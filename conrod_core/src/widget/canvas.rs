@@ -35,7 +35,7 @@ use widget;
 /// See the `canvas.rs` example for a demonstration of the **Canvas** type.
 #[derive(Copy, Clone, Debug, WidgetCommon_)]
 pub struct Canvas<'a> {
-    /// Data necessary and common for all widget builder types.
+    /// Data necessary and common for all widget builder render.
     #[conrod(common_builder)]
     pub common: widget::CommonBuilder,
     /// The builder data related to the style of the Canvas.

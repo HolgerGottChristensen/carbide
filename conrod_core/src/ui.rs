@@ -12,6 +12,7 @@ use theme::Theme;
 use utils;
 use widget::{self, Widget};
 use cursor;
+use render::primitives::Primitives;
 
 /// A constructor type for building a `Ui` instance with a set of optional parameters.
 pub struct UiBuilder {
@@ -102,7 +103,7 @@ pub struct Ui {
 ///
 /// The name came from its likening to a "jail cell for the `Ui`", as it restricts a user's access
 /// to it. However, we realise that the name may also cause ambiguity with the std `Cell` and
-/// `RefCell` types (which `UiCell` has nothing to do with). Thus, if you have a better name for
+/// `RefCell` render (which `UiCell` has nothing to do with). Thus, if you have a better name for
 /// this type in mind, please let us know at the github repo via an issue or PR sometime before we
 /// hit 1.0.0!
 #[derive(Debug)]
@@ -1112,7 +1113,7 @@ impl Ui {
     ///
     /// NOTE: If you don't need to redraw your conrod GUI every frame, it is recommended to use the
     /// `Ui::draw_if_changed` method instead.
-    pub fn draw(&self) -> render::Primitives {
+    pub fn draw(&self) -> Primitives {
         let Ui {
             ref redraw_count,
             ref widget_graph,
@@ -1132,7 +1133,7 @@ impl Ui {
             redraw_count.store(remaining_redraws - 1, atomic::Ordering::Relaxed);
         }
 
-        render::Primitives::new(widget_graph, indices, theme, fonts, [win_w, win_h])
+        Primitives::new(widget_graph, indices, theme, fonts, [win_w, win_h])
     }
 
 
@@ -1150,7 +1151,7 @@ impl Ui {
     /// This ensures that conrod is drawn to each buffer in the case that there is buffer swapping
     /// happening. Let us know if you need finer control over this and we'll expose a way for you
     /// to set the redraw count manually.
-    pub fn draw_if_changed(&self) -> Option<render::Primitives> {
+    pub fn draw_if_changed(&self) -> Option<Primitives> {
         if self.has_changed() {
             return Some(self.draw())
         }

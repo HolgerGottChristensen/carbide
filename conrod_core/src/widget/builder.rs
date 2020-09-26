@@ -56,7 +56,7 @@ macro_rules! builder_method {
 ///
 /// Conrod (and much of the Rust ecosystem) makes extensive use of the builder pattern in order to
 /// provide an expressive widget API. After much iteration, we settled upon the builder pattern as
-/// the best approach to interacting with highly optional types, or in our case, widgets.
+/// the best approach to interacting with highly optional render, or in our case, widgets.
 ///
 /// Almost all widgets implement at least a few methods in order to take advantage of this pattern.
 /// We call them "builder methods".

@@ -7,16 +7,30 @@ use {Color, Colorable, Dimensions, Point, Rect, Sizeable, Widget};
 use super::Style as Style;
 use widget;
 use widget::triangles::Triangle;
+use widget::render::Render;
+use graph::Container;
+use widget::Id;
+use color::rgb;
+use render::primitive::Primitive;
+use render::primitive_kind::PrimitiveKind;
+use render::util::new_primitive;
 
 
 /// A basic, non-interactive rectangle shape widget.
 #[derive(Copy, Clone, Debug, WidgetCommon_)]
 pub struct Rectangle {
-    /// Data necessary and common for all widget builder types.
+    /// Data necessary and common for all widget builder render.
     #[conrod(common_builder)]
     pub common: widget::CommonBuilder,
     /// Unique styling for the **Rectangle**.
     pub style: Style,
+}
+
+impl Render for Rectangle {
+    fn render(self, id: Id, clip: Rect, container: &Container) -> Option<Primitive> {
+        let kind = PrimitiveKind::Rectangle { color: rgb(0.0,1.0, 0.0)};
+        return Some(new_primitive(id, kind, clip, container.rect));
+    }
 }
 
 /// Unique state for the Rectangle.

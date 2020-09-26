@@ -175,7 +175,7 @@ impl Container {
     }
 
     /// Same as [**Container::state_and_style**](./struct.Container#method.state_and_style) but
-    /// accessed using a **Widget** type parameter instead of the unique State and Style types.
+    /// accessed using a **Widget** type parameter instead of the unique State and Style render.
     pub fn unique_widget_state<W>(&self) -> Option<&UniqueWidgetState<W::State, W::Style>>
         where W: Widget,
               W::State: Any + 'static,

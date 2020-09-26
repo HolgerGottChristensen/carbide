@@ -15,7 +15,7 @@ use widget::primitive::shape::oval::Circumference;
 /// Draws a rectangle with corners rounded via the given radius.
 #[derive(Copy, Clone, Debug, WidgetCommon_)]
 pub struct RoundedRectangle {
-    /// Data necessary and common for all widget builder types.
+    /// Data necessary and common for all widget builder render.
     #[conrod(common_builder)]
     pub common: widget::CommonBuilder,
     /// Unique styling for the **RoundedRectangle**.

@@ -16,7 +16,7 @@ use utils::{bounding_box_for_points, vec2_add, vec2_sub};
 /// start and end with the same position.
 #[derive(Copy, Clone, Debug, WidgetCommon_)]
 pub struct Polygon<I> {
-    /// Data necessary and common for all widget builder types.
+    /// Data necessary and common for all widget builder render.
     #[conrod(common_builder)]
     pub common: widget::CommonBuilder,
     /// The points describing the corners of the **Polygon**.

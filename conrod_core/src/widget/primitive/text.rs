@@ -16,7 +16,7 @@ use widget;
 /// in accordance with the produced **Alignment**.
 #[derive(Clone, Debug, WidgetCommon_)]
 pub struct Text<'a> {
-    /// Data necessary and common for all widget builder types.
+    /// Data necessary and common for all widget builder render.
     #[conrod(common_builder)]
     pub common: widget::CommonBuilder,
     /// The text to be drawn by the **Text**.

@@ -157,7 +157,7 @@ fn check_hidden(show_hidden: bool, types: super::Types, path: &std::path::PathBu
 
 impl<'a> DirectoryView<'a> {
 
-    /// Begin building a `DirectoryNavigator` widget that displays only files of the given types.
+    /// Begin building a `DirectoryNavigator` widget that displays only files of the given render.
     pub fn new(directory: &'a std::path::Path, types: super::Types<'a>) -> Self {
         DirectoryView {
             common: widget::CommonBuilder::default(),

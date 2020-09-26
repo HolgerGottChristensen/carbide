@@ -19,7 +19,7 @@ use widget::triangles::Triangle;
 /// A filled rectangle widget that may or may not have some border.
 #[derive(Copy, Clone, Debug, WidgetCommon_)]
 pub struct BorderedRectangle {
-    /// Data necessary and common for all widget builder types.
+    /// Data necessary and common for all widget builder render.
     #[conrod(common_builder)]
     pub common: widget::CommonBuilder,
     /// Unique styling for the **BorderedRectangle**.

@@ -3,11 +3,11 @@
 use {FontSize, Scalar};
 use std;
 
-// Re-export all relevant rusttype types here.
+// Re-export all relevant rusttype render here.
 pub use rusttype::{Glyph, GlyphId, GlyphIter, LayoutIter, Scale};
 pub use rusttype::gpu_cache::Cache as GlyphCache;
 
-/// Re-exported RustType geometrical types.
+/// Re-exported RustType geometrical render.
 pub mod rt {
     pub use rusttype::{Point, Rect, Vector, gpu_cache, point, vector};
 }
@@ -101,7 +101,7 @@ impl<'a, I> Iterator for Lines<'a, I>
 }
 
 
-/// The `font::Id` and `font::Map` types.
+/// The `font::Id` and `font::Map` render.
 pub mod font {
     use fnv;
     use std;
@@ -272,7 +272,7 @@ pub mod font {
 }
 
 
-/// Logic and types specific to individual glyph layout.
+/// Logic and render specific to individual glyph layout.
 pub mod glyph {
     use {FontSize, Range, Rect, Scalar};
     use std;
@@ -898,7 +898,7 @@ pub mod line {
     use position::{Align, Range, Rect, Scalar};
     use std;
 
-    /// The two types of **Break** indices returned by the **WrapIndicesBy** iterators.
+    /// The two render of **Break** indices returned by the **WrapIndicesBy** iterators.
     #[derive(Copy, Clone, Debug, PartialEq)]
     pub enum Break {
         /// A break caused by the text exceeding some maximum width.

@@ -9,7 +9,7 @@ use std::ops::{Deref, DerefMut};
 /// A widget that acts as a convenience container for some `Node`'s unique widgets.
 #[derive(Clone, Debug, WidgetCommon_)]
 pub struct Node<W> {
-    /// Data necessary and common for all widget builder types.
+    /// Data necessary and common for all widget builder render.
     #[conrod(common_builder)]
     pub common: widget::CommonBuilder,
     /// Unique styling for the **Node**.

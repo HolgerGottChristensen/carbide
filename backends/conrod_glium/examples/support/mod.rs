@@ -72,6 +72,6 @@ impl EventLoop {
     }
 }
 
-// Conversion functions for converting between types from glium's version of `winit` and
+// Conversion functions for converting between render from glium's version of `winit` and
 // `conrod_core`.
 conrod_winit::conversion_fns!();

@@ -12,6 +12,9 @@ use conrod_core::{
     render,
     text
 };
+use conrod_core::render::primitive_kind::PrimitiveKind;
+use conrod_core::render::primitive_walker::PrimitiveWalker;
+use conrod_core::render::primitive::Primitive;
 
 /// A `Command` describing a step in the drawing process.
 #[derive(Clone, Debug)]
@@ -487,7 +490,7 @@ impl Renderer {
     /// Fill the inner vertex and command buffers by translating the given `primitives`.
     pub fn fill<D, P, T>(&mut self, display: &D, mut primitives: P, image_map: &image::Map<T>)
     where
-        P: render::PrimitiveWalker,
+        P: PrimitiveWalker,
         D: Display,
         T: TextureDimensions,
     {
@@ -563,7 +566,7 @@ impl Renderer {
 
         // Draw each primitive in order of depth.
         while let Some(primitive) = primitives.next_primitive() {
-            let render::Primitive { kind, scizzor, rect, .. } = primitive;
+            let Primitive { kind, scizzor, rect, .. } = primitive;
 
             // Check for a `Scizzor` command.
             let new_scizzor = rect_to_glium_rect(scizzor);
@@ -586,7 +589,7 @@ impl Renderer {
 
             match kind {
 
-                render::PrimitiveKind::Rectangle { color } => {
+                PrimitiveKind::Rectangle { color } => {
                     switch_to_plain_state!();
 
                     let color = gamma_srgb_to_linear(color.to_fsa());
@@ -615,7 +618,7 @@ impl Renderer {
                     push_v(r, t);
                 },
 
-                render::PrimitiveKind::TrianglesSingleColor { color, triangles } => {
+                PrimitiveKind::TrianglesSingleColor { color, triangles } => {
                     if triangles.is_empty() {
                         continue;
                     }
@@ -640,7 +643,7 @@ impl Renderer {
                     }
                 },
 
-                render::PrimitiveKind::TrianglesMultiColor { triangles } => {
+                PrimitiveKind::TrianglesMultiColor { triangles } => {
                     if triangles.is_empty() {
                         continue;
                     }
@@ -663,7 +666,7 @@ impl Renderer {
                     }
                 },
 
-                render::PrimitiveKind::Text { color, text, font_id } => {
+                PrimitiveKind::Text { color, text, font_id } => {
                     switch_to_plain_state!();
 
                     let positioned_glyphs = text.positioned_glyphs(dpi_factor as f32);
@@ -746,7 +749,7 @@ impl Renderer {
                     }
                 },
 
-                render::PrimitiveKind::Image { image_id, color, source_rect } => {
+                PrimitiveKind::Image { image_id, color, source_rect } => {
 
                     // Switch to the `Image` state for this image if we're not in it already.
                     let new_image_id = image_id;
@@ -825,7 +828,7 @@ impl Renderer {
                 },
 
                 // We have no special case widgets to handle.
-                render::PrimitiveKind::Other(_) => (),
+                PrimitiveKind::Other(_) => (),
             }
 
         }

@@ -8,7 +8,7 @@ use fnv;
 /// Unique image identifier.
 ///
 /// Throughout conrod, images are referred to via their unique `Id`. By referring to images via
-/// `Id`s, conrod can remain agnostic of the actual image or texture types used to represent each
+/// `Id`s, conrod can remain agnostic of the actual image or texture render used to represent each
 /// image.
 #[derive(Copy, Clone, Debug, Eq, PartialEq, Ord, PartialOrd, Hash)]
 pub struct Id(u32);

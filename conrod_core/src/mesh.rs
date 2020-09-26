@@ -9,6 +9,7 @@ use crate::{color, image, render};
 use crate::text::{self, rt};
 use crate::{Rect, Scalar};
 use std::{fmt, ops};
+use render::primitive_walker::PrimitiveWalker;
 
 /// Images within the given image map must know their dimensions in pixels.
 pub trait ImageDimensions {
@@ -162,7 +163,7 @@ impl Mesh {
         mut primitives: P,
     ) -> Result<Fill, rt::gpu_cache::CacheWriteErr>
     where
-        P: render::PrimitiveWalker,
+        P: PrimitiveWalker,
         I: ImageDimensions,
     {
         let Mesh {
@@ -231,7 +232,7 @@ impl Mesh {
 
         // Draw each primitive in order of depth.
         while let Some(primitive) = primitives.next_primitive() {
-            let render::Primitive {
+            let render::primitive::Primitive {
                 kind,
                 scizzor,
                 rect,
@@ -262,7 +263,7 @@ impl Mesh {
             }
 
             match kind {
-                render::PrimitiveKind::Rectangle { color } => {
+                render::primitive_kind::PrimitiveKind::Rectangle { color } => {
                     switch_to_plain_state!();
 
                     let color = gamma_srgb_to_linear(color.to_fsa());
@@ -291,7 +292,7 @@ impl Mesh {
                     push_v(r, t);
                 }
 
-                render::PrimitiveKind::TrianglesSingleColor { color, triangles } => {
+                render::primitive_kind::PrimitiveKind::TrianglesSingleColor { color, triangles } => {
                     if triangles.is_empty() {
                         continue;
                     }
@@ -314,7 +315,7 @@ impl Mesh {
                     }
                 }
 
-                render::PrimitiveKind::TrianglesMultiColor { triangles } => {
+                render::primitive_kind::PrimitiveKind::TrianglesMultiColor { triangles } => {
                     if triangles.is_empty() {
                         continue;
                     }
@@ -335,7 +336,7 @@ impl Mesh {
                     }
                 }
 
-                render::PrimitiveKind::Text {
+                render::primitive_kind::PrimitiveKind::Text {
                     color,
                     text,
                     font_id,
@@ -423,7 +424,7 @@ impl Mesh {
                     }
                 }
 
-                render::PrimitiveKind::Image {
+                render::primitive_kind::PrimitiveKind::Image {
                     image_id,
                     color,
                     source_rect,
@@ -509,7 +510,7 @@ impl Mesh {
                 }
 
                 // We have no special case widgets to handle.
-                render::PrimitiveKind::Other(_) => (),
+                render::primitive_kind::PrimitiveKind::Other(_) => (),
             }
         }
 

@@ -9,7 +9,7 @@ use widget;
 /// A primitive and basic widget for drawing an `Image`.
 #[derive(Copy, Clone, WidgetCommon_)]
 pub struct Image {
-    /// Data necessary and common for all widget builder types.
+    /// Data necessary and common for all widget builder render.
     #[conrod(common_builder)]
     pub common: widget::CommonBuilder,
     /// The unique identifier for the image that will be drawn.
@@ -54,18 +54,18 @@ impl Image {
     /// - To avoid requiring that the user passes the image data to the `Image` every update
     /// unnecessarily
     /// - To make it easier for users to borrow and mutate their images without needing to index
-    /// into the `Ui`'s widget graph (which also requires casting types).
+    /// into the `Ui`'s widget graph (which also requires casting render).
     ///
     /// During rendering, conrod will take the `image::Map`, retrieve the data associated with each
     /// image and yield it via the `render::Primitive::Image` variant.
     ///
     /// Note: this implies that the type must be the same for all `Image` widgets instantiated via
-    /// the same `Ui`. In the case that you require multiple different types of images, we
+    /// the same `Ui`. In the case that you require multiple different render of images, we
     /// recommend that you either:
     ///
     /// 1. use an enum with a variant for each type
-    /// 2. use a trait object, where the trait is implemented for each of your image types or
-    /// 3. use an index type which may be mapped to your various image types.
+    /// 2. use a trait object, where the trait is implemented for each of your image render or
+    /// 3. use an index type which may be mapped to your various image render.
     pub fn new(image_id: image::Id) -> Self {
         Image {
             common: widget::CommonBuilder::default(),

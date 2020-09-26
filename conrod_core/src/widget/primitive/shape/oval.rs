@@ -6,12 +6,18 @@ use std;
 use super::Style as Style;
 use widget;
 use widget::triangles::Triangle;
+use widget::render::Render;
+use graph::Container;
+use widget::Id;
+use render::primitive::Primitive;
+use render::primitive_kind::PrimitiveKind;
+use render::util::new_primitive;
 
 
 /// A simple, non-interactive widget for drawing a single **Oval**.
 #[derive(Copy, Clone, Debug, WidgetCommon_)]
 pub struct Oval<S> {
-    /// Data necessary and common for all widget builder types.
+    /// Data necessary and common for all widget builder render.
     #[conrod(common_builder)]
     pub common: widget::CommonBuilder,
     /// Unique styling.
@@ -20,6 +26,19 @@ pub struct Oval<S> {
     pub resolution: usize,
     /// A type describing the section of the `Oval` that is to be drawn.
     pub section: S,
+}
+
+impl Render for Oval<Full> {
+    fn render(self, id: Id, clip: Rect, container: &Container) -> Option<Primitive> {
+        let points = widget::oval::circumference(container.rect, DEFAULT_RESOLUTION);
+        let mut triangles: Vec<Triangle<Point>> = Vec::new();
+        triangles.extend(points.triangles());
+        let kind = PrimitiveKind::TrianglesSingleColor {
+            color: Color::random().to_rgb(),
+            triangles,
+        };
+        return Some(new_primitive(id, kind, clip, container.rect));
+    }
 }
 
 /// Types that may be used to describe the visible section of the `Oval`.

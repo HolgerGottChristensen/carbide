@@ -1,6 +1,6 @@
-//! Contains all types used to describe the input events that `Widget`s may handle.
+//! Contains all render used to describe the input events that `Widget`s may handle.
 //!
-//! The two primary types of this module are:
+//! The two primary render of this module are:
 //!
 //! - `Input`: conrod's input type passed by the user to `Ui::handle_event` in order to drive the
 //! `Ui`.
@@ -29,11 +29,11 @@
 //!    `glfw_window`, `sdl2_window` and `glutin_window`. That said, co-ordinates and scroll
 //!    directions may need to be translated to conrod's orientation.
 //! 3. The `pistoncore-input` crate also provides a `GenericEvent` trait which allows us to easily
-//!    provide a blanket implementation of `ToRawEvent` for all event types that already implement
+//!    provide a blanket implementation of `ToRawEvent` for all event render that already implement
 //!    this trait.
 //!
 //! Because we use the `pistoncore-input` `Event` type, we also re-export its associated data
-//! types (`Button`, `ControllerAxisArgs`, `Key`, etc).
+//! render (`Button`, `ControllerAxisArgs`, `Key`, etc).
 
 use input;
 use position::{Dimensions, Point};

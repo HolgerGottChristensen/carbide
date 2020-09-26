@@ -15,7 +15,7 @@ pub use super::line::Style;
 pub struct PointPath<I> {
     /// Some iterator yielding a series of Points.
     pub points: I,
-    /// Data necessary and common for all widget builder types.
+    /// Data necessary and common for all widget builder render.
     #[conrod(common_builder)]
     pub common: widget::CommonBuilder,
     /// Unique styling for the PointPath.

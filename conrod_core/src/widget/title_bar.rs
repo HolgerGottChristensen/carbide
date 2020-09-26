@@ -9,7 +9,7 @@ use widget::{self, Widget};
 /// A simple title bar widget that automatically sizes itself to the top of some other widget.
 #[derive(Clone, WidgetCommon_)]
 pub struct TitleBar<'a> {
-    /// Data necessary and common for all widget builder types.
+    /// Data necessary and common for all widget builder render.
     #[conrod(common_builder)]
     pub common: widget::CommonBuilder,
     /// Unique styling for the **BorderedRectangle**.

@@ -133,8 +133,8 @@ pub fn gui(ui: &mut conrod_core::UiCell, ids: &Ids, app: &mut DemoApp) {
     const INTRODUCTION: &'static str =
         "This example aims to demonstrate all widgets that are provided by conrod.\
          \n\nThe widget that you are currently looking at is the Text widget. The Text widget \
-         is one of several special \"primitive\" widget types which are used to construct \
-         all other widget types. These types are \"special\" in the sense that conrod knows \
+         is one of several special \"primitive\" widget render which are used to construct \
+         all other widget render. These render are \"special\" in the sense that conrod knows \
          how to render them via `conrod_core::render::Primitive`s.\
          \n\nScroll down to see more widgets!";
     widget::Text::new(INTRODUCTION)
@@ -353,6 +353,6 @@ pub fn gui(ui: &mut conrod_core::UiCell, ids: &Ids, app: &mut DemoApp) {
     /////////////////////
 
     widget::Scrollbar::y_axis(ids.canvas)
-        .auto_hide(true)
+        .auto_hide(false)
         .set(ids.canvas_scrollbar, ui);
 }

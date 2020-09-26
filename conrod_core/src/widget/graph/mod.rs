@@ -14,9 +14,9 @@ pub use self::node::{Node, SocketLayout, SocketSide};
 
 pub mod node;
 
-/// Traits required by types that may be used as a graph node identifier.
+/// Traits required by render that may be used as a graph node identifier.
 ///
-/// This trait has a blanket implementation for all types that satisfy the bounds.
+/// This trait has a blanket implementation for all render that satisfy the bounds.
 pub trait NodeId: 'static + Copy + Clone + PartialEq + Eq + Hash + Send {}
 impl<T> NodeId for T where T: 'static + Copy + Clone + PartialEq + Eq + Hash + Send {}
 
@@ -52,7 +52,7 @@ where
     }
 }
 
-/// A widget used for visualising and manipulating **Graph** types.
+/// A widget used for visualising and manipulating **Graph** render.
 #[derive(Clone, Debug, WidgetCommon_)]
 pub struct Graph<'a, N, E>
 where
@@ -60,7 +60,7 @@ where
     N::Item: NodeId,
     E: Iterator<Item=(NodeSocket<N::Item>, NodeSocket<N::Item>)>,
 {
-    /// Data necessary and common for all widget builder types.
+    /// Data necessary and common for all widget builder render.
     #[conrod(common_builder)]
     pub common: widget::CommonBuilder,
     /// Unique styling for the **Graph**.
@@ -111,7 +111,7 @@ where
     node_ids: Vec<NI>,
     // A list of all edges where (a, b) represents the directed edge a -> b.
     edges: Vec<(NodeSocket<NI>, NodeSocket<NI>)>,
-    // A map from type identifiers to available `widget::Id`s for those types.
+    // A map from type identifiers to available `widget::Id`s for those render.
     widget_id_map: WidgetIdMap<NI>,
 }
 
@@ -149,13 +149,13 @@ impl TypeWidgetIds {
     }
 }
 
-// A mapping from types to their list of IDs.
+// A mapping from render to their list of IDs.
 #[derive(Default)]
 struct WidgetIdMap<NI>
 where
     NI: NodeId,
 {
-    // A map from types to their available `widget::Id`s
+    // A map from render to their available `widget::Id`s
     type_widget_ids: HashMap<TypeId, TypeWidgetIds>,
     // A map from node IDs to their `widget::Id`.
     //

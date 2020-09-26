@@ -39,12 +39,12 @@ pub struct FileNavigator<'a> {
     show_hidden: bool,
 }
 
-/// A type for specifying the types of files to be shown by a `FileNavigator`.
+/// A type for specifying the render of files to be shown by a `FileNavigator`.
 #[derive(Copy, Clone)]
 pub enum Types<'a> {
-    /// Indicates that files of all types should be shown.
+    /// Indicates that files of all render should be shown.
     All,
-    /// A list of types of files that are accepted by the `FileNavigator`.
+    /// A list of render of files that are accepted by the `FileNavigator`.
     ///
     /// i.e. `&["wav", "wave", "aiff"]`.
     WithExtension(&'a [&'a str]),
@@ -134,7 +134,7 @@ pub enum Event {
 
 impl<'a> FileNavigator<'a> {
 
-    /// Begin building a `FileNavigator` widget that displays only files of the given types.
+    /// Begin building a `FileNavigator` widget that displays only files of the given render.
     pub fn new(starting_directory: &'a std::path::Path, types: Types<'a>) -> Self {
         FileNavigator {
             common: widget::CommonBuilder::default(),
@@ -145,7 +145,7 @@ impl<'a> FileNavigator<'a> {
         }
     }
 
-    /// Begin building a `FileNavigator` that will display all file types.
+    /// Begin building a `FileNavigator` that will display all file render.
     pub fn all(starting_directory: &'a std::path::Path) -> Self {
         Self::new(starting_directory, Types::All)
     }

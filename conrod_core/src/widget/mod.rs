@@ -2,6 +2,7 @@
 //!
 //! This module contains items related to the implementation of the `Widget` trait. It also
 //! re-exports all widgets (and their modules) that are provided by conrod.
+pub mod render;
 
 use graph::{Container, UniqueWidgetState};
 use position::{Align, Depth, Dimension, Dimensions, Padding, Position, Point,
@@ -192,7 +193,7 @@ pub struct Floating {
     pub time_last_clicked: instant::Instant,
 }
 
-/// A struct containing builder data common to all **Widget** types.
+/// A struct containing builder data common to all **Widget** render.
 ///
 /// This type also allows us to do a blanket impl of **Positionable** and **Sizeable** for `T: Widget`.
 ///
@@ -200,7 +201,7 @@ pub struct Floating {
 /// take advantage of that.
 #[derive(Clone, Copy, Debug)]
 pub struct CommonBuilder {
-    /// Styling and positioning data that is common between all widget types.
+    /// Styling and positioning data that is common between all widget render.
     pub style: CommonStyle,
     /// The parent widget of the Widget.
     pub maybe_parent_id: MaybeParent,
@@ -238,7 +239,7 @@ pub struct CommonBuilder {
     pub maybe_graphics_for: Option<Id>,
 }
 
-/// Styling and positioning data that is common between all widget types.
+/// Styling and positioning data that is common between all widget render.
 #[derive(Clone, Copy, Debug, Default, PartialEq)]
 pub struct CommonStyle {
     /// The width of a Widget.
@@ -270,7 +271,7 @@ pub struct State<'a, T: 'a> {
     has_updated: bool,
 }
 
-/// A wrapper around state that is common to all **Widget** types.
+/// A wrapper around state that is common to all **Widget** render.
 #[derive(Copy, Clone, Debug, PartialEq)]
 pub struct CommonState {
     /// The rectangle describing the `Widget`'s area.
@@ -386,7 +387,7 @@ pub fn is_over_rect(container: &Container, point: Point, _: &Theme) -> IsOver {
 /// The necessary bounds for a **Widget**'s associated **Style** type.
 pub trait Style: std::any::Any + std::fmt::Debug + PartialEq + Sized {}
 
-/// Auto-implement the **Style** trait for all applicable types.
+/// Auto-implement the **Style** trait for all applicable render.
 impl<T> Style for T where T: std::any::Any + std::fmt::Debug + PartialEq + Sized {}
 
 
@@ -449,7 +450,7 @@ pub fn default_y_dimension<W>(widget: &W, ui: &Ui) -> Dimension
 }
 
 
-/// A trait implemented by all **Widget** types.
+/// A trait implemented by all **Widget** render.
 ///
 /// This trait provides access to a field of type **CommonBuilder** on the implementor. This allows
 /// the `Widget` trait to automatically provide a large number of methods including those from the
@@ -476,7 +477,7 @@ pub trait Common {
 }
 
 
-/// A trait to be implemented by all **Widget** types.
+/// A trait to be implemented by all **Widget** render.
 ///
 /// A type that implements **Widget** can be thought of as a collection of arguments to the
 /// **Widget**'s **Widget::update** method. They type itself is not stored between updates, but
@@ -521,7 +522,7 @@ pub trait Widget: Common + Sized {
     /// a user of the widget.
     ///
     /// All `Style` structs are typically `Copy` and contain simple, descriptive fields like
-    /// `color`, `font_size`, `line_spacing`, `border_width`, etc. These types are also required to
+    /// `color`, `font_size`, `line_spacing`, `border_width`, etc. These render are also required to
     /// be `PartialEq`. This is so that the `Ui` may automatically compare the previous style to
     /// the new style each time `.set` is called, allowing conrod to automatically determine
     /// whether or not something has changed and if a re-draw is required.
@@ -539,7 +540,7 @@ pub trait Widget: Common + Sized {
     ///
     /// ## `#[derive(WidgetStyle)]`
     ///
-    /// These `Style` types are often quite similar and their implementations can involve a lot of
+    /// These `Style` render are often quite similar and their implementations can involve a lot of
     /// boilerplate when written by hand. To get around this, conrod provides
     /// `#[derive(WidgetStyle)]`.
     ///

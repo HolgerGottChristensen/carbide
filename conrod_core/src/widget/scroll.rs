@@ -1,4 +1,4 @@
-//! Scroll related types and logic.
+//! Scroll related render and logic.
 
 use Ui;
 use position::{Align, Point, Padding, Range, Rect, Scalar};

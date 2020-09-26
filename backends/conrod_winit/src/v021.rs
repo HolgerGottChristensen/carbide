@@ -302,7 +302,7 @@ macro_rules! v021_convert_mouse_cursor {
 #[macro_export]
 macro_rules! v021_conversion_fns {
     () => {
-        /// Generate a set of conversion functions for converting between types of the crate's versions of
+        /// Generate a set of conversion functions for converting between render of the crate's versions of
         /// `winit` and `conrod_core`.
         /// Maps winit's key to a conrod `Key`.
         ///

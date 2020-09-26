@@ -8,7 +8,7 @@ pub mod v021;
 /// factor for converting `winit::Event`s to `conrod::event::Input`, as well as set the mouse
 /// cursor.
 ///
-/// This allows users to pass references to window types like `glium::Display`,
+/// This allows users to pass references to window render like `glium::Display`,
 /// `glium::glutin::Window` or `winit::Window`
 pub trait WinitWindow {
     /// Return the inner size of the window in logical pixels.

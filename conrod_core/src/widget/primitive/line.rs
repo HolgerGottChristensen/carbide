@@ -10,7 +10,7 @@ use widget::triangles::Triangle;
 /// A simple, non-interactive widget for drawing a single straight Line.
 #[derive(Copy, Clone, Debug, WidgetCommon_)]
 pub struct Line {
-    /// Data necessary and common for all widget builder types.
+    /// Data necessary and common for all widget builder render.
     #[conrod(common_builder)]
     pub common: widget::CommonBuilder,
     /// The start of the line.

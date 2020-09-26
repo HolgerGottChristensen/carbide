@@ -9,8 +9,10 @@ pub mod image;
 pub mod point_path;
 pub mod shape;
 pub mod text;
+pub mod widget;
 
 use {Point, Range, Rect};
+pub use widget::primitive::widget::CWidget;
 
 /// Find the bounding rect for the given series of points.
 pub fn bounding_box_for_points<I>(mut points: I) -> Rect

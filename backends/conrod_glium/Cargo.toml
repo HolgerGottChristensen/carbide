@@ -18,6 +18,7 @@ path = "./src/lib.rs"
 conrod_core = { path = "../../conrod_core", version = "0.70" }
 glium = "0.24"
 
+
 [dev-dependencies]
 conrod_example_shared = { path = "../conrod_example_shared", version = "0.70" }
 conrod_winit = { path = "../conrod_winit", version = "0.70" }

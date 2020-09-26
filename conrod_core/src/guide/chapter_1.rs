@@ -145,7 +145,7 @@ first, as your desired widget may have already been requested.
 The term "Immediate Mode" describes a style of user interface API.
 
 In an immediate mode GUI, widgets are instantiated using functions in an *update* or *draw* loop.
-This is quite different to the more traditional "retained mode", where widget *types* are
+This is quite different to the more traditional "retained mode", where widget *render* are
 constructed during the *setup* stage.
 
 Immediate mode encourages a less stateful, more data-driven design as the user interface is

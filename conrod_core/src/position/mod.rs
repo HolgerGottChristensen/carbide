@@ -53,7 +53,7 @@ pub enum Axis {
 /// See the [**Positionable**](./trait.Positionable) trait for methods that allow for setting the
 /// **Position**s in various ways.
 ///
-/// Note that **Positionable** is implemented for *all* types that implement **Widget**.
+/// Note that **Positionable** is implemented for *all* render that implement **Widget**.
 #[derive(Copy, Clone, Debug, PartialEq)]
 pub enum Position {
     /// A specific position.
@@ -122,7 +122,7 @@ pub enum Place {
 /// See the [**Sizeable**](./trait.Sizeable) trait for methods that allow for setting the
 /// `x` and `y` **Dimension**s in various ways.
 ///
-/// Note that **Sizeable** is implemented for *all* types that implement **Widget**.
+/// Note that **Sizeable** is implemented for *all* render that implement **Widget**.
 #[derive(Copy, Clone, Debug, PartialEq)]
 pub enum Dimension {
     /// Some specific length has been given.
@@ -144,7 +144,7 @@ pub enum Dimension {
 /// A **Position** is stored internally within the **widget::CommonBuilder** type, allowing all
 /// widgets to be positioned in a variety of different ways.
 ///
-/// Thus, **Positionable** can be implemented for *all* types that implement **Widget**.
+/// Thus, **Positionable** can be implemented for *all* render that implement **Widget**.
 pub trait Positionable: Sized {
 
     /// Build with the given **Position** along the *x* axis.

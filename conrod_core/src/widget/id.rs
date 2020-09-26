@@ -1,4 +1,4 @@
-//! The widget identifier type used throughout conrod, along with helper types and macros to
+//! The widget identifier type used throughout conrod, along with helper render and macros to
 //! simplify the process of generating them.
 
 use daggy;
@@ -18,7 +18,7 @@ pub type Id = daggy::NodeIndex<u32>;
 
 /// Used for generating new unique `widget::Id`s.
 ///
-/// `Generator` is used by the `widget_ids!` macro and the types and fields that it generates in
+/// `Generator` is used by the `widget_ids!` macro and the render and fields that it generates in
 /// order to generate unique `widget::Id`s for each of the generated fields.
 pub struct Generator<'a> { widget_graph: &'a mut Graph }
 

@@ -10,7 +10,7 @@ use widget;
 /// A widget that allows for drawing a list of triangles.
 #[derive(Copy, Clone, Debug, WidgetCommon_)]
 pub struct Triangles<S, I> {
-    /// Data necessary and common for all widget builder types.
+    /// Data necessary and common for all widget builder render.
     #[conrod(common_builder)]
     pub common: widget::CommonBuilder,
     /// Unique styling for the **Triangles**.
@@ -29,7 +29,7 @@ pub trait Vertex: Clone + Copy + PartialEq {
     fn add(self, Point) -> Self;
 }
 
-/// Unique styling types for `Triangles`.
+/// Unique styling render for `Triangles`.
 pub trait Style: widget::Style + Clone + Send {
     /// The type of vertices that make up the list of triangles for this style.
     type Vertex: Vertex + Send;

@@ -23,7 +23,7 @@ pub struct ListSelect<M, D, S> {
 /// A trait that extends the `List` `Direction` trait with behaviour necessary for the `ListSelect`
 /// widget.
 ///
-/// Implemented for the `Down`, `Right`, `Up`, `Left` types.
+/// Implemented for the `Down`, `Right`, `Up`, `Left` render.
 pub trait Direction: widget::list::Direction {
     /// Maps a given `key` to a direction along the list.
     fn key_direction(key: input::Key) -> Option<ListDirection>;

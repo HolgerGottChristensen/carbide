@@ -292,7 +292,7 @@ macro_rules! convert_mouse_cursor {
     }};
 }
 
-/// Generate a set of conversion functions for converting between types of the crate's versions of
+/// Generate a set of conversion functions for converting between render of the crate's versions of
 /// `winit` and `conrod_core`.
 #[macro_export]
 macro_rules! conversion_fns {

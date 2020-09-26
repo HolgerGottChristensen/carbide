@@ -1,5 +1,5 @@
 //! 
-//! A library providing simple `Color` and `Gradient` types along with useful transformations and
+//! A library providing simple `Color` and `Gradient` render along with useful transformations and
 //! presets.
 //!
 //!
@@ -10,9 +10,12 @@
 //! Module for working with colors. Includes [RGB](https://en.wikipedia.org/wiki/RGB_color_model)
 //! and [HSL](http://en.wikipedia.org/wiki/HSL_and_HSV) creation, gradients and built-in names.
 //!
-
+extern crate rand;
 use std::f32::consts::PI;
 use utils::{degrees, fmod, turns};
+use self::rand::Rng;
+
+
 
 /// Color supporting RGB and HSL variants.
 #[derive(PartialEq, Copy, Clone, Debug)]
@@ -21,6 +24,13 @@ pub enum Color {
     Rgba(f32, f32, f32, f32),
     /// Hue, Saturation, Lightness, Alpha - all values scales represented between 0.0 and 1.0.
     Hsla(f32, f32, f32, f32),
+}
+
+impl Color {
+    pub fn random() -> Self {
+        let mut rng = rand::thread_rng();
+        return rgb(rng.gen_range(0.0, 1.0), rng.gen_range(0.0, 1.0), rng.gen_range(0.0, 1.0))
+    }
 }
 
 /// Regional spelling alias.
