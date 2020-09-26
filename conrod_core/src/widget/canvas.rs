@@ -13,7 +13,7 @@ use {
     UiCell,
     Widget,
 };
-use position::{self, Dimensions, Padding, Place, Position, Range, Rect, Scalar};
+use position::{self, Dimension, Padding, Place, Position, Range, Rect, Scalar, Dimensions};
 use position::Direction::{Forwards, Backwards};
 use text;
 use widget;

@@ -2,7 +2,7 @@
 
 use {Color, Widget, Ui};
 use image;
-use position::{Dimension, Rect};
+use position::{Dimension, Rect, Dimensions};
 use widget;
 
 

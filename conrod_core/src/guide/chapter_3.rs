@@ -185,7 +185,7 @@ the UI every time round the loop. Here's the main loop:
 ```ignore
 'main: loop {
     // Render the `Ui` and then display it on the screen.
-    if let Some(primitives) = ui.draw_if_changed() {
+    if let Some((primitives, cprims)) = ui.draw_if_changed() {
         renderer.fill(&display, primitives, &image_map);
         let mut target = display.draw();
         target.clear_color(0.0, 1.0, 0.0, 1.0);

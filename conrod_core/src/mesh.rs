@@ -285,7 +285,6 @@ impl Mesh {
                     push_v(l, t);
                     push_v(r, b);
                     push_v(l, b);
-
                     // Top right triangle.
                     push_v(l, t);
                     push_v(r, b);
@@ -346,7 +345,7 @@ impl Mesh {
                     let positioned_glyphs = text.positioned_glyphs(dpi_factor as f32);
 
                     // Queue the glyphs to be cached
-                    for glyph in positioned_glyphs {
+                    for glyph in positioned_glyphs.clone() {
                         glyph_cache.queue_glyph(font_id.index(), glyph.clone());
                     }
 
@@ -385,8 +384,8 @@ impl Mesh {
                             )) * 2.0,
                     };
 
-                    for g in positioned_glyphs {
-                        if let Ok(Some((uv_rect, screen_rect))) = glyph_cache.rect_for(cache_id, g)
+                    for g in positioned_glyphs.clone() {
+                        if let Ok(Some((uv_rect, screen_rect))) = glyph_cache.rect_for(cache_id, &g)
                         {
                             let vk_rect = to_vk_rect(screen_rect);
                             let v = |p, t| Vertex {

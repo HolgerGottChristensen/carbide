@@ -3,7 +3,6 @@
 use {
     Color,
     Colorable,
-    Dimensions,
     Borderable,
     Point,
     Positionable,
@@ -14,6 +13,7 @@ use {
 };
 use widget;
 use widget::triangles::Triangle;
+use position::Dimensions;
 
 
 /// A filled rectangle widget that may or may not have some border.

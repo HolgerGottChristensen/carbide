@@ -2,7 +2,7 @@ use ::{widget, Rect};
 use graph::{Graph, UniqueWidgetState};
 use ::{Theme, text};
 use widget::triangles::Triangle;
-use ::{Point, Dimensions};
+use ::{Point};
 use render::primitive_walker::PrimitiveWalker;
 use render::primitive::Primitive;
 use ::{color, Widget};
@@ -12,12 +12,13 @@ use render::util::{new_primitive, next_widget};
 use widget::render::Render;
 use widget::Oval;
 use widget::envelope_editor::EnvelopePoint;
-use position::Align;
+use position::{Align, Dimensions};
 use render::text::Text;
 use render::owned_primitives::OwnedPrimitives;
 use render::owned_primitive_kind::OwnedPrimitiveKind;
 use render::owned_primitive::OwnedPrimitive;
 use render::owned_text::OwnedText;
+use Color;
 
 /// An iterator-like type that yields a reference to each primitive in order of depth for
 /// rendering.
@@ -157,7 +158,7 @@ impl<'a> Primitives<'a> {
                 type Style = widget::triangles::MultiColor;
                 if let Some(tris) = container.state_and_style::<TrianglesMultiColorState, Style>() {
                     let UniqueWidgetState { ref state, .. } = *tris;
-                    let kind = PrimitiveKind::TrianglesMultiColor { triangles: &state.triangles };
+                    let kind = PrimitiveKind::TrianglesMultiColor { triangles: state.triangles.clone() };
                     return Some(new_primitive(id, kind, clip, rect));
                 }
 
@@ -346,11 +347,11 @@ impl<'a> Primitives<'a> {
                     let y_align = Align::End;
 
                     let text = Text {
-                        positioned_glyphs: positioned_glyphs,
+                        positioned_glyphs: (*positioned_glyphs).clone(),
                         window_dim: window_rect.dim(),
-                        text: &state.string,
-                        line_infos: &state.line_infos,
-                        font: font,
+                        text: state.string.clone(),
+                        line_infos: state.line_infos.to_vec(),
+                        font: font.clone(),
                         font_size: font_size,
                         rect: rect,
                         justify: justify,
@@ -381,7 +382,7 @@ impl<'a> Primitives<'a> {
 
             // Return an `Other` variant for all non-primitive widgets.
             } else {
-                let kind = PrimitiveKind::Other(container);
+                let kind = PrimitiveKind::Rectangle {color: Color::random()};
                 return Some(new_primitive(id, kind, clip, rect));
             }
         }
@@ -465,7 +466,7 @@ impl<'a> Primitives<'a> {
 
                     // Pack the `texts_string`.
                     let start_str_byte = texts_string.len();
-                    texts_string.push_str(text);
+                    texts_string.push_str(&text);
                     let end_str_byte = texts_string.len();
 
                     // Pack the `line_infos`.

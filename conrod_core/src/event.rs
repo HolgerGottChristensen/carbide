@@ -36,7 +36,7 @@
 //! render (`Button`, `ControllerAxisArgs`, `Key`, etc).
 
 use input;
-use position::{Dimensions, Point};
+use position::{Dimension, Point, Dimensions};
 use utils::vec2_sub;
 use widget;
 

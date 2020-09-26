@@ -3,6 +3,9 @@
 extern crate conrod_core;
 #[macro_use]
 extern crate glium;
+extern crate conrod_winit;
+
+mod window;
 
 use conrod_core::{
     Rect,
@@ -15,6 +18,7 @@ use conrod_core::{
 use conrod_core::render::primitive_kind::PrimitiveKind;
 use conrod_core::render::primitive_walker::PrimitiveWalker;
 use conrod_core::render::primitive::Primitive;
+pub use window::Window;
 
 /// A `Command` describing a step in the drawing process.
 #[derive(Clone, Debug)]
@@ -540,8 +544,8 @@ impl Renderer {
         let dpi_factor = display.hidpi_factor() as Scalar;
 
         // Functions for converting for conrod scalar coords to GL vertex coords (-1.0 to 1.0).
-        let vx = |x: Scalar| (x * dpi_factor / half_win_w) as f32;
-        let vy = |y: Scalar| (y * dpi_factor / half_win_h) as f32;
+        let vx = |x: Scalar| ((x * dpi_factor / half_win_w) - 1.0) as f32;
+        let vy = |y: Scalar| -((y * dpi_factor / half_win_h) - 1.0) as f32;
 
         let mut current_scizzor = glium::Rect {
             left: 0,
@@ -569,7 +573,7 @@ impl Renderer {
             let Primitive { kind, scizzor, rect, .. } = primitive;
 
             // Check for a `Scizzor` command.
-            let new_scizzor = rect_to_glium_rect(scizzor);
+            /*let new_scizzor = rect_to_glium_rect(scizzor);
             if new_scizzor != current_scizzor {
                 // Finish the current command.
                 match current_state {
@@ -585,7 +589,7 @@ impl Renderer {
 
                 // Set the state back to plain drawing.
                 current_state = State::Plain { start: vertices.len() };
-            }
+            }*/
 
             match kind {
 
@@ -606,6 +610,7 @@ impl Renderer {
                     };
 
                     let mut push_v = |x, y| vertices.push(v(x, y));
+
 
                     // Bottom left triangle.
                     push_v(l, t);
@@ -730,7 +735,7 @@ impl Renderer {
                     };
 
                     for g in positioned_glyphs {
-                        if let Ok(Some((uv_rect, screen_rect))) = cache.rect_for(cache_id, g) {
+                        if let Ok(Some((uv_rect, screen_rect))) = cache.rect_for(cache_id, &g) {
                             let gl_rect = to_gl_rect(screen_rect);
                             let v = |p, t| Vertex {
                                 position: p,

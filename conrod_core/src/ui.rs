@@ -2,7 +2,7 @@ use color::Color;
 use event;
 use graph::{self, Graph};
 use input;
-use position::{self, Align, Direction, Dimensions, Padding, Point, Position, Range, Rect, Scalar};
+use position::{self, Align, Direction, Dimension, Padding, Point, Position, Range, Rect, Scalar, Dimensions};
 use render;
 use std;
 use std::sync::atomic::{self, AtomicUsize};
@@ -13,6 +13,8 @@ use utils;
 use widget::{self, Widget};
 use cursor;
 use render::primitives::Primitives;
+use render::cprimitives::CPrimitives;
+use widget::primitive::CWidget;
 
 /// A constructor type for building a `Ui` instance with a set of optional parameters.
 pub struct UiBuilder {
@@ -58,6 +60,8 @@ pub struct Ui {
     pub fonts: text::font::Map,
     /// The Widget cache, storing state for all widgets.
     widget_graph: Graph,
+
+    pub widgets: CWidget,
     /// The widget::Id of the widget that was last updated/set.
     maybe_prev_widget_id: Option<widget::Id>,
     /// The widget::Id of the last widget used as a parent for another widget.
@@ -193,6 +197,7 @@ impl Ui {
             theme: maybe_theme.unwrap_or_else(|| Theme::default()),
             fonts: text::font::Map::new(),
             window: window,
+            widgets: CWidget::Complex,
             win_w: window_dimensions[0],
             win_h: window_dimensions[1],
             maybe_prev_widget_id: None,
@@ -1113,10 +1118,11 @@ impl Ui {
     ///
     /// NOTE: If you don't need to redraw your conrod GUI every frame, it is recommended to use the
     /// `Ui::draw_if_changed` method instead.
-    pub fn draw(&self) -> Primitives {
+    pub fn draw(&self) -> (Primitives, CPrimitives) {
         let Ui {
             ref redraw_count,
             ref widget_graph,
+            ref widgets,
             ref depth_order,
             ref theme,
             ref fonts,
@@ -1133,7 +1139,10 @@ impl Ui {
             redraw_count.store(remaining_redraws - 1, atomic::Ordering::Relaxed);
         }
 
-        Primitives::new(widget_graph, indices, theme, fonts, [win_w, win_h])
+        (
+            Primitives::new(widget_graph, indices, theme, fonts, [win_w, win_h]),
+            CPrimitives::new(widgets)
+        )
     }
 
 
@@ -1151,7 +1160,7 @@ impl Ui {
     /// This ensures that conrod is drawn to each buffer in the case that there is buffer swapping
     /// happening. Let us know if you need finer control over this and we'll expose a way for you
     /// to set the redraw count manually.
-    pub fn draw_if_changed(&self) -> Option<Primitives> {
+    pub fn draw_if_changed(&self) -> Option<(Primitives, CPrimitives)> {
         if self.has_changed() {
             return Some(self.draw())
         }

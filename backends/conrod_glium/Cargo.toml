@@ -17,13 +17,13 @@ path = "./src/lib.rs"
 [dependencies]
 conrod_core = { path = "../../conrod_core", version = "0.70" }
 glium = "0.24"
-
+conrod_winit = { path = "../conrod_winit", version = "0.70" }
+winit = "0.19"
+find_folder = "0.3.0"
 
 [dev-dependencies]
 conrod_example_shared = { path = "../conrod_example_shared", version = "0.70" }
-conrod_winit = { path = "../conrod_winit", version = "0.70" }
-find_folder = "0.3.0"
 image = "0.22"
 petgraph = "0.4"
 rand = "0.7"
-winit = "0.19"
+

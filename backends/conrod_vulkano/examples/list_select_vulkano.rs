@@ -107,7 +107,7 @@ fn main() {
             None => break 'main,
         };
 
-        if let Some(primitives) = ui.draw_if_changed() {
+        if let Some((primitives, cprims)) = ui.draw_if_changed() {
             let (image_num, acquire_future) =
                 match swapchain::acquire_next_image(window.swapchain.clone(), None) {
                     Ok(r) => r,

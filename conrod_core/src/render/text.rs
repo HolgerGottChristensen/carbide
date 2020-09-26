@@ -1,18 +1,18 @@
-use ::{text, Dimensions};
+use ::{text};
 use ::{FontSize, Rect};
-use position::Align;
+use position::{Align, Dimensions};
 use Scalar;
 
 /// A type used for producing a `PositionedGlyph` iterator.
 ///
 /// We produce this type rather than the `&[PositionedGlyph]`s directly so that we can properly
 /// handle "HiDPI" scales when caching glyphs.
-pub struct Text<'a> {
-    pub(crate) positioned_glyphs: &'a mut Vec<text::PositionedGlyph>,
+pub struct Text {
+    pub(crate) positioned_glyphs: Vec<text::PositionedGlyph>,
     pub(crate) window_dim: Dimensions,
-    pub(crate) text: &'a str,
-    pub(crate) line_infos: &'a [text::line::Info],
-    pub(crate) font: &'a text::Font,
+    pub(crate) text: String,
+    pub(crate) line_infos: Vec<text::line::Info>,
+    pub(crate) font: text::Font,
     pub(crate) font_size: FontSize,
     pub(crate) rect: Rect,
     pub(crate) justify: text::Justify,
@@ -21,7 +21,7 @@ pub struct Text<'a> {
 }
 
 
-impl<'a> Text<'a> {
+impl Text {
 
     /// Produces a list of `PositionedGlyph`s which may be used to cache and render the text.
     ///
@@ -34,9 +34,9 @@ impl<'a> Text<'a> {
     /// out text. This is because conrod positioning uses a "pixel-agnostic" `Scalar` value
     /// representing *perceived* distances for its positioning and layout, rather than pixel
     /// values. During rendering however, the pixel density must be known
-    pub fn positioned_glyphs(self, dpi_factor: f32) -> &'a [text::PositionedGlyph] {
+    pub fn positioned_glyphs(self, dpi_factor: f32) -> Vec<text::PositionedGlyph> {
         let Text {
-            positioned_glyphs,
+            mut positioned_glyphs,
             window_dim,
             text,
             line_infos,

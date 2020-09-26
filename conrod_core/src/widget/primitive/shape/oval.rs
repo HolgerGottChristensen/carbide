@@ -1,6 +1,6 @@
 //! A simple, non-interactive widget for drawing a single **Oval**.
 
-use {Color, Colorable, Dimensions, Point, Rect, Scalar, Sizeable, Theme, Widget};
+use {Color, Colorable, Point, Rect, Scalar, Sizeable, Theme, Widget};
 use graph;
 use std;
 use super::Style as Style;
@@ -12,10 +12,16 @@ use widget::Id;
 use render::primitive::Primitive;
 use render::primitive_kind::PrimitiveKind;
 use render::util::new_primitive;
+use position::Dimensions;
+use render::owned_primitive::OwnedPrimitive;
+use daggy::petgraph::graph::node_index;
+use widget::common_widget::CommonWidget;
+use uuid::Uuid;
+use widget::primitive::CWidget;
 
 
 /// A simple, non-interactive widget for drawing a single **Oval**.
-#[derive(Copy, Clone, Debug, WidgetCommon_)]
+#[derive(Clone, Debug, WidgetCommon_)]
 pub struct Oval<S> {
     /// Data necessary and common for all widget builder render.
     #[conrod(common_builder)]
@@ -26,6 +32,44 @@ pub struct Oval<S> {
     pub resolution: usize,
     /// A type describing the section of the `Oval` that is to be drawn.
     pub section: S,
+    position: Point,
+    dimension: Dimensions,
+
+    pub children: Vec<CWidget>
+}
+
+impl<S> CommonWidget for Oval<S> {
+    fn get_id(&self) -> Uuid {
+        unimplemented!()
+    }
+
+    fn get_children(&self) -> &Vec<CWidget> {
+        &self.children
+    }
+
+    fn get_position(&self) -> [f64; 2] {
+        unimplemented!()
+    }
+
+    fn get_x(&self) -> f64 {
+        unimplemented!()
+    }
+
+    fn get_y(&self) -> f64 {
+        unimplemented!()
+    }
+
+    fn get_size(&self) -> [f64; 2] {
+        unimplemented!()
+    }
+
+    fn get_width(&self) -> f64 {
+        unimplemented!()
+    }
+
+    fn get_height(&self) -> f64 {
+        unimplemented!()
+    }
 }
 
 impl Render for Oval<Full> {
@@ -38,6 +82,22 @@ impl Render for Oval<Full> {
             triangles,
         };
         return Some(new_primitive(id, kind, clip, container.rect));
+    }
+
+    fn get_primitives(&self) -> Vec<Primitive> {
+        let points = widget::oval::circumference(Rect::new(self.position, self.dimension), DEFAULT_RESOLUTION);
+        let mut triangles: Vec<Triangle<Point>> = Vec::new();
+        triangles.extend(points.triangles());
+        let kind = PrimitiveKind::TrianglesSingleColor {
+            color: Color::random().to_rgb(),
+            triangles,
+        };
+
+        let mut prims: Vec<Primitive> = vec![new_primitive(node_index(0), kind, Rect::new(self.position, self.dimension), Rect::new(self.position, self.dimension))];
+        let children: Vec<Primitive> = self.get_children().iter().flat_map(|f| f.get_primitives()).collect();
+        prims.extend(children);
+
+        return prims;
     }
 }
 
@@ -87,6 +147,20 @@ pub struct State<S> {
 pub const DEFAULT_RESOLUTION: usize = 50;
 
 impl Oval<Full> {
+
+    pub fn new(position: Point, dimension: Dimensions, children: Vec<CWidget>) -> CWidget {
+        CWidget::Oval(Oval {
+            //id: Uuid::new_v4(),
+            children,
+            position,
+            dimension,
+            common: widget::CommonBuilder::default(),
+            style: Style::fill(),
+            resolution: 0,
+            section: Full
+        })
+    }
+
     /// Build an **Oval** with the given dimensions and style.
     pub fn styled(dim: Dimensions, style: Style) -> Self {
         Oval {
@@ -94,6 +168,9 @@ impl Oval<Full> {
             style: style,
             resolution: DEFAULT_RESOLUTION,
             section: Full,
+            position: [0.0,0.0],
+            dimension: [0.0,0.0],
+            children: vec![]
         }.wh(dim)
     }
 
@@ -133,7 +210,7 @@ impl<S> Oval<S> {
     pub fn section(self, radians: Scalar) -> Oval<Section> {
         let Oval { common, style, resolution, .. } = self;
         let section = Section { radians, offset_radians: 0.0 };
-        Oval { common, style, resolution, section }
+        Oval { common, style, resolution, section, position: [10.0, 10.0], dimension: [10.0,10.0], children: vec![] }
     }
 }
 

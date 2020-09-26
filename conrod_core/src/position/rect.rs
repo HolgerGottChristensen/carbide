@@ -1,6 +1,7 @@
 //! Defines the scalar `Rect` type used throughout conrod.
 
-use super::{Dimensions, Padding, Point, Range, Scalar};
+use super::{Dimension, Padding, Point, Range, Scalar};
+use position::Dimensions;
 
 
 /// Defines a Rectangle's bounds across the x and y axes.
@@ -29,6 +30,13 @@ pub enum Corner {
 
 
 impl Rect {
+
+    pub fn new(position: Point, size: Dimensions) -> Self {
+        Rect {
+            x: Range { start: position[0], end: position[0] + size[0] },
+            y: Range { start: position[1], end: position[1] + size[1] }
+        }
+    }
 
     /// Construct a Rect from a given `Point` and `Dimensions`.
     pub fn from_xy_dim(xy: Point, dim: Dimensions) -> Self {

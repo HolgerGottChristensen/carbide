@@ -56,7 +56,7 @@ impl<'a> WalkOwnedPrimitives<'a> {
 
                 OwnedPrimitiveKind::TrianglesMultiColor { ref triangle_range } => {
                     let kind = PrimitiveKind::TrianglesMultiColor {
-                        triangles: &triangles_multi_color[triangle_range.clone()],
+                        triangles: triangles_multi_color[triangle_range.clone()].to_vec(),
                     };
                     new(kind)
                 },
@@ -78,11 +78,11 @@ impl<'a> WalkOwnedPrimitives<'a> {
                     let line_infos = &line_infos[line_infos_range.clone()];
 
                     let text = Text {
-                        positioned_glyphs: positioned_glyphs,
+                        positioned_glyphs: (*positioned_glyphs).clone(),
                         window_dim: window_dim,
-                        text: text_str,
-                        line_infos: line_infos,
-                        font: font,
+                        text: text_str.clone().parse().unwrap(),
+                        line_infos: line_infos.to_vec(),
+                        font: font.clone(),
                         font_size: font_size,
                         rect: rect,
                         justify: justify,

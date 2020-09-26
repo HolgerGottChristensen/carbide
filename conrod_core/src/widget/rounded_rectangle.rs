@@ -3,13 +3,14 @@
 //! The roundedness of the corners is specified with a `radius`. This indicates the radius of the
 //! circle used to draw the corners.
 
-use {Color, Colorable, Dimensions, Point, Positionable, Range, Rect, Scalar, Sizeable, Theme,
+use {Color, Colorable, Point, Positionable, Range, Rect, Scalar, Sizeable, Theme,
      Widget};
 use graph;
 use std::f64::consts::PI;
 use widget;
 use widget::primitive::shape::Style;
 use widget::primitive::shape::oval::Circumference;
+use position::Dimensions;
 
 
 /// Draws a rectangle with corners rounded via the given radius.

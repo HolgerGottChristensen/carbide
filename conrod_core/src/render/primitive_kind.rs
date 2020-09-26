@@ -6,7 +6,7 @@ use render::text::Text;
 use ::{text, graph};
 
 /// The unique kind for each primitive element in the Ui.
-pub enum PrimitiveKind<'a> {
+pub enum PrimitiveKind {
 
     /// A filled `Rectangle`.
     ///
@@ -31,7 +31,7 @@ pub enum PrimitiveKind<'a> {
     /// This variant is produced by the general purpose `Triangles` primitive widget.
     TrianglesMultiColor {
         /// An ordered slice of multicolored triangles.
-        triangles: &'a [Triangle<ColoredPoint>]
+        triangles: Vec<Triangle<ColoredPoint>>
     },
 
     /// A single `Image`, produced by the primitive `Image` widget.
@@ -50,7 +50,7 @@ pub enum PrimitiveKind<'a> {
         color: Color,
         /// All glyphs within the `Text` laid out in their correct positions in order from top-left
         /// to bottom right.
-        text: Text<'a>,
+        text: Text,
         /// The unique identifier for the font, useful for the `glyph_cache.rect_for(id, glyph)`
         /// method when using the `conrod::text::GlyphCache` (rusttype's GPU `Cache`).
         font_id: text::font::Id,
@@ -66,7 +66,7 @@ pub enum PrimitiveKind<'a> {
     /// variants for a container whose `kind` field matches the unique kind of the `Shader` widget.
     /// They can then retrieve the unique state of the widget and cast it to its actual type using
     /// either of the `Container::state_and_style` or `Container::unique_widget_state` methods.
-    Other(&'a graph::Container),
+    Other(graph::Container),
 
 }
 

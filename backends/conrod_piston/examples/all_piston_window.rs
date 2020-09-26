@@ -89,7 +89,7 @@ pub fn main() {
         });
 
         window.draw_2d(&event, |context, graphics, device| {
-            if let Some(primitives) = ui.draw_if_changed() {
+            if let Some((primitives, cprims)) = ui.draw_if_changed() {
 
                 // A function used for caching glyphs to the texture cache.
                 let cache_queued_glyphs = |_graphics: &mut G2d,

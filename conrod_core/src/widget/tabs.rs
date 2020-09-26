@@ -2,7 +2,6 @@
 
 use {
     Color,
-    Dimensions,
     FontSize,
     Point,
     Rect,
@@ -13,6 +12,7 @@ use std;
 use text;
 use utils;
 use widget;
+use position::Dimensions;
 
 
 /// A wrapper around a list of `Canvas`ses that displays them as a list of selectable tabs.

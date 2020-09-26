@@ -143,7 +143,7 @@ fn main() {
 
         let dpi_factor = context.window().get_hidpi_factor() as f32;
 
-        if let Some(primitives) = ui.draw_if_changed() {
+        if let Some((primitives, cprims)) = ui.draw_if_changed() {
             let dims = (win_w as f32 * dpi_factor, win_h as f32 * dpi_factor);
 
             //Clear the window

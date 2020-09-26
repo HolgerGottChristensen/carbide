@@ -114,7 +114,7 @@ fn main() {
 
             // Render the `Ui` to a list of primitives that we can send to the main thread for
             // display. Wakeup `winit` for rendering.
-            if let Some(primitives) = ui.draw_if_changed() {
+            if let Some((primitives, cprims)) = ui.draw_if_changed() {
                 if render_tx.send(primitives.owned()).is_err()
                 || events_loop_proxy.wakeup().is_err() {
                     break 'conrod;

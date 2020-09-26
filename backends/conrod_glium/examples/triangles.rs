@@ -94,7 +94,7 @@ fn main() {
         }
 
         // Draw the `Ui` if it has changed.
-        if let Some(primitives) = ui.draw_if_changed() {
+        if let Some((primitives, cprims)) = ui.draw_if_changed() {
             renderer.fill(&display.0, primitives, &image_map);
             let mut target = display.0.draw();
             target.clear_color(0.0, 0.0, 0.0, 1.0);

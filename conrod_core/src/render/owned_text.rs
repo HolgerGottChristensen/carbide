@@ -1,7 +1,7 @@
-use ::{Dimensions, FontSize};
+use :: {FontSize};
 use text::{Font, Justify};
 use ::{Rect, Scalar};
-use position::Align;
+use position::{Align, Dimensions};
 
 #[derive(Clone)]
 pub struct OwnedText {

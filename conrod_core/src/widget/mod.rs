@@ -51,6 +51,7 @@ pub use self::toggle::Toggle;
 pub use self::xy_pad::XYPad;
 
 
+
 // Macro providing modules.
 #[macro_use] mod builder;
 
@@ -87,6 +88,7 @@ pub mod text_edit;
 pub mod title_bar;
 pub mod toggle;
 pub mod xy_pad;
+pub mod common_widget;
 
 
 /// Arguments for the [**Widget::update**](./trait.Widget#method.update) method in a struct to

@@ -15,12 +15,13 @@ extern crate num;
 extern crate input as piston_input;
 extern crate rusttype;
 extern crate copypasta;
+extern crate uuid;
 
 pub use color::{Color, Colorable};
 pub use conrod_derive::*;
 pub use border::{Bordering, Borderable};
 pub use label::{FontSize, Labelable};
-pub use position::{Dimensions, Point, Position, Positionable, Range, Rect, Scalar, Sizeable};
+pub use position::{Dimension, Point, Position, Positionable, Range, Rect, Scalar, Sizeable};
 pub use theme::Theme;
 pub use ui::{Ui, UiCell, UiBuilder};
 pub use widget::{scroll, Widget};
@@ -42,5 +43,6 @@ mod ui;
 pub mod utils;
 pub mod widget;
 pub mod cursor;
+pub mod layout;
 
 #[cfg(test)] mod tests;

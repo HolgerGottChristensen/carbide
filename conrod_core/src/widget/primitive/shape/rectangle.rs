@@ -3,9 +3,9 @@
 //! Due to the frequency of its use in GUIs, the `Rectangle` gets its own widget to allow backends
 //! to specialise their rendering implementations.
 
-use {Color, Colorable, Dimensions, Point, Rect, Sizeable, Widget};
+use {Color, Colorable, Point, Rect, Sizeable, Widget};
 use super::Style as Style;
-use widget;
+use ::{widget, Scalar};
 use widget::triangles::Triangle;
 use widget::render::Render;
 use graph::Container;
@@ -14,11 +14,24 @@ use color::rgb;
 use render::primitive::Primitive;
 use render::primitive_kind::PrimitiveKind;
 use render::util::new_primitive;
+use widget::common_widget::CommonWidget;
+use uuid::Uuid;
+use widget::primitive::CWidget;
+use position::Dimensions;
+use daggy::petgraph::graph::node_index;
+use Range;
+use render::owned_primitive::OwnedPrimitive;
+use render::owned_primitive_kind::OwnedPrimitiveKind;
+use widget::envelope_editor::EnvelopePoint;
 
 
 /// A basic, non-interactive rectangle shape widget.
-#[derive(Copy, Clone, Debug, WidgetCommon_)]
+#[derive(Clone, Debug, WidgetCommon_)]
 pub struct Rectangle {
+    id: Uuid,
+    children: Vec<CWidget>,
+    position: Point,
+    dimension: Dimensions,
     /// Data necessary and common for all widget builder render.
     #[conrod(common_builder)]
     pub common: widget::CommonBuilder,
@@ -26,10 +39,60 @@ pub struct Rectangle {
     pub style: Style,
 }
 
+impl CommonWidget for Rectangle {
+    fn get_id(&self) -> Uuid {
+        self.id
+    }
+    fn get_children(&self) -> &Vec<CWidget> {
+        &self.children
+    }
+
+    fn get_position(&self) -> Point {
+        unimplemented!()
+    }
+
+    fn get_x(&self) -> Scalar {
+        unimplemented!()
+    }
+
+    fn get_y(&self) -> Scalar {
+        unimplemented!()
+    }
+
+    fn get_size(&self) -> Dimensions {
+        unimplemented!()
+    }
+
+    fn get_width(&self) -> Scalar {
+        unimplemented!()
+    }
+
+    fn get_height(&self) -> Scalar {
+        unimplemented!()
+    }
+}
+
 impl Render for Rectangle {
     fn render(self, id: Id, clip: Rect, container: &Container) -> Option<Primitive> {
         let kind = PrimitiveKind::Rectangle { color: rgb(0.0,1.0, 0.0)};
         return Some(new_primitive(id, kind, clip, container.rect));
+    }
+
+    fn get_primitives(&self) -> Vec<Primitive> {
+        let kind = PrimitiveKind::Rectangle { color: Color::random()};
+        let mut prims = vec![
+            Primitive {
+                id: node_index(0),
+                kind,
+                scizzor: Rect::new(self.position, self.dimension),
+                rect: Rect::new(self.position, self.dimension)
+
+            }
+        ];
+        let children: Vec<Primitive> = self.get_children().iter().flat_map(|f| f.get_primitives()).collect();
+        prims.extend(children);
+
+        return prims;
     }
 }
 
@@ -51,9 +114,15 @@ pub enum Kind {
 
 impl Rectangle {
 
+
+
     /// Build a rectangle with the dimensions and style.
     pub fn styled(dim: Dimensions, style: Style) -> Self {
         Rectangle {
+            id: Uuid::new_v4(),
+            children: vec![],
+            position: [1.0, 1.0],
+            dimension: [1.0, 1.0],
             common: widget::CommonBuilder::default(),
             style: style,
         }.wh(dim)
@@ -79,6 +148,16 @@ impl Rectangle {
         Rectangle::styled(dim, Style::outline_styled(line_style))
     }
 
+    pub fn new(position: Point, dimension: Dimensions, children: Vec<CWidget>) -> CWidget {
+        CWidget::Rectangle(Rectangle {
+            id: Uuid::new_v4(),
+            children,
+            position,
+            dimension,
+            common: widget::CommonBuilder::default(),
+            style: Style::fill()
+        })
+    }
 }
 
 

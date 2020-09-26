@@ -8,8 +8,9 @@ use widget::primitive::shape::oval::Full;
 use render::primitive_kind::PrimitiveKind;
 use render::util::new_primitive;
 use render::primitive::Primitive;
+use render::owned_primitive::OwnedPrimitive;
 
-#[derive(Copy, Clone)]
+#[derive(Clone, Debug)]
 pub enum CWidget {
     Rectangle(Rectangle),
     Oval(Oval<Full>),
@@ -26,6 +27,14 @@ impl Render for CWidget {
                 return Some(new_primitive(id, kind, clip, container.rect));
             },
 
+        }
+    }
+
+    fn get_primitives(&self) -> Vec<Primitive> {
+        match self {
+            CWidget::Rectangle(n) => {n.get_primitives()},
+            CWidget::Oval(n) => {n.get_primitives()},
+            CWidget::Complex => {vec![]},
         }
     }
 }
