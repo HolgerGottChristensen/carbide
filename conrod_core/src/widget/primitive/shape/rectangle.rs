@@ -19,7 +19,7 @@ use uuid::Uuid;
 use widget::primitive::CWidget;
 use position::Dimensions;
 use daggy::petgraph::graph::node_index;
-use Range;
+use ::{Range, text};
 use render::owned_primitive::OwnedPrimitive;
 use render::owned_primitive_kind::OwnedPrimitiveKind;
 use widget::envelope_editor::EnvelopePoint;
@@ -78,7 +78,7 @@ impl Render for Rectangle {
         return Some(new_primitive(id, kind, clip, container.rect));
     }
 
-    fn get_primitives(&self) -> Vec<Primitive> {
+    fn get_primitives(&self, fonts: &text::font::Map) -> Vec<Primitive> {
         let kind = PrimitiveKind::Rectangle { color: Color::random()};
         let mut prims = vec![
             Primitive {
@@ -89,7 +89,7 @@ impl Render for Rectangle {
 
             }
         ];
-        let children: Vec<Primitive> = self.get_children().iter().flat_map(|f| f.get_primitives()).collect();
+        let children: Vec<Primitive> = self.get_children().iter().flat_map(|f| f.get_primitives(fonts)).collect();
         prims.extend(children);
 
         return prims;

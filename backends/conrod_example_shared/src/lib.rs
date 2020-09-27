@@ -125,10 +125,10 @@ pub fn gui(ui: &mut conrod_core::UiCell, ids: &Ids, app: &mut DemoApp) {
 
     // We'll demonstrate the `Text` primitive widget by using it to draw a title and an
     // introduction to the example.
-    widget::Text::new(TITLE)
+    /*widget::Text::new(TITLE, [0.0,0.0], [100.0,100.0])
         .font_size(TITLE_SIZE)
         .mid_top_of(ids.canvas)
-        .set(ids.title, ui);
+        .set(ids.title, ui);*/
 
     const INTRODUCTION: &'static str =
         "This example aims to demonstrate all widgets that are provided by conrod.\
@@ -137,23 +137,23 @@ pub fn gui(ui: &mut conrod_core::UiCell, ids: &Ids, app: &mut DemoApp) {
          all other widget render. These render are \"special\" in the sense that conrod knows \
          how to render them via `conrod_core::render::Primitive`s.\
          \n\nScroll down to see more widgets!";
-    widget::Text::new(INTRODUCTION)
+    /*widget::Text::new(INTRODUCTION)
         .padded_w_of(ids.canvas, MARGIN)
         .down(60.0)
         .align_middle_x_of(ids.canvas)
         .center_justify()
         .line_spacing(5.0)
-        .set(ids.introduction, ui);
+        .set(ids.introduction, ui);*/
 
     ////////////////////////////
     ///// Lines and Shapes /////
     ////////////////////////////
 
-    widget::Text::new("Lines and Shapes")
+    /*widget::Text::new("Lines and Shapes")
         .down(70.0)
         .align_middle_x_of(ids.canvas)
         .font_size(SUBTITLE_SIZE)
-        .set(ids.shapes_title, ui);
+        .set(ids.shapes_title, ui);*/
 
     // Lay out the shapes in two horizontal columns.
     //
@@ -231,11 +231,11 @@ pub fn gui(ui: &mut conrod_core::UiCell, ids: &Ids, app: &mut DemoApp) {
     ///// Image /////
     /////////////////
 
-    widget::Text::new("Image")
+    /*widget::Text::new("Image")
         .down_from(ids.shapes_canvas, MARGIN)
         .align_middle_x_of(ids.canvas)
         .font_size(SUBTITLE_SIZE)
-        .set(ids.image_title, ui);
+        .set(ids.image_title, ui);*/
 
     const LOGO_SIDE: conrod_core::Scalar = 144.0;
     widget::Image::new(app.rust_logo)
@@ -248,11 +248,11 @@ pub fn gui(ui: &mut conrod_core::UiCell, ids: &Ids, app: &mut DemoApp) {
     ///// Button, XYPad, Toggle /////
     /////////////////////////////////
 
-    widget::Text::new("Button, XYPad and Toggle")
+    /*widget::Text::new("Button, XYPad and Toggle")
         .down_from(ids.rust_logo, 60.0)
         .align_middle_x_of(ids.canvas)
         .font_size(SUBTITLE_SIZE)
-        .set(ids.button_title, ui);
+        .set(ids.button_title, ui);*/
 
     let ball_x_range = ui.kid_area_of(ids.canvas).unwrap().w();
     let ball_y_range = ui.h_of(ui.window).unwrap() * 0.5;
@@ -316,11 +316,11 @@ pub fn gui(ui: &mut conrod_core::UiCell, ids: &Ids, app: &mut DemoApp) {
     ///// NumberDialer, PlotPath /////
     //////////////////////////////////
 
-    widget::Text::new("NumberDialer and PlotPath")
+    /*widget::Text::new("NumberDialer and PlotPath")
         .down_from(ids.xy_pad, max_y - min_y + side * 0.5 + MARGIN)
         .align_middle_x_of(ids.canvas)
         .font_size(SUBTITLE_SIZE)
-        .set(ids.dialer_title, ui);
+        .set(ids.dialer_title, ui);*/
 
     // Use a `NumberDialer` widget to adjust the frequency of the sine wave below.
     let min = 0.5;

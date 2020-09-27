@@ -185,13 +185,13 @@ impl<'a, X, Y> Widget for XYPad<'a, X, Y>
         let font_id = style.label_font_id(&ui.theme).or(ui.fonts.ids().next());
         if let Some(label) = maybe_label {
             let label_font_size = style.label_font_size(ui.theme());
-            widget::Text::new(label)
+            /*widget::Text::new(label)
                 .and_then(font_id, widget::Text::font_id)
                 .middle_of(state.ids.rectangle)
                 .graphics_for(id)
                 .color(label_color)
                 .font_size(label_font_size)
-                .set(state.ids.label, ui);
+                .set(state.ids.label, ui);*/
         }
 
         // Crosshair **Line** widgets.
@@ -238,7 +238,7 @@ impl<'a, X, Y> Widget for XYPad<'a, X, Y>
             Edge::Start => Direction::Forwards,
         };
         let value_font_size = style.value_font_size(ui.theme());
-        widget::Text::new(&value_string)
+        /*widget::Text::new(&value_string)
             .and_then(font_id, widget::Text::font_id)
             .x_direction_from(state.ids.v_line, x_direction, VALUE_TEXT_PAD)
             .y_direction_from(state.ids.h_line, y_direction, VALUE_TEXT_PAD)
@@ -246,7 +246,7 @@ impl<'a, X, Y> Widget for XYPad<'a, X, Y>
             .graphics_for(id)
             .parent(id)
             .font_size(value_font_size)
-            .set(state.ids.value_label, ui);
+            .set(state.ids.value_label, ui);*/
 
         event
     }

@@ -180,7 +180,7 @@ impl<'a> Widget for Toggle<'a> {
             .set(state.ids.rectangle, ui);
 
         // Label widget.
-        if let Some(label) = maybe_label {
+        /*if let Some(label) = maybe_label {
             let color = style.label_color(ui.theme());
             let font_size = style.label_font_size(ui.theme());
             let font_id = style.label_font_id(&ui.theme).or(ui.fonts.ids().next());
@@ -194,7 +194,7 @@ impl<'a> Widget for Toggle<'a> {
                 .color(color)
                 .font_size(font_size)
                 .set(state.ids.label, ui);
-        }
+        }*/
 
         times_clicked
     }

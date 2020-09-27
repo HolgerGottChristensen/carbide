@@ -7,14 +7,7 @@ extern crate conrod_winit;
 
 mod window;
 
-use conrod_core::{
-    Rect,
-    Scalar,
-    color,
-    image,
-    render,
-    text
-};
+use conrod_core::{Rect, Scalar, color, image, render, text, Color, Range};
 use conrod_core::render::primitive_kind::PrimitiveKind;
 use conrod_core::render::primitive_walker::PrimitiveWalker;
 use conrod_core::render::primitive::Primitive;
@@ -725,33 +718,89 @@ impl Renderer {
                     let cache_id = font_id.index();
 
                     let origin = text::rt::point(0.0, 0.0);
-                    let to_gl_rect = |screen_rect: text::rt::Rect<i32>| text::rt::Rect {
-                        min: origin
-                            + (text::rt::vector(screen_rect.min.x as f32 / screen_w as f32 - 0.5,
-                                          1.0 - screen_rect.min.y as f32 / screen_h as f32 - 0.5)) * 2.0,
-                        max: origin
-                            + (text::rt::vector(screen_rect.max.x as f32 / screen_w as f32 - 0.5,
-                                          1.0 - screen_rect.max.y as f32 / screen_h as f32 - 0.5)) * 2.0
+                    let to_gl_rect = |screen_rect: text::rt::Rect<i32>| {
+                        let min_x = (screen_rect.min.x as f64 - rect.x.start) / 2.0;
+                        let max_x = (screen_rect.max.x as f64 - rect.x.start) / 2.0;
+                        let min_y = (screen_rect.min.y as f64 + 100.0 + rect.y.start*4.0) / 2.0;
+                        let max_y = (screen_rect.max.y as f64 + 100.0 + rect.y.start*4.0) / 2.0;
+
+
+                        println!("{:?}", &screen_rect);
+                        println!("{:?}", min_x);
+                        println!("{:?}", max_x);
+                        println!("{:?}", min_y);
+                        println!("{:?}", max_y);
+                        /*text::rt::Rect {
+                            min: origin
+                                + (text::rt::vector(screen_rect.min.x as f32 / screen_w as f32 - 0.5,
+                                              1.0 - screen_rect.min.y as f32 / screen_h as f32 - 0.5)) * 2.0,
+                            max: origin
+                                + (text::rt::vector(screen_rect.max.x as f32 / screen_w as f32 - 0.5,
+                                              1.0 - screen_rect.max.y as f32 / screen_h as f32 - 0.5)) * 2.0
+                        }*/
+
+                        Rect {
+                            x: Range {start: min_x, end: max_x},
+                            y: Range {start: min_y, end: max_y}
+                        }
                     };
+
+                    let (l, r, b, t) = rect.l_r_b_t();
+
+                    let v = |x, y| {
+                        // Convert from conrod Scalar range to GL range -1.0 to 1.0.
+                        Vertex {
+                            position: [vx(x), vy(y)],
+                            tex_coords: [0.0, 0.0],
+                            color: gamma_srgb_to_linear(Color::random().to_fsa()),
+                            mode: MODE_GEOMETRY,
+                        }
+                    };
+
+                    let mut push_v = |x, y| {
+                        vertices.push(v(x, y));
+                        println!("Rect: {:?}", v(x, y));
+                    };
+
+
+                    // Bottom left triangle.
+                    push_v(l, t);
+                    push_v(r, b);
+                    push_v(l, b);
+
+                    // Top right triangle.
+                    push_v(l, t);
+                    push_v(r, b);
+                    push_v(r, t);
 
                     for g in positioned_glyphs {
                         if let Ok(Some((uv_rect, screen_rect))) = cache.rect_for(cache_id, &g) {
                             let gl_rect = to_gl_rect(screen_rect);
-                            let v = |p, t| Vertex {
-                                position: p,
+                            let v = |x, y, t| Vertex {
+                                position: [vx(x), vy(y)],
                                 tex_coords: t,
-                                color: color,
+                                color,
                                 mode: MODE_TEXT,
                             };
-                            let mut push_v = |p, t| vertices.push(v(p, t));
-                            push_v([gl_rect.min.x, gl_rect.max.y], [uv_rect.min.x, uv_rect.max.y]);
-                            push_v([gl_rect.min.x, gl_rect.min.y], [uv_rect.min.x, uv_rect.min.y]);
-                            push_v([gl_rect.max.x, gl_rect.min.y], [uv_rect.max.x, uv_rect.min.y]);
-                            push_v([gl_rect.max.x, gl_rect.min.y], [uv_rect.max.x, uv_rect.min.y]);
-                            push_v([gl_rect.max.x, gl_rect.max.y], [uv_rect.max.x, uv_rect.max.y]);
-                            push_v([gl_rect.min.x, gl_rect.max.y], [uv_rect.min.x, uv_rect.max.y]);
+                            let mut push_v = |x, y, t| {
+                                vertices.push(v(x, y, t));
+                                println!("Glyph: {:?}", v(x, y, t));
+                            };
+
+                            let (l, r, b, t) = gl_rect.l_r_b_t();
+
+                            push_v(l, t, [uv_rect.min.x, uv_rect.max.y]);
+                            push_v(r, b, [uv_rect.max.x, uv_rect.min.y]);
+                            push_v(l, b, [uv_rect.min.x, uv_rect.min.y]);
+                            push_v(l, t, [uv_rect.min.x, uv_rect.max.y]);
+                            push_v(r, b, [uv_rect.max.x, uv_rect.min.y]);
+                            push_v(r, t, [uv_rect.max.x, uv_rect.max.y]);
+                            /*push_v([gl_rect.min.x, 0.0], [0.0, 0.0]);
+                            push_v([0.0, 1.0], [0.0, 0.0]);
+                            push_v([-0.5, 1.0], [0.0, 0.0]);*/
                         }
                     }
+
                 },
 
                 PrimitiveKind::Image { image_id, color, source_rect } => {

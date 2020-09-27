@@ -239,14 +239,14 @@ impl<'a, T> Widget for Slider<'a, T>
             let font_size = style.label_font_size(ui.theme());
             let font_id = style.label_font_id(&ui.theme).or(ui.fonts.ids().next());
             //const TEXT_PADDING: f64 = 10.0;
-            widget::Text::new(label)
+            /*widget::Text::new(label)
                 .and_then(font_id, widget::Text::font_id)
                 .and(|text| if is_horizontal { text.mid_left_of(id) }
                             else { text.mid_bottom_of(id) })
                 .graphics_for(id)
                 .color(label_color)
                 .font_size(font_size)
-                .set(state.ids.label, ui);
+                .set(state.ids.label, ui);*/
         }
 
         // If the value has just changed, return the new value.

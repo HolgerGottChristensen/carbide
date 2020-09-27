@@ -1,11 +1,23 @@
 //! The primitive widget used for displaying text.
 
 use {Color, Colorable, FontSize, Ui, Widget};
-use position::{Dimension, Scalar, Dimensions};
-use std;
-use text;
+use position::{Dimension, Scalar, Dimensions, Align};
+use ::{std, Rect};
+use ::{text, Point};
 use utils;
 use widget;
+use widget::render::Render;
+use render::primitive::Primitive;
+use graph::Container;
+use widget::Id;
+use ::render::text::Text as RenderText;
+use render::primitive_kind::PrimitiveKind;
+use render::util::new_primitive;
+use daggy::petgraph::graph::node_index;
+use widget::common_widget::CommonWidget;
+use uuid::Uuid;
+use widget::primitive::CWidget;
+use text::Justify;
 
 
 /// Displays some given text centered within a rectangular area.
@@ -15,14 +27,106 @@ use widget;
 /// If some horizontal dimension is given, the text will automatically wrap to the width and align
 /// in accordance with the produced **Alignment**.
 #[derive(Clone, Debug, WidgetCommon_)]
-pub struct Text<'a> {
+pub struct Text {
     /// Data necessary and common for all widget builder render.
     #[conrod(common_builder)]
     pub common: widget::CommonBuilder,
     /// The text to be drawn by the **Text**.
-    pub text: &'a str,
+    pub text: String,
     /// Unique styling for the **Text**.
     pub style: Style,
+    position: Point,
+    dimension: Dimensions,
+    wrap_mode: Wrap,
+
+    pub children: Vec<CWidget>,
+}
+
+impl Render for Text {
+    fn render(self, id: Id, clip: Rect, container: &Container) -> Option<Primitive> {
+        unimplemented!()
+    }
+
+    fn get_primitives(&self, fonts: &text::font::Map) -> Vec<Primitive> {
+        let font_id = match fonts.ids().next() {
+            Some(id) => id,
+            None => return vec![],
+        };
+        let font = match fonts.get(font_id) {
+            Some(font) => font,
+            None => return vec![],
+        };
+
+        let rect = Rect::new(self.position, self.dimension);
+
+        let new_line_infos = match self.wrap_mode {
+            Wrap::None =>
+                text::line::infos(&self.text, font, 14),
+            Wrap::Character =>
+                text::line::infos(&self.text, font, 14).wrap_by_character(rect.w()),
+            Wrap::Whitespace =>
+                text::line::infos(&self.text, font, 14).wrap_by_whitespace(rect.w()),
+        };
+
+        let text = RenderText {
+            positioned_glyphs: Vec::new(),
+            window_dim: self.dimension,
+            text: self.text.clone(),
+            line_infos: new_line_infos.collect(),
+            font: font.clone(),
+            font_size: 14,
+            rect,
+            justify: Justify::Left,
+            y_align: Align::End,
+            line_spacing: 1.0,
+        };
+
+        let kind = PrimitiveKind::Text {
+            color: Color::random(),
+            text,
+            font_id,
+        };
+
+        let mut prims: Vec<Primitive> = vec![new_primitive(node_index(0), kind, Rect::new(self.position, self.dimension), Rect::new(self.position, self.dimension))];
+        let children: Vec<Primitive> = self.get_children().iter().flat_map(|f| f.get_primitives(fonts)).collect();
+        prims.extend(children);
+
+        return prims;
+    }
+}
+
+impl CommonWidget for Text {
+    fn get_id(&self) -> Uuid {
+        unimplemented!()
+    }
+
+    fn get_children(&self) -> &Vec<CWidget> {
+        &self.children
+    }
+
+    fn get_position(&self) -> [f64; 2] {
+        unimplemented!()
+    }
+
+    fn get_x(&self) -> f64 {
+        unimplemented!()
+    }
+
+    fn get_y(&self) -> f64 {
+        unimplemented!()
+    }
+
+    fn get_size(&self) -> [f64; 2] {
+        unimplemented!()
+    }
+
+    fn get_width(&self) -> f64 {
+        unimplemented!()
+    }
+
+    fn get_height(&self) -> f64 {
+        unimplemented!()
+    }
 }
 
 /// The styling for a **Text**'s graphics.
@@ -58,6 +162,8 @@ pub enum Wrap {
     Character,
     /// Wrap at the first word that exceeds the width.
     Whitespace,
+    /// No wrapping
+    None,
 }
 
 // /// Line styling for the **Text**.
@@ -80,15 +186,19 @@ pub struct State {
 }
 
 
-impl<'a> Text<'a> {
+impl Text {
 
     /// Build a new **Text** widget.
-    pub fn new(text: &'a str) -> Self {
-        Text {
+    pub fn new(text: String, position: Point, dimension: Dimensions, children: Vec<CWidget>) -> CWidget {
+        CWidget::Text(Text {
             common: widget::CommonBuilder::default(),
-            text: text,
+            text,
             style: Style::default(),
-        }
+            position,
+            dimension,
+            wrap_mode: Wrap::Whitespace,
+            children
+        })
     }
 
     /// Specify that the **Text** should not wrap lines around the width.
@@ -145,7 +255,7 @@ impl<'a> Text<'a> {
 }
 
 
-impl<'a> Widget for Text<'a> {
+impl Widget for Text {
     type State = State;
     type Style = Style;
     type Event = ();
@@ -200,7 +310,7 @@ impl<'a> Widget for Text<'a> {
 
         let text = &self.text;
         let font_size = self.style.font_size(&ui.theme);
-        let num_lines = match self.style.maybe_wrap(&ui.theme) {
+        let num_lines = 1 as usize; /*match self.style.maybe_wrap(&ui.theme) {
             None => text.lines().count(),
             Some(wrap) => match self.get_w(ui) {
                 None => text.lines().count(),
@@ -215,7 +325,7 @@ impl<'a> Widget for Text<'a> {
                             .count(),
                 },
             },
-        };
+        };*/
         let line_spacing = self.style.line_spacing(&ui.theme);
         let height = text::height(std::cmp::max(num_lines, 1), font_size, line_spacing);
         Dimension::Absolute(height)
@@ -238,14 +348,7 @@ impl<'a> Widget for Text<'a> {
         };
 
         // Produces an iterator yielding info for each line within the `text`.
-        let new_line_infos = || match maybe_wrap {
-            None =>
-                text::line::infos(text, font, font_size),
-            Some(Wrap::Character) =>
-                text::line::infos(text, font, font_size).wrap_by_character(rect.w()),
-            Some(Wrap::Whitespace) =>
-                text::line::infos(text, font, font_size).wrap_by_whitespace(rect.w()),
-        };
+        let new_line_infos = || text::line::infos(&text, font, font_size);
 
         // If the string is different, we must update both the string and the line breaks.
         if &state.string[..] != text {
@@ -276,7 +379,7 @@ impl<'a> Widget for Text<'a> {
 
 }
 
-impl<'a> Colorable for Text<'a> {
+impl Colorable for Text {
     fn color(mut self, color: Color) -> Self {
         self.style.color = Some(color);
         self

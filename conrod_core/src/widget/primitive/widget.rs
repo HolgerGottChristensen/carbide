@@ -2,18 +2,21 @@ use crate::widget::primitive::shape::rectangle::Rectangle;
 use ::{Color, Rect};
 use color::rgb;
 use graph::Container;
-use widget::{Id, Oval};
+use widget::{Id, Oval, Line, Text};
 use widget::render::Render;
 use widget::primitive::shape::oval::Full;
 use render::primitive_kind::PrimitiveKind;
 use render::util::new_primitive;
 use render::primitive::Primitive;
 use render::owned_primitive::OwnedPrimitive;
+use text;
 
 #[derive(Clone, Debug)]
 pub enum CWidget {
     Rectangle(Rectangle),
+    Line(Line),
     Oval(Oval<Full>),
+    Text(Text),
     Complex
 }
 
@@ -27,14 +30,18 @@ impl Render for CWidget {
                 return Some(new_primitive(id, kind, clip, container.rect));
             },
 
+            CWidget::Line(n) => {n.render(id, clip, container)}
+            CWidget::Text(n) => {n.render(id, clip, container)}
         }
     }
 
-    fn get_primitives(&self) -> Vec<Primitive> {
+    fn get_primitives(&self, fonts: &text::font::Map) -> Vec<Primitive> {
         match self {
-            CWidget::Rectangle(n) => {n.get_primitives()},
-            CWidget::Oval(n) => {n.get_primitives()},
+            CWidget::Rectangle(n) => {n.get_primitives(fonts)},
+            CWidget::Oval(n) => {n.get_primitives(fonts)},
             CWidget::Complex => {vec![]},
+            CWidget::Line(n) => {n.get_primitives(fonts)}
+            CWidget::Text(n) => {n.get_primitives(fonts)}
         }
     }
 }

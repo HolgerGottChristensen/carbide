@@ -413,13 +413,14 @@ fn bordered_rectangle(button_id: widget::Id, rectangle_id: widget::Id,
 fn label(button_id: widget::Id, label_id: widget::Id,
          label: &str, style: &Style, ui: &mut UiCell)
 {
-    let color = style.label_color(&ui.theme);
+    unimplemented!()
+    /*let color = style.label_color(&ui.theme);
     let font_size = style.label_font_size(&ui.theme);
     let x = style.label_x(&ui.theme);
     let y = style.label_y(&ui.theme);
     let justify = style.label_justify(&ui.theme);
     let font_id = style.label_font_id(&ui.theme).or(ui.fonts.ids().next());
-    widget::Text::new(label)
+    widget::Text::new(label.to_string(), [0.0,0.0], [100.0,100.0])
         .and_then(font_id, widget::Text::font_id)
         .x_position_relative_to(button_id, x)
         .y_position_relative_to(button_id, y)
@@ -428,7 +429,7 @@ fn label(button_id: widget::Id, label_id: widget::Id,
         .graphics_for(button_id)
         .color(color)
         .font_size(font_size)
-        .set(label_id, ui);
+        .set(label_id, ui);*/
 }
 
 

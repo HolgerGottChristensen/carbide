@@ -1,14 +1,24 @@
 //! A simple, non-interactive widget for drawing a single straight Line.
 
 use {Color, Colorable, Point, Positionable, Rect, Scalar, Sizeable, Theme};
-use graph;
+use ::{graph, text};
 use utils::{vec2_add, vec2_sub};
-use widget::{self, Widget};
+use widget::{self, Widget, Id};
 use widget::triangles::Triangle;
+use position::Dimensions;
+use widget::primitive::CWidget;
+use widget::render::Render;
+use render::primitive::Primitive;
+use graph::Container;
+use render::primitive_kind::PrimitiveKind;
+use render::util::new_primitive;
+use daggy::petgraph::graph::node_index;
+use widget::common_widget::CommonWidget;
+use uuid::Uuid;
 
 
 /// A simple, non-interactive widget for drawing a single straight Line.
-#[derive(Copy, Clone, Debug, WidgetCommon_)]
+#[derive(Clone, Debug, WidgetCommon_)]
 pub struct Line {
     /// Data necessary and common for all widget builder render.
     #[conrod(common_builder)]
@@ -21,6 +31,85 @@ pub struct Line {
     pub style: Style,
     /// Whether or not the line should be automatically centred to the widget position.
     pub should_centre_points: bool,
+    position: Point,
+    dimension: Dimensions,
+
+    pub children: Vec<CWidget>
+}
+
+impl Render for Line {
+    fn render(self, id: Id, clip: Rect, container: &Container) -> Option<Primitive> {
+        const DEFAULT_CAP: Cap = Cap::Flat;
+        let thickness = 2.0;
+        let points = std::iter::once(self.start).chain(std::iter::once(self.end));
+        let triangles = match widget::point_path::triangles(points, DEFAULT_CAP, thickness) {
+            None => Vec::new(),
+            Some(iter) => {
+                iter.collect()
+            },
+        };
+        let kind = PrimitiveKind::TrianglesSingleColor {
+            color: Color::random().to_rgb(),
+            triangles: triangles.to_vec(),
+        };
+        return Some(new_primitive(id, kind, clip, container.rect));
+    }
+
+    fn get_primitives(&self, fonts: &text::font::Map) -> Vec<Primitive> {
+        const DEFAULT_CAP: Cap = Cap::Flat;
+        let thickness = 2.0;
+        let points = std::iter::once(self.start).chain(std::iter::once(self.end));
+        let triangles = match widget::point_path::triangles(points, DEFAULT_CAP, thickness) {
+            None => Vec::new(),
+            Some(iter) => {
+                iter.collect()
+            },
+        };
+        let kind = PrimitiveKind::TrianglesSingleColor {
+            color: Color::random().to_rgb(),
+            triangles: triangles.to_vec(),
+        };
+
+        let mut prims: Vec<Primitive> = vec![new_primitive(node_index(0), kind, Rect::new(self.position, self.dimension), Rect::new(self.position, self.dimension))];
+        let children: Vec<Primitive> = self.get_children().iter().flat_map(|f| f.get_primitives(fonts)).collect();
+        prims.extend(children);
+
+        return prims;
+    }
+}
+
+impl CommonWidget for Line {
+    fn get_id(&self) -> Uuid {
+        unimplemented!()
+    }
+
+    fn get_children(&self) -> &Vec<CWidget> {
+        &self.children
+    }
+
+    fn get_position(&self) -> [f64; 2] {
+        unimplemented!()
+    }
+
+    fn get_x(&self) -> f64 {
+        unimplemented!()
+    }
+
+    fn get_y(&self) -> f64 {
+        unimplemented!()
+    }
+
+    fn get_size(&self) -> [f64; 2] {
+        unimplemented!()
+    }
+
+    fn get_width(&self) -> f64 {
+        unimplemented!()
+    }
+
+    fn get_height(&self) -> f64 {
+        unimplemented!()
+    }
 }
 
 /// Unique state for the Line widget.
@@ -69,6 +158,19 @@ pub enum Cap {
 
 impl Line {
 
+    pub fn new(start: Point, end: Point, children: Vec<CWidget>) -> CWidget {
+        CWidget::Line(Line {
+            start,
+            end,
+            common: widget::CommonBuilder::default(),
+            style: Style::new(),
+            should_centre_points: false,
+            position: [10.0,10.0],
+            dimension: [10.0,10.0],
+            children
+        })
+    }
+
     /// Build a new **Line** widget with the given style.
     pub fn styled(start: Point, end: Point, style: Style) -> Self {
         Line {
@@ -77,14 +179,11 @@ impl Line {
             common: widget::CommonBuilder::default(),
             style: style,
             should_centre_points: false,
+            position: [10.0,10.0],
+            dimension: [10.0,10.0],
+            children: vec![]
         }
     }
-
-    /// Build a new default **Line** widget.
-    pub fn new(start: Point, end: Point) -> Self {
-        Line::styled(start, end, Style::new())
-    }
-
     /// Build a new **Line** whose bounding box is fit to the absolute co-ordinates of the line
     /// points.
     ///

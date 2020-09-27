@@ -1141,7 +1141,7 @@ impl Ui {
 
         (
             Primitives::new(widget_graph, indices, theme, fonts, [win_w, win_h]),
-            CPrimitives::new(widgets)
+            CPrimitives::new(widgets, fonts)
         )
     }
 

@@ -329,14 +329,14 @@ impl<'a, T> Widget for NumberDialer<'a, T>
         let label_color = style.label_color(ui.theme());
         let font_size = style.label_font_size(ui.theme());
         if maybe_label.is_some() {
-            widget::Text::new(&label_string)
+            /*widget::Text::new(&label_string)
                 .font_id(font_id)
                 .x_y_relative_to(id, label_rel_x, 0.0)
                 .graphics_for(id)
                 .color(label_color)
                 .font_size(font_size)
                 .parent(id)
-                .set(state.ids.label, &mut ui);
+                .set(state.ids.label, &mut ui);*/
         }
 
         // Ensure we have at least as many glyph_slot_indices as there are chars in our val_string.
@@ -378,7 +378,7 @@ impl<'a, T> Widget for NumberDialer<'a, T>
             }
 
             // Now a **Text** widget for the character itself.
-            widget::Text::new(glyph_string)
+            /*widget::Text::new(glyph_string)
                 .font_id(font_id)
                 .x_y_relative_to(id, rel_slot_x, 0.0)
                 .graphics_for(id)
@@ -386,7 +386,7 @@ impl<'a, T> Widget for NumberDialer<'a, T>
                 .font_size(font_size)
                 .center_justify()
                 .parent(id)
-                .set(slot.text_id, &mut ui);
+                .set(slot.text_id, &mut ui);*/
 
             rel_slot_x += slot_w;
         }

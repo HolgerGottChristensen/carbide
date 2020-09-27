@@ -474,13 +474,13 @@ impl<'a, E> Widget for EnvelopeEditor<'a, E>
         let label_color = style.label_color(&ui.theme);
         if let Some(label) = maybe_label {
             let font_size = style.label_font_size(&ui.theme);
-            widget::Text::new(label)
+            /*widget::Text::new(label)
                 .and_then(font_id, widget::Text::font_id)
                 .middle_of(state.ids.rectangle)
                 .graphics_for(id)
                 .color(label_color)
                 .font_size(font_size)
-                .set(state.ids.label, ui);
+                .set(state.ids.label, ui);*/
         }
 
         let line_color = label_color.with_alpha(1.0);
@@ -573,7 +573,7 @@ impl<'a, E> Widget for EnvelopeEditor<'a, E>
             let value_font_size = style.value_font_size(ui.theme());
             let closest_point_id = state.ids.points[closest_idx];
             const VALUE_TEXT_PAD: f64 = 5.0; // Slight padding between the point and the text.
-            widget::Text::new(&xy_string)
+            /*widget::Text::new(&xy_string)
                 .and_then(font_id, widget::Text::font_id)
                 .x_direction_from(closest_point_id, x_direction, VALUE_TEXT_PAD)
                 .y_direction_from(closest_point_id, y_direction, VALUE_TEXT_PAD)
@@ -581,7 +581,7 @@ impl<'a, E> Widget for EnvelopeEditor<'a, E>
                 .graphics_for(id)
                 .parent(id)
                 .font_size(value_font_size)
-                .set(state.ids.value_label, ui);
+                .set(state.ids.value_label, ui);*/
         }
 
         events

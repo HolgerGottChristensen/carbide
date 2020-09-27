@@ -7,14 +7,15 @@ use render::owned_primitive_kind::OwnedPrimitiveKind;
 use render::primitive_kind::PrimitiveKind;
 use render::owned_text::OwnedText;
 use render::text::Text;
+use text;
 
 pub struct CPrimitives {
     primitives: Vec<Primitive>
 }
 
 impl CPrimitives {
-    pub fn new (root: &CWidget) -> Self {
-        let mut prims: Vec<Primitive> = root.get_primitives();
+    pub fn new (root: &CWidget, fonts: &text::font::Map) -> Self {
+        let mut prims: Vec<Primitive> = root.get_primitives(fonts);
         CPrimitives {
             primitives: prims
         }

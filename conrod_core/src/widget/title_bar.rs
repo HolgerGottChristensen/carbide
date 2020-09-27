@@ -181,7 +181,7 @@ impl<'a> Widget for TitleBar<'a> {
         let font_id = style.font_id(&ui.theme).or(ui.fonts.ids().next());
         let label_x = style.label_x(&ui.theme);
         let label_y = style.label_y(&ui.theme);
-        widget::Text::new(label)
+        /*widget::Text::new(label)
             .and_mut(|text| {
                 text.style.maybe_wrap = Some(maybe_wrap);
                 text.style.justify = Some(justify);
@@ -194,7 +194,7 @@ impl<'a> Widget for TitleBar<'a> {
             .font_size(font_size)
             .line_spacing(line_spacing)
             .graphics_for(id)
-            .set(state.ids.label, ui);
+            .set(state.ids.label, ui);*/
     }
 
 }

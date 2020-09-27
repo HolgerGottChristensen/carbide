@@ -219,7 +219,7 @@ impl<'a> Widget for TextEdit<'a> {
 
         let text = &self.text;
         let font_size = self.style.font_size(&ui.theme);
-        let num_lines = match self.get_w(ui) {
+        let num_lines = 1 as usize; /*match self.get_w(ui) {
             None => text.lines().count(),
             Some(max_w) => match self.style.line_wrap(&ui.theme) {
                 Wrap::Character =>
@@ -231,7 +231,7 @@ impl<'a> Widget for TextEdit<'a> {
                         .wrap_by_whitespace(max_w)
                         .count(),
             },
-        };
+        };*/
         let line_spacing = self.style.line_spacing(&ui.theme);
         let height = text::height(std::cmp::max(num_lines, 1), font_size, line_spacing);
         Dimension::Absolute(height)
@@ -274,6 +274,7 @@ impl<'a> Widget for TextEdit<'a> {
             match line_wrap {
                 Wrap::Whitespace => infos.wrap_by_whitespace(max_width),
                 Wrap::Character => infos.wrap_by_character(max_width),
+                Wrap::None => infos
             }
         }
 
@@ -873,7 +874,7 @@ impl<'a> Widget for TextEdit<'a> {
         let text_y_range = Range::new(0.0, text_height).align_to(y_align, rect.y);
         let text_rect = Rect { x: rect.x, y: text_y_range };
 
-        match line_wrap {
+        /*match line_wrap {
             Wrap::Whitespace => widget::Text::new(&text).wrap_by_word(),
             Wrap::Character => widget::Text::new(&text).wrap_by_character(),
         }
@@ -886,7 +887,7 @@ impl<'a> Widget for TextEdit<'a> {
             .color(color)
             .line_spacing(line_spacing)
             .font_size(font_size)
-            .set(state.ids.text, ui);
+            .set(state.ids.text, ui);*/
 
         // Draw the line for the cursor.
         let cursor_idx = match cursor {
