@@ -67,8 +67,6 @@ impl Text {
             positioned_glyphs.extend(font.layout(line, scale, point).map(|g| g.standalone()));
         }
 
-        println!("{:?}", &positioned_glyphs);
-
         positioned_glyphs
     }
 

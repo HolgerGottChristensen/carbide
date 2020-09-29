@@ -10,6 +10,7 @@ use glium::Surface;
 use conrod_core::text::font::{Id, Error};
 use conrod_core::widget::id::Generator;
 use conrod_core::widget::primitive::CWidget;
+extern crate image;
 
 pub struct Window {
     title: String,
@@ -65,6 +66,16 @@ impl Window {
         let assets = find_folder::Search::KidsThenParents(3, 5).for_folder("assets").unwrap();
         let font_path = assets.join(path);
         self.ui.fonts.insert_from_file(font_path)
+    }
+
+    pub fn add_image(&mut self, path: &str) -> Result<conrod_core::image::Id, Error> {
+        let assets = find_folder::Search::ParentsThenKids(5, 3).for_folder("assets").unwrap();
+        let path = assets.join(path);
+        let rgba_image = image::open(&std::path::Path::new(&path)).unwrap().to_rgba();
+        let image_dimensions = rgba_image.dimensions();
+        let raw_image = glium::texture::RawImage2d::from_raw_rgba(rgba_image.into_raw(), image_dimensions);
+        let texture = glium::texture::Texture2d::new(&self.display.0, raw_image).unwrap();
+        Ok(self.image_map.insert(texture))
     }
 
     pub fn set_widgets(&mut self, w: CWidget) {

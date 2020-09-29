@@ -81,7 +81,7 @@ fn main() {
             // Draw a light blue background.
             widget::Canvas::new().color(color::LIGHT_BLUE).set(ids.background, ui);
             // Instantiate the `Image` at its full size in the middle of the window.
-            widget::Image::new(rust_logo).w_h(w as f64, h as f64).middle().set(ids.rust_logo, ui);
+            widget::Image::old_new(rust_logo).w_h(w as f64, h as f64).middle().set(ids.rust_logo, ui);
         }
 
         // Render the `Ui` and then display it on the screen.

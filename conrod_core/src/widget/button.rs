@@ -351,7 +351,7 @@ impl<'a> Widget for Button<'a, Image> {
         };
 
         let (x, y, w, h) = rect.x_y_w_h();
-        let mut image = widget::Image::new(image_id)
+        let mut image = widget::Image::old_new(image_id)
             .x_y(x, y)
             .w_h(w, h)
             .parent(id)

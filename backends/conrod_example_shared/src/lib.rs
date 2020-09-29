@@ -238,7 +238,7 @@ pub fn gui(ui: &mut conrod_core::UiCell, ids: &Ids, app: &mut DemoApp) {
         .set(ids.image_title, ui);*/
 
     const LOGO_SIDE: conrod_core::Scalar = 144.0;
-    widget::Image::new(app.rust_logo)
+    widget::Image::old_new(app.rust_logo)
         .w_h(LOGO_SIDE, LOGO_SIDE)
         .down(60.0)
         .align_middle_x_of(ids.canvas)

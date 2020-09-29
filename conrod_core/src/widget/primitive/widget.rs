@@ -2,7 +2,7 @@ use crate::widget::primitive::shape::rectangle::Rectangle;
 use ::{Color, Rect};
 use color::rgb;
 use graph::Container;
-use widget::{Id, Oval, Line, Text};
+use widget::{Id, Oval, Line, Text, Image};
 use widget::render::Render;
 use widget::primitive::shape::oval::Full;
 use render::primitive_kind::PrimitiveKind;
@@ -17,6 +17,7 @@ pub enum CWidget {
     Line(Line),
     Oval(Oval<Full>),
     Text(Text),
+    Image(Image),
     Complex
 }
 
@@ -32,6 +33,7 @@ impl Render for CWidget {
 
             CWidget::Line(n) => {n.render(id, clip, container)}
             CWidget::Text(n) => {n.render(id, clip, container)}
+            CWidget::Image(n) => {n.render(id, clip, container)}
         }
     }
 
@@ -42,6 +44,7 @@ impl Render for CWidget {
             CWidget::Complex => {vec![]},
             CWidget::Line(n) => {n.get_primitives(fonts)}
             CWidget::Text(n) => {n.get_primitives(fonts)}
+            CWidget::Image(n) => {n.get_primitives(fonts)}
         }
     }
 }

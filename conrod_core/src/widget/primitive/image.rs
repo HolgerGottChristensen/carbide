@@ -1,13 +1,24 @@
 //! A simple, non-interactive widget for drawing an `Image`.
 
 use {Color, Widget, Ui};
-use image;
+use ::{image, Point};
 use position::{Dimension, Rect, Dimensions};
 use widget;
+use widget::render::Render;
+use render::primitive::Primitive;
+use graph::Container;
+use widget::Id;
+use text::font::Map;
+use render::primitive_kind::PrimitiveKind;
+use render::util::new_primitive;
+use daggy::petgraph::graph::node_index;
+use widget::primitive::CWidget;
+use widget::common_widget::CommonWidget;
+use uuid::Uuid;
 
 
 /// A primitive and basic widget for drawing an `Image`.
-#[derive(Copy, Clone, WidgetCommon_)]
+#[derive(Clone, Debug, WidgetCommon_)]
 pub struct Image {
     /// Data necessary and common for all widget builder render.
     #[conrod(common_builder)]
@@ -18,6 +29,72 @@ pub struct Image {
     pub src_rect: Option<Rect>,
     /// Unique styling.
     pub style: Style,
+    position: Point,
+    dimension: Dimensions,
+
+    pub children: Vec<CWidget>,
+}
+
+impl Render for Image {
+    fn render(self, id: Id, clip: Rect, container: &Container) -> Option<Primitive> {
+        //let color = Color::random();
+        let kind = PrimitiveKind::Image {
+            color: None,
+            image_id: self.image_id,
+            source_rect: self.src_rect,
+        };
+        return Some(new_primitive(id, kind, clip, container.rect));
+    }
+
+    fn get_primitives(&self, fonts: &Map) -> Vec<Primitive> {
+        //let color = Color::random();
+        let kind = PrimitiveKind::Image {
+            color: None,
+            image_id: self.image_id,
+            source_rect: self.src_rect,
+        };
+
+        let rect = Rect::new(self.position, self.dimension);
+        let mut prims: Vec<Primitive> = vec![new_primitive(node_index(0), kind, rect, rect)];
+        let children: Vec<Primitive> = self.get_children().iter().flat_map(|f| f.get_primitives(fonts)).collect();
+        prims.extend(children);
+
+        return prims;
+    }
+}
+
+impl CommonWidget for Image {
+    fn get_id(&self) -> Uuid {
+        unimplemented!()
+    }
+
+    fn get_children(&self) -> &Vec<CWidget> {
+        &self.children
+    }
+
+    fn get_position(&self) -> [f64; 2] {
+        unimplemented!()
+    }
+
+    fn get_x(&self) -> f64 {
+        unimplemented!()
+    }
+
+    fn get_y(&self) -> f64 {
+        unimplemented!()
+    }
+
+    fn get_size(&self) -> [f64; 2] {
+        unimplemented!()
+    }
+
+    fn get_width(&self) -> f64 {
+        unimplemented!()
+    }
+
+    fn get_height(&self) -> f64 {
+        unimplemented!()
+    }
 }
 
 /// Unique `State` to be stored between updates for the `Image`.
@@ -66,13 +143,28 @@ impl Image {
     /// 1. use an enum with a variant for each type
     /// 2. use a trait object, where the trait is implemented for each of your image render or
     /// 3. use an index type which may be mapped to your various image render.
-    pub fn new(image_id: image::Id) -> Self {
+    pub fn old_new(image_id: image::Id) -> Self {
         Image {
             common: widget::CommonBuilder::default(),
             image_id: image_id,
             src_rect: None,
             style: Style::default(),
+            position: [0.0, 0.0],
+            dimension: [0.0, 0.0],
+            children: vec![]
         }
+    }
+
+    pub fn new(id: image::Id, position: Point, dimension: Dimensions, children: Vec<CWidget>) -> CWidget {
+        CWidget::Image(Image {
+            common: Default::default(),
+            image_id: id,
+            src_rect: None,
+            style: Default::default(),
+            position,
+            dimension,
+            children
+        })
     }
 
     /// The rectangular area of the image that we wish to display.

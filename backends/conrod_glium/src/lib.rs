@@ -725,11 +725,11 @@ impl Renderer {
                         let max_y = (screen_rect.max.y as f64 + 100.0 + rect.y.start*4.0) / 2.0;
 
 
-                        println!("{:?}", &screen_rect);
+                        /*println!("{:?}", &screen_rect);
                         println!("{:?}", min_x);
                         println!("{:?}", max_x);
                         println!("{:?}", min_y);
-                        println!("{:?}", max_y);
+                        println!("{:?}", max_y);*/
                         /*text::rt::Rect {
                             min: origin
                                 + (text::rt::vector(screen_rect.min.x as f32 / screen_w as f32 - 0.5,
@@ -759,7 +759,6 @@ impl Renderer {
 
                     let mut push_v = |x, y| {
                         vertices.push(v(x, y));
-                        println!("Rect: {:?}", v(x, y));
                     };
 
 
@@ -784,7 +783,6 @@ impl Renderer {
                             };
                             let mut push_v = |x, y, t| {
                                 vertices.push(v(x, y, t));
-                                println!("Glyph: {:?}", v(x, y, t));
                             };
 
                             let (l, r, b, t) = gl_rect.l_r_b_t();
@@ -833,6 +831,7 @@ impl Renderer {
 
                     let color = color.unwrap_or(color::WHITE).to_fsa();
 
+
                     if let Some(image) = image_map.get(&image_id) {
                         let (image_w, image_h) = image.dimensions();
                         let (image_w, image_h) = (image_w as Scalar, image_h as Scalar);
@@ -853,19 +852,16 @@ impl Renderer {
                             None => (0.0, 1.0, 0.0, 1.0),
                         };
 
-                        let v = |x, y, t| {
-                            // Convert from conrod Scalar range to GL range -1.0 to 1.0.
-                            let x = (x * dpi_factor as Scalar / half_win_w) as f32;
-                            let y = (y * dpi_factor as Scalar / half_win_h) as f32;
-                            Vertex {
-                                position: [x, y],
-                                tex_coords: t,
-                                color: color,
-                                mode: MODE_IMAGE,
-                            }
+                        let v = |x, y, t| Vertex {
+                            position: [vx(x), vy(y)],
+                            tex_coords: t,
+                            color,
+                            mode: MODE_IMAGE,
                         };
 
-                        let mut push_v = |x, y, t| vertices.push(v(x, y, t));
+                        let mut push_v = |x, y, t| {
+                            vertices.push(v(x, y, t));
+                        };
 
                         let (l, r, b, t) = rect.l_r_b_t();
 

@@ -13,7 +13,7 @@ use conrod_core::{widget, Colorable, Positionable, Widget};
 use glium::Surface;
 use conrod_glium::Window;
 use conrod_core::widget::primitive::CWidget;
-use conrod_core::widget::{Rectangle, Oval, Line, Text};
+use conrod_core::widget::{Rectangle, Oval, Line, Text, Image};
 use conrod_core::widget::oval::Full;
 
 const WIDTH: u32 = 400;
@@ -24,6 +24,7 @@ fn main() {
     let mut window = Window::new("Hello world 2".to_string(), WIDTH, HEIGHT);
 
     window.add_font("fonts/NotoSans/NotoSans-Regular.ttf").unwrap();
+    let rust_image = window.add_image("images/rust_hover.png").unwrap();
 
     window.widgets = Some(Box::new(|ui| {
         widget_ids!(struct Ids { text });
@@ -52,6 +53,12 @@ fn main() {
             ),
             Line::new(
                 [0.0,0.0],
+                [100.0,100.0],
+                vec![]
+            ),
+            Image::new(
+                rust_image,
+                [100.0,0.0],
                 [100.0,100.0],
                 vec![]
             ),
