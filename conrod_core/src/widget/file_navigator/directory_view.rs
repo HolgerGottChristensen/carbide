@@ -19,6 +19,10 @@ use event;
 use std;
 use widget;
 use std::cmp::Ordering;
+use event::release::Release;
+use event::press::PressEvent;
+use event::double_click::DoubleClick;
+use event::click::Click;
 
 /// For viewing, selecting, double-clicking, etc the contents of a directory.
 #[derive(WidgetCommon_)]
@@ -85,13 +89,13 @@ pub enum Event {
     /// Some change in the `Selection` occurred. This represents the new full selection.
     Selection(Vec<std::path::PathBuf>),
     /// One or more entries have been double clicked.
-    Click(event::Click, Vec<std::path::PathBuf>),
+    Click(Click, Vec<std::path::PathBuf>),
     /// One or more entries have been double clicked.
-    DoubleClick(event::DoubleClick, Vec<std::path::PathBuf>),
+    DoubleClick(DoubleClick, Vec<std::path::PathBuf>),
     /// A `Press` event occurred while the given entries were selected.
-    Press(event::Press, Vec<std::path::PathBuf>),
+    Press(PressEvent, Vec<std::path::PathBuf>),
     /// A `Release` event occurred while the given entries were selected.
-    Release(event::Release, Vec<std::path::PathBuf>),
+    Release(Release, Vec<std::path::PathBuf>),
 }
 
 #[cfg(all(target_os = "windows", not(feature = "windows_metadataext")))]

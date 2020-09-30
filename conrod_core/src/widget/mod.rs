@@ -51,6 +51,7 @@ pub use self::toggle::Toggle;
 pub use self::xy_pad::XYPad;
 use event::widget::WidgetEvent;
 use event::button::ButtonEvent;
+use event::release::Release;
 
 
 // Macro providing modules.
@@ -992,7 +993,7 @@ fn set_widget<'a, 'b, W>(widget: W, id: Id, ui: &'a mut UiCell<'b>) -> W::Event
                                 }
                             }
                         }
-                        WidgetEvent::Release(::event::Release {
+                        WidgetEvent::Release(Release {
                             button: ButtonEvent::Mouse(input::MouseButton::Left, _),
                             ..
                         }) => {

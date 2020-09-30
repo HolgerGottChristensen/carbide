@@ -36,14 +36,14 @@ pub enum Input {
 }
 
 
-impl From<input::Touch> for Input {
-    fn from(touch: input::Touch) -> Self {
+impl From<Touch> for Input {
+    fn from(touch: Touch) -> Self {
         Input::Touch(touch)
     }
 }
 
-impl From<input::Motion> for Input {
-    fn from(motion: input::Motion) -> Self {
+impl From<Motion> for Input {
+    fn from(motion: Motion) -> Self {
         Input::Motion(motion)
     }
 }

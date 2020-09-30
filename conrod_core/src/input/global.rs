@@ -92,7 +92,7 @@ impl<'a> Iterator for UiEvents<'a> {
     type Item = &'a UiEvent;
     fn next(&mut self) -> Option<Self::Item> {
         while let Some(event) = self.events.next() {
-            if let WidgetEvent::Ui(ref ui_event) = *event {
+            if let Event::Ui(ref ui_event) = *event {
                 return Some(ui_event);
             }
         }

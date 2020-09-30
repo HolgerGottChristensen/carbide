@@ -24,6 +24,9 @@ use event::press::PressEvent;
 use event::button::ButtonEvent;
 use event::release::Release;
 use event::click::Click;
+use event::text::Text;
+use event::drag::Drag;
+use event::double_click::DoubleClick;
 
 /// A constructor type for building a `Ui` instance with a set of optional parameters.
 pub struct UiBuilder {
@@ -506,7 +509,7 @@ impl Ui {
                         modifiers: self.global_input.current.modifiers,
                     };
                     let widget = self.global_input.current.widget_capturing_mouse;
-                    let release_event = event::Ui::Release(widget, release).into();
+                    let release_event = UiEvent::Release(widget, release).into();
                     self.global_input.push_event(release_event);
 
                     // Check for `Click` and `DoubleClick` events.
@@ -554,7 +557,7 @@ impl Ui {
                                     return None;
                                 }
 
-                                Some(event::DoubleClick {
+                                Some(DoubleClick {
                                     button: click.button,
                                     xy: click.xy,
                                     modifiers: click.modifiers,
@@ -566,7 +569,7 @@ impl Ui {
                             // `DoubleClick` on the next consecutive `Click`.
                             self.global_input.last_click = None;
                             let double_click_event =
-                                event::Ui::DoubleClick(clicked_widget, double_click).into();
+                                UiEvent::DoubleClick(clicked_widget, double_click).into();
                             self.global_input.push_event(double_click_event);
 
                         } else {
@@ -580,8 +583,8 @@ impl Ui {
                     if let MouseButton::Left = mouse_button {
                         if let Some(idx) = self.global_input.current.widget_capturing_mouse {
                             if Some(idx) != self.global_input.current.widget_under_mouse {
-                                let source = input::Source::Mouse;
-                                let event = event::Ui::WidgetUncapturesInputSource(idx, source);
+                                let source = Source::Mouse;
+                                let event = UiEvent::WidgetUncapturesInputSource(idx, source);
                                 self.global_input.push_event(event.into());
                                 self.global_input.current.widget_capturing_mouse = None;
                             }
@@ -595,12 +598,12 @@ impl Ui {
                 Button::Keyboard(key) => {
 
                     // Create a `Release` event.
-                    let release = event::Release {
-                        button: event::Button::Keyboard(key),
+                    let release = Release {
+                        button: ButtonEvent::Keyboard(key),
                         modifiers: self.global_input.current.modifiers,
                     };
                     let widget = self.global_input.current.widget_capturing_keyboard;
-                    let release_event = event::Ui::Release(widget, release).into();
+                    let release_event = UiEvent::Release(widget, release).into();
                     self.global_input.push_event(release_event);
 
                     // If a modifier key was released, remove it from the current set.
@@ -616,7 +619,7 @@ impl Ui {
             Input::Resize(w, h) => {
                 // Create a `WindowResized` event.
                 let (w, h) = (w as Scalar, h as Scalar);
-                let window_resized = event::Ui::WindowResized([w, h]).into();
+                let window_resized = UiEvent::WindowResized([w, h]).into();
                 self.global_input.push_event(window_resized);
 
                 self.win_w = w;
@@ -634,12 +637,12 @@ impl Ui {
             Input::Motion(motion) => {
 
                 // Create a `Motion` event.
-                let move_ = event::Motion {
-                    motion: motion,
+                let move_ = crate::event::motion::Motion {
+                    motion,
                     modifiers: self.global_input.current.modifiers,
                 };
                 let widget = self.global_input.current.widget_capturing_mouse;
-                let move_event = event::Ui::Motion(widget, move_).into();
+                let move_event = UiEvent::Motion(widget, move_).into();
                 self.global_input.push_event(move_event);
 
                 match motion {
@@ -656,7 +659,7 @@ impl Ui {
                             let buttons = self.global_input.current.mouse.buttons.clone();
                             for (btn, btn_xy, widget) in buttons.pressed() {
                                 let total_delta_xy = utils::vec2_sub(mouse_xy, btn_xy);
-                                let event = event::Ui::Drag(widget, event::Drag {
+                                let event = UiEvent::Drag(widget, Drag {
                                     button: btn,
                                     origin: btn_xy,
                                     from: last_mouse_xy,
@@ -755,7 +758,7 @@ impl Ui {
 
                             // Create a `Scroll` event if either axis is scrollable.
                             if scroll_x || scroll_y {
-                                let event = UiEvent::Scroll(Some(idx), event::Scroll {
+                                let event = UiEvent::Scroll(Some(idx), Scroll {
                                     x: x,
                                     y: y,
                                     modifiers: self.global_input.current.modifiers,
@@ -803,7 +806,7 @@ impl Ui {
 
             Input::Text(string) => {
                 // Create a `Text` event.
-                let text = event::Text {
+                let text = Text {
                     string: string,
                     modifiers: self.global_input.current.modifiers,
                 };
@@ -932,12 +935,12 @@ impl Ui {
         let source = input::Source::Keyboard;
 
         if self.global_input.current.widget_capturing_keyboard.is_some() {
-            let event = event::Ui::WidgetUncapturesInputSource(idx, source);
+            let event = UiEvent::WidgetUncapturesInputSource(idx, source);
             self.global_input.push_event(event.into());
             self.global_input.current.widget_capturing_keyboard = None;
         }
 
-        let event = event::Ui::WidgetCapturesInputSource(idx, source).into();
+        let event = UiEvent::WidgetCapturesInputSource(idx, source).into();
         self.global_input.push_event(event);
         self.global_input.current.widget_capturing_keyboard = Some(idx);
     }
@@ -1256,9 +1259,9 @@ impl<'a> UiCell<'a> {
         let (x, y) = (offset[0], offset[1]);
 
         if x != 0.0 || y != 0.0 {
-            let event = event::Ui::Scroll(Some(id), event::Scroll {
-                x: x,
-                y: y,
+            let event = UiEvent::Scroll(Some(id), Scroll {
+                x,
+                y,
                 modifiers: self.ui.global_input.current.modifiers,
             });
             self.ui.pending_scroll_events.push(event);

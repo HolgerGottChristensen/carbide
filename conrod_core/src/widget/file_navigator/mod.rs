@@ -21,6 +21,10 @@ use std;
 use widget;
 
 pub use self::directory_view::DirectoryView;
+use event::click::Click;
+use event::double_click::DoubleClick;
+use event::release::Release;
+use event::press::PressEvent;
 
 pub mod directory_view;
 
@@ -123,13 +127,13 @@ pub enum Event {
     /// The selection of files in the top of the stack has changed.
     ChangeSelection(Vec<std::path::PathBuf>),
     /// A `Click` event occurred over a selection of entries.
-    Click(event::Click, Vec<std::path::PathBuf>),
+    Click(Click, Vec<std::path::PathBuf>),
     /// A file was double clicked.
-    DoubleClick(event::DoubleClick, Vec<std::path::PathBuf>),
+    DoubleClick(DoubleClick, Vec<std::path::PathBuf>),
     /// A `Press` event occurred over a selection of entries.
-    Press(event::Press, Vec<std::path::PathBuf>),
+    Press(PressEvent, Vec<std::path::PathBuf>),
     /// A `Release` event occurred over a selection of entries.
-    Release(event::Release, Vec<std::path::PathBuf>),
+    Release(Release, Vec<std::path::PathBuf>),
 }
 
 impl<'a> FileNavigator<'a> {

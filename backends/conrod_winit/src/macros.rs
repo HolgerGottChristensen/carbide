@@ -168,7 +168,7 @@ macro_rules! convert_window_event {
 
         match $event {
             winit::WindowEvent::Resized(winit::dpi::LogicalSize { width, height }) => {
-                Some(conrod_core::event::Input::Resize(width as _, height as _).into())
+                Some(conrod_core::event::input::Input::Resize(width as _, height as _).into())
             },
 
             winit::WindowEvent::ReceivedCharacter(ch) => {
@@ -180,19 +180,19 @@ macro_rules! convert_window_event {
                     '\r' | '\n' | '\t' => "".to_string(),
                     _ => ch.to_string()
                 };
-                Some(conrod_core::event::Input::Text(string).into())
+                Some(conrod_core::event::input::Input::Text(string).into())
             },
 
             winit::WindowEvent::Focused(focused) =>
-                Some(conrod_core::event::Input::Focus(focused).into()),
+                Some(conrod_core::event::input::Input::Focus(focused).into()),
 
             winit::WindowEvent::KeyboardInput { input, .. } => {
                 input.virtual_keycode.map(|key| {
                     match input.state {
                         winit::ElementState::Pressed =>
-                            conrod_core::event::Input::Press(conrod_core::input::Button::Keyboard(map_key(key))).into(),
+                            conrod_core::event::input::Input::Press(conrod_core::input::Button::Keyboard(map_key(key))).into(),
                         winit::ElementState::Released =>
-                            conrod_core::event::Input::Release(conrod_core::input::Button::Keyboard(map_key(key))).into(),
+                            conrod_core::event::input::Input::Release(conrod_core::input::Button::Keyboard(map_key(key))).into(),
                     }
                 })
             },
@@ -208,7 +208,7 @@ macro_rules! convert_window_event {
                 let xy = [tx(x), ty(y)];
                 let id = conrod_core::input::touch::Id::new(id);
                 let touch = conrod_core::input::Touch { phase: phase, id: id, xy: xy };
-                Some(conrod_core::event::Input::Touch(touch).into())
+                Some(conrod_core::event::input::Input::Touch(touch).into())
             }
 
             winit::WindowEvent::CursorMoved { position, .. } => {
@@ -216,7 +216,7 @@ macro_rules! convert_window_event {
                 let x = tx(x as conrod_core::Scalar);
                 let y = ty(y as conrod_core::Scalar);
                 let motion = conrod_core::input::Motion::MouseCursor { x: x, y: y };
-                Some(conrod_core::event::Input::Motion(motion).into())
+                Some(conrod_core::event::input::Input::Motion(motion).into())
             },
 
             winit::WindowEvent::MouseWheel { delta, .. } => match delta {
@@ -224,7 +224,7 @@ macro_rules! convert_window_event {
                     let x = x as conrod_core::Scalar;
                     let y = -y as conrod_core::Scalar;
                     let motion = conrod_core::input::Motion::Scroll { x: x, y: y };
-                    Some(conrod_core::event::Input::Motion(motion).into())
+                    Some(conrod_core::event::input::Input::Motion(motion).into())
                 },
 
                 winit::MouseScrollDelta::LineDelta(x, y) => {
@@ -232,19 +232,19 @@ macro_rules! convert_window_event {
                     const ARBITRARY_POINTS_PER_LINE_FACTOR: conrod_core::Scalar = 10.0;
                     let x = ARBITRARY_POINTS_PER_LINE_FACTOR * x as conrod_core::Scalar;
                     let y = ARBITRARY_POINTS_PER_LINE_FACTOR * -y as conrod_core::Scalar;
-                    Some(conrod_core::event::Input::Motion(conrod_core::input::Motion::Scroll { x: x, y: y }).into())
+                    Some(conrod_core::event::input::Input::Motion(conrod_core::input::Motion::Scroll { x: x, y: y }).into())
                 },
             },
 
             winit::WindowEvent::MouseInput { state, button, .. } => match state {
                 winit::ElementState::Pressed =>
-                    Some(conrod_core::event::Input::Press(conrod_core::input::Button::Mouse(map_mouse(button))).into()),
+                    Some(conrod_core::event::input::Input::Press(conrod_core::input::Button::Mouse(map_mouse(button))).into()),
                 winit::ElementState::Released =>
-                    Some(conrod_core::event::Input::Release(conrod_core::input::Button::Mouse(map_mouse(button))).into()),
+                    Some(conrod_core::event::input::Input::Release(conrod_core::input::Button::Mouse(map_mouse(button))).into()),
             },
 
             winit::WindowEvent::Refresh => {
-                Some(conrod_core::event::Input::Redraw)
+                Some(conrod_core::event::input::Input::Redraw)
             },
 
             _ => None,
@@ -320,7 +320,7 @@ macro_rules! conversion_fns {
         pub fn convert_window_event<W>(
             event: winit::WindowEvent,
             window: &W,
-        ) -> Option<conrod_core::event::Input>
+        ) -> Option<conrod_core::event::input::Input>
         where
             W: $crate::WinitWindow,
         {
@@ -331,7 +331,7 @@ macro_rules! conversion_fns {
         pub fn convert_event<W>(
             event: winit::Event,
             window: &W,
-        ) -> Option<conrod_core::event::Input>
+        ) -> Option<conrod_core::event::input::Input>
         where
             W: $crate::WinitWindow,
         {

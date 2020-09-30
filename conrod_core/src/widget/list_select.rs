@@ -6,6 +6,11 @@ use std;
 use input::keyboard::ModifierKey;
 use input::state::mouse::Button;
 use event::widget::WidgetEvent;
+use event::key_press::KeyPress;
+use event::click::Click;
+use event::release::Release;
+use event::double_click::DoubleClick;
+use event::press::PressEvent;
 
 /// A wrapper around the `List` widget that handles single and multiple selection logic.
 #[derive(Clone, WidgetCommon_)]
@@ -48,7 +53,7 @@ pub trait Mode {
 
     /// Update the `PendingEvents` in accordance with the given `Click` event.
     fn click_selection<F, D, S>(&self,
-                                event::Click,
+                                Click,
                                 i: usize,
                                 num_items: usize,
                                 &State,
@@ -58,7 +63,7 @@ pub trait Mode {
 
     /// Update the `PendingEvents` in accordance with the given `KeyPress` event.
     fn key_selection<F, D, S>(&self,
-                              event::KeyPress,
+                              KeyPress,
                               i: usize,
                               num_items: usize,
                               &State,
@@ -105,13 +110,13 @@ pub enum Event<Selection, Direction, Size> {
     /// A change in selection has occurred.
     Selection(Selection),
     /// A button press occurred while the widget was capturing the mouse.
-    Press(event::Press),
+    Press(PressEvent),
     /// A button release occurred while the widget was capturing the mouse.
-    Release(event::Release),
+    Release(Release),
     /// A click occurred while the widget was capturing the mouse.
-    Click(event::Click),
+    Click(Click),
     /// A double click occurred while the widget was capturing the mouse.
-    DoubleClick(event::DoubleClick),
+    DoubleClick(DoubleClick),
 }
 
 /// A single item selection `Mode` for the `ListSelect`.
@@ -487,7 +492,7 @@ impl<M, D, S> Events<M, D, S>
                 },
                 
                 WidgetEvent::Tap(_) => {
-                    let dummy_click=event::Click{
+                    let dummy_click = Click{
                         button:Button::Left,
                         xy:[200.0,123.0],
                         modifiers:ModifierKey::NO_MODIFIER
@@ -526,7 +531,7 @@ impl Mode for Single {
     type Selection = usize;
 
     fn click_selection<F, D, S>(&self,
-                                _: event::Click,
+                                _: Click,
                                 i: usize,
                                 _num_items: usize,
                                 state: &State,
@@ -540,7 +545,7 @@ impl Mode for Single {
     }
 
     fn key_selection<F, D, S>(&self,
-                              press: event::KeyPress,
+                              press: KeyPress,
                               _i: usize,
                               num_items: usize,
                               state: &State,
@@ -571,7 +576,7 @@ impl Mode for Multiple {
     type Selection = Selection;
 
     fn click_selection<F, D, S>(&self,
-                                click: event::Click,
+                                click: Click,
                                 i: usize,
                                 num_items: usize,
                                 state: &State,
@@ -619,7 +624,7 @@ impl Mode for Multiple {
     }
 
     fn key_selection<F, D, S>(&self,
-                              press: event::KeyPress,
+                              press: KeyPress,
                               _i: usize,
                               num_items: usize,
                               state: &State,

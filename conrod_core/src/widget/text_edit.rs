@@ -785,7 +785,7 @@ impl<'a> Widget for TextEdit<'a> {
                     }
                 },
 
-                WidgetEvent::Text(event::Text { string, modifiers }) => {
+                WidgetEvent::Text(crate::event::text::Text { string, modifiers }) => {
                     if modifiers.contains(input::keyboard::ModifierKey::CTRL)
                     || string.chars().count() == 0
                     || string.chars().next().is_none() {
