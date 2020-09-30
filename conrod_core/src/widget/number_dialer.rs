@@ -17,6 +17,8 @@ use std::iter::repeat;
 use text;
 use utils::clamp;
 use widget;
+use event::widget::WidgetEvent;
+use event::button::ButtonEvent;
 
 
 /// A widget for precision control over any digit within a value.
@@ -250,21 +252,21 @@ impl<'a, T> Widget for NumberDialer<'a, T>
             match widget_event {
 
                 // Check to see if a value was pressed in case it is later dragged.
-                event::Widget::Press(press) => {
-                    if let event::Button::Mouse(MouseButton::Left, _) = press.button {
+                WidgetEvent::Press(press) => {
+                    if let ButtonEvent::Mouse(MouseButton::Left, _) = press.button {
                         pressed_value_idx = value_under_mouse;
                     }
                 },
 
                 // Check to see if a value was released in case it is later dragged.
-                event::Widget::Release(release) => {
-                    if let event::Button::Mouse(MouseButton::Left, _) = release.button {
+                WidgetEvent::Release(release) => {
+                    if let ButtonEvent::Mouse(MouseButton::Left, _) = release.button {
                         pressed_value_idx = None;
                     }
                 },
 
                 // A left `Drag` moves the `pressed_point` if there is one.
-                event::Widget::Drag(drag) if drag.button == input::MouseButton::Left => {
+                WidgetEvent::Drag(drag) if drag.button == input::MouseButton::Left => {
                     if let Some(idx) = pressed_value_idx {
                         let decimal_pos = val_string.chars().position(|ch| ch == '.');
                         let val_f: f64 = NumCast::from(value).unwrap();

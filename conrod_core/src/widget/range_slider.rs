@@ -6,6 +6,8 @@ use position::{Padding, Range, Rect, Scalar};
 use text;
 use utils;
 use widget;
+use event::widget::WidgetEvent;
+use event::button::ButtonEvent;
 
 /// Linear range selection.
 #[derive(WidgetCommon_)]
@@ -216,9 +218,9 @@ where
                 // the cursor.
                 // - Else if over the range, begin dragging the range.
                 // - Else if not over the range, snap the end closest to the mouse to the mouse.
-                event::Widget::Press(press) => {
+                WidgetEvent::Press(press) => {
                     let press_xy = match press.button {
-                        event::Button::Mouse(input::MouseButton::Left, press_xy) => press_xy,
+                        ButtonEvent::Mouse(input::MouseButton::Left, press_xy) => press_xy,
                         _ => continue,
                     };
                     let abs_press_xy = utils::vec2_add(inner_rect.xy(), press_xy);
@@ -266,7 +268,7 @@ where
                 },
 
                 // Drags either the Start, End or the whole handle depending on where it was pressed.
-                event::Widget::Drag(drag_event) if drag_event.button == input::MouseButton::Left => {
+                WidgetEvent::Drag(drag_event) if drag_event.button == input::MouseButton::Left => {
                     match maybe_drag {
                         Some(Drag::Edge(Edge::Start)) => {
                             let abs_drag_to = inner_rect.x() + drag_event.to[0];
@@ -302,8 +304,8 @@ where
                     }
                 },
 
-                event::Widget::Release(release) => {
-                    if let event::Button::Mouse(input::MouseButton::Left, _) = release.button {
+                WidgetEvent::Release(release) => {
+                    if let ButtonEvent::Mouse(input::MouseButton::Left, _) = release.button {
                         maybe_drag = None;
                     }
                 },

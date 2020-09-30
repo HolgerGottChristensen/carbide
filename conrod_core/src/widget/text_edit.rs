@@ -11,6 +11,8 @@ use widget;
 use cursor;
 use widget::primitive::text::Wrap;
 use copypasta::{ClipboardContext, ClipboardProvider};
+use event::widget::WidgetEvent;
+use event::button::ButtonEvent;
 
 /// A widget for displaying and mutating multi-line text, given as a `String`.
 ///
@@ -436,7 +438,7 @@ impl<'a> Widget for TextEdit<'a> {
         // - Key presses for cursor movement.
         'events: for widget_event in ui.widget_input(id).events() {
             match widget_event {
-                event::Widget::DoubleClick(click) => {
+                WidgetEvent::DoubleClick(click) => {
                     // Select word on double-click with L mouse button
                     if let input::MouseButton::Left = click.button {
                         let abs_xy = utils::vec2_add(click.xy, rect.xy());
@@ -461,10 +463,10 @@ impl<'a> Widget for TextEdit<'a> {
                         }
                     }
                 }
-                event::Widget::Press(press) => match press.button {
+                WidgetEvent::Press(press) => match press.button {
                     // If the left mouse button was pressed, place a `Cursor` with the starting
                     // index at the mouse position.
-                    event::Button::Mouse(input::MouseButton::Left, rel_xy) => {
+                    ButtonEvent::Mouse(input::MouseButton::Left, rel_xy) => {
                         let abs_xy = utils::vec2_add(rel_xy, rect.xy());
                         let infos = &state.line_infos;
                         let font = ui.fonts.get(font_id).unwrap();
@@ -492,7 +494,7 @@ impl<'a> Widget for TextEdit<'a> {
                     }
 
                     // Check for control keys.
-                    event::Button::Keyboard(key) => match key {
+                    ButtonEvent::Keyboard(key) => match key {
 
                         // If `Cursor::Idx`, remove the `char` behind the cursor.
                         // If `Cursor::Selection`, remove the selected text.
@@ -776,14 +778,14 @@ impl<'a> Widget for TextEdit<'a> {
 
                 },
 
-                event::Widget::Release(release) => {
+                WidgetEvent::Release(release) => {
                     // Release drag.
-                    if let event::Button::Mouse(input::MouseButton::Left, _) = release.button {
+                    if let ButtonEvent::Mouse(input::MouseButton::Left, _) = release.button {
                         drag = None;
                     }
                 },
 
-                event::Widget::Text(event::Text { string, modifiers }) => {
+                WidgetEvent::Text(event::Text { string, modifiers }) => {
                     if modifiers.contains(input::keyboard::ModifierKey::CTRL)
                     || string.chars().count() == 0
                     || string.chars().next().is_none() {
@@ -812,7 +814,7 @@ impl<'a> Widget for TextEdit<'a> {
                 },
 
                 // Check whether or not we need to extend a text selection or drag some text.
-                event::Widget::Drag(drag_event) if drag_event.button == input::MouseButton::Left => {
+                WidgetEvent::Drag(drag_event) if drag_event.button == input::MouseButton::Left => {
                     match drag {
 
                         Some(Drag::Selecting) => {

@@ -7,7 +7,7 @@ use widget;
 use widget::render::Render;
 use render::primitive::Primitive;
 use graph::Container;
-use widget::Id;
+use widget::{Id, Rectangle};
 use text::font::Map;
 use render::primitive_kind::PrimitiveKind;
 use render::util::new_primitive;
@@ -56,6 +56,7 @@ impl Render for Image {
 
         let rect = Rect::new(self.position, self.dimension);
         let mut prims: Vec<Primitive> = vec![new_primitive(node_index(0), kind, rect, rect)];
+        prims.extend(Rectangle::rect_outline(rect.clone(), 1.0));
         let children: Vec<Primitive> = self.get_children().iter().flat_map(|f| f.get_primitives(fonts)).collect();
         prims.extend(children);
 

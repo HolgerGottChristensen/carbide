@@ -45,4 +45,3 @@ pub mod widget;
 pub mod cursor;
 pub mod layout;
 
-#[cfg(test)] mod tests;

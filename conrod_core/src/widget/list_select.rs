@@ -5,6 +5,7 @@ use {event, graph, input, widget};
 use std;
 use input::keyboard::ModifierKey;
 use input::state::mouse::Button;
+use event::widget::WidgetEvent;
 
 /// A wrapper around the `List` widget that handles single and multiple selection logic.
 #[derive(Clone, WidgetCommon_)]
@@ -457,14 +458,14 @@ impl<M, D, S> Events<M, D, S>
             match widget_event {
 
                 // Produce a `DoubleClick` event.
-                event::Widget::DoubleClick(click) => {
+                WidgetEvent::DoubleClick(click) => {
                     if let input::MouseButton::Left = click.button {
                         pending_events.push_back(Event::DoubleClick(click));
                     }
                 },
 
                 // Check if the entry has been `Click`ed.
-                event::Widget::Click(click) => {
+                WidgetEvent::Click(click) => {
                     pending_events.push_back(Event::Click(click));
 
                     let state = state();
@@ -474,7 +475,7 @@ impl<M, D, S> Events<M, D, S>
                 },
 
                 // Check for whether or not the item should be selected.
-                event::Widget::Press(press) => {
+                WidgetEvent::Press(press) => {
                     pending_events.push_back(Event::Press(press));
 
                     if let Some(key_press) = press.key() {
@@ -485,7 +486,7 @@ impl<M, D, S> Events<M, D, S>
                     }
                 },
                 
-                event::Widget::Tap(_) => {
+                WidgetEvent::Tap(_) => {
                     let dummy_click=event::Click{
                         button:Button::Left,
                         xy:[200.0,123.0],
@@ -498,7 +499,7 @@ impl<M, D, S> Events<M, D, S>
                                          &is_selected, pending_events);
                 },
                 // Produce a `Release` event.
-                event::Widget::Release(release) => {
+                WidgetEvent::Release(release) => {
                     let event = Event::Release(release);
                     pending_events.push_back(event);
                 },

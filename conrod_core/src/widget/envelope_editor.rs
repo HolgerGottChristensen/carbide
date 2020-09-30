@@ -7,6 +7,8 @@ use std;
 use text;
 use utils::{clamp, map_range, percentage, val_to_string};
 use widget;
+use event::button::ButtonEvent;
+use event::widget::WidgetEvent;
 
 
 /// Used for editing a series of 2D Points on a cartesian (X, Y) plane within some given range.
@@ -329,7 +331,7 @@ impl<'a, E> Widget for EnvelopeEditor<'a, E>
                 // - Point insertion
                 // - Point removal
                 // - The beggining of a point drag
-                event::Widget::Press(press) => match press.button {
+                WidgetEvent::Press(press) => match press.button {
 
                     // Left mouse press:
                     //
@@ -338,7 +340,7 @@ impl<'a, E> Widget for EnvelopeEditor<'a, E>
                     //
                     // Otherwise, if the mouse is not over an existing point, we want to insert
                     // a new point and begin dragging it.
-                    event::Button::Mouse(MouseButton::Left, xy) => {
+                    ButtonEvent::Mouse(MouseButton::Left, xy) => {
 
                         // In this loop, we find the points on either side of the mouse to
                         // determine the insertion index, while checking if we need to break early
@@ -401,7 +403,7 @@ impl<'a, E> Widget for EnvelopeEditor<'a, E>
 
                     // If the right mouse button was pressed over a point that is not currently
                     // being dragged, remove the point.
-                    event::Button::Mouse(MouseButton::Right, xy) => {
+                    ButtonEvent::Mouse(MouseButton::Right, xy) => {
                         if pressed_point.is_some() || !inner_rel_rect.is_over(xy) {
                             continue 'events;
                         }
@@ -416,14 +418,14 @@ impl<'a, E> Widget for EnvelopeEditor<'a, E>
                 },
 
                 // Check to see if a point was released in case it is later dragged.
-                event::Widget::Release(release) => {
-                    if let event::Button::Mouse(MouseButton::Left, _) = release.button {
+                WidgetEvent::Release(release) => {
+                    if let ButtonEvent::Mouse(MouseButton::Left, _) = release.button {
                         pressed_point = None;
                     }
                 },
 
                 // A left `Drag` moves the `pressed_point` if there is one.
-                event::Widget::Drag(drag) if drag.button == input::MouseButton::Left => {
+                WidgetEvent::Drag(drag) if drag.button == input::MouseButton::Left => {
                     if let Some(idx) = pressed_point {
                         let drag_to_x_clamped = inner_rel_rect.x.clamp_value(drag.to[0]);
                         let drag_to_y_clamped = inner_rel_rect.y.clamp_value(drag.to[1]);

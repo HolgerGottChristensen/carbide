@@ -23,6 +23,7 @@ use ::{Range, text};
 use render::owned_primitive::OwnedPrimitive;
 use render::owned_primitive_kind::OwnedPrimitiveKind;
 use widget::envelope_editor::EnvelopePoint;
+use widget::primitive::shape::triangles::Vertex;
 
 
 /// A basic, non-interactive rectangle shape widget.
@@ -79,16 +80,15 @@ impl Render for Rectangle {
     }
 
     fn get_primitives(&self, fonts: &text::font::Map) -> Vec<Primitive> {
-        let kind = PrimitiveKind::Rectangle { color: Color::random()};
         let mut prims = vec![
             Primitive {
                 id: node_index(0),
-                kind,
+                kind: PrimitiveKind::Rectangle { color: Color::random()},
                 scizzor: Rect::new(self.position, self.dimension),
                 rect: Rect::new(self.position, self.dimension)
-
             }
         ];
+        prims.extend(Rectangle::rect_outline(Rect::new(self.position, self.dimension), 1.0));
         let children: Vec<Primitive> = self.get_children().iter().flat_map(|f| f.get_primitives(fonts)).collect();
         prims.extend(children);
 
@@ -114,7 +114,42 @@ pub enum Kind {
 
 impl Rectangle {
 
+    pub fn rect_outline(rect: Rect, width: Scalar) -> Vec<Primitive> {
+        let (l, r, b, t) = rect.l_r_b_t();
 
+        let left_border = Rect::new([l,b], [width, rect.w()]);
+        let right_border = Rect::new([r-width,b], [width, rect.w()]);
+        let top_border = Rect::new([l+width,b], [rect.w()-width*2.0, width]);
+        let bottom_border = Rect::new([l+width,t-width], [rect.w()-width*2.0, width]);
+
+        let border_color = Color::random();
+        vec![
+            Primitive {
+                id: node_index(0),
+                kind: PrimitiveKind::Rectangle { color: border_color.clone()},
+                scizzor: left_border,
+                rect: left_border
+            },
+            Primitive {
+                id: node_index(0),
+                kind: PrimitiveKind::Rectangle { color: border_color.clone()},
+                scizzor: right_border,
+                rect: right_border
+            },
+            Primitive {
+                id: node_index(0),
+                kind: PrimitiveKind::Rectangle { color: border_color.clone()},
+                scizzor: top_border,
+                rect: top_border
+            },
+            Primitive {
+                id: node_index(0),
+                kind: PrimitiveKind::Rectangle { color: border_color.clone()},
+                scizzor: bottom_border,
+                rect: bottom_border
+            },
+        ]
+    }
 
     /// Build a rectangle with the dimensions and style.
     pub fn styled(dim: Dimensions, style: Style) -> Self {

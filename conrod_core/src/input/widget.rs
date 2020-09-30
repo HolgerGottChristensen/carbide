@@ -8,6 +8,20 @@ use event;
 use input;
 use utils;
 use widget;
+use input::global::UiEvents;
+use event::ui::UiEvent;
+use event::widget::WidgetEvent;
+use event::press::PressEvent;
+use event::mouse_press::MousePress;
+use event::key_press::KeyPress;
+use event::release::Release;
+use event::mouse_release::MouseRelease;
+use event::key_release::KeyRelease;
+use event::click::Click;
+use event::tap::Tap;
+use event::drag::Drag;
+use event::text::Text;
+use event::scroll::Scroll;
 
 
 /// Provides only events and input state that are relevant to a specific widget.
@@ -423,61 +437,61 @@ impl<'a> Drags<'a> {
 
 
 impl<'a> Iterator for Events<'a> {
-    type Item = event::Widget;
+    type Item = WidgetEvent;
 
-    fn next(&mut self) -> Option<event::Widget> {
+    fn next(&mut self) -> Option<WidgetEvent> {
         // Loop through all events in the `ui_events` until we find one associated with our widget
         // that we can return.
         while let Some(ui_event) = self.ui_events.next() {
             match *ui_event {
 
                 // Input source capturing.
-                event::Ui::WidgetCapturesInputSource(idx, source) => {
+                UiEvent::WidgetCapturesInputSource(idx, source) => {
                     self.capturing_mouse = Some(idx);
                     if idx == self.idx {
-                        return Some(event::Widget::CapturesInputSource(source));
+                        return Some(WidgetEvent::CapturesInputSource(source));
                     }
                 },
-                event::Ui::WidgetUncapturesInputSource(idx, source) => {
+                UiEvent::WidgetUncapturesInputSource(idx, source) => {
                     if Some(idx) == self.capturing_mouse {
                         self.capturing_mouse = None;
                     }
                     if idx == self.idx {
-                        return Some(event::Widget::UncapturesInputSource(source));
+                        return Some(WidgetEvent::UncapturesInputSource(source));
                     }
                 },
 
-                event::Ui::WindowResized(dim) =>
-                    return Some(event::Widget::WindowResized(dim)),
+                UiEvent::WindowResized(dim) =>
+                    return Some(WidgetEvent::WindowResized(dim)),
 
-                event::Ui::Text(idx, ref text) if idx == Some(self.idx) =>
+                UiEvent::Text(idx, ref text) if idx == Some(self.idx) =>
                     return Some(text.clone().into()),
 
-                event::Ui::Motion(idx, ref motion) if idx == Some(self.idx) =>
+                UiEvent::Motion(idx, ref motion) if idx == Some(self.idx) =>
                     return Some(motion.clone().into()),
 
-                event::Ui::Touch(idx, ref touch) if idx == Some(self.idx) =>
+                UiEvent::Touch(idx, ref touch) if idx == Some(self.idx) =>
                     return Some(touch.clone().relative_to(self.rect.xy()).into()),
 
-                event::Ui::Press(idx, ref press) if idx == Some(self.idx) =>
+                UiEvent::Press(idx, ref press) if idx == Some(self.idx) =>
                     return Some(press.clone().relative_to(self.rect.xy()).into()),
-                
-                event::Ui::Release(idx, ref release) if idx == Some(self.idx) =>
+
+                UiEvent::Release(idx, ref release) if idx == Some(self.idx) =>
                     return Some(release.clone().relative_to(self.rect.xy()).into()),
 
-                event::Ui::Click(idx, ref click) if idx == Some(self.idx) =>
+                UiEvent::Click(idx, ref click) if idx == Some(self.idx) =>
                     return Some(click.clone().relative_to(self.rect.xy()).into()),
 
-                event::Ui::DoubleClick(idx, ref double_click) if idx == Some(self.idx) =>
+                UiEvent::DoubleClick(idx, ref double_click) if idx == Some(self.idx) =>
                     return Some(double_click.clone().relative_to(self.rect.xy()).into()),
 
-                event::Ui::Tap(idx, ref tap) if idx == Some(self.idx) =>
+                UiEvent::Tap(idx, ref tap) if idx == Some(self.idx) =>
                     return Some(tap.clone().relative_to(self.rect.xy()).into()),
 
-                event::Ui::Drag(idx, ref drag) if idx == Some(self.idx) =>
+                UiEvent::Drag(idx, ref drag) if idx == Some(self.idx) =>
                     return Some(drag.clone().relative_to(self.rect.xy()).into()),
 
-                event::Ui::Scroll(idx, ref scroll) if idx == Some(self.idx) =>
+                UiEvent::Scroll(idx, ref scroll) if idx == Some(self.idx) =>
                     return Some(scroll.clone().into()),
 
                 _ => (),
@@ -491,10 +505,10 @@ impl<'a> Iterator for Events<'a> {
 
 
 impl<'a> Iterator for Presses<'a> {
-    type Item = event::Press;
+    type Item = PressEvent;
     fn next(&mut self) -> Option<Self::Item> {
         while let Some(event) = self.events.next() {
-            if let event::Widget::Press(press) = event {
+            if let WidgetEvent::Press(press) = event {
                 return Some(press);
             }
         }
@@ -503,7 +517,7 @@ impl<'a> Iterator for Presses<'a> {
 }
 
 impl<'a> Iterator for MousePresses<'a> {
-    type Item = event::MousePress;
+    type Item = MousePress;
     fn next(&mut self) -> Option<Self::Item> {
         while let Some(press) = self.presses.next() {
             if let Some(mouse_press) = press.mouse() {
@@ -527,7 +541,7 @@ impl<'a> Iterator for MouseButtonPresses<'a> {
 }
 
 impl<'a> Iterator for KeyPresses<'a> {
-    type Item = event::KeyPress;
+    type Item = KeyPress;
     fn next(&mut self) -> Option<Self::Item> {
         while let Some(press) = self.presses.next() {
             if let Some(key_press) = press.key() {
@@ -539,10 +553,10 @@ impl<'a> Iterator for KeyPresses<'a> {
 }
 
 impl<'a> Iterator for Releases<'a> {
-    type Item = event::Release;
+    type Item = Release;
     fn next(&mut self) -> Option<Self::Item> {
         while let Some(event) = self.events.next() {
-            if let event::Widget::Release(release) = event {
+            if let WidgetEvent::Release(release) = event {
                 return Some(release);
             }
         }
@@ -551,7 +565,7 @@ impl<'a> Iterator for Releases<'a> {
 }
 
 impl<'a> Iterator for MouseReleases<'a> {
-    type Item = event::MouseRelease;
+    type Item = MouseRelease;
     fn next(&mut self) -> Option<Self::Item> {
         while let Some(release) = self.releases.next() {
             if let Some(mouse_release) = release.mouse() {
@@ -575,7 +589,7 @@ impl<'a> Iterator for MouseButtonReleases<'a> {
 }
 
 impl<'a> Iterator for KeyReleases<'a> {
-    type Item = event::KeyRelease;
+    type Item = KeyRelease;
     fn next(&mut self) -> Option<Self::Item> {
         while let Some(release) = self.releases.next() {
             if let Some(key_release) = release.key() {
@@ -587,10 +601,10 @@ impl<'a> Iterator for KeyReleases<'a> {
 }
 
 impl<'a> Iterator for Clicks<'a> {
-    type Item = event::Click;
+    type Item = Click;
     fn next(&mut self) -> Option<Self::Item> {
         while let Some(event) = self.events.next() {
-            if let event::Widget::Click(click) = event {
+            if let WidgetEvent::Click(click) = event {
                 return Some(click);
             }
         }
@@ -599,7 +613,7 @@ impl<'a> Iterator for Clicks<'a> {
 }
 
 impl<'a> Iterator for ButtonClicks<'a> {
-    type Item = event::Click;
+    type Item = Click;
     fn next(&mut self) -> Option<Self::Item> {
         while let Some(click) = self.clicks.next() {
             if self.button == click.button {
@@ -611,10 +625,10 @@ impl<'a> Iterator for ButtonClicks<'a> {
 }
 
 impl<'a> Iterator for Taps<'a> {
-    type Item = event::Tap;
+    type Item = Tap;
     fn next(&mut self) -> Option<Self::Item> {
         while let Some(event) = self.events.next() {
-            if let event::Widget::Tap(tap) = event {
+            if let WidgetEvent::Tap(tap) = event {
                 return Some(tap);
             }
         }
@@ -623,10 +637,10 @@ impl<'a> Iterator for Taps<'a> {
 }
 
 impl<'a> Iterator for Drags<'a> {
-    type Item = event::Drag;
+    type Item = Drag;
     fn next(&mut self) -> Option<Self::Item> {
         while let Some(event) = self.events.next() {
-            if let event::Widget::Drag(drag) = event {
+            if let WidgetEvent::Drag(drag) = event {
                 return Some(drag);
             }
         }
@@ -635,7 +649,7 @@ impl<'a> Iterator for Drags<'a> {
 }
 
 impl<'a> Iterator for ButtonDrags<'a> {
-    type Item = event::Drag;
+    type Item = Drag;
     fn next(&mut self) -> Option<Self::Item> {
         while let Some(drag) = self.drags.next() {
             if self.button == drag.button {
@@ -647,10 +661,10 @@ impl<'a> Iterator for ButtonDrags<'a> {
 }
 
 impl<'a> Iterator for Texts<'a> {
-    type Item = event::Text;
+    type Item = Text;
     fn next(&mut self) -> Option<Self::Item> {
         while let Some(event) = self.events.next() {
-            if let event::Widget::Text(text) = event {
+            if let WidgetEvent::Text(text) = event {
                 return Some(text);
             }
         }
@@ -659,10 +673,10 @@ impl<'a> Iterator for Texts<'a> {
 }
 
 impl<'a> Iterator for Scrolls<'a> {
-    type Item = event::Scroll;
+    type Item = Scroll;
     fn next(&mut self) -> Option<Self::Item> {
         while let Some(event) = self.events.next() {
-            if let event::Widget::Scroll(scroll) = event {
+            if let WidgetEvent::Scroll(scroll) = event {
                 return Some(scroll);
             }
         }

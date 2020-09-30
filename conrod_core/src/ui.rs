@@ -15,6 +15,15 @@ use cursor;
 use render::primitives::Primitives;
 use render::cprimitives::CPrimitives;
 use widget::primitive::CWidget;
+use crate::event::input::Input;
+use input::Source;
+use event::tap::Tap;
+use event::ui::UiEvent;
+use event::scroll::Scroll;
+use event::press::PressEvent;
+use event::button::ButtonEvent;
+use event::release::Release;
+use event::click::Click;
 
 /// A constructor type for building a `Ui` instance with a set of optional parameters.
 pub struct UiBuilder {
@@ -88,7 +97,7 @@ pub struct Ui {
     /// These events will be drained and pushed onto the end of the `global_input` event buffer at
     /// the end of the `Ui::set_widgets` method. This ensures that the events are received by the
     /// target widgets during the next call to `Ui::set_widgets`.
-    pending_scroll_events: Vec<event::Ui>,
+    pending_scroll_events: Vec<UiEvent>,
     /// Mouse cursor
     mouse_cursor: cursor::MouseCursor,
 
@@ -312,7 +321,7 @@ impl Ui {
         let (x, y) = (offset[0], offset[1]);
 
         if x != 0.0 || y != 0.0 {
-            let event = event::Ui::Scroll(Some(widget_id), event::Scroll {
+            let event = UiEvent::Scroll(Some(widget_id), Scroll {
                 x: x,
                 y: y,
                 modifiers: self.global_input.current.modifiers,
@@ -352,7 +361,7 @@ impl Ui {
             if let Some(idx) = self.global_input.current.widget_capturing_mouse {
                 if widget_under_mouse != Some(idx) {
                     let source = input::Source::Mouse;
-                    let event = event::Ui::WidgetUncapturesInputSource(idx, source).into();
+                    let event = UiEvent::WidgetUncapturesInputSource(idx, source).into();
                     self.global_input.push_event(event);
                     self.global_input.current.widget_capturing_mouse = None;
                 }
@@ -362,7 +371,7 @@ impl Ui {
             if self.global_input.current.widget_capturing_mouse.is_none() {
                 if let Some(idx) = widget_under_mouse {
                     let source = input::Source::Mouse;
-                    let event = event::Ui::WidgetCapturesInputSource(idx, source).into();
+                    let event = UiEvent::WidgetCapturesInputSource(idx, source).into();
                     self.global_input.push_event(event);
                     self.global_input.current.widget_capturing_mouse = Some(idx);
                 }
@@ -386,8 +395,7 @@ impl Ui {
     ///
     /// The given `event` must implement the **ToRawEvent** trait so that it can be converted to a
     /// `RawEvent` that can be used by the `Ui`.
-    pub fn handle_event(&mut self, event: event::Input) {
-        use event::Input;
+    pub fn handle_event(&mut self, event: Input) {
         use input::{Button, Key, ModifierKey, Motion};
         use input::state::mouse::Button as MouseButton;
 
@@ -419,20 +427,20 @@ impl Ui {
 
                     // Create a mouse `Press` event.
                     let mouse_xy = self.global_input.current.mouse.xy;
-                    let press = event::Press {
-                        button: event::Button::Mouse(mouse_button, mouse_xy),
+                    let press = PressEvent {
+                        button: ButtonEvent::Mouse(mouse_button, mouse_xy),
                         modifiers: self.global_input.current.modifiers,
                     };
                     let widget = self.global_input.current.widget_capturing_mouse;
-                    let press_event = event::Ui::Press(widget, press).into();
+                    let press_event = UiEvent::Press(widget, press).into();
                     self.global_input.push_event(press_event);
 
                     if let MouseButton::Left = mouse_button {
                         // Check to see if we need to uncapture the keyboard.
                         if let Some(idx) = self.global_input.current.widget_capturing_keyboard {
                             if Some(idx) != self.global_input.current.widget_under_mouse {
-                                let source = input::Source::Keyboard;
-                                let event = event::Ui::WidgetUncapturesInputSource(idx, source);
+                                let source = Source::Keyboard;
+                                let event = UiEvent::WidgetUncapturesInputSource(idx, source);
                                 self.global_input.push_event(event.into());
                                 self.global_input.current.widget_capturing_keyboard = None;
                             }
@@ -440,8 +448,8 @@ impl Ui {
 
                         // Check to see if we need to capture the keyboard.
                         if let Some(idx) = self.global_input.current.widget_under_mouse {
-                            let source = input::Source::Keyboard;
-                            let event = event::Ui::WidgetCapturesInputSource(idx, source);
+                            let source = Source::Keyboard;
+                            let event = UiEvent::WidgetCapturesInputSource(idx, source);
                             self.global_input.push_event(event.into());
                             self.global_input.current.widget_capturing_keyboard = Some(idx);
                         }
@@ -456,12 +464,12 @@ impl Ui {
                 Button::Keyboard(key) => {
 
                     // Create a keyboard `Press` event.
-                    let press = event::Press {
-                        button: event::Button::Keyboard(key),
+                    let press = PressEvent {
+                        button: ButtonEvent::Keyboard(key),
                         modifiers: self.global_input.current.modifiers,
                     };
                     let widget = self.global_input.current.widget_capturing_keyboard;
-                    let press_event = event::Ui::Press(widget, press).into();
+                    let press_event = UiEvent::Press(widget, press).into();
                     self.global_input.push_event(press_event);
 
                     // If some modifier key was pressed, add it to the current modifiers.
@@ -493,8 +501,8 @@ impl Ui {
 
                     // Create a `Release` event.
                     let mouse_xy = self.global_input.current.mouse.xy;
-                    let release = event::Release {
-                        button: event::Button::Mouse(mouse_button, mouse_xy),
+                    let release = Release {
+                        button: ButtonEvent::Mouse(mouse_button, mouse_xy),
                         modifiers: self.global_input.current.modifiers,
                     };
                     let widget = self.global_input.current.widget_capturing_mouse;
@@ -511,13 +519,13 @@ impl Ui {
                                 if pressed == released { Some(released) } else { None }
                             }));
 
-                        let click = event::Click {
+                        let click = Click {
                             button: mouse_button,
                             xy: self.global_input.current.mouse.xy,
                             modifiers: self.global_input.current.modifiers,
                         };
 
-                        let click_event = event::Ui::Click(clicked_widget, click).into();
+                        let click_event = UiEvent::Click(clicked_widget, click).into();
                         self.global_input.push_event(click_event);
 
                         let now = instant::Instant::now();
@@ -747,7 +755,7 @@ impl Ui {
 
                             // Create a `Scroll` event if either axis is scrollable.
                             if scroll_x || scroll_y {
-                                let event = event::Ui::Scroll(Some(idx), event::Scroll {
+                                let event = UiEvent::Scroll(Some(idx), event::Scroll {
                                     x: x,
                                     y: y,
                                     modifiers: self.global_input.current.modifiers,
@@ -771,12 +779,12 @@ impl Ui {
                                     // created within the above loop.
                                     if widget.maybe_x_scroll_state.is_none()
                                     && widget.maybe_y_scroll_state.is_none() {
-                                        let scroll = event::Scroll {
+                                        let scroll = Scroll {
                                             x: x,
                                             y: y,
                                             modifiers: self.global_input.current.modifiers,
                                         };
-                                        let event = event::Ui::Scroll(Some(idx), scroll);
+                                        let event = UiEvent::Scroll(Some(idx), scroll);
                                         self.global_input.push_event(event.into());
                                     }
                                 }
@@ -800,7 +808,7 @@ impl Ui {
                     modifiers: self.global_input.current.modifiers,
                 };
                 let widget = self.global_input.current.widget_capturing_keyboard;
-                let text_event = event::Ui::Text(widget, text).into();
+                let text_event = UiEvent::Text(widget, text).into();
                 self.global_input.push_event(text_event);
             },
 
@@ -830,13 +838,13 @@ impl Ui {
                     self.global_input.current.touch.insert(touch.id, state);
 
                     // Push touch event.
-                    let event = event::Ui::Touch(widget_under_touch, touch);
+                    let event = UiEvent::Touch(widget_under_touch, touch);
                     self.global_input.push_event(event.into());
 
                     // Push capture event.
                     if let Some(widget) = widget_under_touch {
-                        let source = input::Source::Touch(touch.id);
-                        let event = event::Ui::WidgetCapturesInputSource(widget, source);
+                        let source = Source::Touch(touch.id);
+                        let event = UiEvent::WidgetCapturesInputSource(widget, source);
                         self.global_input.push_event(event.into());
                     }
                 },
@@ -856,19 +864,19 @@ impl Ui {
                         },
                         None => None,
                     };
-                    let event = event::Ui::Touch(widget, touch);
+                    let event = UiEvent::Touch(widget, touch);
                     self.global_input.push_event(event.into());
                 },
 
                 input::touch::Phase::Cancel => {
                     let widget = self.global_input.current.touch.remove(&touch.id).and_then(|t| t.start.widget);
-                    let event = event::Ui::Touch(widget, touch);
+                    let event = UiEvent::Touch(widget, touch);
                     self.global_input.push_event(event.into());
 
                     // Generate an "uncaptures" event if necessary.
                     if let Some(widget) = widget {
-                        let source = input::Source::Touch(touch.id);
-                        let event = event::Ui::WidgetUncapturesInputSource(widget, source);
+                        let source = Source::Touch(touch.id);
+                        let event = UiEvent::WidgetUncapturesInputSource(widget, source);
                         self.global_input.push_event(event.into());
                     }
                 },
@@ -876,7 +884,7 @@ impl Ui {
                 input::touch::Phase::End => {
                     let old_touch = self.global_input.current.touch.remove(&touch.id).map(|touch| touch);
                     let widget_capturing = old_touch.as_ref().and_then(|touch| touch.start.widget);
-                    let event = event::Ui::Touch(widget_capturing, touch);
+                    let event = UiEvent::Touch(widget_capturing, touch);
                     self.global_input.push_event(event.into());
 
                     // Create a `Tap` event.
@@ -890,14 +898,14 @@ impl Ui {
                                 true => Some(widget),
                                 false => None,
                             });
-                    let tap = event::Tap { id: touch.id, xy: touch.xy };
-                    let event = event::Ui::Tap(tapped_widget, tap);
+                    let tap = Tap { id: touch.id, xy: touch.xy };
+                    let event = UiEvent::Tap(tapped_widget, tap);
                     self.global_input.push_event(event.into());
 
                     // Generate an "uncaptures" event if necessary.
                     if let Some(widget) = widget_capturing {
-                        let source = input::Source::Touch(touch.id);
-                        let event = event::Ui::WidgetUncapturesInputSource(widget, source);
+                        let source = Source::Touch(touch.id);
+                        let event = UiEvent::WidgetUncapturesInputSource(widget, source);
                         self.global_input.push_event(event.into());
                     }
                 },

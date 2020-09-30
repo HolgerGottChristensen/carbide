@@ -5,6 +5,10 @@
 use event;
 use input;
 use std;
+use event::widget::WidgetEvent;
+use event::event::Event;
+use event::click::Click;
+use event::ui::UiEvent;
 
 /// Global input event handler that also implements `input::Provider`. The `Ui` passes all events
 /// to it's `Global` instance, which aggregates and interprets the events to provide so-called
@@ -17,17 +21,17 @@ pub struct Global {
     /// this update cycle
     pub current: input::State,
     /// The events that have occurred between two consecutive updates.
-    events: Vec<event::Event>,
+    events: Vec<Event>,
     /// Tracks the last click that occurred and the time at which it occurred in order to create
     /// double-click events.
-    pub last_click: Option<(instant::Instant, event::Click)>,
+    pub last_click: Option<(instant::Instant, Click)>,
 }
 
 /// Iterator over all global `event::Event`s that have occurred since the last time
 /// `Ui::set_widgets` was called.
 #[derive(Clone)]
 pub struct Events<'a> {
-    iter: std::slice::Iter<'a, event::Event>,
+    iter: std::slice::Iter<'a, Event>,
 }
 
 /// An iterator yielding all `event::Ui`s that have occurred since the last time `Ui::set_widgets`
@@ -56,7 +60,7 @@ impl Global {
     }
 
     /// Add the new event to the stack.
-    pub fn push_event(&mut self, event: event::Event) {
+    pub fn push_event(&mut self, event: Event) {
         self.events.push(event);
     }
 
@@ -78,17 +82,17 @@ impl<'a> Events<'a> {
 }
 
 impl<'a> Iterator for Events<'a> {
-    type Item = &'a event::Event;
+    type Item = &'a Event;
     fn next(&mut self) -> Option<Self::Item> {
         self.iter.next()
     }
 }
 
 impl<'a> Iterator for UiEvents<'a> {
-    type Item = &'a event::Ui;
+    type Item = &'a UiEvent;
     fn next(&mut self) -> Option<Self::Item> {
         while let Some(event) = self.events.next() {
-            if let event::Event::Ui(ref ui_event) = *event {
+            if let WidgetEvent::Ui(ref ui_event) = *event {
                 return Some(ui_event);
             }
         }

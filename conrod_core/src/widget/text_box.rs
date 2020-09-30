@@ -6,6 +6,8 @@ use input;
 use position::{Range, Rect, Scalar};
 use text;
 use widget;
+use event::widget::WidgetEvent;
+use event::button::ButtonEvent;
 
 /// A widget for displaying and mutating a small, one-line field of text, given by the user in the
 /// form of a `String`.
@@ -179,8 +181,8 @@ impl<'a> Widget for TextBox<'a> {
         // TODO: We should probably be doing this via the `TextEdit` widget.
         for widget_event in ui.widget_input(state.ids.text_edit).events() {
             match widget_event {
-                event::Widget::Press(press) => match press.button {
-                    event::Button::Keyboard(key) => match key {
+                WidgetEvent::Press(press) => match press.button {
+                    ButtonEvent::Keyboard(key) => match key {
                         input::Key::Return => events.push(Event::Enter),
                         _ => (),
                     },

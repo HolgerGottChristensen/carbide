@@ -7,6 +7,8 @@ use std;
 use utils;
 use widget::{self, Widget};
 use widget::scroll::{self, X, Y};
+use event::widget::WidgetEvent;
+use event::button::ButtonEvent;
 
 
 /// A widget that allows for scrolling via dragging the mouse.
@@ -213,8 +215,8 @@ impl<A> Widget for Scrollbar<A>
 
                 // If the track is pressed, snap the handle to that part of the track and scroll
                 // accordingly with the handle's Range clamped to the track's Range.
-                event::Widget::Press(press) => {
-                    if let event::Button::Mouse(input::MouseButton::Left, xy) = press.button {
+                WidgetEvent::Press(press) => {
+                    if let ButtonEvent::Mouse(input::MouseButton::Left, xy) = press.button {
                         let abs_xy = utils::vec2_add(xy, rect.xy());
                         if rect.is_over(abs_xy) && !handle_rect.is_over(abs_xy) {
                             let handle_pos_range_len = handle_pos_range_len();
@@ -230,7 +232,7 @@ impl<A> Widget for Scrollbar<A>
                 },
 
                 // Check for the handle being dragged across the track.
-                event::Widget::Drag(drag) if drag.button == input::MouseButton::Left => {
+                WidgetEvent::Drag(drag) if drag.button == input::MouseButton::Left => {
                     let handle_pos_range_len = handle_pos_range_len();
                     let offset_range_len = offset_bounds.len();
                     let from_scalar = A::mouse_scalar(drag.from);

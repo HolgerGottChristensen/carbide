@@ -745,33 +745,6 @@ impl Renderer {
                         }
                     };
 
-                    let (l, r, b, t) = rect.l_r_b_t();
-
-                    let v = |x, y| {
-                        // Convert from conrod Scalar range to GL range -1.0 to 1.0.
-                        Vertex {
-                            position: [vx(x), vy(y)],
-                            tex_coords: [0.0, 0.0],
-                            color: gamma_srgb_to_linear(Color::random().to_fsa()),
-                            mode: MODE_GEOMETRY,
-                        }
-                    };
-
-                    let mut push_v = |x, y| {
-                        vertices.push(v(x, y));
-                    };
-
-
-                    // Bottom left triangle.
-                    push_v(l, t);
-                    push_v(r, b);
-                    push_v(l, b);
-
-                    // Top right triangle.
-                    push_v(l, t);
-                    push_v(r, b);
-                    push_v(r, t);
-
                     for g in positioned_glyphs {
                         if let Ok(Some((uv_rect, screen_rect))) = cache.rect_for(cache_id, &g) {
                             let gl_rect = to_gl_rect(screen_rect);

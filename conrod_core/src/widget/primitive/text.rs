@@ -9,7 +9,7 @@ use widget;
 use widget::render::Render;
 use render::primitive::Primitive;
 use graph::Container;
-use widget::Id;
+use widget::{Id, Rectangle};
 use ::render::text::Text as RenderText;
 use render::primitive_kind::PrimitiveKind;
 use render::util::new_primitive;
@@ -88,6 +88,7 @@ impl Render for Text {
         };
 
         let mut prims: Vec<Primitive> = vec![new_primitive(node_index(0), kind, Rect::new(self.position, self.dimension), Rect::new(self.position, self.dimension))];
+        prims.extend(Rectangle::rect_outline(Rect::new(self.position, self.dimension), 1.0));
         let children: Vec<Primitive> = self.get_children().iter().flat_map(|f| f.get_primitives(fonts)).collect();
         prims.extend(children);
 

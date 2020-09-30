@@ -49,7 +49,8 @@ pub use self::text_edit::TextEdit;
 pub use self::title_bar::TitleBar;
 pub use self::toggle::Toggle;
 pub use self::xy_pad::XYPad;
-
+use event::widget::WidgetEvent;
+use event::button::ButtonEvent;
 
 
 // Macro providing modules.
@@ -976,7 +977,7 @@ fn set_widget<'a, 'b, W>(widget: W, id: Id, ui: &'a mut UiCell<'b>) -> W::Event
 
                 for event in ui.widget_input(id).events() {
                     match event {
-                        ::event::Widget::Drag(drag) => {
+                        WidgetEvent::Drag(drag) => {
                             if drag.button == input::MouseButton::Left {
                                 if current_dragged_from.is_none() && drag_area.is_over(drag.origin)
                                 {
@@ -991,8 +992,8 @@ fn set_widget<'a, 'b, W>(widget: W, id: Id, ui: &'a mut UiCell<'b>) -> W::Event
                                 }
                             }
                         }
-                        ::event::Widget::Release(::event::Release {
-                            button: ::event::Button::Mouse(input::MouseButton::Left, _),
+                        WidgetEvent::Release(::event::Release {
+                            button: ButtonEvent::Mouse(input::MouseButton::Left, _),
                             ..
                         }) => {
                             current_dragged_from = None;
