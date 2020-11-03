@@ -2,7 +2,6 @@
 //!
 //! Due to the frequency of its use in GUIs, the `Rectangle` gets its own widget to allow backends
 //! to specialise their rendering implementations.
-
 use {Color, Colorable, Point, Rect, Sizeable, Widget};
 use super::Style as Style;
 use ::{widget, Scalar};
@@ -24,6 +23,11 @@ use render::owned_primitive::OwnedPrimitive;
 use render::owned_primitive_kind::OwnedPrimitiveKind;
 use widget::envelope_editor::EnvelopePoint;
 use widget::primitive::shape::triangles::Vertex;
+use std::convert::TryFrom;
+use std::error::Error;
+use std::collections::HashMap;
+use std::any::Any;
+
 
 
 /// A basic, non-interactive rectangle shape widget.
@@ -183,6 +187,8 @@ impl Rectangle {
         Rectangle::styled(dim, Style::outline_styled(line_style))
     }
 
+
+
     pub fn new(position: Point, dimension: Dimensions, children: Vec<CWidget>) -> CWidget {
         CWidget::Rectangle(Rectangle {
             id: Uuid::new_v4(),
@@ -194,7 +200,6 @@ impl Rectangle {
         })
     }
 }
-
 
 impl Widget for Rectangle {
     type State = State;

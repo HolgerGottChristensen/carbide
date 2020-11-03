@@ -37,6 +37,8 @@ fn main() {
             .set(ids.text, ui);*/
     }));
 
+    // Rectangle::new(params!(alignment: Alignment::Leading))
+
     window.set_widgets(Rectangle::new(
         [0.0, 0.0],
         [100.0, 100.0],

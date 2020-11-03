@@ -13,6 +13,9 @@ use input::{self, Button, Key, Motion, MouseButton};
 use input::keyboard::ModifierKey;
 use widget;
 use position::Point;
+use conrod_core::event::input::Input;
+use conrod_core::{widget, Colorable, Color, Widget, Sizeable, Labelable, Positionable, Ui, Point, UiBuilder};
+use conrod_core::event::event;
 
 
 ///// Test assist code.
@@ -42,7 +45,7 @@ fn move_mouse_to_widget(widget_id: widget::Id, ui: &mut Ui) {
 }
 
 fn move_mouse_to_abs_coordinates(x: f64, y: f64, ui: &mut Ui) {
-    ui.handle_event(Input::Motion(Motion::MouseCursor { x: x, y: y }));
+    ui.handle_event(Input::Motion(crate::conrod_core::input::Motion::MouseCursor { x, y }));
 }
 
 fn test_handling_basic_input_event(ui: &mut Ui, event: Input) {

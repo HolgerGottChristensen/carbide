@@ -1,8 +1,12 @@
 use event::{self, Input};
 use input::{self, Key, Motion, MouseButton};
-use input::Button::Keyboard;
+use input::Button::{Keyboard, Mouse};
 use input::Button::Mouse;
 use position::Scalar;
+use conrod_core::event::event;
+use conrod_core::Scalar;
+use conrod_core::event::input::Input;
+use conrod_core::input::{Motion, Button, Key};
 
 
 // Pushes an event onto the given global input with a default drag threshold.
@@ -18,7 +22,7 @@ fn mouse_move_event(x: Scalar, y: Scalar) -> event::Event {
 #[test]
 fn resetting_input_should_set_starting_state_to_current_state() {
     let mut input = input::Global::new();
-    push_event(&mut input, event::Event::Raw(Input::Press(Keyboard(Key::LShift))));
+    push_event(&mut input, event::Event::Raw(Input::Press(Button::Keyboard(Key::LShift))));
     push_event(&mut input, event::Event::Raw(Input::Motion(Motion::Scroll { x: 0.0, y: 50.0 })));
 
     let expected_start = input.current.clone();
@@ -29,7 +33,7 @@ fn resetting_input_should_set_starting_state_to_current_state() {
 #[test]
 fn resetting_input_should_clear_out_events() {
     let mut input = input::Global::new();
-    push_event(&mut input, event::Event::Raw(Input::Press(Keyboard(Key::LShift))));
+    push_event(&mut input, event::Event::Raw(Input::Press(Button::Keyboard(Key::LShift))));
     push_event(&mut input, event::Event::Raw(Input::Motion(Motion::Scroll { x: 0.0, y: 50.0 })));
     input.clear_events_and_update_start_state();
     assert!(input.events().next().is_none());
@@ -39,7 +43,7 @@ fn resetting_input_should_clear_out_events() {
 #[test]
 fn no_events_should_be_returned_after_reset_is_called() {
     let mut input = input::Global::new();
-    push_event(&mut input, event::Event::Raw(Input::Press(Keyboard(Key::RShift))));
+    push_event(&mut input, event::Event::Raw(Input::Press(Button::Keyboard(Key::RShift))));
     push_event(&mut input, event::Event::Raw(Input::Motion(Motion::Scroll { x: 7.0, y: 88.5 })));
     push_event(&mut input, event::Event::Raw(Input::Press(Mouse(MouseButton::Left))));
     push_event(&mut input, mouse_move_event(60.0, 30.0));

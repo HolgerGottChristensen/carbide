@@ -3,6 +3,9 @@ use input::{self, Button, Motion, MouseButton};
 use input::keyboard::ModifierKey;
 use widget;
 use position::Rect;
+use conrod_core::event::event;
+use conrod_core::{Rect, widget};
+use conrod_core::event::input::Input;
 
 // Pushes an event onto the given global input with a default drag threshold.
 fn push_event(input: &mut input::Global, event: event::Event) {
@@ -16,7 +19,7 @@ fn mouse_should_return_none_if_another_widget_is_capturing_mouse() {
     let mut global_input = input::Global::new();
     let source = input::Source::Mouse;
     push_event(&mut global_input, event::Ui::WidgetCapturesInputSource(widget::Id::new(999), source).into());
-    push_event(&mut global_input, event::Event::Raw(Input::Motion(Motion::MouseRelative { x: 30.0, y: 30. })));
+    push_event(&mut global_input, event::Event::Raw(Input::Motion(crate::conrod_core::input::Motion::MouseRelative { x: 30.0, y: 30. })));
     push_event(&mut global_input, event::Event::Raw(Input::Press(Button::Mouse(MouseButton::Left))));
 
     let widget_input = input::Widget::for_widget(widget::Id::new(2), widget_area, &global_input);

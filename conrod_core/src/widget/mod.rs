@@ -91,6 +91,7 @@ pub mod title_bar;
 pub mod toggle;
 pub mod xy_pad;
 pub mod common_widget;
+pub mod complex;
 
 
 /// Arguments for the [**Widget::update**](./trait.Widget#method.update) method in a struct to

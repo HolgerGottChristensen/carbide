@@ -1,5 +1,6 @@
 use color::{rgb_to_hsl, hsl_to_rgb};
 use std::cmp::Ordering::Equal;
+use conrod_core::color::{hsl_to_rgb, rgb_to_hsl};
 
 ///// Test assist code.
 
