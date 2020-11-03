@@ -10,7 +10,7 @@ use text::font::Map;
 
 pub struct NewButton {
     id: Uuid,
-    children: Vec<CWidReget>,
+    children: Vec<CWidget>,
     position: Point,
     dimension: Dimensions,
 }
@@ -28,9 +28,9 @@ impl Render for NewButton {
 
     fn get_primitives(&self, fonts: &Map) -> Vec<Primitive> {
         let mut prims = Vec::new();
-        prims.extend(self.display().get_primitives());
-        let children: Vec<Primitive> = self.get_children().iter().flat_map(|f| f.get_primitives(fonts)).collect();
-        prims.extend(children);
+        //prims.extend(self.display().get_primitives());
+        //let children: Vec<Primitive> = self.get_children().iter().flat_map(|f| f.get_primitives(fonts)).collect();
+        //prims.extend(children);
         prims
     }
 }

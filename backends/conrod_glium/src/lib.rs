@@ -12,6 +12,8 @@ use conrod_core::render::primitive_kind::PrimitiveKind;
 use conrod_core::render::primitive_walker::PrimitiveWalker;
 use conrod_core::render::primitive::Primitive;
 pub use window::Window;
+use std::num;
+
 
 /// A `Command` describing a step in the drawing process.
 #[derive(Clone, Debug)]
@@ -705,7 +707,7 @@ impl Renderer {
                         };
 
                         let image = glium::texture::RawImage2d {
-                            data: data,
+                            data,
                             width: w,
                             height: h,
                             format: client_format,
@@ -718,18 +720,32 @@ impl Renderer {
                     let cache_id = font_id.index();
 
                     let origin = text::rt::point(0.0, 0.0);
+
+
+                    //Working on mac
+                    /*
                     let to_gl_rect = |screen_rect: text::rt::Rect<i32>| {
                         let min_x = (screen_rect.min.x as f64 - rect.x.start) / 2.0;
                         let max_x = (screen_rect.max.x as f64 - rect.x.start) / 2.0;
                         let min_y = (screen_rect.min.y as f64 + 100.0 + rect.y.start*4.0) / 2.0;
                         let max_y = (screen_rect.max.y as f64 + 100.0 + rect.y.start*4.0) / 2.0;
 
+                     */
+
+                    let to_gl_rect = |screen_rect: text::rt::Rect<i32>| {
+                        let min_x = (screen_rect.min.x as f64 - 50.0);
+                        let max_x = (screen_rect.max.x as f64 - 50.0);
+                        let min_y = (screen_rect.min.y as f64 + rect.y.start as f64 * 2.0 + 50.0);
+                        let max_y = (screen_rect.max.y as f64 + rect.y.start as f64 * 2.0 + 50.0);
 
                         /*println!("{:?}", &screen_rect);
+                        println!("{:?}", &rect);
                         println!("{:?}", min_x);
                         println!("{:?}", max_x);
                         println!("{:?}", min_y);
-                        println!("{:?}", max_y);*/
+                        println!("{:?}", max_y);
+                        println!("{:?}", screen_w);
+                        println!("{:?}", screen_h);*/
                         /*text::rt::Rect {
                             min: origin
                                 + (text::rt::vector(screen_rect.min.x as f32 / screen_w as f32 - 0.5,

@@ -66,8 +66,8 @@ fn main() {
             ),
             Text::new(
                "Hello world! Dette er tekst".to_string(),
-               [100.0,200.0],
-               [100.0,100.0],
+               [200.0, 200.0],
+               [100.0, 100.0],
                vec![
                     Rectangle::new(
                    [0.0,0.0],
