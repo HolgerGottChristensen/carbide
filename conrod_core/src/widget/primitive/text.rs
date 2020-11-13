@@ -18,6 +18,7 @@ use widget::common_widget::CommonWidget;
 use uuid::Uuid;
 use widget::primitive::CWidget;
 use text::Justify;
+use widget::envelope_editor::EnvelopePoint;
 
 
 /// Displays some given text centered within a rectangular area.
@@ -47,7 +48,31 @@ impl Render for Text {
         unimplemented!()
     }
 
-    fn get_primitives(&self, fonts: &text::font::Map) -> Vec<Primitive> {
+    fn layout(&mut self, proposed_size: Dimensions, fonts: &text::font::Map, positioner: &dyn Fn(&mut dyn CommonWidget, Dimensions)) {
+        let pref_width = self.default_x(fonts);
+        let pref_height = self.default_y(fonts);
+
+        match (pref_width, pref_height) {
+            (width, height) if width > proposed_size[0] && height > proposed_size[1] => {
+                positioner(self, proposed_size);
+                self.dimension = proposed_size;
+            }
+            (width, height) if width > proposed_size[0] && height <= proposed_size[1] => {
+                positioner(self, [proposed_size[0], height]);
+                self.dimension = [proposed_size[0], height];
+            }
+            (width, height) if width <= proposed_size[0] && height > proposed_size[1] => {
+                positioner(self, [width, proposed_size[1]]);
+                self.dimension = [width, proposed_size[1]];
+            }
+            (_, _) => {
+                positioner(self, [pref_width, pref_height]);
+                self.dimension = [pref_width, pref_height];
+            }
+        }
+    }
+
+    fn get_primitives(&self, proposed_dimensions: Dimensions, fonts: &text::font::Map) -> Vec<Primitive> {
         let font_id = match fonts.ids().next() {
             Some(id) => id,
             None => return vec![],
@@ -88,8 +113,8 @@ impl Render for Text {
         };
 
         let mut prims: Vec<Primitive> = vec![new_primitive(node_index(0), kind, Rect::new(self.position, self.dimension), Rect::new(self.position, self.dimension))];
-        prims.extend(Rectangle::rect_outline(Rect::new(self.position, self.dimension), 1.0));
-        let children: Vec<Primitive> = self.get_children().iter().flat_map(|f| f.get_primitives(fonts)).collect();
+        prims.extend(Rectangle::rect_outline(Rect::new(self.position, self.dimension), 0.5));
+        let children: Vec<Primitive> = self.get_children().iter().flat_map(|f| f.get_primitives(proposed_dimensions, fonts)).collect();
         prims.extend(children);
 
         return prims;
@@ -113,8 +138,16 @@ impl CommonWidget for Text {
         unimplemented!()
     }
 
-    fn get_y(&self) -> f64 {
+    fn set_x(&mut self, x: f64) {
+        self.position = Point::new(x, self.position.get_y());
+    }
+
+    fn get_y(&self) -> Scalar {
         unimplemented!()
+    }
+
+    fn set_y(&mut self, y: f64) {
+        self.position = Point::new(self.position.get_x(), y);
     }
 
     fn get_size(&self) -> [f64; 2] {
@@ -188,6 +221,17 @@ pub struct State {
 
 
 impl Text {
+    pub fn initialize(text: String, children: Vec<CWidget>) -> CWidget {
+        CWidget::Text(Text {
+            common: widget::CommonBuilder::default(),
+            text,
+            style: Style::default(),
+            position: [0.0,0.0],
+            dimension: [100.0,100.0],
+            wrap_mode: Wrap::Whitespace,
+            children
+        })
+    }
 
     /// Build a new **Text** widget.
     pub fn new(text: String, position: Point, dimension: Dimensions, children: Vec<CWidget>) -> CWidget {
@@ -201,6 +245,65 @@ impl Text {
             children
         })
     }
+
+    /// If no specific width was given, we'll use the width of the widest line as a default.
+    ///
+    /// The `Font` used by the `Text` is retrieved in order to determine the width of each line. If
+    /// the font used by the `Text` cannot be found, a dimension of `Absolute(0.0)` is returned.
+    fn default_x(&self, fonts: &text::font::Map) -> Scalar {
+        let font = fonts.ids().next()
+            .and_then(|id| fonts.get(id));
+        let font = match font {
+            Some(font) => font,
+            None => return 0.0,
+        };
+
+        let font_size = 14;
+        let mut max_width = 0.0;
+        for line in self.text.lines() {
+            let width = text::line::width(line, font, font_size);
+            max_width = utils::partial_max(max_width, width);
+        }
+        max_width
+    }
+
+    /// If no specific height was given, we'll use the total height of the text as a default.
+    ///
+    /// The `Font` used by the `Text` is retrieved in order to determine the width of each line. If
+    /// the font used by the `Text` cannot be found, a dimension of `Absolute(0.0)` is returned.
+    fn default_y(&self, fonts: &text::font::Map) -> Scalar {
+        use position::Sizeable;
+
+        let font = fonts.ids().next()
+            .and_then(|id| fonts.get(id));
+
+        println!("{:?}", fonts);
+        let font = match font {
+            Some(font) => font,
+            None => return 0.0,
+        };
+
+        let text = &self.text;
+        let font_size = 14;
+        let wrap = Wrap::Whitespace;
+        let num_lines = match wrap {
+            Wrap::Character =>
+                text::line::infos(text, font, font_size)
+                    .wrap_by_character(self.dimension[0])
+                    .count(),
+            Wrap::Whitespace =>
+                text::line::infos(text, font, font_size)
+                    .wrap_by_whitespace(self.dimension[0])
+                    .count(),
+            _ => {
+                text.lines().count()
+            }
+        };
+        let line_spacing =  1.0;
+        let height = text::height(std::cmp::max(num_lines, 1), font_size, line_spacing);
+        height
+    }
+
 
     /// Specify that the **Text** should not wrap lines around the width.
     pub fn no_line_wrap(mut self) -> Self {
@@ -271,11 +374,10 @@ impl Widget for Text {
     fn style(&self) -> Self::Style {
         self.style.clone()
     }
-
     /// If no specific width was given, we'll use the width of the widest line as a default.
-    ///
-    /// The `Font` used by the `Text` is retrieved in order to determine the width of each line. If
-    /// the font used by the `Text` cannot be found, a dimension of `Absolute(0.0)` is returned.
+        ///
+        /// The `Font` used by the `Text` is retrieved in order to determine the width of each line. If
+        /// the font used by the `Text` cannot be found, a dimension of `Absolute(0.0)` is returned.
     fn default_x_dimension(&self, ui: &Ui) -> Dimension {
         let font = match self.style.font_id(&ui.theme)
             .or(ui.fonts.ids().next())
@@ -331,7 +433,6 @@ impl Widget for Text {
         let height = text::height(std::cmp::max(num_lines, 1), font_size, line_spacing);
         Dimension::Absolute(height)
     }
-
     /// Update the state of the Text.
     fn update(self, args: widget::UpdateArgs<Self>) -> Self::Event {
         let widget::UpdateArgs { rect, state, style, ui, .. } = args;

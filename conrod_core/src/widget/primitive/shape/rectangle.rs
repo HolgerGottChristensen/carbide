@@ -60,8 +60,16 @@ impl CommonWidget for Rectangle {
         unimplemented!()
     }
 
+    fn set_x(&mut self, x: f64) {
+        self.position = Point::new(x, self.position.get_y());
+    }
+
     fn get_y(&self) -> Scalar {
         unimplemented!()
+    }
+
+    fn set_y(&mut self, y: f64) {
+        self.position = Point::new(self.position.get_x(), y);
     }
 
     fn get_size(&self) -> Dimensions {
@@ -78,12 +86,17 @@ impl CommonWidget for Rectangle {
 }
 
 impl Render for Rectangle {
+    fn layout(&mut self, proposed_size: Dimensions, fonts: &text::font::Map, positioner: &dyn Fn(&mut CommonWidget, Dimensions)) {
+        let dimension = self.dimension.clone();
+        positioner(self, dimension);
+    }
+
     fn render(self, id: Id, clip: Rect, container: &Container) -> Option<Primitive> {
         let kind = PrimitiveKind::Rectangle { color: rgb(0.0,1.0, 0.0)};
         return Some(new_primitive(id, kind, clip, container.rect));
     }
 
-    fn get_primitives(&self, fonts: &text::font::Map) -> Vec<Primitive> {
+    fn get_primitives(&self, proposed_dimensions: Dimensions, fonts: &text::font::Map) -> Vec<Primitive> {
         let mut prims = vec![
             Primitive {
                 id: node_index(0),
@@ -93,7 +106,7 @@ impl Render for Rectangle {
             }
         ];
         prims.extend(Rectangle::rect_outline(Rect::new(self.position, self.dimension), 1.0));
-        let children: Vec<Primitive> = self.get_children().iter().flat_map(|f| f.get_primitives(fonts)).collect();
+        let children: Vec<Primitive> = self.get_children().iter().flat_map(|f| f.get_primitives(proposed_dimensions, fonts)).collect();
         prims.extend(children);
 
         return prims;
@@ -121,8 +134,8 @@ impl Rectangle {
     pub fn rect_outline(rect: Rect, width: Scalar) -> Vec<Primitive> {
         let (l, r, b, t) = rect.l_r_b_t();
 
-        let left_border = Rect::new([l,b], [width, rect.w()]);
-        let right_border = Rect::new([r-width,b], [width, rect.w()]);
+        let left_border = Rect::new([l,b], [width, rect.h()]);
+        let right_border = Rect::new([r-width,b], [width, rect.h()]);
         let top_border = Rect::new([l+width,b], [rect.w()-width*2.0, width]);
         let bottom_border = Rect::new([l+width,t-width], [rect.w()-width*2.0, width]);
 
@@ -187,7 +200,16 @@ impl Rectangle {
         Rectangle::styled(dim, Style::outline_styled(line_style))
     }
 
-
+    pub fn initialize(dimension: Dimensions, children: Vec<CWidget>) -> CWidget {
+        CWidget::Rectangle(Rectangle {
+            id: Uuid::new_v4(),
+            children,
+            position: [0.0,0.0],
+            dimension,
+            common: widget::CommonBuilder::default(),
+            style: Style::fill()
+        })
+    }
 
     pub fn new(position: Point, dimension: Dimensions, children: Vec<CWidget>) -> CWidget {
         CWidget::Rectangle(Rectangle {

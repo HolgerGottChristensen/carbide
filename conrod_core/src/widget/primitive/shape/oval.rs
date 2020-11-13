@@ -55,7 +55,15 @@ impl<S> CommonWidget for Oval<S> {
         unimplemented!()
     }
 
+    fn set_x(&mut self, x: f64) {
+        unimplemented!()
+    }
+
     fn get_y(&self) -> f64 {
+        unimplemented!()
+    }
+
+    fn set_y(&mut self, y: f64) {
         unimplemented!()
     }
 
@@ -73,6 +81,10 @@ impl<S> CommonWidget for Oval<S> {
 }
 
 impl Render for Oval<Full> {
+    fn layout(&mut self, proposed_size: Dimensions, fonts: &text::font::Map, positioner: &dyn Fn(&mut dyn CommonWidget, Dimensions)) {
+        unimplemented!()
+    }
+
     fn render(self, id: Id, clip: Rect, container: &Container) -> Option<Primitive> {
         let points = widget::oval::circumference(container.rect, DEFAULT_RESOLUTION);
         let mut triangles: Vec<Triangle<Point>> = Vec::new();
@@ -84,7 +96,7 @@ impl Render for Oval<Full> {
         return Some(new_primitive(id, kind, clip, container.rect));
     }
 
-    fn get_primitives(&self, fonts: &text::font::Map) -> Vec<Primitive> {
+    fn get_primitives(&self, proposed_dimensions: Dimensions,  fonts: &text::font::Map) -> Vec<Primitive> {
         let points = widget::oval::circumference(Rect::new(self.position, self.dimension), DEFAULT_RESOLUTION);
         let mut triangles: Vec<Triangle<Point>> = Vec::new();
         triangles.extend(points.triangles());
@@ -94,7 +106,7 @@ impl Render for Oval<Full> {
         };
 
         let mut prims: Vec<Primitive> = vec![new_primitive(node_index(0), kind, Rect::new(self.position, self.dimension), Rect::new(self.position, self.dimension))];
-        let children: Vec<Primitive> = self.get_children().iter().flat_map(|f| f.get_primitives(fonts)).collect();
+        let children: Vec<Primitive> = self.get_children().iter().flat_map(|f| f.get_primitives(proposed_dimensions, fonts)).collect();
         prims.extend(children);
 
         return prims;

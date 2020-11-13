@@ -10,3 +10,4 @@ pub mod owned_primitives;
 pub mod primitives;
 pub mod primitive_kind;
 pub mod primitive;
+pub mod positions_strategy;

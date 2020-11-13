@@ -1129,11 +1129,11 @@ impl Ui {
     ///
     /// NOTE: If you don't need to redraw your conrod GUI every frame, it is recommended to use the
     /// `Ui::draw_if_changed` method instead.
-    pub fn draw(&self) -> (Primitives, CPrimitives) {
+    pub fn draw(&mut self) -> (Primitives, CPrimitives) {
         let Ui {
             ref redraw_count,
             ref widget_graph,
-            ref widgets,
+            ref mut widgets,
             ref depth_order,
             ref theme,
             ref fonts,
@@ -1152,7 +1152,7 @@ impl Ui {
 
         (
             Primitives::new(widget_graph, indices, theme, fonts, [win_w, win_h]),
-            CPrimitives::new(widgets, fonts)
+            CPrimitives::new([win_w, win_h], widgets, fonts)
         )
     }
 
@@ -1171,7 +1171,7 @@ impl Ui {
     /// This ensures that conrod is drawn to each buffer in the case that there is buffer swapping
     /// happening. Let us know if you need finer control over this and we'll expose a way for you
     /// to set the redraw count manually.
-    pub fn draw_if_changed(&self) -> Option<(Primitives, CPrimitives)> {
+    pub fn draw_if_changed(&mut self) -> Option<(Primitives, CPrimitives)> {
         if self.has_changed() {
             return Some(self.draw())
         }

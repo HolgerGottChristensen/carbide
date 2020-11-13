@@ -16,8 +16,8 @@ use conrod_core::widget::primitive::CWidget;
 use conrod_core::widget::{Rectangle, Oval, Line, Text, Image};
 use conrod_core::widget::oval::Full;
 
-const WIDTH: u32 = 400;
-const HEIGHT: u32 = 400;
+const WIDTH: u32 = 750/2;
+const HEIGHT: u32 = 1334/2;
 
 fn main() {
 
@@ -39,7 +39,7 @@ fn main() {
 
     // Rectangle::new(params!(alignment: Alignment::Leading))
 
-    window.set_widgets(Rectangle::new(
+    /*window.set_widgets(Rectangle::new(
         [0.0, 0.0],
         [100.0, 100.0],
         vec![
@@ -77,7 +77,10 @@ fn main() {
                ]
             )
         ]
-    ));
+    ));*/
+
+    //window.set_widgets(Rectangle::initialize([100.0,100.0], vec![]));
+    window.set_widgets(Text::initialize("Hello world! \nHvad sker der i denne verden og vil den laypute rigtigt når der er en lang tekst".to_string(), vec![]));
 
     window.draw()
 }

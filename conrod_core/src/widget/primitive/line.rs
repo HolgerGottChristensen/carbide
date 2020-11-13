@@ -38,6 +38,10 @@ pub struct Line {
 }
 
 impl Render for Line {
+    fn layout(&mut self, proposed_size: Dimensions, fonts: &text::font::Map, positioner: &dyn Fn(&mut dyn CommonWidget, Dimensions)) {
+        unimplemented!()
+    }
+
     fn render(self, id: Id, clip: Rect, container: &Container) -> Option<Primitive> {
         const DEFAULT_CAP: Cap = Cap::Flat;
         let thickness = 2.0;
@@ -55,7 +59,7 @@ impl Render for Line {
         return Some(new_primitive(id, kind, clip, container.rect));
     }
 
-    fn get_primitives(&self, fonts: &text::font::Map) -> Vec<Primitive> {
+    fn get_primitives(&self, proposed_dimensions: Dimensions, fonts: &text::font::Map) -> Vec<Primitive> {
         const DEFAULT_CAP: Cap = Cap::Flat;
         let thickness = 2.0;
         let points = std::iter::once(self.start).chain(std::iter::once(self.end));
@@ -71,7 +75,7 @@ impl Render for Line {
         };
 
         let mut prims: Vec<Primitive> = vec![new_primitive(node_index(0), kind, Rect::new(self.position, self.dimension), Rect::new(self.position, self.dimension))];
-        let children: Vec<Primitive> = self.get_children().iter().flat_map(|f| f.get_primitives(fonts)).collect();
+        let children: Vec<Primitive> = self.get_children().iter().flat_map(|f| f.get_primitives(proposed_dimensions, fonts)).collect();
         prims.extend(children);
 
         return prims;
@@ -95,7 +99,15 @@ impl CommonWidget for Line {
         unimplemented!()
     }
 
+    fn set_x(&mut self, x: f64) {
+        unimplemented!()
+    }
+
     fn get_y(&self) -> f64 {
+        unimplemented!()
+    }
+
+    fn set_y(&mut self, y: f64) {
         unimplemented!()
     }
 

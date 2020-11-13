@@ -1332,14 +1332,14 @@ pub mod line {
             let range = Range::new(0.0, font_size as Scalar);
             let y = range.align_end_of(total_text_y);
 
-            Rect { x: x, y: y }
+            Rect { x, y }
         });
 
         Rects {
-            infos: infos,
+            infos,
             next: first_rect,
-            x_align: x_align,
-            line_spacing: line_spacing,
+            x_align,
+            line_spacing,
         }
     }
 

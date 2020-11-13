@@ -3,7 +3,7 @@
 use {Color, Widget, Ui};
 use ::{image, Point};
 use position::{Dimension, Rect, Dimensions};
-use widget;
+use ::{widget, text};
 use widget::render::Render;
 use render::primitive::Primitive;
 use graph::Container;
@@ -36,6 +36,10 @@ pub struct Image {
 }
 
 impl Render for Image {
+    fn layout(&mut self, proposed_size: Dimensions, fonts: &text::font::Map, positioner: &dyn Fn(&mut dyn CommonWidget, Dimensions)) {
+        unimplemented!()
+    }
+
     fn render(self, id: Id, clip: Rect, container: &Container) -> Option<Primitive> {
         //let color = Color::random();
         let kind = PrimitiveKind::Image {
@@ -46,7 +50,7 @@ impl Render for Image {
         return Some(new_primitive(id, kind, clip, container.rect));
     }
 
-    fn get_primitives(&self, fonts: &Map) -> Vec<Primitive> {
+    fn get_primitives(&self, proposed_dimensions: Dimensions, fonts: &Map) -> Vec<Primitive> {
         //let color = Color::random();
         let kind = PrimitiveKind::Image {
             color: None,
@@ -57,7 +61,7 @@ impl Render for Image {
         let rect = Rect::new(self.position, self.dimension);
         let mut prims: Vec<Primitive> = vec![new_primitive(node_index(0), kind, rect, rect)];
         prims.extend(Rectangle::rect_outline(rect.clone(), 1.0));
-        let children: Vec<Primitive> = self.get_children().iter().flat_map(|f| f.get_primitives(fonts)).collect();
+        let children: Vec<Primitive> = self.get_children().iter().flat_map(|f| f.get_primitives(proposed_dimensions, fonts)).collect();
         prims.extend(children);
 
         return prims;
@@ -81,7 +85,15 @@ impl CommonWidget for Image {
         unimplemented!()
     }
 
+    fn set_x(&mut self, x: f64) {
+        unimplemented!()
+    }
+
     fn get_y(&self) -> f64 {
+        unimplemented!()
+    }
+
+    fn set_y(&mut self, y: f64) {
         unimplemented!()
     }
 

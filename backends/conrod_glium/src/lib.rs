@@ -12,7 +12,6 @@ use conrod_core::render::primitive_kind::PrimitiveKind;
 use conrod_core::render::primitive_walker::PrimitiveWalker;
 use conrod_core::render::primitive::Primitive;
 pub use window::Window;
-use std::num;
 
 
 /// A `Command` describing a step in the drawing process.
@@ -733,10 +732,10 @@ impl Renderer {
                      */
 
                     let to_gl_rect = |screen_rect: text::rt::Rect<i32>| {
-                        let min_x = (screen_rect.min.x as f64 - 50.0);
-                        let max_x = (screen_rect.max.x as f64 - 50.0);
-                        let min_y = (screen_rect.min.y as f64 + rect.y.start as f64 * 2.0 + 50.0);
-                        let max_y = (screen_rect.max.y as f64 + rect.y.start as f64 * 2.0 + 50.0);
+                        let min_x = (screen_rect.min.x as f64 + rect.x.start);
+                        let max_x = (screen_rect.max.x as f64 + rect.x.start);
+                        let min_y = (screen_rect.min.y as f64 + rect.y.start);
+                        let max_y = (screen_rect.max.y as f64 + rect.y.start);
 
                         /*println!("{:?}", &screen_rect);
                         println!("{:?}", &rect);
