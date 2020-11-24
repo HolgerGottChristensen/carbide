@@ -10,6 +10,7 @@ pub mod point_path;
 pub mod shape;
 pub mod text;
 pub mod widget;
+pub mod v_stack;
 
 use {Point, Range, Rect};
 pub use widget::primitive::widget::CWidget;

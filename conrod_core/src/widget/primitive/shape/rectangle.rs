@@ -77,11 +77,11 @@ impl CommonWidget for Rectangle {
     }
 
     fn get_width(&self) -> Scalar {
-        unimplemented!()
+        self.dimension[0]
     }
 
     fn get_height(&self) -> Scalar {
-        unimplemented!()
+        self.dimension[1]
     }
 }
 

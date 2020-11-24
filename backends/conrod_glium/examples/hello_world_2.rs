@@ -15,6 +15,7 @@ use conrod_glium::Window;
 use conrod_core::widget::primitive::CWidget;
 use conrod_core::widget::{Rectangle, Oval, Line, Text, Image};
 use conrod_core::widget::oval::Full;
+use conrod_core::widget::primitive::v_stack::VStack;
 
 const WIDTH: u32 = 750/2;
 const HEIGHT: u32 = 1334/2;
@@ -80,7 +81,8 @@ fn main() {
     ));*/
 
     //window.set_widgets(Rectangle::initialize([100.0,100.0], vec![]));
-    window.set_widgets(Text::initialize("Hello world! \nHvad sker der i denne verden og vil den laypute rigtigt når der er en lang tekst".to_string(), vec![]));
+    //window.set_widgets(Text::initialize("Hello world! \nHvad sker der i denne verden og vil den laypute rigtigt når der er en lang tekst".to_string(), vec![]));
+    window.set_widgets(VStack::initialize([150.0,150.0], vec![Rectangle::initialize([100.0,100.0], vec![])]));
 
     window.draw()
 }

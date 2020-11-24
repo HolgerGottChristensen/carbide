@@ -18,4 +18,10 @@ pub trait CommonWidget {
     fn get_size(&self) -> Dimensions;
     fn get_width(&self) -> Scalar;
     fn get_height(&self) -> Scalar;
+    fn calc_width(&self, pref_width: Scalar) -> Scalar {
+        self.get_width()
+    }
+    fn calc_height(&self, pref_height: Scalar) -> Scalar {
+        self.get_height()
+    }
 }
