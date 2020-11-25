@@ -19,6 +19,9 @@ use uuid::Uuid;
 use widget::primitive::CWidget;
 use text::Justify;
 use widget::envelope_editor::EnvelopePoint;
+use widget::layout::Layout;
+use text::font::Map;
+use layout::basic_layouter::BasicLayouter;
 
 
 /// Displays some given text centered within a rectangular area.
@@ -41,6 +44,49 @@ pub struct Text {
     wrap_mode: Wrap,
 
     pub children: Vec<CWidget>,
+}
+
+impl Layout for Text {
+
+    fn flexibility(&self) -> u32 {
+        2
+    }
+
+    fn calculate_size(&mut self, proposed_size: Dimensions, fonts: &Map) -> Dimensions {
+        let pref_width = self.default_x(fonts);
+        let pref_height = self.default_y(fonts);
+
+        // Todo calculate size of children here
+
+        match (pref_width, pref_height) {
+            (width, height) if width > proposed_size[0] && height > proposed_size[1] => {
+                self.dimension = proposed_size;
+            }
+            (width, height) if width > proposed_size[0] && height <= proposed_size[1] => {
+                self.dimension = [proposed_size[0], height];
+            }
+            (width, height) if width <= proposed_size[0] && height > proposed_size[1] => {
+                self.dimension = [width, proposed_size[1]];
+            }
+            (_, _) => {
+                self.dimension = [pref_width, pref_height];
+            }
+        }
+
+        self.dimension
+
+    }
+
+    fn position_children(&mut self) {
+        let positioning = BasicLayouter::Center.position();
+        let position = self.position;
+        let dimension = self.dimension;
+
+        for child in &mut self.children {
+            positioning(position, dimension, child);
+            child.position_children();
+        }
+    }
 }
 
 impl Render for Text {
@@ -130,12 +176,12 @@ impl CommonWidget for Text {
         &self.children
     }
 
-    fn get_position(&self) -> [f64; 2] {
+    fn get_position(&self) -> Dimensions {
         unimplemented!()
     }
 
     fn get_x(&self) -> f64 {
-        unimplemented!()
+        self.position[0]
     }
 
     fn set_x(&mut self, x: f64) {
@@ -143,23 +189,23 @@ impl CommonWidget for Text {
     }
 
     fn get_y(&self) -> Scalar {
-        unimplemented!()
+        self.position[1]
     }
 
     fn set_y(&mut self, y: f64) {
         self.position = Point::new(self.position.get_x(), y);
     }
 
-    fn get_size(&self) -> [f64; 2] {
+    fn get_size(&self) -> Dimensions {
         unimplemented!()
     }
 
     fn get_width(&self) -> f64 {
-        unimplemented!()
+        self.dimension[0]
     }
 
     fn get_height(&self) -> f64 {
-        unimplemented!()
+        self.dimension[1]
     }
 }
 
@@ -277,7 +323,6 @@ impl Text {
         let font = fonts.ids().next()
             .and_then(|id| fonts.get(id));
 
-        println!("{:?}", fonts);
         let font = match font {
             Some(font) => font,
             None => return 0.0,

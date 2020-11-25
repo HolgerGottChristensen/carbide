@@ -5,7 +5,7 @@
 //! If you are new to Conrod, we recommend checking out [The Guide](./guide/index.html).
 
 #![deny(unsafe_code)]
-#![deny(missing_copy_implementations)]
+#![warn(missing_copy_implementations)]
 #![warn(missing_docs)]
 
 #[macro_use] extern crate conrod_derive;
@@ -16,6 +16,7 @@ extern crate input as piston_input;
 extern crate rusttype;
 extern crate copypasta;
 extern crate uuid;
+extern crate instant;
 
 pub use color::{Color, Colorable};
 pub use conrod_derive::*;
@@ -44,4 +45,5 @@ pub mod utils;
 pub mod widget;
 pub mod cursor;
 pub mod layout;
+pub mod event_handler;
 

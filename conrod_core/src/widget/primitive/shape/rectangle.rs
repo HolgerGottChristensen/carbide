@@ -27,7 +27,9 @@ use std::convert::TryFrom;
 use std::error::Error;
 use std::collections::HashMap;
 use std::any::Any;
-
+use widget::layout::Layout;
+use text::font::Map;
+use layout::basic_layouter::BasicLayouter;
 
 
 /// A basic, non-interactive rectangle shape widget.
@@ -44,6 +46,31 @@ pub struct Rectangle {
     pub style: Style,
 }
 
+impl Layout for Rectangle {
+    fn flexibility(&self) -> u32 {
+        0
+    }
+
+    fn calculate_size(&mut self, requested_size: Dimensions, fonts: &Map) -> Dimensions {
+        for child in &mut self.children {
+            child.calculate_size(requested_size, fonts);
+        }
+        self.dimension = requested_size;
+        requested_size
+    }
+
+    fn position_children(&mut self) {
+        let positioning = BasicLayouter::Center.position();
+        let position = self.position;
+        let dimension = self.dimension;
+
+        for child in &mut self.children {
+            positioning(position, dimension, child);
+            child.position_children();
+        }
+    }
+}
+
 impl CommonWidget for Rectangle {
     fn get_id(&self) -> Uuid {
         self.id
@@ -57,7 +84,7 @@ impl CommonWidget for Rectangle {
     }
 
     fn get_x(&self) -> Scalar {
-        unimplemented!()
+        self.position[0]
     }
 
     fn set_x(&mut self, x: f64) {
@@ -65,7 +92,7 @@ impl CommonWidget for Rectangle {
     }
 
     fn get_y(&self) -> Scalar {
-        unimplemented!()
+        self.position[1]
     }
 
     fn set_y(&mut self, y: f64) {
@@ -200,12 +227,12 @@ impl Rectangle {
         Rectangle::styled(dim, Style::outline_styled(line_style))
     }
 
-    pub fn initialize(dimension: Dimensions, children: Vec<CWidget>) -> CWidget {
+    pub fn initialize(children: Vec<CWidget>) -> CWidget {
         CWidget::Rectangle(Rectangle {
             id: Uuid::new_v4(),
             children,
             position: [0.0,0.0],
-            dimension,
+            dimension: [100.0,100.0],
             common: widget::CommonBuilder::default(),
             style: Style::fill()
         })

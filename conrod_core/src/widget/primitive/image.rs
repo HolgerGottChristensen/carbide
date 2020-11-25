@@ -15,6 +15,10 @@ use daggy::petgraph::graph::node_index;
 use widget::primitive::CWidget;
 use widget::common_widget::CommonWidget;
 use uuid::Uuid;
+use widget::layout::Layout;
+use widget::envelope_editor::EnvelopePoint;
+use Scalar;
+use layout::basic_layouter::BasicLayouter;
 
 
 /// A primitive and basic widget for drawing an `Image`.
@@ -33,6 +37,32 @@ pub struct Image {
     dimension: Dimensions,
 
     pub children: Vec<CWidget>,
+}
+
+impl Layout for Image {
+    fn flexibility(&self) -> u32 {
+        10
+    }
+
+    fn calculate_size(&mut self, _: Dimensions, fonts: &Map) -> Dimensions {
+
+        for child in &mut self.children {
+            child.calculate_size(self.dimension, fonts);
+        }
+
+        self.dimension
+    }
+
+    fn position_children(&mut self) {
+        let positioning = BasicLayouter::Center.position();
+        let position = self.position;
+        let dimension = self.dimension;
+
+        for child in &mut self.children {
+            positioning(position, dimension, child);
+            child.position_children();
+        }
+    }
 }
 
 impl Render for Image {
@@ -77,36 +107,37 @@ impl CommonWidget for Image {
         &self.children
     }
 
-    fn get_position(&self) -> [f64; 2] {
+    fn get_position(&self) -> Dimensions {
         unimplemented!()
     }
 
-    fn get_x(&self) -> f64 {
-        unimplemented!()
+    fn get_x(&self) -> Scalar {
+        self.position[0]
     }
 
     fn set_x(&mut self, x: f64) {
-        unimplemented!()
+        self.position = Point::new(x, self.position.get_y());
     }
 
-    fn get_y(&self) -> f64 {
-        unimplemented!()
+    fn get_y(&self) -> Scalar {
+        self.position[1]
     }
 
     fn set_y(&mut self, y: f64) {
-        unimplemented!()
+        self.position = Point::new(self.position.get_x(), y);
     }
+
 
     fn get_size(&self) -> [f64; 2] {
         unimplemented!()
     }
 
     fn get_width(&self) -> f64 {
-        unimplemented!()
+        self.dimension[0]
     }
 
     fn get_height(&self) -> f64 {
-        unimplemented!()
+        self.dimension[1]
     }
 }
 
@@ -159,7 +190,7 @@ impl Image {
     pub fn old_new(image_id: image::Id) -> Self {
         Image {
             common: widget::CommonBuilder::default(),
-            image_id: image_id,
+            image_id,
             src_rect: None,
             style: Style::default(),
             position: [0.0, 0.0],
@@ -168,13 +199,13 @@ impl Image {
         }
     }
 
-    pub fn new(id: image::Id, position: Point, dimension: Dimensions, children: Vec<CWidget>) -> CWidget {
+    pub fn new(id: image::Id, dimension: Dimensions, children: Vec<CWidget>) -> CWidget {
         CWidget::Image(Image {
             common: Default::default(),
             image_id: id,
             src_rect: None,
             style: Default::default(),
-            position,
+            position: [0.0,0.0],
             dimension,
             children
         })

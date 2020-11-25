@@ -15,6 +15,8 @@ use render::util::new_primitive;
 use daggy::petgraph::graph::node_index;
 use widget::common_widget::CommonWidget;
 use uuid::Uuid;
+use widget::layout::Layout;
+use text::font::Map;
 
 
 /// A simple, non-interactive widget for drawing a single straight Line.
@@ -35,6 +37,20 @@ pub struct Line {
     dimension: Dimensions,
 
     pub children: Vec<CWidget>
+}
+
+impl Layout for Line {
+    fn flexibility(&self) -> u32 {
+        0
+    }
+
+    fn calculate_size(&mut self, requested_size: [f64; 2], fonts: &Map) -> [f64; 2] {
+        unimplemented!()
+    }
+
+    fn position_children(&mut self) {
+        unimplemented!()
+    }
 }
 
 impl Render for Line {

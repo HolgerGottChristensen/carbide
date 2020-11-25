@@ -10,6 +10,7 @@ use render::text::Text;
 use text;
 use position::Dimensions;
 use widget::common_widget::CommonWidget;
+use widget::layout::Layout;
 
 pub struct CPrimitives {
     primitives: Vec<Primitive>
@@ -17,12 +18,20 @@ pub struct CPrimitives {
 
 impl CPrimitives {
     pub fn new (window_dimensions: Dimensions, root: &mut CWidget, fonts: &text::font::Map) -> Self {
-        root.layout(window_dimensions, fonts, &|c: &mut CommonWidget, dimensions: Dimensions| {
+        root.calculate_size(window_dimensions, fonts);
+
+        root.set_x(window_dimensions[0]/2.0-root.get_width()/2.0);
+        root.set_y(window_dimensions[1]/2.0-root.get_height()/2.0);
+
+        root.position_children();
+
+
+        /*root.layout(window_dimensions, fonts, &|c: &mut CommonWidget, dimensions: Dimensions| {
             let new_x = window_dimensions[0]/2.0 - dimensions[0]/2.0;
             let new_y = window_dimensions[1]/2.0 - dimensions[1]/2.0;
             c.set_x(new_x);
             c.set_y(new_y);
-        });
+        });*/
         let mut prims: Vec<Primitive> = root.get_primitives(window_dimensions, fonts);
         CPrimitives {
             primitives: prims

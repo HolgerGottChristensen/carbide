@@ -29,7 +29,7 @@ use layout::CrossAxisAlignment;
 
 /// A basic, non-interactive rectangle shape widget.
 #[derive(Clone, Debug)]
-pub struct VStack {
+pub struct HStack {
     id: Uuid,
     children: Vec<CWidget>,
     position: Point,
@@ -37,9 +37,9 @@ pub struct VStack {
     spacing: Scalar
 }
 
-impl VStack {
+impl HStack {
     pub fn initialize(children: Vec<CWidget>) -> CWidget {
-        CWidget::VStack(VStack {
+        CWidget::HStack(HStack {
             id: Uuid::new_v4(),
             children,
             position: [0.0,0.0],
@@ -49,43 +49,38 @@ impl VStack {
     }
 }
 
-impl Layout for VStack {
+impl Layout for HStack {
     fn flexibility(&self) -> u32 {
         1
     }
 
     fn calculate_size(&mut self, requested_size: Dimensions, fonts: &Map) -> Dimensions {
         let mut number_of_children_that_needs_sizing = self.children.len() as f64;
-        let mut size_for_children = [requested_size[0], requested_size[1] - ((number_of_children_that_needs_sizing - 1.0)*self.spacing)];
+        let mut size_for_children = [requested_size[0] - ((number_of_children_that_needs_sizing - 1.0)*self.spacing), requested_size[1]];
 
         let mut children_flexibilty: Vec<(u32, &mut CWidget)> = self.children.iter_mut().map(|child| (child.flexibility(), child)).collect();
         children_flexibilty.sort_by(|(a,_), (b,_)| a.cmp(&b));
         children_flexibilty.reverse();
 
-        let mut max_width = 0.0;
-        let mut total_height = 0.0;
-        let mut min_chosen_width = 0.0;
+        let mut max_height = 0.0;
+        let mut total_width = 0.0;
 
         for (_, child) in children_flexibilty {
-            let size_for_child = [size_for_children[0], size_for_children[1] / number_of_children_that_needs_sizing];
+            let size_for_child = [size_for_children[0] / number_of_children_that_needs_sizing, size_for_children[1]];
             let chosen_size = child.calculate_size(size_for_child, fonts);
 
-            if chosen_size[0] > max_width {
-                max_width = chosen_size[0];
+            if (chosen_size[1] > max_height) {
+                max_height = chosen_size[1];
             }
 
-            if chosen_size[0] < min_chosen_width {
-                min_chosen_width = chosen_size[0];
-            }
-
-            size_for_children = [size_for_children[0], (size_for_children[1] - chosen_size[1]).max(0.0)];
+            size_for_children = [(size_for_children[0] - chosen_size[0]).max(0.0), size_for_children[1]];
 
             number_of_children_that_needs_sizing -= 1.0;
 
-            total_height += chosen_size[1];
+            total_width += chosen_size[0];
         }
 
-        self.dimension = [max_width, total_height + ((self.children.len() as f64 - 1.0) * self.spacing)];
+        self.dimension = [total_width + ((self.children.len() as f64 - 1.0) * self.spacing), max_height];
 
         self.dimension
 
@@ -94,22 +89,22 @@ impl Layout for VStack {
 
     fn position_children(&mut self) {
         let cross_axis_alignment = CrossAxisAlignment::Center;
-        let mut height_offset = 0.0;
+        let mut width_offset = 0.0;
         let position = self.position;
         let dimension = self.dimension;
         let spacing = self.spacing;
 
         for child in &mut self.children {
             match cross_axis_alignment {
-                CrossAxisAlignment::Start => {child.set_x(position[0])}
-                CrossAxisAlignment::Center => {child.set_x(position[0] + dimension[0]/2.0 - child.get_width()/2.0)}
-                CrossAxisAlignment::End => {child.set_x(position[0] + dimension[0] - child.get_width())}
+                CrossAxisAlignment::Start => {child.set_y(position[1])}
+                CrossAxisAlignment::Center => {child.set_y(position[1] + dimension[1]/2.0 - child.get_height()/2.0)}
+                CrossAxisAlignment::End => {child.set_y(position[1] + dimension[1] - child.get_height())}
             }
 
-            child.set_y(position[1]+height_offset);
+            child.set_x(position[0]+width_offset);
 
-            height_offset += spacing;
-            height_offset += child.get_height();
+            width_offset += spacing;
+            width_offset += child.get_width();
 
 
             child.position_children();
@@ -117,7 +112,7 @@ impl Layout for VStack {
     }
 }
 
-impl CommonWidget for VStack {
+impl CommonWidget for HStack {
     fn get_id(&self) -> Uuid {
         self.id
     }
@@ -158,7 +153,7 @@ impl CommonWidget for VStack {
     }
 }
 
-impl Render for VStack {
+impl Render for HStack {
     fn layout(&mut self, proposed_size: Dimensions, fonts: &text::font::Map, positioner: &dyn Fn(&mut CommonWidget, Dimensions)) {
         unimplemented!()
     }

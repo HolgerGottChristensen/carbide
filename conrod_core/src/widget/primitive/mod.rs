@@ -11,6 +11,12 @@ pub mod shape;
 pub mod text;
 pub mod widget;
 pub mod v_stack;
+pub mod frame;
+pub mod h_stack;
+pub mod z_stack;
+pub mod padding;
+pub mod spacer;
+pub mod edge_insets;
 
 use {Point, Range, Rect};
 pub use widget::primitive::widget::CWidget;

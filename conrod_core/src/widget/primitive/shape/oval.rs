@@ -8,7 +8,7 @@ use widget;
 use widget::triangles::Triangle;
 use widget::render::Render;
 use graph::Container;
-use widget::Id;
+use widget::{Id, Rectangle};
 use render::primitive::Primitive;
 use render::primitive_kind::PrimitiveKind;
 use render::util::new_primitive;
@@ -18,6 +18,10 @@ use daggy::petgraph::graph::node_index;
 use widget::common_widget::CommonWidget;
 use uuid::Uuid;
 use widget::primitive::CWidget;
+use widget::layout::Layout;
+use text::font::Map;
+use widget::envelope_editor::EnvelopePoint;
+use layout::basic_layouter::BasicLayouter;
 
 
 /// A simple, non-interactive widget for drawing a single **Oval**.
@@ -38,6 +42,33 @@ pub struct Oval<S> {
     pub children: Vec<CWidget>
 }
 
+impl<S> Layout for Oval<S> {
+    fn flexibility(&self) -> u32 {
+        0
+    }
+
+    fn calculate_size(&mut self, requested_size: Dimensions, fonts: &Map) -> Dimensions {
+        for child in &mut self.children {
+            child.calculate_size(requested_size, fonts);
+        }
+        self.dimension = requested_size;
+
+        requested_size
+
+    }
+
+    fn position_children(&mut self) {
+        let positioning = BasicLayouter::Center.position();
+        let position = self.position;
+        let dimension = self.dimension;
+
+        for child in &mut self.children {
+            positioning(position, dimension, child);
+            child.position_children();
+        }
+    }
+}
+
 impl<S> CommonWidget for Oval<S> {
     fn get_id(&self) -> Uuid {
         unimplemented!()
@@ -51,32 +82,32 @@ impl<S> CommonWidget for Oval<S> {
         unimplemented!()
     }
 
-    fn get_x(&self) -> f64 {
-        unimplemented!()
+    fn get_x(&self) -> Scalar {
+        self.position[0]
     }
 
     fn set_x(&mut self, x: f64) {
-        unimplemented!()
+        self.position = Point::new(x, self.position.get_y());
     }
 
-    fn get_y(&self) -> f64 {
-        unimplemented!()
+    fn get_y(&self) -> Scalar {
+        self.position[1]
     }
 
     fn set_y(&mut self, y: f64) {
-        unimplemented!()
+        self.position = Point::new(self.position.get_x(), y);
     }
 
     fn get_size(&self) -> [f64; 2] {
         unimplemented!()
     }
 
-    fn get_width(&self) -> f64 {
-        unimplemented!()
+    fn get_width(&self) -> Scalar {
+        self.dimension[0]
     }
 
-    fn get_height(&self) -> f64 {
-        unimplemented!()
+    fn get_height(&self) -> Scalar {
+        self.dimension[1]
     }
 }
 
@@ -106,6 +137,7 @@ impl Render for Oval<Full> {
         };
 
         let mut prims: Vec<Primitive> = vec![new_primitive(node_index(0), kind, Rect::new(self.position, self.dimension), Rect::new(self.position, self.dimension))];
+        prims.extend(Rectangle::rect_outline(Rect::new(self.position, self.dimension), 1.0));
         let children: Vec<Primitive> = self.get_children().iter().flat_map(|f| f.get_primitives(proposed_dimensions, fonts)).collect();
         prims.extend(children);
 
@@ -159,6 +191,18 @@ pub struct State<S> {
 pub const DEFAULT_RESOLUTION: usize = 50;
 
 impl Oval<Full> {
+
+    pub fn initialize(children: Vec<CWidget>) -> CWidget {
+        CWidget::Oval(Oval {
+                common: widget::CommonBuilder::default(),
+                style: Style::fill(),
+                resolution: 0,
+                section: Full,
+                position: [0.0, 0.0],
+                dimension: [100.0,100.0],
+                children
+        })
+    }
 
     pub fn new(position: Point, dimension: Dimensions, children: Vec<CWidget>) -> CWidget {
         CWidget::Oval(Oval {

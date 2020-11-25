@@ -3,6 +3,7 @@
 //! This module contains items related to the implementation of the `Widget` trait. It also
 //! re-exports all widgets (and their modules) that are provided by conrod.
 pub mod render;
+pub mod layout;
 
 use graph::{Container, UniqueWidgetState};
 use position::{Align, Depth, Dimension, Dimensions, Padding, Position, Point,
@@ -24,6 +25,10 @@ pub use self::primitive::shape::polygon::{self, Polygon};
 pub use self::primitive::shape::rectangle::{self, Rectangle};
 pub use self::primitive::shape::triangles::{self, Triangles};
 pub use self::primitive::text::{self, Text};
+pub use self::primitive::frame::Frame;
+pub use self::primitive::frame::SCALE;
+pub use self::primitive::h_stack::*;
+pub use self::primitive::z_stack::*;
 
 pub use self::bordered_rectangle::BorderedRectangle;
 pub use self::button::Button;
@@ -92,6 +97,7 @@ pub mod toggle;
 pub mod xy_pad;
 pub mod common_widget;
 pub mod complex;
+
 
 
 /// Arguments for the [**Widget::update**](./trait.Widget#method.update) method in a struct to

@@ -13,9 +13,12 @@ use conrod_core::{widget, Colorable, Positionable, Widget};
 use glium::Surface;
 use conrod_glium::Window;
 use conrod_core::widget::primitive::CWidget;
-use conrod_core::widget::{Rectangle, Oval, Line, Text, Image};
+use conrod_core::widget::{Rectangle, Oval, Line, Text, Image, Frame, ZStack, SCALE};
 use conrod_core::widget::oval::Full;
 use conrod_core::widget::primitive::v_stack::VStack;
+use conrod_core::widget::primitive::h_stack::HStack;
+use conrod_core::widget::primitive::edge_insets::EdgeInsets;
+use conrod_core::widget::primitive::spacer::Spacer;
 
 const WIDTH: u32 = 750/2;
 const HEIGHT: u32 = 1334/2;
@@ -79,10 +82,33 @@ fn main() {
             )
         ]
     ));*/
+    window.set_widgets(
+        VStack::initialize(vec![
+            Text::initialize("Hello".to_string(), vec![]),
+            Text::initialize("world! \nHvad sker der i denne verden og vil den laypute rigtigt når der er en lang tekst".to_string(), vec![]),
+            Image::new(rust_image, [100.0,100.0], vec![]),
+            Rectangle::initialize(vec![]),
+            HStack::initialize(vec![
+                Image::new(rust_image, [100.0,100.0], vec![]),
+                //ZStack::initialize(vec![
+                    Rectangle::initialize(vec![]).frame(SCALE, 120.0),
+                    //Image::new(rust_image, [100.0,100.0], vec![])
+               // ])
+            ]),
+            HStack::initialize(vec![
+                Spacer::new(),
+                Oval::initialize(vec![])
+                    .padding(EdgeInsets::all(10.0))
+                    .frame(150.0,150.0),
+                Spacer::new(),
+                Spacer::new()
+            ]),
 
-    //window.set_widgets(Rectangle::initialize([100.0,100.0], vec![]));
+        ])
+    );
+    //window.set_widgets(Rectangle::initialize(vec![Text::initialize("Hello world!".to_string(), vec![])]));
     //window.set_widgets(Text::initialize("Hello world! \nHvad sker der i denne verden og vil den laypute rigtigt når der er en lang tekst".to_string(), vec![]));
-    window.set_widgets(VStack::initialize([150.0,150.0], vec![Rectangle::initialize([100.0,100.0], vec![])]));
+    //window.set_widgets(VStack::initialize([150.0,150.0], vec![Rectangle::initialize([100.0,100.0], vec![])]));
 
     window.draw()
 }
