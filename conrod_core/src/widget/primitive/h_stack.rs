@@ -25,6 +25,8 @@ use std::any::Any;
 use widget::layout::Layout;
 use text::font::Map;
 use layout::CrossAxisAlignment;
+use event::event::Event;
+use event_handler::{WidgetEvent, MouseEvent, KeyboardEvent};
 
 
 /// A basic, non-interactive rectangle shape widget.
@@ -46,6 +48,28 @@ impl HStack {
             dimension: [100.0,100.0],
             spacing: 10.0
         })
+    }
+}
+
+impl Event for HStack {
+    fn handle_mouse_event(&mut self, event: &MouseEvent, consumed: &bool) {
+        unimplemented!()
+    }
+
+    fn handle_keyboard_event(&mut self, event: &KeyboardEvent) {
+        ()
+    }
+
+    fn handle_other_event(&mut self, event: &WidgetEvent) {
+        unimplemented!()
+    }
+
+    fn process_mouse_event(&mut self, event: &MouseEvent, consumed: &bool) {
+        self.process_mouse_event_default(event, consumed);
+    }
+
+    fn process_keyboard_event(&mut self, event: &KeyboardEvent) {
+        self.process_keyboard_event_default(event);
     }
 }
 
@@ -116,8 +140,13 @@ impl CommonWidget for HStack {
     fn get_id(&self) -> Uuid {
         self.id
     }
+
     fn get_children(&self) -> &Vec<CWidget> {
         &self.children
+    }
+
+    fn get_children_mut(&mut self) -> &mut Vec<CWidget> {
+        &mut self.children
     }
 
     fn get_position(&self) -> Point {

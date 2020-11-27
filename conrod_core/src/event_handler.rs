@@ -33,6 +33,16 @@ pub struct EventHandler {
     events: Vec<WidgetEvent>
 }
 
+impl EventHandler {
+    pub fn get_events(&self) -> &Vec<WidgetEvent> {
+        &self.events
+    }
+
+    pub fn clear_events(&mut self) {
+        self.events.clear()
+    }
+}
+
 #[derive(Clone, Debug)]
 pub enum WidgetEvent {
     Mouse(MouseEvent),
@@ -53,7 +63,7 @@ pub enum MouseEvent {
         modifiers: ModifierKey
     },
     DoubleClick(MouseButton, Point, ModifierKey),
-    Scroll {x: Scalar, y: Scalar, modifiers: ModifierKey},
+    Scroll {x: Scalar, y: Scalar, mouse_position: Point, modifiers: ModifierKey},
     Drag {
         button: MouseButton,
         origin: Point,
@@ -65,12 +75,26 @@ pub enum MouseEvent {
     },
 }
 
+impl MouseEvent {
+    pub fn get_current_mouse_position(&self) -> Point {
+        match self {
+            MouseEvent::Press(_, n, _) => {*n}
+            MouseEvent::Release(_, n, _) => {*n}
+            MouseEvent::Click(_, n, _) => {*n}
+            MouseEvent::Move {to, .. } => {*to}
+            MouseEvent::DoubleClick(_, n, _) => {*n}
+            MouseEvent::Scroll { mouse_position, .. } => {*mouse_position}
+            MouseEvent::Drag {to, .. } => {*to}
+        }
+    }
+}
+
 #[derive(Clone, Debug)]
 pub enum KeyboardEvent {
     Press(Key, ModifierKey),
     Release(Key, ModifierKey),
     Click(Key, ModifierKey),
-    Paste(String, ModifierKey), //This was originally called 'Text'
+    Text(String, ModifierKey),
 }
 
 #[derive(Clone, Debug)]
@@ -509,7 +533,7 @@ impl EventHandler {
 
                     // Some scrolling occurred (e.g. mouse scroll wheel).
                     Motion::Scroll { x, y } => {
-                        let event = MouseEvent::Scroll { x, y, modifiers };
+                        let event = MouseEvent::Scroll { x, y, mouse_position: mouse_xy, modifiers };
                         self.add_event(WidgetEvent::Mouse(event));
 
 
@@ -637,7 +661,7 @@ impl EventHandler {
             },
 
             Input::Text(string) => {
-                let event = KeyboardEvent::Paste(string, modifiers);
+                let event = KeyboardEvent::Text(string, modifiers);
                 self.add_event(WidgetEvent::Keyboard(event));
 
                 // Create a `Text` event.

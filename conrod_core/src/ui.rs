@@ -27,7 +27,8 @@ use event::click::Click;
 use event::text::Text;
 use event::drag::Drag;
 use event::double_click::DoubleClick;
-use event_handler::{EventHandler, WindowEvent};
+use event_handler::{EventHandler, WindowEvent, WidgetEvent, MouseEvent, KeyboardEvent};
+use event::event::Event;
 
 /// A constructor type for building a `Ui` instance with a set of optional parameters.
 pub struct UiBuilder {
@@ -388,21 +389,54 @@ impl Ui {
     }
 
     pub fn handle_event(&mut self, event: Input) {
-        match self.event_handler.handle_event(event, [self.win_w, self.win_h]) {
+        let window_event = self.event_handler.handle_event(event, [self.win_w, self.win_h]);
+
+        let mut needs_redraw = self.delegate_events();
+
+        match  window_event {
             None => (),
             Some(event) => {
                 match event {
                     WindowEvent::Resize(dimensions) => {
                         self.win_w = dimensions[0];
                         self.win_h = dimensions[1];
-                        self.needs_redraw();
+                        needs_redraw = true;
                     }
-                    WindowEvent::Focus => self.needs_redraw(),
+                    WindowEvent::Focus => needs_redraw = true,
                     WindowEvent::UnFocus => (),
-                    WindowEvent::Redraw => self.needs_redraw(),
+                    WindowEvent::Redraw => needs_redraw = true,
                 }
             }
         }
+
+        if needs_redraw {
+            self.needs_redraw()
+        }
+    }
+
+    fn delegate_events(&mut self) -> bool {
+        let events = self.event_handler.get_events();
+
+        for event in events {
+            match event {
+                WidgetEvent::Mouse(mouse_event) => {
+                    let consumed = false;
+                    self.widgets.process_mouse_event(mouse_event, &consumed);
+                }
+                WidgetEvent::Keyboard(keyboard_event) => {
+                    self.widgets.process_keyboard_event(keyboard_event);
+                }
+                WidgetEvent::Window(window_event) => {
+
+                }
+                WidgetEvent::Touch(_) => {}
+            }
+        }
+
+        self.event_handler.clear_events();
+
+        // Todo: Determine if an redraw is needed after events are processed
+        return true
     }
 
 

@@ -22,11 +22,14 @@ use widget::layout::Layout;
 use text::font::Map;
 use widget::envelope_editor::EnvelopePoint;
 use layout::basic_layouter::BasicLayouter;
+use event::event::Event;
+use event_handler::{WidgetEvent, MouseEvent, KeyboardEvent};
 
 
 /// A simple, non-interactive widget for drawing a single **Oval**.
 #[derive(Clone, Debug, WidgetCommon_)]
 pub struct Oval<S> {
+    pub id: Uuid,
     /// Data necessary and common for all widget builder render.
     #[conrod(common_builder)]
     pub common: widget::CommonBuilder,
@@ -40,6 +43,33 @@ pub struct Oval<S> {
     dimension: Dimensions,
 
     pub children: Vec<CWidget>
+}
+
+impl<S> Event for Oval<S> {
+    fn handle_mouse_event(&mut self, event: &MouseEvent, consumed: &bool) {
+        unimplemented!()
+    }
+
+    fn handle_keyboard_event(&mut self, event: &KeyboardEvent) {
+        match event {
+            KeyboardEvent::Text(s, _) => {
+                println!("The key was accepted: {} in widget: {:?}", s, self.get_id())
+            }
+            _ => ()
+        }
+    }
+
+    fn handle_other_event(&mut self, event: &WidgetEvent) {
+        unimplemented!()
+    }
+
+    fn process_mouse_event(&mut self, event: &MouseEvent, consumed: &bool) {
+        self.process_mouse_event_default(event, consumed);
+    }
+
+    fn process_keyboard_event(&mut self, event: &KeyboardEvent) {
+        self.process_keyboard_event_default(event);
+    }
 }
 
 impl<S> Layout for Oval<S> {
@@ -71,11 +101,15 @@ impl<S> Layout for Oval<S> {
 
 impl<S> CommonWidget for Oval<S> {
     fn get_id(&self) -> Uuid {
-        unimplemented!()
+        self.id
     }
 
     fn get_children(&self) -> &Vec<CWidget> {
         &self.children
+    }
+
+    fn get_children_mut(&mut self) -> &mut Vec<CWidget> {
+        &mut self.children
     }
 
     fn get_position(&self) -> [f64; 2] {
@@ -194,19 +228,20 @@ impl Oval<Full> {
 
     pub fn initialize(children: Vec<CWidget>) -> CWidget {
         CWidget::Oval(Oval {
-                common: widget::CommonBuilder::default(),
-                style: Style::fill(),
-                resolution: 0,
-                section: Full,
-                position: [0.0, 0.0],
-                dimension: [100.0,100.0],
-                children
+            id: Uuid::new_v4(),
+            common: widget::CommonBuilder::default(),
+            style: Style::fill(),
+            resolution: 0,
+            section: Full,
+            position: [0.0, 0.0],
+            dimension: [100.0,100.0],
+            children
         })
     }
 
     pub fn new(position: Point, dimension: Dimensions, children: Vec<CWidget>) -> CWidget {
         CWidget::Oval(Oval {
-            //id: Uuid::new_v4(),
+            id: Uuid::new_v4(),
             children,
             position,
             dimension,
@@ -220,6 +255,7 @@ impl Oval<Full> {
     /// Build an **Oval** with the given dimensions and style.
     pub fn styled(dim: Dimensions, style: Style) -> Self {
         Oval {
+            id: Uuid::new_v4(),
             common: widget::CommonBuilder::default(),
             style: style,
             resolution: DEFAULT_RESOLUTION,
@@ -266,7 +302,7 @@ impl<S> Oval<S> {
     pub fn section(self, radians: Scalar) -> Oval<Section> {
         let Oval { common, style, resolution, .. } = self;
         let section = Section { radians, offset_radians: 0.0 };
-        Oval { common, style, resolution, section, position: [10.0, 10.0], dimension: [10.0,10.0], children: vec![] }
+        Oval { id: Uuid::new_v4(), common, style, resolution, section, position: [10.0, 10.0], dimension: [10.0,10.0], children: vec![] }
     }
 }
 
@@ -353,11 +389,11 @@ impl Circumference {
         let (x, y, w, h) = rect.x_y_w_h();
         Circumference {
             index: 0,
-            num_points: num_points,
+            num_points,
             point: [x, y],
             half_w: w * 0.5,
             half_h: h * 0.5,
-            rad_step: rad_step,
+            rad_step,
             rad_offset: 0.0,
         }
     }

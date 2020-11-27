@@ -22,6 +22,8 @@ use widget::envelope_editor::EnvelopePoint;
 use widget::layout::Layout;
 use text::font::Map;
 use layout::basic_layouter::BasicLayouter;
+use event::event::Event;
+use event_handler::{WidgetEvent, MouseEvent, KeyboardEvent};
 
 
 /// Displays some given text centered within a rectangular area.
@@ -44,6 +46,36 @@ pub struct Text {
     wrap_mode: Wrap,
 
     pub children: Vec<CWidget>,
+}
+
+impl Event for Text {
+    fn handle_mouse_event(&mut self, event: &MouseEvent, consumed: &bool) {
+        unimplemented!()
+    }
+
+    fn handle_keyboard_event(&mut self, event: &KeyboardEvent) {
+        match event {
+            KeyboardEvent::Text(s, _) => {
+                if self.text.len() < 10 {
+                    self.text = s.clone();
+                }
+
+            }
+            _ => ()
+        }
+    }
+
+    fn handle_other_event(&mut self, event: &WidgetEvent) {
+        unimplemented!()
+    }
+
+    fn process_mouse_event(&mut self, event: &MouseEvent, consumed: &bool) {
+        self.process_mouse_event_default(event, consumed);
+    }
+
+    fn process_keyboard_event(&mut self, event: &KeyboardEvent) {
+        self.process_keyboard_event_default(event);
+    }
 }
 
 impl Layout for Text {
@@ -174,6 +206,10 @@ impl CommonWidget for Text {
 
     fn get_children(&self) -> &Vec<CWidget> {
         &self.children
+    }
+
+    fn get_children_mut(&mut self) -> &mut Vec<CWidget> {
+        &mut self.children
     }
 
     fn get_position(&self) -> Dimensions {

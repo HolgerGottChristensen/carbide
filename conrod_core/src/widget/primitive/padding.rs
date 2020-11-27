@@ -14,6 +14,8 @@ use render::primitive::Primitive;
 use widget::{Id, Rectangle};
 use std::ops::Neg;
 use widget::primitive::edge_insets::EdgeInsets;
+use event::event::Event;
+use event_handler::{WidgetEvent, MouseEvent, KeyboardEvent};
 
 pub static SCALE: f64 = -1.0;
 
@@ -39,12 +41,41 @@ impl Padding {
     }
 }
 
+impl Event for Padding {
+    fn handle_mouse_event(&mut self, event: &MouseEvent, consumed: &bool) {
+        unimplemented!()
+    }
+
+    fn handle_keyboard_event(&mut self, event: &KeyboardEvent) {
+        ()
+    }
+
+    fn handle_other_event(&mut self, event: &WidgetEvent) {
+        unimplemented!()
+    }
+
+    fn process_mouse_event(&mut self, event: &MouseEvent, consumed: &bool) {
+        if self.child.is_inside(event.get_current_mouse_position()) {
+            //Then we delegate the event to its children
+            self.child.process_mouse_event(event, &consumed);
+        }
+    }
+
+    fn process_keyboard_event(&mut self, event: &KeyboardEvent) {
+        self.child.process_keyboard_event(event);
+    }
+}
+
 impl CommonWidget for Padding {
     fn get_id(&self) -> Uuid {
         self.id
     }
 
     fn get_children(&self) -> &Vec<CWidget> {
+        unimplemented!()
+    }
+
+    fn get_children_mut(&mut self) -> &mut Vec<CWidget> {
         unimplemented!()
     }
 

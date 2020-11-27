@@ -22,6 +22,8 @@ use widget::primitive::z_stack::ZStack;
 use widget::primitive::spacer::Spacer;
 use widget::primitive::edge_insets::EdgeInsets;
 use widget::primitive::padding::Padding;
+use event::event::Event;
+use event_handler::{WidgetEvent, MouseEvent, KeyboardEvent};
 
 #[derive(Clone, Debug)]
 pub enum CWidget {
@@ -46,6 +48,54 @@ impl CWidget {
 
     pub fn padding(self, edge_insets: EdgeInsets) -> Self {
         Padding::init(edge_insets, self)
+    }
+}
+
+impl Event for CWidget {
+    fn handle_mouse_event(&mut self, event: &MouseEvent, consumed: &bool) {
+        ()
+    }
+
+    fn handle_keyboard_event(&mut self, event: &KeyboardEvent) {
+        match self {
+            CWidget::Rectangle(n) => {n.handle_keyboard_event(event)}
+            CWidget::Line(n) => {n.handle_keyboard_event(event)}
+            CWidget::Oval(n) => {n.handle_keyboard_event(event)}
+            CWidget::Text(n) => {n.handle_keyboard_event(event)}
+            CWidget::Image(n) => {n.handle_keyboard_event(event)}
+            CWidget::VStack(n) => {n.handle_keyboard_event(event)}
+            CWidget::HStack(n) => {n.handle_keyboard_event(event)}
+            CWidget::ZStack(n) => {n.handle_keyboard_event(event)}
+            CWidget::Spacer(n) => {n.handle_keyboard_event(event)}
+            CWidget::Padding(n) => {n.handle_keyboard_event(event)}
+            CWidget::Complex => {()}
+            CWidget::Frame(n) => {n.handle_keyboard_event(event)}
+        }
+    }
+
+    fn handle_other_event(&mut self, event: &WidgetEvent) {
+        ()
+    }
+
+    fn process_mouse_event(&mut self, event: &MouseEvent, consumed: &bool) {
+        unimplemented!()
+    }
+
+    fn process_keyboard_event(&mut self, event: &KeyboardEvent) {
+        match self {
+            CWidget::Rectangle(n) => {n.process_keyboard_event(event)}
+            CWidget::Line(n) => {n.process_keyboard_event(event)}
+            CWidget::Oval(n) => {n.process_keyboard_event(event)}
+            CWidget::Text(n) => {n.process_keyboard_event(event)}
+            CWidget::Image(n) => {n.process_keyboard_event(event)}
+            CWidget::VStack(n) => {n.process_keyboard_event(event)}
+            CWidget::HStack(n) => {n.process_keyboard_event(event)}
+            CWidget::ZStack(n) => {n.process_keyboard_event(event)}
+            CWidget::Spacer(n) => {n.process_keyboard_event(event)}
+            CWidget::Padding(n) => {n.process_keyboard_event(event)}
+            CWidget::Complex => {()}
+            CWidget::Frame(n) => {n.process_keyboard_event(event)}
+        }
     }
 }
 
@@ -109,6 +159,23 @@ impl CommonWidget for CWidget {
 
     fn get_children(&self) -> &Vec<CWidget> {
         unimplemented!()
+    }
+
+    fn get_children_mut(&mut self) -> &mut Vec<CWidget> {
+        match self {
+            CWidget::Rectangle(n) => {n.get_children_mut()},
+            CWidget::Line(n) => {n.get_children_mut()},
+            CWidget::Oval(n) => {n.get_children_mut()},
+            CWidget::Text(n) => {n.get_children_mut()},
+            CWidget::Image(n) => {n.get_children_mut()},
+            CWidget::VStack(n) => {n.get_children_mut()},
+            CWidget::HStack(n) => {n.get_children_mut()},
+            CWidget::ZStack(n) => {n.get_children_mut()},
+            CWidget::Frame(n) => {n.get_children_mut()},
+            CWidget::Padding(n) => {n.get_children_mut()},
+            CWidget::Spacer(n) => {n.get_children_mut()},
+            CWidget::Complex => {unimplemented!()},
+        }
     }
 
     fn get_position(&self) -> Dimensions {

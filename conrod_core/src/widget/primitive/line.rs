@@ -17,6 +17,8 @@ use widget::common_widget::CommonWidget;
 use uuid::Uuid;
 use widget::layout::Layout;
 use text::font::Map;
+use event::event::Event;
+use event_handler::{WidgetEvent, MouseEvent, KeyboardEvent};
 
 
 /// A simple, non-interactive widget for drawing a single straight Line.
@@ -37,6 +39,28 @@ pub struct Line {
     dimension: Dimensions,
 
     pub children: Vec<CWidget>
+}
+
+impl Event for Line {
+    fn handle_mouse_event(&mut self, event: &MouseEvent, consumed: &bool) {
+        unimplemented!()
+    }
+
+    fn handle_keyboard_event(&mut self, event: &KeyboardEvent) {
+        ()
+    }
+
+    fn handle_other_event(&mut self, event: &WidgetEvent) {
+        unimplemented!()
+    }
+
+    fn process_mouse_event(&mut self, event: &MouseEvent, consumed: &bool) {
+        self.process_mouse_event_default(event, consumed);
+    }
+
+    fn process_keyboard_event(&mut self, event: &KeyboardEvent) {
+        self.process_keyboard_event_default(event);
+    }
 }
 
 impl Layout for Line {
@@ -105,6 +129,10 @@ impl CommonWidget for Line {
 
     fn get_children(&self) -> &Vec<CWidget> {
         &self.children
+    }
+
+    fn get_children_mut(&mut self) -> &mut Vec<CWidget> {
+        &mut self.children
     }
 
     fn get_position(&self) -> [f64; 2] {

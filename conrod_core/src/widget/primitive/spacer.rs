@@ -29,6 +29,8 @@ use std::any::Any;
 use widget::layout::Layout;
 use text::font::Map;
 use layout::basic_layouter::BasicLayouter;
+use event::event::Event;
+use event_handler::{WidgetEvent, MouseEvent, KeyboardEvent};
 
 
 /// A basic, non-interactive rectangle shape widget.
@@ -39,6 +41,8 @@ pub struct Spacer {
     dimension: Dimensions
 }
 
+
+
 impl Spacer {
     pub fn new() -> CWidget {
         CWidget::Spacer(Spacer {
@@ -46,6 +50,28 @@ impl Spacer {
             position: [0.0,0.0],
             dimension: [100.0,100.0]
         })
+    }
+}
+
+impl Event for Spacer {
+    fn handle_mouse_event(&mut self, event: &MouseEvent, consumed: &bool) {
+        unimplemented!()
+    }
+
+    fn handle_keyboard_event(&mut self, event: &KeyboardEvent) {
+        unimplemented!()
+    }
+
+    fn handle_other_event(&mut self, event: &WidgetEvent) {
+        unimplemented!()
+    }
+
+    fn process_mouse_event(&mut self, event: &MouseEvent, consumed: &bool) {
+        ()
+    }
+
+    fn process_keyboard_event(&mut self, event: &KeyboardEvent) {
+        ()
     }
 }
 
@@ -68,7 +94,12 @@ impl CommonWidget for Spacer {
     fn get_id(&self) -> Uuid {
         self.id
     }
+
     fn get_children(&self) -> &Vec<CWidget> {
+        unimplemented!()
+    }
+
+    fn get_children_mut(&mut self) -> &mut Vec<CWidget> {
         unimplemented!()
     }
 

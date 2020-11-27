@@ -19,6 +19,8 @@ use widget::layout::Layout;
 use widget::envelope_editor::EnvelopePoint;
 use Scalar;
 use layout::basic_layouter::BasicLayouter;
+use event::event::Event;
+use event_handler::{WidgetEvent, MouseEvent, KeyboardEvent};
 
 
 /// A primitive and basic widget for drawing an `Image`.
@@ -37,6 +39,28 @@ pub struct Image {
     dimension: Dimensions,
 
     pub children: Vec<CWidget>,
+}
+
+impl Event for Image {
+    fn handle_mouse_event(&mut self, event: &MouseEvent, consumed: &bool) {
+        unimplemented!()
+    }
+
+    fn handle_keyboard_event(&mut self, event: &KeyboardEvent) {
+        ()
+    }
+
+    fn handle_other_event(&mut self, event: &WidgetEvent) {
+        unimplemented!()
+    }
+
+    fn process_mouse_event(&mut self, event: &MouseEvent, consumed: &bool) {
+        self.process_mouse_event_default(event, consumed);
+    }
+
+    fn process_keyboard_event(&mut self, event: &KeyboardEvent) {
+        self.process_keyboard_event_default(event);
+    }
 }
 
 impl Layout for Image {
@@ -105,6 +129,10 @@ impl CommonWidget for Image {
 
     fn get_children(&self) -> &Vec<CWidget> {
         &self.children
+    }
+
+    fn get_children_mut(&mut self) -> &mut Vec<CWidget> {
+        &mut self.children
     }
 
     fn get_position(&self) -> Dimensions {
