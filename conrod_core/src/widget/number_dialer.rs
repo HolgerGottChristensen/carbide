@@ -371,7 +371,7 @@ impl<'a, T> OldWidget for NumberDialer<'a, T>
             };
 
             if let Some(slot_color) = maybe_slot_color {
-                widget::Rectangle::fill([slot_w, slot_h])
+                widget::Rectangle::fill_old([slot_w, slot_h])
                     .x_y_relative_to(id, rel_slot_x, 0.0)
                     .graphics_for(id)
                     .color(slot_color)

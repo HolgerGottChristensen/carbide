@@ -554,7 +554,7 @@ impl ItemSize for Fixed {
         // By using one long `Rectangle` widget to trigger the scrolling, this allows us to only
         // instantiate the visible items.
         {
-            let scroll_trigger = widget::Rectangle::fill([0.0, 0.0]);
+            let scroll_trigger = widget::Rectangle::fill_old([0.0, 0.0]);
             let scroll_trigger = D::position_scroll_trigger(scroll_trigger, id);
             let scroll_trigger = D::size_breadth(scroll_trigger, list_breadth);
             let scroll_trigger = D::size_length(scroll_trigger, total_item_length);

@@ -269,7 +269,7 @@ impl<'a> OldWidget for DirectoryView<'a> {
             .unwrap_or_else(|| color.plain_contrast());
 
         // Color the background of the directory view.
-        widget::Rectangle::fill(rect.dim())
+        widget::Rectangle::fill_old(rect.dim())
             .color(unselected_rect_color)
             .xy(rect.xy())
             .parent(id)

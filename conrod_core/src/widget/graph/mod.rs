@@ -896,7 +896,7 @@ where
         }
 
         let background_color = style.background_color(&ui.theme);
-        widget::Rectangle::fill(rect.dim())
+        widget::Rectangle::fill_old(rect.dim())
             .xy(rect.xy())
             .color(background_color)
             .parent(id)

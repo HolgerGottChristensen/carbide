@@ -971,7 +971,7 @@ impl<'a> OldWidget for TextEdit<'a> {
             let selected_rect_color = color.highlighted().alpha(0.25);
             let iter = state.ids.selected_rectangles.iter().zip(&selected_rects);
             for (&selected_rectangle_id, selected_rect) in iter {
-                widget::Rectangle::fill(selected_rect.dim())
+                widget::Rectangle::fill_old(selected_rect.dim())
                     .xy(selected_rect.xy())
                     .color(selected_rect_color)
                     .graphics_for(id)

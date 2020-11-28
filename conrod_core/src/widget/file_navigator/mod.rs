@@ -232,7 +232,7 @@ impl<'a> OldWidget for FileNavigator<'a> {
         let text_color = style.text_color(&ui.theme)
             .unwrap_or_else(|| color.plain_contrast());
 
-        widget::Rectangle::fill(rect.dim())
+        widget::Rectangle::fill_old(rect.dim())
             .xy(rect.xy())
             .color(color::TRANSPARENT)
             .parent(id)
@@ -410,7 +410,7 @@ impl<'a> OldWidget for FileNavigator<'a> {
                 },
                 None => resize_color.alpha(0.2),
             };
-            widget::Rectangle::fill([resize_handle_width, rect.h()])
+            widget::Rectangle::fill_old([resize_handle_width, rect.h()])
                 .color(resize_color)
                 .right(0.0)
                 .parent(state.ids.scrollable_canvas)

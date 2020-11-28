@@ -25,7 +25,7 @@ impl Circle {
 
     /// Build a new **Fill**ed circular **Oval**.
     pub fn fill(radius: Scalar) -> Oval<Full> {
-        Oval::fill(rad_to_dim(radius))
+        Oval::fill_old(rad_to_dim(radius))
     }
 
     /// Build a new circular **Oval** **Fill**ed with the given color.

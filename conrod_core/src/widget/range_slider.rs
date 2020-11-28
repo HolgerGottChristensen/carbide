@@ -337,7 +337,7 @@ where
                 .unwrap_or(color);
 
         let border_color = interaction_color(&ui, style.border_color(ui.theme()));
-        widget::Rectangle::fill(rect.dim())
+        widget::Rectangle::fill_old(rect.dim())
             .middle_of(id)
             .graphics_for(id)
             .color(border_color)
@@ -358,7 +358,7 @@ where
         let slider_rect = Rect { x: Range::new(start_x, end_x), y: inner_rect.y };
         let color = interaction_color(&ui, style.color(ui.theme()));
         let slider_xy_offset = [slider_rect.x() - rect.x(), slider_rect.y() - rect.y()];
-        widget::Rectangle::fill(slider_rect.dim())
+        widget::Rectangle::fill_old(slider_rect.dim())
             .xy_relative_to(id, slider_xy_offset)
             .graphics_for(id)
             .parent(id)

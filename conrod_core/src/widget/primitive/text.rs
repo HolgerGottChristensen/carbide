@@ -25,6 +25,7 @@ use layout::basic_layouter::BasicLayouter;
 use event::event::Event;
 use event_handler::{WidgetEvent, MouseEvent, KeyboardEvent};
 use widget::primitive::widget::WidgetExt;
+use color::WHITE;
 
 
 /// Displays some given text centered within a rectangular area.
@@ -45,6 +46,7 @@ pub struct Text {
     position: Point,
     dimension: Dimensions,
     wrap_mode: Wrap,
+    color: Color,
 
     pub children: Vec<Box<dyn Widget>>,
 }
@@ -186,7 +188,7 @@ impl Render for Text {
         };
 
         let kind = PrimitiveKind::Text {
-            color: Color::random(),
+            color: self.color,
             text,
             font_id,
         };
@@ -314,6 +316,7 @@ impl Text {
             position: [0.0,0.0],
             dimension: [100.0,100.0],
             wrap_mode: Wrap::Whitespace,
+            color: WHITE,
             children
         })
     }
@@ -327,6 +330,7 @@ impl Text {
             position,
             dimension,
             wrap_mode: Wrap::Whitespace,
+            color: WHITE,
             children
         })
     }

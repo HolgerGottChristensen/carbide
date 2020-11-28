@@ -111,7 +111,7 @@ fn set_ui(ref mut ui: conrod_core::UiCell, ids: &Ids) {
     let points = once(left).chain(once(top)).chain(once(right));
     PointPath::centred(points).down(80.0).set(ids.point_path, ui);
 
-    Rectangle::fill([80.0, 80.0]).down(80.0).set(ids.rectangle_fill, ui);
+    Rectangle::fill_old([80.0, 80.0]).down(80.0).set(ids.rectangle_fill, ui);
 
     Rectangle::outline([80.0, 80.0]).down(80.0).set(ids.rectangle_outline, ui);
 
@@ -122,7 +122,7 @@ fn set_ui(ref mut ui: conrod_core::UiCell, ids: &Ids) {
     let points = once(bl).chain(once(tl)).chain(once(tr)).chain(once(br));
     Polygon::centred_fill(points).right_from(ids.line, 80.0).set(ids.trapezoid, ui);
 
-    Oval::fill([40.0, 80.0]).down(80.0).align_middle_x().set(ids.oval_fill, ui);
+    Oval::fill_old([40.0, 80.0]).down(80.0).align_middle_x().set(ids.oval_fill, ui);
 
     Oval::outline([80.0, 40.0]).down(100.0).align_middle_x().set(ids.oval_outline, ui);
 

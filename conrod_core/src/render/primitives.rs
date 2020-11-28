@@ -170,7 +170,7 @@ impl<'a> Primitives<'a> {
                     match *style {
 
                         ShapeStyle::Fill(_) => {
-                            let r = Oval::fill(Dimensions::new(10.0, 10.0));
+                            let r = Oval::fill_old(Dimensions::new(10.0, 10.0));
                             return r.render(id, clip, container);
                         },
 

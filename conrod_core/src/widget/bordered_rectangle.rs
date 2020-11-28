@@ -97,7 +97,7 @@ impl OldWidget for BorderedRectangle {
         }
 
         let color = style.color(&ui.theme);
-        widget::Rectangle::fill(rect.pad(border).dim())
+        widget::Rectangle::fill_old(rect.pad(border).dim())
             .xy(rect.xy())
             .color(color)
             .parent(id)

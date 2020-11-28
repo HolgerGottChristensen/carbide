@@ -195,7 +195,7 @@ pub fn gui(ui: &mut conrod_core::UiCell, ids: &Ids, app: &mut DemoApp) {
         .right(SHAPE_GAP)
         .set(ids.point_path, ui);
 
-    widget::Rectangle::fill([80.0, 80.0])
+    widget::Rectangle::fill_old([80.0, 80.0])
         .right(SHAPE_GAP)
         .set(ids.rectangle_fill, ui);
 
@@ -212,7 +212,7 @@ pub fn gui(ui: &mut conrod_core::UiCell, ids: &Ids, app: &mut DemoApp) {
         .mid_left_of(ids.shapes_right_col)
         .set(ids.trapezoid, ui);
 
-    widget::Oval::fill([40.0, 80.0])
+    widget::Oval::fill_old([40.0, 80.0])
         .right(SHAPE_GAP + 20.0)
         .align_middle_y()
         .set(ids.oval_fill, ui);

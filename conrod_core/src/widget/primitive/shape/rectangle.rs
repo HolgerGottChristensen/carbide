@@ -9,7 +9,7 @@ use widget::triangles::Triangle;
 use widget::render::Render;
 use graph::Container;
 use widget::Id;
-use color::rgb;
+use color::{rgb, YELLOW, PURPLE};
 use render::primitive::Primitive;
 use render::primitive_kind::PrimitiveKind;
 use render::util::new_primitive;
@@ -33,6 +33,7 @@ use layout::basic_layouter::BasicLayouter;
 use event::event::Event;
 use event_handler::{WidgetEvent, MouseEvent, KeyboardEvent};
 use widget::primitive::widget::WidgetExt;
+use input::Key;
 
 
 /// A basic, non-interactive rectangle shape widget.
@@ -47,6 +48,7 @@ pub struct Rectangle {
     pub common: widget::CommonBuilder,
     /// Unique styling for the **Rectangle**.
     pub style: Style,
+    color: Color
 }
 
 impl WidgetExt for Rectangle {}
@@ -57,7 +59,20 @@ impl Event for Rectangle {
     }
 
     fn handle_keyboard_event(&mut self, event: &KeyboardEvent) {
-        ()
+        match event {
+            KeyboardEvent::Click(key, ..) => {
+                match key {
+                    Key::A => {
+                        self.color = YELLOW
+                    }
+                    Key::S => {
+                        self.color = PURPLE
+                    }
+                    _ => ()
+                }
+            }
+            _ => ()
+        }
     }
 
     fn handle_other_event(&mut self, event: &WidgetEvent) {
@@ -159,7 +174,7 @@ impl Render for Rectangle {
         let mut prims = vec![
             Primitive {
                 id: node_index(0),
-                kind: PrimitiveKind::Rectangle { color: Color::random()},
+                kind: PrimitiveKind::Rectangle { color: self.color},
                 scizzor: Rect::new(self.position, self.dimension),
                 rect: Rect::new(self.position, self.dimension)
             }
@@ -189,6 +204,11 @@ pub enum Kind {
 
 
 impl Rectangle {
+
+    pub fn fill(mut self, color: Color) -> Box<Self> {
+        self.color = color;
+        Box::new(self)
+    }
 
     pub fn rect_outline(rect: Rect, width: Scalar) -> Vec<Primitive> {
         let (l, r, b, t) = rect.l_r_b_t();
@@ -235,12 +255,13 @@ impl Rectangle {
             position: [1.0, 1.0],
             dimension: [1.0, 1.0],
             common: widget::CommonBuilder::default(),
-            style: style,
+            style,
+            color: Color::random()
         }.wh(dim)
     }
 
     /// Build a new filled rectangle.
-    pub fn fill(dim: Dimensions) -> Self {
+    pub fn fill_old(dim: Dimensions) -> Self {
         Rectangle::styled(dim, Style::fill())
     }
 
@@ -266,7 +287,8 @@ impl Rectangle {
             position: [0.0,0.0],
             dimension: [100.0,100.0],
             common: widget::CommonBuilder::default(),
-            style: Style::fill()
+            style: Style::fill(),
+            color: Color::random()
         })
     }
 
@@ -277,7 +299,8 @@ impl Rectangle {
             position,
             dimension,
             common: widget::CommonBuilder::default(),
-            style: Style::fill()
+            style: Style::fill(),
+            color: Color::random()
         })
     }
 }

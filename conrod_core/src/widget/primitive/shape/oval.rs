@@ -42,6 +42,7 @@ pub struct Oval<S> {
     pub section: S,
     position: Point,
     dimension: Dimensions,
+    color: Color,
 
     pub children: Vec<Box<dyn Widget>>
 }
@@ -169,7 +170,7 @@ impl<S> Render for Oval<S> {
         let mut triangles: Vec<Triangle<Point>> = Vec::new();
         triangles.extend(points.triangles());
         let kind = PrimitiveKind::TrianglesSingleColor {
-            color: Color::random().to_rgb(),
+            color: self.color.to_rgb(),
             triangles,
         };
 
@@ -229,6 +230,11 @@ pub const DEFAULT_RESOLUTION: usize = 50;
 
 impl Oval<Full> {
 
+    pub fn fill(mut self, color: Color) -> Box<Self> {
+        self.color = color;
+        Box::new(self)
+    }
+
     pub fn initialize(children: Vec<Box<dyn Widget>>) -> Box<Oval<Full>> {
         Box::new(Oval {
             id: Uuid::new_v4(),
@@ -238,6 +244,7 @@ impl Oval<Full> {
             section: Full,
             position: [0.0, 0.0],
             dimension: [100.0,100.0],
+            color: Color::random(),
             children
         })
     }
@@ -251,7 +258,8 @@ impl Oval<Full> {
             common: widget::CommonBuilder::default(),
             style: Style::fill(),
             resolution: 0,
-            section: Full
+            section: Full,
+            color: Color::random()
         })
     }
 
@@ -265,12 +273,13 @@ impl Oval<Full> {
             section: Full,
             position: [0.0,0.0],
             dimension: [0.0,0.0],
+            color: Color::random(),
             children: vec![]
         }.wh(dim)
     }
 
     /// Build a new **Fill**ed **Oval**.
-    pub fn fill(dim: Dimensions) -> Self {
+    pub fn fill_old(dim: Dimensions) -> Self {
         Oval::styled(dim, Style::fill())
     }
 
@@ -305,7 +314,7 @@ impl<S> Oval<S> {
     pub fn section(self, radians: Scalar) -> Oval<Section> {
         let Oval { common, style, resolution, .. } = self;
         let section = Section { radians, offset_radians: 0.0 };
-        Oval { id: Uuid::new_v4(), common, style, resolution, section, position: [10.0, 10.0], dimension: [10.0,10.0], children: vec![] }
+        Oval { id: Uuid::new_v4(), common, style, resolution, section, position: [10.0, 10.0], dimension: [10.0,10.0], color: Color::random(), children: vec![] }
     }
 }
 
