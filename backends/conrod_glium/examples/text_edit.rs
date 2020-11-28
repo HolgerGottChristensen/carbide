@@ -106,7 +106,7 @@ fn main() {
 
 // Declare the `WidgetId`s and instantiate the widgets.
 fn set_ui(ref mut ui: conrod_core::UiCell, ids: &Ids, demo_text: &mut String) {
-    use conrod_core::{color, widget, Colorable, Positionable, Sizeable, Widget};
+    use conrod_core::{color, widget, Colorable, Positionable, Sizeable, OldWidget};
 
     widget::Canvas::new()
         .scroll_kids_vertically()

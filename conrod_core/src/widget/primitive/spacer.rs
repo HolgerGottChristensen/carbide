@@ -2,7 +2,7 @@
 //!
 //! Due to the frequency of its use in GUIs, the `Rectangle` gets its own widget to allow backends
 //! to specialise their rendering implementations.
-use {Color, Colorable, Point, Rect, Sizeable, Widget};
+use {Color, Colorable, Point, Rect, Sizeable, OldWidget};
 use ::{widget, Scalar};
 use widget::triangles::Triangle;
 use widget::render::Render;
@@ -14,7 +14,7 @@ use render::primitive_kind::PrimitiveKind;
 use render::util::new_primitive;
 use widget::common_widget::CommonWidget;
 use uuid::Uuid;
-use widget::primitive::CWidget;
+use widget::primitive::Widget;
 use position::Dimensions;
 use daggy::petgraph::graph::node_index;
 use ::{Range, text};
@@ -44,8 +44,8 @@ pub struct Spacer {
 
 
 impl Spacer {
-    pub fn new() -> CWidget {
-        CWidget::Spacer(Spacer {
+    pub fn new() -> Box<Self> {
+        Box::new(Spacer {
             id: Uuid::new_v4(),
             position: [0.0,0.0],
             dimension: [100.0,100.0]
@@ -95,11 +95,11 @@ impl CommonWidget for Spacer {
         self.id
     }
 
-    fn get_children(&self) -> &Vec<CWidget> {
+    fn get_children(&self) -> &Vec<Box<dyn Widget>> {
         unimplemented!()
     }
 
-    fn get_children_mut(&mut self) -> &mut Vec<CWidget> {
+    fn get_children_mut(&mut self) -> &mut Vec<Box<dyn Widget>> {
         unimplemented!()
     }
 

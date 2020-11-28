@@ -336,7 +336,7 @@ fn gui(
     list_items: &[String],
     list_selected: &mut HashSet<usize>,
 ) {
-    use conrod_core::{widget, Borderable, Colorable, Labelable, Positionable, Sizeable, Widget};
+    use conrod_core::{widget, Borderable, Colorable, Labelable, Positionable, Sizeable, OldWidget};
 
     widget::Canvas::new()
         .color(conrod_core::color::BLUE)

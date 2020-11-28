@@ -1,6 +1,6 @@
 //! A widget for viewing and controlling graph structures.
 
-use {color, widget, Color, Colorable, Point, Positionable, Scalar, Widget, Ui, UiCell};
+use {color, widget, Color, Colorable, Point, Positionable, Scalar, OldWidget, Ui, UiCell};
 use std::any::{Any, TypeId};
 use std::cell::Cell;
 use std::collections::{HashMap, VecDeque};
@@ -596,7 +596,7 @@ where
 impl<'a, NI, W> NodeWidget<'a, NI, W>
 where
     NI: NodeId,
-    W: 'static + Widget,
+    W: 'static + OldWidget,
 {
     /// Retrieve the `widget::Id` that will be used to instantiate this node's widget.
     pub fn widget_id(&self, ui: &mut UiCell) -> widget::Id {
@@ -725,7 +725,7 @@ where
 impl<'a, NI, W> EdgeWidget<'a, NI, W>
 where
     NI: NodeId,
-    W: 'static + Widget,
+    W: 'static + OldWidget,
 {
     /// Retrieve the `widget::Id` that will be used to instantiate this edge's widget.
     pub fn widget_id(&self, ui: &mut UiCell) -> widget::Id {
@@ -789,7 +789,7 @@ where
     }
 }
 
-impl<'a, N, E> Widget for Graph<'a, N, E>
+impl<'a, N, E> OldWidget for Graph<'a, N, E>
 where
     N: Iterator,
     N::Item: NodeId,

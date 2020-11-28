@@ -80,7 +80,7 @@ fn main() {
 
         // Instantiate the conrod widgets.
         {
-            use conrod_core::{widget, Colorable, Positionable, Sizeable, Widget};
+            use conrod_core::{widget, Colorable, Positionable, Sizeable, OldWidget};
             let ui = &mut ui.set_widgets();
 
             widget::Canvas::new()

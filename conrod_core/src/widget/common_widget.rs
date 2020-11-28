@@ -1,5 +1,5 @@
 use uuid::Uuid;
-use widget::primitive::CWidget;
+use widget::primitive::Widget;
 use ::{Point, Scalar};
 use position::Dimensions;
 use widget::primitive::padding::Padding;
@@ -9,8 +9,8 @@ use Color;
 pub trait CommonWidget {
     fn get_id(&self) -> Uuid;
 
-    fn get_children(&self) -> &Vec<CWidget>;
-    fn get_children_mut(&mut self) -> &mut Vec<CWidget>;
+    fn get_children(&self) -> &Vec<Box<dyn Widget>>;
+    fn get_children_mut(&mut self) -> &mut Vec<Box<dyn Widget>>;
 
     fn get_position(&self) -> Point;
     fn get_x(&self) -> Scalar;
@@ -35,4 +35,5 @@ pub trait CommonWidget {
             && point[1] >= self.get_y()
             && point[1] < self.get_y() + self.get_height()
     }
+
 }

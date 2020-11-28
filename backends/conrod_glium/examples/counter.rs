@@ -4,7 +4,7 @@ extern crate conrod_glium;
 extern crate find_folder;
 extern crate glium;
 
-use conrod_core::{widget, Labelable, Positionable, Sizeable, Widget};
+use conrod_core::{widget, Labelable, Positionable, Sizeable, OldWidget};
 use glium::Surface;
 
 mod support;

@@ -1,6 +1,6 @@
 //! A wrapper around the `List` widget providing the ability to select one or more items.
 
-use {Color, Positionable, Scalar, Sizeable, Ui, Widget};
+use {Color, Positionable, Scalar, Sizeable, Ui, OldWidget};
 use {event, graph, input, widget};
 use std;
 use input::keyboard::ModifierKey;
@@ -350,7 +350,7 @@ impl<M, D> ListSelect<M, D, widget::list::Fixed> {
 
 }
 
-impl<M, D, S> Widget for ListSelect<M, D, S>
+impl<M, D, S> OldWidget for ListSelect<M, D, S>
     where M: Mode,
           D: Direction,
           S: widget::list::ItemSize,

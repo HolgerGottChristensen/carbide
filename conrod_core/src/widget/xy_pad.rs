@@ -8,7 +8,7 @@ use {
     Labelable,
     Positionable,
     Scalar,
-    Widget,
+    OldWidget,
 };
 use num::Float;
 use text;
@@ -105,7 +105,7 @@ impl<'a, X, Y> XYPad<'a, X, Y> {
 
 }
 
-impl<'a, X, Y> Widget for XYPad<'a, X, Y>
+impl<'a, X, Y> OldWidget for XYPad<'a, X, Y>
     where X: Float + ToString + ::std::fmt::Debug + ::std::any::Any,
           Y: Float + ToString + ::std::fmt::Debug + ::std::any::Any,
 {

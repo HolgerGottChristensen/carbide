@@ -125,7 +125,7 @@ widget_ids! {
 }
 
 fn set_ui(ref mut ui: conrod_core::UiCell, ids: &Ids, fonts: &Fonts) {
-    use conrod_core::{color, widget, Colorable, Positionable, Scalar, Sizeable, Widget};
+    use conrod_core::{color, widget, Colorable, Positionable, Scalar, Sizeable, OldWidget};
 
     // Our `Canvas` tree, upon which we will place our text widgets.
     widget::Canvas::new()

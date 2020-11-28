@@ -1,6 +1,6 @@
 //! A default container widget to use for nodes that exist within a `Graph` widget.
 
-use {widget, color, Color, Point, Positionable, Scalar, Sizeable, Widget, Ui};
+use {widget, color, Color, Point, Positionable, Scalar, Sizeable, OldWidget, Ui};
 use graph;
 use position::{Axis, Direction, Range, Rect};
 use std::iter::once;
@@ -429,9 +429,9 @@ impl Iterator for SocketRects {
     }
 }
 
-impl<W> Widget for Node<W>
+impl<W> OldWidget for Node<W>
 where
-    W: Widget,
+    W: OldWidget,
 {
     type State = State;
     type Style = Style;

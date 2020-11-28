@@ -19,7 +19,7 @@ pub mod spacer;
 pub mod edge_insets;
 
 use {Point, Range, Rect};
-pub use widget::primitive::widget::CWidget;
+pub use widget::primitive::widget::Widget;
 
 /// Find the bounding rect for the given series of points.
 pub fn bounding_box_for_points<I>(mut points: I) -> Rect

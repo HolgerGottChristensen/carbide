@@ -10,7 +10,7 @@ extern crate find_folder;
 
 mod support;
 
-use conrod_core::{color, widget, Widget};
+use conrod_core::{color, widget, OldWidget};
 use conrod_core::widget::triangles::Triangle;
 use glium::Surface;
 

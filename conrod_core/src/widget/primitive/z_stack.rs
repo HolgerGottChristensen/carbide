@@ -1,4 +1,4 @@
-use {Color, Colorable, Point, Rect, Sizeable, Widget};
+use {Color, Colorable, Point, Rect, Sizeable, OldWidget};
 use ::{widget, Scalar};
 use widget::triangles::Triangle;
 use widget::render::Render;
@@ -10,7 +10,7 @@ use render::primitive_kind::PrimitiveKind;
 use render::util::new_primitive;
 use widget::common_widget::CommonWidget;
 use uuid::Uuid;
-use widget::primitive::CWidget;
+use widget::primitive::Widget;
 use position::Dimensions;
 use daggy::petgraph::graph::node_index;
 use ::{Range, text};
@@ -28,20 +28,21 @@ use layout::CrossAxisAlignment;
 use layout::basic_layouter::BasicLayouter;
 use event::event::Event;
 use event_handler::{WidgetEvent, MouseEvent, KeyboardEvent};
+use widget::primitive::widget::WidgetExt;
 
 
 /// A basic, non-interactive rectangle shape widget.
-#[derive(Clone, Debug)]
+#[derive(Debug)]
 pub struct ZStack {
     id: Uuid,
-    children: Vec<CWidget>,
+    children: Vec<Box<dyn Widget>>,
     position: Point,
     dimension: Dimensions
 }
 
 impl ZStack {
-    pub fn initialize(children: Vec<CWidget>) -> CWidget {
-        CWidget::ZStack(ZStack {
+    pub fn initialize(children: Vec<Box<dyn Widget>>) -> Box<ZStack> {
+        Box::new(ZStack {
             id: Uuid::new_v4(),
             children,
             position: [0.0,0.0],
@@ -72,6 +73,8 @@ impl Event for ZStack {
     }
 }
 
+impl WidgetExt for ZStack {}
+
 impl Layout for ZStack {
     fn flexibility(&self) -> u32 {
         1
@@ -79,7 +82,7 @@ impl Layout for ZStack {
 
     fn calculate_size(&mut self, requested_size: Dimensions, fonts: &Map) -> Dimensions {
 
-        let mut children_flexibilty: Vec<(u32, &mut CWidget)> = self.children.iter_mut().map(|child| (child.flexibility(), child)).collect();
+        let mut children_flexibilty: Vec<(u32, &mut Box<dyn Widget>)> = self.children.iter_mut().map(|child| (child.flexibility(), child)).collect();
         children_flexibilty.sort_by(|(a,_), (b,_)| a.cmp(&b));
         children_flexibilty.reverse();
 
@@ -121,11 +124,11 @@ impl CommonWidget for ZStack {
         self.id
     }
 
-    fn get_children(&self) -> &Vec<CWidget> {
+    fn get_children(&self) -> &Vec<Box<dyn Widget>> {
         &self.children
     }
 
-    fn get_children_mut(&mut self) -> &mut Vec<CWidget> {
+    fn get_children_mut(&mut self) -> &mut Vec<Box<dyn Widget>> {
         &mut self.children
     }
 

@@ -17,7 +17,7 @@ extern crate rand; // for making a random color.
 
 mod support;
 
-use conrod_core::{widget, Borderable, Colorable, Positionable, Sizeable, Widget, color};
+use conrod_core::{widget, Borderable, Colorable, Positionable, Sizeable, OldWidget, color};
 use glium::Surface;
 
 const WIDTH: u32 = 1100;

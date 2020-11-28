@@ -103,7 +103,7 @@ pub mod complex;
 /// Arguments for the [**Widget::update**](./trait.Widget#method.update) method in a struct to
 /// simplify the method signature.
 pub struct UpdateArgs<'a, 'b: 'a, 'c, 'd: 'c, W>
-    where W: Widget,
+    where W: OldWidget,
 {
     /// The **Widget**'s unique index.
     pub id: Id,
@@ -136,7 +136,7 @@ pub struct UpdateArgs<'a, 'b: 'a, 'c, 'd: 'c, W>
 /// Arguments to the [**Widget::kid_area**](./trait.Widget#method.kid_area) method in a struct to
 /// simplify the method signature.
 pub struct KidAreaArgs<'a, W>
-    where W: Widget,
+    where W: OldWidget,
 {
     /// The **Rect** describing the **Widget**'s position and dimensions.
     pub rect: Rect,
@@ -353,7 +353,7 @@ pub struct PreUpdateCache {
 // widget **Graph** for reference.
 #[allow(missing_docs)]
 pub struct PostUpdateCache<W>
-    where W: Widget,
+    where W: OldWidget,
 {
     /// The **Widget**'s unique **Id**.
     pub id: Id,
@@ -410,7 +410,7 @@ impl<T> Style for T where T: std::any::Any + std::fmt::Debug + PartialEq + Sized
 /// 3. Otherwise attempts to copy the dimension of our parent widget.
 /// 4. If no parent widget can be inferred, the window dimensions are used.
 fn default_dimension<W, F>(widget: &W, ui: &Ui, f: F) -> Dimension
-    where W: Widget,
+    where W: OldWidget,
           F: FnOnce(theme::UniqueDefault<W::Style>) -> Option<Dimension>,
 {
     ui.theme.widget_style::<W::Style>()
@@ -437,7 +437,7 @@ fn default_dimension<W, F>(widget: &W, ui: &Ui, f: F) -> Dimension
 /// If you wish to override **Widget::default_x_dimension**, feel free to call this function
 /// internally if you partly require the bahaviour of the default implementations.
 pub fn default_x_dimension<W>(widget: &W, ui: &Ui) -> Dimension
-    where W: Widget,
+    where W: OldWidget,
 {
     default_dimension(widget, ui, |default| default.common.maybe_x_dimension)
 }
@@ -455,7 +455,7 @@ pub fn default_x_dimension<W>(widget: &W, ui: &Ui) -> Dimension
 /// If you wish to override **Widget::default_y_dimension**, feel free to call this function
 /// internally if you partly require the bahaviour of the default implementations.
 pub fn default_y_dimension<W>(widget: &W, ui: &Ui) -> Dimension
-    where W: Widget,
+    where W: OldWidget,
 {
     default_dimension(widget, ui, |default| default.common.maybe_y_dimension)
 }
@@ -519,7 +519,7 @@ pub trait Common {
 /// - parent
 /// - no_parent
 /// - set
-pub trait Widget: Common + Sized {
+pub trait OldWidget: Common + Sized {
     /// State to be stored within the `Ui`s widget cache.
     ///
     /// Take advantage of this type for any large allocations that you would like to avoid
@@ -897,7 +897,7 @@ pub trait Widget: Common + Sized {
 /// as verbosely annotated as possible. If anything is unclear, feel free to post an issue or PR
 /// with concerns/improvements to the github repo.
 fn set_widget<'a, 'b, W>(widget: W, id: Id, ui: &'a mut UiCell<'b>) -> W::Event
-    where W: Widget,
+    where W: OldWidget,
 {
     let type_id = std::any::TypeId::of::<W::State>();
 
@@ -1262,7 +1262,7 @@ impl Default for CommonBuilder {
 }
 
 impl<W> Positionable for W
-    where W: Widget,
+    where W: OldWidget,
 {
     fn x_position(mut self, x: Position) -> Self {
         self.common_mut().style.maybe_x_position = Some(x);
@@ -1316,7 +1316,7 @@ fn infer_position_from_other_position(other_pos: Position, dir_align: Align) -> 
 
 
 impl<W> Sizeable for W
-    where W: Widget,
+    where W: OldWidget,
 {
     fn x_dimension(mut self, w: Dimension) -> Self {
         self.common_mut().style.maybe_x_dimension = Some(w);

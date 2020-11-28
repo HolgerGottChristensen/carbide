@@ -9,7 +9,7 @@ use {
     Point,
     Positionable,
     Scalar,
-    Widget,
+    OldWidget,
 };
 use num::{Float, NumCast};
 use std::cmp::Ordering;
@@ -161,7 +161,7 @@ impl<'a, T> NumberDialer<'a, T>
     }
 }
 
-impl<'a, T> Widget for NumberDialer<'a, T>
+impl<'a, T> OldWidget for NumberDialer<'a, T>
     where T: Float + NumCast + ToString,
 {
     type State = State;

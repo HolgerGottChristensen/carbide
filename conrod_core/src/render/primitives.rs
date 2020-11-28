@@ -5,12 +5,11 @@ use widget::triangles::Triangle;
 use ::{Point};
 use render::primitive_walker::PrimitiveWalker;
 use render::primitive::Primitive;
-use ::{color, Widget};
-use widget::primitive::CWidget;
+use ::{color, OldWidget};
 use render::primitive_kind::PrimitiveKind;
 use render::util::{new_primitive, next_widget};
 use widget::render::Render;
-use widget::Oval;
+use widget::{Oval, Rectangle};
 use widget::envelope_editor::EnvelopePoint;
 use position::{Align, Dimensions};
 use render::text::Text;
@@ -95,7 +94,7 @@ impl<'a> Primitives<'a> {
             let rect = container.rect;
 
             fn state_type_id<W>() -> std::any::TypeId
-                where W: Widget,
+                where W: OldWidget,
             {
                 std::any::TypeId::of::<W::State>()
             }
@@ -107,7 +106,7 @@ impl<'a> Primitives<'a> {
                 if let Some(rectangle) = container.unique_widget_state::<widget::Rectangle>() {
                     let UniqueWidgetState { ref style, .. } = *rectangle;
                     let color = style.get_color(theme);
-                    let r = CWidget::Complex;
+                    let r = Rectangle::initialize(vec![]);
                     return r.render(id, clip, container);
                     match *style {
                         ShapeStyle::Fill(_) => {
@@ -171,7 +170,7 @@ impl<'a> Primitives<'a> {
                     match *style {
 
                         ShapeStyle::Fill(_) => {
-                            let r = CWidget::Oval(Oval::fill(Dimensions::new(10.0, 10.0)));
+                            let r = Oval::fill(Dimensions::new(10.0, 10.0));
                             return r.render(id, clip, container);
                         },
 

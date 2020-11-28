@@ -360,7 +360,7 @@ macro_rules! widget_ids {
 #[test]
 fn test() {
     use ui::UiBuilder;
-    use widget::{self, Widget};
+    use widget::{self, OldWidget};
 
     widget_ids! {
         /// Testing generated Ids doc comments.

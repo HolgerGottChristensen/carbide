@@ -1,6 +1,6 @@
 //! A primitive widget that allows for drawing using a list of triangles.
 
-use {Rect, Point, Positionable, Scalar, Sizeable, Theme, Widget};
+use {Rect, Point, Positionable, Scalar, Sizeable, Theme, OldWidget};
 use color;
 use graph;
 use std;
@@ -234,7 +234,7 @@ fn bounding_rect_for_triangles<I, V>(triangles: I) -> Rect
 impl<S, I> TrianglesUnpositioned<S, I>
     where S: Style,
           I: IntoIterator<Item=Triangle<S::Vertex>>,
-          Triangles<S, I>: Widget,
+          Triangles<S, I>: OldWidget,
 {
     fn new(triangles: Triangles<S, I>) -> Self {
         TrianglesUnpositioned {
@@ -302,7 +302,7 @@ impl<S, I> TrianglesUnpositioned<S, I>
     }
 }
 
-impl<S, I> Widget for Triangles<S, I>
+impl<S, I> OldWidget for Triangles<S, I>
     where S: Style,
           I: IntoIterator<Item=Triangle<S::Vertex>>,
 {

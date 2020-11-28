@@ -21,7 +21,7 @@ mod support;
 
 /// The module in which we'll implement our own custom circular button.
 mod circular_button {
-    use conrod_core::{self, widget_ids, widget, Colorable, Labelable, Point, Positionable, Widget};
+    use conrod_core::{self, widget_ids, widget, Colorable, Labelable, Point, Positionable, OldWidget};
 
     /// The type upon which we'll implement the `Widget` trait.
     #[derive(WidgetCommon)]
@@ -111,7 +111,7 @@ mod circular_button {
 
     /// A custom Conrod widget must implement the Widget trait. See the **Widget** trait
     /// documentation for more details.
-    impl<'a> Widget for CircularButton<'a> {
+    impl<'a> OldWidget for CircularButton<'a> {
         /// The State struct that we defined above.
         type State = State;
         /// The Style struct that we defined using the `widget_style!` macro.
@@ -235,7 +235,7 @@ mod circular_button {
 }
 
 fn main() {
-    use conrod_core::{widget, Colorable, Labelable, Positionable, Sizeable, Widget};
+    use conrod_core::{widget, Colorable, Labelable, Positionable, Sizeable, OldWidget};
     use glium::Surface;
     use self::circular_button::CircularButton;
 

@@ -7,7 +7,7 @@ use {
     Positionable,
     Scalar,
     Sizeable,
-    Widget,
+    OldWidget,
     Ui,
     UiCell,
 };
@@ -84,11 +84,11 @@ pub trait Direction {
                         last_id: Option<widget::Id>,
                         scroll_trigger_id: widget::Id,
                         first_item_margin: Scalar) -> W
-        where W: Widget;
+        where W: OldWidget;
 
     /// Position the `Rectangle` used for scrolling `List`s with fixed `Item` sizes.
     fn position_scroll_trigger<W>(scroll_trigger: W, list: widget::Id) -> W
-        where W: Widget;
+        where W: OldWidget;
 
     /// Calls the suitable `scroll_kids_<axis>` method on the `List`.
     fn scroll_list_kids<S>(list: List<Self, S>) -> List<Self, S>
@@ -97,11 +97,11 @@ pub trait Direction {
 
     /// Size the widget given its breadth.
     fn size_breadth<W>(widget: W, breadth: Scalar) -> W
-        where W: Widget;
+        where W: OldWidget;
 
     /// Size the widget given its length.
     fn size_length<W>(widget: W, length: Scalar) -> W
-        where W: Widget;
+        where W: OldWidget;
 }
 
 /// The way in which the `List`'s items are sized. E.g. `Fired` or `Dynamic`.
@@ -109,12 +109,12 @@ pub trait ItemSize: Sized + Clone + Copy {
 
     /// Update the `List` widget.
     fn update_list<D>(List<D, Self>, widget::UpdateArgs<List<D, Self>>)
-        -> <List<D, Self> as Widget>::Event
+        -> <List<D, Self> as OldWidget>::Event
         where D: Direction;
 
     /// Set the size for the given item `widget` and return it.
     fn size_item<W, D>(&self, widget: W, breadth: Scalar) -> W
-        where W: Widget,
+        where W: OldWidget,
               D: Direction;
 }
 
@@ -332,7 +332,7 @@ impl<D, S> List<D, S>
     }
 }
 
-impl<D, S> Widget for List<D, S>
+impl<D, S> OldWidget for List<D, S>
     where D: Direction,
           S: ItemSize,
 {
@@ -424,7 +424,7 @@ impl<D, S> Item<D, S>
     /// - parent of the widget.
     /// - and finally sets the widget within the `Ui`.
     pub fn set<W>(self, widget: W, ui: &mut UiCell) -> W::Event
-        where W: Widget,
+        where W: OldWidget,
     {
         let Item {
             widget_id, last_id, breadth, size, scroll_trigger_id, first_item_margin, ..
@@ -510,7 +510,7 @@ impl<A> Scrollbar<A>
 impl ItemSize for Fixed {
 
     fn update_list<D>(list: List<D, Self>, args: widget::UpdateArgs<List<D, Self>>)
-        -> <List<D, Self> as Widget>::Event
+        -> <List<D, Self> as OldWidget>::Event
         where D: Direction,
     {
         let widget::UpdateArgs { id, state, rect, prev, ui, style, .. } = args;
@@ -626,7 +626,7 @@ impl ItemSize for Fixed {
     }
 
     fn size_item<W, D>(&self, widget: W, breadth: Scalar) -> W
-        where W: Widget,
+        where W: OldWidget,
               D: Direction,
     {
         let widget = D::size_breadth(widget, breadth);
@@ -638,7 +638,7 @@ impl ItemSize for Fixed {
 impl ItemSize for Dynamic {
 
     fn update_list<D>(list: List<D, Self>, args: widget::UpdateArgs<List<D, Self>>)
-        -> <List<D, Self> as Widget>::Event
+        -> <List<D, Self> as OldWidget>::Event
         where D: Direction,
     {
         let widget::UpdateArgs { id, state, rect, prev, ui, style, .. } = args;
@@ -704,7 +704,7 @@ impl ItemSize for Dynamic {
     }
 
     fn size_item<W, D>(&self, widget: W, breadth: Scalar) -> W
-        where W: Widget,
+        where W: OldWidget,
               D: Direction,
     {
         D::size_breadth(widget, breadth)
@@ -739,7 +739,7 @@ impl Direction for Down {
                         last_id: Option<widget::Id>,
                         scroll_trigger_id: widget::Id,
                         first_item_margin: Scalar) -> W
-        where W: Widget,
+        where W: OldWidget,
     {
         match last_id {
             None => widget.mid_top_with_margin_on(scroll_trigger_id, first_item_margin)
@@ -749,19 +749,19 @@ impl Direction for Down {
     }
 
     fn position_scroll_trigger<W>(scroll_trigger: W, list: widget::Id) -> W
-        where W: Widget
+        where W: OldWidget
     {
         scroll_trigger.mid_top_of(list)
     }
 
     fn size_breadth<W>(widget: W, breadth: Scalar) -> W
-        where W: Widget
+        where W: OldWidget
     {
         widget.w(breadth)
     }
 
     fn size_length<W>(widget: W, length: Scalar) -> W
-        where W: Widget
+        where W: OldWidget
     {
         widget.h(length)
     }
@@ -794,7 +794,7 @@ impl Direction for Up {
                         last_id: Option<widget::Id>,
                         scroll_trigger_id: widget::Id,
                         first_item_margin: Scalar) -> W
-        where W: Widget,
+        where W: OldWidget,
     {
         match last_id {
             None => widget.mid_bottom_with_margin_on(scroll_trigger_id, first_item_margin)
@@ -804,19 +804,19 @@ impl Direction for Up {
     }
 
     fn position_scroll_trigger<W>(scroll_trigger: W, list: widget::Id) -> W
-        where W: Widget
+        where W: OldWidget
     {
         scroll_trigger.mid_bottom_of(list)
     }
 
     fn size_breadth<W>(widget: W, breadth: Scalar) -> W
-        where W: Widget
+        where W: OldWidget
     {
         widget.w(breadth)
     }
 
     fn size_length<W>(widget: W, length: Scalar) -> W
-        where W: Widget
+        where W: OldWidget
     {
         widget.h(length)
     }
@@ -849,7 +849,7 @@ impl Direction for Left {
                         last_id: Option<widget::Id>,
                         scroll_trigger_id: widget::Id,
                         first_item_margin: Scalar) -> W
-        where W: Widget,
+        where W: OldWidget,
     {
         match last_id {
             None => widget.mid_right_with_margin_on(scroll_trigger_id, first_item_margin)
@@ -859,19 +859,19 @@ impl Direction for Left {
     }
 
     fn position_scroll_trigger<W>(scroll_trigger: W, list: widget::Id) -> W
-        where W: Widget
+        where W: OldWidget
     {
         scroll_trigger.mid_right_of(list)
     }
 
     fn size_breadth<W>(widget: W, breadth: Scalar) -> W
-        where W: Widget
+        where W: OldWidget
     {
         widget.h(breadth)
     }
 
     fn size_length<W>(widget: W, length: Scalar) -> W
-        where W: Widget
+        where W: OldWidget
     {
         widget.w(length)
     }
@@ -904,7 +904,7 @@ impl Direction for Right {
                         last_id: Option<widget::Id>,
                         scroll_trigger_id: widget::Id,
                         first_item_margin: Scalar) -> W
-        where W: Widget,
+        where W: OldWidget,
     {
         match last_id {
             None => widget.mid_left_with_margin_on(scroll_trigger_id, first_item_margin)
@@ -914,19 +914,19 @@ impl Direction for Right {
     }
 
     fn position_scroll_trigger<W>(scroll_trigger: W, list: widget::Id) -> W
-        where W: Widget
+        where W: OldWidget
     {
         scroll_trigger.mid_left_of(list)
     }
 
     fn size_breadth<W>(widget: W, breadth: Scalar) -> W
-        where W: Widget
+        where W: OldWidget
     {
         widget.h(breadth)
     }
 
     fn size_length<W>(widget: W, length: Scalar) -> W
-        where W: Widget
+        where W: OldWidget
     {
         widget.w(length)
     }

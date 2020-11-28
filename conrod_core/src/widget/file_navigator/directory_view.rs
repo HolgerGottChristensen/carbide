@@ -13,7 +13,7 @@ use {
     Positionable,
     Sizeable,
     Scalar,
-    Widget,
+    OldWidget,
 };
 use event;
 use std;
@@ -196,7 +196,7 @@ impl<'a> DirectoryView<'a> {
 
 }
 
-impl<'a> Widget for DirectoryView<'a> {
+impl<'a> OldWidget for DirectoryView<'a> {
     type State = State;
     type Style = Style;
     type Event = Vec<Event>;

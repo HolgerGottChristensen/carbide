@@ -5,7 +5,6 @@ use render::primitive::Primitive;
 use render::owned_primitive::OwnedPrimitive;
 use position::Dimensions;
 use Point;
-use widget::primitive::CWidget;
 use widget::common_widget::CommonWidget;
 
 pub trait Render {

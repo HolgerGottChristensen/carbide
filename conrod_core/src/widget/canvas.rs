@@ -11,7 +11,7 @@ use {
     Theme,
     Ui,
     UiCell,
-    Widget,
+    OldWidget,
 };
 use position::{self, Dimension, Padding, Place, Position, Range, Rect, Scalar, Dimensions};
 use position::Direction::{Forwards, Backwards};
@@ -223,7 +223,7 @@ impl<'a> Canvas<'a> {
 }
 
 
-impl<'a> Widget for Canvas<'a> {
+impl<'a> OldWidget for Canvas<'a> {
     type State = State;
     type Style = Style;
     type Event = ();

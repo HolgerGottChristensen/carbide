@@ -1,6 +1,6 @@
 use render::primitive_walker::PrimitiveWalker;
 use render::primitive::Primitive;
-use widget::primitive::CWidget;
+use widget::primitive::Widget;
 use widget::render::Render;
 use render::owned_primitive::OwnedPrimitive;
 use render::owned_primitive_kind::OwnedPrimitiveKind;
@@ -17,7 +17,7 @@ pub struct CPrimitives {
 }
 
 impl CPrimitives {
-    pub fn new (window_dimensions: Dimensions, root: &mut CWidget, fonts: &text::font::Map) -> Self {
+    pub fn new (window_dimensions: Dimensions, root: &mut Box<dyn Widget>, fonts: &text::font::Map) -> Self {
         root.calculate_size(window_dimensions, fonts);
 
         root.set_x(window_dimensions[0]/2.0-root.get_width()/2.0);

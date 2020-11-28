@@ -14,7 +14,7 @@ use {
     Positionable,
     Scalar,
     Sizeable,
-    Widget,
+    OldWidget,
 };
 use event;
 use std;
@@ -193,7 +193,7 @@ impl<'a> FileNavigator<'a> {
 }
 
 
-impl<'a> Widget for FileNavigator<'a> {
+impl<'a> OldWidget for FileNavigator<'a> {
     type State = State;
     type Style = Style;
     type Event = Vec<Event>;

@@ -1,6 +1,6 @@
 //! The `EnvelopeEditor` widget and related items.
 
-use {Color, Colorable, Borderable, FontSize, Labelable, Positionable, Sizeable, Widget};
+use {Color, Colorable, Borderable, FontSize, Labelable, Positionable, Sizeable, OldWidget};
 use num::Float;
 use position::{Direction, Edge, Point, Rect, Scalar};
 use std;
@@ -228,7 +228,7 @@ impl<E> Event<E>
 }
 
 
-impl<'a, E> Widget for EnvelopeEditor<'a, E>
+impl<'a, E> OldWidget for EnvelopeEditor<'a, E>
     where E: EnvelopePoint,
 {
     type State = State;

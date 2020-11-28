@@ -1,6 +1,6 @@
 //! A simple, non-interactive widget for drawing a series of conjoined lines.
 
-use {Color, Colorable, Point, Positionable, Scalar, Sizeable, Theme, Widget};
+use {Color, Colorable, Point, Positionable, Scalar, Sizeable, Theme, OldWidget};
 use graph;
 use utils::{vec2_add, vec2_sub};
 use widget;
@@ -142,7 +142,7 @@ impl<I> PointPath<I> {
 }
 
 
-impl<I> Widget for PointPath<I>
+impl<I> OldWidget for PointPath<I>
     where I: IntoIterator<Item=Point>,
 {
     type State = State;

@@ -10,11 +10,11 @@ use fnv;
 use text;
 use theme::Theme;
 use utils;
-use widget::{self, Widget};
+use widget::{self, OldWidget, Rectangle};
 use cursor;
 use render::primitives::Primitives;
 use render::cprimitives::CPrimitives;
-use widget::primitive::CWidget;
+use widget::primitive::Widget;
 use crate::event::input::Input;
 use input::Source;
 use event::tap::Tap;
@@ -29,6 +29,11 @@ use event::drag::Drag;
 use event::double_click::DoubleClick;
 use event_handler::{EventHandler, WindowEvent, WidgetEvent, MouseEvent, KeyboardEvent};
 use event::event::Event;
+use widget::render::Render;
+use widget::layout::Layout;
+use widget::common_widget::CommonWidget;
+use std::fmt::{Debug, Formatter};
+use std::fmt;
 
 /// A constructor type for building a `Ui` instance with a set of optional parameters.
 pub struct UiBuilder {
@@ -54,6 +59,9 @@ pub struct UiBuilder {
     pub maybe_widgets_capacity: Option<usize>
 }
 
+
+
+
 /// `Ui` is the most important type within Conrod and is necessary for rendering and maintaining
 /// widget state.
 /// # Ui Handles the following:
@@ -75,7 +83,7 @@ pub struct Ui {
     /// The Widget cache, storing state for all widgets.
     pub(crate) widget_graph: Graph,
 
-    pub widgets: CWidget,
+    pub widgets: Box<dyn Widget>,
     /// The widget::Id of the widget that was last updated/set.
     maybe_prev_widget_id: Option<widget::Id>,
     /// The widget::Id of the last widget used as a parent for another widget.
@@ -210,11 +218,11 @@ impl Ui {
         let window = widget_graph.add_placeholder();
         let prev_updated_widgets = updated_widgets.clone();
         Ui {
-            widget_graph: widget_graph,
+            widget_graph,
             theme: maybe_theme.unwrap_or_else(|| Theme::default()),
             fonts: text::font::Map::new(),
-            window: window,
-            widgets: CWidget::Complex,
+            window,
+            widgets: Rectangle::initialize(vec![]),
             win_w: window_dimensions[0],
             win_h: window_dimensions[1],
             maybe_prev_widget_id: None,
@@ -222,9 +230,9 @@ impl Ui {
             num_redraw_frames: SAFE_REDRAW_COUNT,
             redraw_count: AtomicUsize::new(SAFE_REDRAW_COUNT as usize),
             maybe_background_color: None,
-            depth_order: depth_order,
-            updated_widgets: updated_widgets,
-            prev_updated_widgets: prev_updated_widgets,
+            depth_order,
+            updated_widgets,
+            prev_updated_widgets,
             global_input: input::Global::new(),
             pending_scroll_events: Vec::new(),
             mouse_cursor: cursor::MouseCursor::Arrow,
@@ -907,7 +915,7 @@ pub fn pre_update_cache(ui: &mut Ui, widget: widget::PreUpdateCache) {
 /// Set the widget that is being cached as the new `prev_widget`.
 /// Set the widget's parent as the new `current_parent`.
 pub fn post_update_cache<W>(ui: &mut Ui, widget: widget::PostUpdateCache<W>)
-    where W: Widget,
+    where W: OldWidget,
           W::State: 'static,
           W::Style: 'static,
 {

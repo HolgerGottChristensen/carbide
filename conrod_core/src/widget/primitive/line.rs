@@ -3,10 +3,10 @@
 use {Color, Colorable, Point, Positionable, Rect, Scalar, Sizeable, Theme};
 use ::{graph, text};
 use utils::{vec2_add, vec2_sub};
-use widget::{self, Widget, Id};
+use widget::{self, OldWidget, Id};
 use widget::triangles::Triangle;
 use position::Dimensions;
-use widget::primitive::CWidget;
+use widget::primitive::Widget;
 use widget::render::Render;
 use render::primitive::Primitive;
 use graph::Container;
@@ -19,10 +19,11 @@ use widget::layout::Layout;
 use text::font::Map;
 use event::event::Event;
 use event_handler::{WidgetEvent, MouseEvent, KeyboardEvent};
+use widget::primitive::widget::WidgetExt;
 
 
 /// A simple, non-interactive widget for drawing a single straight Line.
-#[derive(Clone, Debug, WidgetCommon_)]
+#[derive(Debug, WidgetCommon_)]
 pub struct Line {
     /// Data necessary and common for all widget builder render.
     #[conrod(common_builder)]
@@ -38,7 +39,7 @@ pub struct Line {
     position: Point,
     dimension: Dimensions,
 
-    pub children: Vec<CWidget>
+    pub children: Vec<Box<dyn Widget>>
 }
 
 impl Event for Line {
@@ -62,6 +63,8 @@ impl Event for Line {
         self.process_keyboard_event_default(event);
     }
 }
+
+impl WidgetExt for Line {}
 
 impl Layout for Line {
     fn flexibility(&self) -> u32 {
@@ -127,11 +130,11 @@ impl CommonWidget for Line {
         unimplemented!()
     }
 
-    fn get_children(&self) -> &Vec<CWidget> {
+    fn get_children(&self) -> &Vec<Box<dyn Widget>> {
         &self.children
     }
 
-    fn get_children_mut(&mut self) -> &mut Vec<CWidget> {
+    fn get_children_mut(&mut self) -> &mut Vec<Box<dyn Widget>> {
         &mut self.children
     }
 
@@ -214,8 +217,8 @@ pub enum Cap {
 
 impl Line {
 
-    pub fn new(start: Point, end: Point, children: Vec<CWidget>) -> CWidget {
-        CWidget::Line(Line {
+    pub fn new(start: Point, end: Point, children: Vec<Box<dyn Widget>>) -> Box<Line> {
+        Box::new(Line {
             start,
             end,
             common: widget::CommonBuilder::default(),
@@ -411,7 +414,7 @@ impl Style {
 }
 
 
-impl Widget for Line {
+impl OldWidget for Line {
     type State = State;
     type Style = Style;
     type Event = ();

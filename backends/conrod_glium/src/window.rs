@@ -2,14 +2,14 @@ extern crate glium;
 extern crate find_folder;
 use ::{std};
 use ::{Renderer};
-use conrod_core::{UiBuilder, widget, Positionable, Colorable, Widget, UiCell, Ui};
+use conrod_core::{UiBuilder, widget, Positionable, Colorable, OldWidget, UiCell, Ui};
 use glium::glutin::WindowBuilder;
 use glium::backend::glutin::Display;
 use conrod_winit::WinitWindow;
 use glium::Surface;
 use conrod_core::text::font::{Id, Error};
 use conrod_core::widget::id::Generator;
-use conrod_core::widget::primitive::CWidget;
+use conrod_core::widget::primitive::Widget;
 extern crate image;
 
 pub struct Window {
@@ -78,8 +78,8 @@ impl Window {
         Ok(self.image_map.insert(texture))
     }
 
-    pub fn set_widgets(&mut self, w: CWidget) {
-        self.ui.widgets = w;
+    pub fn set_widgets(&mut self, w: Box<dyn Widget>) {
+        self.ui.widgets = w
     }
 
     pub fn draw(&mut self) {

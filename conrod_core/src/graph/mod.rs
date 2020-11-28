@@ -8,7 +8,7 @@ use position::{Axis, Depth, Point, Rect};
 use std;
 use std::any::Any;
 use std::ops::{Index, IndexMut};
-use widget::{self, Widget};
+use widget::{self, OldWidget};
 
 pub use daggy::Walker;
 pub use self::depth_order::DepthOrder;
@@ -177,7 +177,7 @@ impl Container {
     /// Same as [**Container::state_and_style**](./struct.Container#method.state_and_style) but
     /// accessed using a **Widget** type parameter instead of the unique State and Style render.
     pub fn unique_widget_state<W>(&self) -> Option<&UniqueWidgetState<W::State, W::Style>>
-        where W: Widget,
+        where W: OldWidget,
               W::State: Any + 'static,
               W::Style: Any + 'static,
     {
@@ -738,7 +738,7 @@ impl Graph {
     /// This is called (via the `ui` module) from within the `widget::set_widget` function after
     /// the `Widget::update` method is called and some new state is returned.
     pub fn post_update_cache<W>(&mut self, widget: widget::PostUpdateCache<W>)
-        where W: Widget,
+        where W: OldWidget,
               W::State: 'static,
               W::Style: 'static,
     {

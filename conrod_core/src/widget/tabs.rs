@@ -6,7 +6,7 @@ use {
     Point,
     Rect,
     Scalar,
-    Widget,
+    OldWidget,
 };
 use std;
 use text;
@@ -168,7 +168,7 @@ impl<'a> Tabs<'a> {
 }
 
 
-impl<'a> Widget for Tabs<'a> {
+impl<'a> OldWidget for Tabs<'a> {
     type State = State;
     type Style = Style;
     type Event = ();

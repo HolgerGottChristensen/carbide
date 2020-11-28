@@ -1,6 +1,6 @@
 //! A simple, non-interactive **Polygon** widget for drawing arbitrary convex shapes.
 
-use {Color, Colorable, Point, Positionable, Sizeable, Theme, Widget};
+use {Color, Colorable, Point, Positionable, Sizeable, Theme, OldWidget};
 use graph;
 use super::Style;
 use widget;
@@ -188,7 +188,7 @@ impl<I> Polygon<I> {
 }
 
 
-impl<I> Widget for Polygon<I>
+impl<I> OldWidget for Polygon<I>
     where I: IntoIterator<Item=Point>,
 {
     type State = State;

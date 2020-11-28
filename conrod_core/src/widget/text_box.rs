@@ -1,6 +1,6 @@
 //! A widget for displaying and mutating a one-line field of text.
 
-use {Color, Colorable, FontSize, Borderable, Positionable, Sizeable, Widget};
+use {Color, Colorable, FontSize, Borderable, Positionable, Sizeable, OldWidget};
 use event;
 use input;
 use position::{Range, Rect, Scalar};
@@ -115,7 +115,7 @@ pub enum Event {
     Enter,
 }
 
-impl<'a> Widget for TextBox<'a> {
+impl<'a> OldWidget for TextBox<'a> {
     type State = State;
     type Style = Style;
     type Event = Vec<Event>;

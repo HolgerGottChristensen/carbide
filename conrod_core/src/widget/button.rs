@@ -1,6 +1,6 @@
 //! The `Button` widget and related items.
 
-use {Color, Colorable, FontSize, Borderable, Labelable, Positionable, Sizeable, UiCell, Widget};
+use {Color, Colorable, FontSize, Borderable, Labelable, Positionable, Sizeable, UiCell, OldWidget};
 use image;
 use position::{self, Align, Rect, Scalar};
 use text;
@@ -281,7 +281,7 @@ impl<'a, S> Button<'a, S> {
 }
 
 
-impl<'a> Widget for Button<'a, Flat> {
+impl<'a> OldWidget for Button<'a, Flat> {
     type State = FlatIds;
     type Style = Style;
     type Event = TimesClicked;
@@ -320,7 +320,7 @@ impl<'a> Widget for Button<'a, Flat> {
 
 }
 
-impl<'a> Widget for Button<'a, Image> {
+impl<'a> OldWidget for Button<'a, Image> {
     type State = ImageIds;
     type Style = Style;
     type Event = TimesClicked;

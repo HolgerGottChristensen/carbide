@@ -218,7 +218,7 @@ widget_ids! {
 /// allocations by updating the pre-existing cached state. A new graphical `Element` is only
 /// retrieved from a `Widget` in the case that it's `State` has changed in some way.
 fn set_widgets(ui: &mut conrod_core::UiCell, app: &mut DemoApp, ids: &mut Ids) {
-    use conrod_core::{color, widget, Colorable, Borderable, Labelable, Positionable, Sizeable, Widget};
+    use conrod_core::{color, widget, Colorable, Borderable, Labelable, Positionable, Sizeable, OldWidget};
 
     // We can use this `Canvas` as a parent Widget upon which we can place other widgets.
     widget::Canvas::new()

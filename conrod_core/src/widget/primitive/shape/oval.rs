@@ -1,6 +1,6 @@
 //! A simple, non-interactive widget for drawing a single **Oval**.
 
-use {Color, Colorable, Point, Rect, Scalar, Sizeable, Theme, Widget};
+use {Color, Colorable, Point, Rect, Scalar, Sizeable, Theme, OldWidget};
 use ::{graph, text};
 use std;
 use super::Style as Style;
@@ -17,17 +17,18 @@ use render::owned_primitive::OwnedPrimitive;
 use daggy::petgraph::graph::node_index;
 use widget::common_widget::CommonWidget;
 use uuid::Uuid;
-use widget::primitive::CWidget;
+use widget::primitive::Widget;
 use widget::layout::Layout;
 use text::font::Map;
 use widget::envelope_editor::EnvelopePoint;
 use layout::basic_layouter::BasicLayouter;
 use event::event::Event;
 use event_handler::{WidgetEvent, MouseEvent, KeyboardEvent};
+use widget::primitive::widget::WidgetExt;
 
 
 /// A simple, non-interactive widget for drawing a single **Oval**.
-#[derive(Clone, Debug, WidgetCommon_)]
+#[derive(Debug, WidgetCommon_)]
 pub struct Oval<S> {
     pub id: Uuid,
     /// Data necessary and common for all widget builder render.
@@ -42,7 +43,7 @@ pub struct Oval<S> {
     position: Point,
     dimension: Dimensions,
 
-    pub children: Vec<CWidget>
+    pub children: Vec<Box<dyn Widget>>
 }
 
 impl<S> Event for Oval<S> {
@@ -71,6 +72,8 @@ impl<S> Event for Oval<S> {
         self.process_keyboard_event_default(event);
     }
 }
+
+impl<S: 'static> WidgetExt for Oval<S> {}
 
 impl<S> Layout for Oval<S> {
     fn flexibility(&self) -> u32 {
@@ -104,11 +107,11 @@ impl<S> CommonWidget for Oval<S> {
         self.id
     }
 
-    fn get_children(&self) -> &Vec<CWidget> {
+    fn get_children(&self) -> &Vec<Box<dyn Widget>> {
         &self.children
     }
 
-    fn get_children_mut(&mut self) -> &mut Vec<CWidget> {
+    fn get_children_mut(&mut self) -> &mut Vec<Box<dyn Widget>> {
         &mut self.children
     }
 
@@ -145,7 +148,7 @@ impl<S> CommonWidget for Oval<S> {
     }
 }
 
-impl Render for Oval<Full> {
+impl<S> Render for Oval<S> {
     fn layout(&mut self, proposed_size: Dimensions, fonts: &text::font::Map, positioner: &dyn Fn(&mut dyn CommonWidget, Dimensions)) {
         unimplemented!()
     }
@@ -226,8 +229,8 @@ pub const DEFAULT_RESOLUTION: usize = 50;
 
 impl Oval<Full> {
 
-    pub fn initialize(children: Vec<CWidget>) -> CWidget {
-        CWidget::Oval(Oval {
+    pub fn initialize(children: Vec<Box<dyn Widget>>) -> Box<Oval<Full>> {
+        Box::new(Oval {
             id: Uuid::new_v4(),
             common: widget::CommonBuilder::default(),
             style: Style::fill(),
@@ -239,8 +242,8 @@ impl Oval<Full> {
         })
     }
 
-    pub fn new(position: Point, dimension: Dimensions, children: Vec<CWidget>) -> CWidget {
-        CWidget::Oval(Oval {
+    pub fn new(position: Point, dimension: Dimensions, children: Vec<Box<dyn Widget>>) -> Box<Oval<Full>> {
+        Box::new(Oval {
             id: Uuid::new_v4(),
             children,
             position,
@@ -316,7 +319,7 @@ impl Oval<Section> {
     }
 }
 
-impl<S> Widget for Oval<S>
+impl<S> OldWidget for Oval<S>
 where
     S: OvalSection,
 {

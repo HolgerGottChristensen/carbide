@@ -1,5 +1,5 @@
 use uuid::Uuid;
-use widget::primitive::CWidget;
+use widget::primitive::Widget;
 use ::{Point, Scalar};
 use position::Dimensions;
 use widget::common_widget::CommonWidget;
@@ -15,21 +15,22 @@ use widget::{Id, Rectangle};
 use std::ops::Neg;
 use event::event::Event;
 use event_handler::{WidgetEvent, MouseEvent, KeyboardEvent};
+use widget::primitive::widget::WidgetExt;
 
 pub static SCALE: f64 = -1.0;
 
 
-#[derive(Clone, Debug)]
+#[derive(Debug)]
 pub struct Frame {
     id: Uuid,
-    child: Box<CWidget>,
+    child: Box<dyn Widget>,
     position: Point,
     dimension: Dimensions
 }
 
 impl Frame {
-    pub fn init(width: Scalar, height: Scalar, child: CWidget) -> CWidget {
-        CWidget::Frame(Frame{
+    pub fn init(width: Scalar, height: Scalar, child: Box<dyn Widget>) -> Box<Frame> {
+        Box::new(Frame{
             id: Default::default(),
             child: Box::new(child),
             position: [0.0,0.0],
@@ -37,8 +38,8 @@ impl Frame {
         })
     }
 
-    pub fn init_width(width: Scalar, child: CWidget) -> CWidget {
-        CWidget::Frame(Frame{
+    pub fn init_width(width: Scalar, child: Box<dyn Widget>) -> Box<Frame> {
+        Box::new(Frame{
             id: Default::default(),
             child: Box::new(child),
             position: [0.0,0.0],
@@ -46,8 +47,8 @@ impl Frame {
         })
     }
 
-    pub fn init_height(height: Scalar, child: CWidget) -> CWidget {
-        CWidget::Frame(Frame{
+    pub fn init_height(height: Scalar, child: Box<dyn Widget>) -> Box<Frame> {
+        Box::new(Frame{
             id: Default::default(),
             child: Box::new(child),
             position: [0.0,0.0],
@@ -55,6 +56,8 @@ impl Frame {
         })
     }
 }
+
+impl WidgetExt for Frame {}
 
 impl Event for Frame {
     fn handle_mouse_event(&mut self, event: &MouseEvent, consumed: &bool) {
@@ -86,11 +89,11 @@ impl CommonWidget for Frame {
         self.id
     }
 
-    fn get_children(&self) -> &Vec<CWidget> {
+    fn get_children(&self) -> &Vec<Box<dyn Widget>> {
         unimplemented!()
     }
 
-    fn get_children_mut(&mut self) -> &mut Vec<CWidget> {
+    fn get_children_mut(&mut self) -> &mut Vec<Box<dyn Widget>> {
         unimplemented!()
     }
 
@@ -158,7 +161,7 @@ impl Layout for Frame {
         let position = self.position;
         let dimension = [self.dimension[0].abs(), self.dimension[1].abs()];
 
-        positioning(position, dimension, &mut *self.child);
+        positioning(position, dimension, &mut self.child);
         self.child.position_children();
     }
 }

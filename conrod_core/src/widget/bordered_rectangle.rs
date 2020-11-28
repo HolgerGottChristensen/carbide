@@ -9,7 +9,7 @@ use {
     Rect,
     Scalar,
     Sizeable,
-    Widget,
+    OldWidget,
 };
 use widget;
 use widget::triangles::Triangle;
@@ -67,7 +67,7 @@ impl BorderedRectangle {
 }
 
 
-impl Widget for BorderedRectangle {
+impl OldWidget for BorderedRectangle {
     type State = State;
     type Style = Style;
     type Event = ();

@@ -5,7 +5,7 @@ use ::{graph, Dimension};
 use position::{Range, Rect, Scalar, Dimensions};
 use std;
 use utils;
-use widget::{self, Widget};
+use widget::{self, OldWidget};
 use widget::scroll::{self, X, Y};
 use event::widget::WidgetEvent;
 use event::button::ButtonEvent;
@@ -131,7 +131,7 @@ impl Scrollbar<Y> {
 
 }
 
-impl<A> Widget for Scrollbar<A>
+impl<A> OldWidget for Scrollbar<A>
     where A: Axis,
 {
     type State = State;

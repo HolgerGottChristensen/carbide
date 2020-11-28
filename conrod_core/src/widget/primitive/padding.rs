@@ -1,5 +1,5 @@
 use uuid::Uuid;
-use widget::primitive::CWidget;
+use widget::primitive::Widget;
 use ::{Point, Scalar};
 use position::Dimensions;
 use widget::common_widget::CommonWidget;
@@ -16,24 +16,25 @@ use std::ops::Neg;
 use widget::primitive::edge_insets::EdgeInsets;
 use event::event::Event;
 use event_handler::{WidgetEvent, MouseEvent, KeyboardEvent};
+use widget::primitive::widget::WidgetExt;
 
 pub static SCALE: f64 = -1.0;
 
 
-#[derive(Clone, Debug)]
+#[derive(Debug)]
 pub struct Padding {
     id: Uuid,
-    child: Box<CWidget>,
+    child: Box<dyn Widget>,
     position: Point,
     dimension: Dimensions,
     edge_insets: EdgeInsets
 }
 
 impl Padding {
-    pub fn init(edge_insets: EdgeInsets, child: CWidget) -> CWidget {
-        CWidget::Padding(Padding{
+    pub fn init(edge_insets: EdgeInsets, child: Box<dyn Widget>) -> Box<Self> {
+        Box::new(Padding{
             id: Default::default(),
-            child: Box::new(child),
+            child,
             position: [0.0, 0.0],
             dimension: [0.0, 0.0],
             edge_insets
@@ -66,16 +67,18 @@ impl Event for Padding {
     }
 }
 
+impl WidgetExt for Padding {}
+
 impl CommonWidget for Padding {
     fn get_id(&self) -> Uuid {
         self.id
     }
 
-    fn get_children(&self) -> &Vec<CWidget> {
+    fn get_children(&self) -> &Vec<Box<dyn Widget>> {
         unimplemented!()
     }
 
-    fn get_children_mut(&mut self) -> &mut Vec<CWidget> {
+    fn get_children_mut(&mut self) -> &mut Vec<Box<dyn Widget>> {
         unimplemented!()
     }
 
@@ -132,7 +135,7 @@ impl Layout for Padding {
         let position = [self.position[0] + self.edge_insets.left, self.position[1] + self.edge_insets.top];
         let dimension = [self.dimension[0] - self.edge_insets.left - self.edge_insets.right, self.dimension[1] - self.edge_insets.top - self.edge_insets.bottom];
 
-        positioning(position, dimension, &mut *self.child);
+        positioning(position, dimension, &mut self.child);
         self.child.position_children();
     }
 }

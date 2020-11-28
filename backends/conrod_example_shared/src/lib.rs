@@ -102,7 +102,7 @@ widget_ids! {
 
 /// Instantiate a GUI demonstrating every widget available in conrod.
 pub fn gui(ui: &mut conrod_core::UiCell, ids: &Ids, app: &mut DemoApp) {
-    use conrod_core::{widget, Colorable, Labelable, Positionable, Sizeable, Widget};
+    use conrod_core::{widget, Colorable, Labelable, Positionable, Sizeable, OldWidget};
     use std::iter::once;
 
     const MARGIN: conrod_core::Scalar = 30.0;

@@ -9,7 +9,7 @@ extern crate petgraph;
 
 mod support;
 
-use conrod_core::{widget, Borderable, Colorable, Labelable, Positionable, Sizeable, Widget};
+use conrod_core::{widget, Borderable, Colorable, Labelable, Positionable, Sizeable, OldWidget};
 use conrod_core::widget::graph::{node, Event, EdgeEvent, Node, NodeEvent, NodeSocket};
 use glium::Surface;
 use std::collections::HashMap;

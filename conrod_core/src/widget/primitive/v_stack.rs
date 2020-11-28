@@ -1,4 +1,4 @@
-use {Color, Colorable, Point, Rect, Sizeable, Widget};
+use {Color, Colorable, Point, Rect, Sizeable, OldWidget};
 use ::{widget, Scalar};
 use widget::triangles::Triangle;
 use widget::render::Render;
@@ -10,7 +10,7 @@ use render::primitive_kind::PrimitiveKind;
 use render::util::new_primitive;
 use widget::common_widget::CommonWidget;
 use uuid::Uuid;
-use widget::primitive::CWidget;
+use widget::primitive::Widget;
 use position::Dimensions;
 use daggy::petgraph::graph::node_index;
 use ::{Range, text};
@@ -27,21 +27,22 @@ use text::font::Map;
 use layout::CrossAxisAlignment;
 use event::event::Event;
 use event_handler::{WidgetEvent, MouseEvent, KeyboardEvent};
+use widget::primitive::widget::WidgetExt;
 
 
 /// A basic, non-interactive rectangle shape widget.
-#[derive(Clone, Debug)]
+#[derive(Debug)]
 pub struct VStack {
     id: Uuid,
-    children: Vec<CWidget>,
+    children: Vec<Box<dyn Widget>>,
     position: Point,
     dimension: Dimensions,
     spacing: Scalar
 }
 
 impl VStack {
-    pub fn initialize(children: Vec<CWidget>) -> CWidget {
-        CWidget::VStack(VStack {
+    pub fn initialize(children: Vec<Box<dyn Widget>>) -> Box<Self> {
+        Box::new(VStack {
             id: Uuid::new_v4(),
             children,
             position: [0.0,0.0],
@@ -73,6 +74,8 @@ impl Event for VStack {
     }
 }
 
+impl WidgetExt for VStack {}
+
 impl Layout for VStack {
     fn flexibility(&self) -> u32 {
         1
@@ -82,7 +85,7 @@ impl Layout for VStack {
         let mut number_of_children_that_needs_sizing = self.children.len() as f64;
         let mut size_for_children = [requested_size[0], requested_size[1] - ((number_of_children_that_needs_sizing - 1.0)*self.spacing)];
 
-        let mut children_flexibilty: Vec<(u32, &mut CWidget)> = self.children.iter_mut().map(|child| (child.flexibility(), child)).collect();
+        let mut children_flexibilty: Vec<(u32, &mut Box<dyn Widget>)> = self.children.iter_mut().map(|child| (child.flexibility(), child)).collect();
         children_flexibilty.sort_by(|(a,_), (b,_)| a.cmp(&b));
         children_flexibilty.reverse();
 
@@ -146,11 +149,11 @@ impl CommonWidget for VStack {
         self.id
     }
 
-    fn get_children(&self) -> &Vec<CWidget> {
+    fn get_children(&self) -> &Vec<Box<dyn Widget>> {
         &self.children
     }
 
-    fn get_children_mut(&mut self) -> &mut Vec<CWidget> {
+    fn get_children_mut(&mut self) -> &mut Vec<Box<dyn Widget>> {
         &mut self.children
     }
 

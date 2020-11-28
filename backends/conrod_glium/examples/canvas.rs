@@ -90,7 +90,7 @@ fn main() {
 
 // Draw the Ui.
 fn set_widgets(ref mut ui: conrod_core::UiCell, ids: &mut Ids) {
-    use conrod_core::{color, widget, Colorable, Labelable, Positionable, Sizeable, Widget};
+    use conrod_core::{color, widget, Colorable, Labelable, Positionable, Sizeable, OldWidget};
 
     // Construct our main `Canvas` tree.
     widget::Canvas::new().flow_down(&[

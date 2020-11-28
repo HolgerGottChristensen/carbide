@@ -9,7 +9,7 @@ extern crate glium;
 
 mod support;
 
-use conrod_core::{widget, Colorable, Positionable, Widget};
+use conrod_core::{widget, Colorable, Positionable, OldWidget};
 use glium::Surface;
 
 const WIDTH: u32 = 400;

@@ -4,7 +4,7 @@ use {Color, Colorable, FontSize, Borderable, Labelable, Positionable, Sizeable};
 use position::{self, Align, Scalar};
 use text;
 use utils;
-use widget::{self, Widget};
+use widget::{self, OldWidget};
 
 
 /// The index of a selected item.
@@ -193,7 +193,7 @@ impl<'a, T> DropDownList<'a, T> {
 }
 
 
-impl<'a, T> Widget for DropDownList<'a, T>
+impl<'a, T> OldWidget for DropDownList<'a, T>
     where T: AsRef<str>,
 {
     type State = State;

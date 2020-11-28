@@ -1,6 +1,6 @@
 //! A widget for plotting a series of lines using the given function *x -> y*.
 
-use {Color, Colorable, Point, Positionable, Scalar, Sizeable, Theme, Widget};
+use {Color, Colorable, Point, Positionable, Scalar, Sizeable, Theme, OldWidget};
 use graph;
 use num;
 use utils;
@@ -68,7 +68,7 @@ impl<X, Y, F> PlotPath<X, Y, F> {
 }
 
 
-impl<X, Y, F> Widget for PlotPath<X, Y, F>
+impl<X, Y, F> OldWidget for PlotPath<X, Y, F>
     where X: num::NumCast + Clone,
           Y: num::NumCast + Clone,
           F: FnMut(X) -> Y,

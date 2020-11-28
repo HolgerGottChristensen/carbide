@@ -1,6 +1,6 @@
 //! A button that allows for toggling boolean state.
 
-use {Color, Colorable, FontSize, Borderable, Labelable, Positionable, Scalar, Widget};
+use {Color, Colorable, FontSize, Borderable, Labelable, Positionable, Scalar, OldWidget};
 use position::{self, Align};
 use text;
 use widget;
@@ -128,7 +128,7 @@ impl<'a> Toggle<'a> {
 
 }
 
-impl<'a> Widget for Toggle<'a> {
+impl<'a> OldWidget for Toggle<'a> {
     type State = State;
     type Style = Style;
     type Event = TimesClicked;

@@ -1,6 +1,6 @@
 //! The primitive widget used for displaying text.
 
-use {Color, Colorable, FontSize, Ui, Widget};
+use {Color, Colorable, FontSize, Ui, OldWidget};
 use position::{Dimension, Scalar, Dimensions, Align};
 use ::{std, Rect};
 use ::{text, Point};
@@ -16,7 +16,7 @@ use render::util::new_primitive;
 use daggy::petgraph::graph::node_index;
 use widget::common_widget::CommonWidget;
 use uuid::Uuid;
-use widget::primitive::CWidget;
+use widget::primitive::Widget;
 use text::Justify;
 use widget::envelope_editor::EnvelopePoint;
 use widget::layout::Layout;
@@ -24,6 +24,7 @@ use text::font::Map;
 use layout::basic_layouter::BasicLayouter;
 use event::event::Event;
 use event_handler::{WidgetEvent, MouseEvent, KeyboardEvent};
+use widget::primitive::widget::WidgetExt;
 
 
 /// Displays some given text centered within a rectangular area.
@@ -32,7 +33,7 @@ use event_handler::{WidgetEvent, MouseEvent, KeyboardEvent};
 ///
 /// If some horizontal dimension is given, the text will automatically wrap to the width and align
 /// in accordance with the produced **Alignment**.
-#[derive(Clone, Debug, WidgetCommon_)]
+#[derive(Debug, WidgetCommon_)]
 pub struct Text {
     /// Data necessary and common for all widget builder render.
     #[conrod(common_builder)]
@@ -45,7 +46,7 @@ pub struct Text {
     dimension: Dimensions,
     wrap_mode: Wrap,
 
-    pub children: Vec<CWidget>,
+    pub children: Vec<Box<dyn Widget>>,
 }
 
 impl Event for Text {
@@ -199,16 +200,18 @@ impl Render for Text {
     }
 }
 
+impl WidgetExt for Text {}
+
 impl CommonWidget for Text {
     fn get_id(&self) -> Uuid {
         unimplemented!()
     }
 
-    fn get_children(&self) -> &Vec<CWidget> {
+    fn get_children(&self) -> &Vec<Box<dyn Widget>> {
         &self.children
     }
 
-    fn get_children_mut(&mut self) -> &mut Vec<CWidget> {
+    fn get_children_mut(&mut self) -> &mut Vec<Box<dyn Widget>> {
         &mut self.children
     }
 
@@ -303,8 +306,8 @@ pub struct State {
 
 
 impl Text {
-    pub fn initialize(text: String, children: Vec<CWidget>) -> CWidget {
-        CWidget::Text(Text {
+    pub fn initialize(text: String, children: Vec<Box<dyn Widget>>) -> Box<Self> {
+        Box::new(Text {
             common: widget::CommonBuilder::default(),
             text,
             style: Style::default(),
@@ -316,8 +319,8 @@ impl Text {
     }
 
     /// Build a new **Text** widget.
-    pub fn new(text: String, position: Point, dimension: Dimensions, children: Vec<CWidget>) -> CWidget {
-        CWidget::Text(Text {
+    pub fn new(text: String, position: Point, dimension: Dimensions, children: Vec<Box<dyn Widget>>) -> Box<Self> {
+        Box::new(Text {
             common: widget::CommonBuilder::default(),
             text,
             style: Style::default(),
@@ -440,7 +443,7 @@ impl Text {
 }
 
 
-impl Widget for Text {
+impl OldWidget for Text {
     type State = State;
     type Style = Style;
     type Event = ();

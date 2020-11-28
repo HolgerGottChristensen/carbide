@@ -2,7 +2,7 @@
 //!
 //! Due to the frequency of its use in GUIs, the `Rectangle` gets its own widget to allow backends
 //! to specialise their rendering implementations.
-use {Color, Colorable, Point, Rect, Sizeable, Widget};
+use {Color, Colorable, Point, Rect, Sizeable, OldWidget};
 use super::Style as Style;
 use ::{widget, Scalar};
 use widget::triangles::Triangle;
@@ -15,7 +15,7 @@ use render::primitive_kind::PrimitiveKind;
 use render::util::new_primitive;
 use widget::common_widget::CommonWidget;
 use uuid::Uuid;
-use widget::primitive::CWidget;
+use widget::primitive::Widget;
 use position::Dimensions;
 use daggy::petgraph::graph::node_index;
 use ::{Range, text};
@@ -32,13 +32,14 @@ use text::font::Map;
 use layout::basic_layouter::BasicLayouter;
 use event::event::Event;
 use event_handler::{WidgetEvent, MouseEvent, KeyboardEvent};
+use widget::primitive::widget::WidgetExt;
 
 
 /// A basic, non-interactive rectangle shape widget.
-#[derive(Clone, Debug, WidgetCommon_)]
+#[derive(Debug, WidgetCommon_)]
 pub struct Rectangle {
     id: Uuid,
-    children: Vec<CWidget>,
+    children: Vec<Box<dyn Widget>>,
     position: Point,
     dimension: Dimensions,
     /// Data necessary and common for all widget builder render.
@@ -47,6 +48,8 @@ pub struct Rectangle {
     /// Unique styling for the **Rectangle**.
     pub style: Style,
 }
+
+impl WidgetExt for Rectangle {}
 
 impl Event for Rectangle {
     fn handle_mouse_event(&mut self, event: &MouseEvent, consumed: &bool) {
@@ -100,11 +103,11 @@ impl CommonWidget for Rectangle {
         self.id
     }
 
-    fn get_children(&self) -> &Vec<CWidget> {
+    fn get_children(&self) -> &Vec<Box<dyn Widget>> {
         &self.children
     }
 
-    fn get_children_mut(&mut self) -> &mut Vec<CWidget> {
+    fn get_children_mut(&mut self) -> &mut Vec<Box<dyn Widget>> {
         &mut self.children
     }
 
@@ -256,8 +259,8 @@ impl Rectangle {
         Rectangle::styled(dim, Style::outline_styled(line_style))
     }
 
-    pub fn initialize(children: Vec<CWidget>) -> CWidget {
-        CWidget::Rectangle(Rectangle {
+    pub fn initialize(children: Vec<Box<dyn Widget>>) -> Box<Rectangle> {
+        Box::new(Rectangle {
             id: Uuid::new_v4(),
             children,
             position: [0.0,0.0],
@@ -267,8 +270,8 @@ impl Rectangle {
         })
     }
 
-    pub fn new(position: Point, dimension: Dimensions, children: Vec<CWidget>) -> CWidget {
-        CWidget::Rectangle(Rectangle {
+    pub fn new(position: Point, dimension: Dimensions, children: Vec<Box<dyn Widget>>) -> Box<Rectangle> {
+        Box::new(Rectangle {
             id: Uuid::new_v4(),
             children,
             position,
@@ -279,7 +282,7 @@ impl Rectangle {
     }
 }
 
-impl Widget for Rectangle {
+impl OldWidget for Rectangle {
     type State = State;
     type Style = Style;
     type Event = ();

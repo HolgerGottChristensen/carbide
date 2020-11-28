@@ -1,6 +1,6 @@
 //! A widget for selecting a single value along some linear range.
 
-use {Color, Colorable, FontSize, Borderable, Labelable, Positionable, Widget};
+use {Color, Colorable, FontSize, Borderable, Labelable, Positionable, OldWidget};
 use num::{Float, NumCast, ToPrimitive};
 use position::{Padding, Range, Rect, Scalar};
 use text;
@@ -100,7 +100,7 @@ impl<'a, T> Slider<'a, T> {
 
 }
 
-impl<'a, T> Widget for Slider<'a, T>
+impl<'a, T> OldWidget for Slider<'a, T>
     where T: Float + NumCast + ToPrimitive,
 {
     type State = State;

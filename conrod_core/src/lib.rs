@@ -25,7 +25,7 @@ pub use label::{FontSize, Labelable};
 pub use position::{Dimension, Point, Position, Positionable, Range, Rect, Scalar, Sizeable};
 pub use theme::Theme;
 pub use ui::{Ui, UiCell, UiBuilder};
-pub use widget::{scroll, Widget};
+pub use widget::{scroll, OldWidget};
 
 mod border;
 pub mod color;

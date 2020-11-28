@@ -1,6 +1,6 @@
 //! A simple, non-interactive widget for drawing an `Image`.
 
-use {Color, Widget, Ui};
+use {Color, OldWidget, Ui};
 use ::{image, Point};
 use position::{Dimension, Rect, Dimensions};
 use ::{widget, text};
@@ -12,7 +12,7 @@ use text::font::Map;
 use render::primitive_kind::PrimitiveKind;
 use render::util::new_primitive;
 use daggy::petgraph::graph::node_index;
-use widget::primitive::CWidget;
+use widget::primitive::Widget;
 use widget::common_widget::CommonWidget;
 use uuid::Uuid;
 use widget::layout::Layout;
@@ -21,10 +21,11 @@ use Scalar;
 use layout::basic_layouter::BasicLayouter;
 use event::event::Event;
 use event_handler::{WidgetEvent, MouseEvent, KeyboardEvent};
+use widget::primitive::widget::WidgetExt;
 
 
 /// A primitive and basic widget for drawing an `Image`.
-#[derive(Clone, Debug, WidgetCommon_)]
+#[derive(Debug, WidgetCommon_)]
 pub struct Image {
     /// Data necessary and common for all widget builder render.
     #[conrod(common_builder)]
@@ -38,7 +39,7 @@ pub struct Image {
     position: Point,
     dimension: Dimensions,
 
-    pub children: Vec<CWidget>,
+    pub children: Vec<Box<dyn Widget>>,
 }
 
 impl Event for Image {
@@ -127,11 +128,11 @@ impl CommonWidget for Image {
         unimplemented!()
     }
 
-    fn get_children(&self) -> &Vec<CWidget> {
+    fn get_children(&self) -> &Vec<Box<dyn Widget>> {
         &self.children
     }
 
-    fn get_children_mut(&mut self) -> &mut Vec<CWidget> {
+    fn get_children_mut(&mut self) -> &mut Vec<Box<dyn Widget>> {
         &mut self.children
     }
 
@@ -227,8 +228,8 @@ impl Image {
         }
     }
 
-    pub fn new(id: image::Id, dimension: Dimensions, children: Vec<CWidget>) -> CWidget {
-        CWidget::Image(Image {
+    pub fn new(id: image::Id, dimension: Dimensions, children: Vec<Box<dyn Widget>>) -> Box<Self> {
+        Box::new(Image {
             common: Default::default(),
             image_id: id,
             src_rect: None,
@@ -253,8 +254,9 @@ impl Image {
 
 }
 
+impl WidgetExt for Image {}
 
-impl Widget for Image {
+impl OldWidget for Image {
     type State = State;
     type Style = Style;
     type Event = ();

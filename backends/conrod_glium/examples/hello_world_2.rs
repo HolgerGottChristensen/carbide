@@ -9,16 +9,17 @@ extern crate glium;
 
 mod support;
 
-use conrod_core::{widget, Colorable, Positionable, Widget};
+use conrod_core::{widget, Colorable, Positionable, OldWidget};
 use glium::Surface;
 use conrod_glium::Window;
-use conrod_core::widget::primitive::CWidget;
 use conrod_core::widget::{Rectangle, Oval, Line, Text, Image, Frame, ZStack, SCALE};
 use conrod_core::widget::oval::Full;
 use conrod_core::widget::primitive::v_stack::VStack;
 use conrod_core::widget::primitive::h_stack::HStack;
 use conrod_core::widget::primitive::edge_insets::EdgeInsets;
 use conrod_core::widget::primitive::spacer::Spacer;
+use std::ops::{Deref, DerefMut};
+use conrod_core::widget::primitive::widget::WidgetExt;
 
 const WIDTH: u32 = 750/2;
 const HEIGHT: u32 = 1334/2;

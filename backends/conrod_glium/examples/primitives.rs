@@ -96,7 +96,7 @@ fn main() {
 
 
 fn set_ui(ref mut ui: conrod_core::UiCell, ids: &Ids) {
-    use conrod_core::{Positionable, Widget};
+    use conrod_core::{Positionable, OldWidget};
     use conrod_core::widget::{Canvas, Circle, Line, Oval, PointPath, Polygon, Rectangle};
     use std::iter::once;
 

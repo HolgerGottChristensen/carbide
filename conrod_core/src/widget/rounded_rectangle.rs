@@ -4,7 +4,7 @@
 //! circle used to draw the corners.
 
 use {Color, Colorable, Point, Positionable, Range, Rect, Scalar, Sizeable, Theme,
-     Widget};
+     OldWidget};
 use graph;
 use std::f64::consts::PI;
 use widget;
@@ -77,7 +77,7 @@ impl RoundedRectangle {
     }
 }
 
-impl Widget for RoundedRectangle {
+impl OldWidget for RoundedRectangle {
     type State = State;
     type Style = Style;
     type Event = ();

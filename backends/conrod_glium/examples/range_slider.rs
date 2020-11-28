@@ -98,7 +98,7 @@ fn set_ui(
     ids: &Ids,
     oval_range: &mut (conrod_core::Scalar, conrod_core::Scalar),
 ) {
-    use conrod_core::{color, widget, Colorable, Positionable, Sizeable, Widget};
+    use conrod_core::{color, widget, Colorable, Positionable, Sizeable, OldWidget};
 
     widget::Canvas::new().color(color::DARK_CHARCOAL).set(ids.canvas, ui);
 

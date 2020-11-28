@@ -1,5 +1,4 @@
 use uuid::Uuid;
-use widget::primitive::CWidget;
 use ::{Point, Rect};
 use position::Dimensions;
 use widget::render::Render;
@@ -9,16 +8,17 @@ use widget::{Id, Rectangle};
 use text::font::Map;
 use widget::common_widget::CommonWidget;
 use text;
+use widget::primitive::Widget;
 
 pub struct NewButton {
     id: Uuid,
-    children: Vec<CWidget>,
+    children: Vec<Box<dyn Widget>>,
     position: Point,
     dimension: Dimensions,
 }
 
 impl NewButton {
-    fn display(&self) -> CWidget {
+    fn display(&self) -> Box<Rectangle> {
         Rectangle::new(self.position, self.dimension, vec![])
     }
 }
