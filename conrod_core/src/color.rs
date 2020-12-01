@@ -16,7 +16,6 @@ use utils::{degrees, fmod, turns};
 use self::rand::Rng;
 
 
-
 /// Color supporting RGB and HSL variants.
 #[derive(PartialEq, Copy, Clone, Debug)]
 pub enum Color {

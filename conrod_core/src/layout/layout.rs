@@ -1,4 +1,3 @@
-use layout::bounds::Bounds;
 use widget::common_widget::CommonWidget;
 use position::Dimensions;
 use Point;

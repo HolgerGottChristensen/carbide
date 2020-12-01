@@ -27,6 +27,7 @@ use event_handler::{WidgetEvent, MouseEvent, KeyboardEvent};
 use std::fmt::Debug;
 use std::fmt;
 use std::ops::{Deref, DerefMut};
+use state::state::{StateList, DefaultState};
 
 pub trait Widget: Event + Layout + Render {}
 
@@ -104,12 +105,24 @@ impl Event for Box<Widget> {
         self.deref_mut().handle_other_event(event)
     }
 
-    fn process_mouse_event(&mut self, event: &MouseEvent, consumed: &bool) {
-        self.deref_mut().process_mouse_event(event, consumed)
+    fn process_mouse_event(&mut self, event: &MouseEvent, consumed: &bool, state: StateList<DefaultState>) -> StateList<DefaultState> {
+        self.deref_mut().process_mouse_event(event, consumed, state)
     }
 
-    fn process_keyboard_event(&mut self, event: &KeyboardEvent) {
-        self.deref_mut().process_keyboard_event(event)
+    fn process_keyboard_event(&mut self, event: &KeyboardEvent, state: StateList<DefaultState>) -> StateList<DefaultState> {
+        self.deref_mut().process_keyboard_event(event, state)
+    }
+
+    fn get_state(&self, mut current_state: StateList<DefaultState>) -> StateList<DefaultState> {
+        self.deref().get_state(current_state)
+    }
+
+    fn apply_state(&mut self, mut states: StateList<DefaultState>) -> StateList<DefaultState> {
+        self.deref_mut().apply_state(states)
+    }
+
+    fn sync_state(&mut self, mut states: StateList<DefaultState>) {
+        self.deref_mut().sync_state(states)
     }
 }
 
@@ -128,16 +141,9 @@ impl Layout for Box<Widget> {
 }
 
 impl Render for Box<Widget> {
-    fn layout(&mut self, proposed_size: [f64; 2], fonts: &Map, positioner: &dyn Fn(&mut dyn CommonWidget, [f64; 2])) {
-        unimplemented!()
-    }
 
-    fn render(self, id: Id, clip: Rect, container: &Container) -> Option<Primitive> {
-        unimplemented!()
-    }
-
-    fn get_primitives(&self, proposed_size: [f64; 2], fonts: &Map) -> Vec<Primitive> {
-        self.deref().get_primitives(proposed_size, fonts)
+    fn get_primitives(&self, fonts: &Map) -> Vec<Primitive> {
+        self.deref().get_primitives(fonts)
     }
 }
 

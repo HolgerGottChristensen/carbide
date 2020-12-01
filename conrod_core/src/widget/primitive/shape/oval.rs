@@ -25,6 +25,7 @@ use layout::basic_layouter::BasicLayouter;
 use event::event::Event;
 use event_handler::{WidgetEvent, MouseEvent, KeyboardEvent};
 use widget::primitive::widget::WidgetExt;
+use state::state::{StateList, DefaultState};
 
 
 /// A simple, non-interactive widget for drawing a single **Oval**.
@@ -49,28 +50,35 @@ pub struct Oval<S> {
 
 impl<S> Event for Oval<S> {
     fn handle_mouse_event(&mut self, event: &MouseEvent, consumed: &bool) {
-        unimplemented!()
+        ()
     }
 
     fn handle_keyboard_event(&mut self, event: &KeyboardEvent) {
-        match event {
-            KeyboardEvent::Text(s, _) => {
-                println!("The key was accepted: {} in widget: {:?}", s, self.get_id())
-            }
-            _ => ()
-        }
+        ()
     }
 
     fn handle_other_event(&mut self, event: &WidgetEvent) {
         unimplemented!()
     }
 
-    fn process_mouse_event(&mut self, event: &MouseEvent, consumed: &bool) {
-        self.process_mouse_event_default(event, consumed);
+    fn process_mouse_event(&mut self, event: &MouseEvent, consumed: &bool, state: StateList<DefaultState>) -> StateList<DefaultState> {
+        self.process_mouse_event_default(event, consumed, state)
     }
 
-    fn process_keyboard_event(&mut self, event: &KeyboardEvent) {
-        self.process_keyboard_event_default(event);
+    fn process_keyboard_event(&mut self, event: &KeyboardEvent, state: StateList<DefaultState>) -> StateList<DefaultState> {
+        self.process_keyboard_event_default(event, state)
+    }
+
+    fn get_state(&self, current_state: StateList<DefaultState>) -> StateList<DefaultState> {
+        current_state
+    }
+
+    fn apply_state(&mut self, states: StateList<DefaultState>) -> StateList<DefaultState> {
+        states
+    }
+
+    fn sync_state(&mut self, states: StateList<DefaultState>) {
+        self.sync_state_default(states);
     }
 }
 
@@ -150,22 +158,8 @@ impl<S> CommonWidget for Oval<S> {
 }
 
 impl<S> Render for Oval<S> {
-    fn layout(&mut self, proposed_size: Dimensions, fonts: &text::font::Map, positioner: &dyn Fn(&mut dyn CommonWidget, Dimensions)) {
-        unimplemented!()
-    }
 
-    fn render(self, id: Id, clip: Rect, container: &Container) -> Option<Primitive> {
-        let points = widget::oval::circumference(container.rect, DEFAULT_RESOLUTION);
-        let mut triangles: Vec<Triangle<Point>> = Vec::new();
-        triangles.extend(points.triangles());
-        let kind = PrimitiveKind::TrianglesSingleColor {
-            color: Color::random().to_rgb(),
-            triangles,
-        };
-        return Some(new_primitive(id, kind, clip, container.rect));
-    }
-
-    fn get_primitives(&self, proposed_dimensions: Dimensions,  fonts: &text::font::Map) -> Vec<Primitive> {
+    fn get_primitives(&self, fonts: &text::font::Map) -> Vec<Primitive> {
         let points = widget::oval::circumference(Rect::new(self.position, self.dimension), DEFAULT_RESOLUTION);
         let mut triangles: Vec<Triangle<Point>> = Vec::new();
         triangles.extend(points.triangles());
@@ -176,7 +170,7 @@ impl<S> Render for Oval<S> {
 
         let mut prims: Vec<Primitive> = vec![new_primitive(node_index(0), kind, Rect::new(self.position, self.dimension), Rect::new(self.position, self.dimension))];
         prims.extend(Rectangle::rect_outline(Rect::new(self.position, self.dimension), 1.0));
-        let children: Vec<Primitive> = self.get_children().iter().flat_map(|f| f.get_primitives(proposed_dimensions, fonts)).collect();
+        let children: Vec<Primitive> = self.get_children().iter().flat_map(|f| f.get_primitives(fonts)).collect();
         prims.extend(children);
 
         return prims;

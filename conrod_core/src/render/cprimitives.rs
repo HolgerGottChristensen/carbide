@@ -25,14 +25,7 @@ impl CPrimitives {
 
         root.position_children();
 
-
-        /*root.layout(window_dimensions, fonts, &|c: &mut CommonWidget, dimensions: Dimensions| {
-            let new_x = window_dimensions[0]/2.0 - dimensions[0]/2.0;
-            let new_y = window_dimensions[1]/2.0 - dimensions[1]/2.0;
-            c.set_x(new_x);
-            c.set_y(new_y);
-        });*/
-        let mut prims: Vec<Primitive> = root.get_primitives(window_dimensions, fonts);
+        let mut prims: Vec<Primitive> = root.get_primitives(fonts);
         CPrimitives {
             primitives: prims
         }

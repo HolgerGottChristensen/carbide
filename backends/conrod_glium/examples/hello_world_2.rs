@@ -17,10 +17,12 @@ use conrod_core::widget::oval::Full;
 use conrod_core::widget::primitive::v_stack::VStack;
 use conrod_core::widget::primitive::h_stack::HStack;
 use conrod_core::widget::primitive::edge_insets::EdgeInsets;
-use conrod_core::widget::primitive::spacer::Spacer;
+use conrod_core::widget::primitive::spacer::{Spacer, SpacerDirection};
 use std::ops::{Deref, DerefMut};
 use conrod_core::widget::primitive::widget::WidgetExt;
 use conrod_core::color::{LIGHT_BLUE, RED, GREEN};
+use conrod_core::state::state::State;
+use conrod_core::widget::complex::button::SyncTest;
 
 const WIDTH: u32 = 750/2;
 const HEIGHT: u32 = 1334/2;
@@ -84,12 +86,19 @@ fn main() {
             )
         ]
     ));*/
+
+    let hello_state = State::new("hej", &"Hello".to_string());
+    let world_state = State::new("hej2", &"world! \nHvad sker der i denne verden og vil den laypute rigtigt når der er en lang tekst".to_string());
+    let sync_state = State::new("K", &"Hello".to_string());
+
     window.set_widgets(
         VStack::initialize(vec![
-            Text::initialize("Hello".to_string(), vec![]),
-            Text::initialize("world! \nHvad sker der i denne verden og vil den laypute rigtigt når der er en lang tekst".to_string(), vec![]),
+            Text::initialize(hello_state, vec![]),
+            Text::initialize(world_state, vec![]),
             Image::new(rust_image, [100.0,100.0], vec![]),
-            Rectangle::initialize(vec![]).fill(GREEN),
+            Rectangle::initialize(vec![
+                SyncTest::new(sync_state)
+            ]).fill(GREEN),
             HStack::initialize(vec![
                 Image::new(rust_image, [100.0,100.0], vec![]),
                 //ZStack::initialize(vec![
@@ -100,13 +109,13 @@ fn main() {
                // ])
             ]),
             HStack::initialize(vec![
-                Spacer::new(),
+                Spacer::new(SpacerDirection::Horizontal),
                 Oval::initialize(vec![])
                     .fill(RED)
                     .padding(EdgeInsets::all(10.0))
                     .frame(150.0,150.0),
-                Spacer::new(),
-                Spacer::new()
+                Spacer::new(SpacerDirection::Horizontal),
+                Spacer::new(SpacerDirection::Horizontal)
             ]),
 
         ])

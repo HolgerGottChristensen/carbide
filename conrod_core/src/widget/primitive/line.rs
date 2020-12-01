@@ -20,6 +20,7 @@ use text::font::Map;
 use event::event::Event;
 use event_handler::{WidgetEvent, MouseEvent, KeyboardEvent};
 use widget::primitive::widget::WidgetExt;
+use state::state::{StateList, DefaultState};
 
 
 /// A simple, non-interactive widget for drawing a single straight Line.
@@ -44,7 +45,7 @@ pub struct Line {
 
 impl Event for Line {
     fn handle_mouse_event(&mut self, event: &MouseEvent, consumed: &bool) {
-        unimplemented!()
+        ()
     }
 
     fn handle_keyboard_event(&mut self, event: &KeyboardEvent) {
@@ -55,12 +56,24 @@ impl Event for Line {
         unimplemented!()
     }
 
-    fn process_mouse_event(&mut self, event: &MouseEvent, consumed: &bool) {
-        self.process_mouse_event_default(event, consumed);
+    fn process_mouse_event(&mut self, event: &MouseEvent, consumed: &bool, state: StateList<DefaultState>) -> StateList<DefaultState> {
+        self.process_mouse_event_default(event, consumed, state)
     }
 
-    fn process_keyboard_event(&mut self, event: &KeyboardEvent) {
-        self.process_keyboard_event_default(event);
+    fn process_keyboard_event(&mut self, event: &KeyboardEvent, state: StateList<DefaultState>) -> StateList<DefaultState> {
+        self.process_keyboard_event_default(event, state)
+    }
+
+    fn get_state(&self, current_state: StateList<DefaultState>) -> StateList<DefaultState> {
+        current_state
+    }
+
+    fn apply_state(&mut self, states: StateList<DefaultState>) -> StateList<DefaultState> {
+        states
+    }
+
+    fn sync_state(&mut self, states: StateList<DefaultState>) {
+        self.sync_state_default(states);
     }
 }
 
@@ -81,28 +94,8 @@ impl Layout for Line {
 }
 
 impl Render for Line {
-    fn layout(&mut self, proposed_size: Dimensions, fonts: &text::font::Map, positioner: &dyn Fn(&mut dyn CommonWidget, Dimensions)) {
-        unimplemented!()
-    }
 
-    fn render(self, id: Id, clip: Rect, container: &Container) -> Option<Primitive> {
-        const DEFAULT_CAP: Cap = Cap::Flat;
-        let thickness = 2.0;
-        let points = std::iter::once(self.start).chain(std::iter::once(self.end));
-        let triangles = match widget::point_path::triangles(points, DEFAULT_CAP, thickness) {
-            None => Vec::new(),
-            Some(iter) => {
-                iter.collect()
-            },
-        };
-        let kind = PrimitiveKind::TrianglesSingleColor {
-            color: Color::random().to_rgb(),
-            triangles: triangles.to_vec(),
-        };
-        return Some(new_primitive(id, kind, clip, container.rect));
-    }
-
-    fn get_primitives(&self, proposed_dimensions: Dimensions, fonts: &text::font::Map) -> Vec<Primitive> {
+    fn get_primitives(&self, fonts: &text::font::Map) -> Vec<Primitive> {
         const DEFAULT_CAP: Cap = Cap::Flat;
         let thickness = 2.0;
         let points = std::iter::once(self.start).chain(std::iter::once(self.end));
@@ -118,7 +111,7 @@ impl Render for Line {
         };
 
         let mut prims: Vec<Primitive> = vec![new_primitive(node_index(0), kind, Rect::new(self.position, self.dimension), Rect::new(self.position, self.dimension))];
-        let children: Vec<Primitive> = self.get_children().iter().flat_map(|f| f.get_primitives(proposed_dimensions, fonts)).collect();
+        let children: Vec<Primitive> = self.get_children().iter().flat_map(|f| f.get_primitives(fonts)).collect();
         prims.extend(children);
 
         return prims;

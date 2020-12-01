@@ -22,6 +22,7 @@ use layout::basic_layouter::BasicLayouter;
 use event::event::Event;
 use event_handler::{WidgetEvent, MouseEvent, KeyboardEvent};
 use widget::primitive::widget::WidgetExt;
+use state::state::{StateList, DefaultState};
 
 
 /// A primitive and basic widget for drawing an `Image`.
@@ -44,7 +45,7 @@ pub struct Image {
 
 impl Event for Image {
     fn handle_mouse_event(&mut self, event: &MouseEvent, consumed: &bool) {
-        unimplemented!()
+        ()
     }
 
     fn handle_keyboard_event(&mut self, event: &KeyboardEvent) {
@@ -55,12 +56,24 @@ impl Event for Image {
         unimplemented!()
     }
 
-    fn process_mouse_event(&mut self, event: &MouseEvent, consumed: &bool) {
-        self.process_mouse_event_default(event, consumed);
+    fn process_mouse_event(&mut self, event: &MouseEvent, consumed: &bool, state: StateList<DefaultState>) -> StateList<DefaultState> {
+        self.process_mouse_event_default(event, consumed, state)
     }
 
-    fn process_keyboard_event(&mut self, event: &KeyboardEvent) {
-        self.process_keyboard_event_default(event);
+    fn process_keyboard_event(&mut self, event: &KeyboardEvent, state: StateList<DefaultState>) -> StateList<DefaultState> {
+        self.process_keyboard_event_default(event, state)
+    }
+
+    fn get_state(&self, current_state: StateList<DefaultState>) -> StateList<DefaultState> {
+        current_state
+    }
+
+    fn apply_state(&mut self, states: StateList<DefaultState>) -> StateList<DefaultState> {
+        states
+    }
+
+    fn sync_state(&mut self, states: StateList<DefaultState>) {
+        self.sync_state_default(states);
     }
 }
 
@@ -91,21 +104,8 @@ impl Layout for Image {
 }
 
 impl Render for Image {
-    fn layout(&mut self, proposed_size: Dimensions, fonts: &text::font::Map, positioner: &dyn Fn(&mut dyn CommonWidget, Dimensions)) {
-        unimplemented!()
-    }
 
-    fn render(self, id: Id, clip: Rect, container: &Container) -> Option<Primitive> {
-        //let color = Color::random();
-        let kind = PrimitiveKind::Image {
-            color: None,
-            image_id: self.image_id,
-            source_rect: self.src_rect,
-        };
-        return Some(new_primitive(id, kind, clip, container.rect));
-    }
-
-    fn get_primitives(&self, proposed_dimensions: Dimensions, fonts: &Map) -> Vec<Primitive> {
+    fn get_primitives(&self, fonts: &Map) -> Vec<Primitive> {
         //let color = Color::random();
         let kind = PrimitiveKind::Image {
             color: None,
@@ -116,7 +116,7 @@ impl Render for Image {
         let rect = Rect::new(self.position, self.dimension);
         let mut prims: Vec<Primitive> = vec![new_primitive(node_index(0), kind, rect, rect)];
         prims.extend(Rectangle::rect_outline(rect.clone(), 1.0));
-        let children: Vec<Primitive> = self.get_children().iter().flat_map(|f| f.get_primitives(proposed_dimensions, fonts)).collect();
+        let children: Vec<Primitive> = self.get_children().iter().flat_map(|f| f.get_primitives(fonts)).collect();
         prims.extend(children);
 
         return prims;

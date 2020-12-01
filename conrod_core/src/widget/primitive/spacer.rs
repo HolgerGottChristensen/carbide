@@ -31,6 +31,7 @@ use text::font::Map;
 use layout::basic_layouter::BasicLayouter;
 use event::event::Event;
 use event_handler::{WidgetEvent, MouseEvent, KeyboardEvent};
+use state::state::{StateList, DefaultState};
 
 
 /// A basic, non-interactive rectangle shape widget.
@@ -38,39 +39,60 @@ use event_handler::{WidgetEvent, MouseEvent, KeyboardEvent};
 pub struct Spacer {
     id: Uuid,
     position: Point,
-    dimension: Dimensions
+    dimension: Dimensions,
+    space: SpacerDirection
+}
+
+#[derive(Clone, Debug)]
+pub enum SpacerDirection {
+    Vertical,
+    Horizontal,
+    Both
 }
 
 
 
 impl Spacer {
-    pub fn new() -> Box<Self> {
+    pub fn new(space: SpacerDirection) -> Box<Self> {
         Box::new(Spacer {
             id: Uuid::new_v4(),
             position: [0.0,0.0],
-            dimension: [100.0,100.0]
+            dimension: [100.0,100.0],
+            space
         })
     }
 }
 
 impl Event for Spacer {
     fn handle_mouse_event(&mut self, event: &MouseEvent, consumed: &bool) {
-        unimplemented!()
-    }
-
-    fn handle_keyboard_event(&mut self, event: &KeyboardEvent) {
-        unimplemented!()
-    }
-
-    fn handle_other_event(&mut self, event: &WidgetEvent) {
-        unimplemented!()
-    }
-
-    fn process_mouse_event(&mut self, event: &MouseEvent, consumed: &bool) {
         ()
     }
 
-    fn process_keyboard_event(&mut self, event: &KeyboardEvent) {
+    fn handle_keyboard_event(&mut self, event: &KeyboardEvent) {
+        ()
+    }
+
+    fn handle_other_event(&mut self, event: &WidgetEvent) {
+        ()
+    }
+
+    fn process_mouse_event(&mut self, event: &MouseEvent, consumed: &bool, state: StateList<DefaultState>) -> StateList<DefaultState> {
+        state
+    }
+
+    fn process_keyboard_event(&mut self, event: &KeyboardEvent, state: StateList<DefaultState>) -> StateList<DefaultState> {
+        state
+    }
+
+    fn get_state(&self, current_state: StateList<DefaultState>) -> StateList<DefaultState> {
+        unimplemented!()
+    }
+
+    fn apply_state(&mut self, states: StateList<DefaultState>) -> StateList<DefaultState> {
+        unimplemented!()
+    }
+
+    fn sync_state(&mut self, states: StateList<DefaultState>) {
         ()
     }
 }
@@ -81,8 +103,19 @@ impl Layout for Spacer {
     }
 
     fn calculate_size(&mut self, requested_size: Dimensions, fonts: &Map) -> Dimensions {
-        self.dimension = requested_size;
-        requested_size
+        match self.space {
+            SpacerDirection::Vertical => {
+                self.dimension = [0.0, requested_size[1]];
+            }
+            SpacerDirection::Horizontal => {
+                self.dimension = [requested_size[0], 0.0];
+            }
+            SpacerDirection::Both => {
+                self.dimension = requested_size;
+            }
+        }
+
+        self.dimension
     }
 
     fn position_children(&mut self) {
@@ -137,17 +170,8 @@ impl CommonWidget for Spacer {
 }
 
 impl Render for Spacer {
-    fn layout(&mut self, proposed_size: Dimensions, fonts: &text::font::Map, positioner: &dyn Fn(&mut CommonWidget, Dimensions)) {
-        let dimension = self.dimension.clone();
-        positioner(self, dimension);
-    }
 
-    fn render(self, id: Id, clip: Rect, container: &Container) -> Option<Primitive> {
-        let kind = PrimitiveKind::Rectangle { color: rgb(0.0,1.0, 0.0)};
-        return Some(new_primitive(id, kind, clip, container.rect));
-    }
-
-    fn get_primitives(&self, proposed_dimensions: Dimensions, fonts: &text::font::Map) -> Vec<Primitive> {
+    fn get_primitives(&self, fonts: &text::font::Map) -> Vec<Primitive> {
         let mut prims = vec![];
         prims.extend(Rectangle::rect_outline(Rect::new(self.position, self.dimension), 1.0));
         return prims;

@@ -29,6 +29,7 @@ use layout::basic_layouter::BasicLayouter;
 use event::event::Event;
 use event_handler::{WidgetEvent, MouseEvent, KeyboardEvent};
 use widget::primitive::widget::WidgetExt;
+use state::state::{StateList, DefaultState};
 
 
 /// A basic, non-interactive rectangle shape widget.
@@ -53,7 +54,7 @@ impl ZStack {
 
 impl Event for ZStack {
     fn handle_mouse_event(&mut self, event: &MouseEvent, consumed: &bool) {
-        unimplemented!()
+        ()
     }
 
     fn handle_keyboard_event(&mut self, event: &KeyboardEvent) {
@@ -64,12 +65,24 @@ impl Event for ZStack {
         unimplemented!()
     }
 
-    fn process_mouse_event(&mut self, event: &MouseEvent, consumed: &bool) {
-        self.process_mouse_event_default(event, consumed);
+    fn process_mouse_event(&mut self, event: &MouseEvent, consumed: &bool, state: StateList<DefaultState>) -> StateList<DefaultState> {
+        self.process_mouse_event_default(event, consumed, state)
     }
 
-    fn process_keyboard_event(&mut self, event: &KeyboardEvent) {
-        self.process_keyboard_event_default(event);
+    fn process_keyboard_event(&mut self, event: &KeyboardEvent, state: StateList<DefaultState>) -> StateList<DefaultState> {
+        self.process_keyboard_event_default(event, state)
+    }
+
+    fn get_state(&self, current_state: StateList<DefaultState>) -> StateList<DefaultState> {
+        current_state
+    }
+
+    fn apply_state(&mut self, states: StateList<DefaultState>) -> StateList<DefaultState> {
+        states
+    }
+
+    fn sync_state(&mut self, states: StateList<DefaultState>) {
+        self.sync_state_default(states);
     }
 }
 
@@ -166,18 +179,11 @@ impl CommonWidget for ZStack {
 }
 
 impl Render for ZStack {
-    fn layout(&mut self, proposed_size: Dimensions, fonts: &text::font::Map, positioner: &dyn Fn(&mut CommonWidget, Dimensions)) {
-        unimplemented!()
-    }
 
-    fn render(self, id: Id, clip: Rect, container: &Container) -> Option<Primitive> {
-        unimplemented!()
-    }
-
-    fn get_primitives(&self, proposed_dimensions: Dimensions, fonts: &text::font::Map) -> Vec<Primitive> {
+    fn get_primitives(&self, fonts: &text::font::Map) -> Vec<Primitive> {
         let mut prims = vec![];
         prims.extend(Rectangle::rect_outline(Rect::new(self.position, self.dimension), 0.5));
-        let children: Vec<Primitive> = self.get_children().iter().flat_map(|f| f.get_primitives(proposed_dimensions, fonts)).collect();
+        let children: Vec<Primitive> = self.get_children().iter().flat_map(|f| f.get_primitives(fonts)).collect();
         prims.extend(children);
 
         return prims;

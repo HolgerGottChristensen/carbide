@@ -26,6 +26,7 @@ use event::event::Event;
 use event_handler::{WidgetEvent, MouseEvent, KeyboardEvent};
 use widget::primitive::widget::WidgetExt;
 use color::WHITE;
+use state::state::{StateList, DefaultState, State, GetState};
 
 
 /// Displays some given text centered within a rectangular area.
@@ -40,7 +41,7 @@ pub struct Text {
     #[conrod(common_builder)]
     pub common: widget::CommonBuilder,
     /// The text to be drawn by the **Text**.
-    pub text: String,
+    pub text: State<String>,
     /// Unique styling for the **Text**.
     pub style: Style,
     position: Point,
@@ -53,11 +54,16 @@ pub struct Text {
 
 impl Event for Text {
     fn handle_mouse_event(&mut self, event: &MouseEvent, consumed: &bool) {
-        unimplemented!()
+        match event {
+            MouseEvent::Press(_, _, _) => {
+                self.text.push_str(" Hejsa")
+            }
+            _ => {}
+        }
     }
 
     fn handle_keyboard_event(&mut self, event: &KeyboardEvent) {
-        match event {
+        /*match event {
             KeyboardEvent::Text(s, _) => {
                 if self.text.len() < 10 {
                     self.text = s.clone();
@@ -65,19 +71,38 @@ impl Event for Text {
 
             }
             _ => ()
-        }
+        }*/
     }
 
     fn handle_other_event(&mut self, event: &WidgetEvent) {
         unimplemented!()
     }
 
-    fn process_mouse_event(&mut self, event: &MouseEvent, consumed: &bool) {
-        self.process_mouse_event_default(event, consumed);
+    fn process_mouse_event(&mut self, event: &MouseEvent, consumed: &bool, state: StateList<DefaultState>) -> StateList<DefaultState> {
+        self.process_mouse_event_default(event, consumed, state)
     }
 
-    fn process_keyboard_event(&mut self, event: &KeyboardEvent) {
-        self.process_keyboard_event_default(event);
+    fn process_keyboard_event(&mut self, event: &KeyboardEvent, state: StateList<DefaultState>) -> StateList<DefaultState> {
+        self.process_keyboard_event_default(event, state)
+    }
+
+    fn get_state(&self, mut current_state: StateList<DefaultState>) -> StateList<DefaultState> {
+        current_state.replace_state(self.text.clone().into());
+        current_state
+    }
+
+    fn apply_state(&mut self, states: StateList<DefaultState>) -> StateList<DefaultState> {
+        match states.get_state(&self.text.id) {
+            None => (),
+            Some(v) => {
+                self.text = v.clone().into()
+            }
+        }
+        states
+    }
+
+    fn sync_state(&mut self, states: StateList<DefaultState>) {
+        self.sync_state_default(states);
     }
 }
 
@@ -89,24 +114,23 @@ impl Layout for Text {
 
     fn calculate_size(&mut self, proposed_size: Dimensions, fonts: &Map) -> Dimensions {
         let pref_width = self.default_x(fonts);
+
+        if (pref_width > proposed_size[0]) {
+            self.dimension = [proposed_size[0], self.dimension[1]];
+        } else {
+            self.dimension = [pref_width, self.dimension[1]];
+        }
+
         let pref_height = self.default_y(fonts);
 
         // Todo calculate size of children here
 
-        match (pref_width, pref_height) {
-            (width, height) if width > proposed_size[0] && height > proposed_size[1] => {
-                self.dimension = proposed_size;
-            }
-            (width, height) if width > proposed_size[0] && height <= proposed_size[1] => {
-                self.dimension = [proposed_size[0], height];
-            }
-            (width, height) if width <= proposed_size[0] && height > proposed_size[1] => {
-                self.dimension = [width, proposed_size[1]];
-            }
-            (_, _) => {
-                self.dimension = [pref_width, pref_height];
-            }
+        if (pref_height > proposed_size[1]) {
+            self.dimension = [self.dimension[0], proposed_size[1]];
+        } else {
+            self.dimension = [self.dimension[0], pref_height];
         }
+
 
         self.dimension
 
@@ -125,35 +149,8 @@ impl Layout for Text {
 }
 
 impl Render for Text {
-    fn render(self, id: Id, clip: Rect, container: &Container) -> Option<Primitive> {
-        unimplemented!()
-    }
 
-    fn layout(&mut self, proposed_size: Dimensions, fonts: &text::font::Map, positioner: &dyn Fn(&mut dyn CommonWidget, Dimensions)) {
-        let pref_width = self.default_x(fonts);
-        let pref_height = self.default_y(fonts);
-
-        match (pref_width, pref_height) {
-            (width, height) if width > proposed_size[0] && height > proposed_size[1] => {
-                positioner(self, proposed_size);
-                self.dimension = proposed_size;
-            }
-            (width, height) if width > proposed_size[0] && height <= proposed_size[1] => {
-                positioner(self, [proposed_size[0], height]);
-                self.dimension = [proposed_size[0], height];
-            }
-            (width, height) if width <= proposed_size[0] && height > proposed_size[1] => {
-                positioner(self, [width, proposed_size[1]]);
-                self.dimension = [width, proposed_size[1]];
-            }
-            (_, _) => {
-                positioner(self, [pref_width, pref_height]);
-                self.dimension = [pref_width, pref_height];
-            }
-        }
-    }
-
-    fn get_primitives(&self, proposed_dimensions: Dimensions, fonts: &text::font::Map) -> Vec<Primitive> {
+    fn get_primitives(&self, fonts: &text::font::Map) -> Vec<Primitive> {
         let font_id = match fonts.ids().next() {
             Some(id) => id,
             None => return vec![],
@@ -177,7 +174,7 @@ impl Render for Text {
         let text = RenderText {
             positioned_glyphs: Vec::new(),
             window_dim: self.dimension,
-            text: self.text.clone(),
+            text: self.text.value.clone(),
             line_infos: new_line_infos.collect(),
             font: font.clone(),
             font_size: 14,
@@ -195,7 +192,7 @@ impl Render for Text {
 
         let mut prims: Vec<Primitive> = vec![new_primitive(node_index(0), kind, Rect::new(self.position, self.dimension), Rect::new(self.position, self.dimension))];
         prims.extend(Rectangle::rect_outline(Rect::new(self.position, self.dimension), 0.5));
-        let children: Vec<Primitive> = self.get_children().iter().flat_map(|f| f.get_primitives(proposed_dimensions, fonts)).collect();
+        let children: Vec<Primitive> = self.get_children().iter().flat_map(|f| f.get_primitives(fonts)).collect();
         prims.extend(children);
 
         return prims;
@@ -299,7 +296,7 @@ pub enum Wrap {
 
 /// The state to be stored between updates for the **Text**.
 #[derive(Clone, Debug, PartialEq)]
-pub struct State {
+pub struct OldState {
     /// An owned version of the string.
     pub string: String,
     /// The indices and width for each line of text within the `string`.
@@ -308,7 +305,7 @@ pub struct State {
 
 
 impl Text {
-    pub fn initialize(text: String, children: Vec<Box<dyn Widget>>) -> Box<Self> {
+    pub fn initialize(text: State<String>, children: Vec<Box<dyn Widget>>) -> Box<Self> {
         Box::new(Text {
             common: widget::CommonBuilder::default(),
             text,
@@ -322,7 +319,7 @@ impl Text {
     }
 
     /// Build a new **Text** widget.
-    pub fn new(text: String, position: Point, dimension: Dimensions, children: Vec<Box<dyn Widget>>) -> Box<Self> {
+    pub fn new(text: State<String>, position: Point, dimension: Dimensions, children: Vec<Box<dyn Widget>>) -> Box<Self> {
         Box::new(Text {
             common: widget::CommonBuilder::default(),
             text,
@@ -448,12 +445,12 @@ impl Text {
 
 
 impl OldWidget for Text {
-    type State = State;
+    type State = OldState;
     type Style = Style;
     type Event = ();
 
     fn init_state(&self, _: widget::id::Generator) -> Self::State {
-        State {
+        OldState {
             string: String::new(),
             line_infos: Vec::new(),
         }
@@ -541,7 +538,7 @@ impl OldWidget for Text {
         let new_line_infos = || text::line::infos(&text, font, font_size);
 
         // If the string is different, we must update both the string and the line breaks.
-        if &state.string[..] != text {
+        /*if &state.string[..] != text {
             state.update(|state| {
                 state.string = text.to_owned();
                 state.line_infos = new_line_infos().collect();
@@ -564,7 +561,7 @@ impl OldWidget for Text {
             if let Some(new_line_infos) = maybe_new_line_infos {
                 state.update(|state| state.line_infos = new_line_infos);
             }
-        }
+        }*/
     }
 
 }

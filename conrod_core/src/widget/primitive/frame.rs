@@ -16,6 +16,7 @@ use std::ops::Neg;
 use event::event::Event;
 use event_handler::{WidgetEvent, MouseEvent, KeyboardEvent};
 use widget::primitive::widget::WidgetExt;
+use state::state::{DefaultState, StateList};
 
 pub static SCALE: f64 = -1.0;
 
@@ -61,7 +62,7 @@ impl WidgetExt for Frame {}
 
 impl Event for Frame {
     fn handle_mouse_event(&mut self, event: &MouseEvent, consumed: &bool) {
-        unimplemented!()
+        ()
     }
 
     fn handle_keyboard_event(&mut self, event: &KeyboardEvent) {
@@ -72,15 +73,39 @@ impl Event for Frame {
         unimplemented!()
     }
 
-    fn process_mouse_event(&mut self, event: &MouseEvent, consumed: &bool) {
+    fn process_mouse_event(&mut self, event: &MouseEvent, consumed: &bool, state: StateList<DefaultState>) -> StateList<DefaultState> {
+        let new_state = self.apply_state(state);
+
         if self.child.is_inside(event.get_current_mouse_position()) {
+
+
             //Then we delegate the event to its children
-            self.child.process_mouse_event(event, &consumed);
+            let updated_state = self.child.process_mouse_event(event, &consumed, new_state.clone());
+            return self.apply_state(updated_state);
         }
+
+        new_state
     }
 
-    fn process_keyboard_event(&mut self, event: &KeyboardEvent) {
-        self.child.process_keyboard_event(event);
+    fn process_keyboard_event(&mut self, event: &KeyboardEvent, state: StateList<DefaultState>) -> StateList<DefaultState> {
+        let new_state = self.apply_state(state);
+        let updated_state = self.child.process_keyboard_event(event, new_state);
+        self.apply_state(updated_state)
+    }
+
+    fn get_state(&self, current_state: StateList<DefaultState>) -> StateList<DefaultState> {
+        current_state
+    }
+
+    fn apply_state(&mut self, states: StateList<DefaultState>) -> StateList<DefaultState> {
+        states
+    }
+
+    fn sync_state(&mut self, states: StateList<DefaultState>) {
+        let applied_state = self.apply_state(states);
+        let new_state = self.get_state(applied_state);
+
+        self.child.sync_state(new_state);
     }
 }
 
@@ -167,18 +192,11 @@ impl Layout for Frame {
 }
 
 impl Render for Frame {
-    fn layout(&mut self, proposed_size: [f64; 2], fonts: &Map, positioner: &dyn Fn(&mut dyn CommonWidget, [f64; 2])) {
-        unimplemented!()
-    }
 
-    fn render(self, id: Id, clip: Rect, container: &Container) -> Option<Primitive> {
-        unimplemented!()
-    }
-
-    fn get_primitives(&self, proposed_size: Dimensions, fonts: &Map) -> Vec<Primitive> {
+    fn get_primitives(&self, fonts: &Map) -> Vec<Primitive> {
         let mut prims = vec![];
         prims.extend(Rectangle::rect_outline(Rect::new(self.position, [self.dimension[0].abs(), self.dimension[1].abs()]), 1.0));
-        let children: Vec<Primitive> = self.child.get_primitives(proposed_size, fonts);
+        let children: Vec<Primitive> = self.child.get_primitives(fonts);
         prims.extend(children);
 
         return prims;

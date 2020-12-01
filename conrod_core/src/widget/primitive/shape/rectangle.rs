@@ -9,7 +9,7 @@ use widget::triangles::Triangle;
 use widget::render::Render;
 use graph::Container;
 use widget::Id;
-use color::{rgb, YELLOW, PURPLE};
+use color::{rgb, YELLOW, PURPLE, LIGHT_BLUE};
 use render::primitive::Primitive;
 use render::primitive_kind::PrimitiveKind;
 use render::util::new_primitive;
@@ -34,6 +34,7 @@ use event::event::Event;
 use event_handler::{WidgetEvent, MouseEvent, KeyboardEvent};
 use widget::primitive::widget::WidgetExt;
 use input::Key;
+use state::state::{StateList, DefaultState};
 
 
 /// A basic, non-interactive rectangle shape widget.
@@ -55,7 +56,7 @@ impl WidgetExt for Rectangle {}
 
 impl Event for Rectangle {
     fn handle_mouse_event(&mut self, event: &MouseEvent, consumed: &bool) {
-        unimplemented!()
+        ()
     }
 
     fn handle_keyboard_event(&mut self, event: &KeyboardEvent) {
@@ -79,12 +80,24 @@ impl Event for Rectangle {
         unimplemented!()
     }
 
-    fn process_mouse_event(&mut self, event: &MouseEvent, consumed: &bool) {
-        self.process_mouse_event_default(event, consumed);
+    fn process_mouse_event(&mut self, event: &MouseEvent, consumed: &bool, state: StateList<DefaultState>) -> StateList<DefaultState> {
+        self.process_mouse_event_default(event, consumed, state)
     }
 
-    fn process_keyboard_event(&mut self, event: &KeyboardEvent) {
-        self.process_keyboard_event_default(event);
+    fn process_keyboard_event(&mut self, event: &KeyboardEvent, state: StateList<DefaultState>) -> StateList<DefaultState> {
+        self.process_keyboard_event_default(event, state)
+    }
+
+    fn get_state(&self, current_state: StateList<DefaultState>) -> StateList<DefaultState> {
+        current_state
+    }
+
+    fn apply_state(&mut self, states: StateList<DefaultState>) -> StateList<DefaultState> {
+        states
+    }
+
+    fn sync_state(&mut self, states: StateList<DefaultState>) {
+        self.sync_state_default(states);
     }
 }
 
@@ -160,17 +173,8 @@ impl CommonWidget for Rectangle {
 }
 
 impl Render for Rectangle {
-    fn layout(&mut self, proposed_size: Dimensions, fonts: &text::font::Map, positioner: &dyn Fn(&mut CommonWidget, Dimensions)) {
-        let dimension = self.dimension.clone();
-        positioner(self, dimension);
-    }
 
-    fn render(self, id: Id, clip: Rect, container: &Container) -> Option<Primitive> {
-        let kind = PrimitiveKind::Rectangle { color: rgb(0.0,1.0, 0.0)};
-        return Some(new_primitive(id, kind, clip, container.rect));
-    }
-
-    fn get_primitives(&self, proposed_dimensions: Dimensions, fonts: &text::font::Map) -> Vec<Primitive> {
+    fn get_primitives(&self, fonts: &text::font::Map) -> Vec<Primitive> {
         let mut prims = vec![
             Primitive {
                 id: node_index(0),
@@ -180,7 +184,7 @@ impl Render for Rectangle {
             }
         ];
         prims.extend(Rectangle::rect_outline(Rect::new(self.position, self.dimension), 1.0));
-        let children: Vec<Primitive> = self.get_children().iter().flat_map(|f| f.get_primitives(proposed_dimensions, fonts)).collect();
+        let children: Vec<Primitive> = self.get_children().iter().flat_map(|f| f.get_primitives(fonts)).collect();
         prims.extend(children);
 
         return prims;
@@ -218,7 +222,7 @@ impl Rectangle {
         let top_border = Rect::new([l+width,b], [rect.w()-width*2.0, width]);
         let bottom_border = Rect::new([l+width,t-width], [rect.w()-width*2.0, width]);
 
-        let border_color = Color::random();
+        let border_color = Color::Rgba(0.0 / 255.0, 255.0 / 255.0, 251.0 / 255.0, 1.0);//Color::random();
         vec![
             Primitive {
                 id: node_index(0),

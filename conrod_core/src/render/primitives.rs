@@ -106,8 +106,7 @@ impl<'a> Primitives<'a> {
                 if let Some(rectangle) = container.unique_widget_state::<widget::Rectangle>() {
                     let UniqueWidgetState { ref style, .. } = *rectangle;
                     let color = style.get_color(theme);
-                    let r = Rectangle::initialize(vec![]);
-                    return r.render(id, clip, container);
+                    return None;
                     match *style {
                         ShapeStyle::Fill(_) => {
                             let kind = PrimitiveKind::Rectangle { color: color };
@@ -171,7 +170,7 @@ impl<'a> Primitives<'a> {
 
                         ShapeStyle::Fill(_) => {
                             let r = Oval::fill_old(Dimensions::new(10.0, 10.0));
-                            return r.render(id, clip, container);
+                            return None;
                         },
 
                         ShapeStyle::Outline(ref line_style) => {
