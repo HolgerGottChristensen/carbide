@@ -87,14 +87,12 @@ fn main() {
         ]
     ));*/
 
-    let hello_state = State::new("hej", &"Hello".to_string());
-    let world_state = State::new("hej2", &"world! \nHvad sker der i denne verden og vil den laypute rigtigt når der er en lang tekst".to_string());
     let sync_state = State::new("K", &"Hello".to_string());
 
     window.set_widgets(
         VStack::initialize(vec![
-            Text::initialize(hello_state, vec![]),
-            Text::initialize(world_state, vec![]),
+            Text::initialize("Hello".into(), vec![]),
+            Text::initialize("world! \nHvad sker der i denne verden og vil den layoute rigtigt når der er en lang tekst".into(), vec![]),
             Image::new(rust_image, [100.0,100.0], vec![]),
             Rectangle::initialize(vec![
                 SyncTest::new(sync_state)

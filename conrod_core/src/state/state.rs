@@ -4,6 +4,7 @@ use std::sync::{Arc, RwLock};
 use std::fmt::Debug;
 use std::convert::TryInto;
 use widget::common_widget::CommonWidget;
+use uuid::Uuid;
 
 #[derive(Debug)]
 pub struct State<T> where T: Clone + Debug {
@@ -81,6 +82,18 @@ impl Into<(String, DefaultState)> for State<String> {
 impl Into<(String, DefaultState)> for State<u32> {
     fn into(self) -> (String, DefaultState) {
         (self.id, DefaultState::U32(self.value))
+    }
+}
+
+impl Into<State<String>> for String {
+    fn into(self) -> State<String> {
+        State::new(&Uuid::new_v4().to_string(), &self)
+    }
+}
+
+impl Into<State<String>> for &str {
+    fn into(self) -> State<String> {
+        State::new(&Uuid::new_v4().to_string(), &self.to_string())
     }
 }
 
