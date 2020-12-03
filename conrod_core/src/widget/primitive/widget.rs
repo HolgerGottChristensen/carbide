@@ -29,6 +29,8 @@ use std::fmt;
 use std::ops::{Deref, DerefMut};
 use state::state::{StateList, DefaultState};
 use flags::Flags;
+use widget::widget_iterator::{WidgetIterMut, WidgetIter};
+use std::slice::{Iter, IterMut};
 
 pub trait Widget: Event + Layout + Render {}
 
@@ -56,11 +58,11 @@ impl CommonWidget for Box<Widget> {
         self.deref().get_flag()
     }
 
-    fn get_children(&self) -> &Vec<Box<dyn Widget>> {
+    fn get_children(&self) -> WidgetIter {
         self.deref().get_children()
     }
 
-    fn get_children_mut(&mut self) -> &mut Vec<Box<dyn Widget>> {
+    fn get_children_mut(&mut self) -> WidgetIterMut {
         self.deref_mut().get_children_mut()
     }
 

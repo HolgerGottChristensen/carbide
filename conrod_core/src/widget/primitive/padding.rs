@@ -19,6 +19,7 @@ use event_handler::{WidgetEvent, MouseEvent, KeyboardEvent};
 use widget::primitive::widget::WidgetExt;
 use state::state::{StateList, DefaultState};
 use flags::Flags;
+use widget::widget_iterator::{WidgetIter, WidgetIterMut};
 
 pub static SCALE: f64 = -1.0;
 
@@ -104,12 +105,20 @@ impl CommonWidget for Padding {
         Flags::Empty
     }
 
-    fn get_children(&self) -> &Vec<Box<dyn Widget>> {
-        unimplemented!()
+    fn get_children(&self) -> WidgetIter {
+        if self.child.get_flag() == Flags::Proxy {
+            self.child.get_children()
+        } else {
+            WidgetIter::single(&self.child)
+        }
     }
 
-    fn get_children_mut(&mut self) -> &mut Vec<Box<dyn Widget>> {
-        unimplemented!()
+    fn get_children_mut(&mut self) -> WidgetIterMut {
+        if self.child.get_flag() == Flags::Proxy {
+            self.child.get_children_mut()
+        } else {
+            WidgetIterMut::single(&mut self.child)
+        }
     }
 
     fn get_position(&self) -> [f64; 2] {

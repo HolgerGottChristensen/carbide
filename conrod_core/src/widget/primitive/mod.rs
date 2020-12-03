@@ -17,6 +17,7 @@ pub mod z_stack;
 pub mod padding;
 pub mod spacer;
 pub mod edge_insets;
+pub mod foreach;
 
 use {Point, Range, Rect};
 pub use widget::primitive::widget::Widget;

@@ -20,11 +20,14 @@ use layout::basic_layouter::BasicLayouter;
 use widget::primitive::spacer::{Spacer, SpacerDirection};
 use input::Key;
 use flags::Flags;
+use widget::widget_iterator::{WidgetIter, WidgetIterMut};
+use widget::primitive::foreach::ForEach;
+use widget::primitive::v_stack::VStack;
 
 #[derive(Debug)]
 pub struct SyncTest {
     id: Uuid,
-    children: Vec<Box<dyn Widget>>,
+    child: Box<dyn Widget>,
     position: Point,
     dimension: Dimensions,
     value: State<String>
@@ -34,15 +37,17 @@ impl SyncTest {
     pub fn new(value: State<String>) -> Box<SyncTest> {
         Box::new(Self {
             id: Uuid::new_v4(),
-            children: vec![
-                HStack::initialize(vec![
+            child: HStack::initialize(vec![
                     Spacer::new(SpacerDirection::Horizontal),
+                    VStack::initialize(vec![
+                        ForEach::new()
+                    ]),
+                    ForEach::new(),
                     Text::initialize(value.clone(), vec![]),
                     Spacer::new(SpacerDirection::Horizontal),
                     Text::initialize(value.clone(), vec![]),
                     Spacer::new(SpacerDirection::Horizontal),
-                ])
-            ],
+            ]),
             position: [100.0,100.0],
             dimension: [100.0,100.0],
             value
@@ -59,12 +64,20 @@ impl CommonWidget for SyncTest {
         Flags::Empty
     }
 
-    fn get_children(&self) -> &Vec<Box<dyn Widget>> {
-        &self.children
+    fn get_children(&self) -> WidgetIter {
+        if self.child.get_flag() == Flags::Proxy {
+            self.child.get_children()
+        } else {
+            WidgetIter::single(&self.child)
+        }
     }
 
-    fn get_children_mut(&mut self) -> &mut Vec<Box<dyn Widget>> {
-        &mut self.children
+    fn get_children_mut(&mut self) -> WidgetIterMut {
+        if self.child.get_flag() == Flags::Proxy {
+            self.child.get_children_mut()
+        } else {
+            WidgetIterMut::single(&mut self.child)
+        }
     }
 
     fn get_position(&self) -> Point {
@@ -163,7 +176,7 @@ impl Layout for SyncTest {
 
     fn calculate_size(&mut self, requested_size: Dimensions, fonts: &Map) -> Dimensions {
 
-        self.dimension = self.children.first_mut().unwrap().calculate_size(requested_size, fonts);
+        self.dimension = self.child.calculate_size(requested_size, fonts);
         self.dimension
     }
 
@@ -171,11 +184,8 @@ impl Layout for SyncTest {
         let positioning = BasicLayouter::Center.position();
         let position = self.position;
         let dimension = self.dimension;
-
-        for child in &mut self.children {
-            positioning(position, dimension, child);
-            child.position_children();
-        }
+        positioning(position, dimension, &mut self.child);
+        self.child.position_children();
     }
 }
 

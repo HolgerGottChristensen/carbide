@@ -31,6 +31,7 @@ use event_handler::{WidgetEvent, MouseEvent, KeyboardEvent};
 use widget::primitive::widget::WidgetExt;
 use state::state::{StateList, DefaultState};
 use flags::Flags;
+use widget::widget_iterator::{WidgetIter, WidgetIterMut};
 
 
 /// A basic, non-interactive rectangle shape widget.
@@ -96,7 +97,7 @@ impl Layout for ZStack {
 
     fn calculate_size(&mut self, requested_size: Dimensions, fonts: &Map) -> Dimensions {
 
-        let mut children_flexibilty: Vec<(u32, &mut Box<dyn Widget>)> = self.children.iter_mut().map(|child| (child.flexibility(), child)).collect();
+        let mut children_flexibilty: Vec<(u32, &mut Box<dyn Widget>)> = self.get_children_mut().map(|child| (child.flexibility(), child)).collect();
         children_flexibilty.sort_by(|(a,_), (b,_)| a.cmp(&b));
         children_flexibilty.reverse();
 
@@ -126,7 +127,7 @@ impl Layout for ZStack {
         let position = self.position;
         let dimension = self.dimension;
 
-        for child in &mut self.children {
+        for child in self.get_children_mut() {
             positioning(position, dimension, child);
             child.position_children();
         }
@@ -142,12 +143,28 @@ impl CommonWidget for ZStack {
         Flags::Empty
     }
 
-    fn get_children(&self) -> &Vec<Box<dyn Widget>> {
-        &self.children
+    fn get_children(&self) -> WidgetIter {
+        self.children
+            .iter()
+            .rfold(WidgetIter::Empty, |acc, x| {
+                if x.get_flag() == Flags::Proxy {
+                    WidgetIter::Multi(Box::new(x.get_children()), Box::new(acc))
+                } else {
+                    WidgetIter::Single(x, Box::new(acc))
+                }
+            })
     }
 
-    fn get_children_mut(&mut self) -> &mut Vec<Box<dyn Widget>> {
-        &mut self.children
+    fn get_children_mut(&mut self) -> WidgetIterMut {
+        self.children
+            .iter_mut()
+            .rfold(WidgetIterMut::Empty, |acc, x| {
+                if x.get_flag() == Flags::Proxy {
+                    WidgetIterMut::Multi(Box::new(x.get_children_mut()), Box::new(acc))
+                } else {
+                    WidgetIterMut::Single(x, Box::new(acc))
+                }
+            })
     }
 
     fn get_position(&self) -> Point {
@@ -188,7 +205,7 @@ impl Render for ZStack {
     fn get_primitives(&self, fonts: &text::font::Map) -> Vec<Primitive> {
         let mut prims = vec![];
         prims.extend(Rectangle::rect_outline(Rect::new(self.position, self.dimension), 0.5));
-        let children: Vec<Primitive> = self.get_children().iter().flat_map(|f| f.get_primitives(fonts)).collect();
+        let children: Vec<Primitive> = self.get_children().flat_map(|f| f.get_primitives(fonts)).collect();
         prims.extend(children);
 
         return prims;

@@ -34,7 +34,7 @@ pub trait Event: CommonWidget {
         // Add the state from itself, to the state list
         let mut state_for_children = self.get_state(new_state);
 
-        for child in self.get_children_mut().iter_mut() {
+        for child in self.get_children_mut(){
             if child.is_inside(event.get_current_mouse_position()) {
                 //Then we delegate the event to its children
                 state_for_children = child.process_mouse_event(event, &consumed, state_for_children);
@@ -60,7 +60,7 @@ pub trait Event: CommonWidget {
         // Add the state from itself, to the state list
         let mut state_for_children = self.get_state(new_state);
 
-        for child in self.get_children_mut().iter_mut() {
+        for child in self.get_children_mut() {
 
             // Then we delegate the event to its children, we also makes sure to update
             // current state for the next child

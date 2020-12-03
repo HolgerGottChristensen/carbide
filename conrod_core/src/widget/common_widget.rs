@@ -6,13 +6,14 @@ use widget::primitive::padding::Padding;
 use widget::primitive::edge_insets::EdgeInsets;
 use Color;
 use flags::Flags;
+use widget::widget_iterator::{WidgetIter, WidgetIterMut};
 
 pub trait CommonWidget {
     fn get_id(&self) -> Uuid;
     fn get_flag(&self) -> Flags;
 
-    fn get_children(&self) -> &Vec<Box<dyn Widget>>;
-    fn get_children_mut(&mut self) -> &mut Vec<Box<dyn Widget>>;
+    fn get_children(&self) -> WidgetIter;
+    fn get_children_mut(&mut self) -> WidgetIterMut;
 
     fn get_position(&self) -> Point;
     fn get_x(&self) -> Scalar;

@@ -33,6 +33,7 @@ use event::event::Event;
 use event_handler::{WidgetEvent, MouseEvent, KeyboardEvent};
 use state::state::{StateList, DefaultState};
 use flags::Flags;
+use widget::widget_iterator::{WidgetIter, WidgetIterMut};
 
 
 /// A basic, non-interactive rectangle shape widget.
@@ -133,11 +134,11 @@ impl CommonWidget for Spacer {
         Flags::Spacer
     }
 
-    fn get_children(&self) -> &Vec<Box<dyn Widget>> {
+    fn get_children(&self) -> WidgetIter {
         unimplemented!()
     }
 
-    fn get_children_mut(&mut self) -> &mut Vec<Box<dyn Widget>> {
+    fn get_children_mut(&mut self) -> WidgetIterMut {
         unimplemented!()
     }
 

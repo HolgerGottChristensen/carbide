@@ -30,7 +30,7 @@ use event_handler::{WidgetEvent, MouseEvent, KeyboardEvent};
 use widget::primitive::widget::WidgetExt;
 use state::state::{StateList, DefaultState};
 use flags::Flags;
-use widget::widget_iterator::WidgetIter;
+use widget::widget_iterator::{WidgetIterMut, WidgetIter};
 
 
 /// A basic, non-interactive rectangle shape widget.
@@ -98,25 +98,12 @@ impl Layout for HStack {
 
     fn calculate_size(&mut self, requested_size: Dimensions, fonts: &Map) -> Dimensions {
 
-        let w = self.children
-            .iter_mut()
-            .rfold(WidgetIter::Empty, |acc, x| {
-                if x.get_flag() == Flags::Proxy {
-                    WidgetIter::Multi(x.get_children_mut().iter_mut(), Box::new(acc))
-                } else {
-                    WidgetIter::Single(x, Box::new(acc))
-                }
-            });
-
-        for (a, wit) in w.enumerate() {
-            println!("{:?}", a);
-        }
 
         // The number of children not containing any spacers
-        let mut number_of_children_that_needs_sizing = self.children.iter().filter(|m| m.get_flag() != Flags::Spacer).count() as f64;
+        let mut number_of_children_that_needs_sizing = self.get_children().filter(|m| m.get_flag() != Flags::Spacer).count() as f64;
 
 
-        let non_spacers_vec: Vec<bool> = self.children.iter().map(|n| n.get_flag() != Flags::Spacer).collect();
+        let non_spacers_vec: Vec<bool> = self.get_children().map(|n| n.get_flag() != Flags::Spacer).collect();
         let non_spacers_vec_length = non_spacers_vec.len();
 
         let number_of_spaces = non_spacers_vec.iter().enumerate().take(non_spacers_vec_length -1).filter(|(n, b)| {
@@ -126,7 +113,7 @@ impl Layout for HStack {
         let spacing_total = ((number_of_spaces)*self.spacing);
         let mut size_for_children = [requested_size[0] - spacing_total, requested_size[1]];
 
-        let mut children_flexibilty: Vec<(u32, &mut Box<dyn Widget>)> = self.children.iter_mut().filter(|m| m.get_flag() != Flags::Spacer).map(|child| (child.flexibility(), child)).collect();
+        let mut children_flexibilty: Vec<(u32, &mut Box<dyn Widget>)> = self.get_children_mut().filter(|m| m.get_flag() != Flags::Spacer).map(|child| (child.flexibility(), child)).collect();
         children_flexibilty.sort_by(|(a,_), (b,_)| a.cmp(&b));
         children_flexibilty.reverse();
 
@@ -148,10 +135,10 @@ impl Layout for HStack {
             total_width += chosen_size[0];
         }
 
-        let spacer_count = self.children.iter().filter(|m| m.get_flag() == Flags::Spacer).count() as f64;
+        let spacer_count = self.get_children().filter(|m| m.get_flag() == Flags::Spacer).count() as f64;
         let rest_space = requested_size[0] - total_width - spacing_total;
 
-        for spacer in self.children.iter_mut().filter(|m| m.get_flag() == Flags::Spacer) {
+        for spacer in self.get_children_mut().filter(|m| m.get_flag() == Flags::Spacer) {
             let chosen_size = spacer.calculate_size([rest_space/spacer_count, requested_size[1]], fonts);
 
             if chosen_size[1] > max_height {
@@ -175,9 +162,9 @@ impl Layout for HStack {
         let dimension = self.dimension;
         let spacing = self.spacing;
 
-        let spacers: Vec<bool> = self.children.iter().map(|n| n.get_flag() == Flags::Spacer).collect();
+        let spacers: Vec<bool> = self.get_children().map(|n| n.get_flag() == Flags::Spacer).collect();
 
-        for (n, child) in &mut self.children.iter_mut().enumerate() {
+        for (n, child) in &mut self.get_children_mut().enumerate() {
             match cross_axis_alignment {
                 CrossAxisAlignment::Start => {child.set_y(position[1])}
                 CrossAxisAlignment::Center => {child.set_y(position[1] + dimension[1]/2.0 - child.get_height()/2.0)}
@@ -206,12 +193,28 @@ impl CommonWidget for HStack {
         Flags::Empty
     }
 
-    fn get_children(&self) -> &Vec<Box<dyn Widget>> {
-        &self.children
+    fn get_children(&self) -> WidgetIter {
+        self.children
+            .iter()
+            .rfold(WidgetIter::Empty, |acc, x| {
+                if x.get_flag() == Flags::Proxy {
+                    WidgetIter::Multi(Box::new(x.get_children()), Box::new(acc))
+                } else {
+                    WidgetIter::Single(x, Box::new(acc))
+                }
+            })
     }
 
-    fn get_children_mut(&mut self) -> &mut Vec<Box<dyn Widget>> {
-        &mut self.children
+    fn get_children_mut(&mut self) -> WidgetIterMut {
+        self.children
+            .iter_mut()
+            .rfold(WidgetIterMut::Empty, |acc, x| {
+                if x.get_flag() == Flags::Proxy {
+                    WidgetIterMut::Multi(Box::new(x.get_children_mut()), Box::new(acc))
+                } else {
+                    WidgetIterMut::Single(x, Box::new(acc))
+                }
+            })
     }
 
     fn get_position(&self) -> Point {
@@ -252,7 +255,7 @@ impl Render for HStack {
     fn get_primitives(&self, fonts: &text::font::Map) -> Vec<Primitive> {
         let mut prims = vec![];
         prims.extend(Rectangle::rect_outline(Rect::new(self.position, self.dimension), 0.5));
-        let children: Vec<Primitive> = self.get_children().iter().flat_map(|f| f.get_primitives(fonts)).collect();
+        let children: Vec<Primitive> = self.get_children().flat_map(|f| f.get_primitives(fonts)).collect();
         prims.extend(children);
 
         return prims;

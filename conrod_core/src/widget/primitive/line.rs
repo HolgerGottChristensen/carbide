@@ -22,6 +22,7 @@ use event_handler::{WidgetEvent, MouseEvent, KeyboardEvent};
 use widget::primitive::widget::WidgetExt;
 use state::state::{StateList, DefaultState};
 use flags::Flags;
+use widget::widget_iterator::{WidgetIter, WidgetIterMut};
 
 
 /// A simple, non-interactive widget for drawing a single straight Line.
@@ -112,7 +113,7 @@ impl Render for Line {
         };
 
         let mut prims: Vec<Primitive> = vec![new_primitive(node_index(0), kind, Rect::new(self.position, self.dimension), Rect::new(self.position, self.dimension))];
-        let children: Vec<Primitive> = self.get_children().iter().flat_map(|f| f.get_primitives(fonts)).collect();
+        let children: Vec<Primitive> = self.get_children().flat_map(|f| f.get_primitives(fonts)).collect();
         prims.extend(children);
 
         return prims;
@@ -128,12 +129,28 @@ impl CommonWidget for Line {
         Flags::Empty
     }
 
-    fn get_children(&self) -> &Vec<Box<dyn Widget>> {
-        &self.children
+    fn get_children(&self) -> WidgetIter {
+        self.children
+            .iter()
+            .rfold(WidgetIter::Empty, |acc, x| {
+                if x.get_flag() == Flags::Proxy {
+                    WidgetIter::Multi(Box::new(x.get_children()), Box::new(acc))
+                } else {
+                    WidgetIter::Single(x, Box::new(acc))
+                }
+            })
     }
 
-    fn get_children_mut(&mut self) -> &mut Vec<Box<dyn Widget>> {
-        &mut self.children
+    fn get_children_mut(&mut self) -> WidgetIterMut {
+        self.children
+            .iter_mut()
+            .rfold(WidgetIterMut::Empty, |acc, x| {
+                if x.get_flag() == Flags::Proxy {
+                    WidgetIterMut::Multi(Box::new(x.get_children_mut()), Box::new(acc))
+                } else {
+                    WidgetIterMut::Single(x, Box::new(acc))
+                }
+            })
     }
 
     fn get_position(&self) -> [f64; 2] {
