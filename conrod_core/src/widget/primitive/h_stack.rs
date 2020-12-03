@@ -30,6 +30,7 @@ use event_handler::{WidgetEvent, MouseEvent, KeyboardEvent};
 use widget::primitive::widget::WidgetExt;
 use state::state::{StateList, DefaultState};
 use flags::Flags;
+use widget::widget_iterator::WidgetIter;
 
 
 /// A basic, non-interactive rectangle shape widget.
@@ -96,6 +97,20 @@ impl Layout for HStack {
     }
 
     fn calculate_size(&mut self, requested_size: Dimensions, fonts: &Map) -> Dimensions {
+
+        let w = self.children
+            .iter_mut()
+            .rfold(WidgetIter::Empty, |acc, x| {
+                if x.get_flag() == Flags::Proxy {
+                    WidgetIter::Multi(x.get_children_mut().iter_mut(), Box::new(acc))
+                } else {
+                    WidgetIter::Single(x, Box::new(acc))
+                }
+            });
+
+        for (a, wit) in w.enumerate() {
+            println!("{:?}", a);
+        }
 
         // The number of children not containing any spacers
         let mut number_of_children_that_needs_sizing = self.children.iter().filter(|m| m.get_flag() != Flags::Spacer).count() as f64;
