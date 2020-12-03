@@ -27,6 +27,7 @@ use event_handler::{WidgetEvent, MouseEvent, KeyboardEvent};
 use widget::primitive::widget::WidgetExt;
 use color::WHITE;
 use state::state::{StateList, DefaultState, State, GetState};
+use flags::Flags;
 
 
 /// Displays some given text centered within a rectangular area.
@@ -204,6 +205,10 @@ impl WidgetExt for Text {}
 impl CommonWidget for Text {
     fn get_id(&self) -> Uuid {
         unimplemented!()
+    }
+
+    fn get_flag(&self) -> Flags {
+        Flags::Empty
     }
 
     fn get_children(&self) -> &Vec<Box<dyn Widget>> {

@@ -21,6 +21,7 @@ use event::event::Event;
 use event_handler::{WidgetEvent, MouseEvent, KeyboardEvent};
 use widget::primitive::widget::WidgetExt;
 use state::state::{StateList, DefaultState};
+use flags::Flags;
 
 
 /// A simple, non-interactive widget for drawing a single straight Line.
@@ -121,6 +122,10 @@ impl Render for Line {
 impl CommonWidget for Line {
     fn get_id(&self) -> Uuid {
         unimplemented!()
+    }
+
+    fn get_flag(&self) -> Flags {
+        Flags::Empty
     }
 
     fn get_children(&self) -> &Vec<Box<dyn Widget>> {

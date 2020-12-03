@@ -235,8 +235,6 @@ pub fn iter_eq<A, B>(mut a: A, mut b: B) -> bool
     }
 }
 
-
-
 #[test]
 fn test_map_range() {
 

@@ -32,3 +32,4 @@ copypasta = "0.6"
 rand = "0.7"
 glium = "0.24"
 uuid = { version = "0.8.1", features = ["v4"]}
+bitflags = "1.2.1"

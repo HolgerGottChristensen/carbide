@@ -17,6 +17,7 @@ use event::event::Event;
 use event_handler::{WidgetEvent, MouseEvent, KeyboardEvent};
 use widget::primitive::widget::WidgetExt;
 use state::state::{DefaultState, StateList};
+use flags::Flags;
 
 pub static SCALE: f64 = -1.0;
 
@@ -112,6 +113,10 @@ impl Event for Frame {
 impl CommonWidget for Frame {
     fn get_id(&self) -> Uuid {
         self.id
+    }
+
+    fn get_flag(&self) -> Flags {
+        Flags::Empty
     }
 
     fn get_children(&self) -> &Vec<Box<dyn Widget>> {

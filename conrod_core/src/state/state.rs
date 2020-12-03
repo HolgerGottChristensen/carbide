@@ -38,7 +38,7 @@ impl<T: Clone + Debug> DerefMut for State<T> {
 impl<T: Clone + Debug> State<T> {
     pub fn new(name: &str, val: &T) -> Self {
         State {
-            id: name.to_string(),//w.get_id().to_string() + "_" + &name,
+            id: name.to_string(),
             value: val.clone()
         }
     }

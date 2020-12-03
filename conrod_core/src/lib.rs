@@ -9,6 +9,7 @@
 #![warn(missing_docs)]
 
 #[macro_use] extern crate conrod_derive;
+#[macro_use] extern crate bitflags;
 extern crate daggy;
 extern crate fnv;
 extern crate num;
@@ -17,6 +18,7 @@ extern crate rusttype;
 extern crate copypasta;
 extern crate uuid;
 extern crate instant;
+extern crate glium;
 
 pub use color::{Color, Colorable};
 pub use conrod_derive::*;
@@ -47,4 +49,5 @@ pub mod cursor;
 pub mod layout;
 pub mod event_handler;
 pub mod state;
+pub mod flags;
 

@@ -23,6 +23,7 @@ use event::event::Event;
 use event_handler::{WidgetEvent, MouseEvent, KeyboardEvent};
 use widget::primitive::widget::WidgetExt;
 use state::state::{StateList, DefaultState};
+use flags::Flags;
 
 
 /// A primitive and basic widget for drawing an `Image`.
@@ -126,6 +127,10 @@ impl Render for Image {
 impl CommonWidget for Image {
     fn get_id(&self) -> Uuid {
         unimplemented!()
+    }
+
+    fn get_flag(&self) -> Flags {
+        Flags::Empty
     }
 
     fn get_children(&self) -> &Vec<Box<dyn Widget>> {

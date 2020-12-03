@@ -32,6 +32,7 @@ use layout::basic_layouter::BasicLayouter;
 use event::event::Event;
 use event_handler::{WidgetEvent, MouseEvent, KeyboardEvent};
 use state::state::{StateList, DefaultState};
+use flags::Flags;
 
 
 /// A basic, non-interactive rectangle shape widget.
@@ -126,6 +127,10 @@ impl Layout for Spacer {
 impl CommonWidget for Spacer {
     fn get_id(&self) -> Uuid {
         self.id
+    }
+
+    fn get_flag(&self) -> Flags {
+        Flags::Spacer
     }
 
     fn get_children(&self) -> &Vec<Box<dyn Widget>> {

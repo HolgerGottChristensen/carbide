@@ -30,6 +30,7 @@ use event::event::Event;
 use event_handler::{WidgetEvent, MouseEvent, KeyboardEvent};
 use widget::primitive::widget::WidgetExt;
 use state::state::{StateList, DefaultState};
+use flags::Flags;
 
 
 /// A basic, non-interactive rectangle shape widget.
@@ -135,6 +136,10 @@ impl Layout for ZStack {
 impl CommonWidget for ZStack {
     fn get_id(&self) -> Uuid {
         self.id
+    }
+
+    fn get_flag(&self) -> Flags {
+        Flags::Empty
     }
 
     fn get_children(&self) -> &Vec<Box<dyn Widget>> {

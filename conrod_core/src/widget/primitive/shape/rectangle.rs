@@ -35,6 +35,7 @@ use event_handler::{WidgetEvent, MouseEvent, KeyboardEvent};
 use widget::primitive::widget::WidgetExt;
 use input::Key;
 use state::state::{StateList, DefaultState};
+use flags::Flags;
 
 
 /// A basic, non-interactive rectangle shape widget.
@@ -129,6 +130,10 @@ impl Layout for Rectangle {
 impl CommonWidget for Rectangle {
     fn get_id(&self) -> Uuid {
         self.id
+    }
+
+    fn get_flag(&self) -> Flags {
+        Flags::Empty
     }
 
     fn get_children(&self) -> &Vec<Box<dyn Widget>> {

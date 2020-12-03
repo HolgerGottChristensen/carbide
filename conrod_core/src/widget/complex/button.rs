@@ -19,6 +19,7 @@ use widget::layout::Layout;
 use layout::basic_layouter::BasicLayouter;
 use widget::primitive::spacer::{Spacer, SpacerDirection};
 use input::Key;
+use flags::Flags;
 
 #[derive(Debug)]
 pub struct SyncTest {
@@ -52,6 +53,10 @@ impl SyncTest {
 impl CommonWidget for SyncTest {
     fn get_id(&self) -> Uuid {
         self.id
+    }
+
+    fn get_flag(&self) -> Flags {
+        Flags::Empty
     }
 
     fn get_children(&self) -> &Vec<Box<dyn Widget>> {

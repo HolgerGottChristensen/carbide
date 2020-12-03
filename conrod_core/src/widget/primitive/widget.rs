@@ -28,6 +28,7 @@ use std::fmt::Debug;
 use std::fmt;
 use std::ops::{Deref, DerefMut};
 use state::state::{StateList, DefaultState};
+use flags::Flags;
 
 pub trait Widget: Event + Layout + Render {}
 
@@ -49,6 +50,10 @@ pub trait WidgetExt: Widget + Sized + 'static {
 impl CommonWidget for Box<Widget> {
     fn get_id(&self) -> Uuid {
         self.deref().get_id()
+    }
+
+    fn get_flag(&self) -> Flags {
+        self.deref().get_flag()
     }
 
     fn get_children(&self) -> &Vec<Box<dyn Widget>> {

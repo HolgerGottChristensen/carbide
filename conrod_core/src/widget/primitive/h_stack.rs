@@ -29,6 +29,7 @@ use event::event::Event;
 use event_handler::{WidgetEvent, MouseEvent, KeyboardEvent};
 use widget::primitive::widget::WidgetExt;
 use state::state::{StateList, DefaultState};
+use flags::Flags;
 
 
 /// A basic, non-interactive rectangle shape widget.
@@ -95,10 +96,22 @@ impl Layout for HStack {
     }
 
     fn calculate_size(&mut self, requested_size: Dimensions, fonts: &Map) -> Dimensions {
-        let mut number_of_children_that_needs_sizing = self.children.len() as f64;
-        let mut size_for_children = [requested_size[0] - ((number_of_children_that_needs_sizing - 1.0)*self.spacing), requested_size[1]];
 
-        let mut children_flexibilty: Vec<(u32, &mut Box<dyn Widget>)> = self.children.iter_mut().map(|child| (child.flexibility(), child)).collect();
+        // The number of children not containing any spacers
+        let mut number_of_children_that_needs_sizing = self.children.iter().filter(|m| m.get_flag() != Flags::Spacer).count() as f64;
+
+
+        let non_spacers_vec: Vec<bool> = self.children.iter().map(|n| n.get_flag() != Flags::Spacer).collect();
+        let non_spacers_vec_length = non_spacers_vec.len();
+
+        let number_of_spaces = non_spacers_vec.iter().enumerate().take(non_spacers_vec_length -1).filter(|(n, b)| {
+            **b && non_spacers_vec[n+1]
+        }).count() as f64;
+
+        let spacing_total = ((number_of_spaces)*self.spacing);
+        let mut size_for_children = [requested_size[0] - spacing_total, requested_size[1]];
+
+        let mut children_flexibilty: Vec<(u32, &mut Box<dyn Widget>)> = self.children.iter_mut().filter(|m| m.get_flag() != Flags::Spacer).map(|child| (child.flexibility(), child)).collect();
         children_flexibilty.sort_by(|(a,_), (b,_)| a.cmp(&b));
         children_flexibilty.reverse();
 
@@ -109,7 +122,7 @@ impl Layout for HStack {
             let size_for_child = [size_for_children[0] / number_of_children_that_needs_sizing, size_for_children[1]];
             let chosen_size = child.calculate_size(size_for_child, fonts);
 
-            if (chosen_size[1] > max_height) {
+            if chosen_size[1] > max_height {
                 max_height = chosen_size[1];
             }
 
@@ -120,7 +133,20 @@ impl Layout for HStack {
             total_width += chosen_size[0];
         }
 
-        self.dimension = [total_width + ((self.children.len() as f64 - 1.0) * self.spacing), max_height];
+        let spacer_count = self.children.iter().filter(|m| m.get_flag() == Flags::Spacer).count() as f64;
+        let rest_space = requested_size[0] - total_width - spacing_total;
+
+        for spacer in self.children.iter_mut().filter(|m| m.get_flag() == Flags::Spacer) {
+            let chosen_size = spacer.calculate_size([rest_space/spacer_count, requested_size[1]], fonts);
+
+            if chosen_size[1] > max_height {
+                max_height = chosen_size[1];
+            }
+
+            total_width += chosen_size[0];
+        }
+
+        self.dimension = [total_width + spacing_total, max_height];
 
         self.dimension
 
@@ -134,7 +160,9 @@ impl Layout for HStack {
         let dimension = self.dimension;
         let spacing = self.spacing;
 
-        for child in &mut self.children {
+        let spacers: Vec<bool> = self.children.iter().map(|n| n.get_flag() == Flags::Spacer).collect();
+
+        for (n, child) in &mut self.children.iter_mut().enumerate() {
             match cross_axis_alignment {
                 CrossAxisAlignment::Start => {child.set_y(position[1])}
                 CrossAxisAlignment::Center => {child.set_y(position[1] + dimension[1]/2.0 - child.get_height()/2.0)}
@@ -143,7 +171,9 @@ impl Layout for HStack {
 
             child.set_x(position[0]+width_offset);
 
-            width_offset += spacing;
+            if child.get_flag() != Flags::Spacer && n < spacers.len()-1 && !spacers[n+1] {
+                width_offset += spacing;
+            }
             width_offset += child.get_width();
 
 
@@ -155,6 +185,10 @@ impl Layout for HStack {
 impl CommonWidget for HStack {
     fn get_id(&self) -> Uuid {
         self.id
+    }
+
+    fn get_flag(&self) -> Flags {
+        Flags::Empty
     }
 
     fn get_children(&self) -> &Vec<Box<dyn Widget>> {

@@ -29,6 +29,7 @@ use event::event::Event;
 use event_handler::{WidgetEvent, MouseEvent, KeyboardEvent};
 use widget::primitive::widget::WidgetExt;
 use state::state::{StateList, DefaultState};
+use flags::Flags;
 
 
 /// A basic, non-interactive rectangle shape widget.
@@ -96,7 +97,16 @@ impl Layout for VStack {
 
     fn calculate_size(&mut self, requested_size: Dimensions, fonts: &Map) -> Dimensions {
         let mut number_of_children_that_needs_sizing = self.children.len() as f64;
-        let mut size_for_children = [requested_size[0], requested_size[1] - ((number_of_children_that_needs_sizing - 1.0)*self.spacing)];
+
+        let non_spacers_vec: Vec<bool> = self.children.iter().map(|n| n.get_flag() != Flags::Spacer).collect();
+        let non_spacers_vec_length = non_spacers_vec.len();
+
+        let number_of_spaces = non_spacers_vec.iter().enumerate().take(non_spacers_vec_length -1).filter(|(n, b)| {
+            **b && non_spacers_vec[n+1]
+        }).count() as f64;
+
+        let spacing_total = ((number_of_spaces)*self.spacing);
+        let mut size_for_children = [requested_size[0], requested_size[1] - spacing_total];
 
         let mut children_flexibilty: Vec<(u32, &mut Box<dyn Widget>)> = self.children.iter_mut().map(|child| (child.flexibility(), child)).collect();
         children_flexibilty.sort_by(|(a,_), (b,_)| a.cmp(&b));
@@ -104,7 +114,6 @@ impl Layout for VStack {
 
         let mut max_width = 0.0;
         let mut total_height = 0.0;
-        let mut min_chosen_width = 0.0;
 
         for (_, child) in children_flexibilty {
             let size_for_child = [size_for_children[0], size_for_children[1] / number_of_children_that_needs_sizing];
@@ -114,10 +123,6 @@ impl Layout for VStack {
                 max_width = chosen_size[0];
             }
 
-            if chosen_size[0] < min_chosen_width {
-                min_chosen_width = chosen_size[0];
-            }
-
             size_for_children = [size_for_children[0], (size_for_children[1] - chosen_size[1]).max(0.0)];
 
             number_of_children_that_needs_sizing -= 1.0;
@@ -125,7 +130,20 @@ impl Layout for VStack {
             total_height += chosen_size[1];
         }
 
-        self.dimension = [max_width, total_height + ((self.children.len() as f64 - 1.0) * self.spacing)];
+        let spacer_count = self.children.iter().filter(|m| m.get_flag() == Flags::Spacer).count() as f64;
+        let rest_space = requested_size[1] - total_height - spacing_total;
+
+        for spacer in self.children.iter_mut().filter(|m| m.get_flag() == Flags::Spacer) {
+            let chosen_size = spacer.calculate_size([requested_size[0], rest_space/spacer_count], fonts);
+
+            if chosen_size[0] > max_width {
+                max_width = chosen_size[0];
+            }
+
+            total_height += chosen_size[1];
+        }
+
+        self.dimension = [max_width, total_height + spacing_total];
 
         self.dimension
 
@@ -139,7 +157,9 @@ impl Layout for VStack {
         let dimension = self.dimension;
         let spacing = self.spacing;
 
-        for child in &mut self.children {
+        let spacers: Vec<bool> = self.children.iter().map(|n| n.get_flag() == Flags::Spacer).collect();
+
+        for (n, child) in &mut self.children.iter_mut().enumerate() {
             match cross_axis_alignment {
                 CrossAxisAlignment::Start => {child.set_x(position[0])}
                 CrossAxisAlignment::Center => {child.set_x(position[0] + dimension[0]/2.0 - child.get_width()/2.0)}
@@ -148,7 +168,9 @@ impl Layout for VStack {
 
             child.set_y(position[1]+height_offset);
 
-            height_offset += spacing;
+            if child.get_flag() != Flags::Spacer && n < spacers.len()-1 && !spacers[n+1] {
+                height_offset += spacing;
+            }
             height_offset += child.get_height();
 
 
@@ -160,6 +182,10 @@ impl Layout for VStack {
 impl CommonWidget for VStack {
     fn get_id(&self) -> Uuid {
         self.id
+    }
+
+    fn get_flag(&self) -> Flags {
+        Flags::Empty
     }
 
     fn get_children(&self) -> &Vec<Box<dyn Widget>> {
