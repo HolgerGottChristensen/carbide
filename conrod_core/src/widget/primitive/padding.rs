@@ -121,36 +121,28 @@ impl CommonWidget for Padding {
         }
     }
 
-    fn get_position(&self) -> [f64; 2] {
-        unimplemented!()
+    fn get_proxied_children(&mut self) -> WidgetIterMut {
+        if self.child.get_flag() == Flags::Proxy {
+            WidgetIterMut::single(&mut self.child)
+        } else {
+            WidgetIterMut::Empty
+        }
     }
 
-    fn get_x(&self) -> Scalar {
-        self.position[0]
+    fn get_position(&self) -> Point {
+        self.position
     }
 
-    fn set_x(&mut self, x: f64) {
-        self.position = Point::new(x, self.position.get_y());
+    fn set_position(&mut self, position: Dimensions) {
+        self.position = position;
     }
 
-    fn get_y(&self) -> Scalar {
-        self.position[1]
+    fn get_dimension(&self) -> Dimensions {
+        [self.dimension[0].abs(), self.dimension[1].abs()]
     }
 
-    fn set_y(&mut self, y: f64) {
-        self.position = Point::new(self.position.get_x(), y);
-    }
-
-    fn get_size(&self) -> [f64; 2] {
-        unimplemented!()
-    }
-
-    fn get_width(&self) -> Scalar {
-        self.dimension[0].abs()
-    }
-
-    fn get_height(&self) -> Scalar {
-        self.dimension[1].abs()
+    fn set_dimension(&mut self, dimensions: Dimensions) {
+        self.dimension = dimensions
     }
 }
 

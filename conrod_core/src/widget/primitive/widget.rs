@@ -46,6 +46,10 @@ pub trait WidgetExt: Widget + Sized + 'static {
     }
 }
 
+pub trait CloneableWidget: Widget + Clone {}
+
+impl<T> CloneableWidget for T where T: Widget + Clone {}
+
 //This does not currently work with intellisense
 //impl<T> WidgetExt for T where T: Widget + 'static {}
 
@@ -66,38 +70,28 @@ impl CommonWidget for Box<Widget> {
         self.deref_mut().get_children_mut()
     }
 
-    fn get_position(&self) -> [f64; 2] {
+    fn get_proxied_children(&mut self) -> WidgetIterMut {
+        self.deref_mut().get_proxied_children()
+    }
+
+    fn get_position(&self) -> Dimensions {
         self.deref().get_position()
     }
 
-    fn get_x(&self) -> f64 {
-        self.deref().get_x()
+    fn set_position(&mut self, position: Dimensions) {
+        self.deref_mut().set_position(position)
     }
 
-    fn set_x(&mut self, x: f64) {
-        self.deref_mut().set_x(x)
+    fn get_dimension(&self) -> Dimensions {
+        self.deref().get_dimension()
     }
 
-    fn get_y(&self) -> f64 {
-        self.deref().get_y()
-    }
-
-    fn set_y(&mut self, y: f64) {
-        self.deref_mut().set_y(y)
-    }
-
-    fn get_size(&self) -> [f64; 2] {
-        self.deref().get_size()
-    }
-
-    fn get_width(&self) -> f64 {
-        self.deref().get_width()
-    }
-
-    fn get_height(&self) -> f64 {
-        self.deref().get_height()
+    fn set_dimension(&mut self, dimensions: Dimensions) {
+        self.deref_mut().set_dimension(dimensions)
     }
 }
+
+
 
 impl Event for Box<Widget> {
     fn handle_mouse_event(&mut self, event: &MouseEvent, consumed: &bool) {

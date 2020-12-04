@@ -153,36 +153,28 @@ impl CommonWidget for Line {
             })
     }
 
-    fn get_position(&self) -> [f64; 2] {
-        unimplemented!()
+    fn get_proxied_children(&mut self) -> WidgetIterMut {
+        self.children.iter_mut()
+            .filter(|s| s.get_flag() == Flags::Proxy)
+            .rfold(WidgetIterMut::Empty, |acc, x| {
+                WidgetIterMut::Single(x, Box::new(acc))
+            })
     }
 
-    fn get_x(&self) -> f64 {
-        unimplemented!()
+    fn get_position(&self) -> Point {
+        self.position
     }
 
-    fn set_x(&mut self, x: f64) {
-        unimplemented!()
+    fn set_position(&mut self, position: Dimensions) {
+        self.position = position;
     }
 
-    fn get_y(&self) -> f64 {
-        unimplemented!()
+    fn get_dimension(&self) -> Dimensions {
+        self.dimension
     }
 
-    fn set_y(&mut self, y: f64) {
-        unimplemented!()
-    }
-
-    fn get_size(&self) -> [f64; 2] {
-        unimplemented!()
-    }
-
-    fn get_width(&self) -> f64 {
-        unimplemented!()
-    }
-
-    fn get_height(&self) -> f64 {
-        unimplemented!()
+    fn set_dimension(&mut self, dimensions: Dimensions) {
+        self.dimension = dimensions
     }
 }
 

@@ -14,22 +14,44 @@ pub trait CommonWidget {
 
     fn get_children(&self) -> WidgetIter;
     fn get_children_mut(&mut self) -> WidgetIterMut;
+    fn get_proxied_children(&mut self) -> WidgetIterMut;
 
     fn get_position(&self) -> Point;
-    fn get_x(&self) -> Scalar;
-    fn set_x(&mut self, x: Scalar);
+    fn set_position(&mut self, position: Point);
 
-    fn get_y(&self) -> Scalar;
-    fn set_y(&mut self, y: Scalar);
-
-    fn get_size(&self) -> Dimensions;
-    fn get_width(&self) -> Scalar;
-    fn get_height(&self) -> Scalar;
-    fn calc_width(&self, pref_width: Scalar) -> Scalar {
-        self.get_width()
+    fn get_x(&self) -> Scalar {
+        self.get_position()[0]
     }
-    fn calc_height(&self, pref_height: Scalar) -> Scalar {
-        self.get_height()
+
+    fn set_x(&mut self, x: Scalar) {
+        self.set_position([x, self.get_y()]);
+    }
+
+    fn get_y(&self) -> Scalar {
+        self.get_position()[1]
+    }
+
+    fn set_y(&mut self, y: Scalar) {
+        self.set_position([self.get_x(), y]);
+    }
+
+    fn get_dimension(&self) -> Dimensions;
+    fn set_dimension(&mut self, dimensions: Dimensions);
+
+    fn get_width(&self) -> Scalar {
+        self.get_dimension()[0]
+    }
+
+    fn set_width(&mut self, width: Scalar) {
+        self.set_dimension([width, self.get_dimension()[1]])
+    }
+
+    fn get_height(&self) -> Scalar {
+        self.get_dimension()[1]
+    }
+
+    fn set_height(&mut self, height: Scalar) {
+        self.set_dimension([self.get_dimension()[0], height])
     }
 
     fn is_inside(&self, point: Point) -> bool {

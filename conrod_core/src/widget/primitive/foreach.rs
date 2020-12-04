@@ -9,7 +9,7 @@ use text::font::Map;
 use widget::common_widget::CommonWidget;
 use ::{text, Scalar};
 use widget::primitive::Widget;
-use widget::primitive::widget::WidgetExt;
+use widget::primitive::widget::{WidgetExt, CloneableWidget};
 use event::event::Event;
 use event_handler::{WidgetEvent, MouseEvent, KeyboardEvent};
 use state::state::{StateList, DefaultState, GetState, State};
@@ -26,21 +26,19 @@ use widget::widget_iterator::{WidgetIter, WidgetIterMut};
 pub struct ForEach {
     id: Uuid,
     children: Vec<Box<dyn Widget>>,
+    delegate: Box<dyn CloneableWidget>,
+    number: State<u32>,
     position: Point,
     dimension: Dimensions
 }
 
 impl ForEach {
-    pub fn new() -> Box<ForEach> {
+    pub fn new(number: State<u32>, delegate: Box<dyn CloneableWidget>) -> Box<ForEach> {
         Box::new(Self {
             id: Uuid::new_v4(),
-            children: vec![
-                Rectangle::initialize(vec![]).frame(10.0,10.0),
-                Rectangle::initialize(vec![]).frame(10.0,10.0),
-                Rectangle::initialize(vec![]).frame(10.0,10.0),
-                Rectangle::initialize(vec![]).frame(10.0,10.0),
-                Rectangle::initialize(vec![]).frame(10.0,10.0),
-            ],
+            children: vec![],
+            delegate,
+            number,
             position: [100.0,100.0],
             dimension: [100.0,100.0]
         })
@@ -80,36 +78,28 @@ impl CommonWidget for ForEach {
             })
     }
 
+    fn get_proxied_children(&mut self) -> WidgetIterMut {
+        self.children.iter_mut()
+            .filter(|s| s.get_flag() == Flags::Proxy)
+            .rfold(WidgetIterMut::Empty, |acc, x| {
+                WidgetIterMut::Single(x, Box::new(acc))
+            })
+    }
+
     fn get_position(&self) -> Point {
         self.position
     }
 
-    fn get_x(&self) -> Scalar {
-        self.position[0]
+    fn set_position(&mut self, position: Dimensions) {
+        self.position = position;
     }
 
-    fn set_x(&mut self, x: Scalar) {
-        self.position = [x, self.position[1]];
-    }
-
-    fn get_y(&self) -> Scalar {
-        self.position[1]
-    }
-
-    fn set_y(&mut self, y: Scalar) {
-        self.position = [self.position[0], y];
-    }
-
-    fn get_size(&self) -> Dimensions {
+    fn get_dimension(&self) -> Dimensions {
         self.dimension
     }
 
-    fn get_width(&self) -> Scalar {
-        self.dimension[0]
-    }
-
-    fn get_height(&self) -> Scalar {
-        self.dimension[1]
+    fn set_dimension(&mut self, dimensions: Dimensions) {
+        self.dimension = dimensions
     }
 }
 
@@ -127,11 +117,12 @@ impl Event for ForEach {
     }
 
     fn process_mouse_event(&mut self, event: &MouseEvent, consumed: &bool, state: StateList<DefaultState>) -> StateList<DefaultState> {
-        unimplemented!()
+        println!("Foreach mouseevent");
+        state
     }
 
     fn process_keyboard_event(&mut self, event: &KeyboardEvent, state: StateList<DefaultState>) -> StateList<DefaultState> {
-        unimplemented!()
+        self.apply_state(state)
     }
 
     fn get_state(&self, mut current_state: StateList<DefaultState>) -> StateList<DefaultState> {
@@ -139,7 +130,13 @@ impl Event for ForEach {
     }
 
     fn apply_state(&mut self, states: StateList<DefaultState>) -> StateList<DefaultState> {
-        unimplemented!()
+        match states.get_state(&self.number.id) {
+            None => (),
+            Some(v) => {
+                self.text = v.clone().into()
+            }
+        }
+        states
     }
 
     fn sync_state(&mut self, states: StateList<DefaultState>) {

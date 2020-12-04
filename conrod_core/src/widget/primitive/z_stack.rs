@@ -167,36 +167,28 @@ impl CommonWidget for ZStack {
             })
     }
 
+    fn get_proxied_children(&mut self) -> WidgetIterMut {
+        self.children.iter_mut()
+            .filter(|s| s.get_flag() == Flags::Proxy)
+            .rfold(WidgetIterMut::Empty, |acc, x| {
+                WidgetIterMut::Single(x, Box::new(acc))
+            })
+    }
+
     fn get_position(&self) -> Point {
-        unimplemented!()
+        self.position
     }
 
-    fn get_x(&self) -> Scalar {
-        self.position[0]
+    fn set_position(&mut self, position: Dimensions) {
+        self.position = position;
     }
 
-    fn set_x(&mut self, x: f64) {
-        self.position = Point::new(x, self.position.get_y());
+    fn get_dimension(&self) -> Dimensions {
+        self.dimension
     }
 
-    fn get_y(&self) -> Scalar {
-        self.position[1]
-    }
-
-    fn set_y(&mut self, y: f64) {
-        self.position = Point::new(self.position.get_x(), y);
-    }
-
-    fn get_size(&self) -> Dimensions {
-        unimplemented!()
-    }
-
-    fn get_width(&self) -> Scalar {
-        self.dimension[0]
-    }
-
-    fn get_height(&self) -> Scalar {
-        self.dimension[1]
+    fn set_dimension(&mut self, dimensions: Dimensions) {
+        self.dimension = dimensions
     }
 }
 

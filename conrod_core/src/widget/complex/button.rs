@@ -80,36 +80,28 @@ impl CommonWidget for SyncTest {
         }
     }
 
+    fn get_proxied_children(&mut self) -> WidgetIterMut {
+        if self.child.get_flag() == Flags::Proxy {
+            WidgetIterMut::single(&mut self.child)
+        } else {
+            WidgetIterMut::Empty
+        }
+    }
+
     fn get_position(&self) -> Point {
         self.position
     }
 
-    fn get_x(&self) -> Scalar {
-        self.position[0]
+    fn set_position(&mut self, position: Dimensions) {
+        self.position = position;
     }
 
-    fn set_x(&mut self, x: Scalar) {
-        self.position = [x, self.position[1]];
-    }
-
-    fn get_y(&self) -> Scalar {
-        self.position[1]
-    }
-
-    fn set_y(&mut self, y: Scalar) {
-        self.position = [self.position[0], y];
-    }
-
-    fn get_size(&self) -> Dimensions {
+    fn get_dimension(&self) -> Dimensions {
         self.dimension
     }
 
-    fn get_width(&self) -> Scalar {
-        self.dimension[0]
-    }
-
-    fn get_height(&self) -> Scalar {
-        self.dimension[1]
+    fn set_dimension(&mut self, dimensions: Dimensions) {
+        self.dimension = dimensions
     }
 }
 
