@@ -34,7 +34,7 @@ use widget::widget_iterator::{WidgetIter, WidgetIterMut};
 
 
 /// A basic, non-interactive rectangle shape widget.
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct VStack {
     id: Uuid,
     children: Vec<Box<dyn Widget>>,
@@ -102,7 +102,7 @@ impl Layout for VStack {
         let non_spacers_vec: Vec<bool> = self.get_children().map(|n| n.get_flag() != Flags::Spacer).collect();
         let non_spacers_vec_length = non_spacers_vec.len();
 
-        let number_of_spaces = non_spacers_vec.iter().enumerate().take(non_spacers_vec_length -1).filter(|(n, b)| {
+        let number_of_spaces = non_spacers_vec.iter().enumerate().take(non_spacers_vec_length.max(1) - 1).filter(|(n, b)| {
             **b && non_spacers_vec[n+1]
         }).count() as f64;
 
@@ -215,10 +215,13 @@ impl CommonWidget for VStack {
 
     fn get_proxied_children(&mut self) -> WidgetIterMut {
         self.children.iter_mut()
-            .filter(|s| s.get_flag() == Flags::Proxy)
             .rfold(WidgetIterMut::Empty, |acc, x| {
                 WidgetIterMut::Single(x, Box::new(acc))
             })
+    }
+
+    fn clone(&self) -> Box<dyn Widget> {
+        Box::new(Clone::clone(self))
     }
 
     fn get_position(&self) -> Point {

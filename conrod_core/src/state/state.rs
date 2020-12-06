@@ -70,7 +70,21 @@ impl<T> GetState<T> for StateList<T> {
 #[derive(Clone, Debug)]
 pub enum DefaultState {
     String(String),
+    UuidList(Vec<Uuid>),
+    Uuid(Uuid),
     U32(u32)
+}
+
+impl Into<(String, DefaultState)> for State<Uuid> {
+    fn into(self) -> (String, DefaultState) {
+        (self.id, DefaultState::Uuid(self.value))
+    }
+}
+
+impl Into<(String, DefaultState)> for State<Vec<Uuid>> {
+    fn into(self) -> (String, DefaultState) {
+        (self.id, DefaultState::UuidList(self.value))
+    }
 }
 
 impl Into<(String, DefaultState)> for State<String> {
@@ -82,6 +96,24 @@ impl Into<(String, DefaultState)> for State<String> {
 impl Into<(String, DefaultState)> for State<u32> {
     fn into(self) -> (String, DefaultState) {
         (self.id, DefaultState::U32(self.value))
+    }
+}
+
+impl Into<State<Uuid>> for Uuid {
+    fn into(self) -> State<Uuid> {
+        State::new(&Uuid::new_v4().to_string(), &self)
+    }
+}
+
+impl Into<State<Vec<Uuid>>> for Vec<Uuid> {
+    fn into(self) -> State<Vec<Uuid>> {
+        State::new(&Uuid::new_v4().to_string(), &self)
+    }
+}
+
+impl Into<State<u32>> for u32 {
+    fn into(self) -> State<u32> {
+        State::new(&Uuid::new_v4().to_string(), &self)
     }
 }
 
@@ -114,6 +146,30 @@ impl Into<State<u32>> for (String, DefaultState) {
         let (id, state) = self;
         match state {
             DefaultState::U32(n) => {
+                State::new(&id, &n)
+            }
+            _ => panic!()
+        }
+    }
+}
+
+impl Into<State<Vec<Uuid>>> for (String, DefaultState) {
+    fn into(self) -> State<Vec<Uuid>> {
+        let (id, state) = self;
+        match state {
+            DefaultState::UuidList(n) => {
+                State::new(&id, &n)
+            }
+            _ => panic!()
+        }
+    }
+}
+
+impl Into<State<Uuid>> for (String, DefaultState) {
+    fn into(self) -> State<Uuid> {
+        let (id, state) = self;
+        match state {
+            DefaultState::Uuid(n) => {
                 State::new(&id, &n)
             }
             _ => panic!()

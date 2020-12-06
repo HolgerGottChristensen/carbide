@@ -32,7 +32,7 @@ use std::slice::{Iter, IterMut};
 
 
 /// A simple, non-interactive widget for drawing a single **Oval**.
-#[derive(Debug, WidgetCommon_)]
+#[derive(Debug, Clone, WidgetCommon_)]
 pub struct Oval<S> {
     pub id: Uuid,
     /// Data necessary and common for all widget builder render.
@@ -51,7 +51,7 @@ pub struct Oval<S> {
     pub children: Vec<Box<dyn Widget>>
 }
 
-impl<S> Event for Oval<S> {
+impl<S: 'static + Clone> Event for Oval<S> {
     fn handle_mouse_event(&mut self, event: &MouseEvent, consumed: &bool) {
         ()
     }
@@ -85,7 +85,7 @@ impl<S> Event for Oval<S> {
     }
 }
 
-impl<S: 'static> WidgetExt for Oval<S> {}
+impl<S: 'static + Clone> WidgetExt for Oval<S> {}
 
 impl<S> Layout for Oval<S> {
     fn flexibility(&self) -> u32 {
@@ -114,7 +114,7 @@ impl<S> Layout for Oval<S> {
     }
 }
 
-impl<S> CommonWidget for Oval<S> {
+impl<S: 'static + Clone> CommonWidget for Oval<S> {
     fn get_id(&self) -> Uuid {
         self.id
     }
@@ -149,10 +149,13 @@ impl<S> CommonWidget for Oval<S> {
 
     fn get_proxied_children(&mut self) -> WidgetIterMut {
         self.children.iter_mut()
-            .filter(|s| s.get_flag() == Flags::Proxy)
             .rfold(WidgetIterMut::Empty, |acc, x| {
                 WidgetIterMut::Single(x, Box::new(acc))
             })
+    }
+
+    fn clone(&self) -> Box<dyn Widget> {
+        Box::new(Clone::clone(self))
     }
 
     fn get_position(&self) -> Point {
@@ -172,7 +175,7 @@ impl<S> CommonWidget for Oval<S> {
     }
 }
 
-impl<S> Render for Oval<S> {
+impl<S: 'static + Clone> Render for Oval<S> {
 
     fn get_primitives(&self, fonts: &text::font::Map) -> Vec<Primitive> {
         let points = widget::oval::circumference(Rect::new(self.position, self.dimension), DEFAULT_RESOLUTION);

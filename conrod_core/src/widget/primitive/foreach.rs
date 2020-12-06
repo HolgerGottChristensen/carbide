@@ -9,7 +9,7 @@ use text::font::Map;
 use widget::common_widget::CommonWidget;
 use ::{text, Scalar};
 use widget::primitive::Widget;
-use widget::primitive::widget::{WidgetExt, CloneableWidget};
+use widget::primitive::widget::WidgetExt;
 use event::event::Event;
 use event_handler::{WidgetEvent, MouseEvent, KeyboardEvent};
 use state::state::{StateList, DefaultState, GetState, State};
@@ -21,24 +21,34 @@ use widget::primitive::spacer::{Spacer, SpacerDirection};
 use input::Key;
 use flags::Flags;
 use widget::widget_iterator::{WidgetIter, WidgetIterMut};
+use std::collections::HashMap;
 
-#[derive(Debug)]
+
+
+#[derive(Debug, Clone)]
 pub struct ForEach {
     id: Uuid,
-    children: Vec<Box<dyn Widget>>,
-    delegate: Box<dyn CloneableWidget>,
-    number: State<u32>,
+    children_map: HashMap<Uuid, Box<dyn Widget>>,
+    delegate: Box<dyn Widget>,
+    ids: State<Vec<Uuid>>,
     position: Point,
     dimension: Dimensions
 }
 
 impl ForEach {
-    pub fn new(number: State<u32>, delegate: Box<dyn CloneableWidget>) -> Box<ForEach> {
+    pub fn new(ids: State<Vec<Uuid>>, delegate: Box<dyn Widget>) -> Box<ForEach> {
+
+        let mut map = HashMap::new();
+
+        for i in &*ids {
+            map.insert(i.clone(), Clone::clone(&delegate));
+        }
+
         Box::new(Self {
             id: Uuid::new_v4(),
-            children: vec![],
+            children_map: map,
             delegate,
-            number,
+            ids,
             position: [100.0,100.0],
             dimension: [100.0,100.0]
         })
@@ -55,35 +65,76 @@ impl CommonWidget for ForEach {
     }
 
     fn get_children(&self) -> WidgetIter {
-        self.children
-            .iter()
-            .rfold(WidgetIter::Empty, |acc, x| {
-                if x.get_flag() == Flags::Proxy {
-                    WidgetIter::Multi(Box::new(x.get_children()), Box::new(acc))
-                } else {
-                    WidgetIter::Single(x, Box::new(acc))
-                }
-            })
+        let mut w = WidgetIter::Empty;
+
+        for id in self.ids.iter().rev() {
+            let item = self.children_map.get(id).unwrap();
+
+            if item.get_flag() == Flags::Proxy {
+                w = WidgetIter::Multi(Box::new(item.get_children()), Box::new(w));
+            } else {
+                w = WidgetIter::Single(item, Box::new(w))
+            }
+        }
+
+        w
     }
 
     fn get_children_mut(&mut self) -> WidgetIterMut {
-        self.children
-            .iter_mut()
-            .rfold(WidgetIterMut::Empty, |acc, x| {
-                if x.get_flag() == Flags::Proxy {
-                    WidgetIterMut::Multi(Box::new(x.get_children_mut()), Box::new(acc))
-                } else {
-                    WidgetIterMut::Single(x, Box::new(acc))
-                }
-            })
+        let mut w = WidgetIterMut::Empty;
+
+        for id in self.ids.iter().rev() {
+            let contains = self.children_map.contains_key(id).clone();
+            if !contains{
+                self.children_map.insert(id.clone(), Clone::clone(&self.delegate));
+            }
+        }
+
+        for id in self.ids.iter().rev() {
+
+            let item: &mut Box<dyn Widget> = unsafe {
+                let p: *mut Box<dyn Widget> = self.children_map.get_mut(id).unwrap();
+                p.as_mut().unwrap()
+            };
+
+            if item.get_flag() == Flags::Proxy {
+                w = WidgetIterMut::Multi(Box::new(item.get_children_mut()), Box::new(w));
+            } else {
+                w = WidgetIterMut::Single(item, Box::new(w))
+            }
+        }
+
+        w
     }
 
     fn get_proxied_children(&mut self) -> WidgetIterMut {
-        self.children.iter_mut()
-            .filter(|s| s.get_flag() == Flags::Proxy)
-            .rfold(WidgetIterMut::Empty, |acc, x| {
-                WidgetIterMut::Single(x, Box::new(acc))
-            })
+        let mut w = WidgetIterMut::Empty;
+
+        for id in self.ids.iter().rev() {
+            let contains = self.children_map.contains_key(id).clone();
+            if !contains{
+                self.children_map.insert(id.clone(), Clone::clone(&self.delegate));
+            }
+        }
+
+        for id in self.ids.iter().rev() {
+            let item: &mut Box<dyn Widget> = unsafe {
+                let p: *mut Box<dyn Widget> = self.children_map.get_mut(id).unwrap();
+                p.as_mut().unwrap()
+            };
+
+            if item.get_flag() == Flags::Proxy {
+                w = WidgetIterMut::Multi(Box::new(item.get_proxied_children()), Box::new(w));
+            } else {
+                w = WidgetIterMut::Single(item, Box::new(w))
+            }
+        }
+
+        w
+    }
+
+    fn clone(&self) -> Box<dyn Widget> {
+        Box::new(Clone::clone(self))
     }
 
     fn get_position(&self) -> Point {
@@ -118,11 +169,30 @@ impl Event for ForEach {
 
     fn process_mouse_event(&mut self, event: &MouseEvent, consumed: &bool, state: StateList<DefaultState>) -> StateList<DefaultState> {
         println!("Foreach mouseevent");
+
         state
     }
 
     fn process_keyboard_event(&mut self, event: &KeyboardEvent, state: StateList<DefaultState>) -> StateList<DefaultState> {
-        self.apply_state(state)
+        // Apply state from its parent
+        let new_state = self.apply_state(state);
+
+        // Add the state from itself, to the state list
+        let mut state_for_children = new_state; //self.get_state(new_state);
+
+        let ids = self.ids.clone();
+
+        for (i, child) in self.get_proxied_children().enumerate() {
+
+            state_for_children.replace_state(State::<Uuid>::new("id", &ids[i]).into());
+            state_for_children.replace_state(State::<u32>::new("index", &(i as u32)).into());
+            // Then we delegate the event to its children, we also makes sure to update
+            // current state for the next child
+            state_for_children = child.process_keyboard_event(event, state_for_children);
+
+        }
+        // We then apply the changed state from its children, to save it for itself.
+        self.apply_state(state_for_children)
     }
 
     fn get_state(&self, mut current_state: StateList<DefaultState>) -> StateList<DefaultState> {
@@ -130,10 +200,10 @@ impl Event for ForEach {
     }
 
     fn apply_state(&mut self, states: StateList<DefaultState>) -> StateList<DefaultState> {
-        match states.get_state(&self.number.id) {
+        match states.get_state(&self.ids.id) {
             None => (),
             Some(v) => {
-                self.text = v.clone().into()
+                self.ids = v.clone().into()
             }
         }
         states

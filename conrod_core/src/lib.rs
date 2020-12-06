@@ -4,7 +4,7 @@
 //!
 //! If you are new to Conrod, we recommend checking out [The Guide](./guide/index.html).
 
-#![deny(unsafe_code)]
+#![warn(unsafe_code)] //Todo deny when unsafe code removed from foreach
 #![warn(missing_copy_implementations)]
 #![warn(missing_docs)]
 
@@ -19,6 +19,7 @@ extern crate copypasta;
 extern crate uuid;
 extern crate instant;
 extern crate glium;
+#[macro_use] extern crate dyn_clone;
 
 pub use color::{Color, Colorable};
 pub use conrod_derive::*;

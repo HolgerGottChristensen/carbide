@@ -26,7 +26,7 @@ use widget::widget_iterator::{WidgetIter, WidgetIterMut};
 
 
 /// A simple, non-interactive widget for drawing a single straight Line.
-#[derive(Debug, WidgetCommon_)]
+#[derive(Debug, Clone, WidgetCommon_)]
 pub struct Line {
     /// Data necessary and common for all widget builder render.
     #[conrod(common_builder)]
@@ -155,10 +155,13 @@ impl CommonWidget for Line {
 
     fn get_proxied_children(&mut self) -> WidgetIterMut {
         self.children.iter_mut()
-            .filter(|s| s.get_flag() == Flags::Proxy)
             .rfold(WidgetIterMut::Empty, |acc, x| {
                 WidgetIterMut::Single(x, Box::new(acc))
             })
+    }
+
+    fn clone(&self) -> Box<dyn Widget> {
+        Box::new(Clone::clone(self))
     }
 
     fn get_position(&self) -> Point {

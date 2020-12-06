@@ -34,17 +34,18 @@ pub trait Event: CommonWidget {
         // Add the state from itself, to the state list
         let mut state_for_children = self.get_state(new_state);
 
-        for proxied_child in self.get_proxied_children() {
-            state_for_children = proxied_child.process_keyboard_event()
-        }
-
-        for child in self.get_children_mut(){
+        for child in self.get_proxied_children(){
             if child.is_inside(event.get_current_mouse_position()) {
                 //Then we delegate the event to its children
                 state_for_children = child.process_mouse_event(event, &consumed, state_for_children);
 
                 if *consumed {return state_for_children}
-            }
+            } /*else {
+                //Then we delegate the event to its children
+                state_for_children = child.process_mouse_event(event, &consumed, state_for_children);
+
+                if *consumed {return state_for_children}
+            }*/
         }
 
         // We then apply the changed state from its children, to save it for itself.
@@ -64,11 +65,7 @@ pub trait Event: CommonWidget {
         // Add the state from itself, to the state list
         let mut state_for_children = self.get_state(new_state);
 
-        for proxied_child in self.get_proxied_children() {
-            state_for_children = proxied_child.process_keyboard_event()
-        }
-
-        for child in self.get_children_mut() {
+        for child in self.get_proxied_children() {
 
             // Then we delegate the event to its children, we also makes sure to update
             // current state for the next child

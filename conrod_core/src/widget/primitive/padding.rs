@@ -24,7 +24,7 @@ use widget::widget_iterator::{WidgetIter, WidgetIterMut};
 pub static SCALE: f64 = -1.0;
 
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Padding {
     id: Uuid,
     child: Box<dyn Widget>,
@@ -122,11 +122,11 @@ impl CommonWidget for Padding {
     }
 
     fn get_proxied_children(&mut self) -> WidgetIterMut {
-        if self.child.get_flag() == Flags::Proxy {
-            WidgetIterMut::single(&mut self.child)
-        } else {
-            WidgetIterMut::Empty
-        }
+        WidgetIterMut::single(&mut self.child)
+    }
+
+    fn clone(&self) -> Box<dyn Widget> {
+        Box::new(Clone::clone(self))
     }
 
     fn get_position(&self) -> Point {

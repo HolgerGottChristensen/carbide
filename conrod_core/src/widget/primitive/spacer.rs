@@ -146,6 +146,10 @@ impl CommonWidget for Spacer {
         unimplemented!()
     }
 
+    fn clone(&self) -> Box<dyn Widget> {
+        Box::new(Clone::clone(self))
+    }
+
     fn get_position(&self) -> Point {
         self.position
     }

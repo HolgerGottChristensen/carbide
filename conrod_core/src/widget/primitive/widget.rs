@@ -31,10 +31,13 @@ use state::state::{StateList, DefaultState};
 use flags::Flags;
 use widget::widget_iterator::{WidgetIterMut, WidgetIter};
 use std::slice::{Iter, IterMut};
+use dyn_clone::DynClone;
 
-pub trait Widget: Event + Layout + Render {}
+pub trait Widget: Event + Layout + Render + DynClone {}
 
-impl<T> Widget for T where T: Event + Layout + Render {}
+impl<T> Widget for T where T: Event + Layout + Render + DynClone {}
+
+dyn_clone::clone_trait_object!(Widget);
 
 pub trait WidgetExt: Widget + Sized + 'static {
     fn frame(self, width: Scalar, height: Scalar) -> Box<Frame> {
@@ -45,10 +48,6 @@ pub trait WidgetExt: Widget + Sized + 'static {
         Padding::init(edge_insets, Box::new(self))
     }
 }
-
-pub trait CloneableWidget: Widget + Clone {}
-
-impl<T> CloneableWidget for T where T: Widget + Clone {}
 
 //This does not currently work with intellisense
 //impl<T> WidgetExt for T where T: Widget + 'static {}
@@ -73,6 +72,8 @@ impl CommonWidget for Box<Widget> {
     fn get_proxied_children(&mut self) -> WidgetIterMut {
         self.deref_mut().get_proxied_children()
     }
+
+    fn clone(&self) -> Box<Widget> {self.deref().clone()}
 
     fn get_position(&self) -> Dimensions {
         self.deref().get_position()

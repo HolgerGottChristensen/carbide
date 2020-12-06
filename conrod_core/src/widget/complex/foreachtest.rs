@@ -23,44 +23,31 @@ use flags::Flags;
 use widget::widget_iterator::{WidgetIter, WidgetIterMut};
 use widget::primitive::foreach::ForEach;
 use widget::primitive::v_stack::VStack;
-use widget::complex::foreachtest::ForeachTest;
 
 #[derive(Debug, Clone)]
-pub struct SyncTest {
+pub struct ForeachTest {
     id: Uuid,
     child: Box<dyn Widget>,
     position: Point,
     dimension: Dimensions,
-    value: State<String>,
-    fore: State<Vec<Uuid>>
+    index: State<u32>
 }
 
-impl SyncTest {
-    pub fn new(value: State<String>) -> Box<SyncTest> {
-        let fore = State::<Vec<Uuid>>::new("a", &(0..5).map(|_| Uuid::new_v4()).collect::<Vec<Uuid>>());
-
+impl ForeachTest {
+    pub fn new() -> Box<ForeachTest> {
         Box::new(Self {
             id: Uuid::new_v4(),
-            child: HStack::initialize(vec![
-                    Spacer::new(SpacerDirection::Horizontal),
-                    VStack::initialize(vec![
-                        ForEach::new(fore.clone(), ForeachTest::new())
-                    ]),
-                    ForEach::new((0..5).map(|_| Uuid::new_v4()).collect::<Vec<Uuid>>().into(), Rectangle::initialize(vec![]).frame(10.0,10.0)),
-                    Text::initialize(value.clone(), vec![]),
-                    Spacer::new(SpacerDirection::Horizontal),
-                    Text::initialize(value.clone(), vec![]),
-                    Spacer::new(SpacerDirection::Horizontal),
-            ]),
+            child: Rectangle::initialize(vec![
+                Text::initialize(State::new("sindex", &"0".to_string()), vec![])
+            ]).frame(60.0,30.0),
             position: [100.0,100.0],
             dimension: [100.0,100.0],
-            value,
-            fore
+            index: State::new("index", &(0 as u32))
         })
     }
 }
 
-impl CommonWidget for SyncTest {
+impl CommonWidget for ForeachTest {
     fn get_id(&self) -> Uuid {
         self.id
     }
@@ -110,36 +97,13 @@ impl CommonWidget for SyncTest {
     }
 }
 
-impl Event for SyncTest {
+impl Event for ForeachTest {
     fn handle_mouse_event(&mut self, event: &MouseEvent, consumed: &bool) {
         ()
     }
 
     fn handle_keyboard_event(&mut self, event: &KeyboardEvent) {
-        match event {
-            KeyboardEvent::Text(s, _) => {
-                self.value.push_str(s);
-            }
-            KeyboardEvent::Press(key, modifier) => {
-                match key {
-                    Key::Backspace => {
-                        self.value.pop();
-                    },
-                    Key::NumPadPlus => {
-                        self.fore.push(Uuid::new_v4())
-                    },
-                    Key::NumPadMinus => {
-                        if self.fore.len() > 1 {
-                            let last = self.fore.len()-1;
-                            self.fore.remove(last);
-                        }
-
-                    }
-                    _ => ()
-                }
-            }
-            _ => ()
-        }
+        ()
     }
 
     fn handle_other_event(&mut self, event: &WidgetEvent) {
@@ -155,16 +119,15 @@ impl Event for SyncTest {
     }
 
     fn get_state(&self, mut current_state: StateList<DefaultState>) -> StateList<DefaultState> {
-        current_state.replace_state(self.value.clone().into());
-        current_state.replace_state(self.fore.clone().into());
+        current_state.replace_state(State::<String>::new("sindex", &self.index.value.to_string()).into());
         current_state
     }
 
     fn apply_state(&mut self, states: StateList<DefaultState>) -> StateList<DefaultState> {
-        match states.get_state(&self.value.id) {
+        match states.get_state(&self.index.id) {
             None => (),
             Some(v) => {
-                self.value = v.clone().into()
+                self.index = v.clone().into()
             }
         }
         states
@@ -175,15 +138,14 @@ impl Event for SyncTest {
     }
 }
 
-impl ChildRender for SyncTest {}
+impl ChildRender for ForeachTest {}
 
-impl Layout for SyncTest {
+impl Layout for ForeachTest {
     fn flexibility(&self) -> u32 {
-        2
+        0
     }
 
     fn calculate_size(&mut self, requested_size: Dimensions, fonts: &Map) -> Dimensions {
-
         self.dimension = self.child.calculate_size(requested_size, fonts);
         self.dimension
     }
@@ -197,4 +159,4 @@ impl Layout for SyncTest {
     }
 }
 
-impl WidgetExt for SyncTest {}
+impl WidgetExt for ForeachTest {}

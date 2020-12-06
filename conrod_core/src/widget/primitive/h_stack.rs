@@ -34,7 +34,7 @@ use widget::widget_iterator::{WidgetIterMut, WidgetIter};
 
 
 /// A basic, non-interactive rectangle shape widget.
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct HStack {
     id: Uuid,
     children: Vec<Box<dyn Widget>>,
@@ -219,10 +219,13 @@ impl CommonWidget for HStack {
 
     fn get_proxied_children(&mut self) -> WidgetIterMut {
         self.children.iter_mut()
-            .filter(|s| s.get_flag() == Flags::Proxy)
             .rfold(WidgetIterMut::Empty, |acc, x| {
                 WidgetIterMut::Single(x, Box::new(acc))
             })
+    }
+
+    fn clone(&self) -> Box<dyn Widget> {
+        Box::new(Clone::clone(self))
     }
 
     fn get_position(&self) -> Point {

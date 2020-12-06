@@ -40,7 +40,7 @@ use widget::widget_iterator::{WidgetIter, WidgetIterMut};
 use std::slice::{Iter, IterMut};
 
 /// A basic, non-interactive rectangle shape widget.
-#[derive(Debug, WidgetCommon_)]
+#[derive(Debug, Clone, WidgetCommon_)]
 pub struct Rectangle {
     id: Uuid,
     children: Vec<Box<dyn Widget>>,
@@ -62,20 +62,7 @@ impl Event for Rectangle {
     }
 
     fn handle_keyboard_event(&mut self, event: &KeyboardEvent) {
-        match event {
-            KeyboardEvent::Click(key, ..) => {
-                match key {
-                    Key::A => {
-                        self.color = YELLOW
-                    }
-                    Key::S => {
-                        self.color = PURPLE
-                    }
-                    _ => ()
-                }
-            }
-            _ => ()
-        }
+        ()
     }
 
     fn handle_other_event(&mut self, event: &WidgetEvent) {
@@ -163,10 +150,13 @@ impl CommonWidget for Rectangle {
 
     fn get_proxied_children(&mut self) -> WidgetIterMut {
         self.children.iter_mut()
-            .filter(|s| s.get_flag() == Flags::Proxy)
             .rfold(WidgetIterMut::Empty, |acc, x| {
                 WidgetIterMut::Single(x, Box::new(acc))
             })
+    }
+
+    fn clone(&self) -> Box<dyn Widget> {
+        Box::new(Clone::clone(self))
     }
 
     fn get_position(&self) -> Point {
