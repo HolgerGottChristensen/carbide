@@ -34,7 +34,7 @@ use event::event::Event;
 use event_handler::{WidgetEvent, MouseEvent, KeyboardEvent};
 use widget::primitive::widget::WidgetExt;
 use input::Key;
-use state::state::{StateList, DefaultState};
+use state::state::{StateList};
 use flags::Flags;
 use widget::widget_iterator::{WidgetIter, WidgetIterMut};
 use std::slice::{Iter, IterMut};
@@ -69,23 +69,23 @@ impl Event for Rectangle {
         unimplemented!()
     }
 
-    fn process_mouse_event(&mut self, event: &MouseEvent, consumed: &bool, state: StateList<DefaultState>) -> StateList<DefaultState> {
+    fn process_mouse_event(&mut self, event: &MouseEvent, consumed: &bool, state: StateList) -> StateList {
         self.process_mouse_event_default(event, consumed, state)
     }
 
-    fn process_keyboard_event(&mut self, event: &KeyboardEvent, state: StateList<DefaultState>) -> StateList<DefaultState> {
+    fn process_keyboard_event(&mut self, event: &KeyboardEvent, state: StateList) -> StateList {
         self.process_keyboard_event_default(event, state)
     }
 
-    fn get_state(&self, current_state: StateList<DefaultState>) -> StateList<DefaultState> {
+    fn get_state(&self, current_state: StateList) -> StateList {
         current_state
     }
 
-    fn apply_state(&mut self, states: StateList<DefaultState>) -> StateList<DefaultState> {
+    fn apply_state(&mut self, states: StateList) -> StateList {
         states
     }
 
-    fn sync_state(&mut self, states: StateList<DefaultState>) {
+    fn sync_state(&mut self, states: StateList) {
         self.sync_state_default(states);
     }
 }

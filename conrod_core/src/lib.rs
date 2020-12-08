@@ -1,3 +1,4 @@
+#![feature(in_band_lifetimes)]
 //! # Conrod
 //!
 //! An easy-to-use, immediate-mode, 2D GUI library featuring a range of useful widgets.
@@ -19,6 +20,8 @@ extern crate copypasta;
 extern crate uuid;
 extern crate instant;
 extern crate glium;
+extern crate serde;
+extern crate ron;
 #[macro_use] extern crate dyn_clone;
 
 pub use color::{Color, Colorable};
@@ -29,6 +32,9 @@ pub use position::{Dimension, Point, Position, Positionable, Range, Rect, Scalar
 pub use theme::Theme;
 pub use ui::{Ui, UiCell, UiBuilder};
 pub use widget::{scroll, OldWidget};
+
+pub use ron::to_string as to_ron;
+pub use ron::from_str as from_ron;
 
 mod border;
 pub mod color;

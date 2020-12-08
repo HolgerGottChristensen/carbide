@@ -5,14 +5,16 @@ use std::fmt::Debug;
 use std::convert::TryInto;
 use widget::common_widget::CommonWidget;
 use uuid::Uuid;
+use serde::{Serialize, Deserialize};
+use ::{from_ron, to_ron};
 
 #[derive(Debug)]
-pub struct State<T> where T: Clone + Debug {
+pub struct State<T> where T: Serialize + Clone + Debug {
     pub id: String,
     pub value: T,
 }
 
-impl<T: Clone + Debug> Clone for State<T> {
+impl<T: Clone + Debug + Serialize> Clone for State<T> {
     fn clone(&self) -> Self {
         Self {
             id: self.id.clone(),
@@ -21,7 +23,7 @@ impl<T: Clone + Debug> Clone for State<T> {
     }
 }
 
-impl<T: Clone + Debug> Deref for State<T> {
+impl<T: Clone + Debug + Serialize> Deref for State<T> {
     type Target = T;
 
     fn deref(&self) -> &Self::Target {
@@ -29,13 +31,13 @@ impl<T: Clone + Debug> Deref for State<T> {
     }
 }
 
-impl<T: Clone + Debug> DerefMut for State<T> {
+impl<T: Clone + Debug + Serialize> DerefMut for State<T> {
     fn deref_mut(&mut self) -> &mut Self::Target {
         &mut self.value
     }
 }
 
-impl<T: Clone + Debug> State<T> {
+impl<T: Clone + Debug + Serialize> State<T> {
     pub fn new(name: &str, val: &T) -> Self {
         State {
             id: name.to_string(),
@@ -44,58 +46,31 @@ impl<T: Clone + Debug> State<T> {
     }
 }
 
+pub type StateList = Vec<(String, String)>;
 
-
-pub type StateList<T: Clone> = Vec<(String, T)>;
-
-pub trait GetState<T> {
-    fn get_state(&self, key: &String) -> Option<&(String, T)>;
-    fn replace_state(&mut self, val: (String, T));
+pub trait GetState {
+    fn update_local_state<'a, T: Deserialize<'a> + Serialize + Clone + Debug>(&'a self, state: &mut State<T>);
+    fn replace_state<T: Serialize + Clone + Debug>(&mut self, val: State<T>);
 }
 
-impl<T> GetState<T> for StateList<T> {
-    fn get_state(&self, key: &String) -> Option<&(String, T)> {
-        self.iter().find(|(try_key, state)| key.eq(try_key))
+impl GetState for StateList {
+    fn update_local_state<'a, T: Deserialize<'a> + Serialize + Clone + Debug>(&'a self, state: &mut State<T>) {
+        let key = &state.id;
+        match self.iter().find(|(try_key, state)| key.eq(try_key)) {
+            None => (),
+            Some((_, value)) => {
+                state.value = from_ron(&value).unwrap();
+            }
+        }
     }
 
-    fn replace_state(&mut self, val: (String, T)) {
-        let (id, val) = val;
+    fn replace_state<T: Serialize + Clone + Debug>(&mut self, val: State<T>) {
+        let id = val.id;
+        let val = to_ron(&val.value).unwrap();
         self.retain(|(i, s)| {
             id.ne(i)
         });
         self.push((id, val));
-    }
-}
-
-#[derive(Clone, Debug)]
-pub enum DefaultState {
-    String(String),
-    UuidList(Vec<Uuid>),
-    Uuid(Uuid),
-    U32(u32)
-}
-
-impl Into<(String, DefaultState)> for State<Uuid> {
-    fn into(self) -> (String, DefaultState) {
-        (self.id, DefaultState::Uuid(self.value))
-    }
-}
-
-impl Into<(String, DefaultState)> for State<Vec<Uuid>> {
-    fn into(self) -> (String, DefaultState) {
-        (self.id, DefaultState::UuidList(self.value))
-    }
-}
-
-impl Into<(String, DefaultState)> for State<String> {
-    fn into(self) -> (String, DefaultState) {
-        (self.id, DefaultState::String(self.value))
-    }
-}
-
-impl Into<(String, DefaultState)> for State<u32> {
-    fn into(self) -> (String, DefaultState) {
-        (self.id, DefaultState::U32(self.value))
     }
 }
 
@@ -126,54 +101,6 @@ impl Into<State<String>> for String {
 impl Into<State<String>> for &str {
     fn into(self) -> State<String> {
         State::new(&Uuid::new_v4().to_string(), &self.to_string())
-    }
-}
-
-impl Into<State<String>> for (String, DefaultState) {
-    fn into(self) -> State<String> {
-        let (id, state) = self;
-        match state {
-            DefaultState::String(n) => {
-                State::new(&id, &n)
-            }
-            _ => panic!()
-        }
-    }
-}
-
-impl Into<State<u32>> for (String, DefaultState) {
-    fn into(self) -> State<u32> {
-        let (id, state) = self;
-        match state {
-            DefaultState::U32(n) => {
-                State::new(&id, &n)
-            }
-            _ => panic!()
-        }
-    }
-}
-
-impl Into<State<Vec<Uuid>>> for (String, DefaultState) {
-    fn into(self) -> State<Vec<Uuid>> {
-        let (id, state) = self;
-        match state {
-            DefaultState::UuidList(n) => {
-                State::new(&id, &n)
-            }
-            _ => panic!()
-        }
-    }
-}
-
-impl Into<State<Uuid>> for (String, DefaultState) {
-    fn into(self) -> State<Uuid> {
-        let (id, state) = self;
-        match state {
-            DefaultState::Uuid(n) => {
-                State::new(&id, &n)
-            }
-            _ => panic!()
-        }
     }
 }
 

@@ -1,6 +1,6 @@
 use event_handler::{MouseEvent, KeyboardEvent, WidgetEvent};
 use widget::common_widget::CommonWidget;
-use state::state::{StateList, DefaultState};
+use state::state::{StateList};
 
 pub trait Event: CommonWidget {
     /// A function that will be called when a mouse event occurs.
@@ -20,9 +20,9 @@ pub trait Event: CommonWidget {
     /// TODO: Separate touch events.
     fn handle_other_event(&mut self, event: &WidgetEvent);
 
-    fn process_mouse_event(&mut self, event: &MouseEvent, consumed: &bool, state: StateList<DefaultState>) -> StateList<DefaultState>;
+    fn process_mouse_event(&mut self, event: &MouseEvent, consumed: &bool, state: StateList) -> StateList;
 
-    fn process_mouse_event_default(&mut self, event: &MouseEvent, consumed: &bool, state: StateList<DefaultState>) -> StateList<DefaultState> {
+    fn process_mouse_event_default(&mut self, event: &MouseEvent, consumed: &bool, state: StateList) -> StateList {
 
         // Apply state from its parent
         let new_state = self.apply_state(state);
@@ -52,9 +52,9 @@ pub trait Event: CommonWidget {
         self.apply_state(state_for_children)
     }
 
-    fn process_keyboard_event(&mut self, event: &KeyboardEvent, state: StateList<DefaultState>) -> StateList<DefaultState>;
+    fn process_keyboard_event(&mut self, event: &KeyboardEvent, state: StateList) -> StateList;
 
-    fn process_keyboard_event_default(&mut self, event: &KeyboardEvent, state: StateList<DefaultState>) -> StateList<DefaultState>{
+    fn process_keyboard_event_default(&mut self, event: &KeyboardEvent, state: StateList) -> StateList {
 
         // Apply state from its parent
         let new_state = self.apply_state(state);
@@ -76,13 +76,13 @@ pub trait Event: CommonWidget {
         self.apply_state(state_for_children)
     }
 
-    fn get_state(&self, current_state: StateList<DefaultState>) -> StateList<DefaultState>;
+    fn get_state(&self, current_state: StateList) -> StateList;
 
-    fn apply_state(&mut self, states: StateList<DefaultState>) -> StateList<DefaultState>;
+    fn apply_state(&mut self, states: StateList) -> StateList;
 
-    fn sync_state(&mut self, states: StateList<DefaultState>);
+    fn sync_state(&mut self, states: StateList);
 
-    fn sync_state_default(&mut self, states: StateList<DefaultState>) {
+    fn sync_state_default(&mut self, states: StateList) {
         let applied_state = self.apply_state(states);
         let new_state = self.get_state(applied_state);
 

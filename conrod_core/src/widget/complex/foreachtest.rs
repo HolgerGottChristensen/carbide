@@ -12,7 +12,7 @@ use widget::primitive::Widget;
 use widget::primitive::widget::WidgetExt;
 use event::event::Event;
 use event_handler::{WidgetEvent, MouseEvent, KeyboardEvent};
-use state::state::{StateList, DefaultState, GetState, State};
+use state::state::{StateList, GetState, State};
 use daggy::petgraph::graph::node_index;
 use render::primitive_kind::PrimitiveKind;
 use widget::layout::Layout;
@@ -110,30 +110,25 @@ impl Event for ForeachTest {
         ()
     }
 
-    fn process_mouse_event(&mut self, event: &MouseEvent, consumed: &bool, state: StateList<DefaultState>) -> StateList<DefaultState> {
+    fn process_mouse_event(&mut self, event: &MouseEvent, consumed: &bool, state: StateList) -> StateList {
         self.process_mouse_event_default(event, consumed, state)
     }
 
-    fn process_keyboard_event(&mut self, event: &KeyboardEvent, state: StateList<DefaultState>) -> StateList<DefaultState> {
+    fn process_keyboard_event(&mut self, event: &KeyboardEvent, state: StateList) -> StateList {
         self.process_keyboard_event_default(event, state)
     }
 
-    fn get_state(&self, mut current_state: StateList<DefaultState>) -> StateList<DefaultState> {
+    fn get_state(&self, mut current_state: StateList) -> StateList {
         current_state.replace_state(State::<String>::new("sindex", &self.index.value.to_string()).into());
         current_state
     }
 
-    fn apply_state(&mut self, states: StateList<DefaultState>) -> StateList<DefaultState> {
-        match states.get_state(&self.index.id) {
-            None => (),
-            Some(v) => {
-                self.index = v.clone().into()
-            }
-        }
+    fn apply_state(&mut self, states: StateList) -> StateList {
+        states.update_local_state(&mut self.index);
         states
     }
 
-    fn sync_state(&mut self, states: StateList<DefaultState>) {
+    fn sync_state(&mut self, states: StateList) {
         self.sync_state_default(states);
     }
 }

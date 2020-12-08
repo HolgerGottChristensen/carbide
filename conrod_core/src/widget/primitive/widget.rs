@@ -27,7 +27,7 @@ use event_handler::{WidgetEvent, MouseEvent, KeyboardEvent};
 use std::fmt::Debug;
 use std::fmt;
 use std::ops::{Deref, DerefMut};
-use state::state::{StateList, DefaultState};
+use state::state::{StateList};
 use flags::Flags;
 use widget::widget_iterator::{WidgetIterMut, WidgetIter};
 use std::slice::{Iter, IterMut};
@@ -107,23 +107,23 @@ impl Event for Box<Widget> {
         self.deref_mut().handle_other_event(event)
     }
 
-    fn process_mouse_event(&mut self, event: &MouseEvent, consumed: &bool, state: StateList<DefaultState>) -> StateList<DefaultState> {
+    fn process_mouse_event(&mut self, event: &MouseEvent, consumed: &bool, state: StateList) -> StateList {
         self.deref_mut().process_mouse_event(event, consumed, state)
     }
 
-    fn process_keyboard_event(&mut self, event: &KeyboardEvent, state: StateList<DefaultState>) -> StateList<DefaultState> {
+    fn process_keyboard_event(&mut self, event: &KeyboardEvent, state: StateList) -> StateList {
         self.deref_mut().process_keyboard_event(event, state)
     }
 
-    fn get_state(&self, mut current_state: StateList<DefaultState>) -> StateList<DefaultState> {
+    fn get_state(&self, mut current_state: StateList) -> StateList {
         self.deref().get_state(current_state)
     }
 
-    fn apply_state(&mut self, mut states: StateList<DefaultState>) -> StateList<DefaultState> {
+    fn apply_state(&mut self, mut states: StateList) -> StateList {
         self.deref_mut().apply_state(states)
     }
 
-    fn sync_state(&mut self, mut states: StateList<DefaultState>) {
+    fn sync_state(&mut self, mut states: StateList) {
         self.deref_mut().sync_state(states)
     }
 }

@@ -31,6 +31,8 @@ instant = "0.1"
 copypasta = "0.6"
 rand = "0.7"
 glium = "0.24"
-uuid = { version = "0.8.1", features = ["v4"]}
+uuid = { version = "0.8.1", features = ["serde", "v4"]}
 bitflags = "1.2.1"
 dyn-clone = "1.0.3"
+serde = "1.0.118"
+ron = "0.6.2"

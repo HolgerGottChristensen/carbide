@@ -17,7 +17,7 @@ use widget::primitive::edge_insets::EdgeInsets;
 use event::event::Event;
 use event_handler::{WidgetEvent, MouseEvent, KeyboardEvent};
 use widget::primitive::widget::WidgetExt;
-use state::state::{StateList, DefaultState};
+use state::state::{StateList};
 use flags::Flags;
 use widget::widget_iterator::{WidgetIter, WidgetIterMut};
 
@@ -58,7 +58,7 @@ impl Event for Padding {
         unimplemented!()
     }
 
-    fn process_mouse_event(&mut self, event: &MouseEvent, consumed: &bool, state: StateList<DefaultState>) -> StateList<DefaultState> {
+    fn process_mouse_event(&mut self, event: &MouseEvent, consumed: &bool, state: StateList) -> StateList {
         let new_state = self.apply_state(state);
 
         if self.child.is_inside(event.get_current_mouse_position()) {
@@ -72,21 +72,21 @@ impl Event for Padding {
         new_state
     }
 
-    fn process_keyboard_event(&mut self, event: &KeyboardEvent, state: StateList<DefaultState>) -> StateList<DefaultState> {
+    fn process_keyboard_event(&mut self, event: &KeyboardEvent, state: StateList) -> StateList {
         let new_state = self.apply_state(state);
         let updated_state = self.child.process_keyboard_event(event, new_state);
         self.apply_state(updated_state)
     }
 
-    fn get_state(&self, current_state: StateList<DefaultState>) -> StateList<DefaultState> {
+    fn get_state(&self, current_state: StateList) -> StateList {
         current_state
     }
 
-    fn apply_state(&mut self, states: StateList<DefaultState>) -> StateList<DefaultState> {
+    fn apply_state(&mut self, states: StateList) -> StateList {
         states
     }
 
-    fn sync_state(&mut self, states: StateList<DefaultState>) {
+    fn sync_state(&mut self, states: StateList) {
         let applied_state = self.apply_state(states);
         let new_state = self.get_state(applied_state);
 

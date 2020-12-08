@@ -12,7 +12,7 @@ use widget::primitive::Widget;
 use widget::primitive::widget::WidgetExt;
 use event::event::Event;
 use event_handler::{WidgetEvent, MouseEvent, KeyboardEvent};
-use state::state::{StateList, DefaultState, GetState, State};
+use state::state::{StateList, GetState, State};
 use daggy::petgraph::graph::node_index;
 use render::primitive_kind::PrimitiveKind;
 use widget::layout::Layout;
@@ -167,13 +167,13 @@ impl Event for ForEach {
         unimplemented!()
     }
 
-    fn process_mouse_event(&mut self, event: &MouseEvent, consumed: &bool, state: StateList<DefaultState>) -> StateList<DefaultState> {
+    fn process_mouse_event(&mut self, event: &MouseEvent, consumed: &bool, state: StateList) -> StateList {
         println!("Foreach mouseevent");
 
         state
     }
 
-    fn process_keyboard_event(&mut self, event: &KeyboardEvent, state: StateList<DefaultState>) -> StateList<DefaultState> {
+    fn process_keyboard_event(&mut self, event: &KeyboardEvent, state: StateList) -> StateList {
         // Apply state from its parent
         let new_state = self.apply_state(state);
 
@@ -195,21 +195,16 @@ impl Event for ForEach {
         self.apply_state(state_for_children)
     }
 
-    fn get_state(&self, mut current_state: StateList<DefaultState>) -> StateList<DefaultState> {
+    fn get_state(&self, mut current_state: StateList) -> StateList {
         unimplemented!()
     }
 
-    fn apply_state(&mut self, states: StateList<DefaultState>) -> StateList<DefaultState> {
-        match states.get_state(&self.ids.id) {
-            None => (),
-            Some(v) => {
-                self.ids = v.clone().into()
-            }
-        }
+    fn apply_state(&mut self, states: StateList) -> StateList {
+        states.update_local_state(&mut self.ids);
         states
     }
 
-    fn sync_state(&mut self, states: StateList<DefaultState>) {
+    fn sync_state(&mut self, states: StateList) {
         unimplemented!()
     }
 }
