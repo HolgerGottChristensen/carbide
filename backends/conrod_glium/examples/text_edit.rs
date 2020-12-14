@@ -45,7 +45,7 @@ fn main() {
     let mut renderer = conrod_glium::Renderer::new(&display.0).unwrap();
 
     // The image map describing each of our widget->image mappings (in our case, none).
-    let image_map = conrod_core::image::Map::<glium::texture::Texture2d>::new();
+    let image_map = conrod_core::image::ImageMap::<glium::texture::Texture2d>::new();
 
     // Some starting text to edit.
     let mut demo_text = "Lorem ipsum dolor sit amet, consectetur adipiscing elit. \

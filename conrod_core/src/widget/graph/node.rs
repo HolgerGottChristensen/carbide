@@ -1,6 +1,6 @@
 //! A default container widget to use for nodes that exist within a `Graph` widget.
 
-use {widget, color, Color, Point, Positionable, Scalar, Sizeable, OldWidget, Ui};
+use {widget, color, Color, Point, Positionable, Scalar, Sizeable, Ui};
 use graph;
 use position::{Axis, Direction, Range, Rect};
 use std::iter::once;
@@ -308,7 +308,7 @@ fn socket_rectangle(
 }
 
 
-/// Retrieve the `Rect` for the given socket on the given node.
+/* /// Retrieve the `Rect` for the given socket on the given node.
 ///
 /// Returns `None` if there is no node for the given `Id` or if the `socket_index` is out of range.
 pub fn socket_rect(
@@ -339,9 +339,9 @@ pub fn socket_rect(
             Some(rect)
         })
 }
-
-/// Returns a `Rect` for an edge's start and end nodes.
-pub fn edge_socket_rects<NI>(edge: &super::Edge<NI>, ui: &Ui) -> (Rect, Rect)
+*/
+// /// Returns a `Rect` for an edge's start and end nodes.
+/*pub fn edge_socket_rects<NI>(edge: &super::Edge<NI>, ui: &Ui) -> (Rect, Rect)
 where
     NI: super::NodeId,
 {
@@ -354,12 +354,12 @@ where
         .expect("no node widget found for the edge's `end_id`");
     (start_rect, end_rect)
 }
-
+*/
 /// Produces an iterator yielding a `Rect` for each socket for both inputs and outputs
 /// respectively.
 ///
 /// Returns `None` if no node is found for the given `widget::Id`.
-pub fn socket_rects(node_id: widget::Id, ui: &Ui) -> Option<(SocketRects, SocketRects)> {
+/*pub fn socket_rects(node_id: widget::Id, ui: &Ui) -> Option<(SocketRects, SocketRects)> {
     ui.widget_graph()
         .widget(node_id)
         .and_then(|container| {
@@ -389,7 +389,7 @@ pub fn socket_rects(node_id: widget::Id, ui: &Ui) -> Option<(SocketRects, Socket
             };
             Some((input_socket_rects, output_socket_rects))
         })
-}
+}*/
 
 /// The rectangle for each socket (either inputs or outputs only).
 #[derive(Clone)]
@@ -429,7 +429,7 @@ impl Iterator for SocketRects {
     }
 }
 
-impl<W> OldWidget for Node<W>
+/*impl<W> OldWidget for Node<W>
 where
     W: OldWidget,
 {
@@ -598,4 +598,4 @@ where
 
         Event { widget_event }
     }
-}
+}*/

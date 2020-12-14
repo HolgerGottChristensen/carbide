@@ -1,4 +1,4 @@
-use conrod_core::image::{Id as ImageId, Map as ImageMap};
+use conrod_core::image::{Id as ImageId, ImageMap as ImageMap};
 use conrod_core::mesh::{self, Mesh};
 use conrod_core::{Rect, Ui};
 use rendy::command::{QueueId, RenderPassEncoder};

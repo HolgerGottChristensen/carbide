@@ -69,7 +69,7 @@ fn main() {
     let font_path = assets.join("fonts/NotoSans/NotoSans-Regular.ttf");
     ui.fonts.insert_from_file(font_path).unwrap();
 
-    let image_map = conrod_core::image::Map::new();
+    let image_map = conrod_core::image::ImageMap::new();
 
     // Keep track of the previous frame so we can wait for it to complete before presenting a new
     // one. This should make sure the CPU never gets ahead of the presentation of frames, which can

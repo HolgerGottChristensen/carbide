@@ -67,7 +67,7 @@ pub fn main() {
     };
 
     // Create our `conrod_core::image::Map` which describes each of our widget->image mappings.
-    let mut image_map = conrod_core::image::Map::new();
+    let mut image_map = conrod_core::image::ImageMap::new();
     let rust_logo = image_map.insert(rust_logo);
 
     // A demonstration of some state that we'd like to control with the App.

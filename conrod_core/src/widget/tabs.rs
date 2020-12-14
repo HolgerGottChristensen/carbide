@@ -6,7 +6,6 @@ use {
     Point,
     Rect,
     Scalar,
-    OldWidget,
 };
 use std;
 use text;
@@ -168,7 +167,7 @@ impl<'a> Tabs<'a> {
 }
 
 
-impl<'a> OldWidget for Tabs<'a> {
+/*impl<'a> OldWidget for Tabs<'a> {
     type State = State;
     type Style = Style;
     type Event = ();
@@ -317,7 +316,7 @@ impl<'a> OldWidget for Tabs<'a> {
     }
 
 }
-
+*/
 
 /// Calculate the max text width yielded by a string in the tabs slice.
 fn max_text_width<'a, I>(tabs: I, font_size: FontSize, font: &text::Font) -> Scalar

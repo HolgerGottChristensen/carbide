@@ -95,7 +95,7 @@ fn main() {
         width: logo_w,
         height: logo_h,
     };
-    let mut image_map = conrod_core::image::Map::new();
+    let mut image_map = conrod_core::image::ImageMap::new();
     let rust_logo = image_map.insert(logo);
 
     // Demonstration app state that we'll control with our conrod GUI.

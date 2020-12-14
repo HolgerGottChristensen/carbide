@@ -13,7 +13,6 @@ use {
     Positionable,
     Sizeable,
     Scalar,
-    OldWidget,
 };
 use event;
 use std;
@@ -196,7 +195,7 @@ impl<'a> DirectoryView<'a> {
 
 }
 
-impl<'a> OldWidget for DirectoryView<'a> {
+/*impl<'a> OldWidget for DirectoryView<'a> {
     type State = State;
     type Style = Style;
     type Event = Vec<Event>;
@@ -379,7 +378,7 @@ impl<'a> OldWidget for DirectoryView<'a> {
         events
     }
 }
-
+*/
 impl<'a> Colorable for DirectoryView<'a> {
     builder_method!(color { style.color = Some(Color) });
 }

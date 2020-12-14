@@ -1,4 +1,4 @@
-use widget::triangles::{Triangle, ColoredPoint};
+use widget::triangles::{ColoredPoint};
 use ::{Point, text};
 use render::primitive::Primitive;
 use render::primitive_kind::PrimitiveKind;
@@ -7,6 +7,7 @@ use render::primitive_walker::PrimitiveWalker;
 use render::owned_primitive_kind::OwnedPrimitiveKind;
 use render::owned_primitive::OwnedPrimitive;
 use render::owned_text::OwnedText;
+use draw::shape::triangle::Triangle;
 
 /// An iterator-like type for yielding `Primitive`s from an `OwnedPrimitives`.
 pub struct WalkOwnedPrimitives<'a> {

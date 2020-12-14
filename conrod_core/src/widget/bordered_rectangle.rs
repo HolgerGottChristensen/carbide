@@ -9,11 +9,10 @@ use {
     Rect,
     Scalar,
     Sizeable,
-    OldWidget,
 };
 use widget;
-use widget::triangles::Triangle;
 use position::Dimensions;
+use draw::shape::triangle::Triangle;
 
 
 /// A filled rectangle widget that may or may not have some border.
@@ -67,7 +66,7 @@ impl BorderedRectangle {
 }
 
 
-impl OldWidget for BorderedRectangle {
+/*impl OldWidget for BorderedRectangle {
     type State = State;
     type Style = Style;
     type Event = ();
@@ -106,7 +105,7 @@ impl OldWidget for BorderedRectangle {
     }
 
 }
-
+*/
 
 impl Colorable for BorderedRectangle {
     builder_method!(color { style.color = Some(Color) });

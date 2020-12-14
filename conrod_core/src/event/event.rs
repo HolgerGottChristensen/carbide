@@ -2,7 +2,7 @@ use event_handler::{MouseEvent, KeyboardEvent, WidgetEvent};
 use widget::common_widget::CommonWidget;
 use state::state::{StateList};
 
-pub trait Event: CommonWidget {
+pub trait Event<S>: CommonWidget {
     /// A function that will be called when a mouse event occurs.
     /// It will only get called on the events where the cursor is inside.
     /// Return true if the event is consumed, and will thus not be delegated to other
@@ -12,7 +12,7 @@ pub trait Event: CommonWidget {
     /// A function that will get called when a keyboard event occurs.
     /// This event will be given to all widgets, no matter if they are in focus or not.
     /// This is because the focus will be decided by the widgets themselves.
-    fn handle_keyboard_event(&mut self, event: &KeyboardEvent);
+    fn handle_keyboard_event(&mut self, event: &KeyboardEvent, global_state: &mut S);
 
     /// This will get called if there are event that are not covered by the other functions.
     /// This will get delegated to all widgets.
@@ -52,15 +52,15 @@ pub trait Event: CommonWidget {
         self.apply_state(state_for_children)
     }
 
-    fn process_keyboard_event(&mut self, event: &KeyboardEvent, state: StateList) -> StateList;
+    fn process_keyboard_event(&mut self, event: &KeyboardEvent, state: StateList, global_state: &mut S) -> StateList;
 
-    fn process_keyboard_event_default(&mut self, event: &KeyboardEvent, state: StateList) -> StateList {
+    fn process_keyboard_event_default(&mut self, event: &KeyboardEvent, state: StateList, global_state: &mut S) -> StateList {
 
         // Apply state from its parent
         let new_state = self.apply_state(state);
 
         // First we handle the event in the widget
-        self.handle_keyboard_event(event);
+        self.handle_keyboard_event(event, global_state);
 
         // Add the state from itself, to the state list
         let mut state_for_children = self.get_state(new_state);
@@ -69,7 +69,7 @@ pub trait Event: CommonWidget {
 
             // Then we delegate the event to its children, we also makes sure to update
             // current state for the next child
-            state_for_children = child.process_keyboard_event(event, state_for_children);
+            state_for_children = child.process_keyboard_event(event, state_for_children, global_state);
 
         }
         // We then apply the changed state from its children, to save it for itself.

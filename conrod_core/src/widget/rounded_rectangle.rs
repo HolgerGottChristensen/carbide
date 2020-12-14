@@ -3,14 +3,13 @@
 //! The roundedness of the corners is specified with a `radius`. This indicates the radius of the
 //! circle used to draw the corners.
 
-use {Color, Colorable, Point, Positionable, Range, Rect, Scalar, Sizeable, Theme,
-     OldWidget};
+use {Color, Colorable, Point, Positionable, Range, Rect, Scalar, Sizeable, Theme};
 use graph;
 use std::f64::consts::PI;
 use widget;
 use widget::primitive::shape::Style;
-use widget::primitive::shape::oval::Circumference;
 use position::Dimensions;
+use draw::shape::circumference::Circumference;
 
 
 /// Draws a rectangle with corners rounded via the given radius.
@@ -77,7 +76,7 @@ impl RoundedRectangle {
     }
 }
 
-impl OldWidget for RoundedRectangle {
+/*impl OldWidget for RoundedRectangle {
     type State = State;
     type Style = Style;
     type Event = ();
@@ -110,7 +109,7 @@ impl OldWidget for RoundedRectangle {
             .set(state.ids.polygon, ui);
     }
 }
-
+*/
 impl Colorable for RoundedRectangle {
     fn color(mut self, color: Color) -> Self {
         self.style.set_color(color);

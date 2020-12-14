@@ -52,7 +52,7 @@ fn main() {
     let ids = Ids::new(ui.widget_id_generator());
 
     // Create our `conrod_core::image::Map` which describes each of our widget->image mappings.
-    let mut image_map = conrod_core::image::Map::new();
+    let mut image_map = conrod_core::image::ImageMap::new();
 
     struct ImageIds {
         normal: conrod_core::image::Id,

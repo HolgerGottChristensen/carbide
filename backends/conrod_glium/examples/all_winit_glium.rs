@@ -56,7 +56,7 @@ fn main() {
         texture
     }
 
-    let mut image_map = conrod_core::image::Map::new();
+    let mut image_map = conrod_core::image::ImageMap::new();
     let rust_logo = image_map.insert(load_rust_logo(&display.0));
 
     // A demonstration of some app state that we want to control with the conrod GUI.

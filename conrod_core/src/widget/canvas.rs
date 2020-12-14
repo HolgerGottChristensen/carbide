@@ -11,7 +11,6 @@ use {
     Theme,
     Ui,
     UiCell,
-    OldWidget,
 };
 use position::{self, Dimension, Padding, Place, Position, Range, Rect, Scalar, Dimensions};
 use position::Direction::{Forwards, Backwards};
@@ -223,7 +222,7 @@ impl<'a> Canvas<'a> {
 }
 
 
-impl<'a> OldWidget for Canvas<'a> {
+/*impl<'a> OldWidget for Canvas<'a> {
     type State = State;
     type Style = Style;
     type Event = ();
@@ -399,7 +398,7 @@ impl<'a> OldWidget for Canvas<'a> {
     }
 
 }
-
+*/
 
 /// The height and relative y coordinate of a Canvas' title bar given some canvas height and font
 /// size for the title bar.

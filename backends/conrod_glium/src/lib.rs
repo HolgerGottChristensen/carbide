@@ -486,7 +486,7 @@ impl Renderer {
     }
 
     /// Fill the inner vertex and command buffers by translating the given `primitives`.
-    pub fn fill<D, P, T>(&mut self, display: &D, mut primitives: P, image_map: &image::Map<T>)
+    pub fn fill<D, P, T>(&mut self, display: &D, mut primitives: P, image_map: &image::ImageMap<T>)
     where
         P: PrimitiveWalker,
         D: Display,
@@ -886,7 +886,7 @@ impl Renderer {
     /// and `commands` methods separately. This method is simply a convenience wrapper around those
     /// methods for the case that the user does not require accessing or modifying conrod's draw
     /// parameters, uniforms or generated draw commands.
-    pub fn draw<F, S, T>(&self, facade: &F, surface: &mut S, image_map: &image::Map<T>)
+    pub fn draw<F, S, T>(&self, facade: &F, surface: &mut S, image_map: &image::ImageMap<T>)
         -> Result<(), DrawError>
         where F: glium::backend::Facade,
               S: glium::Surface,

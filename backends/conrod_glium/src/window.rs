@@ -12,7 +12,7 @@ use conrod_core::widget::id::Generator;
 use conrod_core::widget::primitive::Widget;
 extern crate image;
 
-pub struct Window {
+pub struct Window<S> {
     title: String,
     width: u32,
     height: u32,
@@ -22,12 +22,13 @@ pub struct Window {
     display: GliumDisplayWinitWrapper,
     ui: Ui,
     renderer: Renderer,
-    image_map: conrod_core::image::Map<glium::texture::Texture2d>,
-    pub widgets: Option<Box<dyn Fn(&mut UiCell) -> ()>>
+    image_map: conrod_core::image::ImageMap<glium::texture::Texture2d>,
+    pub widgets: Option<Box<dyn Fn(&mut UiCell) -> ()>>,
+    pub state: S,
 }
 
-impl Window {
-    pub fn new(title: String, width: u32, height: u32) -> Self {
+impl<S> Window<S> {
+    pub fn new(title: String, width: u32, height: u32, state: S) -> Self {
         let mut events_loop = glium::glutin::EventsLoop::new();
         let window = WindowBuilder::new()
             .with_title(title.clone())
@@ -45,7 +46,7 @@ impl Window {
         let mut renderer = Renderer::new(&display.0).unwrap();
 
         // The image map describing each of our widget->image mappings (in our case, none).
-        let image_map = conrod_core::image::Map::<glium::texture::Texture2d>::new();
+        let image_map = conrod_core::image::ImageMap::<glium::texture::Texture2d>::new();
 
         Window {
             title,
@@ -58,7 +59,8 @@ impl Window {
             ui,
             renderer,
             image_map,
-            widgets: None
+            widgets: None,
+            state
         }
     }
 
@@ -126,8 +128,9 @@ impl Window {
                     Some(input) => input,
                 };
 
+
                 // Handle the input with the `Ui`.
-                self.ui.handle_event(input);
+                self.ui.handle_event(input, &mut self.state);
 
                 // Set the widgets.
                 let ui = &mut self.ui.set_widgets();

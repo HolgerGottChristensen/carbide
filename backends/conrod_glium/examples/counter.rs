@@ -41,7 +41,7 @@ fn main() {
     let mut renderer = conrod_glium::Renderer::new(&display.0).unwrap();
 
     // The image map describing each of our widget->image mappings (in our case, none).
-    let image_map = conrod_core::image::Map::<glium::texture::Texture2d>::new();
+    let image_map = conrod_core::image::ImageMap::<glium::texture::Texture2d>::new();
 
     let mut count = 0;
 

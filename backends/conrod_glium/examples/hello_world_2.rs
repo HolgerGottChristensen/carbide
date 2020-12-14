@@ -29,7 +29,7 @@ const HEIGHT: u32 = 1334/2;
 
 fn main() {
 
-    let mut window = Window::new("Hello world 2".to_string(), WIDTH, HEIGHT);
+    let mut window = Window::new("Hello world 2".to_string(), WIDTH, HEIGHT, String::from("Hejsa"));
 
     window.add_font("fonts/NotoSans/NotoSans-Regular.ttf").unwrap();
     let rust_image = window.add_image("images/rust_hover.png").unwrap();

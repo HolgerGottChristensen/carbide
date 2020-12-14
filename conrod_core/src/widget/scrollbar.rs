@@ -5,7 +5,7 @@ use ::{graph, Dimension};
 use position::{Range, Rect, Scalar, Dimensions};
 use std;
 use utils;
-use widget::{self, OldWidget};
+use widget::{self};
 use widget::scroll::{self, X, Y};
 use event::widget::WidgetEvent;
 use event::button::ButtonEvent;
@@ -32,10 +32,10 @@ pub trait Axis: scroll::Axis + Sized {
     fn scroll_state(widget: &graph::Container) -> Option<&scroll::State<Self>>;
     /// Determine a default *x* dimension for the scrollbar in the case that no specific width is
     /// given.
-    fn default_x_dimension(scrollbar: &Scrollbar<Self>, ui: &Ui) -> Dimension;
+    /*fn default_x_dimension(scrollbar: &Scrollbar<Self>, ui: &Ui) -> Dimension;
     /// Determine a default *y* dimension for the scrollbar in the case that no specific height is
     /// given.
-    fn default_y_dimension(scrollbar: &Scrollbar<Self>, ui: &Ui) -> Dimension;
+    fn default_y_dimension(scrollbar: &Scrollbar<Self>, ui: &Ui) -> Dimension;*/
     /// Convert a given `Scalar` along the axis into two dimensions.
     fn to_2d(scalar: Scalar) -> [Scalar; 2];
 }
@@ -131,7 +131,7 @@ impl Scrollbar<Y> {
 
 }
 
-impl<A> OldWidget for Scrollbar<A>
+/*impl<A> OldWidget for Scrollbar<A>
     where A: Axis,
 {
     type State = State;
@@ -297,7 +297,7 @@ impl<A> OldWidget for Scrollbar<A>
             .parent(id)
             .set(state.ids.handle, ui);
     }
-}
+}*/
 
 impl Axis for X {
 
@@ -319,13 +319,13 @@ impl Axis for X {
         widget.maybe_x_scroll_state.as_ref()
     }
 
-    fn default_x_dimension(scrollbar: &Scrollbar<Self>, _ui: &Ui) -> Dimension {
+    /*fn default_x_dimension(scrollbar: &Scrollbar<Self>, _ui: &Ui) -> Dimension {
         Dimension::Of(scrollbar.widget, None)
     }
 
     fn default_y_dimension(scrollbar: &Scrollbar<Self>, ui: &Ui) -> Dimension {
         Dimension::Absolute(scrollbar.style.thickness(&ui.theme))
-    }
+    }*/
 
     fn to_2d(scalar: Scalar) -> [Scalar; 2] {
         [scalar, 0.0]
@@ -353,13 +353,13 @@ impl Axis for Y {
         widget.maybe_y_scroll_state.as_ref()
     }
 
-    fn default_x_dimension(scrollbar: &Scrollbar<Self>, ui: &Ui) -> Dimension {
+    /*fn default_x_dimension(scrollbar: &Scrollbar<Self>, ui: &Ui) -> Dimension {
         Dimension::Absolute(scrollbar.style.thickness(&ui.theme))
     }
 
     fn default_y_dimension(scrollbar: &Scrollbar<Self>, _ui: &Ui) -> Dimension {
         Dimension::Of(scrollbar.widget, None)
-    }
+    }*/
 
     fn to_2d(scalar: Scalar) -> [Scalar; 2] {
         [0.0, scalar]

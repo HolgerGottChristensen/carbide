@@ -78,7 +78,7 @@ impl<A> State<A>
     where A: Axis
 {
 
-    /// Calculate the new scroll state for the single axis of a `Widget`.
+   /* /// Calculate the new scroll state for the single axis of a `Widget`.
     ///
     /// ```txt
     ///
@@ -224,7 +224,7 @@ impl<A> State<A>
             axis: PhantomData,
             is_scrolling: additional_offset != 0.0,
         }
-    }
+    }*/
 
 }
 

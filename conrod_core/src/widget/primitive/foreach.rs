@@ -133,9 +133,7 @@ impl CommonWidget for ForEach {
         w
     }
 
-    fn clone(&self) -> Box<dyn Widget> {
-        Box::new(Clone::clone(self))
-    }
+
 
     fn get_position(&self) -> Point {
         self.position
@@ -154,12 +152,12 @@ impl CommonWidget for ForEach {
     }
 }
 
-impl Event for ForEach {
+impl<S> Event<S> for ForEach {
     fn handle_mouse_event(&mut self, event: &MouseEvent, consumed: &bool) {
         unimplemented!()
     }
 
-    fn handle_keyboard_event(&mut self, event: &KeyboardEvent) {
+    fn handle_keyboard_event(&mut self, event: &KeyboardEvent, global_state: &mut S) {
         unimplemented!()
     }
 
@@ -173,7 +171,7 @@ impl Event for ForEach {
         state
     }
 
-    fn process_keyboard_event(&mut self, event: &KeyboardEvent, state: StateList) -> StateList {
+    fn process_keyboard_event(&mut self, event: &KeyboardEvent, state: StateList, global_state: &mut S) -> StateList {
         // Apply state from its parent
         let new_state = self.apply_state(state);
 

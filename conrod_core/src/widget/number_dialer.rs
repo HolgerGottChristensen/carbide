@@ -9,7 +9,6 @@ use {
     Point,
     Positionable,
     Scalar,
-    OldWidget,
 };
 use num::{Float, NumCast};
 use std::cmp::Ordering;
@@ -161,7 +160,7 @@ impl<'a, T> NumberDialer<'a, T>
     }
 }
 
-impl<'a, T> OldWidget for NumberDialer<'a, T>
+/*impl<'a, T> OldWidget for NumberDialer<'a, T>
     where T: Float + NumCast + ToString,
 {
     type State = State;
@@ -397,7 +396,7 @@ impl<'a, T> OldWidget for NumberDialer<'a, T>
     }
 
 }
-
+*/
 
 impl<'a, T> Colorable for NumberDialer<'a, T> {
     builder_method!(color { style.color = Some(Color) });

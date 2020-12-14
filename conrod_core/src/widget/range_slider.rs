@@ -1,6 +1,6 @@
 //! A widget for specifying start and end values for some linear range.
 
-use {Color, Colorable, FontSize, Borderable, Labelable, Positionable, OldWidget};
+use {Color, Colorable, FontSize, Borderable, Labelable, Positionable};
 use num::Float;
 use position::{Padding, Range, Rect, Scalar};
 use text;
@@ -147,7 +147,7 @@ impl<'a, T> RangeSlider<'a, T> {
     }
 }
 
-impl<'a, T> OldWidget for RangeSlider<'a, T>
+/*impl<'a, T> OldWidget for RangeSlider<'a, T>
 where
     T: Float,
 {
@@ -383,7 +383,7 @@ where
         event
     }
 
-}
+}*/
 
 
 impl<'a, T> Colorable for RangeSlider<'a, T> {

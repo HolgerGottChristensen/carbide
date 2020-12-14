@@ -89,9 +89,7 @@ impl CommonWidget for SyncTest {
         WidgetIterMut::single(&mut self.child)
     }
 
-    fn clone(&self) -> Box<dyn Widget> {
-        Box::new(Clone::clone(self))
-    }
+
 
     fn get_position(&self) -> Point {
         self.position
@@ -110,12 +108,12 @@ impl CommonWidget for SyncTest {
     }
 }
 
-impl Event for SyncTest {
+impl<S> Event<S> for SyncTest {
     fn handle_mouse_event(&mut self, event: &MouseEvent, consumed: &bool) {
         ()
     }
 
-    fn handle_keyboard_event(&mut self, event: &KeyboardEvent) {
+    fn handle_keyboard_event(&mut self, event: &KeyboardEvent, global_state: &mut S) {
         match event {
             KeyboardEvent::Text(s, _) => {
                 self.value.push_str(s);
@@ -150,8 +148,8 @@ impl Event for SyncTest {
         self.process_mouse_event_default(event, consumed, state)
     }
 
-    fn process_keyboard_event(&mut self, event: &KeyboardEvent, state: StateList) -> StateList {
-        self.process_keyboard_event_default(event, state)
+    fn process_keyboard_event(&mut self, event: &KeyboardEvent, state: StateList, global_state: &mut S) -> StateList {
+        self.process_keyboard_event_default(event, state, global_state)
     }
 
     fn get_state(&self, mut current_state: StateList) -> StateList {

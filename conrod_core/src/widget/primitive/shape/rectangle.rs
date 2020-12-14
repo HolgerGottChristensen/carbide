@@ -2,10 +2,9 @@
 //!
 //! Due to the frequency of its use in GUIs, the `Rectangle` gets its own widget to allow backends
 //! to specialise their rendering implementations.
-use {Color, Colorable, Point, Rect, Sizeable, OldWidget};
+use {Color, Colorable, Point, Rect, Sizeable};
 use super::Style as Style;
 use ::{widget, Scalar};
-use widget::triangles::Triangle;
 use widget::render::Render;
 use graph::Container;
 use widget::Id;
@@ -22,7 +21,6 @@ use ::{Range, text};
 use render::owned_primitive::OwnedPrimitive;
 use render::owned_primitive_kind::OwnedPrimitiveKind;
 use widget::envelope_editor::EnvelopePoint;
-use widget::primitive::shape::triangles::Vertex;
 use std::convert::TryFrom;
 use std::error::Error;
 use std::collections::HashMap;
@@ -38,6 +36,7 @@ use state::state::{StateList};
 use flags::Flags;
 use widget::widget_iterator::{WidgetIter, WidgetIterMut};
 use std::slice::{Iter, IterMut};
+use draw::shape::triangle::Triangle;
 
 /// A basic, non-interactive rectangle shape widget.
 #[derive(Debug, Clone, WidgetCommon_)]
@@ -56,12 +55,12 @@ pub struct Rectangle {
 
 impl WidgetExt for Rectangle {}
 
-impl Event for Rectangle {
+impl<S> Event<S> for Rectangle {
     fn handle_mouse_event(&mut self, event: &MouseEvent, consumed: &bool) {
         ()
     }
 
-    fn handle_keyboard_event(&mut self, event: &KeyboardEvent) {
+    fn handle_keyboard_event(&mut self, event: &KeyboardEvent, global_state: &mut S) {
         ()
     }
 
@@ -73,8 +72,8 @@ impl Event for Rectangle {
         self.process_mouse_event_default(event, consumed, state)
     }
 
-    fn process_keyboard_event(&mut self, event: &KeyboardEvent, state: StateList) -> StateList {
-        self.process_keyboard_event_default(event, state)
+    fn process_keyboard_event(&mut self, event: &KeyboardEvent, state: StateList, global_state: &mut S) -> StateList {
+        self.process_keyboard_event_default(event, state, global_state)
     }
 
     fn get_state(&self, current_state: StateList) -> StateList {
@@ -155,9 +154,7 @@ impl CommonWidget for Rectangle {
             })
     }
 
-    fn clone(&self) -> Box<dyn Widget> {
-        Box::new(Clone::clone(self))
-    }
+
 
     fn get_position(&self) -> Point {
         self.position
@@ -313,7 +310,7 @@ impl Rectangle {
     }
 }
 
-impl OldWidget for Rectangle {
+/*impl<S> OldWidget<S> for Rectangle<S> {
     type State = State;
     type Style = Style;
     type Event = ();
@@ -343,7 +340,7 @@ impl OldWidget for Rectangle {
     }
 
 }
-
+*/
 
 impl Colorable for Rectangle {
     fn color(mut self, color: Color) -> Self {

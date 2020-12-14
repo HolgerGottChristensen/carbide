@@ -240,8 +240,8 @@ impl<'a, R: Resources> Renderer<'a, R> {
                       dims: (f32, f32),
                       dpi_factor: f64,
                       mut primitives: P,
-                      image_map: &image::Map<(gfx::handle::ShaderResourceView<R, [f32; 4]>,
-                                              (u32, u32))>)
+                      image_map: &image::ImageMap<(gfx::handle::ShaderResourceView<R, [f32; 4]>,
+                                                   (u32, u32))>)
         where P: render::PrimitiveWalker,
               C: gfx::CommandBuffer<R>,
     {
@@ -553,7 +553,7 @@ impl<'a, R: Resources> Renderer<'a, R> {
     /// and `commands` methods separately. This method is simply a convenience wrapper around those
     /// methods for the case that the user does not require accessing or modifying conrod's draw
     /// parameters, uniforms or generated draw commands.
-    pub fn draw<F, C>(&self, factory: &mut F, encoder: &mut gfx::Encoder<R, C>, image_map: &image::Map<(gfx::handle::ShaderResourceView<R, [f32; 4]>, (u32, u32))>)
+    pub fn draw<F, C>(&self, factory: &mut F, encoder: &mut gfx::Encoder<R, C>, image_map: &image::ImageMap<(gfx::handle::ShaderResourceView<R, [f32; 4]>, (u32, u32))>)
         where F: Factory<R>,
               C: gfx::CommandBuffer<R>,
     {

@@ -32,7 +32,7 @@ pub fn primitives<'a, P, G, T, Img, C, F>(
     graphics: &'a mut G,
     text_texture_cache: &'a mut T,
     glyph_cache: &'a mut text::GlyphCache,
-    image_map: &'a image::Map<Img>,
+    image_map: &'a image::ImageMap<Img>,
     mut cache_queued_glyphs: C,
     mut texture_from_image: F,
 )
@@ -80,7 +80,7 @@ pub fn primitive<'a, Img, G, T, C, F>(
     graphics: &'a mut G,
     text_texture_cache: &'a mut T,
     glyph_cache: &'a mut text::GlyphCache,
-    image_map: &'a image::Map<Img>,
+    image_map: &'a image::ImageMap<Img>,
     glyph_rectangles: &mut Vec<([f64; 4], [f64; 4])>,
     mut cache_queued_glyphs: C,
     mut texture_from_image: F,

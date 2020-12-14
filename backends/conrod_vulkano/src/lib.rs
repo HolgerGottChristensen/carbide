@@ -290,7 +290,7 @@ impl Renderer {
     /// `copy_buffer_to_image` command to write the data to the given `glyph_cache_texture` image.
     pub fn fill<'a, P: render::PrimitiveWalker>(
         &'a mut self,
-        image_map: &image::Map<Image>,
+        image_map: &image::ImageMap<Image>,
         viewport: [f32; 4],
         dpi_factor: f64,
         primitives: P,
@@ -329,7 +329,7 @@ impl Renderer {
     pub fn draw(
         &mut self,
         queue: Arc<Queue>,
-        image_map: &image::Map<Image>,
+        image_map: &image::ImageMap<Image>,
         viewport: [f32; 4],
     ) -> Result<Vec<DrawCommand>, DrawError> {
         let current_viewport = Viewport {

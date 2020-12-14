@@ -1,6 +1,6 @@
 //! A simple, non-interactive widget for drawing an `Image`.
 
-use {Color, OldWidget, Ui};
+use {Color, Ui};
 use ::{image, Point};
 use position::{Dimension, Rect, Dimensions};
 use ::{widget, text};
@@ -45,12 +45,12 @@ pub struct Image {
     pub children: Vec<Box<dyn Widget>>,
 }
 
-impl Event for Image {
+impl<S> Event<S> for Image {
     fn handle_mouse_event(&mut self, event: &MouseEvent, consumed: &bool) {
         ()
     }
 
-    fn handle_keyboard_event(&mut self, event: &KeyboardEvent) {
+    fn handle_keyboard_event(&mut self, event: &KeyboardEvent, global_state: &mut S) {
         ()
     }
 
@@ -62,8 +62,8 @@ impl Event for Image {
         self.process_mouse_event_default(event, consumed, state)
     }
 
-    fn process_keyboard_event(&mut self, event: &KeyboardEvent, state: StateList) -> StateList {
-        self.process_keyboard_event_default(event, state)
+    fn process_keyboard_event(&mut self, event: &KeyboardEvent, state: StateList, global_state: &mut S) -> StateList {
+        self.process_keyboard_event_default(event, state, global_state)
     }
 
     fn get_state(&self, current_state: StateList) -> StateList {
@@ -166,9 +166,7 @@ impl CommonWidget for Image {
             })
     }
 
-    fn clone(&self) -> Box<dyn Widget> {
-        Box::new(Clone::clone(self))
-    }
+
 
     fn get_position(&self) -> Point {
         self.position
@@ -273,7 +271,7 @@ impl Image {
 
 impl WidgetExt for Image {}
 
-impl OldWidget for Image {
+/*impl<S> OldWidget<S> for Image<S> {
     type State = State;
     type Style = Style;
     type Event = ();
@@ -289,14 +287,14 @@ impl OldWidget for Image {
         self.style.clone()
     }
 
-    fn default_x_dimension(&self, ui: &Ui) -> Dimension {
+    fn default_x_dimension(&self, ui: &Ui<S>) -> Dimension {
         match self.src_rect.as_ref() {
             Some(rect) => Dimension::Absolute(rect.w()),
             None => widget::default_x_dimension(self, ui),
         }
     }
 
-    fn default_y_dimension(&self, ui: &Ui) -> Dimension {
+    fn default_y_dimension(&self, ui: &Ui<S>) -> Dimension {
         match self.src_rect.as_ref() {
             Some(rect) => Dimension::Absolute(rect.h()),
             None => widget::default_y_dimension(self, ui),
@@ -316,3 +314,4 @@ impl OldWidget for Image {
     }
 
 }
+*/

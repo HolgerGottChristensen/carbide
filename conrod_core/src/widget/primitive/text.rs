@@ -1,6 +1,6 @@
 //! The primitive widget used for displaying text.
 
-use {Color, Colorable, FontSize, Ui, OldWidget};
+use {Color, Colorable, FontSize, Ui};
 use position::{Dimension, Scalar, Dimensions, Align};
 use ::{std, Rect};
 use ::{text, Point};
@@ -54,7 +54,7 @@ pub struct Text {
     pub children: Vec<Box<dyn Widget>>,
 }
 
-impl Event for Text {
+impl<S> Event<S> for Text {
     fn handle_mouse_event(&mut self, event: &MouseEvent, consumed: &bool) {
         match event {
             MouseEvent::Press(_, _, _) => {
@@ -64,7 +64,7 @@ impl Event for Text {
         }
     }
 
-    fn handle_keyboard_event(&mut self, event: &KeyboardEvent) {
+    fn handle_keyboard_event(&mut self, event: &KeyboardEvent, global_state: &mut S) {
         /*match event {
             KeyboardEvent::Text(s, _) => {
                 if self.text.len() < 10 {
@@ -84,8 +84,8 @@ impl Event for Text {
         self.process_mouse_event_default(event, consumed, state)
     }
 
-    fn process_keyboard_event(&mut self, event: &KeyboardEvent, state: StateList) -> StateList {
-        self.process_keyboard_event_default(event, state)
+    fn process_keyboard_event(&mut self, event: &KeyboardEvent, state: StateList, global_state: &mut S) -> StateList {
+        self.process_keyboard_event_default(event, state, global_state)
     }
 
     fn get_state(&self, mut current_state: StateList) -> StateList {
@@ -238,9 +238,7 @@ impl CommonWidget for Text {
             })
     }
 
-    fn clone(&self) -> Box<dyn Widget> {
-        Box::new(Clone::clone(self))
-    }
+
 
     fn get_position(&self) -> Point {
         self.position
@@ -455,8 +453,8 @@ impl Text {
 
 }
 
-
-impl OldWidget for Text {
+/*
+impl<S> OldWidget for Text<S> {
     type State = OldState;
     type Style = Style;
     type Event = ();
@@ -475,7 +473,7 @@ impl OldWidget for Text {
         ///
         /// The `Font` used by the `Text` is retrieved in order to determine the width of each line. If
         /// the font used by the `Text` cannot be found, a dimension of `Absolute(0.0)` is returned.
-    fn default_x_dimension(&self, ui: &Ui) -> Dimension {
+    fn default_x_dimension(&self, ui: &Ui<S>) -> Dimension {
         let font = match self.style.font_id(&ui.theme)
             .or(ui.fonts.ids().next())
             .and_then(|id| ui.fonts.get(id))
@@ -497,7 +495,7 @@ impl OldWidget for Text {
     ///
     /// The `Font` used by the `Text` is retrieved in order to determine the width of each line. If
     /// the font used by the `Text` cannot be found, a dimension of `Absolute(0.0)` is returned.
-    fn default_y_dimension(&self, ui: &Ui) -> Dimension {
+    fn default_y_dimension(&self, ui: &Ui<S>) -> Dimension {
         use position::Sizeable;
 
         let font = match self.style.font_id(&ui.theme)
@@ -577,7 +575,7 @@ impl OldWidget for Text {
     }
 
 }
-
+*/
 impl Colorable for Text {
     fn color(mut self, color: Color) -> Self {
         self.style.color = Some(color);

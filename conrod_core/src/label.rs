@@ -37,8 +37,8 @@ pub trait Labelable<'a>: Sized {
     /// Set the font size for the widget's label.
     fn label_font_size(self, size: FontSize) -> Self;
 
-    /// Set a "small" font size for the widget's label.
-    fn small_font(self, ui: &Ui) -> Self {
+    // /// Set a "small" font size for the widget's label.
+    /*fn small_font(self, ui: &Ui) -> Self {
         self.label_font_size(ui.theme.font_size_small)
     }
 
@@ -50,6 +50,6 @@ pub trait Labelable<'a>: Sized {
     /// Set a "large" font size for the widget's label.
     fn large_font(self, ui: &Ui) -> Self {
         self.label_font_size(ui.theme.font_size_large)
-    }
+    }*/
 
 }

@@ -1,11 +1,10 @@
 use ::{widget, Rect};
 use graph::{Graph, UniqueWidgetState};
 use ::{Theme, text};
-use widget::triangles::Triangle;
 use ::{Point};
 use render::primitive_walker::PrimitiveWalker;
 use render::primitive::Primitive;
-use ::{color, OldWidget};
+use ::{color};
 use render::primitive_kind::PrimitiveKind;
 use render::util::{new_primitive, next_widget};
 use widget::render::Render;
@@ -18,6 +17,7 @@ use render::owned_primitive_kind::OwnedPrimitiveKind;
 use render::owned_primitive::OwnedPrimitive;
 use render::owned_text::OwnedText;
 use Color;
+use draw::shape::triangle::Triangle;
 
 /// An iterator-like type that yields a reference to each primitive in order of depth for
 /// rendering.
@@ -69,7 +69,7 @@ impl<'a> Primitives<'a> {
 
     /// Yield the next `Primitive` for rendering.
     pub fn next(&mut self) -> Option<Primitive> {
-        let Primitives {
+        /*let Primitives {
             ref mut crop_stack,
             ref mut depth_order,
             ref mut triangles,
@@ -86,9 +86,9 @@ impl<'a> Primitives<'a> {
             use widget::primitive::shape::Style as ShapeStyle;
 
             type TrianglesSingleColorState =
-                widget::triangles::State<Vec<widget::triangles::Triangle<Point>>>;
+                widget::triangles::State<Vec<Triangle<Point>>>;
             type TrianglesMultiColorState =
-                widget::triangles::State<Vec<widget::triangles::Triangle<(Point, color::Rgba)>>>;
+                widget::triangles::State<Vec<Triangle<(Point, color::Rgba)>>>;
 
             let (id, clip, container) = widget;
             let rect = container.rect;
@@ -146,7 +146,7 @@ impl<'a> Primitives<'a> {
                     let UniqueWidgetState { ref state, ref style } = *tris;
                     let widget::triangles::SingleColor(color) = *style;
                     let kind = PrimitiveKind::TrianglesSingleColor {
-                        color: color,
+                        color,
                         triangles: state.triangles.to_vec(),
                     };
                     return Some(new_primitive(id, kind, clip, rect));
@@ -384,7 +384,7 @@ impl<'a> Primitives<'a> {
                 return Some(new_primitive(id, kind, clip, rect));
             }
         }
-
+*/
         None
     }
 

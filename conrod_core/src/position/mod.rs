@@ -154,10 +154,10 @@ pub trait Positionable: Sized {
     fn y_position(self, Position) -> Self;
 
     /// Get the **Position** along the *x* axis.
-    fn get_x_position(&self, ui: &Ui) -> Position;
+    //fn get_x_position(&self, ui: &Ui) -> Position;
 
     /// Get the **Position** along the *y* axis.
-    fn get_y_position(&self, ui: &Ui) -> Position;
+    //fn get_y_position(&self, ui: &Ui) -> Position;
 
     // Absolute positioning.
 
@@ -680,10 +680,10 @@ pub trait Sizeable: Sized {
     fn y_dimension(self, x: Dimension) -> Self;
 
     /// The widget's length along the x axis as a Dimension.
-    fn get_x_dimension(&self, ui: &Ui) -> Dimension;
+    //fn get_x_dimension(&self, ui: &Ui) -> Dimension;
 
     /// The widget's length along the y axis as a Dimension.
-    fn get_y_dimension(&self, ui: &Ui) -> Dimension;
+    //fn get_y_dimension(&self, ui: &Ui) -> Dimension;
 
     // Provided defaults.
 
@@ -773,8 +773,8 @@ pub trait Sizeable: Sized {
         self.padded_kid_area_w_of(idx, pad).padded_kid_area_h_of(idx, pad)
     }
 
-    /// Get the absolute width of the widget as a Scalar value.
-    fn get_w(&self, ui: &Ui) -> Option<Scalar> {
+    // /// Get the absolute width of the widget as a Scalar value.
+    /*fn get_w(&self, ui: &Ui) -> Option<Scalar> {
         match self.get_x_dimension(ui) {
             Dimension::Absolute(width) => Some(width),
             Dimension::Of(idx, None) => ui.w_of(idx),
@@ -782,10 +782,10 @@ pub trait Sizeable: Sized {
             Dimension::KidAreaOf(idx, None) => ui.kid_area_of(idx).map(|r| r.w()),
             Dimension::KidAreaOf(idx, Some(pad)) => ui.kid_area_of(idx).map(|r| r.w() - pad * 2.0),
         }
-    }
+    }*/
 
-    /// Get the height of the widget.
-    fn get_h(&self, ui: &Ui) -> Option<Scalar> {
+    ///// Get the height of the widget.
+    /*fn get_h(&self, ui: &Ui) -> Option<Scalar> {
         match self.get_y_dimension(ui) {
             Dimension::Absolute(height) => Some(height),
             Dimension::Of(idx, None) => ui.h_of(idx),
@@ -793,12 +793,12 @@ pub trait Sizeable: Sized {
             Dimension::KidAreaOf(idx, None) => ui.kid_area_of(idx).map(|r| r.h()),
             Dimension::KidAreaOf(idx, Some(pad)) => ui.kid_area_of(idx).map(|r| r.h() - pad * 2.0),
         }
-    }
+    }*/
 
-    /// The dimensions for the widget.
-    fn get_wh(&self, ui: &Ui) -> Option<Dimensions> {
+    // /// The dimensions for the widget.
+    /*fn get_wh(&self, ui: &Ui) -> Option<Dimensions> {
         self.get_w(ui).and_then(|w| self.get_h(ui).map(|h| [w, h]))
-    }
+    }*/
 
 }
 

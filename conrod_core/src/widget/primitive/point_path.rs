@@ -1,13 +1,13 @@
 //! A simple, non-interactive widget for drawing a series of conjoined lines.
 
-use {Color, Colorable, Point, Positionable, Scalar, Sizeable, Theme, OldWidget};
-use graph;
+use {Color, Colorable, Point, Positionable, Scalar, Sizeable, Theme};
+use ::{graph, draw};
 use utils::{vec2_add, vec2_sub};
 use widget;
-use widget::triangles::Triangle;
 
 pub use super::line::Pattern;
 pub use super::line::Style;
+use draw::shape::triangle::Triangle;
 
 
 /// A simple, non-interactive widget for drawing a series of lines and/or points.
@@ -142,7 +142,7 @@ impl<I> PointPath<I> {
 }
 
 
-impl<I> OldWidget for PointPath<I>
+/*impl<I> OldWidget for PointPath<I>
     where I: IntoIterator<Item=Point>,
 {
     type State = State;
@@ -197,7 +197,7 @@ impl<I> OldWidget for PointPath<I>
         }
     }
 
-}
+}*/
 
 impl<I> Colorable for PointPath<I> {
     fn color(mut self, color: Color) -> Self {
@@ -222,9 +222,9 @@ pub fn triangles<I>(points: I, cap: widget::line::Cap, thickness: Scalar)
     Some(Triangles {
         next: None,
         prev: first,
-        points: points,
+        points,
         half_thickness: thickness / 2.0,
-        cap: cap,
+        cap,
     })
 }
 
@@ -239,7 +239,7 @@ impl<I> Iterator for Triangles<I>
         self.points.next().map(|point| {
             let (a, b) = (self.prev, point);
             self.prev = point;
-            let tris = widget::line::triangles(a, b, self.half_thickness);
+            let tris = draw::shape::line::triangles(a, b, self.half_thickness);
             self.next = Some(tris[1]);
             tris[0]
         })

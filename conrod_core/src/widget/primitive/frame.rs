@@ -62,12 +62,12 @@ impl Frame {
 
 impl WidgetExt for Frame {}
 
-impl Event for Frame {
+impl<S> Event<S> for Frame {
     fn handle_mouse_event(&mut self, event: &MouseEvent, consumed: &bool) {
         ()
     }
 
-    fn handle_keyboard_event(&mut self, event: &KeyboardEvent) {
+    fn handle_keyboard_event(&mut self, event: &KeyboardEvent, global_state: &mut S) {
         ()
     }
 
@@ -89,7 +89,7 @@ impl Event for Frame {
         new_state
     }
 
-    fn process_keyboard_event(&mut self, event: &KeyboardEvent, state: StateList) -> StateList {
+    fn process_keyboard_event(&mut self, event: &KeyboardEvent, state: StateList, global_state: &mut S) -> StateList {
         let new_state = self.apply_state(state);
         let updated_state = self.child.process_keyboard_event(event, new_state);
         self.apply_state(updated_state)
@@ -138,10 +138,6 @@ impl CommonWidget for Frame {
 
     fn get_proxied_children(&mut self) -> WidgetIterMut {
         WidgetIterMut::single(&mut self.child)
-    }
-
-    fn clone(&self) -> Box<dyn Widget> {
-        Box::new(Clone::clone(self))
     }
 
     fn get_position(&self) -> Point {

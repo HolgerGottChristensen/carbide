@@ -1,6 +1,6 @@
 //! A widget for displaying and mutating multi-line text, given as a `String`.
 
-use {Color, Colorable, FontSize, Positionable, Sizeable, OldWidget, Ui};
+use {Color, Colorable, FontSize, Positionable, Sizeable, Ui};
 use event;
 use input;
 use position::{Align, Dimension, Point, Range, Rect, Scalar};
@@ -180,7 +180,7 @@ impl<'a> TextEdit<'a> {
 
 }
 
-impl<'a> OldWidget for TextEdit<'a> {
+/*impl<'a> OldWidget for TextEdit<'a> {
     type State = State;
     type Style = Style;
     // TODO: We should create a more specific `Event` type that:
@@ -984,7 +984,7 @@ impl<'a> OldWidget for TextEdit<'a> {
     }
 
 }
-
+*/
 
 impl<'a> Colorable for TextEdit<'a> {
     builder_method!(color { style.color = Some(Color) });

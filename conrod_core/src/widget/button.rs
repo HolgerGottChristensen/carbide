@@ -1,6 +1,6 @@
 //! The `Button` widget and related items.
 
-use {Color, Colorable, FontSize, Borderable, Labelable, Positionable, Sizeable, UiCell, OldWidget};
+use {Color, Colorable, FontSize, Borderable, Labelable, Positionable, Sizeable, UiCell};
 use image;
 use position::{self, Align, Rect, Scalar};
 use text;
@@ -281,7 +281,7 @@ impl<'a, S> Button<'a, S> {
 }
 
 
-impl<'a> OldWidget for Button<'a, Flat> {
+/*impl<'a> OldWidget for Button<'a, Flat> {
     type State = FlatIds;
     type Style = Style;
     type Event = TimesClicked;
@@ -379,9 +379,9 @@ impl<'a> OldWidget for Button<'a, Image> {
     }
 
 }
+*/
 
-
-fn interaction_and_times_triggered(button_id: widget::Id, ui: &UiCell) -> (Interaction, u16) {
+/*fn interaction_and_times_triggered(button_id: widget::Id, ui: &UiCell) -> (Interaction, u16) {
     let input = ui.widget_input(button_id);
     let interaction = input.mouse().map_or(Interaction::Idle, |mouse| {
         let is_pressed =
@@ -408,9 +408,9 @@ fn bordered_rectangle(button_id: widget::Id, rectangle_id: widget::Id,
         .border(border)
         .border_color(border_color)
         .set(rectangle_id, ui);
-}
+}*/
 
-fn label(button_id: widget::Id, label_id: widget::Id,
+/*fn label(button_id: widget::Id, label_id: widget::Id,
          label: &str, style: &Style, ui: &mut UiCell)
 {
     unimplemented!()
@@ -431,7 +431,7 @@ fn label(button_id: widget::Id, label_id: widget::Id,
         .font_size(font_size)
         .set(label_id, ui);*/
 }
-
+*/
 
 impl<'a, S> Colorable for Button<'a, S> {
     builder_method!(color { style.color = Some(Color) });

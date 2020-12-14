@@ -1,11 +1,11 @@
 //! A simple, non-interactive **Polygon** widget for drawing arbitrary convex shapes.
 
-use {Color, Colorable, Point, Positionable, Sizeable, Theme, OldWidget};
+use {Color, Colorable, Point, Positionable, Sizeable, Theme};
 use graph;
 use super::Style;
 use widget;
-use widget::triangles::Triangle;
 use utils::{bounding_box_for_points, vec2_add, vec2_sub};
+use draw::shape::triangle::Triangle;
 
 
 /// A basic, non-interactive, arbitrary **Polygon** widget.
@@ -188,7 +188,7 @@ impl<I> Polygon<I> {
 }
 
 
-impl<I> OldWidget for Polygon<I>
+/*impl<I> OldWidget for Polygon<I>
     where I: IntoIterator<Item=Point>,
 {
     type State = State;
@@ -255,7 +255,7 @@ impl<I> OldWidget for Polygon<I>
     }
 
 }
-
+*/
 
 impl<I> Colorable for Polygon<I> {
     fn color(mut self, color: Color) -> Self {
@@ -281,9 +281,9 @@ pub fn triangles<I>(points: I) -> Option<Triangles<I::IntoIter>>
         None => return None,
     };
     Some(Triangles {
-        first: first,
-        prev: prev,
-        points: points,
+        first,
+        prev,
+        points,
     })
 }
 

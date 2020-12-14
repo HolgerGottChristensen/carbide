@@ -1,11 +1,13 @@
 //! A primitive widget that allows for drawing using a list of triangles.
 
-use {Rect, Point, Positionable, Scalar, Sizeable, Theme, OldWidget};
+use {Rect, Point, Positionable, Scalar, Sizeable, Theme};
 use color;
 use graph;
 use std;
 use utils::{vec2_add, vec2_sub};
 use widget;
+use draw::shape::vertex::Vertex;
+use draw::shape::triangle::Triangle;
 
 /// A widget that allows for drawing a list of triangles.
 #[derive(Copy, Clone, Debug, WidgetCommon_)]
@@ -21,13 +23,7 @@ pub struct Triangles<S, I> {
     pub maybe_shift_to_centre_from: Option<Point>,
 }
 
-/// Types used as vertices that make up a list of triangles.
-pub trait Vertex: Clone + Copy + PartialEq {
-    /// The x y location of the vertex.
-    fn point(&self) -> Point;
-    /// Add the given vector onto the position of self and return the result.
-    fn add(self, Point) -> Self;
-}
+
 
 /// Unique styling render for `Triangles`.
 pub trait Style: widget::Style + Clone + Send {
@@ -43,10 +39,7 @@ pub struct SingleColor(pub color::Rgba);
 #[derive(Copy, Clone, Debug, PartialEq)]
 pub struct MultiColor;
 
-/// A single triangle described by three vertices.
-#[derive(Copy, Clone, Debug, PartialEq)]
-pub struct Triangle<V>(pub [V; 3])
-    where V: Vertex;
+
 
 /// A point with an associated color.
 pub type ColoredPoint = (Point, color::Rgba);
@@ -59,24 +52,7 @@ pub struct State<T> {
 }
 
 
-impl Vertex for Point {
-    fn point(&self) -> Point {
-        *self
-    }
-    fn add(self, add: Point) -> Self {
-        vec2_add(self, add)
-    }
-}
 
-impl Vertex for ColoredPoint {
-    fn point(&self) -> Point {
-        self.0
-    }
-    fn add(self, add: Point) -> Self {
-        let (p, c) = self;
-        (vec2_add(p, add), c)
-    }
-}
 
 impl Style for SingleColor {
     type Vertex = Point;
@@ -96,76 +72,6 @@ pub struct TrianglesUnpositioned<S, I> {
     triangles: Triangles<S, I>,
 }
 
-
-impl<V> Triangle<V>
-    where V: Vertex,
-{
-    /// Shift the triangle by the given amount by adding it onto the position of each point.
-    pub fn add(self, amount: Point) -> Self {
-        let a = self[0].add(amount);
-        let b = self[1].add(amount);
-        let c = self[2].add(amount);
-        Triangle([a, b, c])
-    }
-
-    /// The three points that make up the triangle.
-    pub fn points(self) -> [Point; 3] {
-        [self[0].point(), self[1].point(), self[2].point()]
-    }
-}
-
-impl Triangle<Point> {
-    /// Convert the `Triangle<Point>` to a `Triangle<ColoredPoint>`.
-    pub fn color(self, a: color::Rgba, b: color::Rgba, c: color::Rgba) -> Triangle<ColoredPoint> {
-        Triangle([(self[0], a), (self[1], b), (self[2], c)])
-    }
-
-    /// Convert the `Triangle<Point>` to a `Triangle<ColoredPoint>` using the given color.
-    pub fn color_all(self, color: color::Rgba) -> Triangle<ColoredPoint> {
-        Triangle([(self[0], color), (self[1], color), (self[2], color)])
-    }
-}
-
-impl<V> std::ops::Deref for Triangle<V>
-    where V: Vertex,
-{
-    type Target = [V; 3];
-    fn deref(&self) -> &Self::Target {
-        &self.0
-    }
-}
-
-impl<V> From<[V; 3]> for Triangle<V>
-    where V: Vertex,
-{
-    fn from(points: [V; 3]) -> Self {
-        Triangle(points)
-    }
-}
-
-impl<V> From<(V, V, V)> for Triangle<V>
-    where V: Vertex,
-{
-    fn from((a, b, c): (V, V, V)) -> Self {
-        Triangle([a, b, c])
-    }
-}
-
-impl<V> Into<[V; 3]> for Triangle<V>
-    where V: Vertex,
-{
-    fn into(self) -> [V; 3] {
-        self.0
-    }
-}
-
-impl<V> Into<(V, V, V)> for Triangle<V>
-    where V: Vertex,
-{
-    fn into(self) -> (V, V, V) {
-        (self[0], self[1], self[2])
-    }
-}
 
 
 impl<S, I> Triangles<S, I> {
@@ -231,7 +137,7 @@ fn bounding_rect_for_triangles<I, V>(triangles: I) -> Rect
     super::super::bounding_box_for_points(points)
 }
 
-impl<S, I> TrianglesUnpositioned<S, I>
+/*impl<S, I> TrianglesUnpositioned<S, I>
     where S: Style,
           I: IntoIterator<Item=Triangle<S::Vertex>>,
           Triangles<S, I>: OldWidget,
@@ -300,9 +206,9 @@ impl<S, I> TrianglesUnpositioned<S, I>
         triangles.maybe_shift_to_centre_from = Some(xy);
         triangles.wh(dim)
     }
-}
+}*/
 
-impl<S, I> OldWidget for Triangles<S, I>
+/*impl<S, I, K> OldWidget<K> for Triangles<S, I, K>
     where S: Style,
           I: IntoIterator<Item=Triangle<S::Vertex>>,
 {
@@ -324,7 +230,7 @@ impl<S, I> OldWidget for Triangles<S, I>
         is_over_widget::<S>
     }
 
-    fn update(self, args: widget::UpdateArgs<Self>) -> Self::Event {
+    fn update(self, args: widget::UpdateArgs<Self, K>) -> Self::Event {
         use utils::{iter_diff, IterDiff};
         let widget::UpdateArgs { rect, state, .. } = args;
         let Triangles { triangles, maybe_shift_to_centre_from, .. } = self;
@@ -359,7 +265,7 @@ impl<S, I> OldWidget for Triangles<S, I>
         }
     }
 }
-
+*/
 
 /// Triangulates the given quad, represented by four points that describe its edges in either
 /// clockwise or anti-clockwise order.
@@ -400,7 +306,8 @@ impl<S, I> OldWidget for Triangles<S, I>
 /// use conrod_core::widget::triangles::{from_quad, Triangle};
 ///
 /// fn main() {
-///     let a = [0.0, 1.0];
+///     use conrod_core::draw::shape::triangle::Triangle;
+/// let a = [0.0, 1.0];
 ///     let b = [1.0, 1.0];
 ///     let c = [1.0, 0.0];
 ///     let d = [0.0, 0.0];

@@ -1,6 +1,6 @@
 //! A widget for displaying a grid of lines across two axes.
 
-use {Color, Colorable, Point, Scalar, OldWidget};
+use {Color, Colorable, Point, Scalar};
 use widget::{self, CommonBuilder, UpdateArgs};
 use utils::map_range;
 
@@ -159,7 +159,7 @@ impl<X, Y, I> Grid<X, Y, I> {
     }
 }
 
-impl<X, Y, I> OldWidget for Grid<X, Y, I>
+/*impl<X, Y, I> OldWidget for Grid<X, Y, I>
 where
     X: Into<Scalar>,
     Y: Into<Scalar>,
@@ -276,7 +276,7 @@ where
             }
         }
     }
-}
+}*/
 
 impl<X, Y, I> Colorable for Grid<X, Y, I> {
     builder_method!(color { style.color = Some(Color) });

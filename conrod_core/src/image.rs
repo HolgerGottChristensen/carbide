@@ -17,7 +17,7 @@ pub struct Id(u32);
 ///
 /// The `image::Map` type is usually instantiated and loaded during the "setup" stage of the
 /// application before the main loop begins.
-pub struct Map<Img> {
+pub struct ImageMap<Img> {
     next_index: u32,
     map: HashMap<Img>,
     /// Whether or not the `image::Map` will trigger a redraw the next time `Ui::draw` is called.
@@ -36,7 +36,7 @@ pub struct NewIds {
 }
 
 
-impl<Img> std::ops::Deref for Map<Img> {
+impl<Img> std::ops::Deref for ImageMap<Img> {
     type Target = HashMap<Img>;
     fn deref(&self) -> &Self::Target {
         &self.map
@@ -44,11 +44,11 @@ impl<Img> std::ops::Deref for Map<Img> {
 }
 
 
-impl<Img> Map<Img> {
+impl<Img> ImageMap<Img> {
 
     /// Construct a new, empty `image::Map`.
     pub fn new() -> Self {
-        Map {
+        ImageMap {
             next_index: 0,
             map: HashMap::<Img>::default(),
             trigger_redraw: std::cell::Cell::new(true),

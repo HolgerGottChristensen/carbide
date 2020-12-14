@@ -2,9 +2,8 @@
 //!
 //! Due to the frequency of its use in GUIs, the `Rectangle` gets its own widget to allow backends
 //! to specialise their rendering implementations.
-use {Color, Colorable, Point, Rect, Sizeable, OldWidget};
+use {Color, Colorable, Point, Rect, Sizeable};
 use ::{widget, Scalar};
-use widget::triangles::Triangle;
 use widget::render::Render;
 use graph::Container;
 use widget::{Id, Rectangle};
@@ -21,7 +20,6 @@ use ::{Range, text};
 use render::owned_primitive::OwnedPrimitive;
 use render::owned_primitive_kind::OwnedPrimitiveKind;
 use widget::envelope_editor::EnvelopePoint;
-use widget::primitive::shape::triangles::Vertex;
 use std::convert::TryFrom;
 use std::error::Error;
 use std::collections::HashMap;
@@ -65,12 +63,12 @@ impl Spacer {
     }
 }
 
-impl Event for Spacer {
+impl<S> Event<S> for Spacer {
     fn handle_mouse_event(&mut self, event: &MouseEvent, consumed: &bool) {
         ()
     }
 
-    fn handle_keyboard_event(&mut self, event: &KeyboardEvent) {
+    fn handle_keyboard_event(&mut self, event: &KeyboardEvent, global_state: &mut S) {
         ()
     }
 
@@ -82,7 +80,7 @@ impl Event for Spacer {
         state
     }
 
-    fn process_keyboard_event(&mut self, event: &KeyboardEvent, state: StateList) -> StateList {
+    fn process_keyboard_event(&mut self, event: &KeyboardEvent, state: StateList, global_state: &mut S) -> StateList {
         state
     }
 
@@ -146,9 +144,7 @@ impl CommonWidget for Spacer {
         unimplemented!()
     }
 
-    fn clone(&self) -> Box<dyn Widget> {
-        Box::new(Clone::clone(self))
-    }
+
 
     fn get_position(&self) -> Point {
         self.position

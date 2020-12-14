@@ -3,7 +3,7 @@
 use {Color, Colorable, FontSize, Borderable, Labelable, Positionable, Sizeable, Ui};
 use position::{self, Align, Dimension, Scalar};
 use text;
-use widget::{self, OldWidget};
+use widget::{self};
 
 
 /// A simple title bar widget that automatically sizes itself to the top of some other widget.
@@ -134,7 +134,7 @@ pub fn calc_height(font_size: FontSize) -> Scalar {
 }
 
 
-impl<'a> OldWidget for TitleBar<'a> {
+/*impl<'a> OldWidget for TitleBar<'a> {
     type State = State;
     type Style = Style;
     type Event = ();
@@ -198,7 +198,7 @@ impl<'a> OldWidget for TitleBar<'a> {
     }
 
 }
-
+*/
 
 impl<'a> Colorable for TitleBar<'a> {
     builder_method!(color { style.color = Some(Color) });

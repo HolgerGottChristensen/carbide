@@ -1,9 +1,10 @@
 use ::{Color, Point};
 use color::Rgba;
-use widget::triangles::{Triangle, ColoredPoint};
+use widget::triangles::{ColoredPoint};
 use ::{image, Rect};
 use render::text::Text;
 use ::{text, graph};
+use draw::shape::triangle::Triangle;
 
 /// The unique kind for each primitive element in the Ui.
 pub enum PrimitiveKind {

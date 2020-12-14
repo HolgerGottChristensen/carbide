@@ -50,7 +50,7 @@ fn main() {
         texture
     }
 
-    let mut image_map = conrod_core::image::Map::new();
+    let mut image_map = conrod_core::image::ImageMap::new();
     let rust_logo = image_map.insert(load_rust_logo(&display.0));
 
     // A channel to send events from the main `winit` thread to the conrod thread.
@@ -126,7 +126,7 @@ fn main() {
     // Draws the given `primitives` to the given `Display`.
     fn draw(display: &glium::Display,
             renderer: &mut Renderer,
-            image_map: &conrod_core::image::Map<glium::Texture2d>,
+            image_map: &conrod_core::image::ImageMap<glium::Texture2d>,
             primitives: &conrod_core::render::OwnedPrimitives)
     {
         renderer.fill(display, primitives.walk(), &image_map);

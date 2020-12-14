@@ -1,11 +1,10 @@
 //! A simple, non-interactive widget for drawing a single **Oval**.
 
-use {Color, Colorable, Point, Rect, Scalar, Sizeable, Theme, OldWidget};
+use {Color, Colorable, Point, Rect, Scalar, Sizeable, Theme};
 use ::{graph, text};
 use std;
 use super::Style as Style;
 use widget;
-use widget::triangles::Triangle;
 use widget::render::Render;
 use graph::Container;
 use widget::{Id, Rectangle};
@@ -29,6 +28,8 @@ use state::state::{StateList};
 use flags::Flags;
 use widget::widget_iterator::{WidgetIter, WidgetIterMut};
 use std::slice::{Iter, IterMut};
+use draw::shape::triangle::Triangle;
+use draw::shape::circumference::{Circumference, Triangles};
 
 
 /// A simple, non-interactive widget for drawing a single **Oval**.
@@ -51,12 +52,12 @@ pub struct Oval<S> {
     pub children: Vec<Box<dyn Widget>>
 }
 
-impl<S: 'static + Clone> Event for Oval<S> {
+impl<K, S: 'static + Clone> Event<K> for Oval<S> {
     fn handle_mouse_event(&mut self, event: &MouseEvent, consumed: &bool) {
         ()
     }
 
-    fn handle_keyboard_event(&mut self, event: &KeyboardEvent) {
+    fn handle_keyboard_event(&mut self, event: &KeyboardEvent, global_state: &mut K) {
         ()
     }
 
@@ -68,8 +69,8 @@ impl<S: 'static + Clone> Event for Oval<S> {
         self.process_mouse_event_default(event, consumed, state)
     }
 
-    fn process_keyboard_event(&mut self, event: &KeyboardEvent, state: StateList) -> StateList {
-        self.process_keyboard_event_default(event, state)
+    fn process_keyboard_event(&mut self, event: &KeyboardEvent, state: StateList, global_state: &mut K) -> StateList {
+        self.process_keyboard_event_default(event, state, global_state)
     }
 
     fn get_state(&self, current_state: StateList) -> StateList {
@@ -85,7 +86,7 @@ impl<S: 'static + Clone> Event for Oval<S> {
     }
 }
 
-impl<S: 'static + Clone> WidgetExt for Oval<S> {}
+impl<S> WidgetExt for Oval<S> {}
 
 impl<S> Layout for Oval<S> {
     fn flexibility(&self) -> u32 {
@@ -152,10 +153,6 @@ impl<S: 'static + Clone> CommonWidget for Oval<S> {
             .rfold(WidgetIterMut::Empty, |acc, x| {
                 WidgetIterMut::Single(x, Box::new(acc))
             })
-    }
-
-    fn clone(&self) -> Box<dyn Widget> {
-        Box::new(Clone::clone(self))
     }
 
     fn get_position(&self) -> Point {
@@ -340,7 +337,7 @@ impl Oval<Section> {
     }
 }
 
-impl<S> OldWidget for Oval<S>
+/*impl<S, K> OldWidget<K> for Oval<S, K>
 where
     S: OvalSection,
 {
@@ -363,7 +360,7 @@ where
         S::IS_OVER
     }
 
-    fn update(self, args: widget::UpdateArgs<Self>) -> Self::Event {
+    fn update(self, args: widget::UpdateArgs<Self, S>) -> Self::Event {
         let widget::UpdateArgs { state, .. } = args;
         if state.resolution != self.resolution {
             state.update(|state| state.resolution = self.resolution);
@@ -372,7 +369,7 @@ where
             state.update(|state| state.section = self.section);
         }
     }
-}
+}*/
 
 impl<S> Colorable for Oval<S> {
     fn color(mut self, color: Color) -> Self {
@@ -394,113 +391,6 @@ pub fn triangles(rect: Rect, resolution: usize) -> Triangles {
     circumference(rect, resolution).triangles()
 }
 
-/// An iterator yielding the edges of an `Oval` (or some section of an `Oval`) as a circumference
-/// represented as a series of edges.
-#[derive(Clone)]
-#[allow(missing_copy_implementations)]
-pub struct Circumference {
-    index: usize,
-    num_points: usize,
-    point: Point,
-    rad_step: Scalar,
-    rad_offset: Scalar,
-    half_w: Scalar,
-    half_h: Scalar,
-}
-
-impl Circumference {
-    fn new_inner(rect: Rect, num_points: usize, rad_step: Scalar) -> Self {
-        let (x, y, w, h) = rect.x_y_w_h();
-        Circumference {
-            index: 0,
-            num_points,
-            point: [x, y],
-            half_w: w * 0.5,
-            half_h: h * 0.5,
-            rad_step,
-            rad_offset: 0.0,
-        }
-    }
-
-    /// An iterator yielding the `Oval`'s edges as a circumference represented as a series of points.
-    ///
-    /// `resolution` is clamped to a minimum of `1` as to avoid creating a `Circumference` that
-    /// produces `NaN` values.
-    pub fn new(rect: Rect, mut resolution: usize) -> Self {
-        resolution = std::cmp::max(resolution, 1);
-        use std::f64::consts::PI;
-        let radians = 2.0 * PI;
-        Self::new_section(rect, resolution, radians)
-    }
-
-    /// Produces a new iterator that yields only a section of the `Oval`'s circumference, where the
-    /// section is described via its angle in radians.
-    ///
-    /// `resolution` is clamped to a minimum of `1` as to avoid creating a `Circumference` that
-    /// produces `NaN` values.
-    pub fn new_section(rect: Rect, resolution: usize, radians: Scalar) -> Self {
-        Self::new_inner(rect, resolution + 1, radians / resolution as Scalar)
-    }
-}
-
-/// An iterator yielding triangles that describe an oval or some section of an oval.
-#[derive(Clone)]
-pub struct Triangles {
-    // The last circumference point yielded by the `CircumferenceOffset` iterator.
-    last: Point,
-    // The circumference points used to yield yielded by the `CircumferenceOffset` iterator.
-    points: Circumference,
-}
-
-impl Circumference {
-    /// Produces a new iterator that yields only a section of the `Oval`'s circumference, where the
-    /// section is described via its angle in radians.
-    pub fn section(mut self, radians: Scalar) -> Self {
-        let resolution = self.num_points - 1;
-        self.rad_step = radians / resolution as Scalar;
-        self
-    }
-
-    /// Rotates the position at which the iterator starts yielding points by the given radians.
-    ///
-    /// This is particularly useful for yielding a different section of the circumference when
-    /// using `circumference_section`
-    pub fn offset_radians(mut self, radians: Scalar) -> Self {
-        self.rad_offset = radians;
-        self
-    }
-
-    /// Produces an `Iterator` yielding `Triangle`s.
-    ///
-    /// Triangles are created by joining each edge yielded by the inner `Circumference` to the
-    /// middle of the `Oval`.
-    pub fn triangles(mut self) -> Triangles {
-        let last = self.next().unwrap_or(self.point);
-        Triangles { last, points: self }
-    }
-}
-
-impl Iterator for Circumference {
-    type Item = Point;
-    fn next(&mut self) -> Option<Self::Item> {
-        let Circumference {
-            ref mut index,
-            num_points,
-            point,
-            rad_step,
-            rad_offset,
-            half_w,
-            half_h,
-        } = *self;
-        if *index >= num_points {
-            return None;
-        }
-        let x = point[0] + half_w * (rad_offset + rad_step * *index as Scalar).cos();
-        let y = point[1] + half_h * (rad_offset + rad_step * *index as Scalar).sin();
-        *index += 1;
-        Some([x, y])
-    }
-}
 
 impl Iterator for Triangles {
     type Item = Triangle<Point>;

@@ -76,9 +76,7 @@ impl CommonWidget for ForeachTest {
         WidgetIterMut::single(&mut self.child)
     }
 
-    fn clone(&self) -> Box<dyn Widget> {
-        Box::new(Clone::clone(self))
-    }
+
 
     fn get_position(&self) -> Point {
         self.position
@@ -97,12 +95,12 @@ impl CommonWidget for ForeachTest {
     }
 }
 
-impl Event for ForeachTest {
+impl<S> Event<S> for ForeachTest {
     fn handle_mouse_event(&mut self, event: &MouseEvent, consumed: &bool) {
         ()
     }
 
-    fn handle_keyboard_event(&mut self, event: &KeyboardEvent) {
+    fn handle_keyboard_event(&mut self, event: &KeyboardEvent, global_state: &mut S) {
         ()
     }
 
@@ -114,8 +112,8 @@ impl Event for ForeachTest {
         self.process_mouse_event_default(event, consumed, state)
     }
 
-    fn process_keyboard_event(&mut self, event: &KeyboardEvent, state: StateList) -> StateList {
-        self.process_keyboard_event_default(event, state)
+    fn process_keyboard_event(&mut self, event: &KeyboardEvent, state: StateList, global_state: &mut S) -> StateList {
+        self.process_keyboard_event_default(event, state, global_state)
     }
 
     fn get_state(&self, mut current_state: StateList) -> StateList {

@@ -43,7 +43,7 @@ fn main() {
     // Create our `conrod_core::image::Map` which describes each of our widget->image mappings.
     let rust_logo = load_rust_logo(&display.0);
     let (w, h) = (rust_logo.get_width(), rust_logo.get_height().unwrap());
-    let mut image_map = conrod_core::image::Map::new();
+    let mut image_map = conrod_core::image::ImageMap::new();
     let rust_logo = image_map.insert(rust_logo);
 
     // Poll events from the window.

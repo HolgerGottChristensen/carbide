@@ -1,11 +1,11 @@
 //! A widget for selecting a single value along some linear range.
 
-use {Color, Colorable, FontSize, Borderable, Labelable, Positionable, OldWidget};
+use {Color, Colorable, FontSize, Borderable, Labelable, Positionable};
 use num::{Float, NumCast, ToPrimitive};
 use position::{Padding, Range, Rect, Scalar};
 use text;
 use widget;
-use widget::triangles::Triangle;
+use draw::shape::triangle::Triangle;
 
 
 /// Linear value selection.
@@ -100,7 +100,7 @@ impl<'a, T> Slider<'a, T> {
 
 }
 
-impl<'a, T> OldWidget for Slider<'a, T>
+/*impl<'a, T> OldWidget for Slider<'a, T>
     where T: Float + NumCast + ToPrimitive,
 {
     type State = State;
@@ -253,7 +253,7 @@ impl<'a, T> OldWidget for Slider<'a, T>
         if value != new_value { Some(new_value) } else { None }
     }
 
-}
+}*/
 
 
 impl<'a, T> Colorable for Slider<'a, T> {

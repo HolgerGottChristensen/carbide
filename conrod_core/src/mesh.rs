@@ -159,7 +159,7 @@ impl Mesh {
         &mut self,
         viewport: Rect,
         dpi_factor: f64,
-        image_map: &image::Map<I>,
+        image_map: &image::ImageMap<I>,
         mut primitives: P,
     ) -> Result<Fill, rt::gpu_cache::CacheWriteErr>
     where

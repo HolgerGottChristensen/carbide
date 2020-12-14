@@ -1,6 +1,5 @@
-use {Color, Colorable, Point, Rect, Sizeable, OldWidget};
+use {Color, Colorable, Point, Rect, Sizeable};
 use ::{widget, Scalar};
-use widget::triangles::Triangle;
 use widget::render::Render;
 use graph::Container;
 use widget::{Id, Rectangle};
@@ -17,7 +16,6 @@ use ::{Range, text};
 use render::owned_primitive::OwnedPrimitive;
 use render::owned_primitive_kind::OwnedPrimitiveKind;
 use widget::envelope_editor::EnvelopePoint;
-use widget::primitive::shape::triangles::Vertex;
 use std::convert::TryFrom;
 use std::error::Error;
 use std::collections::HashMap;
@@ -57,12 +55,12 @@ impl HStack {
 
 impl WidgetExt for HStack {}
 
-impl Event for HStack {
+impl<S> Event<S> for HStack {
     fn handle_mouse_event(&mut self, event: &MouseEvent, consumed: &bool) {
         ()
     }
 
-    fn handle_keyboard_event(&mut self, event: &KeyboardEvent) {
+    fn handle_keyboard_event(&mut self, event: &KeyboardEvent, global_state: &mut S) {
         ()
     }
 
@@ -74,8 +72,8 @@ impl Event for HStack {
         self.process_mouse_event_default(event, consumed, state)
     }
 
-    fn process_keyboard_event(&mut self, event: &KeyboardEvent, state: StateList) -> StateList {
-        self.process_keyboard_event_default(event, state)
+    fn process_keyboard_event(&mut self, event: &KeyboardEvent, state: StateList, global_state: &mut S) -> StateList {
+        self.process_keyboard_event_default(event, state, global_state)
     }
 
     fn get_state(&self, current_state: StateList) -> StateList {
@@ -224,9 +222,7 @@ impl CommonWidget for HStack {
             })
     }
 
-    fn clone(&self) -> Box<dyn Widget> {
-        Box::new(Clone::clone(self))
-    }
+
 
     fn get_position(&self) -> Point {
         self.position

@@ -45,12 +45,12 @@ impl Padding {
     }
 }
 
-impl Event for Padding {
+impl<S> Event<S> for Padding {
     fn handle_mouse_event(&mut self, event: &MouseEvent, consumed: &bool) {
         ()
     }
 
-    fn handle_keyboard_event(&mut self, event: &KeyboardEvent) {
+    fn handle_keyboard_event(&mut self, event: &KeyboardEvent, global_state: &mut S) {
         ()
     }
 
@@ -72,7 +72,7 @@ impl Event for Padding {
         new_state
     }
 
-    fn process_keyboard_event(&mut self, event: &KeyboardEvent, state: StateList) -> StateList {
+    fn process_keyboard_event(&mut self, event: &KeyboardEvent, state: StateList, global_state: &mut S) -> StateList {
         let new_state = self.apply_state(state);
         let updated_state = self.child.process_keyboard_event(event, new_state);
         self.apply_state(updated_state)
@@ -125,9 +125,7 @@ impl CommonWidget for Padding {
         WidgetIterMut::single(&mut self.child)
     }
 
-    fn clone(&self) -> Box<dyn Widget> {
-        Box::new(Clone::clone(self))
-    }
+
 
     fn get_position(&self) -> Point {
         self.position

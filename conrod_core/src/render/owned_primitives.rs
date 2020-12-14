@@ -1,7 +1,8 @@
-use widget::triangles::{Triangle, ColoredPoint};
+use widget::triangles::{ColoredPoint};
 use ::{Point, text};
 use render::walk_owned_primitives::WalkOwnedPrimitives;
 use render::owned_primitive::OwnedPrimitive;
+use draw::shape::triangle::Triangle;
 
 /// An owned alternative to the `Primitives` type.
 ///

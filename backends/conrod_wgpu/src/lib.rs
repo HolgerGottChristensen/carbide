@@ -235,7 +235,7 @@ impl Renderer {
     /// `copy_buffer_to_image` command to write the data to the given `glyph_cache_texture` image.
     pub fn fill<'a, P>(
         &'a mut self,
-        image_map: &image::Map<Image>,
+        image_map: &image::ImageMap<Image>,
         viewport: [f32; 4],
         scale_factor: f64,
         primitives: P,
@@ -271,7 +271,7 @@ impl Renderer {
     /// Converts the inner list of `Command`s generated via `fill` to a list of
     /// `RenderPassCommand`s that are easily digestible by a `wgpu::RenderPass` produced by a
     /// `wgpu::CommandEncoder`.
-    pub fn render(&mut self, device: &wgpu::Device, image_map: &image::Map<Image>) -> Render {
+    pub fn render(&mut self, device: &wgpu::Device, image_map: &image::ImageMap<Image>) -> Render {
         let Renderer {
             ref mut bind_groups,
             ref mut render_pipelines,

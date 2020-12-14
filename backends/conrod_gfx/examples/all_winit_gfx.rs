@@ -125,7 +125,7 @@ fn main() {
         (view, image_dimensions)
     }
 
-    let mut image_map = conrod_core::image::Map::new();
+    let mut image_map = conrod_core::image::ImageMap::new();
     let rust_logo = image_map.insert(load_rust_logo::<conrod_gfx::ColorFormat, _, _>(
         &mut factory,
     ));

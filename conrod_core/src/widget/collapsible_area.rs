@@ -1,6 +1,6 @@
 //! The `CollapsibleArea` widget and related items.
 
-use {Borderable, Colorable, Labelable, Positionable, Sizeable, OldWidget};
+use {Borderable, Colorable, Labelable, Positionable, Sizeable};
 use {Color, FontSize, Scalar, UiCell};
 use position;
 use std;
@@ -110,7 +110,7 @@ impl<'a> CollapsibleArea<'a> {
 
 }
 
-impl<'a> OldWidget for CollapsibleArea<'a> {
+/*impl<'a> OldWidget for CollapsibleArea<'a> {
     type State = State;
     type Style = Style;
     type Event = (Option<Area>, Option<Event>);
@@ -209,7 +209,7 @@ impl<'a> OldWidget for CollapsibleArea<'a> {
         (area, event)
     }
 }
-
+*/
 impl<'a> Colorable for CollapsibleArea<'a> {
     fn color(mut self, color: Color) -> Self {
         self.style.color = Some(color);
@@ -239,7 +239,7 @@ impl Event {
 }
 
 impl Area {
-    /// Set the user's given widget directly under the `CollapsibleArea`.
+    /* /// Set the user's given widget directly under the `CollapsibleArea`.
     ///
     /// Returns any events produced by the given widget.
     pub fn set<W>(self, widget: W, ui: &mut UiCell) -> W::Event
@@ -252,5 +252,5 @@ impl Area {
             .align_middle_x_of(collapsible_area_id)
             .down_from(collapsible_area_id, 0.0)
             .set(id, ui)
-    }
+    }*/
 }

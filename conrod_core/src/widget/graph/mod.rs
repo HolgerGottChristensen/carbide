@@ -1,6 +1,6 @@
 //! A widget for viewing and controlling graph structures.
 
-use {color, widget, Color, Colorable, Point, Positionable, Scalar, OldWidget, Ui, UiCell};
+use {color, widget, Color, Colorable, Point, Positionable, Scalar, Ui, UiCell};
 use std::any::{Any, TypeId};
 use std::cell::Cell;
 use std::collections::{HashMap, VecDeque};
@@ -593,7 +593,7 @@ where
     }
 }
 
-impl<'a, NI, W> NodeWidget<'a, NI, W>
+/*impl<'a, NI, W> NodeWidget<'a, NI, W>
 where
     NI: NodeId,
     W: 'static + OldWidget,
@@ -632,7 +632,7 @@ where
             .parent(node.graph_id)
             .set(widget_id, ui)
     }
-}
+}*/
 
 impl<'a, NI, W> Deref for NodeWidget<'a, NI, W>
 where
@@ -685,7 +685,7 @@ where
 /// This will always return `None` if called between calls to the `Graph::set` and node
 /// instantiation stages, as `widget::Id`s for nodes are only populated during the node
 /// instantiation stage.
-pub fn node_widget_id<NI>(node_id: NI, graph_id: widget::Id, ui: &Ui) -> Option<widget::Id>
+/*pub fn node_widget_id<NI>(node_id: NI, graph_id: widget::Id, ui: &Ui) -> Option<widget::Id>
 where
     NI: NodeId,
 {
@@ -696,7 +696,7 @@ where
             let shared = unique.state.shared.lock().unwrap();
             shared.widget_id_map.node_widget_ids.get(&node_id).map(|&id| id)
         })
-}
+}*/
 
 /// Returns the `widget::Id`s for the start and end nodes.
 ///
@@ -706,7 +706,7 @@ where
 ///
 /// **Panic!**s if the given `Ui` is not the same one used to create the edge's parent Graph
 /// widget.
-pub fn edge_node_widget_ids<NI>(edge: &Edge<NI>, ui: &Ui) -> (widget::Id, widget::Id)
+/*pub fn edge_node_widget_ids<NI>(edge: &Edge<NI>, ui: &Ui) -> (widget::Id, widget::Id)
 where
     NI: NodeId,
 {
@@ -720,46 +720,13 @@ where
             (a.expect("no `widget::Id` for start node"), b.expect("no `widget::Id` for end node"))
         })
         .expect("no graph associated with edge's `graph_id` was found")
-}
+}*/
 
-impl<'a, NI, W> EdgeWidget<'a, NI, W>
+/*impl<'a, NI, W> EdgeWidget<'a, NI, W>
 where
     NI: NodeId,
     W: 'static + OldWidget,
-{
-    /// Retrieve the `widget::Id` that will be used to instantiate this edge's widget.
-    pub fn widget_id(&self, ui: &mut UiCell) -> widget::Id {
-        match self.widget_id.get() {
-            Some(id) => id,
-            None => {
-                // Request a `widget::Id` from the `WidgetIdMap`.
-                let mut shared = self.edge.shared.lock().unwrap();
-                let id = shared.widget_id_map.next_id_for_edge::<W>(&mut ui.widget_id_generator());
-                self.widget_id.set(Some(id));
-                id
-            },
-        }
-    }
-
-    /// Apply the given function to the inner widget.
-    pub fn map<M>(self, map: M) -> Self
-    where
-        M: FnOnce(W) -> W,
-    {
-        let EdgeWidget { edge, mut widget, widget_id } = self;
-        widget = map(widget);
-        EdgeWidget { edge, widget, widget_id }
-    }
-
-    /// Set the given widget for the edge.
-    pub fn set(self, ui: &mut UiCell) -> W::Event {
-        let widget_id = self.widget_id(ui);
-        let EdgeWidget { edge, widget, .. } = self;
-        widget
-            .parent(edge.graph_id)
-            .set(widget_id, ui)
-    }
-}
+*/
 
 impl<'a, N, E> Graph<'a, N, E>
 where
@@ -789,7 +756,7 @@ where
     }
 }
 
-impl<'a, N, E> OldWidget for Graph<'a, N, E>
+/*impl<'a, N, E> OldWidget for Graph<'a, N, E>
 where
     N: Iterator,
     N::Item: NodeId,
@@ -911,4 +878,4 @@ where
         let session = Session { graph_id, shared };
         SessionEvents { session }
     }
-}
+}*/

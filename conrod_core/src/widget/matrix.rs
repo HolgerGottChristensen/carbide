@@ -1,6 +1,6 @@
 //! A helper widget for laying out child widgets in the form of a grid.
 
-use {Scalar, Ui, UiCell, OldWidget};
+use {Scalar, Ui, UiCell};
 use graph;
 use utils;
 use widget;
@@ -114,7 +114,7 @@ impl Matrix {
 }
 
 
-impl OldWidget for Matrix {
+/*impl OldWidget for Matrix {
     type State = State;
     type Style = Style;
     type Event = Elements;
@@ -181,9 +181,9 @@ impl OldWidget for Matrix {
     }
 
 }
+*/
 
-
-impl Elements {
+/*impl Elements {
 
     /// Yield the next `Element`.
     pub fn next(&mut self, ui: &Ui) -> Option<Element> {
@@ -234,10 +234,10 @@ impl Elements {
         })
     }
 
-}
+}*/
 
 
-impl Element {
+/*impl Element {
 
     /// Sets the given widget as the widget to use for the item.
     ///
@@ -257,4 +257,4 @@ impl Element {
             .set(widget_id, ui)
     }
 
-}
+}*/

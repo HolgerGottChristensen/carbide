@@ -7,7 +7,6 @@ use {
     Positionable,
     Scalar,
     Sizeable,
-    OldWidget,
     Ui,
     UiCell,
 };
@@ -80,7 +79,7 @@ pub trait Direction {
     fn common_scroll(common: &widget::CommonBuilder) -> Option<&widget::scroll::Scroll>;
 
     /// Positions the given widget.
-    fn position_item<W>(item_widget: W,
+    /*fn position_item<W>(item_widget: W,
                         last_id: Option<widget::Id>,
                         scroll_trigger_id: widget::Id,
                         first_item_margin: Scalar) -> W
@@ -89,12 +88,12 @@ pub trait Direction {
     /// Position the `Rectangle` used for scrolling `List`s with fixed `Item` sizes.
     fn position_scroll_trigger<W>(scroll_trigger: W, list: widget::Id) -> W
         where W: OldWidget;
-
+*/
     /// Calls the suitable `scroll_kids_<axis>` method on the `List`.
     fn scroll_list_kids<S>(list: List<Self, S>) -> List<Self, S>
         where Self: Sized,
               S: ItemSize;
-
+/*
     /// Size the widget given its breadth.
     fn size_breadth<W>(widget: W, breadth: Scalar) -> W
         where W: OldWidget;
@@ -102,20 +101,22 @@ pub trait Direction {
     /// Size the widget given its length.
     fn size_length<W>(widget: W, length: Scalar) -> W
         where W: OldWidget;
+        */
+
 }
 
 /// The way in which the `List`'s items are sized. E.g. `Fired` or `Dynamic`.
 pub trait ItemSize: Sized + Clone + Copy {
 
-    /// Update the `List` widget.
-    fn update_list<D>(List<D, Self>, widget::UpdateArgs<List<D, Self>>)
+    // /// Update the `List` widget.
+    /*fn update_list<D>(List<D, Self>, widget::UpdateArgs<List<D, Self>>)
         -> <List<D, Self> as OldWidget>::Event
         where D: Direction;
 
     /// Set the size for the given item `widget` and return it.
     fn size_item<W, D>(&self, widget: W, breadth: Scalar) -> W
         where W: OldWidget,
-              D: Direction;
+              D: Direction;*/
 }
 
 /// Unique styling for the `List`.
@@ -332,7 +333,7 @@ impl<D, S> List<D, S>
     }
 }
 
-impl<D, S> OldWidget for List<D, S>
+/*impl<D, S> OldWidget for List<D, S>
     where D: Direction,
           S: ItemSize,
 {
@@ -354,9 +355,9 @@ impl<D, S> OldWidget for List<D, S>
         S::update_list(self, args)
     }
 }
+*/
 
-
-impl<D, S> Items<D, S>
+/*impl<D, S> Items<D, S>
     where D: Direction,
           S: ItemSize,
 {
@@ -408,10 +409,10 @@ impl<D, S> Items<D, S>
         }
     }
 
-}
+}*/
 
 
-impl<D, S> Item<D, S>
+/*impl<D, S> Item<D, S>
     where D: Direction,
           S: ItemSize,
 {
@@ -437,7 +438,7 @@ impl<D, S> Item<D, S>
             .set(widget_id, ui)
     }
 
-}
+}*/
 
 impl<S> Item<Down, S> {
     /// The width of the `Item`.
@@ -496,7 +497,7 @@ impl Item<Left, Fixed> {
 }
 
 
-impl<A> Scrollbar<A>
+/*impl<A> Scrollbar<A>
     where A: widget::scrollbar::Axis,
 {
     /// Set the `Scrollbar` within the given `Ui`.
@@ -504,10 +505,10 @@ impl<A> Scrollbar<A>
         let Scrollbar { widget, id } = self;
         widget.set(id, ui);
     }
-}
+}*/
 
 
-impl ItemSize for Fixed {
+/*impl ItemSize for Fixed {
 
     fn update_list<D>(list: List<D, Self>, args: widget::UpdateArgs<List<D, Self>>)
         -> <List<D, Self> as OldWidget>::Event
@@ -711,7 +712,7 @@ impl ItemSize for Dynamic {
     }
 
 }
-
+*/
 
 impl Direction for Down {
     type Axis = widget::scroll::Y;
@@ -734,7 +735,7 @@ impl Direction for Down {
     {
         list.scroll_kids_vertically()
     }
-
+/*
     fn position_item<W>(widget: W,
                         last_id: Option<widget::Id>,
                         scroll_trigger_id: widget::Id,
@@ -764,7 +765,7 @@ impl Direction for Down {
         where W: OldWidget
     {
         widget.h(length)
-    }
+    }*/
 
 }
 
@@ -789,7 +790,7 @@ impl Direction for Up {
     {
         list.scroll_kids_vertically()
     }
-
+/*
     fn position_item<W>(widget: W,
                         last_id: Option<widget::Id>,
                         scroll_trigger_id: widget::Id,
@@ -820,7 +821,7 @@ impl Direction for Up {
     {
         widget.h(length)
     }
-
+*/
 }
 
 impl Direction for Left {
@@ -844,7 +845,7 @@ impl Direction for Left {
     {
         list.scroll_kids_horizontally()
     }
-
+/*
     fn position_item<W>(widget: W,
                         last_id: Option<widget::Id>,
                         scroll_trigger_id: widget::Id,
@@ -874,7 +875,7 @@ impl Direction for Left {
         where W: OldWidget
     {
         widget.w(length)
-    }
+    }*/
 
 }
 
@@ -900,7 +901,7 @@ impl Direction for Right {
         list.scroll_kids_horizontally()
     }
 
-    fn position_item<W>(widget: W,
+    /*fn position_item<W>(widget: W,
                         last_id: Option<widget::Id>,
                         scroll_trigger_id: widget::Id,
                         first_item_margin: Scalar) -> W
@@ -929,6 +930,6 @@ impl Direction for Right {
         where W: OldWidget
     {
         widget.w(length)
-    }
+    }*/
 
 }

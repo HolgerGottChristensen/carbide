@@ -16,8 +16,6 @@ pub trait CommonWidget {
     fn get_children_mut(&mut self) -> WidgetIterMut;
     fn get_proxied_children(&mut self) -> WidgetIterMut;
 
-    fn clone(&self) -> Box<Widget>;
-
     fn get_position(&self) -> Point;
     fn set_position(&mut self, position: Point);
 

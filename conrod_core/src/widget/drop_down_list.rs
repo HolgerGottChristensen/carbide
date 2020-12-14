@@ -4,7 +4,7 @@ use {Color, Colorable, FontSize, Borderable, Labelable, Positionable, Sizeable};
 use position::{self, Align, Scalar};
 use text;
 use utils;
-use widget::{self, OldWidget};
+use widget::{self};
 
 
 /// The index of a selected item.
@@ -193,7 +193,7 @@ impl<'a, T> DropDownList<'a, T> {
 }
 
 
-impl<'a, T> OldWidget for DropDownList<'a, T>
+/*impl<'a, T> OldWidget for DropDownList<'a, T>
     where T: AsRef<str>,
 {
     type State = State;
@@ -345,7 +345,7 @@ impl<'a, T> OldWidget for DropDownList<'a, T>
         clicked_item
     }
 
-}
+}*/
 
 
 impl Style {

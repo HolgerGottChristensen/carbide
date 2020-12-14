@@ -17,7 +17,7 @@ fn rad_to_dim(radius: Scalar) -> Dimensions {
 }
 
 
-impl Circle {
+/*impl Circle {
     /// Build a circular **Oval** with the given dimensions and style.
     pub fn styled(radius: Scalar, style: Style) -> Oval<Full> {
         Oval::styled(rad_to_dim(radius), style)
@@ -43,4 +43,4 @@ impl Circle {
         Oval::outline_styled(rad_to_dim(radius), line_style)
     }
 }
-
+*/

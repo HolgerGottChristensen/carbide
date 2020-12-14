@@ -33,9 +33,9 @@ use widget::widget_iterator::{WidgetIterMut, WidgetIter};
 use std::slice::{Iter, IterMut};
 use dyn_clone::DynClone;
 
-pub trait Widget: Event + Layout + Render + DynClone {}
+pub trait Widget: Event<_> + Layout + Render + DynClone {}
 
-impl<T> Widget for T where T: Event + Layout + Render + DynClone {}
+impl<S, T> Widget for T where T: Event<S> + Layout + Render + DynClone {}
 
 dyn_clone::clone_trait_object!(Widget);
 
@@ -73,8 +73,6 @@ impl CommonWidget for Box<Widget> {
         self.deref_mut().get_proxied_children()
     }
 
-    fn clone(&self) -> Box<Widget> {self.deref().clone()}
-
     fn get_position(&self) -> Dimensions {
         self.deref().get_position()
     }
@@ -94,12 +92,12 @@ impl CommonWidget for Box<Widget> {
 
 
 
-impl Event for Box<Widget> {
+impl<S> Event<S> for Box<Widget> {
     fn handle_mouse_event(&mut self, event: &MouseEvent, consumed: &bool) {
         self.deref_mut().handle_mouse_event(event, consumed)
     }
 
-    fn handle_keyboard_event(&mut self, event: &KeyboardEvent) {
+    fn handle_keyboard_event(&mut self, event: &KeyboardEvent, global_state: &mut S) {
         self.deref_mut().handle_keyboard_event(event)
     }
 
@@ -111,7 +109,7 @@ impl Event for Box<Widget> {
         self.deref_mut().process_mouse_event(event, consumed, state)
     }
 
-    fn process_keyboard_event(&mut self, event: &KeyboardEvent, state: StateList) -> StateList {
+    fn process_keyboard_event(&mut self, event: &KeyboardEvent, state: StateList, global_state: &mut S) -> StateList {
         self.deref_mut().process_keyboard_event(event, state)
     }
 

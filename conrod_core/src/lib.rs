@@ -1,4 +1,3 @@
-#![feature(in_band_lifetimes)]
 //! # Conrod
 //!
 //! An easy-to-use, immediate-mode, 2D GUI library featuring a range of useful widgets.
@@ -31,7 +30,6 @@ pub use label::{FontSize, Labelable};
 pub use position::{Dimension, Point, Position, Positionable, Range, Rect, Scalar, Sizeable};
 pub use theme::Theme;
 pub use ui::{Ui, UiCell, UiBuilder};
-pub use widget::{scroll, OldWidget};
 
 pub use ron::to_string as to_ron;
 pub use ron::from_str as from_ron;
@@ -57,4 +55,4 @@ pub mod layout;
 pub mod event_handler;
 pub mod state;
 pub mod flags;
-
+pub mod draw;

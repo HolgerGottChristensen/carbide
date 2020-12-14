@@ -1,5 +1,5 @@
 use color::Color;
-use event;
+use ::{event, Positionable};
 use graph::{self, Graph};
 use input;
 use position::{self, Align, Direction, Dimension, Padding, Point, Position, Range, Rect, Scalar, Dimensions};
@@ -10,7 +10,7 @@ use fnv;
 use text;
 use theme::Theme;
 use utils;
-use widget::{self, OldWidget, Rectangle};
+use widget::{self, Rectangle};
 use cursor;
 use render::primitives::Primitives;
 use render::cprimitives::CPrimitives;
@@ -155,7 +155,7 @@ impl UiBuilder {
     /// `Scalar` (DPI agnostic) value.
     pub fn new(window_dimensions: Dimensions) -> Self {
         UiBuilder {
-            window_dimensions: window_dimensions,
+            window_dimensions,
             maybe_theme: None,
             maybe_widgets_capacity: None
         }
@@ -396,10 +396,10 @@ impl Ui {
         }
     }
 
-    pub fn handle_event(&mut self, event: Input) {
+    pub fn handle_event<S>(&mut self, event: Input, global_state: &mut S) {
         let window_event = self.event_handler.handle_event(event, [self.win_w, self.win_h]);
 
-        let mut needs_redraw = self.delegate_events();
+        let mut needs_redraw = self.delegate_events(global_state);
 
         match  window_event {
             None => (),
@@ -422,7 +422,7 @@ impl Ui {
         }
     }
 
-    fn delegate_events(&mut self) -> bool {
+    fn delegate_events<S>(&mut self, global_state: &mut S) -> bool {
         let events = self.event_handler.get_events();
 
         for event in events {
@@ -432,7 +432,7 @@ impl Ui {
                     self.widgets.process_mouse_event(mouse_event, &consumed, Vec::new());
                 }
                 WidgetEvent::Keyboard(keyboard_event) => {
-                    self.widgets.process_keyboard_event(keyboard_event, Vec::new());
+                    self.widgets.process_keyboard_event(keyboard_event, Vec::new(), global_state);
                 }
                 WidgetEvent::Window(window_event) => {
 
@@ -493,7 +493,7 @@ impl Ui {
         //
         // The axis used is specified by the given range_from_rect function which, given some
         // **Rect**, returns the relevant **Range**.
-        fn abs_from_position<R, P>(ui: &Ui,
+        fn abs_from_position<R, P, S>(ui: &Ui,
                                    maybe_parent_id: Option<widget::Id>,
                                    position: Position,
                                    dim: Scalar,
@@ -913,10 +913,10 @@ pub fn pre_update_cache(ui: &mut Ui, widget: widget::PreUpdateCache) {
     ui.updated_widgets.insert(widget_id);
 }
 
-/// Cache some `PostUpdateCache` widget data into the widget graph.
+/* /// Cache some `PostUpdateCache` widget data into the widget graph.
 /// Set the widget that is being cached as the new `prev_widget`.
 /// Set the widget's parent as the new `current_parent`.
-pub fn post_update_cache<W>(ui: &mut Ui, widget: widget::PostUpdateCache<W>)
+pub fn post_update_cache<W, S>(ui: &mut Ui<S>, widget: widget::PostUpdateCache<W>)
     where W: OldWidget,
           W::State: 'static,
           W::Style: 'static,
@@ -924,4 +924,4 @@ pub fn post_update_cache<W>(ui: &mut Ui, widget: widget::PostUpdateCache<W>)
     ui.maybe_prev_widget_id = Some(widget.id);
     ui.maybe_current_parent_id = widget.maybe_parent_id;
     ui.widget_graph.post_update_cache(widget);
-}
+}*/
