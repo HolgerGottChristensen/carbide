@@ -113,8 +113,8 @@ impl Scrollbar<X> {
     /// the scrollable widget at the given Id.
     pub fn x_axis(widget: widget::Id) -> Self {
         Scrollbar::new(widget)
-            .align_middle_x_of(widget)
-            .align_bottom_of(widget)
+            //.align_middle_x_of(widget)
+            //.align_bottom_of(widget)
     }
 
 }
@@ -125,8 +125,8 @@ impl Scrollbar<Y> {
     /// the scrollable widget at the given Id.
     pub fn y_axis(widget: widget::Id) -> Self {
         Scrollbar::new(widget)
-            .align_middle_y_of(widget)
-            .align_right_of(widget)
+            //.align_middle_y_of(widget)
+            //.align_right_of(widget)
     }
 
 }

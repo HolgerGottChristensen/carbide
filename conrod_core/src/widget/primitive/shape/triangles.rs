@@ -137,10 +137,9 @@ fn bounding_rect_for_triangles<I, V>(triangles: I) -> Rect
     super::super::bounding_box_for_points(points)
 }
 
-/*impl<S, I> TrianglesUnpositioned<S, I>
+impl<S, I> TrianglesUnpositioned<S, I>
     where S: Style,
           I: IntoIterator<Item=Triangle<S::Vertex>>,
-          Triangles<S, I>: OldWidget,
 {
     fn new(triangles: Triangles<S, I>) -> Self {
         TrianglesUnpositioned {
@@ -159,7 +158,7 @@ fn bounding_rect_for_triangles<I, V>(triangles: I) -> Rect
     pub fn with_bounding_rect(self, rect: Rect) -> Triangles<S, I> {
         let TrianglesUnpositioned { triangles } = self;
         let (xy, dim) = rect.xy_dim();
-        triangles.wh(dim).xy(xy)
+        triangles//.wh(dim).xy(xy)
     }
 
     /// Calculate the position and size of the bounding rectangle from the `Triangles` points. The
@@ -181,7 +180,7 @@ fn bounding_rect_for_triangles<I, V>(triangles: I) -> Rect
     {
         let TrianglesUnpositioned { triangles } = self;
         let (xy, dim) = bounding_rect_for_triangles(triangles.triangles.clone()).xy_dim();
-        triangles.wh(dim).xy(xy)
+        triangles//.wh(dim).xy(xy)
     }
 
     /// Shift the location of the **Triangles** points so that the centre of their bounding
@@ -204,9 +203,9 @@ fn bounding_rect_for_triangles<I, V>(triangles: I) -> Rect
         let TrianglesUnpositioned { mut triangles } = self;
         let (xy, dim) = bounding_rect_for_triangles(triangles.triangles.clone()).xy_dim();
         triangles.maybe_shift_to_centre_from = Some(xy);
-        triangles.wh(dim)
+        triangles//.wh(dim)
     }
-}*/
+}
 
 /*impl<S, I, K> OldWidget<K> for Triangles<S, I, K>
     where S: Style,
@@ -360,7 +359,7 @@ where
     ts.into_iter().any(|t| is_over_triangle(t.as_ref(), p))
 }
 
-/// The function to use for picking whether a given point is over the line.
+/*/// The function to use for picking whether a given point is over the line.
 pub fn is_over_widget<S>(widget: &graph::Container, point: Point, _: &Theme) -> widget::IsOver
 where
     S: Style,
@@ -370,4 +369,4 @@ where
         .map(|widget| is_over(widget.state.triangles.iter().cloned(), point))
         .unwrap_or_else(|| widget.rect.is_over(point))
         .into()
-}
+}*/

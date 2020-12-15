@@ -26,17 +26,17 @@ use widget::primitive::v_stack::VStack;
 use widget::complex::foreachtest::ForeachTest;
 
 #[derive(Debug, Clone)]
-pub struct SyncTest {
+pub struct SyncTest<S> {
     id: Uuid,
-    child: Box<dyn Widget>,
+    child: Box<dyn Widget<S>>,
     position: Point,
     dimension: Dimensions,
     value: State<String>,
     fore: State<Vec<Uuid>>
 }
 
-impl SyncTest {
-    pub fn new(value: State<String>) -> Box<SyncTest> {
+impl<S: 'static + Clone> SyncTest<S> {
+    pub fn new(value: State<String>) -> Box<SyncTest<S>> {
         let fore = State::<Vec<Uuid>>::new("a", &(0..5).map(|_| Uuid::new_v4()).collect::<Vec<Uuid>>());
 
         Box::new(Self {
@@ -60,7 +60,7 @@ impl SyncTest {
     }
 }
 
-impl CommonWidget for SyncTest {
+impl<S> CommonWidget<S> for SyncTest<S> {
     fn get_id(&self) -> Uuid {
         self.id
     }
@@ -69,7 +69,7 @@ impl CommonWidget for SyncTest {
         Flags::Empty
     }
 
-    fn get_children(&self) -> WidgetIter {
+    fn get_children(&self) -> WidgetIter<S> {
         if self.child.get_flag() == Flags::Proxy {
             self.child.get_children()
         } else {
@@ -77,7 +77,7 @@ impl CommonWidget for SyncTest {
         }
     }
 
-    fn get_children_mut(&mut self) -> WidgetIterMut {
+    fn get_children_mut(&mut self) -> WidgetIterMut<S> {
         if self.child.get_flag() == Flags::Proxy {
             self.child.get_children_mut()
         } else {
@@ -85,11 +85,9 @@ impl CommonWidget for SyncTest {
         }
     }
 
-    fn get_proxied_children(&mut self) -> WidgetIterMut {
+    fn get_proxied_children(&mut self) -> WidgetIterMut<S> {
         WidgetIterMut::single(&mut self.child)
     }
-
-
 
     fn get_position(&self) -> Point {
         self.position
@@ -108,7 +106,7 @@ impl CommonWidget for SyncTest {
     }
 }
 
-impl<S> Event<S> for SyncTest {
+impl<S> Event<S> for SyncTest<S> {
     fn handle_mouse_event(&mut self, event: &MouseEvent, consumed: &bool) {
         ()
     }
@@ -168,9 +166,9 @@ impl<S> Event<S> for SyncTest {
     }
 }
 
-impl ChildRender for SyncTest {}
+impl<S> ChildRender for SyncTest<S> {}
 
-impl Layout for SyncTest {
+impl<S> Layout for SyncTest<S> {
     fn flexibility(&self) -> u32 {
         2
     }
@@ -190,4 +188,4 @@ impl Layout for SyncTest {
     }
 }
 
-impl WidgetExt for SyncTest {}
+impl<S: 'static + Clone> WidgetExt<S> for SyncTest<S> {}

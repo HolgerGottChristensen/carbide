@@ -100,7 +100,7 @@ impl<I> Polygon<I> {
     {
         let points_clone = points.clone().into_iter();
         let (xy, dim) = bounding_box_for_points(points_clone).xy_dim();
-        Polygon::styled(points, style).wh(dim).xy(xy)
+        Polygon::styled(points, style)//.wh(dim).xy(xy)
     }
 
     /// The same as [**Polygon::abs_styled**](./struct.Polygon#method.abs_styled) but builds the
@@ -148,7 +148,7 @@ impl<I> Polygon<I> {
     {
         let points_clone = points.clone().into_iter();
         let (xy, dim) = bounding_box_for_points(points_clone).xy_dim();
-        let mut polygon = Polygon::styled(points, style).wh(dim);
+        let mut polygon = Polygon::styled(points, style);//.wh(dim);
         polygon.maybe_shift_to_centre_from = Some(xy);
         polygon
     }
@@ -309,11 +309,11 @@ where
     triangles(points).map(|ts| widget::triangles::is_over(ts, point)).unwrap_or(false)
 }
 
-/// The function to use for picking whether a given point is over the polygon.
+/*/// The function to use for picking whether a given point is over the polygon.
 pub fn is_over_widget(widget: &graph::Container, point: Point, _: &Theme) -> widget::IsOver {
     widget
         .state_and_style::<State, Style>()
         .map(|widget| is_over(widget.state.points.iter().cloned(), point))
         .unwrap_or_else(|| widget.rect.is_over(point))
         .into()
-}
+}*/

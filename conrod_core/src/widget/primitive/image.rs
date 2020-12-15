@@ -29,7 +29,7 @@ use widget::widget_iterator::{WidgetIter, WidgetIterMut};
 
 /// A primitive and basic widget for drawing an `Image`.
 #[derive(Debug, Clone, WidgetCommon_)]
-pub struct Image {
+pub struct Image<S> {
     /// Data necessary and common for all widget builder render.
     #[conrod(common_builder)]
     pub common: widget::CommonBuilder,
@@ -42,10 +42,10 @@ pub struct Image {
     position: Point,
     dimension: Dimensions,
 
-    pub children: Vec<Box<dyn Widget>>,
+    pub children: Vec<Box<dyn Widget<S>>>,
 }
 
-impl<S> Event<S> for Image {
+impl<S> Event<S> for Image<S> {
     fn handle_mouse_event(&mut self, event: &MouseEvent, consumed: &bool) {
         ()
     }
@@ -79,7 +79,7 @@ impl<S> Event<S> for Image {
     }
 }
 
-impl Layout for Image {
+impl<S> Layout for Image<S> {
     fn flexibility(&self) -> u32 {
         10
     }
@@ -106,7 +106,7 @@ impl Layout for Image {
     }
 }
 
-impl Render for Image {
+impl<S> Render<S> for Image<S> {
 
     fn get_primitives(&self, fonts: &Map) -> Vec<Primitive> {
         //let color = Color::random();
@@ -118,7 +118,7 @@ impl Render for Image {
 
         let rect = Rect::new(self.position, self.dimension);
         let mut prims: Vec<Primitive> = vec![new_primitive(node_index(0), kind, rect, rect)];
-        prims.extend(Rectangle::rect_outline(rect.clone(), 1.0));
+        prims.extend(Rectangle::<S>::rect_outline(rect.clone(), 1.0));
         let children: Vec<Primitive> = self.get_children().flat_map(|f| f.get_primitives(fonts)).collect();
         prims.extend(children);
 
@@ -126,7 +126,7 @@ impl Render for Image {
     }
 }
 
-impl CommonWidget for Image {
+impl<S> CommonWidget<S> for Image<S> {
     fn get_id(&self) -> Uuid {
         unimplemented!()
     }
@@ -135,7 +135,7 @@ impl CommonWidget for Image {
         Flags::Empty
     }
 
-    fn get_children(&self) -> WidgetIter {
+    fn get_children(&self) -> WidgetIter<S> {
         self.children
             .iter()
             .rfold(WidgetIter::Empty, |acc, x| {
@@ -147,7 +147,7 @@ impl CommonWidget for Image {
             })
     }
 
-    fn get_children_mut(&mut self) -> WidgetIterMut {
+    fn get_children_mut(&mut self) -> WidgetIterMut<S> {
         self.children
             .iter_mut()
             .rfold(WidgetIterMut::Empty, |acc, x| {
@@ -159,7 +159,7 @@ impl CommonWidget for Image {
             })
     }
 
-    fn get_proxied_children(&mut self) -> WidgetIterMut {
+    fn get_proxied_children(&mut self) -> WidgetIterMut<S> {
         self.children.iter_mut()
             .rfold(WidgetIterMut::Empty, |acc, x| {
                 WidgetIterMut::Single(x, Box::new(acc))
@@ -205,7 +205,7 @@ pub struct Style {
 }
 
 
-impl Image {
+impl<S> Image<S> {
 
     /// Construct a new `Image`.
     ///
@@ -243,7 +243,7 @@ impl Image {
         }
     }
 
-    pub fn new(id: image::Id, dimension: Dimensions, children: Vec<Box<dyn Widget>>) -> Box<Self> {
+    pub fn new(id: image::Id, dimension: Dimensions, children: Vec<Box<dyn Widget<S>>>) -> Box<Self> {
         Box::new(Image {
             common: Default::default(),
             image_id: id,
@@ -269,7 +269,7 @@ impl Image {
 
 }
 
-impl WidgetExt for Image {}
+impl<S: 'static + Clone> WidgetExt<S> for Image<S> {}
 
 /*impl<S> OldWidget<S> for Image<S> {
     type State = State;

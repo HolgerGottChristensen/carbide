@@ -24,15 +24,15 @@ pub static SCALE: f64 = -1.0;
 
 
 #[derive(Debug, Clone)]
-pub struct Frame {
+pub struct Frame<S> {
     id: Uuid,
-    child: Box<dyn Widget>,
+    child: Box<dyn Widget<S>>,
     position: Point,
     dimension: Dimensions
 }
 
-impl Frame {
-    pub fn init(width: Scalar, height: Scalar, child: Box<dyn Widget>) -> Box<Frame> {
+impl<S: 'static> Frame<S> {
+    pub fn init(width: Scalar, height: Scalar, child: Box<dyn Widget<S>>) -> Box<Frame<S>> {
         Box::new(Frame{
             id: Default::default(),
             child: Box::new(child),
@@ -41,7 +41,7 @@ impl Frame {
         })
     }
 
-    pub fn init_width(width: Scalar, child: Box<dyn Widget>) -> Box<Frame> {
+    pub fn init_width(width: Scalar, child: Box<dyn Widget<S>>) -> Box<Frame<S>> {
         Box::new(Frame{
             id: Default::default(),
             child: Box::new(child),
@@ -50,7 +50,7 @@ impl Frame {
         })
     }
 
-    pub fn init_height(height: Scalar, child: Box<dyn Widget>) -> Box<Frame> {
+    pub fn init_height(height: Scalar, child: Box<dyn Widget<S>>) -> Box<Frame<S>> {
         Box::new(Frame{
             id: Default::default(),
             child: Box::new(child),
@@ -60,9 +60,9 @@ impl Frame {
     }
 }
 
-impl WidgetExt for Frame {}
+impl<S: 'static + Clone> WidgetExt<S> for Frame<S> {}
 
-impl<S> Event<S> for Frame {
+impl<S> Event<S> for Frame<S> {
     fn handle_mouse_event(&mut self, event: &MouseEvent, consumed: &bool) {
         ()
     }
@@ -91,7 +91,7 @@ impl<S> Event<S> for Frame {
 
     fn process_keyboard_event(&mut self, event: &KeyboardEvent, state: StateList, global_state: &mut S) -> StateList {
         let new_state = self.apply_state(state);
-        let updated_state = self.child.process_keyboard_event(event, new_state);
+        let updated_state = self.child.process_keyboard_event(event, new_state, global_state);
         self.apply_state(updated_state)
     }
 
@@ -111,7 +111,7 @@ impl<S> Event<S> for Frame {
     }
 }
 
-impl CommonWidget for Frame {
+impl<S> CommonWidget<S> for Frame<S> {
     fn get_id(&self) -> Uuid {
         self.id
     }
@@ -120,7 +120,7 @@ impl CommonWidget for Frame {
         Flags::Empty
     }
 
-    fn get_children(&self) -> WidgetIter {
+    fn get_children(&self) -> WidgetIter<S> {
         if self.child.get_flag() == Flags::Proxy {
             self.child.get_children()
         } else {
@@ -128,7 +128,7 @@ impl CommonWidget for Frame {
         }
     }
 
-    fn get_children_mut(&mut self) -> WidgetIterMut {
+    fn get_children_mut(&mut self) -> WidgetIterMut<S> {
         if self.child.get_flag() == Flags::Proxy {
             self.child.get_children_mut()
         } else {
@@ -136,9 +136,10 @@ impl CommonWidget for Frame {
         }
     }
 
-    fn get_proxied_children(&mut self) -> WidgetIterMut {
+    fn get_proxied_children(&mut self) -> WidgetIterMut<S> {
         WidgetIterMut::single(&mut self.child)
     }
+
 
     fn get_position(&self) -> Point {
         self.position
@@ -157,7 +158,7 @@ impl CommonWidget for Frame {
     }
 }
 
-impl Layout for Frame {
+impl<S> Layout for Frame<S> {
     fn flexibility(&self) -> u32 {
         9
     }
@@ -193,11 +194,11 @@ impl Layout for Frame {
     }
 }
 
-impl Render for Frame {
+impl<S> Render<S> for Frame<S> {
 
     fn get_primitives(&self, fonts: &Map) -> Vec<Primitive> {
         let mut prims = vec![];
-        prims.extend(Rectangle::rect_outline(Rect::new(self.position, [self.dimension[0].abs(), self.dimension[1].abs()]), 1.0));
+        prims.extend(Rectangle::<S>::rect_outline(Rect::new(self.position, [self.dimension[0].abs(), self.dimension[1].abs()]), 1.0));
         let children: Vec<Primitive> = self.child.get_primitives(fonts);
         prims.extend(children);
 

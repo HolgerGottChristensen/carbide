@@ -71,7 +71,7 @@ pub struct UiBuilder {
 /// * Maintains the latest user input state (for mouse and keyboard).
 /// * Maintains the latest window dimensions.
 #[derive(Debug)]
-pub struct Ui {
+pub struct Ui<S> {
     /// The theme used to set default styling for widgets.
     pub theme: Theme,
     /// An index into the root widget of the graph, representing the entire window.
@@ -83,7 +83,7 @@ pub struct Ui {
     /// The Widget cache, storing state for all widgets.
     pub(crate) widget_graph: Graph,
 
-    pub widgets: Box<dyn Widget>,
+    pub widgets: Box<dyn Widget<S>>,
     /// The widget::Id of the widget that was last updated/set.
     maybe_prev_widget_id: Option<widget::Id>,
     /// The widget::Id of the last widget used as a parent for another widget.
@@ -136,9 +136,9 @@ pub struct Ui {
 /// this type in mind, please let us know at the github repo via an issue or PR sometime before we
 /// hit 1.0.0!
 #[derive(Debug)]
-pub struct UiCell<'a> {
+pub struct UiCell<'a, S: 'static + Clone> {
     /// A mutable reference to a **Ui**.
-    ui: &'a mut Ui,
+    ui: &'a mut Ui<S>,
 }
 
 
@@ -155,7 +155,7 @@ impl UiBuilder {
     /// `Scalar` (DPI agnostic) value.
     pub fn new(window_dimensions: Dimensions) -> Self {
         UiBuilder {
-            window_dimensions,
+            window_dimensions: window_dimensions,
             maybe_theme: None,
             maybe_widgets_capacity: None
         }
@@ -188,13 +188,13 @@ impl UiBuilder {
     }
 
     /// Build **Ui** from the given builder
-    pub fn build(self) -> Ui {
+    pub fn build<S: 'static + Clone>(self) -> Ui<S> {
         Ui::new(self)
     }
 
 }
 
-impl Ui {
+impl<S: 'static + Clone> Ui<S> {
 
     /// A new, empty **Ui**.
     fn new(builder: UiBuilder) -> Self {
@@ -396,7 +396,7 @@ impl Ui {
         }
     }
 
-    pub fn handle_event<S>(&mut self, event: Input, global_state: &mut S) {
+    pub fn handle_event(&mut self, event: Input, global_state: &mut S) {
         let window_event = self.event_handler.handle_event(event, [self.win_w, self.win_h]);
 
         let mut needs_redraw = self.delegate_events(global_state);
@@ -422,7 +422,7 @@ impl Ui {
         }
     }
 
-    fn delegate_events<S>(&mut self, global_state: &mut S) -> bool {
+    fn delegate_events(&mut self, global_state: &mut S) -> bool {
         let events = self.event_handler.get_events();
 
         for event in events {
@@ -472,126 +472,126 @@ impl Ui {
         self.global_input.current.widget_capturing_keyboard = Some(idx);
     }
 
-    /// Get the centred xy coords for some given `Dimension`s, `Position` and alignment.
-    ///
-    /// If getting the xy for a specific widget, its `widget::Id` should be specified so that we
-    /// can also consider the scroll offset of the scrollable parent widgets.
-    ///
-    /// The `place_on_kid_area` argument specifies whether or not **Place** **Position** variants
-    /// should target a **Widget**'s `kid_area`, or simply the **Widget**'s total area.
-    pub fn calc_xy(&self,
-                   maybe_id: Option<widget::Id>,
-                   maybe_parent_id: Option<widget::Id>,
-                   x_position: Position,
-                   y_position: Position,
-                   dim: Dimensions,
-                   place_on_kid_area: bool) -> Point
-    {
-        use utils::vec2_add;
+    /*/// Get the centred xy coords for some given `Dimension`s, `Position` and alignment.
+   ///
+   /// If getting the xy for a specific widget, its `widget::Id` should be specified so that we
+   /// can also consider the scroll offset of the scrollable parent widgets.
+   ///
+   /// The `place_on_kid_area` argument specifies whether or not **Place** **Position** variants
+   /// should target a **Widget**'s `kid_area`, or simply the **Widget**'s total area.
+   pub fn calc_xy(&self,
+                  maybe_id: Option<widget::Id>,
+                  maybe_parent_id: Option<widget::Id>,
+                  x_position: Position,
+                  y_position: Position,
+                  dim: Dimensions,
+                  place_on_kid_area: bool) -> Point
+   {
+       use utils::vec2_add;
 
-        // Retrieves the absolute **Scalar** position from the given position for a single axis.
-        //
-        // The axis used is specified by the given range_from_rect function which, given some
-        // **Rect**, returns the relevant **Range**.
-        fn abs_from_position<R, P, S>(ui: &Ui,
-                                   maybe_parent_id: Option<widget::Id>,
-                                   position: Position,
-                                   dim: Scalar,
-                                   place_on_kid_area: bool,
-                                   range_from_rect: R,
-                                   start_and_end_pad: P) -> Scalar
-            where R: FnOnce(Rect) -> Range,
-                  P: FnOnce(Padding) -> Range,
-        {
-            let (relative, maybe_id) = match position {
-                Position::Absolute(abs) => return abs,
-                Position::Relative(relative, maybe_id) => (relative, maybe_id),
-            };
+       // Retrieves the absolute **Scalar** position from the given position for a single axis.
+       //
+       // The axis used is specified by the given range_from_rect function which, given some
+       // **Rect**, returns the relevant **Range**.
+       /*fn abs_from_position<R, P, S>(ui: &Ui<S>,
+                                  maybe_parent_id: Option<widget::Id>,
+                                  position: Position,
+                                  dim: Scalar,
+                                  place_on_kid_area: bool,
+                                  range_from_rect: R,
+                                  start_and_end_pad: P) -> Scalar
+           where R: FnOnce(Rect) -> Range,
+                 P: FnOnce(Padding) -> Range,
+       {
+           let (relative, maybe_id) = match position {
+               Position::Absolute(abs) => return abs,
+               Position::Relative(relative, maybe_id) => (relative, maybe_id),
+           };
 
-            match relative {
+           match relative {
 
-                position::Relative::Scalar(scalar) =>
-                    maybe_id.or(ui.maybe_prev_widget_id).or(Some(ui.window.into()))
-                        .and_then(|idx| ui.rect_of(idx).map(range_from_rect))
-                        .map(|other_range| other_range.middle() + scalar)
-                        .unwrap_or(scalar),
+               position::Relative::Scalar(scalar) =>
+                   maybe_id.or(ui.maybe_prev_widget_id).or(Some(ui.window.into()))
+                       .and_then(|idx| ui.rect_of(idx).map(range_from_rect))
+                       .map(|other_range| other_range.middle() + scalar)
+                       .unwrap_or(scalar),
 
-                position::Relative::Direction(direction, amt) =>
-                    maybe_id.or(ui.maybe_prev_widget_id)
-                        .and_then(|idx| ui.rect_of(idx).map(range_from_rect))
-                        .map(|other_range| {
-                            let range = Range::from_pos_and_len(0.0, dim);
-                            match direction {
-                                Direction::Forwards => range.align_after(other_range).middle() + amt,
-                                Direction::Backwards => range.align_before(other_range).middle() - amt,
-                            }
-                        })
-                        .unwrap_or_else(|| match direction {
-                            Direction::Forwards => amt,
-                            Direction::Backwards => -amt,
-                        }),
+               position::Relative::Direction(direction, amt) =>
+                   maybe_id.or(ui.maybe_prev_widget_id)
+                       .and_then(|idx| ui.rect_of(idx).map(range_from_rect))
+                       .map(|other_range| {
+                           let range = Range::from_pos_and_len(0.0, dim);
+                           match direction {
+                               Direction::Forwards => range.align_after(other_range).middle() + amt,
+                               Direction::Backwards => range.align_before(other_range).middle() - amt,
+                           }
+                       })
+                       .unwrap_or_else(|| match direction {
+                           Direction::Forwards => amt,
+                           Direction::Backwards => -amt,
+                       }),
 
-                position::Relative::Align(align) =>
-                    maybe_id.or(ui.maybe_prev_widget_id).or(Some(ui.window.into()))
-                        .and_then(|idx| ui.rect_of(idx).map(range_from_rect))
-                        .map(|other_range| {
-                            let range = Range::from_pos_and_len(0.0, dim);
-                            match align {
-                                Align::Start => range.align_start_of(other_range).middle(),
-                                Align::Middle => other_range.middle(),
-                                Align::End => range.align_end_of(other_range).middle(),
-                            }
-                        })
-                        .unwrap_or(0.0),
+               position::Relative::Align(align) =>
+                   maybe_id.or(ui.maybe_prev_widget_id).or(Some(ui.window.into()))
+                       .and_then(|idx| ui.rect_of(idx).map(range_from_rect))
+                       .map(|other_range| {
+                           let range = Range::from_pos_and_len(0.0, dim);
+                           match align {
+                               Align::Start => range.align_start_of(other_range).middle(),
+                               Align::Middle => other_range.middle(),
+                               Align::End => range.align_end_of(other_range).middle(),
+                           }
+                       })
+                       .unwrap_or(0.0),
 
-                position::Relative::Place(place) => {
-                    let parent_id = maybe_id
-                        .or(maybe_parent_id)
-                        .or(ui.maybe_current_parent_id)
-                        .unwrap_or(ui.window.into());
-                    let maybe_area = match place_on_kid_area {
-                        true => ui.widget_graph.widget(parent_id)
-                            .map(|w| w.kid_area)
-                            .map(|k| (range_from_rect(k.rect), start_and_end_pad(k.pad))),
-                        false => ui.rect_of(parent_id)
-                            .map(|rect| (range_from_rect(rect), Range::new(0.0, 0.0))),
-                    };
-                    maybe_area
-                        .map(|(parent_range, pad)| {
-                            let range = Range::from_pos_and_len(0.0, dim);
-                            let parent_range = parent_range.pad_start(pad.start).pad_end(pad.end);
-                            match place {
-                                position::Place::Start(maybe_mgn) =>
-                                    range.align_start_of(parent_range).middle() + maybe_mgn.unwrap_or(0.0),
-                                position::Place::Middle =>
-                                    parent_range.middle(),
-                                position::Place::End(maybe_mgn) =>
-                                    range.align_end_of(parent_range).middle() - maybe_mgn.unwrap_or(0.0),
-                            }
-                        })
-                        .unwrap_or(0.0)
-                },
-            }
-        }
+               position::Relative::Place(place) => {
+                   let parent_id = maybe_id
+                       .or(maybe_parent_id)
+                       .or(ui.maybe_current_parent_id)
+                       .unwrap_or(ui.window.into());
+                   let maybe_area = match place_on_kid_area {
+                       true => ui.widget_graph.widget(parent_id)
+                           .map(|w| w.kid_area)
+                           .map(|k| (range_from_rect(k.rect), start_and_end_pad(k.pad))),
+                       false => ui.rect_of(parent_id)
+                           .map(|rect| (range_from_rect(rect), Range::new(0.0, 0.0))),
+                   };
+                   maybe_area
+                       .map(|(parent_range, pad)| {
+                           let range = Range::from_pos_and_len(0.0, dim);
+                           let parent_range = parent_range.pad_start(pad.start).pad_end(pad.end);
+                           match place {
+                               position::Place::Start(maybe_mgn) =>
+                                   range.align_start_of(parent_range).middle() + maybe_mgn.unwrap_or(0.0),
+                               position::Place::Middle =>
+                                   parent_range.middle(),
+                               position::Place::End(maybe_mgn) =>
+                                   range.align_end_of(parent_range).middle() - maybe_mgn.unwrap_or(0.0),
+                           }
+                       })
+                       .unwrap_or(0.0)
+               },
+           }
+       }*/
 
-        fn x_range(rect: Rect) -> Range { rect.x }
-        fn y_range(rect: Rect) -> Range { rect.y }
-        fn x_pad(pad: Padding) -> Range { pad.x }
-        fn y_pad(pad: Padding) -> Range { pad.y }
-        let x = abs_from_position(self, maybe_parent_id, x_position, dim[0], place_on_kid_area, x_range, x_pad);
-        let y = abs_from_position(self, maybe_parent_id, y_position, dim[1], place_on_kid_area, y_range, y_pad);
-        let xy = [x, y];
+       fn x_range(rect: Rect) -> Range { rect.x }
+       fn y_range(rect: Rect) -> Range { rect.y }
+       fn x_pad(pad: Padding) -> Range { pad.x }
+       fn y_pad(pad: Padding) -> Range { pad.y }
+       let x = abs_from_position(self, maybe_parent_id, x_position, dim[0], place_on_kid_area, x_range, x_pad);
+       let y = abs_from_position(self, maybe_parent_id, y_position, dim[1], place_on_kid_area, y_range, y_pad);
+       let xy = [x, y];
 
-        // Add the widget's parents' total combined scroll offset to the given xy.
-        maybe_id
-            .map(|idx| vec2_add(xy, graph::algo::scroll_offset(&self.widget_graph, idx)))
-            .unwrap_or(xy)
-    }
+       // Add the widget's parents' total combined scroll offset to the given xy.
+       maybe_id
+           .map(|idx| vec2_add(xy, graph::algo::scroll_offset(&self.widget_graph, idx)))
+           .unwrap_or(xy)
+   }
 
-
+*/
     /// A function within which all widgets are instantiated by the user, normally situated within
     /// the "update" stage of an event loop.
-    pub fn set_widgets(&mut self) -> UiCell {
+    pub fn set_widgets(&mut self) -> UiCell<S> {
         self.maybe_prev_widget_id = None;
         self.maybe_current_parent_id = None;
 
@@ -609,17 +609,15 @@ impl Ui {
         //
         // This widget acts as the parent-most widget and root node for the Ui's `widget_graph`,
         // upon which all other widgets are placed.
-        {
+        /*{
             use {color, Colorable, Borderable, Positionable};
             type Window = widget::BorderedRectangle;
             Window::new([ui_cell.win_w, ui_cell.win_h])
-                .no_parent()
-                .x_y(0.0, 0.0)
                 .border(0.0)
                 .border_color(color::BLACK.alpha(0.0))
                 .color(ui_cell.maybe_background_color.unwrap_or(color::BLACK.alpha(0.0)))
                 .set(ui_cell.window, &mut ui_cell);
-        }
+        }*/
 
         ui_cell.ui.maybe_current_parent_id = Some(ui_cell.window.into());
 
@@ -734,7 +732,7 @@ impl Ui {
 }
 
 
-impl<'a> UiCell<'a> {
+impl<'a, S: Clone> UiCell<'a, S> {
 
     /// A reference to the `Theme` that is currently active within the `Ui`.
     pub fn theme(&self) -> &Theme { &self.ui.theme }
@@ -756,14 +754,14 @@ impl<'a> UiCell<'a> {
         &self.ui.global_input
     }
 
-    /// Returns a `input::Widget` with input events for the widget.
+    /*/// Returns a `input::Widget` with input events for the widget.
     ///
     /// All coordinates in the `input::Widget` will be relative to the widget at the given index.
     pub fn widget_input(&self, id: widget::Id) -> input::Widget {
         self.ui.widget_input(id)
-    }
+    }*/
 
-    /// Produces a type that may be used to generate new unique `widget::Id`s.
+    /*/// Produces a type that may be used to generate new unique `widget::Id`s.
     ///
     /// See the [**widget::id::Generator**](../widget/id/struct.Generator.html) docs for details on
     /// how to use this correctly.
@@ -776,7 +774,7 @@ impl<'a> UiCell<'a> {
     /// Returns `None` if the widget has no children or if there's is no widget for the given index.
     pub fn kids_bounding_box(&self, id: widget::Id) -> Option<Rect> {
         self.ui.kids_bounding_box(id)
-    }
+    }*/
 
     /// Scroll the widget at the given index by the given offset amount.
     ///
@@ -801,7 +799,7 @@ impl<'a> UiCell<'a> {
     }
 }
 
-impl<'a> Drop for UiCell<'a> {
+impl<'a, S: 'static + Clone> Drop for UiCell<'a, S> {
     fn drop(&mut self) {
         // We'll need to re-draw if we have gained or lost widgets.
         let changed = self.ui.updated_widgets != self.ui.prev_updated_widgets;
@@ -838,15 +836,15 @@ impl<'a> Drop for UiCell<'a> {
     }
 }
 
-impl<'a> ::std::ops::Deref for UiCell<'a> {
-    type Target = Ui;
-    fn deref(&self) -> &Ui {
+impl<'a, S: Clone> ::std::ops::Deref for UiCell<'a, S> {
+    type Target = Ui<S>;
+    fn deref(&self) -> &Ui<S> {
         self.ui
     }
 }
 
-impl<'a> AsRef<Ui> for UiCell<'a> {
-    fn as_ref(&self) -> &Ui {
+impl<'a, S: Clone> AsRef<Ui<S>> for UiCell<'a, S> {
+    fn as_ref(&self) -> &Ui<S> {
         &self.ui
     }
 }
@@ -855,12 +853,12 @@ impl<'a> AsRef<Ui> for UiCell<'a> {
 ///
 /// This function is only for internal use to allow for some `Ui` type acrobatics in order to
 /// provide a nice *safe* API for the user.
-pub fn ref_mut_from_ui_cell<'a, 'b: 'a>(ui_cell: &'a mut UiCell<'b>) -> &'a mut Ui {
+pub fn ref_mut_from_ui_cell<'a, 'b: 'a, S: Clone>(ui_cell: &'a mut UiCell<'b, S>) -> &'a mut Ui<S> {
     ui_cell.ui
 }
 
 /// A mutable reference to the given `Ui`'s widget `Graph`.
-pub fn widget_graph_mut(ui: &mut Ui) -> &mut Graph {
+pub fn widget_graph_mut<S>(ui: &mut Ui<S>) -> &mut Graph {
     &mut ui.widget_graph
 }
 
@@ -868,7 +866,7 @@ pub fn widget_graph_mut(ui: &mut Ui) -> &mut Graph {
 /// Infer a widget's `Depth` parent by examining it's *x* and *y* `Position`s.
 ///
 /// When a different parent may be inferred from either `Position`, the *x* `Position` is favoured.
-pub fn infer_parent_from_position(ui: &Ui, x: Position, y: Position) -> Option<widget::Id> {
+pub fn infer_parent_from_position<S>(ui: &Ui<S>, x: Position, y: Position) -> Option<widget::Id> {
     use Position::Relative;
     use position::Relative::{Align, Direction, Place, Scalar};
     match (x, y) {
@@ -893,7 +891,7 @@ pub fn infer_parent_from_position(ui: &Ui, x: Position, y: Position) -> Option<w
 ///
 /// **Note:** This function does not check whether or not using the `window` widget would cause a
 /// cycle.
-pub fn infer_parent_unchecked(ui: &Ui, x_pos: Position, y_pos: Position) -> widget::Id {
+pub fn infer_parent_unchecked<S>(ui: &Ui<S>, x_pos: Position, y_pos: Position) -> widget::Id {
     infer_parent_from_position(ui, x_pos, y_pos)
         .or(ui.maybe_current_parent_id)
         .unwrap_or(ui.window.into())
@@ -903,7 +901,7 @@ pub fn infer_parent_unchecked(ui: &Ui, x_pos: Position, y_pos: Position) -> widg
 /// Cache some `PreUpdateCache` widget data into the widget graph.
 /// Set the widget that is being cached as the new `prev_widget`.
 /// Set the widget's parent as the new `current_parent`.
-pub fn pre_update_cache(ui: &mut Ui, widget: widget::PreUpdateCache) {
+pub fn pre_update_cache<S>(ui: &mut Ui<S>, widget: widget::PreUpdateCache) {
     ui.maybe_prev_widget_id = Some(widget.id);
     ui.maybe_current_parent_id = widget.maybe_parent_id;
     let widget_id = widget.id;

@@ -40,9 +40,9 @@ use draw::shape::triangle::Triangle;
 
 /// A basic, non-interactive rectangle shape widget.
 #[derive(Debug, Clone, WidgetCommon_)]
-pub struct Rectangle {
+pub struct Rectangle<S> {
     id: Uuid,
-    children: Vec<Box<dyn Widget>>,
+    children: Vec<Box<dyn Widget<S>>>,
     position: Point,
     dimension: Dimensions,
     /// Data necessary and common for all widget builder render.
@@ -53,14 +53,14 @@ pub struct Rectangle {
     color: Color
 }
 
-impl WidgetExt for Rectangle {}
+impl<K: 'static + Clone> WidgetExt<K> for Rectangle<K> {}
 
-impl<S> Event<S> for Rectangle {
+impl<K> Event<K> for Rectangle<K> {
     fn handle_mouse_event(&mut self, event: &MouseEvent, consumed: &bool) {
         ()
     }
 
-    fn handle_keyboard_event(&mut self, event: &KeyboardEvent, global_state: &mut S) {
+    fn handle_keyboard_event(&mut self, event: &KeyboardEvent, global_state: &mut K) {
         ()
     }
 
@@ -72,7 +72,7 @@ impl<S> Event<S> for Rectangle {
         self.process_mouse_event_default(event, consumed, state)
     }
 
-    fn process_keyboard_event(&mut self, event: &KeyboardEvent, state: StateList, global_state: &mut S) -> StateList {
+    fn process_keyboard_event(&mut self, event: &KeyboardEvent, state: StateList, global_state: &mut K) -> StateList {
         self.process_keyboard_event_default(event, state, global_state)
     }
 
@@ -89,7 +89,7 @@ impl<S> Event<S> for Rectangle {
     }
 }
 
-impl Layout for Rectangle {
+impl<K> Layout for Rectangle<K> {
     fn flexibility(&self) -> u32 {
         0
     }
@@ -114,7 +114,7 @@ impl Layout for Rectangle {
     }
 }
 
-impl CommonWidget for Rectangle {
+impl<S> CommonWidget<S> for Rectangle<S> {
     fn get_id(&self) -> Uuid {
         self.id
     }
@@ -123,7 +123,7 @@ impl CommonWidget for Rectangle {
         Flags::Empty
     }
 
-    fn get_children(&self) -> WidgetIter {
+    fn get_children(&self) -> WidgetIter<S> {
         self.children
             .iter()
             .rfold(WidgetIter::Empty, |acc, x| {
@@ -135,7 +135,7 @@ impl CommonWidget for Rectangle {
             })
     }
 
-    fn get_children_mut(&mut self) -> WidgetIterMut {
+    fn get_children_mut(&mut self) -> WidgetIterMut<S> {
         self.children
             .iter_mut()
             .rfold(WidgetIterMut::Empty, |acc, x| {
@@ -147,7 +147,7 @@ impl CommonWidget for Rectangle {
             })
     }
 
-    fn get_proxied_children(&mut self) -> WidgetIterMut {
+    fn get_proxied_children(&mut self) -> WidgetIterMut<S> {
         self.children.iter_mut()
             .rfold(WidgetIterMut::Empty, |acc, x| {
                 WidgetIterMut::Single(x, Box::new(acc))
@@ -173,7 +173,7 @@ impl CommonWidget for Rectangle {
     }
 }
 
-impl Render for Rectangle {
+impl<S> Render<S> for Rectangle<S> {
 
     fn get_primitives(&self, fonts: &text::font::Map) -> Vec<Primitive> {
         let mut prims = vec![
@@ -184,7 +184,7 @@ impl Render for Rectangle {
                 rect: Rect::new(self.position, self.dimension)
             }
         ];
-        prims.extend(Rectangle::rect_outline(Rect::new(self.position, self.dimension), 1.0));
+        prims.extend(Rectangle::<S>::rect_outline(Rect::new(self.position, self.dimension), 1.0));
         let children: Vec<Primitive> = self.get_children().flat_map(|f| f.get_primitives(fonts)).collect();
         prims.extend(children);
 
@@ -208,7 +208,7 @@ pub enum Kind {
 }
 
 
-impl Rectangle {
+impl<S> Rectangle<S> {
 
     pub fn fill(mut self, color: Color) -> Box<Self> {
         self.color = color;
@@ -262,7 +262,7 @@ impl Rectangle {
             common: widget::CommonBuilder::default(),
             style,
             color: Color::random()
-        }.wh(dim)
+        }//.wh(dim)
     }
 
     /// Build a new filled rectangle.
@@ -285,7 +285,7 @@ impl Rectangle {
         Rectangle::styled(dim, Style::outline_styled(line_style))
     }
 
-    pub fn initialize(children: Vec<Box<dyn Widget>>) -> Box<Rectangle> {
+    pub fn initialize(children: Vec<Box<dyn Widget<S>>>) -> Box<Rectangle<S>> {
         Box::new(Rectangle {
             id: Uuid::new_v4(),
             children,
@@ -297,7 +297,7 @@ impl Rectangle {
         })
     }
 
-    pub fn new(position: Point, dimension: Dimensions, children: Vec<Box<dyn Widget>>) -> Box<Rectangle> {
+    pub fn new(position: Point, dimension: Dimensions, children: Vec<Box<dyn Widget<S>>>) -> Box<Rectangle<S>> {
         Box::new(Rectangle {
             id: Uuid::new_v4(),
             children,
@@ -342,7 +342,7 @@ impl Rectangle {
 }
 */
 
-impl Colorable for Rectangle {
+impl<S> Colorable for Rectangle<S> {
     fn color(mut self, color: Color) -> Self {
         self.style.set_color(color);
         self

@@ -25,16 +25,16 @@ pub static SCALE: f64 = -1.0;
 
 
 #[derive(Debug, Clone)]
-pub struct Padding {
+pub struct Padding<S> {
     id: Uuid,
-    child: Box<dyn Widget>,
+    child: Box<dyn Widget<S>>,
     position: Point,
     dimension: Dimensions,
     edge_insets: EdgeInsets
 }
 
-impl Padding {
-    pub fn init(edge_insets: EdgeInsets, child: Box<dyn Widget>) -> Box<Self> {
+impl<S> Padding<S> {
+    pub fn init(edge_insets: EdgeInsets, child: Box<dyn Widget<S>>) -> Box<Self> {
         Box::new(Padding{
             id: Default::default(),
             child,
@@ -45,7 +45,7 @@ impl Padding {
     }
 }
 
-impl<S> Event<S> for Padding {
+impl<S> Event<S> for Padding<S> {
     fn handle_mouse_event(&mut self, event: &MouseEvent, consumed: &bool) {
         ()
     }
@@ -74,7 +74,7 @@ impl<S> Event<S> for Padding {
 
     fn process_keyboard_event(&mut self, event: &KeyboardEvent, state: StateList, global_state: &mut S) -> StateList {
         let new_state = self.apply_state(state);
-        let updated_state = self.child.process_keyboard_event(event, new_state);
+        let updated_state = self.child.process_keyboard_event(event, new_state, global_state);
         self.apply_state(updated_state)
     }
 
@@ -94,9 +94,9 @@ impl<S> Event<S> for Padding {
     }
 }
 
-impl WidgetExt for Padding {}
+impl<S: 'static + Clone> WidgetExt<S> for Padding<S> {}
 
-impl CommonWidget for Padding {
+impl<S> CommonWidget<S> for Padding<S> {
     fn get_id(&self) -> Uuid {
         self.id
     }
@@ -105,7 +105,7 @@ impl CommonWidget for Padding {
         Flags::Empty
     }
 
-    fn get_children(&self) -> WidgetIter {
+    fn get_children(&self) -> WidgetIter<S> {
         if self.child.get_flag() == Flags::Proxy {
             self.child.get_children()
         } else {
@@ -113,7 +113,7 @@ impl CommonWidget for Padding {
         }
     }
 
-    fn get_children_mut(&mut self) -> WidgetIterMut {
+    fn get_children_mut(&mut self) -> WidgetIterMut<S> {
         if self.child.get_flag() == Flags::Proxy {
             self.child.get_children_mut()
         } else {
@@ -121,10 +121,9 @@ impl CommonWidget for Padding {
         }
     }
 
-    fn get_proxied_children(&mut self) -> WidgetIterMut {
+    fn get_proxied_children(&mut self) -> WidgetIterMut<S> {
         WidgetIterMut::single(&mut self.child)
     }
-
 
 
     fn get_position(&self) -> Point {
@@ -144,7 +143,7 @@ impl CommonWidget for Padding {
     }
 }
 
-impl Layout for Padding {
+impl<S> Layout for Padding<S> {
     fn flexibility(&self) -> u32 {
         9
     }
@@ -169,11 +168,11 @@ impl Layout for Padding {
     }
 }
 
-impl Render for Padding {
+impl<S> Render<S> for Padding<S> {
 
     fn get_primitives(&self, fonts: &Map) -> Vec<Primitive> {
         let mut prims = vec![];
-        prims.extend(Rectangle::rect_outline(Rect::new(self.position, [self.dimension[0], self.dimension[1]]), 1.0));
+        prims.extend(Rectangle::<S>::rect_outline(Rect::new(self.position, [self.dimension[0], self.dimension[1]]), 1.0));
         let children: Vec<Primitive> = self.child.get_primitives(fonts);
         prims.extend(children);
 

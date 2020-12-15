@@ -34,7 +34,7 @@ use draw::shape::circumference::{Circumference, Triangles};
 
 /// A simple, non-interactive widget for drawing a single **Oval**.
 #[derive(Debug, Clone, WidgetCommon_)]
-pub struct Oval<S> {
+pub struct Oval<S, K> {
     pub id: Uuid,
     /// Data necessary and common for all widget builder render.
     #[conrod(common_builder)]
@@ -49,10 +49,10 @@ pub struct Oval<S> {
     dimension: Dimensions,
     color: Color,
 
-    pub children: Vec<Box<dyn Widget>>
+    pub children: Vec<Box<dyn Widget<K>>>
 }
 
-impl<K, S: 'static + Clone> Event<K> for Oval<S> {
+impl<K, S: 'static + Clone> Event<K> for Oval<S, K> {
     fn handle_mouse_event(&mut self, event: &MouseEvent, consumed: &bool) {
         ()
     }
@@ -86,9 +86,9 @@ impl<K, S: 'static + Clone> Event<K> for Oval<S> {
     }
 }
 
-impl<S> WidgetExt for Oval<S> {}
+impl<S: 'static + Clone, K: 'static + Clone> WidgetExt<K> for Oval<S, K> {}
 
-impl<S> Layout for Oval<S> {
+impl<S, K> Layout for Oval<S, K> {
     fn flexibility(&self) -> u32 {
         0
     }
@@ -115,7 +115,7 @@ impl<S> Layout for Oval<S> {
     }
 }
 
-impl<S: 'static + Clone> CommonWidget for Oval<S> {
+impl<S: 'static + Clone, K> CommonWidget<K> for Oval<S, K> {
     fn get_id(&self) -> Uuid {
         self.id
     }
@@ -124,7 +124,7 @@ impl<S: 'static + Clone> CommonWidget for Oval<S> {
         Flags::Empty
     }
 
-    fn get_children(&self) -> WidgetIter {
+    fn get_children(&self) -> WidgetIter<K> {
         self.children
             .iter()
             .rfold(WidgetIter::Empty, |acc, x| {
@@ -136,7 +136,7 @@ impl<S: 'static + Clone> CommonWidget for Oval<S> {
             })
     }
 
-    fn get_children_mut(&mut self) -> WidgetIterMut {
+    fn get_children_mut(&mut self) -> WidgetIterMut<K> {
         self.children
             .iter_mut()
             .rfold(WidgetIterMut::Empty, |acc, x| {
@@ -148,7 +148,7 @@ impl<S: 'static + Clone> CommonWidget for Oval<S> {
             })
     }
 
-    fn get_proxied_children(&mut self) -> WidgetIterMut {
+    fn get_proxied_children(&mut self) -> WidgetIterMut<K> {
         self.children.iter_mut()
             .rfold(WidgetIterMut::Empty, |acc, x| {
                 WidgetIterMut::Single(x, Box::new(acc))
@@ -172,7 +172,7 @@ impl<S: 'static + Clone> CommonWidget for Oval<S> {
     }
 }
 
-impl<S: 'static + Clone> Render for Oval<S> {
+impl<K, S: 'static + Clone> Render<K> for Oval<S, K> {
 
     fn get_primitives(&self, fonts: &text::font::Map) -> Vec<Primitive> {
         let points = widget::oval::circumference(Rect::new(self.position, self.dimension), DEFAULT_RESOLUTION);
@@ -184,7 +184,7 @@ impl<S: 'static + Clone> Render for Oval<S> {
         };
 
         let mut prims: Vec<Primitive> = vec![new_primitive(node_index(0), kind, Rect::new(self.position, self.dimension), Rect::new(self.position, self.dimension))];
-        prims.extend(Rectangle::rect_outline(Rect::new(self.position, self.dimension), 1.0));
+        prims.extend(Rectangle::<K>::rect_outline(Rect::new(self.position, self.dimension), 1.0));
         let children: Vec<Primitive> = self.get_children().flat_map(|f| f.get_primitives(fonts)).collect();
         prims.extend(children);
 
@@ -221,9 +221,9 @@ pub struct Section {
     pub offset_radians: Scalar,
 }
 
-impl OvalSection for Section {
+/*impl OvalSection for Section {
     const IS_OVER: widget::IsOverFn = is_over_section_widget;
-}
+}*/
 
 /// Unique state for the **Oval**.
 #[derive(Copy, Clone, Debug, PartialEq)]
@@ -237,14 +237,14 @@ pub struct State<S> {
 /// The default circle resolution if none is specified.
 pub const DEFAULT_RESOLUTION: usize = 50;
 
-impl Oval<Full> {
+impl<S> Oval<Full, S> {
 
     pub fn fill(mut self, color: Color) -> Box<Self> {
         self.color = color;
         Box::new(self)
     }
 
-    pub fn initialize(children: Vec<Box<dyn Widget>>) -> Box<Oval<Full>> {
+    pub fn initialize(children: Vec<Box<dyn Widget<S>>>) -> Box<Oval<Full, S>> {
         Box::new(Oval {
             id: Uuid::new_v4(),
             common: widget::CommonBuilder::default(),
@@ -258,7 +258,7 @@ impl Oval<Full> {
         })
     }
 
-    pub fn new(position: Point, dimension: Dimensions, children: Vec<Box<dyn Widget>>) -> Box<Oval<Full>> {
+    pub fn new(position: Point, dimension: Dimensions, children: Vec<Box<dyn Widget<S>>>) -> Box<Oval<Full, S>> {
         Box::new(Oval {
             id: Uuid::new_v4(),
             children,
@@ -284,7 +284,7 @@ impl Oval<Full> {
             dimension: [0.0,0.0],
             color: Color::random(),
             children: vec![]
-        }.wh(dim)
+        }//.wh(dim)
     }
 
     /// Build a new **Fill**ed **Oval**.
@@ -308,7 +308,7 @@ impl Oval<Full> {
     }
 }
 
-impl<S> Oval<S> {
+impl<S, K> Oval<S, K> {
     /// The number of lines used to draw the edge.
     ///
     /// By default, `DEFAULT_RESOLUTION` is used.
@@ -320,14 +320,14 @@ impl<S> Oval<S> {
     /// Produces an `Oval` where only a section is drawn.
     ///
     /// The given `radians` describes the angle occuppied by the section's circumference.
-    pub fn section(self, radians: Scalar) -> Oval<Section> {
+    pub fn section(self, radians: Scalar) -> Oval<Section, K> {
         let Oval { common, style, resolution, .. } = self;
         let section = Section { radians, offset_radians: 0.0 };
         Oval { id: Uuid::new_v4(), common, style, resolution, section, position: [10.0, 10.0], dimension: [10.0,10.0], color: Color::random(), children: vec![] }
     }
 }
 
-impl Oval<Section> {
+impl<K> Oval<Section, K> {
     /// The radians at which the section will begin.
     ///
     /// A value of `0.0` will begin at the rightmost point of the oval.
@@ -371,7 +371,7 @@ where
     }
 }*/
 
-impl<S> Colorable for Oval<S> {
+impl<S, K> Colorable for Oval<S, K> {
     fn color(mut self, color: Color) -> Self {
         self.style.set_color(color);
         self
@@ -423,7 +423,7 @@ pub fn is_over_section(circumference: Circumference, p: Point) -> bool {
     widget::triangles::is_over(circumference.triangles(), p)
 }
 
-/// The function to use for picking whether a given point is over the oval section.
+/*/// The function to use for picking whether a given point is over the oval section.
 pub fn is_over_section_widget(widget: &graph::Container, p: Point, _: &Theme) -> widget::IsOver {
     widget
         .state_and_style::<State<Section>, Style>()
@@ -437,4 +437,4 @@ pub fn is_over_section_widget(widget: &graph::Container, p: Point, _: &Theme) ->
         })
         .unwrap_or_else(|| widget.rect.is_over(p))
         .into()
-}
+}*/

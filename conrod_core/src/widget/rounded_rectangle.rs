@@ -46,7 +46,7 @@ impl RoundedRectangle {
             style: style,
             radius: radius,
             corner_resolution: DEFAULT_CORNER_RESOLUTION,
-        }.wh(dim)
+        }//.wh(dim)
     }
 
     /// Build a new filled rounded rectangle.
@@ -183,10 +183,10 @@ impl Iterator for Points {
 /// An iterator yielding triangles for a `RoundedRectangle`.
 pub type Triangles = widget::polygon::Triangles<Points>;
 
-/// The function to use for picking whether a given point is over the polygon.
+/*/// The function to use for picking whether a given point is over the polygon.
 pub fn is_over_widget(widget: &graph::Container, point: Point, _: &Theme) -> widget::IsOver {
     widget
         .unique_widget_state::<RoundedRectangle>()
         .map(|widget| widget.state.ids.polygon.into())
         .unwrap_or_else(|| widget.rect.is_over(point).into())
-}
+}*/

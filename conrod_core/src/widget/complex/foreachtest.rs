@@ -25,16 +25,16 @@ use widget::primitive::foreach::ForEach;
 use widget::primitive::v_stack::VStack;
 
 #[derive(Debug, Clone)]
-pub struct ForeachTest {
+pub struct ForeachTest<S> {
     id: Uuid,
-    child: Box<dyn Widget>,
+    child: Box<dyn Widget<S>>,
     position: Point,
     dimension: Dimensions,
     index: State<u32>
 }
 
-impl ForeachTest {
-    pub fn new() -> Box<ForeachTest> {
+impl<S: 'static + Clone> ForeachTest<S> {
+    pub fn new() -> Box<ForeachTest<S>> {
         Box::new(Self {
             id: Uuid::new_v4(),
             child: Rectangle::initialize(vec![
@@ -47,7 +47,7 @@ impl ForeachTest {
     }
 }
 
-impl CommonWidget for ForeachTest {
+impl<S> CommonWidget<S> for ForeachTest<S> {
     fn get_id(&self) -> Uuid {
         self.id
     }
@@ -56,7 +56,7 @@ impl CommonWidget for ForeachTest {
         Flags::Empty
     }
 
-    fn get_children(&self) -> WidgetIter {
+    fn get_children(&self) -> WidgetIter<S> {
         if self.child.get_flag() == Flags::Proxy {
             self.child.get_children()
         } else {
@@ -64,7 +64,7 @@ impl CommonWidget for ForeachTest {
         }
     }
 
-    fn get_children_mut(&mut self) -> WidgetIterMut {
+    fn get_children_mut(&mut self) -> WidgetIterMut<S> {
         if self.child.get_flag() == Flags::Proxy {
             self.child.get_children_mut()
         } else {
@@ -72,11 +72,9 @@ impl CommonWidget for ForeachTest {
         }
     }
 
-    fn get_proxied_children(&mut self) -> WidgetIterMut {
+    fn get_proxied_children(&mut self) -> WidgetIterMut<S> {
         WidgetIterMut::single(&mut self.child)
     }
-
-
 
     fn get_position(&self) -> Point {
         self.position
@@ -95,7 +93,7 @@ impl CommonWidget for ForeachTest {
     }
 }
 
-impl<S> Event<S> for ForeachTest {
+impl<S> Event<S> for ForeachTest<S> {
     fn handle_mouse_event(&mut self, event: &MouseEvent, consumed: &bool) {
         ()
     }
@@ -131,9 +129,9 @@ impl<S> Event<S> for ForeachTest {
     }
 }
 
-impl ChildRender for ForeachTest {}
+impl<S> ChildRender for ForeachTest<S> {}
 
-impl Layout for ForeachTest {
+impl<S> Layout for ForeachTest<S> {
     fn flexibility(&self) -> u32 {
         0
     }
@@ -152,4 +150,4 @@ impl Layout for ForeachTest {
     }
 }
 
-impl WidgetExt for ForeachTest {}
+impl<S: 'static + Clone> WidgetExt<S> for ForeachTest<S> {}

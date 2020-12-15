@@ -38,7 +38,7 @@ use widget::widget_iterator::{WidgetIter, WidgetIterMut};
 /// If some horizontal dimension is given, the text will automatically wrap to the width and align
 /// in accordance with the produced **Alignment**.
 #[derive(Debug, Clone, WidgetCommon_)]
-pub struct Text {
+pub struct Text<S> {
     /// Data necessary and common for all widget builder render.
     #[conrod(common_builder)]
     pub common: widget::CommonBuilder,
@@ -51,10 +51,10 @@ pub struct Text {
     wrap_mode: Wrap,
     color: Color,
 
-    pub children: Vec<Box<dyn Widget>>,
+    pub children: Vec<Box<dyn Widget<S>>>,
 }
 
-impl<S> Event<S> for Text {
+impl<S> Event<S> for Text<S> {
     fn handle_mouse_event(&mut self, event: &MouseEvent, consumed: &bool) {
         match event {
             MouseEvent::Press(_, _, _) => {
@@ -103,7 +103,7 @@ impl<S> Event<S> for Text {
     }
 }
 
-impl Layout for Text {
+impl<S> Layout for Text<S> {
 
     fn flexibility(&self) -> u32 {
         2
@@ -145,7 +145,7 @@ impl Layout for Text {
     }
 }
 
-impl Render for Text {
+impl<S> Render<S> for Text<S> {
 
     fn get_primitives(&self, fonts: &text::font::Map) -> Vec<Primitive> {
         let font_id = match fonts.ids().next() {
@@ -188,7 +188,7 @@ impl Render for Text {
         };
 
         let mut prims: Vec<Primitive> = vec![new_primitive(node_index(0), kind, Rect::new(self.position, self.dimension), Rect::new(self.position, self.dimension))];
-        prims.extend(Rectangle::rect_outline(Rect::new(self.position, self.dimension), 0.5));
+        prims.extend(Rectangle::<S>::rect_outline(Rect::new(self.position, self.dimension), 0.5));
         let children: Vec<Primitive> = self.get_children().flat_map(|f| f.get_primitives(fonts)).collect();
         prims.extend(children);
 
@@ -196,9 +196,9 @@ impl Render for Text {
     }
 }
 
-impl WidgetExt for Text {}
+impl<S: 'static + Clone> WidgetExt<S> for Text<S> {}
 
-impl CommonWidget for Text {
+impl<S> CommonWidget<S> for Text<S> {
     fn get_id(&self) -> Uuid {
         unimplemented!()
     }
@@ -207,7 +207,7 @@ impl CommonWidget for Text {
         Flags::Empty
     }
 
-    fn get_children(&self) -> WidgetIter {
+    fn get_children(&self) -> WidgetIter<S> {
         self.children
             .iter()
             .rfold(WidgetIter::Empty, |acc, x| {
@@ -219,7 +219,7 @@ impl CommonWidget for Text {
             })
     }
 
-    fn get_children_mut(&mut self) -> WidgetIterMut {
+    fn get_children_mut(&mut self) -> WidgetIterMut<S> {
         self.children
             .iter_mut()
             .rfold(WidgetIterMut::Empty, |acc, x| {
@@ -231,14 +231,12 @@ impl CommonWidget for Text {
             })
     }
 
-    fn get_proxied_children(&mut self) -> WidgetIterMut {
+    fn get_proxied_children(&mut self) -> WidgetIterMut<S> {
         self.children.iter_mut()
             .rfold(WidgetIterMut::Empty, |acc, x| {
                 WidgetIterMut::Single(x, Box::new(acc))
             })
     }
-
-
 
     fn get_position(&self) -> Point {
         self.position
@@ -314,8 +312,8 @@ pub struct OldState {
 }
 
 
-impl Text {
-    pub fn initialize(text: State<String>, children: Vec<Box<dyn Widget>>) -> Box<Self> {
+impl<S> Text<S> {
+    pub fn initialize(text: State<String>, children: Vec<Box<dyn Widget<S>>>) -> Box<Self> {
         Box::new(Text {
             common: widget::CommonBuilder::default(),
             text,
@@ -329,7 +327,7 @@ impl Text {
     }
 
     /// Build a new **Text** widget.
-    pub fn new(text: State<String>, position: Point, dimension: Dimensions, children: Vec<Box<dyn Widget>>) -> Box<Self> {
+    pub fn new(text: State<String>, position: Point, dimension: Dimensions, children: Vec<Box<dyn Widget<S>>>) -> Box<Self> {
         Box::new(Text {
             common: widget::CommonBuilder::default(),
             text,
@@ -576,7 +574,7 @@ impl<S> OldWidget for Text<S> {
 
 }
 */
-impl Colorable for Text {
+impl<S> Colorable for Text<S> {
     fn color(mut self, color: Color) -> Self {
         self.style.color = Some(color);
         self

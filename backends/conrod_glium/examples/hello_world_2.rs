@@ -9,7 +9,7 @@ extern crate glium;
 
 mod support;
 
-use conrod_core::{widget, Colorable, Positionable, OldWidget};
+use conrod_core::{widget, Colorable, Positionable};
 use glium::Surface;
 use conrod_glium::Window;
 use conrod_core::widget::{Rectangle, Oval, Line, Text, Image, Frame, ZStack, SCALE};
@@ -36,7 +36,7 @@ fn main() {
 
     window.widgets = Some(Box::new(|ui| {
         widget_ids!(struct Ids { text });
-        let ids = Ids::new(ui.widget_id_generator());
+        //let ids = Ids::new(ui.widget_id_generator());
 
         /*widget::Text::new("Hello World!")
             .middle_of(ui.window)

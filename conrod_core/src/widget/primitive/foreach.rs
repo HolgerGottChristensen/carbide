@@ -26,17 +26,17 @@ use std::collections::HashMap;
 
 
 #[derive(Debug, Clone)]
-pub struct ForEach {
+pub struct ForEach<S> {
     id: Uuid,
-    children_map: HashMap<Uuid, Box<dyn Widget>>,
-    delegate: Box<dyn Widget>,
+    children_map: HashMap<Uuid, Box<dyn Widget<S>>>,
+    delegate: Box<dyn Widget<S>>,
     ids: State<Vec<Uuid>>,
     position: Point,
     dimension: Dimensions
 }
 
-impl ForEach {
-    pub fn new(ids: State<Vec<Uuid>>, delegate: Box<dyn Widget>) -> Box<ForEach> {
+impl<S> ForEach<S> {
+    pub fn new(ids: State<Vec<Uuid>>, delegate: Box<dyn Widget<S>>) -> Box<ForEach<S>> {
 
         let mut map = HashMap::new();
 
@@ -55,7 +55,7 @@ impl ForEach {
     }
 }
 
-impl CommonWidget for ForEach {
+impl<S> CommonWidget<S> for ForEach<S> {
     fn get_id(&self) -> Uuid {
         self.id
     }
@@ -64,7 +64,7 @@ impl CommonWidget for ForEach {
         Flags::Proxy
     }
 
-    fn get_children(&self) -> WidgetIter {
+    fn get_children(&self) -> WidgetIter<S> {
         let mut w = WidgetIter::Empty;
 
         for id in self.ids.iter().rev() {
@@ -80,7 +80,7 @@ impl CommonWidget for ForEach {
         w
     }
 
-    fn get_children_mut(&mut self) -> WidgetIterMut {
+    fn get_children_mut(&mut self) -> WidgetIterMut<S> {
         let mut w = WidgetIterMut::Empty;
 
         for id in self.ids.iter().rev() {
@@ -92,8 +92,8 @@ impl CommonWidget for ForEach {
 
         for id in self.ids.iter().rev() {
 
-            let item: &mut Box<dyn Widget> = unsafe {
-                let p: *mut Box<dyn Widget> = self.children_map.get_mut(id).unwrap();
+            let item: &mut Box<dyn Widget<S>> = unsafe {
+                let p: *mut Box<dyn Widget<S>> = self.children_map.get_mut(id).unwrap();
                 p.as_mut().unwrap()
             };
 
@@ -107,7 +107,7 @@ impl CommonWidget for ForEach {
         w
     }
 
-    fn get_proxied_children(&mut self) -> WidgetIterMut {
+    fn get_proxied_children(&mut self) -> WidgetIterMut<S> {
         let mut w = WidgetIterMut::Empty;
 
         for id in self.ids.iter().rev() {
@@ -118,8 +118,8 @@ impl CommonWidget for ForEach {
         }
 
         for id in self.ids.iter().rev() {
-            let item: &mut Box<dyn Widget> = unsafe {
-                let p: *mut Box<dyn Widget> = self.children_map.get_mut(id).unwrap();
+            let item: &mut Box<dyn Widget<S>> = unsafe {
+                let p: *mut Box<dyn Widget<S>> = self.children_map.get_mut(id).unwrap();
                 p.as_mut().unwrap()
             };
 
@@ -132,8 +132,6 @@ impl CommonWidget for ForEach {
 
         w
     }
-
-
 
     fn get_position(&self) -> Point {
         self.position
@@ -152,7 +150,7 @@ impl CommonWidget for ForEach {
     }
 }
 
-impl<S> Event<S> for ForEach {
+impl<S> Event<S> for ForEach<S> {
     fn handle_mouse_event(&mut self, event: &MouseEvent, consumed: &bool) {
         unimplemented!()
     }
@@ -186,7 +184,7 @@ impl<S> Event<S> for ForEach {
             state_for_children.replace_state(State::<u32>::new("index", &(i as u32)).into());
             // Then we delegate the event to its children, we also makes sure to update
             // current state for the next child
-            state_for_children = child.process_keyboard_event(event, state_for_children);
+            state_for_children = child.process_keyboard_event(event, state_for_children, global_state);
 
         }
         // We then apply the changed state from its children, to save it for itself.
@@ -207,9 +205,9 @@ impl<S> Event<S> for ForEach {
     }
 }
 
-impl ChildRender for ForEach {}
+impl<S> ChildRender for ForEach<S> {}
 
-impl Layout for ForEach {
+impl<S> Layout for ForEach<S> {
     fn flexibility(&self) -> u32 {
         unimplemented!()
     }
@@ -223,4 +221,4 @@ impl Layout for ForEach {
     }
 }
 
-impl WidgetExt for ForEach {}
+impl<S: 'static + Clone> WidgetExt<S> for ForEach<S> {}

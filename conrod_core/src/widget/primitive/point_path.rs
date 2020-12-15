@@ -84,7 +84,7 @@ impl<I> PointPath<I> {
     {
         let points_clone = points.clone().into_iter();
         let (xy, dim) = super::bounding_box_for_points(points_clone).xy_dim();
-        PointPath::styled(points, style).wh(dim).xy(xy)
+        PointPath::styled(points, style)//.wh(dim).xy(xy)
     }
 
     /// Build a new **PointPath** and shift the location of the points so that the centre of their
@@ -108,7 +108,7 @@ impl<I> PointPath<I> {
     {
         let points_clone = points.clone().into_iter();
         let (xy, dim) = super::bounding_box_for_points(points_clone).xy_dim();
-        let mut point_path = PointPath::styled(points, style).wh(dim);
+        let mut point_path = PointPath::styled(points, style);//.wh(dim);
         point_path.maybe_shift_to_centre_from = Some(xy);
         point_path
     }
@@ -255,7 +255,7 @@ where
     triangles(points, cap, thickness).map(|ts| widget::triangles::is_over(ts, p)).unwrap_or(false)
 }
 
-/// The function to use for picking whether a given point is over the point path.
+/*/// The function to use for picking whether a given point is over the point path.
 pub fn is_over_widget(widget: &graph::Container, point: Point, theme: &Theme) -> widget::IsOver {
     widget
         .state_and_style::<State, Style>()
@@ -266,4 +266,4 @@ pub fn is_over_widget(widget: &graph::Container, point: Point, theme: &Theme) ->
         })
         .unwrap_or_else(|| widget.rect.is_over(point))
         .into()
-}
+}*/

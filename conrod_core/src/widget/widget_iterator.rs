@@ -2,20 +2,20 @@ use widget::primitive::Widget;
 use std::slice::{IterMut, Iter};
 use flags::Flags;
 
-pub enum WidgetIterMut<'a> {
+pub enum WidgetIterMut<'a, S> {
     Empty,
-    Single(&'a mut Box<dyn Widget>, Box<WidgetIterMut<'a>>),
-    Multi(Box<WidgetIterMut<'a>>, Box<WidgetIterMut<'a>>)
+    Single(&'a mut Box<dyn Widget<S>>, Box<WidgetIterMut<'a, S>>),
+    Multi(Box<WidgetIterMut<'a, S>>, Box<WidgetIterMut<'a, S>>)
 }
 
-impl<'a> WidgetIterMut<'a> {
-    pub fn single(widget: &'a mut Box<dyn Widget>) -> WidgetIterMut<'a> {
+impl<'a, S> WidgetIterMut<'a, S> {
+    pub fn single(widget: &'a mut Box<dyn Widget<S>>) -> WidgetIterMut<'a,S> {
         WidgetIterMut::Single(widget, Box::new(WidgetIterMut::Empty))
     }
 }
 
-impl<'a> Iterator for WidgetIterMut<'a> {
-    type Item = &'a mut Box<dyn Widget>;
+impl<'a, S> Iterator for WidgetIterMut<'a, S> {
+    type Item = &'a mut Box<dyn Widget<S>>;
 
     fn next(&mut self) -> Option<Self::Item> {
 
@@ -47,20 +47,20 @@ impl<'a> Iterator for WidgetIterMut<'a> {
     }
 }
 
-pub enum WidgetIter<'a> {
+pub enum WidgetIter<'a, S> {
     Empty,
-    Single(&'a Box<dyn Widget>, Box<WidgetIter<'a>>),
-    Multi(Box<WidgetIter<'a>>, Box<WidgetIter<'a>>)
+    Single(&'a Box<dyn Widget<S>>, Box<WidgetIter<'a, S>>),
+    Multi(Box<WidgetIter<'a, S>>, Box<WidgetIter<'a, S>>)
 }
 
-impl<'a> WidgetIter<'a> {
-    pub fn single(widget: &'a Box<dyn Widget>) -> WidgetIter<'a> {
+impl<'a, S> WidgetIter<'a, S> {
+    pub fn single(widget: &'a Box<dyn Widget<S>>) -> WidgetIter<'a, S> {
         WidgetIter::Single(widget, Box::new(WidgetIter::Empty))
     }
 }
 
-impl<'a> Iterator for WidgetIter<'a> {
-    type Item = &'a Box<dyn Widget>;
+impl<'a, S> Iterator for WidgetIter<'a, S> {
+    type Item = &'a Box<dyn Widget<S>>;
 
     fn next(&mut self) -> Option<Self::Item> {
 

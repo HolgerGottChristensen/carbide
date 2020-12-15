@@ -58,7 +58,7 @@ impl BorderedRectangle {
         BorderedRectangle {
             common: widget::CommonBuilder::default(),
             style: Style::default(),
-        }.wh(dim)
+        }//.wh(dim)
     }
 
     builder_method!(pub with_style { style = Style });

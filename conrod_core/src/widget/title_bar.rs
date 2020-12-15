@@ -82,7 +82,7 @@ impl<'a> TitleBar<'a> {
             common: widget::CommonBuilder::default(),
             style: Style::default(),
             label: label,
-        }.w_of(id).mid_top_of(id)
+        }//.w_of(id).mid_top_of(id)
     }
 
     /// Align the text to the left of its bounding **Rect**'s *x* axis range.

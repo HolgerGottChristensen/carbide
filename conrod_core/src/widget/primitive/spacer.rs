@@ -123,7 +123,7 @@ impl Layout for Spacer {
     }
 }
 
-impl CommonWidget for Spacer {
+impl<S> CommonWidget<S> for Spacer {
     fn get_id(&self) -> Uuid {
         self.id
     }
@@ -132,19 +132,17 @@ impl CommonWidget for Spacer {
         Flags::Spacer
     }
 
-    fn get_children(&self) -> WidgetIter {
+    fn get_children(&self) -> WidgetIter<S> {
         unimplemented!()
     }
 
-    fn get_children_mut(&mut self) -> WidgetIterMut {
+    fn get_children_mut(&mut self) -> WidgetIterMut<S> {
         unimplemented!()
     }
 
-    fn get_proxied_children(&mut self) -> WidgetIterMut {
+    fn get_proxied_children(&mut self) -> WidgetIterMut<S> {
         unimplemented!()
     }
-
-
 
     fn get_position(&self) -> Point {
         self.position
@@ -163,11 +161,11 @@ impl CommonWidget for Spacer {
     }
 }
 
-impl Render for Spacer {
+impl<S> Render<S> for Spacer {
 
     fn get_primitives(&self, fonts: &text::font::Map) -> Vec<Primitive> {
         let mut prims = vec![];
-        prims.extend(Rectangle::rect_outline(Rect::new(self.position, self.dimension), 1.0));
+        prims.extend(Rectangle::<S>::rect_outline(Rect::new(self.position, self.dimension), 1.0));
         return prims;
     }
 }

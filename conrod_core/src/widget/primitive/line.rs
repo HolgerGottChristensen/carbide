@@ -22,12 +22,12 @@ use widget::primitive::widget::WidgetExt;
 use state::state::{StateList};
 use flags::Flags;
 use widget::widget_iterator::{WidgetIter, WidgetIterMut};
-use draw::shape::line::is_over_widget;
+//use draw::shape::line::is_over_widget;
 
 
 /// A simple, non-interactive widget for drawing a single straight Line.
 #[derive(Debug, Clone, WidgetCommon_)]
-pub struct Line {
+pub struct Line<S> {
     /// Data necessary and common for all widget builder render.
     #[conrod(common_builder)]
     pub common: widget::CommonBuilder,
@@ -42,10 +42,10 @@ pub struct Line {
     position: Point,
     dimension: Dimensions,
 
-    pub children: Vec<Box<dyn Widget>>
+    pub children: Vec<Box<dyn Widget<S>>>
 }
 
-impl<S> Event<S> for Line {
+impl<S> Event<S> for Line<S> {
     fn handle_mouse_event(&mut self, event: &MouseEvent, consumed: &bool) {
         ()
     }
@@ -79,9 +79,9 @@ impl<S> Event<S> for Line {
     }
 }
 
-impl WidgetExt for Line {}
+impl<S: 'static + Clone> WidgetExt<S> for Line<S> {}
 
-impl Layout for Line {
+impl<S> Layout for Line<S> {
     fn flexibility(&self) -> u32 {
         0
     }
@@ -95,7 +95,7 @@ impl Layout for Line {
     }
 }
 
-impl Render for Line {
+impl<S> Render<S> for Line<S> {
 
     fn get_primitives(&self, fonts: &text::font::Map) -> Vec<Primitive> {
         const DEFAULT_CAP: Cap = Cap::Flat;
@@ -120,7 +120,7 @@ impl Render for Line {
     }
 }
 
-impl CommonWidget for Line {
+impl<S> CommonWidget<S> for Line<S> {
     fn get_id(&self) -> Uuid {
         unimplemented!()
     }
@@ -129,7 +129,7 @@ impl CommonWidget for Line {
         Flags::Empty
     }
 
-    fn get_children(&self) -> WidgetIter {
+    fn get_children(&self) -> WidgetIter<S> {
         self.children
             .iter()
             .rfold(WidgetIter::Empty, |acc, x| {
@@ -141,7 +141,7 @@ impl CommonWidget for Line {
             })
     }
 
-    fn get_children_mut(&mut self) -> WidgetIterMut {
+    fn get_children_mut(&mut self) -> WidgetIterMut<S> {
         self.children
             .iter_mut()
             .rfold(WidgetIterMut::Empty, |acc, x| {
@@ -153,7 +153,7 @@ impl CommonWidget for Line {
             })
     }
 
-    fn get_proxied_children(&mut self) -> WidgetIterMut {
+    fn get_proxied_children(&mut self) -> WidgetIterMut<S> {
         self.children.iter_mut()
             .rfold(WidgetIterMut::Empty, |acc, x| {
                 WidgetIterMut::Single(x, Box::new(acc))
@@ -221,9 +221,9 @@ pub enum Cap {
 }
 
 
-impl Line {
+impl<S> Line<S> {
 
-    pub fn new(start: Point, end: Point, children: Vec<Box<dyn Widget>>) -> Box<Line> {
+    pub fn new(start: Point, end: Point, children: Vec<Box<dyn Widget<S>>>) -> Box<Line<S>> {
         Box::new(Line {
             start,
             end,
@@ -261,7 +261,7 @@ impl Line {
     /// The same as [**Line::abs**](./struct.Line#method.abs) but with the given style.
     pub fn abs_styled(start: Point, end: Point, style: Style) -> Self {
         let (xy, dim) = Rect::from_corners(start, end).xy_dim();
-        Line::styled(start, end, style).wh(dim).xy(xy)
+        Line::styled(start, end, style)//.wh(dim).xy(xy)
     }
 
     /// Build a new **Line** and shift the location of the start and end points so that the centre
@@ -465,7 +465,7 @@ impl Style {
 }
 */
 
-impl Colorable for Line {
+impl<S> Colorable for Line<S> {
     fn color(mut self, color: Color) -> Self {
         self.style.maybe_color = Some(color);
         self

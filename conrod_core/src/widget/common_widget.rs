@@ -8,13 +8,13 @@ use Color;
 use flags::Flags;
 use widget::widget_iterator::{WidgetIter, WidgetIterMut};
 
-pub trait CommonWidget {
+pub trait CommonWidget<S> {
     fn get_id(&self) -> Uuid;
     fn get_flag(&self) -> Flags;
 
-    fn get_children(&self) -> WidgetIter;
-    fn get_children_mut(&mut self) -> WidgetIterMut;
-    fn get_proxied_children(&mut self) -> WidgetIterMut;
+    fn get_children(&self) -> WidgetIter<S>;
+    fn get_children_mut(&mut self) -> WidgetIterMut<S>;
+    fn get_proxied_children(&mut self) -> WidgetIterMut<S>;
 
     fn get_position(&self) -> Point;
     fn set_position(&mut self, position: Point);

@@ -39,7 +39,7 @@ pub use self::envelope_editor::EnvelopeEditor;
 pub use self::file_navigator::FileNavigator;
 pub use self::grid::Grid;
 pub use self::list::List;
-pub use self::list_select::ListSelect;
+//pub use self::list_select::ListSelect;
 pub use self::matrix::Matrix;
 pub use self::graph::Graph;
 pub use self::number_dialer::NumberDialer;
@@ -101,7 +101,7 @@ pub mod widget_iterator;
 
 /// Arguments for the [**Widget::update**](./trait.Widget#method.update) method in a struct to
 /// simplify the method signature.
-pub struct UpdateArgs<'a, 'c, 'd: 'c>
+pub struct UpdateArgs<'a, 'c, 'd: 'c, S: 'static + Clone>
     //where W: OldWidget<S>,
 {
     /// The **Widget**'s unique index.
@@ -129,7 +129,7 @@ pub struct UpdateArgs<'a, 'c, 'd: 'c>
     ///
     /// Provides methods for immutably accessing the `Ui`'s `Theme` and `GlyphCache`.  Also allows
     /// calling `Widget::set` within the `Widget::update` method.
-    pub ui: &'c mut UiCell<'d>,
+    pub ui: &'c mut UiCell<'d, S>,
 }
 
 /// Arguments to the [**Widget::kid_area**](./trait.Widget#method.kid_area) method in a struct to
@@ -167,7 +167,7 @@ pub enum MaybeParent {
     Unspecified,
 }
 
-/*impl<S> MaybeParent {
+/*impl MaybeParent {
     /// Convert the **MaybeParent** into an **Option<Id>**.
     ///
     /// If `Unspecified`, check the positioning to retrieve the **Id** from there.
@@ -194,8 +194,8 @@ pub enum MaybeParent {
             Some(self.get_unchecked(ui, x_pos, y_pos))
         }
     }
-}*/
-
+}
+*/
 /// State necessary for "floating" (pop-up style) widgets.
 #[derive(Copy, Clone, Debug, PartialEq)]
 pub struct Floating {

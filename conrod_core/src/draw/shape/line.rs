@@ -19,7 +19,7 @@ pub fn rect_corners(a: Point, b: Point, half_thickness: Scalar) -> [Point; 4] {
     [r1, r2, r3, r4]
 }
 
-/// The function to use for picking whether a given point is over the line.
+/*/// The function to use for picking whether a given point is over the line.
 pub fn is_over_widget(widget: &graph::Container, point: Point, theme: &Theme) -> widget::IsOver {
     widget
         .unique_widget_state::<Line>()
@@ -30,7 +30,7 @@ pub fn is_over_widget(widget: &graph::Container, point: Point, theme: &Theme) ->
         })
         .unwrap_or_else(|| widget.rect.is_over(point))
         .into()
-}
+}*/
 
 /// Given two points and half the line thickness, return the two triangles that describe the line.
 pub fn triangles(a: Point, b: Point, half_thickness: Scalar) -> [Triangle<Point>; 2] {

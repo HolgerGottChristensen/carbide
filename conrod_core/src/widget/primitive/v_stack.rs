@@ -33,16 +33,16 @@ use widget::widget_iterator::{WidgetIter, WidgetIterMut};
 
 /// A basic, non-interactive rectangle shape widget.
 #[derive(Debug, Clone)]
-pub struct VStack {
+pub struct VStack<S> {
     id: Uuid,
-    children: Vec<Box<dyn Widget>>,
+    children: Vec<Box<dyn Widget<S>>>,
     position: Point,
     dimension: Dimensions,
     spacing: Scalar
 }
 
-impl VStack {
-    pub fn initialize(children: Vec<Box<dyn Widget>>) -> Box<Self> {
+impl<S> VStack<S> {
+    pub fn initialize(children: Vec<Box<dyn Widget<S>>>) -> Box<Self> {
         Box::new(VStack {
             id: Uuid::new_v4(),
             children,
@@ -53,7 +53,7 @@ impl VStack {
     }
 }
 
-impl<S> Event<S> for VStack {
+impl<S> Event<S> for VStack<S> {
     fn handle_mouse_event(&mut self, event: &MouseEvent, consumed: &bool) {
         ()
     }
@@ -87,9 +87,9 @@ impl<S> Event<S> for VStack {
     }
 }
 
-impl WidgetExt for VStack {}
+impl<S: 'static + Clone> WidgetExt<S> for VStack<S> {}
 
-impl Layout for VStack {
+impl<S> Layout for VStack<S> {
     fn flexibility(&self) -> u32 {
         1
     }
@@ -107,7 +107,7 @@ impl Layout for VStack {
         let spacing_total = ((number_of_spaces)*self.spacing);
         let mut size_for_children = [requested_size[0], requested_size[1] - spacing_total];
 
-        let mut children_flexibilty: Vec<(u32, &mut Box<dyn Widget>)> = self.get_children_mut().map(|child| (child.flexibility(), child)).collect();
+        let mut children_flexibilty: Vec<(u32, &mut Box<dyn Widget<S>>)> = self.get_children_mut().map(|child| (child.flexibility(), child)).collect();
         children_flexibilty.sort_by(|(a,_), (b,_)| a.cmp(&b));
         children_flexibilty.reverse();
 
@@ -178,7 +178,7 @@ impl Layout for VStack {
     }
 }
 
-impl CommonWidget for VStack {
+impl<S> CommonWidget<S> for VStack<S> {
     fn get_id(&self) -> Uuid {
         self.id
     }
@@ -187,7 +187,7 @@ impl CommonWidget for VStack {
         Flags::Empty
     }
 
-    fn get_children(&self) -> WidgetIter {
+    fn get_children(&self) -> WidgetIter<S> {
         self.children
             .iter()
             .rfold(WidgetIter::Empty, |acc, x| {
@@ -199,7 +199,7 @@ impl CommonWidget for VStack {
             })
     }
 
-    fn get_children_mut(&mut self) -> WidgetIterMut {
+    fn get_children_mut(&mut self) -> WidgetIterMut<S> {
         self.children
             .iter_mut()
             .rfold(WidgetIterMut::Empty, |acc, x| {
@@ -211,13 +211,12 @@ impl CommonWidget for VStack {
             })
     }
 
-    fn get_proxied_children(&mut self) -> WidgetIterMut {
+    fn get_proxied_children(&mut self) -> WidgetIterMut<S> {
         self.children.iter_mut()
             .rfold(WidgetIterMut::Empty, |acc, x| {
                 WidgetIterMut::Single(x, Box::new(acc))
             })
     }
-
 
 
     fn get_position(&self) -> Point {
@@ -237,11 +236,11 @@ impl CommonWidget for VStack {
     }
 }
 
-impl Render for VStack {
+impl<S> Render<S> for VStack<S> {
 
     fn get_primitives(&self, fonts: &text::font::Map) -> Vec<Primitive> {
         let mut prims = vec![];
-        prims.extend(Rectangle::rect_outline(Rect::new(self.position, self.dimension), 0.5));
+        prims.extend(Rectangle::<S>::rect_outline(Rect::new(self.position, self.dimension), 0.5));
         let children: Vec<Primitive> = self.get_children().flat_map(|f| f.get_primitives(fonts)).collect();
         prims.extend(children);
 

@@ -2,7 +2,7 @@ extern crate glium;
 extern crate find_folder;
 use ::{std};
 use ::{Renderer};
-use conrod_core::{UiBuilder, widget, Positionable, Colorable, OldWidget, UiCell, Ui};
+use conrod_core::{UiBuilder, widget, Positionable, Colorable, UiCell, Ui};
 use glium::glutin::WindowBuilder;
 use glium::backend::glutin::Display;
 use conrod_winit::WinitWindow;
@@ -12,7 +12,7 @@ use conrod_core::widget::id::Generator;
 use conrod_core::widget::primitive::Widget;
 extern crate image;
 
-pub struct Window<S> {
+pub struct Window<S: 'static + Clone> {
     title: String,
     width: u32,
     height: u32,
@@ -20,14 +20,14 @@ pub struct Window<S> {
     multisampling: u32,
     event_loop: glium::glutin::EventsLoop,
     display: GliumDisplayWinitWrapper,
-    ui: Ui,
+    ui: Ui<S>,
     renderer: Renderer,
     image_map: conrod_core::image::ImageMap<glium::texture::Texture2d>,
-    pub widgets: Option<Box<dyn Fn(&mut UiCell) -> ()>>,
+    pub widgets: Option<Box<dyn Fn(&mut UiCell<S>) -> ()>>,
     pub state: S,
 }
 
-impl<S> Window<S> {
+impl<S: 'static + Clone> Window<S> {
     pub fn new(title: String, width: u32, height: u32, state: S) -> Self {
         let mut events_loop = glium::glutin::EventsLoop::new();
         let window = WindowBuilder::new()
@@ -80,7 +80,7 @@ impl<S> Window<S> {
         Ok(self.image_map.insert(texture))
     }
 
-    pub fn set_widgets(&mut self, w: Box<dyn Widget>) {
+    pub fn set_widgets(&mut self, w: Box<dyn Widget<S>>) {
         self.ui.widgets = w
     }
 
