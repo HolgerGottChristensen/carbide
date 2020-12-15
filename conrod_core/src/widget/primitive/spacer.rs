@@ -19,7 +19,7 @@ use daggy::petgraph::graph::node_index;
 use ::{Range, text};
 use render::owned_primitive::OwnedPrimitive;
 use render::owned_primitive_kind::OwnedPrimitiveKind;
-use widget::envelope_editor::EnvelopePoint;
+
 use std::convert::TryFrom;
 use std::error::Error;
 use std::collections::HashMap;

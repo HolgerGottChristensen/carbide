@@ -13,7 +13,7 @@ use event::scroll::Scroll;
 use event::text::Text;
 use input::touch::Phase;
 use event::tap::Tap;
-use widget::scroll::State;
+use widget::old::scroll::State;
 use input::state::touch::{Touch, Start};
 use Point;
 use input::{Button};

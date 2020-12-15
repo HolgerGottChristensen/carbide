@@ -58,7 +58,7 @@ pub struct Style {
     pub maybe_max_visible_height: Option<Option<MaxHeight>>,
     /// The position of the scrollbar in the case that the list is scrollable.
     #[conrod(default = "None")]
-    pub scrollbar_position: Option<Option<widget::list::ScrollbarPosition>>,
+    pub scrollbar_position: Option<Option<widget::old::list::ScrollbarPosition>>,
     /// The width of the scrollbar in the case that the list is scrollable.
     #[conrod(default = "None")]
     pub scrollbar_width: Option<Option<Scalar>>,
@@ -131,14 +131,14 @@ impl<'a, T> DropDownList<'a, T> {
     /// Specifies that the list should be scrollable and should provide a `Scrollbar` to the right
     /// of the items.
     pub fn scrollbar_next_to(mut self) -> Self {
-        self.style.scrollbar_position = Some(Some(widget::list::ScrollbarPosition::NextTo));
+        self.style.scrollbar_position = Some(Some(widget::old::list::ScrollbarPosition::NextTo));
         self
     }
 
     /// Specifies that the list should be scrollable and should provide a `Scrollbar` that hovers
     /// above the right edge of the items and automatically hides when the user is not scrolling.
     pub fn scrollbar_on_top(mut self) -> Self {
-        self.style.scrollbar_position = Some(Some(widget::list::ScrollbarPosition::OnTop));
+        self.style.scrollbar_position = Some(Some(widget::old::list::ScrollbarPosition::OnTop));
         self
     }
 
@@ -351,8 +351,8 @@ impl<'a, T> DropDownList<'a, T> {
 impl Style {
 
     /// Style for a `Button` given this `Style`'s current state.
-    pub fn button_style(&self, is_selected: bool) -> widget::button::Style {
-        widget::button::Style {
+    pub fn button_style(&self, is_selected: bool) -> widget::old::button::Style {
+        widget::old::button::Style {
             color: self.color.map(|c| if is_selected { c.highlighted() } else { c }),
             border: self.border,
             border_color: self.border_color,

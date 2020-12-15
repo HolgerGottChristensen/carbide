@@ -3,7 +3,7 @@ use widget::primitive::Widget;
 use ::{Point, Scalar};
 use position::Dimensions;
 use widget::common_widget::CommonWidget;
-use widget::envelope_editor::EnvelopePoint;
+
 use widget::layout::Layout;
 use text::font::Map;
 use layout::basic_layouter::BasicLayouter;

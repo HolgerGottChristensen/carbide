@@ -1,4 +1,4 @@
-use widget::Id;
+use widget::old::id::Id;
 use Rect;
 use render::owned_primitive_kind::OwnedPrimitiveKind;
 

@@ -67,13 +67,13 @@ pub struct Dynamic {}
 /// The direction in which the list is laid out.
 pub trait Direction {
     /// The direction along which the `Scrollbar` is laid out.
-    type Axis: widget::scrollbar::Axis;
+    type Axis: widget::old::scrollbar::Axis;
 
     /// For some given `Rect`, returns the parallel and perpendicular ranges respectively.
     fn ranges(Rect) -> (Range, Range);
 
     /// Begin building the scrollbar for the `List`.
-    fn scrollbar(widget::Id) -> widget::Scrollbar<Self::Axis>;
+    fn scrollbar(widget::Id) -> widget::old::scrollbar::Scrollbar<Self::Axis>;
 
     /// Borrow the scroll state associated with this `Direction`'s axis.
     fn common_scroll(common: &widget::CommonBuilder) -> Option<&widget::scroll::Scroll>;
@@ -186,7 +186,7 @@ pub enum ScrollbarPosition {
 
 /// A wrapper around a `List`'s `Scrollbar` and its `widget::Id`.
 pub struct Scrollbar<A> {
-    widget: widget::Scrollbar<A>,
+    widget: widget::old::scrollbar::Scrollbar<A>,
     id: widget::Id,
 }
 

@@ -18,7 +18,7 @@ use widget::common_widget::CommonWidget;
 use uuid::Uuid;
 use widget::primitive::Widget;
 use text::Justify;
-use widget::envelope_editor::EnvelopePoint;
+
 use widget::layout::Layout;
 use text::font::Map;
 use layout::basic_layouter::BasicLayouter;
@@ -438,16 +438,21 @@ impl<S> Text<S> {
         self.justify(text::Justify::Center)
     }
 
+    pub fn justify(self, j: text::Justify) -> Self {
+
+        self
+    }
+
     /// Align the text to the right of its bounding **Rect**'s *x* axis range.
     pub fn right_justify(self) -> Self {
         self.justify(text::Justify::Right)
     }
 
-    builder_methods!{
+    /*builder_methods!{
         pub font_size { style.font_size = Some(FontSize) }
         pub justify { style.justify = Some(text::Justify) }
         pub line_spacing { style.line_spacing = Some(Scalar) }
-    }
+    }*/
 
 }
 

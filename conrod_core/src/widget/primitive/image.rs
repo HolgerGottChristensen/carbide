@@ -16,7 +16,6 @@ use widget::primitive::Widget;
 use widget::common_widget::CommonWidget;
 use uuid::Uuid;
 use widget::layout::Layout;
-use widget::envelope_editor::EnvelopePoint;
 use Scalar;
 use layout::basic_layouter::BasicLayouter;
 use event::event::Event;
@@ -263,9 +262,9 @@ impl<S> Image<S> {
         self
     }
 
-    builder_methods!{
+    /*builder_methods!{
         pub color { style.maybe_color = Some(Option<Color>) }
-    }
+    }*/
 
 }
 

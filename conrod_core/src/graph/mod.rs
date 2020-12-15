@@ -88,9 +88,9 @@ pub struct Container {
     /// Whether or not children widgets should be cropped to the `kid_area`.
     pub crop_kids: bool,
     /// Scroll related state (is only `Some` if this axis is scrollable).
-    pub maybe_x_scroll_state: Option<widget::scroll::StateX>,
+    pub maybe_x_scroll_state: Option<widget::old::scroll::StateX>,
     /// Scroll related state (is only `Some` if this axis is scrollable).
-    pub maybe_y_scroll_state: Option<widget::scroll::StateY>,
+    pub maybe_y_scroll_state: Option<widget::old::scroll::StateY>,
     /// Represents the Widget's position within the overall instantiation ordering of the widgets.
     ///
     /// i.e. if foo's `instantiation_order_idx` is lower than bar's, it means that foo was

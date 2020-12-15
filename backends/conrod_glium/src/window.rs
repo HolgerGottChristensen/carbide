@@ -8,7 +8,7 @@ use glium::backend::glutin::Display;
 use conrod_winit::WinitWindow;
 use glium::Surface;
 use conrod_core::text::font::{Id, Error};
-use conrod_core::widget::id::Generator;
+use conrod_core::widget::old::id::Generator;
 use conrod_core::widget::primitive::Widget;
 extern crate image;
 

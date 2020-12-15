@@ -327,8 +327,8 @@ impl<S: 'static + Clone> Ui<S> {
     ///
     /// See the [**widget::id::Generator**](../widget/id/struct.Generator.html) docs for details on
     /// how to use this correctly.
-    pub fn widget_id_generator(&mut self) -> widget::id::Generator {
-        widget::id::Generator::new(&mut self.widget_graph)
+    pub fn widget_id_generator(&mut self) -> widget::old::id::Generator {
+        widget::old::id::Generator::new(&mut self.widget_graph)
     }
 
     /// Scroll the widget at the given index by the given offset amount.

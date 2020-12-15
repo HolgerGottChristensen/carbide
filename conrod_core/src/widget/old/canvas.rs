@@ -403,7 +403,7 @@ impl<'a> Canvas<'a> {
 /// The height and relative y coordinate of a Canvas' title bar given some canvas height and font
 /// size for the title bar.
 fn title_bar_h_rel_y(canvas_h: Scalar, font_size: FontSize) -> (Scalar, Scalar) {
-    let h = widget::title_bar::calc_height(font_size);
+    let h = widget::old::title_bar::calc_height(font_size);
     let rel_y = canvas_h / 2.0 - h / 2.0;
     (h, rel_y)
 }

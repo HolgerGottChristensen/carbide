@@ -19,7 +19,7 @@ use uuid::Uuid;
 use widget::primitive::Widget;
 use widget::layout::Layout;
 use text::font::Map;
-use widget::envelope_editor::EnvelopePoint;
+
 use layout::basic_layouter::BasicLayouter;
 use event::event::Event;
 use event_handler::{WidgetEvent, MouseEvent, KeyboardEvent};

@@ -136,7 +136,7 @@ impl TypeWidgetIds {
     //
     // If there are no more `Id`s available for the type, a new one will be generated from the
     // given `widget::id::Generator`.
-    fn next_id(&mut self, generator: &mut widget::id::Generator) -> widget::Id {
+    fn next_id(&mut self, generator: &mut widget::old::id::Generator) -> widget::Id {
         loop {
             match self.widget_ids.get(self.next_index).map(|&id| id) {
                 None => self.widget_ids.push(generator.next()),
@@ -189,7 +189,7 @@ where
     //
     // If there are no more `Id`s available for the type, a new one will be generated from the
     // given `widget::id::Generator`.
-    fn next_id_for_node<T>(&mut self, node_id: NI, generator: &mut widget::id::Generator) -> widget::Id
+    fn next_id_for_node<T>(&mut self, node_id: NI, generator: &mut widget::old::id::Generator) -> widget::Id
     where
         T: Any,
     {
@@ -204,7 +204,7 @@ where
     //
     // If there are no more `Id`s available for the type, a new one will be generated from the
     // given `widget::id::Generator`.
-    fn next_id_for_edge<T>(&mut self, generator: &mut widget::id::Generator) -> widget::Id
+    fn next_id_for_edge<T>(&mut self, generator: &mut widget::old::id::Generator) -> widget::Id
     where
         T: Any,
     {

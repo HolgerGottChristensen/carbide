@@ -63,8 +63,8 @@ pub struct Style {
     #[conrod(default = "None")]
     pub font_id: Option<Option<text::font::Id>>,
     /// The styling for each `Canvas`.
-    #[conrod(default = "widget::canvas::Style::default()")]
-    pub canvas: Option<widget::canvas::Style>,
+    #[conrod(default = "widget::old::canvas::Style::default()")]
+    pub canvas: Option<widget::old::canvas::Style>,
 }
 
 /// The direction in which the tabs will be laid out.
@@ -116,18 +116,18 @@ impl<'a> Tabs<'a> {
     }
 
     /// Build the `Tabs` widget with the given styling for its `Canvas`ses.
-    pub fn canvas_style(mut self, style: widget::canvas::Style) -> Self {
+    pub fn canvas_style(mut self, style: widget::old::canvas::Style) -> Self {
         self.style.canvas = Some(style);
         self
     }
 
     /// Map the `NumberDialer`'s `widget::canvas::Style` to a new `widget::canvas::Style`.
     fn map_canvas_style<F>(mut self, map: F) -> Self
-        where F: FnOnce(widget::canvas::Style) -> widget::canvas::Style,
+        where F: FnOnce(widget::old::canvas::Style) -> widget::old::canvas::Style,
     {
         self.style.canvas = Some(map({
             self.style.canvas.clone()
-                .unwrap_or_else(widget::canvas::Style::default)
+                .unwrap_or_else(widget::old::canvas::Style::default)
         }));
         self
     }

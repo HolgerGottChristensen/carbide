@@ -167,8 +167,8 @@ pub fn rounded_border_triangles(
 /// An iterator yielding triangles for a rounded border.
 #[derive(Clone)]
 pub struct RoundedBorderTriangles {
-    outer: widget::rounded_rectangle::Points,
-    inner: widget::rounded_rectangle::Points,
+    outer: widget::old::rounded_rectangle::Points,
+    inner: widget::old::rounded_rectangle::Points,
     outer_end: Option<Point>,
     inner_end: Option<Point>,
     last_points: [Point; 2],
@@ -191,8 +191,8 @@ impl RoundedBorderTriangles {
             thickness.min(w * 0.5).min(h * 0.5)
         };
         let inner_rect = rect.pad(thickness);
-        let mut outer = widget::rounded_rectangle::points(rect, radius, corner_resolution);
-        let mut inner = widget::rounded_rectangle::points(inner_rect, radius, corner_resolution);
+        let mut outer = widget::old::rounded_rectangle::points(rect, radius, corner_resolution);
+        let mut inner = widget::old::rounded_rectangle::points(inner_rect, radius, corner_resolution);
         // A rounded_rectangle should always yield at least four points.
         let last_outer = outer.next().unwrap();
         let last_inner = inner.next().unwrap();

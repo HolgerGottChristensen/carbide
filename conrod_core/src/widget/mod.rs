@@ -14,21 +14,6 @@ use text::font;
 use theme::{self, Theme};
 use ui::{self, Ui, UiCell};
 
-pub use self::bordered_rectangle::BorderedRectangle;
-pub use self::button::Button;
-pub use self::canvas::Canvas;
-pub use self::collapsible_area::CollapsibleArea;
-pub use self::drop_down_list::DropDownList;
-pub use self::envelope_editor::EnvelopeEditor;
-pub use self::file_navigator::FileNavigator;
-pub use self::graph::Graph;
-pub use self::grid::Grid;
-pub use self::id::Id;
-pub use self::list::List;
-//pub use self::list_select::ListSelect;
-pub use self::matrix::Matrix;
-pub use self::number_dialer::NumberDialer;
-pub use self::plot_path::PlotPath;
 pub use self::primitive::frame::Frame;
 pub use self::primitive::frame::SCALE;
 pub use self::primitive::h_stack::*;
@@ -42,61 +27,22 @@ pub use self::primitive::shape::rectangle::{self, Rectangle};
 pub use self::primitive::shape::triangles::{self, Triangles};
 pub use self::primitive::text::{self, Text};
 pub use self::primitive::z_stack::*;
-pub use self::range_slider::RangeSlider;
-pub use self::rounded_rectangle::RoundedRectangle;
-pub use self::scrollbar::Scrollbar;
-pub use self::slider::Slider;
-pub use self::tabs::Tabs;
-pub use self::text_box::TextBox;
-pub use self::text_edit::TextEdit;
-pub use self::title_bar::TitleBar;
-pub use self::toggle::Toggle;
-pub use self::xy_pad::XYPad;
+pub use widget::old::id::Id;
+use widget::old::scroll;
 
 pub mod render;
 pub mod layout;
 
-// Macro providing modules.
-#[macro_use]
-mod builder;
 
-// Widget functionality modules.
-#[macro_use]
-pub mod id;
-pub mod scroll;
 
 // Primitive widget modules.
 pub mod primitive;
 
-// Widget modules.
 
-pub mod bordered_rectangle;
-pub mod button;
-pub mod canvas;
-pub mod collapsible_area;
-pub mod drop_down_list;
-pub mod envelope_editor;
-pub mod file_navigator;
-pub mod grid;
-pub mod list;
-pub mod list_select;
-pub mod matrix;
-pub mod graph;
-pub mod number_dialer;
-pub mod plot_path;
-pub mod range_slider;
-pub mod rounded_rectangle;
-pub mod scrollbar;
-pub mod slider;
-pub mod tabs;
-pub mod text_box;
-pub mod text_edit;
-pub mod title_bar;
-pub mod toggle;
-pub mod xy_pad;
 pub mod common_widget;
 pub mod complex;
 pub mod widget_iterator;
+#[macro_use] pub mod old;
 
 /// Arguments for the [**Widget::update**](./trait.Widget#method.update) method in a struct to
 /// simplify the method signature.

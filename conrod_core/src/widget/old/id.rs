@@ -180,7 +180,7 @@ macro_rules! widget_ids {
 
             /// Construct a new `widget::Id` container.
             #[allow(unused_mut, unused_variables)]
-            pub fn new(mut generator: $crate::widget::id::Generator) -> Self {
+            pub fn new(mut generator: $crate::widget::old::id::Generator) -> Self {
                 widget_ids! {
                     constructor $Ids, generator { {} $($id)* }
                 }
@@ -222,7 +222,7 @@ macro_rules! widget_ids {
             define_struct $(#[$attr])* [$($public)*] $Ids {
                 {
                     $($id_field: $T,)*
-                    $id: $crate::widget::id::List,
+                    $id: $crate::widget::old::id::List,
                 }
                 $($rest)*
             }
@@ -311,7 +311,7 @@ macro_rules! widget_ids {
             constructor $Ids, $generator {
                 {
                     $($id_field: $new,)*
-                    $id: $crate::widget::id::List::new(),
+                    $id: $crate::widget::old::id::List::new(),
                 }
                 $($rest)*
             }

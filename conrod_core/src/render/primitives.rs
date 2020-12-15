@@ -9,7 +9,6 @@ use render::primitive_kind::PrimitiveKind;
 use render::util::{new_primitive, next_widget};
 use widget::render::Render;
 use widget::{Oval, Rectangle};
-use widget::envelope_editor::EnvelopePoint;
 use position::{Align, Dimensions};
 use render::text::Text;
 use render::owned_primitives::OwnedPrimitives;
