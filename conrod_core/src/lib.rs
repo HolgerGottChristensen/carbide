@@ -5,34 +5,38 @@
 //! If you are new to Conrod, we recommend checking out [The Guide](./guide/index.html).
 
 #![warn(unsafe_code)] //Todo deny when unsafe code removed from foreach
-#![warn(missing_copy_implementations)]
-#![warn(missing_docs)]
+//#![warn(missing_copy_implementations)]
+//#![warn(missing_docs)]
 
-#[macro_use] extern crate conrod_derive;
-#[macro_use] extern crate bitflags;
-extern crate daggy;
-extern crate fnv;
-extern crate num;
-extern crate input as piston_input;
-extern crate rusttype;
+#[macro_use]
+extern crate bitflags;
+#[macro_use]
+extern crate conrod_derive;
 extern crate copypasta;
-extern crate uuid;
+extern crate daggy;
+#[macro_use]
+extern crate derivative;
+#[macro_use]
+extern crate dyn_clone;
+extern crate fnv;
+extern crate input as piston_input;
 extern crate instant;
-extern crate glium;
-extern crate serde;
+extern crate num;
 extern crate ron;
-#[macro_use] extern crate dyn_clone;
+extern crate rusttype;
+extern crate serde;
+extern crate uuid;
 
+pub use ron::from_str as from_ron;
+pub use ron::to_string as to_ron;
+
+pub use border::{Borderable, Bordering};
 pub use color::{Color, Colorable};
 pub use conrod_derive::*;
-pub use border::{Bordering, Borderable};
 pub use label::{FontSize, Labelable};
 pub use position::{Dimension, Point, Position, Positionable, Range, Rect, Scalar, Sizeable};
 pub use theme::Theme;
-pub use ui::{Ui, UiCell, UiBuilder};
-
-pub use ron::to_string as to_ron;
-pub use ron::from_str as from_ron;
+pub use ui::{Ui, UiBuilder, UiCell};
 
 mod border;
 pub mod color;

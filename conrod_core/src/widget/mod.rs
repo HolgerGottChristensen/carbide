@@ -2,33 +2,17 @@
 //!
 //! This module contains items related to the implementation of the `Widget` trait. It also
 //! re-exports all widgets (and their modules) that are provided by conrod.
-pub mod render;
-pub mod layout;
-
-use graph::{Container, UniqueWidgetState};
-use position::{Align, Depth, Dimension, Dimensions, Padding, Position, Point,
-               Positionable, Rect, Relative, Sizeable};
 use std;
+
+use event::button::ButtonEvent;
+use event::release::Release;
+use event::widget::WidgetEvent;
+use graph::{Container, UniqueWidgetState};
+use position::{Align, Depth, Dimension, Dimensions, Padding, Point, Position,
+               Positionable, Rect, Relative, Sizeable};
 use text::font;
 use theme::{self, Theme};
 use ui::{self, Ui, UiCell};
-
-
-pub use self::id::Id;
-
-pub use self::primitive::line::{self, Line};
-pub use self::primitive::image::{self, Image};
-pub use self::primitive::point_path::{self, PointPath};
-pub use self::primitive::shape::circle::{self, Circle};
-pub use self::primitive::shape::oval::{self, Oval};
-pub use self::primitive::shape::polygon::{self, Polygon};
-pub use self::primitive::shape::rectangle::{self, Rectangle};
-pub use self::primitive::shape::triangles::{self, Triangles};
-pub use self::primitive::text::{self, Text};
-pub use self::primitive::frame::Frame;
-pub use self::primitive::frame::SCALE;
-pub use self::primitive::h_stack::*;
-pub use self::primitive::z_stack::*;
 
 pub use self::bordered_rectangle::BorderedRectangle;
 pub use self::button::Button;
@@ -37,13 +21,27 @@ pub use self::collapsible_area::CollapsibleArea;
 pub use self::drop_down_list::DropDownList;
 pub use self::envelope_editor::EnvelopeEditor;
 pub use self::file_navigator::FileNavigator;
+pub use self::graph::Graph;
 pub use self::grid::Grid;
+pub use self::id::Id;
 pub use self::list::List;
 //pub use self::list_select::ListSelect;
 pub use self::matrix::Matrix;
-pub use self::graph::Graph;
 pub use self::number_dialer::NumberDialer;
 pub use self::plot_path::PlotPath;
+pub use self::primitive::frame::Frame;
+pub use self::primitive::frame::SCALE;
+pub use self::primitive::h_stack::*;
+pub use self::primitive::image::{self, Image};
+pub use self::primitive::line::{self, Line};
+pub use self::primitive::point_path::{self, PointPath};
+pub use self::primitive::shape::circle::{self, Circle};
+pub use self::primitive::shape::oval::{self, Oval};
+pub use self::primitive::shape::polygon::{self, Polygon};
+pub use self::primitive::shape::rectangle::{self, Rectangle};
+pub use self::primitive::shape::triangles::{self, Triangles};
+pub use self::primitive::text::{self, Text};
+pub use self::primitive::z_stack::*;
 pub use self::range_slider::RangeSlider;
 pub use self::rounded_rectangle::RoundedRectangle;
 pub use self::scrollbar::Scrollbar;
@@ -54,16 +52,17 @@ pub use self::text_edit::TextEdit;
 pub use self::title_bar::TitleBar;
 pub use self::toggle::Toggle;
 pub use self::xy_pad::XYPad;
-use event::widget::WidgetEvent;
-use event::button::ButtonEvent;
-use event::release::Release;
 
+pub mod render;
+pub mod layout;
 
 // Macro providing modules.
-#[macro_use] mod builder;
+#[macro_use]
+mod builder;
 
 // Widget functionality modules.
-#[macro_use] pub mod id;
+#[macro_use]
+pub mod id;
 pub mod scroll;
 
 // Primitive widget modules.
@@ -624,7 +623,7 @@ pub trait Common {
     /// flag is set within the **State**, indicating that there has been some change to the unique
     /// **Widget::State** and that we require re-drawing the **Widget**. As a result, widget
     /// designers should only call **State::update** when necessary, checking whether or not the
-    /// state has changed before invoking the method. See the custom_widget.rs example for a
+    /// state has changed before invoking the method. See the old_custom_widget example for a
     /// demonstration of this.
     ///
     /// # Arguments

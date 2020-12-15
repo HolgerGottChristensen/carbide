@@ -1,29 +1,30 @@
+use daggy::petgraph::graph::node_index;
 use uuid::Uuid;
+
 use ::{Point, Rect};
-use position::Dimensions;
-use widget::render::{Render, ChildRender};
-use render::primitive::Primitive;
+use ::{Scalar, text};
+use event::event::Event;
+use event_handler::{KeyboardEvent, MouseEvent, WidgetEvent};
+use flags::Flags;
 use graph::Container;
-use widget::{Id, Rectangle, Oval, HStack, Text};
+use input::Key;
+use layout::basic_layouter::BasicLayouter;
+use position::Dimensions;
+use render::primitive::Primitive;
+use render::primitive_kind::PrimitiveKind;
+use state::state::{GetState, State, StateList};
 use text::font::Map;
+use widget::{HStack, Id, Oval, Rectangle, Text};
 use widget::common_widget::CommonWidget;
-use ::{text, Scalar};
+use widget::complex::foreachtest::ForeachTest;
+use widget::layout::Layout;
+use widget::primitive::foreach::ForEach;
+use widget::primitive::spacer::{Spacer, SpacerDirection};
+use widget::primitive::v_stack::VStack;
 use widget::primitive::Widget;
 use widget::primitive::widget::WidgetExt;
-use event::event::Event;
-use event_handler::{WidgetEvent, MouseEvent, KeyboardEvent};
-use state::state::{StateList, GetState, State};
-use daggy::petgraph::graph::node_index;
-use render::primitive_kind::PrimitiveKind;
-use widget::layout::Layout;
-use layout::basic_layouter::BasicLayouter;
-use widget::primitive::spacer::{Spacer, SpacerDirection};
-use input::Key;
-use flags::Flags;
+use widget::render::{ChildRender, Render};
 use widget::widget_iterator::{WidgetIter, WidgetIterMut};
-use widget::primitive::foreach::ForEach;
-use widget::primitive::v_stack::VStack;
-use widget::complex::foreachtest::ForeachTest;
 
 #[derive(Debug, Clone)]
 pub struct SyncTest<S> {
@@ -32,7 +33,7 @@ pub struct SyncTest<S> {
     position: Point,
     dimension: Dimensions,
     value: State<String>,
-    fore: State<Vec<Uuid>>
+    fore: State<Vec<Uuid>>,
 }
 
 impl<S: 'static + Clone> SyncTest<S> {

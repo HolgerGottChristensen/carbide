@@ -21,7 +21,7 @@ mod support;
 
 /// The module in which we'll implement our own custom circular button.
 mod circular_button {
-    use conrod_core::{self, widget_ids, widget, Colorable, Labelable, Point, Positionable, OldWidget};
+    use conrod_core::{self, Colorable, Labelable, OldWidget, Point, Positionable, widget, widget_ids};
 
     /// The type upon which we'll implement the `Widget` trait.
     #[derive(WidgetCommon)]

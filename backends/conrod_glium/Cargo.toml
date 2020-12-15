@@ -21,6 +21,7 @@ conrod_winit = { path = "../conrod_winit", version = "0.70" }
 winit = "0.19"
 find_folder = "0.3.0"
 image = "0.22"
+uuid = { version = "0.8.1", features = ["serde", "v4"]}
 
 [dev-dependencies]
 conrod_example_shared = { path = "../conrod_example_shared", version = "0.70" }
