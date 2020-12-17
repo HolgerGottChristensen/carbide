@@ -17,7 +17,7 @@ use text::font::Map;
 use widget::{HStack, Id, Oval, Rectangle, Text};
 use widget::common_widget::CommonWidget;
 use widget::complex::foreachtest::ForeachTest;
-use widget::layout::Layout;
+
 use widget::primitive::foreach::ForEach;
 use widget::primitive::spacer::{Spacer, SpacerDirection};
 use widget::primitive::v_stack::VStack;
@@ -25,6 +25,8 @@ use widget::primitive::Widget;
 use widget::primitive::widget::WidgetExt;
 use widget::render::{ChildRender, Render};
 use widget::widget_iterator::{WidgetIter, WidgetIterMut};
+use layout::Layout;
+use layout::layouter::Layouter;
 
 #[derive(Debug, Clone)]
 pub struct SyncTest<S> {

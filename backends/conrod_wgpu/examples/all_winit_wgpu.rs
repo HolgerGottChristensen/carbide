@@ -82,12 +82,7 @@ fn main() {
 
     // Load the Rust logo from our assets folder to use as an example image.
     let logo_path = assets.join("images/rust.png");
-    let rgba_logo_image = image::open(logo_path)
-        .expect("Couldn't load logo")
-        .to_rgba();
 
-    // Create the GPU texture and upload the image data.
-    let (logo_w, logo_h) = rgba_logo_image.dimensions();
     let logo_tex = create_logo_texture(&device, &mut queue, rgba_logo_image);
     let logo = conrod_wgpu::Image {
         texture: logo_tex,

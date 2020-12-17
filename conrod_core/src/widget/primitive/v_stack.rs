@@ -20,9 +20,9 @@ use std::convert::TryFrom;
 use std::error::Error;
 use std::collections::HashMap;
 use std::any::Any;
-use widget::layout::Layout;
+
 use text::font::Map;
-use layout::CrossAxisAlignment;
+use layout::{CrossAxisAlignment, Layout};
 use event::event::Event;
 use event_handler::{WidgetEvent, MouseEvent, KeyboardEvent};
 use widget::primitive::widget::WidgetExt;
@@ -240,7 +240,7 @@ impl<S> Render<S> for VStack<S> {
 
     fn get_primitives(&self, fonts: &text::font::Map) -> Vec<Primitive> {
         let mut prims = vec![];
-        prims.extend(Rectangle::<S>::rect_outline(Rect::new(self.position, self.dimension), 0.5));
+        prims.extend(Rectangle::<S>::rect_outline(Rect::new(self.position, self.dimension), 1.0));
         let children: Vec<Primitive> = self.get_children().flat_map(|f| f.get_primitives(fonts)).collect();
         prims.extend(children);
 

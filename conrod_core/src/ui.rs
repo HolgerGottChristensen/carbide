@@ -30,7 +30,6 @@ use event::double_click::DoubleClick;
 use event_handler::{EventHandler, WindowEvent, WidgetEvent, MouseEvent, KeyboardEvent};
 use event::event::Event;
 use widget::render::Render;
-use widget::layout::Layout;
 use widget::common_widget::CommonWidget;
 use std::fmt::{Debug, Formatter};
 use std::fmt;

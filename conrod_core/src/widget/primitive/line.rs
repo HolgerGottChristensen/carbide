@@ -14,7 +14,7 @@ use render::util::new_primitive;
 use daggy::petgraph::graph::node_index;
 use widget::common_widget::CommonWidget;
 use uuid::Uuid;
-use widget::layout::Layout;
+
 use text::font::Map;
 use event::event::Event;
 use event_handler::{WidgetEvent, MouseEvent, KeyboardEvent};
@@ -22,6 +22,7 @@ use widget::primitive::widget::WidgetExt;
 use state::state::{StateList};
 use flags::Flags;
 use widget::widget_iterator::{WidgetIter, WidgetIterMut};
+use layout::Layout;
 //use draw::shape::line::is_over_widget;
 
 

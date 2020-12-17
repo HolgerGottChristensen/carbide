@@ -26,7 +26,7 @@ use conrod_core::text::font::Map;
 use conrod_core::widget::{Frame, Image, Line, Oval, Rectangle, SCALE, Text, ZStack};
 use conrod_core::widget::common_widget::CommonWidget;
 use conrod_core::widget::complex::button::SyncTest;
-use conrod_core::widget::layout::Layout;
+use conrod_core::layout::Layout;
 use conrod_core::widget::oval::Full;
 use conrod_core::widget::primitive::edge_insets::EdgeInsets;
 use conrod_core::widget::primitive::h_stack::HStack;
@@ -37,6 +37,7 @@ use conrod_core::widget::primitive::widget::WidgetExt;
 use conrod_core::widget::render::ChildRender;
 use conrod_core::widget::widget_iterator::{WidgetIter, WidgetIterMut};
 use conrod_glium::Window;
+use conrod_core::layout::layouter::Layouter;
 
 mod support;
 
@@ -160,7 +161,7 @@ impl CommonWidget<GState> for CustomWidget {
 
 impl Event<GState> for CustomWidget {
     fn handle_mouse_event(&mut self, event: &MouseEvent, consumed: &bool) {
-        unimplemented!()
+        ()
     }
 
     fn handle_keyboard_event(&mut self, event: &KeyboardEvent, global_state: &mut GState) {

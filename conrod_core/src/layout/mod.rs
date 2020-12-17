@@ -1,6 +1,8 @@
 pub mod basic_layouter;
-mod layout;
+pub mod layout;
 pub mod layouter;
+
+pub use self::layout::Layout;
 
 pub enum CrossAxisAlignment {
     Start, Center, End

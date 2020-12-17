@@ -36,3 +36,5 @@ dyn-clone = "1.0.3"
 serde = "1.0.118"
 ron = "0.6.2"
 derivative = "2.1.1"
+wgpu = "0.6"
+bytemuck = { version = "1.4", features = [ "derive" ] }

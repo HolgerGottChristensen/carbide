@@ -1,8 +1,9 @@
-use widget::common_widget::CommonWidget;
 use position::Dimensions;
-use Point;
+use text;
 
-pub trait Layout<S> {
-    fn calculate_size(&self, widget: &mut CommonWidget<S>, dimensions: Dimensions);
-    fn calculate_position(&self, widget: &mut CommonWidget<S>, point: Point, dimensions: Dimensions);
+pub trait Layout {
+    /// 0 is the most flexible and the largest number is the least flexible
+    fn flexibility(&self) -> u32;
+    fn calculate_size(&mut self, requested_size: Dimensions, fonts: &text::font::Map) -> Dimensions;
+    fn position_children(&mut self);
 }

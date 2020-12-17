@@ -1,7 +1,7 @@
-use layout::layout::Layout;
 use widget::common_widget::CommonWidget;
 use position::Dimensions;
 use ::{Point, Scalar};
+use layout::layouter::Layouter;
 
 pub enum BasicLayouter {
     TopLeading, Top, TopTrailing,
@@ -80,8 +80,10 @@ impl BasicLayouter {
         BasicLayouter::trailing_x(relative_to[0], dimensions[0], child);
         BasicLayouter::bottom_y(relative_to[1], dimensions[1], child);
     }
+}
 
-    pub fn position<S>(&self) -> fn(Point, Dimensions, &mut dyn CommonWidget<S>) {
+impl<S> Layouter<S> for BasicLayouter {
+    fn position(&self) -> fn(Point, Dimensions, &mut dyn CommonWidget<S>) {
         match self {
             BasicLayouter::TopLeading => BasicLayouter::top_leading,
             BasicLayouter::Top => BasicLayouter::top,

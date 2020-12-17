@@ -19,7 +19,7 @@ use uuid::Uuid;
 use widget::primitive::Widget;
 use text::Justify;
 
-use widget::layout::Layout;
+
 use text::font::Map;
 use layout::basic_layouter::BasicLayouter;
 use event::event::Event;
@@ -29,6 +29,8 @@ use color::WHITE;
 use state::state::{StateList, State, GetState};
 use flags::Flags;
 use widget::widget_iterator::{WidgetIter, WidgetIterMut};
+use layout::Layout;
+use layout::layouter::Layouter;
 
 
 /// Displays some given text centered within a rectangular area.
@@ -188,7 +190,7 @@ impl<S> Render<S> for Text<S> {
         };
 
         let mut prims: Vec<Primitive> = vec![new_primitive(node_index(0), kind, Rect::new(self.position, self.dimension), Rect::new(self.position, self.dimension))];
-        prims.extend(Rectangle::<S>::rect_outline(Rect::new(self.position, self.dimension), 0.5));
+        prims.extend(Rectangle::<S>::rect_outline(Rect::new(self.position, self.dimension), 1.0));
         let children: Vec<Primitive> = self.get_children().flat_map(|f| f.get_primitives(fonts)).collect();
         prims.extend(children);
 

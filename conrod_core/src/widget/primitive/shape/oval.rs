@@ -17,7 +17,7 @@ use daggy::petgraph::graph::node_index;
 use widget::common_widget::CommonWidget;
 use uuid::Uuid;
 use widget::primitive::Widget;
-use widget::layout::Layout;
+
 use text::font::Map;
 
 use layout::basic_layouter::BasicLayouter;
@@ -30,6 +30,8 @@ use widget::widget_iterator::{WidgetIter, WidgetIterMut};
 use std::slice::{Iter, IterMut};
 use draw::shape::triangle::Triangle;
 use draw::shape::circumference::{Circumference, Triangles};
+use layout::Layout;
+use layout::layouter::Layouter;
 
 
 /// A simple, non-interactive widget for drawing a single **Oval**.

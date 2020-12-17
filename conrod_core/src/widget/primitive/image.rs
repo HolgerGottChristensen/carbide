@@ -15,7 +15,7 @@ use daggy::petgraph::graph::node_index;
 use widget::primitive::Widget;
 use widget::common_widget::CommonWidget;
 use uuid::Uuid;
-use widget::layout::Layout;
+
 use Scalar;
 use layout::basic_layouter::BasicLayouter;
 use event::event::Event;
@@ -24,6 +24,8 @@ use widget::primitive::widget::WidgetExt;
 use state::state::{StateList};
 use flags::Flags;
 use widget::widget_iterator::{WidgetIter, WidgetIterMut};
+use layout::Layout;
+use layout::layouter::Layouter;
 
 
 /// A primitive and basic widget for drawing an `Image`.

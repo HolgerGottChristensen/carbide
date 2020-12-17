@@ -10,10 +10,9 @@ use render::text::Text;
 use text;
 use position::Dimensions;
 use widget::common_widget::CommonWidget;
-use widget::layout::Layout;
 
 pub struct CPrimitives {
-    primitives: Vec<Primitive>
+    pub primitives: Vec<Primitive>
 }
 
 impl CPrimitives {

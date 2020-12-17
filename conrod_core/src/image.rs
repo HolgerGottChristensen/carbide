@@ -11,7 +11,7 @@ use fnv;
 /// `Id`s, conrod can remain agnostic of the actual image or texture render used to represent each
 /// image.
 #[derive(Copy, Clone, Debug, Eq, PartialEq, Ord, PartialOrd, Hash)]
-pub struct Id(u32);
+pub struct Id(pub u32);
 
 /// A type used to map the `widget::Id` of `Image` widgets to their associated `Img` data.
 ///

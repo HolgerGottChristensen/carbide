@@ -4,7 +4,7 @@ use ::{Point, Scalar};
 use position::Dimensions;
 use widget::common_widget::CommonWidget;
 
-use widget::layout::Layout;
+
 use text::font::Map;
 use layout::basic_layouter::BasicLayouter;
 use widget::render::Render;
@@ -20,6 +20,8 @@ use widget::primitive::widget::WidgetExt;
 use state::state::{StateList};
 use flags::Flags;
 use widget::widget_iterator::{WidgetIter, WidgetIterMut};
+use layout::Layout;
+use layout::layouter::Layouter;
 
 pub static SCALE: f64 = -1.0;
 

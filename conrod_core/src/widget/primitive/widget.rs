@@ -14,7 +14,7 @@ use position::Dimensions;
 use widget::common_widget::CommonWidget;
 use widget::primitive::v_stack::VStack;
 use uuid::Uuid;
-use widget::layout::Layout;
+
 use text::font::Map;
 use widget::primitive::frame::Frame;
 use widget::primitive::h_stack::HStack;
@@ -32,6 +32,7 @@ use flags::Flags;
 use widget::widget_iterator::{WidgetIterMut, WidgetIter};
 use std::slice::{Iter, IterMut};
 use dyn_clone::DynClone;
+use layout::Layout;
 
 pub trait Widget<S>: Event<S> + Layout + Render<S> + DynClone {}
 

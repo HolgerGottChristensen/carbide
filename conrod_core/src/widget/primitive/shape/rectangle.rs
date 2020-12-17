@@ -25,7 +25,7 @@ use std::convert::TryFrom;
 use std::error::Error;
 use std::collections::HashMap;
 use std::any::Any;
-use widget::layout::Layout;
+
 use text::font::Map;
 use layout::basic_layouter::BasicLayouter;
 use event::event::Event;
@@ -37,6 +37,8 @@ use flags::Flags;
 use widget::widget_iterator::{WidgetIter, WidgetIterMut};
 use std::slice::{Iter, IterMut};
 use draw::shape::triangle::Triangle;
+use layout::Layout;
+use layout::layouter::Layouter;
 
 /// A basic, non-interactive rectangle shape widget.
 #[derive(Debug, Clone, WidgetCommon_)]

@@ -124,6 +124,7 @@ pub const MODE_GEOMETRY: u32 = 2;
 /// The vertex shader used within the `glium::Program` for OpenGL.
 pub const VERTEX_SHADER_120: &'static str = "
     #version 120
+    uniform mat4 matrix;
 
     attribute vec2 position;
     attribute vec2 tex_coords;
@@ -135,7 +136,7 @@ pub const VERTEX_SHADER_120: &'static str = "
     varying float v_mode;
 
     void main() {
-        gl_Position = vec4(position, 0.0, 1.0);
+        gl_Position = matrix * vec4(position, 0.0, 1.0);
         v_tex_coords = tex_coords;
         v_color = color;
         v_mode = mode;
@@ -170,6 +171,7 @@ pub const FRAGMENT_SHADER_120: &'static str = "
 /// The vertex shader used within the `glium::Program` for OpenGL.
 pub const VERTEX_SHADER_140: &'static str = "
     #version 140
+    uniform mat4 matrix;
 
     in vec2 position;
     in vec2 tex_coords;
@@ -181,7 +183,7 @@ pub const VERTEX_SHADER_140: &'static str = "
     flat out uint v_mode;
 
     void main() {
-        gl_Position = vec4(position, 0.0, 1.0);
+        gl_Position = matrix * vec4(position, 0.0, 1.0);
         v_tex_coords = tex_coords;
         v_color = color;
         v_mode = mode;
@@ -218,6 +220,7 @@ pub const FRAGMENT_SHADER_140: &'static str = "
 /// The vertex shader used within the `glium::Program` for OpenGL ES.
 pub const VERTEX_SHADER_300_ES: &'static str = "
     #version 300 es
+    uniform mat4 matrix;
     precision mediump float;
 
     in vec2 position;
@@ -230,7 +233,7 @@ pub const VERTEX_SHADER_300_ES: &'static str = "
     flat out uint v_mode;
 
     void main() {
-        gl_Position = vec4(position, 0.0, 1.0);
+        gl_Position = matrix * vec4(position, 0.0, 1.0);
         v_tex_coords = tex_coords;
         v_color = color;
         v_mode = mode;
@@ -538,8 +541,8 @@ impl Renderer {
         let dpi_factor = display.hidpi_factor() as Scalar;
 
         // Functions for converting for conrod scalar coords to GL vertex coords (-1.0 to 1.0).
-        let vx = |x: Scalar| ((x * dpi_factor / half_win_w) - 1.0) as f32;
-        let vy = |y: Scalar| -((y * dpi_factor / half_win_h) - 1.0) as f32;
+        let vx = |x: Scalar| ((x * dpi_factor / half_win_w)) as f32;
+        let vy = |y: Scalar| ((y * dpi_factor / half_win_h)) as f32;
 
         let mut current_scizzor = glium::Rect {
             left: 0,
@@ -895,6 +898,12 @@ impl Renderer {
         let mut draw_params = draw_parameters();
         let no_indices = glium::index::NoIndices(glium::index::PrimitiveType::TrianglesList);
         let uniforms = uniform! {
+            matrix: [
+                [1.0, 0.0, 0.0, 0.0],
+                [0.0, -1.0, 0.0, 0.0],
+                [0.0, 0.0, 1.0, 0.0],
+                [-1.0 , 1.0, 0.0, 1.0f32],
+            ],
             tex: self.glyph_cache.texture()
                 .sampled()
                 .magnify_filter(glium::uniforms::MagnifySamplerFilter::Nearest)
@@ -928,6 +937,12 @@ impl Renderer {
                         let vertex_buffer = glium::VertexBuffer::new(facade, slice).unwrap();
                         if let Some(image) = image_map.get(&image_id) {
                             let image_uniforms = uniform! {
+                                matrix: [
+                                    [1.0, 0.0, 0.0, 0.0],
+                                    [0.0, -1.0, 0.0, 0.0],
+                                    [0.0, 0.0, 1.0, 0.0],
+                                    [-1.0 , 1.0, 0.0, 1.0f32],
+                                ],
                                 tex: glium::uniforms::Sampler::new(image)
                                     .wrap_function(glium::uniforms::SamplerWrapFunction::Clamp)
                                     .magnify_filter(glium::uniforms::MagnifySamplerFilter::Nearest),

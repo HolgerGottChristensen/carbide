@@ -24,7 +24,7 @@ use std::convert::TryFrom;
 use std::error::Error;
 use std::collections::HashMap;
 use std::any::Any;
-use widget::layout::Layout;
+
 use text::font::Map;
 use layout::basic_layouter::BasicLayouter;
 use event::event::Event;
@@ -32,6 +32,7 @@ use event_handler::{WidgetEvent, MouseEvent, KeyboardEvent};
 use state::state::{StateList};
 use flags::Flags;
 use widget::widget_iterator::{WidgetIter, WidgetIterMut};
+use layout::Layout;
 
 
 /// A basic, non-interactive rectangle shape widget.

@@ -20,9 +20,9 @@ use std::convert::TryFrom;
 use std::error::Error;
 use std::collections::HashMap;
 use std::any::Any;
-use widget::layout::Layout;
+
 use text::font::Map;
-use layout::CrossAxisAlignment;
+use layout::{CrossAxisAlignment, Layout};
 use layout::basic_layouter::BasicLayouter;
 use event::event::Event;
 use event_handler::{WidgetEvent, MouseEvent, KeyboardEvent};
@@ -30,6 +30,7 @@ use widget::primitive::widget::WidgetExt;
 use state::state::{StateList};
 use flags::Flags;
 use widget::widget_iterator::{WidgetIter, WidgetIterMut};
+use layout::layouter::Layouter;
 
 
 /// A basic, non-interactive rectangle shape widget.

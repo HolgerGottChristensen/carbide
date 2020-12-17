@@ -15,14 +15,14 @@ use event_handler::{WidgetEvent, MouseEvent, KeyboardEvent};
 use state::state::{StateList, GetState, State};
 use daggy::petgraph::graph::node_index;
 use render::primitive_kind::PrimitiveKind;
-use widget::layout::Layout;
+
 use layout::basic_layouter::BasicLayouter;
 use widget::primitive::spacer::{Spacer, SpacerDirection};
 use input::Key;
 use flags::Flags;
 use widget::widget_iterator::{WidgetIter, WidgetIterMut};
 use std::collections::HashMap;
-
+use layout::Layout;
 
 
 #[derive(Debug, Clone)]

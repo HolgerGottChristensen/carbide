@@ -10,6 +10,8 @@ use crate::text::{self, rt};
 use crate::{Rect, Scalar};
 use std::{fmt, ops};
 use render::primitive_walker::PrimitiveWalker;
+use mesh::vertex::Vertex;
+use Range;
 
 /// Images within the given image map must know their dimensions in pixels.
 pub trait ImageDimensions {
@@ -63,31 +65,6 @@ pub enum Draw {
     Plain(std::ops::Range<usize>),
 }
 
-/// The data associated with a single vertex.
-#[repr(C)]
-#[derive(Clone, Copy, Debug, Default, PartialEq, PartialOrd)]
-pub struct Vertex {
-    /// The normalised position of the vertex within vector space.
-    ///
-    /// [-1.0, 1.0] is the leftmost, bottom position of the display.
-    /// [1.0, -1.0] is the rightmost, top position of the display.
-    pub position: [f32; 2],
-    /// The coordinates of the texture used by this `Vertex`.
-    ///
-    /// [0.0, 0.0] is the leftmost, top position of the texture.
-    /// [1.0, 1.0] is the rightmost, bottom position of the texture.
-    pub tex_coords: [f32; 2],
-    /// Linear sRGB with an alpha channel.
-    pub rgba: [f32; 4],
-    /// The mode with which the `Vertex` will be drawn within the fragment shader.
-    ///
-    /// `0` for rendering text.
-    /// `1` for rendering an image.
-    /// `2` for rendering non-textured 2D geometry.
-    ///
-    /// If any other value is given, the fragment shader will not output any color.
-    pub mode: u32,
-}
 
 /// The result of filling the mesh.
 ///
@@ -196,8 +173,8 @@ impl Mesh {
         let glyph_cache_w = glyph_cache_w as usize;
 
         // Functions for converting for conrod scalar coords to normalised vertex coords (-1.0 to 1.0).
-        let vx = |x: Scalar| (x * dpi_factor / half_viewport_w) as f32;
-        let vy = |y: Scalar| -1.0 * (y * dpi_factor / half_viewport_h) as f32;
+        let vx = |x: Scalar| (x * dpi_factor / half_viewport_w - 1.0) as f32;
+        let vy = |y: Scalar| -1.0 * (y * dpi_factor / half_viewport_h - 1.0) as f32;
 
         let rect_to_scizzor = |rect: Rect| {
             let (w, h) = rect.w_h();
@@ -272,7 +249,7 @@ impl Mesh {
                     let v = |x, y| {
                         // Convert from conrod Scalar range to GL range -1.0 to 1.0.
                         Vertex {
-                            position: [vx(x), vy(y)],
+                            position: [vx(x), vy(y), 0.0],
                             tex_coords: [0.0, 0.0],
                             rgba: color,
                             mode: MODE_GEOMETRY,
@@ -301,7 +278,7 @@ impl Mesh {
                     let color = gamma_srgb_to_linear(color.into());
 
                     let v = |p: [Scalar; 2]| Vertex {
-                        position: [vx(p[0]), vy(p[1])],
+                        position: [vx(p[0]), vy(p[1]), 0.0],
                         tex_coords: [0.0, 0.0],
                         rgba: color,
                         mode: MODE_GEOMETRY,
@@ -322,7 +299,7 @@ impl Mesh {
                     switch_to_plain_state!();
 
                     let v = |(p, c): ([Scalar; 2], color::Rgba)| Vertex {
-                        position: [vx(p[0]), vy(p[1])],
+                        position: [vx(p[0]), vy(p[1]), 0.0],
                         tex_coords: [0.0, 0.0],
                         rgba: gamma_srgb_to_linear(c.into()),
                         mode: MODE_GEOMETRY,
@@ -341,9 +318,7 @@ impl Mesh {
                     font_id,
                 } => {
                     switch_to_plain_state!();
-
                     let positioned_glyphs = text.positioned_glyphs(dpi_factor as f32);
-
                     // Queue the glyphs to be cached
                     for glyph in positioned_glyphs.clone() {
                         glyph_cache.queue_glyph(font_id.index(), glyph.clone());
@@ -366,12 +341,13 @@ impl Mesh {
                         glyph_cache_requires_upload = true;
                     })?;
 
+
                     let color = gamma_srgb_to_linear(color.to_fsa());
                     let cache_id = font_id.index();
-                    let origin = rt::point(0.0, 0.0);
+                    //let origin = rt::point(0.0, 0.0);
 
                     // A closure to convert RustType rects to GL rects
-                    let to_vk_rect = |screen_rect: rt::Rect<i32>| rt::Rect {
+                    /*let to_vk_rect = |screen_rect: rt::Rect<i32>| rt::Rect {
                         min: origin
                             + (rt::vector(
                                 screen_rect.min.x as f32 / viewport_w as f32 - 0.5,
@@ -382,43 +358,43 @@ impl Mesh {
                                 screen_rect.max.x as f32 / viewport_w as f32 - 0.5,
                                 screen_rect.max.y as f32 / viewport_h as f32 - 0.5,
                             )) * 2.0,
+                    };*/
+
+                    let to_gl_rect = |screen_rect: text::rt::Rect<i32>| {
+                        let min_x = (screen_rect.min.x as f64 / dpi_factor + rect.x.start);
+                        let max_x = (screen_rect.max.x as f64 / dpi_factor + rect.x.start);
+                        let min_y = (screen_rect.min.y as f64 / dpi_factor + rect.y.start);
+                        let max_y = (screen_rect.max.y as f64 / dpi_factor + rect.y.start);
+
+                        Rect {
+                            x: Range {start: min_x, end: max_x},
+                            y: Range {start: min_y, end: max_y}
+                        }
                     };
 
                     for g in positioned_glyphs.clone() {
                         if let Ok(Some((uv_rect, screen_rect))) = glyph_cache.rect_for(cache_id, &g)
                         {
-                            let vk_rect = to_vk_rect(screen_rect);
-                            let v = |p, t| Vertex {
-                                position: p,
+                            let vk_rect = to_gl_rect(screen_rect);
+
+                            let v = |x, y, t| Vertex {
+                                position: [vx(x), vy(y), 0.0],
                                 tex_coords: t,
                                 rgba: color,
                                 mode: MODE_TEXT,
                             };
-                            let mut push_v = |p, t| vertices.push(v(p, t));
-                            push_v(
-                                [vk_rect.min.x, vk_rect.max.y],
-                                [uv_rect.min.x, uv_rect.max.y],
-                            );
-                            push_v(
-                                [vk_rect.min.x, vk_rect.min.y],
-                                [uv_rect.min.x, uv_rect.min.y],
-                            );
-                            push_v(
-                                [vk_rect.max.x, vk_rect.min.y],
-                                [uv_rect.max.x, uv_rect.min.y],
-                            );
-                            push_v(
-                                [vk_rect.max.x, vk_rect.min.y],
-                                [uv_rect.max.x, uv_rect.min.y],
-                            );
-                            push_v(
-                                [vk_rect.max.x, vk_rect.max.y],
-                                [uv_rect.max.x, uv_rect.max.y],
-                            );
-                            push_v(
-                                [vk_rect.min.x, vk_rect.max.y],
-                                [uv_rect.min.x, uv_rect.max.y],
-                            );
+                            let mut push_v = |x, y, t| {
+                                vertices.push(v(x, y, t));
+                            };
+
+                            let (l, r, b, t) = vk_rect.l_r_b_t();
+
+                            push_v(l, t, [uv_rect.min.x, uv_rect.max.y]);
+                            push_v(r, b, [uv_rect.max.x, uv_rect.min.y]);
+                            push_v(l, b, [uv_rect.min.x, uv_rect.min.y]);
+                            push_v(l, t, [uv_rect.min.x, uv_rect.max.y]);
+                            push_v(r, b, [uv_rect.max.x, uv_rect.min.y]);
+                            push_v(r, t, [uv_rect.max.x, uv_rect.max.y]);
                         }
                     }
                 }
@@ -473,19 +449,19 @@ impl Mesh {
                             (
                                 (l / image_w) as f32,
                                 (r / image_w) as f32,
-                                1.0 - (b / image_h) as f32,
-                                1.0 - (t / image_h) as f32,
+                                (b / image_h) as f32,
+                                (t / image_h) as f32,
                             )
                         }
-                        None => (0.0, 1.0, 1.0, 0.0),
+                        None => (0.0, 1.0, 0.0, 1.0),
                     };
 
                     let v = |x, y, t| {
                         // Convert from conrod Scalar range to normalised range -1.0 to 1.0.
-                        let x = (x * dpi_factor / half_viewport_w) as f32;
-                        let y = -((y * dpi_factor / half_viewport_h) as f32);
+                        let x = (x * dpi_factor / half_viewport_w - 1.0) as f32;
+                        let y = -((y * dpi_factor / half_viewport_h - 1.0) as f32);
                         Vertex {
-                            position: [x, y],
+                            position: [x, y, 0.0],
                             tex_coords: t,
                             rgba: color,
                             mode: MODE_IMAGE,
