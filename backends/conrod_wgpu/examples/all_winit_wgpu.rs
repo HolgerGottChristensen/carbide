@@ -1,5 +1,8 @@
 //! An example demonstrating the use of `conrod_wgpu` alongside `winit`.
 
+mod calculator;
+mod calculator_ui;
+
 use conrod_example_shared::{WIN_H, WIN_W};
 use winit::{
     event,

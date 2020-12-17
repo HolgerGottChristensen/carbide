@@ -52,8 +52,6 @@ fn main() {
     window.add_font("fonts/NotoSans/NotoSans-Regular.ttf").unwrap();
     let rust_image = window.add_image("images/rust_hover.png").unwrap();
 
-    window.widgets = Some(Box::new(|ui| {}));
-
     // Rectangle::new(params!(alignment: Alignment::Leading))
 
     let sync_state = State::new("K", &"Hello".to_string());

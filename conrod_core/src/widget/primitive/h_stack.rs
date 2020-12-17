@@ -51,6 +51,11 @@ impl<S> HStack<S> {
             spacing: 10.0
         })
     }
+
+    pub fn spacing(mut self, spacing: f64) -> Box<Self> {
+        self.spacing = spacing;
+        Box::new(self)
+    }
 }
 
 impl<S: 'static + Clone> WidgetExt<S> for HStack<S> {}
@@ -244,7 +249,7 @@ impl<S> Render<S> for HStack<S> {
 
     fn get_primitives(&self, fonts: &text::font::Map) -> Vec<Primitive> {
         let mut prims = vec![];
-        prims.extend(Rectangle::<S>::rect_outline(Rect::new(self.position, self.dimension), 0.5));
+        prims.extend(Rectangle::<S>::rect_outline(Rect::new(self.position, self.dimension), 1.0));
         let children: Vec<Primitive> = self.get_children().flat_map(|f| f.get_primitives(fonts)).collect();
         prims.extend(children);
 

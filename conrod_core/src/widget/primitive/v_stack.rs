@@ -51,6 +51,11 @@ impl<S> VStack<S> {
             spacing: 10.0
         })
     }
+
+    pub fn spacing(mut self, spacing: f64) -> Box<Self> {
+        self.spacing = spacing;
+        Box::new(self)
+    }
 }
 
 impl<S> Event<S> for VStack<S> {

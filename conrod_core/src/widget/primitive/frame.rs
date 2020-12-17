@@ -152,7 +152,7 @@ impl<S> CommonWidget<S> for Frame<S> {
     }
 
     fn get_dimension(&self) -> Dimensions {
-        self.dimension
+        [self.dimension[0].abs(), self.dimension[1].abs()]
     }
 
     fn set_dimension(&mut self, dimensions: Dimensions) {
@@ -173,6 +173,7 @@ impl<S> Layout for Frame<S> {
             (x, y) if y < 0.0 => [self.dimension[0], dimension[1]],
             (x, y) => [x, y]
         };
+
         let child_dimensions = self.child.calculate_size(abs_dimensions, fonts);
 
         if dimensions[0] < 0.0 {
@@ -190,6 +191,7 @@ impl<S> Layout for Frame<S> {
         let positioning = BasicLayouter::Center.position();
         let position = self.position;
         let dimension = [self.dimension[0].abs(), self.dimension[1].abs()];
+
 
         positioning(position, dimension, &mut self.child);
         self.child.position_children();

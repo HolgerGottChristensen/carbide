@@ -1,60 +1,25 @@
-mod texture;
-mod renderer;
-mod image;
-mod render;
-mod render_pass_command;
-mod glyph_cache_command;
-mod diffuse_bind_group;
-mod pipeline;
-
-use winit::window::{Window, WindowBuilder};
-use winit::event::{WindowEvent, Event, KeyboardInput, ElementState, VirtualKeyCode};
-use winit::event_loop::EventLoop;
-use futures::executor::block_on;
-use winit::event_loop::ControlFlow;
-use wgpu::util::DeviceExt;
-use crate::diffuse_bind_group::{DiffuseBindGroup, new_diffuse};
 use crate::image::Image;
-use conrod_core::mesh::vertex::Vertex;
 use conrod_core::mesh::mesh::{Mesh, DEFAULT_GLYPH_CACHE_DIMS};
-use conrod_core::{Rect, Color, mesh, Ui};
+use conrod_core::{Ui, Rect};
 use conrod_core::image::{ImageMap, Id};
-use conrod_core::render::cprimitives::CPrimitives;
-use conrod_core::render::primitive::Primitive;
-use conrod_core::render::primitive_kind::PrimitiveKind;
-use conrod_core::widget::{Rectangle, Text};
-use conrod_core::color::{GREEN, RED};
-use conrod_core::event::input::Input;
-use conrod_core::widget::primitive::widget::WidgetExt;
-use crate::renderer::glyph_cache_tex_desc;
-use wgpu::{Texture, BindGroup, BindGroupLayout};
-use crate::glyph_cache_command::GlyphCacheCommand;
-use conrod_core::widget::primitive::v_stack::VStack;
+use wgpu::{Texture, BindGroupLayout};
 use std::collections::HashMap;
-use crate::render_pass_command::{create_render_pass_commands, RenderPassCommand};
+use crate::diffuse_bind_group::{DiffuseBindGroup, new_diffuse};
+use conrod_core::mesh::vertex::Vertex;
+use crate::renderer::glyph_cache_tex_desc;
+use conrod_core::event::input::Input;
+use crate::render_pass_command::{RenderPassCommand, create_render_pass_commands};
+use wgpu::util::DeviceExt;
+use crate::glyph_cache_command::GlyphCacheCommand;
+use winit::event::{WindowEvent, Event, KeyboardInput, ElementState, VirtualKeyCode};
+use winit::event_loop::{ControlFlow, EventLoop};
+use conrod_core::widget::primitive::Widget;
+use conrod_core::text::font::Error;
+use winit::window::WindowBuilder;
+use conrod_core::text::font;
+use winit::dpi::{Size, PhysicalSize};
 
-
-const GLYPH_TEX_FORMAT: wgpu::TextureFormat = wgpu::TextureFormat::R8Unorm;
-const GLYPH_TEX_COMPONENT_TY: wgpu::TextureComponentType = wgpu::TextureComponentType::Uint;
-const DEFAULT_IMAGE_TEX_FORMAT: wgpu::TextureFormat = wgpu::TextureFormat::R8Unorm;
-
-
-const VERTICES: &[Vertex] = &[
-    // Changed
-    Vertex { position: [-0.0868241, 0.49240386, 0.0], tex_coords: [0.4131759, 0.00759614], rgba: [1.0,0.0,0.0,1.0], mode: 0 }, // A
-    Vertex { position: [-0.49513406, 0.06958647, 0.0], tex_coords: [0.0048659444, 0.43041354], rgba: [1.0,0.0,0.0,1.0], mode: 0 }, // B
-    Vertex { position: [-0.21918549, -0.44939706, 0.0], tex_coords: [0.28081453, 0.949397057], rgba: [1.0,0.0,0.0,1.0], mode: 0}, // C
-    Vertex { position: [0.35966998, -0.3473291, 0.0], tex_coords: [0.85967, 0.84732911], rgba: [1.0,0.0,0.0,1.0], mode: 0}, // D
-    Vertex { position: [0.44147372, 0.2347359, 0.0], tex_coords: [0.9414737, 0.2652641], rgba: [1.0,0.0,0.0,1.0], mode: 0}, // E
-];
-
-const INDICES: &[u16] = &[
-    0, 1, 4,
-    1, 2, 4,
-    2, 3, 4,
-];
-
-struct State {
+pub struct Window<T: 'static + Clone> {
     surface: wgpu::Surface,
     device: wgpu::Device,
     queue: wgpu::Queue,
@@ -62,29 +27,61 @@ struct State {
     swap_chain: wgpu::SwapChain,
     size: winit::dpi::PhysicalSize<u32>,
     render_pipeline: wgpu::RenderPipeline,
-    vertex_buffer: wgpu::Buffer,
-    num_vertices: u32,
-    index_buffer: wgpu::Buffer,
-    num_indices: u32,
     diffuse_bind_group: wgpu::BindGroup,
-    diffuse_texture: Image,
+    image: Image,
     mesh: Mesh,
-    ui: Ui<String>,
+    ui: Ui<T>,
     image_map: ImageMap<Image>,
     glyph_cache_tex: Texture,
     bind_groups: HashMap<Id, DiffuseBindGroup>,
     texture_bind_group_layout: BindGroupLayout,
+    state: T,
+    inner_window: winit::window::Window,
+    event_loop: Option<EventLoop<()>>
 }
 
-impl State {
-    // Creating some of the wgpu types requires async code
-    async fn new(window: &Window, ui: Ui<String>) -> Self {
-        let size = window.inner_size();
+impl<T: 'static + Clone> conrod_core::window::TWindow<T> for Window<T> {
+
+    fn add_font(&mut self, path: &str) -> Result<font::Id, Error> {
+        let assets = find_folder::Search::KidsThenParents(3, 5).for_folder("assets").unwrap();
+        let font_path = assets.join(path);
+
+        self.ui.fonts.insert_from_file(font_path)
+    }
+
+    fn add_image(&mut self, path: &str) -> Result<Id, Error> {
+        let assets = find_folder::Search::KidsThenParents(3, 5)
+            .for_folder("assets")
+            .unwrap();
+        let image = Image::new(assets.join(path), &self.device, &self.queue);
+
+        Ok(self.image_map.insert(image))
+    }
+
+    fn set_widgets(&mut self, w: Box<dyn Widget<T>>) {
+        self.ui.widgets = w;
+    }
+}
+
+impl<T: 'static + Clone> Window<T> {
+    pub async fn new(title: String, width: u32, height: u32, state: T) -> Self {
+
+        let event_loop = EventLoop::new();
+
+        let inner_window = WindowBuilder::new()
+            .with_inner_size(Size::Physical(PhysicalSize{ width, height }))
+            .with_title(title)
+            .build(&event_loop)
+            .unwrap();
+
+        let size = inner_window.inner_size();
+
+        let ui: Ui<T> = conrod_core::UiBuilder::new([inner_window.inner_size().width as f64, inner_window.inner_size().height as f64]).build();
 
         // The instance is a handle to our GPU
         // BackendBit::PRIMARY => Vulkan + Metal + DX12 + Browser WebGPU
         let instance = wgpu::Instance::new(wgpu::BackendBit::PRIMARY);
-        let surface = unsafe { instance.create_surface(window) };
+        let surface = unsafe { instance.create_surface(&inner_window) };
         let adapter = instance.request_adapter(
             &wgpu::RequestAdapterOptions {
                 power_preference: wgpu::PowerPreference::Default,
@@ -154,14 +151,6 @@ impl State {
         let assets = find_folder::Search::KidsThenParents(3, 5)
             .for_folder("assets")
             .unwrap();
-        let image = Image::new(assets.join("images/happy-tree.png"), &device, &queue);
-
-        let mut image_map = ImageMap::new();
-        image_map.insert(image);
-
-        let image = Image::new(assets.join("images/rust.png"), &device, &queue);
-
-        image_map.insert(image);
 
         let image = Image::new(assets.join("images/happy-tree.png"), &device, &queue);
         let diffuse_bind_group = new_diffuse(&device, &image, &glyph_cache_tex, &texture_bind_group_layout);
@@ -226,29 +215,13 @@ impl State {
             alpha_to_coverage_enabled: false, // 7.
         });
 
-        let vertex_buffer = device.create_buffer_init(
-            &wgpu::util::BufferInitDescriptor {
-                label: Some("Vertex Buffer"),
-                contents: bytemuck::cast_slice(VERTICES),
-                usage: wgpu::BufferUsage::VERTEX,
-            }
-        );
-
-        let index_buffer = device.create_buffer_init(
-            &wgpu::util::BufferInitDescriptor {
-                label: Some("Index Buffer"),
-                contents: bytemuck::cast_slice(INDICES),
-                usage: wgpu::BufferUsage::INDEX,
-            }
-        );
-        let num_indices = INDICES.len() as u32;
-        let num_vertices = VERTICES.len() as u32;
-
-
         let mut bind_groups = HashMap::new();
-        bind_groups.insert(Id(0), diffuse_bind_group);
 
         let diffuse_bind_group = new_diffuse(&device, &image, &glyph_cache_tex, &texture_bind_group_layout);
+
+        let mesh = Mesh::with_glyph_cache_dimensions(DEFAULT_GLYPH_CACHE_DIMS);
+
+        let image_map = ImageMap::new();
 
         Self {
             surface,
@@ -258,41 +231,45 @@ impl State {
             swap_chain,
             size,
             render_pipeline,
-            vertex_buffer,
-            num_vertices,
-            index_buffer,
-            num_indices,
             diffuse_bind_group,
-            diffuse_texture: image,
-            mesh: Mesh::with_glyph_cache_dimensions(mesh::mesh::DEFAULT_GLYPH_CACHE_DIMS),
+            image,
+            mesh,
             ui,
             image_map,
             glyph_cache_tex,
             bind_groups,
-            texture_bind_group_layout
+            texture_bind_group_layout,
+            state,
+            inner_window,
+            event_loop: Some(event_loop)
         }
     }
 
-    fn resize(&mut self, new_size: winit::dpi::PhysicalSize<u32>) {
+    pub fn resize(&mut self, new_size: winit::dpi::PhysicalSize<u32>) {
         self.size = new_size;
         self.ui.win_w = self.size.width as f64;
         self.ui.win_h = self.size.height as f64;
-        let mut str = String::from("Hejsa");
-        self.ui.handle_event(Input::Redraw, &mut str);
+        self.ui.handle_event(Input::Redraw, &mut self.state);
         self.sc_desc.width = new_size.width;
         self.sc_desc.height = new_size.height;
         self.swap_chain = self.device.create_swap_chain(&self.surface, &self.sc_desc);
     }
 
     fn input(&mut self, event: &WindowEvent) -> bool {
-        false
+        match convert_window_event(event, &self.inner_window) {
+            None => false,
+            Some(input) => {
+                self.ui.handle_event(input, &mut self.state);
+                false
+            },
+        }
     }
 
     fn update(&mut self) {
 
     }
 
-    fn render(&mut self) -> Result<(), wgpu::SwapChainError> {
+    pub fn render(&mut self) -> Result<(), wgpu::SwapChainError> {
         let frame = self
             .swap_chain
             .get_current_frame()?
@@ -346,9 +323,9 @@ impl State {
                         resolve_target: None,
                         ops: wgpu::Operations {
                             load: wgpu::LoadOp::Clear(wgpu::Color {
-                                r: 0.1,
-                                g: 0.2,
-                                b: 0.3,
+                                r: 0.0,
+                                g: 0.0,
+                                b: 0.0,
                                 a: 1.0,
                             }),
                             store: true,
@@ -387,86 +364,67 @@ impl State {
         Ok(())
 
     }
-}
 
+    pub fn run_event_loop(mut self) {
 
+        let mut event_loop = None;
 
-fn main() {
-    env_logger::init();
-    let event_loop = EventLoop::new();
-    let window = WindowBuilder::new()
-        .build(&event_loop)
-        .unwrap();
+        std::mem::swap(&mut event_loop, &mut self.event_loop);
 
-    let mut ui: Ui<String> = conrod_core::UiBuilder::new([window.inner_size().width as f64, window.inner_size().height as f64]).build();
+        event_loop
+            .expect("The eventloop should be retrieved")
+            .run(move |event, _, control_flow| {
+            match event {
+                Event::WindowEvent {
+                    ref event,
+                    window_id,
+                } if window_id == self.inner_window.id() => if !self.input(event) { // UPDATED!
+                    match event {
 
-    ui.widgets = Rectangle::initialize(vec![
-        Rectangle::initialize(vec![
-            VStack::initialize(
-                vec![
-                    conrod_core::widget::Text::initialize("Majs med jokejjkjjjj".into(), vec![]),
-                    conrod_core::widget::Image::new(Id(0), [50.0,50.0], vec![]),
-                    conrod_core::widget::Image::new(Id(1), [150.0,150.0], vec![])
-                ]
-            )
-
-        ]).fill(RED).frame(200.0, 600.0)
-    ]).fill(GREEN);
-
-    let assets = find_folder::Search::KidsThenParents(3, 5).for_folder("assets").unwrap();
-    let font_path = assets.join("fonts/NotoSans/NotoSans-Regular.ttf");
-    ui.fonts.insert_from_file(font_path);
-
-    let mut state = block_on(State::new(&window, ui));
-    event_loop.run(move |event, _, control_flow| {
-        match event {
-            Event::WindowEvent {
-                ref event,
-                window_id,
-            } if window_id == window.id() => if !state.input(event) { // UPDATED!
-                match event {
-
-                    WindowEvent::CloseRequested => *control_flow = ControlFlow::Exit,
-                    WindowEvent::KeyboardInput {
-                        input,
-                        ..
-                    } => {
-                        match input {
-                            KeyboardInput {
-                                state: ElementState::Pressed,
-                                virtual_keycode: Some(VirtualKeyCode::Escape),
-                                ..
-                            } => *control_flow = ControlFlow::Exit,
-                            _ => {}
+                        WindowEvent::CloseRequested => *control_flow = ControlFlow::Exit,
+                        WindowEvent::KeyboardInput {
+                            input,
+                            ..
+                        } => {
+                            match input {
+                                KeyboardInput {
+                                    state: ElementState::Pressed,
+                                    virtual_keycode: Some(VirtualKeyCode::Escape),
+                                    ..
+                                } => *control_flow = ControlFlow::Exit,
+                                _ => {}
+                            }
                         }
+                        WindowEvent::Resized(physical_size) => {
+                            self.resize(*physical_size);
+                        }
+                        WindowEvent::ScaleFactorChanged { new_inner_size, .. } => {
+                            self.resize(**new_inner_size);
+                        }
+                        _ => {}
                     }
-                    WindowEvent::Resized(physical_size) => {
-                        state.resize(*physical_size);
-                    }
-                    WindowEvent::ScaleFactorChanged { new_inner_size, .. } => {
-                        state.resize(**new_inner_size);
-                    }
-                    _ => {}
                 }
-            }
-            Event::RedrawRequested(_) => {
-                state.update();
-                match state.render() {
-                    Ok(_) => {}
-                    // Recreate the swap_chain if lost
-                    Err(wgpu::SwapChainError::Lost) => state.resize(state.size),
-                    // The system is out of memory, we should probably quit
-                    Err(wgpu::SwapChainError::OutOfMemory) => *control_flow = ControlFlow::Exit,
-                    // All other errors (Outdated, Timeout) should be resolved by the next frame
-                    Err(e) => eprintln!("{:?}", e),
+                Event::RedrawRequested(_) => {
+                    self.update();
+                    match self.render() {
+                        Ok(_) => {}
+                        // Recreate the swap_chain if lost
+                        Err(wgpu::SwapChainError::Lost) => self.resize(self.size),
+                        // The system is out of memory, we should probably quit
+                        Err(wgpu::SwapChainError::OutOfMemory) => *control_flow = ControlFlow::Exit,
+                        // All other errors (Outdated, Timeout) should be resolved by the next frame
+                        Err(e) => eprintln!("{:?}", e),
+                    }
                 }
+                Event::MainEventsCleared => {
+                    // RedrawRequested will only trigger once, unless we manually
+                    // request it.
+                    self.inner_window.request_redraw();
+                }
+                _ => {}
             }
-            Event::MainEventsCleared => {
-                // RedrawRequested will only trigger once, unless we manually
-                // request it.
-                window.request_redraw();
-            }
-            _ => {}
-        }
-    });
+        });
+    }
 }
+
+conrod_winit::v023_conversion_fns!();

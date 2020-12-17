@@ -45,7 +45,7 @@ compiled won't need recompilation, and things will happen more quickly.
 
 To use Conrod in your application, you need to tell your program to use it,
 and you need to tell Cargo to make it available to your programme. The program
-itself is in the `src` folder of your project, in the file called `main.rs`,
+itself is in the `src` folder of your project, in the file called `lib`,
 and should look like this right now:
 
 ```ignore
@@ -70,7 +70,7 @@ If you try to run the above code, you'll get an error like:
 ```txt
 error[E0463]: can't find crate for "conrod"
 
- --> src/main.rs:1:1
+ --> src/lib:1:1
 
 error: aborting due to previous error(s)
 ```
@@ -271,7 +271,7 @@ Except that if you compile the code right now, it fails with
 error[E0599]: no method named 'middle_of' found for type
 conrod::widget::Text<'_>' in the current scope
 
-  --> src/main.rs:89:18`
+  --> src/lib:89:18`
 
    = help: items from traits can only be used if the trait is in scope`
 
