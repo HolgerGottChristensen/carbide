@@ -27,6 +27,7 @@ pub struct CalculatorButton {
     child: Box<dyn Widget<CalculatorState>>,
     position: Point,
     dimension: Dimensions,
+    function: Option<fn(myself: &mut Self, global_state: &mut CalculatorState)>
 }
 
 impl CalculatorButton {
@@ -38,7 +39,13 @@ impl CalculatorButton {
             ]).fill(rgb_bytes(76,0,19)),
             position: [0.0, 0.0],
             dimension: [0.0, 0.0],
+            function: None
         })
+    }
+
+    pub fn on_clicked(mut self, func: fn(&mut Self, &mut CalculatorState)) -> Box<Self>{
+        self.function = Some(func);
+        Box::new(self)
     }
 }
 
@@ -89,8 +96,18 @@ impl CommonWidget<CalculatorState> for CalculatorButton {
 }
 
 impl Event<CalculatorState> for CalculatorButton {
-    fn handle_mouse_event(&mut self, event: &MouseEvent, consumed: &bool) {
-        ()
+    fn handle_mouse_event(&mut self, event: &MouseEvent, consumed: &bool, global_state: &mut CalculatorState) {
+        match event {
+            MouseEvent::Click(_, _, _) => {
+                match self.function {
+                    None => {}
+                    Some(f) => {
+                        f(self, global_state)
+                    }
+                }
+            }
+            _ => ()
+        }
     }
 
     fn handle_keyboard_event(&mut self, event: &KeyboardEvent, global_state: &mut CalculatorState) {
@@ -106,8 +123,8 @@ impl Event<CalculatorState> for CalculatorButton {
         unimplemented!()
     }
 
-    fn process_mouse_event(&mut self, event: &MouseEvent, consumed: &bool, state: StateList) -> StateList {
-        self.process_mouse_event_default(event, consumed, state)
+    fn process_mouse_event(&mut self, event: &MouseEvent, consumed: &bool, state: StateList, global_state: &mut CalculatorState) -> StateList {
+        self.process_mouse_event_default(event, consumed, state, global_state)
     }
 
     fn process_keyboard_event(&mut self, event: &KeyboardEvent, state: StateList, global_state: &mut CalculatorState) -> StateList {
@@ -118,12 +135,12 @@ impl Event<CalculatorState> for CalculatorButton {
         current_state
     }
 
-    fn apply_state(&mut self, states: StateList) -> StateList {
+    fn apply_state(&mut self, states: StateList, global_state: &CalculatorState) -> StateList {
         states
     }
 
-    fn sync_state(&mut self, states: StateList) {
-        self.sync_state_default(states)
+    fn sync_state(&mut self, states: StateList, global_state: &CalculatorState) {
+        self.sync_state_default(states, global_state)
     }
 }
 

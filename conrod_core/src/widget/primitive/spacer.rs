@@ -65,7 +65,7 @@ impl Spacer {
 }
 
 impl<S> Event<S> for Spacer {
-    fn handle_mouse_event(&mut self, event: &MouseEvent, consumed: &bool) {
+    fn handle_mouse_event(&mut self, event: &MouseEvent, consumed: &bool, global_state: &mut S) {
         ()
     }
 
@@ -77,7 +77,7 @@ impl<S> Event<S> for Spacer {
         ()
     }
 
-    fn process_mouse_event(&mut self, event: &MouseEvent, consumed: &bool, state: StateList) -> StateList {
+    fn process_mouse_event(&mut self, event: &MouseEvent, consumed: &bool, state: StateList, global_state: &mut S) -> StateList {
         state
     }
 
@@ -89,11 +89,11 @@ impl<S> Event<S> for Spacer {
         unimplemented!()
     }
 
-    fn apply_state(&mut self, states: StateList) -> StateList {
+    fn apply_state(&mut self, states: StateList, global_state: &S) -> StateList {
         unimplemented!()
     }
 
-    fn sync_state(&mut self, states: StateList) {
+    fn sync_state(&mut self, states: StateList, global_state: &S) {
         ()
     }
 }

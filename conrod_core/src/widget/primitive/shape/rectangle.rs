@@ -58,7 +58,7 @@ pub struct Rectangle<S> {
 impl<K: 'static + Clone> WidgetExt<K> for Rectangle<K> {}
 
 impl<K> Event<K> for Rectangle<K> {
-    fn handle_mouse_event(&mut self, event: &MouseEvent, consumed: &bool) {
+    fn handle_mouse_event(&mut self, event: &MouseEvent, consumed: &bool, global_state: &mut K) {
         ()
     }
 
@@ -70,8 +70,8 @@ impl<K> Event<K> for Rectangle<K> {
         unimplemented!()
     }
 
-    fn process_mouse_event(&mut self, event: &MouseEvent, consumed: &bool, state: StateList) -> StateList {
-        self.process_mouse_event_default(event, consumed, state)
+    fn process_mouse_event(&mut self, event: &MouseEvent, consumed: &bool, state: StateList, global_state: &mut K) -> StateList {
+        self.process_mouse_event_default(event, consumed, state, global_state)
     }
 
     fn process_keyboard_event(&mut self, event: &KeyboardEvent, state: StateList, global_state: &mut K) -> StateList {
@@ -82,12 +82,12 @@ impl<K> Event<K> for Rectangle<K> {
         current_state
     }
 
-    fn apply_state(&mut self, states: StateList) -> StateList {
+    fn apply_state(&mut self, states: StateList, _: &K) -> StateList {
         states
     }
 
-    fn sync_state(&mut self, states: StateList) {
-        self.sync_state_default(states);
+    fn sync_state(&mut self, states: StateList, global_state: &K) {
+        self.sync_state_default(states, global_state);
     }
 }
 

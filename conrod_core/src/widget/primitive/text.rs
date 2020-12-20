@@ -31,6 +31,8 @@ use flags::Flags;
 use widget::widget_iterator::{WidgetIter, WidgetIterMut};
 use layout::Layout;
 use layout::layouter::Layouter;
+use std::ops::Deref;
+use std::fmt::Debug;
 
 
 /// Displays some given text centered within a rectangular area.
@@ -40,12 +42,12 @@ use layout::layouter::Layouter;
 /// If some horizontal dimension is given, the text will automatically wrap to the width and align
 /// in accordance with the produced **Alignment**.
 #[derive(Debug, Clone, WidgetCommon_)]
-pub struct Text<S> {
+pub struct Text<S: Clone + Debug> {
     /// Data necessary and common for all widget builder render.
     #[conrod(common_builder)]
     pub common: widget::CommonBuilder,
     /// The text to be drawn by the **Text**.
-    pub text: State<String>,
+    pub text: State<String, S>,
     /// Unique styling for the **Text**.
     pub style: Style,
     position: Point,
@@ -56,11 +58,11 @@ pub struct Text<S> {
     pub children: Vec<Box<dyn Widget<S>>>,
 }
 
-impl<S> Event<S> for Text<S> {
-    fn handle_mouse_event(&mut self, event: &MouseEvent, consumed: &bool) {
+impl<S: Clone + Debug> Event<S> for Text<S> {
+    fn handle_mouse_event(&mut self, event: &MouseEvent, consumed: &bool, global_state: &mut S) {
         match event {
             MouseEvent::Press(_, _, _) => {
-                self.text.push_str(" Hejsa")
+                self.text.get_value_mut(global_state).push_str(" Hejsa")
             }
             _ => {}
         }
@@ -82,8 +84,8 @@ impl<S> Event<S> for Text<S> {
         unimplemented!()
     }
 
-    fn process_mouse_event(&mut self, event: &MouseEvent, consumed: &bool, state: StateList) -> StateList {
-        self.process_mouse_event_default(event, consumed, state)
+    fn process_mouse_event(&mut self, event: &MouseEvent, consumed: &bool, state: StateList, global_state: &mut S) -> StateList {
+        self.process_mouse_event_default(event, consumed, state, global_state)
     }
 
     fn process_keyboard_event(&mut self, event: &KeyboardEvent, state: StateList, global_state: &mut S) -> StateList {
@@ -95,17 +97,17 @@ impl<S> Event<S> for Text<S> {
         current_state
     }
 
-    fn apply_state(&mut self, states: StateList) -> StateList {
-        states.update_local_state(&mut self.text);
+    fn apply_state(&mut self, states: StateList, global_state: &S) -> StateList {
+        states.update_local_state(&mut self.text, global_state);
         states
     }
 
-    fn sync_state(&mut self, states: StateList) {
-        self.sync_state_default(states);
+    fn sync_state(&mut self, states: StateList, global_state: &S) {
+        self.sync_state_default(states, global_state);
     }
 }
 
-impl<S> Layout for Text<S> {
+impl<S: Clone + Debug> Layout for Text<S> {
 
     fn flexibility(&self) -> u32 {
         2
@@ -147,7 +149,7 @@ impl<S> Layout for Text<S> {
     }
 }
 
-impl<S> Render<S> for Text<S> {
+impl<S: Clone + Debug> Render<S> for Text<S> {
 
     fn get_primitives(&self, fonts: &text::font::Map) -> Vec<Primitive> {
         let font_id = match fonts.ids().next() {
@@ -163,17 +165,17 @@ impl<S> Render<S> for Text<S> {
 
         let new_line_infos = match self.wrap_mode {
             Wrap::None =>
-                text::line::infos(&self.text, font, 14),
+                text::line::infos(&self.text.get_latest_value(), font, 14),
             Wrap::Character =>
-                text::line::infos(&self.text, font, 14).wrap_by_character(rect.w()),
+                text::line::infos(&self.text.get_latest_value(), font, 14).wrap_by_character(rect.w()),
             Wrap::Whitespace =>
-                text::line::infos(&self.text, font, 14).wrap_by_whitespace(rect.w()),
+                text::line::infos(&self.text.get_latest_value(), font, 14).wrap_by_whitespace(rect.w()),
         };
 
         let text = RenderText {
             positioned_glyphs: Vec::new(),
             window_dim: self.dimension,
-            text: self.text.value.clone(),
+            text: self.text.get_latest_value().clone(),
             line_infos: new_line_infos.collect(),
             font: font.clone(),
             font_size: 14,
@@ -198,9 +200,9 @@ impl<S> Render<S> for Text<S> {
     }
 }
 
-impl<S: 'static + Clone> WidgetExt<S> for Text<S> {}
+impl<S: 'static + Clone + Debug> WidgetExt<S> for Text<S> {}
 
-impl<S> CommonWidget<S> for Text<S> {
+impl<S: Clone + Debug> CommonWidget<S> for Text<S> {
     fn get_id(&self) -> Uuid {
         unimplemented!()
     }
@@ -314,8 +316,8 @@ pub struct OldState {
 }
 
 
-impl<S> Text<S> {
-    pub fn initialize(text: State<String>, children: Vec<Box<dyn Widget<S>>>) -> Box<Self> {
+impl<S: Clone + Debug> Text<S> {
+    pub fn initialize(text: State<String, S>, children: Vec<Box<dyn Widget<S>>>) -> Box<Self> {
         Box::new(Text {
             common: widget::CommonBuilder::default(),
             text,
@@ -329,7 +331,7 @@ impl<S> Text<S> {
     }
 
     /// Build a new **Text** widget.
-    pub fn new(text: State<String>, position: Point, dimension: Dimensions, children: Vec<Box<dyn Widget<S>>>) -> Box<Self> {
+    pub fn new(text: State<String, S>, position: Point, dimension: Dimensions, children: Vec<Box<dyn Widget<S>>>) -> Box<Self> {
         Box::new(Text {
             common: widget::CommonBuilder::default(),
             text,
@@ -356,7 +358,7 @@ impl<S> Text<S> {
 
         let font_size = 14;
         let mut max_width = 0.0;
-        for line in self.text.lines() {
+        for line in self.text.get_latest_value().lines() {
             let width = text::line::width(line, font, font_size);
             max_width = utils::partial_max(max_width, width);
         }
@@ -383,15 +385,15 @@ impl<S> Text<S> {
         let wrap = Wrap::Whitespace;
         let num_lines = match wrap {
             Wrap::Character =>
-                text::line::infos(text, font, font_size)
+                text::line::infos(text.get_latest_value(), font, font_size)
                     .wrap_by_character(self.dimension[0])
                     .count(),
             Wrap::Whitespace =>
-                text::line::infos(text, font, font_size)
+                text::line::infos(text.get_latest_value(), font, font_size)
                     .wrap_by_whitespace(self.dimension[0])
                     .count(),
             _ => {
-                text.lines().count()
+                text.get_latest_value().lines().count()
             }
         };
         let line_spacing =  1.0;
@@ -581,7 +583,7 @@ impl<S> OldWidget for Text<S> {
 
 }
 */
-impl<S> Colorable for Text<S> {
+impl<S: Clone + Debug> Colorable for Text<S> {
     fn color(mut self, color: Color) -> Self {
         self.style.color = Some(color);
         self

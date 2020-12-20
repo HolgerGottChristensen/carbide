@@ -65,7 +65,7 @@ impl<S: 'static> Frame<S> {
 impl<S: 'static + Clone> WidgetExt<S> for Frame<S> {}
 
 impl<S> Event<S> for Frame<S> {
-    fn handle_mouse_event(&mut self, event: &MouseEvent, consumed: &bool) {
+    fn handle_mouse_event(&mut self, event: &MouseEvent, consumed: &bool, global_state: &mut S) {
         ()
     }
 
@@ -77,39 +77,39 @@ impl<S> Event<S> for Frame<S> {
         unimplemented!()
     }
 
-    fn process_mouse_event(&mut self, event: &MouseEvent, consumed: &bool, state: StateList) -> StateList {
-        let new_state = self.apply_state(state);
+    fn process_mouse_event(&mut self, event: &MouseEvent, consumed: &bool, state: StateList, global_state: &mut S) -> StateList {
+        let new_state = self.apply_state(state, global_state);
 
         if self.child.is_inside(event.get_current_mouse_position()) {
 
 
             //Then we delegate the event to its children
-            let updated_state = self.child.process_mouse_event(event, &consumed, new_state.clone());
-            return self.apply_state(updated_state);
+            let updated_state = self.child.process_mouse_event(event, &consumed, new_state.clone(), global_state);
+            return self.apply_state(updated_state, global_state);
         }
 
         new_state
     }
 
     fn process_keyboard_event(&mut self, event: &KeyboardEvent, state: StateList, global_state: &mut S) -> StateList {
-        let new_state = self.apply_state(state);
+        let new_state = self.apply_state(state, global_state);
         let updated_state = self.child.process_keyboard_event(event, new_state, global_state);
-        self.apply_state(updated_state)
+        self.apply_state(updated_state, global_state)
     }
 
     fn get_state(&self, current_state: StateList) -> StateList {
         current_state
     }
 
-    fn apply_state(&mut self, states: StateList) -> StateList {
+    fn apply_state(&mut self, states: StateList, global_state: &S) -> StateList {
         states
     }
 
-    fn sync_state(&mut self, states: StateList) {
-        let applied_state = self.apply_state(states);
+    fn sync_state(&mut self, states: StateList, global_state: &S) {
+        let applied_state = self.apply_state(states, global_state);
         let new_state = self.get_state(applied_state);
 
-        self.child.sync_state(new_state);
+        self.child.sync_state(new_state, global_state);
     }
 }
 

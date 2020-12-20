@@ -158,7 +158,7 @@ impl CommonWidget<GState> for CustomWidget {
 }
 
 impl Event<GState> for CustomWidget {
-    fn handle_mouse_event(&mut self, event: &MouseEvent, consumed: &bool) {
+    fn handle_mouse_event(&mut self, event: &MouseEvent, consumed: &bool, global_state: &mut S) {
         ()
     }
 
@@ -176,8 +176,8 @@ impl Event<GState> for CustomWidget {
         unimplemented!()
     }
 
-    fn process_mouse_event(&mut self, event: &MouseEvent, consumed: &bool, state: StateList) -> StateList {
-        self.process_mouse_event_default(event, consumed, state)
+    fn process_mouse_event(&mut self, event: &MouseEvent, consumed: &bool, state: StateList, global_state: &mut S) -> StateList {
+        self.process_mouse_event_default(event, consumed, state, global_state)
     }
 
     fn process_keyboard_event(&mut self, event: &KeyboardEvent, state: StateList, global_state: &mut GState) -> StateList {

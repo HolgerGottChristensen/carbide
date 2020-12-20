@@ -94,8 +94,8 @@ impl<S> CommonWidget<S> for Box<Widget<S>> {
 
 
 impl<S> Event<S> for Box<Widget<S>> {
-    fn handle_mouse_event(&mut self, event: &MouseEvent, consumed: &bool) {
-        self.deref_mut().handle_mouse_event(event, consumed)
+    fn handle_mouse_event(&mut self, event: &MouseEvent, consumed: &bool, global_state: &mut S) {
+        self.deref_mut().handle_mouse_event(event, consumed, global_state)
     }
 
     fn handle_keyboard_event(&mut self, event: &KeyboardEvent, global_state: &mut S) {
@@ -106,8 +106,8 @@ impl<S> Event<S> for Box<Widget<S>> {
         self.deref_mut().handle_other_event(event)
     }
 
-    fn process_mouse_event(&mut self, event: &MouseEvent, consumed: &bool, state: StateList) -> StateList {
-        self.deref_mut().process_mouse_event(event, consumed, state)
+    fn process_mouse_event(&mut self, event: &MouseEvent, consumed: &bool, state: StateList, global_state: &mut S) -> StateList {
+        self.deref_mut().process_mouse_event(event, consumed, state, global_state)
     }
 
     fn process_keyboard_event(&mut self, event: &KeyboardEvent, state: StateList, global_state: &mut S) -> StateList {
@@ -118,12 +118,12 @@ impl<S> Event<S> for Box<Widget<S>> {
         self.deref().get_state(current_state)
     }
 
-    fn apply_state(&mut self, mut states: StateList) -> StateList {
-        self.deref_mut().apply_state(states)
+    fn apply_state(&mut self, mut states: StateList, global_state: &S) -> StateList {
+        self.deref_mut().apply_state(states, global_state)
     }
 
-    fn sync_state(&mut self, mut states: StateList) {
-        self.deref_mut().sync_state(states)
+    fn sync_state(&mut self, mut states: StateList, global_state: &S) {
+        self.deref_mut().sync_state(states, global_state)
     }
 }
 

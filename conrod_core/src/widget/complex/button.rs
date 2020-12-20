@@ -27,20 +27,21 @@ use widget::render::{ChildRender, Render};
 use widget::widget_iterator::{WidgetIter, WidgetIterMut};
 use layout::Layout;
 use layout::layouter::Layouter;
+use std::fmt::Debug;
 
 #[derive(Debug, Clone)]
-pub struct SyncTest<S> {
+pub struct SyncTest<S: Clone + Debug> {
     id: Uuid,
     child: Box<dyn Widget<S>>,
     position: Point,
     dimension: Dimensions,
-    value: State<String>,
-    fore: State<Vec<Uuid>>,
+    value: State<String, S>,
+    fore: State<Vec<Uuid>, S>,
 }
 
-impl<S: 'static + Clone> SyncTest<S> {
-    pub fn new(value: State<String>) -> Box<SyncTest<S>> {
-        let fore = State::<Vec<Uuid>>::new("a", &(0..5).map(|_| Uuid::new_v4()).collect::<Vec<Uuid>>());
+impl<S: 'static + Clone + Debug> SyncTest<S> {
+    pub fn new(value: State<String, S>) -> Box<SyncTest<S>> {
+        let fore = State::<Vec<Uuid>, S>::new("a", &(0..5).map(|_| Uuid::new_v4()).collect::<Vec<Uuid>>());
 
         Box::new(Self {
             id: Uuid::new_v4(),
@@ -63,7 +64,7 @@ impl<S: 'static + Clone> SyncTest<S> {
     }
 }
 
-impl<S> CommonWidget<S> for SyncTest<S> {
+impl<S: Clone + Debug> CommonWidget<S> for SyncTest<S> {
     fn get_id(&self) -> Uuid {
         self.id
     }
@@ -109,28 +110,28 @@ impl<S> CommonWidget<S> for SyncTest<S> {
     }
 }
 
-impl<S> Event<S> for SyncTest<S> {
-    fn handle_mouse_event(&mut self, event: &MouseEvent, consumed: &bool) {
+impl<S: Clone + Debug> Event<S> for SyncTest<S> {
+    fn handle_mouse_event(&mut self, event: &MouseEvent, consumed: &bool, global_state: &mut S) {
         ()
     }
 
     fn handle_keyboard_event(&mut self, event: &KeyboardEvent, global_state: &mut S) {
         match event {
             KeyboardEvent::Text(s, _) => {
-                self.value.push_str(s);
+                self.value.get_value_mut(global_state).push_str(s);
             }
             KeyboardEvent::Press(key, modifier) => {
                 match key {
                     Key::Backspace => {
-                        self.value.pop();
+                        self.value.get_value_mut(global_state).pop();
                     },
                     Key::NumPadPlus => {
-                        self.fore.push(Uuid::new_v4())
+                        self.fore.get_value_mut(global_state).push(Uuid::new_v4())
                     },
                     Key::NumPadMinus => {
-                        if self.fore.len() > 1 {
-                            let last = self.fore.len()-1;
-                            self.fore.remove(last);
+                        if self.fore.get_value(global_state).len() > 1 {
+                            let last = self.fore.get_value(global_state).len()-1;
+                            self.fore.get_value_mut(global_state).remove(last);
                         }
 
                     }
@@ -145,8 +146,8 @@ impl<S> Event<S> for SyncTest<S> {
         ()
     }
 
-    fn process_mouse_event(&mut self, event: &MouseEvent, consumed: &bool, state: StateList) -> StateList {
-        self.process_mouse_event_default(event, consumed, state)
+    fn process_mouse_event(&mut self, event: &MouseEvent, consumed: &bool, state: StateList, global_state: &mut S) -> StateList {
+        self.process_mouse_event_default(event, consumed, state, global_state)
     }
 
     fn process_keyboard_event(&mut self, event: &KeyboardEvent, state: StateList, global_state: &mut S) -> StateList {
@@ -159,19 +160,19 @@ impl<S> Event<S> for SyncTest<S> {
         current_state
     }
 
-    fn apply_state(&mut self, states: StateList) -> StateList {
-        states.update_local_state(&mut self.value);
+    fn apply_state(&mut self, states: StateList, global_state: &S) -> StateList {
+        states.update_local_state(&mut self.value, global_state);
         states
     }
 
-    fn sync_state(&mut self, states: StateList) {
-        self.sync_state_default(states);
+    fn sync_state(&mut self, states: StateList, global_state: &S) {
+        self.sync_state_default(states, global_state);
     }
 }
 
-impl<S> ChildRender for SyncTest<S> {}
+impl<S: Clone + Debug> ChildRender for SyncTest<S> {}
 
-impl<S> Layout for SyncTest<S> {
+impl<S: Clone + Debug> Layout for SyncTest<S> {
     fn flexibility(&self) -> u32 {
         2
     }
@@ -191,4 +192,4 @@ impl<S> Layout for SyncTest<S> {
     }
 }
 
-impl<S: 'static + Clone> WidgetExt<S> for SyncTest<S> {}
+impl<S: 'static + Clone + Debug> WidgetExt<S> for SyncTest<S> {}

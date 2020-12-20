@@ -5,41 +5,110 @@ use std::fmt::Debug;
 use std::convert::TryInto;
 use widget::common_widget::CommonWidget;
 use uuid::Uuid;
-use serde::{Serialize, Deserialize};
+use serde::{Serialize, Deserialize, Serializer};
 use ::{from_ron, to_ron};
+use bitflags::_core::fmt::Formatter;
 
-#[derive(Debug)]
-pub struct State<T> where T: Serialize + Clone + Debug {
-    pub id: String,
-    pub value: T,
+#[derive(Clone)]
+pub enum State<T, U> where T: Serialize + Clone + Debug, U: Clone {
+    LocalState {id: String, value: T},
+    Value {value: T},
+    GlobalState {
+        function: fn(state: &U) -> &T,
+        function_mut: fn(state: &mut U) -> &mut T,
+        latest_value: T
+    }
 }
 
-impl<T: Clone + Debug + Serialize> Clone for State<T> {
-    fn clone(&self) -> Self {
-        Self {
-            id: self.id.clone(),
-            value: self.value.clone()
+impl<T: Serialize + Clone + Debug, U: Clone> Debug for State<T, U> {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        match self {
+            State::LocalState { id, value } => {
+                f.debug_struct("State::LocalState")
+                    .field("id", id)
+                    .field("value", value)
+                    .finish()
+            }
+            State::Value { value } => {
+                f.debug_struct("State::Value")
+                    .field("value", value)
+                    .finish()
+            }
+            State::GlobalState { latest_value, .. } => {
+                f.debug_struct("State::GlobalState")
+                    .field("latest_value", latest_value)
+                    .finish()
+            }
+        }
+
+
+    }
+}
+
+impl<T: Serialize + Clone + Debug, U: Clone> State<T, U> {
+    pub fn get_value_mut(&mut self, global_state: &mut U) -> &mut T {
+        match self {
+            State::LocalState { value, .. } => {value}
+            State::Value { value } => {value}
+            State::GlobalState { latest_value, function_mut, .. } => {
+                *latest_value = function_mut(global_state).clone();
+                latest_value
+            }
+        }
+    }
+
+    pub fn get_value(&mut self, global_state: &U) -> &T {
+        match self {
+            State::LocalState { value, .. } => {value}
+            State::Value { value } => {value}
+            State::GlobalState { latest_value, function, .. } => {
+                *latest_value = function(global_state).clone();
+                latest_value
+            }
+        }
+    }
+
+    pub fn get_latest_value(&self) -> &T {
+        match self {
+            State::LocalState { value, .. } => {value}
+            State::Value { value } => {value}
+            State::GlobalState { latest_value, .. } => {
+                latest_value
+            }
+        }
+    }
+
+    pub fn get_key(&self) -> Option<&String> {
+        match self {
+            State::LocalState {id, ..} => Some(id),
+            _ => None
         }
     }
 }
 
-impl<T: Clone + Debug + Serialize> Deref for State<T> {
+/*impl<T: Clone + Debug + Serialize> Deref for State<T> {
     type Target = T;
 
     fn deref(&self) -> &Self::Target {
-        &self.value
+        match self {
+            State::LocalState { value, .. } => {value}
+            State::Value { value } => {value}
+        }
     }
 }
 
 impl<T: Clone + Debug + Serialize> DerefMut for State<T> {
     fn deref_mut(&mut self) -> &mut Self::Target {
-        &mut self.value
+        match self {
+            State::LocalState { value, .. } => {value}
+            State::Value { value } => {value}
+        }
     }
-}
+}*/
 
-impl<T: Clone + Debug + Serialize> State<T> {
+impl<T: Clone + Debug + Serialize, S: Clone> State<T, S> {
     pub fn new(name: &str, val: &T) -> Self {
-        State {
+        State::LocalState {
             id: name.to_string(),
             value: val.clone()
         }
@@ -49,57 +118,72 @@ impl<T: Clone + Debug + Serialize> State<T> {
 pub type StateList = Vec<(String, String)>;
 
 pub trait GetState {
-    fn update_local_state<'a, T: Deserialize<'a> + Serialize + Clone + Debug>(&'a self, state: &mut State<T>);
-    fn replace_state<T: Serialize + Clone + Debug>(&mut self, val: State<T>);
+    fn update_local_state<'a, T: Deserialize<'a> + Serialize + Clone + Debug, U: Clone>(&'a self, state: &mut State<T, U>, global_state: &U);
+    fn replace_state<T: Serialize + Clone + Debug, U: Clone + Debug>(&mut self, val: State<T, U>);
 }
 
 impl GetState for StateList {
-    fn update_local_state<'a, T: Deserialize<'a> + Serialize + Clone + Debug>(&'a self, state: &mut State<T>) {
-        let key = &state.id;
-        match self.iter().find(|(try_key, state)| key.eq(try_key)) {
-            None => (),
-            Some((_, value)) => {
-                state.value = from_ron(&value).unwrap();
+    fn update_local_state<'a, T: Deserialize<'a> + Serialize + Clone + Debug, U: Clone>(&'a self, state: &mut State<T, U>, global_state: &U) {
+        match state {
+            State::LocalState { id, value } => {
+                let key = &*id;
+                match self.iter().find(|(try_key, state)| key.eq(try_key)) {
+                    None => (),
+                    Some((_, val)) => {
+                        *value = from_ron(&val).unwrap();
+                    }
+                }
+            }
+            State::Value { .. } => {}
+            State::GlobalState {function, latest_value, ..} => {
+                *latest_value = function(global_state).clone()
             }
         }
+
     }
 
-    fn replace_state<T: Serialize + Clone + Debug>(&mut self, val: State<T>) {
-        let id = val.id;
-        let val = to_ron(&val.value).unwrap();
-        self.retain(|(i, s)| {
-            id.ne(i)
-        });
-        self.push((id, val));
+    fn replace_state<T: Serialize + Clone + Debug, U: Clone>(&mut self, val: State<T,U>) {
+        match val {
+            State::LocalState { id, value } => {
+                let val = to_ron(&value).unwrap();
+                self.retain(|(i, s)| {
+                    id.ne(i)
+                });
+                self.push((id, val));
+            }
+            State::Value { .. } => {}
+            _ => {}
+        }
+
     }
 }
 
-impl Into<State<Uuid>> for Uuid {
-    fn into(self) -> State<Uuid> {
+impl<T: Clone> Into<State<Uuid, T>> for Uuid {
+    fn into(self) -> State<Uuid, T> {
         State::new(&Uuid::new_v4().to_string(), &self)
     }
 }
 
-impl Into<State<Vec<Uuid>>> for Vec<Uuid> {
-    fn into(self) -> State<Vec<Uuid>> {
+impl<T: Clone> Into<State<Vec<Uuid>, T>> for Vec<Uuid> {
+    fn into(self) -> State<Vec<Uuid>, T> {
         State::new(&Uuid::new_v4().to_string(), &self)
     }
 }
 
-impl Into<State<u32>> for u32 {
-    fn into(self) -> State<u32> {
+impl<T: Clone> Into<State<u32,T>> for u32 {
+    fn into(self) -> State<u32,T> {
         State::new(&Uuid::new_v4().to_string(), &self)
     }
 }
 
-impl Into<State<String>> for String {
-    fn into(self) -> State<String> {
+impl<T: Clone> Into<State<String, T>> for String {
+    fn into(self) -> State<String, T> {
         State::new(&Uuid::new_v4().to_string(), &self)
     }
 }
 
-impl Into<State<String>> for &str {
-    fn into(self) -> State<String> {
+impl<T: Clone> Into<State<String, T>> for &str {
+    fn into(self) -> State<String, T> {
         State::new(&Uuid::new_v4().to_string(), &self.to_string())
     }
 }

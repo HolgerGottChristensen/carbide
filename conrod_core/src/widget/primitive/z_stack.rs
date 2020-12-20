@@ -54,7 +54,7 @@ impl<S> ZStack<S> {
 }
 
 impl<S> Event<S> for ZStack<S> {
-    fn handle_mouse_event(&mut self, event: &MouseEvent, consumed: &bool) {
+    fn handle_mouse_event(&mut self, event: &MouseEvent, consumed: &bool, global_state: &mut S) {
         ()
     }
 
@@ -66,8 +66,8 @@ impl<S> Event<S> for ZStack<S> {
         unimplemented!()
     }
 
-    fn process_mouse_event(&mut self, event: &MouseEvent, consumed: &bool, state: StateList) -> StateList {
-        self.process_mouse_event_default(event, consumed, state)
+    fn process_mouse_event(&mut self, event: &MouseEvent, consumed: &bool, state: StateList, global_state: &mut S) -> StateList {
+        self.process_mouse_event_default(event, consumed, state, global_state)
     }
 
     fn process_keyboard_event(&mut self, event: &KeyboardEvent, state: StateList, global_state: &mut S) -> StateList {
@@ -78,12 +78,12 @@ impl<S> Event<S> for ZStack<S> {
         current_state
     }
 
-    fn apply_state(&mut self, states: StateList) -> StateList {
+    fn apply_state(&mut self, states: StateList, global_state: &S) -> StateList {
         states
     }
 
-    fn sync_state(&mut self, states: StateList) {
-        self.sync_state_default(states);
+    fn sync_state(&mut self, states: StateList, global_state: &S) {
+        self.sync_state_default(states, global_state);
     }
 }
 

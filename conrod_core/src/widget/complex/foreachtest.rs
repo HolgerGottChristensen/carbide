@@ -25,17 +25,19 @@ use widget::primitive::foreach::ForEach;
 use widget::primitive::v_stack::VStack;
 use layout::Layout;
 use layout::layouter::Layouter;
+use std::ops::Deref;
+use std::fmt::Debug;
 
 #[derive(Debug, Clone)]
-pub struct ForeachTest<S> {
+pub struct ForeachTest<S: Clone + Debug> {
     id: Uuid,
     child: Box<dyn Widget<S>>,
     position: Point,
     dimension: Dimensions,
-    index: State<u32>
+    index: State<u32, S>
 }
 
-impl<S: 'static + Clone> ForeachTest<S> {
+impl<S: 'static + Clone + Debug> ForeachTest<S> {
     pub fn new() -> Box<ForeachTest<S>> {
         Box::new(Self {
             id: Uuid::new_v4(),
@@ -49,7 +51,7 @@ impl<S: 'static + Clone> ForeachTest<S> {
     }
 }
 
-impl<S> CommonWidget<S> for ForeachTest<S> {
+impl<S: Clone + Debug> CommonWidget<S> for ForeachTest<S> {
     fn get_id(&self) -> Uuid {
         self.id
     }
@@ -95,8 +97,8 @@ impl<S> CommonWidget<S> for ForeachTest<S> {
     }
 }
 
-impl<S> Event<S> for ForeachTest<S> {
-    fn handle_mouse_event(&mut self, event: &MouseEvent, consumed: &bool) {
+impl<S: Clone + Debug> Event<S> for ForeachTest<S> {
+    fn handle_mouse_event(&mut self, event: &MouseEvent, consumed: &bool, global_state: &mut S) {
         ()
     }
 
@@ -108,8 +110,8 @@ impl<S> Event<S> for ForeachTest<S> {
         ()
     }
 
-    fn process_mouse_event(&mut self, event: &MouseEvent, consumed: &bool, state: StateList) -> StateList {
-        self.process_mouse_event_default(event, consumed, state)
+    fn process_mouse_event(&mut self, event: &MouseEvent, consumed: &bool, state: StateList, global_state: &mut S) -> StateList {
+        self.process_mouse_event_default(event, consumed, state, global_state)
     }
 
     fn process_keyboard_event(&mut self, event: &KeyboardEvent, state: StateList, global_state: &mut S) -> StateList {
@@ -117,23 +119,23 @@ impl<S> Event<S> for ForeachTest<S> {
     }
 
     fn get_state(&self, mut current_state: StateList) -> StateList {
-        current_state.replace_state(State::<String>::new("sindex", &self.index.value.to_string()).into());
+        current_state.replace_state(State::<String, S>::new("sindex", &self.index.get_latest_value().to_string()).into());
         current_state
     }
 
-    fn apply_state(&mut self, states: StateList) -> StateList {
-        states.update_local_state(&mut self.index);
+    fn apply_state(&mut self, states: StateList, global_state: &S) -> StateList {
+        states.update_local_state(&mut self.index, global_state);
         states
     }
 
-    fn sync_state(&mut self, states: StateList) {
-        self.sync_state_default(states);
+    fn sync_state(&mut self, states: StateList, global_state: &S) {
+        self.sync_state_default(states, global_state);
     }
 }
 
-impl<S> ChildRender for ForeachTest<S> {}
+impl<S: Clone + Debug> ChildRender for ForeachTest<S> {}
 
-impl<S> Layout for ForeachTest<S> {
+impl<S: Clone + Debug> Layout for ForeachTest<S> {
     fn flexibility(&self) -> u32 {
         0
     }
@@ -152,4 +154,4 @@ impl<S> Layout for ForeachTest<S> {
     }
 }
 
-impl<S: 'static + Clone> WidgetExt<S> for ForeachTest<S> {}
+impl<S: 'static + Clone + Debug> WidgetExt<S> for ForeachTest<S> {}

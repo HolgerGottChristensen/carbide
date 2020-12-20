@@ -428,7 +428,7 @@ impl<S: 'static + Clone> Ui<S> {
             match event {
                 WidgetEvent::Mouse(mouse_event) => {
                     let consumed = false;
-                    self.widgets.process_mouse_event(mouse_event, &consumed, Vec::new());
+                    self.widgets.process_mouse_event(mouse_event, &consumed, Vec::new(), global_state);
                 }
                 WidgetEvent::Keyboard(keyboard_event) => {
                     self.widgets.process_keyboard_event(keyboard_event, Vec::new(), global_state);
@@ -441,7 +441,7 @@ impl<S: 'static + Clone> Ui<S> {
 
         }
 
-        self.widgets.sync_state(Vec::new());
+        self.widgets.sync_state(Vec::new(), global_state);
         self.event_handler.clear_events();
 
         // Todo: Determine if an redraw is needed after events are processed
