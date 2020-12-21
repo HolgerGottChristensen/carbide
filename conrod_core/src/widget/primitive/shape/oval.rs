@@ -90,7 +90,7 @@ impl<K, S: 'static + Clone> Event<K> for Oval<S, K> {
 
 impl<S: 'static + Clone, K: 'static + Clone> WidgetExt<K> for Oval<S, K> {}
 
-impl<S, K> Layout for Oval<S, K> {
+impl<S, K> Layout<K> for Oval<S, K> {
     fn flexibility(&self) -> u32 {
         0
     }

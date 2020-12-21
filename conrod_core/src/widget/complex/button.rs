@@ -172,7 +172,7 @@ impl<S: Clone + Debug> Event<S> for SyncTest<S> {
 
 impl<S: Clone + Debug> ChildRender for SyncTest<S> {}
 
-impl<S: Clone + Debug> Layout for SyncTest<S> {
+impl<S: Clone + Debug> Layout<S> for SyncTest<S> {
     fn flexibility(&self) -> u32 {
         2
     }

@@ -47,7 +47,7 @@ fn main() {
                             function_mut: None,
                             latest_value: "0".to_string()
                         }, vec![]).font_size(45.into())
-                    ]).cross_axis_alignment(CrossAxisAlignment::Start)
+                    ]).cross_axis_alignment(CrossAxisAlignment::End)
                 ]).padding(EdgeInsets::all(10.0))
             ])
                 .fill(DARK_GREEN)

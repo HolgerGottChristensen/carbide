@@ -160,7 +160,7 @@ impl<S> CommonWidget<S> for Frame<S> {
     }
 }
 
-impl<S> Layout for Frame<S> {
+impl<S> Layout<S> for Frame<S> {
     fn flexibility(&self) -> u32 {
         9
     }

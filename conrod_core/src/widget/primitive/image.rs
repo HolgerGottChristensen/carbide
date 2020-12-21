@@ -80,7 +80,7 @@ impl<S> Event<S> for Image<S> {
     }
 }
 
-impl<S> Layout for Image<S> {
+impl<S> Layout<S> for Image<S> {
     fn flexibility(&self) -> u32 {
         10
     }

@@ -94,7 +94,7 @@ impl<S> Event<S> for HStack<S> {
     }
 }
 
-impl<S> Layout for HStack<S> {
+impl<S> Layout<S> for HStack<S> {
     fn flexibility(&self) -> u32 {
         1
     }

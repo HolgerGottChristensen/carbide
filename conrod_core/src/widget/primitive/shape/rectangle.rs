@@ -91,7 +91,7 @@ impl<K> Event<K> for Rectangle<K> {
     }
 }
 
-impl<K> Layout for Rectangle<K> {
+impl<K> Layout<K> for Rectangle<K> {
     fn flexibility(&self) -> u32 {
         0
     }

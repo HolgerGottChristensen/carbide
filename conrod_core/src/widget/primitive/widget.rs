@@ -34,9 +34,9 @@ use std::slice::{Iter, IterMut};
 use dyn_clone::DynClone;
 use layout::Layout;
 
-pub trait Widget<S>: Event<S> + Layout + Render<S> + DynClone {}
+pub trait Widget<S>: Event<S> + Layout<S> + Render<S> + DynClone {}
 
-impl<S, T> Widget<S> for T where T: Event<S> + Layout + Render<S> + DynClone {}
+impl<S, T> Widget<S> for T where T: Event<S> + Layout<S> + Render<S> + DynClone {}
 
 dyn_clone::clone_trait_object!(<S> Widget<S>);
 
@@ -127,7 +127,7 @@ impl<S> Event<S> for Box<Widget<S>> {
     }
 }
 
-impl<S> Layout for Box<Widget<S>> {
+impl<S> Layout<S> for Box<Widget<S>> {
     fn flexibility(&self) -> u32 {
         self.deref().flexibility()
     }

@@ -98,7 +98,7 @@ impl<S> Event<S> for Spacer {
     }
 }
 
-impl Layout for Spacer {
+impl<S> Layout<S> for Spacer {
     fn flexibility(&self) -> u32 {
         0
     }

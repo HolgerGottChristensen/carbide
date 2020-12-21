@@ -135,7 +135,7 @@ impl<S: Clone + Debug> Event<S> for ForeachTest<S> {
 
 impl<S: Clone + Debug> ChildRender for ForeachTest<S> {}
 
-impl<S: Clone + Debug> Layout for ForeachTest<S> {
+impl<S: Clone + Debug> Layout<S> for ForeachTest<S> {
     fn flexibility(&self) -> u32 {
         0
     }

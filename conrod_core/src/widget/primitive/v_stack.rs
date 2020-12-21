@@ -101,7 +101,7 @@ impl<S> Event<S> for VStack<S> {
 
 impl<S: 'static + Clone> WidgetExt<S> for VStack<S> {}
 
-impl<S> Layout for VStack<S> {
+impl<S> Layout<S> for VStack<S> {
     fn flexibility(&self) -> u32 {
         1
     }

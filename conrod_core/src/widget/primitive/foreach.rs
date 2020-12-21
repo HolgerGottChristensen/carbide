@@ -208,7 +208,7 @@ impl<S: Clone + Debug> Event<S> for ForEach<S> {
 
 impl<S: Clone + Debug> ChildRender for ForEach<S> {}
 
-impl<S: Clone + Debug> Layout for ForEach<S> {
+impl<S: Clone + Debug> Layout<S> for ForEach<S> {
     fn flexibility(&self) -> u32 {
         unimplemented!()
     }

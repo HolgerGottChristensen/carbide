@@ -89,7 +89,7 @@ impl<S> Event<S> for ZStack<S> {
 
 impl<S: 'static + Clone> WidgetExt<S> for ZStack<S> {}
 
-impl<S> Layout for ZStack<S> {
+impl<S> Layout<S> for ZStack<S> {
     fn flexibility(&self) -> u32 {
         1
     }

@@ -20,6 +20,7 @@ use conrod_core::widget::primitive::widget::WidgetExt;
 use conrod_core::layout::layouter::Layouter;
 use uuid::Uuid;
 use conrod_core::image::Id;
+use conrod_core::layout::layout::SingleChildLayout;
 
 #[derive(Clone)]
 pub struct CalculatorButton {
@@ -146,22 +147,9 @@ impl Event<CalculatorState> for CalculatorButton {
 
 impl ChildRender for CalculatorButton {}
 
-impl Layout for CalculatorButton {
+impl SingleChildLayout for CalculatorButton {
     fn flexibility(&self) -> u32 {
         10
-    }
-
-    fn calculate_size(&mut self, requested_size: Dimensions, fonts: &Map) -> Dimensions {
-        self.dimension = self.child.calculate_size(requested_size, fonts);
-        self.dimension
-    }
-
-    fn position_children(&mut self) {
-        let positioning = BasicLayouter::Center.position();
-        let position = self.position;
-        let dimension = self.dimension;
-        positioning(position, dimension, &mut self.child);
-        self.child.position_children();
     }
 }
 

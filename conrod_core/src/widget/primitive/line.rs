@@ -82,7 +82,7 @@ impl<S> Event<S> for Line<S> {
 
 impl<S: 'static + Clone> WidgetExt<S> for Line<S> {}
 
-impl<S> Layout for Line<S> {
+impl<S> Layout<S> for Line<S> {
     fn flexibility(&self) -> u32 {
         0
     }

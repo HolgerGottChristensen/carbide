@@ -145,7 +145,7 @@ impl<S> CommonWidget<S> for Padding<S> {
     }
 }
 
-impl<S> Layout for Padding<S> {
+impl<S> Layout<S> for Padding<S> {
     fn flexibility(&self) -> u32 {
         9
     }

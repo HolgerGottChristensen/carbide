@@ -103,7 +103,7 @@ impl<S: Clone + Debug> Event<S> for Text<S> {
     }
 }
 
-impl<S: Clone + Debug> Layout for Text<S> {
+impl<S: Clone + Debug> Layout<S> for Text<S> {
 
     fn flexibility(&self) -> u32 {
         2
