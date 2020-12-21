@@ -21,7 +21,7 @@ use conrod_core::event_handler::{KeyboardEvent, MouseEvent, WidgetEvent};
 use conrod_core::flags::Flags;
 use conrod_core::layout::basic_layouter::BasicLayouter;
 use conrod_core::position::Dimensions;
-use conrod_core::state::state::{State, StateList};
+use conrod_core::state::state::{State, LocalStateList};
 use conrod_core::text::font::Map;
 use conrod_core::widget::{Frame, Image, Line, Oval, Rectangle, SCALE, Text, ZStack};
 use conrod_core::widget::common_widget::CommonWidget;
@@ -176,23 +176,23 @@ impl Event<GState> for CustomWidget {
         unimplemented!()
     }
 
-    fn process_mouse_event(&mut self, event: &MouseEvent, consumed: &bool, state: StateList, global_state: &mut S) -> StateList {
+    fn process_mouse_event(&mut self, event: &MouseEvent, consumed: &bool, state: LocalStateList, global_state: &mut S) -> LocalStateList {
         self.process_mouse_event_default(event, consumed, state, global_state)
     }
 
-    fn process_keyboard_event(&mut self, event: &KeyboardEvent, state: StateList, global_state: &mut GState) -> StateList {
+    fn process_keyboard_event(&mut self, event: &KeyboardEvent, state: LocalStateList, global_state: &mut GState) -> LocalStateList {
         self.process_keyboard_event_default(event, state, global_state)
     }
 
-    fn get_state(&self, current_state: StateList) -> StateList {
+    fn get_state(&self, current_state: LocalStateList) -> LocalStateList {
         current_state
     }
 
-    fn apply_state(&mut self, states: StateList) -> StateList {
+    fn apply_state(&mut self, states: LocalStateList) -> LocalStateList {
         states
     }
 
-    fn sync_state(&mut self, states: StateList) {
+    fn sync_state(&mut self, states: LocalStateList) {
         self.sync_state_default(states)
     }
 }

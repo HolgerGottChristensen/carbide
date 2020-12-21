@@ -2,10 +2,13 @@ use ::{Color, from_ron};
 use text;
 use text::font::{Id, Error, from_file};
 use bitflags::_core::fmt::Formatter;
+use state::state::LocalStateList;
+use std::collections::HashMap;
 
 pub struct Environment {
     stack: Vec<EnvironmentVariable>,
-    fonts: text::font::Map
+    fonts: text::font::Map,
+    local_state: HashMap<String, String>
 }
 
 impl std::fmt::Debug for Environment {
@@ -19,8 +22,16 @@ impl Environment {
     pub fn new() -> Self {
         Environment {
             stack: vec![],
-            fonts: text::font::Map::new()
+            fonts: text::font::Map::new(),
+            local_state: HashMap::new()
         }
+    }
+
+    pub fn clear_local_state(&mut self) {
+        if self.local_state.len() > 0 {
+            println!("Some local state was left on the stack. This might result in unexpected behavior: {:?}", self.local_state);
+        }
+        self.local_state.clear()
     }
 
     pub fn get_fonts_map(&self) -> &text::font::Map {

@@ -17,12 +17,13 @@ use widget::primitive::edge_insets::EdgeInsets;
 use event::event::Event;
 use event_handler::{WidgetEvent, MouseEvent, KeyboardEvent};
 use widget::primitive::widget::WidgetExt;
-use state::state::{StateList};
+use state::state::{LocalStateList};
 use flags::Flags;
 use widget::widget_iterator::{WidgetIter, WidgetIterMut};
 use layout::Layout;
 use layout::layouter::Layouter;
 use state::environment::Environment;
+use state::state_sync::{NoLocalStateSync, StateSync};
 
 pub static SCALE: f64 = -1.0;
 
@@ -61,41 +62,28 @@ impl<S> Event<S> for Padding<S> {
         unimplemented!()
     }
 
-    fn process_mouse_event(&mut self, event: &MouseEvent, consumed: &bool, state: StateList, global_state: &mut S) -> StateList {
-        let new_state = self.apply_state(state, global_state);
+    fn process_mouse_event(&mut self, event: &MouseEvent, consumed: &bool, state: LocalStateList, global_state: &mut S) -> LocalStateList {
+        let new_state = self.update_widget_state(state, global_state);
 
         if self.child.is_inside(event.get_current_mouse_position()) {
 
 
             //Then we delegate the event to its children
             let updated_state = self.child.process_mouse_event(event, &consumed, new_state.clone(), global_state);
-            return self.apply_state(updated_state, global_state);
+            return self.update_widget_state(updated_state, global_state);
         }
 
         new_state
     }
 
-    fn process_keyboard_event(&mut self, event: &KeyboardEvent, state: StateList, global_state: &mut S) -> StateList {
-        let new_state = self.apply_state(state, global_state);
+    fn process_keyboard_event(&mut self, event: &KeyboardEvent, state: LocalStateList, global_state: &mut S) -> LocalStateList {
+        let new_state = self.update_widget_state(state, global_state);
         let updated_state = self.child.process_keyboard_event(event, new_state, global_state);
-        self.apply_state(updated_state, global_state)
-    }
-
-    fn get_state(&self, current_state: StateList) -> StateList {
-        current_state
-    }
-
-    fn apply_state(&mut self, states: StateList, global_state: &S) -> StateList {
-        states
-    }
-
-    fn sync_state(&mut self, states: StateList, global_state: &S) {
-        let applied_state = self.apply_state(states, global_state);
-        let new_state = self.get_state(applied_state);
-
-        self.child.sync_state(new_state, global_state);
+        self.update_widget_state(updated_state, global_state)
     }
 }
+
+impl<S> NoLocalStateSync for Padding<S> {}
 
 impl<S: 'static + Clone> WidgetExt<S> for Padding<S> {}
 

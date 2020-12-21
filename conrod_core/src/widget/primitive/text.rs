@@ -26,7 +26,7 @@ use event::event::Event;
 use event_handler::{WidgetEvent, MouseEvent, KeyboardEvent};
 use widget::primitive::widget::WidgetExt;
 use color::WHITE;
-use state::state::{StateList, State, GetState};
+use state::state::{LocalStateList, State, GetState};
 use flags::Flags;
 use widget::widget_iterator::{WidgetIter, WidgetIterMut};
 use layout::Layout;
@@ -81,25 +81,25 @@ impl<S: Clone + Debug> Event<S> for Text<S> {
         unimplemented!()
     }
 
-    fn process_mouse_event(&mut self, event: &MouseEvent, consumed: &bool, state: StateList, global_state: &mut S) -> StateList {
+    fn process_mouse_event(&mut self, event: &MouseEvent, consumed: &bool, state: LocalStateList, global_state: &mut S) -> LocalStateList {
         self.process_mouse_event_default(event, consumed, state, global_state)
     }
 
-    fn process_keyboard_event(&mut self, event: &KeyboardEvent, state: StateList, global_state: &mut S) -> StateList {
+    fn process_keyboard_event(&mut self, event: &KeyboardEvent, state: LocalStateList, global_state: &mut S) -> LocalStateList {
         self.process_keyboard_event_default(event, state, global_state)
     }
 
-    fn get_state(&self, mut current_state: StateList) -> StateList {
+    fn get_state(&self, mut current_state: LocalStateList) -> LocalStateList {
         current_state.replace_state(self.text.clone().into());
         current_state
     }
 
-    fn apply_state(&mut self, states: StateList, global_state: &S) -> StateList {
+    fn update_widget_state(&mut self, states: LocalStateList, global_state: &S) -> LocalStateList {
         states.update_local_state(&mut self.text, global_state);
         states
     }
 
-    fn sync_state(&mut self, states: StateList, global_state: &S) {
+    fn sync_state(&mut self, states: LocalStateList, global_state: &S) {
         self.sync_state_default(states, global_state);
     }
 }

@@ -32,7 +32,7 @@ use event::event::Event;
 use event_handler::{WidgetEvent, MouseEvent, KeyboardEvent};
 use widget::primitive::widget::WidgetExt;
 use input::Key;
-use state::state::{StateList};
+use state::state::{LocalStateList};
 use flags::Flags;
 use widget::widget_iterator::{WidgetIter, WidgetIterMut};
 use std::slice::{Iter, IterMut};
@@ -40,6 +40,7 @@ use draw::shape::triangle::Triangle;
 use layout::Layout;
 use layout::layouter::Layouter;
 use state::environment::Environment;
+use state::state_sync::NoLocalStateSync;
 
 /// A basic, non-interactive rectangle shape widget.
 #[derive(Debug, Clone, WidgetCommon_)]
@@ -71,26 +72,16 @@ impl<K> Event<K> for Rectangle<K> {
         unimplemented!()
     }
 
-    fn process_mouse_event(&mut self, event: &MouseEvent, consumed: &bool, state: StateList, global_state: &mut K) -> StateList {
+    fn process_mouse_event(&mut self, event: &MouseEvent, consumed: &bool, state: LocalStateList, global_state: &mut K) -> LocalStateList {
         self.process_mouse_event_default(event, consumed, state, global_state)
     }
 
-    fn process_keyboard_event(&mut self, event: &KeyboardEvent, state: StateList, global_state: &mut K) -> StateList {
+    fn process_keyboard_event(&mut self, event: &KeyboardEvent, state: LocalStateList, global_state: &mut K) -> LocalStateList {
         self.process_keyboard_event_default(event, state, global_state)
     }
-
-    fn get_state(&self, current_state: StateList) -> StateList {
-        current_state
-    }
-
-    fn apply_state(&mut self, states: StateList, _: &K) -> StateList {
-        states
-    }
-
-    fn sync_state(&mut self, states: StateList, global_state: &K) {
-        self.sync_state_default(states, global_state);
-    }
 }
+
+impl<S> NoLocalStateSync for Rectangle<S> {}
 
 impl<K> Layout<K> for Rectangle<K> {
     fn flexibility(&self) -> u32 {

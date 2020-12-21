@@ -1,39 +1,42 @@
-use crate::widget::primitive::shape::rectangle::Rectangle;
-use ::{Color, Rect};
-use color::rgb;
-use graph::Container;
-use widget::{Id, Oval, Line, Text, Image, common_widget};
-use widget::render::Render;
-use widget::primitive::shape::oval::Full;
-use render::primitive_kind::PrimitiveKind;
-use render::util::new_primitive;
-use render::primitive::Primitive;
-use render::owned_primitive::OwnedPrimitive;
-use ::{text, Scalar};
-use position::Dimensions;
-use widget::common_widget::CommonWidget;
-use widget::primitive::v_stack::VStack;
+use std::fmt;
+use std::fmt::Debug;
+use std::ops::{Deref, DerefMut};
+use std::slice::{Iter, IterMut};
+
+use dyn_clone::DynClone;
 use uuid::Uuid;
 
+use ::{Color, Rect};
+use ::{Scalar, text};
+use color::rgb;
+use event::event::Event;
+use event_handler::{KeyboardEvent, MouseEvent, WidgetEvent};
+use flags::Flags;
+use graph::Container;
+use layout::Layout;
+use position::Dimensions;
+use render::owned_primitive::OwnedPrimitive;
+use render::primitive::Primitive;
+use render::primitive_kind::PrimitiveKind;
+use render::util::new_primitive;
+use state::environment::Environment;
+use state::state::LocalStateList;
+use state::state_sync::StateSync;
 use text::font::Map;
+use widget::{common_widget, Id, Image, Line, Oval, Text};
+use widget::common_widget::CommonWidget;
+use widget::primitive::edge_insets::EdgeInsets;
 use widget::primitive::frame::Frame;
 use widget::primitive::h_stack::HStack;
-use widget::primitive::z_stack::ZStack;
-use widget::primitive::spacer::Spacer;
-use widget::primitive::edge_insets::EdgeInsets;
 use widget::primitive::padding::Padding;
-use event::event::Event;
-use event_handler::{WidgetEvent, MouseEvent, KeyboardEvent};
-use std::fmt::Debug;
-use std::fmt;
-use std::ops::{Deref, DerefMut};
-use state::state::{StateList};
-use flags::Flags;
-use widget::widget_iterator::{WidgetIterMut, WidgetIter};
-use std::slice::{Iter, IterMut};
-use dyn_clone::DynClone;
-use layout::Layout;
-use state::environment::Environment;
+use widget::primitive::shape::oval::Full;
+use widget::primitive::spacer::Spacer;
+use widget::primitive::v_stack::VStack;
+use widget::primitive::z_stack::ZStack;
+use widget::render::Render;
+use widget::widget_iterator::{WidgetIter, WidgetIterMut};
+
+use crate::widget::primitive::shape::rectangle::Rectangle;
 
 pub trait Widget<S>: Event<S> + Layout<S> + Render<S> + DynClone {}
 
@@ -93,7 +96,6 @@ impl<S> CommonWidget<S> for Box<Widget<S>> {
 }
 
 
-
 impl<S> Event<S> for Box<Widget<S>> {
     fn handle_mouse_event(&mut self, event: &MouseEvent, consumed: &bool, global_state: &mut S) {
         self.deref_mut().handle_mouse_event(event, consumed, global_state)
@@ -107,24 +109,34 @@ impl<S> Event<S> for Box<Widget<S>> {
         self.deref_mut().handle_other_event(event)
     }
 
-    fn process_mouse_event(&mut self, event: &MouseEvent, consumed: &bool, state: StateList, global_state: &mut S) -> StateList {
+    fn process_mouse_event(&mut self, event: &MouseEvent, consumed: &bool, state: LocalStateList, global_state: &mut S) -> LocalStateList {
         self.deref_mut().process_mouse_event(event, consumed, state, global_state)
     }
 
-    fn process_keyboard_event(&mut self, event: &KeyboardEvent, state: StateList, global_state: &mut S) -> StateList {
+    fn process_keyboard_event(&mut self, event: &KeyboardEvent, state: LocalStateList, global_state: &mut S) -> LocalStateList {
         self.deref_mut().process_keyboard_event(event, state, global_state)
     }
+}
 
-    fn get_state(&self, mut current_state: StateList) -> StateList {
-        self.deref().get_state(current_state)
+impl<S> StateSync<S> for Box<Widget<S>> {
+    fn push_local_state(&self, env: &mut Environment) {
+        self.deref().push_local_state(env);
     }
 
-    fn apply_state(&mut self, mut states: StateList, global_state: &S) -> StateList {
-        self.deref_mut().apply_state(states, global_state)
+    fn pop_local_state(&self, env: &mut Environment) {
+        self.deref().pop_local_state(env);
     }
 
-    fn sync_state(&mut self, mut states: StateList, global_state: &S) {
-        self.deref_mut().sync_state(states, global_state)
+    fn replace_local_state(&self, env: &mut Environment) {
+        self.deref().replace_local_state(env)
+    }
+
+    fn update_widget_state(&mut self, env: &Environment, global_state: &S) {
+        self.deref_mut().update_widget_state(env, global_state)
+    }
+
+    fn sync_state(&mut self, env: &mut Environment, global_state: &S) {
+        self.deref_mut().sync_state(env, global_state)
     }
 }
 
@@ -143,7 +155,6 @@ impl<S> Layout<S> for Box<Widget<S>> {
 }
 
 impl<S> Render<S> for Box<Widget<S>> {
-
     fn get_primitives(&self, fonts: &text::font::Map) -> Vec<Primitive> {
         self.deref().get_primitives(fonts)
     }

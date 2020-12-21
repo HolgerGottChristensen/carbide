@@ -1,8 +1,9 @@
 use event_handler::{MouseEvent, KeyboardEvent, WidgetEvent};
 use widget::common_widget::CommonWidget;
-use state::state::{StateList};
+use state::state::{LocalStateList};
+use state::state_sync::StateSync;
 
-pub trait Event<S>: CommonWidget<S> {
+pub trait Event<S>: CommonWidget<S> + StateSync<S> {
     /// A function that will be called when a mouse event occurs.
     /// It will only get called on the events where the cursor is inside.
     /// Return true if the event is consumed, and will thus not be delegated to other
@@ -20,12 +21,12 @@ pub trait Event<S>: CommonWidget<S> {
     /// TODO: Separate touch events.
     fn handle_other_event(&mut self, event: &WidgetEvent);
 
-    fn process_mouse_event(&mut self, event: &MouseEvent, consumed: &bool, state: StateList, global_state: &mut S) -> StateList;
+    fn process_mouse_event(&mut self, event: &MouseEvent, consumed: &bool, state: LocalStateList, global_state: &mut S) -> LocalStateList;
 
-    fn process_mouse_event_default(&mut self, event: &MouseEvent, consumed: &bool, state: StateList, global_state: &mut S) -> StateList {
+    fn process_mouse_event_default(&mut self, event: &MouseEvent, consumed: &bool, state: LocalStateList, global_state: &mut S) -> LocalStateList {
 
         // Apply state from its parent
-        let new_state = self.apply_state(state, global_state);
+        let new_state = self.update_widget_state(state, global_state);
 
         // First we handle the event in the widget
         self.handle_mouse_event(event, &consumed, global_state);
@@ -49,15 +50,15 @@ pub trait Event<S>: CommonWidget<S> {
         }
 
         // We then apply the changed state from its children, to save it for itself.
-        self.apply_state(state_for_children, global_state)
+        self.update_widget_state(state_for_children, global_state)
     }
 
-    fn process_keyboard_event(&mut self, event: &KeyboardEvent, state: StateList, global_state: &mut S) -> StateList;
+    fn process_keyboard_event(&mut self, event: &KeyboardEvent, state: LocalStateList, global_state: &mut S) -> LocalStateList;
 
-    fn process_keyboard_event_default(&mut self, event: &KeyboardEvent, state: StateList, global_state: &mut S) -> StateList {
+    fn process_keyboard_event_default(&mut self, event: &KeyboardEvent, state: LocalStateList, global_state: &mut S) -> LocalStateList {
 
         // Apply state from its parent
-        let new_state = self.apply_state(state, global_state);
+        let new_state = self.update_widget_state(state, global_state);
 
         // First we handle the event in the widget
         self.handle_keyboard_event(event, global_state);
@@ -73,25 +74,6 @@ pub trait Event<S>: CommonWidget<S> {
 
         }
         // We then apply the changed state from its children, to save it for itself.
-        self.apply_state(state_for_children, global_state)
-    }
-
-    fn get_state(&self, current_state: StateList) -> StateList;
-
-    /// When implementing this, all states that are a function of globalState needs to be updated
-    /// This is done by calling either get_value or get_value_mut.
-    /// Todo: Update this to happen automatically
-    /// You also need to update all the local states, with the values from the states list.
-    fn apply_state(&mut self, states: StateList, global_state: &S) -> StateList;
-
-    fn sync_state(&mut self, states: StateList, global_state: &S);
-
-    fn sync_state_default(&mut self, states: StateList, global_state: &S) {
-        let applied_state = self.apply_state(states, global_state);
-        let new_state = self.get_state(applied_state);
-
-        for child in self.get_children_mut() {
-            child.sync_state(new_state.clone(), global_state)
-        }
+        self.update_widget_state(state_for_children, global_state)
     }
 }

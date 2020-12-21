@@ -29,11 +29,12 @@ use text::font::Map;
 use layout::basic_layouter::BasicLayouter;
 use event::event::Event;
 use event_handler::{WidgetEvent, MouseEvent, KeyboardEvent};
-use state::state::{StateList};
+use state::state::{LocalStateList};
 use flags::Flags;
 use widget::widget_iterator::{WidgetIter, WidgetIterMut};
 use layout::Layout;
 use state::environment::Environment;
+use state::state_sync::NoLocalStateSync;
 
 
 /// A basic, non-interactive rectangle shape widget.
@@ -78,26 +79,16 @@ impl<S> Event<S> for Spacer {
         ()
     }
 
-    fn process_mouse_event(&mut self, event: &MouseEvent, consumed: &bool, state: StateList, global_state: &mut S) -> StateList {
+    fn process_mouse_event(&mut self, event: &MouseEvent, consumed: &bool, state: LocalStateList, global_state: &mut S) -> LocalStateList {
         state
     }
 
-    fn process_keyboard_event(&mut self, event: &KeyboardEvent, state: StateList, global_state: &mut S) -> StateList {
+    fn process_keyboard_event(&mut self, event: &KeyboardEvent, state: LocalStateList, global_state: &mut S) -> LocalStateList {
         state
-    }
-
-    fn get_state(&self, current_state: StateList) -> StateList {
-        unimplemented!()
-    }
-
-    fn apply_state(&mut self, states: StateList, global_state: &S) -> StateList {
-        unimplemented!()
-    }
-
-    fn sync_state(&mut self, states: StateList, global_state: &S) {
-        ()
     }
 }
+
+impl NoLocalStateSync for Spacer {}
 
 impl<S> Layout<S> for Spacer {
     fn flexibility(&self) -> u32 {
@@ -135,15 +126,15 @@ impl<S> CommonWidget<S> for Spacer {
     }
 
     fn get_children(&self) -> WidgetIter<S> {
-        unimplemented!()
+        WidgetIter::Empty
     }
 
     fn get_children_mut(&mut self) -> WidgetIterMut<S> {
-        unimplemented!()
+        WidgetIterMut::Empty
     }
 
     fn get_proxied_children(&mut self) -> WidgetIterMut<S> {
-        unimplemented!()
+        WidgetIterMut::Empty
     }
 
     fn get_position(&self) -> Point {

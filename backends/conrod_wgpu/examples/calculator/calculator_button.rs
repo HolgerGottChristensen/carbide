@@ -11,7 +11,7 @@ use conrod_core::flags::Flags;
 use conrod_core::widget::widget_iterator::{WidgetIter, WidgetIterMut};
 use conrod_core::event::event::Event;
 use conrod_core::event_handler::{MouseEvent, WidgetEvent, KeyboardEvent};
-use conrod_core::state::state::StateList;
+use conrod_core::state::state::LocalStateList;
 use conrod_core::widget::render::ChildRender;
 use conrod_core::layout::Layout;
 use conrod_core::text::font::Map;
@@ -124,23 +124,23 @@ impl Event<CalculatorState> for CalculatorButton {
         unimplemented!()
     }
 
-    fn process_mouse_event(&mut self, event: &MouseEvent, consumed: &bool, state: StateList, global_state: &mut CalculatorState) -> StateList {
+    fn process_mouse_event(&mut self, event: &MouseEvent, consumed: &bool, state: LocalStateList, global_state: &mut CalculatorState) -> LocalStateList {
         self.process_mouse_event_default(event, consumed, state, global_state)
     }
 
-    fn process_keyboard_event(&mut self, event: &KeyboardEvent, state: StateList, global_state: &mut CalculatorState) -> StateList {
+    fn process_keyboard_event(&mut self, event: &KeyboardEvent, state: LocalStateList, global_state: &mut CalculatorState) -> LocalStateList {
         self.process_keyboard_event_default(event, state, global_state)
     }
 
-    fn get_state(&self, current_state: StateList) -> StateList {
+    fn get_state(&self, current_state: LocalStateList) -> LocalStateList {
         current_state
     }
 
-    fn apply_state(&mut self, states: StateList, global_state: &CalculatorState) -> StateList {
+    fn apply_state(&mut self, states: LocalStateList, global_state: &CalculatorState) -> LocalStateList {
         states
     }
 
-    fn sync_state(&mut self, states: StateList, global_state: &CalculatorState) {
+    fn sync_state(&mut self, states: LocalStateList, global_state: &CalculatorState) {
         self.sync_state_default(states, global_state)
     }
 }

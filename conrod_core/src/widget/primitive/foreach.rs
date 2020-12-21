@@ -12,7 +12,7 @@ use widget::primitive::Widget;
 use widget::primitive::widget::WidgetExt;
 use event::event::Event;
 use event_handler::{WidgetEvent, MouseEvent, KeyboardEvent};
-use state::state::{StateList, GetState, State};
+use state::state::{LocalStateList, GetState, State};
 use daggy::petgraph::graph::node_index;
 use render::primitive_kind::PrimitiveKind;
 
@@ -165,15 +165,15 @@ impl<S: Clone + Debug> Event<S> for ForEach<S> {
         unimplemented!()
     }
 
-    fn process_mouse_event(&mut self, event: &MouseEvent, consumed: &bool, state: StateList, global_state: &mut S) -> StateList {
+    fn process_mouse_event(&mut self, event: &MouseEvent, consumed: &bool, state: LocalStateList, global_state: &mut S) -> LocalStateList {
         println!("Foreach mouseevent");
 
         state
     }
 
-    fn process_keyboard_event(&mut self, event: &KeyboardEvent, state: StateList, global_state: &mut S) -> StateList {
+    fn process_keyboard_event(&mut self, event: &KeyboardEvent, state: LocalStateList, global_state: &mut S) -> LocalStateList {
         // Apply state from its parent
-        let new_state = self.apply_state(state, global_state);
+        let new_state = self.update_widget_state(state, global_state);
 
         // Add the state from itself, to the state list
         let mut state_for_children = new_state; //self.get_state(new_state);
@@ -190,19 +190,19 @@ impl<S: Clone + Debug> Event<S> for ForEach<S> {
 
         }
         // We then apply the changed state from its children, to save it for itself.
-        self.apply_state(state_for_children, global_state)
+        self.update_widget_state(state_for_children, global_state)
     }
 
-    fn get_state(&self, mut current_state: StateList) -> StateList {
+    fn get_state(&self, mut current_state: LocalStateList) -> LocalStateList {
         unimplemented!()
     }
 
-    fn apply_state(&mut self, states: StateList, global_state: &S) -> StateList {
+    fn update_widget_state(&mut self, states: LocalStateList, global_state: &S) -> LocalStateList {
         states.update_local_state(&mut self.ids, global_state);
         states
     }
 
-    fn sync_state(&mut self, states: StateList, global_state: &S) {
+    fn sync_state(&mut self, states: LocalStateList, global_state: &S) {
         unimplemented!()
     }
 }

@@ -21,12 +21,13 @@ use layout::basic_layouter::BasicLayouter;
 use event::event::Event;
 use event_handler::{WidgetEvent, MouseEvent, KeyboardEvent};
 use widget::primitive::widget::WidgetExt;
-use state::state::{StateList};
+use state::state::{LocalStateList};
 use flags::Flags;
 use widget::widget_iterator::{WidgetIter, WidgetIterMut};
 use layout::Layout;
 use layout::layouter::Layouter;
 use state::environment::Environment;
+use state::state_sync::NoLocalStateSync;
 
 
 /// A primitive and basic widget for drawing an `Image`.
@@ -60,26 +61,16 @@ impl<S> Event<S> for Image<S> {
         unimplemented!()
     }
 
-    fn process_mouse_event(&mut self, event: &MouseEvent, consumed: &bool, state: StateList, global_state: &mut S) -> StateList {
+    fn process_mouse_event(&mut self, event: &MouseEvent, consumed: &bool, state: LocalStateList, global_state: &mut S) -> LocalStateList {
         self.process_mouse_event_default(event, consumed, state, global_state)
     }
 
-    fn process_keyboard_event(&mut self, event: &KeyboardEvent, state: StateList, global_state: &mut S) -> StateList {
+    fn process_keyboard_event(&mut self, event: &KeyboardEvent, state: LocalStateList, global_state: &mut S) -> LocalStateList {
         self.process_keyboard_event_default(event, state, global_state)
     }
-
-    fn get_state(&self, current_state: StateList) -> StateList {
-        current_state
-    }
-
-    fn apply_state(&mut self, states: StateList, _: &S) -> StateList {
-        states
-    }
-
-    fn sync_state(&mut self, states: StateList, global_state: &S) {
-        self.sync_state_default(states, global_state);
-    }
 }
+
+impl<S> NoLocalStateSync for Image<S> {}
 
 impl<S> Layout<S> for Image<S> {
     fn flexibility(&self) -> u32 {

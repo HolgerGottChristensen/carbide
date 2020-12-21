@@ -121,14 +121,14 @@ impl<T: Clone + Debug + Serialize, S: Clone> State<T, S> {
     }
 }
 
-pub type StateList = Vec<(String, String)>;
+pub type LocalStateList = Vec<(String, String)>;
 
 pub trait GetState {
     fn update_local_state<'a, T: Deserialize<'a> + Serialize + Clone + Debug, U: Clone>(&'a self, state: &mut State<T, U>, global_state: &U);
     fn replace_state<T: Serialize + Clone + Debug, U: Clone + Debug>(&mut self, val: State<T, U>);
 }
 
-impl GetState for StateList {
+impl GetState for LocalStateList {
     fn update_local_state<'a, T: Deserialize<'a> + Serialize + Clone + Debug, U: Clone>(&'a self, state: &mut State<T, U>, global_state: &U) {
         match state {
             State::LocalState { id, value } => {
