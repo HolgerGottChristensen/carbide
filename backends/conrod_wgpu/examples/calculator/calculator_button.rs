@@ -31,11 +31,11 @@ pub struct CalculatorButton {
 }
 
 impl CalculatorButton {
-    pub fn new(id: Id) -> Box<CalculatorButton> {
+    pub fn new(display: Box<dyn Widget<CalculatorState>>) -> Box<CalculatorButton> {
         Box::new(CalculatorButton {
             id: Uuid::new_v4(),
             child: Rectangle::initialize(vec![
-                Image::new(id, [100.0,100.0], vec![])
+                display
             ]).fill(rgb_bytes(76,0,19)),
             position: [0.0, 0.0],
             dimension: [0.0, 0.0],
@@ -43,7 +43,7 @@ impl CalculatorButton {
         })
     }
 
-    pub fn on_clicked(mut self, func: fn(&mut Self, &mut CalculatorState)) -> Box<Self>{
+    pub fn on_released(mut self, func: fn(&mut Self, &mut CalculatorState)) -> Box<Self>{
         self.function = Some(func);
         Box::new(self)
     }
@@ -98,7 +98,7 @@ impl CommonWidget<CalculatorState> for CalculatorButton {
 impl Event<CalculatorState> for CalculatorButton {
     fn handle_mouse_event(&mut self, event: &MouseEvent, consumed: &bool, global_state: &mut CalculatorState) {
         match event {
-            MouseEvent::Click(_, _, _) => {
+            MouseEvent::Release(_, _, _) => {
                 match self.function {
                     None => {}
                     Some(f) => {

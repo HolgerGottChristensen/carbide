@@ -38,7 +38,8 @@ pub struct VStack<S> {
     children: Vec<Box<dyn Widget<S>>>,
     position: Point,
     dimension: Dimensions,
-    spacing: Scalar
+    spacing: Scalar,
+    cross_axis_alignment: CrossAxisAlignment
 }
 
 impl<S> VStack<S> {
@@ -48,8 +49,14 @@ impl<S> VStack<S> {
             children,
             position: [0.0,0.0],
             dimension: [100.0,100.0],
-            spacing: 10.0
+            spacing: 10.0,
+            cross_axis_alignment: CrossAxisAlignment::Center
         })
+    }
+
+    pub fn cross_axis_alignment(mut self, alignment: CrossAxisAlignment) -> Box<Self>{
+        self.cross_axis_alignment = alignment;
+        Box::new(self)
     }
 
     pub fn spacing(mut self, spacing: f64) -> Box<Self> {
@@ -155,16 +162,16 @@ impl<S> Layout for VStack<S> {
     }
 
     fn position_children(&mut self) {
-        let cross_axis_alignment = CrossAxisAlignment::Center;
         let mut height_offset = 0.0;
         let position = self.position;
         let dimension = self.dimension;
         let spacing = self.spacing;
+        let alignment = self.cross_axis_alignment.clone();
 
         let spacers: Vec<bool> = self.get_children().map(|n| n.get_flag() == Flags::Spacer).collect();
 
         for (n, child) in self.get_children_mut().enumerate() {
-            match cross_axis_alignment {
+            match alignment {
                 CrossAxisAlignment::Start => {child.set_x(position[0])}
                 CrossAxisAlignment::Center => {child.set_x(position[0] + dimension[0]/2.0 - child.get_width()/2.0)}
                 CrossAxisAlignment::End => {child.set_x(position[0] + dimension[0] - child.get_width())}

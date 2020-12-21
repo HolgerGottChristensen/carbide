@@ -48,6 +48,7 @@ pub struct Text<S: Clone + Debug> {
     pub common: widget::CommonBuilder,
     /// The text to be drawn by the **Text**.
     pub text: State<String, S>,
+    font_size: State<u32, S>,
     /// Unique styling for the **Text**.
     pub style: Style,
     position: Point,
@@ -60,12 +61,7 @@ pub struct Text<S: Clone + Debug> {
 
 impl<S: Clone + Debug> Event<S> for Text<S> {
     fn handle_mouse_event(&mut self, event: &MouseEvent, consumed: &bool, global_state: &mut S) {
-        match event {
-            MouseEvent::Press(_, _, _) => {
-                self.text.get_value_mut(global_state).push_str(" Hejsa")
-            }
-            _ => {}
-        }
+        ()
     }
 
     fn handle_keyboard_event(&mut self, event: &KeyboardEvent, global_state: &mut S) {
@@ -165,11 +161,13 @@ impl<S: Clone + Debug> Render<S> for Text<S> {
 
         let new_line_infos = match self.wrap_mode {
             Wrap::None =>
-                text::line::infos(&self.text.get_latest_value(), font, 14),
+                text::line::infos(&self.text.get_latest_value(), font, *self.font_size.get_latest_value()),
             Wrap::Character =>
-                text::line::infos(&self.text.get_latest_value(), font, 14).wrap_by_character(rect.w()),
+                text::line::infos(&self.text.get_latest_value(), font, *self.font_size.get_latest_value())
+                    .wrap_by_character(rect.w()),
             Wrap::Whitespace =>
-                text::line::infos(&self.text.get_latest_value(), font, 14).wrap_by_whitespace(rect.w()),
+                text::line::infos(&self.text.get_latest_value(), font, *self.font_size.get_latest_value())
+                    .wrap_by_whitespace(rect.w()),
         };
 
         let text = RenderText {
@@ -178,7 +176,7 @@ impl<S: Clone + Debug> Render<S> for Text<S> {
             text: self.text.get_latest_value().clone(),
             line_infos: new_line_infos.collect(),
             font: font.clone(),
-            font_size: 14,
+            font_size: *self.font_size.get_latest_value(),
             rect,
             justify: Justify::Left,
             y_align: Align::End,
@@ -321,6 +319,7 @@ impl<S: Clone + Debug> Text<S> {
         Box::new(Text {
             common: widget::CommonBuilder::default(),
             text,
+            font_size: 14.into(),
             style: Style::default(),
             position: [0.0,0.0],
             dimension: [100.0,100.0],
@@ -335,6 +334,7 @@ impl<S: Clone + Debug> Text<S> {
         Box::new(Text {
             common: widget::CommonBuilder::default(),
             text,
+            font_size: 14.into(),
             style: Style::default(),
             position,
             dimension,
@@ -342,6 +342,11 @@ impl<S: Clone + Debug> Text<S> {
             color: WHITE,
             children
         })
+    }
+
+    pub fn font_size(mut self, size: State<u32, S>) -> Box<Self> {
+        self.font_size = size;
+        Box::new(self)
     }
 
     /// If no specific width was given, we'll use the width of the widest line as a default.
@@ -356,7 +361,7 @@ impl<S: Clone + Debug> Text<S> {
             None => return 0.0,
         };
 
-        let font_size = 14;
+        let font_size = *self.font_size.get_latest_value();
         let mut max_width = 0.0;
         for line in self.text.get_latest_value().lines() {
             let width = text::line::width(line, font, font_size);
@@ -381,7 +386,7 @@ impl<S: Clone + Debug> Text<S> {
         };
 
         let text = &self.text;
-        let font_size = 14;
+        let font_size = *self.font_size.get_latest_value();
         let wrap = Wrap::Whitespace;
         let num_lines = match wrap {
             Wrap::Character =>

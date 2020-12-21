@@ -14,10 +14,11 @@ pub enum State<T, U> where T: Serialize + Clone + Debug, U: Clone {
     LocalState {id: String, value: T},
     Value {value: T},
     GlobalState {
-        function: fn(state: &U) -> &T,
-        function_mut: fn(state: &mut U) -> &mut T,
+        function: fn(state: &U) -> T,
+        function_mut: Option<fn(state: &mut U) -> T>,
         latest_value: T
-    }
+    },
+    // KeyedEnvironmentState
 }
 
 impl<T: Serialize + Clone + Debug, U: Clone> Debug for State<T, U> {
@@ -50,8 +51,13 @@ impl<T: Serialize + Clone + Debug, U: Clone> State<T, U> {
         match self {
             State::LocalState { value, .. } => {value}
             State::Value { value } => {value}
-            State::GlobalState { latest_value, function_mut, .. } => {
-                *latest_value = function_mut(global_state).clone();
+            State::GlobalState { latest_value, function_mut, function } => {
+                if let Some(n) = function_mut {
+                    *latest_value = n(global_state).clone();
+                } else {
+                    *latest_value = function(global_state).clone();
+                }
+
                 latest_value
             }
         }
