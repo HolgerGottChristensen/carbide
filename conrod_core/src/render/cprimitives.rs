@@ -10,21 +10,22 @@ use render::text::Text;
 use text;
 use position::Dimensions;
 use widget::common_widget::CommonWidget;
+use state::environment::Environment;
 
 pub struct CPrimitives {
     pub primitives: Vec<Primitive>
 }
 
 impl CPrimitives {
-    pub fn new<S>(window_dimensions: Dimensions, root: &mut Box<dyn Widget<S>>, fonts: &text::font::Map) -> Self {
-        root.calculate_size(window_dimensions, fonts);
+    pub fn new<S>(window_dimensions: Dimensions, root: &mut Box<dyn Widget<S>>, environment: &mut Environment) -> Self {
+        root.calculate_size(window_dimensions, environment);
 
         root.set_x(window_dimensions[0]/2.0-root.get_width()/2.0);
         root.set_y(window_dimensions[1]/2.0-root.get_height()/2.0);
 
         root.position_children();
 
-        let mut prims: Vec<Primitive> = root.get_primitives(fonts);
+        let mut prims: Vec<Primitive> = root.get_primitives(environment.get_fonts_map());
         CPrimitives {
             primitives: prims
         }

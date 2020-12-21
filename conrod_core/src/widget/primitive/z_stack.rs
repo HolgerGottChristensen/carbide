@@ -31,6 +31,7 @@ use state::state::{StateList};
 use flags::Flags;
 use widget::widget_iterator::{WidgetIter, WidgetIterMut};
 use layout::layouter::Layouter;
+use state::environment::Environment;
 
 
 /// A basic, non-interactive rectangle shape widget.
@@ -94,7 +95,7 @@ impl<S> Layout<S> for ZStack<S> {
         1
     }
 
-    fn calculate_size(&mut self, requested_size: Dimensions, fonts: &Map) -> Dimensions {
+    fn calculate_size(&mut self, requested_size: Dimensions, env: &Environment) -> Dimensions {
 
         let mut children_flexibilty: Vec<(u32, &mut Box<dyn Widget<S>>)> = self.get_children_mut().map(|child| (child.flexibility(), child)).collect();
         children_flexibilty.sort_by(|(a,_), (b,_)| a.cmp(&b));
@@ -104,7 +105,7 @@ impl<S> Layout<S> for ZStack<S> {
         let mut max_height = 0.0;
 
         for (_, child) in children_flexibilty {
-            let chosen_size = child.calculate_size(requested_size, fonts);
+            let chosen_size = child.calculate_size(requested_size, env);
 
             if (chosen_size[0] > max_width) {
                 max_width = chosen_size[0];

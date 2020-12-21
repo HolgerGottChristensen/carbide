@@ -33,6 +33,7 @@ use layout::Layout;
 use layout::layouter::Layouter;
 use std::ops::Deref;
 use std::fmt::Debug;
+use state::environment::Environment;
 
 
 /// Displays some given text centered within a rectangular area.
@@ -109,8 +110,8 @@ impl<S: Clone + Debug> Layout<S> for Text<S> {
         2
     }
 
-    fn calculate_size(&mut self, proposed_size: Dimensions, fonts: &Map) -> Dimensions {
-        let pref_width = self.default_x(fonts);
+    fn calculate_size(&mut self, proposed_size: Dimensions, env: &Environment) -> Dimensions {
+        let pref_width = self.default_x(env.get_fonts_map());
 
         if (pref_width > proposed_size[0]) {
             self.dimension = [proposed_size[0], self.dimension[1]];
@@ -118,7 +119,7 @@ impl<S: Clone + Debug> Layout<S> for Text<S> {
             self.dimension = [pref_width, self.dimension[1]];
         }
 
-        let pref_height = self.default_y(fonts);
+        let pref_height = self.default_y(env.get_fonts_map());
 
         // Todo calculate size of children here
 

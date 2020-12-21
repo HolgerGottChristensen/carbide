@@ -29,6 +29,7 @@ use widget::primitive::widget::WidgetExt;
 use state::state::{StateList};
 use flags::Flags;
 use widget::widget_iterator::{WidgetIter, WidgetIterMut};
+use state::environment::Environment;
 
 
 /// A basic, non-interactive rectangle shape widget.
@@ -106,7 +107,7 @@ impl<S> Layout<S> for VStack<S> {
         1
     }
 
-    fn calculate_size(&mut self, requested_size: Dimensions, fonts: &Map) -> Dimensions {
+    fn calculate_size(&mut self, requested_size: Dimensions, env: &Environment) -> Dimensions {
         let mut number_of_children_that_needs_sizing = self.children.len() as f64;
 
         let non_spacers_vec: Vec<bool> = self.get_children().map(|n| n.get_flag() != Flags::Spacer).collect();
@@ -128,7 +129,7 @@ impl<S> Layout<S> for VStack<S> {
 
         for (_, child) in children_flexibilty {
             let size_for_child = [size_for_children[0], size_for_children[1] / number_of_children_that_needs_sizing];
-            let chosen_size = child.calculate_size(size_for_child, fonts);
+            let chosen_size = child.calculate_size(size_for_child, env);
 
             if chosen_size[0] > max_width {
                 max_width = chosen_size[0];
@@ -145,7 +146,7 @@ impl<S> Layout<S> for VStack<S> {
         let rest_space = requested_size[1] - total_height - spacing_total;
 
         for spacer in self.get_children_mut().filter(|m| m.get_flag() == Flags::Spacer) {
-            let chosen_size = spacer.calculate_size([requested_size[0], rest_space/spacer_count], fonts);
+            let chosen_size = spacer.calculate_size([requested_size[0], rest_space/spacer_count], env);
 
             if chosen_size[0] > max_width {
                 max_width = chosen_size[0];

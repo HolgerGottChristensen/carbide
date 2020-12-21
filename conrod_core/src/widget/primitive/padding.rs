@@ -9,7 +9,7 @@ use text::font::Map;
 use layout::basic_layouter::BasicLayouter;
 use widget::render::Render;
 use graph::Container;
-use Rect;
+use ::{Rect, text};
 use render::primitive::Primitive;
 use widget::{Id, Rectangle};
 use std::ops::Neg;
@@ -22,6 +22,7 @@ use flags::Flags;
 use widget::widget_iterator::{WidgetIter, WidgetIterMut};
 use layout::Layout;
 use layout::layouter::Layouter;
+use state::environment::Environment;
 
 pub static SCALE: f64 = -1.0;
 
@@ -150,10 +151,10 @@ impl<S> Layout<S> for Padding<S> {
         9
     }
 
-    fn calculate_size(&mut self, dimension: Dimensions, fonts: &Map) -> Dimensions {
+    fn calculate_size(&mut self, dimension: Dimensions, env: &Environment) -> Dimensions {
         let dimensions = [dimension[0] - self.edge_insets.left - self.edge_insets.right, dimension[1] - self.edge_insets.top - self.edge_insets.bottom];
 
-        let child_dimensions = self.child.calculate_size(dimensions, fonts);
+        let child_dimensions = self.child.calculate_size(dimensions, env);
 
         self.dimension = [child_dimensions[0] + self.edge_insets.left + self.edge_insets.right, child_dimensions[1] + self.edge_insets.top + self.edge_insets.bottom];
 
@@ -172,7 +173,7 @@ impl<S> Layout<S> for Padding<S> {
 
 impl<S> Render<S> for Padding<S> {
 
-    fn get_primitives(&self, fonts: &Map) -> Vec<Primitive> {
+    fn get_primitives(&self, fonts: &text::font::Map) -> Vec<Primitive> {
         let mut prims = vec![];
         prims.extend(Rectangle::<S>::rect_outline(Rect::new(self.position, [self.dimension[0], self.dimension[1]]), 1.0));
         let children: Vec<Primitive> = self.child.get_primitives(fonts);

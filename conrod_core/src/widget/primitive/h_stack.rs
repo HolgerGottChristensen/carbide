@@ -29,6 +29,7 @@ use widget::primitive::widget::WidgetExt;
 use state::state::{StateList};
 use flags::Flags;
 use widget::widget_iterator::{WidgetIterMut, WidgetIter};
+use state::environment::Environment;
 
 
 /// A basic, non-interactive rectangle shape widget.
@@ -99,7 +100,7 @@ impl<S> Layout<S> for HStack<S> {
         1
     }
 
-    fn calculate_size(&mut self, requested_size: Dimensions, fonts: &Map) -> Dimensions {
+    fn calculate_size(&mut self, requested_size: Dimensions, env: &Environment) -> Dimensions {
 
 
         // The number of children not containing any spacers
@@ -125,7 +126,7 @@ impl<S> Layout<S> for HStack<S> {
 
         for (_, child) in children_flexibilty {
             let size_for_child = [size_for_children[0] / number_of_children_that_needs_sizing, size_for_children[1]];
-            let chosen_size = child.calculate_size(size_for_child, fonts);
+            let chosen_size = child.calculate_size(size_for_child, env);
 
             if chosen_size[1] > max_height {
                 max_height = chosen_size[1];
@@ -142,7 +143,7 @@ impl<S> Layout<S> for HStack<S> {
         let rest_space = requested_size[0] - total_width - spacing_total;
 
         for spacer in self.get_children_mut().filter(|m| m.get_flag() == Flags::Spacer) {
-            let chosen_size = spacer.calculate_size([rest_space/spacer_count, requested_size[1]], fonts);
+            let chosen_size = spacer.calculate_size([rest_space/spacer_count, requested_size[1]], env);
 
             if chosen_size[1] > max_height {
                 max_height = chosen_size[1];

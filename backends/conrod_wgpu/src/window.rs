@@ -46,7 +46,7 @@ impl<T: 'static + Clone> conrod_core::window::TWindow<T> for Window<T> {
         let assets = find_folder::Search::KidsThenParents(3, 5).for_folder("assets").unwrap();
         let font_path = assets.join(path);
 
-        self.ui.fonts.insert_from_file(font_path)
+        self.ui.environment.insert_font_from_file(font_path)
     }
 
     fn add_image(&mut self, path: &str) -> Result<Id, Error> {

@@ -33,6 +33,7 @@ use widget::render::Render;
 use widget::common_widget::CommonWidget;
 use std::fmt::{Debug, Formatter};
 use std::fmt;
+use state::environment::Environment;
 
 /// A constructor type for building a `Ui` instance with a set of optional parameters.
 pub struct UiBuilder {
@@ -82,7 +83,7 @@ pub struct Ui<S> {
     /// The Widget cache, storing state for all widgets.
     pub(crate) widget_graph: Graph,
 
-    pub widgets: Box<dyn Widget<S>>,
+
     /// The widget::Id of the widget that was last updated/set.
     maybe_prev_widget_id: Option<widget::Id>,
     /// The widget::Id of the last widget used as a parent for another widget.
@@ -121,7 +122,9 @@ pub struct Ui<S> {
     pub win_h: f64,
 
 
-    event_handler: EventHandler
+    pub widgets: Box<dyn Widget<S>>,
+    event_handler: EventHandler,
+    pub environment: Environment
 }
 
 /// A wrapper around the `Ui` that restricts the user from mutating the `Ui` in certain ways while
@@ -235,7 +238,8 @@ impl<S: 'static + Clone> Ui<S> {
             global_input: input::Global::new(),
             pending_scroll_events: Vec::new(),
             mouse_cursor: cursor::MouseCursor::Arrow,
-            event_handler: EventHandler::new()
+            event_handler: EventHandler::new(),
+            environment: Environment::new()
         }
     }
 
@@ -662,6 +666,7 @@ impl<S: 'static + Clone> Ui<S> {
             ref theme,
             ref fonts,
             win_w, win_h,
+            ref mut environment,
             ..
         } = *self;
 
@@ -676,7 +681,7 @@ impl<S: 'static + Clone> Ui<S> {
 
         (
             Primitives::new(widget_graph, indices, theme, fonts, [win_w, win_h]),
-            CPrimitives::new([win_w, win_h], widgets, fonts)
+            CPrimitives::new([win_w, win_h], widgets, environment)
         )
     }
 

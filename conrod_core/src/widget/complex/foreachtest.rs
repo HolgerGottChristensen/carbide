@@ -27,6 +27,7 @@ use layout::Layout;
 use layout::layouter::Layouter;
 use std::ops::Deref;
 use std::fmt::Debug;
+use state::environment::Environment;
 
 #[derive(Debug, Clone)]
 pub struct ForeachTest<S: Clone + Debug> {
@@ -140,8 +141,8 @@ impl<S: Clone + Debug> Layout<S> for ForeachTest<S> {
         0
     }
 
-    fn calculate_size(&mut self, requested_size: Dimensions, fonts: &Map) -> Dimensions {
-        self.dimension = self.child.calculate_size(requested_size, fonts);
+    fn calculate_size(&mut self, requested_size: Dimensions, env: &Environment) -> Dimensions {
+        self.dimension = self.child.calculate_size(requested_size, env);
         self.dimension
     }
 

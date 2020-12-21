@@ -26,6 +26,7 @@ use flags::Flags;
 use widget::widget_iterator::{WidgetIter, WidgetIterMut};
 use layout::Layout;
 use layout::layouter::Layouter;
+use state::environment::Environment;
 
 
 /// A primitive and basic widget for drawing an `Image`.
@@ -85,11 +86,11 @@ impl<S> Layout<S> for Image<S> {
         10
     }
 
-    fn calculate_size(&mut self, _: Dimensions, fonts: &Map) -> Dimensions {
+    fn calculate_size(&mut self, _: Dimensions, env: &Environment) -> Dimensions {
         let dim = self.dimension;
 
         for child in self.get_children_mut() {
-            child.calculate_size(dim, fonts);
+            child.calculate_size(dim, env);
         }
 
         self.dimension
@@ -109,7 +110,7 @@ impl<S> Layout<S> for Image<S> {
 
 impl<S> Render<S> for Image<S> {
 
-    fn get_primitives(&self, fonts: &Map) -> Vec<Primitive> {
+    fn get_primitives(&self, fonts: &text::font::Map) -> Vec<Primitive> {
         //let color = Color::random();
         let kind = PrimitiveKind::Image {
             color: None,

@@ -33,6 +33,7 @@ use widget::widget_iterator::{WidgetIterMut, WidgetIter};
 use std::slice::{Iter, IterMut};
 use dyn_clone::DynClone;
 use layout::Layout;
+use state::environment::Environment;
 
 pub trait Widget<S>: Event<S> + Layout<S> + Render<S> + DynClone {}
 
@@ -132,8 +133,8 @@ impl<S> Layout<S> for Box<Widget<S>> {
         self.deref().flexibility()
     }
 
-    fn calculate_size(&mut self, requested_size: [f64; 2], fonts: &Map) -> [f64; 2] {
-        self.deref_mut().calculate_size(requested_size, fonts)
+    fn calculate_size(&mut self, requested_size: [f64; 2], env: &Environment) -> [f64; 2] {
+        self.deref_mut().calculate_size(requested_size, env)
     }
 
     fn position_children(&mut self) {
@@ -143,7 +144,7 @@ impl<S> Layout<S> for Box<Widget<S>> {
 
 impl<S> Render<S> for Box<Widget<S>> {
 
-    fn get_primitives(&self, fonts: &Map) -> Vec<Primitive> {
+    fn get_primitives(&self, fonts: &text::font::Map) -> Vec<Primitive> {
         self.deref().get_primitives(fonts)
     }
 }

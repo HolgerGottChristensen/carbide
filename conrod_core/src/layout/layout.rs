@@ -4,11 +4,12 @@ use text::font::Map;
 use widget::common_widget::CommonWidget;
 use layout::basic_layouter::BasicLayouter;
 use layout::layouter::Layouter;
+use state::environment::Environment;
 
 pub trait Layout<U> {
     /// 0 is the most flexible and the largest number is the least flexible
     fn flexibility(&self) -> u32;
-    fn calculate_size(&mut self, requested_size: Dimensions, fonts: &text::font::Map) -> Dimensions;
+    fn calculate_size(&mut self, requested_size: Dimensions, env: &Environment) -> Dimensions;
     fn position_children(&mut self);
 }
 
@@ -21,10 +22,10 @@ impl<T, U> Layout<U> for T where T: SingleChildLayout + CommonWidget<U> {
         self.flexibility()
     }
 
-    fn calculate_size(&mut self, requested_size: [f64; 2], fonts: &Map) -> [f64; 2] {
+    fn calculate_size(&mut self, requested_size: [f64; 2], env: &Environment) -> [f64; 2] {
         let mut dimentions = [0.0, 0.0];
         if let Some(child) = self.get_children_mut().next() {
-            dimentions = child.calculate_size(requested_size, fonts);
+            dimentions = child.calculate_size(requested_size, env);
         }
 
         self.set_dimension(dimentions);

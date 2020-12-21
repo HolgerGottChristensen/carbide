@@ -32,6 +32,7 @@ use draw::shape::triangle::Triangle;
 use draw::shape::circumference::{Circumference, Triangles};
 use layout::Layout;
 use layout::layouter::Layouter;
+use state::environment::Environment;
 
 
 /// A simple, non-interactive widget for drawing a single **Oval**.
@@ -95,9 +96,9 @@ impl<S, K> Layout<K> for Oval<S, K> {
         0
     }
 
-    fn calculate_size(&mut self, requested_size: Dimensions, fonts: &Map) -> Dimensions {
+    fn calculate_size(&mut self, requested_size: Dimensions, env: &Environment) -> Dimensions {
         for child in &mut self.children {
-            child.calculate_size(requested_size, fonts);
+            child.calculate_size(requested_size, env);
         }
         self.dimension = requested_size;
 

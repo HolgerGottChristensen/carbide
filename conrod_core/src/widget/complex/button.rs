@@ -28,6 +28,7 @@ use widget::widget_iterator::{WidgetIter, WidgetIterMut};
 use layout::Layout;
 use layout::layouter::Layouter;
 use std::fmt::Debug;
+use state::environment::Environment;
 
 #[derive(Debug, Clone)]
 pub struct SyncTest<S: Clone + Debug> {
@@ -177,9 +178,9 @@ impl<S: Clone + Debug> Layout<S> for SyncTest<S> {
         2
     }
 
-    fn calculate_size(&mut self, requested_size: Dimensions, fonts: &Map) -> Dimensions {
+    fn calculate_size(&mut self, requested_size: Dimensions, env: &Environment) -> Dimensions {
 
-        self.dimension = self.child.calculate_size(requested_size, fonts);
+        self.dimension = self.child.calculate_size(requested_size, env);
         self.dimension
     }
 

@@ -23,6 +23,7 @@ use state::state::{StateList};
 use flags::Flags;
 use widget::widget_iterator::{WidgetIter, WidgetIterMut};
 use layout::Layout;
+use state::environment::Environment;
 //use draw::shape::line::is_over_widget;
 
 
@@ -87,7 +88,7 @@ impl<S> Layout<S> for Line<S> {
         0
     }
 
-    fn calculate_size(&mut self, requested_size: [f64; 2], fonts: &Map) -> [f64; 2] {
+    fn calculate_size(&mut self, requested_size: [f64; 2], env: &Environment) -> [f64; 2] {
         unimplemented!()
     }
 

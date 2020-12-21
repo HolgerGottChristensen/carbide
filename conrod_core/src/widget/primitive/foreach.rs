@@ -24,6 +24,7 @@ use widget::widget_iterator::{WidgetIter, WidgetIterMut};
 use std::collections::HashMap;
 use layout::Layout;
 use std::fmt::Debug;
+use state::environment::Environment;
 
 
 #[derive(Debug, Clone)]
@@ -213,7 +214,7 @@ impl<S: Clone + Debug> Layout<S> for ForEach<S> {
         unimplemented!()
     }
 
-    fn calculate_size(&mut self, requested_size: Dimensions, fonts: &Map) -> Dimensions {
+    fn calculate_size(&mut self, requested_size: Dimensions, env: &Environment) -> Dimensions {
         unimplemented!()
     }
 

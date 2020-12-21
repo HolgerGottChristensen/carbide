@@ -33,6 +33,7 @@ use state::state::{StateList};
 use flags::Flags;
 use widget::widget_iterator::{WidgetIter, WidgetIterMut};
 use layout::Layout;
+use state::environment::Environment;
 
 
 /// A basic, non-interactive rectangle shape widget.
@@ -103,7 +104,7 @@ impl<S> Layout<S> for Spacer {
         0
     }
 
-    fn calculate_size(&mut self, requested_size: Dimensions, fonts: &Map) -> Dimensions {
+    fn calculate_size(&mut self, requested_size: Dimensions, env: &Environment) -> Dimensions {
         match self.space {
             SpacerDirection::Vertical => {
                 self.dimension = [0.0, requested_size[1]];
