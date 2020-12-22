@@ -1,34 +1,33 @@
 //! A simple, non-interactive widget for drawing an `Image`.
 
-use {Color, Ui};
-use ::{image, Point};
-use position::{Dimension, Rect, Dimensions};
-use ::{widget, text};
-use widget::render::Render;
-use render::primitive::Primitive;
-use graph::Container;
-use widget::{Id, Rectangle};
-use text::font::Map;
-use render::primitive_kind::PrimitiveKind;
-use render::util::new_primitive;
 use daggy::petgraph::graph::node_index;
-use widget::primitive::Widget;
-use widget::common_widget::CommonWidget;
 use uuid::Uuid;
 
-use Scalar;
-use layout::basic_layouter::BasicLayouter;
-use event::event::Event;
-use event_handler::{WidgetEvent, MouseEvent, KeyboardEvent};
-use widget::primitive::widget::WidgetExt;
-use state::state::{LocalStateList};
+use {Color, Ui};
+use ::{image, Point};
+use ::{text, widget};
+use event::event::{Event, NoEvents};
+use event_handler::{KeyboardEvent, MouseEvent, WidgetEvent};
 use flags::Flags;
-use widget::widget_iterator::{WidgetIter, WidgetIterMut};
+use graph::Container;
+use layout::basic_layouter::BasicLayouter;
 use layout::Layout;
 use layout::layouter::Layouter;
+use position::{Dimension, Dimensions, Rect};
+use render::primitive::Primitive;
+use render::primitive_kind::PrimitiveKind;
+use render::util::new_primitive;
+use Scalar;
 use state::environment::Environment;
+use state::state::LocalStateList;
 use state::state_sync::NoLocalStateSync;
-
+use text::font::Map;
+use widget::{Id, Rectangle};
+use widget::common_widget::CommonWidget;
+use widget::primitive::Widget;
+use widget::primitive::widget::WidgetExt;
+use widget::render::Render;
+use widget::widget_iterator::{WidgetIter, WidgetIterMut};
 
 /// A primitive and basic widget for drawing an `Image`.
 #[derive(Debug, Clone, WidgetCommon_)]
@@ -48,27 +47,7 @@ pub struct Image<S> {
     pub children: Vec<Box<dyn Widget<S>>>,
 }
 
-impl<S> Event<S> for Image<S> {
-    fn handle_mouse_event(&mut self, event: &MouseEvent, consumed: &bool, global_state: &mut S) {
-        ()
-    }
-
-    fn handle_keyboard_event(&mut self, event: &KeyboardEvent, global_state: &mut S) {
-        ()
-    }
-
-    fn handle_other_event(&mut self, event: &WidgetEvent) {
-        unimplemented!()
-    }
-
-    fn process_mouse_event(&mut self, event: &MouseEvent, consumed: &bool, state: LocalStateList, global_state: &mut S) -> LocalStateList {
-        self.process_mouse_event_default(event, consumed, state, global_state)
-    }
-
-    fn process_keyboard_event(&mut self, event: &KeyboardEvent, state: LocalStateList, global_state: &mut S) -> LocalStateList {
-        self.process_keyboard_event_default(event, state, global_state)
-    }
-}
+impl<S> NoEvents for Image<S> {}
 
 impl<S> NoLocalStateSync for Image<S> {}
 

@@ -2,40 +2,39 @@
 //!
 //! Due to the frequency of its use in GUIs, the `Rectangle` gets its own widget to allow backends
 //! to specialise their rendering implementations.
+use std::any::Any;
+use std::collections::HashMap;
+use std::convert::TryFrom;
+use std::error::Error;
+
+use daggy::petgraph::graph::node_index;
+use uuid::Uuid;
+
 use {Color, Colorable, Point, Rect, Sizeable};
-use ::{widget, Scalar};
-use widget::render::Render;
-use graph::Container;
-use widget::{Id, Rectangle};
+use ::{Scalar, widget};
+use ::{Range, text};
 use color::rgb;
+use event::event::{Event, NoEvents};
+use event_handler::{KeyboardEvent, MouseEvent, WidgetEvent};
+use flags::Flags;
+use graph::Container;
+use layout::basic_layouter::BasicLayouter;
+use layout::Layout;
+use position::Dimensions;
+use render::owned_primitive::OwnedPrimitive;
+use render::owned_primitive_kind::OwnedPrimitiveKind;
 use render::primitive::Primitive;
 use render::primitive_kind::PrimitiveKind;
 use render::util::new_primitive;
-use widget::common_widget::CommonWidget;
-use uuid::Uuid;
-use widget::primitive::Widget;
-use position::Dimensions;
-use daggy::petgraph::graph::node_index;
-use ::{Range, text};
-use render::owned_primitive::OwnedPrimitive;
-use render::owned_primitive_kind::OwnedPrimitiveKind;
-
-use std::convert::TryFrom;
-use std::error::Error;
-use std::collections::HashMap;
-use std::any::Any;
-
-use text::font::Map;
-use layout::basic_layouter::BasicLayouter;
-use event::event::Event;
-use event_handler::{WidgetEvent, MouseEvent, KeyboardEvent};
-use state::state::{LocalStateList};
-use flags::Flags;
-use widget::widget_iterator::{WidgetIter, WidgetIterMut};
-use layout::Layout;
 use state::environment::Environment;
+use state::state::LocalStateList;
 use state::state_sync::NoLocalStateSync;
-
+use text::font::Map;
+use widget::{Id, Rectangle};
+use widget::common_widget::CommonWidget;
+use widget::primitive::Widget;
+use widget::render::Render;
+use widget::widget_iterator::{WidgetIter, WidgetIterMut};
 
 /// A basic, non-interactive rectangle shape widget.
 #[derive(Clone, Debug)]
@@ -66,27 +65,7 @@ impl Spacer {
     }
 }
 
-impl<S> Event<S> for Spacer {
-    fn handle_mouse_event(&mut self, event: &MouseEvent, consumed: &bool, global_state: &mut S) {
-        ()
-    }
-
-    fn handle_keyboard_event(&mut self, event: &KeyboardEvent, global_state: &mut S) {
-        ()
-    }
-
-    fn handle_other_event(&mut self, event: &WidgetEvent) {
-        ()
-    }
-
-    fn process_mouse_event(&mut self, event: &MouseEvent, consumed: &bool, state: LocalStateList, global_state: &mut S) -> LocalStateList {
-        state
-    }
-
-    fn process_keyboard_event(&mut self, event: &KeyboardEvent, state: LocalStateList, global_state: &mut S) -> LocalStateList {
-        state
-    }
-}
+impl NoEvents for Spacer {}
 
 impl NoLocalStateSync for Spacer {}
 

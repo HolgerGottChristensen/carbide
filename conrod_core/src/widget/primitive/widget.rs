@@ -109,34 +109,26 @@ impl<S> Event<S> for Box<Widget<S>> {
         self.deref_mut().handle_other_event(event)
     }
 
-    fn process_mouse_event(&mut self, event: &MouseEvent, consumed: &bool, state: LocalStateList, global_state: &mut S) -> LocalStateList {
-        self.deref_mut().process_mouse_event(event, consumed, state, global_state)
+    fn process_mouse_event(&mut self, event: &MouseEvent, consumed: &bool, env: &mut Environment, global_state: &mut S) {
+        self.deref_mut().process_mouse_event(event, consumed, env, global_state)
     }
 
-    fn process_keyboard_event(&mut self, event: &KeyboardEvent, state: LocalStateList, global_state: &mut S) -> LocalStateList {
-        self.deref_mut().process_keyboard_event(event, state, global_state)
+    fn process_keyboard_event(&mut self, event: &KeyboardEvent, env: &mut Environment, global_state: &mut S) {
+        self.deref_mut().process_keyboard_event(event, env, global_state)
     }
 }
 
 impl<S> StateSync<S> for Box<Widget<S>> {
-    fn push_local_state(&self, env: &mut Environment) {
-        self.deref().push_local_state(env);
+    fn insert_local_state(&self, env: &mut Environment) {
+        self.deref().insert_local_state(env)
     }
 
-    fn pop_local_state(&self, env: &mut Environment) {
-        self.deref().pop_local_state(env);
+    fn update_all_widget_state(&mut self, env: &Environment, global_state: &S) {
+        self.deref_mut().update_all_widget_state(env, global_state)
     }
 
-    fn replace_local_state(&self, env: &mut Environment) {
-        self.deref().replace_local_state(env)
-    }
-
-    fn update_widget_state(&mut self, env: &Environment, global_state: &S) {
-        self.deref_mut().update_widget_state(env, global_state)
-    }
-
-    fn sync_state(&mut self, env: &mut Environment, global_state: &S) {
-        self.deref_mut().sync_state(env, global_state)
+    fn update_local_widget_state(&mut self, env: &Environment) {
+        self.deref_mut().update_all_widget_state(env)
     }
 }
 

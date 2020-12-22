@@ -1,14 +1,19 @@
-use ::{Color, from_ron};
-use text;
-use text::font::{Id, Error, from_file};
-use bitflags::_core::fmt::Formatter;
-use state::state::LocalStateList;
 use std::collections::HashMap;
+use std::fmt::Debug;
+
+use bitflags::_core::fmt::Formatter;
+use serde::{Deserialize, Serialize};
+
+use ::{Color, from_ron};
+use ::{text, to_ron};
+use state::state::LocalStateList;
+use text::font::{Error, from_file, Id};
+use widget::primitive::image::State;
 
 pub struct Environment {
     stack: Vec<EnvironmentVariable>,
     fonts: text::font::Map,
-    local_state: HashMap<String, String>
+    local_state: HashMap<String, String>,
 }
 
 impl std::fmt::Debug for Environment {
@@ -34,6 +39,20 @@ impl Environment {
         self.local_state.clear()
     }
 
+    pub fn update_local_state<'a, T: Serialize + Clone + Debug + Deserialize<'a>, U: Clone>(&self, local_state: &mut super::state::State<T, U>) {
+        if let super::state::State::LocalState { id, value } = local_state {
+            *local_state = from_ron(self.local_state.get(id).unwrap().as_str()).unwrap();
+        } else {
+            println!("Tried to update non local state")
+        }
+    }
+
+    pub fn insert_local_state(&mut self, local_state: &State) {
+        if let super::state::State::LocalState { id, value } = local_state {
+            self.local_state.insert(id.clone(), to_ron(value).unwrap())
+        }
+    }
+
     pub fn get_fonts_map(&self) -> &text::font::Map {
         &self.fonts
     }
@@ -41,7 +60,7 @@ impl Environment {
     pub fn insert_font_from_file<P>(&mut self, path: P) -> Result<Id, Error>
         where P: AsRef<std::path::Path>,
     {
-            self.fonts.insert_from_file(path)
+        self.fonts.insert_from_file(path)
 
     }
 

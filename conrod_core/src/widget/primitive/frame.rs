@@ -1,28 +1,28 @@
-use uuid::Uuid;
-use widget::primitive::Widget;
-use ::{Point, Scalar};
-use position::Dimensions;
-use widget::common_widget::CommonWidget;
-
-
-use text::font::Map;
-use layout::basic_layouter::BasicLayouter;
-use widget::render::Render;
-use graph::Container;
-use ::{Rect, text};
-use render::primitive::Primitive;
-use widget::{Id, Rectangle};
 use std::ops::Neg;
-use event::event::Event;
-use event_handler::{WidgetEvent, MouseEvent, KeyboardEvent};
-use widget::primitive::widget::WidgetExt;
-use state::state::{LocalStateList};
+
+use uuid::Uuid;
+
+use ::{Point, Scalar};
+use ::{Rect, text};
+use event::event::{Event, NoEvents};
+use event_handler::{KeyboardEvent, MouseEvent, WidgetEvent};
 use flags::Flags;
-use widget::widget_iterator::{WidgetIter, WidgetIterMut};
+use graph::Container;
+use layout::basic_layouter::BasicLayouter;
 use layout::Layout;
 use layout::layouter::Layouter;
+use position::Dimensions;
+use render::primitive::Primitive;
 use state::environment::Environment;
+use state::state::LocalStateList;
 use state::state_sync::{NoLocalStateSync, StateSync};
+use text::font::Map;
+use widget::{Id, Rectangle};
+use widget::common_widget::CommonWidget;
+use widget::primitive::Widget;
+use widget::primitive::widget::WidgetExt;
+use widget::render::Render;
+use widget::widget_iterator::{WidgetIter, WidgetIterMut};
 
 pub static SCALE: f64 = -1.0;
 
@@ -66,39 +66,7 @@ impl<S: 'static> Frame<S> {
 
 impl<S: 'static + Clone> WidgetExt<S> for Frame<S> {}
 
-impl<S> Event<S> for Frame<S> {
-    fn handle_mouse_event(&mut self, event: &MouseEvent, consumed: &bool, global_state: &mut S) {
-        ()
-    }
-
-    fn handle_keyboard_event(&mut self, event: &KeyboardEvent, global_state: &mut S) {
-        ()
-    }
-
-    fn handle_other_event(&mut self, event: &WidgetEvent) {
-        unimplemented!()
-    }
-
-    fn process_mouse_event(&mut self, event: &MouseEvent, consumed: &bool, state: LocalStateList, global_state: &mut S) -> LocalStateList {
-        let new_state = self.update_widget_state(state, global_state);
-
-        if self.child.is_inside(event.get_current_mouse_position()) {
-
-
-            //Then we delegate the event to its children
-            let updated_state = self.child.process_mouse_event(event, &consumed, new_state.clone(), global_state);
-            return self.update_widget_state(updated_state, global_state);
-        }
-
-        new_state
-    }
-
-    fn process_keyboard_event(&mut self, event: &KeyboardEvent, state: LocalStateList, global_state: &mut S) -> LocalStateList {
-        let new_state = self.update_widget_state(state, global_state);
-        let updated_state = self.child.process_keyboard_event(event, new_state, global_state);
-        self.update_widget_state(updated_state, global_state)
-    }
-}
+impl<S> NoEvents for Frame<S> {}
 
 impl<S> NoLocalStateSync for Frame<S> {}
 

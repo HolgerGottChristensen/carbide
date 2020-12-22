@@ -1,30 +1,31 @@
 //! A simple, non-interactive widget for drawing a single straight Line.
 
-use {Color, Colorable, Point, Positionable, Rect, Scalar, Sizeable, Theme};
-use ::{graph, text};
-use utils::{vec2_add, vec2_sub};
-use widget::{self, Id};
-use position::Dimensions;
-use widget::primitive::Widget;
-use widget::render::Render;
-use render::primitive::Primitive;
-use graph::Container;
-use render::primitive_kind::PrimitiveKind;
-use render::util::new_primitive;
 use daggy::petgraph::graph::node_index;
-use widget::common_widget::CommonWidget;
 use uuid::Uuid;
 
-use text::font::Map;
-use event::event::Event;
-use event_handler::{WidgetEvent, MouseEvent, KeyboardEvent};
-use widget::primitive::widget::WidgetExt;
-use state::state::{LocalStateList};
+use {Color, Colorable, Point, Positionable, Rect, Scalar, Sizeable, Theme};
+use ::{graph, text};
+use event::event::{Event, NoEvents};
+use event_handler::{KeyboardEvent, MouseEvent, WidgetEvent};
 use flags::Flags;
-use widget::widget_iterator::{WidgetIter, WidgetIterMut};
+use graph::Container;
 use layout::Layout;
+use position::Dimensions;
+use render::primitive::Primitive;
+use render::primitive_kind::PrimitiveKind;
+use render::util::new_primitive;
 use state::environment::Environment;
+use state::state::LocalStateList;
 use state::state_sync::NoLocalStateSync;
+use text::font::Map;
+use utils::{vec2_add, vec2_sub};
+use widget::{self, Id};
+use widget::common_widget::CommonWidget;
+use widget::primitive::Widget;
+use widget::primitive::widget::WidgetExt;
+use widget::render::Render;
+use widget::widget_iterator::{WidgetIter, WidgetIterMut};
+
 //use draw::shape::line::is_over_widget;
 
 
@@ -48,28 +49,7 @@ pub struct Line<S> {
     pub children: Vec<Box<dyn Widget<S>>>
 }
 
-impl<S> Event<S> for Line<S> {
-    fn handle_mouse_event(&mut self, event: &MouseEvent, consumed: &bool, global_state: &mut S) {
-        ()
-    }
-
-    fn handle_keyboard_event(&mut self, event: &KeyboardEvent, global_state: &mut S) {
-        ()
-    }
-
-    fn handle_other_event(&mut self, event: &WidgetEvent) {
-        unimplemented!()
-    }
-
-    fn process_mouse_event(&mut self, event: &MouseEvent, consumed: &bool, state: LocalStateList, global_state: &mut S) -> LocalStateList {
-        self.process_mouse_event_default(event, consumed, state, global_state)
-    }
-
-    fn process_keyboard_event(&mut self, event: &KeyboardEvent, state: LocalStateList, global_state: &mut S) -> LocalStateList {
-        self.process_keyboard_event_default(event, state, global_state)
-    }
-
-}
+impl<S> NoEvents for Line<S> {}
 
 impl<S> NoLocalStateSync for Line<S> {}
 

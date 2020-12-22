@@ -1,40 +1,40 @@
 //! The primitive widget used for displaying text.
 
-use {Color, Colorable, FontSize, Ui};
-use position::{Dimension, Scalar, Dimensions, Align};
-use ::{std, Rect};
-use ::{text, Point};
-use utils;
-use widget;
-use widget::render::Render;
-use render::primitive::Primitive;
-use graph::Container;
-use widget::{Id, Rectangle};
-use ::render::text::Text as RenderText;
-use render::primitive_kind::PrimitiveKind;
-use render::util::new_primitive;
+use std::fmt::Debug;
+use std::ops::Deref;
+
 use daggy::petgraph::graph::node_index;
-use widget::common_widget::CommonWidget;
 use uuid::Uuid;
-use widget::primitive::Widget;
-use text::Justify;
 
-
-use text::font::Map;
-use layout::basic_layouter::BasicLayouter;
-use event::event::Event;
-use event_handler::{WidgetEvent, MouseEvent, KeyboardEvent};
-use widget::primitive::widget::WidgetExt;
+use {Color, Colorable, FontSize, Ui};
+use ::{Rect, std};
+use ::{Point, text};
+use ::render::text::Text as RenderText;
 use color::WHITE;
-use state::state::{LocalStateList, State, GetState};
+use event::event::{Event, NoEvents};
+use event_handler::{KeyboardEvent, MouseEvent, WidgetEvent};
 use flags::Flags;
-use widget::widget_iterator::{WidgetIter, WidgetIterMut};
+use graph::Container;
+use layout::basic_layouter::BasicLayouter;
 use layout::Layout;
 use layout::layouter::Layouter;
-use std::ops::Deref;
-use std::fmt::Debug;
+use position::{Align, Dimension, Dimensions, Scalar};
+use render::primitive::Primitive;
+use render::primitive_kind::PrimitiveKind;
+use render::util::new_primitive;
 use state::environment::Environment;
-
+use state::state::{GetState, LocalStateList, State};
+use state::state_sync::StateSync;
+use text::font::Map;
+use text::Justify;
+use utils;
+use widget;
+use widget::{Id, Rectangle};
+use widget::common_widget::CommonWidget;
+use widget::primitive::Widget;
+use widget::primitive::widget::WidgetExt;
+use widget::render::Render;
+use widget::widget_iterator::{WidgetIter, WidgetIterMut};
 
 /// Displays some given text centered within a rectangular area.
 ///
@@ -60,47 +60,19 @@ pub struct Text<S: Clone + Debug> {
     pub children: Vec<Box<dyn Widget<S>>>,
 }
 
-impl<S: Clone + Debug> Event<S> for Text<S> {
-    fn handle_mouse_event(&mut self, event: &MouseEvent, consumed: &bool, global_state: &mut S) {
-        ()
+impl<S: Clone + Debug> NoEvents for Text<S> {}
+
+impl<S: Clone + Debug> StateSync<S> for Text<S> {
+    fn insert_local_state(&self, env: &mut Environment) {
+        env.insert_local_state(&self.text);
     }
 
-    fn handle_keyboard_event(&mut self, event: &KeyboardEvent, global_state: &mut S) {
-        /*match event {
-            KeyboardEvent::Text(s, _) => {
-                if self.text.len() < 10 {
-                    self.text = s.clone();
-                }
-
-            }
-            _ => ()
-        }*/
+    fn update_all_widget_state(&mut self, env: &Environment, global_state: &S) {
+        self.update_local_widget_state(env)
     }
 
-    fn handle_other_event(&mut self, event: &WidgetEvent) {
-        unimplemented!()
-    }
-
-    fn process_mouse_event(&mut self, event: &MouseEvent, consumed: &bool, state: LocalStateList, global_state: &mut S) -> LocalStateList {
-        self.process_mouse_event_default(event, consumed, state, global_state)
-    }
-
-    fn process_keyboard_event(&mut self, event: &KeyboardEvent, state: LocalStateList, global_state: &mut S) -> LocalStateList {
-        self.process_keyboard_event_default(event, state, global_state)
-    }
-
-    fn get_state(&self, mut current_state: LocalStateList) -> LocalStateList {
-        current_state.replace_state(self.text.clone().into());
-        current_state
-    }
-
-    fn update_widget_state(&mut self, states: LocalStateList, global_state: &S) -> LocalStateList {
-        states.update_local_state(&mut self.text, global_state);
-        states
-    }
-
-    fn sync_state(&mut self, states: LocalStateList, global_state: &S) {
-        self.sync_state_default(states, global_state);
+    fn update_local_widget_state(&mut self, env: &Environment) {
+        env.update_local_state(&mut self.text)
     }
 }
 

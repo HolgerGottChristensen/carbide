@@ -1,3 +1,5 @@
+use std::fmt::Debug;
+
 use daggy::petgraph::graph::node_index;
 use uuid::Uuid;
 
@@ -9,15 +11,18 @@ use flags::Flags;
 use graph::Container;
 use input::Key;
 use layout::basic_layouter::BasicLayouter;
+use layout::Layout;
+use layout::layouter::Layouter;
 use position::Dimensions;
 use render::primitive::Primitive;
 use render::primitive_kind::PrimitiveKind;
-use state::state::{GetState, State, LocalStateList};
+use state::environment::Environment;
+use state::state::{GetState, LocalStateList, State};
+use state::state_sync::StateSync;
 use text::font::Map;
 use widget::{HStack, Id, Oval, Rectangle, Text};
 use widget::common_widget::CommonWidget;
 use widget::complex::foreachtest::ForeachTest;
-
 use widget::primitive::foreach::ForEach;
 use widget::primitive::spacer::{Spacer, SpacerDirection};
 use widget::primitive::v_stack::VStack;
@@ -25,10 +30,6 @@ use widget::primitive::Widget;
 use widget::primitive::widget::WidgetExt;
 use widget::render::{ChildRender, Render};
 use widget::widget_iterator::{WidgetIter, WidgetIterMut};
-use layout::Layout;
-use layout::layouter::Layouter;
-use std::fmt::Debug;
-use state::environment::Environment;
 
 #[derive(Debug, Clone)]
 pub struct SyncTest<S: Clone + Debug> {
@@ -146,28 +147,20 @@ impl<S: Clone + Debug> Event<S> for SyncTest<S> {
     fn handle_other_event(&mut self, event: &WidgetEvent) {
         ()
     }
+}
 
-    fn process_mouse_event(&mut self, event: &MouseEvent, consumed: &bool, state: LocalStateList, global_state: &mut S) -> LocalStateList {
-        self.process_mouse_event_default(event, consumed, state, global_state)
+impl<S: Clone + Debug> StateSync<S> for SyncTest<S> {
+    fn insert_local_state(&self, env: &mut Environment) {
+        env.insert_local_state(&self.value);
+        env.insert_local_state(&self.fore);
     }
 
-    fn process_keyboard_event(&mut self, event: &KeyboardEvent, state: LocalStateList, global_state: &mut S) -> LocalStateList {
-        self.process_keyboard_event_default(event, state, global_state)
+    fn update_all_widget_state(&mut self, env: &Environment, global_state: &S) {
+        self.update_local_widget_state(env);
     }
 
-    fn get_state(&self, mut current_state: LocalStateList) -> LocalStateList {
-        current_state.replace_state(self.value.clone().into());
-        current_state.replace_state(self.fore.clone().into());
-        current_state
-    }
-
-    fn update_widget_stae(&mut self, states: LocalStateList, global_state: &S) -> LocalStateList {
-        states.update_local_state(&mut self.value, global_state);
-        states
-    }
-
-    fn sync_state(&mut self, states: LocalStateList, global_state: &S) {
-        self.sync_state_default(states, global_state);
+    fn update_local_widget_state(&mut self, env: &Environment) {
+        env.update_local_state(&mut self.value);
     }
 }
 

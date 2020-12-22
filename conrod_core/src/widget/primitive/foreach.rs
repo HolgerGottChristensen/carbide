@@ -1,31 +1,32 @@
+use std::collections::HashMap;
+use std::fmt::Debug;
+
+use daggy::petgraph::graph::node_index;
 use uuid::Uuid;
+
 use ::{Point, Rect};
-use position::Dimensions;
-use widget::render::{Render, ChildRender};
-use render::primitive::Primitive;
+use ::{Scalar, text};
+use event::event::{Event, NoEvents};
+use event_handler::{KeyboardEvent, MouseEvent, WidgetEvent};
+use flags::Flags;
 use graph::Container;
-use widget::{Id, Rectangle, HStack, Text};
+use input::Key;
+use layout::basic_layouter::BasicLayouter;
+use layout::Layout;
+use position::Dimensions;
+use render::primitive::Primitive;
+use render::primitive_kind::PrimitiveKind;
+use state::environment::Environment;
+use state::state::{GetState, LocalStateList, State};
+use state::state_sync::StateSync;
 use text::font::Map;
+use widget::{HStack, Id, Rectangle, Text};
 use widget::common_widget::CommonWidget;
-use ::{text, Scalar};
+use widget::primitive::spacer::{Spacer, SpacerDirection};
 use widget::primitive::Widget;
 use widget::primitive::widget::WidgetExt;
-use event::event::Event;
-use event_handler::{WidgetEvent, MouseEvent, KeyboardEvent};
-use state::state::{LocalStateList, GetState, State};
-use daggy::petgraph::graph::node_index;
-use render::primitive_kind::PrimitiveKind;
-
-use layout::basic_layouter::BasicLayouter;
-use widget::primitive::spacer::{Spacer, SpacerDirection};
-use input::Key;
-use flags::Flags;
+use widget::render::{ChildRender, Render};
 use widget::widget_iterator::{WidgetIter, WidgetIterMut};
-use std::collections::HashMap;
-use layout::Layout;
-use std::fmt::Debug;
-use state::environment::Environment;
-
 
 #[derive(Debug, Clone)]
 pub struct ForEach<S: Clone + Debug> {
@@ -152,7 +153,7 @@ impl<S: Clone + Debug> CommonWidget<S> for ForEach<S> {
     }
 }
 
-impl<S: Clone + Debug> Event<S> for ForEach<S> {
+/*impl<S: Clone + Debug> Event<S> for ForEach<S> {
     fn handle_mouse_event(&mut self, event: &MouseEvent, consumed: &bool, global_state: &mut S) {
         unimplemented!()
     }
@@ -204,6 +205,20 @@ impl<S: Clone + Debug> Event<S> for ForEach<S> {
 
     fn sync_state(&mut self, states: LocalStateList, global_state: &S) {
         unimplemented!()
+    }
+}*/
+
+impl<S: Clone + Debug> NoEvents for ForEach<S> {}
+
+impl<S: Clone + Debug> StateSync<S> for ForEach<S> {
+    fn insert_local_state(&self, env: &mut Environment) {}
+
+    fn update_all_widget_state(&mut self, env: &Environment, global_state: &S) {
+        self.update_local_widget_state(env)
+    }
+
+    fn update_local_widget_state(&mut self, env: &Environment) {
+        env.update_local_state(&mut self.ids)
     }
 }
 

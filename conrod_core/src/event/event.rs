@@ -1,7 +1,8 @@
-use event_handler::{MouseEvent, KeyboardEvent, WidgetEvent};
-use widget::common_widget::CommonWidget;
-use state::state::{LocalStateList};
+use event_handler::{KeyboardEvent, MouseEvent, WidgetEvent};
+use state::environment::{Environment, EnvironmentVariable};
+use state::state::LocalStateList;
 use state::state_sync::StateSync;
+use widget::common_widget::CommonWidget;
 
 pub trait Event<S>: CommonWidget<S> + StateSync<S> {
     /// A function that will be called when a mouse event occurs.
@@ -21,59 +22,47 @@ pub trait Event<S>: CommonWidget<S> + StateSync<S> {
     /// TODO: Separate touch events.
     fn handle_other_event(&mut self, event: &WidgetEvent);
 
-    fn process_mouse_event(&mut self, event: &MouseEvent, consumed: &bool, state: LocalStateList, global_state: &mut S) -> LocalStateList;
+    fn process_mouse_event(&mut self, event: &MouseEvent, consumed: &bool, env: &mut Environment, global_state: &mut S) {
+        self.update_all_widget_state(env, global_state);
 
-    fn process_mouse_event_default(&mut self, event: &MouseEvent, consumed: &bool, state: LocalStateList, global_state: &mut S) -> LocalStateList {
+        self.handle_mouse_event(event, consumed, global_state);
+        if *consumed { return () }
 
-        // Apply state from its parent
-        let new_state = self.update_widget_state(state, global_state);
-
-        // First we handle the event in the widget
-        self.handle_mouse_event(event, &consumed, global_state);
-        if *consumed {return new_state}
-
-        // Add the state from itself, to the state list
-        let mut state_for_children = self.get_state(new_state);
-
-        for child in self.get_proxied_children(){
-            if child.is_inside(event.get_current_mouse_position()) {
-                //Then we delegate the event to its children
-                state_for_children = child.process_mouse_event(event, &consumed, state_for_children, global_state);
-
-                if *consumed {return state_for_children}
-            } /*else {
-                //Then we delegate the event to its children
-                state_for_children = child.process_mouse_event(event, &consumed, state_for_children);
-
-                if *consumed {return state_for_children}
-            }*/
-        }
-
-        // We then apply the changed state from its children, to save it for itself.
-        self.update_widget_state(state_for_children, global_state)
-    }
-
-    fn process_keyboard_event(&mut self, event: &KeyboardEvent, state: LocalStateList, global_state: &mut S) -> LocalStateList;
-
-    fn process_keyboard_event_default(&mut self, event: &KeyboardEvent, state: LocalStateList, global_state: &mut S) -> LocalStateList {
-
-        // Apply state from its parent
-        let new_state = self.update_widget_state(state, global_state);
-
-        // First we handle the event in the widget
-        self.handle_keyboard_event(event, global_state);
-
-        // Add the state from itself, to the state list
-        let mut state_for_children = self.get_state(new_state);
+        self.insert_local_state(env);
 
         for child in self.get_proxied_children() {
-
-            // Then we delegate the event to its children, we also makes sure to update
-            // current state for the next child
-            state_for_children = child.process_keyboard_event(event, state_for_children, global_state);
-
+            if child.is_inside(event.get_current_mouse_position()) {
+                child.process_mouse_event(event, &consumed, env, global_state);
+                if *consumed { return () }
+            }
         }
-        // We then apply the changed state from its children, to save it for itself.
-        self.update_widget_state(state_for_children, global_state)
+
+        self.update_local_widget_state(env)
     }
+
+    fn process_keyboard_event(&mut self, event: &KeyboardEvent, env: &mut Environment, global_state: &mut S) {
+        self.update_all_widget_state(env, global_state);
+
+        self.handle_keyboard_event(event, global_state);
+
+        self.insert_local_state(env);
+
+        for child in self.get_proxied_children() {
+            if child.is_inside(event.get_current_mouse_position()) {
+                child.process_keyboard_event(event, env, global_state);
+            }
+        }
+
+        self.update_local_widget_state(env)
+    }
+}
+
+pub trait NoEvents {}
+
+impl<S, T> Event<S> for T where T: NoEvents + StateSync<S> {
+    fn handle_mouse_event(&mut self, event: &MouseEvent, consumed: &bool, global_state: &mut S) {}
+
+    fn handle_keyboard_event(&mut self, event: &KeyboardEvent, global_state: &mut S) {}
+
+    fn handle_other_event(&mut self, event: &WidgetEvent) {}
 }

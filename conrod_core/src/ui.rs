@@ -1,39 +1,42 @@
-use color::Color;
+use std;
+use std::fmt::{Debug, Formatter};
+use std::fmt;
+use std::sync::atomic::{self, AtomicUsize};
+
+use fnv;
+
 use ::{event, Positionable};
+use color::Color;
+use cursor;
+use event::button::ButtonEvent;
+use event::click::Click;
+use event::double_click::DoubleClick;
+use event::drag::Drag;
+use event::event::Event;
+use event::press::PressEvent;
+use event::release::Release;
+use event::scroll::Scroll;
+use event::tap::Tap;
+use event::text::Text;
+use event::ui::UiEvent;
+use event_handler::{EventHandler, KeyboardEvent, MouseEvent, WidgetEvent, WindowEvent};
 use graph::{self, Graph};
 use input;
-use position::{self, Align, Direction, Dimension, Padding, Point, Position, Range, Rect, Scalar, Dimensions};
+use input::Source;
+use position::{self, Align, Dimension, Dimensions, Direction, Padding, Point, Position, Range, Rect, Scalar};
 use render;
-use std;
-use std::sync::atomic::{self, AtomicUsize};
-use fnv;
+use render::cprimitives::CPrimitives;
+use render::primitives::Primitives;
+use state::environment::Environment;
 use text;
 use theme::Theme;
 use utils;
 use widget::{self, Rectangle};
-use cursor;
-use render::primitives::Primitives;
-use render::cprimitives::CPrimitives;
-use widget::primitive::Widget;
-use crate::event::input::Input;
-use input::Source;
-use event::tap::Tap;
-use event::ui::UiEvent;
-use event::scroll::Scroll;
-use event::press::PressEvent;
-use event::button::ButtonEvent;
-use event::release::Release;
-use event::click::Click;
-use event::text::Text;
-use event::drag::Drag;
-use event::double_click::DoubleClick;
-use event_handler::{EventHandler, WindowEvent, WidgetEvent, MouseEvent, KeyboardEvent};
-use event::event::Event;
-use widget::render::Render;
 use widget::common_widget::CommonWidget;
-use std::fmt::{Debug, Formatter};
-use std::fmt;
-use state::environment::Environment;
+use widget::primitive::Widget;
+use widget::render::Render;
+
+use crate::event::input::Input;
 
 /// A constructor type for building a `Ui` instance with a set of optional parameters.
 pub struct UiBuilder {
@@ -432,10 +435,10 @@ impl<S: 'static + Clone> Ui<S> {
             match event {
                 WidgetEvent::Mouse(mouse_event) => {
                     let consumed = false;
-                    self.widgets.process_mouse_event(mouse_event, &consumed, Vec::new(), global_state);
+                    self.widgets.process_mouse_event(mouse_event, &consumed, &mut self.environment, global_state);
                 }
                 WidgetEvent::Keyboard(keyboard_event) => {
-                    self.widgets.process_keyboard_event(keyboard_event, Vec::new(), global_state);
+                    self.widgets.process_keyboard_event(keyboard_event, &mut self.environment, global_state);
                 }
                 WidgetEvent::Window(window_event) => {
 
@@ -445,7 +448,7 @@ impl<S: 'static + Clone> Ui<S> {
 
         }
 
-        self.widgets.sync_state(Vec::new(), global_state);
+        self.widgets.sync_state(&mut self.environment, global_state);
         self.event_handler.clear_events();
 
         // Todo: Determine if an redraw is needed after events are processed

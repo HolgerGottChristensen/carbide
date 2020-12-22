@@ -1,33 +1,35 @@
-use uuid::Uuid;
-use ::{Point, Rect};
-use position::Dimensions;
-use widget::render::{Render, ChildRender};
-use render::primitive::Primitive;
-use graph::Container;
-use widget::{Id, Rectangle, Oval, HStack, Text};
-use text::font::Map;
-use widget::common_widget::CommonWidget;
-use ::{text, Scalar};
-use widget::primitive::Widget;
-use widget::primitive::widget::WidgetExt;
-use event::event::Event;
-use event_handler::{WidgetEvent, MouseEvent, KeyboardEvent};
-use state::state::{LocalStateList, GetState, State};
-use daggy::petgraph::graph::node_index;
-use render::primitive_kind::PrimitiveKind;
+use std::fmt::Debug;
+use std::ops::Deref;
 
-use layout::basic_layouter::BasicLayouter;
-use widget::primitive::spacer::{Spacer, SpacerDirection};
-use input::Key;
+use daggy::petgraph::graph::node_index;
+use uuid::Uuid;
+
+use ::{Point, Rect};
+use ::{Scalar, text};
+use event::event::Event;
+use event_handler::{KeyboardEvent, MouseEvent, WidgetEvent};
 use flags::Flags;
-use widget::widget_iterator::{WidgetIter, WidgetIterMut};
-use widget::primitive::foreach::ForEach;
-use widget::primitive::v_stack::VStack;
+use graph::Container;
+use input::Key;
+use layout::basic_layouter::BasicLayouter;
 use layout::Layout;
 use layout::layouter::Layouter;
-use std::ops::Deref;
-use std::fmt::Debug;
+use position::Dimensions;
+use render::primitive::Primitive;
+use render::primitive_kind::PrimitiveKind;
 use state::environment::Environment;
+use state::state::{GetState, LocalStateList, State};
+use state::state_sync::StateSync;
+use text::font::Map;
+use widget::{HStack, Id, Oval, Rectangle, Text};
+use widget::common_widget::CommonWidget;
+use widget::primitive::foreach::ForEach;
+use widget::primitive::spacer::{Spacer, SpacerDirection};
+use widget::primitive::v_stack::VStack;
+use widget::primitive::Widget;
+use widget::primitive::widget::WidgetExt;
+use widget::render::{ChildRender, Render};
+use widget::widget_iterator::{WidgetIter, WidgetIterMut};
 
 #[derive(Debug, Clone)]
 pub struct ForeachTest<S: Clone + Debug> {
@@ -110,27 +112,19 @@ impl<S: Clone + Debug> Event<S> for ForeachTest<S> {
     fn handle_other_event(&mut self, event: &WidgetEvent) {
         ()
     }
+}
 
-    fn process_mouse_event(&mut self, event: &MouseEvent, consumed: &bool, state: LocalStateList, global_state: &mut S) -> LocalStateList {
-        self.process_mouse_event_default(event, consumed, state, global_state)
+impl<S: Clone + Debug> StateSync<S> for ForeachTest<S> {
+    fn insert_local_state(&self, env: &mut Environment) {
+        env.insert_local_state(&State::<String, S>::new("sindex", &self.index.get_latest_value().to_string()))
     }
 
-    fn process_keyboard_event(&mut self, event: &KeyboardEvent, state: LocalStateList, global_state: &mut S) -> LocalStateList {
-        self.process_keyboard_event_default(event, state, global_state)
+    fn update_all_widget_state(&mut self, env: &Environment, global_state: &S) {
+        self.update_local_widget_state(env)
     }
 
-    fn get_state(&self, mut current_state: LocalStateList) -> LocalStateList {
-        current_state.replace_state(State::<String, S>::new("sindex", &self.index.get_latest_value().to_string()).into());
-        current_state
-    }
-
-    fn update_widget_state(&mut self, states: LocalStateList, global_state: &S) -> LocalStateList {
-        states.update_local_state(&mut self.index, global_state);
-        states
-    }
-
-    fn sync_state(&mut self, states: LocalStateList, global_state: &S) {
-        self.sync_state_default(states, global_state);
+    fn update_local_widget_state(&mut self, env: &Environment) {
+        env.update_local_state(&mut self.index);
     }
 }
 
