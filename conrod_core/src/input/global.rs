@@ -2,13 +2,13 @@
 //! The core of this module is the `Global` struct. It is responsible for aggregating
 //! and interpreting raw input events into high-level semantic events.
 
-use event;
-use input;
+
 use std;
-use event::widget::WidgetEvent;
-use event::old_event::OldEvent;
-use event::click::Click;
-use event::ui::UiEvent;
+
+use crate::event::click::Click;
+use crate::event::old_event::OldEvent;
+use crate::event::ui::UiEvent;
+use crate::input;
 
 /// Global input event handler that also implements `input::Provider`. The `Ui` passes all events
 /// to it's `Global` instance, which aggregates and interprets the events to provide so-called

@@ -6,12 +6,13 @@
 
 
 use daggy::Walker;
-use position::{Point, Rect};
 use fnv;
-use super::{EdgeIndex, Graph};
-use theme::Theme;
-use widget;
 
+use crate::position::{Point, Rect};
+use crate::theme::Theme;
+use crate::widget;
+
+use super::{EdgeIndex, Graph};
 
 /// A node "walker" that yields all widgets under the given `xy` position in order from top to
 /// bottom.

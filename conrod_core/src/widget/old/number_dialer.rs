@@ -1,24 +1,21 @@
 //! A widget for precision control over any base-10 digit within a given value.
 
-use {
+use std::cmp::Ordering;
+use std::iter::repeat;
+
+use num::Float;
+
+use crate::{
+    Borderable,
     Color,
     Colorable,
     FontSize,
-    Borderable,
     Labelable,
-    Point,
-    Positionable,
     Scalar,
 };
-use num::{Float, NumCast};
-use std::cmp::Ordering;
-use std::iter::repeat;
-use text;
-use utils::clamp;
-use widget;
-use event::widget::WidgetEvent;
-use event::button::ButtonEvent;
-
+use crate::text;
+use crate::utils::clamp;
+use crate::widget;
 
 /// A widget for precision control over any digit within a value.
 ///

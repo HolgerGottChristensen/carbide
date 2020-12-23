@@ -1,14 +1,13 @@
-use ::{Color, Point};
-use color::Rgba;
-use widget::triangles::{ColoredPoint};
-use ::{image, Rect};
-use render::text::Text;
-use ::{text, graph};
-use draw::shape::triangle::Triangle;
+use crate::{Color, Point};
+use crate::{image, Rect};
+use crate::{graph, text};
+use crate::color::Rgba;
+use crate::draw::shape::triangle::Triangle;
+use crate::render::text::Text;
+use crate::widget::triangles::ColoredPoint;
 
 /// The unique kind for each primitive element in the Ui.
 pub enum PrimitiveKind {
-
     /// A filled `Rectangle`.
     ///
     /// These are produced by the `Rectangle` and `BorderedRectangle` primitive widgets. A `Filled`

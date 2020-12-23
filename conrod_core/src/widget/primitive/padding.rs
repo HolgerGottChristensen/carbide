@@ -1,29 +1,23 @@
-use std::ops::Neg;
-
 use uuid::Uuid;
 
-use ::{Point, Scalar};
-use ::{Rect, text};
-use event::event::{Event, NoEvents};
-use event_handler::{KeyboardEvent, MouseEvent, WidgetEvent};
-use flags::Flags;
-use graph::Container;
-use layout::basic_layouter::BasicLayouter;
-use layout::Layout;
-use layout::layouter::Layouter;
-use position::Dimensions;
-use render::primitive::Primitive;
-use state::environment::Environment;
-use state::state::LocalStateList;
-use state::state_sync::{NoLocalStateSync, StateSync};
-use text::font::Map;
-use widget::{Id, Rectangle};
-use widget::common_widget::CommonWidget;
-use widget::primitive::edge_insets::EdgeInsets;
-use widget::primitive::Widget;
-use widget::primitive::widget::WidgetExt;
-use widget::render::Render;
-use widget::widget_iterator::{WidgetIter, WidgetIterMut};
+use crate::Point;
+use crate::{Rect, text};
+use crate::event::event::NoEvents;
+use crate::flags::Flags;
+use crate::layout::basic_layouter::BasicLayouter;
+use crate::layout::Layout;
+use crate::layout::layouter::Layouter;
+use crate::position::Dimensions;
+use crate::render::primitive::Primitive;
+use crate::state::environment::Environment;
+use crate::state::state_sync::NoLocalStateSync;
+use crate::widget::Rectangle;
+use crate::widget::common_widget::CommonWidget;
+use crate::widget::primitive::edge_insets::EdgeInsets;
+use crate::widget::primitive::Widget;
+use crate::widget::primitive::widget::WidgetExt;
+use crate::widget::render::Render;
+use crate::widget::widget_iterator::{WidgetIter, WidgetIterMut};
 
 pub static SCALE: f64 = -1.0;
 

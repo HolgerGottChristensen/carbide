@@ -1,38 +1,22 @@
-use std::any::Any;
-use std::collections::HashMap;
-use std::convert::TryFrom;
-use std::error::Error;
-
-use daggy::petgraph::graph::node_index;
 use uuid::Uuid;
 
-use {Color, Colorable, Point, Rect, Sizeable};
-use ::{Scalar, widget};
-use ::{Range, text};
-use color::rgb;
-use event::event::{Event, NoEvents};
-use event_handler::{KeyboardEvent, MouseEvent, WidgetEvent};
-use flags::Flags;
-use graph::Container;
-use layout::{CrossAxisAlignment, Layout};
-use layout::basic_layouter::BasicLayouter;
-use layout::layouter::Layouter;
-use position::Dimensions;
-use render::owned_primitive::OwnedPrimitive;
-use render::owned_primitive_kind::OwnedPrimitiveKind;
-use render::primitive::Primitive;
-use render::primitive_kind::PrimitiveKind;
-use render::util::new_primitive;
-use state::environment::Environment;
-use state::state::LocalStateList;
-use state::state_sync::NoLocalStateSync;
-use text::font::Map;
-use widget::{Id, Rectangle};
-use widget::common_widget::CommonWidget;
-use widget::primitive::Widget;
-use widget::primitive::widget::WidgetExt;
-use widget::render::Render;
-use widget::widget_iterator::{WidgetIter, WidgetIterMut};
+use crate::{Color, Colorable, Point, Rect, Sizeable};
+use crate::text;
+use crate::event::event::NoEvents;
+use crate::flags::Flags;
+use crate::layout::Layout;
+use crate::layout::basic_layouter::BasicLayouter;
+use crate::layout::layouter::Layouter;
+use crate::position::Dimensions;
+use crate::render::primitive::Primitive;
+use crate::state::environment::Environment;
+use crate::state::state_sync::NoLocalStateSync;
+use crate::widget::Rectangle;
+use crate::widget::common_widget::CommonWidget;
+use crate::widget::primitive::Widget;
+use crate::widget::primitive::widget::WidgetExt;
+use crate::widget::render::Render;
+use crate::widget::widget_iterator::{WidgetIter, WidgetIterMut};
 
 /// A basic, non-interactive rectangle shape widget.
 #[derive(Debug, Clone)]
@@ -40,7 +24,7 @@ pub struct ZStack<S> {
     id: Uuid,
     children: Vec<Box<dyn Widget<S>>>,
     position: Point,
-    dimension: Dimensions
+    dimension: Dimensions,
 }
 
 impl<S> ZStack<S> {
@@ -77,11 +61,11 @@ impl<S> Layout<S> for ZStack<S> {
         for (_, child) in children_flexibilty {
             let chosen_size = child.calculate_size(requested_size, env);
 
-            if (chosen_size[0] > max_width) {
+            if chosen_size[0] > max_width {
                 max_width = chosen_size[0];
             }
 
-            if (chosen_size[1] > max_height) {
+            if chosen_size[1] > max_height {
                 max_height = chosen_size[1];
             }
 

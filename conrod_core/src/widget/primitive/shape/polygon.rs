@@ -1,12 +1,11 @@
 //! A simple, non-interactive **Polygon** widget for drawing arbitrary convex shapes.
 
-use {Color, Colorable, Point, Positionable, Sizeable, Theme};
-use graph;
-use super::Style;
-use widget;
-use utils::{bounding_box_for_points, vec2_add, vec2_sub};
-use draw::shape::triangle::Triangle;
+use crate::{Color, Colorable, Point};
+use crate::draw::shape::triangle::Triangle;
+use crate::utils::bounding_box_for_points;
+use crate::widget;
 
+use super::Style;
 
 /// A basic, non-interactive, arbitrary **Polygon** widget.
 ///
@@ -99,7 +98,7 @@ impl<I> Polygon<I> {
         where I: IntoIterator<Item=Point> + Clone,
     {
         let points_clone = points.clone().into_iter();
-        let (xy, dim) = bounding_box_for_points(points_clone).xy_dim();
+        let (_xy, _dim) = bounding_box_for_points(points_clone).xy_dim();
         Polygon::styled(points, style)//.wh(dim).xy(xy)
     }
 
@@ -147,7 +146,7 @@ impl<I> Polygon<I> {
         where I: IntoIterator<Item=Point> + Clone,
     {
         let points_clone = points.clone().into_iter();
-        let (xy, dim) = bounding_box_for_points(points_clone).xy_dim();
+        let (xy, _dim) = bounding_box_for_points(points_clone).xy_dim();
         let mut polygon = Polygon::styled(points, style);//.wh(dim);
         polygon.maybe_shift_to_centre_from = Some(xy);
         polygon

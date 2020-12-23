@@ -2,14 +2,16 @@
 //! Types a functionality for handling Canvas and Widget theming.
 //!
 
-use Scalar;
-use color::{Color, BLACK, WHITE};
-use position::{Align, Direction, Padding, Position, Relative};
-use fnv;
 use std;
 use std::any::Any;
-use text;
-use widget;
+
+use fnv;
+
+use crate::color::{BLACK, Color, WHITE};
+use crate::position::{Align, Direction, Padding, Position, Relative};
+use crate::Scalar;
+use crate::text;
+use crate::widget;
 
 /// `std::collections::HashMap` with `fnv::FnvHasher` for unique styling
 /// of each widget, index-able by the **Widget::kind**.

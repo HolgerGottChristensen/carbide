@@ -1,7 +1,7 @@
-use ::{text};
-use ::{FontSize, Rect};
-use position::{Align, Dimensions};
-use Scalar;
+use crate::text;
+use crate::{FontSize, Rect};
+use crate::position::{Align, Dimensions};
+use crate::Scalar;
 
 /// A type used for producing a `PositionedGlyph` iterator.
 ///

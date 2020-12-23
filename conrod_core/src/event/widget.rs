@@ -1,14 +1,14 @@
-use event::press::PressEvent;
-use event::click::Click;
-use event::drag::Drag;
-use event::motion::Motion;
-use event::release::Release;
-use event::scroll::Scroll;
-use event::tap::Tap;
-use event::text::Text;
-use event::double_click::DoubleClick;
-use position::Dimensions;
-use input;
+use crate::event::click::Click;
+use crate::event::double_click::DoubleClick;
+use crate::event::drag::Drag;
+use crate::event::motion::Motion;
+use crate::event::press::PressEvent;
+use crate::event::release::Release;
+use crate::event::scroll::Scroll;
+use crate::event::tap::Tap;
+use crate::event::text::Text;
+use crate::input;
+use crate::position::Dimensions;
 
 impl From<PressEvent> for WidgetEvent {
     fn from(press: PressEvent) -> Self {

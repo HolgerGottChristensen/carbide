@@ -1,8 +1,7 @@
-use event_handler::{KeyboardEvent, MouseEvent, WidgetEvent};
-use state::environment::{Environment, EnvironmentVariable};
-use state::state::LocalStateList;
-use state::state_sync::StateSync;
-use widget::common_widget::CommonWidget;
+use crate::event_handler::{KeyboardEvent, MouseEvent, WidgetEvent};
+use crate::state::environment::Environment;
+use crate::state::state_sync::StateSync;
+use crate::widget::common_widget::CommonWidget;
 
 pub trait Event<S>: CommonWidget<S> + StateSync<S> {
     /// A function that will be called when a mouse event occurs.
@@ -58,9 +57,9 @@ pub trait Event<S>: CommonWidget<S> + StateSync<S> {
 pub trait NoEvents {}
 
 impl<S, T> Event<S> for T where T: NoEvents + StateSync<S> {
-    fn handle_mouse_event(&mut self, event: &MouseEvent, consumed: &bool, global_state: &mut S) {}
+    fn handle_mouse_event(&mut self, _event: &MouseEvent, _consumed: &bool, _global_state: &mut S) {}
 
-    fn handle_keyboard_event(&mut self, event: &KeyboardEvent, global_state: &mut S) {}
+    fn handle_keyboard_event(&mut self, _event: &KeyboardEvent, _global_state: &mut S) {}
 
-    fn handle_other_event(&mut self, event: &WidgetEvent) {}
+    fn handle_other_event(&mut self, _event: &WidgetEvent) {}
 }

@@ -1,7 +1,7 @@
-use Point;
-use event::mouse_press::MousePress;
-use event::button::ButtonEvent;
-use event::key_press::KeyPress;
+use crate::event::button::ButtonEvent;
+use crate::event::key_press::KeyPress;
+use crate::event::mouse_press::MousePress;
+use crate::Point;
 
 /// Contains all relevant information for a Press event.
 #[derive(Copy, Clone, PartialEq, Debug)]

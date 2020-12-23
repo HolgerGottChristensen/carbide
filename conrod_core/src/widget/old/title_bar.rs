@@ -1,10 +1,9 @@
 //! A simple title bar widget that automatically sizes itself to the top of some other widget.
 
-use {Color, Colorable, FontSize, Borderable, Labelable, Positionable, Sizeable, Ui};
-use position::{self, Align, Dimension, Scalar};
-use text;
-use widget::{self};
-
+use crate::{Borderable, Color, Colorable, FontSize, Labelable};
+use crate::position::{self, Align, Scalar};
+use crate::text;
+use crate::widget::{self};
 
 /// A simple title bar widget that automatically sizes itself to the top of some other widget.
 #[derive(Clone, WidgetCommon_)]
@@ -75,9 +74,8 @@ const LABEL_PADDING: f64 = 4.0;
 
 
 impl<'a> TitleBar<'a> {
-
     /// Construct a new TitleBar widget and attach it to the widget at the given index.
-    pub fn new(label: &'a str, id: widget::Id) -> Self {
+    pub fn new(label: &'a str, _id: widget::Id) -> Self {
         TitleBar {
             common: widget::CommonBuilder::default(),
             style: Style::default(),

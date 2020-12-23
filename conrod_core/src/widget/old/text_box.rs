@@ -1,13 +1,9 @@
 //! A widget for displaying and mutating a one-line field of text.
 
-use {Color, Colorable, FontSize, Borderable, Positionable, Sizeable};
-use event;
-use input;
-use position::{Range, Rect, Scalar};
-use text;
-use widget;
-use event::widget::WidgetEvent;
-use event::button::ButtonEvent;
+use crate::{Borderable, Color, Colorable, FontSize};
+use crate::position::Scalar;
+use crate::text;
+use crate::widget;
 
 /// A widget for displaying and mutating a small, one-line field of text, given by the user in the
 /// form of a `String`.

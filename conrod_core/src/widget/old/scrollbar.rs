@@ -1,15 +1,12 @@
 //! A widget that allows for manually scrolling via dragging the mouse.
 
-use {Color, Colorable, Positionable, Ui};
-use ::{graph, Dimension};
-use position::{Range, Rect, Scalar, Dimensions};
 use std;
-use utils;
-use widget::{self};
-use widget::scroll::{self, X, Y};
-use event::widget::WidgetEvent;
-use event::button::ButtonEvent;
 
+use crate::{Color, Colorable, Positionable};
+use crate::graph;
+use crate::position::{Range, Rect, Scalar};
+use crate::widget::{self};
+use crate::widget::scroll::{self, X, Y};
 
 /// A widget that allows for scrolling via dragging the mouse.
 #[derive(WidgetCommon_)]

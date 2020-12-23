@@ -4,6 +4,9 @@
 //! define their own methods for rendering. Instead, conrod graphics backends only need to define
 //! rendering methods for a small set of primitives.
 
+use crate::{Point, Range, Rect};
+pub use crate::widget::primitive::widget::Widget;
+
 pub mod line;
 pub mod image;
 pub mod point_path;
@@ -18,9 +21,6 @@ pub mod padding;
 pub mod spacer;
 pub mod edge_insets;
 pub mod foreach;
-
-use {Point, Range, Rect};
-pub use widget::primitive::widget::Widget;
 
 /// Find the bounding rect for the given series of points.
 pub fn bounding_box_for_points<I>(mut points: I) -> Rect

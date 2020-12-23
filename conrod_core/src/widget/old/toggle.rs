@@ -1,10 +1,9 @@
 //! A button that allows for toggling boolean state.
 
-use {Color, Colorable, FontSize, Borderable, Labelable, Positionable, Scalar};
-use position::{self, Align};
-use text;
-use widget;
-
+use crate::{Borderable, Color, Colorable, FontSize, Labelable, Scalar};
+use crate::position::{self, Align};
+use crate::text;
+use crate::widget;
 
 /// A pressable widget for toggling the state of a bool.
 ///

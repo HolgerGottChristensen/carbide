@@ -1,13 +1,13 @@
-use widget::triangles::{ColoredPoint};
-use ::{Point, text};
-use render::primitive::Primitive;
-use render::primitive_kind::PrimitiveKind;
-use render::text::Text;
-use render::primitive_walker::PrimitiveWalker;
-use render::owned_primitive_kind::OwnedPrimitiveKind;
-use render::owned_primitive::OwnedPrimitive;
-use render::owned_text::OwnedText;
-use draw::shape::triangle::Triangle;
+use crate::{Point, text};
+use crate::draw::shape::triangle::Triangle;
+use crate::render::owned_primitive::OwnedPrimitive;
+use crate::render::owned_primitive_kind::OwnedPrimitiveKind;
+use crate::render::owned_text::OwnedText;
+use crate::render::primitive::Primitive;
+use crate::render::primitive_kind::PrimitiveKind;
+use crate::render::primitive_walker::PrimitiveWalker;
+use crate::render::text::Text;
+use crate::widget::triangles::ColoredPoint;
 
 /// An iterator-like type for yielding `Primitive`s from an `OwnedPrimitives`.
 pub struct WalkOwnedPrimitives<'a> {

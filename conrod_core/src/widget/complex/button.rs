@@ -1,35 +1,29 @@
 use std::fmt::Debug;
 
-use daggy::petgraph::graph::node_index;
 use uuid::Uuid;
 
-use ::{Point, Rect};
-use ::{Scalar, text};
-use event::event::Event;
-use event_handler::{KeyboardEvent, MouseEvent, WidgetEvent};
-use flags::Flags;
-use graph::Container;
-use input::Key;
-use layout::basic_layouter::BasicLayouter;
-use layout::Layout;
-use layout::layouter::Layouter;
-use position::Dimensions;
-use render::primitive::Primitive;
-use render::primitive_kind::PrimitiveKind;
-use state::environment::Environment;
-use state::state::{GetState, LocalStateList, State};
-use state::state_sync::StateSync;
-use text::font::Map;
-use widget::{HStack, Id, Oval, Rectangle, Text};
-use widget::common_widget::CommonWidget;
-use widget::complex::foreachtest::ForeachTest;
-use widget::primitive::foreach::ForEach;
-use widget::primitive::spacer::{Spacer, SpacerDirection};
-use widget::primitive::v_stack::VStack;
-use widget::primitive::Widget;
-use widget::primitive::widget::WidgetExt;
-use widget::render::{ChildRender, Render};
-use widget::widget_iterator::{WidgetIter, WidgetIterMut};
+use crate::Point;
+use crate::event::event::Event;
+use crate::event_handler::{KeyboardEvent, MouseEvent, WidgetEvent};
+use crate::flags::Flags;
+use crate::input::Key;
+use crate::layout::basic_layouter::BasicLayouter;
+use crate::layout::Layout;
+use crate::layout::layouter::Layouter;
+use crate::position::Dimensions;
+use crate::state::environment::Environment;
+use crate::state::state::{GetState, State};
+use crate::state::state_sync::StateSync;
+use crate::widget::{HStack, Rectangle, Text};
+use crate::widget::common_widget::CommonWidget;
+use crate::widget::complex::foreachtest::ForeachTest;
+use crate::widget::primitive::foreach::ForEach;
+use crate::widget::primitive::spacer::{Spacer, SpacerDirection};
+use crate::widget::primitive::v_stack::VStack;
+use crate::widget::primitive::Widget;
+use crate::widget::primitive::widget::WidgetExt;
+use crate::widget::render::ChildRender;
+use crate::widget::widget_iterator::{WidgetIter, WidgetIterMut};
 
 #[derive(Debug, Clone)]
 pub struct SyncTest<S: Clone + Debug> {
@@ -113,7 +107,7 @@ impl<S: Clone + Debug> CommonWidget<S> for SyncTest<S> {
 }
 
 impl<S: Clone + Debug> Event<S> for SyncTest<S> {
-    fn handle_mouse_event(&mut self, event: &MouseEvent, consumed: &bool, global_state: &mut S) {
+    fn handle_mouse_event(&mut self, _event: &MouseEvent, _consumed: &bool, _global_state: &mut S) {
         ()
     }
 
@@ -122,7 +116,7 @@ impl<S: Clone + Debug> Event<S> for SyncTest<S> {
             KeyboardEvent::Text(s, _) => {
                 self.value.get_value_mut(global_state).push_str(s);
             }
-            KeyboardEvent::Press(key, modifier) => {
+            KeyboardEvent::Press(key, _modifier) => {
                 match key {
                     Key::Backspace => {
                         self.value.get_value_mut(global_state).pop();
@@ -132,7 +126,7 @@ impl<S: Clone + Debug> Event<S> for SyncTest<S> {
                     },
                     Key::NumPadMinus => {
                         if self.fore.get_value(global_state).len() > 1 {
-                            let last = self.fore.get_value(global_state).len()-1;
+                            let last = self.fore.get_value(global_state).len() - 1;
                             self.fore.get_value_mut(global_state).remove(last);
                         }
 
@@ -144,7 +138,7 @@ impl<S: Clone + Debug> Event<S> for SyncTest<S> {
         }
     }
 
-    fn handle_other_event(&mut self, event: &WidgetEvent) {
+    fn handle_other_event(&mut self, _event: &WidgetEvent) {
         ()
     }
 }
@@ -155,7 +149,7 @@ impl<S: Clone + Debug> StateSync<S> for SyncTest<S> {
         env.insert_local_state(&self.fore);
     }
 
-    fn update_all_widget_state(&mut self, env: &Environment, global_state: &S) {
+    fn update_all_widget_state(&mut self, env: &Environment, _global_state: &S) {
         self.update_local_widget_state(env);
     }
 

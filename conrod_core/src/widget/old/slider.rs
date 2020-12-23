@@ -1,12 +1,9 @@
 //! A widget for selecting a single value along some linear range.
 
-use {Color, Colorable, FontSize, Borderable, Labelable, Positionable};
-use num::{Float, NumCast, ToPrimitive};
-use position::{Padding, Range, Rect, Scalar};
-use text;
-use widget;
-use draw::shape::triangle::Triangle;
-
+use crate::{Borderable, Color, Colorable, FontSize, Labelable};
+use crate::position::Scalar;
+use crate::text;
+use crate::widget;
 
 /// Linear value selection.
 ///

@@ -1,4 +1,4 @@
-use input::{Touch, Motion};
+use crate::input::{Motion, Touch};
 
 /// The event type that is used by conrod to track inputs from the world. Events yielded by polling
 /// window backends should be converted to this type. This can be thought of as the event type

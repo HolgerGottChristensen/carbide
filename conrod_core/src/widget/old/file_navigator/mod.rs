@@ -6,7 +6,9 @@
 //! of one or more files, de-selection, deletion and double-clicking.
 //! - `FileView`: Displays some basic information about the file.
 
-use {
+use std;
+
+use crate::{
     color,
     Color,
     Colorable,
@@ -15,15 +17,13 @@ use {
     Scalar,
     Sizeable,
 };
-use event;
-use std;
-use widget;
+use crate::event::click::Click;
+use crate::event::double_click::DoubleClick;
+use crate::event::press::PressEvent;
+use crate::event::release::Release;
+use crate::widget;
 
 pub use self::directory_view::DirectoryView;
-use event::click::Click;
-use event::double_click::DoubleClick;
-use event::release::Release;
-use event::press::PressEvent;
 
 pub mod directory_view;
 

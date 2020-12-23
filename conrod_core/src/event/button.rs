@@ -1,5 +1,5 @@
-use Point;
-use utils::vec2_sub;
+use crate::Point;
+use crate::utils::vec2_sub;
 
 impl ButtonEvent {
     /// Returns a copy of the Button relative to the given `xy`

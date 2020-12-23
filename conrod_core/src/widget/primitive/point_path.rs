@@ -1,14 +1,12 @@
 //! A simple, non-interactive widget for drawing a series of conjoined lines.
 
-use {Color, Colorable, Point, Positionable, Scalar, Sizeable, Theme};
-use ::{graph, draw};
-use utils::{vec2_add, vec2_sub};
-use widget;
+use crate::{Color, Colorable, Point, Positionable, Scalar, Sizeable, Theme};
+use crate::draw;
+use crate::draw::shape::triangle::Triangle;
+use crate::widget;
 
 pub use super::line::Pattern;
 pub use super::line::Style;
-use draw::shape::triangle::Triangle;
-
 
 /// A simple, non-interactive widget for drawing a series of lines and/or points.
 #[derive(Clone, Debug, WidgetCommon_)]
@@ -83,7 +81,7 @@ impl<I> PointPath<I> {
         where I: IntoIterator<Item=Point> + Clone,
     {
         let points_clone = points.clone().into_iter();
-        let (xy, dim) = super::bounding_box_for_points(points_clone).xy_dim();
+        let (_xy, _dim) = super::bounding_box_for_points(points_clone).xy_dim();
         PointPath::styled(points, style)//.wh(dim).xy(xy)
     }
 
@@ -107,7 +105,7 @@ impl<I> PointPath<I> {
         where I: IntoIterator<Item=Point> + Clone,
     {
         let points_clone = points.clone().into_iter();
-        let (xy, dim) = super::bounding_box_for_points(points_clone).xy_dim();
+        let (xy, _dim) = super::bounding_box_for_points(points_clone).xy_dim();
         let mut point_path = PointPath::styled(points, style);//.wh(dim);
         point_path.maybe_shift_to_centre_from = Some(xy);
         point_path

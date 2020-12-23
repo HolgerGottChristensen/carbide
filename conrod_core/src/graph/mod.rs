@@ -3,14 +3,16 @@
 //!
 //! The primary type of interest in this module is the [**Graph**](./struct.Graph) type.
 
-use daggy;
-use position::{Axis, Depth, Point, Rect};
 use std;
 use std::any::Any;
 use std::ops::{Index, IndexMut};
-use widget::{self};
 
+use daggy;
 pub use daggy::Walker;
+
+use crate::position::{Axis, Depth, Point, Rect};
+use crate::widget::{self};
+
 pub use self::depth_order::DepthOrder;
 
 pub mod algo;

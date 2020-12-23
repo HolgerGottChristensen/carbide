@@ -1,15 +1,10 @@
-use std::borrow::BorrowMut;
-use std::convert::TryInto;
 use std::fmt::Debug;
-use std::ops::{Deref, DerefMut};
-use std::sync::{Arc, RwLock};
 
 use bitflags::_core::fmt::Formatter;
-use serde::{Deserialize, Serialize, Serializer};
+use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
-use ::{from_ron, to_ron};
-use widget::common_widget::CommonWidget;
+use crate::{from_ron, to_ron};
 
 #[derive(Clone)]
 pub enum State<T, U> where T: Serialize + Clone + Debug, U: Clone {
@@ -141,7 +136,7 @@ impl GetState for LocalStateList {
         match state {
             State::LocalState { id, value } => {
                 let key = &*id;
-                match self.iter().find(|(try_key, state)| key.eq(try_key)) {
+                match self.iter().find(|(try_key, _state)| key.eq(try_key)) {
                     None => (),
                     Some((_, val)) => {
                         *value = from_ron(&val).unwrap();
@@ -160,7 +155,7 @@ impl GetState for LocalStateList {
         match val {
             State::LocalState { id, value } => {
                 let val = to_ron(&value).unwrap();
-                self.retain(|(i, s)| {
+                self.retain(|(i, _s)| {
                     id.ne(i)
                 });
                 self.push((id, val));

@@ -1,6 +1,6 @@
-use draw::shape::vertex::Vertex;
-use ::{Point, color};
-use widget::primitive::shape::triangles::ColoredPoint;
+use crate::{color, Point};
+use crate::draw::shape::vertex::Vertex;
+use crate::widget::primitive::shape::triangles::ColoredPoint;
 
 /// A single triangle described by three vertices.
 #[derive(Copy, Clone, Debug, PartialEq)]

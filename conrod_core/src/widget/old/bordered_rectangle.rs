@@ -1,19 +1,17 @@
 //! The `BorderedRectangle` widget and related items.
 
-use {
+use crate::{
+    Borderable,
     Color,
     Colorable,
-    Borderable,
     Point,
-    Positionable,
     Rect,
     Scalar,
     Sizeable,
 };
-use widget;
-use position::Dimensions;
-use draw::shape::triangle::Triangle;
-
+use crate::draw::shape::triangle::Triangle;
+use crate::position::Dimensions;
+use crate::widget;
 
 /// A filled rectangle widget that may or may not have some border.
 #[derive(Copy, Clone, Debug, WidgetCommon_)]
@@ -52,9 +50,8 @@ pub struct State {
 }
 
 impl BorderedRectangle {
-
     /// Build a new **BorderedRectangle**.
-    pub fn new(dim: Dimensions) -> Self {
+    pub fn new(_dim: Dimensions) -> Self {
         BorderedRectangle {
             common: widget::CommonBuilder::default(),
             style: Style::default(),

@@ -1,10 +1,7 @@
 //! A widget for plotting a series of lines using the given function *x -> y*.
 
-use {Color, Colorable, Point, Positionable, Scalar, Sizeable, Theme};
-use graph;
-use num;
-use utils;
-use widget;
+use crate::{Color, Colorable, Point, Positionable, Scalar, Sizeable, Theme};
+use crate::widget;
 
 /// A widget that plots a series of lines using the given function *x -> y*.
 ///

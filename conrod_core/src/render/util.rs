@@ -1,8 +1,8 @@
-use ::{widget, Rect};
-use render::primitive_kind::PrimitiveKind;
-use render::primitive::Primitive;
-use graph::Graph;
-use graph;
+use crate::{Rect, widget};
+use crate::graph;
+use crate::graph::Graph;
+use crate::render::primitive::Primitive;
+use crate::render::primitive_kind::PrimitiveKind;
 
 /// Simplify the constructor for a `Primitive`.
 pub fn new_primitive(id: widget::Id, kind: PrimitiveKind, scizzor: Rect, rect: Rect) -> Primitive {

@@ -1,22 +1,19 @@
 //! The `Canvas` widget and related items.
 
-use {
+use crate::{
+    Borderable,
     Color,
     Colorable,
     FontSize,
-    Borderable,
     Labelable,
     Positionable,
     Sizeable,
     Theme,
-    Ui,
-    UiCell,
 };
-use position::{self, Dimension, Padding, Place, Position, Range, Rect, Scalar, Dimensions};
-use position::Direction::{Forwards, Backwards};
-use text;
-use widget;
-
+use crate::position::{self, Dimension, Dimensions, Padding, Place, Position, Range, Rect, Scalar};
+use crate::position::Direction::{Backwards, Forwards};
+use crate::text;
+use crate::widget;
 
 /// **Canvas** is designed to be a "container"-like "parent" widget that simplifies placement of
 /// "children" widgets.
@@ -427,22 +424,22 @@ impl Style {
     }
 }
 
-impl<'a> ::color::Colorable for Canvas<'a> {
+impl<'a> crate::color::Colorable for Canvas<'a> {
     builder_method!(color { style.color = Some(Color) });
 }
 
-impl<'a> ::border::Borderable for Canvas<'a> {
-    builder_methods!{
+impl<'a> crate::border::Borderable for Canvas<'a> {
+    builder_methods! {
         border { style.border = Some(Scalar) }
         border_color { style.border_color = Some(Color) }
     }
 }
 
-impl<'a> ::label::Labelable<'a> for Canvas<'a> {
+impl<'a> crate::label::Labelable<'a> for Canvas<'a> {
     fn label(self, text: &'a str) -> Self {
         self.title_bar(text)
     }
-    builder_methods!{
+    builder_methods! {
         label_color { style.title_bar_text_color = Some(Color) }
         label_font_size { style.title_bar_font_size = Some(FontSize) }
     }

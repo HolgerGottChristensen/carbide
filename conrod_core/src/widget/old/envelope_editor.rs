@@ -1,15 +1,11 @@
 //! The `EnvelopeEditor` widget and related items.
 
-use {Color, Colorable, Borderable, FontSize, Labelable, Positionable, Sizeable};
 use num::Float;
-use position::{Direction, Edge, Point, Rect, Scalar};
-use std;
-use text;
-use utils::{clamp, map_range, percentage, val_to_string};
-use widget;
-use event::button::ButtonEvent;
-use event::widget::WidgetEvent;
 
+use crate::{Borderable, Color, Colorable, FontSize, Labelable};
+use crate::position::{Direction, Edge, Point, Rect, Scalar};
+use crate::text;
+use crate::widget;
 
 /// Used for editing a series of 2D Points on a cartesian (X, Y) plane within some given range.
 ///

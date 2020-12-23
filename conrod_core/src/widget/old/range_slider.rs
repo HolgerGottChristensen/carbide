@@ -1,13 +1,9 @@
 //! A widget for specifying start and end values for some linear range.
 
-use {Color, Colorable, FontSize, Borderable, Labelable, Positionable};
-use num::Float;
-use position::{Padding, Range, Rect, Scalar};
-use text;
-use utils;
-use widget;
-use event::widget::WidgetEvent;
-use event::button::ButtonEvent;
+use crate::{Borderable, Color, Colorable, FontSize, Labelable};
+use crate::position::Scalar;
+use crate::text;
+use crate::widget;
 
 /// Linear range selection.
 #[derive(WidgetCommon_)]

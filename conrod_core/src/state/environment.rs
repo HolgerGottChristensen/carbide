@@ -4,11 +4,9 @@ use std::fmt::Debug;
 use bitflags::_core::fmt::Formatter;
 use serde::{Deserialize, Serialize};
 
-use ::{Color, from_ron};
-use ::{text, to_ron};
-use state::state::LocalStateList;
-use text::font::{Error, from_file, Id};
-use widget::primitive::image::State;
+use crate::{Color, from_ron};
+use crate::{text, to_ron};
+use crate::text::font::{Error, Id};
 
 pub struct Environment {
     stack: Vec<EnvironmentVariable>,
@@ -17,7 +15,7 @@ pub struct Environment {
 }
 
 impl std::fmt::Debug for Environment {
-    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+    fn fmt(&self, _f: &mut Formatter<'_>) -> std::fmt::Result {
         Ok(())
     }
 }

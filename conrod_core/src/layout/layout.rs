@@ -1,10 +1,8 @@
-use position::Dimensions;
-use text;
-use text::font::Map;
-use widget::common_widget::CommonWidget;
-use layout::basic_layouter::BasicLayouter;
-use layout::layouter::Layouter;
-use state::environment::Environment;
+use crate::layout::basic_layouter::BasicLayouter;
+use crate::layout::layouter::Layouter;
+use crate::position::Dimensions;
+use crate::state::environment::Environment;
+use crate::widget::common_widget::CommonWidget;
 
 pub trait Layout<U> {
     /// 0 is the most flexible and the largest number is the least flexible

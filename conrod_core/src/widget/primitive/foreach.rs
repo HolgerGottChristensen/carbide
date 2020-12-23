@@ -1,32 +1,21 @@
 use std::collections::HashMap;
 use std::fmt::Debug;
 
-use daggy::petgraph::graph::node_index;
 use uuid::Uuid;
 
-use ::{Point, Rect};
-use ::{Scalar, text};
-use event::event::{Event, NoEvents};
-use event_handler::{KeyboardEvent, MouseEvent, WidgetEvent};
-use flags::Flags;
-use graph::Container;
-use input::Key;
-use layout::basic_layouter::BasicLayouter;
-use layout::Layout;
-use position::Dimensions;
-use render::primitive::Primitive;
-use render::primitive_kind::PrimitiveKind;
-use state::environment::Environment;
-use state::state::{GetState, LocalStateList, State};
-use state::state_sync::StateSync;
-use text::font::Map;
-use widget::{HStack, Id, Rectangle, Text};
-use widget::common_widget::CommonWidget;
-use widget::primitive::spacer::{Spacer, SpacerDirection};
-use widget::primitive::Widget;
-use widget::primitive::widget::WidgetExt;
-use widget::render::{ChildRender, Render};
-use widget::widget_iterator::{WidgetIter, WidgetIterMut};
+use crate::Point;
+use crate::event::event::NoEvents;
+use crate::flags::Flags;
+use crate::layout::Layout;
+use crate::position::Dimensions;
+use crate::state::environment::Environment;
+use crate::state::state::{GetState, State};
+use crate::state::state_sync::StateSync;
+use crate::widget::common_widget::CommonWidget;
+use crate::widget::primitive::Widget;
+use crate::widget::primitive::widget::WidgetExt;
+use crate::widget::render::ChildRender;
+use crate::widget::widget_iterator::{WidgetIter, WidgetIterMut};
 
 #[derive(Debug, Clone)]
 pub struct ForEach<S: Clone + Debug> {
@@ -35,7 +24,7 @@ pub struct ForEach<S: Clone + Debug> {
     delegate: Box<dyn Widget<S>>,
     ids: State<Vec<Uuid>, S>,
     position: Point,
-    dimension: Dimensions
+    dimension: Dimensions,
 }
 
 impl<S: Clone + Debug> ForEach<S> {
@@ -211,9 +200,9 @@ impl<S: Clone + Debug> CommonWidget<S> for ForEach<S> {
 impl<S: Clone + Debug> NoEvents for ForEach<S> {}
 
 impl<S: Clone + Debug> StateSync<S> for ForEach<S> {
-    fn insert_local_state(&self, env: &mut Environment) {}
+    fn insert_local_state(&self, _env: &mut Environment) {}
 
-    fn update_all_widget_state(&mut self, env: &Environment, global_state: &S) {
+    fn update_all_widget_state(&mut self, env: &Environment, _global_state: &S) {
         self.update_local_widget_state(env)
     }
 
@@ -246,7 +235,7 @@ impl<S: Clone + Debug> Layout<S> for ForEach<S> {
         unimplemented!()
     }
 
-    fn calculate_size(&mut self, requested_size: Dimensions, env: &Environment) -> Dimensions {
+    fn calculate_size(&mut self, _requested_size: Dimensions, _env: &Environment) -> Dimensions {
         unimplemented!()
     }
 

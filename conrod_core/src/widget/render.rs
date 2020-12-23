@@ -1,14 +1,7 @@
-use widget::{Id, Rectangle};
-use ::{Rect, text};
-use graph::Container;
-use render::primitive::Primitive;
-use render::owned_primitive::OwnedPrimitive;
-use position::Dimensions;
-use Point;
-use widget::common_widget::CommonWidget;
-use text::font::Map;
-use widget::primitive::Widget;
-use state::environment::Environment;
+use crate::{Rect, text};
+use crate::render::primitive::Primitive;
+use crate::widget::Rectangle;
+use crate::widget::common_widget::CommonWidget;
 
 pub trait Render<U> {
     fn get_primitives(&self, fonts: &text::font::Map) -> Vec<Primitive>;

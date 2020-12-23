@@ -1,5 +1,5 @@
-use utils::vec2_sub;
-use Point;
+use crate::Point;
+use crate::utils::vec2_sub;
 
 /// Contains all the relevant information for a double click.
 ///

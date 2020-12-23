@@ -3,14 +3,13 @@
 //! The roundedness of the corners is specified with a `radius`. This indicates the radius of the
 //! circle used to draw the corners.
 
-use {Color, Colorable, Point, Positionable, Range, Rect, Scalar, Sizeable, Theme};
-use graph;
 use std::f64::consts::PI;
-use widget;
-use widget::primitive::shape::Style;
-use position::Dimensions;
-use draw::shape::circumference::Circumference;
 
+use crate::{Color, Colorable, Point, Positionable, Range, Rect, Scalar};
+use crate::draw::shape::circumference::Circumference;
+use crate::position::Dimensions;
+use crate::widget;
+use crate::widget::primitive::shape::Style;
 
 /// Draws a rectangle with corners rounded via the given radius.
 #[derive(Copy, Clone, Debug, WidgetCommon_)]
@@ -40,7 +39,7 @@ pub struct State {
 
 impl RoundedRectangle {
     /// Build a rounded rectangle with the given dimensions and style.
-    pub fn styled(dim: Dimensions, radius: Scalar, style: Style) -> Self {
+    pub fn styled(_dim: Dimensions, radius: Scalar, style: Style) -> Self {
         RoundedRectangle {
             common: widget::CommonBuilder::default(),
             style: style,

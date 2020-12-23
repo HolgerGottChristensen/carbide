@@ -1,9 +1,11 @@
 //! The widget identifier type used throughout conrod, along with helper render and macros to
 //! simplify the process of generating them.
 
-use daggy;
-use graph::Graph;
 use std;
+
+use daggy;
+
+use crate::graph::Graph;
 
 /// Unique widget identifier.
 ///
@@ -357,7 +359,7 @@ macro_rules! widget_ids {
 }
 
 
-#[test]
+/*#[test]
 fn test() {
     use ui::UiBuilder;
     use widget::{self, OldWidget};
@@ -386,8 +388,8 @@ fn test() {
             widget::Toggle::new(true).set(id, ui);
         }
     }
-}
-
+}*/
+/*
 #[test]
 #[allow(unused_variables)]
 fn test_invocation_variations() {
@@ -413,3 +415,4 @@ fn test_invocation_variations() {
     let g = G::new(ui.widget_id_generator());
     let h = H::new(ui.widget_id_generator());
 }
+*/

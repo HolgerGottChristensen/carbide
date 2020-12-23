@@ -1,40 +1,34 @@
 //! The primitive widget used for displaying text.
 
-use std::fmt::Debug;
-use std::ops::Deref;
-
 use daggy::petgraph::graph::node_index;
 use uuid::Uuid;
 
-use {Color, Colorable, FontSize, Ui};
-use ::{Rect, std};
-use ::{Point, text};
-use ::render::text::Text as RenderText;
-use color::WHITE;
-use event::event::{Event, NoEvents};
-use event_handler::{KeyboardEvent, MouseEvent, WidgetEvent};
-use flags::Flags;
-use graph::Container;
-use layout::basic_layouter::BasicLayouter;
-use layout::Layout;
-use layout::layouter::Layouter;
-use position::{Align, Dimension, Dimensions, Scalar};
-use render::primitive::Primitive;
-use render::primitive_kind::PrimitiveKind;
-use render::util::new_primitive;
-use state::environment::Environment;
-use state::state::{GetState, LocalStateList, State};
-use state::state_sync::StateSync;
-use text::font::Map;
-use text::Justify;
-use utils;
-use widget;
-use widget::{Id, Rectangle};
-use widget::common_widget::CommonWidget;
-use widget::primitive::Widget;
-use widget::primitive::widget::WidgetExt;
-use widget::render::Render;
-use widget::widget_iterator::{WidgetIter, WidgetIterMut};
+use crate::{Color, Colorable, FontSize};
+use crate::Rect;
+use crate::{Point, text};
+use crate::color::WHITE;
+use crate::event::event::NoEvents;
+use crate::flags::Flags;
+use crate::layout::basic_layouter::BasicLayouter;
+use crate::layout::Layout;
+use crate::layout::layouter::Layouter;
+use crate::position::{Align, Dimensions, Scalar};
+use crate::render::primitive::Primitive;
+use crate::render::primitive_kind::PrimitiveKind;
+use crate::render::text::Text as RenderText;
+use crate::render::util::new_primitive;
+use crate::state::environment::Environment;
+use crate::state::state::{GetState, State};
+use crate::state::state_sync::StateSync;
+use crate::text::Justify;
+use crate::utils;
+use crate::widget;
+use crate::widget::Rectangle;
+use crate::widget::common_widget::CommonWidget;
+use crate::widget::primitive::Widget;
+use crate::widget::primitive::widget::WidgetExt;
+use crate::widget::render::Render;
+use crate::widget::widget_iterator::{WidgetIter, WidgetIterMut};
 
 /// Displays some given text centered within a rectangular area.
 ///
@@ -43,7 +37,7 @@ use widget::widget_iterator::{WidgetIter, WidgetIterMut};
 /// If some horizontal dimension is given, the text will automatically wrap to the width and align
 /// in accordance with the produced **Alignment**.
 #[derive(Debug, Clone, WidgetCommon_)]
-pub struct Text<S: Clone + Debug> {
+pub struct Text<S: Clone + std::fmt::Debug> {
     /// Data necessary and common for all widget builder render.
     #[conrod(common_builder)]
     pub common: widget::CommonBuilder,
@@ -60,14 +54,14 @@ pub struct Text<S: Clone + Debug> {
     pub children: Vec<Box<dyn Widget<S>>>,
 }
 
-impl<S: Clone + Debug> NoEvents for Text<S> {}
+impl<S: Clone + std::fmt::Debug> NoEvents for Text<S> {}
 
-impl<S: Clone + Debug> StateSync<S> for Text<S> {
+impl<S: Clone + std::fmt::Debug> StateSync<S> for Text<S> {
     fn insert_local_state(&self, env: &mut Environment) {
         env.insert_local_state(&self.text);
     }
 
-    fn update_all_widget_state(&mut self, env: &Environment, global_state: &S) {
+    fn update_all_widget_state(&mut self, env: &Environment, _global_state: &S) {
         self.update_local_widget_state(env)
     }
 
@@ -76,8 +70,7 @@ impl<S: Clone + Debug> StateSync<S> for Text<S> {
     }
 }
 
-impl<S: Clone + Debug> Layout<S> for Text<S> {
-
+impl<S: Clone + std::fmt::Debug> Layout<S> for Text<S> {
     fn flexibility(&self) -> u32 {
         2
     }
@@ -85,7 +78,7 @@ impl<S: Clone + Debug> Layout<S> for Text<S> {
     fn calculate_size(&mut self, proposed_size: Dimensions, env: &Environment) -> Dimensions {
         let pref_width = self.default_x(env.get_fonts_map());
 
-        if (pref_width > proposed_size[0]) {
+        if pref_width > proposed_size[0] {
             self.dimension = [proposed_size[0], self.dimension[1]];
         } else {
             self.dimension = [pref_width, self.dimension[1]];
@@ -95,7 +88,7 @@ impl<S: Clone + Debug> Layout<S> for Text<S> {
 
         // Todo calculate size of children here
 
-        if (pref_height > proposed_size[1]) {
+        if pref_height > proposed_size[1] {
             self.dimension = [self.dimension[0], proposed_size[1]];
         } else {
             self.dimension = [self.dimension[0], pref_height];
@@ -118,8 +111,7 @@ impl<S: Clone + Debug> Layout<S> for Text<S> {
     }
 }
 
-impl<S: Clone + Debug> Render<S> for Text<S> {
-
+impl<S: Clone + std::fmt::Debug> Render<S> for Text<S> {
     fn get_primitives(&self, fonts: &text::font::Map) -> Vec<Primitive> {
         let font_id = match fonts.ids().next() {
             Some(id) => id,
@@ -171,9 +163,9 @@ impl<S: Clone + Debug> Render<S> for Text<S> {
     }
 }
 
-impl<S: 'static + Clone + Debug> WidgetExt<S> for Text<S> {}
+impl<S: 'static + Clone + std::fmt::Debug> WidgetExt<S> for Text<S> {}
 
-impl<S: Clone + Debug> CommonWidget<S> for Text<S> {
+impl<S: Clone + std::fmt::Debug> CommonWidget<S> for Text<S> {
     fn get_id(&self) -> Uuid {
         unimplemented!()
     }
@@ -287,15 +279,15 @@ pub struct OldState {
 }
 
 
-impl<S: Clone + Debug> Text<S> {
+impl<S: Clone + std::fmt::Debug> Text<S> {
     pub fn initialize(text: State<String, S>, children: Vec<Box<dyn Widget<S>>>) -> Box<Self> {
         Box::new(Text {
             common: widget::CommonBuilder::default(),
             text,
             font_size: 14.into(),
             style: Style::default(),
-            position: [0.0,0.0],
-            dimension: [100.0,100.0],
+            position: [0.0, 0.0],
+            dimension: [100.0, 100.0],
             wrap_mode: Wrap::Whitespace,
             color: WHITE,
             children
@@ -348,8 +340,6 @@ impl<S: Clone + Debug> Text<S> {
     /// The `Font` used by the `Text` is retrieved in order to determine the width of each line. If
     /// the font used by the `Text` cannot be found, a dimension of `Absolute(0.0)` is returned.
     fn default_y(&self, fonts: &text::font::Map) -> Scalar {
-        use position::Sizeable;
-
         let font = fonts.ids().next()
             .and_then(|id| fonts.get(id));
 
@@ -420,8 +410,7 @@ impl<S: Clone + Debug> Text<S> {
         self.justify(text::Justify::Center)
     }
 
-    pub fn justify(self, j: text::Justify) -> Self {
-
+    pub fn justify(self, _j: text::Justify) -> Self {
         self
     }
 
@@ -561,7 +550,7 @@ impl<S> OldWidget for Text<S> {
 
 }
 */
-impl<S: Clone + Debug> Colorable for Text<S> {
+impl<S: Clone + std::fmt::Debug> Colorable for Text<S> {
     fn color(mut self, color: Color) -> Self {
         self.style.color = Some(color);
         self

@@ -1,6 +1,4 @@
-
-use color::{Color, hsl, hsla, rgb, rgba};
-use ui::Ui;
+use crate::color::{Color, hsl, hsla, rgb, rgba};
 
 /// Font size used throughout Conrod.
 pub type FontSize = u32;

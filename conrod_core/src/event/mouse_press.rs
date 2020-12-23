@@ -1,4 +1,4 @@
-use Point;
+use crate::Point;
 
 /// Contains all relevant information for the event where a mouse button was pressed.
 #[derive(Copy, Clone, PartialEq, Debug)]

@@ -11,8 +11,11 @@
 #[macro_use]
 extern crate bitflags;
 #[macro_use]
+extern crate bytemuck;
+#[macro_use]
 extern crate conrod_derive;
 extern crate copypasta;
+extern crate core;
 extern crate daggy;
 #[macro_use]
 extern crate derivative;
@@ -26,21 +29,19 @@ extern crate ron;
 extern crate rusttype;
 extern crate serde;
 extern crate uuid;
-#[macro_use]
-extern crate bytemuck;
 extern crate wgpu;
-extern crate core;
 
 pub use ron::from_str as from_ron;
 pub use ron::to_string as to_ron;
 
-pub use border::{Borderable, Bordering};
-pub use color::{Color, Colorable};
 pub use conrod_derive::*;
-pub use label::{FontSize, Labelable};
-pub use position::{Dimension, Point, Position, Positionable, Range, Rect, Scalar, Sizeable};
-pub use theme::Theme;
-pub use ui::{Ui, UiBuilder, UiCell};
+
+pub use crate::border::{Borderable, Bordering};
+pub use crate::color::{Color, Colorable};
+pub use crate::label::{FontSize, Labelable};
+pub use crate::position::{Dimension, Point, Position, Positionable, Range, Rect, Scalar, Sizeable};
+pub use crate::theme::Theme;
+pub use crate::ui::{Ui, UiBuilder, UiCell};
 
 mod border;
 pub mod color;

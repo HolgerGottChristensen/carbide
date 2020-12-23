@@ -5,13 +5,14 @@
 //! produce a sequence of commands describing the order in which draw commands should occur and
 //! whether or not the `Scizzor` should be updated between draws.
 
-use crate::{color, image, render};
-use crate::text::{self, rt};
-use crate::{Rect, Scalar};
 use std::{fmt, ops};
-use render::primitive_walker::PrimitiveWalker;
-use mesh::vertex::Vertex;
-use Range;
+
+use crate::{color, image, render};
+use crate::{Rect, Scalar};
+use crate::mesh::vertex::Vertex;
+use crate::Range;
+use crate::render::primitive_walker::PrimitiveWalker;
+use crate::text::{self, rt};
 
 /// Images within the given image map must know their dimensions in pixels.
 pub trait ImageDimensions {
@@ -361,14 +362,14 @@ impl Mesh {
                     };*/
 
                     let to_gl_rect = |screen_rect: text::rt::Rect<i32>| {
-                        let min_x = (screen_rect.min.x as f64 / dpi_factor + rect.x.start);
-                        let max_x = (screen_rect.max.x as f64 / dpi_factor + rect.x.start);
-                        let min_y = (screen_rect.min.y as f64 / dpi_factor + rect.y.start);
-                        let max_y = (screen_rect.max.y as f64 / dpi_factor + rect.y.start);
+                        let min_x = screen_rect.min.x as f64 / dpi_factor + rect.x.start;
+                        let max_x = screen_rect.max.x as f64 / dpi_factor + rect.x.start;
+                        let min_y = screen_rect.min.y as f64 / dpi_factor + rect.y.start;
+                        let max_y = screen_rect.max.y as f64 / dpi_factor + rect.y.start;
 
                         Rect {
-                            x: Range {start: min_x, end: max_x},
-                            y: Range {start: min_y, end: max_y}
+                            x: Range { start: min_x, end: max_x },
+                            y: Range { start: min_y, end: max_y },
                         }
                     };
 

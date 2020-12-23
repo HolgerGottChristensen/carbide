@@ -1,15 +1,16 @@
 //! Text layout logic.
 
-use {FontSize, Scalar};
 use std;
 
 // Re-export all relevant rusttype render here.
 pub use rusttype::{Glyph, GlyphId, GlyphIter, LayoutIter, Scale};
 pub use rusttype::gpu_cache::Cache as GlyphCache;
 
+use crate::{FontSize, Scalar};
+
 /// Re-exported RustType geometrical render.
 pub mod rt {
-    pub use rusttype::{Point, Rect, Vector, gpu_cache, point, vector};
+    pub use rusttype::{gpu_cache, Point, point, Rect, Vector, vector};
 }
 
 
@@ -103,15 +104,16 @@ impl<'a, I> Iterator for Lines<'a, I>
 
 /// The `font::Id` and `font::Map` render.
 pub mod font {
-    use fnv;
     use std;
 
+    use fnv;
+
     /// A type-safe wrapper around the `FontId`.
-    ///
-    /// This is used as both:
-    ///
-    /// - The key for the `font::Map`'s inner `HashMap`.
-    /// - The `font_id` field for the rusttype::gpu_cache::Cache.
+        ///
+        /// This is used as both:
+        ///
+        /// - The key for the `font::Map`'s inner `HashMap`.
+        /// - The `font_id` field for the rusttype::gpu_cache::Cache.
     #[derive(Copy, Clone, Debug, Hash, PartialEq, Eq, PartialOrd, Ord)]
     pub struct Id(pub usize);
 
@@ -274,8 +276,9 @@ pub mod font {
 
 /// Logic and render specific to individual glyph layout.
 pub mod glyph {
-    use {FontSize, Range, Rect, Scalar};
     use std;
+
+    use crate::{FontSize, Range, Rect, Scalar};
 
     /// Some position along the X axis (used within `CharXs`).
     pub type X = Scalar;
@@ -475,14 +478,15 @@ pub mod glyph {
 
 /// Logic related to the positioning of the cursor within text.
 pub mod cursor {
-    use FontSize;
-    use position::{Range, Rect, Scalar, Point, Align};
     use std;
 
+    use crate::FontSize;
+    use crate::position::{Align, Point, Range, Rect, Scalar};
+
     /// Every possible cursor position within each line of text yielded by the given iterator.
-    ///
-    /// Yields `(xs, y_range)`, where `y_range` is the `Range` occupied by the line across the *y*
-    /// axis and `xs` is every possible cursor position along the *x* axis
+        ///
+        /// Yields `(xs, y_range)`, where `y_range` is the `Range` occupied by the line across the *y*
+        /// axis and `xs` is every possible cursor position along the *x* axis
     #[derive(Clone)]
     pub struct XysPerLine<'a, I> {
         lines_with_rects: I,
@@ -894,9 +898,10 @@ pub mod cursor {
 ///
 /// This module is the core of multi-line text handling.
 pub mod line {
-    use FontSize;
-    use position::{Align, Range, Rect, Scalar};
     use std;
+
+    use crate::FontSize;
+    use crate::position::{Align, Range, Rect, Scalar};
 
     /// The two render of **Break** indices returned by the **WrapIndicesBy** iterators.
     #[derive(Copy, Clone, Debug, PartialEq)]

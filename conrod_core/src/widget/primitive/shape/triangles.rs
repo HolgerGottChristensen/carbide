@@ -1,13 +1,10 @@
 //! A primitive widget that allows for drawing using a list of triangles.
 
-use {Rect, Point, Positionable, Scalar, Sizeable, Theme};
-use color;
-use graph;
-use std;
-use utils::{vec2_add, vec2_sub};
-use widget;
-use draw::shape::vertex::Vertex;
-use draw::shape::triangle::Triangle;
+use crate::{Point, Positionable, Rect, Scalar, Sizeable, Theme};
+use crate::color;
+use crate::draw::shape::triangle::Triangle;
+use crate::draw::shape::vertex::Vertex;
+use crate::widget;
 
 /// A widget that allows for drawing a list of triangles.
 #[derive(Copy, Clone, Debug, WidgetCommon_)]
@@ -157,7 +154,7 @@ impl<S, I> TrianglesUnpositioned<S, I>
     /// from the **Triangles**' points.
     pub fn with_bounding_rect(self, rect: Rect) -> Triangles<S, I> {
         let TrianglesUnpositioned { triangles } = self;
-        let (xy, dim) = rect.xy_dim();
+        let (_xy, _dim) = rect.xy_dim();
         triangles//.wh(dim).xy(xy)
     }
 
@@ -179,7 +176,7 @@ impl<S, I> TrianglesUnpositioned<S, I>
         where I: Clone,
     {
         let TrianglesUnpositioned { triangles } = self;
-        let (xy, dim) = bounding_rect_for_triangles(triangles.triangles.clone()).xy_dim();
+        let (_xy, _dim) = bounding_rect_for_triangles(triangles.triangles.clone()).xy_dim();
         triangles//.wh(dim).xy(xy)
     }
 
@@ -201,7 +198,7 @@ impl<S, I> TrianglesUnpositioned<S, I>
         where I: Clone,
     {
         let TrianglesUnpositioned { mut triangles } = self;
-        let (xy, dim) = bounding_rect_for_triangles(triangles.triangles.clone()).xy_dim();
+        let (xy, _dim) = bounding_rect_for_triangles(triangles.triangles.clone()).xy_dim();
         triangles.maybe_shift_to_centre_from = Some(xy);
         triangles//.wh(dim)
     }

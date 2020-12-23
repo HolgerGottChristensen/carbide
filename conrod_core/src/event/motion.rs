@@ -1,4 +1,4 @@
-use Point;
+use crate::Point;
 
 /// Contains all relevant information for a Motion event.
 #[derive(Copy, Clone, PartialEq, Debug)]

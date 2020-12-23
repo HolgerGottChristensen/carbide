@@ -1,18 +1,18 @@
 //! A glium backend for rendering conrod primitives.
 
 extern crate conrod_core;
+extern crate conrod_winit;
 #[macro_use]
 extern crate glium;
-extern crate conrod_winit;
 
-mod window;
-
-use conrod_core::{Rect, Scalar, color, image, render, text, Color, Range};
+use conrod_core::{color, Color, image, Range, Rect, render, Scalar, text};
+use conrod_core::render::primitive::Primitive;
 use conrod_core::render::primitive_kind::PrimitiveKind;
 use conrod_core::render::primitive_walker::PrimitiveWalker;
-use conrod_core::render::primitive::Primitive;
-pub use window::Window;
 
+pub use crate::window::Window;
+
+mod window;
 
 /// A `Command` describing a step in the drawing process.
 #[derive(Clone, Debug)]
@@ -110,6 +110,7 @@ pub struct Vertex {
 #[allow(unsafe_code)]
 mod vertex_impl {
     use super::Vertex;
+
     implement_vertex!(Vertex, position, tex_coords, color, mode);
 }
 
@@ -544,14 +545,14 @@ impl Renderer {
         let vx = |x: Scalar| ((x * dpi_factor / half_win_w)) as f32;
         let vy = |y: Scalar| ((y * dpi_factor / half_win_h)) as f32;
 
-        let mut current_scizzor = glium::Rect {
+        let _current_scizzor = glium::Rect {
             left: 0,
             width: screen_w,
             bottom: 0,
             height: screen_h,
         };
 
-        let rect_to_glium_rect = |rect: Rect| {
+        let _rect_to_glium_rect = |rect: Rect| {
             let (w, h) = rect.w_h();
             let left = (rect.left() * dpi_factor + half_win_w).round() as u32;
             let bottom = (rect.bottom() * dpi_factor + half_win_h).round() as u32;
@@ -567,7 +568,7 @@ impl Renderer {
 
         // Draw each primitive in order of depth.
         while let Some(primitive) = primitives.next_primitive() {
-            let Primitive { kind, scizzor, rect, .. } = primitive;
+            let Primitive { kind, scizzor: _, rect, .. } = primitive;
 
             // Check for a `Scizzor` command.
             /*let new_scizzor = rect_to_glium_rect(scizzor);
@@ -721,7 +722,7 @@ impl Renderer {
 
                     let cache_id = font_id.index();
 
-                    let origin = text::rt::point(0.0, 0.0);
+                    let _origin = text::rt::point(0.0, 0.0);
 
 
                     //Working on mac
@@ -735,10 +736,10 @@ impl Renderer {
                      */
 
                     let to_gl_rect = |screen_rect: text::rt::Rect<i32>| {
-                        let min_x = (screen_rect.min.x as f64 / dpi_factor + rect.x.start);
-                        let max_x = (screen_rect.max.x as f64 / dpi_factor + rect.x.start);
-                        let min_y = (screen_rect.min.y as f64 / dpi_factor + rect.y.start);
-                        let max_y = (screen_rect.max.y as f64 / dpi_factor + rect.y.start);
+                        let min_x = screen_rect.min.x as f64 / dpi_factor + rect.x.start;
+                        let max_x = screen_rect.max.x as f64 / dpi_factor + rect.x.start;
+                        let min_y = screen_rect.min.y as f64 / dpi_factor + rect.y.start;
+                        let max_y = screen_rect.max.y as f64 / dpi_factor + rect.y.start;
 
                         /*println!("{:?}", &screen_rect);
                         println!("{:?}", &rect);

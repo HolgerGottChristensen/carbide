@@ -1,16 +1,15 @@
-use widget;
-use event::*;
-use position::Dimensions;
-use event::text::Text;
-use event::press::PressEvent;
-use event::release::Release;
-use event::motion::Motion;
-use event::click::Click;
-use event::double_click::DoubleClick;
-use event::tap::Tap;
-use event::drag::Drag;
-use event::scroll::Scroll;
-use input::{Source, Touch};
+use crate::event::click::Click;
+use crate::event::double_click::DoubleClick;
+use crate::event::drag::Drag;
+use crate::event::motion::Motion;
+use crate::event::press::PressEvent;
+use crate::event::release::Release;
+use crate::event::scroll::Scroll;
+use crate::event::tap::Tap;
+use crate::event::text::Text;
+use crate::input::{Source, Touch};
+use crate::position::Dimensions;
+use crate::widget;
 
 /// Represents all events interpreted by the `Ui`.
 #[derive(Clone, PartialEq, Debug)]

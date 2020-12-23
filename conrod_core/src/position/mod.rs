@@ -1,10 +1,11 @@
 //! Items related to 2D positioning, used throughout conrod.
 
-use Ui;
-use widget;
+
+use crate::widget;
 
 pub use self::range::{Edge, Range};
 pub use self::rect::{Corner, Rect};
+
 //pub use self::matrix::Matrix;
 
 
@@ -146,12 +147,11 @@ pub enum Dimension {
 ///
 /// Thus, **Positionable** can be implemented for *all* render that implement **Widget**.
 pub trait Positionable: Sized {
-
     /// Build with the given **Position** along the *x* axis.
-    fn x_position(self, Position) -> Self;
+    fn x_position(self, _: Position) -> Self;
 
     /// Build with the given **Position** along the *y* axis.
-    fn y_position(self, Position) -> Self;
+    fn y_position(self, _: Position) -> Self;
 
     /// Get the **Position** along the *x* axis.
     //fn get_x_position(&self, ui: &Ui) -> Position;

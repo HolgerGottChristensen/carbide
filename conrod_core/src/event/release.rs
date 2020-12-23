@@ -1,7 +1,7 @@
-use Point;
-use event::mouse_release::MouseRelease;
-use event::button::ButtonEvent;
-use event::key_release::KeyRelease;
+use crate::event::button::ButtonEvent;
+use crate::event::key_release::KeyRelease;
+use crate::event::mouse_release::MouseRelease;
+use crate::Point;
 
 /// Contains all relevant information for a Release event.
 #[derive(Copy, Clone, PartialEq, Debug)]

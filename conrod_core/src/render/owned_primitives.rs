@@ -1,8 +1,8 @@
-use widget::triangles::{ColoredPoint};
-use ::{Point, text};
-use render::walk_owned_primitives::WalkOwnedPrimitives;
-use render::owned_primitive::OwnedPrimitive;
-use draw::shape::triangle::Triangle;
+use crate::{Point, text};
+use crate::draw::shape::triangle::Triangle;
+use crate::render::owned_primitive::OwnedPrimitive;
+use crate::render::walk_owned_primitives::WalkOwnedPrimitives;
+use crate::widget::triangles::ColoredPoint;
 
 /// An owned alternative to the `Primitives` type.
 ///

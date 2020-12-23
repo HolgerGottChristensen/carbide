@@ -1,19 +1,15 @@
 //! Used for displaying and controlling a 2D point on a cartesian plane within a given range.
 
-use {
+use crate::{
+    Borderable,
     Color,
     Colorable,
-    Borderable,
     FontSize,
     Labelable,
-    Positionable,
     Scalar,
 };
-use num::Float;
-use text;
-use utils::{map_range, val_to_string};
-use widget;
-
+use crate::text;
+use crate::widget;
 
 /// Used for displaying and controlling a 2D point on a cartesian plane within a given range.
 ///
@@ -23,7 +19,9 @@ use widget;
 pub struct XYPad<'a, X, Y> {
     #[conrod(common_builder)]
     common: widget::CommonBuilder,
-    x: X, min_x: X, max_x: X,
+    x: X,
+    min_x: X,
+    max_x: X,
     y: Y, min_y: Y, max_y: Y,
     maybe_label: Option<&'a str>,
     style: Style,

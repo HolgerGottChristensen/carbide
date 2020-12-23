@@ -1,11 +1,9 @@
 //! The `DropDownList` and related items.
 
-use {Color, Colorable, FontSize, Borderable, Labelable, Positionable, Sizeable};
-use position::{self, Align, Scalar};
-use text;
-use utils;
-use widget::{self};
-
+use crate::{Borderable, Color, Colorable, FontSize, Labelable};
+use crate::position::{self, Align, Scalar};
+use crate::text;
+use crate::widget::{self};
 
 /// The index of a selected item.
 pub type Idx = usize;

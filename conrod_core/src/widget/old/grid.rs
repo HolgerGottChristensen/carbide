@@ -1,8 +1,7 @@
 //! A widget for displaying a grid of lines across two axes.
 
-use {Color, Colorable, Point, Scalar};
-use widget::{self, CommonBuilder, UpdateArgs};
-use utils::map_range;
+use crate::{Color, Colorable, Scalar};
+use crate::widget::{self, CommonBuilder, UpdateArgs};
 
 /// A widget for displaying a grid of lines across two axes.
 #[derive(Copy, Clone, Debug, WidgetCommon_)]

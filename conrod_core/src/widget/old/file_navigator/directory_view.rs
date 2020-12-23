@@ -3,7 +3,9 @@
 //! Reacts to events for selection of one or more files, de-selection, deletion and
 //! double-clicking.
 
-use {
+use std;
+
+use crate::{
     Borderable,
     color,
     Color,
@@ -11,17 +13,14 @@ use {
     FontSize,
     Labelable,
     Positionable,
-    Sizeable,
     Scalar,
+    Sizeable,
 };
-use event;
-use std;
-use widget;
-use std::cmp::Ordering;
-use event::release::Release;
-use event::press::PressEvent;
-use event::double_click::DoubleClick;
-use event::click::Click;
+use crate::event::click::Click;
+use crate::event::double_click::DoubleClick;
+use crate::event::press::PressEvent;
+use crate::event::release::Release;
+use crate::widget;
 
 /// For viewing, selecting, double-clicking, etc the contents of a directory.
 #[derive(WidgetCommon_)]

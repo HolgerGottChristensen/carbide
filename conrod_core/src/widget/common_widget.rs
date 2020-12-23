@@ -1,12 +1,9 @@
 use uuid::Uuid;
-use widget::primitive::Widget;
-use ::{Point, Scalar};
-use position::Dimensions;
-use widget::primitive::padding::Padding;
-use widget::primitive::edge_insets::EdgeInsets;
-use Color;
-use flags::Flags;
-use widget::widget_iterator::{WidgetIter, WidgetIterMut};
+
+use crate::{Point, Scalar};
+use crate::flags::Flags;
+use crate::position::Dimensions;
+use crate::widget::widget_iterator::{WidgetIter, WidgetIterMut};
 
 pub trait CommonWidget<S> {
     fn get_id(&self) -> Uuid;

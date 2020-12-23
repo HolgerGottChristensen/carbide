@@ -1,27 +1,15 @@
-use event::input::Input;
-use ::{Ui, Scalar};
-use event::press::PressEvent;
-use event::button::ButtonEvent;
-use event::ui::UiEvent;
-use input::{Source, ModifierKey, MouseButton, Key, Motion};
-use event::release::Release;
-use event::click::Click;
-use event::double_click::DoubleClick;
-use ::{utils, graph};
-use event::drag::Drag;
-use event::scroll::Scroll;
-use event::text::Text;
-use input::touch::Phase;
-use event::tap::Tap;
-use widget::old::scroll::State;
-use input::state::touch::{Touch, Start};
-use Point;
-use input::{Button};
 use std::collections::HashMap;
-use instant::Instant;
 use std::time::Duration;
-use event_handler::WidgetEvent::Keyboard;
-use position::Dimensions;
+
+use instant::Instant;
+
+use crate::Scalar;
+use crate::utils;
+use crate::event::input::Input;
+use crate::input::{Key, ModifierKey, Motion, MouseButton};
+use crate::input::Button;
+use crate::Point;
+use crate::position::Dimensions;
 
 #[derive(Debug)]
 pub struct EventHandler {
@@ -30,7 +18,7 @@ pub struct EventHandler {
     modifiers: ModifierKey,
     last_click: Option<(Instant, MouseEvent)>,
     mouse_position: Point,
-    events: Vec<WidgetEvent>
+    events: Vec<WidgetEvent>,
 }
 
 impl EventHandler {
@@ -466,11 +454,11 @@ impl EventHandler {
                         let mouse_xy = [x + window_dimensions[0] / 2.0, window_dimensions[1] - (y + window_dimensions[1] / 2.0)];
                         let delta_xy = utils::vec2_sub(mouse_xy, last_mouse_xy);
 
-                        let move_event = MouseEvent::Move{
+                        let _move_event = MouseEvent::Move {
                             from: last_mouse_xy,
                             to: mouse_xy,
                             delta_xy,
-                            modifiers
+                            modifiers,
                         };
                         // Todo: Re-add when we need mouse move events
                         //self.add_event(WidgetEvent::Mouse(move_event));

@@ -1,11 +1,10 @@
 //! The `Button` widget and related items.
 
-use {Color, Colorable, FontSize, Borderable, Labelable, Positionable, Sizeable, UiCell};
-use image;
-use position::{self, Align, Rect, Scalar};
-use text;
-use widget;
-
+use crate::{Borderable, Color, Colorable, FontSize, Labelable};
+use crate::image;
+use crate::position::{self, Align, Rect, Scalar};
+use crate::text;
+use crate::widget;
 
 /// A pressable button widget whose reaction is triggered upon release.
 #[derive(Clone, WidgetCommon_)]

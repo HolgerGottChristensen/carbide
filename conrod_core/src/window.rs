@@ -1,6 +1,6 @@
-use text::font::{Id, Error};
-use widget::primitive::Widget;
-use image;
+use crate::image;
+use crate::text::font::{Error, Id};
+use crate::widget::primitive::Widget;
 
 pub trait TWindow<S: 'static + Clone> {
     fn add_font(&mut self, path: &str) -> Result<Id, Error>;

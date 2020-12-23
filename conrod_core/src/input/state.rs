@@ -7,13 +7,15 @@
 //!
 //! This module exists mostly to support the `input::Provider` trait.
 
-use position::Point;
-use self::mouse::Mouse;
 use fnv;
-use super::keyboard::ModifierKey;
-use utils;
-use widget;
 
+use crate::position::Point;
+use crate::utils;
+use crate::widget;
+
+use super::keyboard::ModifierKey;
+
+use self::mouse::Mouse;
 
 /// Holds the current state of user input.
 ///
@@ -65,8 +67,8 @@ impl State {
 
 /// Touch specific state.
 pub mod touch {
-    use position::Point;
-    use widget;
+    use crate::position::Point;
+    use crate::widget;
 
     /// State stored about the start of a `Touch` interaction.
     #[derive(Copy, Clone, Debug, PartialEq)]
@@ -96,12 +98,12 @@ pub mod touch {
 
 /// Mouse specific state.
 pub mod mouse {
-    use position::Point;
     use std;
-    use widget;
 
     #[doc(inline)]
-    pub use input::MouseButton as Button;
+    pub use crate::input::MouseButton as Button;
+    use crate::position::Point;
+    use crate::widget;
 
     /// The max total number of buttons on a mouse.
     pub const NUM_BUTTONS: usize = 9;

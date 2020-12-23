@@ -1,5 +1,5 @@
-use Point;
-use utils::vec2_sub;
+use crate::Point;
+use crate::utils::vec2_sub;
 
 /// Contains all the relevant information for a mouse drag.
 #[derive(Copy, Clone, PartialEq, Debug)]

@@ -1,5 +1,5 @@
-use ::{widget, Rect};
-use render::primitive_kind::PrimitiveKind;
+use crate::{Rect, widget};
+use crate::render::primitive_kind::PrimitiveKind;
 
 /// Data required for rendering a single primitive widget.
 pub struct Primitive {

@@ -3,26 +3,23 @@
 //! The core of this module is the `Widget::for_widget` method, which creates an
 //! `InputProvider` that provides input events for a specific widget.
 
-use {Point, Rect};
-use event;
-use input;
-use utils;
-use widget;
-use input::global::UiEvents;
-use event::ui::UiEvent;
-use event::widget::WidgetEvent;
-use event::press::PressEvent;
-use event::mouse_press::MousePress;
-use event::key_press::KeyPress;
-use event::release::Release;
-use event::mouse_release::MouseRelease;
-use event::key_release::KeyRelease;
-use event::click::Click;
-use event::tap::Tap;
-use event::drag::Drag;
-use event::text::Text;
-use event::scroll::Scroll;
-
+use crate::{Point, Rect};
+use crate::event::click::Click;
+use crate::event::drag::Drag;
+use crate::event::key_press::KeyPress;
+use crate::event::key_release::KeyRelease;
+use crate::event::mouse_press::MousePress;
+use crate::event::mouse_release::MouseRelease;
+use crate::event::press::PressEvent;
+use crate::event::release::Release;
+use crate::event::scroll::Scroll;
+use crate::event::tap::Tap;
+use crate::event::text::Text;
+use crate::event::ui::UiEvent;
+use crate::event::widget::WidgetEvent;
+use crate::input;
+use crate::utils;
+use crate::widget;
 
 /// Provides only events and input state that are relevant to a specific widget.
 ///

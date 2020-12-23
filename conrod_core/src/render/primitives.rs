@@ -1,22 +1,17 @@
-use ::{widget, Rect};
-use graph::{Graph, UniqueWidgetState};
-use ::{Theme, text};
-use ::{Point};
-use render::primitive_walker::PrimitiveWalker;
-use render::primitive::Primitive;
-use ::{color};
-use render::primitive_kind::PrimitiveKind;
-use render::util::{new_primitive, next_widget};
-use widget::render::Render;
-use widget::{Oval, Rectangle};
-use position::{Align, Dimensions};
-use render::text::Text;
-use render::owned_primitives::OwnedPrimitives;
-use render::owned_primitive_kind::OwnedPrimitiveKind;
-use render::owned_primitive::OwnedPrimitive;
-use render::owned_text::OwnedText;
-use Color;
-use draw::shape::triangle::Triangle;
+use crate::{Rect, widget};
+use crate::{text, Theme};
+use crate::Point;
+use crate::draw::shape::triangle::Triangle;
+use crate::graph::Graph;
+use crate::position::Dimensions;
+use crate::render::owned_primitive::OwnedPrimitive;
+use crate::render::owned_primitive_kind::OwnedPrimitiveKind;
+use crate::render::owned_primitives::OwnedPrimitives;
+use crate::render::owned_text::OwnedText;
+use crate::render::primitive::Primitive;
+use crate::render::primitive_kind::PrimitiveKind;
+use crate::render::primitive_walker::PrimitiveWalker;
+use crate::render::text::Text;
 
 /// An iterator-like type that yields a reference to each primitive in order of depth for
 /// rendering.

@@ -1,38 +1,33 @@
 //! A simple, non-interactive widget for drawing a single **Oval**.
 
-use std;
-use std::slice::{Iter, IterMut};
+
+
 
 use daggy::petgraph::graph::node_index;
 use uuid::Uuid;
 
-use {Color, Colorable, Point, Rect, Scalar, Sizeable, Theme};
-use ::{graph, text};
-use draw::shape::circumference::{Circumference, Triangles};
-use draw::shape::triangle::Triangle;
-use event::event::{Event, NoEvents};
-use event_handler::{KeyboardEvent, MouseEvent, WidgetEvent};
-use flags::Flags;
-use graph::Container;
-use layout::basic_layouter::BasicLayouter;
-use layout::Layout;
-use layout::layouter::Layouter;
-use position::Dimensions;
-use render::owned_primitive::OwnedPrimitive;
-use render::primitive::Primitive;
-use render::primitive_kind::PrimitiveKind;
-use render::util::new_primitive;
-use state::environment::Environment;
-use state::state::LocalStateList;
-use state::state_sync::NoLocalStateSync;
-use text::font::Map;
-use widget;
-use widget::{Id, Rectangle};
-use widget::common_widget::CommonWidget;
-use widget::primitive::Widget;
-use widget::primitive::widget::WidgetExt;
-use widget::render::Render;
-use widget::widget_iterator::{WidgetIter, WidgetIterMut};
+use crate::{Color, Colorable, Point, Rect, Scalar, Theme};
+use crate::{graph, text};
+use crate::draw::shape::circumference::{Circumference, Triangles};
+use crate::draw::shape::triangle::Triangle;
+use crate::event::event::NoEvents;
+use crate::flags::Flags;
+use crate::layout::basic_layouter::BasicLayouter;
+use crate::layout::Layout;
+use crate::layout::layouter::Layouter;
+use crate::position::Dimensions;
+use crate::render::primitive::Primitive;
+use crate::render::primitive_kind::PrimitiveKind;
+use crate::render::util::new_primitive;
+use crate::state::environment::Environment;
+use crate::state::state_sync::NoLocalStateSync;
+use crate::widget;
+use crate::widget::Rectangle;
+use crate::widget::common_widget::CommonWidget;
+use crate::widget::primitive::Widget;
+use crate::widget::primitive::widget::WidgetExt;
+use crate::widget::render::Render;
+use crate::widget::widget_iterator::{WidgetIter, WidgetIterMut};
 
 use super::Style as Style;
 
@@ -247,15 +242,15 @@ impl<S> Oval<Full, S> {
     }
 
     /// Build an **Oval** with the given dimensions and style.
-    pub fn styled(dim: Dimensions, style: Style) -> Self {
+    pub fn styled(_dim: Dimensions, style: Style) -> Self {
         Oval {
             id: Uuid::new_v4(),
             common: widget::CommonBuilder::default(),
             style: style,
             resolution: DEFAULT_RESOLUTION,
             section: Full,
-            position: [0.0,0.0],
-            dimension: [0.0,0.0],
+            position: [0.0, 0.0],
+            dimension: [0.0, 0.0],
             color: Color::random(),
             children: vec![]
         }//.wh(dim)

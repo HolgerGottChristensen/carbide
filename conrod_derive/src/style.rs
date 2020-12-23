@@ -2,7 +2,9 @@ use std;
 
 use proc_macro2;
 use syn;
-use utils;
+
+use crate::utils;
+
 // The implementation for `WidgetStyle`.
 //
 // This generates an accessor method for every field in the struct

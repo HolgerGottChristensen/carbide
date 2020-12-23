@@ -2,44 +2,34 @@
 //!
 //! Due to the frequency of its use in GUIs, the `Rectangle` gets its own widget to allow backends
 //! to specialise their rendering implementations.
-use std::any::Any;
-use std::collections::HashMap;
-use std::convert::TryFrom;
-use std::error::Error;
-use std::slice::{Iter, IterMut};
+
+
+
+
+
 
 use daggy::petgraph::graph::node_index;
 use uuid::Uuid;
 
-use {Color, Colorable, Point, Rect, Sizeable};
-use ::{Scalar, widget};
-use ::{Range, text};
-use color::{LIGHT_BLUE, PURPLE, rgb, YELLOW};
-use draw::shape::triangle::Triangle;
-use event::event::{Event, NoEvents};
-use event_handler::{KeyboardEvent, MouseEvent, WidgetEvent};
-use flags::Flags;
-use graph::Container;
-use input::Key;
-use layout::basic_layouter::BasicLayouter;
-use layout::Layout;
-use layout::layouter::Layouter;
-use position::Dimensions;
-use render::owned_primitive::OwnedPrimitive;
-use render::owned_primitive_kind::OwnedPrimitiveKind;
-use render::primitive::Primitive;
-use render::primitive_kind::PrimitiveKind;
-use render::util::new_primitive;
-use state::environment::Environment;
-use state::state::LocalStateList;
-use state::state_sync::NoLocalStateSync;
-use text::font::Map;
-use widget::common_widget::CommonWidget;
-use widget::Id;
-use widget::primitive::Widget;
-use widget::primitive::widget::WidgetExt;
-use widget::render::Render;
-use widget::widget_iterator::{WidgetIter, WidgetIterMut};
+use crate::{Color, Colorable, Point, Rect, Sizeable};
+use crate::{Scalar, widget};
+use crate::text;
+use crate::draw::shape::triangle::Triangle;
+use crate::event::event::NoEvents;
+use crate::flags::Flags;
+use crate::layout::basic_layouter::BasicLayouter;
+use crate::layout::Layout;
+use crate::layout::layouter::Layouter;
+use crate::position::Dimensions;
+use crate::render::primitive::Primitive;
+use crate::render::primitive_kind::PrimitiveKind;
+use crate::state::environment::Environment;
+use crate::state::state_sync::NoLocalStateSync;
+use crate::widget::common_widget::CommonWidget;
+use crate::widget::primitive::Widget;
+use crate::widget::primitive::widget::WidgetExt;
+use crate::widget::render::Render;
+use crate::widget::widget_iterator::{WidgetIter, WidgetIterMut};
 
 use super::Style as Style;
 
@@ -228,7 +218,7 @@ impl<S> Rectangle<S> {
     }
 
     /// Build a rectangle with the dimensions and style.
-    pub fn styled(dim: Dimensions, style: Style) -> Self {
+    pub fn styled(_dim: Dimensions, style: Style) -> Self {
         Rectangle {
             id: Uuid::new_v4(),
             children: vec![],
@@ -236,7 +226,7 @@ impl<S> Rectangle<S> {
             dimension: [1.0, 1.0],
             common: widget::CommonBuilder::default(),
             style,
-            color: Color::random()
+            color: Color::random(),
         }//.wh(dim)
     }
 

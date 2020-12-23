@@ -1,8 +1,8 @@
 //! A module encompassing the primitive 2D shape widgets.
 
-use color::Color;
-use theme::Theme;
-use widget;
+use crate::color::Color;
+use crate::theme::Theme;
+use crate::widget;
 
 pub mod circle;
 pub mod oval;

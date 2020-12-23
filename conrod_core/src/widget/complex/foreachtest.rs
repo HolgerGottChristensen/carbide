@@ -1,35 +1,23 @@
 use std::fmt::Debug;
-use std::ops::Deref;
 
-use daggy::petgraph::graph::node_index;
 use uuid::Uuid;
 
-use ::{Point, Rect};
-use ::{Scalar, text};
-use event::event::{Event, NoEvents};
-use event_handler::{KeyboardEvent, MouseEvent, WidgetEvent};
-use flags::Flags;
-use graph::Container;
-use input::Key;
-use layout::basic_layouter::BasicLayouter;
-use layout::Layout;
-use layout::layouter::Layouter;
-use position::Dimensions;
-use render::primitive::Primitive;
-use render::primitive_kind::PrimitiveKind;
-use state::environment::Environment;
-use state::state::{GetState, LocalStateList, State};
-use state::state_sync::StateSync;
-use text::font::Map;
-use widget::{HStack, Id, Oval, Rectangle, Text};
-use widget::common_widget::CommonWidget;
-use widget::primitive::foreach::ForEach;
-use widget::primitive::spacer::{Spacer, SpacerDirection};
-use widget::primitive::v_stack::VStack;
-use widget::primitive::Widget;
-use widget::primitive::widget::WidgetExt;
-use widget::render::{ChildRender, Render};
-use widget::widget_iterator::{WidgetIter, WidgetIterMut};
+use crate::Point;
+use crate::event::event::NoEvents;
+use crate::flags::Flags;
+use crate::layout::basic_layouter::BasicLayouter;
+use crate::layout::Layout;
+use crate::layout::layouter::Layouter;
+use crate::position::Dimensions;
+use crate::state::environment::Environment;
+use crate::state::state::{GetState, State};
+use crate::state::state_sync::StateSync;
+use crate::widget::{Rectangle, Text};
+use crate::widget::common_widget::CommonWidget;
+use crate::widget::primitive::Widget;
+use crate::widget::primitive::widget::WidgetExt;
+use crate::widget::render::ChildRender;
+use crate::widget::widget_iterator::{WidgetIter, WidgetIterMut};
 
 #[derive(Debug, Clone)]
 pub struct ForeachTest<S: Clone + Debug> {
@@ -37,7 +25,7 @@ pub struct ForeachTest<S: Clone + Debug> {
     child: Box<dyn Widget<S>>,
     position: Point,
     dimension: Dimensions,
-    index: State<u32, S>
+    index: State<u32, S>,
 }
 
 impl<S: 'static + Clone + Debug> ForeachTest<S> {
@@ -107,7 +95,7 @@ impl<S: Clone + Debug> StateSync<S> for ForeachTest<S> {
         env.insert_local_state(&State::<String, S>::new_local("sindex", &self.index.get_latest_value().to_string()))
     }
 
-    fn update_all_widget_state(&mut self, env: &Environment, global_state: &S) {
+    fn update_all_widget_state(&mut self, env: &Environment, _global_state: &S) {
         self.update_local_widget_state(env)
     }
 

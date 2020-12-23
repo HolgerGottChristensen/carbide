@@ -3,28 +3,23 @@
 use daggy::petgraph::graph::node_index;
 use uuid::Uuid;
 
-use {Color, Colorable, Point, Positionable, Rect, Scalar, Sizeable, Theme};
-use ::{graph, text};
-use event::event::{Event, NoEvents};
-use event_handler::{KeyboardEvent, MouseEvent, WidgetEvent};
-use flags::Flags;
-use graph::Container;
-use layout::Layout;
-use position::Dimensions;
-use render::primitive::Primitive;
-use render::primitive_kind::PrimitiveKind;
-use render::util::new_primitive;
-use state::environment::Environment;
-use state::state::LocalStateList;
-use state::state_sync::NoLocalStateSync;
-use text::font::Map;
-use utils::{vec2_add, vec2_sub};
-use widget::{self, Id};
-use widget::common_widget::CommonWidget;
-use widget::primitive::Widget;
-use widget::primitive::widget::WidgetExt;
-use widget::render::Render;
-use widget::widget_iterator::{WidgetIter, WidgetIterMut};
+use crate::{Color, Colorable, Point, Positionable, Rect, Scalar, Sizeable, Theme};
+use crate::text;
+use crate::event::event::NoEvents;
+use crate::flags::Flags;
+use crate::layout::Layout;
+use crate::position::Dimensions;
+use crate::render::primitive::Primitive;
+use crate::render::primitive_kind::PrimitiveKind;
+use crate::render::util::new_primitive;
+use crate::state::environment::Environment;
+use crate::state::state_sync::NoLocalStateSync;
+use crate::widget::{self};
+use crate::widget::common_widget::CommonWidget;
+use crate::widget::primitive::Widget;
+use crate::widget::primitive::widget::WidgetExt;
+use crate::widget::render::Render;
+use crate::widget::widget_iterator::{WidgetIter, WidgetIterMut};
 
 //use draw::shape::line::is_over_widget;
 
@@ -60,7 +55,7 @@ impl<S> Layout<S> for Line<S> {
         0
     }
 
-    fn calculate_size(&mut self, requested_size: [f64; 2], env: &Environment) -> [f64; 2] {
+    fn calculate_size(&mut self, _requested_size: [f64; 2], _env: &Environment) -> [f64; 2] {
         unimplemented!()
     }
 
@@ -234,7 +229,7 @@ impl<S> Line<S> {
 
     /// The same as [**Line::abs**](./struct.Line#method.abs) but with the given style.
     pub fn abs_styled(start: Point, end: Point, style: Style) -> Self {
-        let (xy, dim) = Rect::from_corners(start, end).xy_dim();
+        let (_xy, _dim) = Rect::from_corners(start, end).xy_dim();
         Line::styled(start, end, style)//.wh(dim).xy(xy)
     }
 
@@ -253,7 +248,7 @@ impl<S> Line<S> {
 
     /// The same as [**Line::centred**](./struct.Line#method.centred) but with the given style.
     pub fn centred_styled(start: Point, end: Point, style: Style) -> Self {
-        let dim = Rect::from_corners(start, end).dim();
+        let _dim = Rect::from_corners(start, end).dim();
         let mut line = Line::styled(start, end, style);//.wh(dim);
         line.should_centre_points = true;
         line

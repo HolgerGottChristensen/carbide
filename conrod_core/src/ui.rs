@@ -1,42 +1,27 @@
 use std;
-use std::fmt::{Debug, Formatter};
-use std::fmt;
+use std::fmt::Debug;
 use std::sync::atomic::{self, AtomicUsize};
 
 use fnv;
 
-use ::{event, Positionable};
-use color::Color;
-use cursor;
-use event::button::ButtonEvent;
-use event::click::Click;
-use event::double_click::DoubleClick;
-use event::drag::Drag;
-use event::event::Event;
-use event::press::PressEvent;
-use event::release::Release;
-use event::scroll::Scroll;
-use event::tap::Tap;
-use event::text::Text;
-use event::ui::UiEvent;
-use event_handler::{EventHandler, KeyboardEvent, MouseEvent, WidgetEvent, WindowEvent};
-use graph::{self, Graph};
-use input;
-use input::Source;
-use position::{self, Align, Dimension, Dimensions, Direction, Padding, Point, Position, Range, Rect, Scalar};
-use render;
-use render::cprimitives::CPrimitives;
-use render::primitives::Primitives;
-use state::environment::Environment;
-use text;
-use theme::Theme;
-use utils;
-use widget::{self, Rectangle};
-use widget::common_widget::CommonWidget;
-use widget::primitive::Widget;
-use widget::render::Render;
-
+use crate::Positionable;
+use crate::color::Color;
+use crate::cursor;
+use crate::event::event::Event;
 use crate::event::input::Input;
+use crate::event::scroll::Scroll;
+use crate::event::ui::UiEvent;
+use crate::event_handler::{EventHandler, WidgetEvent, WindowEvent};
+use crate::graph::{self, Graph};
+use crate::input;
+use crate::position::{self, Align, Dimension, Dimensions, Direction, Padding, Point, Position, Range, Rect, Scalar};
+use crate::render::cprimitives::CPrimitives;
+use crate::render::primitives::Primitives;
+use crate::state::environment::Environment;
+use crate::text;
+use crate::theme::Theme;
+use crate::widget::{self, Rectangle};
+use crate::widget::primitive::Widget;
 
 /// A constructor type for building a `Ui` instance with a set of optional parameters.
 pub struct UiBuilder {
@@ -440,9 +425,7 @@ impl<S: 'static + Clone> Ui<S> {
                 WidgetEvent::Keyboard(keyboard_event) => {
                     self.widgets.process_keyboard_event(keyboard_event, &mut self.environment, global_state);
                 }
-                WidgetEvent::Window(window_event) => {
-
-                }
+                WidgetEvent::Window(_window_event) => {}
                 WidgetEvent::Touch(_) => {}
             }
 
@@ -874,14 +857,14 @@ pub fn widget_graph_mut<S>(ui: &mut Ui<S>) -> &mut Graph {
 ///
 /// When a different parent may be inferred from either `Position`, the *x* `Position` is favoured.
 pub fn infer_parent_from_position<S>(ui: &Ui<S>, x: Position, y: Position) -> Option<widget::Id> {
-    use Position::Relative;
-    use position::Relative::{Align, Direction, Place, Scalar};
+    use crate::Position::Relative;
+    use crate::position::Relative::{Align, Direction, Place, Scalar};
     match (x, y) {
         (Relative(Place(_), maybe_parent_id), _) | (_, Relative(Place(_), maybe_parent_id)) =>
             maybe_parent_id,
         (Relative(Direction(_, _), maybe_id), _) | (_, Relative(Direction(_, _), maybe_id)) |
-        (Relative(Align(_), maybe_id), _)        | (_, Relative(Align(_), maybe_id))        |
-        (Relative(Scalar(_), maybe_id), _)       | (_, Relative(Scalar(_), maybe_id))       =>
+        (Relative(Align(_), maybe_id), _) | (_, Relative(Align(_), maybe_id)) |
+        (Relative(Scalar(_), maybe_id), _) | (_, Relative(Scalar(_), maybe_id)) =>
             maybe_id.or(ui.maybe_prev_widget_id)
                 .and_then(|idx| ui.widget_graph.depth_parent(idx)),
         _ => None,

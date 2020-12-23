@@ -11,10 +11,12 @@
 //! and [HSL](http://en.wikipedia.org/wiki/HSL_and_HSV) creation, gradients and built-in names.
 //!
 extern crate rand;
-use std::f32::consts::PI;
-use utils::{degrees, fmod, turns};
-use self::rand::Rng;
 
+use std::f32::consts::PI;
+
+use crate::utils::{degrees, fmod, turns};
+
+use self::rand::Rng;
 
 /// Color supporting RGB and HSL variants.
 #[derive(PartialEq, Copy, Clone, Debug)]

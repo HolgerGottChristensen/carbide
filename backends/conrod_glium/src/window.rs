@@ -2,18 +2,18 @@ extern crate find_folder;
 extern crate glium;
 extern crate image;
 
+use std;
+
 use glium::backend::glutin::Display;
 use glium::glutin::WindowBuilder;
 use glium::Surface;
 
-use std;
-use Renderer;
 use conrod_core::{Colorable, Positionable, Ui, UiBuilder, UiCell, widget};
 use conrod_core::text::font::{Error, Id};
-use conrod_core::widget::old::id::Generator;
 use conrod_core::widget::primitive::Widget;
 use conrod_winit::WinitWindow;
 
+use crate::Renderer;
 
 pub struct Window<S: 'static + Clone> {
     title: String,
@@ -32,7 +32,7 @@ pub struct Window<S: 'static + Clone> {
 
 impl<S: 'static + Clone> Window<S> {
     pub fn new(title: String, width: u32, height: u32, state: S) -> Self {
-        let mut events_loop = glium::glutin::EventsLoop::new();
+        let events_loop = glium::glutin::EventsLoop::new();
         let window = WindowBuilder::new()
             .with_title(title.clone())
             .with_dimensions((width, height).into());
@@ -42,11 +42,11 @@ impl<S: 'static + Clone> Window<S> {
         let display = Display::new(window, context, &events_loop).unwrap();
         let display = GliumDisplayWinitWrapper(display);
 
-        let mut ui = conrod_core::UiBuilder::new([width as f64, height as f64]).build();
+        let ui = conrod_core::UiBuilder::new([width as f64, height as f64]).build();
 
         // A type used for converting `conrod_core::render::Primitives` into `Command`s that can be used
         // for drawing to the glium `Surface`.
-        let mut renderer = Renderer::new(&display.0).unwrap();
+        let renderer = Renderer::new(&display.0).unwrap();
 
         // The image map describing each of our widget->image mappings (in our case, none).
         let image_map = conrod_core::image::ImageMap::<glium::texture::Texture2d>::new();
@@ -147,7 +147,7 @@ impl<S: 'static + Clone> Window<S> {
             }
 
             // Draw the `Ui` if it has changed.
-            if let Some((primitives, cprims)) = self.ui.draw_if_changed() {
+            if let Some((_primitives, cprims)) = self.ui.draw_if_changed() {
                 self.renderer.fill(&self.display.0, cprims, &self.image_map);
                 let mut target = self.display.0.draw();
                 target.clear_color(0.0, 0.0, 0.0, 1.0);

@@ -1,6 +1,5 @@
 //! A widget for viewing and controlling graph structures.
 
-use {color, widget, Color, Colorable, Point, Positionable, Scalar, Ui, UiCell};
 use std::any::{Any, TypeId};
 use std::cell::Cell;
 use std::collections::{HashMap, VecDeque};
@@ -8,7 +7,8 @@ use std::hash::Hash;
 use std::marker::PhantomData;
 use std::ops::{Deref, DerefMut};
 use std::sync::{Arc, Mutex, Weak};
-use utils::{iter_diff, IterDiff};
+
+use crate::{color, Color, Colorable, Point, Positionable, Scalar, Ui, UiCell, widget};
 
 pub use self::node::{Node, SocketLayout, SocketSide};
 
@@ -18,6 +18,7 @@ pub mod node;
 ///
 /// This trait has a blanket implementation for all render that satisfy the bounds.
 pub trait NodeId: 'static + Copy + Clone + PartialEq + Eq + Hash + Send {}
+
 impl<T> NodeId for T where T: 'static + Copy + Clone + PartialEq + Eq + Hash + Send {}
 
 /// Stores the layout of all nodes within the graph.

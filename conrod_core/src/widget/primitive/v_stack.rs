@@ -1,36 +1,21 @@
-use std::any::Any;
-use std::collections::HashMap;
-use std::convert::TryFrom;
-use std::error::Error;
-
-use daggy::petgraph::graph::node_index;
 use uuid::Uuid;
 
-use {Color, Colorable, Point, Rect, Sizeable};
-use ::{Scalar, widget};
-use ::{Range, text};
-use color::rgb;
-use event::event::{Event, NoEvents};
-use event_handler::{KeyboardEvent, MouseEvent, WidgetEvent};
-use flags::Flags;
-use graph::Container;
-use layout::{CrossAxisAlignment, Layout};
-use position::Dimensions;
-use render::owned_primitive::OwnedPrimitive;
-use render::owned_primitive_kind::OwnedPrimitiveKind;
-use render::primitive::Primitive;
-use render::primitive_kind::PrimitiveKind;
-use render::util::new_primitive;
-use state::environment::Environment;
-use state::state::LocalStateList;
-use state::state_sync::NoLocalStateSync;
-use text::font::Map;
-use widget::{Id, Rectangle};
-use widget::common_widget::CommonWidget;
-use widget::primitive::Widget;
-use widget::primitive::widget::WidgetExt;
-use widget::render::Render;
-use widget::widget_iterator::{WidgetIter, WidgetIterMut};
+use crate::{Color, Colorable, Point, Rect, Sizeable};
+use crate::Scalar;
+use crate::text;
+use crate::event::event::NoEvents;
+use crate::flags::Flags;
+use crate::layout::{CrossAxisAlignment, Layout};
+use crate::position::Dimensions;
+use crate::render::primitive::Primitive;
+use crate::state::environment::Environment;
+use crate::state::state_sync::NoLocalStateSync;
+use crate::widget::Rectangle;
+use crate::widget::common_widget::CommonWidget;
+use crate::widget::primitive::Widget;
+use crate::widget::primitive::widget::WidgetExt;
+use crate::widget::render::Render;
+use crate::widget::widget_iterator::{WidgetIter, WidgetIterMut};
 
 /// A basic, non-interactive rectangle shape widget.
 #[derive(Debug, Clone)]
@@ -87,7 +72,7 @@ impl<S> Layout<S> for VStack<S> {
             **b && non_spacers_vec[n+1]
         }).count() as f64;
 
-        let spacing_total = ((number_of_spaces)*self.spacing);
+        let spacing_total = (number_of_spaces) * self.spacing;
         let mut size_for_children = [requested_size[0], requested_size[1] - spacing_total];
 
         let mut children_flexibilty: Vec<(u32, &mut Box<dyn Widget<S>>)> = self.get_children_mut().map(|child| (child.flexibility(), child)).collect();

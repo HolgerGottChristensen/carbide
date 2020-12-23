@@ -1,4 +1,4 @@
-use render::primitive::Primitive;
+use crate::render::primitive::Primitive;
 
 /// A trait that allows the user to remain generic over render yielding `Primitive`s.
 ///

@@ -1,8 +1,8 @@
 //! Defines the scalar `Rect` type used throughout conrod.
 
-use super::{Dimension, Padding, Point, Range, Scalar};
-use position::Dimensions;
+use crate::position::Dimensions;
 
+use super::{Padding, Point, Range, Scalar};
 
 /// Defines a Rectangle's bounds across the x and y axes.
 ///
@@ -122,7 +122,7 @@ impl Rect {
 
     /// The length of the longest side of the rectangle.
     pub fn len(&self) -> Scalar {
-        ::utils::partial_max(self.w(), self.h())
+        crate::utils::partial_max(self.w(), self.h())
     }
 
     /// The Rect's lowest y value.

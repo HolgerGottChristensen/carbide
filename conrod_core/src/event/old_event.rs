@@ -1,5 +1,5 @@
-use event::input::Input;
-use event::ui::UiEvent;
+use crate::event::input::Input;
+use crate::event::ui::UiEvent;
 
 impl From<Input> for OldEvent {
     fn from(input: Input) -> Self {

@@ -1,6 +1,8 @@
 //! A helper widget, useful for instantiating a sequence of widgets in a vertical list.
 
-use {
+use std;
+
+use crate::{
     color,
     Color,
     Colorable,
@@ -10,10 +12,8 @@ use {
     Ui,
     UiCell,
 };
-use graph;
-use position::{Range, Rect};
-use std;
-use widget;
+use crate::position::{Range, Rect};
+use crate::widget;
 
 /// A helper widget, useful for instantiating a sequence of widgets in a vertical list.
 ///
@@ -70,10 +70,10 @@ pub trait Direction {
     type Axis: widget::old::scrollbar::Axis;
 
     /// For some given `Rect`, returns the parallel and perpendicular ranges respectively.
-    fn ranges(Rect) -> (Range, Range);
+    fn ranges(_: Rect) -> (Range, Range);
 
     /// Begin building the scrollbar for the `List`.
-    fn scrollbar(widget::Id) -> widget::old::scrollbar::Scrollbar<Self::Axis>;
+    fn scrollbar(_: widget::Id) -> widget::old::scrollbar::Scrollbar<Self::Axis>;
 
     /// Borrow the scroll state associated with this `Direction`'s axis.
     fn common_scroll(common: &widget::CommonBuilder) -> Option<&widget::scroll::Scroll>;

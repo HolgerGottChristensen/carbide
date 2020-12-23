@@ -1,8 +1,8 @@
-use ::{Color, Rect};
-use color::Rgba;
-use image::Id;
-use text::font;
-use render::owned_text::OwnedText;
+use crate::{Color, Rect};
+use crate::color::Rgba;
+use crate::image::Id;
+use crate::render::owned_text::OwnedText;
+use crate::text::font;
 
 #[derive(Clone)]
 pub enum OwnedPrimitiveKind {

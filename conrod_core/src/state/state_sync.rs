@@ -1,6 +1,5 @@
-use state::environment::Environment;
-use state::state::LocalStateList;
-use widget::common_widget::CommonWidget;
+use crate::state::environment::Environment;
+use crate::widget::common_widget::CommonWidget;
 
 pub trait StateSync<S>: CommonWidget<S> {
     /// Insert local state from the widget into the environment.
@@ -46,5 +45,5 @@ impl<S, T> StateSync<S> for T where T: NoLocalStateSync + CommonWidget<S> {
 
     fn update_all_widget_state(&mut self, _: &Environment, _: &S) {}
 
-    fn update_local_widget_state(&mut self, env: &Environment) {}
+    fn update_local_widget_state(&mut self, _env: &Environment) {}
 }

@@ -1,6 +1,6 @@
-use Point;
-use utils::vec2_sub;
-use input;
+use crate::input;
+use crate::Point;
+use crate::utils::vec2_sub;
 
 /// All relevant information for a touch-screen tap event.
 #[derive(Copy, Clone, PartialEq, Debug)]

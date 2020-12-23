@@ -1,6 +1,4 @@
-use widget::primitive::Widget;
-use std::slice::{IterMut, Iter};
-use flags::Flags;
+use crate::widget::primitive::Widget;
 
 pub enum WidgetIterMut<'a, S> {
     Empty,

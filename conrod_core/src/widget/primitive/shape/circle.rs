@@ -1,10 +1,7 @@
 //! An adaptation of the **Oval** type where the width and height are equal.
 
-use {Color, Scalar};
-use super::oval::{Full, Oval};
-use super::Style as Style;
-use widget;
-use position::Dimensions;
+use crate::Scalar;
+use crate::position::Dimensions;
 
 /// A tiny wrapper around the **Oval** widget type.
 #[derive(Copy, Clone, Debug)]

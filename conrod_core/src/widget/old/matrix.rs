@@ -1,10 +1,7 @@
 //! A helper widget for laying out child widgets in the form of a grid.
 
-use {Scalar, Ui, UiCell};
-use graph;
-use utils;
-use widget;
-
+use crate::Scalar;
+use crate::widget;
 
 /// The number of the widget.
 pub type WidgetNum = usize;

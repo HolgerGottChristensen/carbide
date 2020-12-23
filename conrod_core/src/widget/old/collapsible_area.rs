@@ -1,11 +1,9 @@
 //! The `CollapsibleArea` widget and related items.
 
-use {Borderable, Colorable, Labelable, Positionable, Sizeable};
-use {Color, FontSize, Scalar, UiCell};
-use position;
-use std;
-use text;
-use widget;
+use crate::{Borderable, Colorable, Labelable};
+use crate::{Color, FontSize, Scalar};
+use crate::text;
+use crate::widget;
 
 /// A vertically collapsible area.
 ///

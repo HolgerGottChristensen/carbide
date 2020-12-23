@@ -1,18 +1,10 @@
 //! A widget for displaying and mutating multi-line text, given as a `String`.
 
-use {Color, Colorable, FontSize, Positionable, Sizeable, Ui};
-use event;
-use input;
-use position::{Align, Dimension, Point, Range, Rect, Scalar};
-use std;
-use text;
-use utils;
-use widget;
-use cursor;
-use widget::primitive::text::Wrap;
-use copypasta::{ClipboardContext, ClipboardProvider};
-use event::widget::WidgetEvent;
-use event::button::ButtonEvent;
+use crate::{Color, Colorable, FontSize, Positionable};
+use crate::position::{Align, Scalar};
+use crate::text;
+use crate::widget;
+use crate::widget::primitive::text::Wrap;
 
 /// A widget for displaying and mutating multi-line text, given as a `String`.
 ///

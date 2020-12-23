@@ -1,18 +1,18 @@
 //! A wrapper around a list of `Canvas`ses that displays them as a list of selectable tabs.
 
-use {
+use std;
+
+use crate::{
     Color,
     FontSize,
     Point,
     Rect,
     Scalar,
 };
-use std;
-use text;
-use utils;
-use widget;
-use position::Dimensions;
-
+use crate::position::Dimensions;
+use crate::text;
+use crate::utils;
+use crate::widget;
 
 /// A wrapper around a list of `Canvas`ses that displays them as a list of selectable tabs.
 #[derive(WidgetCommon_)]
@@ -375,7 +375,7 @@ fn tab_dim(num_tabs: usize, tab_bar_dim: Dimensions, layout: Layout) -> Dimensio
 }
 
 
-impl<'a> ::color::Colorable for Tabs<'a> {
+impl<'a> crate::color::Colorable for Tabs<'a> {
     fn color(self, color: Color) -> Self {
         self.map_canvas_style(|mut style| {
             style.color = Some(color);
@@ -384,7 +384,7 @@ impl<'a> ::color::Colorable for Tabs<'a> {
     }
 }
 
-impl<'a> ::border::Borderable for Tabs<'a> {
+impl<'a> crate::border::Borderable for Tabs<'a> {
     fn border(self, width: f64) -> Self {
         self.map_canvas_style(|mut style| {
             style.border = Some(width);

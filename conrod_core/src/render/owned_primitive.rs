@@ -1,6 +1,6 @@
-use widget::old::id::Id;
-use Rect;
-use render::owned_primitive_kind::OwnedPrimitiveKind;
+use crate::Rect;
+use crate::render::owned_primitive_kind::OwnedPrimitiveKind;
+use crate::widget::old::id::Id;
 
 #[derive(Clone)]
 pub struct OwnedPrimitive {

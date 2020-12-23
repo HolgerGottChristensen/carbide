@@ -1,8 +1,6 @@
-use ::{Point, Scalar};
-use ::{graph, Theme};
-use widget;
-use widget::Line;
-use draw::shape::triangle::Triangle;
+use crate::{Point, Scalar};
+use crate::draw::shape::triangle::Triangle;
+use crate::widget;
 
 /// Given two points and half the line thickness, return the four corners of the rectangle
 /// describing the line.

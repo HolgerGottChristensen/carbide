@@ -1,11 +1,13 @@
 //! Types and functionality related to the calculation of a **Graph**'s rendering depth order.
 
-use daggy::Walker;
 use std;
-use fnv;
-use super::{Graph, Node};
-use widget;
 
+use daggy::Walker;
+use fnv;
+
+use crate::widget;
+
+use super::{Graph, Node};
 
 /// Contains Node indices in order of depth, starting with the deepest.
 #[derive(Debug)]

@@ -4,15 +4,14 @@
 //! re-exports all widgets (and their modules) that are provided by conrod.
 use std;
 
-use event::button::ButtonEvent;
-use event::release::Release;
-use event::widget::WidgetEvent;
-use graph::{Container, UniqueWidgetState};
-use position::{Align, Depth, Dimension, Dimensions, Padding, Point, Position,
-               Positionable, Rect, Relative, Sizeable};
-use text::font;
-use theme::{self, Theme};
-use ui::{self, Ui, UiCell};
+use crate::graph::Container;
+use crate::position::{Align, Depth, Dimension, Dimensions, Padding, Point, Position,
+                      Positionable, Rect, Relative, Sizeable};
+use crate::text::font;
+use crate::theme::Theme;
+use crate::ui::UiCell;
+pub use crate::widget::old::id::Id;
+use crate::widget::old::scroll;
 
 pub use self::primitive::frame::Frame;
 pub use self::primitive::frame::SCALE;
@@ -27,8 +26,6 @@ pub use self::primitive::shape::rectangle::{self, Rectangle};
 pub use self::primitive::shape::triangles::{self, Triangles};
 pub use self::primitive::text::{self, Text};
 pub use self::primitive::z_stack::*;
-pub use widget::old::id::Id;
-use widget::old::scroll;
 
 pub mod render;
 

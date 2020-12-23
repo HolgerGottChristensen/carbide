@@ -1,5 +1,5 @@
-use ::{Point, Scalar};
-use Rect;
+use crate::{Point, Scalar};
+use crate::Rect;
 
 /// An iterator yielding the edges of an `Oval` (or some section of an `Oval`) as a circumference
 /// represented as a series of edges.

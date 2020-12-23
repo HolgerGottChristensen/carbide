@@ -1,42 +1,25 @@
 use std::fmt;
 use std::fmt::Debug;
 use std::ops::{Deref, DerefMut};
-use std::slice::{Iter, IterMut};
 
 use dyn_clone::DynClone;
 use uuid::Uuid;
 
-use ::{Color, Rect};
-use ::{Scalar, text};
-use color::rgb;
-use event::event::Event;
-use event_handler::{KeyboardEvent, MouseEvent, WidgetEvent};
-use flags::Flags;
-use graph::Container;
-use layout::Layout;
-use position::Dimensions;
-use render::owned_primitive::OwnedPrimitive;
-use render::primitive::Primitive;
-use render::primitive_kind::PrimitiveKind;
-use render::util::new_primitive;
-use state::environment::Environment;
-use state::state::LocalStateList;
-use state::state_sync::StateSync;
-use text::font::Map;
-use widget::{common_widget, Id, Image, Line, Oval, Text};
-use widget::common_widget::CommonWidget;
-use widget::primitive::edge_insets::EdgeInsets;
-use widget::primitive::frame::Frame;
-use widget::primitive::h_stack::HStack;
-use widget::primitive::padding::Padding;
-use widget::primitive::shape::oval::Full;
-use widget::primitive::spacer::Spacer;
-use widget::primitive::v_stack::VStack;
-use widget::primitive::z_stack::ZStack;
-use widget::render::Render;
-use widget::widget_iterator::{WidgetIter, WidgetIterMut};
-
-use crate::widget::primitive::shape::rectangle::Rectangle;
+use crate::{Scalar, text};
+use crate::event::event::Event;
+use crate::event_handler::{KeyboardEvent, MouseEvent, WidgetEvent};
+use crate::flags::Flags;
+use crate::layout::Layout;
+use crate::position::Dimensions;
+use crate::render::primitive::Primitive;
+use crate::state::environment::Environment;
+use crate::state::state_sync::StateSync;
+use crate::widget::common_widget::CommonWidget;
+use crate::widget::primitive::edge_insets::EdgeInsets;
+use crate::widget::primitive::frame::Frame;
+use crate::widget::primitive::padding::Padding;
+use crate::widget::render::Render;
+use crate::widget::widget_iterator::{WidgetIter, WidgetIterMut};
 
 pub trait Widget<S>: Event<S> + Layout<S> + Render<S> + DynClone {}
 
@@ -57,7 +40,7 @@ pub trait WidgetExt<S: 'static>: Widget<S> + Sized + 'static {
 //This does not currently work with intellisense
 //impl<T> WidgetExt for T where T: Widget + 'static {}
 
-impl<S> CommonWidget<S> for Box<Widget<S>> {
+impl<S> CommonWidget<S> for Box<dyn Widget<S>> {
     fn get_id(&self) -> Uuid {
         self.deref().get_id()
     }
@@ -96,7 +79,7 @@ impl<S> CommonWidget<S> for Box<Widget<S>> {
 }
 
 
-impl<S> Event<S> for Box<Widget<S>> {
+impl<S> Event<S> for Box<dyn Widget<S>> {
     fn handle_mouse_event(&mut self, event: &MouseEvent, consumed: &bool, global_state: &mut S) {
         self.deref_mut().handle_mouse_event(event, consumed, global_state)
     }
@@ -118,7 +101,7 @@ impl<S> Event<S> for Box<Widget<S>> {
     }
 }
 
-impl<S> StateSync<S> for Box<Widget<S>> {
+impl<S> StateSync<S> for Box<dyn Widget<S>> {
     fn insert_local_state(&self, env: &mut Environment) {
         self.deref().insert_local_state(env)
     }
@@ -132,7 +115,7 @@ impl<S> StateSync<S> for Box<Widget<S>> {
     }
 }
 
-impl<S> Layout<S> for Box<Widget<S>> {
+impl<S> Layout<S> for Box<dyn Widget<S>> {
     fn flexibility(&self) -> u32 {
         self.deref().flexibility()
     }
@@ -146,14 +129,14 @@ impl<S> Layout<S> for Box<Widget<S>> {
     }
 }
 
-impl<S> Render<S> for Box<Widget<S>> {
+impl<S> Render<S> for Box<dyn Widget<S>> {
     fn get_primitives(&self, fonts: &text::font::Map) -> Vec<Primitive> {
         self.deref().get_primitives(fonts)
     }
 }
 
 
-impl<S> Debug for Widget<S> {
+impl<S> Debug for dyn Widget<S> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "Widget: {}", self.get_id())
     }

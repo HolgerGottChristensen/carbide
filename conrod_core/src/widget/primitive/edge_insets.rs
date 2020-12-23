@@ -1,4 +1,4 @@
-use Scalar;
+use crate::Scalar;
 
 #[derive(Debug, Copy, Clone)]
 pub struct EdgeInsets {
