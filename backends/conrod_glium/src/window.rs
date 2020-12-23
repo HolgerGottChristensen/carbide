@@ -1,16 +1,19 @@
-extern crate glium;
 extern crate find_folder;
-use ::{std};
-use ::{Renderer};
-use conrod_core::{UiBuilder, widget, Positionable, Colorable, UiCell, Ui};
-use glium::glutin::WindowBuilder;
+extern crate glium;
+extern crate image;
+
 use glium::backend::glutin::Display;
-use conrod_winit::WinitWindow;
+use glium::glutin::WindowBuilder;
 use glium::Surface;
-use conrod_core::text::font::{Id, Error};
+
+use std;
+use Renderer;
+use conrod_core::{Colorable, Positionable, Ui, UiBuilder, UiCell, widget};
+use conrod_core::text::font::{Error, Id};
 use conrod_core::widget::old::id::Generator;
 use conrod_core::widget::primitive::Widget;
-extern crate image;
+use conrod_winit::WinitWindow;
+
 
 pub struct Window<S: 'static + Clone> {
     title: String,
@@ -67,7 +70,7 @@ impl<S: 'static + Clone> Window<S> {
     pub fn add_font(&mut self, path: &str) -> Result<Id, Error> {
         let assets = find_folder::Search::KidsThenParents(3, 5).for_folder("assets").unwrap();
         let font_path = assets.join(path);
-        self.ui.fonts.insert_from_file(font_path)
+        self.ui.environment.insert_font_from_file(font_path)
     }
 
     pub fn add_image(&mut self, path: &str) -> Result<conrod_core::image::Id, Error> {

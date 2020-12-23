@@ -2,45 +2,46 @@
 //!
 //! Due to the frequency of its use in GUIs, the `Rectangle` gets its own widget to allow backends
 //! to specialise their rendering implementations.
+use std::any::Any;
+use std::collections::HashMap;
+use std::convert::TryFrom;
+use std::error::Error;
+use std::slice::{Iter, IterMut};
+
+use daggy::petgraph::graph::node_index;
+use uuid::Uuid;
+
 use {Color, Colorable, Point, Rect, Sizeable};
-use super::Style as Style;
-use ::{widget, Scalar};
-use widget::render::Render;
+use ::{Scalar, widget};
+use ::{Range, text};
+use color::{LIGHT_BLUE, PURPLE, rgb, YELLOW};
+use draw::shape::triangle::Triangle;
+use event::event::{Event, NoEvents};
+use event_handler::{KeyboardEvent, MouseEvent, WidgetEvent};
+use flags::Flags;
 use graph::Container;
-use widget::Id;
-use color::{rgb, YELLOW, PURPLE, LIGHT_BLUE};
+use input::Key;
+use layout::basic_layouter::BasicLayouter;
+use layout::Layout;
+use layout::layouter::Layouter;
+use position::Dimensions;
+use render::owned_primitive::OwnedPrimitive;
+use render::owned_primitive_kind::OwnedPrimitiveKind;
 use render::primitive::Primitive;
 use render::primitive_kind::PrimitiveKind;
 use render::util::new_primitive;
-use widget::common_widget::CommonWidget;
-use uuid::Uuid;
-use widget::primitive::Widget;
-use position::Dimensions;
-use daggy::petgraph::graph::node_index;
-use ::{Range, text};
-use render::owned_primitive::OwnedPrimitive;
-use render::owned_primitive_kind::OwnedPrimitiveKind;
-
-use std::convert::TryFrom;
-use std::error::Error;
-use std::collections::HashMap;
-use std::any::Any;
-
-use text::font::Map;
-use layout::basic_layouter::BasicLayouter;
-use event::event::Event;
-use event_handler::{WidgetEvent, MouseEvent, KeyboardEvent};
-use widget::primitive::widget::WidgetExt;
-use input::Key;
-use state::state::{LocalStateList};
-use flags::Flags;
-use widget::widget_iterator::{WidgetIter, WidgetIterMut};
-use std::slice::{Iter, IterMut};
-use draw::shape::triangle::Triangle;
-use layout::Layout;
-use layout::layouter::Layouter;
 use state::environment::Environment;
+use state::state::LocalStateList;
 use state::state_sync::NoLocalStateSync;
+use text::font::Map;
+use widget::common_widget::CommonWidget;
+use widget::Id;
+use widget::primitive::Widget;
+use widget::primitive::widget::WidgetExt;
+use widget::render::Render;
+use widget::widget_iterator::{WidgetIter, WidgetIterMut};
+
+use super::Style as Style;
 
 /// A basic, non-interactive rectangle shape widget.
 #[derive(Debug, Clone, WidgetCommon_)]
@@ -59,27 +60,7 @@ pub struct Rectangle<S> {
 
 impl<K: 'static + Clone> WidgetExt<K> for Rectangle<K> {}
 
-impl<K> Event<K> for Rectangle<K> {
-    fn handle_mouse_event(&mut self, event: &MouseEvent, consumed: &bool, global_state: &mut K) {
-        ()
-    }
-
-    fn handle_keyboard_event(&mut self, event: &KeyboardEvent, global_state: &mut K) {
-        ()
-    }
-
-    fn handle_other_event(&mut self, event: &WidgetEvent) {
-        unimplemented!()
-    }
-
-    fn process_mouse_event(&mut self, event: &MouseEvent, consumed: &bool, state: LocalStateList, global_state: &mut K) -> LocalStateList {
-        self.process_mouse_event_default(event, consumed, state, global_state)
-    }
-
-    fn process_keyboard_event(&mut self, event: &KeyboardEvent, state: LocalStateList, global_state: &mut K) -> LocalStateList {
-        self.process_keyboard_event_default(event, state, global_state)
-    }
-}
+impl<K> NoEvents for Rectangle<K> {}
 
 impl<S> NoLocalStateSync for Rectangle<S> {}
 

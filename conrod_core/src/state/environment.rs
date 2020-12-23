@@ -39,17 +39,19 @@ impl Environment {
         self.local_state.clear()
     }
 
-    pub fn update_local_state<'a, T: Serialize + Clone + Debug + Deserialize<'a>, U: Clone>(&self, local_state: &mut super::state::State<T, U>) {
+    pub fn update_local_state<'a, T: Serialize + Clone + Debug + Deserialize<'a>, U: Clone>(&'a self, local_state: &mut super::state::State<T, U>) {
         if let super::state::State::LocalState { id, value } = local_state {
-            *local_state = from_ron(self.local_state.get(id).unwrap().as_str()).unwrap();
-        } else {
-            println!("Tried to update non local state")
+            let local_value: &String = match self.local_state.get(id) {
+                Some(n) => n,
+                None => return,
+            };
+            *value = from_ron::<'a, T>(&local_value).unwrap();
         }
     }
 
-    pub fn insert_local_state(&mut self, local_state: &State) {
+    pub fn insert_local_state<T: Serialize + Clone + Debug, U: Clone>(&mut self, local_state: &super::state::State<T, U>) {
         if let super::state::State::LocalState { id, value } = local_state {
-            self.local_state.insert(id.clone(), to_ron(value).unwrap())
+            self.local_state.insert(id.clone(), to_ron(value).unwrap());
         }
     }
 

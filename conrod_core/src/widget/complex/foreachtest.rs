@@ -6,7 +6,7 @@ use uuid::Uuid;
 
 use ::{Point, Rect};
 use ::{Scalar, text};
-use event::event::Event;
+use event::event::{Event, NoEvents};
 use event_handler::{KeyboardEvent, MouseEvent, WidgetEvent};
 use flags::Flags;
 use graph::Container;
@@ -45,11 +45,11 @@ impl<S: 'static + Clone + Debug> ForeachTest<S> {
         Box::new(Self {
             id: Uuid::new_v4(),
             child: Rectangle::initialize(vec![
-                Text::initialize(State::new("sindex", &"0".to_string()), vec![])
+                Text::initialize(State::new_local("sindex", &"0".to_string()), vec![])
             ]).frame(60.0,30.0),
             position: [100.0,100.0],
             dimension: [100.0,100.0],
-            index: State::new("index", &(0 as u32))
+            index: State::new_local("index", &(0 as u32))
         })
     }
 }
@@ -100,23 +100,11 @@ impl<S: Clone + Debug> CommonWidget<S> for ForeachTest<S> {
     }
 }
 
-impl<S: Clone + Debug> Event<S> for ForeachTest<S> {
-    fn handle_mouse_event(&mut self, event: &MouseEvent, consumed: &bool, global_state: &mut S) {
-        ()
-    }
-
-    fn handle_keyboard_event(&mut self, event: &KeyboardEvent, global_state: &mut S) {
-        ()
-    }
-
-    fn handle_other_event(&mut self, event: &WidgetEvent) {
-        ()
-    }
-}
+impl<S: Clone + Debug> NoEvents for ForeachTest<S> {}
 
 impl<S: Clone + Debug> StateSync<S> for ForeachTest<S> {
     fn insert_local_state(&self, env: &mut Environment) {
-        env.insert_local_state(&State::<String, S>::new("sindex", &self.index.get_latest_value().to_string()))
+        env.insert_local_state(&State::<String, S>::new_local("sindex", &self.index.get_latest_value().to_string()))
     }
 
     fn update_all_widget_state(&mut self, env: &Environment, global_state: &S) {

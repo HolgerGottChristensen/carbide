@@ -1,18 +1,20 @@
-use std::ops::{Deref, DerefMut};
 use std::borrow::BorrowMut;
-use std::sync::{Arc, RwLock};
-use std::fmt::Debug;
 use std::convert::TryInto;
-use widget::common_widget::CommonWidget;
-use uuid::Uuid;
-use serde::{Serialize, Deserialize, Serializer};
-use ::{from_ron, to_ron};
+use std::fmt::Debug;
+use std::ops::{Deref, DerefMut};
+use std::sync::{Arc, RwLock};
+
 use bitflags::_core::fmt::Formatter;
+use serde::{Deserialize, Serialize, Serializer};
+use uuid::Uuid;
+
+use ::{from_ron, to_ron};
+use widget::common_widget::CommonWidget;
 
 #[derive(Clone)]
 pub enum State<T, U> where T: Serialize + Clone + Debug, U: Clone {
-    LocalState {id: String, value: T},
-    Value {value: T},
+    LocalState { id: String, value: T },
+    Value { value: T },
     GlobalState {
         function: fn(state: &U) -> T,
         function_mut: Option<fn(state: &mut U) -> T>,
@@ -113,10 +115,16 @@ impl<T: Clone + Debug + Serialize> DerefMut for State<T> {
 }*/
 
 impl<T: Clone + Debug + Serialize, S: Clone> State<T, S> {
-    pub fn new(name: &str, val: &T) -> Self {
-        State::LocalState {
-            id: name.to_string(),
+    pub fn new(val: &T) -> Self {
+        State::Value {
             value: val.clone()
+        }
+    }
+
+    pub fn new_local(key: &str, val: &T) -> Self {
+        State::LocalState {
+            id: key.to_string(),
+            value: val.clone(),
         }
     }
 }
@@ -166,31 +174,31 @@ impl GetState for LocalStateList {
 
 impl<T: Clone> Into<State<Uuid, T>> for Uuid {
     fn into(self) -> State<Uuid, T> {
-        State::new(&Uuid::new_v4().to_string(), &self)
+        State::new(&self)
     }
 }
 
 impl<T: Clone> Into<State<Vec<Uuid>, T>> for Vec<Uuid> {
     fn into(self) -> State<Vec<Uuid>, T> {
-        State::new(&Uuid::new_v4().to_string(), &self)
+        State::new(&self)
     }
 }
 
 impl<T: Clone> Into<State<u32,T>> for u32 {
     fn into(self) -> State<u32,T> {
-        State::new(&Uuid::new_v4().to_string(), &self)
+        State::new(&self)
     }
 }
 
 impl<T: Clone> Into<State<String, T>> for String {
     fn into(self) -> State<String, T> {
-        State::new(&Uuid::new_v4().to_string(), &self)
+        State::new(&self)
     }
 }
 
 impl<T: Clone> Into<State<String, T>> for &str {
     fn into(self) -> State<String, T> {
-        State::new(&Uuid::new_v4().to_string(), &self.to_string())
+        State::new(&self.to_string())
     }
 }
 

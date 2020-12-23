@@ -424,7 +424,7 @@ impl<S: 'static + Clone> Ui<S> {
         }
 
         if needs_redraw {
-            //self.needs_redraw()
+            self.needs_redraw()
         }
     }
 

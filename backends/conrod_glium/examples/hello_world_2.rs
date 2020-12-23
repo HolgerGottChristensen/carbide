@@ -20,13 +20,16 @@ use conrod_core::event::event::Event;
 use conrod_core::event_handler::{KeyboardEvent, MouseEvent, WidgetEvent};
 use conrod_core::flags::Flags;
 use conrod_core::layout::basic_layouter::BasicLayouter;
+use conrod_core::layout::Layout;
+use conrod_core::layout::layouter::Layouter;
 use conrod_core::position::Dimensions;
-use conrod_core::state::state::{State, LocalStateList};
+use conrod_core::state::environment::Environment;
+use conrod_core::state::state::{LocalStateList, State};
+use conrod_core::state::state_sync::NoLocalStateSync;
 use conrod_core::text::font::Map;
 use conrod_core::widget::{Frame, Image, Line, Oval, Rectangle, SCALE, Text, ZStack};
 use conrod_core::widget::common_widget::CommonWidget;
 use conrod_core::widget::complex::button::SyncTest;
-use conrod_core::layout::Layout;
 use conrod_core::widget::oval::Full;
 use conrod_core::widget::primitive::edge_insets::EdgeInsets;
 use conrod_core::widget::primitive::h_stack::HStack;
@@ -37,7 +40,6 @@ use conrod_core::widget::primitive::widget::WidgetExt;
 use conrod_core::widget::render::ChildRender;
 use conrod_core::widget::widget_iterator::{WidgetIter, WidgetIterMut};
 use conrod_glium::Window;
-use conrod_core::layout::layouter::Layouter;
 
 mod support;
 
@@ -54,7 +56,7 @@ fn main() {
 
     // Rectangle::new(params!(alignment: Alignment::Leading))
 
-    let sync_state = State::new("K", &"Hello".to_string());
+    let sync_state = State::new_local("K", &"Hello".to_string());
 
     window.set_widgets(
         VStack::initialize(vec![
@@ -79,7 +81,7 @@ fn main() {
     window.draw()
 }
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 struct GState {
     pub s: String,
 }
@@ -158,7 +160,7 @@ impl CommonWidget<GState> for CustomWidget {
 }
 
 impl Event<GState> for CustomWidget {
-    fn handle_mouse_event(&mut self, event: &MouseEvent, consumed: &bool, global_state: &mut S) {
+    fn handle_mouse_event(&mut self, event: &MouseEvent, consumed: &bool, global_state: &mut GState) {
         ()
     }
 
@@ -175,36 +177,18 @@ impl Event<GState> for CustomWidget {
     fn handle_other_event(&mut self, event: &WidgetEvent) {
         unimplemented!()
     }
-
-    fn process_mouse_event(&mut self, event: &MouseEvent, consumed: &bool, state: LocalStateList, global_state: &mut S) -> LocalStateList {
-        self.process_mouse_event_default(event, consumed, state, global_state)
-    }
-
-    fn process_keyboard_event(&mut self, event: &KeyboardEvent, state: LocalStateList, global_state: &mut GState) -> LocalStateList {
-        self.process_keyboard_event_default(event, state, global_state)
-    }
-
-    fn get_state(&self, current_state: LocalStateList) -> LocalStateList {
-        current_state
-    }
-
-    fn apply_state(&mut self, states: LocalStateList) -> LocalStateList {
-        states
-    }
-
-    fn sync_state(&mut self, states: LocalStateList) {
-        self.sync_state_default(states)
-    }
 }
+
+impl NoLocalStateSync for CustomWidget {}
 
 impl ChildRender for CustomWidget {}
 
-impl Layout for CustomWidget {
+impl Layout<GState> for CustomWidget {
     fn flexibility(&self) -> u32 {
         2
     }
 
-    fn calculate_size(&mut self, requested_size: Dimensions, fonts: &Map) -> Dimensions {
+    fn calculate_size(&mut self, requested_size: Dimensions, fonts: &Environment) -> Dimensions {
         self.dimension = self.child.calculate_size(requested_size, fonts);
         self.dimension
     }

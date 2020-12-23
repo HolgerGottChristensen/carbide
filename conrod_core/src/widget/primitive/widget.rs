@@ -128,7 +128,7 @@ impl<S> StateSync<S> for Box<Widget<S>> {
     }
 
     fn update_local_widget_state(&mut self, env: &Environment) {
-        self.deref_mut().update_all_widget_state(env)
+        self.deref_mut().update_local_widget_state(env)
     }
 }
 

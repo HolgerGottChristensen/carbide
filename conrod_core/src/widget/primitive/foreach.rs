@@ -220,6 +220,23 @@ impl<S: Clone + Debug> StateSync<S> for ForEach<S> {
     fn update_local_widget_state(&mut self, env: &Environment) {
         env.update_local_state(&mut self.ids)
     }
+
+    fn sync_state(&mut self, env: &mut Environment, global_state: &S) {
+        self.update_all_widget_state(env, global_state);
+
+        self.insert_local_state(env);
+
+        let mut ids = self.ids.clone();
+
+        for (i, child) in self.get_children_mut().enumerate() {
+            println!("Local");
+            env.insert_local_state(&State::<Uuid, S>::new_local("id", &ids.get_value(global_state)[i]));
+            env.insert_local_state(&State::<u32, S>::new_local("index", &(i as u32)));
+            child.sync_state(env, global_state)
+        }
+
+        self.update_local_widget_state(env);
+    }
 }
 
 impl<S: Clone + Debug> ChildRender for ForEach<S> {}

@@ -1,40 +1,40 @@
 //! A simple, non-interactive widget for drawing a single **Oval**.
 
+use std;
+use std::slice::{Iter, IterMut};
+
+use daggy::petgraph::graph::node_index;
+use uuid::Uuid;
+
 use {Color, Colorable, Point, Rect, Scalar, Sizeable, Theme};
 use ::{graph, text};
-use std;
-use super::Style as Style;
-use widget;
-use widget::render::Render;
+use draw::shape::circumference::{Circumference, Triangles};
+use draw::shape::triangle::Triangle;
+use event::event::{Event, NoEvents};
+use event_handler::{KeyboardEvent, MouseEvent, WidgetEvent};
+use flags::Flags;
 use graph::Container;
-use widget::{Id, Rectangle};
+use layout::basic_layouter::BasicLayouter;
+use layout::Layout;
+use layout::layouter::Layouter;
+use position::Dimensions;
+use render::owned_primitive::OwnedPrimitive;
 use render::primitive::Primitive;
 use render::primitive_kind::PrimitiveKind;
 use render::util::new_primitive;
-use position::Dimensions;
-use render::owned_primitive::OwnedPrimitive;
-use daggy::petgraph::graph::node_index;
-use widget::common_widget::CommonWidget;
-use uuid::Uuid;
-use widget::primitive::Widget;
-
-use text::font::Map;
-
-use layout::basic_layouter::BasicLayouter;
-use event::event::Event;
-use event_handler::{WidgetEvent, MouseEvent, KeyboardEvent};
-use widget::primitive::widget::WidgetExt;
-use state::state::{LocalStateList};
-use flags::Flags;
-use widget::widget_iterator::{WidgetIter, WidgetIterMut};
-use std::slice::{Iter, IterMut};
-use draw::shape::triangle::Triangle;
-use draw::shape::circumference::{Circumference, Triangles};
-use layout::Layout;
-use layout::layouter::Layouter;
 use state::environment::Environment;
+use state::state::LocalStateList;
 use state::state_sync::NoLocalStateSync;
+use text::font::Map;
+use widget;
+use widget::{Id, Rectangle};
+use widget::common_widget::CommonWidget;
+use widget::primitive::Widget;
+use widget::primitive::widget::WidgetExt;
+use widget::render::Render;
+use widget::widget_iterator::{WidgetIter, WidgetIterMut};
 
+use super::Style as Style;
 
 /// A simple, non-interactive widget for drawing a single **Oval**.
 #[derive(Debug, Clone, WidgetCommon_)]
@@ -56,27 +56,7 @@ pub struct Oval<S, K> {
     pub children: Vec<Box<dyn Widget<K>>>
 }
 
-impl<K, S: 'static + Clone> Event<K> for Oval<S, K> {
-    fn handle_mouse_event(&mut self, event: &MouseEvent, consumed: &bool, global_state: &mut K) {
-        ()
-    }
-
-    fn handle_keyboard_event(&mut self, event: &KeyboardEvent, global_state: &mut K) {
-        ()
-    }
-
-    fn handle_other_event(&mut self, event: &WidgetEvent) {
-        unimplemented!()
-    }
-
-    fn process_mouse_event(&mut self, event: &MouseEvent, consumed: &bool, state: LocalStateList, global_state: &mut K) -> LocalStateList {
-        self.process_mouse_event_default(event, consumed, state, global_state)
-    }
-
-    fn process_keyboard_event(&mut self, event: &KeyboardEvent, state: LocalStateList, global_state: &mut K) -> LocalStateList {
-        self.process_keyboard_event_default(event, state, global_state)
-    }
-}
+impl<K, S: 'static + Clone> NoEvents for Oval<S, K> {}
 
 impl<S, K> NoLocalStateSync for Oval<S, K> {}
 

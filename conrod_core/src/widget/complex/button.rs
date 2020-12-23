@@ -43,7 +43,7 @@ pub struct SyncTest<S: Clone + Debug> {
 
 impl<S: 'static + Clone + Debug> SyncTest<S> {
     pub fn new(value: State<String, S>) -> Box<SyncTest<S>> {
-        let fore = State::<Vec<Uuid>, S>::new("a", &(0..5).map(|_| Uuid::new_v4()).collect::<Vec<Uuid>>());
+        let fore = State::<Vec<Uuid>, S>::new_local("a", &(0..5).map(|_| Uuid::new_v4()).collect::<Vec<Uuid>>());
 
         Box::new(Self {
             id: Uuid::new_v4(),

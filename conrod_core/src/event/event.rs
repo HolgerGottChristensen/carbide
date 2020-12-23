@@ -48,9 +48,7 @@ pub trait Event<S>: CommonWidget<S> + StateSync<S> {
         self.insert_local_state(env);
 
         for child in self.get_proxied_children() {
-            if child.is_inside(event.get_current_mouse_position()) {
-                child.process_keyboard_event(event, env, global_state);
-            }
+            child.process_keyboard_event(event, env, global_state);
         }
 
         self.update_local_widget_state(env)
