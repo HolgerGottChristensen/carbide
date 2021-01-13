@@ -21,6 +21,8 @@ pub mod padding;
 pub mod spacer;
 pub mod edge_insets;
 pub mod foreach;
+pub mod overlay;
+pub mod overlaid_layer;
 
 /// Find the bounding rect for the given series of points.
 pub fn bounding_box_for_points<I>(mut points: I) -> Rect

@@ -24,6 +24,7 @@ use crate::widget::primitive::Widget;
 use crate::widget::primitive::widget::WidgetExt;
 use crate::widget::render::ChildRender;
 use crate::widget::widget_iterator::{WidgetIter, WidgetIterMut};
+use crate::color::RED;
 
 #[derive(Debug, Clone)]
 pub struct SyncTest<S: Clone + Debug> {
@@ -33,6 +34,7 @@ pub struct SyncTest<S: Clone + Debug> {
     dimension: Dimensions,
     value: State<String, S>,
     fore: State<Vec<Uuid>, S>,
+    show_overlay: bool,
 }
 
 impl<S: 'static + Clone + Debug> SyncTest<S> {
@@ -55,7 +57,8 @@ impl<S: 'static + Clone + Debug> SyncTest<S> {
             position: [100.0,100.0],
             dimension: [100.0,100.0],
             value,
-            fore
+            fore,
+            show_overlay: false
         })
     }
 }
@@ -106,7 +109,7 @@ impl<S: Clone + Debug> CommonWidget<S> for SyncTest<S> {
     }
 }
 
-impl<S: Clone + Debug> Event<S> for SyncTest<S> {
+impl<S: Clone + Debug + 'static> Event<S> for SyncTest<S> {
     fn handle_mouse_event(&mut self, _event: &MouseEvent, _consumed: &bool, _global_state: &mut S) {
         ()
     }
@@ -118,6 +121,10 @@ impl<S: Clone + Debug> Event<S> for SyncTest<S> {
             }
             KeyboardEvent::Press(key, _modifier) => {
                 match key {
+                    Key::NumPadMultiply => {
+                        self.show_overlay = !self.show_overlay;
+                        println!("herjalkd");
+                    }
                     Key::Backspace => {
                         self.value.get_value_mut(global_state).pop();
                     },
@@ -143,21 +150,26 @@ impl<S: Clone + Debug> Event<S> for SyncTest<S> {
     }
 }
 
-impl<S: Clone + Debug> StateSync<S> for SyncTest<S> {
-    fn insert_local_state(&self, env: &mut Environment) {
+impl<S: Clone + Debug + 'static> StateSync<S> for SyncTest<S> {
+    fn insert_local_state(&self, env: &mut Environment<S>) {
         env.insert_local_state(&self.value);
         env.insert_local_state(&self.fore);
+
+        if self.show_overlay {
+            env.add_overlay("overlay_test", Rectangle::new([10.0,10.0], [600.0,600.0], vec![]).fill(RED))
+        }
+
     }
 
-    fn update_all_widget_state(&mut self, env: &Environment, _global_state: &S) {
+    fn update_all_widget_state(&mut self, env: &Environment<S>, _global_state: &S) {
         self.update_local_widget_state(env);
     }
 
-    fn update_local_widget_state(&mut self, env: &Environment) {
+    fn update_local_widget_state(&mut self, env: &Environment<S>) {
         env.update_local_state(&mut self.value);
     }
 
-    fn sync_state(&mut self, env: &mut Environment, global_state: &S) {
+    fn sync_state(&mut self, env: &mut Environment<S>, global_state: &S) {
         self.default_sync_state(env, global_state)
     }
 }
@@ -169,7 +181,7 @@ impl<S: Clone + Debug> Layout<S> for SyncTest<S> {
         2
     }
 
-    fn calculate_size(&mut self, requested_size: Dimensions, env: &Environment) -> Dimensions {
+    fn calculate_size(&mut self, requested_size: Dimensions, env: &Environment<S>) -> Dimensions {
 
         self.dimension = self.child.calculate_size(requested_size, env);
         self.dimension

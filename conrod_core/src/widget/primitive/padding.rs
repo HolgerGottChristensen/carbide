@@ -101,7 +101,7 @@ impl<S> Layout<S> for Padding<S> {
         9
     }
 
-    fn calculate_size(&mut self, dimension: Dimensions, env: &Environment) -> Dimensions {
+    fn calculate_size(&mut self, dimension: Dimensions, env: &Environment<S>) -> Dimensions {
         let dimensions = [dimension[0] - self.edge_insets.left - self.edge_insets.right, dimension[1] - self.edge_insets.top - self.edge_insets.bottom];
 
         let child_dimensions = self.child.calculate_size(dimensions, env);

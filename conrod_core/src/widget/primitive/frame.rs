@@ -118,7 +118,7 @@ impl<S> Layout<S> for Frame<S> {
         9
     }
 
-    fn calculate_size(&mut self, dimension: Dimensions, env: &Environment) -> Dimensions {
+    fn calculate_size(&mut self, dimension: Dimensions, env: &Environment<S>) -> Dimensions {
         let dimensions = self.dimension;
         let abs_dimensions = match (dimensions[0], dimensions[1]) {
             (x, y) if x < 0.0 && y < 0.0 => [dimension[0], dimension[1]],

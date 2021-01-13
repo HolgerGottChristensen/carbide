@@ -7,7 +7,7 @@ use crate::widget::common_widget::CommonWidget;
 pub trait Layout<U> {
     /// 0 is the most flexible and the largest number is the least flexible
     fn flexibility(&self) -> u32;
-    fn calculate_size(&mut self, requested_size: Dimensions, env: &Environment) -> Dimensions;
+    fn calculate_size(&mut self, requested_size: Dimensions, env: &Environment<U>) -> Dimensions;
     fn position_children(&mut self);
 }
 
@@ -20,7 +20,7 @@ impl<T, U> Layout<U> for T where T: SingleChildLayout + CommonWidget<U> {
         self.flexibility()
     }
 
-    fn calculate_size(&mut self, requested_size: [f64; 2], env: &Environment) -> [f64; 2] {
+    fn calculate_size(&mut self, requested_size: [f64; 2], env: &Environment<U>) -> [f64; 2] {
         let mut dimentions = [0.0, 0.0];
         if let Some(child) = self.get_children_mut().next() {
             dimentions = child.calculate_size(requested_size, env);

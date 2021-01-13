@@ -11,7 +11,7 @@ pub struct CPrimitives {
 }
 
 impl CPrimitives {
-    pub fn new<S>(window_dimensions: Dimensions, root: &mut Box<dyn Widget<S>>, environment: &mut Environment) -> Self {
+    pub fn new<S>(window_dimensions: Dimensions, root: &mut Box<dyn Widget<S>>, environment: &mut Environment<S>) -> Self {
         root.calculate_size(window_dimensions, environment);
 
         root.set_x(window_dimensions[0] / 2.0 - root.get_width() / 2.0);

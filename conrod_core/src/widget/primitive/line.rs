@@ -55,7 +55,7 @@ impl<S> Layout<S> for Line<S> {
         0
     }
 
-    fn calculate_size(&mut self, _requested_size: [f64; 2], _env: &Environment) -> [f64; 2] {
+    fn calculate_size(&mut self, _requested_size: [f64; 2], _env: &Environment<S>) -> [f64; 2] {
         unimplemented!()
     }
 

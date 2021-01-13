@@ -91,19 +91,19 @@ impl<S: Clone + Debug> CommonWidget<S> for ForeachTest<S> {
 impl<S: Clone + Debug> NoEvents for ForeachTest<S> {}
 
 impl<S: Clone + Debug> StateSync<S> for ForeachTest<S> {
-    fn insert_local_state(&self, env: &mut Environment) {
+    fn insert_local_state(&self, env: &mut Environment<S>) {
         env.insert_local_state(&State::<String, S>::new_local("sindex", &self.index.get_latest_value().to_string()))
     }
 
-    fn update_all_widget_state(&mut self, env: &Environment, _global_state: &S) {
+    fn update_all_widget_state(&mut self, env: &Environment<S>, _global_state: &S) {
         self.update_local_widget_state(env)
     }
 
-    fn update_local_widget_state(&mut self, env: &Environment) {
+    fn update_local_widget_state(&mut self, env: &Environment<S>) {
         env.update_local_state(&mut self.index);
     }
 
-    fn sync_state(&mut self, env: &mut Environment, global_state: &S) {
+    fn sync_state(&mut self, env: &mut Environment<S>, global_state: &S) {
         self.default_sync_state(env, global_state)
     }
 }
@@ -115,7 +115,7 @@ impl<S: Clone + Debug> Layout<S> for ForeachTest<S> {
         0
     }
 
-    fn calculate_size(&mut self, requested_size: Dimensions, env: &Environment) -> Dimensions {
+    fn calculate_size(&mut self, requested_size: Dimensions, env: &Environment<S>) -> Dimensions {
         self.dimension = self.child.calculate_size(requested_size, env);
         self.dimension
     }

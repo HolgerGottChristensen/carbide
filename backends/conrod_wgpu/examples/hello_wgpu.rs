@@ -9,6 +9,7 @@ use conrod_core::color::{GREEN, LIGHT_BLUE, RED};
 use conrod_core::widget::primitive::widget::WidgetExt;
 use conrod_core::widget::primitive::spacer::{Spacer, SpacerDirection};
 use conrod_core::widget::primitive::edge_insets::EdgeInsets;
+use conrod_core::widget::primitive::overlaid_layer::OverlaidLayer;
 
 fn main() {
     env_logger::init();
@@ -20,6 +21,7 @@ fn main() {
     let sync_state = State::new_local("K", &"Hello".to_string());
 
     window.set_widgets(
+        OverlaidLayer::new (
         VStack::initialize(vec![
             Text::initialize("Hello".into(), vec![]),
             Text::initialize("world! \nHvad sker der i denne verden og vil den layoute rigtigt når der er en lang tekst".into(), vec![]),
@@ -29,12 +31,9 @@ fn main() {
             ]).fill(GREEN),
             HStack::initialize(vec![
                 Image::new(rust_image, [100.0, 100.0], vec![]),
-                //ZStack::initialize(vec![
                 Rectangle::initialize(vec![])
                     .fill(LIGHT_BLUE)
                     .frame(SCALE, 120.0),
-                //Image::new(rust_image, [100.0,100.0], vec![])
-                // ])
             ]),
             HStack::initialize(vec![
                 Spacer::new(SpacerDirection::Horizontal),
@@ -45,7 +44,9 @@ fn main() {
                 Spacer::new(SpacerDirection::Horizontal),
                 Spacer::new(SpacerDirection::Horizontal)
             ]),
-        ])
+        ]),
+        "overlay_test"
+        ),
     );
 
     window.run_event_loop();

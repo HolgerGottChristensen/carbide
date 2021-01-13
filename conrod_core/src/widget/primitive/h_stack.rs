@@ -55,7 +55,7 @@ impl<S> Layout<S> for HStack<S> {
         1
     }
 
-    fn calculate_size(&mut self, requested_size: Dimensions, env: &Environment) -> Dimensions {
+    fn calculate_size(&mut self, requested_size: Dimensions, env: &Environment<S>) -> Dimensions {
 
 
         // The number of children not containing any spacers

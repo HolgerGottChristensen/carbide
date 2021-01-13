@@ -51,7 +51,7 @@ impl<S> Layout<S> for Image<S> {
         10
     }
 
-    fn calculate_size(&mut self, _: Dimensions, env: &Environment) -> Dimensions {
+    fn calculate_size(&mut self, _: Dimensions, env: &Environment<S>) -> Dimensions {
         let dim = self.dimension;
 
         for child in self.get_children_mut() {

@@ -7,33 +7,46 @@ use serde::{Deserialize, Serialize};
 use crate::{Color, from_ron};
 use crate::{text, to_ron};
 use crate::text::font::{Error, Id};
+use crate::widget::primitive::Widget;
 
-pub struct Environment {
+pub struct Environment<S> {
     stack: Vec<EnvironmentVariable>,
     fonts: text::font::Map,
+    overlay_map: HashMap<String, Box<dyn Widget<S>>>,
     pub(crate) local_state: HashMap<String, String>,
 }
 
-impl std::fmt::Debug for Environment {
+impl<S> std::fmt::Debug for Environment<S> {
     fn fmt(&self, _f: &mut Formatter<'_>) -> std::fmt::Result {
         Ok(())
     }
 }
 
-impl Environment {
+impl<S> Environment<S> {
 
     pub fn new() -> Self {
         Environment {
             stack: vec![],
             fonts: text::font::Map::new(),
+            overlay_map: HashMap::new(),
             local_state: HashMap::new()
         }
     }
 
-    pub fn clear_local_state(&mut self) {
-        if self.local_state.len() > 0 {
-            println!("Some local state was left on the stack. This might result in unexpected behavior: {:?}", self.local_state);
-        }
+    pub fn get_overlay(&mut self, id: &String) -> Option<Box<dyn Widget<S>>> {
+        self.overlay_map.remove(id)
+    }
+
+    pub fn add_overlay(&mut self, id: &str, overlay: Box<dyn Widget<S>>) {
+        self.overlay_map.insert(id.to_string(), overlay);
+    }
+
+    pub fn clear(&mut self) {
+        self.clear_local_state();
+        self.overlay_map.clear();
+    }
+
+    fn clear_local_state(&mut self) {
         self.local_state.clear()
     }
 

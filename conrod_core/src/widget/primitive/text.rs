@@ -57,19 +57,19 @@ pub struct Text<S: Clone + std::fmt::Debug> {
 impl<S: Clone + std::fmt::Debug> NoEvents for Text<S> {}
 
 impl<S: Clone + std::fmt::Debug> StateSync<S> for Text<S> {
-    fn insert_local_state(&self, env: &mut Environment) {
+    fn insert_local_state(&self, env: &mut Environment<S>) {
         env.insert_local_state(&self.text);
     }
 
-    fn update_all_widget_state(&mut self, env: &Environment, _global_state: &S) {
+    fn update_all_widget_state(&mut self, env: &Environment<S>, _global_state: &S) {
         self.update_local_widget_state(env)
     }
 
-    fn update_local_widget_state(&mut self, env: &Environment) {
+    fn update_local_widget_state(&mut self, env: &Environment<S>) {
         env.update_local_state(&mut self.text)
     }
 
-    fn sync_state(&mut self, env: &mut Environment, global_state: &S) {
+    fn sync_state(&mut self, env: &mut Environment<S>, global_state: &S) {
         self.default_sync_state(env, global_state)
     }
 }
@@ -79,7 +79,7 @@ impl<S: Clone + std::fmt::Debug> Layout<S> for Text<S> {
         2
     }
 
-    fn calculate_size(&mut self, proposed_size: Dimensions, env: &Environment) -> Dimensions {
+    fn calculate_size(&mut self, proposed_size: Dimensions, env: &Environment<S>) -> Dimensions {
         let pref_width = self.default_x(env.get_fonts_map());
 
         if pref_width > proposed_size[0] {

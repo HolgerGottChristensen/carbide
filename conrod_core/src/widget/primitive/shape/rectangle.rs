@@ -48,18 +48,18 @@ pub struct Rectangle<S> {
     color: Color
 }
 
-impl<K: 'static + Clone> WidgetExt<K> for Rectangle<K> {}
+impl<S: 'static + Clone> WidgetExt<S> for Rectangle<S> {}
 
-impl<K> NoEvents for Rectangle<K> {}
+impl<S> NoEvents for Rectangle<S> {}
 
 impl<S> NoLocalStateSync for Rectangle<S> {}
 
-impl<K> Layout<K> for Rectangle<K> {
+impl<S> Layout<S> for Rectangle<S> {
     fn flexibility(&self) -> u32 {
         0
     }
 
-    fn calculate_size(&mut self, requested_size: Dimensions, env: &Environment) -> Dimensions {
+    fn calculate_size(&mut self, requested_size: Dimensions, env: &Environment<S>) -> Dimensions {
         for child in &mut self.children {
             child.calculate_size(requested_size, env);
         }

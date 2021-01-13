@@ -21,7 +21,7 @@ pub trait Event<S>: CommonWidget<S> + StateSync<S> {
     /// TODO: Separate touch events.
     fn handle_other_event(&mut self, event: &WidgetEvent);
 
-    fn process_mouse_event(&mut self, event: &MouseEvent, consumed: &bool, env: &mut Environment, global_state: &mut S) {
+    fn process_mouse_event(&mut self, event: &MouseEvent, consumed: &bool, env: &mut Environment<S>, global_state: &mut S) {
         self.update_all_widget_state(env, global_state);
 
         self.handle_mouse_event(event, consumed, global_state);
@@ -39,7 +39,7 @@ pub trait Event<S>: CommonWidget<S> + StateSync<S> {
         self.update_local_widget_state(env)
     }
 
-    fn process_keyboard_event(&mut self, event: &KeyboardEvent, env: &mut Environment, global_state: &mut S) {
+    fn process_keyboard_event(&mut self, event: &KeyboardEvent, env: &mut Environment<S>, global_state: &mut S) {
         self.update_all_widget_state(env, global_state);
 
         self.handle_keyboard_event(event, global_state);

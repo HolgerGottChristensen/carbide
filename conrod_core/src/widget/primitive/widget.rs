@@ -92,29 +92,29 @@ impl<S> Event<S> for Box<dyn Widget<S>> {
         self.deref_mut().handle_other_event(event)
     }
 
-    fn process_mouse_event(&mut self, event: &MouseEvent, consumed: &bool, env: &mut Environment, global_state: &mut S) {
+    fn process_mouse_event(&mut self, event: &MouseEvent, consumed: &bool, env: &mut Environment<S>, global_state: &mut S) {
         self.deref_mut().process_mouse_event(event, consumed, env, global_state)
     }
 
-    fn process_keyboard_event(&mut self, event: &KeyboardEvent, env: &mut Environment, global_state: &mut S) {
+    fn process_keyboard_event(&mut self, event: &KeyboardEvent, env: &mut Environment<S>, global_state: &mut S) {
         self.deref_mut().process_keyboard_event(event, env, global_state)
     }
 }
 
 impl<S> StateSync<S> for Box<dyn Widget<S>> {
-    fn insert_local_state(&self, env: &mut Environment) {
+    fn insert_local_state(&self, env: &mut Environment<S>) {
         self.deref().insert_local_state(env)
     }
 
-    fn update_all_widget_state(&mut self, env: &Environment, global_state: &S) {
+    fn update_all_widget_state(&mut self, env: &Environment<S>, global_state: &S) {
         self.deref_mut().update_all_widget_state(env, global_state)
     }
 
-    fn update_local_widget_state(&mut self, env: &Environment) {
+    fn update_local_widget_state(&mut self, env: &Environment<S>) {
         self.deref_mut().update_local_widget_state(env)
     }
 
-    fn sync_state(&mut self, env: &mut Environment, global_state: &S) {
+    fn sync_state(&mut self, env: &mut Environment<S>, global_state: &S) {
         self.deref_mut().sync_state(env, global_state)
     }
 }
@@ -124,7 +124,7 @@ impl<S> Layout<S> for Box<dyn Widget<S>> {
         self.deref().flexibility()
     }
 
-    fn calculate_size(&mut self, requested_size: [f64; 2], env: &Environment) -> [f64; 2] {
+    fn calculate_size(&mut self, requested_size: [f64; 2], env: &Environment<S>) -> [f64; 2] {
         self.deref_mut().calculate_size(requested_size, env)
     }
 

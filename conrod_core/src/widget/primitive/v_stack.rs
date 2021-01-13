@@ -62,7 +62,7 @@ impl<S> Layout<S> for VStack<S> {
         1
     }
 
-    fn calculate_size(&mut self, requested_size: Dimensions, env: &Environment) -> Dimensions {
+    fn calculate_size(&mut self, requested_size: Dimensions, env: &Environment<S>) -> Dimensions {
         let mut number_of_children_that_needs_sizing = self.children.len() as f64;
 
         let non_spacers_vec: Vec<bool> = self.get_children().map(|n| n.get_flag() != Flags::Spacer).collect();

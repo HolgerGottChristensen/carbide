@@ -62,7 +62,7 @@ impl<S, K> Layout<K> for Oval<S, K> {
         0
     }
 
-    fn calculate_size(&mut self, requested_size: Dimensions, env: &Environment) -> Dimensions {
+    fn calculate_size(&mut self, requested_size: Dimensions, env: &Environment<K>) -> Dimensions {
         for child in &mut self.children {
             child.calculate_size(requested_size, env);
         }

@@ -200,17 +200,17 @@ impl<S: Clone + Debug> CommonWidget<S> for ForEach<S> {
 impl<S: Clone + Debug> NoEvents for ForEach<S> {}
 
 impl<S: Clone + Debug> StateSync<S> for ForEach<S> {
-    fn insert_local_state(&self, _env: &mut Environment) {}
+    fn insert_local_state(&self, _env: &mut Environment<S>) {}
 
-    fn update_all_widget_state(&mut self, env: &Environment, _global_state: &S) {
+    fn update_all_widget_state(&mut self, env: &Environment<S>, _global_state: &S) {
         self.update_local_widget_state(env)
     }
 
-    fn update_local_widget_state(&mut self, env: &Environment) {
+    fn update_local_widget_state(&mut self, env: &Environment<S>) {
         env.update_local_state(&mut self.ids)
     }
 
-    fn sync_state(&mut self, env: &mut Environment, global_state: &S) {
+    fn sync_state(&mut self, env: &mut Environment<S>, global_state: &S) {
         self.update_all_widget_state(env, global_state);
 
         self.insert_local_state(env);
@@ -234,7 +234,7 @@ impl<S: Clone + Debug> Layout<S> for ForEach<S> {
         unimplemented!()
     }
 
-    fn calculate_size(&mut self, _requested_size: Dimensions, _env: &Environment) -> Dimensions {
+    fn calculate_size(&mut self, _requested_size: Dimensions, _env: &Environment<S>) -> Dimensions {
         unimplemented!()
     }
 

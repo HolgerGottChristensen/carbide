@@ -112,7 +112,7 @@ pub struct Ui<S> {
 
     pub widgets: Box<dyn Widget<S>>,
     event_handler: EventHandler,
-    pub environment: Environment
+    pub environment: Environment<S>
 }
 
 /// A wrapper around the `Ui` that restricts the user from mutating the `Ui` in certain ways while
@@ -432,6 +432,7 @@ impl<S: 'static + Clone> Ui<S> {
         }
 
         self.widgets.sync_state(&mut self.environment, global_state);
+        self.environment.clear();
         self.event_handler.clear_events();
 
         // Todo: Determine if an redraw is needed after events are processed
