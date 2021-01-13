@@ -39,6 +39,7 @@ pub mod common_widget;
 pub mod complex;
 pub mod widget_iterator;
 #[macro_use] pub mod old;
+pub mod types;
 
 /// Arguments for the [**Widget::update**](./trait.Widget#method.update) method in a struct to
 /// simplify the method signature.

@@ -425,8 +425,12 @@ impl<S: 'static + Clone> Ui<S> {
                 WidgetEvent::Keyboard(keyboard_event) => {
                     self.widgets.process_keyboard_event(keyboard_event, &mut self.environment, global_state);
                 }
-                WidgetEvent::Window(_window_event) => {}
-                WidgetEvent::Touch(_) => {}
+                WidgetEvent::Window(window_event) => {
+                    self.widgets.process_other_event(event, &mut self.environment, global_state);
+                }
+                WidgetEvent::Touch(_) => {
+                    self.widgets.process_other_event(event, &mut self.environment, global_state);
+                }
             }
 
         }

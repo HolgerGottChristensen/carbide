@@ -38,15 +38,11 @@ impl<S: 'static + Clone> WidgetExt<S> for OverlaidLayer<S> {}
 impl<S> NoEvents for OverlaidLayer<S> {}
 
 impl<S: Clone + 'static> StateSync<S> for OverlaidLayer<S> {
-    fn insert_local_state(&self, _env: &mut Environment<S>) {
+    fn insert_local_state(&self, _env: &mut Environment<S>) {}
 
-    }
+    fn update_all_widget_state(&mut self, _env: &Environment<S>, _global_state: &S) {}
 
-    fn update_all_widget_state(&mut self, _env: &Environment<S>, _global_state: &S) {
-    }
-
-    fn update_local_widget_state(&mut self, _env: &Environment<S>) {
-    }
+    fn update_local_widget_state(&mut self, _env: &Environment<S>) {}
 
     fn sync_state(&mut self, env: &mut Environment<S>, global_state: &S) {
         // This might not be the prettiest place to retrieve things from the env
@@ -137,7 +133,9 @@ impl<S> Render<S> for OverlaidLayer<S> {
     fn get_primitives(&self, fonts: &text::font::Map) -> Vec<Primitive> {
         let mut prims = vec![];
         prims.extend(Rectangle::<S>::rect_outline(Rect::new(self.position, self.dimension), 1.0));
-        let children: Vec<Primitive> = self.get_children().flat_map(|f| f.get_primitives(fonts)).collect();
+        let children: Vec<Primitive> = self.get_children()
+            .flat_map(|f| f.get_primitives(fonts))
+            .collect();
         prims.extend(children);
 
         if let Some(t) = &self.overlay {

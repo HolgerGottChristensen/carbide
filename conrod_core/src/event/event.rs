@@ -18,7 +18,7 @@ pub trait Event<S>: CommonWidget<S> + StateSync<S> {
     /// This will get called if there are event that are not covered by the other functions.
     /// This will get delegated to all widgets.
     /// It will never get called with mouse or keyboard events.
-    /// TODO: Separate touch events.
+    /// TODO: Separate touch events. And add global state
     fn handle_other_event(&mut self, event: &WidgetEvent);
 
     fn process_mouse_event(&mut self, event: &MouseEvent, consumed: &bool, env: &mut Environment<S>, global_state: &mut S) {
@@ -48,6 +48,20 @@ pub trait Event<S>: CommonWidget<S> + StateSync<S> {
 
         for child in self.get_proxied_children() {
             child.process_keyboard_event(event, env, global_state);
+        }
+
+        self.update_local_widget_state(env)
+    }
+
+    fn process_other_event(&mut self, event: &WidgetEvent, env: &mut Environment<S>, global_state: &mut S) {
+        self.update_all_widget_state(env, global_state);
+
+        self.handle_other_event(event);
+
+        self.insert_local_state(env);
+
+        for child in self.get_proxied_children() {
+            child.process_other_event(event, env, global_state);
         }
 
         self.update_local_widget_state(env)

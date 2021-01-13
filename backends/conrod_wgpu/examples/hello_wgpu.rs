@@ -10,6 +10,8 @@ use conrod_core::widget::primitive::widget::WidgetExt;
 use conrod_core::widget::primitive::spacer::{Spacer, SpacerDirection};
 use conrod_core::widget::primitive::edge_insets::EdgeInsets;
 use conrod_core::widget::primitive::overlaid_layer::OverlaidLayer;
+use conrod_core::widget::primitive::scroll::Scroll;
+use conrod_core::widget::types::scroll_direction::ScrollDirection;
 
 fn main() {
     env_logger::init();
@@ -31,9 +33,12 @@ fn main() {
             ]).fill(GREEN),
             HStack::initialize(vec![
                 Image::new(rust_image, [100.0, 100.0], vec![]),
-                Rectangle::initialize(vec![])
-                    .fill(LIGHT_BLUE)
-                    .frame(SCALE, 120.0),
+                Rectangle::initialize(vec![
+                    Scroll::new(
+                        Rectangle::initialize(vec![]).fill(RED).frame(500.0,300.0)
+                    ).set_scroll_direction(ScrollDirection::Both)
+                ]).fill(LIGHT_BLUE),
+                    //.frame(SCALE, 120.0),
             ]),
             HStack::initialize(vec![
                 Spacer::new(SpacerDirection::Horizontal),
