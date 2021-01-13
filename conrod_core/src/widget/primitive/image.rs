@@ -23,6 +23,7 @@ use crate::widget::primitive::Widget;
 use crate::widget::primitive::widget::WidgetExt;
 use crate::widget::render::Render;
 use crate::widget::widget_iterator::{WidgetIter, WidgetIterMut};
+use crate::widget::types::scale_mode::ScaleMode;
 
 /// A primitive and basic widget for drawing an `Image`.
 #[derive(Debug, Clone, WidgetCommon_)]
@@ -40,6 +41,10 @@ pub struct Image<S> {
     dimension: Dimensions,
 
     pub children: Vec<Box<dyn Widget<S>>>,
+
+    scale_mode: ScaleMode,
+    resizeable: bool,
+    requested_size: Dimensions
 }
 
 impl<S> NoEvents for Image<S> {}
@@ -51,17 +56,44 @@ impl<S> Layout<S> for Image<S> {
         10
     }
 
-    fn calculate_size(&mut self, _: Dimensions, env: &Environment<S>) -> Dimensions {
+    fn calculate_size(&mut self, requested_size: Dimensions, env: &Environment<S>) -> Dimensions {
         let dim = self.dimension;
+        self.requested_size = requested_size;
 
         for child in self.get_children_mut() {
             child.calculate_size(dim, env);
         }
 
+        let image_information = env.get_image_information(&self.image_id).unwrap();
+
+        if !self.resizeable {
+
+            self.dimension = [image_information.width as f64, image_information.height as f64];
+        } else {
+
+            let rs = requested_size[0] / requested_size[1];
+            let ri = (image_information.width as f64) / (image_information.height as f64);
+
+            match self.scale_mode {
+                ScaleMode::Fit => {
+                    if rs > ri {
+                        self.dimension = [(image_information.width as f64) * requested_size[1]/(image_information.height as f64), requested_size[1]]
+                    } else {
+                        self.dimension = [requested_size[0], (image_information.height as f64) * requested_size[0]/(image_information.width as f64)]
+                    }
+                }
+                ScaleMode::Fill => {
+
+                }
+            }
+        }
+
         self.dimension
+
     }
 
     fn position_children(&mut self) {
+
         let positioning = BasicLayouter::Center.position();
         let position = self.position;
         let dimension = self.dimension;
@@ -132,8 +164,6 @@ impl<S> CommonWidget<S> for Image<S> {
                 WidgetIterMut::Single(x, Box::new(acc))
             })
     }
-
-
 
     fn get_position(&self) -> Point {
         self.position
@@ -206,19 +236,25 @@ impl<S> Image<S> {
             style: Style::default(),
             position: [0.0, 0.0],
             dimension: [0.0, 0.0],
-            children: vec![]
+            children: vec![],
+            scale_mode: ScaleMode::Fit,
+            resizeable: false,
+            requested_size: [0.0, 0.0]
         }
     }
 
-    pub fn new(id: image::Id, dimension: Dimensions, children: Vec<Box<dyn Widget<S>>>) -> Box<Self> {
+    pub fn new(id: image::Id, children: Vec<Box<dyn Widget<S>>>) -> Box<Self> {
         Box::new(Image {
             common: Default::default(),
             image_id: id,
             src_rect: None,
             style: Default::default(),
-            position: [0.0,0.0],
-            dimension,
-            children
+            position: [0.0, 0.0],
+            dimension: [0.0, 0.0],
+            children,
+            scale_mode: ScaleMode::Fit,
+            resizeable: false,
+            requested_size: [0.0, 0.0]
         })
     }
 
@@ -228,6 +264,11 @@ impl<S> Image<S> {
     pub fn source_rectangle(mut self, rect: Rect) -> Self {
         self.src_rect = Some(rect);
         self
+    }
+
+    pub fn resizeable(mut self) -> Box<Self> {
+        self.resizeable = true;
+        Box::new(self)
     }
 
     /*builder_methods!{

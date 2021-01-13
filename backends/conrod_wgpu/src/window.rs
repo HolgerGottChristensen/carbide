@@ -55,7 +55,13 @@ impl<T: 'static + Clone> conrod_core::window::TWindow<T> for Window<T> {
             .unwrap();
         let image = Image::new(assets.join(path), &self.device, &self.queue);
 
-        Ok(self.image_map.insert(image))
+        let information = image.image_information();
+
+        let id = self.image_map.insert(image);
+
+        self.ui.environment.insert_image(id, information);
+
+        Ok(id)
     }
 
     fn set_widgets(&mut self, w: Box<dyn Widget<T>>) {

@@ -8,10 +8,12 @@ use crate::{Color, from_ron};
 use crate::{text, to_ron};
 use crate::text::font::{Error, Id};
 use crate::widget::primitive::Widget;
+use crate::widget::types::image_information::ImageInformation;
 
 pub struct Environment<S> {
     stack: Vec<EnvironmentVariable>,
     fonts: text::font::Map,
+    images_information: HashMap<crate::image::Id, ImageInformation>,
     overlay_map: HashMap<String, Box<dyn Widget<S>>>,
     pub(crate) local_state: HashMap<String, String>,
 }
@@ -28,9 +30,18 @@ impl<S> Environment<S> {
         Environment {
             stack: vec![],
             fonts: text::font::Map::new(),
+            images_information: HashMap::new(),
             overlay_map: HashMap::new(),
             local_state: HashMap::new()
         }
+    }
+
+    pub fn get_image_information(&self, id: &crate::image::Id) -> Option<&ImageInformation> {
+        self.images_information.get(id)
+    }
+
+    pub fn insert_image(&mut self, id: crate::image::Id, image: ImageInformation) {
+        self.images_information.insert(id, image);
     }
 
     pub fn get_overlay(&mut self, id: &String) -> Option<Box<dyn Widget<S>>> {

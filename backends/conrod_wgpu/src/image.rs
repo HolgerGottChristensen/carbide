@@ -3,6 +3,7 @@ use conrod_core::mesh;
 use wgpu::{Device, Queue};
 use crate::{texture, DEFAULT_IMAGE_TEX_FORMAT};
 use std::path::Path;
+use conrod_core::widget::types::image_information::ImageInformation;
 
 /// A loaded wgpu texture and it's width/height
 pub struct Image {
@@ -24,9 +25,17 @@ impl mesh::mesh::ImageDimensions for Image {
     }
 }
 
+
 impl Image {
     pub fn texture_component_type(&self) -> wgpu::TextureComponentType {
         self.texture_format.into()
+    }
+
+    pub fn image_information(&self) -> ImageInformation {
+        ImageInformation {
+            width: self.width,
+            height: self.height
+        }
     }
 
     pub fn new<P>(logo_path: P,  device: &Device, queue: &Queue) -> Self

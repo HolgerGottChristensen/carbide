@@ -27,15 +27,17 @@ fn main() {
         VStack::initialize(vec![
             Text::initialize("Hello".into(), vec![]),
             Text::initialize("world! \nHvad sker der i denne verden og vil den layoute rigtigt når der er en lang tekst".into(), vec![]),
-            Image::new(rust_image, [100.0,100.0], vec![]),
+            Image::new(rust_image,  vec![]),
             Rectangle::initialize(vec![
                 SyncTest::new(sync_state)
             ]).fill(GREEN),
             HStack::initialize(vec![
-                Image::new(rust_image, [100.0, 100.0], vec![]),
+                Image::new(rust_image,  vec![]),
                 Rectangle::initialize(vec![
                     Scroll::new(
-                        Rectangle::initialize(vec![]).fill(RED).frame(500.0,300.0)
+                        Image::new(rust_image,  vec![])
+                            .resizeable()
+                            .frame(800.0, 500.0)
                     ).set_scroll_direction(ScrollDirection::Both)
                 ]).fill(LIGHT_BLUE),
                     //.frame(SCALE, 120.0),
