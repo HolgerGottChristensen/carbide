@@ -11,7 +11,7 @@ use crate::text::font::{Error, Id};
 pub struct Environment {
     stack: Vec<EnvironmentVariable>,
     fonts: text::font::Map,
-    local_state: HashMap<String, String>,
+    pub(crate) local_state: HashMap<String, String>,
 }
 
 impl std::fmt::Debug for Environment {

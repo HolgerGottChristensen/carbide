@@ -217,8 +217,7 @@ impl<S: Clone + Debug> StateSync<S> for ForEach<S> {
 
         let mut ids = self.ids.clone();
 
-        for (i, child) in self.get_children_mut().enumerate() {
-            println!("Local");
+        for (i, child) in self.get_proxied_children().enumerate() {
             env.insert_local_state(&State::<Uuid, S>::new_local("id", &ids.get_value(global_state)[i]));
             env.insert_local_state(&State::<u32, S>::new_local("index", &(i as u32)));
             child.sync_state(env, global_state)

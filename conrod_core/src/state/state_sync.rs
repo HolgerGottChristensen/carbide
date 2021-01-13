@@ -25,12 +25,15 @@ pub trait StateSync<S>: CommonWidget<S> {
     /// - Update the widget state, both global and local
     /// - Insert its own local state into the environment
     /// - Iterate though its children and sync_state on each
-    fn sync_state(&mut self, env: &mut Environment, global_state: &S) {
+    /// You can in most cases use default_sync_state
+    fn sync_state(&mut self, env: &mut Environment, global_state: &S);
+
+    fn default_sync_state(&mut self, env: &mut Environment, global_state: &S) {
         self.update_all_widget_state(env, global_state);
 
         self.insert_local_state(env);
 
-        for child in self.get_children_mut() {
+        for child in self.get_proxied_children() {
             child.sync_state(env, global_state)
         }
 
@@ -46,4 +49,8 @@ impl<S, T> StateSync<S> for T where T: NoLocalStateSync + CommonWidget<S> {
     fn update_all_widget_state(&mut self, _: &Environment, _: &S) {}
 
     fn update_local_widget_state(&mut self, _env: &Environment) {}
+
+    fn sync_state(&mut self, env: &mut Environment, global_state: &S) {
+        self.default_sync_state(env, global_state);
+    }
 }

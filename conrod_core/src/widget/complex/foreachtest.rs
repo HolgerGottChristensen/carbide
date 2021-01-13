@@ -102,6 +102,10 @@ impl<S: Clone + Debug> StateSync<S> for ForeachTest<S> {
     fn update_local_widget_state(&mut self, env: &Environment) {
         env.update_local_state(&mut self.index);
     }
+
+    fn sync_state(&mut self, env: &mut Environment, global_state: &S) {
+        self.default_sync_state(env, global_state)
+    }
 }
 
 impl<S: Clone + Debug> ChildRender for ForeachTest<S> {}

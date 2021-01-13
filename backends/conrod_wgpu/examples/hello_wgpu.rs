@@ -17,7 +17,7 @@ fn main() {
     window.add_font("fonts/NotoSans/NotoSans-Regular.ttf").unwrap();
     let rust_image = window.add_image("images/rust_press.png").unwrap();
 
-    let sync_state = State::new("K", &"Hello".to_string());
+    let sync_state = State::new_local("K", &"Hello".to_string());
 
     window.set_widgets(
         VStack::initialize(vec![

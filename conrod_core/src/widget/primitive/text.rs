@@ -68,6 +68,10 @@ impl<S: Clone + std::fmt::Debug> StateSync<S> for Text<S> {
     fn update_local_widget_state(&mut self, env: &Environment) {
         env.update_local_state(&mut self.text)
     }
+
+    fn sync_state(&mut self, env: &mut Environment, global_state: &S) {
+        self.default_sync_state(env, global_state)
+    }
 }
 
 impl<S: Clone + std::fmt::Debug> Layout<S> for Text<S> {

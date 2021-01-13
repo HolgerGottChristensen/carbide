@@ -113,6 +113,10 @@ impl<S> StateSync<S> for Box<dyn Widget<S>> {
     fn update_local_widget_state(&mut self, env: &Environment) {
         self.deref_mut().update_local_widget_state(env)
     }
+
+    fn sync_state(&mut self, env: &mut Environment, global_state: &S) {
+        self.deref_mut().sync_state(env, global_state)
+    }
 }
 
 impl<S> Layout<S> for Box<dyn Widget<S>> {
