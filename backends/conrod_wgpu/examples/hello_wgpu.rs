@@ -12,6 +12,7 @@ use conrod_core::widget::primitive::edge_insets::EdgeInsets;
 use conrod_core::widget::primitive::overlaid_layer::OverlaidLayer;
 use conrod_core::widget::primitive::scroll::Scroll;
 use conrod_core::widget::types::scroll_direction::ScrollDirection;
+use conrod_core::widget::types::scale_mode::ScaleMode;
 
 fn main() {
     env_logger::init();
@@ -37,6 +38,7 @@ fn main() {
                     Scroll::new(
                         Image::new(rust_image,  vec![])
                             .resizeable()
+                            .aspect_ratio(ScaleMode::Fit)
                             .frame(800.0, 500.0)
                     ).set_scroll_direction(ScrollDirection::Both)
                 ]).fill(LIGHT_BLUE),

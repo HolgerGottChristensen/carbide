@@ -24,6 +24,7 @@ use crate::widget::primitive::widget::WidgetExt;
 use crate::widget::render::Render;
 use crate::widget::widget_iterator::{WidgetIter, WidgetIterMut};
 use crate::widget::types::scale_mode::ScaleMode;
+use crate::widget::types::image_information::ImageInformation;
 
 /// A primitive and basic widget for drawing an `Image`.
 #[derive(Debug, Clone, WidgetCommon_)]
@@ -70,20 +71,22 @@ impl<S> Layout<S> for Image<S> {
 
             self.dimension = [image_information.width as f64, image_information.height as f64];
         } else {
-
-            let rs = requested_size[0] / requested_size[1];
-            let ri = (image_information.width as f64) / (image_information.height as f64);
+            let width_factor = requested_size[0] / (image_information.width as f64) ;
+            let height_factor = requested_size[1] / (image_information.height as f64);
 
             match self.scale_mode {
                 ScaleMode::Fit => {
-                    if rs > ri {
-                        self.dimension = [(image_information.width as f64) * requested_size[1]/(image_information.height as f64), requested_size[1]]
-                    } else {
-                        self.dimension = [requested_size[0], (image_information.height as f64) * requested_size[0]/(image_information.width as f64)]
-                    }
+                    let scale_factor = width_factor.min(height_factor);
+
+                    self.dimension = [(image_information.width as f64) * scale_factor, (image_information.height as f64) * scale_factor]
                 }
                 ScaleMode::Fill => {
+                    let scale_factor = width_factor.max(height_factor);
 
+                    self.dimension = [(image_information.width as f64) * scale_factor, (image_information.height as f64) * scale_factor]
+                }
+                ScaleMode::Stretch => {
+                    self.dimension = requested_size
                 }
             }
         }
@@ -268,6 +271,11 @@ impl<S> Image<S> {
 
     pub fn resizeable(mut self) -> Box<Self> {
         self.resizeable = true;
+        Box::new(self)
+    }
+
+    pub fn aspect_ratio(mut self, mode: ScaleMode) -> Box<Self> {
+        self.scale_mode = mode;
         Box::new(self)
     }
 
