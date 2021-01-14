@@ -15,9 +15,10 @@ use winit::event::{WindowEvent, Event, KeyboardInput, ElementState, VirtualKeyCo
 use winit::event_loop::{ControlFlow, EventLoop};
 use conrod_core::widget::primitive::Widget;
 use conrod_core::text::font::Error;
-use winit::window::WindowBuilder;
+use winit::window::{WindowBuilder, Icon};
 use conrod_core::text::font;
 use winit::dpi::{Size, PhysicalSize};
+use std::path::PathBuf;
 
 pub struct Window<T: 'static + Clone> {
     surface: wgpu::Surface,
@@ -70,13 +71,41 @@ impl<T: 'static + Clone> conrod_core::window::TWindow<T> for Window<T> {
 }
 
 impl<T: 'static + Clone> Window<T> {
-    pub async fn new(title: String, width: u32, height: u32, state: T) -> Self {
+
+    pub fn path_to_assets(path: &str) -> PathBuf {
+        let assets = find_folder::Search::KidsThenParents(3, 5)
+            .for_folder("assets")
+            .unwrap();
+        assets.join(path)
+    }
+
+    pub async fn new(title: String, width: u32, height: u32, icon: Option<PathBuf>, state: T) -> Self {
 
         let event_loop = EventLoop::new();
+
+        let loaded_icon = if let Some(path) = icon {
+            let rgba_logo_image = image::open(path)
+                .expect("Couldn't load logo")
+                .to_rgba();
+
+            let width = rgba_logo_image.width();
+            let height = rgba_logo_image.height();
+
+            Some(Icon::from_rgba(rgba_logo_image.into_raw(), width, height).unwrap())
+        } else {
+            None
+        };
+
+
+
+
+
+
 
         let inner_window = WindowBuilder::new()
             .with_inner_size(Size::Physical(PhysicalSize{ width, height }))
             .with_title(title)
+            .with_window_icon(loaded_icon)
             .build(&event_loop)
             .unwrap();
 

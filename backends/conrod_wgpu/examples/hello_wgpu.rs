@@ -17,7 +17,10 @@ use conrod_core::widget::primitive::clip::Clip;
 
 fn main() {
     env_logger::init();
-    let mut window = block_on(Window::new("Hello world 2".to_string(), 800, 800, String::from("Hejsa")));
+
+    let icon_path = Window::<String>::path_to_assets("images/rust_press.png");
+
+    let mut window = block_on(Window::new("Hello world 2".to_string(), 800, 1200,Some(icon_path), String::from("Hejsa")));
 
     window.add_font("fonts/NotoSans/NotoSans-Regular.ttf").unwrap();
     let rust_image = window.add_image("images/rust_press.png").unwrap();
@@ -43,7 +46,7 @@ fn main() {
                             .frame(800.0, 500.0)
                     ).set_scroll_direction(ScrollDirection::Both)
                         .clip()
-                ]).fill(LIGHT_BLUE).frame(SCALE, 120.0),
+                ]).fill(LIGHT_BLUE).frame(SCALE, 200.0),
             ]),
             HStack::initialize(vec![
                 Spacer::new(SpacerDirection::Horizontal),
