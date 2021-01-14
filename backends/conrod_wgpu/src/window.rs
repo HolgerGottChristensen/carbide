@@ -355,7 +355,7 @@ impl<T: 'static + Clone> Window<T> {
                     } => {
                         let [x, y] = top_left;
                         let [w, h] = dimensions;
-                        //render_pass.set_scissor_rect(x, y, w, h);
+                        render_pass.set_scissor_rect(x, y, w, h);
                     }
                     RenderPassCommand::Draw { vertex_range } => {
                         render_pass.draw(vertex_range, instance_range.clone());

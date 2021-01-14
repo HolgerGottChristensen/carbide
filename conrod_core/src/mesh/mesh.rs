@@ -13,6 +13,7 @@ use crate::mesh::vertex::Vertex;
 use crate::Range;
 use crate::render::primitive_walker::PrimitiveWalker;
 use crate::text::{self, rt};
+use crate::position::Padding;
 
 /// Images within the given image map must know their dimensions in pixels.
 pub trait ImageDimensions {
@@ -178,19 +179,17 @@ impl Mesh {
         let vy = |y: Scalar| -1.0 * (y * dpi_factor / half_viewport_h - 1.0) as f32;
 
         let rect_to_scizzor = |rect: Rect| {
-            let (w, h) = rect.w_h();
-            let left = (rect.left() * dpi_factor + half_viewport_w).round() as i32;
-            let top = (rect.top() * dpi_factor - half_viewport_h).round().abs() as i32;
-            let width = (w * dpi_factor).round() as u32;
-            let height = (h * dpi_factor).round() as u32;
+            // Below uses bottom because the rect is flipped :/
             Scizzor {
-                top_left: [left.max(0), top.max(0)],
-                dimensions: [width.min(viewport_w as u32), height.min(viewport_h as u32)],
+                top_left: [rect.left().max(0.0) as i32, rect.bottom().max(0.0) as i32],
+                dimensions: [rect.w().min(viewport_w) as u32, rect.h().min(viewport_h) as u32],
             }
         };
 
         // Keep track of the scizzor as it changes.
-        let mut current_scizzor = rect_to_scizzor(viewport);
+        let mut scizzor_stack = vec![rect_to_scizzor(viewport)];
+
+        commands.push(PreparedCommand::Scizzor(*scizzor_stack.first().unwrap()));
 
         // Switches to the `Plain` state and completes the previous `Command` if not already in the
         // `Plain` state.
@@ -218,7 +217,7 @@ impl Mesh {
             } = primitive;
 
             // Check for a `Scizzor` command.
-            let new_scizzor = rect_to_scizzor(scizzor);
+            /*let new_scizzor = rect_to_scizzor(scizzor);
             if new_scizzor != current_scizzor {
                 // Finish the current command.
                 match current_state {
@@ -238,9 +237,50 @@ impl Mesh {
                 current_state = State::Plain {
                     start: vertices.len(),
                 };
-            }
+            }*/
 
             match kind {
+                render::primitive_kind::PrimitiveKind::Clip => {
+                    match current_state {
+                        State::Plain { start } => {
+                            commands.push(PreparedCommand::Plain(start..vertices.len()))
+                        }
+                        State::Image { image_id, start } => {
+                            commands.push(PreparedCommand::Image(image_id, start..vertices.len()))
+                        }
+                    }
+
+                    commands.push(PreparedCommand::Scizzor(rect_to_scizzor(rect)));
+
+                    scizzor_stack.push(rect_to_scizzor(rect));
+
+                    current_state = State::Plain {
+                        start: vertices.len(),
+                    };
+                }
+                render::primitive_kind::PrimitiveKind::UnClip => {
+                    match current_state {
+                        State::Plain { start } => {
+                            commands.push(PreparedCommand::Plain(start..vertices.len()))
+                        }
+                        State::Image { image_id, start } => {
+                            commands.push(PreparedCommand::Image(image_id, start..vertices.len()))
+                        }
+                    }
+
+                    scizzor_stack.pop();
+
+                    let new_scizzor = match scizzor_stack.first() {
+                        Some(n) => n,
+                        None => panic!("Trying to pop scizzor, when there is none on the stack")
+                    };
+
+                    commands.push(PreparedCommand::Scizzor(*new_scizzor));
+
+                    current_state = State::Plain {
+                        start: vertices.len(),
+                    };
+                }
                 render::primitive_kind::PrimitiveKind::Rectangle { color } => {
                     switch_to_plain_state!();
 

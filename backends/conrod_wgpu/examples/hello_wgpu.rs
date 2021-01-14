@@ -13,6 +13,7 @@ use conrod_core::widget::primitive::overlaid_layer::OverlaidLayer;
 use conrod_core::widget::primitive::scroll::Scroll;
 use conrod_core::widget::types::scroll_direction::ScrollDirection;
 use conrod_core::widget::types::scale_mode::ScaleMode;
+use conrod_core::widget::primitive::clip::Clip;
 
 fn main() {
     env_logger::init();
@@ -35,12 +36,14 @@ fn main() {
             HStack::initialize(vec![
                 Image::new(rust_image,  vec![]),
                 Rectangle::initialize(vec![
-                    Scroll::new(
-                        Image::new(rust_image,  vec![])
-                            .resizeable()
-                            .aspect_ratio(ScaleMode::Fit)
-                            .frame(800.0, 500.0)
-                    ).set_scroll_direction(ScrollDirection::Both)
+                    Clip::new(
+                        Scroll::new(
+                            Image::new(rust_image,  vec![])
+                                .resizeable()
+                                .aspect_ratio(ScaleMode::Fill)
+                                .frame(800.0, 500.0)
+                        ).set_scroll_direction(ScrollDirection::Both)
+                    ),
                 ]).fill(LIGHT_BLUE),
                     //.frame(SCALE, 120.0),
             ]),

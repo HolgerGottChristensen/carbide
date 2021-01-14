@@ -489,6 +489,7 @@ impl<'a> Primitives<'a> {
                 // TODO: Not sure how we should handle this yet.
                 PrimitiveKind::Other(_) => (),
 
+                _ => {}
             }
         }
 

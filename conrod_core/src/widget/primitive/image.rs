@@ -119,6 +119,7 @@ impl<S> Render<S> for Image<S> {
         };
 
         let rect = Rect::new(self.position, self.dimension);
+
         let mut prims: Vec<Primitive> = vec![new_primitive(node_index(0), kind, rect, rect)];
         prims.extend(Rectangle::<S>::rect_outline(rect.clone(), 1.0));
         let children: Vec<Primitive> = self.get_children().flat_map(|f| f.get_primitives(fonts)).collect();

@@ -18,6 +18,7 @@ use crate::widget::primitive::Widget;
 use crate::widget::primitive::widget::WidgetExt;
 use crate::widget::render::ChildRender;
 use crate::widget::widget_iterator::{WidgetIter, WidgetIterMut};
+use crate::color::RED;
 
 #[derive(Debug, Clone)]
 pub struct ForeachTest<S: Clone + Debug> {
@@ -34,7 +35,7 @@ impl<S: 'static + Clone + Debug> ForeachTest<S> {
             id: Uuid::new_v4(),
             child: Rectangle::initialize(vec![
                 Text::initialize(State::new_local("sindex", &"0".to_string()), vec![])
-            ]).frame(60.0,30.0),
+            ]).fill(RED).frame(60.0,30.0),
             position: [100.0,100.0],
             dimension: [100.0,100.0],
             index: State::new_local("index", &(0 as u32))

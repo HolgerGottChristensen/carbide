@@ -8,6 +8,11 @@ use crate::widget::triangles::ColoredPoint;
 
 /// The unique kind for each primitive element in the Ui.
 pub enum PrimitiveKind {
+
+    Clip,
+    UnClip,
+
+
     /// A filled `Rectangle`.
     ///
     /// These are produced by the `Rectangle` and `BorderedRectangle` primitive widgets. A `Filled`
