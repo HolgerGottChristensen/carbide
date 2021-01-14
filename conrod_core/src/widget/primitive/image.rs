@@ -275,6 +275,18 @@ impl<S> Image<S> {
         Box::new(self)
     }
 
+    pub fn scaled_to_fit(mut self) -> Box<Self> {
+        self.resizeable = true;
+        self.scale_mode = ScaleMode::Fit;
+        Box::new(self)
+    }
+
+    pub fn scaled_to_fill(mut self) -> Box<Self> {
+        self.resizeable = true;
+        self.scale_mode = ScaleMode::Fill;
+        Box::new(self)
+    }
+
     pub fn aspect_ratio(mut self, mode: ScaleMode) -> Box<Self> {
         self.scale_mode = mode;
         Box::new(self)

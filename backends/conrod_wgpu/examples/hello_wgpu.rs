@@ -36,16 +36,14 @@ fn main() {
             HStack::initialize(vec![
                 Image::new(rust_image,  vec![]),
                 Rectangle::initialize(vec![
-                    Clip::new(
-                        Scroll::new(
-                            Image::new(rust_image,  vec![])
-                                .resizeable()
-                                .aspect_ratio(ScaleMode::Fill)
-                                .frame(800.0, 500.0)
-                        ).set_scroll_direction(ScrollDirection::Both)
-                    ),
-                ]).fill(LIGHT_BLUE),
-                    //.frame(SCALE, 120.0),
+                    Scroll::new(
+                        Image::new(rust_image,  vec![])
+                            .resizeable()
+                            .aspect_ratio(ScaleMode::Fill)
+                            .frame(800.0, 500.0)
+                    ).set_scroll_direction(ScrollDirection::Both)
+                        .clip()
+                ]).fill(LIGHT_BLUE).frame(SCALE, 120.0),
             ]),
             HStack::initialize(vec![
                 Spacer::new(SpacerDirection::Horizontal),

@@ -1,13 +1,3 @@
-//! A simple, non-interactive rectangle shape widget.
-//!
-//! Due to the frequency of its use in GUIs, the `Rectangle` gets its own widget to allow backends
-//! to specialise their rendering implementations.
-
-
-
-
-
-
 use daggy::petgraph::graph::node_index;
 use uuid::Uuid;
 
@@ -34,28 +24,27 @@ use crate::widget::Rectangle;
 
 /// A basic, non-interactive rectangle shape widget.
 #[derive(Debug, Clone)]
-pub struct Clip<S> {
+pub struct Hidden<S> {
     id: Uuid,
     child: Box<dyn Widget<S>>,
     position: Point,
     dimension: Dimensions,
 }
 
-impl<S: 'static + Clone> WidgetExt<S> for Clip<S> {}
+impl<S: 'static + Clone> WidgetExt<S> for Hidden<S> {}
 
-impl<S> NoEvents for Clip<S> {}
+impl<S> NoEvents for Hidden<S> {}
 
-impl<S> NoLocalStateSync for Clip<S> {}
+impl<S> NoLocalStateSync for Hidden<S> {}
 
-impl<S> Layout<S> for Clip<S> {
+impl<S> Layout<S> for Hidden<S> {
     fn flexibility(&self) -> u32 {
         self.child.flexibility()
     }
 
     fn calculate_size(&mut self, requested_size: Dimensions, env: &Environment<S>) -> Dimensions {
-        self.child.calculate_size(requested_size, env);
-        self.dimension = requested_size;
-        requested_size
+        self.dimension = self.child.calculate_size(requested_size, env);
+        self.dimension
     }
 
     fn position_children(&mut self) {
@@ -69,7 +58,7 @@ impl<S> Layout<S> for Clip<S> {
     }
 }
 
-impl<S> CommonWidget<S> for Clip<S> {
+impl<S> CommonWidget<S> for Hidden<S> {
     fn get_id(&self) -> Uuid {
         self.id
     }
@@ -115,36 +104,19 @@ impl<S> CommonWidget<S> for Clip<S> {
     }
 }
 
-impl<S> Render<S> for Clip<S> {
+impl<S> Render<S> for Hidden<S> {
 
     fn get_primitives(&self, fonts: &text::font::Map) -> Vec<Primitive> {
-        let mut prims = vec![
-            Primitive {
-                id: node_index(0),
-                kind: PrimitiveKind::Clip,
-                scizzor: Rect::new(self.position, self.dimension),
-                rect: Rect::new(self.position, self.dimension)
-            }
-        ];
+        let mut prims = vec![];
         prims.extend(Rectangle::<S>::rect_outline(Rect::new(self.position, self.dimension), 1.0));
-        let children: Vec<Primitive> = self.get_children().flat_map(|f| f.get_primitives(fonts)).collect();
-        prims.extend(children);
-
-        prims.push(Primitive {
-            id: node_index(0),
-            kind: PrimitiveKind::UnClip,
-            scizzor: Rect::new(self.position, self.dimension),
-            rect: Rect::new(self.position, self.dimension)
-        });
-
         return prims;
     }
 }
 
 
-impl<S> Clip<S> {
+impl<S> Hidden<S> {
     pub fn new(child: Box<dyn Widget<S>>) -> Box<Self<>> {
-        Box::new(Clip {
+        Box::new(Hidden {
             id: Uuid::new_v4(),
             child,
             position: [0.0, 0.0],

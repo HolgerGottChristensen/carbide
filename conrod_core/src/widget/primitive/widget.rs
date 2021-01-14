@@ -20,6 +20,8 @@ use crate::widget::primitive::frame::Frame;
 use crate::widget::primitive::padding::Padding;
 use crate::widget::render::Render;
 use crate::widget::widget_iterator::{WidgetIter, WidgetIterMut};
+use crate::widget::primitive::clip::Clip;
+use crate::widget::primitive::hidden::Hidden;
 
 pub trait Widget<S>: Event<S> + Layout<S> + Render<S> + DynClone {}
 
@@ -34,6 +36,13 @@ pub trait WidgetExt<S: 'static>: Widget<S> + Sized + 'static {
 
     fn padding(self, edge_insets: EdgeInsets) -> Box<Padding<S>> {
         Padding::init(edge_insets, Box::new(self))
+    }
+    fn clip(self) -> Box<Clip<S>> {
+        Clip::new(Box::new(self))
+    }
+
+    fn hidden(self) -> Box<Hidden<S>> {
+        Hidden::new(Box::new(self))
     }
 }
 

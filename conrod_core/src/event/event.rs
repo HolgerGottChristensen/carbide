@@ -24,8 +24,7 @@ pub trait Event<S>: CommonWidget<S> + StateSync<S> {
     fn process_mouse_event(&mut self, event: &MouseEvent, consumed: &bool, env: &mut Environment<S>, global_state: &mut S) {
         self.update_all_widget_state(env, global_state);
 
-        self.handle_mouse_event(event, consumed, global_state);
-        if *consumed { return () }
+
 
         self.insert_local_state(env);
 
@@ -34,6 +33,10 @@ pub trait Event<S>: CommonWidget<S> + StateSync<S> {
                 child.process_mouse_event(event, &consumed, env, global_state);
                 if *consumed { return () }
             }
+        }
+
+        if !*consumed {
+            self.handle_mouse_event(event, consumed, global_state);
         }
 
         self.update_local_widget_state(env)
