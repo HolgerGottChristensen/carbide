@@ -61,8 +61,8 @@ impl<S: Clone + std::fmt::Debug> StateSync<S> for Text<S> {
         env.insert_local_state(&self.text);
     }
 
-    fn update_all_widget_state(&mut self, env: &Environment<S>, _global_state: &S) {
-        self.update_local_widget_state(env)
+    fn update_all_widget_state(&mut self, env: &Environment<S>, global_state: &S) {
+        self.text.get_value(global_state);
     }
 
     fn update_local_widget_state(&mut self, env: &Environment<S>) {

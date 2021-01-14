@@ -18,7 +18,7 @@ use conrod_core::layout::CrossAxisAlignment;
 
 fn main() {
     env_logger::init();
-    let mut window = block_on(Window::new("My first calculator".to_string(), 800, 800, CalculatorState::new()));
+    let mut window = block_on(Window::new("My first calculator".to_string(), 800, 800, None, CalculatorState::new()));
 
     window.add_font("fonts/NotoSans/NotoSans-Regular.ttf").unwrap();
     let rust_image = window.add_image("images/rust_press.png").unwrap();

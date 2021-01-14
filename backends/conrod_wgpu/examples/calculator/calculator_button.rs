@@ -21,6 +21,7 @@ use conrod_core::layout::layouter::Layouter;
 use uuid::Uuid;
 use conrod_core::image::Id;
 use conrod_core::layout::layout::SingleChildLayout;
+use conrod_core::state::state_sync::NoLocalStateSync;
 
 #[derive(Clone)]
 pub struct CalculatorButton {
@@ -120,30 +121,10 @@ impl Event<CalculatorState> for CalculatorButton {
         }
     }
 
-    fn handle_other_event(&mut self, event: &WidgetEvent) {
-        unimplemented!()
-    }
-
-    fn process_mouse_event(&mut self, event: &MouseEvent, consumed: &bool, state: LocalStateList, global_state: &mut CalculatorState) -> LocalStateList {
-        self.process_mouse_event_default(event, consumed, state, global_state)
-    }
-
-    fn process_keyboard_event(&mut self, event: &KeyboardEvent, state: LocalStateList, global_state: &mut CalculatorState) -> LocalStateList {
-        self.process_keyboard_event_default(event, state, global_state)
-    }
-
-    fn get_state(&self, current_state: LocalStateList) -> LocalStateList {
-        current_state
-    }
-
-    fn apply_state(&mut self, states: LocalStateList, global_state: &CalculatorState) -> LocalStateList {
-        states
-    }
-
-    fn sync_state(&mut self, states: LocalStateList, global_state: &CalculatorState) {
-        self.sync_state_default(states, global_state)
-    }
+    fn handle_other_event(&mut self, event: &WidgetEvent) {}
 }
+
+impl NoLocalStateSync for CalculatorButton {}
 
 impl ChildRender for CalculatorButton {}
 

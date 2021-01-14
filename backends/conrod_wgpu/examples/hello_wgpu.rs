@@ -30,8 +30,8 @@ fn main() {
     window.set_widgets(
         OverlaidLayer::new (
         VStack::initialize(vec![
-            Text::initialize("Hello".into(), vec![]),
-            Text::initialize("world! \nHvad sker der i denne verden og vil den layoute rigtigt når der er en lang tekst".into(), vec![]),
+            Text::initialize("Hello world!".into(), vec![]),
+            Text::initialize("Hvad sker der i denne verden og vil den layoute rigtigt når der er en lang tekst og der ikke er nok plads til at det hele kan være på en linje".into(), vec![]),
             Image::new(rust_image,  vec![]),
             Rectangle::initialize(vec![
                 SyncTest::new(sync_state)
