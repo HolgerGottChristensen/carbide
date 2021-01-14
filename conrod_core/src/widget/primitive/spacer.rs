@@ -124,7 +124,7 @@ impl<S> CommonWidget<S> for Spacer {
 impl<S> Render<S> for Spacer {
     fn get_primitives(&self, _fonts: &text::font::Map) -> Vec<Primitive> {
         let mut prims = vec![];
-        prims.extend(Rectangle::<S>::rect_outline(Rect::new(self.position, self.dimension), 1.0));
+        prims.extend(Rectangle::<S>::debug_outline(Rect::new(self.position, self.dimension), 1.0));
         return prims;
     }
 }

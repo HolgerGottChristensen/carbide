@@ -149,7 +149,7 @@ impl<S> Render<S> for Rectangle<S> {
                 rect: Rect::new(self.position, self.dimension)
             }
         ];
-        prims.extend(Rectangle::<S>::rect_outline(Rect::new(self.position, self.dimension), 1.0));
+        prims.extend(Rectangle::<S>::debug_outline(Rect::new(self.position, self.dimension), 1.0));
         let children: Vec<Primitive> = self.get_children().flat_map(|f| f.get_primitives(fonts)).collect();
         prims.extend(children);
 
@@ -180,7 +180,13 @@ impl<S> Rectangle<S> {
         Box::new(self)
     }
 
-    pub fn rect_outline(rect: Rect, width: Scalar) -> Vec<Primitive> {
+    #[cfg(not(debug_assertions))]
+    pub fn debug_outline(rect: Rect, width: Scalar) -> Vec<Primitive> {
+        vec![]
+    }
+
+    #[cfg(debug_assertions)]
+    pub fn debug_outline(rect: Rect, width: Scalar) -> Vec<Primitive> {
         let (l, r, b, t) = rect.l_r_b_t();
 
         let left_border = Rect::new([l,b], [width, rect.h()]);

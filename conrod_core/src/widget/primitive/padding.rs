@@ -125,7 +125,7 @@ impl<S> Render<S> for Padding<S> {
 
     fn get_primitives(&self, fonts: &text::font::Map) -> Vec<Primitive> {
         let mut prims = vec![];
-        prims.extend(Rectangle::<S>::rect_outline(Rect::new(self.position, [self.dimension[0], self.dimension[1]]), 1.0));
+        prims.extend(Rectangle::<S>::debug_outline(Rect::new(self.position, [self.dimension[0], self.dimension[1]]), 1.0));
         let children: Vec<Primitive> = self.child.get_primitives(fonts);
         prims.extend(children);
 

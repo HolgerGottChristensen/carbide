@@ -62,6 +62,7 @@ impl<S: Clone + std::fmt::Debug> StateSync<S> for Text<S> {
     }
 
     fn update_all_widget_state(&mut self, env: &Environment<S>, global_state: &S) {
+        self.update_local_widget_state(env);
         self.text.get_value(global_state);
     }
 
@@ -159,7 +160,7 @@ impl<S: Clone + std::fmt::Debug> Render<S> for Text<S> {
         };
 
         let mut prims: Vec<Primitive> = vec![new_primitive(node_index(0), kind, Rect::new(self.position, self.dimension), Rect::new(self.position, self.dimension))];
-        prims.extend(Rectangle::<S>::rect_outline(Rect::new(self.position, self.dimension), 1.0));
+        prims.extend(Rectangle::<S>::debug_outline(Rect::new(self.position, self.dimension), 1.0));
         let children: Vec<Primitive> = self.get_children().flat_map(|f| f.get_primitives(fonts)).collect();
         prims.extend(children);
 

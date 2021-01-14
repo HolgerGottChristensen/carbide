@@ -153,7 +153,7 @@ impl<K, S: 'static + Clone> Render<K> for Oval<S, K> {
         };
 
         let mut prims: Vec<Primitive> = vec![new_primitive(node_index(0), kind, Rect::new(self.position, self.dimension), Rect::new(self.position, self.dimension))];
-        prims.extend(Rectangle::<K>::rect_outline(Rect::new(self.position, self.dimension), 1.0));
+        prims.extend(Rectangle::<K>::debug_outline(Rect::new(self.position, self.dimension), 1.0));
         let children: Vec<Primitive> = self.get_children().flat_map(|f| f.get_primitives(fonts)).collect();
         prims.extend(children);
 

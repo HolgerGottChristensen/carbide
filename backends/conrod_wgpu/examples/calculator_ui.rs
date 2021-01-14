@@ -18,7 +18,7 @@ use conrod_core::layout::CrossAxisAlignment;
 
 fn main() {
     env_logger::init();
-    let mut window = block_on(Window::new("My first calculator".to_string(), 800, 800, None, CalculatorState::new()));
+    let mut window = block_on(Window::new("My first calculator".to_string(), 400, 550, None, CalculatorState::new()));
 
     window.add_font("fonts/NotoSans/NotoSans-Regular.ttf").unwrap();
     let rust_image = window.add_image("images/rust_press.png").unwrap();
@@ -51,7 +51,7 @@ fn main() {
                 ]).padding(EdgeInsets::all(10.0))
             ])
                 .fill(DARK_GREEN)
-                .frame(-1.0, 200.0),
+                .frame(-1.0, 150.0),
             HStack::initialize(vec![
 
                 CalculatorButton::new(
@@ -64,8 +64,7 @@ fn main() {
                         .font_size(45.into())
                 ),
                 CalculatorButton::new(
-                    Text::initialize("<=".into(), vec![])
-                        .font_size(45.into())
+                    Image::new(rust_image, vec![]).resizeable().frame(45.0,45.0)
                 ).on_released(|_, s| s.pop_char()),
                 CalculatorButton::new(
                     Text::initialize("/".into(), vec![])

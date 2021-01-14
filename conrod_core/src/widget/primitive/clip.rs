@@ -126,7 +126,7 @@ impl<S> Render<S> for Clip<S> {
                 rect: Rect::new(self.position, self.dimension)
             }
         ];
-        prims.extend(Rectangle::<S>::rect_outline(Rect::new(self.position, self.dimension), 1.0));
+        prims.extend(Rectangle::<S>::debug_outline(Rect::new(self.position, self.dimension), 1.0));
         let children: Vec<Primitive> = self.get_children().flat_map(|f| f.get_primitives(fonts)).collect();
         prims.extend(children);
 
