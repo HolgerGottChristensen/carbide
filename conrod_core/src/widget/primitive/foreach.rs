@@ -16,9 +16,10 @@ use crate::widget::primitive::Widget;
 use crate::widget::primitive::widget::WidgetExt;
 use crate::widget::render::ChildRender;
 use crate::widget::widget_iterator::{WidgetIter, WidgetIterMut};
+use crate::state::global_state::GlobalState;
 
 #[derive(Debug, Clone)]
-pub struct ForEach<S: Clone + Debug> {
+pub struct ForEach<S: GlobalState> {
     id: Uuid,
     children_map: HashMap<Uuid, Box<dyn Widget<S>>>,
     delegate: Box<dyn Widget<S>>,
@@ -27,7 +28,9 @@ pub struct ForEach<S: Clone + Debug> {
     dimension: Dimensions,
 }
 
-impl<S: Clone + Debug> ForEach<S> {
+impl<S: GlobalState> Widget<S> for ForEach<S> {}
+
+impl<S: GlobalState> ForEach<S> {
     pub fn new(ids: State<Vec<Uuid>, S>, delegate: Box<dyn Widget<S>>) -> Box<ForEach<S>> {
 
         let mut map = HashMap::new();
@@ -47,7 +50,7 @@ impl<S: Clone + Debug> ForEach<S> {
     }
 }
 
-impl<S: Clone + Debug> CommonWidget<S> for ForEach<S> {
+impl<S: GlobalState> CommonWidget<S> for ForEach<S> {
     fn get_id(&self) -> Uuid {
         self.id
     }
@@ -197,9 +200,9 @@ impl<S: Clone + Debug> CommonWidget<S> for ForEach<S> {
     }
 }*/
 
-impl<S: Clone + Debug> NoEvents for ForEach<S> {}
+impl<S: GlobalState> NoEvents for ForEach<S> {}
 
-impl<S: Clone + Debug> StateSync<S> for ForEach<S> {
+impl<S: GlobalState> StateSync<S> for ForEach<S> {
     fn insert_local_state(&self, _env: &mut Environment<S>) {}
 
     fn update_all_widget_state(&mut self, env: &Environment<S>, _global_state: &S) {
@@ -227,9 +230,9 @@ impl<S: Clone + Debug> StateSync<S> for ForEach<S> {
     }
 }
 
-impl<S: Clone + Debug> ChildRender for ForEach<S> {}
+impl<S: GlobalState> ChildRender for ForEach<S> {}
 
-impl<S: Clone + Debug> Layout<S> for ForEach<S> {
+impl<S: GlobalState> Layout<S> for ForEach<S> {
     fn flexibility(&self) -> u32 {
         unimplemented!()
     }
@@ -243,4 +246,4 @@ impl<S: Clone + Debug> Layout<S> for ForEach<S> {
     }
 }
 
-impl<S: 'static + Clone + Debug> WidgetExt<S> for ForEach<S> {}
+impl<S: GlobalState> WidgetExt<S> for ForEach<S> {}

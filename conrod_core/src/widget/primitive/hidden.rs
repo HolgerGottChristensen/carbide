@@ -21,23 +21,20 @@ use crate::widget::primitive::widget::WidgetExt;
 use crate::widget::render::Render;
 use crate::widget::widget_iterator::{WidgetIter, WidgetIterMut};
 use crate::widget::Rectangle;
+use crate::state::global_state::GlobalState;
 
 /// A basic, non-interactive rectangle shape widget.
-#[derive(Debug, Clone)]
-pub struct Hidden<S> {
+#[derive(Debug, Clone, Widget)]
+pub struct Hidden<GS> where GS: GlobalState {
     id: Uuid,
-    child: Box<dyn Widget<S>>,
+    child: Box<dyn Widget<GS>>,
     position: Point,
     dimension: Dimensions,
 }
 
-impl<S: 'static + Clone> WidgetExt<S> for Hidden<S> {}
+impl<S: GlobalState> NoEvents for Hidden<S> {}
 
-impl<S> NoEvents for Hidden<S> {}
-
-impl<S> NoLocalStateSync for Hidden<S> {}
-
-impl<S> Layout<S> for Hidden<S> {
+impl<S: GlobalState> Layout<S> for Hidden<S> {
     fn flexibility(&self) -> u32 {
         self.child.flexibility()
     }
@@ -58,7 +55,7 @@ impl<S> Layout<S> for Hidden<S> {
     }
 }
 
-impl<S> CommonWidget<S> for Hidden<S> {
+impl<S: GlobalState> CommonWidget<S> for Hidden<S> {
     fn get_id(&self) -> Uuid {
         self.id
     }
@@ -104,7 +101,7 @@ impl<S> CommonWidget<S> for Hidden<S> {
     }
 }
 
-impl<S> Render<S> for Hidden<S> {
+impl<S: GlobalState> Render<S> for Hidden<S> {
 
     fn get_primitives(&self, fonts: &text::font::Map) -> Vec<Primitive> {
         let mut prims = vec![];
@@ -114,7 +111,7 @@ impl<S> Render<S> for Hidden<S> {
 }
 
 
-impl<S> Hidden<S> {
+impl<S: GlobalState> Hidden<S> {
     pub fn new(child: Box<dyn Widget<S>>) -> Box<Self<>> {
         Box::new(Hidden {
             id: Uuid::new_v4(),

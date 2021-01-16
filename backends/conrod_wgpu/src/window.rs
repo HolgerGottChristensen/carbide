@@ -19,8 +19,9 @@ use winit::window::{WindowBuilder, Icon};
 use conrod_core::text::font;
 use winit::dpi::{Size, PhysicalSize};
 use std::path::PathBuf;
+use conrod_core::state::global_state::GlobalState;
 
-pub struct Window<T: 'static + Clone> {
+pub struct Window<T: GlobalState> {
     surface: wgpu::Surface,
     device: wgpu::Device,
     queue: wgpu::Queue,
@@ -41,7 +42,7 @@ pub struct Window<T: 'static + Clone> {
     event_loop: Option<EventLoop<()>>
 }
 
-impl<T: 'static + Clone> conrod_core::window::TWindow<T> for Window<T> {
+impl<T: GlobalState> conrod_core::window::TWindow<T> for Window<T> {
 
     fn add_font(&mut self, path: &str) -> Result<font::Id, Error> {
         let assets = find_folder::Search::KidsThenParents(3, 5).for_folder("assets").unwrap();
@@ -70,7 +71,7 @@ impl<T: 'static + Clone> conrod_core::window::TWindow<T> for Window<T> {
     }
 }
 
-impl<T: 'static + Clone> Window<T> {
+impl<T: GlobalState> Window<T> {
 
     pub fn path_to_assets(path: &str) -> PathBuf {
         let assets = find_folder::Search::KidsThenParents(3, 5)

@@ -35,11 +35,12 @@ use crate::widget::Rectangle;
 use crate::widget::types::scroll_direction::ScrollDirection;
 use crate::color::GRAY;
 use crate::draw::shape::vertex::Vertex;
+use crate::state::global_state::GlobalState;
 
 
 /// A basic, non-interactive rectangle shape widget.
 #[derive(Debug, Clone)]
-pub struct Scroll<S> {
+pub struct Scroll<S> where S: GlobalState {
     id: Uuid,
     child: Box<dyn Widget<S>>,
     position: Point,
@@ -50,9 +51,11 @@ pub struct Scroll<S> {
     scrollbar_vertical: Box<dyn Widget<S>>,
 }
 
-impl<S: 'static + Clone> WidgetExt<S> for Scroll<S> {}
+impl<S: GlobalState> Widget<S> for Scroll<S> {}
 
-impl<S> Event<S> for Scroll<S> {
+impl<S: GlobalState> WidgetExt<S> for Scroll<S> {}
+
+impl<S: GlobalState> Event<S> for Scroll<S> {
     fn handle_mouse_event(&mut self, event: &MouseEvent, consumed: &bool, global_state: &mut S) {
         match event {
             MouseEvent::Scroll { x, y, mouse_position, modifiers } => {
@@ -105,9 +108,9 @@ impl<S> Event<S> for Scroll<S> {
 }
 
 
-impl<S> NoLocalStateSync for Scroll<S> {}
+impl<S: GlobalState> NoLocalStateSync for Scroll<S> {}
 
-impl<S> Layout<S> for Scroll<S> {
+impl<S: GlobalState> Layout<S> for Scroll<S> {
     fn flexibility(&self) -> u32 {
         0
     }
@@ -178,7 +181,7 @@ impl<S> Layout<S> for Scroll<S> {
     }
 }
 
-impl<S> CommonWidget<S> for Scroll<S> {
+impl<S: GlobalState> CommonWidget<S> for Scroll<S> {
     fn get_id(&self) -> Uuid {
         self.id
     }
@@ -226,7 +229,7 @@ impl<S> CommonWidget<S> for Scroll<S> {
     }
 }
 
-impl<S> Render<S> for Scroll<S> {
+impl<S: GlobalState> Render<S> for Scroll<S> {
 
     fn get_primitives(&self, fonts: &text::font::Map) -> Vec<Primitive> {
         let mut prims = vec![];
@@ -248,7 +251,7 @@ impl<S> Render<S> for Scroll<S> {
     }
 }
 
-impl<S: Clone + 'static> Scroll<S> {
+impl<S: GlobalState> Scroll<S> {
 
     pub fn new(child: Box<dyn Widget<S>>) -> Box<Self> {
         Box::new(Self {
@@ -264,7 +267,7 @@ impl<S: Clone + 'static> Scroll<S> {
     }
 }
 
-impl<S> Scroll<S> {
+impl<S: GlobalState> Scroll<S> {
 
     pub fn set_scroll_direction(mut self, scroll_directions: ScrollDirection) -> Box<Self> {
         self.scroll_directions = scroll_directions;

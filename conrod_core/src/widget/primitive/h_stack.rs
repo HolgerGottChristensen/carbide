@@ -16,10 +16,11 @@ use crate::widget::primitive::Widget;
 use crate::widget::primitive::widget::WidgetExt;
 use crate::widget::render::Render;
 use crate::widget::widget_iterator::{WidgetIter, WidgetIterMut};
+use crate::state::global_state::GlobalState;
 
 /// A basic, non-interactive rectangle shape widget.
 #[derive(Debug, Clone)]
-pub struct HStack<S> {
+pub struct HStack<S> where S: GlobalState {
     id: Uuid,
     children: Vec<Box<dyn Widget<S>>>,
     position: Point,
@@ -27,7 +28,9 @@ pub struct HStack<S> {
     spacing: Scalar,
 }
 
-impl<S> HStack<S> {
+impl<S: GlobalState> Widget<S> for HStack<S> {}
+
+impl<S: GlobalState> HStack<S> {
     pub fn initialize(children: Vec<Box<dyn Widget<S>>>) -> Box<Self> {
         Box::new(HStack {
             id: Uuid::new_v4(),
@@ -44,13 +47,13 @@ impl<S> HStack<S> {
     }
 }
 
-impl<S: 'static + Clone> WidgetExt<S> for HStack<S> {}
+impl<S: GlobalState> WidgetExt<S> for HStack<S> {}
 
-impl<S> NoEvents for HStack<S> {}
+impl<S: GlobalState> NoEvents for HStack<S> {}
 
-impl<S> NoLocalStateSync for HStack<S> {}
+impl<S: GlobalState> NoLocalStateSync for HStack<S> {}
 
-impl<S> Layout<S> for HStack<S> {
+impl<S: GlobalState> Layout<S> for HStack<S> {
     fn flexibility(&self) -> u32 {
         1
     }
@@ -143,7 +146,7 @@ impl<S> Layout<S> for HStack<S> {
     }
 }
 
-impl<S> CommonWidget<S> for HStack<S> {
+impl<S: GlobalState> CommonWidget<S> for HStack<S> {
     fn get_id(&self) -> Uuid {
         self.id
     }
@@ -201,7 +204,7 @@ impl<S> CommonWidget<S> for HStack<S> {
     }
 }
 
-impl<S> Render<S> for HStack<S> {
+impl<S: GlobalState> Render<S> for HStack<S> {
 
     fn get_primitives(&self, fonts: &text::font::Map) -> Vec<Primitive> {
         let mut prims = vec![];

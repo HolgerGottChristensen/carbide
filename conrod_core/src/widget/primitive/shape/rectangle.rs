@@ -32,29 +32,21 @@ use crate::widget::render::Render;
 use crate::widget::widget_iterator::{WidgetIter, WidgetIterMut};
 
 use super::Style as Style;
+use crate::state::global_state::GlobalState;
 
 /// A basic, non-interactive rectangle shape widget.
-#[derive(Debug, Clone, WidgetCommon_)]
-pub struct Rectangle<S> {
+#[derive(Debug, Clone, Widget)]
+pub struct Rectangle<GS> where GS: GlobalState {
     id: Uuid,
-    children: Vec<Box<dyn Widget<S>>>,
+    children: Vec<Box<dyn Widget<GS>>>,
     position: Point,
     dimension: Dimensions,
-    /// Data necessary and common for all widget builder render.
-    #[conrod(common_builder)]
-    pub common: widget::CommonBuilder,
-    /// Unique styling for the **Rectangle**.
-    pub style: Style,
-    color: Color
+    color: Color,
 }
 
-impl<S: 'static + Clone> WidgetExt<S> for Rectangle<S> {}
+impl<S: GlobalState> NoEvents for Rectangle<S> {}
 
-impl<S> NoEvents for Rectangle<S> {}
-
-impl<S> NoLocalStateSync for Rectangle<S> {}
-
-impl<S> Layout<S> for Rectangle<S> {
+impl<S: GlobalState> Layout<S> for Rectangle<S> {
     fn flexibility(&self) -> u32 {
         0
     }
@@ -79,7 +71,7 @@ impl<S> Layout<S> for Rectangle<S> {
     }
 }
 
-impl<S> CommonWidget<S> for Rectangle<S> {
+impl<S: GlobalState> CommonWidget<S> for Rectangle<S> {
     fn get_id(&self) -> Uuid {
         self.id
     }
@@ -138,7 +130,7 @@ impl<S> CommonWidget<S> for Rectangle<S> {
     }
 }
 
-impl<S> Render<S> for Rectangle<S> {
+impl<S: GlobalState> Render<S> for Rectangle<S> {
 
     fn get_primitives(&self, fonts: &text::font::Map) -> Vec<Primitive> {
         let mut prims = vec![
@@ -173,7 +165,7 @@ pub enum Kind {
 }
 
 
-impl<S> Rectangle<S> {
+impl<S: GlobalState> Rectangle<S> {
 
     pub fn fill(mut self, color: Color) -> Box<Self> {
         self.color = color;
@@ -230,8 +222,6 @@ impl<S> Rectangle<S> {
             children: vec![],
             position: [1.0, 1.0],
             dimension: [1.0, 1.0],
-            common: widget::CommonBuilder::default(),
-            style,
             color: Color::random(),
         }//.wh(dim)
     }
@@ -262,8 +252,6 @@ impl<S> Rectangle<S> {
             children,
             position: [0.0,0.0],
             dimension: [100.0,100.0],
-            common: widget::CommonBuilder::default(),
-            style: Style::fill(),
             color: Color::random()
         })
     }
@@ -274,8 +262,6 @@ impl<S> Rectangle<S> {
             children,
             position,
             dimension,
-            common: widget::CommonBuilder::default(),
-            style: Style::fill(),
             color: Color::random()
         })
     }
@@ -312,13 +298,6 @@ impl<S> Rectangle<S> {
 
 }
 */
-
-impl<S> Colorable for Rectangle<S> {
-    fn color(mut self, color: Color) -> Self {
-        self.style.set_color(color);
-        self
-    }
-}
 
 
 /// The two triangles that describe the given `Rect`.

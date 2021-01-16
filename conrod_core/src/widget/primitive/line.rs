@@ -20,13 +20,14 @@ use crate::widget::primitive::Widget;
 use crate::widget::primitive::widget::WidgetExt;
 use crate::widget::render::Render;
 use crate::widget::widget_iterator::{WidgetIter, WidgetIterMut};
+use crate::state::global_state::GlobalState;
 
 //use draw::shape::line::is_over_widget;
 
 
 /// A simple, non-interactive widget for drawing a single straight Line.
 #[derive(Debug, Clone, WidgetCommon_)]
-pub struct Line<S> {
+pub struct Line<S> where S: GlobalState {
     /// Data necessary and common for all widget builder render.
     #[conrod(common_builder)]
     pub common: widget::CommonBuilder,
@@ -44,13 +45,15 @@ pub struct Line<S> {
     pub children: Vec<Box<dyn Widget<S>>>
 }
 
-impl<S> NoEvents for Line<S> {}
+impl<S: GlobalState> Widget<S> for Line<S> {}
 
-impl<S> NoLocalStateSync for Line<S> {}
+impl<S: GlobalState> NoEvents for Line<S> {}
 
-impl<S: 'static + Clone> WidgetExt<S> for Line<S> {}
+impl<S: GlobalState> NoLocalStateSync for Line<S> {}
 
-impl<S> Layout<S> for Line<S> {
+impl<S: GlobalState> WidgetExt<S> for Line<S> {}
+
+impl<S: GlobalState> Layout<S> for Line<S> {
     fn flexibility(&self) -> u32 {
         0
     }
@@ -64,7 +67,7 @@ impl<S> Layout<S> for Line<S> {
     }
 }
 
-impl<S> Render<S> for Line<S> {
+impl<S: GlobalState> Render<S> for Line<S> {
 
     fn get_primitives(&self, fonts: &text::font::Map) -> Vec<Primitive> {
         const DEFAULT_CAP: Cap = Cap::Flat;
@@ -89,7 +92,7 @@ impl<S> Render<S> for Line<S> {
     }
 }
 
-impl<S> CommonWidget<S> for Line<S> {
+impl<S: GlobalState> CommonWidget<S> for Line<S> {
     fn get_id(&self) -> Uuid {
         unimplemented!()
     }
@@ -190,7 +193,7 @@ pub enum Cap {
 }
 
 
-impl<S> Line<S> {
+impl<S: GlobalState> Line<S> {
 
     pub fn new(start: Point, end: Point, children: Vec<Box<dyn Widget<S>>>) -> Box<Line<S>> {
         Box::new(Line {
@@ -433,11 +436,4 @@ impl Style {
     }
 }
 */
-
-impl<S> Colorable for Line<S> {
-    fn color(mut self, color: Color) -> Self {
-        self.style.maybe_color = Some(color);
-        self
-    }
-}
 

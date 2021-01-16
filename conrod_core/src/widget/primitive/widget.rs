@@ -22,14 +22,17 @@ use crate::widget::render::Render;
 use crate::widget::widget_iterator::{WidgetIter, WidgetIterMut};
 use crate::widget::primitive::clip::Clip;
 use crate::widget::primitive::hidden::Hidden;
+use crate::state::global_state::GlobalState;
 
-pub trait Widget<S>: Event<S> + Layout<S> + Render<S> + DynClone {}
+pub trait Widget<S>: Event<S> + Layout<S> + Render<S> + DynClone where S: GlobalState {}
 
-impl<S, T> Widget<S> for T where T: Event<S> + Layout<S> + Render<S> + DynClone {}
+//impl<S, T> Widget<S> for T where T: Event<S> + Layout<S> + Render<S> + DynClone {}
+
+impl<S: GlobalState> Widget<S> for Box<dyn Widget<S>> {}
 
 dyn_clone::clone_trait_object!(<S> Widget<S>);
 
-pub trait WidgetExt<S: 'static>: Widget<S> + Sized + 'static {
+pub trait WidgetExt<S: GlobalState>: Widget<S> + Sized + 'static {
     fn frame(self, width: Scalar, height: Scalar) -> Box<Frame<S>> {
         Frame::init(width, height, Box::new(self))
     }
@@ -49,7 +52,7 @@ pub trait WidgetExt<S: 'static>: Widget<S> + Sized + 'static {
 //This does not currently work with intellisense
 //impl<T> WidgetExt for T where T: Widget + 'static {}
 
-impl<S> CommonWidget<S> for Box<dyn Widget<S>> {
+impl<S: GlobalState> CommonWidget<S> for Box<dyn Widget<S>> {
     fn get_id(&self) -> Uuid {
         self.deref().get_id()
     }
@@ -88,7 +91,7 @@ impl<S> CommonWidget<S> for Box<dyn Widget<S>> {
 }
 
 
-impl<S> Event<S> for Box<dyn Widget<S>> {
+impl<S: GlobalState> Event<S> for Box<dyn Widget<S>> {
     fn handle_mouse_event(&mut self, event: &MouseEvent, consumed: &bool, global_state: &mut S) {
         self.deref_mut().handle_mouse_event(event, consumed, global_state)
     }
@@ -110,7 +113,7 @@ impl<S> Event<S> for Box<dyn Widget<S>> {
     }
 }
 
-impl<S> StateSync<S> for Box<dyn Widget<S>> {
+impl<S: GlobalState> StateSync<S> for Box<dyn Widget<S>> {
     fn insert_local_state(&self, env: &mut Environment<S>) {
         self.deref().insert_local_state(env)
     }
@@ -128,7 +131,7 @@ impl<S> StateSync<S> for Box<dyn Widget<S>> {
     }
 }
 
-impl<S> Layout<S> for Box<dyn Widget<S>> {
+impl<S: GlobalState> Layout<S> for Box<dyn Widget<S>> {
     fn flexibility(&self) -> u32 {
         self.deref().flexibility()
     }
@@ -142,14 +145,14 @@ impl<S> Layout<S> for Box<dyn Widget<S>> {
     }
 }
 
-impl<S> Render<S> for Box<dyn Widget<S>> {
+impl<S: GlobalState> Render<S> for Box<dyn Widget<S>> {
     fn get_primitives(&self, fonts: &text::font::Map) -> Vec<Primitive> {
         self.deref().get_primitives(fonts)
     }
 }
 
 
-impl<S> Debug for dyn Widget<S> {
+impl<S: GlobalState> Debug for dyn Widget<S> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "Widget: {}", self.get_id())
     }

@@ -17,17 +17,20 @@ use crate::widget::primitive::Widget;
 use crate::widget::primitive::widget::WidgetExt;
 use crate::widget::render::Render;
 use crate::widget::widget_iterator::{WidgetIter, WidgetIterMut};
+use crate::state::global_state::GlobalState;
 
 /// A basic, non-interactive rectangle shape widget.
 #[derive(Debug, Clone)]
-pub struct ZStack<S> {
+pub struct ZStack<S> where S: GlobalState {
     id: Uuid,
     children: Vec<Box<dyn Widget<S>>>,
     position: Point,
     dimension: Dimensions,
 }
 
-impl<S> ZStack<S> {
+impl<S: GlobalState> Widget<S> for ZStack<S> {}
+
+impl<S: GlobalState> ZStack<S> {
     pub fn initialize(children: Vec<Box<dyn Widget<S>>>) -> Box<ZStack<S>> {
         Box::new(ZStack {
             id: Uuid::new_v4(),
@@ -38,13 +41,13 @@ impl<S> ZStack<S> {
     }
 }
 
-impl<S> NoEvents for ZStack<S> {}
+impl<S: GlobalState> NoEvents for ZStack<S> {}
 
-impl<S> NoLocalStateSync for ZStack<S> {}
+impl<S: GlobalState> NoLocalStateSync for ZStack<S> {}
 
-impl<S: 'static + Clone> WidgetExt<S> for ZStack<S> {}
+impl<S: GlobalState> WidgetExt<S> for ZStack<S> {}
 
-impl<S> Layout<S> for ZStack<S> {
+impl<S: GlobalState> Layout<S> for ZStack<S> {
     fn flexibility(&self) -> u32 {
         1
     }
@@ -88,7 +91,7 @@ impl<S> Layout<S> for ZStack<S> {
     }
 }
 
-impl<S> CommonWidget<S> for ZStack<S> {
+impl<S: GlobalState> CommonWidget<S> for ZStack<S> {
     fn get_id(&self) -> Uuid {
         self.id
     }
@@ -145,7 +148,7 @@ impl<S> CommonWidget<S> for ZStack<S> {
     }
 }
 
-impl<S> Render<S> for ZStack<S> {
+impl<S: GlobalState> Render<S> for ZStack<S> {
 
     fn get_primitives(&self, fonts: &text::font::Map) -> Vec<Primitive> {
         let mut prims = vec![];

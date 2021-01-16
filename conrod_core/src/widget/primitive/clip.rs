@@ -24,7 +24,7 @@ use crate::position::Dimensions;
 use crate::render::primitive::Primitive;
 use crate::render::primitive_kind::PrimitiveKind;
 use crate::state::environment::Environment;
-use crate::state::state_sync::NoLocalStateSync;
+use crate::state::state_sync::{NoLocalStateSync, StateSync};
 use crate::widget::common_widget::CommonWidget;
 use crate::widget::primitive::Widget;
 use crate::widget::primitive::widget::WidgetExt;
@@ -32,22 +32,21 @@ use crate::widget::render::Render;
 use crate::widget::widget_iterator::{WidgetIter, WidgetIterMut};
 use crate::widget::Rectangle;
 
-/// A basic, non-interactive rectangle shape widget.
-#[derive(Debug, Clone)]
-pub struct Clip<S> {
+use conrod_derive::Widget;
+use crate::state::state::State;
+use crate::state::global_state::GlobalState;
+
+#[derive(Debug, Clone, Widget)]
+pub struct Clip<GS> where GS: GlobalState {
     id: Uuid,
-    child: Box<dyn Widget<S>>,
+    child: Box<dyn Widget<GS>>,
     position: Point,
     dimension: Dimensions,
 }
 
-impl<S: 'static + Clone> WidgetExt<S> for Clip<S> {}
+impl<S: GlobalState> NoEvents for Clip<S> {}
 
-impl<S> NoEvents for Clip<S> {}
-
-impl<S> NoLocalStateSync for Clip<S> {}
-
-impl<S> Layout<S> for Clip<S> {
+impl<S: GlobalState> Layout<S> for Clip<S> {
     fn flexibility(&self) -> u32 {
         self.child.flexibility()
     }
@@ -69,7 +68,7 @@ impl<S> Layout<S> for Clip<S> {
     }
 }
 
-impl<S> CommonWidget<S> for Clip<S> {
+impl<S: GlobalState> CommonWidget<S> for Clip<S> {
     fn get_id(&self) -> Uuid {
         self.id
     }
@@ -115,7 +114,7 @@ impl<S> CommonWidget<S> for Clip<S> {
     }
 }
 
-impl<S> Render<S> for Clip<S> {
+impl<S: GlobalState> Render<S> for Clip<S> {
 
     fn get_primitives(&self, fonts: &text::font::Map) -> Vec<Primitive> {
         let mut prims = vec![
@@ -142,7 +141,7 @@ impl<S> Render<S> for Clip<S> {
 }
 
 
-impl<S> Clip<S> {
+impl<S: GlobalState> Clip<S> {
     pub fn new(child: Box<dyn Widget<S>>) -> Box<Self<>> {
         Box::new(Clip {
             id: Uuid::new_v4(),

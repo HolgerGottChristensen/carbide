@@ -25,10 +25,11 @@ use crate::widget::render::Render;
 use crate::widget::widget_iterator::{WidgetIter, WidgetIterMut};
 use crate::widget::types::scale_mode::ScaleMode;
 use crate::widget::types::image_information::ImageInformation;
+use crate::state::global_state::GlobalState;
 
 /// A primitive and basic widget for drawing an `Image`.
 #[derive(Debug, Clone, WidgetCommon_)]
-pub struct Image<S> {
+pub struct Image<S> where S: GlobalState {
     /// Data necessary and common for all widget builder render.
     #[conrod(common_builder)]
     pub common: widget::CommonBuilder,
@@ -48,11 +49,13 @@ pub struct Image<S> {
     requested_size: Dimensions
 }
 
-impl<S> NoEvents for Image<S> {}
+impl<S: GlobalState> Widget<S> for Image<S> {}
 
-impl<S> NoLocalStateSync for Image<S> {}
+impl<S: GlobalState> NoEvents for Image<S> {}
 
-impl<S> Layout<S> for Image<S> {
+impl<S: GlobalState> NoLocalStateSync for Image<S> {}
+
+impl<S: GlobalState> Layout<S> for Image<S> {
     fn flexibility(&self) -> u32 {
         10
     }
@@ -108,7 +111,7 @@ impl<S> Layout<S> for Image<S> {
     }
 }
 
-impl<S> Render<S> for Image<S> {
+impl<S: GlobalState> Render<S> for Image<S> {
 
     fn get_primitives(&self, fonts: &text::font::Map) -> Vec<Primitive> {
         //let color = Color::random();
@@ -129,7 +132,7 @@ impl<S> Render<S> for Image<S> {
     }
 }
 
-impl<S> CommonWidget<S> for Image<S> {
+impl<S: GlobalState> CommonWidget<S> for Image<S> {
     fn get_id(&self) -> Uuid {
         unimplemented!()
     }
@@ -206,7 +209,7 @@ pub struct Style {
 }
 
 
-impl<S> Image<S> {
+impl<S: GlobalState> Image<S> {
 
     /// Construct a new `Image`.
     ///
@@ -298,7 +301,7 @@ impl<S> Image<S> {
 
 }
 
-impl<S: 'static + Clone> WidgetExt<S> for Image<S> {}
+impl<S: GlobalState> WidgetExt<S> for Image<S> {}
 
 /*impl<S> OldWidget<S> for Image<S> {
     type State = State;

@@ -5,6 +5,7 @@
 //! If you are new to Conrod, we recommend checking out [The Guide](./guide/index.html).
 
 #![warn(unsafe_code)] //Todo deny when unsafe code removed from foreach
+//#![feature(associated_type_bounds)]
 //#![warn(missing_copy_implementations)]
 //#![warn(missing_docs)]
 
@@ -30,6 +31,8 @@ extern crate rusttype;
 extern crate serde;
 extern crate uuid;
 extern crate wgpu;
+
+extern crate self as conrod_core;
 
 pub use ron::from_str as from_ron;
 pub use ron::to_string as to_ron;

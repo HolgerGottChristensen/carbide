@@ -19,19 +19,20 @@ use crate::widget::primitive::Widget;
 use crate::widget::primitive::widget::WidgetExt;
 use crate::widget::render::Render;
 use crate::widget::widget_iterator::{WidgetIter, WidgetIterMut};
+use crate::state::global_state::GlobalState;
 
 pub static SCALE: f64 = -1.0;
 
 
 #[derive(Debug, Clone)]
-pub struct Frame<S> {
+pub struct Frame<S> where S: GlobalState {
     id: Uuid,
     child: Box<dyn Widget<S>>,
     position: Point,
     dimension: Dimensions
 }
 
-impl<S: 'static> Frame<S> {
+impl<S: GlobalState> Frame<S> {
     pub fn init(width: Scalar, height: Scalar, child: Box<dyn Widget<S>>) -> Box<Frame<S>> {
         Box::new(Frame{
             id: Default::default(),
@@ -60,13 +61,15 @@ impl<S: 'static> Frame<S> {
     }
 }
 
-impl<S: 'static + Clone> WidgetExt<S> for Frame<S> {}
+impl<S: GlobalState> Widget<S> for Frame<S> {}
 
-impl<S> NoEvents for Frame<S> {}
+impl<S: GlobalState> WidgetExt<S> for Frame<S> {}
 
-impl<S> NoLocalStateSync for Frame<S> {}
+impl<S: GlobalState> NoEvents for Frame<S> {}
 
-impl<S> CommonWidget<S> for Frame<S> {
+impl<S: GlobalState> NoLocalStateSync for Frame<S> {}
+
+impl<S: GlobalState> CommonWidget<S> for Frame<S> {
     fn get_id(&self) -> Uuid {
         self.id
     }
@@ -113,7 +116,7 @@ impl<S> CommonWidget<S> for Frame<S> {
     }
 }
 
-impl<S> Layout<S> for Frame<S> {
+impl<S: GlobalState> Layout<S> for Frame<S> {
     fn flexibility(&self) -> u32 {
         9
     }
@@ -151,7 +154,7 @@ impl<S> Layout<S> for Frame<S> {
     }
 }
 
-impl<S> Render<S> for Frame<S> {
+impl<S: GlobalState> Render<S> for Frame<S> {
 
     fn get_primitives(&self, fonts: &text::font::Map) -> Vec<Primitive> {
         let mut prims = vec![];

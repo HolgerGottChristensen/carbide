@@ -26,6 +26,7 @@ pub use self::primitive::shape::rectangle::{self, Rectangle};
 pub use self::primitive::shape::triangles::{self, Triangles};
 pub use self::primitive::text::{self, Text};
 pub use self::primitive::z_stack::*;
+use crate::state::global_state::GlobalState;
 
 pub mod render;
 
@@ -43,7 +44,7 @@ pub mod types;
 
 /// Arguments for the [**Widget::update**](./trait.Widget#method.update) method in a struct to
 /// simplify the method signature.
-pub struct UpdateArgs<'a, 'c, 'd: 'c, S: 'static + Clone>
+pub struct UpdateArgs<'a, 'c, 'd: 'c, S: GlobalState>
     //where W: OldWidget<S>,
 {
     /// The **Widget**'s unique index.

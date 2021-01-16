@@ -19,9 +19,10 @@ use crate::widget::primitive::widget::WidgetExt;
 use crate::widget::render::ChildRender;
 use crate::widget::widget_iterator::{WidgetIter, WidgetIterMut};
 use crate::color::RED;
+use crate::state::global_state::GlobalState;
 
 #[derive(Debug, Clone)]
-pub struct ForeachTest<S: Clone + Debug> {
+pub struct ForeachTest<S> where S: GlobalState {
     id: Uuid,
     child: Box<dyn Widget<S>>,
     position: Point,
@@ -29,7 +30,9 @@ pub struct ForeachTest<S: Clone + Debug> {
     index: State<u32, S>,
 }
 
-impl<S: 'static + Clone + Debug> ForeachTest<S> {
+impl<S: GlobalState> Widget<S> for ForeachTest<S> {}
+
+impl<S: GlobalState> ForeachTest<S> {
     pub fn new() -> Box<ForeachTest<S>> {
         Box::new(Self {
             id: Uuid::new_v4(),
@@ -43,7 +46,7 @@ impl<S: 'static + Clone + Debug> ForeachTest<S> {
     }
 }
 
-impl<S: Clone + Debug> CommonWidget<S> for ForeachTest<S> {
+impl<S: GlobalState> CommonWidget<S> for ForeachTest<S> {
     fn get_id(&self) -> Uuid {
         self.id
     }
@@ -89,9 +92,9 @@ impl<S: Clone + Debug> CommonWidget<S> for ForeachTest<S> {
     }
 }
 
-impl<S: Clone + Debug> NoEvents for ForeachTest<S> {}
+impl<S: GlobalState> NoEvents for ForeachTest<S> {}
 
-impl<S: Clone + Debug> StateSync<S> for ForeachTest<S> {
+impl<S: GlobalState> StateSync<S> for ForeachTest<S> {
     fn insert_local_state(&self, env: &mut Environment<S>) {
         env.insert_local_state(&State::<String, S>::new_local("sindex", &self.index.get_latest_value().to_string()))
     }
@@ -109,9 +112,9 @@ impl<S: Clone + Debug> StateSync<S> for ForeachTest<S> {
     }
 }
 
-impl<S: Clone + Debug> ChildRender for ForeachTest<S> {}
+impl<S: GlobalState> ChildRender for ForeachTest<S> {}
 
-impl<S: Clone + Debug> Layout<S> for ForeachTest<S> {
+impl<S: GlobalState> Layout<S> for ForeachTest<S> {
     fn flexibility(&self) -> u32 {
         0
     }
@@ -130,4 +133,4 @@ impl<S: Clone + Debug> Layout<S> for ForeachTest<S> {
     }
 }
 
-impl<S: 'static + Clone + Debug> WidgetExt<S> for ForeachTest<S> {}
+impl<S: GlobalState> WidgetExt<S> for ForeachTest<S> {}

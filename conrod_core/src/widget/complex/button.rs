@@ -25,19 +25,20 @@ use crate::widget::primitive::widget::WidgetExt;
 use crate::widget::render::ChildRender;
 use crate::widget::widget_iterator::{WidgetIter, WidgetIterMut};
 use crate::color::RED;
+use crate::state::global_state::GlobalState;
 
-#[derive(Debug, Clone)]
-pub struct SyncTest<S: Clone + Debug> {
+#[derive(Debug, Clone, Widget)]
+pub struct SyncTest<GS> where GS: GlobalState {
     id: Uuid,
-    child: Box<dyn Widget<S>>,
+    child: Box<dyn Widget<GS>>,
     position: Point,
     dimension: Dimensions,
-    value: State<String, S>,
-    fore: State<Vec<Uuid>, S>,
+    #[state] value: State<String, GS>,
+    #[state] fore: State<Vec<Uuid>, GS>,
     show_overlay: bool,
 }
 
-impl<S: 'static + Clone + Debug> SyncTest<S> {
+impl<S: GlobalState> SyncTest<S> {
     pub fn new(value: State<String, S>) -> Box<SyncTest<S>> {
         let fore = State::<Vec<Uuid>, S>::new_local("a", &(0..5).map(|_| Uuid::new_v4()).collect::<Vec<Uuid>>());
 
@@ -63,7 +64,7 @@ impl<S: 'static + Clone + Debug> SyncTest<S> {
     }
 }
 
-impl<S: Clone + Debug> CommonWidget<S> for SyncTest<S> {
+impl<S: GlobalState> CommonWidget<S> for SyncTest<S> {
     fn get_id(&self) -> Uuid {
         self.id
     }
@@ -109,7 +110,7 @@ impl<S: Clone + Debug> CommonWidget<S> for SyncTest<S> {
     }
 }
 
-impl<S: Clone + Debug + 'static> Event<S> for SyncTest<S> {
+impl<S: GlobalState> Event<S> for SyncTest<S> {
     fn handle_mouse_event(&mut self, _event: &MouseEvent, _consumed: &bool, _global_state: &mut S) {
         ()
     }
@@ -150,7 +151,7 @@ impl<S: Clone + Debug + 'static> Event<S> for SyncTest<S> {
     }
 }
 
-impl<S: Clone + Debug + 'static> StateSync<S> for SyncTest<S> {
+/*impl<S: Clone + Debug + 'static> StateSync<S> for SyncTest<S> {
     fn insert_local_state(&self, env: &mut Environment<S>) {
         env.insert_local_state(&self.value);
         env.insert_local_state(&self.fore);
@@ -172,17 +173,16 @@ impl<S: Clone + Debug + 'static> StateSync<S> for SyncTest<S> {
     fn sync_state(&mut self, env: &mut Environment<S>, global_state: &S) {
         self.default_sync_state(env, global_state)
     }
-}
+}*/
 
-impl<S: Clone + Debug> ChildRender for SyncTest<S> {}
+impl<S: GlobalState> ChildRender for SyncTest<S> {}
 
-impl<S: Clone + Debug> Layout<S> for SyncTest<S> {
+impl<S: GlobalState> Layout<S> for SyncTest<S> {
     fn flexibility(&self) -> u32 {
         2
     }
 
     fn calculate_size(&mut self, requested_size: Dimensions, env: &Environment<S>) -> Dimensions {
-
         self.dimension = self.child.calculate_size(requested_size, env);
         self.dimension
     }
@@ -195,5 +195,3 @@ impl<S: Clone + Debug> Layout<S> for SyncTest<S> {
         self.child.position_children();
     }
 }
-
-impl<S: 'static + Clone + Debug> WidgetExt<S> for SyncTest<S> {}

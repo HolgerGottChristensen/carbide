@@ -23,6 +23,8 @@ use crate::widget::Rectangle;
 use crate::widget::common_widget::CommonWidget;
 use crate::widget::render::Render;
 use crate::widget::widget_iterator::{WidgetIter, WidgetIterMut};
+use crate::widget::primitive::Widget;
+use crate::state::global_state::GlobalState;
 
 /// A basic, non-interactive rectangle shape widget.
 #[derive(Clone, Debug)]
@@ -32,6 +34,8 @@ pub struct Spacer {
     dimension: Dimensions,
     space: SpacerDirection,
 }
+
+impl<S: GlobalState> Widget<S> for Spacer {}
 
 #[derive(Clone, Debug)]
 pub enum SpacerDirection {
@@ -57,7 +61,7 @@ impl NoEvents for Spacer {}
 
 impl NoLocalStateSync for Spacer {}
 
-impl<S> Layout<S> for Spacer {
+impl<S: GlobalState> Layout<S> for Spacer {
     fn flexibility(&self) -> u32 {
         0
     }
@@ -83,7 +87,7 @@ impl<S> Layout<S> for Spacer {
     }
 }
 
-impl<S> CommonWidget<S> for Spacer {
+impl<S: GlobalState> CommonWidget<S> for Spacer {
     fn get_id(&self) -> Uuid {
         self.id
     }
@@ -121,7 +125,7 @@ impl<S> CommonWidget<S> for Spacer {
     }
 }
 
-impl<S> Render<S> for Spacer {
+impl<S: GlobalState> Render<S> for Spacer {
     fn get_primitives(&self, _fonts: &text::font::Map) -> Vec<Primitive> {
         let mut prims = vec![];
         prims.extend(Rectangle::<S>::debug_outline(Rect::new(self.position, self.dimension), 1.0));

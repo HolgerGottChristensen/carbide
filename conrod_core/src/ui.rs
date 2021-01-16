@@ -22,6 +22,7 @@ use crate::text;
 use crate::theme::Theme;
 use crate::widget::{self, Rectangle};
 use crate::widget::primitive::Widget;
+use crate::state::global_state::GlobalState;
 
 /// A constructor type for building a `Ui` instance with a set of optional parameters.
 pub struct UiBuilder {
@@ -59,7 +60,7 @@ pub struct UiBuilder {
 /// * Maintains the latest user input state (for mouse and keyboard).
 /// * Maintains the latest window dimensions.
 #[derive(Debug)]
-pub struct Ui<S> {
+pub struct Ui<S> where S: GlobalState {
     /// The theme used to set default styling for widgets.
     pub theme: Theme,
     /// An index into the root widget of the graph, representing the entire window.
@@ -126,7 +127,7 @@ pub struct Ui<S> {
 /// this type in mind, please let us know at the github repo via an issue or PR sometime before we
 /// hit 1.0.0!
 #[derive(Debug)]
-pub struct UiCell<'a, S: 'static + Clone> {
+pub struct UiCell<'a, S: GlobalState> {
     /// A mutable reference to a **Ui**.
     ui: &'a mut Ui<S>,
 }
@@ -178,13 +179,13 @@ impl UiBuilder {
     }
 
     /// Build **Ui** from the given builder
-    pub fn build<S: 'static + Clone>(self) -> Ui<S> {
+    pub fn build<S: GlobalState>(self) -> Ui<S> {
         Ui::new(self)
     }
 
 }
 
-impl<S: 'static + Clone> Ui<S> {
+impl<S: GlobalState> Ui<S> {
 
     /// A new, empty **Ui**.
     fn new(builder: UiBuilder) -> Self {
@@ -727,7 +728,7 @@ impl<S: 'static + Clone> Ui<S> {
 }
 
 
-impl<'a, S: Clone> UiCell<'a, S> {
+impl<'a, S: GlobalState> UiCell<'a, S> {
 
     /// A reference to the `Theme` that is currently active within the `Ui`.
     pub fn theme(&self) -> &Theme { &self.ui.theme }
@@ -794,7 +795,7 @@ impl<'a, S: Clone> UiCell<'a, S> {
     }
 }
 
-impl<'a, S: 'static + Clone> Drop for UiCell<'a, S> {
+impl<'a, S: GlobalState> Drop for UiCell<'a, S> {
     fn drop(&mut self) {
         // We'll need to re-draw if we have gained or lost widgets.
         let changed = self.ui.updated_widgets != self.ui.prev_updated_widgets;
@@ -831,14 +832,14 @@ impl<'a, S: 'static + Clone> Drop for UiCell<'a, S> {
     }
 }
 
-impl<'a, S: Clone> ::std::ops::Deref for UiCell<'a, S> {
+impl<'a, S: GlobalState> ::std::ops::Deref for UiCell<'a, S> {
     type Target = Ui<S>;
     fn deref(&self) -> &Ui<S> {
         self.ui
     }
 }
 
-impl<'a, S: Clone> AsRef<Ui<S>> for UiCell<'a, S> {
+impl<'a, S: GlobalState> AsRef<Ui<S>> for UiCell<'a, S> {
     fn as_ref(&self) -> &Ui<S> {
         &self.ui
     }
@@ -848,12 +849,12 @@ impl<'a, S: Clone> AsRef<Ui<S>> for UiCell<'a, S> {
 ///
 /// This function is only for internal use to allow for some `Ui` type acrobatics in order to
 /// provide a nice *safe* API for the user.
-pub fn ref_mut_from_ui_cell<'a, 'b: 'a, S: Clone>(ui_cell: &'a mut UiCell<'b, S>) -> &'a mut Ui<S> {
+pub fn ref_mut_from_ui_cell<'a, 'b: 'a, S: GlobalState>(ui_cell: &'a mut UiCell<'b, S>) -> &'a mut Ui<S> {
     ui_cell.ui
 }
 
 /// A mutable reference to the given `Ui`'s widget `Graph`.
-pub fn widget_graph_mut<S>(ui: &mut Ui<S>) -> &mut Graph {
+pub fn widget_graph_mut<S: GlobalState>(ui: &mut Ui<S>) -> &mut Graph {
     &mut ui.widget_graph
 }
 
@@ -861,7 +862,7 @@ pub fn widget_graph_mut<S>(ui: &mut Ui<S>) -> &mut Graph {
 /// Infer a widget's `Depth` parent by examining it's *x* and *y* `Position`s.
 ///
 /// When a different parent may be inferred from either `Position`, the *x* `Position` is favoured.
-pub fn infer_parent_from_position<S>(ui: &Ui<S>, x: Position, y: Position) -> Option<widget::Id> {
+pub fn infer_parent_from_position<S: GlobalState>(ui: &Ui<S>, x: Position, y: Position) -> Option<widget::Id> {
     use crate::Position::Relative;
     use crate::position::Relative::{Align, Direction, Place, Scalar};
     match (x, y) {
@@ -886,7 +887,7 @@ pub fn infer_parent_from_position<S>(ui: &Ui<S>, x: Position, y: Position) -> Op
 ///
 /// **Note:** This function does not check whether or not using the `window` widget would cause a
 /// cycle.
-pub fn infer_parent_unchecked<S>(ui: &Ui<S>, x_pos: Position, y_pos: Position) -> widget::Id {
+pub fn infer_parent_unchecked<S: GlobalState>(ui: &Ui<S>, x_pos: Position, y_pos: Position) -> widget::Id {
     infer_parent_from_position(ui, x_pos, y_pos)
         .or(ui.maybe_current_parent_id)
         .unwrap_or(ui.window.into())
@@ -896,7 +897,7 @@ pub fn infer_parent_unchecked<S>(ui: &Ui<S>, x_pos: Position, y_pos: Position) -
 /// Cache some `PreUpdateCache` widget data into the widget graph.
 /// Set the widget that is being cached as the new `prev_widget`.
 /// Set the widget's parent as the new `current_parent`.
-pub fn pre_update_cache<S>(ui: &mut Ui<S>, widget: widget::PreUpdateCache) {
+pub fn pre_update_cache<S: GlobalState>(ui: &mut Ui<S>, widget: widget::PreUpdateCache) {
     ui.maybe_prev_widget_id = Some(widget.id);
     ui.maybe_current_parent_id = widget.maybe_parent_id;
     let widget_id = widget.id;

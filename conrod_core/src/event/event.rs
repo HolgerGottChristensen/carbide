@@ -2,8 +2,9 @@ use crate::event_handler::{KeyboardEvent, MouseEvent, WidgetEvent};
 use crate::state::environment::Environment;
 use crate::state::state_sync::StateSync;
 use crate::widget::common_widget::CommonWidget;
+use crate::state::global_state::GlobalState;
 
-pub trait Event<S>: CommonWidget<S> + StateSync<S> {
+pub trait Event<S>: CommonWidget<S> + StateSync<S> where S: GlobalState {
     /// A function that will be called when a mouse event occurs.
     /// It will only get called on the events where the cursor is inside.
     /// Return true if the event is consumed, and will thus not be delegated to other
@@ -73,7 +74,7 @@ pub trait Event<S>: CommonWidget<S> + StateSync<S> {
 
 pub trait NoEvents {}
 
-impl<S, T> Event<S> for T where T: NoEvents + StateSync<S> {
+impl<S: GlobalState, T> Event<S> for T where T: NoEvents + StateSync<S> {
     fn handle_mouse_event(&mut self, _event: &MouseEvent, _consumed: &bool, _global_state: &mut S) {}
 
     fn handle_keyboard_event(&mut self, _event: &KeyboardEvent, _global_state: &mut S) {}

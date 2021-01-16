@@ -30,10 +30,11 @@ use crate::widget::render::Render;
 use crate::widget::widget_iterator::{WidgetIter, WidgetIterMut};
 
 use super::Style as Style;
+use crate::state::global_state::GlobalState;
 
 /// A simple, non-interactive widget for drawing a single **Oval**.
-#[derive(Debug, Clone, WidgetCommon_)]
-pub struct Oval<S, K> {
+#[derive(Debug, Clone, WidgetCommon_, Widget)]
+pub struct Oval<S, GS> where S: 'static + Clone, GS: GlobalState {
     pub id: Uuid,
     /// Data necessary and common for all widget builder render.
     #[conrod(common_builder)]
@@ -48,21 +49,17 @@ pub struct Oval<S, K> {
     dimension: Dimensions,
     color: Color,
 
-    pub children: Vec<Box<dyn Widget<K>>>
+    pub children: Vec<Box<dyn Widget<GS>>>
 }
 
-impl<K, S: 'static + Clone> NoEvents for Oval<S, K> {}
+impl<S: 'static + Clone, GS: GlobalState> NoEvents for Oval<S, GS> {}
 
-impl<S, K> NoLocalStateSync for Oval<S, K> {}
-
-impl<S: 'static + Clone, K: 'static + Clone> WidgetExt<K> for Oval<S, K> {}
-
-impl<S, K> Layout<K> for Oval<S, K> {
+impl<S: 'static + Clone, GS: GlobalState> Layout<GS> for Oval<S, GS> {
     fn flexibility(&self) -> u32 {
         0
     }
 
-    fn calculate_size(&mut self, requested_size: Dimensions, env: &Environment<K>) -> Dimensions {
+    fn calculate_size(&mut self, requested_size: Dimensions, env: &Environment<GS>) -> Dimensions {
         for child in &mut self.children {
             child.calculate_size(requested_size, env);
         }
@@ -84,7 +81,7 @@ impl<S, K> Layout<K> for Oval<S, K> {
     }
 }
 
-impl<S: 'static + Clone, K> CommonWidget<K> for Oval<S, K> {
+impl<S: 'static + Clone, K: GlobalState> CommonWidget<K> for Oval<S, K> {
     fn get_id(&self) -> Uuid {
         self.id
     }
@@ -141,7 +138,7 @@ impl<S: 'static + Clone, K> CommonWidget<K> for Oval<S, K> {
     }
 }
 
-impl<K, S: 'static + Clone> Render<K> for Oval<S, K> {
+impl<S: 'static + Clone, GS: GlobalState> Render<GS> for Oval<S, GS> {
 
     fn get_primitives(&self, fonts: &text::font::Map) -> Vec<Primitive> {
         let points = widget::oval::circumference(Rect::new(self.position, self.dimension), DEFAULT_RESOLUTION);
@@ -153,7 +150,7 @@ impl<K, S: 'static + Clone> Render<K> for Oval<S, K> {
         };
 
         let mut prims: Vec<Primitive> = vec![new_primitive(node_index(0), kind, Rect::new(self.position, self.dimension), Rect::new(self.position, self.dimension))];
-        prims.extend(Rectangle::<K>::debug_outline(Rect::new(self.position, self.dimension), 1.0));
+        prims.extend(Rectangle::<GS>::debug_outline(Rect::new(self.position, self.dimension), 1.0));
         let children: Vec<Primitive> = self.get_children().flat_map(|f| f.get_primitives(fonts)).collect();
         prims.extend(children);
 
@@ -206,7 +203,7 @@ pub struct State<S> {
 /// The default circle resolution if none is specified.
 pub const DEFAULT_RESOLUTION: usize = 50;
 
-impl<S> Oval<Full, S> {
+impl<S: GlobalState> Oval<Full, S> {
 
     pub fn fill(mut self, color: Color) -> Box<Self> {
         self.color = color;
@@ -277,7 +274,7 @@ impl<S> Oval<Full, S> {
     }
 }
 
-impl<S, K> Oval<S, K> {
+impl<S: Clone, K: GlobalState> Oval<S, K> {
     /// The number of lines used to draw the edge.
     ///
     /// By default, `DEFAULT_RESOLUTION` is used.
@@ -296,7 +293,7 @@ impl<S, K> Oval<S, K> {
     }
 }
 
-impl<K> Oval<Section, K> {
+impl<K: GlobalState> Oval<Section, K> {
     /// The radians at which the section will begin.
     ///
     /// A value of `0.0` will begin at the rightmost point of the oval.
@@ -340,7 +337,7 @@ where
     }
 }*/
 
-impl<S, K> Colorable for Oval<S, K> {
+impl<S: Clone, K: GlobalState> Colorable for Oval<S, K> {
     fn color(mut self, color: Color) -> Self {
         self.style.set_color(color);
         self

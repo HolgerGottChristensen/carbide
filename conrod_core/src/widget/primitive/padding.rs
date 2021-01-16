@@ -18,12 +18,13 @@ use crate::widget::primitive::Widget;
 use crate::widget::primitive::widget::WidgetExt;
 use crate::widget::render::Render;
 use crate::widget::widget_iterator::{WidgetIter, WidgetIterMut};
+use crate::state::global_state::GlobalState;
 
 pub static SCALE: f64 = -1.0;
 
 
 #[derive(Debug, Clone)]
-pub struct Padding<S> {
+pub struct Padding<S> where S: GlobalState {
     id: Uuid,
     child: Box<dyn Widget<S>>,
     position: Point,
@@ -31,7 +32,9 @@ pub struct Padding<S> {
     edge_insets: EdgeInsets
 }
 
-impl<S> Padding<S> {
+impl<S: GlobalState> Widget<S> for Padding<S> {}
+
+impl<S: GlobalState> Padding<S> {
     pub fn init(edge_insets: EdgeInsets, child: Box<dyn Widget<S>>) -> Box<Self> {
         Box::new(Padding{
             id: Default::default(),
@@ -43,13 +46,13 @@ impl<S> Padding<S> {
     }
 }
 
-impl<S> NoEvents for Padding<S> {}
+impl<S: GlobalState> NoEvents for Padding<S> {}
 
-impl<S> NoLocalStateSync for Padding<S> {}
+impl<S: GlobalState> NoLocalStateSync for Padding<S> {}
 
-impl<S: 'static + Clone> WidgetExt<S> for Padding<S> {}
+impl<S: GlobalState> WidgetExt<S> for Padding<S> {}
 
-impl<S> CommonWidget<S> for Padding<S> {
+impl<S: GlobalState> CommonWidget<S> for Padding<S> {
     fn get_id(&self) -> Uuid {
         self.id
     }
@@ -96,7 +99,7 @@ impl<S> CommonWidget<S> for Padding<S> {
     }
 }
 
-impl<S> Layout<S> for Padding<S> {
+impl<S: GlobalState> Layout<S> for Padding<S> {
     fn flexibility(&self) -> u32 {
         9
     }
@@ -121,7 +124,7 @@ impl<S> Layout<S> for Padding<S> {
     }
 }
 
-impl<S> Render<S> for Padding<S> {
+impl<S: GlobalState> Render<S> for Padding<S> {
 
     fn get_primitives(&self, fonts: &text::font::Map) -> Vec<Primitive> {
         let mut prims = vec![];

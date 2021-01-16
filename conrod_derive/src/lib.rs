@@ -7,6 +7,7 @@ extern crate syn;
 mod common;
 mod style;
 mod utils;
+mod widget;
 
 use proc_macro::TokenStream;
 
@@ -39,6 +40,15 @@ pub fn widget_style(input: TokenStream) -> TokenStream {
 pub fn widget_style_(input: TokenStream) -> TokenStream {
     impl_derive(input, style::impl_widget_style_)
 }
+
+
+
+#[proc_macro_derive(Widget, attributes(state))]
+pub fn widget(input: TokenStream) -> TokenStream {
+    impl_derive(input, widget::impl_widget)
+}
+
+
 
 // Use the given function to generate a TokenStream for the derive implementation.
 fn impl_derive(

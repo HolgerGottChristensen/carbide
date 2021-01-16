@@ -22,9 +22,10 @@ use crate::widget::widget_iterator::{WidgetIter, WidgetIterMut};
 use daggy::petgraph::graph::node_index;
 use crate::widget::Rectangle;
 use crate::color::RED;
+use crate::state::global_state::GlobalState;
 
 #[derive(Debug, Clone)]
-pub struct OverlaidLayer<S> {
+pub struct OverlaidLayer<S> where S: GlobalState {
     id: Uuid,
     child: Box<dyn Widget<S>>,
     overlay: Option<Box<dyn Widget<S>>>,
@@ -33,11 +34,13 @@ pub struct OverlaidLayer<S> {
     dimension: Dimensions,
 }
 
-impl<S: 'static + Clone> WidgetExt<S> for OverlaidLayer<S> {}
+impl<S: GlobalState> Widget<S> for OverlaidLayer<S> {}
 
-impl<S> NoEvents for OverlaidLayer<S> {}
+impl<S: GlobalState> WidgetExt<S> for OverlaidLayer<S> {}
 
-impl<S: Clone + 'static> StateSync<S> for OverlaidLayer<S> {
+impl<S: GlobalState> NoEvents for OverlaidLayer<S> {}
+
+impl<S: GlobalState> StateSync<S> for OverlaidLayer<S> {
     fn insert_local_state(&self, _env: &mut Environment<S>) {}
 
     fn update_all_widget_state(&mut self, _env: &Environment<S>, _global_state: &S) {}
@@ -62,7 +65,7 @@ impl<S: Clone + 'static> StateSync<S> for OverlaidLayer<S> {
     }
 }
 
-impl<S> Layout<S> for OverlaidLayer<S> {
+impl<S: GlobalState> Layout<S> for OverlaidLayer<S> {
     fn flexibility(&self) -> u32 {
         0
     }
@@ -82,7 +85,7 @@ impl<S> Layout<S> for OverlaidLayer<S> {
     }
 }
 
-impl<S> CommonWidget<S> for OverlaidLayer<S> {
+impl<S: GlobalState> CommonWidget<S> for OverlaidLayer<S> {
     fn get_id(&self) -> Uuid {
         self.id
     }
@@ -128,7 +131,7 @@ impl<S> CommonWidget<S> for OverlaidLayer<S> {
     }
 }
 
-impl<S> Render<S> for OverlaidLayer<S> {
+impl<S: GlobalState> Render<S> for OverlaidLayer<S> {
 
     fn get_primitives(&self, fonts: &text::font::Map) -> Vec<Primitive> {
         let mut prims = vec![];
@@ -149,7 +152,7 @@ impl<S> Render<S> for OverlaidLayer<S> {
 
 
 
-impl<S: Clone + 'static> OverlaidLayer<S> {
+impl<S: GlobalState> OverlaidLayer<S> {
 
     pub fn new(child: Box<dyn Widget<S>>, overlay_id: &str) -> Box<Self> {
         Box::new(Self {

@@ -3,6 +3,7 @@ use crate::layout::layouter::Layouter;
 use crate::position::Dimensions;
 use crate::state::environment::Environment;
 use crate::widget::common_widget::CommonWidget;
+use crate::state::global_state::GlobalState;
 
 pub trait Layout<U> {
     /// 0 is the most flexible and the largest number is the least flexible
@@ -15,7 +16,7 @@ pub trait SingleChildLayout {
     fn flexibility(&self) -> u32;
 }
 
-impl<T, U> Layout<U> for T where T: SingleChildLayout + CommonWidget<U> {
+impl<T, U: GlobalState> Layout<U> for T where T: SingleChildLayout + CommonWidget<U> {
     fn flexibility(&self) -> u32 {
         self.flexibility()
     }

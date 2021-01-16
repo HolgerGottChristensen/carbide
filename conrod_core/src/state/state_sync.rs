@@ -1,7 +1,8 @@
 use crate::state::environment::Environment;
 use crate::widget::common_widget::CommonWidget;
+use crate::state::global_state::GlobalState;
 
-pub trait StateSync<S>: CommonWidget<S> {
+pub trait StateSync<S>: CommonWidget<S> where S: GlobalState {
     /// Insert local state from the widget into the environment.
     /// Return true if any of the keys from the widget was already
     /// in the local state.
@@ -43,7 +44,7 @@ pub trait StateSync<S>: CommonWidget<S> {
 
 pub trait NoLocalStateSync {}
 
-impl<S, T> StateSync<S> for T where T: NoLocalStateSync + CommonWidget<S> {
+impl<S: GlobalState, T> StateSync<S> for T where T: NoLocalStateSync + CommonWidget<S> {
     fn insert_local_state(&self, _: &mut Environment<S>) {}
 
     fn update_all_widget_state(&mut self, _: &Environment<S>, _: &S) {}

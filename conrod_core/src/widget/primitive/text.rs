@@ -29,53 +29,28 @@ use crate::widget::primitive::Widget;
 use crate::widget::primitive::widget::WidgetExt;
 use crate::widget::render::Render;
 use crate::widget::widget_iterator::{WidgetIter, WidgetIterMut};
+use crate::state::global_state::GlobalState;
 
 /// Displays some given text centered within a rectangular area.
 ///
-/// By default, the rectangular dimensions are fit to the area occuppied by the text.
+/// By default, the rectangular dimensions are fit to the area occupied by the text.
 ///
 /// If some horizontal dimension is given, the text will automatically wrap to the width and align
 /// in accordance with the produced **Alignment**.
-#[derive(Debug, Clone, WidgetCommon_)]
-pub struct Text<S: Clone + std::fmt::Debug> {
-    /// Data necessary and common for all widget builder render.
-    #[conrod(common_builder)]
-    pub common: widget::CommonBuilder,
-    /// The text to be drawn by the **Text**.
-    pub text: State<String, S>,
-    font_size: State<u32, S>,
-    /// Unique styling for the **Text**.
-    pub style: Style,
+#[derive(Debug, Clone, Widget)]
+pub struct Text<GS> where GS: GlobalState {
+    #[state] pub text: State<String, GS>,
+    #[state] font_size: State<u32, GS>,
     position: Point,
     dimension: Dimensions,
     wrap_mode: Wrap,
     color: Color,
-
-    pub children: Vec<Box<dyn Widget<S>>>,
+    pub children: Vec<Box<dyn Widget<GS>>>,
 }
 
-impl<S: Clone + std::fmt::Debug> NoEvents for Text<S> {}
+impl<S: GlobalState> NoEvents for Text<S> {}
 
-impl<S: Clone + std::fmt::Debug> StateSync<S> for Text<S> {
-    fn insert_local_state(&self, env: &mut Environment<S>) {
-        env.insert_local_state(&self.text);
-    }
-
-    fn update_all_widget_state(&mut self, env: &Environment<S>, global_state: &S) {
-        self.update_local_widget_state(env);
-        self.text.get_value(global_state);
-    }
-
-    fn update_local_widget_state(&mut self, env: &Environment<S>) {
-        env.update_local_state(&mut self.text)
-    }
-
-    fn sync_state(&mut self, env: &mut Environment<S>, global_state: &S) {
-        self.default_sync_state(env, global_state)
-    }
-}
-
-impl<S: Clone + std::fmt::Debug> Layout<S> for Text<S> {
+impl<S: GlobalState> Layout<S> for Text<S> {
     fn flexibility(&self) -> u32 {
         2
     }
@@ -116,7 +91,7 @@ impl<S: Clone + std::fmt::Debug> Layout<S> for Text<S> {
     }
 }
 
-impl<S: Clone + std::fmt::Debug> Render<S> for Text<S> {
+impl<S: GlobalState> Render<S> for Text<S> {
     fn get_primitives(&self, fonts: &text::font::Map) -> Vec<Primitive> {
         let font_id = match fonts.ids().next() {
             Some(id) => id,
@@ -168,9 +143,7 @@ impl<S: Clone + std::fmt::Debug> Render<S> for Text<S> {
     }
 }
 
-impl<S: 'static + Clone + std::fmt::Debug> WidgetExt<S> for Text<S> {}
-
-impl<S: Clone + std::fmt::Debug> CommonWidget<S> for Text<S> {
+impl<S: GlobalState> CommonWidget<S> for Text<S> {
     fn get_id(&self) -> Uuid {
         unimplemented!()
     }
@@ -226,7 +199,7 @@ impl<S: Clone + std::fmt::Debug> CommonWidget<S> for Text<S> {
         self.dimension = dimensions
     }
 }
-
+/*
 /// The styling for a **Text**'s graphics.
 #[derive(Copy, Clone, Debug, Default, PartialEq, WidgetStyle_)]
 pub struct Style {
@@ -252,7 +225,7 @@ pub struct Style {
     // #[conrod(default = "None")]
     // pub line: Option<Option<Line>>,
 }
-
+*/
 /// The way in which text should wrap around the width.
 #[derive(Copy, Clone, Debug, PartialEq)]
 pub enum Wrap {
@@ -284,13 +257,11 @@ pub struct OldState {
 }
 
 
-impl<S: Clone + std::fmt::Debug> Text<S> {
+impl<S: GlobalState> Text<S> {
     pub fn initialize(text: State<String, S>, children: Vec<Box<dyn Widget<S>>>) -> Box<Self> {
         Box::new(Text {
-            common: widget::CommonBuilder::default(),
             text,
             font_size: 14.into(),
-            style: Style::default(),
             position: [0.0, 0.0],
             dimension: [100.0, 100.0],
             wrap_mode: Wrap::Whitespace,
@@ -302,10 +273,8 @@ impl<S: Clone + std::fmt::Debug> Text<S> {
     /// Build a new **Text** widget.
     pub fn new(text: State<String, S>, position: Point, dimension: Dimensions, children: Vec<Box<dyn Widget<S>>>) -> Box<Self> {
         Box::new(Text {
-            common: widget::CommonBuilder::default(),
             text,
             font_size: 14.into(),
-            style: Style::default(),
             position,
             dimension,
             wrap_mode: Wrap::Whitespace,
@@ -372,37 +341,6 @@ impl<S: Clone + std::fmt::Debug> Text<S> {
         let line_spacing =  1.0;
         let height = text::height(std::cmp::max(num_lines, 1), font_size, line_spacing);
         height
-    }
-
-
-    /// Specify that the **Text** should not wrap lines around the width.
-    pub fn no_line_wrap(mut self) -> Self {
-        self.style.maybe_wrap = Some(None);
-        self
-    }
-
-    /// Line wrap the **Text** at the beginning of the first word that exceeds the width.
-    pub fn wrap_by_word(mut self) -> Self {
-        self.style.maybe_wrap = Some(Some(Wrap::Whitespace));
-        self
-    }
-
-    /// Line wrap the **Text** at the beginning of the first character that exceeds the width.
-    pub fn wrap_by_character(mut self) -> Self {
-        self.style.maybe_wrap = Some(Some(Wrap::Character));
-        self
-    }
-
-    /// A method for specifying the `Font` used for displaying the `Text`.
-    pub fn font_id(mut self, font_id: text::font::Id) -> Self {
-        self.style.font_id =  Some(Some(font_id));
-        self
-    }
-
-    /// Build the **Text** with the given **Style**.
-    pub fn with_style(mut self, style: Style) -> Self {
-        self.style = style;
-        self
     }
 
     /// Align the text to the left of its bounding **Rect**'s *x* axis range.
@@ -555,9 +493,3 @@ impl<S> OldWidget for Text<S> {
 
 }
 */
-impl<S: Clone + std::fmt::Debug> Colorable for Text<S> {
-    fn color(mut self, color: Color) -> Self {
-        self.style.color = Some(color);
-        self
-    }
-}
