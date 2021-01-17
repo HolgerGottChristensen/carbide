@@ -134,4 +134,6 @@ impl SingleChildLayout for CalculatorButton {
     }
 }
 
+impl Widget<CalculatorState> for CalculatorButton {}
+
 impl WidgetExt<CalculatorState> for CalculatorButton {}

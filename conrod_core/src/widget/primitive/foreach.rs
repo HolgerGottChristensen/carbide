@@ -20,12 +20,12 @@ use crate::state::global_state::GlobalState;
 
 #[derive(Debug, Clone)]
 pub struct ForEach<S: GlobalState> {
-    id: Uuid,
+    id: Uuid, // --
     children_map: HashMap<Uuid, Box<dyn Widget<S>>>,
     delegate: Box<dyn Widget<S>>,
     ids: State<Vec<Uuid>, S>,
-    position: Point,
-    dimension: Dimensions,
+    position: Point, // --
+    dimension: Dimensions, // --
 }
 
 impl<S: GlobalState> Widget<S> for ForEach<S> {}
@@ -144,61 +144,6 @@ impl<S: GlobalState> CommonWidget<S> for ForEach<S> {
         self.dimension = dimensions
     }
 }
-
-/*impl<S: Clone + Debug> Event<S> for ForEach<S> {
-    fn handle_mouse_event(&mut self, event: &MouseEvent, consumed: &bool, global_state: &mut S) {
-        unimplemented!()
-    }
-
-    fn handle_keyboard_event(&mut self, event: &KeyboardEvent, global_state: &mut S) {
-        unimplemented!()
-    }
-
-    fn handle_other_event(&mut self, event: &WidgetEvent) {
-        unimplemented!()
-    }
-
-    fn process_mouse_event(&mut self, event: &MouseEvent, consumed: &bool, state: LocalStateList, global_state: &mut S) -> LocalStateList {
-        println!("Foreach mouseevent");
-
-        state
-    }
-
-    fn process_keyboard_event(&mut self, event: &KeyboardEvent, state: LocalStateList, global_state: &mut S) -> LocalStateList {
-        // Apply state from its parent
-        let new_state = self.update_widget_state(state, global_state);
-
-        // Add the state from itself, to the state list
-        let mut state_for_children = new_state; //self.get_state(new_state);
-
-        let mut ids = self.ids.clone();
-
-        for (i, child) in self.get_proxied_children().enumerate() {
-
-            state_for_children.replace_state(State::<Uuid, S>::new("id", &ids.get_value(global_state)[i]).into());
-            state_for_children.replace_state(State::<u32, S>::new("index", &(i as u32)).into());
-            // Then we delegate the event to its children, we also makes sure to update
-            // current state for the next child
-            state_for_children = child.process_keyboard_event(event, state_for_children, global_state);
-
-        }
-        // We then apply the changed state from its children, to save it for itself.
-        self.update_widget_state(state_for_children, global_state)
-    }
-
-    fn get_state(&self, mut current_state: LocalStateList) -> LocalStateList {
-        unimplemented!()
-    }
-
-    fn update_widget_state(&mut self, states: LocalStateList, global_state: &S) -> LocalStateList {
-        states.update_local_state(&mut self.ids, global_state);
-        states
-    }
-
-    fn sync_state(&mut self, states: LocalStateList, global_state: &S) {
-        unimplemented!()
-    }
-}*/
 
 impl<S: GlobalState> NoEvents for ForEach<S> {}
 
