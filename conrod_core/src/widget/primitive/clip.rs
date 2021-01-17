@@ -37,7 +37,6 @@ use crate::state::state::State;
 use crate::state::global_state::GlobalState;
 
 #[derive(Debug, Clone, Widget)]
-#[state_sync(sync_state)]
 pub struct Clip<GS> where GS: GlobalState {
     id: Uuid,
     child: Box<dyn Widget<GS>>,

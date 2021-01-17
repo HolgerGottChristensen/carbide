@@ -21,18 +21,22 @@ use crate::widget::widget_iterator::{WidgetIter, WidgetIterMut};
 use crate::color::RED;
 use crate::state::global_state::GlobalState;
 
-#[derive(Debug, Clone)]
-pub struct ForeachTest<S> where S: GlobalState {
+#[derive(Debug, Clone, Widget)]
+#[state_sync(insert_local_state)]
+pub struct ForeachTest<GS> where GS: GlobalState {
     id: Uuid,
-    child: Box<dyn Widget<S>>,
+    child: Box<dyn Widget<GS>>,
     position: Point,
     dimension: Dimensions,
-    index: State<u32, S>,
+    #[state] index: State<u32, GS>,
 }
 
-impl<S: GlobalState> Widget<S> for ForeachTest<S> {}
-
 impl<S: GlobalState> ForeachTest<S> {
+
+    fn insert_local_state(&self, env: &mut Environment<S>) {
+        env.insert_local_state(&State::<String, S>::new_local("sindex", &self.index.get_latest_value().to_string()));
+    }
+
     pub fn new() -> Box<ForeachTest<S>> {
         Box::new(Self {
             id: Uuid::new_v4(),
@@ -94,24 +98,6 @@ impl<S: GlobalState> CommonWidget<S> for ForeachTest<S> {
 
 impl<S: GlobalState> NoEvents for ForeachTest<S> {}
 
-impl<S: GlobalState> StateSync<S> for ForeachTest<S> {
-    fn insert_local_state(&self, env: &mut Environment<S>) {
-        env.insert_local_state(&State::<String, S>::new_local("sindex", &self.index.get_latest_value().to_string()))
-    }
-
-    fn update_all_widget_state(&mut self, env: &Environment<S>, _global_state: &S) {
-        self.update_local_widget_state(env)
-    }
-
-    fn update_local_widget_state(&mut self, env: &Environment<S>) {
-        env.update_local_state(&mut self.index);
-    }
-
-    fn sync_state(&mut self, env: &mut Environment<S>, global_state: &S) {
-        self.default_sync_state(env, global_state)
-    }
-}
-
 impl<S: GlobalState> ChildRender for ForeachTest<S> {}
 
 impl<S: GlobalState> Layout<S> for ForeachTest<S> {
@@ -132,5 +118,3 @@ impl<S: GlobalState> Layout<S> for ForeachTest<S> {
         self.child.position_children();
     }
 }
-
-impl<S: GlobalState> WidgetExt<S> for ForeachTest<S> {}

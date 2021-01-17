@@ -19,7 +19,7 @@ pub use self::primitive::h_stack::*;
 pub use self::primitive::image::{self, Image};
 pub use self::primitive::line::{self, Line};
 pub use self::primitive::point_path::{self, PointPath};
-pub use self::primitive::shape::circle::{self, Circle};
+pub use old::circle::{self, Circle};
 pub use self::primitive::shape::oval::{self, Oval};
 pub use self::primitive::shape::polygon::{self, Polygon};
 pub use self::primitive::shape::rectangle::{self, Rectangle};

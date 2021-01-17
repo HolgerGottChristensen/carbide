@@ -96,7 +96,7 @@ pub const MODE_IMAGE: u32 = 1;
 pub const MODE_GEOMETRY: u32 = 2;
 
 /// Default dimensions to use for the glyph cache.
-pub const DEFAULT_GLYPH_CACHE_DIMS: [u32; 2] = [1_024; 2];
+pub const DEFAULT_GLYPH_CACHE_DIMS: [u32; 2] = [2_048; 2];
 
 impl Mesh {
     /// Construct a new empty `Mesh` with default glyph cache dimensions.

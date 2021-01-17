@@ -18,17 +18,16 @@ use crate::widget::render::ChildRender;
 use crate::widget::widget_iterator::{WidgetIter, WidgetIterMut};
 use crate::state::global_state::GlobalState;
 
-#[derive(Debug, Clone)]
-pub struct ForEach<S: GlobalState> {
+#[derive(Debug, Clone, Widget)]
+#[state_sync(sync_state)]
+pub struct ForEach<GS> where GS: GlobalState {
     id: Uuid, // --
-    children_map: HashMap<Uuid, Box<dyn Widget<S>>>,
-    delegate: Box<dyn Widget<S>>,
-    ids: State<Vec<Uuid>, S>,
+    children_map: HashMap<Uuid, Box<dyn Widget<GS>>>,
+    delegate: Box<dyn Widget<GS>>,
+    #[state] ids: State<Vec<Uuid>, GS>,
     position: Point, // --
     dimension: Dimensions, // --
 }
-
-impl<S: GlobalState> Widget<S> for ForEach<S> {}
 
 impl<S: GlobalState> ForEach<S> {
     pub fn new(ids: State<Vec<Uuid>, S>, delegate: Box<dyn Widget<S>>) -> Box<ForEach<S>> {
@@ -47,6 +46,22 @@ impl<S: GlobalState> ForEach<S> {
             position: [100.0,100.0],
             dimension: [100.0,100.0]
         })
+    }
+
+    fn sync_state(&mut self, env: &mut Environment<S>, global_state: &S) {
+        self.update_all_widget_state(env, global_state);
+
+        self.insert_local_state(env);
+
+        let mut ids = self.ids.clone();
+
+        for (i, child) in self.get_proxied_children().enumerate() {
+            env.insert_local_state(&State::<Uuid, S>::new_local("id", &ids.get_value(global_state)[i]));
+            env.insert_local_state(&State::<u32, S>::new_local("index", &(i as u32)));
+            child.sync_state(env, global_state)
+        }
+
+        self.update_local_widget_state(env);
     }
 }
 
@@ -147,34 +162,6 @@ impl<S: GlobalState> CommonWidget<S> for ForEach<S> {
 
 impl<S: GlobalState> NoEvents for ForEach<S> {}
 
-impl<S: GlobalState> StateSync<S> for ForEach<S> {
-    fn insert_local_state(&self, _env: &mut Environment<S>) {}
-
-    fn update_all_widget_state(&mut self, env: &Environment<S>, _global_state: &S) {
-        self.update_local_widget_state(env)
-    }
-
-    fn update_local_widget_state(&mut self, env: &Environment<S>) {
-        env.update_local_state(&mut self.ids)
-    }
-
-    fn sync_state(&mut self, env: &mut Environment<S>, global_state: &S) {
-        self.update_all_widget_state(env, global_state);
-
-        self.insert_local_state(env);
-
-        let mut ids = self.ids.clone();
-
-        for (i, child) in self.get_proxied_children().enumerate() {
-            env.insert_local_state(&State::<Uuid, S>::new_local("id", &ids.get_value(global_state)[i]));
-            env.insert_local_state(&State::<u32, S>::new_local("index", &(i as u32)));
-            child.sync_state(env, global_state)
-        }
-
-        self.update_local_widget_state(env);
-    }
-}
-
 impl<S: GlobalState> ChildRender for ForEach<S> {}
 
 impl<S: GlobalState> Layout<S> for ForEach<S> {
@@ -190,5 +177,3 @@ impl<S: GlobalState> Layout<S> for ForEach<S> {
         unimplemented!()
     }
 }
-
-impl<S: GlobalState> WidgetExt<S> for ForEach<S> {}

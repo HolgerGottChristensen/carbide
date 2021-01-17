@@ -28,8 +28,8 @@ use crate::widget::types::image_information::ImageInformation;
 use crate::state::global_state::GlobalState;
 
 /// A primitive and basic widget for drawing an `Image`.
-#[derive(Debug, Clone, WidgetCommon_)]
-pub struct Image<S> where S: GlobalState {
+#[derive(Debug, Clone, WidgetCommon_, Widget)]
+pub struct Image<GS> where GS: GlobalState {
     /// Data necessary and common for all widget builder render.
     #[conrod(common_builder)]
     pub common: widget::CommonBuilder,
@@ -42,18 +42,14 @@ pub struct Image<S> where S: GlobalState {
     position: Point,
     dimension: Dimensions,
 
-    pub children: Vec<Box<dyn Widget<S>>>,
+    pub children: Vec<Box<dyn Widget<GS>>>,
 
     scale_mode: ScaleMode,
     resizeable: bool,
     requested_size: Dimensions
 }
 
-impl<S: GlobalState> Widget<S> for Image<S> {}
-
 impl<S: GlobalState> NoEvents for Image<S> {}
-
-impl<S: GlobalState> NoLocalStateSync for Image<S> {}
 
 impl<S: GlobalState> Layout<S> for Image<S> {
     fn flexibility(&self) -> u32 {
@@ -300,8 +296,6 @@ impl<S: GlobalState> Image<S> {
     }*/
 
 }
-
-impl<S: GlobalState> WidgetExt<S> for Image<S> {}
 
 /*impl<S> OldWidget<S> for Image<S> {
     type State = State;

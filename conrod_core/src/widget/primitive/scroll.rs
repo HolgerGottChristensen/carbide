@@ -39,21 +39,33 @@ use crate::state::global_state::GlobalState;
 
 
 /// A basic, non-interactive rectangle shape widget.
-#[derive(Debug, Clone)]
-pub struct Scroll<S> where S: GlobalState {
+#[derive(Debug, Clone, Widget)]
+pub struct Scroll<GS> where GS: GlobalState {
     id: Uuid,
-    child: Box<dyn Widget<S>>,
+    child: Box<dyn Widget<GS>>,
     position: Point,
     dimension: Dimensions,
     scroll_offset: [f64; 2], // Save as scroll percents instead of offsets
     scroll_directions: ScrollDirection,
-    scrollbar_horizontal: Box<dyn Widget<S>>,
-    scrollbar_vertical: Box<dyn Widget<S>>,
+    scrollbar_horizontal: Box<dyn Widget<GS>>,
+    scrollbar_vertical: Box<dyn Widget<GS>>,
 }
 
-impl<S: GlobalState> Widget<S> for Scroll<S> {}
+impl<S: GlobalState> Scroll<S> {
 
-impl<S: GlobalState> WidgetExt<S> for Scroll<S> {}
+    pub fn new(child: Box<dyn Widget<S>>) -> Box<Self> {
+        Box::new(Self {
+            id: Uuid::new_v4(),
+            child,
+            position: [0.0, 0.0],
+            dimension: [0.0, 0.0],
+            scroll_offset: [0.0, 0.0],
+            scroll_directions: ScrollDirection::Both,
+            scrollbar_horizontal: Rectangle::initialize(vec![]).fill(GRAY).frame(100.0,10.0),
+            scrollbar_vertical: Rectangle::initialize(vec![]).fill(GRAY).frame(10.0,100.0)
+        })
+    }
+}
 
 impl<S: GlobalState> Event<S> for Scroll<S> {
     fn handle_mouse_event(&mut self, event: &MouseEvent, consumed: &bool, global_state: &mut S) {
@@ -106,9 +118,6 @@ impl<S: GlobalState> Event<S> for Scroll<S> {
         }
     }
 }
-
-
-impl<S: GlobalState> NoLocalStateSync for Scroll<S> {}
 
 impl<S: GlobalState> Layout<S> for Scroll<S> {
     fn flexibility(&self) -> u32 {
@@ -251,21 +260,7 @@ impl<S: GlobalState> Render<S> for Scroll<S> {
     }
 }
 
-impl<S: GlobalState> Scroll<S> {
 
-    pub fn new(child: Box<dyn Widget<S>>) -> Box<Self> {
-        Box::new(Self {
-            id: Uuid::new_v4(),
-            child,
-            position: [0.0, 0.0],
-            dimension: [0.0, 0.0],
-            scroll_offset: [0.0, 0.0],
-            scroll_directions: ScrollDirection::Both,
-            scrollbar_horizontal: Rectangle::initialize(vec![]).fill(GRAY).frame(100.0,10.0),
-            scrollbar_vertical: Rectangle::initialize(vec![]).fill(GRAY).frame(10.0,100.0)
-        })
-    }
-}
 
 impl<S: GlobalState> Scroll<S> {
 

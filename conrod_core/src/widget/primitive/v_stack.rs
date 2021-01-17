@@ -19,17 +19,15 @@ use crate::widget::widget_iterator::{WidgetIter, WidgetIterMut};
 use crate::state::global_state::GlobalState;
 
 /// A basic, non-interactive rectangle shape widget.
-#[derive(Debug, Clone)]
-pub struct VStack<S> where S: GlobalState {
+#[derive(Debug, Clone, Widget)]
+pub struct VStack<GS> where GS: GlobalState {
     id: Uuid,
-    children: Vec<Box<dyn Widget<S>>>,
+    children: Vec<Box<dyn Widget<GS>>>,
     position: Point,
     dimension: Dimensions,
     spacing: Scalar,
     cross_axis_alignment: CrossAxisAlignment
 }
-
-impl<S: GlobalState> Widget<S> for VStack<S> {}
 
 impl<S: GlobalState> VStack<S> {
     pub fn initialize(children: Vec<Box<dyn Widget<S>>>) -> Box<Self> {
@@ -55,10 +53,6 @@ impl<S: GlobalState> VStack<S> {
 }
 
 impl<S: GlobalState> NoEvents for VStack<S> {}
-
-impl<S: GlobalState> NoLocalStateSync for VStack<S> {}
-
-impl<S: GlobalState> WidgetExt<S> for VStack<S> {}
 
 impl<S: GlobalState> Layout<S> for VStack<S> {
     fn flexibility(&self) -> u32 {

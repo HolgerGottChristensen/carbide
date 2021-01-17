@@ -24,46 +24,18 @@ use crate::widget::Rectangle;
 use crate::color::RED;
 use crate::state::global_state::GlobalState;
 
-#[derive(Debug, Clone)]
-pub struct OverlaidLayer<S> where S: GlobalState {
+#[derive(Debug, Clone, Widget)]
+#[state_sync(sync_state)]
+pub struct OverlaidLayer<GS> where GS: GlobalState {
     id: Uuid,
-    child: Box<dyn Widget<S>>,
-    overlay: Option<Box<dyn Widget<S>>>,
+    child: Box<dyn Widget<GS>>,
+    overlay: Option<Box<dyn Widget<GS>>>,
     overlay_id: String,
     position: Point,
     dimension: Dimensions,
 }
 
-impl<S: GlobalState> Widget<S> for OverlaidLayer<S> {}
-
-impl<S: GlobalState> WidgetExt<S> for OverlaidLayer<S> {}
-
 impl<S: GlobalState> NoEvents for OverlaidLayer<S> {}
-
-impl<S: GlobalState> StateSync<S> for OverlaidLayer<S> {
-    fn insert_local_state(&self, _env: &mut Environment<S>) {}
-
-    fn update_all_widget_state(&mut self, _env: &Environment<S>, _global_state: &S) {}
-
-    fn update_local_widget_state(&mut self, _env: &Environment<S>) {}
-
-    fn sync_state(&mut self, env: &mut Environment<S>, global_state: &S) {
-        // This might not be the prettiest place to retrieve things from the env
-        self.update_all_widget_state(env, global_state);
-
-        self.insert_local_state(env);
-
-        for child in self.get_proxied_children() {
-            child.sync_state(env, global_state)
-        }
-
-        // Check if env contains an overlay widget with the specified id
-        self.overlay = env.get_overlay(&self.overlay_id);
-
-
-        self.update_local_widget_state(env);
-    }
-}
 
 impl<S: GlobalState> Layout<S> for OverlaidLayer<S> {
     fn flexibility(&self) -> u32 {
@@ -154,7 +126,24 @@ impl<S: GlobalState> Render<S> for OverlaidLayer<S> {
 
 impl<S: GlobalState> OverlaidLayer<S> {
 
-    pub fn new(child: Box<dyn Widget<S>>, overlay_id: &str) -> Box<Self> {
+    fn sync_state(&mut self, env: &mut Environment<S>, global_state: &S) {
+        // This might not be the prettiest place to retrieve things from the env
+        self.update_all_widget_state(env, global_state);
+
+        self.insert_local_state(env);
+
+        for child in self.get_proxied_children() {
+            child.sync_state(env, global_state)
+        }
+
+        // Check if env contains an overlay widget with the specified id
+        self.overlay = env.get_overlay(&self.overlay_id);
+
+
+        self.update_local_widget_state(env);
+    }
+
+    pub fn new(overlay_id: &str, child: Box<dyn Widget<S>>) -> Box<Self> {
         Box::new(Self {
             id: Uuid::new_v4(),
             child,

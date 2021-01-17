@@ -111,7 +111,7 @@ fn bind_group_layout(
         visibility: wgpu::ShaderStage::FRAGMENT,
         ty: wgpu::BindingType::SampledTexture {
             multisampled: false,
-            component_type: GLYPH_TEX_COMPONENT_TY,
+            component_type: GLYPH_TEX_COMPONENT_TY.into(),
             dimension: wgpu::TextureViewDimension::D2,
         },
         count: None,

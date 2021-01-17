@@ -26,8 +26,8 @@ use crate::state::global_state::GlobalState;
 
 
 /// A simple, non-interactive widget for drawing a single straight Line.
-#[derive(Debug, Clone, WidgetCommon_)]
-pub struct Line<S> where S: GlobalState {
+#[derive(Debug, Clone, WidgetCommon_, Widget)]
+pub struct Line<GS> where GS: GlobalState {
     /// Data necessary and common for all widget builder render.
     #[conrod(common_builder)]
     pub common: widget::CommonBuilder,
@@ -42,16 +42,10 @@ pub struct Line<S> where S: GlobalState {
     position: Point,
     dimension: Dimensions,
 
-    pub children: Vec<Box<dyn Widget<S>>>
+    pub children: Vec<Box<dyn Widget<GS>>>
 }
 
-impl<S: GlobalState> Widget<S> for Line<S> {}
-
 impl<S: GlobalState> NoEvents for Line<S> {}
-
-impl<S: GlobalState> NoLocalStateSync for Line<S> {}
-
-impl<S: GlobalState> WidgetExt<S> for Line<S> {}
 
 impl<S: GlobalState> Layout<S> for Line<S> {
     fn flexibility(&self) -> u32 {

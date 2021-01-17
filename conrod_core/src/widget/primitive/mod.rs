@@ -21,7 +21,6 @@ pub mod padding;
 pub mod spacer;
 pub mod edge_insets;
 pub mod foreach;
-pub mod overlay;
 pub mod overlaid_layer;
 pub mod scroll;
 pub mod clip;

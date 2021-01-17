@@ -23,16 +23,14 @@ use crate::state::global_state::GlobalState;
 pub static SCALE: f64 = -1.0;
 
 
-#[derive(Debug, Clone)]
-pub struct Padding<S> where S: GlobalState {
+#[derive(Debug, Clone, Widget)]
+pub struct Padding<GS> where GS: GlobalState {
     id: Uuid,
-    child: Box<dyn Widget<S>>,
+    child: Box<dyn Widget<GS>>,
     position: Point,
     dimension: Dimensions,
     edge_insets: EdgeInsets
 }
-
-impl<S: GlobalState> Widget<S> for Padding<S> {}
 
 impl<S: GlobalState> Padding<S> {
     pub fn init(edge_insets: EdgeInsets, child: Box<dyn Widget<S>>) -> Box<Self> {
@@ -47,10 +45,6 @@ impl<S: GlobalState> Padding<S> {
 }
 
 impl<S: GlobalState> NoEvents for Padding<S> {}
-
-impl<S: GlobalState> NoLocalStateSync for Padding<S> {}
-
-impl<S: GlobalState> WidgetExt<S> for Padding<S> {}
 
 impl<S: GlobalState> CommonWidget<S> for Padding<S> {
     fn get_id(&self) -> Uuid {

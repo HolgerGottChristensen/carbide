@@ -33,3 +33,4 @@ pub mod text_edit;
 pub mod title_bar;
 pub mod toggle;
 pub mod xy_pad;
+pub mod circle;

@@ -35,7 +35,7 @@ use std::collections::HashMap;
 use crate::render_pass_command::{create_render_pass_commands, RenderPassCommand};
 
 const GLYPH_TEX_FORMAT: wgpu::TextureFormat = wgpu::TextureFormat::R8Unorm;
-const GLYPH_TEX_COMPONENT_TY: wgpu::TextureComponentType = wgpu::TextureComponentType::Uint;
+const GLYPH_TEX_COMPONENT_TY: wgpu::TextureFormat = wgpu::TextureFormat::R8Unorm;
 const DEFAULT_IMAGE_TEX_FORMAT: wgpu::TextureFormat = wgpu::TextureFormat::R8Unorm;
 
 

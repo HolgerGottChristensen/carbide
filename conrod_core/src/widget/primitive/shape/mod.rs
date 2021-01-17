@@ -4,7 +4,6 @@ use crate::color::Color;
 use crate::theme::Theme;
 use crate::widget;
 
-pub mod circle;
 pub mod oval;
 pub mod polygon;
 pub mod rectangle;

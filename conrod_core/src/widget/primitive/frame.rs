@@ -23,11 +23,10 @@ use crate::state::global_state::GlobalState;
 
 pub static SCALE: f64 = -1.0;
 
-
-#[derive(Debug, Clone)]
-pub struct Frame<S> where S: GlobalState {
+#[derive(Debug, Clone, Widget)]
+pub struct Frame<GS> where GS: GlobalState {
     id: Uuid,
-    child: Box<dyn Widget<S>>,
+    child: Box<dyn Widget<GS>>,
     position: Point,
     dimension: Dimensions
 }
@@ -61,13 +60,7 @@ impl<S: GlobalState> Frame<S> {
     }
 }
 
-impl<S: GlobalState> Widget<S> for Frame<S> {}
-
-impl<S: GlobalState> WidgetExt<S> for Frame<S> {}
-
 impl<S: GlobalState> NoEvents for Frame<S> {}
-
-impl<S: GlobalState> NoLocalStateSync for Frame<S> {}
 
 impl<S: GlobalState> CommonWidget<S> for Frame<S> {
     fn get_id(&self) -> Uuid {

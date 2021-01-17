@@ -18,7 +18,7 @@ use crate::widget::{HStack, Rectangle, Text};
 use crate::widget::common_widget::CommonWidget;
 use crate::widget::complex::foreachtest::ForeachTest;
 use crate::widget::primitive::foreach::ForEach;
-use crate::widget::primitive::spacer::{Spacer, SpacerDirection};
+use crate::widget::primitive::spacer::{Spacer};
 use crate::widget::primitive::v_stack::VStack;
 use crate::widget::primitive::Widget;
 use crate::widget::primitive::widget::WidgetExt;
@@ -26,8 +26,10 @@ use crate::widget::render::ChildRender;
 use crate::widget::widget_iterator::{WidgetIter, WidgetIterMut};
 use crate::color::RED;
 use crate::state::global_state::GlobalState;
+use crate::widget::types::spacer_direction::SpacerDirection;
 
 #[derive(Debug, Clone, Widget)]
+#[state_sync(insert_local_state)]
 pub struct SyncTest<GS> where GS: GlobalState {
     id: Uuid,
     child: Box<dyn Widget<GS>>,
@@ -39,6 +41,13 @@ pub struct SyncTest<GS> where GS: GlobalState {
 }
 
 impl<S: GlobalState> SyncTest<S> {
+
+    fn insert_local_state(&self, env: &mut Environment<S>) {
+        if self.show_overlay {
+            env.add_overlay("overlay_test", Rectangle::new([10.0,10.0], [600.0,600.0], vec![]).fill(RED))
+        }
+    }
+
     pub fn new(value: State<String, S>) -> Box<SyncTest<S>> {
         let fore = State::<Vec<Uuid>, S>::new_local("a", &(0..5).map(|_| Uuid::new_v4()).collect::<Vec<Uuid>>());
 

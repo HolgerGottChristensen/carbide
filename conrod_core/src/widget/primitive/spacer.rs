@@ -25,26 +25,16 @@ use crate::widget::render::Render;
 use crate::widget::widget_iterator::{WidgetIter, WidgetIterMut};
 use crate::widget::primitive::Widget;
 use crate::state::global_state::GlobalState;
+use crate::widget::types::spacer_direction::SpacerDirection;
 
 /// A basic, non-interactive rectangle shape widget.
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Widget)]
 pub struct Spacer {
     id: Uuid,
     position: Point,
     dimension: Dimensions,
     space: SpacerDirection,
 }
-
-impl<S: GlobalState> Widget<S> for Spacer {}
-
-#[derive(Clone, Debug)]
-pub enum SpacerDirection {
-    Vertical,
-    Horizontal,
-    Both
-}
-
-
 
 impl Spacer {
     pub fn new(space: SpacerDirection) -> Box<Self> {
@@ -58,8 +48,6 @@ impl Spacer {
 }
 
 impl NoEvents for Spacer {}
-
-impl NoLocalStateSync for Spacer {}
 
 impl<S: GlobalState> Layout<S> for Spacer {
     fn flexibility(&self) -> u32 {
