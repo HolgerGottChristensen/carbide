@@ -91,9 +91,9 @@ impl<S: GlobalState> SyncTest<S> {
                         ForEach::new(fore.clone(), ForeachTest::new())
                     ]),
                     ForEach::new((0..5).map(|_| Uuid::new_v4()).collect::<Vec<Uuid>>().into(), Rectangle::initialize(vec![]).frame(10.0,10.0)),
-                    Text::initialize(value.clone(), vec![]),
+                    Text::initialize(value.clone()),
                     Spacer::new(SpacerDirection::Horizontal),
-                    Text::initialize(value.clone(), vec![]),
+                    Text::initialize(value.clone()),
                     Spacer::new(SpacerDirection::Horizontal),
             ]),
             position: [100.0,100.0],

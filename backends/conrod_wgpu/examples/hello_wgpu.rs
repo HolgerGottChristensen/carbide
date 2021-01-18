@@ -31,17 +31,17 @@ fn main() {
     window.set_widgets(
         OverlaidLayer::new ("overlay_test",
         VStack::initialize(vec![
-            Text::initialize("Hello world!".into(), vec![]),
-            Text::initialize("Hvad sker der i denne verden og vil den layoute rigtigt når der er en lang tekst og der ikke er nok plads til at det hele kan være på en linje".into(), vec![]),
-            Image::new(rust_image,  vec![]),
+            Text::initialize("Hello world!".into()),
+            Text::initialize("Hvad sker der i denne verden og vil den layoute rigtigt når der er en lang tekst og der ikke er nok plads til at det hele kan være på en linje".into()),
+            Image::new(rust_image),
             Rectangle::initialize(vec![
                 SyncTest::new(sync_state)
             ]).fill(GREEN),
             HStack::initialize(vec![
-                Image::new(rust_image,  vec![]),
+                Image::new(rust_image),
                 Rectangle::initialize(vec![
                     Scroll::new(
-                        Image::new(rust_image,  vec![])
+                        Image::new(rust_image)
                             .resizeable()
                             .aspect_ratio(ScaleMode::Fill)
                             .frame(800.0, 500.0)

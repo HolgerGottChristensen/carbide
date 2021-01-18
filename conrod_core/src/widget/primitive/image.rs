@@ -28,7 +28,7 @@ use crate::state::global_state::GlobalState;
 
 /// A primitive and basic widget for drawing an `Image`.
 #[derive(Debug, Clone, WidgetCommon_, Widget)]
-pub struct Image<GS> where GS: GlobalState {
+pub struct Image {
     /// Data necessary and common for all widget builder render.
     #[conrod(common_builder)]
     pub common: widget::CommonBuilder,
@@ -40,15 +40,12 @@ pub struct Image<GS> where GS: GlobalState {
     pub style: Style,
     position: Point,
     dimension: Dimensions,
-
-    pub children: Vec<Box<dyn Widget<GS>>>,
-
     scale_mode: ScaleMode,
     resizeable: bool,
     requested_size: Dimensions
 }
 
-impl<S: GlobalState> Layout<S> for Image<S> {
+impl<S: GlobalState> Layout<S> for Image {
     fn flexibility(&self) -> u32 {
         10
     }
@@ -56,10 +53,6 @@ impl<S: GlobalState> Layout<S> for Image<S> {
     fn calculate_size(&mut self, requested_size: Dimensions, env: &Environment<S>) -> Dimensions {
         let dim = self.dimension;
         self.requested_size = requested_size;
-
-        for child in self.get_children_mut() {
-            child.calculate_size(dim, env);
-        }
 
         let image_information = env.get_image_information(&self.image_id).unwrap();
 
@@ -93,18 +86,10 @@ impl<S: GlobalState> Layout<S> for Image<S> {
 
     fn position_children(&mut self) {
 
-        let positioning = BasicLayouter::Center.position();
-        let position = self.position;
-        let dimension = self.dimension;
-
-        for child in self.get_children_mut() {
-            positioning(position, dimension, child);
-            child.position_children();
-        }
     }
 }
 
-impl<S: GlobalState> Render<S> for Image<S> {
+impl<S: GlobalState> Render<S> for Image {
 
     fn get_primitives(&self, fonts: &text::font::Map) -> Vec<Primitive> {
         //let color = Color::random();
@@ -118,14 +103,11 @@ impl<S: GlobalState> Render<S> for Image<S> {
 
         let mut prims: Vec<Primitive> = vec![new_primitive(node_index(0), kind, rect, rect)];
         prims.extend(Rectangle::<S>::debug_outline(rect.clone(), 1.0));
-        let children: Vec<Primitive> = self.get_children().flat_map(|f| f.get_primitives(fonts)).collect();
-        prims.extend(children);
-
         return prims;
     }
 }
 
-impl<S: GlobalState> CommonWidget<S> for Image<S> {
+impl<S: GlobalState> CommonWidget<S> for Image {
     fn get_id(&self) -> Uuid {
         unimplemented!()
     }
@@ -135,34 +117,15 @@ impl<S: GlobalState> CommonWidget<S> for Image<S> {
     }
 
     fn get_children(&self) -> WidgetIter<S> {
-        self.children
-            .iter()
-            .rfold(WidgetIter::Empty, |acc, x| {
-                if x.get_flag() == Flags::Proxy {
-                    WidgetIter::Multi(Box::new(x.get_children()), Box::new(acc))
-                } else {
-                    WidgetIter::Single(x, Box::new(acc))
-                }
-            })
+        WidgetIter::Empty
     }
 
     fn get_children_mut(&mut self) -> WidgetIterMut<S> {
-        self.children
-            .iter_mut()
-            .rfold(WidgetIterMut::Empty, |acc, x| {
-                if x.get_flag() == Flags::Proxy {
-                    WidgetIterMut::Multi(Box::new(x.get_children_mut()), Box::new(acc))
-                } else {
-                    WidgetIterMut::Single(x, Box::new(acc))
-                }
-            })
+        WidgetIterMut::Empty
     }
 
     fn get_proxied_children(&mut self) -> WidgetIterMut<S> {
-        self.children.iter_mut()
-            .rfold(WidgetIterMut::Empty, |acc, x| {
-                WidgetIterMut::Single(x, Box::new(acc))
-            })
+        WidgetIterMut::Empty
     }
 
     fn get_position(&self) -> Point {
@@ -202,7 +165,7 @@ pub struct Style {
 }
 
 
-impl<S: GlobalState> Image<S> {
+impl Image {
 
     /// Construct a new `Image`.
     ///
@@ -236,14 +199,13 @@ impl<S: GlobalState> Image<S> {
             style: Style::default(),
             position: [0.0, 0.0],
             dimension: [0.0, 0.0],
-            children: vec![],
             scale_mode: ScaleMode::Fit,
             resizeable: false,
             requested_size: [0.0, 0.0]
         }
     }
 
-    pub fn new(id: image::Id, children: Vec<Box<dyn Widget<S>>>) -> Box<Self> {
+    pub fn new(id: image::Id) -> Box<Self> {
         Box::new(Image {
             common: Default::default(),
             image_id: id,
@@ -251,7 +213,6 @@ impl<S: GlobalState> Image<S> {
             style: Default::default(),
             position: [0.0, 0.0],
             dimension: [0.0, 0.0],
-            children,
             scale_mode: ScaleMode::Fit,
             resizeable: false,
             requested_size: [0.0, 0.0]

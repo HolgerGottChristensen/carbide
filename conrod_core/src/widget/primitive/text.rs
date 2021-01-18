@@ -44,7 +44,6 @@ pub struct Text<GS> where GS: GlobalState {
     dimension: Dimensions,
     wrap_mode: Wrap,
     color: Color,
-    pub children: Vec<Box<dyn Widget<GS>>>,
 }
 
 impl<S: GlobalState> Layout<S> for Text<S> {
@@ -63,28 +62,18 @@ impl<S: GlobalState> Layout<S> for Text<S> {
 
         let pref_height = self.default_y(env.get_fonts_map());
 
-        // Todo calculate size of children here
-
         if pref_height > proposed_size[1] {
             self.dimension = [self.dimension[0], proposed_size[1]];
         } else {
             self.dimension = [self.dimension[0], pref_height];
         }
 
-
         self.dimension
 
     }
 
     fn position_children(&mut self) {
-        let positioning = BasicLayouter::Center.position();
-        let position = self.position;
-        let dimension = self.dimension;
 
-        for child in self.get_children_mut() {
-            positioning(position, dimension, child);
-            child.position_children();
-        }
     }
 }
 
@@ -133,8 +122,6 @@ impl<S: GlobalState> Render<S> for Text<S> {
 
         let mut prims: Vec<Primitive> = vec![new_primitive(node_index(0), kind, Rect::new(self.position, self.dimension), Rect::new(self.position, self.dimension))];
         prims.extend(Rectangle::<S>::debug_outline(Rect::new(self.position, self.dimension), 1.0));
-        let children: Vec<Primitive> = self.get_children().flat_map(|f| f.get_primitives(fonts)).collect();
-        prims.extend(children);
 
         return prims;
     }
@@ -150,34 +137,15 @@ impl<S: GlobalState> CommonWidget<S> for Text<S> {
     }
 
     fn get_children(&self) -> WidgetIter<S> {
-        self.children
-            .iter()
-            .rfold(WidgetIter::Empty, |acc, x| {
-                if x.get_flag() == Flags::Proxy {
-                    WidgetIter::Multi(Box::new(x.get_children()), Box::new(acc))
-                } else {
-                    WidgetIter::Single(x, Box::new(acc))
-                }
-            })
+        WidgetIter::Empty
     }
 
     fn get_children_mut(&mut self) -> WidgetIterMut<S> {
-        self.children
-            .iter_mut()
-            .rfold(WidgetIterMut::Empty, |acc, x| {
-                if x.get_flag() == Flags::Proxy {
-                    WidgetIterMut::Multi(Box::new(x.get_children_mut()), Box::new(acc))
-                } else {
-                    WidgetIterMut::Single(x, Box::new(acc))
-                }
-            })
+        WidgetIterMut::Empty
     }
 
     fn get_proxied_children(&mut self) -> WidgetIterMut<S> {
-        self.children.iter_mut()
-            .rfold(WidgetIterMut::Empty, |acc, x| {
-                WidgetIterMut::Single(x, Box::new(acc))
-            })
+        WidgetIterMut::Empty
     }
 
     fn get_position(&self) -> Point {
@@ -255,28 +223,26 @@ pub struct OldState {
 
 
 impl<S: GlobalState> Text<S> {
-    pub fn initialize(text: State<String, S>, children: Vec<Box<dyn Widget<S>>>) -> Box<Self> {
+    pub fn initialize(text: State<String, S>) -> Box<Self> {
         Box::new(Text {
             text,
             font_size: 14.into(),
             position: [0.0, 0.0],
             dimension: [100.0, 100.0],
             wrap_mode: Wrap::Whitespace,
-            color: WHITE,
-            children
+            color: WHITE
         })
     }
 
     /// Build a new **Text** widget.
-    pub fn new(text: State<String, S>, position: Point, dimension: Dimensions, children: Vec<Box<dyn Widget<S>>>) -> Box<Self> {
+    pub fn new(text: State<String, S>, position: Point, dimension: Dimensions) -> Box<Self> {
         Box::new(Text {
             text,
             font_size: 14.into(),
             position,
             dimension,
             wrap_mode: Wrap::Whitespace,
-            color: WHITE,
-            children
+            color: WHITE
         })
     }
 
