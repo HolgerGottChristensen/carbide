@@ -4,7 +4,6 @@ use uuid::Uuid;
 
 use crate::{Point, Scalar};
 use crate::{Rect, text};
-use crate::event::event::NoEvents;
 use crate::flags::Flags;
 use crate::layout::basic_layouter::BasicLayouter;
 use crate::layout::Layout;
@@ -71,8 +70,6 @@ impl<S: GlobalState> Frame<S> {
         })
     }
 }
-
-impl<S: GlobalState> NoEvents for Frame<S> {}
 
 impl<S: GlobalState> CommonWidget<S> for Frame<S> {
     fn get_id(&self) -> Uuid {

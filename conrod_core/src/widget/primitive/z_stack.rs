@@ -2,7 +2,6 @@ use uuid::Uuid;
 
 use crate::{Color, Colorable, Point, Rect, Sizeable};
 use crate::text;
-use crate::event::event::NoEvents;
 use crate::flags::Flags;
 use crate::layout::Layout;
 use crate::layout::basic_layouter::BasicLayouter;
@@ -38,8 +37,6 @@ impl<S: GlobalState> ZStack<S> {
         })
     }
 }
-
-impl<S: GlobalState> NoEvents for ZStack<S> {}
 
 impl<S: GlobalState> Layout<S> for ZStack<S> {
     fn flexibility(&self) -> u32 {

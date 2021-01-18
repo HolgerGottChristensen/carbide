@@ -109,9 +109,73 @@ pub fn impl_widget(ast: &syn::DeriveInput) -> proc_macro2::TokenStream {
         quote! {self.default_sync_state(env, global_state)}
     };
 
+    let handle_mouse_event = if let Some(_) = struct_attributes.get("event.handle_mouse_event") {
+        quote! {#struct_ident::handle_mouse_event(self, event, consumed, global_state);}
+    } else {
+        quote! {}
+    };
+
+    let handle_keyboard_event = if let Some(_) = struct_attributes.get("event.handle_keyboard_event") {
+        quote! {#struct_ident::handle_keyboard_event(self, event,  global_state);}
+    } else {
+        quote! {}
+    };
+
+    let handle_other_event = if let Some(_) = struct_attributes.get("event.handle_other_event") {
+        quote! {#struct_ident::handle_other_event(self, event);}
+    } else {
+        quote! {}
+    };
+
+    let process_mouse_event = if let Some(_) = struct_attributes.get("event.process_mouse_event") {
+        quote! {#struct_ident::process_mouse_event(self, event, consumed, env, global_state);}
+    } else {
+        quote! {self.process_mouse_event_default(event, consumed, env, global_state);}
+    };
+
+    let process_keyboard_event = if let Some(_) = struct_attributes.get("event.process_keyboard_event") {
+        quote! {#struct_ident::process_keyboard_event(self, event, env, global_state);}
+    } else {
+        quote! {self.process_keyboard_event_default(event, env, global_state);}
+    };
+
+    let process_other_event = if let Some(_) = struct_attributes.get("event.process_other_event") {
+        quote! {#struct_ident::process_other_event(self, event, env, global_state);}
+    } else {
+        quote! {self.process_other_event_default(event, env, global_state);}
+    };
+
     let mut wheres = filtered_where_clause(&ast);
 
     quote! {
+
+        impl<#(#generics_without_gs ,)* GS: conrod_core::state::global_state::GlobalState> conrod_core::event::event::Event<GS> for #struct_ident #generics_with_gs #wheres {
+            fn handle_mouse_event(&mut self, event: &conrod_core::event_handler::MouseEvent, consumed: &bool, global_state: &mut GS) {
+                #handle_mouse_event
+            }
+
+            fn handle_keyboard_event(&mut self, event: &conrod_core::event_handler::KeyboardEvent, global_state: &mut GS) {
+                #handle_keyboard_event
+            }
+
+            fn handle_other_event(&mut self, event: &conrod_core::event_handler::WidgetEvent) {
+                #handle_other_event
+            }
+
+            fn process_mouse_event(&mut self, event: &conrod_core::event_handler::MouseEvent, consumed: &bool, env: &mut conrod_core::state::environment::Environment<GS>, global_state: &mut GS) {
+                #process_mouse_event
+            }
+
+            fn process_keyboard_event(&mut self, event: &conrod_core::event_handler::KeyboardEvent, env: &mut conrod_core::state::environment::Environment<GS>, global_state: &mut GS) {
+                #process_keyboard_event
+            }
+
+            fn process_other_event(&mut self, event: &conrod_core::event_handler::WidgetEvent, env: &mut conrod_core::state::environment::Environment<GS>, global_state: &mut GS) {
+                #process_other_event
+            }
+        }
+
+
         #[automatically_derived]
         impl<#(#generics_without_gs ,)* GS: conrod_core::state::global_state::GlobalState> conrod_core::state::state_sync::StateSync<GS> for #struct_ident #generics_with_gs #wheres {
             fn insert_local_state(&self, env: &mut conrod_core::state::environment::Environment<GS>) {

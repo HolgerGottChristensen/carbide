@@ -4,7 +4,6 @@ use std::fmt::Debug;
 use uuid::Uuid;
 
 use crate::Point;
-use crate::event::event::NoEvents;
 use crate::flags::Flags;
 use crate::layout::Layout;
 use crate::position::Dimensions;
@@ -159,8 +158,6 @@ impl<S: GlobalState> CommonWidget<S> for ForEach<S> {
         self.dimension = dimensions
     }
 }
-
-impl<S: GlobalState> NoEvents for ForEach<S> {}
 
 impl<S: GlobalState> ChildRender for ForEach<S> {}
 

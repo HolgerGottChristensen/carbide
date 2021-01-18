@@ -3,7 +3,6 @@ use uuid::Uuid;
 use crate::{Color, Colorable, Point, Rect, Sizeable};
 use crate::Scalar;
 use crate::text;
-use crate::event::event::NoEvents;
 use crate::flags::Flags;
 use crate::layout::{CrossAxisAlignment, Layout};
 use crate::position::Dimensions;
@@ -44,7 +43,6 @@ impl<S: GlobalState> HStack<S> {
         Box::new(self)
     }
 }
-impl<S: GlobalState> NoEvents for HStack<S> {}
 
 impl<S: GlobalState> Layout<S> for HStack<S> {
     fn flexibility(&self) -> u32 {

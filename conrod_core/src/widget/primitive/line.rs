@@ -5,7 +5,6 @@ use uuid::Uuid;
 
 use crate::{Color, Colorable, Point, Positionable, Rect, Scalar, Sizeable, Theme};
 use crate::text;
-use crate::event::event::NoEvents;
 use crate::flags::Flags;
 use crate::layout::Layout;
 use crate::position::Dimensions;
@@ -44,8 +43,6 @@ pub struct Line<GS> where GS: GlobalState {
 
     pub children: Vec<Box<dyn Widget<GS>>>
 }
-
-impl<S: GlobalState> NoEvents for Line<S> {}
 
 impl<S: GlobalState> Layout<S> for Line<S> {
     fn flexibility(&self) -> u32 {

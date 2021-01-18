@@ -12,7 +12,6 @@ use uuid::Uuid;
 
 use crate::{Color, Colorable, Point, Rect, Sizeable};
 use crate::text;
-use crate::event::event::NoEvents;
 use crate::flags::Flags;
 use crate::layout::Layout;
 use crate::position::Dimensions;
@@ -46,8 +45,6 @@ impl Spacer {
         })
     }
 }
-
-impl NoEvents for Spacer {}
 
 impl<S: GlobalState> Layout<S> for Spacer {
     fn flexibility(&self) -> u32 {

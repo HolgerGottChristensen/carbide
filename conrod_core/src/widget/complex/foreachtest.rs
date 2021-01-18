@@ -3,7 +3,6 @@ use std::fmt::Debug;
 use uuid::Uuid;
 
 use crate::Point;
-use crate::event::event::NoEvents;
 use crate::flags::Flags;
 use crate::layout::basic_layouter::BasicLayouter;
 use crate::layout::Layout;
@@ -32,11 +31,6 @@ pub struct ForeachTest<GS> where GS: GlobalState {
 }
 
 impl<S: GlobalState> ForeachTest<S> {
-
-    fn insert_local_state(&self, env: &mut Environment<S>) {
-        env.insert_local_state(&State::<String, S>::new_local("sindex", &self.index.get_latest_value().to_string()));
-    }
-
     pub fn new() -> Box<ForeachTest<S>> {
         Box::new(Self {
             id: Uuid::new_v4(),
@@ -47,6 +41,10 @@ impl<S: GlobalState> ForeachTest<S> {
             dimension: [100.0,100.0],
             index: State::new_local("index", &(0 as u32))
         })
+    }
+
+    fn insert_local_state(&self, env: &mut Environment<S>) {
+        env.insert_local_state(&State::<String, S>::new_local("sindex", &self.index.get_latest_value().to_string()));
     }
 }
 
@@ -95,8 +93,6 @@ impl<S: GlobalState> CommonWidget<S> for ForeachTest<S> {
         self.dimension = dimensions
     }
 }
-
-impl<S: GlobalState> NoEvents for ForeachTest<S> {}
 
 impl<S: GlobalState> ChildRender for ForeachTest<S> {}
 

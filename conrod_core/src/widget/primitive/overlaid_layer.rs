@@ -4,7 +4,6 @@ use crate::{Color, Colorable, Point, Rect, Sizeable};
 use crate::{Scalar, widget};
 use crate::text;
 use crate::draw::shape::triangle::Triangle;
-use crate::event::event::NoEvents;
 use crate::flags::Flags;
 use crate::layout::basic_layouter::BasicLayouter;
 use crate::layout::Layout;
@@ -34,8 +33,6 @@ pub struct OverlaidLayer<GS> where GS: GlobalState {
     position: Point,
     dimension: Dimensions,
 }
-
-impl<S: GlobalState> NoEvents for OverlaidLayer<S> {}
 
 impl<S: GlobalState> Layout<S> for OverlaidLayer<S> {
     fn flexibility(&self) -> u32 {

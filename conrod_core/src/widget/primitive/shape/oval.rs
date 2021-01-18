@@ -10,7 +10,6 @@ use crate::{Color, Colorable, Point, Rect, Scalar, Theme};
 use crate::{graph, text};
 use crate::draw::shape::circumference::{Circumference, Triangles};
 use crate::draw::shape::triangle::Triangle;
-use crate::event::event::NoEvents;
 use crate::flags::Flags;
 use crate::layout::basic_layouter::BasicLayouter;
 use crate::layout::Layout;
@@ -51,8 +50,6 @@ pub struct Oval<S, GS> where S: 'static + Clone, GS: GlobalState {
 
     pub children: Vec<Box<dyn Widget<GS>>>
 }
-
-impl<S: 'static + Clone, GS: GlobalState> NoEvents for Oval<S, GS> {}
 
 impl<S: 'static + Clone, GS: GlobalState> Layout<GS> for Oval<S, GS> {
     fn flexibility(&self) -> u32 {

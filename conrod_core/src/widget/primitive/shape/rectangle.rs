@@ -15,7 +15,6 @@ use crate::{Color, Colorable, Point, Rect, Sizeable};
 use crate::{Scalar, widget};
 use crate::text;
 use crate::draw::shape::triangle::Triangle;
-use crate::event::event::NoEvents;
 use crate::flags::Flags;
 use crate::layout::basic_layouter::BasicLayouter;
 use crate::layout::Layout;
@@ -43,8 +42,6 @@ pub struct Rectangle<GS> where GS: GlobalState {
     dimension: Dimensions,
     color: Color,
 }
-
-impl<S: GlobalState> NoEvents for Rectangle<S> {}
 
 impl<S: GlobalState> Layout<S> for Rectangle<S> {
     fn flexibility(&self) -> u32 {

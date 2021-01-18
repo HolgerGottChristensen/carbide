@@ -30,6 +30,7 @@ use crate::widget::types::spacer_direction::SpacerDirection;
 
 #[derive(Debug, Clone, Widget)]
 #[state_sync(insert_local_state)]
+#[event(handle_keyboard_event)]
 pub struct SyncTest<GS> where GS: GlobalState {
     id: Uuid,
     child: Box<dyn Widget<GS>>,
@@ -45,6 +46,37 @@ impl<S: GlobalState> SyncTest<S> {
     fn insert_local_state(&self, env: &mut Environment<S>) {
         if self.show_overlay {
             env.add_overlay("overlay_test", Rectangle::new([10.0,10.0], [600.0,600.0], vec![]).fill(RED))
+        }
+    }
+
+    fn handle_keyboard_event(&mut self, event: &KeyboardEvent, global_state: &mut S) {
+        match event {
+            KeyboardEvent::Text(s, _) => {
+                self.value.get_value_mut(global_state).push_str(s);
+            }
+            KeyboardEvent::Press(key, _modifier) => {
+                match key {
+                    Key::NumPadMultiply => {
+                        self.show_overlay = !self.show_overlay;
+                        println!("herjalkd");
+                    }
+                    Key::Backspace => {
+                        self.value.get_value_mut(global_state).pop();
+                    },
+                    Key::NumPadPlus => {
+                        self.fore.get_value_mut(global_state).push(Uuid::new_v4())
+                    },
+                    Key::NumPadMinus => {
+                        if self.fore.get_value(global_state).len() > 1 {
+                            let last = self.fore.get_value(global_state).len() - 1;
+                            self.fore.get_value_mut(global_state).remove(last);
+                        }
+
+                    }
+                    _ => ()
+                }
+            }
+            _ => ()
         }
     }
 
@@ -118,71 +150,6 @@ impl<S: GlobalState> CommonWidget<S> for SyncTest<S> {
         self.dimension = dimensions
     }
 }
-
-impl<S: GlobalState> Event<S> for SyncTest<S> {
-    fn handle_mouse_event(&mut self, _event: &MouseEvent, _consumed: &bool, _global_state: &mut S) {
-        ()
-    }
-
-    fn handle_keyboard_event(&mut self, event: &KeyboardEvent, global_state: &mut S) {
-        match event {
-            KeyboardEvent::Text(s, _) => {
-                self.value.get_value_mut(global_state).push_str(s);
-            }
-            KeyboardEvent::Press(key, _modifier) => {
-                match key {
-                    Key::NumPadMultiply => {
-                        self.show_overlay = !self.show_overlay;
-                        println!("herjalkd");
-                    }
-                    Key::Backspace => {
-                        self.value.get_value_mut(global_state).pop();
-                    },
-                    Key::NumPadPlus => {
-                        self.fore.get_value_mut(global_state).push(Uuid::new_v4())
-                    },
-                    Key::NumPadMinus => {
-                        if self.fore.get_value(global_state).len() > 1 {
-                            let last = self.fore.get_value(global_state).len() - 1;
-                            self.fore.get_value_mut(global_state).remove(last);
-                        }
-
-                    }
-                    _ => ()
-                }
-            }
-            _ => ()
-        }
-    }
-
-    fn handle_other_event(&mut self, _event: &WidgetEvent) {
-        ()
-    }
-}
-
-/*impl<S: Clone + Debug + 'static> StateSync<S> for SyncTest<S> {
-    fn insert_local_state(&self, env: &mut Environment<S>) {
-        env.insert_local_state(&self.value);
-        env.insert_local_state(&self.fore);
-
-        if self.show_overlay {
-            env.add_overlay("overlay_test", Rectangle::new([10.0,10.0], [600.0,600.0], vec![]).fill(RED))
-        }
-
-    }
-
-    fn update_all_widget_state(&mut self, env: &Environment<S>, _global_state: &S) {
-        self.update_local_widget_state(env);
-    }
-
-    fn update_local_widget_state(&mut self, env: &Environment<S>) {
-        env.update_local_state(&mut self.value);
-    }
-
-    fn sync_state(&mut self, env: &mut Environment<S>, global_state: &S) {
-        self.default_sync_state(env, global_state)
-    }
-}*/
 
 impl<S: GlobalState> ChildRender for SyncTest<S> {}
 

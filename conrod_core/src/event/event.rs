@@ -22,10 +22,10 @@ pub trait Event<S>: CommonWidget<S> + StateSync<S> where S: GlobalState {
     /// TODO: Separate touch events. And add global state
     fn handle_other_event(&mut self, event: &WidgetEvent);
 
-    fn process_mouse_event(&mut self, event: &MouseEvent, consumed: &bool, env: &mut Environment<S>, global_state: &mut S) {
+    fn process_mouse_event(&mut self, event: &MouseEvent, consumed: &bool, env: &mut Environment<S>, global_state: &mut S);
+
+    fn process_mouse_event_default(&mut self, event: &MouseEvent, consumed: &bool, env: &mut Environment<S>, global_state: &mut S) {
         self.update_all_widget_state(env, global_state);
-
-
 
         self.insert_local_state(env);
 
@@ -43,7 +43,9 @@ pub trait Event<S>: CommonWidget<S> + StateSync<S> where S: GlobalState {
         self.update_local_widget_state(env)
     }
 
-    fn process_keyboard_event(&mut self, event: &KeyboardEvent, env: &mut Environment<S>, global_state: &mut S) {
+    fn process_keyboard_event(&mut self, event: &KeyboardEvent, env: &mut Environment<S>, global_state: &mut S);
+
+    fn process_keyboard_event_default(&mut self, event: &KeyboardEvent, env: &mut Environment<S>, global_state: &mut S) {
         self.update_all_widget_state(env, global_state);
 
         self.handle_keyboard_event(event, global_state);
@@ -57,7 +59,9 @@ pub trait Event<S>: CommonWidget<S> + StateSync<S> where S: GlobalState {
         self.update_local_widget_state(env)
     }
 
-    fn process_other_event(&mut self, event: &WidgetEvent, env: &mut Environment<S>, global_state: &mut S) {
+    fn process_other_event(&mut self, event: &WidgetEvent, env: &mut Environment<S>, global_state: &mut S);
+
+    fn process_other_event_default(&mut self, event: &WidgetEvent, env: &mut Environment<S>, global_state: &mut S) {
         self.update_all_widget_state(env, global_state);
 
         self.handle_other_event(event);
@@ -70,14 +74,4 @@ pub trait Event<S>: CommonWidget<S> + StateSync<S> where S: GlobalState {
 
         self.update_local_widget_state(env)
     }
-}
-
-pub trait NoEvents {}
-
-impl<S: GlobalState, T> Event<S> for T where T: NoEvents + StateSync<S> {
-    fn handle_mouse_event(&mut self, _event: &MouseEvent, _consumed: &bool, _global_state: &mut S) {}
-
-    fn handle_keyboard_event(&mut self, _event: &KeyboardEvent, _global_state: &mut S) {}
-
-    fn handle_other_event(&mut self, _event: &WidgetEvent) {}
 }

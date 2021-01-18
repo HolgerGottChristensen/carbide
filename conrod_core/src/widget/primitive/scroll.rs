@@ -15,7 +15,7 @@ use crate::{Color, Colorable, Point, Rect, Sizeable};
 use crate::{Scalar, widget};
 use crate::text;
 use crate::draw::shape::triangle::Triangle;
-use crate::event::event::{NoEvents, Event};
+use crate::event::event::Event;
 use crate::flags::Flags;
 use crate::layout::basic_layouter::BasicLayouter;
 use crate::layout::Layout;
@@ -40,6 +40,7 @@ use crate::state::global_state::GlobalState;
 
 /// A basic, non-interactive rectangle shape widget.
 #[derive(Debug, Clone, Widget)]
+#[event(handle_mouse_event, handle_other_event)]
 pub struct Scroll<GS> where GS: GlobalState {
     id: Uuid,
     child: Box<dyn Widget<GS>>,
@@ -53,6 +54,39 @@ pub struct Scroll<GS> where GS: GlobalState {
 
 impl<S: GlobalState> Scroll<S> {
 
+    pub fn set_scroll_direction(mut self, scroll_directions: ScrollDirection) -> Box<Self> {
+        self.scroll_directions = scroll_directions;
+        Box::new(self)
+    }
+
+    fn keep_y_within_bounds(&mut self) -> () {
+        if self.scroll_offset[1] > 0.0 {
+            self.scroll_offset = [self.scroll_offset[0], 0.0];
+        }
+
+        if self.child.get_height() > self.get_height() {
+            if self.scroll_offset[1] < -(self.child.get_height() - self.get_height()) {
+                self.scroll_offset = [self.scroll_offset[0], -(self.child.get_height() - self.get_height())];
+            }
+        } else {
+            self.scroll_offset = [self.scroll_offset[0], 0.0];
+        }
+    }
+
+    fn keep_x_within_bounds(&mut self) {
+        if self.scroll_offset[0] < 0.0 {
+            self.scroll_offset = [0.0, self.scroll_offset[1]];
+        }
+
+        if self.child.get_width() > self.get_width() {
+            if self.scroll_offset[0] > (self.child.get_width() - self.get_width()) {
+                self.scroll_offset = [(self.child.get_width() - self.get_width()), self.scroll_offset[1]];
+            }
+        } else {
+            self.scroll_offset = [0.0, self.scroll_offset[1]];
+        }
+    }
+
     pub fn new(child: Box<dyn Widget<S>>) -> Box<Self> {
         Box::new(Self {
             id: Uuid::new_v4(),
@@ -65,9 +99,7 @@ impl<S: GlobalState> Scroll<S> {
             scrollbar_vertical: Rectangle::initialize(vec![]).fill(GRAY).frame(10.0,100.0)
         })
     }
-}
 
-impl<S: GlobalState> Event<S> for Scroll<S> {
     fn handle_mouse_event(&mut self, event: &MouseEvent, consumed: &bool, global_state: &mut S) {
         match event {
             MouseEvent::Scroll { x, y, mouse_position, modifiers } => {
@@ -105,8 +137,6 @@ impl<S: GlobalState> Event<S> for Scroll<S> {
             _ => {}
         }
     }
-
-    fn handle_keyboard_event(&mut self, event: &KeyboardEvent, global_state: &mut S) {}
 
     fn handle_other_event(&mut self, event: &WidgetEvent) {
         match event {
@@ -262,38 +292,4 @@ impl<S: GlobalState> Render<S> for Scroll<S> {
 
 
 
-impl<S: GlobalState> Scroll<S> {
 
-    pub fn set_scroll_direction(mut self, scroll_directions: ScrollDirection) -> Box<Self> {
-        self.scroll_directions = scroll_directions;
-        Box::new(self)
-    }
-
-    fn keep_y_within_bounds(&mut self) -> () {
-        if self.scroll_offset[1] > 0.0 {
-            self.scroll_offset = [self.scroll_offset[0], 0.0];
-        }
-
-        if self.child.get_height() > self.get_height() {
-            if self.scroll_offset[1] < -(self.child.get_height() - self.get_height()) {
-                self.scroll_offset = [self.scroll_offset[0], -(self.child.get_height() - self.get_height())];
-            }
-        } else {
-            self.scroll_offset = [self.scroll_offset[0], 0.0];
-        }
-    }
-
-    fn keep_x_within_bounds(&mut self) {
-        if self.scroll_offset[0] < 0.0 {
-            self.scroll_offset = [0.0, self.scroll_offset[1]];
-        }
-
-        if self.child.get_width() > self.get_width() {
-            if self.scroll_offset[0] > (self.child.get_width() - self.get_width()) {
-                self.scroll_offset = [(self.child.get_width() - self.get_width()), self.scroll_offset[1]];
-            }
-        } else {
-            self.scroll_offset = [0.0, self.scroll_offset[1]];
-        }
-    }
-}

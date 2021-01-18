@@ -7,7 +7,6 @@ use crate::{Color, Colorable, FontSize};
 use crate::Rect;
 use crate::{Point, text};
 use crate::color::WHITE;
-use crate::event::event::NoEvents;
 use crate::flags::Flags;
 use crate::layout::basic_layouter::BasicLayouter;
 use crate::layout::Layout;
@@ -47,8 +46,6 @@ pub struct Text<GS> where GS: GlobalState {
     color: Color,
     pub children: Vec<Box<dyn Widget<GS>>>,
 }
-
-impl<S: GlobalState> NoEvents for Text<S> {}
 
 impl<S: GlobalState> Layout<S> for Text<S> {
     fn flexibility(&self) -> u32 {

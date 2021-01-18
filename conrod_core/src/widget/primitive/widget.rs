@@ -111,6 +111,10 @@ impl<S: GlobalState> Event<S> for Box<dyn Widget<S>> {
     fn process_keyboard_event(&mut self, event: &KeyboardEvent, env: &mut Environment<S>, global_state: &mut S) {
         self.deref_mut().process_keyboard_event(event, env, global_state)
     }
+
+    fn process_other_event(&mut self, event: &WidgetEvent, env: &mut Environment<S>, global_state: &mut S) {
+        self.deref_mut().process_other_event(event, env, global_state)
+    }
 }
 
 impl<S: GlobalState> StateSync<S> for Box<dyn Widget<S>> {

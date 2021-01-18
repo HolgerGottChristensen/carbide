@@ -2,7 +2,6 @@ use uuid::Uuid;
 
 use crate::Point;
 use crate::{Rect, text};
-use crate::event::event::NoEvents;
 use crate::flags::Flags;
 use crate::layout::basic_layouter::BasicLayouter;
 use crate::layout::Layout;
@@ -43,8 +42,6 @@ impl<S: GlobalState> Padding<S> {
         })
     }
 }
-
-impl<S: GlobalState> NoEvents for Padding<S> {}
 
 impl<S: GlobalState> CommonWidget<S> for Padding<S> {
     fn get_id(&self) -> Uuid {

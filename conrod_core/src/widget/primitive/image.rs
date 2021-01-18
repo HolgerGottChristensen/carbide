@@ -6,7 +6,6 @@ use uuid::Uuid;
 use crate::Color;
 use crate::{image, Point};
 use crate::{text, widget};
-use crate::event::event::NoEvents;
 use crate::flags::Flags;
 use crate::layout::basic_layouter::BasicLayouter;
 use crate::layout::Layout;
@@ -48,8 +47,6 @@ pub struct Image<GS> where GS: GlobalState {
     resizeable: bool,
     requested_size: Dimensions
 }
-
-impl<S: GlobalState> NoEvents for Image<S> {}
 
 impl<S: GlobalState> Layout<S> for Image<S> {
     fn flexibility(&self) -> u32 {
