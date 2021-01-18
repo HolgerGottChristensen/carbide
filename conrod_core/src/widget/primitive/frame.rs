@@ -28,16 +28,24 @@ pub struct Frame<GS> where GS: GlobalState {
     id: Uuid,
     child: Box<dyn Widget<GS>>,
     position: Point,
-    dimension: Dimensions
+    dimension: Dimensions,
+    expand_width: bool,
+    expand_height: bool,
 }
 
 impl<S: GlobalState> Frame<S> {
     pub fn init(width: Scalar, height: Scalar, child: Box<dyn Widget<S>>) -> Box<Frame<S>> {
+
+        let expand_width = width == SCALE;
+        let expand_height = height == SCALE;
+
         Box::new(Frame{
             id: Default::default(),
             child: Box::new(child),
             position: [0.0,0.0],
-            dimension: [width, height]
+            dimension: [width, height],
+            expand_width,
+            expand_height,
         })
     }
 
@@ -46,7 +54,9 @@ impl<S: GlobalState> Frame<S> {
             id: Default::default(),
             child: Box::new(child),
             position: [0.0,0.0],
-            dimension: [width, -1.0]
+            dimension: [width, 0.0],
+            expand_width: false,
+            expand_height: true
         })
     }
 
@@ -55,7 +65,9 @@ impl<S: GlobalState> Frame<S> {
             id: Default::default(),
             child: Box::new(child),
             position: [0.0,0.0],
-            dimension: [-1.0, height]
+            dimension: [0.0, height],
+            expand_width: true,
+            expand_height: false
         })
     }
 }
@@ -114,26 +126,21 @@ impl<S: GlobalState> Layout<S> for Frame<S> {
         9
     }
 
-    fn calculate_size(&mut self, dimension: Dimensions, env: &Environment<S>) -> Dimensions {
+    fn calculate_size(&mut self, requested_size: Dimensions, env: &Environment<S>) -> Dimensions {
+
+        if self.expand_width {
+            self.set_width(requested_size[0]);
+        }
+
+        if self.expand_height {
+            self.set_height(requested_size[1]);
+        }
+
         let dimensions = self.dimension;
-        let abs_dimensions = match (dimensions[0], dimensions[1]) {
-            (x, y) if x < 0.0 && y < 0.0 => [dimension[0], dimension[1]],
-            (x, _y) if x < 0.0 => [dimension[0], self.dimension[1]],
-            (_x, y) if y < 0.0 => [self.dimension[0], dimension[1]],
-            (x, y) => [x, y]
-        };
 
-        let child_dimensions = self.child.calculate_size(abs_dimensions, env);
+        self.child.calculate_size(dimensions, env);
 
-        if dimensions[0] < 0.0 {
-            self.dimension = [child_dimensions[0].abs().neg(), dimensions[1]]
-        }
-
-        if dimensions[1] < 0.0 {
-            self.dimension = [self.dimension[0], child_dimensions[1].abs().neg()]
-        }
-
-        [self.dimension[0].abs(), self.dimension[1].abs()]
+        self.dimension
     }
 
     fn position_children(&mut self) {

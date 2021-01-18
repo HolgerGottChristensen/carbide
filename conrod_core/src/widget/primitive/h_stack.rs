@@ -53,7 +53,6 @@ impl<S: GlobalState> Layout<S> for HStack<S> {
 
     fn calculate_size(&mut self, requested_size: Dimensions, env: &Environment<S>) -> Dimensions {
 
-
         // The number of children not containing any spacers
         let mut number_of_children_that_needs_sizing = self.get_children().filter(|m| m.get_flag() != Flags::Spacer).count() as f64;
 
