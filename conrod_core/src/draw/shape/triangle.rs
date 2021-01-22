@@ -34,6 +34,26 @@ impl Triangle<Point> {
     pub fn color_all(self, color: color::Rgba) -> Triangle<ColoredPoint> {
         Triangle([(self[0], color), (self[1], color), (self[2], color)])
     }
+
+    pub fn from_point_list(points: Vec<Point>) -> Vec<Triangle<Point>> {
+        let len = points.len();
+
+        if len == 0 {
+            return vec![]
+        }
+
+        if len % 3 != 0 {
+            panic!("The vector of points can not be converted to a list of triangles because its length is not divisible by three")
+        }
+
+        let mut res = vec![];
+
+        for i in (0..len).step_by(3) {
+            res.push((points[i], points[i+1], points[i+2]).into())
+        }
+
+        res
+    }
 }
 
 impl<V> std::ops::Deref for Triangle<V>
@@ -76,3 +96,4 @@ impl<V> Into<(V, V, V)> for Triangle<V>
         (self[0], self[1], self[2])
     }
 }
+

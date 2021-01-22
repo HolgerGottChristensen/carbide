@@ -52,6 +52,8 @@ pub struct Scroll<GS> where GS: GlobalState {
     scrollbar_vertical: Box<dyn Widget<GS>>,
 }
 
+impl<GS: GlobalState> WidgetExt<GS> for Scroll<GS> {}
+
 impl<S: GlobalState> Scroll<S> {
 
     pub fn set_scroll_direction(mut self, scroll_directions: ScrollDirection) -> Box<Self> {
@@ -270,10 +272,10 @@ impl<S: GlobalState> CommonWidget<S> for Scroll<S> {
 
 impl<S: GlobalState> Render<S> for Scroll<S> {
 
-    fn get_primitives(&self, fonts: &text::font::Map) -> Vec<Primitive> {
+    fn get_primitives(&mut self, fonts: &text::font::Map) -> Vec<Primitive> {
         let mut prims = vec![];
         prims.extend(Rectangle::<S>::debug_outline(Rect::new(self.position, self.dimension), 1.0));
-        let child_prims = self.get_children().flat_map(|f| f.get_primitives(fonts));
+        let child_prims = self.get_children_mut().flat_map(|f| f.get_primitives(fonts));
         prims.extend(child_prims);
 
         if self.scroll_directions == ScrollDirection::Both ||

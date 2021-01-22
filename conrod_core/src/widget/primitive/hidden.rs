@@ -31,6 +31,8 @@ pub struct Hidden<GS> where GS: GlobalState {
     dimension: Dimensions,
 }
 
+impl<GS: GlobalState> WidgetExt<GS> for Hidden<GS> {}
+
 impl<S: GlobalState> Layout<S> for Hidden<S> {
     fn flexibility(&self) -> u32 {
         self.child.flexibility()
@@ -100,7 +102,7 @@ impl<S: GlobalState> CommonWidget<S> for Hidden<S> {
 
 impl<S: GlobalState> Render<S> for Hidden<S> {
 
-    fn get_primitives(&self, fonts: &text::font::Map) -> Vec<Primitive> {
+    fn get_primitives(&mut self, fonts: &text::font::Map) -> Vec<Primitive> {
         let mut prims = vec![];
         prims.extend(Rectangle::<S>::debug_outline(Rect::new(self.position, self.dimension), 1.0));
         return prims;

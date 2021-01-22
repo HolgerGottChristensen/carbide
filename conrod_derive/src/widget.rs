@@ -231,8 +231,9 @@ pub fn impl_widget(ast: &syn::DeriveInput) -> proc_macro2::TokenStream {
         #[automatically_derived]
         impl<#(#generics_without_gs ,)* #global_state> conrod_core::widget::primitive::widget::Widget<#global_state_use> for #struct_ident #generics_with_gs #wheres {}
 
-        #[automatically_derived]
-        impl<#(#generics_without_gs ,)* #global_state> conrod_core::widget::primitive::widget::WidgetExt<#global_state_use> for #struct_ident #generics_with_gs #wheres {}
+        // When this is implemented in a macro you loose intellij autocomplete
+        //#[automatically_derived]
+        //impl<#(#generics_without_gs ,)* #global_state> conrod_core::widget::primitive::widget::WidgetExt<#global_state_use> for #struct_ident #generics_with_gs #wheres {}
     }
 }
 

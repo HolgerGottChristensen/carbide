@@ -15,6 +15,10 @@ use conrod_core::widget::types::scroll_direction::ScrollDirection;
 use conrod_core::widget::types::scale_mode::ScaleMode;
 use conrod_core::widget::primitive::clip::Clip;
 use conrod_core::widget::types::spacer_direction::SpacerDirection;
+use conrod_core::widget::primitive::shape::rounded_rectangle::RoundedRectangle;
+use conrod_core::widget::primitive::canvas::canvas::Canvas;
+use conrod_core::widget::primitive::canvas::context::Context;
+use conrod_core::widget::primitive::canvas::context::ContextAction;
 
 fn main() {
     env_logger::init();
@@ -38,7 +42,17 @@ fn main() {
                 SyncTest::new(sync_state)
             ]).fill(GREEN),
             HStack::initialize(vec![
-                Image::new(rust_image),
+                RoundedRectangle::initialize(vec![]).frame(100.0, 100.0),
+                Canvas::initialize(Context { actions: vec![
+                    ContextAction::MoveTo([75.0, 40.0]),
+                    ContextAction::CubicBezierTo{ctrl1: [75.0, 37.0], ctrl2: [70.0, 25.0], to: [50.0, 25.0]},
+                    ContextAction::CubicBezierTo{ctrl1: [20.0, 25.0], ctrl2: [20.0, 62.5], to: [20.0, 62.5]},
+                    ContextAction::CubicBezierTo{ctrl1: [20.0, 80.0], ctrl2: [40.0, 102.0], to: [75.0, 120.0]},
+                    ContextAction::CubicBezierTo{ctrl1: [110.0, 102.0], ctrl2: [130.0, 80.0], to: [130.0, 62.5]},
+                    ContextAction::CubicBezierTo{ctrl1: [130.0, 62.5], ctrl2: [130.0, 25.0], to: [100.0, 25.0]},
+                    ContextAction::CubicBezierTo{ctrl1: [85.0, 25.0], ctrl2: [75.0, 37.0], to: [75.0, 40.0]},
+                    ContextAction::Close
+                    ]}).frame(150.0, 150.0),
                 Rectangle::initialize(vec![
                     Scroll::new(
                         Image::new(rust_image)

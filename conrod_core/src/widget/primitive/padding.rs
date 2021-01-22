@@ -31,6 +31,8 @@ pub struct Padding<GS> where GS: GlobalState {
     edge_insets: EdgeInsets
 }
 
+impl<GS: GlobalState> WidgetExt<GS> for Padding<GS> {}
+
 impl<S: GlobalState> Padding<S> {
     pub fn init(edge_insets: EdgeInsets, child: Box<dyn Widget<S>>) -> Box<Self> {
         Box::new(Padding{
@@ -117,7 +119,7 @@ impl<S: GlobalState> Layout<S> for Padding<S> {
 
 impl<S: GlobalState> Render<S> for Padding<S> {
 
-    fn get_primitives(&self, fonts: &text::font::Map) -> Vec<Primitive> {
+    fn get_primitives(&mut self, fonts: &text::font::Map) -> Vec<Primitive> {
         let mut prims = vec![];
         prims.extend(Rectangle::<S>::debug_outline(Rect::new(self.position, [self.dimension[0], self.dimension[1]]), 1.0));
         let children: Vec<Primitive> = self.child.get_primitives(fonts);

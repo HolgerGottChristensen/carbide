@@ -27,6 +27,8 @@ pub struct ZStack<GS> where GS: GlobalState {
     dimension: Dimensions,
 }
 
+impl<GS: GlobalState> WidgetExt<GS> for ZStack<GS> {}
+
 impl<S: GlobalState> ZStack<S> {
     pub fn initialize(children: Vec<Box<dyn Widget<S>>>) -> Box<ZStack<S>> {
         Box::new(ZStack {
@@ -141,10 +143,10 @@ impl<S: GlobalState> CommonWidget<S> for ZStack<S> {
 
 impl<S: GlobalState> Render<S> for ZStack<S> {
 
-    fn get_primitives(&self, fonts: &text::font::Map) -> Vec<Primitive> {
+    fn get_primitives(&mut self, fonts: &text::font::Map) -> Vec<Primitive> {
         let mut prims = vec![];
         prims.extend(Rectangle::<S>::debug_outline(Rect::new(self.position, self.dimension), 0.5));
-        let children: Vec<Primitive> = self.get_children().flat_map(|f| f.get_primitives(fonts)).collect();
+        let children: Vec<Primitive> = self.get_children_mut().flat_map(|f| f.get_primitives(fonts)).collect();
         prims.extend(children);
 
         return prims;

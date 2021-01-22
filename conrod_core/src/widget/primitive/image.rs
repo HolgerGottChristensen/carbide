@@ -45,6 +45,8 @@ pub struct Image {
     requested_size: Dimensions
 }
 
+impl<GS: GlobalState> WidgetExt<GS> for Image {}
+
 impl<S: GlobalState> Layout<S> for Image {
     fn flexibility(&self) -> u32 {
         10
@@ -91,7 +93,7 @@ impl<S: GlobalState> Layout<S> for Image {
 
 impl<S: GlobalState> Render<S> for Image {
 
-    fn get_primitives(&self, fonts: &text::font::Map) -> Vec<Primitive> {
+    fn get_primitives(&mut self, fonts: &text::font::Map) -> Vec<Primitive> {
         //let color = Color::random();
         let kind = PrimitiveKind::Image {
             color: None,

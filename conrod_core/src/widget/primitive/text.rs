@@ -46,6 +46,8 @@ pub struct Text<GS> where GS: GlobalState {
     color: Color,
 }
 
+impl<GS: GlobalState> WidgetExt<GS> for Text<GS> {}
+
 impl<S: GlobalState> Layout<S> for Text<S> {
     fn flexibility(&self) -> u32 {
         2
@@ -78,7 +80,7 @@ impl<S: GlobalState> Layout<S> for Text<S> {
 }
 
 impl<S: GlobalState> Render<S> for Text<S> {
-    fn get_primitives(&self, fonts: &text::font::Map) -> Vec<Primitive> {
+    fn get_primitives(&mut self, fonts: &text::font::Map) -> Vec<Primitive> {
         let font_id = match fonts.ids().next() {
             Some(id) => id,
             None => return vec![],

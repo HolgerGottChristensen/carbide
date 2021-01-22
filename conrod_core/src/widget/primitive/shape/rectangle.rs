@@ -3,11 +3,6 @@
 //! Due to the frequency of its use in GUIs, the `Rectangle` gets its own widget to allow backends
 //! to specialise their rendering implementations.
 
-
-
-
-
-
 use daggy::petgraph::graph::node_index;
 use uuid::Uuid;
 
@@ -42,6 +37,8 @@ pub struct Rectangle<GS> where GS: GlobalState {
     dimension: Dimensions,
     color: Color,
 }
+
+impl<GS: GlobalState> WidgetExt<GS> for Rectangle<GS> {}
 
 impl<S: GlobalState> Layout<S> for Rectangle<S> {
     fn flexibility(&self) -> u32 {
@@ -129,7 +126,7 @@ impl<S: GlobalState> CommonWidget<S> for Rectangle<S> {
 
 impl<S: GlobalState> Render<S> for Rectangle<S> {
 
-    fn get_primitives(&self, fonts: &text::font::Map) -> Vec<Primitive> {
+    fn get_primitives(&mut self, fonts: &text::font::Map) -> Vec<Primitive> {
         let mut prims = vec![
             Primitive {
                 id: node_index(0),
@@ -139,7 +136,7 @@ impl<S: GlobalState> Render<S> for Rectangle<S> {
             }
         ];
         prims.extend(Rectangle::<S>::debug_outline(Rect::new(self.position, self.dimension), 1.0));
-        let children: Vec<Primitive> = self.get_children().flat_map(|f| f.get_primitives(fonts)).collect();
+        let children: Vec<Primitive> = self.get_children_mut().flat_map(|f| f.get_primitives(fonts)).collect();
         prims.extend(children);
 
         return prims;

@@ -59,9 +59,9 @@ impl<I> Polygon<I> {
     /// Build a polygon with the given points and style.
     pub fn styled(points: I, style: Style) -> Self {
         Polygon {
-            points: points,
+            points,
             common: widget::CommonBuilder::default(),
-            style: style,
+            style,
             maybe_shift_to_centre_from: None,
         }
     }

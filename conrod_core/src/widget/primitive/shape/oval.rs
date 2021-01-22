@@ -51,6 +51,8 @@ pub struct Oval<S, GS> where S: 'static + Clone, GS: GlobalState {
     pub children: Vec<Box<dyn Widget<GS>>>
 }
 
+impl<S: 'static + Clone, GS: GlobalState> WidgetExt<GS> for Oval<S, GS> {}
+
 impl<S: 'static + Clone, GS: GlobalState> Layout<GS> for Oval<S, GS> {
     fn flexibility(&self) -> u32 {
         0
@@ -137,7 +139,7 @@ impl<S: 'static + Clone, K: GlobalState> CommonWidget<K> for Oval<S, K> {
 
 impl<S: 'static + Clone, GS: GlobalState> Render<GS> for Oval<S, GS> {
 
-    fn get_primitives(&self, fonts: &text::font::Map) -> Vec<Primitive> {
+    fn get_primitives(&mut self, fonts: &text::font::Map) -> Vec<Primitive> {
         let points = widget::oval::circumference(Rect::new(self.position, self.dimension), DEFAULT_RESOLUTION);
         let mut triangles: Vec<Triangle<Point>> = Vec::new();
         triangles.extend(points.triangles());
@@ -148,7 +150,7 @@ impl<S: 'static + Clone, GS: GlobalState> Render<GS> for Oval<S, GS> {
 
         let mut prims: Vec<Primitive> = vec![new_primitive(node_index(0), kind, Rect::new(self.position, self.dimension), Rect::new(self.position, self.dimension))];
         prims.extend(Rectangle::<GS>::debug_outline(Rect::new(self.position, self.dimension), 1.0));
-        let children: Vec<Primitive> = self.get_children().flat_map(|f| f.get_primitives(fonts)).collect();
+        let children: Vec<Primitive> = self.get_children_mut().flat_map(|f| f.get_primitives(fonts)).collect();
         prims.extend(children);
 
         return prims;

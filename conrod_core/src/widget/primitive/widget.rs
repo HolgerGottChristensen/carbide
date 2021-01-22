@@ -150,8 +150,8 @@ impl<S: GlobalState> Layout<S> for Box<dyn Widget<S>> {
 }
 
 impl<S: GlobalState> Render<S> for Box<dyn Widget<S>> {
-    fn get_primitives(&self, fonts: &text::font::Map) -> Vec<Primitive> {
-        self.deref().get_primitives(fonts)
+    fn get_primitives(&mut self, fonts: &text::font::Map) -> Vec<Primitive> {
+        self.deref_mut().get_primitives(fonts)
     }
 }
 

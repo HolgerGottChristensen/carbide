@@ -27,6 +27,8 @@ pub struct HStack<GS> where GS: GlobalState {
     spacing: Scalar,
 }
 
+impl<GS: GlobalState> WidgetExt<GS> for HStack<GS> {}
+
 impl<S: GlobalState> HStack<S> {
     pub fn initialize(children: Vec<Box<dyn Widget<S>>>) -> Box<Self> {
         Box::new(HStack {
@@ -196,10 +198,10 @@ impl<S: GlobalState> CommonWidget<S> for HStack<S> {
 
 impl<S: GlobalState> Render<S> for HStack<S> {
 
-    fn get_primitives(&self, fonts: &text::font::Map) -> Vec<Primitive> {
+    fn get_primitives(&mut self, fonts: &text::font::Map) -> Vec<Primitive> {
         let mut prims = vec![];
         prims.extend(Rectangle::<S>::debug_outline(Rect::new(self.position, self.dimension), 1.0));
-        let children: Vec<Primitive> = self.get_children().flat_map(|f| f.get_primitives(fonts)).collect();
+        let children: Vec<Primitive> = self.get_children_mut().flat_map(|f| f.get_primitives(fonts)).collect();
         prims.extend(children);
 
         return prims;

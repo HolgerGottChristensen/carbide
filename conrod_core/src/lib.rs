@@ -31,6 +31,7 @@ extern crate rusttype;
 extern crate serde;
 extern crate uuid;
 extern crate wgpu;
+extern crate lyon;
 
 extern crate self as conrod_core;
 

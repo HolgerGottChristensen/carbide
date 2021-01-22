@@ -34,6 +34,8 @@ pub struct OverlaidLayer<GS> where GS: GlobalState {
     dimension: Dimensions,
 }
 
+impl<GS: GlobalState> WidgetExt<GS> for OverlaidLayer<GS> {}
+
 impl<S: GlobalState> Layout<S> for OverlaidLayer<S> {
     fn flexibility(&self) -> u32 {
         0
@@ -102,15 +104,15 @@ impl<S: GlobalState> CommonWidget<S> for OverlaidLayer<S> {
 
 impl<S: GlobalState> Render<S> for OverlaidLayer<S> {
 
-    fn get_primitives(&self, fonts: &text::font::Map) -> Vec<Primitive> {
+    fn get_primitives(&mut self, fonts: &text::font::Map) -> Vec<Primitive> {
         let mut prims = vec![];
         prims.extend(Rectangle::<S>::debug_outline(Rect::new(self.position, self.dimension), 1.0));
-        let children: Vec<Primitive> = self.get_children()
+        let children: Vec<Primitive> = self.get_children_mut()
             .flat_map(|f| f.get_primitives(fonts))
             .collect();
         prims.extend(children);
 
-        if let Some(t) = &self.overlay {
+        if let Some(t) = &mut self.overlay {
             let overlay_prims = t.get_primitives(fonts);
             prims.extend(overlay_prims);
         }

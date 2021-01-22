@@ -8,6 +8,7 @@ pub mod oval;
 pub mod polygon;
 pub mod rectangle;
 pub mod triangles;
+pub mod rounded_rectangle;
 
 
 /// The style for some 2D shape.

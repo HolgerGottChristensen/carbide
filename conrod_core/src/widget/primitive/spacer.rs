@@ -25,6 +25,7 @@ use crate::widget::widget_iterator::{WidgetIter, WidgetIterMut};
 use crate::widget::primitive::Widget;
 use crate::state::global_state::GlobalState;
 use crate::widget::types::spacer_direction::SpacerDirection;
+use crate::widget::primitive::widget::WidgetExt;
 
 /// A basic, non-interactive rectangle shape widget.
 #[derive(Clone, Debug, Widget)]
@@ -34,6 +35,8 @@ pub struct Spacer {
     dimension: Dimensions,
     space: SpacerDirection,
 }
+
+impl<GS: GlobalState> WidgetExt<GS> for Spacer {}
 
 impl Spacer {
     pub fn new(space: SpacerDirection) -> Box<Self> {
@@ -111,7 +114,7 @@ impl<S: GlobalState> CommonWidget<S> for Spacer {
 }
 
 impl<S: GlobalState> Render<S> for Spacer {
-    fn get_primitives(&self, _fonts: &text::font::Map) -> Vec<Primitive> {
+    fn get_primitives(&mut self, _fonts: &text::font::Map) -> Vec<Primitive> {
         let mut prims = vec![];
         prims.extend(Rectangle::<S>::debug_outline(Rect::new(self.position, self.dimension), 1.0));
         return prims;

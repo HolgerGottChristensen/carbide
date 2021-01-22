@@ -44,6 +44,8 @@ pub struct Line<GS> where GS: GlobalState {
     pub children: Vec<Box<dyn Widget<GS>>>
 }
 
+impl<GS: GlobalState> WidgetExt<GS> for Line<GS> {}
+
 impl<S: GlobalState> Layout<S> for Line<S> {
     fn flexibility(&self) -> u32 {
         0
@@ -60,7 +62,7 @@ impl<S: GlobalState> Layout<S> for Line<S> {
 
 impl<S: GlobalState> Render<S> for Line<S> {
 
-    fn get_primitives(&self, fonts: &text::font::Map) -> Vec<Primitive> {
+    fn get_primitives(&mut self, fonts: &text::font::Map) -> Vec<Primitive> {
         const DEFAULT_CAP: Cap = Cap::Flat;
         let thickness = 2.0;
         let points = std::iter::once(self.start).chain(std::iter::once(self.end));
@@ -76,7 +78,7 @@ impl<S: GlobalState> Render<S> for Line<S> {
         };
 
         let mut prims: Vec<Primitive> = vec![new_primitive(node_index(0), kind, Rect::new(self.position, self.dimension), Rect::new(self.position, self.dimension))];
-        let children: Vec<Primitive> = self.get_children().flat_map(|f| f.get_primitives(fonts)).collect();
+        let children: Vec<Primitive> = self.get_children_mut().flat_map(|f| f.get_primitives(fonts)).collect();
         prims.extend(children);
 
         return prims;

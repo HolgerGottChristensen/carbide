@@ -32,6 +32,8 @@ pub struct Frame<GS> where GS: GlobalState {
     expand_height: bool,
 }
 
+impl<GS: GlobalState> WidgetExt<GS> for Frame<GS> {}
+
 impl<S: GlobalState> Frame<S> {
     pub fn init(width: Scalar, height: Scalar, child: Box<dyn Widget<S>>) -> Box<Frame<S>> {
 
@@ -120,7 +122,11 @@ impl<S: GlobalState> CommonWidget<S> for Frame<S> {
 
 impl<S: GlobalState> Layout<S> for Frame<S> {
     fn flexibility(&self) -> u32 {
-        9
+        if self.expand_width || self.expand_height {
+            8
+        } else {
+            9
+        }
     }
 
     fn calculate_size(&mut self, requested_size: Dimensions, env: &Environment<S>) -> Dimensions {
@@ -153,7 +159,7 @@ impl<S: GlobalState> Layout<S> for Frame<S> {
 
 impl<S: GlobalState> Render<S> for Frame<S> {
 
-    fn get_primitives(&self, fonts: &text::font::Map) -> Vec<Primitive> {
+    fn get_primitives(&mut self, fonts: &text::font::Map) -> Vec<Primitive> {
         let mut prims = vec![];
         prims.extend(Rectangle::<S>::debug_outline(Rect::new(self.position, [self.dimension[0].abs(), self.dimension[1].abs()]), 1.0));
         let children: Vec<Primitive> = self.child.get_primitives(fonts);

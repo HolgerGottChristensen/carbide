@@ -28,6 +28,8 @@ pub struct ForEach<GS> where GS: GlobalState {
     dimension: Dimensions, // --
 }
 
+impl<GS: GlobalState> WidgetExt<GS> for ForEach<GS> {}
+
 impl<S: GlobalState> ForEach<S> {
     pub fn new(ids: State<Vec<Uuid>, S>, delegate: Box<dyn Widget<S>>) -> Box<ForEach<S>> {
 

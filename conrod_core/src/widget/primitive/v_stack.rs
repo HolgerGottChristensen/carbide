@@ -28,6 +28,8 @@ pub struct VStack<GS> where GS: GlobalState {
     cross_axis_alignment: CrossAxisAlignment
 }
 
+impl<GS: GlobalState> WidgetExt<GS> for VStack<GS> {}
+
 impl<S: GlobalState> VStack<S> {
     pub fn initialize(children: Vec<Box<dyn Widget<S>>>) -> Box<Self> {
         Box::new(VStack {
@@ -200,10 +202,10 @@ impl<S: GlobalState> CommonWidget<S> for VStack<S> {
 
 impl<S: GlobalState> Render<S> for VStack<S> {
 
-    fn get_primitives(&self, fonts: &text::font::Map) -> Vec<Primitive> {
+    fn get_primitives(&mut self, fonts: &text::font::Map) -> Vec<Primitive> {
         let mut prims = vec![];
         prims.extend(Rectangle::<S>::debug_outline(Rect::new(self.position, self.dimension), 1.0));
-        let children: Vec<Primitive> = self.get_children().flat_map(|f| f.get_primitives(fonts)).collect();
+        let children: Vec<Primitive> = self.get_children_mut().flat_map(|f| f.get_primitives(fonts)).collect();
         prims.extend(children);
 
         return prims;
