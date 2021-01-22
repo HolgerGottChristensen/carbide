@@ -2,7 +2,7 @@ use proc_macro2;
 use syn;
 
 use crate::utils;
-use proc_macro2::{Ident, TokenStream};
+use proc_macro2::{Ident, TokenStream, Span};
 use syn::{Type, Fields, Attribute, Meta, Error, Path, PathSegment, GenericParam, WherePredicate, PredicateType, DeriveInput, NestedMeta};
 use std::collections::{HashMap, HashSet};
 
@@ -85,6 +85,32 @@ pub fn impl_widget(ast: &syn::DeriveInput) -> proc_macro2::TokenStream {
     let state_idents: Vec<Ident> = state_idents_iter.collect();
 
 
+    let (global_state, global_state_use) = if let Some(_) = struct_attributes.get("global_state") {
+        let idents: Vec<Ident> = struct_attributes.iter().filter_map(|st| {
+            if st.starts_with("global_state.") {
+                let str_ident: Vec<&str> = st.split(".").collect();
+                Some(Ident::new(str_ident[1], Span::call_site()))
+            } else {
+                None
+            }
+        }).collect();
+
+        let ident = idents.first().unwrap();
+
+        let generic = quote! {};
+        let generic_use = quote! { #ident };
+
+        (generic, generic_use)
+
+    } else {
+        let generic = quote! { GS: conrod_core::state::global_state::GlobalState };
+        let generic_use = quote! {GS};
+
+        (generic, generic_use)
+    };
+
+
+
     let insert_local_state = if let Some(_) = struct_attributes.get("state_sync.insert_local_state") {
         quote! {#struct_ident::insert_local_state(self, env);}
     } else {
@@ -149,12 +175,12 @@ pub fn impl_widget(ast: &syn::DeriveInput) -> proc_macro2::TokenStream {
 
     quote! {
 
-        impl<#(#generics_without_gs ,)* GS: conrod_core::state::global_state::GlobalState> conrod_core::event::event::Event<GS> for #struct_ident #generics_with_gs #wheres {
-            fn handle_mouse_event(&mut self, event: &conrod_core::event_handler::MouseEvent, consumed: &bool, global_state: &mut GS) {
+        impl<#(#generics_without_gs ,)* #global_state> conrod_core::event::event::Event<#global_state_use> for #struct_ident #generics_with_gs #wheres {
+            fn handle_mouse_event(&mut self, event: &conrod_core::event_handler::MouseEvent, consumed: &bool, global_state: &mut #global_state_use) {
                 #handle_mouse_event
             }
 
-            fn handle_keyboard_event(&mut self, event: &conrod_core::event_handler::KeyboardEvent, global_state: &mut GS) {
+            fn handle_keyboard_event(&mut self, event: &conrod_core::event_handler::KeyboardEvent, global_state: &mut #global_state_use) {
                 #handle_keyboard_event
             }
 
@@ -162,51 +188,51 @@ pub fn impl_widget(ast: &syn::DeriveInput) -> proc_macro2::TokenStream {
                 #handle_other_event
             }
 
-            fn process_mouse_event(&mut self, event: &conrod_core::event_handler::MouseEvent, consumed: &bool, env: &mut conrod_core::state::environment::Environment<GS>, global_state: &mut GS) {
+            fn process_mouse_event(&mut self, event: &conrod_core::event_handler::MouseEvent, consumed: &bool, env: &mut conrod_core::state::environment::Environment<#global_state_use>, global_state: &mut #global_state_use) {
                 #process_mouse_event
             }
 
-            fn process_keyboard_event(&mut self, event: &conrod_core::event_handler::KeyboardEvent, env: &mut conrod_core::state::environment::Environment<GS>, global_state: &mut GS) {
+            fn process_keyboard_event(&mut self, event: &conrod_core::event_handler::KeyboardEvent, env: &mut conrod_core::state::environment::Environment<#global_state_use>, global_state: &mut #global_state_use) {
                 #process_keyboard_event
             }
 
-            fn process_other_event(&mut self, event: &conrod_core::event_handler::WidgetEvent, env: &mut conrod_core::state::environment::Environment<GS>, global_state: &mut GS) {
+            fn process_other_event(&mut self, event: &conrod_core::event_handler::WidgetEvent, env: &mut conrod_core::state::environment::Environment<#global_state_use>, global_state: &mut #global_state_use) {
                 #process_other_event
             }
         }
 
 
         #[automatically_derived]
-        impl<#(#generics_without_gs ,)* GS: conrod_core::state::global_state::GlobalState> conrod_core::state::state_sync::StateSync<GS> for #struct_ident #generics_with_gs #wheres {
-            fn insert_local_state(&self, env: &mut conrod_core::state::environment::Environment<GS>) {
+        impl<#(#generics_without_gs ,)* #global_state> conrod_core::state::state_sync::StateSync<#global_state_use> for #struct_ident #generics_with_gs #wheres {
+            fn insert_local_state(&self, env: &mut conrod_core::state::environment::Environment<#global_state_use>) {
                 #(env.insert_local_state(&self.#state_idents);)*
 
                 #insert_local_state
             }
 
-            fn update_all_widget_state(&mut self, env: &conrod_core::state::environment::Environment<GS>, global_state: &GS) {
+            fn update_all_widget_state(&mut self, env: &conrod_core::state::environment::Environment<#global_state_use>, global_state: &#global_state_use) {
                 self.update_local_widget_state(env);
                 #(self.#state_idents.get_value(global_state);)*
 
                 #update_all_widget_state
             }
 
-            fn update_local_widget_state(&mut self, env: &conrod_core::state::environment::Environment<GS>) {
+            fn update_local_widget_state(&mut self, env: &conrod_core::state::environment::Environment<#global_state_use>) {
                 #(env.update_local_state(&mut self.#state_idents);)*
 
                 #update_local_widget_state
             }
 
-            fn sync_state(&mut self, env: &mut conrod_core::state::environment::Environment<GS>, global_state: &GS) {
+            fn sync_state(&mut self, env: &mut conrod_core::state::environment::Environment<#global_state_use>, global_state: &#global_state_use) {
                 #sync_state
             }
         }
 
         #[automatically_derived]
-        impl<#(#generics_without_gs ,)* GS: conrod_core::state::global_state::GlobalState> conrod_core::widget::primitive::widget::Widget<GS> for #struct_ident #generics_with_gs #wheres {}
+        impl<#(#generics_without_gs ,)* #global_state> conrod_core::widget::primitive::widget::Widget<#global_state_use> for #struct_ident #generics_with_gs #wheres {}
 
         #[automatically_derived]
-        impl<#(#generics_without_gs ,)* GS: conrod_core::state::global_state::GlobalState> conrod_core::widget::primitive::widget::WidgetExt<GS> for #struct_ident #generics_with_gs #wheres {}
+        impl<#(#generics_without_gs ,)* #global_state> conrod_core::widget::primitive::widget::WidgetExt<#global_state_use> for #struct_ident #generics_with_gs #wheres {}
     }
 }
 

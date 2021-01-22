@@ -43,7 +43,7 @@ pub fn widget_style_(input: TokenStream) -> TokenStream {
 
 
 
-#[proc_macro_derive(Widget, attributes(state, state_sync, event))]
+#[proc_macro_derive(Widget, attributes(global_state, state, state_sync, event))]
 pub fn widget(input: TokenStream) -> TokenStream {
     impl_derive(input, widget::impl_widget)
 }

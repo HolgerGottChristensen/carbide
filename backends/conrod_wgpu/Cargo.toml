@@ -15,6 +15,7 @@ edition = "2018"
 
 [dependencies]
 conrod_core = { path = "../../conrod_core", version = "0.70" }
+conrod_derive  = { path = "../../conrod_derive", version = "0.70" }
 conrod_winit = { path = "../conrod_winit", version = "0.70" }
 image = "0.23"
 winit = "0.23"

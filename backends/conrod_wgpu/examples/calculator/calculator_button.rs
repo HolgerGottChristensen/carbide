@@ -1,8 +1,9 @@
+
 use conrod_core::widget::primitive::Widget;
 use conrod_core::{Point, Color};
 use conrod_core::position::Dimensions;
 use conrod_core::widget::{HStack, Rectangle, Image};
-use conrod_core::widget::primitive::spacer::{SpacerDirection, Spacer};
+use conrod_core::widget::primitive::spacer::Spacer;
 use conrod_core::color::{RED, rgb_bytes};
 use conrod_core::widget::primitive::edge_insets::EdgeInsets;
 use conrod_core::widget::common_widget::CommonWidget;
@@ -22,8 +23,11 @@ use uuid::Uuid;
 use conrod_core::image::Id;
 use conrod_core::layout::layout::SingleChildLayout;
 use conrod_core::state::state_sync::NoLocalStateSync;
+use conrod_derive;
 
-#[derive(Clone)]
+#[derive(Clone, Widget)]
+#[global_state(CalculatorState)]
+#[event(handle_mouse_event)]
 pub struct CalculatorButton {
     id: Uuid,
     child: Box<dyn Widget<CalculatorState>>,
@@ -48,6 +52,20 @@ impl CalculatorButton {
     pub fn on_released(mut self, func: fn(&mut Self, &mut CalculatorState)) -> Box<Self>{
         self.function = Some(func);
         Box::new(self)
+    }
+
+    fn handle_mouse_event(&mut self, event: &MouseEvent, consumed: &bool, global_state: &mut CalculatorState) {
+        match event {
+            MouseEvent::Release(_, _, _) => {
+                match self.function {
+                    None => {}
+                    Some(f) => {
+                        f(self, global_state)
+                    }
+                }
+            }
+            _ => ()
+        }
     }
 }
 
@@ -97,34 +115,6 @@ impl CommonWidget<CalculatorState> for CalculatorButton {
     }
 }
 
-impl Event<CalculatorState> for CalculatorButton {
-    fn handle_mouse_event(&mut self, event: &MouseEvent, consumed: &bool, global_state: &mut CalculatorState) {
-        match event {
-            MouseEvent::Release(_, _, _) => {
-                match self.function {
-                    None => {}
-                    Some(f) => {
-                        f(self, global_state)
-                    }
-                }
-            }
-            _ => ()
-        }
-    }
-
-    fn handle_keyboard_event(&mut self, event: &KeyboardEvent, global_state: &mut CalculatorState) {
-        match event {
-            KeyboardEvent::Text(st, _) => {
-                println!("Hejsa");
-            },
-            _ => {},
-        }
-    }
-
-    fn handle_other_event(&mut self, event: &WidgetEvent) {}
-}
-
-impl NoLocalStateSync for CalculatorButton {}
 
 impl ChildRender for CalculatorButton {}
 
@@ -133,7 +123,3 @@ impl SingleChildLayout for CalculatorButton {
         10
     }
 }
-
-impl Widget<CalculatorState> for CalculatorButton {}
-
-impl WidgetExt<CalculatorState> for CalculatorButton {}
