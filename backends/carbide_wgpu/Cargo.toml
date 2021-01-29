@@ -1,0 +1,44 @@
+[package]
+name = "carbide_wgpu"
+version = "0.70.0"
+authors = [
+    "mitchmindtree <mitchell.nordine@gmail.com>",
+]
+keywords = ["ui", "widgets", "gui", "interface", "graphics"]
+description = "A crate to assist with rendering carbide UIs via wgpu."
+license = "MIT OR Apache-2.0"
+readme = "../../README.md"
+repository = "https://github.com/pistondevelopers/carbide.git"
+homepage = "https://github.com/pistondevelopers/carbide"
+categories = ["gui"]
+edition = "2018"
+
+[dependencies]
+carbide_core = { path = "../../carbide_core", version = "0.70" }
+carbide_derive  = { path = "../../carbide_derive", version = "0.70" }
+carbide_winit = { path = "../carbide_winit", version = "0.70" }
+image = "0.23"
+winit = "0.23"
+cgmath = "0.17"
+env_logger = "0.7"
+log = "0.4"
+wgpu = "0.6"
+futures = "0.3"
+bytemuck = { version = "1.4", features = [ "derive" ] }
+anyhow = "1.0"
+find_folder = "0.3"
+uuid = { version = "0.8.1", features = ["serde", "v4"]}
+
+[dev-dependencies]
+carbide_example_shared = { path = "../carbide_example_shared", version = "0.70" }
+carbide_winit = { path = "../carbide_winit", version = "0.70" }
+find_folder = "0.3"
+futures = "0.3"
+image = "0.23"
+winit = "0.23"
+
+[build-dependencies]
+anyhow = "1.0"
+fs_extra = "1.1"
+glob = "0.3"
+shaderc = "0.6"

@@ -1,0 +1,40 @@
+[package]
+name = "carbide_rendy"
+version = "0.70.0"
+authors = [
+    "David Partouche <david@kaligs.com>",
+    "mitchmindtree <mitchell.nordine@gmail.com>",
+]
+keywords = ["ui", "widgets", "gui", "interface", "graphics"]
+description = "A rendy backend for carbide."
+license = "MIT OR Apache-2.0"
+readme = "../../README.md"
+repository = "https://github.com/pistondevelopers/carbide.git"
+homepage = "https://github.com/pistondevelopers/carbide"
+categories = ["gui"]
+edition = "2018"
+
+[dependencies]
+carbide_core = { path = "../../carbide_core", version = "0.70" }
+lazy_static = "1.4.0"
+rendy = { version = "0.5.1", default-features = false, features = ["base", "texture"] }
+
+[features]
+empty = ["rendy/empty"]
+dx12 = ["rendy/dx12"]
+gl = ["rendy/gl"]
+metal = ["rendy/metal"]
+vulkan = ["rendy/vulkan"]
+init-winit = ["rendy/init-winit"]
+no-slow-safety-checks = ["rendy/no-slow-safety-checks"]
+profiler = ["rendy/profiler"]
+
+[dev-dependencies]
+carbide_example_shared = { path = "../carbide_example_shared", version = "0.70" }
+carbide_winit = { path = "../carbide_winit", version = "0.70" }
+find_folder = "0.3.0"
+image = "0.22"
+
+[[example]]
+name = "all_winit_rendy"
+required-features = ["init-winit"]

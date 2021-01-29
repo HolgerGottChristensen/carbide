@@ -1,0 +1,18 @@
+[package]
+name = "carbide_derive"
+version = "0.70.0"
+authors = ["mitchmindtree <mitchell.nordine@gmail.com>"]
+description = "A crate providing procedural macros for the carbide library"
+license = "MIT OR Apache-2.0"
+keywords = ["carbide", "gui", "derive", "procedural", "macro"]
+repository = "https://github.com/pistondevelopers/carbide.git"
+homepage = "https://github.com/pistondevelopers/carbide"
+
+
+[lib]
+proc-macro = true
+
+[dependencies]
+proc-macro2 = "1"
+quote = "1"
+syn = { version = "1", features = ["extra-traits", "full"] }

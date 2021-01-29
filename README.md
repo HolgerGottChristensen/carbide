@@ -1,79 +1,17 @@
-# Conrod [![Build Status](https://travis-ci.org/PistonDevelopers/conrod.svg?branch=master)](https://travis-ci.org/PistonDevelopers/conrod) [![Crates.io](https://img.shields.io/crates/l/conrod_core.svg)](https://github.com/PistonDevelopers/conrod/blob/master/LICENSE)
+# Carbide 
 
-An easy-to-use, 2D GUI library written entirely in Rust.
+Carbide is a fork of the earlier repository conrod.
 
-Guide
------
+Carbide is an attempt to create an easy-to-use, 2D library written entirely in Rust.
 
-1. [**What is Conrod?**][1]
-    - [A Brief Summary][1.1]
-    - [Screenshots and Videos][1.2]
-    - [Feature Overview][1.3]
-    - [Available Widgets][1.4]
-        - [Primitive Widgets][1.4.1]
-        - [Common Use Widgets][1.4.2]
-    - [Immediate Mode][1.5]
-        - [What is it?][1.5.1]
-        - [Why use it?][1.5.2]
-        - [Is Conrod Immediate or Retained?][1.5.3]
-    - [The Builder Pattern][1.6]
-2. [**Getting Started**][2]
-    - [Installing Rust and Cargo][2.1]
-    - [Running the Conrod Examples][2.2]
-3. [**Hello World**][3]
-    - [Creating a new project][3.1]
-    - [Conrod Setup][3.2]
-        -[Back ends][3.2.1]
-    - [Creating a Window][3.3]
-    - [Event Handling][3.4]
-4. **Using and Customising Themes**
-    - What is a `Theme`?
-    - Custom Themes
-    - Serializing Themes
-5. **Designing Custom Widgets (using the Widget trait)**
-    - The `Widget` trait
-    - The `widget_style!` macro
-    - The `builder_methods!` macro
-    - Making a `Button` widget
-6. **Custom Graphics and Window Backends**
-    - Demonstration of Backend Implementation (using glium and glutin)
-7. **Internals**
-    - The `Ui`'s Widget `Graph`
-    - `Ui::set_widgets` - How does it work?
-8. **FAQ**
-
-*The Guide is a work-in-progress. If a section is not linked, it is likely not yet implemented.*
+The project differentiates itself from other attempts (druid, egui, iced, ...) by using the mindset of SwiftUI 
+layouting along with being a retained mode framework. 
 
 
-Crates
-------
-
-| Crate | Badges | Description |
-| --- | --- | --- |
-| **`conrod_core`** | [![Crates.io](https://img.shields.io/crates/v/conrod_core.svg)](https://crates.io/crates/conrod_core) [![docs.rs](https://docs.rs/conrod_core/badge.svg)](https://docs.rs/conrod_core/) | The fundamentals for any conrod project. |
-| **`conrod_derive`** | [![Crates.io](https://img.shields.io/crates/v/conrod_derive.svg)](https://crates.io/crates/conrod_derive) [![docs.rs](https://docs.rs/conrod_derive/badge.svg)](https://docs.rs/conrod_derive/) | Provides the `WidgetCommon` and `WidgetStyle` derive macros. |
-| **`conrod_winit`** | [![Crates.io](https://img.shields.io/crates/v/conrod_winit.svg)](https://crates.io/crates/conrod_winit) [![docs.rs](https://docs.rs/conrod_winit/badge.svg)](https://docs.rs/conrod_winit/) | Simplifies using `conrod_core` with `winit` |
-| **`conrod_gfx`** | [![Crates.io](https://img.shields.io/crates/v/conrod_gfx.svg)](https://crates.io/crates/conrod_gfx) [![docs.rs](https://docs.rs/conrod_gfx/badge.svg)](https://docs.rs/conrod_gfx/) | Simplifies using `conrod_core` with the gfx ecosystem |
-| **`conrod_glium`** | [![Crates.io](https://img.shields.io/crates/v/conrod_glium.svg)](https://crates.io/crates/conrod_glium) [![docs.rs](https://docs.rs/conrod_glium/badge.svg)](https://docs.rs/conrod_glium/) | Simplifies using `conrod_core` with `glium` |
-| **`conrod_piston`** | [![Crates.io](https://img.shields.io/crates/v/conrod_piston.svg)](https://crates.io/crates/conrod_piston) [![docs.rs](https://docs.rs/conrod_piston/badge.svg)](https://docs.rs/conrod_piston/) | Simplifies using `conrod_core` with `piston` |
-| **`conrod_vulkano`** | [![Crates.io](https://img.shields.io/crates/v/conrod_vulkano.svg)](https://crates.io/crates/conrod_vulkano) [![docs.rs](https://docs.rs/conrod_vulkano/badge.svg)](https://docs.rs/conrod_vulkano/) | Simplifies using `conrod_core` with `vulkano` |
-
-
-Current State
--------------
-
-We're just starting to reach a stable-ish API pattern! There will still be some
-large changes, however these are more likely to be new features than API
-overhauls.
-
-To get a clearer idea of where we're at see the [issues] and in particular, the
-[1.0.0 milestone].
-
-
-Contributing
-------------
-
-Want to help out? See [Piston's how to contribute guide][Contributing].
+## Current state
+Currently the framework is in the early stages, but most of the layouting algorithms and basic widgets have been 
+implemented. By extending conrod, I am trying to bring the project up to more modern standards, 2018 rust, with its new 
+features. 
 
 
 License
@@ -98,32 +36,32 @@ dual licensed as above, without any additional terms or conditions.
 - [Google Noto](https://www.google.com/get/noto/) (Apache2)
 
 
-[The API Documentation]: https://docs.rs/conrod_core/
-[The Guide]: https://docs.rs/conrod_core/latest/conrod_core/guide/index.html
+[The API Documentation]: https://docs.rs/carbide_core/
+[The Guide]: https://docs.rs/carbide_core/latest/carbide_core/guide/index.html
 
-[1]:        https://docs.rs/conrod_core/latest/conrod_core/guide/chapter_1/index.html
-[1.1]:      https://docs.rs/conrod_core/latest/conrod_core/guide/chapter_1/index.html#a-brief-history
-[1.2]:      https://docs.rs/conrod_core/latest/conrod_core/guide/chapter_1/index.html#screenshots-and-videos
-[1.3]:      https://docs.rs/conrod_core/latest/conrod_core/guide/chapter_1/index.html#feature-overview
-[1.4]:      https://docs.rs/conrod_core/latest/conrod_core/guide/chapter_1/index.html#available-widgets
-[1.4.1]:    https://docs.rs/conrod_core/latest/conrod_core/guide/chapter_1/index.html#primitive-widgets
-[1.4.2]:    https://docs.rs/conrod_core/latest/conrod_core/guide/chapter_1/index.html#common-use-widgets
-[1.5]:      https://docs.rs/conrod_core/latest/conrod_core/guide/chapter_1/index.html#immediate-mode
-[1.5.1]:    https://docs.rs/conrod_core/latest/conrod_core/guide/chapter_1/index.html#what-is-it
-[1.5.2]:    https://docs.rs/conrod_core/latest/conrod_core/guide/chapter_1/index.html#why-use-it
-[1.5.3]:    https://docs.rs/conrod_core/latest/conrod_core/guide/chapter_1/index.html#is-conrod-immediate-or-retained
-[1.6]:      https://docs.rs/conrod_core/latest/conrod_core/guide/chapter_1/index.html#the-builder-pattern
-[2]:        https://docs.rs/conrod_core/latest/conrod_core/guide/chapter_2/index.html
-[2.1]:      https://docs.rs/conrod_core/latest/conrod_core/guide/chapter_2/index.html#installing-rust-and-cargo
-[2.2]:      https://docs.rs/conrod_core/latest/conrod_core/guide/chapter_2/index.html#running-the-conrod-examples
-[3]:        https://docs.rs/conrod_core/latest/conrod_core/guide/chapter_3/index.html
-[3.1]:      https://docs.rs/conrod_core/latest/conrod_core/guide/chapter_3/index.html#creating-a-new-project
-[3.2]:      https://docs.rs/conrod_core/latest/conrod_core/guide/chapter_3/index.html#setting-up-conrod
-[3.2.1]:    https://docs.rs/conrod_core/latest/conrod_core/guide/chapter_3/index.html#backends
-[3.3]:      https://docs.rs/conrod_core/latest/conrod_core/guide/chapter_3/index.html#creating-a-window
-[3.4]:      https://docs.rs/conrod_core/latest/conrod_core/guide/chapter_3/index.html#handling-events
+[1]:        https://docs.rs/carbide_core/latest/carbide_core/guide/chapter_1/index.html
+[1.1]:      https://docs.rs/carbide_core/latest/carbide_core/guide/chapter_1/index.html#a-brief-history
+[1.2]:      https://docs.rs/carbide_core/latest/carbide_core/guide/chapter_1/index.html#screenshots-and-videos
+[1.3]:      https://docs.rs/carbide_core/latest/carbide_core/guide/chapter_1/index.html#feature-overview
+[1.4]:      https://docs.rs/carbide_core/latest/carbide_core/guide/chapter_1/index.html#available-widgets
+[1.4.1]:    https://docs.rs/carbide_core/latest/carbide_core/guide/chapter_1/index.html#primitive-widgets
+[1.4.2]:    https://docs.rs/carbide_core/latest/carbide_core/guide/chapter_1/index.html#common-use-widgets
+[1.5]:      https://docs.rs/carbide_core/latest/carbide_core/guide/chapter_1/index.html#immediate-mode
+[1.5.1]:    https://docs.rs/carbide_core/latest/carbide_core/guide/chapter_1/index.html#what-is-it
+[1.5.2]:    https://docs.rs/carbide_core/latest/carbide_core/guide/chapter_1/index.html#why-use-it
+[1.5.3]:    https://docs.rs/carbide_core/latest/carbide_core/guide/chapter_1/index.html#is-carbide-immediate-or-retained
+[1.6]:      https://docs.rs/carbide_core/latest/carbide_core/guide/chapter_1/index.html#the-builder-pattern
+[2]:        https://docs.rs/carbide_core/latest/carbide_core/guide/chapter_2/index.html
+[2.1]:      https://docs.rs/carbide_core/latest/carbide_core/guide/chapter_2/index.html#installing-rust-and-cargo
+[2.2]:      https://docs.rs/carbide_core/latest/carbide_core/guide/chapter_2/index.html#running-the-carbide-examples
+[3]:        https://docs.rs/carbide_core/latest/carbide_core/guide/chapter_3/index.html
+[3.1]:      https://docs.rs/carbide_core/latest/carbide_core/guide/chapter_3/index.html#creating-a-new-project
+[3.2]:      https://docs.rs/carbide_core/latest/carbide_core/guide/chapter_3/index.html#setting-up-carbide
+[3.2.1]:    https://docs.rs/carbide_core/latest/carbide_core/guide/chapter_3/index.html#backends
+[3.3]:      https://docs.rs/carbide_core/latest/carbide_core/guide/chapter_3/index.html#creating-a-window
+[3.4]:      https://docs.rs/carbide_core/latest/carbide_core/guide/chapter_3/index.html#handling-events
 
-[issues]: https://github.com/PistonDevelopers/conrod/issues
-[1.0.0 milestone]: https://github.com/PistonDevelopers/conrod/milestones/1.0.0
+[issues]: https://github.com/PistonDevelopers/carbide/issues
+[1.0.0 milestone]: https://github.com/PistonDevelopers/carbide/milestones/1.0.0
 
 [Contributing]: https://github.com/PistonDevelopers/piston/blob/master/CONTRIBUTING.md
