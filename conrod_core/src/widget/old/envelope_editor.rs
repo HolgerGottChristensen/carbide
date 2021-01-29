@@ -2,7 +2,7 @@
 
 use num::Float;
 
-use crate::{Borderable, Color, Colorable, FontSize, Labelable};
+use crate::{Color, Colorable, FontSize, Labelable};
 use crate::position::{Direction, Edge, Point, Rect, Scalar};
 use crate::text;
 use crate::widget;

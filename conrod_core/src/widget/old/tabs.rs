@@ -384,21 +384,6 @@ impl<'a> crate::color::Colorable for Tabs<'a> {
     }
 }
 
-impl<'a> crate::border::Borderable for Tabs<'a> {
-    fn border(self, width: f64) -> Self {
-        self.map_canvas_style(|mut style| {
-            style.border = Some(width);
-            style
-        })
-    }
-    fn border_color(self, color: Color) -> Self {
-        self.map_canvas_style(|mut style| {
-            style.border_color = Some(color);
-            style
-        })
-    }
-}
-
 /// An iterator yielding the **Rect** for each Tab in the given list.
 pub struct TabRects<'a> {
     tabs: std::slice::Iter<'a, (widget::Id, &'a str)>,

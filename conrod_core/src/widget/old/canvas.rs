@@ -1,7 +1,6 @@
 //! The `Canvas` widget and related items.
 
 use crate::{
-    Borderable,
     Color,
     Colorable,
     FontSize,
@@ -426,13 +425,6 @@ impl Style {
 
 impl<'a> crate::color::Colorable for Canvas<'a> {
     builder_method!(color { style.color = Some(Color) });
-}
-
-impl<'a> crate::border::Borderable for Canvas<'a> {
-    builder_methods! {
-        border { style.border = Some(Scalar) }
-        border_color { style.border_color = Some(Color) }
-    }
 }
 
 impl<'a> crate::label::Labelable<'a> for Canvas<'a> {

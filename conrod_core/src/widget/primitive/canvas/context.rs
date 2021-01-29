@@ -1,5 +1,4 @@
 use crate::Point;
-use lyon::lyon_algorithms::path::path::Builder;
 use lyon::algorithms::path::Path;
 use lyon::lyon_algorithms::path::math::point;
 

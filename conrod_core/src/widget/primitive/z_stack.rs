@@ -1,22 +1,4 @@
-use uuid::Uuid;
-
-use crate::{Color, Colorable, Point, Rect, Sizeable};
-use crate::text;
-use crate::flags::Flags;
-use crate::layout::Layout;
-use crate::layout::basic_layouter::BasicLayouter;
-use crate::layout::layouter::Layouter;
-use crate::position::Dimensions;
-use crate::render::primitive::Primitive;
-use crate::state::environment::Environment;
-use crate::state::state_sync::NoLocalStateSync;
-use crate::widget::Rectangle;
-use crate::widget::common_widget::CommonWidget;
-use crate::widget::primitive::Widget;
-use crate::widget::primitive::widget::WidgetExt;
-use crate::widget::render::Render;
-use crate::widget::widget_iterator::{WidgetIter, WidgetIterMut};
-use crate::state::global_state::GlobalState;
+use crate::prelude::*;
 
 /// A basic, non-interactive rectangle shape widget.
 #[derive(Debug, Clone, Widget)]
@@ -90,14 +72,14 @@ impl<S: GlobalState> CommonWidget<S> for ZStack<S> {
     }
 
     fn get_flag(&self) -> Flags {
-        Flags::Empty
+        Flags::EMPTY
     }
 
     fn get_children(&self) -> WidgetIter<S> {
         self.children
             .iter()
             .rfold(WidgetIter::Empty, |acc, x| {
-                if x.get_flag() == Flags::Proxy {
+                if x.get_flag() == Flags::PROXY {
                     WidgetIter::Multi(Box::new(x.get_children()), Box::new(acc))
                 } else {
                     WidgetIter::Single(x, Box::new(acc))
@@ -109,7 +91,7 @@ impl<S: GlobalState> CommonWidget<S> for ZStack<S> {
         self.children
             .iter_mut()
             .rfold(WidgetIterMut::Empty, |acc, x| {
-                if x.get_flag() == Flags::Proxy {
+                if x.get_flag() == Flags::PROXY {
                     WidgetIterMut::Multi(Box::new(x.get_children_mut()), Box::new(acc))
                 } else {
                     WidgetIterMut::Single(x, Box::new(acc))

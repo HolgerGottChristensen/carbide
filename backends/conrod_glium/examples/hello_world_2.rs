@@ -119,11 +119,11 @@ impl CommonWidget<GState> for CustomWidget {
     }
 
     fn get_flag(&self) -> Flags {
-        Flags::Empty
+        Flags::EMPTY
     }
 
     fn get_children(&self) -> WidgetIter<GState> {
-        if self.child.get_flag() == Flags::Proxy {
+        if self.child.get_flag() == Flags::PROXY {
             self.child.get_children()
         } else {
             WidgetIter::single(&self.child)
@@ -131,7 +131,7 @@ impl CommonWidget<GState> for CustomWidget {
     }
 
     fn get_children_mut(&mut self) -> WidgetIterMut<GState> {
-        if self.child.get_flag() == Flags::Proxy {
+        if self.child.get_flag() == Flags::PROXY {
             self.child.get_children_mut()
         } else {
             WidgetIterMut::single(&mut self.child)

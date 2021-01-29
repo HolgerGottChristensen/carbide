@@ -1,37 +1,14 @@
 //! A simple, non-interactive widget for drawing an `Image`.
 
-use daggy::petgraph::graph::node_index;
-use uuid::Uuid;
-
-use crate::Color;
-use crate::{image, Point};
-use crate::{text, widget};
-use crate::flags::Flags;
-use crate::layout::basic_layouter::BasicLayouter;
-use crate::layout::Layout;
-use crate::layout::layouter::Layouter;
-use crate::position::{Dimensions, Rect};
-use crate::render::primitive::Primitive;
+use crate::prelude::*;
+use crate::image;
+use crate::widget::types::scale_mode::ScaleMode;
 use crate::render::primitive_kind::PrimitiveKind;
 use crate::render::util::new_primitive;
-use crate::state::environment::Environment;
-use crate::state::state_sync::NoLocalStateSync;
-use crate::widget::Rectangle;
-use crate::widget::common_widget::CommonWidget;
-use crate::widget::primitive::Widget;
-use crate::widget::primitive::widget::WidgetExt;
-use crate::widget::render::Render;
-use crate::widget::widget_iterator::{WidgetIter, WidgetIterMut};
-use crate::widget::types::scale_mode::ScaleMode;
-use crate::widget::types::image_information::ImageInformation;
-use crate::state::global_state::GlobalState;
 
 /// A primitive and basic widget for drawing an `Image`.
-#[derive(Debug, Clone, WidgetCommon_, Widget)]
+#[derive(Debug, Clone, Widget)]
 pub struct Image {
-    /// Data necessary and common for all widget builder render.
-    #[conrod(common_builder)]
-    pub common: widget::CommonBuilder,
     /// The unique identifier for the image that will be drawn.
     pub image_id: image::Id,
     /// The rectangle area of the original source image that should be used.
@@ -53,7 +30,6 @@ impl<S: GlobalState> Layout<S> for Image {
     }
 
     fn calculate_size(&mut self, requested_size: Dimensions, env: &Environment<S>) -> Dimensions {
-        let dim = self.dimension;
         self.requested_size = requested_size;
 
         let image_information = env.get_image_information(&self.image_id).unwrap();
@@ -93,8 +69,7 @@ impl<S: GlobalState> Layout<S> for Image {
 
 impl<S: GlobalState> Render<S> for Image {
 
-    fn get_primitives(&mut self, fonts: &text::font::Map) -> Vec<Primitive> {
-        //let color = Color::random();
+    fn get_primitives(&mut self, _: &text::font::Map) -> Vec<Primitive> {
         let kind = PrimitiveKind::Image {
             color: None,
             image_id: self.image_id,
@@ -103,7 +78,7 @@ impl<S: GlobalState> Render<S> for Image {
 
         let rect = Rect::new(self.position, self.dimension);
 
-        let mut prims: Vec<Primitive> = vec![new_primitive(node_index(0), kind, rect, rect)];
+        let mut prims: Vec<Primitive> = vec![new_primitive(kind, rect)];
         prims.extend(Rectangle::<S>::debug_outline(rect.clone(), 1.0));
         return prims;
     }
@@ -115,7 +90,7 @@ impl<S: GlobalState> CommonWidget<S> for Image {
     }
 
     fn get_flag(&self) -> Flags {
-        Flags::Empty
+        Flags::EMPTY
     }
 
     fn get_children(&self) -> WidgetIter<S> {
@@ -159,10 +134,9 @@ pub struct State {
 }
 
 /// Unique styling for the `Image` widget.
-#[derive(Copy, Clone, Debug, Default, PartialEq, WidgetStyle_)]
+#[derive(Copy, Clone, Debug, Default, PartialEq)]
 pub struct Style {
     /// Optionally specify a single color to use for the image.
-    #[conrod(default = "None")]
     pub maybe_color: Option<Option<Color>>,
 }
 
@@ -195,7 +169,6 @@ impl Image {
     /// 3. use an index type which may be mapped to your various image render.
     pub fn old_new(image_id: image::Id) -> Self {
         Image {
-            common: widget::CommonBuilder::default(),
             image_id,
             src_rect: None,
             style: Style::default(),
@@ -209,7 +182,6 @@ impl Image {
 
     pub fn new(id: image::Id) -> Box<Self> {
         Box::new(Image {
-            common: Default::default(),
             image_id: id,
             src_rect: None,
             style: Default::default(),

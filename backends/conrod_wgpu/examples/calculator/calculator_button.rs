@@ -75,11 +75,11 @@ impl CommonWidget<CalculatorState> for CalculatorButton {
     }
 
     fn get_flag(&self) -> Flags {
-        Flags::Empty
+        Flags::EMPTY
     }
 
     fn get_children(&self) -> WidgetIter<CalculatorState> {
-        if self.child.get_flag() == Flags::Proxy {
+        if self.child.get_flag() == Flags::PROXY {
             self.child.get_children()
         } else {
             WidgetIter::single(&self.child)
@@ -87,7 +87,7 @@ impl CommonWidget<CalculatorState> for CalculatorButton {
     }
 
     fn get_children_mut(&mut self) -> WidgetIterMut<CalculatorState> {
-        if self.child.get_flag() == Flags::Proxy {
+        if self.child.get_flag() == Flags::PROXY {
             self.child.get_children_mut()
         } else {
             WidgetIterMut::single(&mut self.child)

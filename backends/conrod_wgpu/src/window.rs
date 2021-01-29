@@ -30,7 +30,6 @@ pub struct Window<T: GlobalState> {
     size: winit::dpi::PhysicalSize<u32>,
     render_pipeline: wgpu::RenderPipeline,
     diffuse_bind_group: wgpu::BindGroup,
-    image: Image,
     mesh: Mesh,
     ui: Ui<T>,
     image_map: ImageMap<Image>,
@@ -96,12 +95,6 @@ impl<T: GlobalState> Window<T> {
         } else {
             None
         };
-
-
-
-
-
-
 
         let inner_window = WindowBuilder::new()
             .with_inner_size(Size::Physical(PhysicalSize{ width, height }))
@@ -189,7 +182,6 @@ impl<T: GlobalState> Window<T> {
             .unwrap();
 
         let image = Image::new(assets.join("images/happy-tree.png"), &device, &queue);
-        let diffuse_bind_group = new_diffuse(&device, &image, &glyph_cache_tex, &texture_bind_group_layout);
 
         let vs_module = device.create_shader_module(wgpu::include_spirv!("shader.vert.spv"));
         let fs_module = device.create_shader_module(wgpu::include_spirv!("shader.frag.spv"));
@@ -251,7 +243,7 @@ impl<T: GlobalState> Window<T> {
             alpha_to_coverage_enabled: false, // 7.
         });
 
-        let mut bind_groups = HashMap::new();
+        let bind_groups = HashMap::new();
 
         let diffuse_bind_group = new_diffuse(&device, &image, &glyph_cache_tex, &texture_bind_group_layout);
 
@@ -268,7 +260,6 @@ impl<T: GlobalState> Window<T> {
             size,
             render_pipeline,
             diffuse_bind_group,
-            image,
             mesh,
             ui,
             image_map,
@@ -314,29 +305,28 @@ impl<T: GlobalState> Window<T> {
             label: Some("Render Encoder"),
         });
 
-        if let (primitives, cprims) = self.ui.draw() {
-            let fill = self.mesh.fill(Rect::new([0.0,0.0], [self.size.width as f64, self.size.height as f64]), 1.0, &self.image_map, cprims).unwrap();
+        let primitives = self.ui.draw();
 
-            let glyph_cache_cmd = match fill.glyph_cache_requires_upload {
-                false => None,
-                true => {
-                    let (width, height) = self.mesh.glyph_cache().dimensions();
-                    Some(GlyphCacheCommand {
-                        glyph_cache_pixel_buffer: self.mesh.glyph_cache_pixel_buffer(),
-                        glyph_cache_texture: &self.glyph_cache_tex,
-                        width,
-                        height,
-                    })
-                }
-            };
+        let fill = self.mesh.fill(Rect::new([0.0,0.0], [self.size.width as f64, self.size.height as f64]), 1.0, &self.image_map, primitives).unwrap();
 
-            match glyph_cache_cmd {
-                None => (),
-                Some(cmd) => {
-                    cmd.load_buffer_and_encode(&self.device, &mut encoder);
-                }
+        let glyph_cache_cmd = match fill.glyph_cache_requires_upload {
+            false => None,
+            true => {
+                let (width, height) = self.mesh.glyph_cache().dimensions();
+                Some(GlyphCacheCommand {
+                    glyph_cache_pixel_buffer: self.mesh.glyph_cache_pixel_buffer(),
+                    glyph_cache_texture: &self.glyph_cache_tex,
+                    width,
+                    height,
+                })
             }
+        };
 
+        match glyph_cache_cmd {
+            None => (),
+            Some(cmd) => {
+                cmd.load_buffer_and_encode(&self.device, &mut encoder);
+            }
         }
 
         let commands = create_render_pass_commands(&self.diffuse_bind_group, &mut self.bind_groups, &self.image_map, &self.mesh, &self.device, &self.glyph_cache_tex, &self.texture_bind_group_layout);

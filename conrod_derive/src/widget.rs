@@ -1,10 +1,9 @@
 use proc_macro2;
 use syn;
 
-use crate::utils;
 use proc_macro2::{Ident, TokenStream, Span};
-use syn::{Type, Fields, Attribute, Meta, Error, Path, PathSegment, GenericParam, WherePredicate, PredicateType, DeriveInput, NestedMeta};
-use std::collections::{HashMap, HashSet};
+use syn::{Type, Fields, Attribute, Meta, Path, GenericParam, WherePredicate, DeriveInput, NestedMeta};
+use std::collections::HashSet;
 
 // The implementation for `Widget`.
 pub fn impl_widget(ast: &syn::DeriveInput) -> proc_macro2::TokenStream {
@@ -171,7 +170,7 @@ pub fn impl_widget(ast: &syn::DeriveInput) -> proc_macro2::TokenStream {
         quote! {self.process_other_event_default(event, env, global_state);}
     };
 
-    let mut wheres = filtered_where_clause(&ast);
+    let wheres = filtered_where_clause(&ast);
 
     quote! {
 
@@ -322,7 +321,7 @@ fn filtered_where_clause(ast: &&DeriveInput) -> TokenStream {
                             Some(WherePredicate::Type(t.clone()))
                         }
                     }
-                    n => Some(WherePredicate::Type(t.clone()))
+                    _ => Some(WherePredicate::Type(t.clone()))
                 }
             }
             b => Some(b.clone())

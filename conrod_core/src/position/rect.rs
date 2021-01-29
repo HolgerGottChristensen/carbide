@@ -2,7 +2,7 @@
 
 use crate::position::Dimensions;
 
-use super::{Padding, Point, Range, Scalar};
+use super::{Point, Range, Scalar};
 
 /// Defines a Rectangle's bounds across the x and y axes.
 ///
@@ -243,13 +243,6 @@ impl Rect {
         Rect { x: x.pad(pad), y: y.pad(pad) }
     }
 
-    /// The Rect with some padding applied.
-    pub fn padding(self, padding: Padding) -> Self {
-        Rect {
-            x: self.x.pad_ends(padding.x.start, padding.x.end),
-            y: self.y.pad_ends(padding.y.start, padding.y.end),
-        }
-    }
 
     /// Stretches the closest edge(s) to the given point if the point lies outside of the Rect area.
     pub fn stretch_to_point(self, point: Point) -> Self {

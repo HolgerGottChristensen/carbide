@@ -1,34 +1,13 @@
-//! The primitive widget used for displaying text.
-
-use daggy::petgraph::graph::node_index;
-use uuid::Uuid;
-
-use crate::{Color, Colorable, FontSize};
-use crate::Rect;
-use crate::{Point, text};
-use crate::color::WHITE;
-use crate::flags::Flags;
-use crate::layout::basic_layouter::BasicLayouter;
-use crate::layout::Layout;
-use crate::layout::layouter::Layouter;
-use crate::position::{Align, Dimensions, Scalar};
-use crate::render::primitive::Primitive;
-use crate::render::primitive_kind::PrimitiveKind;
-use crate::render::text::Text as RenderText;
-use crate::render::util::new_primitive;
-use crate::state::environment::Environment;
-use crate::state::state::{GetState, State};
-use crate::state::state_sync::StateSync;
+use crate::prelude::*;
+use crate::state::state::State;
 use crate::text::Justify;
+use crate::position::Align;
+use crate::render::primitive_kind::PrimitiveKind;
+use crate::render::util::new_primitive;
+use crate::color::WHITE;
 use crate::utils;
-use crate::widget;
-use crate::widget::Rectangle;
-use crate::widget::common_widget::CommonWidget;
-use crate::widget::primitive::Widget;
-use crate::widget::primitive::widget::WidgetExt;
-use crate::widget::render::Render;
-use crate::widget::widget_iterator::{WidgetIter, WidgetIterMut};
-use crate::state::global_state::GlobalState;
+use crate::render::text::Text as RenderText;
+
 
 /// Displays some given text centered within a rectangular area.
 ///
@@ -122,7 +101,7 @@ impl<S: GlobalState> Render<S> for Text<S> {
             font_id,
         };
 
-        let mut prims: Vec<Primitive> = vec![new_primitive(node_index(0), kind, Rect::new(self.position, self.dimension), Rect::new(self.position, self.dimension))];
+        let mut prims: Vec<Primitive> = vec![new_primitive(kind, Rect::new(self.position, self.dimension))];
         prims.extend(Rectangle::<S>::debug_outline(Rect::new(self.position, self.dimension), 1.0));
 
         return prims;
@@ -135,7 +114,7 @@ impl<S: GlobalState> CommonWidget<S> for Text<S> {
     }
 
     fn get_flag(&self) -> Flags {
-        Flags::Empty
+        Flags::EMPTY
     }
 
     fn get_children(&self) -> WidgetIter<S> {

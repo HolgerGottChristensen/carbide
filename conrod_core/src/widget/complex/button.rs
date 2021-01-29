@@ -1,32 +1,15 @@
-use std::fmt::Debug;
-
-use uuid::Uuid;
-
-use crate::Point;
-use crate::event::event::Event;
-use crate::event_handler::{KeyboardEvent, MouseEvent, WidgetEvent};
-use crate::flags::Flags;
-use crate::input::Key;
-use crate::layout::basic_layouter::BasicLayouter;
-use crate::layout::Layout;
-use crate::layout::layouter::Layouter;
-use crate::position::Dimensions;
-use crate::state::environment::Environment;
-use crate::state::state::{GetState, State};
-use crate::state::state_sync::StateSync;
-use crate::widget::{HStack, Rectangle, Text};
-use crate::widget::common_widget::CommonWidget;
-use crate::widget::complex::foreachtest::ForeachTest;
-use crate::widget::primitive::foreach::ForEach;
-use crate::widget::primitive::spacer::{Spacer};
-use crate::widget::primitive::v_stack::VStack;
-use crate::widget::primitive::Widget;
-use crate::widget::primitive::widget::WidgetExt;
-use crate::widget::render::ChildRender;
-use crate::widget::widget_iterator::{WidgetIter, WidgetIterMut};
+use crate::prelude::*;
+use crate::state::state::State;
+use crate::event_handler::KeyboardEvent;
 use crate::color::RED;
-use crate::state::global_state::GlobalState;
+use crate::input::Key;
+use crate::widget::{HStack, Text};
+use crate::widget::primitive::spacer::Spacer;
 use crate::widget::types::spacer_direction::SpacerDirection;
+use crate::widget::primitive::v_stack::VStack;
+use crate::widget::primitive::foreach::ForEach;
+use crate::widget::complex::foreachtest::ForeachTest;
+use crate::widget::render::ChildRender;
 
 #[derive(Debug, Clone, Widget)]
 #[state_sync(insert_local_state)]
@@ -45,7 +28,7 @@ impl<S: GlobalState> SyncTest<S> {
 
     fn insert_local_state(&self, env: &mut Environment<S>) {
         if self.show_overlay {
-            env.add_overlay("overlay_test", Rectangle::new([10.0,10.0], [600.0,600.0], vec![]).fill(RED))
+            env.add_overlay("overlay_test", Rectangle::initialize(vec![]).fill(RED))
         }
     }
 
@@ -111,11 +94,11 @@ impl<S: GlobalState> CommonWidget<S> for SyncTest<S> {
     }
 
     fn get_flag(&self) -> Flags {
-        Flags::Empty
+        Flags::EMPTY
     }
 
     fn get_children(&self) -> WidgetIter<S> {
-        if self.child.get_flag() == Flags::Proxy {
+        if self.child.get_flag() == Flags::PROXY {
             self.child.get_children()
         } else {
             WidgetIter::single(&self.child)
@@ -123,7 +106,7 @@ impl<S: GlobalState> CommonWidget<S> for SyncTest<S> {
     }
 
     fn get_children_mut(&mut self) -> WidgetIterMut<S> {
-        if self.child.get_flag() == Flags::Proxy {
+        if self.child.get_flag() == Flags::PROXY {
             self.child.get_children_mut()
         } else {
             WidgetIterMut::single(&mut self.child)

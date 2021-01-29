@@ -1,23 +1,5 @@
-use uuid::Uuid;
-
-use crate::Point;
-use crate::{Rect, text};
-use crate::flags::Flags;
-use crate::layout::basic_layouter::BasicLayouter;
-use crate::layout::Layout;
-use crate::layout::layouter::Layouter;
-use crate::position::Dimensions;
-use crate::render::primitive::Primitive;
-use crate::state::environment::Environment;
-use crate::state::state_sync::NoLocalStateSync;
-use crate::widget::Rectangle;
-use crate::widget::common_widget::CommonWidget;
+use crate::prelude::*;
 use crate::widget::primitive::edge_insets::EdgeInsets;
-use crate::widget::primitive::Widget;
-use crate::widget::primitive::widget::WidgetExt;
-use crate::widget::render::Render;
-use crate::widget::widget_iterator::{WidgetIter, WidgetIterMut};
-use crate::state::global_state::GlobalState;
 
 pub static SCALE: f64 = -1.0;
 
@@ -51,11 +33,11 @@ impl<S: GlobalState> CommonWidget<S> for Padding<S> {
     }
 
     fn get_flag(&self) -> Flags {
-        Flags::Empty
+        Flags::EMPTY
     }
 
     fn get_children(&self) -> WidgetIter<S> {
-        if self.child.get_flag() == Flags::Proxy {
+        if self.child.get_flag() == Flags::PROXY {
             self.child.get_children()
         } else {
             WidgetIter::single(&self.child)
@@ -63,7 +45,7 @@ impl<S: GlobalState> CommonWidget<S> for Padding<S> {
     }
 
     fn get_children_mut(&mut self) -> WidgetIterMut<S> {
-        if self.child.get_flag() == Flags::Proxy {
+        if self.child.get_flag() == Flags::PROXY {
             self.child.get_children_mut()
         } else {
             WidgetIterMut::single(&mut self.child)

@@ -1,28 +1,15 @@
-use std::fmt;
-use std::fmt::Debug;
-use std::ops::{Deref, DerefMut};
-
-use dyn_clone::DynClone;
-use uuid::Uuid;
-
-use crate::{Scalar, text};
+use crate::prelude::*;
 use crate::event::event::Event;
-use crate::event_handler::{KeyboardEvent, MouseEvent, WidgetEvent};
-use crate::flags::Flags;
-use crate::layout::Layout;
-use crate::position::Dimensions;
-use crate::render::primitive::Primitive;
-use crate::state::environment::Environment;
-use crate::state::state_sync::StateSync;
-use crate::widget::common_widget::CommonWidget;
-use crate::widget::primitive::edge_insets::EdgeInsets;
-use crate::widget::primitive::frame::Frame;
+use dyn_clone::DynClone;
+use crate::widget::Frame;
 use crate::widget::primitive::padding::Padding;
-use crate::widget::render::Render;
-use crate::widget::widget_iterator::{WidgetIter, WidgetIterMut};
-use crate::widget::primitive::clip::Clip;
 use crate::widget::primitive::hidden::Hidden;
-use crate::state::global_state::GlobalState;
+use crate::widget::primitive::clip::Clip;
+use crate::widget::primitive::edge_insets::EdgeInsets;
+use std::ops::{Deref, DerefMut};
+use crate::event_handler::{MouseEvent, KeyboardEvent, WidgetEvent};
+use core::fmt;
+use std::fmt::Debug;
 
 pub trait Widget<S>: Event<S> + Layout<S> + Render<S> + DynClone where S: GlobalState {}
 

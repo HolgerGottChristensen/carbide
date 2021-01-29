@@ -1,41 +1,14 @@
-//! A simple, non-interactive rectangle shape widget.
-//!
-//! Due to the frequency of its use in GUIs, the `Rectangle` gets its own widget to allow backends
-//! to specialise their rendering implementations.
+use crate::prelude::*;
 
-use daggy::petgraph::graph::node_index;
-use uuid::Uuid;
-
-use crate::{Color, Colorable, Point, Rect, Sizeable};
-use crate::{Scalar, widget};
-use crate::text;
-use crate::draw::shape::triangle::Triangle;
-use crate::flags::Flags;
-use crate::layout::basic_layouter::BasicLayouter;
-use crate::layout::Layout;
-use crate::layout::layouter::Layouter;
-use crate::position::Dimensions;
-use crate::render::primitive::Primitive;
-use crate::render::primitive_kind::PrimitiveKind;
-use crate::state::environment::Environment;
-use crate::state::state_sync::NoLocalStateSync;
-use crate::widget::common_widget::CommonWidget;
-use crate::widget::primitive::Widget;
-use crate::widget::primitive::widget::WidgetExt;
-use crate::widget::render::Render;
-use crate::widget::widget_iterator::{WidgetIter, WidgetIterMut};
-use crate::color::Rgba;
-
-use super::Style as Style;
-use crate::state::global_state::GlobalState;
-use crate::widget::Rectangle;
 use lyon::tessellation::{VertexBuffers, FillTessellator, FillOptions, BuffersBuilder, FillVertex};
-use lyon::tessellation::geometry_builder::simple_builder;
 use lyon::tessellation::path::{Path, Winding};
 use lyon::tessellation::path::traits::PathBuilder;
 use lyon::tessellation::math::rect;
 use lyon::tessellation::path::builder::BorderRadii;
 use crate::widget::types::triangle_store::TriangleStore;
+use crate::render::primitive_kind::PrimitiveKind;
+use crate::draw::shape::triangle::Triangle;
+use crate::color::Rgba;
 
 /// A basic, non-interactive rectangle shape widget.
 #[derive(Debug, Clone, Widget)]
@@ -81,14 +54,14 @@ impl<S: GlobalState> CommonWidget<S> for RoundedRectangle<S> {
     }
 
     fn get_flag(&self) -> Flags {
-        Flags::Empty
+        Flags::EMPTY
     }
 
     fn get_children(&self) -> WidgetIter<S> {
         self.children
             .iter()
             .rfold(WidgetIter::Empty, |acc, x| {
-                if x.get_flag() == Flags::Proxy {
+                if x.get_flag() == Flags::PROXY {
                     WidgetIter::Multi(Box::new(x.get_children()), Box::new(acc))
                 } else {
                     WidgetIter::Single(x, Box::new(acc))
@@ -100,7 +73,7 @@ impl<S: GlobalState> CommonWidget<S> for RoundedRectangle<S> {
         self.children
             .iter_mut()
             .rfold(WidgetIterMut::Empty, |acc, x| {
-                if x.get_flag() == Flags::Proxy {
+                if x.get_flag() == Flags::PROXY {
                     WidgetIterMut::Multi(Box::new(x.get_children_mut()), Box::new(acc))
                 } else {
                     WidgetIterMut::Single(x, Box::new(acc))
@@ -190,9 +163,7 @@ impl<S: GlobalState> Render<S> for RoundedRectangle<S> {
 
         let mut prims = vec![
             Primitive {
-                id: node_index(0),
                 kind: PrimitiveKind::TrianglesSingleColor { color: Rgba::from(self.color), triangles },
-                scizzor: Rect::new(self.position, self.dimension),
                 rect: Rect::new(self.position, self.dimension)
             }
         ];

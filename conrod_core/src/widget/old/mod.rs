@@ -1,11 +1,11 @@
 // Macro providing modules.
-#[macro_use]
+/*#[macro_use]
 pub mod builder;
-
+*/
 // Widget functionality modules.
-#[macro_use]
-pub mod id;
-pub mod scroll;
+//#[macro_use]
+//pub mod id;
+/*pub mod scroll;
 
 // Widget modules.
 
@@ -34,3 +34,4 @@ pub mod title_bar;
 pub mod toggle;
 pub mod xy_pad;
 pub mod circle;
+*/

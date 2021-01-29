@@ -7,7 +7,7 @@ use crate::render::primitive::Primitive;
 use crate::render::primitive_kind::PrimitiveKind;
 use crate::render::primitive_walker::PrimitiveWalker;
 use crate::render::text::Text;
-use crate::widget::triangles::ColoredPoint;
+use crate::widget::primitive::shape::triangles::ColoredPoint;
 
 /// An iterator-like type for yielding `Primitive`s from an `OwnedPrimitives`.
 pub struct WalkOwnedPrimitives<'a> {
@@ -32,12 +32,10 @@ impl<'a> WalkOwnedPrimitives<'a> {
             texts_str,
         } = *self;
 
-        primitives.next().map(move |&OwnedPrimitive { id, rect, scizzor, ref kind }| {
+        primitives.next().map(move |&OwnedPrimitive { rect, ref kind }| {
             let new = |kind| Primitive {
-                id: id,
-                rect: rect,
-                scizzor: scizzor,
-                kind: kind,
+                rect,
+                kind,
             };
 
             match *kind {
@@ -49,7 +47,7 @@ impl<'a> WalkOwnedPrimitives<'a> {
 
                 OwnedPrimitiveKind::TrianglesSingleColor { color, ref triangle_range } => {
                     let kind = PrimitiveKind::TrianglesSingleColor {
-                        color: color,
+                        color,
                         triangles: triangles_single_color[triangle_range.clone()].to_owned(),
                     };
                     new(kind)
@@ -80,30 +78,30 @@ impl<'a> WalkOwnedPrimitives<'a> {
 
                     let text = Text {
                         positioned_glyphs: (*positioned_glyphs).clone(),
-                        window_dim: window_dim,
+                        window_dim,
                         text: text_str.clone().parse().unwrap(),
                         line_infos: line_infos.to_vec(),
                         font: font.clone(),
-                        font_size: font_size,
-                        rect: rect,
-                        justify: justify,
-                        y_align: y_align,
-                        line_spacing: line_spacing,
+                        font_size,
+                        rect,
+                        justify,
+                        y_align,
+                        line_spacing,
                     };
 
                     let kind = PrimitiveKind::Text {
-                        color: color,
-                        font_id: font_id,
-                        text: text,
+                        color,
+                        font_id,
+                        text,
                     };
                     new(kind)
                 },
 
                 OwnedPrimitiveKind::Image { image_id, color, source_rect } => {
                     let kind = PrimitiveKind::Image {
-                        image_id: image_id,
-                        color: color,
-                        source_rect: source_rect,
+                        image_id,
+                        color,
+                        source_rect,
                     };
                     new(kind)
                 },

@@ -1,6 +1,6 @@
 //! The `CollapsibleArea` widget and related items.
 
-use crate::{Borderable, Colorable, Labelable};
+use crate::{Colorable, Labelable};
 use crate::{Color, FontSize, Scalar};
 use crate::text;
 use crate::widget;

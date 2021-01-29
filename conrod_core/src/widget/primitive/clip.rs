@@ -1,39 +1,5 @@
-//! A simple, non-interactive rectangle shape widget.
-//!
-//! Due to the frequency of its use in GUIs, the `Rectangle` gets its own widget to allow backends
-//! to specialise their rendering implementations.
-
-
-
-
-
-
-use daggy::petgraph::graph::node_index;
-use uuid::Uuid;
-
-use crate::{Color, Colorable, Point, Rect, Sizeable};
-use crate::{Scalar, widget};
-use crate::text;
-use crate::draw::shape::triangle::Triangle;
-use crate::flags::Flags;
-use crate::layout::basic_layouter::BasicLayouter;
-use crate::layout::Layout;
-use crate::layout::layouter::Layouter;
-use crate::position::Dimensions;
-use crate::render::primitive::Primitive;
+use crate::prelude::*;
 use crate::render::primitive_kind::PrimitiveKind;
-use crate::state::environment::Environment;
-use crate::state::state_sync::{NoLocalStateSync, StateSync};
-use crate::widget::common_widget::CommonWidget;
-use crate::widget::primitive::Widget;
-use crate::widget::primitive::widget::WidgetExt;
-use crate::widget::render::Render;
-use crate::widget::widget_iterator::{WidgetIter, WidgetIterMut};
-use crate::widget::Rectangle;
-
-use conrod_derive::Widget;
-use crate::state::state::State;
-use crate::state::global_state::GlobalState;
 
 #[derive(Debug, Clone, Widget)]
 pub struct Clip<GS> where GS: GlobalState {
@@ -73,11 +39,11 @@ impl<S: GlobalState> CommonWidget<S> for Clip<S> {
     }
 
     fn get_flag(&self) -> Flags {
-        Flags::Empty
+        Flags::EMPTY
     }
 
     fn get_children(&self) -> WidgetIter<S> {
-        if self.child.get_flag() == Flags::Proxy {
+        if self.child.get_flag() == Flags::PROXY {
             self.child.get_children()
         } else {
             WidgetIter::single(&self.child)
@@ -85,7 +51,7 @@ impl<S: GlobalState> CommonWidget<S> for Clip<S> {
     }
 
     fn get_children_mut(&mut self) -> WidgetIterMut<S> {
-        if self.child.get_flag() == Flags::Proxy {
+        if self.child.get_flag() == Flags::PROXY {
             self.child.get_children_mut()
         } else {
             WidgetIterMut::single(&mut self.child)
@@ -118,9 +84,7 @@ impl<S: GlobalState> Render<S> for Clip<S> {
     fn get_primitives(&mut self, fonts: &text::font::Map) -> Vec<Primitive> {
         let mut prims = vec![
             Primitive {
-                id: node_index(0),
                 kind: PrimitiveKind::Clip,
-                scizzor: Rect::new(self.position, self.dimension),
                 rect: Rect::new(self.position, self.dimension)
             }
         ];
@@ -129,9 +93,7 @@ impl<S: GlobalState> Render<S> for Clip<S> {
         prims.extend(children);
 
         prims.push(Primitive {
-            id: node_index(0),
             kind: PrimitiveKind::UnClip,
-            scizzor: Rect::new(self.position, self.dimension),
             rect: Rect::new(self.position, self.dimension)
         });
 

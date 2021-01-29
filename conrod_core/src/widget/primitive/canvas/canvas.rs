@@ -1,41 +1,14 @@
-//! A simple, non-interactive rectangle shape widget.
-//!
-//! Due to the frequency of its use in GUIs, the `Rectangle` gets its own widget to allow backends
-//! to specialise their rendering implementations.
-
-use daggy::petgraph::graph::node_index;
-use uuid::Uuid;
-
-use crate::{Color, Colorable, Point, Rect, Sizeable};
-use crate::{Scalar, widget};
-use crate::text;
-use crate::draw::shape::triangle::Triangle;
-use crate::flags::Flags;
-use crate::layout::basic_layouter::BasicLayouter;
-use crate::layout::Layout;
-use crate::layout::layouter::Layouter;
-use crate::position::Dimensions;
-use crate::render::primitive::Primitive;
-use crate::render::primitive_kind::PrimitiveKind;
-use crate::state::environment::Environment;
-use crate::state::state_sync::NoLocalStateSync;
-use crate::widget::common_widget::CommonWidget;
-use crate::widget::primitive::Widget;
-use crate::widget::primitive::widget::WidgetExt;
-use crate::widget::render::Render;
-use crate::widget::widget_iterator::{WidgetIter, WidgetIterMut};
+use crate::prelude::*;
 use crate::color::Rgba;
 
 use crate::state::global_state::GlobalState;
 use crate::widget::Rectangle;
 use lyon::tessellation::{VertexBuffers, FillTessellator, FillOptions, BuffersBuilder, FillVertex};
-use lyon::tessellation::geometry_builder::simple_builder;
-use lyon::tessellation::path::{Path, Winding};
-use lyon::tessellation::path::traits::PathBuilder;
-use lyon::tessellation::math::rect;
-use lyon::tessellation::path::builder::BorderRadii;
 use crate::widget::types::triangle_store::TriangleStore;
 use crate::widget::primitive::canvas::context::Context;
+use crate::render::primitive_kind::PrimitiveKind;
+
+use crate::draw::shape::triangle::Triangle;
 
 /// A basic, non-interactive rectangle shape widget.
 #[derive(Debug, Clone, Widget)]
@@ -55,7 +28,7 @@ impl<S: GlobalState> Layout<S> for Canvas {
         0
     }
 
-    fn calculate_size(&mut self, requested_size: Dimensions, env: &Environment<S>) -> Dimensions {
+    fn calculate_size(&mut self, requested_size: Dimensions, _: &Environment<S>) -> Dimensions {
         self.dimension = requested_size;
         requested_size
     }
@@ -71,7 +44,7 @@ impl<S: GlobalState> CommonWidget<S> for Canvas {
     }
 
     fn get_flag(&self) -> Flags {
-        Flags::Empty
+        Flags::EMPTY
     }
 
     fn get_children(&self) -> WidgetIter<S> {
@@ -105,7 +78,7 @@ impl<S: GlobalState> CommonWidget<S> for Canvas {
 
 impl<S: GlobalState> Render<S> for Canvas {
 
-    fn get_primitives(&mut self, fonts: &text::font::Map) -> Vec<Primitive> {
+    fn get_primitives(&mut self, _: &text::font::Map) -> Vec<Primitive> {
 
         let mut geometry: VertexBuffers<Point, u16> = VertexBuffers::new();
 
@@ -134,9 +107,7 @@ impl<S: GlobalState> Render<S> for Canvas {
 
         let mut prims = vec![
             Primitive {
-                id: node_index(0),
                 kind: PrimitiveKind::TrianglesSingleColor { color: Rgba::from(self.color), triangles: Triangle::from_point_list(points)},
-                scizzor: Rect::new(self.position, self.dimension),
                 rect: Rect::new(self.position, self.dimension)
             }
         ];

@@ -13,7 +13,6 @@ use conrod_core::widget::primitive::overlaid_layer::OverlaidLayer;
 use conrod_core::widget::primitive::scroll::Scroll;
 use conrod_core::widget::types::scroll_direction::ScrollDirection;
 use conrod_core::widget::types::scale_mode::ScaleMode;
-use conrod_core::widget::primitive::clip::Clip;
 use conrod_core::widget::types::spacer_direction::SpacerDirection;
 use conrod_core::widget::primitive::shape::rounded_rectangle::RoundedRectangle;
 use conrod_core::widget::primitive::canvas::canvas::Canvas;

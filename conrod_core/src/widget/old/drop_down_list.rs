@@ -1,6 +1,6 @@
 //! The `DropDownList` and related items.
 
-use crate::{Borderable, Color, Colorable, FontSize, Labelable};
+use crate::{Color, Colorable, FontSize, Labelable};
 use crate::position::{self, Align, Scalar};
 use crate::text;
 use crate::widget::{self};

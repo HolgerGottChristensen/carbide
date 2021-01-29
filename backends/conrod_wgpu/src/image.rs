@@ -27,9 +27,6 @@ impl mesh::mesh::ImageDimensions for Image {
 
 
 impl Image {
-    pub fn texture_component_type(&self) -> wgpu::TextureComponentType {
-        self.texture_format.into()
-    }
 
     pub fn image_information(&self) -> ImageInformation {
         ImageInformation {

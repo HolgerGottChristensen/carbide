@@ -1,27 +1,6 @@
-use uuid::Uuid;
+use crate::prelude::*;
 
-use crate::{Color, Colorable, Point, Rect, Sizeable};
-use crate::{Scalar, widget};
-use crate::text;
-use crate::draw::shape::triangle::Triangle;
-use crate::flags::Flags;
-use crate::layout::basic_layouter::BasicLayouter;
-use crate::layout::Layout;
-use crate::layout::layouter::Layouter;
-use crate::position::Dimensions;
-use crate::render::primitive::Primitive;
-use crate::render::primitive_kind::PrimitiveKind;
-use crate::state::environment::Environment;
-use crate::state::state_sync::{NoLocalStateSync, StateSync};
-use crate::widget::common_widget::CommonWidget;
-use crate::widget::primitive::Widget;
-use crate::widget::primitive::widget::WidgetExt;
-use crate::widget::render::Render;
-use crate::widget::widget_iterator::{WidgetIter, WidgetIterMut};
-use daggy::petgraph::graph::node_index;
-use crate::widget::Rectangle;
-use crate::color::RED;
-use crate::state::global_state::GlobalState;
+
 
 #[derive(Debug, Clone, Widget)]
 #[state_sync(sync_state)]
@@ -62,11 +41,11 @@ impl<S: GlobalState> CommonWidget<S> for OverlaidLayer<S> {
     }
 
     fn get_flag(&self) -> Flags {
-        Flags::Empty
+        Flags::EMPTY
     }
 
     fn get_children(&self) -> WidgetIter<S> {
-        if self.child.get_flag() == Flags::Proxy {
+        if self.child.get_flag() == Flags::PROXY {
             self.child.get_children()
         } else {
             WidgetIter::single(&self.child)
@@ -74,7 +53,7 @@ impl<S: GlobalState> CommonWidget<S> for OverlaidLayer<S> {
     }
 
     fn get_children_mut(&mut self) -> WidgetIterMut<S> {
-        if self.child.get_flag() == Flags::Proxy {
+        if self.child.get_flag() == Flags::PROXY {
             self.child.get_children_mut()
         } else {
             WidgetIterMut::single(&mut self.child)

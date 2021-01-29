@@ -7,9 +7,7 @@
 use crate::{Point, Range, Rect};
 pub use crate::widget::primitive::widget::Widget;
 
-pub mod line;
 pub mod image;
-pub mod point_path;
 pub mod shape;
 pub mod text;
 pub mod widget;

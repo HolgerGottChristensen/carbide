@@ -1,21 +1,5 @@
-use uuid::Uuid;
-
-use crate::{Color, Colorable, Point, Rect, Sizeable};
-use crate::Scalar;
-use crate::text;
-use crate::flags::Flags;
-use crate::layout::{CrossAxisAlignment, Layout};
-use crate::position::Dimensions;
-use crate::render::primitive::Primitive;
-use crate::state::environment::Environment;
-use crate::state::state_sync::NoLocalStateSync;
-use crate::widget::Rectangle;
-use crate::widget::common_widget::CommonWidget;
-use crate::widget::primitive::Widget;
-use crate::widget::primitive::widget::WidgetExt;
-use crate::widget::render::Render;
-use crate::widget::widget_iterator::{WidgetIter, WidgetIterMut};
-use crate::state::global_state::GlobalState;
+use crate::prelude::*;
+use crate::layout::CrossAxisAlignment;
 
 /// A basic, non-interactive rectangle shape widget.
 #[derive(Debug, Clone, Widget)]
@@ -54,10 +38,10 @@ impl<S: GlobalState> Layout<S> for HStack<S> {
     fn calculate_size(&mut self, requested_size: Dimensions, env: &Environment<S>) -> Dimensions {
 
         // The number of children not containing any spacers
-        let mut number_of_children_that_needs_sizing = self.get_children().filter(|m| m.get_flag() != Flags::Spacer).count() as f64;
+        let mut number_of_children_that_needs_sizing = self.get_children().filter(|m| m.get_flag() != Flags::SPACER).count() as f64;
 
 
-        let non_spacers_vec: Vec<bool> = self.get_children().map(|n| n.get_flag() != Flags::Spacer).collect();
+        let non_spacers_vec: Vec<bool> = self.get_children().map(|n| n.get_flag() != Flags::SPACER).collect();
         let non_spacers_vec_length = non_spacers_vec.len();
 
         let number_of_spaces = non_spacers_vec.iter().enumerate().take(non_spacers_vec_length -1).filter(|(n, b)| {
@@ -67,7 +51,7 @@ impl<S: GlobalState> Layout<S> for HStack<S> {
         let spacing_total = (number_of_spaces) * self.spacing;
         let mut size_for_children = [requested_size[0] - spacing_total, requested_size[1]];
 
-        let mut children_flexibilty: Vec<(u32, &mut Box<dyn Widget<S>>)> = self.get_children_mut().filter(|m| m.get_flag() != Flags::Spacer).map(|child| (child.flexibility(), child)).collect();
+        let mut children_flexibilty: Vec<(u32, &mut Box<dyn Widget<S>>)> = self.get_children_mut().filter(|m| m.get_flag() != Flags::SPACER).map(|child| (child.flexibility(), child)).collect();
         children_flexibilty.sort_by(|(a,_), (b,_)| a.cmp(&b));
         children_flexibilty.reverse();
 
@@ -89,10 +73,10 @@ impl<S: GlobalState> Layout<S> for HStack<S> {
             total_width += chosen_size[0];
         }
 
-        let spacer_count = self.get_children().filter(|m| m.get_flag() == Flags::Spacer).count() as f64;
+        let spacer_count = self.get_children().filter(|m| m.get_flag() == Flags::SPACER).count() as f64;
         let rest_space = requested_size[0] - total_width - spacing_total;
 
-        for spacer in self.get_children_mut().filter(|m| m.get_flag() == Flags::Spacer) {
+        for spacer in self.get_children_mut().filter(|m| m.get_flag() == Flags::SPACER) {
             let chosen_size = spacer.calculate_size([rest_space/spacer_count, requested_size[1]], env);
 
             if chosen_size[1] > max_height {
@@ -116,7 +100,7 @@ impl<S: GlobalState> Layout<S> for HStack<S> {
         let dimension = self.dimension;
         let spacing = self.spacing;
 
-        let spacers: Vec<bool> = self.get_children().map(|n| n.get_flag() == Flags::Spacer).collect();
+        let spacers: Vec<bool> = self.get_children().map(|n| n.get_flag() == Flags::SPACER).collect();
 
         for (n, child) in &mut self.get_children_mut().enumerate() {
             match cross_axis_alignment {
@@ -127,7 +111,7 @@ impl<S: GlobalState> Layout<S> for HStack<S> {
 
             child.set_x(position[0]+width_offset);
 
-            if child.get_flag() != Flags::Spacer && n < spacers.len()-1 && !spacers[n+1] {
+            if child.get_flag() != Flags::SPACER && n < spacers.len()-1 && !spacers[n+1] {
                 width_offset += spacing;
             }
             width_offset += child.get_width();
@@ -144,14 +128,14 @@ impl<S: GlobalState> CommonWidget<S> for HStack<S> {
     }
 
     fn get_flag(&self) -> Flags {
-        Flags::Empty
+        Flags::EMPTY
     }
 
     fn get_children(&self) -> WidgetIter<S> {
         self.children
             .iter()
             .rfold(WidgetIter::Empty, |acc, x| {
-                if x.get_flag() == Flags::Proxy {
+                if x.get_flag() == Flags::PROXY {
                     WidgetIter::Multi(Box::new(x.get_children()), Box::new(acc))
                 } else {
                     WidgetIter::Single(x, Box::new(acc))
@@ -163,7 +147,7 @@ impl<S: GlobalState> CommonWidget<S> for HStack<S> {
         self.children
             .iter_mut()
             .rfold(WidgetIterMut::Empty, |acc, x| {
-                if x.get_flag() == Flags::Proxy {
+                if x.get_flag() == Flags::PROXY {
                     WidgetIterMut::Multi(Box::new(x.get_children_mut()), Box::new(acc))
                 } else {
                     WidgetIterMut::Single(x, Box::new(acc))

@@ -1,21 +1,11 @@
+#![allow(unsafe_code)]
+
 use std::collections::HashMap;
 use std::fmt::Debug;
 
-use uuid::Uuid;
-
-use crate::Point;
-use crate::flags::Flags;
-use crate::layout::Layout;
-use crate::position::Dimensions;
-use crate::state::environment::Environment;
-use crate::state::state::{GetState, State};
-use crate::state::state_sync::StateSync;
-use crate::widget::common_widget::CommonWidget;
-use crate::widget::primitive::Widget;
-use crate::widget::primitive::widget::WidgetExt;
+use crate::prelude::*;
+use crate::state::state::State;
 use crate::widget::render::ChildRender;
-use crate::widget::widget_iterator::{WidgetIter, WidgetIterMut};
-use crate::state::global_state::GlobalState;
 
 #[derive(Debug, Clone, Widget)]
 #[state_sync(sync_state)]
@@ -72,7 +62,7 @@ impl<S: GlobalState> CommonWidget<S> for ForEach<S> {
     }
 
     fn get_flag(&self) -> Flags {
-        Flags::Proxy
+        Flags::PROXY
     }
 
     fn get_children(&self) -> WidgetIter<S> {
@@ -81,7 +71,7 @@ impl<S: GlobalState> CommonWidget<S> for ForEach<S> {
         for id in self.ids.get_latest_value().iter().rev() {
             let item = self.children_map.get(id).unwrap();
 
-            if item.get_flag() == Flags::Proxy {
+            if item.get_flag() == Flags::PROXY {
                 w = WidgetIter::Multi(Box::new(item.get_children()), Box::new(w));
             } else {
                 w = WidgetIter::Single(item, Box::new(w))
@@ -108,7 +98,7 @@ impl<S: GlobalState> CommonWidget<S> for ForEach<S> {
                 p.as_mut().unwrap()
             };
 
-            if item.get_flag() == Flags::Proxy {
+            if item.get_flag() == Flags::PROXY {
                 w = WidgetIterMut::Multi(Box::new(item.get_children_mut()), Box::new(w));
             } else {
                 w = WidgetIterMut::Single(item, Box::new(w))
@@ -134,7 +124,7 @@ impl<S: GlobalState> CommonWidget<S> for ForEach<S> {
                 p.as_mut().unwrap()
             };
 
-            if item.get_flag() == Flags::Proxy {
+            if item.get_flag() == Flags::PROXY {
                 w = WidgetIterMut::Multi(Box::new(item.get_proxied_children()), Box::new(w));
             } else {
                 w = WidgetIterMut::Single(item, Box::new(w))

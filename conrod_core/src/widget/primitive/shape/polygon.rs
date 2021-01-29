@@ -1,11 +1,8 @@
 //! A simple, non-interactive **Polygon** widget for drawing arbitrary convex shapes.
 
-use crate::{Color, Colorable, Point};
+use crate::Point;
 use crate::draw::shape::triangle::Triangle;
-use crate::utils::bounding_box_for_points;
-use crate::widget;
 
-use super::Style;
 
 /// A basic, non-interactive, arbitrary **Polygon** widget.
 ///
@@ -13,15 +10,10 @@ use super::Style;
 ///
 /// **Polygon** will automatically close all shapes, so the given list of points does not need to
 /// start and end with the same position.
-#[derive(Copy, Clone, Debug, WidgetCommon_)]
+#[derive(Copy, Clone, Debug)]
 pub struct Polygon<I> {
-    /// Data necessary and common for all widget builder render.
-    #[conrod(common_builder)]
-    pub common: widget::CommonBuilder,
     /// The points describing the corners of the **Polygon**.
     pub points: I,
-    /// Unique styling for the **Polygon**.
-    pub style: Style,
     /// Whether or not the points should be automatically centred to the widget position.
     pub maybe_shift_to_centre_from: Option<Point>,
 }
@@ -55,134 +47,6 @@ pub struct Triangles<I> {
 
 
 impl<I> Polygon<I> {
-
-    /// Build a polygon with the given points and style.
-    pub fn styled(points: I, style: Style) -> Self {
-        Polygon {
-            points,
-            common: widget::CommonBuilder::default(),
-            style,
-            maybe_shift_to_centre_from: None,
-        }
-    }
-
-    /// Build a **Polygon** with the default **Fill** style.
-    pub fn fill(points: I) -> Self {
-        Polygon::styled(points, Style::fill())
-    }
-
-    /// Build a **Polygon** **Fill**ed with the given **Color**.
-    pub fn fill_with(points: I, color: Color) -> Self {
-        Polygon::styled(points, Style::fill_with(color))
-    }
-
-    /// Build a **Polygon** with the default **Outline** style.
-    pub fn outline(points: I) -> Self {
-        Polygon::styled(points, Style::outline())
-    }
-
-    /// Build a **Polygon** **Outline**ed with the given line style.
-    pub fn outline_styled(points: I, style: widget::line::Style) -> Self {
-        Polygon::styled(points, Style::outline_styled(style))
-    }
-
-    /// Build a new filled **Polygon** whose bounding box is fit to the absolute co-ordinates of
-    /// the points.
-    ///
-    /// This requires that the `points` iterator is `Clone` so that we may iterate through and
-    /// determine the bounding box of the `points`.
-    ///
-    /// If you would rather centre the points to the middle of the bounding box, use
-    /// the [**Polygon::centred**](./struct.Polygon#method.centred) methods instead.
-    pub fn abs_styled(points: I, style: Style) -> Self
-        where I: IntoIterator<Item=Point> + Clone,
-    {
-        let points_clone = points.clone().into_iter();
-        let (_xy, _dim) = bounding_box_for_points(points_clone).xy_dim();
-        Polygon::styled(points, style)//.wh(dim).xy(xy)
-    }
-
-    /// The same as [**Polygon::abs_styled**](./struct.Polygon#method.abs_styled) but builds the
-    /// **Polygon** with the default **Fill** style.
-    pub fn abs_fill(points: I) -> Self
-        where I: IntoIterator<Item=Point> + Clone,
-    {
-        Polygon::abs_styled(points, Style::fill())
-    }
-
-    /// The same as [**Polygon::abs_styled**](./struct.Polygon#method.abs_styled) but builds the
-    /// **Polygon** **Fill**ed with the given **Color**.
-    pub fn abs_fill_with(points: I, color: Color) -> Self
-        where I: IntoIterator<Item=Point> + Clone,
-    {
-        Polygon::abs_styled(points, Style::fill_with(color))
-    }
-
-    /// The same as [**Polygon::abs_styled**](./struct.Polygon#method.abs_styled) but builds the
-    /// **Polygon** with the default **Outline** style.
-    pub fn abs_outline(points: I) -> Self
-        where I: IntoIterator<Item=Point> + Clone,
-    {
-        Polygon::abs_styled(points, Style::outline())
-    }
-
-    /// The same as [**Polygon::abs_styled**](./struct.Polygon#method.abs_styled) but builds the
-    /// **Polygon** with the given **Outline** styling.
-    pub fn abs_outline_styled(points: I, style: widget::line::Style) -> Self
-        where I: IntoIterator<Item=Point> + Clone,
-    {
-        Polygon::abs_styled(points, Style::outline_styled(style))
-    }
-
-    /// Build a new **Polygon** and shift the location of the points so that the centre of their
-    /// bounding rectangle lies at the position determined for the **Polygon** widget.
-    ///
-    /// This is useful if your points simply describe a shape and you want to position them using
-    /// conrod's auto-layout and/or **Positionable** methods.
-    ///
-    /// If you would rather centre the bounding box to the points, use the
-    /// [**Polygon::abs**](./struct.Polygon#method.abs) constructor method instead.
-    pub fn centred_styled(points: I, style: Style) -> Self
-        where I: IntoIterator<Item=Point> + Clone,
-    {
-        let points_clone = points.clone().into_iter();
-        let (xy, _dim) = bounding_box_for_points(points_clone).xy_dim();
-        let mut polygon = Polygon::styled(points, style);//.wh(dim);
-        polygon.maybe_shift_to_centre_from = Some(xy);
-        polygon
-    }
-
-    /// The same as [**Polygon::centred_styled**](./struct.Polygon#method.centred_styled) but
-    /// constructs the **Polygon** with the default **Fill** style.
-    pub fn centred_fill(points: I) -> Self
-        where I: IntoIterator<Item=Point> + Clone,
-    {
-        Polygon::centred_styled(points, Style::fill())
-    }
-
-    /// The same as [**Polygon::centred_styled**](./struct.Polygon#method.centred_styled) but
-    /// constructs the **Polygon** **Fill**ed with the given color.
-    pub fn centred_fill_with(points: I, color: Color) -> Self
-        where I: IntoIterator<Item=Point> + Clone,
-    {
-        Polygon::centred_styled(points, Style::fill_with(color))
-    }
-
-    /// The same as [**Polygon::centred_styled**](./struct.Polygon#method.centred_styled) but
-    /// constructs the **Polygon** with the default **Outline** style.
-    pub fn centred_outline(points: I) -> Self
-        where I: IntoIterator<Item=Point> + Clone,
-    {
-        Polygon::centred_styled(points, Style::outline())
-    }
-
-    /// The same as [**Polygon::centred_styled**](./struct.Polygon#method.centred_styled) but
-    /// constructs the **Polygon** **Outline**d with the given styling.
-    pub fn centred_outline_styled(points: I, style: widget::line::Style) -> Self
-        where I: IntoIterator<Item=Point> + Clone,
-    {
-        Polygon::centred_styled(points, Style::outline_styled(style))
-    }
 
 }
 
@@ -256,14 +120,6 @@ impl<I> Polygon<I> {
 }
 */
 
-impl<I> Colorable for Polygon<I> {
-    fn color(mut self, color: Color) -> Self {
-        self.style.set_color(color);
-        self
-    }
-}
-
-
 /// Triangulate the polygon given as a list of `Point`s describing its sides.
 ///
 /// Returns `None` if the given iterator yields less than two points.
@@ -299,14 +155,6 @@ impl<I> Iterator for Triangles<I>
     }
 }
 
-/// Returns `true` if the given `Point` is over the polygon described by the given series of
-/// points.
-pub fn is_over<I>(points: I, point: Point) -> bool
-where
-    I: IntoIterator<Item=Point>,
-{
-    triangles(points).map(|ts| widget::triangles::is_over(ts, point)).unwrap_or(false)
-}
 
 /*/// The function to use for picking whether a given point is over the polygon.
 pub fn is_over_widget(widget: &graph::Container, point: Point, _: &Theme) -> widget::IsOver {

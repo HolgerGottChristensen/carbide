@@ -1,10 +1,10 @@
 use crate::{Color, Point};
 use crate::{image, Rect};
-use crate::{graph, text};
+use crate::text;
 use crate::color::Rgba;
 use crate::draw::shape::triangle::Triangle;
 use crate::render::text::Text;
-use crate::widget::triangles::ColoredPoint;
+use crate::widget::primitive::shape::triangles::ColoredPoint;
 
 /// The unique kind for each primitive element in the Ui.
 pub enum PrimitiveKind {
@@ -60,18 +60,5 @@ pub enum PrimitiveKind {
         /// method when using the `conrod::text::GlyphCache` (rusttype's GPU `Cache`).
         font_id: text::font::Id,
     },
-
-    /// An `Other` variant will be yielded for every non-primitive widget in the list.
-    ///
-    /// Most of the time, this variant can be ignored, however it is useful for users who need to
-    /// render widgets in ways that cannot be covered by the other `PrimitiveKind` variants.
-    ///
-    /// For example, a `Shader` widget might be required for updating uniforms in user rendering
-    /// code. In order to access the unique state of this widget, the user can check `Other`
-    /// variants for a container whose `kind` field matches the unique kind of the `Shader` widget.
-    /// They can then retrieve the unique state of the widget and cast it to its actual type using
-    /// either of the `Container::state_and_style` or `Container::unique_widget_state` methods.
-    Other(graph::Container),
-
 }
 

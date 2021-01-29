@@ -1,6 +1,6 @@
 //! The `Button` widget and related items.
 
-use crate::{Borderable, Color, Colorable, FontSize, Labelable};
+use crate::{Color, Colorable, FontSize, Labelable};
 use crate::image;
 use crate::position::{self, Align, Rect, Scalar};
 use crate::text;

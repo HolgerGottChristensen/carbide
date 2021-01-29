@@ -4,7 +4,7 @@
 //!
 //! If you are new to Conrod, we recommend checking out [The Guide](./guide/index.html).
 
-#![warn(unsafe_code)] //Todo deny when unsafe code removed from foreach
+#![deny(unsafe_code)] //Todo deny when unsafe code removed from foreach
 //#![feature(associated_type_bounds)]
 //#![warn(missing_copy_implementations)]
 //#![warn(missing_docs)]
@@ -17,10 +17,6 @@ extern crate bytemuck;
 extern crate conrod_derive;
 extern crate copypasta;
 extern crate core;
-extern crate daggy;
-#[macro_use]
-extern crate derivative;
-#[macro_use]
 extern crate dyn_clone;
 extern crate fnv;
 extern crate input as piston_input;
@@ -40,17 +36,13 @@ pub use ron::to_string as to_ron;
 
 pub use conrod_derive::*;
 
-pub use crate::border::{Borderable, Bordering};
 pub use crate::color::{Color, Colorable};
 pub use crate::label::{FontSize, Labelable};
-pub use crate::position::{Dimension, Point, Position, Positionable, Range, Rect, Scalar, Sizeable};
-pub use crate::theme::Theme;
+pub use crate::position::{Point, Range, Rect, Scalar};
 pub use crate::ui::{Ui, UiBuilder, UiCell};
 
-mod border;
 pub mod color;
 pub mod event;
-pub mod graph;
 pub mod guide;
 pub mod image;
 pub mod input;
@@ -70,3 +62,4 @@ pub mod state;
 pub mod flags;
 pub mod draw;
 pub mod window;
+pub mod prelude;

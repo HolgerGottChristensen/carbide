@@ -9,8 +9,7 @@ use crate::layout::Layout;
 use crate::layout::layouter::Layouter;
 use crate::position::Dimensions;
 use crate::state::environment::Environment;
-use crate::state::state::{GetState, State};
-use crate::state::state_sync::StateSync;
+use crate::state::state::State;
 use crate::widget::{Rectangle, Text};
 use crate::widget::common_widget::CommonWidget;
 use crate::widget::primitive::Widget;
@@ -54,11 +53,11 @@ impl<S: GlobalState> CommonWidget<S> for ForeachTest<S> {
     }
 
     fn get_flag(&self) -> Flags {
-        Flags::Empty
+        Flags::EMPTY
     }
 
     fn get_children(&self) -> WidgetIter<S> {
-        if self.child.get_flag() == Flags::Proxy {
+        if self.child.get_flag() == Flags::PROXY {
             self.child.get_children()
         } else {
             WidgetIter::single(&self.child)
@@ -66,7 +65,7 @@ impl<S: GlobalState> CommonWidget<S> for ForeachTest<S> {
     }
 
     fn get_children_mut(&mut self) -> WidgetIterMut<S> {
-        if self.child.get_flag() == Flags::Proxy {
+        if self.child.get_flag() == Flags::PROXY {
             self.child.get_children_mut()
         } else {
             WidgetIterMut::single(&mut self.child)

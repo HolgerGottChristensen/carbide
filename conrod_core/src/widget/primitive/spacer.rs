@@ -1,33 +1,7 @@
-//! A simple, non-interactive rectangle shape widget.
-//!
-//! Due to the frequency of its use in GUIs, the `Rectangle` gets its own widget to allow backends
-//! to specialise their rendering implementations.
-
-
-
-
-
-
-use uuid::Uuid;
-
-use crate::{Color, Colorable, Point, Rect, Sizeable};
-use crate::text;
-use crate::flags::Flags;
-use crate::layout::Layout;
-use crate::position::Dimensions;
-use crate::render::primitive::Primitive;
-use crate::state::environment::Environment;
-use crate::state::state_sync::NoLocalStateSync;
-use crate::widget::Rectangle;
-use crate::widget::common_widget::CommonWidget;
-use crate::widget::render::Render;
-use crate::widget::widget_iterator::{WidgetIter, WidgetIterMut};
-use crate::widget::primitive::Widget;
-use crate::state::global_state::GlobalState;
+use crate::prelude::*;
 use crate::widget::types::spacer_direction::SpacerDirection;
-use crate::widget::primitive::widget::WidgetExt;
 
-/// A basic, non-interactive rectangle shape widget.
+
 #[derive(Clone, Debug, Widget)]
 pub struct Spacer {
     id: Uuid,
@@ -81,7 +55,7 @@ impl<S: GlobalState> CommonWidget<S> for Spacer {
     }
 
     fn get_flag(&self) -> Flags {
-        Flags::Spacer
+        Flags::SPACER
     }
 
     fn get_children(&self) -> WidgetIter<S> {

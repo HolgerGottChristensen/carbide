@@ -1,21 +1,5 @@
-use uuid::Uuid;
-
-use crate::{Color, Colorable, Point, Rect, Sizeable};
-use crate::Scalar;
-use crate::text;
-use crate::flags::Flags;
-use crate::layout::{CrossAxisAlignment, Layout};
-use crate::position::Dimensions;
-use crate::render::primitive::Primitive;
-use crate::state::environment::Environment;
-use crate::state::state_sync::NoLocalStateSync;
-use crate::widget::Rectangle;
-use crate::widget::common_widget::CommonWidget;
-use crate::widget::primitive::Widget;
-use crate::widget::primitive::widget::WidgetExt;
-use crate::widget::render::Render;
-use crate::widget::widget_iterator::{WidgetIter, WidgetIterMut};
-use crate::state::global_state::GlobalState;
+use crate::prelude::*;
+use crate::layout::CrossAxisAlignment;
 
 /// A basic, non-interactive rectangle shape widget.
 #[derive(Debug, Clone, Widget)]
@@ -61,7 +45,7 @@ impl<S: GlobalState> Layout<S> for VStack<S> {
     fn calculate_size(&mut self, requested_size: Dimensions, env: &Environment<S>) -> Dimensions {
         let mut number_of_children_that_needs_sizing = self.children.len() as f64;
 
-        let non_spacers_vec: Vec<bool> = self.get_children().map(|n| n.get_flag() != Flags::Spacer).collect();
+        let non_spacers_vec: Vec<bool> = self.get_children().map(|n| n.get_flag() != Flags::SPACER).collect();
         let non_spacers_vec_length = non_spacers_vec.len();
 
         let number_of_spaces = non_spacers_vec.iter().enumerate().take(non_spacers_vec_length.max(1) - 1).filter(|(n, b)| {
@@ -93,10 +77,10 @@ impl<S: GlobalState> Layout<S> for VStack<S> {
             total_height += chosen_size[1];
         }
 
-        let spacer_count = self.get_children().filter(|m| m.get_flag() == Flags::Spacer).count() as f64;
+        let spacer_count = self.get_children().filter(|m| m.get_flag() == Flags::SPACER).count() as f64;
         let rest_space = requested_size[1] - total_height - spacing_total;
 
-        for spacer in self.get_children_mut().filter(|m| m.get_flag() == Flags::Spacer) {
+        for spacer in self.get_children_mut().filter(|m| m.get_flag() == Flags::SPACER) {
             let chosen_size = spacer.calculate_size([requested_size[0], rest_space/spacer_count], env);
 
             if chosen_size[0] > max_width {
@@ -120,7 +104,7 @@ impl<S: GlobalState> Layout<S> for VStack<S> {
         let spacing = self.spacing;
         let alignment = self.cross_axis_alignment.clone();
 
-        let spacers: Vec<bool> = self.get_children().map(|n| n.get_flag() == Flags::Spacer).collect();
+        let spacers: Vec<bool> = self.get_children().map(|n| n.get_flag() == Flags::SPACER).collect();
 
         for (n, child) in self.get_children_mut().enumerate() {
             match alignment {
@@ -131,7 +115,7 @@ impl<S: GlobalState> Layout<S> for VStack<S> {
 
             child.set_y(position[1]+height_offset);
 
-            if child.get_flag() != Flags::Spacer && n < spacers.len()-1 && !spacers[n+1] {
+            if child.get_flag() != Flags::SPACER && n < spacers.len()-1 && !spacers[n+1] {
                 height_offset += spacing;
             }
             height_offset += child.get_height();
@@ -148,14 +132,14 @@ impl<S: GlobalState> CommonWidget<S> for VStack<S> {
     }
 
     fn get_flag(&self) -> Flags {
-        Flags::Empty
+        Flags::EMPTY
     }
 
     fn get_children(&self) -> WidgetIter<S> {
         self.children
             .iter()
             .rfold(WidgetIter::Empty, |acc, x| {
-                if x.get_flag() == Flags::Proxy {
+                if x.get_flag() == Flags::PROXY {
                     WidgetIter::Multi(Box::new(x.get_children()), Box::new(acc))
                 } else {
                     WidgetIter::Single(x, Box::new(acc))
@@ -167,7 +151,7 @@ impl<S: GlobalState> CommonWidget<S> for VStack<S> {
         self.children
             .iter_mut()
             .rfold(WidgetIterMut::Empty, |acc, x| {
-                if x.get_flag() == Flags::Proxy {
+                if x.get_flag() == Flags::PROXY {
                     WidgetIterMut::Multi(Box::new(x.get_children_mut()), Box::new(acc))
                 } else {
                     WidgetIterMut::Single(x, Box::new(acc))

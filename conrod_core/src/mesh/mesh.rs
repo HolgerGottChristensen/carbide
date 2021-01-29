@@ -13,7 +13,6 @@ use crate::mesh::vertex::Vertex;
 use crate::Range;
 use crate::render::primitive_walker::PrimitiveWalker;
 use crate::text::{self, rt};
-use crate::position::Padding;
 
 /// Images within the given image map must know their dimensions in pixels.
 pub trait ImageDimensions {
@@ -209,12 +208,8 @@ impl Mesh {
 
         // Draw each primitive in order of depth.
         while let Some(primitive) = primitives.next_primitive() {
-            let render::primitive::Primitive {
-                kind,
-                scizzor,
-                rect,
-                ..
-            } = primitive;
+
+            let rect = primitive.rect;
 
             // Check for a `Scizzor` command.
             /*let new_scizzor = rect_to_scizzor(scizzor);
@@ -239,7 +234,7 @@ impl Mesh {
                 };
             }*/
 
-            match kind {
+            match primitive.kind {
                 render::primitive_kind::PrimitiveKind::Clip => {
                     match current_state {
                         State::Plain { start } => {
@@ -250,9 +245,9 @@ impl Mesh {
                         }
                     }
 
-                    commands.push(PreparedCommand::Scizzor(rect_to_scizzor(rect)));
+                    commands.push(PreparedCommand::Scizzor(rect_to_scizzor(primitive.rect)));
 
-                    scizzor_stack.push(rect_to_scizzor(rect));
+                    scizzor_stack.push(rect_to_scizzor(primitive.rect));
 
                     current_state = State::Plain {
                         start: vertices.len(),
@@ -285,7 +280,7 @@ impl Mesh {
                     switch_to_plain_state!();
 
                     let color = gamma_srgb_to_linear(color.to_fsa());
-                    let (l, r, b, t) = rect.l_r_b_t();
+                    let (l, r, b, t) = primitive.rect.l_r_b_t();
 
                     let v = |x, y| {
                         // Convert from conrod Scalar range to GL range -1.0 to 1.0.
@@ -512,7 +507,7 @@ impl Mesh {
                     let mut push_v = |x, y, t| vertices.push(v(x, y, t));
 
                     // Swap bottom and top to suit reversed vulkan coords.
-                    let (l, r, b, t) = rect.l_r_b_t();
+                    let (l, r, b, t) = primitive.rect.l_r_b_t();
 
                     // Bottom left triangle.
                     push_v(l, t, [uv_l, uv_t]);
@@ -524,9 +519,6 @@ impl Mesh {
                     push_v(r, b, [uv_r, uv_b]);
                     push_v(r, t, [uv_r, uv_t]);
                 }
-
-                // We have no special case widgets to handle.
-                render::primitive_kind::PrimitiveKind::Other(_) => (),
             }
         }
 

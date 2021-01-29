@@ -1,32 +1,5 @@
-//! A simple, non-interactive rectangle shape widget.
-//!
-//! Due to the frequency of its use in GUIs, the `Rectangle` gets its own widget to allow backends
-//! to specialise their rendering implementations.
-
-use daggy::petgraph::graph::node_index;
-use uuid::Uuid;
-
-use crate::{Color, Colorable, Point, Rect, Sizeable};
-use crate::{Scalar, widget};
-use crate::text;
-use crate::draw::shape::triangle::Triangle;
-use crate::flags::Flags;
-use crate::layout::basic_layouter::BasicLayouter;
-use crate::layout::Layout;
-use crate::layout::layouter::Layouter;
-use crate::position::Dimensions;
-use crate::render::primitive::Primitive;
+use crate::prelude::*;
 use crate::render::primitive_kind::PrimitiveKind;
-use crate::state::environment::Environment;
-use crate::state::state_sync::NoLocalStateSync;
-use crate::widget::common_widget::CommonWidget;
-use crate::widget::primitive::Widget;
-use crate::widget::primitive::widget::WidgetExt;
-use crate::widget::render::Render;
-use crate::widget::widget_iterator::{WidgetIter, WidgetIterMut};
-
-use super::Style as Style;
-use crate::state::global_state::GlobalState;
 
 /// A basic, non-interactive rectangle shape widget.
 #[derive(Debug, Clone, Widget)]
@@ -71,14 +44,14 @@ impl<S: GlobalState> CommonWidget<S> for Rectangle<S> {
     }
 
     fn get_flag(&self) -> Flags {
-        Flags::Empty
+        Flags::EMPTY
     }
 
     fn get_children(&self) -> WidgetIter<S> {
         self.children
             .iter()
             .rfold(WidgetIter::Empty, |acc, x| {
-                if x.get_flag() == Flags::Proxy {
+                if x.get_flag() == Flags::PROXY {
                     WidgetIter::Multi(Box::new(x.get_children()), Box::new(acc))
                 } else {
                     WidgetIter::Single(x, Box::new(acc))
@@ -90,7 +63,7 @@ impl<S: GlobalState> CommonWidget<S> for Rectangle<S> {
         self.children
             .iter_mut()
             .rfold(WidgetIterMut::Empty, |acc, x| {
-                if x.get_flag() == Flags::Proxy {
+                if x.get_flag() == Flags::PROXY {
                     WidgetIterMut::Multi(Box::new(x.get_children_mut()), Box::new(acc))
                 } else {
                     WidgetIterMut::Single(x, Box::new(acc))
@@ -129,9 +102,7 @@ impl<S: GlobalState> Render<S> for Rectangle<S> {
     fn get_primitives(&mut self, fonts: &text::font::Map) -> Vec<Primitive> {
         let mut prims = vec![
             Primitive {
-                id: node_index(0),
                 kind: PrimitiveKind::Rectangle { color: self.color},
-                scizzor: Rect::new(self.position, self.dimension),
                 rect: Rect::new(self.position, self.dimension)
             }
         ];
@@ -183,61 +154,22 @@ impl<S: GlobalState> Rectangle<S> {
         let border_color = Color::Rgba(0.0 / 255.0, 255.0 / 255.0, 251.0 / 255.0, 1.0);//Color::random();
         vec![
             Primitive {
-                id: node_index(0),
                 kind: PrimitiveKind::Rectangle { color: border_color.clone()},
-                scizzor: left_border,
                 rect: left_border
             },
             Primitive {
-                id: node_index(0),
                 kind: PrimitiveKind::Rectangle { color: border_color.clone()},
-                scizzor: right_border,
                 rect: right_border
             },
             Primitive {
-                id: node_index(0),
                 kind: PrimitiveKind::Rectangle { color: border_color.clone()},
-                scizzor: top_border,
                 rect: top_border
             },
             Primitive {
-                id: node_index(0),
                 kind: PrimitiveKind::Rectangle { color: border_color.clone()},
-                scizzor: bottom_border,
                 rect: bottom_border
             },
         ]
-    }
-
-    /// Build a rectangle with the dimensions and style.
-    pub fn styled(_dim: Dimensions, style: Style) -> Self {
-        Rectangle {
-            id: Uuid::new_v4(),
-            children: vec![],
-            position: [1.0, 1.0],
-            dimension: [1.0, 1.0],
-            color: Color::random(),
-        }//.wh(dim)
-    }
-
-    /// Build a new filled rectangle.
-    pub fn fill_old(dim: Dimensions) -> Self {
-        Rectangle::styled(dim, Style::fill())
-    }
-
-    /// Build a new filled rectangle widget filled with the given color.
-    pub fn fill_with(dim: Dimensions, color: Color) -> Self {
-        Rectangle::styled(dim, Style::fill_with(color))
-    }
-
-    /// Build a new outlined rectangle widget.
-    pub fn outline(dim: Dimensions) -> Self {
-        Rectangle::styled(dim, Style::outline())
-    }
-
-    /// Build an outlined rectangle rather than a filled one.
-    pub fn outline_styled(dim: Dimensions, line_style: widget::line::Style) -> Self {
-        Rectangle::styled(dim, Style::outline_styled(line_style))
     }
 
     pub fn initialize(children: Vec<Box<dyn Widget<S>>>) -> Box<Rectangle<S>> {
@@ -249,54 +181,4 @@ impl<S: GlobalState> Rectangle<S> {
             color: Color::random()
         })
     }
-
-    pub fn new(position: Point, dimension: Dimensions, children: Vec<Box<dyn Widget<S>>>) -> Box<Rectangle<S>> {
-        Box::new(Rectangle {
-            id: Uuid::new_v4(),
-            children,
-            position,
-            dimension,
-            color: Color::random()
-        })
-    }
-}
-
-/*impl<S> OldWidget<S> for Rectangle<S> {
-    type State = State;
-    type Style = Style;
-    type Event = ();
-
-    fn init_state(&self, _: widget::id::Generator) -> Self::State {
-        State {
-            kind: Kind::Fill,
-        }
-    }
-
-    fn style(&self) -> Self::Style {
-        self.style.clone()
-    }
-
-    /// Update the state of the Rectangle.
-    fn update(self, args: widget::UpdateArgs<Self>) -> Self::Event {
-        let widget::UpdateArgs { state, style, .. } = args;
-
-        let kind = match *style {
-            Style::Fill(_) => Kind::Fill,
-            Style::Outline(_) => Kind::Outline,
-        };
-
-        if state.kind != kind {
-            state.update(|state| state.kind = kind);
-        }
-    }
-
-}
-*/
-
-
-/// The two triangles that describe the given `Rect`.
-pub fn triangles(rect: Rect) -> (Triangle<Point>, Triangle<Point>) {
-    let (l, r, b, t) = rect.l_r_b_t();
-    let quad = [[l, t], [r, t], [r, b], [l, b]];
-    widget::triangles::from_quad(quad)
 }
