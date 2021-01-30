@@ -3,6 +3,7 @@ use crate::layout::layouter::Layouter;
 use crate::position::Dimensions;
 use crate::widget::common_widget::CommonWidget;
 
+#[derive(Clone, Debug)]
 pub enum BasicLayouter {
     TopLeading,
     Top,

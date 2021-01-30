@@ -24,6 +24,7 @@ pub mod scroll;
 pub mod clip;
 pub mod hidden;
 pub mod canvas;
+pub mod offset;
 
 /// Find the bounding rect for the given series of points.
 pub fn bounding_box_for_points<I>(mut points: I) -> Rect

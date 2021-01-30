@@ -1,7 +1,7 @@
 use crate::prelude::*;
 use crate::event::event::Event;
 use dyn_clone::DynClone;
-use crate::widget::Frame;
+use crate::widget::{Frame, Offset};
 use crate::widget::primitive::padding::Padding;
 use crate::widget::primitive::hidden::Hidden;
 use crate::widget::primitive::clip::Clip;
@@ -19,20 +19,24 @@ impl<S: GlobalState> Widget<S> for Box<dyn Widget<S>> {}
 
 dyn_clone::clone_trait_object!(<S> Widget<S>);
 
-pub trait WidgetExt<S: GlobalState>: Widget<S> + Sized + 'static {
-    fn frame(self, width: Scalar, height: Scalar) -> Box<Frame<S>> {
+pub trait WidgetExt<GS: GlobalState>: Widget<GS> + Sized + 'static {
+    fn frame(self, width: Scalar, height: Scalar) -> Box<Frame<GS>> {
         Frame::init(width, height, Box::new(self))
     }
 
-    fn padding(self, edge_insets: EdgeInsets) -> Box<Padding<S>> {
+    fn padding(self, edge_insets: EdgeInsets) -> Box<Padding<GS>> {
         Padding::init(edge_insets, Box::new(self))
     }
-    fn clip(self) -> Box<Clip<S>> {
+    fn clip(self) -> Box<Clip<GS>> {
         Clip::new(Box::new(self))
     }
 
-    fn hidden(self) -> Box<Hidden<S>> {
+    fn hidden(self) -> Box<Hidden<GS>> {
         Hidden::new(Box::new(self))
+    }
+
+    fn offset(self, offset_x: State<f64,GS>, offset_y: State<f64,GS>) -> Box<Offset<GS>> {
+        Offset::new(offset_x, offset_y, Box::new(self))
     }
 }
 
@@ -83,8 +87,8 @@ impl<S: GlobalState> Event<S> for Box<dyn Widget<S>> {
         self.deref_mut().handle_mouse_event(event, consumed, global_state)
     }
 
-    fn handle_keyboard_event(&mut self, event: &KeyboardEvent, global_state: &mut S) {
-        self.deref_mut().handle_keyboard_event(event, global_state)
+    fn handle_keyboard_event(&mut self, event: &KeyboardEvent, env: &mut Environment<S>, global_state: &mut S) {
+        self.deref_mut().handle_keyboard_event(event, env, global_state)
     }
 
     fn handle_other_event(&mut self, event: &WidgetEvent) {

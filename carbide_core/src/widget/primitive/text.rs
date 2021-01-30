@@ -1,12 +1,13 @@
 use crate::prelude::*;
 use crate::state::state::State;
-use crate::text::Justify;
+use crate::text::{Justify, PositionedGlyph, font};
 use crate::position::Align;
 use crate::render::primitive_kind::PrimitiveKind;
 use crate::render::util::new_primitive;
 use crate::color::WHITE;
 use crate::utils;
 use crate::render::text::Text as RenderText;
+use crate::text::font::Ids;
 
 
 /// Displays some given text centered within a rectangular area.
@@ -60,40 +61,8 @@ impl<S: GlobalState> Layout<S> for Text<S> {
 
 impl<S: GlobalState> Render<S> for Text<S> {
     fn get_primitives(&mut self, fonts: &text::font::Map) -> Vec<Primitive> {
-        let font_id = match fonts.ids().next() {
-            Some(id) => id,
-            None => return vec![],
-        };
-        let font = match fonts.get(font_id) {
-            Some(font) => font,
-            None => return vec![],
-        };
 
-        let rect = Rect::new(self.position, self.dimension);
-
-        let new_line_infos = match self.wrap_mode {
-            Wrap::None =>
-                text::line::infos(&self.text.get_latest_value(), font, *self.font_size.get_latest_value()),
-            Wrap::Character =>
-                text::line::infos(&self.text.get_latest_value(), font, *self.font_size.get_latest_value())
-                    .wrap_by_character(rect.w()),
-            Wrap::Whitespace =>
-                text::line::infos(&self.text.get_latest_value(), font, *self.font_size.get_latest_value())
-                    .wrap_by_whitespace(rect.w()),
-        };
-
-        let text = RenderText {
-            positioned_glyphs: Vec::new(),
-            window_dim: self.dimension,
-            text: self.text.get_latest_value().clone(),
-            line_infos: new_line_infos.collect(),
-            font: font.clone(),
-            font_size: *self.font_size.get_latest_value(),
-            rect,
-            justify: Justify::Left,
-            y_align: Align::End,
-            line_spacing: 1.0,
-        };
+        let (text, font_id) = self.get_render_text(fonts);
 
         let kind = PrimitiveKind::Text {
             color: self.color,
@@ -232,6 +201,11 @@ impl<S: GlobalState> Text<S> {
         Box::new(self)
     }
 
+    pub fn wrap_mode(mut self, wrap: Wrap) -> Box<Self> {
+        self.wrap_mode = wrap;
+        Box::new(self)
+    }
+
     /// If no specific width was given, we'll use the width of the widest line as a default.
     ///
     /// The `Font` used by the `Text` is retrieved in order to determine the width of each line. If
@@ -268,7 +242,7 @@ impl<S: GlobalState> Text<S> {
 
         let text = &self.text;
         let font_size = *self.font_size.get_latest_value();
-        let wrap = Wrap::Whitespace;
+        let wrap = self.wrap_mode;
         let num_lines = match wrap {
             Wrap::Character =>
                 text::line::infos(text.get_latest_value(), font, font_size)
@@ -306,134 +280,49 @@ impl<S: GlobalState> Text<S> {
         self.justify(text::Justify::Right)
     }
 
-    /*builder_methods!{
-        pub font_size { style.font_size = Some(FontSize) }
-        pub justify { style.justify = Some(text::Justify) }
-        pub line_spacing { style.line_spacing = Some(Scalar) }
-    }*/
 
-}
-
-/*
-impl<S> OldWidget for Text<S> {
-    type State = OldState;
-    type Style = Style;
-    type Event = ();
-
-    fn init_state(&self, _: widget::id::Generator) -> Self::State {
-        OldState {
-            string: String::new(),
-            line_infos: Vec::new(),
-        }
+    pub fn get_positioned_glyphs(&self, fonts: &text::font::Map, dpi: f32) -> Vec<PositionedGlyph> {
+        let (render_text, font_id) = self.get_render_text(fonts);
+        render_text.positioned_glyphs(dpi)
     }
 
-    fn style(&self) -> Self::Style {
-        self.style.clone()
-    }
-    /// If no specific width was given, we'll use the width of the widest line as a default.
-        ///
-        /// The `Font` used by the `Text` is retrieved in order to determine the width of each line. If
-        /// the font used by the `Text` cannot be found, a dimension of `Absolute(0.0)` is returned.
-    fn default_x_dimension(&self, ui: &Ui<S>) -> Dimension {
-        let font = match self.style.font_id(&ui.theme)
-            .or(ui.fonts.ids().next())
-            .and_then(|id| ui.fonts.get(id))
-        {
+    pub fn get_render_text(&self, fonts: &text::font::Map) -> (RenderText, font::Id) {
+        let font_id: font::Id = match fonts.ids().next() {
+            Some(id) => id,
+            None => return panic!("No font ids available"),
+        };
+        let font = match fonts.get(font_id) {
             Some(font) => font,
-            None => return Dimension::Absolute(0.0),
+            None => return panic!("Not able to retrieve font"),
         };
 
-        let font_size = self.style.font_size(&ui.theme);
-        let mut max_width = 0.0;
-        for line in self.text.lines() {
-            let width = text::line::width(line, font, font_size);
-            max_width = utils::partial_max(max_width, width);
-        }
-        Dimension::Absolute(max_width)
-    }
+        let rect = Rect::new(self.position, self.dimension);
 
-    /// If no specific height was given, we'll use the total height of the text as a default.
-    ///
-    /// The `Font` used by the `Text` is retrieved in order to determine the width of each line. If
-    /// the font used by the `Text` cannot be found, a dimension of `Absolute(0.0)` is returned.
-    fn default_y_dimension(&self, ui: &Ui<S>) -> Dimension {
-        use position::Sizeable;
-
-        let font = match self.style.font_id(&ui.theme)
-            .or(ui.fonts.ids().next())
-            .and_then(|id| ui.fonts.get(id))
-        {
-            Some(font) => font,
-            None => return Dimension::Absolute(0.0),
+        let new_line_infos = match self.wrap_mode {
+            Wrap::None =>
+                text::line::infos(&self.text.get_latest_value(), font, *self.font_size.get_latest_value()),
+            Wrap::Character =>
+                text::line::infos(&self.text.get_latest_value(), font, *self.font_size.get_latest_value())
+                    .wrap_by_character(rect.w()),
+            Wrap::Whitespace =>
+                text::line::infos(&self.text.get_latest_value(), font, *self.font_size.get_latest_value())
+                    .wrap_by_whitespace(rect.w()),
         };
 
-        let text = &self.text;
-        let font_size = self.style.font_size(&ui.theme);
-        let num_lines = 1 as usize; /*match self.style.maybe_wrap(&ui.theme) {
-            None => text.lines().count(),
-            Some(wrap) => match self.get_w(ui) {
-                None => text.lines().count(),
-                Some(max_w) => match wrap {
-                    Wrap::Character =>
-                        text::line::infos(text, font, font_size)
-                            .wrap_by_character(max_w)
-                            .count(),
-                    Wrap::Whitespace =>
-                        text::line::infos(text, font, font_size)
-                            .wrap_by_whitespace(max_w)
-                            .count(),
-                },
-            },
-        };*/
-        let line_spacing = self.style.line_spacing(&ui.theme);
-        let height = text::height(std::cmp::max(num_lines, 1), font_size, line_spacing);
-        Dimension::Absolute(height)
-    }
-    /// Update the state of the Text.
-    fn update(self, args: widget::UpdateArgs<Self>) -> Self::Event {
-        let widget::UpdateArgs { rect, state, style, ui, .. } = args;
-        let Text { text, .. } = self;
-
-        let maybe_wrap = style.maybe_wrap(ui.theme());
-        let font_size = style.font_size(ui.theme());
-
-        let font = match style.font_id(&ui.theme)
-            .or(ui.fonts.ids().next())
-            .and_then(|id| ui.fonts.get(id))
-        {
-            Some(font) => font,
-            None => return,
+        let t = RenderText {
+            positioned_glyphs: Vec::new(),
+            window_dim: self.dimension,
+            text: self.text.get_latest_value().clone(),
+            line_infos: new_line_infos.collect(),
+            font: font.clone(),
+            font_size: *self.font_size.get_latest_value(),
+            rect,
+            justify: Justify::Left,
+            y_align: Align::End,
+            line_spacing: 1.0,
         };
 
-        // Produces an iterator yielding info for each line within the `text`.
-        let new_line_infos = || text::line::infos(&text, font, font_size);
-
-        // If the string is different, we must update both the string and the line breaks.
-        /*if &state.string[..] != text {
-            state.update(|state| {
-                state.string = text.to_owned();
-                state.line_infos = new_line_infos().collect();
-            });
-
-        // Otherwise, we'll check to see if we have to update the line breaks.
-        } else {
-            use utils::write_if_different;
-            use std::borrow::Cow;
-
-            // Compare the line_infos and only collect the new ones if they are different.
-            let maybe_new_line_infos = {
-                let line_infos = &state.line_infos[..];
-                match write_if_different(line_infos, new_line_infos()) {
-                    Cow::Owned(new) => Some(new),
-                    _ => None,
-                }
-            };
-
-            if let Some(new_line_infos) = maybe_new_line_infos {
-                state.update(|state| state.line_infos = new_line_infos);
-            }
-        }*/
+        (t, font_id)
     }
 
 }
-*/

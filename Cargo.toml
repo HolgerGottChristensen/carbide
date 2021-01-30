@@ -1,6 +1,7 @@
 [workspace]
 members = [
     "carbide_core",
+    "carbide_controls",
     "carbide_derive",
     "backends/carbide_example_shared",
     "backends/carbide_winit",
@@ -10,4 +11,5 @@ members = [
     # "backends/carbide_rendy",
     # "backends/carbide_vulkano",
     "backends/carbide_wgpu",
+
 ]

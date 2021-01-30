@@ -3,15 +3,50 @@
 //! This module contains items related to the implementation of the `Widget` trait. It also
 //! re-exports all widgets (and their modules) that are provided by carbide.
 
-pub use self::primitive::frame::Frame;
-pub use self::primitive::frame::SCALE;
+pub use self::primitive::frame::*;
 pub use self::primitive::h_stack::*;
+pub use self::primitive::v_stack::*;
 pub use self::primitive::image::{self, Image};
 pub use self::primitive::shape::oval::{self, Oval};
 pub use self::primitive::shape::polygon::{self, Polygon};
 pub use self::primitive::shape::rectangle::{self, Rectangle};
 pub use self::primitive::text::{self, Text};
 pub use self::primitive::z_stack::*;
+pub use self::primitive::widget::WidgetExt;
+pub use self::primitive::spacer::Spacer;
+pub use self::primitive::edge_insets::EdgeInsets;
+pub use self::primitive::overlaid_layer::OverlaidLayer;
+pub use self::primitive::scroll::Scroll;
+pub use self::types::scroll_direction::ScrollDirection;
+pub use self::types::scale_mode::ScaleMode;
+pub use self::types::spacer_direction::SpacerDirection;
+pub use self::primitive::shape::rounded_rectangle::RoundedRectangle;
+pub use self::primitive::canvas::canvas::Canvas;
+pub use self::primitive::canvas::context::Context;
+pub use self::primitive::canvas::context::ContextAction;
+pub use self::primitive::offset::Offset;
+
+
+
+pub use carbide_core::window::TWindow;
+
+
+// Other useful uses when importing widgets.
+use uuid::Uuid;
+pub type Id = Uuid;
+pub use crate::{Color, Colorable, Point, Rect};
+pub use crate::position::Dimensions;
+pub use crate::position::Scalar;
+pub use self::primitive::Widget;
+pub use crate::state::global_state::GlobalState;
+pub use crate::state::state::State;
+pub use self::common_widget::CommonWidget;
+pub use crate::flags::Flags;
+pub use crate::layout::basic_layouter::BasicLayouter;
+
+pub use self::widget_iterator::{WidgetIter, WidgetIterMut};
+pub use self::render::ChildRender;
+pub use crate::layout::layout::SingleChildLayout;
 
 pub mod render;
 
@@ -27,6 +62,9 @@ pub mod widget_iterator;
 #[macro_use] pub mod old;
 pub mod types;
 pub mod control;
+
+
+
 //
 // /// Arguments for the [**Widget::update**](./trait.Widget#method.update) method in a struct to
 // /// simplify the method signature.

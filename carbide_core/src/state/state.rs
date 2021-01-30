@@ -122,6 +122,13 @@ impl<T: Clone + Debug + Serialize, S: Clone> State<T, S> {
             value: val.clone(),
         }
     }
+
+    pub fn new_local_with_key(val: &T) -> Self {
+        State::LocalState {
+            id: Uuid::new_v4().to_string(),
+            value: val.clone(),
+        }
+    }
 }
 
 pub type LocalStateList = Vec<(String, String)>;
@@ -181,6 +188,12 @@ impl<T: Clone> Into<State<Vec<Uuid>, T>> for Vec<Uuid> {
 
 impl<T: Clone> Into<State<u32,T>> for u32 {
     fn into(self) -> State<u32,T> {
+        State::new(&self)
+    }
+}
+
+impl<T: Clone> Into<State<f64,T>> for f64 {
+    fn into(self) -> State<f64,T> {
         State::new(&self)
     }
 }

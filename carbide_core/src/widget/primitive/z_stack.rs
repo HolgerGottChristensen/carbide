@@ -7,6 +7,7 @@ pub struct ZStack<GS> where GS: GlobalState {
     children: Vec<Box<dyn Widget<GS>>>,
     position: Point,
     dimension: Dimensions,
+    alignment: BasicLayouter,
 }
 
 impl<GS: GlobalState> WidgetExt<GS> for ZStack<GS> {}
@@ -17,8 +18,14 @@ impl<S: GlobalState> ZStack<S> {
             id: Uuid::new_v4(),
             children,
             position: [0.0,0.0],
-            dimension: [100.0,100.0]
+            dimension: [100.0,100.0],
+            alignment: BasicLayouter::Center
         })
+    }
+
+    pub fn alignment(mut self, alignment: BasicLayouter) -> Box<Self> {
+        self.alignment = alignment;
+        Box::new(self)
     }
 }
 
@@ -55,7 +62,7 @@ impl<S: GlobalState> Layout<S> for ZStack<S> {
     }
 
     fn position_children(&mut self) {
-        let positioning = BasicLayouter::TopLeading.position();
+        let positioning = self.alignment.position();
         let position = self.position;
         let dimension = self.dimension;
 

@@ -32,7 +32,7 @@ impl<S: GlobalState> SyncTest<S> {
         }
     }
 
-    fn handle_keyboard_event(&mut self, event: &KeyboardEvent, global_state: &mut S) {
+    fn handle_keyboard_event(&mut self, event: &KeyboardEvent, env: &mut Environment<S>, global_state: &mut S) {
         match event {
             KeyboardEvent::Text(s, _) => {
                 self.value.get_value_mut(global_state).push_str(s);

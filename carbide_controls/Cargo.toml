@@ -1,0 +1,21 @@
+[package]
+name = "carbide_controls"
+version = "0.70.0"
+authors = [
+    "Holger Gott Christensen <holger.gott@icloud.com>",
+]
+keywords = ["ui", "widgets", "gui", "interface", "graphics"]
+description = "A set of control widgets for the carbide core crate"
+license = "MIT OR Apache-2.0"
+readme = "../README.md"
+categories = ["gui"]
+edition="2018"
+
+[dependencies]
+carbide_derive = { path = "../carbide_derive", version = "0.70" }
+carbide_core = { path = "../carbide_core", version = "0.70"}
+
+[dev-dependencies]
+env_logger = "0.7"
+carbide_wgpu = { path = "../backends/carbide_wgpu", version = "0.70" }
+futures = "0.3"

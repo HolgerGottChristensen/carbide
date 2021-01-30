@@ -141,7 +141,7 @@ pub fn impl_widget(ast: &syn::DeriveInput) -> proc_macro2::TokenStream {
     };
 
     let handle_keyboard_event = if let Some(_) = struct_attributes.get("event.handle_keyboard_event") {
-        quote! {#struct_ident::handle_keyboard_event(self, event,  global_state);}
+        quote! {#struct_ident::handle_keyboard_event(self, event, env, global_state);}
     } else {
         quote! {}
     };
@@ -179,7 +179,7 @@ pub fn impl_widget(ast: &syn::DeriveInput) -> proc_macro2::TokenStream {
                 #handle_mouse_event
             }
 
-            fn handle_keyboard_event(&mut self, event: &carbide_core::event_handler::KeyboardEvent, global_state: &mut #global_state_use) {
+            fn handle_keyboard_event(&mut self, event: &carbide_core::event_handler::KeyboardEvent, env: &mut carbide_core::state::environment::Environment<#global_state_use>, global_state: &mut #global_state_use) {
                 #handle_keyboard_event
             }
 
