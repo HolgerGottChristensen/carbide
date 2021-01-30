@@ -9,7 +9,7 @@ pub trait Event<S>: CommonWidget<S> + StateSync<S> where S: GlobalState {
     /// It will only get called on the events where the cursor is inside.
     /// Return true if the event is consumed, and will thus not be delegated to other
     /// widgets.
-    fn handle_mouse_event(&mut self, event: &MouseEvent, consumed: &bool, global_state: &mut S);
+    fn handle_mouse_event(&mut self, event: &MouseEvent, consumed: &bool, env: &mut Environment<S>, global_state: &mut S);
 
     /// A function that will get called when a keyboard event occurs.
     /// This event will be given to all widgets, no matter if they are in focus or not.
@@ -27,6 +27,10 @@ pub trait Event<S>: CommonWidget<S> + StateSync<S> where S: GlobalState {
     fn process_mouse_event_default(&mut self, event: &MouseEvent, consumed: &bool, env: &mut Environment<S>, global_state: &mut S) {
         self.update_all_widget_state(env, global_state);
 
+        if !*consumed {
+            self.handle_mouse_event(event, consumed, env, global_state);
+        }
+
         self.insert_local_state(env);
 
         for child in self.get_proxied_children() {
@@ -36,9 +40,7 @@ pub trait Event<S>: CommonWidget<S> + StateSync<S> where S: GlobalState {
             }
         }
 
-        if !*consumed {
-            self.handle_mouse_event(event, consumed, global_state);
-        }
+
 
         self.update_local_widget_state(env)
     }

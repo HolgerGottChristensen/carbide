@@ -64,12 +64,12 @@ impl<S: GlobalState> Scroll<S> {
             dimension: [0.0, 0.0],
             scroll_offset: [0.0, 0.0],
             scroll_directions: ScrollDirection::Both,
-            scrollbar_horizontal: Rectangle::initialize(vec![]).fill(GRAY).frame(100.0,10.0),
-            scrollbar_vertical: Rectangle::initialize(vec![]).fill(GRAY).frame(10.0,100.0)
+            scrollbar_horizontal: Rectangle::initialize(vec![]).fill(GRAY).frame(100.0.into(),10.0.into()),
+            scrollbar_vertical: Rectangle::initialize(vec![]).fill(GRAY).frame(10.0.into(),100.0.into())
         })
     }
 
-    fn handle_mouse_event(&mut self, event: &MouseEvent, _: &bool, _: &mut S) {
+    fn handle_mouse_event(&mut self, event: &MouseEvent, _: &bool, _: &mut Environment<S>, _: &mut S) {
         match event {
             MouseEvent::Scroll { x, y, modifiers, ..} => {
 

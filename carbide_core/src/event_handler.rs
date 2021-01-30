@@ -52,7 +52,7 @@ pub enum MouseEvent {
         delta_xy: Point,
         modifiers: ModifierKey
     },
-    DoubleClick(MouseButton, Point, ModifierKey),
+    NClick(MouseButton, Point, ModifierKey, u32),
     Scroll {x: Scalar, y: Scalar, mouse_position: Point, modifiers: ModifierKey},
     Drag {
         button: MouseButton,
@@ -72,7 +72,7 @@ impl MouseEvent {
             MouseEvent::Release(_, n, _) => {*n}
             MouseEvent::Click(_, n, _) => {*n}
             MouseEvent::Move {to, .. } => {*to}
-            MouseEvent::DoubleClick(_, n, _) => {*n}
+            MouseEvent::NClick(_, n, _, _) => {*n}
             MouseEvent::Scroll { mouse_position, .. } => {*mouse_position}
             MouseEvent::Drag {to, .. } => {*to}
         }
@@ -210,15 +210,23 @@ impl EventHandler {
                     self.add_event(WidgetEvent::Mouse(event));
                     let pressed_event = self.pressed_buttons.remove(&mouse_button);
                     let now = Instant::now();
-                    let double_click_threshold = Duration::from_millis(500);
+                    let n_click_threshold = Duration::from_millis(500);
 
-                    // Handle double clicks
-                    if let Some((time, MouseEvent::Click(button, location, _))) = self.last_click {
+                    if let Some((time, MouseEvent::NClick(button, location, _, n))) = self.last_click {
                         if button == mouse_button &&
                             location == mouse_xy &&
-                            now.duration_since(time) < double_click_threshold {
-                            let double_click_event = MouseEvent::DoubleClick(mouse_button, mouse_xy, modifiers);
-                            self.add_event(WidgetEvent::Mouse(double_click_event));
+                            now.duration_since(time) < n_click_threshold {
+                            let n_click_event = MouseEvent::NClick(mouse_button, mouse_xy, modifiers, n + 1);
+                            self.add_event(WidgetEvent::Mouse(n_click_event.clone()));
+                            self.last_click = Some((now, n_click_event));
+                        }
+                    } else if let Some((time, MouseEvent::Click(button, location, _))) = self.last_click {
+                        if button == mouse_button &&
+                            location == mouse_xy &&
+                            now.duration_since(time) < n_click_threshold {
+                            let n_click_event = MouseEvent::NClick(mouse_button, mouse_xy, modifiers, 2);
+                            self.add_event(WidgetEvent::Mouse(n_click_event.clone()));
+                            self.last_click = Some((now, n_click_event));
                         }
                     }
 
@@ -226,8 +234,16 @@ impl EventHandler {
                     if let Some(MouseEvent::Press(_, location, _)) = pressed_event {
                         if mouse_xy == location {
                             let click_event = MouseEvent::Click(mouse_button, mouse_xy, modifiers);
-                            self.add_event(WidgetEvent::Mouse(click_event.clone()));
-                            self.last_click = Some((now, click_event));
+                            if let Some((time, MouseEvent::NClick(_,_,_,_))) = self.last_click {
+                                if now.duration_since(time) >= n_click_threshold {
+                                    self.add_event(WidgetEvent::Mouse(click_event.clone()));
+                                    self.last_click = Some((now, click_event));
+                                }
+                            } else {
+                                self.add_event(WidgetEvent::Mouse(click_event.clone()));
+                                self.last_click = Some((now, click_event));
+                            }
+
                         }
                     };
 

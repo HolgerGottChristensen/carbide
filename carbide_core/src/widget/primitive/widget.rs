@@ -10,6 +10,7 @@ use std::ops::{Deref, DerefMut};
 use crate::event_handler::{MouseEvent, KeyboardEvent, WidgetEvent};
 use core::fmt;
 use std::fmt::Debug;
+use crate::widget::primitive::border::Border;
 
 pub trait Widget<S>: Event<S> + Layout<S> + Render<S> + DynClone where S: GlobalState {}
 
@@ -20,8 +21,12 @@ impl<S: GlobalState> Widget<S> for Box<dyn Widget<S>> {}
 dyn_clone::clone_trait_object!(<S> Widget<S>);
 
 pub trait WidgetExt<GS: GlobalState>: Widget<GS> + Sized + 'static {
-    fn frame(self, width: Scalar, height: Scalar) -> Box<Frame<GS>> {
+    fn frame(self, width: State<f64, GS>, height: State<f64, GS>) -> Box<Frame<GS>> {
         Frame::init(width, height, Box::new(self))
+    }
+
+    fn frame_width(self, width: State<f64, GS>) -> Box<Frame<GS>> {
+        Frame::init_width(width, Box::new(self))
     }
 
     fn padding(self, edge_insets: EdgeInsets) -> Box<Padding<GS>> {
@@ -37,6 +42,10 @@ pub trait WidgetExt<GS: GlobalState>: Widget<GS> + Sized + 'static {
 
     fn offset(self, offset_x: State<f64,GS>, offset_y: State<f64,GS>) -> Box<Offset<GS>> {
         Offset::new(offset_x, offset_y, Box::new(self))
+    }
+
+    fn border(self) -> Box<Border<GS>> {
+        Border::initialize(Box::new(self))
     }
 }
 
@@ -83,8 +92,8 @@ impl<S: GlobalState> CommonWidget<S> for Box<dyn Widget<S>> {
 
 
 impl<S: GlobalState> Event<S> for Box<dyn Widget<S>> {
-    fn handle_mouse_event(&mut self, event: &MouseEvent, consumed: &bool, global_state: &mut S) {
-        self.deref_mut().handle_mouse_event(event, consumed, global_state)
+    fn handle_mouse_event(&mut self, event: &MouseEvent, consumed: &bool, env: &mut Environment<S>, global_state: &mut S) {
+        self.deref_mut().handle_mouse_event(event, consumed, env, global_state)
     }
 
     fn handle_keyboard_event(&mut self, event: &KeyboardEvent, env: &mut Environment<S>, global_state: &mut S) {

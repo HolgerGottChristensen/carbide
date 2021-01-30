@@ -135,7 +135,7 @@ pub fn impl_widget(ast: &syn::DeriveInput) -> proc_macro2::TokenStream {
     };
 
     let handle_mouse_event = if let Some(_) = struct_attributes.get("event.handle_mouse_event") {
-        quote! {#struct_ident::handle_mouse_event(self, event, consumed, global_state);}
+        quote! {#struct_ident::handle_mouse_event(self, event, consumed, env, global_state);}
     } else {
         quote! {}
     };
@@ -175,7 +175,7 @@ pub fn impl_widget(ast: &syn::DeriveInput) -> proc_macro2::TokenStream {
     quote! {
 
         impl<#(#generics_without_gs ,)* #global_state> carbide_core::event::event::Event<#global_state_use> for #struct_ident #generics_with_gs #wheres {
-            fn handle_mouse_event(&mut self, event: &carbide_core::event_handler::MouseEvent, consumed: &bool, global_state: &mut #global_state_use) {
+            fn handle_mouse_event(&mut self, event: &carbide_core::event_handler::MouseEvent, consumed: &bool, env: &mut carbide_core::state::environment::Environment<#global_state_use>, global_state: &mut #global_state_use) {
                 #handle_mouse_event
             }
 

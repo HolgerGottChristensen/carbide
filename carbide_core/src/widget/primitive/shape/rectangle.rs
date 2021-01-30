@@ -137,12 +137,13 @@ impl<S: GlobalState> Rectangle<S> {
         Box::new(self)
     }
 
-    #[cfg(not(debug_assertions))]
-    pub fn debug_outline(rect: Rect, width: Scalar) -> Vec<Primitive> {
+    #[cfg(debug_assertions)]
+    pub fn debug_outline(_rect: Rect, _width: Scalar) -> Vec<Primitive> {
         vec![]
     }
 
-    #[cfg(debug_assertions)]
+    // Switch when needing borders
+    #[cfg(not(debug_assertions))]
     pub fn debug_outline(rect: Rect, width: Scalar) -> Vec<Primitive> {
         let (l, r, b, t) = rect.l_r_b_t();
 

@@ -21,7 +21,7 @@ fn main() {
     window.add_font("fonts/NotoSans/NotoSans-Regular.ttf").unwrap();
 
     window.set_widgets(
-        PlainTextInput::new()
+        PlainTextInput::new().padding(EdgeInsets::all(2.0)).border()
     );
 
     window.run_event_loop();

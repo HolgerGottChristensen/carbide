@@ -32,7 +32,7 @@ impl<S: GlobalState> SyncTest<S> {
         }
     }
 
-    fn handle_keyboard_event(&mut self, event: &KeyboardEvent, env: &mut Environment<S>, global_state: &mut S) {
+    fn handle_keyboard_event(&mut self, event: &KeyboardEvent, _: &mut Environment<S>, global_state: &mut S) {
         match event {
             KeyboardEvent::Text(s, _) => {
                 self.value.get_value_mut(global_state).push_str(s);
@@ -73,7 +73,7 @@ impl<S: GlobalState> SyncTest<S> {
                     VStack::initialize(vec![
                         ForEach::new(fore.clone(), ForeachTest::new())
                     ]),
-                    ForEach::new((0..5).map(|_| Uuid::new_v4()).collect::<Vec<Uuid>>().into(), Rectangle::initialize(vec![]).frame(10.0,10.0)),
+                    ForEach::new((0..5).map(|_| Uuid::new_v4()).collect::<Vec<Uuid>>().into(), Rectangle::initialize(vec![]).frame(10.0.into(),10.0.into())),
                     Text::initialize(value.clone()),
                     Spacer::new(SpacerDirection::Horizontal),
                     Text::initialize(value.clone()),

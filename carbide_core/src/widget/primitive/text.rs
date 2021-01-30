@@ -7,7 +7,6 @@ use crate::render::util::new_primitive;
 use crate::color::WHITE;
 use crate::utils;
 use crate::render::text::Text as RenderText;
-use crate::text::font::Ids;
 
 
 /// Displays some given text centered within a rectangular area.
@@ -282,18 +281,18 @@ impl<S: GlobalState> Text<S> {
 
 
     pub fn get_positioned_glyphs(&self, fonts: &text::font::Map, dpi: f32) -> Vec<PositionedGlyph> {
-        let (render_text, font_id) = self.get_render_text(fonts);
+        let (render_text, _) = self.get_render_text(fonts);
         render_text.positioned_glyphs(dpi)
     }
 
     pub fn get_render_text(&self, fonts: &text::font::Map) -> (RenderText, font::Id) {
         let font_id: font::Id = match fonts.ids().next() {
             Some(id) => id,
-            None => return panic!("No font ids available"),
+            None => panic!("No font ids available"),
         };
         let font = match fonts.get(font_id) {
             Some(font) => font,
-            None => return panic!("Not able to retrieve font"),
+            None => panic!("Not able to retrieve font"),
         };
 
         let rect = Rect::new(self.position, self.dimension);

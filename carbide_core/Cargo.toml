@@ -2,6 +2,7 @@
 name = "carbide_core"
 version = "0.70.0"
 authors = [
+    "Holger Gott Christensen <holger.gott@icloud.com>",
     "Mitchell Nordine <mitchell.nordine@gmail.com>",
     "Sven Nilsen <bvssvni@gmail.com>"
 ]
@@ -9,8 +10,8 @@ keywords = ["ui", "widgets", "gui", "interface", "graphics"]
 description = "An easy-to-use, 100% Rust, extensible 2D GUI library."
 license = "MIT OR Apache-2.0"
 readme = "../README.md"
-repository = "https://github.com/pistondevelopers/carbide.git"
-homepage = "https://github.com/pistondevelopers/carbide"
+repository = "https://github.com/HolgerGottChristensen/carbide.git"
+homepage = "https://github.com/HolgerGottChristensen/carbide"
 categories = ["gui"]
 edition="2018"
 

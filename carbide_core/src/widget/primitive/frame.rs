@@ -7,46 +7,59 @@ pub struct Frame<GS> where GS: GlobalState {
     id: Uuid,
     child: Box<dyn Widget<GS>>,
     position: Point,
-    dimension: Dimensions,
+    #[state] width: State<f64, GS>,
+    #[state] height: State<f64, GS>,
     expand_width: bool,
     expand_height: bool,
 }
 
 impl<GS: GlobalState> WidgetExt<GS> for Frame<GS> {}
 
-impl<S: GlobalState> Frame<S> {
-    pub fn init(width: Scalar, height: Scalar, child: Box<dyn Widget<S>>) -> Box<Frame<S>> {
+impl<GS: GlobalState> Frame<GS> {
+    pub fn init(width: State<f64, GS>, height: State<f64, GS>, child: Box<dyn Widget<GS>>) -> Box<Frame<GS>> {
 
-        let expand_width = width == SCALE;
-        let expand_height = height == SCALE;
+        let expand_width = if let State::Value {value} = width {
+            value == SCALE
+        } else {
+            false
+        };
+
+        let expand_height = if let State::Value {value} = height {
+            value == SCALE
+        } else {
+            false
+        };
 
         Box::new(Frame{
             id: Default::default(),
             child: Box::new(child),
             position: [0.0,0.0],
-            dimension: [width, height],
+            width: width.into(),
+            height: height.into(),
             expand_width,
             expand_height,
         })
     }
 
-    pub fn init_width(width: Scalar, child: Box<dyn Widget<S>>) -> Box<Frame<S>> {
+    pub fn init_width(width: State<f64, GS>, child: Box<dyn Widget<GS>>) -> Box<Frame<GS>> {
         Box::new(Frame{
             id: Default::default(),
             child: Box::new(child),
             position: [0.0,0.0],
-            dimension: [width, 0.0],
+            width,
+            height: 0.0.into(),
             expand_width: false,
             expand_height: true
         })
     }
 
-    pub fn init_height(height: Scalar, child: Box<dyn Widget<S>>) -> Box<Frame<S>> {
+    pub fn init_height(height: State<f64, GS>, child: Box<dyn Widget<GS>>) -> Box<Frame<GS>> {
         Box::new(Frame{
             id: Default::default(),
             child: Box::new(child),
             position: [0.0,0.0],
-            dimension: [0.0, height],
+            width: 0.0.into(),
+            height,
             expand_width: true,
             expand_height: false
         })
@@ -92,11 +105,17 @@ impl<S: GlobalState> CommonWidget<S> for Frame<S> {
     }
 
     fn get_dimension(&self) -> Dimensions {
-        [self.dimension[0].abs(), self.dimension[1].abs()]
+        [*self.width.get_latest_value(), *self.height.get_latest_value()]
     }
 
     fn set_dimension(&mut self, dimensions: Dimensions) {
-        self.dimension = dimensions
+        if let State::Value {ref mut value} = self.width {
+            *value = dimensions[0];
+        }
+
+        if let State::Value {ref mut value} = self.height {
+            *value = dimensions[1];
+        }
     }
 }
 
@@ -119,17 +138,17 @@ impl<S: GlobalState> Layout<S> for Frame<S> {
             self.set_height(requested_size[1]);
         }
 
-        let dimensions = self.dimension;
+        let dimensions = self.get_dimension();
 
         self.child.calculate_size(dimensions, env);
 
-        self.dimension
+        self.get_dimension()
     }
 
     fn position_children(&mut self) {
         let positioning = BasicLayouter::Center.position();
         let position = self.position;
-        let dimension = [self.dimension[0].abs(), self.dimension[1].abs()];
+        let dimension = [self.get_width(), self.get_height()];
 
 
         positioning(position, dimension, &mut self.child);
@@ -141,7 +160,7 @@ impl<S: GlobalState> Render<S> for Frame<S> {
 
     fn get_primitives(&mut self, fonts: &text::font::Map) -> Vec<Primitive> {
         let mut prims = vec![];
-        prims.extend(Rectangle::<S>::debug_outline(Rect::new(self.position, [self.dimension[0].abs(), self.dimension[1].abs()]), 1.0));
+        prims.extend(Rectangle::<S>::debug_outline(Rect::new(self.position, [self.get_width(), self.get_height()]), 1.0));
         let children: Vec<Primitive> = self.child.get_primitives(fonts);
         prims.extend(children);
 

@@ -1,4 +1,6 @@
 extern crate carbide_core;
+extern crate copypasta;
+extern crate unicode_segmentation;
 
 #[macro_use]
 extern crate carbide_derive;
