@@ -2,7 +2,7 @@
 name = "carbide_wgpu"
 version = "0.70.0"
 authors = [
-    "mitchmindtree <mitchell.nordine@gmail.com>",
+    "Holger Gott Christensen <holger.gott@icloud.com>",
 ]
 keywords = ["ui", "widgets", "gui", "interface", "graphics"]
 description = "A crate to assist with rendering carbide UIs via wgpu."
@@ -30,7 +30,6 @@ find_folder = "0.3"
 uuid = { version = "0.8.1", features = ["serde", "v4"]}
 
 [dev-dependencies]
-carbide_example_shared = { path = "../carbide_example_shared", version = "0.70" }
 carbide_winit = { path = "../carbide_winit", version = "0.70" }
 find_folder = "0.3"
 futures = "0.3"
