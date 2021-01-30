@@ -1,12 +1,12 @@
 [package]
 name = "carbide_derive"
 version = "0.70.0"
-authors = ["mitchmindtree <mitchell.nordine@gmail.com>"]
+authors = ["Holger Gott Christensen <holger.gott@icloud.com>"]
 description = "A crate providing procedural macros for the carbide library"
 license = "MIT OR Apache-2.0"
 keywords = ["carbide", "gui", "derive", "procedural", "macro"]
-repository = "https://github.com/pistondevelopers/carbide.git"
-homepage = "https://github.com/pistondevelopers/carbide"
+repository = "https://github.com/HolgerGottChristensen/carbide.git"
+homepage = "https://github.com/HolgerGottChristensen/carbide"
 
 
 [lib]
