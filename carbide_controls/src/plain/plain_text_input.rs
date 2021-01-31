@@ -9,6 +9,7 @@ use crate::plain::text_input_key_commands::TextInputKeyCommand;
 use copypasta::{ClipboardContext, ClipboardProvider};
 use std::ops::Range;
 use unicode_segmentation::UnicodeSegmentation;
+use carbide_core::text::PositionedGlyph;
 
 
 #[derive(Clone, Widget)]
@@ -18,11 +19,13 @@ pub struct PlainTextInput<GS> where GS: GlobalState {
     child: Box<dyn Widget<GS>>,
     position: Point,
     dimension: Dimensions,
-    #[state] text: State<String, GS>,
     cursor: Cursor,
+    grapheme_split_cache: (String, Vec<f32>),
+    #[state] text: State<String, GS>,
     #[state] cursor_x: State<f64, GS>,
     #[state] selection_x: State<f64, GS>,
     #[state] selection_width: State<f64, GS>,
+    #[state] text_offset: State<f64, GS>,
 }
 
 impl<GS: GlobalState> PlainTextInput<GS> {
@@ -35,27 +38,35 @@ impl<GS: GlobalState> PlainTextInput<GS> {
 
         let selection_width = State::new_local_with_key(&4.0);
 
+        let text_offset = State::new_local_with_key(&0.0);
+
         Box::new(PlainTextInput {
             id: Id::new_v4(),
-            child: ZStack::initialize(vec![
-                Rectangle::initialize(vec![])
-                    .fill(GREEN)
-                    .frame(selection_width.clone(), 40.0.into())
-                    .offset(selection_x.clone(), 0.0.into()),
-                Text::initialize(text_state.clone())
-                    .font_size(40.into()).wrap_mode(Wrap::None),
-                Rectangle::initialize(vec![])
-                    .fill(RED)
-                    .frame(4.0.into(), 40.0.into())
-                    .offset(cursor_x.clone(), 0.0.into())
-            ]).alignment(BasicLayouter::TopLeading),
+            child: HStack::initialize( vec![
+                ZStack::initialize(vec![
+                    Rectangle::initialize(vec![])
+                        .fill(GREEN)
+                        .frame(selection_width.clone(), 40.0.into())
+                        .offset(selection_x.clone(), 0.0.into()),
+                    Text::initialize(text_state.clone())
+                        .font_size(40.into()).wrap_mode(Wrap::None),
+                    Rectangle::initialize(vec![])
+                        .fill(RED)
+                        .frame(4.0.into(), 40.0.into())
+                        .offset(cursor_x.clone(), 0.0.into())
+            ]).alignment(BasicLayouter::TopLeading)
+                    .offset(text_offset.clone(), 0.0.into()),
+                   Spacer::new(SpacerDirection::Horizontal)
+            ]),
             position: [0.0, 0.0],
             dimension: [0.0, 0.0],
             text: text_state,
+            grapheme_split_cache: ("".to_string(), vec![]),
             cursor: Cursor::Single(CursorIndex{ line: 0, char: 0 }),
             cursor_x,
             selection_width,
             selection_x,
+            text_offset
         })
     }
 
@@ -144,24 +155,44 @@ impl<GS: GlobalState> PlainTextInput<GS> {
         min..max
     }
 
+    fn get_positioned_glyphs(&mut self, text: &String, env: &Environment<GS>) -> Vec<PositionedGlyph> {
+        let mut text_scaler: Box<carbide_core::widget::Text<GS>> = Text::initialize(text.clone().into())
+            .font_size(40.into()).wrap_mode(Wrap::None);
+
+        text_scaler.set_position([0.0, 0.0]);
+        text_scaler.set_dimension(self.dimension.add([100.0,100.0]));
+
+        let positioned_glyphs = text_scaler.get_positioned_glyphs(env.get_fonts_map(), 1.0); //Todo: save dpi in env stack
+        positioned_glyphs
+    }
+
+    fn check_for_cache_updates(&mut self, text: &String, env: &Environment<GS>) {
+        let (cache_string, _) = &self.grapheme_split_cache;
+
+        if text != cache_string {
+            // Position the cursor
+            let positioned_glyphs = self.get_positioned_glyphs(text, env);
+
+            let new_splits = Cursor::get_char_index_split_points(&positioned_glyphs);
+            let new_cache = (text.clone(), new_splits);
+
+            self.grapheme_split_cache = new_cache;
+        }
+    }
+
     fn handle_mouse_event(&mut self, event: &MouseEvent, _: &bool, env: &mut Environment<GS>, global_state: &mut GS) {
+        let text_offset = *self.text_offset.get_value(global_state);
+
         match event {
-            MouseEvent::Click(_, position, _) => {
+            MouseEvent::Press(_, position, _) => {
                 let text = self.text.get_value(global_state).clone();
 
-                // Position the cursor
-                let mut text_scaler: Box<carbide_core::widget::Text<GS>> = Text::initialize(text.clone().into())
-                    .font_size(40.into()).wrap_mode(Wrap::None);
-
-                text_scaler.set_position([0.0, 0.0]);
-                text_scaler.set_dimension(self.dimension.add([100.0,100.0]));
-
-                let positioned_glyphs = text_scaler.get_positioned_glyphs(env.get_fonts_map(), 1.0); //Todo: save dpi in env stack
+                self.check_for_cache_updates(&text, env);
+                let (_, cache_split) = &self.grapheme_split_cache;
 
 
-                let relative_offset = position[0] - self.position[0];
-
-                let char_index = Cursor::get_char_index(relative_offset, &text, &positioned_glyphs);
+                let relative_offset = position[0] - self.position[0] - text_offset;
+                let char_index = Cursor::get_char_index(relative_offset, &text, &cache_split);
 
                 self.cursor = Cursor::Single(CursorIndex{ line: 0, char: char_index });
             }
@@ -171,19 +202,13 @@ impl<GS: GlobalState> PlainTextInput<GS> {
                 } else {
                     let text = self.text.get_value(global_state).clone();
 
-                    // Position the cursor
-                    let mut text_scaler: Box<carbide_core::widget::Text<GS>> = Text::initialize(text.clone().into())
-                        .font_size(40.into()).wrap_mode(Wrap::None);
+                    self.check_for_cache_updates(&text, env);
 
-                    text_scaler.set_position([0.0, 0.0]);
-                    text_scaler.set_dimension(self.dimension.add([100.0,100.0]));
+                    let (_, cache_split) = &self.grapheme_split_cache;
 
-                    let positioned_glyphs = text_scaler.get_positioned_glyphs(env.get_fonts_map(), 1.0); //Todo: save dpi in env stack
+                    let relative_offset = position[0] - self.position[0] - text_offset;
 
-
-                    let relative_offset = position[0] - self.position[0];
-
-                    let char_index = Cursor::get_char_index(relative_offset, &text, &positioned_glyphs);
+                    let char_index = Cursor::get_char_index(relative_offset, &text, &cache_split);
 
                     let range = Self::word_index_range(text.clone(), char_index);
 
@@ -191,27 +216,44 @@ impl<GS: GlobalState> PlainTextInput<GS> {
                 }
 
             }
-            MouseEvent::Drag { origin, to, .. } => {
+            MouseEvent::Drag { to, .. } => {
                 let text = self.text.get_value(global_state).clone();
 
-                // Position the cursor
-                let mut text_scaler: Box<carbide_core::widget::Text<GS>> = Text::initialize(text.clone().into())
-                    .font_size(40.into()).wrap_mode(Wrap::None);
+                let mouse_scroll_threshold = 30.0;
 
-                text_scaler.set_position([0.0, 0.0]);
-                text_scaler.set_dimension(self.dimension.add([100.0,100.0]));
+                if to[0] < self.get_x() + mouse_scroll_threshold {
+                    let offset = self.text_offset.get_value(global_state) + 10.0;
+                    *self.text_offset.get_value_mut(global_state) = offset.min(0.0);
+                } else if to[0] > self.get_x() + self.get_width() - mouse_scroll_threshold {
+                    let offset = self.text_offset.get_value(global_state) - 10.0;
+                    let text = self.text.get_value(global_state).clone();
+                    let positioned_glyphs = self.get_positioned_glyphs(&text, env);
 
-                let positioned_glyphs = text_scaler.get_positioned_glyphs(env.get_fonts_map(), 1.0); //Todo: save dpi in env stack
+                    let start = CursorIndex {line: 0, char: 0};
+                    let end = CursorIndex {line: 0, char: Self::len_in_graphemes(self.text.get_value(global_state))};
 
-                let origin_relative_offset = origin[0] - self.position[0];
+                    let max_offset = Cursor::Selection{start, end}.get_width(&text, &positioned_glyphs);
 
-                let current_relative_offset = to[0] - self.position[0];
+                    *self.text_offset.get_value_mut(global_state) = offset.max(-(max_offset - self.get_width()));
+                }
 
-                let origin_char_index = Cursor::get_char_index(origin_relative_offset, &text, &positioned_glyphs);
-                let current_char_index = Cursor::get_char_index(current_relative_offset, &text, &positioned_glyphs);
 
-                self.cursor = Cursor::Selection { start: CursorIndex { line: 0, char: origin_char_index }, end: CursorIndex { line: 0, char: current_char_index } }
+                self.check_for_cache_updates(&text, env);
 
+                let (_, cache_split) = &self.grapheme_split_cache;
+
+                let current_relative_offset = to[0] - self.position[0] - text_offset;
+
+                let current_char_index = Cursor::get_char_index(current_relative_offset, &text, &cache_split);
+
+                match self.cursor {
+                    Cursor::Single(index) => {
+                        self.cursor = Cursor::Selection { start: index, end: CursorIndex { line: 0, char: current_char_index } }
+                    }
+                    Cursor::Selection { start, .. } => {
+                        self.cursor = Cursor::Selection { start, end: CursorIndex { line: 0, char: current_char_index } }
+                    }
+                }
             }
             _ => ()
         }
@@ -544,8 +586,6 @@ impl<GS: GlobalState> PlainTextInput<GS> {
 
                 match self.cursor {
                     Cursor::Single(index) => {
-                        let text = self.text.get_value(global_state).clone();
-                        println!("index: {}, old_text: {}, number_of_graphemes: {}, len_of_string: {}", index.char, &text, Self::len_in_graphemes(&text), text.len());
                         self.insert_str(index.char, string, global_state);
 
                         self.cursor = Cursor::Single(CursorIndex{ line: 0, char: index.char + Self::len_in_graphemes(&string) });
@@ -562,7 +602,8 @@ impl<GS: GlobalState> PlainTextInput<GS> {
             _ => ()
         }
 
-        self.reposition_cursor(env, global_state)
+        self.reposition_cursor(env, global_state);
+        self.recalculate_offset_to_make_cursor_visible(env, global_state);
     }
 
     fn reposition_cursor(&mut self, env: &mut Environment<GS>, global_state: &mut GS) {
@@ -595,6 +636,24 @@ impl<GS: GlobalState> PlainTextInput<GS> {
             *self.selection_x.get_value_mut(global_state) -= selection_width;
             *self.selection_width.get_value_mut(global_state) = selection_width;
         }
+    }
+
+    fn recalculate_offset_to_make_cursor_visible(&mut self, env: &mut Environment<GS>, global_state: &mut GS) {
+        let cursor_x = *self.cursor_x.get_value(global_state);
+        let cursor_width = 4.0;
+        let current_text_offset = *self.text_offset.get_value(global_state);
+
+        if cursor_x + cursor_width > self.get_width() && -current_text_offset < cursor_x + cursor_width - self.get_width() {
+            let new_text_offset = -(cursor_x + cursor_width - self.get_width());
+
+            *self.text_offset.get_value_mut(global_state) = new_text_offset;
+        } else if cursor_x + current_text_offset < 0.0 {
+            let new_text_offset = -(cursor_x);
+
+            *self.text_offset.get_value_mut(global_state) = new_text_offset;
+        }
+
+
     }
 }
 
@@ -647,9 +706,31 @@ impl<GS: GlobalState> CommonWidget<GS> for PlainTextInput<GS> {
 
 impl<GS: GlobalState> ChildRender for PlainTextInput<GS> {}
 
-impl<GS: GlobalState> SingleChildLayout for PlainTextInput<GS> {
+impl<GS: GlobalState> Layout<GS> for PlainTextInput<GS> {
     fn flexibility(&self) -> u32 {
         10
+    }
+
+    fn calculate_size(&mut self, requested_size: [f64; 2], env: &Environment<GS>) -> [f64; 2] {
+        let mut dimensions = [0.0, 0.0];
+        if let Some(child) = self.get_children_mut().next() {
+            dimensions = child.calculate_size(requested_size, env);
+        }
+
+        self.set_dimension([requested_size[0], dimensions[1]]);
+
+        self.get_dimension()
+    }
+
+    fn position_children(&mut self) {
+        let positioning = BasicLayouter::Center.position();
+        let position = self.get_position();
+        let dimension = self.get_dimension();
+
+        if let Some(child) = self.get_children_mut().next() {
+            positioning(position, dimension, child);
+            child.position_children();
+        }
     }
 }
 

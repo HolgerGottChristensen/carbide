@@ -14,5 +14,6 @@ pub struct OwnedText {
     pub justify: Justify,
     pub y_align: Align,
     pub line_spacing: Scalar,
+    pub base_line_offset: f32
 }
 

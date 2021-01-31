@@ -30,6 +30,33 @@ pub fn clamp<T: PartialOrd>(n: T, start: T, end: T) -> T {
     }
 }
 
+/// Get the closest index in a sorted vec of f32
+// function binary_search_rightmost(A, n, T):
+//     L := 0
+//     R := n
+//     while L < R:
+//         m := floor((L + R) / 2)
+//         if A[m] > T:
+//             R := m
+//         else:
+//             L := m + 1
+//     return R - 1
+pub fn binary_search(value: f32, vec: &Vec<f32>) -> usize {
+    let mut left = 0;
+    let mut right = vec.len();
+    while left < right {
+        let m = (left + right) / 2;
+        if vec[m] > value {
+            right = m;
+        } else {
+            left = m + 1;
+        }
+    }
+    if right != 0 {right - 1} else {0}
+}
+
+
+
 /// Convert degrees to radians.
 pub fn degrees<F: Float + NumCast>(d: F) -> F {
     use std::f32::consts::PI;

@@ -71,6 +71,7 @@ impl<'a> WalkOwnedPrimitives<'a> {
                         justify,
                         y_align,
                         line_spacing,
+                        base_line_offset,
                     } = *text;
 
                     let text_str = &texts_str[str_byte_range.clone()];
@@ -87,6 +88,7 @@ impl<'a> WalkOwnedPrimitives<'a> {
                         justify,
                         y_align,
                         line_spacing,
+                        base_line_offset,
                     };
 
                     let kind = PrimitiveKind::Text {

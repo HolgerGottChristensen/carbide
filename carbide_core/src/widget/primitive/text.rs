@@ -7,6 +7,7 @@ use crate::render::util::new_primitive;
 use crate::color::WHITE;
 use crate::utils;
 use crate::render::text::Text as RenderText;
+use rusttype::Scale;
 
 
 /// Displays some given text centered within a rectangular area.
@@ -308,6 +309,8 @@ impl<S: GlobalState> Text<S> {
                     .wrap_by_whitespace(rect.w()),
         };
 
+        let base_line_offset = font.v_metrics(Scale::uniform(40.0)).descent;
+
         let t = RenderText {
             positioned_glyphs: Vec::new(),
             window_dim: self.dimension,
@@ -319,6 +322,7 @@ impl<S: GlobalState> Text<S> {
             justify: Justify::Left,
             y_align: Align::End,
             line_spacing: 1.0,
+            base_line_offset
         };
 
         (t, font_id)

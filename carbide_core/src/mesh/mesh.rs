@@ -353,6 +353,8 @@ impl Mesh {
                     text,
                     font_id,
                 } => {
+                    let base_line_offset = text.base_line_offset as f64;
+
                     switch_to_plain_state!();
                     let positioned_glyphs = text.positioned_glyphs(dpi_factor as f32);
                     // Queue the glyphs to be cached
@@ -399,8 +401,8 @@ impl Mesh {
                     let to_gl_rect = |screen_rect: text::rt::Rect<i32>| {
                         let min_x = screen_rect.min.x as f64 / dpi_factor + rect.x.start;
                         let max_x = screen_rect.max.x as f64 / dpi_factor + rect.x.start;
-                        let min_y = screen_rect.min.y as f64 / dpi_factor + rect.y.start;
-                        let max_y = screen_rect.max.y as f64 / dpi_factor + rect.y.start;
+                        let min_y = screen_rect.min.y as f64 / dpi_factor + rect.y.start + base_line_offset;
+                        let max_y = screen_rect.max.y as f64 / dpi_factor + rect.y.start + base_line_offset;
 
                         Rect {
                             x: Range { start: min_x, end: max_x },

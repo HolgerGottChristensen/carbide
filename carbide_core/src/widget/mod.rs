@@ -43,7 +43,8 @@ pub use crate::state::state::State;
 pub use self::common_widget::CommonWidget;
 pub use crate::flags::Flags;
 pub use crate::layout::basic_layouter::BasicLayouter;
-
+pub use carbide_core::layout::Layout;
+pub use carbide_core::layout::layouter::Layouter;
 pub use self::widget_iterator::{WidgetIter, WidgetIterMut};
 pub use self::render::ChildRender;
 pub use crate::layout::layout::SingleChildLayout;

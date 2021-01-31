@@ -1,5 +1,6 @@
 use carbide_core::{Point, Scalar};
 use carbide_core::text::PositionedGlyph;
+use carbide_core::utils::binary_search;
 
 #[derive(Debug, Clone, Copy)]
 pub enum Cursor {
@@ -18,31 +19,26 @@ impl Cursor {
         }
     }
 
-    pub fn get_char_index(relative_offset: f64, _text: &str, positioned_glyphs: &Vec<PositionedGlyph>) -> usize {
+    pub fn get_char_index_split_points(positioned_glyphs: &Vec<PositionedGlyph>) -> Vec<f32>{
         let splits = vec![0.0].into_iter().chain(positioned_glyphs.iter().map(|val| {
             let middle = val.position().x + val.unpositioned().h_metrics().advance_width;
             middle
         }));
 
         let collected: Vec<f32> = splits.collect();
+        collected
+    }
 
-        let mut closest_iter = collected.iter().enumerate().skip(1).skip_while(|(i, s)|{
-            let distance_to_before = (relative_offset as f32 - collected[i-1]).abs();
+    pub fn get_char_index(relative_offset: f64, _text: &str, splits: &Vec<f32>) -> usize {
+        let rightmost_closest = binary_search(relative_offset as f32, splits);
 
-            let distance_to_after = (relative_offset as f32 - **s).abs();
-
-            distance_to_after < distance_to_before
-
-        });
-
-        let closest = match closest_iter.next() {
-            None => {positioned_glyphs.len()}
-            Some((i, _)) => i-1
+        let new_closest = if rightmost_closest < splits.len() && ((relative_offset as f32) - splits[rightmost_closest + 1]).abs() < ((relative_offset as f32) - splits[rightmost_closest]).abs() {
+            rightmost_closest + 1
+        } else {
+            rightmost_closest
         };
 
-
-
-        closest
+        new_closest
     }
 }
 

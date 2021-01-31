@@ -18,6 +18,7 @@ pub struct Text {
     pub(crate) justify: text::Justify,
     pub(crate) y_align: Align,
     pub(crate) line_spacing: Scalar,
+    pub(crate) base_line_offset: f32
 }
 
 
@@ -46,6 +47,7 @@ impl Text {
             justify,
             y_align,
             line_spacing,
+            ..
         } = self;
 
         let rect = Rect::from_xy_dim([0.0,0.0], rect.dim());
