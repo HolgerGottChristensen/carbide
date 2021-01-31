@@ -50,6 +50,7 @@ pub use self::render::ChildRender;
 pub use crate::layout::layout::SingleChildLayout;
 pub use crate::state::environment::Environment;
 pub use carbide_core::state::state::StateExt;
+pub use carbide_core::layout::CrossAxisAlignment;
 
 pub mod render;
 

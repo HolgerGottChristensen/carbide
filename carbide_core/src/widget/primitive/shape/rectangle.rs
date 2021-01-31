@@ -137,41 +137,39 @@ impl<S: GlobalState> Rectangle<S> {
         Box::new(self)
     }
 
-    #[cfg(debug_assertions)]
     pub fn debug_outline(_rect: Rect, _width: Scalar) -> Vec<Primitive> {
         vec![]
     }
 
-    // Switch when needing borders
-    #[cfg(not(debug_assertions))]
-    pub fn debug_outline(rect: Rect, width: Scalar) -> Vec<Primitive> {
-        let (l, r, b, t) = rect.l_r_b_t();
-
-        let left_border = Rect::new([l,b], [width, rect.h()]);
-        let right_border = Rect::new([r-width,b], [width, rect.h()]);
-        let top_border = Rect::new([l+width,b], [rect.w()-width*2.0, width]);
-        let bottom_border = Rect::new([l+width,t-width], [rect.w()-width*2.0, width]);
-
-        let border_color = Color::Rgba(0.0 / 255.0, 255.0 / 255.0, 251.0 / 255.0, 1.0);//Color::random();
-        vec![
-            Primitive {
-                kind: PrimitiveKind::Rectangle { color: border_color.clone()},
-                rect: left_border
-            },
-            Primitive {
-                kind: PrimitiveKind::Rectangle { color: border_color.clone()},
-                rect: right_border
-            },
-            Primitive {
-                kind: PrimitiveKind::Rectangle { color: border_color.clone()},
-                rect: top_border
-            },
-            Primitive {
-                kind: PrimitiveKind::Rectangle { color: border_color.clone()},
-                rect: bottom_border
-            },
-        ]
-    }
+    // Enable when needing debug borders
+    // pub fn debug_outline(rect: Rect, width: Scalar) -> Vec<Primitive> {
+    //     let (l, r, b, t) = rect.l_r_b_t();
+    //
+    //     let left_border = Rect::new([l,b], [width, rect.h()]);
+    //     let right_border = Rect::new([r-width,b], [width, rect.h()]);
+    //     let top_border = Rect::new([l+width,b], [rect.w()-width*2.0, width]);
+    //     let bottom_border = Rect::new([l+width,t-width], [rect.w()-width*2.0, width]);
+    //
+    //     let border_color = Color::Rgba(0.0 / 255.0, 255.0 / 255.0, 251.0 / 255.0, 1.0);//Color::random();
+    //     vec![
+    //         Primitive {
+    //             kind: PrimitiveKind::Rectangle { color: border_color.clone()},
+    //             rect: left_border
+    //         },
+    //         Primitive {
+    //             kind: PrimitiveKind::Rectangle { color: border_color.clone()},
+    //             rect: right_border
+    //         },
+    //         Primitive {
+    //             kind: PrimitiveKind::Rectangle { color: border_color.clone()},
+    //             rect: top_border
+    //         },
+    //         Primitive {
+    //             kind: PrimitiveKind::Rectangle { color: border_color.clone()},
+    //             rect: bottom_border
+    //         },
+    //     ]
+    // }
 
     pub fn initialize(children: Vec<Box<dyn Widget<S>>>) -> Box<Rectangle<S>> {
         Box::new(Rectangle {

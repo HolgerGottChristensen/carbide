@@ -1,21 +1,11 @@
 mod calculator;
 
-use carbide_wgpu::window::Window;
+use carbide_core::widget::*;
 use futures::executor::block_on;
-use carbide_core::window::TWindow;
-use carbide_core::state::state::CommonState;
-use carbide_core::widget::primitive::v_stack::VStack;
-use carbide_core::widget::{Text, Image, Rectangle, HStack, SCALE, Oval, Frame};
-use carbide_core::widget::complex::SyncTest;
-use carbide_core::color::{GREEN, LIGHT_BLUE, RED, DARK_GREEN};
-use carbide_core::widget::primitive::widget::WidgetExt;
-use carbide_core::widget::primitive::spacer::Spacer;
-use carbide_core::widget::primitive::edge_insets::EdgeInsets;
-use self::calculator::calculator_button::CalculatorButton;
-use calculator::calculator_state::CalculatorState;
-use calculator::calculator_state::Operation;
-use carbide_core::layout::CrossAxisAlignment;
-use carbide_core::widget::types::spacer_direction::SpacerDirection;
+use carbide_wgpu::window::Window;
+use crate::calculator::calculator_state::{CalculatorState, Operation};
+use carbide_core::color::DARK_GREEN;
+use crate::calculator::calculator_button::CalculatorButton;
 
 
 #[macro_use]
@@ -27,8 +17,6 @@ fn main() {
 
     window.add_font("fonts/NotoSans/NotoSans-Regular.ttf").unwrap();
     let rust_image = window.add_image("images/rust_press.png").unwrap();
-    let rust_image1 = window.add_image("images/rust_hover.png").unwrap();
-    let rust_image2 = window.add_image("images/rust.png").unwrap();
 
 
     window.set_widgets(
@@ -38,38 +26,38 @@ fn main() {
                     Spacer::new(SpacerDirection::Horizontal),
                     VStack::initialize(
                     vec![
-                            Text::initialize(CommonState::GlobalState {
+                            Text::initialize(Box::new(CommonState::GlobalState {
                             function: |global_state: &CalculatorState| {
                                 global_state.get_upper_display()
                             },
                             function_mut: None,
                             latest_value: "0".to_string()
-                        }).font_size(30.into()),
-                            Text::initialize(CommonState::GlobalState {
+                        })).font_size(30.into()),
+                            Text::initialize(Box::new(CommonState::GlobalState {
                             function: |global_state: &CalculatorState| {
                                 global_state.get_display()
                             },
                             function_mut: None,
                             latest_value: "0".to_string()
-                        }).font_size(45.into())
+                        })).font_size(45.into())
                     ]).cross_axis_alignment(CrossAxisAlignment::End)
                 ]).padding(EdgeInsets::all(10.0))
             ])
                 .fill(DARK_GREEN)
-                .frame(-1.0, 150.0),
+                .frame(SCALE.into(), 150.0.into()),
             HStack::initialize(vec![
 
                 CalculatorButton::new(
                     Text::initialize("".into())
                         .font_size(45.into())
-                ).on_released(|b, s| println!("I am clicked")),
+                ).on_released(|_, _| println!("I am clicked")),
 
                 CalculatorButton::new(
                     Text::initialize("".into())
                         .font_size(45.into())
                 ),
                 CalculatorButton::new(
-                    Image::new(rust_image).resizeable().frame(45.0,45.0)
+                    Image::new(rust_image).resizeable().frame(45.0.into(),45.0.into())
                 ).on_released(|_, s| s.pop_char()),
                 CalculatorButton::new(
                     Text::initialize("/".into())

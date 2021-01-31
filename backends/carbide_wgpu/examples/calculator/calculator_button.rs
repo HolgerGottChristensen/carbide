@@ -1,29 +1,8 @@
-
-use carbide_core::widget::primitive::Widget;
-use carbide_core::{Point, Color};
-use carbide_core::position::Dimensions;
-use carbide_core::widget::{HStack, Rectangle, Image};
-use carbide_core::widget::primitive::spacer::Spacer;
-use carbide_core::color::{RED, rgb_bytes};
-use carbide_core::widget::primitive::edge_insets::EdgeInsets;
-use carbide_core::widget::common_widget::CommonWidget;
+use carbide_core::prelude::*;
 use crate::calculator::calculator_state::CalculatorState;
-use carbide_core::flags::Flags;
-use carbide_core::widget::widget_iterator::{WidgetIter, WidgetIterMut};
-use carbide_core::event::event::Event;
-use carbide_core::event_handler::{MouseEvent, WidgetEvent, KeyboardEvent};
-use carbide_core::state::state::LocalStateList;
-use carbide_core::widget::render::ChildRender;
-use carbide_core::layout::Layout;
-use carbide_core::text::font::Map;
-use carbide_core::layout::basic_layouter::BasicLayouter;
-use carbide_core::widget::primitive::widget::WidgetExt;
-use carbide_core::layout::layouter::Layouter;
-use uuid::Uuid;
-use carbide_core::image_map::Id;
-use carbide_core::layout::layout::SingleChildLayout;
-use carbide_core::state::state_sync::NoLocalStateSync;
-use carbide_derive;
+use carbide_core::color::rgb_bytes;
+use carbide_core::event_handler::MouseEvent;
+use carbide_core::widget::{ChildRender, SingleChildLayout};
 
 #[derive(Clone, Widget)]
 #[global_state(CalculatorState)]
@@ -54,7 +33,8 @@ impl CalculatorButton {
         Box::new(self)
     }
 
-    fn handle_mouse_event(&mut self, event: &MouseEvent, consumed: &bool, global_state: &mut CalculatorState) {
+    fn handle_mouse_event(&mut self, event: &MouseEvent, _consumed: &bool, _: &mut Environment<CalculatorState>, global_state: &mut CalculatorState) {
+        if !self.is_inside(event.get_current_mouse_position()) {return}
         match event {
             MouseEvent::Release(_, _, _) => {
                 match self.function {

@@ -34,7 +34,6 @@ impl CalculatorState {
                 Operation::Sub => res.push_str(" - "),
                 Operation::Mul => res.push_str(" × "),
                 Operation::Div => res.push_str(" / "),
-                Operation::Mod => res.push_str(" % "),
                 Operation::Eq => (),
             }
             if let Some(n) = self.right {
@@ -49,7 +48,6 @@ impl CalculatorState {
             Operation::Sub => res.push_str(" - "),
             Operation::Mul => res.push_str(" × "),
             Operation::Div => res.push_str(" / "),
-            Operation::Mod => res.push_str(" % "),
             Operation::Eq => (),
         }
 
@@ -73,15 +71,6 @@ impl CalculatorState {
     }
 
     fn calculate(&mut self) {
-
-        //If let some left
-
-
-        //If let some rigth
-        //Check if string = empty
-        //Check if operator should be shown
-
-
         match (self.left, self.right) {
             (Some(left), Some(right)) => {
                 self.result = match &self.current_operation {
@@ -91,7 +80,6 @@ impl CalculatorState {
                     Operation::Sub => Some(left - right),
                     Operation::Mul => Some(left * right),
                     Operation::Div => Some(left / right),
-                    Operation::Mod => Some(left % right),
                 };
             }
             _ => println!("No calculation")
@@ -125,8 +113,10 @@ impl CalculatorState {
         }
 
         if let None = self.left {
-            self.left = Some(f64::from_str(&self.string).unwrap());
-            self.string = String::new()
+            if !self.string.is_empty() {
+                self.left = Some(f64::from_str(&self.string).unwrap());
+                self.string = String::new()
+            }
         } else {
             if !self.string.is_empty() {
                 self.right = Some(f64::from_str(&self.string).unwrap());
@@ -149,6 +139,5 @@ pub enum Operation {
     Add,
     Sub,
     Mul,
-    Div,
-    Mod
+    Div
 }
