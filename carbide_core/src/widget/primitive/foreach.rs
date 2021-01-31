@@ -4,7 +4,7 @@ use std::collections::HashMap;
 use std::fmt::Debug;
 
 use crate::prelude::*;
-use crate::state::state::State;
+use crate::state::state::CommonState;
 use crate::widget::render::ChildRender;
 
 #[derive(Debug, Clone, Widget)]
@@ -13,7 +13,7 @@ pub struct ForEach<GS> where GS: GlobalState {
     id: Uuid, // --
     children_map: HashMap<Uuid, Box<dyn Widget<GS>>>,
     delegate: Box<dyn Widget<GS>>,
-    #[state] ids: State<Vec<Uuid>, GS>,
+    #[state] ids: CommonState<Vec<Uuid>, GS>,
     position: Point, // --
     dimension: Dimensions, // --
 }
@@ -21,7 +21,7 @@ pub struct ForEach<GS> where GS: GlobalState {
 impl<GS: GlobalState> WidgetExt<GS> for ForEach<GS> {}
 
 impl<S: GlobalState> ForEach<S> {
-    pub fn new(ids: State<Vec<Uuid>, S>, delegate: Box<dyn Widget<S>>) -> Box<ForEach<S>> {
+    pub fn new(ids: CommonState<Vec<Uuid>, S>, delegate: Box<dyn Widget<S>>) -> Box<ForEach<S>> {
 
         let mut map = HashMap::new();
 
@@ -47,8 +47,8 @@ impl<S: GlobalState> ForEach<S> {
         let mut ids = self.ids.clone();
 
         for (i, child) in self.get_proxied_children().enumerate() {
-            env.insert_local_state(&State::<Uuid, S>::new_local("id", &ids.get_value(global_state)[i]));
-            env.insert_local_state(&State::<u32, S>::new_local("index", &(i as u32)));
+            env.insert_local_state(&CommonState::<Uuid, S>::new_local("id", &ids.get_value(global_state)[i]));
+            env.insert_local_state(&CommonState::<u32, S>::new_local("index", &(i as u32)));
             child.sync_state(env, global_state)
         }
 

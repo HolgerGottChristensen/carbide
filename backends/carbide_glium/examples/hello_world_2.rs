@@ -24,7 +24,7 @@ use carbide_core::layout::Layout;
 use carbide_core::layout::layouter::Layouter;
 use carbide_core::position::Dimensions;
 use carbide_core::state::environment::Environment;
-use carbide_core::state::state::{LocalStateList, State};
+use carbide_core::state::state::{LocalStateList, CommonState};
 use carbide_core::state::state_sync::NoLocalStateSync;
 use carbide_core::text::font::Map;
 use carbide_core::widget::{Frame, Image, Line, Oval, Rectangle, SCALE, Text, ZStack};
@@ -56,7 +56,7 @@ fn main() {
 
     // Rectangle::new(params!(alignment: Alignment::Leading))
 
-    let sync_state = State::new_local("K", &"Hello".to_string());
+    let sync_state = CommonState::new_local("K", &"Hello".to_string());
 
     window.set_widgets(
         VStack::initialize(vec![

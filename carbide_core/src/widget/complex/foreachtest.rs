@@ -9,7 +9,7 @@ use crate::layout::Layout;
 use crate::layout::layouter::Layouter;
 use crate::position::Dimensions;
 use crate::state::environment::Environment;
-use crate::state::state::State;
+use crate::state::state::CommonState;
 use crate::widget::{Rectangle, Text};
 use crate::widget::common_widget::CommonWidget;
 use crate::widget::primitive::Widget;
@@ -26,7 +26,7 @@ pub struct ForeachTest<GS> where GS: GlobalState {
     child: Box<dyn Widget<GS>>,
     position: Point,
     dimension: Dimensions,
-    #[state] index: State<u32, GS>,
+    #[state] index: CommonState<u32, GS>,
 }
 
 impl<S: GlobalState> ForeachTest<S> {
@@ -34,16 +34,16 @@ impl<S: GlobalState> ForeachTest<S> {
         Box::new(Self {
             id: Uuid::new_v4(),
             child: Rectangle::initialize(vec![
-                Text::initialize(State::new_local("sindex", &"0".to_string()))
+                Text::initialize(CommonState::new_local("sindex", &"0".to_string()))
             ]).fill(RED).frame(60.0.into(),30.0.into()),
             position: [100.0,100.0],
             dimension: [100.0,100.0],
-            index: State::new_local("index", &(0 as u32))
+            index: CommonState::new_local("index", &(0 as u32))
         })
     }
 
     fn insert_local_state(&self, env: &mut Environment<S>) {
-        env.insert_local_state(&State::<String, S>::new_local("sindex", &self.index.get_latest_value().to_string()));
+        env.insert_local_state(&CommonState::<String, S>::new_local("sindex", &self.index.get_latest_value().to_string()));
     }
 }
 

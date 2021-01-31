@@ -20,7 +20,7 @@ fn main() {
 
     window.add_font("fonts/NotoSans/NotoSans-Regular.ttf").unwrap();
 
-    let text_state = State::new_local_with_key(&"Hello World!".to_string());
+    let text_state = CommonState::new_local_with_key(&"Hello World!".to_string());
 
     window.set_widgets(
         PlainTextInput::new(text_state)

@@ -18,4 +18,4 @@ pub use crate::position::Dimensions;
 pub use crate::text;
 pub use crate::position::Scalar;
 pub use crate::state::state_sync::StateSync;
-pub use crate::state::state::State;
+pub use crate::state::state::CommonState;

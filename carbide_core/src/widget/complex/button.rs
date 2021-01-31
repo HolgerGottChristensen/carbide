@@ -1,5 +1,5 @@
 use crate::prelude::*;
-use crate::state::state::State;
+use crate::state::state::CommonState;
 use crate::event_handler::KeyboardEvent;
 use crate::color::RED;
 use crate::input::Key;
@@ -19,8 +19,8 @@ pub struct SyncTest<GS> where GS: GlobalState {
     child: Box<dyn Widget<GS>>,
     position: Point,
     dimension: Dimensions,
-    #[state] value: State<String, GS>,
-    #[state] fore: State<Vec<Uuid>, GS>,
+    #[state] value: CommonState<String, GS>,
+    #[state] fore: CommonState<Vec<Uuid>, GS>,
     show_overlay: bool,
 }
 
@@ -63,8 +63,8 @@ impl<S: GlobalState> SyncTest<S> {
         }
     }
 
-    pub fn new(value: State<String, S>) -> Box<SyncTest<S>> {
-        let fore = State::<Vec<Uuid>, S>::new_local("a", &(0..5).map(|_| Uuid::new_v4()).collect::<Vec<Uuid>>());
+    pub fn new(value: CommonState<String, S>) -> Box<SyncTest<S>> {
+        let fore = CommonState::<Vec<Uuid>, S>::new_local("a", &(0..5).map(|_| Uuid::new_v4()).collect::<Vec<Uuid>>());
 
         Box::new(Self {
             id: Uuid::new_v4(),

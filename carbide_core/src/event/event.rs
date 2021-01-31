@@ -34,10 +34,8 @@ pub trait Event<S>: CommonWidget<S> + StateSync<S> where S: GlobalState {
         self.insert_local_state(env);
 
         for child in self.get_proxied_children() {
-            if child.is_inside(event.get_current_mouse_position()) {
-                child.process_mouse_event(event, &consumed, env, global_state);
-                if *consumed { return () }
-            }
+            child.process_mouse_event(event, &consumed, env, global_state);
+            if *consumed { return () }
         }
 
 

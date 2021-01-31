@@ -7,8 +7,8 @@ pub struct Frame<GS> where GS: GlobalState {
     id: Uuid,
     child: Box<dyn Widget<GS>>,
     position: Point,
-    #[state] width: State<f64, GS>,
-    #[state] height: State<f64, GS>,
+    #[state] width: CommonState<f64, GS>,
+    #[state] height: CommonState<f64, GS>,
     expand_width: bool,
     expand_height: bool,
 }
@@ -16,15 +16,15 @@ pub struct Frame<GS> where GS: GlobalState {
 impl<GS: GlobalState> WidgetExt<GS> for Frame<GS> {}
 
 impl<GS: GlobalState> Frame<GS> {
-    pub fn init(width: State<f64, GS>, height: State<f64, GS>, child: Box<dyn Widget<GS>>) -> Box<Frame<GS>> {
+    pub fn init(width: CommonState<f64, GS>, height: CommonState<f64, GS>, child: Box<dyn Widget<GS>>) -> Box<Frame<GS>> {
 
-        let expand_width = if let State::Value {value} = width {
+        let expand_width = if let CommonState::Value {value} = width {
             value == SCALE
         } else {
             false
         };
 
-        let expand_height = if let State::Value {value} = height {
+        let expand_height = if let CommonState::Value {value} = height {
             value == SCALE
         } else {
             false
@@ -41,7 +41,7 @@ impl<GS: GlobalState> Frame<GS> {
         })
     }
 
-    pub fn init_width(width: State<f64, GS>, child: Box<dyn Widget<GS>>) -> Box<Frame<GS>> {
+    pub fn init_width(width: CommonState<f64, GS>, child: Box<dyn Widget<GS>>) -> Box<Frame<GS>> {
         Box::new(Frame{
             id: Default::default(),
             child: Box::new(child),
@@ -53,7 +53,7 @@ impl<GS: GlobalState> Frame<GS> {
         })
     }
 
-    pub fn init_height(height: State<f64, GS>, child: Box<dyn Widget<GS>>) -> Box<Frame<GS>> {
+    pub fn init_height(height: CommonState<f64, GS>, child: Box<dyn Widget<GS>>) -> Box<Frame<GS>> {
         Box::new(Frame{
             id: Default::default(),
             child: Box::new(child),
@@ -109,11 +109,11 @@ impl<S: GlobalState> CommonWidget<S> for Frame<S> {
     }
 
     fn set_dimension(&mut self, dimensions: Dimensions) {
-        if let State::Value {ref mut value} = self.width {
+        if let CommonState::Value {ref mut value} = self.width {
             *value = dimensions[0];
         }
 
-        if let State::Value {ref mut value} = self.height {
+        if let CommonState::Value {ref mut value} = self.height {
             *value = dimensions[1];
         }
     }

@@ -1,7 +1,7 @@
 use carbide_wgpu::window::Window;
 use futures::executor::block_on;
 use carbide_core::window::TWindow;
-use carbide_core::state::state::State;
+use carbide_core::state::state::CommonState;
 use carbide_core::widget::primitive::v_stack::VStack;
 use carbide_core::widget::{Text, Image, Rectangle, HStack, SCALE, Oval};
 use carbide_core::widget::complex::SyncTest;
@@ -29,7 +29,7 @@ fn main() {
     window.add_font("fonts/NotoSans/NotoSans-Regular.ttf").unwrap();
     let rust_image = window.add_image("images/rust_press.png").unwrap();
 
-    let sync_state = State::new_local("K", &"Hello".to_string());
+    let sync_state = CommonState::new_local("K", &"Hello".to_string());
 
     window.set_widgets(
         OverlaidLayer::new ("overlay_test",

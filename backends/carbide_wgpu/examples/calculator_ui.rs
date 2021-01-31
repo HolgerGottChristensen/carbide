@@ -3,7 +3,7 @@ mod calculator;
 use carbide_wgpu::window::Window;
 use futures::executor::block_on;
 use carbide_core::window::TWindow;
-use carbide_core::state::state::State;
+use carbide_core::state::state::CommonState;
 use carbide_core::widget::primitive::v_stack::VStack;
 use carbide_core::widget::{Text, Image, Rectangle, HStack, SCALE, Oval, Frame};
 use carbide_core::widget::complex::SyncTest;
@@ -38,14 +38,14 @@ fn main() {
                     Spacer::new(SpacerDirection::Horizontal),
                     VStack::initialize(
                     vec![
-                            Text::initialize(State::GlobalState {
+                            Text::initialize(CommonState::GlobalState {
                             function: |global_state: &CalculatorState| {
                                 global_state.get_upper_display()
                             },
                             function_mut: None,
                             latest_value: "0".to_string()
                         }).font_size(30.into()),
-                            Text::initialize(State::GlobalState {
+                            Text::initialize(CommonState::GlobalState {
                             function: |global_state: &CalculatorState| {
                                 global_state.get_display()
                             },

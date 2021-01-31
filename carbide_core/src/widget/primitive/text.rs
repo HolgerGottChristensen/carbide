@@ -1,5 +1,5 @@
 use crate::prelude::*;
-use crate::state::state::State;
+use crate::state::state::CommonState;
 use crate::text::{Justify, PositionedGlyph, font};
 use crate::position::Align;
 use crate::render::primitive_kind::PrimitiveKind;
@@ -18,8 +18,8 @@ use rusttype::Scale;
 /// in accordance with the produced **Alignment**.
 #[derive(Debug, Clone, Widget)]
 pub struct Text<GS> where GS: GlobalState {
-    #[state] pub text: State<String, GS>,
-    #[state] font_size: State<u32, GS>,
+    #[state] pub text: CommonState<String, GS>,
+    #[state] font_size: CommonState<u32, GS>,
     position: Point,
     dimension: Dimensions,
     wrap_mode: Wrap,
@@ -173,7 +173,7 @@ pub struct OldState {
 
 
 impl<S: GlobalState> Text<S> {
-    pub fn initialize(text: State<String, S>) -> Box<Self> {
+    pub fn initialize(text: CommonState<String, S>) -> Box<Self> {
         Box::new(Text {
             text,
             font_size: 14.into(),
@@ -185,7 +185,7 @@ impl<S: GlobalState> Text<S> {
     }
 
     /// Build a new **Text** widget.
-    pub fn new(text: State<String, S>, position: Point, dimension: Dimensions) -> Box<Self> {
+    pub fn new(text: CommonState<String, S>, position: Point, dimension: Dimensions) -> Box<Self> {
         Box::new(Text {
             text,
             font_size: 14.into(),
@@ -196,7 +196,7 @@ impl<S: GlobalState> Text<S> {
         })
     }
 
-    pub fn font_size(mut self, size: State<u32, S>) -> Box<Self> {
+    pub fn font_size(mut self, size: CommonState<u32, S>) -> Box<Self> {
         self.font_size = size;
         Box::new(self)
     }

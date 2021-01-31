@@ -9,6 +9,8 @@ use crate::{text, to_ron};
 use crate::text::font::{Error, Id};
 use crate::widget::primitive::Widget;
 use crate::widget::types::image_information::ImageInformation;
+use crate::state::global_state::GlobalState;
+use crate::state::state::State;
 
 pub struct Environment<S> {
     stack: Vec<EnvironmentVariable>,
@@ -61,19 +63,20 @@ impl<S> Environment<S> {
         self.local_state.clear()
     }
 
-    pub fn update_local_state<'a, T: Serialize + Clone + Debug + Deserialize<'a>, U: Clone>(&'a self, local_state: &mut super::state::State<T, U>) {
-        if let super::state::State::LocalState { id, value } = local_state {
-            let local_value: &String = match self.local_state.get(id) {
+    pub fn update_local_state<'a, T: Serialize + Clone + Debug + Deserialize<'a>, U: GlobalState>(&'a self, local_state: &mut dyn State<T, U>) {
+        if let Some(key) = local_state.get_key() {
+            let local_value: &String = match self.local_state.get(key) {
                 Some(n) => n,
                 None => return,
             };
-            *value = from_ron::<'a, T>(&local_value).unwrap();
+            *local_state.get_latest_value_mut() = from_ron::<'a, T>(&local_value).unwrap();
         }
     }
 
-    pub fn insert_local_state<T: Serialize + Clone + Debug, U: Clone>(&mut self, local_state: &super::state::State<T, U>) {
-        if let super::state::State::LocalState { id, value } = local_state {
-            self.local_state.insert(id.clone(), to_ron(value).unwrap());
+    pub fn insert_local_state<T: Serialize + Clone + Debug, U: GlobalState>(&mut self, local_state: &dyn State<T, U>) {
+        if let Some(key) = local_state.get_key() {
+            let value = local_state.get_latest_value();
+            self.local_state.insert(key.clone(), to_ron(value).unwrap());
         }
     }
 

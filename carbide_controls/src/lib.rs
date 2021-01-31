@@ -8,3 +8,4 @@ extern crate carbide_derive;
 mod plain;
 
 pub use plain::PlainTextInput;
+pub use plain::PlainButton;

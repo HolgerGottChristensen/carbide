@@ -8,8 +8,8 @@ pub struct Offset<GS> where GS: GlobalState {
     child: Box<dyn Widget<GS>>,
     position: Point,
     dimension: Dimensions,
-    #[state] offset_x: State<f64, GS>,
-    #[state] offset_y: State<f64, GS>,
+    #[state] offset_x: CommonState<f64, GS>,
+    #[state] offset_y: CommonState<f64, GS>,
 }
 
 impl<GS: GlobalState> WidgetExt<GS> for Offset<GS> {}
@@ -92,7 +92,7 @@ impl<S: GlobalState> ChildRender for Offset<S> {}
 
 
 impl<GS: GlobalState> Offset<GS> {
-    pub fn new(offset_x: State<f64,GS>, offset_y: State<f64,GS>, child: Box<dyn Widget<GS>>) -> Box<Self<>> {
+    pub fn new(offset_x: CommonState<f64,GS>, offset_y: CommonState<f64,GS>, child: Box<dyn Widget<GS>>) -> Box<Self<>> {
         Box::new(Offset {
             id: Uuid::new_v4(),
             child,

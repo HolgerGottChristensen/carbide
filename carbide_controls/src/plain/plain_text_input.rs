@@ -2,7 +2,6 @@ use carbide_core::widget::*;
 use carbide_core::color::{RED, GREEN};
 use carbide_core::event_handler::{KeyboardEvent, MouseEvent};
 use crate::plain::cursor::{Cursor, CursorIndex};
-use carbide_core::state::environment::Environment;
 use carbide_core::draw::shape::vertex::Vertex;
 use carbide_core::widget::text::Wrap;
 use crate::plain::text_input_key_commands::TextInputKeyCommand;
@@ -25,24 +24,24 @@ pub struct PlainTextInput<GS> where GS: GlobalState {
     cursor: Cursor,
     drag_start_cursor: Option<Cursor>,
     grapheme_split_cache: (String, Vec<f32>),
-    #[state] text: State<String, GS>,
-    #[state] cursor_x: State<f64, GS>,
-    #[state] selection_x: State<f64, GS>,
-    #[state] selection_width: State<f64, GS>,
-    #[state] text_offset: State<f64, GS>,
+    #[state] text: CommonState<String, GS>,
+    #[state] cursor_x: CommonState<f64, GS>,
+    #[state] selection_x: CommonState<f64, GS>,
+    #[state] selection_width: CommonState<f64, GS>,
+    #[state] text_offset: CommonState<f64, GS>,
 }
 
 impl<GS: GlobalState> PlainTextInput<GS> {
-    pub fn new(text: State<String, GS>) -> Box<Self> {
+    pub fn new(text: CommonState<String, GS>) -> Box<Self> {
 
         let text_state = text;
 
-        let cursor_x = State::new_local_with_key(&0.0);
-        let selection_x = State::new_local_with_key(&0.0);
+        let cursor_x = CommonState::new_local_with_key(&0.0);
+        let selection_x = CommonState::new_local_with_key(&0.0);
 
-        let selection_width = State::new_local_with_key(&4.0);
+        let selection_width = CommonState::new_local_with_key(&4.0);
 
-        let text_offset = State::new_local_with_key(&0.0);
+        let text_offset = CommonState::new_local_with_key(&0.0);
 
         Box::new(PlainTextInput {
             id: Id::new_v4(),
@@ -75,10 +74,12 @@ impl<GS: GlobalState> PlainTextInput<GS> {
         })
     }
 
+    /// Get the number of graphemes in a string. This is not the same as the length.
     fn len_in_graphemes(text: &String) -> usize {
         text.graphemes(true).count()
     }
 
+    /// Get the index of the first byte for a given grapheme index.
     fn byte_index_from_graphemes(index: usize, text: &str) -> usize {
         if text.len() == 0 { return 0 }
         let grapheme_byte_offset = match text.grapheme_indices(true).skip(index).next() {
@@ -88,16 +89,19 @@ impl<GS: GlobalState> PlainTextInput<GS> {
         grapheme_byte_offset
     }
 
+    /// Insert a string at a given grapheme index.
     fn insert_str(&mut self, index: usize, string: &str, global_state: &mut GS) {
         let offset = Self::byte_index_from_graphemes(index, self.text.get_value(global_state));
         self.text.get_value_mut(global_state).insert_str(offset, string);
     }
 
+    /// Remove a single grapheme at an index.
     fn remove(&mut self, index: usize, global_state: &mut GS) {
         let offset = Self::byte_index_from_graphemes(index, self.text.get_value(global_state));
         self.text.get_value_mut(global_state).remove(offset);
     }
 
+    /// Remove all the graphemes inside the range,
     fn remove_range(&mut self, index: Range<usize>, global_state: &mut GS) {
         let text = self.text.get_value(global_state);
 
@@ -106,6 +110,8 @@ impl<GS: GlobalState> PlainTextInput<GS> {
         self.text.get_value_mut(global_state).replace_range(offset_start..offset_end, "");
     }
 
+    /// Get the range from the leftmost character in a word, to the current index.
+    /// When calculating this, all spaces to the left of the word is included as well.
     fn prev_word_range(text: String, start_index: usize) -> Range<usize> {
         let mut has_hit_space = false;
 
@@ -121,6 +127,8 @@ impl<GS: GlobalState> PlainTextInput<GS> {
         number_left..start_index
     }
 
+    /// Get the range from the current index to the rightmost character in a word.
+    /// When calculating this, all spaces to the right of the word is included as well.
     fn next_word_range(text: String, start_index: usize) -> Range<usize> {
         let mut has_hit_space = false;
 
@@ -138,6 +146,8 @@ impl<GS: GlobalState> PlainTextInput<GS> {
         start_index..new_index
     }
 
+    /// Get a range of the graphemes in the word surrounded by spaces,
+    /// where the current index is within. The spaces is not included.
     fn word_index_range(text: String, start_index: usize) -> Range<usize> {
         let mut max_iter = text.chars().enumerate().skip(start_index).skip_while(|(_, cur)|{
            *cur != ' '
@@ -160,6 +170,8 @@ impl<GS: GlobalState> PlainTextInput<GS> {
         min..max
     }
 
+    /// Get the positioned glyphs of a given string. This is useful when needing to calculate cursor
+    /// position, or the width of a given string.
     fn get_positioned_glyphs(&mut self, text: &String, env: &Environment<GS>) -> Vec<PositionedGlyph> {
         let mut text_scaler: Box<carbide_core::widget::Text<GS>> = Text::initialize(text.clone().into())
             .font_size(40.into()).wrap_mode(Wrap::None);
@@ -171,11 +183,11 @@ impl<GS: GlobalState> PlainTextInput<GS> {
         positioned_glyphs
     }
 
+    /// When the text differs, recalculate all the cursor split positions and update the cache.
     fn check_for_cache_updates(&mut self, text: &String, env: &Environment<GS>) {
         let (cache_string, _) = &self.grapheme_split_cache;
 
         if text != cache_string {
-            // Position the cursor
             let positioned_glyphs = self.get_positioned_glyphs(text, env);
 
             let new_splits = Cursor::get_char_index_split_points(&positioned_glyphs);
@@ -186,6 +198,7 @@ impl<GS: GlobalState> PlainTextInput<GS> {
     }
 
     fn handle_mouse_event(&mut self, event: &MouseEvent, _: &bool, env: &mut Environment<GS>, global_state: &mut GS) {
+        if !self.is_inside(event.get_current_mouse_position()) {return}
         let text_offset = *self.text_offset.get_value(global_state);
 
         match event {
@@ -214,6 +227,8 @@ impl<GS: GlobalState> PlainTextInput<GS> {
                 self.cursor = Cursor::Single(CursorIndex{ line: 0, char: char_index });
             }
             MouseEvent::NClick(_, position, _, n) => {
+
+                // If the click number is even, select all, otherwise select the clicked word.
                 if n % 2 == 1 {
                     self.cursor = Cursor::Selection {start: CursorIndex{line: 0, char: 0}, end: CursorIndex {line: 0, char: Self::len_in_graphemes(self.text.get_value(global_state))}};
                 } else {
@@ -642,6 +657,8 @@ impl<GS: GlobalState> PlainTextInput<GS> {
         self.recalculate_offset_to_make_cursor_visible(global_state);
     }
 
+    /// Recalculate the position of the cursor and the selection. This will not move the cursor
+    /// index, but move the visual positioning of the cursor and the selection box (if selection mode).
     fn reposition_cursor(&mut self, env: &mut Environment<GS>, global_state: &mut GS) {
         let text = self.text.get_value(global_state).clone();
 
@@ -674,6 +691,8 @@ impl<GS: GlobalState> PlainTextInput<GS> {
         }
     }
 
+    /// This will change the text offset to make the cursor visible. It will result in the text
+    /// getting scrolled, such that the entire cursor is visible.
     fn recalculate_offset_to_make_cursor_visible(&mut self, global_state: &mut GS) {
         let cursor_x = *self.cursor_x.get_value(global_state);
         let cursor_width = 4.0;
