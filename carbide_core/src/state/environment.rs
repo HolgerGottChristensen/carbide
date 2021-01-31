@@ -2,7 +2,7 @@ use std::collections::HashMap;
 use std::fmt::Debug;
 
 use bitflags::_core::fmt::Formatter;
-use serde::{Deserialize, Serialize};
+use serde::Serialize;
 
 use crate::{Color, from_ron};
 use crate::{text, to_ron};
@@ -11,22 +11,23 @@ use crate::widget::primitive::Widget;
 use crate::widget::types::image_information::ImageInformation;
 use crate::state::global_state::GlobalState;
 use crate::state::state::State;
+use serde::de::DeserializeOwned;
 
-pub struct Environment<S> {
+pub struct Environment<GS> where GS: GlobalState {
     stack: Vec<EnvironmentVariable>,
     fonts: text::font::Map,
     images_information: HashMap<crate::image_map::Id, ImageInformation>,
-    overlay_map: HashMap<String, Box<dyn Widget<S>>>,
+    overlay_map: HashMap<String, Box<dyn Widget<GS>>>,
     pub(crate) local_state: HashMap<String, String>,
 }
 
-impl<S> std::fmt::Debug for Environment<S> {
+impl<GS: GlobalState> std::fmt::Debug for Environment<GS> {
     fn fmt(&self, _f: &mut Formatter<'_>) -> std::fmt::Result {
         Ok(())
     }
 }
 
-impl<S> Environment<S> {
+impl<GS: GlobalState> Environment<GS> {
 
     pub fn new() -> Self {
         Environment {
@@ -46,11 +47,11 @@ impl<S> Environment<S> {
         self.images_information.insert(id, image);
     }
 
-    pub fn get_overlay(&mut self, id: &String) -> Option<Box<dyn Widget<S>>> {
+    pub fn get_overlay(&mut self, id: &String) -> Option<Box<dyn Widget<GS>>> {
         self.overlay_map.remove(id)
     }
 
-    pub fn add_overlay(&mut self, id: &str, overlay: Box<dyn Widget<S>>) {
+    pub fn add_overlay(&mut self, id: &str, overlay: Box<dyn Widget<GS>>) {
         self.overlay_map.insert(id.to_string(), overlay);
     }
 
@@ -63,17 +64,18 @@ impl<S> Environment<S> {
         self.local_state.clear()
     }
 
-    pub fn update_local_state<'a, T: Serialize + Clone + Debug + Deserialize<'a>, U: GlobalState>(&'a self, local_state: &mut dyn State<T, U>) {
+    pub fn update_local_state<T: Serialize + Clone + Debug + DeserializeOwned>(&self, local_state: &mut dyn State<T, GS>) {
+        local_state.update_dependent_states(self);
         if let Some(key) = local_state.get_key() {
             let local_value: &String = match self.local_state.get(key) {
                 Some(n) => n,
                 None => return,
             };
-            *local_state.get_latest_value_mut() = from_ron::<'a, T>(&local_value).unwrap();
+            *local_state.get_latest_value_mut() = from_ron(&local_value).unwrap();
         }
     }
 
-    pub fn insert_local_state<T: Serialize + Clone + Debug, U: GlobalState>(&mut self, local_state: &dyn State<T, U>) {
+    pub fn insert_local_state<T: Serialize + Clone + Debug>(&mut self, local_state: &dyn State<T, GS>) {
         if let Some(key) = local_state.get_key() {
             let value = local_state.get_latest_value();
             self.local_state.insert(key.clone(), to_ron(value).unwrap());

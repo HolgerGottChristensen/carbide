@@ -8,6 +8,10 @@ use crate::{from_ron, to_ron};
 use crate::state::global_state::GlobalState;
 use dyn_clone::DynClone;
 use std::ops::{DerefMut, Deref};
+use std::fmt;
+use crate::state::mapped_state::MappedState;
+use crate::state::environment::Environment;
+use serde::de::DeserializeOwned;
 
 
 pub trait State<T, GS>: DynClone where T: Serialize + Clone + Debug, GS: GlobalState {
@@ -16,6 +20,23 @@ pub trait State<T, GS>: DynClone where T: Serialize + Clone + Debug, GS: GlobalS
     fn get_latest_value(&self) -> &T;
     fn get_latest_value_mut(&mut self) -> &mut T;
     fn get_key(&self) -> Option<&String>;
+    fn update_dependent_states(&mut self, env: &Environment<GS>);
+}
+
+pub trait StateExt<T: Serialize + Clone + Debug + DeserializeOwned + 'static, GS: GlobalState>: State<T, GS> + Sized + 'static {
+    fn mapped<U: Serialize + Clone + Debug + 'static>(self, map: fn(&T) -> U) -> Box<dyn State<U, GS>> {
+        let latest_value = self.get_latest_value().clone();
+        Box::new(MappedState::new(Box::new(self), map, map(&latest_value)))
+    }
+}
+
+impl<X: 'static, T: Serialize + Clone + Debug + DeserializeOwned + 'static, GS: GlobalState> StateExt<T, GS> for X where X: State<T, GS> {}
+
+impl<T: Serialize + Clone + Debug, GS: GlobalState> Debug for dyn State<T, GS> {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        // The latest value printed is not necessarily the same as the current value.
+        write!(f, "State with latest value: {:?}", *self.get_latest_value())
+    }
 }
 
 dyn_clone::clone_trait_object!(<T: Serialize + Clone + Debug, GS: GlobalState> State<T, GS>);
@@ -41,6 +62,10 @@ impl<T: Serialize + Clone + Debug, GS: GlobalState> State<T, GS> for Box<dyn Sta
     fn get_key(&self) -> Option<&String> {
         self.deref().get_key()
     }
+
+    fn update_dependent_states(&mut self, env: &Environment<GS>) {
+        self.deref_mut().update_dependent_states(env)
+    }
 }
 
 impl<T: Serialize + Clone + Debug, GS: GlobalState> State<T, GS> for CommonState<T, GS> {
@@ -63,6 +88,8 @@ impl<T: Serialize + Clone + Debug, GS: GlobalState> State<T, GS> for CommonState
     fn get_key(&self) -> Option<&String> {
         self.get_key()
     }
+
+    fn update_dependent_states(&mut self, _: &Environment<GS>) {}
 }
 
 
@@ -180,7 +207,7 @@ impl<T: Clone + Debug + Serialize> DerefMut for State<T> {
     }
 }*/
 
-impl<T: Clone + Debug + Serialize, S: GlobalState> CommonState<T, S> {
+impl<T: Clone + Debug + Serialize + 'static, S: GlobalState> CommonState<T, S> {
     pub fn new(val: &T) -> Self {
         CommonState::Value {
             value: val.clone()
@@ -331,6 +358,15 @@ impl<T: GlobalState> Into<Box<dyn State<bool, T>>> for bool {
         Box::new(CommonState::new(&self))
     }
 }
+
+impl<T: Serialize + Clone + Debug + 'static, GS: GlobalState> Into<Box<dyn State<T, GS>>> for CommonState<T, GS> {
+    fn into(self) -> Box<dyn State<T, GS>> {
+        Box::new(self)
+    }
+}
+
+
+
 
 // Build a macro that expands: bind!(self.hejsa)
 // To:  self.get_id() + ".hejsa"

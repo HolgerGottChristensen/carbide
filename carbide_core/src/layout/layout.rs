@@ -5,7 +5,7 @@ use crate::state::environment::Environment;
 use crate::widget::common_widget::CommonWidget;
 use crate::state::global_state::GlobalState;
 
-pub trait Layout<U> {
+pub trait Layout<U> where U: GlobalState {
     /// 0 is the most flexible and the largest number is the least flexible
     fn flexibility(&self) -> u32;
     fn calculate_size(&mut self, requested_size: Dimensions, env: &Environment<U>) -> Dimensions;

@@ -22,6 +22,16 @@ impl<GS: GlobalState> PlainButton<GS> {
         Box::new(self)
     }
 
+    pub fn hover(mut self, is_hovered: Box<dyn State<bool, GS>>) -> Box<Self> {
+        self.is_hovered = is_hovered;
+        Box::new(self)
+    }
+
+    pub fn pressed(mut self, pressed: Box<dyn State<bool, GS>>) -> Box<Self> {
+        self.is_pressed = pressed;
+        Box::new(self)
+    }
+
     pub fn new(child: Box<dyn Widget<GS>>) -> Box<Self> {
         Box::new(PlainButton {
             id: Id::new_v4(),
@@ -39,6 +49,11 @@ impl<GS: GlobalState> PlainButton<GS> {
             MouseEvent::Press(MouseButton::Left, mouse_position, _) => {
                 if self.is_inside(*mouse_position) {
                     *self.is_pressed.get_value_mut(global_state) = true;
+                }
+            }
+            MouseEvent::Release(MouseButton::Left, mouse_position, _) => {
+                if self.is_inside(*mouse_position) {
+                    *self.is_pressed.get_value_mut(global_state) = false;
                 }
             }
             MouseEvent::Move { to, .. } => {

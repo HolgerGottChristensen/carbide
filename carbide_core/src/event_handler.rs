@@ -124,8 +124,16 @@ impl EventHandler {
         }
     }
 
+    #[cfg(not(debug_assertions))]
     fn add_event(&mut self, event: WidgetEvent) {
-        println!("{:?}", &event);
+        self.events.push(event);
+    }
+
+    #[cfg(debug_assertions)]
+    fn add_event(&mut self, event: WidgetEvent) {
+        if let WidgetEvent::Mouse(MouseEvent::Move {..}) = event {} else {
+            println!("{:?}", &event);
+        }
         self.events.push(event);
     }
 
@@ -295,14 +303,14 @@ impl EventHandler {
                         let mouse_xy = [x + window_dimensions[0] / 2.0, window_dimensions[1] - (y + window_dimensions[1] / 2.0)];
                         let delta_xy = utils::vec2_sub(mouse_xy, last_mouse_xy);
 
-                        let _move_event = MouseEvent::Move {
+                        let move_event = MouseEvent::Move {
                             from: last_mouse_xy,
                             to: mouse_xy,
                             delta_xy,
                             modifiers,
                         };
-                        // Todo: Re-add when we need mouse move events
-                        //self.add_event(WidgetEvent::Mouse(move_event));
+
+                        self.add_event(WidgetEvent::Mouse(move_event));
 
                         // Check for drag events.
 

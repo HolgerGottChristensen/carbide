@@ -34,7 +34,7 @@ impl<S: GlobalState> ForeachTest<S> {
         Box::new(Self {
             id: Uuid::new_v4(),
             child: Rectangle::initialize(vec![
-                Text::initialize(CommonState::new_local("sindex", &"0".to_string()))
+                Text::initialize(CommonState::new_local("sindex", &"0".to_string()).into())
             ]).fill(RED).frame(60.0.into(),30.0.into()),
             position: [100.0,100.0],
             dimension: [100.0,100.0],

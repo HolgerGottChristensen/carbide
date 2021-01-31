@@ -12,6 +12,7 @@ use futures::executor::block_on;
 use carbide_controls::PlainButton;
 use carbide_core::color::RED;
 
+
 fn main() {
     env_logger::init();
 
@@ -21,6 +22,9 @@ fn main() {
 
     window.add_font("fonts/NotoSans/NotoSans-Regular.ttf").unwrap();
 
+    let hover_state = CommonState::new_local_with_key(&false);
+    let pressed_state = CommonState::new_local_with_key(&false);
+
     window.set_widgets(
         VStack::initialize(vec![
             PlainButton::<u32>::new(Rectangle::initialize(vec![])
@@ -29,7 +33,8 @@ fn main() {
             )
                 .on_click(|_,_, f| {
                     *f += 1;
-                })
+                }).hover(hover_state.clone().into())
+                .pressed(pressed_state.clone().into())
                 .padding(EdgeInsets::all(2.0))
                 .border()
                 .clip()
@@ -38,7 +43,13 @@ fn main() {
                 function: |state: &u32| { state.to_string()},
                 function_mut: None,
                 latest_value: "0".to_string()
-            }).font_size(40.into())
+            }.into()).font_size(40.into()),
+            Text::initialize(hover_state.mapped(|m|{
+                format!("Is hovered: {}", m).to_string()
+            })).font_size(40.into()),
+            Text::initialize(pressed_state.mapped(|m|{
+                format!("Is pressed: {}", m).to_string()
+            })).font_size(40.into())
         ]).spacing(20.0)
 
     );

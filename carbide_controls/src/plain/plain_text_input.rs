@@ -51,7 +51,7 @@ impl<GS: GlobalState> PlainTextInput<GS> {
                         .fill(GREEN)
                         .frame(selection_width.clone(), 40.0.into())
                         .offset(selection_x.clone(), 0.0.into()),
-                    Text::initialize(text_state.clone())
+                    Text::initialize(text_state.clone().into())
                         .font_size(40.into()).wrap_mode(Wrap::None),
                     Rectangle::initialize(vec![])
                         .fill(RED)

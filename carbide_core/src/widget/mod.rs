@@ -49,6 +49,7 @@ pub use self::widget_iterator::{WidgetIter, WidgetIterMut};
 pub use self::render::ChildRender;
 pub use crate::layout::layout::SingleChildLayout;
 pub use crate::state::environment::Environment;
+pub use carbide_core::state::state::StateExt;
 
 pub mod render;
 

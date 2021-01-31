@@ -3,13 +3,14 @@ use crate::render::primitive::Primitive;
 use crate::render::primitive_walker::PrimitiveWalker;
 use crate::state::environment::Environment;
 use crate::widget::primitive::Widget;
+use crate::state::global_state::GlobalState;
 
 pub struct CPrimitives {
     pub primitives: Vec<Primitive>
 }
 
 impl CPrimitives {
-    pub fn new<S>(window_dimensions: Dimensions, root: &mut Box<dyn Widget<S>>, environment: &mut Environment<S>) -> Self {
+    pub fn new<S: GlobalState>(window_dimensions: Dimensions, root: &mut Box<dyn Widget<S>>, environment: &mut Environment<S>) -> Self {
         root.calculate_size(window_dimensions, environment);
 
         root.set_x(window_dimensions[0] / 2.0 - root.get_width() / 2.0);
