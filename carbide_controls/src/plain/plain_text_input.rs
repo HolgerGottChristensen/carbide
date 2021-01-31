@@ -11,7 +11,10 @@ use std::ops::Range;
 use unicode_segmentation::UnicodeSegmentation;
 use carbide_core::text::PositionedGlyph;
 
-
+/// A plain text input widget. The widget contains no specific styling, other than text color,
+/// cursor color/width and selection color. Most common logic has been implemented, such as
+/// key shortcuts, mouse click and drag select along with copy and paste. For an example of
+/// how to use this widget look at examples/plain_text_input
 #[derive(Clone, Widget)]
 #[event(handle_keyboard_event, handle_mouse_event)]
 pub struct PlainTextInput<GS> where GS: GlobalState {
@@ -20,6 +23,7 @@ pub struct PlainTextInput<GS> where GS: GlobalState {
     position: Point,
     dimension: Dimensions,
     cursor: Cursor,
+    drag_start_cursor: Option<Cursor>,
     grapheme_split_cache: (String, Vec<f32>),
     #[state] text: State<String, GS>,
     #[state] cursor_x: State<f64, GS>,
@@ -29,9 +33,9 @@ pub struct PlainTextInput<GS> where GS: GlobalState {
 }
 
 impl<GS: GlobalState> PlainTextInput<GS> {
-    pub fn new() -> Box<Self> {
+    pub fn new(text: State<String, GS>) -> Box<Self> {
 
-        let text_state = State::new_local_with_key(&String::from("Hello World!"));
+        let text_state = text;
 
         let cursor_x = State::new_local_with_key(&0.0);
         let selection_x = State::new_local_with_key(&0.0);
@@ -63,6 +67,7 @@ impl<GS: GlobalState> PlainTextInput<GS> {
             text: text_state,
             grapheme_split_cache: ("".to_string(), vec![]),
             cursor: Cursor::Single(CursorIndex{ line: 0, char: 0 }),
+            drag_start_cursor: None,
             cursor_x,
             selection_width,
             selection_x,
@@ -194,6 +199,18 @@ impl<GS: GlobalState> PlainTextInput<GS> {
                 let relative_offset = position[0] - self.position[0] - text_offset;
                 let char_index = Cursor::get_char_index(relative_offset, &text, &cache_split);
 
+                self.drag_start_cursor = Some(Cursor::Single(CursorIndex{ line: 0, char: char_index }));
+            }
+            MouseEvent::Click(_, position, _) => {
+                let text = self.text.get_value(global_state).clone();
+
+                self.check_for_cache_updates(&text, env);
+                let (_, cache_split) = &self.grapheme_split_cache;
+
+
+                let relative_offset = position[0] - self.position[0] - text_offset;
+                let char_index = Cursor::get_char_index(relative_offset, &text, &cache_split);
+
                 self.cursor = Cursor::Single(CursorIndex{ line: 0, char: char_index });
             }
             MouseEvent::NClick(_, position, _, n) => {
@@ -216,16 +233,17 @@ impl<GS: GlobalState> PlainTextInput<GS> {
                 }
 
             }
-            MouseEvent::Drag { to, .. } => {
+            MouseEvent::Drag { to, delta_xy, .. } => {
                 let text = self.text.get_value(global_state).clone();
 
+                let delta_x = delta_xy[0].abs();
                 let mouse_scroll_threshold = 30.0;
 
                 if to[0] < self.get_x() + mouse_scroll_threshold {
-                    let offset = self.text_offset.get_value(global_state) + 10.0;
+                    let offset = self.text_offset.get_value(global_state) + 10.0 * delta_x;
                     *self.text_offset.get_value_mut(global_state) = offset.min(0.0);
                 } else if to[0] > self.get_x() + self.get_width() - mouse_scroll_threshold {
-                    let offset = self.text_offset.get_value(global_state) - 10.0;
+                    let offset = self.text_offset.get_value(global_state) - 10.0 * delta_x;
                     let text = self.text.get_value(global_state).clone();
                     let positioned_glyphs = self.get_positioned_glyphs(&text, env);
 
@@ -246,14 +264,32 @@ impl<GS: GlobalState> PlainTextInput<GS> {
 
                 let current_char_index = Cursor::get_char_index(current_relative_offset, &text, &cache_split);
 
-                match self.cursor {
-                    Cursor::Single(index) => {
-                        self.cursor = Cursor::Selection { start: index, end: CursorIndex { line: 0, char: current_char_index } }
+
+                match self.drag_start_cursor {
+                    None => {
+                        match self.cursor {
+                            Cursor::Single(index) => {
+                                self.cursor = Cursor::Selection { start: index, end: CursorIndex { line: 0, char: current_char_index } }
+                            }
+                            Cursor::Selection { start, .. } => {
+                                self.cursor = Cursor::Selection { start, end: CursorIndex { line: 0, char: current_char_index } }
+                            }
+                        }
                     }
-                    Cursor::Selection { start, .. } => {
-                        self.cursor = Cursor::Selection { start, end: CursorIndex { line: 0, char: current_char_index } }
+                    Some(cursor) => {
+                        match cursor {
+                            Cursor::Single(index) => {
+                                self.cursor = Cursor::Selection { start: index, end: CursorIndex { line: 0, char: current_char_index } }
+                            }
+                            Cursor::Selection { start, .. } => {
+                                self.cursor = Cursor::Selection { start, end: CursorIndex { line: 0, char: current_char_index } }
+                            }
+                        }
+                        self.drag_start_cursor = None;
                     }
                 }
+
+
             }
             _ => ()
         }
@@ -603,7 +639,7 @@ impl<GS: GlobalState> PlainTextInput<GS> {
         }
 
         self.reposition_cursor(env, global_state);
-        self.recalculate_offset_to_make_cursor_visible(env, global_state);
+        self.recalculate_offset_to_make_cursor_visible(global_state);
     }
 
     fn reposition_cursor(&mut self, env: &mut Environment<GS>, global_state: &mut GS) {
@@ -638,7 +674,7 @@ impl<GS: GlobalState> PlainTextInput<GS> {
         }
     }
 
-    fn recalculate_offset_to_make_cursor_visible(&mut self, env: &mut Environment<GS>, global_state: &mut GS) {
+    fn recalculate_offset_to_make_cursor_visible(&mut self, global_state: &mut GS) {
         let cursor_x = *self.cursor_x.get_value(global_state);
         let cursor_width = 4.0;
         let current_text_offset = *self.text_offset.get_value(global_state);

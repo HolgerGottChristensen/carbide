@@ -32,7 +32,7 @@ impl Cursor {
     pub fn get_char_index(relative_offset: f64, _text: &str, splits: &Vec<f32>) -> usize {
         let rightmost_closest = binary_search(relative_offset as f32, splits);
 
-        let new_closest = if rightmost_closest < splits.len() && ((relative_offset as f32) - splits[rightmost_closest + 1]).abs() < ((relative_offset as f32) - splits[rightmost_closest]).abs() {
+        let new_closest = if rightmost_closest < splits.len()-1 && ((relative_offset as f32) - splits[rightmost_closest + 1]).abs() < ((relative_offset as f32) - splits[rightmost_closest]).abs() {
             rightmost_closest + 1
         } else {
             rightmost_closest

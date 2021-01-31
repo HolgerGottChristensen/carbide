@@ -20,8 +20,10 @@ fn main() {
 
     window.add_font("fonts/NotoSans/NotoSans-Regular.ttf").unwrap();
 
+    let text_state = State::new_local_with_key(&"Hello World!".to_string());
+
     window.set_widgets(
-        PlainTextInput::new()
+        PlainTextInput::new(text_state)
             .padding(EdgeInsets::all(2.0))
             .border()
             .clip()
