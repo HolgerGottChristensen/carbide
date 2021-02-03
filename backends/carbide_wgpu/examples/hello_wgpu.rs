@@ -41,7 +41,7 @@ fn main() {
                 SyncTest::new(sync_state)
             ]).fill(GREEN),
             HStack::initialize(vec![
-                RoundedRectangle::initialize(vec![]).frame(100.0, 100.0),
+                RoundedRectangle::initialize(vec![]).frame(100.0.into(), 100.0.into()),
                 Canvas::initialize(Context { actions: vec![
                     ContextAction::MoveTo([75.0, 40.0]),
                     ContextAction::CubicBezierTo{ctrl1: [75.0, 37.0], ctrl2: [70.0, 25.0], to: [50.0, 25.0]},
@@ -51,23 +51,23 @@ fn main() {
                     ContextAction::CubicBezierTo{ctrl1: [130.0, 62.5], ctrl2: [130.0, 25.0], to: [100.0, 25.0]},
                     ContextAction::CubicBezierTo{ctrl1: [85.0, 25.0], ctrl2: [75.0, 37.0], to: [75.0, 40.0]},
                     ContextAction::Close
-                    ]}).frame(150.0, 150.0),
+                    ]}).frame(150.0.into(), 150.0.into()),
                 Rectangle::initialize(vec![
                     Scroll::new(
                         Image::new(rust_image)
                             .resizeable()
-                            .aspect_ratio(ScaleMode::Fill)
-                            .frame(800.0, 500.0)
+                            .aspect_ratio(ScaleMode::Fit)
+                            .frame(800.0.into(), 500.0.into())
                     ).set_scroll_direction(ScrollDirection::Both)
                         .clip()
-                ]).fill(LIGHT_BLUE).frame(SCALE, 200.0),
+                ]).fill(LIGHT_BLUE).frame(SCALE.into(), 200.0.into()),
             ]),
             HStack::initialize(vec![
                 Spacer::new(SpacerDirection::Horizontal),
                 Oval::initialize(vec![])
                     .fill(RED)
                     .padding(EdgeInsets::all(10.0))
-                    .frame(150.0, 150.0),
+                    .frame(150.0.into(), 150.0.into()),
                 Spacer::new(SpacerDirection::Horizontal),
                 Spacer::new(SpacerDirection::Horizontal)
             ]),

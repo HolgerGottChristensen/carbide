@@ -309,7 +309,7 @@ impl<S: GlobalState> Text<S> {
                     .wrap_by_whitespace(rect.w()),
         };
 
-        let base_line_offset = font.v_metrics(Scale::uniform(40.0)).descent;
+        let base_line_offset = font.v_metrics(Scale::uniform(*self.font_size.get_latest_value() as f32)).descent;
 
         let t = RenderText {
             positioned_glyphs: Vec::new(),
