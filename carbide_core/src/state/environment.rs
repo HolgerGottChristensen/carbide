@@ -71,7 +71,7 @@ impl<GS: GlobalState> Environment<GS> {
                 Some(n) => n,
                 None => return,
             };
-            *local_state.get_latest_value_mut() = from_bin(&local_value).unwrap();
+            *local_state.get_latest_value_mut() = from_bin::<T>(&local_value).unwrap();
         }
     }
 

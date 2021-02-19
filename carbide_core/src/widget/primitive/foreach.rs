@@ -46,9 +46,9 @@ impl<GS: GlobalState, T: ForEachDelegate + 'static> ForEach<GS, T> {
             ids,
             position: [100.0,100.0],
             dimension: [100.0,100.0],
-            id_state: Box::new(CommonState::new_local("id", &T::default())),
-            index_state: Box::new(CommonState::new_local("index", &0)),
-            index_offset: Box::new(CommonState::new_local("index", &0)),
+            id_state: Box::new(CommonState::new_local_with_key(&T::default())),
+            index_state: Box::new(CommonState::new_local_with_key(&0)),
+            index_offset: Box::new(CommonState::new_local_with_key(&0)),
         })
     }
 

@@ -17,7 +17,7 @@ use carbide_core::widget::primitive::Widget;
 use carbide_core::text::font::Error;
 use winit::window::{WindowBuilder, Icon};
 use carbide_core::text::font;
-use winit::dpi::{Size, PhysicalSize};
+use winit::dpi::{Size, PhysicalSize, PhysicalPosition, LogicalPosition};
 use std::path::PathBuf;
 use carbide_core::state::global_state::GlobalState;
 
@@ -96,12 +96,27 @@ impl<T: GlobalState> Window<T> {
             None
         };
 
-        let inner_window = WindowBuilder::new()
+        let mut inner_window = WindowBuilder::new()
             .with_inner_size(Size::Physical(PhysicalSize{ width, height }))
             .with_title(title)
             .with_window_icon(loaded_icon)
             .build(&event_loop)
             .unwrap();
+
+        if let Some(monitor) = inner_window.current_monitor() {
+            let size = monitor.size();
+
+            let outer_window_size = inner_window.outer_size();
+
+            let position = PhysicalPosition::new(
+                size.width / 2 - outer_window_size.width / 2,
+                size.height / 2 - outer_window_size.height / 2
+            );
+
+            inner_window.set_outer_position(position);
+        }
+
+
 
         let size = inner_window.inner_size();
 
@@ -392,6 +407,9 @@ impl<T: GlobalState> Window<T> {
     }
 
     pub fn run_event_loop(mut self) {
+
+        // Make the state sync on event loop run
+        self.input(&WindowEvent::Focused(true));
 
         let mut event_loop = None;
 

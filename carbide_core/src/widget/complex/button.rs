@@ -8,8 +8,8 @@ use crate::widget::primitive::spacer::Spacer;
 use crate::widget::types::spacer_direction::SpacerDirection;
 use crate::widget::primitive::v_stack::VStack;
 use crate::widget::primitive::foreach::ForEach;
-use crate::widget::complex::foreachtest::ForeachTest;
 use crate::widget::render::ChildRender;
+use crate::state::mapped_state::MappedState;
 
 #[derive(Debug, Clone, Widget)]
 #[state_sync(insert_local_state)]
@@ -66,12 +66,21 @@ impl<S: GlobalState> SyncTest<S> {
     pub fn new(value: CommonState<String, S>) -> Box<SyncTest<S>> {
         let fore = CommonState::<Vec<Uuid>, S>::new_local("a", &(0..5).map(|_| Uuid::new_v4()).collect::<Vec<Uuid>>());
 
+        let index_state = Box::new(CommonState::new_local_with_key(&1));
+
+        let mapped_state = MappedState::new_local(index_state.clone(), |a: &usize| format!("{}", a), "0".to_string());
+
         Box::new(Self {
             id: Uuid::new_v4(),
             child: HStack::initialize(vec![
                     Spacer::new(SpacerDirection::Horizontal),
                     VStack::initialize(vec![
-                        ForEach::new(Box::new(fore.clone()), ForeachTest::new())
+                        ForEach::new(
+                            Box::new(fore.clone()),
+                            Rectangle::initialize(vec![
+                                Text::initialize(Box::new(mapped_state))
+                            ]).fill(RED).frame(60.0.into(),30.0.into()))
+                            .index_state(index_state)
                     ]),
                     ForEach::new((0..5).map(|_| Uuid::new_v4()).collect::<Vec<Uuid>>().into(), Rectangle::initialize(vec![]).frame(10.0.into(),10.0.into())),
                     Text::initialize(value.clone().into()),
