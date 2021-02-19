@@ -205,7 +205,7 @@ impl<GS: GlobalState, T: ListIndex + 'static> List<GS, T> {
 
                 // Handle add items to view from the bottom
                 while last_y < self_y + self_height {
-                    last_y += (min_height + spacing);
+                    last_y += min_height + spacing;
                     *self_end_offset.get_latest_value_mut() -= min_height + spacing;
                     let index_to_take_from = *self_index_offset.get_latest_value() + self_internal_model.get_latest_value().len();
 
