@@ -4,8 +4,7 @@ use std::fmt::Debug;
 use bitflags::_core::fmt::Formatter;
 use serde::Serialize;
 
-use crate::{Color, from_ron, from_bin, to_bin};
-use crate::{text, to_ron};
+use crate::{Color, from_bin, to_bin, text};
 use crate::text::font::{Error, Id};
 use crate::widget::primitive::Widget;
 use crate::widget::types::image_information::ImageInformation;

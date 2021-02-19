@@ -149,7 +149,7 @@ impl<S: GlobalState> Scroll<S> {
                     self.keep_x_within_bounds();
                 }
             }
-            MouseEvent::Drag { button, origin, from, to, delta_xy, total_delta_xy, modifiers } => {
+            MouseEvent::Drag { origin, to, delta_xy, .. } => {
 
                 if !self.drag_started_on_vertical_scrollbar {
                     if self.scrollbar_vertical.is_inside(*origin) {
