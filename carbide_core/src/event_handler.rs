@@ -131,9 +131,9 @@ impl EventHandler {
 
     #[cfg(debug_assertions)]
     fn add_event(&mut self, event: WidgetEvent) {
-        if let WidgetEvent::Mouse(MouseEvent::Move {..}) = event {} else {
+        /*if let WidgetEvent::Mouse(MouseEvent::Move {..}) = event {} else {
             println!("{:?}", &event);
-        }
+        }*/
         self.events.push(event);
     }
 

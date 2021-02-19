@@ -14,6 +14,7 @@ use crate::widget::Rectangle;
 use crate::widget::primitive::Widget;
 use crate::state::global_state::GlobalState;
 use crate::event::input::Input;
+use instant::Instant;
 
 /// A constructor type for building a `Ui` instance with a set of optional parameters.
 pub struct UiBuilder {
@@ -168,7 +169,7 @@ impl<S: GlobalState> Ui<S> {
 
         let mut _needs_redraw = self.delegate_events(global_state);
 
-        match  window_event {
+        match window_event {
             None => (),
             Some(event) => {
                 match event {
@@ -190,6 +191,7 @@ impl<S: GlobalState> Ui<S> {
     }
 
     fn delegate_events(&mut self, global_state: &mut S) -> bool {
+        let now = Instant::now();
         let events = self.event_handler.get_events();
 
         for event in events {
@@ -214,6 +216,10 @@ impl<S: GlobalState> Ui<S> {
         self.widgets.sync_state(&mut self.environment, global_state);
         self.environment.clear();
         self.event_handler.clear_events();
+
+        if now.elapsed().as_millis() > 16 {
+            println!("Frame took: {}", now.elapsed().as_secs_f32());
+        }
 
         // Todo: Determine if an redraw is needed after events are processed
         return true

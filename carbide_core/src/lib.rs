@@ -34,6 +34,9 @@ extern crate self as carbide_core;
 pub use ron::from_str as from_ron;
 pub use ron::to_string as to_ron;
 
+pub use bincode::deserialize as from_bin;
+pub use bincode::serialize as to_bin;
+
 pub use carbide_derive::*;
 
 pub use crate::color::{Color, Colorable};

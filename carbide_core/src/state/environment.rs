@@ -4,7 +4,7 @@ use std::fmt::Debug;
 use bitflags::_core::fmt::Formatter;
 use serde::Serialize;
 
-use crate::{Color, from_ron};
+use crate::{Color, from_ron, from_bin, to_bin};
 use crate::{text, to_ron};
 use crate::text::font::{Error, Id};
 use crate::widget::primitive::Widget;
@@ -18,7 +18,7 @@ pub struct Environment<GS> where GS: GlobalState {
     fonts: text::font::Map,
     images_information: HashMap<crate::image_map::Id, ImageInformation>,
     overlay_map: HashMap<String, Box<dyn Widget<GS>>>,
-    pub(crate) local_state: HashMap<String, String>,
+    pub(crate) local_state: HashMap<String, Vec<u8>>,
 }
 
 impl<GS: GlobalState> std::fmt::Debug for Environment<GS> {
@@ -67,23 +67,23 @@ impl<GS: GlobalState> Environment<GS> {
     pub fn update_local_state<T: Serialize + Clone + Debug + DeserializeOwned>(&self, local_state: &mut dyn State<T, GS>) {
         local_state.update_dependent_states(self);
         if let Some(key) = local_state.get_key() {
-            let local_value: &String = match self.local_state.get(key) {
+            let local_value: &Vec<u8> = match self.local_state.get(key) {
                 Some(n) => n,
                 None => return,
             };
-            *local_state.get_latest_value_mut() = from_ron(&local_value).unwrap();
+            *local_state.get_latest_value_mut() = from_bin(&local_value).unwrap();
         }
     }
 
     pub fn insert_local_state<T: Serialize + Clone + Debug>(&mut self, local_state: &dyn State<T, GS>) {
         if let Some(key) = local_state.get_key() {
             let value = local_state.get_latest_value();
-            self.local_state.insert(key.clone(), to_ron(value).unwrap());
+            self.local_state.insert(key.clone(), to_bin(value).unwrap());
         }
     }
 
     pub fn insert_local_state_from_key_value<T: Serialize + Clone + Debug>(&mut self, key: &String, value: &T) {
-        self.local_state.insert(key.clone(), to_ron(value).unwrap());
+        self.local_state.insert(key.clone(), to_bin(value).unwrap());
     }
 
     pub fn get_fonts_map(&self) -> &text::font::Map {

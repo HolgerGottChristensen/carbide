@@ -99,7 +99,6 @@ impl<GS: GlobalState, T: ListIndex + 'static> List<GS, T> {
     }
 
     fn recalculate_visible_children(&mut self, env: &mut Environment<GS>, global_state: &GS) {
-        let now = Instant::now();
         // TODO: Handle when model changes.
         // If items in the internal model is removed, calculate new sizes, if items in between the items in the internal_model is added, do ???
 
@@ -115,8 +114,6 @@ impl<GS: GlobalState, T: ListIndex + 'static> List<GS, T> {
         let mut self_internal_model = self.internal_model.clone();
         let self_model = self.model.clone();
         let mut self_index_offset = self.index_offset.clone();
-
-        let internal_model_size = self.internal_model.get_latest_value().len();
 
         // Notice the scroll might not be the first when clip is added.
         if let Some(scroll_view) = self.get_children_mut().next() {
@@ -264,7 +261,6 @@ impl<GS: GlobalState, T: ListIndex + 'static> List<GS, T> {
         // Recalculate the height of the after offset.
         // To this step while there are views below the bottom.
 
-        println!("Time for list thingie: {}", now.elapsed().as_secs_f32());
     }
 
     fn sync_state(&mut self, env: &mut Environment<GS>, global_state: &GS) {
