@@ -21,11 +21,11 @@ impl<S: GlobalState> Widget<S> for Box<dyn Widget<S>> {}
 dyn_clone::clone_trait_object!(<S> Widget<S>);
 
 pub trait WidgetExt<GS: GlobalState>: Widget<GS> + Sized + 'static {
-    fn frame(self, width: CommonState<f64, GS>, height: CommonState<f64, GS>) -> Box<Frame<GS>> {
+    fn frame(self, width: Box<dyn State<f64, GS>>, height: Box<dyn State<f64, GS>>) -> Box<Frame<GS>> {
         Frame::init(width, height, Box::new(self))
     }
 
-    fn frame_width(self, width: CommonState<f64, GS>) -> Box<Frame<GS>> {
+    fn frame_width(self, width: Box<dyn State<f64, GS>>) -> Box<Frame<GS>> {
         Frame::init_width(width, Box::new(self))
     }
 

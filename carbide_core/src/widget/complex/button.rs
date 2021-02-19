@@ -71,7 +71,7 @@ impl<S: GlobalState> SyncTest<S> {
             child: HStack::initialize(vec![
                     Spacer::new(SpacerDirection::Horizontal),
                     VStack::initialize(vec![
-                        ForEach::new(fore.clone(), ForeachTest::new())
+                        ForEach::new(Box::new(fore.clone()), ForeachTest::new())
                     ]),
                     ForEach::new((0..5).map(|_| Uuid::new_v4()).collect::<Vec<Uuid>>().into(), Rectangle::initialize(vec![]).frame(10.0.into(),10.0.into())),
                     Text::initialize(value.clone().into()),

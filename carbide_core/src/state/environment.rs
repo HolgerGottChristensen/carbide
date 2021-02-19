@@ -82,6 +82,10 @@ impl<GS: GlobalState> Environment<GS> {
         }
     }
 
+    pub fn insert_local_state_from_key_value<T: Serialize + Clone + Debug>(&mut self, key: &String, value: &T) {
+        self.local_state.insert(key.clone(), to_ron(value).unwrap());
+    }
+
     pub fn get_fonts_map(&self) -> &text::font::Map {
         &self.fonts
     }

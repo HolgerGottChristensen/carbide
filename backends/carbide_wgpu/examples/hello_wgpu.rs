@@ -56,7 +56,7 @@ fn main() {
                     Scroll::new(
                         Image::new(rust_image)
                             .resizeable()
-                            .aspect_ratio(ScaleMode::Fit)
+                            .aspect_ratio(ScaleMode::Fill)
                             .frame(800.0.into(), 500.0.into())
                     ).set_scroll_direction(ScrollDirection::Both)
                         .clip()

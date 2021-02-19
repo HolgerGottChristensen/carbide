@@ -14,7 +14,7 @@ pub struct Scroll<GS> where GS: GlobalState {
     child: Box<dyn Widget<GS>>,
     position: Point,
     dimension: Dimensions,
-    scroll_offset: [f64; 2], // Save as scroll percents instead of offsets
+    scroll_offset: [f64; 2],
     scroll_directions: ScrollDirection,
     scrollbar_horizontal: Box<dyn Widget<GS>>,
     scrollbar_vertical: Box<dyn Widget<GS>>,
@@ -90,7 +90,7 @@ impl<S: GlobalState> Scroll<S> {
 
                 if self.scroll_directions == ScrollDirection::Both ||
                     self.scroll_directions == ScrollDirection::Vertical {
-                    let offset_multiplier = self.child.get_height() / self.get_height();
+                    let offset_multiplier = 1.0; //self.child.get_height() / self.get_height();
                     if modifiers.contains(piston_input::keyboard::ModifierKey::SHIFT) {
                         self.scroll_offset[1] -= x * offset_multiplier;
                     } else {
@@ -104,7 +104,7 @@ impl<S: GlobalState> Scroll<S> {
                 if self.scroll_directions == ScrollDirection::Both ||
                     self.scroll_directions == ScrollDirection::Horizontal {
 
-                    let offset_multiplier = self.child.get_width() / self.get_width();
+                    let offset_multiplier = 1.0; //self.child.get_width() / self.get_width();
                     if modifiers.contains(piston_input::keyboard::ModifierKey::SHIFT) {
                         self.scroll_offset[0] += y * offset_multiplier;
                     } else {
