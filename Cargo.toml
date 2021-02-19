@@ -11,5 +11,6 @@ members = [
     # "backends/carbide_rendy",
     # "backends/carbide_vulkano",
     "backends/carbide_wgpu",
+    "carbide"
 
 ]

@@ -1,6 +1,6 @@
 [package]
 name = "carbide_derive"
-version = "0.70.0"
+version = "0.70.1"
 authors = ["Holger Gott Christensen <holger.gott@icloud.com>"]
 description = "A crate providing procedural macros for the carbide library"
 license = "MIT OR Apache-2.0"

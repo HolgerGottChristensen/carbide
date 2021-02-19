@@ -1,6 +1,6 @@
 [package]
 name = "carbide_core"
-version = "0.70.0"
+version = "0.70.1"
 authors = [
     "Holger Gott Christensen <holger.gott@icloud.com>",
     "Mitchell Nordine <mitchell.nordine@gmail.com>",
