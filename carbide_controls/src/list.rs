@@ -1,14 +1,10 @@
 use carbide_core::widget::*;
 use carbide_core::event_handler::{MouseEvent, KeyboardEvent};
-use carbide_core::input::MouseButton;
-use carbide_core::input::Key;
 use carbide_core::state::state::State;
-use std::hash::Hash;
 use carbide_core::widget::primitive::foreach::{ForEachDelegate, ForEach};
-use carbide_core::color::{RED, BLACK, BLUE, GREEN};
+use carbide_core::color::{RED, BLUE};
 use std::option::Option::Some;
 use carbide_core::prelude::StateSync;
-use std::time::Instant;
 
 pub trait ListIndex: ForEachDelegate {}
 
@@ -90,15 +86,15 @@ impl<GS: GlobalState, T: ListIndex + 'static> List<GS, T> {
         Box::new(self)
     }
 
-    fn handle_mouse_event(&mut self, event: &MouseEvent, _: &bool, env: &mut Environment<GS>, global_state: &mut GS) {
+    fn handle_mouse_event(&mut self, _: &MouseEvent, _: &bool, _: &mut Environment<GS>, _: &mut GS) {
 
     }
 
-    fn handle_keyboard_event(&mut self, event: &KeyboardEvent, env: &mut Environment<GS>, global_state: &mut GS) {
+    fn handle_keyboard_event(&mut self, _: &KeyboardEvent, _: &mut Environment<GS>, _: &mut GS) {
 
     }
 
-    fn recalculate_visible_children(&mut self, env: &mut Environment<GS>, global_state: &GS) {
+    fn recalculate_visible_children(&mut self, env: &mut Environment<GS>, _: &GS) {
         // TODO: Handle when model changes.
         // If items in the internal model is removed, calculate new sizes, if items in between the items in the internal_model is added, do ???
 
@@ -184,7 +180,7 @@ impl<GS: GlobalState, T: ListIndex + 'static> List<GS, T> {
 
                 // Handle add items to view from the top
                 while *self_start_offset.get_latest_value() + inital_y > self_y {
-                    *self_start_offset.get_latest_value_mut() -= (min_height + spacing);
+                    *self_start_offset.get_latest_value_mut() -= min_height + spacing;
                     *self_index_offset.get_latest_value_mut() -= 1;
                     let index_to_take_from = *self_index_offset.get_latest_value();
 
@@ -210,7 +206,7 @@ impl<GS: GlobalState, T: ListIndex + 'static> List<GS, T> {
                 // Handle add items to view from the bottom
                 while last_y < self_y + self_height {
                     last_y += (min_height + spacing);
-                    *self_end_offset.get_latest_value_mut() -= (min_height + spacing);
+                    *self_end_offset.get_latest_value_mut() -= min_height + spacing;
                     let index_to_take_from = *self_index_offset.get_latest_value() + self_internal_model.get_latest_value().len();
 
 
@@ -270,7 +266,7 @@ impl<GS: GlobalState, T: ListIndex + 'static> List<GS, T> {
 
         self.insert_local_state(env);
 
-        for (child) in self.get_proxied_children() {
+        for child in self.get_proxied_children() {
             child.sync_state(env, global_state)
         }
 

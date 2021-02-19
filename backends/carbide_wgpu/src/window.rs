@@ -17,7 +17,7 @@ use carbide_core::widget::primitive::Widget;
 use carbide_core::text::font::Error;
 use winit::window::{WindowBuilder, Icon};
 use carbide_core::text::font;
-use winit::dpi::{Size, PhysicalSize, PhysicalPosition, LogicalPosition};
+use winit::dpi::{Size, PhysicalSize, PhysicalPosition};
 use std::path::PathBuf;
 use carbide_core::state::global_state::GlobalState;
 
@@ -96,7 +96,7 @@ impl<T: GlobalState> Window<T> {
             None
         };
 
-        let mut inner_window = WindowBuilder::new()
+        let inner_window = WindowBuilder::new()
             .with_inner_size(Size::Physical(PhysicalSize{ width, height }))
             .with_title(title)
             .with_window_icon(loaded_icon)

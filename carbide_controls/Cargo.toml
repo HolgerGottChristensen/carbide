@@ -10,6 +10,8 @@ license = "MIT OR Apache-2.0"
 readme = "../README.md"
 categories = ["gui"]
 edition="2018"
+repository = "https://github.com/HolgerGottChristensen/carbide.git"
+homepage = "https://github.com/HolgerGottChristensen/carbide"
 
 [dependencies]
 carbide_derive = { path = "../carbide_derive", version = "0.70" }
