@@ -170,16 +170,96 @@ pub fn impl_widget(ast: &syn::DeriveInput) -> proc_macro2::TokenStream {
         quote! {self.process_other_event_default(event, env, global_state);}
     };
 
+    let get_focus = if let Some(_) = struct_attributes.get("focusable") {
+        quote! {self.focus}
+    } else {
+        quote! {carbide_core::focus::Focus::Unfocused}
+    };
+
+    let set_focus = if let Some(_) = struct_attributes.get("focusable") {
+        quote! {self.focus = focus;}
+    } else {
+        quote! {}
+    };
+
+    let focus_retrieved = if let Some(_) = struct_attributes.get("focusable.focus_retrieved") {
+        quote! {#struct_ident::focus_retrieved(self, event);}
+    } else {
+        quote! {}
+    };
+
+    let focus_dismissed = if let Some(_) = struct_attributes.get("focusable.focus_dismissed") {
+        quote! {#struct_ident::focus_dismissed(self, event);}
+    } else {
+        quote! {}
+    };
+
+    let override_default_tab_focus_behavior = if let Some(_) = struct_attributes.get("focusable.custom_tab_behavior") {
+        quote! {}
+    } else {
+        quote! {
+            if self.focus == carbide_core::focus::Focus::Focused {
+                match event {
+                    carbide_core::event_handler::KeyboardEvent::Press(key, modifier) => {
+                        if key == &carbide_core::input::Key::Tab {
+                            if modifier == &carbide_core::input::ModifierKey::SHIFT {
+
+                                self.focus = carbide_core::focus::Focus::FocusReleased;
+                                env.request_focus(carbide_core::focus::Refocus::FocusPrevious);
+
+                            } else if modifier == &carbide_core::input::ModifierKey::NO_MODIFIER {
+
+                                self.focus = carbide_core::focus::Focus::FocusReleased;
+                                env.request_focus(carbide_core::focus::Refocus::FocusNext);
+
+                            }
+                        }
+                    }
+                    _ => {}
+                }
+
+            }
+        }
+    };
+
+    let default_tab_focus_behavior = if let Some(_) = struct_attributes.get("focusable") {
+        quote! {#override_default_tab_focus_behavior}
+    } else {
+        quote! {}
+    };
+
     let wheres = filtered_where_clause(&ast);
 
     quote! {
 
+        #[automatically_derived]
+        impl<#(#generics_without_gs ,)* #global_state> carbide_core::focus::Focusable<#global_state_use> for #struct_ident #generics_with_gs #wheres {
+            fn focus_retrieved(&mut self, event: &carbide_core::event_handler::WidgetEvent) {
+                #focus_retrieved
+            }
+
+            fn focus_dismissed(&mut self, event: &carbide_core::event_handler::WidgetEvent) {
+                #focus_dismissed
+            }
+
+            fn get_focus(&self) -> carbide_core::focus::Focus {
+                #get_focus
+            }
+
+            fn set_focus(&mut self, focus: carbide_core::focus::Focus) {
+                #set_focus
+            }
+
+        }
+
+        #[automatically_derived]
         impl<#(#generics_without_gs ,)* #global_state> carbide_core::event::event::Event<#global_state_use> for #struct_ident #generics_with_gs #wheres {
             fn handle_mouse_event(&mut self, event: &carbide_core::event_handler::MouseEvent, consumed: &bool, env: &mut carbide_core::state::environment::Environment<#global_state_use>, global_state: &mut #global_state_use) {
                 #handle_mouse_event
             }
 
             fn handle_keyboard_event(&mut self, event: &carbide_core::event_handler::KeyboardEvent, env: &mut carbide_core::state::environment::Environment<#global_state_use>, global_state: &mut #global_state_use) {
+                #default_tab_focus_behavior
                 #handle_keyboard_event
             }
 

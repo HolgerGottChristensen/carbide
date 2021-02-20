@@ -25,6 +25,7 @@ pub enum TextInputKeyCommand {
     JumpToRight,
     JumpSelectToLeft,
     JumpSelectToRight,
+    Enter,
     Undefined,
 }
 
@@ -56,6 +57,7 @@ impl From<(&Key, &ModifierKey)> for TextInputKeyCommand {
             (Key::Home, &ModifierKey::SHIFT) => TextInputKeyCommand::JumpSelectToLeft,
             (Key::End, &ModifierKey::NO_MODIFIER) => TextInputKeyCommand::JumpToRight,
             (Key::End, &ModifierKey::SHIFT) => TextInputKeyCommand::JumpSelectToRight,
+            (Key::Return, &ModifierKey::NO_MODIFIER) => TextInputKeyCommand::Enter,
             _ => TextInputKeyCommand::Undefined
         }
     }

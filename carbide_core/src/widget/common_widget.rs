@@ -9,9 +9,15 @@ pub trait CommonWidget<S> {
     fn get_id(&self) -> Uuid;
     fn get_flag(&self) -> Flags;
 
+    /// Get the logical children. This means for example for a vstack with a foreach,
+    /// the children of the foreach is retrieved.
     fn get_children(&self) -> WidgetIter<S>;
     fn get_children_mut(&mut self) -> WidgetIterMut<S>;
+
+    /// Get the actual children. This means for example for a vstack with a foreach,
+    /// the foreach widget is retrieved.
     fn get_proxied_children(&mut self) -> WidgetIterMut<S>;
+    fn get_proxied_children_rev(&mut self) -> WidgetIterMut<S>;
 
     fn get_position(&self) -> Point;
     fn set_position(&mut self, position: Point);

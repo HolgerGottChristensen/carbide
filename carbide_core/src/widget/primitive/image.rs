@@ -105,6 +105,10 @@ impl<S: GlobalState> CommonWidget<S> for Image {
         WidgetIterMut::Empty
     }
 
+    fn get_proxied_children_rev(&mut self) -> WidgetIterMut<S> {
+        WidgetIterMut::Empty
+    }
+
     fn get_position(&self) -> Point {
         self.position
     }

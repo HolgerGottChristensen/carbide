@@ -92,6 +92,13 @@ impl<S: 'static + Clone, K: GlobalState> CommonWidget<K> for Oval<S, K> {
             })
     }
 
+    fn get_proxied_children_rev(&mut self) -> WidgetIterMut<K> {
+        self.children.iter_mut()
+            .fold(WidgetIterMut::Empty, |acc, x| {
+                WidgetIterMut::Single(x, Box::new(acc))
+            })
+    }
+
     fn get_position(&self) -> Point {
         self.position
     }

@@ -71,6 +71,10 @@ impl<S: GlobalState> CommonWidget<S> for Offset<S> {
         WidgetIterMut::single(&mut self.child)
     }
 
+    fn get_proxied_children_rev(&mut self) -> WidgetIterMut<S> {
+        WidgetIterMut::single(&mut self.child)
+    }
+
     fn get_position(&self) -> Point {
         self.position
     }

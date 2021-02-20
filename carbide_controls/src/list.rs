@@ -10,8 +10,8 @@ pub trait ListIndex: ForEachDelegate {}
 
 impl<T> ListIndex for T where T: ForEachDelegate {}
 
-#[event(handle_keyboard_event, handle_mouse_event)]
 #[derive(Clone, Widget)]
+#[event(handle_keyboard_event, handle_mouse_event)]
 #[state_sync(sync_state)]
 pub struct List<GS, T> where GS: GlobalState, T: ListIndex + 'static {
     id: Id,
@@ -301,6 +301,10 @@ impl<GS: GlobalState, T: ListIndex> CommonWidget<GS> for List<GS, T> {
     }
 
     fn get_proxied_children(&mut self) -> WidgetIterMut<GS> {
+        WidgetIterMut::single(&mut self.child)
+    }
+
+    fn get_proxied_children_rev(&mut self) -> WidgetIterMut<GS> {
         WidgetIterMut::single(&mut self.child)
     }
 

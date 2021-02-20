@@ -11,8 +11,9 @@ use crate::event_handler::{MouseEvent, KeyboardEvent, WidgetEvent};
 use core::fmt;
 use std::fmt::Debug;
 use crate::widget::primitive::border::Border;
+use crate::focus::{Focusable, Focus};
 
-pub trait Widget<S>: Event<S> + Layout<S> + Render<S> + DynClone where S: GlobalState {}
+pub trait Widget<S>: Event<S> + Layout<S> + Render<S> + Focusable<S> + DynClone where S: GlobalState {}
 
 //impl<S, T> Widget<S> for T where T: Event<S> + Layout<S> + Render<S> + DynClone {}
 
@@ -71,6 +72,10 @@ impl<S: GlobalState> CommonWidget<S> for Box<dyn Widget<S>> {
 
     fn get_proxied_children(&mut self) -> WidgetIterMut<S> {
         self.deref_mut().get_proxied_children()
+    }
+
+    fn get_proxied_children_rev(&mut self) -> WidgetIterMut<S> {
+        self.deref_mut().get_proxied_children_rev()
     }
 
     fn get_position(&self) -> Dimensions {
@@ -152,6 +157,24 @@ impl<S: GlobalState> Layout<S> for Box<dyn Widget<S>> {
 impl<S: GlobalState> Render<S> for Box<dyn Widget<S>> {
     fn get_primitives(&mut self, fonts: &text::font::Map) -> Vec<Primitive> {
         self.deref_mut().get_primitives(fonts)
+    }
+}
+
+impl<GS: GlobalState> Focusable<GS> for Box<dyn Widget<GS>> {
+    fn focus_retrieved(&mut self, event: &WidgetEvent) {
+        self.deref_mut().focus_retrieved(event)
+    }
+
+    fn focus_dismissed(&mut self, event: &WidgetEvent) {
+        self.deref_mut().focus_dismissed(event)
+    }
+
+    fn get_focus(&self) -> Focus {
+        self.deref().get_focus()
+    }
+
+    fn set_focus(&mut self, focus: Focus) {
+        self.deref_mut().set_focus(focus)
     }
 }
 

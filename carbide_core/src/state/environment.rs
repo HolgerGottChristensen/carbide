@@ -11,6 +11,7 @@ use crate::widget::types::image_information::ImageInformation;
 use crate::state::global_state::GlobalState;
 use crate::state::state::State;
 use serde::de::DeserializeOwned;
+use crate::focus::Refocus;
 
 pub struct Environment<GS> where GS: GlobalState {
     stack: Vec<EnvironmentVariable>,
@@ -18,6 +19,7 @@ pub struct Environment<GS> where GS: GlobalState {
     images_information: HashMap<crate::image_map::Id, ImageInformation>,
     overlay_map: HashMap<String, Box<dyn Widget<GS>>>,
     pub(crate) local_state: HashMap<String, Vec<u8>>,
+    pub(crate) focus_request: Option<Refocus>,
 }
 
 impl<GS: GlobalState> std::fmt::Debug for Environment<GS> {
@@ -34,8 +36,13 @@ impl<GS: GlobalState> Environment<GS> {
             fonts: text::font::Map::new(),
             images_information: HashMap::new(),
             overlay_map: HashMap::new(),
-            local_state: HashMap::new()
+            local_state: HashMap::new(),
+            focus_request: None
         }
+    }
+
+    pub fn request_focus(&mut self, request_type: Refocus) {
+        self.focus_request = Some(request_type);
     }
 
     pub fn get_image_information(&self, id: &crate::image_map::Id) -> Option<&ImageInformation> {

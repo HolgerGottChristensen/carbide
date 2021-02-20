@@ -168,6 +168,32 @@ impl<GS: GlobalState, T: ForEachDelegate> CommonWidget<GS> for ForEach<GS, T> {
         w
     }
 
+    fn get_proxied_children_rev(&mut self) -> WidgetIterMut<GS> {
+        let mut w = WidgetIterMut::Empty;
+
+        for id in self.ids.get_latest_value().iter() {
+            let contains = self.children_map.contains_key(id).clone();
+            if !contains{
+                self.children_map.insert(id.clone(), Clone::clone(&self.delegate));
+            }
+        }
+
+        for id in self.ids.get_latest_value().iter() {
+            let item: &mut Box<dyn Widget<GS>> = unsafe {
+                let p: *mut Box<dyn Widget<GS>> = self.children_map.get_mut(id).unwrap();
+                p.as_mut().unwrap()
+            };
+
+            if item.get_flag() == Flags::PROXY {
+                w = WidgetIterMut::Multi(Box::new(item.get_proxied_children()), Box::new(w));
+            } else {
+                w = WidgetIterMut::Single(item, Box::new(w))
+            }
+        }
+
+        w
+    }
+
     fn get_position(&self) -> Point {
         self.position
     }

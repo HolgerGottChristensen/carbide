@@ -4,8 +4,8 @@ use carbide_core::input::MouseButton;
 use carbide_core::input::Key;
 use carbide_core::state::state::State;
 
-#[event(handle_keyboard_event, handle_mouse_event)]
 #[derive(Clone, Widget)]
+#[event(handle_keyboard_event, handle_mouse_event)]
 pub struct PlainButton<GS> where GS: GlobalState {
     id: Id,
     child: Box<dyn Widget<GS>>,
@@ -118,6 +118,10 @@ impl<GS: GlobalState> CommonWidget<GS> for PlainButton<GS> {
     }
 
     fn get_proxied_children(&mut self) -> WidgetIterMut<GS> {
+        WidgetIterMut::single(&mut self.child)
+    }
+
+    fn get_proxied_children_rev(&mut self) -> WidgetIterMut<GS> {
         WidgetIterMut::single(&mut self.child)
     }
 

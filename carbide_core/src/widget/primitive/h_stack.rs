@@ -162,6 +162,13 @@ impl<S: GlobalState> CommonWidget<S> for HStack<S> {
             })
     }
 
+    fn get_proxied_children_rev(&mut self) -> WidgetIterMut<S> {
+        self.children.iter_mut()
+            .fold(WidgetIterMut::Empty, |acc, x| {
+                WidgetIterMut::Single(x, Box::new(acc))
+            })
+    }
+
 
     fn get_position(&self) -> Point {
         self.position

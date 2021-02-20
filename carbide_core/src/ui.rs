@@ -15,6 +15,7 @@ use crate::widget::primitive::Widget;
 use crate::state::global_state::GlobalState;
 use crate::event::input::Input;
 use instant::Instant;
+use crate::focus::{Refocus, Focusable};
 
 /// A constructor type for building a `Ui` instance with a set of optional parameters.
 pub struct UiBuilder {
@@ -211,9 +212,34 @@ impl<S: GlobalState> Ui<S> {
                 }
             }
 
+            if let Some(request) = &self.environment.focus_request {
+                match request {
+                    Refocus::FocusRequest => {
+                        println!("Process focus request");
+                        self.widgets.process_focus_request(event);
+                    }
+                    Refocus::FocusNext => {
+                        let focus_first = self.widgets.process_focus_next(event, false);
+                        if focus_first {
+                            self.widgets.process_focus_next(event, true);
+                        }
+                    }
+                    Refocus::FocusPrevious => {
+                        let focus_last = self.widgets.process_focus_previous(event, false);
+                        if focus_last {
+                            self.widgets.process_focus_previous(event, true);
+                        }
+                    }
+                }
+                self.environment.focus_request = None;
+            }
+
         }
 
         self.widgets.sync_state(&mut self.environment, global_state);
+
+
+
         self.environment.clear();
         self.event_handler.clear_events();
 

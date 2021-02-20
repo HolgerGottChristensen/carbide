@@ -16,9 +16,11 @@ use carbide_core::text::PositionedGlyph;
 /// how to use this widget look at examples/plain_text_input
 #[derive(Clone, Widget)]
 #[event(handle_keyboard_event, handle_mouse_event)]
+#[focusable]
 pub struct PlainTextInput<GS> where GS: GlobalState {
     id: Id,
     child: Box<dyn Widget<GS>>,
+    focus: Focus,
     position: Point,
     dimension: Dimensions,
     cursor: Cursor,
@@ -61,6 +63,7 @@ impl<GS: GlobalState> PlainTextInput<GS> {
                     .offset(text_offset.clone(), 0.0.into()),
                    Spacer::new(SpacerDirection::Horizontal)
             ]),
+            focus: Focus::Unfocused,
             position: [0.0, 0.0],
             dimension: [0.0, 0.0],
             text: text_state,
@@ -197,12 +200,21 @@ impl<GS: GlobalState> PlainTextInput<GS> {
         }
     }
 
+    fn request_focus(&mut self, env: &mut Environment<GS>) {
+        if self.focus == Focus::Unfocused {
+            self.focus = Focus::FocusRequested;
+            env.request_focus(Refocus::FocusRequest);
+        }
+    }
+
     fn handle_mouse_event(&mut self, event: &MouseEvent, _: &bool, env: &mut Environment<GS>, global_state: &mut GS) {
-        if !self.is_inside(event.get_current_mouse_position()) {return}
+        if !self.is_inside(event.get_current_mouse_position()) { return }
         let text_offset = *self.text_offset.get_value(global_state);
 
         match event {
             MouseEvent::Press(_, position, _) => {
+                self.request_focus(env);
+
                 let text = self.text.get_value(global_state).clone();
 
                 self.check_for_cache_updates(&text, env);
@@ -215,6 +227,8 @@ impl<GS: GlobalState> PlainTextInput<GS> {
                 self.drag_start_cursor = Some(Cursor::Single(CursorIndex{ line: 0, char: char_index }));
             }
             MouseEvent::Click(_, position, _) => {
+                self.request_focus(env);
+
                 let text = self.text.get_value(global_state).clone();
 
                 self.check_for_cache_updates(&text, env);
@@ -227,6 +241,7 @@ impl<GS: GlobalState> PlainTextInput<GS> {
                 self.cursor = Cursor::Single(CursorIndex{ line: 0, char: char_index });
             }
             MouseEvent::NClick(_, position, _, n) => {
+                self.request_focus(env);
 
                 // If the click number is even, select all, otherwise select the clicked word.
                 if n % 2 == 1 {
@@ -249,6 +264,8 @@ impl<GS: GlobalState> PlainTextInput<GS> {
 
             }
             MouseEvent::Drag { to, delta_xy, .. } => {
+                if self.focus != Focus::Focused { return }
+
                 let text = self.text.get_value(global_state).clone();
 
                 let delta_x = delta_xy[0].abs();
@@ -313,6 +330,8 @@ impl<GS: GlobalState> PlainTextInput<GS> {
     }
 
     fn handle_keyboard_event(&mut self, event: &KeyboardEvent, env: &mut Environment<GS>, global_state: &mut GS) {
+        if self.focus != Focus::Focused { return }
+
         match event {
             KeyboardEvent::Press(key, modifier) => {
                 let (current_movable_cursor_index, _is_selection) = match self.cursor {
@@ -630,6 +649,10 @@ impl<GS: GlobalState> PlainTextInput<GS> {
                             }
                         }
                     }
+                    TextInputKeyCommand::Enter => {
+                        self.focus = Focus::FocusReleased;
+                        env.request_focus(Refocus::FocusRequest);
+                    }
                 }
             }
             KeyboardEvent::Text(string, _modifiers) => {
@@ -654,7 +677,7 @@ impl<GS: GlobalState> PlainTextInput<GS> {
         }
 
         self.reposition_cursor(env, global_state);
-        self.recalculate_offset_to_make_cursor_visible(global_state);
+        self.recalculate_offset_to_make_cursor_visible(env, global_state);
     }
 
     /// Recalculate the position of the cursor and the selection. This will not move the cursor
@@ -662,14 +685,7 @@ impl<GS: GlobalState> PlainTextInput<GS> {
     fn reposition_cursor(&mut self, env: &mut Environment<GS>, global_state: &mut GS) {
         let text = self.text.get_value(global_state).clone();
 
-        // Position the cursor
-        let mut text_scaler: Box<carbide_core::widget::Text<GS>> = Text::initialize(text.clone().into())
-            .font_size(40.into()).wrap_mode(Wrap::None);
-
-        text_scaler.set_position([0.0, 0.0]);
-        text_scaler.set_dimension(self.dimension.add([100.0, 100.0]));
-
-        let positioned_glyphs = text_scaler.get_positioned_glyphs(env.get_fonts_map(), 1.0); //Todo: save dpi in env stack
+        let positioned_glyphs = self.get_positioned_glyphs(&text, env); //Todo: save dpi in env stack
 
         let index = match self.cursor {
             Cursor::Single(index) => index,
@@ -693,7 +709,7 @@ impl<GS: GlobalState> PlainTextInput<GS> {
 
     /// This will change the text offset to make the cursor visible. It will result in the text
     /// getting scrolled, such that the entire cursor is visible.
-    fn recalculate_offset_to_make_cursor_visible(&mut self, global_state: &mut GS) {
+    fn recalculate_offset_to_make_cursor_visible(&mut self, env: &mut Environment<GS>, global_state: &mut GS) {
         let cursor_x = *self.cursor_x.get_value(global_state);
         let cursor_width = 4.0;
         let current_text_offset = *self.text_offset.get_value(global_state);
@@ -708,6 +724,30 @@ impl<GS: GlobalState> PlainTextInput<GS> {
             *self.text_offset.get_value_mut(global_state) = new_text_offset;
         }
 
+        let text = self.text.get_value(global_state).clone();
+        let positioned_glyphs = self.get_positioned_glyphs(&text, env);
+
+        if positioned_glyphs.len() != 0 {
+            let last_glyph = &positioned_glyphs[positioned_glyphs.len() - 1];
+
+            let point = last_glyph.position();
+
+            let width = last_glyph.unpositioned().h_metrics().advance_width;
+
+            let width_of_text = (point.x + width) as f64;
+
+            if width_of_text < self.get_width() {
+                *self.text_offset.get_value_mut(global_state) = 0.0;
+            } else if current_text_offset.abs() > width_of_text {
+                *self.text_offset.get_value_mut(global_state) = 0.0;
+                self.recalculate_offset_to_make_cursor_visible(env, global_state)
+            }
+
+        } else {
+            *self.text_offset.get_value_mut(global_state) = 0.0;
+        }
+
+
 
     }
 }
@@ -719,7 +759,7 @@ impl<GS: GlobalState> CommonWidget<GS> for PlainTextInput<GS> {
     }
 
     fn get_flag(&self) -> Flags {
-        Flags::EMPTY
+        Flags::FOCUSABLE
     }
 
     fn get_children(&self) -> WidgetIter<GS> {
@@ -739,6 +779,10 @@ impl<GS: GlobalState> CommonWidget<GS> for PlainTextInput<GS> {
     }
 
     fn get_proxied_children(&mut self) -> WidgetIterMut<GS> {
+        WidgetIterMut::single(&mut self.child)
+    }
+
+    fn get_proxied_children_rev(&mut self) -> WidgetIterMut<GS> {
         WidgetIterMut::single(&mut self.child)
     }
 

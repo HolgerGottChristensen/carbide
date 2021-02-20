@@ -51,6 +51,8 @@ pub use crate::layout::layout::SingleChildLayout;
 pub use crate::state::environment::Environment;
 pub use carbide_core::state::state::StateExt;
 pub use carbide_core::layout::CrossAxisAlignment;
+pub use crate::focus::Focus;
+pub use crate::focus::Refocus;
 
 pub mod render;
 
