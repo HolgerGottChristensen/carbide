@@ -1,6 +1,6 @@
 use carbide_core::widget::*;
 use carbide_core::color::{RED, GREEN};
-use carbide_core::event_handler::{KeyboardEvent, MouseEvent};
+use carbide_core::event_handler::{KeyboardEvent, MouseEvent, WidgetEvent};
 use crate::plain::cursor::{Cursor, CursorIndex};
 use carbide_core::draw::shape::vertex::Vertex;
 use carbide_core::widget::text::Wrap;
@@ -9,6 +9,7 @@ use copypasta::{ClipboardContext, ClipboardProvider};
 use std::ops::Range;
 use unicode_segmentation::UnicodeSegmentation;
 use carbide_core::text::PositionedGlyph;
+use carbide_core::prelude::State;
 
 /// A plain text input widget. The widget contains no specific styling, other than text color,
 /// cursor color/width and selection color. Most common logic has been implemented, such as
@@ -16,11 +17,11 @@ use carbide_core::text::PositionedGlyph;
 /// how to use this widget look at examples/plain_text_input
 #[derive(Clone, Widget)]
 #[event(handle_keyboard_event, handle_mouse_event)]
-#[focusable]
+#[focusable(focus_retrieved)]
 pub struct PlainTextInput<GS> where GS: GlobalState {
     id: Id,
     child: Box<dyn Widget<GS>>,
-    focus: Focus,
+    #[state] focus: Box<dyn State<Focus, GS>>,
     position: Point,
     dimension: Dimensions,
     cursor: Cursor,
@@ -45,25 +46,29 @@ impl<GS: GlobalState> PlainTextInput<GS> {
 
         let text_offset = CommonState::new_local_with_key(&0.0);
 
+        let focus_state = CommonState::new_local_with_key(&Focus::Unfocused);
+
         Box::new(PlainTextInput {
             id: Id::new_v4(),
             child: HStack::initialize( vec![
                 ZStack::initialize(vec![
-                    Rectangle::initialize(vec![])
-                        .fill(GREEN)
-                        .frame(Box::new(selection_width.clone()), 40.0.into())
-                        .offset(selection_x.clone(), 0.0.into()),
+                    IfElse::new(focus_state.clone().mapped(|focus| *focus == Focus::Focused))
+                        .when_true(Rectangle::initialize(vec![])
+                            .fill(GREEN)
+                            .frame(Box::new(selection_width.clone()), 40.0.into())
+                            .offset(selection_x.clone(), 0.0.into())),
                     Text::initialize(text_state.clone().into())
                         .font_size(40.into()).wrap_mode(Wrap::None),
-                    Rectangle::initialize(vec![])
+                    IfElse::new( focus_state.clone().mapped(|focus| *focus == Focus::Focused))
+                        .when_true(Rectangle::initialize(vec![])
                         .fill(RED)
                         .frame(4.0.into(), 40.0.into())
-                        .offset(cursor_x.clone(), 0.0.into())
+                        .offset(cursor_x.clone(), 0.0.into()))
             ]).alignment(BasicLayouter::TopLeading)
                     .offset(text_offset.clone(), 0.0.into()),
                    Spacer::new(SpacerDirection::Horizontal)
             ]),
-            focus: Focus::Unfocused,
+            focus: focus_state.into(),
             position: [0.0, 0.0],
             dimension: [0.0, 0.0],
             text: text_state,
@@ -201,9 +206,15 @@ impl<GS: GlobalState> PlainTextInput<GS> {
     }
 
     fn request_focus(&mut self, env: &mut Environment<GS>) {
-        if self.focus == Focus::Unfocused {
-            self.focus = Focus::FocusRequested;
-            env.request_focus(Refocus::FocusRequest);
+        if self.get_focus() == Focus::Unfocused {
+            self.set_focus_and_request(Focus::FocusRequested, env);
+        }
+    }
+
+    fn focus_retrieved(&mut self, _: &WidgetEvent, focus_request: &Refocus, env: &mut Environment<GS>, global_state: &mut GS) {
+        if focus_request != &Refocus::FocusRequest {
+            self.cursor = Cursor::Single(CursorIndex{line: 0, char: Self::len_in_graphemes(self.text.get_latest_value())});
+            self.reposition_cursor(env, global_state);
         }
     }
 
@@ -225,6 +236,10 @@ impl<GS: GlobalState> PlainTextInput<GS> {
                 let char_index = Cursor::get_char_index(relative_offset, &text, &cache_split);
 
                 self.drag_start_cursor = Some(Cursor::Single(CursorIndex{ line: 0, char: char_index }));
+                if let Cursor::Single(_) = self.cursor {
+                    self.cursor = Cursor::Single(CursorIndex{ line: 0, char: char_index });
+                }
+
             }
             MouseEvent::Click(_, position, _) => {
                 self.request_focus(env);
@@ -264,7 +279,7 @@ impl<GS: GlobalState> PlainTextInput<GS> {
 
             }
             MouseEvent::Drag { to, delta_xy, .. } => {
-                if self.focus != Focus::Focused { return }
+                if self.get_focus() != Focus::Focused { return }
 
                 let text = self.text.get_value(global_state).clone();
 
@@ -330,7 +345,7 @@ impl<GS: GlobalState> PlainTextInput<GS> {
     }
 
     fn handle_keyboard_event(&mut self, event: &KeyboardEvent, env: &mut Environment<GS>, global_state: &mut GS) {
-        if self.focus != Focus::Focused { return }
+        if self.get_focus() != Focus::Focused { return }
 
         match event {
             KeyboardEvent::Press(key, modifier) => {
@@ -650,8 +665,7 @@ impl<GS: GlobalState> PlainTextInput<GS> {
                         }
                     }
                     TextInputKeyCommand::Enter => {
-                        self.focus = Focus::FocusReleased;
-                        env.request_focus(Refocus::FocusRequest);
+                        self.set_focus_and_request(Focus::FocusReleased, env);
                     }
                 }
             }

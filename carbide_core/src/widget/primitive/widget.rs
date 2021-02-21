@@ -11,7 +11,7 @@ use crate::event_handler::{MouseEvent, KeyboardEvent, WidgetEvent};
 use core::fmt;
 use std::fmt::Debug;
 use crate::widget::primitive::border::Border;
-use crate::focus::{Focusable, Focus};
+use crate::focus::{Focusable, Focus, Refocus};
 
 pub trait Widget<S>: Event<S> + Layout<S> + Render<S> + Focusable<S> + DynClone where S: GlobalState {}
 
@@ -161,12 +161,12 @@ impl<S: GlobalState> Render<S> for Box<dyn Widget<S>> {
 }
 
 impl<GS: GlobalState> Focusable<GS> for Box<dyn Widget<GS>> {
-    fn focus_retrieved(&mut self, event: &WidgetEvent) {
-        self.deref_mut().focus_retrieved(event)
+    fn focus_retrieved(&mut self, event: &WidgetEvent, focus_request: &Refocus, env: &mut Environment<GS>, global_state: &mut GS) {
+        self.deref_mut().focus_retrieved(event, focus_request, env, global_state)
     }
 
-    fn focus_dismissed(&mut self, event: &WidgetEvent) {
-        self.deref_mut().focus_dismissed(event)
+    fn focus_dismissed(&mut self, event: &WidgetEvent, focus_request: &Refocus, env: &mut Environment<GS>, global_state: &mut GS) {
+        self.deref_mut().focus_dismissed(event, focus_request, env, global_state)
     }
 
     fn get_focus(&self) -> Focus {
@@ -175,6 +175,10 @@ impl<GS: GlobalState> Focusable<GS> for Box<dyn Widget<GS>> {
 
     fn set_focus(&mut self, focus: Focus) {
         self.deref_mut().set_focus(focus)
+    }
+
+    fn set_focus_and_request(&mut self, focus: Focus, env: &mut Environment<GS>) {
+        self.deref_mut().set_focus_and_request(focus, env)
     }
 }
 

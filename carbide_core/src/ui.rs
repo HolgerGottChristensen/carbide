@@ -212,22 +212,22 @@ impl<S: GlobalState> Ui<S> {
                 }
             }
 
-            if let Some(request) = &self.environment.focus_request {
+            if let Some(request) = self.environment.focus_request.clone() {
                 match request {
                     Refocus::FocusRequest => {
                         println!("Process focus request");
-                        self.widgets.process_focus_request(event);
+                        self.widgets.process_focus_request(event, &request, &mut self.environment, global_state);
                     }
                     Refocus::FocusNext => {
-                        let focus_first = self.widgets.process_focus_next(event, false);
+                        let focus_first = self.widgets.process_focus_next(event, &request,false, &mut self.environment, global_state);
                         if focus_first {
-                            self.widgets.process_focus_next(event, true);
+                            self.widgets.process_focus_next(event, &request,true, &mut self.environment, global_state);
                         }
                     }
                     Refocus::FocusPrevious => {
-                        let focus_last = self.widgets.process_focus_previous(event, false);
+                        let focus_last = self.widgets.process_focus_previous(event,&request, false, &mut self.environment, global_state);
                         if focus_last {
-                            self.widgets.process_focus_previous(event, true);
+                            self.widgets.process_focus_previous(event, &request,true, &mut self.environment, global_state);
                         }
                     }
                 }
@@ -236,9 +236,9 @@ impl<S: GlobalState> Ui<S> {
 
         }
 
+        self.environment.clear();
+
         self.widgets.sync_state(&mut self.environment, global_state);
-
-
 
         self.environment.clear();
         self.event_handler.clear_events();

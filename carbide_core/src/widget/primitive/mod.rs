@@ -26,6 +26,7 @@ pub mod hidden;
 pub mod canvas;
 pub mod offset;
 pub mod border;
+pub mod if_else;
 
 /// Find the bounding rect for the given series of points.
 pub fn bounding_box_for_points<I>(mut points: I) -> Rect

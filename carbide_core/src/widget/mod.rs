@@ -25,6 +25,7 @@ pub use self::primitive::canvas::canvas::Canvas;
 pub use self::primitive::canvas::context::Context;
 pub use self::primitive::canvas::context::ContextAction;
 pub use self::primitive::offset::Offset;
+pub use self::primitive::if_else::IfElse;
 
 
 
@@ -53,6 +54,7 @@ pub use carbide_core::state::state::StateExt;
 pub use carbide_core::layout::CrossAxisAlignment;
 pub use crate::focus::Focus;
 pub use crate::focus::Refocus;
+pub use crate::focus::Focusable;
 
 pub mod render;
 

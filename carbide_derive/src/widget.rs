@@ -171,25 +171,40 @@ pub fn impl_widget(ast: &syn::DeriveInput) -> proc_macro2::TokenStream {
     };
 
     let get_focus = if let Some(_) = struct_attributes.get("focusable") {
-        quote! {self.focus}
+        quote! {self.focus.get_latest_value().clone()}
     } else {
         quote! {carbide_core::focus::Focus::Unfocused}
     };
 
+    let set_focus_and_request = if let Some(_) = struct_attributes.get("focusable") {
+        quote! {
+            if focus == carbide_core::focus::Focus::FocusReleased {
+                env.request_focus(Refocus::FocusRequest)
+            } else if focus == carbide_core::focus::Focus::FocusRequested {
+                env.request_focus(Refocus::FocusRequest)
+            }
+            *self.focus.get_latest_value_mut() = focus;
+        }
+    } else {
+        quote! {}
+    };
+
     let set_focus = if let Some(_) = struct_attributes.get("focusable") {
-        quote! {self.focus = focus;}
+        quote! {
+            *self.focus.get_latest_value_mut() = focus;
+        }
     } else {
         quote! {}
     };
 
     let focus_retrieved = if let Some(_) = struct_attributes.get("focusable.focus_retrieved") {
-        quote! {#struct_ident::focus_retrieved(self, event);}
+        quote! {#struct_ident::focus_retrieved(self, event, focus_request, env, global_state);}
     } else {
         quote! {}
     };
 
     let focus_dismissed = if let Some(_) = struct_attributes.get("focusable.focus_dismissed") {
-        quote! {#struct_ident::focus_dismissed(self, event);}
+        quote! {#struct_ident::focus_dismissed(self, event, focus_request, env, global_state);}
     } else {
         quote! {}
     };
@@ -198,18 +213,18 @@ pub fn impl_widget(ast: &syn::DeriveInput) -> proc_macro2::TokenStream {
         quote! {}
     } else {
         quote! {
-            if self.focus == carbide_core::focus::Focus::Focused {
+            if self.get_focus() == carbide_core::focus::Focus::Focused {
                 match event {
                     carbide_core::event_handler::KeyboardEvent::Press(key, modifier) => {
                         if key == &carbide_core::input::Key::Tab {
                             if modifier == &carbide_core::input::ModifierKey::SHIFT {
 
-                                self.focus = carbide_core::focus::Focus::FocusReleased;
+                                self.set_focus(carbide_core::focus::Focus::FocusReleased);
                                 env.request_focus(carbide_core::focus::Refocus::FocusPrevious);
 
                             } else if modifier == &carbide_core::input::ModifierKey::NO_MODIFIER {
 
-                                self.focus = carbide_core::focus::Focus::FocusReleased;
+                                self.set_focus(carbide_core::focus::Focus::FocusReleased);
                                 env.request_focus(carbide_core::focus::Refocus::FocusNext);
 
                             }
@@ -234,16 +249,20 @@ pub fn impl_widget(ast: &syn::DeriveInput) -> proc_macro2::TokenStream {
 
         #[automatically_derived]
         impl<#(#generics_without_gs ,)* #global_state> carbide_core::focus::Focusable<#global_state_use> for #struct_ident #generics_with_gs #wheres {
-            fn focus_retrieved(&mut self, event: &carbide_core::event_handler::WidgetEvent) {
+            fn focus_retrieved(&mut self, event: &carbide_core::event_handler::WidgetEvent, focus_request: &carbide_core::focus::Refocus, env: &mut carbide_core::state::environment::Environment<#global_state_use>, global_state: &mut #global_state_use) {
                 #focus_retrieved
             }
 
-            fn focus_dismissed(&mut self, event: &carbide_core::event_handler::WidgetEvent) {
+            fn focus_dismissed(&mut self, event: &carbide_core::event_handler::WidgetEvent, focus_request: &carbide_core::focus::Refocus, env: &mut carbide_core::state::environment::Environment<#global_state_use>, global_state: &mut #global_state_use) {
                 #focus_dismissed
             }
 
             fn get_focus(&self) -> carbide_core::focus::Focus {
                 #get_focus
+            }
+
+            fn set_focus_and_request(&mut self, focus: carbide_core::focus::Focus, env: &mut Environment<#global_state_use>) {
+                #set_focus_and_request
             }
 
             fn set_focus(&mut self, focus: carbide_core::focus::Focus) {
