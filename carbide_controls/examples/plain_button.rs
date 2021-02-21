@@ -24,6 +24,7 @@ fn main() {
 
     let hover_state = CommonState::new_local_with_key(&false);
     let pressed_state = CommonState::new_local_with_key(&false);
+    let focus_state = CommonState::new_local_with_key(&Focus::Focused);
 
     window.set_widgets(
         VStack::initialize(vec![
@@ -35,6 +36,7 @@ fn main() {
                     *f += 1;
                 }).hover(hover_state.clone().into())
                 .pressed(pressed_state.clone().into())
+                .focused(focus_state.clone().into())
                 .padding(EdgeInsets::all(2.0))
                 .border()
                 .clip()
@@ -49,6 +51,9 @@ fn main() {
             })).font_size(40.into()),
             Text::initialize(pressed_state.mapped(|m|{
                 format!("Is pressed: {}", m).to_string()
+            })).font_size(40.into()),
+            Text::initialize(focus_state.mapped(|m|{
+                format!("Focus state: {:?}", m).to_string()
             })).font_size(40.into())
         ]).spacing(20.0)
 

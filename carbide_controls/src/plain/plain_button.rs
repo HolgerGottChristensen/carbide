@@ -6,8 +6,10 @@ use carbide_core::state::state::State;
 
 #[derive(Clone, Widget)]
 #[event(handle_keyboard_event, handle_mouse_event)]
+#[focusable]
 pub struct PlainButton<GS> where GS: GlobalState {
     id: Id,
+    #[state] focus: Box<dyn State<Focus, GS>>,
     child: Box<dyn Widget<GS>>,
     position: Point,
     dimension: Dimensions,
@@ -32,9 +34,15 @@ impl<GS: GlobalState> PlainButton<GS> {
         Box::new(self)
     }
 
+    pub fn focused(mut self, focused: Box<dyn State<Focus, GS>>) -> Box<Self> {
+        self.focus = focused;
+        Box::new(self)
+    }
+
     pub fn new(child: Box<dyn Widget<GS>>) -> Box<Self> {
         Box::new(PlainButton {
             id: Id::new_v4(),
+            focus: Box::new(CommonState::new_local_with_key(&Focus::Unfocused)),
             child,
             position: [0.0,0.0],
             dimension: [0.0,0.0],
@@ -81,10 +89,13 @@ impl<GS: GlobalState> PlainButton<GS> {
     }
 
     fn handle_keyboard_event(&mut self, event: &KeyboardEvent, env: &mut Environment<GS>, global_state: &mut GS) {
+        if self.get_focus() != Focus::Focused { return }
+
         match event {
             KeyboardEvent::Click(Key::Return, _) => {
                 if let Some(action) = self.on_click {
                     action(self, env, global_state);
+                    self.set_focus_and_request(Focus::FocusReleased, env);
                 }
             }
             _ => ()
@@ -98,7 +109,7 @@ impl<GS: GlobalState> CommonWidget<GS> for PlainButton<GS> {
     }
 
     fn get_flag(&self) -> Flags {
-        Flags::EMPTY
+        Flags::FOCUSABLE
     }
 
     fn get_children(&self) -> WidgetIter<GS> {
