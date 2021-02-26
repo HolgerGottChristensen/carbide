@@ -9,6 +9,7 @@ use crate::widget::render::ChildRender;
 use std::hash::Hash;
 use serde::Serialize;
 use serde::de::DeserializeOwned;
+use fxhash::{FxHashMap, FxBuildHasher};
 
 pub trait ForEachDelegate: Clone + PartialEq + Eq + Hash + Debug + Serialize + DeserializeOwned + Default {}
 
@@ -18,7 +19,7 @@ impl<T> ForEachDelegate for T where T: Clone + PartialEq + Eq + Hash + Debug + S
 #[state_sync(sync_state)]
 pub struct ForEach<GS, T> where GS: GlobalState, T: ForEachDelegate + 'static {
     id: Uuid, // --
-    children_map: HashMap<T, Box<dyn Widget<GS>>>,
+    children_map: FxHashMap<T, Box<dyn Widget<GS>>>,
     delegate: Box<dyn Widget<GS>>,
     #[state] ids: Box<dyn State<Vec<T>, GS>>,
     position: Point, // --
@@ -33,7 +34,7 @@ impl<GS: GlobalState, T: ForEachDelegate + 'static> WidgetExt<GS> for ForEach<GS
 impl<GS: GlobalState, T: ForEachDelegate + 'static> ForEach<GS, T> {
     pub fn new(ids: Box<dyn State<Vec<T>, GS>>, delegate: Box<dyn Widget<GS>>) -> Box<Self> {
 
-        let mut map = HashMap::new();
+        let mut map = HashMap::with_hasher(FxBuildHasher::default());
 
         for i in ids.get_latest_value() {
             map.insert(i.clone(), Clone::clone(&delegate));
