@@ -5,7 +5,7 @@ use std::sync::atomic::AtomicUsize;
 use crate::color::Color;
 use crate::cursor;
 use crate::event::event::Event;
-use crate::event_handler::{EventHandler, WidgetEvent, WindowEvent};
+use crate::event_handler::{EventHandler, WidgetEvent, WindowEvent, KeyboardEvent};
 use crate::position::Dimensions;
 use crate::render::cprimitives::CPrimitives;
 use crate::state::environment::Environment;
@@ -16,6 +16,7 @@ use crate::state::global_state::GlobalState;
 use crate::event::input::Input;
 use instant::Instant;
 use crate::focus::{Refocus, Focusable};
+use crate::input::{Key, ModifierKey};
 
 /// A constructor type for building a `Ui` instance with a set of optional parameters.
 pub struct UiBuilder {
@@ -76,7 +77,8 @@ pub struct Ui<S> where S: GlobalState {
 
     pub widgets: Box<dyn Widget<S>>,
     event_handler: EventHandler,
-    pub environment: Environment<S>
+    pub environment: Environment<S>,
+    any_focus: bool,
 }
 
 /// A wrapper around the `Ui` that restricts the user from mutating the `Ui` in certain ways while
@@ -160,7 +162,8 @@ impl<S: GlobalState> Ui<S> {
             maybe_background_color: None,
             mouse_cursor: cursor::MouseCursor::Arrow,
             event_handler: EventHandler::new(),
-            environment: Environment::new()
+            environment: Environment::new(),
+            any_focus: false,
         }
     }
 
@@ -216,7 +219,7 @@ impl<S: GlobalState> Ui<S> {
                 match request {
                     Refocus::FocusRequest => {
                         println!("Process focus request");
-                        self.widgets.process_focus_request(event, &request, &mut self.environment, global_state);
+                        self.any_focus = self.widgets.process_focus_request(event, &request, &mut self.environment, global_state);
                     }
                     Refocus::FocusNext => {
                         let focus_first = self.widgets.process_focus_next(event, &request,false, &mut self.environment, global_state);
@@ -232,6 +235,22 @@ impl<S: GlobalState> Ui<S> {
                     }
                 }
                 self.environment.focus_request = None;
+            } else if !self.any_focus {
+                match event {
+                    WidgetEvent::Keyboard(KeyboardEvent::Press(key, modifier)) => {
+                        if key == &Key::Tab {
+                            if modifier == &ModifierKey::SHIFT {
+                                // If focus is still up for grab we can assume that no element
+                                // has been focused. This assumption breaks if there can be multiple
+                                // widgets with focus at the same time
+                                self.any_focus = !self.widgets.process_focus_previous(event, &Refocus::FocusPrevious,true, &mut self.environment, global_state);
+                            } else if modifier == &carbide_core::input::ModifierKey::NO_MODIFIER {
+                                self.any_focus = !self.widgets.process_focus_next(event, &Refocus::FocusNext,true, &mut self.environment, global_state);
+                            }
+                        }
+                    }
+                    _ => {}
+                }
             }
 
         }

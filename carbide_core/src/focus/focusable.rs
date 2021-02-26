@@ -17,13 +17,18 @@ pub trait Focusable<GS>: CommonWidget<GS> where GS: GlobalState {
 
     fn set_focus_and_request(&mut self, focus: Focus, env: &mut Environment<GS>);
 
-    fn process_focus_request(&mut self, event: &WidgetEvent, focus_request: &Refocus, env: &mut Environment<GS>, global_state: &mut GS) {
+    /// Returns a boolean whether any widget in the tree now contains focus.
+    /// This is useful for checking whether the next tab should focus the first element
+    fn process_focus_request(&mut self, event: &WidgetEvent, focus_request: &Refocus, env: &mut Environment<GS>, global_state: &mut GS) -> bool {
+
+        let mut any_focus = false;
 
         if self.get_flag().contains(Flags::FOCUSABLE) {
             let focus = self.get_focus();
             if focus == Focus::FocusRequested {
                 self.set_focus(Focus::Focused);
                 self.focus_retrieved(event, focus_request, env, global_state);
+                any_focus = true;
             } else if focus != Focus::Unfocused {
                 self.set_focus(Focus::Unfocused);
                 self.focus_dismissed(event, focus_request, env, global_state);
@@ -31,8 +36,12 @@ pub trait Focusable<GS>: CommonWidget<GS> where GS: GlobalState {
         }
 
         for child in self.get_proxied_children() {
-            child.process_focus_request(event, focus_request, env, global_state);
+            if child.process_focus_request(event, focus_request, env, global_state) {
+                any_focus = true;
+            }
         }
+
+        any_focus
     }
 
     fn process_focus_next(&mut self, event: &WidgetEvent, focus_request: &Refocus, focus_up_for_grab: bool, env: &mut Environment<GS>, global_state: &mut GS) -> bool {

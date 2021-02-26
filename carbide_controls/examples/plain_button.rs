@@ -18,7 +18,7 @@ fn main() {
 
     let icon_path = Window::<u32>::path_to_assets("images/rust_press.png");
 
-    let mut window = block_on(Window::new("Plain Text Input Example - Carbide".to_string(), 800, 1200,Some(icon_path), 0));
+    let mut window = block_on(Window::new("Plain Button Example - Carbide".to_string(), 800, 1200,Some(icon_path), 0));
 
     window.add_font("fonts/NotoSans/NotoSans-Regular.ttf").unwrap();
 

@@ -219,7 +219,19 @@ impl<GS: GlobalState> PlainTextInput<GS> {
     }
 
     fn handle_mouse_event(&mut self, event: &MouseEvent, _: &bool, env: &mut Environment<GS>, global_state: &mut GS) {
-        if !self.is_inside(event.get_current_mouse_position()) { return }
+        if !self.is_inside(event.get_current_mouse_position()) {
+            match event {
+                MouseEvent::Press(_, _, _) => {
+                    if self.get_focus() == Focus::Focused {
+                        self.set_focus_and_request(Focus::FocusReleased, env);
+                    }
+                }
+                _ => ()
+            }
+
+            return
+        }
+
         let text_offset = *self.text_offset.get_value(global_state);
 
         match event {

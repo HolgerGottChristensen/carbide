@@ -78,6 +78,10 @@ impl CommonWidget<CalculatorState> for CalculatorButton {
         WidgetIterMut::single(&mut self.child)
     }
 
+    fn get_proxied_children_rev(&mut self) -> WidgetIterMut<CalculatorState> {
+        WidgetIterMut::single(&mut self.child)
+    }
+
     fn get_position(&self) -> Point {
         self.position
     }
