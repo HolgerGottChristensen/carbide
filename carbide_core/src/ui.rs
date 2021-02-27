@@ -3,7 +3,7 @@ use std::fmt::Debug;
 use std::sync::atomic::AtomicUsize;
 
 use crate::color::Color;
-use crate::cursor;
+use crate::{cursor, color};
 use crate::event::event::Event;
 use crate::event_handler::{EventHandler, WidgetEvent, WindowEvent, KeyboardEvent};
 use crate::position::Dimensions;
@@ -17,6 +17,9 @@ use crate::event::input::Input;
 use instant::Instant;
 use crate::focus::{Refocus, Focusable};
 use crate::input::{Key, ModifierKey};
+use crate::state::environment_variable::EnvironmentVariable;
+use crate::state::environment_color::EnvironmentColor;
+use crate::state::environment_font_size::EnvironmentFontSize;
 
 /// A constructor type for building a `Ui` instance with a set of optional parameters.
 pub struct UiBuilder {
@@ -151,6 +154,100 @@ impl<S: GlobalState> Ui<S> {
             ..
         } = builder;
 
+        
+        let dark_system_colors = vec![
+            EnvironmentVariable::Color { key: EnvironmentColor::Blue, value: color::rgba_bytes(10, 132, 255, 1.0) },
+            EnvironmentVariable::Color { key: EnvironmentColor::Green, value: color::rgba_bytes(48, 209, 88, 1.0) },
+            EnvironmentVariable::Color { key: EnvironmentColor::Indigo, value: color::rgba_bytes(94, 92, 230, 1.0) },
+            EnvironmentVariable::Color { key: EnvironmentColor::Orange, value: color::rgba_bytes(255, 149, 10, 1.0) },
+            EnvironmentVariable::Color { key: EnvironmentColor::Pink, value: color::rgba_bytes(255, 55, 95, 1.0) },
+            EnvironmentVariable::Color { key: EnvironmentColor::Purple, value: color::rgba_bytes(191, 90, 242, 1.0) },
+            EnvironmentVariable::Color { key: EnvironmentColor::Red, value: color::rgba_bytes(255, 69, 58, 1.0) },
+            EnvironmentVariable::Color { key: EnvironmentColor::Teal, value: color::rgba_bytes(100, 210, 255, 1.0) },
+            EnvironmentVariable::Color { key: EnvironmentColor::Yellow, value: color::rgba_bytes(255, 214, 10, 1.0) },
+
+            EnvironmentVariable::Color { key: EnvironmentColor::Gray, value: color::rgba_bytes(142, 142, 147, 1.0) },
+            EnvironmentVariable::Color { key: EnvironmentColor::Gray2, value: color::rgba_bytes(99, 99, 102, 1.0) },
+            EnvironmentVariable::Color { key: EnvironmentColor::Gray3, value: color::rgba_bytes(72, 72, 74, 1.0) },
+            EnvironmentVariable::Color { key: EnvironmentColor::Gray4, value: color::rgba_bytes(58, 58, 60, 1.0) },
+            EnvironmentVariable::Color { key: EnvironmentColor::Gray5, value: color::rgba_bytes(44, 44, 46, 1.0) },
+            EnvironmentVariable::Color { key: EnvironmentColor::Gray6, value: color::rgba_bytes(28, 28, 30, 1.0) },
+
+            EnvironmentVariable::Color { key: EnvironmentColor::SystemBackground, value: color::rgba_bytes(28, 28, 30, 1.0) },
+            EnvironmentVariable::Color { key: EnvironmentColor::SecondarySystemBackground, value: color::rgba_bytes(44, 44, 46, 1.0) },
+            EnvironmentVariable::Color { key: EnvironmentColor::TertiarySystemBackground, value: color::rgba_bytes(58, 58, 60, 1.0) },
+
+            EnvironmentVariable::Color { key: EnvironmentColor::Label, value: color::rgba_bytes(255, 255, 255, 1.0) },
+            EnvironmentVariable::Color { key: EnvironmentColor::SecondaryLabel, value: color::rgba_bytes(152, 152, 159, 1.0) },
+            EnvironmentVariable::Color { key: EnvironmentColor::TertiaryLabel, value: color::rgba_bytes(90, 90, 95, 1.0) },
+            EnvironmentVariable::Color { key: EnvironmentColor::TertiaryLabel, value: color::rgba_bytes(65, 65, 69, 1.0) },
+            EnvironmentVariable::Color { key: EnvironmentColor::PlaceholderText, value: color::rgba_bytes(71, 71, 74, 1.0) },
+            EnvironmentVariable::Color { key: EnvironmentColor::Link, value: color::rgba_bytes(9, 132, 255, 1.0) },
+
+            EnvironmentVariable::Color { key: EnvironmentColor::SystemFill, value: color::rgba_bytes(61, 61, 65, 1.0) },
+            EnvironmentVariable::Color { key: EnvironmentColor::SecondarySystemFill, value: color::rgba_bytes(57, 57, 61, 1.0) },
+            EnvironmentVariable::Color { key: EnvironmentColor::TertiarySystemFill, value: color::rgba_bytes(50, 50, 54, 1.0) },
+            EnvironmentVariable::Color { key: EnvironmentColor::QuaternarySystemFill, value: color::rgba_bytes(44, 44, 48, 1.0) },
+
+            EnvironmentVariable::Color { key: EnvironmentColor::OpaqueSeparator, value: color::rgba_bytes(61, 61, 65, 1.0) },
+            EnvironmentVariable::Color { key: EnvironmentColor::Separator, value: color::rgba_bytes(255, 255, 255, 0.15) },
+
+        ];
+
+        let _light_system_colors = vec![
+            EnvironmentVariable::Color { key: EnvironmentColor::Blue, value: color::rgba_bytes(0, 122, 255, 1.0) },
+            EnvironmentVariable::Color { key: EnvironmentColor::Green, value: color::rgba_bytes(52, 199, 89, 1.0) },
+            EnvironmentVariable::Color { key: EnvironmentColor::Indigo, value: color::rgba_bytes(88, 86, 214, 1.0) },
+            EnvironmentVariable::Color { key: EnvironmentColor::Orange, value: color::rgba_bytes(255, 149, 0, 1.0) },
+            EnvironmentVariable::Color { key: EnvironmentColor::Pink, value: color::rgba_bytes(255, 45, 85, 1.0) },
+            EnvironmentVariable::Color { key: EnvironmentColor::Purple, value: color::rgba_bytes(175, 82, 222, 1.0) },
+            EnvironmentVariable::Color { key: EnvironmentColor::Red, value: color::rgba_bytes(255, 59, 48, 1.0) },
+            EnvironmentVariable::Color { key: EnvironmentColor::Teal, value: color::rgba_bytes(90, 200, 250, 1.0) },
+            EnvironmentVariable::Color { key: EnvironmentColor::Yellow, value: color::rgba_bytes(255, 204, 0, 1.0) },
+
+            EnvironmentVariable::Color { key: EnvironmentColor::Gray, value: color::rgba_bytes(142, 142, 147, 1.0) },
+            EnvironmentVariable::Color { key: EnvironmentColor::Gray2, value: color::rgba_bytes(174, 174, 178, 1.0) },
+            EnvironmentVariable::Color { key: EnvironmentColor::Gray3, value: color::rgba_bytes(199, 199, 204, 1.0) },
+            EnvironmentVariable::Color { key: EnvironmentColor::Gray4, value: color::rgba_bytes(209, 209, 214, 1.0) },
+            EnvironmentVariable::Color { key: EnvironmentColor::Gray5, value: color::rgba_bytes(229, 229, 234, 1.0) },
+            EnvironmentVariable::Color { key: EnvironmentColor::Gray6, value: color::rgba_bytes(242, 242, 247, 1.0) },
+
+            EnvironmentVariable::Color { key: EnvironmentColor::SystemBackground, value: color::rgba_bytes(255, 255, 255, 1.0) },
+            EnvironmentVariable::Color { key: EnvironmentColor::SecondarySystemBackground, value: color::rgba_bytes(242, 242, 247, 1.0) },
+            EnvironmentVariable::Color { key: EnvironmentColor::TertiarySystemBackground, value: color::rgba_bytes(255, 255, 255, 1.0) },
+
+            EnvironmentVariable::Color { key: EnvironmentColor::Label, value: color::rgba_bytes(0, 0, 0, 1.0) },
+            EnvironmentVariable::Color { key: EnvironmentColor::SecondaryLabel, value: color::rgba_bytes(138, 138, 142, 1.0) },
+            EnvironmentVariable::Color { key: EnvironmentColor::TertiaryLabel, value: color::rgba_bytes(196, 196, 198, 1.0) },
+            EnvironmentVariable::Color { key: EnvironmentColor::TertiaryLabel, value: color::rgba_bytes(220, 220, 221, 1.0) },
+            EnvironmentVariable::Color { key: EnvironmentColor::PlaceholderText, value: color::rgba_bytes(196, 196, 198, 1.0) },
+            EnvironmentVariable::Color { key: EnvironmentColor::Link, value: color::rgba_bytes(0, 122, 255, 1.0) },
+
+            EnvironmentVariable::Color { key: EnvironmentColor::SystemFill, value: color::rgba_bytes(228, 228, 230, 1.0) },
+            EnvironmentVariable::Color { key: EnvironmentColor::SecondarySystemFill, value: color::rgba_bytes(233, 233, 235, 1.0) },
+            EnvironmentVariable::Color { key: EnvironmentColor::TertiarySystemFill, value: color::rgba_bytes(239, 239, 240, 1.0) },
+            EnvironmentVariable::Color { key: EnvironmentColor::QuaternarySystemFill, value: color::rgba_bytes(244, 244, 245, 1.0) },
+
+            EnvironmentVariable::Color { key: EnvironmentColor::OpaqueSeparator, value: color::rgba_bytes(220, 220, 222, 1.0) },
+            EnvironmentVariable::Color { key: EnvironmentColor::Separator, value: color::rgba_bytes(0, 0, 0, 0.137) },
+        ];
+
+        let font_sizes_large = vec![
+            EnvironmentVariable::FontSize { key: EnvironmentFontSize::LargeTitle, value: 34 },
+            EnvironmentVariable::FontSize { key: EnvironmentFontSize::Title, value: 28 },
+            EnvironmentVariable::FontSize { key: EnvironmentFontSize::Title2, value: 22 },
+            EnvironmentVariable::FontSize { key: EnvironmentFontSize::Title3, value: 20 },
+            EnvironmentVariable::FontSize { key: EnvironmentFontSize::Headline, value: 17 },
+            EnvironmentVariable::FontSize { key: EnvironmentFontSize::Body, value: 17 },
+            EnvironmentVariable::FontSize { key: EnvironmentFontSize::Callout, value: 16 },
+            EnvironmentVariable::FontSize { key: EnvironmentFontSize::Subhead, value: 15 },
+            EnvironmentVariable::FontSize { key: EnvironmentFontSize::Footnote, value: 13 },
+            EnvironmentVariable::FontSize { key: EnvironmentFontSize::Caption, value: 12 },
+            EnvironmentVariable::FontSize { key: EnvironmentFontSize::Caption2, value: 11 },
+        ];
+
+        let base_environment = dark_system_colors.iter().chain(font_sizes_large.iter()).map(|item| item.clone()).collect::<Vec<_>>();
+        
 
         Ui {
             fonts: text::font::Map::new(),
@@ -162,7 +259,7 @@ impl<S: GlobalState> Ui<S> {
             maybe_background_color: None,
             mouse_cursor: cursor::MouseCursor::Arrow,
             event_handler: EventHandler::new(),
-            environment: Environment::new(),
+            environment: Environment::new(base_environment),
             any_focus: false,
         }
     }

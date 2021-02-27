@@ -4,7 +4,7 @@ use bitflags::_core::fmt::Formatter;
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
-use crate::{from_ron, to_ron};
+use crate::{from_ron, to_ron, Color};
 use crate::state::global_state::GlobalState;
 use dyn_clone::DynClone;
 use std::ops::{DerefMut, Deref};
@@ -12,16 +12,20 @@ use std::fmt;
 use crate::state::mapped_state::MappedState;
 use crate::state::environment::Environment;
 use serde::de::DeserializeOwned;
+use crate::state::state_key::StateKey;
 
 
 pub trait State<T, GS>: DynClone where T: Serialize + Clone + Debug, GS: GlobalState {
-    fn get_value_mut(&mut self, global_state: &mut GS) -> &mut T;
-    fn get_value(&mut self, global_state: &GS) -> &T;
+    fn get_value_mut(&mut self, env: &mut Environment<GS>, global_state: &mut GS) -> &mut T;
+    fn get_value(&mut self, env: &Environment<GS>, global_state: &GS) -> &T;
     fn get_latest_value(&self) -> &T;
     fn get_latest_value_mut(&mut self) -> &mut T;
-    fn get_key(&self) -> Option<&String>;
+    fn get_key(&self) -> Option<&StateKey>;
     fn update_dependent_states(&mut self, env: &Environment<GS>);
 }
+
+pub type ColorState<GS> = Box<dyn State<Color, GS>>;
+pub type U32State<GS> = Box<dyn State<u32, GS>>;
 
 pub trait StateExt<T: Serialize + Clone + Debug + DeserializeOwned + 'static, GS: GlobalState>: State<T, GS> + Sized + 'static {
     fn mapped<U: Serialize + Clone + Debug + 'static>(self, map: fn(&T) -> U) -> Box<dyn State<U, GS>> {
@@ -43,12 +47,12 @@ dyn_clone::clone_trait_object!(<T: Serialize + Clone + Debug, GS: GlobalState> S
 
 
 impl<T: Serialize + Clone + Debug, GS: GlobalState> State<T, GS> for Box<dyn State<T, GS>> {
-    fn get_value_mut(&mut self, global_state: &mut GS) -> &mut T {
-        self.deref_mut().get_value_mut(global_state)
+    fn get_value_mut(&mut self, env: &mut Environment<GS>, global_state: &mut GS) -> &mut T {
+        self.deref_mut().get_value_mut(env, global_state)
     }
 
-    fn get_value(&mut self, global_state: &GS) -> &T {
-        self.deref_mut().get_value(global_state)
+    fn get_value(&mut self, env: &Environment<GS>, global_state: &GS) -> &T {
+        self.deref_mut().get_value(env, global_state)
     }
 
     fn get_latest_value(&self) -> &T {
@@ -59,7 +63,7 @@ impl<T: Serialize + Clone + Debug, GS: GlobalState> State<T, GS> for Box<dyn Sta
         self.deref_mut().get_latest_value_mut()
     }
 
-    fn get_key(&self) -> Option<&String> {
+    fn get_key(&self) -> Option<&StateKey> {
         self.deref().get_key()
     }
 
@@ -68,25 +72,71 @@ impl<T: Serialize + Clone + Debug, GS: GlobalState> State<T, GS> for Box<dyn Sta
     }
 }
 
+// TODO: Split into different structs.
+#[derive(Clone)]
+pub enum CommonState<T, GS> where T: Serialize + Clone + Debug, GS: GlobalState {
+    LocalState { id: StateKey, value: T },
+    Value { value: T },
+    GlobalState {
+        function: fn(state: &GS) -> T,
+        function_mut: Option<fn(state: &mut GS) -> T>,
+        latest_value: T
+    }
+}
+
 impl<T: Serialize + Clone + Debug, GS: GlobalState> State<T, GS> for CommonState<T, GS> {
-    fn get_value_mut(&mut self, global_state: &mut GS) -> &mut T {
-        self.get_value_mut(global_state)
+    fn get_value_mut(&mut self, _: &mut Environment<GS>, global_state: &mut GS) -> &mut T {
+        match self {
+            CommonState::LocalState { value, .. } => {value}
+            CommonState::Value { value } => {value}
+            CommonState::GlobalState { latest_value, function_mut, function } => {
+                if let Some(n) = function_mut {
+                    *latest_value = n(global_state).clone();
+                } else {
+                    *latest_value = function(global_state).clone();
+                }
+
+                latest_value
+            }
+        }
     }
 
-    fn get_value(&mut self, global_state: &GS) -> &T {
-        self.get_value(global_state)
+    fn get_value(&mut self, _: &Environment<GS>, global_state: &GS) -> &T {
+        match self {
+            CommonState::LocalState { value, .. } => {value}
+            CommonState::Value { value } => {value}
+            CommonState::GlobalState { latest_value, function, .. } => {
+                *latest_value = function(global_state).clone();
+                latest_value
+            }
+        }
     }
 
     fn get_latest_value(&self) -> &T {
-        self.get_latest_value()
+        match self {
+            CommonState::LocalState { value, .. } => {value}
+            CommonState::Value { value } => {value}
+            CommonState::GlobalState { latest_value, .. } => {
+                latest_value
+            }
+        }
     }
 
     fn get_latest_value_mut(&mut self) -> &mut T {
-        self.get_latest_value_mut()
+        match self {
+            CommonState::LocalState { value, .. } => {value}
+            CommonState::Value { value } => {value}
+            CommonState::GlobalState { latest_value, .. } => {
+                latest_value
+            }
+        }
     }
 
-    fn get_key(&self) -> Option<&String> {
-        self.get_key()
+    fn get_key(&self) -> Option<&StateKey> {
+        match self {
+            CommonState::LocalState {id, ..} => Some(id),
+            _ => None
+        }
     }
 
     fn update_dependent_states(&mut self, _: &Environment<GS>) {}
@@ -94,17 +144,7 @@ impl<T: Serialize + Clone + Debug, GS: GlobalState> State<T, GS> for CommonState
 
 
 
-#[derive(Clone)]
-pub enum CommonState<T, GS> where T: Serialize + Clone + Debug, GS: GlobalState {
-    LocalState { id: String, value: T },
-    Value { value: T },
-    GlobalState {
-        function: fn(state: &GS) -> T,
-        function_mut: Option<fn(state: &mut GS) -> T>,
-        latest_value: T
-    }
-    // KeyedEnvironmentState
-}
+
 
 impl<T: Serialize + Clone + Debug, U: GlobalState> Debug for CommonState<T, U> {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
@@ -128,62 +168,6 @@ impl<T: Serialize + Clone + Debug, U: GlobalState> Debug for CommonState<T, U> {
         }
 
 
-    }
-}
-
-impl<T: Serialize + Clone + Debug, U: GlobalState> CommonState<T, U> {
-    pub fn get_value_mut(&mut self, global_state: &mut U) -> &mut T {
-        match self {
-            CommonState::LocalState { value, .. } => {value}
-            CommonState::Value { value } => {value}
-            CommonState::GlobalState { latest_value, function_mut, function } => {
-                if let Some(n) = function_mut {
-                    *latest_value = n(global_state).clone();
-                } else {
-                    *latest_value = function(global_state).clone();
-                }
-
-                latest_value
-            }
-        }
-    }
-
-    pub fn get_value(&mut self, global_state: &U) -> &T {
-        match self {
-            CommonState::LocalState { value, .. } => {value}
-            CommonState::Value { value } => {value}
-            CommonState::GlobalState { latest_value, function, .. } => {
-                *latest_value = function(global_state).clone();
-                latest_value
-            }
-        }
-    }
-
-    pub fn get_latest_value(&self) -> &T {
-        match self {
-            CommonState::LocalState { value, .. } => {value}
-            CommonState::Value { value } => {value}
-            CommonState::GlobalState { latest_value, .. } => {
-                latest_value
-            }
-        }
-    }
-
-    pub fn get_latest_value_mut(&mut self) -> &mut T {
-        match self {
-            CommonState::LocalState { value, .. } => {value}
-            CommonState::Value { value } => {value}
-            CommonState::GlobalState { latest_value, .. } => {
-                latest_value
-            }
-        }
-    }
-
-    pub fn get_key(&self) -> Option<&String> {
-        match self {
-            CommonState::LocalState {id, ..} => Some(id),
-            _ => None
-        }
     }
 }
 
@@ -214,16 +198,9 @@ impl<T: Clone + Debug + Serialize + 'static, S: GlobalState> CommonState<T, S> {
         }
     }
 
-    pub fn new_local(key: &str, val: &T) -> Self {
-        CommonState::LocalState {
-            id: key.to_string(),
-            value: val.clone(),
-        }
-    }
-
     pub fn new_local_with_key(val: &T) -> Self {
         CommonState::LocalState {
-            id: Uuid::new_v4().to_string(),
+            id: StateKey::String(Uuid::new_v4().to_string()),
             value: val.clone(),
         }
     }
@@ -240,11 +217,12 @@ impl GetState for LocalStateList {
     fn update_local_state<'a, T: Deserialize<'a> + Serialize + Clone + Debug, U: GlobalState>(&'a self, state: &mut CommonState<T, U>, global_state: &U) {
         match state {
             CommonState::LocalState { id, value } => {
-                let key = &*id;
-                match self.iter().find(|(try_key, _state)| key.eq(try_key)) {
-                    None => (),
-                    Some((_, val)) => {
-                        *value = from_ron(&val).unwrap();
+                if let StateKey::String(key) = &*id {
+                    match self.iter().find(|(try_key, _state)| key.eq(try_key)) {
+                        None => (),
+                        Some((_, val)) => {
+                            *value = from_ron(&val).unwrap();
+                        }
                     }
                 }
             }
@@ -259,11 +237,14 @@ impl GetState for LocalStateList {
     fn replace_state<T: Serialize + Clone + Debug, U: GlobalState>(&mut self, val: CommonState<T,U>) {
         match val {
             CommonState::LocalState { id, value } => {
-                let val = to_ron(&value).unwrap();
-                self.retain(|(i, _s)| {
-                    id.ne(i)
-                });
-                self.push((id, val));
+                if let StateKey::String(key) = id {
+                    let val = to_ron(&value).unwrap();
+                    self.retain(|(i, _s)| {
+                        key.ne(i)
+                    });
+                    self.push((key, val));
+                }
+
             }
             CommonState::Value { .. } => {}
             _ => {}

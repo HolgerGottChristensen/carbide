@@ -98,24 +98,24 @@ impl<GS: GlobalState> PlainTextInput<GS> {
     }
 
     /// Insert a string at a given grapheme index.
-    fn insert_str(&mut self, index: usize, string: &str, global_state: &mut GS) {
-        let offset = Self::byte_index_from_graphemes(index, self.text.get_value(global_state));
-        self.text.get_value_mut(global_state).insert_str(offset, string);
+    fn insert_str(&mut self, index: usize, string: &str, env: &mut Environment<GS>, global_state: &mut GS) {
+        let offset = Self::byte_index_from_graphemes(index, self.text.get_value(env, global_state));
+        self.text.get_value_mut(env, global_state).insert_str(offset, string);
     }
 
     /// Remove a single grapheme at an index.
-    fn remove(&mut self, index: usize, global_state: &mut GS) {
-        let offset = Self::byte_index_from_graphemes(index, self.text.get_value(global_state));
-        self.text.get_value_mut(global_state).remove(offset);
+    fn remove(&mut self, index: usize, env: &mut Environment<GS>, global_state: &mut GS) {
+        let offset = Self::byte_index_from_graphemes(index, self.text.get_value(env, global_state));
+        self.text.get_value_mut(env, global_state).remove(offset);
     }
 
     /// Remove all the graphemes inside the range,
-    fn remove_range(&mut self, index: Range<usize>, global_state: &mut GS) {
-        let text = self.text.get_value(global_state);
+    fn remove_range(&mut self, index: Range<usize>, env: &mut Environment<GS>, global_state: &mut GS) {
+        let text = self.text.get_value(env, global_state);
 
         let offset_start = Self::byte_index_from_graphemes(index.start, text);
         let offset_end = Self::byte_index_from_graphemes(index.end, text);
-        self.text.get_value_mut(global_state).replace_range(offset_start..offset_end, "");
+        self.text.get_value_mut(env, global_state).replace_range(offset_start..offset_end, "");
     }
 
     /// Get the range from the leftmost character in a word, to the current index.
@@ -232,13 +232,13 @@ impl<GS: GlobalState> PlainTextInput<GS> {
             return
         }
 
-        let text_offset = *self.text_offset.get_value(global_state);
+        let text_offset = *self.text_offset.get_value(env, global_state);
 
         match event {
             MouseEvent::Press(_, position, _) => {
                 self.request_focus(env);
 
-                let text = self.text.get_value(global_state).clone();
+                let text = self.text.get_value(env, global_state).clone();
 
                 self.check_for_cache_updates(&text, env);
                 let (_, cache_split) = &self.grapheme_split_cache;
@@ -256,7 +256,7 @@ impl<GS: GlobalState> PlainTextInput<GS> {
             MouseEvent::Click(_, position, _) => {
                 self.request_focus(env);
 
-                let text = self.text.get_value(global_state).clone();
+                let text = self.text.get_value(env, global_state).clone();
 
                 self.check_for_cache_updates(&text, env);
                 let (_, cache_split) = &self.grapheme_split_cache;
@@ -272,9 +272,9 @@ impl<GS: GlobalState> PlainTextInput<GS> {
 
                 // If the click number is even, select all, otherwise select the clicked word.
                 if n % 2 == 1 {
-                    self.cursor = Cursor::Selection {start: CursorIndex{line: 0, char: 0}, end: CursorIndex {line: 0, char: Self::len_in_graphemes(self.text.get_value(global_state))}};
+                    self.cursor = Cursor::Selection {start: CursorIndex{line: 0, char: 0}, end: CursorIndex {line: 0, char: Self::len_in_graphemes(self.text.get_value(env, global_state))}};
                 } else {
-                    let text = self.text.get_value(global_state).clone();
+                    let text = self.text.get_value(env, global_state).clone();
 
                     self.check_for_cache_updates(&text, env);
 
@@ -293,25 +293,25 @@ impl<GS: GlobalState> PlainTextInput<GS> {
             MouseEvent::Drag { to, delta_xy, .. } => {
                 if self.get_focus() != Focus::Focused { return }
 
-                let text = self.text.get_value(global_state).clone();
+                let text = self.text.get_value(env, global_state).clone();
 
                 let delta_x = delta_xy[0].abs();
                 let mouse_scroll_threshold = 30.0;
 
                 if to[0] < self.get_x() + mouse_scroll_threshold {
-                    let offset = self.text_offset.get_value(global_state) + 10.0 * delta_x;
-                    *self.text_offset.get_value_mut(global_state) = offset.min(0.0);
+                    let offset = self.text_offset.get_value(env, global_state) + 10.0 * delta_x;
+                    *self.text_offset.get_value_mut(env, global_state) = offset.min(0.0);
                 } else if to[0] > self.get_x() + self.get_width() - mouse_scroll_threshold {
-                    let offset = self.text_offset.get_value(global_state) - 10.0 * delta_x;
-                    let text = self.text.get_value(global_state).clone();
+                    let offset = self.text_offset.get_value(env, global_state) - 10.0 * delta_x;
+                    let text = self.text.get_value(env, global_state).clone();
                     let positioned_glyphs = self.get_positioned_glyphs(&text, env);
 
                     let start = CursorIndex {line: 0, char: 0};
-                    let end = CursorIndex {line: 0, char: Self::len_in_graphemes(self.text.get_value(global_state))};
+                    let end = CursorIndex {line: 0, char: Self::len_in_graphemes(self.text.get_value(env, global_state))};
 
                     let max_offset = Cursor::Selection{start, end}.get_width(&text, &positioned_glyphs);
 
-                    *self.text_offset.get_value_mut(global_state) = offset.max(-(max_offset - self.get_width()));
+                    *self.text_offset.get_value_mut(env, global_state) = offset.max(-(max_offset - self.get_width()));
                 }
 
 
@@ -374,14 +374,14 @@ impl<GS: GlobalState> PlainTextInput<GS> {
                     TextInputKeyCommand::MoveLeft => {
                         let current_char = current_movable_cursor_index.char;
                         let moved_char = if current_char == 0 {0} else {current_char - 1};
-                        let clamped = carbide_core::utils::clamp(moved_char, 0, Self::len_in_graphemes(self.text.get_value(global_state)));
+                        let clamped = carbide_core::utils::clamp(moved_char, 0, Self::len_in_graphemes(self.text.get_value(env, global_state)));
 
                         self.cursor = Cursor::Single(CursorIndex{ line: 0, char: clamped });
                     }
                     TextInputKeyCommand::MoveRight => {
                         let current_char = current_movable_cursor_index.char;
                         let moved_char = current_char + 1;
-                        let clamped = carbide_core::utils::clamp(moved_char, 0, Self::len_in_graphemes(self.text.get_value(global_state)));
+                        let clamped = carbide_core::utils::clamp(moved_char, 0, Self::len_in_graphemes(self.text.get_value(env, global_state)));
 
                         self.cursor = Cursor::Single(CursorIndex{ line: 0, char: clamped });
                     }
@@ -390,7 +390,7 @@ impl<GS: GlobalState> PlainTextInput<GS> {
                         match self.cursor {
                             Cursor::Single(index) => {
                                 if index.char > 0 {
-                                    self.remove(index.char - 1, global_state);
+                                    self.remove(index.char - 1, env, global_state);
                                     self.cursor = Cursor::Single(CursorIndex{ line: 0, char: index.char -1 });
                                 }
                             }
@@ -398,7 +398,7 @@ impl<GS: GlobalState> PlainTextInput<GS> {
                                 let min = start.char.min(end.char);
                                 let max = start.char.max(end.char);
 
-                                self.remove_range(min..max, global_state);
+                                self.remove_range(min..max, env, global_state);
 
                                 self.cursor = Cursor::Single(CursorIndex{ line: 0, char: min });
                             }
@@ -407,16 +407,16 @@ impl<GS: GlobalState> PlainTextInput<GS> {
                     TextInputKeyCommand::RemoveRight => {
                         match self.cursor {
                             Cursor::Single(index) => {
-                                let mut_text = self.text.get_value_mut(global_state);
+                                let mut_text = self.text.get_value_mut(env, global_state);
                                 if index.char < Self::len_in_graphemes(mut_text) {
-                                    self.remove(index.char, global_state);
+                                    self.remove(index.char, env, global_state);
                                     self.cursor = Cursor::Single(CursorIndex{ line: 0, char: index.char });
                                 }
                             }
                             Cursor::Selection { start, end } => {
                                 let min = start.char.min(end.char);
                                 let max = start.char.max(end.char);
-                                self.remove_range(min..max, global_state);
+                                self.remove_range(min..max, env, global_state);
 
                                 self.cursor = Cursor::Single(CursorIndex{ line: 0, char: min });
                             }
@@ -425,7 +425,7 @@ impl<GS: GlobalState> PlainTextInput<GS> {
                     TextInputKeyCommand::Undefined => {}
                     TextInputKeyCommand::Copy => {
                         let mut ctx = ClipboardContext::new().unwrap();
-                        let text = self.text.get_value(global_state).clone();
+                        let text = self.text.get_value(env, global_state).clone();
 
 
                         match self.cursor {
@@ -451,15 +451,15 @@ impl<GS: GlobalState> PlainTextInput<GS> {
 
                         match self.cursor {
                             Cursor::Single(index) => {
-                                self.insert_str(index.char, &content, global_state);
+                                self.insert_str(index.char, &content, env, global_state);
                                 self.cursor = Cursor::Single(CursorIndex{ line: 0, char: index.char + Self::len_in_graphemes(&content) });
                             }
                             Cursor::Selection { start, end } => {
                                 let min = start.char.min(end.char);
                                 let max = start.char.max(end.char);
-                                self.remove_range(min..max, global_state);
+                                self.remove_range(min..max, env, global_state);
 
-                                self.insert_str(min, &content, global_state);
+                                self.insert_str(min, &content, env, global_state);
                                 self.cursor = Cursor::Single(CursorIndex{ line: 0, char: min + Self::len_in_graphemes(&content) });
 
                             }
@@ -467,11 +467,11 @@ impl<GS: GlobalState> PlainTextInput<GS> {
                     }
                     TextInputKeyCommand::Clip => {
                         let mut ctx = ClipboardContext::new().unwrap();
-                        let text = self.text.get_value(global_state).clone();
+                        let text = self.text.get_value(env, global_state).clone();
                         match self.cursor {
                             Cursor::Single(_) => {
                                 ctx.set_contents(text).unwrap();
-                                self.text.get_value_mut(global_state).clear();
+                                self.text.get_value_mut(env, global_state).clear();
 
                                 self.cursor = Cursor::Single(CursorIndex{ line: 0, char: 0 })
                             }
@@ -480,7 +480,7 @@ impl<GS: GlobalState> PlainTextInput<GS> {
                                 let max = start.char.max(end.char);
                                 let s = text[min..max].to_string();
                                 ctx.set_contents(s).unwrap();
-                                self.remove_range(min..max, global_state);
+                                self.remove_range(min..max, env, global_state);
 
                                 self.cursor = Cursor::Single(CursorIndex{ line: 0, char: min })
                             }
@@ -490,14 +490,14 @@ impl<GS: GlobalState> PlainTextInput<GS> {
                         match self.cursor {
                             Cursor::Single(index) => {
                                 let moved_char = if index.char == 0 {0} else {index.char - 1};
-                                let clamped = carbide_core::utils::clamp(moved_char, 0, Self::len_in_graphemes(self.text.get_value(global_state)));
+                                let clamped = carbide_core::utils::clamp(moved_char, 0, Self::len_in_graphemes(self.text.get_value(env, global_state)));
 
                                 self.cursor = Cursor::Selection {start: index, end: CursorIndex {line: 0, char: clamped}}
 
                             }
                             Cursor::Selection { start, end } => {
                                 let moved_char = if end.char == 0 {0} else {end.char - 1};
-                                let clamped = carbide_core::utils::clamp(moved_char, 0, Self::len_in_graphemes(self.text.get_value(global_state)));
+                                let clamped = carbide_core::utils::clamp(moved_char, 0, Self::len_in_graphemes(self.text.get_value(env, global_state)));
 
                                 if start.char == clamped {
                                     self.cursor = Cursor::Single(start)
@@ -513,14 +513,14 @@ impl<GS: GlobalState> PlainTextInput<GS> {
                         match self.cursor {
                             Cursor::Single(index) => {
                                 let moved_char = index.char + 1;
-                                let clamped = carbide_core::utils::clamp(moved_char, 0, Self::len_in_graphemes(self.text.get_value(global_state)));
+                                let clamped = carbide_core::utils::clamp(moved_char, 0, Self::len_in_graphemes(self.text.get_value(env, global_state)));
 
                                 self.cursor = Cursor::Selection {start: index, end: CursorIndex {line: 0, char: clamped}}
 
                             }
                             Cursor::Selection { start, end } => {
                                 let moved_char = end.char + 1;
-                                let clamped = carbide_core::utils::clamp(moved_char, 0, Self::len_in_graphemes(self.text.get_value(global_state)));
+                                let clamped = carbide_core::utils::clamp(moved_char, 0, Self::len_in_graphemes(self.text.get_value(env, global_state)));
 
                                 if start.char == clamped {
                                     self.cursor = Cursor::Single(start)
@@ -532,10 +532,10 @@ impl<GS: GlobalState> PlainTextInput<GS> {
 
                     }
                     TextInputKeyCommand::SelectAll => {
-                        self.cursor = Cursor::Selection {start: CursorIndex{line: 0, char: 0}, end: CursorIndex {line: 0, char: Self::len_in_graphemes(self.text.get_value(global_state))}}
+                        self.cursor = Cursor::Selection {start: CursorIndex{line: 0, char: 0}, end: CursorIndex {line: 0, char: Self::len_in_graphemes(self.text.get_value(env, global_state))}}
                     }
                     TextInputKeyCommand::JumpWordLeft => {
-                        let text = self.text.get_value(global_state).clone();
+                        let text = self.text.get_value(env, global_state).clone();
                         let start_index = current_movable_cursor_index.char;
 
                         let range = Self::prev_word_range(text, start_index);
@@ -544,7 +544,7 @@ impl<GS: GlobalState> PlainTextInput<GS> {
 
                     }
                     TextInputKeyCommand::JumpWordRight => {
-                        let text = self.text.get_value(global_state).clone();
+                        let text = self.text.get_value(env, global_state).clone();
                         let start_index = current_movable_cursor_index.char;
 
                         let range = Self::next_word_range(text, start_index);
@@ -552,7 +552,7 @@ impl<GS: GlobalState> PlainTextInput<GS> {
                         self.cursor = Cursor::Single(CursorIndex {line: 0, char: range.end})
                     }
                     TextInputKeyCommand::JumpSelectWordLeft => {
-                        let text = self.text.get_value(global_state).clone();
+                        let text = self.text.get_value(env, global_state).clone();
                         let start_index = current_movable_cursor_index.char;
 
                         let range = Self::prev_word_range(text, start_index);
@@ -567,7 +567,7 @@ impl<GS: GlobalState> PlainTextInput<GS> {
                         }
                     }
                     TextInputKeyCommand::JumpSelectWordRight => {
-                        let text = self.text.get_value(global_state).clone();
+                        let text = self.text.get_value(env, global_state).clone();
                         let start_index = current_movable_cursor_index.char;
 
                         let range = Self::next_word_range(text, start_index);
@@ -584,18 +584,18 @@ impl<GS: GlobalState> PlainTextInput<GS> {
 
                     }
                     TextInputKeyCommand::RemoveAll => {
-                        self.text.get_value_mut(global_state).clear();
+                        self.text.get_value_mut(env, global_state).clear();
                         self.cursor = Cursor::Single (CursorIndex{line: 0, char: 0})
                     }
                     TextInputKeyCommand::RemoveWordLeft => {
                         if let Cursor::Single(index) = self.cursor {
-                            let text = self.text.get_value(global_state).clone();
+                            let text = self.text.get_value(env, global_state).clone();
                             let start_index = index.char;
 
                             let range = Self::prev_word_range(text, start_index);
                             let start = range.start;
 
-                            self.remove_range(range, global_state);
+                            self.remove_range(range, env, global_state);
 
                             self.cursor = Cursor::Single (CursorIndex{line: 0, char: start})
 
@@ -603,13 +603,13 @@ impl<GS: GlobalState> PlainTextInput<GS> {
                     }
                     TextInputKeyCommand::RemoveWordRight => {
                         if let Cursor::Single(index) = self.cursor {
-                            let text = self.text.get_value(global_state).clone();
+                            let text = self.text.get_value(env, global_state).clone();
                             let start_index = index.char;
 
                             let range = Self::next_word_range(text, start_index);
                             let start = range.start;
 
-                            self.remove_range(range, global_state);
+                            self.remove_range(range, env, global_state);
 
                             self.cursor = Cursor::Single (CursorIndex{line: 0, char: start})
 
@@ -618,33 +618,33 @@ impl<GS: GlobalState> PlainTextInput<GS> {
                     TextInputKeyCommand::DuplicateLeft => {
                         match self.cursor {
                             Cursor::Single(_) => {
-                                let text = self.text.get_value(global_state).clone();
-                                self.text.get_value_mut(global_state).push_str(&text);
+                                let text = self.text.get_value(env, global_state).clone();
+                                self.text.get_value_mut(env, global_state).push_str(&text);
 
                             }
                             Cursor::Selection { start, end } => {
-                                let text = self.text.get_value(global_state).clone();
+                                let text = self.text.get_value(env, global_state).clone();
                                 let min = start.char.min(end.char);
                                 let max = start.char.max(end.char);
 
-                                self.insert_str(max, &text[min..max], global_state);
+                                self.insert_str(max, &text[min..max], env, global_state);
                             }
                         }
                     }
                     TextInputKeyCommand::DuplicateRight => {
                         match self.cursor {
                             Cursor::Single(_) => {
-                                let text = self.text.get_value(global_state).clone();
-                                self.text.get_value_mut(global_state).push_str(&text);
+                                let text = self.text.get_value(env, global_state).clone();
+                                self.text.get_value_mut(env, global_state).push_str(&text);
 
                                 self.cursor = Cursor::Single (CursorIndex{line: 0, char: Self::len_in_graphemes(&text) * 2})
                             }
                             Cursor::Selection { start, end } => {
-                                let text = self.text.get_value(global_state).clone();
+                                let text = self.text.get_value(env, global_state).clone();
                                 let min = start.char.min(end.char);
                                 let max = start.char.max(end.char);
 
-                                self.insert_str(max, &text[min..max], global_state);
+                                self.insert_str(max, &text[min..max], env, global_state);
 
                                 self.cursor = Cursor::Selection { start: CursorIndex {line: 0, char: end.char}, end: CursorIndex {line: 0, char: end.char + (min..max).count()} }
                             }
@@ -654,7 +654,7 @@ impl<GS: GlobalState> PlainTextInput<GS> {
                         self.cursor = Cursor::Single(CursorIndex{line: 0, char: 0})
                     }
                     TextInputKeyCommand::JumpToRight => {
-                        self.cursor = Cursor::Single(CursorIndex{line: 0, char: Self::len_in_graphemes(self.text.get_value(global_state))})
+                        self.cursor = Cursor::Single(CursorIndex{line: 0, char: Self::len_in_graphemes(self.text.get_value(env, global_state))})
                     }
                     TextInputKeyCommand::JumpSelectToLeft => {
                         match self.cursor {
@@ -669,10 +669,10 @@ impl<GS: GlobalState> PlainTextInput<GS> {
                     TextInputKeyCommand::JumpSelectToRight => {
                         match self.cursor {
                             Cursor::Single(index) => {
-                                self.cursor = Cursor::Selection { start: index, end: CursorIndex { line: 0, char: Self::len_in_graphemes(self.text.get_value(global_state)) } }
+                                self.cursor = Cursor::Selection { start: index, end: CursorIndex { line: 0, char: Self::len_in_graphemes(self.text.get_value(env, global_state)) } }
                             }
                             Cursor::Selection { start, .. } => {
-                                self.cursor = Cursor::Selection { start, end: CursorIndex { line: 0, char: Self::len_in_graphemes(self.text.get_value(global_state)) } }
+                                self.cursor = Cursor::Selection { start, end: CursorIndex { line: 0, char: Self::len_in_graphemes(self.text.get_value(env, global_state)) } }
                             }
                         }
                     }
@@ -686,15 +686,15 @@ impl<GS: GlobalState> PlainTextInput<GS> {
 
                 match self.cursor {
                     Cursor::Single(index) => {
-                        self.insert_str(index.char, string, global_state);
+                        self.insert_str(index.char, string, env, global_state);
 
                         self.cursor = Cursor::Single(CursorIndex{ line: 0, char: index.char + Self::len_in_graphemes(&string) });
                     }
                     Cursor::Selection { start, end } => {
                         let min = start.char.min(end.char);
                         let max = start.char.max(end.char);
-                        self.remove_range(min..max, global_state);
-                        self.insert_str(min, string, global_state);
+                        self.remove_range(min..max, env, global_state);
+                        self.insert_str(min, string, env, global_state);
                         self.cursor = Cursor::Single(CursorIndex{ line: 0, char: min + Self::len_in_graphemes(&string) });
                     }
                 }
@@ -709,7 +709,7 @@ impl<GS: GlobalState> PlainTextInput<GS> {
     /// Recalculate the position of the cursor and the selection. This will not move the cursor
     /// index, but move the visual positioning of the cursor and the selection box (if selection mode).
     fn reposition_cursor(&mut self, env: &mut Environment<GS>, global_state: &mut GS) {
-        let text = self.text.get_value(global_state).clone();
+        let text = self.text.get_value(env, global_state).clone();
 
         let positioned_glyphs = self.get_positioned_glyphs(&text, env); //Todo: save dpi in env stack
 
@@ -720,37 +720,37 @@ impl<GS: GlobalState> PlainTextInput<GS> {
 
         let point = index.get_position(&text, &positioned_glyphs);
 
-        *self.cursor_x.get_value_mut(global_state) = point[0];
-        *self.selection_x.get_value_mut(global_state) = point[0];
+        *self.cursor_x.get_value_mut(env, global_state) = point[0];
+        *self.selection_x.get_value_mut(env, global_state) = point[0];
 
         let selection_width = self.cursor.get_width(&text, &positioned_glyphs);
 
         if selection_width < 0.0 {
-            *self.selection_width.get_value_mut(global_state) = selection_width.abs();
+            *self.selection_width.get_value_mut(env, global_state) = selection_width.abs();
         } else {
-            *self.selection_x.get_value_mut(global_state) -= selection_width;
-            *self.selection_width.get_value_mut(global_state) = selection_width;
+            *self.selection_x.get_value_mut(env, global_state) -= selection_width;
+            *self.selection_width.get_value_mut(env, global_state) = selection_width;
         }
     }
 
     /// This will change the text offset to make the cursor visible. It will result in the text
     /// getting scrolled, such that the entire cursor is visible.
     fn recalculate_offset_to_make_cursor_visible(&mut self, env: &mut Environment<GS>, global_state: &mut GS) {
-        let cursor_x = *self.cursor_x.get_value(global_state);
+        let cursor_x = *self.cursor_x.get_value(env, global_state);
         let cursor_width = 4.0;
-        let current_text_offset = *self.text_offset.get_value(global_state);
+        let current_text_offset = *self.text_offset.get_value(env, global_state);
 
         if cursor_x + cursor_width > self.get_width() && -current_text_offset < cursor_x + cursor_width - self.get_width() {
             let new_text_offset = -(cursor_x + cursor_width - self.get_width());
 
-            *self.text_offset.get_value_mut(global_state) = new_text_offset;
+            *self.text_offset.get_value_mut(env, global_state) = new_text_offset;
         } else if cursor_x + current_text_offset < 0.0 {
             let new_text_offset = -(cursor_x);
 
-            *self.text_offset.get_value_mut(global_state) = new_text_offset;
+            *self.text_offset.get_value_mut(env, global_state) = new_text_offset;
         }
 
-        let text = self.text.get_value(global_state).clone();
+        let text = self.text.get_value(env, global_state).clone();
         let positioned_glyphs = self.get_positioned_glyphs(&text, env);
 
         if positioned_glyphs.len() != 0 {
@@ -763,14 +763,14 @@ impl<GS: GlobalState> PlainTextInput<GS> {
             let width_of_text = (point.x + width) as f64;
 
             if width_of_text < self.get_width() {
-                *self.text_offset.get_value_mut(global_state) = 0.0;
+                *self.text_offset.get_value_mut(env, global_state) = 0.0;
             } else if current_text_offset.abs() > width_of_text {
-                *self.text_offset.get_value_mut(global_state) = 0.0;
+                *self.text_offset.get_value_mut(env, global_state) = 0.0;
                 self.recalculate_offset_to_make_cursor_visible(env, global_state)
             }
 
         } else {
-            *self.text_offset.get_value_mut(global_state) = 0.0;
+            *self.text_offset.get_value_mut(env, global_state) = 0.0;
         }
 
 

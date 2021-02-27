@@ -5,6 +5,7 @@ use crate::state::state::State;
 use uuid::Uuid;
 use crate::state::environment::Environment;
 use serde::de::DeserializeOwned;
+use crate::state::state_key::StateKey;
 
 #[derive(Clone)]
 pub struct MappedState<T, U, GS> where T: Serialize + Clone + Debug, U: Serialize + Clone + Debug, GS: GlobalState {
@@ -36,13 +37,13 @@ impl<T: Serialize + Clone + Debug, U: Serialize + Clone + Debug, GS: GlobalState
 }
 
 impl<T: Serialize + Clone + Debug, U: Serialize + Clone + Debug + DeserializeOwned, GS: GlobalState> State<T, GS> for MappedState<T, U, GS> {
-    fn get_value_mut(&mut self, global_state: &mut GS) -> &mut T {
-        self.latest_value = (self.map)(self.mapped_state.get_value_mut(global_state));
+    fn get_value_mut(&mut self, env: &mut Environment<GS>, global_state: &mut GS) -> &mut T {
+        self.latest_value = (self.map)(self.mapped_state.get_value_mut(env, global_state));
         &mut self.latest_value
     }
 
-    fn get_value(&mut self, global_state: &GS) -> &T {
-        self.latest_value = (self.map)(self.mapped_state.get_value(global_state));
+    fn get_value(&mut self, env: &Environment<GS>, global_state: &GS) -> &T {
+        self.latest_value = (self.map)(self.mapped_state.get_value(env, global_state));
         &self.latest_value
     }
 
@@ -54,7 +55,7 @@ impl<T: Serialize + Clone + Debug, U: Serialize + Clone + Debug + DeserializeOwn
         &mut self.latest_value
     }
 
-    fn get_key(&self) -> Option<&String> {
+    fn get_key(&self) -> Option<&StateKey> {
         None
     }
 

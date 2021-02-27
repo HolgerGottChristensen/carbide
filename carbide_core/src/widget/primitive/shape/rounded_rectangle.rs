@@ -9,6 +9,7 @@ use crate::widget::types::triangle_store::TriangleStore;
 use crate::render::primitive_kind::PrimitiveKind;
 use crate::draw::shape::triangle::Triangle;
 use crate::color::Rgba;
+use crate::state::environment_color::EnvironmentColor;
 
 /// A basic, non-interactive rectangle shape widget.
 #[derive(Debug, Clone, Widget)]
@@ -17,7 +18,7 @@ pub struct RoundedRectangle<GS> where GS: GlobalState {
     children: Vec<Box<dyn Widget<GS>>>,
     position: Point,
     dimension: Dimensions,
-    color: Color,
+    #[state] color: ColorState<GS>,
     triangle_store: TriangleStore,
 }
 
@@ -169,7 +170,7 @@ impl<S: GlobalState> Render<S> for RoundedRectangle<S> {
 
         let mut prims = vec![
             Primitive {
-                kind: PrimitiveKind::TrianglesSingleColor { color: Rgba::from(self.color), triangles },
+                kind: PrimitiveKind::TrianglesSingleColor { color: Rgba::from(*self.color.get_latest_value()), triangles },
                 rect: Rect::new(self.position, self.dimension)
             }
         ];
@@ -182,20 +183,20 @@ impl<S: GlobalState> Render<S> for RoundedRectangle<S> {
     }
 }
 
-impl<S: GlobalState> RoundedRectangle<S> {
+impl<GS: GlobalState> RoundedRectangle<GS> {
 
-    pub fn fill(mut self, color: Color) -> Box<Self> {
+    pub fn fill(mut self, color: ColorState<GS>) -> Box<Self> {
         self.color = color;
         Box::new(self)
     }
 
-    pub fn initialize(children: Vec<Box<dyn Widget<S>>>) -> Box<RoundedRectangle<S>> {
+    pub fn initialize(children: Vec<Box<dyn Widget<GS>>>) -> Box<RoundedRectangle<GS>> {
         Box::new(RoundedRectangle {
             id: Uuid::new_v4(),
             children,
             position: [0.0,0.0],
             dimension: [100.0,100.0],
-            color: Color::random(),
+            color: EnvironmentColor::Blue.into(),
             triangle_store: TriangleStore::new()
         })
     }

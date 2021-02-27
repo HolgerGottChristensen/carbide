@@ -56,23 +56,23 @@ impl<GS: GlobalState> PlainButton<GS> {
         match event {
             MouseEvent::Press(MouseButton::Left, mouse_position, _) => {
                 if self.is_inside(*mouse_position) {
-                    *self.is_pressed.get_value_mut(global_state) = true;
+                    *self.is_pressed.get_value_mut(env, global_state) = true;
                 }
             }
             MouseEvent::Release(MouseButton::Left, mouse_position, _) => {
                 if self.is_inside(*mouse_position) {
-                    *self.is_pressed.get_value_mut(global_state) = false;
+                    *self.is_pressed.get_value_mut(env, global_state) = false;
                 }
             }
             MouseEvent::Move { to, .. } => {
-                if *self.is_hovered.get_value(global_state) {
+                if *self.is_hovered.get_value(env, global_state) {
                    if !self.is_inside(*to) {
-                       *self.is_hovered.get_value_mut(global_state) = false;
-                       *self.is_pressed.get_value_mut(global_state) = false;
+                       *self.is_hovered.get_value_mut(env, global_state) = false;
+                       *self.is_pressed.get_value_mut(env, global_state) = false;
                    }
                 } else {
                     if self.is_inside(*to) {
-                        *self.is_hovered.get_value_mut(global_state) = true;
+                        *self.is_hovered.get_value_mut(env, global_state) = true;
                     }
                 }
             }

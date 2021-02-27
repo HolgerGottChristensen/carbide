@@ -4,10 +4,13 @@ use crate::text::{Justify, PositionedGlyph, font};
 use crate::position::Align;
 use crate::render::primitive_kind::PrimitiveKind;
 use crate::render::util::new_primitive;
-use crate::color::WHITE;
 use crate::utils;
 use crate::render::text::Text as RenderText;
 use rusttype::Scale;
+use crate::state::environment_color::EnvironmentColor;
+use crate::state::state::{ColorState, U32State};
+use crate::widget::types::text_wrap::Wrap;
+use crate::state::environment_font_size::EnvironmentFontSize;
 
 
 /// Displays some given text centered within a rectangular area.
@@ -18,12 +21,12 @@ use rusttype::Scale;
 /// in accordance with the produced **Alignment**.
 #[derive(Debug, Clone, Widget)]
 pub struct Text<GS> where GS: GlobalState {
-    #[state] pub text: Box<dyn State<String, GS>>,
-    #[state] font_size: CommonState<u32, GS>,
     position: Point,
     dimension: Dimensions,
     wrap_mode: Wrap,
-    color: Color,
+    #[state] pub text: Box<dyn State<String, GS>>,
+    #[state] font_size: U32State<GS>,
+    #[state] color: ColorState<GS>,
 }
 
 impl<GS: GlobalState> WidgetExt<GS> for Text<GS> {}
@@ -65,7 +68,7 @@ impl<S: GlobalState> Render<S> for Text<S> {
         let (text, font_id) = self.get_render_text(fonts);
 
         let kind = PrimitiveKind::Text {
-            color: self.color,
+            color: self.color.get_latest_value().clone(),
             text,
             font_id,
         };
@@ -118,43 +121,8 @@ impl<S: GlobalState> CommonWidget<S> for Text<S> {
         self.dimension = dimensions
     }
 }
-/*
-/// The styling for a **Text**'s graphics.
-#[derive(Copy, Clone, Debug, Default, PartialEq, WidgetStyle_)]
-pub struct Style {
-    /// The font size for the **Text**.
-    #[carbide(default = "theme.font_size_medium")]
-    pub font_size: Option<FontSize>,
-    /// The color of the **Text**.
-    #[carbide(default = "theme.label_color")]
-    pub color: Option<Color>,
-    /// Whether or not the text should wrap around the width.
-    #[carbide(default = "Some(Wrap::Whitespace)")]
-    pub maybe_wrap: Option<Option<Wrap>>,
-    /// The spacing between consecutive lines.
-    #[carbide(default = "1.0")]
-    pub line_spacing: Option<Scalar>,
-    /// Alignment of the text along the *x* axis.
-    #[carbide(default = "text::Justify::Left")]
-    pub justify: Option<text::Justify>,
-    /// The id of the font to use for rendering and layout.
-    #[carbide(default = "theme.font_id")]
-    pub font_id: Option<Option<text::font::Id>>,
-    // /// The line styling for the text.
-    // #[carbide(default = "None")]
-    // pub line: Option<Option<Line>>,
-}
-*/
-/// The way in which text should wrap around the width.
-#[derive(Copy, Clone, Debug, PartialEq)]
-pub enum Wrap {
-    /// Wrap at the first character that exceeds the width.
-    Character,
-    /// Wrap at the first word that exceeds the width.
-    Whitespace,
-    /// No wrapping
-    None,
-}
+
+
 
 // /// Line styling for the **Text**.
 // pub enum Line {
@@ -166,25 +134,17 @@ pub enum Wrap {
 //     Through,
 // }
 
-/// The state to be stored between updates for the **Text**.
-#[derive(Clone, Debug, PartialEq)]
-pub struct OldState {
-    /// An owned version of the string.
-    pub string: String,
-    /// The indices and width for each line of text within the `string`.
-    pub line_infos: Vec<text::line::Info>,
-}
 
 
 impl<S: GlobalState> Text<S> {
     pub fn initialize(text: Box<dyn State<String, S>>) -> Box<Self> {
         Box::new(Text {
             text,
-            font_size: 14.into(),
+            font_size: EnvironmentFontSize::Body.into(),
             position: [0.0, 0.0],
             dimension: [100.0, 100.0],
             wrap_mode: Wrap::Whitespace,
-            color: WHITE
+            color: EnvironmentColor::Label.into()
         })
     }
 
@@ -192,15 +152,20 @@ impl<S: GlobalState> Text<S> {
     pub fn new(text: Box<dyn State<String, S>>, position: Point, dimension: Dimensions) -> Box<Self> {
         Box::new(Text {
             text,
-            font_size: 14.into(),
+            font_size: EnvironmentFontSize::Body.into(),
             position,
             dimension,
             wrap_mode: Wrap::Whitespace,
-            color: WHITE
+            color: EnvironmentColor::Label.into()
         })
     }
 
-    pub fn font_size(mut self, size: CommonState<u32, S>) -> Box<Self> {
+    pub fn color(mut self, color: ColorState<S>) -> Box<Self> {
+        self.color = color;
+        Box::new(self)
+    }
+
+    pub fn font_size(mut self, size: U32State<S>) -> Box<Self> {
         self.font_size = size;
         Box::new(self)
     }

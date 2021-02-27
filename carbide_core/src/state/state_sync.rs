@@ -9,7 +9,7 @@ pub trait StateSync<S>: CommonWidget<S> where S: GlobalState {
     fn insert_local_state(&self, env: &mut Environment<S>);
 
     /// Update the state for this widget. Update both local, global and environment state
-    fn update_all_widget_state(&mut self, env: &Environment<S>, global_state: &S);
+    fn update_all_widget_state(&mut self, env: &mut Environment<S>, global_state: &S);
 
     /// Update only the local state for the widget
     fn update_local_widget_state(&mut self, env: &Environment<S>);
@@ -47,7 +47,7 @@ pub trait NoLocalStateSync {}
 impl<S: GlobalState, T> StateSync<S> for T where T: NoLocalStateSync + CommonWidget<S> {
     fn insert_local_state(&self, _: &mut Environment<S>) {}
 
-    fn update_all_widget_state(&mut self, _: &Environment<S>, _: &S) {}
+    fn update_all_widget_state(&mut self, _: &mut Environment<S>, _: &S) {}
 
     fn update_local_widget_state(&mut self, _env: &Environment<S>) {}
 

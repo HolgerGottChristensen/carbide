@@ -127,7 +127,7 @@ impl<S: GlobalState> StateSync<S> for Box<dyn Widget<S>> {
         self.deref().insert_local_state(env)
     }
 
-    fn update_all_widget_state(&mut self, env: &Environment<S>, global_state: &S) {
+    fn update_all_widget_state(&mut self, env: &mut Environment<S>, global_state: &S) {
         self.deref_mut().update_all_widget_state(env, global_state)
     }
 

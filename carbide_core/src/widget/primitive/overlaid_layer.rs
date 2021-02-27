@@ -121,6 +121,10 @@ impl<S: GlobalState> OverlaidLayer<S> {
         // Check if env contains an overlay widget with the specified id
         self.overlay = env.get_overlay(&self.overlay_id);
 
+        if let Some(overlay) = &mut self.overlay {
+            overlay.sync_state(env, global_state);
+        }
+
 
         self.update_local_widget_state(env);
     }

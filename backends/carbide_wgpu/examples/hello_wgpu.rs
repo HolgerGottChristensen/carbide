@@ -5,7 +5,6 @@ use carbide_core::state::state::CommonState;
 use carbide_core::widget::primitive::v_stack::VStack;
 use carbide_core::widget::{Text, Image, Rectangle, HStack, SCALE, Oval};
 use carbide_core::widget::complex::SyncTest;
-use carbide_core::color::{GREEN, LIGHT_BLUE, RED};
 use carbide_core::widget::primitive::widget::WidgetExt;
 use carbide_core::widget::primitive::spacer::{Spacer};
 use carbide_core::widget::primitive::edge_insets::EdgeInsets;
@@ -18,6 +17,8 @@ use carbide_core::widget::primitive::shape::rounded_rectangle::RoundedRectangle;
 use carbide_core::widget::primitive::canvas::canvas::Canvas;
 use carbide_core::widget::primitive::canvas::context::Context;
 use carbide_core::widget::primitive::canvas::context::ContextAction;
+use carbide_core::state::environment_font_size::EnvironmentFontSize;
+use carbide_core::state::environment_color::EnvironmentColor;
 
 fn main() {
     env_logger::init();
@@ -29,17 +30,21 @@ fn main() {
     window.add_font("fonts/NotoSans/NotoSans-Regular.ttf").unwrap();
     let rust_image = window.add_image("images/rust_press.png").unwrap();
 
-    let sync_state = CommonState::new_local("K", &"Hello".to_string());
+    let sync_state = CommonState::new_local_with_key(&"Hello".to_string());
 
     window.set_widgets(
         OverlaidLayer::new ("overlay_test",
         VStack::initialize(vec![
-            Text::initialize("Hello world!".into()),
-            Text::initialize("Hvad sker der i denne verden og vil den layoute rigtigt når der er en lang tekst og der ikke er nok plads til at det hele kan være på en linje".into()),
+            Text::initialize("Hello world!".into())
+                .font_size(EnvironmentFontSize::Title.into())
+                .color(EnvironmentColor::Green.into())
+                .padding(EdgeInsets::all(10.0)),
+            Text::initialize("Hvad sker der i denne verden og vil den layoute rigtigt når der er en lang tekst og der ikke er nok plads til at det hele kan være på en linje".into())
+                .padding(EdgeInsets::all(10.0)),
             Image::new(rust_image),
             Rectangle::initialize(vec![
                 SyncTest::new(sync_state)
-            ]).fill(GREEN),
+            ]).fill(EnvironmentColor::SecondarySystemBackground.into()),
             HStack::initialize(vec![
                 RoundedRectangle::initialize(vec![]).frame(100.0.into(), 100.0.into()),
                 Canvas::initialize(Context { actions: vec![
@@ -60,12 +65,11 @@ fn main() {
                             .frame(800.0.into(), 500.0.into())
                     ).set_scroll_direction(ScrollDirection::Both)
                         .clip()
-                ]).fill(LIGHT_BLUE).frame(SCALE.into(), 200.0.into()),
-            ]),
+                ]).fill(EnvironmentColor::SecondarySystemBackground.into()).frame(SCALE.into(), 200.0.into()),
+            ]).padding(EdgeInsets::all(10.0)),
             HStack::initialize(vec![
                 Spacer::new(SpacerDirection::Horizontal),
-                Oval::initialize(vec![])
-                    .fill(RED)
+                Oval::new()
                     .padding(EdgeInsets::all(10.0))
                     .frame(150.0.into(), 150.0.into()),
                 Spacer::new(SpacerDirection::Horizontal),

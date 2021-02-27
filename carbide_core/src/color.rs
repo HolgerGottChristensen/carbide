@@ -10,21 +10,29 @@
 //! Module for working with colors. Includes [RGB](https://en.wikipedia.org/wiki/RGB_color_model)
 //! and [HSL](http://en.wikipedia.org/wiki/HSL_and_HSV) creation, gradients and built-in names.
 //!
-extern crate rand;
 
 use std::f32::consts::PI;
 
 use crate::utils::{degrees, fmod, turns};
 
-use self::rand::Rng;
+use serde::{Serialize, Deserialize};
+use rand::Rng;
+use crate::widget::{GlobalState, CommonState};
+use crate::prelude::ColorState;
 
 /// Color supporting RGB and HSL variants.
-#[derive(PartialEq, Copy, Clone, Debug)]
+#[derive(PartialEq, Copy, Clone, Debug, Serialize, Deserialize)]
 pub enum Color {
     /// Red, Green, Blue, Alpha - All values' scales represented between 0.0 and 1.0.
     Rgba(f32, f32, f32, f32),
     /// Hue, Saturation, Lightness, Alpha - all values scales represented between 0.0 and 1.0.
     Hsla(f32, f32, f32, f32),
+}
+
+impl<GS: GlobalState> Into<ColorState<GS>> for Color {
+    fn into(self) -> ColorState<GS> {
+        Box::new(CommonState::new(&self))
+    }
 }
 
 impl Color {

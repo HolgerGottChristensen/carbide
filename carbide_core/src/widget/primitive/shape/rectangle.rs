@@ -1,5 +1,7 @@
 use crate::prelude::*;
 use crate::render::primitive_kind::PrimitiveKind;
+use crate::state::environment_color::EnvironmentColor;
+
 
 /// A basic, non-interactive rectangle shape widget.
 #[derive(Debug, Clone, Widget)]
@@ -8,7 +10,7 @@ pub struct Rectangle<GS> where GS: GlobalState {
     children: Vec<Box<dyn Widget<GS>>>,
     position: Point,
     dimension: Dimensions,
-    color: Color,
+    #[state] color: ColorState<GS>,
 }
 
 impl<GS: GlobalState> WidgetExt<GS> for Rectangle<GS> {}
@@ -108,7 +110,7 @@ impl<S: GlobalState> Render<S> for Rectangle<S> {
     fn get_primitives(&mut self, fonts: &text::font::Map) -> Vec<Primitive> {
         let mut prims = vec![
             Primitive {
-                kind: PrimitiveKind::Rectangle { color: self.color},
+                kind: PrimitiveKind::Rectangle { color: self.color.get_latest_value().clone()},
                 rect: Rect::new(self.position, self.dimension)
             }
         ];
@@ -118,12 +120,6 @@ impl<S: GlobalState> Render<S> for Rectangle<S> {
 
         return prims;
     }
-}
-
-/// Unique state for the Rectangle.
-#[derive(Copy, Clone, Debug, PartialEq)]
-pub struct State {
-    kind: Kind,
 }
 
 /// Whether the rectangle is drawn as an outline or a filled color.
@@ -138,7 +134,7 @@ pub enum Kind {
 
 impl<S: GlobalState> Rectangle<S> {
 
-    pub fn fill(mut self, color: Color) -> Box<Self> {
+    pub fn fill(mut self, color: ColorState<S>) -> Box<Self> {
         self.color = color;
         Box::new(self)
     }
@@ -183,7 +179,7 @@ impl<S: GlobalState> Rectangle<S> {
             children,
             position: [0.0,0.0],
             dimension: [100.0,100.0],
-            color: Color::random()
+            color: EnvironmentColor::Blue.into()
         })
     }
 }

@@ -81,7 +81,7 @@ impl<GS: GlobalState, T: ForEachDelegate + 'static> ForEach<GS, T> {
 
         for (i, child) in self.get_proxied_children().enumerate() {
 
-            env.insert_local_state_from_key_value(&id_key, &ids.get_value(global_state)[i]);
+            env.insert_local_state_from_key_value(&id_key, &ids.get_value(env, global_state)[i]);
             env.insert_local_state_from_key_value(&index_key, &(i + initial_offset));
 
             child.sync_state(env, global_state)

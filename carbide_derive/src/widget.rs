@@ -308,9 +308,9 @@ pub fn impl_widget(ast: &syn::DeriveInput) -> proc_macro2::TokenStream {
                 #insert_local_state
             }
 
-            fn update_all_widget_state(&mut self, env: &carbide_core::state::environment::Environment<#global_state_use>, global_state: &#global_state_use) {
+            fn update_all_widget_state(&mut self, env: &mut carbide_core::state::environment::Environment<#global_state_use>, global_state: &#global_state_use) {
                 self.update_local_widget_state(env);
-                #(self.#state_idents.get_value(global_state);)*
+                #(self.#state_idents.get_value(env, global_state);)*
 
                 #update_all_widget_state
             }

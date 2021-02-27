@@ -100,7 +100,7 @@ impl CustomWidget {
             id: Uuid::new_v4(),
             child: HStack::initialize(vec![
                 Spacer::new(SpacerDirection::Horizontal),
-                Oval::initialize(vec![])
+                Oval::new(vec![])
                     .fill(RED)
                     .padding(EdgeInsets::all(10.0))
                     .frame(150.0, 150.0),

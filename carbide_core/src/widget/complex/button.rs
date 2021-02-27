@@ -10,6 +10,7 @@ use crate::widget::primitive::v_stack::VStack;
 use crate::widget::primitive::foreach::ForEach;
 use crate::widget::render::ChildRender;
 use crate::state::mapped_state::MappedState;
+use crate::state::environment_color::EnvironmentColor;
 
 #[derive(Debug, Clone, Widget)]
 #[state_sync(insert_local_state)]
@@ -28,14 +29,15 @@ impl<S: GlobalState> SyncTest<S> {
 
     fn insert_local_state(&self, env: &mut Environment<S>) {
         if self.show_overlay {
-            env.add_overlay("overlay_test", Rectangle::initialize(vec![]).fill(RED))
+            env.add_overlay("overlay_test", Rectangle::initialize(vec![])
+                .fill(EnvironmentColor::Red.into()))
         }
     }
 
-    fn handle_keyboard_event(&mut self, event: &KeyboardEvent, _: &mut Environment<S>, global_state: &mut S) {
+    fn handle_keyboard_event(&mut self, event: &KeyboardEvent, env: &mut Environment<S>, global_state: &mut S) {
         match event {
             KeyboardEvent::Text(s, _) => {
-                self.value.get_value_mut(global_state).push_str(s);
+                self.value.get_value_mut(env, global_state).push_str(s);
             }
             KeyboardEvent::Press(key, _modifier) => {
                 match key {
@@ -44,15 +46,15 @@ impl<S: GlobalState> SyncTest<S> {
                         println!("herjalkd");
                     }
                     Key::Backspace => {
-                        self.value.get_value_mut(global_state).pop();
+                        self.value.get_value_mut(env, global_state).pop();
                     },
                     Key::NumPadPlus => {
-                        self.fore.get_value_mut(global_state).push(Uuid::new_v4())
+                        self.fore.get_value_mut(env, global_state).push(Uuid::new_v4())
                     },
                     Key::NumPadMinus => {
-                        if self.fore.get_value(global_state).len() > 1 {
-                            let last = self.fore.get_value(global_state).len() - 1;
-                            self.fore.get_value_mut(global_state).remove(last);
+                        if self.fore.get_value(env, global_state).len() > 1 {
+                            let last = self.fore.get_value(env, global_state).len() - 1;
+                            self.fore.get_value_mut(env, global_state).remove(last);
                         }
 
                     }
@@ -64,7 +66,7 @@ impl<S: GlobalState> SyncTest<S> {
     }
 
     pub fn new(value: CommonState<String, S>) -> Box<SyncTest<S>> {
-        let fore = CommonState::<Vec<Uuid>, S>::new_local("a", &(0..5).map(|_| Uuid::new_v4()).collect::<Vec<Uuid>>());
+        let fore = CommonState::<Vec<Uuid>, S>::new_local_with_key(&(0..5).map(|_| Uuid::new_v4()).collect::<Vec<Uuid>>());
 
         let index_state = Box::new(CommonState::new_local_with_key(&1));
 
@@ -79,7 +81,7 @@ impl<S: GlobalState> SyncTest<S> {
                             Box::new(fore.clone()),
                             Rectangle::initialize(vec![
                                 Text::initialize(Box::new(mapped_state))
-                            ]).fill(RED).frame(60.0.into(),30.0.into()))
+                            ]).fill(EnvironmentColor::Red.into()).frame(60.0.into(),30.0.into()))
                             .index_state(index_state)
                     ]),
                     ForEach::new((0..5).map(|_| Uuid::new_v4()).collect::<Vec<Uuid>>().into(), Rectangle::initialize(vec![]).frame(10.0.into(),10.0.into())),

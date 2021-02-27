@@ -5,14 +5,11 @@ extern crate carbide_core;
 
 use carbide_core::widget::*;
 
-
 use carbide_wgpu::window::Window;
 use futures::executor::block_on;
 
-use carbide_controls::{PlainButton};
 use carbide_controls::List;
-use carbide_core::color::{RED, GREEN};
-use carbide_core::prelude::Uuid;
+use carbide_core::color::GREEN;
 
 
 fn main() {

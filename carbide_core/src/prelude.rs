@@ -19,3 +19,5 @@ pub use crate::text;
 pub use crate::position::Scalar;
 pub use crate::state::state_sync::StateSync;
 pub use crate::state::state::{CommonState, State};
+pub use crate::state::state::ColorState;
+pub use crate::state::state::U32State;

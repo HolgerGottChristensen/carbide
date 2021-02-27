@@ -4,11 +4,13 @@ use crate::color::GRAY;
 use crate::event_handler::{MouseEvent, WidgetEvent};
 use crate::draw::shape::vertex::Vertex;
 use crate::input::MouseButton;
+use crate::state::environment_color::EnvironmentColor;
 
 
 /// A basic, non-interactive rectangle shape widget.
 #[derive(Debug, Clone, Widget)]
 #[event(handle_mouse_event, handle_other_event)]
+#[state_sync(update_all_widget_state)]
 pub struct Scroll<GS> where GS: GlobalState {
     id: Uuid,
     child: Box<dyn Widget<GS>>,
@@ -29,6 +31,13 @@ pub struct Scroll<GS> where GS: GlobalState {
 impl<GS: GlobalState> WidgetExt<GS> for Scroll<GS> {}
 
 impl<S: GlobalState> Scroll<S> {
+
+    fn update_all_widget_state(&mut self, env: &mut Environment<S>, global_state: &S) {
+        self.scrollbar_horizontal.sync_state(env, global_state);
+        self.scrollbar_vertical.sync_state(env, global_state);
+        self.scrollbar_horizontal_background.sync_state(env, global_state);
+        self.scrollbar_vertical_background.sync_state(env, global_state);
+    }
 
     pub fn set_scroll_direction(mut self, scroll_directions: ScrollDirection) -> Box<Self> {
         self.scroll_directions = scroll_directions;
@@ -71,14 +80,18 @@ impl<S: GlobalState> Scroll<S> {
             dimension: [0.0, 0.0],
             scroll_offset: [0.0, 0.0],
             scroll_directions: ScrollDirection::Both,
-            scrollbar_horizontal: Rectangle::initialize(vec![]).fill(GRAY).frame(100.0.into(),10.0.into()),
-            scrollbar_vertical: Rectangle::initialize(vec![]).fill(GRAY).frame(10.0.into(),100.0.into()),
+            scrollbar_horizontal: Rectangle::initialize(vec![])
+                .fill(EnvironmentColor::Gray.into())
+                .frame(100.0.into(),10.0.into()),
+            scrollbar_vertical: Rectangle::initialize(vec![])
+                .fill(EnvironmentColor::Gray.into())
+                .frame(10.0.into(),100.0.into()),
             drag_started_on_vertical_scrollbar: false,
             drag_started_on_horizontal_scrollbar: false,
             vertical_scrollbar_hovered: false,
             horizontal_scrollbar_hovered: false,
-            scrollbar_horizontal_background: Rectangle::initialize(vec![]).fill(Color::Rgba(0.0, 0.0, 0.0, 0.5)).frame(100.0.into(), 10.0.into()),
-            scrollbar_vertical_background: Rectangle::initialize(vec![]).fill(Color::Rgba(0.0,0.0,0.0,0.5)).frame(10.0.into(),100.0.into())
+            scrollbar_horizontal_background: Rectangle::initialize(vec![]).fill(Color::Rgba(0.0, 0.0, 0.0, 0.5).into()).frame(100.0.into(), 10.0.into()),
+            scrollbar_vertical_background: Rectangle::initialize(vec![]).fill(Color::Rgba(0.0,0.0,0.0,0.5).into()).frame(10.0.into(),100.0.into())
         })
     }
 

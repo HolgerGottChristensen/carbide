@@ -53,8 +53,8 @@ impl<GS: GlobalState, T: ListIndex + 'static> List<GS, T> {
             model,
             internal_model,
             index_offset: index_offset_state,
-            id_state: Box::new(CommonState::new_local("id", &T::default())),
-            index_state: Box::new(CommonState::new_local("index", &0)),
+            id_state: Box::new(CommonState::new_local_with_key(&T::default())),
+            index_state: Box::new(CommonState::new_local_with_key(&0)),
             start_offset: Box::new(start_offset),
             end_offset: Box::new(end_offset)
         })

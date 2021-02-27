@@ -6,6 +6,7 @@ use crate::widget;
 use crate::draw::shape::triangle::Triangle;
 use crate::render::util::new_primitive;
 use crate::draw::shape::circumference::{Circumference, Triangles};
+use crate::state::environment_color::EnvironmentColor;
 
 
 /// A simple, non-interactive widget for drawing a single **Oval**.
@@ -18,9 +19,7 @@ pub struct Oval<S, GS> where S: 'static + Clone, GS: GlobalState {
     pub section: S,
     position: Point,
     dimension: Dimensions,
-    color: Color,
-
-    pub children: Vec<Box<dyn Widget<GS>>>
+    #[state] color: ColorState<GS>,
 }
 
 impl<S: 'static + Clone, GS: GlobalState> WidgetExt<GS> for Oval<S, GS> {}
@@ -30,26 +29,14 @@ impl<S: 'static + Clone, GS: GlobalState> Layout<GS> for Oval<S, GS> {
         0
     }
 
-    fn calculate_size(&mut self, requested_size: Dimensions, env: &Environment<GS>) -> Dimensions {
-        for child in &mut self.children {
-            child.calculate_size(requested_size, env);
-        }
+    fn calculate_size(&mut self, requested_size: Dimensions, _: &Environment<GS>) -> Dimensions {
         self.dimension = requested_size;
 
         requested_size
 
     }
 
-    fn position_children(&mut self) {
-        let positioning = BasicLayouter::Center.position();
-        let position = self.position;
-        let dimension = self.dimension;
-
-        for child in &mut self.children {
-            positioning(position, dimension, child);
-            child.position_children();
-        }
-    }
+    fn position_children(&mut self) {}
 }
 
 impl<S: 'static + Clone, K: GlobalState> CommonWidget<K> for Oval<S, K> {
@@ -62,41 +49,19 @@ impl<S: 'static + Clone, K: GlobalState> CommonWidget<K> for Oval<S, K> {
     }
 
     fn get_children(&self) -> WidgetIter<K> {
-        self.children
-            .iter()
-            .rfold(WidgetIter::Empty, |acc, x| {
-                if x.get_flag() == Flags::PROXY {
-                    WidgetIter::Multi(Box::new(x.get_children()), Box::new(acc))
-                } else {
-                    WidgetIter::Single(x, Box::new(acc))
-                }
-            })
+        WidgetIter::Empty
     }
 
     fn get_children_mut(&mut self) -> WidgetIterMut<K> {
-        self.children
-            .iter_mut()
-            .rfold(WidgetIterMut::Empty, |acc, x| {
-                if x.get_flag() == Flags::PROXY {
-                    WidgetIterMut::Multi(Box::new(x.get_children_mut()), Box::new(acc))
-                } else {
-                    WidgetIterMut::Single(x, Box::new(acc))
-                }
-            })
+        WidgetIterMut::Empty
     }
 
     fn get_proxied_children(&mut self) -> WidgetIterMut<K> {
-        self.children.iter_mut()
-            .rfold(WidgetIterMut::Empty, |acc, x| {
-                WidgetIterMut::Single(x, Box::new(acc))
-            })
+        WidgetIterMut::Empty
     }
 
     fn get_proxied_children_rev(&mut self) -> WidgetIterMut<K> {
-        self.children.iter_mut()
-            .fold(WidgetIterMut::Empty, |acc, x| {
-                WidgetIterMut::Single(x, Box::new(acc))
-            })
+        WidgetIterMut::Empty
     }
 
     fn get_position(&self) -> Point {
@@ -118,19 +83,17 @@ impl<S: 'static + Clone, K: GlobalState> CommonWidget<K> for Oval<S, K> {
 
 impl<S: 'static + Clone, GS: GlobalState> Render<GS> for Oval<S, GS> {
 
-    fn get_primitives(&mut self, fonts: &text::font::Map) -> Vec<Primitive> {
+    fn get_primitives(&mut self, _: &text::font::Map) -> Vec<Primitive> {
         let points = widget::oval::circumference(Rect::new(self.position, self.dimension), DEFAULT_RESOLUTION);
         let mut triangles: Vec<Triangle<Point>> = Vec::new();
         triangles.extend(points.triangles());
         let kind = PrimitiveKind::TrianglesSingleColor {
-            color: self.color.to_rgb(),
+            color: self.color.get_latest_value().to_rgb(),
             triangles,
         };
 
         let mut prims: Vec<Primitive> = vec![new_primitive(kind, Rect::new(self.position, self.dimension))];
         prims.extend(Rectangle::<GS>::debug_outline(Rect::new(self.position, self.dimension), 1.0));
-        let children: Vec<Primitive> = self.get_children_mut().flat_map(|f| f.get_primitives(fonts)).collect();
-        prims.extend(children);
 
         return prims;
     }
@@ -172,37 +135,23 @@ pub struct State<S> {
 /// The default circle resolution if none is specified.
 pub const DEFAULT_RESOLUTION: usize = 50;
 
-impl<S: GlobalState> Oval<Full, S> {
+impl<GS: GlobalState> Oval<Full, GS> {
 
-    pub fn fill(mut self, color: Color) -> Box<Self> {
+    pub fn fill(mut self, color: ColorState<GS>) -> Box<Self> {
         self.color = color;
         Box::new(self)
     }
 
-    pub fn initialize(children: Vec<Box<dyn Widget<S>>>) -> Box<Oval<Full, S>> {
+    pub fn new() -> Box<Oval<Full, GS>> {
         Box::new(Oval {
             id: Uuid::new_v4(),
             resolution: 0,
             section: Full,
             position: [0.0, 0.0],
             dimension: [100.0,100.0],
-            color: Color::random(),
-            children
+            color: EnvironmentColor::Blue.into()
         })
     }
-
-    pub fn new(position: Point, dimension: Dimensions, children: Vec<Box<dyn Widget<S>>>) -> Box<Oval<Full, S>> {
-        Box::new(Oval {
-            id: Uuid::new_v4(),
-            children,
-            position,
-            dimension,
-            resolution: 0,
-            section: Full,
-            color: Color::random()
-        })
-    }
-
 }
 
 impl<S: Clone, K: GlobalState> Oval<S, K> {
@@ -220,7 +169,7 @@ impl<S: Clone, K: GlobalState> Oval<S, K> {
     pub fn section(self, radians: Scalar) -> Oval<Section, K> {
         let Oval { resolution, .. } = self;
         let section = Section { radians, offset_radians: 0.0 };
-        Oval { id: Uuid::new_v4(), resolution, section, position: [10.0, 10.0], dimension: [10.0,10.0], color: Color::random(), children: vec![] }
+        Oval { id: Uuid::new_v4(), resolution, section, position: [10.0, 10.0], dimension: [10.0,10.0], color: EnvironmentColor::Blue.into() }
     }
 }
 

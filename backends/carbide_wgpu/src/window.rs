@@ -20,7 +20,10 @@ use carbide_core::text::font;
 use winit::dpi::{Size, PhysicalSize, PhysicalPosition};
 use std::path::PathBuf;
 use carbide_core::state::global_state::GlobalState;
+use carbide_core::prelude::Rectangle;
+use carbide_core::state::environment_color::EnvironmentColor;
 
+// Todo: Look in to multisampling: https://github.com/gfx-rs/wgpu-rs/blob/v0.6/examples/msaa-line/main.rs
 pub struct Window<T: GlobalState> {
     surface: wgpu::Surface,
     device: wgpu::Device,
@@ -66,7 +69,8 @@ impl<T: GlobalState> carbide_core::window::TWindow<T> for Window<T> {
     }
 
     fn set_widgets(&mut self, w: Box<dyn Widget<T>>) {
-        self.ui.widgets = w;
+        self.ui.widgets = Rectangle::initialize(vec![w])
+            .fill(EnvironmentColor::SystemBackground.into());
     }
 }
 
