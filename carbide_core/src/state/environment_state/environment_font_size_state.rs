@@ -1,5 +1,3 @@
-use crate::state::environment_color::EnvironmentColor;
-use crate::Color;
 use crate::prelude::{GlobalState, State, Environment};
 use crate::state::state_key::StateKey;
 use crate::state::environment_font_size::EnvironmentFontSize;

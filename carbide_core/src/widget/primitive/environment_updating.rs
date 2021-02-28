@@ -1,5 +1,4 @@
 use crate::prelude::*;
-use crate::render::primitive_kind::PrimitiveKind;
 use crate::state::environment_color::EnvironmentColor;
 use crate::event_handler::{KeyboardEvent, MouseEvent, WidgetEvent};
 use crate::state::environment_variable::EnvironmentVariable;
@@ -10,7 +9,7 @@ use crate::state::state_sync::StateSync;
 
 /// A basic, non-interactive rectangle shape widget.
 #[derive(Debug, Clone, Widget)]
-#[event(process_keyboard_event, process_mouse_event)]
+#[event(process_keyboard_event, process_mouse_event, process_other_event)]
 #[state_sync(sync_state)]
 pub struct EnvUpdating<GS> where GS: GlobalState {
     id: Uuid,
@@ -199,7 +198,7 @@ impl<GS: GlobalState> CommonWidget<GS> for EnvUpdating<GS> {
 impl<GS: GlobalState> Render<GS> for EnvUpdating<GS> {
 
     fn get_primitives(&mut self, fonts: &text::font::Map) -> Vec<Primitive> {
-        let mut prims = self.child.get_primitives(fonts);
+        let prims = self.child.get_primitives(fonts);
         return prims;
     }
 }

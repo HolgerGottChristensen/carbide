@@ -57,6 +57,13 @@ pub trait WidgetExt<GS: GlobalState>: Widget<GS> + Sized + 'static {
 
         e
     }
+
+    fn accent_color(self, color: ColorState<GS>) -> Box<EnvUpdating<GS>> {
+        let mut e = EnvUpdating::new(Box::new(self));
+        e.add(EnvironmentStateContainer::Color { key: EnvironmentColor::Accent, value: color });
+
+        e
+    }
 }
 
 //This does not currently work with intellisense

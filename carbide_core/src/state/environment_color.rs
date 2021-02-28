@@ -1,6 +1,4 @@
 use crate::widget::GlobalState;
-use crate::prelude::State;
-use crate::Color;
 use crate::state::environment_state::environment_color_state::EnvironmentColorState;
 use crate::state::state::ColorState;
 
@@ -38,6 +36,7 @@ pub enum EnvironmentColor {
     Link,
     DarkText,
     LightText,
+    Accent,
     Custom(String)
 }
 

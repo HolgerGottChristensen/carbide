@@ -1,7 +1,6 @@
 use crate::prelude::*;
 use crate::state::state::CommonState;
 use crate::event_handler::KeyboardEvent;
-use crate::color::RED;
 use crate::input::Key;
 use crate::widget::{HStack, Text};
 use crate::widget::primitive::spacer::Spacer;

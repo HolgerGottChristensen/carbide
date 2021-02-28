@@ -1,4 +1,4 @@
-use crate::prelude::{GlobalState, State};
+use crate::prelude::GlobalState;
 use crate::state::environment_state::environment_font_size_state::EnvironmentFontSizeState;
 use crate::state::state::U32State;
 

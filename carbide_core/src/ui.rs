@@ -192,6 +192,8 @@ impl<S: GlobalState> Ui<S> {
             EnvironmentVariable::Color { key: EnvironmentColor::OpaqueSeparator, value: color::rgba_bytes(61, 61, 65, 1.0) },
             EnvironmentVariable::Color { key: EnvironmentColor::Separator, value: color::rgba_bytes(255, 255, 255, 0.15) },
 
+            EnvironmentVariable::Color { key: EnvironmentColor::Accent, value: color::rgba_bytes(10, 132, 255, 1.0) },
+
         ];
 
         let _light_system_colors = vec![
@@ -230,6 +232,8 @@ impl<S: GlobalState> Ui<S> {
 
             EnvironmentVariable::Color { key: EnvironmentColor::OpaqueSeparator, value: color::rgba_bytes(220, 220, 222, 1.0) },
             EnvironmentVariable::Color { key: EnvironmentColor::Separator, value: color::rgba_bytes(0, 0, 0, 0.137) },
+
+            EnvironmentVariable::Color { key: EnvironmentColor::Accent, value: color::rgba_bytes(0, 122, 255, 1.0) },
         ];
 
         let font_sizes_large = vec![
