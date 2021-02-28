@@ -169,3 +169,5 @@ impl<S: GlobalState> Layout<S> for SyncTest<S> {
         self.child.position_children();
     }
 }
+
+impl<GS: GlobalState> WidgetExt<GS> for SyncTest<GS> {}

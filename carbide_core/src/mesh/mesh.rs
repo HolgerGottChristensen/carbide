@@ -413,6 +413,7 @@ impl Mesh {
                     for g in positioned_glyphs.clone() {
                         if let Ok(Some((uv_rect, screen_rect))) = glyph_cache.rect_for(cache_id, &g)
                         {
+                            // Fixme: It seems like the resulting rect for "k" and "a" has different bottom positions, even though they should be on the same baseline
                             let vk_rect = to_gl_rect(screen_rect);
 
                             let v = |x, y, t| Vertex {

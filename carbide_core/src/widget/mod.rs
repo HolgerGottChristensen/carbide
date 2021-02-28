@@ -26,6 +26,7 @@ pub use self::primitive::canvas::context::Context;
 pub use self::primitive::canvas::context::ContextAction;
 pub use self::primitive::offset::Offset;
 pub use self::primitive::if_else::IfElse;
+pub use self::primitive::environment_updating::EnvUpdating;
 
 
 

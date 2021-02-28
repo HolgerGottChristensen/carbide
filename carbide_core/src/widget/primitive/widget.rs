@@ -1,7 +1,7 @@
 use crate::prelude::*;
 use crate::event::event::Event;
 use dyn_clone::DynClone;
-use crate::widget::{Frame, Offset};
+use crate::widget::{Frame, Offset, EnvUpdating};
 use crate::widget::primitive::padding::Padding;
 use crate::widget::primitive::hidden::Hidden;
 use crate::widget::primitive::clip::Clip;
@@ -12,6 +12,8 @@ use core::fmt;
 use std::fmt::Debug;
 use crate::widget::primitive::border::Border;
 use crate::focus::{Focusable, Focus, Refocus};
+use crate::widget::primitive::environment_updating::EnvironmentStateContainer;
+use crate::state::environment_color::EnvironmentColor;
 
 pub trait Widget<S>: Event<S> + Layout<S> + Render<S> + Focusable<S> + DynClone where S: GlobalState {}
 
@@ -47,6 +49,13 @@ pub trait WidgetExt<GS: GlobalState>: Widget<GS> + Sized + 'static {
 
     fn border(self) -> Box<Border<GS>> {
         Border::initialize(Box::new(self))
+    }
+
+    fn foreground_color(self, color: ColorState<GS>) -> Box<EnvUpdating<GS>> {
+        let mut e = EnvUpdating::new(Box::new(self));
+        e.add(EnvironmentStateContainer::Color { key: EnvironmentColor::Label, value: color });
+
+        e
     }
 }
 

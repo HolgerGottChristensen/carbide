@@ -180,7 +180,7 @@ impl<S: GlobalState> Ui<S> {
             EnvironmentVariable::Color { key: EnvironmentColor::Label, value: color::rgba_bytes(255, 255, 255, 1.0) },
             EnvironmentVariable::Color { key: EnvironmentColor::SecondaryLabel, value: color::rgba_bytes(152, 152, 159, 1.0) },
             EnvironmentVariable::Color { key: EnvironmentColor::TertiaryLabel, value: color::rgba_bytes(90, 90, 95, 1.0) },
-            EnvironmentVariable::Color { key: EnvironmentColor::TertiaryLabel, value: color::rgba_bytes(65, 65, 69, 1.0) },
+            EnvironmentVariable::Color { key: EnvironmentColor::QuaternaryLabel, value: color::rgba_bytes(65, 65, 69, 1.0) },
             EnvironmentVariable::Color { key: EnvironmentColor::PlaceholderText, value: color::rgba_bytes(71, 71, 74, 1.0) },
             EnvironmentVariable::Color { key: EnvironmentColor::Link, value: color::rgba_bytes(9, 132, 255, 1.0) },
 
@@ -219,7 +219,7 @@ impl<S: GlobalState> Ui<S> {
             EnvironmentVariable::Color { key: EnvironmentColor::Label, value: color::rgba_bytes(0, 0, 0, 1.0) },
             EnvironmentVariable::Color { key: EnvironmentColor::SecondaryLabel, value: color::rgba_bytes(138, 138, 142, 1.0) },
             EnvironmentVariable::Color { key: EnvironmentColor::TertiaryLabel, value: color::rgba_bytes(196, 196, 198, 1.0) },
-            EnvironmentVariable::Color { key: EnvironmentColor::TertiaryLabel, value: color::rgba_bytes(220, 220, 221, 1.0) },
+            EnvironmentVariable::Color { key: EnvironmentColor::QuaternaryLabel, value: color::rgba_bytes(220, 220, 221, 1.0) },
             EnvironmentVariable::Color { key: EnvironmentColor::PlaceholderText, value: color::rgba_bytes(196, 196, 198, 1.0) },
             EnvironmentVariable::Color { key: EnvironmentColor::Link, value: color::rgba_bytes(0, 122, 255, 1.0) },
 
