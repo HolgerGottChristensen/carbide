@@ -22,6 +22,7 @@ pub trait State<T, GS>: DynClone where T: Serialize + Clone + Debug, GS: GlobalS
     fn get_latest_value_mut(&mut self) -> &mut T;
     fn get_key(&self) -> Option<&StateKey>;
     fn update_dependent_states(&mut self, env: &Environment<GS>);
+    fn insert_dependent_states(&self, env: &mut Environment<GS>);
 }
 
 pub type ColorState<GS> = Box<dyn State<Color, GS>>;
@@ -30,7 +31,7 @@ pub type U32State<GS> = Box<dyn State<u32, GS>>;
 pub trait StateExt<T: Serialize + Clone + Debug + DeserializeOwned + 'static, GS: GlobalState>: State<T, GS> + Sized + 'static {
     fn mapped<U: Serialize + Clone + Debug + 'static>(self, map: fn(&T) -> U) -> Box<dyn State<U, GS>> {
         let latest_value = self.get_latest_value().clone();
-        Box::new(MappedState::new(Box::new(self), map, map(&latest_value)))
+        MappedState::new(Box::new(self), map, map(&latest_value))
     }
 }
 
@@ -69,6 +70,10 @@ impl<T: Serialize + Clone + Debug, GS: GlobalState> State<T, GS> for Box<dyn Sta
 
     fn update_dependent_states(&mut self, env: &Environment<GS>) {
         self.deref_mut().update_dependent_states(env)
+    }
+
+    fn insert_dependent_states(&self, env: &mut Environment<GS>) {
+        self.deref().insert_dependent_states(env)
     }
 }
 
@@ -140,6 +145,8 @@ impl<T: Serialize + Clone + Debug, GS: GlobalState> State<T, GS> for CommonState
     }
 
     fn update_dependent_states(&mut self, _: &Environment<GS>) {}
+
+    fn insert_dependent_states(&self, env: &mut Environment<GS>) {}
 }
 
 

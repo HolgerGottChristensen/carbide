@@ -196,6 +196,18 @@ impl<GS: GlobalState> Focusable<GS> for Box<dyn Widget<GS>> {
     fn set_focus_and_request(&mut self, focus: Focus, env: &mut Environment<GS>) {
         self.deref_mut().set_focus_and_request(focus, env)
     }
+
+    fn process_focus_request(&mut self, event: &WidgetEvent, focus_request: &Refocus, env: &mut Environment<GS>, global_state: &mut GS) -> bool {
+        self.deref_mut().process_focus_request(event, focus_request, env, global_state)
+    }
+
+    fn process_focus_next(&mut self, event: &WidgetEvent, focus_request: &Refocus, focus_up_for_grab: bool, env: &mut Environment<GS>, global_state: &mut GS) -> bool {
+        self.deref_mut().process_focus_next(event, focus_request, focus_up_for_grab, env, global_state)
+    }
+
+    fn process_focus_previous(&mut self, event: &WidgetEvent, focus_request: &Refocus, focus_up_for_grab: bool, env: &mut Environment<GS>, global_state: &mut GS) -> bool {
+        self.deref_mut().process_focus_previous(event, focus_request, focus_up_for_grab, env, global_state)
+    }
 }
 
 

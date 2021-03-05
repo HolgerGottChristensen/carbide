@@ -3,11 +3,13 @@ use carbide_core::event_handler::{MouseEvent, KeyboardEvent};
 use carbide_core::input::MouseButton;
 use carbide_core::input::Key;
 use carbide_core::state::state::State;
+use std::fmt::Debug;
+use carbide_core::{Serialize, DeserializeOwned};
 
 #[derive(Clone, Widget)]
 #[event(handle_keyboard_event, handle_mouse_event)]
 #[focusable]
-pub struct PlainButton<GS> where GS: GlobalState {
+pub struct PlainButton<T, GS> where GS: GlobalState, T: 'static + Serialize + Clone + Debug + Default + DeserializeOwned {
     id: Id,
     #[state] focus: Box<dyn State<Focus, GS>>,
     child: Box<dyn Widget<GS>>,
@@ -16,9 +18,10 @@ pub struct PlainButton<GS> where GS: GlobalState {
     on_click: Option<fn(myself: &mut Self, env: &mut Environment<GS>, global_state: &mut GS)>,
     #[state] is_hovered: Box<dyn State<bool, GS>>,
     #[state] is_pressed: Box<dyn State<bool, GS>>,
+    #[state] local_state: Box<dyn State<T, GS>>,
 }
 
-impl<GS: GlobalState> PlainButton<GS> {
+impl<T: 'static + Serialize + Clone + Debug + Default + DeserializeOwned, GS: GlobalState> PlainButton<T, GS> {
     pub fn on_click(mut self, fire: fn(myself: &mut Self, env: &mut Environment<GS>, global_state: &mut GS)) -> Box<Self> {
         self.on_click = Some(fire);
         Box::new(self)
@@ -39,6 +42,15 @@ impl<GS: GlobalState> PlainButton<GS> {
         Box::new(self)
     }
 
+    pub fn local_state(mut self, state: Box<dyn State<T, GS>>) -> Box<Self> {
+        self.local_state = state;
+        Box::new(self)
+    }
+
+    pub fn get_local_state(&mut self) -> &mut Box<dyn State<T, GS>> {
+        &mut self.local_state
+    }
+
     pub fn new(child: Box<dyn Widget<GS>>) -> Box<Self> {
         Box::new(PlainButton {
             id: Id::new_v4(),
@@ -48,7 +60,8 @@ impl<GS: GlobalState> PlainButton<GS> {
             dimension: [0.0,0.0],
             on_click: None,
             is_hovered: false.into(),
-            is_pressed: false.into()
+            is_pressed: false.into(),
+            local_state: Box::new(CommonState::new(&T::default()))
         })
     }
 
@@ -103,7 +116,7 @@ impl<GS: GlobalState> PlainButton<GS> {
     }
 }
 
-impl<GS: GlobalState> CommonWidget<GS> for PlainButton<GS> {
+impl<T: Serialize + Clone + Debug + Default + DeserializeOwned, GS: GlobalState> CommonWidget<GS> for PlainButton<T, GS> {
     fn get_id(&self) -> Id {
         self.id
     }
@@ -153,9 +166,9 @@ impl<GS: GlobalState> CommonWidget<GS> for PlainButton<GS> {
     }
 }
 
-impl<GS: GlobalState> ChildRender for PlainButton<GS> {}
+impl<T: Serialize + Clone + Debug + Default + DeserializeOwned, GS: GlobalState> ChildRender for PlainButton<T, GS> {}
 
-impl<GS: GlobalState> Layout<GS> for PlainButton<GS> {
+impl<T: Serialize + Clone + Debug + Default + DeserializeOwned, GS: GlobalState> Layout<GS> for PlainButton<T, GS> {
     fn flexibility(&self) -> u32 {
         10
     }
@@ -183,4 +196,4 @@ impl<GS: GlobalState> Layout<GS> for PlainButton<GS> {
 }
 
 
-impl<GS: GlobalState> WidgetExt<GS> for PlainButton<GS> {}
+impl<T: 'static + Serialize + Clone + Debug + Default + DeserializeOwned, GS: GlobalState> WidgetExt<GS> for PlainButton<T, GS> {}

@@ -1,9 +1,11 @@
 use crate::prelude::*;
-
+use crate::event_handler::{MouseEvent, KeyboardEvent};
+use crate::event::event::Event;
 
 
 #[derive(Debug, Clone, Widget)]
-#[state_sync(sync_state)]
+#[state_sync(sync_state, update_all_widget_state, update_local_widget_state)]
+#[event(process_keyboard_event, process_mouse_event)]
 pub struct OverlaidLayer<GS> where GS: GlobalState {
     id: Uuid,
     child: Box<dyn Widget<GS>>,
@@ -11,9 +13,119 @@ pub struct OverlaidLayer<GS> where GS: GlobalState {
     overlay_id: String,
     position: Point,
     dimension: Dimensions,
+    steal_events_when_some: bool,
 }
 
-impl<GS: GlobalState> WidgetExt<GS> for OverlaidLayer<GS> {}
+impl<GS: GlobalState> OverlaidLayer<GS> {
+
+    fn update_all_widget_state(&mut self, env: &mut Environment<GS>, global_state: &GS) {
+        if let Some(overlay) = &mut self.overlay {
+            overlay.update_all_widget_state(env, global_state);
+        }
+    }
+
+    fn update_local_widget_state(&mut self, env: &Environment<GS>) {
+        if let Some(overlay) = &mut self.overlay {
+            overlay.update_local_widget_state(env);
+        }
+    }
+
+    fn process_mouse_event(&mut self, event: &MouseEvent, consumed: &bool, env: &mut Environment<GS>, global_state: &mut GS) {
+        self.update_all_widget_state(env, global_state);
+
+        if !*consumed {
+            self.handle_mouse_event(event, consumed, env, global_state);
+        }
+
+        self.insert_local_state(env);
+
+
+        if let Some(overlay) = &mut self.overlay {
+
+            overlay.process_mouse_event(event, &consumed, env, global_state);
+            if *consumed { return () }
+
+            if !self.steal_events_when_some {
+                for child in self.get_proxied_children() {
+                    child.process_mouse_event(event, &consumed, env, global_state);
+                    if *consumed { return () }
+                }
+            }
+        } else {
+            for child in self.get_proxied_children() {
+                child.process_mouse_event(event, &consumed, env, global_state);
+                if *consumed { return () }
+            }
+        }
+
+        self.update_local_widget_state(env)
+    }
+
+    fn handle_keyboard_event(&mut self, event: &KeyboardEvent, env: &mut Environment<GS>, global_state: &mut GS) {
+        self.update_all_widget_state(env, global_state);
+
+        self.handle_keyboard_event(event, env, global_state);
+
+        self.insert_local_state(env);
+
+        if let Some(overlay) = &mut self.overlay {
+
+            overlay.process_keyboard_event(event, env, global_state);
+
+            if !self.steal_events_when_some {
+                for child in self.get_proxied_children() {
+                    child.process_keyboard_event(event, env, global_state);
+                }
+            }
+        } else {
+            for child in self.get_proxied_children() {
+                child.process_keyboard_event(event, env, global_state);
+            }
+        }
+
+        self.update_local_widget_state(env)
+    }
+
+    fn sync_state(&mut self, env: &mut Environment<GS>, global_state: &GS) {
+        // This might not be the prettiest place to retrieve things from the env
+        self.update_all_widget_state(env, global_state);
+
+        self.insert_local_state(env);
+
+        if let Some(overlay) = &mut self.overlay {
+            overlay.sync_state(env, global_state);
+        }
+
+        for child in self.get_proxied_children() {
+            child.sync_state(env, global_state)
+        }
+
+        // Check if env contains an overlay widget with the specified id
+        self.overlay = env.get_overlay(&self.overlay_id);
+
+        if let Some(overlay) = &mut self.overlay {
+            overlay.sync_state(env, global_state);
+        }
+
+
+
+
+        self.update_local_widget_state(env);
+    }
+
+    pub fn new(overlay_id: &str, child: Box<dyn Widget<GS>>) -> Box<Self> {
+        Box::new(Self {
+            id: Uuid::new_v4(),
+            child,
+            overlay: None,
+            overlay_id: overlay_id.to_string(),
+            position: [0.0,0.0],
+            dimension: [0.0,0.0],
+            steal_events_when_some: true
+        })
+    }
+}
+
 
 impl<S: GlobalState> Layout<S> for OverlaidLayer<S> {
     fn flexibility(&self) -> u32 {
@@ -22,6 +134,11 @@ impl<S: GlobalState> Layout<S> for OverlaidLayer<S> {
 
     fn calculate_size(&mut self, requested_size: Dimensions, env: &Environment<S>) -> Dimensions {
         self.dimension = self.child.calculate_size(requested_size, env);
+
+        if let Some(overlay) = &mut self.overlay {
+            overlay.calculate_size(requested_size, env);
+        }
+
         self.dimension
     }
 
@@ -32,6 +149,9 @@ impl<S: GlobalState> Layout<S> for OverlaidLayer<S> {
 
         positioning(position, dimension, &mut self.child);
         self.child.position_children();
+        if let Some(overlay) = &mut self.overlay {
+            overlay.position_children();
+        }
     }
 }
 
@@ -106,37 +226,6 @@ impl<S: GlobalState> Render<S> for OverlaidLayer<S> {
 
 
 
-impl<S: GlobalState> OverlaidLayer<S> {
-
-    fn sync_state(&mut self, env: &mut Environment<S>, global_state: &S) {
-        // This might not be the prettiest place to retrieve things from the env
-        self.update_all_widget_state(env, global_state);
-
-        self.insert_local_state(env);
-
-        for child in self.get_proxied_children() {
-            child.sync_state(env, global_state)
-        }
-
-        // Check if env contains an overlay widget with the specified id
-        self.overlay = env.get_overlay(&self.overlay_id);
-
-        if let Some(overlay) = &mut self.overlay {
-            overlay.sync_state(env, global_state);
-        }
 
 
-        self.update_local_widget_state(env);
-    }
-
-    pub fn new(overlay_id: &str, child: Box<dyn Widget<S>>) -> Box<Self> {
-        Box::new(Self {
-            id: Uuid::new_v4(),
-            child,
-            overlay: None,
-            overlay_id: overlay_id.to_string(),
-            position: [0.0,0.0],
-            dimension: [0.0,0.0],
-        })
-    }
-}
+impl<GS: GlobalState> WidgetExt<GS> for OverlaidLayer<GS> {}

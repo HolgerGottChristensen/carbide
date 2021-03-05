@@ -237,6 +237,24 @@ pub fn impl_widget(ast: &syn::DeriveInput) -> proc_macro2::TokenStream {
         }
     };
 
+    let block_focus_request = if let Some(_) = struct_attributes.get("focusable.block_focus") {
+        quote! {return false}
+    } else {
+        quote! {self.process_focus_request_default(event, focus_request, env, global_state)}
+    };
+
+    let block_focus_next = if let Some(_) = struct_attributes.get("focusable.block_focus") {
+        quote! {focus_up_for_grab}
+    } else {
+        quote! {self.process_focus_next_default(event, focus_request, focus_up_for_grab, env, global_state)}
+    };
+
+    let block_focus_previous = if let Some(_) = struct_attributes.get("focusable.block_focus") {
+        quote! {focus_up_for_grab}
+    } else {
+        quote! {self.process_focus_previous_default(event, focus_request, focus_up_for_grab, env, global_state)}
+    };
+
     let default_tab_focus_behavior = if let Some(_) = struct_attributes.get("focusable") {
         quote! {#override_default_tab_focus_behavior}
     } else {
@@ -261,12 +279,24 @@ pub fn impl_widget(ast: &syn::DeriveInput) -> proc_macro2::TokenStream {
                 #get_focus
             }
 
-            fn set_focus_and_request(&mut self, focus: carbide_core::focus::Focus, env: &mut Environment<#global_state_use>) {
+            fn set_focus_and_request(&mut self, focus: carbide_core::focus::Focus, env: &mut carbide_core::state::environment::Environment<#global_state_use>) {
                 #set_focus_and_request
             }
 
             fn set_focus(&mut self, focus: carbide_core::focus::Focus) {
                 #set_focus
+            }
+
+            fn process_focus_request(&mut self, event: &carbide_core::event_handler::WidgetEvent, focus_request: &carbide_core::focus::Refocus, env: &mut carbide_core::state::environment::Environment<#global_state_use>, global_state: &mut #global_state_use) -> bool {
+                #block_focus_request
+            }
+
+            fn process_focus_next(&mut self, event: &carbide_core::event_handler::WidgetEvent, focus_request: &carbide_core::focus::Refocus, focus_up_for_grab: bool, env: &mut carbide_core::state::environment::Environment<#global_state_use>, global_state: &mut #global_state_use) -> bool {
+                #block_focus_next
+            }
+
+            fn process_focus_previous(&mut self, event: &carbide_core::event_handler::WidgetEvent, focus_request: &carbide_core::focus::Refocus, focus_up_for_grab: bool, env: &mut carbide_core::state::environment::Environment<#global_state_use>, global_state: &mut #global_state_use) -> bool {
+                #block_focus_previous
             }
 
         }

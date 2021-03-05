@@ -79,7 +79,7 @@ impl<S: GlobalState> SyncTest<S> {
                         ForEach::new(
                             Box::new(fore.clone()),
                             Rectangle::initialize(vec![
-                                Text::initialize(Box::new(mapped_state))
+                                Text::initialize(mapped_state)
                             ]).fill(EnvironmentColor::Red.into()).frame(60.0.into(),30.0.into()))
                             .index_state(index_state)
                     ]),

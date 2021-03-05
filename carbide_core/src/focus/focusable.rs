@@ -17,9 +17,11 @@ pub trait Focusable<GS>: CommonWidget<GS> where GS: GlobalState {
 
     fn set_focus_and_request(&mut self, focus: Focus, env: &mut Environment<GS>);
 
+    fn process_focus_request(&mut self, event: &WidgetEvent, focus_request: &Refocus, env: &mut Environment<GS>, global_state: &mut GS) -> bool;
+
     /// Returns a boolean whether any widget in the tree now contains focus.
     /// This is useful for checking whether the next tab should focus the first element
-    fn process_focus_request(&mut self, event: &WidgetEvent, focus_request: &Refocus, env: &mut Environment<GS>, global_state: &mut GS) -> bool {
+    fn process_focus_request_default(&mut self, event: &WidgetEvent, focus_request: &Refocus, env: &mut Environment<GS>, global_state: &mut GS) -> bool {
 
         let mut any_focus = false;
 
@@ -44,7 +46,9 @@ pub trait Focusable<GS>: CommonWidget<GS> where GS: GlobalState {
         any_focus
     }
 
-    fn process_focus_next(&mut self, event: &WidgetEvent, focus_request: &Refocus, focus_up_for_grab: bool, env: &mut Environment<GS>, global_state: &mut GS) -> bool {
+    fn process_focus_next(&mut self, event: &WidgetEvent, focus_request: &Refocus, focus_up_for_grab: bool, env: &mut Environment<GS>, global_state: &mut GS) -> bool;
+
+    fn process_focus_next_default(&mut self, event: &WidgetEvent, focus_request: &Refocus, focus_up_for_grab: bool, env: &mut Environment<GS>, global_state: &mut GS) -> bool {
         let mut focus_child =
             if self.get_flag().contains(Flags::FOCUSABLE) {
                 if focus_up_for_grab {
@@ -69,7 +73,9 @@ pub trait Focusable<GS>: CommonWidget<GS> where GS: GlobalState {
         return focus_child
     }
 
-    fn process_focus_previous(&mut self, event: &WidgetEvent, focus_request: &Refocus, focus_up_for_grab: bool, env: &mut Environment<GS>, global_state: &mut GS) -> bool {
+    fn process_focus_previous(&mut self, event: &WidgetEvent, focus_request: &Refocus, focus_up_for_grab: bool, env: &mut Environment<GS>, global_state: &mut GS) -> bool;
+
+    fn process_focus_previous_default(&mut self, event: &WidgetEvent, focus_request: &Refocus, focus_up_for_grab: bool, env: &mut Environment<GS>, global_state: &mut GS) -> bool {
         let mut focus_child =
             if self.get_flag().contains(Flags::FOCUSABLE) {
                 if focus_up_for_grab {

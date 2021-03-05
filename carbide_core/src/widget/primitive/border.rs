@@ -9,7 +9,7 @@ pub struct Border<GS> where GS: GlobalState {
     child: Box<dyn Widget<GS>>,
     position: Point,
     dimension: Dimensions,
-    color: Color,
+    #[state] color: ColorState<GS>,
     border_width: u32
 }
 
@@ -84,7 +84,7 @@ impl<S: GlobalState> Render<S> for Border<S> {
         let top_border = Rect::new([l+width,b], [rect.w()-width*2.0, width]);
         let bottom_border = Rect::new([l+width,t-width], [rect.w()-width*2.0, width]);
 
-        let border_color = self.color;
+        let border_color = self.color.get_latest_value();
         let mut prims = vec![
             Primitive {
                 kind: PrimitiveKind::Rectangle { color: border_color.clone()},
@@ -113,7 +113,7 @@ impl<S: GlobalState> Render<S> for Border<S> {
 
 impl<S: GlobalState> Border<S> {
 
-    pub fn color(mut self, color: Color) -> Box<Self> {
+    pub fn color(mut self, color: ColorState<S>) -> Box<Self> {
         self.color = color;
         Box::new(self)
     }
@@ -129,7 +129,7 @@ impl<S: GlobalState> Border<S> {
             child,
             position: [0.0,0.0],
             dimension: [100.0,100.0],
-            color: Color::random(),
+            color: Color::random().into(),
             border_width: 2
         })
     }

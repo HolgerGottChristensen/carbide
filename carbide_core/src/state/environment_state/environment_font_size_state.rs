@@ -47,4 +47,6 @@ impl<GS: GlobalState> State<u32, GS> for EnvironmentFontSizeState{
     }
 
     fn update_dependent_states(&mut self, _: &Environment<GS>) {}
+
+    fn insert_dependent_states(&self, env: &mut Environment<GS>) {}
 }

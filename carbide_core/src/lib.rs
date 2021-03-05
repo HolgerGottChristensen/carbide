@@ -66,3 +66,7 @@ pub mod draw;
 pub mod window;
 pub mod prelude;
 pub mod focus;
+
+pub use serde::Serialize;
+pub use serde::Deserialize;
+pub use serde::de::DeserializeOwned;

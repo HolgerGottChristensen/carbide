@@ -3,13 +3,13 @@ use carbide_core::color::{RED, GREEN};
 use carbide_core::event_handler::{KeyboardEvent, MouseEvent, WidgetEvent};
 use crate::plain::cursor::{Cursor, CursorIndex};
 use carbide_core::draw::shape::vertex::Vertex;
-use carbide_core::widget::text::Wrap;
 use crate::plain::text_input_key_commands::TextInputKeyCommand;
 use copypasta::{ClipboardContext, ClipboardProvider};
 use std::ops::Range;
 use unicode_segmentation::UnicodeSegmentation;
 use carbide_core::text::PositionedGlyph;
 use carbide_core::prelude::State;
+use carbide_core::widget::types::text_wrap::Wrap;
 
 /// A plain text input widget. The widget contains no specific styling, other than text color,
 /// cursor color/width and selection color. Most common logic has been implemented, such as
@@ -54,14 +54,14 @@ impl<GS: GlobalState> PlainTextInput<GS> {
                 ZStack::initialize(vec![
                     IfElse::new(focus_state.clone().mapped(|focus| *focus == Focus::Focused))
                         .when_true(Rectangle::initialize(vec![])
-                            .fill(GREEN)
+                            .fill(GREEN.into())
                             .frame(Box::new(selection_width.clone()), 40.0.into())
                             .offset(selection_x.clone(), 0.0.into())),
                     Text::initialize(text_state.clone().into())
                         .font_size(40.into()).wrap_mode(Wrap::None),
                     IfElse::new( focus_state.clone().mapped(|focus| *focus == Focus::Focused))
                         .when_true(Rectangle::initialize(vec![])
-                        .fill(RED)
+                        .fill(RED.into())
                         .frame(4.0.into(), 40.0.into())
                         .offset(cursor_x.clone(), 0.0.into()))
             ]).alignment(BasicLayouter::TopLeading)

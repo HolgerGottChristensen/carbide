@@ -28,8 +28,8 @@ fn main() {
 
     window.set_widgets(
         VStack::initialize(vec![
-            PlainButton::<u32>::new(Rectangle::initialize(vec![])
-                .fill(RED)
+            PlainButton::<bool, u32>::new(Rectangle::initialize(vec![])
+                .fill(RED.into())
                 .frame(10.0.into(),10.0.into())
             )
                 .on_click(|_,_, f| {

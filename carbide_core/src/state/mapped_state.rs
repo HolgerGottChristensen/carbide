@@ -9,7 +9,7 @@ use crate::state::state_key::StateKey;
 
 #[derive(Clone)]
 pub struct MappedState<T, U, GS> where T: Serialize + Clone + Debug, U: Serialize + Clone + Debug, GS: GlobalState {
-    id: Option<Uuid>,
+    id: Option<StateKey>,
     mapped_state: Box<dyn State<U, GS>>,
     map: fn(&U) -> T,
     latest_value: T,
@@ -17,22 +17,22 @@ pub struct MappedState<T, U, GS> where T: Serialize + Clone + Debug, U: Serializ
 
 impl<T: Serialize + Clone + Debug, U: Serialize + Clone + Debug, GS: GlobalState> MappedState<T, U, GS> {
 
-    pub fn new_local(state: Box<dyn State<U, GS>>, map: fn(&U) -> T, start: T) -> MappedState<T, U, GS> {
-        MappedState {
-            id: Some(Uuid::new_v4()),
+    pub fn new_local(state: Box<dyn State<U, GS>>, map: fn(&U) -> T, start: T) -> Box<MappedState<T, U, GS>> {
+        Box::new(MappedState {
+            id: Some(StateKey::String(Uuid::new_v4().to_string())),
             mapped_state: state,
             map,
             latest_value: start
-        }
+        })
     }
 
-    pub fn new(state: Box<dyn State<U, GS>>, map: fn(&U) -> T, start: T) -> MappedState<T, U, GS> {
-        MappedState {
+    pub fn new(state: Box<dyn State<U, GS>>, map: fn(&U) -> T, start: T) -> Box<MappedState<T, U, GS>> {
+        Box::new(MappedState {
             id: None,
             mapped_state: state,
             map,
             latest_value: start
-        }
+        })
     }
 }
 
@@ -56,10 +56,18 @@ impl<T: Serialize + Clone + Debug, U: Serialize + Clone + Debug + DeserializeOwn
     }
 
     fn get_key(&self) -> Option<&StateKey> {
-        None
+        if let Some(id) = &self.id {
+            Some(id)
+        } else {
+            None
+        }
     }
 
     fn update_dependent_states(&mut self, env: &Environment<GS>) {
         env.update_local_state(&mut self.mapped_state)
+    }
+
+    fn insert_dependent_states(&self, env: &mut Environment<GS>) {
+        //Todo: If a map back function is made, we could map the value back and insert that into the environment
     }
 }

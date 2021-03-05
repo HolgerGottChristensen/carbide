@@ -110,6 +110,7 @@ impl<GS: GlobalState> Environment<GS> {
     }
 
     pub fn insert_local_state<T: Serialize + Clone + Debug>(&mut self, local_state: &dyn State<T, GS>) {
+        local_state.insert_dependent_states(self);
         if let Some(key) = local_state.get_key() {
             let value = local_state.get_latest_value();
             self.local_state.insert(key.clone(), to_bin(value).unwrap());
