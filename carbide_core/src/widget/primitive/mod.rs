@@ -28,6 +28,7 @@ pub mod offset;
 pub mod border;
 pub mod if_else;
 pub mod environment_updating;
+pub mod shared_state;
 
 /// Find the bounding rect for the given series of points.
 pub fn bounding_box_for_points<I>(mut points: I) -> Rect

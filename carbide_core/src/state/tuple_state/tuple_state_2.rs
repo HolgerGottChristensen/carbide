@@ -24,6 +24,16 @@ impl<T: Serialize + Clone + Debug + DeserializeOwned, U: Serialize + Clone + Deb
     }
 }
 
+impl<T: Serialize + Clone + Debug + DeserializeOwned, U: Serialize + Clone + Debug + DeserializeOwned, GS: GlobalState> From<(Box<dyn State<T, GS>>, Box<dyn State<U, GS>>)> for TupleState2<T, U, GS> {
+    fn from((first, second): (Box<dyn State<T, GS>>, Box<dyn State<U, GS>>)) -> Self {
+        TupleState2 {
+            fst: first.clone(),
+            snd: second.clone(),
+            latest_value: (first.get_latest_value().clone(), second.get_latest_value().clone()),
+        }
+    }
+}
+
 impl<T: Serialize + Clone + Debug + DeserializeOwned, U: Serialize + Clone + Debug + DeserializeOwned, GS: GlobalState> State<(T, U), GS> for TupleState2<T, U, GS> {
     fn get_value_mut(&mut self, env: &mut Environment<GS>, global_state: &mut GS) -> &mut (T, U) {
         self.latest_value = (self.fst.get_value_mut(env, global_state).clone(), self.snd.get_value_mut(env, global_state).clone());

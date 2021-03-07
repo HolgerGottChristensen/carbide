@@ -5,13 +5,15 @@ use carbide_core::input::Key;
 use carbide_core::state::state::State;
 use crate::PlainButton;
 use carbide_core::state::environment_color::EnvironmentColor;
-use carbide_core::state::TupleState2;
+use carbide_core::state::{TupleState2, TupleState3};
+use carbide_core::widget::primitive::foreach::ForEach;
+use carbide_core::state::mapped_state::MappedState;
 
 #[derive(Clone, Widget)]
 #[event(handle_keyboard_event, handle_mouse_event)]
 #[focusable(block_focus)]
 #[state_sync(update_all_widget_state)]
-pub struct PlainPopUp<GS> where GS: GlobalState {
+pub struct PlainPopUpButton<GS> where GS: GlobalState {
     id: Id,
     #[state] focus: Box<dyn State<Focus, GS>>,
     child: Box<dyn Widget<GS>>,
@@ -19,25 +21,25 @@ pub struct PlainPopUp<GS> where GS: GlobalState {
     dimension: Dimensions,
     //popup: Box<dyn Widget<GS>>,
     #[state] opened: Box<dyn State<bool, GS>>,
-    #[state] selected_state: Box<dyn State<u32, GS>>,
+    #[state] selected_state: Box<dyn State<usize, GS>>,
 }
 
-impl<GS: GlobalState> PlainPopUp<GS> {
+impl<GS: GlobalState> PlainPopUpButton<GS> {
 
 
-    pub fn new(selected_state: Box<dyn State<u32, GS>>) -> Box<Self> {
+    pub fn new(selected_state: Box<dyn State<usize, GS>>) -> Box<Self> {
 
         let opened = Box::new(CommonState::new_local_with_key(&false));
 
-        Box::new(PlainPopUp {
+        Box::new(PlainPopUpButton {
             id: Id::new_v4(),
             focus: Box::new(CommonState::new_local_with_key(&Focus::Unfocused)),
-            child: PlainButton::<bool, GS>::new(Rectangle::initialize(vec![]))
-                .local_state(opened.clone())
-                .on_click(|a, b, c| {
-                    let local = a.get_local_state().get_latest_value_mut();
-                    *local = !*local;
-                    println!("{}", a.get_local_state().get_latest_value());
+            child: PlainButton::<(bool, usize), GS>::new(Rectangle::initialize(vec![]))
+                .local_state(TupleState2::new(opened.clone(), selected_state.clone()))
+                .on_click(|myself, env, global_state| {
+                    let (opened, selected_index) = myself.get_local_state().get_latest_value_mut();
+                    *opened = true;
+                    println!("Opened popup. The currently selected item is: {}", selected_index);
                 }),
             position: [0.0,0.0],
             dimension: [0.0,0.0],
@@ -48,21 +50,38 @@ impl<GS: GlobalState> PlainPopUp<GS> {
 
     fn update_all_widget_state(&mut self, env: &mut Environment<GS>, _: &GS) {
         if *self.opened.get_latest_value() {
+
+            let index_state = CommonState::new_local_with_key(&0);
+            let foreach_state = CommonState::<Vec<u32>, GS>::new_local_with_key(&(0..5).collect::<Vec<u32>>());
+
+            let mapped_state = MappedState::new_local(Box::new(index_state.clone()), |a: &usize| format!("{}", a), "0".to_string());
+
             env.add_overlay("overlay_test", Rectangle::initialize(vec![
-                PlainButton::<(bool, u32), GS>::new(Rectangle::initialize(vec![])
-                    .fill(EnvironmentColor::Green.into())
-                    .frame(10.0.into(),10.0.into())
-                )
-                    .local_state(TupleState2::new(self.opened.clone(), self.selected_state.clone()))
-                    .on_click(|myself, env, global_state| {
-                        let (local, selected_index) = myself.get_local_state().get_latest_value_mut();
-                        *local = false;
-                        *selected_index = *selected_index + 1;
-                        println!("Closed popup and selected: {}", selected_index);
-                    })
+                SharedState::new(TupleState2::new(self.opened.clone(), self.selected_state.clone()),
+                VStack::initialize(
+                    vec![
+                        ForEach::new(Box::new(foreach_state),
+                            Rectangle::initialize(vec![
+                                PlainButton::<(usize, bool, usize), GS>::new(Text::initialize(mapped_state))
+                                    .local_state(TupleState3::new(Box::new(index_state.clone()), self.opened.clone(), self.selected_state.clone()))
+                                    .on_click(|myself, env, global_state| {
+                                        let (index, opened, selected_index) = myself.get_local_state().get_latest_value_mut();
+
+                                        *selected_index = *index;
+                                        *opened = false;
+
+                                        println!("Closed popup and selected: {}", index);
+                                    })
+                            ])
+                                .fill(EnvironmentColor::Green.into())
+                                .frame(30.0.into(), 30.0.into())
+                        ).index_state(Box::new(index_state))
+                    ]
+                )),
+
             ])
                 .fill(EnvironmentColor::Red.into())
-                .frame(100.0.into(), 100.0.into()))
+                .frame(100.0.into(), 300.0.into()))
         }
     }
 
@@ -75,7 +94,7 @@ impl<GS: GlobalState> PlainPopUp<GS> {
     }
 }
 
-impl<GS: GlobalState> CommonWidget<GS> for PlainPopUp<GS> {
+impl<GS: GlobalState> CommonWidget<GS> for PlainPopUpButton<GS> {
     fn get_id(&self) -> Id {
         self.id
     }
@@ -125,9 +144,9 @@ impl<GS: GlobalState> CommonWidget<GS> for PlainPopUp<GS> {
     }
 }
 
-impl<GS: GlobalState> ChildRender for PlainPopUp<GS> {}
+impl<GS: GlobalState> ChildRender for PlainPopUpButton<GS> {}
 
-impl<GS: GlobalState> Layout<GS> for PlainPopUp<GS> {
+impl<GS: GlobalState> Layout<GS> for PlainPopUpButton<GS> {
     fn flexibility(&self) -> u32 {
         10
     }
@@ -155,4 +174,4 @@ impl<GS: GlobalState> Layout<GS> for PlainPopUp<GS> {
 }
 
 
-impl<GS: GlobalState> WidgetExt<GS> for PlainPopUp<GS> {}
+impl<GS: GlobalState> WidgetExt<GS> for PlainPopUpButton<GS> {}

@@ -8,6 +8,6 @@ pub mod environment_color;
 pub mod environment_font_size;
 mod environment_state;
 pub mod state_key;
-mod tuple_state;
+pub(crate) mod tuple_state;
 
 pub use tuple_state::*;
