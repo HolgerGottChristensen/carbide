@@ -143,6 +143,10 @@ impl<GS: GlobalState, T: ForEachDelegate> CommonWidget<GS> for ForEach<GS, T> {
         self.id
     }
 
+    fn set_id(&mut self, id: Uuid) {
+        self.id = id;
+    }
+
     fn get_flag(&self) -> Flags {
         Flags::PROXY
     }

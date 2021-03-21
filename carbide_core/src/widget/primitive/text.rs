@@ -21,6 +21,7 @@ use crate::state::environment_font_size::EnvironmentFontSize;
 /// in accordance with the produced **Alignment**.
 #[derive(Debug, Clone, Widget)]
 pub struct Text<GS> where GS: GlobalState {
+    id: Uuid,
     position: Point,
     dimension: Dimensions,
     wrap_mode: Wrap,
@@ -82,7 +83,11 @@ impl<S: GlobalState> Render<S> for Text<S> {
 
 impl<S: GlobalState> CommonWidget<S> for Text<S> {
     fn get_id(&self) -> Uuid {
-        unimplemented!()
+        self.id
+    }
+
+    fn set_id(&mut self, id: Uuid) {
+        self.id = id;
     }
 
     fn get_flag(&self) -> Flags {
@@ -139,6 +144,7 @@ impl<S: GlobalState> CommonWidget<S> for Text<S> {
 impl<S: GlobalState> Text<S> {
     pub fn initialize(text: Box<dyn State<String, S>>) -> Box<Self> {
         Box::new(Text {
+            id: Uuid::new_v4(),
             text,
             font_size: EnvironmentFontSize::Body.into(),
             position: [0.0, 0.0],
@@ -151,6 +157,7 @@ impl<S: GlobalState> Text<S> {
     /// Build a new **Text** widget.
     pub fn new(text: Box<dyn State<String, S>>, position: Point, dimension: Dimensions) -> Box<Self> {
         Box::new(Text {
+            id: Uuid::new_v4(),
             text,
             font_size: EnvironmentFontSize::Body.into(),
             position,

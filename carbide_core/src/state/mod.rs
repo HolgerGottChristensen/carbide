@@ -9,5 +9,6 @@ pub mod environment_font_size;
 mod environment_state;
 pub mod state_key;
 pub(crate) mod tuple_state;
+pub mod vec_state;
 
 pub use tuple_state::*;

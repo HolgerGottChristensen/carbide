@@ -51,13 +51,16 @@ pub trait Focusable<GS>: CommonWidget<GS> where GS: GlobalState {
     fn process_focus_next_default(&mut self, event: &WidgetEvent, focus_request: &Refocus, focus_up_for_grab: bool, env: &mut Environment<GS>, global_state: &mut GS) -> bool {
         let mut focus_child =
             if self.get_flag().contains(Flags::FOCUSABLE) {
+                println!("{}, {:?}", focus_up_for_grab, self.get_focus());
                 if focus_up_for_grab {
                     self.set_focus(Focus::Focused);
                     self.focus_retrieved(event, focus_request, env, global_state);
+                    println!("{}, {:?}", focus_up_for_grab, self.get_focus());
                     false
                 } else if self.get_focus() == Focus::FocusReleased {
                     self.set_focus(Focus::Unfocused);
                     self.focus_dismissed(event, focus_request, env, global_state);
+                    println!("{}, {:?}", focus_up_for_grab, self.get_focus());
                     true
                 } else {
                     false

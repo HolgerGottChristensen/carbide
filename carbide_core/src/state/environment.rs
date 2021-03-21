@@ -15,6 +15,7 @@ use crate::focus::Refocus;
 use crate::state::environment_variable::EnvironmentVariable;
 use fxhash::{FxHashMap, FxBuildHasher};
 use crate::state::state_key::StateKey;
+use crate::widget::Dimensions;
 
 pub struct Environment<GS> where GS: GlobalState {
 
@@ -48,6 +49,8 @@ pub struct Environment<GS> where GS: GlobalState {
     /// reason and apply that focus change after the event is done. This also means that
     /// the focus change is not instant, but updates after each run event.
     pub(crate) focus_request: Option<Refocus>,
+
+    pub window_dimension: Dimensions,
 }
 
 impl<GS: GlobalState> std::fmt::Debug for Environment<GS> {
@@ -58,14 +61,15 @@ impl<GS: GlobalState> std::fmt::Debug for Environment<GS> {
 
 impl<GS: GlobalState> Environment<GS> {
 
-    pub fn new(env_stack: Vec<EnvironmentVariable>) -> Self {
+    pub fn new(env_stack: Vec<EnvironmentVariable>, dimensions: Dimensions) -> Self {
         Environment {
             stack: env_stack,
             fonts: text::font::Map::new(),
             images_information: HashMap::with_hasher(FxBuildHasher::default()),
             overlay_map: HashMap::with_hasher(FxBuildHasher::default()),
             local_state: HashMap::with_hasher(FxBuildHasher::default()),
-            focus_request: None
+            focus_request: None,
+            window_dimension: dimensions
         }
     }
 

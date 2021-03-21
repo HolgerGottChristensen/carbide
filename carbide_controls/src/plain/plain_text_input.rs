@@ -8,7 +8,7 @@ use copypasta::{ClipboardContext, ClipboardProvider};
 use std::ops::Range;
 use unicode_segmentation::UnicodeSegmentation;
 use carbide_core::text::PositionedGlyph;
-use carbide_core::prelude::State;
+use carbide_core::prelude::{State, Uuid};
 use carbide_core::widget::types::text_wrap::Wrap;
 
 /// A plain text input widget. The widget contains no specific styling, other than text color,
@@ -212,6 +212,7 @@ impl<GS: GlobalState> PlainTextInput<GS> {
     }
 
     fn focus_retrieved(&mut self, _: &WidgetEvent, focus_request: &Refocus, env: &mut Environment<GS>, global_state: &mut GS) {
+
         if focus_request != &Refocus::FocusRequest {
             self.cursor = Cursor::Single(CursorIndex{line: 0, char: Self::len_in_graphemes(self.text.get_latest_value())});
             self.reposition_cursor(env, global_state);
@@ -782,6 +783,10 @@ impl<GS: GlobalState> PlainTextInput<GS> {
 impl<GS: GlobalState> CommonWidget<GS> for PlainTextInput<GS> {
     fn get_id(&self) -> Id {
         self.id
+    }
+
+    fn set_id(&mut self, id: Uuid) {
+        self.id = id
     }
 
     fn get_flag(&self) -> Flags {

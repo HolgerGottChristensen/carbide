@@ -74,6 +74,10 @@ impl<S: GlobalState> CommonWidget<S> for Box<dyn Widget<S>> {
         self.deref().get_id()
     }
 
+    fn set_id(&mut self, id: Uuid) {
+        self.deref_mut().set_id(id);
+    }
+
     fn get_flag(&self) -> Flags {
         self.deref().get_flag()
     }

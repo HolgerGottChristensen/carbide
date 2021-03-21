@@ -263,24 +263,34 @@ impl<S: GlobalState> Ui<S> {
             maybe_background_color: None,
             mouse_cursor: cursor::MouseCursor::Arrow,
             event_handler: EventHandler::new(),
-            environment: Environment::new(base_environment),
+            environment: Environment::new(base_environment, window_dimensions),
             any_focus: false,
         }
+    }
+
+    pub fn set_window_width(&mut self, width: f64) {
+        self.win_w = width;
+        self.environment.window_dimension = [width, self.environment.window_dimension[1]];
+    }
+
+    pub fn set_window_height(&mut self, height: f64) {
+        self.win_h = height;
+        self.environment.window_dimension = [self.environment.window_dimension[0], height];
     }
 
 
     pub fn handle_event(&mut self, event: Input, global_state: &mut S) {
         let window_event = self.event_handler.handle_event(event, [self.win_w, self.win_h]);
 
-        let mut _needs_redraw = self.delegate_events(global_state);
+        //let mut _needs_redraw = self.delegate_events(global_state);
 
         match window_event {
             None => (),
             Some(event) => {
                 match event {
                     WindowEvent::Resize(dimensions) => {
-                        self.win_w = dimensions[0];
-                        self.win_h = dimensions[1];
+                        self.set_window_width(dimensions[0]);
+                        self.set_window_height(dimensions[1]);
                         //_needs_redraw = true;
                     }
                     WindowEvent::Focus => (),//_needs_redraw = true,
@@ -295,7 +305,7 @@ impl<S: GlobalState> Ui<S> {
         //}
     }
 
-    fn delegate_events(&mut self, global_state: &mut S) -> bool {
+    pub fn delegate_events(&mut self, global_state: &mut S) -> bool {
         let now = Instant::now();
         let events = self.event_handler.get_events();
 
@@ -323,8 +333,10 @@ impl<S: GlobalState> Ui<S> {
                         self.any_focus = self.widgets.process_focus_request(event, &request, &mut self.environment, global_state);
                     }
                     Refocus::FocusNext => {
+                        println!("Focus next");
                         let focus_first = self.widgets.process_focus_next(event, &request,false, &mut self.environment, global_state);
                         if focus_first {
+                            println!("Focus next fisr");
                             self.widgets.process_focus_next(event, &request,true, &mut self.environment, global_state);
                         }
                     }
@@ -354,18 +366,31 @@ impl<S: GlobalState> Ui<S> {
                 }
             }
 
+
+
+            self.environment.clear();
+
+            // Todo check if this can be removed. It is for the overlay layer to have the same position
+            // as the thing below. This will not work if the thing below the overlay layers, position is
+            // dependent on some state that has not been synchronized. For a use case look at the pop up
+            // button in controls.
+            self.widgets.calculate_size(self.environment.window_dimension, &self.environment);
+            self.widgets.position_children();
+
+            self.widgets.sync_state(&mut self.environment, global_state);
+
+
+            self.environment.clear();
         }
 
-        self.environment.clear();
 
-        self.widgets.sync_state(&mut self.environment, global_state);
-
-        self.environment.clear();
         self.event_handler.clear_events();
 
         if now.elapsed().as_millis() > 16 {
             println!("Frame took: {}", now.elapsed().as_secs_f32());
         }
+
+
 
         // Todo: Determine if an redraw is needed after events are processed
         return true

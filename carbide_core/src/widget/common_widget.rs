@@ -7,6 +7,7 @@ use crate::widget::widget_iterator::{WidgetIter, WidgetIterMut};
 
 pub trait CommonWidget<S> {
     fn get_id(&self) -> Uuid;
+    fn set_id(&mut self, id: Uuid);
     fn get_flag(&self) -> Flags;
 
     /// Get the logical children. This means for example for a vstack with a foreach,

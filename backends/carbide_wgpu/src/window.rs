@@ -293,8 +293,8 @@ impl<T: GlobalState> Window<T> {
 
     pub fn resize(&mut self, new_size: winit::dpi::PhysicalSize<u32>) {
         self.size = new_size;
-        self.ui.win_w = self.size.width as f64;
-        self.ui.win_h = self.size.height as f64;
+        self.ui.set_window_width(self.size.width as f64);
+        self.ui.set_window_height(self.size.height as f64);
         self.ui.handle_event(Input::Redraw, &mut self.state);
         self.sc_desc.width = new_size.width;
         self.sc_desc.height = new_size.height;
@@ -312,7 +312,7 @@ impl<T: GlobalState> Window<T> {
     }
 
     fn update(&mut self) {
-
+        self.ui.delegate_events(&mut self.state);
     }
 
     pub fn render(&mut self) -> Result<(), wgpu::SwapChainError> {

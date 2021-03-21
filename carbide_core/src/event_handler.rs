@@ -131,9 +131,20 @@ impl EventHandler {
 
     #[cfg(debug_assertions)]
     fn add_event(&mut self, event: WidgetEvent) {
-        /*if let WidgetEvent::Mouse(MouseEvent::Move {..}) = event {} else {
-            println!("{:?}", &event);
+        //if let WidgetEvent::Mouse(MouseEvent::Move {..}) = event {} else {
+        //    println!("{:?}", &event);
+        //}
+
+        /*if let Some(WidgetEvent::Mouse(MouseEvent::Move {..})) = self.events.last() {
+            if let WidgetEvent::Mouse(MouseEvent::Move {..}) = event {
+
+            }
         }*/
+
+        // Todo: Compress sequential drag and move events.
+
+
+
         self.events.push(event);
     }
 

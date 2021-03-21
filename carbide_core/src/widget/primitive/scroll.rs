@@ -220,6 +220,10 @@ impl<S: GlobalState> Layout<S> for Scroll<S> {
 
     fn calculate_size(&mut self, requested_size: Dimensions, env: &Environment<S>) -> Dimensions {
         self.child.calculate_size(requested_size, env);
+
+        self.keep_y_within_bounds();
+        self.keep_x_within_bounds();
+
         self.dimension = requested_size;
 
         if self.scroll_directions == ScrollDirection::Both ||
@@ -330,6 +334,10 @@ impl<S: GlobalState> Layout<S> for Scroll<S> {
 impl<S: GlobalState> CommonWidget<S> for Scroll<S> {
     fn get_id(&self) -> Uuid {
         self.id
+    }
+
+    fn set_id(&mut self, id: Uuid) {
+        self.id = id;
     }
 
     fn get_flag(&self) -> Flags {

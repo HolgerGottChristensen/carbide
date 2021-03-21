@@ -9,6 +9,7 @@ use crate::render::util::new_primitive;
 /// A primitive and basic widget for drawing an `Image`.
 #[derive(Debug, Clone, Widget)]
 pub struct Image {
+    id: Uuid,
     /// The unique identifier for the image that will be drawn.
     pub image_id: image_map::Id,
     /// The rectangle area of the original source image that should be used.
@@ -86,7 +87,11 @@ impl<S: GlobalState> Render<S> for Image {
 
 impl<S: GlobalState> CommonWidget<S> for Image {
     fn get_id(&self) -> Uuid {
-        unimplemented!()
+        self.id
+    }
+
+    fn set_id(&mut self, id: Uuid) {
+        self.id = id
     }
 
     fn get_flag(&self) -> Flags {
@@ -173,6 +178,7 @@ impl Image {
     /// 3. use an index type which may be mapped to your various image render.
     pub fn old_new(image_id: image_map::Id) -> Self {
         Image {
+            id: Uuid::new_v4(),
             image_id,
             src_rect: None,
             style: Style::default(),
@@ -186,6 +192,7 @@ impl Image {
 
     pub fn new(id: image_map::Id) -> Box<Self> {
         Box::new(Image {
+            id: Uuid::new_v4(),
             image_id: id,
             src_rect: None,
             style: Default::default(),

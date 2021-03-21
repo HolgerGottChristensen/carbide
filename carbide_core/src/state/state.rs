@@ -77,6 +77,12 @@ impl<T: Serialize + Clone + Debug, GS: GlobalState> State<T, GS> for Box<dyn Sta
     }
 }
 
+pub trait EnvFn<T: Serialize + Clone + Debug, GS: GlobalState>: FnOnce(&Environment<GS>) -> T + DynClone {}
+pub trait EnvFnMut<T: Serialize + Clone + Debug, GS: GlobalState>: FnOnce(&mut Environment<GS>) -> T + DynClone {}
+
+impl<T: Serialize + Clone + Debug, U: FnOnce(&Environment<GS>) -> T + DynClone, GS: GlobalState> EnvFn<T, GS> for U {}
+impl<T: Serialize + Clone + Debug, U: FnOnce(&mut Environment<GS>) -> T + DynClone, GS: GlobalState> EnvFnMut<T, GS> for U {}
+
 // TODO: Split into different structs.
 #[derive(Clone)]
 pub enum CommonState<T, GS> where T: Serialize + Clone + Debug, GS: GlobalState {
@@ -86,11 +92,16 @@ pub enum CommonState<T, GS> where T: Serialize + Clone + Debug, GS: GlobalState 
         function: fn(state: &GS) -> T,
         function_mut: Option<fn(state: &mut GS) -> T>,
         latest_value: T
-    }
+    },
+    EnvironmentState {
+        function: fn(env: &Environment<GS>) -> T,
+        function_mut: Option<fn(env: &mut Environment<GS>) -> T>,
+        latest_value: T
+    },
 }
 
 impl<T: Serialize + Clone + Debug, GS: GlobalState> State<T, GS> for CommonState<T, GS> {
-    fn get_value_mut(&mut self, _: &mut Environment<GS>, global_state: &mut GS) -> &mut T {
+    fn get_value_mut(&mut self, env: &mut Environment<GS>, global_state: &mut GS) -> &mut T {
         match self {
             CommonState::LocalState { value, .. } => {value}
             CommonState::Value { value } => {value}
@@ -103,15 +114,28 @@ impl<T: Serialize + Clone + Debug, GS: GlobalState> State<T, GS> for CommonState
 
                 latest_value
             }
+            CommonState::EnvironmentState { latest_value, function, function_mut } => {
+                if let Some(n) = function_mut {
+                    *latest_value = n(env).clone();
+                } else {
+                    *latest_value = function(env).clone();
+                }
+
+                latest_value
+            }
         }
     }
 
-    fn get_value(&mut self, _: &Environment<GS>, global_state: &GS) -> &T {
+    fn get_value(&mut self, env: &Environment<GS>, global_state: &GS) -> &T {
         match self {
             CommonState::LocalState { value, .. } => {value}
             CommonState::Value { value } => {value}
             CommonState::GlobalState { latest_value, function, .. } => {
                 *latest_value = function(global_state).clone();
+                latest_value
+            }
+            CommonState::EnvironmentState { latest_value, function, .. } => {
+                *latest_value = function(env).clone();
                 latest_value
             }
         }
@@ -124,6 +148,9 @@ impl<T: Serialize + Clone + Debug, GS: GlobalState> State<T, GS> for CommonState
             CommonState::GlobalState { latest_value, .. } => {
                 latest_value
             }
+            CommonState::EnvironmentState { latest_value, .. } => {
+                latest_value
+            }
         }
     }
 
@@ -132,6 +159,9 @@ impl<T: Serialize + Clone + Debug, GS: GlobalState> State<T, GS> for CommonState
             CommonState::LocalState { value, .. } => {value}
             CommonState::Value { value } => {value}
             CommonState::GlobalState { latest_value, .. } => {
+                latest_value
+            }
+            CommonState::EnvironmentState { latest_value, .. } => {
                 latest_value
             }
         }
@@ -169,6 +199,11 @@ impl<T: Serialize + Clone + Debug, U: GlobalState> Debug for CommonState<T, U> {
             }
             CommonState::GlobalState { latest_value, .. } => {
                 f.debug_struct("State::GlobalState")
+                    .field("latest_value", latest_value)
+                    .finish()
+            }
+            CommonState::EnvironmentState { latest_value, .. } => {
+                f.debug_struct("State::EnvironmentState")
                     .field("latest_value", latest_value)
                     .finish()
             }
@@ -237,6 +272,7 @@ impl GetState for LocalStateList {
             CommonState::GlobalState {function, latest_value, ..} => {
                 *latest_value = function(global_state).clone()
             }
+            CommonState::EnvironmentState {..} => {}
         }
 
     }
@@ -253,7 +289,6 @@ impl GetState for LocalStateList {
                 }
 
             }
-            CommonState::Value { .. } => {}
             _ => {}
         }
 
@@ -319,6 +354,12 @@ impl<T: GlobalState> Into<Box<dyn State<Vec<Uuid>, T>>> for Vec<Uuid> {
 
 impl<T: GlobalState> Into<Box<dyn State<u32, T>>> for u32 {
     fn into(self) -> Box<dyn State<u32, T>> {
+        Box::new(CommonState::new(&self))
+    }
+}
+
+impl<T: GlobalState> Into<Box<dyn State<usize, T>>> for usize {
+    fn into(self) -> Box<dyn State<usize, T>> {
         Box::new(CommonState::new(&self))
     }
 }

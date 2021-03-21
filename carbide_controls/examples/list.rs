@@ -29,11 +29,11 @@ fn main() {
 
     window.set_widgets(
         List::new(
+            Box::new(list_model_state),
             Rectangle::initialize(vec![
                 Text::initialize(Box::new(id_state.clone()))
-            ]).fill(GREEN)
-                .frame(SCALE.into(), 80.0.into()),
-            Box::new(list_model_state))
+            ]).fill(GREEN.into())
+                .frame(SCALE.into(), 80.0.into()))
             .id_state(Box::new(id_state.clone()))
             .frame(500.0.into(), SCALE.into())
             .frame(SCALE.into(), 900.0.into())

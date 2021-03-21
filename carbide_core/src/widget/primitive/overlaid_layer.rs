@@ -1,15 +1,16 @@
 use crate::prelude::*;
-use crate::event_handler::{MouseEvent, KeyboardEvent};
+use crate::event_handler::{MouseEvent, KeyboardEvent, WidgetEvent};
 use crate::event::event::Event;
 
 
 #[derive(Debug, Clone, Widget)]
 #[state_sync(sync_state, update_all_widget_state, update_local_widget_state)]
-#[event(process_keyboard_event, process_mouse_event)]
+#[event(process_keyboard_event, process_mouse_event, process_other_event)]
 pub struct OverlaidLayer<GS> where GS: GlobalState {
     id: Uuid,
     child: Box<dyn Widget<GS>>,
     overlay: Option<Box<dyn Widget<GS>>>,
+    current_overlay_id: Option<Uuid>,
     overlay_id: String,
     position: Point,
     dimension: Dimensions,
@@ -86,6 +87,29 @@ impl<GS: GlobalState> OverlaidLayer<GS> {
         self.update_local_widget_state(env)
     }
 
+    fn process_other_event(&mut self, event: &WidgetEvent, env: &mut Environment<GS>, global_state: &mut GS) {
+        self.update_all_widget_state(env, global_state);
+
+        self.insert_local_state(env);
+
+        if let Some(overlay) = &mut self.overlay {
+
+            overlay.process_other_event(event, env, global_state);
+
+            if !self.steal_events_when_some {
+                for child in self.get_proxied_children() {
+                    child.process_other_event(event, env, global_state);
+                }
+            }
+        } else {
+            for child in self.get_proxied_children() {
+                child.process_other_event(event, env, global_state);
+            }
+        }
+
+        self.update_local_widget_state(env)
+    }
+
     fn sync_state(&mut self, env: &mut Environment<GS>, global_state: &GS) {
         // This might not be the prettiest place to retrieve things from the env
         self.update_all_widget_state(env, global_state);
@@ -101,7 +125,31 @@ impl<GS: GlobalState> OverlaidLayer<GS> {
         }
 
         // Check if env contains an overlay widget with the specified id
-        self.overlay = env.get_overlay(&self.overlay_id);
+        let temp_overlay = env.get_overlay(&self.overlay_id);
+
+        if let Some(overlay) = temp_overlay {
+            if let Some(current_overlay_id) = self.current_overlay_id {
+
+                // If the overlay has the same id as the overlay shown last frame we should not
+                // update it, because we will loose its state.
+                if overlay.get_id() != current_overlay_id {
+                    self.overlay = Some(overlay);
+                    self.current_overlay_id = Some(current_overlay_id)
+                } else {
+                    if let Some(o) = &mut self.overlay {
+                        o.set_position(overlay.get_position());
+                    }
+
+                }
+            } else {
+                self.current_overlay_id = Some(overlay.get_id());
+                self.overlay = Some(overlay);
+            }
+
+        } else {
+            self.current_overlay_id = None;
+            self.overlay = None;
+        }
 
         if let Some(overlay) = &mut self.overlay {
             overlay.sync_state(env, global_state);
@@ -118,10 +166,11 @@ impl<GS: GlobalState> OverlaidLayer<GS> {
             id: Uuid::new_v4(),
             child,
             overlay: None,
+            current_overlay_id: None,
             overlay_id: overlay_id.to_string(),
             position: [0.0,0.0],
             dimension: [0.0,0.0],
-            steal_events_when_some: true
+            steal_events_when_some: true,
         })
     }
 }
@@ -158,6 +207,10 @@ impl<S: GlobalState> Layout<S> for OverlaidLayer<S> {
 impl<S: GlobalState> CommonWidget<S> for OverlaidLayer<S> {
     fn get_id(&self) -> Uuid {
         self.id
+    }
+
+    fn set_id(&mut self, id: Uuid) {
+        self.id = id;
     }
 
     fn get_flag(&self) -> Flags {

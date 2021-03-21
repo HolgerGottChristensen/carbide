@@ -47,6 +47,10 @@ impl<S: GlobalState> CommonWidget<S> for Offset<S> {
         self.id
     }
 
+    fn set_id(&mut self, id: Uuid) {
+        self.id = id;
+    }
+
     fn get_flag(&self) -> Flags {
         Flags::EMPTY
     }

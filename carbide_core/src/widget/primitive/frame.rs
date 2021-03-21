@@ -7,6 +7,10 @@ pub struct Frame<GS> where GS: GlobalState {
     id: Uuid,
     child: Box<dyn Widget<GS>>,
     position: Point,
+    #[state] x: Box<dyn State<f64, GS>>,
+    #[state] y: Box<dyn State<f64, GS>>,
+    fixed_x: bool,
+    fixed_y: bool,
     #[state] width: Box<dyn State<f64, GS>>,
     #[state] height: Box<dyn State<f64, GS>>,
     expand_width: bool,
@@ -26,6 +30,10 @@ impl<GS: GlobalState> Frame<GS> {
             id: Default::default(),
             child: Box::new(child),
             position: [0.0,0.0],
+            x: 0.0.into(),
+            y: 0.0.into(),
+            fixed_x: false,
+            fixed_y: false,
             width: width.into(),
             height: height.into(),
             expand_width,
@@ -38,6 +46,10 @@ impl<GS: GlobalState> Frame<GS> {
             id: Default::default(),
             child: Box::new(child),
             position: [0.0,0.0],
+            x: 0.0.into(),
+            y: 0.0.into(),
+            fixed_x: false,
+            fixed_y: false,
             width,
             height: 0.0.into(),
             expand_width: false,
@@ -50,17 +62,48 @@ impl<GS: GlobalState> Frame<GS> {
             id: Default::default(),
             child: Box::new(child),
             position: [0.0,0.0],
+            x: 0.0.into(),
+            y: 0.0.into(),
+            fixed_x: false,
+            fixed_y: false,
             width: 0.0.into(),
             height,
             expand_width: true,
             expand_height: false
         })
     }
+
+    pub fn with_fixed_x(mut self, x: Box<dyn State<f64, GS>>) -> Box<Frame<GS>> {
+        self.x = x;
+        self.fixed_x = true;
+
+        Box::new(self)
+    }
+
+    pub fn with_fixed_y(mut self, y: Box<dyn State<f64, GS>>) -> Box<Frame<GS>> {
+        self.y = y;
+        self.fixed_y = true;
+
+        Box::new(self)
+    }
+
+    pub fn with_fixed_position(mut self, x: Box<dyn State<f64, GS>>, y: Box<dyn State<f64, GS>>) -> Box<Frame<GS>> {
+        self.x = x;
+        self.fixed_x = true;
+        self.y = y;
+        self.fixed_y = true;
+
+        Box::new(self)
+    }
 }
 
 impl<S: GlobalState> CommonWidget<S> for Frame<S> {
     fn get_id(&self) -> Uuid {
         self.id
+    }
+
+    fn set_id(&mut self, id: Uuid) {
+        self.id = id;
     }
 
     fn get_flag(&self) -> Flags {
@@ -136,6 +179,15 @@ impl<S: GlobalState> Layout<S> for Frame<S> {
     }
 
     fn position_children(&mut self) {
+
+        if self.fixed_x {
+            self.set_x(*self.x.get_latest_value());
+        }
+
+        if self.fixed_y {
+            self.set_y(*self.y.get_latest_value());
+        }
+
         let positioning = BasicLayouter::Center.position();
         let position = self.position;
         let dimension = [self.get_width(), self.get_height()];

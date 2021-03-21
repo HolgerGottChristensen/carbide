@@ -118,6 +118,10 @@ impl CommonWidget<GState> for CustomWidget {
         self.id
     }
 
+    fn set_id(&mut self, id: Uuid) {
+        self.id = id;
+    }
+
     fn get_flag(&self) -> Flags {
         Flags::EMPTY
     }

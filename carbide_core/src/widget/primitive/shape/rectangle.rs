@@ -11,21 +11,101 @@ pub struct Rectangle<GS> where GS: GlobalState {
     position: Point,
     dimension: Dimensions,
     #[state] color: ColorState<GS>,
+    shrink_to_fit: bool,
 }
 
-impl<GS: GlobalState> WidgetExt<GS> for Rectangle<GS> {}
+impl<GS: GlobalState> Rectangle<GS> {
 
-impl<S: GlobalState> Layout<S> for Rectangle<S> {
+    pub fn fill(mut self, color: ColorState<GS>) -> Box<Self> {
+        self.color = color;
+        Box::new(self)
+    }
+
+    pub fn shrink_to_fit(mut self) -> Box<Self> {
+        self.shrink_to_fit = true;
+        Box::new(self)
+    }
+
+    pub fn position(mut self, position: Point) -> Box<Self> {
+        self.position = position;
+        Box::new(self)
+    }
+
+    pub fn debug_outline(_rect: Rect, _width: Scalar) -> Vec<Primitive> {
+        vec![]
+    }
+
+    //Enable when needing debug borders
+    //pub fn debug_outline(rect: Rect, width: Scalar) -> Vec<Primitive> {
+    //    let (l, r, b, t) = rect.l_r_b_t();
+
+    //    let left_border = Rect::new([l,b], [width, rect.h()]);
+    //    let right_border = Rect::new([r-width,b], [width, rect.h()]);
+    //    let top_border = Rect::new([l+width,b], [rect.w()-width*2.0, width]);
+    //    let bottom_border = Rect::new([l+width,t-width], [rect.w()-width*2.0, width]);
+
+    //    let border_color = Color::Rgba(0.0 / 255.0, 255.0 / 255.0, 251.0 / 255.0, 1.0);//Color::random();
+    //    vec![
+    //        Primitive {
+    //            kind: PrimitiveKind::Rectangle { color: border_color.clone()},
+    //            rect: left_border
+    //        },
+    //        Primitive {
+    //            kind: PrimitiveKind::Rectangle { color: border_color.clone()},
+    //            rect: right_border
+    //        },
+    //        Primitive {
+    //            kind: PrimitiveKind::Rectangle { color: border_color.clone()},
+    //            rect: top_border
+    //        },
+    //        Primitive {
+    //            kind: PrimitiveKind::Rectangle { color: border_color.clone()},
+    //            rect: bottom_border
+    //        },
+    //    ]
+    //}
+
+    pub fn initialize(children: Vec<Box<dyn Widget<GS>>>) -> Box<Rectangle<GS>> {
+        Box::new(Rectangle {
+            id: Uuid::new_v4(),
+            children,
+            position: [0.0,0.0],
+            dimension: [100.0,100.0],
+            color: EnvironmentColor::Blue.into(),
+            shrink_to_fit: false
+        })
+    }
+}
+
+
+
+impl<GS: GlobalState> Layout<GS> for Rectangle<GS> {
     fn flexibility(&self) -> u32 {
         0
     }
 
-    fn calculate_size(&mut self, requested_size: Dimensions, env: &Environment<S>) -> Dimensions {
+    fn calculate_size(&mut self, requested_size: Dimensions, env: &Environment<GS>) -> Dimensions {
+        let mut max_child_size = [0.0, 0.0];
+
         for child in &mut self.children {
-            child.calculate_size(requested_size, env);
+            let child_size = child.calculate_size(requested_size, env);
+
+            if child_size[0] > max_child_size[0] {
+                max_child_size[0] = child_size[0];
+            }
+
+            if child_size[1] > max_child_size[1] {
+                max_child_size[1] = child_size[1];
+            }
         }
-        self.dimension = requested_size;
-        requested_size
+
+        if self.shrink_to_fit {
+            self.dimension = max_child_size;
+        } else {
+            self.dimension = requested_size;
+        }
+
+        self.dimension
     }
 
     fn position_children(&mut self) {
@@ -40,16 +120,20 @@ impl<S: GlobalState> Layout<S> for Rectangle<S> {
     }
 }
 
-impl<S: GlobalState> CommonWidget<S> for Rectangle<S> {
+impl<GS: GlobalState> CommonWidget<GS> for Rectangle<GS> {
     fn get_id(&self) -> Uuid {
         self.id
+    }
+
+    fn set_id(&mut self, id: Uuid) {
+        self.id = id;
     }
 
     fn get_flag(&self) -> Flags {
         Flags::EMPTY
     }
 
-    fn get_children(&self) -> WidgetIter<S> {
+    fn get_children(&self) -> WidgetIter<GS> {
         self.children
             .iter()
             .rfold(WidgetIter::Empty, |acc, x| {
@@ -61,7 +145,7 @@ impl<S: GlobalState> CommonWidget<S> for Rectangle<S> {
             })
     }
 
-    fn get_children_mut(&mut self) -> WidgetIterMut<S> {
+    fn get_children_mut(&mut self) -> WidgetIterMut<GS> {
         self.children
             .iter_mut()
             .rfold(WidgetIterMut::Empty, |acc, x| {
@@ -73,14 +157,14 @@ impl<S: GlobalState> CommonWidget<S> for Rectangle<S> {
             })
     }
 
-    fn get_proxied_children(&mut self) -> WidgetIterMut<S> {
+    fn get_proxied_children(&mut self) -> WidgetIterMut<GS> {
         self.children.iter_mut()
             .rfold(WidgetIterMut::Empty, |acc, x| {
                 WidgetIterMut::Single(x, Box::new(acc))
             })
     }
 
-    fn get_proxied_children_rev(&mut self) -> WidgetIterMut<S> {
+    fn get_proxied_children_rev(&mut self) -> WidgetIterMut<GS> {
         self.children.iter_mut()
             .fold(WidgetIterMut::Empty, |acc, x| {
                 WidgetIterMut::Single(x, Box::new(acc))
@@ -131,55 +215,4 @@ pub enum Kind {
     Fill,
 }
 
-
-impl<S: GlobalState> Rectangle<S> {
-
-    pub fn fill(mut self, color: ColorState<S>) -> Box<Self> {
-        self.color = color;
-        Box::new(self)
-    }
-
-    pub fn debug_outline(_rect: Rect, _width: Scalar) -> Vec<Primitive> {
-        vec![]
-    }
-
-    //Enable when needing debug borders
-    //pub fn debug_outline(rect: Rect, width: Scalar) -> Vec<Primitive> {
-    //    let (l, r, b, t) = rect.l_r_b_t();
-
-    //    let left_border = Rect::new([l,b], [width, rect.h()]);
-    //    let right_border = Rect::new([r-width,b], [width, rect.h()]);
-    //    let top_border = Rect::new([l+width,b], [rect.w()-width*2.0, width]);
-    //    let bottom_border = Rect::new([l+width,t-width], [rect.w()-width*2.0, width]);
-
-    //    let border_color = Color::Rgba(0.0 / 255.0, 255.0 / 255.0, 251.0 / 255.0, 1.0);//Color::random();
-    //    vec![
-    //        Primitive {
-    //            kind: PrimitiveKind::Rectangle { color: border_color.clone()},
-    //            rect: left_border
-    //        },
-    //        Primitive {
-    //            kind: PrimitiveKind::Rectangle { color: border_color.clone()},
-    //            rect: right_border
-    //        },
-    //        Primitive {
-    //            kind: PrimitiveKind::Rectangle { color: border_color.clone()},
-    //            rect: top_border
-    //        },
-    //        Primitive {
-    //            kind: PrimitiveKind::Rectangle { color: border_color.clone()},
-    //            rect: bottom_border
-    //        },
-    //    ]
-    //}
-
-    pub fn initialize(children: Vec<Box<dyn Widget<S>>>) -> Box<Rectangle<S>> {
-        Box::new(Rectangle {
-            id: Uuid::new_v4(),
-            children,
-            position: [0.0,0.0],
-            dimension: [100.0,100.0],
-            color: EnvironmentColor::Blue.into()
-        })
-    }
-}
+impl<GS: GlobalState> WidgetExt<GS> for Rectangle<GS> {}

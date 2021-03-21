@@ -4,7 +4,8 @@ use carbide_core::state::state::State;
 use carbide_core::widget::primitive::foreach::{ForEachDelegate, ForEach};
 use carbide_core::color::{RED, BLUE};
 use std::option::Option::Some;
-use carbide_core::prelude::StateSync;
+use carbide_core::prelude::{StateSync, Uuid};
+use carbide_core::input::ModifierKey;
 
 pub trait ListIndex: ForEachDelegate {}
 
@@ -19,6 +20,7 @@ pub struct List<GS, T> where GS: GlobalState, T: ListIndex + 'static {
     delegate: Box<dyn Widget<GS>>,
     position: Point,
     dimension: Dimensions,
+    spacing: f64,
     #[state] model: Box<dyn State<Vec<T>, GS>>,
     #[state] internal_model: Box<dyn State<Vec<T>, GS>>,
     #[state] index_offset: Box<dyn State<usize, GS>>,
@@ -30,7 +32,7 @@ pub struct List<GS, T> where GS: GlobalState, T: ListIndex + 'static {
 
 impl<GS: GlobalState, T: ListIndex + 'static> List<GS, T> {
 
-    pub fn new(delegate: Box<dyn Widget<GS>>, model: Box<dyn State<Vec<T>, GS>>) -> Box<Self> {
+    pub fn new(model: Box<dyn State<Vec<T>, GS>>, delegate: Box<dyn Widget<GS>>) -> Box<Self> {
 
         let index_offset_state = Box::new(CommonState::new_local_with_key(&0));
 
@@ -46,10 +48,11 @@ impl<GS: GlobalState, T: ListIndex + 'static> List<GS, T> {
                 ForEach::new(internal_model.clone(), delegate.clone())
                     .index_offset(index_offset_state.clone()),
                 Rectangle::initialize(vec![]).fill(BLUE.into()).frame(SCALE.into(), Box::new(end_offset.clone())),
-            ])),
+            ]).spacing(10.0)),
             delegate,
             position: [0.0,0.0],
             dimension: [0.0,0.0],
+            spacing: 10.0,
             model,
             internal_model,
             index_offset: index_offset_state,
@@ -69,7 +72,7 @@ impl<GS: GlobalState, T: ListIndex + 'static> List<GS, T> {
                 .id_state(self.id_state.clone())
                 .index_state(self.index_state.clone()),
             Rectangle::initialize(vec![]).fill(BLUE.into()).frame(SCALE.into(), Box::new(self.end_offset.clone())),
-        ]));
+        ]).spacing(self.spacing));
         Box::new(self)
     }
 
@@ -82,7 +85,24 @@ impl<GS: GlobalState, T: ListIndex + 'static> List<GS, T> {
                 .id_state(self.id_state.clone())
                 .index_state(self.index_state.clone()),
             Rectangle::initialize(vec![]).fill(BLUE.into()).frame(SCALE.into(), Box::new(self.end_offset.clone())),
-        ]));
+        ]).spacing(self.spacing));
+        Box::new(self)
+    }
+
+    pub fn spacing(mut self, spacing: f64) -> Box<Self> {
+        self.spacing = spacing;
+        let start_offset = CommonState::new_local_with_key(&-spacing);
+        let end_offset = CommonState::new_local_with_key(&-spacing);
+        self.start_offset = Box::new(start_offset);
+        self.end_offset = Box::new(end_offset);
+        self.child = Scroll::new(VStack::initialize(vec![
+            Rectangle::initialize(vec![]).fill(RED.into()).frame(SCALE.into(), Box::new(self.start_offset.clone())),
+            ForEach::new(self.internal_model.clone(), self.delegate.clone())
+                .index_offset(self.index_offset.clone())
+                .id_state(self.id_state.clone())
+                .index_state(self.index_state.clone()),
+            Rectangle::initialize(vec![]).fill(BLUE.into()).frame(SCALE.into(), Box::new(self.end_offset.clone())),
+        ]).spacing(spacing));
         Box::new(self)
     }
 
@@ -94,28 +114,41 @@ impl<GS: GlobalState, T: ListIndex + 'static> List<GS, T> {
 
     }
 
-    fn recalculate_visible_children(&mut self, env: &mut Environment<GS>, _: &GS) {
+    fn recalculate_visible_children(&mut self, env: &Environment<GS>) {
+        //println!("Med dig");
         // TODO: Handle when model changes.
         // If items in the internal model is removed, calculate new sizes, if items in between the items in the internal_model is added, do ???
 
-        let spacing = 10.0;
+        let spacing = self.spacing;
 
-        let dims = self.get_dimension();
+        let dimension = self.get_dimension();
 
-        let self_y = self.get_y();
-        let self_height = self.get_height();
+        // The y position of the list
+        let y_position = self.get_y();
 
-        let mut self_start_offset = self.start_offset.clone();
-        let mut self_end_offset = self.end_offset.clone();
-        let mut self_internal_model = self.internal_model.clone();
-        let self_model = self.model.clone();
-        let mut self_index_offset = self.index_offset.clone();
+        // The height of the list
+        let height = self.get_height();
+
+        // The offset at the beginning of the list.
+        let mut start_offset = self.start_offset.clone();
+
+        // The offset at the end of the list
+        let mut end_offset = self.end_offset.clone();
+
+        // The internal model that is actually shown in the foreach
+        let mut internal_model = self.internal_model.clone();
+
+        // The model of all the items to scroll through in the list
+        let model = self.model.clone();
+
+        // Index offset for the first visible element in the foreach
+        let mut index_offset = self.index_offset.clone();
 
         // Notice the scroll might not be the first when clip is added.
         if let Some(scroll_view) = self.get_children_mut().next() {
 
             // Calculate the size off all the children.
-            scroll_view.calculate_size(dims, env);
+            scroll_view.calculate_size(dimension, env);
 
             // Position all the children. This will not be their final position though, just relative
             // to the current position of the list view, but this does not matter.
@@ -124,8 +157,8 @@ impl<GS: GlobalState, T: ListIndex + 'static> List<GS, T> {
             if let Some(vstack) = scroll_view.get_children_mut().next() {
 
 
-
-                let internal_model_size = self_internal_model.get_latest_value().len();
+                // The number of elements in currently in the internal model.
+                let internal_model_size = internal_model.get_latest_value().len();
 
                 // Get the children of the scrollview
                 let mut vstack_children = vstack.get_children_mut().enumerate();
@@ -136,41 +169,42 @@ impl<GS: GlobalState, T: ListIndex + 'static> List<GS, T> {
 
                 // Handle remove items out of view
                 while let Some((index, child)) = vstack_children.next() {
+                    // Skip the last element in the v_stack, which is the end rectangle
                     if index > internal_model_size {continue}
 
                     // Check if an items bottom is above the top of this view.
-                    if child.get_y() + child.get_height() < self_y {
-                        *self_start_offset.get_latest_value_mut() += child.get_height() + spacing;
-                        self_internal_model.get_latest_value_mut().remove(0);
-                        *self_index_offset.get_latest_value_mut() += 1;
-
+                    if child.get_y() + child.get_height() < y_position {
+                        // Increase the start_offset height with the height of the child and spacing.
+                        *start_offset.get_latest_value_mut() += child.get_height() + spacing;
+                        // Remove the first element from the internal model.
+                        internal_model.get_latest_value_mut().remove(0);
+                        // Increase the start_index_offset with 1.
+                        *index_offset.get_latest_value_mut() += 1;
                     }
 
-                    if child.get_y() > self_y + self_height {
-                        *self_end_offset.get_latest_value_mut() += child.get_height() + spacing;
-                        self_internal_model.get_latest_value_mut().pop();
+                    // Check if an item is below the list
+                    if child.get_y() > y_position + height {
+                        // Increase the end_offset with the child's height and additional spacing
+                        *end_offset.get_latest_value_mut() += child.get_height() + spacing;
+                        // Pop the last element from the internal model
+                        internal_model.get_latest_value_mut().pop();
                     }
-
 
                 }
-
-
-
-
-
-
 
                 // Get the children of the scrollview
                 let mut vstack_children = vstack.get_children_mut().enumerate();
 
-                // TODO: Consider choosing -scroll_offset for this value.
+
                 let (_, initial_child) = vstack_children.next()
                     .expect("Could not find the initial rectangle");
 
+                // TODO: Consider choosing -scroll_offset for this value.
                 let inital_y = initial_child.get_y();
 
                 let mut min_height = 1000.0;
 
+                // Calculate the minimum height of an index currently in the list.
                 while let Some((index, child)) = vstack_children.next() {
                     if index > internal_model_size {continue}
                     if child.get_height() < min_height {
@@ -179,43 +213,60 @@ impl<GS: GlobalState, T: ListIndex + 'static> List<GS, T> {
                 }
 
                 // Handle add items to view from the top
-                while *self_start_offset.get_latest_value() + inital_y > self_y {
-                    *self_start_offset.get_latest_value_mut() -= min_height + spacing;
-                    *self_index_offset.get_latest_value_mut() -= 1;
-                    let index_to_take_from = *self_index_offset.get_latest_value();
+                while *start_offset.get_latest_value() + inital_y > y_position {
+                    *start_offset.get_latest_value_mut() -= min_height + spacing;
+                    *index_offset.get_latest_value_mut() -= 1;
+                    let index_to_take_from = *index_offset.get_latest_value();
 
 
-                    if self_model.get_latest_value().len() < index_to_take_from {
+                    if model.get_latest_value().len() < index_to_take_from {
                         panic!("Can not take index from model, that is outside the bounds of said model")
                     }
 
 
-                    self_internal_model.get_latest_value_mut().insert(0, self_model.get_latest_value()[index_to_take_from].clone());
+                    internal_model.get_latest_value_mut().insert(0, model.get_latest_value()[index_to_take_from].clone());
                 }
 
 
                 let mut vstack_children = vstack.get_children_mut();
 
-                let mut last_y = 0.0;
+                let bottom_of_list_widget = y_position + height;
+
+                let mut top_of_end_rectangle = 0.0;
 
                 while let Some(vstack_child) = vstack_children.next() {
-                    last_y = vstack_child.get_y();
+                    top_of_end_rectangle = vstack_child.get_y();
+                    //println!("{}", top_of_end_rectangle);
                 }
 
 
                 // Handle add items to view from the bottom
-                while last_y < self_y + self_height {
-                    last_y += min_height + spacing;
-                    *self_end_offset.get_latest_value_mut() -= min_height + spacing;
-                    let index_to_take_from = *self_index_offset.get_latest_value() + self_internal_model.get_latest_value().len();
+                while top_of_end_rectangle < bottom_of_list_widget {
+                    //println!("--------------");
+                    //println!("Minimum height: {}", min_height);
+                    //println!("Top of end rectangle: {}", top_of_end_rectangle);
+                    //println!("Bottom of list: {}", bottom_of_list_widget);
 
+                    //println!("Top of end rectangle AFTER: {}", top_of_end_rectangle);
 
-                    if self_model.get_latest_value().len() < index_to_take_from {
-                        panic!("Can not take index from model, that is outside the bounds of said model")
+                    let index_to_take_from = *index_offset.get_latest_value() + internal_model.get_latest_value().len();
+
+                    //println!("Index offset: {}", *self_index_offset.get_latest_value());
+                    //println!("Internal model length: {}", internal_model.get_latest_value().len());
+
+                    //if model.get_latest_value().len() < index_to_take_from {
+                    //    panic!("Can not take index from model, that is outside the bounds of said model")
+                    //}
+
+                    if model.get_latest_value().len() <= index_to_take_from {
+                        break;
+                    } else {
+                        top_of_end_rectangle += min_height + spacing;
+                        *end_offset.get_latest_value_mut() -= min_height + spacing;
+                        internal_model.get_latest_value_mut().push(model.get_latest_value()[index_to_take_from].clone());
                     }
 
 
-                    self_internal_model.get_latest_value_mut().push(self_model.get_latest_value()[index_to_take_from].clone());
                 }
 
 
@@ -223,10 +274,10 @@ impl<GS: GlobalState, T: ListIndex + 'static> List<GS, T> {
 
         }
 
-        self.start_offset = self_start_offset;
-        self.end_offset = self_end_offset;
-        self.internal_model = self_internal_model;
-        self.index_offset = self_index_offset;
+        self.start_offset = start_offset;
+        self.end_offset = end_offset;
+        self.internal_model = internal_model;
+        self.index_offset = index_offset;
 
 
         // If yes, expand the
@@ -262,7 +313,7 @@ impl<GS: GlobalState, T: ListIndex + 'static> List<GS, T> {
     fn sync_state(&mut self, env: &mut Environment<GS>, global_state: &GS) {
         self.update_all_widget_state(env, global_state);
 
-        self.recalculate_visible_children(env, global_state);
+        self.recalculate_visible_children(env);
 
         self.insert_local_state(env);
 
@@ -278,6 +329,10 @@ impl<GS: GlobalState, T: ListIndex + 'static> List<GS, T> {
 impl<GS: GlobalState, T: ListIndex> CommonWidget<GS> for List<GS, T> {
     fn get_id(&self) -> Id {
         self.id
+    }
+
+    fn set_id(&mut self, id: Uuid) {
+        self.id = id;
     }
 
     fn get_flag(&self) -> Flags {
@@ -339,6 +394,8 @@ impl<GS: GlobalState, T: ListIndex> Layout<GS> for List<GS, T> {
         }
 
         self.set_dimension(requested_size);
+
+        //self.recalculate_visible_children(env);
 
         requested_size
     }
