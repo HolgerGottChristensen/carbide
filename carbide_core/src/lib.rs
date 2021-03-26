@@ -24,10 +24,10 @@ extern crate instant;
 extern crate num;
 extern crate ron;
 extern crate rusttype;
-extern crate serde;
 extern crate uuid;
 extern crate wgpu;
 extern crate lyon;
+extern crate serde;
 
 extern crate self as carbide_core;
 
@@ -67,6 +67,6 @@ pub mod window;
 pub mod prelude;
 pub mod focus;
 
-pub use serde::Serialize;
-pub use serde::Deserialize;
-pub use serde::de::DeserializeOwned;
+pub use serde::*;
+pub use serde::de::*;
+

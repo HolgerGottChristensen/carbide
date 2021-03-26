@@ -1,6 +1,6 @@
 use crate::prelude::*;
 use serde::Serialize;
-use crate::DeserializeOwned;
+use crate::serde::de::DeserializeOwned;
 use std::fmt::Debug;
 
 /// This widget is for containing shared state. This is very rarely needed as there always is a

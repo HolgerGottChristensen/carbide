@@ -43,7 +43,6 @@ impl<T: Serialize + Clone + Debug + DeserializeOwned, GS: GlobalState> State<T, 
     fn get_value_mut(&mut self, env: &mut Environment<GS>, global_state: &mut GS) -> &mut T {
         self.latest_index = *self.index_state.get_value(env, global_state);
         self.latest_value = self.vec.get_value(env, global_state)[self.latest_index].clone();
-        println!("Get value mut returned: {:?}, with index: {}", self.latest_value, self.latest_index);
         &mut self.vec.get_value_mut(env, global_state)[self.latest_index]
     }
 

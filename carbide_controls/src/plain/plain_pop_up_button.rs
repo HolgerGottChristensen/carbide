@@ -10,12 +10,15 @@ use carbide_core::widget::primitive::foreach::ForEach;
 use carbide_core::state::mapped_state::MappedState;
 use carbide_core::prelude::Uuid;
 use carbide_core::state::vec_state::VecState;
+use std::fmt::Debug;
+use carbide_core::DeserializeOwned;
+use carbide_core::Serialize;
 
 #[derive(Clone, Widget)]
 #[event(handle_keyboard_event, handle_mouse_event)]
 #[focusable(block_focus)]
 #[state_sync(update_all_widget_state)]
-pub struct PlainPopUpButton<GS> where GS: GlobalState {
+pub struct PlainPopUpButton<T, GS> where GS: GlobalState, T: Serialize + Clone + Debug + Default + DeserializeOwned + 'static {
     id: Id,
     #[state] focus: Box<dyn State<Focus, GS>>,
     child: Box<dyn Widget<GS>>,
@@ -25,45 +28,59 @@ pub struct PlainPopUpButton<GS> where GS: GlobalState {
     popup_list_spacing: f64,
     #[state] opened: Box<dyn State<bool, GS>>,
     #[state] selected_state: Box<dyn State<usize, GS>>,
+    #[state] selected_item: Box<dyn State<T, GS>>,
+    #[state] model: Box<dyn State<Vec<T>, GS>>,
 }
 
-impl<GS: GlobalState> PlainPopUpButton<GS> {
+impl<T: Serialize + Clone + Debug + Default + DeserializeOwned + 'static, GS: GlobalState> PlainPopUpButton<T, GS> {
 
 
-    pub fn new(selected_state: Box<dyn State<usize, GS>>) -> Box<Self> {
+    pub fn new(model: Box<dyn State<Vec<T>, GS>>, selected_state: Box<dyn State<usize, GS>>) -> Box<Self> {
 
         let opened = Box::new(CommonState::new_local_with_key(&false));
+
+        let start_item = model.get_latest_value().first().unwrap();
+
+        let selected_item = VecState::new(model.clone(), selected_state.clone(), start_item.clone());
+
+        let text = selected_item.clone().mapped(|a| format!("{:?}", a));
 
         Box::new(PlainPopUpButton {
             id: Id::new_v4(),
             focus: Box::new(CommonState::new_local_with_key(&Focus::Unfocused)),
-            child: PlainButton::<(bool, usize), GS>::new(Rectangle::initialize(vec![]))
-                .local_state(TupleState2::new(opened.clone(), selected_state.clone()))
+            child: PlainButton::<(bool, T), GS>::new(Rectangle::initialize(vec![
+                Text::initialize(text)
+            ]))
+                .local_state(TupleState2::new(opened.clone(), selected_item.clone()))
                 .on_click(|myself, env, global_state| {
-                    let (opened, selected_index) = myself.get_local_state().get_latest_value_mut();
+                    let (opened, selected_item) = myself.get_local_state().get_latest_value_mut();
                     *opened = true;
-                    println!("Opened popup. The currently selected item is: {}", selected_index);
+                    //println!("Opened popup. The currently selected item is: {:?}", selected_item);
                 }),
             position: [0.0,0.0],
             dimension: [0.0,0.0],
             popup_id: Uuid::new_v4(),
             popup_list_spacing: 0.0,
             opened,
-            selected_state
+            selected_state,
+            selected_item,
+            model,
         })
     }
 
     fn update_all_widget_state(&mut self, env: &mut Environment<GS>, global_state: &GS) {
         if *self.opened.get_latest_value() {
 
+            let number_of_items_in_model = self.model.get_latest_value().len();
 
             let index_state = CommonState::new_local_with_key(&0);
-            let foreach_state = CommonState::<Vec<u32>, GS>::new_local_with_key(&(0..4).collect::<Vec<u32>>());
+            let foreach_state = CommonState::<Vec<u32>, GS>::new_local_with_key(&(0..number_of_items_in_model).map(|a| a as u32).collect::<Vec<u32>>());
             let foreach_selected_state = CommonState::<Vec<bool>, GS>::new_local_with_key(&foreach_state.get_latest_value().iter().map(|_| false).collect::<Vec<_>>());
 
             let selected_state = VecState::new_local(Box::new(foreach_selected_state.clone()), Box::new(index_state.clone()), false);
 
-            let mapped_state = MappedState::new_local(Box::new(index_state.clone()), |a: &usize| format!("{}", a), "0".to_string());
+            let selected_item_state = VecState::new_local(Box::new(self.model.clone()), Box::new(index_state.clone()), T::default());
+            let mapped_state = MappedState::new_local(selected_item_state.clone(), |a: &T| format!("{:?}", a), "".to_string());
 
             let height: Box<dyn State<f64, GS>> = self.dimension[1].into();
             let popup_list_spacing: Box<dyn State<f64, GS>> = self.popup_list_spacing.into();
@@ -117,7 +134,7 @@ impl<GS: GlobalState> PlainPopUpButton<GS> {
                                            *selected_index = *index;
                                            *opened = false;
 
-                                           println!("Closed popup and selected: {}", index);
+                                           //println!("Closed popup and selected: {}", index);
                                        })
                                        .on_click_outside(|myself, _, _| {
                                            let (_, opened, _) = myself.get_local_state().get_latest_value_mut();
@@ -168,7 +185,7 @@ impl<GS: GlobalState> PlainPopUpButton<GS> {
     }
 }
 
-impl<GS: GlobalState> CommonWidget<GS> for PlainPopUpButton<GS> {
+impl<T: Serialize + Clone + Debug + Default + DeserializeOwned + 'static, GS: GlobalState> CommonWidget<GS> for PlainPopUpButton<T, GS> {
     fn get_id(&self) -> Id {
         self.id
     }
@@ -222,9 +239,9 @@ impl<GS: GlobalState> CommonWidget<GS> for PlainPopUpButton<GS> {
     }
 }
 
-impl<GS: GlobalState> ChildRender for PlainPopUpButton<GS> {}
+impl<T: Serialize + Clone + Debug + Default + DeserializeOwned + 'static, GS: GlobalState> ChildRender for PlainPopUpButton<T, GS> {}
 
-impl<GS: GlobalState> Layout<GS> for PlainPopUpButton<GS> {
+impl<T: Serialize + Clone + Debug + Default + DeserializeOwned + 'static, GS: GlobalState> Layout<GS> for PlainPopUpButton<T, GS> {
     fn flexibility(&self) -> u32 {
         10
     }
@@ -252,4 +269,4 @@ impl<GS: GlobalState> Layout<GS> for PlainPopUpButton<GS> {
 }
 
 
-impl<GS: GlobalState> WidgetExt<GS> for PlainPopUpButton<GS> {}
+impl<T: Serialize + Clone + Debug + Default + DeserializeOwned + 'static + 'static, GS: GlobalState> WidgetExt<GS> for PlainPopUpButton<T, GS> {}
