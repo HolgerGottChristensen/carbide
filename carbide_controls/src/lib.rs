@@ -7,8 +7,10 @@ extern crate carbide_derive;
 
 mod plain;
 mod list;
+mod pop_up_button;
 
 pub use plain::PlainTextInput;
 pub use plain::PlainButton;
 pub use plain::PlainPopUpButton;
+pub use pop_up_button::PopUpButton;
 pub use list::List;

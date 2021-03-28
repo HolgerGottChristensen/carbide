@@ -7,7 +7,7 @@ extern crate carbide_core;
 use carbide_core::widget::*;
 use carbide_wgpu::window::Window;
 use futures::executor::block_on;
-use carbide_controls::PlainPopUpButton;
+use carbide_controls::PopUpButton;
 use carbide_core::color::RED;
 use carbide_core::state::environment_color::EnvironmentColor;
 use serde::Serialize;
@@ -36,7 +36,7 @@ fn main() {
 
     let icon_path = Window::<u32>::path_to_assets("images/rust_press.png");
 
-    let mut window = block_on(Window::new("Plain Pop up Button Example - Carbide".to_string(), 800, 1200,Some(icon_path), 0));
+    let mut window = block_on(Window::new("Pop up Button Example - Carbide".to_string(), 800, 1200,Some(icon_path), 0));
 
     window.add_font("fonts/NotoSans/NotoSans-Regular.ttf").unwrap();
 
@@ -54,16 +54,11 @@ fn main() {
     ]);
 
     window.set_widgets(
-        OverlaidLayer::new ("overlay_test",
-        VStack::initialize(vec![
-            PlainPopUpButton::new(Box::new(selected_model), Box::new(selected_index))
-                .padding(EdgeInsets::all(2.0))
-                .border()
-                .color(EnvironmentColor::Red.into())
-                .clip()
-                .frame(120.0.into(), 40.0.into()),
-        ]).spacing(20.0)
-    ));
+        OverlaidLayer::new (
+            "overlay_test",
+            PopUpButton::new(Box::new(selected_model), Box::new(selected_index))
+                .frame(235.0.into(), 100.0.into())
+        ));
 
     window.run_event_loop();
 

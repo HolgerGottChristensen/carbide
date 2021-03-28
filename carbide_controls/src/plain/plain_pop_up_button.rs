@@ -22,6 +22,7 @@ pub struct PlainPopUpButton<T, GS> where GS: GlobalState, T: Serialize + Clone +
     id: Id,
     #[state] focus: Box<dyn State<Focus, GS>>,
     child: Box<dyn Widget<GS>>,
+    popup_display_item: Option<fn (selected_item: Box<dyn State<T, GS>>, selected_index: Box<dyn State<usize, GS>>, index: Box<dyn State<usize, GS>>, hovered: Box<dyn State<bool, GS>>) -> Box<dyn Widget<GS>>>,
     position: Point,
     dimension: Dimensions,
     popup_id: Id,
@@ -45,18 +46,21 @@ impl<T: Serialize + Clone + Debug + Default + DeserializeOwned + 'static, GS: Gl
 
         let text = selected_item.clone().mapped(|a| format!("{:?}", a));
 
+        let child = PlainButton::<(bool, T), GS>::new(
+            Rectangle::initialize(vec![
+                Text::initialize(text)
+            ])).local_state(TupleState2::new(opened.clone(), selected_item.clone()))
+            .on_click(|myself, env, global_state| {
+                let (opened, selected_item) = myself.get_local_state().get_latest_value_mut();
+                *opened = true;
+                println!("Opened popup. The currently selected item is: {:?}", selected_item);
+            });
+
         Box::new(PlainPopUpButton {
             id: Id::new_v4(),
             focus: Box::new(CommonState::new_local_with_key(&Focus::Unfocused)),
-            child: PlainButton::<(bool, T), GS>::new(Rectangle::initialize(vec![
-                Text::initialize(text)
-            ]))
-                .local_state(TupleState2::new(opened.clone(), selected_item.clone()))
-                .on_click(|myself, env, global_state| {
-                    let (opened, selected_item) = myself.get_local_state().get_latest_value_mut();
-                    *opened = true;
-                    //println!("Opened popup. The currently selected item is: {:?}", selected_item);
-                }),
+            child,
+            popup_display_item: None,
             position: [0.0,0.0],
             dimension: [0.0,0.0],
             popup_id: Uuid::new_v4(),
@@ -68,13 +72,35 @@ impl<T: Serialize + Clone + Debug + Default + DeserializeOwned + 'static, GS: Gl
         })
     }
 
+    pub fn display_item(mut self, item: fn(selected_item: Box<dyn State<T, GS>>) -> Box<dyn Widget<GS>>) -> Box<Self> {
+
+        let display_item = item(self.selected_item.clone());
+
+        let child = PlainButton::<(bool, T), GS>::new(display_item)
+            .local_state(TupleState2::new(self.opened.clone(), self.selected_item.clone()))
+            .on_click(|myself, env, global_state| {
+                let (opened, _) = myself.get_local_state().get_latest_value_mut();
+                *opened = true;
+                //println!("Opened popup. The currently selected item is: {:?}", selected_item);
+            });
+
+        self.child = child;
+        Box::new(self)
+    }
+
+    pub fn display_item_popup(mut self, item: fn (selected_item: Box<dyn State<T, GS>>, selected_index: Box<dyn State<usize, GS>>, index: Box<dyn State<usize, GS>>, hovered: Box<dyn State<bool, GS>>) -> Box<dyn Widget<GS>>) -> Box<Self> {
+        self.popup_display_item = Some(item);
+
+        Box::new(self)
+    }
+
     fn update_all_widget_state(&mut self, env: &mut Environment<GS>, global_state: &GS) {
         if *self.opened.get_latest_value() {
 
             let number_of_items_in_model = self.model.get_latest_value().len();
 
-            let index_state = CommonState::new_local_with_key(&0);
-            let foreach_state = CommonState::<Vec<u32>, GS>::new_local_with_key(&(0..number_of_items_in_model).map(|a| a as u32).collect::<Vec<u32>>());
+            let index_state = CommonState::new_local_with_key(&(0 as usize));
+            let foreach_state = CommonState::<Vec<usize>, GS>::new_local_with_key(&(0..number_of_items_in_model).collect::<Vec<_>>());
             let foreach_selected_state = CommonState::<Vec<bool>, GS>::new_local_with_key(&foreach_state.get_latest_value().iter().map(|_| false).collect::<Vec<_>>());
 
             let selected_state = VecState::new_local(Box::new(foreach_selected_state.clone()), Box::new(index_state.clone()), false);
@@ -112,21 +138,35 @@ impl<T: Serialize + Clone + Debug + Default + DeserializeOwned + 'static, GS: Gl
                 popup_y = env.window_dimension[1];
             }
 
+            let display_item = if let Some(display_item_function) = self.popup_display_item {
+                display_item_function(selected_item_state.clone(), self.selected_state.clone(), Box::new(index_state.clone()), selected_state.clone())
+            } else {
+                Rectangle::initialize(vec![
+                    Text::initialize(mapped_state)
+                        .color(selected_state.clone().mapped(|selected| {
+                            if *selected {
+                                Color::Rgba(0.0, 0.0, 0.0, 1.0)
+                            } else {
+                                Color::Rgba(1.0, 1.0, 1.0, 1.0)
+                            }
+                        }))
+                ]).fill(selected_state.clone().mapped(|selected| {
+                    if *selected {
+                        Color::Rgba(0.0, 1.0, 0.0, 1.0)
+                    } else {
+                        Color::Rgba(0.0, 0.0, 1.0, 1.0)
+                    }
+                })).padding(EdgeInsets::all(1.0))
+                    .border()
+                    .border_width(1)
+                    .color(EnvironmentColor::Blue.into())
+            };
+
             let mut overlay = Rectangle::initialize(vec![
                 SharedState::new(
                     TupleState3::new(self.opened.clone(), self.selected_state.clone(), Box::new(foreach_selected_state.clone())),
                     List::new(Box::new(foreach_state),
-                               Rectangle::initialize(vec![
-                                   PlainButton::<(usize, bool, usize), GS>::new(
-                                       Text::initialize(mapped_state)
-                                           .color(selected_state.clone().mapped(|selected| {
-                                               if *selected {
-                                                   Color::Rgba(0.0, 0.0, 0.0, 1.0)
-                                               } else {
-                                                   Color::Rgba(1.0, 1.0, 1.0, 1.0)
-                                               }
-                                           }))
-                                   )
+                               PlainButton::<(usize, bool, usize), GS>::new(display_item)
                                        .local_state(TupleState3::new(Box::new(index_state.clone()), self.opened.clone(), self.selected_state.clone()))
                                        .on_click(|myself, env, global_state| {
                                            let (index, opened, selected_index) = myself.get_local_state().get_latest_value_mut();
@@ -142,17 +182,7 @@ impl<T: Serialize + Clone + Debug + Default + DeserializeOwned + 'static, GS: Gl
                                            *opened = false
                                        })
                                        .hover(selected_state.clone())
-                               ]).fill(selected_state.mapped(|selected| {
-                                   if *selected {
-                                       Color::Rgba(0.0, 1.0, 0.0, 1.0)
-                                   } else {
-                                       Color::Rgba(0.0, 0.0, 1.0, 1.0)
-                                   }
-                               }))
-                                   .padding(EdgeInsets::all(1.0))
-                                   .border()
-                                   .border_width(1)
-                                   .color(EnvironmentColor::Blue.into())
+
                                    .frame(self.dimension[0].into(), self.dimension[1].into())
                             ).index_state(Box::new(index_state))
                         .spacing(self.popup_list_spacing)
