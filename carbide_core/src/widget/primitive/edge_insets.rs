@@ -9,6 +9,15 @@ pub struct EdgeInsets {
 }
 
 impl EdgeInsets {
+    pub fn single(top: Scalar, bottom: Scalar, left: Scalar, right: Scalar) -> Self {
+        EdgeInsets {
+            top,
+            bottom,
+            left,
+            right
+        }
+    }
+
     pub fn all(amount: Scalar) -> Self {
         EdgeInsets {
             top: amount,

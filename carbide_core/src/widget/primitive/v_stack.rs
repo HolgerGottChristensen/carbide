@@ -55,7 +55,7 @@ impl<S: GlobalState> Layout<S> for VStack<S> {
         let spacing_total = (number_of_spaces) * self.spacing;
         let mut size_for_children = [requested_size[0], requested_size[1] - spacing_total];
 
-        let mut children_flexibilty: Vec<(u32, &mut Box<dyn Widget<S>>)> = self.get_children_mut().map(|child| (child.flexibility(), child)).collect();
+        let mut children_flexibilty: Vec<(u32, &mut dyn Widget<S>)> = self.get_children_mut().map(|child| (child.flexibility(), child)).collect();
         children_flexibilty.sort_by(|(a,_), (b,_)| a.cmp(&b));
         children_flexibilty.reverse();
 
@@ -142,6 +142,7 @@ impl<S: GlobalState> CommonWidget<S> for VStack<S> {
     fn get_children(&self) -> WidgetIter<S> {
         self.children
             .iter()
+            .map(|x| x.deref())
             .rfold(WidgetIter::Empty, |acc, x| {
                 if x.get_flag() == Flags::PROXY {
                     WidgetIter::Multi(Box::new(x.get_children()), Box::new(acc))
@@ -154,6 +155,7 @@ impl<S: GlobalState> CommonWidget<S> for VStack<S> {
     fn get_children_mut(&mut self) -> WidgetIterMut<S> {
         self.children
             .iter_mut()
+            .map(|x| x.deref_mut())
             .rfold(WidgetIterMut::Empty, |acc, x| {
                 if x.get_flag() == Flags::PROXY {
                     WidgetIterMut::Multi(Box::new(x.get_children_mut()), Box::new(acc))
@@ -165,6 +167,7 @@ impl<S: GlobalState> CommonWidget<S> for VStack<S> {
 
     fn get_proxied_children(&mut self) -> WidgetIterMut<S> {
         self.children.iter_mut()
+            .map(|x| x.deref_mut())
             .rfold(WidgetIterMut::Empty, |acc, x| {
                 WidgetIterMut::Single(x, Box::new(acc))
             })
@@ -172,6 +175,7 @@ impl<S: GlobalState> CommonWidget<S> for VStack<S> {
 
     fn get_proxied_children_rev(&mut self) -> WidgetIterMut<S> {
         self.children.iter_mut()
+            .map(|x| x.deref_mut())
             .fold(WidgetIterMut::Empty, |acc, x| {
                 WidgetIterMut::Single(x, Box::new(acc))
             })

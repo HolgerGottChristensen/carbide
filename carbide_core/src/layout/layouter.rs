@@ -1,7 +1,7 @@
 use crate::Point;
 use crate::position::Dimensions;
-use crate::widget::common_widget::CommonWidget;
+use crate::widget::Widget;
 
 pub trait Layouter<S> {
-    fn position(&self) -> fn(Point, Dimensions, &mut dyn CommonWidget<S>);
+    fn position(&self) -> fn(Point, Dimensions, &mut dyn Widget<S>);
 }

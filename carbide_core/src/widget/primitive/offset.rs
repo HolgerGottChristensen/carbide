@@ -59,7 +59,7 @@ impl<S: GlobalState> CommonWidget<S> for Offset<S> {
         if self.child.get_flag() == Flags::PROXY {
             self.child.get_children()
         } else {
-            WidgetIter::single(&self.child)
+            WidgetIter::single(self.child.deref())
         }
     }
 
@@ -67,16 +67,16 @@ impl<S: GlobalState> CommonWidget<S> for Offset<S> {
         if self.child.get_flag() == Flags::PROXY {
             self.child.get_children_mut()
         } else {
-            WidgetIterMut::single(&mut self.child)
+            WidgetIterMut::single(self.child.deref_mut())
         }
     }
 
     fn get_proxied_children(&mut self) -> WidgetIterMut<S> {
-        WidgetIterMut::single(&mut self.child)
+        WidgetIterMut::single(self.child.deref_mut())
     }
 
     fn get_proxied_children_rev(&mut self) -> WidgetIterMut<S> {
-        WidgetIterMut::single(&mut self.child)
+        WidgetIterMut::single(self.child.deref_mut())
     }
 
     fn get_position(&self) -> Point {

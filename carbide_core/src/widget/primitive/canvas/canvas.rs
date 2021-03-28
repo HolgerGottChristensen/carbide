@@ -3,27 +3,28 @@ use crate::color::Rgba;
 
 use crate::state::global_state::GlobalState;
 use crate::widget::Rectangle;
-use lyon::tessellation::{VertexBuffers, FillTessellator, FillOptions, BuffersBuilder, FillVertex};
+use lyon::tessellation::{VertexBuffers, FillTessellator, FillOptions, BuffersBuilder, FillVertex, StrokeOptions, StrokeTessellator, StrokeVertex, LineCap, LineJoin};
 use crate::widget::types::triangle_store::TriangleStore;
 use crate::widget::primitive::canvas::context::Context;
 use crate::render::primitive_kind::PrimitiveKind;
 
 use crate::draw::shape::triangle::Triangle;
+use crate::state::environment_color::EnvironmentColor;
 
 /// A basic, non-interactive rectangle shape widget.
 #[derive(Debug, Clone, Widget)]
-pub struct Canvas {
+pub struct Canvas<GS> where GS: GlobalState {
     id: Uuid,
     position: Point,
     dimension: Dimensions,
-    color: Color,
+    #[state] color: ColorState<GS>,
     triangle_store: TriangleStore,
     context: Context
 }
 
-impl<GS: GlobalState> WidgetExt<GS> for Canvas {}
+impl<GS: GlobalState> WidgetExt<GS> for Canvas<GS> {}
 
-impl<S: GlobalState> Layout<S> for Canvas {
+impl<S: GlobalState> Layout<S> for Canvas<S> {
     fn flexibility(&self) -> u32 {
         0
     }
@@ -38,7 +39,7 @@ impl<S: GlobalState> Layout<S> for Canvas {
     }
 }
 
-impl<S: GlobalState> CommonWidget<S> for Canvas {
+impl<S: GlobalState> CommonWidget<S> for Canvas<S> {
     fn get_id(&self) -> Uuid {
         self.id
     }
@@ -84,19 +85,19 @@ impl<S: GlobalState> CommonWidget<S> for Canvas {
     }
 }
 
-impl<S: GlobalState> Render<S> for Canvas {
+impl<S: GlobalState> Render<S> for Canvas<S> {
 
     fn get_primitives(&mut self, _: &text::font::Map) -> Vec<Primitive> {
 
         let mut geometry: VertexBuffers<Point, u16> = VertexBuffers::new();
 
-        let mut tessellator = FillTessellator::new();
+        let mut tessellator = StrokeTessellator::new();
 
         for path in self.context.to_paths(self.position) {
             tessellator.tessellate_path(
                 &path,
-                &FillOptions::default(),
-                &mut BuffersBuilder::new(&mut geometry, |vertex: FillVertex| {
+                &StrokeOptions::default().with_line_width(2.0).with_line_cap(LineCap::Round).with_line_join(LineJoin::Round),
+                &mut BuffersBuilder::new(&mut geometry, |vertex: StrokeVertex| {
                     let point = vertex.position().to_array();
                     [point[0] as Scalar, point[1] as Scalar]
                 }),
@@ -115,7 +116,7 @@ impl<S: GlobalState> Render<S> for Canvas {
 
         let mut prims = vec![
             Primitive {
-                kind: PrimitiveKind::TrianglesSingleColor { color: Rgba::from(self.color), triangles: Triangle::from_point_list(points)},
+                kind: PrimitiveKind::TrianglesSingleColor { color: Rgba::from(*self.color.get_latest_value()), triangles: Triangle::from_point_list(points)},
                 rect: Rect::new(self.position, self.dimension)
             }
         ];
@@ -126,19 +127,19 @@ impl<S: GlobalState> Render<S> for Canvas {
     }
 }
 
-impl Canvas {
+impl<S: GlobalState> Canvas<S> {
 
-    pub fn fill(mut self, color: Color) -> Box<Self> {
+    pub fn color(mut self, color: ColorState<S>) -> Box<Self> {
         self.color = color;
         Box::new(self)
     }
 
-    pub fn initialize(context: Context) -> Box<Canvas> {
+    pub fn initialize(context: Context) -> Box<Self> {
         Box::new(Canvas {
             id: Uuid::new_v4(),
             position: [0.0,0.0],
             dimension: [100.0,100.0],
-            color: Color::random(),
+            color: EnvironmentColor::Accent.into(),
             triangle_store: TriangleStore::new(),
             context
         })

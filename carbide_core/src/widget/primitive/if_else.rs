@@ -88,13 +88,13 @@ impl<S: GlobalState> CommonWidget<S> for IfElse<S> {
             if self.when_true.get_flag() == Flags::PROXY {
                 self.when_true.get_children()
             } else {
-                WidgetIter::single(&self.when_true)
+                WidgetIter::single(self.when_true.deref())
             }
         } else {
             if self.when_false.get_flag() == Flags::PROXY {
                 self.when_false.get_children()
             } else {
-                WidgetIter::single(&self.when_false)
+                WidgetIter::single(self.when_false.deref())
             }
         }
 
@@ -105,13 +105,13 @@ impl<S: GlobalState> CommonWidget<S> for IfElse<S> {
             if self.when_true.get_flag() == Flags::PROXY {
                 self.when_true.get_children_mut()
             } else {
-                WidgetIterMut::single(&mut self.when_true)
+                WidgetIterMut::single(self.when_true.deref_mut())
             }
         } else {
             if self.when_false.get_flag() == Flags::PROXY {
                 self.when_false.get_children_mut()
             } else {
-                WidgetIterMut::single(&mut self.when_false)
+                WidgetIterMut::single(self.when_false.deref_mut())
             }
         }
 
@@ -119,17 +119,17 @@ impl<S: GlobalState> CommonWidget<S> for IfElse<S> {
 
     fn get_proxied_children(&mut self) -> WidgetIterMut<S> {
         if *self.predicate.get_latest_value() {
-            WidgetIterMut::single(&mut self.when_true)
+            WidgetIterMut::single(self.when_true.deref_mut())
         } else {
-            WidgetIterMut::single(&mut self.when_false)
+            WidgetIterMut::single(self.when_false.deref_mut())
         }
     }
 
     fn get_proxied_children_rev(&mut self) -> WidgetIterMut<S> {
         if *self.predicate.get_latest_value() {
-            WidgetIterMut::single(&mut self.when_true)
+            WidgetIterMut::single(self.when_true.deref_mut())
         } else {
-            WidgetIterMut::single(&mut self.when_false)
+            WidgetIterMut::single(self.when_false.deref_mut())
         }
     }
 

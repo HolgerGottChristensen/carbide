@@ -15,9 +15,30 @@ pub struct Border<GS> where GS: GlobalState {
 
 impl<GS: GlobalState> WidgetExt<GS> for Border<GS> {}
 
-impl<S: GlobalState> SingleChildLayout for Border<S> {
+impl<GS: GlobalState> Layout<GS> for Border<GS> {
     fn flexibility(&self) -> u32 {
         self.child.flexibility()
+    }
+
+    fn calculate_size(&mut self, requested_size: Dimensions, env: &Environment<GS>) -> Dimensions {
+        let border_width = self.border_width as f64;
+        let dimensions = [requested_size[0] - border_width  - border_width, requested_size[1] - border_width - border_width];
+
+        let child_dimensions = self.child.calculate_size(dimensions, env);
+
+        self.dimension = [child_dimensions[0] + border_width + border_width, child_dimensions[1] + border_width + border_width];
+
+        self.dimension
+    }
+
+    fn position_children(&mut self) {
+        let border_width = self.border_width as f64;
+        let positioning = BasicLayouter::Center.position();
+        let position = [self.position[0] + border_width, self.position[1] + border_width];
+        let dimension = [self.dimension[0] - border_width - border_width, self.dimension[1] - border_width - border_width];
+
+        positioning(position, dimension, &mut self.child);
+        self.child.position_children();
     }
 }
 
@@ -38,7 +59,7 @@ impl<S: GlobalState> CommonWidget<S> for Border<S> {
         if self.child.get_flag() == Flags::PROXY {
             self.child.get_children()
         } else {
-            WidgetIter::single(&self.child)
+            WidgetIter::single(self.child.deref())
         }
     }
 
@@ -46,16 +67,16 @@ impl<S: GlobalState> CommonWidget<S> for Border<S> {
         if self.child.get_flag() == Flags::PROXY {
             self.child.get_children_mut()
         } else {
-            WidgetIterMut::single(&mut self.child)
+            WidgetIterMut::single(self.child.deref_mut())
         }
     }
 
     fn get_proxied_children(&mut self) -> WidgetIterMut<S> {
-        WidgetIterMut::single(&mut self.child)
+        WidgetIterMut::single(self.child.deref_mut())
     }
 
     fn get_proxied_children_rev(&mut self) -> WidgetIterMut<S> {
-        WidgetIterMut::single(&mut self.child)
+        WidgetIterMut::single(self.child.deref_mut())
     }
 
     fn get_position(&self) -> Point {

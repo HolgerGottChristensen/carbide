@@ -22,3 +22,4 @@ pub use crate::state::state::{CommonState, State};
 pub use crate::state::state::ColorState;
 pub use crate::state::state::U32State;
 pub use crate::state::tuple_state::*;
+pub use std::ops::{Deref, DerefMut};

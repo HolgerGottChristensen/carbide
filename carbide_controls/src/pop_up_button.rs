@@ -14,6 +14,7 @@ use std::fmt::Debug;
 use carbide_core::DeserializeOwned;
 use carbide_core::Serialize;
 use std::ops::{DerefMut, Deref};
+use carbide_core::widget::primitive::padding::Padding;
 
 #[derive(Clone, Widget)]
 pub struct PopUpButton<T, GS> where GS: GlobalState, T: Serialize + Clone + Debug + Default + DeserializeOwned + 'static {
@@ -29,15 +30,60 @@ impl<T: Serialize + Clone + Debug + Default + DeserializeOwned + 'static, GS: Gl
 
         let mut child = *PlainPopUpButton::new(model, selected_state);
 
-        /*child = child.display_item(|selected_item| {
-
+        child = *child.display_item(|selected_item| {
             let text = selected_item.mapped(|item| format!("{:?}", item));
 
             Rectangle::initialize(vec![
-                Text::initialize(text)
+                HStack::initialize(vec![
+                    Padding::init(EdgeInsets::single(0.0, 0.0, 5.0, 0.0), Text::initialize(text)),
+                    Spacer::new(SpacerDirection::Horizontal),
+                    Rectangle::initialize(vec![
+                        Canvas::initialize(Context { actions: vec![
+                            ContextAction::MoveTo([7.0, 10.0]),
+                            ContextAction::LineTo([11.0, 6.0]),
+                            ContextAction::LineTo([15.0, 10.0]),
+                            ContextAction::Stroke,
+                            ContextAction::MoveTo([7.0, 14.0]),
+                            ContextAction::LineTo([11.0, 18.0]),
+                            ContextAction::LineTo([15.0, 14.0]),
+                        ] }).color(EnvironmentColor::DarkText.into())
+
+                    ]).fill(EnvironmentColor::Accent.into()).frame(23.0.into(), 24.0.into())
+                ])
             ]).fill(EnvironmentColor::SecondarySystemBackground.into())
                 .border().color(EnvironmentColor::OpaqueSeparator.into()).border_width(1)
-        });*/
+        });
+
+        child = *child.display_item_popup(|item, selected_index, index, hovered| {
+            let text = item.mapped(|item| format!("{:?}", item));
+
+            let background_color = TupleState3::new(
+                hovered.clone(),
+                EnvironmentColor::Accent.into(),
+                EnvironmentColor::SecondarySystemBackground.into())
+                .mapped(|(hovered, hover_color, other_color)| {
+                    if *hovered {
+                        *hover_color
+                    } else {
+                        *other_color
+                    }
+                });
+
+            Rectangle::initialize(vec![
+                HStack::initialize(vec![
+                    Padding::init(
+                        EdgeInsets::single(0.0, 0.0, 5.0, 0.0),
+                        Text::initialize(text)
+                        .color(EnvironmentColor::Label.into())),
+                    Spacer::new(SpacerDirection::Horizontal)
+                ])
+
+            ]).fill(background_color)
+                .border()
+                .border_width(1)
+                .color(EnvironmentColor::OpaqueSeparator.into())
+
+        });
 
         Box::new(PopUpButton {
             id: Id::new_v4(),
@@ -67,15 +113,15 @@ impl<T: Serialize + Clone + Debug + Default + DeserializeOwned + 'static, GS: Gl
     }
 
     fn get_children_mut(&mut self) -> WidgetIterMut<GS> {
-        self.child.get_children_mut()
+        WidgetIterMut::single(&mut self.child)
     }
 
     fn get_proxied_children(&mut self) -> WidgetIterMut<GS> {
-        self.child.get_proxied_children()
+        WidgetIterMut::single(&mut self.child)
     }
 
     fn get_proxied_children_rev(&mut self) -> WidgetIterMut<GS> {
-        self.child.get_proxied_children_rev()
+        WidgetIterMut::single(&mut self.child)
     }
 
     fn get_position(&self) -> Point {

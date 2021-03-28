@@ -15,7 +15,6 @@ use carbide_core::DeserializeOwned;
 use carbide_core::Serialize;
 
 #[derive(Clone, Widget)]
-#[event(handle_keyboard_event, handle_mouse_event)]
 #[focusable(block_focus)]
 #[state_sync(update_all_widget_state)]
 pub struct PlainPopUpButton<T, GS> where GS: GlobalState, T: Serialize + Clone + Debug + Default + DeserializeOwned + 'static {
@@ -88,7 +87,7 @@ impl<T: Serialize + Clone + Debug + Default + DeserializeOwned + 'static, GS: Gl
         Box::new(self)
     }
 
-    pub fn display_item_popup(mut self, item: fn (selected_item: Box<dyn State<T, GS>>, selected_index: Box<dyn State<usize, GS>>, index: Box<dyn State<usize, GS>>, hovered: Box<dyn State<bool, GS>>) -> Box<dyn Widget<GS>>) -> Box<Self> {
+    pub fn display_item_popup(mut self, item: fn (item: Box<dyn State<T, GS>>, selected_index: Box<dyn State<usize, GS>>, index: Box<dyn State<usize, GS>>, hovered: Box<dyn State<bool, GS>>) -> Box<dyn Widget<GS>>) -> Box<Self> {
         self.popup_display_item = Some(item);
 
         Box::new(self)
@@ -156,8 +155,7 @@ impl<T: Serialize + Clone + Debug + Default + DeserializeOwned + 'static, GS: Gl
                     } else {
                         Color::Rgba(0.0, 0.0, 1.0, 1.0)
                     }
-                })).padding(EdgeInsets::all(1.0))
-                    .border()
+                })).border()
                     .border_width(1)
                     .color(EnvironmentColor::Blue.into())
             };
@@ -188,10 +186,9 @@ impl<T: Serialize + Clone + Debug + Default + DeserializeOwned + 'static, GS: Gl
                         .spacing(self.popup_list_spacing)
                 )
                     .clip()
-                    .padding(EdgeInsets::all(1.0))
                     .border()
                     .border_width(1)
-                    .color(EnvironmentColor::Yellow.into()),
+                    .color(EnvironmentColor::OpaqueSeparator.into()),
 
             ])
                 .fill(EnvironmentColor::Red.into())
@@ -204,14 +201,6 @@ impl<T: Serialize + Clone + Debug + Default + DeserializeOwned + 'static, GS: Gl
 
             env.add_overlay("overlay_test", overlay);
         }
-    }
-
-    fn handle_mouse_event(&mut self, event: &MouseEvent, _: &bool, env: &mut Environment<GS>, global_state: &mut GS) {
-
-    }
-
-    fn handle_keyboard_event(&mut self, event: &KeyboardEvent, env: &mut Environment<GS>, global_state: &mut GS) {
-
     }
 }
 

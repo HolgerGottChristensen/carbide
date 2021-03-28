@@ -71,8 +71,10 @@ impl Context {
                     if !current_builder_begun {
 
                     } else {
+                        current_builder.end(false);
                         paths.push(current_builder.build());
                         current_builder = Path::builder();
+
                     }
                 }
                 ContextAction::Close => {
@@ -86,6 +88,7 @@ impl Context {
         }
 
         if current_builder_begun {
+            current_builder.end(false);
             paths.push(current_builder.build());
         }
 
