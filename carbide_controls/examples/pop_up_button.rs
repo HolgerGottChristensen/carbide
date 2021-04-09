@@ -12,7 +12,7 @@ use carbide_core::color::RED;
 use carbide_core::state::environment_color::EnvironmentColor;
 use serde::Serialize;
 use serde::Deserialize;
-use crate::Day::{Monday, Tuesday, Wednesday, Thursday, Friday, Saturday, Sunday};
+use self::Day::{Monday, Tuesday, Wednesday, Thursday, Friday, Saturday, Sunday};
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub enum Day {
@@ -54,11 +54,9 @@ fn main() {
     ]);
 
     window.set_widgets(
-        OverlaidLayer::new (
-            "overlay_test",
-            PopUpButton::new(Box::new(selected_model), Box::new(selected_index))
-                .frame(235.0.into(), 100.0.into())
-        ));
+        PopUpButton::new(Box::new(selected_model), Box::new(selected_index))
+            .frame(235.0.into(), 100.0.into())
+    );
 
     window.run_event_loop();
 

@@ -54,7 +54,6 @@ fn main() {
     ]);
 
     window.set_widgets(
-        OverlaidLayer::new ("overlay_test",
         VStack::initialize(vec![
             PlainPopUpButton::new(Box::new(selected_model), Box::new(selected_index))
                 .padding(EdgeInsets::all(2.0))
@@ -63,7 +62,7 @@ fn main() {
                 .clip()
                 .frame(120.0.into(), 40.0.into()),
         ]).spacing(20.0)
-    ));
+    );
 
     window.run_event_loop();
 

@@ -62,7 +62,7 @@ impl<GS: GlobalState> OverlaidLayer<GS> {
         self.update_local_widget_state(env)
     }
 
-    fn handle_keyboard_event(&mut self, event: &KeyboardEvent, env: &mut Environment<GS>, global_state: &mut GS) {
+    fn process_keyboard_event(&mut self, event: &KeyboardEvent, env: &mut Environment<GS>, global_state: &mut GS) {
         self.update_all_widget_state(env, global_state);
 
         self.handle_keyboard_event(event, env, global_state);

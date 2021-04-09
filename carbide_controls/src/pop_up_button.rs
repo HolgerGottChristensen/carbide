@@ -30,8 +30,21 @@ impl<T: Serialize + Clone + Debug + Default + DeserializeOwned + 'static, GS: Gl
 
         let mut child = *PlainPopUpButton::new(model, selected_state);
 
-        child = *child.display_item(|selected_item| {
+        child = *child.display_item(|selected_item, focus_state| {
             let text = selected_item.mapped(|item| format!("{:?}", item));
+
+            let focus_color = TupleState3::new(
+                focus_state,
+                EnvironmentColor::OpaqueSeparator.into(),
+                EnvironmentColor::Accent.into()
+            ).mapped(|(focus, primary_color, focus_color)| {
+                if focus == &Focus::Focused {
+                    *focus_color
+                } else {
+                    *primary_color
+                }
+            });
+
 
             Rectangle::initialize(vec![
                 HStack::initialize(vec![
@@ -51,7 +64,7 @@ impl<T: Serialize + Clone + Debug + Default + DeserializeOwned + 'static, GS: Gl
                     ]).fill(EnvironmentColor::Accent.into()).frame(23.0.into(), 24.0.into())
                 ])
             ]).fill(EnvironmentColor::SecondarySystemBackground.into())
-                .border().color(EnvironmentColor::OpaqueSeparator.into()).border_width(1)
+                .border().color(focus_color).border_width(1)
         });
 
         child = *child.display_item_popup(|item, selected_index, index, hovered| {

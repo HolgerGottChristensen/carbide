@@ -23,6 +23,7 @@ use carbide_core::state::global_state::GlobalState;
 use carbide_core::prelude::Rectangle;
 use carbide_core::state::environment_color::EnvironmentColor;
 use carbide_core::mesh::DEFAULT_GLYPH_CACHE_DIMS;
+use carbide_core::widget::OverlaidLayer;
 
 // Todo: Look in to multisampling: https://github.com/gfx-rs/wgpu-rs/blob/v0.6/examples/msaa-line/main.rs
 pub struct Window<T: GlobalState> {
@@ -70,7 +71,12 @@ impl<T: GlobalState> carbide_core::window::TWindow<T> for Window<T> {
     }
 
     fn set_widgets(&mut self, w: Box<dyn Widget<T>>) {
-        self.ui.widgets = Rectangle::initialize(vec![w])
+        self.ui.widgets = Rectangle::initialize(vec![
+            OverlaidLayer::new (
+                "controls_popup_layer",
+                w
+            )
+        ])
             .fill(EnvironmentColor::SystemBackground.into());
     }
 }

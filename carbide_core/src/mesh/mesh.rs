@@ -385,10 +385,10 @@ impl Mesh {
                         //let min_y = (screen_rect.min.y as f64 / dpi_factor + rect.y.start + base_line_offset).round();
                         //let max_y = (screen_rect.max.y as f64 / dpi_factor + rect.y.start + base_line_offset).round();
 
-                        let min_x = (screen_rect.min.x as f64 / dpi_factor);
-                        let max_x = (screen_rect.max.x as f64 / dpi_factor);
-                        let min_y = (screen_rect.min.y as f64 / dpi_factor);
-                        let max_y = (screen_rect.max.y as f64 / dpi_factor);
+                        let min_x = screen_rect.min.x as f64 / dpi_factor;
+                        let max_x = screen_rect.max.x as f64 / dpi_factor;
+                        let min_y = screen_rect.min.y as f64 / dpi_factor;
+                        let max_y = screen_rect.max.y as f64 / dpi_factor;
 
 
                         Rect {

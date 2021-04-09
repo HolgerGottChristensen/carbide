@@ -205,12 +205,6 @@ impl<GS: GlobalState> PlainTextInput<GS> {
         }
     }
 
-    fn request_focus(&mut self, env: &mut Environment<GS>) {
-        if self.get_focus() == Focus::Unfocused {
-            self.set_focus_and_request(Focus::FocusRequested, env);
-        }
-    }
-
     fn focus_retrieved(&mut self, _: &WidgetEvent, focus_request: &Refocus, env: &mut Environment<GS>, global_state: &mut GS) {
 
         if focus_request != &Refocus::FocusRequest {

@@ -1,6 +1,6 @@
 use carbide_core::widget::*;
-use carbide_core::event_handler::{MouseEvent, KeyboardEvent};
-use carbide_core::input::MouseButton;
+use carbide_core::event_handler::{MouseEvent, KeyboardEvent, WidgetEvent};
+use carbide_core::input::{MouseButton, ModifierKey};
 use carbide_core::input::Key;
 use carbide_core::state::state::State;
 use crate::{PlainButton, List};
@@ -16,6 +16,7 @@ use carbide_core::Serialize;
 
 #[derive(Clone, Widget)]
 #[focusable(block_focus)]
+#[event(handle_keyboard_event, handle_mouse_event)]
 #[state_sync(update_all_widget_state)]
 pub struct PlainPopUpButton<T, GS> where GS: GlobalState, T: Serialize + Clone + Debug + Default + DeserializeOwned + 'static {
     id: Id,
@@ -33,7 +34,6 @@ pub struct PlainPopUpButton<T, GS> where GS: GlobalState, T: Serialize + Clone +
 }
 
 impl<T: Serialize + Clone + Debug + Default + DeserializeOwned + 'static, GS: GlobalState> PlainPopUpButton<T, GS> {
-
 
     pub fn new(model: Box<dyn State<Vec<T>, GS>>, selected_state: Box<dyn State<usize, GS>>) -> Box<Self> {
 
@@ -57,7 +57,7 @@ impl<T: Serialize + Clone + Debug + Default + DeserializeOwned + 'static, GS: Gl
 
         Box::new(PlainPopUpButton {
             id: Id::new_v4(),
-            focus: Box::new(CommonState::new_local_with_key(&Focus::Unfocused)),
+            focus: Box::new(CommonState::new_local_with_key(&Focus::Focused)),
             child,
             popup_display_item: None,
             position: [0.0,0.0],
@@ -71,9 +71,45 @@ impl<T: Serialize + Clone + Debug + Default + DeserializeOwned + 'static, GS: Gl
         })
     }
 
-    pub fn display_item(mut self, item: fn(selected_item: Box<dyn State<T, GS>>) -> Box<dyn Widget<GS>>) -> Box<Self> {
+    fn handle_mouse_event(&mut self, event: &MouseEvent, _: &bool, env: &mut Environment<GS>, global_state: &mut GS) {
+        if !self.is_inside(event.get_current_mouse_position()) {
+            match event {
+                MouseEvent::Press(_, _, _) => {
+                    self.release_focus(env);
+                }
+                _ => ()
+            }
+        } else {
+            match event {
+                MouseEvent::Press(_, _, _) => {
+                    self.request_focus(env);
+                }
+                _ => ()
+            }
 
-        let display_item = item(self.selected_item.clone());
+        }
+    }
+
+    fn handle_keyboard_event(&mut self, event: &KeyboardEvent, env: &mut Environment<GS>, global_state: &mut GS) {
+        if self.get_focus() != Focus::Focused { return }
+
+        match event {
+            KeyboardEvent::Press(key, modifier) => {
+                match (key, modifier) {
+                    (Key::Space, _) |
+                    (Key::Return, _) => {
+                        *self.opened.get_value_mut(env, global_state) = true;
+                    }
+                    (_, _) => {}
+                }
+            }
+            _ => {}
+        }
+    }
+
+    pub fn display_item(mut self, item: fn(selected_item: Box<dyn State<T, GS>>, focus: Box<dyn State<Focus, GS>>) -> Box<dyn Widget<GS>>) -> Box<Self> {
+
+        let display_item = item(self.selected_item.clone(), self.focus.clone());
 
         let child = PlainButton::<(bool, T), GS>::new(display_item)
             .local_state(TupleState2::new(self.opened.clone(), self.selected_item.clone()))
@@ -100,7 +136,9 @@ impl<T: Serialize + Clone + Debug + Default + DeserializeOwned + 'static, GS: Gl
 
             let index_state = CommonState::new_local_with_key(&(0 as usize));
             let foreach_state = CommonState::<Vec<usize>, GS>::new_local_with_key(&(0..number_of_items_in_model).collect::<Vec<_>>());
-            let foreach_selected_state = CommonState::<Vec<bool>, GS>::new_local_with_key(&foreach_state.get_latest_value().iter().map(|_| false).collect::<Vec<_>>());
+            let mut foreach_selected_state = CommonState::<Vec<bool>, GS>::new_local_with_key(&foreach_state.get_latest_value().iter().map(|_| false).collect::<Vec<_>>());
+
+            foreach_selected_state.get_latest_value_mut()[*self.selected_state.get_latest_value()] = true;
 
             let selected_state = VecState::new_local(Box::new(foreach_selected_state.clone()), Box::new(index_state.clone()), false);
 
@@ -134,7 +172,7 @@ impl<T: Serialize + Clone + Debug + Default + DeserializeOwned + 'static, GS: Gl
             if popup_y < 0.0 {
                 popup_y = 0.0;
             } else if popup_y + popup_height > env.window_dimension[1]{
-                popup_y = env.window_dimension[1];
+                popup_y = env.window_dimension[1] - popup_height;
             }
 
             let display_item = if let Some(display_item_function) = self.popup_display_item {
@@ -199,7 +237,7 @@ impl<T: Serialize + Clone + Debug + Default + DeserializeOwned + 'static, GS: Gl
             overlay.set_position([popup_x, popup_y]);
             overlay.set_id(self.popup_id);
 
-            env.add_overlay("overlay_test", overlay);
+            env.add_overlay("controls_popup_layer", overlay);
         }
     }
 }

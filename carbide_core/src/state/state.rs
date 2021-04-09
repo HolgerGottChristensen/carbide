@@ -100,6 +100,13 @@ pub enum CommonState<T, GS> where T: Serialize + Clone + Debug, GS: GlobalState 
     },
 }
 
+impl<T: Serialize + Clone + Debug, GS: GlobalState> CommonState<T, GS> {
+
+    pub fn into_box(self) -> Box<Self> {
+        Box::new(self)
+    }
+}
+
 impl<T: Serialize + Clone + Debug, GS: GlobalState> State<T, GS> for CommonState<T, GS> {
     fn get_value_mut(&mut self, env: &mut Environment<GS>, global_state: &mut GS) -> &mut T {
         match self {

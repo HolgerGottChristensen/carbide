@@ -238,19 +238,73 @@ pub fn impl_widget(ast: &syn::DeriveInput) -> proc_macro2::TokenStream {
     };
 
     let block_focus_request = if let Some(_) = struct_attributes.get("focusable.block_focus") {
-        quote! {return false}
+        quote! {
+             let mut any_focus = false;
+
+            if self.get_flag().contains(Flags::FOCUSABLE) {
+                let focus = self.get_focus();
+                if focus == Focus::FocusRequested {
+                    self.set_focus(Focus::Focused);
+                    self.focus_retrieved(event, focus_request, env, global_state);
+                    any_focus = true;
+                } else if focus != Focus::Unfocused {
+                    self.set_focus(Focus::Unfocused);
+                    self.focus_dismissed(event, focus_request, env, global_state);
+                }
+            }
+
+            // Do not send the focus request to its children
+
+            any_focus
+        }
     } else {
         quote! {self.process_focus_request_default(event, focus_request, env, global_state)}
     };
 
     let block_focus_next = if let Some(_) = struct_attributes.get("focusable.block_focus") {
-        quote! {focus_up_for_grab}
+        quote! {
+            if self.get_flag().contains(Flags::FOCUSABLE) {
+                if focus_up_for_grab {
+                    self.set_focus(Focus::Focused);
+                    self.focus_retrieved(event, focus_request, env, global_state);
+                    false
+                } else if self.get_focus() == Focus::FocusReleased {
+                    self.set_focus(Focus::Unfocused);
+                    self.focus_dismissed(event, focus_request, env, global_state);
+                    true
+                } else {
+                    false
+                }
+            } else {
+                focus_up_for_grab
+            }
+
+            // Do not send the request to its children
+        }
     } else {
         quote! {self.process_focus_next_default(event, focus_request, focus_up_for_grab, env, global_state)}
     };
 
     let block_focus_previous = if let Some(_) = struct_attributes.get("focusable.block_focus") {
-        quote! {focus_up_for_grab}
+        quote! {
+            if self.get_flag().contains(Flags::FOCUSABLE) {
+                if focus_up_for_grab {
+                    self.set_focus(Focus::Focused);
+                    self.focus_retrieved(event, focus_request, env, global_state);
+                    false
+                } else if self.get_focus() == Focus::FocusReleased {
+                    self.set_focus(Focus::Unfocused);
+                    self.focus_dismissed(event, focus_request, env, global_state);
+                    true
+                } else {
+                    false
+                }
+            } else {
+                focus_up_for_grab
+            }
+
+            // Do not send the request to its children
+        }
     } else {
         quote! {self.process_focus_previous_default(event, focus_request, focus_up_for_grab, env, global_state)}
     };

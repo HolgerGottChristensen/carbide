@@ -340,7 +340,7 @@ impl<S: GlobalState> Ui<S> {
                         println!("Focus next");
                         let focus_first = self.widgets.process_focus_next(event, &request,false, &mut self.environment, global_state);
                         if focus_first {
-                            println!("Focus next fisr");
+                            println!("Focus next back to first");
                             self.widgets.process_focus_next(event, &request,true, &mut self.environment, global_state);
                         }
                     }
