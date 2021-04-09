@@ -13,6 +13,7 @@ use crate::mesh::vertex::Vertex;
 use crate::Range;
 use crate::render::primitive_walker::PrimitiveWalker;
 use crate::text::{self, rt};
+use crate::mesh::{DEFAULT_GLYPH_CACHE_DIMS, GLYPH_CACHE_SCALE_TOLERANCE, GLYPH_CACHE_POSITION_TOLERANCE, MODE_GEOMETRY, MODE_TEXT, MODE_IMAGE};
 
 /// Images within the given image map must know their dimensions in pixels.
 pub trait ImageDimensions {
@@ -87,15 +88,7 @@ enum PreparedCommand {
     Scizzor(Scizzor),
 }
 
-/// Draw text from the text cache texture `tex` in the fragment shader.
-pub const MODE_TEXT: u32 = 0;
-/// Draw an image from the texture at `tex` in the fragment shader.
-pub const MODE_IMAGE: u32 = 1;
-/// Ignore `tex` and draw simple, colored 2D geometry.
-pub const MODE_GEOMETRY: u32 = 2;
 
-/// Default dimensions to use for the glyph cache.
-pub const DEFAULT_GLYPH_CACHE_DIMS: [u32; 2] = [2_048; 2];
 
 impl Mesh {
     /// Construct a new empty `Mesh` with default glyph cache dimensions.
@@ -105,13 +98,12 @@ impl Mesh {
 
     /// Construct a `Mesh` with the given glyph cache dimensions.
     pub fn with_glyph_cache_dimensions(glyph_cache_dims: [u32; 2]) -> Self {
-        const SCALE_TOLERANCE: f32 = 0.1;
-        const POSITION_TOLERANCE: f32 = 0.1;
         let [gc_width, gc_height] = glyph_cache_dims;
+
         let glyph_cache = text::GlyphCache::builder()
             .dimensions(gc_width, gc_height)
-            .scale_tolerance(SCALE_TOLERANCE)
-            .position_tolerance(POSITION_TOLERANCE)
+            .scale_tolerance(GLYPH_CACHE_SCALE_TOLERANCE)
+            .position_tolerance(GLYPH_CACHE_POSITION_TOLERANCE)
             .build()
             .into();
         let glyph_cache_pixel_buffer = vec![0u8; gc_width as usize * gc_height as usize];
@@ -359,6 +351,7 @@ impl Mesh {
                     let positioned_glyphs = text.positioned_glyphs(dpi_factor as f32);
                     // Queue the glyphs to be cached
                     for glyph in positioned_glyphs.clone() {
+                        //println!("{:?}", glyph.position());
                         glyph_cache.queue_glyph(font_id.index(), glyph.clone());
                     }
 
@@ -382,27 +375,21 @@ impl Mesh {
 
                     let color = gamma_srgb_to_linear(color.to_fsa());
                     let cache_id = font_id.index();
-                    //let origin = rt::point(0.0, 0.0);
 
-                    // A closure to convert RustType rects to GL rects
-                    /*let to_vk_rect = |screen_rect: rt::Rect<i32>| rt::Rect {
-                        min: origin
-                            + (rt::vector(
-                                screen_rect.min.x as f32 / viewport_w as f32 - 0.5,
-                                screen_rect.min.y as f32 / viewport_h as f32 - 0.5,
-                            )) * 2.0,
-                        max: origin
-                            + (rt::vector(
-                                screen_rect.max.x as f32 / viewport_w as f32 - 0.5,
-                                screen_rect.max.y as f32 / viewport_h as f32 - 0.5,
-                            )) * 2.0,
-                    };*/
 
+                    // Rounding here is not really the best solution, but it makes the text cleaner.
+                    // Todo: consider changing text rendering to glyph_brush, or drawing at the correct position instead of translating
                     let to_gl_rect = |screen_rect: text::rt::Rect<i32>| {
-                        let min_x = screen_rect.min.x as f64 / dpi_factor + rect.x.start;
-                        let max_x = screen_rect.max.x as f64 / dpi_factor + rect.x.start;
-                        let min_y = screen_rect.min.y as f64 / dpi_factor + rect.y.start + base_line_offset;
-                        let max_y = screen_rect.max.y as f64 / dpi_factor + rect.y.start + base_line_offset;
+                        //let min_x = (screen_rect.min.x as f64 / dpi_factor + rect.x.start).round();
+                        //let max_x = (screen_rect.max.x as f64 / dpi_factor + rect.x.start).round();
+                        //let min_y = (screen_rect.min.y as f64 / dpi_factor + rect.y.start + base_line_offset).round();
+                        //let max_y = (screen_rect.max.y as f64 / dpi_factor + rect.y.start + base_line_offset).round();
+
+                        let min_x = (screen_rect.min.x as f64 / dpi_factor);
+                        let max_x = (screen_rect.max.x as f64 / dpi_factor);
+                        let min_y = (screen_rect.min.y as f64 / dpi_factor);
+                        let max_y = (screen_rect.max.y as f64 / dpi_factor);
+
 
                         Rect {
                             x: Range { start: min_x, end: max_x },
@@ -410,10 +397,10 @@ impl Mesh {
                         }
                     };
 
+
                     for g in positioned_glyphs.clone() {
                         if let Ok(Some((uv_rect, screen_rect))) = glyph_cache.rect_for(cache_id, &g)
                         {
-                            // Fixme: It seems like the resulting rect for "k" and "a" has different bottom positions, even though they should be on the same baseline
                             let vk_rect = to_gl_rect(screen_rect);
 
                             let v = |x, y, t| Vertex {

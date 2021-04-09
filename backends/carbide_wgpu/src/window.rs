@@ -1,5 +1,5 @@
 use crate::image::Image;
-use carbide_core::mesh::mesh::{Mesh, DEFAULT_GLYPH_CACHE_DIMS};
+use carbide_core::mesh::mesh::Mesh;
 use carbide_core::{Ui, Rect};
 use carbide_core::image_map::{ImageMap, Id};
 use wgpu::{Texture, BindGroupLayout};
@@ -22,6 +22,7 @@ use std::path::PathBuf;
 use carbide_core::state::global_state::GlobalState;
 use carbide_core::prelude::Rectangle;
 use carbide_core::state::environment_color::EnvironmentColor;
+use carbide_core::mesh::DEFAULT_GLYPH_CACHE_DIMS;
 
 // Todo: Look in to multisampling: https://github.com/gfx-rs/wgpu-rs/blob/v0.6/examples/msaa-line/main.rs
 pub struct Window<T: GlobalState> {

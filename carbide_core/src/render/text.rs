@@ -47,14 +47,14 @@ impl Text {
             justify,
             y_align,
             line_spacing,
-            ..
+            base_line_offset,
         } = self;
 
-        let rect = Rect::from_xy_dim([0.0,0.0], rect.dim());
+        //let rect = Rect::from_xy_dim([rect.x(),0.0], rect.dim());
 
         // Convert carbide coordinates to pixel coordinates.
-        let trans_x = |x: Scalar| (x + window_dim[0] / 2.0) * dpi_factor as Scalar;
-        let trans_y = |y: Scalar| ((-y) + window_dim[1] / 2.0) * dpi_factor as Scalar;
+        let trans_x = |x: Scalar| (x + window_dim[0] / 2.0 - rect.w() / 2.0) * dpi_factor as Scalar;
+        let trans_y = |y: Scalar| ((y) + window_dim[1] / 2.0 - base_line_offset as f64) * dpi_factor as Scalar;
 
         // Produce the text layout iterators.
         let line_infos = line_infos.iter().cloned();

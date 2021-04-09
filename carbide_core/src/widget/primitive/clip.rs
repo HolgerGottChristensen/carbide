@@ -1,5 +1,6 @@
 use crate::prelude::*;
 use crate::render::primitive_kind::PrimitiveKind;
+use crate::widget::HStack;
 
 #[derive(Debug, Clone, Widget)]
 pub struct Clip<GS> where GS: GlobalState {
@@ -119,4 +120,17 @@ impl<S: GlobalState> Clip<S> {
             dimension: [0.0, 0.0],
         })
     }
+
+    /*pub fn body(&mut self) -> Box<dyn Widget<S>> {
+        widget_body!(
+            HStack (
+                alignment: Aligment::Top,
+                spacing: 10.0,
+            ) {
+                for i in $self.model {
+                    Text("Item: {}, index: {}", $item, $index),
+                }
+            }
+        )
+    }*/
 }
