@@ -16,11 +16,10 @@ use crate::widget::types::stroke_style::StrokeStyle;
 
 /// A basic, non-interactive rectangle shape widget.
 #[derive(Debug, Clone, Widget)]
-pub struct RoundedRectangle<GS> where GS: GlobalState {
+pub struct Capsule<GS> where GS: GlobalState {
     id: Uuid,
     position: Point,
     dimension: Dimensions,
-    corner_radius: f64,
     #[state] stroke_color: ColorState<GS>,
     #[state] fill_color: ColorState<GS>,
     style: ShapeStyle,
@@ -28,7 +27,7 @@ pub struct RoundedRectangle<GS> where GS: GlobalState {
     triangle_store: TriangleStore,
 }
 
-impl<GS: GlobalState> RoundedRectangle<GS> {
+impl<GS: GlobalState> Capsule<GS> {
 
     pub fn fill(mut self, color: ColorState<GS>) -> Box<Self> {
         self.fill_color = color;
@@ -48,12 +47,11 @@ impl<GS: GlobalState> RoundedRectangle<GS> {
         Box::new(self)
     }
 
-    pub fn initialize(corner_radius: f64) -> Box<RoundedRectangle<GS>> {
-        Box::new(RoundedRectangle {
+    pub fn initialize() -> Box<Capsule<GS>> {
+        Box::new(Capsule {
             id: Uuid::new_v4(),
             position: [0.0,0.0],
             dimension: [100.0,100.0],
-            corner_radius,
             stroke_color: EnvironmentColor::Blue.into(),
             fill_color: EnvironmentColor::Blue.into(),
             style: ShapeStyle::Default,
@@ -63,7 +61,7 @@ impl<GS: GlobalState> RoundedRectangle<GS> {
     }
 }
 
-impl<S: GlobalState> Layout<S> for RoundedRectangle<S> {
+impl<S: GlobalState> Layout<S> for Capsule<S> {
     fn flexibility(&self) -> u32 {
         0
     }
@@ -74,10 +72,11 @@ impl<S: GlobalState> Layout<S> for RoundedRectangle<S> {
     }
 
     fn position_children(&mut self) {
+
     }
 }
 
-impl<S: GlobalState> CommonWidget<S> for RoundedRectangle<S> {
+impl<S: GlobalState> CommonWidget<S> for Capsule<S> {
     fn get_id(&self) -> Uuid {
         self.id
     }
@@ -124,7 +123,7 @@ impl<S: GlobalState> CommonWidget<S> for RoundedRectangle<S> {
     }
 }
 
-impl<GS: GlobalState> Shape<GS> for RoundedRectangle<GS> {
+impl<GS: GlobalState> Shape<GS> for Capsule<GS> {
     fn get_triangle_store_mut(&mut self) -> &mut TriangleStore {
         &mut self.triangle_store
     }
@@ -138,22 +137,20 @@ impl<GS: GlobalState> Shape<GS> for RoundedRectangle<GS> {
     }
 }
 
-impl<S: GlobalState> Render<S> for RoundedRectangle<S> {
+impl<S: GlobalState> Render<S> for Capsule<S> {
 
     fn get_primitives(&mut self, fonts: &text::font::Map) -> Vec<Primitive> {
 
         let rectangle = rect(self.get_x() as f32, self.get_y() as f32, self.get_width() as f32, self.get_height() as f32);
 
-        let corner_radius = self.corner_radius as f32;
-
         tessellate(self, &rectangle, &|builder, rect| {
             builder.add_rounded_rectangle(
                 rect,
                 &BorderRadii {
-                    top_left: corner_radius,
-                    top_right: corner_radius,
-                    bottom_left: corner_radius,
-                    bottom_right: corner_radius,
+                    top_left: f32::MAX,
+                    top_right: f32::MAX,
+                    bottom_left: f32::MAX,
+                    bottom_right: f32::MAX,
                 },
                 Winding::Positive
             );
@@ -167,4 +164,4 @@ impl<S: GlobalState> Render<S> for RoundedRectangle<S> {
     }
 }
 
-impl<GS: GlobalState> WidgetExt<GS> for RoundedRectangle<GS> {}
+impl<GS: GlobalState> WidgetExt<GS> for Capsule<GS> {}

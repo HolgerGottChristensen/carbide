@@ -13,6 +13,7 @@ use carbide_core::state::vec_state::VecState;
 use std::fmt::Debug;
 use carbide_core::DeserializeOwned;
 use carbide_core::Serialize;
+use crate::plain::plain_pop_up_button_popup::PlainPopUpButtonPopUp;
 
 #[derive(Clone, Widget)]
 #[focusable(block_focus)]
@@ -132,108 +133,53 @@ impl<T: Serialize + Clone + Debug + Default + DeserializeOwned + 'static, GS: Gl
     fn update_all_widget_state(&mut self, env: &mut Environment<GS>, global_state: &GS) {
         if *self.opened.get_latest_value() {
 
-            let number_of_items_in_model = self.model.get_latest_value().len();
+            let display_item = if let Some(display_item_function) = self.popup_display_item {
+                display_item_function
+            } else {
+                |item: Box<dyn State<T, GS>>, parent_selected_index: Box<dyn State<usize, GS>>, item_index: Box<dyn State<usize, GS>>, partially_chosen: Box<dyn State<bool, GS>>| -> Box<dyn Widget<GS>>{
+                    let text = item.mapped(|item| format!("{:?}", item));
+                    Rectangle::initialize(vec![
+                        Text::initialize(text)
+                            .color(partially_chosen.clone().mapped(|partially_chosen| {
+                                if *partially_chosen {
+                                    Color::Rgba(0.0, 0.0, 0.0, 1.0)
+                                } else {
+                                    Color::Rgba(1.0, 1.0, 1.0, 1.0)
+                                }
+                            }))
+                    ]).fill(partially_chosen.clone().mapped(|partially_chosen| {
+                        if *partially_chosen {
+                            Color::Rgba(0.0, 1.0, 0.0, 1.0)
+                        } else {
+                            Color::Rgba(0.0, 0.0, 1.0, 1.0)
+                        }
+                    })).border()
+                        .border_width(1)
+                        .color(EnvironmentColor::Blue.into())
+                }
+            };
 
-            let index_state = CommonState::new_local_with_key(&(0 as usize));
-            let foreach_state = CommonState::<Vec<usize>, GS>::new_local_with_key(&(0..number_of_items_in_model).collect::<Vec<_>>());
-            let mut foreach_selected_state = CommonState::<Vec<bool>, GS>::new_local_with_key(&foreach_state.get_latest_value().iter().map(|_| false).collect::<Vec<_>>());
+            let mut overlay = PlainPopUpButtonPopUp::new(
+                display_item,
+                self.opened.clone(),
+                self.model.clone(),
+                self.selected_state.clone(),
+                self.popup_list_spacing,
+            self.dimension,
+            env.window_dimension);
 
-            foreach_selected_state.get_latest_value_mut()[*self.selected_state.get_latest_value()] = true;
-
-            let selected_state = VecState::new_local(Box::new(foreach_selected_state.clone()), Box::new(index_state.clone()), false);
-
-            let selected_item_state = VecState::new_local(Box::new(self.model.clone()), Box::new(index_state.clone()), T::default());
-            let mapped_state = MappedState::new_local(selected_item_state.clone(), |a: &T| format!("{:?}", a), "".to_string());
-
-            let height: Box<dyn State<f64, GS>> = self.dimension[1].into();
-            let popup_list_spacing: Box<dyn State<f64, GS>> = self.popup_list_spacing.into();
-            let length: Box<dyn State<usize, GS>> = foreach_state.get_latest_value().len().into();
-
-            let max_height_state: Box<dyn State<f64, GS>> = Box::new(CommonState::<f64, GS>::EnvironmentState {
-                function: |e: &Environment<GS>| {
-                    (e.window_dimension[1])
-                },
-                function_mut: None,
-                latest_value: env.window_dimension[1]
-            });
-
-            let tup = TupleState4::new(height, length, max_height_state, popup_list_spacing);
-
-            let mut popup_height_state = tup.mapped(|(parent_height, number_of_elements, window_height, popup_list_spacing)| {
-                window_height.min(*number_of_elements as f64 * parent_height + (*number_of_elements - 1) as f64 * popup_list_spacing + 2.0).max(*parent_height)
-            });
+            overlay.calculate_size([5000.0, 5000.0], env);
 
             let popup_x = self.get_x() - 1.0;
 
-            let popup_height = *popup_height_state.get_value(env, global_state);
-
-            let mut popup_y = self.get_y() - popup_height / 2.0 + self.get_height() / 2.0;
+            let mut popup_y = self.get_y() - overlay.get_height() / 2.0 + self.get_height() / 2.0;
 
             if popup_y < 0.0 {
                 popup_y = 0.0;
-            } else if popup_y + popup_height > env.window_dimension[1]{
-                popup_y = env.window_dimension[1] - popup_height;
+            } else if popup_y + overlay.get_height() > env.window_dimension[1]{
+                popup_y = env.window_dimension[1] - overlay.get_height();
             }
 
-            let display_item = if let Some(display_item_function) = self.popup_display_item {
-                display_item_function(selected_item_state.clone(), self.selected_state.clone(), Box::new(index_state.clone()), selected_state.clone())
-            } else {
-                Rectangle::initialize(vec![
-                    Text::initialize(mapped_state)
-                        .color(selected_state.clone().mapped(|selected| {
-                            if *selected {
-                                Color::Rgba(0.0, 0.0, 0.0, 1.0)
-                            } else {
-                                Color::Rgba(1.0, 1.0, 1.0, 1.0)
-                            }
-                        }))
-                ]).fill(selected_state.clone().mapped(|selected| {
-                    if *selected {
-                        Color::Rgba(0.0, 1.0, 0.0, 1.0)
-                    } else {
-                        Color::Rgba(0.0, 0.0, 1.0, 1.0)
-                    }
-                })).border()
-                    .border_width(1)
-                    .color(EnvironmentColor::Blue.into())
-            };
-
-            let mut overlay = Rectangle::initialize(vec![
-                SharedState::new(
-                    TupleState3::new(self.opened.clone(), self.selected_state.clone(), Box::new(foreach_selected_state.clone())),
-                    List::new(Box::new(foreach_state),
-                               PlainButton::<(usize, bool, usize), GS>::new(display_item)
-                                       .local_state(TupleState3::new(Box::new(index_state.clone()), self.opened.clone(), self.selected_state.clone()))
-                                       .on_click(|myself, env, global_state| {
-                                           let (index, opened, selected_index) = myself.get_local_state().get_latest_value_mut();
-
-                                           *selected_index = *index;
-                                           *opened = false;
-
-                                           //println!("Closed popup and selected: {}", index);
-                                       })
-                                       .on_click_outside(|myself, _, _| {
-                                           let (_, opened, _) = myself.get_local_state().get_latest_value_mut();
-
-                                           *opened = false
-                                       })
-                                       .hover(selected_state.clone())
-
-                                   .frame(self.dimension[0].into(), self.dimension[1].into())
-                            ).index_state(Box::new(index_state))
-                        .spacing(self.popup_list_spacing)
-                )
-                    .clip()
-                    .border()
-                    .border_width(1)
-                    .color(EnvironmentColor::OpaqueSeparator.into()),
-
-            ])
-                .fill(EnvironmentColor::Red.into())
-                .frame((self.dimension[0] + 2.0).into(), popup_height_state);
-                //.with_fixed_position(popup_x.into(), 100.0.into());
-
-            overlay.calculate_size([300.0, 600.0], env);
             overlay.set_position([popup_x, popup_y]);
             overlay.set_id(self.popup_id);
 

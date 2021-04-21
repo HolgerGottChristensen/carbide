@@ -7,22 +7,69 @@ use crate::draw::shape::triangle::Triangle;
 use crate::render::util::new_primitive;
 use crate::draw::shape::circumference::{Circumference, Triangles};
 use crate::state::environment_color::EnvironmentColor;
+use crate::widget::types::shape_style::ShapeStyle;
+use crate::widget::types::stroke_style::StrokeStyle;
+use crate::widget::types::triangle_store::TriangleStore;
+use lyon::algorithms::math::{rect, Angle};
+use crate::widget::primitive::shape::{tessellate, Shape};
+use lyon::algorithms::path::builder::PathBuilder;
+use lyon::math::point;
+use lyon::algorithms::path::geom::euclid::vec2;
+use lyon::algorithms::path::Winding;
 
 
 /// A simple, non-interactive widget for drawing a single **Oval**.
 #[derive(Debug, Clone, Widget)]
 pub struct Oval<S, GS> where S: 'static + Clone, GS: GlobalState {
     pub id: Uuid,
-    /// The number of lines used to draw the edge.
-    pub resolution: usize,
     /// A type describing the section of the `Oval` that is to be drawn.
     pub section: S,
     position: Point,
     dimension: Dimensions,
-    #[state] color: ColorState<GS>,
+
+    #[state] stroke_color: ColorState<GS>,
+    #[state] fill_color: ColorState<GS>,
+    style: ShapeStyle,
+    stroke_style: StrokeStyle,
+    triangle_store: TriangleStore,
 }
 
-impl<S: 'static + Clone, GS: GlobalState> WidgetExt<GS> for Oval<S, GS> {}
+impl<GS: GlobalState> Oval<Full, GS> {
+
+    pub fn fill(mut self, color: ColorState<GS>) -> Box<Self> {
+        self.fill_color = color;
+        self.style += ShapeStyle::Fill;
+        Box::new(self)
+    }
+
+    pub fn stroke(mut self, color: ColorState<GS>) -> Box<Self> {
+        self.stroke_color = color;
+        self.style += ShapeStyle::Stroke;
+        Box::new(self)
+    }
+
+    pub fn stroke_style(mut self, line_width: f64) -> Box<Self> {
+        self.stroke_style = StrokeStyle::Solid {line_width};
+        self.style += ShapeStyle::Stroke;
+        Box::new(self)
+    }
+
+    pub fn new() -> Box<Oval<Full, GS>> {
+        Box::new(Oval {
+            id: Uuid::new_v4(),
+            section: Full,
+            position: [0.0, 0.0],
+            dimension: [100.0,100.0],
+            stroke_color: EnvironmentColor::Blue.into(),
+            fill_color: EnvironmentColor::Blue.into(),
+            style: ShapeStyle::Default,
+            stroke_style: StrokeStyle::Solid {line_width: 2.0},
+            triangle_store: TriangleStore::new()
+        })
+    }
+}
+
+
 
 impl<S: 'static + Clone, GS: GlobalState> Layout<GS> for Oval<S, GS> {
     fn flexibility(&self) -> u32 {
@@ -88,18 +135,38 @@ impl<S: 'static + Clone, K: GlobalState> CommonWidget<K> for Oval<S, K> {
 impl<S: 'static + Clone, GS: GlobalState> Render<GS> for Oval<S, GS> {
 
     fn get_primitives(&mut self, _: &text::font::Map) -> Vec<Primitive> {
-        let points = widget::oval::circumference(Rect::new(self.position, self.dimension), DEFAULT_RESOLUTION);
-        let mut triangles: Vec<Triangle<Point>> = Vec::new();
-        triangles.extend(points.triangles());
-        let kind = PrimitiveKind::TrianglesSingleColor {
-            color: self.color.get_latest_value().to_rgb(),
-            triangles,
-        };
+        let radii = vec2(self.get_width() as f32 / 2.0, self.get_height() as f32 / 2.0);
+        let center = point(self.get_x() as f32 + radii.x, self.get_y() as f32 + radii.y);
+        let rectangle = rect(self.get_x() as f32, self.get_y() as f32, self.get_width() as f32, self.get_height() as f32);
 
-        let mut prims: Vec<Primitive> = vec![new_primitive(kind, Rect::new(self.position, self.dimension))];
+        tessellate(self, &rectangle, &|builder, rect| {
+            builder.add_ellipse(
+                center,
+                radii,
+                Angle::degrees(0.0),
+                Winding::Positive
+            );
+        });
+
+        let mut prims = self.triangle_store.get_primitives(*self.fill_color.get_latest_value(), *self.stroke_color.get_latest_value());
+
         prims.extend(Rectangle::<GS>::debug_outline(Rect::new(self.position, self.dimension), 1.0));
 
         return prims;
+    }
+}
+
+impl<K: Clone, GS: GlobalState> Shape<GS> for Oval<K, GS> {
+    fn get_triangle_store_mut(&mut self) -> &mut TriangleStore {
+        &mut self.triangle_store
+    }
+
+    fn get_stroke_style(&self) -> StrokeStyle {
+        self.stroke_style.clone()
+    }
+
+    fn get_shape_style(&self) -> ShapeStyle {
+        self.style.clone()
     }
 }
 
@@ -139,26 +206,9 @@ pub struct State<S> {
 /// The default circle resolution if none is specified.
 pub const DEFAULT_RESOLUTION: usize = 50;
 
-impl<GS: GlobalState> Oval<Full, GS> {
 
-    pub fn fill(mut self, color: ColorState<GS>) -> Box<Self> {
-        self.color = color;
-        Box::new(self)
-    }
 
-    pub fn new() -> Box<Oval<Full, GS>> {
-        Box::new(Oval {
-            id: Uuid::new_v4(),
-            resolution: 0,
-            section: Full,
-            position: [0.0, 0.0],
-            dimension: [100.0,100.0],
-            color: EnvironmentColor::Blue.into()
-        })
-    }
-}
-
-impl<S: Clone, K: GlobalState> Oval<S, K> {
+/*impl<S: Clone, K: GlobalState> Oval<S, K> {
     /// The number of lines used to draw the edge.
     ///
     /// By default, `DEFAULT_RESOLUTION` is used.
@@ -185,7 +235,7 @@ impl<K: GlobalState> Oval<Section, K> {
         self.section.offset_radians = offset_radians;
         self
     }
-}
+}*/
 
 /*impl<S, K> OldWidget<K> for Oval<S, K>
 where
@@ -246,6 +296,8 @@ impl Iterator for Triangles {
         })
     }
 }
+
+impl<S: 'static + Clone, GS: GlobalState> WidgetExt<GS> for Oval<S, GS> {}
 
 
 /*/// The function to use for picking whether a given point is over the oval section.

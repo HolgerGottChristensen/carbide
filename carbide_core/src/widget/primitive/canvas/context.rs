@@ -1,15 +1,102 @@
 use crate::Point;
 use lyon::algorithms::path::Path;
 use lyon::lyon_algorithms::path::math::point;
+use crate::widget::types::shape_style::ShapeStyle;
+use lyon::tessellation::{StrokeOptions, FillOptions};
 
 #[derive(Debug, Clone)]
 pub struct Context {
-    pub actions: Vec<ContextAction>
+    pub generator: Vec<ContextAction>
 }
 
 
 impl Context {
-    pub fn to_paths(&self, offset: Point) -> Vec<Path> {
+
+    pub fn set_line_width(&mut self) {
+
+    }
+
+    pub fn set_line_join(&mut self) {
+
+    }
+
+    pub fn set_line_cap(&mut self) {
+
+    }
+
+    pub fn set_miter_limit(&mut self) {
+
+    }
+
+    pub fn set_fill_style(&mut self) {
+
+    }
+
+    pub fn set_stroke_style(&mut self) {
+
+    }
+
+    pub fn rect(&mut self) {
+
+    }
+
+    pub fn fill_rect(&mut self) {
+
+    }
+
+    pub fn stroke_rect(&mut self) {
+
+    }
+
+    pub fn clear_rect(&mut self) {
+        todo!()
+    }
+
+    pub fn fill(&mut self) {
+
+    }
+
+    pub fn stroke(&mut self) {
+
+    }
+
+    pub fn begin_path(&mut self) {
+
+    }
+
+    pub fn move_to(&mut self) {
+
+    }
+
+    pub fn close_path(&mut self) {
+
+    }
+
+    pub fn line_to(&mut self) {
+
+    }
+
+    pub fn clip(&mut self) {
+        todo!()
+    }
+
+    pub fn quadratic_curve_to(&mut self) {
+
+    }
+
+    pub fn bezier_curve_to(&mut self) {
+
+    }
+
+    pub fn arc(&mut self) {
+
+    }
+
+    pub fn arc_to(&mut self) {
+
+    }
+
+    pub fn to_paths(&self, offset: Point) -> Vec<(Path, ShapeStyleWithOptions)> {
 
         let offset_point = |p: [f64; 2]| {
             point(p[0] as f32 + offset[0] as f32, p[1] as f32 + offset[1] as f32)
@@ -95,6 +182,13 @@ impl Context {
         paths
 
     }
+}
+
+pub enum ShapeStyleWithOptions {
+    Default(StrokeOptions),
+    Fill(FillOptions),
+    Stroke(StrokeOptions),
+    FillAndStroke(FillOptions, StrokeOptions),
 }
 
 #[derive(Debug, Clone)]

@@ -22,22 +22,26 @@ pub struct Canvas<GS> where GS: GlobalState {
     context: Context
 }
 
-impl<GS: GlobalState> WidgetExt<GS> for Canvas<GS> {}
+impl<S: GlobalState> Canvas<S> {
 
-impl<S: GlobalState> Layout<S> for Canvas<S> {
-    fn flexibility(&self) -> u32 {
-        0
+    pub fn color(mut self, color: ColorState<S>) -> Box<Self> {
+        self.color = color;
+        Box::new(self)
     }
 
-    fn calculate_size(&mut self, requested_size: Dimensions, _: &Environment<S>) -> Dimensions {
-        self.dimension = requested_size;
-        requested_size
-    }
-
-    fn position_children(&mut self) {
-
+    pub fn initialize(context: fn(Rect, Context) -> Context) -> Box<Self> {
+        Box::new(Canvas {
+            id: Uuid::new_v4(),
+            position: [0.0,0.0],
+            dimension: [100.0,100.0],
+            color: EnvironmentColor::Accent.into(),
+            triangle_store: TriangleStore::new(),
+            context
+        })
     }
 }
+
+
 
 impl<S: GlobalState> CommonWidget<S> for Canvas<S> {
     fn get_id(&self) -> Uuid {
@@ -127,21 +131,19 @@ impl<S: GlobalState> Render<S> for Canvas<S> {
     }
 }
 
-impl<S: GlobalState> Canvas<S> {
+impl<GS: GlobalState> WidgetExt<GS> for Canvas<GS> {}
 
-    pub fn color(mut self, color: ColorState<S>) -> Box<Self> {
-        self.color = color;
-        Box::new(self)
+impl<S: GlobalState> Layout<S> for Canvas<S> {
+    fn flexibility(&self) -> u32 {
+        0
     }
 
-    pub fn initialize(context: Context) -> Box<Self> {
-        Box::new(Canvas {
-            id: Uuid::new_v4(),
-            position: [0.0,0.0],
-            dimension: [100.0,100.0],
-            color: EnvironmentColor::Accent.into(),
-            triangle_store: TriangleStore::new(),
-            context
-        })
+    fn calculate_size(&mut self, requested_size: Dimensions, _: &Environment<S>) -> Dimensions {
+        self.dimension = requested_size;
+        requested_size
+    }
+
+    fn position_children(&mut self) {
+
     }
 }

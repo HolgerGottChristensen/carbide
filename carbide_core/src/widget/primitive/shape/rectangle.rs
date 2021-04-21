@@ -1,6 +1,15 @@
 use crate::prelude::*;
 use crate::render::primitive_kind::PrimitiveKind;
 use crate::state::environment_color::EnvironmentColor;
+use crate::widget::types::shape_style::ShapeStyle;
+use crate::widget::types::stroke_style::StrokeStyle;
+use crate::widget::types::triangle_store::TriangleStore;
+use crate::widget::primitive::shape::{tessellate, Shape};
+use lyon::algorithms::path::builder::PathBuilder;
+use lyon::algorithms::path::geom::euclid::{Point2D, Size2D};
+use lyon::algorithms::math::rect;
+use lyon::algorithms::path::Winding;
+use crate::color::Rgba;
 
 
 /// A basic, non-interactive rectangle shape widget.
@@ -10,14 +19,32 @@ pub struct Rectangle<GS> where GS: GlobalState {
     children: Vec<Box<dyn Widget<GS>>>,
     position: Point,
     dimension: Dimensions,
-    #[state] color: ColorState<GS>,
+    #[state] fill_color: ColorState<GS>,
+    #[state] stroke_color: ColorState<GS>,
     shrink_to_fit: bool,
+    style: ShapeStyle,
+    stroke_style: StrokeStyle,
+    // Store the triangles for the border
+    triangle_store: TriangleStore,
 }
 
 impl<GS: GlobalState> Rectangle<GS> {
 
     pub fn fill(mut self, color: ColorState<GS>) -> Box<Self> {
-        self.color = color;
+        self.fill_color = color;
+        self.style += ShapeStyle::Fill;
+        Box::new(self)
+    }
+
+    pub fn stroke(mut self, color: ColorState<GS>) -> Box<Self> {
+        self.stroke_color = color;
+        self.style += ShapeStyle::Stroke;
+        Box::new(self)
+    }
+
+    pub fn stroke_style(mut self, line_width: f64) -> Box<Self> {
+        self.stroke_style = StrokeStyle::Solid {line_width};
+        self.style += ShapeStyle::Stroke;
         Box::new(self)
     }
 
@@ -72,8 +99,12 @@ impl<GS: GlobalState> Rectangle<GS> {
             children,
             position: [0.0,0.0],
             dimension: [100.0,100.0],
-            color: EnvironmentColor::Blue.into(),
-            shrink_to_fit: false
+            fill_color: EnvironmentColor::Blue.into(),
+            stroke_color: EnvironmentColor::Blue.into(),
+            shrink_to_fit: false,
+            style: ShapeStyle::Default,
+            stroke_style: StrokeStyle::Solid {line_width: 2.0},
+            triangle_store: TriangleStore::new()
         })
     }
 }
@@ -190,15 +221,87 @@ impl<GS: GlobalState> CommonWidget<GS> for Rectangle<GS> {
     }
 }
 
+impl<GS: GlobalState> Shape<GS> for Rectangle<GS> {
+    fn get_triangle_store_mut(&mut self) -> &mut TriangleStore {
+        &mut self.triangle_store
+    }
+
+    fn get_stroke_style(&self) -> StrokeStyle {
+        self.stroke_style.clone()
+    }
+
+    fn get_shape_style(&self) -> ShapeStyle {
+        ShapeStyle::Stroke
+    }
+}
+
 impl<S: GlobalState> Render<S> for Rectangle<S> {
 
     fn get_primitives(&mut self, fonts: &text::font::Map) -> Vec<Primitive> {
-        let mut prims = vec![
-            Primitive {
-                kind: PrimitiveKind::Rectangle { color: self.color.get_latest_value().clone()},
-                rect: Rect::new(self.position, self.dimension)
+        let mut prims = vec![];
+
+        match self.style {
+            ShapeStyle::Default => {
+                prims.push(Primitive {
+                    kind: PrimitiveKind::Rectangle { color: self.fill_color.get_latest_value().clone()},
+                    rect: Rect::new(self.position, self.dimension)
+                });
             }
-        ];
+            ShapeStyle::Fill => {
+                prims.push(Primitive {
+                    kind: PrimitiveKind::Rectangle { color: self.fill_color.get_latest_value().clone()},
+                    rect: Rect::new(self.position, self.dimension)
+                });
+            }
+            ShapeStyle::Stroke => {
+                let rect = rect(
+                    self.get_x() as f32,
+                    self.get_y() as f32,
+                    self.get_width() as f32,
+                    self.get_height() as f32
+                );
+                tessellate(self, &rect, &|builder, rectangle|{
+                    builder.add_rectangle(
+                        rectangle,
+                        Winding::Positive
+                    )
+                });
+
+                let stroke_triangles = self.triangle_store.stroke_triangles.clone();
+
+                prims.push(Primitive {
+                    kind: PrimitiveKind::TrianglesSingleColor { color: Rgba::from(*self.stroke_color.get_latest_value()) , triangles: stroke_triangles},
+                    rect: Rect::new(self.position, self.dimension)
+                });
+            }
+            ShapeStyle::FillAndStroke => {
+                prims.push(Primitive {
+                    kind: PrimitiveKind::Rectangle { color: self.fill_color.get_latest_value().clone()},
+                    rect: Rect::new(self.position, self.dimension)
+                });
+
+                let rect = rect(
+                    self.get_x() as f32,
+                    self.get_y() as f32,
+                    self.get_width() as f32,
+                    self.get_height() as f32
+                );
+                tessellate(self, &rect, &|builder, rectangle|{
+                    builder.add_rectangle(
+                        rectangle,
+                        Winding::Positive
+                    )
+                });
+
+                let stroke_triangles = self.triangle_store.stroke_triangles.clone();
+
+                prims.push(Primitive {
+                    kind: PrimitiveKind::TrianglesSingleColor { color: Rgba::from(*self.stroke_color.get_latest_value()), triangles: stroke_triangles },
+                    rect: Rect::new(self.position, self.dimension)
+                });
+            }
+        }
+
         prims.extend(Rectangle::<S>::debug_outline(Rect::new(self.position, self.dimension), 1.0));
         let children: Vec<Primitive> = self.get_children_mut().flat_map(|f| f.get_primitives(fonts)).collect();
         prims.extend(children);
