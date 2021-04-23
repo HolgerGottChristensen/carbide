@@ -6,7 +6,6 @@ extern crate carbide_core;
 use carbide_core::widget::*;
 
 use carbide_wgpu::window::Window;
-use futures::executor::block_on;
 
 use carbide_controls::List;
 use carbide_core::color::GREEN;
@@ -17,7 +16,7 @@ fn main() {
 
     let icon_path = Window::<u32>::path_to_assets("images/rust_press.png");
 
-    let mut window = block_on(Window::new("List Example - Carbide".to_string(), 800, 1200,Some(icon_path), 0));
+    let mut window = Window::new("List Example - Carbide".to_string(), 800, 1200,Some(icon_path), 0);
 
     window.add_font("fonts/NotoSans/NotoSans-Regular.ttf").unwrap();
 
@@ -31,14 +30,12 @@ fn main() {
         List::new(
             Box::new(list_model_state),
             Rectangle::initialize(vec![
-                Text::initialize(Box::new(id_state.clone()))
-            ]).fill(GREEN.into())
-                .frame(SCALE.into(), 80.0.into()))
+                Text::new(id_state.clone())
+            ]).fill(GREEN)
+                .frame(SCALE, 80.0))
             .id_state(Box::new(id_state.clone()))
-            .frame(500.0.into(), SCALE.into())
-            .frame(SCALE.into(), 900.0.into())
-
-
+            .frame(500.0, SCALE)
+            .frame(SCALE, 900.0)
     );
 
     window.run_event_loop();

@@ -100,7 +100,7 @@ impl<T: Serialize + Clone + Debug + Default + DeserializeOwned + 'static, GS: Gl
                               })
                               .hover(hovered_state.clone())
 
-                              .frame(parent_size[0].into(), parent_size[1].into())
+                              .frame(parent_size[0], parent_size[1])
                 ).index_state(index_state)
                     .spacing(popup_list_spacing)
                 .clip()
@@ -109,8 +109,8 @@ impl<T: Serialize + Clone + Debug + Default + DeserializeOwned + 'static, GS: Gl
                 .color(EnvironmentColor::OpaqueSeparator.into()),
 
         ])
-            .fill(EnvironmentColor::Red.into())
-            .frame((parent_size[0] + 2.0).into(), popup_height_state);
+            .fill(EnvironmentColor::Red)
+            .frame((parent_size[0] + 2.0), popup_height_state);
 
 
         Box::new(PlainPopUpButtonPopUp {

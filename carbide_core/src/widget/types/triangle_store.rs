@@ -2,7 +2,6 @@ use crate::{Point, Color, Rect};
 use crate::draw::shape::triangle::Triangle;
 use crate::position::Dimensions;
 use crate::prelude::Primitive;
-use crate::widget::types::shape_style::ShapeStyle;
 use crate::render::primitive_kind::PrimitiveKind;
 use crate::color::Rgba;
 

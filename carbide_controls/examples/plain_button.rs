@@ -18,7 +18,7 @@ fn main() {
 
     let icon_path = Window::<u32>::path_to_assets("images/rust_press.png");
 
-    let mut window = block_on(Window::new("Plain Button Example - Carbide".to_string(), 800, 1200,Some(icon_path), 0));
+    let mut window = Window::new("Plain Button Example - Carbide".to_string(), 800, 1200,Some(icon_path), 0);
 
     window.add_font("fonts/NotoSans/NotoSans-Regular.ttf").unwrap();
 
@@ -29,8 +29,8 @@ fn main() {
     window.set_widgets(
         VStack::initialize(vec![
             PlainButton::<bool, u32>::new(Rectangle::initialize(vec![])
-                .fill(RED.into())
-                .frame(10.0.into(),10.0.into())
+                .fill(RED)
+                .frame(10.0,10.0)
             )
                 .on_click(|_,_, f| {
                     *f += 1;
@@ -40,21 +40,21 @@ fn main() {
                 .padding(EdgeInsets::all(2.0))
                 .border()
                 .clip()
-                .frame(120.0.into(), 70.0.into()),
-            Text::initialize(CommonState::GlobalState {
+                .frame(120.0, 70.0),
+            Text::new(CommonState::GlobalState {
                 function: |state: &u32| { state.to_string()},
                 function_mut: None,
                 latest_value: "0".to_string()
-            }.into()).font_size(40.into()),
-            Text::initialize(hover_state.mapped(|m|{
+            }).font_size(40),
+            Text::new(hover_state.mapped(|m|{
                 format!("Is hovered: {}", m).to_string()
-            })).font_size(40.into()),
-            Text::initialize(pressed_state.mapped(|m|{
+            })).font_size(40),
+            Text::new(pressed_state.mapped(|m|{
                 format!("Is pressed: {}", m).to_string()
-            })).font_size(40.into()),
-            Text::initialize(focus_state.mapped(|m|{
+            })).font_size(40),
+            Text::new(focus_state.mapped(|m|{
                 format!("Focus state: {:?}", m).to_string()
-            })).font_size(40.into())
+            })).font_size(40)
         ]).spacing(20.0)
 
     );

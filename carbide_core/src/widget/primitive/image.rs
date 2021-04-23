@@ -68,9 +68,9 @@ impl<S: GlobalState> Layout<S> for Image {
     }
 }
 
-impl<S: GlobalState> Render<S> for Image {
+impl<GS: GlobalState> Render<GS> for Image {
 
-    fn get_primitives(&mut self, _: &text::font::Map) -> Vec<Primitive> {
+    fn get_primitives(&mut self, _: &Environment<GS>, _: &GS) -> Vec<Primitive> {
         let kind = PrimitiveKind::Image {
             color: None,
             image_id: self.image_id,
@@ -80,7 +80,7 @@ impl<S: GlobalState> Render<S> for Image {
         let rect = Rect::new(self.position, self.dimension);
 
         let mut prims: Vec<Primitive> = vec![new_primitive(kind, rect)];
-        prims.extend(Rectangle::<S>::debug_outline(rect.clone(), 1.0));
+        prims.extend(Rectangle::<GS>::debug_outline(rect.clone(), 1.0));
         return prims;
     }
 }

@@ -36,7 +36,7 @@ fn main() {
 
     let icon_path = Window::<u32>::path_to_assets("images/rust_press.png");
 
-    let mut window = block_on(Window::new("Pop up Button Example - Carbide".to_string(), 800, 1200,Some(icon_path), 0));
+    let mut window = Window::new("Pop up Button Example - Carbide".to_string(), 800, 1200,Some(icon_path), 0);
 
     window.add_font("fonts/NotoSans/NotoSans-Regular.ttf").unwrap();
 
@@ -55,7 +55,7 @@ fn main() {
 
     window.set_widgets(
         PopUpButton::new(Box::new(selected_model), Box::new(selected_index))
-            .frame(235.0.into(), 100.0.into())
+            .frame(235.0, 100.0)
     );
 
     window.run_event_loop();

@@ -1,22 +1,22 @@
 use crate::{Point, Color};
 use lyon::algorithms::path::Path;
 use lyon::lyon_algorithms::path::math::point;
-use crate::widget::types::shape_style::ShapeStyle;
 use lyon::tessellation::{StrokeOptions, FillOptions, LineJoin, LineCap};
 //use crate::draw::path_builder::PathBuilder;
-use lyon::algorithms::path::builder::{PathBuilder as PB, Build, SvgPathBuilder};
-use std::rc::Rc;
+use lyon::algorithms::path::builder::{Build, SvgPathBuilder};
 use crate::draw::svg_path_builder::SVGPathBuilder;
+use crate::prelude::{State, ColorState};
+use crate::widget::GlobalState;
 
 #[derive(Debug, Clone)]
-pub struct Context {
-    generator: Vec<ContextAction>
+pub struct Context<GS: GlobalState> {
+    generator: Vec<ContextAction<GS>>
 }
 
 
-impl Context {
+impl<GS: GlobalState> Context<GS> {
 
-    pub fn new() -> Context {
+    pub fn new() -> Context<GS> {
         Context {
             generator: vec![ContextAction::MoveTo([0.0, 0.0])]
         }
@@ -38,12 +38,12 @@ impl Context {
         self.generator.push(ContextAction::MiterLimit(limit))
     }
 
-    pub fn set_fill_style(&mut self, color: Color) {
-        self.generator.push(ContextAction::FillStyle(color))
+    pub fn set_fill_style<C: Into<ColorState<GS>>>(&mut self, color: C) {
+        self.generator.push(ContextAction::FillStyle(color.into()))
     }
 
-    pub fn set_stroke_style(&mut self, color: Color) {
-        self.generator.push(ContextAction::StrokeStyle(color))
+    pub fn set_stroke_style<C: Into<ColorState<GS>>>(&mut self, color: C) {
+        self.generator.push(ContextAction::StrokeStyle(color.into()))
     }
 
     pub fn rect(&mut self, x: f64, y: f64, width: f64, height: f64) {
@@ -108,17 +108,16 @@ impl Context {
         self.generator.push(ContextAction::ArcTo {x1, y1, x2, y2, r})
     }
 
-    pub fn to_paths(&self, offset: Point) -> Vec<(Path, ShapeStyleWithOptions)> {
-        let mut current_stroke_color = Color::Rgba(0.0,0.0,0.0,1.0);
-        let mut current_fill_color = Color::Rgba(0.0,0.0,0.0,1.0);
+    pub fn to_paths(&self, offset: Point) -> Vec<(Path, ShapeStyleWithOptions<GS>)> {
+        let mut current_stroke_color = Color::Rgba(0.0,0.0,0.0,1.0).into();
+        let mut current_fill_color = Color::Rgba(0.0,0.0,0.0,1.0).into();
         let mut current_cap_style = LineCap::Round;
         let mut current_join_style = LineJoin::Round;
         let mut current_line_width = 2.0;
         let mut current_miter_limit = StrokeOptions::DEFAULT_MITER_LIMIT;
-        let mut paths: Vec<(Path, ShapeStyleWithOptions)> = vec![];
+        let mut paths: Vec<(Path, ShapeStyleWithOptions<GS>)> = vec![];
         let mut current_builder = SVGPathBuilder::new();
         let mut current_builder_begun = false;
-        let mut current_builder_closed = false;
 
         let offset_point = |p: [f64; 2]| {
             point(p[0] as f32 + offset[0] as f32, p[1] as f32 + offset[1] as f32)
@@ -128,7 +127,6 @@ impl Context {
             if !current_builder_begun {
                 current_builder = SVGPathBuilder::new();
                 current_builder_begun = true;
-                current_builder_closed = false;
             }
 
             match action {
@@ -172,10 +170,10 @@ impl Context {
                     todo!()
                 }
                 ContextAction::FillStyle(color) => {
-                    current_fill_color = *color;
+                    current_fill_color = color.clone();
                 }
                 ContextAction::StrokeStyle(color) => {
-                    current_stroke_color = *color;
+                    current_stroke_color = color.clone();
                 }
                 ContextAction::Fill => {
                     let fill_options = FillOptions::default();
@@ -201,13 +199,13 @@ impl Context {
     }
 }
 
-pub enum ShapeStyleWithOptions {
-    Fill(FillOptions, Color),
-    Stroke(StrokeOptions, Color),
+pub enum ShapeStyleWithOptions<GS: GlobalState> {
+    Fill(FillOptions, Box<dyn State<Color, GS>>),
+    Stroke(StrokeOptions, Box<dyn State<Color, GS>>),
 }
 
 #[derive(Debug, Clone)]
-pub enum ContextAction {
+pub enum ContextAction<GS: GlobalState> {
     MoveTo(Point),
     LineTo(Point),
     QuadraticBezierTo {ctrl: Point, to: Point},
@@ -223,6 +221,6 @@ pub enum ContextAction {
     BeginPath,
     Arc {x: f64, y: f64, r: f64, start_angle: f64, end_angle: f64},
     ArcTo {x1: f64, y1: f64, x2: f64, y2: f64, r: f64},
-    FillStyle(Color),
-    StrokeStyle(Color),
+    FillStyle(Box<dyn State<Color, GS>>),
+    StrokeStyle(Box<dyn State<Color, GS>>),
 }

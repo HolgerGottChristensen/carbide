@@ -30,7 +30,7 @@ fn main() {
 
     let icon_path = Window::<String>::path_to_assets("images/rust_press.png");
 
-    let mut window = block_on(Window::new("Focus behavior example - Carbide".to_string(), 800, 1200,Some(icon_path), String::from("Hejsa")));
+    let mut window = Window::new("Focus behavior example - Carbide".to_string(), 800, 1200,Some(icon_path), String::from("Hejsa"));
 
     window.add_font("fonts/NotoSans/NotoSans-Regular.ttf").unwrap();
 

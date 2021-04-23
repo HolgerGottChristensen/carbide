@@ -1,6 +1,5 @@
 use crate::prelude::*;
 use crate::render::primitive_kind::PrimitiveKind;
-use crate::widget::HStack;
 
 #[derive(Debug, Clone, Widget)]
 pub struct Clip<GS> where GS: GlobalState {
@@ -88,17 +87,17 @@ impl<S: GlobalState> CommonWidget<S> for Clip<S> {
     }
 }
 
-impl<S: GlobalState> Render<S> for Clip<S> {
+impl<GS: GlobalState> Render<GS> for Clip<GS> {
 
-    fn get_primitives(&mut self, fonts: &text::font::Map) -> Vec<Primitive> {
+    fn get_primitives(&mut self, env: &Environment<GS>, global_state: &GS) -> Vec<Primitive> {
         let mut prims = vec![
             Primitive {
                 kind: PrimitiveKind::Clip,
                 rect: Rect::new(self.position, self.dimension)
             }
         ];
-        prims.extend(Rectangle::<S>::debug_outline(Rect::new(self.position, self.dimension), 1.0));
-        let children: Vec<Primitive> = self.get_children_mut().flat_map(|f| f.get_primitives(fonts)).collect();
+        prims.extend(Rectangle::<GS>::debug_outline(Rect::new(self.position, self.dimension), 1.0));
+        let children: Vec<Primitive> = self.get_children_mut().flat_map(|f| f.get_primitives(env, global_state)).collect();
         prims.extend(children);
 
         prims.push(Primitive {

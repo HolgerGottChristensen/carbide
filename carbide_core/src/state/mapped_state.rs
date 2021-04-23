@@ -76,7 +76,7 @@ impl<T: Serialize + Clone + Debug, U: Serialize + Clone + Debug + DeserializeOwn
         env.update_local_state(&mut self.mapped_state)
     }
 
-    fn insert_dependent_states(&self, env: &mut Environment<GS>) {
+    fn insert_dependent_states(&self, _: &mut Environment<GS>) {
         //Todo: If a map back function is made, we could map the value back and insert that into the environment
 
         /*if let Some(map_back) = &self.map_back {
@@ -85,5 +85,11 @@ impl<T: Serialize + Clone + Debug, U: Serialize + Clone + Debug + DeserializeOwn
                 env.insert_local_state_from_key_value(key, &mapped_back)
             }
         }*/
+    }
+}
+
+impl<T: Serialize + Clone + Debug + 'static, U: Serialize + Clone + Debug + DeserializeOwned + 'static, GS: GlobalState> Into<Box<dyn State<T, GS>>> for Box<MappedState<T, U, GS>> {
+    fn into(self) -> Box<dyn State<T, GS>> {
+        self
     }
 }

@@ -1,5 +1,6 @@
 use crate::prelude::*;
 use crate::layout::CrossAxisAlignment;
+use crate::widget::ChildRender;
 
 /// A basic, non-interactive rectangle shape widget.
 #[derive(Debug, Clone, Widget)]
@@ -199,16 +200,6 @@ impl<S: GlobalState> CommonWidget<S> for VStack<S> {
     }
 }
 
-impl<S: GlobalState> Render<S> for VStack<S> {
-
-    fn get_primitives(&mut self, fonts: &text::font::Map) -> Vec<Primitive> {
-        let mut prims = vec![];
-        prims.extend(Rectangle::<S>::debug_outline(Rect::new(self.position, self.dimension), 1.0));
-        let children: Vec<Primitive> = self.get_children_mut().flat_map(|f| f.get_primitives(fonts)).collect();
-        prims.extend(children);
-
-        return prims;
-    }
-}
+impl<S: GlobalState> ChildRender for VStack<S> {}
 
 

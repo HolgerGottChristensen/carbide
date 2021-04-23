@@ -1,5 +1,6 @@
 use crate::prelude::*;
-use crate::widget::primitive::edge_insets::EdgeInsets;
+use crate::widget::types::edge_insets::EdgeInsets;
+use crate::widget::ChildRender;
 
 pub static SCALE: f64 = -1.0;
 
@@ -107,14 +108,4 @@ impl<S: GlobalState> Layout<S> for Padding<S> {
     }
 }
 
-impl<S: GlobalState> Render<S> for Padding<S> {
-
-    fn get_primitives(&mut self, fonts: &text::font::Map) -> Vec<Primitive> {
-        let mut prims = vec![];
-        prims.extend(Rectangle::<S>::debug_outline(Rect::new(self.position, [self.dimension[0], self.dimension[1]]), 1.0));
-        let children: Vec<Primitive> = self.child.get_primitives(fonts);
-        prims.extend(children);
-
-        return prims;
-    }
-}
+impl<S: GlobalState> ChildRender for Padding<S> {}

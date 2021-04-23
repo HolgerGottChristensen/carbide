@@ -66,59 +66,59 @@ impl lyon::path::builder::SvgPathBuilder for SVGPathBuilder {
         self.actions.push(SVGBuildAction::CubicBezierTo {ctrl1, ctrl2, to});
     }
 
-    fn relative_move_to(&mut self, to: Vector) {
+    fn relative_move_to(&mut self, _: Vector) {
         todo!()
     }
 
-    fn relative_line_to(&mut self, to: Vector) {
+    fn relative_line_to(&mut self, _: Vector) {
         todo!()
     }
 
-    fn relative_quadratic_bezier_to(&mut self, ctrl: Vector, to: Vector) {
+    fn relative_quadratic_bezier_to(&mut self, _: Vector, _: Vector) {
         todo!()
     }
 
-    fn relative_cubic_bezier_to(&mut self, ctrl1: Vector, ctrl2: Vector, to: Vector) {
+    fn relative_cubic_bezier_to(&mut self, _: Vector, _: Vector, _: Vector) {
         todo!()
     }
 
-    fn smooth_cubic_bezier_to(&mut self, ctrl2: Point, to: Point) {
+    fn smooth_cubic_bezier_to(&mut self, _: Point, _: Point) {
         todo!()
     }
 
-    fn smooth_relative_cubic_bezier_to(&mut self, ctrl2: Vector, to: Vector) {
+    fn smooth_relative_cubic_bezier_to(&mut self, _: Vector, _: Vector) {
         todo!()
     }
 
-    fn smooth_quadratic_bezier_to(&mut self, to: Point) {
+    fn smooth_quadratic_bezier_to(&mut self, _: Point) {
         todo!()
     }
 
-    fn smooth_relative_quadratic_bezier_to(&mut self, to: Vector) {
+    fn smooth_relative_quadratic_bezier_to(&mut self, _: Vector) {
         todo!()
     }
 
-    fn horizontal_line_to(&mut self, x: f32) {
+    fn horizontal_line_to(&mut self, _: f32) {
         todo!()
     }
 
-    fn relative_horizontal_line_to(&mut self, dx: f32) {
+    fn relative_horizontal_line_to(&mut self, _: f32) {
         todo!()
     }
 
-    fn vertical_line_to(&mut self, y: f32) {
+    fn vertical_line_to(&mut self, _: f32) {
         todo!()
     }
 
-    fn relative_vertical_line_to(&mut self, dy: f32) {
+    fn relative_vertical_line_to(&mut self, _: f32) {
         todo!()
     }
 
-    fn arc_to(&mut self, radii: Vector, x_rotation: Angle, flags: ArcFlags, to: Point) {
+    fn arc_to(&mut self, _: Vector, _: Angle, _: ArcFlags, _: Point) {
         todo!()
     }
 
-    fn relative_arc_to(&mut self, radii: Vector, x_rotation: Angle, flags: ArcFlags, to: Vector) {
+    fn relative_arc_to(&mut self, _: Vector, _: Angle, _: ArcFlags, _: Vector) {
         todo!()
     }
 }

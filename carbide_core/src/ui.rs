@@ -283,7 +283,7 @@ impl<S: GlobalState> Ui<S> {
     }
 
 
-    pub fn handle_event(&mut self, event: Input, global_state: &mut S) {
+    pub fn handle_event(&mut self, event: Input, _: &mut S) {
         let window_event = self.event_handler.handle_event(event, [self.win_w, self.win_h]);
 
         //let mut _needs_redraw = self.delegate_events(global_state);
@@ -404,7 +404,7 @@ impl<S: GlobalState> Ui<S> {
     ///
     /// NOTE: If you don't need to redraw your carbide GUI every frame, it is recommended to use the
     /// `Ui::draw_if_changed` method instead.
-    pub fn draw(&mut self) -> CPrimitives {
+    pub fn draw(&mut self, global_state: &S) -> CPrimitives {
         let Ui {
             ref mut widgets,
             win_w, win_h,
@@ -412,7 +412,7 @@ impl<S: GlobalState> Ui<S> {
             ..
         } = *self;
 
-        CPrimitives::new([win_w, win_h], widgets, environment)
+        CPrimitives::new([win_w, win_h], widgets, environment, global_state)
     }
 
     /// Get mouse cursor state.

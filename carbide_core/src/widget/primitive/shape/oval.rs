@@ -1,10 +1,7 @@
 //! A simple, non-interactive widget for drawing a single **Oval**.
 
 use crate::prelude::*;
-use crate::render::primitive_kind::PrimitiveKind;
-use crate::widget;
 use crate::draw::shape::triangle::Triangle;
-use crate::render::util::new_primitive;
 use crate::draw::shape::circumference::{Circumference, Triangles};
 use crate::state::environment_color::EnvironmentColor;
 use crate::widget::types::shape_style::ShapeStyle;
@@ -36,14 +33,14 @@ pub struct Oval<S, GS> where S: 'static + Clone, GS: GlobalState {
 
 impl<GS: GlobalState> Oval<Full, GS> {
 
-    pub fn fill(mut self, color: ColorState<GS>) -> Box<Self> {
-        self.fill_color = color;
+    pub fn fill<C: Into<ColorState<GS>>>(mut self, color: C) -> Box<Self> {
+        self.fill_color = color.into();
         self.style += ShapeStyle::Fill;
         Box::new(self)
     }
 
-    pub fn stroke(mut self, color: ColorState<GS>) -> Box<Self> {
-        self.stroke_color = color;
+    pub fn stroke<C: Into<ColorState<GS>>>(mut self, color: C) -> Box<Self> {
+        self.stroke_color = color.into();
         self.style += ShapeStyle::Stroke;
         Box::new(self)
     }
@@ -134,12 +131,12 @@ impl<S: 'static + Clone, K: GlobalState> CommonWidget<K> for Oval<S, K> {
 
 impl<S: 'static + Clone, GS: GlobalState> Render<GS> for Oval<S, GS> {
 
-    fn get_primitives(&mut self, _: &text::font::Map) -> Vec<Primitive> {
+    fn get_primitives(&mut self, _: &Environment<GS>, _: &GS) -> Vec<Primitive> {
         let radii = vec2(self.get_width() as f32 / 2.0, self.get_height() as f32 / 2.0);
         let center = point(self.get_x() as f32 + radii.x, self.get_y() as f32 + radii.y);
         let rectangle = rect(self.get_x() as f32, self.get_y() as f32, self.get_width() as f32, self.get_height() as f32);
 
-        tessellate(self, &rectangle, &|builder, rect| {
+        tessellate(self, &rectangle, &|builder, _| {
             builder.add_ellipse(
                 center,
                 radii,

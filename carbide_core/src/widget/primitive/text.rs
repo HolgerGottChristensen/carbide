@@ -63,10 +63,10 @@ impl<S: GlobalState> Layout<S> for Text<S> {
     }
 }
 
-impl<S: GlobalState> Render<S> for Text<S> {
-    fn get_primitives(&mut self, fonts: &text::font::Map) -> Vec<Primitive> {
+impl<GS: GlobalState> Render<GS> for Text<GS> {
+    fn get_primitives(&mut self, env: &Environment<GS>, _: &GS) -> Vec<Primitive> {
 
-        let (text, font_id) = self.get_render_text(fonts);
+        let (text, font_id) = self.get_render_text(env.get_fonts_map());
 
         let kind = PrimitiveKind::Text {
             color: self.color.get_latest_value().clone(),
@@ -75,7 +75,7 @@ impl<S: GlobalState> Render<S> for Text<S> {
         };
 
         let mut prims: Vec<Primitive> = vec![new_primitive(kind, Rect::new(self.position, self.dimension))];
-        prims.extend(Rectangle::<S>::debug_outline(Rect::new(self.position, self.dimension), 1.0));
+        prims.extend(Rectangle::<GS>::debug_outline(Rect::new(self.position, self.dimension), 1.0));
 
         return prims;
     }
@@ -141,11 +141,11 @@ impl<S: GlobalState> CommonWidget<S> for Text<S> {
 
 
 
-impl<S: GlobalState> Text<S> {
-    pub fn initialize(text: Box<dyn State<String, S>>) -> Box<Self> {
+impl<GS: GlobalState> Text<GS> {
+    pub fn new<K: Into<Box<dyn State<String, GS>>>>(text: K) -> Box<Self> {
         Box::new(Text {
             id: Uuid::new_v4(),
-            text,
+            text: text.into(),
             font_size: EnvironmentFontSize::Body.into(),
             position: [0.0, 0.0],
             dimension: [100.0, 100.0],
@@ -154,26 +154,13 @@ impl<S: GlobalState> Text<S> {
         })
     }
 
-    /// Build a new **Text** widget.
-    pub fn new(text: Box<dyn State<String, S>>, position: Point, dimension: Dimensions) -> Box<Self> {
-        Box::new(Text {
-            id: Uuid::new_v4(),
-            text,
-            font_size: EnvironmentFontSize::Body.into(),
-            position,
-            dimension,
-            wrap_mode: Wrap::Whitespace,
-            color: EnvironmentColor::Label.into()
-        })
-    }
-
-    pub fn color(mut self, color: ColorState<S>) -> Box<Self> {
-        self.color = color;
+    pub fn color<C: Into<ColorState<GS>>>(mut self, color: C) -> Box<Self> {
+        self.color = color.into();
         Box::new(self)
     }
 
-    pub fn font_size(mut self, size: U32State<S>) -> Box<Self> {
-        self.font_size = size;
+    pub fn font_size<K: Into<U32State<GS>>>(mut self, size: K) -> Box<Self> {
+        self.font_size = size.into();
         Box::new(self)
     }
 

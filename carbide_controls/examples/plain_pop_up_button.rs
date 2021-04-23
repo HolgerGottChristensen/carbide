@@ -36,7 +36,7 @@ fn main() {
 
     let icon_path = Window::<u32>::path_to_assets("images/rust_press.png");
 
-    let mut window = block_on(Window::new("Plain Pop up Button Example - Carbide".to_string(), 800, 1200,Some(icon_path), 0));
+    let mut window = Window::new("Plain Pop up Button Example - Carbide".to_string(), 800, 1200,Some(icon_path), 0);
 
     window.add_font("fonts/NotoSans/NotoSans-Regular.ttf").unwrap();
 
@@ -60,7 +60,7 @@ fn main() {
                 .border()
                 .color(EnvironmentColor::Red.into())
                 .clip()
-                .frame(120.0.into(), 40.0.into()),
+                .frame(120.0, 40.0),
         ]).spacing(20.0)
     );
 

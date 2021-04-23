@@ -1,7 +1,5 @@
-use lyon::algorithms::path::path::Builder;
 use lyon::math::Point;
 use lyon::algorithms::path::{EndpointId, Path};
-use lyon::algorithms::path::builder::Build;
 
 #[derive(Clone)]
 pub struct PathBuilder {

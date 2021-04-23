@@ -8,11 +8,7 @@ use lyon::tessellation::{VertexBuffers, StrokeTessellator, StrokeOptions, Buffer
 use crate::{Point, Scalar};
 use crate::draw::shape::triangle::Triangle;
 use crate::widget::types::shape_style::ShapeStyle;
-use lyon::math::{Rect, Angle};
-use lyon::lyon_tessellation::path::math::rect;
-use lyon::algorithms::path::builder::{PathBuilder, WithSvg};
-use lyon::algorithms::path::geom::euclid::point2;
-use lyon::algorithms::path::Winding;
+use lyon::math::Rect;
 
 pub mod oval;
 pub mod polygon;
@@ -59,7 +55,7 @@ pub fn fill<GS: GlobalState>(path: &dyn Fn(&mut Builder, &Rect), shape: &mut dyn
 
         let mut tessellator = FillTessellator::new();
 
-        let mut fill_options = FillOptions::default();
+        let fill_options = FillOptions::default();
 
 
 
@@ -115,7 +111,7 @@ pub fn stroke<GS: GlobalState>(path: &dyn Fn(&mut Builder, &Rect), shape: &mut d
 
             let mut tessellator = FillTessellator::new();
 
-            let mut fill_options = FillOptions::default();
+            let fill_options = FillOptions::default();
 
             {
                 // Compute the tessellation.

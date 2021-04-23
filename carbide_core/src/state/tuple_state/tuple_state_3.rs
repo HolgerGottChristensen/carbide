@@ -24,6 +24,7 @@ impl<T1, T2, T3, GS> TupleState3<T1, T2, T3, GS>
           T3: Serialize + Clone + Debug + DeserializeOwned,
           GS: GlobalState {
 
+    // Todo: Change to take things that impl Into the different states
     pub fn new(first: Box<dyn State<T1, GS>>, second: Box<dyn State<T2, GS>>, third: Box<dyn State<T3, GS>>) -> Box<TupleState3<T1, T2, T3, GS>> {
         Box::new(TupleState3 {
             first: first.clone(),

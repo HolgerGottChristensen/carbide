@@ -201,8 +201,8 @@ impl<GS: GlobalState> CommonWidget<GS> for EnvUpdating<GS> {
 
 impl<GS: GlobalState> Render<GS> for EnvUpdating<GS> {
 
-    fn get_primitives(&mut self, fonts: &text::font::Map) -> Vec<Primitive> {
-        let prims = self.child.get_primitives(fonts);
+    fn get_primitives(&mut self, env: &Environment<GS>, global_state: &GS) -> Vec<Primitive> {
+        let prims = self.child.get_primitives(env, global_state);
         return prims;
     }
 }

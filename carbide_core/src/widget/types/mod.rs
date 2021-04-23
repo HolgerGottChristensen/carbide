@@ -6,3 +6,5 @@ pub mod triangle_store;
 pub mod text_wrap;
 pub mod shape_style;
 pub mod stroke_style;
+pub mod corner_radii;
+pub mod edge_insets;

@@ -17,7 +17,6 @@ pub mod h_stack;
 pub mod z_stack;
 pub mod padding;
 pub mod spacer;
-pub mod edge_insets;
 pub mod foreach;
 pub mod overlaid_layer;
 pub mod scroll;

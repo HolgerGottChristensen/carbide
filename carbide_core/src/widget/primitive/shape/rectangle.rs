@@ -6,7 +6,6 @@ use crate::widget::types::stroke_style::StrokeStyle;
 use crate::widget::types::triangle_store::TriangleStore;
 use crate::widget::primitive::shape::{tessellate, Shape};
 use lyon::algorithms::path::builder::PathBuilder;
-use lyon::algorithms::path::geom::euclid::{Point2D, Size2D};
 use lyon::algorithms::math::rect;
 use lyon::algorithms::path::Winding;
 use crate::color::Rgba;
@@ -30,14 +29,14 @@ pub struct Rectangle<GS> where GS: GlobalState {
 
 impl<GS: GlobalState> Rectangle<GS> {
 
-    pub fn fill(mut self, color: ColorState<GS>) -> Box<Self> {
-        self.fill_color = color;
+    pub fn fill<C: Into<ColorState<GS>>>(mut self, color: C) -> Box<Self> {
+        self.fill_color = color.into();
         self.style += ShapeStyle::Fill;
         Box::new(self)
     }
 
-    pub fn stroke(mut self, color: ColorState<GS>) -> Box<Self> {
-        self.stroke_color = color;
+    pub fn stroke<C: Into<ColorState<GS>>>(mut self, color: C) -> Box<Self> {
+        self.stroke_color = color.into();
         self.style += ShapeStyle::Stroke;
         Box::new(self)
     }
@@ -235,9 +234,9 @@ impl<GS: GlobalState> Shape<GS> for Rectangle<GS> {
     }
 }
 
-impl<S: GlobalState> Render<S> for Rectangle<S> {
+impl<GS: GlobalState> Render<GS> for Rectangle<GS> {
 
-    fn get_primitives(&mut self, fonts: &text::font::Map) -> Vec<Primitive> {
+    fn get_primitives(&mut self, env: &Environment<GS>, global_state: &GS) -> Vec<Primitive> {
         let mut prims = vec![];
 
         match self.style {
@@ -302,8 +301,8 @@ impl<S: GlobalState> Render<S> for Rectangle<S> {
             }
         }
 
-        prims.extend(Rectangle::<S>::debug_outline(Rect::new(self.position, self.dimension), 1.0));
-        let children: Vec<Primitive> = self.get_children_mut().flat_map(|f| f.get_primitives(fonts)).collect();
+        prims.extend(Rectangle::<GS>::debug_outline(Rect::new(self.position, self.dimension), 1.0));
+        let children: Vec<Primitive> = self.get_children_mut().flat_map(|f| f.get_primitives(env, global_state)).collect();
         prims.extend(children);
 
         return prims;

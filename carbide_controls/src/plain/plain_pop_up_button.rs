@@ -48,7 +48,7 @@ impl<T: Serialize + Clone + Debug + Default + DeserializeOwned + 'static, GS: Gl
 
         let child = PlainButton::<(bool, T), GS>::new(
             Rectangle::initialize(vec![
-                Text::initialize(text)
+                Text::new(text)
             ])).local_state(TupleState2::new(opened.clone(), selected_item.clone()))
             .on_click(|myself, env, global_state| {
                 let (opened, selected_item) = myself.get_local_state().get_latest_value_mut();
@@ -139,7 +139,7 @@ impl<T: Serialize + Clone + Debug + Default + DeserializeOwned + 'static, GS: Gl
                 |item: Box<dyn State<T, GS>>, parent_selected_index: Box<dyn State<usize, GS>>, item_index: Box<dyn State<usize, GS>>, partially_chosen: Box<dyn State<bool, GS>>| -> Box<dyn Widget<GS>>{
                     let text = item.mapped(|item| format!("{:?}", item));
                     Rectangle::initialize(vec![
-                        Text::initialize(text)
+                        Text::new(text)
                             .color(partially_chosen.clone().mapped(|partially_chosen| {
                                 if *partially_chosen {
                                     Color::Rgba(0.0, 0.0, 0.0, 1.0)

@@ -80,17 +80,17 @@ impl<S: GlobalState> Scroll<S> {
             scroll_offset: [0.0, 0.0],
             scroll_directions: ScrollDirection::Both,
             scrollbar_horizontal: Rectangle::initialize(vec![])
-                .fill(EnvironmentColor::Gray.into())
-                .frame(100.0.into(),10.0.into()),
+                .fill(EnvironmentColor::Gray)
+                .frame(100.0,10.0),
             scrollbar_vertical: Rectangle::initialize(vec![])
-                .fill(EnvironmentColor::Gray.into())
-                .frame(10.0.into(),100.0.into()),
+                .fill(EnvironmentColor::Gray)
+                .frame(10.0,100.0),
             drag_started_on_vertical_scrollbar: false,
             drag_started_on_horizontal_scrollbar: false,
             vertical_scrollbar_hovered: false,
             horizontal_scrollbar_hovered: false,
-            scrollbar_horizontal_background: Rectangle::initialize(vec![]).fill(Color::Rgba(0.0, 0.0, 0.0, 0.5).into()).frame(100.0.into(), 10.0.into()),
-            scrollbar_vertical_background: Rectangle::initialize(vec![]).fill(Color::Rgba(0.0,0.0,0.0,0.5).into()).frame(10.0.into(),100.0.into())
+            scrollbar_horizontal_background: Rectangle::initialize(vec![]).fill(Color::Rgba(0.0, 0.0, 0.0, 0.5)).frame(100.0, 10.0),
+            scrollbar_vertical_background: Rectangle::initialize(vec![]).fill(Color::Rgba(0.0,0.0,0.0,0.5)).frame(10.0,100.0)
         })
     }
 
@@ -386,32 +386,32 @@ impl<S: GlobalState> CommonWidget<S> for Scroll<S> {
     }
 }
 
-impl<S: GlobalState> Render<S> for Scroll<S> {
+impl<GS: GlobalState> Render<GS> for Scroll<GS> {
 
-    fn get_primitives(&mut self, fonts: &text::font::Map) -> Vec<Primitive> {
+    fn get_primitives(&mut self, env: &Environment<GS>, global_state: &GS) -> Vec<Primitive> {
         let mut prims = vec![];
-        prims.extend(Rectangle::<S>::debug_outline(Rect::new(self.position, self.dimension), 1.0));
-        let child_prims = self.get_children_mut().flat_map(|f| f.get_primitives(fonts));
+        prims.extend(Rectangle::<GS>::debug_outline(Rect::new(self.position, self.dimension), 1.0));
+        let child_prims = self.get_children_mut().flat_map(|f| f.get_primitives(env, global_state));
         prims.extend(child_prims);
 
         if (self.scroll_directions == ScrollDirection::Both ||
             self.scroll_directions == ScrollDirection::Vertical) && self.child.get_height() > self.get_height() {
 
             if self.vertical_scrollbar_hovered || self.drag_started_on_vertical_scrollbar {
-                prims.extend(self.scrollbar_vertical_background.get_primitives(fonts));
+                prims.extend(self.scrollbar_vertical_background.get_primitives(env, global_state));
             }
 
-            prims.extend(self.scrollbar_vertical.get_primitives(fonts));
+            prims.extend(self.scrollbar_vertical.get_primitives(env, global_state));
         }
 
         if (self.scroll_directions == ScrollDirection::Both ||
             self.scroll_directions == ScrollDirection::Horizontal) && self.child.get_width() > self.get_width() {
 
             if self.horizontal_scrollbar_hovered || self.drag_started_on_horizontal_scrollbar {
-                prims.extend(self.scrollbar_horizontal_background.get_primitives(fonts));
+                prims.extend(self.scrollbar_horizontal_background.get_primitives(env, global_state));
             }
 
-            prims.extend(self.scrollbar_horizontal.get_primitives(fonts));
+            prims.extend(self.scrollbar_horizontal.get_primitives(env, global_state));
         }
 
         return prims;

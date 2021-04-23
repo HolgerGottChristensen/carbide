@@ -60,8 +60,8 @@ fn main() {
 
     window.set_widgets(
         VStack::initialize(vec![
-            Text::initialize("Hello".into(), vec![]),
-            Text::initialize("world! \nHvad sker der i denne verden og vil den layoute rigtigt når der er en lang tekst".into(), vec![]),
+            Text::new("Hello".into(), vec![]),
+            Text::new("world! \nHvad sker der i denne verden og vil den layoute rigtigt når der er en lang tekst".into(), vec![]),
             Image::new(rust_image, [100.0,100.0], vec![]),
             Rectangle::initialize(vec![
                 SyncTest::new(sync_state)

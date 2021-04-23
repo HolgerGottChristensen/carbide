@@ -29,7 +29,7 @@ impl<S: GlobalState> SyncTest<S> {
     fn insert_local_state(&self, env: &mut Environment<S>) {
         if self.show_overlay {
             env.add_overlay("overlay_test", Rectangle::initialize(vec![])
-                .fill(EnvironmentColor::Red.into()))
+                .fill(EnvironmentColor::Red))
         }
     }
 
@@ -74,20 +74,20 @@ impl<S: GlobalState> SyncTest<S> {
         Box::new(Self {
             id: Uuid::new_v4(),
             child: HStack::initialize(vec![
-                    Spacer::new(SpacerDirection::Horizontal),
-                    VStack::initialize(vec![
+                Spacer::new(SpacerDirection::Horizontal),
+                VStack::initialize(vec![
                         ForEach::new(
                             Box::new(fore.clone()),
                             Rectangle::initialize(vec![
-                                Text::initialize(mapped_state)
-                            ]).fill(EnvironmentColor::Red.into()).frame(60.0.into(),30.0.into()))
+                                Text::new(mapped_state)
+                            ]).fill(EnvironmentColor::Red).frame(60.0,30.0))
                             .index_state(index_state)
                     ]),
-                    ForEach::new((0..5).map(|_| Uuid::new_v4()).collect::<Vec<Uuid>>().into(), Rectangle::initialize(vec![]).frame(10.0.into(),10.0.into())),
-                    Text::initialize(value.clone().into()),
-                    Spacer::new(SpacerDirection::Horizontal),
-                    Text::initialize(value.clone().into()),
-                    Spacer::new(SpacerDirection::Horizontal),
+                ForEach::new((0..5).map(|_| Uuid::new_v4()).collect::<Vec<Uuid>>().into(), Rectangle::initialize(vec![]).frame(10.0,10.0)),
+                Text::new(value.clone()),
+                Spacer::new(SpacerDirection::Horizontal),
+                Text::new(value.clone()),
+                Spacer::new(SpacerDirection::Horizontal),
             ]),
             position: [100.0,100.0],
             dimension: [100.0,100.0],

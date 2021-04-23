@@ -3,8 +3,7 @@ use crate::color::Rgba;
 
 use crate::state::global_state::GlobalState;
 use crate::widget::Rectangle;
-use lyon::tessellation::{VertexBuffers, FillTessellator, FillOptions, BuffersBuilder, FillVertex, StrokeOptions, StrokeTessellator, StrokeVertex, LineCap, LineJoin};
-use crate::widget::types::triangle_store::TriangleStore;
+use lyon::tessellation::{VertexBuffers, FillTessellator, FillOptions, BuffersBuilder, FillVertex, StrokeOptions, StrokeTessellator, StrokeVertex};
 use crate::widget::primitive::canvas::context::{Context, ShapeStyleWithOptions};
 use crate::render::primitive_kind::PrimitiveKind;
 
@@ -20,11 +19,11 @@ pub struct Canvas<GS> where GS: GlobalState {
     dimension: Dimensions,
     #[state] color: ColorState<GS>,
     //prim_store: Vec<Primitive>,
-    context: fn(Rect, Context) -> Context
+    context: fn(Rect, Context<GS>) -> Context<GS>
 }
 
-impl<S: GlobalState> Canvas<S> {
-    pub fn initialize(context: fn(Rect, Context) -> Context) -> Box<Self> {
+impl<GS: GlobalState> Canvas<GS> {
+    pub fn initialize(context: fn(Rect, Context<GS>) -> Context<GS>) -> Box<Self> {
         Box::new(Canvas {
             id: Uuid::new_v4(),
             position: [0.0,0.0],
@@ -135,9 +134,9 @@ impl<S: GlobalState> CommonWidget<S> for Canvas<S> {
     }
 }
 
-impl<S: GlobalState> Render<S> for Canvas<S> {
+impl<GS: GlobalState> Render<GS> for Canvas<GS> {
 
-    fn get_primitives(&mut self, _: &text::font::Map) -> Vec<Primitive> {
+    fn get_primitives(&mut self, env: &Environment<GS>, global_state: &GS) -> Vec<Primitive> {
 
         let context = Context::new();
 
@@ -151,15 +150,15 @@ impl<S: GlobalState> Render<S> for Canvas<S> {
         for (path, options) in paths {
             match options {
                 ShapeStyleWithOptions::Fill(fill_options, color) => {
-                    prims.push(self.get_fill_prim(path, fill_options, color));
+                    prims.push(self.get_fill_prim(path, fill_options, *color.clone().get_value(env, global_state)));
                 }
                 ShapeStyleWithOptions::Stroke(stroke_options, color) => {
-                    prims.push(self.get_stroke_prim(path, stroke_options, color));
+                    prims.push(self.get_stroke_prim(path, stroke_options, *color.clone().get_value(env, global_state)));
                 }
             }
         }
 
-        prims.extend(Rectangle::<S>::debug_outline(Rect::new(self.position, self.dimension), 1.0));
+        prims.extend(Rectangle::<GS>::debug_outline(Rect::new(self.position, self.dimension), 1.0));
 
         return prims;
     }

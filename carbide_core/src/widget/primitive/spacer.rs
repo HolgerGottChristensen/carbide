@@ -1,5 +1,6 @@
 use crate::prelude::*;
 use crate::widget::types::spacer_direction::SpacerDirection;
+use crate::widget::ChildRender;
 
 
 #[derive(Clone, Debug, Widget)]
@@ -95,13 +96,7 @@ impl<S: GlobalState> CommonWidget<S> for Spacer {
     }
 }
 
-impl<S: GlobalState> Render<S> for Spacer {
-    fn get_primitives(&mut self, _fonts: &text::font::Map) -> Vec<Primitive> {
-        let mut prims = vec![];
-        prims.extend(Rectangle::<S>::debug_outline(Rect::new(self.position, self.dimension), 1.0));
-        return prims;
-    }
-}
+impl ChildRender for Spacer {}
 
 
 

@@ -201,7 +201,7 @@ impl Mesh {
         // Draw each primitive in order of depth.
         while let Some(primitive) = primitives.next_primitive() {
 
-            let rect = primitive.rect;
+            //let rect = primitive.rect;
 
             // Check for a `Scizzor` command.
             /*let new_scizzor = rect_to_scizzor(scizzor);
@@ -345,7 +345,7 @@ impl Mesh {
                     text,
                     font_id,
                 } => {
-                    let base_line_offset = text.base_line_offset as f64;
+                    //let base_line_offset = text.base_line_offset as f64;
 
                     switch_to_plain_state!();
                     let positioned_glyphs = text.positioned_glyphs(dpi_factor as f32);

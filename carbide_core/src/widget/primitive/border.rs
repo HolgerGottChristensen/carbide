@@ -1,6 +1,5 @@
 use crate::prelude::*;
 use crate::render::primitive_kind::PrimitiveKind;
-use crate::layout::layout::SingleChildLayout;
 
 /// A basic, non-interactive rectangle shape widget.
 #[derive(Debug, Clone, Widget)]
@@ -96,9 +95,9 @@ impl<S: GlobalState> CommonWidget<S> for Border<S> {
     }
 }
 
-impl<S: GlobalState> Render<S> for Border<S> {
+impl<GS: GlobalState> Render<GS> for Border<GS> {
 
-    fn get_primitives(&mut self, fonts: &text::font::Map) -> Vec<Primitive> {
+    fn get_primitives(&mut self, env: &Environment<GS>, global_state: &GS) -> Vec<Primitive> {
         let rect = Rect::new(self.position, self.dimension);
         let (l, r, b, t) = rect.l_r_b_t();
 
@@ -129,7 +128,7 @@ impl<S: GlobalState> Render<S> for Border<S> {
             },
         ];
 
-        let children: Vec<Primitive> = self.get_children_mut().flat_map(|f| f.get_primitives(fonts)).collect();
+        let children: Vec<Primitive> = self.get_children_mut().flat_map(|f| f.get_primitives(env, global_state)).collect();
         prims.extend(children);
 
         return prims;

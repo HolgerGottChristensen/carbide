@@ -54,18 +54,18 @@ impl<GS: GlobalState> PlainTextInput<GS> {
                 ZStack::initialize(vec![
                     IfElse::new(focus_state.clone().mapped(|focus| *focus == Focus::Focused))
                         .when_true(Rectangle::initialize(vec![])
-                            .fill(GREEN.into())
-                            .frame(Box::new(selection_width.clone()), 40.0.into())
-                            .offset(selection_x.clone(), 0.0.into())),
-                    Text::initialize(text_state.clone().into())
-                        .font_size(40.into()).wrap_mode(Wrap::None),
+                            .fill(GREEN)
+                            .frame(selection_width.clone(), 40.0)
+                            .offset(selection_x.clone(), 0.0)),
+                    Text::new(text_state.clone())
+                        .font_size(40).wrap_mode(Wrap::None),
                     IfElse::new( focus_state.clone().mapped(|focus| *focus == Focus::Focused))
                         .when_true(Rectangle::initialize(vec![])
-                        .fill(RED.into())
-                        .frame(4.0.into(), 40.0.into())
-                        .offset(cursor_x.clone(), 0.0.into()))
+                        .fill(RED)
+                        .frame(4.0, 40.0)
+                        .offset(cursor_x.clone(), 0.0))
             ]).alignment(BasicLayouter::TopLeading)
-                    .offset(text_offset.clone(), 0.0.into()),
+                    .offset(text_offset.clone(), 0.0),
                    Spacer::new(SpacerDirection::Horizontal)
             ]),
             focus: focus_state.into(),
@@ -181,8 +181,8 @@ impl<GS: GlobalState> PlainTextInput<GS> {
     /// Get the positioned glyphs of a given string. This is useful when needing to calculate cursor
     /// position, or the width of a given string.
     fn get_positioned_glyphs(&mut self, text: &String, env: &Environment<GS>) -> Vec<PositionedGlyph> {
-        let mut text_scaler: Box<carbide_core::widget::Text<GS>> = Text::initialize(text.clone().into())
-            .font_size(40.into()).wrap_mode(Wrap::None);
+        let mut text_scaler: Box<carbide_core::widget::Text<GS>> = Text::new(text.clone())
+            .font_size(40).wrap_mode(Wrap::None);
 
         text_scaler.set_position([0.0, 0.0]);
         text_scaler.set_dimension(self.dimension.add([100.0,100.0]));

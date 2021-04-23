@@ -48,22 +48,24 @@ impl<T: Serialize + Clone + Debug + Default + DeserializeOwned + 'static, GS: Gl
 
             Rectangle::initialize(vec![
                 HStack::initialize(vec![
-                    Padding::init(EdgeInsets::single(0.0, 0.0, 5.0, 0.0), Text::initialize(text)),
+                    Padding::init(EdgeInsets::single(0.0, 0.0, 5.0, 0.0), Text::new(text)),
                     Spacer::new(SpacerDirection::Horizontal),
                     Rectangle::initialize(vec![
-                        Canvas::initialize(Context { actions: vec![
-                            ContextAction::MoveTo([7.0, 10.0]),
-                            ContextAction::LineTo([11.0, 6.0]),
-                            ContextAction::LineTo([15.0, 10.0]),
-                            ContextAction::Stroke,
-                            ContextAction::MoveTo([7.0, 14.0]),
-                            ContextAction::LineTo([11.0, 18.0]),
-                            ContextAction::LineTo([15.0, 14.0]),
-                        ] }).color(EnvironmentColor::DarkText.into())
+                        Canvas::initialize(|rect, mut context| {
+                            context.move_to(7.0, 10.0);
+                            context.line_to(11.0, 6.0);
+                            context.line_to(15.0, 10.0);
+                            context.move_to(7.0, 14.0);
+                            context.line_to(11.0, 18.0);
+                            context.line_to(15.0, 14.0);
+                            context.set_stroke_style(EnvironmentColor::DarkText);
+                            context.stroke();
 
-                    ]).fill(EnvironmentColor::Accent.into()).frame(23.0.into(), 24.0.into())
+                            context
+                        })
+                    ]).fill(EnvironmentColor::Accent).frame(23.0, 24.0)
                 ])
-            ]).fill(EnvironmentColor::SecondarySystemBackground.into())
+            ]).fill(EnvironmentColor::SecondarySystemBackground)
                 .border().color(focus_color).border_width(1)
         });
 
@@ -86,15 +88,14 @@ impl<T: Serialize + Clone + Debug + Default + DeserializeOwned + 'static, GS: Gl
                 HStack::initialize(vec![
                     Padding::init(
                         EdgeInsets::single(0.0, 0.0, 5.0, 0.0),
-                        Text::initialize(text)
-                        .color(EnvironmentColor::Label.into())),
+                        Text::new(text)
+                        .color(EnvironmentColor::Label)),
                     Spacer::new(SpacerDirection::Horizontal)
                 ])
 
             ]).fill(background_color)
-                .border()
-                .border_width(1)
-                .color(EnvironmentColor::OpaqueSeparator.into())
+                .stroke(EnvironmentColor::OpaqueSeparator)
+                .stroke_style(1.0)
 
         });
 

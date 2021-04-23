@@ -1,14 +1,10 @@
 use crate::prelude::*;
 
-use lyon::tessellation::{VertexBuffers, FillTessellator, FillOptions, BuffersBuilder, FillVertex};
-use lyon::tessellation::path::{Path, Winding};
+use lyon::tessellation::path::Winding;
 use lyon::tessellation::path::traits::PathBuilder;
 use lyon::tessellation::math::rect;
 use lyon::tessellation::path::builder::BorderRadii;
 use crate::widget::types::triangle_store::TriangleStore;
-use crate::render::primitive_kind::PrimitiveKind;
-use crate::draw::shape::triangle::Triangle;
-use crate::color::Rgba;
 use crate::state::environment_color::EnvironmentColor;
 use crate::widget::primitive::shape::{tessellate, Shape};
 use crate::widget::types::shape_style::ShapeStyle;
@@ -29,14 +25,14 @@ pub struct Capsule<GS> where GS: GlobalState {
 
 impl<GS: GlobalState> Capsule<GS> {
 
-    pub fn fill(mut self, color: ColorState<GS>) -> Box<Self> {
-        self.fill_color = color;
+    pub fn fill<C: Into<ColorState<GS>>>(mut self, color: C) -> Box<Self> {
+        self.fill_color = color.into();
         self.style += ShapeStyle::Fill;
         Box::new(self)
     }
 
-    pub fn stroke(mut self, color: ColorState<GS>) -> Box<Self> {
-        self.stroke_color = color;
+    pub fn stroke<C: Into<ColorState<GS>>>(mut self, color: C) -> Box<Self> {
+        self.stroke_color = color.into();
         self.style += ShapeStyle::Stroke;
         Box::new(self)
     }
@@ -66,7 +62,7 @@ impl<S: GlobalState> Layout<S> for Capsule<S> {
         0
     }
 
-    fn calculate_size(&mut self, requested_size: Dimensions, env: &Environment<S>) -> Dimensions {
+    fn calculate_size(&mut self, requested_size: Dimensions, _: &Environment<S>) -> Dimensions {
         self.dimension = requested_size;
         requested_size
     }
@@ -137,9 +133,9 @@ impl<GS: GlobalState> Shape<GS> for Capsule<GS> {
     }
 }
 
-impl<S: GlobalState> Render<S> for Capsule<S> {
+impl<GS: GlobalState> Render<GS> for Capsule<GS> {
 
-    fn get_primitives(&mut self, fonts: &text::font::Map) -> Vec<Primitive> {
+    fn get_primitives(&mut self, _: &Environment<GS>, _: &GS) -> Vec<Primitive> {
 
         let rectangle = rect(self.get_x() as f32, self.get_y() as f32, self.get_width() as f32, self.get_height() as f32);
 
@@ -158,7 +154,7 @@ impl<S: GlobalState> Render<S> for Capsule<S> {
 
         let mut prims = self.triangle_store.get_primitives(*self.fill_color.get_latest_value(), *self.stroke_color.get_latest_value());
 
-        prims.extend(Rectangle::<S>::debug_outline(Rect::new(self.position, self.dimension), 1.0));
+        prims.extend(Rectangle::<GS>::debug_outline(Rect::new(self.position, self.dimension), 1.0));
 
         return prims;
     }

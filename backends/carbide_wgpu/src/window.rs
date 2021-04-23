@@ -1,3 +1,6 @@
+pub use futures::executor::block_on;
+pub use carbide_core::window::TWindow;
+
 use crate::image::Image;
 use carbide_core::mesh::mesh::Mesh;
 use carbide_core::{Ui, Rect};
@@ -77,7 +80,7 @@ impl<T: GlobalState> carbide_core::window::TWindow<T> for Window<T> {
                 w
             )
         ])
-            .fill(EnvironmentColor::SystemBackground.into());
+            .fill(EnvironmentColor::SystemBackground);
     }
 }
 
@@ -90,7 +93,7 @@ impl<T: GlobalState> Window<T> {
         assets.join(path)
     }
 
-    pub async fn new(title: String, width: u32, height: u32, icon: Option<PathBuf>, state: T) -> Self {
+    pub fn new(title: String, width: u32, height: u32, icon: Option<PathBuf>, state: T) -> Self {
 
         let event_loop = EventLoop::new();
 
@@ -137,21 +140,22 @@ impl<T: GlobalState> Window<T> {
         // BackendBit::PRIMARY => Vulkan + Metal + DX12 + Browser WebGPU
         let instance = wgpu::Instance::new(wgpu::BackendBit::PRIMARY);
         let surface = unsafe { instance.create_surface(&inner_window) };
-        let adapter = instance.request_adapter(
+
+        let adapter = block_on(instance.request_adapter(
             &wgpu::RequestAdapterOptions {
                 power_preference: wgpu::PowerPreference::Default,
                 compatible_surface: Some(&surface),
             },
-        ).await.unwrap();
+        )).unwrap();
 
-        let (device, queue) = adapter.request_device(
+        let (device, queue) = block_on(adapter.request_device(
             &wgpu::DeviceDescriptor {
                 features: wgpu::Features::empty(),
                 limits: wgpu::Limits::default(),
                 shader_validation: true,
             },
             None, // Trace path
-        ).await.unwrap();
+        )).unwrap();
 
         let sc_desc = wgpu::SwapChainDescriptor {
             usage: wgpu::TextureUsage::OUTPUT_ATTACHMENT,
@@ -331,7 +335,7 @@ impl<T: GlobalState> Window<T> {
             label: Some("Render Encoder"),
         });
 
-        let primitives = self.ui.draw();
+        let primitives = self.ui.draw(&self.state);
 
         let fill = self.mesh.fill(Rect::new([0.0,0.0], [self.size.width as f64, self.size.height as f64]), 1.0, &self.image_map, primitives).unwrap();
 

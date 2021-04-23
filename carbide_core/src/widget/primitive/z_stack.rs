@@ -1,5 +1,6 @@
 use crate::prelude::*;
 use std::ops::Deref;
+use crate::widget::ChildRender;
 
 /// A basic, non-interactive rectangle shape widget.
 #[derive(Debug, Clone, Widget)]
@@ -146,16 +147,6 @@ impl<S: GlobalState> CommonWidget<S> for ZStack<S> {
     }
 }
 
-impl<S: GlobalState> Render<S> for ZStack<S> {
-
-    fn get_primitives(&mut self, fonts: &text::font::Map) -> Vec<Primitive> {
-        let mut prims = vec![];
-        prims.extend(Rectangle::<S>::debug_outline(Rect::new(self.position, self.dimension), 0.5));
-        let children: Vec<Primitive> = self.get_children_mut().flat_map(|f| f.get_primitives(fonts)).collect();
-        prims.extend(children);
-
-        return prims;
-    }
-}
+impl<S: GlobalState> ChildRender for ZStack<S> {}
 
 

@@ -1,4 +1,5 @@
 use crate::prelude::*;
+use crate::widget::ChildRender;
 
 pub static SCALE: f64 = -1.0;
 
@@ -198,14 +199,4 @@ impl<S: GlobalState> Layout<S> for Frame<S> {
     }
 }
 
-impl<S: GlobalState> Render<S> for Frame<S> {
-
-    fn get_primitives(&mut self, fonts: &text::font::Map) -> Vec<Primitive> {
-        let mut prims = vec![];
-        prims.extend(Rectangle::<S>::debug_outline(Rect::new(self.position, [self.get_width(), self.get_height()]), 1.0));
-        let children: Vec<Primitive> = self.child.get_primitives(fonts);
-        prims.extend(children);
-
-        return prims;
-    }
-}
+impl<GS: GlobalState> ChildRender for Frame<GS> {}

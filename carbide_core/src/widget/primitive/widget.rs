@@ -5,7 +5,7 @@ use crate::widget::{Frame, Offset, EnvUpdating};
 use crate::widget::primitive::padding::Padding;
 use crate::widget::primitive::hidden::Hidden;
 use crate::widget::primitive::clip::Clip;
-use crate::widget::primitive::edge_insets::EdgeInsets;
+use crate::widget::types::edge_insets::EdgeInsets;
 use std::ops::{Deref, DerefMut};
 use crate::event_handler::{MouseEvent, KeyboardEvent, WidgetEvent};
 use core::fmt;
@@ -24,8 +24,8 @@ impl<S: GlobalState> Widget<S> for Box<dyn Widget<S>> {}
 dyn_clone::clone_trait_object!(<S> Widget<S>);
 
 pub trait WidgetExt<GS: GlobalState>: Widget<GS> + Sized + 'static {
-    fn frame(self, width: Box<dyn State<f64, GS>>, height: Box<dyn State<f64, GS>>) -> Box<Frame<GS>> {
-        Frame::init(width, height, Box::new(self))
+    fn frame<K1: Into<Box<dyn State<f64, GS>>>, K2: Into<Box<dyn State<f64, GS>>>>(self, width: K1, height: K2) -> Box<Frame<GS>> {
+        Frame::init(width.into(), height.into(), Box::new(self))
     }
 
     fn frame_width(self, width: Box<dyn State<f64, GS>>) -> Box<Frame<GS>> {
@@ -43,8 +43,8 @@ pub trait WidgetExt<GS: GlobalState>: Widget<GS> + Sized + 'static {
         Hidden::new(Box::new(self))
     }
 
-    fn offset(self, offset_x: CommonState<f64,GS>, offset_y: CommonState<f64,GS>) -> Box<Offset<GS>> {
-        Offset::new(offset_x, offset_y, Box::new(self))
+    fn offset<K1: Into<Box<dyn State<f64, GS>>>, K2: Into<Box<dyn State<f64, GS>>>>(self, offset_x: K1, offset_y: K2) -> Box<Offset<GS>> {
+        Offset::new(offset_x.into(), offset_y.into(), Box::new(self))
     }
 
     fn border(self) -> Box<Border<GS>> {
@@ -174,9 +174,9 @@ impl<S: GlobalState> Layout<S> for Box<dyn Widget<S>> {
     }
 }
 
-impl<S: GlobalState> Render<S> for Box<dyn Widget<S>> {
-    fn get_primitives(&mut self, fonts: &text::font::Map) -> Vec<Primitive> {
-        self.deref_mut().get_primitives(fonts)
+impl<GS: GlobalState> Render<GS> for Box<dyn Widget<GS>> {
+    fn get_primitives(&mut self, env: &Environment<GS>, global_state: &GS) -> Vec<Primitive> {
+        self.deref_mut().get_primitives(env, global_state)
     }
 }
 
