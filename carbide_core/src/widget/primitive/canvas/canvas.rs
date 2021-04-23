@@ -5,11 +5,12 @@ use crate::state::global_state::GlobalState;
 use crate::widget::Rectangle;
 use lyon::tessellation::{VertexBuffers, FillTessellator, FillOptions, BuffersBuilder, FillVertex, StrokeOptions, StrokeTessellator, StrokeVertex, LineCap, LineJoin};
 use crate::widget::types::triangle_store::TriangleStore;
-use crate::widget::primitive::canvas::context::Context;
+use crate::widget::primitive::canvas::context::{Context, ShapeStyleWithOptions};
 use crate::render::primitive_kind::PrimitiveKind;
 
 use crate::draw::shape::triangle::Triangle;
 use crate::state::environment_color::EnvironmentColor;
+use lyon::algorithms::path::Path;
 
 /// A basic, non-interactive rectangle shape widget.
 #[derive(Debug, Clone, Widget)]
@@ -18,30 +19,75 @@ pub struct Canvas<GS> where GS: GlobalState {
     position: Point,
     dimension: Dimensions,
     #[state] color: ColorState<GS>,
-    triangle_store: TriangleStore,
-    context: Context
+    //prim_store: Vec<Primitive>,
+    context: fn(Rect, Context) -> Context
 }
 
 impl<S: GlobalState> Canvas<S> {
-
-    pub fn color(mut self, color: ColorState<S>) -> Box<Self> {
-        self.color = color;
-        Box::new(self)
-    }
-
     pub fn initialize(context: fn(Rect, Context) -> Context) -> Box<Self> {
         Box::new(Canvas {
             id: Uuid::new_v4(),
             position: [0.0,0.0],
             dimension: [100.0,100.0],
             color: EnvironmentColor::Accent.into(),
-            triangle_store: TriangleStore::new(),
+            //prim_store: vec![],
             context
         })
     }
+
+    pub fn get_stroke_prim(&self, path: Path, stroke_options: StrokeOptions, color: Color) -> Primitive {
+        let mut geometry: VertexBuffers<Point, u16> = VertexBuffers::new();
+        let mut tessellator = StrokeTessellator::new();
+
+        {
+            // Compute the tessellation.
+            tessellator.tessellate_path(
+                &path,
+                &stroke_options,
+                &mut BuffersBuilder::new(&mut geometry, |vertex: StrokeVertex| {
+                    let point = vertex.position().to_array();
+                    [point[0] as Scalar, point[1] as Scalar]
+                }),
+            ).unwrap();
+        }
+
+        let point_iter = geometry.indices.iter().map(|index| geometry.vertices[*index as usize]);
+
+        let points: Vec<Point> = point_iter.collect();
+
+        Primitive {
+            kind: PrimitiveKind::TrianglesSingleColor { color: Rgba::from(color), triangles: Triangle::from_point_list(points)},
+            rect: Rect::new(self.position, self.dimension)
+        }
+
+    }
+
+    pub fn get_fill_prim(&self, path: Path, fill_options: FillOptions, color: Color) -> Primitive {
+        let mut geometry: VertexBuffers<Point, u16> = VertexBuffers::new();
+        let mut tessellator = FillTessellator::new();
+
+        {
+            // Compute the tessellation.
+            tessellator.tessellate_path(
+                &path,
+                &fill_options,
+                &mut BuffersBuilder::new(&mut geometry, |vertex: FillVertex| {
+                    let point = vertex.position().to_array();
+                    [point[0] as Scalar, point[1] as Scalar]
+                }),
+            ).unwrap();
+        }
+
+        let point_iter = geometry.indices.iter().map(|index| geometry.vertices[*index as usize]);
+
+        let points: Vec<Point> = point_iter.collect();
+
+        Primitive {
+            kind: PrimitiveKind::TrianglesSingleColor { color: Rgba::from(color), triangles: Triangle::from_point_list(points)},
+            rect: Rect::new(self.position, self.dimension)
+        }
+    }
 }
-
-
 
 impl<S: GlobalState> CommonWidget<S> for Canvas<S> {
     fn get_id(&self) -> Uuid {
@@ -93,37 +139,25 @@ impl<S: GlobalState> Render<S> for Canvas<S> {
 
     fn get_primitives(&mut self, _: &text::font::Map) -> Vec<Primitive> {
 
-        let mut geometry: VertexBuffers<Point, u16> = VertexBuffers::new();
+        let context = Context::new();
 
-        let mut tessellator = StrokeTessellator::new();
+        let rectangle = Rect::new(self.get_position(), self.get_dimension());
+        let context = (self.context)(rectangle, context);
 
-        for path in self.context.to_paths(self.position) {
-            tessellator.tessellate_path(
-                &path,
-                &StrokeOptions::default().with_line_width(2.0).with_line_cap(LineCap::Round).with_line_join(LineJoin::Round),
-                &mut BuffersBuilder::new(&mut geometry, |vertex: StrokeVertex| {
-                    let point = vertex.position().to_array();
-                    [point[0] as Scalar, point[1] as Scalar]
-                }),
-            ).unwrap();
-        }
+        let paths = context.to_paths(self.get_position());
 
-        let point_iter = geometry.indices.iter().map(|index| geometry.vertices[*index as usize]);
+        let mut prims = vec![];
 
-        let points: Vec<Point> = point_iter.collect();
-
-
-        //self.triangle_store.position = self.position;
-        //self.triangle_store.dimensions = self.dimension;
-        //self.triangle_store.set_triangles(&triangles);
-
-
-        let mut prims = vec![
-            Primitive {
-                kind: PrimitiveKind::TrianglesSingleColor { color: Rgba::from(*self.color.get_latest_value()), triangles: Triangle::from_point_list(points)},
-                rect: Rect::new(self.position, self.dimension)
+        for (path, options) in paths {
+            match options {
+                ShapeStyleWithOptions::Fill(fill_options, color) => {
+                    prims.push(self.get_fill_prim(path, fill_options, color));
+                }
+                ShapeStyleWithOptions::Stroke(stroke_options, color) => {
+                    prims.push(self.get_stroke_prim(path, stroke_options, color));
+                }
             }
-        ];
+        }
 
         prims.extend(Rectangle::<S>::debug_outline(Rect::new(self.position, self.dimension), 1.0));
 

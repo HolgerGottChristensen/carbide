@@ -20,6 +20,10 @@ use carbide_core::widget::primitive::canvas::context::ContextAction;
 use carbide_core::state::environment_font_size::EnvironmentFontSize;
 use carbide_core::state::environment_color::EnvironmentColor;
 use carbide_core::widget::primitive::shape::capsule::Capsule;
+use carbide_core::color::{WHITE, BLUE, RED};
+use carbide_core::widget::primitive::canvas::LineCap;
+use carbide_core::{Rect, Point};
+use std::f64::consts::PI;
 
 fn main() {
     env_logger::init();
@@ -32,6 +36,40 @@ fn main() {
     //let rust_image = window.add_image("images/rust_press.png").unwrap();
 
     //let sync_state = CommonState::new_local_with_key(&"Hello".to_string());
+
+    fn draw_star(center: Point, number_of_spikes: u32, outer_radius: f64, inner_radius: f64, mut context: Context) -> Context {
+        let mut rotation = PI / 2.0 * 3.0;
+
+        let center_x = center[0];
+        let center_y = center[1];
+
+        let mut x = center[0];
+        let mut y = center[1];
+
+        let step = PI / number_of_spikes as f64;
+
+        context.begin_path();
+
+        context.move_to(center_x, center_y - outer_radius);
+
+        for _ in 0..number_of_spikes {
+            x = center_x + rotation.cos() * outer_radius;
+            y = center_y + rotation.sin() * outer_radius;
+
+            context.line_to(x, y);
+            rotation += step;
+
+            x = center_x + rotation.cos() * inner_radius;
+            y = center_y + rotation.sin() * inner_radius;
+            context.line_to(x, y);
+            rotation += step;
+        }
+
+        context.line_to(center_x, center_y - outer_radius);
+        context.close_path();
+
+        context
+    }
 
     window.set_widgets(
         VStack::initialize(vec![
@@ -89,6 +127,29 @@ fn main() {
                     .stroke(EnvironmentColor::Red.into())
                     .frame(100.0.into(), 50.0.into())
                     .frame(100.0.into(), 100.0.into())
+            ]),
+            HStack::initialize(vec![
+                Canvas::initialize(|rect, mut context| {
+                    context = draw_star([50.0, 50.0], 5, 45.0, 20.0, context);
+                    context.set_fill_style(BLUE);
+                    context.fill();
+                    context
+                }).frame(100.0.into(), 100.0.into()),
+                Canvas::initialize(|rect, mut context| {
+                    context = draw_star([50.0, 50.0], 5, 45.0, 20.0, context);
+                    context.set_line_width(10.0);
+                    context.set_stroke_style(BLUE);
+                    context.stroke();
+                    context
+                }).frame(100.0.into(), 100.0.into()),
+                Canvas::initialize(|rect, mut context| {
+                    context = draw_star([50.0, 50.0], 5, 45.0, 20.0, context);
+                    context.set_fill_style(BLUE);
+                    context.set_stroke_style(RED);
+                    context.fill();
+                    context.stroke();
+                    context
+                }).frame(100.0.into(), 100.0.into()),
             ]),
         ])
     );
