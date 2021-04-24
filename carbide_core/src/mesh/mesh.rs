@@ -9,11 +9,11 @@ use std::{fmt, ops};
 
 use crate::{color, image_map, render};
 use crate::{Rect, Scalar};
+use crate::mesh::{DEFAULT_GLYPH_CACHE_DIMS, GLYPH_CACHE_POSITION_TOLERANCE, GLYPH_CACHE_SCALE_TOLERANCE, MODE_GEOMETRY, MODE_IMAGE, MODE_TEXT};
 use crate::mesh::vertex::Vertex;
 use crate::Range;
 use crate::render::primitive_walker::PrimitiveWalker;
 use crate::text::{self, rt};
-use crate::mesh::{DEFAULT_GLYPH_CACHE_DIMS, GLYPH_CACHE_SCALE_TOLERANCE, GLYPH_CACHE_POSITION_TOLERANCE, MODE_GEOMETRY, MODE_TEXT, MODE_IMAGE};
 
 /// Images within the given image map must know their dimensions in pixels.
 pub trait ImageDimensions {
@@ -121,14 +121,14 @@ impl Mesh {
     ///
     /// - `viewport`: the window in which the UI is drawn. The width and height should be the
     ///   physical size (pixels).
-    /// - `dpi_factor`: the factor for converting from carbide's DPI agnostic point space to the
+    /// - `scale_factor`: the factor for converting from carbide's DPI agnostic point space to the
     ///   pixel space of the viewport.
     /// - `image_map`: a map from image IDs to images.
     /// - `primitives`: the sequence of UI primitives in order of depth to be rendered.
     pub fn fill<P, I>(
         &mut self,
         viewport: Rect,
-        dpi_factor: f64,
+        scale_factor: f64,
         image_map: &image_map::ImageMap<I>,
         mut primitives: P,
     ) -> Result<Fill, rt::gpu_cache::CacheWriteErr>
@@ -166,14 +166,14 @@ impl Mesh {
         let glyph_cache_w = glyph_cache_w as usize;
 
         // Functions for converting for carbide scalar coords to normalised vertex coords (-1.0 to 1.0).
-        let vx = |x: Scalar| (x * dpi_factor / half_viewport_w - 1.0) as f32;
-        let vy = |y: Scalar| -1.0 * (y * dpi_factor / half_viewport_h - 1.0) as f32;
+        let vx = |x: Scalar| (x * scale_factor / half_viewport_w - 1.0) as f32;
+        let vy = |y: Scalar| -1.0 * (y * scale_factor / half_viewport_h - 1.0) as f32;
 
         let rect_to_scizzor = |rect: Rect| {
             // Below uses bottom because the rect is flipped :/
             Scizzor {
                 top_left: [rect.left().max(0.0) as i32, rect.bottom().max(0.0) as i32],
-                dimensions: [rect.w().min(viewport_w) as u32, rect.h().min(viewport_h) as u32],
+                dimensions: [(rect.w().min(viewport_w)) as u32, (rect.h().min(viewport_h)) as u32],
             }
         };
 
@@ -201,31 +201,6 @@ impl Mesh {
         // Draw each primitive in order of depth.
         while let Some(primitive) = primitives.next_primitive() {
 
-            //let rect = primitive.rect;
-
-            // Check for a `Scizzor` command.
-            /*let new_scizzor = rect_to_scizzor(scizzor);
-            if new_scizzor != current_scizzor {
-                // Finish the current command.
-                match current_state {
-                    State::Plain { start } => {
-                        commands.push(PreparedCommand::Plain(start..vertices.len()))
-                    }
-                    State::Image { image_id, start } => {
-                        commands.push(PreparedCommand::Image(image_id, start..vertices.len()))
-                    }
-                }
-
-                // Update the scizzor and produce a command.
-                current_scizzor = new_scizzor;
-                commands.push(PreparedCommand::Scizzor(new_scizzor));
-
-                // Set the state back to plain drawing.
-                current_state = State::Plain {
-                    start: vertices.len(),
-                };
-            }*/
-
             match primitive.kind {
                 render::primitive_kind::PrimitiveKind::Clip => {
                     match current_state {
@@ -237,9 +212,18 @@ impl Mesh {
                         }
                     }
 
-                    commands.push(PreparedCommand::Scizzor(rect_to_scizzor(primitive.rect)));
+                    let (mut l, mut r, mut b, mut t) = primitive.rect.l_r_b_t();
 
-                    scizzor_stack.push(rect_to_scizzor(primitive.rect));
+                    l *= scale_factor;
+                    r *= scale_factor;
+                    t *= scale_factor;
+                    b *= scale_factor;
+
+                    let new_rect = Rect::from_corners([r, b], [l, t]);
+
+                    commands.push(PreparedCommand::Scizzor(rect_to_scizzor(new_rect)));
+
+                    scizzor_stack.push(rect_to_scizzor(new_rect));
 
                     current_state = State::Plain {
                         start: vertices.len(),
@@ -348,7 +332,7 @@ impl Mesh {
                     //let base_line_offset = text.base_line_offset as f64;
 
                     switch_to_plain_state!();
-                    let positioned_glyphs = text.positioned_glyphs(dpi_factor as f32);
+                    let positioned_glyphs = text.positioned_glyphs(scale_factor as f32);
                     // Queue the glyphs to be cached
                     for glyph in positioned_glyphs.clone() {
                         //println!("{:?}", glyph.position());
@@ -385,10 +369,10 @@ impl Mesh {
                         //let min_y = (screen_rect.min.y as f64 / dpi_factor + rect.y.start + base_line_offset).round();
                         //let max_y = (screen_rect.max.y as f64 / dpi_factor + rect.y.start + base_line_offset).round();
 
-                        let min_x = screen_rect.min.x as f64 / dpi_factor;
-                        let max_x = screen_rect.max.x as f64 / dpi_factor;
-                        let min_y = screen_rect.min.y as f64 / dpi_factor;
-                        let max_y = screen_rect.max.y as f64 / dpi_factor;
+                        let min_x = screen_rect.min.x as f64 / scale_factor;
+                        let max_x = screen_rect.max.x as f64 / scale_factor;
+                        let min_y = screen_rect.min.y as f64 / scale_factor;
+                        let max_y = screen_rect.max.y as f64 / scale_factor;
 
 
                         Rect {
@@ -484,8 +468,8 @@ impl Mesh {
 
                     let v = |x, y, t| {
                         // Convert from carbide Scalar range to normalised range -1.0 to 1.0.
-                        let x = (x * dpi_factor / half_viewport_w - 1.0) as f32;
-                        let y = -((y * dpi_factor / half_viewport_h - 1.0) as f32);
+                        let x = (x * scale_factor / half_viewport_w - 1.0) as f32;
+                        let y = -((y * scale_factor / half_viewport_h - 1.0) as f32);
                         Vertex {
                             position: [x, y, 0.0],
                             tex_coords: t,

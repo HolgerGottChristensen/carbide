@@ -11,12 +11,12 @@ pub struct Clip<GS> where GS: GlobalState {
 
 impl<GS: GlobalState> WidgetExt<GS> for Clip<GS> {}
 
-impl<S: GlobalState> Layout<S> for Clip<S> {
+impl<GS: GlobalState> Layout<GS> for Clip<GS> {
     fn flexibility(&self) -> u32 {
         self.child.flexibility()
     }
 
-    fn calculate_size(&mut self, requested_size: Dimensions, env: &Environment<S>) -> Dimensions {
+    fn calculate_size(&mut self, requested_size: Dimensions, env: &Environment<GS>) -> Dimensions {
         self.child.calculate_size(requested_size, env);
         self.dimension = requested_size;
         requested_size
@@ -96,9 +96,9 @@ impl<GS: GlobalState> Render<GS> for Clip<GS> {
                 rect: Rect::new(self.position, self.dimension)
             }
         ];
-        prims.extend(Rectangle::<GS>::debug_outline(Rect::new(self.position, self.dimension), 1.0));
         let children: Vec<Primitive> = self.get_children_mut().flat_map(|f| f.get_primitives(env, global_state)).collect();
         prims.extend(children);
+        prims.extend(Rectangle::<GS>::debug_outline(Rect::new(self.position, self.dimension), 1.0));
 
         prims.push(Primitive {
             kind: PrimitiveKind::UnClip,

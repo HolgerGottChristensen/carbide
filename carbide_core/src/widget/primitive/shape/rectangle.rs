@@ -1,15 +1,15 @@
+use lyon::algorithms::math::rect;
+use lyon::algorithms::path::builder::PathBuilder;
+use lyon::algorithms::path::Winding;
+
+use crate::color::Rgba;
 use crate::prelude::*;
 use crate::render::primitive_kind::PrimitiveKind;
 use crate::state::environment_color::EnvironmentColor;
+use crate::widget::primitive::shape::{Shape, tessellate};
 use crate::widget::types::shape_style::ShapeStyle;
 use crate::widget::types::stroke_style::StrokeStyle;
 use crate::widget::types::triangle_store::TriangleStore;
-use crate::widget::primitive::shape::{tessellate, Shape};
-use lyon::algorithms::path::builder::PathBuilder;
-use lyon::algorithms::math::rect;
-use lyon::algorithms::path::Winding;
-use crate::color::Rgba;
-
 
 /// A basic, non-interactive rectangle shape widget.
 #[derive(Debug, Clone, Widget)]
@@ -60,6 +60,35 @@ impl<GS: GlobalState> Rectangle<GS> {
     //#[cfg(not(feature = "debug-outline"))]
     pub fn debug_outline(_rect: Rect, _width: Scalar) -> Vec<Primitive> {
         vec![]
+    }
+
+    pub fn debug_outline_special(rect: Rect, width: Scalar) -> Vec<Primitive> {
+        let (l, r, b, t) = rect.l_r_b_t();
+
+        let left_border = Rect::new([l, b], [width, rect.h()]);
+        let right_border = Rect::new([r - width, b], [width, rect.h()]);
+        let top_border = Rect::new([l + width, b], [rect.w() - width * 2.0, width]);
+        let bottom_border = Rect::new([l + width, t - width], [rect.w() - width * 2.0, width]);
+
+        let border_color = Color::Rgba(0.0 / 255.0, 255.0 / 255.0, 251.0 / 255.0, 1.0);//Color::random();
+        vec![
+            Primitive {
+                kind: PrimitiveKind::Rectangle { color: border_color.clone() },
+                rect: left_border,
+            },
+            Primitive {
+                kind: PrimitiveKind::Rectangle { color: border_color.clone() },
+                rect: right_border,
+            },
+            Primitive {
+                kind: PrimitiveKind::Rectangle { color: border_color.clone() },
+                rect: top_border,
+            },
+            Primitive {
+                kind: PrimitiveKind::Rectangle { color: border_color.clone() },
+                rect: bottom_border,
+            },
+        ]
     }
 
     //#[cfg(feature = "debug-outline")]

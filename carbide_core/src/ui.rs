@@ -2,50 +2,25 @@ use std;
 use std::fmt::Debug;
 use std::sync::atomic::AtomicUsize;
 
+use instant::Instant;
+
+use crate::{color, cursor};
 use crate::color::Color;
-use crate::{cursor, color};
 use crate::event::event::Event;
-use crate::event_handler::{EventHandler, WidgetEvent, WindowEvent, KeyboardEvent};
+use crate::event::input::Input;
+use crate::event_handler::{EventHandler, KeyboardEvent, WidgetEvent, WindowEvent};
+use crate::focus::{Focusable, Refocus};
+use crate::input::{Key, ModifierKey};
 use crate::position::Dimensions;
 use crate::render::cprimitives::CPrimitives;
 use crate::state::environment::Environment;
-use crate::text;
-use crate::widget::Rectangle;
-use crate::widget::primitive::Widget;
-use crate::state::global_state::GlobalState;
-use crate::event::input::Input;
-use instant::Instant;
-use crate::focus::{Refocus, Focusable};
-use crate::input::{Key, ModifierKey};
-use crate::state::environment_variable::EnvironmentVariable;
 use crate::state::environment_color::EnvironmentColor;
 use crate::state::environment_font_size::EnvironmentFontSize;
-
-/// A constructor type for building a `Ui` instance with a set of optional parameters.
-pub struct UiBuilder {
-    /// The initial dimensions of the window in which the `Ui` exists.
-    pub window_dimensions: Dimensions,
-    /// The theme used to set default styling for widgets.
-    ///
-    /// If this field is `None` when `build` is called, `Theme::default` will be used.
-    /// An estimation of the maximum number of widgets that will be used with this `Ui` instance.
-    ///
-    /// This value is used to determine the size with which various collections should be
-    /// reserved. This may make the first cycle of widget instantiations more efficient as the
-    /// collections will not be required to grow dynamically. These collections include:
-    ///
-    /// - the widget graph node and edge `Vec`s
-    /// - the `HashSet` used to track updated widgets
-    /// - the widget `DepthOrder` (a kind of toposort describing the order of widgets in their
-    /// rendering order).
-    ///
-    /// If this field is `None` when `build` is called, these collections will be initialised with
-    /// no pre-reserved size and will instead grow organically as needed.
-    pub maybe_widgets_capacity: Option<usize>
-}
-
-
-
+use crate::state::environment_variable::EnvironmentVariable;
+use crate::state::global_state::GlobalState;
+use crate::text;
+use crate::widget::primitive::Widget;
+use crate::widget::Rectangle;
 
 /// `Ui` is the most important type within carbide and is necessary for rendering and maintaining
 /// widget state.
@@ -69,14 +44,6 @@ pub struct Ui<S> where S: GlobalState {
 
     /// Mouse cursor
     mouse_cursor: cursor::MouseCursor,
-
-    // TODO: Remove the following fields as they should now be handled by `input::Global`.
-
-    /// Window width.
-    pub win_w: f64,
-    /// Window height.
-    pub win_h: f64,
-
 
     pub widgets: Box<dyn Widget<S>>,
     event_handler: EventHandler,
@@ -106,55 +73,9 @@ pub struct UiCell<'a, S: GlobalState> {
 /// buffer. Otherwise if we don't draw into each buffer, we will probably be subject to flickering.
 pub const SAFE_REDRAW_COUNT: u8 = 3;
 
-impl UiBuilder {
-
-    /// Begin building a new `Ui` instance.
-    ///
-    /// Give the initial dimensions of the window within which the `Ui` will be instantiated as a
-    /// `Scalar` (DPI agnostic) value.
-    pub fn new(window_dimensions: Dimensions) -> Self {
-        UiBuilder {
-            window_dimensions: window_dimensions,
-            maybe_widgets_capacity: None
-        }
-    }
-
-    /// An estimation of the maximum number of widgets that will be used with this `Ui` instance.
-    ///
-    /// This value is used to determine the size with which various collections should be
-    /// reserved. This may make the first cycle of widget instantiations more efficient as the
-    /// collections will not be required to grow dynamically. These collections include:
-    ///
-    /// - the widget graph node and edge `Vec`s
-    /// - the `HashSet` used to track updated widgets
-    /// - the widget `DepthOrder` (a kind of toposort describing the order of widgets in their
-    /// rendering order).
-    ///
-    /// If this field is `None` when `build` is called, these collections will be initialised with
-    /// no pre-reserved size and will instead grow organically as required.
-    pub fn widgets_capacity(mut self, value: usize) -> Self {
-        self.maybe_widgets_capacity = Some(value);
-        self
-    }
-
-    /// Build **Ui** from the given builder
-    pub fn build<S: GlobalState>(self) -> Ui<S> {
-        Ui::new(self)
-    }
-
-}
-
 impl<S: GlobalState> Ui<S> {
-
     /// A new, empty **Ui**.
-    fn new(builder: UiBuilder) -> Self {
-
-        let UiBuilder {
-            window_dimensions,
-            ..
-        } = builder;
-
-        
+    pub fn new(window_pixel_dimensions: Dimensions, scale_factor: f64) -> Self {
         let dark_system_colors = vec![
             EnvironmentVariable::Color { key: EnvironmentColor::Blue, value: color::rgba_bytes(10, 132, 255, 1.0) },
             EnvironmentVariable::Color { key: EnvironmentColor::Green, value: color::rgba_bytes(48, 209, 88, 1.0) },
@@ -255,36 +176,37 @@ impl<S: GlobalState> Ui<S> {
         ];
 
         let base_environment = dark_system_colors.iter().chain(font_sizes_large.iter()).map(|item| item.clone()).collect::<Vec<_>>();
-        
+
+        let environment = Environment::new(base_environment, window_pixel_dimensions, scale_factor);
 
         Ui {
             fonts: text::font::Map::new(),
             widgets: Rectangle::initialize(vec![]),
-            win_w: window_dimensions[0],
-            win_h: window_dimensions[1],
             num_redraw_frames: SAFE_REDRAW_COUNT,
             redraw_count: AtomicUsize::new(SAFE_REDRAW_COUNT as usize),
             maybe_background_color: None,
             mouse_cursor: cursor::MouseCursor::Arrow,
             event_handler: EventHandler::new(),
-            environment: Environment::new(base_environment, window_dimensions),
+            environment,
             any_focus: false,
         }
     }
 
     pub fn set_window_width(&mut self, width: f64) {
-        self.win_w = width;
-        self.environment.window_dimension = [width, self.environment.window_dimension[1]];
+        self.environment.set_pixel_width(width);
     }
 
     pub fn set_window_height(&mut self, height: f64) {
-        self.win_h = height;
-        self.environment.window_dimension = [self.environment.window_dimension[0], height];
+        self.environment.set_pixel_height(height);
+    }
+
+    pub fn set_scale_factor(&mut self, scale_factor: f64) {
+        self.environment.set_scale_factor(scale_factor);
     }
 
 
     pub fn handle_event(&mut self, event: Input, _: &mut S) {
-        let window_event = self.event_handler.handle_event(event, [self.win_w, self.win_h]);
+        let window_event = self.event_handler.handle_event(event, self.environment.get_corrected_dimensions());
 
         //let mut _needs_redraw = self.delegate_events(global_state);
 
@@ -292,9 +214,9 @@ impl<S: GlobalState> Ui<S> {
             None => (),
             Some(event) => {
                 match event {
-                    WindowEvent::Resize(dimensions) => {
-                        self.set_window_width(dimensions[0]);
-                        self.set_window_height(dimensions[1]);
+                    WindowEvent::Resize(pixel_dimensions) => {
+                        self.set_window_width(pixel_dimensions[0]);
+                        self.set_window_height(pixel_dimensions[1]);
                         //_needs_redraw = true;
                     }
                     WindowEvent::Focus => (),//_needs_redraw = true,
@@ -378,7 +300,7 @@ impl<S: GlobalState> Ui<S> {
             // as the thing below. This will not work if the thing below the overlay layers, position is
             // dependent on some state that has not been synchronized. For a use case look at the pop up
             // button in controls.
-            self.widgets.calculate_size(self.environment.window_dimension, &self.environment);
+            self.widgets.calculate_size(self.environment.get_corrected_dimensions(), &self.environment);
             self.widgets.position_children();
 
             self.widgets.sync_state(&mut self.environment, global_state);
@@ -407,12 +329,14 @@ impl<S: GlobalState> Ui<S> {
     pub fn draw(&mut self, global_state: &S) -> CPrimitives {
         let Ui {
             ref mut widgets,
-            win_w, win_h,
             ref mut environment,
             ..
         } = *self;
 
-        CPrimitives::new([win_w, win_h], widgets, environment, global_state)
+        let corrected_dimensions = environment.get_corrected_dimensions();
+
+
+        CPrimitives::new(corrected_dimensions, widgets, environment, global_state)
     }
 
     /// Get mouse cursor state.
@@ -431,7 +355,7 @@ impl<'a, S: GlobalState> UiCell<'a, S> {
 
     /// Returns the dimensions of the window
     pub fn window_dim(&self) -> Dimensions {
-        [self.ui.win_w, self.ui.win_h]
+        self.environment.get_pixel_dimensions()
     }
 
     /// Sets the mouse cursor

@@ -21,28 +21,28 @@ extern crate dyn_clone;
 extern crate fnv;
 extern crate input as piston_input;
 extern crate instant;
+extern crate lyon;
 extern crate num;
 extern crate ron;
 extern crate rusttype;
+extern crate self as carbide_core;
+extern crate serde;
 extern crate uuid;
 extern crate wgpu;
-extern crate lyon;
-extern crate serde;
-
-extern crate self as carbide_core;
-
-pub use ron::from_str as from_ron;
-pub use ron::to_string as to_ron;
 
 pub use bincode::deserialize as from_bin;
 pub use bincode::serialize as to_bin;
+pub use ron::from_str as from_ron;
+pub use ron::to_string as to_ron;
+pub use serde::*;
+pub use serde::de::*;
 
 pub use carbide_derive::*;
 
 pub use crate::color::{Color, Colorable};
 pub use crate::label::{FontSize, Labelable};
 pub use crate::position::{Point, Range, Rect, Scalar};
-pub use crate::ui::{Ui, UiBuilder, UiCell};
+pub use crate::ui::{Ui, UiCell};
 
 pub mod color;
 pub mod event;
@@ -66,7 +66,4 @@ pub mod draw;
 pub mod window;
 pub mod prelude;
 pub mod focus;
-
-pub use serde::*;
-pub use serde::de::*;
 

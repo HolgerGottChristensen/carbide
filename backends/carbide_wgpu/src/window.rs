@@ -1,32 +1,34 @@
-pub use futures::executor::block_on;
-pub use carbide_core::window::TWindow;
-
-use crate::image::Image;
-use carbide_core::mesh::mesh::Mesh;
-use carbide_core::{Ui, Rect};
-use carbide_core::image_map::{ImageMap, Id};
-use wgpu::{Texture, BindGroupLayout};
 use std::collections::HashMap;
-use crate::diffuse_bind_group::{DiffuseBindGroup, new_diffuse};
-use carbide_core::mesh::vertex::Vertex;
-use crate::renderer::glyph_cache_tex_desc;
-use carbide_core::event::input::Input;
-use crate::render_pass_command::{RenderPassCommand, create_render_pass_commands};
-use wgpu::util::DeviceExt;
-use crate::glyph_cache_command::GlyphCacheCommand;
-use winit::event::{WindowEvent, Event, KeyboardInput, ElementState, VirtualKeyCode};
-use winit::event_loop::{ControlFlow, EventLoop};
-use carbide_core::widget::primitive::Widget;
-use carbide_core::text::font::Error;
-use winit::window::{WindowBuilder, Icon};
-use carbide_core::text::font;
-use winit::dpi::{Size, PhysicalSize, PhysicalPosition};
 use std::path::PathBuf;
-use carbide_core::state::global_state::GlobalState;
+
+pub use futures::executor::block_on;
+use wgpu::{BindGroupLayout, Texture};
+use wgpu::util::DeviceExt;
+use winit::dpi::{PhysicalPosition, PhysicalSize, Size};
+use winit::event::{ElementState, Event, KeyboardInput, VirtualKeyCode, WindowEvent};
+use winit::event_loop::{ControlFlow, EventLoop};
+use winit::window::{Icon, WindowBuilder};
+
+use carbide_core::{Rect, Ui};
+use carbide_core::event::input::Input;
+use carbide_core::image_map::{Id, ImageMap};
+use carbide_core::mesh::DEFAULT_GLYPH_CACHE_DIMS;
+use carbide_core::mesh::mesh::Mesh;
+use carbide_core::mesh::vertex::Vertex;
 use carbide_core::prelude::Rectangle;
 use carbide_core::state::environment_color::EnvironmentColor;
-use carbide_core::mesh::DEFAULT_GLYPH_CACHE_DIMS;
+use carbide_core::state::global_state::GlobalState;
+use carbide_core::text::font;
+use carbide_core::text::font::Error;
 use carbide_core::widget::OverlaidLayer;
+use carbide_core::widget::primitive::Widget;
+pub use carbide_core::window::TWindow;
+
+use crate::diffuse_bind_group::{DiffuseBindGroup, new_diffuse};
+use crate::glyph_cache_command::GlyphCacheCommand;
+use crate::image::Image;
+use crate::render_pass_command::{create_render_pass_commands, RenderPassCommand};
+use crate::renderer::glyph_cache_tex_desc;
 
 // Todo: Look in to multisampling: https://github.com/gfx-rs/wgpu-rs/blob/v0.6/examples/msaa-line/main.rs
 pub struct Window<T: GlobalState> {
@@ -130,11 +132,14 @@ impl<T: GlobalState> Window<T> {
             inner_window.set_outer_position(position);
         }
 
-
+        println!("DPI: {}", inner_window.scale_factor());
 
         let size = inner_window.inner_size();
 
-        let ui: Ui<T> = carbide_core::UiBuilder::new([inner_window.inner_size().width as f64, inner_window.inner_size().height as f64]).build();
+        let pixel_dimensions = [inner_window.inner_size().width as f64, inner_window.inner_size().height as f64];
+        let scale_factor = inner_window.scale_factor();
+
+        let ui: Ui<T> = Ui::new(pixel_dimensions, scale_factor);
 
         // The instance is a handle to our GPU
         // BackendBit::PRIMARY => Vulkan + Metal + DX12 + Browser WebGPU
@@ -337,7 +342,9 @@ impl<T: GlobalState> Window<T> {
 
         let primitives = self.ui.draw(&self.state);
 
-        let fill = self.mesh.fill(Rect::new([0.0,0.0], [self.size.width as f64, self.size.height as f64]), 1.0, &self.image_map, primitives).unwrap();
+        let scale_factor = self.ui.environment.get_scale_factor();
+
+        let fill = self.mesh.fill(Rect::new([0.0, 0.0], [self.size.width as f64, self.size.height as f64]), scale_factor, &self.image_map, primitives).unwrap();
 
         let glyph_cache_cmd = match fill.glyph_cache_requires_upload {
             false => None,

@@ -1,11 +1,12 @@
-use carbide_core::widget::*;
-use carbide_core::event_handler::{MouseEvent, KeyboardEvent};
-use carbide_core::state::state::State;
-use carbide_core::widget::primitive::foreach::{ForEachDelegate, ForEach};
-use carbide_core::color::{RED, BLUE};
 use std::option::Option::Some;
-use carbide_core::prelude::{StateSync, Uuid};
+
+use carbide_core::color::{BLUE, RED};
+use carbide_core::event_handler::{KeyboardEvent, MouseEvent};
 use carbide_core::input::ModifierKey;
+use carbide_core::prelude::{StateSync, Uuid};
+use carbide_core::state::state::State;
+use carbide_core::widget::*;
+use carbide_core::widget::primitive::foreach::{ForEach, ForEachDelegate};
 
 pub trait ListIndex: ForEachDelegate {}
 
@@ -313,7 +314,7 @@ impl<GS: GlobalState, T: ListIndex + 'static> List<GS, T> {
     fn sync_state(&mut self, env: &mut Environment<GS>, global_state: &GS) {
         self.update_all_widget_state(env, global_state);
 
-        self.recalculate_visible_children(env);
+        //self.recalculate_visible_children(env);
 
         self.insert_local_state(env);
 

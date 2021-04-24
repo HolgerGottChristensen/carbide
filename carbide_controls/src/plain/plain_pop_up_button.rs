@@ -1,18 +1,20 @@
-use carbide_core::widget::*;
-use carbide_core::event_handler::{MouseEvent, KeyboardEvent, WidgetEvent};
-use carbide_core::input::{MouseButton, ModifierKey};
-use carbide_core::input::Key;
-use carbide_core::state::state::State;
-use crate::{PlainButton, List};
-use carbide_core::state::environment_color::EnvironmentColor;
-use carbide_core::state::{TupleState2, TupleState3};
-use carbide_core::widget::primitive::foreach::ForEach;
-use carbide_core::state::mapped_state::MappedState;
-use carbide_core::prelude::Uuid;
-use carbide_core::state::vec_state::VecState;
 use std::fmt::Debug;
+
 use carbide_core::DeserializeOwned;
+use carbide_core::event_handler::{KeyboardEvent, MouseEvent, WidgetEvent};
+use carbide_core::input::{ModifierKey, MouseButton};
+use carbide_core::input::Key;
+use carbide_core::prelude::Uuid;
 use carbide_core::Serialize;
+use carbide_core::state::{TupleState2, TupleState3};
+use carbide_core::state::environment_color::EnvironmentColor;
+use carbide_core::state::mapped_state::MappedState;
+use carbide_core::state::state::State;
+use carbide_core::state::vec_state::VecState;
+use carbide_core::widget::*;
+use carbide_core::widget::primitive::foreach::ForEach;
+
+use crate::{List, PlainButton};
 use crate::plain::plain_pop_up_button_popup::PlainPopUpButtonPopUp;
 
 #[derive(Clone, Widget)]
@@ -165,8 +167,8 @@ impl<T: Serialize + Clone + Debug + Default + DeserializeOwned + 'static, GS: Gl
                 self.model.clone(),
                 self.selected_state.clone(),
                 self.popup_list_spacing,
-            self.dimension,
-            env.window_dimension);
+                self.dimension,
+                env.get_corrected_dimensions());
 
             overlay.calculate_size([5000.0, 5000.0], env);
 
@@ -176,8 +178,8 @@ impl<T: Serialize + Clone + Debug + Default + DeserializeOwned + 'static, GS: Gl
 
             if popup_y < 0.0 {
                 popup_y = 0.0;
-            } else if popup_y + overlay.get_height() > env.window_dimension[1]{
-                popup_y = env.window_dimension[1] - overlay.get_height();
+            } else if popup_y + overlay.get_height() > env.get_corrected_height() {
+                popup_y = env.get_corrected_height() - overlay.get_height();
             }
 
             overlay.set_position([popup_x, popup_y]);

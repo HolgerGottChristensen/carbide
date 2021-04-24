@@ -2,23 +2,22 @@ use std::collections::HashMap;
 use std::fmt::Debug;
 
 use bitflags::_core::fmt::Formatter;
+use fxhash::{FxBuildHasher, FxHashMap};
+use serde::de::DeserializeOwned;
 use serde::Serialize;
 
-use crate::{Color, from_bin, to_bin, text};
-use crate::text::font::{Error, Id};
-use crate::widget::primitive::Widget;
-use crate::widget::types::image_information::ImageInformation;
-use crate::state::global_state::GlobalState;
-use crate::state::state::State;
-use serde::de::DeserializeOwned;
+use crate::{Color, from_bin, text, to_bin};
 use crate::focus::Refocus;
 use crate::state::environment_variable::EnvironmentVariable;
-use fxhash::{FxHashMap, FxBuildHasher};
+use crate::state::global_state::GlobalState;
+use crate::state::state::State;
 use crate::state::state_key::StateKey;
+use crate::text::font::{Error, Id};
 use crate::widget::Dimensions;
+use crate::widget::primitive::Widget;
+use crate::widget::types::image_information::ImageInformation;
 
 pub struct Environment<GS> where GS: GlobalState {
-
     /// This stack should be used to scope the environment. This contains information such as
     /// current foreground color, text colors and more. This means a parent can choose some
     /// styling that is applied to all of its children, unless some child overrides that style.
@@ -50,7 +49,13 @@ pub struct Environment<GS> where GS: GlobalState {
     /// the focus change is not instant, but updates after each run event.
     pub(crate) focus_request: Option<Refocus>,
 
-    pub window_dimension: Dimensions,
+    /// The size of the drawing area in actual pixels.
+    pixel_dimensions: Dimensions,
+
+    /// The pixel density, or scale factor.
+    /// On windows this is the settable factor in desktop settings.
+    /// On retina displays for macos this is 2 and otherwise 1.
+    scale_factor: f64,
 }
 
 impl<GS: GlobalState> std::fmt::Debug for Environment<GS> {
@@ -60,8 +65,7 @@ impl<GS: GlobalState> std::fmt::Debug for Environment<GS> {
 }
 
 impl<GS: GlobalState> Environment<GS> {
-
-    pub fn new(env_stack: Vec<EnvironmentVariable>, dimensions: Dimensions) -> Self {
+    pub fn new(env_stack: Vec<EnvironmentVariable>, pixel_dimensions: Dimensions, scale_factor: f64) -> Self {
         Environment {
             stack: env_stack,
             fonts: text::font::Map::new(),
@@ -69,8 +73,49 @@ impl<GS: GlobalState> Environment<GS> {
             overlay_map: HashMap::with_hasher(FxBuildHasher::default()),
             local_state: HashMap::with_hasher(FxBuildHasher::default()),
             focus_request: None,
-            window_dimension: dimensions
+            pixel_dimensions,
+            scale_factor,
         }
+    }
+
+    pub fn set_pixel_width(&mut self, new_pixel_width: f64) {
+        self.pixel_dimensions[0] = new_pixel_width;
+    }
+
+    pub fn set_pixel_height(&mut self, new_pixel_height: f64) {
+        self.pixel_dimensions[1] = new_pixel_height;
+    }
+
+    pub fn set_scale_factor(&mut self, new_scale_factor: f64) {
+        self.scale_factor = new_scale_factor;
+    }
+
+    pub fn get_corrected_width(&self) -> f64 {
+        self.pixel_dimensions[0] / self.scale_factor
+    }
+
+    pub fn get_corrected_height(&self) -> f64 {
+        self.pixel_dimensions[1] / self.scale_factor
+    }
+
+    pub fn get_corrected_dimensions(&self) -> Dimensions {
+        [self.pixel_dimensions[0] / self.scale_factor, self.pixel_dimensions[1] / self.scale_factor]
+    }
+
+    pub fn get_pixel_width(&self) -> f64 {
+        self.pixel_dimensions[0] / self.scale_factor
+    }
+
+    pub fn get_pixel_height(&self) -> f64 {
+        self.pixel_dimensions[1] / self.scale_factor
+    }
+
+    pub fn get_pixel_dimensions(&self) -> Dimensions {
+        self.pixel_dimensions
+    }
+
+    pub fn get_scale_factor(&self) -> f64 {
+        self.scale_factor
     }
 
     pub fn request_focus(&mut self, request_type: Refocus) {

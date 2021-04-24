@@ -1,19 +1,21 @@
-use carbide_core::widget::*;
-use carbide_core::event_handler::{MouseEvent, KeyboardEvent, WidgetEvent};
-use carbide_core::input::{MouseButton, ModifierKey};
-use carbide_core::input::Key;
-use carbide_core::state::state::State;
-use crate::{PlainButton, List};
-use carbide_core::state::environment_color::EnvironmentColor;
-use carbide_core::state::{TupleState2, TupleState3};
-use carbide_core::widget::primitive::foreach::ForEach;
-use carbide_core::state::mapped_state::MappedState;
-use carbide_core::prelude::Uuid;
-use carbide_core::state::vec_state::VecState;
 use std::fmt::Debug;
-use carbide_core::DeserializeOwned;
-use carbide_core::Serialize;
 use std::marker::PhantomData;
+
+use carbide_core::DeserializeOwned;
+use carbide_core::event_handler::{KeyboardEvent, MouseEvent, WidgetEvent};
+use carbide_core::input::{ModifierKey, MouseButton};
+use carbide_core::input::Key;
+use carbide_core::prelude::Uuid;
+use carbide_core::Serialize;
+use carbide_core::state::{TupleState2, TupleState3};
+use carbide_core::state::environment_color::EnvironmentColor;
+use carbide_core::state::mapped_state::MappedState;
+use carbide_core::state::state::State;
+use carbide_core::state::vec_state::VecState;
+use carbide_core::widget::*;
+use carbide_core::widget::primitive::foreach::ForEach;
+
+use crate::{List, PlainButton};
 
 #[derive(Clone, Widget)]
 #[event(handle_keyboard_event)]
@@ -66,7 +68,7 @@ impl<T: Serialize + Clone + Debug + Default + DeserializeOwned + 'static, GS: Gl
 
         let max_height_state: Box<dyn State<f64, GS>> = Box::new(CommonState::<f64, GS>::EnvironmentState {
             function: |e: &Environment<GS>| {
-                (e.window_dimension[1])
+                (e.get_corrected_height())
             },
             function_mut: None,
             latest_value: window_size[1]
@@ -99,7 +101,6 @@ impl<T: Serialize + Clone + Debug + Default + DeserializeOwned + 'static, GS: Gl
                                   *opened = false
                               })
                               .hover(hovered_state.clone())
-
                               .frame(parent_size[0], parent_size[1])
                 ).index_state(index_state)
                     .spacing(popup_list_spacing)
