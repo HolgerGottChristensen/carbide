@@ -1,15 +1,19 @@
-use carbide_core::widget::*;
-use carbide_core::color::{RED, GREEN};
-use carbide_core::event_handler::{KeyboardEvent, MouseEvent, WidgetEvent};
-use crate::plain::cursor::{Cursor, CursorIndex};
-use carbide_core::draw::shape::vertex::Vertex;
-use crate::plain::text_input_key_commands::TextInputKeyCommand;
-use copypasta::{ClipboardContext, ClipboardProvider};
 use std::ops::Range;
+
+use copypasta::{ClipboardContext, ClipboardProvider};
 use unicode_segmentation::UnicodeSegmentation;
-use carbide_core::text::PositionedGlyph;
+
+use carbide_core::color::{GREEN, RED};
+use carbide_core::draw::shape::vertex::Vertex;
+use carbide_core::event_handler::{KeyboardEvent, MouseEvent, WidgetEvent};
 use carbide_core::prelude::{State, Uuid};
+use carbide_core::state::{F64State, StringState, U32State};
+use carbide_core::text::PositionedGlyph;
+use carbide_core::widget::*;
 use carbide_core::widget::types::text_wrap::Wrap;
+
+use crate::plain::cursor::{Cursor, CursorIndex};
+use crate::plain::text_input_key_commands::TextInputKeyCommand;
 
 /// A plain text input widget. The widget contains no specific styling, other than text color,
 /// cursor color/width and selection color. Most common logic has been implemented, such as
@@ -21,24 +25,46 @@ use carbide_core::widget::types::text_wrap::Wrap;
 pub struct PlainTextInput<GS> where GS: GlobalState {
     id: Id,
     child: Box<dyn Widget<GS>>,
-    #[state] focus: Box<dyn State<Focus, GS>>,
+    #[state] focus: FocusState<GS>,
     position: Point,
     dimension: Dimensions,
     cursor: Cursor,
     drag_start_cursor: Option<Cursor>,
     grapheme_split_cache: (String, Vec<f32>),
-    #[state] text: CommonState<String, GS>,
-    #[state] cursor_x: CommonState<f64, GS>,
-    #[state] selection_x: CommonState<f64, GS>,
-    #[state] selection_width: CommonState<f64, GS>,
-    #[state] text_offset: CommonState<f64, GS>,
+    #[state] text: StringState<GS>,
+    #[state] cursor_x: F64State<GS>,
+    #[state] selection_x: F64State<GS>,
+    #[state] selection_width: F64State<GS>,
+    #[state] text_offset: F64State<GS>,
+    #[state] font_size: U32State<GS>,
 }
 
 impl<GS: GlobalState> PlainTextInput<GS> {
-    pub fn new(text: CommonState<String, GS>) -> Box<Self> {
+    pub fn new<S: Into<StringState<GS>>>(text: S) -> Box<Self> {
+        let text_state = text.into();
+        let font_size = CommonState::new(&(12 as u32)).into();
+        let focus_state = CommonState::new_local_with_key(&Focus::Unfocused).into();
 
-        let text_state = text;
+        Self::new_internal(text_state, font_size, focus_state)
+    }
 
+    pub fn font_size<S: Into<U32State<GS>>>(self, font_size: S) -> Box<Self> {
+        let font_size = font_size.into();
+        let text_state = self.text;
+        let focus_state = self.focus;
+
+        Self::new_internal(text_state, font_size, focus_state)
+    }
+
+    pub fn focus_state<S: Into<FocusState<GS>>>(self, focus_state: S) -> Box<Self> {
+        let font_size = self.font_size;
+        let text_state = self.text;
+        let focus_state = focus_state.into();
+
+        Self::new_internal(text_state, font_size, focus_state)
+    }
+
+    fn new_internal(text_state: StringState<GS>, font_size: U32State<GS>, focus_state: FocusState<GS>) -> Box<Self> {
         let cursor_x = CommonState::new_local_with_key(&0.0);
         let selection_x = CommonState::new_local_with_key(&0.0);
 
@@ -46,39 +72,39 @@ impl<GS: GlobalState> PlainTextInput<GS> {
 
         let text_offset = CommonState::new_local_with_key(&0.0);
 
-        let focus_state = CommonState::new_local_with_key(&Focus::Unfocused);
 
         Box::new(PlainTextInput {
             id: Id::new_v4(),
-            child: HStack::initialize( vec![
+            child: HStack::initialize(vec![
                 ZStack::initialize(vec![
                     IfElse::new(focus_state.clone().mapped(|focus| *focus == Focus::Focused))
                         .when_true(Rectangle::initialize(vec![])
-                            .fill(GREEN)
-                            .frame(selection_width.clone(), 40.0)
+                            .fill(EnvironmentColor::Accent)
+                            .frame(selection_width.clone(), font_size.clone().mapped(|val| *val as f64))
                             .offset(selection_x.clone(), 0.0)),
                     Text::new(text_state.clone())
-                        .font_size(40).wrap_mode(Wrap::None),
-                    IfElse::new( focus_state.clone().mapped(|focus| *focus == Focus::Focused))
+                        .font_size(font_size.clone()).wrap_mode(Wrap::None),
+                    IfElse::new(focus_state.clone().mapped(|focus| *focus == Focus::Focused))
                         .when_true(Rectangle::initialize(vec![])
-                        .fill(RED)
-                        .frame(4.0, 40.0)
-                        .offset(cursor_x.clone(), 0.0))
-            ]).alignment(BasicLayouter::TopLeading)
+                            .fill(EnvironmentColor::Label)
+                            .frame(1.0, font_size.clone().mapped(|val| *val as f64))
+                            .offset(cursor_x.clone(), 0.0))
+                ]).alignment(BasicLayouter::TopLeading)
                     .offset(text_offset.clone(), 0.0),
-                   Spacer::new(SpacerDirection::Horizontal)
+                Spacer::new(SpacerDirection::Horizontal)
             ]),
-            focus: focus_state.into(),
+            focus: focus_state,
             position: [0.0, 0.0],
             dimension: [0.0, 0.0],
             text: text_state,
             grapheme_split_cache: ("".to_string(), vec![]),
-            cursor: Cursor::Single(CursorIndex{ line: 0, char: 0 }),
+            cursor: Cursor::Single(CursorIndex { line: 0, char: 0 }),
             drag_start_cursor: None,
-            cursor_x,
-            selection_width,
-            selection_x,
-            text_offset
+            cursor_x: cursor_x.into(),
+            selection_width: selection_width.into(),
+            selection_x: selection_x.into(),
+            text_offset: text_offset.into(),
+            font_size,
         })
     }
 
@@ -182,7 +208,7 @@ impl<GS: GlobalState> PlainTextInput<GS> {
     /// position, or the width of a given string.
     fn get_positioned_glyphs(&mut self, text: &String, env: &Environment<GS>) -> Vec<PositionedGlyph> {
         let mut text_scaler: Box<carbide_core::widget::Text<GS>> = Text::new(text.clone())
-            .font_size(40).wrap_mode(Wrap::None);
+            .font_size(self.font_size.clone()).wrap_mode(Wrap::None);
 
         text_scaler.set_position([0.0, 0.0]);
         text_scaler.set_dimension(self.dimension.add([100.0,100.0]));
@@ -206,7 +232,6 @@ impl<GS: GlobalState> PlainTextInput<GS> {
     }
 
     fn focus_retrieved(&mut self, _: &WidgetEvent, focus_request: &Refocus, env: &mut Environment<GS>, global_state: &mut GS) {
-
         if focus_request != &Refocus::FocusRequest {
             self.cursor = Cursor::Single(CursorIndex{line: 0, char: Self::len_in_graphemes(self.text.get_latest_value())});
             self.reposition_cursor(env, global_state);

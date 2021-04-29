@@ -1,17 +1,15 @@
-use crate::prelude::*;
-
-use crate::text::{Justify, PositionedGlyph, font};
-use crate::position::Align;
-use crate::render::primitive_kind::PrimitiveKind;
-use crate::render::util::new_primitive;
-use crate::utils;
-use crate::render::text::Text as RenderText;
 use rusttype::Scale;
-use crate::state::environment_color::EnvironmentColor;
-use crate::state::state::{ColorState, U32State};
-use crate::widget::types::text_wrap::Wrap;
-use crate::state::environment_font_size::EnvironmentFontSize;
 
+use crate::position::Align;
+use crate::prelude::*;
+use crate::render::primitive_kind::PrimitiveKind;
+use crate::render::text::Text as RenderText;
+use crate::render::util::new_primitive;
+use crate::state::environment_color::EnvironmentColor;
+use crate::state::environment_font_size::EnvironmentFontSize;
+use crate::text::{font, Justify, PositionedGlyph};
+use crate::utils;
+use crate::widget::types::text_wrap::Wrap;
 
 /// Displays some given text centered within a rectangular area.
 ///

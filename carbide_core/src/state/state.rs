@@ -1,19 +1,18 @@
+use std::fmt;
 use std::fmt::Debug;
+use std::ops::{Deref, DerefMut};
 
 use bitflags::_core::fmt::Formatter;
+use dyn_clone::DynClone;
 use serde::{Deserialize, Serialize};
+use serde::de::DeserializeOwned;
 use uuid::Uuid;
 
-use crate::{from_ron, to_ron, Color};
-use crate::state::global_state::GlobalState;
-use dyn_clone::DynClone;
-use std::ops::{DerefMut, Deref};
-use std::fmt;
-use crate::state::mapped_state::MappedState;
+use crate::{Color, from_ron, to_ron};
 use crate::state::environment::Environment;
-use serde::de::DeserializeOwned;
+use crate::state::global_state::GlobalState;
+use crate::state::mapped_state::MappedState;
 use crate::state::state_key::StateKey;
-
 
 pub trait State<T, GS>: DynClone where T: Serialize + Clone + Debug, GS: GlobalState {
     fn get_value_mut(&mut self, env: &mut Environment<GS>, global_state: &mut GS) -> &mut T;
@@ -24,9 +23,6 @@ pub trait State<T, GS>: DynClone where T: Serialize + Clone + Debug, GS: GlobalS
     fn update_dependent_states(&mut self, env: &Environment<GS>);
     fn insert_dependent_states(&self, env: &mut Environment<GS>);
 }
-
-pub type ColorState<GS> = Box<dyn State<Color, GS>>;
-pub type U32State<GS> = Box<dyn State<u32, GS>>;
 
 pub trait StateExt<T: Serialize + Clone + Debug + DeserializeOwned + 'static, GS: GlobalState>: State<T, GS> + Sized + 'static {
     fn mapped<U: Serialize + Clone + Debug + 'static>(self, map: fn(&T) -> U) -> Box<dyn State<U, GS>> {

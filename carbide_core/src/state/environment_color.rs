@@ -1,6 +1,6 @@
-use crate::widget::GlobalState;
+use crate::state::*;
 use crate::state::environment_state::environment_color_state::EnvironmentColorState;
-use crate::state::state::ColorState;
+use crate::widget::GlobalState;
 
 #[derive(Hash, Eq, PartialEq, Clone, Debug)]
 pub enum EnvironmentColor {

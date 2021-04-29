@@ -1,12 +1,13 @@
-use carbide_core::widget::*;
-use carbide_wgpu::window::Window;
 use futures::executor::block_on;
+use serde::Deserialize;
+use serde::Serialize;
 
 use carbide_controls::PlainTextInput;
 use carbide_controls::PopUpButton;
-use serde::Serialize;
-use serde::Deserialize;
-use self::Day::{Monday, Tuesday, Wednesday, Thursday, Friday, Saturday, Sunday};
+use carbide_core::widget::*;
+use carbide_wgpu::window::Window;
+
+use self::Day::{Friday, Monday, Saturday, Sunday, Thursday, Tuesday, Wednesday};
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub enum Day {
@@ -56,21 +57,25 @@ fn main() {
     window.set_widgets(
         VStack::initialize(vec![
             PlainTextInput::new(text_state)
+                .font_size(40)
                 .padding(EdgeInsets::all(2.0))
                 .border()
                 .clip()
                 .padding(EdgeInsets::all(50.0)),
             PlainTextInput::new(text_state2)
+                .font_size(40)
                 .padding(EdgeInsets::all(2.0))
                 .border()
                 .clip()
                 .padding(EdgeInsets::all(50.0)),
             PlainTextInput::new(text_state3)
+                .font_size(40)
                 .padding(EdgeInsets::all(2.0))
                 .border()
                 .clip()
                 .padding(EdgeInsets::all(50.0)),
             PlainTextInput::new(text_state4)
+                .font_size(40)
                 .padding(EdgeInsets::all(2.0))
                 .border()
                 .clip()
