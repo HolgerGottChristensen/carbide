@@ -1,3 +1,4 @@
+
 #[macro_export]
 macro_rules! v023_convert_key {
     ($keycode:expr) => {{
@@ -105,6 +106,11 @@ macro_rules! v023_convert_key {
             winit::event::VirtualKeyCode::Home => carbide_core::input::keyboard::Key::Home,
             winit::event::VirtualKeyCode::Insert => carbide_core::input::keyboard::Key::Insert,
             winit::event::VirtualKeyCode::Left => carbide_core::input::keyboard::Key::Left,
+
+            // On mac this is the command (cmd) key
+            winit::event::VirtualKeyCode::LWin => carbide_core::input::keyboard::Key::LGui,
+            winit::event::VirtualKeyCode::RWin => carbide_core::input::keyboard::Key::RGui,
+
             winit::event::VirtualKeyCode::LBracket => {
                 carbide_core::input::keyboard::Key::LeftBracket
             }

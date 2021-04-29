@@ -1,9 +1,9 @@
 use crate::event_handler::{KeyboardEvent, MouseEvent, WidgetEvent};
+use crate::focus::Focusable;
 use crate::state::environment::Environment;
+use crate::state::global_state::GlobalState;
 use crate::state::state_sync::StateSync;
 use crate::widget::common_widget::CommonWidget;
-use crate::state::global_state::GlobalState;
-use crate::focus::Focusable;
 
 pub trait Event<GS>: CommonWidget<GS> + StateSync<GS> + Focusable<GS> where GS: GlobalState {
     /// A function that will be called when a mouse event occurs.
@@ -21,7 +21,7 @@ pub trait Event<GS>: CommonWidget<GS> + StateSync<GS> + Focusable<GS> where GS: 
     /// This will get delegated to all widgets.
     /// It will never get called with mouse or keyboard events.
     /// TODO: Separate touch events. And add global state
-    fn handle_other_event(&mut self, event: &WidgetEvent);
+    fn handle_other_event(&mut self, event: &WidgetEvent, env: &mut Environment<GS>, global_state: &mut GS);
 
     fn process_mouse_event(&mut self, event: &MouseEvent, consumed: &bool, env: &mut Environment<GS>, global_state: &mut GS);
 
@@ -65,7 +65,7 @@ pub trait Event<GS>: CommonWidget<GS> + StateSync<GS> + Focusable<GS> where GS: 
     fn process_other_event_default(&mut self, event: &WidgetEvent, env: &mut Environment<GS>, global_state: &mut GS) {
         self.update_all_widget_state(env, global_state);
 
-        self.handle_other_event(event);
+        self.handle_other_event(event, env, global_state);
 
         self.insert_local_state(env);
 

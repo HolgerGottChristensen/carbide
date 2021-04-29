@@ -12,6 +12,7 @@ readme = "../../README.md"
 repository = "https://github.com/pistondevelopers/carbide.git"
 homepage = "https://github.com/pistondevelopers/carbide"
 categories = ["gui"]
+edition="2018"
 
 [lib]
 name = "carbide_winit"

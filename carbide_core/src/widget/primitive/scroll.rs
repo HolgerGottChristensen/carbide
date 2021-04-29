@@ -1,10 +1,9 @@
-use crate::prelude::*;
-use crate::widget::types::scroll_direction::ScrollDirection;
-use crate::event_handler::{MouseEvent, WidgetEvent};
 use crate::draw::shape::vertex::Vertex;
+use crate::event_handler::{MouseEvent, WidgetEvent};
 use crate::input::MouseButton;
+use crate::prelude::*;
 use crate::state::environment_color::EnvironmentColor;
-
+use crate::widget::types::scroll_direction::ScrollDirection;
 
 /// A basic, non-interactive rectangle shape widget.
 #[derive(Debug, Clone, Widget)]
@@ -202,7 +201,7 @@ impl<S: GlobalState> Scroll<S> {
         }
     }
 
-    fn handle_other_event(&mut self, event: &WidgetEvent) {
+    fn handle_other_event(&mut self, event: &WidgetEvent, env: &mut Environment<S>, global_state: &mut S) {
         match event {
             WidgetEvent::Window(_) => {
                 self.keep_y_within_bounds();

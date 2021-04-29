@@ -1,13 +1,12 @@
-use proc_macro2;
-use syn;
-
-use proc_macro2::{Ident, TokenStream, Span};
-use syn::{Type, Fields, Attribute, Meta, Path, GenericParam, WherePredicate, DeriveInput, NestedMeta};
 use std::collections::HashSet;
+
+use proc_macro2;
+use proc_macro2::{Ident, Span, TokenStream};
+use syn;
+use syn::{Attribute, DeriveInput, Fields, GenericParam, Meta, NestedMeta, Path, Type, WherePredicate};
 
 // The implementation for `Widget`.
 pub fn impl_widget(ast: &syn::DeriveInput) -> proc_macro2::TokenStream {
-
     let struct_ident = &ast.ident;
 
     let generics_with_gs = &ast.generics;
@@ -147,7 +146,7 @@ pub fn impl_widget(ast: &syn::DeriveInput) -> proc_macro2::TokenStream {
     };
 
     let handle_other_event = if let Some(_) = struct_attributes.get("event.handle_other_event") {
-        quote! {#struct_ident::handle_other_event(self, event);}
+        quote! {#struct_ident::handle_other_event(self, event, env, global_state);}
     } else {
         quote! {}
     };
@@ -366,7 +365,7 @@ pub fn impl_widget(ast: &syn::DeriveInput) -> proc_macro2::TokenStream {
                 #handle_keyboard_event
             }
 
-            fn handle_other_event(&mut self, event: &carbide_core::event_handler::WidgetEvent) {
+            fn handle_other_event(&mut self, event: &carbide_core::event_handler::WidgetEvent, env: &mut carbide_core::state::environment::Environment<#global_state_use>, global_state: &mut #global_state_use) {
                 #handle_other_event
             }
 

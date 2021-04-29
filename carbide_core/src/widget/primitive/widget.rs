@@ -1,19 +1,21 @@
-use crate::prelude::*;
-use crate::event::event::Event;
-use dyn_clone::DynClone;
-use crate::widget::{Frame, Offset, EnvUpdating};
-use crate::widget::primitive::padding::Padding;
-use crate::widget::primitive::hidden::Hidden;
-use crate::widget::primitive::clip::Clip;
-use crate::widget::types::edge_insets::EdgeInsets;
-use std::ops::{Deref, DerefMut};
-use crate::event_handler::{MouseEvent, KeyboardEvent, WidgetEvent};
 use core::fmt;
 use std::fmt::Debug;
-use crate::widget::primitive::border::Border;
-use crate::focus::{Focusable, Focus, Refocus};
-use crate::widget::primitive::environment_updating::EnvironmentStateContainer;
+use std::ops::{Deref, DerefMut};
+
+use dyn_clone::DynClone;
+
+use crate::event::event::Event;
+use crate::event_handler::{KeyboardEvent, MouseEvent, WidgetEvent};
+use crate::focus::{Focus, Focusable, Refocus};
+use crate::prelude::*;
 use crate::state::environment_color::EnvironmentColor;
+use crate::widget::{EnvUpdating, Frame, Offset};
+use crate::widget::primitive::border::Border;
+use crate::widget::primitive::clip::Clip;
+use crate::widget::primitive::environment_updating::EnvironmentStateContainer;
+use crate::widget::primitive::hidden::Hidden;
+use crate::widget::primitive::padding::Padding;
+use crate::widget::types::edge_insets::EdgeInsets;
 
 pub trait Widget<S>: Event<S> + Layout<S> + Render<S> + Focusable<S> + DynClone where S: GlobalState {}
 
@@ -125,8 +127,8 @@ impl<S: GlobalState> Event<S> for Box<dyn Widget<S>> {
         self.deref_mut().handle_keyboard_event(event, env, global_state)
     }
 
-    fn handle_other_event(&mut self, event: &WidgetEvent) {
-        self.deref_mut().handle_other_event(event)
+    fn handle_other_event(&mut self, event: &WidgetEvent, env: &mut Environment<S>, global_state: &mut S) {
+        self.deref_mut().handle_other_event(event, env, global_state)
     }
 
     fn process_mouse_event(&mut self, event: &MouseEvent, consumed: &bool, env: &mut Environment<S>, global_state: &mut S) {

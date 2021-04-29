@@ -5,7 +5,8 @@ use unicode_segmentation::UnicodeSegmentation;
 
 use carbide_core::color::{GREEN, RED};
 use carbide_core::draw::shape::vertex::Vertex;
-use carbide_core::event_handler::{KeyboardEvent, MouseEvent, WidgetEvent};
+use carbide_core::event_handler::{KeyboardEvent, MouseEvent, WidgetEvent, WindowEvent};
+use carbide_core::input::ModifierKey;
 use carbide_core::prelude::{State, Uuid};
 use carbide_core::state::{F64State, StringState, U32State};
 use carbide_core::text::PositionedGlyph;
@@ -20,7 +21,7 @@ use crate::plain::text_input_key_commands::TextInputKeyCommand;
 /// key shortcuts, mouse click and drag select along with copy and paste. For an example of
 /// how to use this widget look at examples/plain_text_input
 #[derive(Clone, Widget)]
-#[event(handle_keyboard_event, handle_mouse_event)]
+#[event(handle_keyboard_event, handle_mouse_event, handle_other_event)]
 #[focusable(focus_retrieved)]
 pub struct PlainTextInput<GS> where GS: GlobalState {
     id: Id,
@@ -213,7 +214,7 @@ impl<GS: GlobalState> PlainTextInput<GS> {
         text_scaler.set_position([0.0, 0.0]);
         text_scaler.set_dimension(self.dimension.add([100.0,100.0]));
 
-        let positioned_glyphs = text_scaler.get_positioned_glyphs(env.get_fonts_map(), 1.0); //Todo: save dpi in env stack
+        let positioned_glyphs = text_scaler.get_positioned_glyphs(env.get_fonts_map(), 1.0);
         positioned_glyphs
     }
 
@@ -233,8 +234,32 @@ impl<GS: GlobalState> PlainTextInput<GS> {
 
     fn focus_retrieved(&mut self, _: &WidgetEvent, focus_request: &Refocus, env: &mut Environment<GS>, global_state: &mut GS) {
         if focus_request != &Refocus::FocusRequest {
-            self.cursor = Cursor::Single(CursorIndex{line: 0, char: Self::len_in_graphemes(self.text.get_latest_value())});
+            self.cursor = Cursor::Single(CursorIndex { line: 0, char: Self::len_in_graphemes(self.text.get_latest_value()) });
             self.reposition_cursor(env, global_state);
+        }
+    }
+
+    fn handle_other_event(&mut self, event: &WidgetEvent, env: &mut Environment<GS>, global_state: &mut GS) {
+        match event {
+            WidgetEvent::Window(w) => {
+                match w {
+                    WindowEvent::Resize(_) => {
+                        let offset = *self.text_offset.get_value(env, global_state);
+                        let text = self.text.get_value(env, global_state).clone();
+                        let positioned_glyphs = self.get_positioned_glyphs(&text, env);
+
+                        let start = CursorIndex { line: 0, char: 0 };
+                        let end = CursorIndex { line: 0, char: Self::len_in_graphemes(self.text.get_value(env, global_state)) };
+
+                        let max_offset = Cursor::Selection { start, end }.get_width(&text, &positioned_glyphs);
+
+                        // Since the offset is negative we have to chose the max value
+                        *self.text_offset.get_value_mut(env, global_state) = offset.max(-(max_offset - self.get_width())).min(0.0);
+                    }
+                    _ => ()
+                }
+            }
+            _ => ()
         }
     }
 
@@ -311,27 +336,36 @@ impl<GS: GlobalState> PlainTextInput<GS> {
 
             }
             MouseEvent::Drag { to, delta_xy, .. } => {
+                // If we do not have focus, just return
                 if self.get_focus() != Focus::Focused { return }
 
+                // Get the current text for the text_input
                 let text = self.text.get_value(env, global_state).clone();
 
+                // Get the delta x for the drag
                 let delta_x = delta_xy[0].abs();
+
+                // The threshold for when to scroll when the mouse is at the edge
                 let mouse_scroll_threshold = 30.0;
 
+                // If the cursor is at the right edge within the threshold
                 if to[0] < self.get_x() + mouse_scroll_threshold {
                     let offset = self.text_offset.get_value(env, global_state) + 10.0 * delta_x;
                     *self.text_offset.get_value_mut(env, global_state) = offset.min(0.0);
+
+                    // If the cursor is at the left edge within the threshold
                 } else if to[0] > self.get_x() + self.get_width() - mouse_scroll_threshold {
                     let offset = self.text_offset.get_value(env, global_state) - 10.0 * delta_x;
                     let text = self.text.get_value(env, global_state).clone();
                     let positioned_glyphs = self.get_positioned_glyphs(&text, env);
 
-                    let start = CursorIndex {line: 0, char: 0};
-                    let end = CursorIndex {line: 0, char: Self::len_in_graphemes(self.text.get_value(env, global_state))};
+                    let start = CursorIndex { line: 0, char: 0 };
+                    let end = CursorIndex { line: 0, char: Self::len_in_graphemes(self.text.get_value(env, global_state)) };
 
-                    let max_offset = Cursor::Selection{start, end}.get_width(&text, &positioned_glyphs);
+                    let max_offset = Cursor::Selection { start, end }.get_width(&text, &positioned_glyphs);
 
-                    *self.text_offset.get_value_mut(env, global_state) = offset.max(-(max_offset - self.get_width()));
+                    // Since the offset is negative we have to chose the max value
+                    *self.text_offset.get_value_mut(env, global_state) = offset.max(-(max_offset - self.get_width())).min(0.0);
                 }
 
 
@@ -701,14 +735,15 @@ impl<GS: GlobalState> PlainTextInput<GS> {
                     }
                 }
             }
-            KeyboardEvent::Text(string, _modifiers) => {
+            KeyboardEvent::Text(string, modifiers) => {
                 if Self::len_in_graphemes(&string) == 0 || string.chars().next().unwrap().is_control() { return }
+                if modifiers == &ModifierKey::GUI { return }
 
                 match self.cursor {
                     Cursor::Single(index) => {
                         self.insert_str(index.char, string, env, global_state);
 
-                        self.cursor = Cursor::Single(CursorIndex{ line: 0, char: index.char + Self::len_in_graphemes(&string) });
+                        self.cursor = Cursor::Single(CursorIndex { line: 0, char: index.char + Self::len_in_graphemes(&string) });
                     }
                     Cursor::Selection { start, end } => {
                         let min = start.char.min(end.char);
