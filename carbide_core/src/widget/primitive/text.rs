@@ -73,7 +73,7 @@ impl<GS: GlobalState> Render<GS> for Text<GS> {
         };
 
         let mut prims: Vec<Primitive> = vec![new_primitive(kind, Rect::new(self.position, self.dimension))];
-        prims.extend(Rectangle::<GS>::debug_outline_special(Rect::new(self.position, self.dimension), 1.0));
+        prims.extend(Rectangle::<GS>::debug_outline(Rect::new(self.position, self.dimension), 1.0));
 
         return prims;
     }
