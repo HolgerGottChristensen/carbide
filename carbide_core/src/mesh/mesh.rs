@@ -374,7 +374,6 @@ impl Mesh {
                         let min_y = screen_rect.min.y as f64 / scale_factor;
                         let max_y = screen_rect.max.y as f64 / scale_factor;
 
-
                         Rect {
                             x: Range { start: min_x, end: max_x },
                             y: Range { start: min_y, end: max_y },
