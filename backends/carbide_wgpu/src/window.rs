@@ -465,8 +465,9 @@ impl<T: GlobalState> Window<T> {
                             self.resize(*physical_size);
                             self.inner_window.request_redraw();
                         }
-                        WindowEvent::ScaleFactorChanged { new_inner_size, .. } => {
+                        WindowEvent::ScaleFactorChanged { new_inner_size, scale_factor } => {
                             self.resize(**new_inner_size);
+                            self.ui.set_scale_factor(*scale_factor);
                             self.inner_window.request_redraw();
                         }
                         _ => {}

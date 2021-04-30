@@ -4,11 +4,11 @@ extern crate env_logger;
 extern crate futures;
 
 use futures::executor::block_on;
+use serde::{Deserialize, Serialize};
 
 use carbide_controls::RadioButton;
 use carbide_core::widget::*;
 use carbide_wgpu::window::Window;
-use serde::{Serialize, Deserialize};
 
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 enum Shape {
@@ -29,7 +29,7 @@ fn main() {
 
     let icon_path = Window::<String>::path_to_assets("images/rust_press.png");
 
-    let mut window = Window::new("Plain Text Input Example - Carbide".to_string(), 800, 1200, Some(icon_path), String::from("Hejsa"));
+    let mut window = Window::new("Radio Button Example - Carbide".to_string(), 800, 1200, Some(icon_path), String::from("Hejsa"));
 
     window.add_font("fonts/NotoSans/NotoSans-Regular.ttf").unwrap();
 

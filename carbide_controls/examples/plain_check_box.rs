@@ -4,18 +4,18 @@ extern crate env_logger;
 extern crate futures;
 
 use futures::executor::block_on;
+use serde::{Deserialize, Serialize};
 
-use carbide_controls::{PlainCheckBox, CheckBoxValue};
+use carbide_controls::{CheckBoxValue, PlainCheckBox};
 use carbide_core::widget::*;
 use carbide_wgpu::window::Window;
-use serde::{Serialize, Deserialize};
 
 fn main() {
     env_logger::init();
 
     let icon_path = Window::<String>::path_to_assets("images/rust_press.png");
 
-    let mut window = Window::new("Plain Text Input Example - Carbide".to_string(), 800, 1200, Some(icon_path), String::from("Hejsa"));
+    let mut window = Window::new("Plain Check Box Example - Carbide".to_string(), 800, 1200, Some(icon_path), String::from("Hejsa"));
 
     window.add_font("fonts/NotoSans/NotoSans-Regular.ttf").unwrap();
 

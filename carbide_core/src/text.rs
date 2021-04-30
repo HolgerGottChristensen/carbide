@@ -109,11 +109,11 @@ pub mod font {
     use fnv;
 
     /// A type-safe wrapper around the `FontId`.
-                ///
-                /// This is used as both:
-                ///
-                /// - The key for the `font::Map`'s inner `HashMap`.
-                /// - The `font_id` field for the rusttype::gpu_cache::Cache.
+                    ///
+                    /// This is used as both:
+                    ///
+                    /// - The key for the `font::Map`'s inner `HashMap`.
+                    /// - The `font_id` field for the rusttype::gpu_cache::Cache.
     #[derive(Copy, Clone, Debug, Hash, PartialEq, Eq, PartialOrd, Ord)]
     pub struct Id(pub usize);
 
@@ -484,9 +484,9 @@ pub mod cursor {
     use crate::position::{Align, Point, Range, Rect, Scalar};
 
     /// Every possible cursor position within each line of text yielded by the given iterator.
-                ///
-                /// Yields `(xs, y_range)`, where `y_range` is the `Range` occupied by the line across the *y*
-                /// axis and `xs` is every possible cursor position along the *x* axis
+                    ///
+                    /// Yields `(xs, y_range)`, where `y_range` is the `Range` occupied by the line across the *y*
+                    /// axis and `xs` is every possible cursor position along the *x* axis
     #[derive(Clone)]
     pub struct XysPerLine<'a, I> {
         lines_with_rects: I,
@@ -1218,7 +1218,8 @@ pub mod line {
             }
 
             // Add the character's width to the width so far.
-            let new_width = width + advance_width(ch, font, scale, &mut last_glyph);
+            let advance_width = advance_width(ch, font, scale, &mut last_glyph);
+            let new_width = width + advance_width;
 
             // Check for a new whitespace.
             if ch.is_whitespace() {
@@ -1237,7 +1238,7 @@ pub mod line {
                 last_whitespace_start = Some((Last { byte: byte_i, char: char_i, width_before: width }, ch.len_utf8()));
             } else {
                 // Check for a line wrap.
-                if new_width - 1.0 > max_width {
+                if new_width - advance_width / 2.0 > max_width {
                     return match last_whitespace_start {
                         Some((Last { byte, char, width_before }, len_bytes)) => {
                             let break_ = Break::Wrap { byte, char, len_bytes };
