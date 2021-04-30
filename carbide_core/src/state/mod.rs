@@ -2,7 +2,7 @@ pub use tuple_state::*;
 
 use crate::Color;
 use crate::focus::Focus;
-use crate::state::state::State;
+pub use crate::state::state::State;
 
 pub mod state;
 pub mod environment;
@@ -20,5 +20,7 @@ pub mod vec_state;
 pub type ColorState<GS> = Box<dyn State<Color, GS>>;
 pub type StringState<GS> = Box<dyn State<String, GS>>;
 pub type U32State<GS> = Box<dyn State<u32, GS>>;
+pub type BoolState<GS> = Box<dyn State<bool, GS>>;
 pub type F64State<GS> = Box<dyn State<f64, GS>>;
 pub type FocusState<GS> = Box<dyn State<Focus, GS>>;
+pub type TState<T, GS> = Box<dyn State<T, GS>>;

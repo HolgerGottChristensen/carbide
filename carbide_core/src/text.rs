@@ -1329,13 +1329,14 @@ pub mod line {
             // Calculate the `y` `Range` of the first line `Rect`.
             let total_text_height = super::height(num_lines, font_size, line_spacing);
             let total_text_y_range = Range::new(0.0, total_text_height);
+
             let total_text_y = match y_align {
                 Align::Start => total_text_y_range.align_start_of(bounding_rect.y),
                 Align::Middle => total_text_y_range.align_middle_of(bounding_rect.y),
                 Align::End => total_text_y_range.align_end_of(bounding_rect.y),
             };
             let range = Range::new(0.0, font_size as Scalar);
-            let y = range.align_end_of(total_text_y);
+            let y = range.align_start_of(total_text_y);
 
             Rect { x, y }
         });
@@ -1468,7 +1469,7 @@ pub mod line {
 
                     let y = {
                         let h = line_rect.h();
-                        let y = line_rect.y() - h - line_spacing;
+                        let y = line_rect.y() + h + line_spacing;
                         Range::from_pos_and_len(y, h)
                     };
 

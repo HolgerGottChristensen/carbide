@@ -5,14 +5,16 @@ extern crate copypasta;
 extern crate unicode_segmentation;
 
 pub use list::List;
-pub use plain::PlainButton;
-pub use plain::PlainPopUpButton;
-pub use plain::PlainTextInput;
+pub use plain::*;
 pub use pop_up_button::PopUpButton;
 pub use text_input::TextInput;
+pub use radio_button::RadioButton;
+pub use check_box::CheckBox;
 
 mod plain;
 mod list;
 mod pop_up_button;
 mod text_input;
+mod radio_button;
+mod check_box;
 

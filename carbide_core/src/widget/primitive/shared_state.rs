@@ -18,13 +18,13 @@ pub struct SharedState<T, GS> where T: Serialize + Clone + Debug + DeserializeOw
 }
 
 impl<T: Serialize + Clone + Debug + DeserializeOwned, GS: GlobalState> SharedState<T, GS> {
-    pub fn new(shared_state: Box<dyn State<T, GS>>, child: Box<dyn Widget<GS>>) -> Box<Self> {
+    pub fn new<S: Into<TState<T, GS>>>(shared_state: S, child: Box<dyn Widget<GS>>) -> Box<Self> {
         Box::new(SharedState {
             id: Uuid::new_v4(),
             child,
             position: [0.0, 0.0],
             dimension: [0.0, 0.0],
-            shared_state
+            shared_state: shared_state.into()
         })
     }
 }

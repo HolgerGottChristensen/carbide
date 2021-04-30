@@ -120,7 +120,7 @@ impl<T: 'static + Serialize + Clone + Debug + Default + DeserializeOwned, GS: Gl
             KeyboardEvent::Click(Key::Return, _) => {
                 if let Some(action) = self.on_click {
                     action(self, env, global_state);
-                    self.set_focus_and_request(Focus::FocusReleased, env);
+                    //self.set_focus_and_request(Focus::FocusReleased, env);
                 }
             }
             _ => ()
@@ -189,7 +189,7 @@ impl<T: Serialize + Clone + Debug + Default + DeserializeOwned, GS: GlobalState>
         10
     }
 
-    fn calculate_size(&mut self, requested_size: [f64; 2], env: &Environment<GS>) -> [f64; 2] {
+    fn calculate_size(&mut self, requested_size: Dimensions, env: &Environment<GS>) -> [f64; 2] {
         if let Some(child) = self.get_children_mut().next() {
             child.calculate_size(requested_size, env);
         }

@@ -17,12 +17,12 @@ fn main() {
     window.set_widgets(
         OverlaidLayer::new ("overlay_test",
         VStack::initialize(vec![
-            Text::new("Hello world!")
+            Text::new("Hello world!y")
                 .font_size(EnvironmentFontSize::Title)
                 .color(EnvironmentColor::Green)
                 .padding(EdgeInsets::all(10.0)),
             Text::new("Hvad sker der i denne verden og vil den layoute rigtigt når der er en lang tekst og der ikke er nok plads til at det hele kan være på en linje")
-                .padding(EdgeInsets::all(10.0)),
+                .padding(EdgeInsets::all(10.0)).border(),
             Image::new(rust_image),
             Rectangle::initialize(vec![
                 SyncTest::new(sync_state)
