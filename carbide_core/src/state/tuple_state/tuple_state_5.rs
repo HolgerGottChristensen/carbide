@@ -1,10 +1,13 @@
-use crate::prelude::GlobalState;
-use serde::Serialize;
 use std::fmt::Debug;
-use crate::state::state::State;
-use crate::state::environment::Environment;
+
 use serde::de::DeserializeOwned;
+use serde::Serialize;
+
+use crate::prelude::GlobalState;
+use crate::state::environment::Environment;
+use crate::state::state::State;
 use crate::state::state_key::StateKey;
+use crate::state::TState;
 
 #[derive(Clone)]
 pub struct TupleState5<T1, T2, T3, T4, T5, GS>
@@ -29,8 +32,20 @@ impl<T1, T2, T3, T4, T5, GS> TupleState5<T1, T2, T3, T4, T5, GS>
           T4: Serialize + Clone + Debug + DeserializeOwned,
           T5: Serialize + Clone + Debug + DeserializeOwned,
           GS: GlobalState {
+    pub fn new<IT1, IT2, IT3, IT4, IT5>(first: IT1, second: IT2, third: IT3, fourth: IT4, fifth: IT5) -> Box<TupleState5<T1, T2, T3, T4, T5, GS>>
+        where
+            IT1: Into<TState<T1, GS>>,
+            IT2: Into<TState<T2, GS>>,
+            IT3: Into<TState<T3, GS>>,
+            IT4: Into<TState<T4, GS>>,
+            IT5: Into<TState<T5, GS>>,
+    {
+        let first = first.into();
+        let second = second.into();
+        let third = third.into();
+        let fourth = fourth.into();
+        let fifth = fifth.into();
 
-    pub fn new(first: Box<dyn State<T1, GS>>, second: Box<dyn State<T2, GS>>, third: Box<dyn State<T3, GS>>, fourth: Box<dyn State<T4, GS>>, fifth: Box<dyn State<T5, GS>>) -> Box<TupleState5<T1, T2, T3, T4, T5, GS>> {
         Box::new(TupleState5 {
             first: first.clone(),
             second: second.clone(),

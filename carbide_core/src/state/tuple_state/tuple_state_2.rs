@@ -1,10 +1,13 @@
-use crate::prelude::GlobalState;
-use serde::Serialize;
 use std::fmt::Debug;
-use crate::state::state::State;
-use crate::state::environment::Environment;
+
 use serde::de::DeserializeOwned;
+use serde::Serialize;
+
+use crate::prelude::GlobalState;
+use crate::state::environment::Environment;
+use crate::state::state::State;
 use crate::state::state_key::StateKey;
+use crate::state::TState;
 
 #[derive(Clone)]
 pub struct TupleState2<T, U, GS> where T: Serialize + Clone + Debug + DeserializeOwned, U: Serialize + Clone + Debug + DeserializeOwned, GS: GlobalState {
@@ -14,8 +17,14 @@ pub struct TupleState2<T, U, GS> where T: Serialize + Clone + Debug + Deserializ
 }
 
 impl<T: Serialize + Clone + Debug + DeserializeOwned, U: Serialize + Clone + Debug + DeserializeOwned, GS: GlobalState> TupleState2<T, U, GS> {
+    pub fn new<IT, IU>(fst: IT, snd: IU) -> Box<TupleState2<T, U, GS>>
+        where
+            IT: Into<TState<T, GS>>,
+            IU: Into<TState<U, GS>>
+    {
+        let fst = fst.into();
+        let snd = snd.into();
 
-    pub fn new(fst: Box<dyn State<T, GS>>, snd: Box<dyn State<U, GS>>) -> Box<TupleState2<T, U, GS>> {
         Box::new(TupleState2 {
             fst: fst.clone(),
             snd: snd.clone(),

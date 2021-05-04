@@ -1,10 +1,13 @@
-use crate::prelude::GlobalState;
-use serde::Serialize;
 use std::fmt::Debug;
-use crate::state::state::State;
-use crate::state::environment::Environment;
+
 use serde::de::DeserializeOwned;
+use serde::Serialize;
+
+use crate::prelude::GlobalState;
+use crate::state::environment::Environment;
+use crate::state::state::State;
 use crate::state::state_key::StateKey;
+use crate::state::TState;
 
 #[derive(Clone)]
 pub struct TupleState7<T1, T2, T3, T4, T5, T6, T7, GS>
@@ -35,15 +38,32 @@ impl<T1, T2, T3, T4, T5, T6, T7, GS> TupleState7<T1, T2, T3, T4, T5, T6, T7, GS>
           T6: Serialize + Clone + Debug + DeserializeOwned,
           T7: Serialize + Clone + Debug + DeserializeOwned,
           GS: GlobalState {
+    pub fn new<IT1, IT2, IT3, IT4, IT5, IT6, IT7>(
+        first: IT1,
+        second: IT2,
+        third: IT3,
+        fourth: IT4,
+        fifth: IT5,
+        sixth: IT6,
+        seventh: IT7,
+    ) -> Box<TupleState7<T1, T2, T3, T4, T5, T6, T7, GS>>
+        where
+            IT1: Into<TState<T1, GS>>,
+            IT2: Into<TState<T2, GS>>,
+            IT3: Into<TState<T3, GS>>,
+            IT4: Into<TState<T4, GS>>,
+            IT5: Into<TState<T5, GS>>,
+            IT6: Into<TState<T6, GS>>,
+            IT7: Into<TState<T7, GS>>,
+    {
+        let first = first.into();
+        let second = second.into();
+        let third = third.into();
+        let fourth = fourth.into();
+        let fifth = fifth.into();
+        let sixth = sixth.into();
+        let seventh = seventh.into();
 
-    pub fn new(first: Box<dyn State<T1, GS>>,
-               second: Box<dyn State<T2, GS>>,
-               third: Box<dyn State<T3, GS>>,
-               fourth: Box<dyn State<T4, GS>>,
-               fifth: Box<dyn State<T5, GS>>,
-               sixth: Box<dyn State<T6, GS>>,
-               seventh: Box<dyn State<T7, GS>>,
-    ) -> Box<TupleState7<T1, T2, T3, T4, T5, T6, T7, GS>> {
         Box::new(TupleState7 {
             first: first.clone(),
             second: second.clone(),
