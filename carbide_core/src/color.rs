@@ -13,12 +13,12 @@
 
 use std::f32::consts::PI;
 
-use crate::utils::{degrees, fmod, turns};
-
-use serde::{Serialize, Deserialize};
 use rand::Rng;
-use crate::widget::{GlobalState, CommonState};
+use serde::{Deserialize, Serialize};
+
 use crate::prelude::ColorState;
+use crate::utils::{degrees, fmod, turns};
+use crate::widget::{CommonState, GlobalState};
 
 /// Color supporting RGB and HSL variants.
 #[derive(PartialEq, Copy, Clone, Debug, Serialize, Deserialize)]
@@ -118,6 +118,19 @@ fn clampf32(f: f32) -> f32 {
 
 
 impl Color {
+    /// The percent should be between 0 and 1.
+    /// Lighting with negative values will darken the color.
+    pub fn lightened(self, percent: f32) -> Color {
+        let Hsla(h, s, l, a) = self.to_hsl();
+        Color::Hsla(h, s, clampf32(l + percent), a)
+    }
+
+    /// The percent should be between 0 and 1.
+    /// Darkening with negative values will lighten the color.
+    pub fn darkened(self, percent: f32) -> Color {
+        let Hsla(h, s, l, a) = self.to_hsl();
+        Color::Hsla(h, s, clampf32(l - percent), a)
+    }
 
     /// Produce a complementary color. The two colors will accent each other. This is the same as
     /// rotating the hue by 180 degrees.

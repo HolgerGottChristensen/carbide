@@ -77,11 +77,29 @@ impl<T: 'static + Serialize + Clone + Debug + Default + DeserializeOwned, GS: Gl
             }
         });
 
-        let background_color = if is_primary {
+        let hover_state = CommonState::new_local_with_key(&false);
+        let pressed_state = CommonState::new_local_with_key(&false);
+
+        let normal_color = if is_primary {
             EnvironmentColor::Accent
         } else {
             EnvironmentColor::SecondarySystemBackground
         };
+
+        let background_color = TupleState3::new(
+            hover_state.clone().into(),
+            pressed_state.clone().into(),
+            normal_color.into(),
+        ).mapped(|(hover, pressed, normal_color)| {
+            if *pressed {
+                return normal_color.darkened(0.05)
+            }
+            if *hover {
+                return normal_color.lightened(0.05)
+            }
+
+            *normal_color
+        });
 
         let child = PlainButton::new(
             ZStack::initialize(vec![
@@ -93,7 +111,9 @@ impl<T: 'static + Serialize + Clone + Debug + Default + DeserializeOwned, GS: Gl
             ])
         ).local_state(local_state.clone())
             .focused(focus_state.clone())
-            .on_click(clicked);
+            .on_click(clicked)
+            .hover(hover_state.into())
+            .pressed(pressed_state.into());
 
         Box::new(
             Button {
