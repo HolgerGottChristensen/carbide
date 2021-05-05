@@ -40,7 +40,7 @@ impl<T: Serialize + Clone + Debug + Default + DeserializeOwned + 'static, GS: Gl
 
     pub fn new(model: Box<dyn State<Vec<T>, GS>>, selected_state: Box<dyn State<usize, GS>>) -> Box<Self> {
 
-        let opened = Box::new(CommonState::new_local_with_key(&false));
+        let opened = CommonState::new_local_with_key(&false);
 
         let start_item = model.get_latest_value().first().unwrap();
 
@@ -63,11 +63,11 @@ impl<T: Serialize + Clone + Debug + Default + DeserializeOwned + 'static, GS: Gl
             focus: Box::new(CommonState::new_local_with_key(&Focus::Focused)),
             child,
             popup_display_item: None,
-            position: [0.0,0.0],
-            dimension: [0.0,0.0],
+            position: [0.0, 0.0],
+            dimension: [0.0, 0.0],
             popup_id: Uuid::new_v4(),
             popup_list_spacing: 0.0,
-            opened,
+            opened: Box::new(opened),
             selected_state,
             selected_item,
             model,

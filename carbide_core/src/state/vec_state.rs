@@ -1,10 +1,12 @@
-use crate::prelude::GlobalState;
-use serde::Serialize;
 use std::fmt::Debug;
-use crate::state::state::State;
-use uuid::Uuid;
-use crate::state::environment::Environment;
+
 use serde::de::DeserializeOwned;
+use serde::Serialize;
+use uuid::Uuid;
+
+use crate::prelude::GlobalState;
+use crate::state::environment::Environment;
+use crate::state::state::State;
 use crate::state::state_key::StateKey;
 
 #[derive(Clone)]
@@ -75,5 +77,17 @@ impl<T: Serialize + Clone + Debug + DeserializeOwned, GS: GlobalState> State<T, 
 
     fn insert_dependent_states(&self, env: &mut Environment<GS>) {
         env.insert_local_state(&self.vec)
+    }
+}
+
+impl<T: Serialize + Clone + Debug + DeserializeOwned + 'static, GS: GlobalState> Into<Box<dyn State<T, GS>>> for VecState<T, GS> {
+    fn into(self) -> Box<dyn State<T, GS>> {
+        Box::new(self)
+    }
+}
+
+impl<T: Serialize + Clone + Debug + DeserializeOwned + 'static, GS: GlobalState> Into<Box<dyn State<T, GS>>> for Box<VecState<T, GS>> {
+    fn into(self) -> Box<dyn State<T, GS>> {
+        self
     }
 }

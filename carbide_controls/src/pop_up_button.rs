@@ -37,8 +37,8 @@ impl<T: Serialize + Clone + Debug + Default + DeserializeOwned + 'static, GS: Gl
 
             let focus_color = TupleState3::new(
                 focus_state,
-                EnvironmentColor::OpaqueSeparator.into(),
-                EnvironmentColor::Accent.into()
+                EnvironmentColor::OpaqueSeparator,
+                EnvironmentColor::Accent,
             ).mapped(|(focus, primary_color, focus_color)| {
                 if focus == &Focus::Focused {
                     *focus_color
@@ -76,8 +76,8 @@ impl<T: Serialize + Clone + Debug + Default + DeserializeOwned + 'static, GS: Gl
 
             let background_color = TupleState3::new(
                 hovered.clone(),
-                EnvironmentColor::Accent.into(),
-                EnvironmentColor::SecondarySystemBackground.into())
+                EnvironmentColor::Accent,
+                EnvironmentColor::SecondarySystemBackground)
                 .mapped(|(hovered, hover_color, other_color)| {
                     if *hovered {
                         *hover_color

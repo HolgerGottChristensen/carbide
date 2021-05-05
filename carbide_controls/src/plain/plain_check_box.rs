@@ -1,12 +1,14 @@
-use carbide_core::widget::*;
-use carbide_core::event_handler::{MouseEvent, KeyboardEvent};
-use carbide_core::input::MouseButton;
-use carbide_core::input::Key;
-use carbide_core::state::state::State;
 use std::fmt::Debug;
-use carbide_core::{Serialize, DeserializeOwned};
+
+use carbide_core::{DeserializeOwned, Serialize};
+use carbide_core::event_handler::{KeyboardEvent, MouseEvent};
+use carbide_core::input::Key;
+use carbide_core::input::MouseButton;
 use carbide_core::prelude::Uuid;
-use crate::{PlainButton, CheckBoxState, CheckBoxValue};
+use carbide_core::state::state::State;
+use carbide_core::widget::*;
+
+use crate::{CheckBoxState, CheckBoxValue, PlainButton};
 
 #[derive(Clone, Widget)]
 #[focusable(block_focus)]
@@ -33,8 +35,7 @@ impl<GS: GlobalState> PlainCheckBox<GS> {
         let focus_state =  Box::new(CommonState::new_local_with_key(&Focus::Unfocused));
 
         let default_delegate= |focus_state: FocusState<GS>, checked: CheckBoxState<GS>, button: Box<dyn Widget<GS>>| -> Box<dyn Widget<GS>> {
-
-            let highlight_color = TupleState4::new(checked, EnvironmentColor::Red.into(), EnvironmentColor::Green.into(), EnvironmentColor::Blue.into())
+            let highlight_color = TupleState4::new(checked, EnvironmentColor::Red, EnvironmentColor::Green, EnvironmentColor::Blue)
                 .mapped(|(selected, true_color, intermediate_color, false_color)| {
                     match *selected {
                         CheckBoxValue::True => {

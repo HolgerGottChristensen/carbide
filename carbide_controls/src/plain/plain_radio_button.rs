@@ -1,11 +1,13 @@
-use carbide_core::widget::*;
-use carbide_core::event_handler::{MouseEvent, KeyboardEvent};
-use carbide_core::input::MouseButton;
-use carbide_core::input::Key;
-use carbide_core::state::state::State;
 use std::fmt::Debug;
-use carbide_core::{Serialize, DeserializeOwned};
+
+use carbide_core::{DeserializeOwned, Serialize};
+use carbide_core::event_handler::{KeyboardEvent, MouseEvent};
+use carbide_core::input::Key;
+use carbide_core::input::MouseButton;
 use carbide_core::prelude::Uuid;
+use carbide_core::state::state::State;
+use carbide_core::widget::*;
+
 use crate::PlainButton;
 
 #[derive(Clone, Widget)]
@@ -34,8 +36,7 @@ impl<T: 'static + Serialize + Clone + Debug + Default + DeserializeOwned + Parti
         let focus_state =  Box::new(CommonState::new_local_with_key(&Focus::Unfocused));
 
         let default_delegate= |focus_state: FocusState<GS>, selected_state: BoolState<GS>, button: Box<dyn Widget<GS>>| -> Box<dyn Widget<GS>> {
-
-            let highlight_color = TupleState3::new(selected_state, EnvironmentColor::Red.into(), EnvironmentColor::Green.into())
+            let highlight_color = TupleState3::new(selected_state, EnvironmentColor::Red, EnvironmentColor::Green)
                 .mapped(|(selected, selected_color, deselected_color)| {
                     if *selected {
                         *selected_color

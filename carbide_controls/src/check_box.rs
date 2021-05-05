@@ -9,7 +9,7 @@ use carbide_core::prelude::Uuid;
 use carbide_core::Serialize;
 use carbide_core::widget::*;
 
-use crate::{PlainCheckBox, CheckBoxState, CheckBoxValue};
+use crate::{CheckBoxState, CheckBoxValue, PlainCheckBox};
 
 #[derive(Clone, Widget)]
 pub struct CheckBox<GS> where GS: GlobalState {
@@ -29,8 +29,8 @@ impl<GS: GlobalState> CheckBox<GS> {
 
             let focus_color = TupleState3::new(
                 focus_state,
-                EnvironmentColor::OpaqueSeparator.into(),
-                EnvironmentColor::Accent.into()
+                EnvironmentColor::OpaqueSeparator,
+                EnvironmentColor::Accent,
             ).mapped(|(focus, primary_color, focus_color)| {
                 if focus == &Focus::Focused {
                     *focus_color
@@ -41,8 +41,8 @@ impl<GS: GlobalState> CheckBox<GS> {
 
             let checked_color = TupleState3::new(
                 checked_state.clone(),
-                EnvironmentColor::SecondarySystemBackground.into(),
-                EnvironmentColor::Accent.into()
+                EnvironmentColor::SecondarySystemBackground,
+                EnvironmentColor::Accent,
             ).mapped(|(selected, primary_color, checked_color)| {
                 if *selected == CheckBoxValue::False {
                     *primary_color

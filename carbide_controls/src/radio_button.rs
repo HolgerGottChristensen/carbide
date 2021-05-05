@@ -29,8 +29,8 @@ impl<T: Serialize + Clone + Debug + Default + DeserializeOwned + PartialEq  + 's
 
             let focus_color = TupleState3::new(
                 focus_state,
-                EnvironmentColor::OpaqueSeparator.into(),
-                EnvironmentColor::Accent.into()
+                EnvironmentColor::OpaqueSeparator,
+                EnvironmentColor::Accent,
             ).mapped(|(focus, primary_color, focus_color)| {
                 if focus == &Focus::Focused {
                     *focus_color
@@ -41,8 +41,8 @@ impl<T: Serialize + Clone + Debug + Default + DeserializeOwned + PartialEq  + 's
 
             let selected_color = TupleState3::new(
                 selected_state.clone(),
-                EnvironmentColor::SecondarySystemBackground.into(),
-                EnvironmentColor::Accent.into()
+                EnvironmentColor::SecondarySystemBackground,
+                EnvironmentColor::Accent,
             ).mapped(|(selected, primary_color, selected_color)| {
                 if *selected {
                     *selected_color

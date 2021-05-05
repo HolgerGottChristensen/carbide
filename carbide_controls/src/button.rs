@@ -66,9 +66,9 @@ impl<T: 'static + Serialize + Clone + Debug + Default + DeserializeOwned, GS: Gl
 
     fn new_internal(is_primary: bool, focus_state: FocusState<GS>, display_item: Box<dyn Widget<GS>>, local_state: Box<dyn State<T, GS>>, clicked: fn(myself: &mut PlainButton<T, GS>, env: &mut Environment<GS>, global_state: &mut GS)) -> Box<Self> {
         let focus_color = TupleState3::new(
-            focus_state.clone().into(),
-            EnvironmentColor::OpaqueSeparator.into(),
-            EnvironmentColor::Accent.into(),
+            focus_state.clone(),
+            EnvironmentColor::OpaqueSeparator,
+            EnvironmentColor::Accent,
         ).mapped(|(focus, primary_color, focus_color)| {
             if focus == &Focus::Focused {
                 *focus_color
@@ -87,9 +87,9 @@ impl<T: 'static + Serialize + Clone + Debug + Default + DeserializeOwned, GS: Gl
         };
 
         let background_color = TupleState3::new(
-            hover_state.clone().into(),
-            pressed_state.clone().into(),
-            normal_color.into(),
+            hover_state.clone(),
+            pressed_state.clone(),
+            normal_color,
         ).mapped(|(hover, pressed, normal_color)| {
             if *pressed {
                 return normal_color.darkened(0.05)

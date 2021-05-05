@@ -397,8 +397,11 @@ impl<T: Serialize + Clone + Debug + 'static, GS: GlobalState> Into<Box<dyn State
     }
 }
 
-
-
+impl<T: Serialize + Clone + Debug + 'static, GS: GlobalState> Into<Box<dyn State<T, GS>>> for Box<CommonState<T, GS>> {
+    fn into(self) -> Box<dyn State<T, GS>> {
+        self
+    }
+}
 
 
 // Build a macro that expands: bind!(self.hejsa)

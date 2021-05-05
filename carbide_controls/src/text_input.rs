@@ -21,9 +21,9 @@ impl<GS: GlobalState> TextInput<GS> {
         let focus_state = CommonState::new_local_with_key(&Focus::Unfocused);
 
         let focus_color = TupleState3::new(
-            focus_state.clone().into(),
-            EnvironmentColor::OpaqueSeparator.into(),
-            EnvironmentColor::Accent.into(),
+            focus_state.clone(),
+            EnvironmentColor::OpaqueSeparator,
+            EnvironmentColor::Accent,
         ).mapped(|(focus, primary_color, focus_color)| {
             if focus == &Focus::Focused {
                 *focus_color
