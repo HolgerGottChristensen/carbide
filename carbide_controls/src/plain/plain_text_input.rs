@@ -765,7 +765,7 @@ impl<GS: GlobalState> PlainTextInput<GS> {
     fn reposition_cursor(&mut self, env: &mut Environment<GS>, global_state: &mut GS) {
         let text = self.text.get_value(env, global_state).clone();
 
-        let positioned_glyphs = self.get_positioned_glyphs(&text, env); //Todo: save dpi in env stack
+        let positioned_glyphs = self.get_positioned_glyphs(&text, env);
 
         let index = match self.cursor {
             Cursor::Single(index) => index,

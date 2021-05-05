@@ -361,14 +361,7 @@ impl Mesh {
                     let cache_id = font_id.index();
 
 
-                    // Rounding here is not really the best solution, but it makes the text cleaner.
-                    // Todo: consider changing text rendering to glyph_brush, or drawing at the correct position instead of translating
                     let to_gl_rect = |screen_rect: text::rt::Rect<i32>| {
-                        //let min_x = (screen_rect.min.x as f64 / dpi_factor + rect.x.start).round();
-                        //let max_x = (screen_rect.max.x as f64 / dpi_factor + rect.x.start).round();
-                        //let min_y = (screen_rect.min.y as f64 / dpi_factor + rect.y.start + base_line_offset).round();
-                        //let max_y = (screen_rect.max.y as f64 / dpi_factor + rect.y.start + base_line_offset).round();
-
                         let min_x = screen_rect.min.x as f64 / scale_factor;
                         let max_x = screen_rect.max.x as f64 / scale_factor;
                         let min_y = screen_rect.min.y as f64 / scale_factor;

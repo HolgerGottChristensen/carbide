@@ -4,13 +4,13 @@ use std::time::Duration;
 use instant::Instant;
 
 use crate::event::input::Input;
-use crate::Scalar;
-use crate::utils;
-use crate::piston_input::{Key, MouseButton, Button};
+use crate::event::Motion;
+use crate::piston_input::{Button, Key, MouseButton};
 use crate::piston_input::keyboard::ModifierKey;
 use crate::Point;
 use crate::position::Dimensions;
-use crate::event::Motion;
+use crate::Scalar;
+use crate::utils;
 
 /// A basic, non-interactive rectangle shape widget.
 #[derive(Debug)]
@@ -142,6 +142,7 @@ impl EventHandler {
         }*/
 
         // Todo: Compress sequential drag and move events.
+        // Todo: Compress multiple scroll events
 
 
 
