@@ -2,18 +2,15 @@ use std::fmt::Debug;
 use std::marker::PhantomData;
 
 use carbide_core::DeserializeOwned;
-use carbide_core::event_handler::{KeyboardEvent, MouseEvent, WidgetEvent};
-use carbide_core::input::{ModifierKey, MouseButton};
+use carbide_core::event_handler::KeyboardEvent;
 use carbide_core::input::Key;
 use carbide_core::prelude::Uuid;
 use carbide_core::Serialize;
-use carbide_core::state::{TupleState2, TupleState3};
 use carbide_core::state::environment_color::EnvironmentColor;
-use carbide_core::state::mapped_state::MappedState;
 use carbide_core::state::state::State;
+use carbide_core::state::TupleState3;
 use carbide_core::state::vec_state::VecState;
 use carbide_core::widget::*;
-use carbide_core::widget::primitive::foreach::ForEach;
 
 use crate::{List, PlainButton};
 
@@ -68,7 +65,7 @@ impl<T: Serialize + Clone + Debug + Default + DeserializeOwned + 'static, GS: Gl
 
         let max_height_state: Box<dyn State<f64, GS>> = Box::new(CommonState::<f64, GS>::EnvironmentState {
             function: |e: &Environment<GS>| {
-                (e.get_corrected_height())
+                e.get_corrected_height()
             },
             function_mut: None,
             latest_value: window_size[1]
@@ -76,7 +73,7 @@ impl<T: Serialize + Clone + Debug + Default + DeserializeOwned + 'static, GS: Gl
 
         let tup = TupleState4::new(height, length, max_height_state, popup_list_spacing_state);
 
-        let mut popup_height_state = tup.mapped(|(parent_height, number_of_elements, window_height, popup_list_spacing)| {
+        let popup_height_state = tup.mapped(|(parent_height, number_of_elements, window_height, popup_list_spacing)| {
             window_height.min(*number_of_elements as f64 * parent_height + (*number_of_elements - 1) as f64 * popup_list_spacing + 2.0).max(*parent_height)
         });
 
@@ -87,7 +84,7 @@ impl<T: Serialize + Clone + Debug + Default + DeserializeOwned + 'static, GS: Gl
                 List::new(Box::new(foreach_state),
                           PlainButton::<(usize, bool, usize), GS>::new(display_item)
                               .local_state(TupleState3::new(index_state.clone(), opened.clone(), parent_selected_index.clone()))
-                              .on_click(|myself, env, global_state| {
+                              .on_click(|myself, _, _| {
                                   let (index, opened, selected_index) = myself.get_local_state().get_latest_value_mut();
 
                                   *selected_index = *index;
@@ -104,14 +101,13 @@ impl<T: Serialize + Clone + Debug + Default + DeserializeOwned + 'static, GS: Gl
                               .frame(parent_size[0], parent_size[1])
                 ).index_state(index_state)
                     .spacing(popup_list_spacing)
-                .clip()
-                .border()
-                .border_width(1)
-                .color(EnvironmentColor::OpaqueSeparator.into()),
-
+                    .clip()
+                    .border()
+                    .border_width(1)
+                    .color(EnvironmentColor::OpaqueSeparator.into()),
         ])
             .fill(EnvironmentColor::Red)
-            .frame((parent_size[0] + 2.0), popup_height_state);
+            .frame(parent_size[0] + 2.0, popup_height_state);
 
 
         Box::new(PlainPopUpButtonPopUp {
@@ -126,16 +122,12 @@ impl<T: Serialize + Clone + Debug + Default + DeserializeOwned + 'static, GS: Gl
         })
     }
 
-    fn handle_mouse_event(&mut self, event: &MouseEvent, _: &bool, env: &mut Environment<GS>, global_state: &mut GS) {
-        println!("Handle mouse event")
-    }
-
     fn handle_keyboard_event(&mut self, event: &KeyboardEvent, env: &mut Environment<GS>, global_state: &mut GS) {
         match event {
             KeyboardEvent::Press(key, _) => {
                 match key {
                     Key::Return => {
-                        let mut focused = self.foreach_hovered_state.get_value_mut(env, global_state);
+                        let focused = self.foreach_hovered_state.get_value_mut(env, global_state);
 
                         for (index, item) in focused.iter().enumerate() {
                             if *item {
@@ -145,7 +137,7 @@ impl<T: Serialize + Clone + Debug + Default + DeserializeOwned + 'static, GS: Gl
                         }
                     }
                     Key::Up => {
-                        let mut focused = self.foreach_hovered_state.get_value_mut(env, global_state);
+                        let focused = self.foreach_hovered_state.get_value_mut(env, global_state);
                         // This is an linear operation and might make it slow when the model is large
 
                         let mut true_at_any_point = false;
@@ -168,7 +160,7 @@ impl<T: Serialize + Clone + Debug + Default + DeserializeOwned + 'static, GS: Gl
 
                     }
                     Key::Down => {
-                        let mut focused = self.foreach_hovered_state.get_value_mut(env, global_state);
+                        let focused = self.foreach_hovered_state.get_value_mut(env, global_state);
                         // This is an linear operation and might make it slow when the model is large
 
                         let mut true_at_any_point = false;

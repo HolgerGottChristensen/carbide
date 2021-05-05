@@ -1,9 +1,6 @@
 use std::fmt::Debug;
 
 use carbide_core::{DeserializeOwned, Serialize};
-use carbide_core::event_handler::{KeyboardEvent, MouseEvent};
-use carbide_core::input::Key;
-use carbide_core::input::MouseButton;
 use carbide_core::prelude::Uuid;
 use carbide_core::state::state::State;
 use carbide_core::widget::*;
@@ -35,7 +32,7 @@ impl<T: 'static + Serialize + Clone + Debug + Default + DeserializeOwned + Parti
 
         let focus_state =  Box::new(CommonState::new_local_with_key(&Focus::Unfocused));
 
-        let default_delegate= |focus_state: FocusState<GS>, selected_state: BoolState<GS>, button: Box<dyn Widget<GS>>| -> Box<dyn Widget<GS>> {
+        let default_delegate = |_focus_state: FocusState<GS>, selected_state: BoolState<GS>, button: Box<dyn Widget<GS>>| -> Box<dyn Widget<GS>> {
             let highlight_color = TupleState3::new(selected_state, EnvironmentColor::Red, EnvironmentColor::Green)
                 .mapped(|(selected, selected_color, deselected_color)| {
                     if *selected {
@@ -79,7 +76,7 @@ impl<T: 'static + Serialize + Clone + Debug + Default + DeserializeOwned + Parti
 
         let button = PlainButton::<(T, T), GS>::new(Spacer::new(SpacerDirection::Vertical))
             .local_state(TupleState2::new(reference_state, local_state.clone()))
-            .on_click(|myself, env, global_state| {
+            .on_click(|myself, env, _| {
                 let (reference, local_state) = myself.get_local_state().get_latest_value_mut();
                 *local_state = reference.clone();
                 myself.set_focus_and_request(Focus::FocusRequested, env);

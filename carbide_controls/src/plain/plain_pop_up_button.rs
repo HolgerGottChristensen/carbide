@@ -1,21 +1,18 @@
 use std::fmt::Debug;
 
 use carbide_core::DeserializeOwned;
-use carbide_core::event_handler::{KeyboardEvent, MouseEvent, WidgetEvent};
-use carbide_core::input::{ModifierKey, MouseButton};
+use carbide_core::event_handler::{KeyboardEvent, MouseEvent};
 use carbide_core::input::Key;
 use carbide_core::prelude::Uuid;
 use carbide_core::Serialize;
-use carbide_core::state::{TupleState2, TupleState3};
 use carbide_core::state::environment_color::EnvironmentColor;
-use carbide_core::state::mapped_state::MappedState;
 use carbide_core::state::state::State;
+use carbide_core::state::TupleState2;
 use carbide_core::state::vec_state::VecState;
 use carbide_core::widget::*;
-use carbide_core::widget::primitive::foreach::ForEach;
 
-use crate::{List, PlainButton};
 use crate::plain::plain_pop_up_button_popup::PlainPopUpButtonPopUp;
+use crate::PlainButton;
 
 #[derive(Clone, Widget)]
 #[focusable(block_focus)]
@@ -52,7 +49,7 @@ impl<T: Serialize + Clone + Debug + Default + DeserializeOwned + 'static, GS: Gl
             Rectangle::initialize(vec![
                 Text::new(text)
             ])).local_state(TupleState2::new(opened.clone(), selected_item.clone()))
-            .on_click(|myself, env, global_state| {
+            .on_click(|myself, _, _| {
                 let (opened, selected_item) = myself.get_local_state().get_latest_value_mut();
                 *opened = true;
                 println!("Opened popup. The currently selected item is: {:?}", selected_item);
@@ -74,7 +71,7 @@ impl<T: Serialize + Clone + Debug + Default + DeserializeOwned + 'static, GS: Gl
         })
     }
 
-    fn handle_mouse_event(&mut self, event: &MouseEvent, _: &bool, env: &mut Environment<GS>, global_state: &mut GS) {
+    fn handle_mouse_event(&mut self, event: &MouseEvent, _: &bool, env: &mut Environment<GS>, _: &mut GS) {
         if !self.is_inside(event.get_current_mouse_position()) {
             match event {
                 MouseEvent::Press(_, _, _) => {
@@ -116,7 +113,7 @@ impl<T: Serialize + Clone + Debug + Default + DeserializeOwned + 'static, GS: Gl
 
         let child = PlainButton::<(bool, T), GS>::new(display_item)
             .local_state(TupleState2::new(self.opened.clone(), self.selected_item.clone()))
-            .on_click(|myself, env, global_state| {
+            .on_click(|myself, _, _| {
                 let (opened, _) = myself.get_local_state().get_latest_value_mut();
                 *opened = true;
                 //println!("Opened popup. The currently selected item is: {:?}", selected_item);
@@ -132,13 +129,12 @@ impl<T: Serialize + Clone + Debug + Default + DeserializeOwned + 'static, GS: Gl
         Box::new(self)
     }
 
-    fn update_all_widget_state(&mut self, env: &mut Environment<GS>, global_state: &GS) {
+    fn update_all_widget_state(&mut self, env: &mut Environment<GS>, _: &GS) {
         if *self.opened.get_latest_value() {
-
             let display_item = if let Some(display_item_function) = self.popup_display_item {
                 display_item_function
             } else {
-                |item: Box<dyn State<T, GS>>, parent_selected_index: Box<dyn State<usize, GS>>, item_index: Box<dyn State<usize, GS>>, partially_chosen: Box<dyn State<bool, GS>>| -> Box<dyn Widget<GS>>{
+                |item: Box<dyn State<T, GS>>, _parent_selected_index: Box<dyn State<usize, GS>>, _item_index: Box<dyn State<usize, GS>>, partially_chosen: Box<dyn State<bool, GS>>| -> Box<dyn Widget<GS>>{
                     let text = item.mapped(|item| format!("{:?}", item));
                     Rectangle::initialize(vec![
                         Text::new(text)

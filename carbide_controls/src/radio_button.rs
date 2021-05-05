@@ -1,15 +1,9 @@
 use std::fmt::Debug;
-use std::ops::{Deref, DerefMut};
 
-use carbide_core::DeserializeOwned;
-use carbide_core::event_handler::{KeyboardEvent, MouseEvent};
-use carbide_core::input::Key;
-use carbide_core::input::MouseButton;
-use carbide_core::prelude::Uuid;
-use carbide_core::Serialize;
+use carbide_core::{DeserializeOwned, Serialize};
 use carbide_core::widget::*;
 
-use crate::{List, PlainButton, PlainPopUpButton, PlainRadioButton};
+use crate::PlainRadioButton;
 
 #[derive(Clone, Widget)]
 pub struct RadioButton<T, GS> where GS: GlobalState, T: Serialize + Clone + Debug + Default + DeserializeOwned + PartialEq + 'static {

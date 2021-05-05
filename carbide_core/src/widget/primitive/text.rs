@@ -1,6 +1,5 @@
 use rusttype::Scale;
 
-use crate::position::Align;
 use crate::prelude::*;
 use crate::render::primitive_kind::PrimitiveKind;
 use crate::render::text::Text as RenderText;
@@ -274,14 +273,12 @@ impl<GS: GlobalState> Text<GS> {
 
         let t = RenderText {
             positioned_glyphs: Vec::new(),
-            window_dim: self.dimension,
             text: self.text.get_latest_value().clone(),
             line_infos: new_line_infos.collect(),
             font: font.clone(),
             font_size: *self.font_size.get_latest_value(),
             rect,
             justify: Justify::Left,
-            y_align: Align::End,
             line_spacing: 1.0,
             base_line_offset
         };

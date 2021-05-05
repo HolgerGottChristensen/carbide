@@ -65,13 +65,12 @@ impl<'a> WalkOwnedPrimitives<'a> {
                         ref str_byte_range,
                         ref line_infos_range,
                         ref font,
-                        window_dim,
                         font_size,
                         rect,
                         justify,
-                        y_align,
                         line_spacing,
                         base_line_offset,
+                        ..
                     } = *text;
 
                     let text_str = &texts_str[str_byte_range.clone()];
@@ -79,14 +78,12 @@ impl<'a> WalkOwnedPrimitives<'a> {
 
                     let text = Text {
                         positioned_glyphs: (*positioned_glyphs).clone(),
-                        window_dim,
                         text: text_str.clone().parse().unwrap(),
                         line_infos: line_infos.to_vec(),
                         font: font.clone(),
                         font_size,
                         rect,
                         justify,
-                        y_align,
                         line_spacing,
                         base_line_offset,
                     };

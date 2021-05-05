@@ -1,7 +1,5 @@
-use rusttype::Scale;
-
 use crate::{FontSize, Rect};
-use crate::position::{Align, Dimensions};
+use crate::position::Dimensions;
 use crate::Scalar;
 use crate::text;
 use crate::text::Justify;
@@ -13,14 +11,12 @@ use crate::text::line::Info;
 /// handle "HiDPI" scales when caching glyphs.
 pub struct Text {
     pub(crate) positioned_glyphs: Vec<text::PositionedGlyph>,
-    pub(crate) window_dim: Dimensions,
     pub(crate) text: String,
     pub(crate) line_infos: Vec<text::line::Info>,
     pub(crate) font: text::Font,
     pub(crate) font_size: FontSize,
     pub(crate) rect: Rect,
     pub(crate) justify: text::Justify,
-    pub(crate) y_align: Align,
     pub(crate) line_spacing: Scalar,
     pub(crate) base_line_offset: f32
 }
@@ -42,24 +38,23 @@ impl Text {
     pub fn positioned_glyphs(self, scale_factor: f32) -> Vec<text::PositionedGlyph> {
         let Text {
             mut positioned_glyphs,
-            window_dim,
             text,
             line_infos,
             font,
             font_size,
             rect,
             justify,
-            y_align,
             line_spacing,
             base_line_offset,
+            ..
         } = self;
 
         //let rect = Rect::from_xy_dim([rect.x(),0.0], rect.dim());
 
         // Convert carbide coordinates to pixel coordinates.
-        let trans_x = |x: Scalar| (x + window_dim[0] / 2.0 - rect.w() / 2.0) * scale_factor as Scalar;
+        //let trans_x = |x: Scalar| (x + window_dim[0] / 2.0 - rect.w() / 2.0) * scale_factor as Scalar;
         //let trans_y = |y: Scalar| ((y) + window_dim[1] / 2.0 - base_line_offset as f64) * dpi_factor as Scalar;
-        let trans_y = |y: Scalar| ((y) + window_dim[1] / 2.0) * scale_factor as Scalar;
+        //let trans_y = |y: Scalar| ((y) + window_dim[1] / 2.0) * scale_factor as Scalar;
 
         // Produce the text layout iterators.
         let line_infos = line_infos.iter().cloned();

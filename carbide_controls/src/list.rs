@@ -2,7 +2,6 @@ use std::option::Option::Some;
 
 use carbide_core::color::{BLUE, RED};
 use carbide_core::event_handler::{KeyboardEvent, MouseEvent};
-use carbide_core::input::ModifierKey;
 use carbide_core::prelude::{StateSync, Uuid};
 use carbide_core::state::state::State;
 use carbide_core::widget::*;
@@ -115,7 +114,7 @@ impl<GS: GlobalState, T: ListIndex + 'static> List<GS, T> {
 
     }
 
-    fn recalculate_visible_children(&mut self, env: &Environment<GS>) {
+    fn _recalculate_visible_children(&mut self, env: &Environment<GS>) {
         //println!("Med dig");
         // TODO: Handle when model changes.
         // If items in the internal model is removed, calculate new sizes, if items in between the items in the internal_model is added, do ???

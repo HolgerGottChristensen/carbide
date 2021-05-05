@@ -3,7 +3,6 @@ use std::ops::Range;
 use copypasta::{ClipboardContext, ClipboardProvider};
 use unicode_segmentation::UnicodeSegmentation;
 
-use carbide_core::color::{GREEN, RED};
 use carbide_core::draw::shape::vertex::Vertex;
 use carbide_core::event_handler::{KeyboardEvent, MouseEvent, WidgetEvent, WindowEvent};
 use carbide_core::input::ModifierKey;

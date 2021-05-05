@@ -1,6 +1,3 @@
-use serde::Serialize;
-
-use carbide_core::event_handler::KeyboardEvent;
 use carbide_core::widget::*;
 
 use crate::PlainTextInput;

@@ -1,12 +1,9 @@
 use std::fmt::Debug;
 
-use serde::de::DeserializeOwned;
-use serde::Serialize;
-
-use carbide_core::event_handler::KeyboardEvent;
+use carbide_core::{DeserializeOwned, Serialize};
 use carbide_core::widget::*;
 
-use crate::{PlainButton, PlainTextInput};
+use crate::PlainButton;
 
 #[derive(Clone, Widget)]
 pub struct Button<T, GS> where T: 'static + Serialize + Clone + Debug + Default + DeserializeOwned, GS: GlobalState {
@@ -34,7 +31,7 @@ impl<T: 'static + Serialize + Clone + Debug + Default + DeserializeOwned, GS: Gl
         Self::new_internal(is_primary, focus_state.into(), display_item, local_state.into(), clicked)
     }
 
-    pub fn on_click(mut self, fire: fn(myself: &mut PlainButton<T, GS>, env: &mut Environment<GS>, global_state: &mut GS)) -> Box<Self> {
+    pub fn on_click(self, fire: fn(myself: &mut PlainButton<T, GS>, env: &mut Environment<GS>, global_state: &mut GS)) -> Box<Self> {
         let focus_state = self.focus;
         let is_primary = self.is_primary;
         let local_state = self.local_state;
@@ -44,7 +41,7 @@ impl<T: 'static + Serialize + Clone + Debug + Default + DeserializeOwned, GS: Gl
         Self::new_internal(is_primary, focus_state, display_item, local_state, clicked)
     }
 
-    pub fn local_state(mut self, state: Box<dyn State<T, GS>>) -> Box<Self> {
+    pub fn local_state(self, state: Box<dyn State<T, GS>>) -> Box<Self> {
         let focus_state = self.focus;
         let is_primary = self.is_primary;
         let local_state = state;

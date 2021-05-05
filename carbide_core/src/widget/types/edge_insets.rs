@@ -23,7 +23,13 @@ impl EdgeInsets {
             top: amount,
             bottom: amount,
             left: amount,
-            right: amount
+            right: amount,
         }
+    }
+}
+
+impl Into<EdgeInsets> for f64 {
+    fn into(self) -> EdgeInsets {
+        EdgeInsets::all(self)
     }
 }

@@ -1,22 +1,10 @@
 use std::fmt::Debug;
-use std::ops::{Deref, DerefMut};
 
 use carbide_core::DeserializeOwned;
-use carbide_core::event_handler::{KeyboardEvent, MouseEvent};
-use carbide_core::input::Key;
-use carbide_core::input::MouseButton;
-use carbide_core::prelude::Uuid;
 use carbide_core::Serialize;
-use carbide_core::state::{TupleState2, TupleState3};
-use carbide_core::state::environment_color::EnvironmentColor;
-use carbide_core::state::mapped_state::MappedState;
-use carbide_core::state::state::State;
-use carbide_core::state::vec_state::VecState;
 use carbide_core::widget::*;
-use carbide_core::widget::primitive::foreach::ForEach;
-use carbide_core::widget::primitive::padding::Padding;
 
-use crate::{List, PlainButton, PlainPopUpButton};
+use crate::PlainPopUpButton;
 
 #[derive(Clone, Widget)]
 pub struct PopUpButton<T, GS> where GS: GlobalState, T: Serialize + Clone + Debug + Default + DeserializeOwned + 'static {
@@ -53,7 +41,7 @@ impl<T: Serialize + Clone + Debug + Default + DeserializeOwned + 'static, GS: Gl
                     Padding::init(EdgeInsets::single(0.0, 0.0, 5.0, 0.0), Text::new(text)),
                     Spacer::new(SpacerDirection::Horizontal),
                     Rectangle::initialize(vec![
-                        Canvas::initialize(|rect, mut context| {
+                        Canvas::initialize(|_, mut context| {
                             context.move_to(7.0, 10.0);
                             context.line_to(11.0, 6.0);
                             context.line_to(15.0, 10.0);
@@ -71,7 +59,7 @@ impl<T: Serialize + Clone + Debug + Default + DeserializeOwned + 'static, GS: Gl
                 .border().color(focus_color).border_width(1)
         });
 
-        child = *child.display_item_popup(|item, selected_index, index, hovered| {
+        child = *child.display_item_popup(|item, _selected_index, _index, hovered| {
             let text = item.mapped(|item| format!("{:?}", item));
 
             let background_color = TupleState3::new(

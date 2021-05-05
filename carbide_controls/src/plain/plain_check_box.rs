@@ -1,9 +1,3 @@
-use std::fmt::Debug;
-
-use carbide_core::{DeserializeOwned, Serialize};
-use carbide_core::event_handler::{KeyboardEvent, MouseEvent};
-use carbide_core::input::Key;
-use carbide_core::input::MouseButton;
 use carbide_core::prelude::Uuid;
 use carbide_core::state::state::State;
 use carbide_core::widget::*;
@@ -34,7 +28,7 @@ impl<GS: GlobalState> PlainCheckBox<GS> {
 
         let focus_state =  Box::new(CommonState::new_local_with_key(&Focus::Unfocused));
 
-        let default_delegate= |focus_state: FocusState<GS>, checked: CheckBoxState<GS>, button: Box<dyn Widget<GS>>| -> Box<dyn Widget<GS>> {
+        let default_delegate = |_focus_state: FocusState<GS>, checked: CheckBoxState<GS>, button: Box<dyn Widget<GS>>| -> Box<dyn Widget<GS>> {
             let highlight_color = TupleState4::new(checked, EnvironmentColor::Red, EnvironmentColor::Green, EnvironmentColor::Blue)
                 .mapped(|(selected, true_color, intermediate_color, false_color)| {
                     match *selected {
@@ -75,7 +69,7 @@ impl<GS: GlobalState> PlainCheckBox<GS> {
 
         let button = PlainButton::<CheckBoxValue, GS>::new(Spacer::new(SpacerDirection::Vertical))
             .local_state(checked.clone())
-            .on_click(|myself, env, global_state| {
+            .on_click(|myself, env, _| {
                 let checked = myself.get_local_state().get_latest_value_mut();
 
                 if *checked == CheckBoxValue::True {

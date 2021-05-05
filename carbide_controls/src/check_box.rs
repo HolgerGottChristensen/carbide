@@ -1,12 +1,3 @@
-use std::fmt::Debug;
-use std::ops::{Deref, DerefMut};
-
-use carbide_core::DeserializeOwned;
-use carbide_core::event_handler::{KeyboardEvent, MouseEvent};
-use carbide_core::input::Key;
-use carbide_core::input::MouseButton;
-use carbide_core::prelude::Uuid;
-use carbide_core::Serialize;
 use carbide_core::widget::*;
 
 use crate::{CheckBoxState, CheckBoxValue, PlainCheckBox};
@@ -66,7 +57,7 @@ impl<GS: GlobalState> CheckBox<GS> {
                     .stroke_style(1.0),
                 IfElse::new(checked_intermediate)
                     .when_true(
-                        Canvas::initialize(|rect, mut context| {
+                        Canvas::initialize(|_, mut context| {
                             context.move_to(4.0, 8.0);
                             context.line_to(12.0, 8.0);
 
@@ -80,7 +71,7 @@ impl<GS: GlobalState> CheckBox<GS> {
                     ),
                 IfElse::new(checked_true)
                     .when_true(
-                        Canvas::initialize(|rectangle, mut context| {
+                        Canvas::initialize(|_, mut context| {
                             context.move_to(4.0, 9.0);
                             context.line_to(7.0, 12.0);
                             context.line_to(12.0, 4.0);

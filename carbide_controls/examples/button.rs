@@ -3,9 +3,6 @@ extern crate carbide_wgpu;
 extern crate env_logger;
 extern crate futures;
 
-use futures::executor::block_on;
-use serde::{Deserialize, Serialize};
-
 use carbide_controls::Button;
 use carbide_core::widget::*;
 use carbide_wgpu::window::Window;
@@ -32,7 +29,9 @@ fn main() {
                     println!("Clicked the secondary button");
                 })
                 .frame(180.0, 26.0),
-        ]).spacing(10.0).padding(EdgeInsets::all(40.0))
+        ]).spacing(10.0)
+            .padding(40.0)
+            .accent_color(EnvironmentColor::Green)
     );
 
     window.run_event_loop();

@@ -8,7 +8,7 @@ use serde::{Deserialize, Serialize};
 use serde::de::DeserializeOwned;
 use uuid::Uuid;
 
-use crate::{Color, from_ron, to_ron};
+use crate::{from_ron, to_ron};
 use crate::state::environment::Environment;
 use crate::state::global_state::GlobalState;
 use crate::state::mapped_state::MappedState;

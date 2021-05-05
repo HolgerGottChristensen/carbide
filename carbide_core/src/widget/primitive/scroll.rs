@@ -201,7 +201,7 @@ impl<S: GlobalState> Scroll<S> {
         }
     }
 
-    fn handle_other_event(&mut self, event: &WidgetEvent, env: &mut Environment<S>, global_state: &mut S) {
+    fn handle_other_event(&mut self, event: &WidgetEvent, _: &mut Environment<S>, _: &mut S) {
         match event {
             WidgetEvent::Window(_) => {
                 self.keep_y_within_bounds();
