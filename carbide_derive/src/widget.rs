@@ -1,20 +1,30 @@
 use std::collections::HashSet;
 
 use proc_macro2;
-use proc_macro2::Ident;
+use proc_macro2::{Ident, Span, TokenStream};
 use syn;
-use syn::{Attribute, Fields, Meta};
-use crate::widget_builder::impl_widget_builder;
-use utils::*;
+use syn::{Attribute, DeriveInput, Fields, GenericParam, Meta, NestedMeta, Path, Type, WherePredicate};
 
 // The implementation for `Widget`.
 pub fn impl_widget(ast: &syn::DeriveInput) -> proc_macro2::TokenStream {
     let struct_ident = &ast.ident;
 
+    let generics_with_gs = &ast.generics;
 
     let struct_attributes: HashSet<String> = parse_attributes(&ast.attrs);
 
-    let (generics_with_gs, generics_without_gs) = extract_generics(&ast);
+    let generics_without_gs = &ast.generics.params.iter().filter_map(|generic| {
+        match generic {
+            GenericParam::Type(ty) => {
+                if ty.ident.to_string() == "GS" {
+                    None
+                } else {
+                    Some(GenericParam::Type(ty.clone()))
+                }
+            }
+            a => Some(a.clone()),
+        }
+    }).collect::<Vec<GenericParam>>();
 
     /*if generics_with_gs.params.iter().count() -1 != generics_without_gs.len() {
         panic!("The struct need to have a generic with the name GS for global state.")
@@ -49,7 +59,7 @@ pub fn impl_widget(ast: &syn::DeriveInput) -> proc_macro2::TokenStream {
                         match n {
                             // Path token
                             Meta::Path(path) => {
-                                if is_attribute_path(path, "state") {
+                                if is_attribute_path_state(path) {
                                     contains_state = true
                                 }
                             }
@@ -73,7 +83,29 @@ pub fn impl_widget(ast: &syn::DeriveInput) -> proc_macro2::TokenStream {
     let state_idents: Vec<Ident> = state_idents_iter.collect();
 
 
-    let (global_state, global_state_use) = extract_global_state(&struct_attributes);
+    let (global_state, global_state_use) = if let Some(_) = struct_attributes.get("global_state") {
+        let idents: Vec<Ident> = struct_attributes.iter().filter_map(|st| {
+            if st.starts_with("global_state.") {
+                let str_ident: Vec<&str> = st.split(".").collect();
+                Some(Ident::new(str_ident[1], Span::call_site()))
+            } else {
+                None
+            }
+        }).collect();
+
+        let ident = idents.first().unwrap();
+
+        let generic = quote! {};
+        let generic_use = quote! { #ident };
+
+        (generic, generic_use)
+
+    } else {
+        let generic = quote! { GS: carbide_core::state::global_state::GlobalState };
+        let generic_use = quote! {GS};
+
+        (generic, generic_use)
+    };
 
 
 
@@ -284,9 +316,6 @@ pub fn impl_widget(ast: &syn::DeriveInput) -> proc_macro2::TokenStream {
 
     let wheres = filtered_where_clause(&ast);
 
-
-    let builder = impl_widget_builder(ast);
-
     quote! {
 
         #[automatically_derived]
@@ -386,7 +415,111 @@ pub fn impl_widget(ast: &syn::DeriveInput) -> proc_macro2::TokenStream {
         // When this is implemented in a macro you loose intellij autocomplete
         //#[automatically_derived]
         //impl<#(#generics_without_gs ,)* #global_state> carbide_core::widget::primitive::widget::WidgetExt<#global_state_use> for #struct_ident #generics_with_gs #wheres {}
-
-        #builder
     }
+}
+
+fn parse_attributes(attr: &Vec<Attribute>) -> HashSet<String> {
+    let mut set = HashSet::new();
+
+    attr.iter().filter_map(|attribute| {
+        match Attribute::parse_meta(attribute) {
+            Ok(meta) => {
+                Some(stringify_meta(meta))
+            }
+            Err(_) => panic!("Cound not parse attribute as meta"),
+        }
+    }).for_each(|a| {
+        for x in a {
+            set.insert(x);
+        }
+    });
+    set
+}
+
+fn stringify_meta(meta: Meta) -> Vec<String> {
+    match meta {
+        Meta::Path(path) => {
+            vec![path_to_string(path)]
+        }
+        Meta::List(list) => {
+            let own_path = path_to_string(list.path);
+
+            let metas = list.nested.iter().filter_map(|nested_meta| {
+                match nested_meta {
+                    NestedMeta::Meta(m) => {
+                        Some(stringify_meta(m.clone()))
+                    }
+                    NestedMeta::Lit(_) => None
+                }
+            });
+
+            let mut resulting = vec![own_path.clone()];
+
+            for i in metas {
+                let joined = i.join(".");
+
+                let mut new = own_path.clone();
+                new.push_str(".");
+                new.push_str(joined.as_str());
+                resulting.push(new);
+            }
+
+            resulting
+        }
+        Meta::NameValue(_) => {
+            vec![]
+        }
+    }
+}
+
+fn path_to_string(path: Path) -> String {
+    let mut string = path.segments.iter().fold(String::from(""), |mut state, new| {
+        state.push_str(new.ident.to_string().as_str());
+        state.push_str(".");
+        state
+    });
+
+    string.remove(string.len()-1);
+    string
+}
+
+
+fn filtered_where_clause(ast: &&DeriveInput) -> TokenStream {
+    if ast.generics.where_clause.is_none() {
+        return quote!{};
+    }
+
+
+    let _wheres = &ast.generics.where_clause.clone().unwrap();
+
+    let filtered = _wheres.predicates.iter().filter_map(|a| {
+        match a {
+            WherePredicate::Type(t) => {
+                match &t.bounded_ty {
+                    Type::Path(path) => {
+                        if path.path.segments.len() == 1 && path.path.segments.first().unwrap().ident.to_string() == "GS" {
+                            None
+                        } else {
+                            Some(WherePredicate::Type(t.clone()))
+                        }
+                    }
+                    _ => Some(WherePredicate::Type(t.clone()))
+                }
+            }
+            b => Some(b.clone())
+        }
+    });
+    quote! { where #(#filtered),*}
+}
+
+fn is_attribute_path_state(path: Path) -> bool {
+    let is_state = path.segments.len() == 1 &&
+        match path.segments.first() {
+            None => false,
+            Some(segment) => {
+                segment.ident.to_string() == "state"
+            }
+        };
+
+    is_state
 }
