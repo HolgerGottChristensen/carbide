@@ -8,6 +8,7 @@ mod common;
 mod style;
 mod utils;
 mod widget;
+mod widget_builder;
 
 use proc_macro::TokenStream;
 
@@ -43,7 +44,7 @@ pub fn widget_style_(input: TokenStream) -> TokenStream {
 
 
 
-#[proc_macro_derive(Widget, attributes(global_state, state, state_sync, event, focusable))]
+#[proc_macro_derive(Widget, attributes(global_state, state, required, state_sync, event, focusable))]
 pub fn widget(input: TokenStream) -> TokenStream {
     impl_derive(input, widget::impl_widget)
 }
