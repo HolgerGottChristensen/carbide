@@ -1,21 +1,21 @@
 use carbide_core::widget::*;
 
-use crate::PlainCheckBox;
+use crate::PlainSwitch;
 use crate::types::*;
 
 #[derive(Clone, Widget)]
-pub struct CheckBox<GS> where GS: GlobalState {
+pub struct Switch<GS> where GS: GlobalState {
     id: Id,
-    child: PlainCheckBox<GS>,
+    child: PlainSwitch<GS>,
     position: Point,
     dimension: Dimensions,
 }
 
-impl<GS: GlobalState> CheckBox<GS> {
+impl<GS: GlobalState> Switch<GS> {
 
-    pub fn new<S: Into<StringState<GS>>, L: Into<CheckBoxState<GS>>>(label: S, checked: L) -> Box<Self> {
+    pub fn new<S: Into<StringState<GS>>, L: Into<BoolState<GS>>>(label: S, checked: L) -> Box<Self> {
 
-        let mut child = *PlainCheckBox::new(label, checked.into());
+        let mut child = *PlainSwitch::new(label, checked.into());
 
         child = *child.delegate(|focus_state, checked_state, button: Box<dyn Widget<GS>>| {
 
@@ -36,59 +36,39 @@ impl<GS: GlobalState> CheckBox<GS> {
                 EnvironmentColor::SecondarySystemBackground,
                 EnvironmentColor::Accent,
             ).mapped(|(selected, primary_color, checked_color)| {
-                if *selected == CheckBoxValue::False {
-                    *primary_color
-                } else {
+                if *selected {
                     *checked_color
+                } else {
+                    *primary_color
                 }
             });
 
-            let checked_true = checked_state.clone().mapped(|checked| {
-                *checked == CheckBoxValue::True
-            });
-
-            let checked_intermediate = checked_state.clone().mapped(|checked| {
-                *checked == CheckBoxValue::Intermediate
-            });
-
             ZStack::initialize(vec![
-                RoundedRectangle::initialize(CornerRadii::all(3.0))
+                Capsule::initialize()
                     .fill(checked_color)
                     .stroke(focus_color)
                     .stroke_style(1.0),
-                IfElse::new(checked_intermediate)
+                IfElse::new(checked_state)
                     .when_true(
-                        Canvas::initialize(|_, mut context| {
-                            context.move_to(4.0, 8.0);
-                            context.line_to(12.0, 8.0);
-
-
-                            context.set_stroke_style(EnvironmentColor::DarkText);
-                            context.set_line_width(2.0);
-                            context.stroke();
-
-                            context
-                        })
-                    ),
-                IfElse::new(checked_true)
-                    .when_true(
-                        Canvas::initialize(|_, mut context| {
-                            context.move_to(4.0, 9.0);
-                            context.line_to(7.0, 12.0);
-                            context.line_to(12.0, 4.0);
-
-                            context.set_stroke_style(EnvironmentColor::DarkText);
-                            context.set_line_width(2.0);
-                            context.stroke();
-
-                            context
-                        })
-                    ),
+                        HStack::initialize(vec![
+                            Spacer::new(SpacerDirection::Horizontal),
+                            Oval::new()
+                                .fill(EnvironmentColor::DarkText)
+                                .frame(22.0, 22.0)
+                        ])
+                    ).when_false(
+                        HStack::initialize(vec![
+                            Oval::new()
+                                .fill(EnvironmentColor::DarkText)
+                                .frame(22.0, 22.0),
+                            Spacer::new(SpacerDirection::Horizontal),
+                        ])
+                    ).padding(2.0),
                 button
-            ]).frame(16.0, 16.0)
+            ]).frame(45.0, 26.0)
         });
 
-        Box::new(CheckBox {
+        Box::new(Switch {
             id: Id::new_v4(),
             child,
             position: [0.0,0.0],
@@ -98,7 +78,7 @@ impl<GS: GlobalState> CheckBox<GS> {
 
 }
 
-impl<GS: GlobalState> CommonWidget<GS> for CheckBox<GS> {
+impl<GS: GlobalState> CommonWidget<GS> for Switch<GS> {
     fn get_id(&self) -> Id {
         self.id
     }
@@ -144,9 +124,9 @@ impl<GS: GlobalState> CommonWidget<GS> for CheckBox<GS> {
     }
 }
 
-impl<GS: GlobalState> ChildRender for CheckBox<GS> {}
+impl<GS: GlobalState> ChildRender for Switch<GS> {}
 
-impl<GS: GlobalState> Layout<GS> for CheckBox<GS> {
+impl<GS: GlobalState> Layout<GS> for Switch<GS> {
     fn flexibility(&self) -> u32 {
         5
     }
@@ -171,4 +151,4 @@ impl<GS: GlobalState> Layout<GS> for CheckBox<GS> {
 }
 
 
-impl<GS: GlobalState> WidgetExt<GS> for CheckBox<GS> {}
+impl<GS: GlobalState> WidgetExt<GS> for Switch<GS> {}

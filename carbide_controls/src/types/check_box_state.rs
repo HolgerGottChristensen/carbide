@@ -1,5 +1,6 @@
 use serde::{Serialize, Deserialize};
-use carbide_core::state::TState;
+use carbide_core::state::{TState, BoolState};
+use carbide_core::widget::GlobalState;
 
 pub type CheckBoxState<GS> = TState<CheckBoxValue, GS>;
 
