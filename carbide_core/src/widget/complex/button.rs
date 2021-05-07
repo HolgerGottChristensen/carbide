@@ -83,7 +83,7 @@ impl<S: GlobalState> SyncTest<S> {
                             ]).fill(EnvironmentColor::Red).frame(60.0,30.0))
                             .index_state(index_state)
                     ]),
-                ForEach::new((0..5).map(|_| Uuid::new_v4()).collect::<Vec<Uuid>>().into(), Rectangle::initialize(vec![]).frame(10.0,10.0)),
+                ForEach::new((0..5).map(|_| Uuid::new_v4()).collect::<Vec<Uuid>>(), Rectangle::initialize(vec![]).frame(10.0,10.0)),
                 Text::new(value.clone()),
                 Spacer::new(SpacerDirection::Horizontal),
                 Text::new(value.clone()),

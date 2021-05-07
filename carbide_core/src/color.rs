@@ -19,6 +19,7 @@ use serde::{Deserialize, Serialize};
 use crate::prelude::ColorState;
 use crate::utils::{degrees, fmod, turns};
 use crate::widget::{CommonState, GlobalState};
+use crate::state::widget_state::WidgetState;
 
 /// Color supporting RGB and HSL variants.
 #[derive(PartialEq, Copy, Clone, Debug, Serialize, Deserialize)]
@@ -29,9 +30,15 @@ pub enum Color {
     Hsla(f32, f32, f32, f32),
 }
 
+impl Default for Color {
+    fn default() -> Self {
+        RED
+    }
+}
+
 impl<GS: GlobalState> Into<ColorState<GS>> for Color {
     fn into(self) -> ColorState<GS> {
-        Box::new(CommonState::new(&self))
+        WidgetState::new(Box::new(CommonState::new(&self)))
     }
 }
 

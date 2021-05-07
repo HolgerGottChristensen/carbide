@@ -1,57 +1,53 @@
-use std::fmt::Debug;
-
-use serde::de::DeserializeOwned;
-use serde::Serialize;
-
 use crate::prelude::GlobalState;
 use crate::state::environment::Environment;
 use crate::state::state::State;
 use crate::state::state_key::StateKey;
-use crate::state::TState;
+use crate::state::{TState, StateContract};
+use crate::state::widget_state::WidgetState;
 
 #[derive(Clone)]
 pub struct TupleState12<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, GS>
-    where T1: Serialize + Clone + Debug + DeserializeOwned,
-          T2: Serialize + Clone + Debug + DeserializeOwned,
-          T3: Serialize + Clone + Debug + DeserializeOwned,
-          T4: Serialize + Clone + Debug + DeserializeOwned,
-          T5: Serialize + Clone + Debug + DeserializeOwned,
-          T6: Serialize + Clone + Debug + DeserializeOwned,
-          T7: Serialize + Clone + Debug + DeserializeOwned,
-          T8: Serialize + Clone + Debug + DeserializeOwned,
-          T9: Serialize + Clone + Debug + DeserializeOwned,
-          T10: Serialize + Clone + Debug + DeserializeOwned,
-          T11: Serialize + Clone + Debug + DeserializeOwned,
-          T12: Serialize + Clone + Debug + DeserializeOwned,
+    where T1: StateContract,
+          T2: StateContract,
+          T3: StateContract,
+          T4: StateContract,
+          T5: StateContract,
+          T6: StateContract,
+          T7: StateContract,
+          T8: StateContract,
+          T9: StateContract,
+          T10: StateContract,
+          T11: StateContract,
+          T12: StateContract,
           GS: GlobalState {
-    first: Box<dyn State<T1, GS>>,
-    second: Box<dyn State<T2, GS>>,
-    third: Box<dyn State<T3, GS>>,
-    fourth: Box<dyn State<T4, GS>>,
-    fifth: Box<dyn State<T5, GS>>,
-    sixth: Box<dyn State<T6, GS>>,
-    seventh: Box<dyn State<T7, GS>>,
-    eighth: Box<dyn State<T8, GS>>,
-    ninth: Box<dyn State<T9, GS>>,
-    tenth: Box<dyn State<T10, GS>>,
-    eleventh: Box<dyn State<T11, GS>>,
-    twelfth: Box<dyn State<T12, GS>>,
+    first: TState<T1, GS>,
+    second: TState<T2, GS>,
+    third: TState<T3, GS>,
+    fourth: TState<T4, GS>,
+    fifth: TState<T5, GS>,
+    sixth: TState<T6, GS>,
+    seventh: TState<T7, GS>,
+    eighth: TState<T8, GS>,
+    ninth: TState<T9, GS>,
+    tenth: TState<T10, GS>,
+    eleventh: TState<T11, GS>,
+    twelfth: TState<T12, GS>,
     latest_value: (T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12),
 }
 
 impl<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, GS> TupleState12<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, GS>
-    where T1: Serialize + Clone + Debug + DeserializeOwned,
-          T2: Serialize + Clone + Debug + DeserializeOwned,
-          T3: Serialize + Clone + Debug + DeserializeOwned,
-          T4: Serialize + Clone + Debug + DeserializeOwned,
-          T5: Serialize + Clone + Debug + DeserializeOwned,
-          T6: Serialize + Clone + Debug + DeserializeOwned,
-          T7: Serialize + Clone + Debug + DeserializeOwned,
-          T8: Serialize + Clone + Debug + DeserializeOwned,
-          T9: Serialize + Clone + Debug + DeserializeOwned,
-          T10: Serialize + Clone + Debug + DeserializeOwned,
-          T11: Serialize + Clone + Debug + DeserializeOwned,
-          T12: Serialize + Clone + Debug + DeserializeOwned,
+    where T1: StateContract,
+          T2: StateContract,
+          T3: StateContract,
+          T4: StateContract,
+          T5: StateContract,
+          T6: StateContract,
+          T7: StateContract,
+          T8: StateContract,
+          T9: StateContract,
+          T10: StateContract,
+          T11: StateContract,
+          T12: StateContract,
           GS: GlobalState {
     pub fn new<IT1, IT2, IT3, IT4, IT5, IT6, IT7, IT8, IT9, IT10, IT11, IT12>(
         first: IT1,
@@ -125,7 +121,7 @@ impl<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, GS> TupleState12<T1, T2,
     }
 }
 
-impl<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, GS> From<(
+/*impl<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, GS> From<(
     Box<dyn State<T1, GS>>,
     Box<dyn State<T2, GS>>,
     Box<dyn State<T3, GS>>,
@@ -139,18 +135,18 @@ impl<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, GS> From<(
     Box<dyn State<T11, GS>>,
     Box<dyn State<T12, GS>>,
 )> for TupleState12<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, GS>
-    where T1: Serialize + Clone + Debug + DeserializeOwned,
-          T2: Serialize + Clone + Debug + DeserializeOwned,
-          T3: Serialize + Clone + Debug + DeserializeOwned,
-          T4: Serialize + Clone + Debug + DeserializeOwned,
-          T5: Serialize + Clone + Debug + DeserializeOwned,
-          T6: Serialize + Clone + Debug + DeserializeOwned,
-          T7: Serialize + Clone + Debug + DeserializeOwned,
-          T8: Serialize + Clone + Debug + DeserializeOwned,
-          T9: Serialize + Clone + Debug + DeserializeOwned,
-          T10: Serialize + Clone + Debug + DeserializeOwned,
-          T11: Serialize + Clone + Debug + DeserializeOwned,
-          T12: Serialize + Clone + Debug + DeserializeOwned,
+    where T1: StateContract,
+          T2: StateContract,
+          T3: StateContract,
+          T4: StateContract,
+          T5: StateContract,
+          T6: StateContract,
+          T7: StateContract,
+          T8: StateContract,
+          T9: StateContract,
+          T10: StateContract,
+          T11: StateContract,
+          T12: StateContract,
           GS: GlobalState {
     fn from((first, second, third, fourth, fifth, sixth, seventh, eighth, ninth, tenth, eleventh, twelfth): (
         Box<dyn State<T1, GS>>,
@@ -195,22 +191,41 @@ impl<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, GS> From<(
             ),
         }
     }
+}*/
+
+impl<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, GS> Into<TState<(T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12), GS>> for Box<TupleState12<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, GS>>
+    where T1: StateContract + 'static,
+          T2: StateContract + 'static,
+          T3: StateContract + 'static,
+          T4: StateContract + 'static,
+          T5: StateContract + 'static,
+          T6: StateContract + 'static,
+          T7: StateContract + 'static,
+          T8: StateContract + 'static,
+          T9: StateContract + 'static,
+          T10: StateContract + 'static,
+          T11: StateContract + 'static,
+          T12: StateContract + 'static,
+          GS: GlobalState {
+    fn into(self) -> TState<(T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12), GS> {
+        WidgetState::new(self)
+    }
 }
 
 
 impl<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, GS> State<(T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12), GS> for TupleState12<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, GS>
-    where T1: Serialize + Clone + Debug + DeserializeOwned,
-          T2: Serialize + Clone + Debug + DeserializeOwned,
-          T3: Serialize + Clone + Debug + DeserializeOwned,
-          T4: Serialize + Clone + Debug + DeserializeOwned,
-          T5: Serialize + Clone + Debug + DeserializeOwned,
-          T6: Serialize + Clone + Debug + DeserializeOwned,
-          T7: Serialize + Clone + Debug + DeserializeOwned,
-          T8: Serialize + Clone + Debug + DeserializeOwned,
-          T9: Serialize + Clone + Debug + DeserializeOwned,
-          T10: Serialize + Clone + Debug + DeserializeOwned,
-          T11: Serialize + Clone + Debug + DeserializeOwned,
-          T12: Serialize + Clone + Debug + DeserializeOwned,
+    where T1: StateContract,
+          T2: StateContract,
+          T3: StateContract,
+          T4: StateContract,
+          T5: StateContract,
+          T6: StateContract,
+          T7: StateContract,
+          T8: StateContract,
+          T9: StateContract,
+          T10: StateContract,
+          T11: StateContract,
+          T12: StateContract,
           GS: GlobalState {
 
     fn get_value_mut(&mut self, env: &mut Environment<GS>, global_state: &mut GS) -> &mut (T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12) {

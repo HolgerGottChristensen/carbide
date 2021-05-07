@@ -8,12 +8,12 @@ pub struct Frame<GS> where GS: GlobalState {
     id: Uuid,
     child: Box<dyn Widget<GS>>,
     position: Point,
-    #[state] x: Box<dyn State<f64, GS>>,
-    #[state] y: Box<dyn State<f64, GS>>,
+    #[state] x: F64State<GS>,
+    #[state] y: F64State<GS>,
     fixed_x: bool,
     fixed_y: bool,
-    #[state] width: Box<dyn State<f64, GS>>,
-    #[state] height: Box<dyn State<f64, GS>>,
+    #[state] width: F64State<GS>,
+    #[state] height: F64State<GS>,
     expand_width: bool,
     expand_height: bool,
 }
@@ -21,7 +21,7 @@ pub struct Frame<GS> where GS: GlobalState {
 impl<GS: GlobalState> WidgetExt<GS> for Frame<GS> {}
 
 impl<GS: GlobalState> Frame<GS> {
-    pub fn init(width: Box<dyn State<f64, GS>>, height: Box<dyn State<f64, GS>>, child: Box<dyn Widget<GS>>) -> Box<Frame<GS>> {
+    pub fn init(width: F64State<GS>, height: F64State<GS>, child: Box<dyn Widget<GS>>) -> Box<Frame<GS>> {
 
         let expand_width = *width.get_latest_value() == SCALE;
 
@@ -42,7 +42,7 @@ impl<GS: GlobalState> Frame<GS> {
         })
     }
 
-    pub fn init_width(width: Box<dyn State<f64, GS>>, child: Box<dyn Widget<GS>>) -> Box<Frame<GS>> {
+    pub fn init_width(width: F64State<GS>, child: Box<dyn Widget<GS>>) -> Box<Frame<GS>> {
         Box::new(Frame{
             id: Default::default(),
             child: Box::new(child),
@@ -58,7 +58,7 @@ impl<GS: GlobalState> Frame<GS> {
         })
     }
 
-    pub fn init_height(height: Box<dyn State<f64, GS>>, child: Box<dyn Widget<GS>>) -> Box<Frame<GS>> {
+    pub fn init_height(height: F64State<GS>, child: Box<dyn Widget<GS>>) -> Box<Frame<GS>> {
         Box::new(Frame{
             id: Default::default(),
             child: Box::new(child),
@@ -74,21 +74,21 @@ impl<GS: GlobalState> Frame<GS> {
         })
     }
 
-    pub fn with_fixed_x(mut self, x: Box<dyn State<f64, GS>>) -> Box<Frame<GS>> {
+    pub fn with_fixed_x(mut self, x: F64State<GS>) -> Box<Frame<GS>> {
         self.x = x;
         self.fixed_x = true;
 
         Box::new(self)
     }
 
-    pub fn with_fixed_y(mut self, y: Box<dyn State<f64, GS>>) -> Box<Frame<GS>> {
+    pub fn with_fixed_y(mut self, y: F64State<GS>) -> Box<Frame<GS>> {
         self.y = y;
         self.fixed_y = true;
 
         Box::new(self)
     }
 
-    pub fn with_fixed_position(mut self, x: Box<dyn State<f64, GS>>, y: Box<dyn State<f64, GS>>) -> Box<Frame<GS>> {
+    pub fn with_fixed_position(mut self, x: F64State<GS>, y: F64State<GS>) -> Box<Frame<GS>> {
         self.x = x;
         self.fixed_x = true;
         self.y = y;

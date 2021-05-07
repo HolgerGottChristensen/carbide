@@ -26,11 +26,11 @@ impl<S: GlobalState> Widget<S> for Box<dyn Widget<S>> {}
 dyn_clone::clone_trait_object!(<S> Widget<S>);
 
 pub trait WidgetExt<GS: GlobalState>: Widget<GS> + Sized + 'static {
-    fn frame<K1: Into<Box<dyn State<f64, GS>>>, K2: Into<Box<dyn State<f64, GS>>>>(self, width: K1, height: K2) -> Box<Frame<GS>> {
+    fn frame<K1: Into<F64State<GS>>, K2: Into<F64State<GS>>>(self, width: K1, height: K2) -> Box<Frame<GS>> {
         Frame::init(width.into(), height.into(), Box::new(self))
     }
 
-    fn frame_width(self, width: Box<dyn State<f64, GS>>) -> Box<Frame<GS>> {
+    fn frame_width(self, width: F64State<GS>) -> Box<Frame<GS>> {
         Frame::init_width(width, Box::new(self))
     }
 
@@ -45,7 +45,7 @@ pub trait WidgetExt<GS: GlobalState>: Widget<GS> + Sized + 'static {
         Hidden::new(Box::new(self))
     }
 
-    fn offset<K1: Into<Box<dyn State<f64, GS>>>, K2: Into<Box<dyn State<f64, GS>>>>(self, offset_x: K1, offset_y: K2) -> Box<Offset<GS>> {
+    fn offset<K1: Into<F64State<GS>>, K2: Into<F64State<GS>>>(self, offset_x: K1, offset_y: K2) -> Box<Offset<GS>> {
         Offset::new(offset_x.into(), offset_y.into(), Box::new(self))
     }
 

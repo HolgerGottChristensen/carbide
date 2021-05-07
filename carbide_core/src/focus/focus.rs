@@ -7,3 +7,9 @@ pub enum Focus {
     FocusReleased,
     Unfocused
 }
+
+impl Default for Focus {
+    fn default() -> Self {
+        Focus::Unfocused
+    }
+}

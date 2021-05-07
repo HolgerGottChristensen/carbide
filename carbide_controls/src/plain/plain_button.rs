@@ -3,27 +3,25 @@ use carbide_core::event_handler::{MouseEvent, KeyboardEvent};
 use carbide_core::input::MouseButton;
 use carbide_core::input::Key;
 use carbide_core::state::state::State;
-use std::fmt::Debug;
-use carbide_core::{Serialize, DeserializeOwned};
 use carbide_core::prelude::Uuid;
 
 #[derive(Clone, Widget)]
 #[event(handle_keyboard_event, handle_mouse_event)]
 #[focusable]
-pub struct PlainButton<T, GS> where GS: GlobalState, T: 'static + Serialize + Clone + Debug + Default + DeserializeOwned {
+pub struct PlainButton<T, GS> where GS: GlobalState, T: StateContract + 'static {
     id: Id,
-    #[state] focus: Box<dyn State<Focus, GS>>,
+    #[state] focus: FocusState<GS>,
     child: Box<dyn Widget<GS>>,
     position: Point,
     dimension: Dimensions,
     on_click: Option<fn(myself: &mut Self, env: &mut Environment<GS>, global_state: &mut GS)>,
     on_click_outside: Option<fn(myself: &mut Self, env: &mut Environment<GS>, global_state: &mut GS)>,
-    #[state] is_hovered: Box<dyn State<bool, GS>>,
-    #[state] is_pressed: Box<dyn State<bool, GS>>,
-    #[state] local_state: Box<dyn State<T, GS>>,
+    #[state] is_hovered: BoolState<GS>,
+    #[state] is_pressed: BoolState<GS>,
+    #[state] local_state: TState<T, GS>,
 }
 
-impl<T: 'static + Serialize + Clone + Debug + Default + DeserializeOwned, GS: GlobalState> PlainButton<T, GS> {
+impl<T: StateContract + 'static, GS: GlobalState> PlainButton<T, GS> {
     pub fn on_click(mut self, fire: fn(myself: &mut Self, env: &mut Environment<GS>, global_state: &mut GS)) -> Box<Self> {
         self.on_click = Some(fire);
         Box::new(self)
@@ -34,34 +32,34 @@ impl<T: 'static + Serialize + Clone + Debug + Default + DeserializeOwned, GS: Gl
         Box::new(self)
     }
 
-    pub fn hover(mut self, is_hovered: Box<dyn State<bool, GS>>) -> Box<Self> {
-        self.is_hovered = is_hovered;
+    pub fn hover<K: Into<BoolState<GS>>>(mut self, is_hovered: K) -> Box<Self> {
+        self.is_hovered = is_hovered.into();
         Box::new(self)
     }
 
-    pub fn pressed(mut self, pressed: Box<dyn State<bool, GS>>) -> Box<Self> {
-        self.is_pressed = pressed;
+    pub fn pressed<K: Into<BoolState<GS>>>(mut self, pressed: K) -> Box<Self> {
+        self.is_pressed = pressed.into();
         Box::new(self)
     }
 
-    pub fn focused(mut self, focused: Box<dyn State<Focus, GS>>) -> Box<Self> {
-        self.focus = focused;
+    pub fn focused<K: Into<FocusState<GS>>>(mut self, focused: K) -> Box<Self> {
+        self.focus = focused.into();
         Box::new(self)
     }
 
-    pub fn local_state(mut self, state: Box<dyn State<T, GS>>) -> Box<Self> {
-        self.local_state = state;
+    pub fn local_state<K: Into<TState<T, GS>>>(mut self, state: K) -> Box<Self> {
+        self.local_state = state.into();
         Box::new(self)
     }
 
-    pub fn get_local_state(&mut self) -> &mut Box<dyn State<T, GS>> {
+    pub fn get_local_state(&mut self) -> &mut TState<T, GS> {
         &mut self.local_state
     }
 
     pub fn new(child: Box<dyn Widget<GS>>) -> Box<Self> {
         Box::new(PlainButton {
             id: Id::new_v4(),
-            focus: Box::new(CommonState::new_local_with_key(&Focus::Unfocused)),
+            focus: CommonState::new_local_with_key(&Focus::Unfocused).into(),
             child,
             position: [0.0,0.0],
             dimension: [0.0,0.0],
@@ -69,7 +67,7 @@ impl<T: 'static + Serialize + Clone + Debug + Default + DeserializeOwned, GS: Gl
             on_click_outside: None,
             is_hovered: false.into(),
             is_pressed: false.into(),
-            local_state: Box::new(CommonState::new(&T::default()))
+            local_state: CommonState::new(&T::default()).into()
         })
     }
 
@@ -128,7 +126,7 @@ impl<T: 'static + Serialize + Clone + Debug + Default + DeserializeOwned, GS: Gl
     }
 }
 
-impl<T: Serialize + Clone + Debug + Default + DeserializeOwned, GS: GlobalState> CommonWidget<GS> for PlainButton<T, GS> {
+impl<T: StateContract, GS: GlobalState> CommonWidget<GS> for PlainButton<T, GS> {
     fn get_id(&self) -> Id {
         self.id
     }
@@ -182,9 +180,9 @@ impl<T: Serialize + Clone + Debug + Default + DeserializeOwned, GS: GlobalState>
     }
 }
 
-impl<T: Serialize + Clone + Debug + Default + DeserializeOwned, GS: GlobalState> ChildRender for PlainButton<T, GS> {}
+impl<T: StateContract, GS: GlobalState> ChildRender for PlainButton<T, GS> {}
 
-impl<T: Serialize + Clone + Debug + Default + DeserializeOwned, GS: GlobalState> Layout<GS> for PlainButton<T, GS> {
+impl<T: StateContract, GS: GlobalState> Layout<GS> for PlainButton<T, GS> {
     fn flexibility(&self) -> u32 {
         10
     }
@@ -212,4 +210,4 @@ impl<T: Serialize + Clone + Debug + Default + DeserializeOwned, GS: GlobalState>
 }
 
 
-impl<T: 'static + Serialize + Clone + Debug + Default + DeserializeOwned, GS: GlobalState> WidgetExt<GS> for PlainButton<T, GS> {}
+impl<T: StateContract + 'static, GS: GlobalState> WidgetExt<GS> for PlainButton<T, GS> {}

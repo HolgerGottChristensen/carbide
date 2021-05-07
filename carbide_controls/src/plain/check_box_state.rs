@@ -1,7 +1,7 @@
 use serde::{Serialize, Deserialize};
-use carbide_core::state::State;
+use carbide_core::state::TState;
 
-pub type CheckBoxState<GS> = Box<dyn State<CheckBoxValue, GS>>;
+pub type CheckBoxState<GS> = TState<CheckBoxValue, GS>;
 
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum CheckBoxValue {

@@ -13,7 +13,7 @@ pub struct Button<T, GS> where T: 'static + Serialize + Clone + Debug + Default 
     dimension: Dimensions,
     #[state] focus: FocusState<GS>,
     is_primary: bool,
-    #[state] local_state: Box<dyn State<T, GS>>,
+    #[state] local_state: TState<T, GS>,
     on_click: fn(myself: &mut PlainButton<T, GS>, env: &mut Environment<GS>, global_state: &mut GS),
     display_item: Box<dyn Widget<GS>>,
 }
@@ -41,10 +41,10 @@ impl<T: 'static + Serialize + Clone + Debug + Default + DeserializeOwned, GS: Gl
         Self::new_internal(is_primary, focus_state, display_item, local_state, clicked)
     }
 
-    pub fn local_state(self, state: Box<dyn State<T, GS>>) -> Box<Self> {
+    pub fn local_state<K: Into<TState<T, GS>>>(self, state: K) -> Box<Self> {
         let focus_state = self.focus;
         let is_primary = self.is_primary;
-        let local_state = state;
+        let local_state = state.into();
         let clicked = self.on_click;
         let display_item = self.display_item;
 
@@ -61,7 +61,7 @@ impl<T: 'static + Serialize + Clone + Debug + Default + DeserializeOwned, GS: Gl
         Self::new_internal(is_primary, focus_state, display_item, local_state, clicked)
     }
 
-    fn new_internal(is_primary: bool, focus_state: FocusState<GS>, display_item: Box<dyn Widget<GS>>, local_state: Box<dyn State<T, GS>>, clicked: fn(myself: &mut PlainButton<T, GS>, env: &mut Environment<GS>, global_state: &mut GS)) -> Box<Self> {
+    fn new_internal(is_primary: bool, focus_state: FocusState<GS>, display_item: Box<dyn Widget<GS>>, local_state: TState<T, GS>, clicked: fn(myself: &mut PlainButton<T, GS>, env: &mut Environment<GS>, global_state: &mut GS)) -> Box<Self> {
         let focus_color = TupleState3::new(
             focus_state.clone(),
             EnvironmentColor::OpaqueSeparator,
@@ -109,8 +109,8 @@ impl<T: 'static + Serialize + Clone + Debug + Default + DeserializeOwned, GS: Gl
         ).local_state(local_state.clone())
             .focused(focus_state.clone())
             .on_click(clicked)
-            .hover(hover_state.into())
-            .pressed(pressed_state.into());
+            .hover(hover_state)
+            .pressed(pressed_state);
 
         Box::new(
             Button {

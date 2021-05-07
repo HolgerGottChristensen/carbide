@@ -1,8 +1,10 @@
 pub use tuple_state::*;
 
-use crate::Color;
+use crate::{Color, Serialize, DeserializeOwned};
 use crate::focus::Focus;
 pub use crate::state::state::State;
+use crate::state::widget_state::WidgetState;
+use std::fmt::Debug;
 
 pub mod state;
 pub mod environment;
@@ -16,11 +18,17 @@ mod environment_state;
 pub mod state_key;
 pub(crate) mod tuple_state;
 pub mod vec_state;
+pub(crate) mod widget_state;
 
-pub type ColorState<GS> = Box<dyn State<Color, GS>>;
-pub type StringState<GS> = Box<dyn State<String, GS>>;
-pub type U32State<GS> = Box<dyn State<u32, GS>>;
-pub type BoolState<GS> = Box<dyn State<bool, GS>>;
-pub type F64State<GS> = Box<dyn State<f64, GS>>;
-pub type FocusState<GS> = Box<dyn State<Focus, GS>>;
-pub type TState<T, GS> = Box<dyn State<T, GS>>;
+pub type ColorState<GS> = TState<Color, GS>;
+pub type StringState<GS> = TState<String, GS>;
+pub type U32State<GS> = TState<u32, GS>;
+pub type UsizeState<GS> = TState<usize, GS>;
+pub type BoolState<GS> = TState<bool, GS>;
+pub type F64State<GS> = TState<f64, GS>;
+pub type FocusState<GS> = TState<Focus, GS>;
+pub type TState<T, GS> = WidgetState<T, GS>;
+
+pub trait StateContract: Serialize + Clone + Debug + DeserializeOwned + Default {}
+
+impl<T> StateContract for T where T: Serialize + Clone + Debug + DeserializeOwned + Default {}

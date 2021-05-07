@@ -135,10 +135,10 @@ impl<GS: GlobalState> Render<GS> for Border<GS> {
     }
 }
 
-impl<S: GlobalState> Border<S> {
+impl<GS: GlobalState> Border<GS> {
 
-    pub fn color(mut self, color: ColorState<S>) -> Box<Self> {
-        self.color = color;
+    pub fn color<C: Into<ColorState<GS>>>(mut self, color: C) -> Box<Self> {
+        self.color = color.into();
         Box::new(self)
     }
 
@@ -147,7 +147,7 @@ impl<S: GlobalState> Border<S> {
         Box::new(self)
     }
 
-    pub fn initialize(child: Box<dyn Widget<S>>) -> Box<Self> {
+    pub fn initialize(child: Box<dyn Widget<GS>>) -> Box<Self> {
         Box::new(Border {
             id: Uuid::new_v4(),
             child,

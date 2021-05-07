@@ -1,22 +1,18 @@
-use std::fmt::Debug;
-
-use serde::de::DeserializeOwned;
-use serde::Serialize;
-
 use crate::prelude::GlobalState;
 use crate::state::environment::Environment;
 use crate::state::state::State;
 use crate::state::state_key::StateKey;
-use crate::state::TState;
+use crate::state::{TState, StateContract};
+use crate::state::widget_state::WidgetState;
 
 #[derive(Clone)]
-pub struct TupleState2<T, U, GS> where T: Serialize + Clone + Debug + DeserializeOwned, U: Serialize + Clone + Debug + DeserializeOwned, GS: GlobalState {
-    fst: Box<dyn State<T, GS>>,
-    snd: Box<dyn State<U, GS>>,
+pub struct TupleState2<T, U, GS> where T: StateContract, U: StateContract, GS: GlobalState {
+    fst: TState<T, GS>,
+    snd: TState<U, GS>,
     latest_value: (T, U),
 }
 
-impl<T: Serialize + Clone + Debug + DeserializeOwned, U: Serialize + Clone + Debug + DeserializeOwned, GS: GlobalState> TupleState2<T, U, GS> {
+impl<T: StateContract, U: StateContract, GS: GlobalState> TupleState2<T, U, GS> {
     pub fn new<IT, IU>(fst: IT, snd: IU) -> Box<TupleState2<T, U, GS>>
         where
             IT: Into<TState<T, GS>>,
@@ -33,8 +29,8 @@ impl<T: Serialize + Clone + Debug + DeserializeOwned, U: Serialize + Clone + Deb
     }
 }
 
-impl<T: Serialize + Clone + Debug + DeserializeOwned, U: Serialize + Clone + Debug + DeserializeOwned, GS: GlobalState> From<(Box<dyn State<T, GS>>, Box<dyn State<U, GS>>)> for TupleState2<T, U, GS> {
-    fn from((first, second): (Box<dyn State<T, GS>>, Box<dyn State<U, GS>>)) -> Self {
+impl<T: StateContract, U: StateContract, GS: GlobalState> From<(TState<T, GS>, TState<U, GS>)> for TupleState2<T, U, GS> {
+    fn from((first, second): (TState<T, GS>, TState<U, GS>)) -> Self {
         TupleState2 {
             fst: first.clone(),
             snd: second.clone(),
@@ -43,7 +39,13 @@ impl<T: Serialize + Clone + Debug + DeserializeOwned, U: Serialize + Clone + Deb
     }
 }
 
-impl<T: Serialize + Clone + Debug + DeserializeOwned, U: Serialize + Clone + Debug + DeserializeOwned, GS: GlobalState> State<(T, U), GS> for TupleState2<T, U, GS> {
+impl<T: StateContract + 'static, U: StateContract + 'static, GS: GlobalState> Into<TState<(T, U), GS>> for Box<TupleState2<T, U, GS>> {
+    fn into(self) -> TState<(T, U), GS> {
+        WidgetState::new(self)
+    }
+}
+
+impl<T: StateContract, U: StateContract, GS: GlobalState> State<(T, U), GS> for TupleState2<T, U, GS> {
     fn get_value_mut(&mut self, env: &mut Environment<GS>, global_state: &mut GS) -> &mut (T, U) {
         self.latest_value = (self.fst.get_value_mut(env, global_state).clone(), self.snd.get_value_mut(env, global_state).clone());
         &mut self.latest_value

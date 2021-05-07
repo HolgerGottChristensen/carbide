@@ -1,14 +1,13 @@
 use crate::prelude::GlobalState;
-use serde::Serialize;
-use std::fmt::Debug;
 use crate::state::state::State;
 use uuid::Uuid;
 use crate::state::environment::Environment;
-use serde::de::DeserializeOwned;
 use crate::state::state_key::StateKey;
+use crate::state::{StateContract, TState};
+use crate::state::widget_state::WidgetState;
 
 #[derive(Clone)]
-pub struct MappedState<T, U, GS> where T: Serialize + Clone + Debug, U: Serialize + Clone + Debug, GS: GlobalState {
+pub struct MappedState<T, U, GS> where T: StateContract, U: StateContract, GS: GlobalState {
     id: Option<StateKey>,
     mapped_state: Box<dyn State<U, GS>>,
     map: fn(&U) -> T,
@@ -16,7 +15,7 @@ pub struct MappedState<T, U, GS> where T: Serialize + Clone + Debug, U: Serializ
     latest_value: T,
 }
 
-impl<T: Serialize + Clone + Debug, U: Serialize + Clone + Debug, GS: GlobalState> MappedState<T, U, GS> {
+impl<T: StateContract, U: StateContract, GS: GlobalState> MappedState<T, U, GS> {
 
     pub fn new_local(state: Box<dyn State<U, GS>>, map: fn(&U) -> T, start: T) -> Box<MappedState<T, U, GS>> {
         Box::new(MappedState {
@@ -45,7 +44,7 @@ impl<T: Serialize + Clone + Debug, U: Serialize + Clone + Debug, GS: GlobalState
     }
 }
 
-impl<T: Serialize + Clone + Debug, U: Serialize + Clone + Debug + DeserializeOwned, GS: GlobalState> State<T, GS> for MappedState<T, U, GS> {
+impl<T: StateContract, U: StateContract, GS: GlobalState> State<T, GS> for MappedState<T, U, GS> {
     fn get_value_mut(&mut self, env: &mut Environment<GS>, global_state: &mut GS) -> &mut T {
         self.latest_value = (self.map)(self.mapped_state.get_value_mut(env, global_state));
         &mut self.latest_value
@@ -88,8 +87,8 @@ impl<T: Serialize + Clone + Debug, U: Serialize + Clone + Debug + DeserializeOwn
     }
 }
 
-impl<T: Serialize + Clone + Debug + 'static, U: Serialize + Clone + Debug + DeserializeOwned + 'static, GS: GlobalState> Into<Box<dyn State<T, GS>>> for Box<MappedState<T, U, GS>> {
-    fn into(self) -> Box<dyn State<T, GS>> {
-        self
+impl<T: StateContract + 'static, U: StateContract + 'static, GS: GlobalState> Into<TState<T, GS>> for Box<MappedState<T, U, GS>> {
+    fn into(self) -> TState<T, GS> {
+        WidgetState::new(self)
     }
 }

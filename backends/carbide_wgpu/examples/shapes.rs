@@ -1,6 +1,6 @@
 use carbide_wgpu::window::*;
 use carbide_core::widget::*;
-use carbide_core::{Rect, Point};
+use carbide_core::Point;
 use std::f64::consts::PI;
 
 
@@ -71,20 +71,20 @@ fn main() {
                     .frame(100.0, 100.0)
             ]),
             HStack::initialize(vec![
-                Canvas::initialize(|rect, mut context| {
+                Canvas::initialize(|_, mut context| {
                     context = draw_star([50.0, 50.0], 5, 45.0, 20.0, context);
                     context.set_fill_style(EnvironmentColor::Accent);
                     context.fill();
                     context
                 }).frame(100.0, 100.0),
-                Canvas::initialize(|rect, mut context| {
+                Canvas::initialize(|_, mut context| {
                     context = draw_star([50.0, 50.0], 5, 45.0, 20.0, context);
                     context.set_line_width(10.0);
                     context.set_stroke_style(EnvironmentColor::Accent);
                     context.stroke();
                     context
                 }).frame(100.0, 100.0),
-                Canvas::initialize(|rect, mut context| {
+                Canvas::initialize(|_, mut context| {
                     context = draw_star([50.0, 50.0], 5, 45.0, 20.0, context);
                     context.set_fill_style(EnvironmentColor::Accent);
                     context.set_stroke_style(EnvironmentColor::Red);

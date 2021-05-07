@@ -26,6 +26,6 @@ impl Default for EnvironmentFontSize {
 
 impl<GS: GlobalState> Into<U32State<GS>> for EnvironmentFontSize {
     fn into(self) -> U32State<GS> {
-        Box::new(EnvironmentFontSizeState::new(self))
+        WidgetState::new(Box::new(EnvironmentFontSizeState::new(self)))
     }
 }

@@ -1,30 +1,26 @@
-use std::fmt::Debug;
-
-use serde::de::DeserializeOwned;
-use serde::Serialize;
-
 use crate::prelude::GlobalState;
 use crate::state::environment::Environment;
 use crate::state::state::State;
 use crate::state::state_key::StateKey;
-use crate::state::TState;
+use crate::state::{TState, StateContract};
+use crate::state::widget_state::WidgetState;
 
 #[derive(Clone)]
 pub struct TupleState3<T1, T2, T3, GS>
-    where T1: Serialize + Clone + Debug + DeserializeOwned,
-          T2: Serialize + Clone + Debug + DeserializeOwned,
-          T3: Serialize + Clone + Debug + DeserializeOwned,
+    where T1: StateContract,
+          T2: StateContract,
+          T3: StateContract,
           GS: GlobalState {
-    first: Box<dyn State<T1, GS>>,
-    second: Box<dyn State<T2, GS>>,
-    third: Box<dyn State<T3, GS>>,
+    first: TState<T1, GS>,
+    second: TState<T2, GS>,
+    third: TState<T3, GS>,
     latest_value: (T1, T2, T3),
 }
 
 impl<T1, T2, T3, GS> TupleState3<T1, T2, T3, GS>
-    where T1: Serialize + Clone + Debug + DeserializeOwned,
-          T2: Serialize + Clone + Debug + DeserializeOwned,
-          T3: Serialize + Clone + Debug + DeserializeOwned,
+    where T1: StateContract,
+          T2: StateContract,
+          T3: StateContract,
           GS: GlobalState {
     pub fn new<IT1, IT2, IT3>(first: IT1, second: IT2, third: IT3) -> Box<TupleState3<T1, T2, T3, GS>>
         where
@@ -45,10 +41,10 @@ impl<T1, T2, T3, GS> TupleState3<T1, T2, T3, GS>
     }
 }
 
-impl<T1, T2, T3, GS> From<(Box<dyn State<T1, GS>>, Box<dyn State<T2, GS>>, Box<dyn State<T3, GS>>)> for TupleState3<T1, T2, T3, GS>
-    where T1: Serialize + Clone + Debug + DeserializeOwned,
-          T2: Serialize + Clone + Debug + DeserializeOwned,
-          T3: Serialize + Clone + Debug + DeserializeOwned,
+/*impl<T1, T2, T3, GS> From<(Box<dyn State<T1, GS>>, Box<dyn State<T2, GS>>, Box<dyn State<T3, GS>>)> for TupleState3<T1, T2, T3, GS>
+    where T1: StateContract,
+          T2: StateContract,
+          T3: StateContract,
           GS: GlobalState {
     fn from((first, second, third): (Box<dyn State<T1, GS>>, Box<dyn State<T2, GS>>, Box<dyn State<T3, GS>>)) -> Self {
         TupleState3 {
@@ -58,13 +54,23 @@ impl<T1, T2, T3, GS> From<(Box<dyn State<T1, GS>>, Box<dyn State<T2, GS>>, Box<d
             latest_value: (first.get_latest_value().clone(), second.get_latest_value().clone(), third.get_latest_value().clone()),
         }
     }
+}*/
+
+impl<T1, T2, T3, GS> Into<TState<(T1, T2, T3), GS>> for Box<TupleState3<T1, T2, T3, GS>>
+    where T1: StateContract + 'static,
+          T2: StateContract + 'static,
+          T3: StateContract + 'static,
+          GS: GlobalState {
+    fn into(self) -> TState<(T1, T2, T3), GS> {
+        WidgetState::new(self)
+    }
 }
 
 
 impl<T1, T2, T3, GS> State<(T1, T2, T3), GS> for TupleState3<T1, T2, T3, GS>
-    where T1: Serialize + Clone + Debug + DeserializeOwned,
-          T2: Serialize + Clone + Debug + DeserializeOwned,
-          T3: Serialize + Clone + Debug + DeserializeOwned,
+    where T1: StateContract,
+          T2: StateContract,
+          T3: StateContract,
           GS: GlobalState {
 
     fn get_value_mut(&mut self, env: &mut Environment<GS>, global_state: &mut GS) -> &mut (T1, T2, T3) {

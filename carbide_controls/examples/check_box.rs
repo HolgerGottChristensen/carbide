@@ -3,8 +3,6 @@ extern crate carbide_wgpu;
 extern crate env_logger;
 extern crate futures;
 
-use futures::executor::block_on;
-use serde::{Deserialize, Serialize};
 
 use carbide_controls::{CheckBox, CheckBoxValue};
 use carbide_core::widget::*;

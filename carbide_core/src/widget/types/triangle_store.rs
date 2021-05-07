@@ -73,3 +73,9 @@ impl TriangleStore {
         res
     }
 }
+
+impl Default for TriangleStore {
+    fn default() -> Self {
+        TriangleStore::new()
+    }
+}

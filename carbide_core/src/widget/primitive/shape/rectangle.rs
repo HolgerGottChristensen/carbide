@@ -12,7 +12,7 @@ use crate::widget::types::stroke_style::StrokeStyle;
 use crate::widget::types::triangle_store::TriangleStore;
 
 /// A basic, non-interactive rectangle shape widget.
-#[derive(Debug, Clone, Widget)]
+#[derive(Debug, Clone, Default, Widget)]
 pub struct Rectangle<GS> where GS: GlobalState {
     id: Uuid,
     children: Vec<Box<dyn Widget<GS>>>,

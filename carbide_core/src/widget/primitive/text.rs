@@ -22,7 +22,7 @@ pub struct Text<GS> where GS: GlobalState {
     position: Point,
     dimension: Dimensions,
     wrap_mode: Wrap,
-    #[state] pub text: Box<dyn State<String, GS>>,
+    #[state] pub text: StringState<GS>,
     #[state] font_size: U32State<GS>,
     #[state] color: ColorState<GS>,
 }
@@ -139,7 +139,7 @@ impl<S: GlobalState> CommonWidget<S> for Text<S> {
 
 
 impl<GS: GlobalState> Text<GS> {
-    pub fn new<K: Into<Box<dyn State<String, GS>>>>(text: K) -> Box<Self> {
+    pub fn new<K: Into<StringState<GS>>>(text: K) -> Box<Self> {
         Box::new(Text {
             id: Uuid::new_v4(),
             text: text.into(),

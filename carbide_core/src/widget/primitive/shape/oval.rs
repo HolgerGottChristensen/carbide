@@ -193,7 +193,7 @@ pub struct Section {
 
 /// Unique state for the **Oval**.
 #[derive(Copy, Clone, Debug, PartialEq)]
-pub struct State<S> {
+pub struct OvalState<S> {
     /// The number of lines used to draw the edge.
     pub resolution: usize,
     /// A type describing the section of the `Oval` that is to be drawn.

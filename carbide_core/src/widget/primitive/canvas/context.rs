@@ -5,7 +5,7 @@ use lyon::tessellation::{StrokeOptions, FillOptions, LineJoin, LineCap};
 //use crate::draw::path_builder::PathBuilder;
 use lyon::algorithms::path::builder::{Build, SvgPathBuilder};
 use crate::draw::svg_path_builder::SVGPathBuilder;
-use crate::prelude::{State, ColorState};
+use crate::prelude::ColorState;
 use crate::widget::GlobalState;
 
 #[derive(Debug, Clone)]
@@ -200,8 +200,8 @@ impl<GS: GlobalState> Context<GS> {
 }
 
 pub enum ShapeStyleWithOptions<GS: GlobalState> {
-    Fill(FillOptions, Box<dyn State<Color, GS>>),
-    Stroke(StrokeOptions, Box<dyn State<Color, GS>>),
+    Fill(FillOptions, ColorState<GS>),
+    Stroke(StrokeOptions, ColorState<GS>),
 }
 
 #[derive(Debug, Clone)]
@@ -221,6 +221,6 @@ pub enum ContextAction<GS: GlobalState> {
     BeginPath,
     Arc {x: f64, y: f64, r: f64, start_angle: f64, end_angle: f64},
     ArcTo {x1: f64, y1: f64, x2: f64, y2: f64, r: f64},
-    FillStyle(Box<dyn State<Color, GS>>),
-    StrokeStyle(Box<dyn State<Color, GS>>),
+    FillStyle(ColorState<GS>),
+    StrokeStyle(ColorState<GS>),
 }

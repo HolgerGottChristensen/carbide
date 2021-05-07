@@ -23,7 +23,7 @@ pub struct ForEach<GS, T> where GS: GlobalState, T: ForEachDelegate + 'static {
     id: Uuid, // --
     children_map: FxHashMap<T, Box<dyn Widget<GS>>>,
     delegate: Box<dyn Widget<GS>>,
-    #[state] ids: Box<dyn State<Vec<T>, GS>>,
+    #[state] ids: TState<Vec<T>, GS>,
     position: Point, // --
     dimension: Dimensions, // --
     id_state: Box<dyn State<T, GS>>,
@@ -34,8 +34,8 @@ pub struct ForEach<GS, T> where GS: GlobalState, T: ForEachDelegate + 'static {
 impl<GS: GlobalState, T: ForEachDelegate + 'static> WidgetExt<GS> for ForEach<GS, T> {}
 
 impl<GS: GlobalState, T: ForEachDelegate + 'static> ForEach<GS, T> {
-    pub fn new(ids: Box<dyn State<Vec<T>, GS>>, delegate: Box<dyn Widget<GS>>) -> Box<Self> {
-
+    pub fn new<K: Into<TState<Vec<T>, GS>>>(ids: K, delegate: Box<dyn Widget<GS>>) -> Box<Self> {
+        let ids = ids.into();
         let mut map = HashMap::with_hasher(FxBuildHasher::default());
 
         for i in ids.get_latest_value() {

@@ -1,10 +1,6 @@
-use std::fmt::Debug;
-
-use carbide_core::DeserializeOwned;
 use carbide_core::event_handler::{KeyboardEvent, MouseEvent};
 use carbide_core::input::Key;
 use carbide_core::prelude::Uuid;
-use carbide_core::Serialize;
 use carbide_core::state::environment_color::EnvironmentColor;
 use carbide_core::state::state::State;
 use carbide_core::state::TupleState2;
@@ -18,7 +14,7 @@ use crate::PlainButton;
 #[focusable(block_focus)]
 #[event(handle_keyboard_event, handle_mouse_event)]
 #[state_sync(update_all_widget_state)]
-pub struct PlainPopUpButton<T, GS> where GS: GlobalState, T: Serialize + Clone + Debug + Default + DeserializeOwned + 'static {
+pub struct PlainPopUpButton<T, GS> where GS: GlobalState, T: StateContract + 'static {
     id: Id,
     #[state] focus: Box<dyn State<Focus, GS>>,
     child: Box<dyn Widget<GS>>,
@@ -33,7 +29,7 @@ pub struct PlainPopUpButton<T, GS> where GS: GlobalState, T: Serialize + Clone +
     #[state] model: Box<dyn State<Vec<T>, GS>>,
 }
 
-impl<T: Serialize + Clone + Debug + Default + DeserializeOwned + 'static, GS: GlobalState> PlainPopUpButton<T, GS> {
+impl<T: StateContract + 'static, GS: GlobalState> PlainPopUpButton<T, GS> {
 
     pub fn new(model: Box<dyn State<Vec<T>, GS>>, selected_state: Box<dyn State<usize, GS>>) -> Box<Self> {
 
@@ -153,7 +149,7 @@ impl<T: Serialize + Clone + Debug + Default + DeserializeOwned + 'static, GS: Gl
                         }
                     })).border()
                         .border_width(1)
-                        .color(EnvironmentColor::Blue.into())
+                        .color(EnvironmentColor::Blue)
                 }
             };
 
@@ -186,7 +182,7 @@ impl<T: Serialize + Clone + Debug + Default + DeserializeOwned + 'static, GS: Gl
     }
 }
 
-impl<T: Serialize + Clone + Debug + Default + DeserializeOwned + 'static, GS: GlobalState> CommonWidget<GS> for PlainPopUpButton<T, GS> {
+impl<T: StateContract + 'static, GS: GlobalState> CommonWidget<GS> for PlainPopUpButton<T, GS> {
     fn get_id(&self) -> Id {
         self.id
     }
@@ -240,9 +236,9 @@ impl<T: Serialize + Clone + Debug + Default + DeserializeOwned + 'static, GS: Gl
     }
 }
 
-impl<T: Serialize + Clone + Debug + Default + DeserializeOwned + 'static, GS: GlobalState> ChildRender for PlainPopUpButton<T, GS> {}
+impl<T: StateContract + 'static, GS: GlobalState> ChildRender for PlainPopUpButton<T, GS> {}
 
-impl<T: Serialize + Clone + Debug + Default + DeserializeOwned + 'static, GS: GlobalState> Layout<GS> for PlainPopUpButton<T, GS> {
+impl<T: StateContract + 'static, GS: GlobalState> Layout<GS> for PlainPopUpButton<T, GS> {
     fn flexibility(&self) -> u32 {
         10
     }
@@ -270,4 +266,4 @@ impl<T: Serialize + Clone + Debug + Default + DeserializeOwned + 'static, GS: Gl
 }
 
 
-impl<T: Serialize + Clone + Debug + Default + DeserializeOwned + 'static + 'static, GS: GlobalState> WidgetExt<GS> for PlainPopUpButton<T, GS> {}
+impl<T: StateContract + 'static, GS: GlobalState> WidgetExt<GS> for PlainPopUpButton<T, GS> {}

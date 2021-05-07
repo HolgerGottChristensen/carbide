@@ -19,8 +19,8 @@ pub struct PlainCheckBox<GS> where GS: GlobalState {
 
 impl<GS: GlobalState> PlainCheckBox<GS> {
 
-    pub fn focused(mut self, focused: Box<dyn State<Focus, GS>>) -> Box<Self> {
-        self.focus = focused;
+    pub fn focused<K: Into<FocusState<GS>>>(mut self, focused: K) -> Box<Self> {
+        self.focus = focused.into();
         Box::new(self)
     }
 
@@ -49,7 +49,7 @@ impl<GS: GlobalState> PlainCheckBox<GS> {
             ]).fill(highlight_color)
         };
 
-        Self::new_internal(checked.into(), focus_state, default_delegate, label.into())
+        Self::new_internal(checked.into(), focus_state.into(), default_delegate, label.into())
     }
 
     pub fn delegate(self, delegate: fn(focus: FocusState<GS>, selected: CheckBoxState<GS>, button: Box<dyn Widget<GS>>) -> Box<dyn Widget<GS>>) -> Box<Self> {

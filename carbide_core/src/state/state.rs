@@ -5,7 +5,6 @@ use std::ops::{Deref, DerefMut};
 use bitflags::_core::fmt::Formatter;
 use dyn_clone::DynClone;
 use serde::{Deserialize, Serialize};
-use serde::de::DeserializeOwned;
 use uuid::Uuid;
 
 use crate::{from_ron, to_ron};
@@ -13,6 +12,8 @@ use crate::state::environment::Environment;
 use crate::state::global_state::GlobalState;
 use crate::state::mapped_state::MappedState;
 use crate::state::state_key::StateKey;
+use crate::state::*;
+use crate::widget::widget_state::WidgetState;
 
 pub trait State<T, GS>: DynClone where T: Serialize + Clone + Debug, GS: GlobalState {
     fn get_value_mut(&mut self, env: &mut Environment<GS>, global_state: &mut GS) -> &mut T;
@@ -24,14 +25,14 @@ pub trait State<T, GS>: DynClone where T: Serialize + Clone + Debug, GS: GlobalS
     fn insert_dependent_states(&self, env: &mut Environment<GS>);
 }
 
-pub trait StateExt<T: Serialize + Clone + Debug + DeserializeOwned + 'static, GS: GlobalState>: State<T, GS> + Sized + 'static {
-    fn mapped<U: Serialize + Clone + Debug + 'static>(self, map: fn(&T) -> U) -> Box<dyn State<U, GS>> {
+pub trait StateExt<T: StateContract + 'static, GS: GlobalState>: State<T, GS> + Sized + 'static {
+    fn mapped<U: StateContract + 'static>(self, map: fn(&T) -> U) -> Box<dyn State<U, GS>> {
         let latest_value = self.get_latest_value().clone();
         MappedState::new(Box::new(self), map, map(&latest_value))
     }
 }
 
-impl<X: 'static, T: Serialize + Clone + Debug + DeserializeOwned + 'static, GS: GlobalState> StateExt<T, GS> for X where X: State<T, GS> {}
+impl<X: 'static, T: StateContract + 'static, GS: GlobalState> StateExt<T, GS> for X where X: State<T, GS> {}
 
 impl<T: Serialize + Clone + Debug, GS: GlobalState> Debug for dyn State<T, GS> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
@@ -298,44 +299,44 @@ impl GetState for LocalStateList {
     }
 }
 
-impl<T: GlobalState> Into<CommonState<Uuid, T>> for Uuid {
-    fn into(self) -> CommonState<Uuid, T> {
+impl<GS: GlobalState> Into<CommonState<Uuid, GS>> for Uuid {
+    fn into(self) -> CommonState<Uuid, GS> {
         CommonState::new(&self)
     }
 }
 
-impl<T: GlobalState> Into<CommonState<Vec<Uuid>, T>> for Vec<Uuid> {
-    fn into(self) -> CommonState<Vec<Uuid>, T> {
+impl<GS: GlobalState> Into<CommonState<Vec<Uuid>, GS>> for Vec<Uuid> {
+    fn into(self) -> CommonState<Vec<Uuid>, GS> {
         CommonState::new(&self)
     }
 }
 
-impl<T: GlobalState> Into<CommonState<u32,T>> for u32 {
-    fn into(self) -> CommonState<u32,T> {
+impl<GS: GlobalState> Into<CommonState<u32, GS>> for u32 {
+    fn into(self) -> CommonState<u32, GS> {
         CommonState::new(&self)
     }
 }
 
-impl<T: GlobalState> Into<CommonState<f64,T>> for f64 {
-    fn into(self) -> CommonState<f64,T> {
+impl<GS: GlobalState> Into<CommonState<f64, GS>> for f64 {
+    fn into(self) -> CommonState<f64, GS> {
         CommonState::new(&self)
     }
 }
 
-impl<T: GlobalState> Into<CommonState<String, T>> for String {
-    fn into(self) -> CommonState<String, T> {
+impl<GS: GlobalState> Into<CommonState<String, GS>> for String {
+    fn into(self) -> CommonState<String, GS> {
         CommonState::new(&self)
     }
 }
 
-impl<T: GlobalState> Into<CommonState<String, T>> for &str {
-    fn into(self) -> CommonState<String, T> {
+impl<GS: GlobalState> Into<CommonState<String, GS>> for &str {
+    fn into(self) -> CommonState<String, GS> {
         CommonState::new(&self.to_string())
     }
 }
 
-impl<T: GlobalState> Into<CommonState<bool, T>> for bool {
-    fn into(self) -> CommonState<bool, T> {
+impl<GS: GlobalState> Into<CommonState<bool, GS>> for bool {
+    fn into(self) -> CommonState<bool, GS> {
         CommonState::new(&self)
     }
 }
@@ -343,63 +344,63 @@ impl<T: GlobalState> Into<CommonState<bool, T>> for bool {
 
 
 
-impl<T: GlobalState> Into<Box<dyn State<Uuid, T>>> for Uuid {
-    fn into(self) -> Box<dyn State<Uuid, T>> {
-        Box::new(CommonState::new(&self))
+impl<GS: GlobalState> Into<TState<Uuid, GS>> for Uuid {
+    fn into(self) -> TState<Uuid, GS> {
+        WidgetState::new(Box::new(CommonState::new(&self)))
     }
 }
 
-impl<T: GlobalState> Into<Box<dyn State<Vec<Uuid>, T>>> for Vec<Uuid> {
-    fn into(self) -> Box<dyn State<Vec<Uuid>, T>> {
-        Box::new(CommonState::new(&self))
+impl<GS: GlobalState> Into<TState<Vec<Uuid>, GS>> for Vec<Uuid> {
+    fn into(self) -> TState<Vec<Uuid>, GS> {
+        WidgetState::new(Box::new(CommonState::new(&self)))
     }
 }
 
-impl<T: GlobalState> Into<Box<dyn State<u32, T>>> for u32 {
-    fn into(self) -> Box<dyn State<u32, T>> {
-        Box::new(CommonState::new(&self))
+impl<GS: GlobalState> Into<U32State<GS>> for u32 {
+    fn into(self) -> U32State<GS> {
+        WidgetState::new(Box::new(CommonState::new(&self)))
     }
 }
 
-impl<T: GlobalState> Into<Box<dyn State<usize, T>>> for usize {
-    fn into(self) -> Box<dyn State<usize, T>> {
-        Box::new(CommonState::new(&self))
+impl<GS: GlobalState> Into<UsizeState<GS>> for usize {
+    fn into(self) -> UsizeState<GS> {
+        WidgetState::new(Box::new(CommonState::new(&self)))
     }
 }
 
-impl<T: GlobalState> Into<Box<dyn State<f64, T>>> for f64 {
-    fn into(self) -> Box<dyn State<f64, T>> {
-        Box::new(CommonState::new(&self))
+impl<GS: GlobalState> Into<F64State<GS>> for f64 {
+    fn into(self) -> F64State<GS> {
+        WidgetState::new(Box::new(CommonState::new(&self)))
     }
 }
 
-impl<T: GlobalState> Into<Box<dyn State<String, T>>> for String {
-    fn into(self) -> Box<dyn State<String, T>> {
-        Box::new(CommonState::new(&self))
+impl<GS: GlobalState> Into<StringState<GS>> for String {
+    fn into(self) -> StringState<GS> {
+        WidgetState::new(Box::new(CommonState::new(&self)))
     }
 }
 
-impl<T: GlobalState> Into<Box<dyn State<String, T>>> for &str {
-    fn into(self) -> Box<dyn State<String, T>> {
-        Box::new(CommonState::new(&self.to_string()))
+impl<GS: GlobalState> Into<StringState<GS>> for &str {
+    fn into(self) -> StringState<GS> {
+        WidgetState::new(Box::new(CommonState::new(&self.to_string())))
     }
 }
 
-impl<T: GlobalState> Into<Box<dyn State<bool, T>>> for bool {
-    fn into(self) -> Box<dyn State<bool, T>> {
-        Box::new(CommonState::new(&self))
+impl<GS: GlobalState> Into<BoolState<GS>> for bool {
+    fn into(self) -> BoolState<GS> {
+        WidgetState::new(Box::new(CommonState::new(&self)))
     }
 }
 
-impl<T: Serialize + Clone + Debug + 'static, GS: GlobalState> Into<Box<dyn State<T, GS>>> for CommonState<T, GS> {
-    fn into(self) -> Box<dyn State<T, GS>> {
-        Box::new(self)
+impl<T: StateContract + 'static, GS: GlobalState> Into<TState<T, GS>> for CommonState<T, GS> {
+    fn into(self) -> TState<T, GS> {
+        WidgetState::new(Box::new(self))
     }
 }
 
-impl<T: Serialize + Clone + Debug + 'static, GS: GlobalState> Into<Box<dyn State<T, GS>>> for Box<CommonState<T, GS>> {
-    fn into(self) -> Box<dyn State<T, GS>> {
-        self
+impl<T: StateContract + 'static, GS: GlobalState> Into<TState<T, GS>> for Box<CommonState<T, GS>> {
+    fn into(self) -> TState<T, GS> {
+        WidgetState::new(self)
     }
 }
 

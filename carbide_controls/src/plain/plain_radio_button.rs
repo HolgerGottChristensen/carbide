@@ -23,8 +23,8 @@ pub struct PlainRadioButton<T, GS> where GS: GlobalState, T: 'static + Serialize
 
 impl<T: 'static + Serialize + Clone + Debug + Default + DeserializeOwned + PartialEq, GS: GlobalState> PlainRadioButton<T, GS> {
 
-    pub fn focused(mut self, focused: Box<dyn State<Focus, GS>>) -> Box<Self> {
-        self.focus = focused;
+    pub fn focused<K: Into<FocusState<GS>>>(mut self, focused: K) -> Box<Self> {
+        self.focus = focused.into();
         Box::new(self)
     }
 
@@ -47,7 +47,7 @@ impl<T: 'static + Serialize + Clone + Debug + Default + DeserializeOwned + Parti
             ]).fill(highlight_color)
         };
 
-        Self::new_internal(reference, local_state.into(), focus_state, default_delegate, label.into())
+        Self::new_internal(reference, local_state.into(), focus_state.into(), default_delegate, label.into())
     }
 
     pub(crate) fn delegate(self, delegate: fn(focus: FocusState<GS>, selected: BoolState<GS>, button: Box<dyn Widget<GS>>) -> Box<dyn Widget<GS>>) -> Box<Self> {
@@ -82,7 +82,7 @@ impl<T: 'static + Serialize + Clone + Debug + Default + DeserializeOwned + Parti
                 myself.set_focus_and_request(Focus::FocusRequested, env);
             }).focused(focus_state.clone());
 
-        let delegate_widget = delegate(focus_state.clone(), selected_state, button);
+        let delegate_widget = delegate(focus_state.clone(), selected_state.into(), button);
 
         let child = HStack::initialize(vec![
             delegate_widget,

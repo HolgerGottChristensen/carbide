@@ -59,9 +59,9 @@ impl<T: Serialize + Clone + Debug + Default + DeserializeOwned + 'static, GS: Gl
 
 
         // Calculate the height of the popup
-        let height: Box<dyn State<f64, GS>> = parent_size[1].into();
-        let popup_list_spacing_state: Box<dyn State<f64, GS>> = popup_list_spacing.into();
-        let length: Box<dyn State<usize, GS>> = foreach_state.get_latest_value().len().into();
+        let height: F64State<GS> = parent_size[1].into();
+        let popup_list_spacing_state: F64State<GS> = popup_list_spacing.into();
+        let length: UsizeState<GS> = foreach_state.get_latest_value().len().into();
 
         let max_height_state: Box<dyn State<f64, GS>> = Box::new(CommonState::<f64, GS>::EnvironmentState {
             function: |e: &Environment<GS>| {
@@ -104,7 +104,7 @@ impl<T: Serialize + Clone + Debug + Default + DeserializeOwned + 'static, GS: Gl
                     .clip()
                     .border()
                     .border_width(1)
-                    .color(EnvironmentColor::OpaqueSeparator.into()),
+                    .color(EnvironmentColor::OpaqueSeparator),
         ])
             .fill(EnvironmentColor::Red)
             .frame(parent_size[0] + 2.0, popup_height_state);

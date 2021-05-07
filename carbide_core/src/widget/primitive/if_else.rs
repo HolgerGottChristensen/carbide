@@ -9,14 +9,14 @@ pub struct IfElse<GS> where GS: GlobalState {
     when_false: Box<dyn Widget<GS>>,
     position: Point,
     dimension: Dimensions,
-    #[state] predicate: Box<dyn State<bool, GS>>,
+    #[state] predicate: BoolState<GS>,
 }
 
 impl<GS: GlobalState> IfElse<GS> {
-    pub fn new(predicate: Box<dyn State<bool, GS>>) -> Box<Self> {
+    pub fn new<B: Into<BoolState<GS>>>(predicate: B) -> Box<Self> {
         Box::new(IfElse {
             id: Uuid::new_v4(),
-            predicate,
+            predicate: predicate.into(),
             when_true: Frame::init(0.0.into(), 0.0.into(), Rectangle::initialize(vec![])),
             when_false: Frame::init(0.0.into(), 0.0.into(), Rectangle::initialize(vec![])),
             position: [0.0, 0.0],

@@ -15,3 +15,9 @@ impl StrokeStyle {
         }
     }
 }
+
+impl Default for StrokeStyle {
+    fn default() -> Self {
+        StrokeStyle::Solid {line_width: 2.0}
+    }
+}

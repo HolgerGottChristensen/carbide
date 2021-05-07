@@ -8,6 +8,8 @@ use crate::prelude::GlobalState;
 use crate::state::environment::Environment;
 use crate::state::state::State;
 use crate::state::state_key::StateKey;
+use crate::state::{StateContract, TState};
+use crate::state::widget_state::WidgetState;
 
 #[derive(Clone)]
 pub struct VecState<T, GS> where T: Serialize + Clone + Debug, GS: GlobalState {
@@ -80,14 +82,14 @@ impl<T: Serialize + Clone + Debug + DeserializeOwned, GS: GlobalState> State<T, 
     }
 }
 
-impl<T: Serialize + Clone + Debug + DeserializeOwned + 'static, GS: GlobalState> Into<Box<dyn State<T, GS>>> for VecState<T, GS> {
-    fn into(self) -> Box<dyn State<T, GS>> {
-        Box::new(self)
+impl<T: StateContract + 'static, GS: GlobalState> Into<TState<T, GS>> for VecState<T, GS> {
+    fn into(self) -> TState<T, GS> {
+        WidgetState::new(Box::new(self))
     }
 }
 
-impl<T: Serialize + Clone + Debug + DeserializeOwned + 'static, GS: GlobalState> Into<Box<dyn State<T, GS>>> for Box<VecState<T, GS>> {
-    fn into(self) -> Box<dyn State<T, GS>> {
-        self
+impl<T: StateContract + 'static, GS: GlobalState> Into<TState<T, GS>> for Box<VecState<T, GS>> {
+    fn into(self) -> TState<T, GS> {
+        WidgetState::new(self)
     }
 }

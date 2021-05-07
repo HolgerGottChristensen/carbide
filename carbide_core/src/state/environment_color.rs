@@ -48,6 +48,6 @@ impl Default for EnvironmentColor {
 
 impl<GS: GlobalState> Into<ColorState<GS>> for EnvironmentColor {
     fn into(self) -> ColorState<GS> {
-        Box::new(EnvironmentColorState::new(self))
+        WidgetState::new(Box::new(EnvironmentColorState::new(self)))
     }
 }

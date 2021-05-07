@@ -1,6 +1,4 @@
 use crate::prelude::*;
-use serde::Serialize;
-use crate::serde::de::DeserializeOwned;
 use std::fmt::Debug;
 
 /// This widget is for containing shared state. This is very rarely needed as there always is a
@@ -9,15 +7,15 @@ use std::fmt::Debug;
 /// further down the tree than the items in the foreach. The first item in the foreach if there is no
 /// parent state, the first item in the foreach widget will override all the others state.
 #[derive(Debug, Clone, Widget)]
-pub struct SharedState<T, GS> where T: Serialize + Clone + Debug + DeserializeOwned, GS: GlobalState {
+pub struct SharedState<T, GS> where T: StateContract, GS: GlobalState {
     id: Uuid,
     child: Box<dyn Widget<GS>>,
     position: Point,
     dimension: Dimensions,
-    #[state] shared_state: Box<dyn State<T, GS>>
+    #[state] shared_state: TState<T, GS>
 }
 
-impl<T: Serialize + Clone + Debug + DeserializeOwned, GS: GlobalState> SharedState<T, GS> {
+impl<T: StateContract, GS: GlobalState> SharedState<T, GS> {
     pub fn new<S: Into<TState<T, GS>>>(shared_state: S, child: Box<dyn Widget<GS>>) -> Box<Self> {
         Box::new(SharedState {
             id: Uuid::new_v4(),
@@ -29,7 +27,7 @@ impl<T: Serialize + Clone + Debug + DeserializeOwned, GS: GlobalState> SharedSta
     }
 }
 
-impl<T: Serialize + Clone + Debug + DeserializeOwned, GS: GlobalState> Layout<GS> for SharedState<T, GS> {
+impl<T: StateContract, GS: GlobalState> Layout<GS> for SharedState<T, GS> {
     fn flexibility(&self) -> u32 {
         self.child.flexibility()
     }
@@ -50,7 +48,7 @@ impl<T: Serialize + Clone + Debug + DeserializeOwned, GS: GlobalState> Layout<GS
     }
 }
 
-impl<T: Serialize + Clone + Debug + DeserializeOwned, GS: GlobalState> CommonWidget<GS> for SharedState<T, GS> {
+impl<T: StateContract, GS: GlobalState> CommonWidget<GS> for SharedState<T, GS> {
     fn get_id(&self) -> Uuid {
         self.id
     }
@@ -103,7 +101,7 @@ impl<T: Serialize + Clone + Debug + DeserializeOwned, GS: GlobalState> CommonWid
     }
 }
 
-impl<T: Serialize + Clone + Debug + DeserializeOwned, GS: GlobalState> Render<GS> for SharedState<T, GS> {
+impl<T: StateContract, GS: GlobalState> Render<GS> for SharedState<T, GS> {
 
     fn get_primitives(&mut self, env: &Environment<GS>, global_state: &GS) -> Vec<Primitive> {
         let mut prims = vec![];
@@ -115,4 +113,4 @@ impl<T: Serialize + Clone + Debug + DeserializeOwned, GS: GlobalState> Render<GS
 }
 
 
-impl<T: 'static + Serialize + Clone + Debug + DeserializeOwned, GS: GlobalState> WidgetExt<GS> for SharedState<T, GS> {}
+impl<T: 'static + StateContract, GS: GlobalState> WidgetExt<GS> for SharedState<T, GS> {}
