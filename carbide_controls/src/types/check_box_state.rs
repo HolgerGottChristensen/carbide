@@ -1,6 +1,6 @@
-use serde::{Serialize, Deserialize};
-use carbide_core::state::{TState, BoolState};
-use carbide_core::widget::GlobalState;
+use serde::{Deserialize, Serialize};
+
+use carbide_core::state::TState;
 
 pub type CheckBoxState<GS> = TState<CheckBoxValue, GS>;
 
@@ -8,7 +8,7 @@ pub type CheckBoxState<GS> = TState<CheckBoxValue, GS>;
 pub enum CheckBoxValue {
     True,
     Intermediate,
-    False
+    False,
 }
 
 impl Default for CheckBoxValue {

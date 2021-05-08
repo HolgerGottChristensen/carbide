@@ -17,9 +17,9 @@ use rand::Rng;
 use serde::{Deserialize, Serialize};
 
 use crate::prelude::ColorState;
+use crate::state::widget_state::WidgetState;
 use crate::utils::{degrees, fmod, turns};
 use crate::widget::{CommonState, GlobalState};
-use crate::state::widget_state::WidgetState;
 
 /// Color supporting RGB and HSL variants.
 #[derive(PartialEq, Copy, Clone, Debug, Serialize, Deserialize)]
@@ -503,13 +503,6 @@ pub const DARK_BROWN     :  Color = make_color!(143, 89, 2);
 pub const BLACK          :  Color = make_color!(0, 0, 0);
 /// Straight White.                                       
 pub const WHITE          :  Color = make_color!(255, 255, 255);
-
-/// Alluminium - Light                                    
-pub const LIGHT_GRAY     :  Color = make_color!(238, 238, 236);
-/// Alluminium - Regular                                  
-pub const GRAY           :  Color = make_color!(211, 215, 207);
-/// Alluminium - Dark                                     
-pub const DARK_GRAY      :  Color = make_color!(186, 189, 182);
 
 /// Aluminium - Light - #EEEEEC                           
 pub const LIGHT_GREY     :  Color = make_color!(238, 238, 236);

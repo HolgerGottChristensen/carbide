@@ -1,7 +1,6 @@
 use carbide_core::widget::*;
 
 use crate::PlainSwitch;
-use crate::types::*;
 
 #[derive(Clone, Widget)]
 pub struct Switch<GS> where GS: GlobalState {
