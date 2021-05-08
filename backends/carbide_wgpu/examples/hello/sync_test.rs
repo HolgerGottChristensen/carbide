@@ -1,15 +1,7 @@
-use crate::prelude::*;
-use crate::state::state::CommonState;
-use crate::event_handler::KeyboardEvent;
-use crate::input::Key;
-use crate::widget::{HStack, Text};
-use crate::widget::primitive::spacer::Spacer;
-use crate::widget::types::spacer_direction::SpacerDirection;
-use crate::widget::primitive::v_stack::VStack;
-use crate::widget::primitive::foreach::ForEach;
-use crate::widget::render::ChildRender;
-use crate::state::mapped_state::MappedState;
-use crate::state::environment_color::EnvironmentColor;
+use carbide_core::event_handler::KeyboardEvent;
+use carbide_core::input::Key;
+use carbide_core::prelude::*;
+use carbide_core::widget::*;
 
 #[derive(Debug, Clone, Widget)]
 #[state_sync(insert_local_state)]

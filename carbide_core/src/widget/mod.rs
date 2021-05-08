@@ -33,6 +33,7 @@ pub use self::primitive::canvas::canvas::Canvas;
 pub use self::primitive::canvas::context::Context;
 pub use self::primitive::canvas::context::ContextAction;
 pub use self::primitive::environment_updating::EnvUpdating;
+pub use self::primitive::foreach::ForEach;
 pub use self::primitive::frame::*;
 pub use self::primitive::h_stack::*;
 pub use self::primitive::if_else::IfElse;
@@ -42,7 +43,7 @@ pub use self::primitive::overlaid_layer::OverlaidLayer;
 pub use self::primitive::padding::Padding;
 pub use self::primitive::scroll::Scroll;
 pub use self::primitive::shape::capsule::Capsule;
-pub use self::primitive::shape::oval::{self, Oval};
+pub use self::primitive::shape::ellipse::{self, Ellipse};
 pub use self::primitive::shape::polygon::{self, Polygon};
 pub use self::primitive::shape::rectangle::{self, Rectangle};
 pub use self::primitive::shape::rounded_rectangle::RoundedRectangle;
@@ -71,6 +72,5 @@ pub mod primitive;
 
 
 pub mod common_widget;
-pub mod complex;
 pub mod widget_iterator;
 pub mod types;

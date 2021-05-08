@@ -1,16 +1,17 @@
 //! A module encompassing the primitive 2D shape widgets.
 use lyon::lyon_tessellation::path::path::Builder;
-use crate::widget::{CommonWidget, GlobalState};
-use crate::widget::types::triangle_store::TriangleStore;
-use crate::widget::types::stroke_style::StrokeStyle;
+use lyon::math::Rect;
+use lyon::tessellation::{BuffersBuilder, FillOptions, FillTessellator, FillVertex, Side, StrokeOptions, StrokeTessellator, StrokeVertex, VertexBuffers};
 use lyon::tessellation::path::Path;
-use lyon::tessellation::{VertexBuffers, StrokeTessellator, StrokeOptions, BuffersBuilder, StrokeVertex, FillTessellator, FillOptions, FillVertex, Side};
+
 use crate::{Point, Scalar};
 use crate::draw::shape::triangle::Triangle;
+use crate::widget::{CommonWidget, GlobalState};
 use crate::widget::types::shape_style::ShapeStyle;
-use lyon::math::Rect;
+use crate::widget::types::stroke_style::StrokeStyle;
+use crate::widget::types::triangle_store::TriangleStore;
 
-pub mod oval;
+pub mod ellipse;
 pub mod polygon;
 pub mod rectangle;
 pub mod triangles;

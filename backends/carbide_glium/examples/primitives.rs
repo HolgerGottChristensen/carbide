@@ -1,12 +1,14 @@
-#[macro_use] extern crate carbide_core;
+#[macro_use]
+extern crate carbide_core;
 extern crate carbide_glium;
-#[macro_use] extern crate carbide_winit;
+#[macro_use]
+extern crate carbide_winit;
 extern crate find_folder;
 extern crate glium;
 
-mod support;
-
 use glium::Surface;
+
+mod support;
 
 // Generate a type that will produce a unique `widget::Id` for each widget.
 widget_ids! {
@@ -97,7 +99,7 @@ fn main() {
 
 fn set_ui(ref mut ui: carbide_core::UiCell, ids: &Ids) {
     use carbide_core::{Positionable, OldWidget};
-    use carbide_core::widget::{Canvas, Circle, Line, Oval, PointPath, Polygon, Rectangle};
+    use carbide_core::widget::{Canvas, Circle, Line, Ellipse, PointPath, Polygon, Rectangle};
     use std::iter::once;
 
     // The background canvas upon which we'll place our widgets.
@@ -122,9 +124,9 @@ fn set_ui(ref mut ui: carbide_core::UiCell, ids: &Ids) {
     let points = once(bl).chain(once(tl)).chain(once(tr)).chain(once(br));
     Polygon::centred_fill(points).right_from(ids.line, 80.0).set(ids.trapezoid, ui);
 
-    Oval::fill_old([40.0, 80.0]).down(80.0).align_middle_x().set(ids.oval_fill, ui);
+    Ellipse::fill_old([40.0, 80.0]).down(80.0).align_middle_x().set(ids.oval_fill, ui);
 
-    Oval::outline([80.0, 40.0]).down(100.0).align_middle_x().set(ids.oval_outline, ui);
+    Ellipse::outline([80.0, 40.0]).down(100.0).align_middle_x().set(ids.oval_outline, ui);
 
     Circle::fill(40.0).down(100.0).align_middle_x().set(ids.circle, ui);
 }

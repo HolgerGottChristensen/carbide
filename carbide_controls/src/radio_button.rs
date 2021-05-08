@@ -46,13 +46,13 @@ impl<T: Serialize + Clone + Debug + Default + DeserializeOwned + PartialEq  + 's
             });
 
             ZStack::initialize(vec![
-                Oval::new()
+                Ellipse::new()
                     .fill(selected_color)
                     .stroke(focus_color)
                     .stroke_style(1.0),
                 IfElse::new(selected_state)
                     .when_true(
-                        Oval::new()
+                        Ellipse::new()
                             .fill(EnvironmentColor::DarkText)
                             .frame(6.0, 6.0)
                     ),

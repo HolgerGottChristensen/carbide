@@ -1,14 +1,16 @@
 //! A simple example demonstrating the `RangeSlider` widget.
 
-#[macro_use] extern crate carbide_core;
+#[macro_use]
+extern crate carbide_core;
 extern crate carbide_glium;
-#[macro_use] extern crate carbide_winit;
+#[macro_use]
+extern crate carbide_winit;
 extern crate find_folder;
 extern crate glium;
 
-mod support;
-
 use glium::Surface;
+
+mod support;
 
 widget_ids! {
     struct Ids { canvas, oval, range_slider }
@@ -122,7 +124,7 @@ fn set_ui(
     let range_slider_w = ui.w_of(ids.range_slider).unwrap();
     let w = (*end - *start) * range_slider_w;
     let h = 200.0;
-    widget::Oval::fill_old([w, h])
+    widget::Ellipse::fill_old([w, h])
         .mid_left_with_margin_on(ids.canvas, PAD + *start * range_slider_w)
         .color(color::LIGHT_BLUE)
         .down(50.0)

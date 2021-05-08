@@ -1,15 +1,15 @@
-use carbide_wgpu::window::*;
-use carbide_core::widget::*;
-use carbide_core::Point;
 use std::f64::consts::PI;
 
+use carbide_core::Point;
+use carbide_core::widget::*;
+use carbide_wgpu::window::*;
 
 fn main() {
     env_logger::init();
 
     let icon_path = Window::<String>::path_to_assets("images/rust_press.png");
 
-    let mut window = Window::new("Hello world 2".to_string(), 800, 1200,Some(icon_path), String::from("Hejsa"));
+    let mut window = Window::new("Hello world 2".to_string(), 800, 1200, Some(icon_path), String::from("Hejsa"));
 
     window.add_font("fonts/NotoSans/NotoSans-Regular.ttf").unwrap();
 
@@ -42,14 +42,14 @@ fn main() {
                     .frame(100.0, 100.0)
             ]),
             HStack::initialize(vec![
-                Oval::new()
+                Ellipse::new()
                     .fill(EnvironmentColor::Accent)
                     .frame(100.0, 100.0),
-                Oval::new()
+                Ellipse::new()
                     .stroke(EnvironmentColor::Accent)
                     .stroke_style(10.0)
                     .frame(100.0, 100.0),
-                Oval::new()
+                Ellipse::new()
                     .fill(EnvironmentColor::Accent)
                     .stroke(EnvironmentColor::Red)
                     .frame(100.0, 100.0)

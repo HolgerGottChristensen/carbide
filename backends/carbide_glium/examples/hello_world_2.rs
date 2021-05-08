@@ -24,13 +24,13 @@ use carbide_core::layout::Layout;
 use carbide_core::layout::layouter::Layouter;
 use carbide_core::position::Dimensions;
 use carbide_core::state::environment::Environment;
-use carbide_core::state::state::{LocalStateList, CommonState};
+use carbide_core::state::state::{CommonState, LocalStateList};
 use carbide_core::state::state_sync::NoLocalStateSync;
 use carbide_core::text::font::Map;
-use carbide_core::widget::{Frame, Image, Line, Oval, Rectangle, SCALE, Text, ZStack};
+use carbide_core::widget::{Ellipse, Frame, Image, Line, Rectangle, SCALE, Text, ZStack};
 use carbide_core::widget::common_widget::CommonWidget;
-use carbide_core::widget::complex::button::SyncTest;
-use carbide_core::widget::oval::Full;
+use carbide_core::widget::complex::sync_test::SyncTest;
+use carbide_core::widget::ellipse::Full;
 use carbide_core::widget::primitive::edge_insets::EdgeInsets;
 use carbide_core::widget::primitive::h_stack::HStack;
 use carbide_core::widget::primitive::spacer::{Spacer, SpacerDirection};
@@ -100,7 +100,7 @@ impl CustomWidget {
             id: Uuid::new_v4(),
             child: HStack::initialize(vec![
                 Spacer::new(SpacerDirection::Horizontal),
-                Oval::new(vec![])
+                Ellipse::new(vec![])
                     .fill(RED)
                     .padding(EdgeInsets::all(10.0))
                     .frame(150.0, 150.0),

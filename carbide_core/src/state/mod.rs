@@ -7,6 +7,8 @@ use crate::focus::Focus;
 pub use crate::state::state::State;
 use crate::state::widget_state::WidgetState;
 
+pub use self::mapped_state::MappedState;
+
 pub mod state;
 pub mod environment;
 pub mod state_sync;

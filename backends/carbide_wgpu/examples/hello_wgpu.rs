@@ -1,13 +1,15 @@
-use carbide_wgpu::window::*;
 use carbide_core::widget::*;
-use carbide_core::widget::complex::SyncTest;
+use carbide_wgpu::window::*;
+use hello::sync_test::SyncTest;
+
+mod hello;
 
 fn main() {
     env_logger::init();
 
     let icon_path = Window::<String>::path_to_assets("images/rust_press.png");
 
-    let mut window = Window::new("Hello world 2".to_string(), 800, 1200,Some(icon_path), String::from("Hejsa"));
+    let mut window = Window::new("Hello world 2".to_string(), 800, 1200, Some(icon_path), String::from("Hejsa"));
 
     window.add_font("fonts/NotoSans/NotoSans-Regular.ttf").unwrap();
     let rust_image = window.add_image("images/rust_press.png").unwrap();
@@ -44,7 +46,7 @@ fn main() {
             ]).padding(EdgeInsets::all(10.0)),
             HStack::initialize(vec![
                 Spacer::new(SpacerDirection::Horizontal),
-                Oval::new()
+                Ellipse::new()
                     .padding(EdgeInsets::all(10.0))
                     .frame(150.0, 150.0),
                 Spacer::new(SpacerDirection::Horizontal),

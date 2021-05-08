@@ -51,13 +51,13 @@ impl<GS: GlobalState> Switch<GS> {
                     .when_true(
                         HStack::initialize(vec![
                             Spacer::new(SpacerDirection::Horizontal),
-                            Oval::new()
+                            Ellipse::new()
                                 .fill(EnvironmentColor::DarkText)
                                 .frame(22.0, 22.0)
                         ])
                     ).when_false(
                         HStack::initialize(vec![
-                            Oval::new()
+                            Ellipse::new()
                                 .fill(EnvironmentColor::DarkText)
                                 .frame(22.0, 22.0),
                             Spacer::new(SpacerDirection::Horizontal),
