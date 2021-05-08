@@ -1,11 +1,12 @@
-pub use crate::state::State;
-use crate::widget::{GlobalState, CommonState};
-use crate::{Serialize, DeserializeOwned};
-use std::fmt::Debug;
-use crate::prelude::state_key::StateKey;
-use crate::prelude::Environment;
-use crate::export::Formatter;
 use std::fmt;
+use std::fmt::Debug;
+
+use crate::{DeserializeOwned, Serialize};
+use crate::export::Formatter;
+use crate::prelude::Environment;
+use crate::prelude::state_key::StateKey;
+pub use crate::state::State;
+use crate::widget::{CommonState, GlobalState};
 
 pub struct WidgetState<T, GS>(Box<dyn State<T, GS>>);
 
@@ -41,7 +42,7 @@ impl<T: Serialize + Clone + Debug + DeserializeOwned + Default, GS: GlobalState>
 
 
 impl<T: Serialize + Clone + Debug + DeserializeOwned + Default, GS: GlobalState> State<T, GS> for WidgetState<T, GS> {
-    fn get_value_mut(&mut self, env: &mut Environment<GS>, global_state: &mut GS) -> &mut T {
+    fn get_value_mut<'a>(&'a mut self, env: &'a mut Environment<GS>, global_state: &'a mut GS) -> &'a mut T {
         self.0.get_value_mut(env, global_state)
     }
 

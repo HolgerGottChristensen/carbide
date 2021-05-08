@@ -63,8 +63,8 @@ impl<GS: GlobalState> PlainSwitch<GS> {
 
         let button = PlainButton::<bool, GS>::new(Spacer::new(SpacerDirection::Vertical))
             .local_state(checked.clone())
-            .on_click(|myself, env, _| {
-                let checked = myself.get_local_state().get_latest_value_mut();
+            .on_click(|myself, env, global_state| {
+                let checked = myself.get_local_state().get_value_mut(env, global_state);
 
                 *checked = !*checked;
 

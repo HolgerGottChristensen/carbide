@@ -5,10 +5,10 @@ use serde::Serialize;
 use uuid::Uuid;
 
 use crate::prelude::GlobalState;
+use crate::state::{StateContract, TState};
 use crate::state::environment::Environment;
 use crate::state::state::State;
 use crate::state::state_key::StateKey;
-use crate::state::{StateContract, TState};
 use crate::state::widget_state::WidgetState;
 
 #[derive(Clone)]
@@ -44,7 +44,7 @@ impl<T: Serialize + Clone + Debug, GS: GlobalState> VecState<T, GS> {
 }
 
 impl<T: Serialize + Clone + Debug + DeserializeOwned, GS: GlobalState> State<T, GS> for VecState<T, GS> {
-    fn get_value_mut(&mut self, env: &mut Environment<GS>, global_state: &mut GS) -> &mut T {
+    fn get_value_mut<'a>(&'a mut self, env: &'a mut Environment<GS>, global_state: &'a mut GS) -> &'a mut T {
         self.latest_index = *self.index_state.get_value(env, global_state);
         self.latest_value = self.vec.get_value(env, global_state)[self.latest_index].clone();
         &mut self.vec.get_value_mut(env, global_state)[self.latest_index]

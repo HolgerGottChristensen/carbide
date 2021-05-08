@@ -127,7 +127,7 @@ impl<T: Serialize + Clone + Debug + Default + DeserializeOwned + 'static, GS: Gl
             KeyboardEvent::Press(key, _) => {
                 match key {
                     Key::Return => {
-                        let focused = self.foreach_hovered_state.get_value_mut(env, global_state);
+                        let focused = self.foreach_hovered_state.get_value(env, global_state);
 
                         for (index, item) in focused.iter().enumerate() {
                             if *item {

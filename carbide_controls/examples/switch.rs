@@ -10,14 +10,22 @@ use carbide_wgpu::window::Window;
 fn main() {
     env_logger::init();
 
-    let icon_path = Window::<String>::path_to_assets("images/rust_press.png");
+    let icon_path = Window::<bool>::path_to_assets("images/rust_press.png");
 
-    let mut window = Window::new("Switch Example - Carbide".to_string(), 800, 1200, Some(icon_path), String::from("Hejsa"));
+    let mut window = Window::new("Switch Example - Carbide".to_string(), 800, 1200, Some(icon_path), false);
 
     window.add_font("fonts/NotoSans/NotoSans-Regular.ttf").unwrap();
 
     let switch_state1 = CommonState::new_local_with_key(&false);
-    let switch_state2 = CommonState::new_local_with_key(&true);
+    let switch_state2 = CommonState::<bool, bool>::GlobalState {
+        function: |global_state: &bool| -> &bool {
+            global_state
+        },
+        function_mut: |global_state: &mut bool| -> &mut bool {
+            global_state
+        },
+        latest_value: false,
+    };
     let switch_state3 = CommonState::new_local_with_key(&false);
 
     window.set_widgets(

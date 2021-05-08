@@ -9,7 +9,7 @@ use uuid::Uuid;
 pub use carbide_core::layout::CrossAxisAlignment;
 pub use carbide_core::layout::Layout;
 pub use carbide_core::layout::layouter::Layouter;
-pub use carbide_core::state::state::StateExt;
+pub use carbide_core::state::state_ext::StateExt;
 pub use carbide_core::window::TWindow;
 
 pub use crate::{Color, Colorable, Point, Rect};

@@ -1,10 +1,11 @@
+use std::fmt::Debug;
+
 pub use tuple_state::*;
 
-use crate::{Color, Serialize, DeserializeOwned};
+use crate::{Color, DeserializeOwned, Serialize};
 use crate::focus::Focus;
 pub use crate::state::state::State;
 use crate::state::widget_state::WidgetState;
-use std::fmt::Debug;
 
 pub mod state;
 pub mod environment;
@@ -19,6 +20,7 @@ pub mod state_key;
 pub(crate) mod tuple_state;
 pub mod vec_state;
 pub(crate) mod widget_state;
+pub mod state_ext;
 
 pub type ColorState<GS> = TState<Color, GS>;
 pub type StringState<GS> = TState<String, GS>;
