@@ -78,8 +78,8 @@ pub enum CommonState<T, GS> where T: Serialize + Clone + Debug, GS: GlobalState 
     },
     EnvironmentState {
         function: fn(env: &Environment<GS>) -> T,
-        function_mut: Option<fn(env: &mut Environment<GS>) -> T>,
-        latest_value: T
+        function_mut: Option<fn(env: &mut Environment<GS>) -> &mut T>,
+        latest_value: T,
     },
 }
 
@@ -100,14 +100,14 @@ impl<T: Serialize + Clone + Debug, GS: GlobalState> State<T, GS> for CommonState
 
                 function_mut(global_state)
             }
-            CommonState::EnvironmentState { latest_value, function, function_mut } => {
-                if let Some(n) = function_mut {
-                    *latest_value = n(env).clone();
+            CommonState::EnvironmentState { latest_value, function_mut, function } => {
+                if let Some(function_mut) = function_mut {
+                    *latest_value = function_mut(env).clone();
+                    function_mut(env)
                 } else {
-                    *latest_value = function(env).clone();
+                    *latest_value = function(env);
+                    latest_value
                 }
-
-                latest_value
             }
         }
     }
@@ -177,6 +177,7 @@ impl<T: Serialize + Clone + Debug, U: GlobalState> Debug for CommonState<T, U> {
                     .field("id", id)
                     .field("value", value)
                     .finish()
+                //Todo: .finish_non_exhaustive() Change to this when updating to rust 1.53
             }
             CommonState::Value { value } => {
                 f.debug_struct("State::Value")
@@ -199,25 +200,6 @@ impl<T: Serialize + Clone + Debug, U: GlobalState> Debug for CommonState<T, U> {
     }
 }
 
-/*impl<T: Clone + Debug + Serialize> Deref for State<T> {
-    type Target = T;
-
-    fn deref(&self) -> &Self::Target {
-        match self {
-            State::LocalState { value, .. } => {value}
-            State::Value { value } => {value}
-        }
-    }
-}
-
-impl<T: Clone + Debug + Serialize> DerefMut for State<T> {
-    fn deref_mut(&mut self) -> &mut Self::Target {
-        match self {
-            State::LocalState { value, .. } => {value}
-            State::Value { value } => {value}
-        }
-    }
-}*/
 
 impl<T: Clone + Debug + Serialize + 'static, S: GlobalState> CommonState<T, S> {
     pub fn new(val: &T) -> Self {
