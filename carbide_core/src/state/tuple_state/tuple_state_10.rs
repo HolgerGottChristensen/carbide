@@ -1,8 +1,8 @@
+use crate::prelude::Environment;
 use crate::prelude::GlobalState;
-use crate::state::environment::Environment;
+use crate::state::{StateContract, TState};
 use crate::state::state::State;
 use crate::state::state_key::StateKey;
-use crate::state::{TState, StateContract};
 use crate::state::widget_state::WidgetState;
 
 #[derive(Clone)]

@@ -1,6 +1,7 @@
+use crate::prelude::EnvironmentFontSizeState;
 use crate::prelude::GlobalState;
 use crate::state::*;
-use crate::state::environment_state::environment_font_size_state::EnvironmentFontSizeState;
+use crate::state::widget_state::WidgetState;
 
 #[derive(Hash, Eq, PartialEq, Clone, Debug)]
 pub enum EnvironmentFontSize {

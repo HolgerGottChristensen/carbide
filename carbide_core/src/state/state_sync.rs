@@ -1,6 +1,6 @@
-use crate::state::environment::Environment;
-use crate::widget::common_widget::CommonWidget;
+use crate::prelude::Environment;
 use crate::state::global_state::GlobalState;
+use crate::widget::common_widget::CommonWidget;
 
 pub trait StateSync<GS>: CommonWidget<GS> where GS: GlobalState {
     /// Insert local state from the widget into the environment.

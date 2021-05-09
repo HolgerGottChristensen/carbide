@@ -1,6 +1,5 @@
-use crate::prelude::{GlobalState, State, Environment};
+use crate::prelude::{Environment, EnvironmentFontSize, GlobalState, State};
 use crate::state::state_key::StateKey;
-use crate::state::environment_font_size::EnvironmentFontSize;
 
 #[derive(Clone)]
 pub struct EnvironmentFontSizeState {

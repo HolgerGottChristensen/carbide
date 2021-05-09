@@ -1,9 +1,9 @@
 use crate::position::Dimensions;
+use crate::prelude::Environment;
 use crate::render::primitive::Primitive;
 use crate::render::primitive_walker::PrimitiveWalker;
-use crate::state::environment::Environment;
-use crate::widget::primitive::Widget;
 use crate::state::global_state::GlobalState;
+use crate::widget::primitive::Widget;
 
 pub struct CPrimitives {
     pub primitives: Vec<Primitive>

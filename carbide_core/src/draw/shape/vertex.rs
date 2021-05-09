@@ -1,6 +1,6 @@
 use crate::Point;
 use crate::utils::vec2_add;
-use crate::widget::primitive::shape::triangles::ColoredPoint;
+use crate::widget::primitive::ColoredPoint;
 
 /// Types used as vertices that make up a list of triangles.
 pub trait Vertex: Clone + Copy + PartialEq {

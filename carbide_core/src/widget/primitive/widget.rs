@@ -8,7 +8,6 @@ use crate::event::event::Event;
 use crate::event_handler::{KeyboardEvent, MouseEvent, WidgetEvent};
 use crate::focus::{Focus, Focusable, Refocus};
 use crate::prelude::*;
-use crate::state::environment_color::EnvironmentColor;
 use crate::widget::{EnvUpdating, Frame, Offset};
 use crate::widget::primitive::border::Border;
 use crate::widget::primitive::clip::Clip;

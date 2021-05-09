@@ -2,7 +2,7 @@ use crate::{Point, text};
 use crate::draw::shape::triangle::Triangle;
 use crate::render::owned_primitive::OwnedPrimitive;
 use crate::render::walk_owned_primitives::WalkOwnedPrimitives;
-use crate::widget::primitive::shape::triangles::ColoredPoint;
+use crate::widget::primitive::ColoredPoint;
 
 /// An owned alternative to the `Primitives` type.
 ///

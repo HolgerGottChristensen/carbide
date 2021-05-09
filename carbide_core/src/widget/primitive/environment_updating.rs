@@ -1,11 +1,7 @@
-use crate::prelude::*;
-use crate::state::environment_color::EnvironmentColor;
-use crate::event_handler::{KeyboardEvent, MouseEvent, WidgetEvent};
-use crate::state::environment_variable::EnvironmentVariable;
-use crate::state::environment_font_size::EnvironmentFontSize;
 use crate::event::event::Event;
+use crate::event_handler::{KeyboardEvent, MouseEvent, WidgetEvent};
+use crate::prelude::*;
 use crate::state::state_sync::StateSync;
-
 
 /// A basic, non-interactive rectangle shape widget.
 #[derive(Debug, Clone, Widget)]

@@ -1,6 +1,6 @@
 use crate::event_handler::{KeyboardEvent, MouseEvent, WidgetEvent};
 use crate::focus::Focusable;
-use crate::state::environment::Environment;
+use crate::prelude::Environment;
 use crate::state::global_state::GlobalState;
 use crate::state::state_sync::StateSync;
 use crate::widget::common_widget::CommonWidget;

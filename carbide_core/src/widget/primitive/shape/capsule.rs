@@ -1,14 +1,13 @@
-use crate::prelude::*;
-
-use lyon::tessellation::path::Winding;
-use lyon::tessellation::path::traits::PathBuilder;
 use lyon::tessellation::math::rect;
 use lyon::tessellation::path::builder::BorderRadii;
-use crate::widget::types::triangle_store::TriangleStore;
-use crate::state::environment_color::EnvironmentColor;
-use crate::widget::primitive::shape::{tessellate, Shape};
+use lyon::tessellation::path::traits::PathBuilder;
+use lyon::tessellation::path::Winding;
+
+use crate::prelude::*;
+use crate::widget::primitive::shape::{Shape, tessellate};
 use crate::widget::types::shape_style::ShapeStyle;
 use crate::widget::types::stroke_style::StrokeStyle;
+use crate::widget::types::triangle_store::TriangleStore;
 
 /// A basic, non-interactive rectangle shape widget.
 #[derive(Debug, Clone, Widget)]

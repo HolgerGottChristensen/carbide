@@ -14,7 +14,6 @@ use crate::widget::types::triangle_store::TriangleStore;
 pub mod ellipse;
 pub mod polygon;
 pub mod rectangle;
-pub mod triangles;
 pub mod rounded_rectangle;
 pub mod capsule;
 

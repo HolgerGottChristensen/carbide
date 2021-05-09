@@ -4,6 +4,7 @@ extern crate env_logger;
 extern crate futures;
 
 use carbide_controls::Switch;
+use carbide_core::state::global_state::GState;
 use carbide_core::widget::*;
 use carbide_wgpu::window::Window;
 
@@ -17,15 +18,11 @@ fn main() {
     window.add_font("fonts/NotoSans/NotoSans-Regular.ttf").unwrap();
 
     let switch_state1 = CommonState::new_local_with_key(&false);
-    let switch_state2 = CommonState::<bool, bool>::GlobalState {
-        function: |global_state: &bool| -> &bool {
-            global_state
-        },
-        function_mut: |global_state: &mut bool| -> &mut bool {
-            global_state
-        },
-        latest_value: false,
-    };
+    let switch_state2 = GState::<bool, bool>::new(|global_state: &bool| -> &bool {
+        global_state
+    }, |global_state: &mut bool| -> &mut bool {
+        global_state
+    });
     let switch_state3 = CommonState::new_local_with_key(&false);
 
     window.set_widgets(

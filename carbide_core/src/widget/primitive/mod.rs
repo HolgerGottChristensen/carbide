@@ -41,3 +41,5 @@ pub fn bounding_box_for_points<I>(mut points: I) -> Rect
         points.fold(start_rect, Rect::stretch_to_point)
     }).unwrap_or_else(|| Rect::from_xy_dim([0.0, 0.0], [0.0, 0.0]))
 }
+
+pub type ColoredPoint = (Point, crate::color::Rgba);

@@ -1,17 +1,15 @@
 use crate::{Color, Point};
 use crate::{image_map, Rect};
-use crate::text;
 use crate::color::Rgba;
 use crate::draw::shape::triangle::Triangle;
 use crate::render::text::Text;
-use crate::widget::primitive::shape::triangles::ColoredPoint;
+use crate::text;
+use crate::widget::primitive::ColoredPoint;
 
 /// The unique kind for each primitive element in the Ui.
 pub enum PrimitiveKind {
-
     Clip,
     UnClip,
-
 
     /// A filled `Rectangle`.
     ///

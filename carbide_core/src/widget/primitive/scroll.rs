@@ -2,7 +2,6 @@ use crate::draw::shape::vertex::Vertex;
 use crate::event_handler::{MouseEvent, WidgetEvent};
 use crate::input::MouseButton;
 use crate::prelude::*;
-use crate::state::environment_color::EnvironmentColor;
 use crate::widget::types::scroll_direction::ScrollDirection;
 
 /// A basic, non-interactive rectangle shape widget.

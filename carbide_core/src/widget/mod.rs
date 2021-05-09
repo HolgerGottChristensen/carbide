@@ -13,6 +13,9 @@ pub use carbide_core::state::state_ext::StateExt;
 pub use carbide_core::window::TWindow;
 
 pub use crate::{Color, Colorable, Point, Rect};
+pub use crate::environment::environment::Environment;
+pub use crate::environment::environment_color::EnvironmentColor;
+pub use crate::environment::environment_font_size::EnvironmentFontSize;
 pub use crate::flags::Flags;
 pub use crate::focus::Focus;
 pub use crate::focus::Focusable;
@@ -22,9 +25,6 @@ pub use crate::layout::layout::SingleChildLayout;
 pub use crate::position::Dimensions;
 pub use crate::position::Scalar;
 pub use crate::state::*;
-pub use crate::state::environment::Environment;
-pub use crate::state::environment_color::EnvironmentColor;
-pub use crate::state::environment_font_size::EnvironmentFontSize;
 pub use crate::state::global_state::GlobalState;
 pub use crate::state::state::CommonState;
 

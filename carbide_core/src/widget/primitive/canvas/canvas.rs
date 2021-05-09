@@ -1,15 +1,13 @@
-use crate::prelude::*;
-use crate::color::Rgba;
-
-use crate::state::global_state::GlobalState;
-use crate::widget::Rectangle;
-use lyon::tessellation::{VertexBuffers, FillTessellator, FillOptions, BuffersBuilder, FillVertex, StrokeOptions, StrokeTessellator, StrokeVertex};
-use crate::widget::primitive::canvas::context::{Context, ShapeStyleWithOptions};
-use crate::render::primitive_kind::PrimitiveKind;
-
-use crate::draw::shape::triangle::Triangle;
-use crate::state::environment_color::EnvironmentColor;
 use lyon::algorithms::path::Path;
+use lyon::tessellation::{BuffersBuilder, FillOptions, FillTessellator, FillVertex, StrokeOptions, StrokeTessellator, StrokeVertex, VertexBuffers};
+
+use crate::color::Rgba;
+use crate::draw::shape::triangle::Triangle;
+use crate::prelude::*;
+use crate::render::primitive_kind::PrimitiveKind;
+use crate::state::global_state::GlobalState;
+use crate::widget::primitive::canvas::context::{Context, ShapeStyleWithOptions};
+use crate::widget::Rectangle;
 
 /// A basic, non-interactive rectangle shape widget.
 #[derive(Debug, Clone, Widget)]

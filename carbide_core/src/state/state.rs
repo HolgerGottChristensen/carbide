@@ -7,8 +7,8 @@ use dyn_clone::DynClone;
 use serde::Serialize;
 use uuid::Uuid;
 
+use crate::prelude::Environment;
 use crate::state::*;
-use crate::state::environment::Environment;
 use crate::state::global_state::GlobalState;
 use crate::state::state_key::StateKey;
 use crate::widget::widget_state::WidgetState;

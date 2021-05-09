@@ -1,5 +1,6 @@
+use crate::prelude::EnvironmentColorState;
 use crate::state::*;
-use crate::state::environment_state::environment_color_state::EnvironmentColorState;
+use crate::state::widget_state::WidgetState;
 use crate::widget::GlobalState;
 
 #[derive(Hash, Eq, PartialEq, Clone, Debug)]

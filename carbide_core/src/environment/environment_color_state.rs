@@ -1,6 +1,6 @@
-use crate::state::environment_color::EnvironmentColor;
 use crate::Color;
-use crate::prelude::{GlobalState, State, Environment};
+use crate::prelude::{Environment, GlobalState, State};
+use crate::prelude::EnvironmentColor;
 use crate::state::state_key::StateKey;
 
 #[derive(Clone)]

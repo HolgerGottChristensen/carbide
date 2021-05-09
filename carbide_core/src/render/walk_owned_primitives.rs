@@ -7,7 +7,7 @@ use crate::render::primitive::Primitive;
 use crate::render::primitive_kind::PrimitiveKind;
 use crate::render::primitive_walker::PrimitiveWalker;
 use crate::render::text::Text;
-use crate::widget::primitive::shape::triangles::ColoredPoint;
+use crate::widget::primitive::ColoredPoint;
 
 /// An iterator-like type for yielding `Primitive`s from an `OwnedPrimitives`.
 pub struct WalkOwnedPrimitives<'a> {

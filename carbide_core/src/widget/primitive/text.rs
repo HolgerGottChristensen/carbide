@@ -4,8 +4,6 @@ use crate::prelude::*;
 use crate::render::primitive_kind::PrimitiveKind;
 use crate::render::text::Text as RenderText;
 use crate::render::util::new_primitive;
-use crate::state::environment_color::EnvironmentColor;
-use crate::state::environment_font_size::EnvironmentFontSize;
 use crate::text::{font, Justify, PositionedGlyph};
 use crate::utils;
 use crate::widget::types::text_wrap::Wrap;

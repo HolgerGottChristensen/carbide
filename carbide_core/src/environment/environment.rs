@@ -8,7 +8,7 @@ use serde::Serialize;
 
 use crate::{Color, from_bin, text, to_bin};
 use crate::focus::Refocus;
-use crate::state::environment_variable::EnvironmentVariable;
+use crate::prelude::EnvironmentVariable;
 use crate::state::global_state::GlobalState;
 use crate::state::state::State;
 use crate::state::state_key::StateKey;

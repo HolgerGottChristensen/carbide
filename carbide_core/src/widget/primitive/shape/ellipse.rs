@@ -5,7 +5,6 @@ use lyon::algorithms::path::Winding;
 use lyon::math::point;
 
 use crate::prelude::*;
-use crate::state::environment_color::EnvironmentColor;
 use crate::widget::primitive::shape::{Shape, tessellate};
 use crate::widget::types::shape_style::ShapeStyle;
 use crate::widget::types::stroke_style::StrokeStyle;
@@ -17,7 +16,6 @@ pub struct Ellipse<GS> where GS: GlobalState {
     pub id: Uuid,
     position: Point,
     dimension: Dimensions,
-
     #[state] stroke_color: ColorState<GS>,
     #[state] fill_color: ColorState<GS>,
     style: ShapeStyle,

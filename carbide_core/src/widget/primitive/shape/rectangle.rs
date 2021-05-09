@@ -5,7 +5,6 @@ use lyon::algorithms::path::Winding;
 use crate::color::Rgba;
 use crate::prelude::*;
 use crate::render::primitive_kind::PrimitiveKind;
-use crate::state::environment_color::EnvironmentColor;
 use crate::widget::primitive::shape::{Shape, tessellate};
 use crate::widget::types::shape_style::ShapeStyle;
 use crate::widget::types::stroke_style::StrokeStyle;

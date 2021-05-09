@@ -12,11 +12,11 @@ use crate::event_handler::{EventHandler, KeyboardEvent, WidgetEvent, WindowEvent
 use crate::focus::{Focusable, Refocus};
 use crate::input::{Key, ModifierKey};
 use crate::position::Dimensions;
+use crate::prelude::Environment;
+use crate::prelude::EnvironmentColor;
+use crate::prelude::EnvironmentFontSize;
+use crate::prelude::EnvironmentVariable;
 use crate::render::cprimitives::CPrimitives;
-use crate::state::environment::Environment;
-use crate::state::environment_color::EnvironmentColor;
-use crate::state::environment_font_size::EnvironmentFontSize;
-use crate::state::environment_variable::EnvironmentVariable;
 use crate::state::global_state::GlobalState;
 use crate::text;
 use crate::widget::primitive::Widget;
