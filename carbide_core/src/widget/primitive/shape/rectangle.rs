@@ -27,7 +27,6 @@ pub struct Rectangle<GS> where GS: GlobalState {
 }
 
 impl<GS: GlobalState> Rectangle<GS> {
-
     pub fn fill<C: Into<ColorState<GS>>>(mut self, color: C) -> Box<Self> {
         self.fill_color = color.into();
         self.style += ShapeStyle::Fill;
@@ -41,7 +40,7 @@ impl<GS: GlobalState> Rectangle<GS> {
     }
 
     pub fn stroke_style(mut self, line_width: f64) -> Box<Self> {
-        self.stroke_style = StrokeStyle::Solid {line_width};
+        self.stroke_style = StrokeStyle::Solid { line_width };
         self.style += ShapeStyle::Stroke;
         Box::new(self)
     }
@@ -124,18 +123,17 @@ impl<GS: GlobalState> Rectangle<GS> {
         Box::new(Rectangle {
             id: Uuid::new_v4(),
             children,
-            position: [0.0,0.0],
-            dimension: [100.0,100.0],
+            position: [0.0, 0.0],
+            dimension: [100.0, 100.0],
             fill_color: EnvironmentColor::Blue.into(),
             stroke_color: EnvironmentColor::Blue.into(),
             shrink_to_fit: false,
             style: ShapeStyle::Default,
-            stroke_style: StrokeStyle::Solid {line_width: 2.0},
-            triangle_store: TriangleStore::new()
+            stroke_style: StrokeStyle::Solid { line_width: 2.0 },
+            triangle_store: TriangleStore::new(),
         })
     }
 }
-
 
 
 impl<GS: GlobalState> Layout<GS> for Rectangle<GS> {
@@ -143,7 +141,7 @@ impl<GS: GlobalState> Layout<GS> for Rectangle<GS> {
         0
     }
 
-    fn calculate_size(&mut self, requested_size: Dimensions, env: &Environment<GS>) -> Dimensions {
+    fn calculate_size(&mut self, requested_size: Dimensions, env: &mut Environment<GS>) -> Dimensions {
         let mut max_child_size = [0.0, 0.0];
 
         for child in &mut self.children {
@@ -263,21 +261,20 @@ impl<GS: GlobalState> Shape<GS> for Rectangle<GS> {
 }
 
 impl<GS: GlobalState> Render<GS> for Rectangle<GS> {
-
     fn get_primitives(&mut self, env: &Environment<GS>, global_state: &GS) -> Vec<Primitive> {
         let mut prims = vec![];
 
         match self.style {
             ShapeStyle::Default => {
                 prims.push(Primitive {
-                    kind: PrimitiveKind::Rectangle { color: self.fill_color.get_latest_value().clone()},
-                    rect: Rect::new(self.position, self.dimension)
+                    kind: PrimitiveKind::Rectangle { color: self.fill_color.get_latest_value().clone() },
+                    rect: Rect::new(self.position, self.dimension),
                 });
             }
             ShapeStyle::Fill => {
                 prims.push(Primitive {
-                    kind: PrimitiveKind::Rectangle { color: self.fill_color.get_latest_value().clone()},
-                    rect: Rect::new(self.position, self.dimension)
+                    kind: PrimitiveKind::Rectangle { color: self.fill_color.get_latest_value().clone() },
+                    rect: Rect::new(self.position, self.dimension),
                 });
             }
             ShapeStyle::Stroke => {
@@ -285,38 +282,12 @@ impl<GS: GlobalState> Render<GS> for Rectangle<GS> {
                     self.get_x() as f32,
                     self.get_y() as f32,
                     self.get_width() as f32,
-                    self.get_height() as f32
+                    self.get_height() as f32,
                 );
-                tessellate(self, &rect, &|builder, rectangle|{
+                tessellate(self, &rect, &|builder, rectangle| {
                     builder.add_rectangle(
                         rectangle,
-                        Winding::Positive
-                    )
-                });
-
-                let stroke_triangles = self.triangle_store.stroke_triangles.clone();
-
-                prims.push(Primitive {
-                    kind: PrimitiveKind::TrianglesSingleColor { color: Rgba::from(*self.stroke_color.get_latest_value()) , triangles: stroke_triangles},
-                    rect: Rect::new(self.position, self.dimension)
-                });
-            }
-            ShapeStyle::FillAndStroke => {
-                prims.push(Primitive {
-                    kind: PrimitiveKind::Rectangle { color: self.fill_color.get_latest_value().clone()},
-                    rect: Rect::new(self.position, self.dimension)
-                });
-
-                let rect = rect(
-                    self.get_x() as f32,
-                    self.get_y() as f32,
-                    self.get_width() as f32,
-                    self.get_height() as f32
-                );
-                tessellate(self, &rect, &|builder, rectangle|{
-                    builder.add_rectangle(
-                        rectangle,
-                        Winding::Positive
+                        Winding::Positive,
                     )
                 });
 
@@ -324,7 +295,33 @@ impl<GS: GlobalState> Render<GS> for Rectangle<GS> {
 
                 prims.push(Primitive {
                     kind: PrimitiveKind::TrianglesSingleColor { color: Rgba::from(*self.stroke_color.get_latest_value()), triangles: stroke_triangles },
-                    rect: Rect::new(self.position, self.dimension)
+                    rect: Rect::new(self.position, self.dimension),
+                });
+            }
+            ShapeStyle::FillAndStroke => {
+                prims.push(Primitive {
+                    kind: PrimitiveKind::Rectangle { color: self.fill_color.get_latest_value().clone() },
+                    rect: Rect::new(self.position, self.dimension),
+                });
+
+                let rect = rect(
+                    self.get_x() as f32,
+                    self.get_y() as f32,
+                    self.get_width() as f32,
+                    self.get_height() as f32,
+                );
+                tessellate(self, &rect, &|builder, rectangle| {
+                    builder.add_rectangle(
+                        rectangle,
+                        Winding::Positive,
+                    )
+                });
+
+                let stroke_triangles = self.triangle_store.stroke_triangles.clone();
+
+                prims.push(Primitive {
+                    kind: PrimitiveKind::TrianglesSingleColor { color: Rgba::from(*self.stroke_color.get_latest_value()), triangles: stroke_triangles },
+                    rect: Rect::new(self.position, self.dimension),
                 });
             }
         }

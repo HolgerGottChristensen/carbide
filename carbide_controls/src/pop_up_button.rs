@@ -15,9 +15,7 @@ pub struct PopUpButton<T, GS> where GS: GlobalState, T: Serialize + Clone + Debu
 }
 
 impl<T: Serialize + Clone + Debug + Default + DeserializeOwned + 'static, GS: GlobalState> PopUpButton<T, GS> {
-
     pub fn new(model: Box<dyn State<Vec<T>, GS>>, selected_state: Box<dyn State<usize, GS>>) -> Box<Self> {
-
         let mut child = *PlainPopUpButton::new(model, selected_state);
 
         child = *child.display_item(|selected_item, focus_state| {
@@ -79,24 +77,21 @@ impl<T: Serialize + Clone + Debug + Default + DeserializeOwned + 'static, GS: Gl
                     Padding::init(
                         EdgeInsets::single(0.0, 0.0, 5.0, 0.0),
                         Text::new(text)
-                        .color(EnvironmentColor::Label)),
+                            .color(EnvironmentColor::Label)),
                     Spacer::new(SpacerDirection::Horizontal)
                 ])
-
             ]).fill(background_color)
                 .stroke(EnvironmentColor::OpaqueSeparator)
                 .stroke_style(1.0)
-
         });
 
         Box::new(PopUpButton {
             id: Id::new_v4(),
             child,
-            position: [0.0,0.0],
+            position: [0.0, 0.0],
             dimension: [235.0, 26.0],
         })
     }
-
 }
 
 impl<T: Serialize + Clone + Debug + Default + DeserializeOwned + 'static, GS: GlobalState> CommonWidget<GS> for PopUpButton<T, GS> {
@@ -152,7 +147,7 @@ impl<T: Serialize + Clone + Debug + Default + DeserializeOwned + 'static, GS: Gl
         5
     }
 
-    fn calculate_size(&mut self, requested_size: Dimensions, env: &Environment<GS>) -> Dimensions {
+    fn calculate_size(&mut self, requested_size: Dimensions, env: &mut Environment<GS>) -> Dimensions {
         self.set_width(requested_size[0]);
 
         self.child.calculate_size(self.dimension, env);

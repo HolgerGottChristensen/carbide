@@ -18,15 +18,13 @@ pub struct PlainSwitch<GS> where GS: GlobalState {
 }
 
 impl<GS: GlobalState> PlainSwitch<GS> {
-
     pub fn focused<K: Into<FocusState<GS>>>(mut self, focused: K) -> Box<Self> {
         self.focus = focused.into();
         Box::new(self)
     }
 
     pub fn new<S: Into<StringState<GS>>, L: Into<BoolState<GS>>>(label: S, checked: L) -> Box<Self> {
-
-        let focus_state =  Box::new(CommonState::new_local_with_key(&Focus::Unfocused));
+        let focus_state = Box::new(CommonState::new_local_with_key(&Focus::Unfocused));
 
         let default_delegate = |_focus_state: FocusState<GS>, checked: BoolState<GS>, button: Box<dyn Widget<GS>>| -> Box<dyn Widget<GS>> {
             let highlight_color = TupleState3::new(checked, EnvironmentColor::Red, EnvironmentColor::Blue)
@@ -58,9 +56,8 @@ impl<GS: GlobalState> PlainSwitch<GS> {
         checked: BoolState<GS>,
         focus_state: FocusState<GS>,
         delegate: fn(focus: FocusState<GS>, selected: BoolState<GS>, button: Box<dyn Widget<GS>>) -> Box<dyn Widget<GS>>,
-        label_state: StringState<GS>
+        label_state: StringState<GS>,
     ) -> Box<Self> {
-
         let button = PlainButton::<bool, GS>::new(Spacer::new(SpacerDirection::Vertical))
             .local_state(checked.clone())
             .on_click(|myself, env, global_state| {
@@ -83,11 +80,11 @@ impl<GS: GlobalState> PlainSwitch<GS> {
             id: Id::new_v4(),
             focus: focus_state,
             child,
-            position: [0.0,0.0],
-            dimension: [0.0,0.0],
+            position: [0.0, 0.0],
+            dimension: [0.0, 0.0],
             delegate,
             label: label_state,
-            checked
+            checked,
         })
     }
 }
@@ -153,7 +150,7 @@ impl<GS: GlobalState> Layout<GS> for PlainSwitch<GS> {
         10
     }
 
-    fn calculate_size(&mut self, requested_size: [f64; 2], env: &Environment<GS>) -> [f64; 2] {
+    fn calculate_size(&mut self, requested_size: Dimensions, env: &mut Environment<GS>) -> Dimensions {
         if let Some(child) = self.get_children_mut().next() {
             child.calculate_size(requested_size, env);
         }

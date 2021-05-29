@@ -11,12 +11,12 @@ pub struct Hidden<GS> where GS: GlobalState {
 
 impl<GS: GlobalState> WidgetExt<GS> for Hidden<GS> {}
 
-impl<S: GlobalState> Layout<S> for Hidden<S> {
+impl<GS: GlobalState> Layout<GS> for Hidden<GS> {
     fn flexibility(&self) -> u32 {
         self.child.flexibility()
     }
 
-    fn calculate_size(&mut self, requested_size: Dimensions, env: &Environment<S>) -> Dimensions {
+    fn calculate_size(&mut self, requested_size: Dimensions, env: &mut Environment<GS>) -> Dimensions {
         self.dimension = self.child.calculate_size(requested_size, env);
         self.dimension
     }
@@ -96,7 +96,7 @@ impl<GS: GlobalState> Render<GS> for Hidden<GS> {
 
 
 impl<S: GlobalState> Hidden<S> {
-    pub fn new(child: Box<dyn Widget<S>>) -> Box<Self<>> {
+    pub fn new(child: Box<dyn Widget<S>>) -> Box<Self <>> {
         Box::new(Hidden {
             id: Uuid::new_v4(),
             child,

@@ -13,7 +13,8 @@ use crate::mesh::{DEFAULT_GLYPH_CACHE_DIMS, GLYPH_CACHE_POSITION_TOLERANCE, GLYP
 use crate::mesh::vertex::Vertex;
 use crate::Range;
 use crate::render::primitive_walker::PrimitiveWalker;
-use crate::text::{self, rt};
+use crate::text_old::{self, rt};
+use crate::widget::{Environment, GlobalState};
 
 /// Images within the given image map must know their dimensions in pixels.
 pub trait ImageDimensions {
@@ -79,7 +80,7 @@ pub struct Fill {
 }
 
 // A wrapper around an owned glyph cache, providing `Debug` and `Deref` impls.
-struct GlyphCache(text::GlyphCache<'static>);
+struct GlyphCache(text_old::GlyphCache<'static>);
 
 #[derive(Debug)]
 enum PreparedCommand {
@@ -87,7 +88,6 @@ enum PreparedCommand {
     Plain(std::ops::Range<usize>),
     Scizzor(Scizzor),
 }
-
 
 
 impl Mesh {
@@ -100,7 +100,7 @@ impl Mesh {
     pub fn with_glyph_cache_dimensions(glyph_cache_dims: [u32; 2]) -> Self {
         let [gc_width, gc_height] = glyph_cache_dims;
 
-        let glyph_cache = text::GlyphCache::builder()
+        let glyph_cache = text_old::GlyphCache::builder()
             .dimensions(gc_width, gc_height)
             .scale_tolerance(GLYPH_CACHE_SCALE_TOLERANCE)
             .position_tolerance(GLYPH_CACHE_POSITION_TOLERANCE)
@@ -125,17 +125,20 @@ impl Mesh {
     ///   pixel space of the viewport.
     /// - `image_map`: a map from image IDs to images.
     /// - `primitives`: the sequence of UI primitives in order of depth to be rendered.
-    pub fn fill<P, I>(
+    pub fn fill<P, I, GS: GlobalState>(
         &mut self,
         viewport: Rect,
-        scale_factor: f64,
+        env: &Environment<GS>,
         image_map: &image_map::ImageMap<I>,
         mut primitives: P,
     ) -> Result<Fill, rt::gpu_cache::CacheWriteErr>
-    where
-        P: PrimitiveWalker,
-        I: ImageDimensions,
+        where
+            P: PrimitiveWalker,
+            I: ImageDimensions,
     {
+        let scale_factor = env.get_scale_factor();
+
+
         let Mesh {
             ref mut glyph_cache,
             ref mut glyph_cache_pixel_buffer,
@@ -200,7 +203,6 @@ impl Mesh {
 
         // Draw each primitive in order of depth.
         while let Some(primitive) = primitives.next_primitive() {
-
             match primitive.kind {
                 render::primitive_kind::PrimitiveKind::Clip => {
                     match current_state {
@@ -332,11 +334,11 @@ impl Mesh {
                     //let base_line_offset = text.base_line_offset as f64;
 
                     switch_to_plain_state!();
-                    let positioned_glyphs = text.positioned_glyphs(scale_factor as f32);
+                    let positioned_glyphs = text.positioned_glyphs(env, env.get_scale_factor() as f32);
                     // Queue the glyphs to be cached
                     for glyph in positioned_glyphs.clone() {
                         //println!("{:?}", glyph.position());
-                        glyph_cache.queue_glyph(font_id.index(), glyph.clone());
+                        glyph_cache.queue_glyph(font_id, glyph.clone());
                     }
 
                     glyph_cache.cache_queued(|rect, data| {
@@ -358,10 +360,10 @@ impl Mesh {
 
 
                     let color = gamma_srgb_to_linear(color.to_fsa());
-                    let cache_id = font_id.index();
+                    let cache_id = font_id;
 
 
-                    let to_gl_rect = |screen_rect: text::rt::Rect<i32>| {
+                    let to_gl_rect = |screen_rect: text_old::rt::Rect<i32>| {
                         let min_x = screen_rect.min.x as f64 / scale_factor;
                         let max_x = screen_rect.max.x as f64 / scale_factor;
                         let min_y = screen_rect.min.y as f64 / scale_factor;
@@ -504,7 +506,7 @@ impl Mesh {
     }
 
     /// The rusttype glyph cache used for managing caching of glyphs into the pixel buffer.
-    pub fn glyph_cache(&self) -> &text::GlyphCache {
+    pub fn glyph_cache(&self) -> &text_old::GlyphCache {
         &self.glyph_cache.0
     }
 
@@ -554,7 +556,7 @@ impl<'a> Iterator for Commands<'a> {
 }
 
 impl ops::Deref for GlyphCache {
-    type Target = text::GlyphCache<'static>;
+    type Target = text_old::GlyphCache<'static>;
     fn deref(&self) -> &Self::Target {
         &self.0
     }
@@ -572,8 +574,8 @@ impl fmt::Debug for GlyphCache {
     }
 }
 
-impl From<text::GlyphCache<'static>> for GlyphCache {
-    fn from(gc: text::GlyphCache<'static>) -> Self {
+impl From<text_old::GlyphCache<'static>> for GlyphCache {
+    fn from(gc: text_old::GlyphCache<'static>) -> Self {
         GlyphCache(gc)
     }
 }

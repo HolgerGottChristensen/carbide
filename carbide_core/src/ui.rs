@@ -18,7 +18,6 @@ use crate::prelude::EnvironmentFontSize;
 use crate::prelude::EnvironmentVariable;
 use crate::render::cprimitives::CPrimitives;
 use crate::state::global_state::GlobalState;
-use crate::text;
 use crate::widget::primitive::Widget;
 use crate::widget::Rectangle;
 
@@ -32,10 +31,6 @@ use crate::widget::Rectangle;
 /// * Maintains the latest window dimensions.
 #[derive(Debug)]
 pub struct Ui<S> where S: GlobalState {
-
-    /// Manages all fonts that have been loaded by the user.
-    pub fonts: text::font::Map,
-
     num_redraw_frames: u8,
     /// Whether or not the `Ui` needs to be re-drawn to screen.
     redraw_count: AtomicUsize,
@@ -49,22 +44,6 @@ pub struct Ui<S> where S: GlobalState {
     event_handler: EventHandler,
     pub environment: Environment<S>,
     any_focus: bool,
-}
-
-/// A wrapper around the `Ui` that restricts the user from mutating the `Ui` in certain ways while
-/// in the scope of the `Ui::set_widgets` function and within `Widget`s' `update` methods. Using
-/// the `UiCell`, users may access the `Ui` immutably (via `Deref`) however they wish, however they
-/// may only mutate the `Ui` via the `&mut self` methods provided by the `UiCell`.
-///
-/// The name came from its likening to a "jail cell for the `Ui`", as it restricts a user's access
-/// to it. However, we realise that the name may also cause ambiguity with the std `Cell` and
-/// `RefCell` render (which `UiCell` has nothing to do with). Thus, if you have a better name for
-/// this type in mind, please let us know at the github repo via an issue or PR sometime before we
-/// hit 1.0.0!
-#[derive(Debug)]
-pub struct UiCell<'a, S: GlobalState> {
-    /// A mutable reference to a **Ui**.
-    ui: &'a mut Ui<S>,
 }
 
 
@@ -86,37 +65,30 @@ impl<S: GlobalState> Ui<S> {
             EnvironmentVariable::Color { key: EnvironmentColor::Red, value: color::rgba_bytes(255, 69, 58, 1.0) },
             EnvironmentVariable::Color { key: EnvironmentColor::Teal, value: color::rgba_bytes(100, 210, 255, 1.0) },
             EnvironmentVariable::Color { key: EnvironmentColor::Yellow, value: color::rgba_bytes(255, 214, 10, 1.0) },
-
             EnvironmentVariable::Color { key: EnvironmentColor::Gray, value: color::rgba_bytes(142, 142, 147, 1.0) },
             EnvironmentVariable::Color { key: EnvironmentColor::Gray2, value: color::rgba_bytes(99, 99, 102, 1.0) },
             EnvironmentVariable::Color { key: EnvironmentColor::Gray3, value: color::rgba_bytes(72, 72, 74, 1.0) },
             EnvironmentVariable::Color { key: EnvironmentColor::Gray4, value: color::rgba_bytes(58, 58, 60, 1.0) },
             EnvironmentVariable::Color { key: EnvironmentColor::Gray5, value: color::rgba_bytes(44, 44, 46, 1.0) },
             EnvironmentVariable::Color { key: EnvironmentColor::Gray6, value: color::rgba_bytes(28, 28, 30, 1.0) },
-
             EnvironmentVariable::Color { key: EnvironmentColor::SystemBackground, value: color::rgba_bytes(28, 28, 30, 1.0) },
             EnvironmentVariable::Color { key: EnvironmentColor::SecondarySystemBackground, value: color::rgba_bytes(44, 44, 46, 1.0) },
             EnvironmentVariable::Color { key: EnvironmentColor::TertiarySystemBackground, value: color::rgba_bytes(58, 58, 60, 1.0) },
-
             EnvironmentVariable::Color { key: EnvironmentColor::Label, value: color::rgba_bytes(255, 255, 255, 1.0) },
             EnvironmentVariable::Color { key: EnvironmentColor::SecondaryLabel, value: color::rgba_bytes(152, 152, 159, 1.0) },
             EnvironmentVariable::Color { key: EnvironmentColor::TertiaryLabel, value: color::rgba_bytes(90, 90, 95, 1.0) },
             EnvironmentVariable::Color { key: EnvironmentColor::QuaternaryLabel, value: color::rgba_bytes(65, 65, 69, 1.0) },
             EnvironmentVariable::Color { key: EnvironmentColor::PlaceholderText, value: color::rgba_bytes(71, 71, 74, 1.0) },
             EnvironmentVariable::Color { key: EnvironmentColor::Link, value: color::rgba_bytes(9, 132, 255, 1.0) },
-
             EnvironmentVariable::Color { key: EnvironmentColor::SystemFill, value: color::rgba_bytes(61, 61, 65, 1.0) },
             EnvironmentVariable::Color { key: EnvironmentColor::SecondarySystemFill, value: color::rgba_bytes(57, 57, 61, 1.0) },
             EnvironmentVariable::Color { key: EnvironmentColor::TertiarySystemFill, value: color::rgba_bytes(50, 50, 54, 1.0) },
             EnvironmentVariable::Color { key: EnvironmentColor::QuaternarySystemFill, value: color::rgba_bytes(44, 44, 48, 1.0) },
-
             EnvironmentVariable::Color { key: EnvironmentColor::OpaqueSeparator, value: color::rgba_bytes(61, 61, 65, 1.0) },
             EnvironmentVariable::Color { key: EnvironmentColor::Separator, value: color::rgba_bytes(255, 255, 255, 0.15) },
-
             EnvironmentVariable::Color { key: EnvironmentColor::Accent, value: color::rgba_bytes(10, 132, 255, 1.0) },
-            EnvironmentVariable::Color { key: EnvironmentColor::LightText, value: color::rgba_bytes(0, 0, 0, 1.0)},
-            EnvironmentVariable::Color { key: EnvironmentColor::DarkText, value: color::rgba_bytes(255, 255, 255, 1.0)},
-
+            EnvironmentVariable::Color { key: EnvironmentColor::LightText, value: color::rgba_bytes(0, 0, 0, 1.0) },
+            EnvironmentVariable::Color { key: EnvironmentColor::DarkText, value: color::rgba_bytes(255, 255, 255, 1.0) },
         ];
 
         let _light_system_colors = vec![
@@ -129,36 +101,30 @@ impl<S: GlobalState> Ui<S> {
             EnvironmentVariable::Color { key: EnvironmentColor::Red, value: color::rgba_bytes(255, 59, 48, 1.0) },
             EnvironmentVariable::Color { key: EnvironmentColor::Teal, value: color::rgba_bytes(90, 200, 250, 1.0) },
             EnvironmentVariable::Color { key: EnvironmentColor::Yellow, value: color::rgba_bytes(255, 204, 0, 1.0) },
-
             EnvironmentVariable::Color { key: EnvironmentColor::Gray, value: color::rgba_bytes(142, 142, 147, 1.0) },
             EnvironmentVariable::Color { key: EnvironmentColor::Gray2, value: color::rgba_bytes(174, 174, 178, 1.0) },
             EnvironmentVariable::Color { key: EnvironmentColor::Gray3, value: color::rgba_bytes(199, 199, 204, 1.0) },
             EnvironmentVariable::Color { key: EnvironmentColor::Gray4, value: color::rgba_bytes(209, 209, 214, 1.0) },
             EnvironmentVariable::Color { key: EnvironmentColor::Gray5, value: color::rgba_bytes(229, 229, 234, 1.0) },
             EnvironmentVariable::Color { key: EnvironmentColor::Gray6, value: color::rgba_bytes(242, 242, 247, 1.0) },
-
             EnvironmentVariable::Color { key: EnvironmentColor::SystemBackground, value: color::rgba_bytes(255, 255, 255, 1.0) },
             EnvironmentVariable::Color { key: EnvironmentColor::SecondarySystemBackground, value: color::rgba_bytes(242, 242, 247, 1.0) },
             EnvironmentVariable::Color { key: EnvironmentColor::TertiarySystemBackground, value: color::rgba_bytes(255, 255, 255, 1.0) },
-
             EnvironmentVariable::Color { key: EnvironmentColor::Label, value: color::rgba_bytes(0, 0, 0, 1.0) },
             EnvironmentVariable::Color { key: EnvironmentColor::SecondaryLabel, value: color::rgba_bytes(138, 138, 142, 1.0) },
             EnvironmentVariable::Color { key: EnvironmentColor::TertiaryLabel, value: color::rgba_bytes(196, 196, 198, 1.0) },
             EnvironmentVariable::Color { key: EnvironmentColor::QuaternaryLabel, value: color::rgba_bytes(220, 220, 221, 1.0) },
             EnvironmentVariable::Color { key: EnvironmentColor::PlaceholderText, value: color::rgba_bytes(196, 196, 198, 1.0) },
             EnvironmentVariable::Color { key: EnvironmentColor::Link, value: color::rgba_bytes(0, 122, 255, 1.0) },
-
             EnvironmentVariable::Color { key: EnvironmentColor::SystemFill, value: color::rgba_bytes(228, 228, 230, 1.0) },
             EnvironmentVariable::Color { key: EnvironmentColor::SecondarySystemFill, value: color::rgba_bytes(233, 233, 235, 1.0) },
             EnvironmentVariable::Color { key: EnvironmentColor::TertiarySystemFill, value: color::rgba_bytes(239, 239, 240, 1.0) },
             EnvironmentVariable::Color { key: EnvironmentColor::QuaternarySystemFill, value: color::rgba_bytes(244, 244, 245, 1.0) },
-
             EnvironmentVariable::Color { key: EnvironmentColor::OpaqueSeparator, value: color::rgba_bytes(220, 220, 222, 1.0) },
             EnvironmentVariable::Color { key: EnvironmentColor::Separator, value: color::rgba_bytes(0, 0, 0, 0.137) },
-
             EnvironmentVariable::Color { key: EnvironmentColor::Accent, value: color::rgba_bytes(0, 122, 255, 1.0) },
-            EnvironmentVariable::Color { key: EnvironmentColor::LightText, value: color::rgba_bytes(0, 0, 0, 1.0)},
-            EnvironmentVariable::Color { key: EnvironmentColor::DarkText, value: color::rgba_bytes(255, 255, 255, 1.0)},
+            EnvironmentVariable::Color { key: EnvironmentColor::LightText, value: color::rgba_bytes(0, 0, 0, 1.0) },
+            EnvironmentVariable::Color { key: EnvironmentColor::DarkText, value: color::rgba_bytes(255, 255, 255, 1.0) },
         ];
 
         let font_sizes_large = vec![
@@ -180,7 +146,6 @@ impl<S: GlobalState> Ui<S> {
         let environment = Environment::new(base_environment, window_pixel_dimensions, scale_factor);
 
         Ui {
-            fonts: text::font::Map::new(),
             widgets: Rectangle::initialize(vec![]),
             num_redraw_frames: SAFE_REDRAW_COUNT,
             redraw_count: AtomicUsize::new(SAFE_REDRAW_COUNT as usize),
@@ -260,16 +225,16 @@ impl<S: GlobalState> Ui<S> {
                     }
                     Refocus::FocusNext => {
                         println!("Focus next");
-                        let focus_first = self.widgets.process_focus_next(event, &request,false, &mut self.environment, global_state);
+                        let focus_first = self.widgets.process_focus_next(event, &request, false, &mut self.environment, global_state);
                         if focus_first {
                             println!("Focus next back to first");
-                            self.widgets.process_focus_next(event, &request,true, &mut self.environment, global_state);
+                            self.widgets.process_focus_next(event, &request, true, &mut self.environment, global_state);
                         }
                     }
                     Refocus::FocusPrevious => {
-                        let focus_last = self.widgets.process_focus_previous(event,&request, false, &mut self.environment, global_state);
+                        let focus_last = self.widgets.process_focus_previous(event, &request, false, &mut self.environment, global_state);
                         if focus_last {
-                            self.widgets.process_focus_previous(event, &request,true, &mut self.environment, global_state);
+                            self.widgets.process_focus_previous(event, &request, true, &mut self.environment, global_state);
                         }
                     }
                 }
@@ -282,9 +247,9 @@ impl<S: GlobalState> Ui<S> {
                                 // If focus is still up for grab we can assume that no element
                                 // has been focused. This assumption breaks if there can be multiple
                                 // widgets with focus at the same time
-                                self.any_focus = !self.widgets.process_focus_previous(event, &Refocus::FocusPrevious,true, &mut self.environment, global_state);
+                                self.any_focus = !self.widgets.process_focus_previous(event, &Refocus::FocusPrevious, true, &mut self.environment, global_state);
                             } else if modifier == &carbide_core::input::ModifierKey::NO_MODIFIER {
-                                self.any_focus = !self.widgets.process_focus_next(event, &Refocus::FocusNext,true, &mut self.environment, global_state);
+                                self.any_focus = !self.widgets.process_focus_next(event, &Refocus::FocusNext, true, &mut self.environment, global_state);
                             }
                         }
                     }
@@ -293,14 +258,13 @@ impl<S: GlobalState> Ui<S> {
             }
 
 
-
             self.environment.clear();
 
             // Todo check if this can be removed. It is for the overlay layer to have the same position
             // as the thing below. This will not work if the thing below the overlay layers, position is
             // dependent on some state that has not been synchronized. For a use case look at the pop up
             // button in controls.
-            self.widgets.calculate_size(self.environment.get_corrected_dimensions(), &self.environment);
+            self.widgets.calculate_size(self.environment.get_corrected_dimensions(), &mut self.environment);
             self.widgets.position_children();
 
             self.widgets.sync_state(&mut self.environment, global_state);
@@ -317,9 +281,8 @@ impl<S: GlobalState> Ui<S> {
         }
 
 
-
         // Todo: Determine if an redraw is needed after events are processed
-        return true
+        return true;
     }
 
     /// Draw the `Ui` in it's current state.
@@ -342,37 +305,5 @@ impl<S: GlobalState> Ui<S> {
     /// Get mouse cursor state.
     pub fn mouse_cursor(&self) -> cursor::MouseCursor {
         self.mouse_cursor
-    }
-}
-
-
-impl<'a, S: GlobalState> UiCell<'a, S> {
-
-    /// A convenience method for borrowing the `Font` for the given `Id` if it exists.
-    pub fn font(&self, id: text::font::Id) -> Option<&text::Font> {
-        self.ui.fonts.get(id)
-    }
-
-    /// Returns the dimensions of the window
-    pub fn window_dim(&self) -> Dimensions {
-        self.environment.get_pixel_dimensions()
-    }
-
-    /// Sets the mouse cursor
-    pub fn set_mouse_cursor(&mut self, cursor: cursor::MouseCursor) {
-        self.ui.mouse_cursor = cursor;
-    }
-}
-
-impl<'a, S: GlobalState> ::std::ops::Deref for UiCell<'a, S> {
-    type Target = Ui<S>;
-    fn deref(&self) -> &Ui<S> {
-        self.ui
-    }
-}
-
-impl<'a, S: GlobalState> AsRef<Ui<S>> for UiCell<'a, S> {
-    fn as_ref(&self) -> &Ui<S> {
-        &self.ui
     }
 }

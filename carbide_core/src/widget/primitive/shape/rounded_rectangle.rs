@@ -25,7 +25,6 @@ pub struct RoundedRectangle<GS> where GS: GlobalState {
 }
 
 impl<GS: GlobalState> RoundedRectangle<GS> {
-
     pub fn fill<C: Into<ColorState<GS>>>(mut self, color: C) -> Box<Self> {
         self.fill_color = color.into();
         self.style += ShapeStyle::Fill;
@@ -39,7 +38,7 @@ impl<GS: GlobalState> RoundedRectangle<GS> {
     }
 
     pub fn stroke_style(mut self, line_width: f64) -> Box<Self> {
-        self.stroke_style = StrokeStyle::Solid {line_width};
+        self.stroke_style = StrokeStyle::Solid { line_width };
         self.style += ShapeStyle::Stroke;
         Box::new(self)
     }
@@ -47,14 +46,14 @@ impl<GS: GlobalState> RoundedRectangle<GS> {
     pub fn initialize(corner_radii: CornerRadii) -> Box<RoundedRectangle<GS>> {
         Box::new(RoundedRectangle {
             id: Uuid::new_v4(),
-            position: [0.0,0.0],
-            dimension: [100.0,100.0],
+            position: [0.0, 0.0],
+            dimension: [100.0, 100.0],
             corner_radii,
             stroke_color: EnvironmentColor::Blue.into(),
             fill_color: EnvironmentColor::Blue.into(),
             style: ShapeStyle::Default,
-            stroke_style: StrokeStyle::Solid {line_width: 2.0},
-            triangle_store: TriangleStore::new()
+            stroke_style: StrokeStyle::Solid { line_width: 2.0 },
+            triangle_store: TriangleStore::new(),
         })
     }
 }
@@ -64,13 +63,12 @@ impl<GS: GlobalState> Layout<GS> for RoundedRectangle<GS> {
         0
     }
 
-    fn calculate_size(&mut self, requested_size: Dimensions, _: &Environment<GS>) -> Dimensions {
+    fn calculate_size(&mut self, requested_size: Dimensions, env: &mut Environment<GS>) -> Dimensions {
         self.dimension = requested_size;
         requested_size
     }
 
-    fn position_children(&mut self) {
-    }
+    fn position_children(&mut self) {}
 }
 
 impl<S: GlobalState> CommonWidget<S> for RoundedRectangle<S> {
@@ -135,9 +133,7 @@ impl<GS: GlobalState> Shape<GS> for RoundedRectangle<GS> {
 }
 
 impl<GS: GlobalState> Render<GS> for RoundedRectangle<GS> {
-
     fn get_primitives(&mut self, _: &Environment<GS>, _: &GS) -> Vec<Primitive> {
-
         let rectangle = rect(self.get_x() as f32, self.get_y() as f32, self.get_width() as f32, self.get_height() as f32);
 
         let corner_radius = self.corner_radii;
@@ -151,7 +147,7 @@ impl<GS: GlobalState> Render<GS> for RoundedRectangle<GS> {
                     bottom_left: corner_radius.bottom_left as f32,
                     bottom_right: corner_radius.bottom_right as f32,
                 },
-                Winding::Positive
+                Winding::Positive,
             );
         });
 

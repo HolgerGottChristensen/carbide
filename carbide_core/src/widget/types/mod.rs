@@ -8,3 +8,4 @@ pub mod shape_style;
 pub mod stroke_style;
 pub mod corner_radii;
 pub mod edge_insets;
+pub mod justify;

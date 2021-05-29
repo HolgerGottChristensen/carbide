@@ -23,10 +23,11 @@ use carbide_core::layout::basic_layouter::BasicLayouter;
 use carbide_core::layout::Layout;
 use carbide_core::layout::layouter::Layouter;
 use carbide_core::position::Dimensions;
+use carbide_core::prelude::Environment;
 use carbide_core::state::environment::Environment;
 use carbide_core::state::state::{CommonState, LocalStateList};
 use carbide_core::state::state_sync::NoLocalStateSync;
-use carbide_core::text::font::Map;
+use carbide_core::text_old::font::Map;
 use carbide_core::widget::{Ellipse, Frame, Image, Line, Rectangle, SCALE, Text, ZStack};
 use carbide_core::widget::common_widget::CommonWidget;
 use carbide_core::widget::complex::sync_test::SyncTest;
@@ -62,7 +63,7 @@ fn main() {
         VStack::initialize(vec![
             Text::new("Hello".into(), vec![]),
             Text::new("world! \nHvad sker der i denne verden og vil den layoute rigtigt når der er en lang tekst".into(), vec![]),
-            Image::new(rust_image, [100.0,100.0], vec![]),
+            Image::new(rust_image, [100.0, 100.0], vec![]),
             Rectangle::initialize(vec![
                 SyncTest::new(sync_state)
             ]).fill(GREEN),
@@ -173,8 +174,8 @@ impl Event<GState> for CustomWidget {
             KeyboardEvent::Text(st, _) => {
                 global_state.s.push_str(st.as_str());
                 println!("Global state says: {}", global_state.s);
-            },
-            _ => {},
+            }
+            _ => {}
         }
     }
 
@@ -192,8 +193,8 @@ impl Layout<GState> for CustomWidget {
         2
     }
 
-    fn calculate_size(&mut self, requested_size: Dimensions, fonts: &Environment) -> Dimensions {
-        self.dimension = self.child.calculate_size(requested_size, fonts);
+    fn calculate_size(&mut self, requested_size: Dimensions, env: &mut Environment<GS>) -> Dimensions {
+        self.dimension = self.child.calculate_size(requested_size, env);
         self.dimension
     }
 

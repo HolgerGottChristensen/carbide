@@ -22,15 +22,13 @@ pub struct PlainRadioButton<T, GS> where GS: GlobalState, T: 'static + Serialize
 }
 
 impl<T: 'static + Serialize + Clone + Debug + Default + DeserializeOwned + PartialEq, GS: GlobalState> PlainRadioButton<T, GS> {
-
     pub fn focused<K: Into<FocusState<GS>>>(mut self, focused: K) -> Box<Self> {
         self.focus = focused.into();
         Box::new(self)
     }
 
     pub fn new<S: Into<StringState<GS>>, L: Into<TState<T, GS>>>(label: S, reference: T, local_state: L) -> Box<Self> {
-
-        let focus_state =  Box::new(CommonState::new_local_with_key(&Focus::Unfocused));
+        let focus_state = Box::new(CommonState::new_local_with_key(&Focus::Unfocused));
 
         let default_delegate = |_focus_state: FocusState<GS>, selected_state: BoolState<GS>, button: Box<dyn Widget<GS>>| -> Box<dyn Widget<GS>> {
             let highlight_color = TupleState3::new(selected_state, EnvironmentColor::Red, EnvironmentColor::Green)
@@ -64,9 +62,8 @@ impl<T: 'static + Serialize + Clone + Debug + Default + DeserializeOwned + Parti
         local_state: TState<T, GS>,
         focus_state: FocusState<GS>,
         delegate: fn(focus: FocusState<GS>, selected: BoolState<GS>, button: Box<dyn Widget<GS>>) -> Box<dyn Widget<GS>>,
-        label_state: StringState<GS>
+        label_state: StringState<GS>,
     ) -> Box<Self> {
-
         let reference_state: TState<T, GS> = CommonState::new(&reference).into();
 
         let selected_state = TupleState2::new(reference_state.clone(), local_state.clone())
@@ -94,12 +91,12 @@ impl<T: 'static + Serialize + Clone + Debug + Default + DeserializeOwned + Parti
             id: Id::new_v4(),
             focus: focus_state,
             child,
-            position: [0.0,0.0],
-            dimension: [0.0,0.0],
+            position: [0.0, 0.0],
+            dimension: [0.0, 0.0],
             delegate,
             reference,
             label: label_state,
-            local_state: local_state.into()
+            local_state: local_state.into(),
         })
     }
 }
@@ -165,7 +162,7 @@ impl<T: Serialize + Clone + Debug + Default + DeserializeOwned + PartialEq, GS: 
         10
     }
 
-    fn calculate_size(&mut self, requested_size: [f64; 2], env: &Environment<GS>) -> [f64; 2] {
+    fn calculate_size(&mut self, requested_size: Dimensions, env: &mut Environment<GS>) -> Dimensions {
         if let Some(child) = self.get_children_mut().next() {
             child.calculate_size(requested_size, env);
         }

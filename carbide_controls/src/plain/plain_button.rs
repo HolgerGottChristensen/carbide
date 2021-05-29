@@ -1,9 +1,9 @@
-use carbide_core::widget::*;
-use carbide_core::event_handler::{MouseEvent, KeyboardEvent};
-use carbide_core::input::MouseButton;
+use carbide_core::event_handler::{KeyboardEvent, MouseEvent};
 use carbide_core::input::Key;
-use carbide_core::state::state::State;
+use carbide_core::input::MouseButton;
 use carbide_core::prelude::Uuid;
+use carbide_core::state::state::State;
+use carbide_core::widget::*;
 
 #[derive(Clone, Widget)]
 #[event(handle_keyboard_event, handle_mouse_event)]
@@ -61,13 +61,13 @@ impl<T: StateContract + 'static, GS: GlobalState> PlainButton<T, GS> {
             id: Id::new_v4(),
             focus: CommonState::new_local_with_key(&Focus::Unfocused).into(),
             child,
-            position: [0.0,0.0],
-            dimension: [0.0,0.0],
+            position: [0.0, 0.0],
+            dimension: [0.0, 0.0],
             on_click: None,
             on_click_outside: None,
             is_hovered: false.into(),
             is_pressed: false.into(),
-            local_state: CommonState::new(&T::default()).into()
+            local_state: CommonState::new(&T::default()).into(),
         })
     }
 
@@ -85,10 +85,10 @@ impl<T: StateContract + 'static, GS: GlobalState> PlainButton<T, GS> {
             }
             MouseEvent::Move { to, .. } => {
                 if *self.is_hovered.get_value(env, global_state) {
-                   if !self.is_inside(*to) {
-                       *self.is_hovered.get_value_mut(env, global_state) = false;
-                       *self.is_pressed.get_value_mut(env, global_state) = false;
-                   }
+                    if !self.is_inside(*to) {
+                        *self.is_hovered.get_value_mut(env, global_state) = false;
+                        *self.is_pressed.get_value_mut(env, global_state) = false;
+                    }
                 } else {
                     if self.is_inside(*to) {
                         *self.is_hovered.get_value_mut(env, global_state) = true;
@@ -187,7 +187,7 @@ impl<T: StateContract, GS: GlobalState> Layout<GS> for PlainButton<T, GS> {
         10
     }
 
-    fn calculate_size(&mut self, requested_size: Dimensions, env: &Environment<GS>) -> [f64; 2] {
+    fn calculate_size(&mut self, requested_size: Dimensions, env: &mut Environment<GS>) -> Dimensions {
         if let Some(child) = self.get_children_mut().next() {
             child.calculate_size(requested_size, env);
         }

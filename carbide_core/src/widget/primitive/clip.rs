@@ -16,7 +16,7 @@ impl<GS: GlobalState> Layout<GS> for Clip<GS> {
         self.child.flexibility()
     }
 
-    fn calculate_size(&mut self, requested_size: Dimensions, env: &Environment<GS>) -> Dimensions {
+    fn calculate_size(&mut self, requested_size: Dimensions, env: &mut Environment<GS>) -> Dimensions {
         self.child.calculate_size(requested_size, env);
         self.dimension = requested_size;
         requested_size
@@ -88,12 +88,11 @@ impl<S: GlobalState> CommonWidget<S> for Clip<S> {
 }
 
 impl<GS: GlobalState> Render<GS> for Clip<GS> {
-
     fn get_primitives(&mut self, env: &Environment<GS>, global_state: &GS) -> Vec<Primitive> {
         let mut prims = vec![
             Primitive {
                 kind: PrimitiveKind::Clip,
-                rect: Rect::new(self.position, self.dimension)
+                rect: Rect::new(self.position, self.dimension),
             }
         ];
         let children: Vec<Primitive> = self.get_children_mut().flat_map(|f| f.get_primitives(env, global_state)).collect();
@@ -102,7 +101,7 @@ impl<GS: GlobalState> Render<GS> for Clip<GS> {
 
         prims.push(Primitive {
             kind: PrimitiveKind::UnClip,
-            rect: Rect::new(self.position, self.dimension)
+            rect: Rect::new(self.position, self.dimension),
         });
 
         return prims;
@@ -111,7 +110,7 @@ impl<GS: GlobalState> Render<GS> for Clip<GS> {
 
 
 impl<S: GlobalState> Clip<S> {
-    pub fn new(child: Box<dyn Widget<S>>) -> Box<Self<>> {
+    pub fn new(child: Box<dyn Widget<S>>) -> Box<Self <>> {
         Box::new(Clip {
             id: Uuid::new_v4(),
             child,

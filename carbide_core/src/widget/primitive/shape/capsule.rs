@@ -23,7 +23,6 @@ pub struct Capsule<GS> where GS: GlobalState {
 }
 
 impl<GS: GlobalState> Capsule<GS> {
-
     pub fn fill<C: Into<ColorState<GS>>>(mut self, color: C) -> Box<Self> {
         self.fill_color = color.into();
         self.style += ShapeStyle::Fill;
@@ -37,7 +36,7 @@ impl<GS: GlobalState> Capsule<GS> {
     }
 
     pub fn stroke_style(mut self, line_width: f64) -> Box<Self> {
-        self.stroke_style = StrokeStyle::Solid {line_width};
+        self.stroke_style = StrokeStyle::Solid { line_width };
         self.style += ShapeStyle::Stroke;
         Box::new(self)
     }
@@ -45,30 +44,28 @@ impl<GS: GlobalState> Capsule<GS> {
     pub fn initialize() -> Box<Capsule<GS>> {
         Box::new(Capsule {
             id: Uuid::new_v4(),
-            position: [0.0,0.0],
-            dimension: [100.0,100.0],
+            position: [0.0, 0.0],
+            dimension: [100.0, 100.0],
             stroke_color: EnvironmentColor::Blue.into(),
             fill_color: EnvironmentColor::Blue.into(),
             style: ShapeStyle::Default,
-            stroke_style: StrokeStyle::Solid {line_width: 2.0},
-            triangle_store: TriangleStore::new()
+            stroke_style: StrokeStyle::Solid { line_width: 2.0 },
+            triangle_store: TriangleStore::new(),
         })
     }
 }
 
-impl<S: GlobalState> Layout<S> for Capsule<S> {
+impl<GS: GlobalState> Layout<GS> for Capsule<GS> {
     fn flexibility(&self) -> u32 {
         0
     }
 
-    fn calculate_size(&mut self, requested_size: Dimensions, _: &Environment<S>) -> Dimensions {
+    fn calculate_size(&mut self, requested_size: Dimensions, env: &mut Environment<GS>) -> Dimensions {
         self.dimension = requested_size;
         requested_size
     }
 
-    fn position_children(&mut self) {
-
-    }
+    fn position_children(&mut self) {}
 }
 
 impl<S: GlobalState> CommonWidget<S> for Capsule<S> {
@@ -133,9 +130,7 @@ impl<GS: GlobalState> Shape<GS> for Capsule<GS> {
 }
 
 impl<GS: GlobalState> Render<GS> for Capsule<GS> {
-
     fn get_primitives(&mut self, _: &Environment<GS>, _: &GS) -> Vec<Primitive> {
-
         let rectangle = rect(self.get_x() as f32, self.get_y() as f32, self.get_width() as f32, self.get_height() as f32);
 
         tessellate(self, &rectangle, &|builder, rect| {
@@ -147,7 +142,7 @@ impl<GS: GlobalState> Render<GS> for Capsule<GS> {
                     bottom_left: f32::MAX,
                     bottom_right: f32::MAX,
                 },
-                Winding::Positive
+                Winding::Positive,
             );
         });
 

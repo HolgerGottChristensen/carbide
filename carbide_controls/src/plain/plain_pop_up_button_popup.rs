@@ -30,8 +30,7 @@ pub struct PlainPopUpButtonPopUp<T, GS> where GS: GlobalState, T: Serialize + Cl
 }
 
 impl<T: Serialize + Clone + Debug + Default + DeserializeOwned + 'static, GS: GlobalState> PlainPopUpButtonPopUp<T, GS> {
-
-    pub fn new(item: fn (item: Box<dyn State<T, GS>>, parent_selected_index: Box<dyn State<usize, GS>>, item_index: Box<dyn State<usize, GS>>, partially_chosen: Box<dyn State<bool, GS>>) -> Box<dyn Widget<GS>>,
+    pub fn new(item: fn(item: Box<dyn State<T, GS>>, parent_selected_index: Box<dyn State<usize, GS>>, item_index: Box<dyn State<usize, GS>>, partially_chosen: Box<dyn State<bool, GS>>) -> Box<dyn Widget<GS>>,
                opened: Box<dyn State<bool, GS>>,
                model: Box<dyn State<Vec<T>, GS>>,
                parent_selected_index: Box<dyn State<usize, GS>>,
@@ -39,7 +38,6 @@ impl<T: Serialize + Clone + Debug + Default + DeserializeOwned + 'static, GS: Gl
                parent_size: Dimensions,
                window_size: Dimensions,
     ) -> Box<Self> {
-
         let index_state = CommonState::new_local_with_key(&(0 as usize)).into_box();
         let selected_item_state = VecState::new_local(Box::new(model.clone()), index_state.clone(), T::default());
 
@@ -57,7 +55,6 @@ impl<T: Serialize + Clone + Debug + Default + DeserializeOwned + 'static, GS: Gl
         let display_item = item(selected_item_state.clone(), parent_selected_index.clone(), index_state.clone(), hovered_state.clone());
 
 
-
         // Calculate the height of the popup
         let height: F64State<GS> = parent_size[1].into();
         let popup_list_spacing_state: F64State<GS> = popup_list_spacing.into();
@@ -68,7 +65,7 @@ impl<T: Serialize + Clone + Debug + Default + DeserializeOwned + 'static, GS: Gl
                 e.get_corrected_height()
             },
             function_mut: None,
-            latest_value: window_size[1]
+            latest_value: window_size[1],
         });
 
         let tup = TupleState4::new(height, length, max_height_state, popup_list_spacing_state);
@@ -78,33 +75,31 @@ impl<T: Serialize + Clone + Debug + Default + DeserializeOwned + 'static, GS: Gl
         });
 
 
-
-
         let child = Rectangle::initialize(vec![
-                List::new(Box::new(foreach_state),
-                          PlainButton::<(usize, bool, usize), GS>::new(display_item)
-                              .local_state(TupleState3::new(index_state.clone(), opened.clone(), parent_selected_index.clone()))
-                              .on_click(|myself, _, _| {
-                                  let (index, opened, selected_index) = myself.get_local_state().get_latest_value_mut();
+            List::new(Box::new(foreach_state),
+                      PlainButton::<(usize, bool, usize), GS>::new(display_item)
+                          .local_state(TupleState3::new(index_state.clone(), opened.clone(), parent_selected_index.clone()))
+                          .on_click(|myself, _, _| {
+                              let (index, opened, selected_index) = myself.get_local_state().get_latest_value_mut();
 
-                                  *selected_index = *index;
-                                  *opened = false;
+                              *selected_index = *index;
+                              *opened = false;
 
-                                  //println!("Closed popup and selected: {}", index);
-                              })
-                              .on_click_outside(|myself, _, _| {
-                                  let (_, opened, _) = myself.get_local_state().get_latest_value_mut();
+                              //println!("Closed popup and selected: {}", index);
+                          })
+                          .on_click_outside(|myself, _, _| {
+                              let (_, opened, _) = myself.get_local_state().get_latest_value_mut();
 
-                                  *opened = false
-                              })
-                              .hover(hovered_state.clone())
-                              .frame(parent_size[0], parent_size[1])
-                ).index_state(index_state)
-                    .spacing(popup_list_spacing)
-                    .clip()
-                    .border()
-                    .border_width(1)
-                    .color(EnvironmentColor::OpaqueSeparator),
+                              *opened = false
+                          })
+                          .hover(hovered_state.clone())
+                          .frame(parent_size[0], parent_size[1]),
+            ).index_state(index_state)
+                .spacing(popup_list_spacing)
+                .clip()
+                .border()
+                .border_width(1)
+                .color(EnvironmentColor::OpaqueSeparator),
         ])
             .fill(EnvironmentColor::Red)
             .frame(parent_size[0] + 2.0, popup_height_state);
@@ -113,12 +108,12 @@ impl<T: Serialize + Clone + Debug + Default + DeserializeOwned + 'static, GS: Gl
         Box::new(PlainPopUpButtonPopUp {
             id: Id::new_v4(),
             child,
-            position: [0.0,0.0],
-            dimension: [0.0,0.0],
+            position: [0.0, 0.0],
+            dimension: [0.0, 0.0],
             foreach_hovered_state,
             opened,
             phantom: Default::default(),
-            parent_selected_index
+            parent_selected_index,
         })
     }
 
@@ -157,7 +152,6 @@ impl<T: Serialize + Clone + Debug + Default + DeserializeOwned + 'static, GS: Gl
                         } else {
                             focused[last_index] = last_item;
                         }
-
                     }
                     Key::Down => {
                         let focused = self.foreach_hovered_state.get_value_mut(env, global_state);
@@ -186,7 +180,6 @@ impl<T: Serialize + Clone + Debug + Default + DeserializeOwned + 'static, GS: Gl
             _ => ()
         }
     }
-
 }
 
 impl<T: Serialize + Clone + Debug + Default + DeserializeOwned + 'static, GS: GlobalState> CommonWidget<GS> for PlainPopUpButtonPopUp<T, GS> {
@@ -250,7 +243,7 @@ impl<T: Serialize + Clone + Debug + Default + DeserializeOwned + 'static, GS: Gl
         10
     }
 
-    fn calculate_size(&mut self, requested_size: Dimensions, env: &Environment<GS>) -> Dimensions {
+    fn calculate_size(&mut self, requested_size: Dimensions, env: &mut Environment<GS>) -> Dimensions {
         let size = self.child.calculate_size(requested_size, env);
 
         self.set_dimension(size);

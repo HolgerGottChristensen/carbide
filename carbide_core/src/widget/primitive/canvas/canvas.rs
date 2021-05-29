@@ -17,18 +17,18 @@ pub struct Canvas<GS> where GS: GlobalState {
     dimension: Dimensions,
     #[state] color: ColorState<GS>,
     //prim_store: Vec<Primitive>,
-    context: fn(Rect, Context<GS>) -> Context<GS>
+    context: fn(Rect, Context<GS>) -> Context<GS>,
 }
 
 impl<GS: GlobalState> Canvas<GS> {
     pub fn initialize(context: fn(Rect, Context<GS>) -> Context<GS>) -> Box<Self> {
         Box::new(Canvas {
             id: Uuid::new_v4(),
-            position: [0.0,0.0],
-            dimension: [100.0,100.0],
+            position: [0.0, 0.0],
+            dimension: [100.0, 100.0],
             color: EnvironmentColor::Accent.into(),
             //prim_store: vec![],
-            context
+            context,
         })
     }
 
@@ -53,10 +53,9 @@ impl<GS: GlobalState> Canvas<GS> {
         let points: Vec<Point> = point_iter.collect();
 
         Primitive {
-            kind: PrimitiveKind::TrianglesSingleColor { color: Rgba::from(color), triangles: Triangle::from_point_list(points)},
-            rect: Rect::new(self.position, self.dimension)
+            kind: PrimitiveKind::TrianglesSingleColor { color: Rgba::from(color), triangles: Triangle::from_point_list(points) },
+            rect: Rect::new(self.position, self.dimension),
         }
-
     }
 
     pub fn get_fill_prim(&self, path: Path, fill_options: FillOptions, color: Color) -> Primitive {
@@ -80,8 +79,8 @@ impl<GS: GlobalState> Canvas<GS> {
         let points: Vec<Point> = point_iter.collect();
 
         Primitive {
-            kind: PrimitiveKind::TrianglesSingleColor { color: Rgba::from(color), triangles: Triangle::from_point_list(points)},
-            rect: Rect::new(self.position, self.dimension)
+            kind: PrimitiveKind::TrianglesSingleColor { color: Rgba::from(color), triangles: Triangle::from_point_list(points) },
+            rect: Rect::new(self.position, self.dimension),
         }
     }
 }
@@ -133,9 +132,7 @@ impl<S: GlobalState> CommonWidget<S> for Canvas<S> {
 }
 
 impl<GS: GlobalState> Render<GS> for Canvas<GS> {
-
     fn get_primitives(&mut self, env: &Environment<GS>, global_state: &GS) -> Vec<Primitive> {
-
         let context = Context::new();
 
         let rectangle = Rect::new(self.get_position(), self.get_dimension());
@@ -164,17 +161,15 @@ impl<GS: GlobalState> Render<GS> for Canvas<GS> {
 
 impl<GS: GlobalState> WidgetExt<GS> for Canvas<GS> {}
 
-impl<S: GlobalState> Layout<S> for Canvas<S> {
+impl<GS: GlobalState> Layout<GS> for Canvas<GS> {
     fn flexibility(&self) -> u32 {
         0
     }
 
-    fn calculate_size(&mut self, requested_size: Dimensions, _: &Environment<S>) -> Dimensions {
+    fn calculate_size(&mut self, requested_size: Dimensions, env: &mut Environment<GS>) -> Dimensions {
         self.dimension = requested_size;
         requested_size
     }
 
-    fn position_children(&mut self) {
-
-    }
+    fn position_children(&mut self) {}
 }

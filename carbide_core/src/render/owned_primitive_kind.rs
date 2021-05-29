@@ -2,7 +2,7 @@ use crate::{Color, Rect};
 use crate::color::Rgba;
 use crate::image_map::Id;
 use crate::render::owned_text::OwnedText;
-use crate::text::font;
+use crate::text::FontId;
 
 #[derive(Clone)]
 pub enum OwnedPrimitiveKind {
@@ -23,7 +23,7 @@ pub enum OwnedPrimitiveKind {
     },
     Text {
         color: Color,
-        font_id: font::Id,
+        font_id: FontId,
         text: OwnedText,
     },
 }

@@ -161,12 +161,12 @@ impl<S: GlobalState> StateSync<S> for Box<dyn Widget<S>> {
     }
 }
 
-impl<S: GlobalState> Layout<S> for Box<dyn Widget<S>> {
+impl<GS: GlobalState> Layout<GS> for Box<dyn Widget<GS>> {
     fn flexibility(&self) -> u32 {
         self.deref().flexibility()
     }
 
-    fn calculate_size(&mut self, requested_size: [f64; 2], env: &Environment<S>) -> [f64; 2] {
+    fn calculate_size(&mut self, requested_size: Dimensions, env: &mut Environment<GS>) -> Dimensions {
         self.deref_mut().calculate_size(requested_size, env)
     }
 

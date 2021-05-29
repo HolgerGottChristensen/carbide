@@ -31,9 +31,7 @@ pub struct List<GS, T> where GS: GlobalState, T: ListIndex + 'static {
 }
 
 impl<GS: GlobalState, T: ListIndex + 'static> List<GS, T> {
-
     pub fn new(model: Box<dyn State<Vec<T>, GS>>, delegate: Box<dyn Widget<GS>>) -> Box<Self> {
-
         let index_offset_state = Box::new(CommonState::new_local_with_key(&0));
 
         let start_offset = CommonState::new_local_with_key(&-10.0);
@@ -50,8 +48,8 @@ impl<GS: GlobalState, T: ListIndex + 'static> List<GS, T> {
                 Rectangle::initialize(vec![]).fill(BLUE).frame(SCALE, end_offset.clone()),
             ]).spacing(10.0)),
             delegate,
-            position: [0.0,0.0],
-            dimension: [0.0,0.0],
+            position: [0.0, 0.0],
+            dimension: [0.0, 0.0],
             spacing: 10.0,
             model,
             internal_model,
@@ -59,7 +57,7 @@ impl<GS: GlobalState, T: ListIndex + 'static> List<GS, T> {
             id_state: Box::new(CommonState::new_local_with_key(&T::default())),
             index_state: Box::new(CommonState::new_local_with_key(&0)),
             start_offset: Box::new(start_offset),
-            end_offset: Box::new(end_offset)
+            end_offset: Box::new(end_offset),
         })
     }
 
@@ -106,13 +104,9 @@ impl<GS: GlobalState, T: ListIndex + 'static> List<GS, T> {
         Box::new(self)
     }
 
-    fn handle_mouse_event(&mut self, _: &MouseEvent, _: &bool, _: &mut Environment<GS>, _: &mut GS) {
+    fn handle_mouse_event(&mut self, _: &MouseEvent, _: &bool, _: &mut Environment<GS>, _: &mut GS) {}
 
-    }
-
-    fn handle_keyboard_event(&mut self, _: &KeyboardEvent, _: &mut Environment<GS>, _: &mut GS) {
-
-    }
+    fn handle_keyboard_event(&mut self, _: &KeyboardEvent, _: &mut Environment<GS>, _: &mut GS) {}
 
     fn _recalculate_visible_children(&mut self, env: &Environment<GS>) {
         //println!("Med dig");
@@ -170,7 +164,7 @@ impl<GS: GlobalState, T: ListIndex + 'static> List<GS, T> {
                 // Handle remove items out of view
                 while let Some((index, child)) = vstack_children.next() {
                     // Skip the last element in the v_stack, which is the end rectangle
-                    if index > internal_model_size {continue}
+                    if index > internal_model_size { continue }
 
                     // Check if an items bottom is above the top of this view.
                     if child.get_y() + child.get_height() < y_position {
@@ -189,7 +183,6 @@ impl<GS: GlobalState, T: ListIndex + 'static> List<GS, T> {
                         // Pop the last element from the internal model
                         internal_model.get_latest_value_mut().pop();
                     }
-
                 }
 
                 // Get the children of the scrollview
@@ -206,7 +199,7 @@ impl<GS: GlobalState, T: ListIndex + 'static> List<GS, T> {
 
                 // Calculate the minimum height of an index currently in the list.
                 while let Some((index, child)) = vstack_children.next() {
-                    if index > internal_model_size {continue}
+                    if index > internal_model_size { continue }
                     if child.get_height() < min_height {
                         min_height = child.get_height();
                     }
@@ -265,13 +258,8 @@ impl<GS: GlobalState, T: ListIndex + 'static> List<GS, T> {
                         *end_offset.get_latest_value_mut() -= min_height + spacing;
                         internal_model.get_latest_value_mut().push(model.get_latest_value()[index_to_take_from].clone());
                     }
-
-
                 }
-
-
             }
-
         }
 
         self.start_offset = start_offset;
@@ -307,7 +295,6 @@ impl<GS: GlobalState, T: ListIndex + 'static> List<GS, T> {
         // element from the internal_model and add its size + 1 x spacing to the after_offset.
         // Recalculate the height of the after offset.
         // To this step while there are views below the bottom.
-
     }
 
     fn sync_state(&mut self, env: &mut Environment<GS>, global_state: &GS) {
@@ -323,7 +310,6 @@ impl<GS: GlobalState, T: ListIndex + 'static> List<GS, T> {
 
         self.update_local_widget_state(env);
     }
-
 }
 
 impl<GS: GlobalState, T: ListIndex> CommonWidget<GS> for List<GS, T> {
@@ -387,8 +373,7 @@ impl<GS: GlobalState, T: ListIndex> Layout<GS> for List<GS, T> {
         10
     }
 
-    fn calculate_size(&mut self, requested_size: Dimensions, env: &Environment<GS>) -> Dimensions {
-
+    fn calculate_size(&mut self, requested_size: Dimensions, env: &mut Environment<GS>) -> Dimensions {
         if let Some(child) = self.get_children_mut().next() {
             child.calculate_size(requested_size, env);
         }

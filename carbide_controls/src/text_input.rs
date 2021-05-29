@@ -107,7 +107,7 @@ impl<GS: GlobalState> Layout<GS> for TextInput<GS> {
         5
     }
 
-    fn calculate_size(&mut self, requested_size: Dimensions, env: &Environment<GS>) -> Dimensions {
+    fn calculate_size(&mut self, requested_size: Dimensions, env: &mut Environment<GS>) -> Dimensions {
         self.set_width(requested_size[0]);
 
         self.child.calculate_size(self.dimension, env);

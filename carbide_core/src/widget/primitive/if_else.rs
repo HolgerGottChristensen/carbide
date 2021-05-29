@@ -35,7 +35,7 @@ impl<GS: GlobalState> IfElse<GS> {
     }
 }
 
-impl<S: GlobalState> Layout<S> for IfElse<S> {
+impl<GS: GlobalState> Layout<GS> for IfElse<GS> {
     fn flexibility(&self) -> u32 {
         if *self.predicate.get_latest_value() {
             self.when_true.flexibility()
@@ -44,7 +44,7 @@ impl<S: GlobalState> Layout<S> for IfElse<S> {
         }
     }
 
-    fn calculate_size(&mut self, requested_size: Dimensions, env: &Environment<S>) -> Dimensions {
+    fn calculate_size(&mut self, requested_size: Dimensions, env: &mut Environment<GS>) -> Dimensions {
         if *self.predicate.get_latest_value() {
             self.dimension = self.when_true.calculate_size(requested_size, env);
         } else {
@@ -97,7 +97,6 @@ impl<S: GlobalState> CommonWidget<S> for IfElse<S> {
                 WidgetIter::single(self.when_false.deref())
             }
         }
-
     }
 
     fn get_children_mut(&mut self) -> WidgetIterMut<S> {
@@ -114,7 +113,6 @@ impl<S: GlobalState> CommonWidget<S> for IfElse<S> {
                 WidgetIterMut::single(self.when_false.deref_mut())
             }
         }
-
     }
 
     fn get_proxied_children(&mut self) -> WidgetIterMut<S> {
@@ -151,7 +149,6 @@ impl<S: GlobalState> CommonWidget<S> for IfElse<S> {
 }
 
 impl<GS: GlobalState> Render<GS> for IfElse<GS> {
-
     fn get_primitives(&mut self, env: &Environment<GS>, global_state: &GS) -> Vec<Primitive> {
         let mut prims = vec![];
         prims.extend(Rectangle::<GS>::debug_outline(Rect::new(self.position, self.dimension), 1.0));

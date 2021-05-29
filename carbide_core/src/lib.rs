@@ -40,20 +40,18 @@ pub use serde::de::*;
 pub use carbide_derive::*;
 
 pub use crate::color::{Color, Colorable};
-pub use crate::label::{FontSize, Labelable};
 pub use crate::position::{Point, Range, Rect, Scalar};
-pub use crate::ui::{Ui, UiCell};
+pub use crate::ui::Ui;
 
 pub mod color;
 pub mod event;
 pub mod guide;
 pub mod image_map;
 pub mod input;
-mod label;
 pub mod mesh;
 pub mod position;
 pub mod render;
-pub mod text;
+pub mod text_old;
 mod ui;
 pub mod utils;
 pub mod widget;
@@ -67,4 +65,5 @@ pub mod window;
 pub mod prelude;
 pub mod focus;
 mod environment;
+pub mod text;
 

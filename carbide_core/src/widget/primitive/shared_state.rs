@@ -1,5 +1,6 @@
-use crate::prelude::*;
 use std::fmt::Debug;
+
+use crate::prelude::*;
 
 /// This widget is for containing shared state. This is very rarely needed as there always is a
 /// source of truth. The state is always kept in a parent. If this is not the case we need this widget.
@@ -12,7 +13,7 @@ pub struct SharedState<T, GS> where T: StateContract, GS: GlobalState {
     child: Box<dyn Widget<GS>>,
     position: Point,
     dimension: Dimensions,
-    #[state] shared_state: TState<T, GS>
+    #[state] shared_state: TState<T, GS>,
 }
 
 impl<T: StateContract, GS: GlobalState> SharedState<T, GS> {
@@ -22,7 +23,7 @@ impl<T: StateContract, GS: GlobalState> SharedState<T, GS> {
             child,
             position: [0.0, 0.0],
             dimension: [0.0, 0.0],
-            shared_state: shared_state.into()
+            shared_state: shared_state.into(),
         })
     }
 }
@@ -32,7 +33,7 @@ impl<T: StateContract, GS: GlobalState> Layout<GS> for SharedState<T, GS> {
         self.child.flexibility()
     }
 
-    fn calculate_size(&mut self, requested_size: Dimensions, env: &Environment<GS>) -> Dimensions {
+    fn calculate_size(&mut self, requested_size: Dimensions, env: &mut Environment<GS>) -> Dimensions {
         self.dimension = self.child.calculate_size(requested_size, env);
         self.dimension
     }
@@ -102,7 +103,6 @@ impl<T: StateContract, GS: GlobalState> CommonWidget<GS> for SharedState<T, GS> 
 }
 
 impl<T: StateContract, GS: GlobalState> Render<GS> for SharedState<T, GS> {
-
     fn get_primitives(&mut self, env: &Environment<GS>, global_state: &GS) -> Vec<Primitive> {
         let mut prims = vec![];
         prims.extend(Rectangle::<GS>::debug_outline(Rect::new(self.position, self.dimension), 1.0));

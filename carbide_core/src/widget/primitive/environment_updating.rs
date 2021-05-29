@@ -12,28 +12,27 @@ pub struct EnvUpdating<GS> where GS: GlobalState {
     child: Box<dyn Widget<GS>>,
     position: Point,
     dimension: Dimensions,
-    envs_to_update: Vec<EnvironmentStateContainer<GS>>
+    envs_to_update: Vec<EnvironmentStateContainer<GS>>,
 }
 
 #[derive(Debug, Clone)]
 pub enum EnvironmentStateContainer<GS> where GS: GlobalState {
-    String{key: String, value: Box<dyn State<String, GS>>},
-    U32{key: String, value: Box<dyn State<u32, GS>>},
-    F64{key: String, value: Box<dyn State<f64, GS>>},
-    Color{key: EnvironmentColor, value: ColorState<GS>},
-    FontSize{key: EnvironmentFontSize, value: U32State<GS>},
-    I32{key: String, value: Box<dyn State<i32, GS>>},
+    String { key: String, value: Box<dyn State<String, GS>> },
+    U32 { key: String, value: Box<dyn State<u32, GS>> },
+    F64 { key: String, value: Box<dyn State<f64, GS>> },
+    Color { key: EnvironmentColor, value: ColorState<GS> },
+    FontSize { key: EnvironmentFontSize, value: U32State<GS> },
+    I32 { key: String, value: Box<dyn State<i32, GS>> },
 }
 
 impl<GS: GlobalState> EnvUpdating<GS> {
-
     pub fn new(child: Box<dyn Widget<GS>>) -> Box<EnvUpdating<GS>> {
         Box::new(EnvUpdating {
             id: Uuid::new_v4(),
             child,
-            position: [0.0,0.0],
-            dimension: [100.0,100.0],
-            envs_to_update: vec![]
+            position: [0.0, 0.0],
+            dimension: [100.0, 100.0],
+            envs_to_update: vec![],
         })
     }
 
@@ -115,8 +114,6 @@ impl<GS: GlobalState> EnvUpdating<GS> {
             }
         }
     }
-
-
 }
 
 
@@ -125,7 +122,7 @@ impl<GS: GlobalState> Layout<GS> for EnvUpdating<GS> {
         self.child.flexibility()
     }
 
-    fn calculate_size(&mut self, requested_size: Dimensions, env: &Environment<GS>) -> Dimensions {
+    fn calculate_size(&mut self, requested_size: Dimensions, env: &mut Environment<GS>) -> Dimensions {
         self.dimension = self.child.calculate_size(requested_size, env);
         self.dimension
     }
@@ -196,13 +193,11 @@ impl<GS: GlobalState> CommonWidget<GS> for EnvUpdating<GS> {
 }
 
 impl<GS: GlobalState> Render<GS> for EnvUpdating<GS> {
-
     fn get_primitives(&mut self, env: &Environment<GS>, global_state: &GS) -> Vec<Primitive> {
         let prims = self.child.get_primitives(env, global_state);
         return prims;
     }
 }
-
 
 
 impl<GS: GlobalState> WidgetExt<GS> for EnvUpdating<GS> {}

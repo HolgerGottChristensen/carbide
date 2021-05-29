@@ -15,7 +15,7 @@ fn main() {
 
     let mut window = Window::new("Switch Example - Carbide".to_string(), 800, 1200, Some(icon_path), false);
 
-    window.add_font("fonts/NotoSans/NotoSans-Regular.ttf").unwrap();
+    window.add_font("fonts/NotoSans/NotoSans-Regular.ttf");
 
     let switch_state1 = CommonState::new_local_with_key(&false);
     let switch_state2 = GState::<bool, bool>::new(|global_state: &bool| -> &bool {
@@ -37,11 +37,9 @@ fn main() {
                     .frame(140.0, 26.0),
                 Switch::new("Star", switch_state3)
                     .frame(140.0, 26.0),
-            ]).spacing(10.0).padding(EdgeInsets::all(40.0))
+            ]).spacing(10.0).padding(EdgeInsets::all(40.0)),
         )
-
     );
 
     window.run_event_loop();
-
 }

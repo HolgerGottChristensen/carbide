@@ -22,15 +22,14 @@ impl<GS: GlobalState> WidgetExt<GS> for Frame<GS> {}
 
 impl<GS: GlobalState> Frame<GS> {
     pub fn init(width: F64State<GS>, height: F64State<GS>, child: Box<dyn Widget<GS>>) -> Box<Frame<GS>> {
-
         let expand_width = *width.get_latest_value() == SCALE;
 
         let expand_height = *height.get_latest_value() == SCALE;
 
-        Box::new(Frame{
+        Box::new(Frame {
             id: Default::default(),
             child: Box::new(child),
-            position: [0.0,0.0],
+            position: [0.0, 0.0],
             x: 0.0.into(),
             y: 0.0.into(),
             fixed_x: false,
@@ -43,10 +42,10 @@ impl<GS: GlobalState> Frame<GS> {
     }
 
     pub fn init_width(width: F64State<GS>, child: Box<dyn Widget<GS>>) -> Box<Frame<GS>> {
-        Box::new(Frame{
+        Box::new(Frame {
             id: Default::default(),
             child: Box::new(child),
-            position: [0.0,0.0],
+            position: [0.0, 0.0],
             x: 0.0.into(),
             y: 0.0.into(),
             fixed_x: false,
@@ -54,15 +53,15 @@ impl<GS: GlobalState> Frame<GS> {
             width,
             height: 0.0.into(),
             expand_width: false,
-            expand_height: true
+            expand_height: true,
         })
     }
 
     pub fn init_height(height: F64State<GS>, child: Box<dyn Widget<GS>>) -> Box<Frame<GS>> {
-        Box::new(Frame{
+        Box::new(Frame {
             id: Default::default(),
             child: Box::new(child),
-            position: [0.0,0.0],
+            position: [0.0, 0.0],
             x: 0.0.into(),
             y: 0.0.into(),
             fixed_x: false,
@@ -70,7 +69,7 @@ impl<GS: GlobalState> Frame<GS> {
             width: 0.0.into(),
             height,
             expand_width: true,
-            expand_height: false
+            expand_height: false,
         })
     }
 
@@ -153,7 +152,7 @@ impl<S: GlobalState> CommonWidget<S> for Frame<S> {
     }
 }
 
-impl<S: GlobalState> Layout<S> for Frame<S> {
+impl<GS: GlobalState> Layout<GS> for Frame<GS> {
     fn flexibility(&self) -> u32 {
         if self.expand_width || self.expand_height {
             8
@@ -162,8 +161,7 @@ impl<S: GlobalState> Layout<S> for Frame<S> {
         }
     }
 
-    fn calculate_size(&mut self, requested_size: Dimensions, env: &Environment<S>) -> Dimensions {
-
+    fn calculate_size(&mut self, requested_size: Dimensions, env: &mut Environment<GS>) -> Dimensions {
         if self.expand_width {
             self.set_width(requested_size[0]);
         }
@@ -180,7 +178,6 @@ impl<S: GlobalState> Layout<S> for Frame<S> {
     }
 
     fn position_children(&mut self) {
-
         if self.fixed_x {
             self.set_x(*self.x.get_latest_value());
         }

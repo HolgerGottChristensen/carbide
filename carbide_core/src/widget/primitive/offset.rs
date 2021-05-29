@@ -1,7 +1,6 @@
 use crate::prelude::*;
 use crate::widget::ChildRender;
 
-
 #[derive(Debug, Clone, Widget)]
 pub struct Offset<GS> where GS: GlobalState {
     id: Uuid,
@@ -14,12 +13,12 @@ pub struct Offset<GS> where GS: GlobalState {
 
 impl<GS: GlobalState> WidgetExt<GS> for Offset<GS> {}
 
-impl<S: GlobalState> Layout<S> for Offset<S> {
+impl<GS: GlobalState> Layout<GS> for Offset<GS> {
     fn flexibility(&self) -> u32 {
         self.child.flexibility()
     }
 
-    fn calculate_size(&mut self, requested_size: Dimensions, env: &Environment<S>) -> Dimensions {
+    fn calculate_size(&mut self, requested_size: Dimensions, env: &mut Environment<GS>) -> Dimensions {
         self.dimension = self.child.calculate_size(requested_size, env);
         self.dimension
     }
@@ -100,14 +99,14 @@ impl<S: GlobalState> ChildRender for Offset<S> {}
 
 
 impl<GS: GlobalState> Offset<GS> {
-    pub fn new(offset_x: F64State<GS>, offset_y: F64State<GS>, child: Box<dyn Widget<GS>>) -> Box<Self<>> {
+    pub fn new(offset_x: F64State<GS>, offset_y: F64State<GS>, child: Box<dyn Widget<GS>>) -> Box<Self <>> {
         Box::new(Offset {
             id: Uuid::new_v4(),
             child,
             position: [0.0, 0.0],
             dimension: [0.0, 0.0],
             offset_x,
-            offset_y
+            offset_y,
         })
     }
 }

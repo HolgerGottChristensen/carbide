@@ -22,7 +22,7 @@ pub use crate::state::state::{CommonState, State};
 pub use crate::state::state_sync::NoLocalStateSync;
 pub use crate::state::state_sync::StateSync;
 pub use crate::state::tuple_state::*;
-pub use crate::text;
+pub use crate::text_old;
 pub use crate::widget::common_widget::CommonWidget;
 pub use crate::widget::primitive::Widget;
 pub use crate::widget::primitive::widget::WidgetExt;

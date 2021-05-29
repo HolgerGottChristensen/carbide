@@ -17,7 +17,6 @@ pub struct SyncTest<GS> where GS: GlobalState {
 }
 
 impl<S: GlobalState> SyncTest<S> {
-
     fn insert_local_state(&self, env: &mut Environment<S>) {
         if self.show_overlay {
             env.add_overlay("overlay_test", Rectangle::initialize(vec![])
@@ -38,16 +37,15 @@ impl<S: GlobalState> SyncTest<S> {
                     }
                     Key::Backspace => {
                         self.value.get_value_mut(env, global_state).pop();
-                    },
+                    }
                     Key::NumPadPlus => {
                         self.fore.get_value_mut(env, global_state).push(Uuid::new_v4())
-                    },
+                    }
                     Key::NumPadMinus => {
                         if self.fore.get_value(env, global_state).len() > 1 {
                             let last = self.fore.get_value(env, global_state).len() - 1;
                             self.fore.get_value_mut(env, global_state).remove(last);
                         }
-
                     }
                     _ => ()
                 }
@@ -68,24 +66,24 @@ impl<S: GlobalState> SyncTest<S> {
             child: HStack::initialize(vec![
                 Spacer::new(SpacerDirection::Horizontal),
                 VStack::initialize(vec![
-                        ForEach::new(
-                            Box::new(fore.clone()),
-                            Rectangle::initialize(vec![
-                                Text::new(mapped_state)
-                            ]).fill(EnvironmentColor::Red).frame(60.0,30.0))
-                            .index_state(index_state)
-                    ]),
-                ForEach::new((0..5).map(|_| Uuid::new_v4()).collect::<Vec<Uuid>>(), Rectangle::initialize(vec![]).frame(10.0,10.0)),
+                    ForEach::new(
+                        Box::new(fore.clone()),
+                        Rectangle::initialize(vec![
+                            Text::new(mapped_state)
+                        ]).fill(EnvironmentColor::Red).frame(60.0, 30.0))
+                        .index_state(index_state)
+                ]),
+                ForEach::new((0..5).map(|_| Uuid::new_v4()).collect::<Vec<Uuid>>(), Rectangle::initialize(vec![]).frame(10.0, 10.0)),
                 Text::new(value.clone()),
                 Spacer::new(SpacerDirection::Horizontal),
                 Text::new(value.clone()),
                 Spacer::new(SpacerDirection::Horizontal),
             ]),
-            position: [100.0,100.0],
-            dimension: [100.0,100.0],
+            position: [100.0, 100.0],
+            dimension: [100.0, 100.0],
             value,
             fore,
-            show_overlay: false
+            show_overlay: false,
         })
     }
 }
@@ -151,7 +149,7 @@ impl<S: GlobalState> Layout<S> for SyncTest<S> {
         2
     }
 
-    fn calculate_size(&mut self, requested_size: Dimensions, env: &Environment<S>) -> Dimensions {
+    fn calculate_size(&mut self, requested_size: Dimensions, env: &mut Environment<GS>) -> Dimensions {
         self.dimension = self.child.calculate_size(requested_size, env);
         self.dimension
     }

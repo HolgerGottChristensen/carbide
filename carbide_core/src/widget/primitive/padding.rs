@@ -1,6 +1,6 @@
 use crate::prelude::*;
-use crate::widget::types::edge_insets::EdgeInsets;
 use crate::widget::ChildRender;
+use crate::widget::types::edge_insets::EdgeInsets;
 
 pub static SCALE: f64 = -1.0;
 
@@ -11,19 +11,19 @@ pub struct Padding<GS> where GS: GlobalState {
     child: Box<dyn Widget<GS>>,
     position: Point,
     dimension: Dimensions,
-    edge_insets: EdgeInsets
+    edge_insets: EdgeInsets,
 }
 
 impl<GS: GlobalState> WidgetExt<GS> for Padding<GS> {}
 
 impl<S: GlobalState> Padding<S> {
     pub fn init(edge_insets: EdgeInsets, child: Box<dyn Widget<S>>) -> Box<Self> {
-        Box::new(Padding{
+        Box::new(Padding {
             id: Default::default(),
             child,
             position: [0.0, 0.0],
             dimension: [0.0, 0.0],
-            edge_insets
+            edge_insets,
         })
     }
 }
@@ -83,13 +83,13 @@ impl<S: GlobalState> CommonWidget<S> for Padding<S> {
     }
 }
 
-impl<S: GlobalState> Layout<S> for Padding<S> {
+impl<GS: GlobalState> Layout<GS> for Padding<GS> {
     fn flexibility(&self) -> u32 {
         9
     }
 
-    fn calculate_size(&mut self, dimension: Dimensions, env: &Environment<S>) -> Dimensions {
-        let dimensions = [dimension[0] - self.edge_insets.left - self.edge_insets.right, dimension[1] - self.edge_insets.top - self.edge_insets.bottom];
+    fn calculate_size(&mut self, requested_size: Dimensions, env: &mut Environment<GS>) -> Dimensions {
+        let dimensions = [requested_size[0] - self.edge_insets.left - self.edge_insets.right, requested_size[1] - self.edge_insets.top - self.edge_insets.bottom];
 
         let child_dimensions = self.child.calculate_size(dimensions, env);
 

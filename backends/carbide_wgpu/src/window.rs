@@ -18,8 +18,7 @@ use carbide_core::mesh::vertex::Vertex;
 use carbide_core::prelude::EnvironmentColor;
 use carbide_core::prelude::Rectangle;
 use carbide_core::state::global_state::GlobalState;
-use carbide_core::text::font;
-use carbide_core::text::font::Error;
+use carbide_core::text::FontId;
 use carbide_core::widget::OverlaidLayer;
 use carbide_core::widget::primitive::Widget;
 pub use carbide_core::window::TWindow;
@@ -48,19 +47,18 @@ pub struct Window<T: GlobalState> {
     texture_bind_group_layout: BindGroupLayout,
     state: T,
     inner_window: winit::window::Window,
-    event_loop: Option<EventLoop<()>>
+    event_loop: Option<EventLoop<()>>,
 }
 
 impl<T: GlobalState> carbide_core::window::TWindow<T> for Window<T> {
-
-    fn add_font(&mut self, path: &str) -> Result<font::Id, Error> {
+    fn add_font(&mut self, path: &str) -> FontId {
         let assets = find_folder::Search::KidsThenParents(3, 5).for_folder("assets").unwrap();
         let font_path = assets.join(path);
 
         self.ui.environment.insert_font_from_file(font_path)
     }
 
-    fn add_image(&mut self, path: &str) -> Result<Id, Error> {
+    fn add_image(&mut self, path: &str) -> Id {
         let assets = find_folder::Search::KidsThenParents(3, 5)
             .for_folder("assets")
             .unwrap();
@@ -72,14 +70,14 @@ impl<T: GlobalState> carbide_core::window::TWindow<T> for Window<T> {
 
         self.ui.environment.insert_image(id, information);
 
-        Ok(id)
+        id
     }
 
     fn set_widgets(&mut self, w: Box<dyn Widget<T>>) {
         self.ui.widgets = Rectangle::initialize(vec![
-            OverlaidLayer::new (
+            OverlaidLayer::new(
                 "controls_popup_layer",
-                w
+                w,
             )
         ])
             .fill(EnvironmentColor::SystemBackground);
@@ -87,7 +85,6 @@ impl<T: GlobalState> carbide_core::window::TWindow<T> for Window<T> {
 }
 
 impl<T: GlobalState> Window<T> {
-
     pub fn path_to_assets(path: &str) -> PathBuf {
         let assets = find_folder::Search::KidsThenParents(3, 5)
             .for_folder("assets")
@@ -96,7 +93,6 @@ impl<T: GlobalState> Window<T> {
     }
 
     pub fn new(title: String, width: u32, height: u32, icon: Option<PathBuf>, state: T) -> Self {
-
         let event_loop = EventLoop::new();
 
         let loaded_icon = if let Some(path) = icon {
@@ -113,7 +109,7 @@ impl<T: GlobalState> Window<T> {
         };
 
         let inner_window = WindowBuilder::new()
-            .with_inner_size(Size::Physical(PhysicalSize{ width, height }))
+            .with_inner_size(Size::Physical(PhysicalSize { width, height }))
             .with_title(title)
             .with_window_icon(loaded_icon)
             .build(&event_loop)
@@ -126,7 +122,7 @@ impl<T: GlobalState> Window<T> {
 
             let position = PhysicalPosition::new(
                 size.width / 2 - outer_window_size.width / 2,
-                size.height / 2 - outer_window_size.height / 2
+                size.height / 2 - outer_window_size.height / 2,
             );
 
             inner_window.set_outer_position(position);
@@ -303,7 +299,7 @@ impl<T: GlobalState> Window<T> {
             texture_bind_group_layout,
             state,
             inner_window,
-            event_loop: Some(event_loop)
+            event_loop: Some(event_loop),
         }
     }
 
@@ -323,7 +319,7 @@ impl<T: GlobalState> Window<T> {
             Some(input) => {
                 self.ui.handle_event(input, &mut self.state);
                 false
-            },
+            }
         }
     }
 
@@ -342,9 +338,7 @@ impl<T: GlobalState> Window<T> {
 
         let primitives = self.ui.draw(&self.state);
 
-        let scale_factor = self.ui.environment.get_scale_factor();
-
-        let fill = self.mesh.fill(Rect::new([0.0, 0.0], [self.size.width as f64, self.size.height as f64]), scale_factor, &self.image_map, primitives).unwrap();
+        let fill = self.mesh.fill(Rect::new([0.0, 0.0], [self.size.width as f64, self.size.height as f64]), &self.ui.environment, &self.image_map, primitives).unwrap();
 
         let glyph_cache_cmd = match fill.glyph_cache_requires_upload {
             false => None,
@@ -392,7 +386,7 @@ impl<T: GlobalState> Window<T> {
                                 a: 1.0,
                             }),
                             store: true,
-                        }
+                        },
                     }
                 ],
                 depth_stencil_attachment: None,
@@ -425,7 +419,6 @@ impl<T: GlobalState> Window<T> {
         self.queue.submit(std::iter::once(encoder.finish()));
 
         Ok(())
-
     }
 
     pub fn run_event_loop(mut self) {
@@ -440,59 +433,58 @@ impl<T: GlobalState> Window<T> {
         event_loop
             .expect("The eventloop should be retrieved")
             .run(move |event, _, control_flow| {
-            match event {
-                Event::WindowEvent {
-                    ref event,
-                    window_id,
-                } if window_id == self.inner_window.id() => if !self.input(event) { // UPDATED!
-                    match event {
-
-                        WindowEvent::CloseRequested => *control_flow = ControlFlow::Exit,
-                        WindowEvent::KeyboardInput {
-                            input,
-                            ..
-                        } => {
-                            match input {
-                                KeyboardInput {
-                                    state: ElementState::Pressed,
-                                    virtual_keycode: Some(VirtualKeyCode::Escape),
-                                    ..
-                                } => *control_flow = ControlFlow::Exit,
-                                _ => {}
+                match event {
+                    Event::WindowEvent {
+                        ref event,
+                        window_id,
+                    } if window_id == self.inner_window.id() => if !self.input(event) { // UPDATED!
+                        match event {
+                            WindowEvent::CloseRequested => *control_flow = ControlFlow::Exit,
+                            WindowEvent::KeyboardInput {
+                                input,
+                                ..
+                            } => {
+                                match input {
+                                    KeyboardInput {
+                                        state: ElementState::Pressed,
+                                        virtual_keycode: Some(VirtualKeyCode::Escape),
+                                        ..
+                                    } => *control_flow = ControlFlow::Exit,
+                                    _ => {}
+                                }
                             }
+                            WindowEvent::Resized(physical_size) => {
+                                self.resize(*physical_size);
+                                self.inner_window.request_redraw();
+                            }
+                            WindowEvent::ScaleFactorChanged { new_inner_size, scale_factor } => {
+                                self.resize(**new_inner_size);
+                                self.ui.set_scale_factor(*scale_factor);
+                                self.inner_window.request_redraw();
+                            }
+                            _ => {}
                         }
-                        WindowEvent::Resized(physical_size) => {
-                            self.resize(*physical_size);
-                            self.inner_window.request_redraw();
-                        }
-                        WindowEvent::ScaleFactorChanged { new_inner_size, scale_factor } => {
-                            self.resize(**new_inner_size);
-                            self.ui.set_scale_factor(*scale_factor);
-                            self.inner_window.request_redraw();
-                        }
-                        _ => {}
                     }
-                }
-                Event::RedrawRequested(_) => {
-                    self.update();
-                    match self.render() {
-                        Ok(_) => {}
-                        // Recreate the swap_chain if lost
-                        Err(wgpu::SwapChainError::Lost) => self.resize(self.size),
-                        // The system is out of memory, we should probably quit
-                        Err(wgpu::SwapChainError::OutOfMemory) => *control_flow = ControlFlow::Exit,
-                        // All other errors (Outdated, Timeout) should be resolved by the next frame
-                        Err(e) => eprintln!("{:?}", e),
+                    Event::RedrawRequested(_) => {
+                        self.update();
+                        match self.render() {
+                            Ok(_) => {}
+                            // Recreate the swap_chain if lost
+                            Err(wgpu::SwapChainError::Lost) => self.resize(self.size),
+                            // The system is out of memory, we should probably quit
+                            Err(wgpu::SwapChainError::OutOfMemory) => *control_flow = ControlFlow::Exit,
+                            // All other errors (Outdated, Timeout) should be resolved by the next frame
+                            Err(e) => eprintln!("{:?}", e),
+                        }
                     }
+                    Event::MainEventsCleared => {
+                        // RedrawRequested will only trigger once, unless we manually
+                        // request it.
+                        self.inner_window.request_redraw();
+                    }
+                    _ => {}
                 }
-                Event::MainEventsCleared => {
-                    // RedrawRequested will only trigger once, unless we manually
-                    // request it.
-                    self.inner_window.request_redraw();
-                }
-                _ => {}
-            }
-        });
+            });
     }
 }
 

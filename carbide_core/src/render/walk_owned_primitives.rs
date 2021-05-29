@@ -1,4 +1,4 @@
-use crate::{Point, text};
+use crate::{Point, text_old};
 use crate::draw::shape::triangle::Triangle;
 use crate::render::owned_primitive::OwnedPrimitive;
 use crate::render::owned_primitive_kind::OwnedPrimitiveKind;
@@ -14,13 +14,12 @@ pub struct WalkOwnedPrimitives<'a> {
     pub(crate) primitives: std::slice::Iter<'a, OwnedPrimitive>,
     pub(crate) triangles_single_color: &'a [Triangle<Point>],
     pub(crate) triangles_multi_color: &'a [Triangle<ColoredPoint>],
-    pub(crate) line_infos: &'a [text::line::Info],
+    pub(crate) line_infos: &'a [text_old::line::Info],
     pub(crate) texts_str: &'a str,
-    pub(crate) positioned_glyphs: Vec<text::PositionedGlyph>,
+    pub(crate) positioned_glyphs: Vec<text_old::PositionedGlyph>,
 }
 
 impl<'a> WalkOwnedPrimitives<'a> {
-
     /// Yield the next `Primitive` in order or rendering depth, bottom to top.
     pub fn next(&mut self) -> Option<Primitive> {
         let WalkOwnedPrimitives {
@@ -39,7 +38,6 @@ impl<'a> WalkOwnedPrimitives<'a> {
             };
 
             match *kind {
-
                 OwnedPrimitiveKind::Rectangle { color } => {
                     let kind = PrimitiveKind::Rectangle { color: color };
                     new(kind)
@@ -64,7 +62,6 @@ impl<'a> WalkOwnedPrimitives<'a> {
                     let OwnedText {
                         ref str_byte_range,
                         ref line_infos_range,
-                        ref font,
                         font_size,
                         rect,
                         justify,
@@ -80,7 +77,7 @@ impl<'a> WalkOwnedPrimitives<'a> {
                         positioned_glyphs: (*positioned_glyphs).clone(),
                         text: text_str.clone().parse().unwrap(),
                         line_infos: line_infos.to_vec(),
-                        font: font.clone(),
+                        font_id,
                         font_size,
                         rect,
                         justify,
@@ -107,7 +104,6 @@ impl<'a> WalkOwnedPrimitives<'a> {
             }
         })
     }
-
 }
 
 

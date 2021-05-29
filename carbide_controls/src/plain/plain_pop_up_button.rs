@@ -18,7 +18,7 @@ pub struct PlainPopUpButton<T, GS> where GS: GlobalState, T: StateContract + 'st
     id: Id,
     #[state] focus: Box<dyn State<Focus, GS>>,
     child: Box<dyn Widget<GS>>,
-    popup_display_item: Option<fn (selected_item: Box<dyn State<T, GS>>, selected_index: Box<dyn State<usize, GS>>, index: Box<dyn State<usize, GS>>, hovered: Box<dyn State<bool, GS>>) -> Box<dyn Widget<GS>>>,
+    popup_display_item: Option<fn(selected_item: Box<dyn State<T, GS>>, selected_index: Box<dyn State<usize, GS>>, index: Box<dyn State<usize, GS>>, hovered: Box<dyn State<bool, GS>>) -> Box<dyn Widget<GS>>>,
     position: Point,
     dimension: Dimensions,
     popup_id: Id,
@@ -30,9 +30,7 @@ pub struct PlainPopUpButton<T, GS> where GS: GlobalState, T: StateContract + 'st
 }
 
 impl<T: StateContract + 'static, GS: GlobalState> PlainPopUpButton<T, GS> {
-
     pub fn new(model: Box<dyn State<Vec<T>, GS>>, selected_state: Box<dyn State<usize, GS>>) -> Box<Self> {
-
         let opened = CommonState::new_local_with_key(&false);
 
         let start_item = model.get_latest_value().first().unwrap();
@@ -82,7 +80,6 @@ impl<T: StateContract + 'static, GS: GlobalState> PlainPopUpButton<T, GS> {
                 }
                 _ => ()
             }
-
         }
     }
 
@@ -104,7 +101,6 @@ impl<T: StateContract + 'static, GS: GlobalState> PlainPopUpButton<T, GS> {
     }
 
     pub fn display_item(mut self, item: fn(selected_item: Box<dyn State<T, GS>>, focus: Box<dyn State<Focus, GS>>) -> Box<dyn Widget<GS>>) -> Box<Self> {
-
         let display_item = item(self.selected_item.clone(), self.focus.clone());
 
         let child = PlainButton::<(bool, T), GS>::new(display_item)
@@ -119,7 +115,7 @@ impl<T: StateContract + 'static, GS: GlobalState> PlainPopUpButton<T, GS> {
         Box::new(self)
     }
 
-    pub fn display_item_popup(mut self, item: fn (item: Box<dyn State<T, GS>>, selected_index: Box<dyn State<usize, GS>>, index: Box<dyn State<usize, GS>>, hovered: Box<dyn State<bool, GS>>) -> Box<dyn Widget<GS>>) -> Box<Self> {
+    pub fn display_item_popup(mut self, item: fn(item: Box<dyn State<T, GS>>, selected_index: Box<dyn State<usize, GS>>, index: Box<dyn State<usize, GS>>, hovered: Box<dyn State<bool, GS>>) -> Box<dyn Widget<GS>>) -> Box<Self> {
         self.popup_display_item = Some(item);
 
         Box::new(self)
@@ -243,7 +239,7 @@ impl<T: StateContract + 'static, GS: GlobalState> Layout<GS> for PlainPopUpButto
         10
     }
 
-    fn calculate_size(&mut self, requested_size: Dimensions, env: &Environment<GS>) -> Dimensions {
+    fn calculate_size(&mut self, requested_size: Dimensions, env: &mut Environment<GS>) -> Dimensions {
         if let Some(child) = self.get_children_mut().next() {
             child.calculate_size(requested_size, env);
         }

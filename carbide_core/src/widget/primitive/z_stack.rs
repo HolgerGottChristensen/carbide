@@ -1,5 +1,6 @@
-use crate::prelude::*;
 use std::ops::Deref;
+
+use crate::prelude::*;
 use crate::widget::ChildRender;
 
 /// A basic, non-interactive rectangle shape widget.
@@ -19,9 +20,9 @@ impl<S: GlobalState> ZStack<S> {
         Box::new(ZStack {
             id: Uuid::new_v4(),
             children,
-            position: [0.0,0.0],
-            dimension: [100.0,100.0],
-            alignment: BasicLayouter::Center
+            position: [0.0, 0.0],
+            dimension: [100.0, 100.0],
+            alignment: BasicLayouter::Center,
         })
     }
 
@@ -31,15 +32,14 @@ impl<S: GlobalState> ZStack<S> {
     }
 }
 
-impl<S: GlobalState> Layout<S> for ZStack<S> {
+impl<GS: GlobalState> Layout<GS> for ZStack<GS> {
     fn flexibility(&self) -> u32 {
         1
     }
 
-    fn calculate_size(&mut self, requested_size: Dimensions, env: &Environment<S>) -> Dimensions {
-
-        let mut children_flexibilty: Vec<(u32, &mut dyn Widget<S>)> = self.get_children_mut().map(|child| (child.flexibility(), child)).collect();
-        children_flexibilty.sort_by(|(a,_), (b,_)| a.cmp(&b));
+    fn calculate_size(&mut self, requested_size: Dimensions, env: &mut Environment<GS>) -> Dimensions {
+        let mut children_flexibilty: Vec<(u32, &mut dyn Widget<GS>)> = self.get_children_mut().map(|child| (child.flexibility(), child)).collect();
+        children_flexibilty.sort_by(|(a, _), (b, _)| a.cmp(&b));
         children_flexibilty.reverse();
 
         let mut max_width = 0.0;
@@ -55,12 +55,10 @@ impl<S: GlobalState> Layout<S> for ZStack<S> {
             if chosen_size[1] > max_height {
                 max_height = chosen_size[1];
             }
-
         }
 
         self.dimension = [max_width, max_height];
         self.dimension
-
     }
 
     fn position_children(&mut self) {

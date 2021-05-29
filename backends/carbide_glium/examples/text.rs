@@ -5,14 +5,14 @@ extern crate carbide_winit;
 extern crate find_folder;
 extern crate glium;
 
-mod support;
-
 use glium::Surface;
 
+mod support;
+
 struct Fonts {
-    regular: carbide_core::text::font::Id,
-    italic: carbide_core::text::font::Id,
-    bold: carbide_core::text::font::Id,
+    regular: carbide_core::text_old::font::Id,
+    italic: carbide_core::text_old::font::Id,
+    bold: carbide_core::text_old::font::Id,
 }
 
 fn main() {
@@ -86,10 +86,10 @@ fn main() {
                     glium::glutin::WindowEvent::CloseRequested
                     | glium::glutin::WindowEvent::KeyboardInput {
                         input:
-                            glium::glutin::KeyboardInput {
-                                virtual_keycode: Some(glium::glutin::VirtualKeyCode::Escape),
-                                ..
-                            },
+                        glium::glutin::KeyboardInput {
+                            virtual_keycode: Some(glium::glutin::VirtualKeyCode::Escape),
+                            ..
+                        },
                         ..
                     } => break 'main,
                     _ => (),

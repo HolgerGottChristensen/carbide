@@ -61,7 +61,7 @@ impl<GS: GlobalState> Layout<GS> for Ellipse<GS> {
         0
     }
 
-    fn calculate_size(&mut self, requested_size: Dimensions, _: &Environment<GS>) -> Dimensions {
+    fn calculate_size(&mut self, requested_size: Dimensions, env: &mut Environment<GS>) -> Dimensions {
         self.dimension = requested_size;
 
         requested_size
@@ -127,7 +127,7 @@ impl<GS: GlobalState> Render<GS> for Ellipse<GS> {
                 center,
                 radii,
                 Angle::degrees(0.0),
-                Winding::Positive
+                Winding::Positive,
             );
         });
 

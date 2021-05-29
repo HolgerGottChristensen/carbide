@@ -1,7 +1,6 @@
-use crate::prelude::*;
-use crate::event_handler::{MouseEvent, KeyboardEvent, WidgetEvent};
 use crate::event::event::Event;
-
+use crate::event_handler::{KeyboardEvent, MouseEvent, WidgetEvent};
+use crate::prelude::*;
 
 #[derive(Debug, Clone, Widget)]
 #[state_sync(sync_state, update_all_widget_state, update_local_widget_state)]
@@ -18,7 +17,6 @@ pub struct OverlaidLayer<GS> where GS: GlobalState {
 }
 
 impl<GS: GlobalState> OverlaidLayer<GS> {
-
     fn update_all_widget_state(&mut self, env: &mut Environment<GS>, global_state: &GS) {
         if let Some(overlay) = &mut self.overlay {
             overlay.update_all_widget_state(env, global_state);
@@ -42,20 +40,19 @@ impl<GS: GlobalState> OverlaidLayer<GS> {
 
 
         if let Some(overlay) = &mut self.overlay {
-
             overlay.process_mouse_event(event, &consumed, env, global_state);
-            if *consumed { return () }
+            if *consumed { return (); }
 
             if !self.steal_events_when_some {
                 for child in self.get_proxied_children() {
                     child.process_mouse_event(event, &consumed, env, global_state);
-                    if *consumed { return () }
+                    if *consumed { return (); }
                 }
             }
         } else {
             for child in self.get_proxied_children() {
                 child.process_mouse_event(event, &consumed, env, global_state);
-                if *consumed { return () }
+                if *consumed { return (); }
             }
         }
 
@@ -70,7 +67,6 @@ impl<GS: GlobalState> OverlaidLayer<GS> {
         self.insert_local_state(env);
 
         if let Some(overlay) = &mut self.overlay {
-
             overlay.process_keyboard_event(event, env, global_state);
 
             if !self.steal_events_when_some {
@@ -93,7 +89,6 @@ impl<GS: GlobalState> OverlaidLayer<GS> {
         self.insert_local_state(env);
 
         if let Some(overlay) = &mut self.overlay {
-
             overlay.process_other_event(event, env, global_state);
 
             if !self.steal_events_when_some {
@@ -139,13 +134,11 @@ impl<GS: GlobalState> OverlaidLayer<GS> {
                     if let Some(o) = &mut self.overlay {
                         o.set_position(overlay.get_position());
                     }
-
                 }
             } else {
                 self.current_overlay_id = Some(overlay.get_id());
                 self.overlay = Some(overlay);
             }
-
         } else {
             self.current_overlay_id = None;
             self.overlay = None;
@@ -154,8 +147,6 @@ impl<GS: GlobalState> OverlaidLayer<GS> {
         if let Some(overlay) = &mut self.overlay {
             overlay.sync_state(env, global_state);
         }
-
-
 
 
         self.update_local_widget_state(env);
@@ -168,20 +159,20 @@ impl<GS: GlobalState> OverlaidLayer<GS> {
             overlay: None,
             current_overlay_id: None,
             overlay_id: overlay_id.to_string(),
-            position: [0.0,0.0],
-            dimension: [0.0,0.0],
+            position: [0.0, 0.0],
+            dimension: [0.0, 0.0],
             steal_events_when_some: true,
         })
     }
 }
 
 
-impl<S: GlobalState> Layout<S> for OverlaidLayer<S> {
+impl<GS: GlobalState> Layout<GS> for OverlaidLayer<GS> {
     fn flexibility(&self) -> u32 {
         0
     }
 
-    fn calculate_size(&mut self, requested_size: Dimensions, env: &Environment<S>) -> Dimensions {
+    fn calculate_size(&mut self, requested_size: Dimensions, env: &mut Environment<GS>) -> Dimensions {
         self.dimension = self.child.calculate_size(requested_size, env);
 
         if let Some(overlay) = &mut self.overlay {
@@ -259,7 +250,6 @@ impl<S: GlobalState> CommonWidget<S> for OverlaidLayer<S> {
 }
 
 impl<GS: GlobalState> Render<GS> for OverlaidLayer<GS> {
-
     fn get_primitives(&mut self, env: &Environment<GS>, global_state: &GS) -> Vec<Primitive> {
         let mut prims = vec![];
         prims.extend(Rectangle::<GS>::debug_outline(Rect::new(self.position, self.dimension), 1.0));
@@ -276,9 +266,6 @@ impl<GS: GlobalState> Render<GS> for OverlaidLayer<GS> {
         return prims;
     }
 }
-
-
-
 
 
 impl<GS: GlobalState> WidgetExt<GS> for OverlaidLayer<GS> {}

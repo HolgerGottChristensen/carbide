@@ -1,10 +1,10 @@
 //! A simple, non-interactive widget for drawing an `Image`.
 
-use crate::prelude::*;
 use crate::image_map;
-use crate::widget::types::scale_mode::ScaleMode;
+use crate::prelude::*;
 use crate::render::primitive_kind::PrimitiveKind;
 use crate::render::util::new_primitive;
+use crate::widget::types::scale_mode::ScaleMode;
 
 /// A primitive and basic widget for drawing an `Image`.
 #[derive(Debug, Clone, Widget)]
@@ -20,26 +20,25 @@ pub struct Image {
     dimension: Dimensions,
     scale_mode: ScaleMode,
     resizeable: bool,
-    requested_size: Dimensions
+    requested_size: Dimensions,
 }
 
 impl<GS: GlobalState> WidgetExt<GS> for Image {}
 
-impl<S: GlobalState> Layout<S> for Image {
+impl<GS: GlobalState> Layout<GS> for Image {
     fn flexibility(&self) -> u32 {
         10
     }
 
-    fn calculate_size(&mut self, requested_size: Dimensions, env: &Environment<S>) -> Dimensions {
+    fn calculate_size(&mut self, requested_size: Dimensions, env: &mut Environment<GS>) -> Dimensions {
         self.requested_size = requested_size;
 
         let image_information = env.get_image_information(&self.image_id).unwrap();
 
         if !self.resizeable {
-
             self.dimension = [image_information.width as f64, image_information.height as f64];
         } else {
-            let width_factor = requested_size[0] / (image_information.width as f64) ;
+            let width_factor = requested_size[0] / (image_information.width as f64);
             let height_factor = requested_size[1] / (image_information.height as f64);
 
             match self.scale_mode {
@@ -60,16 +59,12 @@ impl<S: GlobalState> Layout<S> for Image {
         }
 
         self.dimension
-
     }
 
-    fn position_children(&mut self) {
-
-    }
+    fn position_children(&mut self) {}
 }
 
 impl<GS: GlobalState> Render<GS> for Image {
-
     fn get_primitives(&mut self, _: &Environment<GS>, _: &GS) -> Vec<Primitive> {
         let kind = PrimitiveKind::Image {
             color: None,
@@ -151,7 +146,6 @@ pub struct Style {
 
 
 impl Image {
-
     /// Construct a new `Image`.
     ///
     /// Note that the `Image` widget does not require borrowing or owning any image data directly.
@@ -186,7 +180,7 @@ impl Image {
             dimension: [0.0, 0.0],
             scale_mode: ScaleMode::Fit,
             resizeable: false,
-            requested_size: [0.0, 0.0]
+            requested_size: [0.0, 0.0],
         }
     }
 
@@ -200,7 +194,7 @@ impl Image {
             dimension: [0.0, 0.0],
             scale_mode: ScaleMode::Fit,
             resizeable: false,
-            requested_size: [0.0, 0.0]
+            requested_size: [0.0, 0.0],
         })
     }
 
@@ -237,7 +231,6 @@ impl Image {
     /*builder_methods!{
         pub color { style.maybe_color = Some(Option<Color>) }
     }*/
-
 }
 
 /*impl<S> OldWidget<S> for Image<S> {

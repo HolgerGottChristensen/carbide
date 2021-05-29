@@ -6,13 +6,13 @@ use fxhash::{FxBuildHasher, FxHashMap};
 use serde::de::DeserializeOwned;
 use serde::Serialize;
 
-use crate::{Color, from_bin, text, to_bin};
+use crate::{Color, from_bin, to_bin};
 use crate::focus::Refocus;
 use crate::prelude::EnvironmentVariable;
 use crate::state::global_state::GlobalState;
 use crate::state::state::State;
 use crate::state::state_key::StateKey;
-use crate::text::font::{Error, Id};
+use crate::text::{Font, FontId};
 use crate::widget::Dimensions;
 use crate::widget::primitive::Widget;
 use crate::widget::types::image_information::ImageInformation;
@@ -26,7 +26,7 @@ pub struct Environment<GS> where GS: GlobalState {
 
     /// Keep the loaded fonts in a map from font id to font. This is used when
     /// calculating the size of rendered strings.
-    fonts: text::font::Map,
+    fonts: Vec<Font>,
 
     /// This map contains the widths and heights for loaded images.
     /// This is used to make the static size of the Image widget its
@@ -68,7 +68,7 @@ impl<GS: GlobalState> Environment<GS> {
     pub fn new(env_stack: Vec<EnvironmentVariable>, pixel_dimensions: Dimensions, scale_factor: f64) -> Self {
         Environment {
             stack: env_stack,
-            fonts: text::font::Map::new(),
+            fonts: vec![],
             images_information: HashMap::with_hasher(FxBuildHasher::default()),
             overlay_map: HashMap::with_hasher(FxBuildHasher::default()),
             local_state: HashMap::with_hasher(FxBuildHasher::default()),
@@ -170,24 +170,28 @@ impl<GS: GlobalState> Environment<GS> {
         self.local_state.insert(key.clone(), to_bin(value).unwrap());
     }
 
-    pub fn get_fonts_map(&self) -> &text::font::Map {
-        &self.fonts
-    }
-
-    pub fn insert_font_from_file<P>(&mut self, path: P) -> Result<Id, Error>
+    pub fn insert_font_from_file<P>(&mut self, path: P) -> FontId
         where P: AsRef<std::path::Path>,
     {
-        self.fonts.insert_from_file(path)
-
+        let font = Font::from_file(path).unwrap();
+        let font_id = self.fonts.len();
+        self.fonts.push(font);
+        font_id
     }
 
-    pub fn get_font(&self, id: Id) -> &rusttype::Font<'static> {
-        self.fonts.get(id).expect("No font was found with the id")
+    pub fn get_font(&self, id: FontId) -> &Font {
+        &self.fonts[id]
+    }
+
+    pub fn get_font_mut(&mut self, id: FontId) -> &mut Font {
+        &mut self.fonts[id]
     }
 
     /// Adds the given `rusttype::Font` to the `Map` and returns a unique `Id` for it.
-    pub fn insert_font(&mut self, font: rusttype::Font<'static>) -> Id {
-        self.fonts.insert(font)
+    pub fn insert_font(&mut self, font: Font) -> FontId {
+        let font_id = self.fonts.len();
+        self.fonts.push(font);
+        font_id
     }
 
 

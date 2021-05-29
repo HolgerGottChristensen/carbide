@@ -1,4 +1,4 @@
-use crate::{Point, text};
+use crate::{Point, text_old};
 use crate::draw::shape::triangle::Triangle;
 use crate::render::owned_primitive::OwnedPrimitive;
 use crate::render::walk_owned_primitives::WalkOwnedPrimitives;
@@ -15,13 +15,12 @@ pub struct OwnedPrimitives {
     pub(crate) triangles_single_color: Vec<Triangle<Point>>,
     pub(crate) triangles_multi_color: Vec<Triangle<ColoredPoint>>,
     pub(crate) max_glyphs: usize,
-    pub(crate) line_infos: Vec<text::line::Info>,
+    pub(crate) line_infos: Vec<text_old::line::Info>,
     pub(crate) texts_string: String,
 }
 
 
 impl OwnedPrimitives {
-
     /// Produce an iterator-like type for yielding `Primitive`s.
     pub fn walk(&self) -> WalkOwnedPrimitives {
         let OwnedPrimitives {
@@ -41,6 +40,5 @@ impl OwnedPrimitives {
             positioned_glyphs: Vec::with_capacity(max_glyphs),
         }
     }
-
 }
 

@@ -2,15 +2,16 @@
 
 use std::collections::HashMap;
 use std::fmt::Debug;
+use std::hash::Hash;
 
+use fxhash::{FxBuildHasher, FxHashMap};
+use serde::de::DeserializeOwned;
+use serde::Serialize;
+
+use crate::event_handler::{KeyboardEvent, MouseEvent};
 use crate::prelude::*;
 use crate::state::state::CommonState;
 use crate::widget::render::ChildRender;
-use std::hash::Hash;
-use serde::Serialize;
-use serde::de::DeserializeOwned;
-use fxhash::{FxHashMap, FxBuildHasher};
-use crate::event_handler::{MouseEvent, KeyboardEvent};
 
 pub trait ForEachDelegate: Clone + PartialEq + Eq + Hash + Debug + Serialize + DeserializeOwned + Default {}
 
@@ -20,12 +21,15 @@ impl<T> ForEachDelegate for T where T: Clone + PartialEq + Eq + Hash + Debug + S
 #[state_sync(sync_state)]
 #[event(process_mouse_event, process_keyboard_event)]
 pub struct ForEach<GS, T> where GS: GlobalState, T: ForEachDelegate + 'static {
-    id: Uuid, // --
+    id: Uuid,
+    // --
     children_map: FxHashMap<T, Box<dyn Widget<GS>>>,
     delegate: Box<dyn Widget<GS>>,
     #[state] ids: TState<Vec<T>, GS>,
-    position: Point, // --
-    dimension: Dimensions, // --
+    position: Point,
+    // --
+    dimension: Dimensions,
+    // --
     id_state: Box<dyn State<T, GS>>,
     index_state: Box<dyn State<usize, GS>>,
     #[state] index_offset: Box<dyn State<usize, GS>>,
@@ -47,8 +51,8 @@ impl<GS: GlobalState, T: ForEachDelegate + 'static> ForEach<GS, T> {
             children_map: map,
             delegate,
             ids,
-            position: [100.0,100.0],
-            dimension: [100.0,100.0],
+            position: [100.0, 100.0],
+            dimension: [100.0, 100.0],
             id_state: Box::new(CommonState::new_local_with_key(&T::default())),
             index_state: Box::new(CommonState::new_local_with_key(&0)),
             index_offset: Box::new(CommonState::new_local_with_key(&0)),
@@ -82,7 +86,6 @@ impl<GS: GlobalState, T: ForEachDelegate + 'static> ForEach<GS, T> {
         let index_key = self.index_state.get_key().unwrap().clone();
 
         for (i, child) in self.get_proxied_children().enumerate() {
-
             env.insert_local_state_from_key_value(&id_key, &ids.get_value(env, global_state)[i]);
             env.insert_local_state_from_key_value(&index_key, &(i + initial_offset));
 
@@ -104,7 +107,6 @@ impl<GS: GlobalState, T: ForEachDelegate + 'static> ForEach<GS, T> {
         let index_key = self.index_state.get_key().unwrap().clone();
 
         for (i, child) in self.get_proxied_children().enumerate() {
-
             env.insert_local_state_from_key_value(&id_key, &ids.get_value(env, global_state)[i]);
             env.insert_local_state_from_key_value(&index_key, &(i + initial_offset));
 
@@ -127,7 +129,6 @@ impl<GS: GlobalState, T: ForEachDelegate + 'static> ForEach<GS, T> {
         let index_key = self.index_state.get_key().unwrap().clone();
 
         for (i, child) in self.get_proxied_children().enumerate() {
-
             env.insert_local_state_from_key_value(&id_key, &ids.get_value(env, global_state)[i]);
             env.insert_local_state_from_key_value(&index_key, &(i + initial_offset));
 
@@ -172,13 +173,12 @@ impl<GS: GlobalState, T: ForEachDelegate> CommonWidget<GS> for ForEach<GS, T> {
 
         for id in self.ids.get_latest_value().iter().rev() {
             let contains = self.children_map.contains_key(id).clone();
-            if !contains{
+            if !contains {
                 self.children_map.insert(id.clone(), Clone::clone(&self.delegate));
             }
         }
 
         for id in self.ids.get_latest_value().iter().rev() {
-
             let item: &mut Box<dyn Widget<GS>> = unsafe {
                 let p: *mut Box<dyn Widget<GS>> = self.children_map.get_mut(id).unwrap();
                 p.as_mut().unwrap()
@@ -199,7 +199,7 @@ impl<GS: GlobalState, T: ForEachDelegate> CommonWidget<GS> for ForEach<GS, T> {
 
         for id in self.ids.get_latest_value().iter().rev() {
             let contains = self.children_map.contains_key(id).clone();
-            if !contains{
+            if !contains {
                 self.children_map.insert(id.clone(), Clone::clone(&self.delegate));
             }
         }
@@ -225,7 +225,7 @@ impl<GS: GlobalState, T: ForEachDelegate> CommonWidget<GS> for ForEach<GS, T> {
 
         for id in self.ids.get_latest_value().iter() {
             let contains = self.children_map.contains_key(id).clone();
-            if !contains{
+            if !contains {
                 self.children_map.insert(id.clone(), Clone::clone(&self.delegate));
             }
         }
@@ -263,14 +263,14 @@ impl<GS: GlobalState, T: ForEachDelegate> CommonWidget<GS> for ForEach<GS, T> {
     }
 }
 
-impl<S: GlobalState, T: ForEachDelegate> ChildRender for ForEach<S, T> {}
+impl<GS: GlobalState, T: ForEachDelegate> ChildRender for ForEach<GS, T> {}
 
-impl<S: GlobalState, T: ForEachDelegate> Layout<S> for ForEach<S, T> {
+impl<GS: GlobalState, T: ForEachDelegate> Layout<GS> for ForEach<GS, T> {
     fn flexibility(&self) -> u32 {
         unimplemented!()
     }
 
-    fn calculate_size(&mut self, _requested_size: Dimensions, _env: &Environment<S>) -> Dimensions {
+    fn calculate_size(&mut self, requested_size: Dimensions, env: &mut Environment<GS>) -> Dimensions {
         unimplemented!()
     }
 

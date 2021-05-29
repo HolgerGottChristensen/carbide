@@ -9,7 +9,7 @@ use glium::glutin::WindowBuilder;
 use glium::Surface;
 
 use carbide_core::{Colorable, Positionable, Ui, UiBuilder, UiCell, widget};
-use carbide_core::text::font::{Error, Id};
+use carbide_core::text_old::font::{Error, Id};
 use carbide_core::widget::primitive::Widget;
 use carbide_winit::WinitWindow;
 
@@ -63,7 +63,7 @@ impl<S: 'static + Clone> Window<S> {
             renderer,
             image_map,
             widgets: None,
-            state
+            state,
         }
     }
 
@@ -157,8 +157,6 @@ impl<S: 'static + Clone> Window<S> {
         }
     }
 }
-
-
 
 
 pub struct GliumDisplayWinitWrapper(pub glium::Display);

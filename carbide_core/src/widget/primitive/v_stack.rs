@@ -1,5 +1,5 @@
-use crate::prelude::*;
 use crate::layout::CrossAxisAlignment;
+use crate::prelude::*;
 use crate::widget::ChildRender;
 
 /// A basic, non-interactive rectangle shape widget.
@@ -10,7 +10,7 @@ pub struct VStack<GS> where GS: GlobalState {
     position: Point,
     dimension: Dimensions,
     spacing: Scalar,
-    cross_axis_alignment: CrossAxisAlignment
+    cross_axis_alignment: CrossAxisAlignment,
 }
 
 impl<GS: GlobalState> WidgetExt<GS> for VStack<GS> {}
@@ -20,14 +20,14 @@ impl<S: GlobalState> VStack<S> {
         Box::new(VStack {
             id: Uuid::new_v4(),
             children,
-            position: [0.0,0.0],
-            dimension: [100.0,100.0],
+            position: [0.0, 0.0],
+            dimension: [100.0, 100.0],
             spacing: 10.0,
-            cross_axis_alignment: CrossAxisAlignment::Center
+            cross_axis_alignment: CrossAxisAlignment::Center,
         })
     }
 
-    pub fn cross_axis_alignment(mut self, alignment: CrossAxisAlignment) -> Box<Self>{
+    pub fn cross_axis_alignment(mut self, alignment: CrossAxisAlignment) -> Box<Self> {
         self.cross_axis_alignment = alignment;
         Box::new(self)
     }
@@ -38,26 +38,26 @@ impl<S: GlobalState> VStack<S> {
     }
 }
 
-impl<S: GlobalState> Layout<S> for VStack<S> {
+impl<GS: GlobalState> Layout<GS> for VStack<GS> {
     fn flexibility(&self) -> u32 {
         1
     }
 
-    fn calculate_size(&mut self, requested_size: Dimensions, env: &Environment<S>) -> Dimensions {
+    fn calculate_size(&mut self, requested_size: Dimensions, env: &mut Environment<GS>) -> Dimensions {
         let mut number_of_children_that_needs_sizing = self.children.len() as f64;
 
         let non_spacers_vec: Vec<bool> = self.get_children().map(|n| n.get_flag() != Flags::SPACER).collect();
         let non_spacers_vec_length = non_spacers_vec.len();
 
         let number_of_spaces = non_spacers_vec.iter().enumerate().take(non_spacers_vec_length.max(1) - 1).filter(|(n, b)| {
-            **b && non_spacers_vec[n+1]
+            **b && non_spacers_vec[n + 1]
         }).count() as f64;
 
         let spacing_total = (number_of_spaces) * self.spacing;
         let mut size_for_children = [requested_size[0], requested_size[1] - spacing_total];
 
-        let mut children_flexibilty: Vec<(u32, &mut dyn Widget<S>)> = self.get_children_mut().map(|child| (child.flexibility(), child)).collect();
-        children_flexibilty.sort_by(|(a,_), (b,_)| a.cmp(&b));
+        let mut children_flexibilty: Vec<(u32, &mut dyn Widget<GS>)> = self.get_children_mut().map(|child| (child.flexibility(), child)).collect();
+        children_flexibilty.sort_by(|(a, _), (b, _)| a.cmp(&b));
         children_flexibilty.reverse();
 
         let mut max_width = 0.0;
@@ -82,7 +82,7 @@ impl<S: GlobalState> Layout<S> for VStack<S> {
         let rest_space = requested_size[1] - total_height - spacing_total;
 
         for spacer in self.get_children_mut().filter(|m| m.get_flag() == Flags::SPACER) {
-            let chosen_size = spacer.calculate_size([requested_size[0], rest_space/spacer_count], env);
+            let chosen_size = spacer.calculate_size([requested_size[0], rest_space / spacer_count], env);
 
             if chosen_size[0] > max_width {
                 max_width = chosen_size[0];
@@ -94,8 +94,6 @@ impl<S: GlobalState> Layout<S> for VStack<S> {
         self.dimension = [max_width, total_height + spacing_total];
 
         self.dimension
-
-
     }
 
     fn position_children(&mut self) {
@@ -109,14 +107,14 @@ impl<S: GlobalState> Layout<S> for VStack<S> {
 
         for (n, child) in self.get_children_mut().enumerate() {
             match alignment {
-                CrossAxisAlignment::Start => {child.set_x(position[0])}
-                CrossAxisAlignment::Center => {child.set_x(position[0] + dimension[0]/2.0 - child.get_width()/2.0)}
-                CrossAxisAlignment::End => {child.set_x(position[0] + dimension[0] - child.get_width())}
+                CrossAxisAlignment::Start => { child.set_x(position[0]) }
+                CrossAxisAlignment::Center => { child.set_x(position[0] + dimension[0] / 2.0 - child.get_width() / 2.0) }
+                CrossAxisAlignment::End => { child.set_x(position[0] + dimension[0] - child.get_width()) }
             }
 
-            child.set_y(position[1]+height_offset);
+            child.set_y(position[1] + height_offset);
 
-            if child.get_flag() != Flags::SPACER && n < spacers.len()-1 && !spacers[n+1] {
+            if child.get_flag() != Flags::SPACER && n < spacers.len() - 1 && !spacers[n + 1] {
                 height_offset += spacing;
             }
             height_offset += child.get_height();

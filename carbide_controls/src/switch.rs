@@ -11,13 +11,10 @@ pub struct Switch<GS> where GS: GlobalState {
 }
 
 impl<GS: GlobalState> Switch<GS> {
-
     pub fn new<S: Into<StringState<GS>>, L: Into<BoolState<GS>>>(label: S, checked: L) -> Box<Self> {
-
         let mut child = *PlainSwitch::new(label, checked.into());
 
         child = *child.delegate(|focus_state, checked_state, button: Box<dyn Widget<GS>>| {
-
             let focus_color = TupleState3::new(
                 focus_state,
                 EnvironmentColor::OpaqueSeparator,
@@ -56,13 +53,13 @@ impl<GS: GlobalState> Switch<GS> {
                                 .frame(22.0, 22.0)
                         ])
                     ).when_false(
-                        HStack::initialize(vec![
-                            Ellipse::new()
-                                .fill(EnvironmentColor::DarkText)
-                                .frame(22.0, 22.0),
-                            Spacer::new(SpacerDirection::Horizontal),
-                        ])
-                    ).padding(2.0),
+                    HStack::initialize(vec![
+                        Ellipse::new()
+                            .fill(EnvironmentColor::DarkText)
+                            .frame(22.0, 22.0),
+                        Spacer::new(SpacerDirection::Horizontal),
+                    ])
+                ).padding(2.0),
                 button
             ]).frame(45.0, 26.0)
         });
@@ -70,11 +67,10 @@ impl<GS: GlobalState> Switch<GS> {
         Box::new(Switch {
             id: Id::new_v4(),
             child,
-            position: [0.0,0.0],
+            position: [0.0, 0.0],
             dimension: [235.0, 26.0],
         })
     }
-
 }
 
 impl<GS: GlobalState> CommonWidget<GS> for Switch<GS> {
@@ -130,7 +126,7 @@ impl<GS: GlobalState> Layout<GS> for Switch<GS> {
         5
     }
 
-    fn calculate_size(&mut self, requested_size: Dimensions, env: &Environment<GS>) -> Dimensions {
+    fn calculate_size(&mut self, requested_size: Dimensions, env: &mut Environment<GS>) -> Dimensions {
         self.set_width(requested_size[0]);
 
         self.child.calculate_size(self.dimension, env);

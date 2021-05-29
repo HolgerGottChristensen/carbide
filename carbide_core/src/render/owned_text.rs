@@ -1,7 +1,8 @@
 use crate::{Rect, Scalar};
-use crate::FontSize;
 use crate::position::Dimensions;
-use crate::text::{Font, Justify};
+use crate::text::FontSize;
+use crate::text_old::Font;
+use crate::widget::types::justify::Justify;
 
 #[derive(Clone)]
 pub struct OwnedText {
@@ -13,6 +14,6 @@ pub struct OwnedText {
     pub rect: Rect,
     pub justify: Justify,
     pub line_spacing: Scalar,
-    pub base_line_offset: f32
+    pub base_line_offset: f32,
 }
 

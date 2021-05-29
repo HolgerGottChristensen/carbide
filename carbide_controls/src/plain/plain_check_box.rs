@@ -19,15 +19,13 @@ pub struct PlainCheckBox<GS> where GS: GlobalState {
 }
 
 impl<GS: GlobalState> PlainCheckBox<GS> {
-
     pub fn focused<K: Into<FocusState<GS>>>(mut self, focused: K) -> Box<Self> {
         self.focus = focused.into();
         Box::new(self)
     }
 
     pub fn new<S: Into<StringState<GS>>, L: Into<CheckBoxState<GS>>>(label: S, checked: L) -> Box<Self> {
-
-        let focus_state =  Box::new(CommonState::new_local_with_key(&Focus::Unfocused));
+        let focus_state = Box::new(CommonState::new_local_with_key(&Focus::Unfocused));
 
         let default_delegate = |_focus_state: FocusState<GS>, checked: CheckBoxState<GS>, button: Box<dyn Widget<GS>>| -> Box<dyn Widget<GS>> {
             let highlight_color = TupleState4::new(checked, EnvironmentColor::Red, EnvironmentColor::Green, EnvironmentColor::Blue)
@@ -65,9 +63,8 @@ impl<GS: GlobalState> PlainCheckBox<GS> {
         checked: CheckBoxState<GS>,
         focus_state: FocusState<GS>,
         delegate: fn(focus: FocusState<GS>, selected: CheckBoxState<GS>, button: Box<dyn Widget<GS>>) -> Box<dyn Widget<GS>>,
-        label_state: StringState<GS>
+        label_state: StringState<GS>,
     ) -> Box<Self> {
-
         let button = PlainButton::<CheckBoxValue, GS>::new(Spacer::new(SpacerDirection::Vertical))
             .local_state(checked.clone())
             .on_click(|myself, env, global_state| {
@@ -94,11 +91,11 @@ impl<GS: GlobalState> PlainCheckBox<GS> {
             id: Id::new_v4(),
             focus: focus_state,
             child,
-            position: [0.0,0.0],
-            dimension: [0.0,0.0],
+            position: [0.0, 0.0],
+            dimension: [0.0, 0.0],
             delegate,
             label: label_state,
-            checked
+            checked,
         })
     }
 }
@@ -164,7 +161,7 @@ impl<GS: GlobalState> Layout<GS> for PlainCheckBox<GS> {
         10
     }
 
-    fn calculate_size(&mut self, requested_size: [f64; 2], env: &Environment<GS>) -> [f64; 2] {
+    fn calculate_size(&mut self, requested_size: Dimensions, env: &mut Environment<GS>) -> Dimensions {
         if let Some(child) = self.get_children_mut().next() {
             child.calculate_size(requested_size, env);
         }

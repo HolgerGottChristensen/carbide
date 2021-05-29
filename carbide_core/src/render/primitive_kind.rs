@@ -3,7 +3,7 @@ use crate::{image_map, Rect};
 use crate::color::Rgba;
 use crate::draw::shape::triangle::Triangle;
 use crate::render::text::Text;
-use crate::text;
+use crate::text::FontId;
 use crate::widget::primitive::ColoredPoint;
 
 /// The unique kind for each primitive element in the Ui.
@@ -24,9 +24,10 @@ pub enum PrimitiveKind {
     /// A series of consecutive `Triangles` that are all the same color.
     TrianglesSingleColor {
         /// The color of all triangles.
-        color: Rgba, //Todo why is this not Color
+        color: Rgba,
+        //Todo why is this not Color
         /// An ordered slice of triangles.
-        triangles: Vec<Triangle<Point>>
+        triangles: Vec<Triangle<Point>>,
     },
 
     /// A series of consecutive `Triangles` with unique colors per vertex.
@@ -56,7 +57,7 @@ pub enum PrimitiveKind {
         text: Text,
         /// The unique identifier for the font, useful for the `glyph_cache.rect_for(id, glyph)`
         /// method when using the `carbide::text::GlyphCache` (rusttype's GPU `Cache`).
-        font_id: text::font::Id,
+        font_id: FontId,
     },
 }
 

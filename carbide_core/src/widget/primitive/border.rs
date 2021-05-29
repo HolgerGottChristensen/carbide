@@ -9,7 +9,7 @@ pub struct Border<GS> where GS: GlobalState {
     position: Point,
     dimension: Dimensions,
     #[state] color: ColorState<GS>,
-    border_width: u32
+    border_width: u32,
 }
 
 impl<GS: GlobalState> WidgetExt<GS> for Border<GS> {}
@@ -19,9 +19,9 @@ impl<GS: GlobalState> Layout<GS> for Border<GS> {
         self.child.flexibility()
     }
 
-    fn calculate_size(&mut self, requested_size: Dimensions, env: &Environment<GS>) -> Dimensions {
+    fn calculate_size(&mut self, requested_size: Dimensions, env: &mut Environment<GS>) -> Dimensions {
         let border_width = self.border_width as f64;
-        let dimensions = [requested_size[0] - border_width  - border_width, requested_size[1] - border_width - border_width];
+        let dimensions = [requested_size[0] - border_width - border_width, requested_size[1] - border_width - border_width];
 
         let child_dimensions = self.child.calculate_size(dimensions, env);
 
@@ -96,35 +96,34 @@ impl<S: GlobalState> CommonWidget<S> for Border<S> {
 }
 
 impl<GS: GlobalState> Render<GS> for Border<GS> {
-
     fn get_primitives(&mut self, env: &Environment<GS>, global_state: &GS) -> Vec<Primitive> {
         let rect = Rect::new(self.position, self.dimension);
         let (l, r, b, t) = rect.l_r_b_t();
 
         let width = self.border_width as f64;
 
-        let left_border = Rect::new([l,b], [width, rect.h()]);
-        let right_border = Rect::new([r-width,b], [width, rect.h()]);
-        let top_border = Rect::new([l+width,b], [rect.w()-width*2.0, width]);
-        let bottom_border = Rect::new([l+width,t-width], [rect.w()-width*2.0, width]);
+        let left_border = Rect::new([l, b], [width, rect.h()]);
+        let right_border = Rect::new([r - width, b], [width, rect.h()]);
+        let top_border = Rect::new([l + width, b], [rect.w() - width * 2.0, width]);
+        let bottom_border = Rect::new([l + width, t - width], [rect.w() - width * 2.0, width]);
 
         let border_color = self.color.get_latest_value();
         let mut prims = vec![
             Primitive {
-                kind: PrimitiveKind::Rectangle { color: border_color.clone()},
-                rect: left_border
+                kind: PrimitiveKind::Rectangle { color: border_color.clone() },
+                rect: left_border,
             },
             Primitive {
-                kind: PrimitiveKind::Rectangle { color: border_color.clone()},
-                rect: right_border
+                kind: PrimitiveKind::Rectangle { color: border_color.clone() },
+                rect: right_border,
             },
             Primitive {
-                kind: PrimitiveKind::Rectangle { color: border_color.clone()},
-                rect: top_border
+                kind: PrimitiveKind::Rectangle { color: border_color.clone() },
+                rect: top_border,
             },
             Primitive {
-                kind: PrimitiveKind::Rectangle { color: border_color.clone()},
-                rect: bottom_border
+                kind: PrimitiveKind::Rectangle { color: border_color.clone() },
+                rect: bottom_border,
             },
         ];
 
@@ -136,7 +135,6 @@ impl<GS: GlobalState> Render<GS> for Border<GS> {
 }
 
 impl<GS: GlobalState> Border<GS> {
-
     pub fn color<C: Into<ColorState<GS>>>(mut self, color: C) -> Box<Self> {
         self.color = color.into();
         Box::new(self)
@@ -151,10 +149,10 @@ impl<GS: GlobalState> Border<GS> {
         Box::new(Border {
             id: Uuid::new_v4(),
             child,
-            position: [0.0,0.0],
-            dimension: [100.0,100.0],
+            position: [0.0, 0.0],
+            dimension: [100.0, 100.0],
             color: Color::random().into(),
-            border_width: 2
+            border_width: 2,
         })
     }
 }

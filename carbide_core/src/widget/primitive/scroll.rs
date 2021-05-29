@@ -28,7 +28,6 @@ pub struct Scroll<GS> where GS: GlobalState {
 impl<GS: GlobalState> WidgetExt<GS> for Scroll<GS> {}
 
 impl<S: GlobalState> Scroll<S> {
-
     fn update_all_widget_state(&mut self, env: &mut Environment<S>, global_state: &S) {
         self.scrollbar_horizontal.sync_state(env, global_state);
         self.scrollbar_vertical.sync_state(env, global_state);
@@ -79,24 +78,23 @@ impl<S: GlobalState> Scroll<S> {
             scroll_directions: ScrollDirection::Both,
             scrollbar_horizontal: Rectangle::initialize(vec![])
                 .fill(EnvironmentColor::Gray)
-                .frame(100.0,10.0),
+                .frame(100.0, 10.0),
             scrollbar_vertical: Rectangle::initialize(vec![])
                 .fill(EnvironmentColor::Gray)
-                .frame(10.0,100.0),
+                .frame(10.0, 100.0),
             drag_started_on_vertical_scrollbar: false,
             drag_started_on_horizontal_scrollbar: false,
             vertical_scrollbar_hovered: false,
             horizontal_scrollbar_hovered: false,
             scrollbar_horizontal_background: Rectangle::initialize(vec![]).fill(Color::Rgba(0.0, 0.0, 0.0, 0.5)).frame(100.0, 10.0),
-            scrollbar_vertical_background: Rectangle::initialize(vec![]).fill(Color::Rgba(0.0,0.0,0.0,0.5)).frame(10.0,100.0)
+            scrollbar_vertical_background: Rectangle::initialize(vec![]).fill(Color::Rgba(0.0, 0.0, 0.0, 0.5)).frame(10.0, 100.0),
         })
     }
 
     fn handle_mouse_event(&mut self, event: &MouseEvent, _: &bool, _: &mut Environment<S>, _: &mut S) {
-
         match event {
-            MouseEvent::Scroll { x, y, modifiers, ..} => {
-                if !self.is_inside(event.get_current_mouse_position()) {return}
+            MouseEvent::Scroll { x, y, modifiers, .. } => {
+                if !self.is_inside(event.get_current_mouse_position()) { return }
 
                 if self.scroll_directions == ScrollDirection::Both ||
                     self.scroll_directions == ScrollDirection::Vertical {
@@ -108,12 +106,10 @@ impl<S: GlobalState> Scroll<S> {
                     }
 
                     self.keep_y_within_bounds();
-
                 }
 
                 if self.scroll_directions == ScrollDirection::Both ||
                     self.scroll_directions == ScrollDirection::Horizontal {
-
                     let offset_multiplier = 1.0; //self.child.get_width() / self.get_width();
                     if modifiers.contains(piston_input::keyboard::ModifierKey::SHIFT) {
                         self.scroll_offset[0] += y * offset_multiplier;
@@ -122,9 +118,7 @@ impl<S: GlobalState> Scroll<S> {
                     }
 
                     self.keep_x_within_bounds();
-
                 }
-
             }
             MouseEvent::Release(..) => {
                 self.drag_started_on_vertical_scrollbar = false;
@@ -160,7 +154,6 @@ impl<S: GlobalState> Scroll<S> {
                 }
             }
             MouseEvent::Drag { origin, to, delta_xy, .. } => {
-
                 if !self.drag_started_on_vertical_scrollbar {
                     if self.scrollbar_vertical.is_inside(*origin) {
                         self.drag_started_on_vertical_scrollbar = true;
@@ -211,12 +204,12 @@ impl<S: GlobalState> Scroll<S> {
     }
 }
 
-impl<S: GlobalState> Layout<S> for Scroll<S> {
+impl<GS: GlobalState> Layout<GS> for Scroll<GS> {
     fn flexibility(&self) -> u32 {
         0
     }
 
-    fn calculate_size(&mut self, requested_size: Dimensions, env: &Environment<S>) -> Dimensions {
+    fn calculate_size(&mut self, requested_size: Dimensions, env: &mut Environment<GS>) -> Dimensions {
         self.child.calculate_size(requested_size, env);
 
         self.keep_y_within_bounds();
@@ -226,7 +219,6 @@ impl<S: GlobalState> Layout<S> for Scroll<S> {
 
         if self.scroll_directions == ScrollDirection::Both ||
             self.scroll_directions == ScrollDirection::Vertical {
-
             let min_height = 30.0;
             let max_height = requested_size[1];
             let horizontal_height = if self.scroll_directions == ScrollDirection::Both && self.child.get_width() > self.get_width() {
@@ -281,9 +273,8 @@ impl<S: GlobalState> Layout<S> for Scroll<S> {
 
 
         // Position scrollbars
-        self.scrollbar_vertical.set_position(self.get_position().add([self.dimension[0]-self.scrollbar_vertical.get_width(), 0.0]));
-        self.scrollbar_vertical_background.set_position(self.get_position().add([self.dimension[0]-self.scrollbar_vertical.get_width(), 0.0]));
-
+        self.scrollbar_vertical.set_position(self.get_position().add([self.dimension[0] - self.scrollbar_vertical.get_width(), 0.0]));
+        self.scrollbar_vertical_background.set_position(self.get_position().add([self.dimension[0] - self.scrollbar_vertical.get_width(), 0.0]));
 
 
         let scroll_vertical_percent = if self.child.get_height() - self.get_height() != 0.0 {
@@ -292,7 +283,7 @@ impl<S: GlobalState> Layout<S> for Scroll<S> {
             0.0
         };
 
-        let horizontal_height =  if self.scroll_directions == ScrollDirection::Both && self.child.get_width() > self.get_width() {
+        let horizontal_height = if self.scroll_directions == ScrollDirection::Both && self.child.get_width() > self.get_width() {
             self.scrollbar_horizontal.get_height()
         } else {
             0.0
@@ -301,8 +292,8 @@ impl<S: GlobalState> Layout<S> for Scroll<S> {
         self.scrollbar_vertical.set_position(self.scrollbar_vertical.get_position().add([0.0, -(self.get_height() - horizontal_height - self.scrollbar_vertical.get_height()) * scroll_vertical_percent]));
 
 
-        self.scrollbar_horizontal.set_position(self.get_position().add([0.0, self.dimension[1]-self.scrollbar_horizontal.get_height()]));
-        self.scrollbar_horizontal_background.set_position(self.get_position().add([0.0, self.dimension[1]-self.scrollbar_horizontal.get_height()]));
+        self.scrollbar_horizontal.set_position(self.get_position().add([0.0, self.dimension[1] - self.scrollbar_horizontal.get_height()]));
+        self.scrollbar_horizontal_background.set_position(self.get_position().add([0.0, self.dimension[1] - self.scrollbar_horizontal.get_height()]));
 
 
         let scroll_horizontal_percent = if self.child.get_width() - self.get_width() != 0.0 {
@@ -318,7 +309,6 @@ impl<S: GlobalState> Layout<S> for Scroll<S> {
         };
 
         self.scrollbar_horizontal.set_position(self.scrollbar_horizontal.get_position().add([(self.get_width() - vertical_width - self.scrollbar_horizontal.get_width()) * scroll_horizontal_percent, 0.0]));
-
 
 
         self.scrollbar_vertical.position_children();
@@ -385,7 +375,6 @@ impl<S: GlobalState> CommonWidget<S> for Scroll<S> {
 }
 
 impl<GS: GlobalState> Render<GS> for Scroll<GS> {
-
     fn get_primitives(&mut self, env: &Environment<GS>, global_state: &GS) -> Vec<Primitive> {
         let mut prims = vec![];
         prims.extend(Rectangle::<GS>::debug_outline(Rect::new(self.position, self.dimension), 1.0));
@@ -394,7 +383,6 @@ impl<GS: GlobalState> Render<GS> for Scroll<GS> {
 
         if (self.scroll_directions == ScrollDirection::Both ||
             self.scroll_directions == ScrollDirection::Vertical) && self.child.get_height() > self.get_height() {
-
             if self.vertical_scrollbar_hovered || self.drag_started_on_vertical_scrollbar {
                 prims.extend(self.scrollbar_vertical_background.get_primitives(env, global_state));
             }
@@ -404,7 +392,6 @@ impl<GS: GlobalState> Render<GS> for Scroll<GS> {
 
         if (self.scroll_directions == ScrollDirection::Both ||
             self.scroll_directions == ScrollDirection::Horizontal) && self.child.get_width() > self.get_width() {
-
             if self.horizontal_scrollbar_hovered || self.drag_started_on_horizontal_scrollbar {
                 prims.extend(self.scrollbar_horizontal_background.get_primitives(env, global_state));
             }

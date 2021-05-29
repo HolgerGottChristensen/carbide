@@ -5,7 +5,7 @@ extern crate carbide_winit;
 #[macro_use]
 extern crate glium;
 
-use carbide_core::{color, Color, image_map, Range, Rect, render, Scalar, text};
+use carbide_core::{color, Color, image_map, Range, Rect, render, Scalar, text_old};
 use carbide_core::render::primitive::Primitive;
 use carbide_core::render::primitive_kind::PrimitiveKind;
 use carbide_core::render::primitive_walker::PrimitiveWalker;
@@ -43,7 +43,7 @@ enum PreparedCommand {
 
 /// A rusttype `GlyphCache` along with a `glium::texture::Texture2d` for caching text on the `GPU`.
 pub struct GlyphCache {
-    cache: text::GlyphCache<'static>,
+    cache: text_old::GlyphCache<'static>,
     texture: glium::texture::Texture2d,
 }
 
@@ -339,10 +339,10 @@ pub fn text_texture_uncompressed_float_format(opengl_version: &glium::Version) -
 }
 
 // Creating the rusttype glyph cache used within a `GlyphCache`.
-fn rusttype_glyph_cache(w: u32, h: u32) -> text::GlyphCache<'static> {
+fn rusttype_glyph_cache(w: u32, h: u32) -> text_old::GlyphCache<'static> {
     const SCALE_TOLERANCE: f32 = 0.1;
     const POSITION_TOLERANCE: f32 = 0.1;
-    text::GlyphCache::builder()
+    text_old::GlyphCache::builder()
         .dimensions(w, h)
         .scale_tolerance(SCALE_TOLERANCE)
         .position_tolerance(POSITION_TOLERANCE)
@@ -355,8 +355,8 @@ fn glyph_cache_texture<F>(
     width: u32,
     height: u32,
 ) -> Result<glium::texture::Texture2d, glium::texture::TextureCreationError>
-where
-    F: glium::backend::Facade,
+    where
+        F: glium::backend::Facade,
 {
     // Determine the optimal texture format to use given the opengl version.
     let context = facade.get_context();
@@ -389,8 +389,8 @@ impl GlyphCache {
         width: u32,
         height: u32,
     ) -> Result<Self, glium::texture::TextureCreationError>
-    where
-        F: glium::backend::Facade,
+        where
+            F: glium::backend::Facade,
     {
         // First, the rusttype `Cache` which performs the logic for rendering and laying out glyphs
         // in the cache.
@@ -408,8 +408,8 @@ impl GlyphCache {
     /// Construct a `GlyphCache` with a size equal to the given `Display`'s current framebuffer
     /// dimensions.
     pub fn new<F>(facade: &F) -> Result<Self, glium::texture::TextureCreationError>
-    where
-        F: glium::backend::Facade,
+        where
+            F: glium::backend::Facade,
     {
         let (w, h) = facade.get_context().get_framebuffer_dimensions();
         Self::with_dimensions(facade, w, h)
@@ -459,8 +459,8 @@ impl Renderer {
         width: u32,
         height: u32,
     ) -> Result<Self, RendererCreationError>
-    where
-        F: glium::backend::Facade,
+        where
+            F: glium::backend::Facade,
     {
         let glyph_cache = GlyphCache::with_dimensions(facade, width, height)?;
         Self::with_glyph_cache(facade, glyph_cache)
@@ -468,8 +468,8 @@ impl Renderer {
 
     // Construct a new **Renderer** that uses the given glyph cache for caching text.
     fn with_glyph_cache<F>(facade: &F, gc: GlyphCache) -> Result<Self, RendererCreationError>
-    where
-        F: glium::backend::Facade,
+        where
+            F: glium::backend::Facade,
     {
         let program = program(facade)?;
         Ok(Renderer {
@@ -491,10 +491,10 @@ impl Renderer {
 
     /// Fill the inner vertex and command buffers by translating the given `primitives`.
     pub fn fill<D, P, T>(&mut self, display: &D, mut primitives: P, image_map: &image_map::ImageMap<T>)
-    where
-        P: PrimitiveWalker,
-        D: Display,
-        T: TextureDimensions,
+        where
+            P: PrimitiveWalker,
+            D: Display,
+            T: TextureDimensions,
     {
         let Renderer { ref mut commands, ref mut vertices, ref mut glyph_cache, .. } = *self;
 
@@ -590,7 +590,6 @@ impl Renderer {
             }*/
 
             match kind {
-
                 PrimitiveKind::Rectangle { color } => {
                     switch_to_plain_state!();
 
@@ -722,7 +721,7 @@ impl Renderer {
 
                     let cache_id = font_id.index();
 
-                    let _origin = text::rt::point(0.0, 0.0);
+                    let _origin = text_old::rt::point(0.0, 0.0);
 
 
                     //Working on mac
@@ -735,7 +734,7 @@ impl Renderer {
 
                      */
 
-                    let to_gl_rect = |screen_rect: text::rt::Rect<i32>| {
+                    let to_gl_rect = |screen_rect: text_old::rt::Rect<i32>| {
                         let min_x = screen_rect.min.x as f64 / dpi_factor + rect.x.start;
                         let max_x = screen_rect.max.x as f64 / dpi_factor + rect.x.start;
                         let min_y = screen_rect.min.y as f64 / dpi_factor + rect.y.start;
@@ -759,8 +758,8 @@ impl Renderer {
                         }*/
 
                         Rect {
-                            x: Range {start: min_x, end: max_x},
-                            y: Range {start: min_y, end: max_y}
+                            x: Range { start: min_x, end: max_x },
+                            y: Range { start: min_y, end: max_y },
                         }
                     };
 
@@ -790,7 +789,6 @@ impl Renderer {
                             push_v([-0.5, 1.0], [0.0, 0.0]);*/
                         }
                     }
-
                 },
 
                 PrimitiveKind::Image { image_id, color, source_rect } => {
@@ -872,7 +870,6 @@ impl Renderer {
                 // We have no special case widgets to handle.
                 PrimitiveKind::Other(_) => (),
             }
-
         }
 
         // Enter the final command.
@@ -891,7 +888,7 @@ impl Renderer {
     /// methods for the case that the user does not require accessing or modifying carbide's draw
     /// parameters, uniforms or generated draw commands.
     pub fn draw<F, S, T>(&self, facade: &F, surface: &mut S, image_map: &image_map::ImageMap<T>)
-        -> Result<(), DrawError>
+                         -> Result<(), DrawError>
         where F: glium::backend::Facade,
               S: glium::Surface,
               for<'a> glium::uniforms::Sampler<'a, T>: glium::uniforms::AsUniformValue,
@@ -951,14 +948,12 @@ impl Renderer {
                             surface.draw(&vertex_buffer, no_indices, &self.program, &image_uniforms, &draw_params).unwrap();
                         }
                     },
-
                 }
             }
         }
 
         Ok(())
     }
-
 }
 
 impl<'a> Iterator for Commands<'a> {

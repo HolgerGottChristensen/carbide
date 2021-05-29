@@ -11,9 +11,11 @@
 //!
 //! For more information, please see the `Widget` trait documentation.
 
-#[macro_use] extern crate carbide_core;
+#[macro_use]
+extern crate carbide_core;
 extern crate carbide_glium;
-#[macro_use] extern crate carbide_winit;
+#[macro_use]
+extern crate carbide_winit;
 extern crate find_folder;
 extern crate glium;
 
@@ -36,7 +38,7 @@ mod circular_button {
         style: Style,
         /// Whether the button is currently enabled, i.e. whether it responds to
         /// user input.
-        enabled: bool
+        enabled: bool,
     }
 
     // We use `#[derive(WidgetStyle)] to vastly simplify the definition and implementation of the
@@ -62,7 +64,7 @@ mod circular_button {
         pub label_font_size: Option<carbide_core::FontSize>,
         /// Specify a unique font for the label.
         #[carbide(default = "theme.font_id")]
-        pub label_font_id: Option<Option<carbide_core::text::font::Id>>,
+        pub label_font_id: Option<Option<carbide_core::text_old::font::Id>>,
     }
 
     // We'll create the widget using a `Circle` widget and a `Text` widget for its label.
@@ -81,7 +83,6 @@ mod circular_button {
     }
 
     impl<'a> CircularButton<'a> {
-
         /// Create a button context to be built upon.
         pub fn new() -> Self {
             CircularButton {
@@ -93,7 +94,7 @@ mod circular_button {
         }
 
         /// Specify the font used for displaying the label.
-        pub fn label_font_id(mut self, font_id: carbide_core::text::font::Id) -> Self {
+        pub fn label_font_id(mut self, font_id: carbide_core::text_old::font::Id) -> Self {
             self.style.label_font_id = Some(Some(font_id));
             self
         }
@@ -106,7 +107,6 @@ mod circular_button {
             self.enabled = flag;
             self
         }
-
     }
 
     /// A custom carbide widget must implement the Widget trait. See the **Widget** trait
@@ -205,7 +205,6 @@ mod circular_button {
 
             event
         }
-
     }
 
     /// Provide the chainable color() configuration method.

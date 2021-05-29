@@ -1,7 +1,6 @@
 use crate::prelude::*;
-use crate::widget::types::spacer_direction::SpacerDirection;
 use crate::widget::ChildRender;
-
+use crate::widget::types::spacer_direction::SpacerDirection;
 
 #[derive(Clone, Debug, Widget)]
 pub struct Spacer {
@@ -17,19 +16,19 @@ impl Spacer {
     pub fn new(space: SpacerDirection) -> Box<Self> {
         Box::new(Spacer {
             id: Uuid::new_v4(),
-            position: [0.0,0.0],
-            dimension: [100.0,100.0],
-            space
+            position: [0.0, 0.0],
+            dimension: [100.0, 100.0],
+            space,
         })
     }
 }
 
-impl<S: GlobalState> Layout<S> for Spacer {
+impl<GS: GlobalState> Layout<GS> for Spacer {
     fn flexibility(&self) -> u32 {
         0
     }
 
-    fn calculate_size(&mut self, requested_size: Dimensions, _env: &Environment<S>) -> Dimensions {
+    fn calculate_size(&mut self, requested_size: Dimensions, env: &mut Environment<GS>) -> Dimensions {
         match self.space {
             SpacerDirection::Vertical => {
                 self.dimension = [0.0, requested_size[1]];
@@ -45,9 +44,7 @@ impl<S: GlobalState> Layout<S> for Spacer {
         self.dimension
     }
 
-    fn position_children(&mut self) {
-
-    }
+    fn position_children(&mut self) {}
 }
 
 impl<S: GlobalState> CommonWidget<S> for Spacer {
