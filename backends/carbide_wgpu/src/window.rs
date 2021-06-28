@@ -1,5 +1,5 @@
 use std::collections::HashMap;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use std::time::Instant;
 
 pub use futures::executor::block_on;
@@ -19,7 +19,7 @@ use carbide_core::mesh::vertex::Vertex;
 use carbide_core::prelude::EnvironmentColor;
 use carbide_core::prelude::Rectangle;
 use carbide_core::state::global_state::GlobalState;
-use carbide_core::text::FontId;
+use carbide_core::text::{FontFamily, FontId};
 use carbide_core::widget::OverlaidLayer;
 use carbide_core::widget::primitive::Widget;
 pub use carbide_core::window::TWindow;
@@ -52,9 +52,18 @@ pub struct Window<T: GlobalState> {
 }
 
 impl<T: GlobalState> carbide_core::window::TWindow<T> for Window<T> {
-    fn add_font(&mut self, path: &str) -> FontId {
+    fn add_font_family(&mut self, mut family: FontFamily) -> String {
+        for font in &mut family.fonts {
+            font.font_id = self.add_font(&font.path)
+        }
+        let family_name = family.name.clone();
+        self.ui.environment.add_font_family(family);
+        family_name
+    }
+
+    fn add_font<P: AsRef<Path>>(&mut self, path: P) -> FontId {
         let assets = find_folder::Search::KidsThenParents(3, 5).for_folder("assets").unwrap();
-        let font_path = assets.join(path);
+        let font_path = assets.join(path.as_ref());
 
         self.ui.environment.insert_font_from_file(font_path)
     }

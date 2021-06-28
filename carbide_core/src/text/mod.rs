@@ -2,6 +2,9 @@
 use rusttype::PositionedGlyph;
 
 pub use font::*;
+pub use font_family::FontFamily;
+pub use font_style::FontStyle;
+pub use font_weight::FontWeight;
 pub use glyph::Glyph;
 pub use text::Text;
 
@@ -18,6 +21,7 @@ mod font_weight;
 mod glyph;
 mod text_overflow;
 mod text;
+mod markup;
 
 pub type FontId = usize;
 pub type FontSize = u32;

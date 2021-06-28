@@ -12,7 +12,7 @@ use crate::prelude::EnvironmentVariable;
 use crate::state::global_state::GlobalState;
 use crate::state::state::State;
 use crate::state::state_key::StateKey;
-use crate::text::{Font, FontId};
+use crate::text::{Font, FontFamily, FontId};
 use crate::widget::Dimensions;
 use crate::widget::primitive::Widget;
 use crate::widget::types::image_information::ImageInformation;
@@ -27,6 +27,10 @@ pub struct Environment<GS> where GS: GlobalState {
     /// Keep the loaded fonts in a map from font id to font. This is used when
     /// calculating the size of rendered strings.
     fonts: Vec<Font>,
+
+    /// Font families. The fonts are still kept as seperate fonts in the above vec, but references
+    /// are kept in families for better lookup.
+    font_families: FxHashMap<String, FontFamily>,
 
     /// This map contains the widths and heights for loaded images.
     /// This is used to make the static size of the Image widget its
@@ -69,6 +73,7 @@ impl<GS: GlobalState> Environment<GS> {
         Environment {
             stack: env_stack,
             fonts: vec![],
+            font_families: HashMap::with_hasher(FxBuildHasher::default()),
             images_information: HashMap::with_hasher(FxBuildHasher::default()),
             overlay_map: HashMap::with_hasher(FxBuildHasher::default()),
             local_state: HashMap::with_hasher(FxBuildHasher::default()),
@@ -192,6 +197,19 @@ impl<GS: GlobalState> Environment<GS> {
         let font_id = self.fonts.len();
         self.fonts.push(font);
         font_id
+    }
+
+    pub fn add_font_family(&mut self, family: FontFamily) {
+        let key = family.name.clone();
+        self.font_families.insert(key, family);
+    }
+
+    pub fn get_first_font_family(&self) -> &FontFamily {
+        self.font_families.iter().next().unwrap().1
+    }
+
+    pub fn get_font_family(&self, name: &String) -> &FontFamily {
+        self.font_families.get(name).unwrap()
     }
 
 

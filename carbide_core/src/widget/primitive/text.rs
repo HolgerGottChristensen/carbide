@@ -189,10 +189,15 @@ impl<GS: GlobalState> Layout<GS> for Text<GS> {
 impl<GS: GlobalState> Render<GS> for Text<GS> {
     fn get_primitives(&mut self, env: &Environment<GS>, _: &GS) -> Vec<Primitive> {
         let mut prims: Vec<Primitive> = vec![];
-        //let color = self.color.get_latest_value().clone();
+        let default_color = self.color.get_latest_value().clone();
 
         if let Some(internal) = &self.internal_text {
             for (glyphs, font_id, color) in internal.span_glyphs() {
+                let color = if let Some(color) = color {
+                    color
+                } else {
+                    default_color
+                };
                 let kind = PrimitiveKind::Text {
                     color,
                     text: glyphs,

@@ -27,7 +27,7 @@ pub struct Text<GS> where GS: GlobalState {
 
 impl<GS: GlobalState> Text<GS> {
     pub fn new(string: String, env: &mut Environment<GS>) -> Text<GS> {
-        let spans = TextSpan::new(&string, env);
+        let spans = TextSpan::new_polar_bear_markup(&string, env);
 
         Text {
             style: None,
@@ -49,11 +49,11 @@ impl<GS: GlobalState> Text<GS> {
         }
     }
 
-    pub fn span_glyphs(&self) -> Vec<(Vec<Glyph>, FontId, Color)> {
+    pub fn span_glyphs(&self) -> Vec<(Vec<Glyph>, FontId, Option<Color>)> {
         self.spans.iter().filter_map(|a| {
             match a {
-                TextSpan::Text { style, glyphs, .. } => {
-                    Some((glyphs.to_vec(), 1, style.unwrap().color))
+                TextSpan::Text { font_id, style, glyphs, .. } => {
+                    Some((glyphs.to_vec(), *font_id, style.clone().unwrap().color))
                 }
                 TextSpan::Widget(_) => None,
                 TextSpan::NewLine => None,

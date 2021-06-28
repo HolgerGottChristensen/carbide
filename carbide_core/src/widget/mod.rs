@@ -27,6 +27,9 @@ pub use crate::position::Scalar;
 pub use crate::state::*;
 pub use crate::state::global_state::GlobalState;
 pub use crate::state::state::CommonState;
+pub use crate::text::FontFamily;
+pub use crate::text::FontStyle;
+pub use crate::text::FontWeight;
 
 pub use self::common_widget::CommonWidget;
 pub use self::primitive::canvas::canvas::Canvas;
