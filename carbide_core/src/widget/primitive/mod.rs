@@ -4,7 +4,7 @@
 //! define their own methods for rendering. Instead, carbide graphics backends only need to define
 //! rendering methods for a small set of primitives.
 
-use crate::{Point, Range, Rect};
+use crate::{OldRect, Point, Range};
 pub use crate::widget::primitive::widget::Widget;
 
 pub mod image;
@@ -30,16 +30,16 @@ pub mod environment_updating;
 pub mod shared_state;
 
 /// Find the bounding rect for the given series of points.
-pub fn bounding_box_for_points<I>(mut points: I) -> Rect
+pub fn bounding_box_for_points<I>(mut points: I) -> OldRect
     where I: Iterator<Item=Point>,
 {
     points.next().map(|first| {
-        let start_rect = Rect {
+        let start_rect = OldRect {
             x: Range { start: first[0], end: first[0] },
             y: Range { start: first[1], end: first[1] },
         };
-        points.fold(start_rect, Rect::stretch_to_point)
-    }).unwrap_or_else(|| Rect::from_xy_dim([0.0, 0.0], [0.0, 0.0]))
+        points.fold(start_rect, OldRect::stretch_to_point)
+    }).unwrap_or_else(|| OldRect::from_xy_dim([0.0, 0.0], [0.0, 0.0]))
 }
 
 pub type ColoredPoint = (Point, crate::color::Rgba);

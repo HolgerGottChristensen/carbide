@@ -56,17 +56,17 @@ impl<GS: GlobalState> Rectangle<GS> {
     }
 
     //#[cfg(not(feature = "debug-outline"))]
-    pub fn debug_outline(_rect: Rect, _width: Scalar) -> Vec<Primitive> {
+    pub fn debug_outline(_rect: OldRect, _width: Scalar) -> Vec<Primitive> {
         vec![]
     }
 
-    pub fn debug_outline_special(rect: Rect, width: Scalar) -> Vec<Primitive> {
+    pub fn debug_outline_special(rect: OldRect, width: Scalar) -> Vec<Primitive> {
         let (l, r, b, t) = rect.l_r_b_t();
 
-        let left_border = Rect::new([l, b], [width, rect.h()]);
-        let right_border = Rect::new([r - width, b], [width, rect.h()]);
-        let top_border = Rect::new([l + width, b], [rect.w() - width * 2.0, width]);
-        let bottom_border = Rect::new([l + width, t - width], [rect.w() - width * 2.0, width]);
+        let left_border = OldRect::new([l, b], [width, rect.h()]);
+        let right_border = OldRect::new([r - width, b], [width, rect.h()]);
+        let top_border = OldRect::new([l + width, b], [rect.w() - width * 2.0, width]);
+        let bottom_border = OldRect::new([l + width, t - width], [rect.w() - width * 2.0, width]);
 
         let border_color = Color::Rgba(0.0 / 255.0, 255.0 / 255.0, 251.0 / 255.0, 1.0);//Color::random();
         vec![
@@ -268,13 +268,13 @@ impl<GS: GlobalState> Render<GS> for Rectangle<GS> {
             ShapeStyle::Default => {
                 prims.push(Primitive {
                     kind: PrimitiveKind::Rectangle { color: self.fill_color.get_latest_value().clone() },
-                    rect: Rect::new(self.position, self.dimension),
+                    rect: OldRect::new(self.position, self.dimension),
                 });
             }
             ShapeStyle::Fill => {
                 prims.push(Primitive {
                     kind: PrimitiveKind::Rectangle { color: self.fill_color.get_latest_value().clone() },
-                    rect: Rect::new(self.position, self.dimension),
+                    rect: OldRect::new(self.position, self.dimension),
                 });
             }
             ShapeStyle::Stroke => {
@@ -295,13 +295,13 @@ impl<GS: GlobalState> Render<GS> for Rectangle<GS> {
 
                 prims.push(Primitive {
                     kind: PrimitiveKind::TrianglesSingleColor { color: Rgba::from(*self.stroke_color.get_latest_value()), triangles: stroke_triangles },
-                    rect: Rect::new(self.position, self.dimension),
+                    rect: OldRect::new(self.position, self.dimension),
                 });
             }
             ShapeStyle::FillAndStroke => {
                 prims.push(Primitive {
                     kind: PrimitiveKind::Rectangle { color: self.fill_color.get_latest_value().clone() },
-                    rect: Rect::new(self.position, self.dimension),
+                    rect: OldRect::new(self.position, self.dimension),
                 });
 
                 let rect = rect(
@@ -321,12 +321,12 @@ impl<GS: GlobalState> Render<GS> for Rectangle<GS> {
 
                 prims.push(Primitive {
                     kind: PrimitiveKind::TrianglesSingleColor { color: Rgba::from(*self.stroke_color.get_latest_value()), triangles: stroke_triangles },
-                    rect: Rect::new(self.position, self.dimension),
+                    rect: OldRect::new(self.position, self.dimension),
                 });
             }
         }
 
-        prims.extend(Rectangle::<GS>::debug_outline(Rect::new(self.position, self.dimension), 1.0));
+        prims.extend(Rectangle::<GS>::debug_outline(OldRect::new(self.position, self.dimension), 1.0));
         let children: Vec<Primitive> = self.get_children_mut().flat_map(|f| f.get_primitives(env, global_state)).collect();
         prims.extend(children);
 

@@ -2,7 +2,7 @@ pub use std::ops::{Deref, DerefMut};
 
 pub use uuid::Uuid;
 
-pub use crate::{Color, Colorable, Point, Rect};
+pub use crate::{Color, Colorable, OldRect, Point};
 pub use crate::environment::environment::Environment;
 pub use crate::environment::environment_color::EnvironmentColor;
 pub use crate::environment::environment_color_state::EnvironmentColorState;

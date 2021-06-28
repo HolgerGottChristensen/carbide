@@ -92,16 +92,16 @@ impl<GS: GlobalState> Render<GS> for Clip<GS> {
         let mut prims = vec![
             Primitive {
                 kind: PrimitiveKind::Clip,
-                rect: Rect::new(self.position, self.dimension),
+                rect: OldRect::new(self.position, self.dimension),
             }
         ];
         let children: Vec<Primitive> = self.get_children_mut().flat_map(|f| f.get_primitives(env, global_state)).collect();
         prims.extend(children);
-        prims.extend(Rectangle::<GS>::debug_outline(Rect::new(self.position, self.dimension), 1.0));
+        prims.extend(Rectangle::<GS>::debug_outline(OldRect::new(self.position, self.dimension), 1.0));
 
         prims.push(Primitive {
             kind: PrimitiveKind::UnClip,
-            rect: Rect::new(self.position, self.dimension),
+            rect: OldRect::new(self.position, self.dimension),
         });
 
         return prims;

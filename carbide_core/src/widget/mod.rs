@@ -12,7 +12,7 @@ pub use carbide_core::layout::layouter::Layouter;
 pub use carbide_core::state::state_ext::StateExt;
 pub use carbide_core::window::TWindow;
 
-pub use crate::{Color, Colorable, Point, Rect};
+pub use crate::{Color, Colorable, OldRect, Point};
 pub use crate::environment::environment::Environment;
 pub use crate::environment::environment_color::EnvironmentColor;
 pub use crate::environment::environment_font_size::EnvironmentFontSize;

@@ -17,11 +17,11 @@ pub struct Canvas<GS> where GS: GlobalState {
     dimension: Dimensions,
     #[state] color: ColorState<GS>,
     //prim_store: Vec<Primitive>,
-    context: fn(Rect, Context<GS>) -> Context<GS>,
+    context: fn(OldRect, Context<GS>) -> Context<GS>,
 }
 
 impl<GS: GlobalState> Canvas<GS> {
-    pub fn initialize(context: fn(Rect, Context<GS>) -> Context<GS>) -> Box<Self> {
+    pub fn initialize(context: fn(OldRect, Context<GS>) -> Context<GS>) -> Box<Self> {
         Box::new(Canvas {
             id: Uuid::new_v4(),
             position: [0.0, 0.0],
@@ -54,7 +54,7 @@ impl<GS: GlobalState> Canvas<GS> {
 
         Primitive {
             kind: PrimitiveKind::TrianglesSingleColor { color: Rgba::from(color), triangles: Triangle::from_point_list(points) },
-            rect: Rect::new(self.position, self.dimension),
+            rect: OldRect::new(self.position, self.dimension),
         }
     }
 
@@ -80,7 +80,7 @@ impl<GS: GlobalState> Canvas<GS> {
 
         Primitive {
             kind: PrimitiveKind::TrianglesSingleColor { color: Rgba::from(color), triangles: Triangle::from_point_list(points) },
-            rect: Rect::new(self.position, self.dimension),
+            rect: OldRect::new(self.position, self.dimension),
         }
     }
 }
@@ -135,7 +135,7 @@ impl<GS: GlobalState> Render<GS> for Canvas<GS> {
     fn get_primitives(&mut self, env: &Environment<GS>, global_state: &GS) -> Vec<Primitive> {
         let context = Context::new();
 
-        let rectangle = Rect::new(self.get_position(), self.get_dimension());
+        let rectangle = OldRect::new(self.get_position(), self.get_dimension());
         let context = (self.context)(rectangle, context);
 
         let paths = context.to_paths(self.get_position());
@@ -153,7 +153,7 @@ impl<GS: GlobalState> Render<GS> for Canvas<GS> {
             }
         }
 
-        prims.extend(Rectangle::<GS>::debug_outline(Rect::new(self.position, self.dimension), 1.0));
+        prims.extend(Rectangle::<GS>::debug_outline(OldRect::new(self.position, self.dimension), 1.0));
 
         return prims;
     }

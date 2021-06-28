@@ -1,5 +1,5 @@
 use crate::{Point, Scalar};
-use crate::Rect;
+use crate::OldRect;
 
 /// An iterator yielding the edges of an `Oval` (or some section of an `Oval`) as a circumference
 /// represented as a series of edges.
@@ -16,7 +16,7 @@ pub struct Circumference {
 }
 
 impl Circumference {
-    fn new_inner(rect: Rect, num_points: usize, rad_step: Scalar) -> Self {
+    fn new_inner(rect: OldRect, num_points: usize, rad_step: Scalar) -> Self {
         let (x, y, w, h) = rect.x_y_w_h();
         Circumference {
             index: 0,
@@ -33,7 +33,7 @@ impl Circumference {
     ///
     /// `resolution` is clamped to a minimum of `1` as to avoid creating a `Circumference` that
     /// produces `NaN` values.
-    pub fn new(rect: Rect, mut resolution: usize) -> Self {
+    pub fn new(rect: OldRect, mut resolution: usize) -> Self {
         resolution = std::cmp::max(resolution, 1);
         use std::f64::consts::PI;
         let radians = 2.0 * PI;
@@ -45,7 +45,7 @@ impl Circumference {
     ///
     /// `resolution` is clamped to a minimum of `1` as to avoid creating a `Circumference` that
     /// produces `NaN` values.
-    pub fn new_section(rect: Rect, resolution: usize, radians: Scalar) -> Self {
+    pub fn new_section(rect: OldRect, resolution: usize, radians: Scalar) -> Self {
         Self::new_inner(rect, resolution + 1, radians / resolution as Scalar)
     }
 }

@@ -8,7 +8,7 @@
 use std::{fmt, ops};
 
 use crate::{color, image_map, render};
-use crate::{Rect, Scalar};
+use crate::{OldRect, Scalar};
 use crate::mesh::{DEFAULT_GLYPH_CACHE_DIMS, GLYPH_CACHE_POSITION_TOLERANCE, GLYPH_CACHE_SCALE_TOLERANCE, MODE_GEOMETRY, MODE_IMAGE, MODE_TEXT};
 use crate::mesh::vertex::Vertex;
 use crate::Range;
@@ -127,7 +127,7 @@ impl Mesh {
     /// - `primitives`: the sequence of UI primitives in order of depth to be rendered.
     pub fn fill<P, I, GS: GlobalState>(
         &mut self,
-        viewport: Rect,
+        viewport: OldRect,
         env: &Environment<GS>,
         image_map: &image_map::ImageMap<I>,
         mut primitives: P,
@@ -172,7 +172,7 @@ impl Mesh {
         let vx = |x: Scalar| (x * scale_factor / half_viewport_w - 1.0) as f32;
         let vy = |y: Scalar| -1.0 * (y * scale_factor / half_viewport_h - 1.0) as f32;
 
-        let rect_to_scizzor = |rect: Rect| {
+        let rect_to_scizzor = |rect: OldRect| {
             // Below uses bottom because the rect is flipped :/
             Scizzor {
                 top_left: [rect.left().max(0.0) as i32, rect.bottom().max(0.0) as i32],
@@ -221,7 +221,7 @@ impl Mesh {
                     t *= scale_factor;
                     b *= scale_factor;
 
-                    let new_rect = Rect::from_corners([r, b], [l, t]);
+                    let new_rect = OldRect::from_corners([r, b], [l, t]);
 
                     commands.push(PreparedCommand::Scizzor(rect_to_scizzor(new_rect)));
 
@@ -331,10 +331,8 @@ impl Mesh {
                     text,
                     font_id,
                 } => {
-                    //let base_line_offset = text.base_line_offset as f64;
-
                     switch_to_plain_state!();
-                    let positioned_glyphs = text.positioned_glyphs(env, env.get_scale_factor() as f32);
+                    let positioned_glyphs = text;
                     // Queue the glyphs to be cached
                     for glyph in positioned_glyphs.clone() {
                         //println!("{:?}", glyph.position());
@@ -369,14 +367,14 @@ impl Mesh {
                         let min_y = screen_rect.min.y as f64 / scale_factor;
                         let max_y = screen_rect.max.y as f64 / scale_factor;
 
-                        Rect {
+                        OldRect {
                             x: Range { start: min_x, end: max_x },
                             y: Range { start: min_y, end: max_y },
                         }
                     };
 
 
-                    for g in positioned_glyphs.clone() {
+                    for g in positioned_glyphs {
                         if let Ok(Some((uv_rect, screen_rect))) = glyph_cache.rect_for(cache_id, &g)
                         {
                             let vk_rect = to_gl_rect(screen_rect);

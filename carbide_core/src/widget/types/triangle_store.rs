@@ -1,9 +1,9 @@
-use crate::{Point, Color, Rect};
+use crate::{Color, OldRect, Point};
+use crate::color::Rgba;
 use crate::draw::shape::triangle::Triangle;
 use crate::position::Dimensions;
 use crate::prelude::Primitive;
 use crate::render::primitive_kind::PrimitiveKind;
-use crate::color::Rgba;
 
 #[derive(PartialEq, Clone, Debug)]
 pub struct TriangleStore {
@@ -25,7 +25,7 @@ impl TriangleStore {
             latest_fill_position: [0.0, 0.0],
             latest_fill_dimensions: [0.0, 0.0],
             stroke_triangles: vec![],
-            fill_triangles: vec![]
+            fill_triangles: vec![],
         }
     }
 
@@ -59,14 +59,14 @@ impl TriangleStore {
         if self.fill_triangles.len() > 0 {
             res.push(Primitive {
                 kind: PrimitiveKind::TrianglesSingleColor { color: Rgba::from(fill_color), triangles: self.fill_triangles.clone() },
-                rect: Rect::new(self.latest_fill_position, self.latest_fill_dimensions)
+                rect: OldRect::new(self.latest_fill_position, self.latest_fill_dimensions),
             });
         }
 
         if self.stroke_triangles.len() > 0 {
             res.push(Primitive {
                 kind: PrimitiveKind::TrianglesSingleColor { color: Rgba::from(stroke_color), triangles: self.stroke_triangles.clone() },
-                rect: Rect::new(self.latest_stroke_position, self.latest_stroke_dimensions)
+                rect: OldRect::new(self.latest_stroke_position, self.latest_stroke_dimensions),
             });
         }
 

@@ -9,7 +9,7 @@ use std::iter::{Chain, once, Once};
 
 use num::{Float, NumCast, PrimInt, ToPrimitive};
 
-use crate::position::{Point, Range, Rect};
+use crate::position::{OldRect, Point, Range};
 
 /// Compare to PartialOrd values and return the min.
 pub fn partial_min<T: PartialOrd>(a: T, b: T) -> T {
@@ -52,9 +52,8 @@ pub fn binary_search(value: f32, vec: &Vec<f32>) -> usize {
             left = m + 1;
         }
     }
-    if right != 0 {right - 1} else {0}
+    if right != 0 { right - 1 } else { 0 }
 }
-
 
 
 /// Convert degrees to radians.
@@ -74,8 +73,8 @@ pub fn fmod(f: f32, n: i32) -> f32 {
 pub fn modulo<I: PrimInt>(a: I, b: I) -> I {
     match a % b {
         r if (r > I::zero() && b < I::zero())
-          || (r < I::zero() && b > I::zero()) => r + b,
-        r                                     => r,
+            || (r < I::zero() && b > I::zero()) => r + b,
+        r => r,
     }
 }
 
@@ -168,16 +167,16 @@ pub fn vec2_sub<T>(a: [T; 2], b: [T; 2]) -> [T; 2]
 
 
 /// Find the bounding rect for the given series of points.
-pub fn bounding_box_for_points<I>(mut points: I) -> Rect
+pub fn bounding_box_for_points<I>(mut points: I) -> OldRect
     where I: Iterator<Item=Point>,
 {
     points.next().map(|first| {
-        let start_rect = Rect {
+        let start_rect = OldRect {
             x: Range { start: first[0], end: first[0] },
             y: Range { start: first[1], end: first[1] },
         };
-        points.fold(start_rect, Rect::stretch_to_point)
-    }).unwrap_or_else(|| Rect::from_xy_dim([0.0, 0.0], [0.0, 0.0]))
+        points.fold(start_rect, OldRect::stretch_to_point)
+    }).unwrap_or_else(|| OldRect::from_xy_dim([0.0, 0.0], [0.0, 0.0]))
 }
 
 /// A type returned by the `iter_diff` function.
@@ -302,5 +301,4 @@ fn test_map_range() {
     assert_eq!(map_range(5.0, 5.0, 0.0, 0.0, 10.0), 0.0);
     assert_eq!(map_range(2.5, 5.0, 0.0, 0.0, 10.0), 5.0);
     assert_eq!(map_range(0.0, 5.0, 0.0, 0.0, 10.0), 10.0);
-
 }

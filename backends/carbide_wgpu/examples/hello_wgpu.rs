@@ -17,49 +17,48 @@ fn main() {
     let sync_state = CommonState::new_local_with_key(&"Hello".to_string());
 
     window.set_widgets(
-        OverlaidLayer::new ("overlay_test",
-        VStack::initialize(vec![
-            Text::new("Hello world!y")
-                .font_size(EnvironmentFontSize::Title)
-                .color(EnvironmentColor::Green)
-                .padding(EdgeInsets::all(10.0)),
-            Text::new("Hvad sker der i denne verden og vil den layoute rigtigt når der er en lang tekst og der ikke er nok plads til at det hele kan være på en linje")
-                .padding(EdgeInsets::all(10.0)).border(),
-            Image::new(rust_image),
-            Rectangle::initialize(vec![
-                SyncTest::new(sync_state)
-            ]).fill(EnvironmentColor::SecondarySystemBackground),
-            HStack::initialize(vec![
-                RoundedRectangle::initialize(CornerRadii::all(25.0))
-                    .frame(100.0, 100.0),
-                Canvas::initialize(draw_heart)
-                    .frame(150.0, 150.0),
-                Rectangle::initialize(vec![
-                    Scroll::new(
-                        Image::new(rust_image)
-                            .resizeable()
-                            .aspect_ratio(ScaleMode::Fill)
-                            .frame(800.0, 500.0)
-                    ).set_scroll_direction(ScrollDirection::Both)
-                        .clip()
-                ]).fill(EnvironmentColor::SecondarySystemBackground).frame(SCALE, 200.0),
-            ]).padding(EdgeInsets::all(10.0)),
-            HStack::initialize(vec![
-                Spacer::new(SpacerDirection::Horizontal),
-                Ellipse::new()
-                    .padding(EdgeInsets::all(10.0))
-                    .frame(150.0, 150.0),
-                Spacer::new(SpacerDirection::Horizontal),
-                Spacer::new(SpacerDirection::Horizontal)
-            ]),
-        ])),
+        OverlaidLayer::new("overlay_test",
+                           VStack::initialize(vec![
+                               Text::new("Hello world!y")
+                                   .font_size(EnvironmentFontSize::Title)
+                                   .color(EnvironmentColor::Green)
+                                   .padding(EdgeInsets::all(10.0)),
+                               Text::new("Hvad sker der i denne verden og vil den layoute rigtigt når der er en lang tekst og der ikke er nok plads til at det hele kan være på en linje")
+                                   .padding(EdgeInsets::all(10.0)).border(),
+                               Image::new(rust_image),
+                               Rectangle::initialize(vec![
+                                   SyncTest::new(sync_state)
+                               ]).fill(EnvironmentColor::SecondarySystemBackground),
+                               HStack::initialize(vec![
+                                   RoundedRectangle::initialize(CornerRadii::all(25.0))
+                                       .frame(100.0, 100.0),
+                                   Canvas::initialize(draw_heart)
+                                       .frame(150.0, 150.0),
+                                   Rectangle::initialize(vec![
+                                       Scroll::new(
+                                           Image::new(rust_image)
+                                               .resizeable()
+                                               .aspect_ratio(ScaleMode::Fill)
+                                               .frame(800.0, 500.0)
+                                       ).set_scroll_direction(ScrollDirection::Both)
+                                           .clip()
+                                   ]).fill(EnvironmentColor::SecondarySystemBackground).frame(SCALE, 200.0),
+                               ]).padding(EdgeInsets::all(10.0)),
+                               HStack::initialize(vec![
+                                   Spacer::new(SpacerDirection::Horizontal),
+                                   Ellipse::new()
+                                       .padding(EdgeInsets::all(10.0))
+                                       .frame(150.0, 150.0),
+                                   Spacer::new(SpacerDirection::Horizontal),
+                                   Spacer::new(SpacerDirection::Horizontal)
+                               ]),
+                           ])),
     );
 
     window.run_event_loop();
-
 }
 
-fn draw_heart<GS: GlobalState>(_: Rect, mut context: Context<GS>) -> Context<GS> {
+fn draw_heart<GS: GlobalState>(_: OldRect, mut context: Context<GS>) -> Context<GS> {
     context.move_to(75.0, 40.0);
     context.bezier_curve_to([75.0, 37.0], [70.0, 25.0], [50.0, 25.0]);
     context.bezier_curve_to([20.0, 25.0], [20.0, 62.5], [20.0, 62.5]);

@@ -8,7 +8,7 @@ use super::{Point, Range, Scalar};
 ///
 /// This is a carbide-specific Rectangle in that it's designed to help with layout.
 #[derive(Copy, Clone, Debug, PartialEq)]
-pub struct Rect {
+pub struct OldRect {
     /// The start and end positions of the Rectangle on the x axis.
     pub x: Range,
     /// The start and end positions of the Rectangle on the y axis.
@@ -29,18 +29,17 @@ pub enum Corner {
 }
 
 
-impl Rect {
-
+impl OldRect {
     pub fn new(position: Point, size: Dimensions) -> Self {
-        Rect {
+        OldRect {
             x: Range { start: position[0], end: position[0] + size[0] },
-            y: Range { start: position[1], end: position[1] + size[1] }
+            y: Range { start: position[1], end: position[1] + size[1] },
         }
     }
 
     /// Construct a Rect from a given `Point` and `Dimensions`.
     pub fn from_xy_dim(xy: Point, dim: Dimensions) -> Self {
-        Rect {
+        OldRect {
             x: Range::from_pos_and_len(xy[0], dim[0]),
             y: Range::from_pos_and_len(xy[1], dim[1]),
         }
@@ -50,7 +49,7 @@ impl Rect {
     pub fn from_corners(a: Point, b: Point) -> Self {
         let (left, right) = if a[0] < b[0] { (a[0], b[0]) } else { (b[0], a[0]) };
         let (bottom, top) = if a[1] < b[1] { (a[1], b[1]) } else { (b[1], a[1]) };
-        Rect {
+        OldRect {
             x: Range { start: left, end: right },
             y: Range { start: bottom, end: top },
         }
@@ -58,12 +57,12 @@ impl Rect {
 
     /// The Rect representing the area in which two Rects overlap.
     pub fn overlap(self, other: Self) -> Option<Self> {
-        self.x.overlap(other.x).and_then(|x| self.y.overlap(other.y).map(|y| Rect { x: x, y: y }))
+        self.x.overlap(other.x).and_then(|x| self.y.overlap(other.y).map(|y| OldRect { x: x, y: y }))
     }
 
     /// The Rect that encompass the two given sets of Rect.
     pub fn max(self, other: Self) -> Self {
-        Rect {
+        OldRect {
             x: self.x.max(other.x),
             y: self.y.max(other.y),
         }
@@ -184,12 +183,12 @@ impl Rect {
 
     /// Shift the Rect along the x axis.
     pub fn shift_x(self, x: Scalar) -> Self {
-        Rect { x: self.x.shift(x), ..self }
+        OldRect { x: self.x.shift(x), ..self }
     }
 
     /// Shift the Rect along the y axis.
     pub fn shift_y(self, y: Scalar) -> Self {
-        Rect { y: self.y.shift(y), ..self }
+        OldRect { y: self.y.shift(y), ..self }
     }
 
     /// Shift the Rect by the given Point.
@@ -199,12 +198,12 @@ impl Rect {
 
     /// Returns a `Rect` with a position relative to the given position on the *x* axis.
     pub fn relative_to_x(self, x: Scalar) -> Self {
-        Rect { x: self.x.shift(-x), ..self }
+        OldRect { x: self.x.shift(-x), ..self }
     }
 
     /// Returns a `Rect` with a position relative to the given position on the *y* axis.
     pub fn relative_to_y(self, y: Scalar) -> Self {
-        Rect { y: self.y.shift(-y), ..self }
+        OldRect { y: self.y.shift(-y), ..self }
     }
 
     /// Returns a `Rect` with a position relative to the given position.
@@ -219,35 +218,35 @@ impl Rect {
 
     /// The Rect with some padding applied to the left edge.
     pub fn pad_left(self, pad: Scalar) -> Self {
-        Rect { x: self.x.pad_start(pad), ..self }
+        OldRect { x: self.x.pad_start(pad), ..self }
     }
 
     /// The Rect with some padding applied to the right edge.
     pub fn pad_right(self, pad: Scalar) -> Self {
-        Rect { x: self.x.pad_end(pad), ..self }
+        OldRect { x: self.x.pad_end(pad), ..self }
     }
 
     /// The rect with some padding applied to the bottom edge.
     pub fn pad_bottom(self, pad: Scalar) -> Self {
-        Rect { y: self.y.pad_start(pad), ..self }
+        OldRect { y: self.y.pad_start(pad), ..self }
     }
 
     /// The Rect with some padding applied to the top edge.
     pub fn pad_top(self, pad: Scalar) -> Self {
-        Rect { y: self.y.pad_end(pad), ..self }
+        OldRect { y: self.y.pad_end(pad), ..self }
     }
 
     /// The Rect with some padding amount applied to each edge.
     pub fn pad(self, pad: Scalar) -> Self {
-        let Rect { x, y } = self;
-        Rect { x: x.pad(pad), y: y.pad(pad) }
+        let OldRect { x, y } = self;
+        OldRect { x: x.pad(pad), y: y.pad(pad) }
     }
 
 
     /// Stretches the closest edge(s) to the given point if the point lies outside of the Rect area.
     pub fn stretch_to_point(self, point: Point) -> Self {
-        let Rect { x, y } = self;
-        Rect {
+        let OldRect { x, y } = self;
+        OldRect {
             x: x.stretch_to_value(point[0]),
             y: y.stretch_to_value(point[1]),
         }
@@ -255,7 +254,7 @@ impl Rect {
 
     /// Align `self`'s right edge with the left edge of the `other` **Rect**.
     pub fn left_of(self, other: Self) -> Self {
-        Rect {
+        OldRect {
             x: self.x.align_before(other.x),
             y: self.y,
         }
@@ -263,7 +262,7 @@ impl Rect {
 
     /// Align `self`'s left edge with the right dge of the `other` **Rect**.
     pub fn right_of(self, other: Self) -> Self {
-        Rect {
+        OldRect {
             x: self.x.align_after(other.x),
             y: self.y,
         }
@@ -271,7 +270,7 @@ impl Rect {
 
     /// Align `self`'s top edge with the bottom edge of the `other` **Rect**.
     pub fn below(self, other: Self) -> Self {
-        Rect {
+        OldRect {
             x: self.x,
             y: self.y.align_before(other.x),
         }
@@ -279,7 +278,7 @@ impl Rect {
 
     /// Align `self`'s bottom edge with the top edge of the `other` **Rect**.
     pub fn above(self, other: Self) -> Self {
-        Rect {
+        OldRect {
             x: self.x,
             y: self.y.align_after(other.x),
         }
@@ -287,7 +286,7 @@ impl Rect {
 
     /// Align `self` to `other` along the *x* axis in accordance with the given `Align` variant.
     pub fn align_x_of(self, align: super::Align, other: Self) -> Self {
-        Rect {
+        OldRect {
             x: self.x.align_to(align, other.x),
             y: self.y,
         }
@@ -295,7 +294,7 @@ impl Rect {
 
     /// Align `self` to `other` along the *y* axis in accordance with the given `Align` variant.
     pub fn align_y_of(self, align: super::Align, other: Self) -> Self {
-        Rect {
+        OldRect {
             x: self.x,
             y: self.y.align_to(align, other.y),
         }
@@ -303,7 +302,7 @@ impl Rect {
 
     /// Align `self`'s left edge with the left edge of the `other` **Rect**.
     pub fn align_left_of(self, other: Self) -> Self {
-        Rect {
+        OldRect {
             x: self.x.align_start_of(other.x),
             y: self.y,
         }
@@ -311,7 +310,7 @@ impl Rect {
 
     /// Align the middle of `self` with the middle of the `other` **Rect** along the *x* axis.
     pub fn align_middle_x_of(self, other: Self) -> Self {
-        Rect {
+        OldRect {
             x: self.x.align_middle_of(other.x),
             y: self.y,
         }
@@ -319,7 +318,7 @@ impl Rect {
 
     /// Align `self`'s right edge with the right edge of the `other` **Rect**.
     pub fn align_right_of(self, other: Self) -> Self {
-        Rect {
+        OldRect {
             x: self.x.align_end_of(other.x),
             y: self.y,
         }
@@ -327,7 +326,7 @@ impl Rect {
 
     /// Align `self`'s bottom edge with the bottom edge of the `other` **Rect**.
     pub fn align_bottom_of(self, other: Self) -> Self {
-        Rect {
+        OldRect {
             x: self.x,
             y: self.y.align_start_of(other.y),
         }
@@ -335,7 +334,7 @@ impl Rect {
 
     /// Align the middle of `self` with the middle of the `other` **Rect** along the *y* axis.
     pub fn align_middle_y_of(self, other: Self) -> Self {
-        Rect {
+        OldRect {
             x: self.x,
             y: self.y.align_middle_of(other.y),
         }
@@ -343,7 +342,7 @@ impl Rect {
 
     /// Align `self`'s top edge with the top edge of the `other` **Rect**.
     pub fn align_top_of(self, other: Self) -> Self {
-        Rect {
+        OldRect {
             x: self.x,
             y: self.y.align_end_of(other.y),
         }
@@ -406,5 +405,4 @@ impl Rect {
             (Edge::End, Edge::End) => Corner::TopRight,
         }
     }
-
 }

@@ -13,7 +13,7 @@ pub struct Image {
     /// The unique identifier for the image that will be drawn.
     pub image_id: image_map::Id,
     /// The rectangle area of the original source image that should be used.
-    pub src_rect: Option<Rect>,
+    pub src_rect: Option<OldRect>,
     /// Unique styling.
     pub style: Style,
     position: Point,
@@ -72,7 +72,7 @@ impl<GS: GlobalState> Render<GS> for Image {
             source_rect: self.src_rect,
         };
 
-        let rect = Rect::new(self.position, self.dimension);
+        let rect = OldRect::new(self.position, self.dimension);
 
         let mut prims: Vec<Primitive> = vec![new_primitive(kind, rect)];
         prims.extend(Rectangle::<GS>::debug_outline(rect.clone(), 1.0));
@@ -132,7 +132,7 @@ pub struct State {
     /// The rectangular area of the image that we wish to display.
     ///
     /// If `None`, the entire image will be used.
-    pub src_rect: Option<Rect>,
+    pub src_rect: Option<OldRect>,
     /// The unique identifier for the image's associated data that will be drawn.
     pub image_id: image_map::Id,
 }
@@ -201,7 +201,7 @@ impl Image {
     /// The rectangular area of the image that we wish to display.
     ///
     /// If this method is not called, the entire image will be used.
-    pub fn source_rectangle(mut self, rect: Rect) -> Self {
+    pub fn source_rectangle(mut self, rect: OldRect) -> Self {
         self.src_rect = Some(rect);
         self
     }

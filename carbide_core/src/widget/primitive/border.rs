@@ -97,15 +97,15 @@ impl<S: GlobalState> CommonWidget<S> for Border<S> {
 
 impl<GS: GlobalState> Render<GS> for Border<GS> {
     fn get_primitives(&mut self, env: &Environment<GS>, global_state: &GS) -> Vec<Primitive> {
-        let rect = Rect::new(self.position, self.dimension);
+        let rect = OldRect::new(self.position, self.dimension);
         let (l, r, b, t) = rect.l_r_b_t();
 
         let width = self.border_width as f64;
 
-        let left_border = Rect::new([l, b], [width, rect.h()]);
-        let right_border = Rect::new([r - width, b], [width, rect.h()]);
-        let top_border = Rect::new([l + width, b], [rect.w() - width * 2.0, width]);
-        let bottom_border = Rect::new([l + width, t - width], [rect.w() - width * 2.0, width]);
+        let left_border = OldRect::new([l, b], [width, rect.h()]);
+        let right_border = OldRect::new([r - width, b], [width, rect.h()]);
+        let top_border = OldRect::new([l + width, b], [rect.w() - width * 2.0, width]);
+        let bottom_border = OldRect::new([l + width, t - width], [rect.w() - width * 2.0, width]);
 
         let border_color = self.color.get_latest_value();
         let mut prims = vec![

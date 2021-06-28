@@ -1,9 +1,8 @@
 use crate::{Color, Point};
-use crate::{image_map, Rect};
+use crate::{image_map, OldRect};
 use crate::color::Rgba;
 use crate::draw::shape::triangle::Triangle;
-use crate::render::text::Text;
-use crate::text::FontId;
+use crate::text::{FontId, Glyph};
 use crate::widget::primitive::ColoredPoint;
 
 /// The unique kind for each primitive element in the Ui.
@@ -45,7 +44,7 @@ pub enum PrimitiveKind {
         /// When `Some`, colours the `Image`. When `None`, the `Image` uses its regular colours.
         color: Option<Color>,
         /// The area of the texture that will be drawn to the `Image`'s `Rect`.
-        source_rect: Option<Rect>,
+        source_rect: Option<OldRect>,
     },
 
     /// A single block of `Text`, produced by the primitive `Text` widget.
@@ -54,7 +53,7 @@ pub enum PrimitiveKind {
         color: Color,
         /// All glyphs within the `Text` laid out in their correct positions in order from top-left
         /// to bottom right.
-        text: Text,
+        text: Vec<Glyph>,
         /// The unique identifier for the font, useful for the `glyph_cache.rect_for(id, glyph)`
         /// method when using the `carbide::text::GlyphCache` (rusttype's GPU `Cache`).
         font_id: FontId,

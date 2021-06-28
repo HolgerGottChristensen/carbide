@@ -1,7 +1,8 @@
 //! Items related to 2D positioning, used throughout carbide.
 
 pub use self::range::{Edge, Range};
-pub use self::rect::{Corner, Rect};
+pub use self::rect::{Corner, OldRect};
+
 pub mod range;
 pub mod rect;
 

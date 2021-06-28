@@ -1,11 +1,12 @@
 use instant::Instant;
 use rusttype::Scale;
 
+use crate::draw::{Dimension, Position};
 use crate::prelude::*;
 use crate::render::primitive_kind::PrimitiveKind;
-use crate::render::text::Text as RenderText;
+//use crate::render::text::Text as RenderText;
 use crate::render::util::new_primitive;
-use crate::text::FontId;
+use crate::text::{FontId, Glyph};
 use crate::text::Text as InternalText;
 use crate::text_old::PositionedGlyph;
 use crate::utils;
@@ -28,7 +29,129 @@ pub struct Text<GS> where GS: GlobalState {
     #[state] pub text: StringState<GS>,
     #[state] font_size: U32State<GS>,
     #[state] color: ColorState<GS>,
-    internal_text: InternalText,
+    internal_text: Option<InternalText<GS>>,
+}
+
+impl<GS: GlobalState> Text<GS> {
+    pub fn new<K: Into<StringState<GS>>>(text: K) -> Box<Self> {
+        let text = text.into();
+
+        Box::new(Text {
+            id: Uuid::new_v4(),
+            text,
+            font_size: EnvironmentFontSize::Body.into(),
+            position: [0.0, 0.0],
+            dimension: [100.0, 100.0],
+            wrap_mode: Wrap::Whitespace,
+            color: EnvironmentColor::Label.into(),
+            internal_text: None,
+        })
+    }
+
+    pub fn color<C: Into<ColorState<GS>>>(mut self, color: C) -> Box<Self> {
+        self.color = color.into();
+        Box::new(self)
+    }
+
+    pub fn font_size<K: Into<U32State<GS>>>(mut self, size: K) -> Box<Self> {
+        self.font_size = size.into();
+        Box::new(self)
+    }
+
+    pub fn wrap_mode(mut self, wrap: Wrap) -> Box<Self> {
+        self.wrap_mode = wrap;
+        Box::new(self)
+    }
+
+    /*/// Calculate the max width of the text, bounded by the proposed max width
+    fn max_width(&self, proposed_max_width: f64, env: &mut Environment<GS>) -> Scalar {
+        let font = env.get_font_mut(0); // Fixme: add multiple fonts
+        let font_size = *self.font_size.get_latest_value();
+        let mut max_width = 0.0;
+
+        for line in self.text.get_latest_value().lines() {
+            let width = font.calculate_width(line, font_size);
+
+            // We can end early, because we are bounded by the proposed max
+            if width >= proposed_max_width {
+                return proposed_max_width;
+            }
+            max_width = utils::partial_max(max_width, width);
+        }
+        max_width
+    }
+
+    /// Calculate the max height for the text, including newlines and wrapping
+    fn max_height(&self, env: &Environment<GS>) -> Scalar {
+        let font = env.get_font(0); // Fixme: add multiple fonts
+
+        let text = &self.text;
+        let font_size = *self.font_size.get_latest_value();
+        let wrap = self.wrap_mode;
+        let num_lines = match wrap {
+            Wrap::Character =>
+                text_old::line::infos(text.get_latest_value(), font, font_size)
+                    .wrap_by_character(self.dimension[0])
+                    .count(),
+            Wrap::Whitespace =>
+                text_old::line::infos(text.get_latest_value(), font, font_size)
+                    .wrap_by_whitespace(self.dimension[0])
+                    .count(),
+            _ => {
+                text.get_latest_value().lines().count()
+            }
+        };
+        let line_spacing = 1.0;
+        let height = text_old::height(num_lines.max(1), font_size, line_spacing);
+        height
+    }
+    */
+    /// Align the text to the left of its bounding **Rect**'s *x* axis range.
+    pub fn left_justify(self) -> Self {
+        self.justify(justify::Justify::Left)
+    }
+
+    /// Align the text to the middle of its bounding **Rect**'s *x* axis range.
+    pub fn center_justify(self) -> Self {
+        self.justify(justify::Justify::Center)
+    }
+
+    pub fn justify(self, _j: justify::Justify) -> Self {
+        self
+    }
+
+    /// Align the text to the right of its bounding **Rect**'s *x* axis range.
+    pub fn right_justify(self) -> Self {
+        self.justify(justify::Justify::Right)
+    }
+
+    pub fn get_positioned_glyphs(&self, env: &Environment<GS>, scale_factor: f32) -> Vec<Glyph> {
+        if let Some(internal) = &self.internal_text {
+            internal.first_glyphs()
+        } else {
+            vec![]
+        }
+    }
+
+    /*pub fn get_render_text(&self, env: &Environment<GS>) -> (RenderText, FontId) {
+        let font_id = 0 as FontId;
+        let font = env.get_font(font_id);
+
+        let rect = OldRect::new(self.position, self.dimension);
+
+        let base_line_offset = font.get_inner().v_metrics(Scale::uniform(*self.font_size.get_latest_value() as f32)).descent;
+
+        let t = RenderText {
+            internal_text: self.internal_text.clone(),
+            font_size: *self.font_size.get_latest_value(),
+            rect,
+            justify: Justify::Left,
+            line_spacing: 1.0,
+            base_line_offset,
+        };
+
+        (t, font_id)
+    }*/
 }
 
 impl<GS: GlobalState> Layout<GS> for Text<GS> {
@@ -38,36 +161,48 @@ impl<GS: GlobalState> Layout<GS> for Text<GS> {
 
     fn calculate_size(&mut self, requested_size: Dimensions, env: &mut Environment<GS>) -> Dimensions {
         let now = Instant::now();
-        let text = self.text.get_latest_value();
-        let font_size = self.font_size.get_latest_value();
-        self.internal_text.update(text.as_str(), *font_size, env);
 
-        let pref_width = requested_size[0].min(self.internal_text.max_width());
-        self.dimension = [pref_width, self.dimension[1]];
+        if let None = self.internal_text {
+            let text = self.text.get_latest_value().clone();
+            self.internal_text = Some(InternalText::new(text, env))
+        }
 
-        let pref_height = requested_size[1].min(self.internal_text.height(self.dimension[0], *font_size));
-        self.dimension = [self.dimension[0], pref_height];
+        if let Some(internal) = &mut self.internal_text {
+            let size = internal.calculate_size(Dimension::new(requested_size[0], requested_size[1]), env);
+
+            self.dimension = [size.width, size.height]
+        }
 
         println!("Time for calculate size: {}us", now.elapsed().as_micros());
 
         self.dimension
     }
 
-    fn position_children(&mut self) {}
+    fn position_children(&mut self) {
+        let position = Position::new(self.get_x(), self.get_y());
+        if let Some(internal) = &mut self.internal_text {
+            internal.position(position)
+        }
+    }
 }
 
 impl<GS: GlobalState> Render<GS> for Text<GS> {
     fn get_primitives(&mut self, env: &Environment<GS>, _: &GS) -> Vec<Primitive> {
-        let (text, font_id) = self.get_render_text(env);
+        let mut prims: Vec<Primitive> = vec![];
+        //let color = self.color.get_latest_value().clone();
 
-        let kind = PrimitiveKind::Text {
-            color: self.color.get_latest_value().clone(),
-            text,
-            font_id,
-        };
+        if let Some(internal) = &self.internal_text {
+            for (glyphs, font_id, color) in internal.span_glyphs() {
+                let kind = PrimitiveKind::Text {
+                    color,
+                    text: glyphs,
+                    font_id,
+                };
+                prims.push(new_primitive(kind, OldRect::new(self.position, self.dimension)));
+            }
+        }
 
-        let mut prims: Vec<Primitive> = vec![new_primitive(kind, Rect::new(self.position, self.dimension))];
-        prims.extend(Rectangle::<GS>::debug_outline(Rect::new(self.position, self.dimension), 1.0));
+        prims.extend(Rectangle::<GS>::debug_outline(OldRect::new(self.position, self.dimension), 1.0));
 
         return prims;
     }
@@ -116,138 +251,6 @@ impl<S: GlobalState> CommonWidget<S> for Text<S> {
 
     fn set_dimension(&mut self, dimensions: Dimensions) {
         self.dimension = dimensions
-    }
-}
-
-impl<GS: GlobalState> Text<GS> {
-    pub fn new<K: Into<StringState<GS>>>(text: K) -> Box<Self> {
-        Box::new(Text {
-            id: Uuid::new_v4(),
-            text: text.into(),
-            font_size: EnvironmentFontSize::Body.into(),
-            position: [0.0, 0.0],
-            dimension: [100.0, 100.0],
-            wrap_mode: Wrap::Whitespace,
-            color: EnvironmentColor::Label.into(),
-            internal_text: InternalText::new(0, Wrap::Whitespace),
-        })
-    }
-
-    pub fn color<C: Into<ColorState<GS>>>(mut self, color: C) -> Box<Self> {
-        self.color = color.into();
-        Box::new(self)
-    }
-
-    pub fn font_size<K: Into<U32State<GS>>>(mut self, size: K) -> Box<Self> {
-        self.font_size = size.into();
-        Box::new(self)
-    }
-
-    pub fn wrap_mode(mut self, wrap: Wrap) -> Box<Self> {
-        self.wrap_mode = wrap;
-        Box::new(self)
-    }
-
-    /// Calculate the max width of the text, bounded by the proposed max width
-    fn max_width(&self, proposed_max_width: f64, env: &mut Environment<GS>) -> Scalar {
-        let font = env.get_font_mut(0); // Fixme: add multiple fonts
-        let font_size = *self.font_size.get_latest_value();
-        let mut max_width = 0.0;
-
-        for line in self.text.get_latest_value().lines() {
-            let width = font.calculate_width(line, font_size);
-
-            // We can end early, because we are bounded by the proposed max
-            if width >= proposed_max_width {
-                return proposed_max_width;
-            }
-            max_width = utils::partial_max(max_width, width);
-        }
-        max_width
-    }
-
-    /// Calculate the max height for the text, including newlines and wrapping
-    fn max_height(&self, env: &Environment<GS>) -> Scalar {
-        let font = env.get_font(0); // Fixme: add multiple fonts
-
-        let text = &self.text;
-        let font_size = *self.font_size.get_latest_value();
-        let wrap = self.wrap_mode;
-        let num_lines = match wrap {
-            Wrap::Character =>
-                text_old::line::infos(text.get_latest_value(), font, font_size)
-                    .wrap_by_character(self.dimension[0])
-                    .count(),
-            Wrap::Whitespace =>
-                text_old::line::infos(text.get_latest_value(), font, font_size)
-                    .wrap_by_whitespace(self.dimension[0])
-                    .count(),
-            _ => {
-                text.get_latest_value().lines().count()
-            }
-        };
-        let line_spacing = 1.0;
-        let height = text_old::height(num_lines.max(1), font_size, line_spacing);
-        height
-    }
-
-    /// Align the text to the left of its bounding **Rect**'s *x* axis range.
-    pub fn left_justify(self) -> Self {
-        self.justify(justify::Justify::Left)
-    }
-
-    /// Align the text to the middle of its bounding **Rect**'s *x* axis range.
-    pub fn center_justify(self) -> Self {
-        self.justify(justify::Justify::Center)
-    }
-
-    pub fn justify(self, _j: justify::Justify) -> Self {
-        self
-    }
-
-    /// Align the text to the right of its bounding **Rect**'s *x* axis range.
-    pub fn right_justify(self) -> Self {
-        self.justify(justify::Justify::Right)
-    }
-
-
-    pub fn get_positioned_glyphs(&self, env: &Environment<GS>, scale_factor: f32) -> Vec<PositionedGlyph> {
-        let (render_text, _) = self.get_render_text(env);
-        render_text.positioned_glyphs(env, scale_factor)
-    }
-
-    pub fn get_render_text(&self, env: &Environment<GS>) -> (RenderText, FontId) {
-        let font_id = 0 as FontId;
-        let font = env.get_font(font_id);
-
-        let rect = Rect::new(self.position, self.dimension);
-
-        let new_line_infos = match self.wrap_mode {
-            Wrap::None =>
-                text_old::line::infos(&self.text.get_latest_value(), font, *self.font_size.get_latest_value()),
-            Wrap::Character =>
-                text_old::line::infos(&self.text.get_latest_value(), font, *self.font_size.get_latest_value())
-                    .wrap_by_character(rect.w()),
-            Wrap::Whitespace =>
-                text_old::line::infos(&self.text.get_latest_value(), font, *self.font_size.get_latest_value())
-                    .wrap_by_whitespace(rect.w()),
-        };
-
-        let base_line_offset = font.get_inner().v_metrics(Scale::uniform(*self.font_size.get_latest_value() as f32)).descent;
-
-        let t = RenderText {
-            positioned_glyphs: Vec::new(),
-            text: self.text.get_latest_value().clone(),
-            line_infos: new_line_infos.collect(),
-            font_id,
-            font_size: *self.font_size.get_latest_value(),
-            rect,
-            justify: Justify::Left,
-            line_spacing: 1.0,
-            base_line_offset,
-        };
-
-        (t, font_id)
     }
 }
 

@@ -9,8 +9,11 @@ fn main() {
     let mut window = Window::new("Hello world 2".to_string(), 800, 1200, Some(icon_path), String::from("Hejsa"));
 
     window.add_font("fonts/NotoSans/NotoSans-Regular.ttf");
+    window.add_font("fonts/NotoSans/NotoSans-Italic.ttf");
 
     window.set_widgets(
+        //Text::new("Hello world!\nHej verden!")
+        //    .foreground_color(EnvironmentColor::Orange)
         Text::new("Bacon ipsum dolor amet boudin chicken frankfurter tongue sausage jowl tenderloin biltong ribeye beef filet mignon porchetta. Tenderloin strip steak spare ribs short loin tri-tip. Ball tip sausage buffalo, ham pork loin prosciutto boudin short loin brisket porchetta doner fatback tenderloin pork burgdoggen. Short ribs filet mignon swine, drumstick bacon turkey capicola prosciutto venison short loin doner pork belly ham hock beef pork. Doner shoulder pig andouille ham hock capicola. Sirloin ribeye porchetta tenderloin short ribs.
 
 Jerky chicken pork loin, landjaeger rump frankfurter kielbasa leberkas chislic beef sausage burgdoggen. Biltong cupim picanha rump hamburger tri-tip. Brisket short loin andouille, alcatra cow pancetta prosciutto rump sausage salami kevin pork belly landjaeger filet mignon ham. Pork chop corned beef bacon, pork ribeye biltong tail cupim leberkas meatloaf prosciutto kevin. Ball tip picanha leberkas, fatback shankle swine tail sirloin. Turducken flank picanha buffalo venison. Jowl pork chop corned beef turducken, tail ground round andouille shankle biltong cow prosciutto kevin picanha short loin chislic.
@@ -26,6 +29,10 @@ Short ribs ball tip beef, tri-tip drumstick turducken bresaola filet mignon rump
 Ribeye pastrami ham hock pork belly ground round venison kevin jowl flank biltong ham kielbasa chicken drumstick. Cow burgdoggen ground round t-bone meatloaf kielbasa turducken jowl chislic drumstick sausage. Ham pastrami shank, cupim ham hock tongue strip steak. Drumstick short ribs tail, ground round doner pancetta ball tip tongue shankle. Filet mignon alcatra fatback tenderloin, jowl rump buffalo bacon burgdoggen tri-tip t-bone jerky landjaeger pig. Pig ham beef ribs salami, ribeye kevin pork.
 
 Does your lorem ipsum text long for something a little meatier? Give our generator a try… it’s tasty!")
+            .border()
+            .border_width(1)
+            .color(EnvironmentColor::Green)
+            .padding(EdgeInsets::all(40.0))
     );
 
     window.run_event_loop();

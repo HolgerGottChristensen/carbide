@@ -377,7 +377,7 @@ impl<S: GlobalState> CommonWidget<S> for Scroll<S> {
 impl<GS: GlobalState> Render<GS> for Scroll<GS> {
     fn get_primitives(&mut self, env: &Environment<GS>, global_state: &GS) -> Vec<Primitive> {
         let mut prims = vec![];
-        prims.extend(Rectangle::<GS>::debug_outline(Rect::new(self.position, self.dimension), 1.0));
+        prims.extend(Rectangle::<GS>::debug_outline(OldRect::new(self.position, self.dimension), 1.0));
         let child_prims = self.get_children_mut().flat_map(|f| f.get_primitives(env, global_state));
         prims.extend(child_prims);
 

@@ -1,4 +1,4 @@
-use crate::{Color, Rect};
+use crate::{Color, OldRect};
 use crate::color::Rgba;
 use crate::image_map::Id;
 use crate::render::owned_text::OwnedText;
@@ -19,7 +19,7 @@ pub enum OwnedPrimitiveKind {
     Image {
         image_id: Id,
         color: Option<Color>,
-        source_rect: Option<Rect>,
+        source_rect: Option<OldRect>,
     },
     Text {
         color: Color,

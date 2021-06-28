@@ -5,7 +5,7 @@ extern crate carbide_winit;
 #[macro_use]
 extern crate glium;
 
-use carbide_core::{color, Color, image_map, Range, Rect, render, Scalar, text_old};
+use carbide_core::{color, Color, image_map, OldRect, Range, render, Scalar, text_old};
 use carbide_core::render::primitive::Primitive;
 use carbide_core::render::primitive_kind::PrimitiveKind;
 use carbide_core::render::primitive_walker::PrimitiveWalker;
@@ -552,7 +552,7 @@ impl Renderer {
             height: screen_h,
         };
 
-        let _rect_to_glium_rect = |rect: Rect| {
+        let _rect_to_glium_rect = |rect: OldRect| {
             let (w, h) = rect.w_h();
             let left = (rect.left() * dpi_factor + half_win_w).round() as u32;
             let bottom = (rect.bottom() * dpi_factor + half_win_h).round() as u32;
@@ -757,7 +757,7 @@ impl Renderer {
                                               1.0 - screen_rect.max.y as f32 / screen_h as f32 - 0.5)) * 2.0
                         }*/
 
-                        Rect {
+                        OldRect {
                             x: Range { start: min_x, end: max_x },
                             y: Range { start: min_y, end: max_y },
                         }

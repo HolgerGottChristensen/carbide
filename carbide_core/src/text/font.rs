@@ -1,22 +1,26 @@
 use std::collections::HashMap;
 
 use fxhash::{FxBuildHasher, FxHashMap};
-use rusttype::GlyphId;
+use rusttype::{GlyphId, point, PositionedGlyph};
 
 use crate::prelude::text_old;
 use crate::Scalar;
 use crate::text::FontSize;
-use crate::text_old::{FontCollection, pt_to_px};
+use crate::text::glyph::Glyph;
+use crate::text_old::{f32_pt_to_scale, FontCollection, pt_to_px};
 
 type RustTypeFont = rusttype::Font<'static>;
+type RustTypeScale = rusttype::Scale;
+type RustTypePoint = rusttype::Point<f32>;
 
 pub struct Font {
     // Should in the future be a collection of different font weights
     font: RustTypeFont,
+    height: Scalar,
 
     /// Store a map from the size and string to a width,
     /// In the future we might be able to get rid of fontsize as this is probably just a multiplier
-    dimension_cache: FxHashMap<(FontSize, String), (Scalar, Vec<Scalar>)>,
+    dimension_cache: FxHashMap<(FontSize, String), Vec<Glyph>>,
 }
 
 impl Font {
@@ -24,76 +28,47 @@ impl Font {
         &self.font
     }
 
-    /// Warning: This currently ignores newlines and tabs, spaces are included
-    pub fn calculate_width(&mut self, text: &str, font_size: FontSize) -> Scalar {
-        if let Some((cache_hit, _)) = self.dimension_cache.get(&(font_size, text.to_string())) {
-            *cache_hit
-        } else {
-            let mut total_width = 0.0 as Scalar;
-            let mut total_char_widths = vec![];
-
-            for word in text.split_ascii_whitespace() {
-                if let Some((cache_hit, _)) = self.dimension_cache.get(&(font_size, word.to_string())) {
-                    total_width += *cache_hit;
-                } else {
-                    println!("Cache miss on: {}", word);
-                    let (calculated_width, char_widths) = Font::calculate_uncached_width(self, word, font_size);
-                    total_char_widths.extend(char_widths.clone());
-                    self.dimension_cache.insert((font_size, word.to_string()), (calculated_width, char_widths));
-
-                    total_width += calculated_width;
-                }
-            }
-
-            text.chars()
-                .filter(|c| {
-                    c.is_whitespace()
-                })
-                .for_each(|c| {
-                    if let Some((cache_hit, _)) = self.dimension_cache.get(&(font_size, c.to_string())) {
-                        total_width += *cache_hit;
-                    } else {
-                        let string = c.to_string();
-                        let (calculated_width, char_widths) = Font::calculate_uncached_width(self, &string, font_size);
-                        total_char_widths.extend(char_widths.clone());
-                        self.dimension_cache.insert((font_size, string), (calculated_width, char_widths));
-
-                        total_width += calculated_width;
-                    }
-                });
-
-            self.dimension_cache.insert((font_size, text.to_string()), (total_width, total_char_widths));
-            total_width
-        }
+    fn size_to_scale(font_size: FontSize, scale_factor: Scalar) -> RustTypeScale {
+        f32_pt_to_scale(font_size as f32 * scale_factor as f32)
     }
 
-    fn calculate_uncached_width(&self, text: &str, font_size: FontSize) -> (Scalar, Vec<Scalar>) {
-        let scale = rusttype::Scale::uniform(pt_to_px(font_size));
+    pub fn get_glyphs(&self, text: &str, font_size: FontSize, scale_factor: Scalar) -> (Vec<Scalar>, Vec<Glyph>) {
+        let scale = Font::size_to_scale(font_size, scale_factor);
+        let mut next_width = 0.0;
+        let mut widths = vec![];
+        let mut glyphs = vec![];
+        let mut last = None;
 
-        let mut total_width = 0.0 as Scalar;
-        let mut char_widths = vec![];
-
-        text.chars().map(|c| self.font.glyph(c)).fold(None, |state, glyph| {
-            let scaled_glyph = glyph.scaled(scale);
-            let mut char_width = scaled_glyph.h_metrics().advance_width as Scalar;
-            if let Some(last) = state {
-                char_width += self.font.pair_kerning(scale, last, scaled_glyph.id()) as Scalar;
+        for glyph in self.font.glyphs_for(text.chars()) {
+            let glyph_scaled = glyph.scaled(scale);
+            if let Some(last) = last {
+                let kerning = self.font.pair_kerning(scale, last, glyph_scaled.id());
+                next_width += kerning as f64;
+                widths.push(next_width);
+                next_width = 0.0;
             }
 
-            char_widths.push(char_width);
-            total_width += char_width;
-            Some(scaled_glyph.id())
-        });
+            let w = glyph_scaled.h_metrics().advance_width;
+            let next = glyph_scaled.positioned(point(0.0, 0.0));
+            last = Some(next.id());
+            next_width += w as f64;
+            glyphs.push(next.standalone());
+        };
 
-        (total_width, char_widths)
+        // Widths are pushed such that they contain the width and the kerning between itself and the
+        // next character. If its the last, we push here.
+        widths.push(next_width);
+
+        (widths, glyphs)
     }
 
+    pub fn height(font_size: FontSize, scale_factor: Scalar) -> Scalar {
+        Font::size_to_scale(font_size, scale_factor).y as Scalar
+    }
 
-    pub fn get_char_widths(&mut self, text: &str, font_size: FontSize) -> &Vec<Scalar> {
-        // Make sure we have cached the widths of all the letters
-        self.calculate_width(text, font_size);
-
-        &self.dimension_cache.get(&(font_size, text.to_string())).unwrap().1
+    pub fn baseline_offset(&self, font_size: FontSize, scale_factor: Scalar) -> Scalar {
+        let scale = Font::size_to_scale(font_size, scale_factor);
+        self.font.v_metrics(scale).ascent as Scalar
     }
 }
 
@@ -119,6 +94,7 @@ impl Font {
         collection.into_font().or(Err(Error::NoFont)).map(|inner_font| {
             Font {
                 font: inner_font,
+                height: 0.0,
                 dimension_cache: HashMap::with_hasher(FxBuildHasher::default()),
             }
         })

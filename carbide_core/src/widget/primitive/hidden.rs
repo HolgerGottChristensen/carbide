@@ -89,7 +89,7 @@ impl<S: GlobalState> CommonWidget<S> for Hidden<S> {
 impl<GS: GlobalState> Render<GS> for Hidden<GS> {
     fn get_primitives(&mut self, _: &Environment<GS>, _: &GS) -> Vec<Primitive> {
         let mut prims = vec![];
-        prims.extend(Rectangle::<GS>::debug_outline(Rect::new(self.position, self.dimension), 1.0));
+        prims.extend(Rectangle::<GS>::debug_outline(OldRect::new(self.position, self.dimension), 1.0));
         return prims;
     }
 }

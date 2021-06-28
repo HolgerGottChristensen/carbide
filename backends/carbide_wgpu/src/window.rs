@@ -1,5 +1,6 @@
 use std::collections::HashMap;
 use std::path::PathBuf;
+use std::time::Instant;
 
 pub use futures::executor::block_on;
 use wgpu::{BindGroupLayout, Texture};
@@ -9,7 +10,7 @@ use winit::event::{ElementState, Event, KeyboardInput, VirtualKeyCode, WindowEve
 use winit::event_loop::{ControlFlow, EventLoop};
 use winit::window::{Icon, WindowBuilder};
 
-use carbide_core::{Rect, Ui};
+use carbide_core::{OldRect, Ui};
 use carbide_core::event::input::Input;
 use carbide_core::image_map::{Id, ImageMap};
 use carbide_core::mesh::DEFAULT_GLYPH_CACHE_DIMS;
@@ -336,9 +337,10 @@ impl<T: GlobalState> Window<T> {
             label: Some("Render Encoder"),
         });
 
+        let now = Instant::now();
         let primitives = self.ui.draw(&self.state);
-
-        let fill = self.mesh.fill(Rect::new([0.0, 0.0], [self.size.width as f64, self.size.height as f64]), &self.ui.environment, &self.image_map, primitives).unwrap();
+        println!("Time for draw: {:?}us", now.elapsed().as_micros());
+        let fill = self.mesh.fill(OldRect::new([0.0, 0.0], [self.size.width as f64, self.size.height as f64]), &self.ui.environment, &self.image_map, primitives).unwrap();
 
         let glyph_cache_cmd = match fill.glyph_cache_requires_upload {
             false => None,

@@ -40,7 +40,7 @@ pub use serde::de::*;
 pub use carbide_derive::*;
 
 pub use crate::color::{Color, Colorable};
-pub use crate::position::{Point, Range, Rect, Scalar};
+pub use crate::position::{OldRect, Point, Range, Scalar};
 pub use crate::ui::Ui;
 
 pub mod color;

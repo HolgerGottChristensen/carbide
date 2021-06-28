@@ -1,4 +1,4 @@
-use crate::{Rect, Scalar};
+use crate::{OldRect, Scalar};
 use crate::position::Dimensions;
 use crate::text::FontSize;
 use crate::text_old::Font;
@@ -11,7 +11,7 @@ pub struct OwnedText {
     pub window_dim: Dimensions,
     pub font: Font,
     pub font_size: FontSize,
-    pub rect: Rect,
+    pub rect: OldRect,
     pub justify: Justify,
     pub line_spacing: Scalar,
     pub base_line_offset: f32,

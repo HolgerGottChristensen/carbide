@@ -89,7 +89,7 @@ impl<'a, I> Iterator for Lines<'a, I>
 pub mod glyph {
     use std;
 
-    use crate::{Range, Rect, Scalar};
+    use crate::{OldRect, Range, Scalar};
     use crate::text::{Font, FontSize};
 
     /// Some position along the X axis (used within `CharXs`).
@@ -166,7 +166,7 @@ pub mod glyph {
     pub fn rects_per_line<'a, I>(lines_with_rects: I,
                                  font: &'a Font,
                                  font_size: FontSize) -> RectsPerLine<'a, I>
-        where I: Iterator<Item=(&'a str, Rect)>,
+        where I: Iterator<Item=(&'a str, OldRect)>,
     {
         RectsPerLine {
             lines_with_rects,
@@ -187,7 +187,7 @@ pub mod glyph {
                                           font_size: FontSize,
                                           start: super::cursor::Index,
                                           end: super::cursor::Index) -> SelectedRectsPerLine<'a, I>
-        where I: Iterator<Item=(&'a str, Rect)>,
+        where I: Iterator<Item=(&'a str, OldRect)>,
     {
         SelectedRectsPerLine {
             enumerated_rects_per_line:
@@ -198,7 +198,7 @@ pub mod glyph {
     }
 
     impl<'a, I> Iterator for RectsPerLine<'a, I>
-        where I: Iterator<Item=(&'a str, Rect)>,
+        where I: Iterator<Item=(&'a str, OldRect)>,
     {
         type Item = Rects<'a, 'a>;
         fn next(&mut self) -> Option<Self::Item> {
@@ -217,7 +217,7 @@ pub mod glyph {
     }
 
     impl<'a, I> Iterator for SelectedRectsPerLine<'a, I>
-        where I: Iterator<Item=(&'a str, Rect)>,
+        where I: Iterator<Item=(&'a str, OldRect)>,
     {
         type Item = SelectedRects<'a, 'a>;
         fn next(&mut self) -> Option<Self::Item> {
@@ -258,7 +258,7 @@ pub mod glyph {
     }
 
     impl<'a, 'b> Iterator for Rects<'a, 'b> {
-        type Item = Rect;
+        type Item = OldRect;
         fn next(&mut self) -> Option<Self::Item> {
             let Rects { ref mut next_left, ref mut layout, y } = *self;
             layout.next().map(|g| {
@@ -268,13 +268,13 @@ pub mod glyph {
                     .unwrap_or_else(|| left + g.unpositioned().h_metrics().advance_width as Scalar);
                 *next_left = right;
                 let x = Range::new(left, right);
-                Rect { x, y }
+                OldRect { x, y }
             })
         }
     }
 
     impl<'a, 'b> Iterator for SelectedRects<'a, 'b> {
-        type Item = Rect;
+        type Item = OldRect;
         fn next(&mut self) -> Option<Self::Item> {
             let SelectedRects { ref mut enumerated_rects, end_char_idx } = *self;
             enumerated_rects.next()
@@ -290,14 +290,14 @@ pub mod glyph {
 pub mod cursor {
     use std;
 
-    use crate::position::{Align, Point, Range, Rect, Scalar};
+    use crate::position::{Align, OldRect, Point, Range, Scalar};
     use crate::text::{Font, FontSize};
     use crate::widget::types::justify::Justify;
 
     /// Every possible cursor position within each line of text yielded by the given iterator.
-                            ///
-                            /// Yields `(xs, y_range)`, where `y_range` is the `Range` occupied by the line across the *y*
-                            /// axis and `xs` is every possible cursor position along the *x* axis
+                                ///
+                                /// Yields `(xs, y_range)`, where `y_range` is the `Range` occupied by the line across the *y*
+                                /// axis and `xs` is every possible cursor position along the *x* axis
     #[derive(Clone)]
     pub struct XysPerLine<'a, I> {
         lines_with_rects: I,
@@ -540,7 +540,7 @@ pub mod cursor {
                                       x_align: Justify,
                                       y_align: Align,
                                       line_spacing: Scalar,
-                                      rect: Rect) -> XysPerLineFromText<'a>
+                                      rect: OldRect) -> XysPerLineFromText<'a>
     {
         let line_infos = line_infos.iter().cloned();
         let line_rects = super::line::rects(line_infos.clone(), font_size, rect,
@@ -653,7 +653,7 @@ pub mod cursor {
 
 
     impl<'a, I> Iterator for XysPerLine<'a, I>
-        where I: Iterator<Item=(super::line::Info, Rect)>,
+        where I: Iterator<Item=(super::line::Info, OldRect)>,
     {
         // The `Range` occupied by the line across the *y* axis, along with an iterator yielding
         // each possible cursor position along the *x* axis.
@@ -709,7 +709,7 @@ pub mod cursor {
 pub mod line {
     use std;
 
-    use crate::position::{Align, Range, Rect, Scalar};
+    use crate::position::{Align, OldRect, Range, Scalar};
     use crate::text::{Font, FontSize};
     use crate::widget::types::justify::Justify;
 
@@ -791,7 +791,7 @@ pub mod line {
         infos: I,
         x_align: Justify,
         line_spacing: Scalar,
-        next: Option<Rect>,
+        next: Option<OldRect>,
     }
 
     /// An iterator yielding a `Rect` for each selected line in a block of text.
@@ -1132,7 +1132,7 @@ pub mod line {
     /// yielded by the `infos` Iterator.
     pub fn rects<I>(mut infos: I,
                     font_size: FontSize,
-                    bounding_rect: Rect,
+                    bounding_rect: OldRect,
                     x_align: Justify,
                     y_align: Align,
                     line_spacing: Scalar) -> Rects<I>
@@ -1161,7 +1161,7 @@ pub mod line {
             let range = Range::new(0.0, font_size as Scalar);
             let y = range.align_start_of(total_text_y);
 
-            Rect { x, y }
+            OldRect { x, y }
         });
 
         Rects {
@@ -1183,7 +1183,7 @@ pub mod line {
                                  font_size: FontSize,
                                  start: super::cursor::Index,
                                  end: super::cursor::Index) -> SelectedRects<'a, I>
-        where I: Iterator<Item=(&'a str, Rect)>,
+        where I: Iterator<Item=(&'a str, OldRect)>,
     {
         SelectedRects {
             selected_char_rects_per_line:
@@ -1284,7 +1284,7 @@ pub mod line {
     impl<I> Iterator for Rects<I>
         where I: Iterator<Item=Info>,
     {
-        type Item = Rect;
+        type Item = OldRect;
         fn next(&mut self) -> Option<Self::Item> {
             let Rects { ref mut next, ref mut infos, x_align, line_spacing } = *self;
             next.map(|line_rect| {
@@ -1304,7 +1304,7 @@ pub mod line {
                         }
                     };
 
-                    Rect { x, y }
+                    OldRect { x, y }
                 });
 
                 line_rect
@@ -1313,9 +1313,9 @@ pub mod line {
     }
 
     impl<'a, I> Iterator for SelectedRects<'a, I>
-        where I: Iterator<Item=(&'a str, Rect)>,
+        where I: Iterator<Item=(&'a str, OldRect)>,
     {
-        type Item = Rect;
+        type Item = OldRect;
         fn next(&mut self) -> Option<Self::Item> {
             while let Some(mut rects) = self.selected_char_rects_per_line.next() {
                 if let Some(first_rect) = rects.next() {
