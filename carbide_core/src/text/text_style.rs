@@ -20,7 +20,7 @@ pub struct TextStyle {
     pub font_style: FontStyle,
     /// The weight of the font to show in
     pub font_weight: FontWeight,
-    /// Underline, Overline, Strikethrough
+    /// Underline, Overline, StrikeThrough
     pub text_decoration: TextDecoration,
     /// The primary color for the text
     pub color: Option<Color>,

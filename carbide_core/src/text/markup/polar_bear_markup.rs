@@ -27,6 +27,8 @@ pub fn parse_polar_bear_markup(input: &str) -> IResult<&str, Vec<PolarItem>> {
     let (left, parsed) = many0(alt((
         parse_header_1,
         parse_header_2,
+        parse_underline,
+        parse_strike_through,
         parse_italic,
         parse_bold,
         parse_paragraph,
@@ -87,9 +89,21 @@ fn parse_newline(input: &str) -> IResult<&str, PolarItem> {
     Ok((left, PolarItem::Newline))
 }
 
-fn parse_italic(input: &str) -> IResult<&str, PolarItem> {
+fn parse_underline(input: &str) -> IResult<&str, PolarItem> {
+    let (left, parsed): (&str, String) =
+        delimited(tag("_"), parse_text, tag("_"))(input)?;
+    let italic = PolarItem::Underline(parsed);
+    Ok((left, italic))
+}
 
-    //let end = tuple((not(tag(" ")), tag("/"), alt((peek(tag(" ")), eof))));
+fn parse_strike_through(input: &str) -> IResult<&str, PolarItem> {
+    let (left, parsed): (&str, String) =
+        delimited(tag("-"), parse_text, tag("-"))(input)?;
+    let italic = PolarItem::Strike(parsed);
+    Ok((left, italic))
+}
+
+fn parse_italic(input: &str) -> IResult<&str, PolarItem> {
     let (left, parsed): (&str, String) =
         delimited(tag("/"), parse_text, tag("/"))(input)?;
     let italic = PolarItem::Italic(parsed);
@@ -97,8 +111,6 @@ fn parse_italic(input: &str) -> IResult<&str, PolarItem> {
 }
 
 fn parse_bold(input: &str) -> IResult<&str, PolarItem> {
-
-    //let end = tuple((not(tag(" ")), tag("/"), alt((peek(tag(" ")), eof))));
     let (left, parsed): (&str, String) =
         delimited(tag("*"), parse_text, tag("*"))(input)?;
     let italic = PolarItem::Bold(parsed);
@@ -116,7 +128,7 @@ fn parse_text(input: &str) -> IResult<&str, String> {
     let (left, parsed): (&str, String) =
         map(
             many1(preceded(
-                not(alt((tag("/"), tag("*"), tag("\n")))),
+                not(alt((tag("/"), tag("*"), tag("-"), tag("_"), tag("\n")))),
                 take(1u8),
             )),
             |vec| vec.join(""),

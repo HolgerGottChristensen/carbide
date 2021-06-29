@@ -22,6 +22,7 @@ pub enum TextSpan<GS> where GS: GlobalState {
         glyphs: Vec<Glyph>,
         widths: Vec<Scalar>,
         font_id: FontId,
+        ascending_pixels: f64,
     },
     Widget(Box<dyn Widget<GS>>),
     NewLine,
@@ -54,6 +55,7 @@ impl<GS: GlobalState> TextSpan<GS> {
             let font = style.get_font(env);
 
             let (widths, glyphs) = font.get_glyphs(line, style.font_size, scale_factor);
+            let ascending_pixels = font.baseline_offset(style.font_size, 1.0);
 
             res.push(TextSpan::Text {
                 style: Some(style.clone()),
@@ -61,6 +63,7 @@ impl<GS: GlobalState> TextSpan<GS> {
                 glyphs,
                 widths,
                 font_id: style.get_font_id(env),
+                ascending_pixels,
             });
             res.push(TextSpan::NewLine);
         }
@@ -91,6 +94,7 @@ impl<GS: GlobalState> TextSpan<GS> {
                     let font = style.get_font(env);
 
                     let (widths, glyphs) = font.get_glyphs(&text, style.font_size, scale_factor);
+                    let ascending_pixels = font.baseline_offset(style.font_size, 1.0);
 
                     let span = TextSpan::Text {
                         style: Some(style.clone()),
@@ -98,6 +102,7 @@ impl<GS: GlobalState> TextSpan<GS> {
                         glyphs,
                         widths,
                         font_id: style.get_font_id(env),
+                        ascending_pixels,
                     };
 
                     spans.push(span);
@@ -115,6 +120,7 @@ impl<GS: GlobalState> TextSpan<GS> {
                     let font = style.get_font(env);
 
                     let (widths, glyphs) = font.get_glyphs(&text, style.font_size, scale_factor);
+                    let ascending_pixels = font.baseline_offset(style.font_size, 1.0);
 
                     let span = TextSpan::Text {
                         style: Some(style.clone()),
@@ -122,6 +128,7 @@ impl<GS: GlobalState> TextSpan<GS> {
                         glyphs,
                         widths,
                         font_id: style.get_font_id(env),
+                        ascending_pixels,
                     };
 
                     spans.push(span);
@@ -139,6 +146,7 @@ impl<GS: GlobalState> TextSpan<GS> {
                     let font = style.get_font(env);
 
                     let (widths, glyphs) = font.get_glyphs(&text, style.font_size, scale_factor);
+                    let ascending_pixels = font.baseline_offset(style.font_size, 1.0);
 
                     let span = TextSpan::Text {
                         style: Some(style.clone()),
@@ -146,6 +154,7 @@ impl<GS: GlobalState> TextSpan<GS> {
                         glyphs,
                         widths,
                         font_id: style.get_font_id(env),
+                        ascending_pixels,
                     };
 
                     spans.push(span);
@@ -162,6 +171,7 @@ impl<GS: GlobalState> TextSpan<GS> {
                     let font = style.get_font(env);
 
                     let (widths, glyphs) = font.get_glyphs(&text, style.font_size, scale_factor);
+                    let ascending_pixels = font.baseline_offset(style.font_size, 1.0);
 
                     let span = TextSpan::Text {
                         style: Some(style.clone()),
@@ -169,6 +179,7 @@ impl<GS: GlobalState> TextSpan<GS> {
                         glyphs,
                         widths,
                         font_id: style.get_font_id(env),
+                        ascending_pixels,
                     };
 
                     spans.push(span);
@@ -185,6 +196,7 @@ impl<GS: GlobalState> TextSpan<GS> {
                     let font = style.get_font(env);
 
                     let (widths, glyphs) = font.get_glyphs(&text, style.font_size, scale_factor);
+                    let ascending_pixels = font.baseline_offset(style.font_size, 1.0);
 
                     let span = TextSpan::Text {
                         style: Some(style.clone()),
@@ -192,6 +204,57 @@ impl<GS: GlobalState> TextSpan<GS> {
                         glyphs,
                         widths,
                         font_id: style.get_font_id(env),
+                        ascending_pixels,
+                    };
+
+                    spans.push(span);
+                }
+                PolarItem::Underline(text) => {
+                    let style = TextStyle {
+                        font_family: default_font_family_name.clone(),
+                        font_size: 14,
+                        font_style: FontStyle::Normal,
+                        font_weight: FontWeight::Normal,
+                        text_decoration: TextDecoration::Underline(vec![]),
+                        color: None,
+                    };
+                    let font = style.get_font(env);
+
+                    let (widths, glyphs) = font.get_glyphs(&text, style.font_size, scale_factor);
+                    let ascending_pixels = font.baseline_offset(style.font_size, 1.0);
+
+                    let span = TextSpan::Text {
+                        style: Some(style.clone()),
+                        text: text.to_string(),
+                        glyphs,
+                        widths,
+                        font_id: style.get_font_id(env),
+                        ascending_pixels,
+                    };
+
+                    spans.push(span);
+                }
+                PolarItem::Strike(text) => {
+                    let style = TextStyle {
+                        font_family: default_font_family_name.clone(),
+                        font_size: 14,
+                        font_style: FontStyle::Normal,
+                        font_weight: FontWeight::Normal,
+                        text_decoration: TextDecoration::StrikeThrough(vec![]),
+                        color: None,
+                    };
+                    let font = style.get_font(env);
+
+                    let (widths, glyphs) = font.get_glyphs(&text, style.font_size, scale_factor);
+                    let ascending_pixels = font.baseline_offset(style.font_size, 1.0);
+
+                    let span = TextSpan::Text {
+                        style: Some(style.clone()),
+                        text: text.to_string(),
+                        glyphs,
+                        widths,
+                        font_id: style.get_font_id(env),
+                        ascending_pixels,
                     };
 
                     spans.push(span);

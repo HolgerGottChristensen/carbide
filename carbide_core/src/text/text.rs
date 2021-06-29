@@ -3,6 +3,7 @@ use rusttype::{point, vector};
 use crate::{Color, Scalar};
 use crate::draw::{Dimension, Position, Rect};
 use crate::text::{Font, FontId, Glyph};
+use crate::text::text_decoration::TextDecoration;
 use crate::text::text_span::TextSpan;
 use crate::text::text_style::TextStyle;
 use crate::widget::{Environment, GlobalState};
@@ -49,11 +50,12 @@ impl<GS: GlobalState> Text<GS> {
         }
     }
 
-    pub fn span_glyphs(&self) -> Vec<(Vec<Glyph>, FontId, Option<Color>)> {
+    pub fn span_glyphs(&self) -> Vec<(Vec<Glyph>, FontId, Option<Color>, Vec<Rect>)> {
         self.spans.iter().filter_map(|a| {
             match a {
                 TextSpan::Text { font_id, style, glyphs, .. } => {
-                    Some((glyphs.to_vec(), *font_id, style.clone().unwrap().color))
+                    let style = style.clone().unwrap();
+                    Some((glyphs.to_vec(), *font_id, style.color, style.text_decoration.get_rects()))
                 }
                 TextSpan::Widget(_) => None,
                 TextSpan::NewLine => None,
@@ -69,10 +71,23 @@ impl<GS: GlobalState> Text<GS> {
             let offset = vector(new_offset.x as f32 * self.scale_factor as f32, new_offset.y as f32 * self.scale_factor as f32);
             for span in &mut self.spans {
                 match span {
-                    TextSpan::Text { glyphs, .. } => {
+                    TextSpan::Text { glyphs, style, .. } => {
                         for glyph in glyphs {
                             let new_position = glyph.position() + offset;
                             glyph.set_position(new_position);
+                        }
+                        if let Some(style) = style {
+                            match &mut style.text_decoration {
+                                TextDecoration::None => {}
+                                TextDecoration::Overline(r) |
+                                TextDecoration::Underline(r) |
+                                TextDecoration::StrikeThrough(r) => {
+                                    for rect in r {
+                                        rect.position.x += new_offset.x;
+                                        rect.position.y += new_offset.y;
+                                    }
+                                }
+                            }
                         }
                     }
                     TextSpan::Widget(_) => {}
@@ -84,10 +99,6 @@ impl<GS: GlobalState> Text<GS> {
 
     /// Layout the text within a bounding box and return the dimensions of the resulting layout.
     pub fn calculate_size(&mut self, requested_size: Dimension, env: &Environment<GS>) -> Dimension {
-        // Todo: If the bounding box has the same width, change all x and y, but all other remains.
-        // This will also have an effect on the widgets will not be re-scaled on changes :/.
-
-
         // Layout as if the layout is at x:0, y:0
 
         // Todo: If text is NoWrap, this is not needed.
@@ -192,26 +203,60 @@ impl<GS: GlobalState> Text<GS> {
         let width = requested_size.width as f32 * self.scale_factor as f32;
         let mut max_width = 0.0;
         let mut current_x = 0.0;
-        let mut current_line = 0.0;
-        //env.get_font(0).baseline_offset(14, self.scale_factor) as f32;
+        let mut current_line = 28.0;//0.0;
+
         // Flatten the spans into lines by layout the widths and x axis.
         for span in &mut self.spans {
             match span {
-                TextSpan::Text { widths, glyphs, .. } => {
+                TextSpan::Text { widths, glyphs, style, ascending_pixels, .. } => {
+                    // Initiate strike lines
+                    let mut strike_lines = vec![];
+                    let mut current_strike_line = Rect { position: Position::new(current_x as f64 / self.scale_factor, current_line as f64 / self.scale_factor), dimension: Default::default() };
+
                     for (glyph, w) in glyphs.iter_mut().zip(widths) {
                         glyph.set_position(point(current_x, current_line));
                         current_x += *w as f32;
 
                         if current_x > width {
+                            current_strike_line.dimension = Dimension::new((width as f64 / self.scale_factor - current_strike_line.position.x), 1.0);
+                            strike_lines.push(current_strike_line);
+
                             current_line += 28.0; // 1.0
                             current_x = 0.0;
                             max_width = width;
+
+                            current_strike_line = Rect { position: Position::new(current_x as f64 / self.scale_factor, current_line as f64 / self.scale_factor), dimension: Default::default() };
+
                             glyph.set_position(point(current_x, current_line));
                             current_x += *w as f32;
                         }
 
                         if current_x > max_width {
                             max_width = current_x;
+                        }
+                    }
+
+                    current_strike_line.dimension = Dimension::new(current_x as f64 / self.scale_factor - current_strike_line.position.x, 1.0);
+                    strike_lines.push(current_strike_line);
+
+                    if let Some(style) = style {
+                        match &mut style.text_decoration {
+                            TextDecoration::None => {}
+                            TextDecoration::StrikeThrough(l) => {
+                                for line in &mut strike_lines {
+                                    line.position.y -= *ascending_pixels * 0.3;
+                                }
+                                *l = strike_lines;
+                            }
+                            TextDecoration::Overline(l) => {
+                                for line in &mut strike_lines {
+                                    line.position.y -= *ascending_pixels;
+                                }
+                                *l = strike_lines;
+                            }
+                            TextDecoration::Underline(l) => {
+                                *l = strike_lines;
+                            }
                         }
                     }
                 }
@@ -226,12 +271,4 @@ impl<GS: GlobalState> Text<GS> {
         self.latest_requested_offset = Position::new(0.0, 0.0);
         self.latest_max_width = max_width as f64;
     }
-
-    // Flatten all the text spans into lines
-    // Iterative layout into lines (layout x)
-    // Calculate height for each line
-    // Layout the lines y
-
-
-    // If width is the same, and either x or y changed, just move all coords
 }
