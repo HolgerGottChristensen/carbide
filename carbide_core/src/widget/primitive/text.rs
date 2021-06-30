@@ -8,7 +8,7 @@ use crate::render::primitive_kind::PrimitiveKind;
 use crate::render::util::new_primitive;
 use crate::text::{FontId, Glyph};
 use crate::text::Text as InternalText;
-use crate::text_old::PositionedGlyph;
+//use crate::text_old::PositionedGlyph;
 use crate::utils;
 use crate::widget::types::justify;
 use crate::widget::types::justify::Justify;

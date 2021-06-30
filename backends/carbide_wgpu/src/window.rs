@@ -342,6 +342,8 @@ impl<T: GlobalState> Window<T> {
             .swap_chain
             .get_current_frame()?
             .output;
+
+
         let mut encoder = self.device.create_command_encoder(&wgpu::CommandEncoderDescriptor {
             label: Some("Render Encoder"),
         });

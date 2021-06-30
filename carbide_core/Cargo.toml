@@ -27,7 +27,7 @@ carbide_derive = { path = "../carbide_derive", version = "0.70" }
 fnv = "1.0"
 num = "0.2"
 pistoncore-input = "1.0.0"
-rusttype = { version = "0.8", features = ["gpu_cache"] }
+rusttype = { version = "0.9", features = ["gpu_cache"] }
 instant = "0.1"
 copypasta = "0.6"
 rand = "0.7"
@@ -43,3 +43,8 @@ lyon = "0.17.3"
 bincode = "1.3.1"
 fxhash = "0.2.1"
 nom = "6.2.1"
+
+[dev-dependencies]
+ttf-parser = "0.12.3"
+font-kit = "0.10.1"
+image = "0.23"

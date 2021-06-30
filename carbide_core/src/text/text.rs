@@ -65,16 +65,14 @@ impl<GS: GlobalState> Text<GS> {
 
     pub fn position(&mut self, requested_offset: Position) {
         if self.latest_requested_offset != requested_offset {
-            let new_offset = requested_offset - self.latest_requested_offset;
+            let new_offset = (requested_offset - self.latest_requested_offset) * self.scale_factor;
 
             self.latest_requested_offset = requested_offset;
-            let offset = vector(new_offset.x as f32 * self.scale_factor as f32, new_offset.y as f32 * self.scale_factor as f32);
             for span in &mut self.spans {
                 match span {
                     TextSpan::Text { glyphs, style, .. } => {
                         for glyph in glyphs {
-                            let new_position = glyph.position() + offset;
-                            glyph.set_position(new_position);
+                            *glyph.position() = *glyph.position() + new_offset;
                         }
                         if let Some(style) = style {
                             match &mut style.text_decoration {
@@ -120,7 +118,7 @@ impl<GS: GlobalState> Text<GS> {
 
     fn calculate_size_with_word_break(&mut self, requested_size: Dimension, env: &Environment<GS>) {
         self.scale_factor = env.get_scale_factor();
-        let width = requested_size.width as f32 * self.scale_factor as f32;
+        let width = requested_size.width * self.scale_factor;
         let mut max_width = 0.0;
         let mut current_x = 0.0;
         let mut current_line = 0.0;
@@ -139,17 +137,17 @@ impl<GS: GlobalState> Text<GS> {
                         if current_char.is_whitespace() {
                             if current_x != 0.0 {
                                 latest_break_glyph_index = Some(current_glyph_index);
-                                current_glyph.set_position(point(current_x, current_line));
-                                current_x += current_width as f32;
+                                *current_glyph.position() = Position::new(current_x, current_line);
+                                current_x += current_width;
                             }
                         } else {
-                            current_glyph.set_position(point(current_x, current_line));
-                            current_x += current_width as f32;
+                            *current_glyph.position() = Position::new(current_x, current_line);
+                            current_x += current_width;
                         }
 
                         if current_x > width {
                             if current_char.is_whitespace() && current_x != 0.0 {
-                                current_x -= current_width as f32;
+                                current_x -= current_width;
                                 if current_x > max_width {
                                     max_width = current_x;
                                 }
@@ -161,7 +159,7 @@ impl<GS: GlobalState> Text<GS> {
                                     current_line += 28.0; // 1.0
                                     current_x = 0.0;
                                     for i in latest_break..current_glyph_index {
-                                        current_max_width -= widths[i] as f32;
+                                        current_max_width -= widths[i];
                                     }
                                     if current_max_width > max_width {
                                         max_width = current_max_width;
@@ -171,8 +169,8 @@ impl<GS: GlobalState> Text<GS> {
                                     current_line += 28.0; // 1.0
                                     current_x = 0.0;
                                     max_width = width;
-                                    current_glyph.set_position(point(current_x, current_line));
-                                    current_x += current_width as f32;
+                                    *current_glyph.position() = Position::new(current_x, current_line);
+                                    current_x += current_width;
                                     current_glyph_index += 1;
                                 }
                             }
@@ -200,7 +198,7 @@ impl<GS: GlobalState> Text<GS> {
 
     fn calculate_size_with_character_break(&mut self, requested_size: Dimension, env: &Environment<GS>) {
         self.scale_factor = env.get_scale_factor();
-        let width = requested_size.width as f32 * self.scale_factor as f32;
+        let width = requested_size.width * self.scale_factor;
         let mut max_width = 0.0;
         let mut current_x = 0.0;
         let mut current_line = 28.0;//0.0;
@@ -211,24 +209,24 @@ impl<GS: GlobalState> Text<GS> {
                 TextSpan::Text { widths, glyphs, style, ascending_pixels, .. } => {
                     // Initiate strike lines
                     let mut strike_lines = vec![];
-                    let mut current_strike_line = Rect { position: Position::new(current_x as f64 / self.scale_factor, current_line as f64 / self.scale_factor), dimension: Default::default() };
+                    let mut current_strike_line = Rect { position: Position::new(current_x / self.scale_factor, current_line / self.scale_factor), dimension: Default::default() };
 
                     for (glyph, w) in glyphs.iter_mut().zip(widths) {
-                        glyph.set_position(point(current_x, current_line));
-                        current_x += *w as f32;
+                        *glyph.position() = Position::new(current_x, current_line);
+                        current_x += *w;
 
                         if current_x > width {
-                            current_strike_line.dimension = Dimension::new((width as f64 / self.scale_factor - current_strike_line.position.x), 1.0);
+                            current_strike_line.dimension = Dimension::new((width / self.scale_factor - current_strike_line.position.x), 1.0);
                             strike_lines.push(current_strike_line);
 
                             current_line += 28.0; // 1.0
                             current_x = 0.0;
                             max_width = width;
 
-                            current_strike_line = Rect { position: Position::new(current_x as f64 / self.scale_factor, current_line as f64 / self.scale_factor), dimension: Default::default() };
+                            current_strike_line = Rect { position: Position::new(current_x / self.scale_factor, current_line / self.scale_factor), dimension: Default::default() };
 
-                            glyph.set_position(point(current_x, current_line));
-                            current_x += *w as f32;
+                            *glyph.position() = Position::new(current_x, current_line);
+                            current_x += *w;
                         }
 
                         if current_x > max_width {
@@ -236,7 +234,7 @@ impl<GS: GlobalState> Text<GS> {
                         }
                     }
 
-                    current_strike_line.dimension = Dimension::new(current_x as f64 / self.scale_factor - current_strike_line.position.x, 1.0);
+                    current_strike_line.dimension = Dimension::new(current_x / self.scale_factor - current_strike_line.position.x, 1.0);
                     strike_lines.push(current_strike_line);
 
                     if let Some(style) = style {

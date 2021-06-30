@@ -1,13 +1,12 @@
 use std::collections::HashMap;
 
 use fxhash::{FxBuildHasher, FxHashMap};
-use rusttype::{GlyphId, point, PositionedGlyph};
+use rusttype::{GlyphId, point, PositionedGlyph, Scale};
 
 use crate::prelude::text_old;
 use crate::Scalar;
 use crate::text::FontSize;
 use crate::text::glyph::Glyph;
-use crate::text_old::{f32_pt_to_scale, FontCollection, pt_to_px};
 
 type RustTypeFont = rusttype::Font<'static>;
 type RustTypeScale = rusttype::Scale;
@@ -24,12 +23,13 @@ pub struct Font {
 }
 
 impl Font {
-    pub fn get_inner(&self) -> &RustTypeFont {
-        &self.font
+    pub fn get_inner(&self) -> RustTypeFont {
+        // This clone should only be either an ARC clone or reference clone
+        self.font.clone()
     }
 
     fn size_to_scale(font_size: FontSize, scale_factor: Scalar) -> RustTypeScale {
-        f32_pt_to_scale(font_size as f32 * scale_factor as f32)
+        Font::f32_pt_to_scale(font_size as f32 * scale_factor as f32)
     }
 
     pub fn get_glyphs(&self, text: &str, font_size: FontSize, scale_factor: Scalar) -> (Vec<Scalar>, Vec<Glyph>) {
@@ -52,7 +52,7 @@ impl Font {
             let next = glyph_scaled.positioned(point(0.0, 0.0));
             last = Some(next.id());
             next_width += w as f64;
-            glyphs.push(next.standalone());
+            glyphs.push(Glyph::from(next));
         };
 
         // Widths are pushed such that they contain the width and the kerning between itself and the
@@ -70,33 +70,47 @@ impl Font {
         let scale = Font::size_to_scale(font_size, scale_factor);
         self.font.v_metrics(scale).ascent as Scalar
     }
+
+    /// Converts the given font size in "points" to its font size in pixels.
+    /// This is useful for when the font size is not an integer.
+    pub fn f32_pt_to_px(font_size_in_points: f32) -> f32 {
+        font_size_in_points * 4.0 / 3.0
+    }
+
+    /// Converts the given font size in "points" to a uniform `rusttype::Scale`.
+    /// This is useful for when the font size is not an integer.
+    pub fn f32_pt_to_scale(font_size_in_points: f32) -> Scale {
+        Scale::uniform(Font::f32_pt_to_px(font_size_in_points))
+    }
+
+    /// Converts the given font size in "points" to its font size in pixels.
+    pub fn pt_to_px(font_size_in_points: FontSize) -> f32 {
+        Font::f32_pt_to_px(font_size_in_points as f32)
+    }
+
+    /// Converts the given font size in "points" to a uniform `rusttype::Scale`.
+    pub fn pt_to_scale(font_size_in_points: FontSize) -> Scale {
+        Scale::uniform(Font::pt_to_px(font_size_in_points))
+    }
 }
 
 /// New font creation
 impl Font {
-    /// Load a `super::FontCollection` from a file at a given path.
-    pub fn collection_from_file<P>(path: P) -> Result<FontCollection, std::io::Error>
-        where P: AsRef<std::path::Path>,
+    /// Load a single `Font` from a file at the given path.
+    pub fn from_file<P>(path: P) -> Result<Self, Error>
+        where P: AsRef<std::path::Path>
     {
         use std::io::Read;
         let path = path.as_ref();
         let mut file = std::fs::File::open(path)?;
         let mut file_buffer = Vec::new();
         file.read_to_end(&mut file_buffer)?;
-        Ok(FontCollection::from_bytes(file_buffer)?)
-    }
+        let inner_font = RustTypeFont::try_from_vec(file_buffer).unwrap();
 
-    /// Load a single `Font` from a file at the given path.
-    pub fn from_file<P>(path: P) -> Result<Self, Error>
-        where P: AsRef<std::path::Path>
-    {
-        let collection = Font::collection_from_file(path)?;
-        collection.into_font().or(Err(Error::NoFont)).map(|inner_font| {
-            Font {
-                font: inner_font,
-                height: 0.0,
-                dimension_cache: HashMap::with_hasher(FxBuildHasher::default()),
-            }
+        Ok(Font {
+            font: inner_font,
+            height: 0.0,
+            dimension_cache: HashMap::with_hasher(FxBuildHasher::default()),
         })
     }
 }
@@ -133,4 +147,23 @@ impl std::fmt::Display for Error {
         };
         write!(f, "{}", s)
     }
+}
+
+#[test]
+fn load_bitmap_font() {
+    use ttf_parser::Face;
+    use image::ImageFormat;
+
+    let emoji_path = "/System/Library/Fonts/Apple Color Emoji.ttc";
+
+    let emoji_data = std::fs::read(emoji_path).unwrap();
+
+    let face = Face::from_slice(&emoji_data, 0).unwrap();
+    let glyph_id = face.glyph_index('😀').unwrap();
+    println!("Glyph ID: {:?}", glyph_id);
+    let raster_image = face.glyph_raster_image(glyph_id, 200).unwrap();
+    println!("{:?}", raster_image);
+
+    let image = image::load_from_memory(raster_image.data).unwrap();
+    image.into_luma_alpha().save("/Users/holgergottchristensen/Documents/carbide/target/smile.png").unwrap();
 }

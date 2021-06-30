@@ -1,6 +1,6 @@
 use std::fmt;
 use std::fmt::Display;
-use std::ops::{Add, AddAssign, Sub};
+use std::ops::{Add, AddAssign, Mul, Sub};
 
 use rusttype::Point;
 
@@ -29,12 +29,32 @@ impl AddAssign<Dimension> for Position {
     }
 }
 
+impl Mul<Scalar> for Position {
+    type Output = Position;
+
+    fn mul(mut self, rhs: f64) -> Self::Output {
+        self.x *= rhs;
+        self.y *= rhs;
+        self
+    }
+}
+
 impl Sub for Position {
     type Output = Position;
 
     fn sub(mut self, rhs: Self) -> Self::Output {
         self.x -= rhs.x;
         self.y -= rhs.y;
+        self
+    }
+}
+
+impl Add<Position> for Position {
+    type Output = Position;
+
+    fn add(mut self, rhs: Position) -> Self::Output {
+        self.x += rhs.x;
+        self.y += rhs.y;
         self
     }
 }
