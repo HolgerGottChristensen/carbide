@@ -53,9 +53,6 @@ pub struct Window<T: GlobalState> {
 
 impl<T: GlobalState> carbide_core::window::TWindow<T> for Window<T> {
     fn add_font_family(&mut self, mut family: FontFamily) -> String {
-        for font in &mut family.fonts {
-            font.font_id = self.add_font(&font.path)
-        }
         let family_name = family.name.clone();
         self.ui.environment.add_font_family(family);
         family_name

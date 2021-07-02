@@ -184,6 +184,15 @@ impl<GS: GlobalState> Environment<GS> {
         font_id
     }
 
+    pub fn insert_bitmap_font_from_file<P>(&mut self, path: P) -> FontId
+        where P: AsRef<std::path::Path>,
+    {
+        let font = Font::from_file_bitmap(path).unwrap();
+        let font_id = self.fonts.len();
+        self.fonts.push(font);
+        font_id
+    }
+
     pub fn get_font(&self, id: FontId) -> &Font {
         &self.fonts[id]
     }
@@ -199,7 +208,16 @@ impl<GS: GlobalState> Environment<GS> {
         font_id
     }
 
-    pub fn add_font_family(&mut self, family: FontFamily) {
+    pub fn add_font_family(&mut self, mut family: FontFamily) {
+        for font in &mut family.fonts {
+            let assets = find_folder::Search::KidsThenParents(3, 5).for_folder("assets").unwrap();
+            let font_path = assets.join(&font.path);
+            if font.is_bitmap {
+                self.insert_bitmap_font_from_file(font_path);
+            } else {
+                self.insert_font_from_file(font_path);
+            }
+        }
         let key = family.name.clone();
         self.font_families.insert(key, family);
     }

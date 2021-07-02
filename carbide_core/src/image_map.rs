@@ -3,6 +3,7 @@
 //! - [Map](./struct.Map.html)
 
 use std;
+
 use fnv;
 
 /// Unique image identifier.
@@ -12,6 +13,12 @@ use fnv;
 /// image.
 #[derive(Copy, Clone, Debug, Eq, PartialEq, Ord, PartialOrd, Hash)]
 pub struct Id(pub u32);
+
+impl From<u32> for Id {
+    fn from(id: u32) -> Self {
+        Id(id)
+    }
+}
 
 /// A type used to map the `widget::Id` of `Image` widgets to their associated `Img` data.
 ///
@@ -45,7 +52,6 @@ impl<Img> std::ops::Deref for ImageMap<Img> {
 
 
 impl<Img> ImageMap<Img> {
-
     /// Construct a new, empty `image::Map`.
     pub fn new() -> Self {
         ImageMap {
@@ -112,7 +118,6 @@ impl<Img> ImageMap<Img> {
         }
         NewIds { index_range: start_index..end_index }
     }
-
 }
 
 impl Iterator for NewIds {

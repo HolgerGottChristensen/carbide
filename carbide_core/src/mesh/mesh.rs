@@ -336,37 +336,6 @@ impl Mesh {
                     switch_to_plain_state!();
                     let font = env.get_font(font_id);
 
-                    let positioned_glyphs = text.iter().map(|glyph| {
-                        glyph.convert_to_glyph(font)
-                    }).collect::<Vec<_>>();
-
-                    // Queue the glyphs to be cached
-                    for positioned_glyph in positioned_glyphs.clone() {
-                        glyph_cache.queue_glyph(font_id, positioned_glyph);
-                    }
-
-                    glyph_cache.cache_queued(|rect, data| {
-                        let width = (rect.max.x - rect.min.x) as usize;
-                        let height = (rect.max.y - rect.min.y) as usize;
-                        let mut dst_ix = rect.min.y as usize * glyph_cache_w + rect.min.x as usize;
-                        let mut src_ix = 0;
-                        for _ in 0..height {
-                            let dst_range = dst_ix..dst_ix + width;
-                            let src_range = src_ix..src_ix + width;
-                            let dst_slice = &mut glyph_cache_pixel_buffer[dst_range];
-                            let src_slice = &data[src_range];
-                            dst_slice.copy_from_slice(src_slice);
-                            dst_ix += glyph_cache_w;
-                            src_ix += width;
-                        }
-                        glyph_cache_requires_upload = true;
-                    })?;
-
-
-                    let color = gamma_srgb_to_linear(color.to_fsa());
-                    let cache_id = font_id;
-
-
                     let to_gl_rect = |screen_rect: rusttype::Rect<i32>| {
                         let min_x = screen_rect.min.x as f64 / scale_factor;
                         let max_x = screen_rect.max.x as f64 / scale_factor;
@@ -379,30 +348,75 @@ impl Mesh {
                         }
                     };
 
+                    println!("{:?}", font);
 
-                    for g in positioned_glyphs {
-                        if let Ok(Some((uv_rect, screen_rect))) = glyph_cache.rect_for(cache_id, &g)
-                        {
-                            let vk_rect = to_gl_rect(screen_rect);
+                    if font.is_bitmap() {
+                        for glyph in text {
+                            let position = glyph.position();
+                            println!("Position glyph at: {}", position);
+                            println!("Dimensions of glyph: {}", glyph.scale());
+                            println!("bb: {:?}", glyph.bb());
+                        }
+                    } else {
+                        for glyph in &text {
+                            let position = glyph.position();
+                            println!("Position glyph at: {}", position);
+                            println!("Dimensions of glyph: {}", glyph.scale());
+                            println!("bb: {:?}", glyph.bb());
+                        }
+                        let positioned_glyphs = text.iter().map(|glyph| {
+                            glyph.convert_to_glyph(font)
+                        }).collect::<Vec<_>>();
 
-                            let v = |x, y, t| Vertex {
-                                position: [vx(x), vy(y), 0.0],
-                                tex_coords: t,
-                                rgba: color,
-                                mode: MODE_TEXT,
-                            };
-                            let mut push_v = |x, y, t| {
-                                vertices.push(v(x, y, t));
-                            };
+                        // Queue the glyphs to be cached
+                        for positioned_glyph in positioned_glyphs.clone() {
+                            glyph_cache.queue_glyph(font_id, positioned_glyph);
+                        }
 
-                            let (l, r, b, t) = vk_rect.l_r_b_t();
+                        glyph_cache.cache_queued(|rect, data| {
+                            let width = (rect.max.x - rect.min.x) as usize;
+                            let height = (rect.max.y - rect.min.y) as usize;
+                            let mut dst_ix = rect.min.y as usize * glyph_cache_w + rect.min.x as usize;
+                            let mut src_ix = 0;
+                            for _ in 0..height {
+                                let dst_range = dst_ix..dst_ix + width;
+                                let src_range = src_ix..src_ix + width;
+                                let dst_slice = &mut glyph_cache_pixel_buffer[dst_range];
+                                let src_slice = &data[src_range];
+                                dst_slice.copy_from_slice(src_slice);
+                                dst_ix += glyph_cache_w;
+                                src_ix += width;
+                            }
+                            glyph_cache_requires_upload = true;
+                        })?;
 
-                            push_v(l, t, [uv_rect.min.x, uv_rect.max.y]);
-                            push_v(r, b, [uv_rect.max.x, uv_rect.min.y]);
-                            push_v(l, b, [uv_rect.min.x, uv_rect.min.y]);
-                            push_v(l, t, [uv_rect.min.x, uv_rect.max.y]);
-                            push_v(r, b, [uv_rect.max.x, uv_rect.min.y]);
-                            push_v(r, t, [uv_rect.max.x, uv_rect.max.y]);
+
+                        let color = gamma_srgb_to_linear(color.to_fsa());
+
+                        for g in positioned_glyphs {
+                            if let Ok(Some((uv_rect, screen_rect))) = glyph_cache.rect_for(font_id, &g)
+                            {
+                                let vk_rect = to_gl_rect(screen_rect);
+
+                                let v = |x, y, t| Vertex {
+                                    position: [vx(x), vy(y), 0.0],
+                                    tex_coords: t,
+                                    rgba: color,
+                                    mode: MODE_TEXT,
+                                };
+                                let mut push_v = |x, y, t| {
+                                    vertices.push(v(x, y, t));
+                                };
+
+                                let (l, r, b, t) = vk_rect.l_r_b_t();
+
+                                push_v(l, t, [uv_rect.min.x, uv_rect.max.y]);
+                                push_v(r, b, [uv_rect.max.x, uv_rect.min.y]);
+                                push_v(l, b, [uv_rect.min.x, uv_rect.min.y]);
+                                push_v(l, t, [uv_rect.min.x, uv_rect.max.y]);
+                                push_v(r, b, [uv_rect.max.x, uv_rect.min.y]);
+                                push_v(r, t, [uv_rect.max.x, uv_rect.max.y]);
+                            }
                         }
                     }
                 }

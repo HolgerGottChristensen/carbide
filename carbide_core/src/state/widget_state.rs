@@ -1,8 +1,7 @@
 use std::fmt;
-use std::fmt::Debug;
+use std::fmt::{Debug, Formatter};
 
 use crate::{DeserializeOwned, Serialize};
-use crate::export::Formatter;
 use crate::prelude::Environment;
 use crate::prelude::state_key::StateKey;
 pub use crate::state::State;
@@ -30,7 +29,7 @@ impl<T: Serialize + Clone + Debug + Default, GS: GlobalState> Debug for WidgetSt
 
 impl<T: Serialize + Clone + Debug + Default, GS: GlobalState> Clone for WidgetState<T, GS> {
     fn clone(&self) -> Self {
-        WidgetState (self.0.clone())
+        WidgetState(self.0.clone())
     }
 }
 

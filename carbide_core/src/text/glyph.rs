@@ -28,8 +28,20 @@ impl Glyph {
         scaled.positioned(point(self.position.x as f32, self.position.y as f32))
     }
 
-    pub fn position(&mut self) -> &mut Position {
+    pub fn position_mut(&mut self) -> &mut Position {
         &mut self.position
+    }
+
+    pub fn position(&self) -> Position {
+        self.position
+    }
+
+    pub fn scale(&self) -> Dimension {
+        self.api_scale
+    }
+
+    pub fn bb(&self) -> Option<Rect> {
+        self.bb
     }
 }
 

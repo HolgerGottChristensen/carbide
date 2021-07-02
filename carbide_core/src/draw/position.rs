@@ -1,11 +1,10 @@
 use std::fmt;
-use std::fmt::Display;
+use std::fmt::{Display, Formatter};
 use std::ops::{Add, AddAssign, Mul, Sub};
 
 use rusttype::Point;
 
 use crate::draw::Dimension;
-use crate::export::Formatter;
 use crate::Scalar;
 
 #[derive(Copy, Clone, PartialOrd, PartialEq, Debug, Default)]

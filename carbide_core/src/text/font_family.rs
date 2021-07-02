@@ -11,9 +11,9 @@ pub struct FontFamily {
 }
 
 impl FontFamily {
-    pub fn new(name: String) -> FontFamily {
+    pub fn new(name: &str) -> FontFamily {
         FontFamily {
-            name,
+            name: name.to_string(),
             fonts: vec![],
         }
     }
@@ -24,6 +24,17 @@ impl FontFamily {
             font_id: 0,
             weight_hint,
             style_hint,
+            is_bitmap: false,
+        })
+    }
+
+    pub fn add_bitmap_font<P: AsRef<Path>>(&mut self, path: P, weight_hint: FontWeight, style_hint: FontStyle) {
+        self.fonts.push(FontDescriptor {
+            path: path.as_ref().to_path_buf(),
+            font_id: 0,
+            weight_hint,
+            style_hint,
+            is_bitmap: true,
         })
     }
 
@@ -67,4 +78,5 @@ pub struct FontDescriptor {
     pub font_id: FontId,
     weight_hint: FontWeight,
     style_hint: FontStyle,
+    pub(crate) is_bitmap: bool,
 }

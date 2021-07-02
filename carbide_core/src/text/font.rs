@@ -1,7 +1,12 @@
+#![allow(unsafe_code)]
+
 use std::collections::HashMap;
+use std::fmt::{Debug, Formatter};
+use std::ops::Range;
 
 use fxhash::{FxBuildHasher, FxHashMap};
-use rusttype::{GlyphId, point, PositionedGlyph, Scale};
+use image::DynamicImage;
+use rusttype::{GlyphId, IntoGlyphId, point, PositionedGlyph, Scale, VMetrics};
 
 use crate::prelude::text_old;
 use crate::Scalar;
@@ -12,17 +17,56 @@ type RustTypeFont = rusttype::Font<'static>;
 type RustTypeScale = rusttype::Scale;
 type RustTypePoint = rusttype::Point<f32>;
 
+const POINT_TO_PIXEL: f32 = 4.0 / 3.0;
+
 pub struct Font {
     // Should in the future be a collection of different font weights
     font: RustTypeFont,
     height: Scalar,
+    bitmap_font: bool,
 
     /// Store a map from the size and string to a width,
     /// In the future we might be able to get rid of fontsize as this is probably just a multiplier
     dimension_cache: FxHashMap<(FontSize, String), Vec<Glyph>>,
 }
 
+impl Debug for Font {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("Font")
+            .field("is_bitmap", &self.bitmap_font)
+            .finish()
+    }
+}
+
 impl Font {
+    pub fn get_glyph_raster_image(&self, character: char, font_size: FontSize) -> Option<DynamicImage> {
+        let face = self.font.inner();
+        if let Some(id) = face.glyph_index(character) {
+            let raster_image = face.glyph_raster_image(id, font_size as u16);
+            raster_image.map(|raster| {
+                image::load_from_memory(raster.data).unwrap()
+            })
+        } else {
+            None
+        }
+    }
+
+    pub fn get_glyph_id(&self, c: char) -> Option<GlyphId> {
+        self.font.inner().glyph_index(c).map(|ttf_parser::GlyphId(id)| GlyphId(id))
+    }
+
+    pub fn is_bitmap(&self) -> bool {
+        self.bitmap_font
+    }
+
+    pub fn get_glyph_raster_image_from_id(&self, id: GlyphId, font_size: FontSize) -> Option<DynamicImage> {
+        let face = self.font.inner();
+        let raster_image = face.glyph_raster_image(ttf_parser::GlyphId(id.0), font_size as u16);
+        raster_image.map(|raster| {
+            image::load_from_memory(raster.data).unwrap()
+        })
+    }
+
     pub fn get_inner(&self) -> RustTypeFont {
         // This clone should only be either an ARC clone or reference clone
         self.font.clone()
@@ -49,12 +93,16 @@ impl Font {
             }
 
             let w = glyph_scaled.h_metrics().advance_width;
+            println!("VMetrics: {:?}", self.font.v_metrics(scale));
+            println!("Scale used: {:?}", scale);
             let next = glyph_scaled.positioned(point(0.0, 0.0));
+            println!("Glyph: {:?}", next);
             last = Some(next.id());
             next_width += w as f64;
             glyphs.push(Glyph::from(next));
         };
 
+        println!("Next width: {:?}", next_width);
         // Widths are pushed such that they contain the width and the kerning between itself and the
         // next character. If its the last, we push here.
         widths.push(next_width);
@@ -74,7 +122,7 @@ impl Font {
     /// Converts the given font size in "points" to its font size in pixels.
     /// This is useful for when the font size is not an integer.
     pub fn f32_pt_to_px(font_size_in_points: f32) -> f32 {
-        font_size_in_points * 4.0 / 3.0
+        font_size_in_points * POINT_TO_PIXEL
     }
 
     /// Converts the given font size in "points" to a uniform `rusttype::Scale`.
@@ -110,6 +158,31 @@ impl Font {
         Ok(Font {
             font: inner_font,
             height: 0.0,
+            bitmap_font: false,
+            dimension_cache: HashMap::with_hasher(FxBuildHasher::default()),
+        })
+    }
+
+    /// Load a single `Font` from a file at the given path.
+    pub fn from_file_bitmap<P>(path: P) -> Result<Self, Error>
+        where P: AsRef<std::path::Path>
+    {
+        use std::io::Read;
+        let path = path.as_ref();
+        let mut file = std::fs::File::open(path)?;
+        let mut file_buffer = Vec::new();
+        file.read_to_end(&mut file_buffer)?;
+        let mut inner_font = RustTypeFont::try_from_vec(file_buffer).unwrap();
+        inner_font.with_custom_v_metrics(VMetrics {
+            ascent: 800.0,
+            descent: 0.0,
+            line_gap: 0.0,
+        });
+
+        Ok(Font {
+            font: inner_font,
+            height: 0.0,
+            bitmap_font: true,
             dimension_cache: HashMap::with_hasher(FxBuildHasher::default()),
         })
     }
@@ -151,19 +224,49 @@ impl std::fmt::Display for Error {
 
 #[test]
 fn load_bitmap_font() {
-    use ttf_parser::Face;
-    use image::ImageFormat;
+    let test_char = '😀';
+    //let test_char = 'j';
 
-    let emoji_path = "/System/Library/Fonts/Apple Color Emoji.ttc";
+    let font = Font::from_file_bitmap("/System/Library/Fonts/Apple Color Emoji.ttc").unwrap();
 
-    let emoji_data = std::fs::read(emoji_path).unwrap();
+    //let font = Font::from_file("/System/Library/Fonts/HelveticaNeue.ttc").unwrap();
+    println!("Ascender: {:?}", font.font.inner().ascender());
+    println!("Descender: {:?}", font.font.inner().descender());
+    println!("Height: {:?}", font.font.inner().height());
 
-    let face = Face::from_slice(&emoji_data, 0).unwrap();
-    let glyph_id = face.glyph_index('😀').unwrap();
-    println!("Glyph ID: {:?}", glyph_id);
-    let raster_image = face.glyph_raster_image(glyph_id, 200).unwrap();
-    println!("{:?}", raster_image);
+    let emoji_ranges: [Range<u32>; 1] = [
+        0x1F601..0x1F64F,
+        //0x2702..0x27B0,
+        //0x1F680..0x1F6C0,
+        //0x1F170..0x1F251
+    ];
 
-    let image = image::load_from_memory(raster_image.data).unwrap();
-    image.into_luma_alpha().save("/Users/holgergottchristensen/Documents/carbide/target/smile.png").unwrap();
+    /*for range in &emoji_ranges {
+
+        for i in range.clone() {
+            let c = unsafe { std::mem::transmute::<u32, char>(i) };
+            let id = font.get_inner().inner().glyph_index(c).unwrap();
+            let bb = font.get_inner().inner().glyph_bounding_box(id);
+            println!("bb: {:?}", bb);
+            let advance_width = font.get_inner().inner().glyph_hor_advance(id).unwrap();
+            println!("Advance_width: {}", advance_width);
+            println!("{}", c);
+        }
+    }*/
+    let glyph = font.get_inner().glyph(test_char);
+    let scale = Font::size_to_scale(14, 1.0);
+    let scaled_glyph = glyph.scaled(scale);
+    let positioned_glyph = scaled_glyph.positioned(point(0.0, 20.0));
+    println!("Positioned bb: {:?}", positioned_glyph.pixel_bounding_box());
+    println!("Exact bb: {:?}", positioned_glyph.unpositioned().exact_bounding_box());
+
+    //let image = font.get_glyph_raster_image(test_char, 64).unwrap();
+    let id = font.get_inner().inner().glyph_index(test_char).unwrap();
+    let bb = font.get_inner().inner().glyph_bounding_box(id);
+    println!("glyph bb: {:?}", bb);
+    let advance_width = font.get_inner().inner().glyph_hor_advance(id).unwrap();
+    println!("Advance_width: {}", advance_width);
+    println!("Glyph name: {:?}", font.get_inner().inner().glyph_name(id));
+
+    //image.save("/Users/holgergottchristensen/Documents/carbide/target/smile_new.png").unwrap();
 }
