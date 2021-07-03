@@ -21,7 +21,9 @@ pub enum TextSpan<GS> where GS: GlobalState {
         text: String,
         glyphs: Vec<Glyph>,
         widths: Vec<Scalar>,
-        ascending_pixels: f64,
+        ascend: f64,
+        descend: f64,
+        line_gap: f64,
     },
     Widget(Box<dyn Widget<GS>>),
     NewLine,
@@ -53,7 +55,9 @@ impl<GS: GlobalState> TextSpan<GS> {
 
             let font = style.get_font(env);
 
-            let ascending_pixels = font.baseline_offset(style.font_size, 1.0);
+            let ascend = font.ascend(style.font_size, scale_factor);
+            let descend = font.descend(style.font_size, scale_factor);
+            let line_gap = font.line_gap(style.font_size, scale_factor);
             let (widths, glyphs) = font.get_glyphs(line, style.font_size, scale_factor, env);
 
             res.push(TextSpan::Text {
@@ -61,7 +65,9 @@ impl<GS: GlobalState> TextSpan<GS> {
                 text: line.to_string(),
                 glyphs,
                 widths,
-                ascending_pixels,
+                ascend,
+                descend,
+                line_gap,
             });
             res.push(TextSpan::NewLine);
         }
@@ -85,21 +91,25 @@ impl<GS: GlobalState> TextSpan<GS> {
                         font_family: default_font_family_name.clone(),
                         font_size: 30,
                         font_style: FontStyle::Normal,
-                        font_weight: FontWeight::Normal,
+                        font_weight: FontWeight::Bold,
                         text_decoration: TextDecoration::None,
                         color: None,
                     };
                     let font = style.get_font(env);
 
                     let (widths, glyphs) = font.get_glyphs(&text, style.font_size, scale_factor, env);
-                    let ascending_pixels = font.baseline_offset(style.font_size, 1.0);
+                    let ascending_pixels = font.ascend(style.font_size, scale_factor);
+                    let line_height = font.descend(style.font_size, scale_factor);
+                    let line_gap = font.line_gap(style.font_size, scale_factor);
 
                     let span = TextSpan::Text {
                         style: Some(style.clone()),
                         text: text.to_string(),
                         glyphs,
                         widths,
-                        ascending_pixels,
+                        ascend: ascending_pixels,
+                        descend: line_height,
+                        line_gap,
                     };
 
                     spans.push(span);
@@ -117,14 +127,19 @@ impl<GS: GlobalState> TextSpan<GS> {
                     let font = style.get_font(env);
 
                     let (widths, glyphs) = font.get_glyphs(&text, style.font_size, scale_factor, env);
-                    let ascending_pixels = font.baseline_offset(style.font_size, 1.0);
+                    let ascending_pixels = font.ascend(style.font_size, scale_factor);
+                    let line_height = font.descend(style.font_size, scale_factor);
+
+                    let line_gap = font.line_gap(style.font_size, scale_factor);
 
                     let span = TextSpan::Text {
                         style: Some(style.clone()),
                         text: text.to_string(),
                         glyphs,
                         widths,
-                        ascending_pixels,
+                        ascend: ascending_pixels,
+                        descend: line_height,
+                        line_gap,
                     };
 
                     spans.push(span);
@@ -142,14 +157,19 @@ impl<GS: GlobalState> TextSpan<GS> {
                     let font = style.get_font(env);
 
                     let (widths, glyphs) = font.get_glyphs(&text, style.font_size, scale_factor, env);
-                    let ascending_pixels = font.baseline_offset(style.font_size, 1.0);
+                    let ascending_pixels = font.ascend(style.font_size, scale_factor);
+                    let line_height = font.descend(style.font_size, scale_factor);
+
+                    let line_gap = font.line_gap(style.font_size, scale_factor);
 
                     let span = TextSpan::Text {
                         style: Some(style.clone()),
                         text: text.to_string(),
                         glyphs,
                         widths,
-                        ascending_pixels,
+                        ascend: ascending_pixels,
+                        descend: line_height,
+                        line_gap,
                     };
 
                     spans.push(span);
@@ -166,14 +186,18 @@ impl<GS: GlobalState> TextSpan<GS> {
                     let font = style.get_font(env);
 
                     let (widths, glyphs) = font.get_glyphs(&text, style.font_size, scale_factor, env);
-                    let ascending_pixels = font.baseline_offset(style.font_size, 1.0);
+                    let ascending_pixels = font.ascend(style.font_size, scale_factor);
+                    let line_height = font.descend(style.font_size, scale_factor);
+                    let line_gap = font.line_gap(style.font_size, scale_factor);
 
                     let span = TextSpan::Text {
                         style: Some(style.clone()),
                         text: text.to_string(),
                         glyphs,
                         widths,
-                        ascending_pixels,
+                        ascend: ascending_pixels,
+                        descend: line_height,
+                        line_gap,
                     };
 
                     spans.push(span);
@@ -190,14 +214,18 @@ impl<GS: GlobalState> TextSpan<GS> {
                     let font = style.get_font(env);
 
                     let (widths, glyphs) = font.get_glyphs(&text, style.font_size, scale_factor, env);
-                    let ascending_pixels = font.baseline_offset(style.font_size, 1.0);
+                    let ascending_pixels = font.ascend(style.font_size, scale_factor);
+                    let line_height = font.descend(style.font_size, scale_factor);
+                    let line_gap = font.line_gap(style.font_size, scale_factor);
 
                     let span = TextSpan::Text {
                         style: Some(style.clone()),
                         text: text.to_string(),
                         glyphs,
                         widths,
-                        ascending_pixels,
+                        ascend: ascending_pixels,
+                        descend: line_height,
+                        line_gap,
                     };
 
                     spans.push(span);
@@ -214,14 +242,18 @@ impl<GS: GlobalState> TextSpan<GS> {
                     let font = style.get_font(env);
 
                     let (widths, glyphs) = font.get_glyphs(&text, style.font_size, scale_factor, env);
-                    let ascending_pixels = font.baseline_offset(style.font_size, 1.0);
+                    let ascending_pixels = font.ascend(style.font_size, scale_factor);
+                    let line_height = font.descend(style.font_size, scale_factor);
+                    let line_gap = font.line_gap(style.font_size, scale_factor);
 
                     let span = TextSpan::Text {
                         style: Some(style.clone()),
                         text: text.to_string(),
                         glyphs,
                         widths,
-                        ascending_pixels,
+                        ascend: ascending_pixels,
+                        descend: line_height,
+                        line_gap,
                     };
 
                     spans.push(span);
@@ -238,14 +270,18 @@ impl<GS: GlobalState> TextSpan<GS> {
                     let font = style.get_font(env);
 
                     let (widths, glyphs) = font.get_glyphs(&text, style.font_size, scale_factor, env);
-                    let ascending_pixels = font.baseline_offset(style.font_size, 1.0);
+                    let ascending_pixels = font.ascend(style.font_size, scale_factor);
+                    let line_height = font.descend(style.font_size, scale_factor);
+                    let line_gap = font.line_gap(style.font_size, scale_factor);
 
                     let span = TextSpan::Text {
                         style: Some(style.clone()),
                         text: text.to_string(),
                         glyphs,
                         widths,
-                        ascending_pixels,
+                        ascend: ascending_pixels,
+                        descend: line_height,
+                        line_gap,
                     };
 
                     spans.push(span);

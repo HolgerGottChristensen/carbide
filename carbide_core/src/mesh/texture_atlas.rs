@@ -174,7 +174,7 @@ impl TextureAtlas {
 
     pub fn queue_raster_glyph_id<GS: GlobalState>(&mut self, font_id: FontId, id: GlyphId, font_size: FontSize, env: &Environment<GS>) {
         if !self.all_books.contains_key(&AtlasId::RasterGlyph(font_id, id, font_size)) {
-            let image_data = env.get_font(font_id).get_glyph_raster_image_from_id(id, font_size).unwrap();
+            let image_data = env.get_font(font_id).get_glyph_raster_image_from_id(id, font_size, env.get_scale_factor()).unwrap();
             let queue_type = QueueType::RasterGlyph(font_id, id, font_size, image_data);
             if !self.queue.contains(&queue_type) {
                 self.queue.push(queue_type)

@@ -394,7 +394,6 @@ impl Mesh {
                                 if let Some(bb) = glyph.bb() {
                                     let mut positioned_bb = (bb + glyph.position()) / scale_factor;
                                     positioned_bb.round();
-                                    println!("{:?}", positioned_bb);
 
                                     let (left, right, bottom, top) = positioned_bb.l_r_b_t();
                                     let coords = texture_atlas.get_tex_coords_for(&AtlasId::RasterGlyph(glyph.font_id(), glyph.id(), glyph.font_size()));

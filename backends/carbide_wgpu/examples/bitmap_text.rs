@@ -23,7 +23,7 @@ fn main() {
 
     window.set_widgets(
         //Text::new("😀 😀")
-        Text::new("Hello *world*, this is /italic/, _underlined_ and -striked-. We can even show 😀, and we support a list of fallback fonts!")
+        Text::new("# Rich text\nHello *world*, this is /italic/, _underlined_ and -striked-. We can even show 😀, and we support a list of fallback fonts!")
             .foreground_color(EnvironmentColor::Orange)
             /*Text::new("# This is bacon ipsum.
     ## This is bacon ipsum.

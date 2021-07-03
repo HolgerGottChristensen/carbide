@@ -63,9 +63,9 @@ impl Font {
         self.bitmap_font
     }
 
-    pub fn get_glyph_raster_image_from_id(&self, id: GlyphId, font_size: FontSize) -> Option<DynamicImage> {
+    pub fn get_glyph_raster_image_from_id(&self, id: GlyphId, font_size: FontSize, scale_factor: Scalar) -> Option<DynamicImage> {
         let face = self.font.inner();
-        let raster_image = face.glyph_raster_image(ttf_parser::GlyphId(id.0), (font_size * 2) as u16);
+        let raster_image = face.glyph_raster_image(ttf_parser::GlyphId(id.0), (font_size as f64 * scale_factor) as u16);
         raster_image.map(|raster| {
             image::load_from_memory(raster.data).unwrap()
         })
@@ -148,9 +148,21 @@ impl Font {
         Font::size_to_scale(font_size, scale_factor).y as Scalar
     }
 
-    pub fn baseline_offset(&self, font_size: FontSize, scale_factor: Scalar) -> Scalar {
+    pub fn ascend(&self, font_size: FontSize, scale_factor: Scalar) -> Scalar {
         let scale = Font::size_to_scale(font_size, scale_factor);
         self.font.v_metrics(scale).ascent as Scalar
+    }
+
+    pub fn descend(&self, font_size: FontSize, scale_factor: Scalar) -> Scalar {
+        let scale = Font::size_to_scale(font_size, scale_factor);
+        let metrics = self.font.v_metrics(scale);
+        metrics.descent as f64
+    }
+
+    pub fn line_gap(&self, font_size: FontSize, scale_factor: Scalar) -> Scalar {
+        let scale = Font::size_to_scale(font_size, scale_factor);
+        let metrics = self.font.v_metrics(scale);
+        metrics.line_gap as f64
     }
 
     /// Converts the given font size in "points" to its font size in pixels.
