@@ -7,12 +7,11 @@ pub struct Texture {
 }
 
 impl Texture {
-
     pub fn from_image(
         device: &wgpu::Device,
         queue: &wgpu::Queue,
         img: &image::RgbaImage,
-        label: Option<&str>
+        label: Option<&str>,
     ) -> Result<Self> {
         let rgba = img;
         let dimensions = img.dimensions();
@@ -56,7 +55,7 @@ impl Texture {
                 address_mode_v: wgpu::AddressMode::ClampToEdge,
                 address_mode_w: wgpu::AddressMode::ClampToEdge,
                 mag_filter: wgpu::FilterMode::Linear,
-                min_filter: wgpu::FilterMode::Nearest,
+                min_filter: wgpu::FilterMode::Linear,
                 mipmap_filter: wgpu::FilterMode::Nearest,
                 ..Default::default()
             }

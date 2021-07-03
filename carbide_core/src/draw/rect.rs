@@ -11,6 +11,13 @@ pub struct Rect {
 }
 
 impl Rect {
+    pub fn round(&mut self) {
+        self.position.x = self.position.x.round();
+        self.position.y = self.position.y.round();
+        self.dimension.width = self.dimension.width.round();
+        self.dimension.height = self.dimension.height.round();
+    }
+
     pub fn l_r_b_t(&self) -> (Scalar, Scalar, Scalar, Scalar) {
         (
             self.position.x,

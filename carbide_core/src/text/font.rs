@@ -65,7 +65,7 @@ impl Font {
 
     pub fn get_glyph_raster_image_from_id(&self, id: GlyphId, font_size: FontSize) -> Option<DynamicImage> {
         let face = self.font.inner();
-        let raster_image = face.glyph_raster_image(ttf_parser::GlyphId(id.0), font_size as u16);
+        let raster_image = face.glyph_raster_image(ttf_parser::GlyphId(id.0), (font_size * 2) as u16);
         raster_image.map(|raster| {
             image::load_from_memory(raster.data).unwrap()
         })
