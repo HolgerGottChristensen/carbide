@@ -1,6 +1,6 @@
 use std::fmt;
 use std::fmt::{Display, Formatter};
-use std::ops::{Add, AddAssign, Mul, Sub};
+use std::ops::{Add, AddAssign, Div, Mul, Sub};
 
 use rusttype::Point;
 
@@ -34,6 +34,16 @@ impl Mul<Scalar> for Position {
     fn mul(mut self, rhs: f64) -> Self::Output {
         self.x *= rhs;
         self.y *= rhs;
+        self
+    }
+}
+
+impl Div<Scalar> for Position {
+    type Output = Position;
+
+    fn div(mut self, rhs: f64) -> Self::Output {
+        self.x /= rhs;
+        self.y /= rhs;
         self
     }
 }

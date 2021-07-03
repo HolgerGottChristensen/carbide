@@ -54,9 +54,6 @@ pub enum PrimitiveKind {
         /// All glyphs within the `Text` laid out in their correct positions in order from top-left
         /// to bottom right.
         text: Vec<Glyph>,
-        /// The unique identifier for the font, useful for the `glyph_cache.rect_for(id, glyph)`
-        /// method when using the `carbide::text::GlyphCache` (rusttype's GPU `Cache`).
-        font_id: FontId,
     },
 }
 

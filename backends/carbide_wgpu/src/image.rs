@@ -1,9 +1,12 @@
-use crate::texture::Texture;
-use carbide_core::mesh;
-use wgpu::{Device, Queue};
-use crate::{texture, DEFAULT_IMAGE_TEX_FORMAT};
 use std::path::Path;
+
+use wgpu::{Device, Queue};
+
+use carbide_core::mesh;
 use carbide_core::widget::types::image_information::ImageInformation;
+
+use crate::{DEFAULT_IMAGE_TEX_FORMAT, texture};
+use crate::texture::Texture;
 
 /// A loaded wgpu texture and it's width/height
 pub struct Image {
@@ -27,18 +30,16 @@ impl mesh::mesh::ImageDimensions for Image {
 
 
 impl Image {
-
     pub fn image_information(&self) -> ImageInformation {
         ImageInformation {
             width: self.width,
-            height: self.height
+            height: self.height,
         }
     }
 
-    pub fn new<P>(logo_path: P,  device: &Device, queue: &Queue) -> Self
-    where P: AsRef<Path> {
-
-        let rgba_logo_image = image::open(logo_path)
+    pub fn new<P>(path: P, device: &Device, queue: &Queue) -> Self
+        where P: AsRef<Path> {
+        let rgba_logo_image = image::open(path)
             .expect("Couldn't load logo")
             .to_rgba();
 
@@ -51,7 +52,7 @@ impl Image {
             texture,
             texture_format: DEFAULT_IMAGE_TEX_FORMAT,
             width,
-            height
+            height,
         }
     }
 }

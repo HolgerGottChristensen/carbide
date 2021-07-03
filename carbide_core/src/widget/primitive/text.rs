@@ -192,7 +192,7 @@ impl<GS: GlobalState> Render<GS> for Text<GS> {
         let default_color = self.color.get_latest_value().clone();
 
         if let Some(internal) = &self.internal_text {
-            for (glyphs, font_id, color, additional_rects) in internal.span_glyphs() {
+            for (glyphs, color, additional_rects) in internal.span_glyphs() {
                 let color = if let Some(color) = color {
                     color
                 } else {
@@ -201,7 +201,6 @@ impl<GS: GlobalState> Render<GS> for Text<GS> {
                 let kind = PrimitiveKind::Text {
                     color,
                     text: glyphs,
-                    font_id,
                 };
                 prims.push(new_primitive(kind, OldRect::new(self.position, self.dimension)));
 

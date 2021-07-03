@@ -6,13 +6,13 @@ use fxhash::{FxBuildHasher, FxHashMap};
 use serde::de::DeserializeOwned;
 use serde::Serialize;
 
-use crate::{Color, from_bin, to_bin};
+use crate::{Color, from_bin, Scalar, to_bin};
 use crate::focus::Refocus;
 use crate::prelude::EnvironmentVariable;
 use crate::state::global_state::GlobalState;
 use crate::state::state::State;
 use crate::state::state_key::StateKey;
-use crate::text::{Font, FontFamily, FontId};
+use crate::text::{Font, FontFamily, FontId, FontSize, FontStyle, FontWeight, Glyph};
 use crate::widget::Dimensions;
 use crate::widget::primitive::Widget;
 use crate::widget::types::image_information::ImageInformation;
@@ -178,8 +178,9 @@ impl<GS: GlobalState> Environment<GS> {
     pub fn insert_font_from_file<P>(&mut self, path: P) -> FontId
         where P: AsRef<std::path::Path>,
     {
-        let font = Font::from_file(path).unwrap();
+        let mut font = Font::from_file(path).unwrap();
         let font_id = self.fonts.len();
+        font.set_font_id(font_id);
         self.fonts.push(font);
         font_id
     }
@@ -187,14 +188,39 @@ impl<GS: GlobalState> Environment<GS> {
     pub fn insert_bitmap_font_from_file<P>(&mut self, path: P) -> FontId
         where P: AsRef<std::path::Path>,
     {
-        let font = Font::from_file_bitmap(path).unwrap();
+        let mut font = Font::from_file_bitmap(path).unwrap();
         let font_id = self.fonts.len();
+        font.set_font_id(font_id);
         self.fonts.push(font);
         font_id
     }
 
-    pub fn get_font(&self, id: FontId) -> &Font {
-        &self.fonts[id]
+    pub fn get_glyph_from_fallback(&mut self, c: char, font_size: FontSize, scale_factor: Scalar) -> (Scalar, Glyph) {
+        // Try all the loaded fonts. We only check the first font in each family.
+        // Todo: Consider using weight hints and style hints.
+        // Todo: Consider going through a separate list if we have a lot of families loaded.
+        for (_, font_family) in &self.font_families {
+            println!("Looking up in font family: {:?}", font_family);
+            let font_id = font_family.get_best_fit(FontWeight::Normal, FontStyle::Normal);
+            if let Some(res) = self.get_font(font_id).get_glyph(c, font_size, scale_factor) {
+                return res
+            }
+        }
+
+        // Try load fallback fonts until we run out
+        // Todo: Implement fallback font list.
+
+        // Get the glyph for the unknown character: �
+        if c != '�' {
+            self.get_glyph_from_fallback('�', font_size, scale_factor)
+        } else {
+            panic!("Could not lookup the char in any of the loaded fonts or in any fallback fonts. \
+            Further more we could not look up the missing char replacement �. Something is not right.")
+        }
+    }
+
+    pub fn get_font(&self, id: FontId) -> Font {
+        self.fonts[id].clone()
     }
 
     pub fn get_font_mut(&mut self, id: FontId) -> &mut Font {
@@ -212,18 +238,19 @@ impl<GS: GlobalState> Environment<GS> {
         for font in &mut family.fonts {
             let assets = find_folder::Search::KidsThenParents(3, 5).for_folder("assets").unwrap();
             let font_path = assets.join(&font.path);
-            if font.is_bitmap {
-                self.insert_bitmap_font_from_file(font_path);
+            let font_id = if font.is_bitmap {
+                self.insert_bitmap_font_from_file(font_path)
             } else {
-                self.insert_font_from_file(font_path);
-            }
+                self.insert_font_from_file(font_path)
+            };
+            font.font_id = font_id;
         }
         let key = family.name.clone();
         self.font_families.insert(key, family);
     }
 
     pub fn get_first_font_family(&self) -> &FontFamily {
-        self.font_families.iter().next().unwrap().1
+        self.font_families.get("NotoSans").unwrap()
     }
 
     pub fn get_font_family(&self, name: &String) -> &FontFamily {

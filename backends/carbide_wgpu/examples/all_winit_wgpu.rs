@@ -1,13 +1,14 @@
 //! An example demonstrating the use of `carbide_wgpu` alongside `winit`.
 
-mod calculator;
-mod calculator_ui;
-
-use carbide_example_shared::{WIN_H, WIN_W};
 use winit::{
     event,
     event_loop::{ControlFlow, EventLoop},
 };
+
+use carbide_example_shared::{WIN_H, WIN_W};
+
+mod calculator;
+mod calculator_ui;
 
 // Generate the winit <-> carbide_core type conversion fns.
 carbide_winit::v021_conversion_fns!();
@@ -23,7 +24,7 @@ fn main() {
 
     // Create the window and surface.
     #[cfg(not(feature = "gl"))]
-    let (window, mut size, surface) = {
+        let (window, mut size, surface) = {
         let window = winit::window::WindowBuilder::new()
             .with_title("carbide with wgpu")
             .with_inner_size(winit::dpi::LogicalSize {
@@ -124,11 +125,11 @@ fn main() {
                 // Close on request or on Escape.
                 event::WindowEvent::KeyboardInput {
                     input:
-                        event::KeyboardInput {
-                            virtual_keycode: Some(event::VirtualKeyCode::Escape),
-                            state: event::ElementState::Pressed,
-                            ..
-                        },
+                    event::KeyboardInput {
+                        virtual_keycode: Some(event::VirtualKeyCode::Escape),
+                        state: event::ElementState::Pressed,
+                        ..
+                    },
                     ..
                 }
                 | event::WindowEvent::CloseRequested => {
@@ -245,7 +246,7 @@ fn create_multisampled_framebuffer(
         label: Some("carbide_msaa_texture"),
         size: multisampled_texture_extent,
         mip_level_count: 1,
-        sample_count: sample_count,
+        sample_count,
         dimension: wgpu::TextureDimension::D2,
         format: sc_desc.format,
         usage: wgpu::TextureUsage::OUTPUT_ATTACHMENT,

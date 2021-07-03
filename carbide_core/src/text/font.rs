@@ -10,8 +10,9 @@ use rusttype::{GlyphId, IntoGlyphId, point, PositionedGlyph, Scale, VMetrics};
 
 use crate::prelude::text_old;
 use crate::Scalar;
-use crate::text::FontSize;
+use crate::text::{FontId, FontSize};
 use crate::text::glyph::Glyph;
+use crate::widget::{Environment, GlobalState};
 
 type RustTypeFont = rusttype::Font<'static>;
 type RustTypeScale = rusttype::Scale;
@@ -19,15 +20,14 @@ type RustTypePoint = rusttype::Point<f32>;
 
 const POINT_TO_PIXEL: f32 = 4.0 / 3.0;
 
+#[derive(Clone)]
 pub struct Font {
+    font_id: FontId,
+    path: String,
     // Should in the future be a collection of different font weights
     font: RustTypeFont,
     height: Scalar,
     bitmap_font: bool,
-
-    /// Store a map from the size and string to a width,
-    /// In the future we might be able to get rid of fontsize as this is probably just a multiplier
-    dimension_cache: FxHashMap<(FontSize, String), Vec<Glyph>>,
 }
 
 impl Debug for Font {
@@ -49,6 +49,10 @@ impl Font {
         } else {
             None
         }
+    }
+
+    pub fn set_font_id(&mut self, font_id: FontId) {
+        self.font_id = font_id;
     }
 
     pub fn get_glyph_id(&self, c: char) -> Option<GlyphId> {
@@ -76,36 +80,66 @@ impl Font {
         Font::f32_pt_to_scale(font_size as f32 * scale_factor as f32)
     }
 
-    pub fn get_glyphs(&self, text: &str, font_size: FontSize, scale_factor: Scalar) -> (Vec<Scalar>, Vec<Glyph>) {
+    pub fn get_glyph(&self, c: char, font_size: FontSize, scale_factor: Scalar) -> Option<(Scalar, Glyph)> {
+        println!("Looking up glyph for char: {} in font: {}", c, self.path);
+        let glyph_id = self.get_glyph_id(c);
+
+        glyph_id.map(|id| {
+            let scale = Font::size_to_scale(font_size, scale_factor);
+            let glyph_scaled = self.font.glyph(id).scaled(scale);
+            let w = glyph_scaled.h_metrics().advance_width;
+            let positioned = glyph_scaled.positioned(point(0.0, 0.0));
+            (w as f64, Glyph::from((font_size, self.font_id, positioned)))
+        })
+    }
+
+    pub fn get_glyphs<GS: GlobalState>(&self, text: &str, font_size: FontSize, scale_factor: Scalar, env: &mut Environment<GS>) -> (Vec<Scalar>, Vec<Glyph>) {
         let scale = Font::size_to_scale(font_size, scale_factor);
         let mut next_width = 0.0;
         let mut widths = vec![];
         let mut glyphs = vec![];
         let mut last = None;
 
-        for glyph in self.font.glyphs_for(text.chars()) {
-            let glyph_scaled = glyph.scaled(scale);
-            if let Some(last) = last {
-                let kerning = self.font.pair_kerning(scale, last, glyph_scaled.id());
-                next_width += kerning as f64;
-                widths.push(next_width);
-                next_width = 0.0;
+        let glyph_ids = text.chars().map(|c| self.get_glyph_id(c).ok_or(c)).collect::<Vec<_>>();
+
+        for glyph_id in glyph_ids {
+            match glyph_id {
+                Ok(id) => {
+                    // If we have the glyph in our font.
+                    let glyph = self.font.glyph(id);
+                    let glyph_scaled = glyph.scaled(scale);
+                    if let Some(last) = last {
+                        let kerning = self.font.pair_kerning(scale, last, glyph_scaled.id());
+                        next_width += kerning as f64;
+                        widths.push(next_width);
+                        next_width = 0.0;
+                    }
+
+                    let w = glyph_scaled.h_metrics().advance_width;
+                    let next = glyph_scaled.positioned(point(0.0, 0.0));
+                    last = Some(next.id());
+                    next_width += w as f64;
+                    glyphs.push(Glyph::from((font_size, self.font_id, next)));
+                }
+                Err(c) => {
+                    // Font fallback
+                    if let Some(_) = last {
+                        widths.push(next_width);
+                        next_width = 0.0;
+                    }
+                    last = None;
+
+                    let (width, glyph) = env.get_glyph_from_fallback(c, font_size, scale_factor);
+                    glyphs.push(glyph);
+                    widths.push(width);
+                }
             }
-
-            let w = glyph_scaled.h_metrics().advance_width;
-            println!("VMetrics: {:?}", self.font.v_metrics(scale));
-            println!("Scale used: {:?}", scale);
-            let next = glyph_scaled.positioned(point(0.0, 0.0));
-            println!("Glyph: {:?}", next);
-            last = Some(next.id());
-            next_width += w as f64;
-            glyphs.push(Glyph::from(next));
         };
-
-        println!("Next width: {:?}", next_width);
         // Widths are pushed such that they contain the width and the kerning between itself and the
         // next character. If its the last, we push here.
-        widths.push(next_width);
+        if let Some(_) = last {
+            widths.push(next_width);
+        }
 
         (widths, glyphs)
     }
@@ -156,10 +190,11 @@ impl Font {
         let inner_font = RustTypeFont::try_from_vec(file_buffer).unwrap();
 
         Ok(Font {
+            font_id: usize::MAX,
+            path: path.display().to_string(),
             font: inner_font,
             height: 0.0,
             bitmap_font: false,
-            dimension_cache: HashMap::with_hasher(FxBuildHasher::default()),
         })
     }
 
@@ -174,16 +209,17 @@ impl Font {
         file.read_to_end(&mut file_buffer)?;
         let mut inner_font = RustTypeFont::try_from_vec(file_buffer).unwrap();
         inner_font.with_custom_v_metrics(VMetrics {
-            ascent: 800.0,
+            ascent: 1200.0,
             descent: 0.0,
             line_gap: 0.0,
         });
 
         Ok(Font {
+            font_id: usize::MAX,
+            path: path.display().to_string(),
             font: inner_font,
             height: 0.0,
             bitmap_font: true,
-            dimension_cache: HashMap::with_hasher(FxBuildHasher::default()),
         })
     }
 }

@@ -13,11 +13,11 @@ type ImageData = image::DynamicImage;
 
 const SHELVE_WIDTH: u32 = 512;
 
-#[derive(Clone)]
+#[derive(Clone, PartialEq, Debug)]
 pub enum QueueType {
     Image(ImageId, ImageData),
     /// FontId, GlyphId, width, height
-    RasterGlyph(FontId, GlyphId, ImageData),
+    RasterGlyph(FontId, GlyphId, u32, ImageData),
 }
 
 impl QueueType {
@@ -26,8 +26,8 @@ impl QueueType {
             QueueType::Image(id, _) => {
                 AtlasId::Image(id.clone())
             }
-            QueueType::RasterGlyph(font_id, glyph_id, image_data) => {
-                AtlasId::RasterGlyph(font_id.clone(), glyph_id.clone(), image_data.height())
+            QueueType::RasterGlyph(font_id, glyph_id, font_size, image_data) => {
+                AtlasId::RasterGlyph(font_id.clone(), glyph_id.clone(), *font_size)
             }
         }
     }
@@ -37,7 +37,7 @@ impl QueueType {
             QueueType::Image(_, image) => {
                 image.width()
             }
-            QueueType::RasterGlyph(_, _, image) => {
+            QueueType::RasterGlyph(_, _, _, image) => {
                 image.width()
             }
         }
@@ -48,14 +48,15 @@ impl QueueType {
             QueueType::Image(_, image) => {
                 image.height()
             }
-            QueueType::RasterGlyph(_, _, image) => {
+            QueueType::RasterGlyph(_, _, _, image) => {
                 image.height()
             }
         }
     }
 }
 
-#[derive(Hash, Eq, PartialEq)]
+// Todo: Make the shelves wrap around when above height.
+#[derive(Hash, Eq, PartialEq, Debug)]
 pub enum AtlasId {
     Image(ImageId),
     RasterGlyph(FontId, GlyphId, u32),
@@ -63,6 +64,7 @@ pub enum AtlasId {
 
 /// Inspired by the gpu_cache from rusttype
 /// Another interesting source: https://nical.github.io/posts/etagere.html
+#[derive(Debug)]
 pub struct TextureAtlas {
     /// The width and height of the atlas in pixels. The atlas should be a multiple of SHELVE_WIDTH
     width: u32,
@@ -86,6 +88,7 @@ pub struct Book {
 }
 
 /// Each section of rows in the atlas is a shelf
+#[derive(Debug)]
 pub struct Shelf {
     shelf_height: u32,
     shelf_y: u32,
@@ -111,7 +114,7 @@ impl Shelf {
                 self.shelf_current_x += book.width;
                 self.books.push(book);
             }
-            QueueType::RasterGlyph(font, glyph, image_data) => {
+            QueueType::RasterGlyph(font, glyph, _, image_data) => {
                 (*uploader)(self.shelf_current_x, self.shelf_y, image_data);
                 self.shelf_current_x += book.width;
                 self.books.push(book);
@@ -139,35 +142,57 @@ impl TextureAtlas {
         }
     }
 
+    pub fn width(&self) -> u32 {
+        self.width
+    }
+
+    pub fn height(&self) -> u32 {
+        self.height
+    }
+
     pub fn queue_image(&mut self, image_id: ImageId, image_data: ImageData) {
-        // Todo: only queue items that is not already in the atlas.
-        self.queue.push(QueueType::Image(image_id, image_data))
+        if !self.all_books.contains_key(&AtlasId::Image(image_id)) {
+            let queue_type = QueueType::Image(image_id, image_data);
+            if !self.queue.contains(&queue_type) {
+                self.queue.push(queue_type)
+            }
+        }
     }
 
     pub fn queue_raster_glyph<GS: GlobalState>(&mut self, font_id: FontId, c: char, font_size: FontSize, env: &Environment<GS>) {
         let id = env.get_font(font_id).get_glyph_id(c);
         if let Some(id) = id {
-            let image_data = env.get_font(font_id).get_glyph_raster_image(c, font_size).unwrap();
-            self.queue.push(QueueType::RasterGlyph(font_id, id, image_data))
+            if !self.all_books.contains_key(&AtlasId::RasterGlyph(font_id, id, font_size)) {
+                let image_data = env.get_font(font_id).get_glyph_raster_image(c, font_size).unwrap();
+                let raster_data = QueueType::RasterGlyph(font_id, id, font_size, image_data);
+                if !self.queue.contains(&raster_data) {
+                    self.queue.push(raster_data);
+                }
+            }
         }
     }
 
     pub fn queue_raster_glyph_id<GS: GlobalState>(&mut self, font_id: FontId, id: GlyphId, font_size: FontSize, env: &Environment<GS>) {
-        let image_data = env.get_font(font_id).get_glyph_raster_image_from_id(id, font_size).unwrap();
-        self.queue.push(QueueType::RasterGlyph(font_id, id, image_data))
+        if !self.all_books.contains_key(&AtlasId::RasterGlyph(font_id, id, font_size)) {
+            let image_data = env.get_font(font_id).get_glyph_raster_image_from_id(id, font_size).unwrap();
+            let queue_type = QueueType::RasterGlyph(font_id, id, font_size, image_data);
+            if !self.queue.contains(&queue_type) {
+                self.queue.push(queue_type)
+            }
+        }
     }
 
-    pub fn get_tex_coords_for(&self, id: AtlasId) -> Rect<f32> {
-        let book = self.all_books.get(&id);
+    pub fn get_tex_coords_for(&self, id: &AtlasId) -> Rect<f32> {
+        let book = self.all_books.get(id);
         if let Some(book) = book {
             Rect {
                 min: Point {
-                    x: book.x as f32,
-                    y: book.y as f32,
+                    x: book.x as f32 / self.width as f32,
+                    y: book.y as f32 / self.height as f32,
                 },
                 max: Point {
-                    x: book.x as f32 + book.width as f32,
-                    y: book.y as f32 + book.height as f32,
+                    x: (book.x as f32 + book.width as f32) / self.width as f32,
+                    y: (book.y as f32 + book.height as f32) / self.height as f32,
                 },
             }
         } else {
@@ -180,7 +205,7 @@ impl TextureAtlas {
         &mut self,
         mut uploader: F,
     ) {
-        // Sort to get the smallest images first. Todo: what should the actual sorting be?
+        // Sort to get the smallest images first. Todo: make sorting biggest first
         self.queue.sort_unstable_by(|a, b| {
             let a_height = a.height();
             let b_height = b.height();
@@ -231,8 +256,8 @@ impl TextureAtlas {
 #[test]
 fn create_packed_image() {
     let mut atlas = TextureAtlas::new(512, 512);
-    let image1 = "/Users/holgergottchristensen/Documents/carbide/target/smile.png";
-    let image2 = "/Users/holgergottchristensen/Documents/carbide/target/smile_new.png";
+    let image1 = "/Users/holgergottchristensen/carbide/target/smile.png";
+    let image2 = "/Users/holgergottchristensen/carbide/target/smile_new.png";
 
     let mut env = Environment::<String>::new(vec![], [0.0, 0.0], 1.0);
     let mut family = FontFamily::new("Apple Color Emoji");
@@ -272,5 +297,5 @@ fn create_packed_image() {
         }
     });
 
-    texture.save("/Users/holgergottchristensen/Documents/carbide/target/smile_atlas.png").unwrap();
+    texture.save("/Users/holgergottchristensen/carbide/target/smile_atlas.png").unwrap();
 }

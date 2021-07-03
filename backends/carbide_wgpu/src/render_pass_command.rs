@@ -1,10 +1,13 @@
+use std::collections::HashMap;
+
+use wgpu::{BindGroupLayout, Device, Texture};
+
+use carbide_core::image_map::{Id, ImageMap};
 use carbide_core::mesh::mesh;
 use carbide_core::mesh::mesh::Mesh;
-use crate::diffuse_bind_group::{new_diffuse, DiffuseBindGroup};
-use wgpu::{Device, Texture, BindGroupLayout};
-use carbide_core::image_map::{ImageMap, Id};
+
+use crate::diffuse_bind_group::{DiffuseBindGroup, new_diffuse};
 use crate::image::Image;
-use std::collections::HashMap;
 
 /// A draw command that maps directly to the `wgpu::CommandEncoder` method. By returning
 /// `RenderPassCommand`s, we can avoid consuming the entire `AutoCommandBufferBuilder` itself which might
@@ -18,7 +21,7 @@ pub enum RenderPassCommand<'a> {
     /// Draw the specified range of vertices.
     Draw { vertex_range: std::ops::Range<u32> },
     /// A new image requires drawing and in turn a new bind group requires setting.
-    SetBindGroup { bind_group: &'a wgpu::BindGroup }
+    SetBindGroup { bind_group: &'a wgpu::BindGroup },
 }
 
 #[derive(PartialEq)]
@@ -27,8 +30,7 @@ enum BindGroup {
     Image(carbide_core::image_map::Id),
 }
 
-pub fn create_render_pass_commands<'a>(def_bind_group: &'a wgpu::BindGroup, bind_groups: &'a mut HashMap<Id, DiffuseBindGroup>, image_map: &'a ImageMap<Image>, mesh: &'a Mesh, device: &'a Device, gl_tex: &'a Texture, bind_group_layout: &'a BindGroupLayout) -> Vec<RenderPassCommand<'a>> {
-
+pub fn create_render_pass_commands<'a>(def_bind_group: &'a wgpu::BindGroup, bind_groups: &'a mut HashMap<Id, DiffuseBindGroup>, image_map: &'a ImageMap<Image>, mesh: &'a Mesh, device: &'a Device, glyph_texture: &'a Texture, atlas_tex: &'a Texture, bind_group_layout: &'a BindGroupLayout) -> Vec<RenderPassCommand<'a>> {
     bind_groups.retain(|k, _| image_map.contains_key(k));
 
     for (id, img) in image_map.iter() {
@@ -38,7 +40,7 @@ pub fn create_render_pass_commands<'a>(def_bind_group: &'a wgpu::BindGroup, bind
         }
 
         // Create the bind
-        let bind_group = new_diffuse(&device, &img, &gl_tex, &bind_group_layout);
+        let bind_group = new_diffuse(&device, &img, &glyph_texture, &atlas_tex, &bind_group_layout);
         bind_groups.insert(*id, bind_group);
     }
 

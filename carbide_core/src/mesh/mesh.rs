@@ -7,15 +7,18 @@
 
 use std::{fmt, ops};
 
+use image::{DynamicImage, GenericImage, GenericImageView};
 use rusttype::gpu_cache::Cache as RustTypeGlyphCache;
 use rusttype::gpu_cache::CacheWriteErr as RustTypeCacheWriteError;
 
 use crate::{color, image_map, render};
 use crate::{OldRect, Scalar};
-use crate::mesh::{DEFAULT_GLYPH_CACHE_DIMS, GLYPH_CACHE_POSITION_TOLERANCE, GLYPH_CACHE_SCALE_TOLERANCE, MODE_GEOMETRY, MODE_IMAGE, MODE_TEXT};
+use crate::mesh::{DEFAULT_GLYPH_CACHE_DIMS, GLYPH_CACHE_POSITION_TOLERANCE, GLYPH_CACHE_SCALE_TOLERANCE, MODE_ATLAS, MODE_GEOMETRY, MODE_IMAGE, MODE_TEXT};
+use crate::mesh::texture_atlas::{AtlasId, TextureAtlas};
 use crate::mesh::vertex::Vertex;
 use crate::Range;
 use crate::render::primitive_walker::PrimitiveWalker;
+use crate::text::Glyph;
 use crate::widget::{Environment, GlobalState};
 
 /// Images within the given image map must know their dimensions in pixels.
@@ -31,6 +34,8 @@ pub trait ImageDimensions {
 pub struct Mesh {
     glyph_cache: GlyphCache,
     glyph_cache_pixel_buffer: Vec<u8>,
+    texture_atlas: TextureAtlas,
+    texture_atlas_image: DynamicImage,
     commands: Vec<PreparedCommand>,
     vertices: Vec<Vertex>,
 }
@@ -79,6 +84,8 @@ pub enum Draw {
 pub struct Fill {
     /// Whether or not the glyph cache pixel data should be written to the GPU.
     pub glyph_cache_requires_upload: bool,
+    /// Whether or not the atlas pixel data should be written to the GPU.
+    pub atlas_requires_upload: bool,
 }
 
 // A wrapper around an owned glyph cache, providing `Debug` and `Deref` impls.
@@ -114,6 +121,8 @@ impl Mesh {
         Mesh {
             glyph_cache,
             glyph_cache_pixel_buffer,
+            texture_atlas: TextureAtlas::new(512, 512),
+            texture_atlas_image: DynamicImage::new_rgba8(512, 512),
             commands,
             vertices,
         }
@@ -146,6 +155,8 @@ impl Mesh {
             ref mut glyph_cache_pixel_buffer,
             ref mut commands,
             ref mut vertices,
+            ref mut texture_atlas,
+            ref mut texture_atlas_image,
         } = *self;
 
         commands.clear();
@@ -160,6 +171,7 @@ impl Mesh {
 
         // Keep track of whether or not the glyph cache texture needs to be updated.
         let mut glyph_cache_requires_upload = false;
+        let mut atlas_requires_upload = false;
 
         // Viewport dimensions and the "dots per inch" factor.
         let (viewport_w, viewport_h) = viewport.w_h();
@@ -331,11 +343,13 @@ impl Mesh {
                 render::primitive_kind::PrimitiveKind::Text {
                     color,
                     text,
-                    font_id,
                 } => {
                     switch_to_plain_state!();
-                    let font = env.get_font(font_id);
+                    let color = gamma_srgb_to_linear(color.to_fsa());
+                    let glyphs_per_font = Mesh::group_by_font_id(text);
 
+
+                    // Todo: remove when changed to new rect.
                     let to_gl_rect = |screen_rect: rusttype::Rect<i32>| {
                         let min_x = screen_rect.min.x as f64 / scale_factor;
                         let max_x = screen_rect.max.x as f64 / scale_factor;
@@ -348,74 +362,101 @@ impl Mesh {
                         }
                     };
 
-                    println!("{:?}", font);
+                    for glyphs in glyphs_per_font {
+                        let font_id = glyphs[0].font_id();
+                        let font = env.get_font(font_id);
 
-                    if font.is_bitmap() {
-                        for glyph in text {
-                            let position = glyph.position();
-                            println!("Position glyph at: {}", position);
-                            println!("Dimensions of glyph: {}", glyph.scale());
-                            println!("bb: {:?}", glyph.bb());
-                        }
-                    } else {
-                        for glyph in &text {
-                            let position = glyph.position();
-                            println!("Position glyph at: {}", position);
-                            println!("Dimensions of glyph: {}", glyph.scale());
-                            println!("bb: {:?}", glyph.bb());
-                        }
-                        let positioned_glyphs = text.iter().map(|glyph| {
-                            glyph.convert_to_glyph(font)
-                        }).collect::<Vec<_>>();
+                        if font.is_bitmap() {
+                            let v = |x, y, t| Vertex {
+                                position: [vx(x), vy(y), 0.0],
+                                tex_coords: t,
+                                rgba: color,
+                                mode: MODE_ATLAS,
+                            };
+                            let mut push_v = |x: Scalar, y: Scalar, t: [f32; 2]| {
+                                vertices.push(v(x, y, t));
+                            };
 
-                        // Queue the glyphs to be cached
-                        for positioned_glyph in positioned_glyphs.clone() {
-                            glyph_cache.queue_glyph(font_id, positioned_glyph);
-                        }
+                            for glyph in glyphs {
+                                texture_atlas.queue_raster_glyph_id(font_id, glyph.id(), glyph.font_size(), env);
 
-                        glyph_cache.cache_queued(|rect, data| {
-                            let width = (rect.max.x - rect.min.x) as usize;
-                            let height = (rect.max.y - rect.min.y) as usize;
-                            let mut dst_ix = rect.min.y as usize * glyph_cache_w + rect.min.x as usize;
-                            let mut src_ix = 0;
-                            for _ in 0..height {
-                                let dst_range = dst_ix..dst_ix + width;
-                                let src_range = src_ix..src_ix + width;
-                                let dst_slice = &mut glyph_cache_pixel_buffer[dst_range];
-                                let src_slice = &data[src_range];
-                                dst_slice.copy_from_slice(src_slice);
-                                dst_ix += glyph_cache_w;
-                                src_ix += width;
+                                texture_atlas.cache_queued(|x, y, image_data| {
+                                    println!("Insert the image at: {}, {} with size {}, {}", x, y, image_data.width(), image_data.height());
+                                    for (ix, iy, pixel) in image_data.pixels() {
+                                        texture_atlas_image.put_pixel(x + ix, y + iy, pixel);
+                                    }
+
+                                    atlas_requires_upload = true;
+                                });
+
+
+                                let position = glyph.position();
+                                if let Some(bb) = glyph.bb() {
+                                    let positioned_bb = (bb + glyph.position()) / scale_factor;
+
+                                    let (left, right, bottom, top) = positioned_bb.l_r_b_t();
+                                    let coords = texture_atlas.get_tex_coords_for(&AtlasId::RasterGlyph(glyph.font_id(), glyph.id(), glyph.font_size()));
+
+                                    push_v(left, top, [coords.min.x, coords.max.y]);
+                                    push_v(right, bottom, [coords.max.x, coords.min.y]);
+                                    push_v(left, bottom, [coords.min.x, coords.min.y]);
+                                    push_v(left, top, [coords.min.x, coords.max.y]);
+                                    push_v(right, bottom, [coords.max.x, coords.min.y]);
+                                    push_v(right, top, [coords.max.x, coords.max.y]);
+                                }
                             }
-                            glyph_cache_requires_upload = true;
-                        })?;
+                        } else {
+                            let v = |x, y, t| Vertex {
+                                position: [vx(x), vy(y), 0.0],
+                                tex_coords: t,
+                                rgba: color,
+                                mode: MODE_TEXT,
+                            };
+                            let mut push_v = |x: Scalar, y: Scalar, t: [f32; 2]| {
+                                vertices.push(v(x, y, t));
+                            };
+
+                            let positioned_glyphs = glyphs.iter().map(|glyph| {
+                                glyph.convert_to_glyph(&font)
+                            }).collect::<Vec<_>>();
+
+                            // Queue the glyphs to be cached
+                            for positioned_glyph in positioned_glyphs.clone() {
+                                glyph_cache.queue_glyph(font_id, positioned_glyph);
+                            }
+
+                            glyph_cache.cache_queued(|rect, data| {
+                                let width = (rect.max.x - rect.min.x) as usize;
+                                let height = (rect.max.y - rect.min.y) as usize;
+                                let mut dst_ix = rect.min.y as usize * glyph_cache_w + rect.min.x as usize;
+                                let mut src_ix = 0;
+                                for _ in 0..height {
+                                    let dst_range = dst_ix..dst_ix + width;
+                                    let src_range = src_ix..src_ix + width;
+                                    let dst_slice = &mut glyph_cache_pixel_buffer[dst_range];
+                                    let src_slice = &data[src_range];
+                                    dst_slice.copy_from_slice(src_slice);
+                                    dst_ix += glyph_cache_w;
+                                    src_ix += width;
+                                }
+                                glyph_cache_requires_upload = true;
+                            })?;
+
+                            for g in positioned_glyphs {
+                                if let Ok(Some((uv_rect, screen_rect))) = glyph_cache.rect_for(font_id, &g)
+                                {
+                                    let vk_rect = to_gl_rect(screen_rect);
 
 
-                        let color = gamma_srgb_to_linear(color.to_fsa());
+                                    let (l, r, b, t) = vk_rect.l_r_b_t();
 
-                        for g in positioned_glyphs {
-                            if let Ok(Some((uv_rect, screen_rect))) = glyph_cache.rect_for(font_id, &g)
-                            {
-                                let vk_rect = to_gl_rect(screen_rect);
-
-                                let v = |x, y, t| Vertex {
-                                    position: [vx(x), vy(y), 0.0],
-                                    tex_coords: t,
-                                    rgba: color,
-                                    mode: MODE_TEXT,
-                                };
-                                let mut push_v = |x, y, t| {
-                                    vertices.push(v(x, y, t));
-                                };
-
-                                let (l, r, b, t) = vk_rect.l_r_b_t();
-
-                                push_v(l, t, [uv_rect.min.x, uv_rect.max.y]);
-                                push_v(r, b, [uv_rect.max.x, uv_rect.min.y]);
-                                push_v(l, b, [uv_rect.min.x, uv_rect.min.y]);
-                                push_v(l, t, [uv_rect.min.x, uv_rect.max.y]);
-                                push_v(r, b, [uv_rect.max.x, uv_rect.min.y]);
-                                push_v(r, t, [uv_rect.max.x, uv_rect.max.y]);
+                                    push_v(l, t, [uv_rect.min.x, uv_rect.max.y]);
+                                    push_v(r, b, [uv_rect.max.x, uv_rect.min.y]);
+                                    push_v(l, b, [uv_rect.min.x, uv_rect.min.y]);
+                                    push_v(l, t, [uv_rect.min.x, uv_rect.max.y]);
+                                    push_v(r, b, [uv_rect.max.x, uv_rect.min.y]);
+                                    push_v(r, t, [uv_rect.max.x, uv_rect.max.y]);
+                                }
                             }
                         }
                     }
@@ -518,9 +559,35 @@ impl Mesh {
 
         let fill = Fill {
             glyph_cache_requires_upload,
+            atlas_requires_upload,
         };
 
         Ok(fill)
+    }
+
+    fn group_by_font_id(glyphs: Vec<Glyph>) -> Vec<Vec<Glyph>> {
+        let mut glyph_vecs: Vec<Vec<Glyph>> = Vec::new();
+        'glyph_for: for glyph in glyphs {
+            let font_id = glyph.font_id();
+            for glyph_vec in &mut glyph_vecs {
+                if glyph_vec[0].font_id() == font_id {
+                    glyph_vec.push(glyph);
+                    continue 'glyph_for;
+                }
+            }
+            glyph_vecs.push(vec![glyph]);
+        }
+
+        glyph_vecs
+    }
+
+    pub fn texture_atlas(&self) -> &TextureAtlas {
+        &self.texture_atlas
+    }
+
+    pub fn texture_atlas_image_as_bytes(&self) -> &[u8] {
+        println!("Number of bytes: {}", &self.texture_atlas_image.as_bytes().len());
+        &self.texture_atlas_image.as_bytes()
     }
 
     /// The rusttype glyph cache used for managing caching of glyphs into the pixel buffer.

@@ -8,6 +8,15 @@ pub struct Vertex {
 }
 
 impl Vertex {
+    pub fn new_from_2d(x: f32, y: f32, color: [f32; 4], tex_coords: [f32; 2], mode: u32) -> Vertex {
+        Vertex {
+            position: [x, y, 0.0],
+            tex_coords,
+            rgba: color,
+            mode,
+        }
+    }
+
     pub fn desc<'a>() -> wgpu::VertexBufferDescriptor<'a> {
         wgpu::VertexBufferDescriptor {
             stride: std::mem::size_of::<Vertex>() as wgpu::BufferAddress, // 1.
@@ -33,7 +42,7 @@ impl Vertex {
                     shader_location: 3,
                     format: wgpu::VertexFormat::Uint,
                 }
-            ]
+            ],
         }
     }
 }

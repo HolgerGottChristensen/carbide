@@ -28,7 +28,8 @@ use crate::diffuse_bind_group::{DiffuseBindGroup, new_diffuse};
 use crate::glyph_cache_command::GlyphCacheCommand;
 use crate::image::Image;
 use crate::render_pass_command::{create_render_pass_commands, RenderPassCommand};
-use crate::renderer::glyph_cache_tex_desc;
+use crate::renderer::{atlas_cache_tex_desc, glyph_cache_tex_desc};
+use crate::texture_atlas_command::TextureAtlasCommand;
 
 // Todo: Look in to multisampling: https://github.com/gfx-rs/wgpu-rs/blob/v0.6/examples/msaa-line/main.rs
 pub struct Window<T: GlobalState> {
@@ -44,6 +45,7 @@ pub struct Window<T: GlobalState> {
     ui: Ui<T>,
     image_map: ImageMap<Image>,
     glyph_cache_tex: Texture,
+    atlas_cache_tex: Texture,
     bind_groups: HashMap<Id, DiffuseBindGroup>,
     texture_bind_group_layout: BindGroupLayout,
     state: T,
@@ -207,6 +209,16 @@ impl<T: GlobalState> Window<T> {
                         },
                         count: None,
                     },
+                    wgpu::BindGroupLayoutEntry {
+                        binding: 3,
+                        visibility: wgpu::ShaderStage::FRAGMENT,
+                        ty: wgpu::BindingType::SampledTexture {
+                            multisampled: false,
+                            dimension: wgpu::TextureViewDimension::D2,
+                            component_type: wgpu::TextureComponentType::Uint,
+                        },
+                        count: None,
+                    },
                 ],
                 label: Some("texture_bind_group_layout"),
             }
@@ -214,6 +226,8 @@ impl<T: GlobalState> Window<T> {
 
         let text_cache_tex_desc = glyph_cache_tex_desc(DEFAULT_GLYPH_CACHE_DIMS);
         let glyph_cache_tex = device.create_texture(&text_cache_tex_desc);
+        let atlas_cache_tex_desc = atlas_cache_tex_desc([512, 512]);
+        let atlas_cache_tex = device.create_texture(&atlas_cache_tex_desc);
 
         let assets = find_folder::Search::KidsThenParents(3, 5)
             .for_folder("assets")
@@ -283,7 +297,7 @@ impl<T: GlobalState> Window<T> {
 
         let bind_groups = HashMap::new();
 
-        let diffuse_bind_group = new_diffuse(&device, &image, &glyph_cache_tex, &texture_bind_group_layout);
+        let diffuse_bind_group = new_diffuse(&device, &image, &glyph_cache_tex, &atlas_cache_tex, &texture_bind_group_layout);
 
         let mesh = Mesh::with_glyph_cache_dimensions(DEFAULT_GLYPH_CACHE_DIMS);
 
@@ -302,6 +316,7 @@ impl<T: GlobalState> Window<T> {
             ui,
             image_map,
             glyph_cache_tex,
+            atlas_cache_tex,
             bind_groups,
             texture_bind_group_layout,
             state,
@@ -350,6 +365,7 @@ impl<T: GlobalState> Window<T> {
         println!("Time for draw: {:?}us", now.elapsed().as_micros());
         let fill = self.mesh.fill(OldRect::new([0.0, 0.0], [self.size.width as f64, self.size.height as f64]), &self.ui.environment, &self.image_map, primitives).unwrap();
 
+        // Check if an upload to the glyph cache is needed
         let glyph_cache_cmd = match fill.glyph_cache_requires_upload {
             false => None,
             true => {
@@ -370,7 +386,29 @@ impl<T: GlobalState> Window<T> {
             }
         }
 
-        let commands = create_render_pass_commands(&self.diffuse_bind_group, &mut self.bind_groups, &self.image_map, &self.mesh, &self.device, &self.glyph_cache_tex, &self.texture_bind_group_layout);
+        // Check if an upload to texture atlas is needed.
+        let texture_atlas_cmd = match fill.atlas_requires_upload {
+            true => {
+                let width = self.mesh.texture_atlas().width();
+                let height = self.mesh.texture_atlas().height();
+                Some(TextureAtlasCommand {
+                    texture_atlas_buffer: self.mesh.texture_atlas_image_as_bytes(),
+                    texture_atlas_texture: &self.atlas_cache_tex,
+                    width: 512,
+                    height: 512,
+                })
+            }
+            false => None,
+        };
+
+        match texture_atlas_cmd {
+            None => (),
+            Some(cmd) => {
+                cmd.load_buffer_and_encode(&self.device, &mut encoder);
+            }
+        }
+
+        let commands = create_render_pass_commands(&self.diffuse_bind_group, &mut self.bind_groups, &self.image_map, &self.mesh, &self.device, &self.glyph_cache_tex, &self.atlas_cache_tex, &self.texture_bind_group_layout);
 
         //println!("{:#?}", self.mesh.vertices());
 

@@ -21,7 +21,6 @@ pub enum TextSpan<GS> where GS: GlobalState {
         text: String,
         glyphs: Vec<Glyph>,
         widths: Vec<Scalar>,
-        font_id: FontId,
         ascending_pixels: f64,
     },
     Widget(Box<dyn Widget<GS>>),
@@ -54,15 +53,14 @@ impl<GS: GlobalState> TextSpan<GS> {
 
             let font = style.get_font(env);
 
-            let (widths, glyphs) = font.get_glyphs(line, style.font_size, scale_factor);
             let ascending_pixels = font.baseline_offset(style.font_size, 1.0);
+            let (widths, glyphs) = font.get_glyphs(line, style.font_size, scale_factor, env);
 
             res.push(TextSpan::Text {
                 style: Some(style.clone()),
                 text: line.to_string(),
                 glyphs,
                 widths,
-                font_id: style.get_font_id(env),
                 ascending_pixels,
             });
             res.push(TextSpan::NewLine);
@@ -93,7 +91,7 @@ impl<GS: GlobalState> TextSpan<GS> {
                     };
                     let font = style.get_font(env);
 
-                    let (widths, glyphs) = font.get_glyphs(&text, style.font_size, scale_factor);
+                    let (widths, glyphs) = font.get_glyphs(&text, style.font_size, scale_factor, env);
                     let ascending_pixels = font.baseline_offset(style.font_size, 1.0);
 
                     let span = TextSpan::Text {
@@ -101,7 +99,6 @@ impl<GS: GlobalState> TextSpan<GS> {
                         text: text.to_string(),
                         glyphs,
                         widths,
-                        font_id: style.get_font_id(env),
                         ascending_pixels,
                     };
 
@@ -119,7 +116,7 @@ impl<GS: GlobalState> TextSpan<GS> {
                     };
                     let font = style.get_font(env);
 
-                    let (widths, glyphs) = font.get_glyphs(&text, style.font_size, scale_factor);
+                    let (widths, glyphs) = font.get_glyphs(&text, style.font_size, scale_factor, env);
                     let ascending_pixels = font.baseline_offset(style.font_size, 1.0);
 
                     let span = TextSpan::Text {
@@ -127,7 +124,6 @@ impl<GS: GlobalState> TextSpan<GS> {
                         text: text.to_string(),
                         glyphs,
                         widths,
-                        font_id: style.get_font_id(env),
                         ascending_pixels,
                     };
 
@@ -145,7 +141,7 @@ impl<GS: GlobalState> TextSpan<GS> {
                     };
                     let font = style.get_font(env);
 
-                    let (widths, glyphs) = font.get_glyphs(&text, style.font_size, scale_factor);
+                    let (widths, glyphs) = font.get_glyphs(&text, style.font_size, scale_factor, env);
                     let ascending_pixels = font.baseline_offset(style.font_size, 1.0);
 
                     let span = TextSpan::Text {
@@ -153,7 +149,6 @@ impl<GS: GlobalState> TextSpan<GS> {
                         text: text.to_string(),
                         glyphs,
                         widths,
-                        font_id: style.get_font_id(env),
                         ascending_pixels,
                     };
 
@@ -170,7 +165,7 @@ impl<GS: GlobalState> TextSpan<GS> {
                     };
                     let font = style.get_font(env);
 
-                    let (widths, glyphs) = font.get_glyphs(&text, style.font_size, scale_factor);
+                    let (widths, glyphs) = font.get_glyphs(&text, style.font_size, scale_factor, env);
                     let ascending_pixels = font.baseline_offset(style.font_size, 1.0);
 
                     let span = TextSpan::Text {
@@ -178,7 +173,6 @@ impl<GS: GlobalState> TextSpan<GS> {
                         text: text.to_string(),
                         glyphs,
                         widths,
-                        font_id: style.get_font_id(env),
                         ascending_pixels,
                     };
 
@@ -195,7 +189,7 @@ impl<GS: GlobalState> TextSpan<GS> {
                     };
                     let font = style.get_font(env);
 
-                    let (widths, glyphs) = font.get_glyphs(&text, style.font_size, scale_factor);
+                    let (widths, glyphs) = font.get_glyphs(&text, style.font_size, scale_factor, env);
                     let ascending_pixels = font.baseline_offset(style.font_size, 1.0);
 
                     let span = TextSpan::Text {
@@ -203,7 +197,6 @@ impl<GS: GlobalState> TextSpan<GS> {
                         text: text.to_string(),
                         glyphs,
                         widths,
-                        font_id: style.get_font_id(env),
                         ascending_pixels,
                     };
 
@@ -220,7 +213,7 @@ impl<GS: GlobalState> TextSpan<GS> {
                     };
                     let font = style.get_font(env);
 
-                    let (widths, glyphs) = font.get_glyphs(&text, style.font_size, scale_factor);
+                    let (widths, glyphs) = font.get_glyphs(&text, style.font_size, scale_factor, env);
                     let ascending_pixels = font.baseline_offset(style.font_size, 1.0);
 
                     let span = TextSpan::Text {
@@ -228,7 +221,6 @@ impl<GS: GlobalState> TextSpan<GS> {
                         text: text.to_string(),
                         glyphs,
                         widths,
-                        font_id: style.get_font_id(env),
                         ascending_pixels,
                     };
 
@@ -245,7 +237,7 @@ impl<GS: GlobalState> TextSpan<GS> {
                     };
                     let font = style.get_font(env);
 
-                    let (widths, glyphs) = font.get_glyphs(&text, style.font_size, scale_factor);
+                    let (widths, glyphs) = font.get_glyphs(&text, style.font_size, scale_factor, env);
                     let ascending_pixels = font.baseline_offset(style.font_size, 1.0);
 
                     let span = TextSpan::Text {
@@ -253,7 +245,6 @@ impl<GS: GlobalState> TextSpan<GS> {
                         text: text.to_string(),
                         glyphs,
                         widths,
-                        font_id: style.get_font_id(env),
                         ascending_pixels,
                     };
 

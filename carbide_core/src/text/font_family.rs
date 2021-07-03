@@ -4,6 +4,7 @@ use crate::text::{Font, FontId};
 use crate::text::font_style::FontStyle;
 use crate::text::font_weight::FontWeight;
 
+/// Font families should only contain the same sets of glyphs.
 #[derive(Clone, Debug)]
 pub struct FontFamily {
     pub name: String,

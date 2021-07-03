@@ -1,6 +1,6 @@
 use std::fmt::{Display, Formatter};
 use std::fmt;
-use std::ops::{Add, AddAssign, Sub, SubAssign};
+use std::ops::{Add, AddAssign, Div, Sub, SubAssign};
 
 use crate::draw::Position;
 use crate::Scalar;
@@ -80,6 +80,16 @@ impl Sub for Dimension {
     fn sub(mut self, rhs: Dimension) -> Self::Output {
         self.width -= rhs.width;
         self.height -= rhs.height;
+        self
+    }
+}
+
+impl Div<Scalar> for Dimension {
+    type Output = Dimension;
+
+    fn div(mut self, rhs: f64) -> Self::Output {
+        self.width /= rhs;
+        self.height /= rhs;
         self
     }
 }

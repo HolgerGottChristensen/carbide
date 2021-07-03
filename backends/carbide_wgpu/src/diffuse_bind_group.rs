@@ -1,9 +1,10 @@
-use wgpu::{BindGroup, Device, BindGroupLayout, Texture};
+use wgpu::{BindGroup, BindGroupLayout, Device, Texture};
+
 use crate::image::Image;
 
 pub type DiffuseBindGroup = BindGroup;
 
-pub fn new_diffuse(device: &Device, image: &Image, glyph_cache_tex: &Texture, layout: &BindGroupLayout) -> DiffuseBindGroup {
+pub fn new_diffuse(device: &Device, image: &Image, glyph_cache_tex: &Texture, atlas_cache_tex: &Texture, layout: &BindGroupLayout) -> DiffuseBindGroup {
     device.create_bind_group(
         &wgpu::BindGroupDescriptor {
             layout,
@@ -19,6 +20,10 @@ pub fn new_diffuse(device: &Device, image: &Image, glyph_cache_tex: &Texture, la
                 wgpu::BindGroupEntry {
                     binding: 2,
                     resource: wgpu::BindingResource::TextureView(&glyph_cache_tex.create_view(&wgpu::TextureViewDescriptor::default())),
+                },
+                wgpu::BindGroupEntry {
+                    binding: 3,
+                    resource: wgpu::BindingResource::TextureView(&atlas_cache_tex.create_view(&wgpu::TextureViewDescriptor::default())),
                 }
             ],
             label: Some("diffuse_bind_group"),

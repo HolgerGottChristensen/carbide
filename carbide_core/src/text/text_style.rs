@@ -27,13 +27,13 @@ pub struct TextStyle {
 }
 
 impl TextStyle {
-    pub fn get_font<'a, GS: GlobalState>(&'a self, env: &'a mut Environment<GS>) -> &'a mut Font {
+    pub fn get_font<GS: GlobalState>(&self, env: &Environment<GS>) -> Font {
         let family = env.get_font_family(&self.font_family);
         let font_id = family.get_best_fit(self.font_weight, self.font_style);
-        env.get_font_mut(font_id)
+        env.get_font(font_id)
     }
 
-    pub fn get_font_id<'a, GS: GlobalState>(&'a self, env: &'a mut Environment<GS>) -> FontId {
+    pub fn get_font_id<GS: GlobalState>(&self, env: &Environment<GS>) -> FontId {
         let family = env.get_font_family(&self.font_family);
         family.get_best_fit(self.font_weight, self.font_style)
     }

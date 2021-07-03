@@ -8,6 +8,8 @@ pub const MODE_TEXT: u32 = 0;
 pub const MODE_IMAGE: u32 = 1;
 /// Ignore `tex` and draw simple, colored 2D geometry.
 pub const MODE_GEOMETRY: u32 = 2;
+/// Draw colored bitmap glyphs.
+pub const MODE_ATLAS: u32 = 3;
 
 /// Default dimensions to use for the glyph cache.
 pub const DEFAULT_GLYPH_CACHE_DIMS: [u32; 2] = [1024; 2];

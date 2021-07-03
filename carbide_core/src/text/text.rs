@@ -50,12 +50,12 @@ impl<GS: GlobalState> Text<GS> {
         }
     }
 
-    pub fn span_glyphs(&self) -> Vec<(Vec<Glyph>, FontId, Option<Color>, Vec<Rect>)> {
+    pub fn span_glyphs(&self) -> Vec<(Vec<Glyph>, Option<Color>, Vec<Rect>)> {
         self.spans.iter().filter_map(|a| {
             match a {
-                TextSpan::Text { font_id, style, glyphs, .. } => {
+                TextSpan::Text { style, glyphs, .. } => {
                     let style = style.clone().unwrap();
-                    Some((glyphs.to_vec(), *font_id, style.color, style.text_decoration.get_rects()))
+                    Some((glyphs.to_vec(), style.color, style.text_decoration.get_rects()))
                 }
                 TextSpan::Widget(_) => None,
                 TextSpan::NewLine => None,
@@ -81,8 +81,8 @@ impl<GS: GlobalState> Text<GS> {
                                 TextDecoration::Underline(r) |
                                 TextDecoration::StrikeThrough(r) => {
                                     for rect in r {
-                                        rect.position.x += new_offset.x;
-                                        rect.position.y += new_offset.y;
+                                        rect.position.x += new_offset.x / self.scale_factor;
+                                        rect.position.y += new_offset.y / self.scale_factor;
                                     }
                                 }
                             }
