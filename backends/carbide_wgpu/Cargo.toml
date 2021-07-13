@@ -15,19 +15,19 @@ edition = "2018"
 
 [dependencies]
 carbide_core = { path = "../../carbide_core", version = "0.70" }
-carbide_derive  = { path = "../../carbide_derive", version = "0.70" }
+carbide_derive = { path = "../../carbide_derive", version = "0.70" }
 carbide_winit = { path = "../carbide_winit", version = "0.70" }
 image = "0.23"
-winit = "0.23"
+winit = "0.25"
 cgmath = "0.17"
 env_logger = "0.7"
 log = "0.4"
 wgpu = "0.6"
 futures = "0.3"
-bytemuck = { version = "1.4", features = [ "derive" ] }
+bytemuck = { version = "1.4", features = ["derive"] }
 anyhow = "1.0"
 find_folder = "0.3"
-uuid = { version = "0.8.1", features = ["serde", "v4"]}
+uuid = { version = "0.8.1", features = ["serde", "v4"] }
 
 [dev-dependencies]
 carbide_winit = { path = "../carbide_winit", version = "0.70" }

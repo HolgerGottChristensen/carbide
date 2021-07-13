@@ -8,6 +8,7 @@
 use std::{fmt, ops};
 
 use image::{DynamicImage, GenericImage, GenericImageView};
+use instant::Instant;
 use rusttype::gpu_cache::Cache as RustTypeGlyphCache;
 use rusttype::gpu_cache::CacheWriteErr as RustTypeCacheWriteError;
 
@@ -32,6 +33,7 @@ pub trait ImageDimensions {
 /// This is a convenience type for simplifying backend implementations.
 #[derive(Debug)]
 pub struct Mesh {
+    // TODO: Consider mooving glyphcache and atlas to env, such that we can cache texture coords.
     glyph_cache: GlyphCache,
     glyph_cache_pixel_buffer: Vec<u8>,
     texture_atlas: TextureAtlas,
@@ -376,7 +378,7 @@ impl Mesh {
                             let mut push_v = |x: Scalar, y: Scalar, t: [f32; 2]| {
                                 vertices.push(v(x, y, t));
                             };
-
+                            let now = Instant::now();
                             for glyph in glyphs {
                                 texture_atlas.queue_raster_glyph_id(font_id, glyph.id(), glyph.font_size(), env);
 
@@ -406,6 +408,7 @@ impl Mesh {
                                     push_v(right, top, [coords.max.x, coords.max.y]);
                                 }
                             }
+                            println!("Time bitmap render: {:?}us", now.elapsed().as_micros());
                         } else {
                             let v = |x, y, t| Vertex {
                                 position: [vx(x), vy(y), 0.0],
@@ -417,9 +420,11 @@ impl Mesh {
                                 vertices.push(v(x, y, t));
                             };
 
+                            let now = Instant::now();
                             let positioned_glyphs = glyphs.iter().map(|glyph| {
                                 glyph.convert_to_glyph(&font)
                             }).collect::<Vec<_>>();
+                            println!("Time for convert glyph: {:?}us", now.elapsed().as_micros());
 
                             // Queue the glyphs to be cached
                             for positioned_glyph in positioned_glyphs.clone() {
@@ -443,6 +448,7 @@ impl Mesh {
                                 glyph_cache_requires_upload = true;
                             })?;
 
+                            let now = Instant::now();
                             for g in positioned_glyphs {
                                 if let Ok(Some((uv_rect, screen_rect))) = glyph_cache.rect_for(font_id, &g)
                                 {
@@ -459,6 +465,7 @@ impl Mesh {
                                     push_v(r, t, [uv_rect.max.x, uv_rect.max.y]);
                                 }
                             }
+                            println!("Time for rect_for: {:?}us", now.elapsed().as_micros());
                         }
                     }
                 }
@@ -567,6 +574,7 @@ impl Mesh {
     }
 
     fn group_by_font_id(glyphs: Vec<Glyph>) -> Vec<Vec<Glyph>> {
+        let now = Instant::now();
         let mut glyph_vecs: Vec<Vec<Glyph>> = Vec::new();
         'glyph_for: for glyph in glyphs {
             let font_id = glyph.font_id();
@@ -578,6 +586,8 @@ impl Mesh {
             }
             glyph_vecs.push(vec![glyph]);
         }
+
+        println!("Time for group by font: {:?}us", now.elapsed().as_micros());
 
         glyph_vecs
     }

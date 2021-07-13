@@ -1,9 +1,10 @@
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
-use std::time::Instant;
+use std::thread::sleep;
+use std::time::{Duration, Instant};
 
 pub use futures::executor::block_on;
-use wgpu::{BindGroupLayout, Texture};
+use wgpu::{BindGroupLayout, PresentMode, Texture};
 use wgpu::util::DeviceExt;
 use winit::dpi::{PhysicalPosition, PhysicalSize, Size};
 use winit::event::{ElementState, Event, KeyboardInput, VirtualKeyCode, WindowEvent};
@@ -172,7 +173,7 @@ impl<T: GlobalState> Window<T> {
             format: wgpu::TextureFormat::Bgra8UnormSrgb,
             width: size.width,
             height: size.height,
-            present_mode: wgpu::PresentMode::Fifo,
+            present_mode: PresentMode::Fifo,
         };
         let swap_chain = device.create_swap_chain(&surface, &sc_desc);
 
@@ -346,25 +347,35 @@ impl<T: GlobalState> Window<T> {
     }
 
     fn update(&mut self) {
+        let update_start = Instant::now();
         self.ui.delegate_events(&mut self.state);
+        println!("Time for render: {:?}us", update_start.elapsed().as_micros());
     }
 
     pub fn render(&mut self) -> Result<(), wgpu::SwapChainError> {
+
+        // This blocks until a new frame is available.
         let frame = self
             .swap_chain
             .get_current_frame()?
             .output;
 
+        let render_start = Instant::now();
 
+        let now = Instant::now();
         let mut encoder = self.device.create_command_encoder(&wgpu::CommandEncoderDescriptor {
             label: Some("Render Encoder"),
         });
+        println!("encodere: {:?}us", now.elapsed().as_micros());
 
         let now = Instant::now();
         let primitives = self.ui.draw(&self.state);
         println!("Time for draw: {:?}us", now.elapsed().as_micros());
+        let now = Instant::now();
         let fill = self.mesh.fill(OldRect::new([0.0, 0.0], [self.size.width as f64, self.size.height as f64]), &self.ui.environment, &self.image_map, primitives).unwrap();
+        println!("Time for fill: {:?}us", now.elapsed().as_micros());
 
+        let now = Instant::now();
         // Check if an upload to the glyph cache is needed
         let glyph_cache_cmd = match fill.glyph_cache_requires_upload {
             false => None,
@@ -385,6 +396,8 @@ impl<T: GlobalState> Window<T> {
                 cmd.load_buffer_and_encode(&self.device, &mut encoder);
             }
         }
+        println!("glyph_cache_cmd: {:?}us", now.elapsed().as_micros());
+        let now = Instant::now();
 
         // Check if an upload to texture atlas is needed.
         let texture_atlas_cmd = match fill.atlas_requires_upload {
@@ -407,11 +420,13 @@ impl<T: GlobalState> Window<T> {
                 cmd.load_buffer_and_encode(&self.device, &mut encoder);
             }
         }
+        println!("atlas: {:?}us", now.elapsed().as_micros());
+        let now = Instant::now();
 
         let commands = create_render_pass_commands(&self.diffuse_bind_group, &mut self.bind_groups, &self.image_map, &self.mesh, &self.device, &self.glyph_cache_tex, &self.atlas_cache_tex, &self.texture_bind_group_layout);
-
+        println!("commands: {:?}us", now.elapsed().as_micros());
         //println!("{:#?}", self.mesh.vertices());
-
+        let now = Instant::now();
         let vertex_buffer = self.device.create_buffer_init(
             &wgpu::util::BufferInitDescriptor {
                 label: Some("Vertex Buffer"),
@@ -419,6 +434,7 @@ impl<T: GlobalState> Window<T> {
                 usage: wgpu::BufferUsage::VERTEX,
             }
         );
+        println!("vertex_buffer: {:?}us", now.elapsed().as_micros());
 
         {
             let mut render_pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
@@ -465,7 +481,7 @@ impl<T: GlobalState> Window<T> {
 
         // submit will accept anything that implements IntoIter
         self.queue.submit(std::iter::once(encoder.finish()));
-
+        println!("Time for render: {:?}us", render_start.elapsed().as_micros());
         Ok(())
     }
 

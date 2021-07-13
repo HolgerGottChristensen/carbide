@@ -39,7 +39,7 @@ impl<GS: GlobalState> Text<GS> {
             latest_max_width: 0.0,
             latest_max_height: 0.0,
             scale_factor: 0.0,
-            wrap: Wrap::Character,
+            wrap: Wrap::Whitespace,
             justify: Justify::Left,
         }
     }
@@ -145,6 +145,8 @@ impl<GS: GlobalState> Text<GS> {
                         let current_glyph = &mut glyphs[current_glyph_index];
                         let current_char = current_chars[current_glyph_index];
 
+                        *current_glyph.position_mut() = Position::new(current_x, current_line);
+
                         // If our current char is a whitespace
                         if current_char.is_whitespace() {
                             // If the space is not the first glyph in a line.
@@ -160,12 +162,10 @@ impl<GS: GlobalState> Text<GS> {
                                     latest_break_glyph_index = Some(current_glyph_index);
                                 }
 
-                                *current_glyph.position_mut() = Position::new(current_x, current_line);
                                 current_x += current_width;
                             }
                         } else {
                             // All other glyphs we position them, and add their width to the current line.
-                            *current_glyph.position_mut() = Position::new(current_x, current_line);
                             current_x += current_width;
                         }
 
