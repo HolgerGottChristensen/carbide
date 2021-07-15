@@ -5,9 +5,10 @@ use std::fmt::{Debug, Formatter};
 use std::ops::Range;
 
 use fxhash::{FxBuildHasher, FxHashMap};
-use image::DynamicImage;
+use image::{DynamicImage, GenericImage, Rgba};
 use rusttype::{GlyphId, IntoGlyphId, point, PositionedGlyph, Scale, VMetrics};
 
+use crate::draw::Position;
 use crate::prelude::text_old;
 use crate::Scalar;
 use crate::text::{FontId, FontSize};
@@ -69,6 +70,20 @@ impl Font {
         raster_image.map(|raster| {
             image::load_from_memory(raster.data).unwrap()
         })
+    }
+
+    pub fn get_glyph_image_from_id(&self, id: GlyphId, font_size: FontSize, scale_factor: Scalar, position_offset: Position) -> Option<DynamicImage> {
+        let scale = Font::size_to_scale(font_size, scale_factor);
+        let positioned_glyph = self.get_inner().glyph(id).scaled(scale).positioned(point(position_offset.x as f32, position_offset.y as f32));
+        if let Some(bb) = positioned_glyph.pixel_bounding_box() {
+            let mut image_data = DynamicImage::new_rgba8(bb.width() as u32, bb.height() as u32);
+            positioned_glyph.draw(|x, y, value| {
+                image_data.put_pixel(x, y, Rgba::from([0, 0, 0, (value * 255.0) as u8]))
+            });
+            Some(image_data)
+        } else {
+            None
+        }
     }
 
     pub fn get_inner(&self) -> RustTypeFont {
@@ -274,10 +289,12 @@ impl std::fmt::Display for Error {
 fn load_bitmap_font() {
     let test_char = '😀';
     //let test_char = 'j';
+    //let test_char = '􁂿';
 
     let font = Font::from_file_bitmap("/System/Library/Fonts/Apple Color Emoji.ttc").unwrap();
 
     //let font = Font::from_file("/System/Library/Fonts/HelveticaNeue.ttc").unwrap();
+    //let font = Font::from_file("/System/Library/Fonts/SFCompactText.ttf").unwrap();
     println!("Ascender: {:?}", font.font.inner().ascender());
     println!("Descender: {:?}", font.font.inner().descender());
     println!("Height: {:?}", font.font.inner().height());
@@ -307,14 +324,23 @@ fn load_bitmap_font() {
     let positioned_glyph = scaled_glyph.positioned(point(0.0, 20.0));
     println!("Positioned bb: {:?}", positioned_glyph.pixel_bounding_box());
     println!("Exact bb: {:?}", positioned_glyph.unpositioned().exact_bounding_box());
+    println!("Glyph id: {:?}", positioned_glyph.id());
 
     //let image = font.get_glyph_raster_image(test_char, 64).unwrap();
-    let id = font.get_inner().inner().glyph_index(test_char).unwrap();
+    /*let id = font.get_inner().inner().glyph_index(test_char).unwrap();
     let bb = font.get_inner().inner().glyph_bounding_box(id);
     println!("glyph bb: {:?}", bb);
     let advance_width = font.get_inner().inner().glyph_hor_advance(id).unwrap();
     println!("Advance_width: {}", advance_width);
-    println!("Glyph name: {:?}", font.get_inner().inner().glyph_name(id));
+    println!("Glyph name: {:?}", font.get_inner().inner().glyph_name(id));*/
 
     //image.save("/Users/holgergottchristensen/Documents/carbide/target/smile_new.png").unwrap();
+}
+
+#[test]
+fn list_fonts() {
+    use font_kit::family_name::FamilyName;
+    use font_kit::source::SystemSource;
+    let system_source = SystemSource::new();
+    println!("{:#?}", system_source.select_by_postscript_name(".HelveticaNeueDeskInterface-Regular").unwrap().load().unwrap().postscript_name());
 }

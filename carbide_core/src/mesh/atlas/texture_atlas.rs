@@ -4,7 +4,9 @@ use fxhash::{FxBuildHasher, FxHasher, FxHashMap};
 use image::{GenericImage, GenericImageView};
 use rusttype::{GlyphId, Point, Rect};
 
-use crate::draw::Dimension;
+use crate::draw::{Dimension, Position};
+use crate::mesh::atlas::lossy_glyph_info::LossyGlyphInfo;
+use crate::Scalar;
 use crate::text::{FontFamily, FontId, FontSize, FontStyle, FontWeight};
 use crate::widget::{Environment, GlobalState};
 
@@ -16,8 +18,10 @@ const SHELVE_WIDTH: u32 = 512;
 #[derive(Clone, PartialEq, Debug)]
 pub enum QueueType {
     Image(ImageId, ImageData),
-    /// FontId, GlyphId, width, height
+    /// Font id, Glyph id, font size and image data.
     RasterGlyph(FontId, GlyphId, u32, ImageData),
+    /// Font id, glyph id, font size and position
+    Glyph(FontId, GlyphId, u32, (u16, u16), ImageData),
 }
 
 impl QueueType {
@@ -26,8 +30,16 @@ impl QueueType {
             QueueType::Image(id, _) => {
                 AtlasId::Image(id.clone())
             }
-            QueueType::RasterGlyph(font_id, glyph_id, font_size, image_data) => {
+            QueueType::RasterGlyph(font_id, glyph_id, font_size, _) => {
                 AtlasId::RasterGlyph(font_id.clone(), glyph_id.clone(), *font_size)
+            }
+            QueueType::Glyph(font_id, glyph_id, font_size, position, image_data) => {
+                AtlasId::LossyGlyph(LossyGlyphInfo {
+                    font_id: *font_id,
+                    glyph_id: *glyph_id,
+                    offset_over_tolerance: *position,
+                    font_size: *font_size,
+                })
             }
         }
     }
@@ -38,6 +50,9 @@ impl QueueType {
                 image.width()
             }
             QueueType::RasterGlyph(_, _, _, image) => {
+                image.width()
+            }
+            QueueType::Glyph(_, _, _, _, image) => {
                 image.width()
             }
         }
@@ -51,6 +66,9 @@ impl QueueType {
             QueueType::RasterGlyph(_, _, _, image) => {
                 image.height()
             }
+            QueueType::Glyph(_, _, _, _, image) => {
+                image.height()
+            }
         }
     }
 }
@@ -60,6 +78,7 @@ impl QueueType {
 pub enum AtlasId {
     Image(ImageId),
     RasterGlyph(FontId, GlyphId, u32),
+    LossyGlyph(LossyGlyphInfo),
 }
 
 /// Inspired by the gpu_cache from rusttype
@@ -76,6 +95,7 @@ pub struct TextureAtlas {
     shelves: Vec<Shelf>,
 
     all_books: FxHashMap<AtlasId, Book>,
+    position_tolerance: Scalar,
 }
 
 #[derive(Copy, Clone, Debug)]
@@ -97,7 +117,7 @@ pub struct Shelf {
 }
 
 impl Shelf {
-    fn append<F: FnMut(u32, u32, ImageData)>(&mut self, item: QueueType, uploader: &mut F) -> (AtlasId, Book) {
+    fn append<F: FnMut(u32, u32, ImageData)>(&mut self, item: QueueType, uploader: &mut F, tolerance: Scalar) -> (AtlasId, Book) {
         let book = Book {
             x: self.shelf_current_x,
             y: self.shelf_y,
@@ -114,7 +134,12 @@ impl Shelf {
                 self.shelf_current_x += book.width;
                 self.books.push(book);
             }
-            QueueType::RasterGlyph(font, glyph, _, image_data) => {
+            QueueType::RasterGlyph(_, _, _, image_data) => {
+                (*uploader)(self.shelf_current_x, self.shelf_y, image_data);
+                self.shelf_current_x += book.width;
+                self.books.push(book);
+            }
+            QueueType::Glyph(_, _, _, _, image_data) => {
                 (*uploader)(self.shelf_current_x, self.shelf_y, image_data);
                 self.shelf_current_x += book.width;
                 self.books.push(book);
@@ -139,6 +164,7 @@ impl TextureAtlas {
             queue: vec![],
             shelves: vec![],
             all_books: HashMap::with_hasher(FxBuildHasher::default()),
+            position_tolerance: 0.5,
         }
     }
 
@@ -148,6 +174,22 @@ impl TextureAtlas {
 
     pub fn height(&self) -> u32 {
         self.height
+    }
+
+    pub fn queue_glyph<GS: GlobalState>(&mut self, font_id: FontId, c: char, font_size: FontSize, position: Position, env: &Environment<GS>) {
+        let id = env.get_font(font_id).get_glyph_id(c);
+        self.queue_glyph_id(font_id, id.unwrap(), font_size, position, env)
+    }
+
+    pub fn queue_glyph_id<GS: GlobalState>(&mut self, font_id: FontId, glyph_id: GlyphId, font_size: FontSize, position: Position, env: &Environment<GS>) {
+        if !self.all_books.contains_key(&AtlasId::LossyGlyph(LossyGlyphInfo::new(font_id, glyph_id, font_size, position, self.position_tolerance))) {
+            let image_data = env.get_font(font_id).get_glyph_image_from_id(glyph_id, font_size, env.get_scale_factor(), position.fraction_0_1()).unwrap();
+            let offset = (position.fraction_0_1() / self.position_tolerance).round_to_u16();
+            let queue_type = QueueType::Glyph(font_id, glyph_id, font_size, offset, image_data);
+            if !self.queue.contains(&queue_type) {
+                self.queue.push(queue_type)
+            }
+        }
     }
 
     pub fn queue_image(&mut self, image_id: ImageId, image_data: ImageData) {
@@ -161,15 +203,7 @@ impl TextureAtlas {
 
     pub fn queue_raster_glyph<GS: GlobalState>(&mut self, font_id: FontId, c: char, font_size: FontSize, env: &Environment<GS>) {
         let id = env.get_font(font_id).get_glyph_id(c);
-        if let Some(id) = id {
-            if !self.all_books.contains_key(&AtlasId::RasterGlyph(font_id, id, font_size)) {
-                let image_data = env.get_font(font_id).get_glyph_raster_image(c, font_size).unwrap();
-                let raster_data = QueueType::RasterGlyph(font_id, id, font_size, image_data);
-                if !self.queue.contains(&raster_data) {
-                    self.queue.push(raster_data);
-                }
-            }
-        }
+        self.queue_raster_glyph_id(font_id, id.unwrap(), font_size, env)
     }
 
     pub fn queue_raster_glyph_id<GS: GlobalState>(&mut self, font_id: FontId, id: GlyphId, font_size: FontSize, env: &Environment<GS>) {
@@ -215,10 +249,10 @@ impl TextureAtlas {
         while !self.queue.is_empty() {
             let item = self.queue.remove(0);
             let (book_id, book) = if let Some(shelf) = self.get_fitting_shelve(item.height(), item.width()) {
-                self.shelves[shelf].append(item.clone(), &mut uploader)
+                self.shelves[shelf].append(item.clone(), &mut uploader, self.position_tolerance)
             } else {
                 let shelf_number = self.add_shelf(item.height());
-                self.shelves[shelf_number as usize].append(item.clone(), &mut uploader)
+                self.shelves[shelf_number as usize].append(item.clone(), &mut uploader, self.position_tolerance)
             };
 
             self.all_books.insert(book_id, book);
@@ -264,6 +298,10 @@ fn create_packed_image() {
     family.add_font("/System/Library/Fonts/Apple Color Emoji.ttc", FontWeight::Normal, FontStyle::Normal);
     env.add_font_family(family);
 
+    let mut family = FontFamily::new("Noto Sans");
+    family.add_font("fonts/NotoSans/NotoSans-Regular.ttf", FontWeight::Normal, FontStyle::Normal);
+    env.add_font_family(family);
+
     let id = env.get_font(0).get_glyph_id('👴').unwrap();
 
     atlas.queue_image(0.into(), image::open(image1).unwrap());
@@ -286,7 +324,9 @@ fn create_packed_image() {
     atlas.queue_raster_glyph(0, '🟥', 32, &env);
     atlas.queue_raster_glyph(0, '👬', 32, &env);
     atlas.queue_raster_glyph_id(0, id, 32, &env);
-
+    atlas.queue_glyph(1, 'A', 32, Position::new(0.0, 0.0), &env);
+    atlas.queue_glyph(1, 'A', 32, Position::new(20.0, 0.0), &env);
+    atlas.queue_glyph(1, 'A', 32, Position::new(0.5, 0.5), &env);
 
     let mut texture = image::DynamicImage::new_rgba8(512, 512);
 

@@ -4,6 +4,8 @@ use std::thread::sleep;
 use std::time::{Duration, Instant};
 
 pub use futures::executor::block_on;
+use image::DynamicImage;
+use uuid::Uuid;
 use wgpu::{BindGroupLayout, PresentMode, Texture};
 use wgpu::util::DeviceExt;
 use winit::dpi::{PhysicalPosition, PhysicalSize, Size};
@@ -501,7 +503,7 @@ impl<T: GlobalState> Window<T> {
                     Event::WindowEvent {
                         ref event,
                         window_id,
-                    } if window_id == self.inner_window.id() => if !self.input(event) { // UPDATED!
+                    } if window_id == self.inner_window.id() => if !self.input(event) {
                         match event {
                             WindowEvent::CloseRequested => *control_flow = ControlFlow::Exit,
                             WindowEvent::KeyboardInput {
@@ -509,6 +511,21 @@ impl<T: GlobalState> Window<T> {
                                 ..
                             } => {
                                 match input {
+                                    KeyboardInput {
+                                        state: ElementState::Pressed,
+                                        virtual_keycode: Some(VirtualKeyCode::F1),
+                                        ..
+                                    } => {
+                                        // This is only for debugging purposes.
+                                        use std::fs::*;
+                                        use image::GrayImage;
+                                        let image_folder = String::from("/tmp/carbide_img_dump_") + &Uuid::new_v4().to_string();
+                                        create_dir_all(&image_folder);
+                                        self.mesh.texture_atlas_image().save(image_folder.clone() + "/glyph_atlas0.png");
+                                        let atlas1 = DynamicImage::ImageLuma8(GrayImage::from_raw(DEFAULT_GLYPH_CACHE_DIMS[0], DEFAULT_GLYPH_CACHE_DIMS[1], self.mesh.glyph_cache_pixel_buffer().to_vec()).unwrap());
+                                        atlas1.save(image_folder.clone() + "/glyph_atlas1.png");
+                                        println!("Images dumped to: {}", image_folder);
+                                    }
                                     KeyboardInput {
                                         state: ElementState::Pressed,
                                         virtual_keycode: Some(VirtualKeyCode::Escape),

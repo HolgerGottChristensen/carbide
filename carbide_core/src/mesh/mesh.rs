@@ -15,7 +15,7 @@ use rusttype::gpu_cache::CacheWriteErr as RustTypeCacheWriteError;
 use crate::{color, image_map, render};
 use crate::{OldRect, Scalar};
 use crate::mesh::{DEFAULT_GLYPH_CACHE_DIMS, GLYPH_CACHE_POSITION_TOLERANCE, GLYPH_CACHE_SCALE_TOLERANCE, MODE_ATLAS, MODE_GEOMETRY, MODE_IMAGE, MODE_TEXT};
-use crate::mesh::texture_atlas::{AtlasId, TextureAtlas};
+use crate::mesh::atlas::texture_atlas::{AtlasId, TextureAtlas};
 use crate::mesh::vertex::Vertex;
 use crate::Range;
 use crate::render::primitive_walker::PrimitiveWalker;
@@ -163,6 +163,8 @@ impl Mesh {
 
         commands.clear();
         vertices.clear();
+
+        // Todo: Queue glyphs here and check if there is space for all needed glyphs.
 
         enum State {
             Image { image_id: image_map::Id, start: usize },
@@ -594,6 +596,10 @@ impl Mesh {
 
     pub fn texture_atlas(&self) -> &TextureAtlas {
         &self.texture_atlas
+    }
+
+    pub fn texture_atlas_image(&self) -> &DynamicImage {
+        &self.texture_atlas_image
     }
 
     pub fn texture_atlas_image_as_bytes(&self) -> &[u8] {
