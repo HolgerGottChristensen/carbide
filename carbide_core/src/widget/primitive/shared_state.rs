@@ -103,7 +103,7 @@ impl<T: StateContract, GS: GlobalState> CommonWidget<GS> for SharedState<T, GS> 
 }
 
 impl<T: StateContract, GS: GlobalState> Render<GS> for SharedState<T, GS> {
-    fn get_primitives(&mut self, env: &Environment<GS>, global_state: &GS) -> Vec<Primitive> {
+    fn get_primitives(&mut self, env: &mut Environment<GS>, global_state: &GS) -> Vec<Primitive> {
         let mut prims = vec![];
         prims.extend(Rectangle::<GS>::debug_outline(OldRect::new(self.position, self.dimension), 1.0));
         let children: Vec<Primitive> = self.get_children_mut().flat_map(|f| f.get_primitives(env, global_state)).collect();

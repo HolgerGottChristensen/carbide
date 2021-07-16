@@ -290,16 +290,9 @@ impl<S: GlobalState> Ui<S> {
     /// NOTE: If you don't need to redraw your carbide GUI every frame, it is recommended to use the
     /// `Ui::draw_if_changed` method instead.
     pub fn draw(&mut self, global_state: &S) -> CPrimitives {
-        let Ui {
-            ref mut widgets,
-            ref mut environment,
-            ..
-        } = *self;
+        let corrected_dimensions = self.environment.get_corrected_dimensions();
 
-        let corrected_dimensions = environment.get_corrected_dimensions();
-
-
-        CPrimitives::new(corrected_dimensions, widgets, environment, global_state)
+        CPrimitives::new(corrected_dimensions, &mut self.widgets, &mut self.environment, global_state)
     }
 
     /// Get mouse cursor state.

@@ -133,7 +133,7 @@ impl<GS: GlobalState> Shape<GS> for RoundedRectangle<GS> {
 }
 
 impl<GS: GlobalState> Render<GS> for RoundedRectangle<GS> {
-    fn get_primitives(&mut self, _: &Environment<GS>, _: &GS) -> Vec<Primitive> {
+    fn get_primitives(&mut self, env: &mut Environment<GS>, global_state: &GS) -> Vec<Primitive> {
         let rectangle = rect(self.get_x() as f32, self.get_y() as f32, self.get_width() as f32, self.get_height() as f32);
 
         let corner_radius = self.corner_radii;

@@ -117,7 +117,7 @@ impl<GS: GlobalState> CommonWidget<GS> for Ellipse<GS> {
 }
 
 impl<GS: GlobalState> Render<GS> for Ellipse<GS> {
-    fn get_primitives(&mut self, _: &Environment<GS>, _: &GS) -> Vec<Primitive> {
+    fn get_primitives(&mut self, env: &mut Environment<GS>, global_state: &GS) -> Vec<Primitive> {
         let radii = vec2(self.get_width() as f32 / 2.0, self.get_height() as f32 / 2.0);
         let center = point(self.get_x() as f32 + radii.x, self.get_y() as f32 + radii.y);
         let rectangle = rect(self.get_x() as f32, self.get_y() as f32, self.get_width() as f32, self.get_height() as f32);

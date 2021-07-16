@@ -187,11 +187,13 @@ impl<GS: GlobalState> Layout<GS> for Text<GS> {
 }
 
 impl<GS: GlobalState> Render<GS> for Text<GS> {
-    fn get_primitives(&mut self, env: &Environment<GS>, _: &GS) -> Vec<Primitive> {
+    fn get_primitives(&mut self, env: &mut Environment<GS>, global_state: &GS) -> Vec<Primitive> {
         let mut prims: Vec<Primitive> = vec![];
         let default_color = self.color.get_latest_value().clone();
 
-        if let Some(internal) = &self.internal_text {
+        if let Some(internal) = &mut self.internal_text {
+            internal.ensure_glyphs_added_to_atlas(env);
+
             for (glyphs, color, additional_rects) in internal.span_glyphs() {
                 let color = if let Some(color) = color {
                     color

@@ -16,12 +16,11 @@ pub struct LossyGlyphInfo {
 }
 
 impl LossyGlyphInfo {
-    pub(crate) fn new(font_id: FontId, glyph_id: GlyphId, font_size: FontSize, position: Position, position_tolerance: f64) -> LossyGlyphInfo {
-        let offset = (position / position_tolerance).round_to_u16();
+    pub(crate) fn new(font_id: FontId, glyph_id: GlyphId, font_size: FontSize, offset_over_tolerance: (u16, u16)) -> LossyGlyphInfo {
         LossyGlyphInfo {
             font_id,
             glyph_id,
-            offset_over_tolerance: offset,
+            offset_over_tolerance,
             font_size,
         }
     }

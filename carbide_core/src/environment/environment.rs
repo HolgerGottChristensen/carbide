@@ -8,6 +8,7 @@ use serde::Serialize;
 
 use crate::{Color, from_bin, Scalar, to_bin};
 use crate::focus::Refocus;
+use crate::mesh::TextureAtlas;
 use crate::prelude::EnvironmentVariable;
 use crate::state::global_state::GlobalState;
 use crate::state::state::State;
@@ -31,6 +32,10 @@ pub struct Environment<GS> where GS: GlobalState {
     /// Font families. The fonts are still kept as seperate fonts in the above vec, but references
     /// are kept in families for better lookup.
     font_families: FxHashMap<String, FontFamily>,
+
+    /// Font atlas that keeps track of all the textures of the glyphs to render, along with details
+    /// on texture offsets and more.
+    font_texture_atlas: TextureAtlas,
 
     /// This map contains the widths and heights for loaded images.
     /// This is used to make the static size of the Image widget its
@@ -74,6 +79,7 @@ impl<GS: GlobalState> Environment<GS> {
             stack: env_stack,
             fonts: vec![],
             font_families: HashMap::with_hasher(FxBuildHasher::default()),
+            font_texture_atlas: TextureAtlas::new(512, 512),
             images_information: HashMap::with_hasher(FxBuildHasher::default()),
             overlay_map: HashMap::with_hasher(FxBuildHasher::default()),
             local_state: HashMap::with_hasher(FxBuildHasher::default()),
@@ -121,6 +127,14 @@ impl<GS: GlobalState> Environment<GS> {
 
     pub fn get_scale_factor(&self) -> f64 {
         self.scale_factor
+    }
+
+    pub fn get_font_atlas_mut(&mut self) -> &mut TextureAtlas {
+        &mut self.font_texture_atlas
+    }
+
+    pub fn get_font_atlas(&self) -> &TextureAtlas {
+        &self.font_texture_atlas
     }
 
     pub fn request_focus(&mut self, request_type: Refocus) {
@@ -195,6 +209,16 @@ impl<GS: GlobalState> Environment<GS> {
         font_id
     }
 
+    pub fn add_glyphs_to_atlas(&mut self, glyphs: Vec<&mut Glyph>) {
+        let scale_factor = self.get_scale_factor();
+        for glyph in glyphs {
+            let font = &self.fonts[glyph.font_id()];
+            self.font_texture_atlas.queue_glyph(glyph, font, scale_factor);
+        }
+    }
+
+    pub fn remove_glyphs_from_atlas(&mut self, glyphs: &Vec<Glyph>) {}
+
     pub fn get_glyph_from_fallback(&mut self, c: char, font_size: FontSize, scale_factor: Scalar) -> (Scalar, Glyph) {
         // Try all the loaded fonts. We only check the first font in each family.
         // Todo: Consider using weight hints and style hints.
@@ -217,6 +241,10 @@ impl<GS: GlobalState> Environment<GS> {
             panic!("Could not lookup the char in any of the loaded fonts or in any fallback fonts. \
             Further more we could not look up the missing char replacement �. Something is not right.")
         }
+    }
+
+    pub fn get_font_ref(&self, id: FontId) -> &Font {
+        &self.fonts[id]
     }
 
     pub fn get_font(&self, id: FontId) -> Font {

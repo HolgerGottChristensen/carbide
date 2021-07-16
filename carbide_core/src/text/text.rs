@@ -25,11 +25,16 @@ pub struct Text<GS> where GS: GlobalState {
     pub wrap: Wrap,
     /// Justify the text
     pub justify: Justify,
+    /// True if we moved the glyphs. We then need to add the glyphs to the image again.
+    needs_to_update_atlas: bool,
+    /// True if the glyphs have already been added. We might need to remove them if we
+    /// need to update the atlas.
+    already_added_to_atlas: bool,
 }
 
 impl<GS: GlobalState> Text<GS> {
     pub fn new(string: String, env: &mut Environment<GS>) -> Text<GS> {
-        let spans = TextSpan::new_polar_bear_markup(&string, env);
+        let mut spans = TextSpan::new_polar_bear_markup(&string, env);
 
         Text {
             style: None,
@@ -41,6 +46,8 @@ impl<GS: GlobalState> Text<GS> {
             scale_factor: 0.0,
             wrap: Wrap::Whitespace,
             justify: Justify::Left,
+            needs_to_update_atlas: true,
+            already_added_to_atlas: false,
         }
     }
 
@@ -67,6 +74,7 @@ impl<GS: GlobalState> Text<GS> {
 
     pub fn position(&mut self, requested_offset: Position) {
         if self.latest_requested_offset != requested_offset {
+            // Todo: remove_glyphs_from_atlas
             let new_offset = (requested_offset - self.latest_requested_offset) * self.scale_factor;
 
             self.latest_requested_offset = requested_offset;
@@ -94,6 +102,8 @@ impl<GS: GlobalState> Text<GS> {
                     TextSpan::NewLine => {}
                 }
             }
+
+            // Todo: add_glyphs_to_atlas
         }
     }
 
@@ -103,6 +113,7 @@ impl<GS: GlobalState> Text<GS> {
 
         // Todo: If text is NoWrap, this is not needed.
         if self.latest_requested_size.width != requested_size.width {
+            // Todo: remove_glyphs_from_atlas
             self.latest_requested_size = requested_size;
             match self.wrap {
                 Wrap::Character => {
@@ -113,9 +124,32 @@ impl<GS: GlobalState> Text<GS> {
                 }
                 Wrap::None => {}
             }
+            // Todo: add_glyphs_to_atlas
         }
 
         Dimension::new(self.latest_max_width / self.scale_factor as f64, self.latest_max_height / self.scale_factor as f64)
+    }
+
+    pub fn ensure_glyphs_added_to_atlas(&mut self, env: &mut Environment<GS>) {
+        if self.needs_to_update_atlas {
+            if self.already_added_to_atlas {
+                //env.remove_glyphs_from_atlas()
+            }
+            let glyphs_to_queue = self.spans.iter_mut().filter_map(|span| {
+                match span {
+                    TextSpan::Text { glyphs, .. } => {
+                        Some(glyphs)
+                    }
+                    _ => {
+                        None
+                    }
+                }
+            }).flatten().collect::<Vec<&mut Glyph>>();
+
+            env.add_glyphs_to_atlas(glyphs_to_queue);
+            self.needs_to_update_atlas = false;
+            self.already_added_to_atlas = true;
+        }
     }
 
     // Todo: add underline, strikethrough, and fix when that is char wraps for the first word in the span even when its not the first span.

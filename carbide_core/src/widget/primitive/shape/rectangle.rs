@@ -261,7 +261,7 @@ impl<GS: GlobalState> Shape<GS> for Rectangle<GS> {
 }
 
 impl<GS: GlobalState> Render<GS> for Rectangle<GS> {
-    fn get_primitives(&mut self, env: &Environment<GS>, global_state: &GS) -> Vec<Primitive> {
+    fn get_primitives(&mut self, env: &mut Environment<GS>, global_state: &GS) -> Vec<Primitive> {
         let mut prims = vec![];
 
         match self.style {

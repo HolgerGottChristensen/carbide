@@ -374,7 +374,7 @@ impl<T: GlobalState> Window<T> {
         let primitives = self.ui.draw(&self.state);
         println!("Time for draw: {:?}us", now.elapsed().as_micros());
         let now = Instant::now();
-        let fill = self.mesh.fill(OldRect::new([0.0, 0.0], [self.size.width as f64, self.size.height as f64]), &self.ui.environment, &self.image_map, primitives).unwrap();
+        let fill = self.mesh.fill(OldRect::new([0.0, 0.0], [self.size.width as f64, self.size.height as f64]), &mut self.ui.environment, &self.image_map, primitives).unwrap();
         println!("Time for fill: {:?}us", now.elapsed().as_micros());
 
         let now = Instant::now();

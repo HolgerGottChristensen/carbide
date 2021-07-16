@@ -176,7 +176,7 @@ impl<GS: GlobalState> Layout<GS> for Box<dyn Widget<GS>> {
 }
 
 impl<GS: GlobalState> Render<GS> for Box<dyn Widget<GS>> {
-    fn get_primitives(&mut self, env: &Environment<GS>, global_state: &GS) -> Vec<Primitive> {
+    fn get_primitives(&mut self, env: &mut Environment<GS>, global_state: &GS) -> Vec<Primitive> {
         self.deref_mut().get_primitives(env, global_state)
     }
 }

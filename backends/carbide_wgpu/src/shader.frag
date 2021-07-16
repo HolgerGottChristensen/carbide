@@ -13,7 +13,7 @@ layout(set = 0, binding = 3) uniform texture2D atlas_texture;
 
 void main() {
     if (v_mode == uint(0)) {
-        float a = texture(sampler2D(t_text_texture, s_diffuse), v_tex_coords).r;
+        float a = texture(sampler2D(atlas_texture, s_diffuse), v_tex_coords).a;
         f_color = vec4(v_color.r, v_color.g, v_color.b, a);
     } else if (v_mode == uint(1)) {
         f_color = texture(sampler2D(t_diffuse, s_diffuse), v_tex_coords);

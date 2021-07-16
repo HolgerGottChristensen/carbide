@@ -65,7 +65,7 @@ impl<GS: GlobalState> Layout<GS> for Image {
 }
 
 impl<GS: GlobalState> Render<GS> for Image {
-    fn get_primitives(&mut self, _: &Environment<GS>, _: &GS) -> Vec<Primitive> {
+    fn get_primitives(&mut self, env: &mut Environment<GS>, global_state: &GS) -> Vec<Primitive> {
         let kind = PrimitiveKind::Image {
             color: None,
             image_id: self.image_id,

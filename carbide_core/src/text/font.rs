@@ -40,6 +40,10 @@ impl Debug for Font {
 }
 
 impl Font {
+    pub fn id(&self) -> FontId {
+        self.font_id
+    }
+
     pub fn get_glyph_raster_image(&self, character: char, font_size: FontSize) -> Option<DynamicImage> {
         let face = self.font.inner();
         if let Some(id) = face.glyph_index(character) {
@@ -72,6 +76,7 @@ impl Font {
         })
     }
 
+    /// This will return None if the glyph has no boundingbox, for example the ' ' space character
     pub fn get_glyph_image_from_id(&self, id: GlyphId, font_size: FontSize, scale_factor: Scalar, position_offset: Position) -> Option<DynamicImage> {
         let scale = Font::size_to_scale(font_size, scale_factor);
         let positioned_glyph = self.get_inner().glyph(id).scaled(scale).positioned(point(position_offset.x as f32, position_offset.y as f32));
@@ -104,7 +109,7 @@ impl Font {
             let glyph_scaled = self.font.glyph(id).scaled(scale);
             let w = glyph_scaled.h_metrics().advance_width;
             let positioned = glyph_scaled.positioned(point(0.0, 0.0));
-            (w as f64, Glyph::from((font_size, self.font_id, positioned)))
+            (w as f64, Glyph::from((font_size, self.font_id, positioned, self.bitmap_font)))
         })
     }
 
@@ -134,7 +139,7 @@ impl Font {
                     let next = glyph_scaled.positioned(point(0.0, 0.0));
                     last = Some(next.id());
                     next_width += w as f64;
-                    glyphs.push(Glyph::from((font_size, self.font_id, next)));
+                    glyphs.push(Glyph::from((font_size, self.font_id, next, self.bitmap_font)));
                 }
                 Err(c) => {
                     // Font fallback

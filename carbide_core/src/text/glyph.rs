@@ -2,6 +2,7 @@ use rusttype::{GlyphId, point, PositionedGlyph, Scale};
 
 use crate::{Point, Scalar};
 use crate::draw::{Dimension, Position, Rect};
+use crate::mesh::TextureAtlasIndex;
 use crate::text::{Font, FontId, FontSize, InnerGlyph};
 use crate::text::text_style::TextStyle;
 use crate::widget::{Environment, GlobalState};
@@ -13,6 +14,7 @@ pub struct Glyph {
     id: GlyphId,
     /// The id of the font to use to render this glyph. This is important in mesh.rs
     font_id: FontId,
+    bitmap_glyph: bool,
     /// The scale given when changing the glyph to a scaled glyph
     api_scale: Dimension,
     /// Scale calculated when changing to scaled glyph
@@ -22,16 +24,13 @@ pub struct Glyph {
 
     position: Position,
     bb: Option<Rect>,
+
+    /// The index of this glyph in the texture atlas.
+    /// If this is None, this glyph is not queued.
+    texture_index: Option<TextureAtlasIndex>,
 }
 
 impl Glyph {
-    pub fn convert_to_glyph(&self, font: &Font) -> PositionedGlyph<'static> {
-        let glyph = font.get_inner().glyph(self.id);
-        let scale = Scale { x: self.api_scale.width as f32, y: self.api_scale.height as f32 };
-        let scaled = glyph.scaled(scale);
-        scaled.positioned(point(self.position.x as f32, self.position.y as f32))
-    }
-
     pub fn id(&self) -> GlyphId {
         self.id
     }
@@ -59,10 +58,22 @@ impl Glyph {
     pub fn bb(&self) -> Option<Rect> {
         self.bb
     }
+
+    pub fn set_texture_index(&mut self, index: TextureAtlasIndex) {
+        self.texture_index = Some(index)
+    }
+
+    pub fn texture_index(&self) -> Option<TextureAtlasIndex> {
+        self.texture_index
+    }
+
+    pub fn is_bitmap(&self) -> bool {
+        self.bitmap_glyph
+    }
 }
 
-impl From<(FontSize, FontId, PositionedGlyph<'_>)> for Glyph {
-    fn from((font_size, font_id, inner): (FontSize, FontId, PositionedGlyph)) -> Self {
+impl From<(FontSize, FontId, PositionedGlyph<'_>, bool)> for Glyph {
+    fn from((font_size, font_id, inner, is_bitmap): (FontSize, FontId, PositionedGlyph, bool)) -> Self {
         let scale = inner.scale();
         let scale_y = inner.font().scale_for_pixel_height(scale.y);
         let scale_x = scale_y * scale.x / scale.y;
@@ -70,6 +81,7 @@ impl From<(FontSize, FontId, PositionedGlyph<'_>)> for Glyph {
         Glyph {
             id: inner.id(),
             font_id,
+            bitmap_glyph: is_bitmap,
             api_scale: Dimension::new(inner.scale().x as f64, inner.scale().y as f64),
             scale: Dimension::new(scale_x as f64, scale_y as f64),
             font_size,
@@ -83,6 +95,7 @@ impl From<(FontSize, FontId, PositionedGlyph<'_>)> for Glyph {
                     dimension: Dimension::new(width, height),
                 }
             }),
+            texture_index: None,
         }
     }
 }
