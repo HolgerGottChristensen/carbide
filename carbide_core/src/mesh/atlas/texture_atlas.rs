@@ -96,7 +96,7 @@ impl TextureAtlas {
             all_books_cabinet: HashMap::with_hasher(FxBuildHasher::default()),
             glyph_index: vec![],
             book_index: vec![],
-            position_tolerance: 1.0,
+            position_tolerance: 0.5,
         }
     }
 
@@ -108,7 +108,7 @@ impl TextureAtlas {
         self.height
     }
 
-    pub fn get_glyph_index(&mut self, font_id: FontId, glyph_id: GlyphId, font_size: FontSize, position: Position) -> Option<TextureAtlasIndex> {
+    /*pub fn get_glyph_index(&mut self, font_id: FontId, glyph_id: GlyphId, font_size: FontSize, position: Position) -> Option<TextureAtlasIndex> {
         let offset = (position.fraction_0_1() / self.position_tolerance).round_to_u16();
         let atlas_id = AtlasId::LossyGlyph(LossyGlyphInfo::new(font_id, glyph_id, font_size, offset));
 
@@ -125,7 +125,7 @@ impl TextureAtlas {
         let atlas_id = AtlasId::Image(image_id);
 
         self.all_books_cabinet.get(&atlas_id).cloned()
-    }
+    }*/
 
     pub fn queue_glyph(&mut self, glyph: &mut Glyph, font: &Font, scale_factor: Scalar) {
         let texture_index = if font.is_bitmap() {
@@ -134,13 +134,13 @@ impl TextureAtlas {
             self.queue_glyph_id(glyph.id(), glyph.font_size(), glyph.position(), font, scale_factor)
         };
 
-        println!("Queue glyph at: {}", glyph.position());
+        //println!("Queue glyph at: {}", glyph.position());
 
         glyph.set_texture_index(texture_index);
     }
 
     pub fn queue_glyph_id(&mut self, glyph_id: GlyphId, font_size: FontSize, position: Position, font: &Font, scale_factor: Scalar) -> TextureAtlasIndex {
-        let offset = (position.fraction_0_1() / self.position_tolerance).round_to_u16();
+        let offset = (position.fraction_0_1() / (self.position_tolerance * scale_factor)).round_to_u16();
         let atlas_id = AtlasId::LossyGlyph(LossyGlyphInfo::new(font.id(), glyph_id, font_size, offset));
         let next_glyph_index = self.glyph_index.len();
 

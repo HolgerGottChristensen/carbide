@@ -171,7 +171,7 @@ impl Mesh {
         // Todo: Queue glyphs here and check if there is space for all needed glyphs.
         let texture_atlas = env.get_font_atlas_mut();
         texture_atlas.cache_queued(|x, y, image_data| {
-            println!("Insert the image at: {}, {} with size {}, {}", x, y, image_data.width(), image_data.height());
+            //println!("Insert the image at: {}, {} with size {}, {}", x, y, image_data.width(), image_data.height());
             for (ix, iy, pixel) in image_data.pixels() {
                 texture_atlas_image.put_pixel(x + ix, y + iy, pixel);
             }

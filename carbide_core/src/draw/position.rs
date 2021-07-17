@@ -34,11 +34,11 @@ impl Position {
         let mut y = self.y.fract();
 
         if x < 0.0 {
-            x = 1.0 - x;
+            x = 1.0 + x;
         }
 
         if y < 0.0 {
-            y = 1.0 - y;
+            y = 1.0 + y;
         }
 
         Position::new(x, y)
@@ -171,30 +171,30 @@ fn fraction_0_1() {
     // 0.0 will return 0.0
     let position = Position::new(0.0, 0.0);
     let expected = Position::new(0.0, 0.0);
-    assert_eq!(position.fraction_0_1(), expected);
+    assert_eq!(position.fraction_0_1(), expected, "Fraction 1");
 
     // 1.0 will return 0.0
     let position = Position::new(1.0, 1.0);
     let expected = Position::new(0.0, 0.0);
-    assert_eq!(position.fraction_0_1(), expected);
+    assert_eq!(position.fraction_0_1(), expected, "Fraction 2");
 
     // 1.5 will return 0.5
     let position = Position::new(1.5, 1.5);
     let expected = Position::new(0.5, 0.5);
-    assert_eq!(position.fraction_0_1(), expected);
+    assert_eq!(position.fraction_0_1(), expected, "Fraction 3");
 
     // -1.5 will return 0.5
     let position = Position::new(-1.5, -1.5);
     let expected = Position::new(0.5, 0.5);
-    assert_eq!(position.fraction_0_1(), expected);
+    assert_eq!(position.fraction_0_1(), expected, "Fraction 4");
 
     // -0.2 will return 0.8
     let position = Position::new(-0.2, -0.2);
     let expected = Position::new(0.8, 0.8);
-    assert_eq!(position.fraction_0_1(), expected);
+    assert_eq!(position.fraction_0_1(), expected, "Fraction 5");
 
     // 0.2 will return 0.2
     let position = Position::new(0.2, 0.2);
     let expected = Position::new(0.2, 0.2);
-    assert_eq!(position.fraction_0_1(), expected);
+    assert_eq!(position.fraction_0_1(), expected, "Fraction 6");
 }

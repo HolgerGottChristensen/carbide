@@ -51,15 +51,15 @@ impl Glyph {
     }
 
     pub fn set_position(&mut self, position: Position) {
-        let difference = position - self.position;
+        /*let difference = position - self.position;
         if difference.fraction().is_near_zero() {
             if let Some(mut bb) = self.bb {
                 let rounded_difference = difference.rounded();
                 bb = bb + rounded_difference;
             }
-        } else {
-            self.bb = self.recalculate_bb(position);
-        }
+        } else {*/
+        self.bb = self.recalculate_bb(position);
+        //}
         self.position = position;
     }
 
@@ -145,7 +145,6 @@ impl From<(FontSize, FontId, PositionedGlyph<'_>, bool)> for Glyph {
             font_size,
             position: Position::new(inner.position().x as f64, inner.position().y as f64),
             bb: inner.pixel_bounding_box().map(|bb| {
-                println!("{:?}", bb);
                 let width = bb.max.x as f64 - bb.min.x as f64;
                 let height = bb.max.y as f64 - bb.min.y as f64;
 

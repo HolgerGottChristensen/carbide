@@ -102,7 +102,7 @@ impl<GS: GlobalState> Text<GS> {
                     TextSpan::NewLine => {}
                 }
             }
-
+            self.needs_to_update_atlas = true;
             // Todo: add_glyphs_to_atlas
         }
     }
@@ -125,6 +125,7 @@ impl<GS: GlobalState> Text<GS> {
                 Wrap::None => {}
             }
             // Todo: add_glyphs_to_atlas
+            self.needs_to_update_atlas = true;
         }
 
         Dimension::new(self.latest_max_width / self.scale_factor as f64, self.latest_max_height / self.scale_factor as f64)
@@ -364,7 +365,6 @@ impl<GS: GlobalState> Text<GS> {
             match current_span {
                 TextSpan::Text { glyphs, ascend, descend, line_gap, .. } => {
                     for glyph in glyphs {
-                        println!("Pos: {}", glyph.position().y);
                         if current_line == glyph.position().y {
                             max_ascend_this_line = max_ascend_this_line.max(*ascend);
                             max_descend_this_line = max_descend_this_line.max(-(*descend));
