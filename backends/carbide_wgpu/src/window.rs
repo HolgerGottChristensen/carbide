@@ -351,7 +351,7 @@ impl<T: GlobalState> Window<T> {
     fn update(&mut self) {
         let update_start = Instant::now();
         self.ui.delegate_events(&mut self.state);
-        println!("Time for render: {:?}us", update_start.elapsed().as_micros());
+        println!("Time for update: {:?}us", update_start.elapsed().as_micros());
     }
 
     pub fn render(&mut self) -> Result<(), wgpu::SwapChainError> {

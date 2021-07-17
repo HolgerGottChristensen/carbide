@@ -1,5 +1,4 @@
-pub use polar_bear_markup::parse_polar_bear_markup;
-pub use polar_bear_markup::PolarItem;
+pub use polar_bear_markup::PolarBearMarkup;
 
 mod polar_bear_markup;
 

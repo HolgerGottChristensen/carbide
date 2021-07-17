@@ -6,7 +6,10 @@ pub use font_family::FontFamily;
 pub use font_style::FontStyle;
 pub use font_weight::FontWeight;
 pub use glyph::Glyph;
+pub use markup::PolarBearMarkup;
 pub use text::Text;
+pub use text_span_generator::NoStyleTextSpanGenerator;
+pub use text_span_generator::TextSpanGenerator;
 
 pub mod font;
 mod text_old;
@@ -22,6 +25,7 @@ mod glyph;
 mod text_overflow;
 mod text;
 mod markup;
+mod text_span_generator;
 
 pub type FontId = usize;
 pub type FontSize = u32;

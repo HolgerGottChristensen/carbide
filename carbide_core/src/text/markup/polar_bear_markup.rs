@@ -6,6 +6,12 @@ use nom::IResult;
 use nom::multi::{many0, many1};
 use nom::sequence::{delimited, preceded, tuple};
 
+use crate::prelude::{Environment, GlobalState};
+use crate::text::{FontStyle, FontWeight, TextSpanGenerator};
+use crate::text::text_decoration::TextDecoration;
+use crate::text::text_span::TextSpan;
+use crate::text::text_style::TextStyle;
+
 #[derive(PartialEq, Debug, Clone)]
 pub enum PolarItem {
     Header1(String),
@@ -136,3 +142,241 @@ fn parse_text(input: &str) -> IResult<&str, String> {
 
     Ok((left, parsed))
 }
+
+#[derive(Debug, Clone)]
+pub struct PolarBearMarkup;
+
+impl PolarBearMarkup {
+    pub fn new() -> PolarBearMarkup {
+        PolarBearMarkup {}
+    }
+}
+
+impl<GS: GlobalState> TextSpanGenerator<GS> for PolarBearMarkup {
+    // https://bear.app/faq/Markup%20:%20Markdown/Polar%20Bear%20markup%20language/
+    fn generate(&self, string: &str, env: &mut Environment<GS>) -> Vec<TextSpan<GS>> {
+        let default_font_family_name = env.get_first_font_family().name.clone();
+        let scale_factor = env.get_scale_factor();
+        let polars = parse_polar_bear_markup(string).unwrap().1;
+
+        let mut spans = vec![];
+
+        for polar in polars {
+            match polar {
+                PolarItem::Header1(text) => {
+                    let style = TextStyle {
+                        font_family: default_font_family_name.clone(),
+                        font_size: 30,
+                        font_style: FontStyle::Normal,
+                        font_weight: FontWeight::Bold,
+                        text_decoration: TextDecoration::None,
+                        color: None,
+                    };
+                    let font = style.get_font(env);
+
+                    let (widths, glyphs) = font.get_glyphs(&text, style.font_size, scale_factor, env);
+                    let ascending_pixels = font.ascend(style.font_size, scale_factor);
+                    let line_height = font.descend(style.font_size, scale_factor);
+                    let line_gap = font.line_gap(style.font_size, scale_factor);
+
+                    let span = TextSpan::Text {
+                        style: Some(style.clone()),
+                        text: text.to_string(),
+                        glyphs,
+                        widths,
+                        ascend: ascending_pixels,
+                        descend: line_height,
+                        line_gap,
+                    };
+
+                    spans.push(span);
+                    spans.push(TextSpan::NewLine)
+                }
+                PolarItem::Header2(text) => {
+                    let style = TextStyle {
+                        font_family: default_font_family_name.clone(),
+                        font_size: 20,
+                        font_style: FontStyle::Normal,
+                        font_weight: FontWeight::Normal,
+                        text_decoration: TextDecoration::None,
+                        color: None,
+                    };
+                    let font = style.get_font(env);
+
+                    let (widths, glyphs) = font.get_glyphs(&text, style.font_size, scale_factor, env);
+                    let ascending_pixels = font.ascend(style.font_size, scale_factor);
+                    let line_height = font.descend(style.font_size, scale_factor);
+
+                    let line_gap = font.line_gap(style.font_size, scale_factor);
+
+                    let span = TextSpan::Text {
+                        style: Some(style.clone()),
+                        text: text.to_string(),
+                        glyphs,
+                        widths,
+                        ascend: ascending_pixels,
+                        descend: line_height,
+                        line_gap,
+                    };
+
+                    spans.push(span);
+                    spans.push(TextSpan::NewLine)
+                }
+                PolarItem::Italic(text) => {
+                    let style = TextStyle {
+                        font_family: default_font_family_name.clone(),
+                        font_size: 14,
+                        font_style: FontStyle::Italic,
+                        font_weight: FontWeight::Normal,
+                        text_decoration: TextDecoration::None,
+                        color: None,
+                    };
+                    let font = style.get_font(env);
+
+                    let (widths, glyphs) = font.get_glyphs(&text, style.font_size, scale_factor, env);
+                    let ascending_pixels = font.ascend(style.font_size, scale_factor);
+                    let line_height = font.descend(style.font_size, scale_factor);
+
+                    let line_gap = font.line_gap(style.font_size, scale_factor);
+
+                    let span = TextSpan::Text {
+                        style: Some(style.clone()),
+                        text: text.to_string(),
+                        glyphs,
+                        widths,
+                        ascend: ascending_pixels,
+                        descend: line_height,
+                        line_gap,
+                    };
+
+                    spans.push(span);
+                }
+                PolarItem::Bold(text) => {
+                    let style = TextStyle {
+                        font_family: default_font_family_name.clone(),
+                        font_size: 14,
+                        font_style: FontStyle::Normal,
+                        font_weight: FontWeight::Bold,
+                        text_decoration: TextDecoration::None,
+                        color: None,
+                    };
+                    let font = style.get_font(env);
+
+                    let (widths, glyphs) = font.get_glyphs(&text, style.font_size, scale_factor, env);
+                    let ascending_pixels = font.ascend(style.font_size, scale_factor);
+                    let line_height = font.descend(style.font_size, scale_factor);
+                    let line_gap = font.line_gap(style.font_size, scale_factor);
+
+                    let span = TextSpan::Text {
+                        style: Some(style.clone()),
+                        text: text.to_string(),
+                        glyphs,
+                        widths,
+                        ascend: ascending_pixels,
+                        descend: line_height,
+                        line_gap,
+                    };
+
+                    spans.push(span);
+                }
+                PolarItem::Paragraph(text) => {
+                    let style = TextStyle {
+                        font_family: default_font_family_name.clone(),
+                        font_size: 14,
+                        font_style: FontStyle::Normal,
+                        font_weight: FontWeight::Normal,
+                        text_decoration: TextDecoration::None,
+                        color: None,
+                    };
+                    let font = style.get_font(env);
+
+                    let (widths, glyphs) = font.get_glyphs(&text, style.font_size, scale_factor, env);
+                    let ascending_pixels = font.ascend(style.font_size, scale_factor);
+                    let line_height = font.descend(style.font_size, scale_factor);
+                    let line_gap = font.line_gap(style.font_size, scale_factor);
+
+                    let span = TextSpan::Text {
+                        style: Some(style.clone()),
+                        text: text.to_string(),
+                        glyphs,
+                        widths,
+                        ascend: ascending_pixels,
+                        descend: line_height,
+                        line_gap,
+                    };
+
+                    spans.push(span);
+                }
+                PolarItem::Underline(text) => {
+                    let style = TextStyle {
+                        font_family: default_font_family_name.clone(),
+                        font_size: 14,
+                        font_style: FontStyle::Normal,
+                        font_weight: FontWeight::Normal,
+                        text_decoration: TextDecoration::Underline(vec![]),
+                        color: None,
+                    };
+                    let font = style.get_font(env);
+
+                    let (widths, glyphs) = font.get_glyphs(&text, style.font_size, scale_factor, env);
+                    let ascending_pixels = font.ascend(style.font_size, scale_factor);
+                    let line_height = font.descend(style.font_size, scale_factor);
+                    let line_gap = font.line_gap(style.font_size, scale_factor);
+
+                    let span = TextSpan::Text {
+                        style: Some(style.clone()),
+                        text: text.to_string(),
+                        glyphs,
+                        widths,
+                        ascend: ascending_pixels,
+                        descend: line_height,
+                        line_gap,
+                    };
+
+                    spans.push(span);
+                }
+                PolarItem::Strike(text) => {
+                    let style = TextStyle {
+                        font_family: default_font_family_name.clone(),
+                        font_size: 14,
+                        font_style: FontStyle::Normal,
+                        font_weight: FontWeight::Normal,
+                        text_decoration: TextDecoration::StrikeThrough(vec![]),
+                        color: None,
+                    };
+                    let font = style.get_font(env);
+
+                    let (widths, glyphs) = font.get_glyphs(&text, style.font_size, scale_factor, env);
+                    let ascending_pixels = font.ascend(style.font_size, scale_factor);
+                    let line_height = font.descend(style.font_size, scale_factor);
+                    let line_gap = font.line_gap(style.font_size, scale_factor);
+
+                    let span = TextSpan::Text {
+                        style: Some(style.clone()),
+                        text: text.to_string(),
+                        glyphs,
+                        widths,
+                        ascend: ascending_pixels,
+                        descend: line_height,
+                        line_gap,
+                    };
+
+                    spans.push(span);
+                }
+                PolarItem::Newline => {
+                    spans.push(TextSpan::NewLine)
+                }
+                _ => ()
+            }
+        }
+
+        spans
+    }
+}
+
+impl<GS: GlobalState> Into<Box<dyn TextSpanGenerator<GS>>> for PolarBearMarkup {
+    fn into(self) -> Box<dyn TextSpanGenerator<GS>> {
+        Box::new(self)
+    }
+}
+

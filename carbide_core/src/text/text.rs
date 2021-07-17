@@ -5,6 +5,7 @@ use crate::draw::{Dimension, Position, Rect};
 use crate::text::{Font, FontId, Glyph};
 use crate::text::text_decoration::TextDecoration;
 use crate::text::text_span::TextSpan;
+use crate::text::text_span_generator::TextSpanGenerator;
 use crate::text::text_style::TextStyle;
 use crate::widget::{Environment, GlobalState};
 use crate::widget::types::justify::Justify;
@@ -30,11 +31,12 @@ pub struct Text<GS> where GS: GlobalState {
     /// True if the glyphs have already been added. We might need to remove them if we
     /// need to update the atlas.
     already_added_to_atlas: bool,
+    string_that_generated_this: String,
 }
 
 impl<GS: GlobalState> Text<GS> {
-    pub fn new(string: String, env: &mut Environment<GS>) -> Text<GS> {
-        let mut spans = TextSpan::new_polar_bear_markup(&string, env);
+    pub fn new(string: String, generator: &dyn TextSpanGenerator<GS>, env: &mut Environment<GS>) -> Text<GS> {
+        let mut spans = generator.generate(&string, env);
 
         Text {
             style: None,
@@ -48,7 +50,12 @@ impl<GS: GlobalState> Text<GS> {
             justify: Justify::Left,
             needs_to_update_atlas: true,
             already_added_to_atlas: false,
+            string_that_generated_this: string,
         }
+    }
+
+    pub fn string_that_generated_this(&self) -> &String {
+        &self.string_that_generated_this
     }
 
     pub fn first_glyphs(&self) -> Vec<Glyph> {
