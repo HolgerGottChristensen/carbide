@@ -82,7 +82,7 @@ impl<GS: GlobalState> Text<GS> {
                 match span {
                     TextSpan::Text { glyphs, style, .. } => {
                         for glyph in glyphs {
-                            *glyph.position_mut() = glyph.position() + new_offset;
+                            glyph.set_position(glyph.position() + new_offset);
                         }
                         if let Some(style) = style {
                             match &mut style.text_decoration {
@@ -179,7 +179,7 @@ impl<GS: GlobalState> Text<GS> {
                         let current_glyph = &mut glyphs[current_glyph_index];
                         let current_char = current_chars[current_glyph_index];
 
-                        *current_glyph.position_mut() = Position::new(current_x, current_line);
+                        current_glyph.set_position(Position::new(current_x, current_line));
 
                         // If our current char is a whitespace
                         if current_char.is_whitespace() {
@@ -231,7 +231,7 @@ impl<GS: GlobalState> Text<GS> {
                                 current_strike_line = Rect { position: Position::new(current_x / self.scale_factor, current_line), dimension: Default::default() };
 
                                 max_width = requested_width;
-                                *current_glyph.position_mut() = Position::new(current_x, current_line);
+                                current_glyph.set_position(Position::new(current_x, current_line));
                                 current_x += current_width;
                                 current_glyph_index += 1;
                             }
@@ -296,7 +296,7 @@ impl<GS: GlobalState> Text<GS> {
                     let mut current_strike_line = Rect { position: Position::new(current_x / self.scale_factor, current_line / self.scale_factor), dimension: Default::default() };
 
                     for (glyph, w) in glyphs.iter_mut().zip(widths) {
-                        *glyph.position_mut() = Position::new(current_x, current_line);
+                        glyph.set_position(Position::new(current_x, current_line));
                         current_x += *w;
 
                         if current_x > width {
@@ -309,7 +309,7 @@ impl<GS: GlobalState> Text<GS> {
 
                             current_strike_line = Rect { position: Position::new(current_x / self.scale_factor, current_line / self.scale_factor), dimension: Default::default() };
 
-                            *glyph.position_mut() = Position::new(current_x, current_line);
+                            glyph.set_position(Position::new(current_x, current_line));
                             current_x += *w;
                         }
 
@@ -412,7 +412,7 @@ impl<GS: GlobalState> Text<GS> {
                 TextSpan::Text { glyphs, style, ascend, .. } => {
                     for glyph in glyphs {
                         let position = glyph.position();
-                        *glyph.position_mut() = Position::new(position.x, line_positions[position.y as usize]);
+                        glyph.set_position(Position::new(position.x, line_positions[position.y as usize]));
                     }
 
                     if let Some(style) = style {

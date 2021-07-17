@@ -44,10 +44,54 @@ impl Position {
         Position::new(x, y)
     }
 
+    pub fn normalized_offset(&self) -> Position {
+        let mut x = self.x;
+        let mut y = self.y;
+        if x > 0.5 {
+            x -= 1.0;
+        } else if x < -0.5 {
+            x += 1.0;
+        }
+        if y > 0.5 {
+            y -= 1.0;
+        } else if y < -0.5 {
+            y += 1.0;
+        }
+        Position::new(x, y)
+    }
+
     pub fn round_to_u16(&self) -> (u16, u16) {
         let x = (self.x + 0.5) as u16;
         let y = (self.y + 0.5) as u16;
         (x, y)
+    }
+
+    #[inline]
+    pub fn rounded(&self) -> Position {
+        let x = self.x.round();
+        let y = self.y.round();
+        Position::new(x, y)
+    }
+
+    #[inline]
+    pub fn truncated(&self) -> Position {
+        let x = self.x.trunc();
+        let y = self.y.trunc();
+        Position::new(x, y)
+    }
+
+    #[inline]
+    pub fn fraction(&self) -> Position {
+        let x = self.x.fract();
+        let y = self.y.fract();
+        Position::new(x, y)
+    }
+
+    #[inline]
+    pub fn is_near_zero(&self) -> bool {
+        let x = self.x.abs() <= f64::EPSILON;
+        let y = self.y.abs() <= f64::EPSILON;
+        x && y
     }
 }
 

@@ -389,10 +389,7 @@ impl Mesh {
                     for glyph in glyphs {
                         let position = glyph.position();
                         if let Some(bb) = glyph.bb() {
-                            let mut positioned_bb = (bb + glyph.position()) / scale_factor;
-                            //positioned_bb.round();
-
-                            let (left, right, bottom, top) = positioned_bb.l_r_b_t();
+                            let (left, right, bottom, top) = bb.l_r_b_t_scaled(scale_factor);
 
                             if let Some(index) = glyph.texture_index() {
                                 let coords = texture_atlas.get_tex_coords_by_index(index);

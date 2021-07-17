@@ -18,12 +18,30 @@ impl Rect {
         self.dimension.height = self.dimension.height.round();
     }
 
+    pub fn l_r_b_t_with_precision(&self, precision: Scalar) -> (Scalar, Scalar, Scalar, Scalar) {
+        (
+            (self.position.x / precision).round() * precision,
+            ((self.position.x + self.dimension.width) / precision).round() * precision,
+            (self.position.y / precision).round() * precision,
+            ((self.position.y + self.dimension.height) / precision).round() * precision,
+        )
+    }
+
     pub fn l_r_b_t(&self) -> (Scalar, Scalar, Scalar, Scalar) {
         (
             self.position.x,
             self.position.x + self.dimension.width,
             self.position.y,
             self.position.y + self.dimension.height,
+        )
+    }
+
+    pub fn l_r_b_t_scaled(&self, scale_factor: Scalar) -> (Scalar, Scalar, Scalar, Scalar) {
+        (
+            self.position.x / scale_factor,
+            (self.position.x + self.dimension.width) / scale_factor,
+            self.position.y / scale_factor,
+            (self.position.y + self.dimension.height) / scale_factor,
         )
     }
 }
