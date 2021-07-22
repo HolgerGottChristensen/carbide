@@ -31,24 +31,27 @@ fn main() {
 
     let mut window = Window::new("Plain Radio Button Example - Carbide".to_string(), 800, 1200, Some(icon_path), String::from("Hejsa"));
 
-    window.add_font("fonts/NotoSans/NotoSans-Regular.ttf").unwrap();
+    let mut family = FontFamily::new("NotoSans");
+    family.add_font("fonts/NotoSans/NotoSans-Regular.ttf", FontWeight::Normal, FontStyle::Normal);
+    family.add_font("fonts/NotoSans/NotoSans-Italic.ttf", FontWeight::Normal, FontStyle::Italic);
+    family.add_font("fonts/NotoSans/NotoSans-Bold.ttf", FontWeight::Bold, FontStyle::Normal);
+    window.add_font_family(family);
 
     let shape_state = CommonState::new_local_with_key(&Shape::Rectangle);
 
     window.set_widgets(
         SharedState::new(shape_state.clone(),
-         VStack::initialize(vec![
-             PlainRadioButton::new("Rectangle", Shape::Rectangle, shape_state.clone())
-                 .border(),
-             PlainRadioButton::new("Circle", Shape::Circle, shape_state.clone())
-                 .border(),
-             PlainRadioButton::new("Triangle", Shape::Triangle, shape_state.clone())
-                 .border(),
-             PlainRadioButton::new("Star", Shape::Star, shape_state.clone())
-                 .border(),
-         ]).spacing(10.0).padding(EdgeInsets::all(40.0)))
+                         VStack::initialize(vec![
+                             PlainRadioButton::new("Rectangle", Shape::Rectangle, shape_state.clone())
+                                 .border(),
+                             PlainRadioButton::new("Circle", Shape::Circle, shape_state.clone())
+                                 .border(),
+                             PlainRadioButton::new("Triangle", Shape::Triangle, shape_state.clone())
+                                 .border(),
+                             PlainRadioButton::new("Star", Shape::Star, shape_state.clone())
+                                 .border(),
+                         ]).spacing(10.0).padding(EdgeInsets::all(40.0)))
     );
 
     window.run_event_loop();
-
 }

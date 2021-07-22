@@ -11,7 +11,11 @@ fn main() {
 
     let mut window = Window::new("Hello world 2".to_string(), 800, 1200, Some(icon_path), String::from("Hejsa"));
 
-    window.add_font("fonts/NotoSans/NotoSans-Regular.ttf").unwrap();
+    let mut family = FontFamily::new("NotoSans");
+    family.add_font("fonts/NotoSans/NotoSans-Regular.ttf", FontWeight::Normal, FontStyle::Normal);
+    family.add_font("fonts/NotoSans/NotoSans-Italic.ttf", FontWeight::Normal, FontStyle::Italic);
+    family.add_font("fonts/NotoSans/NotoSans-Bold.ttf", FontWeight::Bold, FontStyle::Normal);
+    window.add_font_family(family);
 
     window.set_widgets(
         VStack::initialize(vec![
@@ -97,7 +101,6 @@ fn main() {
     );
 
     window.run_event_loop();
-
 }
 
 fn draw_star<GS: GlobalState>(center: Point, number_of_spikes: u32, outer_radius: f64, inner_radius: f64, mut context: Context<GS>) -> Context<GS> {

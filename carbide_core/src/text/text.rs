@@ -15,7 +15,6 @@ type BoundingBox = Rect;
 
 #[derive(Debug, Clone)]
 pub struct Text<GS> where GS: GlobalState {
-    style: Option<TextStyle>,
     latest_requested_offset: Position,
     latest_requested_size: Dimension,
     spans: Vec<TextSpan<GS>>,
@@ -31,15 +30,16 @@ pub struct Text<GS> where GS: GlobalState {
     /// True if the glyphs have already been added. We might need to remove them if we
     /// need to update the atlas.
     already_added_to_atlas: bool,
+
     string_that_generated_this: String,
+    style_that_generated_this: TextStyle,
 }
 
 impl<GS: GlobalState> Text<GS> {
-    pub fn new(string: String, generator: &dyn TextSpanGenerator<GS>, env: &mut Environment<GS>) -> Text<GS> {
-        let mut spans = generator.generate(&string, env);
+    pub fn new(string: String, style: TextStyle, generator: &dyn TextSpanGenerator<GS>, env: &mut Environment<GS>) -> Text<GS> {
+        let mut spans = generator.generate(&string, &style, env);
 
         Text {
-            style: None,
             latest_requested_offset: Default::default(),
             latest_requested_size: Dimension::new(-1.0, -1.0),
             spans,
@@ -50,7 +50,9 @@ impl<GS: GlobalState> Text<GS> {
             justify: Justify::Left,
             needs_to_update_atlas: true,
             already_added_to_atlas: false,
+
             string_that_generated_this: string,
+            style_that_generated_this: style,
         }
     }
 

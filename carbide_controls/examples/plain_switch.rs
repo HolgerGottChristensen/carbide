@@ -14,7 +14,11 @@ fn main() {
 
     let mut window = Window::new("Plain Switch Example - Carbide".to_string(), 800, 1200, Some(icon_path), String::from("Hejsa"));
 
-    window.add_font("fonts/NotoSans/NotoSans-Regular.ttf").unwrap();
+    let mut family = FontFamily::new("NotoSans");
+    family.add_font("fonts/NotoSans/NotoSans-Regular.ttf", FontWeight::Normal, FontStyle::Normal);
+    family.add_font("fonts/NotoSans/NotoSans-Italic.ttf", FontWeight::Normal, FontStyle::Italic);
+    family.add_font("fonts/NotoSans/NotoSans-Bold.ttf", FontWeight::Bold, FontStyle::Normal);
+    window.add_font_family(family);
 
     let switch_state1 = CommonState::new_local_with_key(&false);
     let switch_state2 = CommonState::new_local_with_key(&true);
@@ -35,5 +39,4 @@ fn main() {
     );
 
     window.run_event_loop();
-
 }

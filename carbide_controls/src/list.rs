@@ -108,7 +108,7 @@ impl<GS: GlobalState, T: ListIndex + 'static> List<GS, T> {
 
     fn handle_keyboard_event(&mut self, _: &KeyboardEvent, _: &mut Environment<GS>, _: &mut GS) {}
 
-    fn _recalculate_visible_children(&mut self, env: &Environment<GS>) {
+    fn _recalculate_visible_children(&mut self, env: &mut Environment<GS>) {
         //println!("Med dig");
         // TODO: Handle when model changes.
         // If items in the internal model is removed, calculate new sizes, if items in between the items in the internal_model is added, do ???

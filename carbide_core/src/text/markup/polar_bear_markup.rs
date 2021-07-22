@@ -154,8 +154,8 @@ impl PolarBearMarkup {
 
 impl<GS: GlobalState> TextSpanGenerator<GS> for PolarBearMarkup {
     // https://bear.app/faq/Markup%20:%20Markdown/Polar%20Bear%20markup%20language/
-    fn generate(&self, string: &str, env: &mut Environment<GS>) -> Vec<TextSpan<GS>> {
-        let default_font_family_name = env.get_first_font_family().name.clone();
+    fn generate(&self, string: &str, style: &TextStyle, env: &mut Environment<GS>) -> Vec<TextSpan<GS>> {
+        let default_font_family_name = &style.font_family;
         let scale_factor = env.get_scale_factor();
         let polars = parse_polar_bear_markup(string).unwrap().1;
 

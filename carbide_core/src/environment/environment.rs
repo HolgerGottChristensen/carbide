@@ -37,6 +37,10 @@ pub struct Environment<GS> where GS: GlobalState {
     /// on texture offsets and more.
     font_texture_atlas: TextureAtlas,
 
+    /// System font family name. This is used to get the font family for default text rendering.
+    /// This should always be expected to exist.
+    default_font_family_name: String,
+
     /// This map contains the widths and heights for loaded images.
     /// This is used to make the static size of the Image widget its
     /// required size.
@@ -75,11 +79,14 @@ impl<GS: GlobalState> std::fmt::Debug for Environment<GS> {
 
 impl<GS: GlobalState> Environment<GS> {
     pub fn new(env_stack: Vec<EnvironmentVariable>, pixel_dimensions: Dimensions, scale_factor: f64) -> Self {
+        let default_font_family_name = "NotoSans";
+
         Environment {
             stack: env_stack,
             fonts: vec![],
             font_families: HashMap::with_hasher(FxBuildHasher::default()),
             font_texture_atlas: TextureAtlas::new(512, 512),
+            default_font_family_name: default_font_family_name.to_string(),
             images_information: HashMap::with_hasher(FxBuildHasher::default()),
             overlay_map: HashMap::with_hasher(FxBuildHasher::default()),
             local_state: HashMap::with_hasher(FxBuildHasher::default()),
@@ -278,11 +285,23 @@ impl<GS: GlobalState> Environment<GS> {
     }
 
     pub fn get_first_font_family(&self) -> &FontFamily {
-        self.font_families.get("NotoSans").unwrap()
+        for (_, family) in self.font_families.iter() {
+            return family
+        }
+
+        panic!("No font family have been added, so we can not get the first.")
+    }
+
+    pub fn get_system_font_family(&self) -> &FontFamily {
+        self.get_font_family(&self.default_font_family_name)
     }
 
     pub fn get_font_family(&self, name: &String) -> &FontFamily {
-        self.font_families.get(name).unwrap()
+        if name == "system-font" {
+            self.get_system_font_family()
+        } else {
+            self.font_families.get(name).unwrap()
+        }
     }
 
 

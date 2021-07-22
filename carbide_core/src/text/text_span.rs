@@ -29,23 +29,12 @@ pub enum TextSpan<GS> where GS: GlobalState {
 }
 
 impl<GS: GlobalState> TextSpan<GS> {
-    pub fn new(string: &str, env: &mut Environment<GS>) -> Vec<TextSpan<GS>> {
-        let default_font_family_name = env.get_first_font_family().name.clone();
-
+    pub fn new(string: &str, style: &TextStyle, env: &mut Environment<GS>) -> Vec<TextSpan<GS>> {
         let scale_factor = env.get_scale_factor();
 
         let mut res = vec![];
 
         for line in string.split('\n') {
-            let style = TextStyle {
-                font_family: default_font_family_name.clone(),
-                font_size: 14,
-                font_style: FontStyle::Normal,
-                font_weight: FontWeight::Normal,
-                text_decoration: TextDecoration::None,
-                color: None,
-            };
-
             let font = style.get_font(env);
 
             let ascend = font.ascend(style.font_size, scale_factor);

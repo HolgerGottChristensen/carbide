@@ -9,7 +9,7 @@ use crate::prelude::*;
 use crate::render::primitive_kind::PrimitiveKind;
 //use crate::render::text::Text as RenderText;
 use crate::render::util::new_primitive;
-use crate::text::{FontId, Glyph, NoStyleTextSpanGenerator, TextSpanGenerator};
+use crate::text::{FontId, FontStyle, FontWeight, Glyph, NoStyleTextSpanGenerator, TextDecoration, TextSpanGenerator, TextStyle};
 use crate::text::Text as InternalText;
 //use crate::text_old::PositionedGlyph;
 use crate::utils;
@@ -32,6 +32,10 @@ pub struct Text<GS> where GS: GlobalState {
     #[state] pub text: StringState<GS>,
     #[state] font_size: U32State<GS>,
     #[state] color: ColorState<GS>,
+    font_family: String,
+    font_style: FontStyle,
+    font_weight: FontWeight,
+    text_decoration: TextDecoration,
     internal_text: Option<InternalText<GS>>,
     text_span_generator: Box<dyn TextSpanGenerator<GS>>,
 }
@@ -48,6 +52,10 @@ impl<GS: GlobalState> Text<GS> {
             dimension: [100.0, 100.0],
             wrap_mode: Wrap::Whitespace,
             color: EnvironmentColor::Label.into(),
+            font_family: "system-font".to_string(),
+            font_style: FontStyle::Normal,
+            font_weight: FontWeight::Normal,
+            text_decoration: TextDecoration::None,
             internal_text: None,
             text_span_generator: Box::new(NoStyleTextSpanGenerator {}),
         })
@@ -64,6 +72,10 @@ impl<GS: GlobalState> Text<GS> {
             dimension: [100.0, 100.0],
             wrap_mode: Wrap::Whitespace,
             color: EnvironmentColor::Label.into(),
+            font_family: "system-font".to_string(),
+            font_style: FontStyle::Normal,
+            font_weight: FontWeight::Normal,
+            text_decoration: TextDecoration::None,
             internal_text: None,
             text_span_generator: generator.into(),
         })
@@ -110,6 +122,17 @@ impl<GS: GlobalState> Text<GS> {
             vec![]
         }
     }
+
+    pub fn get_style(&self) -> TextStyle {
+        TextStyle {
+            font_family: self.font_family.clone(),
+            font_size: *self.font_size.get_latest_value(),
+            font_style: self.font_style,
+            font_weight: self.font_weight,
+            text_decoration: self.text_decoration.clone(),
+            color: Some(self.color.get_latest_value().clone()),
+        }
+    }
 }
 
 impl<GS: GlobalState> Layout<GS> for Text<GS> {
@@ -119,16 +142,19 @@ impl<GS: GlobalState> Layout<GS> for Text<GS> {
 
     fn calculate_size(&mut self, requested_size: Dimensions, env: &mut Environment<GS>) -> Dimensions {
         let now = Instant::now();
+        let style = self.get_style();
 
         if let None = self.internal_text {
             let text = self.text.get_latest_value().clone();
-            self.internal_text = Some(InternalText::new(text, self.text_span_generator.borrow(), env))
+            let style = self.get_style();
+            self.internal_text = Some(InternalText::new(text, style, self.text_span_generator.borrow(), env))
         }
+
 
         if let Some(internal) = &mut self.internal_text {
             let text = self.text.get_latest_value();
             if internal.string_that_generated_this() != text {
-                *internal = InternalText::new(text.clone(), self.text_span_generator.borrow(), env);
+                *internal = InternalText::new(text.clone(), style, self.text_span_generator.borrow(), env);
             }
             let size = internal.calculate_size(Dimension::new(requested_size[0], requested_size[1]), env);
 

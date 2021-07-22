@@ -33,12 +33,15 @@ impl<T: Serialize + Clone + Debug + Default + DeserializeOwned + 'static, GS: Gl
                 }
             });
 
-
-            Rectangle::initialize(vec![
+            ZStack::initialize(vec![
+                RoundedRectangle::initialize(CornerRadii::all(3.0))
+                    .fill(EnvironmentColor::SecondarySystemBackground),
                 HStack::initialize(vec![
-                    Padding::init(EdgeInsets::single(0.0, 0.0, 5.0, 0.0), Text::new(text)),
+                    Padding::init(EdgeInsets::single(0.0, 0.0, 7.0, 0.0), Text::new(text)),
                     Spacer::new(SpacerDirection::Horizontal),
-                    Rectangle::initialize(vec![
+                    ZStack::initialize(vec![
+                        RoundedRectangle::initialize(CornerRadii::single(0.0, 0.0, 0.0, 2.0))
+                            .fill(EnvironmentColor::Accent),
                         Canvas::initialize(|_, mut context| {
                             context.move_to(7.0, 10.0);
                             context.line_to(11.0, 6.0);
@@ -47,14 +50,18 @@ impl<T: Serialize + Clone + Debug + Default + DeserializeOwned + 'static, GS: Gl
                             context.line_to(11.0, 18.0);
                             context.line_to(15.0, 14.0);
                             context.set_stroke_style(EnvironmentColor::DarkText);
+                            context.set_line_width(1.5);
                             context.stroke();
 
                             context
                         })
-                    ]).fill(EnvironmentColor::Accent).frame(23.0, 24.0)
-                ])
-            ]).fill(EnvironmentColor::SecondarySystemBackground)
-                .border().color(focus_color).border_width(1)
+                    ]).padding(EdgeInsets::single(0.0, 0.0, 0.0, 1.0))
+                        .frame(22.0, 24.0)
+                ]),
+                RoundedRectangle::initialize(CornerRadii::all(3.0))
+                    .stroke_style(1.0)
+                    .stroke(focus_color),
+            ])
         });
 
         child = *child.display_item_popup(|item, _selected_index, _index, hovered| {
@@ -165,6 +172,5 @@ impl<T: Serialize + Clone + Debug + Default + DeserializeOwned + 'static, GS: Gl
         self.child.position_children();
     }
 }
-
 
 impl<T: Serialize + Clone + Debug + Default + DeserializeOwned + 'static, GS: GlobalState> WidgetExt<GS> for PopUpButton<T, GS> {}

@@ -15,7 +15,11 @@ fn main() {
 
     let mut window = Window::new("Switch Example - Carbide".to_string(), 800, 1200, Some(icon_path), false);
 
-    window.add_font("fonts/NotoSans/NotoSans-Regular.ttf");
+    let mut family = FontFamily::new("NotoSans");
+    family.add_font("fonts/NotoSans/NotoSans-Regular.ttf", FontWeight::Normal, FontStyle::Normal);
+    family.add_font("fonts/NotoSans/NotoSans-Italic.ttf", FontWeight::Normal, FontStyle::Italic);
+    family.add_font("fonts/NotoSans/NotoSans-Bold.ttf", FontWeight::Bold, FontStyle::Normal);
+    window.add_font_family(family);
 
     let switch_state1 = CommonState::new_local_with_key(&false);
     let switch_state2 = GState::<bool, bool>::new(|global_state: &bool| -> &bool {

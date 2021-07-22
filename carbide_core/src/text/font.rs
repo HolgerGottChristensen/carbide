@@ -19,7 +19,7 @@ type RustTypeFont = rusttype::Font<'static>;
 type RustTypeScale = rusttype::Scale;
 type RustTypePoint = rusttype::Point<f32>;
 
-const POINT_TO_PIXEL: f32 = 4.0 / 3.0;
+const POINT_TO_PIXEL: f32 = 1.0;
 
 #[derive(Clone)]
 pub struct Font {
