@@ -1,20 +1,10 @@
-//use crate::text::paragraph::Paragraph;
-use crate::{Color, OldRect, Point, Scalar};
-use crate::color::BLACK;
-use crate::draw::{Dimension, Position, Rect};
-use crate::text::{Font, FontId};
-use crate::text::font_family::FontFamily;
-use crate::text::font_style::FontStyle;
-use crate::text::font_weight::FontWeight;
+use crate::Scalar;
 use crate::text::glyph::Glyph;
-use crate::text::text_decoration::TextDecoration;
 use crate::text::text_style::TextStyle;
-use crate::widget::{Environment, GlobalState, Widget};
-use crate::widget::types::justify::Justify;
-use crate::widget::types::text_wrap::Wrap;
+use crate::widget::{Environment, GlobalStateContract, Widget};
 
 #[derive(Debug, Clone)]
-pub enum TextSpan<GS> where GS: GlobalState {
+pub enum TextSpan<GS> where GS: GlobalStateContract {
     Text {
         style: Option<TextStyle>,
         text: String,
@@ -28,7 +18,7 @@ pub enum TextSpan<GS> where GS: GlobalState {
     NewLine,
 }
 
-impl<GS: GlobalState> TextSpan<GS> {
+impl<GS: GlobalStateContract> TextSpan<GS> {
     pub fn new(string: &str, style: &TextStyle, env: &mut Environment<GS>) -> Vec<TextSpan<GS>> {
         let scale_factor = env.get_scale_factor();
 

@@ -10,7 +10,7 @@ use serde::Serialize;
 
 use crate::event_handler::{KeyboardEvent, MouseEvent};
 use crate::prelude::*;
-use crate::state::state::CommonState;
+use crate::state::local_state::LocalState;
 use crate::widget::render::ChildRender;
 
 pub trait ForEachDelegate: Clone + PartialEq + Eq + Hash + Debug + Serialize + DeserializeOwned + Default {}
@@ -18,9 +18,9 @@ pub trait ForEachDelegate: Clone + PartialEq + Eq + Hash + Debug + Serialize + D
 impl<T> ForEachDelegate for T where T: Clone + PartialEq + Eq + Hash + Debug + Serialize + DeserializeOwned + Default {}
 
 #[derive(Debug, Clone, Widget)]
-#[state_sync(sync_state)]
-#[event(process_mouse_event, process_keyboard_event)]
-pub struct ForEach<GS, T> where GS: GlobalState, T: ForEachDelegate + 'static {
+//#[state_sync(sync_state)]
+//#[event(process_mouse_event, process_keyboard_event)]
+pub struct ForEach<GS, T> where GS: GlobalStateContract, T: ForEachDelegate + 'static {
     id: Uuid,
     // --
     children_map: FxHashMap<T, Box<dyn Widget<GS>>>,
@@ -35,14 +35,14 @@ pub struct ForEach<GS, T> where GS: GlobalState, T: ForEachDelegate + 'static {
     #[state] index_offset: Box<dyn State<usize, GS>>,
 }
 
-impl<GS: GlobalState, T: ForEachDelegate + 'static> WidgetExt<GS> for ForEach<GS, T> {}
+impl<GS: GlobalStateContract, T: ForEachDelegate + 'static> WidgetExt<GS> for ForEach<GS, T> {}
 
-impl<GS: GlobalState, T: ForEachDelegate + 'static> ForEach<GS, T> {
+impl<GS: GlobalStateContract, T: ForEachDelegate + 'static> ForEach<GS, T> {
     pub fn new<K: Into<TState<Vec<T>, GS>>>(ids: K, delegate: Box<dyn Widget<GS>>) -> Box<Self> {
         let ids = ids.into();
         let mut map = HashMap::with_hasher(FxBuildHasher::default());
 
-        for i in ids.get_latest_value() {
+        for i in ids.deref() {
             map.insert(i.clone(), Clone::clone(&delegate));
         }
 
@@ -53,9 +53,9 @@ impl<GS: GlobalState, T: ForEachDelegate + 'static> ForEach<GS, T> {
             ids,
             position: [100.0, 100.0],
             dimension: [100.0, 100.0],
-            id_state: Box::new(CommonState::new_local_with_key(&T::default())),
-            index_state: Box::new(CommonState::new_local_with_key(&0)),
-            index_offset: Box::new(CommonState::new_local_with_key(&0)),
+            id_state: Box::new(LocalState::new(T::default())),
+            index_state: Box::new(LocalState::new(0)),
+            index_offset: Box::new(LocalState::new(0)),
         })
     }
 
@@ -74,7 +74,7 @@ impl<GS: GlobalState, T: ForEachDelegate + 'static> ForEach<GS, T> {
         Box::new(self)
     }
 
-    fn sync_state(&mut self, env: &mut Environment<GS>, global_state: &GS) {
+    /*fn sync_state(&mut self, env: &mut Environment<GS>, global_state: &GS) {
         self.update_all_widget_state(env, global_state);
 
         self.insert_local_state(env);
@@ -136,10 +136,10 @@ impl<GS: GlobalState, T: ForEachDelegate + 'static> ForEach<GS, T> {
         }
 
         self.update_local_widget_state(env)
-    }
+    }*/
 }
 
-impl<GS: GlobalState, T: ForEachDelegate> CommonWidget<GS> for ForEach<GS, T> {
+impl<GS: GlobalStateContract, T: ForEachDelegate> CommonWidget<GS> for ForEach<GS, T> {
     fn get_id(&self) -> Uuid {
         self.id
     }
@@ -155,7 +155,7 @@ impl<GS: GlobalState, T: ForEachDelegate> CommonWidget<GS> for ForEach<GS, T> {
     fn get_children(&self) -> WidgetIter<GS> {
         let mut w = WidgetIter::Empty;
 
-        for id in self.ids.get_latest_value().iter().rev() {
+        for id in self.ids.iter().rev() {
             let item = self.children_map.get(id).unwrap();
 
             if item.get_flag() == Flags::PROXY {
@@ -171,14 +171,14 @@ impl<GS: GlobalState, T: ForEachDelegate> CommonWidget<GS> for ForEach<GS, T> {
     fn get_children_mut(&mut self) -> WidgetIterMut<GS> {
         let mut w = WidgetIterMut::Empty;
 
-        for id in self.ids.get_latest_value().iter().rev() {
+        for id in self.ids.iter().rev() {
             let contains = self.children_map.contains_key(id).clone();
             if !contains {
                 self.children_map.insert(id.clone(), Clone::clone(&self.delegate));
             }
         }
 
-        for id in self.ids.get_latest_value().iter().rev() {
+        for id in self.ids.iter().rev() {
             let item: &mut Box<dyn Widget<GS>> = unsafe {
                 let p: *mut Box<dyn Widget<GS>> = self.children_map.get_mut(id).unwrap();
                 p.as_mut().unwrap()
@@ -197,14 +197,14 @@ impl<GS: GlobalState, T: ForEachDelegate> CommonWidget<GS> for ForEach<GS, T> {
     fn get_proxied_children(&mut self) -> WidgetIterMut<GS> {
         let mut w = WidgetIterMut::Empty;
 
-        for id in self.ids.get_latest_value().iter().rev() {
+        for id in self.ids.iter().rev() {
             let contains = self.children_map.contains_key(id).clone();
             if !contains {
                 self.children_map.insert(id.clone(), Clone::clone(&self.delegate));
             }
         }
 
-        for id in self.ids.get_latest_value().iter().rev() {
+        for id in self.ids.iter().rev() {
             let item: &mut Box<dyn Widget<GS>> = unsafe {
                 let p: *mut Box<dyn Widget<GS>> = self.children_map.get_mut(id).unwrap();
                 p.as_mut().unwrap()
@@ -223,14 +223,14 @@ impl<GS: GlobalState, T: ForEachDelegate> CommonWidget<GS> for ForEach<GS, T> {
     fn get_proxied_children_rev(&mut self) -> WidgetIterMut<GS> {
         let mut w = WidgetIterMut::Empty;
 
-        for id in self.ids.get_latest_value().iter() {
+        for id in self.ids.iter() {
             let contains = self.children_map.contains_key(id).clone();
             if !contains {
                 self.children_map.insert(id.clone(), Clone::clone(&self.delegate));
             }
         }
 
-        for id in self.ids.get_latest_value().iter() {
+        for id in self.ids.iter() {
             let item: &mut Box<dyn Widget<GS>> = unsafe {
                 let p: *mut Box<dyn Widget<GS>> = self.children_map.get_mut(id).unwrap();
                 p.as_mut().unwrap()
@@ -263,9 +263,9 @@ impl<GS: GlobalState, T: ForEachDelegate> CommonWidget<GS> for ForEach<GS, T> {
     }
 }
 
-impl<GS: GlobalState, T: ForEachDelegate> ChildRender for ForEach<GS, T> {}
+impl<GS: GlobalStateContract, T: ForEachDelegate> ChildRender for ForEach<GS, T> {}
 
-impl<GS: GlobalState, T: ForEachDelegate> Layout<GS> for ForEach<GS, T> {
+impl<GS: GlobalStateContract, T: ForEachDelegate> Layout<GS> for ForEach<GS, T> {
     fn flexibility(&self) -> u32 {
         unimplemented!()
     }

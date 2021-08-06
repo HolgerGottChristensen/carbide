@@ -1,7 +1,7 @@
 use crate::prelude::EnvironmentColorState;
 use crate::state::*;
 use crate::state::widget_state::WidgetState;
-use crate::widget::GlobalState;
+use crate::widget::GlobalStateContract;
 
 #[derive(Hash, Eq, PartialEq, Clone, Debug)]
 pub enum EnvironmentColor {
@@ -38,7 +38,7 @@ pub enum EnvironmentColor {
     DarkText,
     LightText,
     Accent,
-    Custom(String)
+    Custom(String),
 }
 
 impl Default for EnvironmentColor {
@@ -47,7 +47,7 @@ impl Default for EnvironmentColor {
     }
 }
 
-impl<GS: GlobalState> Into<ColorState<GS>> for EnvironmentColor {
+impl<GS: GlobalStateContract> Into<ColorState<GS>> for EnvironmentColor {
     fn into(self) -> ColorState<GS> {
         WidgetState::new(Box::new(EnvironmentColorState::new(self)))
     }

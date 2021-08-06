@@ -1,11 +1,14 @@
 use crate::event::event::Event;
 use crate::event_handler::{KeyboardEvent, MouseEvent, WidgetEvent};
 use crate::prelude::*;
+use crate::state::global_state::GlobalStateContainer;
+use crate::widget::render::RenderProcessor;
 
 #[derive(Debug, Clone, Widget)]
-#[state_sync(sync_state, update_all_widget_state, update_local_widget_state)]
-#[event(process_keyboard_event, process_mouse_event, process_other_event)]
-pub struct OverlaidLayer<GS> where GS: GlobalState {
+//#[state_sync(sync_state, update_all_widget_state, update_local_widget_state)]
+//#[event(process_keyboard_event, process_mouse_event, process_other_event)]
+#[render(process_get_primitives)]
+pub struct OverlaidLayer<GS> where GS: GlobalStateContract {
     id: Uuid,
     child: Box<dyn Widget<GS>>,
     overlay: Option<Box<dyn Widget<GS>>>,
@@ -16,8 +19,8 @@ pub struct OverlaidLayer<GS> where GS: GlobalState {
     steal_events_when_some: bool,
 }
 
-impl<GS: GlobalState> OverlaidLayer<GS> {
-    fn update_all_widget_state(&mut self, env: &mut Environment<GS>, global_state: &GS) {
+impl<GS: GlobalStateContract> OverlaidLayer<GS> {
+    /*fn update_all_widget_state(&mut self, env: &mut Environment<GS>, global_state: &GS) {
         if let Some(overlay) = &mut self.overlay {
             overlay.update_all_widget_state(env, global_state);
         }
@@ -150,6 +153,16 @@ impl<GS: GlobalState> OverlaidLayer<GS> {
 
 
         self.update_local_widget_state(env);
+    }*/
+
+    fn process_get_primitives(&mut self, primitives: &mut Vec<Primitive>, env: &mut Environment<GS>, global_state: &GlobalStateContainer<GS>) {
+        for child in self.get_children_mut() {
+            child.process_get_primitives(primitives, env, global_state);
+        }
+
+        if let Some(t) = &mut self.overlay {
+            t.process_get_primitives(primitives, env, global_state);
+        }
     }
 
     pub fn new(overlay_id: &str, child: Box<dyn Widget<GS>>) -> Box<Self> {
@@ -167,7 +180,7 @@ impl<GS: GlobalState> OverlaidLayer<GS> {
 }
 
 
-impl<GS: GlobalState> Layout<GS> for OverlaidLayer<GS> {
+impl<GS: GlobalStateContract> Layout<GS> for OverlaidLayer<GS> {
     fn flexibility(&self) -> u32 {
         0
     }
@@ -195,7 +208,7 @@ impl<GS: GlobalState> Layout<GS> for OverlaidLayer<GS> {
     }
 }
 
-impl<S: GlobalState> CommonWidget<S> for OverlaidLayer<S> {
+impl<S: GlobalStateContract> CommonWidget<S> for OverlaidLayer<S> {
     fn get_id(&self) -> Uuid {
         self.id
     }
@@ -249,23 +262,11 @@ impl<S: GlobalState> CommonWidget<S> for OverlaidLayer<S> {
     }
 }
 
-impl<GS: GlobalState> Render<GS> for OverlaidLayer<GS> {
-    fn get_primitives(&mut self, env: &mut Environment<GS>, global_state: &GS) -> Vec<Primitive> {
-        let mut prims = vec![];
-        prims.extend(Rectangle::<GS>::debug_outline(OldRect::new(self.position, self.dimension), 1.0));
-        let children: Vec<Primitive> = self.get_children_mut()
-            .flat_map(|f| f.get_primitives(env, global_state))
-            .collect();
-        prims.extend(children);
-
-        if let Some(t) = &mut self.overlay {
-            let overlay_prims = t.get_primitives(env, global_state);
-            prims.extend(overlay_prims);
-        }
-
-        return prims;
+impl<GS: GlobalStateContract> Render<GS> for OverlaidLayer<GS> {
+    fn get_primitives(&mut self, _: &mut Environment<GS>) -> Vec<Primitive> {
+        return vec![];
     }
 }
 
 
-impl<GS: GlobalState> WidgetExt<GS> for OverlaidLayer<GS> {}
+impl<GS: GlobalStateContract> WidgetExt<GS> for OverlaidLayer<GS> {}

@@ -2,7 +2,7 @@ use crate::prelude::*;
 use crate::widget::ChildRender;
 
 #[derive(Debug, Clone, Widget)]
-pub struct Offset<GS> where GS: GlobalState {
+pub struct Offset<GS> where GS: GlobalStateContract {
     id: Uuid,
     child: Box<dyn Widget<GS>>,
     position: Point,
@@ -11,9 +11,9 @@ pub struct Offset<GS> where GS: GlobalState {
     #[state] offset_y: F64State<GS>,
 }
 
-impl<GS: GlobalState> WidgetExt<GS> for Offset<GS> {}
+impl<GS: GlobalStateContract> WidgetExt<GS> for Offset<GS> {}
 
-impl<GS: GlobalState> Layout<GS> for Offset<GS> {
+impl<GS: GlobalStateContract> Layout<GS> for Offset<GS> {
     fn flexibility(&self) -> u32 {
         self.child.flexibility()
     }
@@ -32,8 +32,8 @@ impl<GS: GlobalState> Layout<GS> for Offset<GS> {
 
         let mut child_position: Point = self.child.get_position();
 
-        child_position[0] += self.offset_x.get_latest_value();
-        child_position[1] += self.offset_y.get_latest_value();
+        child_position[0] += *self.offset_x;
+        child_position[1] += *self.offset_y;
 
         self.child.set_position(child_position);
 
@@ -41,7 +41,7 @@ impl<GS: GlobalState> Layout<GS> for Offset<GS> {
     }
 }
 
-impl<S: GlobalState> CommonWidget<S> for Offset<S> {
+impl<S: GlobalStateContract> CommonWidget<S> for Offset<S> {
     fn get_id(&self) -> Uuid {
         self.id
     }
@@ -95,10 +95,10 @@ impl<S: GlobalState> CommonWidget<S> for Offset<S> {
     }
 }
 
-impl<S: GlobalState> ChildRender for Offset<S> {}
+impl<S: GlobalStateContract> ChildRender for Offset<S> {}
 
 
-impl<GS: GlobalState> Offset<GS> {
+impl<GS: GlobalStateContract> Offset<GS> {
     pub fn new(offset_x: F64State<GS>, offset_y: F64State<GS>, child: Box<dyn Widget<GS>>) -> Box<Self <>> {
         Box::new(Offset {
             id: Uuid::new_v4(),

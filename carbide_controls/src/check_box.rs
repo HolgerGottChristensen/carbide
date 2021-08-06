@@ -4,14 +4,14 @@ use crate::PlainCheckBox;
 use crate::types::*;
 
 #[derive(Clone, Widget)]
-pub struct CheckBox<GS> where GS: GlobalState {
+pub struct CheckBox<GS> where GS: GlobalStateContract {
     id: Id,
     child: PlainCheckBox<GS>,
     position: Point,
     dimension: Dimensions,
 }
 
-impl<GS: GlobalState> CheckBox<GS> {
+impl<GS: GlobalStateContract> CheckBox<GS> {
     pub fn new<S: Into<StringState<GS>>, L: Into<CheckBoxState<GS>>>(label: S, checked: L) -> Box<Self> {
         let mut child = *PlainCheckBox::new(label, checked.into());
 
@@ -94,7 +94,7 @@ impl<GS: GlobalState> CheckBox<GS> {
     }
 }
 
-impl<GS: GlobalState> CommonWidget<GS> for CheckBox<GS> {
+impl<GS: GlobalStateContract> CommonWidget<GS> for CheckBox<GS> {
     fn get_id(&self) -> Id {
         self.id
     }
@@ -140,9 +140,9 @@ impl<GS: GlobalState> CommonWidget<GS> for CheckBox<GS> {
     }
 }
 
-impl<GS: GlobalState> ChildRender for CheckBox<GS> {}
+impl<GS: GlobalStateContract> ChildRender for CheckBox<GS> {}
 
-impl<GS: GlobalState> Layout<GS> for CheckBox<GS> {
+impl<GS: GlobalStateContract> Layout<GS> for CheckBox<GS> {
     fn flexibility(&self) -> u32 {
         5
     }
@@ -167,4 +167,4 @@ impl<GS: GlobalState> Layout<GS> for CheckBox<GS> {
 }
 
 
-impl<GS: GlobalState> WidgetExt<GS> for CheckBox<GS> {}
+impl<GS: GlobalStateContract> WidgetExt<GS> for CheckBox<GS> {}

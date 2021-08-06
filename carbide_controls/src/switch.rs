@@ -3,14 +3,14 @@ use carbide_core::widget::*;
 use crate::PlainSwitch;
 
 #[derive(Clone, Widget)]
-pub struct Switch<GS> where GS: GlobalState {
+pub struct Switch<GS> where GS: GlobalStateContract {
     id: Id,
     child: PlainSwitch<GS>,
     position: Point,
     dimension: Dimensions,
 }
 
-impl<GS: GlobalState> Switch<GS> {
+impl<GS: GlobalStateContract> Switch<GS> {
     pub fn new<S: Into<StringState<GS>>, L: Into<BoolState<GS>>>(label: S, checked: L) -> Box<Self> {
         let mut child = *PlainSwitch::new(label, checked.into());
 
@@ -73,7 +73,7 @@ impl<GS: GlobalState> Switch<GS> {
     }
 }
 
-impl<GS: GlobalState> CommonWidget<GS> for Switch<GS> {
+impl<GS: GlobalStateContract> CommonWidget<GS> for Switch<GS> {
     fn get_id(&self) -> Id {
         self.id
     }
@@ -119,9 +119,9 @@ impl<GS: GlobalState> CommonWidget<GS> for Switch<GS> {
     }
 }
 
-impl<GS: GlobalState> ChildRender for Switch<GS> {}
+impl<GS: GlobalStateContract> ChildRender for Switch<GS> {}
 
-impl<GS: GlobalState> Layout<GS> for Switch<GS> {
+impl<GS: GlobalStateContract> Layout<GS> for Switch<GS> {
     fn flexibility(&self) -> u32 {
         5
     }
@@ -146,4 +146,4 @@ impl<GS: GlobalState> Layout<GS> for Switch<GS> {
 }
 
 
-impl<GS: GlobalState> WidgetExt<GS> for Switch<GS> {}
+impl<GS: GlobalStateContract> WidgetExt<GS> for Switch<GS> {}

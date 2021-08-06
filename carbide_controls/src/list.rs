@@ -14,7 +14,7 @@ impl<T> ListIndex for T where T: ForEachDelegate {}
 #[derive(Clone, Widget)]
 #[event(handle_keyboard_event, handle_mouse_event)]
 #[state_sync(sync_state)]
-pub struct List<GS, T> where GS: GlobalState, T: ListIndex + 'static {
+pub struct List<GS, T> where GS: GlobalStateContract, T: ListIndex + 'static {
     id: Id,
     child: Box<dyn Widget<GS>>,
     delegate: Box<dyn Widget<GS>>,
@@ -30,7 +30,7 @@ pub struct List<GS, T> where GS: GlobalState, T: ListIndex + 'static {
     index_state: Box<dyn State<usize, GS>>,
 }
 
-impl<GS: GlobalState, T: ListIndex + 'static> List<GS, T> {
+impl<GS: GlobalStateContract, T: ListIndex + 'static> List<GS, T> {
     pub fn new(model: Box<dyn State<Vec<T>, GS>>, delegate: Box<dyn Widget<GS>>) -> Box<Self> {
         let index_offset_state = Box::new(CommonState::new_local_with_key(&0));
 
@@ -312,7 +312,7 @@ impl<GS: GlobalState, T: ListIndex + 'static> List<GS, T> {
     }
 }
 
-impl<GS: GlobalState, T: ListIndex> CommonWidget<GS> for List<GS, T> {
+impl<GS: GlobalStateContract, T: ListIndex> CommonWidget<GS> for List<GS, T> {
     fn get_id(&self) -> Id {
         self.id
     }
@@ -366,9 +366,9 @@ impl<GS: GlobalState, T: ListIndex> CommonWidget<GS> for List<GS, T> {
     }
 }
 
-impl<GS: GlobalState, T: ListIndex> ChildRender for List<GS, T> {}
+impl<GS: GlobalStateContract, T: ListIndex> ChildRender for List<GS, T> {}
 
-impl<GS: GlobalState, T: ListIndex> Layout<GS> for List<GS, T> {
+impl<GS: GlobalStateContract, T: ListIndex> Layout<GS> for List<GS, T> {
     fn flexibility(&self) -> u32 {
         10
     }
@@ -397,4 +397,4 @@ impl<GS: GlobalState, T: ListIndex> Layout<GS> for List<GS, T> {
     }
 }
 
-impl<GS: GlobalState, T: ListIndex + 'static> WidgetExt<GS> for List<GS, T> {}
+impl<GS: GlobalStateContract, T: ListIndex + 'static> WidgetExt<GS> for List<GS, T> {}

@@ -9,7 +9,7 @@ use crate::PlainButton;
 
 #[derive(Clone, Widget)]
 #[focusable(block_focus)]
-pub struct PlainRadioButton<T, GS> where GS: GlobalState, T: 'static + Serialize + Clone + Debug + Default + DeserializeOwned + PartialEq {
+pub struct PlainRadioButton<T, GS> where GS: GlobalStateContract, T: 'static + Serialize + Clone + Debug + Default + DeserializeOwned + PartialEq {
     id: Id,
     #[state] focus: FocusState<GS>,
     child: Box<dyn Widget<GS>>,
@@ -21,7 +21,7 @@ pub struct PlainRadioButton<T, GS> where GS: GlobalState, T: 'static + Serialize
     #[state] local_state: TState<T, GS>,
 }
 
-impl<T: 'static + Serialize + Clone + Debug + Default + DeserializeOwned + PartialEq, GS: GlobalState> PlainRadioButton<T, GS> {
+impl<T: 'static + Serialize + Clone + Debug + Default + DeserializeOwned + PartialEq, GS: GlobalStateContract> PlainRadioButton<T, GS> {
     pub fn focused<K: Into<FocusState<GS>>>(mut self, focused: K) -> Box<Self> {
         self.focus = focused.into();
         Box::new(self)
@@ -101,7 +101,7 @@ impl<T: 'static + Serialize + Clone + Debug + Default + DeserializeOwned + Parti
     }
 }
 
-impl<T: Serialize + Clone + Debug + Default + DeserializeOwned + PartialEq, GS: GlobalState> CommonWidget<GS> for PlainRadioButton<T, GS> {
+impl<T: Serialize + Clone + Debug + Default + DeserializeOwned + PartialEq, GS: GlobalStateContract> CommonWidget<GS> for PlainRadioButton<T, GS> {
     fn get_id(&self) -> Id {
         self.id
     }
@@ -155,9 +155,9 @@ impl<T: Serialize + Clone + Debug + Default + DeserializeOwned + PartialEq, GS: 
     }
 }
 
-impl<T: Serialize + Clone + Debug + Default + DeserializeOwned + PartialEq, GS: GlobalState> ChildRender for PlainRadioButton<T, GS> {}
+impl<T: Serialize + Clone + Debug + Default + DeserializeOwned + PartialEq, GS: GlobalStateContract> ChildRender for PlainRadioButton<T, GS> {}
 
-impl<T: Serialize + Clone + Debug + Default + DeserializeOwned + PartialEq, GS: GlobalState> Layout<GS> for PlainRadioButton<T, GS> {
+impl<T: Serialize + Clone + Debug + Default + DeserializeOwned + PartialEq, GS: GlobalStateContract> Layout<GS> for PlainRadioButton<T, GS> {
     fn flexibility(&self) -> u32 {
         10
     }
@@ -185,4 +185,4 @@ impl<T: Serialize + Clone + Debug + Default + DeserializeOwned + PartialEq, GS: 
 }
 
 
-impl<T: 'static + Serialize + Clone + Debug + Default + DeserializeOwned + PartialEq, GS: GlobalState> WidgetExt<GS> for PlainRadioButton<T, GS> {}
+impl<T: 'static + Serialize + Clone + Debug + Default + DeserializeOwned + PartialEq, GS: GlobalStateContract> WidgetExt<GS> for PlainRadioButton<T, GS> {}

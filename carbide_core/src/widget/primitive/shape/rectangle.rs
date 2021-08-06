@@ -11,8 +11,8 @@ use crate::widget::types::stroke_style::StrokeStyle;
 use crate::widget::types::triangle_store::TriangleStore;
 
 /// A basic, non-interactive rectangle shape widget.
-#[derive(Debug, Clone, Default, Widget)]
-pub struct Rectangle<GS> where GS: GlobalState {
+#[derive(Debug, Clone, Widget)]
+pub struct Rectangle<GS> where GS: GlobalStateContract {
     id: Uuid,
     children: Vec<Box<dyn Widget<GS>>>,
     position: Point,
@@ -26,7 +26,7 @@ pub struct Rectangle<GS> where GS: GlobalState {
     triangle_store: TriangleStore,
 }
 
-impl<GS: GlobalState> Rectangle<GS> {
+impl<GS: GlobalStateContract> Rectangle<GS> {
     pub fn fill<C: Into<ColorState<GS>>>(mut self, color: C) -> Box<Self> {
         self.fill_color = color.into();
         self.style += ShapeStyle::Fill;
@@ -136,7 +136,7 @@ impl<GS: GlobalState> Rectangle<GS> {
 }
 
 
-impl<GS: GlobalState> Layout<GS> for Rectangle<GS> {
+impl<GS: GlobalStateContract> Layout<GS> for Rectangle<GS> {
     fn flexibility(&self) -> u32 {
         0
     }
@@ -177,7 +177,7 @@ impl<GS: GlobalState> Layout<GS> for Rectangle<GS> {
     }
 }
 
-impl<GS: GlobalState> CommonWidget<GS> for Rectangle<GS> {
+impl<GS: GlobalStateContract> CommonWidget<GS> for Rectangle<GS> {
     fn get_id(&self) -> Uuid {
         self.id
     }
@@ -246,7 +246,7 @@ impl<GS: GlobalState> CommonWidget<GS> for Rectangle<GS> {
     }
 }
 
-impl<GS: GlobalState> Shape<GS> for Rectangle<GS> {
+impl<GS: GlobalStateContract> Shape<GS> for Rectangle<GS> {
     fn get_triangle_store_mut(&mut self) -> &mut TriangleStore {
         &mut self.triangle_store
     }
@@ -260,20 +260,20 @@ impl<GS: GlobalState> Shape<GS> for Rectangle<GS> {
     }
 }
 
-impl<GS: GlobalState> Render<GS> for Rectangle<GS> {
-    fn get_primitives(&mut self, env: &mut Environment<GS>, global_state: &GS) -> Vec<Primitive> {
+impl<GS: GlobalStateContract> Render<GS> for Rectangle<GS> {
+    fn get_primitives(&mut self, env: &mut Environment<GS>) -> Vec<Primitive> {
         let mut prims = vec![];
 
         match self.style {
             ShapeStyle::Default => {
                 prims.push(Primitive {
-                    kind: PrimitiveKind::Rectangle { color: self.fill_color.get_latest_value().clone() },
+                    kind: PrimitiveKind::Rectangle { color: *self.fill_color },
                     rect: OldRect::new(self.position, self.dimension),
                 });
             }
             ShapeStyle::Fill => {
                 prims.push(Primitive {
-                    kind: PrimitiveKind::Rectangle { color: self.fill_color.get_latest_value().clone() },
+                    kind: PrimitiveKind::Rectangle { color: *self.fill_color },
                     rect: OldRect::new(self.position, self.dimension),
                 });
             }
@@ -294,13 +294,13 @@ impl<GS: GlobalState> Render<GS> for Rectangle<GS> {
                 let stroke_triangles = self.triangle_store.stroke_triangles.clone();
 
                 prims.push(Primitive {
-                    kind: PrimitiveKind::TrianglesSingleColor { color: Rgba::from(*self.stroke_color.get_latest_value()), triangles: stroke_triangles },
+                    kind: PrimitiveKind::TrianglesSingleColor { color: Rgba::from(*self.stroke_color), triangles: stroke_triangles },
                     rect: OldRect::new(self.position, self.dimension),
                 });
             }
             ShapeStyle::FillAndStroke => {
                 prims.push(Primitive {
-                    kind: PrimitiveKind::Rectangle { color: self.fill_color.get_latest_value().clone() },
+                    kind: PrimitiveKind::Rectangle { color: *self.fill_color },
                     rect: OldRect::new(self.position, self.dimension),
                 });
 
@@ -320,15 +320,13 @@ impl<GS: GlobalState> Render<GS> for Rectangle<GS> {
                 let stroke_triangles = self.triangle_store.stroke_triangles.clone();
 
                 prims.push(Primitive {
-                    kind: PrimitiveKind::TrianglesSingleColor { color: Rgba::from(*self.stroke_color.get_latest_value()), triangles: stroke_triangles },
+                    kind: PrimitiveKind::TrianglesSingleColor { color: Rgba::from(*self.stroke_color), triangles: stroke_triangles },
                     rect: OldRect::new(self.position, self.dimension),
                 });
             }
         }
 
         prims.extend(Rectangle::<GS>::debug_outline(OldRect::new(self.position, self.dimension), 1.0));
-        let children: Vec<Primitive> = self.get_children_mut().flat_map(|f| f.get_primitives(env, global_state)).collect();
-        prims.extend(children);
 
         return prims;
     }
@@ -343,4 +341,4 @@ pub enum Kind {
     Fill,
 }
 
-impl<GS: GlobalState> WidgetExt<GS> for Rectangle<GS> {}
+impl<GS: GlobalStateContract> WidgetExt<GS> for Rectangle<GS> {}

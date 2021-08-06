@@ -1,11 +1,8 @@
-use rusttype::{GlyphId, point, PositionedGlyph, Scale};
+use rusttype::{GlyphId, point, PositionedGlyph};
 
-use crate::{Point, Scalar};
 use crate::draw::{Dimension, Position, Rect};
 use crate::mesh::TextureAtlasIndex;
-use crate::text::{Font, FontId, FontSize, InnerGlyph};
-use crate::text::text_style::TextStyle;
-use crate::widget::{Environment, GlobalState};
+use crate::text::{FontId, FontSize};
 
 #[derive(Debug, Clone)]
 pub struct Glyph {

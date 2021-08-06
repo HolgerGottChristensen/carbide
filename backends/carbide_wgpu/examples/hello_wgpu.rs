@@ -58,7 +58,7 @@ fn main() {
     window.run_event_loop();
 }
 
-fn draw_heart<GS: GlobalState>(_: OldRect, mut context: Context<GS>) -> Context<GS> {
+fn draw_heart<GS: GlobalStateContract>(_: OldRect, mut context: Context<GS>) -> Context<GS> {
     context.move_to(75.0, 40.0);
     context.bezier_curve_to([75.0, 37.0], [70.0, 25.0], [50.0, 25.0]);
     context.bezier_curve_to([20.0, 25.0], [20.0, 62.5], [20.0, 62.5]);

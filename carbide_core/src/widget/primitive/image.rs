@@ -23,9 +23,9 @@ pub struct Image {
     requested_size: Dimensions,
 }
 
-impl<GS: GlobalState> WidgetExt<GS> for Image {}
+impl<GS: GlobalStateContract> WidgetExt<GS> for Image {}
 
-impl<GS: GlobalState> Layout<GS> for Image {
+impl<GS: GlobalStateContract> Layout<GS> for Image {
     fn flexibility(&self) -> u32 {
         10
     }
@@ -64,8 +64,8 @@ impl<GS: GlobalState> Layout<GS> for Image {
     fn position_children(&mut self) {}
 }
 
-impl<GS: GlobalState> Render<GS> for Image {
-    fn get_primitives(&mut self, env: &mut Environment<GS>, global_state: &GS) -> Vec<Primitive> {
+impl<GS: GlobalStateContract> Render<GS> for Image {
+    fn get_primitives(&mut self, _: &mut Environment<GS>) -> Vec<Primitive> {
         let kind = PrimitiveKind::Image {
             color: None,
             image_id: self.image_id,
@@ -74,13 +74,11 @@ impl<GS: GlobalState> Render<GS> for Image {
 
         let rect = OldRect::new(self.position, self.dimension);
 
-        let mut prims: Vec<Primitive> = vec![new_primitive(kind, rect)];
-        prims.extend(Rectangle::<GS>::debug_outline(rect.clone(), 1.0));
-        return prims;
+        return vec![new_primitive(kind, rect)];
     }
 }
 
-impl<S: GlobalState> CommonWidget<S> for Image {
+impl<S: GlobalStateContract> CommonWidget<S> for Image {
     fn get_id(&self) -> Uuid {
         self.id
     }

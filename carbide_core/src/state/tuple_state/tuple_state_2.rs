@@ -1,18 +1,19 @@
+use std::fmt::{Debug, Formatter};
+use std::ops::{Deref, DerefMut};
+
 use crate::prelude::Environment;
-use crate::prelude::GlobalState;
+use crate::prelude::GlobalStateContract;
 use crate::state::{StateContract, TState};
+use crate::state::global_state::GlobalStateContainer;
 use crate::state::state::State;
-use crate::state::state_key::StateKey;
 use crate::state::widget_state::WidgetState;
 
 #[derive(Clone)]
-pub struct TupleState2<T, U, GS> where T: StateContract, U: StateContract, GS: GlobalState {
-    fst: TState<T, GS>,
-    snd: TState<U, GS>,
-    latest_value: (T, U),
+pub struct TupleState2<T, U, GS> where T: StateContract, U: StateContract, GS: GlobalStateContract {
+    state: (TState<T, GS>, TState<U, GS>),
 }
 
-impl<T: StateContract, U: StateContract, GS: GlobalState> TupleState2<T, U, GS> {
+impl<T: StateContract, U: StateContract, GS: GlobalStateContract> TupleState2<T, U, GS> {
     pub fn new<IT, IU>(fst: IT, snd: IU) -> Box<TupleState2<T, U, GS>>
         where
             IT: Into<TState<T, GS>>,
@@ -22,65 +23,47 @@ impl<T: StateContract, U: StateContract, GS: GlobalState> TupleState2<T, U, GS> 
         let snd = snd.into();
 
         Box::new(TupleState2 {
-            fst: fst.clone(),
-            snd: snd.clone(),
-            latest_value: (fst.get_latest_value().clone(), snd.get_latest_value().clone()),
+            state: (fst, snd)
         })
     }
 }
 
-impl<T: StateContract, U: StateContract, GS: GlobalState> From<(TState<T, GS>, TState<U, GS>)> for TupleState2<T, U, GS> {
-    fn from((first, second): (TState<T, GS>, TState<U, GS>)) -> Self {
-        TupleState2 {
-            fst: first.clone(),
-            snd: second.clone(),
-            latest_value: (first.get_latest_value().clone(), second.get_latest_value().clone()),
-        }
+impl<T: StateContract, U: StateContract, GS: GlobalStateContract> Deref for TupleState2<T, U, GS> {
+    type Target = (TState<T, GS>, TState<U, GS>);
+
+    fn deref(&self) -> &Self::Target {
+        &self.state
     }
 }
 
-impl<T: StateContract + 'static, U: StateContract + 'static, GS: GlobalState> Into<TState<(T, U), GS>> for Box<TupleState2<T, U, GS>> {
-    fn into(self) -> TState<(T, U), GS> {
+impl<T: StateContract, U: StateContract, GS: GlobalStateContract> DerefMut for TupleState2<T, U, GS> {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.state
+    }
+}
+
+impl<T: StateContract, U: StateContract, GS: GlobalStateContract> State<(TState<T, GS>, TState<U, GS>), GS> for TupleState2<T, U, GS> {
+    fn capture_state(&mut self, env: &mut Environment<GS>, global_state: &GlobalStateContainer<GS>) {
+        self.state.0.capture_state(env, global_state);
+        self.state.1.capture_state(env, global_state);
+    }
+
+    fn release_state(&mut self, env: &mut Environment<GS>) {
+        self.state.0.release_state(env);
+        self.state.1.release_state(env);
+    }
+}
+
+impl<T: StateContract, U: StateContract, GS: GlobalStateContract> Debug for TupleState2<T, U, GS> {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("State::TupleState2")
+            .field("value", self.deref())
+            .finish()
+    }
+}
+
+impl<T: StateContract + 'static, U: StateContract + 'static, GS: GlobalStateContract> Into<TState<(TState<T, GS>, TState<U, GS>), GS>> for Box<TupleState2<T, U, GS>> {
+    fn into(self) -> TState<(TState<T, GS>, TState<U, GS>), GS> {
         WidgetState::new(self)
-    }
-}
-
-impl<T: StateContract, U: StateContract, GS: GlobalState> State<(T, U), GS> for TupleState2<T, U, GS> {
-    fn get_value_mut(&mut self, env: &mut Environment<GS>, global_state: &mut GS) -> &mut (T, U) {
-        self.latest_value = (self.fst.get_value_mut(env, global_state).clone(), self.snd.get_value_mut(env, global_state).clone());
-        &mut self.latest_value
-    }
-
-    fn get_value(&mut self, env: &Environment<GS>, global_state: &GS) -> &(T, U) {
-        self.latest_value = (self.fst.get_value(env, global_state).clone(), self.snd.get_value(env, global_state).clone());
-        &self.latest_value
-    }
-
-    fn get_latest_value(&self) -> &(T, U) {
-        &self.latest_value
-    }
-
-    fn get_latest_value_mut(&mut self) -> &mut (T, U) {
-        &mut self.latest_value
-    }
-
-    fn get_key(&self) -> Option<&StateKey> {
-        None
-    }
-
-    fn update_dependent_states(&mut self, env: &Environment<GS>) {
-        env.update_local_state(&mut self.fst);
-        env.update_local_state(&mut self.snd);
-    }
-
-    fn insert_dependent_states(&self, env: &mut Environment<GS>) {
-
-        if let Some(fst_key) = self.fst.get_key() {
-            env.insert_local_state_from_key_value(fst_key, &self.latest_value.0);
-        }
-
-        if let Some(snd_key) = self.snd.get_key() {
-            env.insert_local_state_from_key_value(snd_key, &self.latest_value.1);
-        }
     }
 }

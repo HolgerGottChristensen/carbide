@@ -1,13 +1,12 @@
 use crate::event::event::Event;
 use crate::event_handler::{KeyboardEvent, MouseEvent, WidgetEvent};
 use crate::prelude::*;
-use crate::state::state_sync::StateSync;
+use crate::state::global_state::GlobalStateContainer;
 
 /// A basic, non-interactive rectangle shape widget.
 #[derive(Debug, Clone, Widget)]
 #[event(process_keyboard_event, process_mouse_event, process_other_event)]
-#[state_sync(sync_state)]
-pub struct EnvUpdating<GS> where GS: GlobalState {
+pub struct EnvUpdating<GS> where GS: GlobalStateContract {
     id: Uuid,
     child: Box<dyn Widget<GS>>,
     position: Point,
@@ -16,7 +15,7 @@ pub struct EnvUpdating<GS> where GS: GlobalState {
 }
 
 #[derive(Debug, Clone)]
-pub enum EnvironmentStateContainer<GS> where GS: GlobalState {
+pub enum EnvironmentStateContainer<GS> where GS: GlobalStateContract {
     String { key: String, value: Box<dyn State<String, GS>> },
     U32 { key: String, value: Box<dyn State<u32, GS>> },
     F64 { key: String, value: Box<dyn State<f64, GS>> },
@@ -25,7 +24,7 @@ pub enum EnvironmentStateContainer<GS> where GS: GlobalState {
     I32 { key: String, value: Box<dyn State<i32, GS>> },
 }
 
-impl<GS: GlobalState> EnvUpdating<GS> {
+impl<GS: GlobalStateContract> EnvUpdating<GS> {
     pub fn new(child: Box<dyn Widget<GS>>) -> Box<EnvUpdating<GS>> {
         Box::new(EnvUpdating {
             id: Uuid::new_v4(),
@@ -40,32 +39,24 @@ impl<GS: GlobalState> EnvUpdating<GS> {
         self.envs_to_update.push(env_to_update);
     }
 
-    fn sync_state(&mut self, env: &mut Environment<GS>, global_state: &GS) {
-        self.insert_into_env(env, global_state);
-
-        self.default_sync_state(env, global_state);
-
-        self.remove_from_env(env);
-    }
-
-    fn process_keyboard_event(&mut self, event: &KeyboardEvent, env: &mut Environment<GS>, global_state: &mut GS) {
-        self.insert_into_env(env, global_state);
+    fn process_keyboard_event(&mut self, event: &KeyboardEvent, env: &mut Environment<GS>, global_state: &GlobalStateContainer<GS>) {
+        self.insert_into_env(env);
 
         self.process_keyboard_event_default(event, env, global_state);
 
         self.remove_from_env(env);
     }
 
-    fn process_mouse_event(&mut self, event: &MouseEvent, consumed: &bool, env: &mut Environment<GS>, global_state: &mut GS) {
-        self.insert_into_env(env, global_state);
+    fn process_mouse_event(&mut self, event: &MouseEvent, consumed: &bool, env: &mut Environment<GS>, global_state: &GlobalStateContainer<GS>) {
+        self.insert_into_env(env);
 
         self.process_mouse_event_default(event, consumed, env, global_state);
 
         self.remove_from_env(env);
     }
 
-    fn process_other_event(&mut self, event: &WidgetEvent, env: &mut Environment<GS>, global_state: &mut GS) {
-        self.insert_into_env(env, global_state);
+    fn process_other_event(&mut self, event: &WidgetEvent, env: &mut Environment<GS>, global_state: &GlobalStateContainer<GS>) {
+        self.insert_into_env(env);
 
         self.process_other_event_default(event, env, global_state);
 
@@ -78,36 +69,36 @@ impl<GS: GlobalState> EnvUpdating<GS> {
         }
     }
 
-    fn insert_into_env(&mut self, env: &mut Environment<GS>, global_state: &GS) {
+    fn insert_into_env(&mut self, env: &mut Environment<GS>) {
         for env_to_update in &mut self.envs_to_update {
             match env_to_update {
                 EnvironmentStateContainer::String { key, value } => {
-                    let to_update = value.get_value(env, global_state).clone();
+                    let to_update = (&***value).clone();
 
                     env.push(EnvironmentVariable::String { key: key.clone(), value: to_update })
                 }
                 EnvironmentStateContainer::U32 { key, value } => {
-                    let to_update = value.get_value(env, global_state).clone();
+                    let to_update = **value.clone();
 
                     env.push(EnvironmentVariable::U32 { key: key.clone(), value: to_update })
                 }
                 EnvironmentStateContainer::F64 { key, value } => {
-                    let to_update = value.get_value(env, global_state).clone();
+                    let to_update = **value.clone();
 
                     env.push(EnvironmentVariable::F64 { key: key.clone(), value: to_update })
                 }
                 EnvironmentStateContainer::Color { key, value } => {
-                    let to_update = value.get_value(env, global_state).clone();
+                    let to_update = *value.clone();
 
                     env.push(EnvironmentVariable::Color { key: key.clone(), value: to_update })
                 }
                 EnvironmentStateContainer::FontSize { key, value } => {
-                    let to_update = value.get_value(env, global_state).clone();
+                    let to_update = *value.clone();
 
                     env.push(EnvironmentVariable::FontSize { key: key.clone(), value: to_update })
                 }
                 EnvironmentStateContainer::I32 { key, value } => {
-                    let to_update = value.get_value(env, global_state).clone();
+                    let to_update = **value.clone();
 
                     env.push(EnvironmentVariable::I32 { key: key.clone(), value: to_update })
                 }
@@ -117,7 +108,7 @@ impl<GS: GlobalState> EnvUpdating<GS> {
 }
 
 
-impl<GS: GlobalState> Layout<GS> for EnvUpdating<GS> {
+impl<GS: GlobalStateContract> Layout<GS> for EnvUpdating<GS> {
     fn flexibility(&self) -> u32 {
         self.child.flexibility()
     }
@@ -137,7 +128,7 @@ impl<GS: GlobalState> Layout<GS> for EnvUpdating<GS> {
     }
 }
 
-impl<GS: GlobalState> CommonWidget<GS> for EnvUpdating<GS> {
+impl<GS: GlobalStateContract> CommonWidget<GS> for EnvUpdating<GS> {
     fn get_id(&self) -> Uuid {
         self.id
     }
@@ -192,12 +183,12 @@ impl<GS: GlobalState> CommonWidget<GS> for EnvUpdating<GS> {
     }
 }
 
-impl<GS: GlobalState> Render<GS> for EnvUpdating<GS> {
-    fn get_primitives(&mut self, env: &mut Environment<GS>, global_state: &GS) -> Vec<Primitive> {
-        let prims = self.child.get_primitives(env, global_state);
+impl<GS: GlobalStateContract> Render<GS> for EnvUpdating<GS> {
+    fn get_primitives(&mut self, env: &mut Environment<GS>) -> Vec<Primitive> {
+        let prims = self.child.get_primitives(env);
         return prims;
     }
 }
 
 
-impl<GS: GlobalState> WidgetExt<GS> for EnvUpdating<GS> {}
+impl<GS: GlobalStateContract> WidgetExt<GS> for EnvUpdating<GS> {}

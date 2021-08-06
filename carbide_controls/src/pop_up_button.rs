@@ -7,14 +7,14 @@ use carbide_core::widget::*;
 use crate::PlainPopUpButton;
 
 #[derive(Clone, Widget)]
-pub struct PopUpButton<T, GS> where GS: GlobalState, T: Serialize + Clone + Debug + Default + DeserializeOwned + 'static {
+pub struct PopUpButton<T, GS> where GS: GlobalStateContract, T: Serialize + Clone + Debug + Default + DeserializeOwned + 'static {
     id: Id,
     child: PlainPopUpButton<T, GS>,
     position: Point,
     dimension: Dimensions,
 }
 
-impl<T: Serialize + Clone + Debug + Default + DeserializeOwned + 'static, GS: GlobalState> PopUpButton<T, GS> {
+impl<T: Serialize + Clone + Debug + Default + DeserializeOwned + 'static, GS: GlobalStateContract> PopUpButton<T, GS> {
     pub fn new(model: Box<dyn State<Vec<T>, GS>>, selected_state: Box<dyn State<usize, GS>>) -> Box<Self> {
         let mut child = *PlainPopUpButton::new(model, selected_state);
 
@@ -101,7 +101,7 @@ impl<T: Serialize + Clone + Debug + Default + DeserializeOwned + 'static, GS: Gl
     }
 }
 
-impl<T: Serialize + Clone + Debug + Default + DeserializeOwned + 'static, GS: GlobalState> CommonWidget<GS> for PopUpButton<T, GS> {
+impl<T: Serialize + Clone + Debug + Default + DeserializeOwned + 'static, GS: GlobalStateContract> CommonWidget<GS> for PopUpButton<T, GS> {
     fn get_id(&self) -> Id {
         self.id
     }
@@ -147,9 +147,9 @@ impl<T: Serialize + Clone + Debug + Default + DeserializeOwned + 'static, GS: Gl
     }
 }
 
-impl<T: Serialize + Clone + Debug + Default + DeserializeOwned + 'static, GS: GlobalState> ChildRender for PopUpButton<T, GS> {}
+impl<T: Serialize + Clone + Debug + Default + DeserializeOwned + 'static, GS: GlobalStateContract> ChildRender for PopUpButton<T, GS> {}
 
-impl<T: Serialize + Clone + Debug + Default + DeserializeOwned + 'static, GS: GlobalState> Layout<GS> for PopUpButton<T, GS> {
+impl<T: Serialize + Clone + Debug + Default + DeserializeOwned + 'static, GS: GlobalStateContract> Layout<GS> for PopUpButton<T, GS> {
     fn flexibility(&self) -> u32 {
         5
     }
@@ -173,4 +173,4 @@ impl<T: Serialize + Clone + Debug + Default + DeserializeOwned + 'static, GS: Gl
     }
 }
 
-impl<T: Serialize + Clone + Debug + Default + DeserializeOwned + 'static, GS: GlobalState> WidgetExt<GS> for PopUpButton<T, GS> {}
+impl<T: Serialize + Clone + Debug + Default + DeserializeOwned + 'static, GS: GlobalStateContract> WidgetExt<GS> for PopUpButton<T, GS> {}

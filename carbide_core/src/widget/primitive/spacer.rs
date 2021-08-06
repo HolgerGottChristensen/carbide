@@ -10,7 +10,7 @@ pub struct Spacer {
     space: SpacerDirection,
 }
 
-impl<GS: GlobalState> WidgetExt<GS> for Spacer {}
+impl<GS: GlobalStateContract> WidgetExt<GS> for Spacer {}
 
 impl Spacer {
     pub fn new(space: SpacerDirection) -> Box<Self> {
@@ -23,7 +23,7 @@ impl Spacer {
     }
 }
 
-impl<GS: GlobalState> Layout<GS> for Spacer {
+impl<GS: GlobalStateContract> Layout<GS> for Spacer {
     fn flexibility(&self) -> u32 {
         0
     }
@@ -47,7 +47,7 @@ impl<GS: GlobalState> Layout<GS> for Spacer {
     fn position_children(&mut self) {}
 }
 
-impl<S: GlobalState> CommonWidget<S> for Spacer {
+impl<S: GlobalStateContract> CommonWidget<S> for Spacer {
     fn get_id(&self) -> Uuid {
         self.id
     }

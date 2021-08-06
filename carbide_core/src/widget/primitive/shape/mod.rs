@@ -6,7 +6,7 @@ use lyon::tessellation::path::Path;
 
 use crate::{Point, Scalar};
 use crate::draw::shape::triangle::Triangle;
-use crate::widget::{CommonWidget, GlobalState};
+use crate::widget::{CommonWidget, GlobalStateContract};
 use crate::widget::types::shape_style::ShapeStyle;
 use crate::widget::types::stroke_style::StrokeStyle;
 use crate::widget::types::triangle_store::TriangleStore;
@@ -17,13 +17,13 @@ pub mod rectangle;
 pub mod rounded_rectangle;
 pub mod capsule;
 
-pub trait Shape<GS>: CommonWidget<GS> where GS: GlobalState {
+pub trait Shape<GS>: CommonWidget<GS> where GS: GlobalStateContract {
     fn get_triangle_store_mut(&mut self) -> &mut TriangleStore;
     fn get_stroke_style(&self) -> StrokeStyle;
     fn get_shape_style(&self) -> ShapeStyle;
 }
 
-pub fn tessellate<GS: GlobalState>(shape: &mut dyn Shape<GS>, rectangle: &Rect, path: &dyn Fn(&mut Builder, &Rect)) {
+pub fn tessellate<GS: GlobalStateContract>(shape: &mut dyn Shape<GS>, rectangle: &Rect, path: &dyn Fn(&mut Builder, &Rect)) {
     match shape.get_shape_style() {
         ShapeStyle::Default | ShapeStyle::Fill => {
             fill(path, shape, rectangle);
@@ -38,7 +38,7 @@ pub fn tessellate<GS: GlobalState>(shape: &mut dyn Shape<GS>, rectangle: &Rect, 
     }
 }
 
-pub fn fill<GS: GlobalState>(path: &dyn Fn(&mut Builder, &Rect), shape: &mut dyn Shape<GS>, rectangle: &Rect) {
+pub fn fill<GS: GlobalStateContract>(path: &dyn Fn(&mut Builder, &Rect), shape: &mut dyn Shape<GS>, rectangle: &Rect) {
     let position = shape.get_position();
     let dimension = shape.get_dimension();
     let triangle_store = shape.get_triangle_store_mut();
@@ -58,7 +58,6 @@ pub fn fill<GS: GlobalState>(path: &dyn Fn(&mut Builder, &Rect), shape: &mut dyn
         let fill_options = FillOptions::default();
 
 
-
         {
             // Compute the tessellation.
             tessellator.tessellate_path(
@@ -70,7 +69,6 @@ pub fn fill<GS: GlobalState>(path: &dyn Fn(&mut Builder, &Rect), shape: &mut dyn
                 }),
             ).unwrap();
         }
-
 
 
         let point_iter = geometry.indices.iter().map(|index| geometry.vertices[*index as usize]);
@@ -85,7 +83,7 @@ pub fn fill<GS: GlobalState>(path: &dyn Fn(&mut Builder, &Rect), shape: &mut dyn
     }
 }
 
-pub fn stroke<GS: GlobalState>(path: &dyn Fn(&mut Builder, &Rect), shape: &mut dyn Shape<GS>, rectangle: &Rect) {
+pub fn stroke<GS: GlobalStateContract>(path: &dyn Fn(&mut Builder, &Rect), shape: &mut dyn Shape<GS>, rectangle: &Rect) {
     let position = shape.get_position();
     let dimension = shape.get_dimension();
     let line_width = shape.get_stroke_style().get_line_width() as f32;
@@ -126,7 +124,6 @@ pub fn stroke<GS: GlobalState>(path: &dyn Fn(&mut Builder, &Rect), shape: &mut d
             }
 
 
-
             let point_iter = geometry.indices.iter().map(|index| geometry.vertices[*index as usize]);
 
             point_iter.collect()
@@ -146,7 +143,6 @@ pub fn stroke<GS: GlobalState>(path: &dyn Fn(&mut Builder, &Rect), shape: &mut d
             closest
         }
 
-
         {
             // Compute the tessellation.
             tessellator.tessellate_path(
@@ -157,12 +153,10 @@ pub fn stroke<GS: GlobalState>(path: &dyn Fn(&mut Builder, &Rect), shape: &mut d
                     if vertex.side() == Side::Left {
                         [point[0] as Scalar, point[1] as Scalar]
                     } else {
-
                         let p = [point[0] as Scalar, point[1] as Scalar];
 
                         get_closest_point(p, &filled_points)
                     }
-
                 }),
             ).unwrap();
         }

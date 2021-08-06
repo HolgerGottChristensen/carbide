@@ -1,8 +1,8 @@
 use std::ops::{Add, Div};
 
-use crate::{Point, Scalar};
 use crate::draw::dimension::Dimension;
 use crate::draw::Position;
+use crate::Scalar;
 
 #[derive(Copy, Clone, PartialOrd, PartialEq, Debug, Default)]
 pub struct Rect {

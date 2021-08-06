@@ -2,19 +2,16 @@ use std::borrow::Borrow;
 use std::fmt::Debug;
 
 use instant::Instant;
-use rusttype::Scale;
 
 use crate::draw::{Dimension, Position};
 use crate::prelude::*;
 use crate::render::primitive_kind::PrimitiveKind;
 //use crate::render::text::Text as RenderText;
 use crate::render::util::new_primitive;
-use crate::text::{FontId, FontStyle, FontWeight, Glyph, NoStyleTextSpanGenerator, TextDecoration, TextSpanGenerator, TextStyle};
+use crate::text::{FontStyle, FontWeight, Glyph, NoStyleTextSpanGenerator, TextDecoration, TextSpanGenerator, TextStyle};
 use crate::text::Text as InternalText;
 //use crate::text_old::PositionedGlyph;
-use crate::utils;
 use crate::widget::types::justify;
-use crate::widget::types::justify::Justify;
 use crate::widget::types::text_wrap::Wrap;
 
 /// Displays some given text centered within a rectangular area.
@@ -24,7 +21,7 @@ use crate::widget::types::text_wrap::Wrap;
 /// If some horizontal dimension is given, the text will automatically wrap to the width and align
 /// in accordance with the produced **Alignment**.
 #[derive(Debug, Clone, Widget)]
-pub struct Text<GS> where GS: GlobalState {
+pub struct Text<GS> where GS: GlobalStateContract {
     id: Uuid,
     position: Point,
     dimension: Dimensions,
@@ -40,7 +37,7 @@ pub struct Text<GS> where GS: GlobalState {
     text_span_generator: Box<dyn TextSpanGenerator<GS>>,
 }
 
-impl<GS: GlobalState> Text<GS> {
+impl<GS: GlobalStateContract> Text<GS> {
     pub fn new<K: Into<StringState<GS>>>(text: K) -> Box<Self> {
         let text = text.into();
 
@@ -126,16 +123,16 @@ impl<GS: GlobalState> Text<GS> {
     pub fn get_style(&self) -> TextStyle {
         TextStyle {
             font_family: self.font_family.clone(),
-            font_size: *self.font_size.get_latest_value(),
+            font_size: *self.font_size,
             font_style: self.font_style,
             font_weight: self.font_weight,
             text_decoration: self.text_decoration.clone(),
-            color: Some(self.color.get_latest_value().clone()),
+            color: Some(*self.color.clone()),
         }
     }
 }
 
-impl<GS: GlobalState> Layout<GS> for Text<GS> {
+impl<GS: GlobalStateContract> Layout<GS> for Text<GS> {
     fn flexibility(&self) -> u32 {
         2
     }
@@ -145,16 +142,16 @@ impl<GS: GlobalState> Layout<GS> for Text<GS> {
         let style = self.get_style();
 
         if let None = self.internal_text {
-            let text = self.text.get_latest_value().clone();
+            let text = (&*self.text).clone();
             let style = self.get_style();
             self.internal_text = Some(InternalText::new(text, style, self.text_span_generator.borrow(), env))
         }
 
 
         if let Some(internal) = &mut self.internal_text {
-            let text = self.text.get_latest_value();
-            if internal.string_that_generated_this() != text {
-                *internal = InternalText::new(text.clone(), style, self.text_span_generator.borrow(), env);
+            let text = (&*self.text).clone();
+            if internal.string_that_generated_this() != &text {
+                *internal = InternalText::new(text, style, self.text_span_generator.borrow(), env);
             }
             let size = internal.calculate_size(Dimension::new(requested_size[0], requested_size[1]), env);
 
@@ -174,10 +171,10 @@ impl<GS: GlobalState> Layout<GS> for Text<GS> {
     }
 }
 
-impl<GS: GlobalState> Render<GS> for Text<GS> {
-    fn get_primitives(&mut self, env: &mut Environment<GS>, global_state: &GS) -> Vec<Primitive> {
+impl<GS: GlobalStateContract> Render<GS> for Text<GS> {
+    fn get_primitives(&mut self, env: &mut Environment<GS>) -> Vec<Primitive> {
         let mut prims: Vec<Primitive> = vec![];
-        let default_color = self.color.get_latest_value().clone();
+        let default_color = *self.color.clone();
 
         if let Some(internal) = &mut self.internal_text {
             internal.ensure_glyphs_added_to_atlas(env);
@@ -211,7 +208,7 @@ impl<GS: GlobalState> Render<GS> for Text<GS> {
     }
 }
 
-impl<S: GlobalState> CommonWidget<S> for Text<S> {
+impl<S: GlobalStateContract> CommonWidget<S> for Text<S> {
     fn get_id(&self) -> Uuid {
         self.id
     }
@@ -257,4 +254,4 @@ impl<S: GlobalState> CommonWidget<S> for Text<S> {
     }
 }
 
-impl<GS: GlobalState> WidgetExt<GS> for Text<GS> {}
+impl<GS: GlobalStateContract> WidgetExt<GS> for Text<GS> {}

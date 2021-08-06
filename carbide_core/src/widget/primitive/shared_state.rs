@@ -1,6 +1,7 @@
 use std::fmt::Debug;
 
 use crate::prelude::*;
+use crate::widget::ChildRender;
 
 /// This widget is for containing shared state. This is very rarely needed as there always is a
 /// source of truth. The state is always kept in a parent. If this is not the case we need this widget.
@@ -8,7 +9,7 @@ use crate::prelude::*;
 /// further down the tree than the items in the foreach. The first item in the foreach if there is no
 /// parent state, the first item in the foreach widget will override all the others state.
 #[derive(Debug, Clone, Widget)]
-pub struct SharedState<T, GS> where T: StateContract, GS: GlobalState {
+pub struct SharedState<T, GS> where T: StateContract, GS: GlobalStateContract {
     id: Uuid,
     child: Box<dyn Widget<GS>>,
     position: Point,
@@ -16,7 +17,7 @@ pub struct SharedState<T, GS> where T: StateContract, GS: GlobalState {
     #[state] shared_state: TState<T, GS>,
 }
 
-impl<T: StateContract, GS: GlobalState> SharedState<T, GS> {
+impl<T: StateContract, GS: GlobalStateContract> SharedState<T, GS> {
     pub fn new<S: Into<TState<T, GS>>>(shared_state: S, child: Box<dyn Widget<GS>>) -> Box<Self> {
         Box::new(SharedState {
             id: Uuid::new_v4(),
@@ -28,7 +29,7 @@ impl<T: StateContract, GS: GlobalState> SharedState<T, GS> {
     }
 }
 
-impl<T: StateContract, GS: GlobalState> Layout<GS> for SharedState<T, GS> {
+impl<T: StateContract, GS: GlobalStateContract> Layout<GS> for SharedState<T, GS> {
     fn flexibility(&self) -> u32 {
         self.child.flexibility()
     }
@@ -49,7 +50,7 @@ impl<T: StateContract, GS: GlobalState> Layout<GS> for SharedState<T, GS> {
     }
 }
 
-impl<T: StateContract, GS: GlobalState> CommonWidget<GS> for SharedState<T, GS> {
+impl<T: StateContract, GS: GlobalStateContract> CommonWidget<GS> for SharedState<T, GS> {
     fn get_id(&self) -> Uuid {
         self.id
     }
@@ -102,15 +103,7 @@ impl<T: StateContract, GS: GlobalState> CommonWidget<GS> for SharedState<T, GS> 
     }
 }
 
-impl<T: StateContract, GS: GlobalState> Render<GS> for SharedState<T, GS> {
-    fn get_primitives(&mut self, env: &mut Environment<GS>, global_state: &GS) -> Vec<Primitive> {
-        let mut prims = vec![];
-        prims.extend(Rectangle::<GS>::debug_outline(OldRect::new(self.position, self.dimension), 1.0));
-        let children: Vec<Primitive> = self.get_children_mut().flat_map(|f| f.get_primitives(env, global_state)).collect();
-        prims.extend(children);
-        return prims;
-    }
-}
+impl<T: StateContract, GS: GlobalStateContract> ChildRender for SharedState<T, GS> {}
 
 
-impl<T: 'static + StateContract, GS: GlobalState> WidgetExt<GS> for SharedState<T, GS> {}
+impl<T: 'static + StateContract, GS: GlobalStateContract> WidgetExt<GS> for SharedState<T, GS> {}

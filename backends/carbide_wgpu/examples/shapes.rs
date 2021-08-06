@@ -103,7 +103,7 @@ fn main() {
     window.run_event_loop();
 }
 
-fn draw_star<GS: GlobalState>(center: Point, number_of_spikes: u32, outer_radius: f64, inner_radius: f64, mut context: Context<GS>) -> Context<GS> {
+fn draw_star<GS: GlobalStateContract>(center: Point, number_of_spikes: u32, outer_radius: f64, inner_radius: f64, mut context: Context<GS>) -> Context<GS> {
     let mut rotation = PI / 2.0 * 3.0;
 
     let center_x = center[0];

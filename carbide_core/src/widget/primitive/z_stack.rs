@@ -5,7 +5,7 @@ use crate::widget::ChildRender;
 
 /// A basic, non-interactive rectangle shape widget.
 #[derive(Debug, Clone, Widget)]
-pub struct ZStack<GS> where GS: GlobalState {
+pub struct ZStack<GS> where GS: GlobalStateContract {
     id: Uuid,
     children: Vec<Box<dyn Widget<GS>>>,
     position: Point,
@@ -13,9 +13,9 @@ pub struct ZStack<GS> where GS: GlobalState {
     alignment: BasicLayouter,
 }
 
-impl<GS: GlobalState> WidgetExt<GS> for ZStack<GS> {}
+impl<GS: GlobalStateContract> WidgetExt<GS> for ZStack<GS> {}
 
-impl<S: GlobalState> ZStack<S> {
+impl<S: GlobalStateContract> ZStack<S> {
     pub fn initialize(children: Vec<Box<dyn Widget<S>>>) -> Box<ZStack<S>> {
         Box::new(ZStack {
             id: Uuid::new_v4(),
@@ -32,7 +32,7 @@ impl<S: GlobalState> ZStack<S> {
     }
 }
 
-impl<GS: GlobalState> Layout<GS> for ZStack<GS> {
+impl<GS: GlobalStateContract> Layout<GS> for ZStack<GS> {
     fn flexibility(&self) -> u32 {
         1
     }
@@ -73,7 +73,7 @@ impl<GS: GlobalState> Layout<GS> for ZStack<GS> {
     }
 }
 
-impl<S: GlobalState> CommonWidget<S> for ZStack<S> {
+impl<S: GlobalStateContract> CommonWidget<S> for ZStack<S> {
     fn get_id(&self) -> Uuid {
         self.id
     }
@@ -145,6 +145,6 @@ impl<S: GlobalState> CommonWidget<S> for ZStack<S> {
     }
 }
 
-impl<S: GlobalState> ChildRender for ZStack<S> {}
+impl<S: GlobalStateContract> ChildRender for ZStack<S> {}
 
 

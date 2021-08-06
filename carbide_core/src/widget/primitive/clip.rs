@@ -1,17 +1,19 @@
 use crate::prelude::*;
 use crate::render::primitive_kind::PrimitiveKind;
+use crate::state::global_state::GlobalStateContainer;
 
 #[derive(Debug, Clone, Widget)]
-pub struct Clip<GS> where GS: GlobalState {
+#[render(process_get_primitives)]
+pub struct Clip<GS> where GS: GlobalStateContract {
     id: Uuid,
     child: Box<dyn Widget<GS>>,
     position: Point,
     dimension: Dimensions,
 }
 
-impl<GS: GlobalState> WidgetExt<GS> for Clip<GS> {}
+impl<GS: GlobalStateContract> WidgetExt<GS> for Clip<GS> {}
 
-impl<GS: GlobalState> Layout<GS> for Clip<GS> {
+impl<GS: GlobalStateContract> Layout<GS> for Clip<GS> {
     fn flexibility(&self) -> u32 {
         self.child.flexibility()
     }
@@ -33,7 +35,7 @@ impl<GS: GlobalState> Layout<GS> for Clip<GS> {
     }
 }
 
-impl<S: GlobalState> CommonWidget<S> for Clip<S> {
+impl<S: GlobalStateContract> CommonWidget<S> for Clip<S> {
     fn get_id(&self) -> Uuid {
         self.id
     }
@@ -87,36 +89,38 @@ impl<S: GlobalState> CommonWidget<S> for Clip<S> {
     }
 }
 
-impl<GS: GlobalState> Render<GS> for Clip<GS> {
-    fn get_primitives(&mut self, env: &mut Environment<GS>, global_state: &GS) -> Vec<Primitive> {
-        let mut prims = vec![
-            Primitive {
-                kind: PrimitiveKind::Clip,
-                rect: OldRect::new(self.position, self.dimension),
-            }
-        ];
-        let children: Vec<Primitive> = self.get_children_mut().flat_map(|f| f.get_primitives(env, global_state)).collect();
-        prims.extend(children);
-        prims.extend(Rectangle::<GS>::debug_outline(OldRect::new(self.position, self.dimension), 1.0));
-
-        prims.push(Primitive {
-            kind: PrimitiveKind::UnClip,
-            rect: OldRect::new(self.position, self.dimension),
-        });
-
-        return prims;
+impl<GS: GlobalStateContract> Render<GS> for Clip<GS> {
+    fn get_primitives(&mut self, _: &mut Environment<GS>) -> Vec<Primitive> {
+        // Look in process_get_primitives
+        return vec![];
     }
 }
 
 
-impl<S: GlobalState> Clip<S> {
-    pub fn new(child: Box<dyn Widget<S>>) -> Box<Self <>> {
+impl<GS: GlobalStateContract> Clip<GS> {
+    pub fn new(child: Box<dyn Widget<GS>>) -> Box<Self <>> {
         Box::new(Clip {
             id: Uuid::new_v4(),
             child,
             position: [0.0, 0.0],
             dimension: [0.0, 0.0],
         })
+    }
+
+    fn process_get_primitives(&mut self, primitives: &mut Vec<Primitive>, env: &mut Environment<GS>, global_state: &GlobalStateContainer<GS>) {
+        primitives.push(Primitive {
+            kind: PrimitiveKind::Clip,
+            rect: OldRect::new(self.position, self.dimension),
+        });
+
+        for child in self.get_children_mut() {
+            child.process_get_primitives(primitives, env, global_state);
+        }
+
+        primitives.push(Primitive {
+            kind: PrimitiveKind::UnClip,
+            rect: OldRect::new(self.position, self.dimension),
+        });
     }
 
     /*pub fn body(&mut self) -> Box<dyn Widget<S>> {

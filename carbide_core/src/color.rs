@@ -16,10 +16,7 @@ use std::f32::consts::PI;
 use rand::Rng;
 use serde::{Deserialize, Serialize};
 
-use crate::prelude::ColorState;
-use crate::state::widget_state::WidgetState;
 use crate::utils::{degrees, fmod, turns};
-use crate::widget::{CommonState, GlobalState};
 
 /// Color supporting RGB and HSL variants.
 #[derive(PartialEq, Copy, Clone, Debug, Serialize, Deserialize)]
@@ -36,11 +33,11 @@ impl Default for Color {
     }
 }
 
-impl<GS: GlobalState> Into<ColorState<GS>> for Color {
+/*impl<GS: GlobalStateContract> Into<ColorState<GS>> for Color {
     fn into(self) -> ColorState<GS> {
-        WidgetState::new(Box::new(CommonState::new(&self)))
+        WidgetState::new(Box::new(ValueState::new(&self)))
     }
-}
+}*/
 
 impl Color {
     pub fn random() -> Self {
@@ -110,11 +107,12 @@ pub fn hsl(hue: f32, saturation: f32, lightness: f32) -> Color {
 
 /// Produce a gray based on the input. 0.0 is white, 1.0 is black.
 pub fn grayscale(p: f32) -> Color {
-    Color::Hsla(0.0, 0.0, 1.0-p, 1.0)
+    Color::Hsla(0.0, 0.0, 1.0 - p, 1.0)
 }
+
 /// Produce a gray based on the input. 0.0 is white, 1.0 is black.
 pub fn greyscale(p: f32) -> Color {
-    Color::Hsla(0.0, 0.0, 1.0-p, 1.0)
+    Color::Hsla(0.0, 0.0, 1.0 - p, 1.0)
 }
 
 
@@ -169,8 +167,8 @@ impl Color {
             },
             Color::Rgba(r, g, b, _) => {
                 let l = 0.2126 * r
-                      + 0.7152 * g
-                      + 0.0722 * b;
+                    + 0.7152 * g
+                    + 0.0722 * b;
                 if l > 0.5 { BLACK } else { WHITE }
             }
         }
@@ -245,9 +243,7 @@ impl Color {
         let luminance = self.luminance();
         let Rgba(r, g, b, a) = self.to_rgb();
         let (r, g, b) = {
-            if      luminance > 0.8 { (r - 0.2, g - 0.2, b - 0.2) }
-            else if luminance < 0.2 { (r + 0.2, g + 0.2, b + 0.2) }
-            else {
+            if luminance > 0.8 { (r - 0.2, g - 0.2, b - 0.2) } else if luminance < 0.2 { (r + 0.2, g + 0.2, b + 0.2) } else {
                 (clampf32((1.0 - r) * 0.5 * r + r),
                  clampf32((1.0 - g) * 0.1 * g + g),
                  clampf32((1.0 - b) * 0.1 * b + b))
@@ -262,9 +258,7 @@ impl Color {
         let luminance = self.luminance();
         let Rgba(r, g, b, a) = self.to_rgb();
         let (r, g, b) = {
-            if      luminance > 0.8 { (r      , g - 0.2, b - 0.2) }
-            else if luminance < 0.2 { (r + 0.4, g + 0.2, b + 0.2) }
-            else {
+            if luminance > 0.8 { (r, g - 0.2, b - 0.2) } else if luminance < 0.2 { (r + 0.4, g + 0.2, b + 0.2) } else {
                 (clampf32((1.0 - r) * 0.75 + r),
                  clampf32((1.0 - g) * 0.25 + g),
                  clampf32((1.0 - b) * 0.25 + b))
@@ -315,7 +309,6 @@ impl Color {
         let Rgba(r, g, _, a) = self.to_rgb();
         *self = rgba(r, g, b, a);
     }
-
 }
 
 
@@ -379,14 +372,11 @@ pub fn rgb_to_hsl(r: f32, g: f32, b: f32) -> (f32, f32, f32) {
         // If there's no difference in the channels we have grayscale, so the hue is undefined.
         0.0
     } else {
-        degrees(60.0) * if      c_max == r { fmod((g - b) / c, 6) }
-                        else if c_max == g { ((b - r) / c) + 2.0 }
-                        else               { ((r - g) / c) + 4.0 }
+        degrees(60.0) * if c_max == r { fmod((g - b) / c, 6) } else if c_max == g { ((b - r) / c) + 2.0 } else { ((r - g) / c) + 4.0 }
     };
 
     let lightness = (c_max + c_min) / 2.0;
-    let saturation = if lightness == 0.0 || lightness == 1.0 { 0.0 }
-                     else { c / (1.0 - (2.0 * lightness - 1.0).abs()) };
+    let saturation = if lightness == 0.0 || lightness == 1.0 { 0.0 } else { c / (1.0 - (2.0 * lightness - 1.0).abs()) };
     (hue, saturation, lightness)
 }
 
@@ -451,79 +441,78 @@ macro_rules! make_color {
 }
 
 /// Scarlet Red - Light - #EF2929                         
-pub const LIGHT_RED      :  Color = make_color!(239, 41, 41);
+pub const LIGHT_RED: Color = make_color!(239, 41, 41);
 /// Scarlet Red - Regular - #CC0000                       
-pub const RED            :  Color = make_color!(204, 0, 0);
+pub const RED: Color = make_color!(204, 0, 0);
 /// Scarlet Red - Dark - #A30000                          
-pub const DARK_RED       :  Color = make_color!(164, 0, 0);
+pub const DARK_RED: Color = make_color!(164, 0, 0);
 
 /// Orange - Light - #FCAF3E                              
-pub const LIGHT_ORANGE   :  Color = make_color!(252, 175, 62);
+pub const LIGHT_ORANGE: Color = make_color!(252, 175, 62);
 /// Orange - Regular - #F57900                            
-pub const ORANGE         :  Color = make_color!(245, 121, 0);
+pub const ORANGE: Color = make_color!(245, 121, 0);
 /// Orange - Dark - #CE5C00                               
-pub const DARK_ORANGE    :  Color = make_color!(206, 92, 0);
+pub const DARK_ORANGE: Color = make_color!(206, 92, 0);
 
 /// Butter - Light - #FCE94F                              
-pub const LIGHT_YELLOW   :  Color = make_color!(252, 233, 79);
+pub const LIGHT_YELLOW: Color = make_color!(252, 233, 79);
 /// Butter - Regular - #EDD400                            
-pub const YELLOW         :  Color = make_color!(237, 212, 0);
+pub const YELLOW: Color = make_color!(237, 212, 0);
 /// Butter - Dark - #C4A000                               
-pub const DARK_YELLOW    :  Color = make_color!(196, 160, 0);
+pub const DARK_YELLOW: Color = make_color!(196, 160, 0);
 
 /// Chameleon - Light - #8AE234                           
-pub const LIGHT_GREEN     :  Color = make_color!(138, 226, 52);
+pub const LIGHT_GREEN: Color = make_color!(138, 226, 52);
 /// Chameleon - Regular - #73D216                         
-pub const GREEN          :  Color = make_color!(115, 210, 22);
+pub const GREEN: Color = make_color!(115, 210, 22);
 /// Chameleon - Dark - #4E9A06                            
-pub const DARK_GREEN     :  Color = make_color!(78, 154, 6);
+pub const DARK_GREEN: Color = make_color!(78, 154, 6);
 
 /// Sky Blue - Light - #729FCF                            
-pub const LIGHT_BLUE     :  Color = make_color!(114, 159, 207);
+pub const LIGHT_BLUE: Color = make_color!(114, 159, 207);
 /// Sky Blue - Regular - #3465A4                          
-pub const BLUE           :  Color = make_color!(52, 101, 164);
+pub const BLUE: Color = make_color!(52, 101, 164);
 /// Sky Blue - Dark - #204A87                             
-pub const DARK_BLUE      :  Color = make_color!(32, 74, 135);
+pub const DARK_BLUE: Color = make_color!(32, 74, 135);
 
 /// Plum - Light - #AD7FA8                                
-pub const LIGHT_PURPLE   :  Color = make_color!(173, 127, 168);
+pub const LIGHT_PURPLE: Color = make_color!(173, 127, 168);
 /// Plum - Regular - #75507B                              
-pub const PURPLE         :  Color = make_color!(117, 80, 123);
+pub const PURPLE: Color = make_color!(117, 80, 123);
 /// Plum - Dark - #5C3566                                 
-pub const DARK_PURPLE    :  Color = make_color!(92, 53, 102);
+pub const DARK_PURPLE: Color = make_color!(92, 53, 102);
 
 /// Chocolate - Light - #E9B96E                           
-pub const LIGHT_BROWN    :  Color = make_color!(233, 185, 110);
+pub const LIGHT_BROWN: Color = make_color!(233, 185, 110);
 /// Chocolate - Regular - #C17D11                         
-pub const BROWN          :  Color = make_color!(193, 125, 17);
+pub const BROWN: Color = make_color!(193, 125, 17);
 /// Chocolate - Dark - #8F5902                            
-pub const DARK_BROWN     :  Color = make_color!(143, 89, 2);
+pub const DARK_BROWN: Color = make_color!(143, 89, 2);
 
 /// Straight Black.                                       
-pub const BLACK          :  Color = make_color!(0, 0, 0);
+pub const BLACK: Color = make_color!(0, 0, 0);
 /// Straight White.                                       
-pub const WHITE          :  Color = make_color!(255, 255, 255);
+pub const WHITE: Color = make_color!(255, 255, 255);
 
 /// Aluminium - Light - #EEEEEC                           
-pub const LIGHT_GREY     :  Color = make_color!(238, 238, 236);
+pub const LIGHT_GREY: Color = make_color!(238, 238, 236);
 /// Aluminium - Regular - #D3D7CF                         
-pub const GREY           :  Color = make_color!(211, 215, 207);
+pub const GREY: Color = make_color!(211, 215, 207);
 /// Aluminium - Dark - #BABDB6                            
-pub const DARK_GREY      :  Color = make_color!(186, 189, 182);
+pub const DARK_GREY: Color = make_color!(186, 189, 182);
 
 /// Charcoal - Light - #888A85                            
-pub const LIGHT_CHARCOAL :  Color = make_color!(136, 138, 133);
+pub const LIGHT_CHARCOAL: Color = make_color!(136, 138, 133);
 /// Charcoal - Regular - #555753                          
-pub const CHARCOAL       :  Color = make_color!(85, 87, 83);
+pub const CHARCOAL: Color = make_color!(85, 87, 83);
 /// Charcoal - Dark - #2E3436                             
-pub const DARK_CHARCOAL  :  Color = make_color!(46, 52, 54);
+pub const DARK_CHARCOAL: Color = make_color!(46, 52, 54);
 
 /// Transparent
-pub const TRANSPARENT    :  Color = Color::Rgba(0.0, 0.0, 0.0, 0.0);
+pub const TRANSPARENT: Color = Color::Rgba(0.0, 0.0, 0.0, 0.0);
 
 /// Types that can be colored.
 pub trait Colorable: Sized {
-
     /// Set the color of the widget.
     fn color(self, color: Color) -> Self;
 
@@ -546,7 +535,6 @@ pub trait Colorable: Sized {
     fn hsl(self, h: f32, s: f32, l: f32) -> Self {
         self.color(hsl(h, s, l))
     }
-
 }
 
 #[test]
@@ -585,5 +573,4 @@ fn plain_contrast_should_weight_colors() {
     assert_eq!(r, 1.0);
     assert_eq!(g, 1.0);
     assert_eq!(b, 1.0);
-
 }

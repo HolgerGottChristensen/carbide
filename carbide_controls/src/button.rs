@@ -6,7 +6,7 @@ use carbide_core::widget::*;
 use crate::PlainButton;
 
 #[derive(Clone, Widget)]
-pub struct Button<T, GS> where T: 'static + Serialize + Clone + Debug + Default + DeserializeOwned, GS: GlobalState {
+pub struct Button<T, GS> where T: 'static + Serialize + Clone + Debug + Default + DeserializeOwned, GS: GlobalStateContract {
     id: Id,
     child: Box<dyn Widget<GS>>,
     position: Point,
@@ -18,7 +18,7 @@ pub struct Button<T, GS> where T: 'static + Serialize + Clone + Debug + Default 
     display_item: Box<dyn Widget<GS>>,
 }
 
-impl<T: 'static + Serialize + Clone + Debug + Default + DeserializeOwned, GS: GlobalState> Button<T, GS> {
+impl<T: 'static + Serialize + Clone + Debug + Default + DeserializeOwned, GS: GlobalStateContract> Button<T, GS> {
     pub fn new(display_item: Box<dyn Widget<GS>>) -> Box<Self> {
         let focus_state = CommonState::new_local_with_key(&Focus::Unfocused);
 
@@ -128,7 +128,7 @@ impl<T: 'static + Serialize + Clone + Debug + Default + DeserializeOwned, GS: Gl
     }
 }
 
-impl<T: 'static + Serialize + Clone + Debug + Default + DeserializeOwned, GS: GlobalState> CommonWidget<GS> for Button<T, GS> {
+impl<T: 'static + Serialize + Clone + Debug + Default + DeserializeOwned, GS: GlobalStateContract> CommonWidget<GS> for Button<T, GS> {
     fn get_id(&self) -> Id {
         self.id
     }
@@ -174,9 +174,9 @@ impl<T: 'static + Serialize + Clone + Debug + Default + DeserializeOwned, GS: Gl
     }
 }
 
-impl<T: 'static + Serialize + Clone + Debug + Default + DeserializeOwned, GS: GlobalState> ChildRender for Button<T, GS> {}
+impl<T: 'static + Serialize + Clone + Debug + Default + DeserializeOwned, GS: GlobalStateContract> ChildRender for Button<T, GS> {}
 
-impl<T: 'static + Serialize + Clone + Debug + Default + DeserializeOwned, GS: GlobalState> Layout<GS> for Button<T, GS> {
+impl<T: 'static + Serialize + Clone + Debug + Default + DeserializeOwned, GS: GlobalStateContract> Layout<GS> for Button<T, GS> {
     fn flexibility(&self) -> u32 {
         5
     }
@@ -201,4 +201,4 @@ impl<T: 'static + Serialize + Clone + Debug + Default + DeserializeOwned, GS: Gl
 }
 
 
-impl<T: 'static + Serialize + Clone + Debug + Default + DeserializeOwned, GS: GlobalState> WidgetExt<GS> for Button<T, GS> {}
+impl<T: 'static + Serialize + Clone + Debug + Default + DeserializeOwned, GS: GlobalStateContract> WidgetExt<GS> for Button<T, GS> {}

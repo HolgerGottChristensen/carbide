@@ -4,7 +4,7 @@ use crate::widget::ChildRender;
 pub static SCALE: f64 = -1.0;
 
 #[derive(Debug, Clone, Widget)]
-pub struct Frame<GS> where GS: GlobalState {
+pub struct Frame<GS> where GS: GlobalStateContract {
     id: Uuid,
     child: Box<dyn Widget<GS>>,
     position: Point,
@@ -18,13 +18,13 @@ pub struct Frame<GS> where GS: GlobalState {
     expand_height: bool,
 }
 
-impl<GS: GlobalState> WidgetExt<GS> for Frame<GS> {}
+impl<GS: GlobalStateContract> WidgetExt<GS> for Frame<GS> {}
 
-impl<GS: GlobalState> Frame<GS> {
+impl<GS: GlobalStateContract> Frame<GS> {
     pub fn init(width: F64State<GS>, height: F64State<GS>, child: Box<dyn Widget<GS>>) -> Box<Frame<GS>> {
-        let expand_width = *width.get_latest_value() == SCALE;
+        let expand_width = *width == SCALE;
 
-        let expand_height = *height.get_latest_value() == SCALE;
+        let expand_height = *height == SCALE;
 
         Box::new(Frame {
             id: Default::default(),
@@ -97,7 +97,7 @@ impl<GS: GlobalState> Frame<GS> {
     }
 }
 
-impl<S: GlobalState> CommonWidget<S> for Frame<S> {
+impl<S: GlobalStateContract> CommonWidget<S> for Frame<S> {
     fn get_id(&self) -> Uuid {
         self.id
     }
@@ -143,16 +143,16 @@ impl<S: GlobalState> CommonWidget<S> for Frame<S> {
     }
 
     fn get_dimension(&self) -> Dimensions {
-        [*self.width.get_latest_value(), *self.height.get_latest_value()]
+        [*self.width, *self.height]
     }
 
     fn set_dimension(&mut self, dimensions: Dimensions) {
-        *self.width.get_latest_value_mut() = dimensions[0];
-        *self.height.get_latest_value_mut() = dimensions[1];
+        *self.width = dimensions[0];
+        *self.height = dimensions[1];
     }
 }
 
-impl<GS: GlobalState> Layout<GS> for Frame<GS> {
+impl<GS: GlobalStateContract> Layout<GS> for Frame<GS> {
     fn flexibility(&self) -> u32 {
         if self.expand_width || self.expand_height {
             8
@@ -179,11 +179,11 @@ impl<GS: GlobalState> Layout<GS> for Frame<GS> {
 
     fn position_children(&mut self) {
         if self.fixed_x {
-            self.set_x(*self.x.get_latest_value());
+            self.set_x(*self.x);
         }
 
         if self.fixed_y {
-            self.set_y(*self.y.get_latest_value());
+            self.set_y(*self.y);
         }
 
         let positioning = BasicLayouter::Center.position();
@@ -196,4 +196,4 @@ impl<GS: GlobalState> Layout<GS> for Frame<GS> {
     }
 }
 
-impl<GS: GlobalState> ChildRender for Frame<GS> {}
+impl<GS: GlobalStateContract> ChildRender for Frame<GS> {}

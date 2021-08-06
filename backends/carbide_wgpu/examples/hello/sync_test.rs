@@ -6,7 +6,7 @@ use carbide_core::widget::*;
 #[derive(Debug, Clone, Widget)]
 #[state_sync(insert_local_state)]
 #[event(handle_keyboard_event)]
-pub struct SyncTest<GS> where GS: GlobalState {
+pub struct SyncTest<GS> where GS: GlobalStateContract {
     id: Uuid,
     child: Box<dyn Widget<GS>>,
     position: Point,
@@ -16,7 +16,7 @@ pub struct SyncTest<GS> where GS: GlobalState {
     show_overlay: bool,
 }
 
-impl<S: GlobalState> SyncTest<S> {
+impl<S: GlobalStateContract> SyncTest<S> {
     fn insert_local_state(&self, env: &mut Environment<S>) {
         if self.show_overlay {
             env.add_overlay("overlay_test", Rectangle::initialize(vec![])
@@ -88,7 +88,7 @@ impl<S: GlobalState> SyncTest<S> {
     }
 }
 
-impl<S: GlobalState> CommonWidget<S> for SyncTest<S> {
+impl<S: GlobalStateContract> CommonWidget<S> for SyncTest<S> {
     fn get_id(&self) -> Uuid {
         self.id
     }
@@ -142,9 +142,9 @@ impl<S: GlobalState> CommonWidget<S> for SyncTest<S> {
     }
 }
 
-impl<S: GlobalState> ChildRender for SyncTest<S> {}
+impl<S: GlobalStateContract> ChildRender for SyncTest<S> {}
 
-impl<S: GlobalState> Layout<S> for SyncTest<S> {
+impl<S: GlobalStateContract> Layout<S> for SyncTest<S> {
     fn flexibility(&self) -> u32 {
         2
     }
@@ -163,4 +163,4 @@ impl<S: GlobalState> Layout<S> for SyncTest<S> {
     }
 }
 
-impl<GS: GlobalState> WidgetExt<GS> for SyncTest<GS> {}
+impl<GS: GlobalStateContract> WidgetExt<GS> for SyncTest<GS> {}

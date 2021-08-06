@@ -3,7 +3,7 @@ use crate::render::primitive_kind::PrimitiveKind;
 
 /// A basic, non-interactive rectangle shape widget.
 #[derive(Debug, Clone, Widget)]
-pub struct Border<GS> where GS: GlobalState {
+pub struct Border<GS> where GS: GlobalStateContract {
     id: Uuid,
     child: Box<dyn Widget<GS>>,
     position: Point,
@@ -12,9 +12,9 @@ pub struct Border<GS> where GS: GlobalState {
     border_width: u32,
 }
 
-impl<GS: GlobalState> WidgetExt<GS> for Border<GS> {}
+impl<GS: GlobalStateContract> WidgetExt<GS> for Border<GS> {}
 
-impl<GS: GlobalState> Layout<GS> for Border<GS> {
+impl<GS: GlobalStateContract> Layout<GS> for Border<GS> {
     fn flexibility(&self) -> u32 {
         self.child.flexibility()
     }
@@ -41,7 +41,7 @@ impl<GS: GlobalState> Layout<GS> for Border<GS> {
     }
 }
 
-impl<S: GlobalState> CommonWidget<S> for Border<S> {
+impl<S: GlobalStateContract> CommonWidget<S> for Border<S> {
     fn get_id(&self) -> Uuid {
         self.id
     }
@@ -95,8 +95,8 @@ impl<S: GlobalState> CommonWidget<S> for Border<S> {
     }
 }
 
-impl<GS: GlobalState> Render<GS> for Border<GS> {
-    fn get_primitives(&mut self, env: &mut Environment<GS>, global_state: &GS) -> Vec<Primitive> {
+impl<GS: GlobalStateContract> Render<GS> for Border<GS> {
+    fn get_primitives(&mut self, _: &mut Environment<GS>) -> Vec<Primitive> {
         let rect = OldRect::new(self.position, self.dimension);
         let (l, r, b, t) = rect.l_r_b_t();
 
@@ -107,34 +107,31 @@ impl<GS: GlobalState> Render<GS> for Border<GS> {
         let top_border = OldRect::new([l + width, b], [rect.w() - width * 2.0, width]);
         let bottom_border = OldRect::new([l + width, t - width], [rect.w() - width * 2.0, width]);
 
-        let border_color = self.color.get_latest_value();
+        let border_color = *self.color;
         let mut prims = vec![
             Primitive {
-                kind: PrimitiveKind::Rectangle { color: border_color.clone() },
+                kind: PrimitiveKind::Rectangle { color: border_color },
                 rect: left_border,
             },
             Primitive {
-                kind: PrimitiveKind::Rectangle { color: border_color.clone() },
+                kind: PrimitiveKind::Rectangle { color: border_color },
                 rect: right_border,
             },
             Primitive {
-                kind: PrimitiveKind::Rectangle { color: border_color.clone() },
+                kind: PrimitiveKind::Rectangle { color: border_color },
                 rect: top_border,
             },
             Primitive {
-                kind: PrimitiveKind::Rectangle { color: border_color.clone() },
+                kind: PrimitiveKind::Rectangle { color: border_color },
                 rect: bottom_border,
             },
         ];
-
-        let children: Vec<Primitive> = self.get_children_mut().flat_map(|f| f.get_primitives(env, global_state)).collect();
-        prims.extend(children);
 
         return prims;
     }
 }
 
-impl<GS: GlobalState> Border<GS> {
+impl<GS: GlobalStateContract> Border<GS> {
     pub fn color<C: Into<ColorState<GS>>>(mut self, color: C) -> Box<Self> {
         self.color = color.into();
         Box::new(self)

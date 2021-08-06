@@ -1,21 +1,21 @@
-use crate::{Point, Color};
-use lyon::algorithms::path::Path;
-use lyon::lyon_algorithms::path::math::point;
-use lyon::tessellation::{StrokeOptions, FillOptions, LineJoin, LineCap};
 //use crate::draw::path_builder::PathBuilder;
 use lyon::algorithms::path::builder::{Build, SvgPathBuilder};
+use lyon::algorithms::path::Path;
+use lyon::lyon_algorithms::path::math::point;
+use lyon::tessellation::{FillOptions, LineCap, LineJoin, StrokeOptions};
+
+use crate::{Color, Point};
 use crate::draw::svg_path_builder::SVGPathBuilder;
 use crate::prelude::ColorState;
-use crate::widget::GlobalState;
+use crate::widget::GlobalStateContract;
 
 #[derive(Debug, Clone)]
-pub struct Context<GS: GlobalState> {
-    generator: Vec<ContextAction<GS>>
+pub struct Context<GS: GlobalStateContract> {
+    generator: Vec<ContextAction<GS>>,
 }
 
 
-impl<GS: GlobalState> Context<GS> {
-
+impl<GS: GlobalStateContract> Context<GS> {
     pub fn new() -> Context<GS> {
         Context {
             generator: vec![ContextAction::MoveTo([0.0, 0.0])]
@@ -89,28 +89,28 @@ impl<GS: GlobalState> Context<GS> {
     }
 
     pub fn quadratic_curve_to(&mut self, ctrl: Point, to: Point) {
-        self.generator.push(ContextAction::QuadraticBezierTo {ctrl, to})
+        self.generator.push(ContextAction::QuadraticBezierTo { ctrl, to })
     }
 
     pub fn bezier_curve_to(&mut self, ctrl1: Point, ctrl2: Point, to: Point) {
         self.generator.push(ContextAction::CubicBezierTo {
             ctrl1,
             ctrl2,
-            to
+            to,
         })
     }
 
     pub fn arc(&mut self, x: f64, y: f64, r: f64, start_angle: f64, end_angle: f64) {
-        self.generator.push(ContextAction::Arc {x, y, r, start_angle, end_angle})
+        self.generator.push(ContextAction::Arc { x, y, r, start_angle, end_angle })
     }
 
     pub fn arc_to(&mut self, x1: f64, y1: f64, x2: f64, y2: f64, r: f64) {
-        self.generator.push(ContextAction::ArcTo {x1, y1, x2, y2, r})
+        self.generator.push(ContextAction::ArcTo { x1, y1, x2, y2, r })
     }
 
     pub fn to_paths(&self, offset: Point) -> Vec<(Path, ShapeStyleWithOptions<GS>)> {
-        let mut current_stroke_color = Color::Rgba(0.0,0.0,0.0,1.0).into();
-        let mut current_fill_color = Color::Rgba(0.0,0.0,0.0,1.0).into();
+        let mut current_stroke_color = Color::Rgba(0.0, 0.0, 0.0, 1.0).into();
+        let mut current_fill_color = Color::Rgba(0.0, 0.0, 0.0, 1.0).into();
         let mut current_cap_style = LineCap::Round;
         let mut current_join_style = LineJoin::Round;
         let mut current_line_width = 2.0;
@@ -195,21 +195,20 @@ impl<GS: GlobalState> Context<GS> {
         }
 
         paths
-
     }
 }
 
-pub enum ShapeStyleWithOptions<GS: GlobalState> {
+pub enum ShapeStyleWithOptions<GS: GlobalStateContract> {
     Fill(FillOptions, ColorState<GS>),
     Stroke(StrokeOptions, ColorState<GS>),
 }
 
 #[derive(Debug, Clone)]
-pub enum ContextAction<GS: GlobalState> {
+pub enum ContextAction<GS: GlobalStateContract> {
     MoveTo(Point),
     LineTo(Point),
-    QuadraticBezierTo {ctrl: Point, to: Point},
-    CubicBezierTo {ctrl1: Point, ctrl2: Point, to: Point},
+    QuadraticBezierTo { ctrl: Point, to: Point },
+    CubicBezierTo { ctrl1: Point, ctrl2: Point, to: Point },
     Fill,
     Stroke,
     Close,
@@ -219,8 +218,8 @@ pub enum ContextAction<GS: GlobalState> {
     MiterLimit(f64),
     Rect(f64, f64, f64, f64),
     BeginPath,
-    Arc {x: f64, y: f64, r: f64, start_angle: f64, end_angle: f64},
-    ArcTo {x1: f64, y1: f64, x2: f64, y2: f64, r: f64},
+    Arc { x: f64, y: f64, r: f64, start_angle: f64, end_angle: f64 },
+    ArcTo { x1: f64, y1: f64, x2: f64, y2: f64, r: f64 },
     FillStyle(ColorState<GS>),
     StrokeStyle(ColorState<GS>),
 }

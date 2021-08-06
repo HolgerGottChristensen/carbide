@@ -6,7 +6,7 @@ pub static SCALE: f64 = -1.0;
 
 
 #[derive(Debug, Clone, Widget)]
-pub struct Padding<GS> where GS: GlobalState {
+pub struct Padding<GS> where GS: GlobalStateContract {
     id: Uuid,
     child: Box<dyn Widget<GS>>,
     position: Point,
@@ -14,9 +14,9 @@ pub struct Padding<GS> where GS: GlobalState {
     edge_insets: EdgeInsets,
 }
 
-impl<GS: GlobalState> WidgetExt<GS> for Padding<GS> {}
+impl<GS: GlobalStateContract> WidgetExt<GS> for Padding<GS> {}
 
-impl<S: GlobalState> Padding<S> {
+impl<S: GlobalStateContract> Padding<S> {
     pub fn init(edge_insets: EdgeInsets, child: Box<dyn Widget<S>>) -> Box<Self> {
         Box::new(Padding {
             id: Default::default(),
@@ -28,7 +28,7 @@ impl<S: GlobalState> Padding<S> {
     }
 }
 
-impl<S: GlobalState> CommonWidget<S> for Padding<S> {
+impl<S: GlobalStateContract> CommonWidget<S> for Padding<S> {
     fn get_id(&self) -> Uuid {
         self.id
     }
@@ -83,7 +83,7 @@ impl<S: GlobalState> CommonWidget<S> for Padding<S> {
     }
 }
 
-impl<GS: GlobalState> Layout<GS> for Padding<GS> {
+impl<GS: GlobalStateContract> Layout<GS> for Padding<GS> {
     fn flexibility(&self) -> u32 {
         9
     }
@@ -108,4 +108,4 @@ impl<GS: GlobalState> Layout<GS> for Padding<GS> {
     }
 }
 
-impl<S: GlobalState> ChildRender for Padding<S> {}
+impl<S: GlobalStateContract> ChildRender for Padding<S> {}

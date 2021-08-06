@@ -5,13 +5,13 @@ use crate::color::Rgba;
 use crate::draw::shape::triangle::Triangle;
 use crate::prelude::*;
 use crate::render::primitive_kind::PrimitiveKind;
-use crate::state::global_state::GlobalState;
+use crate::state::global_state::GlobalStateContract;
 use crate::widget::primitive::canvas::context::{Context, ShapeStyleWithOptions};
 use crate::widget::Rectangle;
 
 /// A basic, non-interactive rectangle shape widget.
 #[derive(Debug, Clone, Widget)]
-pub struct Canvas<GS> where GS: GlobalState {
+pub struct Canvas<GS> where GS: GlobalStateContract {
     id: Uuid,
     position: Point,
     dimension: Dimensions,
@@ -20,7 +20,7 @@ pub struct Canvas<GS> where GS: GlobalState {
     context: fn(OldRect, Context<GS>) -> Context<GS>,
 }
 
-impl<GS: GlobalState> Canvas<GS> {
+impl<GS: GlobalStateContract> Canvas<GS> {
     pub fn initialize(context: fn(OldRect, Context<GS>) -> Context<GS>) -> Box<Self> {
         Box::new(Canvas {
             id: Uuid::new_v4(),
@@ -85,7 +85,7 @@ impl<GS: GlobalState> Canvas<GS> {
     }
 }
 
-impl<S: GlobalState> CommonWidget<S> for Canvas<S> {
+impl<S: GlobalStateContract> CommonWidget<S> for Canvas<S> {
     fn get_id(&self) -> Uuid {
         self.id
     }
@@ -131,8 +131,8 @@ impl<S: GlobalState> CommonWidget<S> for Canvas<S> {
     }
 }
 
-impl<GS: GlobalState> Render<GS> for Canvas<GS> {
-    fn get_primitives(&mut self, env: &mut Environment<GS>, global_state: &GS) -> Vec<Primitive> {
+impl<GS: GlobalStateContract> Render<GS> for Canvas<GS> {
+    fn get_primitives(&mut self, env: &mut Environment<GS>) -> Vec<Primitive> {
         let context = Context::new();
 
         let rectangle = OldRect::new(self.get_position(), self.get_dimension());
@@ -145,10 +145,10 @@ impl<GS: GlobalState> Render<GS> for Canvas<GS> {
         for (path, options) in paths {
             match options {
                 ShapeStyleWithOptions::Fill(fill_options, color) => {
-                    prims.push(self.get_fill_prim(path, fill_options, *color.clone().get_value(env, global_state)));
+                    prims.push(self.get_fill_prim(path, fill_options, *color.clone()));
                 }
                 ShapeStyleWithOptions::Stroke(stroke_options, color) => {
-                    prims.push(self.get_stroke_prim(path, stroke_options, *color.clone().get_value(env, global_state)));
+                    prims.push(self.get_stroke_prim(path, stroke_options, *color.clone()));
                 }
             }
         }
@@ -159,9 +159,9 @@ impl<GS: GlobalState> Render<GS> for Canvas<GS> {
     }
 }
 
-impl<GS: GlobalState> WidgetExt<GS> for Canvas<GS> {}
+impl<GS: GlobalStateContract> WidgetExt<GS> for Canvas<GS> {}
 
-impl<GS: GlobalState> Layout<GS> for Canvas<GS> {
+impl<GS: GlobalStateContract> Layout<GS> for Canvas<GS> {
     fn flexibility(&self) -> u32 {
         0
     }

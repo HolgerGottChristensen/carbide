@@ -1,6 +1,4 @@
 use crate::draw::Rect;
-use crate::prelude::Widget;
-use crate::widget::GlobalState;
 
 #[derive(Clone, Debug)]
 pub enum TextDecoration {

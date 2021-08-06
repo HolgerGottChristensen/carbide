@@ -7,7 +7,7 @@ use crate::types::*;
 
 #[derive(Clone, Widget)]
 #[focusable(block_focus)]
-pub struct PlainCheckBox<GS> where GS: GlobalState {
+pub struct PlainCheckBox<GS> where GS: GlobalStateContract {
     id: Id,
     #[state] focus: FocusState<GS>,
     child: Box<dyn Widget<GS>>,
@@ -18,7 +18,7 @@ pub struct PlainCheckBox<GS> where GS: GlobalState {
     #[state] checked: CheckBoxState<GS>,
 }
 
-impl<GS: GlobalState> PlainCheckBox<GS> {
+impl<GS: GlobalStateContract> PlainCheckBox<GS> {
     pub fn focused<K: Into<FocusState<GS>>>(mut self, focused: K) -> Box<Self> {
         self.focus = focused.into();
         Box::new(self)
@@ -100,7 +100,7 @@ impl<GS: GlobalState> PlainCheckBox<GS> {
     }
 }
 
-impl<GS: GlobalState> CommonWidget<GS> for PlainCheckBox<GS> {
+impl<GS: GlobalStateContract> CommonWidget<GS> for PlainCheckBox<GS> {
     fn get_id(&self) -> Id {
         self.id
     }
@@ -154,9 +154,9 @@ impl<GS: GlobalState> CommonWidget<GS> for PlainCheckBox<GS> {
     }
 }
 
-impl<GS: GlobalState> ChildRender for PlainCheckBox<GS> {}
+impl<GS: GlobalStateContract> ChildRender for PlainCheckBox<GS> {}
 
-impl<GS: GlobalState> Layout<GS> for PlainCheckBox<GS> {
+impl<GS: GlobalStateContract> Layout<GS> for PlainCheckBox<GS> {
     fn flexibility(&self) -> u32 {
         10
     }
@@ -184,4 +184,4 @@ impl<GS: GlobalState> Layout<GS> for PlainCheckBox<GS> {
 }
 
 
-impl<GS: GlobalState> WidgetExt<GS> for PlainCheckBox<GS> {}
+impl<GS: GlobalStateContract> WidgetExt<GS> for PlainCheckBox<GS> {}

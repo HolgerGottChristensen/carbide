@@ -1,12 +1,11 @@
 use nom::branch::alt;
-use nom::bytes::complete::{is_not, tag, take, take_until};
-use nom::character::complete::{alphanumeric1, none_of, space1};
-use nom::combinator::{eof, map, not, opt, peek};
+use nom::bytes::complete::{is_not, tag, take};
+use nom::combinator::{map, not};
 use nom::IResult;
 use nom::multi::{many0, many1};
 use nom::sequence::{delimited, preceded, tuple};
 
-use crate::prelude::{Environment, GlobalState};
+use crate::prelude::{Environment, GlobalStateContract};
 use crate::text::{FontStyle, FontWeight, TextSpanGenerator};
 use crate::text::text_decoration::TextDecoration;
 use crate::text::text_span::TextSpan;
@@ -54,37 +53,37 @@ fn parse_polar_bear_markup_test() {
 }
 
 fn parse_header_1(input: &str) -> IResult<&str, PolarItem> {
-    let (left, (_, _, parsed, _)): (&str, (_, _, &str, _)) = tuple((tag("#"), tag(" "), is_not(("\n")), tag("\n")))(input)?;
+    let (left, (_, _, parsed, _)): (&str, (_, _, &str, _)) = tuple((tag("#"), tag(" "), is_not("\n"), tag("\n")))(input)?;
 
     Ok((left, PolarItem::Header1(parsed.to_string())))
 }
 
 fn parse_header_2(input: &str) -> IResult<&str, PolarItem> {
-    let (left, (_, _, parsed, _)): (&str, (_, _, &str, _)) = tuple((tag("##"), tag(" "), is_not(("\n")), tag("\n")))(input)?;
+    let (left, (_, _, parsed, _)): (&str, (_, _, &str, _)) = tuple((tag("##"), tag(" "), is_not("\n"), tag("\n")))(input)?;
 
     Ok((left, PolarItem::Header2(parsed.to_string())))
 }
 
 fn parse_header_3(input: &str) -> IResult<&str, PolarItem> {
-    let (left, (_, _, parsed, _)): (&str, (_, _, &str, _)) = tuple((tag("###"), tag(" "), is_not(("\n")), tag("\n")))(input)?;
+    let (left, (_, _, parsed, _)): (&str, (_, _, &str, _)) = tuple((tag("###"), tag(" "), is_not("\n"), tag("\n")))(input)?;
 
     Ok((left, PolarItem::Header3(parsed.to_string())))
 }
 
 fn parse_header_4(input: &str) -> IResult<&str, PolarItem> {
-    let (left, (_, _, parsed, _)): (&str, (_, _, &str, _)) = tuple((tag("####"), tag(" "), is_not(("\n")), tag("\n")))(input)?;
+    let (left, (_, _, parsed, _)): (&str, (_, _, &str, _)) = tuple((tag("####"), tag(" "), is_not("\n"), tag("\n")))(input)?;
 
     Ok((left, PolarItem::Header4(parsed.to_string())))
 }
 
 fn parse_header_5(input: &str) -> IResult<&str, PolarItem> {
-    let (left, (_, _, parsed, _)): (&str, (_, _, &str, _)) = tuple((tag("#####"), tag(" "), is_not(("\n")), tag("\n")))(input)?;
+    let (left, (_, _, parsed, _)): (&str, (_, _, &str, _)) = tuple((tag("#####"), tag(" "), is_not("\n"), tag("\n")))(input)?;
 
     Ok((left, PolarItem::Header5(parsed.to_string())))
 }
 
 fn parse_header_6(input: &str) -> IResult<&str, PolarItem> {
-    let (left, (_, _, parsed, _)): (&str, (_, _, &str, _)) = tuple((tag("######"), tag(" "), is_not(("\n")), tag("\n")))(input)?;
+    let (left, (_, _, parsed, _)): (&str, (_, _, &str, _)) = tuple((tag("######"), tag(" "), is_not("\n"), tag("\n")))(input)?;
 
     Ok((left, PolarItem::Header6(parsed.to_string())))
 }
@@ -152,7 +151,7 @@ impl PolarBearMarkup {
     }
 }
 
-impl<GS: GlobalState> TextSpanGenerator<GS> for PolarBearMarkup {
+impl<GS: GlobalStateContract> TextSpanGenerator<GS> for PolarBearMarkup {
     // https://bear.app/faq/Markup%20:%20Markdown/Polar%20Bear%20markup%20language/
     fn generate(&self, string: &str, style: &TextStyle, env: &mut Environment<GS>) -> Vec<TextSpan<GS>> {
         let default_font_family_name = &style.font_family;
@@ -374,7 +373,7 @@ impl<GS: GlobalState> TextSpanGenerator<GS> for PolarBearMarkup {
     }
 }
 
-impl<GS: GlobalState> Into<Box<dyn TextSpanGenerator<GS>>> for PolarBearMarkup {
+impl<GS: GlobalStateContract> Into<Box<dyn TextSpanGenerator<GS>>> for PolarBearMarkup {
     fn into(self) -> Box<dyn TextSpanGenerator<GS>> {
         Box::new(self)
     }

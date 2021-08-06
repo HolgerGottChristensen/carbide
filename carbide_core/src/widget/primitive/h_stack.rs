@@ -4,7 +4,7 @@ use crate::widget::ChildRender;
 
 /// A basic, non-interactive rectangle shape widget.
 #[derive(Debug, Clone, Widget)]
-pub struct HStack<GS> where GS: GlobalState {
+pub struct HStack<GS> where GS: GlobalStateContract {
     id: Uuid,
     children: Vec<Box<dyn Widget<GS>>>,
     position: Point,
@@ -12,9 +12,9 @@ pub struct HStack<GS> where GS: GlobalState {
     spacing: Scalar,
 }
 
-impl<GS: GlobalState> WidgetExt<GS> for HStack<GS> {}
+impl<GS: GlobalStateContract> WidgetExt<GS> for HStack<GS> {}
 
-impl<S: GlobalState> HStack<S> {
+impl<S: GlobalStateContract> HStack<S> {
     pub fn initialize(children: Vec<Box<dyn Widget<S>>>) -> Box<Self> {
         Box::new(HStack {
             id: Uuid::new_v4(),
@@ -31,7 +31,7 @@ impl<S: GlobalState> HStack<S> {
     }
 }
 
-impl<GS: GlobalState> Layout<GS> for HStack<GS> {
+impl<GS: GlobalStateContract> Layout<GS> for HStack<GS> {
     fn flexibility(&self) -> u32 {
         1
     }
@@ -121,7 +121,7 @@ impl<GS: GlobalState> Layout<GS> for HStack<GS> {
     }
 }
 
-impl<S: GlobalState> CommonWidget<S> for HStack<S> {
+impl<S: GlobalStateContract> CommonWidget<S> for HStack<S> {
     fn get_id(&self) -> Uuid {
         self.id
     }
@@ -194,6 +194,6 @@ impl<S: GlobalState> CommonWidget<S> for HStack<S> {
     }
 }
 
-impl<S: GlobalState> ChildRender for HStack<S> {}
+impl<GS: GlobalStateContract> ChildRender for HStack<GS> {}
 
 

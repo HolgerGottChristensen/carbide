@@ -4,7 +4,7 @@ use crate::widget::ChildRender;
 
 /// A basic, non-interactive rectangle shape widget.
 #[derive(Debug, Clone, Widget)]
-pub struct VStack<GS> where GS: GlobalState {
+pub struct VStack<GS> where GS: GlobalStateContract {
     id: Uuid,
     children: Vec<Box<dyn Widget<GS>>>,
     position: Point,
@@ -13,9 +13,9 @@ pub struct VStack<GS> where GS: GlobalState {
     cross_axis_alignment: CrossAxisAlignment,
 }
 
-impl<GS: GlobalState> WidgetExt<GS> for VStack<GS> {}
+impl<GS: GlobalStateContract> WidgetExt<GS> for VStack<GS> {}
 
-impl<S: GlobalState> VStack<S> {
+impl<S: GlobalStateContract> VStack<S> {
     pub fn initialize(children: Vec<Box<dyn Widget<S>>>) -> Box<Self> {
         Box::new(VStack {
             id: Uuid::new_v4(),
@@ -38,7 +38,7 @@ impl<S: GlobalState> VStack<S> {
     }
 }
 
-impl<GS: GlobalState> Layout<GS> for VStack<GS> {
+impl<GS: GlobalStateContract> Layout<GS> for VStack<GS> {
     fn flexibility(&self) -> u32 {
         1
     }
@@ -125,7 +125,7 @@ impl<GS: GlobalState> Layout<GS> for VStack<GS> {
     }
 }
 
-impl<S: GlobalState> CommonWidget<S> for VStack<S> {
+impl<S: GlobalStateContract> CommonWidget<S> for VStack<S> {
     fn get_id(&self) -> Uuid {
         self.id
     }
@@ -198,6 +198,6 @@ impl<S: GlobalState> CommonWidget<S> for VStack<S> {
     }
 }
 
-impl<S: GlobalState> ChildRender for VStack<S> {}
+impl<S: GlobalStateContract> ChildRender for VStack<S> {}
 
 

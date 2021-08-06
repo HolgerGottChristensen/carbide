@@ -8,7 +8,7 @@ use carbide_core::widget::*;
 #[derive(Clone, Widget)]
 #[event(handle_keyboard_event, handle_mouse_event)]
 #[focusable]
-pub struct PlainButton<T, GS> where GS: GlobalState, T: StateContract + 'static {
+pub struct PlainButton<T, GS> where GS: GlobalStateContract, T: StateContract + 'static {
     id: Id,
     #[state] focus: FocusState<GS>,
     child: Box<dyn Widget<GS>>,
@@ -21,7 +21,7 @@ pub struct PlainButton<T, GS> where GS: GlobalState, T: StateContract + 'static 
     #[state] local_state: TState<T, GS>,
 }
 
-impl<T: StateContract + 'static, GS: GlobalState> PlainButton<T, GS> {
+impl<T: StateContract + 'static, GS: GlobalStateContract> PlainButton<T, GS> {
     pub fn on_click(mut self, fire: fn(myself: &mut Self, env: &mut Environment<GS>, global_state: &mut GS)) -> Box<Self> {
         self.on_click = Some(fire);
         Box::new(self)
@@ -126,7 +126,7 @@ impl<T: StateContract + 'static, GS: GlobalState> PlainButton<T, GS> {
     }
 }
 
-impl<T: StateContract, GS: GlobalState> CommonWidget<GS> for PlainButton<T, GS> {
+impl<T: StateContract, GS: GlobalStateContract> CommonWidget<GS> for PlainButton<T, GS> {
     fn get_id(&self) -> Id {
         self.id
     }
@@ -180,9 +180,9 @@ impl<T: StateContract, GS: GlobalState> CommonWidget<GS> for PlainButton<T, GS> 
     }
 }
 
-impl<T: StateContract, GS: GlobalState> ChildRender for PlainButton<T, GS> {}
+impl<T: StateContract, GS: GlobalStateContract> ChildRender for PlainButton<T, GS> {}
 
-impl<T: StateContract, GS: GlobalState> Layout<GS> for PlainButton<T, GS> {
+impl<T: StateContract, GS: GlobalStateContract> Layout<GS> for PlainButton<T, GS> {
     fn flexibility(&self) -> u32 {
         10
     }
@@ -210,4 +210,4 @@ impl<T: StateContract, GS: GlobalState> Layout<GS> for PlainButton<T, GS> {
 }
 
 
-impl<T: StateContract + 'static, GS: GlobalState> WidgetExt<GS> for PlainButton<T, GS> {}
+impl<T: StateContract + 'static, GS: GlobalStateContract> WidgetExt<GS> for PlainButton<T, GS> {}

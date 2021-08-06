@@ -1,5 +1,5 @@
 use crate::prelude::EnvironmentFontSizeState;
-use crate::prelude::GlobalState;
+use crate::prelude::GlobalStateContract;
 use crate::state::*;
 use crate::state::widget_state::WidgetState;
 
@@ -16,7 +16,7 @@ pub enum EnvironmentFontSize {
     Footnote,
     Caption,
     Caption2,
-    Custom(String)
+    Custom(String),
 }
 
 impl Default for EnvironmentFontSize {
@@ -25,7 +25,7 @@ impl Default for EnvironmentFontSize {
     }
 }
 
-impl<GS: GlobalState> Into<U32State<GS>> for EnvironmentFontSize {
+impl<GS: GlobalStateContract> Into<U32State<GS>> for EnvironmentFontSize {
     fn into(self) -> U32State<GS> {
         WidgetState::new(Box::new(EnvironmentFontSizeState::new(self)))
     }

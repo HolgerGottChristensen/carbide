@@ -1,4 +1,4 @@
-use std::path::{Path, PathBuf};
+use std::path::Path;
 
 use crate::image_map;
 use crate::text::{FontFamily, FontId};

@@ -39,7 +39,7 @@ pub fn impl_widget(ast: &syn::DeriveInput) -> proc_macro2::TokenStream {
     let named = match &body.fields {
         Fields::Named(n) => {
             n
-        },
+        }
         Fields::Unnamed(_) => {
             panic!("Unnamed field structs not supported for derive macro Widget")
         }
@@ -50,7 +50,7 @@ pub fn impl_widget(ast: &syn::DeriveInput) -> proc_macro2::TokenStream {
 
     let state_idents_iter = named.named
         .iter()
-        .filter_map(|field|{
+        .filter_map(|field| {
             let mut contains_state = false;
 
             for attr in &field.attrs {
@@ -99,54 +99,40 @@ pub fn impl_widget(ast: &syn::DeriveInput) -> proc_macro2::TokenStream {
         let generic_use = quote! { #ident };
 
         (generic, generic_use)
-
     } else {
-        let generic = quote! { GS: carbide_core::state::global_state::GlobalState };
+        let generic = quote! { GS: carbide_core::state::global_state::GlobalStateContract };
         let generic_use = quote! {GS};
 
         (generic, generic_use)
     };
 
 
-
-    let insert_local_state = if let Some(_) = struct_attributes.get("state_sync.insert_local_state") {
-        quote! {#struct_ident::insert_local_state(self, env);}
+    let capture_state = if let Some(_) = struct_attributes.get("state_sync.capture_state") {
+        quote! {#struct_ident::capture_state(self, env, global_state);}
     } else {
         quote! {}
     };
 
-    let update_all_widget_state = if let Some(_) = struct_attributes.get("state_sync.update_all_widget_state") {
-        quote! {#struct_ident::update_all_widget_state(self, env, global_state);}
+    let release_state = if let Some(_) = struct_attributes.get("state_sync.release_state") {
+        quote! {#struct_ident::release_state(self, env);}
     } else {
         quote! {}
-    };
-
-    let update_local_widget_state = if let Some(_) = struct_attributes.get("state_sync.update_local_widget_state") {
-        quote! {#struct_ident::update_local_widget_state(self, env);}
-    } else {
-        quote! {}
-    };
-
-    let sync_state = if let Some(_) = struct_attributes.get("state_sync.sync_state") {
-        quote! {#struct_ident::sync_state(self, env, global_state);}
-    } else {
-        quote! {self.default_sync_state(env, global_state)}
     };
 
     let handle_mouse_event = if let Some(_) = struct_attributes.get("event.handle_mouse_event") {
-        quote! {#struct_ident::handle_mouse_event(self, event, consumed, env, global_state);}
+        quote! {#struct_ident::handle_mouse_event(self, event, consumed, env);}
     } else {
         quote! {}
     };
 
     let handle_keyboard_event = if let Some(_) = struct_attributes.get("event.handle_keyboard_event") {
-        quote! {#struct_ident::handle_keyboard_event(self, event, env, global_state);}
+        quote! {#struct_ident::handle_keyboard_event(self, event, env);}
     } else {
         quote! {}
     };
 
     let handle_other_event = if let Some(_) = struct_attributes.get("event.handle_other_event") {
-        quote! {#struct_ident::handle_other_event(self, event, env, global_state);}
+        quote! {#struct_ident::handle_other_event(self, event, env);}
     } else {
         quote! {}
     };
@@ -314,17 +300,23 @@ pub fn impl_widget(ast: &syn::DeriveInput) -> proc_macro2::TokenStream {
         quote! {}
     };
 
+    let process_get_primitives = if let Some(_) = struct_attributes.get("render.process_get_primitives") {
+        quote! {#struct_ident::process_get_primitives(self, primitives, env, global_state);}
+    } else {
+        quote! {self.process_get_primitives_default(primitives, env, global_state);}
+    };
+
     let wheres = filtered_where_clause(&ast);
 
     quote! {
 
         #[automatically_derived]
         impl<#(#generics_without_gs ,)* #global_state> carbide_core::focus::Focusable<#global_state_use> for #struct_ident #generics_with_gs #wheres {
-            fn focus_retrieved(&mut self, event: &carbide_core::event_handler::WidgetEvent, focus_request: &carbide_core::focus::Refocus, env: &mut carbide_core::prelude::Environment<#global_state_use>, global_state: &mut #global_state_use) {
+            fn focus_retrieved(&mut self, event: &carbide_core::event_handler::WidgetEvent, focus_request: &carbide_core::focus::Refocus, env: &mut carbide_core::prelude::Environment<#global_state_use>, global_state: &carbide_core::state::global_state::GlobalStateContainer<#global_state_use>) {
                 #focus_retrieved
             }
 
-            fn focus_dismissed(&mut self, event: &carbide_core::event_handler::WidgetEvent, focus_request: &carbide_core::focus::Refocus, env: &mut carbide_core::prelude::Environment<#global_state_use>, global_state: &mut #global_state_use) {
+            fn focus_dismissed(&mut self, event: &carbide_core::event_handler::WidgetEvent, focus_request: &carbide_core::focus::Refocus, env: &mut carbide_core::prelude::Environment<#global_state_use>, global_state: &carbide_core::state::global_state::GlobalStateContainer<#global_state_use>) {
                 #focus_dismissed
             }
 
@@ -340,15 +332,15 @@ pub fn impl_widget(ast: &syn::DeriveInput) -> proc_macro2::TokenStream {
                 #set_focus
             }
 
-            fn process_focus_request(&mut self, event: &carbide_core::event_handler::WidgetEvent, focus_request: &carbide_core::focus::Refocus, env: &mut carbide_core::prelude::Environment<#global_state_use>, global_state: &mut #global_state_use) -> bool {
+            fn process_focus_request(&mut self, event: &carbide_core::event_handler::WidgetEvent, focus_request: &carbide_core::focus::Refocus, env: &mut carbide_core::prelude::Environment<#global_state_use>, global_state: &carbide_core::state::global_state::GlobalStateContainer<#global_state_use>) -> bool {
                 #block_focus_request
             }
 
-            fn process_focus_next(&mut self, event: &carbide_core::event_handler::WidgetEvent, focus_request: &carbide_core::focus::Refocus, focus_up_for_grab: bool, env: &mut carbide_core::prelude::Environment<#global_state_use>, global_state: &mut #global_state_use) -> bool {
+            fn process_focus_next(&mut self, event: &carbide_core::event_handler::WidgetEvent, focus_request: &carbide_core::focus::Refocus, focus_up_for_grab: bool, env: &mut carbide_core::prelude::Environment<#global_state_use>, global_state: &carbide_core::state::global_state::GlobalStateContainer<#global_state_use>) -> bool {
                 #block_focus_next
             }
 
-            fn process_focus_previous(&mut self, event: &carbide_core::event_handler::WidgetEvent, focus_request: &carbide_core::focus::Refocus, focus_up_for_grab: bool, env: &mut carbide_core::prelude::Environment<#global_state_use>, global_state: &mut #global_state_use) -> bool {
+            fn process_focus_previous(&mut self, event: &carbide_core::event_handler::WidgetEvent, focus_request: &carbide_core::focus::Refocus, focus_up_for_grab: bool, env: &mut carbide_core::prelude::Environment<#global_state_use>, global_state: &carbide_core::state::global_state::GlobalStateContainer<#global_state_use>) -> bool {
                 #block_focus_previous
             }
 
@@ -356,63 +348,59 @@ pub fn impl_widget(ast: &syn::DeriveInput) -> proc_macro2::TokenStream {
 
         #[automatically_derived]
         impl<#(#generics_without_gs ,)* #global_state> carbide_core::event::event::Event<#global_state_use> for #struct_ident #generics_with_gs #wheres {
-            fn handle_mouse_event(&mut self, event: &carbide_core::event_handler::MouseEvent, consumed: &bool, env: &mut carbide_core::prelude::Environment<#global_state_use>, global_state: &mut #global_state_use) {
+            fn handle_mouse_event(&mut self, event: &carbide_core::event_handler::MouseEvent, consumed: &bool, env: &mut carbide_core::prelude::Environment<#global_state_use>) {
                 #handle_mouse_event
             }
 
-            fn handle_keyboard_event(&mut self, event: &carbide_core::event_handler::KeyboardEvent, env: &mut carbide_core::prelude::Environment<#global_state_use>, global_state: &mut #global_state_use) {
+            fn handle_keyboard_event(&mut self, event: &carbide_core::event_handler::KeyboardEvent, env: &mut carbide_core::prelude::Environment<#global_state_use>) {
                 #default_tab_focus_behavior
                 #handle_keyboard_event
             }
 
-            fn handle_other_event(&mut self, event: &carbide_core::event_handler::WidgetEvent, env: &mut carbide_core::prelude::Environment<#global_state_use>, global_state: &mut #global_state_use) {
+            fn handle_other_event(&mut self, event: &carbide_core::event_handler::WidgetEvent, env: &mut carbide_core::prelude::Environment<#global_state_use>) {
                 #handle_other_event
             }
 
-            fn process_mouse_event(&mut self, event: &carbide_core::event_handler::MouseEvent, consumed: &bool, env: &mut carbide_core::prelude::Environment<#global_state_use>, global_state: &mut #global_state_use) {
+            fn process_mouse_event(&mut self, event: &carbide_core::event_handler::MouseEvent, consumed: &bool, env: &mut carbide_core::prelude::Environment<#global_state_use>, global_state: &carbide_core::state::global_state::GlobalStateContainer<#global_state_use>) {
                 #process_mouse_event
             }
 
-            fn process_keyboard_event(&mut self, event: &carbide_core::event_handler::KeyboardEvent, env: &mut carbide_core::prelude::Environment<#global_state_use>, global_state: &mut #global_state_use) {
+            fn process_keyboard_event(&mut self, event: &carbide_core::event_handler::KeyboardEvent, env: &mut carbide_core::prelude::Environment<#global_state_use>, global_state: &carbide_core::state::global_state::GlobalStateContainer<#global_state_use>) {
                 #process_keyboard_event
             }
 
-            fn process_other_event(&mut self, event: &carbide_core::event_handler::WidgetEvent, env: &mut carbide_core::prelude::Environment<#global_state_use>, global_state: &mut #global_state_use) {
+            fn process_other_event(&mut self, event: &carbide_core::event_handler::WidgetEvent, env: &mut carbide_core::prelude::Environment<#global_state_use>, global_state: &carbide_core::state::global_state::GlobalStateContainer<#global_state_use>) {
                 #process_other_event
+            }
+        }
+
+        #[automatically_derived]
+        impl<#(#generics_without_gs ,)* #global_state> carbide_core::widget::render::RenderProcessor<#global_state_use> for #struct_ident #generics_with_gs #wheres {
+            fn process_get_primitives(&mut self, primitives: &mut std::vec::Vec<carbide_core::render::primitive::Primitive>, env: &mut carbide_core::prelude::Environment<#global_state_use>, global_state: &carbide_core::state::global_state::GlobalStateContainer<#global_state_use>) {
+                #process_get_primitives
             }
         }
 
 
         #[automatically_derived]
         impl<#(#generics_without_gs ,)* #global_state> carbide_core::state::state_sync::StateSync<#global_state_use> for #struct_ident #generics_with_gs #wheres {
-            fn insert_local_state(&self, env: &mut carbide_core::prelude::Environment<#global_state_use>) {
-                #(env.insert_local_state(&self.#state_idents);)*
+            fn capture_state(&mut self, env: &mut carbide_core::prelude::Environment<#global_state_use>, global_state: &carbide_core::state::global_state::GlobalStateContainer<#global_state_use>) {
+                #(self.#state_idents.capture_state(env, global_state);)*
 
-                #insert_local_state
+                #capture_state
             }
 
-            fn update_all_widget_state(&mut self, env: &mut carbide_core::prelude::Environment<#global_state_use>, global_state: &#global_state_use) {
-                self.update_local_widget_state(env);
-                #(self.#state_idents.get_value(env, global_state);)*
+            fn release_state(&mut self, env: &mut carbide_core::prelude::Environment<#global_state_use>) {
+                #(self.#state_idents.release_state(env);)*
 
-                #update_all_widget_state
-            }
-
-            fn update_local_widget_state(&mut self, env: &carbide_core::prelude::Environment<#global_state_use>) {
-                #(env.update_local_state(&mut self.#state_idents);)*
-
-                #update_local_widget_state
-            }
-
-            fn sync_state(&mut self, env: &mut carbide_core::prelude::Environment<#global_state_use>, global_state: &#global_state_use) {
-                #sync_state
+                #release_state
             }
         }
 
         #[automatically_derived]
         impl<#(#generics_without_gs ,)* #global_state> carbide_core::widget::primitive::widget::Widget<#global_state_use> for #struct_ident #generics_with_gs #wheres {}
 
-        // When this is implemented in a macro you loose intellij autocomplete
+        // When this is implemented in a macro you lose IntelliJ autocomplete
         //#[automatically_derived]
         //impl<#(#generics_without_gs ,)* #global_state> carbide_core::widget::primitive::widget::WidgetExt<#global_state_use> for #struct_ident #generics_with_gs #wheres {}
     }
@@ -479,14 +467,14 @@ fn path_to_string(path: Path) -> String {
         state
     });
 
-    string.remove(string.len()-1);
+    string.remove(string.len() - 1);
     string
 }
 
 
 fn filtered_where_clause(ast: &&DeriveInput) -> TokenStream {
     if ast.generics.where_clause.is_none() {
-        return quote!{};
+        return quote! {};
     }
 
 

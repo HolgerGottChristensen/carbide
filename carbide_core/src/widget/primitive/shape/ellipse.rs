@@ -12,7 +12,7 @@ use crate::widget::types::triangle_store::TriangleStore;
 
 /// A simple, non-interactive widget for drawing a single **Ellipse**.
 #[derive(Debug, Clone, Widget)]
-pub struct Ellipse<GS> where GS: GlobalState {
+pub struct Ellipse<GS> where GS: GlobalStateContract {
     pub id: Uuid,
     position: Point,
     dimension: Dimensions,
@@ -23,7 +23,7 @@ pub struct Ellipse<GS> where GS: GlobalState {
     triangle_store: TriangleStore,
 }
 
-impl<GS: GlobalState> Ellipse<GS> {
+impl<GS: GlobalStateContract> Ellipse<GS> {
     pub fn fill<C: Into<ColorState<GS>>>(mut self, color: C) -> Box<Self> {
         self.fill_color = color.into();
         self.style += ShapeStyle::Fill;
@@ -56,7 +56,7 @@ impl<GS: GlobalState> Ellipse<GS> {
     }
 }
 
-impl<GS: GlobalState> Layout<GS> for Ellipse<GS> {
+impl<GS: GlobalStateContract> Layout<GS> for Ellipse<GS> {
     fn flexibility(&self) -> u32 {
         0
     }
@@ -70,7 +70,7 @@ impl<GS: GlobalState> Layout<GS> for Ellipse<GS> {
     fn position_children(&mut self) {}
 }
 
-impl<GS: GlobalState> CommonWidget<GS> for Ellipse<GS> {
+impl<GS: GlobalStateContract> CommonWidget<GS> for Ellipse<GS> {
     fn get_id(&self) -> Uuid {
         self.id
     }
@@ -116,8 +116,8 @@ impl<GS: GlobalState> CommonWidget<GS> for Ellipse<GS> {
     }
 }
 
-impl<GS: GlobalState> Render<GS> for Ellipse<GS> {
-    fn get_primitives(&mut self, env: &mut Environment<GS>, global_state: &GS) -> Vec<Primitive> {
+impl<GS: GlobalStateContract> Render<GS> for Ellipse<GS> {
+    fn get_primitives(&mut self, _: &mut Environment<GS>) -> Vec<Primitive> {
         let radii = vec2(self.get_width() as f32 / 2.0, self.get_height() as f32 / 2.0);
         let center = point(self.get_x() as f32 + radii.x, self.get_y() as f32 + radii.y);
         let rectangle = rect(self.get_x() as f32, self.get_y() as f32, self.get_width() as f32, self.get_height() as f32);
@@ -131,7 +131,7 @@ impl<GS: GlobalState> Render<GS> for Ellipse<GS> {
             );
         });
 
-        let mut prims = self.triangle_store.get_primitives(*self.fill_color.get_latest_value(), *self.stroke_color.get_latest_value());
+        let mut prims = self.triangle_store.get_primitives(*self.fill_color, *self.stroke_color);
 
         prims.extend(Rectangle::<GS>::debug_outline(OldRect::new(self.position, self.dimension), 1.0));
 
@@ -139,7 +139,7 @@ impl<GS: GlobalState> Render<GS> for Ellipse<GS> {
     }
 }
 
-impl<GS: GlobalState> Shape<GS> for Ellipse<GS> {
+impl<GS: GlobalStateContract> Shape<GS> for Ellipse<GS> {
     fn get_triangle_store_mut(&mut self) -> &mut TriangleStore {
         &mut self.triangle_store
     }
@@ -153,4 +153,4 @@ impl<GS: GlobalState> Shape<GS> for Ellipse<GS> {
     }
 }
 
-impl<GS: GlobalState> WidgetExt<GS> for Ellipse<GS> {}
+impl<GS: GlobalStateContract> WidgetExt<GS> for Ellipse<GS> {}

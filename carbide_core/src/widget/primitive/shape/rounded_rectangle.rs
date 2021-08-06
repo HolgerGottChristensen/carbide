@@ -12,7 +12,7 @@ use crate::widget::types::triangle_store::TriangleStore;
 
 /// A basic, non-interactive rectangle shape widget.
 #[derive(Debug, Clone, Widget)]
-pub struct RoundedRectangle<GS> where GS: GlobalState {
+pub struct RoundedRectangle<GS> where GS: GlobalStateContract {
     id: Uuid,
     position: Point,
     dimension: Dimensions,
@@ -24,7 +24,7 @@ pub struct RoundedRectangle<GS> where GS: GlobalState {
     triangle_store: TriangleStore,
 }
 
-impl<GS: GlobalState> RoundedRectangle<GS> {
+impl<GS: GlobalStateContract> RoundedRectangle<GS> {
     pub fn fill<C: Into<ColorState<GS>>>(mut self, color: C) -> Box<Self> {
         self.fill_color = color.into();
         self.style += ShapeStyle::Fill;
@@ -58,7 +58,7 @@ impl<GS: GlobalState> RoundedRectangle<GS> {
     }
 }
 
-impl<GS: GlobalState> Layout<GS> for RoundedRectangle<GS> {
+impl<GS: GlobalStateContract> Layout<GS> for RoundedRectangle<GS> {
     fn flexibility(&self) -> u32 {
         0
     }
@@ -71,7 +71,7 @@ impl<GS: GlobalState> Layout<GS> for RoundedRectangle<GS> {
     fn position_children(&mut self) {}
 }
 
-impl<S: GlobalState> CommonWidget<S> for RoundedRectangle<S> {
+impl<S: GlobalStateContract> CommonWidget<S> for RoundedRectangle<S> {
     fn get_id(&self) -> Uuid {
         self.id
     }
@@ -118,7 +118,7 @@ impl<S: GlobalState> CommonWidget<S> for RoundedRectangle<S> {
     }
 }
 
-impl<GS: GlobalState> Shape<GS> for RoundedRectangle<GS> {
+impl<GS: GlobalStateContract> Shape<GS> for RoundedRectangle<GS> {
     fn get_triangle_store_mut(&mut self) -> &mut TriangleStore {
         &mut self.triangle_store
     }
@@ -132,8 +132,8 @@ impl<GS: GlobalState> Shape<GS> for RoundedRectangle<GS> {
     }
 }
 
-impl<GS: GlobalState> Render<GS> for RoundedRectangle<GS> {
-    fn get_primitives(&mut self, env: &mut Environment<GS>, global_state: &GS) -> Vec<Primitive> {
+impl<GS: GlobalStateContract> Render<GS> for RoundedRectangle<GS> {
+    fn get_primitives(&mut self, _: &mut Environment<GS>) -> Vec<Primitive> {
         let rectangle = rect(self.get_x() as f32, self.get_y() as f32, self.get_width() as f32, self.get_height() as f32);
 
         let corner_radius = self.corner_radii;
@@ -151,7 +151,7 @@ impl<GS: GlobalState> Render<GS> for RoundedRectangle<GS> {
             );
         });
 
-        let mut prims = self.triangle_store.get_primitives(*self.fill_color.get_latest_value(), *self.stroke_color.get_latest_value());
+        let mut prims = self.triangle_store.get_primitives(*self.fill_color, *self.stroke_color);
 
         prims.extend(Rectangle::<GS>::debug_outline(OldRect::new(self.position, self.dimension), 1.0));
 
@@ -159,4 +159,4 @@ impl<GS: GlobalState> Render<GS> for RoundedRectangle<GS> {
     }
 }
 
-impl<GS: GlobalState> WidgetExt<GS> for RoundedRectangle<GS> {}
+impl<GS: GlobalStateContract> WidgetExt<GS> for RoundedRectangle<GS> {}

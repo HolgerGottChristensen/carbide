@@ -17,7 +17,7 @@ use crate::prelude::EnvironmentColor;
 use crate::prelude::EnvironmentFontSize;
 use crate::prelude::EnvironmentVariable;
 use crate::render::cprimitives::CPrimitives;
-use crate::state::global_state::GlobalState;
+use crate::state::global_state::{GlobalStateContainer, GlobalStateContract};
 use crate::widget::primitive::Widget;
 use crate::widget::Rectangle;
 
@@ -30,7 +30,7 @@ use crate::widget::Rectangle;
 /// * Maintains the latest user input state (for mouse and keyboard).
 /// * Maintains the latest window dimensions.
 #[derive(Debug)]
-pub struct Ui<S> where S: GlobalState {
+pub struct Ui<GS> where GS: GlobalStateContract {
     num_redraw_frames: u8,
     /// Whether or not the `Ui` needs to be re-drawn to screen.
     redraw_count: AtomicUsize,
@@ -40,9 +40,9 @@ pub struct Ui<S> where S: GlobalState {
     /// Mouse cursor
     mouse_cursor: cursor::MouseCursor,
 
-    pub widgets: Box<dyn Widget<S>>,
+    pub widgets: Box<dyn Widget<GS>>,
     event_handler: EventHandler,
-    pub environment: Environment<S>,
+    pub environment: Environment<GS>,
     any_focus: bool,
 }
 
@@ -52,7 +52,7 @@ pub struct Ui<S> where S: GlobalState {
 /// buffer. Otherwise if we don't draw into each buffer, we will probably be subject to flickering.
 pub const SAFE_REDRAW_COUNT: u8 = 3;
 
-impl<S: GlobalState> Ui<S> {
+impl<GS: GlobalStateContract> Ui<GS> {
     /// A new, empty **Ui**.
     pub fn new(window_pixel_dimensions: Dimensions, scale_factor: f64) -> Self {
         let dark_system_colors = vec![
@@ -170,7 +170,7 @@ impl<S: GlobalState> Ui<S> {
     }
 
 
-    pub fn handle_event(&mut self, event: Input, _: &mut S) {
+    pub fn handle_event(&mut self, event: Input, _: &mut GS) {
         let window_event = self.event_handler.handle_event(event, self.environment.get_corrected_dimensions());
 
         //let mut _needs_redraw = self.delegate_events(global_state);
@@ -196,7 +196,7 @@ impl<S: GlobalState> Ui<S> {
         //}
     }
 
-    pub fn delegate_events(&mut self, global_state: &mut S) -> bool {
+    pub fn delegate_events(&mut self, global_state: &GlobalStateContainer<GS>) -> bool {
         let now = Instant::now();
         let events = self.event_handler.get_events();
 
@@ -267,7 +267,7 @@ impl<S: GlobalState> Ui<S> {
             self.widgets.calculate_size(self.environment.get_corrected_dimensions(), &mut self.environment);
             self.widgets.position_children();
 
-            self.widgets.sync_state(&mut self.environment, global_state);
+            //self.widgets.sync_state(&mut self.environment, global_state);
 
 
             self.environment.clear();
@@ -289,7 +289,7 @@ impl<S: GlobalState> Ui<S> {
     ///
     /// NOTE: If you don't need to redraw your carbide GUI every frame, it is recommended to use the
     /// `Ui::draw_if_changed` method instead.
-    pub fn draw(&mut self, global_state: &S) -> CPrimitives {
+    pub fn draw(&mut self, global_state: &GlobalStateContainer<GS>) -> CPrimitives {
         let corrected_dimensions = self.environment.get_corrected_dimensions();
 
         CPrimitives::new(corrected_dimensions, &mut self.widgets, &mut self.environment, global_state)

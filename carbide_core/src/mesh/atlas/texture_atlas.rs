@@ -1,14 +1,13 @@
 use std::collections::HashMap;
 
-use fxhash::{FxBuildHasher, FxHasher, FxHashMap};
-use image::{GenericImage, GenericImageView};
+use fxhash::{FxBuildHasher, FxHashMap};
+use image::GenericImageView;
 use rusttype::{GlyphId, Point, Rect};
 
-use crate::draw::{Dimension, Position};
+use crate::draw::Position;
 use crate::mesh::atlas::lossy_glyph_info::LossyGlyphInfo;
 use crate::Scalar;
-use crate::text::{Font, FontFamily, FontId, FontSize, FontStyle, FontWeight, Glyph};
-use crate::widget::{Environment, GlobalState};
+use crate::text::{Font, FontId, FontSize, Glyph};
 
 type ImageId = crate::image_map::Id;
 type ImageData = image::DynamicImage;
@@ -244,7 +243,7 @@ impl TextureAtlas {
             } else {
                 let shelf = self.new_shelf(image_data.height());
                 self.shelves.push(shelf);
-                let new_shelf_number = (self.shelves.len() - 1);
+                let new_shelf_number = self.shelves.len() - 1;
                 self.shelves[new_shelf_number].append(*atlas_id, image_data, &mut uploader)
             };
 

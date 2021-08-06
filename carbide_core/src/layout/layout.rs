@@ -2,10 +2,10 @@ use crate::layout::basic_layouter::BasicLayouter;
 use crate::layout::layouter::Layouter;
 use crate::position::Dimensions;
 use crate::prelude::Environment;
-use crate::state::global_state::GlobalState;
+use crate::state::global_state::GlobalStateContract;
 use crate::widget::common_widget::CommonWidget;
 
-pub trait Layout<GS> where GS: GlobalState {
+pub trait Layout<GS> where GS: GlobalStateContract {
     /// 0 is the most flexible and the largest number is the least flexible
     fn flexibility(&self) -> u32;
     fn calculate_size(&mut self, requested_size: Dimensions, env: &mut Environment<GS>) -> Dimensions;
@@ -16,7 +16,7 @@ pub trait SingleChildLayout {
     fn flexibility(&self) -> u32;
 }
 
-impl<T, GS: GlobalState> Layout<GS> for T where T: SingleChildLayout + CommonWidget<GS> {
+impl<T, GS: GlobalStateContract> Layout<GS> for T where T: SingleChildLayout + CommonWidget<GS> {
     fn flexibility(&self) -> u32 {
         self.flexibility()
     }

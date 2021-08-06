@@ -1,9 +1,9 @@
 use crate::prelude::*;
-use crate::widget::Frame;
+use crate::widget::{ChildRender, Frame};
 
 /// A basic, non-interactive rectangle shape widget.
 #[derive(Debug, Clone, Widget)]
-pub struct IfElse<GS> where GS: GlobalState {
+pub struct IfElse<GS> where GS: GlobalStateContract {
     id: Uuid,
     when_true: Box<dyn Widget<GS>>,
     when_false: Box<dyn Widget<GS>>,
@@ -12,7 +12,7 @@ pub struct IfElse<GS> where GS: GlobalState {
     #[state] predicate: BoolState<GS>,
 }
 
-impl<GS: GlobalState> IfElse<GS> {
+impl<GS: GlobalStateContract> IfElse<GS> {
     pub fn new<B: Into<BoolState<GS>>>(predicate: B) -> Box<Self> {
         Box::new(IfElse {
             id: Uuid::new_v4(),
@@ -35,9 +35,9 @@ impl<GS: GlobalState> IfElse<GS> {
     }
 }
 
-impl<GS: GlobalState> Layout<GS> for IfElse<GS> {
+impl<GS: GlobalStateContract> Layout<GS> for IfElse<GS> {
     fn flexibility(&self) -> u32 {
-        if *self.predicate.get_latest_value() {
+        if *self.predicate {
             self.when_true.flexibility()
         } else {
             self.when_false.flexibility()
@@ -45,7 +45,7 @@ impl<GS: GlobalState> Layout<GS> for IfElse<GS> {
     }
 
     fn calculate_size(&mut self, requested_size: Dimensions, env: &mut Environment<GS>) -> Dimensions {
-        if *self.predicate.get_latest_value() {
+        if *self.predicate {
             self.dimension = self.when_true.calculate_size(requested_size, env);
         } else {
             self.dimension = self.when_false.calculate_size(requested_size, env);
@@ -58,7 +58,7 @@ impl<GS: GlobalState> Layout<GS> for IfElse<GS> {
         let position = self.position;
         let dimension = self.dimension;
 
-        if *self.predicate.get_latest_value() {
+        if *self.predicate {
             positioning(position, dimension, &mut self.when_true);
 
             self.when_true.position_children();
@@ -70,7 +70,7 @@ impl<GS: GlobalState> Layout<GS> for IfElse<GS> {
     }
 }
 
-impl<S: GlobalState> CommonWidget<S> for IfElse<S> {
+impl<S: GlobalStateContract> CommonWidget<S> for IfElse<S> {
     fn get_id(&self) -> Uuid {
         self.id
     }
@@ -84,7 +84,7 @@ impl<S: GlobalState> CommonWidget<S> for IfElse<S> {
     }
 
     fn get_children(&self) -> WidgetIter<S> {
-        if *self.predicate.get_latest_value() {
+        if *self.predicate {
             if self.when_true.get_flag() == Flags::PROXY {
                 self.when_true.get_children()
             } else {
@@ -100,7 +100,7 @@ impl<S: GlobalState> CommonWidget<S> for IfElse<S> {
     }
 
     fn get_children_mut(&mut self) -> WidgetIterMut<S> {
-        if *self.predicate.get_latest_value() {
+        if *self.predicate {
             if self.when_true.get_flag() == Flags::PROXY {
                 self.when_true.get_children_mut()
             } else {
@@ -116,7 +116,7 @@ impl<S: GlobalState> CommonWidget<S> for IfElse<S> {
     }
 
     fn get_proxied_children(&mut self) -> WidgetIterMut<S> {
-        if *self.predicate.get_latest_value() {
+        if *self.predicate {
             WidgetIterMut::single(self.when_true.deref_mut())
         } else {
             WidgetIterMut::single(self.when_false.deref_mut())
@@ -124,7 +124,7 @@ impl<S: GlobalState> CommonWidget<S> for IfElse<S> {
     }
 
     fn get_proxied_children_rev(&mut self) -> WidgetIterMut<S> {
-        if *self.predicate.get_latest_value() {
+        if *self.predicate {
             WidgetIterMut::single(self.when_true.deref_mut())
         } else {
             WidgetIterMut::single(self.when_false.deref_mut())
@@ -148,15 +148,7 @@ impl<S: GlobalState> CommonWidget<S> for IfElse<S> {
     }
 }
 
-impl<GS: GlobalState> Render<GS> for IfElse<GS> {
-    fn get_primitives(&mut self, env: &mut Environment<GS>, global_state: &GS) -> Vec<Primitive> {
-        let mut prims = vec![];
-        prims.extend(Rectangle::<GS>::debug_outline(OldRect::new(self.position, self.dimension), 1.0));
-        let children: Vec<Primitive> = self.get_children_mut().flat_map(|f| f.get_primitives(env, global_state)).collect();
-        prims.extend(children);
-        return prims;
-    }
-}
+impl<GS: GlobalStateContract> ChildRender for IfElse<GS> {}
 
 
-impl<GS: GlobalState> WidgetExt<GS> for IfElse<GS> {}
+impl<GS: GlobalStateContract> WidgetExt<GS> for IfElse<GS> {}

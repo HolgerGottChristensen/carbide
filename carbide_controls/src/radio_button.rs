@@ -6,14 +6,14 @@ use carbide_core::widget::*;
 use crate::PlainRadioButton;
 
 #[derive(Clone, Widget)]
-pub struct RadioButton<T, GS> where GS: GlobalState, T: Serialize + Clone + Debug + Default + DeserializeOwned + PartialEq + 'static {
+pub struct RadioButton<T, GS> where GS: GlobalStateContract, T: Serialize + Clone + Debug + Default + DeserializeOwned + PartialEq + 'static {
     id: Id,
     child: PlainRadioButton<T, GS>,
     position: Point,
     dimension: Dimensions,
 }
 
-impl<T: Serialize + Clone + Debug + Default + DeserializeOwned + PartialEq + 'static, GS: GlobalState> RadioButton<T, GS> {
+impl<T: Serialize + Clone + Debug + Default + DeserializeOwned + PartialEq + 'static, GS: GlobalStateContract> RadioButton<T, GS> {
     pub fn new<S: Into<StringState<GS>>, L: Into<TState<T, GS>>>(label: S, reference: T, local_state: L) -> Box<Self> {
         let mut child = *PlainRadioButton::new(label, reference, local_state);
 
@@ -66,7 +66,7 @@ impl<T: Serialize + Clone + Debug + Default + DeserializeOwned + PartialEq + 'st
     }
 }
 
-impl<T: Serialize + Clone + Debug + Default + DeserializeOwned + PartialEq + 'static, GS: GlobalState> CommonWidget<GS> for RadioButton<T, GS> {
+impl<T: Serialize + Clone + Debug + Default + DeserializeOwned + PartialEq + 'static, GS: GlobalStateContract> CommonWidget<GS> for RadioButton<T, GS> {
     fn get_id(&self) -> Id {
         self.id
     }
@@ -112,9 +112,9 @@ impl<T: Serialize + Clone + Debug + Default + DeserializeOwned + PartialEq + 'st
     }
 }
 
-impl<T: Serialize + Clone + Debug + Default + DeserializeOwned + PartialEq + 'static, GS: GlobalState> ChildRender for RadioButton<T, GS> {}
+impl<T: Serialize + Clone + Debug + Default + DeserializeOwned + PartialEq + 'static, GS: GlobalStateContract> ChildRender for RadioButton<T, GS> {}
 
-impl<T: Serialize + Clone + Debug + Default + DeserializeOwned + PartialEq + 'static, GS: GlobalState> Layout<GS> for RadioButton<T, GS> {
+impl<T: Serialize + Clone + Debug + Default + DeserializeOwned + PartialEq + 'static, GS: GlobalStateContract> Layout<GS> for RadioButton<T, GS> {
     fn flexibility(&self) -> u32 {
         5
     }
@@ -139,4 +139,4 @@ impl<T: Serialize + Clone + Debug + Default + DeserializeOwned + PartialEq + 'st
 }
 
 
-impl<T: Serialize + Clone + Debug + Default + DeserializeOwned + PartialEq + 'static, GS: GlobalState> WidgetExt<GS> for RadioButton<T, GS> {}
+impl<T: Serialize + Clone + Debug + Default + DeserializeOwned + PartialEq + 'static, GS: GlobalStateContract> WidgetExt<GS> for RadioButton<T, GS> {}

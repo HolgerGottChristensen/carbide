@@ -9,7 +9,7 @@ use uuid::Uuid;
 pub use carbide_core::layout::CrossAxisAlignment;
 pub use carbide_core::layout::Layout;
 pub use carbide_core::layout::layouter::Layouter;
-pub use carbide_core::state::state_ext::StateExt;
+//pub use carbide_core::state::state_ext::StateExt;
 pub use carbide_core::window::TWindow;
 
 pub use crate::{Color, Colorable, OldRect, Point};
@@ -25,8 +25,7 @@ pub use crate::layout::layout::SingleChildLayout;
 pub use crate::position::Dimensions;
 pub use crate::position::Scalar;
 pub use crate::state::*;
-pub use crate::state::global_state::GlobalState;
-pub use crate::state::state::CommonState;
+pub use crate::state::global_state::GlobalStateContract;
 pub use crate::text::FontFamily;
 pub use crate::text::FontStyle;
 pub use crate::text::FontWeight;

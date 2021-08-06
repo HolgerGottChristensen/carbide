@@ -1,20 +1,18 @@
-use rusttype::{point, vector};
-
 use crate::{Color, Scalar};
 use crate::draw::{Dimension, Position, Rect};
-use crate::text::{Font, FontId, Glyph};
+use crate::text::Glyph;
 use crate::text::text_decoration::TextDecoration;
 use crate::text::text_span::TextSpan;
 use crate::text::text_span_generator::TextSpanGenerator;
 use crate::text::text_style::TextStyle;
-use crate::widget::{Environment, GlobalState};
+use crate::widget::{Environment, GlobalStateContract};
 use crate::widget::types::justify::Justify;
 use crate::widget::types::text_wrap::Wrap;
 
 type BoundingBox = Rect;
 
 #[derive(Debug, Clone)]
-pub struct Text<GS> where GS: GlobalState {
+pub struct Text<GS> where GS: GlobalStateContract {
     latest_requested_offset: Position,
     latest_requested_size: Dimension,
     spans: Vec<TextSpan<GS>>,
@@ -35,7 +33,7 @@ pub struct Text<GS> where GS: GlobalState {
     style_that_generated_this: TextStyle,
 }
 
-impl<GS: GlobalState> Text<GS> {
+impl<GS: GlobalStateContract> Text<GS> {
     pub fn new(string: String, style: TextStyle, generator: &dyn TextSpanGenerator<GS>, env: &mut Environment<GS>) -> Text<GS> {
         let mut spans = generator.generate(&string, &style, env);
 
@@ -223,7 +221,7 @@ impl<GS: GlobalState> Text<GS> {
                                     current_max_width -= widths[i];
                                 }
 
-                                current_strike_line.dimension = Dimension::new((current_max_width / self.scale_factor - current_strike_line.position.x), 1.0);
+                                current_strike_line.dimension = Dimension::new(current_max_width / self.scale_factor - current_strike_line.position.x, 1.0);
                                 strike_lines.push(current_strike_line);
 
                                 current_strike_line = Rect { position: Position::new(current_x / self.scale_factor, current_line), dimension: Default::default() };
@@ -233,7 +231,7 @@ impl<GS: GlobalState> Text<GS> {
                                 }
                                 current_glyph_index = latest_break;
                             } else {
-                                current_strike_line.dimension = Dimension::new((requested_width / self.scale_factor - current_strike_line.position.x), 1.0);
+                                current_strike_line.dimension = Dimension::new(requested_width / self.scale_factor - current_strike_line.position.x, 1.0);
                                 strike_lines.push(current_strike_line);
                                 current_line += 1.0;
                                 current_x = 0.0;
@@ -310,7 +308,7 @@ impl<GS: GlobalState> Text<GS> {
                         current_x += *w;
 
                         if current_x > width {
-                            current_strike_line.dimension = Dimension::new((width / self.scale_factor - current_strike_line.position.x), 1.0);
+                            current_strike_line.dimension = Dimension::new(width / self.scale_factor - current_strike_line.position.x, 1.0);
                             strike_lines.push(current_strike_line);
 
                             current_line += 1.0;

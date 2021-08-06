@@ -1,19 +1,13 @@
-#![allow(unsafe_code)]
-
-use std::collections::HashMap;
 use std::fmt::{Debug, Formatter};
-use std::ops::Range;
 
-use fxhash::{FxBuildHasher, FxHashMap};
 use image::{DynamicImage, GenericImage, Rgba};
-use rusttype::{GlyphId, IntoGlyphId, point, PositionedGlyph, Scale, VMetrics};
+use rusttype::{GlyphId, point, Scale, VMetrics};
 
 use crate::draw::Position;
-use crate::prelude::text_old;
 use crate::Scalar;
 use crate::text::{FontId, FontSize};
 use crate::text::glyph::Glyph;
-use crate::widget::{Environment, GlobalState};
+use crate::widget::{Environment, GlobalStateContract};
 
 type RustTypeFont = rusttype::Font<'static>;
 type RustTypeScale = rusttype::Scale;
@@ -113,7 +107,7 @@ impl Font {
         })
     }
 
-    pub fn get_glyphs<GS: GlobalState>(&self, text: &str, font_size: FontSize, scale_factor: Scalar, env: &mut Environment<GS>) -> (Vec<Scalar>, Vec<Glyph>) {
+    pub fn get_glyphs<GS: GlobalStateContract>(&self, text: &str, font_size: FontSize, scale_factor: Scalar, env: &mut Environment<GS>) -> (Vec<Scalar>, Vec<Glyph>) {
         let scale = Font::size_to_scale(font_size, scale_factor);
         let mut next_width = 0.0;
         let mut widths = vec![];

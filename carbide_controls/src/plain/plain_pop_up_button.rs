@@ -14,7 +14,7 @@ use crate::PlainButton;
 #[focusable(block_focus)]
 #[event(handle_keyboard_event, handle_mouse_event)]
 #[state_sync(update_all_widget_state)]
-pub struct PlainPopUpButton<T, GS> where GS: GlobalState, T: StateContract + 'static {
+pub struct PlainPopUpButton<T, GS> where GS: GlobalStateContract, T: StateContract + 'static {
     id: Id,
     #[state] focus: Box<dyn State<Focus, GS>>,
     child: Box<dyn Widget<GS>>,
@@ -29,7 +29,7 @@ pub struct PlainPopUpButton<T, GS> where GS: GlobalState, T: StateContract + 'st
     #[state] model: Box<dyn State<Vec<T>, GS>>,
 }
 
-impl<T: StateContract + 'static, GS: GlobalState> PlainPopUpButton<T, GS> {
+impl<T: StateContract + 'static, GS: GlobalStateContract> PlainPopUpButton<T, GS> {
     pub fn new(model: Box<dyn State<Vec<T>, GS>>, selected_state: Box<dyn State<usize, GS>>) -> Box<Self> {
         let opened = CommonState::new_local_with_key(&false);
 
@@ -178,7 +178,7 @@ impl<T: StateContract + 'static, GS: GlobalState> PlainPopUpButton<T, GS> {
     }
 }
 
-impl<T: StateContract + 'static, GS: GlobalState> CommonWidget<GS> for PlainPopUpButton<T, GS> {
+impl<T: StateContract + 'static, GS: GlobalStateContract> CommonWidget<GS> for PlainPopUpButton<T, GS> {
     fn get_id(&self) -> Id {
         self.id
     }
@@ -232,9 +232,9 @@ impl<T: StateContract + 'static, GS: GlobalState> CommonWidget<GS> for PlainPopU
     }
 }
 
-impl<T: StateContract + 'static, GS: GlobalState> ChildRender for PlainPopUpButton<T, GS> {}
+impl<T: StateContract + 'static, GS: GlobalStateContract> ChildRender for PlainPopUpButton<T, GS> {}
 
-impl<T: StateContract + 'static, GS: GlobalState> Layout<GS> for PlainPopUpButton<T, GS> {
+impl<T: StateContract + 'static, GS: GlobalStateContract> Layout<GS> for PlainPopUpButton<T, GS> {
     fn flexibility(&self) -> u32 {
         10
     }
@@ -262,4 +262,4 @@ impl<T: StateContract + 'static, GS: GlobalState> Layout<GS> for PlainPopUpButto
 }
 
 
-impl<T: StateContract + 'static, GS: GlobalState> WidgetExt<GS> for PlainPopUpButton<T, GS> {}
+impl<T: StateContract + 'static, GS: GlobalStateContract> WidgetExt<GS> for PlainPopUpButton<T, GS> {}

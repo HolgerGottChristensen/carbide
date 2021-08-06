@@ -1,7 +1,10 @@
-use crate::prelude::{Environment, EnvironmentFontSize, GlobalState, State};
+use std::ops::{Deref, DerefMut};
+
+use crate::prelude::{Environment, EnvironmentFontSize, GlobalStateContract, State};
+use crate::prelude::global_state::GlobalStateContainer;
 use crate::state::state_key::StateKey;
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct EnvironmentFontSizeState {
     key: StateKey,
     value: u32,
@@ -11,41 +14,31 @@ impl EnvironmentFontSizeState {
     pub fn new(key: EnvironmentFontSize) -> Self {
         EnvironmentFontSizeState {
             key: StateKey::FontSize(key),
-            value: 20
+            value: 20,
         }
     }
 }
 
-impl<GS: GlobalState> State<u32, GS> for EnvironmentFontSizeState{
-    fn get_value_mut(&mut self, env: &mut Environment<GS>, _: &mut GS) -> &mut u32 {
+impl Deref for EnvironmentFontSizeState {
+    type Target = u32;
+
+    fn deref(&self) -> &Self::Target {
+        &self.value
+    }
+}
+
+impl DerefMut for EnvironmentFontSizeState {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.value
+    }
+}
+
+impl<GS: GlobalStateContract> State<u32, GS> for EnvironmentFontSizeState {
+    fn capture_state(&mut self, env: &mut Environment<GS>, _: &GlobalStateContainer<GS>) {
         if let Some(size) = env.get_font_size(&self.key) {
             self.value = size;
         }
-
-        &mut self.value
     }
 
-    fn get_value(&mut self, env: &Environment<GS>, _: &GS) -> &u32 {
-        if let Some(size) = env.get_font_size(&self.key) {
-            self.value = size;
-        }
-
-        &self.value
-    }
-
-    fn get_latest_value(&self) -> &u32 {
-        &self.value
-    }
-
-    fn get_latest_value_mut(&mut self) -> &mut u32 {
-        &mut self.value
-    }
-
-    fn get_key(&self) -> Option<&StateKey> {
-        None
-    }
-
-    fn update_dependent_states(&mut self, _: &Environment<GS>) {}
-
-    fn insert_dependent_states(&self, _: &mut Environment<GS>) {}
+    fn release_state(&mut self, _: &mut Environment<GS>) {}
 }

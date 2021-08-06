@@ -1,6 +1,5 @@
 use rusttype::GlyphId;
 
-use crate::draw::Position;
 use crate::text::{FontId, FontSize};
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq, Hash)]

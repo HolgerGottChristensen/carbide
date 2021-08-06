@@ -2,13 +2,16 @@ use crate::draw::shape::vertex::Vertex;
 use crate::event_handler::{MouseEvent, WidgetEvent};
 use crate::input::MouseButton;
 use crate::prelude::*;
+use crate::state::global_state::GlobalStateContainer;
+use crate::widget::render::RenderProcessor;
 use crate::widget::types::scroll_direction::ScrollDirection;
 
 /// A basic, non-interactive rectangle shape widget.
 #[derive(Debug, Clone, Widget)]
-#[event(handle_mouse_event, handle_other_event)]
-#[state_sync(update_all_widget_state)]
-pub struct Scroll<GS> where GS: GlobalState {
+//#[event(handle_mouse_event, handle_other_event)]
+//#[state_sync(update_all_widget_state)]
+#[render(process_get_primitives)]
+pub struct Scroll<GS> where GS: GlobalStateContract {
     id: Uuid,
     child: Box<dyn Widget<GS>>,
     position: Point,
@@ -25,15 +28,15 @@ pub struct Scroll<GS> where GS: GlobalState {
     scrollbar_vertical_background: Box<dyn Widget<GS>>,
 }
 
-impl<GS: GlobalState> WidgetExt<GS> for Scroll<GS> {}
+impl<GS: GlobalStateContract> WidgetExt<GS> for Scroll<GS> {}
 
-impl<S: GlobalState> Scroll<S> {
-    fn update_all_widget_state(&mut self, env: &mut Environment<S>, global_state: &S) {
+impl<GS: GlobalStateContract> Scroll<GS> {
+    /*fn update_all_widget_state(&mut self, env: &mut Environment<GS>, global_state: &GS) {
         self.scrollbar_horizontal.sync_state(env, global_state);
         self.scrollbar_vertical.sync_state(env, global_state);
         self.scrollbar_horizontal_background.sync_state(env, global_state);
         self.scrollbar_vertical_background.sync_state(env, global_state);
-    }
+    }*/
 
     pub fn set_scroll_direction(mut self, scroll_directions: ScrollDirection) -> Box<Self> {
         self.scroll_directions = scroll_directions;
@@ -68,7 +71,7 @@ impl<S: GlobalState> Scroll<S> {
         }
     }
 
-    pub fn new(child: Box<dyn Widget<S>>) -> Box<Self> {
+    pub fn new(child: Box<dyn Widget<GS>>) -> Box<Self> {
         Box::new(Self {
             id: Uuid::new_v4(),
             child,
@@ -91,7 +94,7 @@ impl<S: GlobalState> Scroll<S> {
         })
     }
 
-    fn handle_mouse_event(&mut self, event: &MouseEvent, _: &bool, _: &mut Environment<S>, _: &mut S) {
+    /*fn handle_mouse_event(&mut self, event: &MouseEvent, _: &bool, _: &mut Environment<GS>, _: &mut GS) {
         match event {
             MouseEvent::Scroll { x, y, modifiers, .. } => {
                 if !self.is_inside(event.get_current_mouse_position()) { return }
@@ -193,7 +196,7 @@ impl<S: GlobalState> Scroll<S> {
         }
     }
 
-    fn handle_other_event(&mut self, event: &WidgetEvent, _: &mut Environment<S>, _: &mut S) {
+    fn handle_other_event(&mut self, event: &WidgetEvent, _: &mut Environment<GS>, _: &mut GS) {
         match event {
             WidgetEvent::Window(_) => {
                 self.keep_y_within_bounds();
@@ -201,10 +204,32 @@ impl<S: GlobalState> Scroll<S> {
             }
             _ => {}
         }
+    }*/
+
+    fn process_get_primitives(&mut self, primitives: &mut Vec<Primitive>, env: &mut Environment<GS>, global_state: &GlobalStateContainer<GS>) {
+        primitives.extend(self.get_children_mut().flat_map(|f| f.get_primitives(env)));
+
+        if (self.scroll_directions == ScrollDirection::Both ||
+            self.scroll_directions == ScrollDirection::Vertical) && self.child.get_height() > self.get_height() {
+            if self.vertical_scrollbar_hovered || self.drag_started_on_vertical_scrollbar {
+                self.scrollbar_vertical_background.process_get_primitives(primitives, env, global_state);
+            }
+
+            self.scrollbar_vertical.process_get_primitives(primitives, env, global_state);
+        }
+
+        if (self.scroll_directions == ScrollDirection::Both ||
+            self.scroll_directions == ScrollDirection::Horizontal) && self.child.get_width() > self.get_width() {
+            if self.horizontal_scrollbar_hovered || self.drag_started_on_horizontal_scrollbar {
+                self.scrollbar_horizontal_background.process_get_primitives(primitives, env, global_state);
+            }
+
+            self.scrollbar_horizontal.process_get_primitives(primitives, env, global_state);
+        }
     }
 }
 
-impl<GS: GlobalState> Layout<GS> for Scroll<GS> {
+impl<GS: GlobalStateContract> Layout<GS> for Scroll<GS> {
     fn flexibility(&self) -> u32 {
         0
     }
@@ -319,7 +344,7 @@ impl<GS: GlobalState> Layout<GS> for Scroll<GS> {
     }
 }
 
-impl<S: GlobalState> CommonWidget<S> for Scroll<S> {
+impl<S: GlobalStateContract> CommonWidget<S> for Scroll<S> {
     fn get_id(&self) -> Uuid {
         self.id
     }
@@ -374,31 +399,9 @@ impl<S: GlobalState> CommonWidget<S> for Scroll<S> {
     }
 }
 
-impl<GS: GlobalState> Render<GS> for Scroll<GS> {
-    fn get_primitives(&mut self, env: &mut Environment<GS>, global_state: &GS) -> Vec<Primitive> {
+impl<GS: GlobalStateContract> Render<GS> for Scroll<GS> {
+    fn get_primitives(&mut self, env: &mut Environment<GS>) -> Vec<Primitive> {
         let mut prims = vec![];
-        prims.extend(Rectangle::<GS>::debug_outline(OldRect::new(self.position, self.dimension), 1.0));
-        let child_prims = self.get_children_mut().flat_map(|f| f.get_primitives(env, global_state));
-        prims.extend(child_prims);
-
-        if (self.scroll_directions == ScrollDirection::Both ||
-            self.scroll_directions == ScrollDirection::Vertical) && self.child.get_height() > self.get_height() {
-            if self.vertical_scrollbar_hovered || self.drag_started_on_vertical_scrollbar {
-                prims.extend(self.scrollbar_vertical_background.get_primitives(env, global_state));
-            }
-
-            prims.extend(self.scrollbar_vertical.get_primitives(env, global_state));
-        }
-
-        if (self.scroll_directions == ScrollDirection::Both ||
-            self.scroll_directions == ScrollDirection::Horizontal) && self.child.get_width() > self.get_width() {
-            if self.horizontal_scrollbar_hovered || self.drag_started_on_horizontal_scrollbar {
-                prims.extend(self.scrollbar_horizontal_background.get_primitives(env, global_state));
-            }
-
-            prims.extend(self.scrollbar_horizontal.get_primitives(env, global_state));
-        }
-
         return prims;
     }
 }

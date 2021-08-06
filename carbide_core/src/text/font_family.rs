@@ -1,8 +1,8 @@
 use std::path::{Path, PathBuf};
 
-use crate::text::{Font, FontId};
 use crate::text::font_style::FontStyle;
 use crate::text::font_weight::FontWeight;
+use crate::text::FontId;
 
 /// Font families should only contain the same sets of glyphs.
 #[derive(Clone, Debug)]

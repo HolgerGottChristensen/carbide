@@ -1,5 +1,7 @@
+use std::cell::RefCell;
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
+use std::rc::Rc;
 use std::thread::sleep;
 use std::time::{Duration, Instant};
 
@@ -21,7 +23,7 @@ use carbide_core::mesh::mesh::Mesh;
 use carbide_core::mesh::vertex::Vertex;
 use carbide_core::prelude::EnvironmentColor;
 use carbide_core::prelude::Rectangle;
-use carbide_core::state::global_state::GlobalState;
+use carbide_core::state::global_state::{GlobalStateContainer, GlobalStateContract};
 use carbide_core::text::{FontFamily, FontId};
 use carbide_core::widget::OverlaidLayer;
 use carbide_core::widget::primitive::Widget;
@@ -35,7 +37,7 @@ use crate::renderer::{atlas_cache_tex_desc, glyph_cache_tex_desc};
 use crate::texture_atlas_command::TextureAtlasCommand;
 
 // Todo: Look in to multisampling: https://github.com/gfx-rs/wgpu-rs/blob/v0.6/examples/msaa-line/main.rs
-pub struct Window<T: GlobalState> {
+pub struct Window<GS: GlobalStateContract> {
     surface: wgpu::Surface,
     device: wgpu::Device,
     queue: wgpu::Queue,
@@ -45,18 +47,18 @@ pub struct Window<T: GlobalState> {
     render_pipeline: wgpu::RenderPipeline,
     diffuse_bind_group: wgpu::BindGroup,
     mesh: Mesh,
-    ui: Ui<T>,
+    ui: Ui<GS>,
     image_map: ImageMap<Image>,
     glyph_cache_tex: Texture,
     atlas_cache_tex: Texture,
     bind_groups: HashMap<Id, DiffuseBindGroup>,
     texture_bind_group_layout: BindGroupLayout,
-    state: T,
+    state: GlobalStateContainer<GS>,
     inner_window: winit::window::Window,
     event_loop: Option<EventLoop<()>>,
 }
 
-impl<T: GlobalState> carbide_core::window::TWindow<T> for Window<T> {
+impl<T: GlobalStateContract> carbide_core::window::TWindow<T> for Window<T> {
     fn add_font_family(&mut self, mut family: FontFamily) -> String {
         let family_name = family.name.clone();
         self.ui.environment.add_font_family(family);
@@ -96,7 +98,7 @@ impl<T: GlobalState> carbide_core::window::TWindow<T> for Window<T> {
     }
 }
 
-impl<T: GlobalState> Window<T> {
+impl<T: GlobalStateContract> Window<T> {
     pub fn path_to_assets(path: &str) -> PathBuf {
         let assets = find_folder::Search::KidsThenParents(3, 5)
             .for_folder("assets")
@@ -322,7 +324,7 @@ impl<T: GlobalState> Window<T> {
             atlas_cache_tex,
             bind_groups,
             texture_bind_group_layout,
-            state,
+            state: Rc::new(RefCell::new(state)),
             inner_window,
             event_loop: Some(event_loop),
         }
@@ -350,7 +352,7 @@ impl<T: GlobalState> Window<T> {
 
     fn update(&mut self) {
         let update_start = Instant::now();
-        self.ui.delegate_events(&mut self.state);
+        self.ui.delegate_events(&self.state);
         println!("Time for update: {:?}us", update_start.elapsed().as_micros());
     }
 

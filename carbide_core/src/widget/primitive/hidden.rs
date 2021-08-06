@@ -1,17 +1,20 @@
 use crate::prelude::*;
+use crate::state::global_state::GlobalStateContainer;
+use crate::widget::ChildRender;
 
 /// A basic, non-interactive rectangle shape widget.
 #[derive(Debug, Clone, Widget)]
-pub struct Hidden<GS> where GS: GlobalState {
+#[render(process_get_primitives)]
+pub struct Hidden<GS> where GS: GlobalStateContract {
     id: Uuid,
     child: Box<dyn Widget<GS>>,
     position: Point,
     dimension: Dimensions,
 }
 
-impl<GS: GlobalState> WidgetExt<GS> for Hidden<GS> {}
+impl<GS: GlobalStateContract> WidgetExt<GS> for Hidden<GS> {}
 
-impl<GS: GlobalState> Layout<GS> for Hidden<GS> {
+impl<GS: GlobalStateContract> Layout<GS> for Hidden<GS> {
     fn flexibility(&self) -> u32 {
         self.child.flexibility()
     }
@@ -32,7 +35,7 @@ impl<GS: GlobalState> Layout<GS> for Hidden<GS> {
     }
 }
 
-impl<S: GlobalState> CommonWidget<S> for Hidden<S> {
+impl<S: GlobalStateContract> CommonWidget<S> for Hidden<S> {
     fn get_id(&self) -> Uuid {
         self.id
     }
@@ -86,17 +89,10 @@ impl<S: GlobalState> CommonWidget<S> for Hidden<S> {
     }
 }
 
-impl<GS: GlobalState> Render<GS> for Hidden<GS> {
-    fn get_primitives(&mut self, env: &mut Environment<GS>, global_state: &GS) -> Vec<Primitive> {
-        let mut prims = vec![];
-        prims.extend(Rectangle::<GS>::debug_outline(OldRect::new(self.position, self.dimension), 1.0));
-        return prims;
-    }
-}
+impl<GS: GlobalStateContract> ChildRender for Hidden<GS> {}
 
-
-impl<S: GlobalState> Hidden<S> {
-    pub fn new(child: Box<dyn Widget<S>>) -> Box<Self <>> {
+impl<GS: GlobalStateContract> Hidden<GS> {
+    pub fn new(child: Box<dyn Widget<GS>>) -> Box<Self <>> {
         Box::new(Hidden {
             id: Uuid::new_v4(),
             child,
@@ -104,4 +100,6 @@ impl<S: GlobalState> Hidden<S> {
             dimension: [0.0, 0.0],
         })
     }
+
+    fn process_get_primitives(&mut self, _: &mut Vec<Primitive>, _: &mut Environment<GS>, _: &GlobalStateContainer<GS>) {}
 }

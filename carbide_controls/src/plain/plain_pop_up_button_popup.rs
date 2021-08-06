@@ -16,7 +16,7 @@ use crate::{List, PlainButton};
 
 #[derive(Clone, Widget)]
 #[event(handle_keyboard_event)]
-pub struct PlainPopUpButtonPopUp<T, GS> where GS: GlobalState, T: Serialize + Clone + Debug + Default + DeserializeOwned + 'static {
+pub struct PlainPopUpButtonPopUp<T, GS> where GS: GlobalStateContract, T: Serialize + Clone + Debug + Default + DeserializeOwned + 'static {
     id: Id,
     child: Box<dyn Widget<GS>>,
     position: Point,
@@ -29,7 +29,7 @@ pub struct PlainPopUpButtonPopUp<T, GS> where GS: GlobalState, T: Serialize + Cl
     phantom: PhantomData<T>,
 }
 
-impl<T: Serialize + Clone + Debug + Default + DeserializeOwned + 'static, GS: GlobalState> PlainPopUpButtonPopUp<T, GS> {
+impl<T: Serialize + Clone + Debug + Default + DeserializeOwned + 'static, GS: GlobalStateContract> PlainPopUpButtonPopUp<T, GS> {
     pub fn new(item: fn(item: Box<dyn State<T, GS>>, parent_selected_index: Box<dyn State<usize, GS>>, item_index: Box<dyn State<usize, GS>>, partially_chosen: Box<dyn State<bool, GS>>) -> Box<dyn Widget<GS>>,
                opened: Box<dyn State<bool, GS>>,
                model: Box<dyn State<Vec<T>, GS>>,
@@ -182,7 +182,7 @@ impl<T: Serialize + Clone + Debug + Default + DeserializeOwned + 'static, GS: Gl
     }
 }
 
-impl<T: Serialize + Clone + Debug + Default + DeserializeOwned + 'static, GS: GlobalState> CommonWidget<GS> for PlainPopUpButtonPopUp<T, GS> {
+impl<T: Serialize + Clone + Debug + Default + DeserializeOwned + 'static, GS: GlobalStateContract> CommonWidget<GS> for PlainPopUpButtonPopUp<T, GS> {
     fn get_id(&self) -> Id {
         self.id
     }
@@ -236,9 +236,9 @@ impl<T: Serialize + Clone + Debug + Default + DeserializeOwned + 'static, GS: Gl
     }
 }
 
-impl<T: Serialize + Clone + Debug + Default + DeserializeOwned + 'static, GS: GlobalState> ChildRender for PlainPopUpButtonPopUp<T, GS> {}
+impl<T: Serialize + Clone + Debug + Default + DeserializeOwned + 'static, GS: GlobalStateContract> ChildRender for PlainPopUpButtonPopUp<T, GS> {}
 
-impl<T: Serialize + Clone + Debug + Default + DeserializeOwned + 'static, GS: GlobalState> Layout<GS> for PlainPopUpButtonPopUp<T, GS> {
+impl<T: Serialize + Clone + Debug + Default + DeserializeOwned + 'static, GS: GlobalStateContract> Layout<GS> for PlainPopUpButtonPopUp<T, GS> {
     fn flexibility(&self) -> u32 {
         10
     }
@@ -264,4 +264,4 @@ impl<T: Serialize + Clone + Debug + Default + DeserializeOwned + 'static, GS: Gl
 }
 
 
-impl<T: Serialize + Clone + Debug + Default + DeserializeOwned + 'static + 'static, GS: GlobalState> WidgetExt<GS> for PlainPopUpButtonPopUp<T, GS> {}
+impl<T: Serialize + Clone + Debug + Default + DeserializeOwned + 'static + 'static, GS: GlobalStateContract> WidgetExt<GS> for PlainPopUpButtonPopUp<T, GS> {}

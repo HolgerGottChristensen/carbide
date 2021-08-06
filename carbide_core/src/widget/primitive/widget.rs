@@ -8,23 +8,25 @@ use crate::event::event::Event;
 use crate::event_handler::{KeyboardEvent, MouseEvent, WidgetEvent};
 use crate::focus::{Focus, Focusable, Refocus};
 use crate::prelude::*;
+use crate::prelude::global_state::GlobalStateContainer;
 use crate::widget::{EnvUpdating, Frame, Offset};
 use crate::widget::primitive::border::Border;
 use crate::widget::primitive::clip::Clip;
 use crate::widget::primitive::environment_updating::EnvironmentStateContainer;
 use crate::widget::primitive::hidden::Hidden;
 use crate::widget::primitive::padding::Padding;
+use crate::widget::render::RenderProcessor;
 use crate::widget::types::edge_insets::EdgeInsets;
 
-pub trait Widget<S>: Event<S> + Layout<S> + Render<S> + Focusable<S> + DynClone where S: GlobalState {}
+pub trait Widget<GS>: Event<GS> + Layout<GS> + Render<GS> + RenderProcessor<GS> + Focusable<GS> + DynClone where GS: GlobalStateContract {}
 
 //impl<S, T> Widget<S> for T where T: Event<S> + Layout<S> + Render<S> + DynClone {}
 
-impl<S: GlobalState> Widget<S> for Box<dyn Widget<S>> {}
+impl<GS: GlobalStateContract> Widget<GS> for Box<dyn Widget<GS>> {}
 
 dyn_clone::clone_trait_object!(<S> Widget<S>);
 
-pub trait WidgetExt<GS: GlobalState>: Widget<GS> + Sized + 'static {
+pub trait WidgetExt<GS: GlobalStateContract>: Widget<GS> + Sized + 'static {
     fn frame<K1: Into<F64State<GS>>, K2: Into<F64State<GS>>>(self, width: K1, height: K2) -> Box<Frame<GS>> {
         Frame::init(width.into(), height.into(), Box::new(self))
     }
@@ -70,7 +72,7 @@ pub trait WidgetExt<GS: GlobalState>: Widget<GS> + Sized + 'static {
 //This does not currently work with intellisense
 //impl<T> WidgetExt for T where T: Widget + 'static {}
 
-impl<S: GlobalState> CommonWidget<S> for Box<dyn Widget<S>> {
+impl<GS: GlobalStateContract> CommonWidget<GS> for Box<dyn Widget<GS>> {
     fn get_id(&self) -> Uuid {
         self.deref().get_id()
     }
@@ -83,19 +85,19 @@ impl<S: GlobalState> CommonWidget<S> for Box<dyn Widget<S>> {
         self.deref().get_flag()
     }
 
-    fn get_children(&self) -> WidgetIter<S> {
+    fn get_children(&self) -> WidgetIter<GS> {
         self.deref().get_children()
     }
 
-    fn get_children_mut(&mut self) -> WidgetIterMut<S> {
+    fn get_children_mut(&mut self) -> WidgetIterMut<GS> {
         self.deref_mut().get_children_mut()
     }
 
-    fn get_proxied_children(&mut self) -> WidgetIterMut<S> {
+    fn get_proxied_children(&mut self) -> WidgetIterMut<GS> {
         self.deref_mut().get_proxied_children()
     }
 
-    fn get_proxied_children_rev(&mut self) -> WidgetIterMut<S> {
+    fn get_proxied_children_rev(&mut self) -> WidgetIterMut<GS> {
         self.deref_mut().get_proxied_children_rev()
     }
 
@@ -117,51 +119,43 @@ impl<S: GlobalState> CommonWidget<S> for Box<dyn Widget<S>> {
 }
 
 
-impl<S: GlobalState> Event<S> for Box<dyn Widget<S>> {
-    fn handle_mouse_event(&mut self, event: &MouseEvent, consumed: &bool, env: &mut Environment<S>, global_state: &mut S) {
-        self.deref_mut().handle_mouse_event(event, consumed, env, global_state)
+impl<GS: GlobalStateContract> Event<GS> for Box<dyn Widget<GS>> {
+    fn handle_mouse_event(&mut self, event: &MouseEvent, consumed: &bool, env: &mut Environment<GS>) {
+        self.deref_mut().handle_mouse_event(event, consumed, env)
     }
 
-    fn handle_keyboard_event(&mut self, event: &KeyboardEvent, env: &mut Environment<S>, global_state: &mut S) {
-        self.deref_mut().handle_keyboard_event(event, env, global_state)
+    fn handle_keyboard_event(&mut self, event: &KeyboardEvent, env: &mut Environment<GS>) {
+        self.deref_mut().handle_keyboard_event(event, env)
     }
 
-    fn handle_other_event(&mut self, event: &WidgetEvent, env: &mut Environment<S>, global_state: &mut S) {
-        self.deref_mut().handle_other_event(event, env, global_state)
+    fn handle_other_event(&mut self, event: &WidgetEvent, env: &mut Environment<GS>) {
+        self.deref_mut().handle_other_event(event, env)
     }
 
-    fn process_mouse_event(&mut self, event: &MouseEvent, consumed: &bool, env: &mut Environment<S>, global_state: &mut S) {
+    fn process_mouse_event(&mut self, event: &MouseEvent, consumed: &bool, env: &mut Environment<GS>, global_state: &GlobalStateContainer<GS>) {
         self.deref_mut().process_mouse_event(event, consumed, env, global_state)
     }
 
-    fn process_keyboard_event(&mut self, event: &KeyboardEvent, env: &mut Environment<S>, global_state: &mut S) {
+    fn process_keyboard_event(&mut self, event: &KeyboardEvent, env: &mut Environment<GS>, global_state: &GlobalStateContainer<GS>) {
         self.deref_mut().process_keyboard_event(event, env, global_state)
     }
 
-    fn process_other_event(&mut self, event: &WidgetEvent, env: &mut Environment<S>, global_state: &mut S) {
+    fn process_other_event(&mut self, event: &WidgetEvent, env: &mut Environment<GS>, global_state: &GlobalStateContainer<GS>) {
         self.deref_mut().process_other_event(event, env, global_state)
     }
 }
 
-impl<S: GlobalState> StateSync<S> for Box<dyn Widget<S>> {
-    fn insert_local_state(&self, env: &mut Environment<S>) {
-        self.deref().insert_local_state(env)
+impl<GS: GlobalStateContract> StateSync<GS> for Box<dyn Widget<GS>> {
+    fn capture_state(&mut self, env: &mut Environment<GS>, global_state: &GlobalStateContainer<GS>) {
+        self.deref_mut().capture_state(env, global_state);
     }
 
-    fn update_all_widget_state(&mut self, env: &mut Environment<S>, global_state: &S) {
-        self.deref_mut().update_all_widget_state(env, global_state)
-    }
-
-    fn update_local_widget_state(&mut self, env: &Environment<S>) {
-        self.deref_mut().update_local_widget_state(env)
-    }
-
-    fn sync_state(&mut self, env: &mut Environment<S>, global_state: &S) {
-        self.deref_mut().sync_state(env, global_state)
+    fn release_state(&mut self, env: &mut Environment<GS>) {
+        self.deref_mut().release_state(env)
     }
 }
 
-impl<GS: GlobalState> Layout<GS> for Box<dyn Widget<GS>> {
+impl<GS: GlobalStateContract> Layout<GS> for Box<dyn Widget<GS>> {
     fn flexibility(&self) -> u32 {
         self.deref().flexibility()
     }
@@ -175,18 +169,24 @@ impl<GS: GlobalState> Layout<GS> for Box<dyn Widget<GS>> {
     }
 }
 
-impl<GS: GlobalState> Render<GS> for Box<dyn Widget<GS>> {
-    fn get_primitives(&mut self, env: &mut Environment<GS>, global_state: &GS) -> Vec<Primitive> {
-        self.deref_mut().get_primitives(env, global_state)
+impl<GS: GlobalStateContract> RenderProcessor<GS> for Box<dyn Widget<GS>> {
+    fn process_get_primitives(&mut self, primitives: &mut Vec<Primitive>, env: &mut Environment<GS>, global_state: &GlobalStateContainer<GS>) {
+        self.deref_mut().process_get_primitives(primitives, env, global_state);
     }
 }
 
-impl<GS: GlobalState> Focusable<GS> for Box<dyn Widget<GS>> {
-    fn focus_retrieved(&mut self, event: &WidgetEvent, focus_request: &Refocus, env: &mut Environment<GS>, global_state: &mut GS) {
+impl<GS: GlobalStateContract> Render<GS> for Box<dyn Widget<GS>> {
+    fn get_primitives(&mut self, env: &mut Environment<GS>) -> Vec<Primitive> {
+        self.deref_mut().get_primitives(env)
+    }
+}
+
+impl<GS: GlobalStateContract> Focusable<GS> for Box<dyn Widget<GS>> {
+    fn focus_retrieved(&mut self, event: &WidgetEvent, focus_request: &Refocus, env: &mut Environment<GS>, global_state: &GlobalStateContainer<GS>) {
         self.deref_mut().focus_retrieved(event, focus_request, env, global_state)
     }
 
-    fn focus_dismissed(&mut self, event: &WidgetEvent, focus_request: &Refocus, env: &mut Environment<GS>, global_state: &mut GS) {
+    fn focus_dismissed(&mut self, event: &WidgetEvent, focus_request: &Refocus, env: &mut Environment<GS>, global_state: &GlobalStateContainer<GS>) {
         self.deref_mut().focus_dismissed(event, focus_request, env, global_state)
     }
 
@@ -202,21 +202,21 @@ impl<GS: GlobalState> Focusable<GS> for Box<dyn Widget<GS>> {
         self.deref_mut().set_focus_and_request(focus, env)
     }
 
-    fn process_focus_request(&mut self, event: &WidgetEvent, focus_request: &Refocus, env: &mut Environment<GS>, global_state: &mut GS) -> bool {
+    fn process_focus_request(&mut self, event: &WidgetEvent, focus_request: &Refocus, env: &mut Environment<GS>, global_state: &GlobalStateContainer<GS>) -> bool {
         self.deref_mut().process_focus_request(event, focus_request, env, global_state)
     }
 
-    fn process_focus_next(&mut self, event: &WidgetEvent, focus_request: &Refocus, focus_up_for_grab: bool, env: &mut Environment<GS>, global_state: &mut GS) -> bool {
+    fn process_focus_next(&mut self, event: &WidgetEvent, focus_request: &Refocus, focus_up_for_grab: bool, env: &mut Environment<GS>, global_state: &GlobalStateContainer<GS>) -> bool {
         self.deref_mut().process_focus_next(event, focus_request, focus_up_for_grab, env, global_state)
     }
 
-    fn process_focus_previous(&mut self, event: &WidgetEvent, focus_request: &Refocus, focus_up_for_grab: bool, env: &mut Environment<GS>, global_state: &mut GS) -> bool {
+    fn process_focus_previous(&mut self, event: &WidgetEvent, focus_request: &Refocus, focus_up_for_grab: bool, env: &mut Environment<GS>, global_state: &GlobalStateContainer<GS>) -> bool {
         self.deref_mut().process_focus_previous(event, focus_request, focus_up_for_grab, env, global_state)
     }
 }
 
 
-impl<S: GlobalState> Debug for dyn Widget<S> {
+impl<S: GlobalStateContract> Debug for dyn Widget<S> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "Widget: {}", self.get_id())
     }

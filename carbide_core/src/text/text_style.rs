@@ -1,13 +1,10 @@
 use crate::Color;
 use crate::environment::environment::Environment;
 use crate::text::{Font, FontId, FontSize};
-use crate::text::font_family::FontFamily;
 use crate::text::font_style::FontStyle;
 use crate::text::font_weight::FontWeight;
 use crate::text::text_decoration::TextDecoration;
-use crate::widget::GlobalState;
-use crate::widget::types::justify::Justify;
-use crate::widget::types::text_wrap::Wrap;
+use crate::widget::GlobalStateContract;
 
 /// The text style for a piece of text
 #[derive(Clone, Debug)]
@@ -27,13 +24,13 @@ pub struct TextStyle {
 }
 
 impl TextStyle {
-    pub fn get_font<GS: GlobalState>(&self, env: &Environment<GS>) -> Font {
+    pub fn get_font<GS: GlobalStateContract>(&self, env: &Environment<GS>) -> Font {
         let family = env.get_font_family(&self.font_family);
         let font_id = family.get_best_fit(self.font_weight, self.font_style);
         env.get_font(font_id)
     }
 
-    pub fn get_font_id<GS: GlobalState>(&self, env: &Environment<GS>) -> FontId {
+    pub fn get_font_id<GS: GlobalStateContract>(&self, env: &Environment<GS>) -> FontId {
         let family = env.get_font_family(&self.font_family);
         family.get_best_fit(self.font_weight, self.font_style)
     }

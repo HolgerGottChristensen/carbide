@@ -15,12 +15,11 @@ use rusttype::gpu_cache::CacheWriteErr as RustTypeCacheWriteError;
 use crate::{color, image_map, render};
 use crate::{OldRect, Scalar};
 use crate::mesh::{DEFAULT_GLYPH_CACHE_DIMS, GLYPH_CACHE_POSITION_TOLERANCE, GLYPH_CACHE_SCALE_TOLERANCE, MODE_GEOMETRY, MODE_IMAGE, MODE_TEXT, MODE_TEXT_COLOR};
-use crate::mesh::atlas::texture_atlas::{AtlasId, TextureAtlas};
+use crate::mesh::atlas::texture_atlas::TextureAtlas;
 use crate::mesh::vertex::Vertex;
-use crate::Range;
 use crate::render::primitive_walker::PrimitiveWalker;
 use crate::text::Glyph;
-use crate::widget::{Environment, GlobalState};
+use crate::widget::{Environment, GlobalStateContract};
 
 /// Images within the given image map must know their dimensions in pixels.
 pub trait ImageDimensions {
@@ -138,7 +137,7 @@ impl Mesh {
     ///   pixel space of the viewport.
     /// - `image_map`: a map from image IDs to images.
     /// - `primitives`: the sequence of UI primitives in order of depth to be rendered.
-    pub fn fill<P, I, GS: GlobalState>(
+    pub fn fill<P, I, GS: GlobalStateContract>(
         &mut self,
         viewport: OldRect,
         env: &mut Environment<GS>,
