@@ -15,8 +15,7 @@ use winit::event::{ElementState, Event, KeyboardInput, VirtualKeyCode, WindowEve
 use winit::event_loop::{ControlFlow, EventLoop};
 use winit::window::{Icon, WindowBuilder};
 
-use carbide_core::{OldRect, Ui};
-use carbide_core::draw::Dimension;
+use carbide_core::draw::{Dimension, Position, Rect};
 use carbide_core::event::Input;
 use carbide_core::image_map::{Id, ImageMap};
 use carbide_core::mesh::DEFAULT_GLYPH_CACHE_DIMS;
@@ -24,6 +23,7 @@ use carbide_core::mesh::mesh::Mesh;
 use carbide_core::prelude::EnvironmentColor;
 use carbide_core::prelude::Rectangle;
 use carbide_core::text::{FontFamily, FontId};
+use carbide_core::Ui;
 use carbide_core::widget::OverlaidLayer;
 use carbide_core::widget::Widget;
 pub use carbide_core::window::TWindow;
@@ -374,7 +374,7 @@ impl Window {
         let primitives = self.ui.draw();
         println!("Time for draw: {:?}us", now.elapsed().as_micros());
         let now = Instant::now();
-        let fill = self.mesh.fill(OldRect::new([0.0, 0.0], [self.size.width as f64, self.size.height as f64]), &mut self.ui.environment, &self.image_map, primitives).unwrap();
+        let fill = self.mesh.fill(Rect::new(Position::new(0.0, 0.0), Dimension::new(self.size.width as f64, self.size.height as f64)), &mut self.ui.environment, &self.image_map, primitives).unwrap();
         println!("Time for fill: {:?}us", now.elapsed().as_micros());
 
         let now = Instant::now();

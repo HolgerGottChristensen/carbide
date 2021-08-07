@@ -5,7 +5,7 @@ use lyon::lyon_algorithms::path::math::point;
 use lyon::tessellation::{FillOptions, LineCap, LineJoin, StrokeOptions};
 
 use crate::Color;
-use crate::draw::{Point, Position};
+use crate::draw::Position;
 use crate::draw::svg_path_builder::SVGPathBuilder;
 use crate::prelude::ColorState;
 

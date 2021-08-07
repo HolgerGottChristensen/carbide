@@ -1,5 +1,4 @@
 use crate::draw::Rect;
-use crate::OldRect;
 use crate::render::primitive::Primitive;
 use crate::render::primitive_kind::PrimitiveKind;
 

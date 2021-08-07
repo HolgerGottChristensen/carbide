@@ -511,31 +511,6 @@ pub const DARK_CHARCOAL: Color = make_color!(46, 52, 54);
 /// Transparent
 pub const TRANSPARENT: Color = Color::Rgba(0.0, 0.0, 0.0, 0.0);
 
-/// Types that can be colored.
-pub trait Colorable: Sized {
-    /// Set the color of the widget.
-    fn color(self, color: Color) -> Self;
-
-    /// Set the color of the widget from rgba values.
-    fn rgba(self, r: f32, g: f32, b: f32, a: f32) -> Self {
-        self.color(rgba(r, g, b, a))
-    }
-
-    /// Set the color of the widget from rgb values.
-    fn rgb(self, r: f32, g: f32, b: f32) -> Self {
-        self.color(rgb(r, g, b))
-    }
-
-    /// Set the color of the widget from hsla values.
-    fn hsla(self, h: f32, s: f32, l: f32, a: f32) -> Self {
-        self.color(hsla(h, s, l, a))
-    }
-
-    /// Set the color of the widget from hsl values.
-    fn hsl(self, h: f32, s: f32, l: f32) -> Self {
-        self.color(hsl(h, s, l))
-    }
-}
 
 #[test]
 fn plain_contrast_should_weight_colors() {

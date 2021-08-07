@@ -1,5 +1,4 @@
-use crate::draw::{Dimension, Point, Position};
-use crate::draw::Dimensions;
+use crate::draw::{Dimension, Position};
 use crate::widget::Widget;
 
 pub trait Layouter {

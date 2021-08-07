@@ -297,8 +297,8 @@ impl Layout for Scroll {
 
 
         // Position scrollbars
-        self.scrollbar_vertical.set_position(self.get_position().add(Position::new(self.dimension.width - self.scrollbar_vertical.get_width(), 0.0)));
-        self.scrollbar_vertical_background.set_position(self.get_position().add(Position::new(self.dimension.width - self.scrollbar_vertical.get_width(), 0.0)));
+        self.scrollbar_vertical.set_position(self.get_position().add_vertex(Position::new(self.dimension.width - self.scrollbar_vertical.get_width(), 0.0)));
+        self.scrollbar_vertical_background.set_position(self.get_position().add_vertex(Position::new(self.dimension.width - self.scrollbar_vertical.get_width(), 0.0)));
 
 
         let scroll_vertical_percent = if self.child.get_height() - self.get_height() != 0.0 {
@@ -313,11 +313,11 @@ impl Layout for Scroll {
             0.0
         };
 
-        self.scrollbar_vertical.set_position(self.scrollbar_vertical.get_position().add(Position::new(0.0, -(self.get_height() - horizontal_height - self.scrollbar_vertical.get_height()) * scroll_vertical_percent)));
+        self.scrollbar_vertical.set_position(self.scrollbar_vertical.get_position().add_vertex(Position::new(0.0, -(self.get_height() - horizontal_height - self.scrollbar_vertical.get_height()) * scroll_vertical_percent)));
 
 
-        self.scrollbar_horizontal.set_position(self.get_position().add(Position::new(0.0, self.dimension.height - self.scrollbar_horizontal.get_height())));
-        self.scrollbar_horizontal_background.set_position(self.get_position().add(Position::new(0.0, self.dimension.height - self.scrollbar_horizontal.get_height())));
+        self.scrollbar_horizontal.set_position(self.get_position().add_vertex(Position::new(0.0, self.dimension.height - self.scrollbar_horizontal.get_height())));
+        self.scrollbar_horizontal_background.set_position(self.get_position().add_vertex(Position::new(0.0, self.dimension.height - self.scrollbar_horizontal.get_height())));
 
 
         let scroll_horizontal_percent = if self.child.get_width() - self.get_width() != 0.0 {
@@ -332,7 +332,7 @@ impl Layout for Scroll {
             0.0
         };
 
-        self.scrollbar_horizontal.set_position(self.scrollbar_horizontal.get_position().add(Position::new((self.get_width() - vertical_width - self.scrollbar_horizontal.get_width()) * scroll_horizontal_percent, 0.0)));
+        self.scrollbar_horizontal.set_position(self.scrollbar_horizontal.get_position().add_vertex(Position::new((self.get_width() - vertical_width - self.scrollbar_horizontal.get_width()) * scroll_horizontal_percent, 0.0)));
 
 
         self.scrollbar_vertical.position_children();

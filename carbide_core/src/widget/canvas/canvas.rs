@@ -33,7 +33,7 @@ impl Canvas {
     }
 
     pub fn get_stroke_prim(&self, path: Path, stroke_options: StrokeOptions, color: Color) -> Primitive {
-        let mut geometry: VertexBuffers<Point, u16> = VertexBuffers::new();
+        let mut geometry: VertexBuffers<Position, u16> = VertexBuffers::new();
         let mut tessellator = StrokeTessellator::new();
 
         {
@@ -43,14 +43,14 @@ impl Canvas {
                 &stroke_options,
                 &mut BuffersBuilder::new(&mut geometry, |vertex: StrokeVertex| {
                     let point = vertex.position().to_array();
-                    [point[0] as Scalar, point[1] as Scalar]
+                    Position::new(point[0] as Scalar, point[1] as Scalar)
                 }),
             ).unwrap();
         }
 
         let point_iter = geometry.indices.iter().map(|index| geometry.vertices[*index as usize]);
 
-        let points: Vec<Point> = point_iter.collect();
+        let points: Vec<Position> = point_iter.collect();
 
         Primitive {
             kind: PrimitiveKind::TrianglesSingleColor { color: Rgba::from(color), triangles: Triangle::from_point_list(points) },
@@ -59,7 +59,7 @@ impl Canvas {
     }
 
     pub fn get_fill_prim(&self, path: Path, fill_options: FillOptions, color: Color) -> Primitive {
-        let mut geometry: VertexBuffers<Point, u16> = VertexBuffers::new();
+        let mut geometry: VertexBuffers<Position, u16> = VertexBuffers::new();
         let mut tessellator = FillTessellator::new();
 
         {
@@ -69,14 +69,14 @@ impl Canvas {
                 &fill_options,
                 &mut BuffersBuilder::new(&mut geometry, |vertex: FillVertex| {
                     let point = vertex.position().to_array();
-                    [point[0] as Scalar, point[1] as Scalar]
+                    Position::new(point[0] as Scalar, point[1] as Scalar)
                 }),
             ).unwrap();
         }
 
         let point_iter = geometry.indices.iter().map(|index| geometry.vertices[*index as usize]);
 
-        let points: Vec<Point> = point_iter.collect();
+        let points: Vec<Position> = point_iter.collect();
 
         Primitive {
             kind: PrimitiveKind::TrianglesSingleColor { color: Rgba::from(color), triangles: Triangle::from_point_list(points) },

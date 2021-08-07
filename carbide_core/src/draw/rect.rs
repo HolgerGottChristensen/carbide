@@ -26,6 +26,23 @@ impl Rect {
         self.dimension.height
     }
 
+    pub fn from_corners(corner1: Position, corner2: Position) -> Rect {
+        let min_x = corner1.x.min(corner2.x);
+        let min_y = corner1.y.min(corner2.y);
+        let max_x = corner1.x.max(corner2.x);
+        let max_y = corner1.y.max(corner2.y);
+
+        let position = Position::new(min_x, min_y);
+        let dimension = Dimension::new(max_x - min_x, max_y - min_y);
+
+        Rect::new(position, dimension)
+    }
+
+    pub fn left(&self) -> Scalar { self.position.x }
+    pub fn right(&self) -> Scalar { self.position.x + self.dimension.width }
+    pub fn bottom(&self) -> Scalar { self.position.y }
+    pub fn top(&self) -> Scalar { self.position.y + self.dimension.height }
+
     pub fn round(&mut self) {
         self.position.x = self.position.x.round();
         self.position.y = self.position.y.round();

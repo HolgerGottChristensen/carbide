@@ -1,4 +1,4 @@
-use crate::draw::{Dimension, Dimensions};
+use crate::draw::Dimension;
 use crate::layout::basic_layouter::BasicLayouter;
 use crate::layout::layouter::Layouter;
 use crate::prelude::Environment;

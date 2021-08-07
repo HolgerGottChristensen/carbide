@@ -216,9 +216,8 @@ macro_rules! v023_convert_window_event {
                     winit::event::TouchPhase::Cancelled => carbide_core::event::TouchPhase::Cancel,
                     winit::event::TouchPhase::Ended => carbide_core::event::TouchPhase::End,
                 };
-                let xy = [tx(x), ty(y)];
                 let id = carbide_core::event::TouchId::new(id.clone());
-                let touch = carbide_core::event::Touch { phase: phase, id: id, xy: xy };
+                let touch = carbide_core::event::Touch { phase: phase, id: id, position: carbide_core::draw::Position::new(tx(x), ty(y)) };
                 Some(carbide_core::event::Input::Touch(touch).into())
             }
 

@@ -7,7 +7,7 @@ use bitflags::_core::fmt::Formatter;
 use fxhash::{FxBuildHasher, FxHashMap};
 
 use crate::Color;
-use crate::draw::{Dimension, Dimensions};
+use crate::draw::Dimension;
 use crate::draw::Scalar;
 use crate::focus::Refocus;
 use crate::mesh::TextureAtlas;

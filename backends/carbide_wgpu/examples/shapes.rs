@@ -1,6 +1,6 @@
 use std::f64::consts::PI;
 
-use carbide_core::draw::Point;
+use carbide_core::draw::Position;
 use carbide_core::environment::*;
 use carbide_core::text::*;
 use carbide_core::widget::*;
@@ -79,20 +79,20 @@ fn main() {
             ]),
             HStack::initialize(vec![
                 Canvas::initialize(|_, mut context| {
-                    context = draw_star([50.0, 50.0], 5, 45.0, 20.0, context);
+                    context = draw_star(Position::new(50.0, 50.0), 5, 45.0, 20.0, context);
                     context.set_fill_style(EnvironmentColor::Accent);
                     context.fill();
                     context
                 }).frame(100.0, 100.0),
                 Canvas::initialize(|_, mut context| {
-                    context = draw_star([50.0, 50.0], 5, 45.0, 20.0, context);
+                    context = draw_star(Position::new(50.0, 50.0), 5, 45.0, 20.0, context);
                     context.set_line_width(10.0);
                     context.set_stroke_style(EnvironmentColor::Accent);
                     context.stroke();
                     context
                 }).frame(100.0, 100.0),
                 Canvas::initialize(|_, mut context| {
-                    context = draw_star([50.0, 50.0], 5, 45.0, 20.0, context);
+                    context = draw_star(Position::new(50.0, 50.0), 5, 45.0, 20.0, context);
                     context.set_fill_style(EnvironmentColor::Accent);
                     context.set_stroke_style(EnvironmentColor::Red);
                     context.fill();
@@ -106,11 +106,11 @@ fn main() {
     window.run_event_loop();
 }
 
-fn draw_star(center: Point, number_of_spikes: u32, outer_radius: f64, inner_radius: f64, mut context: Context) -> Context {
+fn draw_star(center: Position, number_of_spikes: u32, outer_radius: f64, inner_radius: f64, mut context: Context) -> Context {
     let mut rotation = PI / 2.0 * 3.0;
 
-    let center_x = center[0];
-    let center_y = center[1];
+    let center_x = center.x();
+    let center_y = center.y();
 
     let mut x;
     let mut y;

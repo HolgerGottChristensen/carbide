@@ -3,7 +3,6 @@ pub use owned_primitive::*;
 pub use owned_primitive_kind::*;
 pub use owned_primitives::*;
 pub use owned_text::*;
-pub use positions_strategy::*;
 pub use primitive::*;
 pub use primitive_kind::*;
 pub use primitive_walker::*;
@@ -25,6 +24,5 @@ mod owned_primitives;
 mod primitives;
 mod primitive_kind;
 mod primitive;
-mod positions_strategy;
 mod render;
 

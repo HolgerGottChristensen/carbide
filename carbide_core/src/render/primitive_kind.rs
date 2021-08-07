@@ -1,8 +1,8 @@
-use crate::{image_map, OldRect};
 use crate::Color;
 use crate::color::Rgba;
-use crate::draw::{Point, Rect};
+use crate::draw::{Position, Rect};
 use crate::draw::shape::triangle::Triangle;
+use crate::image_map;
 use crate::text::Glyph;
 use crate::widget::ColoredPoint;
 
@@ -27,7 +27,7 @@ pub enum PrimitiveKind {
         color: Rgba,
         //Todo why is this not Color
         /// An ordered slice of triangles.
-        triangles: Vec<Triangle<Point>>,
+        triangles: Vec<Triangle<Position>>,
     },
 
     /// A series of consecutive `Triangles` with unique colors per vertex.

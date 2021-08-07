@@ -21,6 +21,14 @@ impl Position {
         }
     }
 
+    pub fn x(&self) -> Scalar {
+        self.x
+    }
+
+    pub fn y(&self) -> Scalar {
+        self.y
+    }
+
     /// Returns the fraction of the position between 0.0 and 1.0 (exclusive)
     /// 0.0 will return 0.0
     /// 1.0 will return 0.0

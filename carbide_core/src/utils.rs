@@ -9,9 +9,6 @@ use std::iter::{Chain, once, Once};
 
 use num::{Float, NumCast, PrimInt, ToPrimitive};
 
-use crate::draw::Point;
-use crate::position::{OldRect, Range};
-
 /// Compare to PartialOrd values and return the min.
 pub fn partial_min<T: PartialOrd>(a: T, b: T) -> T {
     if a <= b { a } else { b }
@@ -150,34 +147,6 @@ pub fn val_to_string<T: ToString + NumCast>
             s
         }
     }
-}
-
-/// Add `a` and `b`.
-pub fn vec2_add<T>(a: [T; 2], b: [T; 2]) -> [T; 2]
-    where T: std::ops::Add<Output=T> + Copy,
-{
-    [a[0] + b[0], a[1] + b[1]]
-}
-
-/// Subtract `b` from `a`.
-pub fn vec2_sub<T>(a: [T; 2], b: [T; 2]) -> [T; 2]
-    where T: std::ops::Sub<Output=T> + Copy,
-{
-    [a[0] - b[0], a[1] - b[1]]
-}
-
-
-/// Find the bounding rect for the given series of points.
-pub fn bounding_box_for_points<I>(mut points: I) -> OldRect
-    where I: Iterator<Item=Point>,
-{
-    points.next().map(|first| {
-        let start_rect = OldRect {
-            x: Range { start: first[0], end: first[0] },
-            y: Range { start: first[1], end: first[1] },
-        };
-        points.fold(start_rect, OldRect::stretch_to_point)
-    }).unwrap_or_else(|| OldRect::from_xy_dim([0.0, 0.0], [0.0, 0.0]))
 }
 
 /// A type returned by the `iter_diff` function.

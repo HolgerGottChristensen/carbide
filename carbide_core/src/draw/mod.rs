@@ -16,9 +16,3 @@ mod position;
 /// This type is primarily used for spatial dimensions and positioning.
 pub type Scalar = f64;
 
-/// General use 2D spatial dimensions.
-pub type Dimensions = [Scalar; 2];
-
-/// General use 2D spatial point.
-pub type Point = [Scalar; 2];
-

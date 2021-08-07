@@ -2,7 +2,7 @@ pub use common::*;
 pub use shape::*;
 pub use types::*;
 
-use crate::draw::Point;
+use crate::draw::Position;
 
 pub use self::border::*;
 pub use self::clip::*;
@@ -47,7 +47,7 @@ mod v_stack;
 mod z_stack;
 
 pub type Id = uuid::Uuid;
-pub type ColoredPoint = (Point, crate::color::Rgba);
+pub type ColoredPoint = (Position, crate::color::Rgba);
 
 
 

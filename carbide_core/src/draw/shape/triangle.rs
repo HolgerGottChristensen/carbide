@@ -1,5 +1,5 @@
 use crate::color;
-use crate::draw::Point;
+use crate::draw::Position;
 use crate::draw::shape::vertex::Vertex;
 use crate::widget::ColoredPoint;
 
@@ -12,20 +12,20 @@ impl<V> Triangle<V>
     where V: Vertex,
 {
     /// Shift the triangle by the given amount by adding it onto the position of each point.
-    pub fn add(self, amount: Point) -> Self {
-        let a = self[0].add(amount);
-        let b = self[1].add(amount);
-        let c = self[2].add(amount);
+    pub fn add(self, amount: Position) -> Self {
+        let a = self[0].add_vertex(amount);
+        let b = self[1].add_vertex(amount);
+        let c = self[2].add_vertex(amount);
         Triangle([a, b, c])
     }
 
     /// The three points that make up the triangle.
-    pub fn points(self) -> [Point; 3] {
+    pub fn points(self) -> [Position; 3] {
         [self[0].point(), self[1].point(), self[2].point()]
     }
 }
 
-impl Triangle<Point> {
+impl Triangle<Position> {
     /// Convert the `Triangle<Point>` to a `Triangle<ColoredPoint>`.
     pub fn color(self, a: color::Rgba, b: color::Rgba, c: color::Rgba) -> Triangle<ColoredPoint> {
         Triangle([(self[0], a), (self[1], b), (self[2], c)])
@@ -36,7 +36,7 @@ impl Triangle<Point> {
         Triangle([(self[0], color), (self[1], color), (self[2], color)])
     }
 
-    pub fn from_point_list(points: Vec<Point>) -> Vec<Triangle<Point>> {
+    pub fn from_point_list(points: Vec<Position>) -> Vec<Triangle<Position>> {
         let len = points.len();
 
         if len == 0 {

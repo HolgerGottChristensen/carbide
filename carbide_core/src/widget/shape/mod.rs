@@ -9,7 +9,7 @@ pub use ellipse::*;
 pub use rectangle::*;
 pub use rounded_rectangle::*;
 
-use crate::draw::{Point, Scalar};
+use crate::draw::{Position, Scalar};
 use crate::draw::shape::triangle::Triangle;
 use crate::widget::CommonWidget;
 use crate::widget::types::ShapeStyle;
@@ -55,7 +55,7 @@ pub fn fill(path: &dyn Fn(&mut Builder, &Rect), shape: &mut dyn Shape, rectangle
 
         let path = builder.build();
 
-        let mut geometry: VertexBuffers<Point, u16> = VertexBuffers::new();
+        let mut geometry: VertexBuffers<Position, u16> = VertexBuffers::new();
 
         let mut tessellator = FillTessellator::new();
 
@@ -69,7 +69,7 @@ pub fn fill(path: &dyn Fn(&mut Builder, &Rect), shape: &mut dyn Shape, rectangle
                 &fill_options,
                 &mut BuffersBuilder::new(&mut geometry, |vertex: FillVertex| {
                     let point = vertex.position().to_array();
-                    [point[0] as Scalar, point[1] as Scalar]
+                    Position::new(point[0] as Scalar, point[1] as Scalar)
                 }),
             ).unwrap();
         }
@@ -77,7 +77,7 @@ pub fn fill(path: &dyn Fn(&mut Builder, &Rect), shape: &mut dyn Shape, rectangle
 
         let point_iter = geometry.indices.iter().map(|index| geometry.vertices[*index as usize]);
 
-        let points: Vec<Point> = point_iter.collect();
+        let points: Vec<Position> = point_iter.collect();
 
         let triangles = Triangle::from_point_list(points);
 
@@ -101,15 +101,15 @@ pub fn stroke(path: &dyn Fn(&mut Builder, &Rect), shape: &mut dyn Shape, rectang
 
         let path = builder.build();
 
-        let mut geometry: VertexBuffers<Point, u16> = VertexBuffers::new();
+        let mut geometry: VertexBuffers<Position, u16> = VertexBuffers::new();
 
         let mut tessellator = StrokeTessellator::new();
 
         let mut stroke_options = StrokeOptions::default();
         stroke_options.line_width = line_width * 2.0;
 
-        let filled_points: Vec<Point> = {
-            let mut geometry: VertexBuffers<Point, u16> = VertexBuffers::new();
+        let filled_points: Vec<Position> = {
+            let mut geometry: VertexBuffers<Position, u16> = VertexBuffers::new();
 
             let mut tessellator = FillTessellator::new();
 
@@ -122,7 +122,7 @@ pub fn stroke(path: &dyn Fn(&mut Builder, &Rect), shape: &mut dyn Shape, rectang
                     &fill_options,
                     &mut BuffersBuilder::new(&mut geometry, |vertex: FillVertex| {
                         let point = vertex.position().to_array();
-                        [point[0] as Scalar, point[1] as Scalar]
+                        Position::new(point[0] as Scalar, point[1] as Scalar)
                     }),
                 ).unwrap();
             }
@@ -134,11 +134,11 @@ pub fn stroke(path: &dyn Fn(&mut Builder, &Rect), shape: &mut dyn Shape, rectang
         };
 
         // Todo: This is linear and should be optimized
-        fn get_closest_point(point: Point, points: &Vec<Point>) -> Point {
+        fn get_closest_point(point: Position, points: &Vec<Position>) -> Position {
             let mut closest = points[0];
             let mut dist = 1000000.0;
             for p in points {
-                let cur_dist = ((point[0] - p[0]).powi(2) + (point[1] - p[1]).powi(2)).sqrt();
+                let cur_dist = ((point.x - p.x).powi(2) + (point.y - p.y).powi(2)).sqrt();
                 if cur_dist < dist {
                     dist = cur_dist;
                     closest = *p;
@@ -154,10 +154,11 @@ pub fn stroke(path: &dyn Fn(&mut Builder, &Rect), shape: &mut dyn Shape, rectang
                 &stroke_options,
                 &mut BuffersBuilder::new(&mut geometry, |vertex: StrokeVertex| {
                     let point = vertex.position().to_array();
+                    let point = Position::new(point[0] as Scalar, point[1] as Scalar);
                     if vertex.side() == Side::Left {
-                        [point[0] as Scalar, point[1] as Scalar]
+                        point
                     } else {
-                        let p = [point[0] as Scalar, point[1] as Scalar];
+                        let p = point;
 
                         get_closest_point(p, &filled_points)
                     }
@@ -167,7 +168,7 @@ pub fn stroke(path: &dyn Fn(&mut Builder, &Rect), shape: &mut dyn Shape, rectang
 
         let point_iter = geometry.indices.iter().map(|index| geometry.vertices[*index as usize]);
 
-        let points: Vec<Point> = point_iter.collect();
+        let points: Vec<Position> = point_iter.collect();
 
         let triangles = Triangle::from_point_list(points);
 

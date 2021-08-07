@@ -1,7 +1,6 @@
-use crate::{Color, OldRect};
+use crate::Color;
 use crate::color::Rgba;
-use crate::draw::{Dimension, Dimensions, Position, Rect};
-use crate::draw::Point;
+use crate::draw::{Dimension, Position, Rect};
 use crate::draw::shape::triangle::Triangle;
 use crate::prelude::Primitive;
 use crate::render::PrimitiveKind;
@@ -14,8 +13,8 @@ pub struct TriangleStore {
     pub latest_fill_position: Position,
     pub latest_fill_dimensions: Dimension,
 
-    pub stroke_triangles: Vec<Triangle<Point>>,
-    pub fill_triangles: Vec<Triangle<Point>>,
+    pub stroke_triangles: Vec<Triangle<Position>>,
+    pub fill_triangles: Vec<Triangle<Position>>,
 }
 
 impl TriangleStore {
@@ -34,24 +33,24 @@ impl TriangleStore {
         self.latest_stroke_position != position || self.latest_stroke_dimensions != dimensions
     }
 
-    // Todo: Maybe translate on position change instead of retessellating
+    // Todo: Maybe translate on position change instead of re-tessellating
     pub fn diff_fill(&self, position: Position, dimensions: Dimension) -> bool {
         self.latest_fill_position != position || self.latest_fill_dimensions != dimensions
     }
 
-    pub fn stroke_triangles(&self) -> Vec<Triangle<Point>> {
+    pub fn stroke_triangles(&self) -> Vec<Triangle<Position>> {
         self.stroke_triangles.clone()
     }
 
-    pub fn fill_triangles(&self) -> Vec<Triangle<Point>> {
+    pub fn fill_triangles(&self) -> Vec<Triangle<Position>> {
         self.fill_triangles.clone()
     }
 
-    pub fn set_stroke_triangles(&mut self, triangles: &Vec<Triangle<Point>>) {
+    pub fn set_stroke_triangles(&mut self, triangles: &Vec<Triangle<Position>>) {
         self.stroke_triangles = triangles.clone()
     }
 
-    pub fn set_fill_triangles(&mut self, triangles: &Vec<Triangle<Point>>) {
+    pub fn set_fill_triangles(&mut self, triangles: &Vec<Triangle<Position>>) {
         self.fill_triangles = triangles.clone()
     }
 

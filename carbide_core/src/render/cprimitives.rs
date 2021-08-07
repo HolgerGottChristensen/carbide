@@ -1,6 +1,6 @@
 use instant::Instant;
 
-use crate::draw::{Dimension, Dimensions};
+use crate::draw::Dimension;
 use crate::prelude::Environment;
 use crate::render::primitive::Primitive;
 use crate::render::primitive_walker::PrimitiveWalker;

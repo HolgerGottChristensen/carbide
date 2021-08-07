@@ -13,12 +13,11 @@ use rusttype::gpu_cache::Cache as RustTypeGlyphCache;
 use rusttype::gpu_cache::CacheWriteErr as RustTypeCacheWriteError;
 
 use crate::{color, image_map, render};
-use crate::draw::Scalar;
+use crate::draw::{Position, Rect, Scalar};
 use crate::environment::Environment;
 use crate::mesh::{DEFAULT_GLYPH_CACHE_DIMS, GLYPH_CACHE_POSITION_TOLERANCE, GLYPH_CACHE_SCALE_TOLERANCE, MODE_GEOMETRY, MODE_IMAGE, MODE_TEXT, MODE_TEXT_COLOR};
 use crate::mesh::atlas::texture_atlas::TextureAtlas;
 use crate::mesh::vertex::Vertex;
-use crate::OldRect;
 use crate::render::PrimitiveWalker;
 use crate::text::Glyph;
 
@@ -140,7 +139,7 @@ impl Mesh {
     /// - `primitives`: the sequence of UI primitives in order of depth to be rendered.
     pub fn fill<P, I>(
         &mut self,
-        viewport: OldRect,
+        viewport: Rect,
         env: &mut Environment,
         image_map: &image_map::ImageMap<I>,
         mut primitives: P,
@@ -188,9 +187,8 @@ impl Mesh {
 
 
         // Viewport dimensions and the "dots per inch" factor.
-        let (viewport_w, viewport_h) = viewport.w_h();
-        let half_viewport_w = viewport_w / 2.0;
-        let half_viewport_h = viewport_h / 2.0;
+        let half_viewport_w = viewport.width() / 2.0;
+        let half_viewport_h = viewport.height() / 2.0;
 
         // Width of the glyph cache is useful when writing to the pixel buffer.
         let (glyph_cache_w, _) = glyph_cache.dimensions();
@@ -200,11 +198,11 @@ impl Mesh {
         let vx = |x: Scalar| (x * scale_factor / half_viewport_w - 1.0) as f32;
         let vy = |y: Scalar| -1.0 * (y * scale_factor / half_viewport_h - 1.0) as f32;
 
-        let rect_to_scizzor = |rect: OldRect| {
+        let rect_to_scizzor = |rect: Rect| {
             // Below uses bottom because the rect is flipped :/
             Scizzor {
                 top_left: [rect.left().max(0.0) as i32, rect.bottom().max(0.0) as i32],
-                dimensions: [(rect.w().min(viewport_w)) as u32, (rect.h().min(viewport_h)) as u32],
+                dimensions: [(rect.width().min(viewport.width())) as u32, (rect.height().min(viewport.height())) as u32],
             }
         };
 
@@ -249,7 +247,7 @@ impl Mesh {
                     t *= scale_factor;
                     b *= scale_factor;
 
-                    let new_rect = OldRect::from_corners([r, b], [l, t]);
+                    let new_rect = Rect::from_corners(Position::new(r, b), Position::new(l, t));
 
                     commands.push(PreparedCommand::Scizzor(rect_to_scizzor(new_rect)));
 
@@ -319,8 +317,8 @@ impl Mesh {
 
                     let color = gamma_srgb_to_linear(color.into());
 
-                    let v = |p: [Scalar; 2]| Vertex {
-                        position: [vx(p[0]), vy(p[1]), 0.0],
+                    let v = |p: Position| Vertex {
+                        position: [vx(p.x), vy(p.y), 0.0],
                         tex_coords: [0.0, 0.0],
                         rgba: color,
                         mode: MODE_GEOMETRY,
@@ -340,8 +338,8 @@ impl Mesh {
 
                     switch_to_plain_state!();
 
-                    let v = |(p, c): ([Scalar; 2], color::Rgba)| Vertex {
-                        position: [vx(p[0]), vy(p[1]), 0.0],
+                    let v = |(p, c): (Position, color::Rgba)| Vertex {
+                        position: [vx(p.x), vy(p.y), 0.0],
                         tex_coords: [0.0, 0.0],
                         rgba: gamma_srgb_to_linear(c.into()),
                         mode: MODE_GEOMETRY,

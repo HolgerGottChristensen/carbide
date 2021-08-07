@@ -3,9 +3,7 @@ use std::time::Duration;
 
 use instant::Instant;
 
-use crate::draw::{Dimension, Point};
-use crate::draw::Dimensions;
-use crate::draw::Scalar;
+use crate::draw::{Dimension, Position, Scalar};
 use crate::event::{Button, Input, Key, ModifierKey, Motion, MouseButton};
 use crate::utils;
 
@@ -16,7 +14,7 @@ pub struct EventHandler {
     pressed_buttons: HashMap<MouseButton, MouseEvent>,
     modifiers: ModifierKey,
     last_click: Option<(Instant, MouseEvent)>,
-    mouse_position: Point,
+    mouse_position: Position,
     events: Vec<WidgetEvent>,
 }
 
@@ -40,30 +38,30 @@ pub enum WidgetEvent {
 
 #[derive(Clone, Debug)]
 pub enum MouseEvent {
-    Press(MouseButton, Point, ModifierKey),
-    Release(MouseButton, Point, ModifierKey),
-    Click(MouseButton, Point, ModifierKey),
+    Press(MouseButton, Position, ModifierKey),
+    Release(MouseButton, Position, ModifierKey),
+    Click(MouseButton, Position, ModifierKey),
     Move {
-        from: Point,
-        to: Point,
-        delta_xy: Point,
+        from: Position,
+        to: Position,
+        delta_xy: Position,
         modifiers: ModifierKey,
     },
-    NClick(MouseButton, Point, ModifierKey, u32),
-    Scroll { x: Scalar, y: Scalar, mouse_position: Point, modifiers: ModifierKey },
+    NClick(MouseButton, Position, ModifierKey, u32),
+    Scroll { x: Scalar, y: Scalar, mouse_position: Position, modifiers: ModifierKey },
     Drag {
         button: MouseButton,
-        origin: Point,
-        from: Point,
-        to: Point,
-        delta_xy: Point,
-        total_delta_xy: Point,
+        origin: Position,
+        from: Position,
+        to: Position,
+        delta_xy: Position,
+        total_delta_xy: Position,
         modifiers: ModifierKey,
     },
 }
 
 impl MouseEvent {
-    pub fn get_current_mouse_position(&self) -> Point {
+    pub fn get_current_mouse_position(&self) -> Position {
         match self {
             MouseEvent::Press(_, n, _) => { *n }
             MouseEvent::Release(_, n, _) => { *n }
@@ -115,7 +113,7 @@ impl EventHandler {
             pressed_buttons: HashMap::new(),
             modifiers: ModifierKey::default(),
             last_click: None,
-            mouse_position: [0.0, 0.0],
+            mouse_position: Position::new(0.0, 0.0),
             events: vec![],
         }
     }
@@ -123,11 +121,11 @@ impl EventHandler {
     fn add_event(&mut self, event: WidgetEvent) {
         if let WidgetEvent::Mouse(MouseEvent::Move { delta_xy, to, modifiers, .. }) = event {
             // We should only add move events where the mouse have actually moved
-            if delta_xy[0] != 0.0 || delta_xy[1] != 0.0 {
+            if delta_xy.x != 0.0 || delta_xy.y != 0.0 {
                 // If the last event was also a move event we can compress it to a single move event.
                 if let Some(WidgetEvent::Mouse(MouseEvent::Move { delta_xy: old_delta_xy, modifiers: old_modifiers, to: old_to, .. })) = self.events.last_mut() {
-                    old_delta_xy[0] += delta_xy[0];
-                    old_delta_xy[1] += delta_xy[1];
+                    old_delta_xy.x += delta_xy.x;
+                    old_delta_xy.y += delta_xy.y;
                     *old_modifiers = modifiers;
                     *old_to = to;
                 } else {
@@ -231,9 +229,9 @@ impl EventHandler {
                     let n_click_threshold = Duration::from_millis(500);
                     let click_distance_from_original_radius_threshold = 3.0;
 
-                    fn dist(point: Point, other_point: Point) -> f64 {
-                        ((point[0] - other_point[0]).powi(2) +
-                            (point[1] - other_point[1]).powi(2)).sqrt()
+                    fn dist(point: Position, other_point: Position) -> f64 {
+                        ((point.x - other_point.x).powi(2) +
+                            (point.y - other_point.y).powi(2)).sqrt()
                     }
 
                     if let Some((time, MouseEvent::NClick(button, location, _, n))) = self.last_click {
@@ -314,8 +312,8 @@ impl EventHandler {
                 match motion {
                     Motion::MouseCursor { x, y } => {
                         let last_mouse_xy = self.mouse_position;
-                        let mouse_xy = [x + window_dimensions.width / 2.0, window_dimensions.height - (y + window_dimensions.height / 2.0)];
-                        let delta_xy = utils::vec2_sub(mouse_xy, last_mouse_xy);
+                        let mouse_xy = Position::new(x + window_dimensions.width / 2.0, window_dimensions.height - (y + window_dimensions.height / 2.0));
+                        let delta_xy = mouse_xy - last_mouse_xy;
 
                         let move_event = MouseEvent::Move {
                             from: last_mouse_xy,
@@ -328,7 +326,7 @@ impl EventHandler {
 
                         // Check for drag events.
 
-                        let distance = (delta_xy[0] + delta_xy[1]).abs().sqrt();
+                        let distance = (delta_xy.x + delta_xy.y).abs().sqrt();
                         let drag_threshold = 0.0;
 
                         if distance > drag_threshold {
@@ -336,7 +334,7 @@ impl EventHandler {
                             for (button, evt) in self.pressed_buttons.iter() {
                                 match evt {
                                     MouseEvent::Press(_, location, _) => {
-                                        let total_delta_xy = utils::vec2_sub(mouse_xy, *location);
+                                        let total_delta_xy = mouse_xy - *location;
                                         let drag_event = MouseEvent::Drag {
                                             button: *button,
                                             origin: *location,
