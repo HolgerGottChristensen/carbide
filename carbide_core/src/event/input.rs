@@ -1,6 +1,6 @@
+use crate::event::Button;
 use crate::event::Motion;
 use crate::event::touch::Touch;
-use crate::input::Button;
 
 /// The event type that is used by carbide to track inputs from the world. Events yielded by polling
 /// window backends should be converted to this type. This can be thought of as the event type

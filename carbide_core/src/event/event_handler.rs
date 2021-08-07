@@ -3,8 +3,7 @@ use std::time::Duration;
 
 use instant::Instant;
 
-use crate::event::Motion;
-use crate::input::{Button, Input, Key, ModifierKey, MouseButton};
+use crate::event::{Button, Input, Key, ModifierKey, Motion, MouseButton};
 use crate::Point;
 use crate::position::Dimensions;
 use crate::Scalar;

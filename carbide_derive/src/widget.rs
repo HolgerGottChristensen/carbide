@@ -1,7 +1,7 @@
 use std::collections::HashSet;
 
 use proc_macro2;
-use proc_macro2::{Ident, Span, TokenStream};
+use proc_macro2::{Ident, TokenStream};
 use syn;
 use syn::{Attribute, DeriveInput, Fields, GenericParam, Meta, NestedMeta, Path, Type, WherePredicate};
 
@@ -83,7 +83,7 @@ pub fn impl_widget(ast: &syn::DeriveInput) -> proc_macro2::TokenStream {
     let state_idents: Vec<Ident> = state_idents_iter.collect();
 
 
-    let (global_state, global_state_use) = if let Some(_) = struct_attributes.get("global_state") {
+    /*let (global_state, global_state_use) = if let Some(_) = struct_attributes.get("global_state") {
         let idents: Vec<Ident> = struct_attributes.iter().filter_map(|st| {
             if st.starts_with("global_state.") {
                 let str_ident: Vec<&str> = st.split(".").collect();
@@ -104,7 +104,7 @@ pub fn impl_widget(ast: &syn::DeriveInput) -> proc_macro2::TokenStream {
         let generic_use = quote! {GS};
 
         (generic, generic_use)
-    };
+    };*/
 
 
     let capture_state = if let Some(_) = struct_attributes.get("state_sync.capture_state") {

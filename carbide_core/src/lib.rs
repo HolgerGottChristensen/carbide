@@ -25,7 +25,6 @@ pub use crate::ui::Ui;
 pub mod color;
 pub mod event;
 pub mod image_map;
-pub mod input;
 pub mod mesh;
 pub mod position;
 pub mod render;

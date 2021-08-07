@@ -6,9 +6,8 @@ use instant::Instant;
 
 use crate::{color, cursor};
 use crate::color::Color;
-use crate::event::{Event, EventHandler, Input, KeyboardEvent, WidgetEvent, WindowEvent};
+use crate::event::{Event, EventHandler, Input, Key, KeyboardEvent, ModifierKey, WidgetEvent, WindowEvent};
 use crate::focus::{Focusable, Refocus};
-use crate::input::{Key, ModifierKey};
 use crate::position::Dimensions;
 use crate::prelude::Environment;
 use crate::prelude::EnvironmentColor;
@@ -245,7 +244,7 @@ impl Ui {
                                 // has been focused. This assumption breaks if there can be multiple
                                 // widgets with focus at the same time
                                 self.any_focus = !self.widgets.process_focus_previous(event, &Refocus::FocusPrevious, true, &mut self.environment);
-                            } else if modifier == &carbide_core::input::ModifierKey::NO_MODIFIER {
+                            } else if modifier == &ModifierKey::NO_MODIFIER {
                                 self.any_focus = !self.widgets.process_focus_next(event, &Refocus::FocusNext, true, &mut self.environment);
                             }
                         }

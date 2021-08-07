@@ -2,141 +2,141 @@
 macro_rules! v023_convert_key {
     ($keycode:expr) => {{
         match $keycode {
-            winit::event::VirtualKeyCode::Key0 => carbide_core::input::Key::D0,
-            winit::event::VirtualKeyCode::Key1 => carbide_core::input::Key::D1,
-            winit::event::VirtualKeyCode::Key2 => carbide_core::input::Key::D2,
-            winit::event::VirtualKeyCode::Key3 => carbide_core::input::Key::D3,
-            winit::event::VirtualKeyCode::Key4 => carbide_core::input::Key::D4,
-            winit::event::VirtualKeyCode::Key5 => carbide_core::input::Key::D5,
-            winit::event::VirtualKeyCode::Key6 => carbide_core::input::Key::D6,
-            winit::event::VirtualKeyCode::Key7 => carbide_core::input::Key::D7,
-            winit::event::VirtualKeyCode::Key8 => carbide_core::input::Key::D8,
-            winit::event::VirtualKeyCode::Key9 => carbide_core::input::Key::D9,
-            winit::event::VirtualKeyCode::A => carbide_core::input::Key::A,
-            winit::event::VirtualKeyCode::B => carbide_core::input::Key::B,
-            winit::event::VirtualKeyCode::C => carbide_core::input::Key::C,
-            winit::event::VirtualKeyCode::D => carbide_core::input::Key::D,
-            winit::event::VirtualKeyCode::E => carbide_core::input::Key::E,
-            winit::event::VirtualKeyCode::F => carbide_core::input::Key::F,
-            winit::event::VirtualKeyCode::G => carbide_core::input::Key::G,
-            winit::event::VirtualKeyCode::H => carbide_core::input::Key::H,
-            winit::event::VirtualKeyCode::I => carbide_core::input::Key::I,
-            winit::event::VirtualKeyCode::J => carbide_core::input::Key::J,
-            winit::event::VirtualKeyCode::K => carbide_core::input::Key::K,
-            winit::event::VirtualKeyCode::L => carbide_core::input::Key::L,
-            winit::event::VirtualKeyCode::M => carbide_core::input::Key::M,
-            winit::event::VirtualKeyCode::N => carbide_core::input::Key::N,
-            winit::event::VirtualKeyCode::O => carbide_core::input::Key::O,
-            winit::event::VirtualKeyCode::P => carbide_core::input::Key::P,
-            winit::event::VirtualKeyCode::Q => carbide_core::input::Key::Q,
-            winit::event::VirtualKeyCode::R => carbide_core::input::Key::R,
-            winit::event::VirtualKeyCode::S => carbide_core::input::Key::S,
-            winit::event::VirtualKeyCode::T => carbide_core::input::Key::T,
-            winit::event::VirtualKeyCode::U => carbide_core::input::Key::U,
-            winit::event::VirtualKeyCode::V => carbide_core::input::Key::V,
-            winit::event::VirtualKeyCode::W => carbide_core::input::Key::W,
-            winit::event::VirtualKeyCode::X => carbide_core::input::Key::X,
-            winit::event::VirtualKeyCode::Y => carbide_core::input::Key::Y,
-            winit::event::VirtualKeyCode::Z => carbide_core::input::Key::Z,
-            winit::event::VirtualKeyCode::Apostrophe => carbide_core::input::Key::Unknown,
-            winit::event::VirtualKeyCode::Backslash => carbide_core::input::Key::Backslash,
-            winit::event::VirtualKeyCode::Back => carbide_core::input::Key::Backspace,
-            winit::event::VirtualKeyCode::Delete => carbide_core::input::Key::Delete,
-            winit::event::VirtualKeyCode::Comma => carbide_core::input::Key::Comma,
-            winit::event::VirtualKeyCode::Down => carbide_core::input::Key::Down,
-            winit::event::VirtualKeyCode::End => carbide_core::input::Key::End,
-            winit::event::VirtualKeyCode::Return => carbide_core::input::Key::Return,
-            winit::event::VirtualKeyCode::Equals => carbide_core::input::Key::Equals,
-            winit::event::VirtualKeyCode::Escape => carbide_core::input::Key::Escape,
-            winit::event::VirtualKeyCode::F1 => carbide_core::input::Key::F1,
-            winit::event::VirtualKeyCode::F2 => carbide_core::input::Key::F2,
-            winit::event::VirtualKeyCode::F3 => carbide_core::input::Key::F3,
-            winit::event::VirtualKeyCode::F4 => carbide_core::input::Key::F4,
-            winit::event::VirtualKeyCode::F5 => carbide_core::input::Key::F5,
-            winit::event::VirtualKeyCode::F6 => carbide_core::input::Key::F6,
-            winit::event::VirtualKeyCode::F7 => carbide_core::input::Key::F7,
-            winit::event::VirtualKeyCode::F8 => carbide_core::input::Key::F8,
-            winit::event::VirtualKeyCode::F9 => carbide_core::input::Key::F9,
-            winit::event::VirtualKeyCode::F10 => carbide_core::input::Key::F10,
-            winit::event::VirtualKeyCode::F11 => carbide_core::input::Key::F11,
-            winit::event::VirtualKeyCode::F12 => carbide_core::input::Key::F12,
-            winit::event::VirtualKeyCode::F13 => carbide_core::input::Key::F13,
-            winit::event::VirtualKeyCode::F14 => carbide_core::input::Key::F14,
-            winit::event::VirtualKeyCode::F15 => carbide_core::input::Key::F15,
-            winit::event::VirtualKeyCode::Numpad0 => carbide_core::input::Key::NumPad0,
-            winit::event::VirtualKeyCode::Numpad1 => carbide_core::input::Key::NumPad1,
-            winit::event::VirtualKeyCode::Numpad2 => carbide_core::input::Key::NumPad2,
-            winit::event::VirtualKeyCode::Numpad3 => carbide_core::input::Key::NumPad3,
-            winit::event::VirtualKeyCode::Numpad4 => carbide_core::input::Key::NumPad4,
-            winit::event::VirtualKeyCode::Numpad5 => carbide_core::input::Key::NumPad5,
-            winit::event::VirtualKeyCode::Numpad6 => carbide_core::input::Key::NumPad6,
-            winit::event::VirtualKeyCode::Numpad7 => carbide_core::input::Key::NumPad7,
-            winit::event::VirtualKeyCode::Numpad8 => carbide_core::input::Key::NumPad8,
-            winit::event::VirtualKeyCode::Numpad9 => carbide_core::input::Key::NumPad9,
+            winit::event::VirtualKeyCode::Key0 => carbide_core::event::Key::D0,
+            winit::event::VirtualKeyCode::Key1 => carbide_core::event::Key::D1,
+            winit::event::VirtualKeyCode::Key2 => carbide_core::event::Key::D2,
+            winit::event::VirtualKeyCode::Key3 => carbide_core::event::Key::D3,
+            winit::event::VirtualKeyCode::Key4 => carbide_core::event::Key::D4,
+            winit::event::VirtualKeyCode::Key5 => carbide_core::event::Key::D5,
+            winit::event::VirtualKeyCode::Key6 => carbide_core::event::Key::D6,
+            winit::event::VirtualKeyCode::Key7 => carbide_core::event::Key::D7,
+            winit::event::VirtualKeyCode::Key8 => carbide_core::event::Key::D8,
+            winit::event::VirtualKeyCode::Key9 => carbide_core::event::Key::D9,
+            winit::event::VirtualKeyCode::A => carbide_core::event::Key::A,
+            winit::event::VirtualKeyCode::B => carbide_core::event::Key::B,
+            winit::event::VirtualKeyCode::C => carbide_core::event::Key::C,
+            winit::event::VirtualKeyCode::D => carbide_core::event::Key::D,
+            winit::event::VirtualKeyCode::E => carbide_core::event::Key::E,
+            winit::event::VirtualKeyCode::F => carbide_core::event::Key::F,
+            winit::event::VirtualKeyCode::G => carbide_core::event::Key::G,
+            winit::event::VirtualKeyCode::H => carbide_core::event::Key::H,
+            winit::event::VirtualKeyCode::I => carbide_core::event::Key::I,
+            winit::event::VirtualKeyCode::J => carbide_core::event::Key::J,
+            winit::event::VirtualKeyCode::K => carbide_core::event::Key::K,
+            winit::event::VirtualKeyCode::L => carbide_core::event::Key::L,
+            winit::event::VirtualKeyCode::M => carbide_core::event::Key::M,
+            winit::event::VirtualKeyCode::N => carbide_core::event::Key::N,
+            winit::event::VirtualKeyCode::O => carbide_core::event::Key::O,
+            winit::event::VirtualKeyCode::P => carbide_core::event::Key::P,
+            winit::event::VirtualKeyCode::Q => carbide_core::event::Key::Q,
+            winit::event::VirtualKeyCode::R => carbide_core::event::Key::R,
+            winit::event::VirtualKeyCode::S => carbide_core::event::Key::S,
+            winit::event::VirtualKeyCode::T => carbide_core::event::Key::T,
+            winit::event::VirtualKeyCode::U => carbide_core::event::Key::U,
+            winit::event::VirtualKeyCode::V => carbide_core::event::Key::V,
+            winit::event::VirtualKeyCode::W => carbide_core::event::Key::W,
+            winit::event::VirtualKeyCode::X => carbide_core::event::Key::X,
+            winit::event::VirtualKeyCode::Y => carbide_core::event::Key::Y,
+            winit::event::VirtualKeyCode::Z => carbide_core::event::Key::Z,
+            winit::event::VirtualKeyCode::Apostrophe => carbide_core::event::Key::Unknown,
+            winit::event::VirtualKeyCode::Backslash => carbide_core::event::Key::Backslash,
+            winit::event::VirtualKeyCode::Back => carbide_core::event::Key::Backspace,
+            winit::event::VirtualKeyCode::Delete => carbide_core::event::Key::Delete,
+            winit::event::VirtualKeyCode::Comma => carbide_core::event::Key::Comma,
+            winit::event::VirtualKeyCode::Down => carbide_core::event::Key::Down,
+            winit::event::VirtualKeyCode::End => carbide_core::event::Key::End,
+            winit::event::VirtualKeyCode::Return => carbide_core::event::Key::Return,
+            winit::event::VirtualKeyCode::Equals => carbide_core::event::Key::Equals,
+            winit::event::VirtualKeyCode::Escape => carbide_core::event::Key::Escape,
+            winit::event::VirtualKeyCode::F1 => carbide_core::event::Key::F1,
+            winit::event::VirtualKeyCode::F2 => carbide_core::event::Key::F2,
+            winit::event::VirtualKeyCode::F3 => carbide_core::event::Key::F3,
+            winit::event::VirtualKeyCode::F4 => carbide_core::event::Key::F4,
+            winit::event::VirtualKeyCode::F5 => carbide_core::event::Key::F5,
+            winit::event::VirtualKeyCode::F6 => carbide_core::event::Key::F6,
+            winit::event::VirtualKeyCode::F7 => carbide_core::event::Key::F7,
+            winit::event::VirtualKeyCode::F8 => carbide_core::event::Key::F8,
+            winit::event::VirtualKeyCode::F9 => carbide_core::event::Key::F9,
+            winit::event::VirtualKeyCode::F10 => carbide_core::event::Key::F10,
+            winit::event::VirtualKeyCode::F11 => carbide_core::event::Key::F11,
+            winit::event::VirtualKeyCode::F12 => carbide_core::event::Key::F12,
+            winit::event::VirtualKeyCode::F13 => carbide_core::event::Key::F13,
+            winit::event::VirtualKeyCode::F14 => carbide_core::event::Key::F14,
+            winit::event::VirtualKeyCode::F15 => carbide_core::event::Key::F15,
+            winit::event::VirtualKeyCode::Numpad0 => carbide_core::event::Key::NumPad0,
+            winit::event::VirtualKeyCode::Numpad1 => carbide_core::event::Key::NumPad1,
+            winit::event::VirtualKeyCode::Numpad2 => carbide_core::event::Key::NumPad2,
+            winit::event::VirtualKeyCode::Numpad3 => carbide_core::event::Key::NumPad3,
+            winit::event::VirtualKeyCode::Numpad4 => carbide_core::event::Key::NumPad4,
+            winit::event::VirtualKeyCode::Numpad5 => carbide_core::event::Key::NumPad5,
+            winit::event::VirtualKeyCode::Numpad6 => carbide_core::event::Key::NumPad6,
+            winit::event::VirtualKeyCode::Numpad7 => carbide_core::event::Key::NumPad7,
+            winit::event::VirtualKeyCode::Numpad8 => carbide_core::event::Key::NumPad8,
+            winit::event::VirtualKeyCode::Numpad9 => carbide_core::event::Key::NumPad9,
             winit::event::VirtualKeyCode::NumpadComma
             | winit::event::VirtualKeyCode::NumpadDecimal => {
-                carbide_core::input::Key::NumPadDecimal
+                carbide_core::event::Key::NumPadDecimal
             }
             winit::event::VirtualKeyCode::NumpadDivide => {
-                carbide_core::input::Key::NumPadDivide
+                carbide_core::event::Key::NumPadDivide
             }
             winit::event::VirtualKeyCode::NumpadMultiply => {
-                carbide_core::input::Key::NumPadMultiply
+                carbide_core::event::Key::NumPadMultiply
             }
             winit::event::VirtualKeyCode::NumpadSubtract => {
-                carbide_core::input::Key::NumPadMinus
+                carbide_core::event::Key::NumPadMinus
             }
             winit::event::VirtualKeyCode::NumpadAdd => {
-                carbide_core::input::Key::NumPadPlus
+                carbide_core::event::Key::NumPadPlus
             }
             winit::event::VirtualKeyCode::NumpadEnter => {
-                carbide_core::input::Key::NumPadEnter
+                carbide_core::event::Key::NumPadEnter
             }
             winit::event::VirtualKeyCode::NumpadEquals => {
-                carbide_core::input::Key::NumPadEquals
+                carbide_core::event::Key::NumPadEquals
             }
-            winit::event::VirtualKeyCode::LShift => carbide_core::input::Key::LShift,
-            winit::event::VirtualKeyCode::LControl => carbide_core::input::Key::LCtrl,
-            winit::event::VirtualKeyCode::LAlt => carbide_core::input::Key::LAlt,
-            winit::event::VirtualKeyCode::RShift => carbide_core::input::Key::RShift,
-            winit::event::VirtualKeyCode::RControl => carbide_core::input::Key::RCtrl,
-            winit::event::VirtualKeyCode::RAlt => carbide_core::input::Key::RAlt,
-            winit::event::VirtualKeyCode::Home => carbide_core::input::Key::Home,
-            winit::event::VirtualKeyCode::Insert => carbide_core::input::Key::Insert,
-            winit::event::VirtualKeyCode::Left => carbide_core::input::Key::Left,
+            winit::event::VirtualKeyCode::LShift => carbide_core::event::Key::LShift,
+            winit::event::VirtualKeyCode::LControl => carbide_core::event::Key::LCtrl,
+            winit::event::VirtualKeyCode::LAlt => carbide_core::event::Key::LAlt,
+            winit::event::VirtualKeyCode::RShift => carbide_core::event::Key::RShift,
+            winit::event::VirtualKeyCode::RControl => carbide_core::event::Key::RCtrl,
+            winit::event::VirtualKeyCode::RAlt => carbide_core::event::Key::RAlt,
+            winit::event::VirtualKeyCode::Home => carbide_core::event::Key::Home,
+            winit::event::VirtualKeyCode::Insert => carbide_core::event::Key::Insert,
+            winit::event::VirtualKeyCode::Left => carbide_core::event::Key::Left,
 
             // On mac this is the command (cmd) key
-            winit::event::VirtualKeyCode::LWin => carbide_core::input::Key::LGui,
-            winit::event::VirtualKeyCode::RWin => carbide_core::input::Key::RGui,
+            winit::event::VirtualKeyCode::LWin => carbide_core::event::Key::LGui,
+            winit::event::VirtualKeyCode::RWin => carbide_core::event::Key::RGui,
 
             winit::event::VirtualKeyCode::LBracket => {
-                carbide_core::input::Key::LeftBracket
+                carbide_core::event::Key::LeftBracket
             }
-            winit::event::VirtualKeyCode::Minus => carbide_core::input::Key::Minus,
+            winit::event::VirtualKeyCode::Minus => carbide_core::event::Key::Minus,
             winit::event::VirtualKeyCode::Numlock => {
-                carbide_core::input::Key::NumLockClear
+                carbide_core::event::Key::NumLockClear
             }
-            winit::event::VirtualKeyCode::PageDown => carbide_core::input::Key::PageDown,
-            winit::event::VirtualKeyCode::PageUp => carbide_core::input::Key::PageUp,
-            winit::event::VirtualKeyCode::Pause => carbide_core::input::Key::Pause,
-            winit::event::VirtualKeyCode::Period => carbide_core::input::Key::Period,
-            winit::event::VirtualKeyCode::Right => carbide_core::input::Key::Right,
+            winit::event::VirtualKeyCode::PageDown => carbide_core::event::Key::PageDown,
+            winit::event::VirtualKeyCode::PageUp => carbide_core::event::Key::PageUp,
+            winit::event::VirtualKeyCode::Pause => carbide_core::event::Key::Pause,
+            winit::event::VirtualKeyCode::Period => carbide_core::event::Key::Period,
+            winit::event::VirtualKeyCode::Right => carbide_core::event::Key::Right,
             winit::event::VirtualKeyCode::RBracket => {
-                carbide_core::input::Key::RightBracket
+                carbide_core::event::Key::RightBracket
             }
-            winit::event::VirtualKeyCode::Semicolon => carbide_core::input::Key::Semicolon,
-            winit::event::VirtualKeyCode::Slash => carbide_core::input::Key::Slash,
-            winit::event::VirtualKeyCode::Space => carbide_core::input::Key::Space,
-            winit::event::VirtualKeyCode::Tab => carbide_core::input::Key::Tab,
-            winit::event::VirtualKeyCode::Up => carbide_core::input::Key::Up,
-            _ => carbide_core::input::Key::Unknown,
+            winit::event::VirtualKeyCode::Semicolon => carbide_core::event::Key::Semicolon,
+            winit::event::VirtualKeyCode::Slash => carbide_core::event::Key::Slash,
+            winit::event::VirtualKeyCode::Space => carbide_core::event::Key::Space,
+            winit::event::VirtualKeyCode::Tab => carbide_core::event::Key::Tab,
+            winit::event::VirtualKeyCode::Up => carbide_core::event::Key::Up,
+            _ => carbide_core::event::Key::Unknown,
         }
     }};
 }
 
 /// Maps winit's mouse button to carbide's mouse button.
 ///
-/// Expects a `winit::MouseButton` as input and returns a `carbide_core::input::MouseButton` as
+/// Expects a `winit::MouseButton` as input and returns a `carbide_core::event::MouseButton` as
 /// output.
 ///
 /// Requires that both the `carbide_core` and `winit` crates are in the crate root.
@@ -144,15 +144,15 @@ macro_rules! v023_convert_key {
 macro_rules! v023_convert_mouse_button {
     ($mouse_button:expr) => {{
         match $mouse_button {
-            winit::event::MouseButton::Left => carbide_core::input::MouseButton::Left,
-            winit::event::MouseButton::Right => carbide_core::input::MouseButton::Right,
-            winit::event::MouseButton::Middle => carbide_core::input::MouseButton::Middle,
-            winit::event::MouseButton::Other(0) => carbide_core::input::MouseButton::X1,
-            winit::event::MouseButton::Other(1) => carbide_core::input::MouseButton::X2,
-            winit::event::MouseButton::Other(2) => carbide_core::input::MouseButton::Button6,
-            winit::event::MouseButton::Other(3) => carbide_core::input::MouseButton::Button7,
-            winit::event::MouseButton::Other(4) => carbide_core::input::MouseButton::Button8,
-            _ => carbide_core::input::MouseButton::Unknown,
+            winit::event::MouseButton::Left => carbide_core::event::MouseButton::Left,
+            winit::event::MouseButton::Right => carbide_core::event::MouseButton::Right,
+            winit::event::MouseButton::Middle => carbide_core::event::MouseButton::Middle,
+            winit::event::MouseButton::Other(0) => carbide_core::event::MouseButton::X1,
+            winit::event::MouseButton::Other(1) => carbide_core::event::MouseButton::X2,
+            winit::event::MouseButton::Other(2) => carbide_core::event::MouseButton::Button6,
+            winit::event::MouseButton::Other(3) => carbide_core::event::MouseButton::Button7,
+            winit::event::MouseButton::Other(4) => carbide_core::event::MouseButton::Button8,
+            _ => carbide_core::event::MouseButton::Unknown,
         }
     }};
 }
@@ -201,9 +201,9 @@ macro_rules! v023_convert_window_event {
                 input.virtual_keycode.map(|key| {
                     match input.state {
                         winit::event::ElementState::Pressed =>
-                            carbide_core::event::Input::Press(carbide_core::input::Button::Keyboard(map_key(key))).into(),
+                            carbide_core::event::Input::Press(carbide_core::event::Button::Keyboard(map_key(key))).into(),
                         winit::event::ElementState::Released =>
-                            carbide_core::event::Input::Release(carbide_core::input::Button::Keyboard(map_key(key))).into(),
+                            carbide_core::event::Input::Release(carbide_core::event::Button::Keyboard(map_key(key))).into(),
                     }
                 })
             },
@@ -211,14 +211,14 @@ macro_rules! v023_convert_window_event {
             winit::event::WindowEvent::Touch(winit::event::Touch { phase, location, id, .. }) => {
                 let winit::dpi::LogicalPosition { x, y } = location.to_logical::<f64>(scale_factor);
                 let phase = match phase {
-                    winit::event::TouchPhase::Started => carbide_core::input::touch::Phase::Start,
-                    winit::event::TouchPhase::Moved => carbide_core::input::touch::Phase::Move,
-                    winit::event::TouchPhase::Cancelled => carbide_core::input::touch::Phase::Cancel,
-                    winit::event::TouchPhase::Ended => carbide_core::input::touch::Phase::End,
+                    winit::event::TouchPhase::Started => carbide_core::event::TouchPhase::Start,
+                    winit::event::TouchPhase::Moved => carbide_core::event::TouchPhase::Move,
+                    winit::event::TouchPhase::Cancelled => carbide_core::event::TouchPhase::Cancel,
+                    winit::event::TouchPhase::Ended => carbide_core::event::TouchPhase::End,
                 };
                 let xy = [tx(x), ty(y)];
-                let id = carbide_core::input::touch::Id::new(id.clone());
-                let touch = carbide_core::input::Touch { phase: phase, id: id, xy: xy };
+                let id = carbide_core::event::TouchId::new(id.clone());
+                let touch = carbide_core::event::Touch { phase: phase, id: id, xy: xy };
                 Some(carbide_core::event::Input::Touch(touch).into())
             }
 
@@ -226,7 +226,7 @@ macro_rules! v023_convert_window_event {
                 let winit::dpi::LogicalPosition { x, y } = position.to_logical::<f64>(scale_factor);
                 let x = tx(x as carbide_core::Scalar);
                 let y = ty(y as carbide_core::Scalar);
-                let motion = carbide_core::input::Motion::MouseCursor { x: x, y: y };
+                let motion = carbide_core::event::Motion::MouseCursor { x: x, y: y };
                 Some(carbide_core::event::Input::Motion(motion).into())
             },
 
@@ -235,7 +235,7 @@ macro_rules! v023_convert_window_event {
                     let winit::dpi::LogicalPosition { x, y } = delta.to_logical::<f64>(scale_factor);
                     let x = x as carbide_core::Scalar;
                     let y = -y as carbide_core::Scalar;
-                    let motion = carbide_core::input::Motion::Scroll { x: x, y: y };
+                    let motion = carbide_core::event::Motion::Scroll { x: x, y: y };
                     Some(carbide_core::event::Input::Motion(motion).into())
                 },
 
@@ -244,15 +244,15 @@ macro_rules! v023_convert_window_event {
                     const ARBITRARY_POINTS_PER_LINE_FACTOR: carbide_core::Scalar = 10.0;
                     let x = ARBITRARY_POINTS_PER_LINE_FACTOR * x.clone() as carbide_core::Scalar;
                     let y = ARBITRARY_POINTS_PER_LINE_FACTOR * -y.clone() as carbide_core::Scalar;
-                    Some(carbide_core::event::Input::Motion(carbide_core::input::Motion::Scroll { x: x, y: y }).into())
+                    Some(carbide_core::event::Input::Motion(carbide_core::event::Motion::Scroll { x: x, y: y }).into())
                 },
             },
 
             winit::event::WindowEvent::MouseInput { state, button, .. } => match state {
                 winit::event::ElementState::Pressed =>
-                    Some(carbide_core::event::Input::Press(carbide_core::input::Button::Mouse(map_mouse(button.clone()))).into()),
+                    Some(carbide_core::event::Input::Press(carbide_core::event::Button::Mouse(map_mouse(button.clone()))).into()),
                 winit::event::ElementState::Released =>
-                    Some(carbide_core::event::Input::Release(carbide_core::input::Button::Mouse(map_mouse(button.clone()))).into()),
+                    Some(carbide_core::event::Input::Release(carbide_core::event::Button::Mouse(map_mouse(button.clone()))).into()),
             },
 
             _ => None,
@@ -317,19 +317,19 @@ macro_rules! v023_conversion_fns {
         /// `winit` and `carbide_core`.
         /// Maps winit's key to a carbide `Key`.
         ///
-        /// Expects a `winit::VirtualKeyCode` as input and returns a `carbide_core::input::Key`.
+        /// Expects a `winit::VirtualKeyCode` as input and returns a `carbide_core::event::Key`.
         ///
         /// Requires that both the `winit` and `carbide_core` crates exist within the crate root.
         pub fn convert_key(
             keycode: winit::event::VirtualKeyCode,
-        ) -> carbide_core::input::Key {
+        ) -> carbide_core::event::Key {
             $crate::v023_convert_key!(keycode)
         }
 
-        /// Convert a `winit::MouseButton` to a `carbide_core::input::MouseButton`.
+        /// Convert a `winit::MouseButton` to a `carbide_core::event::MouseButton`.
         pub fn convert_mouse_button(
             mouse_button: winit::event::MouseButton,
-        ) -> carbide_core::input::MouseButton {
+        ) -> carbide_core::event::MouseButton {
             $crate::v023_convert_mouse_button!(mouse_button)
         }
 

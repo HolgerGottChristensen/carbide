@@ -1,6 +1,6 @@
 use serde::{Deserialize, Serialize};
 
-use crate::input::{Key, MouseButton};
+use crate::event::{Key, MouseButton};
 
 #[derive(Copy, Clone, Deserialize, Serialize, PartialEq, PartialOrd, Ord, Eq, Hash, Debug)]
 pub enum Button {

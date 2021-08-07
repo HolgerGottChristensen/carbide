@@ -1,7 +1,7 @@
 use bitflags::bitflags;
 use serde::{Deserialize, Serialize};
 
-use crate::input::Button;
+use crate::event::Button;
 
 // Defining every combination to allow assignment in static expressions.
 bitflags!(

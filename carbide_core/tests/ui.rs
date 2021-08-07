@@ -10,7 +10,7 @@ use {
 };
 use carbide_core::{Color, Colorable, Labelable, Point, Positionable, Sizeable, Ui, UiBuilder, widget, Widget};
 use carbide_core::event::event;
-use carbide_core::input::input::Input;
+use carbide_core::event::input::Input;
 use event::{self, Input};
 use input::{self, Button, Key, Motion, MouseButton};
 use input::keyboard::ModifierKey;
