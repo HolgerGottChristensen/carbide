@@ -2,7 +2,7 @@ pub use common::*;
 pub use shape::*;
 pub use types::*;
 
-use crate::Point;
+use crate::draw::Point;
 
 pub use self::border::*;
 pub use self::clip::*;

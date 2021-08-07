@@ -1,3 +1,4 @@
+use crate::draw::{Dimension, Position};
 use crate::event::Event;
 use crate::prelude::*;
 use crate::render::RenderProcessor;
@@ -12,8 +13,8 @@ pub struct OverlaidLayer {
     overlay: Option<Box<dyn Widget>>,
     current_overlay_id: Option<Uuid>,
     overlay_id: String,
-    position: Point,
-    dimension: Dimensions,
+    position: Position,
+    dimension: Dimension,
     steal_events_when_some: bool,
 }
 
@@ -170,8 +171,8 @@ impl OverlaidLayer {
             overlay: None,
             current_overlay_id: None,
             overlay_id: overlay_id.to_string(),
-            position: [0.0, 0.0],
-            dimension: [0.0, 0.0],
+            position: Position::new(0.0, 0.0),
+            dimension: Dimension::new(0.0, 0.0),
             steal_events_when_some: true,
         })
     }
@@ -183,7 +184,7 @@ impl Layout for OverlaidLayer {
         0
     }
 
-    fn calculate_size(&mut self, requested_size: Dimensions, env: &mut Environment) -> Dimensions {
+    fn calculate_size(&mut self, requested_size: Dimension, env: &mut Environment) -> Dimension {
         self.dimension = self.child.calculate_size(requested_size, env);
 
         if let Some(overlay) = &mut self.overlay {
@@ -243,19 +244,19 @@ impl CommonWidget for OverlaidLayer {
         WidgetIterMut::single(self.child.deref_mut())
     }
 
-    fn get_position(&self) -> Point {
+    fn get_position(&self) -> Position {
         self.position
     }
 
-    fn set_position(&mut self, position: Dimensions) {
+    fn set_position(&mut self, position: Position) {
         self.position = position;
     }
 
-    fn get_dimension(&self) -> Dimensions {
+    fn get_dimension(&self) -> Dimension {
         self.dimension
     }
 
-    fn set_dimension(&mut self, dimensions: Dimensions) {
+    fn set_dimension(&mut self, dimensions: Dimension) {
         self.dimension = dimensions
     }
 }

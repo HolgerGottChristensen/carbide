@@ -4,6 +4,7 @@ use std::ops::{Deref, DerefMut};
 
 use dyn_clone::DynClone;
 
+use crate::draw::{Dimension, Position};
 use crate::event::{Event, KeyboardEvent, MouseEvent, WidgetEvent};
 use crate::focus::{Focus, Focusable, Refocus};
 use crate::prelude::*;
@@ -55,19 +56,19 @@ impl CommonWidget for Box<dyn Widget> {
         self.deref_mut().get_proxied_children_rev()
     }
 
-    fn get_position(&self) -> Dimensions {
+    fn get_position(&self) -> Position {
         self.deref().get_position()
     }
 
-    fn set_position(&mut self, position: Dimensions) {
+    fn set_position(&mut self, position: Position) {
         self.deref_mut().set_position(position)
     }
 
-    fn get_dimension(&self) -> Dimensions {
+    fn get_dimension(&self) -> Dimension {
         self.deref().get_dimension()
     }
 
-    fn set_dimension(&mut self, dimensions: Dimensions) {
+    fn set_dimension(&mut self, dimensions: Dimension) {
         self.deref_mut().set_dimension(dimensions)
     }
 }
@@ -114,7 +115,7 @@ impl Layout for Box<dyn Widget> {
         self.deref().flexibility()
     }
 
-    fn calculate_size(&mut self, requested_size: Dimensions, env: &mut Environment) -> Dimensions {
+    fn calculate_size(&mut self, requested_size: Dimension, env: &mut Environment) -> Dimension {
         self.deref_mut().calculate_size(requested_size, env)
     }
 

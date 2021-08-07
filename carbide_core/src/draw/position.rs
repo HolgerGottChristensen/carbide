@@ -5,7 +5,7 @@ use std::ops::{Add, AddAssign, Div, Mul, Sub};
 use rusttype::Point;
 
 use crate::draw::Dimension;
-use crate::Scalar;
+use crate::draw::Scalar;
 
 #[derive(Copy, Clone, PartialOrd, PartialEq, Debug, Default)]
 pub struct Position {

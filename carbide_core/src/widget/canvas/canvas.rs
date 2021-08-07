@@ -2,6 +2,7 @@ use lyon::algorithms::path::Path;
 use lyon::tessellation::{BuffersBuilder, FillOptions, FillTessellator, FillVertex, StrokeOptions, StrokeTessellator, StrokeVertex, VertexBuffers};
 
 use crate::color::Rgba;
+use crate::draw::{Dimension, Position, Rect};
 use crate::draw::shape::triangle::Triangle;
 use crate::prelude::*;
 use crate::render::PrimitiveKind;
@@ -12,19 +13,19 @@ use crate::widget::Rectangle;
 #[derive(Debug, Clone, Widget)]
 pub struct Canvas {
     id: Uuid,
-    position: Point,
-    dimension: Dimensions,
+    position: Position,
+    dimension: Dimension,
     #[state] color: ColorState,
     //prim_store: Vec<Primitive>,
-    context: fn(OldRect, Context) -> Context,
+    context: fn(Rect, Context) -> Context,
 }
 
 impl Canvas {
-    pub fn initialize(context: fn(OldRect, Context) -> Context) -> Box<Self> {
+    pub fn initialize(context: fn(Rect, Context) -> Context) -> Box<Self> {
         Box::new(Canvas {
             id: Uuid::new_v4(),
-            position: [0.0, 0.0],
-            dimension: [100.0, 100.0],
+            position: Position::new(0.0, 0.0),
+            dimension: Dimension::new(100.0, 100.0),
             color: EnvironmentColor::Accent.into(),
             //prim_store: vec![],
             context,
@@ -53,7 +54,7 @@ impl Canvas {
 
         Primitive {
             kind: PrimitiveKind::TrianglesSingleColor { color: Rgba::from(color), triangles: Triangle::from_point_list(points) },
-            rect: OldRect::new(self.position, self.dimension),
+            rect: Rect::new(self.position, self.dimension),
         }
     }
 
@@ -79,7 +80,7 @@ impl Canvas {
 
         Primitive {
             kind: PrimitiveKind::TrianglesSingleColor { color: Rgba::from(color), triangles: Triangle::from_point_list(points) },
-            rect: OldRect::new(self.position, self.dimension),
+            rect: Rect::new(self.position, self.dimension),
         }
     }
 }
@@ -113,19 +114,19 @@ impl CommonWidget for Canvas {
         WidgetIterMut::Empty
     }
 
-    fn get_position(&self) -> Point {
+    fn get_position(&self) -> Position {
         self.position
     }
 
-    fn set_position(&mut self, position: Dimensions) {
+    fn set_position(&mut self, position: Position) {
         self.position = position;
     }
 
-    fn get_dimension(&self) -> Dimensions {
+    fn get_dimension(&self) -> Dimension {
         self.dimension
     }
 
-    fn set_dimension(&mut self, dimensions: Dimensions) {
+    fn set_dimension(&mut self, dimensions: Dimension) {
         self.dimension = dimensions
     }
 }
@@ -134,7 +135,7 @@ impl Render for Canvas {
     fn get_primitives(&mut self, env: &mut Environment) -> Vec<Primitive> {
         let context = Context::new();
 
-        let rectangle = OldRect::new(self.get_position(), self.get_dimension());
+        let rectangle = Rect::new(self.get_position(), self.get_dimension());
         let context = (self.context)(rectangle, context);
 
         let paths = context.to_paths(self.get_position());
@@ -156,7 +157,7 @@ impl Render for Canvas {
             }
         }
 
-        prims.extend(Rectangle::debug_outline(OldRect::new(self.position, self.dimension), 1.0));
+        prims.extend(Rectangle::debug_outline(Rect::new(self.position, self.dimension), 1.0));
 
         return prims;
     }
@@ -169,7 +170,7 @@ impl Layout for Canvas {
         0
     }
 
-    fn calculate_size(&mut self, requested_size: Dimensions, env: &mut Environment) -> Dimensions {
+    fn calculate_size(&mut self, requested_size: Dimension, _: &mut Environment) -> Dimension {
         self.dimension = requested_size;
         requested_size
     }

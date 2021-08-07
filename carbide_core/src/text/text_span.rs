@@ -1,5 +1,5 @@
+use crate::draw::Scalar;
 use crate::environment::Environment;
-use crate::Scalar;
 use crate::text::glyph::Glyph;
 use crate::text::text_style::TextStyle;
 use crate::widget::Widget;

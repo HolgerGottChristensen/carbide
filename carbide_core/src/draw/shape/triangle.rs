@@ -1,4 +1,5 @@
-use crate::{color, Point};
+use crate::color;
+use crate::draw::Point;
 use crate::draw::shape::vertex::Vertex;
 use crate::widget::ColoredPoint;
 

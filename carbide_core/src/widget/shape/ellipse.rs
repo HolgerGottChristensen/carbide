@@ -4,6 +4,7 @@ use lyon::algorithms::path::geom::euclid::vec2;
 use lyon::algorithms::path::Winding;
 use lyon::math::point;
 
+use crate::draw::{Dimension, Position, Rect};
 use crate::prelude::*;
 use crate::widget::shape::{Shape, tessellate};
 use crate::widget::types::ShapeStyle;
@@ -14,8 +15,8 @@ use crate::widget::types::TriangleStore;
 #[derive(Debug, Clone, Widget)]
 pub struct Ellipse {
     pub id: Uuid,
-    position: Point,
-    dimension: Dimensions,
+    position: Position,
+    dimension: Dimension,
     #[state] stroke_color: ColorState,
     #[state] fill_color: ColorState,
     style: ShapeStyle,
@@ -45,8 +46,8 @@ impl Ellipse {
     pub fn new() -> Box<Ellipse> {
         Box::new(Ellipse {
             id: Uuid::new_v4(),
-            position: [0.0, 0.0],
-            dimension: [100.0, 100.0],
+            position: Position::new(0.0, 0.0),
+            dimension: Dimension::new(100.0, 100.0),
             stroke_color: EnvironmentColor::Blue.into(),
             fill_color: EnvironmentColor::Blue.into(),
             style: ShapeStyle::Default,
@@ -61,7 +62,7 @@ impl Layout for Ellipse {
         0
     }
 
-    fn calculate_size(&mut self, requested_size: Dimensions, _: &mut Environment) -> Dimensions {
+    fn calculate_size(&mut self, requested_size: Dimension, env: &mut Environment) -> Dimension {
         self.dimension = requested_size;
 
         requested_size
@@ -99,19 +100,19 @@ impl CommonWidget for Ellipse {
         WidgetIterMut::Empty
     }
 
-    fn get_position(&self) -> Point {
+    fn get_position(&self) -> Position {
         self.position
     }
 
-    fn set_position(&mut self, position: Dimensions) {
+    fn set_position(&mut self, position: Position) {
         self.position = position;
     }
 
-    fn get_dimension(&self) -> Dimensions {
+    fn get_dimension(&self) -> Dimension {
         self.dimension
     }
 
-    fn set_dimension(&mut self, dimensions: Dimensions) {
+    fn set_dimension(&mut self, dimensions: Dimension) {
         self.dimension = dimensions
     }
 }
@@ -133,7 +134,7 @@ impl Render for Ellipse {
 
         let mut prims = self.triangle_store.get_primitives(*self.fill_color.value(), *self.stroke_color.value());
 
-        prims.extend(Rectangle::debug_outline(OldRect::new(self.position, self.dimension), 1.0));
+        prims.extend(Rectangle::debug_outline(Rect::new(self.position, self.dimension), 1.0));
 
         return prims;
     }

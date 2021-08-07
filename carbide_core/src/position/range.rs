@@ -1,7 +1,7 @@
 //! A type for working one-dimensional ranges.
 
 
-use super::Scalar;
+use crate::draw::Scalar;
 
 /// Some start and end position along a single axis.
 ///
@@ -26,7 +26,6 @@ pub enum Edge {
 
 
 impl Range {
-
     /// Construct a new `Range` from a given range, i.e. `Range::new(start, end)`.
     ///
     /// # Examples
@@ -178,9 +177,7 @@ impl Range {
     /// assert_eq!(Range::new(0.0, -5.0).direction(), -1.0);
     /// ```
     pub fn direction(&self) -> Scalar {
-        if      self.start < self.end { 1.0 }
-        else if self.start > self.end { -1.0 }
-        else                          { 0.0 }
+        if self.start < self.end { 1.0 } else if self.start > self.end { -1.0 } else { 0.0 }
     }
 
     /// Converts the Range to an undirected Range. By ensuring that `start` <= `end`.
@@ -281,8 +278,7 @@ impl Range {
     /// assert_eq!(c.max_directed(d), Range::new(5.0, -30.0));
     /// ```
     pub fn max_directed(self, other: Self) -> Range {
-        if self.start <= self.end { self.max(other) }
-        else                      { self.max(other).invert() }
+        if self.start <= self.end { self.max(other) } else { self.max(other).invert() }
     }
 
     /// Is the given scalar within our range.
@@ -624,5 +620,4 @@ impl Range {
         let end_diff = if scalar < end { end - scalar } else { scalar - end };
         if start_diff <= end_diff { Edge::Start } else { Edge::End }
     }
-
 }

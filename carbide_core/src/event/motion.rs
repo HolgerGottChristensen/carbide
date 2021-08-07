@@ -1,4 +1,4 @@
-use crate::Scalar;
+use crate::draw::Scalar;
 
 #[derive(Copy, Clone, Debug, PartialEq)]
 pub enum Motion {

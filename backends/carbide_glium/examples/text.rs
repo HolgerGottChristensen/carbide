@@ -7,6 +7,8 @@ extern crate glium;
 
 use glium::Surface;
 
+use carbide_core::draw::Scalar;
+
 mod support;
 
 struct Fonts {
@@ -125,7 +127,7 @@ widget_ids! {
 }
 
 fn set_ui(ref mut ui: carbide_core::UiCell, ids: &Ids, fonts: &Fonts) {
-    use carbide_core::{color, widget, Colorable, Positionable, Scalar, Sizeable, OldWidget};
+    use carbide_core::{color, Colorable, OldWidget, Positionable, Sizeable, widget};
 
     // Our `Canvas` tree, upon which we will place our text widgets.
     widget::Canvas::new()

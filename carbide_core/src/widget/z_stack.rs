@@ -1,5 +1,6 @@
 use std::ops::Deref;
 
+use crate::draw::{Dimension, Position};
 use crate::prelude::*;
 use crate::render::ChildRender;
 
@@ -8,20 +9,18 @@ use crate::render::ChildRender;
 pub struct ZStack {
     id: Uuid,
     children: Vec<Box<dyn Widget>>,
-    position: Point,
-    dimension: Dimensions,
+    position: Position,
+    dimension: Dimension,
     alignment: BasicLayouter,
 }
-
-impl WidgetExt for ZStack {}
 
 impl ZStack {
     pub fn initialize(children: Vec<Box<dyn Widget>>) -> Box<ZStack> {
         Box::new(ZStack {
             id: Uuid::new_v4(),
             children,
-            position: [0.0, 0.0],
-            dimension: [100.0, 100.0],
+            position: Position::new(0.0, 0.0),
+            dimension: Dimension::new(100.0, 100.0),
             alignment: BasicLayouter::Center,
         })
     }
@@ -37,7 +36,7 @@ impl Layout for ZStack {
         1
     }
 
-    fn calculate_size(&mut self, requested_size: Dimensions, env: &mut Environment) -> Dimensions {
+    fn calculate_size(&mut self, requested_size: Dimension, env: &mut Environment) -> Dimension {
         let mut children_flexibilty: Vec<(u32, &mut dyn Widget)> = self.get_children_mut().map(|child| (child.flexibility(), child)).collect();
         children_flexibilty.sort_by(|(a, _), (b, _)| a.cmp(&b));
         children_flexibilty.reverse();
@@ -48,16 +47,16 @@ impl Layout for ZStack {
         for (_, child) in children_flexibilty {
             let chosen_size = child.calculate_size(requested_size, env);
 
-            if chosen_size[0] > max_width {
-                max_width = chosen_size[0];
+            if chosen_size.width > max_width {
+                max_width = chosen_size.width;
             }
 
-            if chosen_size[1] > max_height {
-                max_height = chosen_size[1];
+            if chosen_size.height > max_height {
+                max_height = chosen_size.height;
             }
         }
 
-        self.dimension = [max_width, max_height];
+        self.dimension = Dimension::new(max_width, max_height);
         self.dimension
     }
 
@@ -128,23 +127,23 @@ impl CommonWidget for ZStack {
             })
     }
 
-    fn get_position(&self) -> Point {
+    fn get_position(&self) -> Position {
         self.position
     }
 
-    fn set_position(&mut self, position: Dimensions) {
+    fn set_position(&mut self, position: Position) {
         self.position = position;
     }
 
-    fn get_dimension(&self) -> Dimensions {
+    fn get_dimension(&self) -> Dimension {
         self.dimension
     }
 
-    fn set_dimension(&mut self, dimensions: Dimensions) {
+    fn set_dimension(&mut self, dimensions: Dimension) {
         self.dimension = dimensions
     }
 }
 
 impl ChildRender for ZStack {}
 
-
+impl WidgetExt for ZStack {}

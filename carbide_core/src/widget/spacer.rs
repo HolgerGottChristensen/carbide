@@ -1,3 +1,4 @@
+use crate::draw::{Dimension, Position};
 use crate::prelude::*;
 use crate::render::ChildRender;
 use crate::widget::types::SpacerDirection;
@@ -5,8 +6,8 @@ use crate::widget::types::SpacerDirection;
 #[derive(Clone, Debug, Widget)]
 pub struct Spacer {
     id: Uuid,
-    position: Point,
-    dimension: Dimensions,
+    position: Position,
+    dimension: Dimension,
     space: SpacerDirection,
 }
 
@@ -14,8 +15,8 @@ impl Spacer {
     pub fn new(space: SpacerDirection) -> Box<Self> {
         Box::new(Spacer {
             id: Uuid::new_v4(),
-            position: [0.0, 0.0],
-            dimension: [100.0, 100.0],
+            position: Position::new(0.0, 0.0),
+            dimension: Dimension::new(100.0, 100.0),
             space,
         })
     }
@@ -26,13 +27,13 @@ impl Layout for Spacer {
         0
     }
 
-    fn calculate_size(&mut self, requested_size: Dimensions, _: &mut Environment) -> Dimensions {
+    fn calculate_size(&mut self, requested_size: Dimension, env: &mut Environment) -> Dimension {
         match self.space {
             SpacerDirection::Vertical => {
-                self.dimension = [0.0, requested_size[1]];
+                self.dimension = Dimension::new(0.0, requested_size.height);
             }
             SpacerDirection::Horizontal => {
-                self.dimension = [requested_size[0], 0.0];
+                self.dimension = Dimension::new(requested_size.width, 0.0);
             }
             SpacerDirection::Both => {
                 self.dimension = requested_size;
@@ -74,19 +75,19 @@ impl CommonWidget for Spacer {
         WidgetIterMut::Empty
     }
 
-    fn get_position(&self) -> Point {
+    fn get_position(&self) -> Position {
         self.position
     }
 
-    fn set_position(&mut self, position: Dimensions) {
+    fn set_position(&mut self, position: Position) {
         self.position = position;
     }
 
-    fn get_dimension(&self) -> Dimensions {
+    fn get_dimension(&self) -> Dimension {
         self.dimension
     }
 
-    fn set_dimension(&mut self, dimensions: Dimensions) {
+    fn set_dimension(&mut self, dimensions: Dimension) {
         self.dimension = dimensions
     }
 }

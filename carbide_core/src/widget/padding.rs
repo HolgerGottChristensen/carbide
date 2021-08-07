@@ -1,3 +1,4 @@
+use crate::draw::{Dimension, Position};
 use crate::prelude::*;
 use crate::render::ChildRender;
 use crate::widget::types::EdgeInsets;
@@ -6,8 +7,8 @@ use crate::widget::types::EdgeInsets;
 pub struct Padding {
     id: Uuid,
     child: Box<dyn Widget>,
-    position: Point,
-    dimension: Dimensions,
+    position: Position,
+    dimension: Dimension,
     edge_insets: EdgeInsets,
 }
 
@@ -16,8 +17,8 @@ impl Padding {
         Box::new(Padding {
             id: Default::default(),
             child,
-            position: [0.0, 0.0],
-            dimension: [0.0, 0.0],
+            position: Position::new(0.0, 0.0),
+            dimension: Dimension::new(0.0, 0.0),
             edge_insets,
         })
     }
@@ -61,19 +62,19 @@ impl CommonWidget for Padding {
     }
 
 
-    fn get_position(&self) -> Point {
+    fn get_position(&self) -> Position {
         self.position
     }
 
-    fn set_position(&mut self, position: Dimensions) {
+    fn set_position(&mut self, position: Position) {
         self.position = position;
     }
 
-    fn get_dimension(&self) -> Dimensions {
-        [self.dimension[0].abs(), self.dimension[1].abs()]
+    fn get_dimension(&self) -> Dimension {
+        Dimension::new(self.dimension.width.abs(), self.dimension.height.abs())
     }
 
-    fn set_dimension(&mut self, dimensions: Dimensions) {
+    fn set_dimension(&mut self, dimensions: Dimension) {
         self.dimension = dimensions
     }
 }
@@ -83,20 +84,20 @@ impl Layout for Padding {
         self.child.flexibility()
     }
 
-    fn calculate_size(&mut self, requested_size: Dimensions, env: &mut Environment) -> Dimensions {
-        let dimensions = [requested_size[0] - self.edge_insets.left - self.edge_insets.right, requested_size[1] - self.edge_insets.top - self.edge_insets.bottom];
+    fn calculate_size(&mut self, requested_size: Dimension, env: &mut Environment) -> Dimension {
+        let dimensions = Dimension::new(requested_size.width - self.edge_insets.left - self.edge_insets.right, requested_size.height - self.edge_insets.top - self.edge_insets.bottom);
 
         let child_dimensions = self.child.calculate_size(dimensions, env);
 
-        self.dimension = [child_dimensions[0] + self.edge_insets.left + self.edge_insets.right, child_dimensions[1] + self.edge_insets.top + self.edge_insets.bottom];
+        self.dimension = Dimension::new(child_dimensions.width + self.edge_insets.left + self.edge_insets.right, child_dimensions.height + self.edge_insets.top + self.edge_insets.bottom);
 
         self.dimension
     }
 
     fn position_children(&mut self) {
         let positioning = BasicLayouter::Center.position();
-        let position = [self.position[0] + self.edge_insets.left, self.position[1] + self.edge_insets.top];
-        let dimension = [self.dimension[0] - self.edge_insets.left - self.edge_insets.right, self.dimension[1] - self.edge_insets.top - self.edge_insets.bottom];
+        let position = Position::new(self.get_x() + self.edge_insets.left, self.get_y() + self.edge_insets.top);
+        let dimension = Dimension::new(self.get_width() - self.edge_insets.left - self.edge_insets.right, self.get_height() - self.edge_insets.top - self.edge_insets.bottom);
 
         positioning(position, dimension, &mut self.child);
         self.child.position_children();

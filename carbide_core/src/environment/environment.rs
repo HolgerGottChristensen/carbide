@@ -6,10 +6,11 @@ use std::rc::Rc;
 use bitflags::_core::fmt::Formatter;
 use fxhash::{FxBuildHasher, FxHashMap};
 
-use crate::{Color, Scalar};
+use crate::Color;
+use crate::draw::{Dimension, Dimensions};
+use crate::draw::Scalar;
 use crate::focus::Refocus;
 use crate::mesh::TextureAtlas;
-use crate::position::Dimensions;
 use crate::prelude::EnvironmentVariable;
 use crate::state::{InnerState, StateKey};
 use crate::state::StateContract;
@@ -62,7 +63,7 @@ pub struct Environment {
     pub(crate) focus_request: Option<Refocus>,
 
     /// The size of the drawing area in actual pixels.
-    pixel_dimensions: Dimensions,
+    pixel_dimensions: Dimension,
 
     /// The pixel density, or scale factor.
     /// On windows this is the settable factor in desktop settings.
@@ -77,7 +78,7 @@ impl std::fmt::Debug for Environment {
 }
 
 impl Environment {
-    pub fn new(env_stack: Vec<EnvironmentVariable>, pixel_dimensions: Dimensions, scale_factor: f64) -> Self {
+    pub fn new(env_stack: Vec<EnvironmentVariable>, pixel_dimensions: Dimension, scale_factor: f64) -> Self {
         let default_font_family_name = "NotoSans";
 
         Environment {
@@ -96,11 +97,11 @@ impl Environment {
     }
 
     pub fn set_pixel_width(&mut self, new_pixel_width: f64) {
-        self.pixel_dimensions[0] = new_pixel_width;
+        self.pixel_dimensions.width = new_pixel_width;
     }
 
     pub fn set_pixel_height(&mut self, new_pixel_height: f64) {
-        self.pixel_dimensions[1] = new_pixel_height;
+        self.pixel_dimensions.height = new_pixel_height;
     }
 
     pub fn set_scale_factor(&mut self, new_scale_factor: f64) {
@@ -108,26 +109,26 @@ impl Environment {
     }
 
     pub fn get_corrected_width(&self) -> f64 {
-        self.pixel_dimensions[0] / self.scale_factor
+        self.pixel_dimensions.width / self.scale_factor
     }
 
     pub fn get_corrected_height(&self) -> f64 {
-        self.pixel_dimensions[1] / self.scale_factor
+        self.pixel_dimensions.height / self.scale_factor
     }
 
-    pub fn get_corrected_dimensions(&self) -> Dimensions {
-        [self.pixel_dimensions[0] / self.scale_factor, self.pixel_dimensions[1] / self.scale_factor]
+    pub fn get_corrected_dimensions(&self) -> Dimension {
+        Dimension::new(self.pixel_dimensions.width / self.scale_factor, self.pixel_dimensions.height / self.scale_factor)
     }
 
     pub fn get_pixel_width(&self) -> f64 {
-        self.pixel_dimensions[0] / self.scale_factor
+        self.pixel_dimensions.width / self.scale_factor
     }
 
     pub fn get_pixel_height(&self) -> f64 {
-        self.pixel_dimensions[1] / self.scale_factor
+        self.pixel_dimensions.height / self.scale_factor
     }
 
-    pub fn get_pixel_dimensions(&self) -> Dimensions {
+    pub fn get_pixel_dimensions(&self) -> Dimension {
         self.pixel_dimensions
     }
 

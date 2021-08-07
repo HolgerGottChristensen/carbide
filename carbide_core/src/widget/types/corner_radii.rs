@@ -1,4 +1,4 @@
-use crate::Scalar;
+use crate::draw::Scalar;
 
 #[derive(Debug, Copy, Clone)]
 pub struct CornerRadii {
@@ -14,7 +14,7 @@ impl CornerRadii {
             top_left,
             top_right,
             bottom_left,
-            bottom_right
+            bottom_right,
         }
     }
 
@@ -23,7 +23,7 @@ impl CornerRadii {
             top_left: amount,
             top_right: amount,
             bottom_left: amount,
-            bottom_right: amount
+            bottom_right: amount,
         }
     }
 }

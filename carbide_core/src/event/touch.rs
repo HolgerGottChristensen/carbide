@@ -1,4 +1,4 @@
-use crate::Point;
+use crate::draw::Point;
 
 /// A type for uniquely identifying the source of a touch interaction.
 #[derive(Copy, Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]

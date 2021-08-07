@@ -8,7 +8,8 @@ use {
     UiBuilder,
     Widget,
 };
-use carbide_core::{Color, Colorable, Labelable, Point, Positionable, Sizeable, Ui, UiBuilder, widget, Widget};
+use carbide_core::{Color, Colorable, Labelable, Positionable, Sizeable, Ui, UiBuilder, widget, Widget};
+use carbide_core::draw::Point;
 use carbide_core::event::event;
 use carbide_core::event::input::Input;
 use event::{self, Input};

@@ -1,6 +1,7 @@
-use crate::{Color, Point};
 use crate::{image_map, OldRect};
+use crate::Color;
 use crate::color::Rgba;
+use crate::draw::{Point, Rect};
 use crate::draw::shape::triangle::Triangle;
 use crate::text::Glyph;
 use crate::widget::ColoredPoint;
@@ -44,7 +45,7 @@ pub enum PrimitiveKind {
         /// When `Some`, colours the `Image`. When `None`, the `Image` uses its regular colours.
         color: Option<Color>,
         /// The area of the texture that will be drawn to the `Image`'s `Rect`.
-        source_rect: Option<OldRect>,
+        source_rect: Option<Rect>,
     },
 
     /// A single block of `Text`, produced by the primitive `Text` widget.

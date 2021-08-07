@@ -1,7 +1,7 @@
+use carbide_core::draw::Scalar;
 use carbide_core::event::event;
 use carbide_core::event::input::Input;
 use carbide_core::input::{Button, Key, Motion};
-use carbide_core::Scalar;
 use event::{self, Input};
 use input::{self, Key, Motion, MouseButton};
 use input::Button::{Keyboard, Mouse};

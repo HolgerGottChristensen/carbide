@@ -4,7 +4,8 @@ use lyon::algorithms::path::Path;
 use lyon::lyon_algorithms::path::math::point;
 use lyon::tessellation::{FillOptions, LineCap, LineJoin, StrokeOptions};
 
-use crate::{Color, Point};
+use crate::Color;
+use crate::draw::{Point, Position};
 use crate::draw::svg_path_builder::SVGPathBuilder;
 use crate::prelude::ColorState;
 
@@ -17,7 +18,7 @@ pub struct Context {
 impl Context {
     pub fn new() -> Context {
         Context {
-            generator: vec![ContextAction::MoveTo([0.0, 0.0])]
+            generator: vec![ContextAction::MoveTo(Position::new(0.0, 0.0))]
         }
     }
 
@@ -72,7 +73,7 @@ impl Context {
         if let Some(ContextAction::MoveTo(_)) = self.generator.last() {
             self.generator.pop();
         }
-        self.generator.push(ContextAction::MoveTo([x, y]))
+        self.generator.push(ContextAction::MoveTo(Position::new(x, y)))
     }
 
     pub fn close_path(&mut self) {
@@ -80,18 +81,18 @@ impl Context {
     }
 
     pub fn line_to(&mut self, x: f64, y: f64) {
-        self.generator.push(ContextAction::LineTo([x, y]))
+        self.generator.push(ContextAction::LineTo(Position::new(x, y)))
     }
 
     pub fn clip(&mut self) {
         todo!()
     }
 
-    pub fn quadratic_curve_to(&mut self, ctrl: Point, to: Point) {
+    pub fn quadratic_curve_to(&mut self, ctrl: Position, to: Position) {
         self.generator.push(ContextAction::QuadraticBezierTo { ctrl, to })
     }
 
-    pub fn bezier_curve_to(&mut self, ctrl1: Point, ctrl2: Point, to: Point) {
+    pub fn bezier_curve_to(&mut self, ctrl1: Position, ctrl2: Position, to: Position) {
         self.generator.push(ContextAction::CubicBezierTo {
             ctrl1,
             ctrl2,
@@ -107,7 +108,7 @@ impl Context {
         self.generator.push(ContextAction::ArcTo { x1, y1, x2, y2, r })
     }
 
-    pub fn to_paths(&self, offset: Point) -> Vec<(Path, ShapeStyleWithOptions)> {
+    pub fn to_paths(&self, offset: Position) -> Vec<(Path, ShapeStyleWithOptions)> {
         let mut current_stroke_color = Color::Rgba(0.0, 0.0, 0.0, 1.0).into();
         let mut current_fill_color = Color::Rgba(0.0, 0.0, 0.0, 1.0).into();
         let mut current_cap_style = LineCap::Round;
@@ -118,8 +119,8 @@ impl Context {
         let mut current_builder = SVGPathBuilder::new();
         let mut current_builder_begun = false;
 
-        let offset_point = |p: [f64; 2]| {
-            point(p[0] as f32 + offset[0] as f32, p[1] as f32 + offset[1] as f32)
+        let offset_point = |p: Position| {
+            point(p.x as f32 + offset.x as f32, p.y as f32 + offset.y as f32)
         };
 
         for action in &self.generator {
@@ -203,11 +204,11 @@ pub enum ShapeStyleWithOptions {
 }
 
 #[derive(Debug, Clone)]
-pub enum ContextAction {
-    MoveTo(Point),
-    LineTo(Point),
-    QuadraticBezierTo { ctrl: Point, to: Point },
-    CubicBezierTo { ctrl1: Point, ctrl2: Point, to: Point },
+enum ContextAction {
+    MoveTo(Position),
+    LineTo(Position),
+    QuadraticBezierTo { ctrl: Position, to: Position },
+    CubicBezierTo { ctrl1: Position, ctrl2: Position, to: Position },
     Fill,
     Stroke,
     Close,

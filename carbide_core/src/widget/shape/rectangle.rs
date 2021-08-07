@@ -3,6 +3,7 @@ use lyon::algorithms::path::builder::PathBuilder;
 use lyon::algorithms::path::Winding;
 
 use crate::color::Rgba;
+use crate::draw::{Dimension, Position, Rect};
 use crate::prelude::*;
 use crate::render::PrimitiveKind;
 use crate::widget::shape::{Shape, tessellate};
@@ -15,8 +16,8 @@ use crate::widget::types::TriangleStore;
 pub struct Rectangle {
     id: Uuid,
     children: Vec<Box<dyn Widget>>,
-    position: Point,
-    dimension: Dimensions,
+    position: Position,
+    dimension: Dimension,
     #[state] fill_color: ColorState,
     #[state] stroke_color: ColorState,
     shrink_to_fit: bool,
@@ -50,23 +51,24 @@ impl Rectangle {
         Box::new(self)
     }
 
-    pub fn position(mut self, position: Point) -> Box<Self> {
+    pub fn position(mut self, position: Position) -> Box<Self> {
         self.position = position;
         Box::new(self)
     }
 
     //#[cfg(not(feature = "debug-outline"))]
-    pub fn debug_outline(_rect: OldRect, _width: Scalar) -> Vec<Primitive> {
+    pub fn debug_outline(_rect: Rect, _width: Scalar) -> Vec<Primitive> {
         vec![]
     }
 
-    pub fn debug_outline_special(rect: OldRect, width: Scalar) -> Vec<Primitive> {
+    pub fn debug_outline_special(rect: Rect, border_width: Scalar) -> Vec<Primitive> {
         let (l, r, b, t) = rect.l_r_b_t();
 
-        let left_border = OldRect::new([l, b], [width, rect.h()]);
-        let right_border = OldRect::new([r - width, b], [width, rect.h()]);
-        let top_border = OldRect::new([l + width, b], [rect.w() - width * 2.0, width]);
-        let bottom_border = OldRect::new([l + width, t - width], [rect.w() - width * 2.0, width]);
+        let left_border = Rect::new(Position::new(l, b), Dimension::new(border_width, rect.height()));
+        let right_border = Rect::new(Position::new(r - border_width, b), Dimension::new(border_width, rect.height()));
+
+        let top_border = Rect::new(Position::new(l + border_width, b), Dimension::new(rect.width() - border_width * 2.0, border_width));
+        let bottom_border = Rect::new(Position::new(l + border_width, t - border_width), Dimension::new(rect.width() - border_width * 2.0, border_width));
 
         let border_color = Color::Rgba(0.0 / 255.0, 255.0 / 255.0, 251.0 / 255.0, 1.0);//Color::random();
         vec![
@@ -123,8 +125,8 @@ impl Rectangle {
         Box::new(Rectangle {
             id: Uuid::new_v4(),
             children,
-            position: [0.0, 0.0],
-            dimension: [100.0, 100.0],
+            position: Position::new(0.0, 0.0),
+            dimension: Dimension::new(100.0, 100.0),
             fill_color: EnvironmentColor::Blue.into(),
             stroke_color: EnvironmentColor::Blue.into(),
             shrink_to_fit: false,
@@ -141,18 +143,18 @@ impl Layout for Rectangle {
         0
     }
 
-    fn calculate_size(&mut self, requested_size: Dimensions, env: &mut Environment) -> Dimensions {
-        let mut max_child_size = [0.0, 0.0];
+    fn calculate_size(&mut self, requested_size: Dimension, env: &mut Environment) -> Dimension {
+        let mut max_child_size = Dimension::new(0.0, 0.0);
 
         for child in &mut self.children {
             let child_size = child.calculate_size(requested_size, env);
 
-            if child_size[0] > max_child_size[0] {
-                max_child_size[0] = child_size[0];
+            if child_size.width > max_child_size.width {
+                max_child_size.width = child_size.width;
             }
 
-            if child_size[1] > max_child_size[1] {
-                max_child_size[1] = child_size[1];
+            if child_size.height > max_child_size.height {
+                max_child_size.height = child_size.height;
             }
         }
 
@@ -229,19 +231,19 @@ impl CommonWidget for Rectangle {
     }
 
 
-    fn get_position(&self) -> Point {
+    fn get_position(&self) -> Position {
         self.position
     }
 
-    fn set_position(&mut self, position: Dimensions) {
+    fn set_position(&mut self, position: Position) {
         self.position = position;
     }
 
-    fn get_dimension(&self) -> Dimensions {
+    fn get_dimension(&self) -> Dimension {
         self.dimension
     }
 
-    fn set_dimension(&mut self, dimensions: Dimensions) {
+    fn set_dimension(&mut self, dimensions: Dimension) {
         self.dimension = dimensions
     }
 }
@@ -268,13 +270,13 @@ impl Render for Rectangle {
             ShapeStyle::Default => {
                 prims.push(Primitive {
                     kind: PrimitiveKind::Rectangle { color: *self.fill_color.value() },
-                    rect: OldRect::new(self.position, self.dimension),
+                    rect: Rect::new(self.position, self.dimension),
                 });
             }
             ShapeStyle::Fill => {
                 prims.push(Primitive {
                     kind: PrimitiveKind::Rectangle { color: *self.fill_color.value() },
-                    rect: OldRect::new(self.position, self.dimension),
+                    rect: Rect::new(self.position, self.dimension),
                 });
             }
             ShapeStyle::Stroke => {
@@ -295,13 +297,13 @@ impl Render for Rectangle {
 
                 prims.push(Primitive {
                     kind: PrimitiveKind::TrianglesSingleColor { color: Rgba::from(*self.stroke_color.value()), triangles: stroke_triangles },
-                    rect: OldRect::new(self.position, self.dimension),
+                    rect: Rect::new(self.position, self.dimension),
                 });
             }
             ShapeStyle::FillAndStroke => {
                 prims.push(Primitive {
                     kind: PrimitiveKind::Rectangle { color: *self.fill_color.value() },
-                    rect: OldRect::new(self.position, self.dimension),
+                    rect: Rect::new(self.position, self.dimension),
                 });
 
                 let rect = rect(
@@ -321,12 +323,12 @@ impl Render for Rectangle {
 
                 prims.push(Primitive {
                     kind: PrimitiveKind::TrianglesSingleColor { color: Rgba::from(*self.stroke_color.value()), triangles: stroke_triangles },
-                    rect: OldRect::new(self.position, self.dimension),
+                    rect: Rect::new(self.position, self.dimension),
                 });
             }
         }
 
-        prims.extend(Rectangle::debug_outline(OldRect::new(self.position, self.dimension), 1.0));
+        prims.extend(Rectangle::debug_outline(Rect::new(self.position, self.dimension), 1.0));
 
         return prims;
     }

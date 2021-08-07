@@ -1,6 +1,5 @@
-use crate::{Point, Scalar};
+use crate::draw::{Dimension, Position, Scalar};
 use crate::layout::layouter::Layouter;
-use crate::position::Dimensions;
 use crate::prelude::Widget;
 
 #[derive(Clone, Debug)]
@@ -41,54 +40,54 @@ impl BasicLayouter {
         child.set_y(y + height - child.get_height());
     }
 
-    fn top_leading(relative_to: Point, dimensions: Dimensions, child: &mut dyn Widget) {
-        BasicLayouter::leading_x(relative_to[0], dimensions[0], child);
-        BasicLayouter::top_y(relative_to[1], dimensions[1], child);
+    fn top_leading(relative_to: Position, dimensions: Dimension, child: &mut dyn Widget) {
+        BasicLayouter::leading_x(relative_to.x, dimensions.width, child);
+        BasicLayouter::top_y(relative_to.y, dimensions.height, child);
     }
 
-    fn top(relative_to: Point, dimensions: Dimensions, child: &mut dyn Widget) {
-        BasicLayouter::center_x(relative_to[0], dimensions[0], child);
-        BasicLayouter::top_y(relative_to[1], dimensions[1], child);
+    fn top(relative_to: Position, dimensions: Dimension, child: &mut dyn Widget) {
+        BasicLayouter::center_x(relative_to.x, dimensions.width, child);
+        BasicLayouter::top_y(relative_to.y, dimensions.height, child);
     }
 
-    fn top_trailing(relative_to: Point, dimensions: Dimensions, child: &mut dyn Widget) {
-        BasicLayouter::trailing_x(relative_to[0], dimensions[0], child);
-        BasicLayouter::top_y(relative_to[1], dimensions[1], child);
+    fn top_trailing(relative_to: Position, dimensions: Dimension, child: &mut dyn Widget) {
+        BasicLayouter::trailing_x(relative_to.x, dimensions.width, child);
+        BasicLayouter::top_y(relative_to.y, dimensions.height, child);
     }
 
-    fn leading(relative_to: Point, dimensions: Dimensions, child: &mut dyn Widget) {
-        BasicLayouter::leading_x(relative_to[0], dimensions[0], child);
-        BasicLayouter::center_y(relative_to[1], dimensions[1], child);
+    fn leading(relative_to: Position, dimensions: Dimension, child: &mut dyn Widget) {
+        BasicLayouter::leading_x(relative_to.x, dimensions.width, child);
+        BasicLayouter::center_y(relative_to.y, dimensions.height, child);
     }
 
-    fn center(relative_to: Point, dimensions: Dimensions, child: &mut dyn Widget) {
-        BasicLayouter::center_x(relative_to[0], dimensions[0], child);
-        BasicLayouter::center_y(relative_to[1], dimensions[1], child);
+    fn center(relative_to: Position, dimensions: Dimension, child: &mut dyn Widget) {
+        BasicLayouter::center_x(relative_to.x, dimensions.width, child);
+        BasicLayouter::center_y(relative_to.y, dimensions.height, child);
     }
 
-    fn trailing(relative_to: Point, dimensions: Dimensions, child: &mut dyn Widget) {
-        BasicLayouter::trailing_x(relative_to[0], dimensions[0], child);
-        BasicLayouter::center_y(relative_to[1], dimensions[1], child);
+    fn trailing(relative_to: Position, dimensions: Dimension, child: &mut dyn Widget) {
+        BasicLayouter::trailing_x(relative_to.x, dimensions.width, child);
+        BasicLayouter::center_y(relative_to.y, dimensions.height, child);
     }
 
-    fn bottom_leading(relative_to: Point, dimensions: Dimensions, child: &mut dyn Widget) {
-        BasicLayouter::leading_x(relative_to[0], dimensions[0], child);
-        BasicLayouter::bottom_y(relative_to[1], dimensions[1], child);
+    fn bottom_leading(relative_to: Position, dimensions: Dimension, child: &mut dyn Widget) {
+        BasicLayouter::leading_x(relative_to.x, dimensions.width, child);
+        BasicLayouter::bottom_y(relative_to.y, dimensions.height, child);
     }
 
-    fn bottom(relative_to: Point, dimensions: Dimensions, child: &mut dyn Widget) {
-        BasicLayouter::center_x(relative_to[0], dimensions[0], child);
-        BasicLayouter::bottom_y(relative_to[1], dimensions[1], child);
+    fn bottom(relative_to: Position, dimensions: Dimension, child: &mut dyn Widget) {
+        BasicLayouter::center_x(relative_to.x, dimensions.width, child);
+        BasicLayouter::bottom_y(relative_to.y, dimensions.height, child);
     }
 
-    fn bottom_trailing(relative_to: Point, dimensions: Dimensions, child: &mut dyn Widget) {
-        BasicLayouter::trailing_x(relative_to[0], dimensions[0], child);
-        BasicLayouter::bottom_y(relative_to[1], dimensions[1], child);
+    fn bottom_trailing(relative_to: Position, dimensions: Dimension, child: &mut dyn Widget) {
+        BasicLayouter::trailing_x(relative_to.x, dimensions.width, child);
+        BasicLayouter::bottom_y(relative_to.y, dimensions.height, child);
     }
 }
 
 impl Layouter for BasicLayouter {
-    fn position(&self) -> fn(Point, Dimensions, &mut dyn Widget) {
+    fn position(&self) -> fn(Position, Dimension, &mut dyn Widget) {
         match self {
             BasicLayouter::TopLeading => BasicLayouter::top_leading,
             BasicLayouter::Top => BasicLayouter::top,

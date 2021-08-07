@@ -1,16 +1,12 @@
 //! Items related to 2D positioning, used throughout carbide.
 
+use crate::draw::Scalar;
+
 pub use self::range::{Edge, Range};
 pub use self::rect::{Corner, OldRect};
 
 pub mod range;
 pub mod rect;
-
-
-/// An alias over the Scalar type used throughout carbide.
-///
-/// This type is primarily used for spatial dimensions and positioning.
-pub type Scalar = f64;
 
 /// The depth at which the widget will be rendered.
 ///
@@ -19,12 +15,6 @@ pub type Scalar = f64;
 ///
 /// 0.0 is the default depth.
 pub type Depth = f32;
-
-/// General use 2D spatial dimensions.
-pub type Dimensions = [Scalar; 2];
-
-/// General use 2D spatial point.
-pub type Point = [Scalar; 2];
 
 /// The margin for some `Place`ment on either end of an axis.
 pub type Margin = Scalar;

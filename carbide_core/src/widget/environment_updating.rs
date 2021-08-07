@@ -12,16 +12,6 @@ use crate::prelude::*;
 //     dimension: Dimensions,
 //     envs_to_update: Vec<EnvironmentStateContainer<GS>>,
 // }
-
-#[derive(Debug, Clone)]
-pub enum EnvironmentStateContainer {
-    String { key: String, value: StringState },
-    U32 { key: String, value: U32State },
-    F64 { key: String, value: F64State },
-    Color { key: EnvironmentColor, value: ColorState },
-    FontSize { key: EnvironmentFontSize, value: U32State },
-    I32 { key: String, value: I32State },
-}
 //
 // impl<GS: GlobalStateContract> EnvUpdating<GS> {
 //     pub fn new(child: Box<dyn Widget<GS>>) -> Box<EnvUpdating<GS>> {

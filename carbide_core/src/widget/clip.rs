@@ -1,3 +1,4 @@
+use crate::draw::{Dimension, Position, Rect};
 use crate::prelude::*;
 use crate::render::PrimitiveKind;
 
@@ -6,8 +7,8 @@ use crate::render::PrimitiveKind;
 pub struct Clip {
     id: Uuid,
     child: Box<dyn Widget>,
-    position: Point,
-    dimension: Dimensions,
+    position: Position,
+    dimension: Dimension,
 }
 
 impl Clip {
@@ -15,15 +16,15 @@ impl Clip {
         Box::new(Clip {
             id: Uuid::new_v4(),
             child,
-            position: [0.0, 0.0],
-            dimension: [0.0, 0.0],
+            position: Position::new(0.0, 0.0),
+            dimension: Dimension::new(100.0, 100.0),
         })
     }
 
     fn process_get_primitives(&mut self, primitives: &mut Vec<Primitive>, env: &mut Environment) {
         primitives.push(Primitive {
             kind: PrimitiveKind::Clip,
-            rect: OldRect::new(self.position, self.dimension),
+            rect: Rect::new(self.position, self.dimension),
         });
 
         for child in self.get_children_mut() {
@@ -32,7 +33,7 @@ impl Clip {
 
         primitives.push(Primitive {
             kind: PrimitiveKind::UnClip,
-            rect: OldRect::new(self.position, self.dimension),
+            rect: Rect::new(self.position, self.dimension),
         });
     }
 
@@ -55,7 +56,7 @@ impl Layout for Clip {
         self.child.flexibility()
     }
 
-    fn calculate_size(&mut self, requested_size: Dimensions, env: &mut Environment) -> Dimensions {
+    fn calculate_size(&mut self, requested_size: Dimension, env: &mut Environment) -> Dimension {
         self.child.calculate_size(requested_size, env);
         self.dimension = requested_size;
         requested_size
@@ -109,19 +110,19 @@ impl CommonWidget for Clip {
         WidgetIterMut::single(self.child.deref_mut())
     }
 
-    fn get_position(&self) -> Point {
+    fn get_position(&self) -> Position {
         self.position
     }
 
-    fn set_position(&mut self, position: Dimensions) {
+    fn set_position(&mut self, position: Position) {
         self.position = position;
     }
 
-    fn get_dimension(&self) -> Dimensions {
+    fn get_dimension(&self) -> Dimension {
         self.dimension
     }
 
-    fn set_dimension(&mut self, dimensions: Dimensions) {
+    fn set_dimension(&mut self, dimensions: Dimension) {
         self.dimension = dimensions
     }
 }

@@ -3,7 +3,7 @@ use std::fmt;
 use std::ops::{Add, AddAssign, Div, Sub, SubAssign};
 
 use crate::draw::Position;
-use crate::Scalar;
+use crate::draw::Scalar;
 
 #[derive(Copy, Clone, PartialOrd, PartialEq, Debug, Default)]
 pub struct Dimension {

@@ -13,11 +13,12 @@ use rusttype::gpu_cache::Cache as RustTypeGlyphCache;
 use rusttype::gpu_cache::CacheWriteErr as RustTypeCacheWriteError;
 
 use crate::{color, image_map, render};
-use crate::{OldRect, Scalar};
+use crate::draw::Scalar;
 use crate::environment::Environment;
 use crate::mesh::{DEFAULT_GLYPH_CACHE_DIMS, GLYPH_CACHE_POSITION_TOLERANCE, GLYPH_CACHE_SCALE_TOLERANCE, MODE_GEOMETRY, MODE_IMAGE, MODE_TEXT, MODE_TEXT_COLOR};
 use crate::mesh::atlas::texture_atlas::TextureAtlas;
 use crate::mesh::vertex::Vertex;
+use crate::OldRect;
 use crate::render::PrimitiveWalker;
 use crate::text::Glyph;
 

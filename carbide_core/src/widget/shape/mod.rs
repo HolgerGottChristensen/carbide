@@ -6,11 +6,10 @@ use lyon::tessellation::path::Path;
 
 pub use capsule::*;
 pub use ellipse::*;
-pub use polygon::*;
 pub use rectangle::*;
 pub use rounded_rectangle::*;
 
-use crate::{Point, Scalar};
+use crate::draw::{Point, Scalar};
 use crate::draw::shape::triangle::Triangle;
 use crate::widget::CommonWidget;
 use crate::widget::types::ShapeStyle;
@@ -18,7 +17,6 @@ use crate::widget::types::StrokeStyle;
 use crate::widget::types::TriangleStore;
 
 mod ellipse;
-mod polygon;
 mod rectangle;
 mod rounded_rectangle;
 mod capsule;

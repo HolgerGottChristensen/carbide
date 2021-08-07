@@ -3,10 +3,10 @@ use std::time::Duration;
 
 use instant::Instant;
 
+use crate::draw::{Dimension, Point};
+use crate::draw::Dimensions;
+use crate::draw::Scalar;
 use crate::event::{Button, Input, Key, ModifierKey, Motion, MouseButton};
-use crate::Point;
-use crate::position::Dimensions;
-use crate::Scalar;
 use crate::utils;
 
 /// A basic, non-interactive rectangle shape widget.
@@ -86,7 +86,7 @@ pub enum KeyboardEvent {
 
 #[derive(Clone, Debug)]
 pub enum WindowEvent {
-    Resize(Dimensions),
+    Resize(Dimension),
     Focus,
     UnFocus,
     Redraw,
@@ -165,7 +165,7 @@ impl EventHandler {
     ///
     /// The given `event` must implement the **ToRawEvent** trait so that it can be converted to a
     /// `RawEvent` that can be used by the `Ui`.
-    pub fn handle_event(&mut self, event: Input, window_dimensions: Dimensions) -> Option<WindowEvent> {
+    pub fn handle_event(&mut self, event: Input, window_dimensions: Dimension) -> Option<WindowEvent> {
 
 
         // A function for filtering `ModifierKey`s.
@@ -299,9 +299,9 @@ impl EventHandler {
             Input::Resize(w, h) => {
                 // Create a `WindowResized` event.
                 let (w, h) = (w as Scalar, h as Scalar);
-                let event = WindowEvent::Resize([w, h]);
+                let event = WindowEvent::Resize(Dimension::new(w, h));
                 self.add_event(WidgetEvent::Window(event));
-                Some(WindowEvent::Resize([w, h]))
+                Some(WindowEvent::Resize(Dimension::new(w, h)))
             }
 
             // The mouse cursor was moved to a new position.
@@ -314,7 +314,7 @@ impl EventHandler {
                 match motion {
                     Motion::MouseCursor { x, y } => {
                         let last_mouse_xy = self.mouse_position;
-                        let mouse_xy = [x + window_dimensions[0] / 2.0, window_dimensions[1] - (y + window_dimensions[1] / 2.0)];
+                        let mouse_xy = [x + window_dimensions.width / 2.0, window_dimensions.height - (y + window_dimensions.height / 2.0)];
                         let delta_xy = utils::vec2_sub(mouse_xy, last_mouse_xy);
 
                         let move_event = MouseEvent::Move {

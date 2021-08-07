@@ -5,7 +5,8 @@ extern crate carbide_winit;
 #[macro_use]
 extern crate glium;
 
-use carbide_core::{color, Color, image_map, OldRect, Range, render, Scalar, text_old};
+use carbide_core::{color, Color, image_map, OldRect, Range, render, text_old};
+use carbide_core::draw::Scalar;
 use carbide_core::render::primitive::Primitive;
 use carbide_core::render::primitive_kind::PrimitiveKind;
 use carbide_core::render::primitive_walker::PrimitiveWalker;

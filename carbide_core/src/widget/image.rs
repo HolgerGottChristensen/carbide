@@ -1,5 +1,6 @@
 //! A simple, non-interactive widget for drawing an `Image`.
 
+use crate::draw::{Dimension, Position, Rect};
 use crate::image_map;
 use crate::prelude::*;
 use crate::render::new_primitive;
@@ -13,12 +14,12 @@ pub struct Image {
     /// The unique identifier for the image that will be drawn.
     pub image_id: image_map::Id,
     /// The rectangle area of the original source image that should be used.
-    pub src_rect: Option<OldRect>,
-    position: Point,
-    dimension: Dimensions,
+    pub src_rect: Option<Rect>,
+    position: Position,
+    dimension: Dimension,
     scale_mode: ScaleMode,
     resizeable: bool,
-    requested_size: Dimensions,
+    requested_size: Dimension,
 }
 
 impl Image {
@@ -27,18 +28,18 @@ impl Image {
             id: Uuid::new_v4(),
             image_id: id,
             src_rect: None,
-            position: [0.0, 0.0],
-            dimension: [0.0, 0.0],
+            position: Position::new(0.0, 0.0),
+            dimension: Dimension::new(0.0, 0.0),
             scale_mode: ScaleMode::Fit,
             resizeable: false,
-            requested_size: [0.0, 0.0],
+            requested_size: Dimension::new(0.0, 0.0),
         })
     }
 
     /// The rectangular area of the image that we wish to display.
     ///
     /// If this method is not called, the entire image will be used.
-    pub fn source_rectangle(mut self, rect: OldRect) -> Self {
+    pub fn source_rectangle(mut self, rect: Rect) -> Self {
         self.src_rect = Some(rect);
         self
     }
@@ -71,27 +72,27 @@ impl Layout for Image {
         10
     }
 
-    fn calculate_size(&mut self, requested_size: Dimensions, env: &mut Environment) -> Dimensions {
+    fn calculate_size(&mut self, requested_size: Dimension, env: &mut Environment) -> Dimension {
         self.requested_size = requested_size;
 
         let image_information = env.get_image_information(&self.image_id).unwrap();
 
         if !self.resizeable {
-            self.dimension = [image_information.width as f64, image_information.height as f64];
+            self.dimension = Dimension::new(image_information.width as f64, image_information.height as f64);
         } else {
-            let width_factor = requested_size[0] / (image_information.width as f64);
-            let height_factor = requested_size[1] / (image_information.height as f64);
+            let width_factor = requested_size.width / (image_information.width as f64);
+            let height_factor = requested_size.height / (image_information.height as f64);
 
             match self.scale_mode {
                 ScaleMode::Fit => {
                     let scale_factor = width_factor.min(height_factor);
 
-                    self.dimension = [(image_information.width as f64) * scale_factor, (image_information.height as f64) * scale_factor]
+                    self.dimension = Dimension::new((image_information.width as f64) * scale_factor, (image_information.height as f64) * scale_factor)
                 }
                 ScaleMode::Fill => {
                     let scale_factor = width_factor.max(height_factor);
 
-                    self.dimension = [(image_information.width as f64) * scale_factor, (image_information.height as f64) * scale_factor]
+                    self.dimension = Dimension::new((image_information.width as f64) * scale_factor, (image_information.height as f64) * scale_factor)
                 }
                 ScaleMode::Stretch => {
                     self.dimension = requested_size
@@ -113,7 +114,7 @@ impl Render for Image {
             source_rect: self.src_rect,
         };
 
-        let rect = OldRect::new(self.position, self.dimension);
+        let rect = Rect::new(self.position, self.dimension);
 
         return vec![new_primitive(kind, rect)];
     }
@@ -148,19 +149,19 @@ impl CommonWidget for Image {
         WidgetIterMut::Empty
     }
 
-    fn get_position(&self) -> Point {
+    fn get_position(&self) -> Position {
         self.position
     }
 
-    fn set_position(&mut self, position: Dimensions) {
+    fn set_position(&mut self, position: Position) {
         self.position = position;
     }
 
-    fn get_dimension(&self) -> Dimensions {
+    fn get_dimension(&self) -> Dimension {
         self.dimension
     }
 
-    fn set_dimension(&mut self, dimensions: Dimensions) {
+    fn set_dimension(&mut self, dimensions: Dimension) {
         self.dimension = dimensions
     }
 }

@@ -1,3 +1,4 @@
+use crate::draw::{Dimension, Position};
 use crate::prelude::*;
 use crate::render::ChildRender;
 
@@ -7,8 +8,8 @@ use crate::render::ChildRender;
 pub struct Hidden {
     id: Uuid,
     child: Box<dyn Widget>,
-    position: Point,
-    dimension: Dimensions,
+    position: Position,
+    dimension: Dimension,
 }
 
 impl Hidden {
@@ -16,8 +17,8 @@ impl Hidden {
         Box::new(Hidden {
             id: Uuid::new_v4(),
             child,
-            position: [0.0, 0.0],
-            dimension: [0.0, 0.0],
+            position: Position::new(0.0, 0.0),
+            dimension: Dimension::new(100.0, 100.0),
         })
     }
 
@@ -29,7 +30,7 @@ impl Layout for Hidden {
         self.child.flexibility()
     }
 
-    fn calculate_size(&mut self, requested_size: Dimensions, env: &mut Environment) -> Dimensions {
+    fn calculate_size(&mut self, requested_size: Dimension, env: &mut Environment) -> Dimension {
         self.dimension = self.child.calculate_size(requested_size, env);
         self.dimension
     }
@@ -82,19 +83,19 @@ impl CommonWidget for Hidden {
         WidgetIterMut::single(self.child.deref_mut())
     }
 
-    fn get_position(&self) -> Point {
+    fn get_position(&self) -> Position {
         self.position
     }
 
-    fn set_position(&mut self, position: Dimensions) {
+    fn set_position(&mut self, position: Position) {
         self.position = position;
     }
 
-    fn get_dimension(&self) -> Dimensions {
+    fn get_dimension(&self) -> Dimension {
         self.dimension
     }
 
-    fn set_dimension(&mut self, dimensions: Dimensions) {
+    fn set_dimension(&mut self, dimensions: Dimension) {
         self.dimension = dimensions
     }
 }

@@ -1,13 +1,13 @@
+use crate::draw::{Dimension, Dimensions};
 use crate::layout::basic_layouter::BasicLayouter;
 use crate::layout::layouter::Layouter;
-use crate::position::Dimensions;
 use crate::prelude::Environment;
 use crate::widget::CommonWidget;
 
 pub trait Layout {
     /// 0 is the most flexible and the largest number is the least flexible
     fn flexibility(&self) -> u32;
-    fn calculate_size(&mut self, requested_size: Dimensions, env: &mut Environment) -> Dimensions;
+    fn calculate_size(&mut self, requested_size: Dimension, env: &mut Environment) -> Dimension;
     fn position_children(&mut self);
 }
 
@@ -20,13 +20,13 @@ impl<T> Layout for T where T: SingleChildLayout + CommonWidget {
         self.flexibility()
     }
 
-    fn calculate_size(&mut self, requested_size: Dimensions, env: &mut Environment) -> Dimensions {
-        let mut dimentions = [0.0, 0.0];
+    fn calculate_size(&mut self, requested_size: Dimension, env: &mut Environment) -> Dimension {
+        let mut dimensions = Dimension::new(0.0, 0.0);
         if let Some(child) = self.get_children_mut().next() {
-            dimentions = child.calculate_size(requested_size, env);
+            dimensions = child.calculate_size(requested_size, env);
         }
 
-        self.set_dimension(dimentions);
+        self.set_dimension(dimensions);
 
         self.get_dimension()
     }

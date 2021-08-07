@@ -23,7 +23,8 @@ mod support;
 
 /// The module in which we'll implement our own custom circular button.
 mod circular_button {
-    use carbide_core::{self, Colorable, Labelable, OldWidget, Point, Positionable, widget, widget_ids};
+    use carbide_core::{self, Colorable, Labelable, OldWidget, Positionable, widget, widget_ids};
+    use carbide_core::draw::Point;
 
     /// The type upon which we'll implement the `Widget` trait.
     #[derive(WidgetCommon)]

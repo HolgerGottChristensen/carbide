@@ -1,4 +1,4 @@
-use crate::Scalar;
+use crate::draw::Scalar;
 
 #[derive(Debug, Copy, Clone)]
 pub struct EdgeInsets {
@@ -14,7 +14,7 @@ impl EdgeInsets {
             top,
             bottom,
             left,
-            right
+            right,
         }
     }
 

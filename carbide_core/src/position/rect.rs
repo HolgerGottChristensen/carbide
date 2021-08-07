@@ -1,8 +1,8 @@
 //! Defines the scalar `Rect` type used throughout carbide.
 
-use crate::position::Dimensions;
+use crate::draw::{Dimensions, Point, Scalar};
 
-use super::{Point, Range, Scalar};
+use super::Range;
 
 /// Defines a Rectangle's bounds across the x and y axes.
 ///

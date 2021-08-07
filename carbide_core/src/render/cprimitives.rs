@@ -1,6 +1,6 @@
 use instant::Instant;
 
-use crate::position::Dimensions;
+use crate::draw::{Dimension, Dimensions};
 use crate::prelude::Environment;
 use crate::render::primitive::Primitive;
 use crate::render::primitive_walker::PrimitiveWalker;
@@ -12,12 +12,12 @@ pub struct CPrimitives {
 }
 
 impl CPrimitives {
-    pub fn new(window_dimensions: Dimensions, root: &mut Box<dyn Widget>, environment: &mut Environment) -> Self {
+    pub fn new(window_dimensions: Dimension, root: &mut Box<dyn Widget>, environment: &mut Environment) -> Self {
         let now = Instant::now();
         root.calculate_size(window_dimensions, environment);
 
-        root.set_x(window_dimensions[0] / 2.0 - root.get_width() / 2.0);
-        root.set_y(window_dimensions[1] / 2.0 - root.get_height() / 2.0);
+        root.set_x(window_dimensions.width / 2.0 - root.get_width() / 2.0);
+        root.set_y(window_dimensions.height / 2.0 - root.get_height() / 2.0);
 
         root.position_children();
         println!("Time for pos and size: {:?}us", now.elapsed().as_micros());

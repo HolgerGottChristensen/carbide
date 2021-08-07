@@ -1,7 +1,7 @@
 use std::f64::consts::PI;
 
+use carbide_core::draw::Point;
 use carbide_core::environment::*;
-use carbide_core::Point;
 use carbide_core::text::*;
 use carbide_core::widget::*;
 use carbide_core::widget::canvas::*;

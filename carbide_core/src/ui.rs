@@ -6,9 +6,9 @@ use instant::Instant;
 
 use crate::{color, cursor};
 use crate::color::Color;
+use crate::draw::{Dimension, Dimensions};
 use crate::event::{Event, EventHandler, Input, Key, KeyboardEvent, ModifierKey, WidgetEvent, WindowEvent};
 use crate::focus::{Focusable, Refocus};
-use crate::position::Dimensions;
 use crate::prelude::Environment;
 use crate::prelude::EnvironmentColor;
 use crate::prelude::EnvironmentFontSize;
@@ -50,7 +50,7 @@ pub const SAFE_REDRAW_COUNT: u8 = 3;
 
 impl Ui {
     /// A new, empty **Ui**.
-    pub fn new(window_pixel_dimensions: Dimensions, scale_factor: f64) -> Self {
+    pub fn new(window_pixel_dimensions: Dimension, scale_factor: f64) -> Self {
         let dark_system_colors = vec![
             EnvironmentVariable::Color { key: EnvironmentColor::Blue, value: color::rgba_bytes(10, 132, 255, 1.0) },
             EnvironmentVariable::Color { key: EnvironmentColor::Green, value: color::rgba_bytes(48, 209, 88, 1.0) },
@@ -176,8 +176,8 @@ impl Ui {
             Some(event) => {
                 match event {
                     WindowEvent::Resize(pixel_dimensions) => {
-                        self.set_window_width(pixel_dimensions[0]);
-                        self.set_window_height(pixel_dimensions[1]);
+                        self.set_window_width(pixel_dimensions.width);
+                        self.set_window_height(pixel_dimensions.height);
                         //_needs_redraw = true;
                     }
                     WindowEvent::Focus => (),//_needs_redraw = true,

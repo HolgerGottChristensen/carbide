@@ -1,4 +1,4 @@
-use crate::{Point, Scalar};
+use crate::draw::{Point, Scalar};
 use crate::OldRect;
 
 /// An iterator yielding the edges of an `Oval` (or some section of an `Oval`) as a circumference

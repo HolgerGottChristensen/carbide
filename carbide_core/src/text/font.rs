@@ -4,8 +4,8 @@ use image::{DynamicImage, GenericImage, Rgba};
 use rusttype::{GlyphId, point, Scale, VMetrics};
 
 use crate::draw::Position;
+use crate::draw::Scalar;
 use crate::environment::Environment;
-use crate::Scalar;
 use crate::text::{FontId, FontSize};
 use crate::text::glyph::Glyph;
 

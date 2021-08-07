@@ -1,3 +1,4 @@
+use crate::draw::{Dimension, Position};
 use crate::prelude::*;
 use crate::render::ChildRender;
 
@@ -5,8 +6,8 @@ use crate::render::ChildRender;
 pub struct Offset {
     id: Uuid,
     child: Box<dyn Widget>,
-    position: Point,
-    dimension: Dimensions,
+    position: Position,
+    dimension: Dimension,
     #[state] offset_x: F64State,
     #[state] offset_y: F64State,
 }
@@ -16,8 +17,8 @@ impl Offset {
         Box::new(Offset {
             id: Uuid::new_v4(),
             child,
-            position: [0.0, 0.0],
-            dimension: [0.0, 0.0],
+            position: Position::new(0.0, 0.0),
+            dimension: Dimension::new(0.0, 0.0),
             offset_x,
             offset_y,
         })
@@ -29,7 +30,7 @@ impl Layout for Offset {
         self.child.flexibility()
     }
 
-    fn calculate_size(&mut self, requested_size: Dimensions, env: &mut Environment) -> Dimensions {
+    fn calculate_size(&mut self, requested_size: Dimension, env: &mut Environment) -> Dimension {
         self.dimension = self.child.calculate_size(requested_size, env);
         self.dimension
     }
@@ -41,10 +42,10 @@ impl Layout for Offset {
 
         positioning(position, dimension, &mut self.child);
 
-        let mut child_position: Point = self.child.get_position();
+        let mut child_position = self.child.get_position();
 
-        child_position[0] += *self.offset_x.value();
-        child_position[1] += *self.offset_y.value();
+        child_position.x += *self.offset_x.value();
+        child_position.y += *self.offset_y.value();
 
         self.child.set_position(child_position);
 
@@ -89,19 +90,19 @@ impl CommonWidget for Offset {
         WidgetIterMut::single(self.child.deref_mut())
     }
 
-    fn get_position(&self) -> Point {
+    fn get_position(&self) -> Position {
         self.position
     }
 
-    fn set_position(&mut self, position: Dimensions) {
+    fn set_position(&mut self, position: Position) {
         self.position = position;
     }
 
-    fn get_dimension(&self) -> Dimensions {
+    fn get_dimension(&self) -> Dimension {
         self.dimension
     }
 
-    fn set_dimension(&mut self, dimensions: Dimensions) {
+    fn set_dimension(&mut self, dimensions: Dimension) {
         self.dimension = dimensions
     }
 }

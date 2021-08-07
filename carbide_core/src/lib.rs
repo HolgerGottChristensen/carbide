@@ -11,15 +11,18 @@
 
 #[macro_use]
 extern crate carbide_derive;
+extern crate lyon;
 extern crate self as carbide_core;
 
 pub use serde::*;
 pub use serde::de::*;
 
 pub use carbide_derive::*;
+pub use draw::Point;
+pub use draw::Scalar;
 
 pub use crate::color::{Color, Colorable};
-pub use crate::position::{OldRect, Point, Range, Scalar};
+pub use crate::position::{OldRect, Range};
 pub use crate::ui::Ui;
 
 pub mod color;

@@ -14,15 +14,16 @@ use std::ops::{Deref, DerefMut};
 use glium::Surface;
 use uuid::Uuid;
 
-use carbide_core::{Colorable, Point, Positionable, widget};
+use carbide_core::{Colorable, Positionable, widget};
 use carbide_core::color::{GREEN, LIGHT_BLUE, RED};
+use carbide_core::draw::{Dimension, Dimensions};
+use carbide_core::draw::Point;
 use carbide_core::event::event::Event;
 use carbide_core::event::event_handler::{KeyboardEvent, MouseEvent, WidgetEvent};
 use carbide_core::flags::Flags;
 use carbide_core::layout::basic_layouter::BasicLayouter;
 use carbide_core::layout::Layout;
 use carbide_core::layout::layouter::Layouter;
-use carbide_core::position::Dimensions;
 use carbide_core::prelude::Environment;
 use carbide_core::render::render::ChildRender;
 use carbide_core::state::environment::Environment;
@@ -193,7 +194,7 @@ impl Layout<GState> for CustomWidget {
         2
     }
 
-    fn calculate_size(&mut self, requested_size: Dimensions, env: &mut Environment) -> Dimensions {
+    fn calculate_size(&mut self, requested_size: Dimension, env: &mut Environment) -> Dimension {
         self.dimension = self.child.calculate_size(requested_size, env);
         self.dimension
     }

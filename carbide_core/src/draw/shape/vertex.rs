@@ -1,4 +1,4 @@
-use crate::Point;
+use crate::draw::Point;
 use crate::utils::vec2_add;
 use crate::widget::ColoredPoint;
 

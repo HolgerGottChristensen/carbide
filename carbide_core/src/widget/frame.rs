@@ -1,3 +1,4 @@
+use crate::draw::{Dimension, Position};
 use crate::prelude::*;
 use crate::render::ChildRender;
 
@@ -7,7 +8,7 @@ pub static SCALE: f64 = -1.0;
 pub struct Frame {
     id: Uuid,
     child: Box<dyn Widget>,
-    position: Point,
+    position: Position,
     #[state] x: F64State,
     #[state] y: F64State,
     fixed_x: bool,
@@ -19,7 +20,9 @@ pub struct Frame {
 }
 
 impl Frame {
-    pub fn init(width: F64State, height: F64State, child: Box<dyn Widget>) -> Box<Frame> {
+    pub fn init<W: Into<F64State>, H: Into<F64State>>(width: W, height: H, child: Box<dyn Widget>) -> Box<Frame> {
+        let width = width.into();
+        let height = height.into();
         let expand_width = *width.value() == SCALE;
 
         let expand_height = *height.value() == SCALE;
@@ -27,7 +30,7 @@ impl Frame {
         Box::new(Frame {
             id: Default::default(),
             child: Box::new(child),
-            position: [0.0, 0.0],
+            position: Position::new(0.0, 0.0),
             x: 0.0.into(),
             y: 0.0.into(),
             fixed_x: false,
@@ -43,7 +46,7 @@ impl Frame {
         Box::new(Frame {
             id: Default::default(),
             child: Box::new(child),
-            position: [0.0, 0.0],
+            position: Position::new(0.0, 0.0),
             x: 0.0.into(),
             y: 0.0.into(),
             fixed_x: false,
@@ -59,7 +62,7 @@ impl Frame {
         Box::new(Frame {
             id: Default::default(),
             child: Box::new(child),
-            position: [0.0, 0.0],
+            position: Position::new(0.0, 0.0),
             x: 0.0.into(),
             y: 0.0.into(),
             fixed_x: false,
@@ -132,21 +135,21 @@ impl CommonWidget for Frame {
         WidgetIterMut::single(self.child.deref_mut())
     }
 
-    fn get_position(&self) -> Point {
+    fn get_position(&self) -> Position {
         self.position
     }
 
-    fn set_position(&mut self, position: Dimensions) {
+    fn set_position(&mut self, position: Position) {
         self.position = position;
     }
 
-    fn get_dimension(&self) -> Dimensions {
-        [*self.width.value(), *self.height.value()]
+    fn get_dimension(&self) -> Dimension {
+        Dimension::new(*self.width.value(), *self.height.value())
     }
 
-    fn set_dimension(&mut self, dimensions: Dimensions) {
-        *self.width.value_mut() = dimensions[0];
-        *self.height.value_mut() = dimensions[1];
+    fn set_dimension(&mut self, dimensions: Dimension) {
+        *self.width.value_mut() = dimensions.width;
+        *self.height.value_mut() = dimensions.height;
     }
 }
 
@@ -159,13 +162,13 @@ impl Layout for Frame {
         }
     }
 
-    fn calculate_size(&mut self, requested_size: Dimensions, env: &mut Environment) -> Dimensions {
+    fn calculate_size(&mut self, requested_size: Dimension, env: &mut Environment) -> Dimension {
         if self.expand_width {
-            self.set_width(requested_size[0]);
+            self.set_width(requested_size.width);
         }
 
         if self.expand_height {
-            self.set_height(requested_size[1]);
+            self.set_height(requested_size.height);
         }
 
         let dimensions = self.get_dimension();
@@ -188,7 +191,7 @@ impl Layout for Frame {
 
         let positioning = BasicLayouter::Center.position();
         let position = self.position;
-        let dimension = [self.get_width(), self.get_height()];
+        let dimension = Dimension::new(self.get_width(), self.get_height());
 
 
         positioning(position, dimension, &mut self.child);

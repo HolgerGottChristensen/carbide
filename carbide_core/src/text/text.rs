@@ -1,5 +1,5 @@
-use crate::{Color, Scalar};
-use crate::draw::{Dimension, Position, Rect};
+use crate::Color;
+use crate::draw::{Dimension, Position, Rect, Scalar};
 use crate::environment::Environment;
 use crate::text::Glyph;
 use crate::text::text_decoration::TextDecoration;

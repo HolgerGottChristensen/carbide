@@ -16,6 +16,7 @@ use winit::event_loop::{ControlFlow, EventLoop};
 use winit::window::{Icon, WindowBuilder};
 
 use carbide_core::{OldRect, Ui};
+use carbide_core::draw::Dimension;
 use carbide_core::event::Input;
 use carbide_core::image_map::{Id, ImageMap};
 use carbide_core::mesh::DEFAULT_GLYPH_CACHE_DIMS;
@@ -144,7 +145,7 @@ impl Window {
 
         let size = inner_window.inner_size();
 
-        let pixel_dimensions = [inner_window.inner_size().width as f64, inner_window.inner_size().height as f64];
+        let pixel_dimensions = Dimension::new(inner_window.inner_size().width as f64, inner_window.inner_size().height as f64);
         let scale_factor = inner_window.scale_factor();
 
         let ui = Ui::new(pixel_dimensions, scale_factor);

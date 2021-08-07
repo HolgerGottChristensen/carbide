@@ -9,7 +9,8 @@ use std::iter::{Chain, once, Once};
 
 use num::{Float, NumCast, PrimInt, ToPrimitive};
 
-use crate::position::{OldRect, Point, Range};
+use crate::draw::Point;
+use crate::position::{OldRect, Range};
 
 /// Compare to PartialOrd values and return the min.
 pub fn partial_min<T: PartialOrd>(a: T, b: T) -> T {

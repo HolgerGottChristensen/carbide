@@ -1,3 +1,4 @@
+use crate::draw::{Dimension, Position};
 use crate::prelude::*;
 use crate::widget::Widget;
 
@@ -7,8 +8,8 @@ pub struct IfElse {
     id: Uuid,
     when_true: Box<dyn Widget>,
     when_false: Box<dyn Widget>,
-    position: Point,
-    dimension: Dimensions,
+    position: Position,
+    dimension: Dimension,
     #[state] predicate: BoolState,
 }
 
@@ -17,10 +18,10 @@ impl IfElse {
         Box::new(IfElse {
             id: Uuid::new_v4(),
             predicate: predicate.into(),
-            when_true: Frame::init(0.0.into(), 0.0.into(), Rectangle::initialize(vec![])),
-            when_false: Frame::init(0.0.into(), 0.0.into(), Rectangle::initialize(vec![])),
-            position: [0.0, 0.0],
-            dimension: [0.0, 0.0],
+            when_true: Frame::init(0.0, 0.0, Rectangle::initialize(vec![])),
+            when_false: Frame::init(0.0, 0.0, Rectangle::initialize(vec![])),
+            position: Position::new(0.0, 0.0),
+            dimension: Dimension::new(0.0, 0.0),
         })
     }
 
@@ -44,7 +45,7 @@ impl Layout for IfElse {
         }
     }
 
-    fn calculate_size(&mut self, requested_size: Dimensions, env: &mut Environment) -> Dimensions {
+    fn calculate_size(&mut self, requested_size: Dimension, env: &mut Environment) -> Dimension {
         if *self.predicate.value() {
             self.dimension = self.when_true.calculate_size(requested_size, env);
         } else {
@@ -131,19 +132,19 @@ impl CommonWidget for IfElse {
         }
     }
 
-    fn get_position(&self) -> Point {
+    fn get_position(&self) -> Position {
         self.position
     }
 
-    fn set_position(&mut self, position: Dimensions) {
+    fn set_position(&mut self, position: Position) {
         self.position = position;
     }
 
-    fn get_dimension(&self) -> Dimensions {
+    fn get_dimension(&self) -> Dimension {
         self.dimension
     }
 
-    fn set_dimension(&mut self, dimensions: Dimensions) {
+    fn set_dimension(&mut self, dimensions: Dimension) {
         self.dimension = dimensions
     }
 }

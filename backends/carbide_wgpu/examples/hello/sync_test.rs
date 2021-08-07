@@ -1,3 +1,4 @@
+use carbide_core::draw::Dimension;
 use carbide_core::event::event_handler::KeyboardEvent;
 use carbide_core::input::Key;
 use carbide_core::prelude::*;
@@ -149,7 +150,7 @@ impl<S: GlobalStateContract> Layout<S> for SyncTest<S> {
         2
     }
 
-    fn calculate_size(&mut self, requested_size: Dimensions, env: &mut Environment) -> Dimensions {
+    fn calculate_size(&mut self, requested_size: Dimension, env: &mut Environment) -> Dimension {
         self.dimension = self.child.calculate_size(requested_size, env);
         self.dimension
     }

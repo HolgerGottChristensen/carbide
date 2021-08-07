@@ -2,7 +2,7 @@ use std::ops::{Add, Div};
 
 use crate::draw::dimension::Dimension;
 use crate::draw::Position;
-use crate::Scalar;
+use crate::draw::Scalar;
 
 #[derive(Copy, Clone, PartialOrd, PartialEq, Debug, Default)]
 pub struct Rect {
@@ -11,6 +11,21 @@ pub struct Rect {
 }
 
 impl Rect {
+    pub fn new(position: Position, dimension: Dimension) -> Rect {
+        Rect {
+            position,
+            dimension,
+        }
+    }
+
+    pub fn width(&self) -> Scalar {
+        self.dimension.width
+    }
+
+    pub fn height(&self) -> Scalar {
+        self.dimension.height
+    }
+
     pub fn round(&mut self) {
         self.position.x = self.position.x.round();
         self.position.y = self.position.y.round();

@@ -3,7 +3,7 @@ use std::fmt::Debug;
 
 use instant::Instant;
 
-use crate::draw::{Dimension, Position};
+use crate::draw::{Dimension, Position, Rect};
 use crate::prelude::*;
 //use crate::render::text::Text as RenderText;
 use crate::render::new_primitive;
@@ -22,8 +22,8 @@ use crate::widget::types::Wrap;
 #[derive(Debug, Clone, Widget)]
 pub struct Text {
     id: Uuid,
-    position: Point,
-    dimension: Dimensions,
+    position: Position,
+    dimension: Dimension,
     wrap_mode: Wrap,
     #[state] pub text: StringState,
     #[state] font_size: U32State,
@@ -44,8 +44,8 @@ impl Text {
             id: Uuid::new_v4(),
             text,
             font_size: EnvironmentFontSize::Body.into(),
-            position: [0.0, 0.0],
-            dimension: [100.0, 100.0],
+            position: Position::new(0.0, 0.0),
+            dimension: Dimension::new(100.0, 100.0),
             wrap_mode: Wrap::Whitespace,
             color: EnvironmentColor::Label.into(),
             font_family: "system-font".to_string(),
@@ -64,8 +64,8 @@ impl Text {
             id: Uuid::new_v4(),
             text,
             font_size: EnvironmentFontSize::Body.into(),
-            position: [0.0, 0.0],
-            dimension: [100.0, 100.0],
+            position: Position::new(0.0, 0.0),
+            dimension: Dimension::new(100.0, 100.0),
             wrap_mode: Wrap::Whitespace,
             color: EnvironmentColor::Label.into(),
             font_family: "system-font".to_string(),
@@ -136,7 +136,7 @@ impl Layout for Text {
         2
     }
 
-    fn calculate_size(&mut self, requested_size: Dimensions, env: &mut Environment) -> Dimensions {
+    fn calculate_size(&mut self, requested_size: Dimension, env: &mut Environment) -> Dimension {
         let now = Instant::now();
         let style = self.get_style();
 
@@ -151,9 +151,7 @@ impl Layout for Text {
             if internal.string_that_generated_this() != &text {
                 *internal = InternalText::new(text, style, self.text_span_generator.borrow(), env);
             }
-            let size = internal.calculate_size(Dimension::new(requested_size[0], requested_size[1]), env);
-
-            self.dimension = [size.width, size.height]
+            self.dimension = internal.calculate_size(requested_size, env);
         }
 
         println!("Time for calculate size: {}us", now.elapsed().as_micros());
@@ -187,20 +185,20 @@ impl Render for Text {
                     color,
                     text: glyphs,
                 };
-                prims.push(new_primitive(kind, OldRect::new(self.position, self.dimension)));
+                prims.push(new_primitive(kind, Rect::new(self.position, self.dimension)));
 
                 for additional_rect in additional_rects {
-                    let position = [additional_rect.position.x, additional_rect.position.y];
-                    let dimension = [additional_rect.dimension.width, additional_rect.dimension.height];
+                    let position = Position::new(additional_rect.position.x, additional_rect.position.y);
+                    let dimension = Dimension::new(additional_rect.dimension.width, additional_rect.dimension.height);
                     prims.push(Primitive {
                         kind: PrimitiveKind::Rectangle { color },
-                        rect: OldRect::new(position, dimension),
+                        rect: Rect::new(position, dimension),
                     });
                 }
             }
         }
 
-        prims.extend(Rectangle::debug_outline(OldRect::new(self.position, self.dimension), 1.0));
+        prims.extend(Rectangle::debug_outline(Rect::new(self.position, self.dimension), 1.0));
 
         return prims;
     }
@@ -235,19 +233,19 @@ impl CommonWidget for Text {
         WidgetIterMut::Empty
     }
 
-    fn get_position(&self) -> Point {
+    fn get_position(&self) -> Position {
         self.position
     }
 
-    fn set_position(&mut self, position: Dimensions) {
+    fn set_position(&mut self, position: Position) {
         self.position = position;
     }
 
-    fn get_dimension(&self) -> Dimensions {
+    fn get_dimension(&self) -> Dimension {
         self.dimension
     }
 
-    fn set_dimension(&mut self, dimensions: Dimensions) {
+    fn set_dimension(&mut self, dimensions: Dimension) {
         self.dimension = dimensions
     }
 }
