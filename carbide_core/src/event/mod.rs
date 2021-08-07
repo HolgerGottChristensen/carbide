@@ -1,12 +1,10 @@
 pub use event::Event;
 pub use event_handler::*;
 
+pub use crate::input::Input;
 use crate::Scalar;
 
-pub use self::input::Input;
-
 mod event;
-mod input;
 mod event_handler;
 
 #[allow(missing_docs)]
@@ -20,8 +18,8 @@ pub enum Motion {
     MouseRelative { x: Scalar, y: Scalar },
     /// x and y in scroll ticks.
     Scroll { x: Scalar, y: Scalar },
-    /// controller axis move event.
-    ControllerAxis(crate::piston_input::ControllerAxisArgs),
+    // /// controller axis move event.
+    //ControllerAxis(crate::piston_input::ControllerAxisArgs),
 }
 
 /// Touch-related items.

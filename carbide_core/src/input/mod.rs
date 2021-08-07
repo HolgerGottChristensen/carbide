@@ -15,21 +15,21 @@
 //! middle of the widget's bounding `Rect`. `GlobalInput`, on the other hand, will never filter out
 //! any events, and will always provide them with coordinates relative to the window.
 
-#[doc(inline)]
-pub use crate::piston_input::{
-    Button,
-    ControllerAxisArgs,
-    ControllerButton,
-    Key,
-    keyboard,
-    MouseButton,
-    RenderArgs,
-};
-#[doc(inline)]
-pub use crate::piston_input::keyboard::ModifierKey;
+pub use crate::event::Motion;
 pub use crate::event::touch;
 pub use crate::event::touch::*;
-pub use crate::event::Motion;
+
+pub use self::button::Button;
+pub use self::input::Input;
+pub use self::key::Key;
+pub use self::modifier_key::ModifierKey;
+pub use self::mouse_button::MouseButton;
+
+mod input;
+mod button;
+mod modifier_key;
+mod key;
+mod mouse_button;
 
 /// Sources from which user input may be received.
 ///

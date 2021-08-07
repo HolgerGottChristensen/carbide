@@ -10,20 +10,8 @@
 //#![warn(missing_docs)]
 
 #[macro_use]
-extern crate bitflags;
-#[macro_use]
 extern crate carbide_derive;
-extern crate copypasta;
-extern crate core;
-extern crate dyn_clone;
-extern crate fnv;
-extern crate input as piston_input;
-extern crate instant;
-extern crate lyon;
-extern crate num;
-extern crate rusttype;
 extern crate self as carbide_core;
-extern crate uuid;
 
 pub use serde::*;
 pub use serde::de::*;
@@ -36,7 +24,6 @@ pub use crate::ui::Ui;
 
 pub mod color;
 pub mod event;
-pub mod guide;
 pub mod image_map;
 pub mod input;
 pub mod mesh;

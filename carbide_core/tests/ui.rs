@@ -1,25 +1,23 @@
 use {
     Color,
+    Colorable,
     Labelable,
     Positionable,
-    Colorable,
     Sizeable,
-    Widget,
     Ui,
-    UiBuilder
+    UiBuilder,
+    Widget,
 };
+use carbide_core::{Color, Colorable, Labelable, Point, Positionable, Sizeable, Ui, UiBuilder, widget, Widget};
+use carbide_core::event::event;
+use carbide_core::input::input::Input;
 use event::{self, Input};
 use input::{self, Button, Key, Motion, MouseButton};
 use input::keyboard::ModifierKey;
-use widget;
 use position::Point;
-use carbide_core::event::input::Input;
-use carbide_core::{widget, Colorable, Color, Widget, Sizeable, Labelable, Positionable, Ui, Point, UiBuilder};
-use carbide_core::event::event;
-
+use widget;
 
 ///// Test assist code.
-
 
 
 fn left_click_mouse(ui: &mut Ui) {
@@ -77,7 +75,6 @@ fn windowless_ui() -> Ui {
 
 #[test]
 fn ui_should_reset_global_input_after_widget_are_set() {
-
     let ui = &mut windowless_ui();
     ui.win_w = 250.0;
     ui.win_h = 300.0;
@@ -124,10 +121,10 @@ fn high_level_scroll_event_should_be_created_from_a_raw_mouse_scroll() {
     let mut ui = windowless_ui();
     ui.handle_event(Input::Motion(Motion::Scroll { x: 10.0, y: 33.0 }));
 
-    let expected_scroll = event::Scroll{
+    let expected_scroll = event::Scroll {
         x: 10.0,
         y: 33.0,
-        modifiers: ModifierKey::default()
+        modifiers: ModifierKey::default(),
     };
     let event = ui.global_input().events().next().expect("expected a scroll event");
     if let event::Event::Ui(event::Ui::Scroll(_, scroll)) = *event {

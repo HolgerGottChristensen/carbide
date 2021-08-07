@@ -1,4 +1,4 @@
-
+use bitflags::bitflags;
 
 bitflags! {
     pub struct Flags: u32 {

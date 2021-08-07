@@ -1,5 +1,6 @@
-use crate::event::touch::Touch;
 use crate::event::Motion;
+use crate::event::touch::Touch;
+use crate::input::Button;
 
 /// The event type that is used by carbide to track inputs from the world. Events yielded by polling
 /// window backends should be converted to this type. This can be thought of as the event type
@@ -19,9 +20,9 @@ use crate::event::Motion;
 #[derive(Clone, Debug, PartialEq)]
 pub enum Input {
     /// A button on some input device was pressed.
-    Press(input::Button),
+    Press(Button),
     /// A button on some input device was released.
-    Release(input::Button),
+    Release(Button),
     /// The window was received to the given dimensions.
     Resize(f64, f64),
     /// Some motion input was received (e.g. moving mouse or joystick axis).

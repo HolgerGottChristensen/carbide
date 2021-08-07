@@ -3,10 +3,8 @@ use std::time::Duration;
 
 use instant::Instant;
 
-use crate::event::input::Input;
 use crate::event::Motion;
-use crate::piston_input::{Button, Key, MouseButton};
-use crate::piston_input::keyboard::ModifierKey;
+use crate::input::{Button, Input, Key, ModifierKey, MouseButton};
 use crate::Point;
 use crate::position::Dimensions;
 use crate::Scalar;
@@ -38,7 +36,7 @@ pub enum WidgetEvent {
     Mouse(MouseEvent),
     Keyboard(KeyboardEvent),
     Window(WindowEvent),
-    Touch(TouchEvent)
+    Touch(TouchEvent),
 }
 
 #[derive(Clone, Debug)]
@@ -46,14 +44,14 @@ pub enum MouseEvent {
     Press(MouseButton, Point, ModifierKey),
     Release(MouseButton, Point, ModifierKey),
     Click(MouseButton, Point, ModifierKey),
-    Move{
+    Move {
         from: Point,
         to: Point,
         delta_xy: Point,
-        modifiers: ModifierKey
+        modifiers: ModifierKey,
     },
     NClick(MouseButton, Point, ModifierKey, u32),
-    Scroll {x: Scalar, y: Scalar, mouse_position: Point, modifiers: ModifierKey},
+    Scroll { x: Scalar, y: Scalar, mouse_position: Point, modifiers: ModifierKey },
     Drag {
         button: MouseButton,
         origin: Point,
@@ -61,20 +59,20 @@ pub enum MouseEvent {
         to: Point,
         delta_xy: Point,
         total_delta_xy: Point,
-        modifiers: ModifierKey
+        modifiers: ModifierKey,
     },
 }
 
 impl MouseEvent {
     pub fn get_current_mouse_position(&self) -> Point {
         match self {
-            MouseEvent::Press(_, n, _) => {*n}
-            MouseEvent::Release(_, n, _) => {*n}
-            MouseEvent::Click(_, n, _) => {*n}
-            MouseEvent::Move {to, .. } => {*to}
-            MouseEvent::NClick(_, n, _, _) => {*n}
-            MouseEvent::Scroll { mouse_position, .. } => {*mouse_position}
-            MouseEvent::Drag {to, .. } => {*to}
+            MouseEvent::Press(_, n, _) => { *n }
+            MouseEvent::Release(_, n, _) => { *n }
+            MouseEvent::Click(_, n, _) => { *n }
+            MouseEvent::Move { to, .. } => { *to }
+            MouseEvent::NClick(_, n, _, _) => { *n }
+            MouseEvent::Scroll { mouse_position, .. } => { *mouse_position }
+            MouseEvent::Drag { to, .. } => { *to }
         }
     }
 }
@@ -92,7 +90,7 @@ pub enum WindowEvent {
     Resize(Dimensions),
     Focus,
     UnFocus,
-    Redraw
+    Redraw,
 }
 
 #[derive(Clone, Debug)]
@@ -112,7 +110,6 @@ fn filter_modifier(key: Key) -> Option<ModifierKey> {
 }
 
 impl EventHandler {
-
     pub fn new() -> Self {
         Self {
             pressed_keys: HashMap::new(),
@@ -120,7 +117,7 @@ impl EventHandler {
             modifiers: ModifierKey::default(),
             last_click: None,
             mouse_position: [0.0, 0.0],
-            events: vec![]
+            events: vec![],
         }
     }
 
@@ -169,7 +166,7 @@ impl EventHandler {
     ///
     /// The given `event` must implement the **ToRawEvent** trait so that it can be converted to a
     /// `RawEvent` that can be used by the `Ui`.
-    pub fn handle_event(&mut self, event: Input, window_dimensions: Dimensions) -> Option<WindowEvent>{
+    pub fn handle_event(&mut self, event: Input, window_dimensions: Dimensions) -> Option<WindowEvent> {
 
 
         // A function for filtering `ModifierKey`s.
@@ -200,7 +197,7 @@ impl EventHandler {
                     self.pressed_buttons.insert(mouse_button, event);
 
                     None
-                },
+                }
 
                 Button::Keyboard(key) => {
                     let event = KeyboardEvent::Press(key, modifiers);
@@ -213,7 +210,7 @@ impl EventHandler {
                     }
 
                     None
-                },
+                }
 
                 _ => {
                     None
@@ -227,7 +224,6 @@ impl EventHandler {
             // 2. DoubleClick
             // 2. WidgetUncapturesMouse
             Input::Release(button_type) => match button_type {
-
                 Button::Mouse(mouse_button) => {
                     let event = MouseEvent::Release(mouse_button, mouse_xy, modifiers);
                     self.add_event(WidgetEvent::Mouse(event));
@@ -272,12 +268,11 @@ impl EventHandler {
                                 self.add_event(WidgetEvent::Mouse(click_event.clone()));
                                 self.last_click = Some((now, click_event));
                             }
-
                         }
                     };
 
                     None
-                },
+                }
 
                 Button::Keyboard(key) => {
                     let event = KeyboardEvent::Release(key, modifiers);
@@ -294,11 +289,11 @@ impl EventHandler {
                     }
 
                     None
-                },
+                }
 
                 _ => {
                     None
-                },
+                }
             },
 
             // The window was resized.
@@ -308,7 +303,7 @@ impl EventHandler {
                 let event = WindowEvent::Resize([w, h]);
                 self.add_event(WidgetEvent::Window(event));
                 Some(WindowEvent::Resize([w, h]))
-            },
+            }
 
             // The mouse cursor was moved to a new position.
             //
@@ -317,7 +312,6 @@ impl EventHandler {
             // 2. `WidgetUncapturesMouse`
             // 3. `WidgetCapturesMouse`
             Input::Motion(motion) => {
-
                 match motion {
                     Motion::MouseCursor { x, y } => {
                         let last_mouse_xy = self.mouse_position;
@@ -339,7 +333,6 @@ impl EventHandler {
                         let drag_threshold = 0.0;
 
                         if distance > drag_threshold {
-
                             let mut events = vec![];
                             for (button, evt) in self.pressed_buttons.iter() {
                                 match evt {
@@ -352,18 +345,16 @@ impl EventHandler {
                                             to: mouse_xy,
                                             delta_xy,
                                             total_delta_xy,
-                                            modifiers
+                                            modifiers,
                                         };
 
                                         events.push(WidgetEvent::Mouse(drag_event));
-
                                     }
                                     _ => {}
                                 }
                             }
 
                             events.iter().for_each(|evt| self.add_event(evt.clone()))
-
                         }
 
                         // Update the position of the mouse within the global_input's
@@ -371,44 +362,44 @@ impl EventHandler {
                         self.mouse_position = mouse_xy;
 
                         //ui.track_widget_under_mouse_and_update_capturing();
-                    },
+                    }
 
                     // Some scrolling occurred (e.g. mouse scroll wheel).
                     Motion::Scroll { x, y } => {
                         let event = MouseEvent::Scroll { x, y, mouse_position: mouse_xy, modifiers };
                         self.add_event(WidgetEvent::Mouse(event));
-                    },
+                    }
 
                     _ => (),
                 }
                 None
-            },
+            }
 
             Input::Text(string) => {
                 let event = KeyboardEvent::Text(string, modifiers);
                 self.add_event(WidgetEvent::Keyboard(event));
 
                 None
-            },
+            }
 
             Input::Touch(touch) => match touch.phase {
-                _ => {None}
+                _ => { None }
             },
 
             Input::Focus(focused) if focused == true => {
                 self.add_event(WidgetEvent::Window(WindowEvent::Focus));
                 Some(WindowEvent::Focus)
                 //ui.needs_redraw()
-            },
+            }
             Input::Focus(_focused) => {
                 self.add_event(WidgetEvent::Window(WindowEvent::UnFocus));
                 None
-            },
+            }
 
             Input::Redraw => {
                 //ui.needs_redraw();
                 Some(WindowEvent::Redraw)
-            },
+            }
         }
     }
 }

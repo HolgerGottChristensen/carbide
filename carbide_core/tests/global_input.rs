@@ -1,13 +1,12 @@
+use carbide_core::event::event;
+use carbide_core::input::{Button, Key, Motion};
+use carbide_core::input::input::Input;
+use carbide_core::Scalar;
 use event::{self, Input};
 use input::{self, Key, Motion, MouseButton};
 use input::Button::{Keyboard, Mouse};
 use input::Button::Mouse;
 use position::Scalar;
-use carbide_core::event::event;
-use carbide_core::Scalar;
-use carbide_core::event::input::Input;
-use carbide_core::input::{Motion, Button, Key};
-
 
 // Pushes an event onto the given global input with a default drag threshold.
 fn push_event(input: &mut input::Global, event: event::Event) {

@@ -1,10 +1,9 @@
-use input::{self, Button, Motion, MouseButton};
-use input::keyboard::ModifierKey;
-
 use carbide_core::{OldRect, widget};
 use carbide_core::event::event;
-use carbide_core::event::input::Input;
+use carbide_core::input::input::Input;
 use event::{self, Input};
+use input::{self, Button, Motion, MouseButton};
+use input::keyboard::ModifierKey;
 use position::Rect;
 use widget;
 
