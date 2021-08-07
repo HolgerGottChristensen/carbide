@@ -1,4 +1,4 @@
-use carbide_core::event_handler::KeyboardEvent;
+use carbide_core::event::event_handler::KeyboardEvent;
 use carbide_core::input::Key;
 use carbide_core::prelude::*;
 use carbide_core::widget::*;

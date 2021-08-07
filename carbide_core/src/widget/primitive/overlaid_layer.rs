@@ -1,7 +1,5 @@
-use crate::event::event::Event;
-use crate::event_handler::{KeyboardEvent, MouseEvent, WidgetEvent};
+use crate::event::Event;
 use crate::prelude::*;
-use crate::state::global_state::GlobalStateContainer;
 use crate::widget::render::RenderProcessor;
 
 #[derive(Debug, Clone, Widget)]

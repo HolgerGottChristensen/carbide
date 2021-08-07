@@ -4,15 +4,12 @@ use std::ops::{Deref, DerefMut};
 
 use dyn_clone::DynClone;
 
-use crate::event::event::Event;
-use crate::event_handler::{KeyboardEvent, MouseEvent, WidgetEvent};
+use crate::event::{Event, KeyboardEvent, MouseEvent, WidgetEvent};
 use crate::focus::{Focus, Focusable, Refocus};
 use crate::prelude::*;
-use crate::prelude::global_state::GlobalStateContainer;
 use crate::widget::{Frame, Offset};
 use crate::widget::primitive::border::Border;
 use crate::widget::primitive::clip::Clip;
-use crate::widget::primitive::environment_updating::EnvironmentStateContainer;
 use crate::widget::primitive::hidden::Hidden;
 use crate::widget::primitive::padding::Padding;
 use crate::widget::render::RenderProcessor;

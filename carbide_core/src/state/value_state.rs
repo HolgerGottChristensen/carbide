@@ -1,10 +1,9 @@
 use std::fmt::{Debug, Formatter};
 use std::ops::{Deref, DerefMut};
 
-use crate::environment::environment::Environment;
-use crate::prelude::value_cell::{ValueRef, ValueRefMut};
+use crate::environment::Environment;
 use crate::state::{State, StateContract, TState};
-use crate::state::global_state::{GlobalStateContainer, GlobalStateContract};
+use crate::state::{ValueRef, ValueRefMut};
 use crate::state::widget_state::WidgetState;
 
 #[derive(Clone)]

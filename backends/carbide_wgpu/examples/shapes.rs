@@ -9,7 +9,7 @@ fn main() {
 
     let icon_path = Window::path_to_assets("images/rust_press.png");
 
-    let mut window = Window::new("Hello world 2".to_string(), 800, 1200, Some(icon_path));
+    let mut window = Window::new("Shapes example".to_string(), 800, 1200, Some(icon_path));
 
     let mut family = FontFamily::new("NotoSans");
     family.add_font("fonts/NotoSans/NotoSans-Regular.ttf", FontWeight::Normal, FontStyle::Normal);

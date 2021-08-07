@@ -2,7 +2,6 @@ use crate::layout::basic_layouter::BasicLayouter;
 use crate::layout::layouter::Layouter;
 use crate::position::Dimensions;
 use crate::prelude::Environment;
-use crate::state::global_state::GlobalStateContract;
 use crate::widget::common_widget::CommonWidget;
 
 pub trait Layout {

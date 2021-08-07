@@ -1,5 +1,5 @@
 use carbide_core::color::rgb_bytes;
-use carbide_core::event_handler::MouseEvent;
+use carbide_core::event::event_handler::MouseEvent;
 use carbide_core::prelude::*;
 use carbide_core::widget::{ChildRender, SingleChildLayout};
 

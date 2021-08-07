@@ -6,9 +6,7 @@ use instant::Instant;
 
 use crate::{color, cursor};
 use crate::color::Color;
-use crate::event::event::Event;
-use crate::event::input::Input;
-use crate::event_handler::{EventHandler, KeyboardEvent, WidgetEvent, WindowEvent};
+use crate::event::{Event, EventHandler, Input, KeyboardEvent, WidgetEvent, WindowEvent};
 use crate::focus::{Focusable, Refocus};
 use crate::input::{Key, ModifierKey};
 use crate::position::Dimensions;
@@ -17,7 +15,6 @@ use crate::prelude::EnvironmentColor;
 use crate::prelude::EnvironmentFontSize;
 use crate::prelude::EnvironmentVariable;
 use crate::render::cprimitives::CPrimitives;
-use crate::state::global_state::{GlobalStateContainer, GlobalStateContract};
 use crate::widget::primitive::Widget;
 use crate::widget::Rectangle;
 

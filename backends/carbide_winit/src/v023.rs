@@ -1,4 +1,3 @@
-
 #[macro_export]
 macro_rules! v023_convert_key {
     ($keycode:expr) => {{
@@ -171,7 +170,7 @@ macro_rules! v023_convert_window_event {
         match $event {
             winit::event::WindowEvent::Resized(physical_size) => {
                 let winit::dpi::LogicalSize { width, height } = physical_size.to_logical(scale_factor);
-                Some(carbide_core::event::input::Input::Resize(width, height).into())
+                Some(carbide_core::event::Input::Resize(width, height).into())
             },
 
             winit::event::WindowEvent::ReceivedCharacter(ch) => {
@@ -183,19 +182,19 @@ macro_rules! v023_convert_window_event {
                     '\r' | '\n' | '\t' => "".to_string(),
                     _ => ch.to_string()
                 };
-                Some(carbide_core::event::input::Input::Text(string).into())
+                Some(carbide_core::event::Input::Text(string).into())
             },
 
             winit::event::WindowEvent::Focused(focused) =>
-                Some(carbide_core::event::input::Input::Focus(focused.clone()).into()),
+                Some(carbide_core::event::Input::Focus(focused.clone()).into()),
 
             winit::event::WindowEvent::KeyboardInput { input, .. } => {
                 input.virtual_keycode.map(|key| {
                     match input.state {
                         winit::event::ElementState::Pressed =>
-                            carbide_core::event::input::Input::Press(carbide_core::input::Button::Keyboard(map_key(key))).into(),
+                            carbide_core::event::Input::Press(carbide_core::input::Button::Keyboard(map_key(key))).into(),
                         winit::event::ElementState::Released =>
-                            carbide_core::event::input::Input::Release(carbide_core::input::Button::Keyboard(map_key(key))).into(),
+                            carbide_core::event::Input::Release(carbide_core::input::Button::Keyboard(map_key(key))).into(),
                     }
                 })
             },
@@ -211,7 +210,7 @@ macro_rules! v023_convert_window_event {
                 let xy = [tx(x), ty(y)];
                 let id = carbide_core::input::touch::Id::new(id.clone());
                 let touch = carbide_core::input::Touch { phase: phase, id: id, xy: xy };
-                Some(carbide_core::event::input::Input::Touch(touch).into())
+                Some(carbide_core::event::Input::Touch(touch).into())
             }
 
             winit::event::WindowEvent::CursorMoved { position, .. } => {
@@ -219,7 +218,7 @@ macro_rules! v023_convert_window_event {
                 let x = tx(x as carbide_core::Scalar);
                 let y = ty(y as carbide_core::Scalar);
                 let motion = carbide_core::input::Motion::MouseCursor { x: x, y: y };
-                Some(carbide_core::event::input::Input::Motion(motion).into())
+                Some(carbide_core::event::Input::Motion(motion).into())
             },
 
             winit::event::WindowEvent::MouseWheel { delta, .. } => match delta {
@@ -228,7 +227,7 @@ macro_rules! v023_convert_window_event {
                     let x = x as carbide_core::Scalar;
                     let y = -y as carbide_core::Scalar;
                     let motion = carbide_core::input::Motion::Scroll { x: x, y: y };
-                    Some(carbide_core::event::input::Input::Motion(motion).into())
+                    Some(carbide_core::event::Input::Motion(motion).into())
                 },
 
                 winit::event::MouseScrollDelta::LineDelta(x, y) => {
@@ -236,15 +235,15 @@ macro_rules! v023_convert_window_event {
                     const ARBITRARY_POINTS_PER_LINE_FACTOR: carbide_core::Scalar = 10.0;
                     let x = ARBITRARY_POINTS_PER_LINE_FACTOR * x.clone() as carbide_core::Scalar;
                     let y = ARBITRARY_POINTS_PER_LINE_FACTOR * -y.clone() as carbide_core::Scalar;
-                    Some(carbide_core::event::input::Input::Motion(carbide_core::input::Motion::Scroll { x: x, y: y }).into())
+                    Some(carbide_core::event::Input::Motion(carbide_core::input::Motion::Scroll { x: x, y: y }).into())
                 },
             },
 
             winit::event::WindowEvent::MouseInput { state, button, .. } => match state {
                 winit::event::ElementState::Pressed =>
-                    Some(carbide_core::event::input::Input::Press(carbide_core::input::Button::Mouse(map_mouse(button.clone()))).into()),
+                    Some(carbide_core::event::Input::Press(carbide_core::input::Button::Mouse(map_mouse(button.clone()))).into()),
                 winit::event::ElementState::Released =>
-                    Some(carbide_core::event::input::Input::Release(carbide_core::input::Button::Mouse(map_mouse(button.clone()))).into()),
+                    Some(carbide_core::event::Input::Release(carbide_core::input::Button::Mouse(map_mouse(button.clone()))).into()),
             },
 
             _ => None,
@@ -317,7 +316,7 @@ macro_rules! v023_conversion_fns {
         pub fn convert_window_event(
             event: &winit::event::WindowEvent,
             window: &winit::window::Window,
-        ) -> Option<carbide_core::event::input::Input> {
+        ) -> Option<carbide_core::event::Input> {
             $crate::v023_convert_window_event!(event, window)
         }
 
@@ -325,7 +324,7 @@ macro_rules! v023_conversion_fns {
         pub fn convert_event<T>(
             event: &winit::event::Event<T>,
             window: &winit::window::Window,
-        ) -> Option<carbide_core::event::input::Input> {
+        ) -> Option<carbide_core::event::Input> {
             $crate::v023_convert_event!(event, window)
         }
     };

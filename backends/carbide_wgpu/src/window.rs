@@ -16,14 +16,12 @@ use winit::event_loop::{ControlFlow, EventLoop};
 use winit::window::{Icon, WindowBuilder};
 
 use carbide_core::{OldRect, Ui};
-use carbide_core::event::input::Input;
+use carbide_core::event::Input;
 use carbide_core::image_map::{Id, ImageMap};
 use carbide_core::mesh::DEFAULT_GLYPH_CACHE_DIMS;
 use carbide_core::mesh::mesh::Mesh;
-use carbide_core::mesh::vertex::Vertex;
 use carbide_core::prelude::EnvironmentColor;
 use carbide_core::prelude::Rectangle;
-use carbide_core::state::global_state::{GlobalStateContainer, GlobalStateContract};
 use carbide_core::text::{FontFamily, FontId};
 use carbide_core::widget::OverlaidLayer;
 use carbide_core::widget::primitive::Widget;
@@ -35,6 +33,7 @@ use crate::image::Image;
 use crate::render_pass_command::{create_render_pass_commands, RenderPassCommand};
 use crate::renderer::{atlas_cache_tex_desc, glyph_cache_tex_desc};
 use crate::texture_atlas_command::TextureAtlasCommand;
+use crate::vertex::Vertex;
 
 // Todo: Look in to multisampling: https://github.com/gfx-rs/wgpu-rs/blob/v0.6/examples/msaa-line/main.rs
 pub struct Window {
@@ -428,11 +427,15 @@ impl Window {
         let commands = create_render_pass_commands(&self.diffuse_bind_group, &mut self.bind_groups, &self.image_map, &self.mesh, &self.device, &self.glyph_cache_tex, &self.atlas_cache_tex, &self.texture_bind_group_layout);
         println!("commands: {:?}us", now.elapsed().as_micros());
         //println!("{:#?}", self.mesh.vertices());
+
+        let vertices: Vec<Vertex> = self.mesh.vertices().iter().map(|v| Vertex::from(*v)).collect::<Vec<_>>();
+
+
         let now = Instant::now();
         let vertex_buffer = self.device.create_buffer_init(
             &wgpu::util::BufferInitDescriptor {
                 label: Some("Vertex Buffer"),
-                contents: bytemuck::cast_slice(self.mesh.vertices()),
+                contents: bytemuck::cast_slice(&vertices),
                 usage: wgpu::BufferUsage::VERTEX,
             }
         );

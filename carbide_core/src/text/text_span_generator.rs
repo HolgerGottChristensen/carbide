@@ -5,7 +5,6 @@ use dyn_clone::DynClone;
 use crate::prelude::Environment;
 use crate::text::text_span::TextSpan;
 use crate::text::text_style::TextStyle;
-use crate::widget::GlobalStateContract;
 
 pub trait TextSpanGenerator: DynClone + Debug {
     fn generate(&self, string: &str, style: &TextStyle, env: &mut Environment) -> Vec<TextSpan>;

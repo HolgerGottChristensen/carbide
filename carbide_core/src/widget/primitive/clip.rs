@@ -1,6 +1,5 @@
 use crate::prelude::*;
 use crate::render::primitive_kind::PrimitiveKind;
-use crate::state::global_state::GlobalStateContainer;
 
 #[derive(Debug, Clone, Widget)]
 #[render(process_get_primitives)]

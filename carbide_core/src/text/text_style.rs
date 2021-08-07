@@ -1,10 +1,9 @@
 use crate::Color;
-use crate::environment::environment::Environment;
+use crate::environment::Environment;
 use crate::text::{Font, FontId, FontSize};
 use crate::text::font_style::FontStyle;
 use crate::text::font_weight::FontWeight;
 use crate::text::text_decoration::TextDecoration;
-use crate::widget::GlobalStateContract;
 
 /// The text style for a piece of text
 #[derive(Clone, Debug)]

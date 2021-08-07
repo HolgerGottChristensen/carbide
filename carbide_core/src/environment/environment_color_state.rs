@@ -1,12 +1,10 @@
 use std::ops::{Deref, DerefMut};
 
 use crate::Color;
-use crate::prelude::{Environment, GlobalStateContract, State};
+use crate::prelude::{Environment, State};
 use crate::prelude::EnvironmentColor;
-use crate::prelude::value_cell::ValueRef;
-use crate::state::global_state::GlobalStateContainer;
-use crate::state::state_key::StateKey;
-use crate::state::value_cell::ValueRefMut;
+use crate::state::{ValueRef, ValueRefMut};
+use crate::state::StateKey;
 
 #[derive(Clone, Debug)]
 pub struct EnvironmentColorState {

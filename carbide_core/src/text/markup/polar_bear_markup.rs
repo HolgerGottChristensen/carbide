@@ -5,7 +5,7 @@ use nom::IResult;
 use nom::multi::{many0, many1};
 use nom::sequence::{delimited, preceded, tuple};
 
-use crate::prelude::{Environment, GlobalStateContract};
+use crate::prelude::Environment;
 use crate::text::{FontStyle, FontWeight, TextSpanGenerator};
 use crate::text::text_decoration::TextDecoration;
 use crate::text::text_span::TextSpan;

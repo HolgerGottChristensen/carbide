@@ -2,7 +2,7 @@ use std::fmt::Debug;
 use std::marker::PhantomData;
 
 use carbide_core::DeserializeOwned;
-use carbide_core::event_handler::KeyboardEvent;
+use carbide_core::event::event_handler::KeyboardEvent;
 use carbide_core::input::Key;
 use carbide_core::prelude::EnvironmentColor;
 use carbide_core::prelude::Uuid;

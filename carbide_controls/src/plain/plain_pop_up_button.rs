@@ -1,4 +1,4 @@
-use carbide_core::event_handler::{KeyboardEvent, MouseEvent};
+use carbide_core::event::event_handler::{KeyboardEvent, MouseEvent};
 use carbide_core::input::Key;
 use carbide_core::prelude::EnvironmentColor;
 use carbide_core::prelude::Uuid;

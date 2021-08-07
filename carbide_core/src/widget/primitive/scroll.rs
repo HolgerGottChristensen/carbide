@@ -1,8 +1,7 @@
 use crate::draw::shape::vertex::Vertex;
-use crate::event_handler::{MouseEvent, WidgetEvent};
+use crate::event::{MouseEvent, WidgetEvent};
 use crate::input::MouseButton;
 use crate::prelude::*;
-use crate::state::global_state::GlobalStateContainer;
 use crate::widget::render::RenderProcessor;
 use crate::widget::types::scroll_direction::ScrollDirection;
 

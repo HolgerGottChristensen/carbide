@@ -1,10 +1,9 @@
-use crate::event_handler::WidgetEvent;
+use crate::event::WidgetEvent;
 use crate::flags::Flags;
 use crate::focus::focus::Focus;
 use crate::focus::Refocus;
-use crate::prelude::{CommonWidget, Environment, GlobalStateContract};
-use crate::state::global_state::GlobalStateContainer;
-use crate::state::state_sync::StateSync;
+use crate::prelude::{CommonWidget, Environment};
+use crate::state::StateSync;
 
 pub trait Focusable: CommonWidget + StateSync {
     fn focus_retrieved(&mut self, event: &WidgetEvent, focus_request: &Refocus, env: &mut Environment);

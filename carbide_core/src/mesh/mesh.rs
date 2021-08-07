@@ -19,7 +19,7 @@ use crate::mesh::atlas::texture_atlas::TextureAtlas;
 use crate::mesh::vertex::Vertex;
 use crate::render::primitive_walker::PrimitiveWalker;
 use crate::text::Glyph;
-use crate::widget::{Environment, GlobalStateContract};
+use crate::widget::Environment;
 
 /// Images within the given image map must know their dimensions in pixels.
 pub trait ImageDimensions {

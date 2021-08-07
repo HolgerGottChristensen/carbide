@@ -200,7 +200,7 @@ pub fn impl_widget(ast: &syn::DeriveInput) -> proc_macro2::TokenStream {
         quote! {
             if self.get_focus() == carbide_core::focus::Focus::Focused {
                 match event {
-                    carbide_core::event_handler::KeyboardEvent::Press(key, modifier) => {
+                    carbide_core::event::KeyboardEvent::Press(key, modifier) => {
                         if key == &carbide_core::input::Key::Tab {
                             if modifier == &carbide_core::input::ModifierKey::SHIFT {
 
@@ -312,11 +312,11 @@ pub fn impl_widget(ast: &syn::DeriveInput) -> proc_macro2::TokenStream {
 
         #[automatically_derived]
         impl<#(#generics_without_gs ,)*> carbide_core::focus::Focusable for #struct_ident #generics_with_gs #wheres {
-            fn focus_retrieved(&mut self, event: &carbide_core::event_handler::WidgetEvent, focus_request: &carbide_core::focus::Refocus, env: &mut carbide_core::prelude::Environment) {
+            fn focus_retrieved(&mut self, event: &carbide_core::event::WidgetEvent, focus_request: &carbide_core::focus::Refocus, env: &mut carbide_core::environment::Environment) {
                 #focus_retrieved
             }
 
-            fn focus_dismissed(&mut self, event: &carbide_core::event_handler::WidgetEvent, focus_request: &carbide_core::focus::Refocus, env: &mut carbide_core::prelude::Environment) {
+            fn focus_dismissed(&mut self, event: &carbide_core::event::WidgetEvent, focus_request: &carbide_core::focus::Refocus, env: &mut carbide_core::environment::Environment) {
                 #focus_dismissed
             }
 
@@ -324,7 +324,7 @@ pub fn impl_widget(ast: &syn::DeriveInput) -> proc_macro2::TokenStream {
                 #get_focus
             }
 
-            fn set_focus_and_request(&mut self, focus: carbide_core::focus::Focus, env: &mut carbide_core::prelude::Environment) {
+            fn set_focus_and_request(&mut self, focus: carbide_core::focus::Focus, env: &mut carbide_core::environment::Environment) {
                 #set_focus_and_request
             }
 
@@ -332,65 +332,65 @@ pub fn impl_widget(ast: &syn::DeriveInput) -> proc_macro2::TokenStream {
                 #set_focus
             }
 
-            fn process_focus_request(&mut self, event: &carbide_core::event_handler::WidgetEvent, focus_request: &carbide_core::focus::Refocus, env: &mut carbide_core::prelude::Environment) -> bool {
+            fn process_focus_request(&mut self, event: &carbide_core::event::WidgetEvent, focus_request: &carbide_core::focus::Refocus, env: &mut carbide_core::environment::Environment) -> bool {
                 #block_focus_request
             }
 
-            fn process_focus_next(&mut self, event: &carbide_core::event_handler::WidgetEvent, focus_request: &carbide_core::focus::Refocus, focus_up_for_grab: bool, env: &mut carbide_core::prelude::Environment) -> bool {
+            fn process_focus_next(&mut self, event: &carbide_core::event::WidgetEvent, focus_request: &carbide_core::focus::Refocus, focus_up_for_grab: bool, env: &mut carbide_core::environment::Environment) -> bool {
                 #block_focus_next
             }
 
-            fn process_focus_previous(&mut self, event: &carbide_core::event_handler::WidgetEvent, focus_request: &carbide_core::focus::Refocus, focus_up_for_grab: bool, env: &mut carbide_core::prelude::Environment) -> bool {
+            fn process_focus_previous(&mut self, event: &carbide_core::event::WidgetEvent, focus_request: &carbide_core::focus::Refocus, focus_up_for_grab: bool, env: &mut carbide_core::environment::Environment) -> bool {
                 #block_focus_previous
             }
 
         }
 
         #[automatically_derived]
-        impl<#(#generics_without_gs ,)*> carbide_core::event::event::Event for #struct_ident #generics_with_gs #wheres {
-            fn handle_mouse_event(&mut self, event: &carbide_core::event_handler::MouseEvent, consumed: &bool, env: &mut carbide_core::prelude::Environment) {
+        impl<#(#generics_without_gs ,)*> carbide_core::event::Event for #struct_ident #generics_with_gs #wheres {
+            fn handle_mouse_event(&mut self, event: &carbide_core::event::MouseEvent, consumed: &bool, env: &mut carbide_core::environment::Environment) {
                 #handle_mouse_event
             }
 
-            fn handle_keyboard_event(&mut self, event: &carbide_core::event_handler::KeyboardEvent, env: &mut carbide_core::prelude::Environment) {
+            fn handle_keyboard_event(&mut self, event: &carbide_core::event::KeyboardEvent, env: &mut carbide_core::environment::Environment) {
                 #default_tab_focus_behavior
                 #handle_keyboard_event
             }
 
-            fn handle_other_event(&mut self, event: &carbide_core::event_handler::WidgetEvent, env: &mut carbide_core::prelude::Environment) {
+            fn handle_other_event(&mut self, event: &carbide_core::event::WidgetEvent, env: &mut carbide_core::environment::Environment) {
                 #handle_other_event
             }
 
-            fn process_mouse_event(&mut self, event: &carbide_core::event_handler::MouseEvent, consumed: &bool, env: &mut carbide_core::prelude::Environment) {
+            fn process_mouse_event(&mut self, event: &carbide_core::event::MouseEvent, consumed: &bool, env: &mut carbide_core::environment::Environment) {
                 #process_mouse_event
             }
 
-            fn process_keyboard_event(&mut self, event: &carbide_core::event_handler::KeyboardEvent, env: &mut carbide_core::prelude::Environment) {
+            fn process_keyboard_event(&mut self, event: &carbide_core::event::KeyboardEvent, env: &mut carbide_core::environment::Environment) {
                 #process_keyboard_event
             }
 
-            fn process_other_event(&mut self, event: &carbide_core::event_handler::WidgetEvent, env: &mut carbide_core::prelude::Environment) {
+            fn process_other_event(&mut self, event: &carbide_core::event::WidgetEvent, env: &mut carbide_core::environment::Environment) {
                 #process_other_event
             }
         }
 
         #[automatically_derived]
         impl<#(#generics_without_gs ,)*> carbide_core::widget::render::RenderProcessor for #struct_ident #generics_with_gs #wheres {
-            fn process_get_primitives(&mut self, primitives: &mut std::vec::Vec<carbide_core::render::primitive::Primitive>, env: &mut carbide_core::prelude::Environment) {
+            fn process_get_primitives(&mut self, primitives: &mut std::vec::Vec<carbide_core::render::primitive::Primitive>, env: &mut carbide_core::environment::Environment) {
                 #process_get_primitives
             }
         }
 
 
         #[automatically_derived]
-        impl<#(#generics_without_gs ,)*> carbide_core::state::state_sync::StateSync for #struct_ident #generics_with_gs #wheres {
-            fn capture_state(&mut self, env: &mut carbide_core::prelude::Environment) {
+        impl<#(#generics_without_gs ,)*> carbide_core::state::StateSync for #struct_ident #generics_with_gs #wheres {
+            fn capture_state(&mut self, env: &mut carbide_core::environment::Environment) {
                 #(self.#state_idents.capture_state(env);)*
 
                 #capture_state
             }
 
-            fn release_state(&mut self, env: &mut carbide_core::prelude::Environment) {
+            fn release_state(&mut self, env: &mut carbide_core::environment::Environment) {
                 #(self.#state_idents.release_state(env);)*
 
                 #release_state

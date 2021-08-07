@@ -1,7 +1,6 @@
-use crate::event::event::Event;
-use crate::event_handler::{KeyboardEvent, MouseEvent, WidgetEvent};
+use crate::event::{KeyboardEvent, MouseEvent, WidgetEvent};
+use crate::event::Event;
 use crate::prelude::*;
-use crate::state::global_state::GlobalStateContainer;
 
 // /// A basic, non-interactive rectangle shape widget.
 // #[derive(Debug, Clone, Widget)]

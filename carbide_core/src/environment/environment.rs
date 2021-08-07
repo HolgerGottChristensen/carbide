@@ -10,11 +10,8 @@ use crate::{Color, Scalar};
 use crate::focus::Refocus;
 use crate::mesh::TextureAtlas;
 use crate::prelude::EnvironmentVariable;
-use crate::state::global_state::GlobalStateContract;
-use crate::state::local_state::LocalState;
-use crate::state::state_key::StateKey;
+use crate::state::{InnerState, StateKey};
 use crate::state::StateContract;
-use crate::state::value_cell::ValueCell;
 use crate::text::{Font, FontFamily, FontId, FontSize, FontStyle, FontWeight, Glyph};
 use crate::widget::Dimensions;
 use crate::widget::primitive::Widget;
@@ -158,11 +155,11 @@ impl Environment {
         self.images_information.insert(id, image);
     }
 
-    pub fn get_overlay<GS: GlobalStateContract>(&mut self, id: &String) -> Option<Box<dyn Widget>> {
+    pub fn get_overlay(&mut self, id: &String) -> Option<Box<dyn Widget>> {
         self.overlay_map.remove(id)
     }
 
-    pub fn add_overlay<GS: GlobalStateContract>(&mut self, id: &str, overlay: Box<dyn Widget>) {
+    pub fn add_overlay(&mut self, id: &str, overlay: Box<dyn Widget>) {
         self.overlay_map.insert(id.to_string(), overlay);
     }
 
@@ -170,7 +167,7 @@ impl Environment {
         self.overlay_map.clear();
     }
 
-    pub fn get_global_state<T>(&self) -> Rc<ValueCell<T>> {
+    pub fn get_global_state<T>(&self) -> InnerState<T> {
         todo!()
     }
 

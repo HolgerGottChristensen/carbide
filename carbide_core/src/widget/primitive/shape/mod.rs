@@ -6,7 +6,7 @@ use lyon::tessellation::path::Path;
 
 use crate::{Point, Scalar};
 use crate::draw::shape::triangle::Triangle;
-use crate::widget::{CommonWidget, GlobalStateContract};
+use crate::widget::CommonWidget;
 use crate::widget::types::shape_style::ShapeStyle;
 use crate::widget::types::stroke_style::StrokeStyle;
 use crate::widget::types::triangle_store::TriangleStore;

@@ -1,10 +1,8 @@
 use std::ops::{Deref, DerefMut};
 
-use crate::prelude::{Environment, EnvironmentFontSize, GlobalStateContract, State};
-use crate::prelude::global_state::GlobalStateContainer;
-use crate::prelude::value_cell::ValueRef;
-use crate::state::state_key::StateKey;
-use crate::state::value_cell::ValueRefMut;
+use crate::prelude::{Environment, EnvironmentFontSize, State};
+use crate::state::{ValueRef, ValueRefMut};
+use crate::state::StateKey;
 
 #[derive(Clone, Debug)]
 pub struct EnvironmentFontSizeState {

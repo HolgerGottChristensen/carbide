@@ -7,7 +7,7 @@ use crate::draw::Position;
 use crate::Scalar;
 use crate::text::{FontId, FontSize};
 use crate::text::glyph::Glyph;
-use crate::widget::{Environment, GlobalStateContract};
+use crate::widget::Environment;
 
 type RustTypeFont = rusttype::Font<'static>;
 type RustTypeScale = rusttype::Scale;
@@ -298,7 +298,7 @@ fn load_bitmap_font() {
     println!("Descender: {:?}", font.font.inner().descender());
     println!("Height: {:?}", font.font.inner().height());
 
-    let emoji_ranges: [Range<u32>; 1] = [
+    let emoji_ranges: [std::ops::Range<u32>; 1] = [
         0x1F601..0x1F64F,
         //0x2702..0x27B0,
         //0x1F680..0x1F6C0,

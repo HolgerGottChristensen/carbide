@@ -1,7 +1,7 @@
 use std::option::Option::Some;
 
 use carbide_core::color::{BLUE, RED};
-use carbide_core::event_handler::{KeyboardEvent, MouseEvent};
+use carbide_core::event::event_handler::{KeyboardEvent, MouseEvent};
 use carbide_core::prelude::{StateSync, Uuid};
 use carbide_core::state::state::State;
 use carbide_core::widget::*;

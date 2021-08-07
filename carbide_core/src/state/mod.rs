@@ -1,27 +1,33 @@
 use std::fmt::Debug;
-
-pub use tuple_state::*;
+use std::rc::Rc;
 
 use crate::Color;
 use crate::focus::Focus;
-pub use crate::state::state::State;
-use crate::state::widget_state::WidgetState;
+pub(crate) use crate::state::value_cell::{ValueCell, ValueRef, ValueRefMut};
 
-//pub use self::mapped_state::MappedState;
+pub use self::env_state::EnvState;
+pub use self::global_state::GlobalState;
+pub use self::local_state::LocalState;
+pub use self::map_state::{Map, MapMut, MapState};
+pub use self::state::State;
+pub use self::state_key::StateKey;
+pub use self::state_sync::{NoLocalStateSync, StateSync};
+pub use self::value_state::ValueState;
+pub use self::widget_state::WidgetState;
 
-pub mod state;
-pub mod state_sync;
-pub mod global_state;
-pub mod mapped_state;
-pub mod state_key;
-pub mod tuple_state;
-pub mod vec_state;
-pub mod widget_state;
-pub mod state_ext;
-pub mod local_state;
-pub mod value_state;
-pub mod env_state;
-pub mod value_cell;
+mod state;
+mod state_sync;
+mod global_state;
+mod map_state;
+mod state_key;
+mod vec_state;
+mod widget_state;
+mod local_state;
+mod value_state;
+mod env_state;
+mod value_cell;
+
+pub(crate) type InnerState<T> = Rc<ValueCell<T>>;
 
 pub type ColorState = TState<Color>;
 pub type StringState = TState<String>;

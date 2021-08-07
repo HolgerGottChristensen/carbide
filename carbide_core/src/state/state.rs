@@ -6,10 +6,9 @@ use std::ops::{Deref, DerefMut};
 use dyn_clone::DynClone;
 
 use crate::prelude::Environment;
-use crate::prelude::value_cell::ValueRef;
 use crate::state::*;
-use crate::state::global_state::{GlobalStateContainer, GlobalStateContract};
-use crate::state::value_cell::ValueRefMut;
+
+use super::value_cell::{ValueRef, ValueRefMut};
 
 pub trait State<T>: DynClone + Debug where T: StateContract {
     /// This should take the state from the environment to hold locally in the implementer.
@@ -26,44 +25,17 @@ pub trait State<T>: DynClone + Debug where T: StateContract {
     /// being processed.
     fn release_state(&mut self, env: &mut Environment);
 
+    /// This retrieves a immutable reference to the value contained in the state.
+    /// This type implements deref to get a reference to the actual value. The valueRef
+    /// should not be used directly.
     fn value(&self) -> ValueRef<T>;
 
+    /// This retrieves the value mutably. This is the entry point to changing a value in a state.
+    /// This implements deref and deref_mut. Most state mutates the actual value in the state, but
+    /// this is not guarantied, for example in state that contains a cloned version of another state.
+    /// This is for example the case for MapOwnedState, EnvState and CloneState.
+    /// If a ValueState is mutated, it will only affect that state, but not any clones of it.
     fn value_mut(&mut self) -> ValueRefMut<T>;
 }
 
 dyn_clone::clone_trait_object!(<T: StateContract> State<T>);
-/*impl<T: StateContract, GS: GlobalStateContract> State<T, GS, Target=T> for Box<dyn State<T, GS, Target=T>> {
-    fn capture_state(&mut self, env: &mut Environment<GS>, global_state: &mut Rc<GS>) {
-        self.deref_mut().capture_state(env, global_state);
-    }
-
-    fn release_state(&mut self, env: &mut Environment<GS>) {
-        self.deref_mut().release_state(env);
-    }
-}*/
-
-// Build a macro that expands: bind!(self.hejsa)
-// To:  self.get_id() + ".hejsa"
-
-// Mark fields as #[state]
-// And automatically include these when sending state down to its children.
-// Mark fields in the children as #[binding]
-
-
-// Send state(vec) in each event call
-
-
-// Below is for the thing calls state/binding
-
-// Send state to the first child
-// When an state-element is retrieved by a child remove the state-element from the state. (Maybe Omit if env obj)
-// Return new state(vec) if modified.
-// update parent state with this if it finds a modified state
-// Send state(vec) to the next child (This will be the updated state, send from the other child.)
-
-// After the event is done processing, run through the tree and make all the child state
-// consistent with their parent states.
-
-// Then we can layout (size and positioning)
-
-// Then we can render.

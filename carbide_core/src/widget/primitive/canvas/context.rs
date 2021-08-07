@@ -7,7 +7,6 @@ use lyon::tessellation::{FillOptions, LineCap, LineJoin, StrokeOptions};
 use crate::{Color, Point};
 use crate::draw::svg_path_builder::SVGPathBuilder;
 use crate::prelude::ColorState;
-use crate::widget::GlobalStateContract;
 
 #[derive(Debug, Clone)]
 pub struct Context {

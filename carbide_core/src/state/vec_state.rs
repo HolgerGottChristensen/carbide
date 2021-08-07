@@ -1,12 +1,9 @@
 use std::fmt::{Debug, Formatter};
-use std::ops::{Deref, DerefMut};
 
 use crate::prelude::Environment;
-use crate::prelude::GlobalStateContract;
-use crate::prelude::value_cell::{ValueRef, ValueRefMut};
 use crate::state::{StateContract, TState, UsizeState};
-use crate::state::global_state::GlobalStateContainer;
 use crate::state::state::State;
+use crate::state::value_cell::{ValueRef, ValueRefMut};
 use crate::state::widget_state::WidgetState;
 
 #[derive(Clone)]
@@ -41,7 +38,7 @@ impl<T: StateContract> State<T> for VecState<T> {
 impl<T: StateContract> Debug for VecState<T> {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("State::VecState")
-            .field("value", self.deref())
+            .field("value", &*self.value())
             .field("index", &*self.index_state.value())
             .finish()
     }

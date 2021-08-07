@@ -17,7 +17,7 @@ use uuid::Uuid;
 use carbide_core::{Colorable, Point, Positionable, widget};
 use carbide_core::color::{GREEN, LIGHT_BLUE, RED};
 use carbide_core::event::event::Event;
-use carbide_core::event_handler::{KeyboardEvent, MouseEvent, WidgetEvent};
+use carbide_core::event::event_handler::{KeyboardEvent, MouseEvent, WidgetEvent};
 use carbide_core::flags::Flags;
 use carbide_core::layout::basic_layouter::BasicLayouter;
 use carbide_core::layout::Layout;

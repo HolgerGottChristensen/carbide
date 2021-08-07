@@ -4,7 +4,6 @@ use crate::position::Dimensions;
 use crate::prelude::Environment;
 use crate::render::primitive::Primitive;
 use crate::render::primitive_walker::PrimitiveWalker;
-use crate::state::global_state::{GlobalStateContainer, GlobalStateContract};
 use crate::widget::primitive::Widget;
 use crate::widget::render::RenderProcessor;
 

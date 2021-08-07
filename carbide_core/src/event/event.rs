@@ -1,8 +1,7 @@
-use crate::event_handler::{KeyboardEvent, MouseEvent, WidgetEvent};
+use crate::event::event_handler::{KeyboardEvent, MouseEvent, WidgetEvent};
 use crate::focus::Focusable;
 use crate::prelude::Environment;
-use crate::state::global_state::{GlobalStateContainer, GlobalStateContract};
-use crate::state::state_sync::StateSync;
+use crate::state::StateSync;
 use crate::widget::common_widget::CommonWidget;
 
 pub trait Event: CommonWidget + StateSync + Focusable {

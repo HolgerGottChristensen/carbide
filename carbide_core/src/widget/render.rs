@@ -1,9 +1,6 @@
-use crate::OldRect;
 use crate::prelude::{Environment, StateSync};
 use crate::render::primitive::Primitive;
-use crate::state::global_state::{GlobalStateContainer, GlobalStateContract};
 use crate::widget::common_widget::CommonWidget;
-use crate::widget::Rectangle;
 
 pub trait Render {
     fn get_primitives(&mut self, env: &mut Environment) -> Vec<Primitive>;

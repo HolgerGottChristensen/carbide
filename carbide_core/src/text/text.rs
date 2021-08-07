@@ -5,7 +5,7 @@ use crate::text::text_decoration::TextDecoration;
 use crate::text::text_span::TextSpan;
 use crate::text::text_span_generator::TextSpanGenerator;
 use crate::text::text_style::TextStyle;
-use crate::widget::{Environment, GlobalStateContract};
+use crate::widget::Environment;
 use crate::widget::types::justify::Justify;
 use crate::widget::types::text_wrap::Wrap;
 

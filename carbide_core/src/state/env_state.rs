@@ -2,11 +2,9 @@ use std::borrow::Borrow;
 use std::fmt::{Debug, Formatter};
 use std::ops::{Deref, DerefMut};
 
-use crate::environment::environment::Environment;
-use crate::prelude::value_cell::ValueRef;
+use crate::environment::Environment;
 use crate::state::{State, StateContract, TState};
-use crate::state::global_state::{GlobalStateContainer, GlobalStateContract};
-use crate::state::value_cell::ValueRefMut;
+use crate::state::value_cell::{ValueRef, ValueRefMut};
 use crate::state::widget_state::WidgetState;
 
 /// Warning. This state can not be used to modify the environment, as it pulls the value out

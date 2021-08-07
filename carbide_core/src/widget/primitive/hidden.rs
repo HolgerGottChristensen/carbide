@@ -1,5 +1,4 @@
 use crate::prelude::*;
-use crate::state::global_state::GlobalStateContainer;
 use crate::widget::ChildRender;
 
 /// A basic, non-interactive rectangle shape widget.

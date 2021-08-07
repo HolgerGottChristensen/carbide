@@ -1,7 +1,7 @@
 use crate::Scalar;
 use crate::text::glyph::Glyph;
 use crate::text::text_style::TextStyle;
-use crate::widget::{Environment, GlobalStateContract, Widget};
+use crate::widget::{Environment, Widget};
 
 #[derive(Debug, Clone)]
 pub enum TextSpan {

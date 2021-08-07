@@ -1,21 +1,16 @@
 use std::any::Any;
 use std::cell::RefCell;
 use std::fmt::{Debug, Formatter};
-use std::marker::PhantomData;
 use std::ops::{Deref, DerefMut};
 use std::rc::Rc;
 
 use uuid::Uuid;
 
-use crate::environment::environment::Environment;
-use crate::prelude::value_cell::{ValueRef, ValueRefMut};
-use crate::state::{State, StateContract, TState};
-use crate::state::global_state::{GlobalStateContainer, GlobalStateContract};
+use crate::environment::Environment;
+use crate::state::{InnerState, State, StateContract, TState};
 use crate::state::state_key::StateKey;
-use crate::state::value_cell::ValueCell;
+use crate::state::value_cell::{ValueCell, ValueRef, ValueRefMut};
 use crate::state::widget_state::WidgetState;
-
-type InnerState<T> = Rc<ValueCell<T>>;
 
 #[derive(Clone)]
 pub struct LocalState<T> where T: StateContract {

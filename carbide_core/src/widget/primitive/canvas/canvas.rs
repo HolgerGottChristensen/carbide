@@ -5,7 +5,6 @@ use crate::color::Rgba;
 use crate::draw::shape::triangle::Triangle;
 use crate::prelude::*;
 use crate::render::primitive_kind::PrimitiveKind;
-use crate::state::global_state::GlobalStateContract;
 use crate::widget::primitive::canvas::context::{Context, ShapeStyleWithOptions};
 use crate::widget::Rectangle;
 

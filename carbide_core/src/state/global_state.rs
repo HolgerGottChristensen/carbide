@@ -1,39 +1,26 @@
-use std::cell::{Ref, RefCell, RefMut};
 use std::fmt::{Debug, Formatter};
 use std::ops::{Deref, DerefMut};
 use std::rc::Rc;
 
 use crate::prelude::Environment;
-use crate::prelude::value_cell::ValueRef;
-use crate::state::{State, StateContract, TState};
-use crate::state::value_cell::{ValueCell, ValueRefMut};
+use crate::state::{InnerState, State, StateContract, TState};
+use crate::state::value_cell::{ValueCell, ValueRef, ValueRefMut};
 use crate::state::widget_state::WidgetState;
 
-// The global state needs to implement clone because the widgets do, and for them to be clone
-// All the generic types need to implement it as well. The global state should never in practise
-// be cloned, because that would most likely be very expensive.
-pub trait GlobalStateContract: 'static + Clone + std::fmt::Debug {}
-
-impl<T> GlobalStateContract for T where T: 'static + Clone + std::fmt::Debug {}
-
-pub type GlobalStateContainer<GS: GlobalStateContract> = Rc<RefCell<GS>>;
-
-type InnerState<T> = Rc<ValueCell<T>>;
-
 #[derive(Clone)]
-pub struct GState<T> where T: StateContract {
+pub struct GlobalState<T> where T: StateContract {
     value: InnerState<T>,
 }
 
-impl<T: StateContract> GState<T> {
+impl<T: StateContract> GlobalState<T> {
     pub fn new(env: &Environment) -> Self {
-        GState {
+        GlobalState {
             value: env.get_global_state::<T>()
         }
     }
 }
 
-impl<'a, T: StateContract> State<T> for GState<T> {
+impl<'a, T: StateContract> State<T> for GlobalState<T> {
     fn capture_state(&mut self, _: &mut Environment) {}
 
     fn release_state(&mut self, _: &mut Environment) {}
@@ -47,7 +34,7 @@ impl<'a, T: StateContract> State<T> for GState<T> {
     }
 }
 
-impl<T: StateContract> Debug for GState<T> {
+impl<T: StateContract> Debug for GlobalState<T> {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("State::GlobalState")
             .field("value", &*self.value())
@@ -55,7 +42,7 @@ impl<T: StateContract> Debug for GState<T> {
     }
 }
 
-impl<T: StateContract + 'static> Into<TState<T>> for Box<GState<T>> {
+impl<T: StateContract + 'static> Into<TState<T>> for Box<GlobalState<T>> {
     fn into(self) -> TState<T> {
         WidgetState::new(self)
     }
