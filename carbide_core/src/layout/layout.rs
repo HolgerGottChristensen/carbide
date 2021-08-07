@@ -5,10 +5,10 @@ use crate::prelude::Environment;
 use crate::state::global_state::GlobalStateContract;
 use crate::widget::common_widget::CommonWidget;
 
-pub trait Layout<GS> where GS: GlobalStateContract {
+pub trait Layout {
     /// 0 is the most flexible and the largest number is the least flexible
     fn flexibility(&self) -> u32;
-    fn calculate_size(&mut self, requested_size: Dimensions, env: &mut Environment<GS>) -> Dimensions;
+    fn calculate_size(&mut self, requested_size: Dimensions, env: &mut Environment) -> Dimensions;
     fn position_children(&mut self);
 }
 
@@ -16,12 +16,12 @@ pub trait SingleChildLayout {
     fn flexibility(&self) -> u32;
 }
 
-impl<T, GS: GlobalStateContract> Layout<GS> for T where T: SingleChildLayout + CommonWidget<GS> {
+impl<T> Layout for T where T: SingleChildLayout + CommonWidget {
     fn flexibility(&self) -> u32 {
         self.flexibility()
     }
 
-    fn calculate_size(&mut self, requested_size: Dimensions, env: &mut Environment<GS>) -> Dimensions {
+    fn calculate_size(&mut self, requested_size: Dimensions, env: &mut Environment) -> Dimensions {
         let mut dimentions = [0.0, 0.0];
         if let Some(child) = self.get_children_mut().next() {
             dimentions = child.calculate_size(requested_size, env);

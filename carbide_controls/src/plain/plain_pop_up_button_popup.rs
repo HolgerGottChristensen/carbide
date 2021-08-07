@@ -195,7 +195,7 @@ impl<T: Serialize + Clone + Debug + Default + DeserializeOwned + 'static, GS: Gl
         Flags::EMPTY
     }
 
-    fn get_children(&self) -> WidgetIter<GS> {
+    fn get_children(&self) -> WidgetIter {
         if self.child.get_flag() == Flags::PROXY {
             self.child.get_children()
         } else {
@@ -203,7 +203,7 @@ impl<T: Serialize + Clone + Debug + Default + DeserializeOwned + 'static, GS: Gl
         }
     }
 
-    fn get_children_mut(&mut self) -> WidgetIterMut<GS> {
+    fn get_children_mut(&mut self) -> WidgetIterMut {
         if self.child.get_flag() == Flags::PROXY {
             self.child.get_children_mut()
         } else {
@@ -211,11 +211,11 @@ impl<T: Serialize + Clone + Debug + Default + DeserializeOwned + 'static, GS: Gl
         }
     }
 
-    fn get_proxied_children(&mut self) -> WidgetIterMut<GS> {
+    fn get_proxied_children(&mut self) -> WidgetIterMut {
         WidgetIterMut::single(&mut self.child)
     }
 
-    fn get_proxied_children_rev(&mut self) -> WidgetIterMut<GS> {
+    fn get_proxied_children_rev(&mut self) -> WidgetIterMut {
         WidgetIterMut::single(&mut self.child)
     }
 
@@ -243,7 +243,7 @@ impl<T: Serialize + Clone + Debug + Default + DeserializeOwned + 'static, GS: Gl
         10
     }
 
-    fn calculate_size(&mut self, requested_size: Dimensions, env: &mut Environment<GS>) -> Dimensions {
+    fn calculate_size(&mut self, requested_size: Dimensions, env: &mut Environment) -> Dimensions {
         let size = self.child.calculate_size(requested_size, env);
 
         self.set_dimension(size);

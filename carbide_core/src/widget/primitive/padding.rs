@@ -2,22 +2,17 @@ use crate::prelude::*;
 use crate::widget::ChildRender;
 use crate::widget::types::edge_insets::EdgeInsets;
 
-pub static SCALE: f64 = -1.0;
-
-
 #[derive(Debug, Clone, Widget)]
-pub struct Padding<GS> where GS: GlobalStateContract {
+pub struct Padding {
     id: Uuid,
-    child: Box<dyn Widget<GS>>,
+    child: Box<dyn Widget>,
     position: Point,
     dimension: Dimensions,
     edge_insets: EdgeInsets,
 }
 
-impl<GS: GlobalStateContract> WidgetExt<GS> for Padding<GS> {}
-
-impl<S: GlobalStateContract> Padding<S> {
-    pub fn init(edge_insets: EdgeInsets, child: Box<dyn Widget<S>>) -> Box<Self> {
+impl Padding {
+    pub fn init(edge_insets: EdgeInsets, child: Box<dyn Widget>) -> Box<Self> {
         Box::new(Padding {
             id: Default::default(),
             child,
@@ -28,7 +23,7 @@ impl<S: GlobalStateContract> Padding<S> {
     }
 }
 
-impl<S: GlobalStateContract> CommonWidget<S> for Padding<S> {
+impl CommonWidget for Padding {
     fn get_id(&self) -> Uuid {
         self.id
     }
@@ -41,7 +36,7 @@ impl<S: GlobalStateContract> CommonWidget<S> for Padding<S> {
         Flags::EMPTY
     }
 
-    fn get_children(&self) -> WidgetIter<S> {
+    fn get_children(&self) -> WidgetIter {
         if self.child.get_flag() == Flags::PROXY {
             self.child.get_children()
         } else {
@@ -49,7 +44,7 @@ impl<S: GlobalStateContract> CommonWidget<S> for Padding<S> {
         }
     }
 
-    fn get_children_mut(&mut self) -> WidgetIterMut<S> {
+    fn get_children_mut(&mut self) -> WidgetIterMut {
         if self.child.get_flag() == Flags::PROXY {
             self.child.get_children_mut()
         } else {
@@ -57,11 +52,11 @@ impl<S: GlobalStateContract> CommonWidget<S> for Padding<S> {
         }
     }
 
-    fn get_proxied_children(&mut self) -> WidgetIterMut<S> {
+    fn get_proxied_children(&mut self) -> WidgetIterMut {
         WidgetIterMut::single(self.child.deref_mut())
     }
 
-    fn get_proxied_children_rev(&mut self) -> WidgetIterMut<S> {
+    fn get_proxied_children_rev(&mut self) -> WidgetIterMut {
         WidgetIterMut::single(self.child.deref_mut())
     }
 
@@ -83,12 +78,12 @@ impl<S: GlobalStateContract> CommonWidget<S> for Padding<S> {
     }
 }
 
-impl<GS: GlobalStateContract> Layout<GS> for Padding<GS> {
+impl Layout for Padding {
     fn flexibility(&self) -> u32 {
-        9
+        self.child.flexibility()
     }
 
-    fn calculate_size(&mut self, requested_size: Dimensions, env: &mut Environment<GS>) -> Dimensions {
+    fn calculate_size(&mut self, requested_size: Dimensions, env: &mut Environment) -> Dimensions {
         let dimensions = [requested_size[0] - self.edge_insets.left - self.edge_insets.right, requested_size[1] - self.edge_insets.top - self.edge_insets.bottom];
 
         let child_dimensions = self.child.calculate_size(dimensions, env);
@@ -108,4 +103,6 @@ impl<GS: GlobalStateContract> Layout<GS> for Padding<GS> {
     }
 }
 
-impl<S: GlobalStateContract> ChildRender for Padding<S> {}
+impl ChildRender for Padding {}
+
+impl WidgetExt for Padding {}

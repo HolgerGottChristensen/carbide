@@ -141,19 +141,19 @@ impl<T: 'static + Serialize + Clone + Debug + Default + DeserializeOwned, GS: Gl
         Flags::EMPTY
     }
 
-    fn get_children(&self) -> WidgetIter<GS> {
+    fn get_children(&self) -> WidgetIter {
         WidgetIter::single(&self.child)
     }
 
-    fn get_children_mut(&mut self) -> WidgetIterMut<GS> {
+    fn get_children_mut(&mut self) -> WidgetIterMut {
         WidgetIterMut::single(&mut self.child)
     }
 
-    fn get_proxied_children(&mut self) -> WidgetIterMut<GS> {
+    fn get_proxied_children(&mut self) -> WidgetIterMut {
         WidgetIterMut::single(&mut self.child)
     }
 
-    fn get_proxied_children_rev(&mut self) -> WidgetIterMut<GS> {
+    fn get_proxied_children_rev(&mut self) -> WidgetIterMut {
         WidgetIterMut::single(&mut self.child)
     }
 
@@ -181,7 +181,7 @@ impl<T: 'static + Serialize + Clone + Debug + Default + DeserializeOwned, GS: Gl
         5
     }
 
-    fn calculate_size(&mut self, requested_size: Dimensions, env: &mut Environment<GS>) -> Dimensions {
+    fn calculate_size(&mut self, requested_size: Dimensions, env: &mut Environment) -> Dimensions {
         self.set_width(requested_size[0]);
 
         self.child.calculate_size(self.dimension, env);

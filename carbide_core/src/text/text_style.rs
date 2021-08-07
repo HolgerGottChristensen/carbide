@@ -24,13 +24,13 @@ pub struct TextStyle {
 }
 
 impl TextStyle {
-    pub fn get_font<GS: GlobalStateContract>(&self, env: &Environment<GS>) -> Font {
+    pub fn get_font(&self, env: &Environment) -> Font {
         let family = env.get_font_family(&self.font_family);
         let font_id = family.get_best_fit(self.font_weight, self.font_style);
         env.get_font(font_id)
     }
 
-    pub fn get_font_id<GS: GlobalStateContract>(&self, env: &Environment<GS>) -> FontId {
+    pub fn get_font_id(&self, env: &Environment) -> FontId {
         let family = env.get_font_family(&self.font_family);
         family.get_best_fit(self.font_weight, self.font_style)
     }

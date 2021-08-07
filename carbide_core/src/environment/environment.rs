@@ -1,5 +1,7 @@
 use std::any::Any;
+use std::cell::RefCell;
 use std::collections::HashMap;
+use std::rc::Rc;
 
 use bitflags::_core::fmt::Formatter;
 use fxhash::{FxBuildHasher, FxHashMap};
@@ -12,12 +14,13 @@ use crate::state::global_state::GlobalStateContract;
 use crate::state::local_state::LocalState;
 use crate::state::state_key::StateKey;
 use crate::state::StateContract;
+use crate::state::value_cell::ValueCell;
 use crate::text::{Font, FontFamily, FontId, FontSize, FontStyle, FontWeight, Glyph};
 use crate::widget::Dimensions;
 use crate::widget::primitive::Widget;
 use crate::widget::types::image_information::ImageInformation;
 
-pub struct Environment<GS> where GS: GlobalStateContract {
+pub struct Environment {
     /// This stack should be used to scope the environment. This contains information such as
     /// current foreground color, text colors and more. This means a parent can choose some
     /// styling that is applied to all of its children, unless some child overrides that style.
@@ -47,14 +50,14 @@ pub struct Environment<GS> where GS: GlobalStateContract {
 
     /// A map from String to a widget.
     /// This key should correspond to the targeted overlay_layer
-    overlay_map: FxHashMap<String, Box<dyn Widget<GS>>>,
+    overlay_map: FxHashMap<String, Box<dyn Widget>>,
 
     /// Keep local state as a map from String, to a vector of bytes.
     /// The vector is used as a serializing target for the state value.
     /// bin-code is used to serialize the state.
     /// Keys should be unique to avoid trying to deserialize state into
     /// different state.
-    pub(crate) local_state: FxHashMap<StateKey, Option<Box<dyn Any>>>,
+    //pub(crate) local_state: FxHashMap<StateKey, Option<Box<dyn Any>>>,
 
     /// This field holds the requests for refocus. If Some we need to check the refocus
     /// reason and apply that focus change after the event is done. This also means that
@@ -70,13 +73,13 @@ pub struct Environment<GS> where GS: GlobalStateContract {
     scale_factor: f64,
 }
 
-impl<GS: GlobalStateContract> std::fmt::Debug for Environment<GS> {
+impl std::fmt::Debug for Environment {
     fn fmt(&self, _f: &mut Formatter<'_>) -> std::fmt::Result {
         Ok(())
     }
 }
 
-impl<GS: GlobalStateContract> Environment<GS> {
+impl Environment {
     pub fn new(env_stack: Vec<EnvironmentVariable>, pixel_dimensions: Dimensions, scale_factor: f64) -> Self {
         let default_font_family_name = "NotoSans";
 
@@ -88,7 +91,7 @@ impl<GS: GlobalStateContract> Environment<GS> {
             default_font_family_name: default_font_family_name.to_string(),
             images_information: HashMap::with_hasher(FxBuildHasher::default()),
             overlay_map: HashMap::with_hasher(FxBuildHasher::default()),
-            local_state: HashMap::with_hasher(FxBuildHasher::default()),
+            //local_state: HashMap::with_hasher(FxBuildHasher::default()),
             focus_request: None,
             pixel_dimensions,
             scale_factor,
@@ -155,11 +158,11 @@ impl<GS: GlobalStateContract> Environment<GS> {
         self.images_information.insert(id, image);
     }
 
-    pub fn get_overlay(&mut self, id: &String) -> Option<Box<dyn Widget<GS>>> {
+    pub fn get_overlay<GS: GlobalStateContract>(&mut self, id: &String) -> Option<Box<dyn Widget>> {
         self.overlay_map.remove(id)
     }
 
-    pub fn add_overlay(&mut self, id: &str, overlay: Box<dyn Widget<GS>>) {
+    pub fn add_overlay<GS: GlobalStateContract>(&mut self, id: &str, overlay: Box<dyn Widget>) {
         self.overlay_map.insert(id.to_string(), overlay);
     }
 
@@ -167,14 +170,18 @@ impl<GS: GlobalStateContract> Environment<GS> {
         self.overlay_map.clear();
     }
 
+    pub fn get_global_state<T>(&self) -> Rc<ValueCell<T>> {
+        todo!()
+    }
+
     /// Swaps the local state between the env and the state requesting it.
-    pub fn swap_local_state<T: StateContract + 'static>(&mut self, local_state: &mut LocalState<T>) {
+    /*pub fn swap_local_state<T: StateContract + 'static>(&mut self, local_state: &mut LocalState<T>) {
         if let Some(state_in_env) = self.local_state.get_mut(local_state.key()) {
             std::mem::swap(state_in_env, local_state.value());
         } else {
             self.local_state.insert(local_state.key().clone(), None);
         }
-    }
+    }*/
 
     /*pub fn update_local_state<T: Serialize + Clone + Debug + DeserializeOwned>(&self, local_state: &mut dyn State<T, GS>) {
         local_state.update_dependent_states(self);

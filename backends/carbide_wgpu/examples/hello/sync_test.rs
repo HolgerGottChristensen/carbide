@@ -101,7 +101,7 @@ impl<S: GlobalStateContract> CommonWidget<S> for SyncTest<S> {
         Flags::EMPTY
     }
 
-    fn get_children(&self) -> WidgetIter<S> {
+    fn get_children(&self) -> WidgetIter {
         if self.child.get_flag() == Flags::PROXY {
             self.child.get_children()
         } else {
@@ -109,7 +109,7 @@ impl<S: GlobalStateContract> CommonWidget<S> for SyncTest<S> {
         }
     }
 
-    fn get_children_mut(&mut self) -> WidgetIterMut<S> {
+    fn get_children_mut(&mut self) -> WidgetIterMut {
         if self.child.get_flag() == Flags::PROXY {
             self.child.get_children_mut()
         } else {
@@ -117,11 +117,11 @@ impl<S: GlobalStateContract> CommonWidget<S> for SyncTest<S> {
         }
     }
 
-    fn get_proxied_children(&mut self) -> WidgetIterMut<S> {
+    fn get_proxied_children(&mut self) -> WidgetIterMut {
         WidgetIterMut::single(self.child.deref_mut())
     }
 
-    fn get_proxied_children_rev(&mut self) -> WidgetIterMut<S> {
+    fn get_proxied_children_rev(&mut self) -> WidgetIterMut {
         WidgetIterMut::single(self.child.deref_mut())
     }
 
@@ -149,7 +149,7 @@ impl<S: GlobalStateContract> Layout<S> for SyncTest<S> {
         2
     }
 
-    fn calculate_size(&mut self, requested_size: Dimensions, env: &mut Environment<GS>) -> Dimensions {
+    fn calculate_size(&mut self, requested_size: Dimensions, env: &mut Environment) -> Dimensions {
         self.dimension = self.child.calculate_size(requested_size, env);
         self.dimension
     }

@@ -30,7 +30,7 @@ use crate::widget::Rectangle;
 /// * Maintains the latest user input state (for mouse and keyboard).
 /// * Maintains the latest window dimensions.
 #[derive(Debug)]
-pub struct Ui<GS> where GS: GlobalStateContract {
+pub struct Ui {
     num_redraw_frames: u8,
     /// Whether or not the `Ui` needs to be re-drawn to screen.
     redraw_count: AtomicUsize,
@@ -40,9 +40,9 @@ pub struct Ui<GS> where GS: GlobalStateContract {
     /// Mouse cursor
     mouse_cursor: cursor::MouseCursor,
 
-    pub widgets: Box<dyn Widget<GS>>,
+    pub widgets: Box<dyn Widget>,
     event_handler: EventHandler,
-    pub environment: Environment<GS>,
+    pub environment: Environment,
     any_focus: bool,
 }
 
@@ -52,7 +52,7 @@ pub struct Ui<GS> where GS: GlobalStateContract {
 /// buffer. Otherwise if we don't draw into each buffer, we will probably be subject to flickering.
 pub const SAFE_REDRAW_COUNT: u8 = 3;
 
-impl<GS: GlobalStateContract> Ui<GS> {
+impl Ui {
     /// A new, empty **Ui**.
     pub fn new(window_pixel_dimensions: Dimensions, scale_factor: f64) -> Self {
         let dark_system_colors = vec![
@@ -170,7 +170,7 @@ impl<GS: GlobalStateContract> Ui<GS> {
     }
 
 
-    pub fn handle_event(&mut self, event: Input, _: &mut GS) {
+    pub fn handle_event(&mut self, event: Input) {
         let window_event = self.event_handler.handle_event(event, self.environment.get_corrected_dimensions());
 
         //let mut _needs_redraw = self.delegate_events(global_state);
@@ -196,7 +196,7 @@ impl<GS: GlobalStateContract> Ui<GS> {
         //}
     }
 
-    pub fn delegate_events(&mut self, global_state: &GlobalStateContainer<GS>) -> bool {
+    pub fn delegate_events(&mut self) -> bool {
         let now = Instant::now();
         let events = self.event_handler.get_events();
 
@@ -204,16 +204,16 @@ impl<GS: GlobalStateContract> Ui<GS> {
             match event {
                 WidgetEvent::Mouse(mouse_event) => {
                     let consumed = false;
-                    self.widgets.process_mouse_event(mouse_event, &consumed, &mut self.environment, global_state);
+                    self.widgets.process_mouse_event(mouse_event, &consumed, &mut self.environment);
                 }
                 WidgetEvent::Keyboard(keyboard_event) => {
-                    self.widgets.process_keyboard_event(keyboard_event, &mut self.environment, global_state);
+                    self.widgets.process_keyboard_event(keyboard_event, &mut self.environment);
                 }
                 WidgetEvent::Window(_) => {
-                    self.widgets.process_other_event(event, &mut self.environment, global_state);
+                    self.widgets.process_other_event(event, &mut self.environment);
                 }
                 WidgetEvent::Touch(_) => {
-                    self.widgets.process_other_event(event, &mut self.environment, global_state);
+                    self.widgets.process_other_event(event, &mut self.environment);
                 }
             }
 
@@ -221,20 +221,20 @@ impl<GS: GlobalStateContract> Ui<GS> {
                 match request {
                     Refocus::FocusRequest => {
                         println!("Process focus request");
-                        self.any_focus = self.widgets.process_focus_request(event, &request, &mut self.environment, global_state);
+                        self.any_focus = self.widgets.process_focus_request(event, &request, &mut self.environment);
                     }
                     Refocus::FocusNext => {
                         println!("Focus next");
-                        let focus_first = self.widgets.process_focus_next(event, &request, false, &mut self.environment, global_state);
+                        let focus_first = self.widgets.process_focus_next(event, &request, false, &mut self.environment);
                         if focus_first {
                             println!("Focus next back to first");
-                            self.widgets.process_focus_next(event, &request, true, &mut self.environment, global_state);
+                            self.widgets.process_focus_next(event, &request, true, &mut self.environment);
                         }
                     }
                     Refocus::FocusPrevious => {
-                        let focus_last = self.widgets.process_focus_previous(event, &request, false, &mut self.environment, global_state);
+                        let focus_last = self.widgets.process_focus_previous(event, &request, false, &mut self.environment);
                         if focus_last {
-                            self.widgets.process_focus_previous(event, &request, true, &mut self.environment, global_state);
+                            self.widgets.process_focus_previous(event, &request, true, &mut self.environment);
                         }
                     }
                 }
@@ -247,9 +247,9 @@ impl<GS: GlobalStateContract> Ui<GS> {
                                 // If focus is still up for grab we can assume that no element
                                 // has been focused. This assumption breaks if there can be multiple
                                 // widgets with focus at the same time
-                                self.any_focus = !self.widgets.process_focus_previous(event, &Refocus::FocusPrevious, true, &mut self.environment, global_state);
+                                self.any_focus = !self.widgets.process_focus_previous(event, &Refocus::FocusPrevious, true, &mut self.environment);
                             } else if modifier == &carbide_core::input::ModifierKey::NO_MODIFIER {
-                                self.any_focus = !self.widgets.process_focus_next(event, &Refocus::FocusNext, true, &mut self.environment, global_state);
+                                self.any_focus = !self.widgets.process_focus_next(event, &Refocus::FocusNext, true, &mut self.environment);
                             }
                         }
                     }
@@ -264,8 +264,8 @@ impl<GS: GlobalStateContract> Ui<GS> {
             // as the thing below. This will not work if the thing below the overlay layers, position is
             // dependent on some state that has not been synchronized. For a use case look at the pop up
             // button in controls.
-            self.widgets.calculate_size(self.environment.get_corrected_dimensions(), &mut self.environment);
-            self.widgets.position_children();
+            //self.widgets.calculate_size(self.environment.get_corrected_dimensions(), &mut self.environment);
+            //self.widgets.position_children();
 
             //self.widgets.sync_state(&mut self.environment, global_state);
 
@@ -289,10 +289,10 @@ impl<GS: GlobalStateContract> Ui<GS> {
     ///
     /// NOTE: If you don't need to redraw your carbide GUI every frame, it is recommended to use the
     /// `Ui::draw_if_changed` method instead.
-    pub fn draw(&mut self, global_state: &GlobalStateContainer<GS>) -> CPrimitives {
+    pub fn draw(&mut self) -> CPrimitives {
         let corrected_dimensions = self.environment.get_corrected_dimensions();
 
-        CPrimitives::new(corrected_dimensions, &mut self.widgets, &mut self.environment, global_state)
+        CPrimitives::new(corrected_dimensions, &mut self.widgets, &mut self.environment)
     }
 
     /// Get mouse cursor state.

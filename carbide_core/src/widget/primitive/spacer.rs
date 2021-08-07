@@ -10,8 +10,6 @@ pub struct Spacer {
     space: SpacerDirection,
 }
 
-impl<GS: GlobalStateContract> WidgetExt<GS> for Spacer {}
-
 impl Spacer {
     pub fn new(space: SpacerDirection) -> Box<Self> {
         Box::new(Spacer {
@@ -23,12 +21,12 @@ impl Spacer {
     }
 }
 
-impl<GS: GlobalStateContract> Layout<GS> for Spacer {
+impl Layout for Spacer {
     fn flexibility(&self) -> u32 {
         0
     }
 
-    fn calculate_size(&mut self, requested_size: Dimensions, env: &mut Environment<GS>) -> Dimensions {
+    fn calculate_size(&mut self, requested_size: Dimensions, _: &mut Environment) -> Dimensions {
         match self.space {
             SpacerDirection::Vertical => {
                 self.dimension = [0.0, requested_size[1]];
@@ -47,7 +45,7 @@ impl<GS: GlobalStateContract> Layout<GS> for Spacer {
     fn position_children(&mut self) {}
 }
 
-impl<S: GlobalStateContract> CommonWidget<S> for Spacer {
+impl CommonWidget for Spacer {
     fn get_id(&self) -> Uuid {
         self.id
     }
@@ -60,19 +58,19 @@ impl<S: GlobalStateContract> CommonWidget<S> for Spacer {
         Flags::SPACER
     }
 
-    fn get_children(&self) -> WidgetIter<S> {
+    fn get_children(&self) -> WidgetIter {
         WidgetIter::Empty
     }
 
-    fn get_children_mut(&mut self) -> WidgetIterMut<S> {
+    fn get_children_mut(&mut self) -> WidgetIterMut {
         WidgetIterMut::Empty
     }
 
-    fn get_proxied_children(&mut self) -> WidgetIterMut<S> {
+    fn get_proxied_children(&mut self) -> WidgetIterMut {
         WidgetIterMut::Empty
     }
 
-    fn get_proxied_children_rev(&mut self) -> WidgetIterMut<S> {
+    fn get_proxied_children_rev(&mut self) -> WidgetIterMut {
         WidgetIterMut::Empty
     }
 
@@ -94,6 +92,8 @@ impl<S: GlobalStateContract> CommonWidget<S> for Spacer {
 }
 
 impl ChildRender for Spacer {}
+
+impl WidgetExt for Spacer {}
 
 
 

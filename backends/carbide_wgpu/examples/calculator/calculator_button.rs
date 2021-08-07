@@ -1,8 +1,9 @@
-use carbide_core::prelude::*;
-use crate::calculator::calculator_state::CalculatorState;
 use carbide_core::color::rgb_bytes;
 use carbide_core::event_handler::MouseEvent;
+use carbide_core::prelude::*;
 use carbide_core::widget::{ChildRender, SingleChildLayout};
+
+use crate::calculator::calculator_state::CalculatorState;
 
 #[derive(Clone, Widget)]
 #[global_state(CalculatorState)]
@@ -12,7 +13,7 @@ pub struct CalculatorButton {
     child: Box<dyn Widget<CalculatorState>>,
     position: Point,
     dimension: Dimensions,
-    function: Option<fn(myself: &mut Self, global_state: &mut CalculatorState)>
+    function: Option<fn(myself: &mut Self, global_state: &mut CalculatorState)>,
 }
 
 impl CalculatorButton {
@@ -21,20 +22,20 @@ impl CalculatorButton {
             id: Uuid::new_v4(),
             child: Rectangle::initialize(vec![
                 display
-            ]).fill(rgb_bytes(76,0,19)),
+            ]).fill(rgb_bytes(76, 0, 19)),
             position: [0.0, 0.0],
             dimension: [0.0, 0.0],
-            function: None
+            function: None,
         })
     }
 
-    pub fn on_released(mut self, func: fn(&mut Self, &mut CalculatorState)) -> Box<Self>{
+    pub fn on_released(mut self, func: fn(&mut Self, &mut CalculatorState)) -> Box<Self> {
         self.function = Some(func);
         Box::new(self)
     }
 
     fn handle_mouse_event(&mut self, event: &MouseEvent, _consumed: &bool, _: &mut Environment<CalculatorState>, global_state: &mut CalculatorState) {
-        if !self.is_inside(event.get_current_mouse_position()) {return}
+        if !self.is_inside(event.get_current_mouse_position()) { return }
         match event {
             MouseEvent::Release(_, _, _) => {
                 match self.function {
@@ -62,7 +63,7 @@ impl CommonWidget<CalculatorState> for CalculatorButton {
         Flags::EMPTY
     }
 
-    fn get_children(&self) -> WidgetIter<CalculatorState> {
+    fn get_children(&self) -> WidgetIter {
         if self.child.get_flag() == Flags::PROXY {
             self.child.get_children()
         } else {
@@ -70,7 +71,7 @@ impl CommonWidget<CalculatorState> for CalculatorButton {
         }
     }
 
-    fn get_children_mut(&mut self) -> WidgetIterMut<CalculatorState> {
+    fn get_children_mut(&mut self) -> WidgetIterMut {
         if self.child.get_flag() == Flags::PROXY {
             self.child.get_children_mut()
         } else {
@@ -78,11 +79,11 @@ impl CommonWidget<CalculatorState> for CalculatorButton {
         }
     }
 
-    fn get_proxied_children(&mut self) -> WidgetIterMut<CalculatorState> {
+    fn get_proxied_children(&mut self) -> WidgetIterMut {
         WidgetIterMut::single(&mut self.child)
     }
 
-    fn get_proxied_children_rev(&mut self) -> WidgetIterMut<CalculatorState> {
+    fn get_proxied_children_rev(&mut self) -> WidgetIterMut {
         WidgetIterMut::single(&mut self.child)
     }
 

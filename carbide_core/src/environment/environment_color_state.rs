@@ -3,8 +3,10 @@ use std::ops::{Deref, DerefMut};
 use crate::Color;
 use crate::prelude::{Environment, GlobalStateContract, State};
 use crate::prelude::EnvironmentColor;
+use crate::prelude::value_cell::ValueRef;
 use crate::state::global_state::GlobalStateContainer;
 use crate::state::state_key::StateKey;
+use crate::state::value_cell::ValueRefMut;
 
 #[derive(Clone, Debug)]
 pub struct EnvironmentColorState {
@@ -35,12 +37,20 @@ impl DerefMut for EnvironmentColorState {
     }
 }
 
-impl<GS: GlobalStateContract> State<Color, GS> for EnvironmentColorState {
-    fn capture_state(&mut self, env: &mut Environment<GS>, _: &GlobalStateContainer<GS>) {
+impl State<Color> for EnvironmentColorState {
+    fn capture_state(&mut self, env: &mut Environment) {
         if let Some(color) = env.get_color(&self.key) {
             self.value = color;
         }
     }
 
-    fn release_state(&mut self, _: &mut Environment<GS>) {}
+    fn release_state(&mut self, _: &mut Environment) {}
+
+    fn value(&self) -> ValueRef<Color> {
+        ValueRef::Borrow(&self.value)
+    }
+
+    fn value_mut(&mut self) -> ValueRefMut<Color> {
+        ValueRefMut::Borrow(&mut self.value)
+    }
 }

@@ -2,23 +2,34 @@ use crate::prelude::*;
 use crate::widget::ChildRender;
 
 #[derive(Debug, Clone, Widget)]
-pub struct Offset<GS> where GS: GlobalStateContract {
+pub struct Offset {
     id: Uuid,
-    child: Box<dyn Widget<GS>>,
+    child: Box<dyn Widget>,
     position: Point,
     dimension: Dimensions,
-    #[state] offset_x: F64State<GS>,
-    #[state] offset_y: F64State<GS>,
+    #[state] offset_x: F64State,
+    #[state] offset_y: F64State,
 }
 
-impl<GS: GlobalStateContract> WidgetExt<GS> for Offset<GS> {}
+impl Offset {
+    pub fn new(offset_x: F64State, offset_y: F64State, child: Box<dyn Widget>) -> Box<Self> {
+        Box::new(Offset {
+            id: Uuid::new_v4(),
+            child,
+            position: [0.0, 0.0],
+            dimension: [0.0, 0.0],
+            offset_x,
+            offset_y,
+        })
+    }
+}
 
-impl<GS: GlobalStateContract> Layout<GS> for Offset<GS> {
+impl Layout for Offset {
     fn flexibility(&self) -> u32 {
         self.child.flexibility()
     }
 
-    fn calculate_size(&mut self, requested_size: Dimensions, env: &mut Environment<GS>) -> Dimensions {
+    fn calculate_size(&mut self, requested_size: Dimensions, env: &mut Environment) -> Dimensions {
         self.dimension = self.child.calculate_size(requested_size, env);
         self.dimension
     }
@@ -32,8 +43,8 @@ impl<GS: GlobalStateContract> Layout<GS> for Offset<GS> {
 
         let mut child_position: Point = self.child.get_position();
 
-        child_position[0] += *self.offset_x;
-        child_position[1] += *self.offset_y;
+        child_position[0] += *self.offset_x.value();
+        child_position[1] += *self.offset_y.value();
 
         self.child.set_position(child_position);
 
@@ -41,7 +52,7 @@ impl<GS: GlobalStateContract> Layout<GS> for Offset<GS> {
     }
 }
 
-impl<S: GlobalStateContract> CommonWidget<S> for Offset<S> {
+impl CommonWidget for Offset {
     fn get_id(&self) -> Uuid {
         self.id
     }
@@ -54,7 +65,7 @@ impl<S: GlobalStateContract> CommonWidget<S> for Offset<S> {
         Flags::EMPTY
     }
 
-    fn get_children(&self) -> WidgetIter<S> {
+    fn get_children(&self) -> WidgetIter {
         if self.child.get_flag() == Flags::PROXY {
             self.child.get_children()
         } else {
@@ -62,7 +73,7 @@ impl<S: GlobalStateContract> CommonWidget<S> for Offset<S> {
         }
     }
 
-    fn get_children_mut(&mut self) -> WidgetIterMut<S> {
+    fn get_children_mut(&mut self) -> WidgetIterMut {
         if self.child.get_flag() == Flags::PROXY {
             self.child.get_children_mut()
         } else {
@@ -70,11 +81,11 @@ impl<S: GlobalStateContract> CommonWidget<S> for Offset<S> {
         }
     }
 
-    fn get_proxied_children(&mut self) -> WidgetIterMut<S> {
+    fn get_proxied_children(&mut self) -> WidgetIterMut {
         WidgetIterMut::single(self.child.deref_mut())
     }
 
-    fn get_proxied_children_rev(&mut self) -> WidgetIterMut<S> {
+    fn get_proxied_children_rev(&mut self) -> WidgetIterMut {
         WidgetIterMut::single(self.child.deref_mut())
     }
 
@@ -95,18 +106,6 @@ impl<S: GlobalStateContract> CommonWidget<S> for Offset<S> {
     }
 }
 
-impl<S: GlobalStateContract> ChildRender for Offset<S> {}
+impl ChildRender for Offset {}
 
-
-impl<GS: GlobalStateContract> Offset<GS> {
-    pub fn new(offset_x: F64State<GS>, offset_y: F64State<GS>, child: Box<dyn Widget<GS>>) -> Box<Self <>> {
-        Box::new(Offset {
-            id: Uuid::new_v4(),
-            child,
-            position: [0.0, 0.0],
-            dimension: [0.0, 0.0],
-            offset_x,
-            offset_y,
-        })
-    }
-}
+impl WidgetExt for Offset {}

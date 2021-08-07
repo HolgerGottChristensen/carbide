@@ -10,13 +10,13 @@ use crate::prelude::ColorState;
 use crate::widget::GlobalStateContract;
 
 #[derive(Debug, Clone)]
-pub struct Context<GS: GlobalStateContract> {
-    generator: Vec<ContextAction<GS>>,
+pub struct Context {
+    generator: Vec<ContextAction>,
 }
 
 
-impl<GS: GlobalStateContract> Context<GS> {
-    pub fn new() -> Context<GS> {
+impl Context {
+    pub fn new() -> Context {
         Context {
             generator: vec![ContextAction::MoveTo([0.0, 0.0])]
         }
@@ -38,11 +38,11 @@ impl<GS: GlobalStateContract> Context<GS> {
         self.generator.push(ContextAction::MiterLimit(limit))
     }
 
-    pub fn set_fill_style<C: Into<ColorState<GS>>>(&mut self, color: C) {
+    pub fn set_fill_style<C: Into<ColorState>>(&mut self, color: C) {
         self.generator.push(ContextAction::FillStyle(color.into()))
     }
 
-    pub fn set_stroke_style<C: Into<ColorState<GS>>>(&mut self, color: C) {
+    pub fn set_stroke_style<C: Into<ColorState>>(&mut self, color: C) {
         self.generator.push(ContextAction::StrokeStyle(color.into()))
     }
 
@@ -108,14 +108,14 @@ impl<GS: GlobalStateContract> Context<GS> {
         self.generator.push(ContextAction::ArcTo { x1, y1, x2, y2, r })
     }
 
-    pub fn to_paths(&self, offset: Point) -> Vec<(Path, ShapeStyleWithOptions<GS>)> {
+    pub fn to_paths(&self, offset: Point) -> Vec<(Path, ShapeStyleWithOptions)> {
         let mut current_stroke_color = Color::Rgba(0.0, 0.0, 0.0, 1.0).into();
         let mut current_fill_color = Color::Rgba(0.0, 0.0, 0.0, 1.0).into();
         let mut current_cap_style = LineCap::Round;
         let mut current_join_style = LineJoin::Round;
         let mut current_line_width = 2.0;
         let mut current_miter_limit = StrokeOptions::DEFAULT_MITER_LIMIT;
-        let mut paths: Vec<(Path, ShapeStyleWithOptions<GS>)> = vec![];
+        let mut paths: Vec<(Path, ShapeStyleWithOptions)> = vec![];
         let mut current_builder = SVGPathBuilder::new();
         let mut current_builder_begun = false;
 
@@ -198,13 +198,13 @@ impl<GS: GlobalStateContract> Context<GS> {
     }
 }
 
-pub enum ShapeStyleWithOptions<GS: GlobalStateContract> {
-    Fill(FillOptions, ColorState<GS>),
-    Stroke(StrokeOptions, ColorState<GS>),
+pub enum ShapeStyleWithOptions {
+    Fill(FillOptions, ColorState),
+    Stroke(StrokeOptions, ColorState),
 }
 
 #[derive(Debug, Clone)]
-pub enum ContextAction<GS: GlobalStateContract> {
+pub enum ContextAction {
     MoveTo(Point),
     LineTo(Point),
     QuadraticBezierTo { ctrl: Point, to: Point },
@@ -220,6 +220,6 @@ pub enum ContextAction<GS: GlobalStateContract> {
     BeginPath,
     Arc { x: f64, y: f64, r: f64, start_angle: f64, end_angle: f64 },
     ArcTo { x1: f64, y1: f64, x2: f64, y2: f64, r: f64 },
-    FillStyle(ColorState<GS>),
-    StrokeStyle(ColorState<GS>),
+    FillStyle(ColorState),
+    StrokeStyle(ColorState),
 }

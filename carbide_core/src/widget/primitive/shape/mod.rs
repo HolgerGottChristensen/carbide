@@ -17,13 +17,13 @@ pub mod rectangle;
 pub mod rounded_rectangle;
 pub mod capsule;
 
-pub trait Shape<GS>: CommonWidget<GS> where GS: GlobalStateContract {
+pub trait Shape: CommonWidget {
     fn get_triangle_store_mut(&mut self) -> &mut TriangleStore;
     fn get_stroke_style(&self) -> StrokeStyle;
     fn get_shape_style(&self) -> ShapeStyle;
 }
 
-pub fn tessellate<GS: GlobalStateContract>(shape: &mut dyn Shape<GS>, rectangle: &Rect, path: &dyn Fn(&mut Builder, &Rect)) {
+pub fn tessellate(shape: &mut dyn Shape, rectangle: &Rect, path: &dyn Fn(&mut Builder, &Rect)) {
     match shape.get_shape_style() {
         ShapeStyle::Default | ShapeStyle::Fill => {
             fill(path, shape, rectangle);
@@ -38,7 +38,7 @@ pub fn tessellate<GS: GlobalStateContract>(shape: &mut dyn Shape<GS>, rectangle:
     }
 }
 
-pub fn fill<GS: GlobalStateContract>(path: &dyn Fn(&mut Builder, &Rect), shape: &mut dyn Shape<GS>, rectangle: &Rect) {
+pub fn fill(path: &dyn Fn(&mut Builder, &Rect), shape: &mut dyn Shape, rectangle: &Rect) {
     let position = shape.get_position();
     let dimension = shape.get_dimension();
     let triangle_store = shape.get_triangle_store_mut();
@@ -83,7 +83,7 @@ pub fn fill<GS: GlobalStateContract>(path: &dyn Fn(&mut Builder, &Rect), shape: 
     }
 }
 
-pub fn stroke<GS: GlobalStateContract>(path: &dyn Fn(&mut Builder, &Rect), shape: &mut dyn Shape<GS>, rectangle: &Rect) {
+pub fn stroke(path: &dyn Fn(&mut Builder, &Rect), shape: &mut dyn Shape, rectangle: &Rect) {
     let position = shape.get_position();
     let dimension = shape.get_dimension();
     let line_width = shape.get_stroke_style().get_line_width() as f32;

@@ -4,7 +4,7 @@ use crate::text::text_style::TextStyle;
 use crate::widget::{Environment, GlobalStateContract, Widget};
 
 #[derive(Debug, Clone)]
-pub enum TextSpan<GS> where GS: GlobalStateContract {
+pub enum TextSpan {
     Text {
         style: Option<TextStyle>,
         text: String,
@@ -14,12 +14,12 @@ pub enum TextSpan<GS> where GS: GlobalStateContract {
         descend: f64,
         line_gap: f64,
     },
-    Widget(Box<dyn Widget<GS>>),
+    Widget(Box<dyn Widget>),
     NewLine,
 }
 
-impl<GS: GlobalStateContract> TextSpan<GS> {
-    pub fn new(string: &str, style: &TextStyle, env: &mut Environment<GS>) -> Vec<TextSpan<GS>> {
+impl TextSpan {
+    pub fn new(string: &str, style: &TextStyle, env: &mut Environment) -> Vec<TextSpan> {
         let scale_factor = env.get_scale_factor();
 
         let mut res = vec![];

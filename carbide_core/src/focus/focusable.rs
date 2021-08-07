@@ -6,10 +6,10 @@ use crate::prelude::{CommonWidget, Environment, GlobalStateContract};
 use crate::state::global_state::GlobalStateContainer;
 use crate::state::state_sync::StateSync;
 
-pub trait Focusable<GS>: CommonWidget<GS> + StateSync<GS> where GS: GlobalStateContract {
-    fn focus_retrieved(&mut self, event: &WidgetEvent, focus_request: &Refocus, env: &mut Environment<GS>, global_state: &GlobalStateContainer<GS>);
+pub trait Focusable: CommonWidget + StateSync {
+    fn focus_retrieved(&mut self, event: &WidgetEvent, focus_request: &Refocus, env: &mut Environment);
 
-    fn focus_dismissed(&mut self, event: &WidgetEvent, focus_request: &Refocus, env: &mut Environment<GS>, global_state: &GlobalStateContainer<GS>);
+    fn focus_dismissed(&mut self, event: &WidgetEvent, focus_request: &Refocus, env: &mut Environment);
 
     fn get_focus(&self) -> Focus;
 
@@ -17,17 +17,17 @@ pub trait Focusable<GS>: CommonWidget<GS> + StateSync<GS> where GS: GlobalStateC
     /// which makes sure the request is processed.
     fn set_focus(&mut self, focus: Focus);
 
-    fn set_focus_and_request(&mut self, focus: Focus, env: &mut Environment<GS>);
+    fn set_focus_and_request(&mut self, focus: Focus, env: &mut Environment);
 
-    fn process_focus_request(&mut self, event: &WidgetEvent, focus_request: &Refocus, env: &mut Environment<GS>, global_state: &GlobalStateContainer<GS>) -> bool;
+    fn process_focus_request(&mut self, event: &WidgetEvent, focus_request: &Refocus, env: &mut Environment) -> bool;
 
-    fn request_focus(&mut self, env: &mut Environment<GS>) {
+    fn request_focus(&mut self, env: &mut Environment) {
         if self.get_focus() == Focus::Unfocused {
             self.set_focus_and_request(Focus::FocusRequested, env);
         }
     }
 
-    fn release_focus(&mut self, env: &mut Environment<GS>) {
+    fn release_focus(&mut self, env: &mut Environment) {
         if self.get_focus() == Focus::Focused {
             self.set_focus_and_request(Focus::FocusReleased, env);
         }
@@ -35,8 +35,8 @@ pub trait Focusable<GS>: CommonWidget<GS> + StateSync<GS> where GS: GlobalStateC
 
     /// Returns a boolean whether any widget in the tree now contains focus.
     /// This is useful for checking whether the next tab should focus the first element
-    fn process_focus_request_default(&mut self, event: &WidgetEvent, focus_request: &Refocus, env: &mut Environment<GS>, global_state: &GlobalStateContainer<GS>) -> bool {
-        self.capture_state(env, global_state);
+    fn process_focus_request_default(&mut self, event: &WidgetEvent, focus_request: &Refocus, env: &mut Environment) -> bool {
+        self.capture_state(env);
 
         let mut any_focus = false;
 
@@ -44,18 +44,18 @@ pub trait Focusable<GS>: CommonWidget<GS> + StateSync<GS> where GS: GlobalStateC
             let focus = self.get_focus();
             if focus == Focus::FocusRequested {
                 self.set_focus(Focus::Focused);
-                self.focus_retrieved(event, focus_request, env, global_state);
+                self.focus_retrieved(event, focus_request, env);
                 any_focus = true;
             } else if focus != Focus::Unfocused {
                 self.set_focus(Focus::Unfocused);
-                self.focus_dismissed(event, focus_request, env, global_state);
+                self.focus_dismissed(event, focus_request, env);
             }
         }
 
         self.release_state(env);
 
         for child in self.get_proxied_children() {
-            if child.process_focus_request(event, focus_request, env, global_state) {
+            if child.process_focus_request(event, focus_request, env) {
                 any_focus = true;
             }
         }
@@ -63,22 +63,22 @@ pub trait Focusable<GS>: CommonWidget<GS> + StateSync<GS> where GS: GlobalStateC
         any_focus
     }
 
-    fn process_focus_next(&mut self, event: &WidgetEvent, focus_request: &Refocus, focus_up_for_grab: bool, env: &mut Environment<GS>, global_state: &GlobalStateContainer<GS>) -> bool;
+    fn process_focus_next(&mut self, event: &WidgetEvent, focus_request: &Refocus, focus_up_for_grab: bool, env: &mut Environment) -> bool;
 
-    fn process_focus_next_default(&mut self, event: &WidgetEvent, focus_request: &Refocus, focus_up_for_grab: bool, env: &mut Environment<GS>, global_state: &GlobalStateContainer<GS>) -> bool {
-        self.capture_state(env, global_state);
+    fn process_focus_next_default(&mut self, event: &WidgetEvent, focus_request: &Refocus, focus_up_for_grab: bool, env: &mut Environment) -> bool {
+        self.capture_state(env);
 
         let mut focus_child =
             if self.get_flag().contains(Flags::FOCUSABLE) {
                 //println!("{}, {:?}", focus_up_for_grab, self.get_focus());
                 if focus_up_for_grab {
                     self.set_focus(Focus::Focused);
-                    self.focus_retrieved(event, focus_request, env, global_state);
+                    self.focus_retrieved(event, focus_request, env);
                     //println!("{}, {:?}", focus_up_for_grab, self.get_focus());
                     false
                 } else if self.get_focus() == Focus::FocusReleased {
                     self.set_focus(Focus::Unfocused);
-                    self.focus_dismissed(event, focus_request, env, global_state);
+                    self.focus_dismissed(event, focus_request, env);
                     //println!("{}, {:?}", focus_up_for_grab, self.get_focus());
                     true
                 } else {
@@ -91,26 +91,26 @@ pub trait Focusable<GS>: CommonWidget<GS> + StateSync<GS> where GS: GlobalStateC
         self.release_state(env);
 
         for child in self.get_proxied_children() {
-            focus_child = child.process_focus_next(event, focus_request, focus_child, env, global_state);
+            focus_child = child.process_focus_next(event, focus_request, focus_child, env);
         }
 
         focus_child
     }
 
-    fn process_focus_previous(&mut self, event: &WidgetEvent, focus_request: &Refocus, focus_up_for_grab: bool, env: &mut Environment<GS>, global_state: &GlobalStateContainer<GS>) -> bool;
+    fn process_focus_previous(&mut self, event: &WidgetEvent, focus_request: &Refocus, focus_up_for_grab: bool, env: &mut Environment) -> bool;
 
-    fn process_focus_previous_default(&mut self, event: &WidgetEvent, focus_request: &Refocus, focus_up_for_grab: bool, env: &mut Environment<GS>, global_state: &GlobalStateContainer<GS>) -> bool {
-        self.capture_state(env, global_state);
+    fn process_focus_previous_default(&mut self, event: &WidgetEvent, focus_request: &Refocus, focus_up_for_grab: bool, env: &mut Environment) -> bool {
+        self.capture_state(env);
 
         let mut focus_child =
             if self.get_flag().contains(Flags::FOCUSABLE) {
                 if focus_up_for_grab {
                     self.set_focus(Focus::Focused);
-                    self.focus_retrieved(event, focus_request, env, global_state);
+                    self.focus_retrieved(event, focus_request, env);
                     false
                 } else if self.get_focus() == Focus::FocusReleased {
                     self.set_focus(Focus::Unfocused);
-                    self.focus_dismissed(event, focus_request, env, global_state);
+                    self.focus_dismissed(event, focus_request, env);
                     true
                 } else {
                     false
@@ -122,7 +122,7 @@ pub trait Focusable<GS>: CommonWidget<GS> + StateSync<GS> where GS: GlobalStateC
         self.release_state(env);
 
         for child in self.get_proxied_children_rev() {
-            focus_child = child.process_focus_previous(event, focus_request, focus_child, env, global_state);
+            focus_child = child.process_focus_previous(event, focus_request, focus_child, env);
         }
 
         focus_child

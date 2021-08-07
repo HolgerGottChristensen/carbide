@@ -127,7 +127,7 @@ impl CommonWidget<GState> for CustomWidget {
         Flags::EMPTY
     }
 
-    fn get_children(&self) -> WidgetIter<GState> {
+    fn get_children(&self) -> WidgetIter {
         if self.child.get_flag() == Flags::PROXY {
             self.child.get_children()
         } else {
@@ -135,7 +135,7 @@ impl CommonWidget<GState> for CustomWidget {
         }
     }
 
-    fn get_children_mut(&mut self) -> WidgetIterMut<GState> {
+    fn get_children_mut(&mut self) -> WidgetIterMut {
         if self.child.get_flag() == Flags::PROXY {
             self.child.get_children_mut()
         } else {
@@ -143,7 +143,7 @@ impl CommonWidget<GState> for CustomWidget {
         }
     }
 
-    fn get_proxied_children(&mut self) -> WidgetIterMut<GState> {
+    fn get_proxied_children(&mut self) -> WidgetIterMut {
         WidgetIterMut::single(&mut self.child)
     }
 
@@ -193,7 +193,7 @@ impl Layout<GState> for CustomWidget {
         2
     }
 
-    fn calculate_size(&mut self, requested_size: Dimensions, env: &mut Environment<GS>) -> Dimensions {
+    fn calculate_size(&mut self, requested_size: Dimensions, env: &mut Environment) -> Dimensions {
         self.dimension = self.child.calculate_size(requested_size, env);
         self.dimension
     }

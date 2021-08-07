@@ -13,7 +13,7 @@ pub struct CPrimitives {
 }
 
 impl CPrimitives {
-    pub fn new<S: GlobalStateContract>(window_dimensions: Dimensions, root: &mut Box<dyn Widget<S>>, environment: &mut Environment<S>, global_state: &GlobalStateContainer<S>) -> Self {
+    pub fn new(window_dimensions: Dimensions, root: &mut Box<dyn Widget>, environment: &mut Environment) -> Self {
         let now = Instant::now();
         root.calculate_size(window_dimensions, environment);
 
@@ -23,7 +23,8 @@ impl CPrimitives {
         root.position_children();
         println!("Time for pos and size: {:?}us", now.elapsed().as_micros());
         let mut prims: Vec<Primitive> = vec![];
-        root.process_get_primitives(&mut prims, environment, global_state);
+        root.process_get_primitives(&mut prims, environment);
+        println!("Number of primitives: {}", prims.len());
         CPrimitives {
             primitives: prims
         }

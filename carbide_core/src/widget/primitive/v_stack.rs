@@ -4,19 +4,17 @@ use crate::widget::ChildRender;
 
 /// A basic, non-interactive rectangle shape widget.
 #[derive(Debug, Clone, Widget)]
-pub struct VStack<GS> where GS: GlobalStateContract {
+pub struct VStack {
     id: Uuid,
-    children: Vec<Box<dyn Widget<GS>>>,
+    children: Vec<Box<dyn Widget>>,
     position: Point,
     dimension: Dimensions,
     spacing: Scalar,
     cross_axis_alignment: CrossAxisAlignment,
 }
 
-impl<GS: GlobalStateContract> WidgetExt<GS> for VStack<GS> {}
-
-impl<S: GlobalStateContract> VStack<S> {
-    pub fn initialize(children: Vec<Box<dyn Widget<S>>>) -> Box<Self> {
+impl VStack {
+    pub fn initialize(children: Vec<Box<dyn Widget>>) -> Box<Self> {
         Box::new(VStack {
             id: Uuid::new_v4(),
             children,
@@ -38,12 +36,12 @@ impl<S: GlobalStateContract> VStack<S> {
     }
 }
 
-impl<GS: GlobalStateContract> Layout<GS> for VStack<GS> {
+impl Layout for VStack {
     fn flexibility(&self) -> u32 {
         1
     }
 
-    fn calculate_size(&mut self, requested_size: Dimensions, env: &mut Environment<GS>) -> Dimensions {
+    fn calculate_size(&mut self, requested_size: Dimensions, env: &mut Environment) -> Dimensions {
         let mut number_of_children_that_needs_sizing = self.children.len() as f64;
 
         let non_spacers_vec: Vec<bool> = self.get_children().map(|n| n.get_flag() != Flags::SPACER).collect();
@@ -56,7 +54,7 @@ impl<GS: GlobalStateContract> Layout<GS> for VStack<GS> {
         let spacing_total = (number_of_spaces) * self.spacing;
         let mut size_for_children = [requested_size[0], requested_size[1] - spacing_total];
 
-        let mut children_flexibilty: Vec<(u32, &mut dyn Widget<GS>)> = self.get_children_mut().map(|child| (child.flexibility(), child)).collect();
+        let mut children_flexibilty: Vec<(u32, &mut dyn Widget)> = self.get_children_mut().map(|child| (child.flexibility(), child)).collect();
         children_flexibilty.sort_by(|(a, _), (b, _)| a.cmp(&b));
         children_flexibilty.reverse();
 
@@ -125,7 +123,7 @@ impl<GS: GlobalStateContract> Layout<GS> for VStack<GS> {
     }
 }
 
-impl<S: GlobalStateContract> CommonWidget<S> for VStack<S> {
+impl CommonWidget for VStack {
     fn get_id(&self) -> Uuid {
         self.id
     }
@@ -138,7 +136,7 @@ impl<S: GlobalStateContract> CommonWidget<S> for VStack<S> {
         Flags::EMPTY
     }
 
-    fn get_children(&self) -> WidgetIter<S> {
+    fn get_children(&self) -> WidgetIter {
         self.children
             .iter()
             .map(|x| x.deref())
@@ -151,7 +149,7 @@ impl<S: GlobalStateContract> CommonWidget<S> for VStack<S> {
             })
     }
 
-    fn get_children_mut(&mut self) -> WidgetIterMut<S> {
+    fn get_children_mut(&mut self) -> WidgetIterMut {
         self.children
             .iter_mut()
             .map(|x| x.deref_mut())
@@ -164,7 +162,7 @@ impl<S: GlobalStateContract> CommonWidget<S> for VStack<S> {
             })
     }
 
-    fn get_proxied_children(&mut self) -> WidgetIterMut<S> {
+    fn get_proxied_children(&mut self) -> WidgetIterMut {
         self.children.iter_mut()
             .map(|x| x.deref_mut())
             .rfold(WidgetIterMut::Empty, |acc, x| {
@@ -172,7 +170,7 @@ impl<S: GlobalStateContract> CommonWidget<S> for VStack<S> {
             })
     }
 
-    fn get_proxied_children_rev(&mut self) -> WidgetIterMut<S> {
+    fn get_proxied_children_rev(&mut self) -> WidgetIterMut {
         self.children.iter_mut()
             .map(|x| x.deref_mut())
             .fold(WidgetIterMut::Empty, |acc, x| {
@@ -198,6 +196,6 @@ impl<S: GlobalStateContract> CommonWidget<S> for VStack<S> {
     }
 }
 
-impl<S: GlobalStateContract> ChildRender for VStack<S> {}
+impl ChildRender for VStack {}
 
-
+impl WidgetExt for VStack {}

@@ -4,18 +4,16 @@ use crate::widget::ChildRender;
 
 /// A basic, non-interactive rectangle shape widget.
 #[derive(Debug, Clone, Widget)]
-pub struct HStack<GS> where GS: GlobalStateContract {
+pub struct HStack {
     id: Uuid,
-    children: Vec<Box<dyn Widget<GS>>>,
+    children: Vec<Box<dyn Widget>>,
     position: Point,
     dimension: Dimensions,
     spacing: Scalar,
 }
 
-impl<GS: GlobalStateContract> WidgetExt<GS> for HStack<GS> {}
-
-impl<S: GlobalStateContract> HStack<S> {
-    pub fn initialize(children: Vec<Box<dyn Widget<S>>>) -> Box<Self> {
+impl HStack {
+    pub fn initialize(children: Vec<Box<dyn Widget>>) -> Box<Self> {
         Box::new(HStack {
             id: Uuid::new_v4(),
             children,
@@ -31,12 +29,12 @@ impl<S: GlobalStateContract> HStack<S> {
     }
 }
 
-impl<GS: GlobalStateContract> Layout<GS> for HStack<GS> {
+impl Layout for HStack {
     fn flexibility(&self) -> u32 {
         1
     }
 
-    fn calculate_size(&mut self, requested_size: Dimensions, env: &mut Environment<GS>) -> Dimensions {
+    fn calculate_size(&mut self, requested_size: Dimensions, env: &mut Environment) -> Dimensions {
 
         // The number of children not containing any spacers
         let mut number_of_children_that_needs_sizing = self.get_children().filter(|m| m.get_flag() != Flags::SPACER).count() as f64;
@@ -52,7 +50,7 @@ impl<GS: GlobalStateContract> Layout<GS> for HStack<GS> {
         let spacing_total = (number_of_spaces) * self.spacing;
         let mut size_for_children = [requested_size[0] - spacing_total, requested_size[1]];
 
-        let mut children_flexibilty: Vec<(u32, &mut dyn Widget<GS>)> = self.get_children_mut().filter(|m| m.get_flag() != Flags::SPACER).map(|child| (child.flexibility(), child)).collect();
+        let mut children_flexibilty: Vec<(u32, &mut dyn Widget)> = self.get_children_mut().filter(|m| m.get_flag() != Flags::SPACER).map(|child| (child.flexibility(), child)).collect();
         children_flexibilty.sort_by(|(a, _), (b, _)| a.cmp(&b));
         children_flexibilty.reverse();
 
@@ -121,7 +119,7 @@ impl<GS: GlobalStateContract> Layout<GS> for HStack<GS> {
     }
 }
 
-impl<S: GlobalStateContract> CommonWidget<S> for HStack<S> {
+impl CommonWidget for HStack {
     fn get_id(&self) -> Uuid {
         self.id
     }
@@ -134,7 +132,7 @@ impl<S: GlobalStateContract> CommonWidget<S> for HStack<S> {
         Flags::EMPTY
     }
 
-    fn get_children(&self) -> WidgetIter<S> {
+    fn get_children(&self) -> WidgetIter {
         self.children
             .iter()
             .map(|x| x.deref())
@@ -147,7 +145,7 @@ impl<S: GlobalStateContract> CommonWidget<S> for HStack<S> {
             })
     }
 
-    fn get_children_mut(&mut self) -> WidgetIterMut<S> {
+    fn get_children_mut(&mut self) -> WidgetIterMut {
         self.children
             .iter_mut()
             .map(|x| x.deref_mut())
@@ -160,7 +158,7 @@ impl<S: GlobalStateContract> CommonWidget<S> for HStack<S> {
             })
     }
 
-    fn get_proxied_children(&mut self) -> WidgetIterMut<S> {
+    fn get_proxied_children(&mut self) -> WidgetIterMut {
         self.children.iter_mut()
             .map(|x| x.deref_mut())
             .rfold(WidgetIterMut::Empty, |acc, x| {
@@ -168,7 +166,7 @@ impl<S: GlobalStateContract> CommonWidget<S> for HStack<S> {
             })
     }
 
-    fn get_proxied_children_rev(&mut self) -> WidgetIterMut<S> {
+    fn get_proxied_children_rev(&mut self) -> WidgetIterMut {
         self.children.iter_mut()
             .map(|x| x.deref_mut())
             .fold(WidgetIterMut::Empty, |acc, x| {
@@ -194,6 +192,6 @@ impl<S: GlobalStateContract> CommonWidget<S> for HStack<S> {
     }
 }
 
-impl<GS: GlobalStateContract> ChildRender for HStack<GS> {}
+impl ChildRender for HStack {}
 
-
+impl WidgetExt for HStack {}

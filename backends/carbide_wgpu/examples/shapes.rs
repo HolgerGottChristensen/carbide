@@ -7,9 +7,9 @@ use carbide_wgpu::window::*;
 fn main() {
     env_logger::init();
 
-    let icon_path = Window::<String>::path_to_assets("images/rust_press.png");
+    let icon_path = Window::path_to_assets("images/rust_press.png");
 
-    let mut window = Window::new("Hello world 2".to_string(), 800, 1200, Some(icon_path), String::from("Hejsa"));
+    let mut window = Window::new("Hello world 2".to_string(), 800, 1200, Some(icon_path));
 
     let mut family = FontFamily::new("NotoSans");
     family.add_font("fonts/NotoSans/NotoSans-Regular.ttf", FontWeight::Normal, FontStyle::Normal);
@@ -103,7 +103,7 @@ fn main() {
     window.run_event_loop();
 }
 
-fn draw_star<GS: GlobalStateContract>(center: Point, number_of_spikes: u32, outer_radius: f64, inner_radius: f64, mut context: Context<GS>) -> Context<GS> {
+fn draw_star(center: Point, number_of_spikes: u32, outer_radius: f64, inner_radius: f64, mut context: Context) -> Context {
     let mut rotation = PI / 2.0 * 3.0;
 
     let center_x = center[0];

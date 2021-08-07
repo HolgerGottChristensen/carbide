@@ -5,21 +5,32 @@ use crate::widget::ChildRender;
 /// A basic, non-interactive rectangle shape widget.
 #[derive(Debug, Clone, Widget)]
 #[render(process_get_primitives)]
-pub struct Hidden<GS> where GS: GlobalStateContract {
+pub struct Hidden {
     id: Uuid,
-    child: Box<dyn Widget<GS>>,
+    child: Box<dyn Widget>,
     position: Point,
     dimension: Dimensions,
 }
 
-impl<GS: GlobalStateContract> WidgetExt<GS> for Hidden<GS> {}
+impl Hidden {
+    pub fn new(child: Box<dyn Widget>) -> Box<Self> {
+        Box::new(Hidden {
+            id: Uuid::new_v4(),
+            child,
+            position: [0.0, 0.0],
+            dimension: [0.0, 0.0],
+        })
+    }
 
-impl<GS: GlobalStateContract> Layout<GS> for Hidden<GS> {
+    fn process_get_primitives(&mut self, _: &mut Vec<Primitive>, _: &mut Environment) {}
+}
+
+impl Layout for Hidden {
     fn flexibility(&self) -> u32 {
         self.child.flexibility()
     }
 
-    fn calculate_size(&mut self, requested_size: Dimensions, env: &mut Environment<GS>) -> Dimensions {
+    fn calculate_size(&mut self, requested_size: Dimensions, env: &mut Environment) -> Dimensions {
         self.dimension = self.child.calculate_size(requested_size, env);
         self.dimension
     }
@@ -35,7 +46,7 @@ impl<GS: GlobalStateContract> Layout<GS> for Hidden<GS> {
     }
 }
 
-impl<S: GlobalStateContract> CommonWidget<S> for Hidden<S> {
+impl CommonWidget for Hidden {
     fn get_id(&self) -> Uuid {
         self.id
     }
@@ -48,7 +59,7 @@ impl<S: GlobalStateContract> CommonWidget<S> for Hidden<S> {
         Flags::EMPTY
     }
 
-    fn get_children(&self) -> WidgetIter<S> {
+    fn get_children(&self) -> WidgetIter {
         if self.child.get_flag() == Flags::PROXY {
             self.child.get_children()
         } else {
@@ -56,7 +67,7 @@ impl<S: GlobalStateContract> CommonWidget<S> for Hidden<S> {
         }
     }
 
-    fn get_children_mut(&mut self) -> WidgetIterMut<S> {
+    fn get_children_mut(&mut self) -> WidgetIterMut {
         if self.child.get_flag() == Flags::PROXY {
             self.child.get_children_mut()
         } else {
@@ -64,11 +75,11 @@ impl<S: GlobalStateContract> CommonWidget<S> for Hidden<S> {
         }
     }
 
-    fn get_proxied_children(&mut self) -> WidgetIterMut<S> {
+    fn get_proxied_children(&mut self) -> WidgetIterMut {
         WidgetIterMut::single(self.child.deref_mut())
     }
 
-    fn get_proxied_children_rev(&mut self) -> WidgetIterMut<S> {
+    fn get_proxied_children_rev(&mut self) -> WidgetIterMut {
         WidgetIterMut::single(self.child.deref_mut())
     }
 
@@ -89,17 +100,6 @@ impl<S: GlobalStateContract> CommonWidget<S> for Hidden<S> {
     }
 }
 
-impl<GS: GlobalStateContract> ChildRender for Hidden<GS> {}
+impl ChildRender for Hidden {}
 
-impl<GS: GlobalStateContract> Hidden<GS> {
-    pub fn new(child: Box<dyn Widget<GS>>) -> Box<Self <>> {
-        Box::new(Hidden {
-            id: Uuid::new_v4(),
-            child,
-            position: [0.0, 0.0],
-            dimension: [0.0, 0.0],
-        })
-    }
-
-    fn process_get_primitives(&mut self, _: &mut Vec<Primitive>, _: &mut Environment<GS>, _: &GlobalStateContainer<GS>) {}
-}
+impl WidgetExt for Hidden {}

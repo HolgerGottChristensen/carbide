@@ -4,21 +4,59 @@ use crate::state::global_state::GlobalStateContainer;
 
 #[derive(Debug, Clone, Widget)]
 #[render(process_get_primitives)]
-pub struct Clip<GS> where GS: GlobalStateContract {
+pub struct Clip {
     id: Uuid,
-    child: Box<dyn Widget<GS>>,
+    child: Box<dyn Widget>,
     position: Point,
     dimension: Dimensions,
 }
 
-impl<GS: GlobalStateContract> WidgetExt<GS> for Clip<GS> {}
+impl Clip {
+    pub fn new(child: Box<dyn Widget>) -> Box<Self> {
+        Box::new(Clip {
+            id: Uuid::new_v4(),
+            child,
+            position: [0.0, 0.0],
+            dimension: [0.0, 0.0],
+        })
+    }
 
-impl<GS: GlobalStateContract> Layout<GS> for Clip<GS> {
+    fn process_get_primitives(&mut self, primitives: &mut Vec<Primitive>, env: &mut Environment) {
+        primitives.push(Primitive {
+            kind: PrimitiveKind::Clip,
+            rect: OldRect::new(self.position, self.dimension),
+        });
+
+        for child in self.get_children_mut() {
+            child.process_get_primitives(primitives, env);
+        }
+
+        primitives.push(Primitive {
+            kind: PrimitiveKind::UnClip,
+            rect: OldRect::new(self.position, self.dimension),
+        });
+    }
+
+    /*pub fn body(&mut self) -> Box<Self> {
+        widget_body!(
+            HStack (
+                alignment: Alignment::Top,
+                spacing: 10.0,
+            ) {
+                for i in $self.model {
+                    Text("Item: {}, index: {}", $item, $index),
+                }
+            }
+        )
+    }*/
+}
+
+impl Layout for Clip {
     fn flexibility(&self) -> u32 {
         self.child.flexibility()
     }
 
-    fn calculate_size(&mut self, requested_size: Dimensions, env: &mut Environment<GS>) -> Dimensions {
+    fn calculate_size(&mut self, requested_size: Dimensions, env: &mut Environment) -> Dimensions {
         self.child.calculate_size(requested_size, env);
         self.dimension = requested_size;
         requested_size
@@ -35,7 +73,7 @@ impl<GS: GlobalStateContract> Layout<GS> for Clip<GS> {
     }
 }
 
-impl<S: GlobalStateContract> CommonWidget<S> for Clip<S> {
+impl CommonWidget for Clip {
     fn get_id(&self) -> Uuid {
         self.id
     }
@@ -48,7 +86,7 @@ impl<S: GlobalStateContract> CommonWidget<S> for Clip<S> {
         Flags::EMPTY
     }
 
-    fn get_children(&self) -> WidgetIter<S> {
+    fn get_children(&self) -> WidgetIter {
         if self.child.get_flag() == Flags::PROXY {
             self.child.get_children()
         } else {
@@ -56,7 +94,7 @@ impl<S: GlobalStateContract> CommonWidget<S> for Clip<S> {
         }
     }
 
-    fn get_children_mut(&mut self) -> WidgetIterMut<S> {
+    fn get_children_mut(&mut self) -> WidgetIterMut {
         if self.child.get_flag() == Flags::PROXY {
             self.child.get_children_mut()
         } else {
@@ -64,11 +102,11 @@ impl<S: GlobalStateContract> CommonWidget<S> for Clip<S> {
         }
     }
 
-    fn get_proxied_children(&mut self) -> WidgetIterMut<S> {
+    fn get_proxied_children(&mut self) -> WidgetIterMut {
         WidgetIterMut::single(self.child.deref_mut())
     }
 
-    fn get_proxied_children_rev(&mut self) -> WidgetIterMut<S> {
+    fn get_proxied_children_rev(&mut self) -> WidgetIterMut {
         WidgetIterMut::single(self.child.deref_mut())
     }
 
@@ -89,50 +127,11 @@ impl<S: GlobalStateContract> CommonWidget<S> for Clip<S> {
     }
 }
 
-impl<GS: GlobalStateContract> Render<GS> for Clip<GS> {
-    fn get_primitives(&mut self, _: &mut Environment<GS>) -> Vec<Primitive> {
+impl Render for Clip {
+    fn get_primitives(&mut self, _: &mut Environment) -> Vec<Primitive> {
         // Look in process_get_primitives
         return vec![];
     }
 }
 
-
-impl<GS: GlobalStateContract> Clip<GS> {
-    pub fn new(child: Box<dyn Widget<GS>>) -> Box<Self <>> {
-        Box::new(Clip {
-            id: Uuid::new_v4(),
-            child,
-            position: [0.0, 0.0],
-            dimension: [0.0, 0.0],
-        })
-    }
-
-    fn process_get_primitives(&mut self, primitives: &mut Vec<Primitive>, env: &mut Environment<GS>, global_state: &GlobalStateContainer<GS>) {
-        primitives.push(Primitive {
-            kind: PrimitiveKind::Clip,
-            rect: OldRect::new(self.position, self.dimension),
-        });
-
-        for child in self.get_children_mut() {
-            child.process_get_primitives(primitives, env, global_state);
-        }
-
-        primitives.push(Primitive {
-            kind: PrimitiveKind::UnClip,
-            rect: OldRect::new(self.position, self.dimension),
-        });
-    }
-
-    /*pub fn body(&mut self) -> Box<dyn Widget<S>> {
-        widget_body!(
-            HStack (
-                alignment: Aligment::Top,
-                spacing: 10.0,
-            ) {
-                for i in $self.model {
-                    Text("Item: {}, index: {}", $item, $index),
-                }
-            }
-        )
-    }*/
-}
+impl WidgetExt for Clip {}

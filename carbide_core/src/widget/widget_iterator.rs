@@ -1,22 +1,21 @@
 use crate::widget::primitive::Widget;
 
-pub enum WidgetIterMut<'a, S> {
+pub enum WidgetIterMut<'a> {
     Empty,
-    Single(&'a mut dyn Widget<S>, Box<WidgetIterMut<'a, S>>),
-    Multi(Box<WidgetIterMut<'a, S>>, Box<WidgetIterMut<'a, S>>)
+    Single(&'a mut dyn Widget, Box<WidgetIterMut<'a>>),
+    Multi(Box<WidgetIterMut<'a>>, Box<WidgetIterMut<'a>>),
 }
 
-impl<'a, S> WidgetIterMut<'a, S> {
-    pub fn single(widget: &'a mut dyn Widget<S>) -> WidgetIterMut<'a,S> {
+impl<'a> WidgetIterMut<'a> {
+    pub fn single(widget: &'a mut dyn Widget) -> WidgetIterMut<'a> {
         WidgetIterMut::Single(widget, Box::new(WidgetIterMut::Empty))
     }
 }
 
-impl<'a, S> Iterator for WidgetIterMut<'a, S> {
-    type Item = &'a mut dyn Widget<S>;
+impl<'a> Iterator for WidgetIterMut<'a> {
+    type Item = &'a mut dyn Widget;
 
     fn next(&mut self) -> Option<Self::Item> {
-
         let mut i = WidgetIterMut::Empty;
 
         std::mem::swap(self, &mut i);
@@ -45,23 +44,22 @@ impl<'a, S> Iterator for WidgetIterMut<'a, S> {
     }
 }
 
-pub enum WidgetIter<'a, S> {
+pub enum WidgetIter<'a> {
     Empty,
-    Single(&'a dyn Widget<S>, Box<WidgetIter<'a, S>>),
-    Multi(Box<WidgetIter<'a, S>>, Box<WidgetIter<'a, S>>)
+    Single(&'a dyn Widget, Box<WidgetIter<'a>>),
+    Multi(Box<WidgetIter<'a>>, Box<WidgetIter<'a>>),
 }
 
-impl<'a, S> WidgetIter<'a, S> {
-    pub fn single(widget: &'a dyn Widget<S>) -> WidgetIter<'a, S> {
+impl<'a> WidgetIter<'a> {
+    pub fn single(widget: &'a dyn Widget) -> WidgetIter<'a> {
         WidgetIter::Single(widget, Box::new(WidgetIter::Empty))
     }
 }
 
-impl<'a, S> Iterator for WidgetIter<'a, S> {
-    type Item = &'a dyn Widget<S>;
+impl<'a> Iterator for WidgetIter<'a> {
+    type Item = &'a dyn Widget;
 
     fn next(&mut self) -> Option<Self::Item> {
-
         let mut i = WidgetIter::Empty;
 
         std::mem::swap(self, &mut i);

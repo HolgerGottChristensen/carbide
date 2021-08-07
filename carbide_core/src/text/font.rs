@@ -107,7 +107,7 @@ impl Font {
         })
     }
 
-    pub fn get_glyphs<GS: GlobalStateContract>(&self, text: &str, font_size: FontSize, scale_factor: Scalar, env: &mut Environment<GS>) -> (Vec<Scalar>, Vec<Glyph>) {
+    pub fn get_glyphs(&self, text: &str, font_size: FontSize, scale_factor: Scalar, env: &mut Environment) -> (Vec<Scalar>, Vec<Glyph>) {
         let scale = Font::size_to_scale(font_size, scale_factor);
         let mut next_width = 0.0;
         let mut widths = vec![];

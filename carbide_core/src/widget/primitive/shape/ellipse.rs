@@ -12,25 +12,25 @@ use crate::widget::types::triangle_store::TriangleStore;
 
 /// A simple, non-interactive widget for drawing a single **Ellipse**.
 #[derive(Debug, Clone, Widget)]
-pub struct Ellipse<GS> where GS: GlobalStateContract {
+pub struct Ellipse {
     pub id: Uuid,
     position: Point,
     dimension: Dimensions,
-    #[state] stroke_color: ColorState<GS>,
-    #[state] fill_color: ColorState<GS>,
+    #[state] stroke_color: ColorState,
+    #[state] fill_color: ColorState,
     style: ShapeStyle,
     stroke_style: StrokeStyle,
     triangle_store: TriangleStore,
 }
 
-impl<GS: GlobalStateContract> Ellipse<GS> {
-    pub fn fill<C: Into<ColorState<GS>>>(mut self, color: C) -> Box<Self> {
+impl Ellipse {
+    pub fn fill<C: Into<ColorState>>(mut self, color: C) -> Box<Self> {
         self.fill_color = color.into();
         self.style += ShapeStyle::Fill;
         Box::new(self)
     }
 
-    pub fn stroke<C: Into<ColorState<GS>>>(mut self, color: C) -> Box<Self> {
+    pub fn stroke<C: Into<ColorState>>(mut self, color: C) -> Box<Self> {
         self.stroke_color = color.into();
         self.style += ShapeStyle::Stroke;
         Box::new(self)
@@ -42,7 +42,7 @@ impl<GS: GlobalStateContract> Ellipse<GS> {
         Box::new(self)
     }
 
-    pub fn new() -> Box<Ellipse<GS>> {
+    pub fn new() -> Box<Ellipse> {
         Box::new(Ellipse {
             id: Uuid::new_v4(),
             position: [0.0, 0.0],
@@ -56,12 +56,12 @@ impl<GS: GlobalStateContract> Ellipse<GS> {
     }
 }
 
-impl<GS: GlobalStateContract> Layout<GS> for Ellipse<GS> {
+impl Layout for Ellipse {
     fn flexibility(&self) -> u32 {
         0
     }
 
-    fn calculate_size(&mut self, requested_size: Dimensions, env: &mut Environment<GS>) -> Dimensions {
+    fn calculate_size(&mut self, requested_size: Dimensions, _: &mut Environment) -> Dimensions {
         self.dimension = requested_size;
 
         requested_size
@@ -70,7 +70,7 @@ impl<GS: GlobalStateContract> Layout<GS> for Ellipse<GS> {
     fn position_children(&mut self) {}
 }
 
-impl<GS: GlobalStateContract> CommonWidget<GS> for Ellipse<GS> {
+impl CommonWidget for Ellipse {
     fn get_id(&self) -> Uuid {
         self.id
     }
@@ -83,19 +83,19 @@ impl<GS: GlobalStateContract> CommonWidget<GS> for Ellipse<GS> {
         Flags::EMPTY
     }
 
-    fn get_children(&self) -> WidgetIter<GS> {
+    fn get_children(&self) -> WidgetIter {
         WidgetIter::Empty
     }
 
-    fn get_children_mut(&mut self) -> WidgetIterMut<GS> {
+    fn get_children_mut(&mut self) -> WidgetIterMut {
         WidgetIterMut::Empty
     }
 
-    fn get_proxied_children(&mut self) -> WidgetIterMut<GS> {
+    fn get_proxied_children(&mut self) -> WidgetIterMut {
         WidgetIterMut::Empty
     }
 
-    fn get_proxied_children_rev(&mut self) -> WidgetIterMut<GS> {
+    fn get_proxied_children_rev(&mut self) -> WidgetIterMut {
         WidgetIterMut::Empty
     }
 
@@ -116,8 +116,8 @@ impl<GS: GlobalStateContract> CommonWidget<GS> for Ellipse<GS> {
     }
 }
 
-impl<GS: GlobalStateContract> Render<GS> for Ellipse<GS> {
-    fn get_primitives(&mut self, _: &mut Environment<GS>) -> Vec<Primitive> {
+impl Render for Ellipse {
+    fn get_primitives(&mut self, _: &mut Environment) -> Vec<Primitive> {
         let radii = vec2(self.get_width() as f32 / 2.0, self.get_height() as f32 / 2.0);
         let center = point(self.get_x() as f32 + radii.x, self.get_y() as f32 + radii.y);
         let rectangle = rect(self.get_x() as f32, self.get_y() as f32, self.get_width() as f32, self.get_height() as f32);
@@ -131,15 +131,15 @@ impl<GS: GlobalStateContract> Render<GS> for Ellipse<GS> {
             );
         });
 
-        let mut prims = self.triangle_store.get_primitives(*self.fill_color, *self.stroke_color);
+        let mut prims = self.triangle_store.get_primitives(*self.fill_color.value(), *self.stroke_color.value());
 
-        prims.extend(Rectangle::<GS>::debug_outline(OldRect::new(self.position, self.dimension), 1.0));
+        prims.extend(Rectangle::debug_outline(OldRect::new(self.position, self.dimension), 1.0));
 
         return prims;
     }
 }
 
-impl<GS: GlobalStateContract> Shape<GS> for Ellipse<GS> {
+impl Shape for Ellipse {
     fn get_triangle_store_mut(&mut self) -> &mut TriangleStore {
         &mut self.triangle_store
     }
@@ -153,4 +153,4 @@ impl<GS: GlobalStateContract> Shape<GS> for Ellipse<GS> {
     }
 }
 
-impl<GS: GlobalStateContract> WidgetExt<GS> for Ellipse<GS> {}
+impl WidgetExt for Ellipse {}

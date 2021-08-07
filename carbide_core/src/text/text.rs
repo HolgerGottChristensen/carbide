@@ -12,10 +12,10 @@ use crate::widget::types::text_wrap::Wrap;
 type BoundingBox = Rect;
 
 #[derive(Debug, Clone)]
-pub struct Text<GS> where GS: GlobalStateContract {
+pub struct Text {
     latest_requested_offset: Position,
     latest_requested_size: Dimension,
-    spans: Vec<TextSpan<GS>>,
+    spans: Vec<TextSpan>,
     latest_max_width: Scalar,
     latest_max_height: Scalar,
     scale_factor: Scalar,
@@ -33,8 +33,8 @@ pub struct Text<GS> where GS: GlobalStateContract {
     style_that_generated_this: TextStyle,
 }
 
-impl<GS: GlobalStateContract> Text<GS> {
-    pub fn new(string: String, style: TextStyle, generator: &dyn TextSpanGenerator<GS>, env: &mut Environment<GS>) -> Text<GS> {
+impl Text {
+    pub fn new(string: String, style: TextStyle, generator: &dyn TextSpanGenerator, env: &mut Environment) -> Text {
         let mut spans = generator.generate(&string, &style, env);
 
         Text {
@@ -115,7 +115,7 @@ impl<GS: GlobalStateContract> Text<GS> {
     }
 
     /// Layout the text within a bounding box and return the dimensions of the resulting layout.
-    pub fn calculate_size(&mut self, requested_size: Dimension, env: &Environment<GS>) -> Dimension {
+    pub fn calculate_size(&mut self, requested_size: Dimension, env: &Environment) -> Dimension {
         // Layout as if the layout is at x:0, y:0
 
         // Todo: If text is NoWrap, this is not needed.
@@ -138,7 +138,7 @@ impl<GS: GlobalStateContract> Text<GS> {
         Dimension::new(self.latest_max_width / self.scale_factor as f64, self.latest_max_height / self.scale_factor as f64)
     }
 
-    pub fn ensure_glyphs_added_to_atlas(&mut self, env: &mut Environment<GS>) {
+    pub fn ensure_glyphs_added_to_atlas(&mut self, env: &mut Environment) {
         if self.needs_to_update_atlas {
             if self.already_added_to_atlas {
                 //env.remove_glyphs_from_atlas()
@@ -161,7 +161,7 @@ impl<GS: GlobalStateContract> Text<GS> {
     }
 
     // Todo: add underline, strikethrough, and fix when that is char wraps for the first word in the span even when its not the first span.
-    fn calculate_size_with_word_break(&mut self, requested_size: Dimension, env: &Environment<GS>) {
+    fn calculate_size_with_word_break(&mut self, requested_size: Dimension, env: &Environment) {
         self.scale_factor = env.get_scale_factor();
         let requested_width = requested_size.width * self.scale_factor;
         let mut max_width = 0.0;
@@ -288,7 +288,7 @@ impl<GS: GlobalStateContract> Text<GS> {
         self.latest_max_width = max_width as f64;
     }
 
-    fn calculate_size_with_character_break(&mut self, requested_size: Dimension, env: &Environment<GS>) {
+    fn calculate_size_with_character_break(&mut self, requested_size: Dimension, env: &Environment) {
         self.scale_factor = env.get_scale_factor();
         let width = requested_size.width * self.scale_factor;
         let mut max_width = 0.0;
@@ -357,7 +357,7 @@ impl<GS: GlobalStateContract> Text<GS> {
         self.latest_max_width = max_width as f64;
     }
 
-    fn calculate_line_heights(&mut self, requested_size: Dimension, env: &Environment<GS>) {
+    fn calculate_line_heights(&mut self, requested_size: Dimension, env: &Environment) {
         let mut line_descends = vec![0.0];
         let mut line_ascends = vec![];
         let mut line_gaps = vec![];

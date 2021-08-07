@@ -5,20 +5,20 @@ use crate::flags::Flags;
 use crate::position::Dimensions;
 use crate::widget::widget_iterator::{WidgetIter, WidgetIterMut};
 
-pub trait CommonWidget<S> {
+pub trait CommonWidget {
     fn get_id(&self) -> Uuid;
     fn set_id(&mut self, id: Uuid);
     fn get_flag(&self) -> Flags;
 
     /// Get the logical children. This means for example for a vstack with a foreach,
     /// the children of the foreach is retrieved.
-    fn get_children(&self) -> WidgetIter<S>;
-    fn get_children_mut(&mut self) -> WidgetIterMut<S>;
+    fn get_children(&self) -> WidgetIter;
+    fn get_children_mut(&mut self) -> WidgetIterMut;
 
     /// Get the actual children. This means for example for a vstack with a foreach,
     /// the foreach widget is retrieved.
-    fn get_proxied_children(&mut self) -> WidgetIterMut<S>;
-    fn get_proxied_children_rev(&mut self) -> WidgetIterMut<S>;
+    fn get_proxied_children(&mut self) -> WidgetIterMut;
+    fn get_proxied_children_rev(&mut self) -> WidgetIterMut;
 
     fn get_position(&self) -> Point;
     fn set_position(&mut self, position: Point);
@@ -64,5 +64,4 @@ pub trait CommonWidget<S> {
             && point[1] >= self.get_y()
             && point[1] < self.get_y() + self.get_height()
     }
-
 }

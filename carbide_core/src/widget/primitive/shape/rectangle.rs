@@ -12,13 +12,13 @@ use crate::widget::types::triangle_store::TriangleStore;
 
 /// A basic, non-interactive rectangle shape widget.
 #[derive(Debug, Clone, Widget)]
-pub struct Rectangle<GS> where GS: GlobalStateContract {
+pub struct Rectangle {
     id: Uuid,
-    children: Vec<Box<dyn Widget<GS>>>,
+    children: Vec<Box<dyn Widget>>,
     position: Point,
     dimension: Dimensions,
-    #[state] fill_color: ColorState<GS>,
-    #[state] stroke_color: ColorState<GS>,
+    #[state] fill_color: ColorState,
+    #[state] stroke_color: ColorState,
     shrink_to_fit: bool,
     style: ShapeStyle,
     stroke_style: StrokeStyle,
@@ -26,14 +26,14 @@ pub struct Rectangle<GS> where GS: GlobalStateContract {
     triangle_store: TriangleStore,
 }
 
-impl<GS: GlobalStateContract> Rectangle<GS> {
-    pub fn fill<C: Into<ColorState<GS>>>(mut self, color: C) -> Box<Self> {
+impl Rectangle {
+    pub fn fill<C: Into<ColorState>>(mut self, color: C) -> Box<Self> {
         self.fill_color = color.into();
         self.style += ShapeStyle::Fill;
         Box::new(self)
     }
 
-    pub fn stroke<C: Into<ColorState<GS>>>(mut self, color: C) -> Box<Self> {
+    pub fn stroke<C: Into<ColorState>>(mut self, color: C) -> Box<Self> {
         self.stroke_color = color.into();
         self.style += ShapeStyle::Stroke;
         Box::new(self)
@@ -119,7 +119,7 @@ impl<GS: GlobalStateContract> Rectangle<GS> {
         ]
     }*/
 
-    pub fn initialize(children: Vec<Box<dyn Widget<GS>>>) -> Box<Rectangle<GS>> {
+    pub fn initialize(children: Vec<Box<dyn Widget>>) -> Box<Rectangle> {
         Box::new(Rectangle {
             id: Uuid::new_v4(),
             children,
@@ -136,12 +136,12 @@ impl<GS: GlobalStateContract> Rectangle<GS> {
 }
 
 
-impl<GS: GlobalStateContract> Layout<GS> for Rectangle<GS> {
+impl Layout for Rectangle {
     fn flexibility(&self) -> u32 {
         0
     }
 
-    fn calculate_size(&mut self, requested_size: Dimensions, env: &mut Environment<GS>) -> Dimensions {
+    fn calculate_size(&mut self, requested_size: Dimensions, env: &mut Environment) -> Dimensions {
         let mut max_child_size = [0.0, 0.0];
 
         for child in &mut self.children {
@@ -177,7 +177,7 @@ impl<GS: GlobalStateContract> Layout<GS> for Rectangle<GS> {
     }
 }
 
-impl<GS: GlobalStateContract> CommonWidget<GS> for Rectangle<GS> {
+impl CommonWidget for Rectangle {
     fn get_id(&self) -> Uuid {
         self.id
     }
@@ -190,7 +190,7 @@ impl<GS: GlobalStateContract> CommonWidget<GS> for Rectangle<GS> {
         Flags::EMPTY
     }
 
-    fn get_children(&self) -> WidgetIter<GS> {
+    fn get_children(&self) -> WidgetIter {
         self.children
             .iter()
             .rfold(WidgetIter::Empty, |acc, x| {
@@ -202,7 +202,7 @@ impl<GS: GlobalStateContract> CommonWidget<GS> for Rectangle<GS> {
             })
     }
 
-    fn get_children_mut(&mut self) -> WidgetIterMut<GS> {
+    fn get_children_mut(&mut self) -> WidgetIterMut {
         self.children
             .iter_mut()
             .rfold(WidgetIterMut::Empty, |acc, x| {
@@ -214,14 +214,14 @@ impl<GS: GlobalStateContract> CommonWidget<GS> for Rectangle<GS> {
             })
     }
 
-    fn get_proxied_children(&mut self) -> WidgetIterMut<GS> {
+    fn get_proxied_children(&mut self) -> WidgetIterMut {
         self.children.iter_mut()
             .rfold(WidgetIterMut::Empty, |acc, x| {
                 WidgetIterMut::Single(x, Box::new(acc))
             })
     }
 
-    fn get_proxied_children_rev(&mut self) -> WidgetIterMut<GS> {
+    fn get_proxied_children_rev(&mut self) -> WidgetIterMut {
         self.children.iter_mut()
             .fold(WidgetIterMut::Empty, |acc, x| {
                 WidgetIterMut::Single(x, Box::new(acc))
@@ -246,7 +246,7 @@ impl<GS: GlobalStateContract> CommonWidget<GS> for Rectangle<GS> {
     }
 }
 
-impl<GS: GlobalStateContract> Shape<GS> for Rectangle<GS> {
+impl Shape for Rectangle {
     fn get_triangle_store_mut(&mut self) -> &mut TriangleStore {
         &mut self.triangle_store
     }
@@ -260,20 +260,20 @@ impl<GS: GlobalStateContract> Shape<GS> for Rectangle<GS> {
     }
 }
 
-impl<GS: GlobalStateContract> Render<GS> for Rectangle<GS> {
-    fn get_primitives(&mut self, env: &mut Environment<GS>) -> Vec<Primitive> {
+impl Render for Rectangle {
+    fn get_primitives(&mut self, _: &mut Environment) -> Vec<Primitive> {
         let mut prims = vec![];
 
         match self.style {
             ShapeStyle::Default => {
                 prims.push(Primitive {
-                    kind: PrimitiveKind::Rectangle { color: *self.fill_color },
+                    kind: PrimitiveKind::Rectangle { color: *self.fill_color.value() },
                     rect: OldRect::new(self.position, self.dimension),
                 });
             }
             ShapeStyle::Fill => {
                 prims.push(Primitive {
-                    kind: PrimitiveKind::Rectangle { color: *self.fill_color },
+                    kind: PrimitiveKind::Rectangle { color: *self.fill_color.value() },
                     rect: OldRect::new(self.position, self.dimension),
                 });
             }
@@ -294,13 +294,13 @@ impl<GS: GlobalStateContract> Render<GS> for Rectangle<GS> {
                 let stroke_triangles = self.triangle_store.stroke_triangles.clone();
 
                 prims.push(Primitive {
-                    kind: PrimitiveKind::TrianglesSingleColor { color: Rgba::from(*self.stroke_color), triangles: stroke_triangles },
+                    kind: PrimitiveKind::TrianglesSingleColor { color: Rgba::from(*self.stroke_color.value()), triangles: stroke_triangles },
                     rect: OldRect::new(self.position, self.dimension),
                 });
             }
             ShapeStyle::FillAndStroke => {
                 prims.push(Primitive {
-                    kind: PrimitiveKind::Rectangle { color: *self.fill_color },
+                    kind: PrimitiveKind::Rectangle { color: *self.fill_color.value() },
                     rect: OldRect::new(self.position, self.dimension),
                 });
 
@@ -320,25 +320,16 @@ impl<GS: GlobalStateContract> Render<GS> for Rectangle<GS> {
                 let stroke_triangles = self.triangle_store.stroke_triangles.clone();
 
                 prims.push(Primitive {
-                    kind: PrimitiveKind::TrianglesSingleColor { color: Rgba::from(*self.stroke_color), triangles: stroke_triangles },
+                    kind: PrimitiveKind::TrianglesSingleColor { color: Rgba::from(*self.stroke_color.value()), triangles: stroke_triangles },
                     rect: OldRect::new(self.position, self.dimension),
                 });
             }
         }
 
-        prims.extend(Rectangle::<GS>::debug_outline(OldRect::new(self.position, self.dimension), 1.0));
+        prims.extend(Rectangle::debug_outline(OldRect::new(self.position, self.dimension), 1.0));
 
         return prims;
     }
 }
 
-/// Whether the rectangle is drawn as an outline or a filled color.
-#[derive(Copy, Clone, Debug, PartialEq)]
-pub enum Kind {
-    /// Only the outline of the rectangle is drawn.
-    Outline,
-    /// The rectangle area is filled with some color.
-    Fill,
-}
-
-impl<GS: GlobalStateContract> WidgetExt<GS> for Rectangle<GS> {}
+impl WidgetExt for Rectangle {}

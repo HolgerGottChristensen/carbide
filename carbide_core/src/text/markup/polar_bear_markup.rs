@@ -151,9 +151,9 @@ impl PolarBearMarkup {
     }
 }
 
-impl<GS: GlobalStateContract> TextSpanGenerator<GS> for PolarBearMarkup {
+impl TextSpanGenerator for PolarBearMarkup {
     // https://bear.app/faq/Markup%20:%20Markdown/Polar%20Bear%20markup%20language/
-    fn generate(&self, string: &str, style: &TextStyle, env: &mut Environment<GS>) -> Vec<TextSpan<GS>> {
+    fn generate(&self, string: &str, style: &TextStyle, env: &mut Environment) -> Vec<TextSpan> {
         let default_font_family_name = &style.font_family;
         let scale_factor = env.get_scale_factor();
         let polars = parse_polar_bear_markup(string).unwrap().1;
@@ -373,8 +373,8 @@ impl<GS: GlobalStateContract> TextSpanGenerator<GS> for PolarBearMarkup {
     }
 }
 
-impl<GS: GlobalStateContract> Into<Box<dyn TextSpanGenerator<GS>>> for PolarBearMarkup {
-    fn into(self) -> Box<dyn TextSpanGenerator<GS>> {
+impl Into<Box<dyn TextSpanGenerator>> for PolarBearMarkup {
+    fn into(self) -> Box<dyn TextSpanGenerator> {
         Box::new(self)
     }
 }

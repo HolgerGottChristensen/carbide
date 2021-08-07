@@ -5,18 +5,18 @@ use crate::widget::ChildRender;
 
 /// A basic, non-interactive rectangle shape widget.
 #[derive(Debug, Clone, Widget)]
-pub struct ZStack<GS> where GS: GlobalStateContract {
+pub struct ZStack {
     id: Uuid,
-    children: Vec<Box<dyn Widget<GS>>>,
+    children: Vec<Box<dyn Widget>>,
     position: Point,
     dimension: Dimensions,
     alignment: BasicLayouter,
 }
 
-impl<GS: GlobalStateContract> WidgetExt<GS> for ZStack<GS> {}
+impl WidgetExt for ZStack {}
 
-impl<S: GlobalStateContract> ZStack<S> {
-    pub fn initialize(children: Vec<Box<dyn Widget<S>>>) -> Box<ZStack<S>> {
+impl ZStack {
+    pub fn initialize(children: Vec<Box<dyn Widget>>) -> Box<ZStack> {
         Box::new(ZStack {
             id: Uuid::new_v4(),
             children,
@@ -32,13 +32,13 @@ impl<S: GlobalStateContract> ZStack<S> {
     }
 }
 
-impl<GS: GlobalStateContract> Layout<GS> for ZStack<GS> {
+impl Layout for ZStack {
     fn flexibility(&self) -> u32 {
         1
     }
 
-    fn calculate_size(&mut self, requested_size: Dimensions, env: &mut Environment<GS>) -> Dimensions {
-        let mut children_flexibilty: Vec<(u32, &mut dyn Widget<GS>)> = self.get_children_mut().map(|child| (child.flexibility(), child)).collect();
+    fn calculate_size(&mut self, requested_size: Dimensions, env: &mut Environment) -> Dimensions {
+        let mut children_flexibilty: Vec<(u32, &mut dyn Widget)> = self.get_children_mut().map(|child| (child.flexibility(), child)).collect();
         children_flexibilty.sort_by(|(a, _), (b, _)| a.cmp(&b));
         children_flexibilty.reverse();
 
@@ -73,7 +73,7 @@ impl<GS: GlobalStateContract> Layout<GS> for ZStack<GS> {
     }
 }
 
-impl<S: GlobalStateContract> CommonWidget<S> for ZStack<S> {
+impl CommonWidget for ZStack {
     fn get_id(&self) -> Uuid {
         self.id
     }
@@ -86,7 +86,7 @@ impl<S: GlobalStateContract> CommonWidget<S> for ZStack<S> {
         Flags::EMPTY
     }
 
-    fn get_children(&self) -> WidgetIter<S> {
+    fn get_children(&self) -> WidgetIter {
         self.children
             .iter()
             .map(|x| x.deref())
@@ -99,7 +99,7 @@ impl<S: GlobalStateContract> CommonWidget<S> for ZStack<S> {
             })
     }
 
-    fn get_children_mut(&mut self) -> WidgetIterMut<S> {
+    fn get_children_mut(&mut self) -> WidgetIterMut {
         self.children
             .iter_mut()
             .map(|x| x.deref_mut())
@@ -112,7 +112,7 @@ impl<S: GlobalStateContract> CommonWidget<S> for ZStack<S> {
             })
     }
 
-    fn get_proxied_children(&mut self) -> WidgetIterMut<S> {
+    fn get_proxied_children(&mut self) -> WidgetIterMut {
         self.children.iter_mut()
             .map(|x| x.deref_mut())
             .rfold(WidgetIterMut::Empty, |acc, x| {
@@ -120,7 +120,7 @@ impl<S: GlobalStateContract> CommonWidget<S> for ZStack<S> {
             })
     }
 
-    fn get_proxied_children_rev(&mut self) -> WidgetIterMut<S> {
+    fn get_proxied_children_rev(&mut self) -> WidgetIterMut {
         self.children.iter_mut()
             .map(|x| x.deref_mut())
             .fold(WidgetIterMut::Empty, |acc, x| {
@@ -145,6 +145,6 @@ impl<S: GlobalStateContract> CommonWidget<S> for ZStack<S> {
     }
 }
 
-impl<S: GlobalStateContract> ChildRender for ZStack<S> {}
+impl ChildRender for ZStack {}
 
 

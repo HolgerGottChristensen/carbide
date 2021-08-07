@@ -3,23 +3,44 @@ use crate::render::primitive_kind::PrimitiveKind;
 
 /// A basic, non-interactive rectangle shape widget.
 #[derive(Debug, Clone, Widget)]
-pub struct Border<GS> where GS: GlobalStateContract {
+pub struct Border {
     id: Uuid,
-    child: Box<dyn Widget<GS>>,
+    child: Box<dyn Widget>,
     position: Point,
     dimension: Dimensions,
-    #[state] color: ColorState<GS>,
+    #[state] color: ColorState,
     border_width: u32,
 }
 
-impl<GS: GlobalStateContract> WidgetExt<GS> for Border<GS> {}
+impl Border {
+    pub fn color<C: Into<ColorState>>(mut self, color: C) -> Box<Self> {
+        self.color = color.into();
+        Box::new(self)
+    }
 
-impl<GS: GlobalStateContract> Layout<GS> for Border<GS> {
+    pub fn border_width(mut self, width: u32) -> Box<Self> {
+        self.border_width = width;
+        Box::new(self)
+    }
+
+    pub fn initialize(child: Box<dyn Widget>) -> Box<Self> {
+        Box::new(Border {
+            id: Uuid::new_v4(),
+            child,
+            position: [0.0, 0.0],
+            dimension: [100.0, 100.0],
+            color: Color::random().into(),
+            border_width: 2,
+        })
+    }
+}
+
+impl Layout for Border {
     fn flexibility(&self) -> u32 {
         self.child.flexibility()
     }
 
-    fn calculate_size(&mut self, requested_size: Dimensions, env: &mut Environment<GS>) -> Dimensions {
+    fn calculate_size(&mut self, requested_size: Dimensions, env: &mut Environment) -> Dimensions {
         let border_width = self.border_width as f64;
         let dimensions = [requested_size[0] - border_width - border_width, requested_size[1] - border_width - border_width];
 
@@ -41,7 +62,7 @@ impl<GS: GlobalStateContract> Layout<GS> for Border<GS> {
     }
 }
 
-impl<S: GlobalStateContract> CommonWidget<S> for Border<S> {
+impl CommonWidget for Border {
     fn get_id(&self) -> Uuid {
         self.id
     }
@@ -54,7 +75,7 @@ impl<S: GlobalStateContract> CommonWidget<S> for Border<S> {
         Flags::EMPTY
     }
 
-    fn get_children(&self) -> WidgetIter<S> {
+    fn get_children(&self) -> WidgetIter {
         if self.child.get_flag() == Flags::PROXY {
             self.child.get_children()
         } else {
@@ -62,7 +83,7 @@ impl<S: GlobalStateContract> CommonWidget<S> for Border<S> {
         }
     }
 
-    fn get_children_mut(&mut self) -> WidgetIterMut<S> {
+    fn get_children_mut(&mut self) -> WidgetIterMut {
         if self.child.get_flag() == Flags::PROXY {
             self.child.get_children_mut()
         } else {
@@ -70,11 +91,11 @@ impl<S: GlobalStateContract> CommonWidget<S> for Border<S> {
         }
     }
 
-    fn get_proxied_children(&mut self) -> WidgetIterMut<S> {
+    fn get_proxied_children(&mut self) -> WidgetIterMut {
         WidgetIterMut::single(self.child.deref_mut())
     }
 
-    fn get_proxied_children_rev(&mut self) -> WidgetIterMut<S> {
+    fn get_proxied_children_rev(&mut self) -> WidgetIterMut {
         WidgetIterMut::single(self.child.deref_mut())
     }
 
@@ -95,8 +116,8 @@ impl<S: GlobalStateContract> CommonWidget<S> for Border<S> {
     }
 }
 
-impl<GS: GlobalStateContract> Render<GS> for Border<GS> {
-    fn get_primitives(&mut self, _: &mut Environment<GS>) -> Vec<Primitive> {
+impl Render for Border {
+    fn get_primitives(&mut self, _: &mut Environment) -> Vec<Primitive> {
         let rect = OldRect::new(self.position, self.dimension);
         let (l, r, b, t) = rect.l_r_b_t();
 
@@ -107,7 +128,7 @@ impl<GS: GlobalStateContract> Render<GS> for Border<GS> {
         let top_border = OldRect::new([l + width, b], [rect.w() - width * 2.0, width]);
         let bottom_border = OldRect::new([l + width, t - width], [rect.w() - width * 2.0, width]);
 
-        let border_color = *self.color;
+        let border_color = *self.color.value();
         let mut prims = vec![
             Primitive {
                 kind: PrimitiveKind::Rectangle { color: border_color },
@@ -131,25 +152,4 @@ impl<GS: GlobalStateContract> Render<GS> for Border<GS> {
     }
 }
 
-impl<GS: GlobalStateContract> Border<GS> {
-    pub fn color<C: Into<ColorState<GS>>>(mut self, color: C) -> Box<Self> {
-        self.color = color.into();
-        Box::new(self)
-    }
-
-    pub fn border_width(mut self, width: u32) -> Box<Self> {
-        self.border_width = width;
-        Box::new(self)
-    }
-
-    pub fn initialize(child: Box<dyn Widget<GS>>) -> Box<Self> {
-        Box::new(Border {
-            id: Uuid::new_v4(),
-            child,
-            position: [0.0, 0.0],
-            dimension: [100.0, 100.0],
-            color: Color::random().into(),
-            border_width: 2,
-        })
-    }
-}
+impl WidgetExt for Border {}

@@ -11,17 +11,17 @@ use crate::widget::Rectangle;
 
 /// A basic, non-interactive rectangle shape widget.
 #[derive(Debug, Clone, Widget)]
-pub struct Canvas<GS> where GS: GlobalStateContract {
+pub struct Canvas {
     id: Uuid,
     position: Point,
     dimension: Dimensions,
-    #[state] color: ColorState<GS>,
+    #[state] color: ColorState,
     //prim_store: Vec<Primitive>,
-    context: fn(OldRect, Context<GS>) -> Context<GS>,
+    context: fn(OldRect, Context) -> Context,
 }
 
-impl<GS: GlobalStateContract> Canvas<GS> {
-    pub fn initialize(context: fn(OldRect, Context<GS>) -> Context<GS>) -> Box<Self> {
+impl Canvas {
+    pub fn initialize(context: fn(OldRect, Context) -> Context) -> Box<Self> {
         Box::new(Canvas {
             id: Uuid::new_v4(),
             position: [0.0, 0.0],
@@ -85,7 +85,7 @@ impl<GS: GlobalStateContract> Canvas<GS> {
     }
 }
 
-impl<S: GlobalStateContract> CommonWidget<S> for Canvas<S> {
+impl CommonWidget for Canvas {
     fn get_id(&self) -> Uuid {
         self.id
     }
@@ -98,19 +98,19 @@ impl<S: GlobalStateContract> CommonWidget<S> for Canvas<S> {
         Flags::EMPTY
     }
 
-    fn get_children(&self) -> WidgetIter<S> {
+    fn get_children(&self) -> WidgetIter {
         WidgetIter::Empty
     }
 
-    fn get_children_mut(&mut self) -> WidgetIterMut<S> {
+    fn get_children_mut(&mut self) -> WidgetIterMut {
         WidgetIterMut::Empty
     }
 
-    fn get_proxied_children(&mut self) -> WidgetIterMut<S> {
+    fn get_proxied_children(&mut self) -> WidgetIterMut {
         WidgetIterMut::Empty
     }
 
-    fn get_proxied_children_rev(&mut self) -> WidgetIterMut<S> {
+    fn get_proxied_children_rev(&mut self) -> WidgetIterMut {
         WidgetIterMut::Empty
     }
 
@@ -131,8 +131,8 @@ impl<S: GlobalStateContract> CommonWidget<S> for Canvas<S> {
     }
 }
 
-impl<GS: GlobalStateContract> Render<GS> for Canvas<GS> {
-    fn get_primitives(&mut self, env: &mut Environment<GS>) -> Vec<Primitive> {
+impl Render for Canvas {
+    fn get_primitives(&mut self, env: &mut Environment) -> Vec<Primitive> {
         let context = Context::new();
 
         let rectangle = OldRect::new(self.get_position(), self.get_dimension());
@@ -144,29 +144,33 @@ impl<GS: GlobalStateContract> Render<GS> for Canvas<GS> {
 
         for (path, options) in paths {
             match options {
-                ShapeStyleWithOptions::Fill(fill_options, color) => {
-                    prims.push(self.get_fill_prim(path, fill_options, *color.clone()));
+                ShapeStyleWithOptions::Fill(fill_options, mut color) => {
+                    color.capture_state(env);
+                    prims.push(self.get_fill_prim(path, fill_options, *color.value()));
+                    color.release_state(env);
                 }
-                ShapeStyleWithOptions::Stroke(stroke_options, color) => {
-                    prims.push(self.get_stroke_prim(path, stroke_options, *color.clone()));
+                ShapeStyleWithOptions::Stroke(stroke_options, mut color) => {
+                    color.capture_state(env);
+                    prims.push(self.get_stroke_prim(path, stroke_options, *color.value()));
+                    color.release_state(env);
                 }
             }
         }
 
-        prims.extend(Rectangle::<GS>::debug_outline(OldRect::new(self.position, self.dimension), 1.0));
+        prims.extend(Rectangle::debug_outline(OldRect::new(self.position, self.dimension), 1.0));
 
         return prims;
     }
 }
 
-impl<GS: GlobalStateContract> WidgetExt<GS> for Canvas<GS> {}
+impl WidgetExt for Canvas {}
 
-impl<GS: GlobalStateContract> Layout<GS> for Canvas<GS> {
+impl Layout for Canvas {
     fn flexibility(&self) -> u32 {
         0
     }
 
-    fn calculate_size(&mut self, requested_size: Dimensions, env: &mut Environment<GS>) -> Dimensions {
+    fn calculate_size(&mut self, requested_size: Dimensions, env: &mut Environment) -> Dimensions {
         self.dimension = requested_size;
         requested_size
     }

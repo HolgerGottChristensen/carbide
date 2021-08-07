@@ -37,7 +37,7 @@ use crate::renderer::{atlas_cache_tex_desc, glyph_cache_tex_desc};
 use crate::texture_atlas_command::TextureAtlasCommand;
 
 // Todo: Look in to multisampling: https://github.com/gfx-rs/wgpu-rs/blob/v0.6/examples/msaa-line/main.rs
-pub struct Window<GS: GlobalStateContract> {
+pub struct Window {
     surface: wgpu::Surface,
     device: wgpu::Device,
     queue: wgpu::Queue,
@@ -47,18 +47,17 @@ pub struct Window<GS: GlobalStateContract> {
     render_pipeline: wgpu::RenderPipeline,
     diffuse_bind_group: wgpu::BindGroup,
     mesh: Mesh,
-    ui: Ui<GS>,
+    ui: Ui,
     image_map: ImageMap<Image>,
     glyph_cache_tex: Texture,
     atlas_cache_tex: Texture,
     bind_groups: HashMap<Id, DiffuseBindGroup>,
     texture_bind_group_layout: BindGroupLayout,
-    state: GlobalStateContainer<GS>,
     inner_window: winit::window::Window,
     event_loop: Option<EventLoop<()>>,
 }
 
-impl<T: GlobalStateContract> carbide_core::window::TWindow<T> for Window<T> {
+impl carbide_core::window::TWindow for Window {
     fn add_font_family(&mut self, mut family: FontFamily) -> String {
         let family_name = family.name.clone();
         self.ui.environment.add_font_family(family);
@@ -87,7 +86,7 @@ impl<T: GlobalStateContract> carbide_core::window::TWindow<T> for Window<T> {
         id
     }
 
-    fn set_widgets(&mut self, w: Box<dyn Widget<T>>) {
+    fn set_widgets(&mut self, w: Box<dyn Widget>) {
         self.ui.widgets = Rectangle::initialize(vec![
             OverlaidLayer::new(
                 "controls_popup_layer",
@@ -98,7 +97,7 @@ impl<T: GlobalStateContract> carbide_core::window::TWindow<T> for Window<T> {
     }
 }
 
-impl<T: GlobalStateContract> Window<T> {
+impl Window {
     pub fn path_to_assets(path: &str) -> PathBuf {
         let assets = find_folder::Search::KidsThenParents(3, 5)
             .for_folder("assets")
@@ -106,7 +105,7 @@ impl<T: GlobalStateContract> Window<T> {
         assets.join(path)
     }
 
-    pub fn new(title: String, width: u32, height: u32, icon: Option<PathBuf>, state: T) -> Self {
+    pub fn new(title: String, width: u32, height: u32, icon: Option<PathBuf>) -> Self {
         let event_loop = EventLoop::new();
 
         let loaded_icon = if let Some(path) = icon {
@@ -149,7 +148,7 @@ impl<T: GlobalStateContract> Window<T> {
         let pixel_dimensions = [inner_window.inner_size().width as f64, inner_window.inner_size().height as f64];
         let scale_factor = inner_window.scale_factor();
 
-        let ui: Ui<T> = Ui::new(pixel_dimensions, scale_factor);
+        let ui = Ui::new(pixel_dimensions, scale_factor);
 
         // The instance is a handle to our GPU
         // BackendBit::PRIMARY => Vulkan + Metal + DX12 + Browser WebGPU
@@ -324,7 +323,6 @@ impl<T: GlobalStateContract> Window<T> {
             atlas_cache_tex,
             bind_groups,
             texture_bind_group_layout,
-            state: Rc::new(RefCell::new(state)),
             inner_window,
             event_loop: Some(event_loop),
         }
@@ -334,7 +332,7 @@ impl<T: GlobalStateContract> Window<T> {
         self.size = new_size;
         self.ui.set_window_width(self.size.width as f64);
         self.ui.set_window_height(self.size.height as f64);
-        self.ui.handle_event(Input::Redraw, &mut self.state);
+        self.ui.handle_event(Input::Redraw);
         self.sc_desc.width = new_size.width;
         self.sc_desc.height = new_size.height;
         self.swap_chain = self.device.create_swap_chain(&self.surface, &self.sc_desc);
@@ -344,7 +342,7 @@ impl<T: GlobalStateContract> Window<T> {
         match convert_window_event(event, &self.inner_window) {
             None => false,
             Some(input) => {
-                self.ui.handle_event(input, &mut self.state);
+                self.ui.handle_event(input);
                 false
             }
         }
@@ -352,7 +350,7 @@ impl<T: GlobalStateContract> Window<T> {
 
     fn update(&mut self) {
         let update_start = Instant::now();
-        self.ui.delegate_events(&self.state);
+        self.ui.delegate_events();
         println!("Time for update: {:?}us", update_start.elapsed().as_micros());
     }
 
@@ -373,7 +371,7 @@ impl<T: GlobalStateContract> Window<T> {
         println!("encodere: {:?}us", now.elapsed().as_micros());
 
         let now = Instant::now();
-        let primitives = self.ui.draw(&self.state);
+        let primitives = self.ui.draw();
         println!("Time for draw: {:?}us", now.elapsed().as_micros());
         let now = Instant::now();
         let fill = self.mesh.fill(OldRect::new([0.0, 0.0], [self.size.width as f64, self.size.height as f64]), &mut self.ui.environment, &self.image_map, primitives).unwrap();

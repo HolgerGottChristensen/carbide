@@ -1,93 +1,61 @@
 use std::any::Any;
+use std::cell::RefCell;
 use std::fmt::{Debug, Formatter};
 use std::marker::PhantomData;
 use std::ops::{Deref, DerefMut};
+use std::rc::Rc;
 
 use uuid::Uuid;
 
 use crate::environment::environment::Environment;
+use crate::prelude::value_cell::{ValueRef, ValueRefMut};
 use crate::state::{State, StateContract, TState};
 use crate::state::global_state::{GlobalStateContainer, GlobalStateContract};
 use crate::state::state_key::StateKey;
+use crate::state::value_cell::ValueCell;
 use crate::state::widget_state::WidgetState;
 
+type InnerState<T> = Rc<ValueCell<T>>;
+
+#[derive(Clone)]
 pub struct LocalState<T> where T: StateContract {
     key: StateKey,
-    value: Option<Box<dyn Any>>,
-    phantom: PhantomData<T>,
+    value: InnerState<T>,
 }
 
 impl<T: StateContract + 'static> LocalState<T> {
     pub fn new(value: T) -> Self {
         LocalState {
             key: StateKey::Uuid(Uuid::new_v4()),
-            value: Some(Box::new(value)),
-            phantom: Default::default(),
-        }
-    }
-
-    pub(crate) fn key(&self) -> &StateKey {
-        &self.key
-    }
-
-    pub(crate) fn value(&mut self) -> &mut Option<Box<dyn Any>> {
-        &mut self.value
-    }
-}
-
-impl<T: StateContract + 'static> Clone for LocalState<T> {
-    fn clone(&self) -> Self {
-        LocalState {
-            key: self.key.clone(),
-            value: None,
-            phantom: Default::default(),
+            value: Rc::new(ValueCell::new(value)),
         }
     }
 }
 
-impl<T: StateContract + 'static> Deref for LocalState<T> {
-    type Target = T;
+impl<T: StateContract + 'static> State<T> for LocalState<T> {
+    fn capture_state(&mut self, _: &mut Environment) {}
 
-    fn deref(&self) -> &Self::Target {
-        self.value.as_ref()
-            .expect("The local state is used before it has been captured")
-            .deref()
-            .downcast_ref()
-            .expect("Could not downcast ref for local state")
-    }
-}
+    fn release_state(&mut self, _: &mut Environment) {}
 
-impl<T: StateContract + 'static> DerefMut for LocalState<T> {
-    fn deref_mut(&mut self) -> &mut Self::Target {
-        self.value
-            .as_mut()
-            .expect("The local state is used before it has been captured")
-            .deref_mut()
-            .downcast_mut()
-            .expect("Could not downcast ref for local state")
-    }
-}
-
-impl<T: StateContract + 'static, GS: GlobalStateContract> State<T, GS> for LocalState<T> {
-    fn capture_state(&mut self, env: &mut Environment<GS>, _: &GlobalStateContainer<GS>) {
-        env.swap_local_state(self);
+    fn value(&self) -> ValueRef<T> {
+        self.value.borrow()
     }
 
-    fn release_state(&mut self, env: &mut Environment<GS>) {
-        env.swap_local_state(self);
+    fn value_mut(&mut self) -> ValueRefMut<T> {
+        self.value.borrow_mut()
     }
 }
 
 impl<T: StateContract + 'static> Debug for LocalState<T> {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("State::LocalState")
-            .field("value", self.deref())
+            .field("value", &*self.value())
             .finish()
     }
 }
 
-impl<T: StateContract + 'static, GS: GlobalStateContract> Into<TState<T, GS>> for Box<LocalState<T>> {
-    fn into(self) -> TState<T, GS> {
+impl<T: StateContract + 'static> Into<TState<T>> for Box<LocalState<T>> {
+    fn into(self) -> TState<T> {
         WidgetState::new(self)
     }
 }

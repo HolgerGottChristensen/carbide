@@ -113,7 +113,7 @@ impl<GS: GlobalStateContract> CommonWidget<GS> for PlainCheckBox<GS> {
         Flags::FOCUSABLE
     }
 
-    fn get_children(&self) -> WidgetIter<GS> {
+    fn get_children(&self) -> WidgetIter {
         if self.child.get_flag() == Flags::PROXY {
             self.child.get_children()
         } else {
@@ -121,7 +121,7 @@ impl<GS: GlobalStateContract> CommonWidget<GS> for PlainCheckBox<GS> {
         }
     }
 
-    fn get_children_mut(&mut self) -> WidgetIterMut<GS> {
+    fn get_children_mut(&mut self) -> WidgetIterMut {
         if self.child.get_flag() == Flags::PROXY {
             self.child.get_children_mut()
         } else {
@@ -129,11 +129,11 @@ impl<GS: GlobalStateContract> CommonWidget<GS> for PlainCheckBox<GS> {
         }
     }
 
-    fn get_proxied_children(&mut self) -> WidgetIterMut<GS> {
+    fn get_proxied_children(&mut self) -> WidgetIterMut {
         WidgetIterMut::single(&mut self.child)
     }
 
-    fn get_proxied_children_rev(&mut self) -> WidgetIterMut<GS> {
+    fn get_proxied_children_rev(&mut self) -> WidgetIterMut {
         WidgetIterMut::single(&mut self.child)
     }
 
@@ -161,7 +161,7 @@ impl<GS: GlobalStateContract> Layout<GS> for PlainCheckBox<GS> {
         10
     }
 
-    fn calculate_size(&mut self, requested_size: Dimensions, env: &mut Environment<GS>) -> Dimensions {
+    fn calculate_size(&mut self, requested_size: Dimensions, env: &mut Environment) -> Dimensions {
         if let Some(child) = self.get_children_mut().next() {
             child.calculate_size(requested_size, env);
         }

@@ -2,7 +2,9 @@ use std::ops::{Deref, DerefMut};
 
 use crate::prelude::{Environment, EnvironmentFontSize, GlobalStateContract, State};
 use crate::prelude::global_state::GlobalStateContainer;
+use crate::prelude::value_cell::ValueRef;
 use crate::state::state_key::StateKey;
+use crate::state::value_cell::ValueRefMut;
 
 #[derive(Clone, Debug)]
 pub struct EnvironmentFontSizeState {
@@ -33,12 +35,20 @@ impl DerefMut for EnvironmentFontSizeState {
     }
 }
 
-impl<GS: GlobalStateContract> State<u32, GS> for EnvironmentFontSizeState {
-    fn capture_state(&mut self, env: &mut Environment<GS>, _: &GlobalStateContainer<GS>) {
+impl State<u32> for EnvironmentFontSizeState {
+    fn capture_state(&mut self, env: &mut Environment) {
         if let Some(size) = env.get_font_size(&self.key) {
             self.value = size;
         }
     }
 
-    fn release_state(&mut self, _: &mut Environment<GS>) {}
+    fn release_state(&mut self, _: &mut Environment) {}
+
+    fn value(&self) -> ValueRef<u32> {
+        todo!()//Box::new(self.value.borrow())
+    }
+
+    fn value_mut(&mut self) -> ValueRefMut<u32> {
+        todo!()//Box::new(self.value.borrow_mut())
+    }
 }

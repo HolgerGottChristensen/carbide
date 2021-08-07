@@ -11,26 +11,24 @@ use crate::widget::types::scroll_direction::ScrollDirection;
 //#[event(handle_mouse_event, handle_other_event)]
 //#[state_sync(update_all_widget_state)]
 #[render(process_get_primitives)]
-pub struct Scroll<GS> where GS: GlobalStateContract {
+pub struct Scroll {
     id: Uuid,
-    child: Box<dyn Widget<GS>>,
+    child: Box<dyn Widget>,
     position: Point,
     dimension: Dimensions,
     scroll_offset: [f64; 2],
     scroll_directions: ScrollDirection,
-    scrollbar_horizontal: Box<dyn Widget<GS>>,
-    scrollbar_vertical: Box<dyn Widget<GS>>,
+    scrollbar_horizontal: Box<dyn Widget>,
+    scrollbar_vertical: Box<dyn Widget>,
     drag_started_on_vertical_scrollbar: bool,
     drag_started_on_horizontal_scrollbar: bool,
     vertical_scrollbar_hovered: bool,
     horizontal_scrollbar_hovered: bool,
-    scrollbar_horizontal_background: Box<dyn Widget<GS>>,
-    scrollbar_vertical_background: Box<dyn Widget<GS>>,
+    scrollbar_horizontal_background: Box<dyn Widget>,
+    scrollbar_vertical_background: Box<dyn Widget>,
 }
 
-impl<GS: GlobalStateContract> WidgetExt<GS> for Scroll<GS> {}
-
-impl<GS: GlobalStateContract> Scroll<GS> {
+impl Scroll {
     /*fn update_all_widget_state(&mut self, env: &mut Environment<GS>, global_state: &GS) {
         self.scrollbar_horizontal.sync_state(env, global_state);
         self.scrollbar_vertical.sync_state(env, global_state);
@@ -71,7 +69,7 @@ impl<GS: GlobalStateContract> Scroll<GS> {
         }
     }
 
-    pub fn new(child: Box<dyn Widget<GS>>) -> Box<Self> {
+    pub fn new(child: Box<dyn Widget>) -> Box<Self> {
         Box::new(Self {
             id: Uuid::new_v4(),
             child,
@@ -206,35 +204,35 @@ impl<GS: GlobalStateContract> Scroll<GS> {
         }
     }*/
 
-    fn process_get_primitives(&mut self, primitives: &mut Vec<Primitive>, env: &mut Environment<GS>, global_state: &GlobalStateContainer<GS>) {
+    fn process_get_primitives(&mut self, primitives: &mut Vec<Primitive>, env: &mut Environment) {
         primitives.extend(self.get_children_mut().flat_map(|f| f.get_primitives(env)));
 
         if (self.scroll_directions == ScrollDirection::Both ||
             self.scroll_directions == ScrollDirection::Vertical) && self.child.get_height() > self.get_height() {
             if self.vertical_scrollbar_hovered || self.drag_started_on_vertical_scrollbar {
-                self.scrollbar_vertical_background.process_get_primitives(primitives, env, global_state);
+                self.scrollbar_vertical_background.process_get_primitives(primitives, env);
             }
 
-            self.scrollbar_vertical.process_get_primitives(primitives, env, global_state);
+            self.scrollbar_vertical.process_get_primitives(primitives, env);
         }
 
         if (self.scroll_directions == ScrollDirection::Both ||
             self.scroll_directions == ScrollDirection::Horizontal) && self.child.get_width() > self.get_width() {
             if self.horizontal_scrollbar_hovered || self.drag_started_on_horizontal_scrollbar {
-                self.scrollbar_horizontal_background.process_get_primitives(primitives, env, global_state);
+                self.scrollbar_horizontal_background.process_get_primitives(primitives, env);
             }
 
-            self.scrollbar_horizontal.process_get_primitives(primitives, env, global_state);
+            self.scrollbar_horizontal.process_get_primitives(primitives, env);
         }
     }
 }
 
-impl<GS: GlobalStateContract> Layout<GS> for Scroll<GS> {
+impl Layout for Scroll {
     fn flexibility(&self) -> u32 {
         0
     }
 
-    fn calculate_size(&mut self, requested_size: Dimensions, env: &mut Environment<GS>) -> Dimensions {
+    fn calculate_size(&mut self, requested_size: Dimensions, env: &mut Environment) -> Dimensions {
         self.child.calculate_size(requested_size, env);
 
         self.keep_y_within_bounds();
@@ -344,7 +342,7 @@ impl<GS: GlobalStateContract> Layout<GS> for Scroll<GS> {
     }
 }
 
-impl<S: GlobalStateContract> CommonWidget<S> for Scroll<S> {
+impl CommonWidget for Scroll {
     fn get_id(&self) -> Uuid {
         self.id
     }
@@ -357,7 +355,7 @@ impl<S: GlobalStateContract> CommonWidget<S> for Scroll<S> {
         Flags::EMPTY
     }
 
-    fn get_children(&self) -> WidgetIter<S> {
+    fn get_children(&self) -> WidgetIter {
         if self.child.get_flag() == Flags::PROXY {
             self.child.get_children()
         } else {
@@ -365,7 +363,7 @@ impl<S: GlobalStateContract> CommonWidget<S> for Scroll<S> {
         }
     }
 
-    fn get_children_mut(&mut self) -> WidgetIterMut<S> {
+    fn get_children_mut(&mut self) -> WidgetIterMut {
         if self.child.get_flag() == Flags::PROXY {
             self.child.get_children_mut()
         } else {
@@ -373,14 +371,13 @@ impl<S: GlobalStateContract> CommonWidget<S> for Scroll<S> {
         }
     }
 
-    fn get_proxied_children(&mut self) -> WidgetIterMut<S> {
+    fn get_proxied_children(&mut self) -> WidgetIterMut {
         WidgetIterMut::single(self.child.deref_mut())
     }
 
-    fn get_proxied_children_rev(&mut self) -> WidgetIterMut<S> {
+    fn get_proxied_children_rev(&mut self) -> WidgetIterMut {
         WidgetIterMut::single(self.child.deref_mut())
     }
-
 
     fn get_position(&self) -> Point {
         self.position
@@ -399,12 +396,14 @@ impl<S: GlobalStateContract> CommonWidget<S> for Scroll<S> {
     }
 }
 
-impl<GS: GlobalStateContract> Render<GS> for Scroll<GS> {
-    fn get_primitives(&mut self, env: &mut Environment<GS>) -> Vec<Primitive> {
+impl Render for Scroll {
+    fn get_primitives(&mut self, _: &mut Environment) -> Vec<Primitive> {
         let mut prims = vec![];
         return prims;
     }
 }
+
+impl WidgetExt for Scroll {}
 
 
 

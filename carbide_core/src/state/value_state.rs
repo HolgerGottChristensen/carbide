@@ -2,6 +2,7 @@ use std::fmt::{Debug, Formatter};
 use std::ops::{Deref, DerefMut};
 
 use crate::environment::environment::Environment;
+use crate::prelude::value_cell::{ValueRef, ValueRefMut};
 use crate::state::{State, StateContract, TState};
 use crate::state::global_state::{GlobalStateContainer, GlobalStateContract};
 use crate::state::widget_state::WidgetState;
@@ -33,10 +34,18 @@ impl<T: StateContract> DerefMut for ValueState<T> {
     }
 }
 
-impl<T: StateContract, GS: GlobalStateContract> State<T, GS> for ValueState<T> {
-    fn capture_state(&mut self, _: &mut Environment<GS>, _: &GlobalStateContainer<GS>) {}
+impl<T: StateContract> State<T> for ValueState<T> {
+    fn capture_state(&mut self, _: &mut Environment) {}
 
-    fn release_state(&mut self, _: &mut Environment<GS>) {}
+    fn release_state(&mut self, _: &mut Environment) {}
+
+    fn value(&self) -> ValueRef<T> {
+        ValueRef::Borrow(&self.value)
+    }
+
+    fn value_mut(&mut self) -> ValueRefMut<T> {
+        ValueRefMut::Borrow(&mut self.value)
+    }
 }
 
 impl<T: StateContract> Debug for ValueState<T> {
@@ -47,14 +56,14 @@ impl<T: StateContract> Debug for ValueState<T> {
     }
 }
 
-impl<T: StateContract + 'static, GS: GlobalStateContract> Into<TState<T, GS>> for Box<ValueState<T>> {
-    fn into(self) -> TState<T, GS> {
+impl<T: StateContract + 'static> Into<TState<T>> for Box<ValueState<T>> {
+    fn into(self) -> TState<T> {
         WidgetState::new(self)
     }
 }
 
 /// This should implement into T state for pretty much all T.
-impl<T: StateContract + 'static, GS: GlobalStateContract> From<T> for TState<T, GS> {
+impl<T: StateContract + 'static> From<T> for TState<T> {
     fn from(t: T) -> Self {
         WidgetState::new(Box::new(ValueState::new(t)))
     }

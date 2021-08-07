@@ -7,17 +7,17 @@ use crate::text::text_span::TextSpan;
 use crate::text::text_style::TextStyle;
 use crate::widget::GlobalStateContract;
 
-pub trait TextSpanGenerator<GS>: DynClone + Debug where GS: GlobalStateContract {
-    fn generate(&self, string: &str, style: &TextStyle, env: &mut Environment<GS>) -> Vec<TextSpan<GS>>;
+pub trait TextSpanGenerator: DynClone + Debug {
+    fn generate(&self, string: &str, style: &TextStyle, env: &mut Environment) -> Vec<TextSpan>;
 }
 
-dyn_clone::clone_trait_object!(<GS: GlobalStateContract> TextSpanGenerator<GS>);
+dyn_clone::clone_trait_object!(TextSpanGenerator);
 
 #[derive(Debug, Clone)]
 pub struct NoStyleTextSpanGenerator;
 
-impl<GS: GlobalStateContract> TextSpanGenerator<GS> for NoStyleTextSpanGenerator {
-    fn generate(&self, string: &str, style: &TextStyle, env: &mut Environment<GS>) -> Vec<TextSpan<GS>> {
+impl TextSpanGenerator for NoStyleTextSpanGenerator {
+    fn generate(&self, string: &str, style: &TextStyle, env: &mut Environment) -> Vec<TextSpan> {
         TextSpan::new(string, style, env)
     }
 }

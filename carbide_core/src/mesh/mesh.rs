@@ -137,10 +137,10 @@ impl Mesh {
     ///   pixel space of the viewport.
     /// - `image_map`: a map from image IDs to images.
     /// - `primitives`: the sequence of UI primitives in order of depth to be rendered.
-    pub fn fill<P, I, GS: GlobalStateContract>(
+    pub fn fill<P, I>(
         &mut self,
         viewport: OldRect,
-        env: &mut Environment<GS>,
+        env: &mut Environment,
         image_map: &image_map::ImageMap<I>,
         mut primitives: P,
     ) -> Result<Fill, RustTypeCacheWriteError>

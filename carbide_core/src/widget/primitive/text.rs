@@ -21,24 +21,24 @@ use crate::widget::types::text_wrap::Wrap;
 /// If some horizontal dimension is given, the text will automatically wrap to the width and align
 /// in accordance with the produced **Alignment**.
 #[derive(Debug, Clone, Widget)]
-pub struct Text<GS> where GS: GlobalStateContract {
+pub struct Text {
     id: Uuid,
     position: Point,
     dimension: Dimensions,
     wrap_mode: Wrap,
-    #[state] pub text: StringState<GS>,
-    #[state] font_size: U32State<GS>,
-    #[state] color: ColorState<GS>,
+    #[state] pub text: StringState,
+    #[state] font_size: U32State,
+    #[state] color: ColorState,
     font_family: String,
     font_style: FontStyle,
     font_weight: FontWeight,
     text_decoration: TextDecoration,
-    internal_text: Option<InternalText<GS>>,
-    text_span_generator: Box<dyn TextSpanGenerator<GS>>,
+    internal_text: Option<InternalText>,
+    text_span_generator: Box<dyn TextSpanGenerator>,
 }
 
-impl<GS: GlobalStateContract> Text<GS> {
-    pub fn new<K: Into<StringState<GS>>>(text: K) -> Box<Self> {
+impl Text {
+    pub fn new<K: Into<StringState>>(text: K) -> Box<Self> {
         let text = text.into();
 
         Box::new(Text {
@@ -58,7 +58,7 @@ impl<GS: GlobalStateContract> Text<GS> {
         })
     }
 
-    pub fn new_with_generator<K: Into<StringState<GS>>, G: Into<Box<dyn TextSpanGenerator<GS>>>>(text: K, generator: G) -> Box<Self> {
+    pub fn new_with_generator<K: Into<StringState>, G: Into<Box<dyn TextSpanGenerator>>>(text: K, generator: G) -> Box<Self> {
         let text = text.into();
 
         Box::new(Text {
@@ -78,12 +78,12 @@ impl<GS: GlobalStateContract> Text<GS> {
         })
     }
 
-    pub fn color<C: Into<ColorState<GS>>>(mut self, color: C) -> Box<Self> {
+    pub fn color<C: Into<ColorState>>(mut self, color: C) -> Box<Self> {
         self.color = color.into();
         Box::new(self)
     }
 
-    pub fn font_size<K: Into<U32State<GS>>>(mut self, size: K) -> Box<Self> {
+    pub fn font_size<K: Into<U32State>>(mut self, size: K) -> Box<Self> {
         self.font_size = size.into();
         Box::new(self)
     }
@@ -112,7 +112,7 @@ impl<GS: GlobalStateContract> Text<GS> {
         self.justify(justify::Justify::Right)
     }
 
-    pub fn get_positioned_glyphs(&self, env: &Environment<GS>, scale_factor: f32) -> Vec<Glyph> {
+    pub fn get_positioned_glyphs(&self, _: &Environment, scale_factor: f32) -> Vec<Glyph> {
         if let Some(internal) = &self.internal_text {
             internal.first_glyphs()
         } else {
@@ -123,33 +123,32 @@ impl<GS: GlobalStateContract> Text<GS> {
     pub fn get_style(&self) -> TextStyle {
         TextStyle {
             font_family: self.font_family.clone(),
-            font_size: *self.font_size,
+            font_size: *self.font_size.value(),
             font_style: self.font_style,
             font_weight: self.font_weight,
             text_decoration: self.text_decoration.clone(),
-            color: Some(*self.color.clone()),
+            color: Some(self.color.value().deref().clone()),
         }
     }
 }
 
-impl<GS: GlobalStateContract> Layout<GS> for Text<GS> {
+impl Layout for Text {
     fn flexibility(&self) -> u32 {
         2
     }
 
-    fn calculate_size(&mut self, requested_size: Dimensions, env: &mut Environment<GS>) -> Dimensions {
+    fn calculate_size(&mut self, requested_size: Dimensions, env: &mut Environment) -> Dimensions {
         let now = Instant::now();
         let style = self.get_style();
 
         if let None = self.internal_text {
-            let text = (&*self.text).clone();
+            let text = self.text.value().deref().clone();
             let style = self.get_style();
             self.internal_text = Some(InternalText::new(text, style, self.text_span_generator.borrow(), env))
         }
 
-
         if let Some(internal) = &mut self.internal_text {
-            let text = (&*self.text).clone();
+            let text = self.text.value().deref().clone();
             if internal.string_that_generated_this() != &text {
                 *internal = InternalText::new(text, style, self.text_span_generator.borrow(), env);
             }
@@ -171,10 +170,10 @@ impl<GS: GlobalStateContract> Layout<GS> for Text<GS> {
     }
 }
 
-impl<GS: GlobalStateContract> Render<GS> for Text<GS> {
-    fn get_primitives(&mut self, env: &mut Environment<GS>) -> Vec<Primitive> {
+impl Render for Text {
+    fn get_primitives(&mut self, env: &mut Environment) -> Vec<Primitive> {
         let mut prims: Vec<Primitive> = vec![];
-        let default_color = *self.color.clone();
+        let default_color = *self.color.value();
 
         if let Some(internal) = &mut self.internal_text {
             internal.ensure_glyphs_added_to_atlas(env);
@@ -202,13 +201,13 @@ impl<GS: GlobalStateContract> Render<GS> for Text<GS> {
             }
         }
 
-        prims.extend(Rectangle::<GS>::debug_outline(OldRect::new(self.position, self.dimension), 1.0));
+        prims.extend(Rectangle::debug_outline(OldRect::new(self.position, self.dimension), 1.0));
 
         return prims;
     }
 }
 
-impl<S: GlobalStateContract> CommonWidget<S> for Text<S> {
+impl CommonWidget for Text {
     fn get_id(&self) -> Uuid {
         self.id
     }
@@ -221,19 +220,19 @@ impl<S: GlobalStateContract> CommonWidget<S> for Text<S> {
         Flags::EMPTY
     }
 
-    fn get_children(&self) -> WidgetIter<S> {
+    fn get_children(&self) -> WidgetIter {
         WidgetIter::Empty
     }
 
-    fn get_children_mut(&mut self) -> WidgetIterMut<S> {
+    fn get_children_mut(&mut self) -> WidgetIterMut {
         WidgetIterMut::Empty
     }
 
-    fn get_proxied_children(&mut self) -> WidgetIterMut<S> {
+    fn get_proxied_children(&mut self) -> WidgetIterMut {
         WidgetIterMut::Empty
     }
 
-    fn get_proxied_children_rev(&mut self) -> WidgetIterMut<S> {
+    fn get_proxied_children_rev(&mut self) -> WidgetIterMut {
         WidgetIterMut::Empty
     }
 
@@ -254,4 +253,4 @@ impl<S: GlobalStateContract> CommonWidget<S> for Text<S> {
     }
 }
 
-impl<GS: GlobalStateContract> WidgetExt<GS> for Text<GS> {}
+impl WidgetExt for Text {}

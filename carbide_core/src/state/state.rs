@@ -1,30 +1,37 @@
+use std::cell::Ref;
+use std::cell::RefMut;
 use std::fmt::Debug;
 use std::ops::{Deref, DerefMut};
 
 use dyn_clone::DynClone;
 
 use crate::prelude::Environment;
+use crate::prelude::value_cell::ValueRef;
 use crate::state::*;
 use crate::state::global_state::{GlobalStateContainer, GlobalStateContract};
+use crate::state::value_cell::ValueRefMut;
 
-pub trait State<T, GS>: DynClone + Deref<Target=T> + DerefMut + Debug where T: StateContract, GS: GlobalStateContract {
+pub trait State<T>: DynClone + Debug where T: StateContract {
     /// This should take the state from the environment to hold locally in the implementer.
     /// Other implementations could also take copies of global_state, and apply mappings to other
     /// states.
     /// This will always be the first thing called for the states of a widget when retrieving an
     /// event. This makes sure the local and other states are always up to date when recieving
     /// an event.
-    fn capture_state(&mut self, env: &mut Environment<GS>, global_state: &GlobalStateContainer<GS>);
+    fn capture_state(&mut self, env: &mut Environment);
 
     /// This releases local state from the widget back into the environment. This is called
     /// after the event has been processed in a widget, but before the children of the widget
     /// has is being processed. This makes sure the state is always available for the widget
     /// being processed.
-    fn release_state(&mut self, env: &mut Environment<GS>);
+    fn release_state(&mut self, env: &mut Environment);
+
+    fn value(&self) -> ValueRef<T>;
+
+    fn value_mut(&mut self) -> ValueRefMut<T>;
 }
 
-dyn_clone::clone_trait_object!(<T: StateContract, GS: GlobalStateContract> State<T, GS>);
-
+dyn_clone::clone_trait_object!(<T: StateContract> State<T>);
 /*impl<T: StateContract, GS: GlobalStateContract> State<T, GS, Target=T> for Box<dyn State<T, GS, Target=T>> {
     fn capture_state(&mut self, env: &mut Environment<GS>, global_state: &mut Rc<GS>) {
         self.deref_mut().capture_state(env, global_state);

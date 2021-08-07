@@ -4,27 +4,25 @@ use crate::widget::ChildRender;
 pub static SCALE: f64 = -1.0;
 
 #[derive(Debug, Clone, Widget)]
-pub struct Frame<GS> where GS: GlobalStateContract {
+pub struct Frame {
     id: Uuid,
-    child: Box<dyn Widget<GS>>,
+    child: Box<dyn Widget>,
     position: Point,
-    #[state] x: F64State<GS>,
-    #[state] y: F64State<GS>,
+    #[state] x: F64State,
+    #[state] y: F64State,
     fixed_x: bool,
     fixed_y: bool,
-    #[state] width: F64State<GS>,
-    #[state] height: F64State<GS>,
+    #[state] width: F64State,
+    #[state] height: F64State,
     expand_width: bool,
     expand_height: bool,
 }
 
-impl<GS: GlobalStateContract> WidgetExt<GS> for Frame<GS> {}
+impl Frame {
+    pub fn init(width: F64State, height: F64State, child: Box<dyn Widget>) -> Box<Frame> {
+        let expand_width = *width.value() == SCALE;
 
-impl<GS: GlobalStateContract> Frame<GS> {
-    pub fn init(width: F64State<GS>, height: F64State<GS>, child: Box<dyn Widget<GS>>) -> Box<Frame<GS>> {
-        let expand_width = *width == SCALE;
-
-        let expand_height = *height == SCALE;
+        let expand_height = *height.value() == SCALE;
 
         Box::new(Frame {
             id: Default::default(),
@@ -41,7 +39,7 @@ impl<GS: GlobalStateContract> Frame<GS> {
         })
     }
 
-    pub fn init_width(width: F64State<GS>, child: Box<dyn Widget<GS>>) -> Box<Frame<GS>> {
+    pub fn init_width(width: F64State, child: Box<dyn Widget>) -> Box<Frame> {
         Box::new(Frame {
             id: Default::default(),
             child: Box::new(child),
@@ -57,7 +55,7 @@ impl<GS: GlobalStateContract> Frame<GS> {
         })
     }
 
-    pub fn init_height(height: F64State<GS>, child: Box<dyn Widget<GS>>) -> Box<Frame<GS>> {
+    pub fn init_height(height: F64State, child: Box<dyn Widget>) -> Box<Frame> {
         Box::new(Frame {
             id: Default::default(),
             child: Box::new(child),
@@ -73,21 +71,21 @@ impl<GS: GlobalStateContract> Frame<GS> {
         })
     }
 
-    pub fn with_fixed_x(mut self, x: F64State<GS>) -> Box<Frame<GS>> {
+    pub fn with_fixed_x(mut self, x: F64State) -> Box<Frame> {
         self.x = x;
         self.fixed_x = true;
 
         Box::new(self)
     }
 
-    pub fn with_fixed_y(mut self, y: F64State<GS>) -> Box<Frame<GS>> {
+    pub fn with_fixed_y(mut self, y: F64State) -> Box<Frame> {
         self.y = y;
         self.fixed_y = true;
 
         Box::new(self)
     }
 
-    pub fn with_fixed_position(mut self, x: F64State<GS>, y: F64State<GS>) -> Box<Frame<GS>> {
+    pub fn with_fixed_position(mut self, x: F64State, y: F64State) -> Box<Frame> {
         self.x = x;
         self.fixed_x = true;
         self.y = y;
@@ -97,7 +95,7 @@ impl<GS: GlobalStateContract> Frame<GS> {
     }
 }
 
-impl<S: GlobalStateContract> CommonWidget<S> for Frame<S> {
+impl CommonWidget for Frame {
     fn get_id(&self) -> Uuid {
         self.id
     }
@@ -110,7 +108,7 @@ impl<S: GlobalStateContract> CommonWidget<S> for Frame<S> {
         Flags::EMPTY
     }
 
-    fn get_children(&self) -> WidgetIter<S> {
+    fn get_children(&self) -> WidgetIter {
         if self.child.get_flag() == Flags::PROXY {
             self.child.get_children()
         } else {
@@ -118,7 +116,7 @@ impl<S: GlobalStateContract> CommonWidget<S> for Frame<S> {
         }
     }
 
-    fn get_children_mut(&mut self) -> WidgetIterMut<S> {
+    fn get_children_mut(&mut self) -> WidgetIterMut {
         if self.child.get_flag() == Flags::PROXY {
             self.child.get_children_mut()
         } else {
@@ -126,11 +124,11 @@ impl<S: GlobalStateContract> CommonWidget<S> for Frame<S> {
         }
     }
 
-    fn get_proxied_children(&mut self) -> WidgetIterMut<S> {
+    fn get_proxied_children(&mut self) -> WidgetIterMut {
         WidgetIterMut::single(self.child.deref_mut())
     }
 
-    fn get_proxied_children_rev(&mut self) -> WidgetIterMut<S> {
+    fn get_proxied_children_rev(&mut self) -> WidgetIterMut {
         WidgetIterMut::single(self.child.deref_mut())
     }
 
@@ -143,16 +141,16 @@ impl<S: GlobalStateContract> CommonWidget<S> for Frame<S> {
     }
 
     fn get_dimension(&self) -> Dimensions {
-        [*self.width, *self.height]
+        [*self.width.value(), *self.height.value()]
     }
 
     fn set_dimension(&mut self, dimensions: Dimensions) {
-        *self.width = dimensions[0];
-        *self.height = dimensions[1];
+        *self.width.value_mut() = dimensions[0];
+        *self.height.value_mut() = dimensions[1];
     }
 }
 
-impl<GS: GlobalStateContract> Layout<GS> for Frame<GS> {
+impl Layout for Frame {
     fn flexibility(&self) -> u32 {
         if self.expand_width || self.expand_height {
             8
@@ -161,7 +159,7 @@ impl<GS: GlobalStateContract> Layout<GS> for Frame<GS> {
         }
     }
 
-    fn calculate_size(&mut self, requested_size: Dimensions, env: &mut Environment<GS>) -> Dimensions {
+    fn calculate_size(&mut self, requested_size: Dimensions, env: &mut Environment) -> Dimensions {
         if self.expand_width {
             self.set_width(requested_size[0]);
         }
@@ -179,11 +177,13 @@ impl<GS: GlobalStateContract> Layout<GS> for Frame<GS> {
 
     fn position_children(&mut self) {
         if self.fixed_x {
-            self.set_x(*self.x);
+            let new_x = *self.x.value();
+            self.set_x(new_x);
         }
 
         if self.fixed_y {
-            self.set_y(*self.y);
+            let new_y = *self.y.value();
+            self.set_y(new_y);
         }
 
         let positioning = BasicLayouter::Center.position();
@@ -196,4 +196,6 @@ impl<GS: GlobalStateContract> Layout<GS> for Frame<GS> {
     }
 }
 
-impl<GS: GlobalStateContract> ChildRender for Frame<GS> {}
+impl ChildRender for Frame {}
+
+impl WidgetExt for Frame {}
