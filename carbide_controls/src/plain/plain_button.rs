@@ -127,43 +127,43 @@ impl<T: StateContract + 'static, GS: GlobalStateContract> PlainButton<T, GS> {
 }
 
 impl<T: StateContract, GS: GlobalStateContract> CommonWidget<GS> for PlainButton<T, GS> {
-    fn get_id(&self) -> Id {
+    fn id(&self) -> Id {
         self.id
     }
 
-    fn set_id(&mut self, id: Uuid) {
+    fn set_id(&mut self, id: Id) {
         self.id = id;
     }
 
-    fn get_flag(&self) -> Flags {
+    fn flag(&self) -> Flags {
         Flags::FOCUSABLE
     }
 
-    fn get_children(&self) -> WidgetIter {
-        if self.child.get_flag() == Flags::PROXY {
-            self.child.get_children()
+    fn children(&self) -> WidgetIter {
+        if self.child.flag() == Flags::PROXY {
+            self.child.children()
         } else {
             WidgetIter::single(&self.child)
         }
     }
 
-    fn get_children_mut(&mut self) -> WidgetIterMut {
-        if self.child.get_flag() == Flags::PROXY {
-            self.child.get_children_mut()
+    fn children_mut(&mut self) -> WidgetIterMut {
+        if self.child.flag() == Flags::PROXY {
+            self.child.children_mut()
         } else {
             WidgetIterMut::single(&mut self.child)
         }
     }
 
-    fn get_proxied_children(&mut self) -> WidgetIterMut {
+    fn proxied_children(&mut self) -> WidgetIterMut {
         WidgetIterMut::single(&mut self.child)
     }
 
-    fn get_proxied_children_rev(&mut self) -> WidgetIterMut {
+    fn proxied_children_rev(&mut self) -> WidgetIterMut {
         WidgetIterMut::single(&mut self.child)
     }
 
-    fn get_position(&self) -> Point {
+    fn position(&self) -> Point {
         self.position
     }
 
@@ -171,7 +171,7 @@ impl<T: StateContract, GS: GlobalStateContract> CommonWidget<GS> for PlainButton
         self.position = position;
     }
 
-    fn get_dimension(&self) -> Dimensions {
+    fn dimension(&self) -> Dimensions {
         self.dimension
     }
 
@@ -188,7 +188,7 @@ impl<T: StateContract, GS: GlobalStateContract> Layout<GS> for PlainButton<T, GS
     }
 
     fn calculate_size(&mut self, requested_size: Dimensions, env: &mut Environment) -> Dimensions {
-        if let Some(child) = self.get_children_mut().next() {
+        if let Some(child) = self.children_mut().next() {
             child.calculate_size(requested_size, env);
         }
 
@@ -199,10 +199,10 @@ impl<T: StateContract, GS: GlobalStateContract> Layout<GS> for PlainButton<T, GS
 
     fn position_children(&mut self) {
         let positioning = BasicLayouter::Center.position();
-        let position = self.get_position();
-        let dimension = self.get_dimension();
+        let position = self.position();
+        let dimension = self.dimension();
 
-        if let Some(child) = self.get_children_mut().next() {
+        if let Some(child) = self.children_mut().next() {
             positioning(position, dimension, child);
             child.position_children();
         }

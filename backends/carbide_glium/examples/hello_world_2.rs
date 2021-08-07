@@ -24,7 +24,7 @@ use carbide_core::flags::Flags;
 use carbide_core::layout::basic_layouter::BasicLayouter;
 use carbide_core::layout::Layout;
 use carbide_core::layout::layouter::Layouter;
-use carbide_core::prelude::Environment;
+use carbide_core::prelude::{Environment, Id};
 use carbide_core::render::render::ChildRender;
 use carbide_core::state::environment::Environment;
 use carbide_core::state::state::{CommonState, LocalStateList};
@@ -107,7 +107,7 @@ impl CustomWidget {
                     .padding(EdgeInsets::all(10.0))
                     .frame(150.0, 150.0),
                 Spacer::new(SpacerDirection::Horizontal),
-                Spacer::new(SpacerDirection::Horizontal)
+                Spacer::new(SpacerDirection::Horizontal),
             ]),
             position: [0.0, 0.0],
             dimension: [0.0, 0.0],
@@ -116,19 +116,19 @@ impl CustomWidget {
 }
 
 impl CommonWidget<GState> for CustomWidget {
-    fn get_id(&self) -> Uuid {
+    fn id(&self) -> Id {
         self.id
     }
 
-    fn set_id(&mut self, id: Uuid) {
+    fn set_id(&mut self, id: Id) {
         self.id = id;
     }
 
-    fn get_flag(&self) -> Flags {
+    fn flag(&self) -> Flags {
         Flags::EMPTY
     }
 
-    fn get_children(&self) -> WidgetIter {
+    fn children(&self) -> WidgetIter {
         if self.child.get_flag() == Flags::PROXY {
             self.child.get_children()
         } else {
@@ -136,7 +136,7 @@ impl CommonWidget<GState> for CustomWidget {
         }
     }
 
-    fn get_children_mut(&mut self) -> WidgetIterMut {
+    fn children_mut(&mut self) -> WidgetIterMut {
         if self.child.get_flag() == Flags::PROXY {
             self.child.get_children_mut()
         } else {
@@ -144,11 +144,11 @@ impl CommonWidget<GState> for CustomWidget {
         }
     }
 
-    fn get_proxied_children(&mut self) -> WidgetIterMut {
+    fn proxied_children(&mut self) -> WidgetIterMut {
         WidgetIterMut::single(&mut self.child)
     }
 
-    fn get_position(&self) -> Point {
+    fn position(&self) -> Point {
         self.position
     }
 
@@ -156,7 +156,7 @@ impl CommonWidget<GState> for CustomWidget {
         self.position = position;
     }
 
-    fn get_dimension(&self) -> Dimensions {
+    fn dimension(&self) -> Dimensions {
         self.dimension
     }
 

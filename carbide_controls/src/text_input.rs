@@ -55,7 +55,7 @@
 // }
 //
 // impl<GS: GlobalState> CommonWidget<GS> for TextInput<GS> {
-//     fn get_id(&self) -> Id {
+//     fn id(&self) -> Id {
 //         self.id
 //     }
 //
@@ -63,7 +63,7 @@
 //         self.id = id;
 //     }
 //
-//     fn get_flag(&self) -> Flags {
+//     fn flag(&self) -> Flags {
 //         Flags::EMPTY
 //     }
 //
@@ -75,15 +75,15 @@
 //         WidgetIterMut::single(&mut self.child)
 //     }
 //
-//     fn get_proxied_children(&mut self) -> WidgetIterMut<GS> {
+//     fn proxied_children(&mut self) -> WidgetIterMut<GS> {
 //         WidgetIterMut::single(&mut self.child)
 //     }
 //
-//     fn get_proxied_children_rev(&mut self) -> WidgetIterMut<GS> {
+//     fn proxied_children_rev(&mut self) -> WidgetIterMut<GS> {
 //         WidgetIterMut::single(&mut self.child)
 //     }
 //
-//     fn get_position(&self) -> Point {
+//     fn position(&self) -> Point {
 //         self.position
 //     }
 //
@@ -91,7 +91,7 @@
 //         self.position = position;
 //     }
 //
-//     fn get_dimension(&self) -> Dimensions {
+//     fn dimension(&self) -> Dimensions {
 //         self.dimension
 //     }
 //
@@ -117,8 +117,8 @@
 //
 //     fn position_children(&mut self) {
 //         let positioning = BasicLayouter::Center.position();
-//         let position = self.get_position();
-//         let dimension = self.get_dimension();
+//         let position = self.position();
+//         let dimension = self.dimension();
 //
 //
 //         positioning(position, dimension, &mut self.child);

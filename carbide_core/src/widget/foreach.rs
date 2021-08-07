@@ -85,7 +85,7 @@
 //         let id_key = self.id_state.get_key().unwrap().clone();
 //         let index_key = self.index_state.get_key().unwrap().clone();
 //
-//         for (i, child) in self.get_proxied_children().enumerate() {
+//         for (i, child) in self.proxied_children().enumerate() {
 //             env.insert_local_state_from_key_value(&id_key, &ids.get_value(env, global_state)[i]);
 //             env.insert_local_state_from_key_value(&index_key, &(i + initial_offset));
 //
@@ -106,7 +106,7 @@
 //         let id_key = self.id_state.get_key().unwrap().clone();
 //         let index_key = self.index_state.get_key().unwrap().clone();
 //
-//         for (i, child) in self.get_proxied_children().enumerate() {
+//         for (i, child) in self.proxied_children().enumerate() {
 //             env.insert_local_state_from_key_value(&id_key, &ids.get_value(env, global_state)[i]);
 //             env.insert_local_state_from_key_value(&index_key, &(i + initial_offset));
 //
@@ -128,7 +128,7 @@
 //         let id_key = self.id_state.get_key().unwrap().clone();
 //         let index_key = self.index_state.get_key().unwrap().clone();
 //
-//         for (i, child) in self.get_proxied_children().enumerate() {
+//         for (i, child) in self.proxied_children().enumerate() {
 //             env.insert_local_state_from_key_value(&id_key, &ids.get_value(env, global_state)[i]);
 //             env.insert_local_state_from_key_value(&index_key, &(i + initial_offset));
 //
@@ -140,7 +140,7 @@
 // }
 //
 // impl<GS: GlobalStateContract, T: ForEachDelegate> CommonWidget<GS> for ForEach<GS, T> {
-//     fn get_id(&self) -> Uuid {
+//     fn id(&self) -> Uuid {
 //         self.id
 //     }
 //
@@ -148,7 +148,7 @@
 //         self.id = id;
 //     }
 //
-//     fn get_flag(&self) -> Flags {
+//     fn flag(&self) -> Flags {
 //         Flags::PROXY
 //     }
 //
@@ -158,7 +158,7 @@
 //         for id in self.ids.iter().rev() {
 //             let item = self.children_map.get(id).unwrap();
 //
-//             if item.get_flag() == Flags::PROXY {
+//             if item.flag() == Flags::PROXY {
 //                 w = WidgetIter::Multi(Box::new(item.get_children()), Box::new(w));
 //             } else {
 //                 w = WidgetIter::Single(item, Box::new(w))
@@ -184,7 +184,7 @@
 //                 p.as_mut().unwrap()
 //             };
 //
-//             if item.get_flag() == Flags::PROXY {
+//             if item.flag() == Flags::PROXY {
 //                 w = WidgetIterMut::Multi(Box::new(item.get_children_mut()), Box::new(w));
 //             } else {
 //                 w = WidgetIterMut::Single(item, Box::new(w))
@@ -194,7 +194,7 @@
 //         w
 //     }
 //
-//     fn get_proxied_children(&mut self) -> WidgetIterMut<GS> {
+//     fn proxied_children(&mut self) -> WidgetIterMut<GS> {
 //         let mut w = WidgetIterMut::Empty;
 //
 //         for id in self.ids.iter().rev() {
@@ -210,8 +210,8 @@
 //                 p.as_mut().unwrap()
 //             };
 //
-//             if item.get_flag() == Flags::PROXY {
-//                 w = WidgetIterMut::Multi(Box::new(item.get_proxied_children()), Box::new(w));
+//             if item.flag() == Flags::PROXY {
+//                 w = WidgetIterMut::Multi(Box::new(item.proxied_children()), Box::new(w));
 //             } else {
 //                 w = WidgetIterMut::Single(item, Box::new(w))
 //             }
@@ -220,7 +220,7 @@
 //         w
 //     }
 //
-//     fn get_proxied_children_rev(&mut self) -> WidgetIterMut<GS> {
+//     fn proxied_children_rev(&mut self) -> WidgetIterMut<GS> {
 //         let mut w = WidgetIterMut::Empty;
 //
 //         for id in self.ids.iter() {
@@ -236,8 +236,8 @@
 //                 p.as_mut().unwrap()
 //             };
 //
-//             if item.get_flag() == Flags::PROXY {
-//                 w = WidgetIterMut::Multi(Box::new(item.get_proxied_children()), Box::new(w));
+//             if item.flag() == Flags::PROXY {
+//                 w = WidgetIterMut::Multi(Box::new(item.proxied_children()), Box::new(w));
 //             } else {
 //                 w = WidgetIterMut::Single(item, Box::new(w))
 //             }
@@ -246,7 +246,7 @@
 //         w
 //     }
 //
-//     fn get_position(&self) -> Point {
+//     fn position(&self) -> Point {
 //         self.position
 //     }
 //
@@ -254,7 +254,7 @@
 //         self.position = position;
 //     }
 //
-//     fn get_dimension(&self) -> Dimensions {
+//     fn dimension(&self) -> Dimensions {
 //         self.dimension
 //     }
 //

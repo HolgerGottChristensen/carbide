@@ -104,7 +104,7 @@ impl<T: 'static + Serialize + Clone + Debug + Default + DeserializeOwned, GS: Gl
                     .fill(background_color)
                     .stroke(focus_color)
                     .stroke_style(1.0),
-                display_item.clone()
+                display_item.clone(),
             ])
         ).local_state(local_state.clone())
             .focused(focus_state.clone())
@@ -129,7 +129,7 @@ impl<T: 'static + Serialize + Clone + Debug + Default + DeserializeOwned, GS: Gl
 }
 
 impl<T: 'static + Serialize + Clone + Debug + Default + DeserializeOwned, GS: GlobalStateContract> CommonWidget<GS> for Button<T, GS> {
-    fn get_id(&self) -> Id {
+    fn id(&self) -> Id {
         self.id
     }
 
@@ -137,27 +137,27 @@ impl<T: 'static + Serialize + Clone + Debug + Default + DeserializeOwned, GS: Gl
         self.id = id;
     }
 
-    fn get_flag(&self) -> Flags {
+    fn flag(&self) -> Flags {
         Flags::EMPTY
     }
 
-    fn get_children(&self) -> WidgetIter {
+    fn children(&self) -> WidgetIter {
         WidgetIter::single(&self.child)
     }
 
-    fn get_children_mut(&mut self) -> WidgetIterMut {
+    fn children_mut(&mut self) -> WidgetIterMut {
         WidgetIterMut::single(&mut self.child)
     }
 
-    fn get_proxied_children(&mut self) -> WidgetIterMut {
+    fn proxied_children(&mut self) -> WidgetIterMut {
         WidgetIterMut::single(&mut self.child)
     }
 
-    fn get_proxied_children_rev(&mut self) -> WidgetIterMut {
+    fn proxied_children_rev(&mut self) -> WidgetIterMut {
         WidgetIterMut::single(&mut self.child)
     }
 
-    fn get_position(&self) -> Point {
+    fn position(&self) -> Point {
         self.position
     }
 
@@ -165,7 +165,7 @@ impl<T: 'static + Serialize + Clone + Debug + Default + DeserializeOwned, GS: Gl
         self.position = position;
     }
 
-    fn get_dimension(&self) -> Dimensions {
+    fn dimension(&self) -> Dimensions {
         self.dimension
     }
 
@@ -191,8 +191,8 @@ impl<T: 'static + Serialize + Clone + Debug + Default + DeserializeOwned, GS: Gl
 
     fn position_children(&mut self) {
         let positioning = BasicLayouter::Center.position();
-        let position = self.get_position();
-        let dimension = self.get_dimension();
+        let position = self.position();
+        let dimension = self.dimension();
 
 
         positioning(position, dimension, &mut self.child);

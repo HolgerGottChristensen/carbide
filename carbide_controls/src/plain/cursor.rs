@@ -8,10 +8,10 @@
 // }
 //
 // impl Cursor {
-//     pub fn get_width(&self, text: &str, positioned_glyphs: &Vec<PositionedGlyph>) -> Scalar {
+//     pub fn width(&self, text: &str, positioned_glyphs: &Vec<PositionedGlyph>) -> Scalar {
 //         if let Cursor::Selection { start, end } = self {
-//             let start_point = start.get_position(text, positioned_glyphs);
-//             let end_point = end.get_position(text, positioned_glyphs);
+//             let start_point = start.position(text, positioned_glyphs);
+//             let end_point = end.position(text, positioned_glyphs);
 //             end_point[0] - start_point[0]
 //         } else {
 //             0.0
@@ -54,7 +54,7 @@
 //
 //
 // impl CursorIndex {
-//     pub fn get_position(&self, text: &str, positioned_glyphs: &Vec<PositionedGlyph>) -> Point {
+//     pub fn position(&self, text: &str, positioned_glyphs: &Vec<PositionedGlyph>) -> Point {
 //         if self.line == 0 {
 //             if self.char == 0 {
 //                 return [0.0, 0.0];

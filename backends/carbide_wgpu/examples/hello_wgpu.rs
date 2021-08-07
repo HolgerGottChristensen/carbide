@@ -40,7 +40,7 @@ fn main() {
                                                .resizeable()
                                                .aspect_ratio(ScaleMode::Fill)
                                                .frame(800.0, 500.0)
-                                       ).set_scroll_direction(ScrollDirection::Both)
+                                       ).with_scroll_direction(ScrollDirection::Both)
                                            .clip()
                                    ]).fill(EnvironmentColor::SecondarySystemBackground).frame(SCALE, 200.0),
                                ]).padding(EdgeInsets::all(10.0)),
@@ -50,7 +50,7 @@ fn main() {
                                        .padding(EdgeInsets::all(10.0))
                                        .frame(150.0, 150.0),
                                    Spacer::new(SpacerDirection::Horizontal),
-                                   Spacer::new(SpacerDirection::Horizontal)
+                                   Spacer::new(SpacerDirection::Horizontal),
                                ]),
                            ])),
     );

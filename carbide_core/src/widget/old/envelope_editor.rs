@@ -21,8 +21,10 @@ pub struct EnvelopeEditor<'a, E>
     /// The value skewing for the envelope's y-axis. This is useful for displaying exponential
     /// ranges such as frequency.
     pub skew_y_range: f32,
-    min_x: E::X, max_x: E::X,
-    min_y: E::Y, max_y: E::Y,
+    min_x: E::X,
+    max_x: E::X,
+    min_y: E::Y,
+    max_y: E::Y,
     maybe_label: Option<&'a str>,
     style: Style,
     enabled: bool,
@@ -119,7 +121,6 @@ impl EnvelopePoint for Point {
 impl<'a, E> EnvelopeEditor<'a, E>
     where E: EnvelopePoint,
 {
-
     /// Construct an EnvelopeEditor widget.
     pub fn new(env: &'a [E], min_x: E::X, max_x: E::X, min_y: E::Y, max_y: E::Y) -> Self {
         EnvelopeEditor {
@@ -127,8 +128,10 @@ impl<'a, E> EnvelopeEditor<'a, E>
             style: Style::default(),
             env: env,
             skew_y_range: 1.0, // Default skew amount (no skew).
-            min_x: min_x, max_x: max_x,
-            min_y: min_y, max_y: max_y,
+            min_x: min_x,
+            max_x: max_x,
+            min_y: min_y,
+            max_y: max_y,
             maybe_label: None,
             enabled: true,
         }
@@ -140,14 +143,13 @@ impl<'a, E> EnvelopeEditor<'a, E>
         self
     }
 
-    builder_methods!{
+    builder_methods! {
         pub point_radius { style.point_radius = Some(Scalar) }
         pub line_thickness { style.line_thickness = Some(Scalar) }
         pub value_font_size { style.value_font_size = Some(FontSize) }
         pub skew_y { skew_y_range = f32 }
         pub enabled { enabled = bool }
     }
-
 }
 
 
@@ -183,11 +185,9 @@ pub enum Event<E>
 impl<E> Event<E>
     where E: EnvelopePoint,
 {
-
     /// Update the given `envelope` in accordance with the `Event`.
     pub fn update(self, envelope: &mut Vec<E>) {
         match self {
-
             Event::AddPoint { i, point } => {
                 if i <= envelope.len() {
                     envelope.insert(i, point);
@@ -217,10 +217,8 @@ impl<E> Event<E>
                     }
                 }
             },
-
         }
     }
-
 }
 
 
@@ -285,16 +283,16 @@ impl<E> Event<E>
         // Determine the left and right X bounds for a point.
         let get_x_bounds = |env: &[E], idx: usize| -> (E::X, E::X) {
             let len = env.len();
-            let right_bound = if len > 0 && len - 1 > idx { env[idx + 1].get_x() } else { max_x };
-            let left_bound = if len > 0 && idx > 0 { env[idx - 1].get_x() } else { min_x };
+            let right_bound = if len > 0 && len - 1 > idx { env[idx + 1].x() } else { max_x };
+            let left_bound = if len > 0 && idx > 0 { env[idx - 1].x() } else { min_x };
             (left_bound, right_bound)
         };
 
         // The index of the point that is under the given relative xy position.
         let point_under_rel_xy = |env: &[E], xy: Point| -> Option<usize> {
             for i in 0..env.len() {
-                let px = env[i].get_x();
-                let py = env[i].get_y();
+                let px = env[i].x();
+                let py = env[i].y();
                 let x = map_x_to(px, inner_rel_rect.left(), inner_rel_rect.right());
                 let y = map_y_to(py, inner_rel_rect.bottom(), inner_rel_rect.top());
                 let distance = (xy[0] - x).powf(2.0)
@@ -344,8 +342,8 @@ impl<E> Event<E>
                         let mut maybe_left = None;
                         let mut maybe_right = None;
                         for (i, p) in env.iter().enumerate() {
-                            let px = p.get_x();
-                            let py = p.get_y();
+                            let px = p.x();
+                            let py = p.y();
                             let x = map_x_to(px, inner_rel_rect.left(), inner_rel_rect.right());
                             let y = map_y_to(py, inner_rel_rect.bottom(), inner_rel_rect.top());
                             let distance = (xy[0] - x).powf(2.0)
@@ -485,8 +483,8 @@ impl<E> Event<E>
         {
             let thickness = style.line_thickness(ui.theme());
             let points = env.iter().map(|point| {
-                let x = map_x_to(point.get_x(), inner_rect.left(), inner_rect.right());
-                let y = map_y_to(point.get_y(), inner_rect.bottom(), inner_rect.top());
+                let x = map_x_to(point.x(), inner_rect.left(), inner_rect.right());
+                let y = map_y_to(point.y(), inner_rect.bottom(), inner_rect.top());
                 [x, y]
             });
             widget::PointPath::new(points)
@@ -506,8 +504,8 @@ impl<E> Event<E>
 
         let iter = state.ids.points.iter().zip(env.iter()).enumerate();
         for (i, (&point_id, point)) in iter {
-            let x = map_x_to(point.get_x(), inner_rect.left(), inner_rect.right());
-            let y = map_y_to(point.get_y(), inner_rect.bottom(), inner_rect.top());
+            let x = map_x_to(point.x(), inner_rect.left(), inner_rect.right());
+            let y = map_y_to(point.y(), inner_rect.bottom(), inner_rect.top());
             let point_color = if state.pressed_point == Some(i) {
                 line_color.clicked()
             } else {
@@ -537,8 +535,8 @@ impl<E> Event<E>
             let mut closest_distance = ::std::f64::MAX;
             let mut closest_point = None;
             for (i, p) in env.iter().enumerate() {
-                let px = p.get_x();
-                let py = p.get_y();
+                let px = p.x();
+                let py = p.y();
                 let x = map_x_to(px, inner_rect.left(), inner_rect.right());
                 let y = map_y_to(py, inner_rect.bottom(), inner_rect.top());
                 let mouse_abs_xy = mouse.abs_xy();
@@ -557,8 +555,8 @@ impl<E> Event<E>
             let y_range = max_y - min_y;
             let x_px_range = inner_rect.w() as usize;
             let y_px_range = inner_rect.h() as usize;
-            let x_string = val_to_string(env[closest_idx].get_x(), max_x, x_range, x_px_range);
-            let y_string = val_to_string(env[closest_idx].get_y(), max_y, y_range, y_px_range);
+            let x_string = val_to_string(env[closest_idx].x(), max_x, x_range, x_px_range);
+            let y_string = val_to_string(env[closest_idx].y(), max_y, y_range, y_px_range);
             let xy_string = format!("{}, {}", x_string, y_string);
             let x_direction = match inner_rect.x.closest_edge(x) {
                 Edge::End => Direction::Backwards,
@@ -597,7 +595,7 @@ impl<'a, E> Colorable for EnvelopeEditor<'a, E>
 impl<'a, E> Borderable for EnvelopeEditor<'a, E>
     where E: EnvelopePoint
 {
-    builder_methods!{
+    builder_methods! {
         border { style.border = Some(Scalar) }
         border_color { style.border_color = Some(Color) }
     }
@@ -606,7 +604,7 @@ impl<'a, E> Borderable for EnvelopeEditor<'a, E>
 impl<'a, E> Labelable<'a> for EnvelopeEditor<'a, E>
     where E: EnvelopePoint
 {
-    builder_methods!{
+    builder_methods! {
         label { maybe_label = Some(&'a str) }
         label_color { style.label_color = Some(Color) }
         label_font_size { style.label_font_size = Some(FontSize) }

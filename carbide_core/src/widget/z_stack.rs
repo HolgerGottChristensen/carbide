@@ -37,14 +37,14 @@ impl Layout for ZStack {
     }
 
     fn calculate_size(&mut self, requested_size: Dimension, env: &mut Environment) -> Dimension {
-        let mut children_flexibilty: Vec<(u32, &mut dyn Widget)> = self.get_children_mut().map(|child| (child.flexibility(), child)).collect();
-        children_flexibilty.sort_by(|(a, _), (b, _)| a.cmp(&b));
-        children_flexibilty.reverse();
+        let mut children_flexibility: Vec<(u32, &mut dyn Widget)> = self.children_mut().map(|child| (child.flexibility(), child)).collect();
+        children_flexibility.sort_by(|(a, _), (b, _)| a.cmp(&b));
+        children_flexibility.reverse();
 
         let mut max_width = 0.0;
         let mut max_height = 0.0;
 
-        for (_, child) in children_flexibilty {
+        for (_, child) in children_flexibility {
             let chosen_size = child.calculate_size(requested_size, env);
 
             if chosen_size.width > max_width {
@@ -65,7 +65,7 @@ impl Layout for ZStack {
         let position = self.position;
         let dimension = self.dimension;
 
-        for child in self.get_children_mut() {
+        for child in self.children_mut() {
             positioning(position, dimension, child);
             child.position_children();
         }
@@ -73,45 +73,45 @@ impl Layout for ZStack {
 }
 
 impl CommonWidget for ZStack {
-    fn get_id(&self) -> Uuid {
+    fn id(&self) -> Id {
         self.id
     }
 
-    fn set_id(&mut self, id: Uuid) {
+    fn set_id(&mut self, id: Id) {
         self.id = id;
     }
 
-    fn get_flag(&self) -> Flags {
+    fn flag(&self) -> Flags {
         Flags::EMPTY
     }
 
-    fn get_children(&self) -> WidgetIter {
+    fn children(&self) -> WidgetIter {
         self.children
             .iter()
             .map(|x| x.deref())
             .rfold(WidgetIter::Empty, |acc, x| {
-                if x.get_flag() == Flags::PROXY {
-                    WidgetIter::Multi(Box::new(x.get_children()), Box::new(acc))
+                if x.flag() == Flags::PROXY {
+                    WidgetIter::Multi(Box::new(x.children()), Box::new(acc))
                 } else {
                     WidgetIter::Single(x, Box::new(acc))
                 }
             })
     }
 
-    fn get_children_mut(&mut self) -> WidgetIterMut {
+    fn children_mut(&mut self) -> WidgetIterMut {
         self.children
             .iter_mut()
             .map(|x| x.deref_mut())
             .rfold(WidgetIterMut::Empty, |acc, x| {
-                if x.get_flag() == Flags::PROXY {
-                    WidgetIterMut::Multi(Box::new(x.get_children_mut()), Box::new(acc))
+                if x.flag() == Flags::PROXY {
+                    WidgetIterMut::Multi(Box::new(x.children_mut()), Box::new(acc))
                 } else {
                     WidgetIterMut::Single(x, Box::new(acc))
                 }
             })
     }
 
-    fn get_proxied_children(&mut self) -> WidgetIterMut {
+    fn proxied_children(&mut self) -> WidgetIterMut {
         self.children.iter_mut()
             .map(|x| x.deref_mut())
             .rfold(WidgetIterMut::Empty, |acc, x| {
@@ -119,7 +119,7 @@ impl CommonWidget for ZStack {
             })
     }
 
-    fn get_proxied_children_rev(&mut self) -> WidgetIterMut {
+    fn proxied_children_rev(&mut self) -> WidgetIterMut {
         self.children.iter_mut()
             .map(|x| x.deref_mut())
             .fold(WidgetIterMut::Empty, |acc, x| {
@@ -127,7 +127,7 @@ impl CommonWidget for ZStack {
             })
     }
 
-    fn get_position(&self) -> Position {
+    fn position(&self) -> Position {
         self.position
     }
 
@@ -135,7 +135,7 @@ impl CommonWidget for ZStack {
         self.position = position;
     }
 
-    fn get_dimension(&self) -> Dimension {
+    fn dimension(&self) -> Dimension {
         self.dimension
     }
 

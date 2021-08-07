@@ -70,36 +70,36 @@ impl Layout for Capsule {
 }
 
 impl CommonWidget for Capsule {
-    fn get_id(&self) -> Uuid {
+    fn id(&self) -> Id {
         self.id
     }
 
-    fn set_id(&mut self, id: Uuid) {
+    fn set_id(&mut self, id: Id) {
         self.id = id;
     }
 
-    fn get_flag(&self) -> Flags {
+    fn flag(&self) -> Flags {
         Flags::EMPTY
     }
 
-    fn get_children(&self) -> WidgetIter {
+    fn children(&self) -> WidgetIter {
         WidgetIter::Empty
     }
 
-    fn get_children_mut(&mut self) -> WidgetIterMut {
+    fn children_mut(&mut self) -> WidgetIterMut {
         WidgetIterMut::Empty
     }
 
-    fn get_proxied_children(&mut self) -> WidgetIterMut {
+    fn proxied_children(&mut self) -> WidgetIterMut {
         WidgetIterMut::Empty
     }
 
-    fn get_proxied_children_rev(&mut self) -> WidgetIterMut {
+    fn proxied_children_rev(&mut self) -> WidgetIterMut {
         WidgetIterMut::Empty
     }
 
 
-    fn get_position(&self) -> Position {
+    fn position(&self) -> Position {
         self.position
     }
 
@@ -107,7 +107,7 @@ impl CommonWidget for Capsule {
         self.position = position;
     }
 
-    fn get_dimension(&self) -> Dimension {
+    fn dimension(&self) -> Dimension {
         self.dimension
     }
 
@@ -132,7 +132,7 @@ impl Shape for Capsule {
 
 impl Render for Capsule {
     fn get_primitives(&mut self, _: &mut Environment) -> Vec<Primitive> {
-        let rectangle = rect(self.get_x() as f32, self.get_y() as f32, self.get_width() as f32, self.get_height() as f32);
+        let rectangle = rect(self.x() as f32, self.y() as f32, self.width() as f32, self.height() as f32);
 
         tessellate(self, &rectangle, &|builder, rect| {
             builder.add_rounded_rectangle(

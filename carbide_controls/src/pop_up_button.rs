@@ -54,9 +54,9 @@ impl<T: Serialize + Clone + Debug + Default + DeserializeOwned + 'static, GS: Gl
                             context.stroke();
 
                             context
-                        })
+                        }),
                     ]).padding(EdgeInsets::single(0.0, 0.0, 0.0, 1.0))
-                        .frame(22.0, 24.0)
+                        .frame(22.0, 24.0),
                 ]),
                 RoundedRectangle::initialize(CornerRadii::all(3.0))
                     .stroke_style(1.0)
@@ -85,7 +85,7 @@ impl<T: Serialize + Clone + Debug + Default + DeserializeOwned + 'static, GS: Gl
                         EdgeInsets::single(0.0, 0.0, 5.0, 0.0),
                         Text::new(text)
                             .color(EnvironmentColor::Label)),
-                    Spacer::new(SpacerDirection::Horizontal)
+                    Spacer::new(SpacerDirection::Horizontal),
                 ])
             ]).fill(background_color)
                 .stroke(EnvironmentColor::OpaqueSeparator)
@@ -102,7 +102,7 @@ impl<T: Serialize + Clone + Debug + Default + DeserializeOwned + 'static, GS: Gl
 }
 
 impl<T: Serialize + Clone + Debug + Default + DeserializeOwned + 'static, GS: GlobalStateContract> CommonWidget<GS> for PopUpButton<T, GS> {
-    fn get_id(&self) -> Id {
+    fn id(&self) -> Id {
         self.id
     }
 
@@ -110,27 +110,27 @@ impl<T: Serialize + Clone + Debug + Default + DeserializeOwned + 'static, GS: Gl
         self.id = id;
     }
 
-    fn get_flag(&self) -> Flags {
+    fn flag(&self) -> Flags {
         Flags::EMPTY
     }
 
-    fn get_children(&self) -> WidgetIter {
+    fn children(&self) -> WidgetIter {
         WidgetIter::single(&self.child)
     }
 
-    fn get_children_mut(&mut self) -> WidgetIterMut {
+    fn children_mut(&mut self) -> WidgetIterMut {
         WidgetIterMut::single(&mut self.child)
     }
 
-    fn get_proxied_children(&mut self) -> WidgetIterMut {
+    fn proxied_children(&mut self) -> WidgetIterMut {
         WidgetIterMut::single(&mut self.child)
     }
 
-    fn get_proxied_children_rev(&mut self) -> WidgetIterMut {
+    fn proxied_children_rev(&mut self) -> WidgetIterMut {
         WidgetIterMut::single(&mut self.child)
     }
 
-    fn get_position(&self) -> Point {
+    fn position(&self) -> Point {
         self.position
     }
 
@@ -138,7 +138,7 @@ impl<T: Serialize + Clone + Debug + Default + DeserializeOwned + 'static, GS: Gl
         self.position = position;
     }
 
-    fn get_dimension(&self) -> Dimensions {
+    fn dimension(&self) -> Dimensions {
         self.dimension
     }
 
@@ -164,8 +164,8 @@ impl<T: Serialize + Clone + Debug + Default + DeserializeOwned + 'static, GS: Gl
 
     fn position_children(&mut self) {
         let positioning = BasicLayouter::Center.position();
-        let position = self.get_position();
-        let dimension = self.get_dimension();
+        let position = self.position();
+        let dimension = self.dimension();
 
 
         positioning(position, dimension, &mut self.child);

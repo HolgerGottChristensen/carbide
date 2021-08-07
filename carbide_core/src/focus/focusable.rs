@@ -39,7 +39,7 @@ pub trait Focusable: CommonWidget + StateSync {
 
         let mut any_focus = false;
 
-        if self.get_flag().contains(Flags::FOCUSABLE) {
+        if self.flag().contains(Flags::FOCUSABLE) {
             let focus = self.get_focus();
             if focus == Focus::FocusRequested {
                 self.set_focus(Focus::Focused);
@@ -53,7 +53,7 @@ pub trait Focusable: CommonWidget + StateSync {
 
         self.release_state(env);
 
-        for child in self.get_proxied_children() {
+        for child in self.proxied_children() {
             if child.process_focus_request(event, focus_request, env) {
                 any_focus = true;
             }
@@ -68,7 +68,7 @@ pub trait Focusable: CommonWidget + StateSync {
         self.capture_state(env);
 
         let mut focus_child =
-            if self.get_flag().contains(Flags::FOCUSABLE) {
+            if self.flag().contains(Flags::FOCUSABLE) {
                 //println!("{}, {:?}", focus_up_for_grab, self.get_focus());
                 if focus_up_for_grab {
                     self.set_focus(Focus::Focused);
@@ -89,7 +89,7 @@ pub trait Focusable: CommonWidget + StateSync {
 
         self.release_state(env);
 
-        for child in self.get_proxied_children() {
+        for child in self.proxied_children() {
             focus_child = child.process_focus_next(event, focus_request, focus_child, env);
         }
 
@@ -102,7 +102,7 @@ pub trait Focusable: CommonWidget + StateSync {
         self.capture_state(env);
 
         let mut focus_child =
-            if self.get_flag().contains(Flags::FOCUSABLE) {
+            if self.flag().contains(Flags::FOCUSABLE) {
                 if focus_up_for_grab {
                     self.set_focus(Focus::Focused);
                     self.focus_retrieved(event, focus_request, env);
@@ -120,7 +120,7 @@ pub trait Focusable: CommonWidget + StateSync {
 
         self.release_state(env);
 
-        for child in self.get_proxied_children_rev() {
+        for child in self.proxied_children_rev() {
             focus_child = child.process_focus_previous(event, focus_request, focus_child, env);
         }
 

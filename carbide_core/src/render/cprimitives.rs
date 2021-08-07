@@ -16,8 +16,8 @@ impl CPrimitives {
         let now = Instant::now();
         root.calculate_size(window_dimensions, environment);
 
-        root.set_x(window_dimensions.width / 2.0 - root.get_width() / 2.0);
-        root.set_y(window_dimensions.height / 2.0 - root.get_height() / 2.0);
+        root.set_x(window_dimensions.width / 2.0 - root.width() / 2.0);
+        root.set_y(window_dimensions.height / 2.0 - root.height() / 2.0);
 
         root.position_children();
         println!("Time for pos and size: {:?}us", now.elapsed().as_micros());

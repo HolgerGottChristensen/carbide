@@ -31,7 +31,7 @@ pub trait Event: CommonWidget + StateSync + Focusable {
             self.release_state(env);
         }
 
-        for child in self.get_proxied_children() {
+        for child in self.proxied_children() {
             child.process_mouse_event(event, &consumed, env);
             if *consumed { return (); }
         }
@@ -44,7 +44,7 @@ pub trait Event: CommonWidget + StateSync + Focusable {
         self.handle_keyboard_event(event, env);
         self.release_state(env);
 
-        for child in self.get_proxied_children() {
+        for child in self.proxied_children() {
             child.process_keyboard_event(event, env);
         }
     }
@@ -56,7 +56,7 @@ pub trait Event: CommonWidget + StateSync + Focusable {
         self.handle_other_event(event, env);
         self.release_state(env);
 
-        for child in self.get_proxied_children() {
+        for child in self.proxied_children() {
             child.process_other_event(event, env);
         }
     }

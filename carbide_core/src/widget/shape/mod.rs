@@ -43,8 +43,8 @@ pub fn tessellate(shape: &mut dyn Shape, rectangle: &Rect, path: &dyn Fn(&mut Bu
 }
 
 pub fn fill(path: &dyn Fn(&mut Builder, &Rect), shape: &mut dyn Shape, rectangle: &Rect) {
-    let position = shape.get_position();
-    let dimension = shape.get_dimension();
+    let position = shape.position();
+    let dimension = shape.dimension();
     let triangle_store = shape.get_triangle_store_mut();
 
     if triangle_store.diff_fill(position, dimension) {
@@ -88,8 +88,8 @@ pub fn fill(path: &dyn Fn(&mut Builder, &Rect), shape: &mut dyn Shape, rectangle
 }
 
 pub fn stroke(path: &dyn Fn(&mut Builder, &Rect), shape: &mut dyn Shape, rectangle: &Rect) {
-    let position = shape.get_position();
-    let dimension = shape.get_dimension();
+    let position = shape.position();
+    let dimension = shape.dimension();
     let line_width = shape.get_stroke_style().get_line_width() as f32;
     let triangle_store = shape.get_triangle_store_mut();
 

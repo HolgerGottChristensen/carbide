@@ -51,43 +51,43 @@ impl CalculatorButton {
 }
 
 impl CommonWidget<CalculatorState> for CalculatorButton {
-    fn get_id(&self) -> Uuid {
+    fn id(&self) -> Id {
         self.id
     }
 
-    fn set_id(&mut self, id: Uuid) {
+    fn set_id(&mut self, id: Id) {
         self.id = id;
     }
 
-    fn get_flag(&self) -> Flags {
+    fn flag(&self) -> Flags {
         Flags::EMPTY
     }
 
-    fn get_children(&self) -> WidgetIter {
-        if self.child.get_flag() == Flags::PROXY {
-            self.child.get_children()
+    fn children(&self) -> WidgetIter {
+        if self.child.flag() == Flags::PROXY {
+            self.child.children()
         } else {
             WidgetIter::single(&self.child)
         }
     }
 
-    fn get_children_mut(&mut self) -> WidgetIterMut {
-        if self.child.get_flag() == Flags::PROXY {
-            self.child.get_children_mut()
+    fn children_mut(&mut self) -> WidgetIterMut {
+        if self.child.flag() == Flags::PROXY {
+            self.child.children_mut()
         } else {
             WidgetIterMut::single(&mut self.child)
         }
     }
 
-    fn get_proxied_children(&mut self) -> WidgetIterMut {
+    fn proxied_children(&mut self) -> WidgetIterMut {
         WidgetIterMut::single(&mut self.child)
     }
 
-    fn get_proxied_children_rev(&mut self) -> WidgetIterMut {
+    fn proxied_children_rev(&mut self) -> WidgetIterMut {
         WidgetIterMut::single(&mut self.child)
     }
 
-    fn get_position(&self) -> Point {
+    fn position(&self) -> Point {
         self.position
     }
 
@@ -95,7 +95,7 @@ impl CommonWidget<CalculatorState> for CalculatorButton {
         self.position = position;
     }
 
-    fn get_dimension(&self) -> Dimensions {
+    fn dimension(&self) -> Dimensions {
         self.dimension
     }
 

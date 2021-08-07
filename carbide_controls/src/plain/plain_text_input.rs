@@ -249,10 +249,10 @@
 //                         let start = CursorIndex { line: 0, char: 0 };
 //                         let end = CursorIndex { line: 0, char: Self::len_in_graphemes(self.text.get_value(env, global_state)) };
 //
-//                         let max_offset = Cursor::Selection { start, end }.get_width(&text, &positioned_glyphs);
+//                         let max_offset = Cursor::Selection { start, end }.width(&text, &positioned_glyphs);
 //
 //                         // Since the offset is negative we have to chose the max value
-//                         *self.text_offset.get_value_mut(env, global_state) = offset.max(-(max_offset - self.get_width())).min(0.0);
+//                         *self.text_offset.get_value_mut(env, global_state) = offset.max(-(max_offset - self.width())).min(0.0);
 //                     }
 //                     _ => ()
 //                 }
@@ -345,12 +345,12 @@
 //                 let mouse_scroll_threshold = 30.0;
 //
 //                 // If the cursor is at the right edge within the threshold
-//                 if to[0] < self.get_x() + mouse_scroll_threshold {
+//                 if to[0] < self.x() + mouse_scroll_threshold {
 //                     let offset = self.text_offset.get_value(env, global_state) + 10.0 * delta_x;
 //                     *self.text_offset.get_value_mut(env, global_state) = offset.min(0.0);
 //
 //                     // If the cursor is at the left edge within the threshold
-//                 } else if to[0] > self.get_x() + self.get_width() - mouse_scroll_threshold {
+//                 } else if to[0] > self.x() + self.width() - mouse_scroll_threshold {
 //                     let offset = self.text_offset.get_value(env, global_state) - 10.0 * delta_x;
 //                     let text = self.text.get_value(env, global_state).clone();
 //                     let positioned_glyphs = self.get_positioned_glyphs(&text, env);
@@ -358,10 +358,10 @@
 //                     let start = CursorIndex { line: 0, char: 0 };
 //                     let end = CursorIndex { line: 0, char: Self::len_in_graphemes(self.text.get_value(env, global_state)) };
 //
-//                     let max_offset = Cursor::Selection { start, end }.get_width(&text, &positioned_glyphs);
+//                     let max_offset = Cursor::Selection { start, end }.width(&text, &positioned_glyphs);
 //
 //                     // Since the offset is negative we have to chose the max value
-//                     *self.text_offset.get_value_mut(env, global_state) = offset.max(-(max_offset - self.get_width())).min(0.0);
+//                     *self.text_offset.get_value_mut(env, global_state) = offset.max(-(max_offset - self.width())).min(0.0);
 //                 }
 //
 //
@@ -754,12 +754,12 @@
 //             Cursor::Selection { end, .. } => end
 //         };
 //
-//         let point = index.get_position(&text, &positioned_glyphs);
+//         let point = index.position(&text, &positioned_glyphs);
 //
 //         *self.cursor_x.get_value_mut(env, global_state) = point[0];
 //         *self.selection_x.get_value_mut(env, global_state) = point[0];
 //
-//         let selection_width = self.cursor.get_width(&text, &positioned_glyphs);
+//         let selection_width = self.cursor.width(&text, &positioned_glyphs);
 //
 //         if selection_width < 0.0 {
 //             *self.selection_width.get_value_mut(env, global_state) = selection_width.abs();
@@ -776,8 +776,8 @@
 //         let cursor_width = 4.0;
 //         let current_text_offset = *self.text_offset.get_value(env, global_state);
 //
-//         if cursor_x + cursor_width > self.get_width() && -current_text_offset < cursor_x + cursor_width - self.get_width() {
-//             let new_text_offset = -(cursor_x + cursor_width - self.get_width());
+//         if cursor_x + cursor_width > self.width() && -current_text_offset < cursor_x + cursor_width - self.width() {
+//             let new_text_offset = -(cursor_x + cursor_width - self.width());
 //
 //             *self.text_offset.get_value_mut(env, global_state) = new_text_offset;
 //         } else if cursor_x + current_text_offset < 0.0 {
@@ -798,7 +798,7 @@
 //
 //             let width_of_text = (point.x + width) as f64;
 //
-//             if width_of_text < self.get_width() {
+//             if width_of_text < self.width() {
 //                 *self.text_offset.get_value_mut(env, global_state) = 0.0;
 //             } else if current_text_offset.abs() > width_of_text {
 //                 *self.text_offset.get_value_mut(env, global_state) = 0.0;
@@ -812,7 +812,7 @@
 //
 //
 // impl<GS: GlobalState> CommonWidget<GS> for PlainTextInput<GS> {
-//     fn get_id(&self) -> Id {
+//     fn id(&self) -> Id {
 //         self.id
 //     }
 //
@@ -820,12 +820,12 @@
 //         self.id = id
 //     }
 //
-//     fn get_flag(&self) -> Flags {
+//     fn flag(&self) -> Flags {
 //         Flags::FOCUSABLE
 //     }
 //
 //     fn get_children(&self) -> WidgetIter<GS> {
-//         if self.child.get_flag() == Flags::PROXY {
+//         if self.child.flag() == Flags::PROXY {
 //             self.child.get_children()
 //         } else {
 //             WidgetIter::single(&self.child)
@@ -833,22 +833,22 @@
 //     }
 //
 //     fn get_children_mut(&mut self) -> WidgetIterMut<GS> {
-//         if self.child.get_flag() == Flags::PROXY {
+//         if self.child.flag() == Flags::PROXY {
 //             self.child.get_children_mut()
 //         } else {
 //             WidgetIterMut::single(&mut self.child)
 //         }
 //     }
 //
-//     fn get_proxied_children(&mut self) -> WidgetIterMut<GS> {
+//     fn proxied_children(&mut self) -> WidgetIterMut<GS> {
 //         WidgetIterMut::single(&mut self.child)
 //     }
 //
-//     fn get_proxied_children_rev(&mut self) -> WidgetIterMut<GS> {
+//     fn proxied_children_rev(&mut self) -> WidgetIterMut<GS> {
 //         WidgetIterMut::single(&mut self.child)
 //     }
 //
-//     fn get_position(&self) -> Point {
+//     fn position(&self) -> Point {
 //         self.position
 //     }
 //
@@ -856,7 +856,7 @@
 //         self.position = position;
 //     }
 //
-//     fn get_dimension(&self) -> Dimensions {
+//     fn dimension(&self) -> Dimensions {
 //         self.dimension
 //     }
 //
@@ -880,13 +880,13 @@
 //
 //         self.set_dimension([requested_size[0], dimensions[1]]);
 //
-//         self.get_dimension()
+//         self.dimension()
 //     }
 //
 //     fn position_children(&mut self) {
 //         let positioning = BasicLayouter::Center.position();
-//         let position = self.get_position();
-//         let dimension = self.get_dimension();
+//         let position = self.position();
+//         let dimension = self.dimension();
 //
 //         if let Some(child) = self.get_children_mut().next() {
 //             positioning(position, dimension, child);

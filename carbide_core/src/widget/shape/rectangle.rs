@@ -180,50 +180,50 @@ impl Layout for Rectangle {
 }
 
 impl CommonWidget for Rectangle {
-    fn get_id(&self) -> Uuid {
+    fn id(&self) -> Id {
         self.id
     }
 
-    fn set_id(&mut self, id: Uuid) {
+    fn set_id(&mut self, id: Id) {
         self.id = id;
     }
 
-    fn get_flag(&self) -> Flags {
+    fn flag(&self) -> Flags {
         Flags::EMPTY
     }
 
-    fn get_children(&self) -> WidgetIter {
+    fn children(&self) -> WidgetIter {
         self.children
             .iter()
             .rfold(WidgetIter::Empty, |acc, x| {
-                if x.get_flag() == Flags::PROXY {
-                    WidgetIter::Multi(Box::new(x.get_children()), Box::new(acc))
+                if x.flag() == Flags::PROXY {
+                    WidgetIter::Multi(Box::new(x.children()), Box::new(acc))
                 } else {
                     WidgetIter::Single(x, Box::new(acc))
                 }
             })
     }
 
-    fn get_children_mut(&mut self) -> WidgetIterMut {
+    fn children_mut(&mut self) -> WidgetIterMut {
         self.children
             .iter_mut()
             .rfold(WidgetIterMut::Empty, |acc, x| {
-                if x.get_flag() == Flags::PROXY {
-                    WidgetIterMut::Multi(Box::new(x.get_children_mut()), Box::new(acc))
+                if x.flag() == Flags::PROXY {
+                    WidgetIterMut::Multi(Box::new(x.children_mut()), Box::new(acc))
                 } else {
                     WidgetIterMut::Single(x, Box::new(acc))
                 }
             })
     }
 
-    fn get_proxied_children(&mut self) -> WidgetIterMut {
+    fn proxied_children(&mut self) -> WidgetIterMut {
         self.children.iter_mut()
             .rfold(WidgetIterMut::Empty, |acc, x| {
                 WidgetIterMut::Single(x, Box::new(acc))
             })
     }
 
-    fn get_proxied_children_rev(&mut self) -> WidgetIterMut {
+    fn proxied_children_rev(&mut self) -> WidgetIterMut {
         self.children.iter_mut()
             .fold(WidgetIterMut::Empty, |acc, x| {
                 WidgetIterMut::Single(x, Box::new(acc))
@@ -231,7 +231,7 @@ impl CommonWidget for Rectangle {
     }
 
 
-    fn get_position(&self) -> Position {
+    fn position(&self) -> Position {
         self.position
     }
 
@@ -239,7 +239,7 @@ impl CommonWidget for Rectangle {
         self.position = position;
     }
 
-    fn get_dimension(&self) -> Dimension {
+    fn dimension(&self) -> Dimension {
         self.dimension
     }
 
@@ -281,10 +281,10 @@ impl Render for Rectangle {
             }
             ShapeStyle::Stroke => {
                 let rect = rect(
-                    self.get_x() as f32,
-                    self.get_y() as f32,
-                    self.get_width() as f32,
-                    self.get_height() as f32,
+                    self.x() as f32,
+                    self.y() as f32,
+                    self.width() as f32,
+                    self.height() as f32,
                 );
                 tessellate(self, &rect, &|builder, rectangle| {
                     builder.add_rectangle(
@@ -307,10 +307,10 @@ impl Render for Rectangle {
                 });
 
                 let rect = rect(
-                    self.get_x() as f32,
-                    self.get_y() as f32,
-                    self.get_width() as f32,
-                    self.get_height() as f32,
+                    self.x() as f32,
+                    self.y() as f32,
+                    self.width() as f32,
+                    self.height() as f32,
                 );
                 tessellate(self, &rect, &|builder, rectangle| {
                     builder.add_rectangle(

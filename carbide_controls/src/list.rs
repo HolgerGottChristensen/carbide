@@ -115,13 +115,13 @@ impl<GS: GlobalStateContract, T: ListIndex + 'static> List<GS, T> {
 
         let spacing = self.spacing;
 
-        let dimension = self.get_dimension();
+        let dimension = self.dimension();
 
         // The y position of the list
-        let y_position = self.get_y();
+        let y_position = self.y();
 
         // The height of the list
-        let height = self.get_height();
+        let height = self.height();
 
         // The offset at the beginning of the list.
         let mut start_offset = self.start_offset.clone();
@@ -139,7 +139,7 @@ impl<GS: GlobalStateContract, T: ListIndex + 'static> List<GS, T> {
         let mut index_offset = self.index_offset.clone();
 
         // Notice the scroll might not be the first when clip is added.
-        if let Some(scroll_view) = self.get_children_mut().next() {
+        if let Some(scroll_view) = self.children_mut().next() {
 
             // Calculate the size off all the children.
             scroll_view.calculate_size(dimension, env);
@@ -148,14 +148,14 @@ impl<GS: GlobalStateContract, T: ListIndex + 'static> List<GS, T> {
             // to the current position of the list view, but this does not matter.
             scroll_view.position_children();
 
-            if let Some(vstack) = scroll_view.get_children_mut().next() {
+            if let Some(vstack) = scroll_view.children_mut().next() {
 
 
                 // The number of elements in currently in the internal model.
                 let internal_model_size = internal_model.get_latest_value().len();
 
                 // Get the children of the scrollview
-                let mut vstack_children = vstack.get_children_mut().enumerate();
+                let mut vstack_children = vstack.children_mut().enumerate();
 
                 // The first child is the initial_offset Rectangle.
                 vstack_children.next();
@@ -167,9 +167,9 @@ impl<GS: GlobalStateContract, T: ListIndex + 'static> List<GS, T> {
                     if index > internal_model_size { continue }
 
                     // Check if an items bottom is above the top of this view.
-                    if child.get_y() + child.get_height() < y_position {
+                    if child.y() + child.height() < y_position {
                         // Increase the start_offset height with the height of the child and spacing.
-                        *start_offset.get_latest_value_mut() += child.get_height() + spacing;
+                        *start_offset.get_latest_value_mut() += child.height() + spacing;
                         // Remove the first element from the internal model.
                         internal_model.get_latest_value_mut().remove(0);
                         // Increase the start_index_offset with 1.
@@ -177,31 +177,31 @@ impl<GS: GlobalStateContract, T: ListIndex + 'static> List<GS, T> {
                     }
 
                     // Check if an item is below the list
-                    if child.get_y() > y_position + height {
+                    if child.y() > y_position + height {
                         // Increase the end_offset with the child's height and additional spacing
-                        *end_offset.get_latest_value_mut() += child.get_height() + spacing;
+                        *end_offset.get_latest_value_mut() += child.height() + spacing;
                         // Pop the last element from the internal model
                         internal_model.get_latest_value_mut().pop();
                     }
                 }
 
                 // Get the children of the scrollview
-                let mut vstack_children = vstack.get_children_mut().enumerate();
+                let mut vstack_children = vstack.children_mut().enumerate();
 
 
                 let (_, initial_child) = vstack_children.next()
                     .expect("Could not find the initial rectangle");
 
                 // TODO: Consider choosing -scroll_offset for this value.
-                let inital_y = initial_child.get_y();
+                let inital_y = initial_child.y();
 
                 let mut min_height = 1000.0;
 
                 // Calculate the minimum height of an index currently in the list.
                 while let Some((index, child)) = vstack_children.next() {
                     if index > internal_model_size { continue }
-                    if child.get_height() < min_height {
-                        min_height = child.get_height();
+                    if child.height() < min_height {
+                        min_height = child.height();
                     }
                 }
 
@@ -221,14 +221,14 @@ impl<GS: GlobalStateContract, T: ListIndex + 'static> List<GS, T> {
                 }
 
 
-                let mut vstack_children = vstack.get_children_mut();
+                let mut vstack_children = vstack.children_mut();
 
                 let bottom_of_list_widget = y_position + height;
 
                 let mut top_of_end_rectangle = 0.0;
 
                 while let Some(vstack_child) = vstack_children.next() {
-                    top_of_end_rectangle = vstack_child.get_y();
+                    top_of_end_rectangle = vstack_child.y();
                     //println!("{}", top_of_end_rectangle);
                 }
 
@@ -304,7 +304,7 @@ impl<GS: GlobalStateContract, T: ListIndex + 'static> List<GS, T> {
 
         self.insert_local_state(env);
 
-        for child in self.get_proxied_children() {
+        for child in self.proxied_children() {
             child.sync_state(env, global_state)
         }
 
@@ -313,43 +313,43 @@ impl<GS: GlobalStateContract, T: ListIndex + 'static> List<GS, T> {
 }
 
 impl<GS: GlobalStateContract, T: ListIndex> CommonWidget<GS> for List<GS, T> {
-    fn get_id(&self) -> Id {
+    fn id(&self) -> Id {
         self.id
     }
 
-    fn set_id(&mut self, id: Uuid) {
+    fn set_id(&mut self, id: Id) {
         self.id = id;
     }
 
-    fn get_flag(&self) -> Flags {
+    fn flag(&self) -> Flags {
         Flags::EMPTY
     }
 
-    fn get_children(&self) -> WidgetIter {
-        if self.child.get_flag() == Flags::PROXY {
-            self.child.get_children()
+    fn children(&self) -> WidgetIter {
+        if self.child.flag() == Flags::PROXY {
+            self.child.children()
         } else {
             WidgetIter::single(&self.child)
         }
     }
 
-    fn get_children_mut(&mut self) -> WidgetIterMut {
-        if self.child.get_flag() == Flags::PROXY {
-            self.child.get_children_mut()
+    fn children_mut(&mut self) -> WidgetIterMut {
+        if self.child.flag() == Flags::PROXY {
+            self.child.children_mut()
         } else {
             WidgetIterMut::single(&mut self.child)
         }
     }
 
-    fn get_proxied_children(&mut self) -> WidgetIterMut {
+    fn proxied_children(&mut self) -> WidgetIterMut {
         WidgetIterMut::single(&mut self.child)
     }
 
-    fn get_proxied_children_rev(&mut self) -> WidgetIterMut {
+    fn proxied_children_rev(&mut self) -> WidgetIterMut {
         WidgetIterMut::single(&mut self.child)
     }
 
-    fn get_position(&self) -> Point {
+    fn position(&self) -> Point {
         self.position
     }
 
@@ -357,7 +357,7 @@ impl<GS: GlobalStateContract, T: ListIndex> CommonWidget<GS> for List<GS, T> {
         self.position = position;
     }
 
-    fn get_dimension(&self) -> Dimensions {
+    fn dimension(&self) -> Dimensions {
         self.dimension
     }
 
@@ -374,7 +374,7 @@ impl<GS: GlobalStateContract, T: ListIndex> Layout<GS> for List<GS, T> {
     }
 
     fn calculate_size(&mut self, requested_size: Dimensions, env: &mut Environment) -> Dimensions {
-        if let Some(child) = self.get_children_mut().next() {
+        if let Some(child) = self.children_mut().next() {
             child.calculate_size(requested_size, env);
         }
 
@@ -387,10 +387,10 @@ impl<GS: GlobalStateContract, T: ListIndex> Layout<GS> for List<GS, T> {
 
     fn position_children(&mut self) {
         let positioning = BasicLayouter::Center.position();
-        let position = self.get_position();
-        let dimension = self.get_dimension();
+        let position = self.position();
+        let dimension = self.dimension();
 
-        if let Some(child) = self.get_children_mut().next() {
+        if let Some(child) = self.children_mut().next() {
             positioning(position, dimension, child);
             child.position_children();
         }

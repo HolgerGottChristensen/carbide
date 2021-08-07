@@ -25,44 +25,44 @@ impl Padding {
 }
 
 impl CommonWidget for Padding {
-    fn get_id(&self) -> Uuid {
+    fn id(&self) -> Id {
         self.id
     }
 
-    fn set_id(&mut self, id: Uuid) {
+    fn set_id(&mut self, id: Id) {
         self.id = id;
     }
 
-    fn get_flag(&self) -> Flags {
+    fn flag(&self) -> Flags {
         Flags::EMPTY
     }
 
-    fn get_children(&self) -> WidgetIter {
-        if self.child.get_flag() == Flags::PROXY {
-            self.child.get_children()
+    fn children(&self) -> WidgetIter {
+        if self.child.flag() == Flags::PROXY {
+            self.child.children()
         } else {
             WidgetIter::single(self.child.deref())
         }
     }
 
-    fn get_children_mut(&mut self) -> WidgetIterMut {
-        if self.child.get_flag() == Flags::PROXY {
-            self.child.get_children_mut()
+    fn children_mut(&mut self) -> WidgetIterMut {
+        if self.child.flag() == Flags::PROXY {
+            self.child.children_mut()
         } else {
             WidgetIterMut::single(self.child.deref_mut())
         }
     }
 
-    fn get_proxied_children(&mut self) -> WidgetIterMut {
+    fn proxied_children(&mut self) -> WidgetIterMut {
         WidgetIterMut::single(self.child.deref_mut())
     }
 
-    fn get_proxied_children_rev(&mut self) -> WidgetIterMut {
+    fn proxied_children_rev(&mut self) -> WidgetIterMut {
         WidgetIterMut::single(self.child.deref_mut())
     }
 
 
-    fn get_position(&self) -> Position {
+    fn position(&self) -> Position {
         self.position
     }
 
@@ -70,7 +70,7 @@ impl CommonWidget for Padding {
         self.position = position;
     }
 
-    fn get_dimension(&self) -> Dimension {
+    fn dimension(&self) -> Dimension {
         Dimension::new(self.dimension.width.abs(), self.dimension.height.abs())
     }
 
@@ -96,8 +96,8 @@ impl Layout for Padding {
 
     fn position_children(&mut self) {
         let positioning = BasicLayouter::Center.position();
-        let position = Position::new(self.get_x() + self.edge_insets.left, self.get_y() + self.edge_insets.top);
-        let dimension = Dimension::new(self.get_width() - self.edge_insets.left - self.edge_insets.right, self.get_height() - self.edge_insets.top - self.edge_insets.bottom);
+        let position = Position::new(self.x() + self.edge_insets.left, self.y() + self.edge_insets.top);
+        let dimension = Dimension::new(self.width() - self.edge_insets.left - self.edge_insets.right, self.height() - self.edge_insets.top - self.edge_insets.bottom);
 
         positioning(position, dimension, &mut self.child);
         self.child.position_children();

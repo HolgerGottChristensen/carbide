@@ -46,13 +46,13 @@ impl OverlaidLayer {
             if *consumed { return (); }
 
             if !self.steal_events_when_some {
-                for child in self.get_proxied_children() {
+                for child in self.proxied_children() {
                     child.process_mouse_event(event, &consumed, env, global_state);
                     if *consumed { return (); }
                 }
             }
         } else {
-            for child in self.get_proxied_children() {
+            for child in self.proxied_children() {
                 child.process_mouse_event(event, &consumed, env, global_state);
                 if *consumed { return (); }
             }
@@ -72,12 +72,12 @@ impl OverlaidLayer {
             overlay.process_keyboard_event(event, env, global_state);
 
             if !self.steal_events_when_some {
-                for child in self.get_proxied_children() {
+                for child in self.proxied_children() {
                     child.process_keyboard_event(event, env, global_state);
                 }
             }
         } else {
-            for child in self.get_proxied_children() {
+            for child in self.proxied_children() {
                 child.process_keyboard_event(event, env, global_state);
             }
         }
@@ -94,12 +94,12 @@ impl OverlaidLayer {
             overlay.process_other_event(event, env, global_state);
 
             if !self.steal_events_when_some {
-                for child in self.get_proxied_children() {
+                for child in self.proxied_children() {
                     child.process_other_event(event, env, global_state);
                 }
             }
         } else {
-            for child in self.get_proxied_children() {
+            for child in self.proxied_children() {
                 child.process_other_event(event, env, global_state);
             }
         }
@@ -117,7 +117,7 @@ impl OverlaidLayer {
             overlay.sync_state(env, global_state);
         }
 
-        for child in self.get_proxied_children() {
+        for child in self.proxied_children() {
             child.sync_state(env, global_state)
         }
 
@@ -129,16 +129,16 @@ impl OverlaidLayer {
 
                 // If the overlay has the same id as the overlay shown last frame we should not
                 // update it, because we will loose its state.
-                if overlay.get_id() != current_overlay_id {
+                if overlay.id() != current_overlay_id {
                     self.overlay = Some(overlay);
                     self.current_overlay_id = Some(current_overlay_id)
                 } else {
                     if let Some(o) = &mut self.overlay {
-                        o.set_position(overlay.get_position());
+                        o.set_position(overlay.position());
                     }
                 }
             } else {
-                self.current_overlay_id = Some(overlay.get_id());
+                self.current_overlay_id = Some(overlay.id());
                 self.overlay = Some(overlay);
             }
         } else {
@@ -155,7 +155,7 @@ impl OverlaidLayer {
     }*/
 
     fn process_get_primitives(&mut self, primitives: &mut Vec<Primitive>, env: &mut Environment) {
-        for child in self.get_children_mut() {
+        for child in self.children_mut() {
             child.process_get_primitives(primitives, env);
         }
 
@@ -208,43 +208,43 @@ impl Layout for OverlaidLayer {
 }
 
 impl CommonWidget for OverlaidLayer {
-    fn get_id(&self) -> Uuid {
+    fn id(&self) -> Id {
         self.id
     }
 
-    fn set_id(&mut self, id: Uuid) {
+    fn set_id(&mut self, id: Id) {
         self.id = id;
     }
 
-    fn get_flag(&self) -> Flags {
+    fn flag(&self) -> Flags {
         Flags::EMPTY
     }
 
-    fn get_children(&self) -> WidgetIter {
-        if self.child.get_flag() == Flags::PROXY {
-            self.child.get_children()
+    fn children(&self) -> WidgetIter {
+        if self.child.flag() == Flags::PROXY {
+            self.child.children()
         } else {
             WidgetIter::single(self.child.deref())
         }
     }
 
-    fn get_children_mut(&mut self) -> WidgetIterMut {
-        if self.child.get_flag() == Flags::PROXY {
-            self.child.get_children_mut()
+    fn children_mut(&mut self) -> WidgetIterMut {
+        if self.child.flag() == Flags::PROXY {
+            self.child.children_mut()
         } else {
             WidgetIterMut::single(self.child.deref_mut())
         }
     }
 
-    fn get_proxied_children(&mut self) -> WidgetIterMut {
+    fn proxied_children(&mut self) -> WidgetIterMut {
         WidgetIterMut::single(self.child.deref_mut())
     }
 
-    fn get_proxied_children_rev(&mut self) -> WidgetIterMut {
+    fn proxied_children_rev(&mut self) -> WidgetIterMut {
         WidgetIterMut::single(self.child.deref_mut())
     }
 
-    fn get_position(&self) -> Position {
+    fn position(&self) -> Position {
         self.position
     }
 
@@ -252,7 +252,7 @@ impl CommonWidget for OverlaidLayer {
         self.position = position;
     }
 
-    fn get_dimension(&self) -> Dimension {
+    fn dimension(&self) -> Dimension {
         self.dimension
     }
 

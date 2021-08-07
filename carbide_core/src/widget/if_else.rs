@@ -72,51 +72,51 @@ impl Layout for IfElse {
 }
 
 impl CommonWidget for IfElse {
-    fn get_id(&self) -> Uuid {
+    fn id(&self) -> Id {
         self.id
     }
 
-    fn set_id(&mut self, id: Uuid) {
+    fn set_id(&mut self, id: Id) {
         self.id = id;
     }
 
-    fn get_flag(&self) -> Flags {
+    fn flag(&self) -> Flags {
         Flags::EMPTY
     }
 
-    fn get_children(&self) -> WidgetIter {
+    fn children(&self) -> WidgetIter {
         if *self.predicate.value() {
-            if self.when_true.get_flag() == Flags::PROXY {
-                self.when_true.get_children()
+            if self.when_true.flag() == Flags::PROXY {
+                self.when_true.children()
             } else {
                 WidgetIter::single(self.when_true.deref())
             }
         } else {
-            if self.when_false.get_flag() == Flags::PROXY {
-                self.when_false.get_children()
+            if self.when_false.flag() == Flags::PROXY {
+                self.when_false.children()
             } else {
                 WidgetIter::single(self.when_false.deref())
             }
         }
     }
 
-    fn get_children_mut(&mut self) -> WidgetIterMut {
+    fn children_mut(&mut self) -> WidgetIterMut {
         if *self.predicate.value() {
-            if self.when_true.get_flag() == Flags::PROXY {
-                self.when_true.get_children_mut()
+            if self.when_true.flag() == Flags::PROXY {
+                self.when_true.children_mut()
             } else {
                 WidgetIterMut::single(self.when_true.deref_mut())
             }
         } else {
-            if self.when_false.get_flag() == Flags::PROXY {
-                self.when_false.get_children_mut()
+            if self.when_false.flag() == Flags::PROXY {
+                self.when_false.children_mut()
             } else {
                 WidgetIterMut::single(self.when_false.deref_mut())
             }
         }
     }
 
-    fn get_proxied_children(&mut self) -> WidgetIterMut {
+    fn proxied_children(&mut self) -> WidgetIterMut {
         if *self.predicate.value() {
             WidgetIterMut::single(self.when_true.deref_mut())
         } else {
@@ -124,7 +124,7 @@ impl CommonWidget for IfElse {
         }
     }
 
-    fn get_proxied_children_rev(&mut self) -> WidgetIterMut {
+    fn proxied_children_rev(&mut self) -> WidgetIterMut {
         if *self.predicate.value() {
             WidgetIterMut::single(self.when_true.deref_mut())
         } else {
@@ -132,7 +132,7 @@ impl CommonWidget for IfElse {
         }
     }
 
-    fn get_position(&self) -> Position {
+    fn position(&self) -> Position {
         self.position
     }
 
@@ -140,7 +140,7 @@ impl CommonWidget for IfElse {
         self.position = position;
     }
 
-    fn get_dimension(&self) -> Dimension {
+    fn dimension(&self) -> Dimension {
         self.dimension
     }
 

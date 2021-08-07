@@ -9,12 +9,6 @@ use crate::event::{Event, KeyboardEvent, MouseEvent, WidgetEvent};
 use crate::focus::{Focus, Focusable, Refocus};
 use crate::prelude::*;
 use crate::render::RenderProcessor;
-use crate::widget::{Frame, Offset};
-use crate::widget::Border;
-use crate::widget::Clip;
-use crate::widget::EdgeInsets;
-use crate::widget::Hidden;
-use crate::widget::Padding;
 
 pub trait Widget: Event + Layout + Render + RenderProcessor + Focusable + DynClone {}
 
@@ -28,44 +22,44 @@ dyn_clone::clone_trait_object!(Widget);
 //impl<T> WidgetExt for T where T: Widget + 'static {}
 
 impl CommonWidget for Box<dyn Widget> {
-    fn get_id(&self) -> Uuid {
-        self.deref().get_id()
+    fn id(&self) -> Id {
+        self.deref().id()
     }
 
-    fn set_id(&mut self, id: Uuid) {
+    fn set_id(&mut self, id: Id) {
         self.deref_mut().set_id(id);
     }
 
-    fn get_flag(&self) -> Flags {
-        self.deref().get_flag()
+    fn flag(&self) -> Flags {
+        self.deref().flag()
     }
 
-    fn get_children(&self) -> WidgetIter {
-        self.deref().get_children()
+    fn children(&self) -> WidgetIter {
+        self.deref().children()
     }
 
-    fn get_children_mut(&mut self) -> WidgetIterMut {
-        self.deref_mut().get_children_mut()
+    fn children_mut(&mut self) -> WidgetIterMut {
+        self.deref_mut().children_mut()
     }
 
-    fn get_proxied_children(&mut self) -> WidgetIterMut {
-        self.deref_mut().get_proxied_children()
+    fn proxied_children(&mut self) -> WidgetIterMut {
+        self.deref_mut().proxied_children()
     }
 
-    fn get_proxied_children_rev(&mut self) -> WidgetIterMut {
-        self.deref_mut().get_proxied_children_rev()
+    fn proxied_children_rev(&mut self) -> WidgetIterMut {
+        self.deref_mut().proxied_children_rev()
     }
 
-    fn get_position(&self) -> Position {
-        self.deref().get_position()
+    fn position(&self) -> Position {
+        self.deref().position()
     }
 
     fn set_position(&mut self, position: Position) {
         self.deref_mut().set_position(position)
     }
 
-    fn get_dimension(&self) -> Dimension {
-        self.deref().get_dimension()
+    fn dimension(&self) -> Dimension {
+        self.deref().dimension()
     }
 
     fn set_dimension(&mut self, dimensions: Dimension) {
@@ -173,6 +167,6 @@ impl Focusable for Box<dyn Widget> {
 
 impl Debug for dyn Widget {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "Widget: {}", self.get_id())
+        write!(f, "Widget: {}", self.id())
     }
 }

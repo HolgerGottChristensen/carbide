@@ -5,7 +5,6 @@ use instant::Instant;
 
 use crate::draw::{Dimension, Position, Scalar};
 use crate::event::{Button, Input, Key, ModifierKey, Motion, MouseButton};
-use crate::utils;
 
 /// A basic, non-interactive rectangle shape widget.
 #[derive(Debug)]

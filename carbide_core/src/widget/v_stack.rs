@@ -44,7 +44,7 @@ impl Layout for VStack {
     fn calculate_size(&mut self, requested_size: Dimension, env: &mut Environment) -> Dimension {
         let mut number_of_children_that_needs_sizing = self.children.len() as f64;
 
-        let non_spacers_vec: Vec<bool> = self.get_children().map(|n| n.get_flag() != Flags::SPACER).collect();
+        let non_spacers_vec: Vec<bool> = self.children().map(|n| n.flag() != Flags::SPACER).collect();
         let non_spacers_vec_length = non_spacers_vec.len();
 
         let number_of_spaces = non_spacers_vec.iter().enumerate().take(non_spacers_vec_length.max(1) - 1).filter(|(n, b)| {
@@ -54,7 +54,7 @@ impl Layout for VStack {
         let spacing_total = (number_of_spaces) * self.spacing;
         let mut size_for_children = Dimension::new(requested_size.width, requested_size.height - spacing_total);
 
-        let mut children_flexibilty: Vec<(u32, &mut dyn Widget)> = self.get_children_mut().map(|child| (child.flexibility(), child)).collect();
+        let mut children_flexibilty: Vec<(u32, &mut dyn Widget)> = self.children_mut().map(|child| (child.flexibility(), child)).collect();
         children_flexibilty.sort_by(|(a, _), (b, _)| a.cmp(&b));
         children_flexibilty.reverse();
 
@@ -76,10 +76,10 @@ impl Layout for VStack {
             total_height += chosen_size.height;
         }
 
-        let spacer_count = self.get_children().filter(|m| m.get_flag() == Flags::SPACER).count() as f64;
+        let spacer_count = self.children().filter(|m| m.flag() == Flags::SPACER).count() as f64;
         let rest_space = requested_size.height - total_height - spacing_total;
 
-        for spacer in self.get_children_mut().filter(|m| m.get_flag() == Flags::SPACER) {
+        for spacer in self.children_mut().filter(|m| m.flag() == Flags::SPACER) {
             let chosen_size = spacer.calculate_size(Dimension::new(requested_size.width, rest_space / spacer_count), env);
 
             if chosen_size.width > max_width {
@@ -101,21 +101,21 @@ impl Layout for VStack {
         let spacing = self.spacing;
         let alignment = self.cross_axis_alignment.clone();
 
-        let spacers: Vec<bool> = self.get_children().map(|n| n.get_flag() == Flags::SPACER).collect();
+        let spacers: Vec<bool> = self.children().map(|n| n.flag() == Flags::SPACER).collect();
 
-        for (n, child) in self.get_children_mut().enumerate() {
+        for (n, child) in self.children_mut().enumerate() {
             match alignment {
                 CrossAxisAlignment::Start => { child.set_x(position.x) }
-                CrossAxisAlignment::Center => { child.set_x(position.x + dimension.width / 2.0 - child.get_width() / 2.0) }
-                CrossAxisAlignment::End => { child.set_x(position.x + dimension.width - child.get_width()) }
+                CrossAxisAlignment::Center => { child.set_x(position.x + dimension.width / 2.0 - child.width() / 2.0) }
+                CrossAxisAlignment::End => { child.set_x(position.x + dimension.width - child.width()) }
             }
 
             child.set_y(position.y + height_offset);
 
-            if child.get_flag() != Flags::SPACER && n < spacers.len() - 1 && !spacers[n + 1] {
+            if child.flag() != Flags::SPACER && n < spacers.len() - 1 && !spacers[n + 1] {
                 height_offset += spacing;
             }
-            height_offset += child.get_height();
+            height_offset += child.height();
 
 
             child.position_children();
@@ -124,45 +124,45 @@ impl Layout for VStack {
 }
 
 impl CommonWidget for VStack {
-    fn get_id(&self) -> Uuid {
+    fn id(&self) -> Id {
         self.id
     }
 
-    fn set_id(&mut self, id: Uuid) {
+    fn set_id(&mut self, id: Id) {
         self.id = id;
     }
 
-    fn get_flag(&self) -> Flags {
+    fn flag(&self) -> Flags {
         Flags::EMPTY
     }
 
-    fn get_children(&self) -> WidgetIter {
+    fn children(&self) -> WidgetIter {
         self.children
             .iter()
             .map(|x| x.deref())
             .rfold(WidgetIter::Empty, |acc, x| {
-                if x.get_flag() == Flags::PROXY {
-                    WidgetIter::Multi(Box::new(x.get_children()), Box::new(acc))
+                if x.flag() == Flags::PROXY {
+                    WidgetIter::Multi(Box::new(x.children()), Box::new(acc))
                 } else {
                     WidgetIter::Single(x, Box::new(acc))
                 }
             })
     }
 
-    fn get_children_mut(&mut self) -> WidgetIterMut {
+    fn children_mut(&mut self) -> WidgetIterMut {
         self.children
             .iter_mut()
             .map(|x| x.deref_mut())
             .rfold(WidgetIterMut::Empty, |acc, x| {
-                if x.get_flag() == Flags::PROXY {
-                    WidgetIterMut::Multi(Box::new(x.get_children_mut()), Box::new(acc))
+                if x.flag() == Flags::PROXY {
+                    WidgetIterMut::Multi(Box::new(x.children_mut()), Box::new(acc))
                 } else {
                     WidgetIterMut::Single(x, Box::new(acc))
                 }
             })
     }
 
-    fn get_proxied_children(&mut self) -> WidgetIterMut {
+    fn proxied_children(&mut self) -> WidgetIterMut {
         self.children.iter_mut()
             .map(|x| x.deref_mut())
             .rfold(WidgetIterMut::Empty, |acc, x| {
@@ -170,7 +170,7 @@ impl CommonWidget for VStack {
             })
     }
 
-    fn get_proxied_children_rev(&mut self) -> WidgetIterMut {
+    fn proxied_children_rev(&mut self) -> WidgetIterMut {
         self.children.iter_mut()
             .map(|x| x.deref_mut())
             .fold(WidgetIterMut::Empty, |acc, x| {
@@ -179,7 +179,7 @@ impl CommonWidget for VStack {
     }
 
 
-    fn get_position(&self) -> Position {
+    fn position(&self) -> Position {
         self.position
     }
 
@@ -187,7 +187,7 @@ impl CommonWidget for VStack {
         self.position = position;
     }
 
-    fn get_dimension(&self) -> Dimension {
+    fn dimension(&self) -> Dimension {
         self.dimension
     }
 

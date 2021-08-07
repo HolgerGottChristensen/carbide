@@ -21,15 +21,15 @@ impl BasicLayouter {
     }
 
     fn trailing_x(x: Scalar, width: Scalar, child: &mut dyn Widget) {
-        child.set_x(x + width - child.get_width());
+        child.set_x(x + width - child.width());
     }
 
     fn center_x(x: Scalar, width: Scalar, child: &mut dyn Widget) {
-        child.set_x(x + width / 2.0 - child.get_width() / 2.0);
+        child.set_x(x + width / 2.0 - child.width() / 2.0);
     }
 
     fn center_y(y: Scalar, height: Scalar, child: &mut dyn Widget) {
-        child.set_y(y + height / 2.0 - child.get_height() / 2.0);
+        child.set_y(y + height / 2.0 - child.height() / 2.0);
     }
 
     fn top_y(y: Scalar, _: Scalar, child: &mut dyn Widget) {
@@ -37,7 +37,7 @@ impl BasicLayouter {
     }
 
     fn bottom_y(y: Scalar, height: Scalar, child: &mut dyn Widget) {
-        child.set_y(y + height - child.get_height());
+        child.set_y(y + height - child.height());
     }
 
     fn top_leading(relative_to: Position, dimensions: Dimension, child: &mut dyn Widget) {

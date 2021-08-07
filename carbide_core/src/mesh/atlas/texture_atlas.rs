@@ -288,11 +288,16 @@ impl TextureAtlas {
 
 #[test]
 fn create_packed_image() {
+    use image::GenericImage;
+    use crate::draw::Dimension;
+    use crate::text::{FontFamily, FontWeight, FontStyle};
+    use crate::environment::Environment;
+
     let mut atlas = TextureAtlas::new(512, 512);
     let image1 = "/Users/holgergottchristensen/carbide/target/smile.png";
     let image2 = "/Users/holgergottchristensen/carbide/target/smile_new.png";
 
-    let mut env = Environment::<String>::new(vec![], [0.0, 0.0], 1.0);
+    let mut env = Environment::new(vec![], Dimension::new(0.0, 0.0), 1.0);
     let mut family = FontFamily::new("Apple Color Emoji");
     family.add_font("/System/Library/Fonts/Apple Color Emoji.ttc", FontWeight::Normal, FontStyle::Normal);
     env.add_font_family(family);
@@ -328,6 +333,7 @@ fn create_packed_image() {
     atlas.queue_glyph(1, 'A', 32, Position::new(0.5, 0.5), &env);*/
 
     let mut texture = image::DynamicImage::new_rgba8(512, 512);
+
 
     atlas.cache_queued(|x, y, image_data| {
         println!("Insert the image at: {}, {} with size {}, {}", x, y, image_data.width(), image_data.height());

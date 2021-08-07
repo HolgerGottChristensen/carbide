@@ -86,35 +86,35 @@ impl Canvas {
 }
 
 impl CommonWidget for Canvas {
-    fn get_id(&self) -> Uuid {
+    fn id(&self) -> Id {
         self.id
     }
 
-    fn set_id(&mut self, id: Uuid) {
+    fn set_id(&mut self, id: Id) {
         self.id = id;
     }
 
-    fn get_flag(&self) -> Flags {
+    fn flag(&self) -> Flags {
         Flags::EMPTY
     }
 
-    fn get_children(&self) -> WidgetIter {
+    fn children(&self) -> WidgetIter {
         WidgetIter::Empty
     }
 
-    fn get_children_mut(&mut self) -> WidgetIterMut {
+    fn children_mut(&mut self) -> WidgetIterMut {
         WidgetIterMut::Empty
     }
 
-    fn get_proxied_children(&mut self) -> WidgetIterMut {
+    fn proxied_children(&mut self) -> WidgetIterMut {
         WidgetIterMut::Empty
     }
 
-    fn get_proxied_children_rev(&mut self) -> WidgetIterMut {
+    fn proxied_children_rev(&mut self) -> WidgetIterMut {
         WidgetIterMut::Empty
     }
 
-    fn get_position(&self) -> Position {
+    fn position(&self) -> Position {
         self.position
     }
 
@@ -122,7 +122,7 @@ impl CommonWidget for Canvas {
         self.position = position;
     }
 
-    fn get_dimension(&self) -> Dimension {
+    fn dimension(&self) -> Dimension {
         self.dimension
     }
 
@@ -135,10 +135,10 @@ impl Render for Canvas {
     fn get_primitives(&mut self, env: &mut Environment) -> Vec<Primitive> {
         let context = Context::new();
 
-        let rectangle = Rect::new(self.get_position(), self.get_dimension());
+        let rectangle = Rect::new(self.position(), self.dimension());
         let context = (self.context)(rectangle, context);
 
-        let paths = context.to_paths(self.get_position());
+        let paths = context.to_paths(self.position());
 
         let mut prims = vec![];
 

@@ -118,7 +118,7 @@ use crate::prelude::*;
 // }
 //
 // impl<GS: GlobalStateContract> CommonWidget<GS> for EnvUpdating<GS> {
-//     fn get_id(&self) -> Uuid {
+//     fn id(&self) -> Uuid {
 //         self.id
 //     }
 //
@@ -126,12 +126,12 @@ use crate::prelude::*;
 //         self.id = id;
 //     }
 //
-//     fn get_flag(&self) -> Flags {
+//     fn flag(&self) -> Flags {
 //         Flags::EMPTY
 //     }
 //
 //     fn get_children(&self) -> WidgetIter<GS> {
-//         if self.child.get_flag() == Flags::PROXY {
+//         if self.child.flag() == Flags::PROXY {
 //             self.child.get_children()
 //         } else {
 //             WidgetIter::single(&self.child)
@@ -139,23 +139,23 @@ use crate::prelude::*;
 //     }
 //
 //     fn get_children_mut(&mut self) -> WidgetIterMut<GS> {
-//         if self.child.get_flag() == Flags::PROXY {
+//         if self.child.flag() == Flags::PROXY {
 //             self.child.get_children_mut()
 //         } else {
 //             WidgetIterMut::single(&mut self.child)
 //         }
 //     }
 //
-//     fn get_proxied_children(&mut self) -> WidgetIterMut<GS> {
+//     fn proxied_children(&mut self) -> WidgetIterMut<GS> {
 //         WidgetIterMut::single(&mut self.child)
 //     }
 //
-//     fn get_proxied_children_rev(&mut self) -> WidgetIterMut<GS> {
+//     fn proxied_children_rev(&mut self) -> WidgetIterMut<GS> {
 //         WidgetIterMut::single(&mut self.child)
 //     }
 //
 //
-//     fn get_position(&self) -> Point {
+//     fn position(&self) -> Point {
 //         self.position
 //     }
 //
@@ -163,7 +163,7 @@ use crate::prelude::*;
 //         self.position = position;
 //     }
 //
-//     fn get_dimension(&self) -> Dimensions {
+//     fn dimension(&self) -> Dimensions {
 //         self.dimension
 //     }
 //

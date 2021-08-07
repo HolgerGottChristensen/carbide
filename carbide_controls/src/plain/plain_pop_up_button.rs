@@ -160,14 +160,14 @@ impl<T: StateContract + 'static, GS: GlobalStateContract> PlainPopUpButton<T, GS
 
             overlay.calculate_size([5000.0, 5000.0], env);
 
-            let popup_x = self.get_x() - 1.0;
+            let popup_x = self.x() - 1.0;
 
-            let mut popup_y = self.get_y() - overlay.get_height() / 2.0 + self.get_height() / 2.0;
+            let mut popup_y = self.y() - overlay.height() / 2.0 + self.height() / 2.0;
 
             if popup_y < 0.0 {
                 popup_y = 0.0;
-            } else if popup_y + overlay.get_height() > env.get_corrected_height() {
-                popup_y = env.get_corrected_height() - overlay.get_height();
+            } else if popup_y + overlay.height() > env.get_corrected_height() {
+                popup_y = env.get_corrected_height() - overlay.height();
             }
 
             overlay.set_position([popup_x, popup_y]);
@@ -179,43 +179,43 @@ impl<T: StateContract + 'static, GS: GlobalStateContract> PlainPopUpButton<T, GS
 }
 
 impl<T: StateContract + 'static, GS: GlobalStateContract> CommonWidget<GS> for PlainPopUpButton<T, GS> {
-    fn get_id(&self) -> Id {
+    fn id(&self) -> Id {
         self.id
     }
 
-    fn set_id(&mut self, id: Uuid) {
+    fn set_id(&mut self, id: Id) {
         self.id = id;
     }
 
-    fn get_flag(&self) -> Flags {
+    fn flag(&self) -> Flags {
         Flags::FOCUSABLE
     }
 
-    fn get_children(&self) -> WidgetIter {
-        if self.child.get_flag() == Flags::PROXY {
-            self.child.get_children()
+    fn children(&self) -> WidgetIter {
+        if self.child.flag() == Flags::PROXY {
+            self.child.children()
         } else {
             WidgetIter::single(&self.child)
         }
     }
 
-    fn get_children_mut(&mut self) -> WidgetIterMut {
-        if self.child.get_flag() == Flags::PROXY {
-            self.child.get_children_mut()
+    fn children_mut(&mut self) -> WidgetIterMut {
+        if self.child.flag() == Flags::PROXY {
+            self.child.children_mut()
         } else {
             WidgetIterMut::single(&mut self.child)
         }
     }
 
-    fn get_proxied_children(&mut self) -> WidgetIterMut {
+    fn proxied_children(&mut self) -> WidgetIterMut {
         WidgetIterMut::single(&mut self.child)
     }
 
-    fn get_proxied_children_rev(&mut self) -> WidgetIterMut {
+    fn proxied_children_rev(&mut self) -> WidgetIterMut {
         WidgetIterMut::single(&mut self.child)
     }
 
-    fn get_position(&self) -> Point {
+    fn position(&self) -> Point {
         self.position
     }
 
@@ -223,7 +223,7 @@ impl<T: StateContract + 'static, GS: GlobalStateContract> CommonWidget<GS> for P
         self.position = position;
     }
 
-    fn get_dimension(&self) -> Dimensions {
+    fn dimension(&self) -> Dimensions {
         self.dimension
     }
 
@@ -240,7 +240,7 @@ impl<T: StateContract + 'static, GS: GlobalStateContract> Layout<GS> for PlainPo
     }
 
     fn calculate_size(&mut self, requested_size: Dimensions, env: &mut Environment) -> Dimensions {
-        if let Some(child) = self.get_children_mut().next() {
+        if let Some(child) = self.children_mut().next() {
             child.calculate_size(requested_size, env);
         }
 
@@ -251,10 +251,10 @@ impl<T: StateContract + 'static, GS: GlobalStateContract> Layout<GS> for PlainPo
 
     fn position_children(&mut self) {
         let positioning = BasicLayouter::Center.position();
-        let position = self.get_position();
-        let dimension = self.get_dimension();
+        let position = self.position();
+        let dimension = self.dimension();
 
-        if let Some(child) = self.get_children_mut().next() {
+        if let Some(child) = self.children_mut().next() {
             positioning(position, dimension, child);
             child.position_children();
         }

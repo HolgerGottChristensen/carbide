@@ -55,8 +55,8 @@ impl Layout for Border {
     fn position_children(&mut self) {
         let border_width = self.border_width as f64;
         let positioning = BasicLayouter::Center.position();
-        let position = Position::new(self.get_x() + border_width, self.get_y() + border_width);
-        let dimension = Dimension::new(self.get_width() - border_width - border_width, self.get_height() - border_width - border_width);
+        let position = Position::new(self.x() + border_width, self.y() + border_width);
+        let dimension = Dimension::new(self.width() - border_width - border_width, self.height() - border_width - border_width);
 
         positioning(position, dimension, &mut self.child);
         self.child.position_children();
@@ -64,43 +64,43 @@ impl Layout for Border {
 }
 
 impl CommonWidget for Border {
-    fn get_id(&self) -> Uuid {
+    fn id(&self) -> Id {
         self.id
     }
 
-    fn set_id(&mut self, id: Uuid) {
+    fn set_id(&mut self, id: Id) {
         self.id = id;
     }
 
-    fn get_flag(&self) -> Flags {
+    fn flag(&self) -> Flags {
         Flags::EMPTY
     }
 
-    fn get_children(&self) -> WidgetIter {
-        if self.child.get_flag() == Flags::PROXY {
-            self.child.get_children()
+    fn children(&self) -> WidgetIter {
+        if self.child.flag() == Flags::PROXY {
+            self.child.children()
         } else {
             WidgetIter::single(self.child.deref())
         }
     }
 
-    fn get_children_mut(&mut self) -> WidgetIterMut {
-        if self.child.get_flag() == Flags::PROXY {
-            self.child.get_children_mut()
+    fn children_mut(&mut self) -> WidgetIterMut {
+        if self.child.flag() == Flags::PROXY {
+            self.child.children_mut()
         } else {
             WidgetIterMut::single(self.child.deref_mut())
         }
     }
 
-    fn get_proxied_children(&mut self) -> WidgetIterMut {
+    fn proxied_children(&mut self) -> WidgetIterMut {
         WidgetIterMut::single(self.child.deref_mut())
     }
 
-    fn get_proxied_children_rev(&mut self) -> WidgetIterMut {
+    fn proxied_children_rev(&mut self) -> WidgetIterMut {
         WidgetIterMut::single(self.child.deref_mut())
     }
 
-    fn get_position(&self) -> Position {
+    fn position(&self) -> Position {
         self.position
     }
 
@@ -108,7 +108,7 @@ impl CommonWidget for Border {
         self.position = position;
     }
 
-    fn get_dimension(&self) -> Dimension {
+    fn dimension(&self) -> Dimension {
         self.dimension
     }
 

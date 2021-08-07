@@ -22,21 +22,21 @@ impl<T> Layout for T where T: SingleChildLayout + CommonWidget {
 
     fn calculate_size(&mut self, requested_size: Dimension, env: &mut Environment) -> Dimension {
         let mut dimensions = Dimension::new(0.0, 0.0);
-        if let Some(child) = self.get_children_mut().next() {
+        if let Some(child) = self.children_mut().next() {
             dimensions = child.calculate_size(requested_size, env);
         }
 
         self.set_dimension(dimensions);
 
-        self.get_dimension()
+        self.dimension()
     }
 
     fn position_children(&mut self) {
         let positioning = BasicLayouter::Center.position();
-        let position = self.get_position();
-        let dimension = self.get_dimension();
+        let position = self.position();
+        let dimension = self.dimension();
 
-        if let Some(child) = self.get_children_mut().next() {
+        if let Some(child) = self.children_mut().next() {
             positioning(position, dimension, child);
             child.position_children();
         }
