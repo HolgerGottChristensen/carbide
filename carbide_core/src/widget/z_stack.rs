@@ -1,7 +1,7 @@
 use std::ops::Deref;
 
 use crate::prelude::*;
-use crate::widget::ChildRender;
+use crate::render::ChildRender;
 
 /// A basic, non-interactive rectangle shape widget.
 #[derive(Debug, Clone, Widget)]

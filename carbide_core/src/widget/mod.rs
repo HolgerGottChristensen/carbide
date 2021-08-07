@@ -1,75 +1,53 @@
-//! Widgets are the core building blocks for every carbide user interface.
-//!
-//! This module contains items related to the implementation of the `Widget` trait. It also
-//! re-exports all widgets (and their modules) that are provided by carbide.
+pub use common::*;
+pub use shape::*;
+pub use types::*;
 
-// Other useful uses when importing widgets.
-use uuid::Uuid;
+use crate::Point;
 
-pub use carbide_core::layout::CrossAxisAlignment;
-pub use carbide_core::layout::Layout;
-pub use carbide_core::layout::Layouter;
-//pub use carbide_core::state::state_ext::StateExt;
-pub use carbide_core::window::TWindow;
+pub use self::border::*;
+pub use self::clip::*;
+pub use self::environment_updating::*;
+pub use self::foreach::*;
+pub use self::frame::*;
+pub use self::h_stack::*;
+pub use self::hidden::*;
+pub use self::if_else::*;
+pub use self::image::*;
+pub use self::offset::*;
+pub use self::overlaid_layer::*;
+pub use self::padding::*;
+pub use self::scroll::*;
+pub use self::spacer::*;
+pub use self::text::*;
+pub use self::v_stack::*;
+pub use self::z_stack::*;
 
-pub use crate::{Color, Colorable, OldRect, Point};
-pub use crate::environment::Environment;
-pub use crate::environment::EnvironmentColor;
-pub use crate::environment::EnvironmentFontSize;
-pub use crate::flags::Flags;
-pub use crate::focus::Focus;
-pub use crate::focus::Focusable;
-pub use crate::focus::Refocus;
-pub use crate::layout::BasicLayouter;
-pub use crate::layout::SingleChildLayout;
-pub use crate::position::Dimensions;
-pub use crate::position::Scalar;
-pub use crate::state::*;
-pub use crate::text::FontFamily;
-pub use crate::text::FontStyle;
-pub use crate::text::FontWeight;
+pub mod canvas;
+mod common;
+mod shape;
+mod types;
 
-pub use self::common_widget::CommonWidget;
-pub use self::primitive::canvas::canvas::Canvas;
-pub use self::primitive::canvas::context::Context;
-pub use self::primitive::canvas::context::ContextAction;
-//pub use self::primitive::environment_updating::EnvUpdating;
-//pub use self::primitive::foreach::ForEach;
-pub use self::primitive::frame::*;
-pub use self::primitive::h_stack::*;
-pub use self::primitive::if_else::IfElse;
-pub use self::primitive::image::{self, Image};
-pub use self::primitive::offset::Offset;
-pub use self::primitive::overlaid_layer::OverlaidLayer;
-pub use self::primitive::padding::Padding;
-pub use self::primitive::scroll::Scroll;
-pub use self::primitive::shape::capsule::Capsule;
-pub use self::primitive::shape::ellipse::{self, Ellipse};
-pub use self::primitive::shape::rectangle::{self, Rectangle};
-pub use self::primitive::shape::rounded_rectangle::RoundedRectangle;
-pub use self::primitive::spacer::Spacer;
-pub use self::primitive::text::{self, Text};
-pub use self::primitive::v_stack::*;
-pub use self::primitive::Widget;
-pub use self::primitive::widget::WidgetExt;
-pub use self::primitive::z_stack::*;
-pub use self::render::ChildRender;
-pub use self::types::corner_radii::CornerRadii;
-pub use self::types::edge_insets::EdgeInsets;
-pub use self::types::scale_mode::ScaleMode;
-pub use self::types::scroll_direction::ScrollDirection;
-pub use self::types::spacer_direction::SpacerDirection;
-pub use self::widget_iterator::{WidgetIter, WidgetIterMut};
+// Widgets
+mod border;
+mod clip;
+mod environment_updating;
+mod foreach;
+mod frame;
+mod h_stack;
+mod hidden;
+mod if_else;
+mod image;
+mod offset;
+mod overlaid_layer;
+mod padding;
+mod scroll;
+mod spacer;
+mod text;
+mod v_stack;
+mod z_stack;
 
-pub type Id = Uuid;
-
-pub mod render;
+pub type Id = uuid::Uuid;
+pub type ColoredPoint = (Point, crate::color::Rgba);
 
 
-// Primitive widget modules.
-pub mod primitive;
 
-
-pub mod common_widget;
-pub mod widget_iterator;
-pub mod types;

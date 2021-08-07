@@ -3,7 +3,7 @@ use crate::color::Rgba;
 use crate::draw::shape::triangle::Triangle;
 use crate::position::Dimensions;
 use crate::prelude::Primitive;
-use crate::render::primitive_kind::PrimitiveKind;
+use crate::render::PrimitiveKind;
 
 #[derive(PartialEq, Clone, Debug)]
 pub struct TriangleStore {

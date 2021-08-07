@@ -24,7 +24,7 @@ use carbide_core::prelude::EnvironmentColor;
 use carbide_core::prelude::Rectangle;
 use carbide_core::text::{FontFamily, FontId};
 use carbide_core::widget::OverlaidLayer;
-use carbide_core::widget::primitive::Widget;
+use carbide_core::widget::Widget;
 pub use carbide_core::window::TWindow;
 
 use crate::diffuse_bind_group::{DiffuseBindGroup, new_diffuse};

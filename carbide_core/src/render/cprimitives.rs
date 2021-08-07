@@ -4,8 +4,8 @@ use crate::position::Dimensions;
 use crate::prelude::Environment;
 use crate::render::primitive::Primitive;
 use crate::render::primitive_walker::PrimitiveWalker;
-use crate::widget::primitive::Widget;
-use crate::widget::render::RenderProcessor;
+use crate::render::render::RenderProcessor;
+use crate::widget::Widget;
 
 pub struct CPrimitives {
     pub primitives: Vec<Primitive>,

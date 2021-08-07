@@ -1,4 +1,4 @@
-use crate::widget::primitive::Widget;
+use crate::widget::Widget;
 
 pub enum WidgetIterMut<'a> {
     Empty,

@@ -1,5 +1,5 @@
 use crate::prelude::*;
-use crate::render::primitive_kind::PrimitiveKind;
+use crate::render::PrimitiveKind;
 
 #[derive(Debug, Clone, Widget)]
 #[render(process_get_primitives)]

@@ -3,7 +3,7 @@ use std::path::Path;
 use wgpu::{Device, Queue};
 
 use carbide_core::mesh;
-use carbide_core::widget::types::image_information::ImageInformation;
+use carbide_core::widget::ImageInformation;
 
 use crate::{DEFAULT_IMAGE_TEX_FORMAT, texture};
 use crate::texture::Texture;

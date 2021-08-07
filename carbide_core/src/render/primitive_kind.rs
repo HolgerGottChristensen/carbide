@@ -3,7 +3,7 @@ use crate::{image_map, OldRect};
 use crate::color::Rgba;
 use crate::draw::shape::triangle::Triangle;
 use crate::text::Glyph;
-use crate::widget::primitive::ColoredPoint;
+use crate::widget::ColoredPoint;
 
 /// The unique kind for each primitive element in the Ui.
 pub enum PrimitiveKind {

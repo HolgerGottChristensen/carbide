@@ -7,13 +7,13 @@ use dyn_clone::DynClone;
 use crate::event::{Event, KeyboardEvent, MouseEvent, WidgetEvent};
 use crate::focus::{Focus, Focusable, Refocus};
 use crate::prelude::*;
+use crate::render::RenderProcessor;
 use crate::widget::{Frame, Offset};
-use crate::widget::primitive::border::Border;
-use crate::widget::primitive::clip::Clip;
-use crate::widget::primitive::hidden::Hidden;
-use crate::widget::primitive::padding::Padding;
-use crate::widget::render::RenderProcessor;
-use crate::widget::types::edge_insets::EdgeInsets;
+use crate::widget::Border;
+use crate::widget::Clip;
+use crate::widget::EdgeInsets;
+use crate::widget::Hidden;
+use crate::widget::Padding;
 
 pub trait Widget: Event + Layout + Render + RenderProcessor + Focusable + DynClone {}
 
@@ -22,49 +22,6 @@ pub trait Widget: Event + Layout + Render + RenderProcessor + Focusable + DynClo
 impl Widget for Box<dyn Widget> {}
 
 dyn_clone::clone_trait_object!(Widget);
-
-pub trait WidgetExt: Widget + Sized + 'static {
-    fn frame<K1: Into<F64State>, K2: Into<F64State>>(self, width: K1, height: K2) -> Box<Frame> {
-        Frame::init(width.into(), height.into(), Box::new(self))
-    }
-
-    fn frame_width(self, width: F64State) -> Box<Frame> {
-        Frame::init_width(width, Box::new(self))
-    }
-
-    fn padding<E: Into<EdgeInsets>>(self, edge_insets: E) -> Box<Padding> {
-        Padding::init(edge_insets.into(), Box::new(self))
-    }
-    fn clip(self) -> Box<Clip> {
-        Clip::new(Box::new(self))
-    }
-
-    fn hidden(self) -> Box<Hidden> {
-        Hidden::new(Box::new(self))
-    }
-
-    fn offset<K1: Into<F64State>, K2: Into<F64State>>(self, offset_x: K1, offset_y: K2) -> Box<Offset> {
-        Offset::new(offset_x.into(), offset_y.into(), Box::new(self))
-    }
-
-    fn border(self) -> Box<Border> {
-        Border::initialize(Box::new(self))
-    }
-
-    /*fn foreground_color<C: Into<ColorState>>(self, color: C) -> Box<EnvUpdating<GS>> {
-        let mut e = EnvUpdating::new(Box::new(self));
-        e.add(EnvironmentStateContainer::Color { key: EnvironmentColor::Label, value: color.into() });
-
-        e
-    }
-
-    fn accent_color<C: Into<ColorState>>(self, color: C) -> Box<EnvUpdating<GS>> {
-        let mut e = EnvUpdating::new(Box::new(self));
-        e.add(EnvironmentStateContainer::Color { key: EnvironmentColor::Accent, value: color.into() });
-
-        e
-    }*/
-}
 
 //This does not currently work with intellisense
 //impl<T> WidgetExt for T where T: Widget + 'static {}

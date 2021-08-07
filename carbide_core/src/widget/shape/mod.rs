@@ -4,18 +4,24 @@ use lyon::math::Rect;
 use lyon::tessellation::{BuffersBuilder, FillOptions, FillTessellator, FillVertex, Side, StrokeOptions, StrokeTessellator, StrokeVertex, VertexBuffers};
 use lyon::tessellation::path::Path;
 
+pub use capsule::*;
+pub use ellipse::*;
+pub use polygon::*;
+pub use rectangle::*;
+pub use rounded_rectangle::*;
+
 use crate::{Point, Scalar};
 use crate::draw::shape::triangle::Triangle;
 use crate::widget::CommonWidget;
-use crate::widget::types::shape_style::ShapeStyle;
-use crate::widget::types::stroke_style::StrokeStyle;
-use crate::widget::types::triangle_store::TriangleStore;
+use crate::widget::types::ShapeStyle;
+use crate::widget::types::StrokeStyle;
+use crate::widget::types::TriangleStore;
 
-pub mod ellipse;
-pub mod polygon;
-pub mod rectangle;
-pub mod rounded_rectangle;
-pub mod capsule;
+mod ellipse;
+mod polygon;
+mod rectangle;
+mod rounded_rectangle;
+mod capsule;
 
 pub trait Shape: CommonWidget {
     fn get_triangle_store_mut(&mut self) -> &mut TriangleStore;

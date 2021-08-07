@@ -13,9 +13,9 @@ use crate::prelude::Environment;
 use crate::prelude::EnvironmentColor;
 use crate::prelude::EnvironmentFontSize;
 use crate::prelude::EnvironmentVariable;
-use crate::render::cprimitives::CPrimitives;
-use crate::widget::primitive::Widget;
+use crate::render::CPrimitives;
 use crate::widget::Rectangle;
+use crate::widget::Widget;
 
 /// `Ui` is the most important type within carbide and is necessary for rendering and maintaining
 /// widget state.

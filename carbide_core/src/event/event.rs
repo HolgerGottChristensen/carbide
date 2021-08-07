@@ -2,7 +2,7 @@ use crate::event::event_handler::{KeyboardEvent, MouseEvent, WidgetEvent};
 use crate::focus::Focusable;
 use crate::prelude::Environment;
 use crate::state::StateSync;
-use crate::widget::common_widget::CommonWidget;
+use crate::widget::CommonWidget;
 
 pub trait Event: CommonWidget + StateSync + Focusable {
     /// A function that will be called when a mouse event occurs.

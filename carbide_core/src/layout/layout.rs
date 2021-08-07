@@ -2,7 +2,7 @@ use crate::layout::basic_layouter::BasicLayouter;
 use crate::layout::layouter::Layouter;
 use crate::position::Dimensions;
 use crate::prelude::Environment;
-use crate::widget::common_widget::CommonWidget;
+use crate::widget::CommonWidget;
 
 pub trait Layout {
     /// 0 is the most flexible and the largest number is the least flexible

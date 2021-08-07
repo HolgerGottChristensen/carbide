@@ -9,13 +9,13 @@ use fxhash::{FxBuildHasher, FxHashMap};
 use crate::{Color, Scalar};
 use crate::focus::Refocus;
 use crate::mesh::TextureAtlas;
+use crate::position::Dimensions;
 use crate::prelude::EnvironmentVariable;
 use crate::state::{InnerState, StateKey};
 use crate::state::StateContract;
 use crate::text::{Font, FontFamily, FontId, FontSize, FontStyle, FontWeight, Glyph};
-use crate::widget::Dimensions;
-use crate::widget::primitive::Widget;
-use crate::widget::types::image_information::ImageInformation;
+use crate::widget::ImageInformation;
+use crate::widget::Widget;
 
 pub struct Environment {
     /// This stack should be used to scope the environment. This contains information such as

@@ -14,12 +14,12 @@ use rusttype::gpu_cache::CacheWriteErr as RustTypeCacheWriteError;
 
 use crate::{color, image_map, render};
 use crate::{OldRect, Scalar};
+use crate::environment::Environment;
 use crate::mesh::{DEFAULT_GLYPH_CACHE_DIMS, GLYPH_CACHE_POSITION_TOLERANCE, GLYPH_CACHE_SCALE_TOLERANCE, MODE_GEOMETRY, MODE_IMAGE, MODE_TEXT, MODE_TEXT_COLOR};
 use crate::mesh::atlas::texture_atlas::TextureAtlas;
 use crate::mesh::vertex::Vertex;
-use crate::render::primitive_walker::PrimitiveWalker;
+use crate::render::PrimitiveWalker;
 use crate::text::Glyph;
-use crate::widget::Environment;
 
 /// Images within the given image map must know their dimensions in pixels.
 pub trait ImageDimensions {
@@ -231,7 +231,7 @@ impl Mesh {
         // Draw each primitive in order of depth.
         while let Some(primitive) = primitives.next_primitive() {
             match primitive.kind {
-                render::primitive_kind::PrimitiveKind::Clip => {
+                render::PrimitiveKind::Clip => {
                     match current_state {
                         State::Plain { start } => {
                             commands.push(PreparedCommand::Plain(start..vertices.len()))
@@ -258,7 +258,7 @@ impl Mesh {
                         start: vertices.len(),
                     };
                 }
-                render::primitive_kind::PrimitiveKind::UnClip => {
+                render::PrimitiveKind::UnClip => {
                     match current_state {
                         State::Plain { start } => {
                             commands.push(PreparedCommand::Plain(start..vertices.len()))
@@ -281,7 +281,7 @@ impl Mesh {
                         start: vertices.len(),
                     };
                 }
-                render::primitive_kind::PrimitiveKind::Rectangle { color } => {
+                render::PrimitiveKind::Rectangle { color } => {
                     switch_to_plain_state!();
 
                     let color = gamma_srgb_to_linear(color.to_fsa());
@@ -309,7 +309,7 @@ impl Mesh {
                     push_v(r, t);
                 }
 
-                render::primitive_kind::PrimitiveKind::TrianglesSingleColor { color, triangles } => {
+                render::PrimitiveKind::TrianglesSingleColor { color, triangles } => {
                     if triangles.is_empty() {
                         continue;
                     }
@@ -332,7 +332,7 @@ impl Mesh {
                     }
                 }
 
-                render::primitive_kind::PrimitiveKind::TrianglesMultiColor { triangles } => {
+                render::PrimitiveKind::TrianglesMultiColor { triangles } => {
                     if triangles.is_empty() {
                         continue;
                     }
@@ -353,7 +353,7 @@ impl Mesh {
                     }
                 }
 
-                render::primitive_kind::PrimitiveKind::Text {
+                render::PrimitiveKind::Text {
                     color,
                     text: glyphs,
                 } => {
@@ -406,7 +406,7 @@ impl Mesh {
                     }
                 }
 
-                render::primitive_kind::PrimitiveKind::Image {
+                render::PrimitiveKind::Image {
                     image_id,
                     color,
                     source_rect,

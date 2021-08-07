@@ -39,6 +39,6 @@ pub mod draw;
 pub mod window;
 pub mod prelude;
 pub mod focus;
-mod environment;
+pub mod environment;
 pub mod text;
 

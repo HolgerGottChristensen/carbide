@@ -1,33 +1,26 @@
-use crate::layout::CrossAxisAlignment;
 use crate::prelude::*;
-use crate::widget::ChildRender;
+use crate::render::ChildRender;
+use crate::widget::CrossAxisAlignment;
 
 /// A basic, non-interactive rectangle shape widget.
 #[derive(Debug, Clone, Widget)]
-pub struct VStack {
+pub struct HStack {
     id: Uuid,
     children: Vec<Box<dyn Widget>>,
     position: Point,
     dimension: Dimensions,
     spacing: Scalar,
-    cross_axis_alignment: CrossAxisAlignment,
 }
 
-impl VStack {
+impl HStack {
     pub fn initialize(children: Vec<Box<dyn Widget>>) -> Box<Self> {
-        Box::new(VStack {
+        Box::new(HStack {
             id: Uuid::new_v4(),
             children,
             position: [0.0, 0.0],
             dimension: [100.0, 100.0],
             spacing: 10.0,
-            cross_axis_alignment: CrossAxisAlignment::Center,
         })
-    }
-
-    pub fn cross_axis_alignment(mut self, alignment: CrossAxisAlignment) -> Box<Self> {
-        self.cross_axis_alignment = alignment;
-        Box::new(self)
     }
 
     pub fn spacing(mut self, spacing: f64) -> Box<Self> {
@@ -36,86 +29,89 @@ impl VStack {
     }
 }
 
-impl Layout for VStack {
+impl Layout for HStack {
     fn flexibility(&self) -> u32 {
         1
     }
 
     fn calculate_size(&mut self, requested_size: Dimensions, env: &mut Environment) -> Dimensions {
-        let mut number_of_children_that_needs_sizing = self.children.len() as f64;
+
+        // The number of children not containing any spacers
+        let mut number_of_children_that_needs_sizing = self.get_children().filter(|m| m.get_flag() != Flags::SPACER).count() as f64;
+
 
         let non_spacers_vec: Vec<bool> = self.get_children().map(|n| n.get_flag() != Flags::SPACER).collect();
         let non_spacers_vec_length = non_spacers_vec.len();
 
-        let number_of_spaces = non_spacers_vec.iter().enumerate().take(non_spacers_vec_length.max(1) - 1).filter(|(n, b)| {
+        let number_of_spaces = non_spacers_vec.iter().enumerate().take(non_spacers_vec_length - 1).filter(|(n, b)| {
             **b && non_spacers_vec[n + 1]
         }).count() as f64;
 
         let spacing_total = (number_of_spaces) * self.spacing;
-        let mut size_for_children = [requested_size[0], requested_size[1] - spacing_total];
+        let mut size_for_children = [requested_size[0] - spacing_total, requested_size[1]];
 
-        let mut children_flexibilty: Vec<(u32, &mut dyn Widget)> = self.get_children_mut().map(|child| (child.flexibility(), child)).collect();
+        let mut children_flexibilty: Vec<(u32, &mut dyn Widget)> = self.get_children_mut().filter(|m| m.get_flag() != Flags::SPACER).map(|child| (child.flexibility(), child)).collect();
         children_flexibilty.sort_by(|(a, _), (b, _)| a.cmp(&b));
         children_flexibilty.reverse();
 
-        let mut max_width = 0.0;
-        let mut total_height = 0.0;
+        let mut max_height = 0.0;
+        let mut total_width = 0.0;
 
         for (_, child) in children_flexibilty {
-            let size_for_child = [size_for_children[0], size_for_children[1] / number_of_children_that_needs_sizing];
+            let size_for_child = [size_for_children[0] / number_of_children_that_needs_sizing, size_for_children[1]];
             let chosen_size = child.calculate_size(size_for_child, env);
 
-            if chosen_size[0] > max_width {
-                max_width = chosen_size[0];
+            if chosen_size[1] > max_height {
+                max_height = chosen_size[1];
             }
 
-            size_for_children = [size_for_children[0], (size_for_children[1] - chosen_size[1]).max(0.0)];
+            size_for_children = [(size_for_children[0] - chosen_size[0]).max(0.0), size_for_children[1]];
 
             number_of_children_that_needs_sizing -= 1.0;
 
-            total_height += chosen_size[1];
+            total_width += chosen_size[0];
         }
 
         let spacer_count = self.get_children().filter(|m| m.get_flag() == Flags::SPACER).count() as f64;
-        let rest_space = requested_size[1] - total_height - spacing_total;
+        let rest_space = requested_size[0] - total_width - spacing_total;
 
         for spacer in self.get_children_mut().filter(|m| m.get_flag() == Flags::SPACER) {
-            let chosen_size = spacer.calculate_size([requested_size[0], rest_space / spacer_count], env);
+            let chosen_size = spacer.calculate_size([rest_space / spacer_count, requested_size[1]], env);
 
-            if chosen_size[0] > max_width {
-                max_width = chosen_size[0];
+            if chosen_size[1] > max_height {
+                max_height = chosen_size[1];
             }
 
-            total_height += chosen_size[1];
+            total_width += chosen_size[0];
         }
 
-        self.dimension = [max_width, total_height + spacing_total];
+        self.dimension = [total_width + spacing_total, max_height];
 
         self.dimension
     }
 
     fn position_children(&mut self) {
-        let mut height_offset = 0.0;
+        let cross_axis_alignment = CrossAxisAlignment::Center;
+        let mut width_offset = 0.0;
         let position = self.position;
         let dimension = self.dimension;
         let spacing = self.spacing;
-        let alignment = self.cross_axis_alignment.clone();
 
         let spacers: Vec<bool> = self.get_children().map(|n| n.get_flag() == Flags::SPACER).collect();
 
-        for (n, child) in self.get_children_mut().enumerate() {
-            match alignment {
-                CrossAxisAlignment::Start => { child.set_x(position[0]) }
-                CrossAxisAlignment::Center => { child.set_x(position[0] + dimension[0] / 2.0 - child.get_width() / 2.0) }
-                CrossAxisAlignment::End => { child.set_x(position[0] + dimension[0] - child.get_width()) }
+        for (n, child) in &mut self.get_children_mut().enumerate() {
+            match cross_axis_alignment {
+                CrossAxisAlignment::Start => { child.set_y(position[1]) }
+                CrossAxisAlignment::Center => { child.set_y(position[1] + dimension[1] / 2.0 - child.get_height() / 2.0) }
+                CrossAxisAlignment::End => { child.set_y(position[1] + dimension[1] - child.get_height()) }
             }
 
-            child.set_y(position[1] + height_offset);
+            child.set_x(position[0] + width_offset);
 
             if child.get_flag() != Flags::SPACER && n < spacers.len() - 1 && !spacers[n + 1] {
-                height_offset += spacing;
+                width_offset += spacing;
             }
-            height_offset += child.get_height();
+            width_offset += child.get_width();
 
 
             child.position_children();
@@ -123,7 +119,7 @@ impl Layout for VStack {
     }
 }
 
-impl CommonWidget for VStack {
+impl CommonWidget for HStack {
     fn get_id(&self) -> Uuid {
         self.id
     }
@@ -196,6 +192,6 @@ impl CommonWidget for VStack {
     }
 }
 
-impl ChildRender for VStack {}
+impl ChildRender for HStack {}
 
-impl WidgetExt for VStack {}
+impl WidgetExt for HStack {}

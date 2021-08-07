@@ -5,14 +5,13 @@ use instant::Instant;
 
 use crate::draw::{Dimension, Position};
 use crate::prelude::*;
-use crate::render::primitive_kind::PrimitiveKind;
 //use crate::render::text::Text as RenderText;
-use crate::render::util::new_primitive;
+use crate::render::new_primitive;
+use crate::render::PrimitiveKind;
 use crate::text::{FontStyle, FontWeight, Glyph, NoStyleTextSpanGenerator, TextDecoration, TextSpanGenerator, TextStyle};
 use crate::text::Text as InternalText;
 //use crate::text_old::PositionedGlyph;
-use crate::widget::types::justify;
-use crate::widget::types::text_wrap::Wrap;
+use crate::widget::types::Wrap;
 
 /// Displays some given text centered within a rectangular area.
 ///
@@ -95,21 +94,21 @@ impl Text {
 
     /// Align the text to the left of its bounding **Rect**'s *x* axis range.
     pub fn left_justify(self) -> Self {
-        self.justify(justify::Justify::Left)
+        self.justify(Justify::Left)
     }
 
     /// Align the text to the middle of its bounding **Rect**'s *x* axis range.
     pub fn center_justify(self) -> Self {
-        self.justify(justify::Justify::Center)
+        self.justify(Justify::Center)
     }
 
-    pub fn justify(self, _j: justify::Justify) -> Self {
+    pub fn justify(self, _j: Justify) -> Self {
         self
     }
 
     /// Align the text to the right of its bounding **Rect**'s *x* axis range.
     pub fn right_justify(self) -> Self {
-        self.justify(justify::Justify::Right)
+        self.justify(Justify::Right)
     }
 
     pub fn get_positioned_glyphs(&self, _: &Environment, scale_factor: f32) -> Vec<Glyph> {

@@ -1,6 +1,6 @@
 use crate::prelude::{Environment, StateSync};
 use crate::render::primitive::Primitive;
-use crate::widget::common_widget::CommonWidget;
+use crate::widget::CommonWidget;
 
 pub trait Render {
     fn get_primitives(&mut self, env: &mut Environment) -> Vec<Primitive>;

@@ -1,6 +1,6 @@
 use crate::{color, Point};
 use crate::draw::shape::vertex::Vertex;
-use crate::widget::primitive::ColoredPoint;
+use crate::widget::ColoredPoint;
 
 /// A single triangle described by three vertices.
 #[derive(Copy, Clone, Debug, PartialEq)]
@@ -49,7 +49,7 @@ impl Triangle<Point> {
         let mut res = vec![];
 
         for i in (0..len).step_by(3) {
-            res.push((points[i], points[i+1], points[i+2]).into())
+            res.push((points[i], points[i + 1], points[i + 2]).into())
         }
 
         res

@@ -1,30 +1,30 @@
 use crate::prelude::*;
-use crate::widget::ChildRender;
+use crate::render::ChildRender;
 
-/// A basic, non-interactive rectangle shape widget.
 #[derive(Debug, Clone, Widget)]
-#[render(process_get_primitives)]
-pub struct Hidden {
+pub struct Offset {
     id: Uuid,
     child: Box<dyn Widget>,
     position: Point,
     dimension: Dimensions,
+    #[state] offset_x: F64State,
+    #[state] offset_y: F64State,
 }
 
-impl Hidden {
-    pub fn new(child: Box<dyn Widget>) -> Box<Self> {
-        Box::new(Hidden {
+impl Offset {
+    pub fn new(offset_x: F64State, offset_y: F64State, child: Box<dyn Widget>) -> Box<Self> {
+        Box::new(Offset {
             id: Uuid::new_v4(),
             child,
             position: [0.0, 0.0],
             dimension: [0.0, 0.0],
+            offset_x,
+            offset_y,
         })
     }
-
-    fn process_get_primitives(&mut self, _: &mut Vec<Primitive>, _: &mut Environment) {}
 }
 
-impl Layout for Hidden {
+impl Layout for Offset {
     fn flexibility(&self) -> u32 {
         self.child.flexibility()
     }
@@ -41,11 +41,18 @@ impl Layout for Hidden {
 
         positioning(position, dimension, &mut self.child);
 
+        let mut child_position: Point = self.child.get_position();
+
+        child_position[0] += *self.offset_x.value();
+        child_position[1] += *self.offset_y.value();
+
+        self.child.set_position(child_position);
+
         self.child.position_children();
     }
 }
 
-impl CommonWidget for Hidden {
+impl CommonWidget for Offset {
     fn get_id(&self) -> Uuid {
         self.id
     }
@@ -99,6 +106,6 @@ impl CommonWidget for Hidden {
     }
 }
 
-impl ChildRender for Hidden {}
+impl ChildRender for Offset {}
 
-impl WidgetExt for Hidden {}
+impl WidgetExt for Offset {}

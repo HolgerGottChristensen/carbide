@@ -4,8 +4,8 @@ use lyon::tessellation::{BuffersBuilder, FillOptions, FillTessellator, FillVerte
 use crate::color::Rgba;
 use crate::draw::shape::triangle::Triangle;
 use crate::prelude::*;
-use crate::render::primitive_kind::PrimitiveKind;
-use crate::widget::primitive::canvas::context::{Context, ShapeStyleWithOptions};
+use crate::render::PrimitiveKind;
+use crate::widget::canvas::{Context, ShapeStyleWithOptions};
 use crate::widget::Rectangle;
 
 /// A basic, non-interactive rectangle shape widget.

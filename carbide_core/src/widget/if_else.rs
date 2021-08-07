@@ -1,5 +1,5 @@
 use crate::prelude::*;
-use crate::widget::{ChildRender, Frame};
+use crate::widget::Widget;
 
 /// A basic, non-interactive rectangle shape widget.
 #[derive(Debug, Clone, Widget)]

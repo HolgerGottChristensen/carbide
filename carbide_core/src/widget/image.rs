@@ -2,9 +2,9 @@
 
 use crate::image_map;
 use crate::prelude::*;
-use crate::render::primitive_kind::PrimitiveKind;
-use crate::render::util::new_primitive;
-use crate::widget::types::scale_mode::ScaleMode;
+use crate::render::new_primitive;
+use crate::render::PrimitiveKind;
+use crate::widget::types::ScaleMode;
 
 /// A primitive and basic widget for drawing an `Image`.
 #[derive(Debug, Clone, Widget)]

@@ -1,8 +1,8 @@
 use crate::draw::shape::vertex::Vertex;
 use crate::event::{MouseButton, MouseEvent, WidgetEvent};
 use crate::prelude::*;
-use crate::widget::render::RenderProcessor;
-use crate::widget::types::scroll_direction::ScrollDirection;
+use crate::render::RenderProcessor;
+use crate::widget::types::ScrollDirection;
 
 /// A basic, non-interactive rectangle shape widget.
 #[derive(Debug, Clone, Widget)]

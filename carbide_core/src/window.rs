@@ -2,7 +2,7 @@ use std::path::Path;
 
 use crate::image_map;
 use crate::text::{FontFamily, FontId};
-use crate::widget::primitive::Widget;
+use crate::widget::Widget;
 
 pub trait TWindow {
     fn add_font_family(&mut self, family: FontFamily) -> String;

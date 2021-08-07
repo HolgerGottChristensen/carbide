@@ -3,7 +3,7 @@ use uuid::Uuid;
 use crate::{Point, Scalar};
 use crate::flags::Flags;
 use crate::position::Dimensions;
-use crate::widget::widget_iterator::{WidgetIter, WidgetIterMut};
+use crate::widget::common::widget_iterator::{WidgetIter, WidgetIterMut};
 
 pub trait CommonWidget {
     fn get_id(&self) -> Uuid;

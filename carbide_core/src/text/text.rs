@@ -1,13 +1,13 @@
 use crate::{Color, Scalar};
 use crate::draw::{Dimension, Position, Rect};
+use crate::environment::Environment;
 use crate::text::Glyph;
 use crate::text::text_decoration::TextDecoration;
 use crate::text::text_span::TextSpan;
 use crate::text::text_span_generator::TextSpanGenerator;
 use crate::text::text_style::TextStyle;
-use crate::widget::Environment;
-use crate::widget::types::justify::Justify;
-use crate::widget::types::text_wrap::Wrap;
+use crate::widget::Justify;
+use crate::widget::Wrap;
 
 type BoundingBox = Rect;
 

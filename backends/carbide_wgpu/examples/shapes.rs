@@ -1,7 +1,10 @@
 use std::f64::consts::PI;
 
+use carbide_core::environment::*;
 use carbide_core::Point;
+use carbide_core::text::*;
 use carbide_core::widget::*;
+use carbide_core::widget::canvas::*;
 use carbide_wgpu::window::*;
 
 fn main() {

@@ -375,8 +375,8 @@ pub fn impl_widget(ast: &syn::DeriveInput) -> proc_macro2::TokenStream {
         }
 
         #[automatically_derived]
-        impl<#(#generics_without_gs ,)*> carbide_core::widget::render::RenderProcessor for #struct_ident #generics_with_gs #wheres {
-            fn process_get_primitives(&mut self, primitives: &mut std::vec::Vec<carbide_core::render::primitive::Primitive>, env: &mut carbide_core::environment::Environment) {
+        impl<#(#generics_without_gs ,)*> carbide_core::render::RenderProcessor for #struct_ident #generics_with_gs #wheres {
+            fn process_get_primitives(&mut self, primitives: &mut std::vec::Vec<carbide_core::render::Primitive>, env: &mut carbide_core::environment::Environment) {
                 #process_get_primitives
             }
         }
@@ -398,7 +398,7 @@ pub fn impl_widget(ast: &syn::DeriveInput) -> proc_macro2::TokenStream {
         }
 
         #[automatically_derived]
-        impl<#(#generics_without_gs ,)*> carbide_core::widget::primitive::widget::Widget for #struct_ident #generics_with_gs #wheres {}
+        impl<#(#generics_without_gs ,)*> carbide_core::widget::Widget for #struct_ident #generics_with_gs #wheres {}
 
         // When this is implemented in a macro you lose IntelliJ autocomplete
         //#[automatically_derived]

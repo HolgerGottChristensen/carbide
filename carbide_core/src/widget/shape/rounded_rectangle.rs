@@ -5,10 +5,10 @@ use lyon::tessellation::path::Winding;
 
 use crate::prelude::*;
 use crate::widget::CornerRadii;
-use crate::widget::primitive::shape::{Shape, tessellate};
-use crate::widget::types::shape_style::ShapeStyle;
-use crate::widget::types::stroke_style::StrokeStyle;
-use crate::widget::types::triangle_store::TriangleStore;
+use crate::widget::shape::{Shape, tessellate};
+use crate::widget::types::ShapeStyle;
+use crate::widget::types::StrokeStyle;
+use crate::widget::types::TriangleStore;
 
 /// A basic, non-interactive rectangle shape widget.
 #[derive(Debug, Clone, Widget)]

@@ -1,5 +1,5 @@
 use crate::prelude::*;
-use crate::widget::ChildRender;
+use crate::render::ChildRender;
 
 pub static SCALE: f64 = -1.0;
 

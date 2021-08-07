@@ -1,5 +1,5 @@
 use crate::prelude::Environment;
-use crate::widget::common_widget::CommonWidget;
+use crate::widget::CommonWidget;
 
 pub trait StateSync: CommonWidget {
     fn capture_state(&mut self, env: &mut Environment);

@@ -1,6 +1,6 @@
 use crate::prelude::*;
-use crate::widget::ChildRender;
-use crate::widget::types::edge_insets::EdgeInsets;
+use crate::render::ChildRender;
+use crate::widget::types::EdgeInsets;
 
 #[derive(Debug, Clone, Widget)]
 pub struct Padding {

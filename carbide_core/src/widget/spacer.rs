@@ -1,6 +1,6 @@
 use crate::prelude::*;
-use crate::widget::ChildRender;
-use crate::widget::types::spacer_direction::SpacerDirection;
+use crate::render::ChildRender;
+use crate::widget::types::SpacerDirection;
 
 #[derive(Clone, Debug, Widget)]
 pub struct Spacer {

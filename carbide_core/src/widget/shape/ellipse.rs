@@ -5,10 +5,10 @@ use lyon::algorithms::path::Winding;
 use lyon::math::point;
 
 use crate::prelude::*;
-use crate::widget::primitive::shape::{Shape, tessellate};
-use crate::widget::types::shape_style::ShapeStyle;
-use crate::widget::types::stroke_style::StrokeStyle;
-use crate::widget::types::triangle_store::TriangleStore;
+use crate::widget::shape::{Shape, tessellate};
+use crate::widget::types::ShapeStyle;
+use crate::widget::types::StrokeStyle;
+use crate::widget::types::TriangleStore;
 
 /// A simple, non-interactive widget for drawing a single **Ellipse**.
 #[derive(Debug, Clone, Widget)]

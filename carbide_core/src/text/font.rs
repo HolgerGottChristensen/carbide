@@ -4,10 +4,10 @@ use image::{DynamicImage, GenericImage, Rgba};
 use rusttype::{GlyphId, point, Scale, VMetrics};
 
 use crate::draw::Position;
+use crate::environment::Environment;
 use crate::Scalar;
 use crate::text::{FontId, FontSize};
 use crate::text::glyph::Glyph;
-use crate::widget::Environment;
 
 type RustTypeFont = rusttype::Font<'static>;
 type RustTypeScale = rusttype::Scale;

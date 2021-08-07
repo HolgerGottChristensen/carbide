@@ -4,11 +4,11 @@ use lyon::algorithms::path::Winding;
 
 use crate::color::Rgba;
 use crate::prelude::*;
-use crate::render::primitive_kind::PrimitiveKind;
-use crate::widget::primitive::shape::{Shape, tessellate};
-use crate::widget::types::shape_style::ShapeStyle;
-use crate::widget::types::stroke_style::StrokeStyle;
-use crate::widget::types::triangle_store::TriangleStore;
+use crate::render::PrimitiveKind;
+use crate::widget::shape::{Shape, tessellate};
+use crate::widget::types::ShapeStyle;
+use crate::widget::types::StrokeStyle;
+use crate::widget::types::TriangleStore;
 
 /// A basic, non-interactive rectangle shape widget.
 #[derive(Debug, Clone, Widget)]

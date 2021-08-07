@@ -1,6 +1,6 @@
 use crate::event::Event;
 use crate::prelude::*;
-use crate::widget::render::RenderProcessor;
+use crate::render::RenderProcessor;
 
 #[derive(Debug, Clone, Widget)]
 //#[state_sync(sync_state, update_all_widget_state, update_local_widget_state)]
