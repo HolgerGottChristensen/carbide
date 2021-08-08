@@ -13,7 +13,7 @@ pub struct VStack {
 }
 
 impl VStack {
-    pub fn initialize(children: Vec<Box<dyn Widget>>) -> Box<Self> {
+    pub fn new(children: Vec<Box<dyn Widget>>) -> Box<Self> {
         Box::new(VStack {
             id: Uuid::new_v4(),
             children,

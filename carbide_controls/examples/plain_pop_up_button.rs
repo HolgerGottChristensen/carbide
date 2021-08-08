@@ -60,7 +60,7 @@ fn main() {
     ]);
 
     window.set_widgets(
-        VStack::initialize(vec![
+        VStack::new(vec![
             PlainPopUpButton::new(Box::new(selected_model), Box::new(selected_index))
                 .padding(EdgeInsets::all(2.0))
                 .border()

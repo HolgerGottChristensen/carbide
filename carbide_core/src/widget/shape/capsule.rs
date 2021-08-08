@@ -43,7 +43,7 @@ impl Capsule {
         Box::new(self)
     }
 
-    pub fn initialize() -> Box<Capsule> {
+    pub fn new() -> Box<Capsule> {
         Box::new(Capsule {
             id: Uuid::new_v4(),
             position: Position::new(0.0, 0.0),

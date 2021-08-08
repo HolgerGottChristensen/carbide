@@ -41,7 +41,7 @@ fn main() {
 
     window.set_widgets(
         SharedState::new(shape_state.clone(),
-                         VStack::initialize(vec![
+                         VStack::new(vec![
                              RadioButton::new("Rectangle", Shape::Rectangle, shape_state.clone())
                                  .frame(100.0, 26.0),
                              RadioButton::new("Circle", Shape::Circle, shape_state.clone())

@@ -12,37 +12,65 @@ fn main() {
 
     let icon_path = Window::path_to_assets("images/rust_press.png");
 
-    let mut window = Window::new("Shapes example".to_string(), 800, 1200, Some(icon_path));
+    let mut window = Window::new("Shapes example".to_string(), 1200, 1200, Some(icon_path));
+
+    let landscape_id = window.add_image("images/landscape.png");
 
     window.set_widgets(
-        VStack::initialize(vec![
-            HStack::initialize(vec![
-                Rectangle::initialize(vec![])
+        VStack::new(vec![
+            HStack::new(vec![
+                Rectangle::new(vec![])
                     .fill(EnvironmentColor::Accent)
                     .frame(100.0, 100.0),
-                Rectangle::initialize(vec![])
+                Rectangle::new(vec![])
                     .stroke(EnvironmentColor::Accent)
                     .stroke_style(10.0)
                     .frame(100.0, 100.0),
-                Rectangle::initialize(vec![])
+                Rectangle::new(vec![])
                     .fill(EnvironmentColor::Accent)
                     .stroke(EnvironmentColor::Red)
                     .frame(100.0, 100.0),
+                Image::new(landscape_id)
+                    .scaled_to_fill()
+                    .frame(200.0, 200.0)
+                    .clip()
+                    .frame(100.0, 100.0),
+                Image::new(landscape_id)
+                    .scaled_to_fill()
+                    .frame(200.0, 200.0)
+                    .clip_shape(Rectangle::new(vec![])
+                        .stroke(EnvironmentColor::Accent)
+                        .stroke_style(10.0))
+                    .frame(100.0, 100.0),
             ]),
-            HStack::initialize(vec![
-                RoundedRectangle::initialize(CornerRadii::all(25.0))
+            HStack::new(vec![
+                RoundedRectangle::new(CornerRadii::all(25.0))
                     .fill(EnvironmentColor::Accent)
                     .frame(100.0, 100.0),
-                RoundedRectangle::initialize(CornerRadii::all(25.0))
+                RoundedRectangle::new(CornerRadii::all(25.0))
                     .stroke(EnvironmentColor::Accent)
                     .stroke_style(10.0)
                     .frame(100.0, 100.0),
-                RoundedRectangle::initialize(CornerRadii::all(25.0))
+                RoundedRectangle::new(CornerRadii::all(25.0))
                     .fill(EnvironmentColor::Accent)
                     .stroke(EnvironmentColor::Red)
                     .frame(100.0, 100.0),
+                Image::new(landscape_id)
+                    .scaled_to_fill()
+                    .frame(200.0, 200.0)
+                    .clip_shape(RoundedRectangle::new(CornerRadii::all(25.0)))
+                    .frame(100.0, 100.0),
+                Image::new(landscape_id)
+                    .scaled_to_fill()
+                    .frame(200.0, 200.0)
+                    .clip_shape(
+                        RoundedRectangle::new(CornerRadii::all(25.0))
+                            .stroke(EnvironmentColor::Accent)
+                            .stroke_style(10.0)
+                    )
+                    .frame(100.0, 100.0),
             ]),
-            HStack::initialize(vec![
+            HStack::new(vec![
                 Circle::new()
                     .fill(EnvironmentColor::Accent)
                     .frame(100.0, 100.0),
@@ -54,8 +82,22 @@ fn main() {
                     .fill(EnvironmentColor::Accent)
                     .stroke(EnvironmentColor::Red)
                     .frame(100.0, 100.0),
+                Image::new(landscape_id)
+                    .scaled_to_fill()
+                    .frame(200.0, 200.0)
+                    .clip_shape(Circle::new())
+                    .frame(100.0, 100.0),
+                Image::new(landscape_id)
+                    .scaled_to_fill()
+                    .frame(200.0, 200.0)
+                    .clip_shape(
+                        Circle::new()
+                            .stroke(EnvironmentColor::Accent)
+                            .stroke_style(10.0)
+                    )
+                    .frame(100.0, 100.0),
             ]),
-            HStack::initialize(vec![
+            HStack::new(vec![
                 Ellipse::new()
                     .fill(EnvironmentColor::Accent)
                     .frame(100.0, 50.0),
@@ -67,35 +109,61 @@ fn main() {
                     .fill(EnvironmentColor::Accent)
                     .stroke(EnvironmentColor::Red)
                     .frame(100.0, 50.0),
+                Image::new(landscape_id)
+                    .scaled_to_fill()
+                    .frame(200.0, 200.0)
+                    .clip_shape(Ellipse::new())
+                    .frame(100.0, 50.0),
+                Image::new(landscape_id)
+                    .scaled_to_fill()
+                    .frame(200.0, 200.0)
+                    .clip_shape(
+                        Ellipse::new()
+                            .stroke(EnvironmentColor::Accent)
+                            .stroke_style(10.0)
+                    )
+                    .frame(100.0, 50.0),
             ]),
-            HStack::initialize(vec![
-                Capsule::initialize()
+            HStack::new(vec![
+                Capsule::new()
                     .fill(EnvironmentColor::Accent)
                     .frame(100.0, 50.0),
-                Capsule::initialize()
+                Capsule::new()
                     .stroke(EnvironmentColor::Accent)
                     .stroke_style(10.0)
                     .frame(100.0, 50.0),
-                Capsule::initialize()
+                Capsule::new()
                     .fill(EnvironmentColor::Accent)
                     .stroke(EnvironmentColor::Red)
                     .frame(100.0, 50.0),
+                Image::new(landscape_id)
+                    .scaled_to_fill()
+                    .frame(200.0, 200.0)
+                    .clip_shape(Capsule::new())
+                    .frame(100.0, 50.0),
+                Image::new(landscape_id)
+                    .scaled_to_fill()
+                    .frame(200.0, 200.0)
+                    .clip_shape(Capsule::new()
+                        .stroke(EnvironmentColor::Accent)
+                        .stroke_style(10.0))
+                    .frame(100.0, 50.0),
             ]),
-            HStack::initialize(vec![
-                Canvas::initialize(|_, mut context| {
+            HStack::new(vec![
+                Canvas::new(|_, mut context| {
                     context = draw_star(Position::new(50.0, 50.0), 5, 45.0, 20.0, context);
                     context.set_fill_style(EnvironmentColor::Accent);
                     context.fill();
                     context
                 }).frame(100.0, 100.0),
-                Canvas::initialize(|_, mut context| {
+                Canvas::new(|_, mut context| {
                     context = draw_star(Position::new(50.0, 50.0), 5, 45.0, 20.0, context);
                     context.set_line_width(10.0);
                     context.set_stroke_style(EnvironmentColor::Accent);
                     context.stroke();
                     context
                 }).frame(100.0, 100.0),
-                Canvas::initialize(|_, mut context| {
+                Canvas::new(|_, mut context| {
                     context = draw_star(Position::new(50.0, 50.0), 5, 45.0, 20.0, context);
                     context.set_fill_style(EnvironmentColor::Accent);
                     context.set_stroke_style(EnvironmentColor::Red);
@@ -103,6 +171,29 @@ fn main() {
                     context.stroke();
                     context
                 }).frame(100.0, 100.0),
+                Image::new(landscape_id)
+                    .scaled_to_fill()
+                    .frame(200.0, 200.0)
+                    .clip_shape(
+                        Canvas::new(|_, mut context| {
+                            context = draw_star(Position::new(50.0, 50.0), 5, 45.0, 20.0, context);
+                            context.fill();
+                            context
+                        })
+                    )
+                    .frame(100.0, 100.0),
+                Image::new(landscape_id)
+                    .scaled_to_fill()
+                    .frame(200.0, 200.0)
+                    .clip_shape(
+                        Canvas::new(|_, mut context| {
+                            context = draw_star(Position::new(50.0, 50.0), 5, 45.0, 20.0, context);
+                            context.set_line_width(10.0);
+                            context.stroke();
+                            context
+                        })
+                    )
+                    .frame(100.0, 100.0),
             ]),
         ])
     );

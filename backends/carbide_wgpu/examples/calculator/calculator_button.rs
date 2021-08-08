@@ -20,7 +20,7 @@ impl CalculatorButton {
     pub fn new(display: Box<dyn Widget<CalculatorState>>) -> Box<CalculatorButton> {
         Box::new(CalculatorButton {
             id: Uuid::new_v4(),
-            child: Rectangle::initialize(vec![
+            child: Rectangle::new(vec![
                 display
             ]).fill(rgb_bytes(76, 0, 19)),
             position: [0.0, 0.0],

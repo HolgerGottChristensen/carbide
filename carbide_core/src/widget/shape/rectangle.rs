@@ -4,6 +4,7 @@ use lyon::algorithms::path::Winding;
 
 use crate::color::Rgba;
 use crate::draw::{Dimension, Position, Rect};
+use crate::draw::shape::triangle::Triangle;
 use crate::prelude::*;
 use crate::render::PrimitiveKind;
 use crate::widget::shape::{Shape, tessellate};
@@ -122,7 +123,7 @@ impl Rectangle {
         ]
     }*/
 
-    pub fn initialize(children: Vec<Box<dyn Widget>>) -> Box<Rectangle> {
+    pub fn new(children: Vec<Box<dyn Widget>>) -> Box<Rectangle> {
         Box::new(Rectangle {
             id: Uuid::new_v4(),
             children,

@@ -26,7 +26,7 @@ fn main() {
     let switch_state4 = CommonState::new_local_with_key(&false);
 
     window.set_widgets(
-        VStack::initialize(vec![
+        VStack::new(vec![
             PlainSwitch::new("Rectangle", switch_state1)
                 .border(),
             PlainSwitch::new("Circle", switch_state2)

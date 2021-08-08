@@ -10,35 +10,3 @@ pub trait Layout {
     fn calculate_size(&mut self, requested_size: Dimension, env: &mut Environment) -> Dimension;
     fn position_children(&mut self);
 }
-
-pub trait SingleChildLayout {
-    fn flexibility(&self) -> u32;
-}
-
-impl<T> Layout for T where T: SingleChildLayout + CommonWidget {
-    fn flexibility(&self) -> u32 {
-        self.flexibility()
-    }
-
-    fn calculate_size(&mut self, requested_size: Dimension, env: &mut Environment) -> Dimension {
-        let mut dimensions = Dimension::new(0.0, 0.0);
-        if let Some(child) = self.children_mut().next() {
-            dimensions = child.calculate_size(requested_size, env);
-        }
-
-        self.set_dimension(dimensions);
-
-        self.dimension()
-    }
-
-    fn position_children(&mut self) {
-        let positioning = BasicLayouter::Center.position();
-        let position = self.position();
-        let dimension = self.dimension();
-
-        if let Some(child) = self.children_mut().next() {
-            positioning(position, dimension, child);
-            child.position_children();
-        }
-    }
-}

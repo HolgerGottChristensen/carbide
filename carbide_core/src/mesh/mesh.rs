@@ -18,7 +18,7 @@ use crate::environment::Environment;
 use crate::mesh::{DEFAULT_GLYPH_CACHE_DIMS, GLYPH_CACHE_POSITION_TOLERANCE, GLYPH_CACHE_SCALE_TOLERANCE, MODE_GEOMETRY, MODE_IMAGE, MODE_TEXT, MODE_TEXT_COLOR};
 use crate::mesh::atlas::texture_atlas::TextureAtlas;
 use crate::mesh::vertex::Vertex;
-use crate::render::PrimitiveWalker;
+use crate::render::{PrimitiveKind, PrimitiveWalker};
 use crate::text::Glyph;
 
 /// Images within the given image map must know their dimensions in pixels.
@@ -41,12 +41,12 @@ pub struct Mesh {
     vertices: Vec<Vertex>,
 }
 
-/// Represents the scizzor in pixel coordinates.
+/// Represents the scissor in pixel coordinates.
 #[derive(Copy, Clone, Debug, Eq, PartialEq)]
-pub struct Scizzor {
-    /// The top left of the scizzor rectangle, where the top-left corner of the viewport is [0, 0].
+pub struct Scissor {
+    /// The top left of the scissor rectangle, where the top-left corner of the viewport is [0, 0].
     pub top_left: [i32; 2],
-    /// The dimensions of the `Scizzor` rect.
+    /// The dimensions of the `Scissor` rect.
     pub dimensions: [u32; 2],
 }
 
@@ -56,7 +56,9 @@ pub enum Command {
     /// Draw to the target.
     Draw(Draw),
     /// Update the scizzor within the pipeline.
-    Scizzor(Scizzor),
+    Scissor(Scissor),
+    Stencil(std::ops::Range<usize>),
+    DeStencil(std::ops::Range<usize>),
 }
 
 /// An iterator yielding `Command`s, produced by the `Renderer::commands` method.
@@ -96,7 +98,9 @@ struct GlyphCache(RustTypeGlyphCache<'static>);
 enum PreparedCommand {
     Image(image_map::Id, std::ops::Range<usize>),
     Plain(std::ops::Range<usize>),
-    Scizzor(Scizzor),
+    Scissor(Scissor),
+    Stencil(std::ops::Range<usize>),
+    DeStencil(std::ops::Range<usize>),
 }
 
 
@@ -199,17 +203,29 @@ impl Mesh {
         let vy = |y: Scalar| -1.0 * (y * scale_factor / half_viewport_h - 1.0) as f32;
 
         let rect_to_scizzor = |rect: Rect| {
-            // Below uses bottom because the rect is flipped :/
-            Scizzor {
+            // We need to restrict the scissor x and y to [0, ~].
+            // This means we might need to subtract from the width and height.
+            let width = if rect.left() < 0.0 {
+                rect.width() + rect.left()
+            } else {
+                rect.width()
+            };
+            let height = if rect.bottom() < 0.0 {
+                rect.height() + rect.bottom()
+            } else {
+                rect.height()
+            };
+            Scissor {
                 top_left: [rect.left().max(0.0) as i32, rect.bottom().max(0.0) as i32],
-                dimensions: [(rect.width().min(viewport.width())) as u32, (rect.height().min(viewport.height())) as u32],
+                dimensions: [width as u32, height as u32],
             }
         };
 
-        // Keep track of the scizzor as it changes.
-        let mut scizzor_stack = vec![rect_to_scizzor(viewport)];
+        // Keep track of the scissor as it changes.
+        let mut scissor_stack = vec![rect_to_scizzor(viewport)];
+        let mut stencil_stack = vec![];
 
-        commands.push(PreparedCommand::Scizzor(*scizzor_stack.first().unwrap()));
+        commands.push(PreparedCommand::Scissor(*scissor_stack.first().unwrap()));
 
         // Switches to the `Plain` state and completes the previous `Command` if not already in the
         // `Plain` state.
@@ -230,7 +246,75 @@ impl Mesh {
         // Draw each primitive in order of depth.
         while let Some(primitive) = primitives.next_primitive() {
             match primitive.kind {
-                render::PrimitiveKind::Clip => {
+                PrimitiveKind::Stencil(triangles) => {
+                    match current_state {
+                        State::Plain { start } => {
+                            commands.push(PreparedCommand::Plain(start..vertices.len()))
+                        }
+                        State::Image { image_id, start } => {
+                            commands.push(PreparedCommand::Image(image_id, start..vertices.len()))
+                        }
+                    }
+
+                    let start_index_for_stencil = vertices.len();
+
+                    let v = |p: Position| Vertex {
+                        position: [vx(p.x), vy(p.y), 0.0],
+                        tex_coords: [0.0, 0.0],
+                        rgba: [1.0, 1.0, 1.0, 1.0],
+                        mode: MODE_GEOMETRY,
+                    };
+
+                    for triangle in &triangles {
+                        vertices.push(v(triangle[0]));
+                        vertices.push(v(triangle[1]));
+                        vertices.push(v(triangle[2]));
+                    }
+
+                    stencil_stack.push(triangles);
+
+                    commands.push(PreparedCommand::Stencil(start_index_for_stencil..vertices.len()));
+
+                    current_state = State::Plain {
+                        start: vertices.len(),
+                    };
+                }
+                PrimitiveKind::DeStencil => {
+                    match current_state {
+                        State::Plain { start } => {
+                            commands.push(PreparedCommand::Plain(start..vertices.len()))
+                        }
+                        State::Image { image_id, start } => {
+                            commands.push(PreparedCommand::Image(image_id, start..vertices.len()))
+                        }
+                    }
+
+                    if let Some(triangles) = stencil_stack.pop() {
+                        let start_index_for_de_stencil = vertices.len();
+
+                        let v = |p: Position| Vertex {
+                            position: [vx(p.x), vy(p.y), 0.0],
+                            tex_coords: [0.0, 0.0],
+                            rgba: [1.0, 1.0, 1.0, 1.0],
+                            mode: MODE_GEOMETRY,
+                        };
+
+                        for triangle in &triangles {
+                            vertices.push(v(triangle[0]));
+                            vertices.push(v(triangle[1]));
+                            vertices.push(v(triangle[2]));
+                        }
+
+                        commands.push(PreparedCommand::DeStencil(start_index_for_de_stencil..vertices.len()));
+                    } else {
+                        panic!("Mesh tried to DeStencil when no stencil were present.");
+                    }
+
+                    current_state = State::Plain {
+                        start: vertices.len(),
+                    };
+                },
+                PrimitiveKind::Clip => {
                     match current_state {
                         State::Plain { start } => {
                             commands.push(PreparedCommand::Plain(start..vertices.len()))
@@ -249,9 +333,9 @@ impl Mesh {
 
                     let new_rect = Rect::from_corners(Position::new(r, b), Position::new(l, t));
 
-                    commands.push(PreparedCommand::Scizzor(rect_to_scizzor(new_rect)));
+                    commands.push(PreparedCommand::Scissor(rect_to_scizzor(new_rect)));
 
-                    scizzor_stack.push(rect_to_scizzor(new_rect));
+                    scissor_stack.push(rect_to_scizzor(new_rect));
 
                     current_state = State::Plain {
                         start: vertices.len(),
@@ -267,14 +351,14 @@ impl Mesh {
                         }
                     }
 
-                    scizzor_stack.pop();
+                    scissor_stack.pop();
 
-                    let new_scizzor = match scizzor_stack.first() {
+                    let new_scizzor = match scissor_stack.first() {
                         Some(n) => n,
                         None => panic!("Trying to pop scizzor, when there is none on the stack")
                     };
 
-                    commands.push(PreparedCommand::Scizzor(*new_scizzor));
+                    commands.push(PreparedCommand::Scissor(*new_scizzor));
 
                     current_state = State::Plain {
                         start: vertices.len(),
@@ -579,12 +663,18 @@ impl<'a> Iterator for Commands<'a> {
             ref mut commands,
         } = *self;
         commands.next().map(|command| match *command {
-            PreparedCommand::Scizzor(scizzor) => Command::Scizzor(scizzor),
+            PreparedCommand::Scissor(scizzor) => Command::Scissor(scizzor),
             PreparedCommand::Plain(ref range) => {
                 Command::Draw(Draw::Plain(range.clone()))
             }
             PreparedCommand::Image(id, ref range) => {
                 Command::Draw(Draw::Image(id, range.clone()))
+            }
+            PreparedCommand::Stencil(ref range) => {
+                Command::Stencil(range.clone())
+            }
+            PreparedCommand::DeStencil(ref range) => {
+                Command::DeStencil(range.clone())
             }
         })
     }

@@ -43,7 +43,7 @@ impl<GS: GlobalStateContract> PlainCheckBox<GS> {
                     }
                 });
 
-            Rectangle::initialize(vec![
+            Rectangle::new(vec![
                 button
             ]).fill(highlight_color)
         };
@@ -81,7 +81,7 @@ impl<GS: GlobalStateContract> PlainCheckBox<GS> {
 
         let delegate_widget = delegate(focus_state.clone(), checked.clone(), button);
 
-        let child = HStack::initialize(vec![
+        let child = HStack::new(vec![
             delegate_widget,
             Text::new(label_state.clone()),
             Spacer::new(SpacerDirection::Horizontal),

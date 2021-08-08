@@ -11,7 +11,7 @@ pub use self::local_state::LocalState;
 pub use self::map_state::{Map, MapMut, MapState};
 pub use self::state::State;
 pub use self::state_key::StateKey;
-pub use self::state_sync::{NoLocalStateSync, StateSync};
+pub use self::state_sync::StateSync;
 pub use self::value_state::ValueState;
 pub use self::widget_state::WidgetState;
 

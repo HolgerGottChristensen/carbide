@@ -1,4 +1,7 @@
 //! A module encompassing the primitive 2D shape widgets.
+use std::fmt;
+use std::fmt::Debug;
+
 use lyon::lyon_tessellation::path::path::Builder;
 use lyon::math::Rect;
 use lyon::tessellation::{BuffersBuilder, FillOptions, FillTessellator, FillVertex, Side, StrokeOptions, StrokeTessellator, StrokeVertex, VertexBuffers};
@@ -12,7 +15,8 @@ pub use rounded_rectangle::*;
 
 use crate::draw::{Position, Scalar};
 use crate::draw::shape::triangle::Triangle;
-use crate::widget::CommonWidget;
+use crate::prelude::{Environment, Primitive, PrimitiveKind};
+use crate::widget::{CommonWidget, Widget, WidgetExt};
 use crate::widget::types::ShapeStyle;
 use crate::widget::types::StrokeStyle;
 use crate::widget::types::TriangleStore;
@@ -23,10 +27,34 @@ mod rounded_rectangle;
 mod capsule;
 mod circle;
 
-pub trait Shape: CommonWidget {
+pub trait Shape: Widget + 'static {
     fn get_triangle_store_mut(&mut self) -> &mut TriangleStore;
     fn get_stroke_style(&self) -> StrokeStyle;
     fn get_shape_style(&self) -> ShapeStyle;
+    fn triangles(&mut self, env: &mut Environment) -> Vec<Triangle<Position>> {
+        let mut primitives = self.get_primitives(env);
+        if primitives.len() >= 1 {
+            match primitives.remove(0).kind {
+                PrimitiveKind::TrianglesSingleColor { triangles, .. } => {
+                    triangles
+                }
+                _ => {
+                    panic!("Can only return triangles of PrimitiveKind::TrianglesSingleColor. This error might happen if you use a rectangle with content.")
+                }
+            }
+        } else {
+            vec![]
+        }
+    }
+}
+
+dyn_clone::clone_trait_object!(Shape);
+impl Widget for Box<dyn Shape> {}
+
+impl Debug for dyn Shape {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "Shape: {}", self.id())
+    }
 }
 
 pub fn tessellate(shape: &mut dyn Shape, rectangle: &Rect, path: &dyn Fn(&mut Builder, &Rect)) {

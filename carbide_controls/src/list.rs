@@ -41,11 +41,11 @@ impl<GS: GlobalStateContract, T: ListIndex + 'static> List<GS, T> {
 
         Box::new(List {
             id: Id::new_v4(),
-            child: Scroll::new(VStack::initialize(vec![
-                Rectangle::initialize(vec![]).fill(RED).frame(SCALE, start_offset.clone()),
+            child: Scroll::new(VStack::new(vec![
+                Rectangle::new(vec![]).fill(RED).frame(SCALE, start_offset.clone()),
                 ForEach::new(internal_model.clone(), delegate.clone())
                     .index_offset(index_offset_state.clone()),
-                Rectangle::initialize(vec![]).fill(BLUE).frame(SCALE, end_offset.clone()),
+                Rectangle::new(vec![]).fill(BLUE).frame(SCALE, end_offset.clone()),
             ]).spacing(10.0)),
             delegate,
             position: [0.0, 0.0],
@@ -63,26 +63,26 @@ impl<GS: GlobalStateContract, T: ListIndex + 'static> List<GS, T> {
 
     pub fn id_state(mut self, state: Box<dyn State<T, GS>>) -> Box<Self> {
         self.id_state = state;
-        self.child = Scroll::new(VStack::initialize(vec![
-            Rectangle::initialize(vec![]).fill(RED).frame(SCALE, self.start_offset.clone()),
+        self.child = Scroll::new(VStack::new(vec![
+            Rectangle::new(vec![]).fill(RED).frame(SCALE, self.start_offset.clone()),
             ForEach::new(self.internal_model.clone(), self.delegate.clone())
                 .index_offset(self.index_offset.clone())
                 .id_state(self.id_state.clone())
                 .index_state(self.index_state.clone()),
-            Rectangle::initialize(vec![]).fill(BLUE).frame(SCALE, self.end_offset.clone()),
+            Rectangle::new(vec![]).fill(BLUE).frame(SCALE, self.end_offset.clone()),
         ]).spacing(self.spacing));
         Box::new(self)
     }
 
     pub fn index_state(mut self, state: Box<dyn State<usize, GS>>) -> Box<Self> {
         self.index_state = state;
-        self.child = Scroll::new(VStack::initialize(vec![
-            Rectangle::initialize(vec![]).fill(RED).frame(SCALE, self.start_offset.clone()),
+        self.child = Scroll::new(VStack::new(vec![
+            Rectangle::new(vec![]).fill(RED).frame(SCALE, self.start_offset.clone()),
             ForEach::new(self.internal_model.clone(), self.delegate.clone())
                 .index_offset(self.index_offset.clone())
                 .id_state(self.id_state.clone())
                 .index_state(self.index_state.clone()),
-            Rectangle::initialize(vec![]).fill(BLUE).frame(SCALE, self.end_offset.clone()),
+            Rectangle::new(vec![]).fill(BLUE).frame(SCALE, self.end_offset.clone()),
         ]).spacing(self.spacing));
         Box::new(self)
     }
@@ -93,13 +93,13 @@ impl<GS: GlobalStateContract, T: ListIndex + 'static> List<GS, T> {
         let end_offset = CommonState::new_local_with_key(&-spacing);
         self.start_offset = Box::new(start_offset);
         self.end_offset = Box::new(end_offset);
-        self.child = Scroll::new(VStack::initialize(vec![
-            Rectangle::initialize(vec![]).fill(RED).frame(SCALE, self.start_offset.clone()),
+        self.child = Scroll::new(VStack::new(vec![
+            Rectangle::new(vec![]).fill(RED).frame(SCALE, self.start_offset.clone()),
             ForEach::new(self.internal_model.clone(), self.delegate.clone())
                 .index_offset(self.index_offset.clone())
                 .id_state(self.id_state.clone())
                 .index_state(self.index_state.clone()),
-            Rectangle::initialize(vec![]).fill(BLUE).frame(SCALE, self.end_offset.clone()),
+            Rectangle::new(vec![]).fill(BLUE).frame(SCALE, self.end_offset.clone()),
         ]).spacing(spacing));
         Box::new(self)
     }

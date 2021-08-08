@@ -30,7 +30,7 @@ fn main() {
     window.set_widgets(
         List::new(
             Box::new(list_model_state),
-            Rectangle::initialize(vec![
+            Rectangle::new(vec![
                 Text::new(id_state.clone())
             ]).fill(GREEN)
                 .frame(SCALE, 80.0))

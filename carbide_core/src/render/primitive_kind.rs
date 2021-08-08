@@ -8,8 +8,13 @@ use crate::widget::ColoredPoint;
 
 /// The unique kind for each primitive element in the Ui.
 pub enum PrimitiveKind {
+    /// Start a clip for the rectangle given by the primitive
     Clip,
+    /// Remove a clip
     UnClip,
+
+    Stencil(Vec<Triangle<Position>>),
+    DeStencil,
 
     /// A filled `Rectangle`.
     ///

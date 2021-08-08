@@ -27,7 +27,7 @@ fn main() {
     let checkbox_state4 = CommonState::new_local_with_key(&CheckBoxValue::False);
 
     window.set_widgets(
-        VStack::initialize(vec![
+        VStack::new(vec![
             CheckBox::new("Rectangle", checkbox_state1)
                 .frame(100.0, 26.0),
             CheckBox::new("Circle", checkbox_state2)

@@ -22,7 +22,7 @@ pub struct Canvas {
 }
 
 impl Canvas {
-    pub fn initialize(context: fn(Rect, Context) -> Context) -> Box<Self> {
+    pub fn new(context: fn(Rect, Context) -> Context) -> Box<Self> {
         Box::new(Canvas {
             id: Uuid::new_v4(),
             position: Position::new(0.0, 0.0),
@@ -129,6 +129,58 @@ impl CommonWidget for Canvas {
 
     fn set_dimension(&mut self, dimensions: Dimension) {
         self.dimension = dimensions
+    }
+}
+
+impl Shape for Canvas {
+    fn get_triangle_store_mut(&mut self) -> &mut TriangleStore {
+        todo!()
+    }
+
+    fn get_stroke_style(&self) -> StrokeStyle {
+        todo!()
+    }
+
+    fn get_shape_style(&self) -> ShapeStyle {
+        todo!()
+    }
+
+    fn triangles(&mut self, env: &mut Environment) -> Vec<Triangle<Position>> {
+        let context = Context::new();
+
+        let rectangle = Rect::new(self.position(), self.dimension());
+        let context = (self.context)(rectangle, context);
+
+        let paths = context.to_paths(self.position());
+        let mut prims = vec![];
+
+        for (path, options) in paths {
+            match options {
+                ShapeStyleWithOptions::Fill(fill_options, mut color) => {
+                    color.capture_state(env);
+                    prims.push(self.get_fill_prim(path, fill_options, *color.value()));
+                    color.release_state(env);
+                }
+                ShapeStyleWithOptions::Stroke(stroke_options, mut color) => {
+                    color.capture_state(env);
+                    prims.push(self.get_stroke_prim(path, stroke_options, *color.value()));
+                    color.release_state(env);
+                }
+            }
+        }
+
+        let mut res_triangle_list = vec![];
+
+        for prim in prims {
+            match prim.kind {
+                PrimitiveKind::TrianglesSingleColor { triangles, .. } => {
+                    res_triangle_list.extend(triangles);
+                }
+                _ => ()
+            }
+        }
+
+        res_triangle_list
     }
 }
 

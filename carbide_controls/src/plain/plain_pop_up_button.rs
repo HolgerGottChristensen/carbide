@@ -40,7 +40,7 @@ impl<T: StateContract + 'static, GS: GlobalStateContract> PlainPopUpButton<T, GS
         let text = selected_item.clone().mapped(|a| format!("{:?}", a));
 
         let child = PlainButton::<(bool, T), GS>::new(
-            Rectangle::initialize(vec![
+            Rectangle::new(vec![
                 Text::new(text)
             ])).local_state(TupleState2::new(opened.clone(), selected_item.clone()))
             .on_click(|myself, _, _| {
@@ -128,7 +128,7 @@ impl<T: StateContract + 'static, GS: GlobalStateContract> PlainPopUpButton<T, GS
             } else {
                 |item: Box<dyn State<T, GS>>, _parent_selected_index: Box<dyn State<usize, GS>>, _item_index: Box<dyn State<usize, GS>>, partially_chosen: Box<dyn State<bool, GS>>| -> Box<dyn Widget<GS>>{
                     let text = item.mapped(|item| format!("{:?}", item));
-                    Rectangle::initialize(vec![
+                    Rectangle::new(vec![
                         Text::new(text)
                             .color(partially_chosen.clone().mapped(|partially_chosen| {
                                 if *partially_chosen {

@@ -40,7 +40,7 @@ impl<T: 'static + Serialize + Clone + Debug + Default + DeserializeOwned + Parti
                     }
                 });
 
-            Rectangle::initialize(vec![
+            Rectangle::new(vec![
                 button
             ]).fill(highlight_color)
         };
@@ -81,7 +81,7 @@ impl<T: 'static + Serialize + Clone + Debug + Default + DeserializeOwned + Parti
 
         let delegate_widget = delegate(focus_state.clone(), selected_state.into(), button);
 
-        let child = HStack::initialize(vec![
+        let child = HStack::new(vec![
             delegate_widget,
             Text::new(label_state.clone()),
             Spacer::new(SpacerDirection::Horizontal),

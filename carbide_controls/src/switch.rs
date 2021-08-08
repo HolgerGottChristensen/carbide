@@ -40,20 +40,20 @@ impl<GS: GlobalStateContract> Switch<GS> {
             });
 
             ZStack::initialize(vec![
-                Capsule::initialize()
+                Capsule::new()
                     .fill(checked_color)
                     .stroke(focus_color)
                     .stroke_style(1.0),
                 IfElse::new(checked_state)
                     .when_true(
-                        HStack::initialize(vec![
+                        HStack::new(vec![
                             Spacer::new(SpacerDirection::Horizontal),
                             Ellipse::new()
                                 .fill(EnvironmentColor::DarkText)
                                 .frame(22.0, 22.0),
                         ])
                     ).when_false(
-                    HStack::initialize(vec![
+                    HStack::new(vec![
                         Ellipse::new()
                             .fill(EnvironmentColor::DarkText)
                             .frame(22.0, 22.0),

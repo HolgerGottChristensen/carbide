@@ -31,7 +31,7 @@ fn main() {
 
     let icon_path = Window::<String>::path_to_assets("images/rust_press.png");
 
-    let mut window = Window::new("Focus behavior example - Carbide".to_string(), 800, 1200,Some(icon_path), String::from("Hejsa"));
+    let mut window = Window::new("Focus behavior example - Carbide".to_string(), 800, 1200, Some(icon_path), String::from("Hejsa"));
 
     window.add_font("fonts/NotoSans/NotoSans-Regular.ttf").unwrap();
 
@@ -55,7 +55,7 @@ fn main() {
     ]).into_box();
 
     window.set_widgets(
-        VStack::initialize(vec![
+        VStack::new(vec![
             PlainTextInput::new(text_state)
                 .font_size(40)
                 .padding(EdgeInsets::all(2.0))
@@ -91,10 +91,9 @@ fn main() {
                 .clip()
                 .padding(EdgeInsets::all(30.0)),*/
             PopUpButton::new(selected_model, selected_index)
-                .padding(EdgeInsets::all(50.0))
+                .padding(EdgeInsets::all(50.0)),
         ]).spacing(20.0)
     );
 
     window.run_event_loop();
-
 }

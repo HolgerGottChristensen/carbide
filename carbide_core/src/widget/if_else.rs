@@ -18,8 +18,8 @@ impl IfElse {
         Box::new(IfElse {
             id: Uuid::new_v4(),
             predicate: predicate.into(),
-            when_true: Frame::init(0.0, 0.0, Rectangle::initialize(vec![])),
-            when_false: Frame::init(0.0, 0.0, Rectangle::initialize(vec![])),
+            when_true: Frame::init(0.0, 0.0, Rectangle::new(vec![])),
+            when_false: Frame::init(0.0, 0.0, Rectangle::new(vec![])),
             position: Position::new(0.0, 0.0),
             dimension: Dimension::new(0.0, 0.0),
         })

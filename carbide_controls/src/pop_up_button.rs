@@ -34,13 +34,13 @@ impl<T: Serialize + Clone + Debug + Default + DeserializeOwned + 'static, GS: Gl
             });
 
             ZStack::initialize(vec![
-                RoundedRectangle::initialize(CornerRadii::all(3.0))
+                RoundedRectangle::new(CornerRadii::all(3.0))
                     .fill(EnvironmentColor::SecondarySystemBackground),
-                HStack::initialize(vec![
+                HStack::new(vec![
                     Padding::init(EdgeInsets::single(0.0, 0.0, 7.0, 0.0), Text::new(text)),
                     Spacer::new(SpacerDirection::Horizontal),
                     ZStack::initialize(vec![
-                        RoundedRectangle::initialize(CornerRadii::single(0.0, 0.0, 0.0, 2.0))
+                        RoundedRectangle::new(CornerRadii::single(0.0, 0.0, 0.0, 2.0))
                             .fill(EnvironmentColor::Accent),
                         Canvas::initialize(|_, mut context| {
                             context.move_to(7.0, 10.0);
@@ -58,7 +58,7 @@ impl<T: Serialize + Clone + Debug + Default + DeserializeOwned + 'static, GS: Gl
                     ]).padding(EdgeInsets::single(0.0, 0.0, 0.0, 1.0))
                         .frame(22.0, 24.0),
                 ]),
-                RoundedRectangle::initialize(CornerRadii::all(3.0))
+                RoundedRectangle::new(CornerRadii::all(3.0))
                     .stroke_style(1.0)
                     .stroke(focus_color),
             ])
@@ -79,8 +79,8 @@ impl<T: Serialize + Clone + Debug + Default + DeserializeOwned + 'static, GS: Gl
                     }
                 });
 
-            Rectangle::initialize(vec![
-                HStack::initialize(vec![
+            Rectangle::new(vec![
+                HStack::new(vec![
                     Padding::init(
                         EdgeInsets::single(0.0, 0.0, 5.0, 0.0),
                         Text::new(text)

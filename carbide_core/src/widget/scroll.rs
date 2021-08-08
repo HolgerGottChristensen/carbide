@@ -66,18 +66,18 @@ impl Scroll {
             dimension: Dimension::new(0.0, 0.0),
             scroll_offset: Position::new(0.0, 0.0),
             scroll_directions: ScrollDirection::Both,
-            scrollbar_horizontal: Rectangle::initialize(vec![])
+            scrollbar_horizontal: Rectangle::new(vec![])
                 .fill(EnvironmentColor::Gray)
                 .frame(100.0, 10.0),
-            scrollbar_vertical: Rectangle::initialize(vec![])
+            scrollbar_vertical: Rectangle::new(vec![])
                 .fill(EnvironmentColor::Gray)
                 .frame(10.0, 100.0),
             drag_started_on_vertical_scrollbar: false,
             drag_started_on_horizontal_scrollbar: false,
             vertical_scrollbar_hovered: false,
             horizontal_scrollbar_hovered: false,
-            scrollbar_horizontal_background: Rectangle::initialize(vec![]).fill(Color::Rgba(0.0, 0.0, 0.0, 0.5)).frame(100.0, 10.0),
-            scrollbar_vertical_background: Rectangle::initialize(vec![]).fill(Color::Rgba(0.0, 0.0, 0.0, 0.5)).frame(10.0, 100.0),
+            scrollbar_horizontal_background: Rectangle::new(vec![]).fill(Color::Rgba(0.0, 0.0, 0.0, 0.5)).frame(100.0, 10.0),
+            scrollbar_vertical_background: Rectangle::new(vec![]).fill(Color::Rgba(0.0, 0.0, 0.0, 0.5)).frame(10.0, 100.0),
         })
     }
 }

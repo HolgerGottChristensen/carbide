@@ -18,7 +18,7 @@ fn main() {
 
     window.set_widgets(
         OverlaidLayer::new("overlay_test",
-                           VStack::initialize(vec![
+                           VStack::new(vec![
                                Text::new("Hello world!y")
                                    .font_size(EnvironmentFontSize::Title)
                                    .color(EnvironmentColor::Green)
@@ -26,15 +26,15 @@ fn main() {
                                Text::new("Hvad sker der i denne verden og vil den layoute rigtigt når der er en lang tekst og der ikke er nok plads til at det hele kan være på en linje")
                                    .padding(EdgeInsets::all(10.0)).border(),
                                Image::new(rust_image),
-                               Rectangle::initialize(vec![
+                               Rectangle::new(vec![
                                    SyncTest::new(sync_state)
                                ]).fill(EnvironmentColor::SecondarySystemBackground),
-                               HStack::initialize(vec![
-                                   RoundedRectangle::initialize(CornerRadii::all(25.0))
+                               HStack::new(vec![
+                                   RoundedRectangle::new(CornerRadii::all(25.0))
                                        .frame(100.0, 100.0),
                                    Canvas::initialize(draw_heart)
                                        .frame(150.0, 150.0),
-                                   Rectangle::initialize(vec![
+                                   Rectangle::new(vec![
                                        Scroll::new(
                                            Image::new(rust_image)
                                                .resizeable()
@@ -44,7 +44,7 @@ fn main() {
                                            .clip()
                                    ]).fill(EnvironmentColor::SecondarySystemBackground).frame(SCALE, 200.0),
                                ]).padding(EdgeInsets::all(10.0)),
-                               HStack::initialize(vec![
+                               HStack::new(vec![
                                    Spacer::new(SpacerDirection::Horizontal),
                                    Ellipse::new()
                                        .padding(EdgeInsets::all(10.0))

@@ -75,7 +75,7 @@ impl<T: Serialize + Clone + Debug + Default + DeserializeOwned + 'static, GS: Gl
         });
 
 
-        let child = Rectangle::initialize(vec![
+        let child = Rectangle::new(vec![
             List::new(Box::new(foreach_state),
                       PlainButton::<(usize, bool, usize), GS>::new(display_item)
                           .local_state(TupleState3::new(index_state.clone(), opened.clone(), parent_selected_index.clone()))

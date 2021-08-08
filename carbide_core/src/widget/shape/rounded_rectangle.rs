@@ -45,7 +45,7 @@ impl RoundedRectangle {
         Box::new(self)
     }
 
-    pub fn initialize(corner_radii: CornerRadii) -> Box<RoundedRectangle> {
+    pub fn new(corner_radii: CornerRadii) -> Box<RoundedRectangle> {
         Box::new(RoundedRectangle {
             id: Uuid::new_v4(),
             position: Position::new(0.0, 0.0),

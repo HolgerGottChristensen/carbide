@@ -32,7 +32,7 @@ fn main() {
     window.set_widgets(
         SharedState::new(
             switch_state2.clone(),
-            VStack::initialize(vec![
+            VStack::new(vec![
                 Switch::new("Rectangle", switch_state1)
                     .frame(140.0, 26.0),
                 Switch::new("Circle", switch_state2.clone())

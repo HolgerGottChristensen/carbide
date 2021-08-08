@@ -28,8 +28,8 @@ fn main() {
     let focus_state = CommonState::new_local_with_key(&Focus::Focused);
 
     window.set_widgets(
-        VStack::initialize(vec![
-            PlainButton::<bool, u32>::new(Rectangle::initialize(vec![])
+        VStack::new(vec![
+            PlainButton::<bool, u32>::new(Rectangle::new(vec![])
                 .fill(RED)
                 .frame(10.0, 10.0)
             )
@@ -56,7 +56,7 @@ fn main() {
             })).font_size(40),
             Text::new(focus_state.mapped(|m| {
                 format!("Focus state: {:?}", m).to_string()
-            })).font_size(40)
+            })).font_size(40),
         ]).spacing(20.0)
     );
 

@@ -8,7 +8,7 @@ use std::time::{Duration, Instant};
 pub use futures::executor::block_on;
 use image::DynamicImage;
 use uuid::Uuid;
-use wgpu::{BindGroupLayout, PresentMode, Texture};
+use wgpu::{BindGroupLayout, PresentMode, RenderPassDepthStencilAttachmentDescriptor, Texture, TextureView};
 use wgpu::util::DeviceExt;
 use winit::dpi::{PhysicalPosition, PhysicalSize, Size};
 use winit::event::{ElementState, Event, KeyboardInput, VirtualKeyCode, WindowEvent};
@@ -31,6 +31,7 @@ pub use carbide_core::window::TWindow;
 use crate::diffuse_bind_group::{DiffuseBindGroup, new_diffuse};
 use crate::glyph_cache_command::GlyphCacheCommand;
 use crate::image::Image;
+use crate::pipeline::{create_render_pipeline, MaskType};
 use crate::render_pass_command::{create_render_pass_commands, RenderPassCommand};
 use crate::renderer::{atlas_cache_tex_desc, glyph_cache_tex_desc};
 use crate::texture_atlas_command::TextureAtlasCommand;
@@ -44,7 +45,11 @@ pub struct Window {
     sc_desc: wgpu::SwapChainDescriptor,
     swap_chain: wgpu::SwapChain,
     size: winit::dpi::PhysicalSize<u32>,
-    render_pipeline: wgpu::RenderPipeline,
+    render_pipeline_no_mask: wgpu::RenderPipeline,
+    render_pipeline_add_mask: wgpu::RenderPipeline,
+    render_pipeline_in_mask: wgpu::RenderPipeline,
+    render_pipeline_remove_mask: wgpu::RenderPipeline,
+    depth_texture_view: TextureView,
     diffuse_bind_group: wgpu::BindGroup,
     mesh: Mesh,
     ui: Ui,
@@ -87,7 +92,7 @@ impl carbide_core::window::TWindow for Window {
     }
 
     fn set_widgets(&mut self, w: Box<dyn Widget>) {
-        self.ui.widgets = Rectangle::initialize(vec![
+        self.ui.widgets = Rectangle::new(vec![
             OverlaidLayer::new(
                 "controls_popup_layer",
                 w,
@@ -249,55 +254,10 @@ impl Window {
                 push_constant_ranges: &[],
             });
 
-        let render_pipeline = device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
-            label: Some("Render Pipeline"),
-            layout: Some(&render_pipeline_layout),
-            vertex_stage: wgpu::ProgrammableStageDescriptor {
-                module: &vs_module,
-                entry_point: "main", // 1.
-            },
-            fragment_stage: Some(wgpu::ProgrammableStageDescriptor { // 2.
-                module: &fs_module,
-                entry_point: "main",
-            }),
-            rasterization_state: Some(
-                wgpu::RasterizationStateDescriptor {
-                    front_face: wgpu::FrontFace::Ccw,
-                    cull_mode: wgpu::CullMode::None, // Todo fix mesh to always be CCW, then we can cull backfaces
-                    depth_bias: 0,
-                    depth_bias_slope_scale: 0.0,
-                    depth_bias_clamp: 0.0,
-                    clamp_depth: false,
-                }
-            ),
-            color_states: &[
-                wgpu::ColorStateDescriptor {
-                    format: sc_desc.format,
-                    color_blend: wgpu::BlendDescriptor {
-                        src_factor: wgpu::BlendFactor::SrcAlpha,
-                        dst_factor: wgpu::BlendFactor::OneMinusSrcAlpha,
-                        operation: wgpu::BlendOperation::Add,
-                    },
-                    alpha_blend: wgpu::BlendDescriptor {
-                        src_factor: wgpu::BlendFactor::One,
-                        dst_factor: wgpu::BlendFactor::OneMinusSrcAlpha,
-                        operation: wgpu::BlendOperation::Add,
-                    },
-                    write_mask: wgpu::ColorWrite::ALL,
-                },
-            ],
-            primitive_topology: wgpu::PrimitiveTopology::TriangleList, // 1.
-            depth_stencil_state: None, // 2.
-            vertex_state: wgpu::VertexStateDescriptor {
-                index_format: wgpu::IndexFormat::Uint16, // 3.
-                vertex_buffers: &[
-                    Vertex::desc(),
-                ], // 4.
-            },
-            sample_count: 1, // 5.
-            sample_mask: !0, // 6.
-            alpha_to_coverage_enabled: false, // 7.
-        });
+        let render_pipeline_no_mask = create_render_pipeline(&device, &render_pipeline_layout, &vs_module, &fs_module, &sc_desc, MaskType::NoMask);
+        let render_pipeline_add_mask = create_render_pipeline(&device, &render_pipeline_layout, &vs_module, &fs_module, &sc_desc, MaskType::AddMask);
+        let render_pipeline_in_mask = create_render_pipeline(&device, &render_pipeline_layout, &vs_module, &fs_module, &sc_desc, MaskType::InMask);
+        let render_pipeline_remove_mask = create_render_pipeline(&device, &render_pipeline_layout, &vs_module, &fs_module, &sc_desc, MaskType::RemoveMask);
 
         let bind_groups = HashMap::new();
 
@@ -307,6 +267,22 @@ impl Window {
 
         let image_map = ImageMap::new();
 
+        let depth_texture = device
+            .create_texture(&wgpu::TextureDescriptor {
+                label: Some("Depth texture descriptor"),
+                size: wgpu::Extent3d {
+                    width,
+                    height,
+                    depth: 1,
+                },
+                mip_level_count: 1,
+                sample_count: 1,
+                dimension: wgpu::TextureDimension::D2,
+                format: wgpu::TextureFormat::Depth24PlusStencil8,
+                usage: wgpu::TextureUsage::OUTPUT_ATTACHMENT,
+            });
+        let depth_texture_view = depth_texture.create_view(&Default::default());
+
         Self {
             surface,
             device,
@@ -314,7 +290,11 @@ impl Window {
             sc_desc,
             swap_chain,
             size,
-            render_pipeline,
+            render_pipeline_no_mask,
+            render_pipeline_add_mask,
+            render_pipeline_in_mask,
+            render_pipeline_remove_mask,
+            depth_texture_view,
             diffuse_bind_group,
             mesh,
             ui,
@@ -335,6 +315,22 @@ impl Window {
         self.ui.handle_event(Input::Redraw);
         self.sc_desc.width = new_size.width;
         self.sc_desc.height = new_size.height;
+        let depth_texture = self.device
+            .create_texture(&wgpu::TextureDescriptor {
+                label: Some("Depth texture descriptor"),
+                size: wgpu::Extent3d {
+                    width: new_size.width,
+                    height: new_size.height,
+                    depth: 1,
+                },
+                mip_level_count: 1,
+                sample_count: 1,
+                dimension: wgpu::TextureDimension::D2,
+                format: wgpu::TextureFormat::Depth24PlusStencil8,
+                usage: wgpu::TextureUsage::OUTPUT_ATTACHMENT,
+            });
+        let depth_texture_view = depth_texture.create_view(&Default::default());
+        self.depth_texture_view = depth_texture_view;
         self.swap_chain = self.device.create_swap_chain(&self.surface, &self.sc_desc);
     }
 
@@ -459,12 +455,20 @@ impl Window {
                         },
                     }
                 ],
-                depth_stencil_attachment: None,
+                depth_stencil_attachment: Some(RenderPassDepthStencilAttachmentDescriptor {
+                    attachment: &self.depth_texture_view,
+                    depth_ops: None,
+                    stencil_ops: Some(wgpu::Operations {
+                        load: wgpu::LoadOp::Clear(0),
+                        store: true,
+                    }),
+                }),
             });
-            render_pass.set_pipeline(&self.render_pipeline); // 2.
+            render_pass.set_pipeline(&self.render_pipeline_no_mask); // 2.
             render_pass.set_vertex_buffer(0, vertex_buffer.slice(..));
 
             let instance_range = 0..1;
+            let mut stencil_level = 0;
             for cmd in commands {
                 match cmd {
                     RenderPassCommand::SetBindGroup { bind_group } => {
@@ -480,6 +484,24 @@ impl Window {
                     }
                     RenderPassCommand::Draw { vertex_range } => {
                         render_pass.draw(vertex_range, instance_range.clone());
+                    }
+                    RenderPassCommand::Stencil { vertex_range } => {
+                        stencil_level += 1;
+                        render_pass.set_pipeline(&self.render_pipeline_add_mask);
+                        render_pass.draw(vertex_range, instance_range.clone());
+                        render_pass.set_pipeline(&self.render_pipeline_in_mask);
+                        render_pass.set_stencil_reference(stencil_level);
+                    }
+                    RenderPassCommand::DeStencil { vertex_range } => {
+                        stencil_level -= 1;
+                        render_pass.set_pipeline(&self.render_pipeline_remove_mask);
+                        render_pass.draw(vertex_range, instance_range.clone());
+                        render_pass.set_stencil_reference(stencil_level);
+                        if stencil_level == 0 {
+                            render_pass.set_pipeline(&self.render_pipeline_no_mask);
+                        } else {
+                            render_pass.set_pipeline(&self.render_pipeline_in_mask);
+                        }
                     }
                 }
             }

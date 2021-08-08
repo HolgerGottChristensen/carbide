@@ -49,7 +49,7 @@ impl<GS: GlobalStateContract> CheckBox<GS> {
             });
 
             ZStack::initialize(vec![
-                RoundedRectangle::initialize(CornerRadii::all(3.0))
+                RoundedRectangle::new(CornerRadii::all(3.0))
                     .fill(checked_color)
                     .stroke(focus_color)
                     .stroke_style(1.0),

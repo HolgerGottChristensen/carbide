@@ -142,7 +142,7 @@ impl Ui {
         let environment = Environment::new(base_environment, window_pixel_dimensions, scale_factor);
 
         Ui {
-            widgets: Rectangle::initialize(vec![]),
+            widgets: Rectangle::new(vec![]),
             num_redraw_frames: SAFE_REDRAW_COUNT,
             redraw_count: AtomicUsize::new(SAFE_REDRAW_COUNT as usize),
             maybe_background_color: None,

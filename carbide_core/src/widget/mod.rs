@@ -6,6 +6,7 @@ use crate::draw::Position;
 
 pub use self::border::*;
 pub use self::clip::*;
+pub use self::clip_shape::*;
 pub use self::environment_updating::*;
 pub use self::foreach::*;
 pub use self::frame::*;
@@ -45,6 +46,7 @@ mod spacer;
 mod text;
 mod v_stack;
 mod z_stack;
+mod clip_shape;
 
 pub type Id = uuid::Uuid;
 pub type ColoredPoint = (Position, crate::color::Rgba);

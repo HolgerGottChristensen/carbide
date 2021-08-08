@@ -21,7 +21,7 @@ fn main() {
     window.add_font_family(family);
 
     window.set_widgets(
-        VStack::initialize(vec![
+        VStack::new(vec![
             Button::<(), String>::new(Text::new("Primary button").font_size(EnvironmentFontSize::Body))
                 .on_click(|_, _, _| {
                     println!("Clicked the primary button");

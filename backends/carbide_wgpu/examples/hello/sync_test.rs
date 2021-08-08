@@ -20,7 +20,7 @@ pub struct SyncTest<GS> where GS: GlobalStateContract {
 impl<S: GlobalStateContract> SyncTest<S> {
     fn insert_local_state(&self, env: &mut Environment<S>) {
         if self.show_overlay {
-            env.add_overlay("overlay_test", Rectangle::initialize(vec![])
+            env.add_overlay("overlay_test", Rectangle::new(vec![])
                 .fill(EnvironmentColor::Red))
         }
     }
@@ -64,17 +64,17 @@ impl<S: GlobalStateContract> SyncTest<S> {
 
         Box::new(Self {
             id: Uuid::new_v4(),
-            child: HStack::initialize(vec![
+            child: HStack::new(vec![
                 Spacer::new(SpacerDirection::Horizontal),
-                VStack::initialize(vec![
+                VStack::new(vec![
                     ForEach::new(
                         Box::new(fore.clone()),
-                        Rectangle::initialize(vec![
+                        Rectangle::new(vec![
                             Text::new(mapped_state)
                         ]).fill(EnvironmentColor::Red).frame(60.0, 30.0))
                         .index_state(index_state)
                 ]),
-                ForEach::new((0..5).map(|_| Uuid::new_v4()).collect::<Vec<Uuid>>(), Rectangle::initialize(vec![]).frame(10.0, 10.0)),
+                ForEach::new((0..5).map(|_| Uuid::new_v4()).collect::<Vec<Uuid>>(), Rectangle::new(vec![]).frame(10.0, 10.0)),
                 Text::new(value.clone()),
                 Spacer::new(SpacerDirection::Horizontal),
                 Text::new(value.clone()),

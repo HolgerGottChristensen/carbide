@@ -20,6 +20,8 @@ pub enum RenderPassCommand<'a> {
     },
     /// Draw the specified range of vertices.
     Draw { vertex_range: std::ops::Range<u32> },
+    Stencil { vertex_range: std::ops::Range<u32> },
+    DeStencil { vertex_range: std::ops::Range<u32> },
     /// A new image requires drawing and in turn a new bind group requires setting.
     SetBindGroup { bind_group: &'a wgpu::BindGroup },
 }
@@ -50,13 +52,39 @@ pub fn create_render_pass_commands<'a>(def_bind_group: &'a wgpu::BindGroup, bind
 
     for command in mesh.commands() {
         match command {
-            // Update the `scizzor` before continuing to draw.
-            mesh::Command::Scizzor(s) => {
+            // Update the `scissor` before continuing to draw.
+            mesh::Command::Scissor(s) => {
                 let top_left = [s.top_left[0] as u32, s.top_left[1] as u32];
                 let dimensions = s.dimensions;
                 let cmd = RenderPassCommand::SetScissor {
                     top_left,
                     dimensions,
+                };
+                commands.push(cmd);
+            }
+
+            mesh::Command::Stencil(vertex_range) => {
+                let vertex_count = vertex_range.len();
+                if vertex_count <= 0 {
+                    continue;
+                }
+                // Ensure a render pipeline and bind group is set.
+                if bind_group.is_none() {
+                    bind_group = Some(BindGroup::Default);
+                    let cmd = RenderPassCommand::SetBindGroup {
+                        bind_group: def_bind_group,
+                    };
+                    commands.push(cmd);
+                }
+                let cmd = RenderPassCommand::Stencil {
+                    vertex_range: vertex_range.start as u32..vertex_range.end as u32,
+                };
+                commands.push(cmd);
+            }
+
+            mesh::Command::DeStencil(vertex_range) => {
+                let cmd = RenderPassCommand::DeStencil {
+                    vertex_range: vertex_range.start as u32..vertex_range.end as u32,
                 };
                 commands.push(cmd);
             }

@@ -100,7 +100,7 @@ impl<T: 'static + Serialize + Clone + Debug + Default + DeserializeOwned, GS: Gl
 
         let child = PlainButton::new(
             ZStack::initialize(vec![
-                RoundedRectangle::initialize(CornerRadii::all(3.0))
+                RoundedRectangle::new(CornerRadii::all(3.0))
                     .fill(background_color)
                     .stroke(focus_color)
                     .stroke_style(1.0),

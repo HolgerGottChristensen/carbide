@@ -23,11 +23,11 @@ fn main() {
 
 
     window.set_widgets(
-        VStack::initialize(vec![
-            Rectangle::initialize(vec![
-                HStack::initialize(vec![
+        VStack::new(vec![
+            Rectangle::new(vec![
+                HStack::new(vec![
                     Spacer::new(SpacerDirection::Horizontal),
-                    VStack::initialize(
+                    VStack::new(
                         vec![
                             Text::new(CommonState::GlobalState {
                                 function: |global_state: &CalculatorState| {
@@ -42,13 +42,13 @@ fn main() {
                                 },
                                 function_mut: None,
                                 latest_value: "0".to_string(),
-                            }).font_size(45)
-                        ]).cross_axis_alignment(CrossAxisAlignment::End)
+                            }).font_size(45),
+                        ]).cross_axis_alignment(CrossAxisAlignment::End),
                 ]).padding(EdgeInsets::all(10.0))
             ])
                 .fill(EnvironmentColor::Accent)
                 .frame(SCALE, 150.0),
-            HStack::initialize(vec![
+            HStack::new(vec![
                 CalculatorButton::new(
                     Text::new("")
                         .font_size(45)
@@ -63,9 +63,9 @@ fn main() {
                 CalculatorButton::new(
                     Text::new("/")
                         .font_size(45)
-                ).on_released(|_, s| s.set_operation(Operation::Div))
+                ).on_released(|_, s| s.set_operation(Operation::Div)),
             ]).spacing(3.0),
-            HStack::initialize(vec![
+            HStack::new(vec![
                 CalculatorButton::new(
                     Text::new("7")
                         .font_size(45)
@@ -81,9 +81,9 @@ fn main() {
                 CalculatorButton::new(
                     Text::new("×")
                         .font_size(45)
-                ).on_released(|_, s| s.set_operation(Operation::Mul))
+                ).on_released(|_, s| s.set_operation(Operation::Mul)),
             ]).spacing(3.0),
-            HStack::initialize(vec![
+            HStack::new(vec![
                 CalculatorButton::new(
                     Text::new("4")
                         .font_size(45)
@@ -99,9 +99,9 @@ fn main() {
                 CalculatorButton::new(
                     Text::new("-")
                         .font_size(45)
-                ).on_released(|_, s| s.set_operation(Operation::Sub))
+                ).on_released(|_, s| s.set_operation(Operation::Sub)),
             ]).spacing(3.0),
-            HStack::initialize(vec![
+            HStack::new(vec![
                 CalculatorButton::new(
                     Text::new("1")
                         .font_size(45)
@@ -111,15 +111,15 @@ fn main() {
                 CalculatorButton::new(Text::new("3").font_size(45))
                     .on_released(|_, s| s.append(3)),
                 CalculatorButton::new(Text::new("+").font_size(45))
-                    .on_released(|_, s| s.set_operation(Operation::Add))
+                    .on_released(|_, s| s.set_operation(Operation::Add)),
             ]).spacing(3.0),
-            HStack::initialize(vec![
+            HStack::new(vec![
                 CalculatorButton::new(Text::new("").font_size(45)),
                 CalculatorButton::new(Text::new("0").font_size(45))
                     .on_released(|_, s| s.append(0)),
                 CalculatorButton::new(Text::new("").font_size(45)),
                 CalculatorButton::new(Text::new("=").font_size(45))
-                    .on_released(|_, s| s.set_operation(Operation::Eq))
+                    .on_released(|_, s| s.set_operation(Operation::Eq)),
             ]).spacing(3.0),
         ]).spacing(3.0)
     );

@@ -16,6 +16,10 @@ pub trait WidgetExt: Widget + Sized + 'static {
         Clip::new(Box::new(self))
     }
 
+    fn clip_shape(self, shape: Box<dyn Shape>) -> Box<ClipShape> {
+        ClipShape::new(Box::new(self), shape)
+    }
+
     fn hidden(self) -> Box<Hidden> {
         Hidden::new(Box::new(self))
     }
