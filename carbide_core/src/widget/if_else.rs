@@ -149,7 +149,4 @@ impl CommonWidget for IfElse {
     }
 }
 
-impl ChildRender for IfElse {}
-
-
 impl WidgetExt for IfElse {}

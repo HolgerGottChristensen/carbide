@@ -1,10 +1,9 @@
 use crate::draw::{Dimension, Position};
 use crate::prelude::*;
-use crate::render::ChildRender;
 
 /// A basic, non-interactive rectangle shape widget.
 #[derive(Debug, Clone, Widget)]
-#[render(process_get_primitives)]
+#[carbide_exclude(Render)]
 pub struct Hidden {
     id: Uuid,
     child: Box<dyn Widget>,
@@ -100,6 +99,9 @@ impl CommonWidget for Hidden {
     }
 }
 
-impl ChildRender for Hidden {}
+impl Render for Hidden {
+    // Because we try to hide all children, we just stop the rendering tree.
+    fn process_get_primitives(&mut self, _: &mut Vec<Primitive>, _: &mut Environment) {}
+}
 
 impl WidgetExt for Hidden {}

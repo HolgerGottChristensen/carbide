@@ -336,10 +336,10 @@ fn load_bitmap_font() {
     //image.save("/Users/holgergottchristensen/Documents/carbide/target/smile_new.png").unwrap();
 }
 
-#[test]
+/*#[test]
 fn list_fonts() {
     use font_kit::family_name::FamilyName;
     use font_kit::source::SystemSource;
     let system_source = SystemSource::new();
     println!("{:#?}", system_source.select_by_postscript_name(".HelveticaNeueDeskInterface-Regular").unwrap().load().unwrap().postscript_name());
-}
+}*/

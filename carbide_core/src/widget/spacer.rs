@@ -1,6 +1,5 @@
 use crate::draw::{Dimension, Position};
 use crate::prelude::*;
-use crate::render::ChildRender;
 use crate::widget::types::SpacerDirection;
 
 #[derive(Clone, Debug, Widget)]
@@ -91,8 +90,6 @@ impl CommonWidget for Spacer {
         self.dimension = dimensions
     }
 }
-
-impl ChildRender for Spacer {}
 
 impl WidgetExt for Spacer {}
 

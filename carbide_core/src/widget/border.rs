@@ -4,6 +4,7 @@ use crate::render::PrimitiveKind;
 
 /// A basic, non-interactive rectangle shape widget.
 #[derive(Debug, Clone, Widget)]
+#[carbide_exclude(Render)]
 pub struct Border {
     id: Uuid,
     child: Box<dyn Widget>,

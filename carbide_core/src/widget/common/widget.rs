@@ -5,12 +5,11 @@ use std::ops::{Deref, DerefMut};
 use dyn_clone::DynClone;
 
 use crate::draw::{Dimension, Position};
-use crate::event::{Event, KeyboardEvent, MouseEvent, WidgetEvent};
+use crate::event::{Event, KeyboardEvent, KeyboardEventHandler, MouseEvent, MouseEventHandler, OtherEventHandler, WidgetEvent};
 use crate::focus::{Focus, Focusable, Refocus};
 use crate::prelude::*;
-use crate::render::RenderProcessor;
 
-pub trait Widget: Event + Layout + Render + RenderProcessor + Focusable + DynClone {}
+pub trait Widget: Event + Layout + Render + Focusable + DynClone {}
 
 //impl<S, T> Widget<S> for T where T: Event<S> + Layout<S> + Render<S> + DynClone {}
 
@@ -42,6 +41,14 @@ impl CommonWidget for Box<dyn Widget> {
         self.deref_mut().children_mut()
     }
 
+    fn get_focus(&self) -> Focus {
+        self.deref().get_focus()
+    }
+
+    fn set_focus(&mut self, focus: Focus) {
+        self.deref_mut().set_focus(focus)
+    }
+
     fn proxied_children(&mut self) -> WidgetIterMut {
         self.deref_mut().proxied_children()
     }
@@ -68,25 +75,29 @@ impl CommonWidget for Box<dyn Widget> {
 }
 
 
-impl Event for Box<dyn Widget> {
+impl MouseEventHandler for Box<dyn Widget> {
     fn handle_mouse_event(&mut self, event: &MouseEvent, consumed: &bool, env: &mut Environment) {
         self.deref_mut().handle_mouse_event(event, consumed, env)
-    }
-
-    fn handle_keyboard_event(&mut self, event: &KeyboardEvent, env: &mut Environment) {
-        self.deref_mut().handle_keyboard_event(event, env)
-    }
-
-    fn handle_other_event(&mut self, event: &WidgetEvent, env: &mut Environment) {
-        self.deref_mut().handle_other_event(event, env)
     }
 
     fn process_mouse_event(&mut self, event: &MouseEvent, consumed: &bool, env: &mut Environment) {
         self.deref_mut().process_mouse_event(event, consumed, env)
     }
+}
+
+impl KeyboardEventHandler for Box<dyn Widget> {
+    fn handle_keyboard_event(&mut self, event: &KeyboardEvent, env: &mut Environment) {
+        self.deref_mut().handle_keyboard_event(event, env)
+    }
 
     fn process_keyboard_event(&mut self, event: &KeyboardEvent, env: &mut Environment) {
         self.deref_mut().process_keyboard_event(event, env)
+    }
+}
+
+impl OtherEventHandler for Box<dyn Widget> {
+    fn handle_other_event(&mut self, event: &WidgetEvent, env: &mut Environment) {
+        self.deref_mut().handle_other_event(event, env)
     }
 
     fn process_other_event(&mut self, event: &WidgetEvent, env: &mut Environment) {
@@ -118,15 +129,14 @@ impl Layout for Box<dyn Widget> {
     }
 }
 
-impl RenderProcessor for Box<dyn Widget> {
-    fn process_get_primitives(&mut self, primitives: &mut Vec<Primitive>, env: &mut Environment) {
-        self.deref_mut().process_get_primitives(primitives, env);
-    }
-}
-
 impl Render for Box<dyn Widget> {
     fn get_primitives(&mut self, env: &mut Environment) -> Vec<Primitive> {
+        println!("Called on box");
         self.deref_mut().get_primitives(env)
+    }
+
+    fn process_get_primitives(&mut self, primitives: &mut Vec<Primitive>, env: &mut Environment) {
+        self.deref_mut().process_get_primitives(primitives, env);
     }
 }
 
@@ -137,14 +147,6 @@ impl Focusable for Box<dyn Widget> {
 
     fn focus_dismissed(&mut self, event: &WidgetEvent, focus_request: &Refocus, env: &mut Environment) {
         self.deref_mut().focus_dismissed(event, focus_request, env)
-    }
-
-    fn get_focus(&self) -> Focus {
-        self.deref().get_focus()
-    }
-
-    fn set_focus(&mut self, focus: Focus) {
-        self.deref_mut().set_focus(focus)
     }
 
     fn set_focus_and_request(&mut self, focus: Focus, env: &mut Environment) {

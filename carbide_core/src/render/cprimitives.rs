@@ -4,7 +4,6 @@ use crate::draw::Dimension;
 use crate::prelude::Environment;
 use crate::render::primitive::Primitive;
 use crate::render::primitive_walker::PrimitiveWalker;
-use crate::render::render::RenderProcessor;
 use crate::widget::Widget;
 
 pub struct CPrimitives {

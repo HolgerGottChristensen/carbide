@@ -9,6 +9,7 @@ use crate::widget::types::ScaleMode;
 
 /// A primitive and basic widget for drawing an `Image`.
 #[derive(Debug, Clone, Widget)]
+#[carbide_exclude(Render)]
 pub struct Image {
     id: Uuid,
     /// The unique identifier for the image that will be drawn.

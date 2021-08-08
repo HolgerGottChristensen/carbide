@@ -1,6 +1,5 @@
 use crate::draw::{Dimension, Position};
 use crate::prelude::*;
-use crate::render::ChildRender;
 
 pub static SCALE: f64 = -1.0;
 
@@ -29,7 +28,7 @@ impl Frame {
 
         Box::new(Frame {
             id: Default::default(),
-            child: Box::new(child),
+            child,
             position: Position::new(0.0, 0.0),
             x: 0.0.into(),
             y: 0.0.into(),
@@ -45,7 +44,7 @@ impl Frame {
     pub fn init_width(width: F64State, child: Box<dyn Widget>) -> Box<Frame> {
         Box::new(Frame {
             id: Default::default(),
-            child: Box::new(child),
+            child,
             position: Position::new(0.0, 0.0),
             x: 0.0.into(),
             y: 0.0.into(),
@@ -61,7 +60,7 @@ impl Frame {
     pub fn init_height(height: F64State, child: Box<dyn Widget>) -> Box<Frame> {
         Box::new(Frame {
             id: Default::default(),
-            child: Box::new(child),
+            child,
             position: Position::new(0.0, 0.0),
             x: 0.0.into(),
             y: 0.0.into(),
@@ -198,7 +197,5 @@ impl Layout for Frame {
         self.child.position_children();
     }
 }
-
-impl ChildRender for Frame {}
 
 impl WidgetExt for Frame {}

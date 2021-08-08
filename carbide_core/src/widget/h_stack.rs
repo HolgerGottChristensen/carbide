@@ -1,6 +1,5 @@
 use crate::draw::{Dimension, Position};
 use crate::prelude::*;
-use crate::render::ChildRender;
 use crate::widget::CrossAxisAlignment;
 
 /// A basic, non-interactive rectangle shape widget.
@@ -192,7 +191,5 @@ impl CommonWidget for HStack {
         self.dimension = dimensions
     }
 }
-
-impl ChildRender for HStack {}
 
 impl WidgetExt for HStack {}

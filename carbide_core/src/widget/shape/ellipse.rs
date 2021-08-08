@@ -13,6 +13,7 @@ use crate::widget::types::TriangleStore;
 
 /// A simple, non-interactive widget for drawing a single **Ellipse**.
 #[derive(Debug, Clone, Widget)]
+#[carbide_exclude(Render)]
 pub struct Ellipse {
     pub id: Uuid,
     position: Position,
@@ -119,6 +120,7 @@ impl CommonWidget for Ellipse {
 
 impl Render for Ellipse {
     fn get_primitives(&mut self, _: &mut Environment) -> Vec<Primitive> {
+        println!("Called ellipse primitives");
         let radii = vec2(self.width() as f32 / 2.0, self.height() as f32 / 2.0);
         let center = point(self.x() as f32 + radii.x, self.y() as f32 + radii.y);
         let rectangle = rect(self.x() as f32, self.y() as f32, self.width() as f32, self.height() as f32);

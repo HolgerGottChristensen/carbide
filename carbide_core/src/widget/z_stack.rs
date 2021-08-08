@@ -2,7 +2,6 @@ use std::ops::Deref;
 
 use crate::draw::{Dimension, Position};
 use crate::prelude::*;
-use crate::render::ChildRender;
 
 /// A basic, non-interactive rectangle shape widget.
 #[derive(Debug, Clone, Widget)]
@@ -143,7 +142,5 @@ impl CommonWidget for ZStack {
         self.dimension = dimensions
     }
 }
-
-impl ChildRender for ZStack {}
 
 impl WidgetExt for ZStack {}

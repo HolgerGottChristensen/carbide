@@ -1,12 +1,11 @@
 use crate::draw::{Dimension, Position};
 use crate::event::Event;
 use crate::prelude::*;
-use crate::render::RenderProcessor;
 
 #[derive(Debug, Clone, Widget)]
+#[carbide_exclude(Render)]
 //#[state_sync(sync_state, update_all_widget_state, update_local_widget_state)]
 //#[event(process_keyboard_event, process_mouse_event, process_other_event)]
-#[render(process_get_primitives)]
 pub struct OverlaidLayer {
     id: Uuid,
     child: Box<dyn Widget>,
@@ -154,16 +153,6 @@ impl OverlaidLayer {
         self.update_local_widget_state(env);
     }*/
 
-    fn process_get_primitives(&mut self, primitives: &mut Vec<Primitive>, env: &mut Environment) {
-        for child in self.children_mut() {
-            child.process_get_primitives(primitives, env);
-        }
-
-        if let Some(t) = &mut self.overlay {
-            t.process_get_primitives(primitives, env);
-        }
-    }
-
     pub fn new(overlay_id: &str, child: Box<dyn Widget>) -> Box<Self> {
         Box::new(Self {
             id: Uuid::new_v4(),
@@ -262,8 +251,14 @@ impl CommonWidget for OverlaidLayer {
 }
 
 impl Render for OverlaidLayer {
-    fn get_primitives(&mut self, _: &mut Environment) -> Vec<Primitive> {
-        return vec![];
+    fn process_get_primitives(&mut self, primitives: &mut Vec<Primitive>, env: &mut Environment) {
+        for child in self.children_mut() {
+            child.process_get_primitives(primitives, env);
+        }
+
+        if let Some(t) = &mut self.overlay {
+            t.process_get_primitives(primitives, env);
+        }
     }
 }
 

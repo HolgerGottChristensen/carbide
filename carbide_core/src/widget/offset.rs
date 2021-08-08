@@ -1,6 +1,5 @@
 use crate::draw::{Dimension, Position};
 use crate::prelude::*;
-use crate::render::ChildRender;
 
 #[derive(Debug, Clone, Widget)]
 pub struct Offset {
@@ -106,7 +105,5 @@ impl CommonWidget for Offset {
         self.dimension = dimensions
     }
 }
-
-impl ChildRender for Offset {}
 
 impl WidgetExt for Offset {}

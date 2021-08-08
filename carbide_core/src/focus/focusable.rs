@@ -6,19 +6,18 @@ use crate::prelude::{CommonWidget, Environment};
 use crate::state::StateSync;
 
 pub trait Focusable: CommonWidget + StateSync {
-    fn focus_retrieved(&mut self, event: &WidgetEvent, focus_request: &Refocus, env: &mut Environment);
+    fn focus_retrieved(&mut self, event: &WidgetEvent, focus_request: &Refocus, env: &mut Environment) {}
 
-    fn focus_dismissed(&mut self, event: &WidgetEvent, focus_request: &Refocus, env: &mut Environment);
+    fn focus_dismissed(&mut self, event: &WidgetEvent, focus_request: &Refocus, env: &mut Environment) {}
 
-    fn get_focus(&self) -> Focus;
-
-    /// For normal setting of focus use set_focus_and_request
-    /// which makes sure the request is processed.
-    fn set_focus(&mut self, focus: Focus);
-
-    fn set_focus_and_request(&mut self, focus: Focus, env: &mut Environment);
-
-    fn process_focus_request(&mut self, event: &WidgetEvent, focus_request: &Refocus, env: &mut Environment) -> bool;
+    fn set_focus_and_request(&mut self, focus: Focus, env: &mut Environment) {
+        if focus == Focus::FocusReleased {
+            env.request_focus(Refocus::FocusRequest)
+        } else if focus == Focus::FocusRequested {
+            env.request_focus(Refocus::FocusRequest)
+        }
+        self.set_focus(focus)
+    }
 
     fn request_focus(&mut self, env: &mut Environment) {
         if self.get_focus() == Focus::Unfocused {
@@ -32,9 +31,7 @@ pub trait Focusable: CommonWidget + StateSync {
         }
     }
 
-    /// Returns a boolean whether any widget in the tree now contains focus.
-    /// This is useful for checking whether the next tab should focus the first element
-    fn process_focus_request_default(&mut self, event: &WidgetEvent, focus_request: &Refocus, env: &mut Environment) -> bool {
+    fn process_focus_request(&mut self, event: &WidgetEvent, focus_request: &Refocus, env: &mut Environment) -> bool {
         self.capture_state(env);
 
         let mut any_focus = false;
@@ -62,9 +59,7 @@ pub trait Focusable: CommonWidget + StateSync {
         any_focus
     }
 
-    fn process_focus_next(&mut self, event: &WidgetEvent, focus_request: &Refocus, focus_up_for_grab: bool, env: &mut Environment) -> bool;
-
-    fn process_focus_next_default(&mut self, event: &WidgetEvent, focus_request: &Refocus, focus_up_for_grab: bool, env: &mut Environment) -> bool {
+    fn process_focus_next(&mut self, event: &WidgetEvent, focus_request: &Refocus, focus_up_for_grab: bool, env: &mut Environment) -> bool {
         self.capture_state(env);
 
         let mut focus_child =
@@ -96,9 +91,7 @@ pub trait Focusable: CommonWidget + StateSync {
         focus_child
     }
 
-    fn process_focus_previous(&mut self, event: &WidgetEvent, focus_request: &Refocus, focus_up_for_grab: bool, env: &mut Environment) -> bool;
-
-    fn process_focus_previous_default(&mut self, event: &WidgetEvent, focus_request: &Refocus, focus_up_for_grab: bool, env: &mut Environment) -> bool {
+    fn process_focus_previous(&mut self, event: &WidgetEvent, focus_request: &Refocus, focus_up_for_grab: bool, env: &mut Environment) -> bool {
         self.capture_state(env);
 
         let mut focus_child =

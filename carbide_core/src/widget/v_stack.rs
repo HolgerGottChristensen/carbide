@@ -1,6 +1,5 @@
 use crate::draw::{Dimension, Position};
 use crate::prelude::*;
-use crate::render::ChildRender;
 
 /// A basic, non-interactive rectangle shape widget.
 #[derive(Debug, Clone, Widget)]
@@ -195,7 +194,5 @@ impl CommonWidget for VStack {
         self.dimension = dimensions
     }
 }
-
-impl ChildRender for VStack {}
 
 impl WidgetExt for VStack {}

@@ -1,6 +1,5 @@
 use crate::draw::{Dimension, Position};
 use crate::prelude::*;
-use crate::render::ChildRender;
 use crate::widget::types::EdgeInsets;
 
 #[derive(Debug, Clone, Widget)]
@@ -103,7 +102,5 @@ impl Layout for Padding {
         self.child.position_children();
     }
 }
-
-impl ChildRender for Padding {}
 
 impl WidgetExt for Padding {}

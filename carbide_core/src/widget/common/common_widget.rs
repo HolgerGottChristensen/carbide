@@ -1,5 +1,6 @@
 use crate::draw::{Dimension, Position, Scalar};
 use crate::flags::Flags;
+use crate::focus::Focus;
 use crate::widget::common::widget_iterator::{WidgetIter, WidgetIterMut};
 use crate::widget::Id;
 
@@ -20,6 +21,9 @@ pub trait CommonWidget {
 
     fn position(&self) -> Position;
     fn set_position(&mut self, position: Position);
+
+    fn get_focus(&self) -> Focus { Focus::Unfocused }
+    fn set_focus(&mut self, focus: Focus) {}
 
     fn x(&self) -> Scalar {
         self.position().x

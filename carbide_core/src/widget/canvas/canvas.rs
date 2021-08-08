@@ -11,6 +11,7 @@ use crate::widget::Rectangle;
 
 /// A basic, non-interactive rectangle shape widget.
 #[derive(Debug, Clone, Widget)]
+#[carbide_exclude(Render)]
 pub struct Canvas {
     id: Uuid,
     position: Position,

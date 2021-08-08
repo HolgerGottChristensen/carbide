@@ -2,14 +2,13 @@ use crate::prelude::{Environment, StateSync};
 use crate::render::primitive::Primitive;
 use crate::widget::CommonWidget;
 
-pub trait Render {
-    fn get_primitives(&mut self, env: &mut Environment) -> Vec<Primitive>;
-}
+pub trait Render: CommonWidget + StateSync {
+    fn get_primitives(&mut self, env: &mut Environment) -> Vec<Primitive> {
+        println!("Default impl called");
+        vec![]
+    }
 
-pub trait RenderProcessor: CommonWidget + StateSync + Render {
-    fn process_get_primitives(&mut self, primitives: &mut Vec<Primitive>, env: &mut Environment);
-
-    fn process_get_primitives_default(&mut self, primitives: &mut Vec<Primitive>, env: &mut Environment) {
+    fn process_get_primitives(&mut self, primitives: &mut Vec<Primitive>, env: &mut Environment) {
         // Capture the state such that local state will be available to the widget.
         self.capture_state(env);
 
@@ -22,18 +21,5 @@ pub trait RenderProcessor: CommonWidget + StateSync + Render {
         for child in self.children_mut() {
             child.process_get_primitives(primitives, env);
         }
-    }
-}
-
-pub trait ChildRender {}
-
-impl<T> Render for T where T: CommonWidget + ChildRender {
-    fn get_primitives(&mut self, _: &mut Environment) -> Vec<Primitive> {
-        /*let mut prims = Vec::new();
-        prims.extend(Rectangle::<GS>::debug_outline(OldRect::new(self.position(), self.dimension()), 1.0));
-        let children: Vec<Primitive> = self.get_children_mut().flat_map(|f| f.get_primitives(env, global_state)).collect();
-        prims.extend(children);*/
-
-        return vec![];
     }
 }

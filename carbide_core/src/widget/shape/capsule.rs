@@ -12,6 +12,7 @@ use crate::widget::types::TriangleStore;
 
 /// A basic, non-interactive rectangle shape widget.
 #[derive(Debug, Clone, Widget)]
+#[carbide_exclude(Render)]
 pub struct Capsule {
     id: Uuid,
     position: Position,

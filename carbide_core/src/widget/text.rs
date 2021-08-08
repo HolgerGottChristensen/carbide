@@ -20,6 +20,7 @@ use crate::widget::types::Wrap;
 /// If some horizontal dimension is given, the text will automatically wrap to the width and align
 /// in accordance with the produced **Alignment**.
 #[derive(Debug, Clone, Widget)]
+#[carbide_exclude(Render)]
 pub struct Text {
     id: Uuid,
     position: Position,

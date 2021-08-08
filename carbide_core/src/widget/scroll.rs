@@ -1,14 +1,12 @@
 use crate::draw::{Dimension, Position};
 use crate::draw::shape::vertex::Vertex;
+use crate::event::{ModifierKey, MouseButton, MouseEvent, MouseEventHandler, OtherEventHandler, WidgetEvent};
 use crate::prelude::*;
-use crate::render::RenderProcessor;
 use crate::widget::types::ScrollDirection;
 
-/// A basic, non-interactive rectangle shape widget.
 #[derive(Debug, Clone, Widget)]
+#[carbide_exclude(Render, MouseEvent, OtherEvent)]
 //#[event(handle_mouse_event, handle_other_event)]
-//#[state_sync(update_all_widget_state)]
-#[render(process_get_primitives)]
 pub struct Scroll {
     id: Uuid,
     child: Box<dyn Widget>,
@@ -27,13 +25,6 @@ pub struct Scroll {
 }
 
 impl Scroll {
-    /*fn update_all_widget_state(&mut self, env: &mut Environment<GS>, global_state: &GS) {
-        self.scrollbar_horizontal.sync_state(env, global_state);
-        self.scrollbar_vertical.sync_state(env, global_state);
-        self.scrollbar_horizontal_background.sync_state(env, global_state);
-        self.scrollbar_vertical_background.sync_state(env, global_state);
-    }*/
-
     pub fn with_scroll_direction(mut self, scroll_directions: ScrollDirection) -> Box<Self> {
         self.scroll_directions = scroll_directions;
         Box::new(self)
@@ -89,8 +80,10 @@ impl Scroll {
             scrollbar_vertical_background: Rectangle::initialize(vec![]).fill(Color::Rgba(0.0, 0.0, 0.0, 0.5)).frame(10.0, 100.0),
         })
     }
+}
 
-    /*fn handle_mouse_event(&mut self, event: &MouseEvent, _: &bool, _: &mut Environment<GS>, _: &mut GS) {
+impl MouseEventHandler for Scroll {
+    fn handle_mouse_event(&mut self, event: &MouseEvent, _: &bool, _: &mut Environment) {
         match event {
             MouseEvent::Scroll { x, y, modifiers, .. } => {
                 if !self.is_inside(event.get_current_mouse_position()) { return }
@@ -98,10 +91,10 @@ impl Scroll {
                 if self.scroll_directions == ScrollDirection::Both ||
                     self.scroll_directions == ScrollDirection::Vertical {
                     let offset_multiplier = 1.0; //self.child.height() / self.height();
-                    if modifiers.contains(piston_input::keyboard::ModifierKey::SHIFT) {
-                        self.scroll_offset[1] -= x * offset_multiplier;
+                    if modifiers.contains(ModifierKey::SHIFT) {
+                        self.scroll_offset.y -= x * offset_multiplier;
                     } else {
-                        self.scroll_offset[1] -= y * offset_multiplier;
+                        self.scroll_offset.y -= y * offset_multiplier;
                     }
 
                     self.keep_y_within_bounds();
@@ -110,10 +103,10 @@ impl Scroll {
                 if self.scroll_directions == ScrollDirection::Both ||
                     self.scroll_directions == ScrollDirection::Horizontal {
                     let offset_multiplier = 1.0; //self.child.width() / self.width();
-                    if modifiers.contains(piston_input::keyboard::ModifierKey::SHIFT) {
-                        self.scroll_offset[0] += y * offset_multiplier;
+                    if modifiers.contains(ModifierKey::SHIFT) {
+                        self.scroll_offset.x += y * offset_multiplier;
                     } else {
-                        self.scroll_offset[0] -= x * offset_multiplier;
+                        self.scroll_offset.x -= x * offset_multiplier;
                     }
 
                     self.keep_x_within_bounds();
@@ -133,9 +126,9 @@ impl Scroll {
 
                     let middle_of_scrollbar = self.scrollbar_vertical.y() + self.scrollbar_vertical.height() / 2.0;
 
-                    let delta = point[1] - middle_of_scrollbar;
+                    let delta = point.y - middle_of_scrollbar;
 
-                    self.scroll_offset[1] -= delta * offset_multiplier;
+                    self.scroll_offset.y -= delta * offset_multiplier;
 
                     self.keep_y_within_bounds();
                 }
@@ -145,9 +138,9 @@ impl Scroll {
 
                     let middle_of_scrollbar = self.scrollbar_horizontal.x() + self.scrollbar_horizontal.width() / 2.0;
 
-                    let delta = point[0] - middle_of_scrollbar;
+                    let delta = point.x - middle_of_scrollbar;
 
-                    self.scroll_offset[0] += delta * offset_multiplier;
+                    self.scroll_offset.x += delta * offset_multiplier;
 
                     self.keep_x_within_bounds();
                 }
@@ -158,15 +151,15 @@ impl Scroll {
                         self.drag_started_on_vertical_scrollbar = true;
                     }
                 } else {
-                    if self.is_inside([self.x(), to[1]]) {
+                    if self.is_inside(Position::new(self.x(), to.y)) {
                         let offset_multiplier = self.child.height() / self.height();
-                        self.scroll_offset[1] -= delta_xy[1] * offset_multiplier;
+                        self.scroll_offset.y -= delta_xy.y * offset_multiplier;
 
                         self.keep_y_within_bounds();
-                    } else if to[1] < self.y() {
-                        self.scroll_offset[1] = 0.0;
-                    } else if to[1] > self.y() + self.height() {
-                        self.scroll_offset[1] = f64::NEG_INFINITY;
+                    } else if to.y < self.y() {
+                        self.scroll_offset.y = 0.0;
+                    } else if to.y > self.y() + self.height() {
+                        self.scroll_offset.y = f64::NEG_INFINITY;
                         self.keep_y_within_bounds();
                     }
                 }
@@ -176,14 +169,14 @@ impl Scroll {
                         self.drag_started_on_horizontal_scrollbar = true;
                     }
                 } else {
-                    if self.is_inside([to[0], self.y()]) {
+                    if self.is_inside(Position::new(to.x, self.y())) {
                         let offset_multiplier = self.child.width() / self.width();
-                        self.scroll_offset[0] += delta_xy[0] * offset_multiplier;
+                        self.scroll_offset.x += delta_xy.x * offset_multiplier;
                         self.keep_x_within_bounds();
-                    } else if to[0] < self.x() {
-                        self.scroll_offset[0] = 0.0;
-                    } else if to[0] > self.x() + self.width() {
-                        self.scroll_offset[0] = f64::INFINITY;
+                    } else if to.x < self.x() {
+                        self.scroll_offset.x = 0.0;
+                    } else if to.x > self.x() + self.width() {
+                        self.scroll_offset.x = f64::INFINITY;
                         self.keep_x_within_bounds();
                     }
                 }
@@ -191,36 +184,16 @@ impl Scroll {
             _ => {}
         }
     }
+}
 
-    fn handle_other_event(&mut self, event: &WidgetEvent, _: &mut Environment<GS>, _: &mut GS) {
+impl OtherEventHandler for Scroll {
+    fn handle_other_event(&mut self, event: &WidgetEvent, _: &mut Environment) {
         match event {
             WidgetEvent::Window(_) => {
                 self.keep_y_within_bounds();
                 self.keep_x_within_bounds();
             }
             _ => {}
-        }
-    }*/
-
-    fn process_get_primitives(&mut self, primitives: &mut Vec<Primitive>, env: &mut Environment) {
-        primitives.extend(self.children_mut().flat_map(|f| f.get_primitives(env)));
-
-        if (self.scroll_directions == ScrollDirection::Both ||
-            self.scroll_directions == ScrollDirection::Vertical) && self.child.height() > self.height() {
-            if self.vertical_scrollbar_hovered || self.drag_started_on_vertical_scrollbar {
-                self.scrollbar_vertical_background.process_get_primitives(primitives, env);
-            }
-
-            self.scrollbar_vertical.process_get_primitives(primitives, env);
-        }
-
-        if (self.scroll_directions == ScrollDirection::Both ||
-            self.scroll_directions == ScrollDirection::Horizontal) && self.child.width() > self.width() {
-            if self.horizontal_scrollbar_hovered || self.drag_started_on_horizontal_scrollbar {
-                self.scrollbar_horizontal_background.process_get_primitives(primitives, env);
-            }
-
-            self.scrollbar_horizontal.process_get_primitives(primitives, env);
         }
     }
 }
@@ -395,8 +368,26 @@ impl CommonWidget for Scroll {
 }
 
 impl Render for Scroll {
-    fn get_primitives(&mut self, _: &mut Environment) -> Vec<Primitive> {
-        return vec![];
+    fn process_get_primitives(&mut self, primitives: &mut Vec<Primitive>, env: &mut Environment) {
+        self.child.process_get_primitives(primitives, env);
+
+        if (self.scroll_directions == ScrollDirection::Both ||
+            self.scroll_directions == ScrollDirection::Vertical) && self.child.height() > self.height() {
+            if self.vertical_scrollbar_hovered || self.drag_started_on_vertical_scrollbar {
+                self.scrollbar_vertical_background.process_get_primitives(primitives, env);
+            }
+
+            self.scrollbar_vertical.process_get_primitives(primitives, env);
+        }
+
+        if (self.scroll_directions == ScrollDirection::Both ||
+            self.scroll_directions == ScrollDirection::Horizontal) && self.child.width() > self.width() {
+            if self.horizontal_scrollbar_hovered || self.drag_started_on_horizontal_scrollbar {
+                self.scrollbar_horizontal_background.process_get_primitives(primitives, env);
+            }
+
+            self.scrollbar_horizontal.process_get_primitives(primitives, env);
+        }
     }
 }
 

@@ -3,7 +3,8 @@ use crate::prelude::*;
 use crate::render::PrimitiveKind;
 
 #[derive(Debug, Clone, Widget)]
-#[render(process_get_primitives)]
+#[carbide_exclude(Render)]
+//#[render(process_get_primitives)]
 pub struct Clip {
     id: Uuid,
     child: Box<dyn Widget>,
@@ -19,22 +20,6 @@ impl Clip {
             position: Position::new(0.0, 0.0),
             dimension: Dimension::new(100.0, 100.0),
         })
-    }
-
-    fn process_get_primitives(&mut self, primitives: &mut Vec<Primitive>, env: &mut Environment) {
-        primitives.push(Primitive {
-            kind: PrimitiveKind::Clip,
-            rect: Rect::new(self.position, self.dimension),
-        });
-
-        for child in self.children_mut() {
-            child.process_get_primitives(primitives, env);
-        }
-
-        primitives.push(Primitive {
-            kind: PrimitiveKind::UnClip,
-            rect: Rect::new(self.position, self.dimension),
-        });
     }
 
     /*pub fn body(&mut self) -> Box<Self> {
@@ -128,9 +113,20 @@ impl CommonWidget for Clip {
 }
 
 impl Render for Clip {
-    fn get_primitives(&mut self, _: &mut Environment) -> Vec<Primitive> {
-        // Look in process_get_primitives
-        return vec![];
+    fn process_get_primitives(&mut self, primitives: &mut Vec<Primitive>, env: &mut Environment) {
+        primitives.push(Primitive {
+            kind: PrimitiveKind::Clip,
+            rect: Rect::new(self.position, self.dimension),
+        });
+
+        for child in self.children_mut() {
+            child.process_get_primitives(primitives, env);
+        }
+
+        primitives.push(Primitive {
+            kind: PrimitiveKind::UnClip,
+            rect: Rect::new(self.position, self.dimension),
+        });
     }
 }
 
