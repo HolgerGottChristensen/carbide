@@ -43,33 +43,43 @@ fn main() {
                     .frame(100.0, 100.0),
             ]),
             HStack::initialize(vec![
-                Ellipse::new()
+                Circle::new()
                     .fill(EnvironmentColor::Accent)
                     .frame(100.0, 100.0),
-                Ellipse::new()
+                Circle::new()
                     .stroke(EnvironmentColor::Accent)
                     .stroke_style(10.0)
                     .frame(100.0, 100.0),
-                Ellipse::new()
+                Circle::new()
                     .fill(EnvironmentColor::Accent)
                     .stroke(EnvironmentColor::Red)
                     .frame(100.0, 100.0),
             ]),
             HStack::initialize(vec![
+                Ellipse::new()
+                    .fill(EnvironmentColor::Accent)
+                    .frame(100.0, 50.0),
+                Ellipse::new()
+                    .stroke(EnvironmentColor::Accent)
+                    .stroke_style(10.0)
+                    .frame(100.0, 50.0),
+                Ellipse::new()
+                    .fill(EnvironmentColor::Accent)
+                    .stroke(EnvironmentColor::Red)
+                    .frame(100.0, 50.0),
+            ]),
+            HStack::initialize(vec![
                 Capsule::initialize()
                     .fill(EnvironmentColor::Accent)
-                    .frame(100.0, 50.0)
-                    .frame(100.0, 100.0),
+                    .frame(100.0, 50.0),
                 Capsule::initialize()
                     .stroke(EnvironmentColor::Accent)
                     .stroke_style(10.0)
-                    .frame(100.0, 50.0)
-                    .frame(100.0, 100.0),
+                    .frame(100.0, 50.0),
                 Capsule::initialize()
                     .fill(EnvironmentColor::Accent)
                     .stroke(EnvironmentColor::Red)
-                    .frame(100.0, 50.0)
-                    .frame(100.0, 100.0),
+                    .frame(100.0, 50.0),
             ]),
             HStack::initialize(vec![
                 Canvas::initialize(|_, mut context| {

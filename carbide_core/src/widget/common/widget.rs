@@ -131,7 +131,6 @@ impl Layout for Box<dyn Widget> {
 
 impl Render for Box<dyn Widget> {
     fn get_primitives(&mut self, env: &mut Environment) -> Vec<Primitive> {
-        println!("Called on box");
         self.deref_mut().get_primitives(env)
     }
 

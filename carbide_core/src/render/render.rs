@@ -4,7 +4,6 @@ use crate::widget::CommonWidget;
 
 pub trait Render: CommonWidget + StateSync {
     fn get_primitives(&mut self, env: &mut Environment) -> Vec<Primitive> {
-        println!("Default impl called");
         vec![]
     }
 

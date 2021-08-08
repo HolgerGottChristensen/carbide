@@ -14,7 +14,7 @@ use crate::widget::types::TriangleStore;
 /// A simple, non-interactive widget for drawing a single **Ellipse**.
 #[derive(Debug, Clone, Widget)]
 #[carbide_exclude(Render)]
-pub struct Ellipse {
+pub struct Circle {
     pub id: Uuid,
     position: Position,
     dimension: Dimension,
@@ -25,7 +25,7 @@ pub struct Ellipse {
     triangle_store: TriangleStore,
 }
 
-impl Ellipse {
+impl Circle {
     pub fn fill<C: Into<ColorState>>(mut self, color: C) -> Box<Self> {
         self.fill_color = color.into();
         self.style += ShapeStyle::Fill;
@@ -44,8 +44,8 @@ impl Ellipse {
         Box::new(self)
     }
 
-    pub fn new() -> Box<Ellipse> {
-        Box::new(Ellipse {
+    pub fn new() -> Box<Circle> {
+        Box::new(Circle {
             id: Uuid::new_v4(),
             position: Position::new(0.0, 0.0),
             dimension: Dimension::new(100.0, 100.0),
@@ -58,13 +58,14 @@ impl Ellipse {
     }
 }
 
-impl Layout for Ellipse {
+impl Layout for Circle {
     fn flexibility(&self) -> u32 {
         0
     }
 
-    fn calculate_size(&mut self, requested_size: Dimension, env: &mut Environment) -> Dimension {
-        self.dimension = requested_size;
+    fn calculate_size(&mut self, requested_size: Dimension, _: &mut Environment) -> Dimension {
+        let min_dimension = requested_size.width.min(requested_size.height);
+        self.dimension = Dimension::new(min_dimension, min_dimension);
 
         requested_size
     }
@@ -72,7 +73,7 @@ impl Layout for Ellipse {
     fn position_children(&mut self) {}
 }
 
-impl CommonWidget for Ellipse {
+impl CommonWidget for Circle {
     fn id(&self) -> Id {
         self.id
     }
@@ -118,17 +119,16 @@ impl CommonWidget for Ellipse {
     }
 }
 
-impl Render for Ellipse {
+impl Render for Circle {
     fn get_primitives(&mut self, _: &mut Environment) -> Vec<Primitive> {
-        let radii = vec2(self.width() as f32 / 2.0, self.height() as f32 / 2.0);
-        let center = point(self.x() as f32 + radii.x, self.y() as f32 + radii.y);
+        let radius = self.width() as f32 / 2.0;
+        let center = point(self.x() as f32 + radius, self.y() as f32 + radius);
         let rectangle = rect(self.x() as f32, self.y() as f32, self.width() as f32, self.height() as f32);
 
         tessellate(self, &rectangle, &|builder, _| {
-            builder.add_ellipse(
+            builder.add_circle(
                 center,
-                radii,
-                Angle::degrees(0.0),
+                radius,
                 Winding::Positive,
             );
         });
@@ -141,7 +141,7 @@ impl Render for Ellipse {
     }
 }
 
-impl Shape for Ellipse {
+impl Shape for Circle {
     fn get_triangle_store_mut(&mut self) -> &mut TriangleStore {
         &mut self.triangle_store
     }
@@ -155,4 +155,4 @@ impl Shape for Ellipse {
     }
 }
 
-impl WidgetExt for Ellipse {}
+impl WidgetExt for Circle {}

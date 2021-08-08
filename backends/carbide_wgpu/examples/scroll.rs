@@ -21,7 +21,8 @@ fn main() {
             Image::new(image_id)
                 .resizeable()
                 .frame(500.0, 500.0)
-        ).clip().frame(250.0, 250.0)
+        ).clip()
+            .frame(250.0, 250.0)
             .border()
     );
 
