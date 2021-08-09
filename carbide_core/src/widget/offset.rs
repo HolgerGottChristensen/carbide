@@ -2,6 +2,7 @@ use crate::draw::{Dimension, Position};
 use crate::prelude::*;
 
 #[derive(Debug, Clone, Widget)]
+#[carbide_exclude(Layout)]
 pub struct Offset {
     id: Uuid,
     child: Box<dyn Widget>,
@@ -25,17 +26,8 @@ impl Offset {
 }
 
 impl Layout for Offset {
-    fn flexibility(&self) -> u32 {
-        self.child.flexibility()
-    }
-
-    fn calculate_size(&mut self, requested_size: Dimension, env: &mut Environment) -> Dimension {
-        self.dimension = self.child.calculate_size(requested_size, env);
-        self.dimension
-    }
-
     fn position_children(&mut self) {
-        let positioning = BasicLayouter::Center.position();
+        let positioning = BasicLayouter::Center.positioner();
         let position = self.position;
         let dimension = self.dimension;
 
@@ -59,10 +51,6 @@ impl CommonWidget for Offset {
 
     fn set_id(&mut self, id: Id) {
         self.id = id;
-    }
-
-    fn flag(&self) -> Flags {
-        Flags::EMPTY
     }
 
     fn children(&self) -> WidgetIter {
@@ -101,8 +89,8 @@ impl CommonWidget for Offset {
         self.dimension
     }
 
-    fn set_dimension(&mut self, dimensions: Dimension) {
-        self.dimension = dimensions
+    fn set_dimension(&mut self, dimension: Dimension) {
+        self.dimension = dimension
     }
 }
 

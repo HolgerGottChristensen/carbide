@@ -113,5 +113,8 @@ fn focusable_token_stream(ident: &Ident, generics: &Generics, wheres: &TokenStre
 }
 
 fn layout_token_stream(ident: &Ident, generics: &Generics, wheres: &TokenStream) -> TokenStream {
-    quote! {}
+    quote! {
+        #[automatically_derived]
+        impl<#generics> carbide_core::layout::Layout for #ident #generics #wheres {}
+    }
 }

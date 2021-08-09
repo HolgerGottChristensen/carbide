@@ -3,6 +3,7 @@ use crate::prelude::*;
 use crate::widget::types::SpacerDirection;
 
 #[derive(Clone, Debug, Widget)]
+#[carbide_exclude(Layout)]
 pub struct Spacer {
     id: Uuid,
     position: Position,
@@ -22,10 +23,6 @@ impl Spacer {
 }
 
 impl Layout for Spacer {
-    fn flexibility(&self) -> u32 {
-        0
-    }
-
     fn calculate_size(&mut self, requested_size: Dimension, env: &mut Environment) -> Dimension {
         match self.space {
             SpacerDirection::Vertical => {
@@ -41,8 +38,6 @@ impl Layout for Spacer {
 
         self.dimension
     }
-
-    fn position_children(&mut self) {}
 }
 
 impl CommonWidget for Spacer {
@@ -86,8 +81,8 @@ impl CommonWidget for Spacer {
         self.dimension
     }
 
-    fn set_dimension(&mut self, dimensions: Dimension) {
-        self.dimension = dimensions
+    fn set_dimension(&mut self, dimension: Dimension) {
+        self.dimension = dimension
     }
 }
 

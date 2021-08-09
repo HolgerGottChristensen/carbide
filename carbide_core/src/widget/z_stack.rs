@@ -1,10 +1,12 @@
 use std::ops::Deref;
 
 use crate::draw::{Dimension, Position};
+use crate::focus::Focus;
 use crate::prelude::*;
 
 /// A basic, non-interactive rectangle shape widget.
 #[derive(Debug, Clone, Widget)]
+#[carbide_exclude(Layout)]
 pub struct ZStack {
     id: Uuid,
     children: Vec<Box<dyn Widget>>,
@@ -31,10 +33,6 @@ impl ZStack {
 }
 
 impl Layout for ZStack {
-    fn flexibility(&self) -> u32 {
-        1
-    }
-
     fn calculate_size(&mut self, requested_size: Dimension, env: &mut Environment) -> Dimension {
         let mut children_flexibility: Vec<(u32, &mut dyn Widget)> = self.children_mut().map(|child| (child.flexibility(), child)).collect();
         children_flexibility.sort_by(|(a, _), (b, _)| a.cmp(&b));
@@ -60,7 +58,7 @@ impl Layout for ZStack {
     }
 
     fn position_children(&mut self) {
-        let positioning = self.alignment.position();
+        let positioning = self.alignment.positioner();
         let position = self.position;
         let dimension = self.dimension;
 
@@ -80,8 +78,8 @@ impl CommonWidget for ZStack {
         self.id = id;
     }
 
-    fn flag(&self) -> Flags {
-        Flags::EMPTY
+    fn alignment(&self) -> Box<dyn Layouter> {
+        Box::new(self.alignment.clone())
     }
 
     fn children(&self) -> WidgetIter {
@@ -134,12 +132,17 @@ impl CommonWidget for ZStack {
         self.position = position;
     }
 
+    // Todo: This should maybe be the flexibility of the least flexible child?
+    fn flexibility(&self) -> u32 {
+        1
+    }
+
     fn dimension(&self) -> Dimension {
         self.dimension
     }
 
-    fn set_dimension(&mut self, dimensions: Dimension) {
-        self.dimension = dimensions
+    fn set_dimension(&mut self, dimension: Dimension) {
+        self.dimension = dimension
     }
 }
 

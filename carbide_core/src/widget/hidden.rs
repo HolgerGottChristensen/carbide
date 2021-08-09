@@ -20,29 +20,6 @@ impl Hidden {
             dimension: Dimension::new(100.0, 100.0),
         })
     }
-
-    fn process_get_primitives(&mut self, _: &mut Vec<Primitive>, _: &mut Environment) {}
-}
-
-impl Layout for Hidden {
-    fn flexibility(&self) -> u32 {
-        self.child.flexibility()
-    }
-
-    fn calculate_size(&mut self, requested_size: Dimension, env: &mut Environment) -> Dimension {
-        self.dimension = self.child.calculate_size(requested_size, env);
-        self.dimension
-    }
-
-    fn position_children(&mut self) {
-        let positioning = BasicLayouter::Center.position();
-        let position = self.position;
-        let dimension = self.dimension;
-
-        positioning(position, dimension, &mut self.child);
-
-        self.child.position_children();
-    }
 }
 
 impl CommonWidget for Hidden {
@@ -52,10 +29,6 @@ impl CommonWidget for Hidden {
 
     fn set_id(&mut self, id: Id) {
         self.id = id;
-    }
-
-    fn flag(&self) -> Flags {
-        Flags::EMPTY
     }
 
     fn children(&self) -> WidgetIter {
@@ -94,8 +67,8 @@ impl CommonWidget for Hidden {
         self.dimension
     }
 
-    fn set_dimension(&mut self, dimensions: Dimension) {
-        self.dimension = dimensions
+    fn set_dimension(&mut self, dimension: Dimension) {
+        self.dimension = dimension
     }
 }
 

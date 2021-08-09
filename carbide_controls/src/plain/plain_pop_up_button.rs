@@ -1,3 +1,4 @@
+use carbide_core::draw::Dimension;
 use carbide_core::event::event_handler::{KeyboardEvent, MouseEvent};
 use carbide_core::input::Key;
 use carbide_core::prelude::EnvironmentColor;
@@ -227,8 +228,8 @@ impl<T: StateContract + 'static, GS: GlobalStateContract> CommonWidget<GS> for P
         self.dimension
     }
 
-    fn set_dimension(&mut self, dimensions: Dimensions) {
-        self.dimension = dimensions
+    fn set_dimension(&mut self, dimension: Dimension) {
+        self.dimension = dimension
     }
 }
 

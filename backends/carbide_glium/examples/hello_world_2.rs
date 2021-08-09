@@ -160,8 +160,8 @@ impl CommonWidget<GState> for CustomWidget {
         self.dimension
     }
 
-    fn set_dimension(&mut self, dimensions: Dimensions) {
-        self.dimension = dimensions
+    fn set_dimension(&mut self, dimension: Dimension) {
+        self.dimension = dimension
     }
 }
 
@@ -200,7 +200,7 @@ impl Layout<GState> for CustomWidget {
     }
 
     fn position_children(&mut self) {
-        let positioning = BasicLayouter::Center.position();
+        let positioning = BasicLayouter::Center.positioner();
         let position = self.position;
         let dimension = self.dimension;
         positioning(position, dimension, &mut self.child);

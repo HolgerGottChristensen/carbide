@@ -1,4 +1,5 @@
 use crate::draw::{Dimension, Position};
+use crate::focus::Focus;
 use crate::prelude::*;
 use crate::widget::Widget;
 
@@ -36,41 +37,6 @@ impl IfElse {
     }
 }
 
-impl Layout for IfElse {
-    fn flexibility(&self) -> u32 {
-        if *self.predicate.value() {
-            self.when_true.flexibility()
-        } else {
-            self.when_false.flexibility()
-        }
-    }
-
-    fn calculate_size(&mut self, requested_size: Dimension, env: &mut Environment) -> Dimension {
-        if *self.predicate.value() {
-            self.dimension = self.when_true.calculate_size(requested_size, env);
-        } else {
-            self.dimension = self.when_false.calculate_size(requested_size, env);
-        }
-        self.dimension
-    }
-
-    fn position_children(&mut self) {
-        let positioning = BasicLayouter::Center.position();
-        let position = self.position;
-        let dimension = self.dimension;
-
-        if *self.predicate.value() {
-            positioning(position, dimension, &mut self.when_true);
-
-            self.when_true.position_children();
-        } else {
-            positioning(position, dimension, &mut self.when_false);
-
-            self.when_false.position_children();
-        }
-    }
-}
-
 impl CommonWidget for IfElse {
     fn id(&self) -> Id {
         self.id
@@ -81,7 +47,7 @@ impl CommonWidget for IfElse {
     }
 
     fn flag(&self) -> Flags {
-        Flags::EMPTY
+        Flags::PROXY
     }
 
     fn children(&self) -> WidgetIter {
@@ -144,8 +110,8 @@ impl CommonWidget for IfElse {
         self.dimension
     }
 
-    fn set_dimension(&mut self, dimensions: Dimension) {
-        self.dimension = dimensions
+    fn set_dimension(&mut self, dimension: Dimension) {
+        self.dimension = dimension
     }
 }
 

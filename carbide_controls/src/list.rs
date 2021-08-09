@@ -1,6 +1,7 @@
 use std::option::Option::Some;
 
 use carbide_core::color::{BLUE, RED};
+use carbide_core::draw::Dimension;
 use carbide_core::event::event_handler::{KeyboardEvent, MouseEvent};
 use carbide_core::prelude::{StateSync, Uuid};
 use carbide_core::state::state::State;
@@ -361,8 +362,8 @@ impl<GS: GlobalStateContract, T: ListIndex> CommonWidget<GS> for List<GS, T> {
         self.dimension
     }
 
-    fn set_dimension(&mut self, dimensions: Dimensions) {
-        self.dimension = dimensions
+    fn set_dimension(&mut self, dimension: Dimension) {
+        self.dimension = dimension
     }
 }
 

@@ -3,6 +3,7 @@ use crate::prelude::*;
 
 /// A basic, non-interactive rectangle shape widget.
 #[derive(Debug, Clone, Widget)]
+#[carbide_exclude(Layout)]
 pub struct VStack {
     id: Id,
     children: Vec<Box<dyn Widget>>,
@@ -36,10 +37,6 @@ impl VStack {
 }
 
 impl Layout for VStack {
-    fn flexibility(&self) -> u32 {
-        1
-    }
-
     fn calculate_size(&mut self, requested_size: Dimension, env: &mut Environment) -> Dimension {
         let mut number_of_children_that_needs_sizing = self.children.len() as f64;
 
@@ -131,10 +128,6 @@ impl CommonWidget for VStack {
         self.id = id;
     }
 
-    fn flag(&self) -> Flags {
-        Flags::EMPTY
-    }
-
     fn children(&self) -> WidgetIter {
         self.children
             .iter()
@@ -186,12 +179,16 @@ impl CommonWidget for VStack {
         self.position = position;
     }
 
+    fn flexibility(&self) -> u32 {
+        1
+    }
+
     fn dimension(&self) -> Dimension {
         self.dimension
     }
 
-    fn set_dimension(&mut self, dimensions: Dimension) {
-        self.dimension = dimensions
+    fn set_dimension(&mut self, dimension: Dimension) {
+        self.dimension = dimension
     }
 }
 

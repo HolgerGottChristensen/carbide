@@ -3,7 +3,7 @@ use crate::event::Event;
 use crate::prelude::*;
 
 #[derive(Debug, Clone, Widget)]
-#[carbide_exclude(Render)]
+#[carbide_exclude(Render, Layout)]
 //#[state_sync(sync_state, update_all_widget_state, update_local_widget_state)]
 //#[event(process_keyboard_event, process_mouse_event, process_other_event)]
 pub struct OverlaidLayer {
@@ -169,10 +169,6 @@ impl OverlaidLayer {
 
 
 impl Layout for OverlaidLayer {
-    fn flexibility(&self) -> u32 {
-        0
-    }
-
     fn calculate_size(&mut self, requested_size: Dimension, env: &mut Environment) -> Dimension {
         self.dimension = self.child.calculate_size(requested_size, env);
 
@@ -184,7 +180,7 @@ impl Layout for OverlaidLayer {
     }
 
     fn position_children(&mut self) {
-        let positioning = BasicLayouter::Center.position();
+        let positioning = BasicLayouter::Center.positioner();
         let position = self.position;
         let dimension = self.dimension;
 
@@ -205,9 +201,6 @@ impl CommonWidget for OverlaidLayer {
         self.id = id;
     }
 
-    fn flag(&self) -> Flags {
-        Flags::EMPTY
-    }
 
     fn children(&self) -> WidgetIter {
         if self.child.flag() == Flags::PROXY {
@@ -241,12 +234,16 @@ impl CommonWidget for OverlaidLayer {
         self.position = position;
     }
 
+    fn flexibility(&self) -> u32 {
+        0
+    }
+
     fn dimension(&self) -> Dimension {
         self.dimension
     }
 
-    fn set_dimension(&mut self, dimensions: Dimension) {
-        self.dimension = dimensions
+    fn set_dimension(&mut self, dimension: Dimension) {
+        self.dimension = dimension
     }
 }
 

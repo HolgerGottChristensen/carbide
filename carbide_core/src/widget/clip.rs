@@ -3,7 +3,7 @@ use crate::prelude::*;
 use crate::render::PrimitiveKind;
 
 #[derive(Debug, Clone, Widget)]
-#[carbide_exclude(Render)]
+#[carbide_exclude(Render, Layout)]
 pub struct Clip {
     id: Uuid,
     child: Box<dyn Widget>,
@@ -36,24 +36,12 @@ impl Clip {
 }
 
 impl Layout for Clip {
-    fn flexibility(&self) -> u32 {
-        self.child.flexibility()
-    }
-
+    // Calculate the size of the child, but force clip to requested_size. This makes sure that if
+    // the child is larger than the requested, that is is clipped.
     fn calculate_size(&mut self, requested_size: Dimension, env: &mut Environment) -> Dimension {
         self.child.calculate_size(requested_size, env);
         self.dimension = requested_size;
         requested_size
-    }
-
-    fn position_children(&mut self) {
-        let positioning = BasicLayouter::Center.position();
-        let position = self.position;
-        let dimension = self.dimension;
-
-        positioning(position, dimension, &mut self.child);
-
-        self.child.position_children();
     }
 }
 
@@ -64,10 +52,6 @@ impl CommonWidget for Clip {
 
     fn set_id(&mut self, id: Id) {
         self.id = id;
-    }
-
-    fn flag(&self) -> Flags {
-        Flags::EMPTY
     }
 
     fn children(&self) -> WidgetIter {
@@ -106,8 +90,8 @@ impl CommonWidget for Clip {
         self.dimension
     }
 
-    fn set_dimension(&mut self, dimensions: Dimension) {
-        self.dimension = dimensions
+    fn set_dimension(&mut self, dimension: Dimension) {
+        self.dimension = dimension
     }
 }
 

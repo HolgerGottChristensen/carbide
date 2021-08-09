@@ -2,6 +2,7 @@ use std::fmt::Debug;
 use std::marker::PhantomData;
 
 use carbide_core::DeserializeOwned;
+use carbide_core::draw::Dimension;
 use carbide_core::event::event_handler::KeyboardEvent;
 use carbide_core::input::Key;
 use carbide_core::prelude::EnvironmentColor;
@@ -231,8 +232,8 @@ impl<T: Serialize + Clone + Debug + Default + DeserializeOwned + 'static, GS: Gl
         self.dimension
     }
 
-    fn set_dimension(&mut self, dimensions: Dimensions) {
-        self.dimension = dimensions
+    fn set_dimension(&mut self, dimension: Dimension) {
+        self.dimension = dimension
     }
 }
 

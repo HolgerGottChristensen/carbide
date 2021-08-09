@@ -1,6 +1,7 @@
 use std::fmt::Debug;
 
 use carbide_core::DeserializeOwned;
+use carbide_core::draw::Dimension;
 use carbide_core::Serialize;
 use carbide_core::widget::*;
 
@@ -142,8 +143,8 @@ impl<T: Serialize + Clone + Debug + Default + DeserializeOwned + 'static, GS: Gl
         self.dimension
     }
 
-    fn set_dimension(&mut self, dimensions: Dimensions) {
-        self.dimension = dimensions
+    fn set_dimension(&mut self, dimension: Dimension) {
+        self.dimension = dimension
     }
 }
 

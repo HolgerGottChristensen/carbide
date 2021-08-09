@@ -33,20 +33,16 @@ impl<T: Widget + ?Sized> CommonWidget for Box<T> {
         self.deref().flag()
     }
 
+    fn alignment(&self) -> Box<dyn Layouter> {
+        self.deref().alignment()
+    }
+
     fn children(&self) -> WidgetIter {
         self.deref().children()
     }
 
     fn children_mut(&mut self) -> WidgetIterMut {
         self.deref_mut().children_mut()
-    }
-
-    fn get_focus(&self) -> Focus {
-        self.deref().get_focus()
-    }
-
-    fn set_focus(&mut self, focus: Focus) {
-        self.deref_mut().set_focus(focus)
     }
 
     fn proxied_children(&mut self) -> WidgetIterMut {
@@ -65,12 +61,24 @@ impl<T: Widget + ?Sized> CommonWidget for Box<T> {
         self.deref_mut().set_position(position)
     }
 
+    fn get_focus(&self) -> Focus {
+        self.deref().get_focus()
+    }
+
+    fn set_focus(&mut self, focus: Focus) {
+        self.deref_mut().set_focus(focus)
+    }
+
+    fn flexibility(&self) -> u32 {
+        self.deref().flexibility()
+    }
+
     fn dimension(&self) -> Dimension {
         self.deref().dimension()
     }
 
-    fn set_dimension(&mut self, dimensions: Dimension) {
-        self.deref_mut().set_dimension(dimensions)
+    fn set_dimension(&mut self, dimension: Dimension) {
+        self.deref_mut().set_dimension(dimension)
     }
 }
 
@@ -116,10 +124,6 @@ impl<T: Widget + ?Sized> StateSync for Box<T> {
 }
 
 impl<T: Widget + ?Sized> Layout for Box<T> {
-    fn flexibility(&self) -> u32 {
-        self.deref().flexibility()
-    }
-
     fn calculate_size(&mut self, requested_size: Dimension, env: &mut Environment) -> Dimension {
         self.deref_mut().calculate_size(requested_size, env)
     }

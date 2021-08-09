@@ -20,7 +20,7 @@ use crate::widget::types::Wrap;
 /// If some horizontal dimension is given, the text will automatically wrap to the width and align
 /// in accordance with the produced **Alignment**.
 #[derive(Debug, Clone, Widget)]
-#[carbide_exclude(Render)]
+#[carbide_exclude(Render, Layout)]
 pub struct Text {
     id: Uuid,
     position: Position,
@@ -133,10 +133,6 @@ impl Text {
 }
 
 impl Layout for Text {
-    fn flexibility(&self) -> u32 {
-        2
-    }
-
     fn calculate_size(&mut self, requested_size: Dimension, env: &mut Environment) -> Dimension {
         let now = Instant::now();
         let style = self.get_style();
@@ -214,10 +210,6 @@ impl CommonWidget for Text {
         self.id = id;
     }
 
-    fn flag(&self) -> Flags {
-        Flags::EMPTY
-    }
-
     fn children(&self) -> WidgetIter {
         WidgetIter::Empty
     }
@@ -242,12 +234,16 @@ impl CommonWidget for Text {
         self.position = position;
     }
 
+    fn flexibility(&self) -> u32 {
+        2
+    }
+
     fn dimension(&self) -> Dimension {
         self.dimension
     }
 
-    fn set_dimension(&mut self, dimensions: Dimension) {
-        self.dimension = dimensions
+    fn set_dimension(&mut self, dimension: Dimension) {
+        self.dimension = dimension
     }
 }
 

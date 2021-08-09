@@ -58,20 +58,6 @@ impl Ellipse {
     }
 }
 
-impl Layout for Ellipse {
-    fn flexibility(&self) -> u32 {
-        0
-    }
-
-    fn calculate_size(&mut self, requested_size: Dimension, env: &mut Environment) -> Dimension {
-        self.dimension = requested_size;
-
-        requested_size
-    }
-
-    fn position_children(&mut self) {}
-}
-
 impl CommonWidget for Ellipse {
     fn id(&self) -> Id {
         self.id
@@ -79,10 +65,6 @@ impl CommonWidget for Ellipse {
 
     fn set_id(&mut self, id: Id) {
         self.id = id;
-    }
-
-    fn flag(&self) -> Flags {
-        Flags::EMPTY
     }
 
     fn children(&self) -> WidgetIter {
@@ -113,8 +95,8 @@ impl CommonWidget for Ellipse {
         self.dimension
     }
 
-    fn set_dimension(&mut self, dimensions: Dimension) {
-        self.dimension = dimensions
+    fn set_dimension(&mut self, dimension: Dimension) {
+        self.dimension = dimension
     }
 }
 

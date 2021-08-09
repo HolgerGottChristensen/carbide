@@ -3,6 +3,7 @@ use crate::prelude::*;
 use crate::widget::types::EdgeInsets;
 
 #[derive(Debug, Clone, Widget)]
+#[carbide_exclude(Layout)]
 pub struct Padding {
     id: Uuid,
     child: Box<dyn Widget>,
@@ -30,10 +31,6 @@ impl CommonWidget for Padding {
 
     fn set_id(&mut self, id: Id) {
         self.id = id;
-    }
-
-    fn flag(&self) -> Flags {
-        Flags::EMPTY
     }
 
     fn children(&self) -> WidgetIter {
@@ -73,16 +70,12 @@ impl CommonWidget for Padding {
         Dimension::new(self.dimension.width.abs(), self.dimension.height.abs())
     }
 
-    fn set_dimension(&mut self, dimensions: Dimension) {
-        self.dimension = dimensions
+    fn set_dimension(&mut self, dimension: Dimension) {
+        self.dimension = dimension
     }
 }
 
 impl Layout for Padding {
-    fn flexibility(&self) -> u32 {
-        self.child.flexibility()
-    }
-
     fn calculate_size(&mut self, requested_size: Dimension, env: &mut Environment) -> Dimension {
         let dimensions = Dimension::new(requested_size.width - self.edge_insets.left - self.edge_insets.right, requested_size.height - self.edge_insets.top - self.edge_insets.bottom);
 
@@ -94,7 +87,7 @@ impl Layout for Padding {
     }
 
     fn position_children(&mut self) {
-        let positioning = BasicLayouter::Center.position();
+        let positioning = BasicLayouter::Center.positioner();
         let position = Position::new(self.x() + self.edge_insets.left, self.y() + self.edge_insets.top);
         let dimension = Dimension::new(self.width() - self.edge_insets.left - self.edge_insets.right, self.height() - self.edge_insets.top - self.edge_insets.bottom);
 

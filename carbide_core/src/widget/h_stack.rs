@@ -2,8 +2,8 @@ use crate::draw::{Dimension, Position};
 use crate::prelude::*;
 use crate::widget::CrossAxisAlignment;
 
-/// A basic, non-interactive rectangle shape widget.
 #[derive(Debug, Clone, Widget)]
+#[carbide_exclude(Layout)]
 pub struct HStack {
     id: Uuid,
     children: Vec<Box<dyn Widget>>,
@@ -30,10 +30,6 @@ impl HStack {
 }
 
 impl Layout for HStack {
-    fn flexibility(&self) -> u32 {
-        1
-    }
-
     fn calculate_size(&mut self, requested_size: Dimension, env: &mut Environment) -> Dimension {
 
         // The number of children not containing any spacers
@@ -128,10 +124,6 @@ impl CommonWidget for HStack {
         self.id = id;
     }
 
-    fn flag(&self) -> Flags {
-        Flags::EMPTY
-    }
-
     fn children(&self) -> WidgetIter {
         self.children
             .iter()
@@ -183,12 +175,16 @@ impl CommonWidget for HStack {
         self.position = position;
     }
 
+    fn flexibility(&self) -> u32 {
+        1
+    }
+
     fn dimension(&self) -> Dimension {
         self.dimension
     }
 
-    fn set_dimension(&mut self, dimensions: Dimension) {
-        self.dimension = dimensions
+    fn set_dimension(&mut self, dimension: Dimension) {
+        self.dimension = dimension
     }
 }
 

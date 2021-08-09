@@ -2,7 +2,7 @@ use crate::draw::{Dimension, Position, Scalar};
 use crate::layout::layouter::Layouter;
 use crate::prelude::Widget;
 
-#[derive(Clone, Debug)]
+#[derive(Copy, Clone, Debug)]
 pub enum BasicLayouter {
     TopLeading,
     Top,
@@ -87,7 +87,7 @@ impl BasicLayouter {
 }
 
 impl Layouter for BasicLayouter {
-    fn position(&self) -> fn(Position, Dimension, &mut dyn Widget) {
+    fn positioner(&self) -> fn(Position, Dimension, &mut dyn Widget) {
         match self {
             BasicLayouter::TopLeading => BasicLayouter::top_leading,
             BasicLayouter::Top => BasicLayouter::top,

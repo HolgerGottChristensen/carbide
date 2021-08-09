@@ -95,10 +95,6 @@ impl CommonWidget for Canvas {
         self.id = id;
     }
 
-    fn flag(&self) -> Flags {
-        Flags::EMPTY
-    }
-
     fn children(&self) -> WidgetIter {
         WidgetIter::Empty
     }
@@ -127,8 +123,8 @@ impl CommonWidget for Canvas {
         self.dimension
     }
 
-    fn set_dimension(&mut self, dimensions: Dimension) {
-        self.dimension = dimensions
+    fn set_dimension(&mut self, dimension: Dimension) {
+        self.dimension = dimension
     }
 }
 
@@ -217,16 +213,3 @@ impl Render for Canvas {
 }
 
 impl WidgetExt for Canvas {}
-
-impl Layout for Canvas {
-    fn flexibility(&self) -> u32 {
-        0
-    }
-
-    fn calculate_size(&mut self, requested_size: Dimension, _: &mut Environment) -> Dimension {
-        self.dimension = requested_size;
-        requested_size
-    }
-
-    fn position_children(&mut self) {}
-}

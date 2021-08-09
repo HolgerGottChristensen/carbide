@@ -60,19 +60,6 @@ impl RoundedRectangle {
     }
 }
 
-impl Layout for RoundedRectangle {
-    fn flexibility(&self) -> u32 {
-        0
-    }
-
-    fn calculate_size(&mut self, requested_size: Dimension, env: &mut Environment) -> Dimension {
-        self.dimension = requested_size;
-        requested_size
-    }
-
-    fn position_children(&mut self) {}
-}
-
 impl CommonWidget for RoundedRectangle {
     fn id(&self) -> Id {
         self.id
@@ -102,7 +89,6 @@ impl CommonWidget for RoundedRectangle {
         WidgetIterMut::Empty
     }
 
-
     fn position(&self) -> Position {
         self.position
     }
@@ -115,22 +101,8 @@ impl CommonWidget for RoundedRectangle {
         self.dimension
     }
 
-    fn set_dimension(&mut self, dimensions: Dimension) {
-        self.dimension = dimensions
-    }
-}
-
-impl Shape for RoundedRectangle {
-    fn get_triangle_store_mut(&mut self) -> &mut TriangleStore {
-        &mut self.triangle_store
-    }
-
-    fn get_stroke_style(&self) -> StrokeStyle {
-        self.stroke_style.clone()
-    }
-
-    fn get_shape_style(&self) -> ShapeStyle {
-        self.style.clone()
+    fn set_dimension(&mut self, dimension: Dimension) {
+        self.dimension = dimension
     }
 }
 
@@ -158,6 +130,20 @@ impl Render for RoundedRectangle {
         prims.extend(Rectangle::debug_outline(Rect::new(self.position, self.dimension), 1.0));
 
         return prims;
+    }
+}
+
+impl Shape for RoundedRectangle {
+    fn get_triangle_store_mut(&mut self) -> &mut TriangleStore {
+        &mut self.triangle_store
+    }
+
+    fn get_stroke_style(&self) -> StrokeStyle {
+        self.stroke_style.clone()
+    }
+
+    fn get_shape_style(&self) -> ShapeStyle {
+        self.style.clone()
     }
 }
 

@@ -1,9 +1,10 @@
 use crate::draw::{Dimension, Position, Rect};
+use crate::focus::Focus;
 use crate::prelude::*;
 use crate::render::PrimitiveKind;
 
 #[derive(Debug, Clone, Widget)]
-#[carbide_exclude(Render)]
+#[carbide_exclude(Render, Layout)]
 pub struct ClipShape {
     id: Uuid,
     child: Box<dyn Widget>,
@@ -25,10 +26,6 @@ impl ClipShape {
 }
 
 impl Layout for ClipShape {
-    fn flexibility(&self) -> u32 {
-        self.child.flexibility()
-    }
-
     fn calculate_size(&mut self, requested_size: Dimension, env: &mut Environment) -> Dimension {
         self.child.calculate_size(requested_size, env);
         self.shape.calculate_size(requested_size, env);
@@ -37,7 +34,7 @@ impl Layout for ClipShape {
     }
 
     fn position_children(&mut self) {
-        let positioning = BasicLayouter::Center.position();
+        let positioning = BasicLayouter::Center.positioner();
         let position = self.position;
         let dimension = self.dimension;
 
@@ -56,10 +53,6 @@ impl CommonWidget for ClipShape {
 
     fn set_id(&mut self, id: Id) {
         self.id = id;
-    }
-
-    fn flag(&self) -> Flags {
-        Flags::EMPTY
     }
 
     fn children(&self) -> WidgetIter {
@@ -94,12 +87,16 @@ impl CommonWidget for ClipShape {
         self.position = position;
     }
 
+    fn flexibility(&self) -> u32 {
+        0
+    }
+
     fn dimension(&self) -> Dimension {
         self.dimension
     }
 
-    fn set_dimension(&mut self, dimensions: Dimension) {
-        self.dimension = dimensions
+    fn set_dimension(&mut self, dimension: Dimension) {
+        self.dimension = dimension
     }
 }
 

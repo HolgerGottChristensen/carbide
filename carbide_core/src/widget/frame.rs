@@ -4,6 +4,7 @@ use crate::prelude::*;
 pub static SCALE: f64 = -1.0;
 
 #[derive(Debug, Clone, Widget)]
+#[carbide_exclude(Layout)]
 pub struct Frame {
     id: Uuid,
     child: Box<dyn Widget>,
@@ -106,10 +107,6 @@ impl CommonWidget for Frame {
         self.id = id;
     }
 
-    fn flag(&self) -> Flags {
-        Flags::EMPTY
-    }
-
     fn children(&self) -> WidgetIter {
         if self.child.flag() == Flags::PROXY {
             self.child.children()
@@ -142,17 +139,6 @@ impl CommonWidget for Frame {
         self.position = position;
     }
 
-    fn dimension(&self) -> Dimension {
-        Dimension::new(*self.width.value(), *self.height.value())
-    }
-
-    fn set_dimension(&mut self, dimensions: Dimension) {
-        *self.width.value_mut() = dimensions.width;
-        *self.height.value_mut() = dimensions.height;
-    }
-}
-
-impl Layout for Frame {
     fn flexibility(&self) -> u32 {
         if self.expand_width || self.expand_height {
             8
@@ -161,6 +147,17 @@ impl Layout for Frame {
         }
     }
 
+    fn dimension(&self) -> Dimension {
+        Dimension::new(*self.width.value(), *self.height.value())
+    }
+
+    fn set_dimension(&mut self, dimension: Dimension) {
+        *self.width.value_mut() = dimension.width;
+        *self.height.value_mut() = dimension.height;
+    }
+}
+
+impl Layout for Frame {
     fn calculate_size(&mut self, requested_size: Dimension, env: &mut Environment) -> Dimension {
         if self.expand_width {
             self.set_width(requested_size.width);
@@ -188,7 +185,7 @@ impl Layout for Frame {
             self.set_y(new_y);
         }
 
-        let positioning = BasicLayouter::Center.position();
+        let positioning = BasicLayouter::Center.positioner();
         let position = self.position;
         let dimension = Dimension::new(self.width(), self.height());
 

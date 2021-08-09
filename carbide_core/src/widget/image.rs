@@ -9,7 +9,7 @@ use crate::widget::types::ScaleMode;
 
 /// A primitive and basic widget for drawing an `Image`.
 #[derive(Debug, Clone, Widget)]
-#[carbide_exclude(Render)]
+#[carbide_exclude(Render, Layout)]
 pub struct Image {
     id: Uuid,
     /// The unique identifier for the image that will be drawn.
@@ -69,10 +69,6 @@ impl Image {
 }
 
 impl Layout for Image {
-    fn flexibility(&self) -> u32 {
-        10
-    }
-
     fn calculate_size(&mut self, requested_size: Dimension, env: &mut Environment) -> Dimension {
         self.requested_size = requested_size;
 
@@ -103,8 +99,6 @@ impl Layout for Image {
 
         self.dimension
     }
-
-    fn position_children(&mut self) {}
 }
 
 impl Render for Image {
@@ -128,10 +122,6 @@ impl CommonWidget for Image {
 
     fn set_id(&mut self, id: Id) {
         self.id = id
-    }
-
-    fn flag(&self) -> Flags {
-        Flags::EMPTY
     }
 
     fn children(&self) -> WidgetIter {
@@ -158,12 +148,16 @@ impl CommonWidget for Image {
         self.position = position;
     }
 
+    fn flexibility(&self) -> u32 {
+        10
+    }
+
     fn dimension(&self) -> Dimension {
         self.dimension
     }
 
-    fn set_dimension(&mut self, dimensions: Dimension) {
-        self.dimension = dimensions
+    fn set_dimension(&mut self, dimension: Dimension) {
+        self.dimension = dimension
     }
 }
 

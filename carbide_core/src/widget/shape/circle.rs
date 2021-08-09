@@ -13,7 +13,7 @@ use crate::widget::types::TriangleStore;
 
 /// A simple, non-interactive widget for drawing a single **Ellipse**.
 #[derive(Debug, Clone, Widget)]
-#[carbide_exclude(Render)]
+#[carbide_exclude(Render, Layout)]
 pub struct Circle {
     pub id: Uuid,
     position: Position,
@@ -58,20 +58,6 @@ impl Circle {
     }
 }
 
-impl Layout for Circle {
-    fn flexibility(&self) -> u32 {
-        0
-    }
-
-    fn calculate_size(&mut self, requested_size: Dimension, _: &mut Environment) -> Dimension {
-        let min_dimension = requested_size.width.min(requested_size.height);
-        self.dimension = Dimension::new(min_dimension, min_dimension);
-
-        requested_size
-    }
-
-    fn position_children(&mut self) {}
-}
 
 impl CommonWidget for Circle {
     fn id(&self) -> Id {
@@ -80,10 +66,6 @@ impl CommonWidget for Circle {
 
     fn set_id(&mut self, id: Id) {
         self.id = id;
-    }
-
-    fn flag(&self) -> Flags {
-        Flags::EMPTY
     }
 
     fn children(&self) -> WidgetIter {
@@ -114,8 +96,17 @@ impl CommonWidget for Circle {
         self.dimension
     }
 
-    fn set_dimension(&mut self, dimensions: Dimension) {
-        self.dimension = dimensions
+    fn set_dimension(&mut self, dimension: Dimension) {
+        self.dimension = dimension
+    }
+}
+
+impl Layout for Circle {
+    fn calculate_size(&mut self, requested_size: Dimension, _: &mut Environment) -> Dimension {
+        let min_dimension = requested_size.width.min(requested_size.height);
+        self.dimension = Dimension::new(min_dimension, min_dimension);
+
+        requested_size
     }
 }
 

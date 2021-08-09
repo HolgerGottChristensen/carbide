@@ -4,7 +4,7 @@ use crate::render::PrimitiveKind;
 
 /// A basic, non-interactive rectangle shape widget.
 #[derive(Debug, Clone, Widget)]
-#[carbide_exclude(Render)]
+#[carbide_exclude(Render, Layout)]
 pub struct Border {
     id: Uuid,
     child: Box<dyn Widget>,
@@ -38,10 +38,6 @@ impl Border {
 }
 
 impl Layout for Border {
-    fn flexibility(&self) -> u32 {
-        self.child.flexibility()
-    }
-
     fn calculate_size(&mut self, requested_size: Dimension, env: &mut Environment) -> Dimension {
         let border_width = self.border_width as f64;
         let dimensions = Dimension::new(requested_size.height - border_width - border_width, requested_size.height - border_width - border_width);
@@ -55,7 +51,7 @@ impl Layout for Border {
 
     fn position_children(&mut self) {
         let border_width = self.border_width as f64;
-        let positioning = BasicLayouter::Center.position();
+        let positioning = self.alignment().positioner();
         let position = Position::new(self.x() + border_width, self.y() + border_width);
         let dimension = Dimension::new(self.width() - border_width - border_width, self.height() - border_width - border_width);
 
@@ -71,10 +67,6 @@ impl CommonWidget for Border {
 
     fn set_id(&mut self, id: Id) {
         self.id = id;
-    }
-
-    fn flag(&self) -> Flags {
-        Flags::EMPTY
     }
 
     fn children(&self) -> WidgetIter {
@@ -113,8 +105,8 @@ impl CommonWidget for Border {
         self.dimension
     }
 
-    fn set_dimension(&mut self, dimensions: Dimension) {
-        self.dimension = dimensions
+    fn set_dimension(&mut self, dimension: Dimension) {
+        self.dimension = dimension
     }
 }
 

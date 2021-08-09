@@ -5,8 +5,7 @@ use crate::prelude::*;
 use crate::widget::types::ScrollDirection;
 
 #[derive(Debug, Clone, Widget)]
-#[carbide_exclude(Render, MouseEvent, OtherEvent)]
-//#[event(handle_mouse_event, handle_other_event)]
+#[carbide_exclude(Render, MouseEvent, OtherEvent, Layout)]
 pub struct Scroll {
     id: Uuid,
     child: Box<dyn Widget>,
@@ -199,10 +198,6 @@ impl OtherEventHandler for Scroll {
 }
 
 impl Layout for Scroll {
-    fn flexibility(&self) -> u32 {
-        0
-    }
-
     fn calculate_size(&mut self, requested_size: Dimension, env: &mut Environment) -> Dimension {
         self.child.calculate_size(requested_size, env);
 
@@ -255,7 +250,7 @@ impl Layout for Scroll {
     }
 
     fn position_children(&mut self) {
-        let positioning = BasicLayouter::TopLeading.position(); // Top for center
+        let positioning = BasicLayouter::TopLeading.positioner(); // Top for center
         let position = self.position;
         let dimension = self.dimension;
 
@@ -358,12 +353,16 @@ impl CommonWidget for Scroll {
         self.position = position;
     }
 
+    fn flexibility(&self) -> u32 {
+        0
+    }
+
     fn dimension(&self) -> Dimension {
         self.dimension
     }
 
-    fn set_dimension(&mut self, dimensions: Dimension) {
-        self.dimension = dimensions
+    fn set_dimension(&mut self, dimension: Dimension) {
+        self.dimension = dimension
     }
 }
 

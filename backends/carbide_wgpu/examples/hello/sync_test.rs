@@ -138,8 +138,8 @@ impl<S: GlobalStateContract> CommonWidget<S> for SyncTest<S> {
         self.dimension
     }
 
-    fn set_dimension(&mut self, dimensions: Dimensions) {
-        self.dimension = dimensions
+    fn set_dimension(&mut self, dimension: Dimension) {
+        self.dimension = dimension
     }
 }
 
@@ -156,7 +156,7 @@ impl<S: GlobalStateContract> Layout<S> for SyncTest<S> {
     }
 
     fn position_children(&mut self) {
-        let positioning = BasicLayouter::Center.position();
+        let positioning = BasicLayouter::Center.positioner();
         let position = self.position;
         let dimension = self.dimension;
         positioning(position, dimension, &mut self.child);

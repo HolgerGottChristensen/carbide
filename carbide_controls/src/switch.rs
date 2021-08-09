@@ -1,3 +1,4 @@
+use carbide_core::draw::Dimension;
 use carbide_core::widget::*;
 
 use crate::PlainSwitch;
@@ -114,8 +115,8 @@ impl<GS: GlobalStateContract> CommonWidget<GS> for Switch<GS> {
         self.dimension
     }
 
-    fn set_dimension(&mut self, dimensions: Dimensions) {
-        self.dimension = dimensions
+    fn set_dimension(&mut self, dimension: Dimension) {
+        self.dimension = dimension
     }
 }
 

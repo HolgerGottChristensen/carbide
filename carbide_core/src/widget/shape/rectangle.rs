@@ -14,7 +14,7 @@ use crate::widget::types::TriangleStore;
 
 /// A basic, non-interactive rectangle shape widget.
 #[derive(Debug, Clone, Widget)]
-#[carbide_exclude(Render)]
+#[carbide_exclude(Render, Layout)]
 pub struct Rectangle {
     id: Uuid,
     children: Vec<Box<dyn Widget>>,
@@ -139,48 +139,6 @@ impl Rectangle {
     }
 }
 
-
-impl Layout for Rectangle {
-    fn flexibility(&self) -> u32 {
-        0
-    }
-
-    fn calculate_size(&mut self, requested_size: Dimension, env: &mut Environment) -> Dimension {
-        let mut max_child_size = Dimension::new(0.0, 0.0);
-
-        for child in &mut self.children {
-            let child_size = child.calculate_size(requested_size, env);
-
-            if child_size.width > max_child_size.width {
-                max_child_size.width = child_size.width;
-            }
-
-            if child_size.height > max_child_size.height {
-                max_child_size.height = child_size.height;
-            }
-        }
-
-        if self.shrink_to_fit {
-            self.dimension = max_child_size;
-        } else {
-            self.dimension = requested_size;
-        }
-
-        self.dimension
-    }
-
-    fn position_children(&mut self) {
-        let positioning = BasicLayouter::Center.position();
-        let position = self.position;
-        let dimension = self.dimension;
-
-        for child in &mut self.children {
-            positioning(position, dimension, child);
-            child.position_children();
-        }
-    }
-}
-
 impl CommonWidget for Rectangle {
     fn id(&self) -> Id {
         self.id
@@ -188,10 +146,6 @@ impl CommonWidget for Rectangle {
 
     fn set_id(&mut self, id: Id) {
         self.id = id;
-    }
-
-    fn flag(&self) -> Flags {
-        Flags::EMPTY
     }
 
     fn children(&self) -> WidgetIter {
@@ -232,6 +186,9 @@ impl CommonWidget for Rectangle {
             })
     }
 
+    fn flexibility(&self) -> u32 {
+        0
+    }
 
     fn position(&self) -> Position {
         self.position
@@ -245,22 +202,45 @@ impl CommonWidget for Rectangle {
         self.dimension
     }
 
-    fn set_dimension(&mut self, dimensions: Dimension) {
-        self.dimension = dimensions
+    fn set_dimension(&mut self, dimension: Dimension) {
+        self.dimension = dimension
     }
 }
 
-impl Shape for Rectangle {
-    fn get_triangle_store_mut(&mut self) -> &mut TriangleStore {
-        &mut self.triangle_store
+impl Layout for Rectangle {
+    fn calculate_size(&mut self, requested_size: Dimension, env: &mut Environment) -> Dimension {
+        let mut max_child_size = Dimension::new(0.0, 0.0);
+
+        for child in &mut self.children {
+            let child_size = child.calculate_size(requested_size, env);
+
+            if child_size.width > max_child_size.width {
+                max_child_size.width = child_size.width;
+            }
+
+            if child_size.height > max_child_size.height {
+                max_child_size.height = child_size.height;
+            }
+        }
+
+        if self.shrink_to_fit {
+            self.dimension = max_child_size;
+        } else {
+            self.dimension = requested_size;
+        }
+
+        self.dimension
     }
 
-    fn get_stroke_style(&self) -> StrokeStyle {
-        self.stroke_style.clone()
-    }
+    fn position_children(&mut self) {
+        let positioning = self.alignment().positioner();
+        let position = self.position;
+        let dimension = self.dimension;
 
-    fn get_shape_style(&self) -> ShapeStyle {
-        ShapeStyle::Stroke
+        for child in &mut self.children {
+            positioning(position, dimension, child);
+            child.position_children();
+        }
     }
 }
 
@@ -333,6 +313,20 @@ impl Render for Rectangle {
         prims.extend(Rectangle::debug_outline(Rect::new(self.position, self.dimension), 1.0));
 
         return prims;
+    }
+}
+
+impl Shape for Rectangle {
+    fn get_triangle_store_mut(&mut self) -> &mut TriangleStore {
+        &mut self.triangle_store
+    }
+
+    fn get_stroke_style(&self) -> StrokeStyle {
+        self.stroke_style.clone()
+    }
+
+    fn get_shape_style(&self) -> ShapeStyle {
+        ShapeStyle::Stroke
     }
 }
 
