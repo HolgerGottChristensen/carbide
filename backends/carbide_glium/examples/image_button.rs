@@ -7,18 +7,22 @@
 //! check the current `Theme` within the `Ui` and retrieve defaults from there.
 //!
 
-#[macro_use] extern crate carbide_core;
+#[macro_use]
+extern crate carbide_core;
 extern crate carbide_glium;
-#[macro_use] extern crate carbide_winit;
+#[macro_use]
+extern crate carbide_winit;
 extern crate find_folder;
 extern crate glium;
 extern crate image;
-extern crate rand; // for making a random color.
+extern crate rand;
+// for making a random color.
+
+use glium::Surface;
+
+use carbide_core::{Borderable, color, Colorable, OldWidget, Positionable, Sizeable, widget};
 
 mod support;
-
-use carbide_core::{widget, Borderable, Colorable, Positionable, Sizeable, OldWidget, color};
-use glium::Surface;
 
 const WIDTH: u32 = 1100;
 const HEIGHT: u32 = 560;
@@ -39,7 +43,9 @@ fn main() {
     let mut ui = carbide_core::UiBuilder::new([WIDTH as f64, HEIGHT as f64]).build();
 
     // Add a `Font` to the `Ui`'s `font::Map` from file.
-    let assets = find_folder::Search::KidsThenParents(3, 5).for_folder("assets").unwrap();
+    let assets = find_folder::Search::KidsThenParents(3, 5)
+        .for_folder("assets")
+        .unwrap();
     let font_path = assets.join("fonts/NotoSans/NotoSans-Regular.ttf");
     ui.fonts.insert_from_file(font_path).unwrap();
 
@@ -76,10 +82,8 @@ fn main() {
     // Poll events from the window.
     let mut event_loop = support::EventLoop::new();
     'main: loop {
-
         // Handle all events.
         for event in event_loop.next(&mut events_loop) {
-
             // Use the `winit` backend feature to convert the winit event to a carbide one.
             if let Some(event) = support::convert_event(event.clone(), &display) {
                 ui.handle_event(event);
@@ -89,9 +93,10 @@ fn main() {
             match event {
                 glium::glutin::Event::WindowEvent { event, .. } => match event {
                     // Break from the loop upon `Escape`.
-                    glium::glutin::WindowEvent::CloseRequested |
-                    glium::glutin::WindowEvent::KeyboardInput {
-                        input: glium::glutin::KeyboardInput {
+                    glium::glutin::WindowEvent::CloseRequested
+                    | glium::glutin::WindowEvent::KeyboardInput {
+                        input:
+                        glium::glutin::KeyboardInput {
                             virtual_keycode: Some(glium::glutin::VirtualKeyCode::Escape),
                             ..
                         },
@@ -139,12 +144,16 @@ fn main() {
 
 // Load an image from our assets folder as a texture we can draw to the screen.
 fn load_image<P>(display: &glium::Display, path: P) -> glium::texture::SrgbTexture2d
-    where P: AsRef<std::path::Path>,
+    where
+        P: AsRef<std::path::Path>,
 {
     let path = path.as_ref();
     let rgba_image = image::open(&std::path::Path::new(&path)).unwrap().to_rgba();
     let image_dimensions = rgba_image.dimensions();
-    let raw_image = glium::texture::RawImage2d::from_raw_rgba_reversed(&rgba_image.into_raw(), image_dimensions);
+    let raw_image = glium::texture::RawImage2d::from_raw_rgba_reversed(
+        &rgba_image.into_raw(),
+        image_dimensions,
+    );
     let texture = glium::texture::SrgbTexture2d::new(display, raw_image).unwrap();
     texture
 }

@@ -63,17 +63,15 @@ impl Glyph {
     fn recalculate_bb(&self, position: Position) -> Option<Rect> {
         let fraction_of_position = position.fraction();
         let truncated = position.truncated();
-        let translated_bb = self.inner_glyph_bb.map(|bb| {
-            rusttype::Rect {
-                min: point(
-                    (bb.min.x as f64 + fraction_of_position.x).floor() + truncated.x,
-                    (bb.min.y as f64 + fraction_of_position.y).floor() + truncated.y,
-                ),
-                max: point(
-                    (bb.max.x as f64 + fraction_of_position.x).ceil() + truncated.x,
-                    (bb.max.y as f64 + fraction_of_position.y).ceil() + truncated.y,
-                ),
-            }
+        let translated_bb = self.inner_glyph_bb.map(|bb| rusttype::Rect {
+            min: point(
+                (bb.min.x as f64 + fraction_of_position.x).floor() + truncated.x,
+                (bb.min.y as f64 + fraction_of_position.y).floor() + truncated.y,
+            ),
+            max: point(
+                (bb.max.x as f64 + fraction_of_position.x).ceil() + truncated.x,
+                (bb.max.y as f64 + fraction_of_position.y).ceil() + truncated.y,
+            ),
         });
 
         translated_bb.map(|rect| {
@@ -112,25 +110,27 @@ impl Glyph {
 }
 
 impl From<(FontSize, FontId, PositionedGlyph<'_>, bool)> for Glyph {
-    fn from((font_size, font_id, inner, is_bitmap): (FontSize, FontId, PositionedGlyph, bool)) -> Self {
+    fn from(
+        (font_size, font_id, inner, is_bitmap): (FontSize, FontId, PositionedGlyph, bool),
+    ) -> Self {
         let scale = inner.scale();
         let scale_y = inner.font().scale_for_pixel_height(scale.y);
         let scale_x = scale_y * scale.x / scale.y;
 
         let glyph_id = inner.id();
-        let inner_glyph_bb = inner.font().inner()
+        let inner_glyph_bb = inner
+            .font()
+            .inner()
             .glyph_bounding_box(glyph_id.into())
-            .map(|ttf_bb| {
-                rusttype::Rect {
-                    min: point(
-                        ttf_bb.x_min as f32 * scale_x,
-                        -ttf_bb.y_max as f32 * scale_y,
-                    ),
-                    max: point(
-                        ttf_bb.x_max as f32 * scale_x,
-                        -ttf_bb.y_min as f32 * scale_y,
-                    ),
-                }
+            .map(|ttf_bb| rusttype::Rect {
+                min: point(
+                    ttf_bb.x_min as f32 * scale_x,
+                    -ttf_bb.y_max as f32 * scale_y,
+                ),
+                max: point(
+                    ttf_bb.x_max as f32 * scale_x,
+                    -ttf_bb.y_min as f32 * scale_y,
+                ),
             });
 
         Glyph {

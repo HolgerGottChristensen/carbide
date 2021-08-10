@@ -1,4 +1,4 @@
-//! 
+//!
 //! A library providing simple `Color` and `Gradient` render along with useful transformations and
 //! presets.
 //!
@@ -42,13 +42,16 @@ impl Default for Color {
 impl Color {
     pub fn random() -> Self {
         let mut rng = rand::thread_rng();
-        return rgb(rng.gen_range(0.0, 1.0), rng.gen_range(0.0, 1.0), rng.gen_range(0.0, 1.0))
+        return rgb(
+            rng.gen_range(0.0, 1.0),
+            rng.gen_range(0.0, 1.0),
+            rng.gen_range(0.0, 1.0),
+        );
     }
 }
 
 /// Regional spelling alias.
 pub type Colour = Color;
-
 
 /// Create RGB colors with an alpha component for transparency.
 /// The alpha component is specified with numbers between 0 and 1.
@@ -57,13 +60,11 @@ pub fn rgba(r: f32, g: f32, b: f32, a: f32) -> Color {
     Color::Rgba(r, g, b, a)
 }
 
-
 /// Create RGB colors from numbers between 0.0 and 1.0.
 #[inline]
 pub fn rgb(r: f32, g: f32, b: f32) -> Color {
     Color::Rgba(r, g, b, 1.0)
 }
-
 
 /// Create RGB colors from numbers between 0 and 255 inclusive.
 /// The alpha component is specified with numbers between 0 and 1.
@@ -72,25 +73,27 @@ pub fn rgba_bytes(r: u8, g: u8, b: u8, a: f32) -> Color {
     Color::Rgba(r as f32 / 255.0, g as f32 / 255.0, b as f32 / 255.0, a)
 }
 
-
 /// Create RGB colors from numbers between 0 and 255 inclusive.
 #[inline]
 pub fn rgb_bytes(r: u8, g: u8, b: u8) -> Color {
     rgba_bytes(r, g, b, 1.0)
 }
 
-
 /// Create [HSL colors](http://en.wikipedia.org/wiki/HSL_and_HSV) with an alpha component for
 /// transparency.
 #[inline]
 pub fn hsla(hue: f32, saturation: f32, lightness: f32, alpha: f32) -> Color {
-    Color::Hsla(hue - turns((hue / (2.0 * PI)).floor()), saturation, lightness, alpha)
+    Color::Hsla(
+        hue - turns((hue / (2.0 * PI)).floor()),
+        saturation,
+        lightness,
+        alpha,
+    )
 }
-
 
 /// Create [HSL colors](http://en.wikipedia.org/wiki/HSL_and_HSV). This gives you access to colors
 /// more like a color wheel, where all hues are arranged in a circle that you specify with radians.
-/// 
+///
 ///   red        = hsl(degrees(0.0)   , 1.0 , 0.5)
 ///   green      = hsl(degrees(120.0) , 1.0 , 0.5)
 ///   blue       = hsl(degrees(240.0) , 1.0 , 0.5)
@@ -104,7 +107,6 @@ pub fn hsl(hue: f32, saturation: f32, lightness: f32) -> Color {
     hsla(hue, saturation, lightness, 1.0)
 }
 
-
 /// Produce a gray based on the input. 0.0 is white, 1.0 is black.
 pub fn grayscale(p: f32) -> Color {
     Color::Hsla(0.0, 0.0, 1.0 - p, 1.0)
@@ -115,12 +117,16 @@ pub fn greyscale(p: f32) -> Color {
     Color::Hsla(0.0, 0.0, 1.0 - p, 1.0)
 }
 
-
 /// Clamp a f32 between 0f32 and 1f32.
 fn clampf32(f: f32) -> f32 {
-    if f < 0.0 { 0.0 } else if f > 1.0 { 1.0 } else { f }
+    if f < 0.0 {
+        0.0
+    } else if f > 1.0 {
+        1.0
+    } else {
+        f
+    }
 }
-
 
 impl Color {
     /// The percent should be between 0 and 1.
@@ -145,7 +151,7 @@ impl Color {
             Color::Rgba(r, g, b, a) => {
                 let (h, s, l) = rgb_to_hsl(r, g, b);
                 hsla(h + degrees(180.0), s, l, a)
-            },
+            }
         }
     }
 
@@ -164,12 +170,14 @@ impl Color {
             Color::Hsla(h, s, l, _) => {
                 let (r, g, b) = hsl_to_rgb(h, s, l);
                 rgb(r, g, b).plain_contrast()
-            },
+            }
             Color::Rgba(r, g, b, _) => {
-                let l = 0.2126 * r
-                    + 0.7152 * g
-                    + 0.0722 * b;
-                if l > 0.5 { BLACK } else { WHITE }
+                let l = 0.2126 * r + 0.7152 * g + 0.0722 * b;
+                if l > 0.5 {
+                    BLACK
+                } else {
+                    WHITE
+                }
             }
         }
     }
@@ -181,7 +189,7 @@ impl Color {
             Color::Rgba(r, g, b, a) => {
                 let (h, s, l) = rgb_to_hsl(r, g, b);
                 Hsla(h, s, l, a)
-            },
+            }
         }
     }
 
@@ -192,7 +200,7 @@ impl Color {
             Color::Hsla(h, s, l, a) => {
                 let (r, g, b) = hsl_to_rgb(h, s, l);
                 Rgba(r, g, b, a)
-            },
+            }
         }
     }
 
@@ -205,7 +213,12 @@ impl Color {
     /// Same as `to_fsa`, except r, g, b and a are represented in byte form.
     pub fn to_byte_fsa(self) -> [u8; 4] {
         let Rgba(r, g, b, a) = self.to_rgb();
-        [f32_to_byte(r), f32_to_byte(g), f32_to_byte(b), f32_to_byte(a)]
+        [
+            f32_to_byte(r),
+            f32_to_byte(g),
+            f32_to_byte(b),
+            f32_to_byte(a),
+        ]
     }
 
     // /// Return the hex representation of this color in the format #RRGGBBAA
@@ -243,10 +256,16 @@ impl Color {
         let luminance = self.luminance();
         let Rgba(r, g, b, a) = self.to_rgb();
         let (r, g, b) = {
-            if luminance > 0.8 { (r - 0.2, g - 0.2, b - 0.2) } else if luminance < 0.2 { (r + 0.2, g + 0.2, b + 0.2) } else {
-                (clampf32((1.0 - r) * 0.5 * r + r),
-                 clampf32((1.0 - g) * 0.1 * g + g),
-                 clampf32((1.0 - b) * 0.1 * b + b))
+            if luminance > 0.8 {
+                (r - 0.2, g - 0.2, b - 0.2)
+            } else if luminance < 0.2 {
+                (r + 0.2, g + 0.2, b + 0.2)
+            } else {
+                (
+                    clampf32((1.0 - r) * 0.5 * r + r),
+                    clampf32((1.0 - g) * 0.1 * g + g),
+                    clampf32((1.0 - b) * 0.1 * b + b),
+                )
             }
         };
         let a = clampf32((1.0 - a) * 0.5 + a);
@@ -258,10 +277,16 @@ impl Color {
         let luminance = self.luminance();
         let Rgba(r, g, b, a) = self.to_rgb();
         let (r, g, b) = {
-            if luminance > 0.8 { (r, g - 0.2, b - 0.2) } else if luminance < 0.2 { (r + 0.4, g + 0.2, b + 0.2) } else {
-                (clampf32((1.0 - r) * 0.75 + r),
-                 clampf32((1.0 - g) * 0.25 + g),
-                 clampf32((1.0 - b) * 0.25 + b))
+            if luminance > 0.8 {
+                (r, g - 0.2, b - 0.2)
+            } else if luminance < 0.2 {
+                (r + 0.4, g + 0.2, b + 0.2)
+            } else {
+                (
+                    clampf32((1.0 - r) * 0.75 + r),
+                    clampf32((1.0 - g) * 0.25 + g),
+                    clampf32((1.0 - b) * 0.25 + b),
+                )
             }
         };
         let a = clampf32((1.0 - a) * 0.75 + a);
@@ -311,11 +336,9 @@ impl Color {
     }
 }
 
-
 /// The parts of HSL along with an alpha for transparency.
 #[derive(Copy, Clone, Debug, PartialEq)]
 pub struct Hsla(pub f32, pub f32, pub f32, pub f32);
-
 
 impl From<Color> for Hsla {
     fn from(color: Color) -> Self {
@@ -329,11 +352,9 @@ impl From<Hsla> for Color {
     }
 }
 
-
 /// The parts of RGB along with an alpha for transparency.
 #[derive(Copy, Clone, Debug, PartialEq)]
 pub struct Rgba(pub f32, pub f32, pub f32, pub f32);
-
 
 impl From<Color> for Rgba {
     fn from(color: Color) -> Self {
@@ -354,11 +375,11 @@ impl Into<[f32; 4]> for Rgba {
     }
 }
 
-
 /// Convert an f32 color to a byte.
 #[inline]
-pub fn f32_to_byte(c: f32) -> u8 { (c * 255.0) as u8 }
-
+pub fn f32_to_byte(c: f32) -> u8 {
+    (c * 255.0) as u8
+}
 
 /// Pure function for converting rgb to hsl.
 /// * Inputs expected to be between `0.0` and `1.0`.
@@ -372,14 +393,24 @@ pub fn rgb_to_hsl(r: f32, g: f32, b: f32) -> (f32, f32, f32) {
         // If there's no difference in the channels we have grayscale, so the hue is undefined.
         0.0
     } else {
-        degrees(60.0) * if c_max == r { fmod((g - b) / c, 6) } else if c_max == g { ((b - r) / c) + 2.0 } else { ((r - g) / c) + 4.0 }
+        degrees(60.0)
+            * if c_max == r {
+            fmod((g - b) / c, 6)
+        } else if c_max == g {
+            ((b - r) / c) + 2.0
+        } else {
+            ((r - g) / c) + 4.0
+        }
     };
 
     let lightness = (c_max + c_min) / 2.0;
-    let saturation = if lightness == 0.0 || lightness == 1.0 { 0.0 } else { c / (1.0 - (2.0 * lightness - 1.0).abs()) };
+    let saturation = if lightness == 0.0 || lightness == 1.0 {
+        0.0
+    } else {
+        c / (1.0 - (2.0 * lightness - 1.0).abs())
+    };
     (hue, saturation, lightness)
 }
-
 
 /// Pure function for converting hsl to rgb.
 pub fn hsl_to_rgb(hue: f32, saturation: f32, lightness: f32) -> (f32, f32, f32) {
@@ -400,7 +431,6 @@ pub fn hsl_to_rgb(hue: f32, saturation: f32, lightness: f32) -> (f32, f32, f32) 
     (r + m, g + m, b + m)
 }
 
-
 /// Linear or Radial Gradient.
 #[derive(Clone, Debug)]
 pub enum Gradient {
@@ -413,20 +443,21 @@ pub enum Gradient {
     Radial((f64, f64), f64, (f64, f64), f64, Vec<(f64, Color)>),
 }
 
-
 /// Create a linear gradient.
 pub fn linear(start: (f64, f64), end: (f64, f64), colors: Vec<(f64, Color)>) -> Gradient {
     Gradient::Linear(start, end, colors)
 }
 
-
-/// Create a radial gradient. 
-pub fn radial(start: (f64, f64), start_r: f64,
-              end: (f64, f64), end_r: f64,
-              colors: Vec<(f64, Color)>) -> Gradient {
+/// Create a radial gradient.
+pub fn radial(
+    start: (f64, f64),
+    start_r: f64,
+    end: (f64, f64),
+    end_r: f64,
+    colors: Vec<(f64, Color)>,
+) -> Gradient {
     Gradient::Radial(start, start_r, end, end_r, colors)
 }
-
 
 /// Built-in colors.
 ///
@@ -436,8 +467,17 @@ pub fn radial(start: (f64, f64), start_r: f64,
 /// version.
 
 macro_rules! make_color {
-	($r:expr, $g:expr, $b:expr) => ( Color::Rgba($r as f32 / 255.0, $g as f32 / 255.0, $b as f32 / 255.0, 1.0));
-	($r:expr, $g:expr, $b:expr, $a:expr) => ( Color::Rgba($r as f32 / 255.0, $g as f32 / 255.0, $b as f32 / 255.0, $a as f32 / 255.0));
+    ($r:expr, $g:expr, $b:expr) => {
+        Color::Rgba($r as f32 / 255.0, $g as f32 / 255.0, $b as f32 / 255.0, 1.0)
+    };
+    ($r:expr, $g:expr, $b:expr, $a:expr) => {
+        Color::Rgba(
+            $r as f32 / 255.0,
+            $g as f32 / 255.0,
+            $b as f32 / 255.0,
+            $a as f32 / 255.0,
+        )
+    };
 }
 
 /// Scarlet Red - Light - #EF2929                         
@@ -511,10 +551,8 @@ pub const DARK_CHARCOAL: Color = make_color!(46, 52, 54);
 /// Transparent
 pub const TRANSPARENT: Color = Color::Rgba(0.0, 0.0, 0.0, 0.0);
 
-
 #[test]
 fn plain_contrast_should_weight_colors() {
-
     // Contrast tests.
     // Black and white : Simple tests.
     let white_contrast = rgb(1.0, 1.0, 1.0).plain_contrast();

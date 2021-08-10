@@ -58,14 +58,20 @@ impl TriangleStore {
         let mut res = vec![];
         if self.fill_triangles.len() > 0 {
             res.push(Primitive {
-                kind: PrimitiveKind::TrianglesSingleColor { color: Rgba::from(fill_color), triangles: self.fill_triangles.clone() },
+                kind: PrimitiveKind::TrianglesSingleColor {
+                    color: Rgba::from(fill_color),
+                    triangles: self.fill_triangles.clone(),
+                },
                 rect: Rect::new(self.latest_fill_position, self.latest_fill_dimensions),
             });
         }
 
         if self.stroke_triangles.len() > 0 {
             res.push(Primitive {
-                kind: PrimitiveKind::TrianglesSingleColor { color: Rgba::from(stroke_color), triangles: self.stroke_triangles.clone() },
+                kind: PrimitiveKind::TrianglesSingleColor {
+                    color: Rgba::from(stroke_color),
+                    triangles: self.stroke_triangles.clone(),
+                },
                 rect: Rect::new(self.latest_stroke_position, self.latest_stroke_dimensions),
             });
         }

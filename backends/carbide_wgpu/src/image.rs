@@ -28,7 +28,6 @@ impl mesh::mesh::ImageDimensions for Image {
     }
 }
 
-
 impl Image {
     pub fn image_information(&self) -> ImageInformation {
         ImageInformation {
@@ -38,15 +37,21 @@ impl Image {
     }
 
     pub fn new<P>(path: P, device: &Device, queue: &Queue) -> Self
-        where P: AsRef<Path> {
-        let rgba_logo_image = image::open(path)
-            .expect("Couldn't load logo")
-            .to_rgba();
+        where
+            P: AsRef<Path>,
+    {
+        let rgba_logo_image = image::open(path).expect("Couldn't load logo").to_rgba();
 
         // Create the GPU texture and upload the image data.
         let (width, height) = rgba_logo_image.dimensions();
 
-        let texture = texture::Texture::from_image(device, queue, &rgba_logo_image, Option::from("carbide_loaded_image")).unwrap();
+        let texture = texture::Texture::from_image(
+            device,
+            queue,
+            &rgba_logo_image,
+            Option::from("carbide_loaded_image"),
+        )
+            .unwrap();
 
         Image {
             texture,

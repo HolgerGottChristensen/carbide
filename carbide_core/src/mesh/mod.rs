@@ -2,9 +2,9 @@ pub use atlas::texture_atlas::AtlasId;
 pub use atlas::texture_atlas::TextureAtlas;
 pub use atlas::texture_atlas::TextureAtlasIndex;
 
+mod atlas;
 pub mod mesh;
 pub mod vertex;
-mod atlas;
 
 /// Draw text from the text cache texture `tex` in the fragment shader.
 pub const MODE_TEXT: u32 = 0;

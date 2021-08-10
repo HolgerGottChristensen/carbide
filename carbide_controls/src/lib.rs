@@ -15,13 +15,12 @@ pub use switch::Switch;
 pub use types::CheckBoxState;
 pub use types::CheckBoxValue;
 
-mod plain;
-mod list;
-mod pop_up_button;
-mod text_input;
-mod radio_button;
-mod check_box;
 mod button;
-mod types;
+mod check_box;
+mod list;
+mod plain;
+mod pop_up_button;
+mod radio_button;
 mod switch;
-
+mod text_input;
+mod types;

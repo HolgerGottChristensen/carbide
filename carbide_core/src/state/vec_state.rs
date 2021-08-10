@@ -7,7 +7,10 @@ use crate::state::value_cell::{ValueRef, ValueRefMut};
 use crate::state::widget_state::WidgetState;
 
 #[derive(Clone)]
-pub struct VecState<T> where T: StateContract {
+pub struct VecState<T>
+    where
+        T: StateContract,
+{
     index_state: UsizeState,
     vec: TState<Vec<T>>,
 }

@@ -5,7 +5,10 @@ use std::ops::{Deref, DerefMut};
 use dyn_clone::DynClone;
 
 use crate::draw::{Dimension, Position};
-use crate::event::{Event, KeyboardEvent, KeyboardEventHandler, MouseEvent, MouseEventHandler, OtherEventHandler, WidgetEvent};
+use crate::event::{
+    Event, KeyboardEvent, KeyboardEventHandler, MouseEvent, MouseEventHandler, OtherEventHandler,
+    WidgetEvent,
+};
 use crate::focus::{Focus, Focusable, Refocus};
 use crate::prelude::*;
 
@@ -82,7 +85,6 @@ impl<T: Widget + ?Sized> CommonWidget for Box<T> {
     }
 }
 
-
 impl<T: Widget + ?Sized> MouseEventHandler for Box<T> {
     fn handle_mouse_event(&mut self, event: &MouseEvent, consumed: &bool, env: &mut Environment) {
         self.deref_mut().handle_mouse_event(event, consumed, env)
@@ -144,11 +146,21 @@ impl<T: Widget + ?Sized> Render for Box<T> {
 }
 
 impl<T: Widget + ?Sized> Focusable for Box<T> {
-    fn focus_retrieved(&mut self, event: &WidgetEvent, focus_request: &Refocus, env: &mut Environment) {
+    fn focus_retrieved(
+        &mut self,
+        event: &WidgetEvent,
+        focus_request: &Refocus,
+        env: &mut Environment,
+    ) {
         self.deref_mut().focus_retrieved(event, focus_request, env)
     }
 
-    fn focus_dismissed(&mut self, event: &WidgetEvent, focus_request: &Refocus, env: &mut Environment) {
+    fn focus_dismissed(
+        &mut self,
+        event: &WidgetEvent,
+        focus_request: &Refocus,
+        env: &mut Environment,
+    ) {
         self.deref_mut().focus_dismissed(event, focus_request, env)
     }
 
@@ -156,19 +168,38 @@ impl<T: Widget + ?Sized> Focusable for Box<T> {
         self.deref_mut().set_focus_and_request(focus, env)
     }
 
-    fn process_focus_request(&mut self, event: &WidgetEvent, focus_request: &Refocus, env: &mut Environment) -> bool {
-        self.deref_mut().process_focus_request(event, focus_request, env)
+    fn process_focus_request(
+        &mut self,
+        event: &WidgetEvent,
+        focus_request: &Refocus,
+        env: &mut Environment,
+    ) -> bool {
+        self.deref_mut()
+            .process_focus_request(event, focus_request, env)
     }
 
-    fn process_focus_next(&mut self, event: &WidgetEvent, focus_request: &Refocus, focus_up_for_grab: bool, env: &mut Environment) -> bool {
-        self.deref_mut().process_focus_next(event, focus_request, focus_up_for_grab, env)
+    fn process_focus_next(
+        &mut self,
+        event: &WidgetEvent,
+        focus_request: &Refocus,
+        focus_up_for_grab: bool,
+        env: &mut Environment,
+    ) -> bool {
+        self.deref_mut()
+            .process_focus_next(event, focus_request, focus_up_for_grab, env)
     }
 
-    fn process_focus_previous(&mut self, event: &WidgetEvent, focus_request: &Refocus, focus_up_for_grab: bool, env: &mut Environment) -> bool {
-        self.deref_mut().process_focus_previous(event, focus_request, focus_up_for_grab, env)
+    fn process_focus_previous(
+        &mut self,
+        event: &WidgetEvent,
+        focus_request: &Refocus,
+        focus_up_for_grab: bool,
+        env: &mut Environment,
+    ) -> bool {
+        self.deref_mut()
+            .process_focus_previous(event, focus_request, focus_up_for_grab, env)
     }
 }
-
 
 impl Debug for dyn Widget {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {

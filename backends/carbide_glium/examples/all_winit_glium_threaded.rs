@@ -10,11 +10,12 @@ extern crate find_folder;
 extern crate glium;
 extern crate image;
 
-mod support;
-
-use carbide_example_shared::{WIN_W, WIN_H};
-use carbide_glium::Renderer;
 use glium::Surface;
+
+use carbide_example_shared::{WIN_H, WIN_W};
+use carbide_glium::Renderer;
+
+mod support;
 
 fn main() {
     // Build the window.
@@ -41,11 +42,16 @@ fn main() {
 
     // Load the Rust logo from our assets folder to use as an example image.
     fn load_rust_logo(display: &glium::Display) -> glium::texture::Texture2d {
-        let assets = find_folder::Search::ParentsThenKids(5, 3).for_folder("assets").unwrap();
+        let assets = find_folder::Search::ParentsThenKids(5, 3)
+            .for_folder("assets")
+            .unwrap();
         let path = assets.join("images/rust.png");
         let rgba_image = image::open(&std::path::Path::new(&path)).unwrap().to_rgba();
         let image_dimensions = rgba_image.dimensions();
-        let raw_image = glium::texture::RawImage2d::from_raw_rgba_reversed(&rgba_image.into_raw(), image_dimensions);
+        let raw_image = glium::texture::RawImage2d::from_raw_rgba_reversed(
+            &rgba_image.into_raw(),
+            image_dimensions,
+        );
         let texture = glium::texture::Texture2d::new(display, raw_image).unwrap();
         texture
     }
@@ -61,18 +67,21 @@ fn main() {
     let events_loop_proxy = events_loop.create_proxy();
 
     // A function that runs the carbide loop.
-    fn run_carbide(rust_logo: carbide_core::image_map::Id,
-                  event_rx: std::sync::mpsc::Receiver<carbide_core::event::Input>,
-                  render_tx: std::sync::mpsc::Sender<carbide_core::render::OwnedPrimitives>,
-                  events_loop_proxy: glium::glutin::EventsLoopProxy)
-    {
+    fn run_carbide(
+        rust_logo: carbide_core::image_map::Id,
+        event_rx: std::sync::mpsc::Receiver<carbide_core::event::Input>,
+        render_tx: std::sync::mpsc::Sender<carbide_core::render::OwnedPrimitives>,
+        events_loop_proxy: glium::glutin::EventsLoopProxy,
+    ) {
         // Construct our `Ui`.
         let mut ui = carbide_core::UiBuilder::new([WIN_W as f64, WIN_H as f64])
             .theme(carbide_example_shared::theme())
             .build();
 
         // Add a `Font` to the `Ui`'s `font::Map` from file.
-        let assets = find_folder::Search::KidsThenParents(3, 5).for_folder("assets").unwrap();
+        let assets = find_folder::Search::KidsThenParents(3, 5)
+            .for_folder("assets")
+            .unwrap();
         let font_path = assets.join("fonts/NotoSans/NotoSans-Regular.ttf");
         ui.fonts.insert_from_file(font_path).unwrap();
 
@@ -86,7 +95,6 @@ fn main() {
         // insert an update into the carbide loop using this `bool` after each event.
         let mut needs_update = true;
         'carbide: loop {
-
             // Collect any pending events.
             let mut events = Vec::new();
             while let Ok(event) = event_rx.try_recv() {
@@ -116,7 +124,8 @@ fn main() {
             // display. Wakeup `winit` for rendering.
             if let Some((primitives, cprims)) = ui.draw_if_changed() {
                 if render_tx.send(primitives.owned()).is_err()
-                || events_loop_proxy.wakeup().is_err() {
+                    || events_loop_proxy.wakeup().is_err()
+                {
                     break 'carbide;
                 }
             }
@@ -124,11 +133,12 @@ fn main() {
     }
 
     // Draws the given `primitives` to the given `Display`.
-    fn draw(display: &glium::Display,
-            renderer: &mut Renderer,
-            image_map: &carbide_core::image_map::ImageMap<glium::Texture2d>,
-            primitives: &carbide_core::render::OwnedPrimitives)
-    {
+    fn draw(
+        display: &glium::Display,
+        renderer: &mut Renderer,
+        image_map: &carbide_core::image_map::ImageMap<glium::Texture2d>,
+        primitives: &carbide_core::render::OwnedPrimitives,
+    ) {
         renderer.fill(display, primitives.walk(), &image_map);
         let mut target = display.draw();
         target.clear_color(0.0, 0.0, 0.0, 1.0);
@@ -143,7 +153,6 @@ fn main() {
     let mut last_update = std::time::Instant::now();
     let mut closed = false;
     while !closed {
-
         // We don't want to loop any faster than 60 FPS, so wait until it has been at least
         // 16ms since the last yield.
         let sixteen_ms = std::time::Duration::from_millis(16);
@@ -162,9 +171,10 @@ fn main() {
             match event {
                 glium::glutin::Event::WindowEvent { event, .. } => match event {
                     // Break from the loop upon `Escape`.
-                    glium::glutin::WindowEvent::CloseRequested |
-                    glium::glutin::WindowEvent::KeyboardInput {
-                        input: glium::glutin::KeyboardInput {
+                    glium::glutin::WindowEvent::CloseRequested
+                    | glium::glutin::WindowEvent::KeyboardInput {
+                        input:
+                        glium::glutin::KeyboardInput {
                             virtual_keycode: Some(glium::glutin::VirtualKeyCode::Escape),
                             ..
                         },
@@ -172,15 +182,15 @@ fn main() {
                     } => {
                         closed = true;
                         return glium::glutin::ControlFlow::Break;
-                    },
+                    }
                     // We must re-draw on `Resized`, as the event loops become blocked during
                     // resize on macOS.
                     glium::glutin::WindowEvent::Resized(..) => {
                         if let Some(primitives) = render_rx.iter().next() {
                             draw(&display.0, &mut renderer, &image_map, &primitives);
                         }
-                    },
-                    _ => {},
+                    }
+                    _ => {}
                 },
                 glium::glutin::Event::Awakened => return glium::glutin::ControlFlow::Break,
                 _ => (),

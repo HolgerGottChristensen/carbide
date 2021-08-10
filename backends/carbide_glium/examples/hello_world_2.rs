@@ -49,11 +49,18 @@ const WIDTH: u32 = 750 / 2;
 const HEIGHT: u32 = 1334 / 2;
 
 fn main() {
-    let mut window = Window::new("Hello world 2".to_string(), WIDTH, HEIGHT, GState {
-        s: String::from("Hejsa")
-    });
+    let mut window = Window::new(
+        "Hello world 2".to_string(),
+        WIDTH,
+        HEIGHT,
+        GState {
+            s: String::from("Hejsa"),
+        },
+    );
 
-    window.add_font("fonts/NotoSans/NotoSans-Regular.ttf").unwrap();
+    window
+        .add_font("fonts/NotoSans/NotoSans-Regular.ttf")
+        .unwrap();
     let rust_image = window.add_image("images/rust_hover.png").unwrap();
 
     // Rectangle::new(params!(alignment: Alignment::Leading))
@@ -166,7 +173,12 @@ impl CommonWidget<GState> for CustomWidget {
 }
 
 impl Event<GState> for CustomWidget {
-    fn handle_mouse_event(&mut self, event: &MouseEvent, consumed: &bool, global_state: &mut GState) {
+    fn handle_mouse_event(
+        &mut self,
+        event: &MouseEvent,
+        consumed: &bool,
+        global_state: &mut GState,
+    ) {
         ()
     }
 

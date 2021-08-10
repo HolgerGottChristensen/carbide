@@ -19,11 +19,19 @@ pub enum RenderPassCommand<'a> {
         dimensions: [u32; 2],
     },
     /// Draw the specified range of vertices.
-    Draw { vertex_range: std::ops::Range<u32> },
-    Stencil { vertex_range: std::ops::Range<u32> },
-    DeStencil { vertex_range: std::ops::Range<u32> },
+    Draw {
+        vertex_range: std::ops::Range<u32>,
+    },
+    Stencil {
+        vertex_range: std::ops::Range<u32>,
+    },
+    DeStencil {
+        vertex_range: std::ops::Range<u32>,
+    },
     /// A new image requires drawing and in turn a new bind group requires setting.
-    SetBindGroup { bind_group: &'a wgpu::BindGroup },
+    SetBindGroup {
+        bind_group: &'a wgpu::BindGroup,
+    },
 }
 
 #[derive(PartialEq)]
@@ -32,7 +40,16 @@ enum BindGroup {
     Image(carbide_core::image_map::Id),
 }
 
-pub fn create_render_pass_commands<'a>(def_bind_group: &'a wgpu::BindGroup, bind_groups: &'a mut HashMap<Id, DiffuseBindGroup>, image_map: &'a ImageMap<Image>, mesh: &'a Mesh, device: &'a Device, glyph_texture: &'a Texture, atlas_tex: &'a Texture, bind_group_layout: &'a BindGroupLayout) -> Vec<RenderPassCommand<'a>> {
+pub fn create_render_pass_commands<'a>(
+    def_bind_group: &'a wgpu::BindGroup,
+    bind_groups: &'a mut HashMap<Id, DiffuseBindGroup>,
+    image_map: &'a ImageMap<Image>,
+    mesh: &'a Mesh,
+    device: &'a Device,
+    glyph_texture: &'a Texture,
+    atlas_tex: &'a Texture,
+    bind_group_layout: &'a BindGroupLayout,
+) -> Vec<RenderPassCommand<'a>> {
     bind_groups.retain(|k, _| image_map.contains_key(k));
 
     for (id, img) in image_map.iter() {
@@ -42,7 +59,13 @@ pub fn create_render_pass_commands<'a>(def_bind_group: &'a wgpu::BindGroup, bind
         }
 
         // Create the bind
-        let bind_group = new_diffuse(&device, &img, &glyph_texture, &atlas_tex, &bind_group_layout);
+        let bind_group = new_diffuse(
+            &device,
+            &img,
+            &glyph_texture,
+            &atlas_tex,
+            &bind_group_layout,
+        );
         bind_groups.insert(*id, bind_group);
     }
 
@@ -122,8 +145,6 @@ pub fn create_render_pass_commands<'a>(def_bind_group: &'a wgpu::BindGroup, bind
                     // Ensure the bind group matches this image.
                     let expected_bind_group = Some(BindGroup::Image(image_id));
                     if bind_group != expected_bind_group {
-
-
                         // Now update the bind group and add the new bind group command.
                         bind_group = expected_bind_group;
                         let cmd = RenderPassCommand::SetBindGroup {

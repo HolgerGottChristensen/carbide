@@ -1,9 +1,12 @@
 #![allow(unsafe_code)]
 
-use std::cell::{Cell, UnsafeCell};
+use std::cell::{Cell, RefCell, UnsafeCell};
 use std::cmp::Ordering;
 use std::fmt;
+use std::fmt::Debug;
 use std::ops::{Deref, DerefMut};
+
+use crate::__private::Formatter;
 
 type BorrowFlag = isize;
 
@@ -24,27 +27,52 @@ pub struct ValueCell<T: ?Sized> {
     value: UnsafeCell<T>,
 }
 
+impl<T: Debug> Debug for ValueCell<T> {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        f.debug_struct("InnerState")
+            .field("value", &*self.borrow())
+            .finish()
+    }
+}
+
 impl<T> ValueCell<T> {
     pub const fn new(value: T) -> ValueCell<T> {
-        ValueCell { value: UnsafeCell::new(value), borrow: Cell::new(UNUSED) }
+        ValueCell {
+            value: UnsafeCell::new(value),
+            borrow: Cell::new(UNUSED),
+        }
     }
 }
 
 impl<T: ?Sized> ValueCell<T> {
     pub fn borrow(&self) -> ValueRef<'_, T> {
+        self.try_borrow().expect("Already borrowed")
+    }
+
+    pub fn try_borrow(&self) -> Result<ValueRef<'_, T>, ()> {
         match BorrowRef::new(&self.borrow) {
             // SAFETY: `BorrowRef` ensures that there is only immutable access
             // to the value while borrowed.
-            Some(b) => ValueRef::CellBorrow { value: unsafe { &*self.value.get() }, borrow: b },
-            None => panic!("Already borrowed"),
+            Some(b) => Ok(ValueRef::CellBorrow {
+                value: unsafe { &*self.value.get() },
+                borrow: b,
+            }),
+            None => Err(()),
         }
     }
 
     pub fn borrow_mut(&self) -> ValueRefMut<'_, T> {
+        self.try_borrow_mut().expect("Already borrowed")
+    }
+
+    pub fn try_borrow_mut(&self) -> Result<ValueRefMut<'_, T>, ()> {
         match BorrowRefMut::new(&self.borrow) {
             // SAFETY: `BorrowRef` guarantees unique access.
-            Some(b) => ValueRefMut::CellBorrow { value: unsafe { &mut *self.value.get() }, borrow: b },
-            None => panic!("Already borrowed"),
+            Some(b) => Ok(ValueRefMut::CellBorrow {
+                value: unsafe { &mut *self.value.get() },
+                borrow: b,
+            }),
+            None => Err(()),
         }
     }
 }
@@ -146,15 +174,14 @@ impl Clone for BorrowRef<'_> {
         // a writing borrow.
         assert!(borrow != isize::MAX);
         self.borrow.set(borrow + 1);
-        BorrowRef { borrow: self.borrow }
+        BorrowRef {
+            borrow: self.borrow,
+        }
     }
 }
 
 pub enum ValueRef<'a, T: ?Sized + 'a> {
-    CellBorrow {
-        value: &'a T,
-        borrow: BorrowRef<'a>,
-    },
+    CellBorrow { value: &'a T, borrow: BorrowRef<'a> },
     Borrow(&'a T),
 }
 
@@ -164,12 +191,8 @@ impl<T: ?Sized> Deref for ValueRef<'_, T> {
     #[inline]
     fn deref(&self) -> &T {
         match *self {
-            ValueRef::CellBorrow { value, .. } => {
-                value
-            }
-            ValueRef::Borrow(value) => {
-                value
-            }
+            ValueRef::CellBorrow { value, .. } => value,
+            ValueRef::Borrow(value) => value,
         }
     }
 }
@@ -178,15 +201,11 @@ impl<'b, T: ?Sized> ValueRef<'b, T> {
     #[inline]
     pub fn clone(orig: &ValueRef<'b, T>) -> ValueRef<'b, T> {
         match orig {
-            ValueRef::CellBorrow { value, borrow } => {
-                ValueRef::CellBorrow {
-                    value: *value,
-                    borrow: borrow.clone(),
-                }
-            }
-            ValueRef::Borrow(value) => {
-                ValueRef::Borrow(*value)
-            }
+            ValueRef::CellBorrow { value, borrow } => ValueRef::CellBorrow {
+                value: *value,
+                borrow: borrow.clone(),
+            },
+            ValueRef::Borrow(value) => ValueRef::Borrow(*value),
         }
     }
 
@@ -196,15 +215,11 @@ impl<'b, T: ?Sized> ValueRef<'b, T> {
             F: FnOnce(&T) -> &U,
     {
         match orig {
-            ValueRef::CellBorrow { value, borrow } => {
-                ValueRef::CellBorrow {
-                    value: f(value),
-                    borrow,
-                }
-            }
-            ValueRef::Borrow(value) => {
-                ValueRef::Borrow(f(value))
-            }
+            ValueRef::CellBorrow { value, borrow } => ValueRef::CellBorrow {
+                value: f(value),
+                borrow,
+            },
+            ValueRef::Borrow(value) => ValueRef::Borrow(f(value)),
         }
     }
 }
@@ -212,12 +227,8 @@ impl<'b, T: ?Sized> ValueRef<'b, T> {
 impl<T: ?Sized + fmt::Display> fmt::Display for ValueRef<'_, T> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            ValueRef::CellBorrow { value, .. } => {
-                value.fmt(f)
-            }
-            ValueRef::Borrow(value) => {
-                value.fmt(f)
-            }
+            ValueRef::CellBorrow { value, .. } => value.fmt(f),
+            ValueRef::Borrow(value) => value.fmt(f),
         }
     }
 }
@@ -263,7 +274,9 @@ impl<'b> BorrowRefMut<'b> {
         // Prevent the borrow counter from underflowing.
         assert!(borrow != isize::MIN);
         self.borrow.set(borrow - 1);
-        BorrowRefMut { borrow: self.borrow }
+        BorrowRefMut {
+            borrow: self.borrow,
+        }
     }
 }
 
@@ -275,7 +288,6 @@ pub enum ValueRefMut<'a, T: ?Sized + 'a> {
     Borrow(&'a mut T),
 }
 
-
 impl<'b, T: ?Sized> ValueRefMut<'b, T> {
     #[inline]
     pub fn map<U: ?Sized, F>(orig: ValueRefMut<'b, T>, f: F) -> ValueRefMut<'b, U>
@@ -283,15 +295,11 @@ impl<'b, T: ?Sized> ValueRefMut<'b, T> {
             F: FnOnce(&mut T) -> &mut U,
     {
         match orig {
-            ValueRefMut::CellBorrow { value, borrow } => {
-                ValueRefMut::CellBorrow {
-                    value: f(value),
-                    borrow,
-                }
-            }
-            ValueRefMut::Borrow(value) => {
-                ValueRefMut::Borrow(f(value))
-            }
+            ValueRefMut::CellBorrow { value, borrow } => ValueRefMut::CellBorrow {
+                value: f(value),
+                borrow,
+            },
+            ValueRefMut::Borrow(value) => ValueRefMut::Borrow(f(value)),
         }
     }
 }
@@ -302,12 +310,8 @@ impl<T: ?Sized> Deref for ValueRefMut<'_, T> {
     #[inline]
     fn deref(&self) -> &T {
         match self {
-            ValueRefMut::CellBorrow { value, .. } => {
-                *value
-            }
-            ValueRefMut::Borrow(value) => {
-                *value
-            }
+            ValueRefMut::CellBorrow { value, .. } => *value,
+            ValueRefMut::Borrow(value) => *value,
         }
     }
 }
@@ -316,12 +320,8 @@ impl<T: ?Sized> DerefMut for ValueRefMut<'_, T> {
     #[inline]
     fn deref_mut(&mut self) -> &mut T {
         match self {
-            ValueRefMut::CellBorrow { value, .. } => {
-                *value
-            }
-            ValueRefMut::Borrow(value) => {
-                *value
-            }
+            ValueRefMut::CellBorrow { value, .. } => *value,
+            ValueRefMut::Borrow(value) => *value,
         }
     }
 }
@@ -329,12 +329,8 @@ impl<T: ?Sized> DerefMut for ValueRefMut<'_, T> {
 impl<T: ?Sized + fmt::Display> fmt::Display for ValueRefMut<'_, T> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            ValueRefMut::CellBorrow { value, .. } => {
-                value.fmt(f)
-            }
-            ValueRefMut::Borrow(value) => {
-                value.fmt(f)
-            }
+            ValueRefMut::CellBorrow { value, .. } => value.fmt(f),
+            ValueRefMut::Borrow(value) => value.fmt(f),
         }
     }
 }

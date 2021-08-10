@@ -38,13 +38,15 @@ impl Font {
         self.font_id
     }
 
-    pub fn get_glyph_raster_image(&self, character: char, font_size: FontSize) -> Option<DynamicImage> {
+    pub fn get_glyph_raster_image(
+        &self,
+        character: char,
+        font_size: FontSize,
+    ) -> Option<DynamicImage> {
         let face = self.font.inner();
         if let Some(id) = face.glyph_index(character) {
             let raster_image = face.glyph_raster_image(id, font_size as u16);
-            raster_image.map(|raster| {
-                image::load_from_memory(raster.data).unwrap()
-            })
+            raster_image.map(|raster| image::load_from_memory(raster.data).unwrap())
         } else {
             None
         }
@@ -55,25 +57,44 @@ impl Font {
     }
 
     pub fn get_glyph_id(&self, c: char) -> Option<GlyphId> {
-        self.font.inner().glyph_index(c).map(|ttf_parser::GlyphId(id)| GlyphId(id))
+        self.font
+            .inner()
+            .glyph_index(c)
+            .map(|ttf_parser::GlyphId(id)| GlyphId(id))
     }
 
     pub fn is_bitmap(&self) -> bool {
         self.bitmap_font
     }
 
-    pub fn get_glyph_raster_image_from_id(&self, id: GlyphId, font_size: FontSize, scale_factor: Scalar) -> Option<DynamicImage> {
+    pub fn get_glyph_raster_image_from_id(
+        &self,
+        id: GlyphId,
+        font_size: FontSize,
+        scale_factor: Scalar,
+    ) -> Option<DynamicImage> {
         let face = self.font.inner();
-        let raster_image = face.glyph_raster_image(ttf_parser::GlyphId(id.0), (font_size as f64 * scale_factor) as u16);
-        raster_image.map(|raster| {
-            image::load_from_memory(raster.data).unwrap()
-        })
+        let raster_image = face.glyph_raster_image(
+            ttf_parser::GlyphId(id.0),
+            (font_size as f64 * scale_factor) as u16,
+        );
+        raster_image.map(|raster| image::load_from_memory(raster.data).unwrap())
     }
 
     /// This will return None if the glyph has no boundingbox, for example the ' ' space character
-    pub fn get_glyph_image_from_id(&self, id: GlyphId, font_size: FontSize, scale_factor: Scalar, position_offset: Position) -> Option<DynamicImage> {
+    pub fn get_glyph_image_from_id(
+        &self,
+        id: GlyphId,
+        font_size: FontSize,
+        scale_factor: Scalar,
+        position_offset: Position,
+    ) -> Option<DynamicImage> {
         let scale = Font::size_to_scale(font_size, scale_factor);
-        let positioned_glyph = self.get_inner().glyph(id).scaled(scale).positioned(point(position_offset.x as f32, position_offset.y as f32));
+        let positioned_glyph = self
+            .get_inner()
+            .glyph(id)
+            .scaled(scale)
+            .positioned(point(position_offset.x as f32, position_offset.y as f32));
         if let Some(bb) = positioned_glyph.pixel_bounding_box() {
             let mut image_data = DynamicImage::new_rgba8(bb.width() as u32, bb.height() as u32);
             positioned_glyph.draw(|x, y, value| {
@@ -94,7 +115,12 @@ impl Font {
         Font::f32_pt_to_scale(font_size as f32 * scale_factor as f32)
     }
 
-    pub fn get_glyph(&self, c: char, font_size: FontSize, scale_factor: Scalar) -> Option<(Scalar, Glyph)> {
+    pub fn get_glyph(
+        &self,
+        c: char,
+        font_size: FontSize,
+        scale_factor: Scalar,
+    ) -> Option<(Scalar, Glyph)> {
         println!("Looking up glyph for char: {} in font: {}", c, self.path);
         let glyph_id = self.get_glyph_id(c);
 
@@ -103,18 +129,30 @@ impl Font {
             let glyph_scaled = self.font.glyph(id).scaled(scale);
             let w = glyph_scaled.h_metrics().advance_width;
             let positioned = glyph_scaled.positioned(point(0.0, 0.0));
-            (w as f64, Glyph::from((font_size, self.font_id, positioned, self.bitmap_font)))
+            (
+                w as f64,
+                Glyph::from((font_size, self.font_id, positioned, self.bitmap_font)),
+            )
         })
     }
 
-    pub fn get_glyphs(&self, text: &str, font_size: FontSize, scale_factor: Scalar, env: &mut Environment) -> (Vec<Scalar>, Vec<Glyph>) {
+    pub fn get_glyphs(
+        &self,
+        text: &str,
+        font_size: FontSize,
+        scale_factor: Scalar,
+        env: &mut Environment,
+    ) -> (Vec<Scalar>, Vec<Glyph>) {
         let scale = Font::size_to_scale(font_size, scale_factor);
         let mut next_width = 0.0;
         let mut widths = vec![];
         let mut glyphs = vec![];
         let mut last = None;
 
-        let glyph_ids = text.chars().map(|c| self.get_glyph_id(c).ok_or(c)).collect::<Vec<_>>();
+        let glyph_ids = text
+            .chars()
+            .map(|c| self.get_glyph_id(c).ok_or(c))
+            .collect::<Vec<_>>();
 
         for glyph_id in glyph_ids {
             match glyph_id {
@@ -133,7 +171,12 @@ impl Font {
                     let next = glyph_scaled.positioned(point(0.0, 0.0));
                     last = Some(next.id());
                     next_width += w as f64;
-                    glyphs.push(Glyph::from((font_size, self.font_id, next, self.bitmap_font)));
+                    glyphs.push(Glyph::from((
+                        font_size,
+                        self.font_id,
+                        next,
+                        self.bitmap_font,
+                    )));
                 }
                 Err(c) => {
                     // Font fallback
@@ -148,7 +191,7 @@ impl Font {
                     widths.push(width);
                 }
             }
-        };
+        }
         // Widths are pushed such that they contain the width and the kerning between itself and the
         // next character. If its the last, we push here.
         if let Some(_) = last {
@@ -206,7 +249,8 @@ impl Font {
 impl Font {
     /// Load a single `Font` from a file at the given path.
     pub fn from_file<P>(path: P) -> Result<Self, Error>
-        where P: AsRef<std::path::Path>
+        where
+            P: AsRef<std::path::Path>,
     {
         use std::io::Read;
         let path = path.as_ref();
@@ -226,7 +270,8 @@ impl Font {
 
     /// Load a single `Font` from a file at the given path.
     pub fn from_file_bitmap<P>(path: P) -> Result<Self, Error>
-        where P: AsRef<std::path::Path>
+        where
+            P: AsRef<std::path::Path>,
     {
         use std::io::Read;
         let path = path.as_ref();
@@ -322,7 +367,10 @@ fn load_bitmap_font() {
     let scaled_glyph = glyph.scaled(scale);
     let positioned_glyph = scaled_glyph.positioned(point(0.0, 20.0));
     println!("Positioned bb: {:?}", positioned_glyph.pixel_bounding_box());
-    println!("Exact bb: {:?}", positioned_glyph.unpositioned().exact_bounding_box());
+    println!(
+        "Exact bb: {:?}",
+        positioned_glyph.unpositioned().exact_bounding_box()
+    );
     println!("Glyph id: {:?}", positioned_glyph.id());
 
     //let image = font.get_glyph_raster_image(test_char, 64).unwrap();

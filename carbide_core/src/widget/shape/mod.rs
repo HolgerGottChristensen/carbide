@@ -4,7 +4,10 @@ use std::fmt::Debug;
 
 use lyon::lyon_tessellation::path::path::Builder;
 use lyon::math::Rect;
-use lyon::tessellation::{BuffersBuilder, FillOptions, FillTessellator, FillVertex, Side, StrokeOptions, StrokeTessellator, StrokeVertex, VertexBuffers};
+use lyon::tessellation::{
+    BuffersBuilder, FillOptions, FillTessellator, FillVertex, Side, StrokeOptions,
+    StrokeTessellator, StrokeVertex, VertexBuffers,
+};
 use lyon::tessellation::path::Path;
 
 pub use capsule::*;
@@ -21,11 +24,11 @@ use crate::widget::types::ShapeStyle;
 use crate::widget::types::StrokeStyle;
 use crate::widget::types::TriangleStore;
 
+mod capsule;
+mod circle;
 mod ellipse;
 mod rectangle;
 mod rounded_rectangle;
-mod capsule;
-mod circle;
 
 pub trait Shape: Widget + 'static {
     fn get_triangle_store_mut(&mut self) -> &mut TriangleStore;
@@ -35,9 +38,7 @@ pub trait Shape: Widget + 'static {
         let mut primitives = self.get_primitives(env);
         if primitives.len() >= 1 {
             match primitives.remove(0).kind {
-                PrimitiveKind::TrianglesSingleColor { triangles, .. } => {
-                    triangles
-                }
+                PrimitiveKind::TrianglesSingleColor { triangles, .. } => triangles,
                 _ => {
                     panic!("Can only return triangles of PrimitiveKind::TrianglesSingleColor. This error might happen if you use a rectangle with content.")
                 }
@@ -91,21 +92,24 @@ pub fn fill(path: &dyn Fn(&mut Builder, &Rect), shape: &mut dyn Shape, rectangle
 
         let fill_options = FillOptions::default();
 
-
         {
             // Compute the tessellation.
-            tessellator.tessellate_path(
-                &path,
-                &fill_options,
-                &mut BuffersBuilder::new(&mut geometry, |vertex: FillVertex| {
-                    let point = vertex.position().to_array();
-                    Position::new(point[0] as Scalar, point[1] as Scalar)
-                }),
-            ).unwrap();
+            tessellator
+                .tessellate_path(
+                    &path,
+                    &fill_options,
+                    &mut BuffersBuilder::new(&mut geometry, |vertex: FillVertex| {
+                        let point = vertex.position().to_array();
+                        Position::new(point[0] as Scalar, point[1] as Scalar)
+                    }),
+                )
+                .unwrap();
         }
 
-
-        let point_iter = geometry.indices.iter().map(|index| geometry.vertices[*index as usize]);
+        let point_iter = geometry
+            .indices
+            .iter()
+            .map(|index| geometry.vertices[*index as usize]);
 
         let points: Vec<Position> = point_iter.collect();
 
@@ -147,18 +151,22 @@ pub fn stroke(path: &dyn Fn(&mut Builder, &Rect), shape: &mut dyn Shape, rectang
 
             {
                 // Compute the tessellation.
-                tessellator.tessellate_path(
-                    &path,
-                    &fill_options,
-                    &mut BuffersBuilder::new(&mut geometry, |vertex: FillVertex| {
-                        let point = vertex.position().to_array();
-                        Position::new(point[0] as Scalar, point[1] as Scalar)
-                    }),
-                ).unwrap();
+                tessellator
+                    .tessellate_path(
+                        &path,
+                        &fill_options,
+                        &mut BuffersBuilder::new(&mut geometry, |vertex: FillVertex| {
+                            let point = vertex.position().to_array();
+                            Position::new(point[0] as Scalar, point[1] as Scalar)
+                        }),
+                    )
+                    .unwrap();
             }
 
-
-            let point_iter = geometry.indices.iter().map(|index| geometry.vertices[*index as usize]);
+            let point_iter = geometry
+                .indices
+                .iter()
+                .map(|index| geometry.vertices[*index as usize]);
 
             point_iter.collect()
         };
@@ -179,24 +187,29 @@ pub fn stroke(path: &dyn Fn(&mut Builder, &Rect), shape: &mut dyn Shape, rectang
 
         {
             // Compute the tessellation.
-            tessellator.tessellate_path(
-                &path,
-                &stroke_options,
-                &mut BuffersBuilder::new(&mut geometry, |vertex: StrokeVertex| {
-                    let point = vertex.position().to_array();
-                    let point = Position::new(point[0] as Scalar, point[1] as Scalar);
-                    if vertex.side() == Side::Left {
-                        point
-                    } else {
-                        let p = point;
+            tessellator
+                .tessellate_path(
+                    &path,
+                    &stroke_options,
+                    &mut BuffersBuilder::new(&mut geometry, |vertex: StrokeVertex| {
+                        let point = vertex.position().to_array();
+                        let point = Position::new(point[0] as Scalar, point[1] as Scalar);
+                        if vertex.side() == Side::Left {
+                            point
+                        } else {
+                            let p = point;
 
-                        get_closest_point(p, &filled_points)
-                    }
-                }),
-            ).unwrap();
+                            get_closest_point(p, &filled_points)
+                        }
+                    }),
+                )
+                .unwrap();
         }
 
-        let point_iter = geometry.indices.iter().map(|index| geometry.vertices[*index as usize]);
+        let point_iter = geometry
+            .indices
+            .iter()
+            .map(|index| geometry.vertices[*index as usize]);
 
         let points: Vec<Position> = point_iter.collect();
 

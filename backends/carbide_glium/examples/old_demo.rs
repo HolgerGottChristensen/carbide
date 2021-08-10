@@ -7,16 +7,19 @@
 //! check the current `Theme` within the `Ui` and retrieve defaults from there.
 //!
 
-#[macro_use] extern crate carbide_core;
+#[macro_use]
+extern crate carbide_core;
 extern crate carbide_glium;
-#[macro_use] extern crate carbide_winit;
+#[macro_use]
+extern crate carbide_winit;
 extern crate find_folder;
 extern crate glium;
-extern crate rand; // for making a random color.
-
-mod support;
+extern crate rand;
+// for making a random color.
 
 use glium::Surface;
+
+mod support;
 
 /// This struct holds all of the variables used to demonstrate application data being passed
 /// through the widgets. If some of these seem strange, that's because they are! Most of these
@@ -55,7 +58,6 @@ struct DemoApp {
 }
 
 impl DemoApp {
-
     /// Constructor for the Demonstration Application model.
     fn new() -> DemoApp {
         DemoApp {
@@ -65,34 +67,44 @@ impl DemoApp {
             title_pad: 350.0,
             v_slider_height: 230.0,
             border_width: 1.0,
-            bool_matrix: [ [true, true, true, true, true, true, true, true],
-                           [true, false, false, false, false, false, false, true],
-                           [true, false, true, false, true, true, true, true],
-                           [true, false, true, false, true, true, true, true],
-                           [true, false, false, false, true, true, true, true],
-                           [true, true, true, true, true, true, true, true],
-                           [true, true, false, true, false, false, false, true],
-                           [true, true, true, true, true, true, true, true] ],
-            ddl_colors: vec!["Black".to_string(),
-                              "White".to_string(),
-                              "Red".to_string(),
-                              "Green".to_string(),
-                              "Blue".to_string()],
+            bool_matrix: [
+                [true, true, true, true, true, true, true, true],
+                [true, false, false, false, false, false, false, true],
+                [true, false, true, false, true, true, true, true],
+                [true, false, true, false, true, true, true, true],
+                [true, false, false, false, true, true, true, true],
+                [true, true, true, true, true, true, true, true],
+                [true, true, false, true, false, false, false, true],
+                [true, true, true, true, true, true, true, true],
+            ],
+            ddl_colors: vec![
+                "Black".to_string(),
+                "White".to_string(),
+                "Red".to_string(),
+                "Green".to_string(),
+                "Blue".to_string(),
+            ],
             ddl_color: carbide_core::color::PURPLE,
             selected_idx: None,
             circle_pos: [-50.0, 110.0],
-            envelopes: vec![(vec![ [0.0, 0.0],
-                                   [0.1, 17000.0],
-                                   [0.25, 8000.0],
-                                   [0.5, 2000.0],
-                                   [1.0, 0.0], ], "Envelope A".to_string()),
-                            (vec![ [0.0, 0.85],
-                                   [0.3, 0.2],
-                                   [0.6, 0.6],
-                                   [1.0, 0.0], ], "Envelope B".to_string())],
+            envelopes: vec![
+                (
+                    vec![
+                        [0.0, 0.0],
+                        [0.1, 17000.0],
+                        [0.25, 8000.0],
+                        [0.5, 2000.0],
+                        [1.0, 0.0],
+                    ],
+                    "Envelope A".to_string(),
+                ),
+                (
+                    vec![[0.0, 0.85], [0.3, 0.2], [0.6, 0.6], [1.0, 0.0]],
+                    "Envelope B".to_string(),
+                ),
+            ],
         }
     }
-
 }
 
 fn main() {
@@ -117,7 +129,9 @@ fn main() {
     let mut ids = Ids::new(ui.widget_id_generator());
 
     // Add a `Font` to the `Ui`'s `font::Map` from file.
-    let assets = find_folder::Search::KidsThenParents(3, 5).for_folder("assets").unwrap();
+    let assets = find_folder::Search::KidsThenParents(3, 5)
+        .for_folder("assets")
+        .unwrap();
     let font_path = assets.join("fonts/NotoSans/NotoSans-Regular.ttf");
     ui.fonts.insert_from_file(font_path).unwrap();
 
@@ -134,10 +148,8 @@ fn main() {
     // Poll events from the window.
     let mut event_loop = support::EventLoop::new();
     'main: loop {
-
         // Handle all events.
         for event in event_loop.next(&mut events_loop) {
-
             // Use the `winit` backend feature to convert the winit event to a carbide one.
             if let Some(event) = support::convert_event(event.clone(), &display) {
                 ui.handle_event(event);
@@ -147,9 +159,10 @@ fn main() {
             match event {
                 glium::glutin::Event::WindowEvent { event, .. } => match event {
                     // Break from the loop upon `Escape`.
-                    glium::glutin::WindowEvent::CloseRequested |
-                    glium::glutin::WindowEvent::KeyboardInput {
-                        input: glium::glutin::KeyboardInput {
+                    glium::glutin::WindowEvent::CloseRequested
+                    | glium::glutin::WindowEvent::KeyboardInput {
+                        input:
+                        glium::glutin::KeyboardInput {
                             virtual_keycode: Some(glium::glutin::VirtualKeyCode::Escape),
                             ..
                         },
@@ -177,7 +190,6 @@ fn main() {
         }
     }
 }
-
 
 // In carbide, each widget must have its own unique identifier so that the `Ui` can keep track of
 // its state between updates.
@@ -210,7 +222,6 @@ widget_ids! {
     }
 }
 
-
 /// Set all `Widget`s within the User Interface.
 ///
 /// The first time this gets called, each `Widget`'s `State` will be initialised and cached within
@@ -218,7 +229,9 @@ widget_ids! {
 /// allocations by updating the pre-existing cached state. A new graphical `Element` is only
 /// retrieved from a `Widget` in the case that it's `State` has changed in some way.
 fn set_widgets(ui: &mut carbide_core::UiCell, app: &mut DemoApp, ids: &mut Ids) {
-    use carbide_core::{color, widget, Colorable, Borderable, Labelable, Positionable, Sizeable, OldWidget};
+    use carbide_core::{
+        color, widget, Borderable, Colorable, Labelable, OldWidget, Positionable, Sizeable,
+    };
 
     // We can use this `Canvas` as a parent Widget upon which we can place other widgets.
     widget::Canvas::new()
@@ -227,8 +240,12 @@ fn set_widgets(ui: &mut carbide_core::UiCell, app: &mut DemoApp, ids: &mut Ids) 
         .color(app.bg_color)
         .scroll_kids()
         .set(ids.canvas, ui);
-    widget::Scrollbar::x_axis(ids.canvas).auto_hide(true).set(ids.canvas_y_scrollbar, ui);
-    widget::Scrollbar::y_axis(ids.canvas).auto_hide(true).set(ids.canvas_x_scrollbar, ui);
+    widget::Scrollbar::x_axis(ids.canvas)
+        .auto_hide(true)
+        .set(ids.canvas_y_scrollbar, ui);
+    widget::Scrollbar::y_axis(ids.canvas)
+        .auto_hide(true)
+        .set(ids.canvas_x_scrollbar, ui);
 
     // Text example.
     widget::Text::new("Widget Demonstration")
@@ -238,7 +255,6 @@ fn set_widgets(ui: &mut carbide_core::UiCell, app: &mut DemoApp, ids: &mut Ids) 
         .set(ids.title, ui);
 
     if app.show_button {
-
         // Button widget example button.
         if widget::Button::new()
             .w_h(200.0, 50.0)
@@ -252,12 +268,9 @@ fn set_widgets(ui: &mut carbide_core::UiCell, app: &mut DemoApp, ids: &mut Ids) 
         {
             app.bg_color = color::rgb(rand::random(), rand::random(), rand::random())
         }
-
     }
-
     // Horizontal slider example.
     else {
-
         // Create the label for the slider.
         let label = format!("Padding: {}", app.title_pad as i16);
 
@@ -274,11 +287,14 @@ fn set_widgets(ui: &mut carbide_core::UiCell, app: &mut DemoApp, ids: &mut Ids) 
         {
             app.title_pad = new_pad;
         }
-
     }
 
     // Keep track of the currently shown widget.
-    let shown_widget = if app.show_button { ids.button } else { ids.title_pad_slider };
+    let shown_widget = if app.show_button {
+        ids.button
+    } else {
+        ids.title_pad_slider
+    };
 
     // Toggle widget example.
     if let Some(value) = widget::Toggle::new(app.show_button)
@@ -294,7 +310,7 @@ fn set_widgets(ui: &mut carbide_core::UiCell, app: &mut DemoApp, ids: &mut Ids) 
         app.show_button = value;
         app.toggle_label = match value {
             true => "ON".to_string(),
-            false => "OFF".to_string()
+            false => "OFF".to_string(),
         }
     }
 
@@ -317,8 +333,20 @@ fn set_widgets(ui: &mut carbide_core::UiCell, app: &mut DemoApp, ids: &mut Ids) 
     }
 
     color_slider!(red_slider, red, color::rgb(0.75, 0.3, 0.3), set_red, down);
-    color_slider!(green_slider, green, color::rgb(0.3, 0.75, 0.3), set_green, right);
-    color_slider!(blue_slider, blue, color::rgb(0.3, 0.3, 0.75), set_blue, right);
+    color_slider!(
+        green_slider,
+        green,
+        color::rgb(0.3, 0.75, 0.3),
+        set_green,
+        right
+    );
+    color_slider!(
+        blue_slider,
+        blue,
+        color::rgb(0.3, 0.3, 0.75),
+        set_blue,
+        right
+    );
 
     // Number Dialer widget example. (value, min, max, precision)
     for new_height in widget::NumberDialer::new(app.v_slider_height, 25.0, 250.0, 1)
@@ -363,7 +391,7 @@ fn set_widgets(ui: &mut carbide_core::UiCell, app: &mut DemoApp, ids: &mut Ids) 
             0.5 + (elem.col as f32 / cols as f32) / 2.0,
             0.75,
             1.0 - (elem.row as f32 / rows as f32) / 2.0,
-            1.0
+            1.0,
         );
 
         // We can use `Element`s to instantiate any kind of widget we like.
@@ -394,16 +422,22 @@ fn set_widgets(ui: &mut carbide_core::UiCell, app: &mut DemoApp, ids: &mut Ids) 
         app.ddl_color = match &app.ddl_colors[selected_idx][..] {
             "Black" => color::BLACK,
             "White" => color::WHITE,
-            "Red"   => color::RED,
+            "Red" => color::RED,
             "Green" => color::GREEN,
-            "Blue"  => color::BLUE,
-            _       => color::PURPLE,
+            "Blue" => color::BLUE,
+            _ => color::PURPLE,
         }
     }
 
     // Draw an xy_pad.
-    for (x, y) in widget::XYPad::new(app.circle_pos[0], -75.0, 75.0, // x range.
-                                     app.circle_pos[1], 95.0, 245.0) // y range.
+    for (x, y) in widget::XYPad::new(
+        app.circle_pos[0],
+        -75.0,
+        75.0, // x range.
+        app.circle_pos[1],
+        95.0,
+        245.0,
+    ) // y range.
         .w_h(150.0, 150.0)
         .right_from(ids.toggle_matrix, 30.0)
         .align_bottom_of(ids.toggle_matrix) // Align to the bottom of the last toggle_matrix element.

@@ -21,9 +21,7 @@ impl CalculatorButton {
     pub fn new(display: Box<dyn Widget<CalculatorState>>) -> Box<CalculatorButton> {
         Box::new(CalculatorButton {
             id: Uuid::new_v4(),
-            child: Rectangle::new(vec![
-                display
-            ]).fill(rgb_bytes(76, 0, 19)),
+            child: Rectangle::new(vec![display]).fill(rgb_bytes(76, 0, 19)),
             position: [0.0, 0.0],
             dimension: [0.0, 0.0],
             function: None,
@@ -35,18 +33,22 @@ impl CalculatorButton {
         Box::new(self)
     }
 
-    fn handle_mouse_event(&mut self, event: &MouseEvent, _consumed: &bool, _: &mut Environment<CalculatorState>, global_state: &mut CalculatorState) {
-        if !self.is_inside(event.get_current_mouse_position()) { return }
+    fn handle_mouse_event(
+        &mut self,
+        event: &MouseEvent,
+        _consumed: &bool,
+        _: &mut Environment<CalculatorState>,
+        global_state: &mut CalculatorState,
+    ) {
+        if !self.is_inside(event.get_current_mouse_position()) {
+            return;
+        }
         match event {
-            MouseEvent::Release(_, _, _) => {
-                match self.function {
-                    None => {}
-                    Some(f) => {
-                        f(self, global_state)
-                    }
-                }
-            }
-            _ => ()
+            MouseEvent::Release(_, _, _) => match self.function {
+                None => {}
+                Some(f) => f(self, global_state),
+            },
+            _ => (),
         }
     }
 }
@@ -104,7 +106,6 @@ impl CommonWidget<CalculatorState> for CalculatorButton {
         self.dimension = dimension
     }
 }
-
 
 impl ChildRender for CalculatorButton {}
 

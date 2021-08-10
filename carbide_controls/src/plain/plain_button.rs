@@ -9,26 +9,41 @@ use carbide_core::widget::*;
 #[derive(Clone, Widget)]
 #[event(handle_keyboard_event, handle_mouse_event)]
 #[focusable]
-pub struct PlainButton<T, GS> where GS: GlobalStateContract, T: StateContract + 'static {
+pub struct PlainButton<T, GS>
+    where
+        GS: GlobalStateContract,
+        T: StateContract + 'static,
+{
     id: Id,
-    #[state] focus: FocusState<GS>,
+    #[state]
+    focus: FocusState<GS>,
     child: Box<dyn Widget<GS>>,
     position: Point,
     dimension: Dimensions,
     on_click: Option<fn(myself: &mut Self, env: &mut Environment<GS>, global_state: &mut GS)>,
-    on_click_outside: Option<fn(myself: &mut Self, env: &mut Environment<GS>, global_state: &mut GS)>,
-    #[state] is_hovered: BoolState<GS>,
-    #[state] is_pressed: BoolState<GS>,
-    #[state] local_state: TState<T, GS>,
+    on_click_outside:
+    Option<fn(myself: &mut Self, env: &mut Environment<GS>, global_state: &mut GS)>,
+    #[state]
+    is_hovered: BoolState<GS>,
+    #[state]
+    is_pressed: BoolState<GS>,
+    #[state]
+    local_state: TState<T, GS>,
 }
 
 impl<T: StateContract + 'static, GS: GlobalStateContract> PlainButton<T, GS> {
-    pub fn on_click(mut self, fire: fn(myself: &mut Self, env: &mut Environment<GS>, global_state: &mut GS)) -> Box<Self> {
+    pub fn on_click(
+        mut self,
+        fire: fn(myself: &mut Self, env: &mut Environment<GS>, global_state: &mut GS),
+    ) -> Box<Self> {
         self.on_click = Some(fire);
         Box::new(self)
     }
 
-    pub fn on_click_outside(mut self, fire: fn(myself: &mut Self, env: &mut Environment<GS>, global_state: &mut GS)) -> Box<Self> {
+    pub fn on_click_outside(
+        mut self,
+        fire: fn(myself: &mut Self, env: &mut Environment<GS>, global_state: &mut GS),
+    ) -> Box<Self> {
         self.on_click_outside = Some(fire);
         Box::new(self)
     }
@@ -72,7 +87,13 @@ impl<T: StateContract + 'static, GS: GlobalStateContract> PlainButton<T, GS> {
         })
     }
 
-    fn handle_mouse_event(&mut self, event: &MouseEvent, _: &bool, env: &mut Environment<GS>, global_state: &mut GS) {
+    fn handle_mouse_event(
+        &mut self,
+        event: &MouseEvent,
+        _: &bool,
+        env: &mut Environment<GS>,
+        global_state: &mut GS,
+    ) {
         match event {
             MouseEvent::Press(MouseButton::Left, mouse_position, _) => {
                 if self.is_inside(*mouse_position) {
@@ -96,8 +117,8 @@ impl<T: StateContract + 'static, GS: GlobalStateContract> PlainButton<T, GS> {
                     }
                 }
             }
-            MouseEvent::Click(MouseButton::Left, mouse_position, _) |
-            MouseEvent::NClick(MouseButton::Left, mouse_position, _, _) => {
+            MouseEvent::Click(MouseButton::Left, mouse_position, _)
+            | MouseEvent::NClick(MouseButton::Left, mouse_position, _, _) => {
                 if self.is_inside(*mouse_position) {
                     if let Some(action) = self.on_click {
                         action(self, env, global_state);
@@ -108,12 +129,19 @@ impl<T: StateContract + 'static, GS: GlobalStateContract> PlainButton<T, GS> {
                     }
                 }
             }
-            _ => ()
+            _ => (),
         }
     }
 
-    fn handle_keyboard_event(&mut self, event: &KeyboardEvent, env: &mut Environment<GS>, global_state: &mut GS) {
-        if self.get_focus() != Focus::Focused { return }
+    fn handle_keyboard_event(
+        &mut self,
+        event: &KeyboardEvent,
+        env: &mut Environment<GS>,
+        global_state: &mut GS,
+    ) {
+        if self.get_focus() != Focus::Focused {
+            return;
+        }
 
         match event {
             KeyboardEvent::Click(Key::Return, _) => {
@@ -122,7 +150,7 @@ impl<T: StateContract + 'static, GS: GlobalStateContract> PlainButton<T, GS> {
                     //self.set_focus_and_request(Focus::FocusReleased, env);
                 }
             }
-            _ => ()
+            _ => (),
         }
     }
 }
@@ -209,6 +237,5 @@ impl<T: StateContract, GS: GlobalStateContract> Layout<GS> for PlainButton<T, GS
         }
     }
 }
-
 
 impl<T: StateContract + 'static, GS: GlobalStateContract> WidgetExt<GS> for PlainButton<T, GS> {}

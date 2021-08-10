@@ -11,16 +11,15 @@ pub use mouse_event::MouseEventHandler;
 pub use other_event::OtherEventHandler;
 pub use touch::*;
 
+mod button;
 mod event;
 mod event_handler;
 mod input;
-mod button;
-mod modifier_key;
 mod key;
-mod mouse_button;
-mod touch;
-mod motion;
 mod keyboard_event;
+mod modifier_key;
+mod motion;
+mod mouse_button;
 mod mouse_event;
 mod other_event;
-
+mod touch;

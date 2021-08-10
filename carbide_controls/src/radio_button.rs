@@ -7,15 +7,27 @@ use carbide_core::widget::*;
 use crate::PlainRadioButton;
 
 #[derive(Clone, Widget)]
-pub struct RadioButton<T, GS> where GS: GlobalStateContract, T: Serialize + Clone + Debug + Default + DeserializeOwned + PartialEq + 'static {
+pub struct RadioButton<T, GS>
+    where
+        GS: GlobalStateContract,
+        T: Serialize + Clone + Debug + Default + DeserializeOwned + PartialEq + 'static,
+{
     id: Id,
     child: PlainRadioButton<T, GS>,
     position: Point,
     dimension: Dimensions,
 }
 
-impl<T: Serialize + Clone + Debug + Default + DeserializeOwned + PartialEq + 'static, GS: GlobalStateContract> RadioButton<T, GS> {
-    pub fn new<S: Into<StringState<GS>>, L: Into<TState<T, GS>>>(label: S, reference: T, local_state: L) -> Box<Self> {
+impl<
+    T: Serialize + Clone + Debug + Default + DeserializeOwned + PartialEq + 'static,
+    GS: GlobalStateContract,
+> RadioButton<T, GS>
+{
+    pub fn new<S: Into<StringState<GS>>, L: Into<TState<T, GS>>>(
+        label: S,
+        reference: T,
+        local_state: L,
+    ) -> Box<Self> {
         let mut child = *PlainRadioButton::new(label, reference, local_state);
 
         child = *child.delegate(|focus_state, selected_state, button: Box<dyn Widget<GS>>| {
@@ -23,39 +35,41 @@ impl<T: Serialize + Clone + Debug + Default + DeserializeOwned + PartialEq + 'st
                 focus_state,
                 EnvironmentColor::OpaqueSeparator,
                 EnvironmentColor::Accent,
-            ).mapped(|(focus, primary_color, focus_color)| {
-                if focus == &Focus::Focused {
-                    *focus_color
-                } else {
-                    *primary_color
-                }
-            });
+            )
+                .mapped(|(focus, primary_color, focus_color)| {
+                    if focus == &Focus::Focused {
+                        *focus_color
+                    } else {
+                        *primary_color
+                    }
+                });
 
             let selected_color = TupleState3::new(
                 selected_state.clone(),
                 EnvironmentColor::SecondarySystemBackground,
                 EnvironmentColor::Accent,
-            ).mapped(|(selected, primary_color, selected_color)| {
-                if *selected {
-                    *selected_color
-                } else {
-                    *primary_color
-                }
-            });
+            )
+                .mapped(|(selected, primary_color, selected_color)| {
+                    if *selected {
+                        *selected_color
+                    } else {
+                        *primary_color
+                    }
+                });
 
             ZStack::initialize(vec![
                 Ellipse::new()
                     .fill(selected_color)
                     .stroke(focus_color)
                     .stroke_style(1.0),
-                IfElse::new(selected_state)
-                    .when_true(
-                        Ellipse::new()
-                            .fill(EnvironmentColor::DarkText)
-                            .frame(6.0, 6.0)
-                    ),
+                IfElse::new(selected_state).when_true(
+                    Ellipse::new()
+                        .fill(EnvironmentColor::DarkText)
+                        .frame(6.0, 6.0),
+                ),
                 button,
-            ]).frame(16.0, 16.0)
+            ])
+                .frame(16.0, 16.0)
         });
 
         Box::new(RadioButton {
@@ -67,7 +81,11 @@ impl<T: Serialize + Clone + Debug + Default + DeserializeOwned + PartialEq + 'st
     }
 }
 
-impl<T: Serialize + Clone + Debug + Default + DeserializeOwned + PartialEq + 'static, GS: GlobalStateContract> CommonWidget<GS> for RadioButton<T, GS> {
+impl<
+    T: Serialize + Clone + Debug + Default + DeserializeOwned + PartialEq + 'static,
+    GS: GlobalStateContract,
+> CommonWidget<GS> for RadioButton<T, GS>
+{
     fn id(&self) -> Id {
         self.id
     }
@@ -113,9 +131,17 @@ impl<T: Serialize + Clone + Debug + Default + DeserializeOwned + PartialEq + 'st
     }
 }
 
-impl<T: Serialize + Clone + Debug + Default + DeserializeOwned + PartialEq + 'static, GS: GlobalStateContract> ChildRender for RadioButton<T, GS> {}
+impl<
+    T: Serialize + Clone + Debug + Default + DeserializeOwned + PartialEq + 'static,
+    GS: GlobalStateContract,
+> ChildRender for RadioButton<T, GS>
+{}
 
-impl<T: Serialize + Clone + Debug + Default + DeserializeOwned + PartialEq + 'static, GS: GlobalStateContract> Layout<GS> for RadioButton<T, GS> {
+impl<
+    T: Serialize + Clone + Debug + Default + DeserializeOwned + PartialEq + 'static,
+    GS: GlobalStateContract,
+> Layout<GS> for RadioButton<T, GS>
+{
     fn flexibility(&self) -> u32 {
         5
     }
@@ -133,11 +159,13 @@ impl<T: Serialize + Clone + Debug + Default + DeserializeOwned + PartialEq + 'st
         let position = self.position();
         let dimension = self.dimension();
 
-
         positioning(position, dimension, &mut self.child);
         self.child.position_children();
     }
 }
 
-
-impl<T: Serialize + Clone + Debug + Default + DeserializeOwned + PartialEq + 'static, GS: GlobalStateContract> WidgetExt<GS> for RadioButton<T, GS> {}
+impl<
+    T: Serialize + Clone + Debug + Default + DeserializeOwned + PartialEq + 'static,
+    GS: GlobalStateContract,
+> WidgetExt<GS> for RadioButton<T, GS>
+{}

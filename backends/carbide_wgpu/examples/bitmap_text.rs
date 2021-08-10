@@ -7,16 +7,38 @@ fn main() {
 
     let icon_path = Window::<String>::path_to_assets("images/rust_press.png");
 
-    let mut window = Window::new("Hello world 2".to_string(), 800, 1200, Some(icon_path), String::from("Hejsa"));
+    let mut window = Window::new(
+        "Hello world 2".to_string(),
+        800,
+        1200,
+        Some(icon_path),
+        String::from("Hejsa"),
+    );
 
     let mut noto_family = FontFamily::new("NotoSans");
-    noto_family.add_font("fonts/NotoSans/NotoSans-Regular.ttf", FontWeight::Normal, FontStyle::Normal);
-    noto_family.add_font("fonts/NotoSans/NotoSans-Italic.ttf", FontWeight::Normal, FontStyle::Italic);
-    noto_family.add_font("fonts/NotoSans/NotoSans-Bold.ttf", FontWeight::Bold, FontStyle::Normal);
+    noto_family.add_font(
+        "fonts/NotoSans/NotoSans-Regular.ttf",
+        FontWeight::Normal,
+        FontStyle::Normal,
+    );
+    noto_family.add_font(
+        "fonts/NotoSans/NotoSans-Italic.ttf",
+        FontWeight::Normal,
+        FontStyle::Italic,
+    );
+    noto_family.add_font(
+        "fonts/NotoSans/NotoSans-Bold.ttf",
+        FontWeight::Bold,
+        FontStyle::Normal,
+    );
     window.add_font_family(noto_family);
 
     let mut family = FontFamily::new("Apple Color Emoji");
-    family.add_bitmap_font("/System/Library/Fonts/Apple Color Emoji.ttc", FontWeight::Normal, FontStyle::Normal);
+    family.add_bitmap_font(
+        "/System/Library/Fonts/Apple Color Emoji.ttc",
+        FontWeight::Normal,
+        FontStyle::Normal,
+    );
     window.add_font_family(family);
 
     window.set_widgets(
@@ -29,4 +51,3 @@ fn main() {
 
     window.run_event_loop();
 }
-

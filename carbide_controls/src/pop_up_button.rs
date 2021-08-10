@@ -8,15 +8,26 @@ use carbide_core::widget::*;
 use crate::PlainPopUpButton;
 
 #[derive(Clone, Widget)]
-pub struct PopUpButton<T, GS> where GS: GlobalStateContract, T: Serialize + Clone + Debug + Default + DeserializeOwned + 'static {
+pub struct PopUpButton<T, GS>
+    where
+        GS: GlobalStateContract,
+        T: Serialize + Clone + Debug + Default + DeserializeOwned + 'static,
+{
     id: Id,
     child: PlainPopUpButton<T, GS>,
     position: Point,
     dimension: Dimensions,
 }
 
-impl<T: Serialize + Clone + Debug + Default + DeserializeOwned + 'static, GS: GlobalStateContract> PopUpButton<T, GS> {
-    pub fn new(model: Box<dyn State<Vec<T>, GS>>, selected_state: Box<dyn State<usize, GS>>) -> Box<Self> {
+impl<
+    T: Serialize + Clone + Debug + Default + DeserializeOwned + 'static,
+    GS: GlobalStateContract,
+> PopUpButton<T, GS>
+{
+    pub fn new(
+        model: Box<dyn State<Vec<T>, GS>>,
+        selected_state: Box<dyn State<usize, GS>>,
+    ) -> Box<Self> {
         let mut child = *PlainPopUpButton::new(model, selected_state);
 
         child = *child.display_item(|selected_item, focus_state| {
@@ -26,13 +37,14 @@ impl<T: Serialize + Clone + Debug + Default + DeserializeOwned + 'static, GS: Gl
                 focus_state,
                 EnvironmentColor::OpaqueSeparator,
                 EnvironmentColor::Accent,
-            ).mapped(|(focus, primary_color, focus_color)| {
-                if focus == &Focus::Focused {
-                    *focus_color
-                } else {
-                    *primary_color
-                }
-            });
+            )
+                .mapped(|(focus, primary_color, focus_color)| {
+                    if focus == &Focus::Focused {
+                        *focus_color
+                    } else {
+                        *primary_color
+                    }
+                });
 
             ZStack::initialize(vec![
                 RoundedRectangle::new(CornerRadii::all(3.0))
@@ -56,7 +68,8 @@ impl<T: Serialize + Clone + Debug + Default + DeserializeOwned + 'static, GS: Gl
 
                             context
                         }),
-                    ]).padding(EdgeInsets::single(0.0, 0.0, 0.0, 1.0))
+                    ])
+                        .padding(EdgeInsets::single(0.0, 0.0, 0.0, 1.0))
                         .frame(22.0, 24.0),
                 ]),
                 RoundedRectangle::new(CornerRadii::all(3.0))
@@ -71,24 +84,26 @@ impl<T: Serialize + Clone + Debug + Default + DeserializeOwned + 'static, GS: Gl
             let background_color = TupleState3::new(
                 hovered.clone(),
                 EnvironmentColor::Accent,
-                EnvironmentColor::SecondarySystemBackground)
-                .mapped(|(hovered, hover_color, other_color)| {
-                    if *hovered {
-                        *hover_color
-                    } else {
-                        *other_color
-                    }
-                });
+                EnvironmentColor::SecondarySystemBackground,
+            )
+                .mapped(
+                    |(hovered, hover_color, other_color)| {
+                        if *hovered {
+                            *hover_color
+                        } else {
+                            *other_color
+                        }
+                    },
+                );
 
-            Rectangle::new(vec![
-                HStack::new(vec![
-                    Padding::init(
-                        EdgeInsets::single(0.0, 0.0, 5.0, 0.0),
-                        Text::new(text)
-                            .color(EnvironmentColor::Label)),
-                    Spacer::new(SpacerDirection::Horizontal),
-                ])
-            ]).fill(background_color)
+            Rectangle::new(vec![HStack::new(vec![
+                Padding::init(
+                    EdgeInsets::single(0.0, 0.0, 5.0, 0.0),
+                    Text::new(text).color(EnvironmentColor::Label),
+                ),
+                Spacer::new(SpacerDirection::Horizontal),
+            ])])
+                .fill(background_color)
                 .stroke(EnvironmentColor::OpaqueSeparator)
                 .stroke_style(1.0)
         });
@@ -102,7 +117,11 @@ impl<T: Serialize + Clone + Debug + Default + DeserializeOwned + 'static, GS: Gl
     }
 }
 
-impl<T: Serialize + Clone + Debug + Default + DeserializeOwned + 'static, GS: GlobalStateContract> CommonWidget<GS> for PopUpButton<T, GS> {
+impl<
+    T: Serialize + Clone + Debug + Default + DeserializeOwned + 'static,
+    GS: GlobalStateContract,
+> CommonWidget<GS> for PopUpButton<T, GS>
+{
     fn id(&self) -> Id {
         self.id
     }
@@ -148,9 +167,17 @@ impl<T: Serialize + Clone + Debug + Default + DeserializeOwned + 'static, GS: Gl
     }
 }
 
-impl<T: Serialize + Clone + Debug + Default + DeserializeOwned + 'static, GS: GlobalStateContract> ChildRender for PopUpButton<T, GS> {}
+impl<
+    T: Serialize + Clone + Debug + Default + DeserializeOwned + 'static,
+    GS: GlobalStateContract,
+> ChildRender for PopUpButton<T, GS>
+{}
 
-impl<T: Serialize + Clone + Debug + Default + DeserializeOwned + 'static, GS: GlobalStateContract> Layout<GS> for PopUpButton<T, GS> {
+impl<
+    T: Serialize + Clone + Debug + Default + DeserializeOwned + 'static,
+    GS: GlobalStateContract,
+> Layout<GS> for PopUpButton<T, GS>
+{
     fn flexibility(&self) -> u32 {
         5
     }
@@ -168,10 +195,13 @@ impl<T: Serialize + Clone + Debug + Default + DeserializeOwned + 'static, GS: Gl
         let position = self.position();
         let dimension = self.dimension();
 
-
         positioning(position, dimension, &mut self.child);
         self.child.position_children();
     }
 }
 
-impl<T: Serialize + Clone + Debug + Default + DeserializeOwned + 'static, GS: GlobalStateContract> WidgetExt<GS> for PopUpButton<T, GS> {}
+impl<
+    T: Serialize + Clone + Debug + Default + DeserializeOwned + 'static,
+    GS: GlobalStateContract,
+> WidgetExt<GS> for PopUpButton<T, GS>
+{}

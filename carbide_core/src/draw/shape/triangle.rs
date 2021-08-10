@@ -6,10 +6,12 @@ use crate::widget::ColoredPoint;
 /// A single triangle described by three vertices.
 #[derive(Copy, Clone, Debug, PartialEq)]
 pub struct Triangle<V>(pub [V; 3])
-    where V: Vertex;
+    where
+        V: Vertex;
 
 impl<V> Triangle<V>
-    where V: Vertex,
+    where
+        V: Vertex,
 {
     /// Shift the triangle by the given amount by adding it onto the position of each point.
     pub fn add(self, amount: Position) -> Self {
@@ -40,7 +42,7 @@ impl Triangle<Position> {
         let len = points.len();
 
         if len == 0 {
-            return vec![]
+            return vec![];
         }
 
         if len % 3 != 0 {
@@ -58,7 +60,8 @@ impl Triangle<Position> {
 }
 
 impl<V> std::ops::Deref for Triangle<V>
-    where V: Vertex,
+    where
+        V: Vertex,
 {
     type Target = [V; 3];
     fn deref(&self) -> &Self::Target {
@@ -67,7 +70,8 @@ impl<V> std::ops::Deref for Triangle<V>
 }
 
 impl<V> From<[V; 3]> for Triangle<V>
-    where V: Vertex,
+    where
+        V: Vertex,
 {
     fn from(points: [V; 3]) -> Self {
         Triangle(points)
@@ -75,7 +79,8 @@ impl<V> From<[V; 3]> for Triangle<V>
 }
 
 impl<V> From<(V, V, V)> for Triangle<V>
-    where V: Vertex,
+    where
+        V: Vertex,
 {
     fn from((a, b, c): (V, V, V)) -> Self {
         Triangle([a, b, c])
@@ -83,7 +88,8 @@ impl<V> From<(V, V, V)> for Triangle<V>
 }
 
 impl<V> Into<[V; 3]> for Triangle<V>
-    where V: Vertex,
+    where
+        V: Vertex,
 {
     fn into(self) -> [V; 3] {
         self.0
@@ -91,10 +97,10 @@ impl<V> Into<[V; 3]> for Triangle<V>
 }
 
 impl<V> Into<(V, V, V)> for Triangle<V>
-    where V: Vertex,
+    where
+        V: Vertex,
 {
     fn into(self) -> (V, V, V) {
         (self[0], self[1], self[2])
     }
 }
-

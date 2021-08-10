@@ -45,11 +45,17 @@ impl DeriveType {
             "Render" => DeriveType::Render,
             "Focusable" => DeriveType::Focusable,
             "Layout" => DeriveType::Layout,
-            _ => panic!("Could not match with any of the derive types.")
+            _ => panic!("Could not match with any of the derive types."),
         }
     }
 
-    pub fn to_token_stream(&self, ident: &Ident, generics: &Generics, wheres: &TokenStream, state_idents: &Vec<Ident>) -> TokenStream {
+    pub fn to_token_stream(
+        &self,
+        ident: &Ident,
+        generics: &Generics,
+        wheres: &TokenStream,
+        state_idents: &Vec<Ident>,
+    ) -> TokenStream {
         match self {
             DeriveType::MouseEvent => mouse_event_token_stream(ident, generics, wheres),
             DeriveType::KeyboardEvent => keyboard_event_token_stream(ident, generics, wheres),
@@ -62,28 +68,45 @@ impl DeriveType {
     }
 }
 
-fn mouse_event_token_stream(ident: &Ident, generics: &Generics, wheres: &TokenStream) -> TokenStream {
+fn mouse_event_token_stream(
+    ident: &Ident,
+    generics: &Generics,
+    wheres: &TokenStream,
+) -> TokenStream {
     quote! {
         #[automatically_derived]
         impl<#generics> carbide_core::event::MouseEventHandler for #ident #generics #wheres {}
     }
 }
 
-fn keyboard_event_token_stream(ident: &Ident, generics: &Generics, wheres: &TokenStream) -> TokenStream {
+fn keyboard_event_token_stream(
+    ident: &Ident,
+    generics: &Generics,
+    wheres: &TokenStream,
+) -> TokenStream {
     quote! {
         #[automatically_derived]
         impl<#generics> carbide_core::event::KeyboardEventHandler for #ident #generics #wheres {}
     }
 }
 
-fn other_event_token_stream(ident: &Ident, generics: &Generics, wheres: &TokenStream) -> TokenStream {
+fn other_event_token_stream(
+    ident: &Ident,
+    generics: &Generics,
+    wheres: &TokenStream,
+) -> TokenStream {
     quote! {
         #[automatically_derived]
         impl<#generics> carbide_core::event::OtherEventHandler for #ident #generics #wheres {}
     }
 }
 
-fn state_sync_token_stream(ident: &Ident, generics: &Generics, wheres: &TokenStream, state_idents: &Vec<Ident>) -> TokenStream {
+fn state_sync_token_stream(
+    ident: &Ident,
+    generics: &Generics,
+    wheres: &TokenStream,
+    state_idents: &Vec<Ident>,
+) -> TokenStream {
     quote! {
         #[automatically_derived]
         impl<#generics> carbide_core::state::StateSync for #ident #generics #wheres {

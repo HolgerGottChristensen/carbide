@@ -23,7 +23,7 @@ pub enum PrimitiveKind {
     /// `Rectangle`s, the first for the outer border and the second for the inner on top.
     Rectangle {
         /// The fill colour for the rectangle.
-        color: Color
+        color: Color,
     },
 
     /// A series of consecutive `Triangles` that are all the same color.
@@ -40,7 +40,7 @@ pub enum PrimitiveKind {
     /// This variant is produced by the general purpose `Triangles` primitive widget.
     TrianglesMultiColor {
         /// An ordered slice of multicolored triangles.
-        triangles: Vec<Triangle<ColoredPoint>>
+        triangles: Vec<Triangle<ColoredPoint>>,
     },
 
     /// A single `Image`, produced by the primitive `Image` widget.
@@ -62,4 +62,3 @@ pub enum PrimitiveKind {
         text: Vec<Glyph>,
     },
 }
-

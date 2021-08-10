@@ -15,18 +15,27 @@ impl<T> ListIndex for T where T: ForEachDelegate {}
 #[derive(Clone, Widget)]
 #[event(handle_keyboard_event, handle_mouse_event)]
 #[state_sync(sync_state)]
-pub struct List<GS, T> where GS: GlobalStateContract, T: ListIndex + 'static {
+pub struct List<GS, T>
+    where
+        GS: GlobalStateContract,
+        T: ListIndex + 'static,
+{
     id: Id,
     child: Box<dyn Widget<GS>>,
     delegate: Box<dyn Widget<GS>>,
     position: Point,
     dimension: Dimensions,
     spacing: f64,
-    #[state] model: Box<dyn State<Vec<T>, GS>>,
-    #[state] internal_model: Box<dyn State<Vec<T>, GS>>,
-    #[state] index_offset: Box<dyn State<usize, GS>>,
-    #[state] start_offset: Box<dyn State<f64, GS>>,
-    #[state] end_offset: Box<dyn State<f64, GS>>,
+    #[state]
+    model: Box<dyn State<Vec<T>, GS>>,
+    #[state]
+    internal_model: Box<dyn State<Vec<T>, GS>>,
+    #[state]
+    index_offset: Box<dyn State<usize, GS>>,
+    #[state]
+    start_offset: Box<dyn State<f64, GS>>,
+    #[state]
+    end_offset: Box<dyn State<f64, GS>>,
     id_state: Box<dyn State<T, GS>>,
     index_state: Box<dyn State<usize, GS>>,
 }
@@ -42,12 +51,19 @@ impl<GS: GlobalStateContract, T: ListIndex + 'static> List<GS, T> {
 
         Box::new(List {
             id: Id::new_v4(),
-            child: Scroll::new(VStack::new(vec![
-                Rectangle::new(vec![]).fill(RED).frame(SCALE, start_offset.clone()),
-                ForEach::new(internal_model.clone(), delegate.clone())
-                    .index_offset(index_offset_state.clone()),
-                Rectangle::new(vec![]).fill(BLUE).frame(SCALE, end_offset.clone()),
-            ]).spacing(10.0)),
+            child: Scroll::new(
+                VStack::new(vec![
+                    Rectangle::new(vec![])
+                        .fill(RED)
+                        .frame(SCALE, start_offset.clone()),
+                    ForEach::new(internal_model.clone(), delegate.clone())
+                        .index_offset(index_offset_state.clone()),
+                    Rectangle::new(vec![])
+                        .fill(BLUE)
+                        .frame(SCALE, end_offset.clone()),
+                ])
+                    .spacing(10.0),
+            ),
             delegate,
             position: [0.0, 0.0],
             dimension: [0.0, 0.0],
@@ -64,27 +80,41 @@ impl<GS: GlobalStateContract, T: ListIndex + 'static> List<GS, T> {
 
     pub fn id_state(mut self, state: Box<dyn State<T, GS>>) -> Box<Self> {
         self.id_state = state;
-        self.child = Scroll::new(VStack::new(vec![
-            Rectangle::new(vec![]).fill(RED).frame(SCALE, self.start_offset.clone()),
-            ForEach::new(self.internal_model.clone(), self.delegate.clone())
-                .index_offset(self.index_offset.clone())
-                .id_state(self.id_state.clone())
-                .index_state(self.index_state.clone()),
-            Rectangle::new(vec![]).fill(BLUE).frame(SCALE, self.end_offset.clone()),
-        ]).spacing(self.spacing));
+        self.child = Scroll::new(
+            VStack::new(vec![
+                Rectangle::new(vec![])
+                    .fill(RED)
+                    .frame(SCALE, self.start_offset.clone()),
+                ForEach::new(self.internal_model.clone(), self.delegate.clone())
+                    .index_offset(self.index_offset.clone())
+                    .id_state(self.id_state.clone())
+                    .index_state(self.index_state.clone()),
+                Rectangle::new(vec![])
+                    .fill(BLUE)
+                    .frame(SCALE, self.end_offset.clone()),
+            ])
+                .spacing(self.spacing),
+        );
         Box::new(self)
     }
 
     pub fn index_state(mut self, state: Box<dyn State<usize, GS>>) -> Box<Self> {
         self.index_state = state;
-        self.child = Scroll::new(VStack::new(vec![
-            Rectangle::new(vec![]).fill(RED).frame(SCALE, self.start_offset.clone()),
-            ForEach::new(self.internal_model.clone(), self.delegate.clone())
-                .index_offset(self.index_offset.clone())
-                .id_state(self.id_state.clone())
-                .index_state(self.index_state.clone()),
-            Rectangle::new(vec![]).fill(BLUE).frame(SCALE, self.end_offset.clone()),
-        ]).spacing(self.spacing));
+        self.child = Scroll::new(
+            VStack::new(vec![
+                Rectangle::new(vec![])
+                    .fill(RED)
+                    .frame(SCALE, self.start_offset.clone()),
+                ForEach::new(self.internal_model.clone(), self.delegate.clone())
+                    .index_offset(self.index_offset.clone())
+                    .id_state(self.id_state.clone())
+                    .index_state(self.index_state.clone()),
+                Rectangle::new(vec![])
+                    .fill(BLUE)
+                    .frame(SCALE, self.end_offset.clone()),
+            ])
+                .spacing(self.spacing),
+        );
         Box::new(self)
     }
 
@@ -94,18 +124,31 @@ impl<GS: GlobalStateContract, T: ListIndex + 'static> List<GS, T> {
         let end_offset = CommonState::new_local_with_key(&-spacing);
         self.start_offset = Box::new(start_offset);
         self.end_offset = Box::new(end_offset);
-        self.child = Scroll::new(VStack::new(vec![
-            Rectangle::new(vec![]).fill(RED).frame(SCALE, self.start_offset.clone()),
-            ForEach::new(self.internal_model.clone(), self.delegate.clone())
-                .index_offset(self.index_offset.clone())
-                .id_state(self.id_state.clone())
-                .index_state(self.index_state.clone()),
-            Rectangle::new(vec![]).fill(BLUE).frame(SCALE, self.end_offset.clone()),
-        ]).spacing(spacing));
+        self.child = Scroll::new(
+            VStack::new(vec![
+                Rectangle::new(vec![])
+                    .fill(RED)
+                    .frame(SCALE, self.start_offset.clone()),
+                ForEach::new(self.internal_model.clone(), self.delegate.clone())
+                    .index_offset(self.index_offset.clone())
+                    .id_state(self.id_state.clone())
+                    .index_state(self.index_state.clone()),
+                Rectangle::new(vec![])
+                    .fill(BLUE)
+                    .frame(SCALE, self.end_offset.clone()),
+            ])
+                .spacing(spacing),
+        );
         Box::new(self)
     }
 
-    fn handle_mouse_event(&mut self, _: &MouseEvent, _: &bool, _: &mut Environment<GS>, _: &mut GS) {}
+    fn handle_mouse_event(
+        &mut self,
+        _: &MouseEvent,
+        _: &bool,
+        _: &mut Environment<GS>,
+        _: &mut GS,
+    ) {}
 
     fn handle_keyboard_event(&mut self, _: &KeyboardEvent, _: &mut Environment<GS>, _: &mut GS) {}
 
@@ -141,7 +184,6 @@ impl<GS: GlobalStateContract, T: ListIndex + 'static> List<GS, T> {
 
         // Notice the scroll might not be the first when clip is added.
         if let Some(scroll_view) = self.children_mut().next() {
-
             // Calculate the size off all the children.
             scroll_view.calculate_size(dimension, env);
 
@@ -150,8 +192,6 @@ impl<GS: GlobalStateContract, T: ListIndex + 'static> List<GS, T> {
             scroll_view.position_children();
 
             if let Some(vstack) = scroll_view.children_mut().next() {
-
-
                 // The number of elements in currently in the internal model.
                 let internal_model_size = internal_model.get_latest_value().len();
 
@@ -161,11 +201,12 @@ impl<GS: GlobalStateContract, T: ListIndex + 'static> List<GS, T> {
                 // The first child is the initial_offset Rectangle.
                 vstack_children.next();
 
-
                 // Handle remove items out of view
                 while let Some((index, child)) = vstack_children.next() {
                     // Skip the last element in the v_stack, which is the end rectangle
-                    if index > internal_model_size { continue }
+                    if index > internal_model_size {
+                        continue;
+                    }
 
                     // Check if an items bottom is above the top of this view.
                     if child.y() + child.height() < y_position {
@@ -189,8 +230,8 @@ impl<GS: GlobalStateContract, T: ListIndex + 'static> List<GS, T> {
                 // Get the children of the scrollview
                 let mut vstack_children = vstack.children_mut().enumerate();
 
-
-                let (_, initial_child) = vstack_children.next()
+                let (_, initial_child) = vstack_children
+                    .next()
                     .expect("Could not find the initial rectangle");
 
                 // TODO: Consider choosing -scroll_offset for this value.
@@ -200,7 +241,9 @@ impl<GS: GlobalStateContract, T: ListIndex + 'static> List<GS, T> {
 
                 // Calculate the minimum height of an index currently in the list.
                 while let Some((index, child)) = vstack_children.next() {
-                    if index > internal_model_size { continue }
+                    if index > internal_model_size {
+                        continue;
+                    }
                     if child.height() < min_height {
                         min_height = child.height();
                     }
@@ -212,15 +255,14 @@ impl<GS: GlobalStateContract, T: ListIndex + 'static> List<GS, T> {
                     *index_offset.get_latest_value_mut() -= 1;
                     let index_to_take_from = *index_offset.get_latest_value();
 
-
                     if model.get_latest_value().len() < index_to_take_from {
                         panic!("Can not take index from model, that is outside the bounds of said model")
                     }
 
-
-                    internal_model.get_latest_value_mut().insert(0, model.get_latest_value()[index_to_take_from].clone());
+                    internal_model
+                        .get_latest_value_mut()
+                        .insert(0, model.get_latest_value()[index_to_take_from].clone());
                 }
-
 
                 let mut vstack_children = vstack.children_mut();
 
@@ -233,7 +275,6 @@ impl<GS: GlobalStateContract, T: ListIndex + 'static> List<GS, T> {
                     //println!("{}", top_of_end_rectangle);
                 }
 
-
                 // Handle add items to view from the bottom
                 while top_of_end_rectangle < bottom_of_list_widget {
                     //println!("--------------");
@@ -243,7 +284,8 @@ impl<GS: GlobalStateContract, T: ListIndex + 'static> List<GS, T> {
 
                     //println!("Top of end rectangle AFTER: {}", top_of_end_rectangle);
 
-                    let index_to_take_from = *index_offset.get_latest_value() + internal_model.get_latest_value().len();
+                    let index_to_take_from =
+                        *index_offset.get_latest_value() + internal_model.get_latest_value().len();
 
                     //println!("Index offset: {}", *self_index_offset.get_latest_value());
                     //println!("Internal model length: {}", internal_model.get_latest_value().len());
@@ -257,7 +299,9 @@ impl<GS: GlobalStateContract, T: ListIndex + 'static> List<GS, T> {
                     } else {
                         top_of_end_rectangle += min_height + spacing;
                         *end_offset.get_latest_value_mut() -= min_height + spacing;
-                        internal_model.get_latest_value_mut().push(model.get_latest_value()[index_to_take_from].clone());
+                        internal_model
+                            .get_latest_value_mut()
+                            .push(model.get_latest_value()[index_to_take_from].clone());
                     }
                 }
             }
@@ -267,7 +311,6 @@ impl<GS: GlobalStateContract, T: ListIndex + 'static> List<GS, T> {
         self.end_offset = end_offset;
         self.internal_model = internal_model;
         self.index_offset = index_offset;
-
 
         // If yes, expand the
         // initial_offset to the size of this view + 1 x spacing. Then remove this from the internal model.

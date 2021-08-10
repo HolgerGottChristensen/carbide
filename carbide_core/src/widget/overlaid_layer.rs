@@ -167,7 +167,6 @@ impl OverlaidLayer {
     }
 }
 
-
 impl Layout for OverlaidLayer {
     fn calculate_size(&mut self, requested_size: Dimension, env: &mut Environment) -> Dimension {
         self.dimension = self.child.calculate_size(requested_size, env);
@@ -200,7 +199,6 @@ impl CommonWidget for OverlaidLayer {
     fn set_id(&mut self, id: Id) {
         self.id = id;
     }
-
 
     fn children(&self) -> WidgetIter {
         if self.child.flag() == Flags::PROXY {
@@ -258,6 +256,5 @@ impl Render for OverlaidLayer {
         }
     }
 }
-
 
 impl WidgetExt for OverlaidLayer {}

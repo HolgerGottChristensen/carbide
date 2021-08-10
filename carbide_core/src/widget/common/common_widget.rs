@@ -25,7 +25,9 @@ pub trait CommonWidget {
     fn position(&self) -> Position;
     fn set_position(&mut self, position: Position);
 
-    fn get_focus(&self) -> Focus { Focus::Unfocused }
+    fn get_focus(&self) -> Focus {
+        Focus::Unfocused
+    }
     fn set_focus(&mut self, focus: Focus) {}
 
     fn alignment(&self) -> Box<dyn Layouter> {

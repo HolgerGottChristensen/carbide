@@ -17,9 +17,11 @@ impl<T: StateContract> WidgetState<T> {
 
 impl<T: StateContract + 'static> WidgetState<T> {
     pub fn mapped<U, M1, M2>(self, map: M1, map_mut: M2) -> WidgetState<U>
-        where U: StateContract + 'static,
-              M1: Map<T, U>,
-              M2: MapMut<T, U> {
+        where
+            U: StateContract + 'static,
+            M1: Map<T, U>,
+            M2: MapMut<T, U>,
+    {
         MapState::new(self.0, map, map_mut).into()
     }
 }
@@ -41,7 +43,6 @@ impl<T: StateContract> Into<WidgetState<T>> for Box<dyn State<T>> {
         WidgetState(self)
     }
 }
-
 
 impl<T: StateContract> State<T> for WidgetState<T> {
     fn capture_state(&mut self, env: &mut Environment) {

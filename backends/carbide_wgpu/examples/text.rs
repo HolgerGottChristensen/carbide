@@ -6,12 +6,30 @@ fn main() {
 
     let icon_path = Window::<String>::path_to_assets("images/rust_press.png");
 
-    let mut window = Window::new("Hello world 2".to_string(), 800, 1200, Some(icon_path), String::from("Hejsa"));
+    let mut window = Window::new(
+        "Hello world 2".to_string(),
+        800,
+        1200,
+        Some(icon_path),
+        String::from("Hejsa"),
+    );
 
     let mut family = FontFamily::new("NotoSans");
-    family.add_font("fonts/NotoSans/NotoSans-Regular.ttf", FontWeight::Normal, FontStyle::Normal);
-    family.add_font("fonts/NotoSans/NotoSans-Italic.ttf", FontWeight::Normal, FontStyle::Italic);
-    family.add_font("fonts/NotoSans/NotoSans-Bold.ttf", FontWeight::Bold, FontStyle::Normal);
+    family.add_font(
+        "fonts/NotoSans/NotoSans-Regular.ttf",
+        FontWeight::Normal,
+        FontStyle::Normal,
+    );
+    family.add_font(
+        "fonts/NotoSans/NotoSans-Italic.ttf",
+        FontWeight::Normal,
+        FontStyle::Italic,
+    );
+    family.add_font(
+        "fonts/NotoSans/NotoSans-Bold.ttf",
+        FontWeight::Bold,
+        FontStyle::Normal,
+    );
     window.add_font_family(family);
 
     //window.add_font("fonts/NotoSans/NotoSans-Regular.ttf");
@@ -28,4 +46,3 @@ fn main() {
 
     window.run_event_loop();
 }
-

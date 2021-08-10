@@ -1,7 +1,8 @@
-use anyhow::*;
-use glob::glob;
 use std::fs::{read_to_string, write};
 use std::path::PathBuf;
+
+use anyhow::*;
+use glob::glob;
 
 struct ShaderData {
     src: String,
@@ -62,7 +63,10 @@ fn main() -> Result<()> {
     // recently.
     for shader in shaders {
         // This tells cargo to rerun this script if something in /src/ changes.
-        println!("cargo:rerun-if-changed={}", shader.src_path.as_os_str().to_str().unwrap());
+        println!(
+            "cargo:rerun-if-changed={}",
+            shader.src_path.as_os_str().to_str().unwrap()
+        );
 
         let compiled = compiler.compile_into_spirv(
             &shader.src,

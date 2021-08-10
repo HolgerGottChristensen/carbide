@@ -6,9 +6,9 @@ extern crate carbide_winit;
 extern crate find_folder;
 extern crate glium;
 
-mod support;
-
 use glium::Surface;
+
+mod support;
 
 widget_ids! {
     struct Ids { canvas, text_edit, scrollbar }
@@ -36,7 +36,9 @@ fn main() {
     let ids = Ids::new(ui.widget_id_generator());
 
     // Add a `Font` to the `Ui`'s `font::Map` from file.
-    let assets = find_folder::Search::KidsThenParents(3, 5).for_folder("assets").unwrap();
+    let assets = find_folder::Search::KidsThenParents(3, 5)
+        .for_folder("assets")
+        .unwrap();
     let font_path = assets.join("fonts/NotoSans/NotoSans-Regular.ttf");
     ui.fonts.insert_from_file(font_path).unwrap();
 
@@ -54,15 +56,14 @@ fn main() {
         fames ac ante ipsum primis in faucibus. Cras rhoncus nisi nec dolor bibendum pellentesque. \
         Cum sociis natoque penatibus et magnis dis parturient montes, nascetur ridiculus mus. \
         Quisque commodo nibh hendrerit nunc sollicitudin sodales. Cras vitae tempus ipsum. Nam \
-        magna est, efficitur suscipit dolor eu, consectetur consectetur urna.".to_owned();
+        magna est, efficitur suscipit dolor eu, consectetur consectetur urna."
+        .to_owned();
 
     // Poll events from the window.
     let mut event_loop = support::EventLoop::new();
     'main: loop {
-
         // Handle all events.
         for event in event_loop.next(&mut events_loop) {
-
             // Use the `winit` backend feature to convert the winit event to a carbide one.
             if let Some(event) = support::convert_event(event.clone(), &display) {
                 ui.handle_event(event);
@@ -72,9 +73,10 @@ fn main() {
             match event {
                 glium::glutin::Event::WindowEvent { event, .. } => match event {
                     // Break from the loop upon `Escape`.
-                    glium::glutin::WindowEvent::CloseRequested |
-                    glium::glutin::WindowEvent::KeyboardInput {
-                        input: glium::glutin::KeyboardInput {
+                    glium::glutin::WindowEvent::CloseRequested
+                    | glium::glutin::WindowEvent::KeyboardInput {
+                        input:
+                        glium::glutin::KeyboardInput {
                             virtual_keycode: Some(glium::glutin::VirtualKeyCode::Escape),
                             ..
                         },
@@ -90,7 +92,10 @@ fn main() {
         set_ui(ui.set_widgets(), &ids, &mut demo_text);
 
         // Get the underlying winit window and update the mouse cursor as set by carbide.
-        display.0.gl_window().window()
+        display
+            .0
+            .gl_window()
+            .window()
             .set_cursor(support::convert_mouse_cursor(ui.mouse_cursor()));
 
         // Render the `Ui` and then display it on the screen.
@@ -106,7 +111,7 @@ fn main() {
 
 // Declare the `WidgetId`s and instantiate the widgets.
 fn set_ui(ref mut ui: carbide_core::UiCell, ids: &Ids, demo_text: &mut String) {
-    use carbide_core::{color, widget, Colorable, Positionable, Sizeable, OldWidget};
+    use carbide_core::{color, widget, Colorable, OldWidget, Positionable, Sizeable};
 
     widget::Canvas::new()
         .scroll_kids_vertically()
@@ -121,9 +126,11 @@ fn set_ui(ref mut ui: carbide_core::UiCell, ids: &Ids, demo_text: &mut String) {
         .line_spacing(2.5)
         //.restrict_to_height(false) // Let the height grow infinitely and scroll.
         .set(ids.text_edit, ui)
-        {
-            *demo_text = edit;
-        }
+    {
+        *demo_text = edit;
+    }
 
-    widget::Scrollbar::y_axis(ids.canvas).auto_hide(true).set(ids.scrollbar, ui);
+    widget::Scrollbar::y_axis(ids.canvas)
+        .auto_hide(true)
+        .set(ids.scrollbar, ui);
 }

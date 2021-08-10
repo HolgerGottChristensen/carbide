@@ -4,14 +4,12 @@ use lyon::algorithms::path::builder::Build;
 
 #[derive(Clone)]
 pub struct SVGPathBuilder {
-    actions: Vec<SVGBuildAction>
+    actions: Vec<SVGBuildAction>,
 }
 
 impl SVGPathBuilder {
     pub fn new() -> Self {
-        SVGPathBuilder {
-            actions: vec![]
-        }
+        SVGPathBuilder { actions: vec![] }
     }
 }
 
@@ -47,7 +45,7 @@ impl Build for SVGPathBuilder {
 
 impl lyon::path::builder::SvgPathBuilder for SVGPathBuilder {
     fn move_to(&mut self, to: Point) {
-        self.actions.push(SVGBuildAction::MoveTo {to});
+        self.actions.push(SVGBuildAction::MoveTo { to });
     }
 
     fn close(&mut self) {
@@ -55,15 +53,17 @@ impl lyon::path::builder::SvgPathBuilder for SVGPathBuilder {
     }
 
     fn line_to(&mut self, to: Point) {
-        self.actions.push(SVGBuildAction::LineTo {to});
+        self.actions.push(SVGBuildAction::LineTo { to });
     }
 
     fn quadratic_bezier_to(&mut self, ctrl: Point, to: Point) {
-        self.actions.push(SVGBuildAction::QuadraticBezierTo {ctrl, to});
+        self.actions
+            .push(SVGBuildAction::QuadraticBezierTo { ctrl, to });
     }
 
     fn cubic_bezier_to(&mut self, ctrl1: Point, ctrl2: Point, to: Point) {
-        self.actions.push(SVGBuildAction::CubicBezierTo {ctrl1, ctrl2, to});
+        self.actions
+            .push(SVGBuildAction::CubicBezierTo { ctrl1, ctrl2, to });
     }
 
     fn relative_move_to(&mut self, _: Vector) {
@@ -126,20 +126,19 @@ impl lyon::path::builder::SvgPathBuilder for SVGPathBuilder {
 #[derive(Clone)]
 pub enum SVGBuildAction {
     MoveTo {
-        to: Point
+        to: Point,
     },
     Close,
     LineTo {
-        to: Point
+        to: Point,
     },
     QuadraticBezierTo {
         ctrl: Point,
-        to: Point
+        to: Point,
     },
     CubicBezierTo {
         ctrl1: Point,
         ctrl2: Point,
-        to: Point
-    }
-
+        to: Point,
+    },
 }

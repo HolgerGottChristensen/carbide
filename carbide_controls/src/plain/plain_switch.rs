@@ -7,15 +7,24 @@ use crate::PlainButton;
 
 #[derive(Clone, Widget)]
 #[focusable(block_focus)]
-pub struct PlainSwitch<GS> where GS: GlobalStateContract {
+pub struct PlainSwitch<GS>
+    where
+        GS: GlobalStateContract,
+{
     id: Id,
-    #[state] focus: FocusState<GS>,
+    #[state]
+    focus: FocusState<GS>,
     child: Box<dyn Widget<GS>>,
     position: Point,
     dimension: Dimensions,
-    delegate: fn(focus: FocusState<GS>, checked: BoolState<GS>, button: Box<dyn Widget<GS>>) -> Box<dyn Widget<GS>>,
+    delegate: fn(
+        focus: FocusState<GS>,
+        checked: BoolState<GS>,
+        button: Box<dyn Widget<GS>>,
+    ) -> Box<dyn Widget<GS>>,
     label: StringState<GS>,
-    #[state] checked: BoolState<GS>,
+    #[state]
+    checked: BoolState<GS>,
 }
 
 impl<GS: GlobalStateContract> PlainSwitch<GS> {
@@ -24,28 +33,46 @@ impl<GS: GlobalStateContract> PlainSwitch<GS> {
         Box::new(self)
     }
 
-    pub fn new<S: Into<StringState<GS>>, L: Into<BoolState<GS>>>(label: S, checked: L) -> Box<Self> {
+    pub fn new<S: Into<StringState<GS>>, L: Into<BoolState<GS>>>(
+        label: S,
+        checked: L,
+    ) -> Box<Self> {
         let focus_state = Box::new(CommonState::new_local_with_key(&Focus::Unfocused));
 
-        let default_delegate = |_focus_state: FocusState<GS>, checked: BoolState<GS>, button: Box<dyn Widget<GS>>| -> Box<dyn Widget<GS>> {
-            let highlight_color = TupleState3::new(checked, EnvironmentColor::Red, EnvironmentColor::Blue)
-                .mapped(|(selected, true_color, false_color)| {
-                    if *selected {
-                        *true_color
-                    } else {
-                        *false_color
-                    }
-                });
+        let default_delegate = |_focus_state: FocusState<GS>,
+                                checked: BoolState<GS>,
+                                button: Box<dyn Widget<GS>>|
+                                -> Box<dyn Widget<GS>> {
+            let highlight_color =
+                TupleState3::new(checked, EnvironmentColor::Red, EnvironmentColor::Blue).mapped(
+                    |(selected, true_color, false_color)| {
+                        if *selected {
+                            *true_color
+                        } else {
+                            *false_color
+                        }
+                    },
+                );
 
-            Rectangle::new(vec![
-                button
-            ]).fill(highlight_color)
+            Rectangle::new(vec![button]).fill(highlight_color)
         };
 
-        Self::new_internal(checked.into(), focus_state.into(), default_delegate, label.into())
+        Self::new_internal(
+            checked.into(),
+            focus_state.into(),
+            default_delegate,
+            label.into(),
+        )
     }
 
-    pub fn delegate(self, delegate: fn(focus: FocusState<GS>, selected: BoolState<GS>, button: Box<dyn Widget<GS>>) -> Box<dyn Widget<GS>>) -> Box<Self> {
+    pub fn delegate(
+        self,
+        delegate: fn(
+            focus: FocusState<GS>,
+            selected: BoolState<GS>,
+            button: Box<dyn Widget<GS>>,
+        ) -> Box<dyn Widget<GS>>,
+    ) -> Box<Self> {
         let checked = self.checked;
         let focus_state = self.focus;
         let label_state = self.label;
@@ -56,7 +83,11 @@ impl<GS: GlobalStateContract> PlainSwitch<GS> {
     fn new_internal(
         checked: BoolState<GS>,
         focus_state: FocusState<GS>,
-        delegate: fn(focus: FocusState<GS>, selected: BoolState<GS>, button: Box<dyn Widget<GS>>) -> Box<dyn Widget<GS>>,
+        delegate: fn(
+            focus: FocusState<GS>,
+            selected: BoolState<GS>,
+            button: Box<dyn Widget<GS>>,
+        ) -> Box<dyn Widget<GS>>,
         label_state: StringState<GS>,
     ) -> Box<Self> {
         let button = PlainButton::<bool, GS>::new(Spacer::new(SpacerDirection::Vertical))
@@ -67,7 +98,8 @@ impl<GS: GlobalStateContract> PlainSwitch<GS> {
                 *checked = !*checked;
 
                 myself.set_focus_and_request(Focus::FocusRequested, env);
-            }).focused(focus_state.clone());
+            })
+            .focused(focus_state.clone());
 
         let delegate_widget = delegate(focus_state.clone(), checked.clone(), button);
 
@@ -75,7 +107,8 @@ impl<GS: GlobalStateContract> PlainSwitch<GS> {
             delegate_widget,
             Text::new(label_state.clone()),
             Spacer::new(SpacerDirection::Horizontal),
-        ]).spacing(5.0);
+        ])
+            .spacing(5.0);
 
         Box::new(PlainSwitch {
             id: Id::new_v4(),
@@ -172,6 +205,5 @@ impl<GS: GlobalStateContract> Layout<GS> for PlainSwitch<GS> {
         }
     }
 }
-
 
 impl<GS: GlobalStateContract> WidgetExt<GS> for PlainSwitch<GS> {}

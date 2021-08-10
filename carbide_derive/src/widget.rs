@@ -4,7 +4,10 @@ use proc_macro2;
 use proc_macro2::{Ident, TokenStream};
 use quote::ToTokens;
 use syn;
-use syn::{Attribute, DeriveInput, Error, Fields, GenericParam, Meta, MetaList, NestedMeta, Path, Type, WherePredicate};
+use syn::{
+    Attribute, DeriveInput, Error, Fields, GenericParam, Meta, MetaList, NestedMeta, Path, Type,
+    WherePredicate,
+};
 
 use derive_type::DeriveType;
 
@@ -23,9 +26,7 @@ pub fn impl_widget(ast: &syn::DeriveInput) -> proc_macro2::TokenStream {
     };
 
     let named = match &body.fields {
-        Fields::Named(n) => {
-            n
-        }
+        Fields::Named(n) => n,
         Fields::Unnamed(_) => {
             panic!("Unnamed field structs not supported for derive macro Widget")
         }
@@ -34,43 +35,42 @@ pub fn impl_widget(ast: &syn::DeriveInput) -> proc_macro2::TokenStream {
         }
     };
 
-    let state_idents_iter = named.named
-        .iter()
-        .filter_map(|field| {
-            let mut contains_state = false;
+    let state_idents_iter = named.named.iter().filter_map(|field| {
+        let mut contains_state = false;
 
-            for attr in &field.attrs {
-                match Attribute::parse_meta(&attr) {
-                    Ok(n) => {
-                        match n {
-                            // Path token
-                            Meta::Path(path) => {
-                                if is_attribute_path_state(path) {
-                                    contains_state = true
-                                }
+        for attr in &field.attrs {
+            match Attribute::parse_meta(&attr) {
+                Ok(n) => {
+                    match n {
+                        // Path token
+                        Meta::Path(path) => {
+                            if is_attribute_path_state(path) {
+                                contains_state = true
                             }
-                            // We do not have any list attributes for our macro yet
-                            Meta::List(_) => {}
-                            // We do not have any nameValue attributes for our macro yet
-                            Meta::NameValue(_) => {}
                         }
+                        // We do not have any list attributes for our macro yet
+                        Meta::List(_) => {}
+                        // We do not have any nameValue attributes for our macro yet
+                        Meta::NameValue(_) => {}
                     }
-                    Err(_) => {}
                 }
+                Err(_) => {}
             }
+        }
 
-            if contains_state {
-                field.ident.clone()
-            } else {
-                None
-            }
-        });
+        if contains_state {
+            field.ident.clone()
+        } else {
+            None
+        }
+    });
 
     let state_idents: Vec<Ident> = state_idents_iter.collect();
 
-    let streams = struct_attributes.iter().map(|x| {
-        x.to_token_stream(struct_ident, generics, &wheres, &state_idents)
-    }).collect::<Vec<_>>();
+    let streams = struct_attributes
+        .iter()
+        .map(|x| x.to_token_stream(struct_ident, generics, &wheres, &state_idents))
+        .collect::<Vec<_>>();
 
     quote! {
         #(#streams)*
@@ -82,18 +82,16 @@ pub fn impl_widget(ast: &syn::DeriveInput) -> proc_macro2::TokenStream {
 
 fn parse_attributes(attr: &Vec<Attribute>) -> HashSet<DeriveType> {
     let mut string_set = HashSet::new();
-    attr.iter().filter_map(|attribute| {
-        match Attribute::parse_meta(attribute) {
-            Ok(meta) => {
-                Some(stringify_meta(meta))
-            }
+    attr.iter()
+        .filter_map(|attribute| match Attribute::parse_meta(attribute) {
+            Ok(meta) => Some(stringify_meta(meta)),
             Err(_) => panic!("Could not parse attribute as meta"),
-        }
-    }).for_each(|a| {
-        for x in a {
-            string_set.insert(x);
-        }
-    });
+        })
+        .for_each(|a| {
+            for x in a {
+                string_set.insert(x);
+            }
+        });
 
     let mut set = if string_set.contains("carbide_derive") {
         HashSet::new()
@@ -102,9 +100,9 @@ fn parse_attributes(attr: &Vec<Attribute>) -> HashSet<DeriveType> {
     };
 
     for string in string_set {
-        if string.contains(".") &&
-            (string.starts_with("carbide_derive") ||
-                string.starts_with("carbide_exclude")) {
+        if string.contains(".")
+            && (string.starts_with("carbide_derive") || string.starts_with("carbide_exclude"))
+        {
             let last = string.split('.').last().unwrap();
             let derive_type = DeriveType::from_str(last);
             if string.starts_with("carbide_derive") {
@@ -126,14 +124,13 @@ fn stringify_meta(meta: Meta) -> Vec<String> {
         Meta::List(list) => {
             let own_path = path_to_string(list.path);
 
-            let metas = list.nested.iter().filter_map(|nested_meta| {
-                match nested_meta {
-                    NestedMeta::Meta(m) => {
-                        Some(stringify_meta(m.clone()))
-                    }
-                    NestedMeta::Lit(_) => None
-                }
-            });
+            let metas = list
+                .nested
+                .iter()
+                .filter_map(|nested_meta| match nested_meta {
+                    NestedMeta::Meta(m) => Some(stringify_meta(m.clone())),
+                    NestedMeta::Lit(_) => None,
+                });
 
             let mut resulting = vec![own_path.clone()];
 
@@ -155,53 +152,50 @@ fn stringify_meta(meta: Meta) -> Vec<String> {
 }
 
 fn path_to_string(path: Path) -> String {
-    let mut string = path.segments.iter().fold(String::from(""), |mut state, new| {
-        state.push_str(new.ident.to_string().as_str());
-        state.push_str(".");
-        state
-    });
+    let mut string = path
+        .segments
+        .iter()
+        .fold(String::from(""), |mut state, new| {
+            state.push_str(new.ident.to_string().as_str());
+            state.push_str(".");
+            state
+        });
 
     string.remove(string.len() - 1);
     string
 }
-
 
 fn filtered_where_clause(ast: &&DeriveInput) -> TokenStream {
     if ast.generics.where_clause.is_none() {
         return quote! {};
     }
 
-
     let _wheres = &ast.generics.where_clause.clone().unwrap();
 
-    let filtered = _wheres.predicates.iter().filter_map(|a| {
-        match a {
-            WherePredicate::Type(t) => {
-                match &t.bounded_ty {
-                    Type::Path(path) => {
-                        if path.path.segments.len() == 1 && path.path.segments.first().unwrap().ident.to_string() == "GS" {
-                            None
-                        } else {
-                            Some(WherePredicate::Type(t.clone()))
-                        }
-                    }
-                    _ => Some(WherePredicate::Type(t.clone()))
+    let filtered = _wheres.predicates.iter().filter_map(|a| match a {
+        WherePredicate::Type(t) => match &t.bounded_ty {
+            Type::Path(path) => {
+                if path.path.segments.len() == 1
+                    && path.path.segments.first().unwrap().ident.to_string() == "GS"
+                {
+                    None
+                } else {
+                    Some(WherePredicate::Type(t.clone()))
                 }
             }
-            b => Some(b.clone())
-        }
+            _ => Some(WherePredicate::Type(t.clone())),
+        },
+        b => Some(b.clone()),
     });
     quote! { where #(#filtered),*}
 }
 
 fn is_attribute_path_state(path: Path) -> bool {
-    let is_state = path.segments.len() == 1 &&
-        match path.segments.first() {
-            None => false,
-            Some(segment) => {
-                segment.ident.to_string() == "state"
-            }
-        };
+    let is_state = path.segments.len() == 1
+        && match path.segments.first() {
+        None => false,
+        Some(segment) => segment.ident.to_string() == "state",
+    };
 
     is_state
 }

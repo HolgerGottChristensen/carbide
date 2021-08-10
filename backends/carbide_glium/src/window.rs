@@ -68,17 +68,22 @@ impl<S: 'static + Clone> Window<S> {
     }
 
     pub fn add_font(&mut self, path: &str) -> Result<Id, Error> {
-        let assets = find_folder::Search::KidsThenParents(3, 5).for_folder("assets").unwrap();
+        let assets = find_folder::Search::KidsThenParents(3, 5)
+            .for_folder("assets")
+            .unwrap();
         let font_path = assets.join(path);
         self.ui.environment.insert_font_from_file(font_path)
     }
 
     pub fn add_image(&mut self, path: &str) -> Result<carbide_core::image_map::Id, Error> {
-        let assets = find_folder::Search::ParentsThenKids(5, 3).for_folder("assets").unwrap();
+        let assets = find_folder::Search::ParentsThenKids(5, 3)
+            .for_folder("assets")
+            .unwrap();
         let path = assets.join(path);
         let rgba_image = image::open(&std::path::Path::new(&path)).unwrap().to_rgba();
         let image_dimensions = rgba_image.dimensions();
-        let raw_image = glium::texture::RawImage2d::from_raw_rgba(rgba_image.into_raw(), image_dimensions);
+        let raw_image =
+            glium::texture::RawImage2d::from_raw_rgba(rgba_image.into_raw(), image_dimensions);
         let texture = glium::texture::Texture2d::new(&self.display.0, raw_image).unwrap();
         Ok(self.image_map.insert(texture))
     }
@@ -94,7 +99,9 @@ impl<S: 'static + Clone> Window<S> {
             events.clear();
 
             // Get all the new events since the last frame.
-            self.event_loop.poll_events(|event| { events.push(event); });
+            self.event_loop.poll_events(|event| {
+                events.push(event);
+            });
 
             // If there are no new events, wait for one.
             if events.is_empty() {
@@ -106,22 +113,20 @@ impl<S: 'static + Clone> Window<S> {
 
             // Process the events.
             for event in events.drain(..) {
-
                 // Break from the loop upon `Escape` or closed window.
                 match event.clone() {
-                    glium::glutin::Event::WindowEvent { event, .. } => {
-                        match event {
-                            glium::glutin::WindowEvent::CloseRequested |
-                            glium::glutin::WindowEvent::KeyboardInput {
-                                input: glium::glutin::KeyboardInput {
-                                    virtual_keycode: Some(glium::glutin::VirtualKeyCode::Escape),
-                                    ..
-                                },
+                    glium::glutin::Event::WindowEvent { event, .. } => match event {
+                        glium::glutin::WindowEvent::CloseRequested
+                        | glium::glutin::WindowEvent::KeyboardInput {
+                            input:
+                            glium::glutin::KeyboardInput {
+                                virtual_keycode: Some(glium::glutin::VirtualKeyCode::Escape),
                                 ..
-                            } => break 'render,
-                            _ => (),
-                        }
-                    }
+                            },
+                            ..
+                        } => break 'render,
+                        _ => (),
+                    },
                     _ => (),
                 };
 
@@ -130,7 +135,6 @@ impl<S: 'static + Clone> Window<S> {
                     None => continue,
                     Some(input) => input,
                 };
-
 
                 // Handle the input with the `Ui`.
                 self.ui.handle_event(input, &mut self.state);
@@ -142,7 +146,7 @@ impl<S: 'static + Clone> Window<S> {
                     None => (),
                     Some(n) => {
                         n.as_ref()(ui);
-                    },
+                    }
                 }
             }
 
@@ -151,13 +155,14 @@ impl<S: 'static + Clone> Window<S> {
                 self.renderer.fill(&self.display.0, cprims, &self.image_map);
                 let mut target = self.display.0.draw();
                 target.clear_color(0.0, 0.0, 0.0, 1.0);
-                self.renderer.draw(&self.display.0, &mut target, &self.image_map).unwrap();
+                self.renderer
+                    .draw(&self.display.0, &mut target, &self.image_map)
+                    .unwrap();
                 target.finish().unwrap();
             }
         }
     }
 }
-
 
 pub struct GliumDisplayWinitWrapper(pub glium::Display);
 
@@ -190,7 +195,10 @@ impl EventLoop {
     }
 
     /// Produce an iterator yielding all available events.
-    pub fn next(&mut self, events_loop: &mut glium::glutin::EventsLoop) -> Vec<glium::glutin::Event> {
+    pub fn next(
+        &mut self,
+        events_loop: &mut glium::glutin::EventsLoop,
+    ) -> Vec<glium::glutin::Event> {
         // We don't want to loop any faster than 60 FPS, so wait until it has been at least 16ms
         // since the last yield.
         let last_update = self.last_update;

@@ -19,7 +19,12 @@ impl FontFamily {
         }
     }
 
-    pub fn add_font<P: AsRef<Path>>(&mut self, path: P, weight_hint: FontWeight, style_hint: FontStyle) {
+    pub fn add_font<P: AsRef<Path>>(
+        &mut self,
+        path: P,
+        weight_hint: FontWeight,
+        style_hint: FontStyle,
+    ) {
         self.fonts.push(FontDescriptor {
             path: path.as_ref().to_path_buf(),
             font_id: 0,
@@ -29,7 +34,12 @@ impl FontFamily {
         })
     }
 
-    pub fn add_bitmap_font<P: AsRef<Path>>(&mut self, path: P, weight_hint: FontWeight, style_hint: FontStyle) {
+    pub fn add_bitmap_font<P: AsRef<Path>>(
+        &mut self,
+        path: P,
+        weight_hint: FontWeight,
+        style_hint: FontStyle,
+    ) {
         self.fonts.push(FontDescriptor {
             path: path.as_ref().to_path_buf(),
             font_id: 0,
@@ -52,7 +62,7 @@ impl FontFamily {
                 (FontStyle::Normal, FontStyle::Normal) => {
                     font_score += 1000.0;
                 }
-                (_, _) => ()
+                (_, _) => (),
             }
             let font_weight = font.weight_hint.weight();
             let target_weight = weight_hint.weight();

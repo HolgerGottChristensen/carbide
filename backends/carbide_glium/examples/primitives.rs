@@ -56,10 +56,8 @@ fn main() {
     // Poll events from the window.
     let mut event_loop = support::EventLoop::new();
     'main: loop {
-
         // Handle all events.
         for event in event_loop.next(&mut events_loop) {
-
             // Use the `winit` backend feature to convert the winit event to a carbide one.
             if let Some(event) = support::convert_event(event.clone(), &display) {
                 ui.handle_event(event);
@@ -69,9 +67,10 @@ fn main() {
             match event {
                 glium::glutin::Event::WindowEvent { event, .. } => match event {
                     // Break from the loop upon `Escape`.
-                    glium::glutin::WindowEvent::CloseRequested |
-                    glium::glutin::WindowEvent::KeyboardInput {
-                        input: glium::glutin::KeyboardInput {
+                    glium::glutin::WindowEvent::CloseRequested
+                    | glium::glutin::WindowEvent::KeyboardInput {
+                        input:
+                        glium::glutin::KeyboardInput {
                             virtual_keycode: Some(glium::glutin::VirtualKeyCode::Escape),
                             ..
                         },
@@ -96,37 +95,55 @@ fn main() {
     }
 }
 
-
 fn set_ui(ref mut ui: carbide_core::UiCell, ids: &Ids) {
-    use carbide_core::{Positionable, OldWidget};
-    use carbide_core::widget::{Canvas, Circle, Line, Ellipse, PointPath, Polygon, Rectangle};
+    use carbide_core::widget::{Canvas, Circle, Ellipse, Line, PointPath, Polygon, Rectangle};
+    use carbide_core::{OldWidget, Positionable};
     use std::iter::once;
 
     // The background canvas upon which we'll place our widgets.
     Canvas::new().pad(80.0).set(ids.canvas, ui);
 
-    Line::centred([-40.0, -40.0], [40.0, 40.0]).top_left_of(ids.canvas).set(ids.line, ui);
+    Line::centred([-40.0, -40.0], [40.0, 40.0])
+        .top_left_of(ids.canvas)
+        .set(ids.line, ui);
 
     let left = [-40.0, -40.0];
     let top = [0.0, 40.0];
     let right = [40.0, -40.0];
     let points = once(left).chain(once(top)).chain(once(right));
-    PointPath::centred(points).down(80.0).set(ids.point_path, ui);
+    PointPath::centred(points)
+        .down(80.0)
+        .set(ids.point_path, ui);
 
-    Rectangle::fill_old([80.0, 80.0]).down(80.0).set(ids.rectangle_fill, ui);
+    Rectangle::fill_old([80.0, 80.0])
+        .down(80.0)
+        .set(ids.rectangle_fill, ui);
 
-    Rectangle::outline([80.0, 80.0]).down(80.0).set(ids.rectangle_outline, ui);
+    Rectangle::outline([80.0, 80.0])
+        .down(80.0)
+        .set(ids.rectangle_outline, ui);
 
     let bl = [-40.0, -40.0];
     let tl = [-20.0, 40.0];
     let tr = [20.0, 40.0];
     let br = [40.0, -40.0];
     let points = once(bl).chain(once(tl)).chain(once(tr)).chain(once(br));
-    Polygon::centred_fill(points).right_from(ids.line, 80.0).set(ids.trapezoid, ui);
+    Polygon::centred_fill(points)
+        .right_from(ids.line, 80.0)
+        .set(ids.trapezoid, ui);
 
-    Ellipse::fill_old([40.0, 80.0]).down(80.0).align_middle_x().set(ids.oval_fill, ui);
+    Ellipse::fill_old([40.0, 80.0])
+        .down(80.0)
+        .align_middle_x()
+        .set(ids.oval_fill, ui);
 
-    Ellipse::outline([80.0, 40.0]).down(100.0).align_middle_x().set(ids.oval_outline, ui);
+    Ellipse::outline([80.0, 40.0])
+        .down(100.0)
+        .align_middle_x()
+        .set(ids.oval_outline, ui);
 
-    Circle::fill(40.0).down(100.0).align_middle_x().set(ids.circle, ui);
+    Circle::fill(40.0)
+        .down(100.0)
+        .align_middle_x()
+        .set(ids.circle, ui);
 }

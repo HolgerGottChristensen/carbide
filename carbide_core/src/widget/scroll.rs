@@ -1,6 +1,8 @@
 use crate::draw::{Dimension, Position};
 use crate::draw::shape::vertex::Vertex;
-use crate::event::{ModifierKey, MouseButton, MouseEvent, MouseEventHandler, OtherEventHandler, WidgetEvent};
+use crate::event::{
+    ModifierKey, MouseButton, MouseEvent, MouseEventHandler, OtherEventHandler, WidgetEvent,
+};
 use crate::prelude::*;
 use crate::widget::types::ScrollDirection;
 
@@ -36,7 +38,8 @@ impl Scroll {
 
         if self.child.height() > self.height() {
             if self.scroll_offset.y < -(self.child.height() - self.height()) {
-                self.scroll_offset = Position::new(self.scroll_offset.x, -(self.child.height() - self.height()));
+                self.scroll_offset =
+                    Position::new(self.scroll_offset.x, -(self.child.height() - self.height()));
             }
         } else {
             self.scroll_offset = Position::new(self.scroll_offset.x, 0.0);
@@ -50,7 +53,8 @@ impl Scroll {
 
         if self.child.width() > self.width() {
             if self.scroll_offset.x > (self.child.width() - self.width()) {
-                self.scroll_offset = Position::new(self.child.width() - self.width(), self.scroll_offset.y);
+                self.scroll_offset =
+                    Position::new(self.child.width() - self.width(), self.scroll_offset.y);
             }
         } else {
             self.scroll_offset = Position::new(0.0, self.scroll_offset.y);
@@ -75,8 +79,12 @@ impl Scroll {
             drag_started_on_horizontal_scrollbar: false,
             vertical_scrollbar_hovered: false,
             horizontal_scrollbar_hovered: false,
-            scrollbar_horizontal_background: Rectangle::new(vec![]).fill(Color::Rgba(0.0, 0.0, 0.0, 0.5)).frame(100.0, 10.0),
-            scrollbar_vertical_background: Rectangle::new(vec![]).fill(Color::Rgba(0.0, 0.0, 0.0, 0.5)).frame(10.0, 100.0),
+            scrollbar_horizontal_background: Rectangle::new(vec![])
+                .fill(Color::Rgba(0.0, 0.0, 0.0, 0.5))
+                .frame(100.0, 10.0),
+            scrollbar_vertical_background: Rectangle::new(vec![])
+                .fill(Color::Rgba(0.0, 0.0, 0.0, 0.5))
+                .frame(10.0, 100.0),
         })
     }
 }
@@ -84,11 +92,16 @@ impl Scroll {
 impl MouseEventHandler for Scroll {
     fn handle_mouse_event(&mut self, event: &MouseEvent, _: &bool, _: &mut Environment) {
         match event {
-            MouseEvent::Scroll { x, y, modifiers, .. } => {
-                if !self.is_inside(event.get_current_mouse_position()) { return }
+            MouseEvent::Scroll {
+                x, y, modifiers, ..
+            } => {
+                if !self.is_inside(event.get_current_mouse_position()) {
+                    return;
+                }
 
-                if self.scroll_directions == ScrollDirection::Both ||
-                    self.scroll_directions == ScrollDirection::Vertical {
+                if self.scroll_directions == ScrollDirection::Both
+                    || self.scroll_directions == ScrollDirection::Vertical
+                {
                     let offset_multiplier = 1.0; //self.child.height() / self.height();
                     if modifiers.contains(ModifierKey::SHIFT) {
                         self.scroll_offset.y -= x * offset_multiplier;
@@ -99,8 +112,9 @@ impl MouseEventHandler for Scroll {
                     self.keep_y_within_bounds();
                 }
 
-                if self.scroll_directions == ScrollDirection::Both ||
-                    self.scroll_directions == ScrollDirection::Horizontal {
+                if self.scroll_directions == ScrollDirection::Both
+                    || self.scroll_directions == ScrollDirection::Horizontal
+                {
                     let offset_multiplier = 1.0; //self.child.width() / self.width();
                     if modifiers.contains(ModifierKey::SHIFT) {
                         self.scroll_offset.x += y * offset_multiplier;
@@ -117,13 +131,17 @@ impl MouseEventHandler for Scroll {
             }
             MouseEvent::Move { to, .. } => {
                 self.vertical_scrollbar_hovered = self.scrollbar_vertical_background.is_inside(*to);
-                self.horizontal_scrollbar_hovered = self.scrollbar_horizontal_background.is_inside(*to);
+                self.horizontal_scrollbar_hovered =
+                    self.scrollbar_horizontal_background.is_inside(*to);
             }
             MouseEvent::Press(MouseButton::Left, point, ..) => {
-                if self.scrollbar_vertical_background.is_inside(*point) && !self.scrollbar_vertical.is_inside(*point) {
+                if self.scrollbar_vertical_background.is_inside(*point)
+                    && !self.scrollbar_vertical.is_inside(*point)
+                {
                     let offset_multiplier = self.child.height() / self.height();
 
-                    let middle_of_scrollbar = self.scrollbar_vertical.y() + self.scrollbar_vertical.height() / 2.0;
+                    let middle_of_scrollbar =
+                        self.scrollbar_vertical.y() + self.scrollbar_vertical.height() / 2.0;
 
                     let delta = point.y - middle_of_scrollbar;
 
@@ -132,10 +150,13 @@ impl MouseEventHandler for Scroll {
                     self.keep_y_within_bounds();
                 }
 
-                if self.scrollbar_horizontal_background.is_inside(*point) && !self.scrollbar_horizontal.is_inside(*point) {
+                if self.scrollbar_horizontal_background.is_inside(*point)
+                    && !self.scrollbar_horizontal.is_inside(*point)
+                {
                     let offset_multiplier = self.child.width() / self.width();
 
-                    let middle_of_scrollbar = self.scrollbar_horizontal.x() + self.scrollbar_horizontal.width() / 2.0;
+                    let middle_of_scrollbar =
+                        self.scrollbar_horizontal.x() + self.scrollbar_horizontal.width() / 2.0;
 
                     let delta = point.x - middle_of_scrollbar;
 
@@ -144,7 +165,12 @@ impl MouseEventHandler for Scroll {
                     self.keep_x_within_bounds();
                 }
             }
-            MouseEvent::Drag { origin, to, delta_xy, .. } => {
+            MouseEvent::Drag {
+                origin,
+                to,
+                delta_xy,
+                ..
+            } => {
                 if !self.drag_started_on_vertical_scrollbar {
                     if self.scrollbar_vertical.is_inside(*origin) {
                         self.drag_started_on_vertical_scrollbar = true;
@@ -206,31 +232,40 @@ impl Layout for Scroll {
 
         self.dimension = requested_size;
 
-        if self.scroll_directions == ScrollDirection::Both ||
-            self.scroll_directions == ScrollDirection::Vertical {
+        if self.scroll_directions == ScrollDirection::Both
+            || self.scroll_directions == ScrollDirection::Vertical
+        {
             let min_height = 30.0;
             let max_height = requested_size.height;
-            let horizontal_height = if self.scroll_directions == ScrollDirection::Both && self.child.width() > self.width() {
+            let horizontal_height = if self.scroll_directions == ScrollDirection::Both
+                && self.child.width() > self.width()
+            {
                 self.scrollbar_horizontal.height()
             } else {
                 0.0
             };
             let percent_height = max_height / self.child.height();
 
-            let height = (max_height - min_height) * percent_height.min(1.0) + min_height - horizontal_height;
+            let height = (max_height - min_height) * percent_height.min(1.0) + min_height
+                - horizontal_height;
 
             self.scrollbar_vertical.set_height(height);
             self.scrollbar_vertical.calculate_size(requested_size, env);
 
-            self.scrollbar_vertical_background.set_height(requested_size.height);
-            self.scrollbar_vertical_background.calculate_size(requested_size, env);
+            self.scrollbar_vertical_background
+                .set_height(requested_size.height);
+            self.scrollbar_vertical_background
+                .calculate_size(requested_size, env);
         }
 
-        if self.scroll_directions == ScrollDirection::Both ||
-            self.scroll_directions == ScrollDirection::Horizontal {
+        if self.scroll_directions == ScrollDirection::Both
+            || self.scroll_directions == ScrollDirection::Horizontal
+        {
             let min_width = 30.0;
             let max_width = requested_size.width;
-            let vertical_width = if self.scroll_directions == ScrollDirection::Both && self.child.height() > self.height() {
+            let vertical_width = if self.scroll_directions == ScrollDirection::Both
+                && self.child.height() > self.height()
+            {
                 self.scrollbar_vertical.width()
             } else {
                 0.0
@@ -238,12 +273,16 @@ impl Layout for Scroll {
 
             let percent_width = max_width / self.child.width();
 
-            let width = (max_width - min_width) * percent_width.min(1.0) + min_width - vertical_width;
+            let width =
+                (max_width - min_width) * percent_width.min(1.0) + min_width - vertical_width;
 
             self.scrollbar_horizontal.set_width(width);
-            self.scrollbar_horizontal.calculate_size(requested_size, env);
-            self.scrollbar_horizontal_background.set_width(requested_size.width);
-            self.scrollbar_horizontal_background.calculate_size(requested_size, env);
+            self.scrollbar_horizontal
+                .calculate_size(requested_size, env);
+            self.scrollbar_horizontal_background
+                .set_width(requested_size.width);
+            self.scrollbar_horizontal_background
+                .calculate_size(requested_size, env);
         }
 
         requested_size
@@ -258,13 +297,22 @@ impl Layout for Scroll {
 
         let child_position = self.child.position();
 
-        self.child.set_position(Position::new(child_position.x - self.scroll_offset.x, child_position.y + self.scroll_offset.y));
-
+        self.child.set_position(Position::new(
+            child_position.x - self.scroll_offset.x,
+            child_position.y + self.scroll_offset.y,
+        ));
 
         // Position scrollbars
-        self.scrollbar_vertical.set_position(self.position().add_vertex(Position::new(self.dimension.width - self.scrollbar_vertical.width(), 0.0)));
-        self.scrollbar_vertical_background.set_position(self.position().add_vertex(Position::new(self.dimension.width - self.scrollbar_vertical.width(), 0.0)));
-
+        self.scrollbar_vertical
+            .set_position(self.position().add_vertex(Position::new(
+                self.dimension.width - self.scrollbar_vertical.width(),
+                0.0,
+            )));
+        self.scrollbar_vertical_background
+            .set_position(self.position().add_vertex(Position::new(
+                self.dimension.width - self.scrollbar_vertical.width(),
+                0.0,
+            )));
 
         let scroll_vertical_percent = if self.child.height() - self.height() != 0.0 {
             self.scroll_offset.y / (self.child.height() - self.height())
@@ -272,18 +320,31 @@ impl Layout for Scroll {
             0.0
         };
 
-        let horizontal_height = if self.scroll_directions == ScrollDirection::Both && self.child.width() > self.width() {
+        let horizontal_height = if self.scroll_directions == ScrollDirection::Both
+            && self.child.width() > self.width()
+        {
             self.scrollbar_horizontal.height()
         } else {
             0.0
         };
 
-        self.scrollbar_vertical.set_position(self.scrollbar_vertical.position().add_vertex(Position::new(0.0, -(self.height() - horizontal_height - self.scrollbar_vertical.height()) * scroll_vertical_percent)));
+        self.scrollbar_vertical
+            .set_position(self.scrollbar_vertical.position().add_vertex(Position::new(
+                0.0,
+                -(self.height() - horizontal_height - self.scrollbar_vertical.height())
+                    * scroll_vertical_percent,
+            )));
 
-
-        self.scrollbar_horizontal.set_position(self.position().add_vertex(Position::new(0.0, self.dimension.height - self.scrollbar_horizontal.height())));
-        self.scrollbar_horizontal_background.set_position(self.position().add_vertex(Position::new(0.0, self.dimension.height - self.scrollbar_horizontal.height())));
-
+        self.scrollbar_horizontal
+            .set_position(self.position().add_vertex(Position::new(
+                0.0,
+                self.dimension.height - self.scrollbar_horizontal.height(),
+            )));
+        self.scrollbar_horizontal_background
+            .set_position(self.position().add_vertex(Position::new(
+                0.0,
+                self.dimension.height - self.scrollbar_horizontal.height(),
+            )));
 
         let scroll_horizontal_percent = if self.child.width() - self.width() != 0.0 {
             self.scroll_offset.x / (self.child.width() - self.width())
@@ -291,14 +352,24 @@ impl Layout for Scroll {
             0.0
         };
 
-        let vertical_width = if self.scroll_directions == ScrollDirection::Both && self.child.height() > self.height() {
+        let vertical_width = if self.scroll_directions == ScrollDirection::Both
+            && self.child.height() > self.height()
+        {
             self.scrollbar_vertical.width()
         } else {
             0.0
         };
 
-        self.scrollbar_horizontal.set_position(self.scrollbar_horizontal.position().add_vertex(Position::new((self.width() - vertical_width - self.scrollbar_horizontal.width()) * scroll_horizontal_percent, 0.0)));
-
+        self.scrollbar_horizontal
+            .set_position(
+                self.scrollbar_horizontal
+                    .position()
+                    .add_vertex(Position::new(
+                        (self.width() - vertical_width - self.scrollbar_horizontal.width())
+                            * scroll_horizontal_percent,
+                        0.0,
+                    )),
+            );
 
         self.scrollbar_vertical.position_children();
         self.scrollbar_horizontal.position_children();
@@ -370,28 +441,32 @@ impl Render for Scroll {
     fn process_get_primitives(&mut self, primitives: &mut Vec<Primitive>, env: &mut Environment) {
         self.child.process_get_primitives(primitives, env);
 
-        if (self.scroll_directions == ScrollDirection::Both ||
-            self.scroll_directions == ScrollDirection::Vertical) && self.child.height() > self.height() {
+        if (self.scroll_directions == ScrollDirection::Both
+            || self.scroll_directions == ScrollDirection::Vertical)
+            && self.child.height() > self.height()
+        {
             if self.vertical_scrollbar_hovered || self.drag_started_on_vertical_scrollbar {
-                self.scrollbar_vertical_background.process_get_primitives(primitives, env);
+                self.scrollbar_vertical_background
+                    .process_get_primitives(primitives, env);
             }
 
-            self.scrollbar_vertical.process_get_primitives(primitives, env);
+            self.scrollbar_vertical
+                .process_get_primitives(primitives, env);
         }
 
-        if (self.scroll_directions == ScrollDirection::Both ||
-            self.scroll_directions == ScrollDirection::Horizontal) && self.child.width() > self.width() {
+        if (self.scroll_directions == ScrollDirection::Both
+            || self.scroll_directions == ScrollDirection::Horizontal)
+            && self.child.width() > self.width()
+        {
             if self.horizontal_scrollbar_hovered || self.drag_started_on_horizontal_scrollbar {
-                self.scrollbar_horizontal_background.process_get_primitives(primitives, env);
+                self.scrollbar_horizontal_background
+                    .process_get_primitives(primitives, env);
             }
 
-            self.scrollbar_horizontal.process_get_primitives(primitives, env);
+            self.scrollbar_horizontal
+                .process_get_primitives(primitives, env);
         }
     }
 }
 
 impl WidgetExt for Scroll {}
-
-
-
-

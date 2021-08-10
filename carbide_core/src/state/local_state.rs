@@ -13,7 +13,10 @@ use crate::state::value_cell::{ValueCell, ValueRef, ValueRefMut};
 use crate::state::widget_state::WidgetState;
 
 #[derive(Clone)]
-pub struct LocalState<T> where T: StateContract {
+pub struct LocalState<T>
+    where
+        T: StateContract,
+{
     key: StateKey,
     value: InnerState<T>,
 }

@@ -2,17 +2,20 @@
 //! A simple demonstration of how to instantiate an `Image` widget.
 //!
 
-#[macro_use] extern crate carbide_core;
-extern crate glium;
+#[macro_use]
+extern crate carbide_core;
 extern crate carbide_glium;
-#[macro_use] extern crate carbide_winit;
+#[macro_use]
+extern crate carbide_winit;
 extern crate find_folder;
+extern crate glium;
 extern crate image;
 
-mod support;
-
-use carbide_core::{widget, Colorable, Positionable, Sizeable, OldWidget, color};
 use glium::Surface;
+
+use carbide_core::{color, Colorable, OldWidget, Positionable, Sizeable, widget};
+
+mod support;
 
 const WIDTH: u32 = 800;
 const HEIGHT: u32 = 600;
@@ -49,10 +52,8 @@ fn main() {
     // Poll events from the window.
     let mut event_loop = support::EventLoop::new();
     'main: loop {
-
         // Handle all events.
         for event in event_loop.next(&mut events_loop) {
-
             // Use the `winit` backend feature to convert the winit event to a carbide one.
             if let Some(event) = support::convert_event(event.clone(), &display) {
                 ui.handle_event(event);
@@ -61,9 +62,10 @@ fn main() {
             match event {
                 glium::glutin::Event::WindowEvent { event, .. } => match event {
                     // Break from the loop upon `Escape`.
-                    glium::glutin::WindowEvent::CloseRequested |
-                    glium::glutin::WindowEvent::KeyboardInput {
-                        input: glium::glutin::KeyboardInput {
+                    glium::glutin::WindowEvent::CloseRequested
+                    | glium::glutin::WindowEvent::KeyboardInput {
+                        input:
+                        glium::glutin::KeyboardInput {
                             virtual_keycode: Some(glium::glutin::VirtualKeyCode::Escape),
                             ..
                         },
@@ -79,9 +81,14 @@ fn main() {
         {
             let ui = &mut ui.set_widgets();
             // Draw a light blue background.
-            widget::Canvas::new().color(color::LIGHT_BLUE).set(ids.background, ui);
+            widget::Canvas::new()
+                .color(color::LIGHT_BLUE)
+                .set(ids.background, ui);
             // Instantiate the `Image` at its full size in the middle of the window.
-            widget::Image::old_new(rust_logo).w_h(w as f64, h as f64).middle().set(ids.rust_logo, ui);
+            widget::Image::old_new(rust_logo)
+                .w_h(w as f64, h as f64)
+                .middle()
+                .set(ids.rust_logo, ui);
         }
 
         // Render the `Ui` and then display it on the screen.
@@ -97,11 +104,16 @@ fn main() {
 
 // Load the Rust logo from our assets folder to use as an example image.
 fn load_rust_logo(display: &glium::Display) -> glium::texture::Texture2d {
-    let assets = find_folder::Search::ParentsThenKids(5, 3).for_folder("assets").unwrap();
+    let assets = find_folder::Search::ParentsThenKids(5, 3)
+        .for_folder("assets")
+        .unwrap();
     let path = assets.join("images/rust.png");
     let rgba_image = image::open(&std::path::Path::new(&path)).unwrap().to_rgba();
     let image_dimensions = rgba_image.dimensions();
-    let raw_image = glium::texture::RawImage2d::from_raw_rgba_reversed(&rgba_image.into_raw(), image_dimensions);
+    let raw_image = glium::texture::RawImage2d::from_raw_rgba_reversed(
+        &rgba_image.into_raw(),
+        image_dimensions,
+    );
     let texture = glium::texture::Texture2d::new(display, raw_image).unwrap();
     texture
 }

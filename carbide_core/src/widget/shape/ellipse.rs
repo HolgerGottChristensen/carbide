@@ -18,8 +18,10 @@ pub struct Ellipse {
     pub id: Uuid,
     position: Position,
     dimension: Dimension,
-    #[state] stroke_color: ColorState,
-    #[state] fill_color: ColorState,
+    #[state]
+    stroke_color: ColorState,
+    #[state]
+    fill_color: ColorState,
     style: ShapeStyle,
     stroke_style: StrokeStyle,
     triangle_store: TriangleStore,
@@ -104,20 +106,25 @@ impl Render for Ellipse {
     fn get_primitives(&mut self, _: &mut Environment) -> Vec<Primitive> {
         let radii = vec2(self.width() as f32 / 2.0, self.height() as f32 / 2.0);
         let center = point(self.x() as f32 + radii.x, self.y() as f32 + radii.y);
-        let rectangle = rect(self.x() as f32, self.y() as f32, self.width() as f32, self.height() as f32);
+        let rectangle = rect(
+            self.x() as f32,
+            self.y() as f32,
+            self.width() as f32,
+            self.height() as f32,
+        );
 
         tessellate(self, &rectangle, &|builder, _| {
-            builder.add_ellipse(
-                center,
-                radii,
-                Angle::degrees(0.0),
-                Winding::Positive,
-            );
+            builder.add_ellipse(center, radii, Angle::degrees(0.0), Winding::Positive);
         });
 
-        let mut prims = self.triangle_store.get_primitives(*self.fill_color.value(), *self.stroke_color.value());
+        let mut prims = self
+            .triangle_store
+            .get_primitives(*self.fill_color.value(), *self.stroke_color.value());
 
-        prims.extend(Rectangle::debug_outline(Rect::new(self.position, self.dimension), 1.0));
+        prims.extend(Rectangle::debug_outline(
+            Rect::new(self.position, self.dimension),
+            1.0,
+        ));
 
         return prims;
     }

@@ -57,7 +57,6 @@ impl CommonWidget for Padding {
         WidgetIterMut::single(self.child.deref_mut())
     }
 
-
     fn position(&self) -> Position {
         self.position
     }
@@ -77,19 +76,31 @@ impl CommonWidget for Padding {
 
 impl Layout for Padding {
     fn calculate_size(&mut self, requested_size: Dimension, env: &mut Environment) -> Dimension {
-        let dimensions = Dimension::new(requested_size.width - self.edge_insets.left - self.edge_insets.right, requested_size.height - self.edge_insets.top - self.edge_insets.bottom);
+        let dimensions = Dimension::new(
+            requested_size.width - self.edge_insets.left - self.edge_insets.right,
+            requested_size.height - self.edge_insets.top - self.edge_insets.bottom,
+        );
 
         let child_dimensions = self.child.calculate_size(dimensions, env);
 
-        self.dimension = Dimension::new(child_dimensions.width + self.edge_insets.left + self.edge_insets.right, child_dimensions.height + self.edge_insets.top + self.edge_insets.bottom);
+        self.dimension = Dimension::new(
+            child_dimensions.width + self.edge_insets.left + self.edge_insets.right,
+            child_dimensions.height + self.edge_insets.top + self.edge_insets.bottom,
+        );
 
         self.dimension
     }
 
     fn position_children(&mut self) {
         let positioning = BasicLayouter::Center.positioner();
-        let position = Position::new(self.x() + self.edge_insets.left, self.y() + self.edge_insets.top);
-        let dimension = Dimension::new(self.width() - self.edge_insets.left - self.edge_insets.right, self.height() - self.edge_insets.top - self.edge_insets.bottom);
+        let position = Position::new(
+            self.x() + self.edge_insets.left,
+            self.y() + self.edge_insets.top,
+        );
+        let dimension = Dimension::new(
+            self.width() - self.edge_insets.left - self.edge_insets.right,
+            self.height() - self.edge_insets.top - self.edge_insets.bottom,
+        );
 
         positioning(position, dimension, &mut self.child);
         self.child.position_children();

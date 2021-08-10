@@ -10,7 +10,8 @@ pub struct Border {
     child: Box<dyn Widget>,
     position: Position,
     dimension: Dimension,
-    #[state] color: ColorState,
+    #[state]
+    color: ColorState,
     border_width: u32,
 }
 
@@ -40,11 +41,17 @@ impl Border {
 impl Layout for Border {
     fn calculate_size(&mut self, requested_size: Dimension, env: &mut Environment) -> Dimension {
         let border_width = self.border_width as f64;
-        let dimensions = Dimension::new(requested_size.height - border_width - border_width, requested_size.height - border_width - border_width);
+        let dimensions = Dimension::new(
+            requested_size.height - border_width - border_width,
+            requested_size.height - border_width - border_width,
+        );
 
         let child_dimensions = self.child.calculate_size(dimensions, env);
 
-        self.dimension = Dimension::new(child_dimensions.width + border_width + border_width, child_dimensions.height + border_width + border_width);
+        self.dimension = Dimension::new(
+            child_dimensions.width + border_width + border_width,
+            child_dimensions.height + border_width + border_width,
+        );
 
         self.dimension
     }
@@ -53,7 +60,10 @@ impl Layout for Border {
         let border_width = self.border_width as f64;
         let positioning = self.alignment().positioner();
         let position = Position::new(self.x() + border_width, self.y() + border_width);
-        let dimension = Dimension::new(self.width() - border_width - border_width, self.height() - border_width - border_width);
+        let dimension = Dimension::new(
+            self.width() - border_width - border_width,
+            self.height() - border_width - border_width,
+        );
 
         positioning(position, dimension, &mut self.child);
         self.child.position_children();
@@ -117,28 +127,48 @@ impl Render for Border {
 
         let border_width = self.border_width as f64;
 
-        let left_border = Rect::new(Position::new(l, b), Dimension::new(border_width, rect.height()));
-        let right_border = Rect::new(Position::new(r - border_width, b), Dimension::new(border_width, rect.height()));
+        let left_border = Rect::new(
+            Position::new(l, b),
+            Dimension::new(border_width, rect.height()),
+        );
+        let right_border = Rect::new(
+            Position::new(r - border_width, b),
+            Dimension::new(border_width, rect.height()),
+        );
 
-        let top_border = Rect::new(Position::new(l + border_width, b), Dimension::new(rect.width() - border_width * 2.0, border_width));
-        let bottom_border = Rect::new(Position::new(l + border_width, t - border_width), Dimension::new(rect.width() - border_width * 2.0, border_width));
+        let top_border = Rect::new(
+            Position::new(l + border_width, b),
+            Dimension::new(rect.width() - border_width * 2.0, border_width),
+        );
+        let bottom_border = Rect::new(
+            Position::new(l + border_width, t - border_width),
+            Dimension::new(rect.width() - border_width * 2.0, border_width),
+        );
 
         let border_color = *self.color.value();
         let mut prims = vec![
             Primitive {
-                kind: PrimitiveKind::Rectangle { color: border_color },
+                kind: PrimitiveKind::Rectangle {
+                    color: border_color,
+                },
                 rect: left_border,
             },
             Primitive {
-                kind: PrimitiveKind::Rectangle { color: border_color },
+                kind: PrimitiveKind::Rectangle {
+                    color: border_color,
+                },
                 rect: right_border,
             },
             Primitive {
-                kind: PrimitiveKind::Rectangle { color: border_color },
+                kind: PrimitiveKind::Rectangle {
+                    color: border_color,
+                },
                 rect: top_border,
             },
             Primitive {
-                kind: PrimitiveKind::Rectangle { color: border_color },
+                kind: PrimitiveKind::Rectangle {
+                    color: border_color,
+                },
                 rect: bottom_border,
             },
         ];

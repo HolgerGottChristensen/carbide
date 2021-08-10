@@ -1,17 +1,17 @@
-use lyon::math::Point;
 use lyon::algorithms::path::{EndpointId, Path};
+use lyon::math::Point;
 
 #[derive(Clone)]
 pub struct PathBuilder {
     actions: Vec<BuildAction>,
-    current_end_point: u32
+    current_end_point: u32,
 }
 
 impl PathBuilder {
     pub fn new() -> PathBuilder {
         PathBuilder {
             actions: vec![],
-            current_end_point: 0
+            current_end_point: 0,
         }
     }
 }
@@ -46,16 +46,16 @@ impl lyon::path::builder::Build for PathBuilder {
 
 impl lyon::path::builder::PathBuilder for PathBuilder {
     fn begin(&mut self, at: Point) -> EndpointId {
-        self.actions.push(BuildAction::Begin {at});
+        self.actions.push(BuildAction::Begin { at });
         EndpointId(self.current_end_point)
     }
 
     fn end(&mut self, close: bool) {
-        self.actions.push(BuildAction::End {close})
+        self.actions.push(BuildAction::End { close })
     }
 
     fn line_to(&mut self, to: Point) -> EndpointId {
-        self.actions.push(BuildAction::LineTo {to});
+        self.actions.push(BuildAction::LineTo { to });
         let id = EndpointId(self.current_end_point);
         self.current_end_point += 1;
 
@@ -63,7 +63,8 @@ impl lyon::path::builder::PathBuilder for PathBuilder {
     }
 
     fn quadratic_bezier_to(&mut self, ctrl: Point, to: Point) -> EndpointId {
-        self.actions.push(BuildAction::QuadraticBezierTo {ctrl, to});
+        self.actions
+            .push(BuildAction::QuadraticBezierTo { ctrl, to });
         self.current_end_point += 1;
         let id = EndpointId(self.current_end_point);
         self.current_end_point += 1;
@@ -72,7 +73,8 @@ impl lyon::path::builder::PathBuilder for PathBuilder {
     }
 
     fn cubic_bezier_to(&mut self, ctrl1: Point, ctrl2: Point, to: Point) -> EndpointId {
-        self.actions.push(BuildAction::CubicBezierTo {ctrl1, ctrl2, to});
+        self.actions
+            .push(BuildAction::CubicBezierTo { ctrl1, ctrl2, to });
         self.current_end_point += 2;
         let id = EndpointId(self.current_end_point);
         self.current_end_point += 1;
@@ -84,22 +86,21 @@ impl lyon::path::builder::PathBuilder for PathBuilder {
 #[derive(Clone)]
 pub enum BuildAction {
     Begin {
-        at: Point
+        at: Point,
     },
     End {
-        close: bool
+        close: bool,
     },
     LineTo {
-        to: Point
+        to: Point,
     },
     QuadraticBezierTo {
         ctrl: Point,
-        to: Point
+        to: Point,
     },
     CubicBezierTo {
         ctrl1: Point,
         ctrl2: Point,
-        to: Point
-    }
-
+        to: Point,
+    },
 }

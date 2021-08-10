@@ -20,8 +20,10 @@ pub struct Rectangle {
     children: Vec<Box<dyn Widget>>,
     position: Position,
     dimension: Dimension,
-    #[state] fill_color: ColorState,
-    #[state] stroke_color: ColorState,
+    #[state]
+    fill_color: ColorState,
+    #[state]
+    stroke_color: ColorState,
     shrink_to_fit: bool,
     style: ShapeStyle,
     stroke_style: StrokeStyle,
@@ -66,28 +68,48 @@ impl Rectangle {
     pub fn debug_outline_special(rect: Rect, border_width: Scalar) -> Vec<Primitive> {
         let (l, r, b, t) = rect.l_r_b_t();
 
-        let left_border = Rect::new(Position::new(l, b), Dimension::new(border_width, rect.height()));
-        let right_border = Rect::new(Position::new(r - border_width, b), Dimension::new(border_width, rect.height()));
+        let left_border = Rect::new(
+            Position::new(l, b),
+            Dimension::new(border_width, rect.height()),
+        );
+        let right_border = Rect::new(
+            Position::new(r - border_width, b),
+            Dimension::new(border_width, rect.height()),
+        );
 
-        let top_border = Rect::new(Position::new(l + border_width, b), Dimension::new(rect.width() - border_width * 2.0, border_width));
-        let bottom_border = Rect::new(Position::new(l + border_width, t - border_width), Dimension::new(rect.width() - border_width * 2.0, border_width));
+        let top_border = Rect::new(
+            Position::new(l + border_width, b),
+            Dimension::new(rect.width() - border_width * 2.0, border_width),
+        );
+        let bottom_border = Rect::new(
+            Position::new(l + border_width, t - border_width),
+            Dimension::new(rect.width() - border_width * 2.0, border_width),
+        );
 
-        let border_color = Color::Rgba(0.0 / 255.0, 255.0 / 255.0, 251.0 / 255.0, 1.0);//Color::random();
+        let border_color = Color::Rgba(0.0 / 255.0, 255.0 / 255.0, 251.0 / 255.0, 1.0); //Color::random();
         vec![
             Primitive {
-                kind: PrimitiveKind::Rectangle { color: border_color.clone() },
+                kind: PrimitiveKind::Rectangle {
+                    color: border_color.clone(),
+                },
                 rect: left_border,
             },
             Primitive {
-                kind: PrimitiveKind::Rectangle { color: border_color.clone() },
+                kind: PrimitiveKind::Rectangle {
+                    color: border_color.clone(),
+                },
                 rect: right_border,
             },
             Primitive {
-                kind: PrimitiveKind::Rectangle { color: border_color.clone() },
+                kind: PrimitiveKind::Rectangle {
+                    color: border_color.clone(),
+                },
                 rect: top_border,
             },
             Primitive {
-                kind: PrimitiveKind::Rectangle { color: border_color.clone() },
+                kind: PrimitiveKind::Rectangle {
+                    color: border_color.clone(),
+                },
                 rect: bottom_border,
             },
         ]
@@ -149,15 +171,13 @@ impl CommonWidget for Rectangle {
     }
 
     fn children(&self) -> WidgetIter {
-        self.children
-            .iter()
-            .rfold(WidgetIter::Empty, |acc, x| {
-                if x.flag() == Flags::PROXY {
-                    WidgetIter::Multi(Box::new(x.children()), Box::new(acc))
-                } else {
-                    WidgetIter::Single(x, Box::new(acc))
-                }
-            })
+        self.children.iter().rfold(WidgetIter::Empty, |acc, x| {
+            if x.flag() == Flags::PROXY {
+                WidgetIter::Multi(Box::new(x.children()), Box::new(acc))
+            } else {
+                WidgetIter::Single(x, Box::new(acc))
+            }
+        })
     }
 
     fn children_mut(&mut self) -> WidgetIterMut {
@@ -173,14 +193,16 @@ impl CommonWidget for Rectangle {
     }
 
     fn proxied_children(&mut self) -> WidgetIterMut {
-        self.children.iter_mut()
+        self.children
+            .iter_mut()
             .rfold(WidgetIterMut::Empty, |acc, x| {
                 WidgetIterMut::Single(x, Box::new(acc))
             })
     }
 
     fn proxied_children_rev(&mut self) -> WidgetIterMut {
-        self.children.iter_mut()
+        self.children
+            .iter_mut()
             .fold(WidgetIterMut::Empty, |acc, x| {
                 WidgetIterMut::Single(x, Box::new(acc))
             })
@@ -251,13 +273,17 @@ impl Render for Rectangle {
         match self.style {
             ShapeStyle::Default => {
                 prims.push(Primitive {
-                    kind: PrimitiveKind::Rectangle { color: *self.fill_color.value() },
+                    kind: PrimitiveKind::Rectangle {
+                        color: *self.fill_color.value(),
+                    },
                     rect: Rect::new(self.position, self.dimension),
                 });
             }
             ShapeStyle::Fill => {
                 prims.push(Primitive {
-                    kind: PrimitiveKind::Rectangle { color: *self.fill_color.value() },
+                    kind: PrimitiveKind::Rectangle {
+                        color: *self.fill_color.value(),
+                    },
                     rect: Rect::new(self.position, self.dimension),
                 });
             }
@@ -269,22 +295,24 @@ impl Render for Rectangle {
                     self.height() as f32,
                 );
                 tessellate(self, &rect, &|builder, rectangle| {
-                    builder.add_rectangle(
-                        rectangle,
-                        Winding::Positive,
-                    )
+                    builder.add_rectangle(rectangle, Winding::Positive)
                 });
 
                 let stroke_triangles = self.triangle_store.stroke_triangles.clone();
 
                 prims.push(Primitive {
-                    kind: PrimitiveKind::TrianglesSingleColor { color: Rgba::from(*self.stroke_color.value()), triangles: stroke_triangles },
+                    kind: PrimitiveKind::TrianglesSingleColor {
+                        color: Rgba::from(*self.stroke_color.value()),
+                        triangles: stroke_triangles,
+                    },
                     rect: Rect::new(self.position, self.dimension),
                 });
             }
             ShapeStyle::FillAndStroke => {
                 prims.push(Primitive {
-                    kind: PrimitiveKind::Rectangle { color: *self.fill_color.value() },
+                    kind: PrimitiveKind::Rectangle {
+                        color: *self.fill_color.value(),
+                    },
                     rect: Rect::new(self.position, self.dimension),
                 });
 
@@ -295,22 +323,25 @@ impl Render for Rectangle {
                     self.height() as f32,
                 );
                 tessellate(self, &rect, &|builder, rectangle| {
-                    builder.add_rectangle(
-                        rectangle,
-                        Winding::Positive,
-                    )
+                    builder.add_rectangle(rectangle, Winding::Positive)
                 });
 
                 let stroke_triangles = self.triangle_store.stroke_triangles.clone();
 
                 prims.push(Primitive {
-                    kind: PrimitiveKind::TrianglesSingleColor { color: Rgba::from(*self.stroke_color.value()), triangles: stroke_triangles },
+                    kind: PrimitiveKind::TrianglesSingleColor {
+                        color: Rgba::from(*self.stroke_color.value()),
+                        triangles: stroke_triangles,
+                    },
                     rect: Rect::new(self.position, self.dimension),
                 });
             }
         }
 
-        prims.extend(Rectangle::debug_outline(Rect::new(self.position, self.dimension), 1.0));
+        prims.extend(Rectangle::debug_outline(
+            Rect::new(self.position, self.dimension),
+            1.0,
+        ));
 
         return prims;
     }

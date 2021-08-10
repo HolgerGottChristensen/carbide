@@ -47,7 +47,12 @@ pub enum MouseEvent {
         modifiers: ModifierKey,
     },
     NClick(MouseButton, Position, ModifierKey, u32),
-    Scroll { x: Scalar, y: Scalar, mouse_position: Position, modifiers: ModifierKey },
+    Scroll {
+        x: Scalar,
+        y: Scalar,
+        mouse_position: Position,
+        modifiers: ModifierKey,
+    },
     Drag {
         button: MouseButton,
         origin: Position,
@@ -62,13 +67,13 @@ pub enum MouseEvent {
 impl MouseEvent {
     pub fn get_current_mouse_position(&self) -> Position {
         match self {
-            MouseEvent::Press(_, n, _) => { *n }
-            MouseEvent::Release(_, n, _) => { *n }
-            MouseEvent::Click(_, n, _) => { *n }
-            MouseEvent::Move { to, .. } => { *to }
-            MouseEvent::NClick(_, n, _, _) => { *n }
-            MouseEvent::Scroll { mouse_position, .. } => { *mouse_position }
-            MouseEvent::Drag { to, .. } => { *to }
+            MouseEvent::Press(_, n, _) => *n,
+            MouseEvent::Release(_, n, _) => *n,
+            MouseEvent::Click(_, n, _) => *n,
+            MouseEvent::Move { to, .. } => *to,
+            MouseEvent::NClick(_, n, _, _) => *n,
+            MouseEvent::Scroll { mouse_position, .. } => *mouse_position,
+            MouseEvent::Drag { to, .. } => *to,
         }
     }
 }
@@ -94,14 +99,13 @@ pub enum TouchEvent {
     // Todo: Handle touch events
 }
 
-
 fn filter_modifier(key: Key) -> Option<ModifierKey> {
     match key {
         Key::LCtrl | Key::RCtrl => Some(ModifierKey::CTRL),
         Key::LShift | Key::RShift => Some(ModifierKey::SHIFT),
         Key::LAlt | Key::RAlt => Some(ModifierKey::ALT),
         Key::LGui | Key::RGui => Some(ModifierKey::GUI),
-        _ => None
+        _ => None,
     }
 }
 
@@ -118,11 +122,23 @@ impl EventHandler {
     }
 
     fn add_event(&mut self, event: WidgetEvent) {
-        if let WidgetEvent::Mouse(MouseEvent::Move { delta_xy, to, modifiers, .. }) = event {
+        if let WidgetEvent::Mouse(MouseEvent::Move {
+                                      delta_xy,
+                                      to,
+                                      modifiers,
+                                      ..
+                                  }) = event
+        {
             // We should only add move events where the mouse have actually moved
             if delta_xy.x != 0.0 || delta_xy.y != 0.0 {
                 // If the last event was also a move event we can compress it to a single move event.
-                if let Some(WidgetEvent::Mouse(MouseEvent::Move { delta_xy: old_delta_xy, modifiers: old_modifiers, to: old_to, .. })) = self.events.last_mut() {
+                if let Some(WidgetEvent::Mouse(MouseEvent::Move {
+                                                   delta_xy: old_delta_xy,
+                                                   modifiers: old_modifiers,
+                                                   to: old_to,
+                                                   ..
+                                               })) = self.events.last_mut()
+                {
                     old_delta_xy.x += delta_xy.x;
                     old_delta_xy.y += delta_xy.y;
                     *old_modifiers = modifiers;
@@ -131,9 +147,21 @@ impl EventHandler {
                     self.events.push(event);
                 }
             }
-        } else if let WidgetEvent::Mouse(MouseEvent::Scroll { x: new_x, y: new_y, mouse_position: new_mouse_position, modifiers: new_modifiers }) = event {
+        } else if let WidgetEvent::Mouse(MouseEvent::Scroll {
+                                             x: new_x,
+                                             y: new_y,
+                                             mouse_position: new_mouse_position,
+                                             modifiers: new_modifiers,
+                                         }) = event
+        {
             // If the last event was a scroll, we can compress the events into a single scroll event.
-            if let Some(WidgetEvent::Mouse(MouseEvent::Scroll { x, y, mouse_position, modifiers })) = self.events.last_mut() {
+            if let Some(WidgetEvent::Mouse(MouseEvent::Scroll {
+                                               x,
+                                               y,
+                                               mouse_position,
+                                               modifiers,
+                                           })) = self.events.last_mut()
+            {
                 *x += new_x;
                 *y += new_y;
                 *mouse_position = new_mouse_position;
@@ -162,11 +190,12 @@ impl EventHandler {
     ///
     /// The given `event` must implement the **ToRawEvent** trait so that it can be converted to a
     /// `RawEvent` that can be used by the `Ui`.
-    pub fn handle_event(&mut self, event: Input, window_dimensions: Dimension) -> Option<WindowEvent> {
-
-
+    pub fn handle_event(
+        &mut self,
+        event: Input,
+        window_dimensions: Dimension,
+    ) -> Option<WindowEvent> {
         // A function for filtering `ModifierKey`s.
-
 
         // Here we handle all user input given to carbide.
         //
@@ -182,10 +211,8 @@ impl EventHandler {
         let mouse_xy = self.mouse_position;
 
         match event {
-
             // Some button was pressed, whether keyboard, mouse or some other device.
             Input::Press(button_type) => match button_type {
-
                 // Check to see whether we need to (un)capture the keyboard or mouse.
                 Button::Mouse(mouse_button) => {
                     let event = MouseEvent::Press(mouse_button, mouse_xy, modifiers);
@@ -208,9 +235,7 @@ impl EventHandler {
                     None
                 }
 
-                _ => {
-                    None
-                }
+                _ => None,
             },
 
             // Some button was released.
@@ -229,23 +254,33 @@ impl EventHandler {
                     let click_distance_from_original_radius_threshold = 3.0;
 
                     fn dist(point: Position, other_point: Position) -> f64 {
-                        ((point.x - other_point.x).powi(2) +
-                            (point.y - other_point.y).powi(2)).sqrt()
+                        ((point.x - other_point.x).powi(2) + (point.y - other_point.y).powi(2))
+                            .sqrt()
                     }
 
-                    if let Some((time, MouseEvent::NClick(button, location, _, n))) = self.last_click {
-                        if button == mouse_button &&
-                            dist(location, mouse_xy) < click_distance_from_original_radius_threshold &&
-                            now.duration_since(time) < n_click_threshold {
-                            let n_click_event = MouseEvent::NClick(mouse_button, mouse_xy, modifiers, n + 1);
+                    if let Some((time, MouseEvent::NClick(button, location, _, n))) =
+                    self.last_click
+                    {
+                        if button == mouse_button
+                            && dist(location, mouse_xy)
+                            < click_distance_from_original_radius_threshold
+                            && now.duration_since(time) < n_click_threshold
+                        {
+                            let n_click_event =
+                                MouseEvent::NClick(mouse_button, mouse_xy, modifiers, n + 1);
                             self.add_event(WidgetEvent::Mouse(n_click_event.clone()));
                             self.last_click = Some((now, n_click_event));
                         }
-                    } else if let Some((time, MouseEvent::Click(button, location, _))) = self.last_click {
-                        if button == mouse_button &&
-                            dist(location, mouse_xy) < click_distance_from_original_radius_threshold &&
-                            now.duration_since(time) < n_click_threshold {
-                            let n_click_event = MouseEvent::NClick(mouse_button, mouse_xy, modifiers, 2);
+                    } else if let Some((time, MouseEvent::Click(button, location, _))) =
+                    self.last_click
+                    {
+                        if button == mouse_button
+                            && dist(location, mouse_xy)
+                            < click_distance_from_original_radius_threshold
+                            && now.duration_since(time) < n_click_threshold
+                        {
+                            let n_click_event =
+                                MouseEvent::NClick(mouse_button, mouse_xy, modifiers, 2);
                             self.add_event(WidgetEvent::Mouse(n_click_event.clone()));
                             self.last_click = Some((now, n_click_event));
                         }
@@ -253,7 +288,8 @@ impl EventHandler {
 
                     // Handle click events
                     if let Some(MouseEvent::Press(_, location, _)) = pressed_event {
-                        if dist(location, mouse_xy) < click_distance_from_original_radius_threshold {
+                        if dist(location, mouse_xy) < click_distance_from_original_radius_threshold
+                        {
                             let click_event = MouseEvent::Click(mouse_button, mouse_xy, modifiers);
                             if let Some((time, MouseEvent::NClick(_, _, _, _))) = self.last_click {
                                 if now.duration_since(time) >= n_click_threshold {
@@ -287,9 +323,7 @@ impl EventHandler {
                     None
                 }
 
-                _ => {
-                    None
-                }
+                _ => None,
             },
 
             // The window was resized.
@@ -311,7 +345,10 @@ impl EventHandler {
                 match motion {
                     Motion::MouseCursor { x, y } => {
                         let last_mouse_xy = self.mouse_position;
-                        let mouse_xy = Position::new(x + window_dimensions.width / 2.0, window_dimensions.height - (y + window_dimensions.height / 2.0));
+                        let mouse_xy = Position::new(
+                            x + window_dimensions.width / 2.0,
+                            window_dimensions.height - (y + window_dimensions.height / 2.0),
+                        );
                         let delta_xy = mouse_xy - last_mouse_xy;
 
                         let move_event = MouseEvent::Move {
@@ -362,7 +399,12 @@ impl EventHandler {
 
                     // Some scrolling occurred (e.g. mouse scroll wheel).
                     Motion::Scroll { x, y } => {
-                        let event = MouseEvent::Scroll { x, y, mouse_position: mouse_xy, modifiers };
+                        let event = MouseEvent::Scroll {
+                            x,
+                            y,
+                            mouse_position: mouse_xy,
+                            modifiers,
+                        };
                         self.add_event(WidgetEvent::Mouse(event));
                     }
 
@@ -379,7 +421,7 @@ impl EventHandler {
             }
 
             Input::Touch(touch) => match touch.phase {
-                _ => { None }
+                _ => None,
             },
 
             Input::Focus(focused) if focused == true => {

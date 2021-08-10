@@ -11,7 +11,10 @@ use crate::state::widget_state::WidgetState;
 /// of the environment at the time the state is captured. If the value is modified, the
 /// modification is lost the next time the state is captured.
 #[derive(Clone)]
-pub struct EnvState<T> where T: StateContract {
+pub struct EnvState<T>
+    where
+        T: StateContract,
+{
     map: fn(env: &Environment) -> T,
     value: T,
 }

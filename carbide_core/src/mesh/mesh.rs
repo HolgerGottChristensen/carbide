@@ -15,7 +15,10 @@ use rusttype::gpu_cache::CacheWriteErr as RustTypeCacheWriteError;
 use crate::{color, image_map, render};
 use crate::draw::{Position, Rect, Scalar};
 use crate::environment::Environment;
-use crate::mesh::{DEFAULT_GLYPH_CACHE_DIMS, GLYPH_CACHE_POSITION_TOLERANCE, GLYPH_CACHE_SCALE_TOLERANCE, MODE_GEOMETRY, MODE_IMAGE, MODE_TEXT, MODE_TEXT_COLOR};
+use crate::mesh::{
+    DEFAULT_GLYPH_CACHE_DIMS, GLYPH_CACHE_POSITION_TOLERANCE, GLYPH_CACHE_SCALE_TOLERANCE,
+    MODE_GEOMETRY, MODE_IMAGE, MODE_TEXT, MODE_TEXT_COLOR,
+};
 use crate::mesh::atlas::texture_atlas::TextureAtlas;
 use crate::mesh::vertex::Vertex;
 use crate::render::{PrimitiveKind, PrimitiveWalker};
@@ -78,7 +81,6 @@ pub enum Draw {
     Plain(std::ops::Range<usize>),
 }
 
-
 /// The result of filling the mesh.
 ///
 /// Provides information on whether or not the glyph cache has been updated and requires
@@ -102,7 +104,6 @@ enum PreparedCommand {
     Stencil(std::ops::Range<usize>),
     DeStencil(std::ops::Range<usize>),
 }
-
 
 impl Mesh {
     /// Construct a new empty `Mesh` with default glyph cache dimensions.
@@ -154,7 +155,6 @@ impl Mesh {
     {
         let scale_factor = env.get_scale_factor();
 
-
         let Mesh {
             ref mut glyph_cache,
             ref mut glyph_cache_pixel_buffer,
@@ -183,12 +183,16 @@ impl Mesh {
         });
 
         enum State {
-            Image { image_id: image_map::Id, start: usize },
-            Plain { start: usize },
+            Image {
+                image_id: image_map::Id,
+                start: usize,
+            },
+            Plain {
+                start: usize,
+            },
         }
 
         let mut current_state = State::Plain { start: 0 };
-
 
         // Viewport dimensions and the "dots per inch" factor.
         let half_viewport_w = viewport.width() / 2.0;
@@ -273,7 +277,9 @@ impl Mesh {
 
                     stencil_stack.push(triangles);
 
-                    commands.push(PreparedCommand::Stencil(start_index_for_stencil..vertices.len()));
+                    commands.push(PreparedCommand::Stencil(
+                        start_index_for_stencil..vertices.len(),
+                    ));
 
                     current_state = State::Plain {
                         start: vertices.len(),
@@ -305,7 +311,9 @@ impl Mesh {
                             vertices.push(v(triangle[2]));
                         }
 
-                        commands.push(PreparedCommand::DeStencil(start_index_for_de_stencil..vertices.len()));
+                        commands.push(PreparedCommand::DeStencil(
+                            start_index_for_de_stencil..vertices.len(),
+                        ));
                     } else {
                         panic!("Mesh tried to DeStencil when no stencil were present.");
                     }
@@ -313,7 +321,7 @@ impl Mesh {
                     current_state = State::Plain {
                         start: vertices.len(),
                     };
-                },
+                }
                 PrimitiveKind::Clip => {
                     match current_state {
                         State::Plain { start } => {
@@ -355,7 +363,7 @@ impl Mesh {
 
                     let new_scizzor = match scissor_stack.first() {
                         Some(n) => n,
-                        None => panic!("Trying to pop scizzor, when there is none on the stack")
+                        None => panic!("Trying to pop scizzor, when there is none on the stack"),
                     };
 
                     commands.push(PreparedCommand::Scissor(*new_scizzor));
@@ -477,10 +485,25 @@ impl Mesh {
                                 let coords = texture_atlas.get_tex_coords_by_index(index);
 
                                 push_v(left, top, [coords.min.x, coords.max.y], glyph.is_bitmap());
-                                push_v(right, bottom, [coords.max.x, coords.min.y], glyph.is_bitmap());
-                                push_v(left, bottom, [coords.min.x, coords.min.y], glyph.is_bitmap());
+                                push_v(
+                                    right,
+                                    bottom,
+                                    [coords.max.x, coords.min.y],
+                                    glyph.is_bitmap(),
+                                );
+                                push_v(
+                                    left,
+                                    bottom,
+                                    [coords.min.x, coords.min.y],
+                                    glyph.is_bitmap(),
+                                );
                                 push_v(left, top, [coords.min.x, coords.max.y], glyph.is_bitmap());
-                                push_v(right, bottom, [coords.max.x, coords.min.y], glyph.is_bitmap());
+                                push_v(
+                                    right,
+                                    bottom,
+                                    [coords.max.x, coords.min.y],
+                                    glyph.is_bitmap(),
+                                );
                                 push_v(right, top, [coords.max.x, coords.max.y], glyph.is_bitmap());
                             } else {
                                 println!("Trying to show glyph that is not in the texture atlas.");
@@ -620,7 +643,10 @@ impl Mesh {
     }
 
     pub fn texture_atlas_image_as_bytes(&self) -> &[u8] {
-        println!("Number of bytes: {}", &self.texture_atlas_image.as_bytes().len());
+        println!(
+            "Number of bytes: {}",
+            &self.texture_atlas_image.as_bytes().len()
+        );
         &self.texture_atlas_image.as_bytes()
     }
 
@@ -639,10 +665,7 @@ impl Mesh {
     /// These commands describe the order in which unique draw commands and scizzor updates should
     /// occur.
     pub fn commands(&self) -> Commands {
-        let Mesh {
-            ref commands,
-            ..
-        } = *self;
+        let Mesh { ref commands, .. } = *self;
         Commands {
             commands: commands.iter(),
         }
@@ -659,23 +682,13 @@ impl Mesh {
 impl<'a> Iterator for Commands<'a> {
     type Item = Command;
     fn next(&mut self) -> Option<Self::Item> {
-        let Commands {
-            ref mut commands,
-        } = *self;
+        let Commands { ref mut commands } = *self;
         commands.next().map(|command| match *command {
             PreparedCommand::Scissor(scizzor) => Command::Scissor(scizzor),
-            PreparedCommand::Plain(ref range) => {
-                Command::Draw(Draw::Plain(range.clone()))
-            }
-            PreparedCommand::Image(id, ref range) => {
-                Command::Draw(Draw::Image(id, range.clone()))
-            }
-            PreparedCommand::Stencil(ref range) => {
-                Command::Stencil(range.clone())
-            }
-            PreparedCommand::DeStencil(ref range) => {
-                Command::DeStencil(range.clone())
-            }
+            PreparedCommand::Plain(ref range) => Command::Draw(Draw::Plain(range.clone())),
+            PreparedCommand::Image(id, ref range) => Command::Draw(Draw::Image(id, range.clone())),
+            PreparedCommand::Stencil(ref range) => Command::Stencil(range.clone()),
+            PreparedCommand::DeStencil(ref range) => Command::DeStencil(range.clone()),
         })
     }
 }

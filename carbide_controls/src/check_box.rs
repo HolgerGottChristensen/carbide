@@ -5,7 +5,10 @@ use crate::PlainCheckBox;
 use crate::types::*;
 
 #[derive(Clone, Widget)]
-pub struct CheckBox<GS> where GS: GlobalStateContract {
+pub struct CheckBox<GS>
+    where
+        GS: GlobalStateContract,
+{
     id: Id,
     child: PlainCheckBox<GS>,
     position: Point,
@@ -13,7 +16,10 @@ pub struct CheckBox<GS> where GS: GlobalStateContract {
 }
 
 impl<GS: GlobalStateContract> CheckBox<GS> {
-    pub fn new<S: Into<StringState<GS>>, L: Into<CheckBoxState<GS>>>(label: S, checked: L) -> Box<Self> {
+    pub fn new<S: Into<StringState<GS>>, L: Into<CheckBoxState<GS>>>(
+        label: S,
+        checked: L,
+    ) -> Box<Self> {
         let mut child = *PlainCheckBox::new(label, checked.into());
 
         child = *child.delegate(|focus_state, checked_state, button: Box<dyn Widget<GS>>| {
@@ -21,69 +27,67 @@ impl<GS: GlobalStateContract> CheckBox<GS> {
                 focus_state,
                 EnvironmentColor::OpaqueSeparator,
                 EnvironmentColor::Accent,
-            ).mapped(|(focus, primary_color, focus_color)| {
-                if focus == &Focus::Focused {
-                    *focus_color
-                } else {
-                    *primary_color
-                }
-            });
+            )
+                .mapped(|(focus, primary_color, focus_color)| {
+                    if focus == &Focus::Focused {
+                        *focus_color
+                    } else {
+                        *primary_color
+                    }
+                });
 
             let checked_color = TupleState3::new(
                 checked_state.clone(),
                 EnvironmentColor::SecondarySystemBackground,
                 EnvironmentColor::Accent,
-            ).mapped(|(selected, primary_color, checked_color)| {
-                if *selected == CheckBoxValue::False {
-                    *primary_color
-                } else {
-                    *checked_color
-                }
-            });
+            )
+                .mapped(|(selected, primary_color, checked_color)| {
+                    if *selected == CheckBoxValue::False {
+                        *primary_color
+                    } else {
+                        *checked_color
+                    }
+                });
 
-            let checked_true = checked_state.clone().mapped(|checked| {
-                *checked == CheckBoxValue::True
-            });
+            let checked_true = checked_state
+                .clone()
+                .mapped(|checked| *checked == CheckBoxValue::True);
 
-            let checked_intermediate = checked_state.clone().mapped(|checked| {
-                *checked == CheckBoxValue::Intermediate
-            });
+            let checked_intermediate = checked_state
+                .clone()
+                .mapped(|checked| *checked == CheckBoxValue::Intermediate);
 
             ZStack::initialize(vec![
                 RoundedRectangle::new(CornerRadii::all(3.0))
                     .fill(checked_color)
                     .stroke(focus_color)
                     .stroke_style(1.0),
-                IfElse::new(checked_intermediate)
-                    .when_true(
-                        Canvas::initialize(|_, mut context| {
-                            context.move_to(4.0, 8.0);
-                            context.line_to(12.0, 8.0);
+                IfElse::new(checked_intermediate).when_true(Canvas::initialize(
+                    |_, mut context| {
+                        context.move_to(4.0, 8.0);
+                        context.line_to(12.0, 8.0);
 
+                        context.set_stroke_style(EnvironmentColor::DarkText);
+                        context.set_line_width(2.0);
+                        context.stroke();
 
-                            context.set_stroke_style(EnvironmentColor::DarkText);
-                            context.set_line_width(2.0);
-                            context.stroke();
+                        context
+                    },
+                )),
+                IfElse::new(checked_true).when_true(Canvas::initialize(|_, mut context| {
+                    context.move_to(4.0, 9.0);
+                    context.line_to(7.0, 12.0);
+                    context.line_to(12.0, 4.0);
 
-                            context
-                        })
-                    ),
-                IfElse::new(checked_true)
-                    .when_true(
-                        Canvas::initialize(|_, mut context| {
-                            context.move_to(4.0, 9.0);
-                            context.line_to(7.0, 12.0);
-                            context.line_to(12.0, 4.0);
+                    context.set_stroke_style(EnvironmentColor::DarkText);
+                    context.set_line_width(2.0);
+                    context.stroke();
 
-                            context.set_stroke_style(EnvironmentColor::DarkText);
-                            context.set_line_width(2.0);
-                            context.stroke();
-
-                            context
-                        })
-                    ),
+                    context
+                })),
                 button,
-            ]).frame(16.0, 16.0)
+            ])
+                .frame(16.0, 16.0)
         });
 
         Box::new(CheckBox {
@@ -161,11 +165,9 @@ impl<GS: GlobalStateContract> Layout<GS> for CheckBox<GS> {
         let position = self.position();
         let dimension = self.dimension();
 
-
         positioning(position, dimension, &mut self.child);
         self.child.position_children();
     }
 }
-
 
 impl<GS: GlobalStateContract> WidgetExt<GS> for CheckBox<GS> {}

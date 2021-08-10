@@ -14,20 +14,20 @@ pub use text_span_generator::TextSpanGenerator;
 pub use text_style::TextStyle;
 
 pub mod font;
-mod text_old;
-mod paragraph;
-mod section;
-mod text_span;
-mod text_style;
-mod text_decoration;
 mod font_family;
 mod font_style;
 mod font_weight;
 mod glyph;
-mod text_overflow;
-mod text;
 mod markup;
+mod paragraph;
+mod section;
+mod text;
+mod text_decoration;
+mod text_old;
+mod text_overflow;
+mod text_span;
 mod text_span_generator;
+mod text_style;
 
 pub type FontId = usize;
 pub type FontSize = u32;

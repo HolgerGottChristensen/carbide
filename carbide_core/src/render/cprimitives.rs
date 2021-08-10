@@ -11,7 +11,11 @@ pub struct CPrimitives {
 }
 
 impl CPrimitives {
-    pub fn new(window_dimensions: Dimension, root: &mut Box<dyn Widget>, environment: &mut Environment) -> Self {
+    pub fn new(
+        window_dimensions: Dimension,
+        root: &mut Box<dyn Widget>,
+        environment: &mut Environment,
+    ) -> Self {
         let now = Instant::now();
         root.calculate_size(window_dimensions, environment);
 
@@ -23,9 +27,7 @@ impl CPrimitives {
         let mut prims: Vec<Primitive> = vec![];
         root.process_get_primitives(&mut prims, environment);
         println!("Number of primitives: {}", prims.len());
-        CPrimitives {
-            primitives: prims
-        }
+        CPrimitives { primitives: prims }
     }
 }
 

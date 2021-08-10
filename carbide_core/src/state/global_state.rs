@@ -8,14 +8,17 @@ use crate::state::value_cell::{ValueCell, ValueRef, ValueRefMut};
 use crate::state::widget_state::WidgetState;
 
 #[derive(Clone)]
-pub struct GlobalState<T> where T: StateContract {
+pub struct GlobalState<T>
+    where
+        T: StateContract,
+{
     value: InnerState<T>,
 }
 
 impl<T: StateContract> GlobalState<T> {
     pub fn new(env: &Environment) -> Self {
         GlobalState {
-            value: env.get_global_state::<T>()
+            value: env.get_global_state::<T>(),
         }
     }
 }

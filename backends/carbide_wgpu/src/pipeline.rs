@@ -1,4 +1,7 @@
-use wgpu::{CompareFunction, DepthStencilStateDescriptor, Device, PipelineLayout, RenderPipeline, ShaderModule, SwapChainDescriptor, TextureFormat};
+use wgpu::{
+    CompareFunction, DepthStencilStateDescriptor, Device, PipelineLayout, RenderPipeline,
+    ShaderModule, SwapChainDescriptor, TextureFormat,
+};
 
 use crate::vertex::Vertex;
 
@@ -26,36 +29,33 @@ pub(crate) fn create_render_pipeline(
             module: &vs_module,
             entry_point: "main", // 1.
         },
-        fragment_stage: Some(wgpu::ProgrammableStageDescriptor { // 2.
+        fragment_stage: Some(wgpu::ProgrammableStageDescriptor {
+            // 2.
             module: &fs_module,
             entry_point: "main",
         }),
-        rasterization_state: Some(
-            wgpu::RasterizationStateDescriptor {
-                front_face: wgpu::FrontFace::Ccw,
-                cull_mode: wgpu::CullMode::None, // Todo fix mesh to always be CCW, then we can cull backfaces
-                depth_bias: 0,
-                depth_bias_slope_scale: 0.0,
-                depth_bias_clamp: 0.0,
-                clamp_depth: false,
-            }
-        ),
-        color_states: &[
-            wgpu::ColorStateDescriptor {
-                format: sc_desc.format,
-                color_blend: wgpu::BlendDescriptor {
-                    src_factor: wgpu::BlendFactor::SrcAlpha,
-                    dst_factor: wgpu::BlendFactor::OneMinusSrcAlpha,
-                    operation: wgpu::BlendOperation::Add,
-                },
-                alpha_blend: wgpu::BlendDescriptor {
-                    src_factor: wgpu::BlendFactor::One,
-                    dst_factor: wgpu::BlendFactor::OneMinusSrcAlpha,
-                    operation: wgpu::BlendOperation::Add,
-                },
-                write_mask: col,
+        rasterization_state: Some(wgpu::RasterizationStateDescriptor {
+            front_face: wgpu::FrontFace::Ccw,
+            cull_mode: wgpu::CullMode::None, // Todo fix mesh to always be CCW, then we can cull backfaces
+            depth_bias: 0,
+            depth_bias_slope_scale: 0.0,
+            depth_bias_clamp: 0.0,
+            clamp_depth: false,
+        }),
+        color_states: &[wgpu::ColorStateDescriptor {
+            format: sc_desc.format,
+            color_blend: wgpu::BlendDescriptor {
+                src_factor: wgpu::BlendFactor::SrcAlpha,
+                dst_factor: wgpu::BlendFactor::OneMinusSrcAlpha,
+                operation: wgpu::BlendOperation::Add,
             },
-        ],
+            alpha_blend: wgpu::BlendDescriptor {
+                src_factor: wgpu::BlendFactor::One,
+                dst_factor: wgpu::BlendFactor::OneMinusSrcAlpha,
+                operation: wgpu::BlendOperation::Add,
+            },
+            write_mask: col,
+        }],
         primitive_topology: wgpu::PrimitiveTopology::TriangleList, // 1.
         depth_stencil_state: Some(DepthStencilStateDescriptor {
             format: TextureFormat::Depth24PlusStencil8,
@@ -65,12 +65,10 @@ pub(crate) fn create_render_pipeline(
         }), // 2.
         vertex_state: wgpu::VertexStateDescriptor {
             index_format: wgpu::IndexFormat::Uint16, // 3.
-            vertex_buffers: &[
-                Vertex::desc(),
-            ], // 4.
+            vertex_buffers: &[Vertex::desc()],       // 4.
         },
-        sample_count: 1, // 5.
-        sample_mask: !0, // 6.
+        sample_count: 1,                  // 5.
+        sample_mask: !0,                  // 6.
         alpha_to_coverage_enabled: false, // 7.
     })
 }

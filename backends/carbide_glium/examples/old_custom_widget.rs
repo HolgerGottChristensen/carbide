@@ -123,7 +123,9 @@ mod circular_button {
         type Event = Option<()>;
 
         fn init_state(&self, id_gen: widget::id::Generator) -> Self::State {
-            State { ids: Ids::new(id_gen) }
+            State {
+                ids: Ids::new(id_gen),
+            }
         }
 
         fn style(&self) -> Self::Style {
@@ -148,7 +150,14 @@ mod circular_button {
         /// Update the state of the button by handling any input that has occurred since the last
         /// update.
         fn update(self, args: widget::UpdateArgs<Self>) -> Self::Event {
-            let widget::UpdateArgs { id, state, rect, ui, style, .. } = args;
+            let widget::UpdateArgs {
+                id,
+                state,
+                rect,
+                ui,
+                style,
+                ..
+            } = args;
 
             let (color, event) = {
                 let input = ui.widget_input(id);
@@ -235,9 +244,9 @@ mod circular_button {
 }
 
 fn main() {
-    use carbide_core::{widget, Colorable, Labelable, Positionable, Sizeable, OldWidget};
-    use glium::Surface;
     use self::circular_button::CircularButton;
+    use carbide_core::{widget, Colorable, Labelable, OldWidget, Positionable, Sizeable};
+    use glium::Surface;
 
     const WIDTH: u32 = 1200;
     const HEIGHT: u32 = 800;
@@ -268,7 +277,9 @@ fn main() {
     let ids = Ids::new(ui.widget_id_generator());
 
     // Add a `Font` to the `Ui`'s `font::Map` from file.
-    let assets = find_folder::Search::KidsThenParents(3, 5).for_folder("assets").unwrap();
+    let assets = find_folder::Search::KidsThenParents(3, 5)
+        .for_folder("assets")
+        .unwrap();
     let font_path = assets.join("fonts/NotoSans/NotoSans-Regular.ttf");
     let regular = ui.fonts.insert_from_file(font_path).unwrap();
 
@@ -282,10 +293,8 @@ fn main() {
     // Poll events from the window.
     let mut event_loop = support::EventLoop::new();
     'main: loop {
-
         // Handle all events.
         for event in event_loop.next(&mut events_loop) {
-
             // Use the `winit` backend feature to convert the winit event to a carbide one.
             if let Some(event) = support::convert_event(event.clone(), &display) {
                 ui.handle_event(event);
@@ -295,9 +304,10 @@ fn main() {
             match event {
                 glium::glutin::Event::WindowEvent { event, .. } => match event {
                     // Break from the loop upon `Escape`.
-                    glium::glutin::WindowEvent::CloseRequested |
-                    glium::glutin::WindowEvent::KeyboardInput {
-                        input: glium::glutin::KeyboardInput {
+                    glium::glutin::WindowEvent::CloseRequested
+                    | glium::glutin::WindowEvent::KeyboardInput {
+                        input:
+                        glium::glutin::KeyboardInput {
                             virtual_keycode: Some(glium::glutin::VirtualKeyCode::Escape),
                             ..
                         },
@@ -314,7 +324,9 @@ fn main() {
             let ui = &mut ui.set_widgets();
 
             // Sets a color to clear the background with before the Ui draws our widget.
-            widget::Canvas::new().color(carbide_core::color::DARK_RED).set(ids.background, ui);
+            widget::Canvas::new()
+                .color(carbide_core::color::DARK_RED)
+                .set(ids.background, ui);
 
             // Instantiate of our custom widget.
             for _click in CircularButton::new()

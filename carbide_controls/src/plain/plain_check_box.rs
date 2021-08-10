@@ -8,15 +8,24 @@ use crate::types::*;
 
 #[derive(Clone, Widget)]
 #[focusable(block_focus)]
-pub struct PlainCheckBox<GS> where GS: GlobalStateContract {
+pub struct PlainCheckBox<GS>
+    where
+        GS: GlobalStateContract,
+{
     id: Id,
-    #[state] focus: FocusState<GS>,
+    #[state]
+    focus: FocusState<GS>,
     child: Box<dyn Widget<GS>>,
     position: Point,
     dimension: Dimensions,
-    delegate: fn(focus: FocusState<GS>, checked: CheckBoxState<GS>, button: Box<dyn Widget<GS>>) -> Box<dyn Widget<GS>>,
+    delegate: fn(
+        focus: FocusState<GS>,
+        checked: CheckBoxState<GS>,
+        button: Box<dyn Widget<GS>>,
+    ) -> Box<dyn Widget<GS>>,
     label: StringState<GS>,
-    #[state] checked: CheckBoxState<GS>,
+    #[state]
+    checked: CheckBoxState<GS>,
 }
 
 impl<GS: GlobalStateContract> PlainCheckBox<GS> {
@@ -25,34 +34,49 @@ impl<GS: GlobalStateContract> PlainCheckBox<GS> {
         Box::new(self)
     }
 
-    pub fn new<S: Into<StringState<GS>>, L: Into<CheckBoxState<GS>>>(label: S, checked: L) -> Box<Self> {
+    pub fn new<S: Into<StringState<GS>>, L: Into<CheckBoxState<GS>>>(
+        label: S,
+        checked: L,
+    ) -> Box<Self> {
         let focus_state = Box::new(CommonState::new_local_with_key(&Focus::Unfocused));
 
-        let default_delegate = |_focus_state: FocusState<GS>, checked: CheckBoxState<GS>, button: Box<dyn Widget<GS>>| -> Box<dyn Widget<GS>> {
-            let highlight_color = TupleState4::new(checked, EnvironmentColor::Red, EnvironmentColor::Green, EnvironmentColor::Blue)
-                .mapped(|(selected, true_color, intermediate_color, false_color)| {
-                    match *selected {
-                        CheckBoxValue::True => {
-                            *true_color
-                        }
-                        CheckBoxValue::Intermediate => {
-                            *intermediate_color
-                        }
-                        CheckBoxValue::False => {
-                            *false_color
-                        }
-                    }
-                });
+        let default_delegate = |_focus_state: FocusState<GS>,
+                                checked: CheckBoxState<GS>,
+                                button: Box<dyn Widget<GS>>|
+                                -> Box<dyn Widget<GS>> {
+            let highlight_color = TupleState4::new(
+                checked,
+                EnvironmentColor::Red,
+                EnvironmentColor::Green,
+                EnvironmentColor::Blue,
+            )
+                .mapped(
+                    |(selected, true_color, intermediate_color, false_color)| match *selected {
+                        CheckBoxValue::True => *true_color,
+                        CheckBoxValue::Intermediate => *intermediate_color,
+                        CheckBoxValue::False => *false_color,
+                    },
+                );
 
-            Rectangle::new(vec![
-                button
-            ]).fill(highlight_color)
+            Rectangle::new(vec![button]).fill(highlight_color)
         };
 
-        Self::new_internal(checked.into(), focus_state.into(), default_delegate, label.into())
+        Self::new_internal(
+            checked.into(),
+            focus_state.into(),
+            default_delegate,
+            label.into(),
+        )
     }
 
-    pub fn delegate(self, delegate: fn(focus: FocusState<GS>, selected: CheckBoxState<GS>, button: Box<dyn Widget<GS>>) -> Box<dyn Widget<GS>>) -> Box<Self> {
+    pub fn delegate(
+        self,
+        delegate: fn(
+            focus: FocusState<GS>,
+            selected: CheckBoxState<GS>,
+            button: Box<dyn Widget<GS>>,
+        ) -> Box<dyn Widget<GS>>,
+    ) -> Box<Self> {
         let checked = self.checked;
         let focus_state = self.focus;
         let label_state = self.label;
@@ -63,7 +87,11 @@ impl<GS: GlobalStateContract> PlainCheckBox<GS> {
     fn new_internal(
         checked: CheckBoxState<GS>,
         focus_state: FocusState<GS>,
-        delegate: fn(focus: FocusState<GS>, selected: CheckBoxState<GS>, button: Box<dyn Widget<GS>>) -> Box<dyn Widget<GS>>,
+        delegate: fn(
+            focus: FocusState<GS>,
+            selected: CheckBoxState<GS>,
+            button: Box<dyn Widget<GS>>,
+        ) -> Box<dyn Widget<GS>>,
         label_state: StringState<GS>,
     ) -> Box<Self> {
         let button = PlainButton::<CheckBoxValue, GS>::new(Spacer::new(SpacerDirection::Vertical))
@@ -78,7 +106,8 @@ impl<GS: GlobalStateContract> PlainCheckBox<GS> {
                 }
 
                 myself.set_focus_and_request(Focus::FocusRequested, env);
-            }).focused(focus_state.clone());
+            })
+            .focused(focus_state.clone());
 
         let delegate_widget = delegate(focus_state.clone(), checked.clone(), button);
 
@@ -86,7 +115,8 @@ impl<GS: GlobalStateContract> PlainCheckBox<GS> {
             delegate_widget,
             Text::new(label_state.clone()),
             Spacer::new(SpacerDirection::Horizontal),
-        ]).spacing(5.0);
+        ])
+            .spacing(5.0);
 
         Box::new(PlainCheckBox {
             id: Id::new_v4(),
@@ -183,6 +213,5 @@ impl<GS: GlobalStateContract> Layout<GS> for PlainCheckBox<GS> {
         }
     }
 }
-
 
 impl<GS: GlobalStateContract> WidgetExt<GS> for PlainCheckBox<GS> {}

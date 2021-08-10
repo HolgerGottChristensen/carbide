@@ -77,24 +77,14 @@ macro_rules! v023_convert_key {
             | winit::event::VirtualKeyCode::NumpadDecimal => {
                 carbide_core::event::Key::NumPadDecimal
             }
-            winit::event::VirtualKeyCode::NumpadDivide => {
-                carbide_core::event::Key::NumPadDivide
-            }
+            winit::event::VirtualKeyCode::NumpadDivide => carbide_core::event::Key::NumPadDivide,
             winit::event::VirtualKeyCode::NumpadMultiply => {
                 carbide_core::event::Key::NumPadMultiply
             }
-            winit::event::VirtualKeyCode::NumpadSubtract => {
-                carbide_core::event::Key::NumPadMinus
-            }
-            winit::event::VirtualKeyCode::NumpadAdd => {
-                carbide_core::event::Key::NumPadPlus
-            }
-            winit::event::VirtualKeyCode::NumpadEnter => {
-                carbide_core::event::Key::NumPadEnter
-            }
-            winit::event::VirtualKeyCode::NumpadEquals => {
-                carbide_core::event::Key::NumPadEquals
-            }
+            winit::event::VirtualKeyCode::NumpadSubtract => carbide_core::event::Key::NumPadMinus,
+            winit::event::VirtualKeyCode::NumpadAdd => carbide_core::event::Key::NumPadPlus,
+            winit::event::VirtualKeyCode::NumpadEnter => carbide_core::event::Key::NumPadEnter,
+            winit::event::VirtualKeyCode::NumpadEquals => carbide_core::event::Key::NumPadEquals,
             winit::event::VirtualKeyCode::LShift => carbide_core::event::Key::LShift,
             winit::event::VirtualKeyCode::LControl => carbide_core::event::Key::LCtrl,
             winit::event::VirtualKeyCode::LAlt => carbide_core::event::Key::LAlt,
@@ -109,21 +99,15 @@ macro_rules! v023_convert_key {
             winit::event::VirtualKeyCode::LWin => carbide_core::event::Key::LGui,
             winit::event::VirtualKeyCode::RWin => carbide_core::event::Key::RGui,
 
-            winit::event::VirtualKeyCode::LBracket => {
-                carbide_core::event::Key::LeftBracket
-            }
+            winit::event::VirtualKeyCode::LBracket => carbide_core::event::Key::LeftBracket,
             winit::event::VirtualKeyCode::Minus => carbide_core::event::Key::Minus,
-            winit::event::VirtualKeyCode::Numlock => {
-                carbide_core::event::Key::NumLockClear
-            }
+            winit::event::VirtualKeyCode::Numlock => carbide_core::event::Key::NumLockClear,
             winit::event::VirtualKeyCode::PageDown => carbide_core::event::Key::PageDown,
             winit::event::VirtualKeyCode::PageUp => carbide_core::event::Key::PageUp,
             winit::event::VirtualKeyCode::Pause => carbide_core::event::Key::Pause,
             winit::event::VirtualKeyCode::Period => carbide_core::event::Key::Period,
             winit::event::VirtualKeyCode::Right => carbide_core::event::Key::Right,
-            winit::event::VirtualKeyCode::RBracket => {
-                carbide_core::event::Key::RightBracket
-            }
+            winit::event::VirtualKeyCode::RBracket => carbide_core::event::Key::RightBracket,
             winit::event::VirtualKeyCode::Semicolon => carbide_core::event::Key::Semicolon,
             winit::event::VirtualKeyCode::Slash => carbide_core::event::Key::Slash,
             winit::event::VirtualKeyCode::Space => carbide_core::event::Key::Space,
@@ -294,7 +278,9 @@ macro_rules! v023_convert_mouse_cursor {
             carbide_core::cursor::MouseCursor::Hand => winit::window::CursorIcon::Hand,
             carbide_core::cursor::MouseCursor::Grab => winit::window::CursorIcon::Grab,
             carbide_core::cursor::MouseCursor::Grabbing => winit::window::CursorIcon::Grabbing,
-            carbide_core::cursor::MouseCursor::ResizeVertical => winit::window::CursorIcon::NsResize,
+            carbide_core::cursor::MouseCursor::ResizeVertical => {
+                winit::window::CursorIcon::NsResize
+            }
             carbide_core::cursor::MouseCursor::ResizeHorizontal => {
                 winit::window::CursorIcon::EwResize
             }
@@ -319,9 +305,7 @@ macro_rules! v023_conversion_fns {
         /// Expects a `winit::VirtualKeyCode` as input and returns a `carbide_core::event::Key`.
         ///
         /// Requires that both the `winit` and `carbide_core` crates exist within the crate root.
-        pub fn convert_key(
-            keycode: winit::event::VirtualKeyCode,
-        ) -> carbide_core::event::Key {
+        pub fn convert_key(keycode: winit::event::VirtualKeyCode) -> carbide_core::event::Key {
             $crate::v023_convert_key!(keycode)
         }
 

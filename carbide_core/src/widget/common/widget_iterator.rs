@@ -21,25 +21,21 @@ impl<'a> Iterator for WidgetIterMut<'a> {
         std::mem::swap(self, &mut i);
 
         match i {
-            WidgetIterMut::Empty => {
-                None
-            }
+            WidgetIterMut::Empty => None,
             WidgetIterMut::Single(n, mut b) => {
                 std::mem::swap(self, &mut *b);
                 Some(n)
             }
-            WidgetIterMut::Multi(mut iter, mut b) => {
-                match iter.next() {
-                    Some(n) => {
-                        std::mem::swap(self, &mut WidgetIterMut::Multi(iter, b));
-                        Some(n)
-                    }
-                    None => {
-                        std::mem::swap(self, &mut *b);
-                        self.next()
-                    }
+            WidgetIterMut::Multi(mut iter, mut b) => match iter.next() {
+                Some(n) => {
+                    std::mem::swap(self, &mut WidgetIterMut::Multi(iter, b));
+                    Some(n)
                 }
-            }
+                None => {
+                    std::mem::swap(self, &mut *b);
+                    self.next()
+                }
+            },
         }
     }
 }
@@ -65,25 +61,21 @@ impl<'a> Iterator for WidgetIter<'a> {
         std::mem::swap(self, &mut i);
 
         match i {
-            WidgetIter::Empty => {
-                None
-            }
+            WidgetIter::Empty => None,
             WidgetIter::Single(n, mut b) => {
                 std::mem::swap(self, &mut *b);
                 Some(n)
             }
-            WidgetIter::Multi(mut iter, mut b) => {
-                match iter.next() {
-                    Some(n) => {
-                        std::mem::swap(self, &mut WidgetIter::Multi(iter, b));
-                        Some(n)
-                    }
-                    None => {
-                        std::mem::swap(self, &mut *b);
-                        self.next()
-                    }
+            WidgetIter::Multi(mut iter, mut b) => match iter.next() {
+                Some(n) => {
+                    std::mem::swap(self, &mut WidgetIter::Multi(iter, b));
+                    Some(n)
                 }
-            }
+                None => {
+                    std::mem::swap(self, &mut *b);
+                    self.next()
+                }
+            },
         }
     }
 }

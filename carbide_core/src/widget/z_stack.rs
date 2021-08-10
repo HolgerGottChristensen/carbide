@@ -34,7 +34,10 @@ impl ZStack {
 
 impl Layout for ZStack {
     fn calculate_size(&mut self, requested_size: Dimension, env: &mut Environment) -> Dimension {
-        let mut children_flexibility: Vec<(u32, &mut dyn Widget)> = self.children_mut().map(|child| (child.flexibility(), child)).collect();
+        let mut children_flexibility: Vec<(u32, &mut dyn Widget)> = self
+            .children_mut()
+            .map(|child| (child.flexibility(), child))
+            .collect();
         children_flexibility.sort_by(|(a, _), (b, _)| a.cmp(&b));
         children_flexibility.reverse();
 
@@ -109,7 +112,8 @@ impl CommonWidget for ZStack {
     }
 
     fn proxied_children(&mut self) -> WidgetIterMut {
-        self.children.iter_mut()
+        self.children
+            .iter_mut()
             .map(|x| x.deref_mut())
             .rfold(WidgetIterMut::Empty, |acc, x| {
                 WidgetIterMut::Single(x, Box::new(acc))
@@ -117,7 +121,8 @@ impl CommonWidget for ZStack {
     }
 
     fn proxied_children_rev(&mut self) -> WidgetIterMut {
-        self.children.iter_mut()
+        self.children
+            .iter_mut()
             .map(|x| x.deref_mut())
             .fold(WidgetIterMut::Empty, |acc, x| {
                 WidgetIterMut::Single(x, Box::new(acc))

@@ -31,6 +31,7 @@ mod types;
 // Widgets
 mod border;
 mod clip;
+mod clip_shape;
 mod environment_updating;
 mod foreach;
 mod frame;
@@ -46,10 +47,6 @@ mod spacer;
 mod text;
 mod v_stack;
 mod z_stack;
-mod clip_shape;
 
 pub type Id = uuid::Uuid;
 pub type ColoredPoint = (Position, crate::color::Rgba);
-
-
-

@@ -10,29 +10,54 @@ use crate::PlainButton;
 
 #[derive(Clone, Widget)]
 #[focusable(block_focus)]
-pub struct PlainRadioButton<T, GS> where GS: GlobalStateContract, T: 'static + Serialize + Clone + Debug + Default + DeserializeOwned + PartialEq {
+pub struct PlainRadioButton<T, GS>
+    where
+        GS: GlobalStateContract,
+        T: 'static + Serialize + Clone + Debug + Default + DeserializeOwned + PartialEq,
+{
     id: Id,
-    #[state] focus: FocusState<GS>,
+    #[state]
+    focus: FocusState<GS>,
     child: Box<dyn Widget<GS>>,
     position: Point,
     dimension: Dimensions,
-    delegate: fn(focus: FocusState<GS>, selected: BoolState<GS>, button: Box<dyn Widget<GS>>) -> Box<dyn Widget<GS>>,
+    delegate: fn(
+        focus: FocusState<GS>,
+        selected: BoolState<GS>,
+        button: Box<dyn Widget<GS>>,
+    ) -> Box<dyn Widget<GS>>,
     reference: T,
     label: StringState<GS>,
-    #[state] local_state: TState<T, GS>,
+    #[state]
+    local_state: TState<T, GS>,
 }
 
-impl<T: 'static + Serialize + Clone + Debug + Default + DeserializeOwned + PartialEq, GS: GlobalStateContract> PlainRadioButton<T, GS> {
+impl<
+    T: 'static + Serialize + Clone + Debug + Default + DeserializeOwned + PartialEq,
+    GS: GlobalStateContract,
+> PlainRadioButton<T, GS>
+{
     pub fn focused<K: Into<FocusState<GS>>>(mut self, focused: K) -> Box<Self> {
         self.focus = focused.into();
         Box::new(self)
     }
 
-    pub fn new<S: Into<StringState<GS>>, L: Into<TState<T, GS>>>(label: S, reference: T, local_state: L) -> Box<Self> {
+    pub fn new<S: Into<StringState<GS>>, L: Into<TState<T, GS>>>(
+        label: S,
+        reference: T,
+        local_state: L,
+    ) -> Box<Self> {
         let focus_state = Box::new(CommonState::new_local_with_key(&Focus::Unfocused));
 
-        let default_delegate = |_focus_state: FocusState<GS>, selected_state: BoolState<GS>, button: Box<dyn Widget<GS>>| -> Box<dyn Widget<GS>> {
-            let highlight_color = TupleState3::new(selected_state, EnvironmentColor::Red, EnvironmentColor::Green)
+        let default_delegate = |_focus_state: FocusState<GS>,
+                                selected_state: BoolState<GS>,
+                                button: Box<dyn Widget<GS>>|
+                                -> Box<dyn Widget<GS>> {
+            let highlight_color = TupleState3::new(
+                selected_state,
+                EnvironmentColor::Red,
+                EnvironmentColor::Green,
+            )
                 .mapped(|(selected, selected_color, deselected_color)| {
                     if *selected {
                         *selected_color
@@ -41,15 +66,26 @@ impl<T: 'static + Serialize + Clone + Debug + Default + DeserializeOwned + Parti
                     }
                 });
 
-            Rectangle::new(vec![
-                button
-            ]).fill(highlight_color)
+            Rectangle::new(vec![button]).fill(highlight_color)
         };
 
-        Self::new_internal(reference, local_state.into(), focus_state.into(), default_delegate, label.into())
+        Self::new_internal(
+            reference,
+            local_state.into(),
+            focus_state.into(),
+            default_delegate,
+            label.into(),
+        )
     }
 
-    pub(crate) fn delegate(self, delegate: fn(focus: FocusState<GS>, selected: BoolState<GS>, button: Box<dyn Widget<GS>>) -> Box<dyn Widget<GS>>) -> Box<Self> {
+    pub(crate) fn delegate(
+        self,
+        delegate: fn(
+            focus: FocusState<GS>,
+            selected: BoolState<GS>,
+            button: Box<dyn Widget<GS>>,
+        ) -> Box<dyn Widget<GS>>,
+    ) -> Box<Self> {
         let reference = self.reference;
         let local_state = self.local_state;
         let focus_state = self.focus;
@@ -62,15 +98,17 @@ impl<T: 'static + Serialize + Clone + Debug + Default + DeserializeOwned + Parti
         reference: T,
         local_state: TState<T, GS>,
         focus_state: FocusState<GS>,
-        delegate: fn(focus: FocusState<GS>, selected: BoolState<GS>, button: Box<dyn Widget<GS>>) -> Box<dyn Widget<GS>>,
+        delegate: fn(
+            focus: FocusState<GS>,
+            selected: BoolState<GS>,
+            button: Box<dyn Widget<GS>>,
+        ) -> Box<dyn Widget<GS>>,
         label_state: StringState<GS>,
     ) -> Box<Self> {
         let reference_state: TState<T, GS> = CommonState::new(&reference).into();
 
         let selected_state = TupleState2::new(reference_state.clone(), local_state.clone())
-            .mapped(|(reference, local_state)| {
-                reference == local_state
-            });
+            .mapped(|(reference, local_state)| reference == local_state);
 
         let button = PlainButton::<(T, T), GS>::new(Spacer::new(SpacerDirection::Vertical))
             .local_state(TupleState2::new(reference_state, local_state.clone()))
@@ -78,7 +116,8 @@ impl<T: 'static + Serialize + Clone + Debug + Default + DeserializeOwned + Parti
                 let (reference, local_state) = myself.get_local_state().get_latest_value_mut();
                 *local_state = reference.clone();
                 myself.set_focus_and_request(Focus::FocusRequested, env);
-            }).focused(focus_state.clone());
+            })
+            .focused(focus_state.clone());
 
         let delegate_widget = delegate(focus_state.clone(), selected_state.into(), button);
 
@@ -86,7 +125,8 @@ impl<T: 'static + Serialize + Clone + Debug + Default + DeserializeOwned + Parti
             delegate_widget,
             Text::new(label_state.clone()),
             Spacer::new(SpacerDirection::Horizontal),
-        ]).spacing(5.0);
+        ])
+            .spacing(5.0);
 
         Box::new(PlainRadioButton {
             id: Id::new_v4(),
@@ -102,7 +142,11 @@ impl<T: 'static + Serialize + Clone + Debug + Default + DeserializeOwned + Parti
     }
 }
 
-impl<T: Serialize + Clone + Debug + Default + DeserializeOwned + PartialEq, GS: GlobalStateContract> CommonWidget<GS> for PlainRadioButton<T, GS> {
+impl<
+    T: Serialize + Clone + Debug + Default + DeserializeOwned + PartialEq,
+    GS: GlobalStateContract,
+> CommonWidget<GS> for PlainRadioButton<T, GS>
+{
     fn id(&self) -> Id {
         self.id
     }
@@ -156,9 +200,17 @@ impl<T: Serialize + Clone + Debug + Default + DeserializeOwned + PartialEq, GS: 
     }
 }
 
-impl<T: Serialize + Clone + Debug + Default + DeserializeOwned + PartialEq, GS: GlobalStateContract> ChildRender for PlainRadioButton<T, GS> {}
+impl<
+    T: Serialize + Clone + Debug + Default + DeserializeOwned + PartialEq,
+    GS: GlobalStateContract,
+> ChildRender for PlainRadioButton<T, GS>
+{}
 
-impl<T: Serialize + Clone + Debug + Default + DeserializeOwned + PartialEq, GS: GlobalStateContract> Layout<GS> for PlainRadioButton<T, GS> {
+impl<
+    T: Serialize + Clone + Debug + Default + DeserializeOwned + PartialEq,
+    GS: GlobalStateContract,
+> Layout<GS> for PlainRadioButton<T, GS>
+{
     fn flexibility(&self) -> u32 {
         10
     }
@@ -185,5 +237,8 @@ impl<T: Serialize + Clone + Debug + Default + DeserializeOwned + PartialEq, GS: 
     }
 }
 
-
-impl<T: 'static + Serialize + Clone + Debug + Default + DeserializeOwned + PartialEq, GS: GlobalStateContract> WidgetExt<GS> for PlainRadioButton<T, GS> {}
+impl<
+    T: 'static + Serialize + Clone + Debug + Default + DeserializeOwned + PartialEq,
+    GS: GlobalStateContract,
+> WidgetExt<GS> for PlainRadioButton<T, GS>
+{}

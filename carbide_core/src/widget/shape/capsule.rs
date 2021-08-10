@@ -17,8 +17,10 @@ pub struct Capsule {
     id: Uuid,
     position: Position,
     dimension: Dimension,
-    #[state] stroke_color: ColorState,
-    #[state] fill_color: ColorState,
+    #[state]
+    stroke_color: ColorState,
+    #[state]
+    fill_color: ColorState,
     style: ShapeStyle,
     stroke_style: StrokeStyle,
     triangle_store: TriangleStore,
@@ -115,7 +117,12 @@ impl Shape for Capsule {
 
 impl Render for Capsule {
     fn get_primitives(&mut self, _: &mut Environment) -> Vec<Primitive> {
-        let rectangle = rect(self.x() as f32, self.y() as f32, self.width() as f32, self.height() as f32);
+        let rectangle = rect(
+            self.x() as f32,
+            self.y() as f32,
+            self.width() as f32,
+            self.height() as f32,
+        );
 
         tessellate(self, &rectangle, &|builder, rect| {
             builder.add_rounded_rectangle(
@@ -130,9 +137,14 @@ impl Render for Capsule {
             );
         });
 
-        let mut prims = self.triangle_store.get_primitives(*self.fill_color.value(), *self.stroke_color.value());
+        let mut prims = self
+            .triangle_store
+            .get_primitives(*self.fill_color.value(), *self.stroke_color.value());
 
-        prims.extend(Rectangle::debug_outline(Rect::new(self.position, self.dimension), 1.0));
+        prims.extend(Rectangle::debug_outline(
+            Rect::new(self.position, self.dimension),
+            1.0,
+        ));
 
         return prims;
     }

@@ -1,6 +1,7 @@
-use color::{rgb_to_hsl, hsl_to_rgb};
 use std::cmp::Ordering::Equal;
+
 use carbide_core::color::{hsl_to_rgb, rgb_to_hsl};
+use color::{hsl_to_rgb, rgb_to_hsl};
 
 ///// Test assist code.
 
@@ -9,7 +10,7 @@ fn convert_rgb_to_hsl_to_rgb(expected_r: f32, expected_g: f32, expected_b: f32) 
     hsl_to_rgb(h, s, l)
 }
 
-fn compare_rgb_pairs(expected: (f32, f32, f32), actual: (f32, f32, f32)) -> bool{
+fn compare_rgb_pairs(expected: (f32, f32, f32), actual: (f32, f32, f32)) -> bool {
     let (expected_r, expected_g, expected_b) = expected;
     let (actual_r, actual_g, actual_b) = actual;
     let r_comp = expected_r.partial_cmp(&actual_r).unwrap();

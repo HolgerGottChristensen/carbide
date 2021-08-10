@@ -1,10 +1,7 @@
-
 #[derive(Debug, Clone, PartialEq)]
 pub enum StrokeStyle {
     None,
-    Solid {
-        line_width: f64,
-    }
+    Solid { line_width: f64 },
 }
 
 impl StrokeStyle {
@@ -18,6 +15,6 @@ impl StrokeStyle {
 
 impl Default for StrokeStyle {
     fn default() -> Self {
-        StrokeStyle::Solid {line_width: 2.0}
+        StrokeStyle::Solid { line_width: 2.0 }
     }
 }

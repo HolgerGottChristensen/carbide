@@ -14,11 +14,10 @@ pub struct Context {
     generator: Vec<ContextAction>,
 }
 
-
 impl Context {
     pub fn new() -> Context {
         Context {
-            generator: vec![ContextAction::MoveTo(Position::new(0.0, 0.0))]
+            generator: vec![ContextAction::MoveTo(Position::new(0.0, 0.0))],
         }
     }
 
@@ -43,11 +42,13 @@ impl Context {
     }
 
     pub fn set_stroke_style<C: Into<ColorState>>(&mut self, color: C) {
-        self.generator.push(ContextAction::StrokeStyle(color.into()))
+        self.generator
+            .push(ContextAction::StrokeStyle(color.into()))
     }
 
     pub fn rect(&mut self, x: f64, y: f64, width: f64, height: f64) {
-        self.generator.push(ContextAction::Rect(x, y, width, height))
+        self.generator
+            .push(ContextAction::Rect(x, y, width, height))
     }
 
     pub fn clear_rect(&mut self) {
@@ -73,7 +74,8 @@ impl Context {
         if let Some(ContextAction::MoveTo(_)) = self.generator.last() {
             self.generator.pop();
         }
-        self.generator.push(ContextAction::MoveTo(Position::new(x, y)))
+        self.generator
+            .push(ContextAction::MoveTo(Position::new(x, y)))
     }
 
     pub fn close_path(&mut self) {
@@ -81,7 +83,8 @@ impl Context {
     }
 
     pub fn line_to(&mut self, x: f64, y: f64) {
-        self.generator.push(ContextAction::LineTo(Position::new(x, y)))
+        self.generator
+            .push(ContextAction::LineTo(Position::new(x, y)))
     }
 
     pub fn clip(&mut self) {
@@ -89,23 +92,28 @@ impl Context {
     }
 
     pub fn quadratic_curve_to(&mut self, ctrl: Position, to: Position) {
-        self.generator.push(ContextAction::QuadraticBezierTo { ctrl, to })
+        self.generator
+            .push(ContextAction::QuadraticBezierTo { ctrl, to })
     }
 
     pub fn bezier_curve_to(&mut self, ctrl1: Position, ctrl2: Position, to: Position) {
-        self.generator.push(ContextAction::CubicBezierTo {
-            ctrl1,
-            ctrl2,
-            to,
-        })
+        self.generator
+            .push(ContextAction::CubicBezierTo { ctrl1, ctrl2, to })
     }
 
     pub fn arc(&mut self, x: f64, y: f64, r: f64, start_angle: f64, end_angle: f64) {
-        self.generator.push(ContextAction::Arc { x, y, r, start_angle, end_angle })
+        self.generator.push(ContextAction::Arc {
+            x,
+            y,
+            r,
+            start_angle,
+            end_angle,
+        })
     }
 
     pub fn arc_to(&mut self, x1: f64, y1: f64, x2: f64, y2: f64, r: f64) {
-        self.generator.push(ContextAction::ArcTo { x1, y1, x2, y2, r })
+        self.generator
+            .push(ContextAction::ArcTo { x1, y1, x2, y2, r })
     }
 
     pub fn to_paths(&self, offset: Position) -> Vec<(Path, ShapeStyleWithOptions)> {
@@ -119,9 +127,8 @@ impl Context {
         let mut current_builder = SVGPathBuilder::new();
         let mut current_builder_begun = false;
 
-        let offset_point = |p: Position| {
-            point(p.x as f32 + offset.x as f32, p.y as f32 + offset.y as f32)
-        };
+        let offset_point =
+            |p: Position| point(p.x as f32 + offset.x as f32, p.y as f32 + offset.y as f32);
 
         for action in &self.generator {
             if !current_builder_begun {
@@ -140,7 +147,11 @@ impl Context {
                     current_builder.quadratic_bezier_to(offset_point(*ctrl), offset_point(*to));
                 }
                 ContextAction::CubicBezierTo { ctrl1, ctrl2, to } => {
-                    current_builder.cubic_bezier_to(offset_point(*ctrl1), offset_point(*ctrl2), offset_point(*to));
+                    current_builder.cubic_bezier_to(
+                        offset_point(*ctrl1),
+                        offset_point(*ctrl2),
+                        offset_point(*to),
+                    );
                 }
                 ContextAction::Close => {
                     current_builder.close();
@@ -207,8 +218,15 @@ pub enum ShapeStyleWithOptions {
 enum ContextAction {
     MoveTo(Position),
     LineTo(Position),
-    QuadraticBezierTo { ctrl: Position, to: Position },
-    CubicBezierTo { ctrl1: Position, ctrl2: Position, to: Position },
+    QuadraticBezierTo {
+        ctrl: Position,
+        to: Position,
+    },
+    CubicBezierTo {
+        ctrl1: Position,
+        ctrl2: Position,
+        to: Position,
+    },
     Fill,
     Stroke,
     Close,
@@ -218,8 +236,20 @@ enum ContextAction {
     MiterLimit(f64),
     Rect(f64, f64, f64, f64),
     BeginPath,
-    Arc { x: f64, y: f64, r: f64, start_angle: f64, end_angle: f64 },
-    ArcTo { x1: f64, y1: f64, x2: f64, y2: f64, r: f64 },
+    Arc {
+        x: f64,
+        y: f64,
+        r: f64,
+        start_angle: f64,
+        end_angle: f64,
+    },
+    ArcTo {
+        x1: f64,
+        y1: f64,
+        x2: f64,
+        y2: f64,
+        r: f64,
+    },
     FillStyle(ColorState),
     StrokeStyle(ColorState),
 }

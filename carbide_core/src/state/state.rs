@@ -10,7 +10,10 @@ use crate::state::*;
 
 use super::value_cell::{ValueRef, ValueRefMut};
 
-pub trait State<T>: DynClone + Debug where T: StateContract {
+pub trait State<T>: DynClone + Debug
+    where
+        T: StateContract,
+{
     /// This should take the state from the environment to hold locally in the implementer.
     /// Other implementations could also take copies of global_state, and apply mappings to other
     /// states.

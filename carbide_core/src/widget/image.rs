@@ -75,7 +75,10 @@ impl Layout for Image {
         let image_information = env.get_image_information(&self.image_id).unwrap();
 
         if !self.resizeable {
-            self.dimension = Dimension::new(image_information.width as f64, image_information.height as f64);
+            self.dimension = Dimension::new(
+                image_information.width as f64,
+                image_information.height as f64,
+            );
         } else {
             let width_factor = requested_size.width / (image_information.width as f64);
             let height_factor = requested_size.height / (image_information.height as f64);
@@ -84,16 +87,20 @@ impl Layout for Image {
                 ScaleMode::Fit => {
                     let scale_factor = width_factor.min(height_factor);
 
-                    self.dimension = Dimension::new((image_information.width as f64) * scale_factor, (image_information.height as f64) * scale_factor)
+                    self.dimension = Dimension::new(
+                        (image_information.width as f64) * scale_factor,
+                        (image_information.height as f64) * scale_factor,
+                    )
                 }
                 ScaleMode::Fill => {
                     let scale_factor = width_factor.max(height_factor);
 
-                    self.dimension = Dimension::new((image_information.width as f64) * scale_factor, (image_information.height as f64) * scale_factor)
+                    self.dimension = Dimension::new(
+                        (image_information.width as f64) * scale_factor,
+                        (image_information.height as f64) * scale_factor,
+                    )
                 }
-                ScaleMode::Stretch => {
-                    self.dimension = requested_size
-                }
+                ScaleMode::Stretch => self.dimension = requested_size,
             }
         }
 

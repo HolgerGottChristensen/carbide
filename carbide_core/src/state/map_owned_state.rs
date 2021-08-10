@@ -1,40 +1,36 @@
 use std::fmt::Debug;
+use std::ops::DerefMut;
 
 use dyn_clone::DynClone;
 
 use crate::environment::Environment;
 use crate::prelude::{StateContract, TState};
-use crate::state::State;
+use crate::state::{InnerState, State, ValueCell};
 use crate::state::value_cell::{ValueRef, ValueRefMut};
 use crate::state::widget_state::WidgetState;
 
 #[derive(Clone)]
-pub struct MapState<FROM, TO>
+pub struct MapOwnedState<FROM, TO>
     where
         FROM: StateContract,
         TO: StateContract,
 {
     state: TState<FROM>,
     map: Box<dyn Map<FROM, TO>>,
-    map_mut: Box<dyn MapMut<FROM, TO>>,
+    value: InnerState<TO>,
 }
 
-impl<FROM: StateContract, TO: StateContract> MapState<FROM, TO> {
-    pub fn new<S, M1, M2>(state: S, map: M1, map_mut: M2) -> Self
-        where
-            S: Into<TState<FROM>>,
-            M1: Map<FROM, TO>,
-            M2: MapMut<FROM, TO>,
-    {
-        MapState {
+impl<FROM: StateContract, TO: StateContract + Default> MapOwnedState<FROM, TO> {
+    pub fn new<M1: Into<TState<FROM>>, M2: Map<FROM, TO>>(state: M1, map: M2) -> Self {
+        MapOwnedState {
             state: state.into(),
             map: Box::new(map),
-            map_mut: Box::new(map_mut),
+            value: InnerState::new(ValueCell::new(TO::default())),
         }
     }
 }
 
-impl<FROM: StateContract, TO: StateContract> State<TO> for MapState<FROM, TO> {
+impl<FROM: StateContract, TO: StateContract> State<TO> for MapOwnedState<FROM, TO> {
     fn capture_state(&mut self, env: &mut Environment) {
         self.state.capture_state(env)
     }
@@ -44,24 +40,32 @@ impl<FROM: StateContract, TO: StateContract> State<TO> for MapState<FROM, TO> {
     }
 
     fn value(&self) -> ValueRef<TO> {
-        ValueRef::map(self.state.value(), &self.map)
+        let value: TO = (&self.map)(&*self.state.value());
+        if let Ok(mut borrow) = self.value.try_borrow_mut() {
+            *borrow.deref_mut() = value;
+        }
+        self.value.borrow()
     }
 
     fn value_mut(&mut self) -> ValueRefMut<TO> {
-        ValueRefMut::map(self.state.value_mut(), &self.map_mut)
+        let value: TO = (&self.map)(&*self.state.value());
+        if let Ok(mut borrow) = self.value.try_borrow_mut() {
+            *borrow.deref_mut() = value;
+        }
+        self.value.borrow_mut()
     }
 }
 
-impl<FROM: StateContract, TO: StateContract> Debug for MapState<FROM, TO> {
+impl<FROM: StateContract, TO: StateContract> Debug for MapOwnedState<FROM, TO> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.debug_struct("MapState")
+        f.debug_struct("MapStateOwned")
             .field("value", &*self.value())
             .finish()
     }
 }
 
 impl<FROM: StateContract + 'static, TO: StateContract + 'static> Into<TState<TO>>
-for MapState<FROM, TO>
+for MapOwnedState<FROM, TO>
 {
     fn into(self) -> TState<TO> {
         WidgetState::new(Box::new(self))
@@ -69,20 +73,11 @@ for MapState<FROM, TO>
 }
 
 pub trait Map<FROM: StateContract, TO: StateContract>:
-Fn(&FROM) -> &TO + DynClone + 'static
-{}
-
-pub trait MapMut<FROM: StateContract, TO: StateContract>:
-Fn(&mut FROM) -> &mut TO + DynClone + 'static
+Fn(&FROM) -> TO + DynClone + 'static
 {}
 
 impl<T, FROM: StateContract, TO: StateContract> Map<FROM, TO> for T where
-    T: Fn(&FROM) -> &TO + DynClone + 'static
-{}
-
-impl<T, FROM: StateContract, TO: StateContract> MapMut<FROM, TO> for T where
-    T: Fn(&mut FROM) -> &mut TO + DynClone + 'static
+    T: Fn(&FROM) -> TO + DynClone + 'static
 {}
 
 dyn_clone::clone_trait_object!(<FROM: StateContract, TO: StateContract> Map<FROM, TO>);
-dyn_clone::clone_trait_object!(<FROM: StateContract, TO: StateContract> MapMut<FROM, TO>);

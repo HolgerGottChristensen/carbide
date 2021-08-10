@@ -6,9 +6,19 @@ use crate::prelude::{CommonWidget, Environment};
 use crate::state::StateSync;
 
 pub trait Focusable: CommonWidget + StateSync {
-    fn focus_retrieved(&mut self, event: &WidgetEvent, focus_request: &Refocus, env: &mut Environment) {}
+    fn focus_retrieved(
+        &mut self,
+        event: &WidgetEvent,
+        focus_request: &Refocus,
+        env: &mut Environment,
+    ) {}
 
-    fn focus_dismissed(&mut self, event: &WidgetEvent, focus_request: &Refocus, env: &mut Environment) {}
+    fn focus_dismissed(
+        &mut self,
+        event: &WidgetEvent,
+        focus_request: &Refocus,
+        env: &mut Environment,
+    ) {}
 
     fn set_focus_and_request(&mut self, focus: Focus, env: &mut Environment) {
         if focus == Focus::FocusReleased {
@@ -31,7 +41,12 @@ pub trait Focusable: CommonWidget + StateSync {
         }
     }
 
-    fn process_focus_request(&mut self, event: &WidgetEvent, focus_request: &Refocus, env: &mut Environment) -> bool {
+    fn process_focus_request(
+        &mut self,
+        event: &WidgetEvent,
+        focus_request: &Refocus,
+        env: &mut Environment,
+    ) -> bool {
         self.capture_state(env);
 
         let mut any_focus = false;
@@ -59,28 +74,33 @@ pub trait Focusable: CommonWidget + StateSync {
         any_focus
     }
 
-    fn process_focus_next(&mut self, event: &WidgetEvent, focus_request: &Refocus, focus_up_for_grab: bool, env: &mut Environment) -> bool {
+    fn process_focus_next(
+        &mut self,
+        event: &WidgetEvent,
+        focus_request: &Refocus,
+        focus_up_for_grab: bool,
+        env: &mut Environment,
+    ) -> bool {
         self.capture_state(env);
 
-        let mut focus_child =
-            if self.flag().contains(Flags::FOCUSABLE) {
+        let mut focus_child = if self.flag().contains(Flags::FOCUSABLE) {
+            //println!("{}, {:?}", focus_up_for_grab, self.get_focus());
+            if focus_up_for_grab {
+                self.set_focus(Focus::Focused);
+                self.focus_retrieved(event, focus_request, env);
                 //println!("{}, {:?}", focus_up_for_grab, self.get_focus());
-                if focus_up_for_grab {
-                    self.set_focus(Focus::Focused);
-                    self.focus_retrieved(event, focus_request, env);
-                    //println!("{}, {:?}", focus_up_for_grab, self.get_focus());
-                    false
-                } else if self.get_focus() == Focus::FocusReleased {
-                    self.set_focus(Focus::Unfocused);
-                    self.focus_dismissed(event, focus_request, env);
-                    //println!("{}, {:?}", focus_up_for_grab, self.get_focus());
-                    true
-                } else {
-                    false
-                }
+                false
+            } else if self.get_focus() == Focus::FocusReleased {
+                self.set_focus(Focus::Unfocused);
+                self.focus_dismissed(event, focus_request, env);
+                //println!("{}, {:?}", focus_up_for_grab, self.get_focus());
+                true
             } else {
-                focus_up_for_grab
-            };
+                false
+            }
+        } else {
+            focus_up_for_grab
+        };
 
         self.release_state(env);
 
@@ -91,25 +111,30 @@ pub trait Focusable: CommonWidget + StateSync {
         focus_child
     }
 
-    fn process_focus_previous(&mut self, event: &WidgetEvent, focus_request: &Refocus, focus_up_for_grab: bool, env: &mut Environment) -> bool {
+    fn process_focus_previous(
+        &mut self,
+        event: &WidgetEvent,
+        focus_request: &Refocus,
+        focus_up_for_grab: bool,
+        env: &mut Environment,
+    ) -> bool {
         self.capture_state(env);
 
-        let mut focus_child =
-            if self.flag().contains(Flags::FOCUSABLE) {
-                if focus_up_for_grab {
-                    self.set_focus(Focus::Focused);
-                    self.focus_retrieved(event, focus_request, env);
-                    false
-                } else if self.get_focus() == Focus::FocusReleased {
-                    self.set_focus(Focus::Unfocused);
-                    self.focus_dismissed(event, focus_request, env);
-                    true
-                } else {
-                    false
-                }
+        let mut focus_child = if self.flag().contains(Flags::FOCUSABLE) {
+            if focus_up_for_grab {
+                self.set_focus(Focus::Focused);
+                self.focus_retrieved(event, focus_request, env);
+                false
+            } else if self.get_focus() == Focus::FocusReleased {
+                self.set_focus(Focus::Unfocused);
+                self.focus_dismissed(event, focus_request, env);
+                true
             } else {
-                focus_up_for_grab
-            };
+                false
+            }
+        } else {
+            focus_up_for_grab
+        };
 
         self.release_state(env);
 

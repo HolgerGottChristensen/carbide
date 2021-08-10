@@ -7,7 +7,7 @@ pub struct CalculatorState {
     result: Option<f64>,
     current_operation: Operation,
     old_operation: Operation,
-    string: String
+    string: String,
 }
 
 impl CalculatorState {
@@ -18,7 +18,7 @@ impl CalculatorState {
             result: None,
             current_operation: Operation::None,
             old_operation: Operation::None,
-            string: "".to_string()
+            string: "".to_string(),
         }
     }
 
@@ -39,7 +39,6 @@ impl CalculatorState {
             if let Some(n) = self.right {
                 res.push_str(&n.to_string())
             }
-
         }
 
         match self.current_operation {
@@ -55,16 +54,15 @@ impl CalculatorState {
             res.push_str(" = ")
         }
 
-
         res
     }
 
     pub fn get_display(&self) -> String {
         if !self.string.is_empty() {
-            return self.string.to_string()
+            return self.string.to_string();
         } else if self.current_operation == Operation::Eq {
             if let Some(val) = self.result {
-                return val.to_string()
+                return val.to_string();
             }
         }
         "0".to_string()
@@ -76,15 +74,14 @@ impl CalculatorState {
                 self.result = match &self.current_operation {
                     Operation::None => Some(left),
                     Operation::Eq => Some(left),
-                    Operation::Add => Some (left + right),
+                    Operation::Add => Some(left + right),
                     Operation::Sub => Some(left - right),
                     Operation::Mul => Some(left * right),
                     Operation::Div => Some(left / right),
                 };
             }
-            _ => println!("No calculation")
+            _ => println!("No calculation"),
         }
-
     }
 
     pub fn append(&mut self, val: i64) {
@@ -106,7 +103,6 @@ impl CalculatorState {
     }
 
     pub fn set_operation(&mut self, op: Operation) {
-
         if self.current_operation == Operation::Eq {
             self.left = self.result;
             self.right = None;
@@ -123,14 +119,12 @@ impl CalculatorState {
                 self.calculate();
                 self.string = String::new()
             }
-
         }
         self.old_operation = self.current_operation;
         self.current_operation = op;
         println!("{:?}", &self);
     }
 }
-
 
 #[derive(Copy, Clone, Debug, Eq, PartialEq)]
 pub enum Operation {
@@ -139,5 +133,5 @@ pub enum Operation {
     Add,
     Sub,
     Mul,
-    Div
+    Div,
 }

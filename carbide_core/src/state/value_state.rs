@@ -7,15 +7,16 @@ use crate::state::{ValueRef, ValueRefMut};
 use crate::state::widget_state::WidgetState;
 
 #[derive(Clone)]
-pub struct ValueState<T> where T: StateContract {
+pub struct ValueState<T>
+    where
+        T: StateContract,
+{
     value: T,
 }
 
 impl<T: StateContract> ValueState<T> {
     pub fn new(value: T) -> Self {
-        ValueState {
-            value
-        }
+        ValueState { value }
     }
 }
 
@@ -65,5 +66,11 @@ impl<T: StateContract + 'static> Into<TState<T>> for Box<ValueState<T>> {
 impl<T: StateContract + 'static> From<T> for TState<T> {
     fn from(t: T) -> Self {
         WidgetState::new(Box::new(ValueState::new(t)))
+    }
+}
+
+impl From<u32> for TState<f64> {
+    fn from(t: u32) -> Self {
+        WidgetState::new(Box::new(ValueState::new(t as f64)))
     }
 }

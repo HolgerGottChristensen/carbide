@@ -2,6 +2,7 @@ use std::any::Any;
 use std::cell::RefCell;
 use std::collections::HashMap;
 use std::rc::Rc;
+use std::time::Instant;
 
 use bitflags::_core::fmt::Formatter;
 use fxhash::{FxBuildHasher, FxHashMap};
@@ -12,7 +13,7 @@ use crate::draw::Scalar;
 use crate::focus::Refocus;
 use crate::mesh::TextureAtlas;
 use crate::prelude::EnvironmentVariable;
-use crate::state::{InnerState, StateKey};
+use crate::state::{InnerState, StateKey, ValueCell};
 use crate::state::StateContract;
 use crate::text::{Font, FontFamily, FontId, FontSize, FontStyle, FontWeight, Glyph};
 use crate::widget::ImageInformation;
@@ -69,6 +70,9 @@ pub struct Environment {
     /// On windows this is the settable factor in desktop settings.
     /// On retina displays for macos this is 2 and otherwise 1.
     scale_factor: f64,
+
+    /// The start time of the current frame. This is used to sync the animated states.
+    frame_start_time: InnerState<Instant>,
 }
 
 impl std::fmt::Debug for Environment {
@@ -78,7 +82,11 @@ impl std::fmt::Debug for Environment {
 }
 
 impl Environment {
-    pub fn new(env_stack: Vec<EnvironmentVariable>, pixel_dimensions: Dimension, scale_factor: f64) -> Self {
+    pub fn new(
+        env_stack: Vec<EnvironmentVariable>,
+        pixel_dimensions: Dimension,
+        scale_factor: f64,
+    ) -> Self {
         let default_font_family_name = "NotoSans";
 
         Environment {
@@ -93,7 +101,17 @@ impl Environment {
             focus_request: None,
             pixel_dimensions,
             scale_factor,
+            frame_start_time: InnerState::new(ValueCell::new(Instant::now())),
         }
+    }
+
+    pub fn capture_time(&mut self) {
+        println!("Capture time");
+        *self.frame_start_time.borrow_mut() = Instant::now();
+    }
+
+    pub fn captured_time(&self) -> InnerState<Instant> {
+        self.frame_start_time.clone()
     }
 
     pub fn set_pixel_width(&mut self, new_pixel_width: f64) {
@@ -117,7 +135,10 @@ impl Environment {
     }
 
     pub fn get_corrected_dimensions(&self) -> Dimension {
-        Dimension::new(self.pixel_dimensions.width / self.scale_factor, self.pixel_dimensions.height / self.scale_factor)
+        Dimension::new(
+            self.pixel_dimensions.width / self.scale_factor,
+            self.pixel_dimensions.height / self.scale_factor,
+        )
     }
 
     pub fn get_pixel_width(&self) -> f64 {
@@ -205,7 +226,8 @@ impl Environment {
     }*/
 
     pub fn insert_font_from_file<P>(&mut self, path: P) -> FontId
-        where P: AsRef<std::path::Path>,
+        where
+            P: AsRef<std::path::Path>,
     {
         let mut font = Font::from_file(path).unwrap();
         let font_id = self.fonts.len();
@@ -215,7 +237,8 @@ impl Environment {
     }
 
     pub fn insert_bitmap_font_from_file<P>(&mut self, path: P) -> FontId
-        where P: AsRef<std::path::Path>,
+        where
+            P: AsRef<std::path::Path>,
     {
         let mut font = Font::from_file_bitmap(path).unwrap();
         let font_id = self.fonts.len();
@@ -228,13 +251,19 @@ impl Environment {
         let scale_factor = self.get_scale_factor();
         for glyph in glyphs {
             let font = &self.fonts[glyph.font_id()];
-            self.font_texture_atlas.queue_glyph(glyph, font, scale_factor);
+            self.font_texture_atlas
+                .queue_glyph(glyph, font, scale_factor);
         }
     }
 
     pub fn remove_glyphs_from_atlas(&mut self, glyphs: &Vec<Glyph>) {}
 
-    pub fn get_glyph_from_fallback(&mut self, c: char, font_size: FontSize, scale_factor: Scalar) -> (Scalar, Glyph) {
+    pub fn get_glyph_from_fallback(
+        &mut self,
+        c: char,
+        font_size: FontSize,
+        scale_factor: Scalar,
+    ) -> (Scalar, Glyph) {
         // Try all the loaded fonts. We only check the first font in each family.
         // Todo: Consider using weight hints and style hints.
         // Todo: Consider going through a separate list if we have a lot of families loaded.
@@ -242,7 +271,7 @@ impl Environment {
             println!("Looking up in font family: {:?}", font_family);
             let font_id = font_family.get_best_fit(FontWeight::Normal, FontStyle::Normal);
             if let Some(res) = self.get_font(font_id).get_glyph(c, font_size, scale_factor) {
-                return res
+                return res;
             }
         }
 
@@ -279,7 +308,9 @@ impl Environment {
 
     pub fn add_font_family(&mut self, mut family: FontFamily) {
         for font in &mut family.fonts {
-            let assets = find_folder::Search::KidsThenParents(3, 5).for_folder("assets").unwrap();
+            let assets = find_folder::Search::KidsThenParents(3, 5)
+                .for_folder("assets")
+                .unwrap();
             let font_path = assets.join(&font.path);
             let font_id = if font.is_bitmap {
                 self.insert_bitmap_font_from_file(font_path)
@@ -294,7 +325,7 @@ impl Environment {
 
     pub fn get_first_font_family(&self) -> &FontFamily {
         for (_, family) in self.font_families.iter() {
-            return family
+            return family;
         }
 
         panic!("No font family have been added, so we can not get the first.")
@@ -311,7 +342,6 @@ impl Environment {
             self.font_families.get(name).unwrap()
         }
     }
-
 
     pub fn push_vec(&mut self, value: Vec<EnvironmentVariable>) {
         for v in value {
@@ -333,10 +363,10 @@ impl Environment {
                 match item {
                     EnvironmentVariable::Color { key, value } => {
                         if key == col {
-                            return Some(value.clone())
+                            return Some(value.clone());
                         }
                     }
-                    _ => ()
+                    _ => (),
                 }
             }
         }
@@ -350,10 +380,10 @@ impl Environment {
                 match item {
                     EnvironmentVariable::FontSize { key, value } => {
                         if key == size {
-                            return Some(*value)
+                            return Some(*value);
                         }
                     }
-                    _ => ()
+                    _ => (),
                 }
             }
         }

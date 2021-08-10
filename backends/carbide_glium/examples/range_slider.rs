@@ -38,7 +38,9 @@ fn main() {
     let ids = Ids::new(ui.widget_id_generator());
 
     // Add a `Font` to the `Ui`'s `font::Map` from file.
-    let assets = find_folder::Search::KidsThenParents(3, 5).for_folder("assets").unwrap();
+    let assets = find_folder::Search::KidsThenParents(3, 5)
+        .for_folder("assets")
+        .unwrap();
     let font_path = assets.join("fonts/NotoSans/NotoSans-Regular.ttf");
     ui.fonts.insert_from_file(font_path).unwrap();
 
@@ -54,10 +56,8 @@ fn main() {
     // Poll events from the window.
     let mut event_loop = support::EventLoop::new();
     'main: loop {
-
         // Handle all events.
         for event in event_loop.next(&mut events_loop) {
-
             // Use the `winit` backend feature to convert the winit event to a carbide one.
             if let Some(event) = support::convert_event(event.clone(), &display) {
                 ui.handle_event(event);
@@ -67,9 +67,10 @@ fn main() {
             match event {
                 glium::glutin::Event::WindowEvent { event, .. } => match event {
                     // Break from the loop upon `Escape`.
-                    glium::glutin::WindowEvent::CloseRequested |
-                    glium::glutin::WindowEvent::KeyboardInput {
-                        input: glium::glutin::KeyboardInput {
+                    glium::glutin::WindowEvent::CloseRequested
+                    | glium::glutin::WindowEvent::KeyboardInput {
+                        input:
+                        glium::glutin::KeyboardInput {
                             virtual_keycode: Some(glium::glutin::VirtualKeyCode::Escape),
                             ..
                         },
@@ -100,9 +101,11 @@ fn set_ui(
     ids: &Ids,
     oval_range: &mut (carbide_core::Scalar, carbide_core::Scalar),
 ) {
-    use carbide_core::{color, widget, Colorable, Positionable, Sizeable, OldWidget};
+    use carbide_core::{color, widget, Colorable, OldWidget, Positionable, Sizeable};
 
-    widget::Canvas::new().color(color::DARK_CHARCOAL).set(ids.canvas, ui);
+    widget::Canvas::new()
+        .color(color::DARK_CHARCOAL)
+        .set(ids.canvas, ui);
 
     const PAD: carbide_core::Scalar = 20.0;
     let (ref mut start, ref mut end) = *oval_range;
@@ -114,12 +117,12 @@ fn set_ui(
         .h(30.0)
         .mid_top_with_margin_on(ids.canvas, PAD)
         .set(ids.range_slider, ui)
-        {
-            match edge {
-                widget::range_slider::Edge::Start => *start = value,
-                widget::range_slider::Edge::End => *end = value,
-            }
+    {
+        match edge {
+            widget::range_slider::Edge::Start => *start = value,
+            widget::range_slider::Edge::End => *end = value,
         }
+    }
 
     let range_slider_w = ui.w_of(ids.range_slider).unwrap();
     let w = (*end - *start) * range_slider_w;

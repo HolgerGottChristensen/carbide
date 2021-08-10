@@ -24,7 +24,11 @@ pub trait WidgetExt: Widget + Sized + 'static {
         Hidden::new(Box::new(self))
     }
 
-    fn offset<K1: Into<F64State>, K2: Into<F64State>>(self, offset_x: K1, offset_y: K2) -> Box<Offset> {
+    fn offset<K1: Into<F64State>, K2: Into<F64State>>(
+        self,
+        offset_x: K1,
+        offset_y: K2,
+    ) -> Box<Offset> {
         Offset::new(offset_x.into(), offset_y.into(), Box::new(self))
     }
 

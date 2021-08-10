@@ -13,16 +13,15 @@ pub use util::*;
 pub use walk_owned_primitives::*;
 
 mod cprimitives;
-mod util;
-mod owned_text;
 mod owned_primitive;
-mod text;
-mod walk_owned_primitives;
 mod owned_primitive_kind;
-mod primitive_walker;
 mod owned_primitives;
-mod primitives;
-mod primitive_kind;
+mod owned_text;
 mod primitive;
+mod primitive_kind;
+mod primitive_walker;
+mod primitives;
 mod render;
-
+mod text;
+mod util;
+mod walk_owned_primitives;

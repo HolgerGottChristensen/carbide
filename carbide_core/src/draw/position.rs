@@ -15,10 +15,7 @@ pub struct Position {
 
 impl Position {
     pub fn new(x: Scalar, y: Scalar) -> Position {
-        Position {
-            x,
-            y,
-        }
+        Position { x, y }
     }
 
     pub fn x(&self) -> Scalar {

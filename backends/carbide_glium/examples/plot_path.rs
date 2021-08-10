@@ -1,13 +1,14 @@
-#[macro_use] extern crate carbide_core;
+#[macro_use]
+extern crate carbide_core;
+extern crate carbide_glium;
+#[macro_use]
+extern crate carbide_winit;
+extern crate find_folder;
 extern crate glium;
 
-extern crate find_folder;
-extern crate carbide_glium;
-#[macro_use] extern crate carbide_winit;
+use glium::Surface;
 
 mod support;
-
-use glium::Surface;
 
 const WIDTH: u32 = 720;
 const HEIGHT: u32 = 360;
@@ -46,7 +47,6 @@ fn main() {
     'main: loop {
         // Handle all events.
         for event in event_loop.next(&mut events_loop) {
-
             // Use the `winit` backend feature to convert the winit event to a carbide one.
             if let Some(event) = support::convert_event(event.clone(), &display) {
                 ui.handle_event(event);
@@ -55,9 +55,10 @@ fn main() {
             match event {
                 glium::glutin::Event::WindowEvent { event, .. } => match event {
                     // Break from the loop upon `Escape`.
-                    glium::glutin::WindowEvent::CloseRequested |
-                    glium::glutin::WindowEvent::KeyboardInput {
-                        input: glium::glutin::KeyboardInput {
+                    glium::glutin::WindowEvent::CloseRequested
+                    | glium::glutin::WindowEvent::KeyboardInput {
+                        input:
+                        glium::glutin::KeyboardInput {
                             virtual_keycode: Some(glium::glutin::VirtualKeyCode::Escape),
                             ..
                         },
@@ -71,11 +72,13 @@ fn main() {
 
         // Instantiate the widgets.
         {
-            use carbide_core::{color, widget, Colorable, Positionable, Sizeable, OldWidget};
+            use carbide_core::{color, widget, Colorable, OldWidget, Positionable, Sizeable};
 
             let ui = &mut ui.set_widgets();
 
-            widget::Canvas::new().color(color::DARK_CHARCOAL).set(ids.canvas, ui);
+            widget::Canvas::new()
+                .color(color::DARK_CHARCOAL)
+                .set(ids.canvas, ui);
 
             let min_x = 0.0;
             let max_x = std::f64::consts::PI * 2.0;

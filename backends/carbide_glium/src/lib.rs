@@ -122,7 +122,6 @@ pub const MODE_IMAGE: u32 = 1;
 /// Ignore `tex` and draw simple, colored 2D geometry.
 pub const MODE_GEOMETRY: u32 = 2;
 
-
 /// The vertex shader used within the `glium::Program` for OpenGL.
 pub const VERTEX_SHADER_120: &'static str = "
     #version 120
@@ -277,17 +276,18 @@ pub trait TextureDimensions {
 }
 
 impl<T> TextureDimensions for T
-    where T: std::ops::Deref<Target=glium::texture::TextureAny>,
+    where
+        T: std::ops::Deref<Target=glium::texture::TextureAny>,
 {
     fn dimensions(&self) -> (u32, u32) {
         (self.get_width(), self.get_height().unwrap_or(0))
     }
 }
 
-
 /// Construct the glium shader program that can be used to render `Vertex`es.
 pub fn program<F>(facade: &F) -> Result<glium::Program, glium::program::ProgramChooserCreationError>
-    where F: glium::backend::Facade,
+    where
+        F: glium::backend::Facade,
 {
     program!(facade,
              120 => { vertex: VERTEX_SHADER_120, fragment: FRAGMENT_SHADER_120 },
@@ -298,9 +298,12 @@ pub fn program<F>(facade: &F) -> Result<glium::Program, glium::program::ProgramC
 /// Default glium `DrawParameters` with alpha blending enabled.
 pub fn draw_parameters() -> glium::DrawParameters<'static> {
     let blend = glium::Blend::alpha_blending();
-    glium::DrawParameters { multisampling: true, blend: blend, ..Default::default() }
+    glium::DrawParameters {
+        multisampling: true,
+        blend: blend,
+        ..Default::default()
+    }
 }
-
 
 /// Converts gamma (brightness) from sRGB to linear color space.
 ///
@@ -318,7 +321,6 @@ pub fn gamma_srgb_to_linear(c: [f32; 4]) -> [f32; 4] {
     [component(c[0]), component(c[1]), component(c[2]), c[3]]
 }
 
-
 /// Return the optimal client format for the text texture given the version.
 pub fn text_texture_client_format(opengl_version: &glium::Version) -> glium::texture::ClientFormat {
     match *opengl_version {
@@ -330,7 +332,9 @@ pub fn text_texture_client_format(opengl_version: &glium::Version) -> glium::tex
 }
 
 /// Return the optimal uncompressed float format for the text texture given the version.
-pub fn text_texture_uncompressed_float_format(opengl_version: &glium::Version) -> glium::texture::UncompressedFloatFormat {
+pub fn text_texture_uncompressed_float_format(
+    opengl_version: &glium::Version,
+) -> glium::texture::UncompressedFloatFormat {
     match *opengl_version {
         // If the version is greater than or equal to GL 3.0 or GLes 3.0, we can use the `U8` format.
         glium::Version(_, major, _) if major >= 3 => glium::texture::UncompressedFloatFormat::U8,
@@ -448,7 +452,8 @@ impl Renderer {
     /// The dimensions of the inner glyph cache will be equal to the dimensions of the given
     /// facade's framebuffer.
     pub fn new<F>(facade: &F) -> Result<Self, RendererCreationError>
-        where F: glium::backend::Facade,
+        where
+            F: glium::backend::Facade,
     {
         let glyph_cache = GlyphCache::new(facade)?;
         Self::with_glyph_cache(facade, glyph_cache)
@@ -483,7 +488,11 @@ impl Renderer {
 
     /// Produce an `Iterator` yielding `Command`s.
     pub fn commands(&self) -> Commands {
-        let Renderer { ref commands, ref vertices, .. } = *self;
+        let Renderer {
+            ref commands,
+            ref vertices,
+            ..
+        } = *self;
         Commands {
             commands: commands.iter(),
             vertices: vertices,
@@ -491,13 +500,22 @@ impl Renderer {
     }
 
     /// Fill the inner vertex and command buffers by translating the given `primitives`.
-    pub fn fill<D, P, T>(&mut self, display: &D, mut primitives: P, image_map: &image_map::ImageMap<T>)
-        where
-            P: PrimitiveWalker,
-            D: Display,
-            T: TextureDimensions,
+    pub fn fill<D, P, T>(
+        &mut self,
+        display: &D,
+        mut primitives: P,
+        image_map: &image_map::ImageMap<T>,
+    ) where
+        P: PrimitiveWalker,
+        D: Display,
+        T: TextureDimensions,
     {
-        let Renderer { ref mut commands, ref mut vertices, ref mut glyph_cache, .. } = *self;
+        let Renderer {
+            ref mut commands,
+            ref mut vertices,
+            ref mut glyph_cache,
+            ..
+        } = *self;
 
         commands.clear();
         vertices.clear();
@@ -515,8 +533,13 @@ impl Renderer {
         let client_format = text_texture_client_format(opengl_version);
 
         enum State {
-            Image { image_id: image_map::Id, start: usize },
-            Plain { start: usize },
+            Image {
+                image_id: image_map::Id,
+                start: usize,
+            },
+            Plain {
+                start: usize,
+            },
         }
 
         let mut current_state = State::Plain { start: 0 };
@@ -529,8 +552,10 @@ impl Renderer {
                     State::Plain { .. } => (),
                     State::Image { image_id, start } => {
                         commands.push(PreparedCommand::Image(image_id, start..vertices.len()));
-                        current_state = State::Plain { start: vertices.len() };
-                    },
+                        current_state = State::Plain {
+                            start: vertices.len(),
+                        };
+                    }
                 }
             };
         }
@@ -543,8 +568,8 @@ impl Renderer {
         let dpi_factor = display.hidpi_factor() as Scalar;
 
         // Functions for converting for carbide scalar coords to GL vertex coords (-1.0 to 1.0).
-        let vx = |x: Scalar| ((x * dpi_factor / half_win_w)) as f32;
-        let vy = |y: Scalar| ((y * dpi_factor / half_win_h)) as f32;
+        let vx = |x: Scalar| (x * dpi_factor / half_win_w) as f32;
+        let vy = |y: Scalar| (y * dpi_factor / half_win_h) as f32;
 
         let _current_scizzor = glium::Rect {
             left: 0,
@@ -569,7 +594,12 @@ impl Renderer {
 
         // Draw each primitive in order of depth.
         while let Some(primitive) = primitives.next_primitive() {
-            let Primitive { kind, scizzor: _, rect, .. } = primitive;
+            let Primitive {
+                kind,
+                scizzor: _,
+                rect,
+                ..
+            } = primitive;
 
             // Check for a `Scizzor` command.
             /*let new_scizzor = rect_to_glium_rect(scizzor);
@@ -609,7 +639,6 @@ impl Renderer {
 
                     let mut push_v = |x, y| vertices.push(v(x, y));
 
-
                     // Bottom left triangle.
                     push_v(l, t);
                     push_v(r, b);
@@ -619,7 +648,7 @@ impl Renderer {
                     push_v(l, t);
                     push_v(r, b);
                     push_v(r, t);
-                },
+                }
 
                 PrimitiveKind::TrianglesSingleColor { color, triangles } => {
                     if triangles.is_empty() {
@@ -630,13 +659,11 @@ impl Renderer {
 
                     let color = gamma_srgb_to_linear(color.into());
 
-                    let v = |p: [Scalar; 2]| {
-                        Vertex {
-                            position: [vx(p[0]), vy(p[1])],
-                            tex_coords: [0.0, 0.0],
-                            color: color,
-                            mode: MODE_GEOMETRY,
-                        }
+                    let v = |p: [Scalar; 2]| Vertex {
+                        position: [vx(p[0]), vy(p[1])],
+                        tex_coords: [0.0, 0.0],
+                        color: color,
+                        mode: MODE_GEOMETRY,
                     };
 
                     for triangle in triangles {
@@ -644,7 +671,7 @@ impl Renderer {
                         vertices.push(v(triangle[1]));
                         vertices.push(v(triangle[2]));
                     }
-                },
+                }
 
                 PrimitiveKind::TrianglesMultiColor { triangles } => {
                     if triangles.is_empty() {
@@ -653,13 +680,11 @@ impl Renderer {
 
                     switch_to_plain_state!();
 
-                    let v = |(p, c): ([Scalar; 2], color::Rgba)| {
-                        Vertex {
-                            position: [vx(p[0]), vy(p[1])],
-                            tex_coords: [0.0, 0.0],
-                            color: gamma_srgb_to_linear(c.into()),
-                            mode: MODE_GEOMETRY,
-                        }
+                    let v = |(p, c): ([Scalar; 2], color::Rgba)| Vertex {
+                        position: [vx(p[0]), vy(p[1])],
+                        tex_coords: [0.0, 0.0],
+                        color: gamma_srgb_to_linear(c.into()),
+                        mode: MODE_GEOMETRY,
                     };
 
                     for triangle in triangles {
@@ -667,14 +692,21 @@ impl Renderer {
                         vertices.push(v(triangle[1]));
                         vertices.push(v(triangle[2]));
                     }
-                },
+                }
 
-                PrimitiveKind::Text { color, text, font_id } => {
+                PrimitiveKind::Text {
+                    color,
+                    text,
+                    font_id,
+                } => {
                     switch_to_plain_state!();
 
                     let positioned_glyphs = text.positioned_glyphs(dpi_factor as f32);
 
-                    let GlyphCache { ref mut cache, ref mut texture } = *glyph_cache;
+                    let GlyphCache {
+                        ref mut cache,
+                        ref mut texture,
+                    } = *glyph_cache;
 
                     // Queue the glyphs to be cached.
                     for glyph in positioned_glyphs.iter() {
@@ -682,48 +714,51 @@ impl Renderer {
                     }
 
                     // Cache the glyphs on the GPU.
-                    cache.cache_queued(|rect, data| {
-                        let w = rect.width();
-                        let h = rect.height();
-                        let glium_rect = glium::Rect {
-                            left: rect.min.x,
-                            bottom: rect.min.y,
-                            width: w,
-                            height: h,
-                        };
+                    cache
+                        .cache_queued(|rect, data| {
+                            let w = rect.width();
+                            let h = rect.height();
+                            let glium_rect = glium::Rect {
+                                left: rect.min.x,
+                                bottom: rect.min.y,
+                                width: w,
+                                height: h,
+                            };
 
-                        let data = match client_format {
-                            // `rusttype` gives data in the `U8` format so we can use it directly.
-                            glium::texture::ClientFormat::U8 => std::borrow::Cow::Borrowed(data),
-                            // Otherwise we have to convert to the supported format.
-                            glium::texture::ClientFormat::U8U8U8 => {
-                                text_data_u8u8u8.clear();
-                                for &b in data.iter() {
-                                    text_data_u8u8u8.push(b);
-                                    text_data_u8u8u8.push(b);
-                                    text_data_u8u8u8.push(b);
+                            let data = match client_format {
+                                // `rusttype` gives data in the `U8` format so we can use it directly.
+                                glium::texture::ClientFormat::U8 => {
+                                    std::borrow::Cow::Borrowed(data)
                                 }
-                                std::borrow::Cow::Borrowed(&text_data_u8u8u8[..])
-                            },
-                            // The text cache is only ever created with U8 or U8U8U8 formats.
-                            _ => unreachable!(),
-                        };
+                                // Otherwise we have to convert to the supported format.
+                                glium::texture::ClientFormat::U8U8U8 => {
+                                    text_data_u8u8u8.clear();
+                                    for &b in data.iter() {
+                                        text_data_u8u8u8.push(b);
+                                        text_data_u8u8u8.push(b);
+                                        text_data_u8u8u8.push(b);
+                                    }
+                                    std::borrow::Cow::Borrowed(&text_data_u8u8u8[..])
+                                }
+                                // The text cache is only ever created with U8 or U8U8U8 formats.
+                                _ => unreachable!(),
+                            };
 
-                        let image = glium::texture::RawImage2d {
-                            data,
-                            width: w,
-                            height: h,
-                            format: client_format,
-                        };
-                        texture.main_level().write(glium_rect, image);
-                    }).unwrap();
+                            let image = glium::texture::RawImage2d {
+                                data,
+                                width: w,
+                                height: h,
+                                format: client_format,
+                            };
+                            texture.main_level().write(glium_rect, image);
+                        })
+                        .unwrap();
 
                     let color = gamma_srgb_to_linear(color.to_fsa());
 
                     let cache_id = font_id.index();
 
                     let _origin = text_old::rt::point(0.0, 0.0);
-
 
                     //Working on mac
                     /*
@@ -759,8 +794,14 @@ impl Renderer {
                         }*/
 
                         OldRect {
-                            x: Range { start: min_x, end: max_x },
-                            y: Range { start: min_y, end: max_y },
+                            x: Range {
+                                start: min_x,
+                                end: max_x,
+                            },
+                            y: Range {
+                                start: min_y,
+                                end: max_y,
+                            },
                         }
                     };
 
@@ -790,14 +831,16 @@ impl Renderer {
                             push_v([-0.5, 1.0], [0.0, 0.0]);*/
                         }
                     }
-                },
+                }
 
-                PrimitiveKind::Image { image_id, color, source_rect } => {
-
+                PrimitiveKind::Image {
+                    image_id,
+                    color,
+                    source_rect,
+                } => {
                     // Switch to the `Image` state for this image if we're not in it already.
                     let new_image_id = image_id;
                     match current_state {
-
                         // If we're already in the drawing mode for this image, we're done.
                         State::Image { image_id, .. } if image_id == new_image_id => (),
 
@@ -808,7 +851,7 @@ impl Renderer {
                                 image_id: new_image_id,
                                 start: vertices.len(),
                             };
-                        },
+                        }
 
                         // If we were drawing a different image, switch state to draw *this* image.
                         State::Image { image_id, start } => {
@@ -817,11 +860,10 @@ impl Renderer {
                                 image_id: new_image_id,
                                 start: vertices.len(),
                             };
-                        },
+                        }
                     }
 
                     let color = color.unwrap_or(color::WHITE).to_fsa();
-
 
                     if let Some(image) = image_map.get(&image_id) {
                         let (image_w, image_h) = image.dimensions();
@@ -835,11 +877,13 @@ impl Renderer {
                         let (uv_l, uv_r, uv_b, uv_t) = match source_rect {
                             Some(src_rect) => {
                                 let (l, r, b, t) = src_rect.l_r_b_t();
-                                ((l / image_w) as f32,
-                                 (r / image_w) as f32,
-                                 (b / image_h) as f32,
-                                 (t / image_h) as f32)
-                            },
+                                (
+                                    (l / image_w) as f32,
+                                    (r / image_w) as f32,
+                                    (b / image_h) as f32,
+                                    (t / image_h) as f32,
+                                )
+                            }
                             None => (0.0, 1.0, 0.0, 1.0),
                         };
 
@@ -866,7 +910,7 @@ impl Renderer {
                         push_v(r, b, [uv_r, uv_b]);
                         push_v(r, t, [uv_r, uv_t]);
                     }
-                },
+                }
 
                 // We have no special case widgets to handle.
                 PrimitiveKind::Other(_) => (),
@@ -875,10 +919,10 @@ impl Renderer {
 
         // Enter the final command.
         match current_state {
-            State::Plain { start } =>
-                commands.push(PreparedCommand::Plain(start..vertices.len())),
-            State::Image { image_id, start } =>
-                commands.push(PreparedCommand::Image(image_id, start..vertices.len())),
+            State::Plain { start } => commands.push(PreparedCommand::Plain(start..vertices.len())),
+            State::Image { image_id, start } => {
+                commands.push(PreparedCommand::Image(image_id, start..vertices.len()))
+            }
         }
     }
 
@@ -888,11 +932,16 @@ impl Renderer {
     /// and `commands` methods separately. This method is simply a convenience wrapper around those
     /// methods for the case that the user does not require accessing or modifying carbide's draw
     /// parameters, uniforms or generated draw commands.
-    pub fn draw<F, S, T>(&self, facade: &F, surface: &mut S, image_map: &image_map::ImageMap<T>)
-                         -> Result<(), DrawError>
-        where F: glium::backend::Facade,
-              S: glium::Surface,
-              for<'a> glium::uniforms::Sampler<'a, T>: glium::uniforms::AsUniformValue,
+    pub fn draw<F, S, T>(
+        &self,
+        facade: &F,
+        surface: &mut S,
+        image_map: &image_map::ImageMap<T>,
+    ) -> Result<(), DrawError>
+        where
+            F: glium::backend::Facade,
+            S: glium::Surface,
+            for<'a> glium::uniforms::Sampler<'a, T>: glium::uniforms::AsUniformValue,
     {
         let mut draw_params = draw_parameters();
         let no_indices = glium::index::NoIndices(glium::index::PrimitiveType::TrianglesList);
@@ -913,43 +962,61 @@ impl Renderer {
 
         for command in self.commands() {
             match command {
-
                 // Update the `scizzor` before continuing to draw.
                 Command::Scizzor(scizzor) => draw_params.scissor = Some(scizzor),
 
                 // Draw to the target with the given `draw` command.
                 Command::Draw(draw) => match draw {
-
                     // Draw text and plain 2D geometry.
                     //
                     // Only submit the vertices if there is enough for at least one triangle.
-                    Draw::Plain(slice) => if slice.len() >= NUM_VERTICES_IN_TRIANGLE {
-                        let vertex_buffer = glium::VertexBuffer::new(facade, slice)?;
-                        surface.draw(&vertex_buffer, no_indices, &self.program, &uniforms, &draw_params).unwrap();
-                    },
+                    Draw::Plain(slice) => {
+                        if slice.len() >= NUM_VERTICES_IN_TRIANGLE {
+                            let vertex_buffer = glium::VertexBuffer::new(facade, slice)?;
+                            surface
+                                .draw(
+                                    &vertex_buffer,
+                                    no_indices,
+                                    &self.program,
+                                    &uniforms,
+                                    &draw_params,
+                                )
+                                .unwrap();
+                        }
+                    }
 
                     // Draw an image whose texture data lies within the `image_map` at the
                     // given `id`.
                     //
                     // Only submit the vertices if there is enough for at least one triangle.
-                    Draw::Image(image_id, slice) => if slice.len() >= NUM_VERTICES_IN_TRIANGLE {
-                        let vertex_buffer = glium::VertexBuffer::new(facade, slice).unwrap();
-                        if let Some(image) = image_map.get(&image_id) {
-                            let image_uniforms = uniform! {
-                                matrix: [
-                                    [1.0, 0.0, 0.0, 0.0],
-                                    [0.0, -1.0, 0.0, 0.0],
-                                    [0.0, 0.0, 1.0, 0.0],
-                                    [-1.0 , 1.0, 0.0, 1.0f32],
-                                ],
-                                tex: glium::uniforms::Sampler::new(image)
-                                    .wrap_function(glium::uniforms::SamplerWrapFunction::Clamp)
-                                    .magnify_filter(glium::uniforms::MagnifySamplerFilter::Nearest),
-                            };
-                            surface.draw(&vertex_buffer, no_indices, &self.program, &image_uniforms, &draw_params).unwrap();
+                    Draw::Image(image_id, slice) => {
+                        if slice.len() >= NUM_VERTICES_IN_TRIANGLE {
+                            let vertex_buffer = glium::VertexBuffer::new(facade, slice).unwrap();
+                            if let Some(image) = image_map.get(&image_id) {
+                                let image_uniforms = uniform! {
+                                    matrix: [
+                                        [1.0, 0.0, 0.0, 0.0],
+                                        [0.0, -1.0, 0.0, 0.0],
+                                        [0.0, 0.0, 1.0, 0.0],
+                                        [-1.0 , 1.0, 0.0, 1.0f32],
+                                    ],
+                                    tex: glium::uniforms::Sampler::new(image)
+                                        .wrap_function(glium::uniforms::SamplerWrapFunction::Clamp)
+                                        .magnify_filter(glium::uniforms::MagnifySamplerFilter::Nearest),
+                                };
+                                surface
+                                    .draw(
+                                        &vertex_buffer,
+                                        no_indices,
+                                        &self.program,
+                                        &image_uniforms,
+                                        &draw_params,
+                                    )
+                                    .unwrap();
+                            }
                         }
-                    },
-                }
+                    }
+                },
             }
         }
 
@@ -960,13 +1027,18 @@ impl Renderer {
 impl<'a> Iterator for Commands<'a> {
     type Item = Command<'a>;
     fn next(&mut self) -> Option<Self::Item> {
-        let Commands { ref mut commands, ref vertices } = *self;
+        let Commands {
+            ref mut commands,
+            ref vertices,
+        } = *self;
         commands.next().map(|command| match *command {
             PreparedCommand::Scizzor(scizzor) => Command::Scizzor(scizzor),
-            PreparedCommand::Plain(ref range) =>
-                Command::Draw(Draw::Plain(&vertices[range.clone()])),
-            PreparedCommand::Image(id, ref range) =>
-                Command::Draw(Draw::Image(id, &vertices[range.clone()])),
+            PreparedCommand::Plain(ref range) => {
+                Command::Draw(Draw::Plain(&vertices[range.clone()]))
+            }
+            PreparedCommand::Image(id, ref range) => {
+                Command::Draw(Draw::Image(id, &vertices[range.clone()]))
+            }
         })
     }
 }

@@ -9,7 +9,12 @@ pub struct CornerRadii {
 }
 
 impl CornerRadii {
-    pub fn single(top_left: Scalar, top_right: Scalar, bottom_left: Scalar, bottom_right: Scalar) -> Self {
+    pub fn single(
+        top_left: Scalar,
+        top_right: Scalar,
+        bottom_left: Scalar,
+        bottom_right: Scalar,
+    ) -> Self {
         CornerRadii {
             top_left,
             top_right,

@@ -9,18 +9,26 @@ pub struct Frame {
     id: Uuid,
     child: Box<dyn Widget>,
     position: Position,
-    #[state] x: F64State,
-    #[state] y: F64State,
+    #[state]
+    x: F64State,
+    #[state]
+    y: F64State,
     fixed_x: bool,
     fixed_y: bool,
-    #[state] width: F64State,
-    #[state] height: F64State,
+    #[state]
+    width: F64State,
+    #[state]
+    height: F64State,
     expand_width: bool,
     expand_height: bool,
 }
 
 impl Frame {
-    pub fn init<W: Into<F64State>, H: Into<F64State>>(width: W, height: H, child: Box<dyn Widget>) -> Box<Frame> {
+    pub fn init<W: Into<F64State>, H: Into<F64State>>(
+        width: W,
+        height: H,
+        child: Box<dyn Widget>,
+    ) -> Box<Frame> {
         let width = width.into();
         let height = height.into();
         let expand_width = *width.value() == SCALE;
@@ -188,7 +196,6 @@ impl Layout for Frame {
         let positioning = BasicLayouter::Center.positioner();
         let position = self.position;
         let dimension = Dimension::new(self.width(), self.height());
-
 
         positioning(position, dimension, &mut self.child);
         self.child.position_children();

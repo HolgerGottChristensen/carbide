@@ -37,4 +37,3 @@ pub fn atlas_cache_tex_desc([width, height]: [u32; 2]) -> wgpu::TextureDescripto
         usage: wgpu::TextureUsage::SAMPLED | wgpu::TextureUsage::COPY_DST,
     }
 }
-

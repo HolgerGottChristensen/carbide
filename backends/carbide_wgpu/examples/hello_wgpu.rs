@@ -9,9 +9,17 @@ fn main() {
 
     let icon_path = Window::<String>::path_to_assets("images/rust_press.png");
 
-    let mut window = Window::new("Hello world 2".to_string(), 800, 1200, Some(icon_path), String::from("Hejsa"));
+    let mut window = Window::new(
+        "Hello world 2".to_string(),
+        800,
+        1200,
+        Some(icon_path),
+        String::from("Hejsa"),
+    );
 
-    window.add_font("fonts/NotoSans/NotoSans-Regular.ttf").unwrap();
+    window
+        .add_font("fonts/NotoSans/NotoSans-Regular.ttf")
+        .unwrap();
     let rust_image = window.add_image("images/rust_press.png").unwrap();
 
     let sync_state = CommonState::new_local_with_key(&"Hello".to_string());

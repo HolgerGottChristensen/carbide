@@ -7,19 +7,29 @@ use carbide_core::widget::*;
 use crate::PlainButton;
 
 #[derive(Clone, Widget)]
-pub struct Button<T, GS> where T: 'static + Serialize + Clone + Debug + Default + DeserializeOwned, GS: GlobalStateContract {
+pub struct Button<T, GS>
+    where
+        T: 'static + Serialize + Clone + Debug + Default + DeserializeOwned,
+        GS: GlobalStateContract,
+{
     id: Id,
     child: Box<dyn Widget<GS>>,
     position: Point,
     dimension: Dimensions,
-    #[state] focus: FocusState<GS>,
+    #[state]
+    focus: FocusState<GS>,
     is_primary: bool,
-    #[state] local_state: TState<T, GS>,
+    #[state]
+    local_state: TState<T, GS>,
     on_click: fn(myself: &mut PlainButton<T, GS>, env: &mut Environment<GS>, global_state: &mut GS),
     display_item: Box<dyn Widget<GS>>,
 }
 
-impl<T: 'static + Serialize + Clone + Debug + Default + DeserializeOwned, GS: GlobalStateContract> Button<T, GS> {
+impl<
+    T: 'static + Serialize + Clone + Debug + Default + DeserializeOwned,
+    GS: GlobalStateContract,
+> Button<T, GS>
+{
     pub fn new(display_item: Box<dyn Widget<GS>>) -> Box<Self> {
         let focus_state = CommonState::new_local_with_key(&Focus::Unfocused);
 
@@ -29,10 +39,19 @@ impl<T: 'static + Serialize + Clone + Debug + Default + DeserializeOwned, GS: Gl
 
         let clicked = |_: &mut PlainButton<T, GS>, _: &mut Environment<GS>, _: &mut GS| {};
 
-        Self::new_internal(is_primary, focus_state.into(), display_item, local_state.into(), clicked)
+        Self::new_internal(
+            is_primary,
+            focus_state.into(),
+            display_item,
+            local_state.into(),
+            clicked,
+        )
     }
 
-    pub fn on_click(self, fire: fn(myself: &mut PlainButton<T, GS>, env: &mut Environment<GS>, global_state: &mut GS)) -> Box<Self> {
+    pub fn on_click(
+        self,
+        fire: fn(myself: &mut PlainButton<T, GS>, env: &mut Environment<GS>, global_state: &mut GS),
+    ) -> Box<Self> {
         let focus_state = self.focus;
         let is_primary = self.is_primary;
         let local_state = self.local_state;
@@ -62,18 +81,29 @@ impl<T: 'static + Serialize + Clone + Debug + Default + DeserializeOwned, GS: Gl
         Self::new_internal(is_primary, focus_state, display_item, local_state, clicked)
     }
 
-    fn new_internal(is_primary: bool, focus_state: FocusState<GS>, display_item: Box<dyn Widget<GS>>, local_state: TState<T, GS>, clicked: fn(myself: &mut PlainButton<T, GS>, env: &mut Environment<GS>, global_state: &mut GS)) -> Box<Self> {
+    fn new_internal(
+        is_primary: bool,
+        focus_state: FocusState<GS>,
+        display_item: Box<dyn Widget<GS>>,
+        local_state: TState<T, GS>,
+        clicked: fn(
+            myself: &mut PlainButton<T, GS>,
+            env: &mut Environment<GS>,
+            global_state: &mut GS,
+        ),
+    ) -> Box<Self> {
         let focus_color = TupleState3::new(
             focus_state.clone(),
             EnvironmentColor::OpaqueSeparator,
             EnvironmentColor::Accent,
-        ).mapped(|(focus, primary_color, focus_color)| {
-            if focus == &Focus::Focused {
-                *focus_color
-            } else {
-                *primary_color
-            }
-        });
+        )
+            .mapped(|(focus, primary_color, focus_color)| {
+                if focus == &Focus::Focused {
+                    *focus_color
+                } else {
+                    *primary_color
+                }
+            });
 
         let hover_state = CommonState::new_local_with_key(&false);
         let pressed_state = CommonState::new_local_with_key(&false);
@@ -84,52 +114,52 @@ impl<T: 'static + Serialize + Clone + Debug + Default + DeserializeOwned, GS: Gl
             EnvironmentColor::SecondarySystemBackground
         };
 
-        let background_color = TupleState3::new(
-            hover_state.clone(),
-            pressed_state.clone(),
-            normal_color,
-        ).mapped(|(hover, pressed, normal_color)| {
-            if *pressed {
-                return normal_color.darkened(0.05)
-            }
-            if *hover {
-                return normal_color.lightened(0.05)
-            }
+        let background_color =
+            TupleState3::new(hover_state.clone(), pressed_state.clone(), normal_color).mapped(
+                |(hover, pressed, normal_color)| {
+                    if *pressed {
+                        return normal_color.darkened(0.05);
+                    }
+                    if *hover {
+                        return normal_color.lightened(0.05);
+                    }
 
-            *normal_color
-        });
+                    *normal_color
+                },
+            );
 
-        let child = PlainButton::new(
-            ZStack::initialize(vec![
-                RoundedRectangle::new(CornerRadii::all(3.0))
-                    .fill(background_color)
-                    .stroke(focus_color)
-                    .stroke_style(1.0),
-                display_item.clone(),
-            ])
-        ).local_state(local_state.clone())
+        let child = PlainButton::new(ZStack::initialize(vec![
+            RoundedRectangle::new(CornerRadii::all(3.0))
+                .fill(background_color)
+                .stroke(focus_color)
+                .stroke_style(1.0),
+            display_item.clone(),
+        ]))
+            .local_state(local_state.clone())
             .focused(focus_state.clone())
             .on_click(clicked)
             .hover(hover_state)
             .pressed(pressed_state);
 
-        Box::new(
-            Button {
-                id: Id::new_v4(),
-                child,
-                position: [0.0, 0.0],
-                dimension: [235.0, 26.0],
-                focus: focus_state,
-                is_primary,
-                local_state,
-                on_click: clicked,
-                display_item,
-            }
-        )
+        Box::new(Button {
+            id: Id::new_v4(),
+            child,
+            position: [0.0, 0.0],
+            dimension: [235.0, 26.0],
+            focus: focus_state,
+            is_primary,
+            local_state,
+            on_click: clicked,
+            display_item,
+        })
     }
 }
 
-impl<T: 'static + Serialize + Clone + Debug + Default + DeserializeOwned, GS: GlobalStateContract> CommonWidget<GS> for Button<T, GS> {
+impl<
+    T: 'static + Serialize + Clone + Debug + Default + DeserializeOwned,
+    GS: GlobalStateContract,
+> CommonWidget<GS> for Button<T, GS>
+{
     fn id(&self) -> Id {
         self.id
     }
@@ -175,9 +205,17 @@ impl<T: 'static + Serialize + Clone + Debug + Default + DeserializeOwned, GS: Gl
     }
 }
 
-impl<T: 'static + Serialize + Clone + Debug + Default + DeserializeOwned, GS: GlobalStateContract> ChildRender for Button<T, GS> {}
+impl<
+    T: 'static + Serialize + Clone + Debug + Default + DeserializeOwned,
+    GS: GlobalStateContract,
+> ChildRender for Button<T, GS>
+{}
 
-impl<T: 'static + Serialize + Clone + Debug + Default + DeserializeOwned, GS: GlobalStateContract> Layout<GS> for Button<T, GS> {
+impl<
+    T: 'static + Serialize + Clone + Debug + Default + DeserializeOwned,
+    GS: GlobalStateContract,
+> Layout<GS> for Button<T, GS>
+{
     fn flexibility(&self) -> u32 {
         5
     }
@@ -195,11 +233,13 @@ impl<T: 'static + Serialize + Clone + Debug + Default + DeserializeOwned, GS: Gl
         let position = self.position();
         let dimension = self.dimension();
 
-
         positioning(position, dimension, &mut self.child);
         self.child.position_children();
     }
 }
 
-
-impl<T: 'static + Serialize + Clone + Debug + Default + DeserializeOwned, GS: GlobalStateContract> WidgetExt<GS> for Button<T, GS> {}
+impl<
+    T: 'static + Serialize + Clone + Debug + Default + DeserializeOwned,
+    GS: GlobalStateContract,
+> WidgetExt<GS> for Button<T, GS>
+{}

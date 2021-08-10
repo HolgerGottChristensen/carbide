@@ -38,10 +38,18 @@ impl Rect {
         Rect::new(position, dimension)
     }
 
-    pub fn left(&self) -> Scalar { self.position.x }
-    pub fn right(&self) -> Scalar { self.position.x + self.dimension.width }
-    pub fn bottom(&self) -> Scalar { self.position.y }
-    pub fn top(&self) -> Scalar { self.position.y + self.dimension.height }
+    pub fn left(&self) -> Scalar {
+        self.position.x
+    }
+    pub fn right(&self) -> Scalar {
+        self.position.x + self.dimension.width
+    }
+    pub fn bottom(&self) -> Scalar {
+        self.position.y
+    }
+    pub fn top(&self) -> Scalar {
+        self.position.y + self.dimension.height
+    }
 
     pub fn round(&mut self) {
         self.position.x = self.position.x.round();

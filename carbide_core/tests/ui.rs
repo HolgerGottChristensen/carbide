@@ -1,14 +1,7 @@
-use {
-    Color,
-    Colorable,
-    Labelable,
-    Positionable,
-    Sizeable,
-    Ui,
-    UiBuilder,
-    Widget,
+use {Color, Colorable, Labelable, Positionable, Sizeable, Ui, UiBuilder, Widget};
+use carbide_core::{
+    Color, Colorable, Labelable, Positionable, Sizeable, Ui, UiBuilder, widget, Widget,
 };
-use carbide_core::{Color, Colorable, Labelable, Positionable, Sizeable, Ui, UiBuilder, widget, Widget};
 use carbide_core::draw::Point;
 use carbide_core::event::event;
 use carbide_core::event::input::Input;
@@ -19,7 +12,6 @@ use position::Point;
 use widget;
 
 ///// Test assist code.
-
 
 fn left_click_mouse(ui: &mut Ui) {
     press_mouse_button(MouseButton::Left, ui);
@@ -44,7 +36,9 @@ fn move_mouse_to_widget(widget_id: widget::Id, ui: &mut Ui) {
 }
 
 fn move_mouse_to_abs_coordinates(x: f64, y: f64, ui: &mut Ui) {
-    ui.handle_event(Input::Motion(crate::carbide_core::input::Motion::MouseCursor { x, y }));
+    ui.handle_event(Input::Motion(
+        crate::carbide_core::input::Motion::MouseCursor { x, y },
+    ));
 }
 
 fn test_handling_basic_input_event(ui: &mut Ui, event: Input) {
@@ -54,10 +48,14 @@ fn test_handling_basic_input_event(ui: &mut Ui, event: Input) {
 
 fn assert_event_was_pushed(ui: &Ui, event: event::Event) {
     let found = ui.global_input().events().find(|evt| **evt == event);
-    assert!(found.is_some(),
-            format!("expected to find event: {:?} in: \nevents: {:?}",
-                    event,
-                    ui.global_input().events().collect::<Vec<&event::Event>>()));
+    assert!(
+        found.is_some(),
+        format!(
+            "expected to find event: {:?} in: \nevents: {:?}",
+            event,
+            ui.global_input().events().collect::<Vec<&event::Event>>()
+        )
+    );
 }
 
 fn to_window_coordinates(xy: Point, ui: &Ui) -> Point {
@@ -70,9 +68,7 @@ fn windowless_ui() -> Ui {
     UiBuilder::new([800.0, 600.0]).build()
 }
 
-
 ///// Actual tests.
-
 
 #[test]
 fn ui_should_reset_global_input_after_widget_are_set() {
@@ -105,7 +101,6 @@ fn ui_should_reset_global_input_after_widget_are_set() {
     assert!(ui.global_input().events().next().is_none());
 }
 
-
 #[test]
 fn ui_should_push_input_events_to_aggregator() {
     let ui = &mut windowless_ui();
@@ -127,7 +122,11 @@ fn high_level_scroll_event_should_be_created_from_a_raw_mouse_scroll() {
         y: 33.0,
         modifiers: ModifierKey::default(),
     };
-    let event = ui.global_input().events().next().expect("expected a scroll event");
+    let event = ui
+        .global_input()
+        .events()
+        .next()
+        .expect("expected a scroll event");
     if let event::Event::Ui(event::Ui::Scroll(_, scroll)) = *event {
         assert_eq!(expected_scroll, scroll);
     }

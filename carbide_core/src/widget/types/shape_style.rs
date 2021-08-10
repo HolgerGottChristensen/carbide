@@ -11,8 +11,9 @@ pub enum ShapeStyle {
 impl ShapeStyle {
     pub fn add_style(&self, style: ShapeStyle) -> ShapeStyle {
         match (self, style) {
-            (_, ShapeStyle::FillAndStroke) |
-            (ShapeStyle::FillAndStroke, _) => ShapeStyle::FillAndStroke,
+            (_, ShapeStyle::FillAndStroke) | (ShapeStyle::FillAndStroke, _) => {
+                ShapeStyle::FillAndStroke
+            }
 
             (ShapeStyle::Default, ShapeStyle::Default) => ShapeStyle::Default,
             (ShapeStyle::Default, ShapeStyle::Fill) => ShapeStyle::Fill,

@@ -38,30 +38,40 @@ fn main() {
 
     let icon_path = Window::<u32>::path_to_assets("images/rust_press.png");
 
-    let mut window = Window::new("Pop up Button Example - Carbide".to_string(), 800, 1200, Some(icon_path), 0);
+    let mut window = Window::new(
+        "Pop up Button Example - Carbide".to_string(),
+        800,
+        1200,
+        Some(icon_path),
+        0,
+    );
 
     let mut family = FontFamily::new("NotoSans");
-    family.add_font("fonts/NotoSans/NotoSans-Regular.ttf", FontWeight::Normal, FontStyle::Normal);
-    family.add_font("fonts/NotoSans/NotoSans-Italic.ttf", FontWeight::Normal, FontStyle::Italic);
-    family.add_font("fonts/NotoSans/NotoSans-Bold.ttf", FontWeight::Bold, FontStyle::Normal);
+    family.add_font(
+        "fonts/NotoSans/NotoSans-Regular.ttf",
+        FontWeight::Normal,
+        FontStyle::Normal,
+    );
+    family.add_font(
+        "fonts/NotoSans/NotoSans-Italic.ttf",
+        FontWeight::Normal,
+        FontStyle::Italic,
+    );
+    family.add_font(
+        "fonts/NotoSans/NotoSans-Bold.ttf",
+        FontWeight::Bold,
+        FontStyle::Normal,
+    );
     window.add_font_family(family);
-
 
     let selected_index = CommonState::new_local_with_key(&0);
 
     let selected_model = CommonState::new_local_with_key(&vec![
-        Monday,
-        Tuesday,
-        Wednesday,
-        Thursday,
-        Friday,
-        Saturday,
-        Sunday,
+        Monday, Tuesday, Wednesday, Thursday, Friday, Saturday, Sunday,
     ]);
 
     window.set_widgets(
-        PopUpButton::new(Box::new(selected_model), Box::new(selected_index))
-            .frame(120.0, 100.0)
+        PopUpButton::new(Box::new(selected_model), Box::new(selected_index)).frame(120.0, 100.0),
     );
 
     window.run_event_loop();

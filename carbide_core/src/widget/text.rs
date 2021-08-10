@@ -8,7 +8,10 @@ use crate::prelude::*;
 //use crate::render::text::Text as RenderText;
 use crate::render::new_primitive;
 use crate::render::PrimitiveKind;
-use crate::text::{FontStyle, FontWeight, Glyph, NoStyleTextSpanGenerator, TextDecoration, TextSpanGenerator, TextStyle};
+use crate::text::{
+    FontStyle, FontWeight, Glyph, NoStyleTextSpanGenerator, TextDecoration, TextSpanGenerator,
+    TextStyle,
+};
 use crate::text::Text as InternalText;
 //use crate::text_old::PositionedGlyph;
 use crate::widget::types::Wrap;
@@ -26,9 +29,12 @@ pub struct Text {
     position: Position,
     dimension: Dimension,
     wrap_mode: Wrap,
-    #[state] pub text: StringState,
-    #[state] font_size: U32State,
-    #[state] color: ColorState,
+    #[state]
+    pub text: StringState,
+    #[state]
+    font_size: U32State,
+    #[state]
+    color: ColorState,
     font_family: String,
     font_style: FontStyle,
     font_weight: FontWeight,
@@ -58,7 +64,10 @@ impl Text {
         })
     }
 
-    pub fn new_with_generator<K: Into<StringState>, G: Into<Box<dyn TextSpanGenerator>>>(text: K, generator: G) -> Box<Self> {
+    pub fn new_with_generator<K: Into<StringState>, G: Into<Box<dyn TextSpanGenerator>>>(
+        text: K,
+        generator: G,
+    ) -> Box<Self> {
         let text = text.into();
 
         Box::new(Text {
@@ -140,7 +149,12 @@ impl Layout for Text {
         if let None = self.internal_text {
             let text = self.text.value().deref().clone();
             let style = self.get_style();
-            self.internal_text = Some(InternalText::new(text, style, self.text_span_generator.borrow(), env))
+            self.internal_text = Some(InternalText::new(
+                text,
+                style,
+                self.text_span_generator.borrow(),
+                env,
+            ))
         }
 
         if let Some(internal) = &mut self.internal_text {
@@ -182,11 +196,18 @@ impl Render for Text {
                     color,
                     text: glyphs,
                 };
-                prims.push(new_primitive(kind, Rect::new(self.position, self.dimension)));
+                prims.push(new_primitive(
+                    kind,
+                    Rect::new(self.position, self.dimension),
+                ));
 
                 for additional_rect in additional_rects {
-                    let position = Position::new(additional_rect.position.x, additional_rect.position.y);
-                    let dimension = Dimension::new(additional_rect.dimension.width, additional_rect.dimension.height);
+                    let position =
+                        Position::new(additional_rect.position.x, additional_rect.position.y);
+                    let dimension = Dimension::new(
+                        additional_rect.dimension.width,
+                        additional_rect.dimension.height,
+                    );
                     prims.push(Primitive {
                         kind: PrimitiveKind::Rectangle { color },
                         rect: Rect::new(position, dimension),
@@ -195,7 +216,10 @@ impl Render for Text {
             }
         }
 
-        prims.extend(Rectangle::debug_outline(Rect::new(self.position, self.dimension), 1.0));
+        prims.extend(Rectangle::debug_outline(
+            Rect::new(self.position, self.dimension),
+            1.0,
+        ));
 
         return prims;
     }

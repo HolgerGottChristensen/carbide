@@ -5,9 +5,9 @@ extern crate carbide_winit;
 extern crate find_folder;
 extern crate glium;
 
-mod support;
-
 use glium::Surface;
+
+mod support;
 
 const WIDTH: u32 = 600;
 const HEIGHT: u32 = 300;
@@ -66,10 +66,10 @@ fn main() {
                     glium::glutin::WindowEvent::CloseRequested
                     | glium::glutin::WindowEvent::KeyboardInput {
                         input:
-                            glium::glutin::KeyboardInput {
-                                virtual_keycode: Some(glium::glutin::VirtualKeyCode::Escape),
-                                ..
-                            },
+                        glium::glutin::KeyboardInput {
+                            virtual_keycode: Some(glium::glutin::VirtualKeyCode::Escape),
+                            ..
+                        },
                         ..
                     } => break 'main,
                     _ => (),
@@ -80,7 +80,7 @@ fn main() {
 
         // Instantiate the carbide widgets.
         {
-            use carbide_core::{widget, Colorable, Positionable, Sizeable, OldWidget};
+            use carbide_core::{widget, Colorable, OldWidget, Positionable, Sizeable};
             let ui = &mut ui.set_widgets();
 
             widget::Canvas::new()

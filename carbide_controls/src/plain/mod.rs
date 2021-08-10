@@ -6,12 +6,11 @@ pub use plain_radio_button::PlainRadioButton;
 pub use plain_switch::PlainSwitch;
 
 //mod plain_text_input;
-mod text_input_key_commands;
 mod cursor;
 mod plain_button;
+mod plain_check_box;
 mod plain_pop_up_button;
 mod plain_pop_up_button_popup;
 mod plain_radio_button;
-mod plain_check_box;
 mod plain_switch;
-
+mod text_input_key_commands;

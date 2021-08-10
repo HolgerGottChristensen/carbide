@@ -1,12 +1,14 @@
-#[macro_use] extern crate carbide_core;
+#[macro_use]
+extern crate carbide_core;
 extern crate carbide_glium;
-#[macro_use] extern crate carbide_winit;
+#[macro_use]
+extern crate carbide_winit;
 extern crate find_folder;
 extern crate glium;
 
-mod support;
-
 use glium::Surface;
+
+mod support;
 
 const WIDTH: u32 = 600;
 const HEIGHT: u32 = 300;
@@ -34,7 +36,9 @@ fn main() {
     let ids = Ids::new(ui.widget_id_generator());
 
     // Add a `Font` to the `Ui`'s `font::Map` from file.
-    let assets = find_folder::Search::KidsThenParents(3, 5).for_folder("assets").unwrap();
+    let assets = find_folder::Search::KidsThenParents(3, 5)
+        .for_folder("assets")
+        .unwrap();
     let font_path = assets.join("fonts/NotoSans/NotoSans-Regular.ttf");
     ui.fonts.insert_from_file(font_path).unwrap();
 
@@ -62,7 +66,7 @@ fn main() {
         "Indian Tent Turtle".to_string(),
         "Mud Turtle".to_string(),
         "Painted Turtle".to_string(),
-        "Spotted Turtle".to_string()
+        "Spotted Turtle".to_string(),
     ];
 
     // List of selections, should be same length as list of entries. Will be updated by the widget.
@@ -71,10 +75,8 @@ fn main() {
     // Poll events from the window.
     let mut event_loop = support::EventLoop::new();
     'main: loop {
-
         // Handle all events.
         for event in event_loop.next(&mut events_loop) {
-
             // Use the `winit` backend feature to convert the winit event to a carbide one.
             if let Some(event) = support::convert_event(event.clone(), &display) {
                 ui.handle_event(event);
@@ -84,9 +86,10 @@ fn main() {
             match event {
                 glium::glutin::Event::WindowEvent { event, .. } => match event {
                     // Break from the loop upon `Escape`.
-                    glium::glutin::WindowEvent::CloseRequested |
-                    glium::glutin::WindowEvent::KeyboardInput {
-                        input: glium::glutin::KeyboardInput {
+                    glium::glutin::WindowEvent::CloseRequested
+                    | glium::glutin::WindowEvent::KeyboardInput {
+                        input:
+                        glium::glutin::KeyboardInput {
                             virtual_keycode: Some(glium::glutin::VirtualKeyCode::Escape),
                             ..
                         },
@@ -100,11 +103,15 @@ fn main() {
 
         // Instantiate the carbide widgets.
         {
-            use carbide_core::{widget, Borderable, Colorable, Labelable, Positionable, Sizeable, OldWidget};
+            use carbide_core::{
+                widget, Borderable, Colorable, Labelable, OldWidget, Positionable, Sizeable,
+            };
 
             let ui = &mut ui.set_widgets();
 
-            widget::Canvas::new().color(carbide_core::color::BLUE).set(ids.canvas, ui);
+            widget::Canvas::new()
+                .color(carbide_core::color::BLUE)
+                .set(ids.canvas, ui);
 
             // Instantiate the `ListSelect` widget.
             let num_items = list_items.len();
@@ -122,7 +129,6 @@ fn main() {
             while let Some(event) = events.next(ui, |i| list_selected.contains(&i)) {
                 use carbide_core::widget::list_select::Event;
                 match event {
-
                     // For the `Item` events we instantiate the `List`'s items.
                     Event::Item(item) => {
                         let label = &list_items[item.i];
@@ -151,7 +157,9 @@ fn main() {
             }
 
             // Instantiate the scrollbar for the list.
-            if let Some(s) = scrollbar { s.set(ui); }
+            if let Some(s) = scrollbar {
+                s.set(ui);
+            }
         }
 
         // Render the `Ui` and then display it on the screen.

@@ -15,39 +15,60 @@ use crate::PlainButton;
 #[focusable(block_focus)]
 #[event(handle_keyboard_event, handle_mouse_event)]
 #[state_sync(update_all_widget_state)]
-pub struct PlainPopUpButton<T, GS> where GS: GlobalStateContract, T: StateContract + 'static {
+pub struct PlainPopUpButton<T, GS>
+    where
+        GS: GlobalStateContract,
+        T: StateContract + 'static,
+{
     id: Id,
-    #[state] focus: Box<dyn State<Focus, GS>>,
+    #[state]
+    focus: Box<dyn State<Focus, GS>>,
     child: Box<dyn Widget<GS>>,
-    popup_display_item: Option<fn(selected_item: Box<dyn State<T, GS>>, selected_index: Box<dyn State<usize, GS>>, index: Box<dyn State<usize, GS>>, hovered: Box<dyn State<bool, GS>>) -> Box<dyn Widget<GS>>>,
+    popup_display_item: Option<
+        fn(
+            selected_item: Box<dyn State<T, GS>>,
+            selected_index: Box<dyn State<usize, GS>>,
+            index: Box<dyn State<usize, GS>>,
+            hovered: Box<dyn State<bool, GS>>,
+        ) -> Box<dyn Widget<GS>>,
+    >,
     position: Point,
     dimension: Dimensions,
     popup_id: Id,
     popup_list_spacing: f64,
-    #[state] opened: Box<dyn State<bool, GS>>,
-    #[state] selected_state: Box<dyn State<usize, GS>>,
-    #[state] selected_item: Box<dyn State<T, GS>>,
-    #[state] model: Box<dyn State<Vec<T>, GS>>,
+    #[state]
+    opened: Box<dyn State<bool, GS>>,
+    #[state]
+    selected_state: Box<dyn State<usize, GS>>,
+    #[state]
+    selected_item: Box<dyn State<T, GS>>,
+    #[state]
+    model: Box<dyn State<Vec<T>, GS>>,
 }
 
 impl<T: StateContract + 'static, GS: GlobalStateContract> PlainPopUpButton<T, GS> {
-    pub fn new(model: Box<dyn State<Vec<T>, GS>>, selected_state: Box<dyn State<usize, GS>>) -> Box<Self> {
+    pub fn new(
+        model: Box<dyn State<Vec<T>, GS>>,
+        selected_state: Box<dyn State<usize, GS>>,
+    ) -> Box<Self> {
         let opened = CommonState::new_local_with_key(&false);
 
         let start_item = model.get_latest_value().first().unwrap();
 
-        let selected_item = VecState::new(model.clone(), selected_state.clone(), start_item.clone());
+        let selected_item =
+            VecState::new(model.clone(), selected_state.clone(), start_item.clone());
 
         let text = selected_item.clone().mapped(|a| format!("{:?}", a));
 
-        let child = PlainButton::<(bool, T), GS>::new(
-            Rectangle::new(vec![
-                Text::new(text)
-            ])).local_state(TupleState2::new(opened.clone(), selected_item.clone()))
+        let child = PlainButton::<(bool, T), GS>::new(Rectangle::new(vec![Text::new(text)]))
+            .local_state(TupleState2::new(opened.clone(), selected_item.clone()))
             .on_click(|myself, _, _| {
                 let (opened, selected_item) = myself.get_local_state().get_latest_value_mut();
                 *opened = true;
-                println!("Opened popup. The currently selected item is: {:?}", selected_item);
+                println!(
+                    "Opened popup. The currently selected item is: {:?}",
+                    selected_item
+                );
             });
 
         Box::new(PlainPopUpButton {
@@ -66,46 +87,65 @@ impl<T: StateContract + 'static, GS: GlobalStateContract> PlainPopUpButton<T, GS
         })
     }
 
-    fn handle_mouse_event(&mut self, event: &MouseEvent, _: &bool, env: &mut Environment<GS>, _: &mut GS) {
+    fn handle_mouse_event(
+        &mut self,
+        event: &MouseEvent,
+        _: &bool,
+        env: &mut Environment<GS>,
+        _: &mut GS,
+    ) {
         if !self.is_inside(event.get_current_mouse_position()) {
             match event {
                 MouseEvent::Press(_, _, _) => {
                     self.release_focus(env);
                 }
-                _ => ()
+                _ => (),
             }
         } else {
             match event {
                 MouseEvent::Press(_, _, _) => {
                     self.request_focus(env);
                 }
-                _ => ()
+                _ => (),
             }
         }
     }
 
-    fn handle_keyboard_event(&mut self, event: &KeyboardEvent, env: &mut Environment<GS>, global_state: &mut GS) {
-        if self.get_focus() != Focus::Focused { return }
+    fn handle_keyboard_event(
+        &mut self,
+        event: &KeyboardEvent,
+        env: &mut Environment<GS>,
+        global_state: &mut GS,
+    ) {
+        if self.get_focus() != Focus::Focused {
+            return;
+        }
 
         match event {
-            KeyboardEvent::Press(key, modifier) => {
-                match (key, modifier) {
-                    (Key::Space, _) |
-                    (Key::Return, _) => {
-                        *self.opened.get_value_mut(env, global_state) = true;
-                    }
-                    (_, _) => {}
+            KeyboardEvent::Press(key, modifier) => match (key, modifier) {
+                (Key::Space, _) | (Key::Return, _) => {
+                    *self.opened.get_value_mut(env, global_state) = true;
                 }
-            }
+                (_, _) => {}
+            },
             _ => {}
         }
     }
 
-    pub fn display_item(mut self, item: fn(selected_item: Box<dyn State<T, GS>>, focus: Box<dyn State<Focus, GS>>) -> Box<dyn Widget<GS>>) -> Box<Self> {
+    pub fn display_item(
+        mut self,
+        item: fn(
+            selected_item: Box<dyn State<T, GS>>,
+            focus: Box<dyn State<Focus, GS>>,
+        ) -> Box<dyn Widget<GS>>,
+    ) -> Box<Self> {
         let display_item = item(self.selected_item.clone(), self.focus.clone());
 
         let child = PlainButton::<(bool, T), GS>::new(display_item)
-            .local_state(TupleState2::new(self.opened.clone(), self.selected_item.clone()))
+            .local_state(TupleState2::new(
+                self.opened.clone(),
+                self.selected_item.clone(),
+            ))
             .on_click(|myself, _, _| {
                 let (opened, _) = myself.get_local_state().get_latest_value_mut();
                 *opened = true;
@@ -116,7 +156,15 @@ impl<T: StateContract + 'static, GS: GlobalStateContract> PlainPopUpButton<T, GS
         Box::new(self)
     }
 
-    pub fn display_item_popup(mut self, item: fn(item: Box<dyn State<T, GS>>, selected_index: Box<dyn State<usize, GS>>, index: Box<dyn State<usize, GS>>, hovered: Box<dyn State<bool, GS>>) -> Box<dyn Widget<GS>>) -> Box<Self> {
+    pub fn display_item_popup(
+        mut self,
+        item: fn(
+            item: Box<dyn State<T, GS>>,
+            selected_index: Box<dyn State<usize, GS>>,
+            index: Box<dyn State<usize, GS>>,
+            hovered: Box<dyn State<bool, GS>>,
+        ) -> Box<dyn Widget<GS>>,
+    ) -> Box<Self> {
         self.popup_display_item = Some(item);
 
         Box::new(self)
@@ -127,24 +175,29 @@ impl<T: StateContract + 'static, GS: GlobalStateContract> PlainPopUpButton<T, GS
             let display_item = if let Some(display_item_function) = self.popup_display_item {
                 display_item_function
             } else {
-                |item: Box<dyn State<T, GS>>, _parent_selected_index: Box<dyn State<usize, GS>>, _item_index: Box<dyn State<usize, GS>>, partially_chosen: Box<dyn State<bool, GS>>| -> Box<dyn Widget<GS>>{
+                |item: Box<dyn State<T, GS>>,
+                 _parent_selected_index: Box<dyn State<usize, GS>>,
+                 _item_index: Box<dyn State<usize, GS>>,
+                 partially_chosen: Box<dyn State<bool, GS>>|
+                 -> Box<dyn Widget<GS>> {
                     let text = item.mapped(|item| format!("{:?}", item));
-                    Rectangle::new(vec![
-                        Text::new(text)
-                            .color(partially_chosen.clone().mapped(|partially_chosen| {
-                                if *partially_chosen {
-                                    Color::Rgba(0.0, 0.0, 0.0, 1.0)
-                                } else {
-                                    Color::Rgba(1.0, 1.0, 1.0, 1.0)
-                                }
-                            }))
-                    ]).fill(partially_chosen.clone().mapped(|partially_chosen| {
-                        if *partially_chosen {
-                            Color::Rgba(0.0, 1.0, 0.0, 1.0)
-                        } else {
-                            Color::Rgba(0.0, 0.0, 1.0, 1.0)
-                        }
-                    })).border()
+                    Rectangle::new(vec![Text::new(text).color(
+                        partially_chosen.clone().mapped(|partially_chosen| {
+                            if *partially_chosen {
+                                Color::Rgba(0.0, 0.0, 0.0, 1.0)
+                            } else {
+                                Color::Rgba(1.0, 1.0, 1.0, 1.0)
+                            }
+                        }),
+                    )])
+                        .fill(partially_chosen.clone().mapped(|partially_chosen| {
+                            if *partially_chosen {
+                                Color::Rgba(0.0, 1.0, 0.0, 1.0)
+                            } else {
+                                Color::Rgba(0.0, 0.0, 1.0, 1.0)
+                            }
+                        }))
+                        .border()
                         .border_width(1)
                         .color(EnvironmentColor::Blue)
                 }
@@ -157,7 +210,8 @@ impl<T: StateContract + 'static, GS: GlobalStateContract> PlainPopUpButton<T, GS
                 self.selected_state.clone(),
                 self.popup_list_spacing,
                 self.dimension,
-                env.get_corrected_dimensions());
+                env.get_corrected_dimensions(),
+            );
 
             overlay.calculate_size([5000.0, 5000.0], env);
 
@@ -179,7 +233,9 @@ impl<T: StateContract + 'static, GS: GlobalStateContract> PlainPopUpButton<T, GS
     }
 }
 
-impl<T: StateContract + 'static, GS: GlobalStateContract> CommonWidget<GS> for PlainPopUpButton<T, GS> {
+impl<T: StateContract + 'static, GS: GlobalStateContract> CommonWidget<GS>
+for PlainPopUpButton<T, GS>
+{
     fn id(&self) -> Id {
         self.id
     }
@@ -262,5 +318,6 @@ impl<T: StateContract + 'static, GS: GlobalStateContract> Layout<GS> for PlainPo
     }
 }
 
-
-impl<T: StateContract + 'static, GS: GlobalStateContract> WidgetExt<GS> for PlainPopUpButton<T, GS> {}
+impl<T: StateContract + 'static, GS: GlobalStateContract> WidgetExt<GS>
+for PlainPopUpButton<T, GS>
+{}

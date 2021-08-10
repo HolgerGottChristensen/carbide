@@ -7,10 +7,10 @@ extern crate syn;
 use proc_macro::TokenStream;
 
 mod common;
+mod derive_type;
 mod style;
 mod utils;
 mod widget;
-mod derive_type;
 
 // The implementation for the `WidgetCommon` trait derivation (aka `carbide_core::widget::Common`).
 #[proc_macro_derive(WidgetCommon, attributes(carbide, common_builder))]
@@ -42,19 +42,16 @@ pub fn widget_style_(input: TokenStream) -> TokenStream {
     impl_derive(input, style::impl_widget_style_)
 }
 
-
 #[proc_macro_derive(Widget, attributes(state, carbide_derive, carbide_exclude))]
 pub fn widget(input: TokenStream) -> TokenStream {
     impl_derive(input, widget::impl_widget)
 }
 
-
 // Use the given function to generate a TokenStream for the derive implementation.
 fn impl_derive(
     input: TokenStream,
     generate_derive: fn(&syn::DeriveInput) -> proc_macro2::TokenStream,
-) -> TokenStream
-{
+) -> TokenStream {
     // Parse the input TokenStream representation.
     let ast = syn::parse(input).unwrap();
 

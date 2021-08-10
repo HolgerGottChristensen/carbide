@@ -37,7 +37,6 @@ pub enum Input {
     Redraw,
 }
 
-
 impl From<Touch> for Input {
     fn from(touch: Touch) -> Self {
         Input::Touch(touch)

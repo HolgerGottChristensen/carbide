@@ -40,17 +40,25 @@ impl Layout for VStack {
     fn calculate_size(&mut self, requested_size: Dimension, env: &mut Environment) -> Dimension {
         let mut number_of_children_that_needs_sizing = self.children.len() as f64;
 
-        let non_spacers_vec: Vec<bool> = self.children().map(|n| n.flag() != Flags::SPACER).collect();
+        let non_spacers_vec: Vec<bool> =
+            self.children().map(|n| n.flag() != Flags::SPACER).collect();
         let non_spacers_vec_length = non_spacers_vec.len();
 
-        let number_of_spaces = non_spacers_vec.iter().enumerate().take(non_spacers_vec_length.max(1) - 1).filter(|(n, b)| {
-            **b && non_spacers_vec[n + 1]
-        }).count() as f64;
+        let number_of_spaces = non_spacers_vec
+            .iter()
+            .enumerate()
+            .take(non_spacers_vec_length.max(1) - 1)
+            .filter(|(n, b)| **b && non_spacers_vec[n + 1])
+            .count() as f64;
 
         let spacing_total = (number_of_spaces) * self.spacing;
-        let mut size_for_children = Dimension::new(requested_size.width, requested_size.height - spacing_total);
+        let mut size_for_children =
+            Dimension::new(requested_size.width, requested_size.height - spacing_total);
 
-        let mut children_flexibilty: Vec<(u32, &mut dyn Widget)> = self.children_mut().map(|child| (child.flexibility(), child)).collect();
+        let mut children_flexibilty: Vec<(u32, &mut dyn Widget)> = self
+            .children_mut()
+            .map(|child| (child.flexibility(), child))
+            .collect();
         children_flexibilty.sort_by(|(a, _), (b, _)| a.cmp(&b));
         children_flexibilty.reverse();
 
@@ -58,25 +66,37 @@ impl Layout for VStack {
         let mut total_height = 0.0;
 
         for (_, child) in children_flexibilty {
-            let size_for_child = Dimension::new(size_for_children.width, size_for_children.height / number_of_children_that_needs_sizing);
+            let size_for_child = Dimension::new(
+                size_for_children.width,
+                size_for_children.height / number_of_children_that_needs_sizing,
+            );
             let chosen_size = child.calculate_size(size_for_child, env);
 
             if chosen_size.width > max_width {
                 max_width = chosen_size.width;
             }
 
-            size_for_children = Dimension::new(size_for_children.width, (size_for_children.height - chosen_size.height).max(0.0));
+            size_for_children = Dimension::new(
+                size_for_children.width,
+                (size_for_children.height - chosen_size.height).max(0.0),
+            );
 
             number_of_children_that_needs_sizing -= 1.0;
 
             total_height += chosen_size.height;
         }
 
-        let spacer_count = self.children().filter(|m| m.flag() == Flags::SPACER).count() as f64;
+        let spacer_count = self
+            .children()
+            .filter(|m| m.flag() == Flags::SPACER)
+            .count() as f64;
         let rest_space = requested_size.height - total_height - spacing_total;
 
         for spacer in self.children_mut().filter(|m| m.flag() == Flags::SPACER) {
-            let chosen_size = spacer.calculate_size(Dimension::new(requested_size.width, rest_space / spacer_count), env);
+            let chosen_size = spacer.calculate_size(
+                Dimension::new(requested_size.width, rest_space / spacer_count),
+                env,
+            );
 
             if chosen_size.width > max_width {
                 max_width = chosen_size.width;
@@ -101,9 +121,13 @@ impl Layout for VStack {
 
         for (n, child) in self.children_mut().enumerate() {
             match alignment {
-                CrossAxisAlignment::Start => { child.set_x(position.x) }
-                CrossAxisAlignment::Center => { child.set_x(position.x + dimension.width / 2.0 - child.width() / 2.0) }
-                CrossAxisAlignment::End => { child.set_x(position.x + dimension.width - child.width()) }
+                CrossAxisAlignment::Start => child.set_x(position.x),
+                CrossAxisAlignment::Center => {
+                    child.set_x(position.x + dimension.width / 2.0 - child.width() / 2.0)
+                }
+                CrossAxisAlignment::End => {
+                    child.set_x(position.x + dimension.width - child.width())
+                }
             }
 
             child.set_y(position.y + height_offset);
@@ -112,7 +136,6 @@ impl Layout for VStack {
                 height_offset += spacing;
             }
             height_offset += child.height();
-
 
             child.position_children();
         }
@@ -155,7 +178,8 @@ impl CommonWidget for VStack {
     }
 
     fn proxied_children(&mut self) -> WidgetIterMut {
-        self.children.iter_mut()
+        self.children
+            .iter_mut()
             .map(|x| x.deref_mut())
             .rfold(WidgetIterMut::Empty, |acc, x| {
                 WidgetIterMut::Single(x, Box::new(acc))
@@ -163,13 +187,13 @@ impl CommonWidget for VStack {
     }
 
     fn proxied_children_rev(&mut self) -> WidgetIterMut {
-        self.children.iter_mut()
+        self.children
+            .iter_mut()
             .map(|x| x.deref_mut())
             .fold(WidgetIterMut::Empty, |acc, x| {
                 WidgetIterMut::Single(x, Box::new(acc))
             })
     }
-
 
     fn position(&self) -> Position {
         self.position

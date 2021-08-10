@@ -127,7 +127,7 @@ widget_ids! {
 }
 
 fn set_ui(ref mut ui: carbide_core::UiCell, ids: &Ids, fonts: &Fonts) {
-    use carbide_core::{color, Colorable, OldWidget, Positionable, Sizeable, widget};
+    use carbide_core::{color, widget, Colorable, OldWidget, Positionable, Sizeable};
 
     // Our `Canvas` tree, upon which we will place our text widgets.
     widget::Canvas::new()

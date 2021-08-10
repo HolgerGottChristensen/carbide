@@ -8,4 +8,3 @@ pub struct Primitive {
     /// The bounding rectangle for the `Primitive`.
     pub rect: Rect,
 }
-

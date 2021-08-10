@@ -58,7 +58,7 @@ impl From<(&Key, &ModifierKey)> for TextInputKeyCommand {
             (Key::End, &ModifierKey::NO_MODIFIER) => TextInputKeyCommand::JumpToRight,
             (Key::End, &ModifierKey::SHIFT) => TextInputKeyCommand::JumpSelectToRight,
             (Key::Return, &ModifierKey::NO_MODIFIER) => TextInputKeyCommand::Enter,
-            _ => TextInputKeyCommand::Undefined
+            _ => TextInputKeyCommand::Undefined,
         }
     }
 }
@@ -96,7 +96,7 @@ impl From<(&Key, &ModifierKey)> for TextInputKeyCommand {
             (Key::End, &ModifierKey::NO_MODIFIER) => TextInputKeyCommand::JumpToRight,
             (Key::End, &ModifierKey::SHIFT) => TextInputKeyCommand::JumpSelectToRight,
             (Key::Return, &ModifierKey::NO_MODIFIER) => TextInputKeyCommand::Enter,
-            _ => TextInputKeyCommand::Undefined
+            _ => TextInputKeyCommand::Undefined,
         }
     }
 }

@@ -1,5 +1,5 @@
-use std::fmt::{Display, Formatter};
 use std::fmt;
+use std::fmt::{Display, Formatter};
 use std::ops::{Add, AddAssign, Div, Sub, SubAssign};
 
 use crate::draw::Position;
@@ -13,10 +13,7 @@ pub struct Dimension {
 
 impl Dimension {
     pub fn new(width: Scalar, height: Scalar) -> Dimension {
-        Dimension {
-            width,
-            height,
-        }
+        Dimension { width, height }
     }
 }
 

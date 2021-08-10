@@ -4,7 +4,10 @@ use carbide_core::widget::*;
 use crate::PlainSwitch;
 
 #[derive(Clone, Widget)]
-pub struct Switch<GS> where GS: GlobalStateContract {
+pub struct Switch<GS>
+    where
+        GS: GlobalStateContract,
+{
     id: Id,
     child: PlainSwitch<GS>,
     position: Point,
@@ -12,7 +15,10 @@ pub struct Switch<GS> where GS: GlobalStateContract {
 }
 
 impl<GS: GlobalStateContract> Switch<GS> {
-    pub fn new<S: Into<StringState<GS>>, L: Into<BoolState<GS>>>(label: S, checked: L) -> Box<Self> {
+    pub fn new<S: Into<StringState<GS>>, L: Into<BoolState<GS>>>(
+        label: S,
+        checked: L,
+    ) -> Box<Self> {
         let mut child = *PlainSwitch::new(label, checked.into());
 
         child = *child.delegate(|focus_state, checked_state, button: Box<dyn Widget<GS>>| {
@@ -20,25 +26,27 @@ impl<GS: GlobalStateContract> Switch<GS> {
                 focus_state,
                 EnvironmentColor::OpaqueSeparator,
                 EnvironmentColor::Accent,
-            ).mapped(|(focus, primary_color, focus_color)| {
-                if focus == &Focus::Focused {
-                    *focus_color
-                } else {
-                    *primary_color
-                }
-            });
+            )
+                .mapped(|(focus, primary_color, focus_color)| {
+                    if focus == &Focus::Focused {
+                        *focus_color
+                    } else {
+                        *primary_color
+                    }
+                });
 
             let checked_color = TupleState3::new(
                 checked_state.clone(),
                 EnvironmentColor::SecondarySystemBackground,
                 EnvironmentColor::Accent,
-            ).mapped(|(selected, primary_color, checked_color)| {
-                if *selected {
-                    *checked_color
-                } else {
-                    *primary_color
-                }
-            });
+            )
+                .mapped(|(selected, primary_color, checked_color)| {
+                    if *selected {
+                        *checked_color
+                    } else {
+                        *primary_color
+                    }
+                });
 
             ZStack::initialize(vec![
                 Capsule::new()
@@ -46,23 +54,22 @@ impl<GS: GlobalStateContract> Switch<GS> {
                     .stroke(focus_color)
                     .stroke_style(1.0),
                 IfElse::new(checked_state)
-                    .when_true(
-                        HStack::new(vec![
-                            Spacer::new(SpacerDirection::Horizontal),
-                            Ellipse::new()
-                                .fill(EnvironmentColor::DarkText)
-                                .frame(22.0, 22.0),
-                        ])
-                    ).when_false(
-                    HStack::new(vec![
+                    .when_true(HStack::new(vec![
+                        Spacer::new(SpacerDirection::Horizontal),
+                        Ellipse::new()
+                            .fill(EnvironmentColor::DarkText)
+                            .frame(22.0, 22.0),
+                    ]))
+                    .when_false(HStack::new(vec![
                         Ellipse::new()
                             .fill(EnvironmentColor::DarkText)
                             .frame(22.0, 22.0),
                         Spacer::new(SpacerDirection::Horizontal),
-                    ])
-                ).padding(2.0),
+                    ]))
+                    .padding(2.0),
                 button,
-            ]).frame(45.0, 26.0)
+            ])
+                .frame(45.0, 26.0)
         });
 
         Box::new(Switch {
@@ -140,11 +147,9 @@ impl<GS: GlobalStateContract> Layout<GS> for Switch<GS> {
         let position = self.position();
         let dimension = self.dimension();
 
-
         positioning(position, dimension, &mut self.child);
         self.child.position_children();
     }
 }
-
 
 impl<GS: GlobalStateContract> WidgetExt<GS> for Switch<GS> {}

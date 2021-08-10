@@ -1,5 +1,8 @@
 use lyon::algorithms::path::Path;
-use lyon::tessellation::{BuffersBuilder, FillOptions, FillTessellator, FillVertex, StrokeOptions, StrokeTessellator, StrokeVertex, VertexBuffers};
+use lyon::tessellation::{
+    BuffersBuilder, FillOptions, FillTessellator, FillVertex, StrokeOptions, StrokeTessellator,
+    StrokeVertex, VertexBuffers,
+};
 
 use crate::color::Rgba;
 use crate::draw::{Dimension, Position, Rect};
@@ -16,7 +19,8 @@ pub struct Canvas {
     id: Uuid,
     position: Position,
     dimension: Dimension,
-    #[state] color: ColorState,
+    #[state]
+    color: ColorState,
     //prim_store: Vec<Primitive>,
     context: fn(Rect, Context) -> Context,
 }
@@ -33,28 +37,41 @@ impl Canvas {
         })
     }
 
-    pub fn get_stroke_prim(&self, path: Path, stroke_options: StrokeOptions, color: Color) -> Primitive {
+    pub fn get_stroke_prim(
+        &self,
+        path: Path,
+        stroke_options: StrokeOptions,
+        color: Color,
+    ) -> Primitive {
         let mut geometry: VertexBuffers<Position, u16> = VertexBuffers::new();
         let mut tessellator = StrokeTessellator::new();
 
         {
             // Compute the tessellation.
-            tessellator.tessellate_path(
-                &path,
-                &stroke_options,
-                &mut BuffersBuilder::new(&mut geometry, |vertex: StrokeVertex| {
-                    let point = vertex.position().to_array();
-                    Position::new(point[0] as Scalar, point[1] as Scalar)
-                }),
-            ).unwrap();
+            tessellator
+                .tessellate_path(
+                    &path,
+                    &stroke_options,
+                    &mut BuffersBuilder::new(&mut geometry, |vertex: StrokeVertex| {
+                        let point = vertex.position().to_array();
+                        Position::new(point[0] as Scalar, point[1] as Scalar)
+                    }),
+                )
+                .unwrap();
         }
 
-        let point_iter = geometry.indices.iter().map(|index| geometry.vertices[*index as usize]);
+        let point_iter = geometry
+            .indices
+            .iter()
+            .map(|index| geometry.vertices[*index as usize]);
 
         let points: Vec<Position> = point_iter.collect();
 
         Primitive {
-            kind: PrimitiveKind::TrianglesSingleColor { color: Rgba::from(color), triangles: Triangle::from_point_list(points) },
+            kind: PrimitiveKind::TrianglesSingleColor {
+                color: Rgba::from(color),
+                triangles: Triangle::from_point_list(points),
+            },
             rect: Rect::new(self.position, self.dimension),
         }
     }
@@ -65,22 +82,30 @@ impl Canvas {
 
         {
             // Compute the tessellation.
-            tessellator.tessellate_path(
-                &path,
-                &fill_options,
-                &mut BuffersBuilder::new(&mut geometry, |vertex: FillVertex| {
-                    let point = vertex.position().to_array();
-                    Position::new(point[0] as Scalar, point[1] as Scalar)
-                }),
-            ).unwrap();
+            tessellator
+                .tessellate_path(
+                    &path,
+                    &fill_options,
+                    &mut BuffersBuilder::new(&mut geometry, |vertex: FillVertex| {
+                        let point = vertex.position().to_array();
+                        Position::new(point[0] as Scalar, point[1] as Scalar)
+                    }),
+                )
+                .unwrap();
         }
 
-        let point_iter = geometry.indices.iter().map(|index| geometry.vertices[*index as usize]);
+        let point_iter = geometry
+            .indices
+            .iter()
+            .map(|index| geometry.vertices[*index as usize]);
 
         let points: Vec<Position> = point_iter.collect();
 
         Primitive {
-            kind: PrimitiveKind::TrianglesSingleColor { color: Rgba::from(color), triangles: Triangle::from_point_list(points) },
+            kind: PrimitiveKind::TrianglesSingleColor {
+                color: Rgba::from(color),
+                triangles: Triangle::from_point_list(points),
+            },
             rect: Rect::new(self.position, self.dimension),
         }
     }
@@ -172,7 +197,7 @@ impl Shape for Canvas {
                 PrimitiveKind::TrianglesSingleColor { triangles, .. } => {
                     res_triangle_list.extend(triangles);
                 }
-                _ => ()
+                _ => (),
             }
         }
 
@@ -206,7 +231,10 @@ impl Render for Canvas {
             }
         }
 
-        prims.extend(Rectangle::debug_outline(Rect::new(self.position, self.dimension), 1.0));
+        prims.extend(Rectangle::debug_outline(
+            Rect::new(self.position, self.dimension),
+            1.0,
+        ));
 
         return prims;
     }

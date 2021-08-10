@@ -31,9 +31,17 @@ fn main() {
 
     let icon_path = Window::<String>::path_to_assets("images/rust_press.png");
 
-    let mut window = Window::new("Focus behavior example - Carbide".to_string(), 800, 1200, Some(icon_path), String::from("Hejsa"));
+    let mut window = Window::new(
+        "Focus behavior example - Carbide".to_string(),
+        800,
+        1200,
+        Some(icon_path),
+        String::from("Hejsa"),
+    );
 
-    window.add_font("fonts/NotoSans/NotoSans-Regular.ttf").unwrap();
+    window
+        .add_font("fonts/NotoSans/NotoSans-Regular.ttf")
+        .unwrap();
 
     let text_state = CommonState::new_local_with_key(&"Hello World!".to_string());
     let text_state2 = CommonState::new_local_with_key(&"Hej Verden!".to_string());
@@ -45,14 +53,9 @@ fn main() {
     let selected_index = CommonState::new_local_with_key(&0).into_box();
 
     let selected_model = CommonState::new_local_with_key(&vec![
-        Monday,
-        Tuesday,
-        Wednesday,
-        Thursday,
-        Friday,
-        Saturday,
-        Sunday,
-    ]).into_box();
+        Monday, Tuesday, Wednesday, Thursday, Friday, Saturday, Sunday,
+    ])
+        .into_box();
 
     window.set_widgets(
         VStack::new(vec![
@@ -90,9 +93,9 @@ fn main() {
                 .border()
                 .clip()
                 .padding(EdgeInsets::all(30.0)),*/
-            PopUpButton::new(selected_model, selected_index)
-                .padding(EdgeInsets::all(50.0)),
-        ]).spacing(20.0)
+            PopUpButton::new(selected_model, selected_index).padding(EdgeInsets::all(50.0)),
+        ])
+            .spacing(20.0),
     );
 
     window.run_event_loop();

@@ -1,11 +1,11 @@
-use serde::{Serialize, Deserialize};
+use serde::{Deserialize, Serialize};
 
 #[derive(Eq, PartialEq, Clone, Debug, Serialize, Deserialize)]
 pub enum Focus {
     Focused,
     FocusRequested,
     FocusReleased,
-    Unfocused
+    Unfocused,
 }
 
 impl Default for Focus {

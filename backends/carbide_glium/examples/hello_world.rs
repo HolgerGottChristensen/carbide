@@ -1,16 +1,19 @@
 //! A simple example that demonstrates using carbide within a basic `winit` window loop, using
 //! `glium` to render the `carbide_core::render::Primitives` to screen.
 
-#[macro_use] extern crate carbide_core;
+#[macro_use]
+extern crate carbide_core;
 extern crate carbide_glium;
-#[macro_use] extern crate carbide_winit;
+#[macro_use]
+extern crate carbide_winit;
 extern crate find_folder;
 extern crate glium;
 
-mod support;
-
-use carbide_core::{widget, Colorable, Positionable, OldWidget};
 use glium::Surface;
+
+use carbide_core::{Colorable, OldWidget, Positionable, widget};
+
+mod support;
 
 const WIDTH: u32 = 400;
 const HEIGHT: u32 = 200;
@@ -35,7 +38,9 @@ fn main() {
     let ids = Ids::new(ui.widget_id_generator());
 
     // Add a `Font` to the `Ui`'s `font::Map` from file.
-    let assets = find_folder::Search::KidsThenParents(3, 5).for_folder("assets").unwrap();
+    let assets = find_folder::Search::KidsThenParents(3, 5)
+        .for_folder("assets")
+        .unwrap();
     let font_path = assets.join("fonts/NotoSans/NotoSans-Regular.ttf");
     ui.fonts.insert_from_file(font_path).unwrap();
 
@@ -52,7 +57,9 @@ fn main() {
         events.clear();
 
         // Get all the new events since the last frame.
-        events_loop.poll_events(|event| { events.push(event); });
+        events_loop.poll_events(|event| {
+            events.push(event);
+        });
 
         // If there are no new events, wait for one.
         if events.is_empty() {
@@ -64,22 +71,20 @@ fn main() {
 
         // Process the events.
         for event in events.drain(..) {
-
             // Break from the loop upon `Escape` or closed window.
             match event.clone() {
-                glium::glutin::Event::WindowEvent { event, .. } => {
-                    match event {
-                        glium::glutin::WindowEvent::CloseRequested |
-                        glium::glutin::WindowEvent::KeyboardInput {
-                            input: glium::glutin::KeyboardInput {
-                                virtual_keycode: Some(glium::glutin::VirtualKeyCode::Escape),
-                                ..
-                            },
+                glium::glutin::Event::WindowEvent { event, .. } => match event {
+                    glium::glutin::WindowEvent::CloseRequested
+                    | glium::glutin::WindowEvent::KeyboardInput {
+                        input:
+                        glium::glutin::KeyboardInput {
+                            virtual_keycode: Some(glium::glutin::VirtualKeyCode::Escape),
                             ..
-                        } => break 'render,
-                        _ => (),
-                    }
-                }
+                        },
+                        ..
+                    } => break 'render,
+                    _ => (),
+                },
                 _ => (),
             };
 

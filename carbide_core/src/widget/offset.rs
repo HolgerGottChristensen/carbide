@@ -8,8 +8,10 @@ pub struct Offset {
     child: Box<dyn Widget>,
     position: Position,
     dimension: Dimension,
-    #[state] offset_x: F64State,
-    #[state] offset_y: F64State,
+    #[state]
+    offset_x: F64State,
+    #[state]
+    offset_y: F64State,
 }
 
 impl Offset {

@@ -11,16 +11,15 @@ pub use stroke_style::*;
 pub use text_wrap::*;
 pub use triangle_store::*;
 
-mod scroll_direction;
-mod scale_mode;
-mod image_information;
-mod spacer_direction;
-mod triangle_store;
-mod text_wrap;
-mod shape_style;
-mod stroke_style;
 mod corner_radii;
-mod edge_insets;
-mod justify;
 mod cross_axis_alignment;
-
+mod edge_insets;
+mod image_information;
+mod justify;
+mod scale_mode;
+mod scroll_direction;
+mod shape_style;
+mod spacer_direction;
+mod stroke_style;
+mod text_wrap;
+mod triangle_store;

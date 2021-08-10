@@ -62,7 +62,12 @@ pub struct Shelf {
 }
 
 impl Shelf {
-    fn append<F: FnMut(u32, u32, &ImageData)>(&mut self, atlas_id: AtlasId, image_data: &ImageData, uploader: &mut F) -> (AtlasId, Book) {
+    fn append<F: FnMut(u32, u32, &ImageData)>(
+        &mut self,
+        atlas_id: AtlasId,
+        image_data: &ImageData,
+        uploader: &mut F,
+    ) -> (AtlasId, Book) {
         let book = Book {
             x: self.shelf_current_x,
             y: self.shelf_y,
@@ -82,7 +87,6 @@ impl Shelf {
         SHELVE_WIDTH - self.shelf_current_x
     }
 }
-
 
 impl TextureAtlas {
     pub fn new(width: u32, height: u32) -> TextureAtlas {
@@ -130,7 +134,13 @@ impl TextureAtlas {
         let texture_index = if font.is_bitmap() {
             self.queue_raster_glyph_id(glyph.id(), glyph.font_size(), font, scale_factor)
         } else {
-            self.queue_glyph_id(glyph.id(), glyph.font_size(), glyph.position(), font, scale_factor)
+            self.queue_glyph_id(
+                glyph.id(),
+                glyph.font_size(),
+                glyph.position(),
+                font,
+                scale_factor,
+            )
         };
 
         //println!("Queue glyph at: {}", glyph.position());
@@ -138,13 +148,27 @@ impl TextureAtlas {
         glyph.set_texture_index(texture_index);
     }
 
-    pub fn queue_glyph_id(&mut self, glyph_id: GlyphId, font_size: FontSize, position: Position, font: &Font, scale_factor: Scalar) -> TextureAtlasIndex {
-        let offset = (position.fraction_0_1() / (self.position_tolerance * scale_factor)).round_to_u16();
-        let atlas_id = AtlasId::LossyGlyph(LossyGlyphInfo::new(font.id(), glyph_id, font_size, offset));
+    pub fn queue_glyph_id(
+        &mut self,
+        glyph_id: GlyphId,
+        font_size: FontSize,
+        position: Position,
+        font: &Font,
+        scale_factor: Scalar,
+    ) -> TextureAtlasIndex {
+        let offset =
+            (position.fraction_0_1() / (self.position_tolerance * scale_factor)).round_to_u16();
+        let atlas_id =
+            AtlasId::LossyGlyph(LossyGlyphInfo::new(font.id(), glyph_id, font_size, offset));
         let next_glyph_index = self.glyph_index.len();
 
         if !self.all_books_cabinet.contains_key(&atlas_id) {
-            let image_data = font.get_glyph_image_from_id(glyph_id, font_size, scale_factor, position.fraction_0_1());
+            let image_data = font.get_glyph_image_from_id(
+                glyph_id,
+                font_size,
+                scale_factor,
+                position.fraction_0_1(),
+            );
             if let Some(image_data) = image_data {
                 if let Some(id_index) = self.id_queue.iter().position(|i| i == &atlas_id) {
                     self.data_queue[id_index].1.push(next_glyph_index);
@@ -182,12 +206,24 @@ impl TextureAtlas {
         next_glyph_index
     }
 
-    pub fn queue_raster_glyph(&mut self, c: char, font_size: FontSize, font: &Font, scale_factor: Scalar) -> TextureAtlasIndex {
+    pub fn queue_raster_glyph(
+        &mut self,
+        c: char,
+        font_size: FontSize,
+        font: &Font,
+        scale_factor: Scalar,
+    ) -> TextureAtlasIndex {
         let id = font.get_glyph_id(c);
         self.queue_raster_glyph_id(id.unwrap(), font_size, font, scale_factor)
     }
 
-    pub fn queue_raster_glyph_id(&mut self, id: GlyphId, font_size: FontSize, font: &Font, scale_factor: Scalar) -> TextureAtlasIndex {
+    pub fn queue_raster_glyph_id(
+        &mut self,
+        id: GlyphId,
+        font_size: FontSize,
+        font: &Font,
+        scale_factor: Scalar,
+    ) -> TextureAtlasIndex {
         let atlas_id = AtlasId::RasterGlyph(font.id(), id, font_size);
         let next_glyph_index = self.glyph_index.len();
 
@@ -195,7 +231,9 @@ impl TextureAtlas {
             if let Some(id_index) = self.id_queue.iter().position(|i| i == &atlas_id) {
                 self.data_queue[id_index].1.push(next_glyph_index);
             } else {
-                let image_data = font.get_glyph_raster_image_from_id(id, font_size, scale_factor).unwrap();
+                let image_data = font
+                    .get_glyph_raster_image_from_id(id, font_size, scale_factor)
+                    .unwrap();
                 self.id_queue.push(atlas_id);
                 self.data_queue.push((image_data, vec![next_glyph_index]));
             }
@@ -223,12 +261,13 @@ impl TextureAtlas {
     }
 
     /// The uploader should be x, y, image_data
-    pub fn cache_queued<F: FnMut(u32, u32, &ImageData)>(
-        &mut self,
-        mut uploader: F,
-    ) {
+    pub fn cache_queued<F: FnMut(u32, u32, &ImageData)>(&mut self, mut uploader: F) {
         // Sort to get the smallest images first. Todo: make sorting biggest first
-        let mut zipped_queue = self.id_queue.iter().zip(self.data_queue.iter()).collect::<Vec<_>>();
+        let mut zipped_queue = self
+            .id_queue
+            .iter()
+            .zip(self.data_queue.iter())
+            .collect::<Vec<_>>();
 
         zipped_queue.sort_unstable_by(|(_, (a, _)), (_, (b, _))| {
             let a_height = a.height();
@@ -238,7 +277,9 @@ impl TextureAtlas {
 
         while !zipped_queue.is_empty() {
             let (atlas_id, (image_data, glyph_index_to_change)) = zipped_queue.remove(0);
-            let (book_id, book) = if let Some(shelf) = self.get_fitting_shelve(image_data.height(), image_data.width()) {
+            let (book_id, book) = if let Some(shelf) =
+            self.get_fitting_shelve(image_data.height(), image_data.width())
+            {
                 self.shelves[shelf].append(*atlas_id, image_data, &mut uploader)
             } else {
                 let shelf = self.new_shelf(image_data.height());
@@ -262,7 +303,11 @@ impl TextureAtlas {
     }
 
     fn new_shelf(&self, height: u32) -> Shelf {
-        let shelf_y = self.shelves.last().map(|s| s.shelf_y + s.shelf_height + 1).unwrap_or(0);
+        let shelf_y = self
+            .shelves
+            .last()
+            .map(|s| s.shelf_y + s.shelf_height + 1)
+            .unwrap_or(0);
         Shelf {
             shelf_height: height,
             shelf_y,
@@ -288,10 +333,10 @@ impl TextureAtlas {
 
 #[test]
 fn create_packed_image() {
-    use image::GenericImage;
     use crate::draw::Dimension;
-    use crate::text::{FontFamily, FontWeight, FontStyle};
     use crate::environment::Environment;
+    use crate::text::{FontFamily, FontStyle, FontWeight};
+    use image::GenericImage;
 
     let mut atlas = TextureAtlas::new(512, 512);
     let image1 = "/Users/holgergottchristensen/carbide/target/smile.png";
@@ -299,11 +344,19 @@ fn create_packed_image() {
 
     let mut env = Environment::new(vec![], Dimension::new(0.0, 0.0), 1.0);
     let mut family = FontFamily::new("Apple Color Emoji");
-    family.add_font("/System/Library/Fonts/Apple Color Emoji.ttc", FontWeight::Normal, FontStyle::Normal);
+    family.add_font(
+        "/System/Library/Fonts/Apple Color Emoji.ttc",
+        FontWeight::Normal,
+        FontStyle::Normal,
+    );
     env.add_font_family(family);
 
     let mut family = FontFamily::new("Noto Sans");
-    family.add_font("fonts/NotoSans/NotoSans-Regular.ttf", FontWeight::Normal, FontStyle::Normal);
+    family.add_font(
+        "fonts/NotoSans/NotoSans-Regular.ttf",
+        FontWeight::Normal,
+        FontStyle::Normal,
+    );
     env.add_font_family(family);
 
     let id = env.get_font(0).get_glyph_id('👴').unwrap();
@@ -334,13 +387,20 @@ fn create_packed_image() {
 
     let mut texture = image::DynamicImage::new_rgba8(512, 512);
 
-
     atlas.cache_queued(|x, y, image_data| {
-        println!("Insert the image at: {}, {} with size {}, {}", x, y, image_data.width(), image_data.height());
+        println!(
+            "Insert the image at: {}, {} with size {}, {}",
+            x,
+            y,
+            image_data.width(),
+            image_data.height()
+        );
         for (ix, iy, pixel) in image_data.pixels() {
             texture.put_pixel(x + ix, y + iy, pixel);
         }
     });
 
-    texture.save("/Users/holgergottchristensen/carbide/target/smile_atlas.png").unwrap();
+    texture
+        .save("/Users/holgergottchristensen/carbide/target/smile_atlas.png")
+        .unwrap();
 }
