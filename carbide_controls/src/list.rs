@@ -8,9 +8,9 @@ use carbide_core::state::state::State;
 use carbide_core::widget::*;
 use carbide_core::widget::primitive::foreach::{ForEach, ForEachDelegate};
 
-pub trait ListIndex: ForEachDelegate {}
+pub trait ListIndex: Delegate {}
 
-impl<T> ListIndex for T where T: ForEachDelegate {}
+impl<T> ListIndex for T where T: Delegate {}
 
 #[derive(Clone, Widget)]
 #[event(handle_keyboard_event, handle_mouse_event)]

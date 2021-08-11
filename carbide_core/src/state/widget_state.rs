@@ -3,7 +3,7 @@ use std::fmt::{Debug, Formatter};
 use std::ops::{Deref, DerefMut};
 
 use crate::prelude::Environment;
-use crate::state::{Map, MapMut, MapState, StateContract};
+use crate::state::{MapState, StateContract};
 pub use crate::state::State;
 use crate::state::value_cell::{ValueRef, ValueRefMut};
 
@@ -16,14 +16,14 @@ impl<T: StateContract> WidgetState<T> {
 }
 
 impl<T: StateContract + 'static> WidgetState<T> {
-    pub fn mapped<U, M1, M2>(self, map: M1, map_mut: M2) -> WidgetState<U>
+    /*pub fn mapped<U, M1, M2>(self, map: M1, map_mut: M2) -> WidgetState<U>
         where
             U: StateContract + 'static,
-            M1: Map<T, U>,
-            M2: MapMut<T, U>,
+            M1: Map<T, U> + 'static,
+            M2: MapMut<T, U> + 'static,
     {
         MapState::new(self.0, map, map_mut).into()
-    }
+    }*/
 }
 
 impl<T: StateContract> Debug for WidgetState<T> {

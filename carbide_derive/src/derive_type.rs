@@ -1,7 +1,7 @@
 use std::collections::HashSet;
 
 use proc_macro2::{Ident, TokenStream};
-use syn::Generics;
+use syn::{Generics, WhereClause};
 
 #[derive(Hash, Eq, PartialEq, Debug)]
 pub enum DeriveType {
@@ -53,7 +53,7 @@ impl DeriveType {
         &self,
         ident: &Ident,
         generics: &Generics,
-        wheres: &TokenStream,
+        wheres: &Option<WhereClause>,
         state_idents: &Vec<Ident>,
     ) -> TokenStream {
         match self {
@@ -71,73 +71,73 @@ impl DeriveType {
 fn mouse_event_token_stream(
     ident: &Ident,
     generics: &Generics,
-    wheres: &TokenStream,
+    wheres: &Option<WhereClause>,
 ) -> TokenStream {
     quote! {
         #[automatically_derived]
-        impl<#generics> carbide_core::event::MouseEventHandler for #ident #generics #wheres {}
+        impl #generics carbide_core::event::MouseEventHandler for #ident #generics #wheres {}
     }
 }
 
 fn keyboard_event_token_stream(
     ident: &Ident,
     generics: &Generics,
-    wheres: &TokenStream,
+    wheres: &Option<WhereClause>,
 ) -> TokenStream {
     quote! {
         #[automatically_derived]
-        impl<#generics> carbide_core::event::KeyboardEventHandler for #ident #generics #wheres {}
+        impl #generics carbide_core::event::KeyboardEventHandler for #ident #generics #wheres {}
     }
 }
 
 fn other_event_token_stream(
     ident: &Ident,
     generics: &Generics,
-    wheres: &TokenStream,
+    wheres: &Option<WhereClause>,
 ) -> TokenStream {
     quote! {
         #[automatically_derived]
-        impl<#generics> carbide_core::event::OtherEventHandler for #ident #generics #wheres {}
+        impl #generics carbide_core::event::OtherEventHandler for #ident #generics #wheres {}
     }
 }
 
 fn state_sync_token_stream(
     ident: &Ident,
     generics: &Generics,
-    wheres: &TokenStream,
+    wheres: &Option<WhereClause>,
     state_idents: &Vec<Ident>,
 ) -> TokenStream {
     quote! {
         #[automatically_derived]
-        impl<#generics> carbide_core::state::StateSync for #ident #generics #wheres {
+        impl #generics carbide_core::state::StateSync for #ident #generics #wheres {
             fn capture_state(&mut self, env: &mut carbide_core::environment::Environment) {
-                #(self.#state_idents.capture_state(env);)*
+                //#(self.#state_idents.capture_state(env);)*
             }
 
             fn release_state(&mut self, env: &mut carbide_core::environment::Environment) {
-                #(self.#state_idents.release_state(env);)*
+                //#(self.#state_idents.release_state(env);)*
             }
         }
     }
 }
 
-fn render_token_stream(ident: &Ident, generics: &Generics, wheres: &TokenStream) -> TokenStream {
+fn render_token_stream(ident: &Ident, generics: &Generics, wheres: &Option<WhereClause>) -> TokenStream {
     quote! {
         #[automatically_derived]
-        impl<#generics> carbide_core::render::Render for #ident #generics #wheres {}
+        impl #generics carbide_core::render::Render for #ident #generics #wheres {}
     }
 }
 
-fn focusable_token_stream(ident: &Ident, generics: &Generics, wheres: &TokenStream) -> TokenStream {
+fn focusable_token_stream(ident: &Ident, generics: &Generics, wheres: &Option<WhereClause>) -> TokenStream {
     quote! {
         #[automatically_derived]
-        impl<#generics> carbide_core::focus::Focusable for #ident #generics #wheres {}
+        impl #generics carbide_core::focus::Focusable for #ident #generics #wheres {}
     }
 }
 
-fn layout_token_stream(ident: &Ident, generics: &Generics, wheres: &TokenStream) -> TokenStream {
+fn layout_token_stream(ident: &Ident, generics: &Generics, wheres: &Option<WhereClause>) -> TokenStream {
     quote! {
         #[automatically_derived]
-        impl<#generics> carbide_core::layout::Layout for #ident #generics #wheres {}
+        impl #generics carbide_core::layout::Layout for #ident #generics #wheres {}
     }
 }

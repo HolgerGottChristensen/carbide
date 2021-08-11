@@ -15,7 +15,7 @@ use derive_type::DeriveType;
 pub fn impl_widget(ast: &syn::DeriveInput) -> proc_macro2::TokenStream {
     let struct_ident = &ast.ident;
     let generics = &ast.generics;
-    let wheres = filtered_where_clause(&ast);
+    let wheres = &ast.generics.where_clause;
 
     let struct_attributes: HashSet<DeriveType> = parse_attributes(&ast.attrs);
 
@@ -76,7 +76,7 @@ pub fn impl_widget(ast: &syn::DeriveInput) -> proc_macro2::TokenStream {
         #(#streams)*
 
         #[automatically_derived]
-        impl<#generics> carbide_core::widget::Widget for #struct_ident #generics #wheres {}
+        impl #generics carbide_core::widget::Widget for #struct_ident #generics #wheres {}
     }
 }
 

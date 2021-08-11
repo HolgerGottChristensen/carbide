@@ -15,8 +15,8 @@ pub struct ValueState<T>
 }
 
 impl<T: StateContract> ValueState<T> {
-    pub fn new(value: T) -> Self {
-        ValueState { value }
+    pub fn new(value: T) -> Box<Self> {
+        Box::new(ValueState { value })
     }
 }
 
@@ -65,12 +65,12 @@ impl<T: StateContract + 'static> Into<TState<T>> for Box<ValueState<T>> {
 /// This should implement into T state for pretty much all T.
 impl<T: StateContract + 'static> From<T> for TState<T> {
     fn from(t: T) -> Self {
-        WidgetState::new(Box::new(ValueState::new(t)))
+        WidgetState::new(ValueState::new(t))
     }
 }
 
 impl From<u32> for TState<f64> {
     fn from(t: u32) -> Self {
-        WidgetState::new(Box::new(ValueState::new(t as f64)))
+        WidgetState::new(ValueState::new(t as f64))
     }
 }

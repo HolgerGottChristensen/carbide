@@ -8,33 +8,44 @@ use crate::state::State;
 use crate::state::value_cell::{ValueRef, ValueRefMut};
 use crate::state::widget_state::WidgetState;
 
+// Due to errors with lifetimes and closures it seems we are not able to use fn closures,
+// because we can not provide any closures with valid lifetimes as mapping functions.
+// See: https://github.com/rust-lang/rust/issues/86921
+// Because we cant use closures, we store a generic value of stuff, that is parsed to the
+// mapping function. This should make you able to use it as if it was a closure, by capturing
+// values manually, but is for sure more inconvenient.
+
 #[derive(Clone)]
-pub struct MapState<FROM, TO>
+pub struct MapState<FROM, TO, VALUE>
     where
-        FROM: StateContract,
-        TO: StateContract,
+        FROM: StateContract + 'static,
+        TO: StateContract + 'static,
+        VALUE: StateContract + 'static
 {
     state: TState<FROM>,
-    map: Box<dyn Map<FROM, TO>>,
-    map_mut: Box<dyn MapMut<FROM, TO>>,
+    inner_value: VALUE,
+    map: for<'r, 's> fn(&'r FROM, VALUE) -> &'r TO,
+    //Box<dyn Map<FROM, TO>>,
+    map_mut: for<'r, 's> fn(&'r mut FROM, VALUE) -> &'r mut TO, //Box<dyn MapMut<FROM, TO>>,
 }
 
-impl<FROM: StateContract, TO: StateContract> MapState<FROM, TO> {
-    pub fn new<S, M1, M2>(state: S, map: M1, map_mut: M2) -> Self
+impl<FROM: StateContract + 'static, TO: StateContract + 'static, VALUE: StateContract + 'static> MapState<FROM, TO, VALUE> {
+    pub fn new<S>(state: S, value: VALUE, map: for<'r, 's> fn(&'r FROM, VALUE) -> &'r TO, map_mut: for<'r, 's> fn(&'r mut FROM, VALUE) -> &'r mut TO) -> Self
         where
             S: Into<TState<FROM>>,
-            M1: Map<FROM, TO>,
-            M2: MapMut<FROM, TO>,
+    //M1: Map<FROM, TO> + 'static,
+    //M2: MapMut<FROM, TO> + 'static,
     {
         MapState {
             state: state.into(),
-            map: Box::new(map),
-            map_mut: Box::new(map_mut),
+            inner_value: value,
+            map,
+            map_mut,
         }
     }
 }
 
-impl<FROM: StateContract, TO: StateContract> State<TO> for MapState<FROM, TO> {
+impl<FROM: StateContract + 'static, TO: StateContract + 'static, VALUE: StateContract + 'static> State<TO> for MapState<FROM, TO, VALUE> {
     fn capture_state(&mut self, env: &mut Environment) {
         self.state.capture_state(env)
     }
@@ -44,15 +55,17 @@ impl<FROM: StateContract, TO: StateContract> State<TO> for MapState<FROM, TO> {
     }
 
     fn value(&self) -> ValueRef<TO> {
-        ValueRef::map(self.state.value(), &self.map)
+        ValueRef::map(self.state.value(), |a| { (self.map)(a, self.inner_value.clone()) })
     }
 
     fn value_mut(&mut self) -> ValueRefMut<TO> {
-        ValueRefMut::map(self.state.value_mut(), &self.map_mut)
+        let val = self.inner_value.clone();
+        let function = self.map_mut;
+        ValueRefMut::map(self.state.value_mut(), |a| { function(a, val) })
     }
 }
 
-impl<FROM: StateContract, TO: StateContract> Debug for MapState<FROM, TO> {
+impl<FROM: StateContract + 'static, TO: StateContract + 'static, VALUE: StateContract + 'static> Debug for MapState<FROM, TO, VALUE> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("MapState")
             .field("value", &*self.value())
@@ -60,29 +73,30 @@ impl<FROM: StateContract, TO: StateContract> Debug for MapState<FROM, TO> {
     }
 }
 
-impl<FROM: StateContract + 'static, TO: StateContract + 'static> Into<TState<TO>>
-for MapState<FROM, TO>
+impl<FROM: StateContract + 'static, TO: StateContract + 'static, VALUE: StateContract + 'static> Into<TState<TO>>
+for MapState<FROM, TO, VALUE>
 {
     fn into(self) -> TState<TO> {
         WidgetState::new(Box::new(self))
     }
 }
-
-pub trait Map<FROM: StateContract, TO: StateContract>:
-Fn(&FROM) -> &TO + DynClone + 'static
+/*
+pub trait Map<FROM: StateContract + 'static, TO: StateContract + 'static>:
+for<'a> Fn(&'a FROM) -> &'a TO + DynClone
 {}
 
-pub trait MapMut<FROM: StateContract, TO: StateContract>:
-Fn(&mut FROM) -> &mut TO + DynClone + 'static
+pub trait MapMut<FROM: StateContract + 'static, TO: StateContract + 'static>:
+for<'a> Fn(&'a mut FROM) -> &'a mut TO + DynClone
 {}
 
-impl<T, FROM: StateContract, TO: StateContract> Map<FROM, TO> for T where
-    T: Fn(&FROM) -> &TO + DynClone + 'static
+impl<T, FROM: StateContract + 'static, TO: StateContract + 'static> Map<FROM, TO> for T where
+    T: for<'a> Fn(&'a FROM) -> &'a TO + DynClone
 {}
 
-impl<T, FROM: StateContract, TO: StateContract> MapMut<FROM, TO> for T where
-    T: Fn(&mut FROM) -> &mut TO + DynClone + 'static
+impl<T, FROM: StateContract + 'static, TO: StateContract + 'static> MapMut<FROM, TO> for T where
+    T: for<'a> Fn(&'a mut FROM) -> &'a mut TO + DynClone
 {}
 
-dyn_clone::clone_trait_object!(<FROM: StateContract, TO: StateContract> Map<FROM, TO>);
-dyn_clone::clone_trait_object!(<FROM: StateContract, TO: StateContract> MapMut<FROM, TO>);
+dyn_clone::clone_trait_object!(<FROM: StateContract + 'static, TO: StateContract + 'static> Map<FROM, TO>);
+dyn_clone::clone_trait_object!(<FROM: StateContract + 'static, TO: StateContract + 'static> MapMut<FROM, TO>);
+*/
