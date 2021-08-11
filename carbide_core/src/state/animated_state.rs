@@ -33,11 +33,11 @@ pub struct AnimatedState {
 }
 
 impl AnimatedState {
-    pub fn linear(duration: Duration, env: &Environment) -> Box<Self> {
+    pub fn linear(env: &Environment) -> Box<Self> {
         Box::new(AnimatedState {
             percent: InnerState::new(ValueCell::new(0.0)),
             start_time: Instant::now(),
-            duration,
+            duration: Duration::new(1, 0),
             repeat_mode: RepeatMode::None,
             repeat_count: None,
             frame_time: env.captured_time(),
@@ -45,16 +45,21 @@ impl AnimatedState {
         })
     }
 
-    pub fn custom(duration: Duration, curve: fn(f64) -> f64, env: &Environment) -> Box<Self> {
+    pub fn custom(curve: fn(f64) -> f64, env: &Environment) -> Box<Self> {
         Box::new(AnimatedState {
             percent: InnerState::new(ValueCell::new(0.0)),
             start_time: Instant::now(),
-            duration,
+            duration: Duration::new(1, 0),
             repeat_mode: RepeatMode::None,
             repeat_count: None,
             frame_time: env.captured_time(),
             animation_curve: curve,
         })
+    }
+
+    pub fn duration(mut self, duration: Duration) -> Box<Self> {
+        self.duration = duration;
+        Box::new(self)
     }
 
     pub fn repeat_alternate(mut self) -> Box<Self> {
