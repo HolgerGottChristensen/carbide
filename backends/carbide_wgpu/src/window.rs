@@ -18,6 +18,7 @@ use winit::event::{ElementState, Event, KeyboardInput, VirtualKeyCode, WindowEve
 use winit::event_loop::{ControlFlow, EventLoop};
 use winit::window::{Icon, WindowBuilder};
 
+use carbide_core::{Scalar, Ui};
 use carbide_core::draw::{Dimension, Position, Rect};
 use carbide_core::event::Input;
 use carbide_core::image_map::{Id, ImageMap};
@@ -26,7 +27,6 @@ use carbide_core::mesh::mesh::Mesh;
 use carbide_core::prelude::{Environment, EnvironmentColor};
 use carbide_core::prelude::Rectangle;
 use carbide_core::text::{FontFamily, FontId};
-use carbide_core::Ui;
 use carbide_core::widget::OverlaidLayer;
 use carbide_core::widget::Widget;
 pub use carbide_core::window::TWindow;
@@ -63,7 +63,6 @@ pub struct Window {
     texture_bind_group_layout: BindGroupLayout,
     uniform_bind_group_layout: BindGroupLayout,
     uniform_bind_group: wgpu::BindGroup,
-    uniform_buffer: wgpu::Buffer,
     inner_window: winit::window::Window,
     event_loop: Option<EventLoop<()>>,
 }
@@ -115,6 +114,37 @@ impl Window {
 
     pub fn environment(&self) -> &Environment {
         &self.ui.environment
+    }
+
+    fn calculate_carbide_to_wgpu_matrix(dimension: Dimension, fov: Scalar, scale_factor: Scalar) -> Matrix4<f32> {
+        let fov = fov as f32;
+        let half_height = (dimension.height / 2.0);
+        let scale = (scale_factor / half_height) as f32;
+
+        let pixel_to_points: [[f32; 4]; 4] = [
+            [scale, 0.0, 0.0, 0.0],
+            [0.0, -scale, 0.0, 0.0],
+            [0.0, 0.0, 1.0, 0.0],
+            [0.0, 0.0, 0.0, 1.0],
+        ];
+
+        let angle_to_screen_center = 90.0;
+
+        let outer_angle = 180.0 - (fov / 2.0) - angle_to_screen_center;
+
+        let z = outer_angle.to_radians().tan() as f32;
+        let aspect_ratio = (dimension.width / dimension.height) as f32;
+
+        let perspective = cgmath::perspective(cgmath::Deg(fov), aspect_ratio, 0.1, 100.0);
+        //let view = cgmath::Matrix4::look_at_lh(self.eye, self.target, self.up);
+        let up: Vector3<f32> = cgmath::Vector3::unit_y();
+        let target: Point3<f32> = Point3::new(0.0, 0.0, 0.0);
+        let eye: Point3<f32> = Point3::new(0.0, 0.0, z);
+
+        let view = Matrix4::look_at_rh(eye, target, up);
+        //
+        let res = perspective * view * Matrix4::from_translation(Vector3::new(-aspect_ratio, 1.0, 0.0)) * Matrix4::from(pixel_to_points);
+        res
     }
 
     pub fn new(title: String, width: u32, height: u32, icon: Option<PathBuf>) -> Self {
@@ -194,36 +224,10 @@ impl Window {
         let swap_chain = device.create_swap_chain(&surface, &sc_desc);
 
         let degrees = 10.0;
-        let half_height = pixel_dimensions.height / 2.0;
-        let scale = (scale_factor / half_height) as f32;
+        let fov = 45.0;
 
-        let pixel_to_points: [[f32; 4]; 4] = [
-            [scale, 0.0, 0.0, 0.0],
-            [0.0, -scale, 0.0, 0.0],
-            [0.0, 0.0, 1.0, 0.0],
-            [0.0, 0.0, 0.0, 1.0],
-        ];
 
-        let wgpu_half_screen_width = 1.0;
-        let fov = 45.0 as f32;
-        let angle_to_screen_center = 90.0;
-
-        let outer_angle = 180.0 - (fov / 2.0) - angle_to_screen_center;
-
-        let z = outer_angle.to_radians().tan() as f32;
-        let aspect_ratio = (pixel_dimensions.width / pixel_dimensions.height) as f32;
-
-        let perspective = cgmath::perspective(cgmath::Deg(45.0), aspect_ratio, 0.1, 100.0);
-        //let view = cgmath::Matrix4::look_at_lh(self.eye, self.target, self.up);
-        let up: Vector3<f32> = cgmath::Vector3::unit_y();
-        let target: Point3<f32> = Point3::new(0.0, 0.0, 0.0);
-        let eye: Point3<f32> = Point3::new(0.0, 0.0, z);
-
-        let view = Matrix4::look_at_rh(eye, target, up);
-        //
-        let matrix = perspective * view * Matrix4::from_translation(Vector3::new(-aspect_ratio, 1.0, 0.0)) * Matrix4::from(pixel_to_points) * Matrix4::from_angle_z(Deg(degrees));
-
-        let uniforms: [[f32; 4]; 4] = matrix.into();
+        let uniforms: [[f32; 4]; 4] = Window::calculate_carbide_to_wgpu_matrix(pixel_dimensions, fov, scale_factor).into();
 
         let uniform_buffer = device.create_buffer_init(
             &wgpu::util::BufferInitDescriptor {
@@ -410,7 +414,6 @@ impl Window {
             texture_bind_group_layout,
             uniform_bind_group_layout,
             uniform_bind_group,
-            uniform_buffer,
             inner_window,
             event_loop: Some(event_loop),
         }
@@ -438,6 +441,34 @@ impl Window {
         });
         let depth_texture_view = depth_texture.create_view(&Default::default());
         self.depth_texture_view = depth_texture_view;
+
+        let dimension = Dimension::new(new_size.width as Scalar, new_size.height as Scalar);
+        let fov = 45.0;
+        let scale_factor = self.inner_window.scale_factor();
+
+        let uniforms: [[f32; 4]; 4] = Window::calculate_carbide_to_wgpu_matrix(dimension, fov, scale_factor).into();
+
+        let uniform_buffer = self.device.create_buffer_init(
+            &wgpu::util::BufferInitDescriptor {
+                label: Some("Uniform Buffer"),
+                contents: bytemuck::cast_slice(&[uniforms]),
+                usage: wgpu::BufferUsage::UNIFORM | wgpu::BufferUsage::COPY_DST,
+            }
+        );
+
+        let uniform_bind_group = self.device.create_bind_group(&wgpu::BindGroupDescriptor {
+            layout: &self.uniform_bind_group_layout,
+            entries: &[
+                wgpu::BindGroupEntry {
+                    binding: 0,
+                    resource: wgpu::BindingResource::Buffer(uniform_buffer.slice(..)),
+                }
+            ],
+            label: Some("uniform_bind_group"),
+        });
+
+        self.uniform_bind_group = uniform_bind_group;
+
         self.swap_chain = self.device.create_swap_chain(&self.surface, &self.sc_desc);
     }
 
