@@ -32,7 +32,10 @@ fn main() {
             Image::new(landscape_id)
                 .scaled_to_fill()
                 .frame(200.0, 200.0)
-                .clip()
+                .clip_shape(
+                    Rectangle::new(vec![])
+                        .fill(EnvironmentColor::Accent),
+                )
                 .frame(100.0, 100.0),
             Image::new(landscape_id)
                 .scaled_to_fill()

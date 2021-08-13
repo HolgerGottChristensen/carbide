@@ -5,6 +5,7 @@ use std::rc::Rc;
 use std::thread::sleep;
 use std::time::{Duration, Instant};
 
+use cgmath::{Deg, Matrix4, Point3, Rad, SquareMatrix, Vector3};
 pub use futures::executor::block_on;
 use image::DynamicImage;
 use uuid::Uuid;
@@ -60,6 +61,9 @@ pub struct Window {
     atlas_cache_tex: Texture,
     bind_groups: HashMap<Id, DiffuseBindGroup>,
     texture_bind_group_layout: BindGroupLayout,
+    uniform_bind_group_layout: BindGroupLayout,
+    uniform_bind_group: wgpu::BindGroup,
+    uniform_buffer: wgpu::Buffer,
     inner_window: winit::window::Window,
     event_loop: Option<EventLoop<()>>,
 }
@@ -189,7 +193,71 @@ impl Window {
         };
         let swap_chain = device.create_swap_chain(&surface, &sc_desc);
 
-        // CHANGED!
+        let degrees = 10.0;
+        let half_height = pixel_dimensions.height / 2.0;
+        let scale = (scale_factor / half_height) as f32;
+
+        let pixel_to_points: [[f32; 4]; 4] = [
+            [scale, 0.0, 0.0, 0.0],
+            [0.0, -scale, 0.0, 0.0],
+            [0.0, 0.0, 1.0, 0.0],
+            [0.0, 0.0, 0.0, 1.0],
+        ];
+
+        let wgpu_half_screen_width = 1.0;
+        let fov = 45.0 as f32;
+        let angle_to_screen_center = 90.0;
+
+        let outer_angle = 180.0 - (fov / 2.0) - angle_to_screen_center;
+
+        let z = outer_angle.to_radians().tan() as f32;
+        let aspect_ratio = (pixel_dimensions.width / pixel_dimensions.height) as f32;
+
+        let perspective = cgmath::perspective(cgmath::Deg(45.0), aspect_ratio, 0.1, 100.0);
+        //let view = cgmath::Matrix4::look_at_lh(self.eye, self.target, self.up);
+        let up: Vector3<f32> = cgmath::Vector3::unit_y();
+        let target: Point3<f32> = Point3::new(0.0, 0.0, 0.0);
+        let eye: Point3<f32> = Point3::new(0.0, 0.0, z);
+
+        let view = Matrix4::look_at_rh(eye, target, up);
+        //
+        let matrix = perspective * view * Matrix4::from_translation(Vector3::new(-aspect_ratio, 1.0, 0.0)) * Matrix4::from(pixel_to_points) * Matrix4::from_angle_z(Deg(degrees));
+
+        let uniforms: [[f32; 4]; 4] = matrix.into();
+
+        let uniform_buffer = device.create_buffer_init(
+            &wgpu::util::BufferInitDescriptor {
+                label: Some("Uniform Buffer"),
+                contents: bytemuck::cast_slice(&[uniforms]),
+                usage: wgpu::BufferUsage::UNIFORM | wgpu::BufferUsage::COPY_DST,
+            }
+        );
+
+        let uniform_bind_group_layout = device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
+            entries: &[
+                wgpu::BindGroupLayoutEntry {
+                    binding: 0,
+                    visibility: wgpu::ShaderStage::VERTEX,
+                    ty: wgpu::BindingType::UniformBuffer {
+                        dynamic: false,
+                        min_binding_size: None,
+                    },
+                    count: None,
+                }
+            ],
+            label: Some("uniform_bind_group_layout"),
+        });
+
+        let uniform_bind_group = device.create_bind_group(&wgpu::BindGroupDescriptor {
+            layout: &uniform_bind_group_layout,
+            entries: &[
+                wgpu::BindGroupEntry {
+                    binding: 0,
+                    resource: wgpu::BindingResource::Buffer(uniform_buffer.slice(..)),
+                }
+            ],
+            label: Some("uniform_bind_group"),
+        });
 
         let texture_bind_group_layout =
             device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
@@ -250,8 +318,11 @@ impl Window {
 
         let render_pipeline_layout =
             device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
-                label: Some("Render Pipeline Layout"),             // NEW!
-                bind_group_layouts: &[&texture_bind_group_layout], // NEW!
+                label: Some("Render Pipeline Layout"),
+                bind_group_layouts: &[
+                    &texture_bind_group_layout,
+                    &uniform_bind_group_layout,
+                ],
                 push_constant_ranges: &[],
             });
 
@@ -337,6 +408,9 @@ impl Window {
             atlas_cache_tex,
             bind_groups,
             texture_bind_group_layout,
+            uniform_bind_group_layout,
+            uniform_bind_group,
+            uniform_buffer,
             inner_window,
             event_loop: Some(event_loop),
         }
@@ -522,6 +596,7 @@ impl Window {
             });
             render_pass.set_pipeline(&self.render_pipeline_no_mask); // 2.
             render_pass.set_vertex_buffer(0, vertex_buffer.slice(..));
+            render_pass.set_bind_group(1, &self.uniform_bind_group, &[]);
 
             let instance_range = 0..1;
             let mut stencil_level = 0;

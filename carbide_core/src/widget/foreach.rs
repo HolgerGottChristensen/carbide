@@ -21,8 +21,6 @@ pub trait Identifiable {
 }
 
 #[derive(Clone, Widget)]
-//#[state_sync(sync_state)]
-//#[event(process_mouse_event, process_keyboard_event)]
 pub struct ForEach<T, U> where T: StateContract + Identifiable, U: Delegate<T> {
     id: Uuid,
     position: Position,
@@ -79,70 +77,6 @@ impl<T: StateContract + Identifiable + 'static, U: Delegate<T>> ForEach<T, U> {
     pub fn index_offset(mut self, state: Box<dyn State<usize, GS>>) -> Box<Self> {
         self.index_offset = state;
         Box::new(self)
-    }*/
-
-    /*fn sync_state(&mut self, env: &mut Environment<GS>, global_state: &GS) {
-        self.update_all_widget_state(env, global_state);
-
-        self.insert_local_state(env);
-
-        let mut ids = self.ids.clone();
-
-        let initial_offset = *self.index_offset.get_latest_value();
-        let id_key = self.id_state.get_key().unwrap().clone();
-        let index_key = self.index_state.get_key().unwrap().clone();
-
-        for (i, child) in self.proxied_children().enumerate() {
-            env.insert_local_state_from_key_value(&id_key, &ids.get_value(env, global_state)[i]);
-            env.insert_local_state_from_key_value(&index_key, &(i + initial_offset));
-
-            child.sync_state(env, global_state)
-        }
-
-        self.update_local_widget_state(env);
-    }
-
-    fn process_mouse_event(&mut self, event: &MouseEvent, consumed: &bool, env: &mut Environment<GS>, global_state: &mut GS) {
-        self.update_all_widget_state(env, global_state);
-
-        self.insert_local_state(env);
-
-        let mut ids = self.ids.clone();
-
-        let initial_offset = *self.index_offset.get_latest_value();
-        let id_key = self.id_state.get_key().unwrap().clone();
-        let index_key = self.index_state.get_key().unwrap().clone();
-
-        for (i, child) in self.proxied_children().enumerate() {
-            env.insert_local_state_from_key_value(&id_key, &ids.get_value(env, global_state)[i]);
-            env.insert_local_state_from_key_value(&index_key, &(i + initial_offset));
-
-            child.process_mouse_event(event, &consumed, env, global_state);
-            if *consumed { return () }
-        }
-
-        self.update_local_widget_state(env)
-    }
-
-    fn process_keyboard_event(&mut self, event: &KeyboardEvent, env: &mut Environment<GS>, global_state: &mut GS) {
-        self.update_all_widget_state(env, global_state);
-
-        self.insert_local_state(env);
-
-        let mut ids = self.ids.clone();
-
-        let initial_offset = *self.index_offset.get_latest_value();
-        let id_key = self.id_state.get_key().unwrap().clone();
-        let index_key = self.index_state.get_key().unwrap().clone();
-
-        for (i, child) in self.proxied_children().enumerate() {
-            env.insert_local_state_from_key_value(&id_key, &ids.get_value(env, global_state)[i]);
-            env.insert_local_state_from_key_value(&index_key, &(i + initial_offset));
-
-            child.process_keyboard_event(event, env, global_state);
-        }
-
-        self.update_local_widget_state(env)
     }*/
 }
 

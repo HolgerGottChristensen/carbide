@@ -268,80 +268,19 @@ impl Layout for Rectangle {
 
 impl Render for Rectangle {
     fn get_primitives(&mut self, _: &mut Environment) -> Vec<Primitive> {
-        let mut prims = vec![];
+        let rect = rect(
+            self.x() as f32,
+            self.y() as f32,
+            self.width() as f32,
+            self.height() as f32,
+        );
+        tessellate(self, &rect, &|builder, rectangle| {
+            builder.add_rectangle(rectangle, Winding::Positive)
+        });
 
-        match self.style {
-            ShapeStyle::Default => {
-                prims.push(Primitive {
-                    kind: PrimitiveKind::Rectangle {
-                        color: *self.fill_color.value(),
-                    },
-                    rect: Rect::new(self.position, self.dimension),
-                });
-            }
-            ShapeStyle::Fill => {
-                prims.push(Primitive {
-                    kind: PrimitiveKind::Rectangle {
-                        color: *self.fill_color.value(),
-                    },
-                    rect: Rect::new(self.position, self.dimension),
-                });
-            }
-            ShapeStyle::Stroke => {
-                let rect = rect(
-                    self.x() as f32,
-                    self.y() as f32,
-                    self.width() as f32,
-                    self.height() as f32,
-                );
-                tessellate(self, &rect, &|builder, rectangle| {
-                    builder.add_rectangle(rectangle, Winding::Positive)
-                });
-
-                let stroke_triangles = self.triangle_store.stroke_triangles.clone();
-
-                prims.push(Primitive {
-                    kind: PrimitiveKind::TrianglesSingleColor {
-                        color: Rgba::from(*self.stroke_color.value()),
-                        triangles: stroke_triangles,
-                    },
-                    rect: Rect::new(self.position, self.dimension),
-                });
-            }
-            ShapeStyle::FillAndStroke => {
-                prims.push(Primitive {
-                    kind: PrimitiveKind::Rectangle {
-                        color: *self.fill_color.value(),
-                    },
-                    rect: Rect::new(self.position, self.dimension),
-                });
-
-                let rect = rect(
-                    self.x() as f32,
-                    self.y() as f32,
-                    self.width() as f32,
-                    self.height() as f32,
-                );
-                tessellate(self, &rect, &|builder, rectangle| {
-                    builder.add_rectangle(rectangle, Winding::Positive)
-                });
-
-                let stroke_triangles = self.triangle_store.stroke_triangles.clone();
-
-                prims.push(Primitive {
-                    kind: PrimitiveKind::TrianglesSingleColor {
-                        color: Rgba::from(*self.stroke_color.value()),
-                        triangles: stroke_triangles,
-                    },
-                    rect: Rect::new(self.position, self.dimension),
-                });
-            }
-        }
-
-        prims.extend(Rectangle::debug_outline(
-            Rect::new(self.position, self.dimension),
-            1.0,
-        ));
+        let mut prims = self
+            .triangle_store
+            .get_primitives(*self.fill_color.value(), *self.stroke_color.value());
 
         return prims;
     }
@@ -357,7 +296,7 @@ impl Shape for Rectangle {
     }
 
     fn get_shape_style(&self) -> ShapeStyle {
-        ShapeStyle::Stroke
+        self.style.clone()
     }
 }
 

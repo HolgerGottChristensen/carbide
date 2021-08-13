@@ -19,7 +19,7 @@ carbide_derive = { path = "../../carbide_derive", version = "0.70" }
 carbide_winit = { path = "../carbide_winit", version = "0.70" }
 image = "0.23"
 winit = "0.25"
-cgmath = "0.17"
+cgmath = "0.18"
 env_logger = "0.7"
 log = "0.4"
 wgpu = "0.6"

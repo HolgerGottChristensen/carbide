@@ -203,8 +203,8 @@ impl Mesh {
         let glyph_cache_w = glyph_cache_w as usize;
 
         // Functions for converting for carbide scalar coords to normalised vertex coords (-1.0 to 1.0).
-        let vx = |x: Scalar| (x * scale_factor / half_viewport_w - 1.0) as f32;
-        let vy = |y: Scalar| -1.0 * (y * scale_factor / half_viewport_h - 1.0) as f32;
+        let vx = |x: Scalar| x as f32;//(x * scale_factor / half_viewport_w - 1.0) as f32;
+        let vy = |y: Scalar| y as f32;//-1.0 * (y * scale_factor / half_viewport_h - 1.0) as f32;
 
         let rect_to_scizzor = |rect: Rect| {
             // We need to restrict the scissor x and y to [0, ~].
@@ -570,11 +570,8 @@ impl Mesh {
                     };
 
                     let v = |x, y, t| {
-                        // Convert from carbide Scalar range to normalised range -1.0 to 1.0.
-                        let x = (x * scale_factor / half_viewport_w - 1.0) as f32;
-                        let y = -((y * scale_factor / half_viewport_h - 1.0) as f32);
                         Vertex {
-                            position: [x, y, 0.0],
+                            position: [x as f32, y as f32, 0.0],
                             tex_coords: t,
                             rgba: color,
                             mode: MODE_IMAGE,
