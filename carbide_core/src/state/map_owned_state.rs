@@ -30,6 +30,16 @@ impl<FROM: StateContract, TO: StateContract + Default> MapOwnedState<FROM, TO> {
     }
 }
 
+impl<FROM: StateContract, TO: StateContract> MapOwnedState<FROM, TO> {
+    pub fn new_with_default<M1: Into<TState<FROM>>, M2: Map<FROM, TO>>(state: M1, map: M2, default: TO) -> Self {
+        MapOwnedState {
+            state: state.into(),
+            map: Box::new(map),
+            value: InnerState::new(ValueCell::new(default)),
+        }
+    }
+}
+
 impl<FROM: StateContract, TO: StateContract> State<TO> for MapOwnedState<FROM, TO> {
     fn capture_state(&mut self, env: &mut Environment) {
         self.state.capture_state(env)

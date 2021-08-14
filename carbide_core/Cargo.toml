@@ -40,6 +40,7 @@ nom = "6.2.1"
 find_folder = "0.3"
 image = "0.23"
 ttf-parser = "0.12.3"
+cgmath = "0.18"
 
 [dev-dependencies]
 # font-kit = "0.10.1"

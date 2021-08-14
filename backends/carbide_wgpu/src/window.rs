@@ -9,9 +9,7 @@ use cgmath::{Deg, Matrix4, Point3, Rad, SquareMatrix, Vector3};
 pub use futures::executor::block_on;
 use image::DynamicImage;
 use uuid::Uuid;
-use wgpu::{
-    BindGroupLayout, PresentMode, RenderPassDepthStencilAttachmentDescriptor, Texture, TextureView,
-};
+use wgpu::{BindGroup, BindGroupLayout, Device, PresentMode, RenderPassDepthStencilAttachmentDescriptor, Texture, TextureView};
 use wgpu::util::DeviceExt;
 use winit::dpi::{PhysicalPosition, PhysicalSize, Size};
 use winit::event::{ElementState, Event, KeyboardInput, VirtualKeyCode, WindowEvent};
@@ -63,6 +61,7 @@ pub struct Window {
     texture_bind_group_layout: BindGroupLayout,
     uniform_bind_group_layout: BindGroupLayout,
     uniform_bind_group: wgpu::BindGroup,
+    carbide_to_wgpu_matrix: Matrix4<f32>,
     inner_window: winit::window::Window,
     event_loop: Option<EventLoop<()>>,
 }
@@ -116,15 +115,48 @@ impl Window {
         &self.ui.environment
     }
 
+    pub(crate) fn matrix_to_uniform_bind_group(device: &Device, layout: &BindGroupLayout, matrix: Matrix4<f32>) -> BindGroup {
+        let uniforms: [[f32; 4]; 4] = matrix.into();
+
+        let uniform_buffer = device.create_buffer_init(
+            &wgpu::util::BufferInitDescriptor {
+                label: Some("Uniform Buffer"),
+                contents: bytemuck::cast_slice(&[uniforms]),
+                usage: wgpu::BufferUsage::UNIFORM | wgpu::BufferUsage::COPY_DST,
+            }
+        );
+
+        let uniform_bind_group = device.create_bind_group(&wgpu::BindGroupDescriptor {
+            layout: layout,
+            entries: &[
+                wgpu::BindGroupEntry {
+                    binding: 0,
+                    resource: wgpu::BindingResource::Buffer(uniform_buffer.slice(..)),
+                }
+            ],
+            label: Some("uniform_bind_group"),
+        });
+
+        uniform_bind_group
+    }
+
     fn calculate_carbide_to_wgpu_matrix(dimension: Dimension, fov: Scalar, scale_factor: Scalar) -> Matrix4<f32> {
         let fov = fov as f32;
         let half_height = (dimension.height / 2.0);
         let scale = (scale_factor / half_height) as f32;
 
+        #[rustfmt::skip]
+        pub const OPENGL_TO_WGPU_MATRIX: cgmath::Matrix4<f32> = cgmath::Matrix4::new(
+            1.0, 0.0, 0.0, 0.0,
+            0.0, 1.0, 0.0, 0.0,
+            0.0, 0.0, 0.5, 0.0,
+            0.0, 0.0, 0.5, 1.0,
+        );
+
         let pixel_to_points: [[f32; 4]; 4] = [
             [scale, 0.0, 0.0, 0.0],
             [0.0, -scale, 0.0, 0.0],
-            [0.0, 0.0, 1.0, 0.0],
+            [0.0, 0.0, scale, 0.0],
             [0.0, 0.0, 0.0, 1.0],
         ];
 
@@ -142,8 +174,9 @@ impl Window {
         let eye: Point3<f32> = Point3::new(0.0, 0.0, z);
 
         let view = Matrix4::look_at_rh(eye, target, up);
-        //
-        let res = perspective * view * Matrix4::from_translation(Vector3::new(-aspect_ratio, 1.0, 0.0)) * Matrix4::from(pixel_to_points);
+        //perspective * view *
+        let ortho = cgmath::ortho(-1.0 * aspect_ratio, 1.0 * aspect_ratio, -1.0, 1.0, 1.0, -1.0);
+        let res = OPENGL_TO_WGPU_MATRIX * ortho * Matrix4::from_translation(Vector3::new(-aspect_ratio, 1.0, 0.0)) * Matrix4::from(pixel_to_points);
         res
     }
 
@@ -222,12 +255,9 @@ impl Window {
             present_mode: PresentMode::Fifo,
         };
         let swap_chain = device.create_swap_chain(&surface, &sc_desc);
-
-        let degrees = 10.0;
         let fov = 45.0;
-
-
-        let uniforms: [[f32; 4]; 4] = Window::calculate_carbide_to_wgpu_matrix(pixel_dimensions, fov, scale_factor).into();
+        let matrix = Window::calculate_carbide_to_wgpu_matrix(pixel_dimensions, fov, scale_factor);
+        let uniforms: [[f32; 4]; 4] = matrix.clone().into();
 
         let uniform_buffer = device.create_buffer_init(
             &wgpu::util::BufferInitDescriptor {
@@ -415,6 +445,7 @@ impl Window {
             uniform_bind_group_layout,
             uniform_bind_group,
             inner_window,
+            carbide_to_wgpu_matrix: matrix,
             event_loop: Some(event_loop),
         }
     }
@@ -446,26 +477,9 @@ impl Window {
         let fov = 45.0;
         let scale_factor = self.inner_window.scale_factor();
 
-        let uniforms: [[f32; 4]; 4] = Window::calculate_carbide_to_wgpu_matrix(dimension, fov, scale_factor).into();
+        self.carbide_to_wgpu_matrix = Window::calculate_carbide_to_wgpu_matrix(dimension, fov, scale_factor);
 
-        let uniform_buffer = self.device.create_buffer_init(
-            &wgpu::util::BufferInitDescriptor {
-                label: Some("Uniform Buffer"),
-                contents: bytemuck::cast_slice(&[uniforms]),
-                usage: wgpu::BufferUsage::UNIFORM | wgpu::BufferUsage::COPY_DST,
-            }
-        );
-
-        let uniform_bind_group = self.device.create_bind_group(&wgpu::BindGroupDescriptor {
-            layout: &self.uniform_bind_group_layout,
-            entries: &[
-                wgpu::BindGroupEntry {
-                    binding: 0,
-                    resource: wgpu::BindingResource::Buffer(uniform_buffer.slice(..)),
-                }
-            ],
-            label: Some("uniform_bind_group"),
-        });
+        let uniform_bind_group = Window::matrix_to_uniform_bind_group(&self.device, &self.uniform_bind_group_layout, self.carbide_to_wgpu_matrix);
 
         self.uniform_bind_group = uniform_bind_group;
 
@@ -571,15 +585,20 @@ impl Window {
         println!("atlas: {:?}us", now.elapsed().as_micros());
         let now = Instant::now();
 
+        let mut uniform_bind_groups = vec![];
+
         let commands = create_render_pass_commands(
             &self.diffuse_bind_group,
             &mut self.bind_groups,
+            &mut uniform_bind_groups,
             &self.image_map,
             &self.mesh,
             &self.device,
             &self.glyph_cache_tex,
             &self.atlas_cache_tex,
             &self.texture_bind_group_layout,
+            &self.uniform_bind_group_layout,
+            self.carbide_to_wgpu_matrix,
         );
         println!("commands: {:?}us", now.elapsed().as_micros());
         //println!("{:#?}", self.mesh.vertices());
@@ -664,6 +683,9 @@ impl Window {
                         } else {
                             render_pass.set_pipeline(&self.render_pipeline_in_mask);
                         }
+                    }
+                    RenderPassCommand::Transform { uniform_bind_group_index } => {
+                        render_pass.set_bind_group(1, &uniform_bind_groups[uniform_bind_group_index], &[]);
                     }
                 }
             }

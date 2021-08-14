@@ -1,8 +1,11 @@
+use cgmath::Matrix4;
+
 use crate::Color;
 use crate::color::Rgba;
 use crate::draw::{Position, Rect};
 use crate::draw::shape::triangle::Triangle;
 use crate::image_map;
+use crate::layout::BasicLayouter;
 use crate::text::Glyph;
 use crate::widget::ColoredPoint;
 
@@ -15,6 +18,8 @@ pub enum PrimitiveKind {
 
     Stencil(Vec<Triangle<Position>>),
     DeStencil,
+    Transform(Matrix4<f32>, BasicLayouter),
+    DeTransform,
 
     /// A filled `Rectangle`.
     ///

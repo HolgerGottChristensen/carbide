@@ -7,6 +7,7 @@
 
 use std::{fmt, ops};
 
+use cgmath::{Matrix4, SquareMatrix, Vector3};
 use image::{DynamicImage, GenericImage, GenericImageView};
 use instant::Instant;
 use rusttype::gpu_cache::Cache as RustTypeGlyphCache;
@@ -15,6 +16,7 @@ use rusttype::gpu_cache::CacheWriteErr as RustTypeCacheWriteError;
 use crate::{color, image_map, render};
 use crate::draw::{Position, Rect, Scalar};
 use crate::environment::Environment;
+use crate::layout::BasicLayouter;
 use crate::mesh::{
     DEFAULT_GLYPH_CACHE_DIMS, GLYPH_CACHE_POSITION_TOLERANCE, GLYPH_CACHE_SCALE_TOLERANCE,
     MODE_GEOMETRY, MODE_IMAGE, MODE_TEXT, MODE_TEXT_COLOR,
@@ -62,6 +64,7 @@ pub enum Command {
     Scissor(Scissor),
     Stencil(std::ops::Range<usize>),
     DeStencil(std::ops::Range<usize>),
+    Transform(Matrix4<f32>),
 }
 
 /// An iterator yielding `Command`s, produced by the `Renderer::commands` method.
@@ -103,6 +106,7 @@ enum PreparedCommand {
     Scissor(Scissor),
     Stencil(std::ops::Range<usize>),
     DeStencil(std::ops::Range<usize>),
+    Transform(Matrix4<f32>),
 }
 
 impl Mesh {
@@ -228,6 +232,7 @@ impl Mesh {
         // Keep track of the scissor as it changes.
         let mut scissor_stack = vec![rect_to_scizzor(viewport)];
         let mut stencil_stack = vec![];
+        let mut transform_stack = vec![Matrix4::identity()];
 
         commands.push(PreparedCommand::Scissor(*scissor_stack.first().unwrap()));
 
@@ -249,6 +254,7 @@ impl Mesh {
 
         // Draw each primitive in order of depth.
         while let Some(primitive) = primitives.next_primitive() {
+            let rectangle = primitive.rect;
             match primitive.kind {
                 PrimitiveKind::Stencil(triangles) => {
                     match current_state {
@@ -317,6 +323,91 @@ impl Mesh {
                     } else {
                         panic!("Mesh tried to DeStencil when no stencil were present.");
                     }
+
+                    current_state = State::Plain {
+                        start: vertices.len(),
+                    };
+                }
+                PrimitiveKind::Transform(matrix, alignment) => {
+                    match current_state {
+                        State::Plain { start } => {
+                            commands.push(PreparedCommand::Plain(start..vertices.len()))
+                        }
+                        State::Image { image_id, start } => {
+                            commands.push(PreparedCommand::Image(image_id, start..vertices.len()))
+                        }
+                    }
+
+                    let latest_transform = &transform_stack[transform_stack.len() - 1];
+
+                    let new_transform = match alignment {
+                        BasicLayouter::TopLeading => {
+                            let center_x = (rectangle.position.x) as f32;
+                            let center_y = (rectangle.position.y) as f32;
+                            latest_transform * Matrix4::from_translation(Vector3::new(center_x, center_y, 0.0)) * matrix * Matrix4::from_translation(Vector3::new(-center_x, -center_y, 0.0))
+                        }
+                        BasicLayouter::Top => {
+                            let center_x = (rectangle.position.x + rectangle.dimension.width / 2.0) as f32;
+                            let center_y = (rectangle.position.y) as f32;
+                            latest_transform * Matrix4::from_translation(Vector3::new(center_x, center_y, 0.0)) * matrix * Matrix4::from_translation(Vector3::new(-center_x, -center_y, 0.0))
+                        }
+                        BasicLayouter::TopTrailing => {
+                            let center_x = (rectangle.position.x + rectangle.dimension.width) as f32;
+                            let center_y = (rectangle.position.y) as f32;
+                            latest_transform * Matrix4::from_translation(Vector3::new(center_x, center_y, 0.0)) * matrix * Matrix4::from_translation(Vector3::new(-center_x, -center_y, 0.0))
+                        }
+                        BasicLayouter::Leading => {
+                            let center_x = (rectangle.position.x) as f32;
+                            let center_y = (rectangle.position.y + rectangle.dimension.height / 2.0) as f32;
+                            latest_transform * Matrix4::from_translation(Vector3::new(center_x, center_y, 0.0)) * matrix * Matrix4::from_translation(Vector3::new(-center_x, -center_y, 0.0))
+                        }
+                        BasicLayouter::Center => {
+                            let center_x = (rectangle.position.x + rectangle.dimension.width / 2.0) as f32;
+                            let center_y = (rectangle.position.y + rectangle.dimension.height / 2.0) as f32;
+                            latest_transform * Matrix4::from_translation(Vector3::new(center_x, center_y, 0.0)) * matrix * Matrix4::from_translation(Vector3::new(-center_x, -center_y, 0.0))
+                        }
+                        BasicLayouter::Trailing => {
+                            let center_x = (rectangle.position.x + rectangle.dimension.width) as f32;
+                            let center_y = (rectangle.position.y + rectangle.dimension.height / 2.0) as f32;
+                            latest_transform * Matrix4::from_translation(Vector3::new(center_x, center_y, 0.0)) * matrix * Matrix4::from_translation(Vector3::new(-center_x, -center_y, 0.0))
+                        }
+                        BasicLayouter::BottomLeading => {
+                            let center_x = (rectangle.position.x) as f32;
+                            let center_y = (rectangle.position.y + rectangle.dimension.height) as f32;
+                            latest_transform * Matrix4::from_translation(Vector3::new(center_x, center_y, 0.0)) * matrix * Matrix4::from_translation(Vector3::new(-center_x, -center_y, 0.0))
+                        }
+                        BasicLayouter::Bottom => {
+                            let center_x = (rectangle.position.x + rectangle.dimension.width / 2.0) as f32;
+                            let center_y = (rectangle.position.y + rectangle.dimension.height) as f32;
+                            latest_transform * Matrix4::from_translation(Vector3::new(center_x, center_y, 0.0)) * matrix * Matrix4::from_translation(Vector3::new(-center_x, -center_y, 0.0))
+                        }
+                        BasicLayouter::BottomTrailing => {
+                            let center_x = (rectangle.position.x + rectangle.dimension.width) as f32;
+                            let center_y = (rectangle.position.y + rectangle.dimension.height) as f32;
+                            latest_transform * Matrix4::from_translation(Vector3::new(center_x, center_y, 0.0)) * matrix * Matrix4::from_translation(Vector3::new(-center_x, -center_y, 0.0))
+                        }
+                    };
+
+                    transform_stack.push(new_transform);
+
+                    commands.push(PreparedCommand::Transform(new_transform));
+
+                    current_state = State::Plain {
+                        start: vertices.len(),
+                    };
+                }
+                PrimitiveKind::DeTransform => {
+                    match current_state {
+                        State::Plain { start } => {
+                            commands.push(PreparedCommand::Plain(start..vertices.len()))
+                        }
+                        State::Image { image_id, start } => {
+                            commands.push(PreparedCommand::Image(image_id, start..vertices.len()))
+                        }
+                    }
+
+                    transform_stack.pop();
+                    commands.push(PreparedCommand::Transform(*&transform_stack[transform_stack.len() - 1]));
 
                     current_state = State::Plain {
                         start: vertices.len(),
@@ -686,6 +777,7 @@ impl<'a> Iterator for Commands<'a> {
             PreparedCommand::Image(id, ref range) => Command::Draw(Draw::Image(id, range.clone())),
             PreparedCommand::Stencil(ref range) => Command::Stencil(range.clone()),
             PreparedCommand::DeStencil(ref range) => Command::DeStencil(range.clone()),
+            PreparedCommand::Transform(ref transform) => Command::Transform(*transform)
         })
     }
 }

@@ -34,6 +34,7 @@ pub trait Shape: Widget + 'static {
     fn get_triangle_store_mut(&mut self) -> &mut TriangleStore;
     fn get_stroke_style(&self) -> StrokeStyle;
     fn get_shape_style(&self) -> ShapeStyle;
+    // Todo: add primitives to before and after the shape.
     fn triangles(&mut self, env: &mut Environment) -> Vec<Triangle<Position>> {
         let mut primitives = self.get_primitives(env);
         if primitives.len() >= 1 {
