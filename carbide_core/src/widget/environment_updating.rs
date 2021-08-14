@@ -1,183 +1,232 @@
-use crate::event::{KeyboardEvent, MouseEvent, WidgetEvent};
+use crate::draw::{Dimension, Position};
+use crate::event::{KeyboardEvent, KeyboardEventHandler, MouseEvent, MouseEventHandler, OtherEventHandler, WidgetEvent};
 use crate::event::Event;
+use crate::focus::{Focus, Focusable, Refocus};
 use crate::prelude::*;
 
-// /// A basic, non-interactive rectangle shape widget.
-// #[derive(Debug, Clone, Widget)]
-// #[event(process_keyboard_event, process_mouse_event, process_other_event)]
-// pub struct EnvUpdating<GS> where GS: GlobalStateContract {
-//     id: Uuid,
-//     child: Box<dyn Widget<GS>>,
-//     position: Point,
-//     dimension: Dimensions,
-//     envs_to_update: Vec<EnvironmentStateContainer<GS>>,
-// }
-//
-// impl<GS: GlobalStateContract> EnvUpdating<GS> {
-//     pub fn new(child: Box<dyn Widget<GS>>) -> Box<EnvUpdating<GS>> {
-//         Box::new(EnvUpdating {
-//             id: Uuid::new_v4(),
-//             child,
-//             position: [0.0, 0.0],
-//             dimension: [100.0, 100.0],
-//             envs_to_update: vec![],
-//         })
-//     }
-//
-//     pub fn add(&mut self, env_to_update: EnvironmentStateContainer<GS>) {
-//         self.envs_to_update.push(env_to_update);
-//     }
-//
-//     fn process_keyboard_event(&mut self, event: &KeyboardEvent, env: &mut Environment<GS>, global_state: &GlobalStateContainer<GS>) {
-//         self.insert_into_env(env);
-//
-//         self.process_keyboard_event_default(event, env, global_state);
-//
-//         self.remove_from_env(env);
-//     }
-//
-//     fn process_mouse_event(&mut self, event: &MouseEvent, consumed: &bool, env: &mut Environment<GS>, global_state: &GlobalStateContainer<GS>) {
-//         self.insert_into_env(env);
-//
-//         self.process_mouse_event_default(event, consumed, env, global_state);
-//
-//         self.remove_from_env(env);
-//     }
-//
-//     fn process_other_event(&mut self, event: &WidgetEvent, env: &mut Environment<GS>, global_state: &GlobalStateContainer<GS>) {
-//         self.insert_into_env(env);
-//
-//         self.process_other_event_default(event, env, global_state);
-//
-//         self.remove_from_env(env);
-//     }
-//
-//     fn remove_from_env(&self, env: &mut Environment<GS>) {
-//         for _ in &self.envs_to_update {
-//             env.pop()
-//         }
-//     }
-//
-//     fn insert_into_env(&mut self, env: &mut Environment<GS>) {
-//         for env_to_update in &mut self.envs_to_update {
-//             match env_to_update {
-//                 EnvironmentStateContainer::String { key, value } => {
-//                     let to_update = (&***value).clone();
-//
-//                     env.push(EnvironmentVariable::String { key: key.clone(), value: to_update })
-//                 }
-//                 EnvironmentStateContainer::U32 { key, value } => {
-//                     let to_update = **value.clone();
-//
-//                     env.push(EnvironmentVariable::U32 { key: key.clone(), value: to_update })
-//                 }
-//                 EnvironmentStateContainer::F64 { key, value } => {
-//                     let to_update = **value.clone();
-//
-//                     env.push(EnvironmentVariable::F64 { key: key.clone(), value: to_update })
-//                 }
-//                 EnvironmentStateContainer::Color { key, value } => {
-//                     let to_update = *value.clone();
-//
-//                     env.push(EnvironmentVariable::Color { key: key.clone(), value: to_update })
-//                 }
-//                 EnvironmentStateContainer::FontSize { key, value } => {
-//                     let to_update = *value.clone();
-//
-//                     env.push(EnvironmentVariable::FontSize { key: key.clone(), value: to_update })
-//                 }
-//                 EnvironmentStateContainer::I32 { key, value } => {
-//                     let to_update = **value.clone();
-//
-//                     env.push(EnvironmentVariable::I32 { key: key.clone(), value: to_update })
-//                 }
-//             }
-//         }
-//     }
-// }
-//
-//
-// impl<GS: GlobalStateContract> Layout<GS> for EnvUpdating<GS> {
-//     fn flexibility(&self) -> u32 {
-//         self.child.flexibility()
-//     }
-//
-//     fn calculate_size(&mut self, requested_size: Dimensions, env: &mut Environment<GS>) -> Dimensions {
-//         self.dimension = self.child.calculate_size(requested_size, env);
-//         self.dimension
-//     }
-//
-//     fn position_children(&mut self) {
-//         let positioning = BasicLayouter::Center.position();
-//         let position = self.position;
-//         let dimension = self.dimension;
-//
-//         positioning(position, dimension, &mut self.child);
-//         self.child.position_children();
-//     }
-// }
-//
-// impl<GS: GlobalStateContract> CommonWidget<GS> for EnvUpdating<GS> {
-//     fn id(&self) -> Uuid {
-//         self.id
-//     }
-//
-//     fn set_id(&mut self, id: Uuid) {
-//         self.id = id;
-//     }
-//
-//     fn flag(&self) -> Flags {
-//         Flags::EMPTY
-//     }
-//
-//     fn get_children(&self) -> WidgetIter<GS> {
-//         if self.child.flag() == Flags::PROXY {
-//             self.child.get_children()
-//         } else {
-//             WidgetIter::single(&self.child)
-//         }
-//     }
-//
-//     fn get_children_mut(&mut self) -> WidgetIterMut<GS> {
-//         if self.child.flag() == Flags::PROXY {
-//             self.child.get_children_mut()
-//         } else {
-//             WidgetIterMut::single(&mut self.child)
-//         }
-//     }
-//
-//     fn proxied_children(&mut self) -> WidgetIterMut<GS> {
-//         WidgetIterMut::single(&mut self.child)
-//     }
-//
-//     fn proxied_children_rev(&mut self) -> WidgetIterMut<GS> {
-//         WidgetIterMut::single(&mut self.child)
-//     }
-//
-//
-//     fn position(&self) -> Point {
-//         self.position
-//     }
-//
-//     fn set_position(&mut self, position: Dimensions) {
-//         self.position = position;
-//     }
-//
-//     fn dimension(&self) -> Dimensions {
-//         self.dimension
-//     }
-//
-//     fn set_dimension(&mut self, dimensions: Dimensions) {
-//         self.dimension = dimensions
-//     }
-// }
-//
-// impl<GS: GlobalStateContract> Render<GS> for EnvUpdating<GS> {
-//     fn get_primitives(&mut self, env: &mut Environment<GS>) -> Vec<Primitive> {
-//         let prims = self.child.get_primitives(env);
-//         return prims;
-//     }
-// }
-//
-//
-// impl<GS: GlobalStateContract> WidgetExt<GS> for EnvUpdating<GS> {}
+#[derive(Debug, Clone, Widget)]
+#[carbide_derive(Layout, StateSync)]
+pub struct EnvUpdating {
+    id: Uuid,
+    child: Box<dyn Widget>,
+    position: Position,
+    dimension: Dimension,
+    envs_to_update: Vec<EnvironmentStateContainer>,
+}
+
+impl EnvUpdating {
+    pub fn new(child: Box<dyn Widget>) -> Box<Self> {
+        Box::new(EnvUpdating {
+            id: Uuid::new_v4(),
+            child,
+            position: Position::default(),
+            dimension: Dimension::default(),
+            envs_to_update: vec![],
+        })
+    }
+
+    pub fn add(&mut self, env_to_update: EnvironmentStateContainer) {
+        self.envs_to_update.push(env_to_update);
+    }
+
+    fn remove_from_env(&self, env: &mut Environment) {
+        for _ in &self.envs_to_update {
+            env.pop()
+        }
+    }
+
+    fn insert_into_env(&mut self, env: &mut Environment) {
+        for env_to_update in &mut self.envs_to_update {
+            match env_to_update {
+                EnvironmentStateContainer::String { key, value } => {
+                    value.capture_state(env);
+                    let to_update = value.value().clone();
+
+                    env.push(EnvironmentVariable::String { key: key.clone(), value: to_update });
+                    value.release_state(env);
+                }
+                EnvironmentStateContainer::U32 { key, value } => {
+                    value.capture_state(env);
+                    let to_update = *value.value();
+
+                    env.push(EnvironmentVariable::U32 { key: key.clone(), value: to_update });
+                    value.release_state(env);
+                }
+                EnvironmentStateContainer::F64 { key, value } => {
+                    value.capture_state(env);
+                    let to_update = *value.value();
+
+                    env.push(EnvironmentVariable::F64 { key: key.clone(), value: to_update });
+                    value.release_state(env);
+                }
+                EnvironmentStateContainer::Color { key, value } => {
+                    value.capture_state(env);
+                    let to_update = *value.value();
+
+                    env.push(EnvironmentVariable::Color { key: key.clone(), value: to_update });
+                    value.release_state(env);
+                }
+                EnvironmentStateContainer::FontSize { key, value } => {
+                    value.capture_state(env);
+                    let to_update = *value.value();
+
+                    env.push(EnvironmentVariable::FontSize { key: key.clone(), value: to_update });
+                    value.release_state(env);
+                }
+                EnvironmentStateContainer::I32 { key, value } => {
+                    value.capture_state(env);
+                    let to_update = *value.value();
+
+                    env.push(EnvironmentVariable::I32 { key: key.clone(), value: to_update });
+                    value.release_state(env);
+                }
+            }
+        }
+    }
+}
+
+impl OtherEventHandler for EnvUpdating {
+    fn process_other_event(&mut self, event: &WidgetEvent, env: &mut Environment) {
+        self.insert_into_env(env);
+
+        for child in self.proxied_children() {
+            child.process_other_event(event, env);
+        }
+
+        self.remove_from_env(env);
+    }
+}
+
+impl KeyboardEventHandler for EnvUpdating {
+    fn process_keyboard_event(&mut self, event: &KeyboardEvent, env: &mut Environment) {
+        self.insert_into_env(env);
+
+        for child in self.proxied_children() {
+            child.process_keyboard_event(event, env);
+        }
+
+        self.remove_from_env(env);
+    }
+}
+
+impl MouseEventHandler for EnvUpdating {
+    fn process_mouse_event(&mut self, event: &MouseEvent, consumed: &bool, env: &mut Environment) {
+        self.insert_into_env(env);
+        for child in self.proxied_children() {
+            child.process_mouse_event(event, &consumed, env);
+            if *consumed {
+                self.remove_from_env(env);
+                return ();
+            }
+        }
+
+        self.remove_from_env(env);
+    }
+}
+
+impl Focusable for EnvUpdating {
+    fn process_focus_request(&mut self, event: &WidgetEvent, focus_request: &Refocus, env: &mut Environment) -> bool {
+        let mut any_focus = false;
+        self.insert_into_env(env);
+
+        for child in self.proxied_children() {
+            if child.process_focus_request(event, focus_request, env) {
+                any_focus = true;
+            }
+        }
+
+        self.remove_from_env(env);
+        any_focus
+    }
+
+    fn process_focus_next(&mut self, event: &WidgetEvent, focus_request: &Refocus, focus_up_for_grab: bool, env: &mut Environment) -> bool {
+        let mut focus_child = focus_up_for_grab;
+        self.insert_into_env(env);
+        for child in self.proxied_children() {
+            focus_child = child.process_focus_next(event, focus_request, focus_child, env);
+        }
+        self.remove_from_env(env);
+        focus_child
+    }
+
+    fn process_focus_previous(&mut self, event: &WidgetEvent, focus_request: &Refocus, focus_up_for_grab: bool, env: &mut Environment) -> bool {
+        let mut focus_child = focus_up_for_grab;
+        self.insert_into_env(env);
+        for child in self.proxied_children_rev() {
+            focus_child = child.process_focus_previous(event, focus_request, focus_child, env);
+        }
+        self.remove_from_env(env);
+        focus_child
+    }
+}
+
+impl Render for EnvUpdating {
+    fn process_get_primitives(&mut self, primitives: &mut Vec<Primitive>, env: &mut Environment) {
+        self.insert_into_env(env);
+
+        for child in self.children_mut() {
+            child.process_get_primitives(primitives, env);
+        }
+
+        self.remove_from_env(env);
+    }
+}
+
+
+impl CommonWidget for EnvUpdating {
+    fn id(&self) -> Uuid {
+        self.id
+    }
+
+    fn set_id(&mut self, id: Uuid) {
+        self.id = id;
+    }
+
+    fn flag(&self) -> Flags {
+        Flags::EMPTY
+    }
+
+    fn children(&self) -> WidgetIter {
+        if self.child.flag() == Flags::PROXY {
+            self.child.children()
+        } else {
+            WidgetIter::single(&self.child)
+        }
+    }
+
+    fn children_mut(&mut self) -> WidgetIterMut {
+        if self.child.flag() == Flags::PROXY {
+            self.child.children_mut()
+        } else {
+            WidgetIterMut::single(&mut self.child)
+        }
+    }
+
+    fn proxied_children(&mut self) -> WidgetIterMut {
+        WidgetIterMut::single(&mut self.child)
+    }
+
+    fn proxied_children_rev(&mut self) -> WidgetIterMut {
+        WidgetIterMut::single(&mut self.child)
+    }
+
+
+    fn position(&self) -> Position {
+        self.position
+    }
+
+    fn set_position(&mut self, position: Position) {
+        self.position = position;
+    }
+
+    fn dimension(&self) -> Dimension {
+        self.dimension
+    }
+
+    fn set_dimension(&mut self, dimensions: Dimension) {
+        self.dimension = dimensions
+    }
+}
+
+
+impl WidgetExt for EnvUpdating {}

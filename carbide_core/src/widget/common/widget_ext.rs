@@ -63,17 +63,17 @@ pub trait WidgetExt: Widget + Sized + 'static {
         Border::initialize(Box::new(self))
     }
 
-    /*fn foreground_color<C: Into<ColorState>>(self, color: C) -> Box<EnvUpdating<GS>> {
+    fn foreground_color<C: Into<ColorState>>(self, color: C) -> Box<EnvUpdating> {
         let mut e = EnvUpdating::new(Box::new(self));
         e.add(EnvironmentStateContainer::Color { key: EnvironmentColor::Label, value: color.into() });
 
         e
     }
 
-    fn accent_color<C: Into<ColorState>>(self, color: C) -> Box<EnvUpdating<GS>> {
+    fn accent_color<C: Into<ColorState>>(self, color: C) -> Box<EnvUpdating> {
         let mut e = EnvUpdating::new(Box::new(self));
         e.add(EnvironmentStateContainer::Color { key: EnvironmentColor::Accent, value: color.into() });
 
         e
-    }*/
+    }
 }
