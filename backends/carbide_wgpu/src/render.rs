@@ -1,6 +1,6 @@
 use std::time::Instant;
 
-use wgpu::{Extent3d, LoadOp, Operations, Origin3d, RenderPassDepthStencilAttachmentDescriptor, TextureCopyView};
+use wgpu::{Extent3d, ImageCopyTexture, LoadOp, Operations, Origin3d, RenderPassDepthStencilAttachment};
 use wgpu::util::DeviceExt;
 
 use carbide_core::draw::{Dimension, Position, Rect};
@@ -111,13 +111,14 @@ impl Window {
                         render_pass_ops(RenderPassOps::Middle)
                     };
                     let mut render_pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
-                        color_attachments: &[wgpu::RenderPassColorAttachmentDescriptor {
-                            attachment: &self.main_tex_view, // Here is the render target
+                        label: None,
+                        color_attachments: &[wgpu::RenderPassColorAttachment {
+                            view: &self.main_tex_view, // Here is the render target
                             resolve_target: None,
                             ops: color_op,
                         }],
-                        depth_stencil_attachment: Some(RenderPassDepthStencilAttachmentDescriptor {
-                            attachment: &self.depth_texture_view,
+                        depth_stencil_attachment: Some(RenderPassDepthStencilAttachment {
+                            view: &self.depth_texture_view,
                             depth_ops: None,
                             stencil_ops: Some(stencil_op),
                         }),
@@ -172,29 +173,31 @@ impl Window {
                     }
                 }
                 RenderPass::Filter(vertex_range) => {
-                    encoder.copy_texture_to_texture(TextureCopyView {
+                    encoder.copy_texture_to_texture(ImageCopyTexture {
                         texture: &self.main_tex,
                         mip_level: 0,
                         origin: Default::default(),
-                    }, TextureCopyView {
+                    }, ImageCopyTexture {
                         texture: &self.secondary_tex,
                         mip_level: 0,
                         origin: Default::default(),
                     }, Extent3d {
                         width: self.size.width,
                         height: self.size.height,
-                        depth: 1,
+                        depth_or_array_layers: 1,
                     });
 
+                    let now = Instant::now();
                     let (color_op, stencil_op) = render_pass_ops(RenderPassOps::Middle);
                     let mut render_pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
-                        color_attachments: &[wgpu::RenderPassColorAttachmentDescriptor {
-                            attachment: &self.main_tex_view, // Here is the render target
+                        label: None,
+                        color_attachments: &[wgpu::RenderPassColorAttachment {
+                            view: &self.main_tex_view, // Here is the render target
                             resolve_target: None,
                             ops: color_op,
                         }],
-                        depth_stencil_attachment: Some(RenderPassDepthStencilAttachmentDescriptor {
-                            attachment: &self.depth_texture_view,
+                        depth_stencil_attachment: Some(RenderPassDepthStencilAttachment {
+                            view: &self.depth_texture_view,
                             depth_ops: None,
                             stencil_ops: Some(stencil_op),
                         }),
@@ -205,6 +208,7 @@ impl Window {
                     render_pass.set_bind_group(1, current_uniform_bind_group, &[]);
                     render_pass.set_bind_group(0, &self.secondary_bind_group, &[]);
                     render_pass.draw(vertex_range, instance_range.clone());
+                    println!("Time for filter render pass: {:?}us", now.elapsed().as_micros());
                 }
             };
         }
@@ -229,13 +233,14 @@ impl Window {
 
         let (color_op, stencil_op) = render_pass_ops(RenderPassOps::Middle);
         let mut render_pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
-            color_attachments: &[wgpu::RenderPassColorAttachmentDescriptor {
-                attachment: &frame.view, // Here is the render target
+            label: None,
+            color_attachments: &[wgpu::RenderPassColorAttachment {
+                view: &frame.view, // Here is the render target
                 resolve_target: None,
                 ops: color_op,
             }],
-            depth_stencil_attachment: Some(RenderPassDepthStencilAttachmentDescriptor {
-                attachment: &self.depth_texture_view,
+            depth_stencil_attachment: Some(RenderPassDepthStencilAttachment {
+                view: &self.depth_texture_view,
                 depth_ops: None,
                 stencil_ops: Some(stencil_op),
             }),
@@ -250,7 +255,9 @@ impl Window {
         drop(render_pass);
 
         // submit will accept anything that implements IntoIter
+        let now = Instant::now();
         self.queue.submit(std::iter::once(encoder.finish()));
+        println!("Submit queue time: {:?}us", now.elapsed().as_micros());
         Ok(())
     }
 }

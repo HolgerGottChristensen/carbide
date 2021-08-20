@@ -1,3 +1,6 @@
+use std::num::NonZeroU32;
+
+use wgpu::{ImageCopyTexture, ImageDataLayout};
 use wgpu::util::DeviceExt;
 
 /// An command for uploading an individual glyph.
@@ -33,20 +36,20 @@ impl<'a> GlyphCacheCommand<'a> {
     }
 
     /// Create the copy view ready for copying the pixel data to the texture.
-    pub fn buffer_copy_view<'b>(&self, buffer: &'b wgpu::Buffer) -> wgpu::BufferCopyView<'b> {
-        wgpu::BufferCopyView {
+    pub fn buffer_copy_view<'b>(&self, buffer: &'b wgpu::Buffer) -> wgpu::ImageCopyBuffer<'b> {
+        wgpu::ImageCopyBuffer {
             buffer,
-            layout: wgpu::TextureDataLayout {
+            layout: ImageDataLayout {
                 offset: 0,
-                bytes_per_row: self.width,
-                rows_per_image: self.height,
+                bytes_per_row: NonZeroU32::new(self.width),
+                rows_per_image: NonZeroU32::new(self.height),
             },
         }
     }
 
     /// Create the texture copy view ready for receiving the pixel data from the buffer.
-    pub fn texture_copy_view(&self) -> wgpu::TextureCopyView {
-        wgpu::TextureCopyView {
+    pub fn texture_copy_view(&self) -> ImageCopyTexture {
+        wgpu::ImageCopyTexture {
             texture: &self.glyph_cache_texture,
             mip_level: 0,
             origin: wgpu::Origin3d::ZERO,
@@ -66,7 +69,7 @@ impl<'a> GlyphCacheCommand<'a> {
         wgpu::Extent3d {
             width: self.width,
             height: self.height,
-            depth: 1,
+            depth_or_array_layers: 1,
         }
     }
 

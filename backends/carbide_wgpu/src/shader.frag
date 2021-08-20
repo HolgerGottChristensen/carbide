@@ -12,14 +12,16 @@ layout(set = 0, binding = 2) uniform texture2D t_text_texture;
 layout(set = 0, binding = 3) uniform texture2D atlas_texture;
 
 void main() {
+    vec4 text_color = texture(sampler2D(atlas_texture, s_diffuse), v_tex_coords);
+    vec4 image_color = texture(sampler2D(t_diffuse, s_diffuse), v_tex_coords);
+
     if (v_mode == uint(0)) {
-        float a = texture(sampler2D(atlas_texture, s_diffuse), v_tex_coords).a;
-        f_color = vec4(v_color.r, v_color.g, v_color.b, a);
+        f_color = vec4(v_color.r, v_color.g, v_color.b, text_color.a);
     } else if (v_mode == uint(1)) {
-        f_color = texture(sampler2D(t_diffuse, s_diffuse), v_tex_coords);
+        f_color = image_color;
     } else if (v_mode == uint(2)) {
         f_color = v_color;
     } else if (v_mode == uint(3)) {
-        f_color = texture(sampler2D(atlas_texture, s_diffuse), v_tex_coords);
+        f_color = text_color;
     }
 }

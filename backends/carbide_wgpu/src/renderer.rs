@@ -3,11 +3,11 @@ use wgpu::{TextureFormat, TextureUsage};
 use crate::{DEFAULT_IMAGE_TEX_FORMAT, GLYPH_TEX_FORMAT};
 
 pub fn main_render_tex_desc([width, height]: [u32; 2]) -> wgpu::TextureDescriptor<'static> {
-    let depth = 1;
+    let depth_or_array_layers = 1;
     let texture_extent = wgpu::Extent3d {
         width,
         height,
-        depth,
+        depth_or_array_layers,
     };
     wgpu::TextureDescriptor {
         label: Some("carbide_wgpu_main_render_tex"),
@@ -16,18 +16,18 @@ pub fn main_render_tex_desc([width, height]: [u32; 2]) -> wgpu::TextureDescripto
         sample_count: 1,
         dimension: wgpu::TextureDimension::D2,
         format: TextureFormat::Bgra8UnormSrgb,
-        usage: wgpu::TextureUsage::OUTPUT_ATTACHMENT | TextureUsage::SAMPLED | TextureUsage::COPY_SRC | wgpu::TextureUsage::COPY_DST,
+        usage: wgpu::TextureUsage::RENDER_ATTACHMENT | TextureUsage::SAMPLED | TextureUsage::COPY_SRC | wgpu::TextureUsage::COPY_DST,
     }
 }
 
 // This will return the texture description of the secondary image. This is used as a copy destination
 // when for example applying a filter.
 pub fn secondary_render_tex_desc([width, height]: [u32; 2]) -> wgpu::TextureDescriptor<'static> {
-    let depth = 1;
+    let depth_or_array_layers = 1;
     let texture_extent = wgpu::Extent3d {
         width,
         height,
-        depth,
+        depth_or_array_layers,
     };
     wgpu::TextureDescriptor {
         label: Some("carbide_wgpu_secondary_render_tex"),
@@ -41,11 +41,11 @@ pub fn secondary_render_tex_desc([width, height]: [u32; 2]) -> wgpu::TextureDesc
 }
 
 pub fn glyph_cache_tex_desc([width, height]: [u32; 2]) -> wgpu::TextureDescriptor<'static> {
-    let depth = 1;
+    let depth_or_array_layers = 1;
     let texture_extent = wgpu::Extent3d {
         width,
         height,
-        depth,
+        depth_or_array_layers,
     };
     wgpu::TextureDescriptor {
         label: Some("carbide_wgpu_glyph_cache_texture"),
@@ -59,11 +59,11 @@ pub fn glyph_cache_tex_desc([width, height]: [u32; 2]) -> wgpu::TextureDescripto
 }
 
 pub fn atlas_cache_tex_desc([width, height]: [u32; 2]) -> wgpu::TextureDescriptor<'static> {
-    let depth = 1;
+    let depth_or_array_layers = 1;
     let texture_extent = wgpu::Extent3d {
         width,
         height,
-        depth,
+        depth_or_array_layers,
     };
     wgpu::TextureDescriptor {
         label: Some("carbide_wgpu_atlas_cache_texture"),

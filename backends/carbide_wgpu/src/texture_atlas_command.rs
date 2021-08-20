@@ -1,3 +1,5 @@
+use std::num::NonZeroU32;
+
 use wgpu::util::DeviceExt;
 
 /// An command for uploading an individual glyph.
@@ -33,20 +35,20 @@ impl<'a> TextureAtlasCommand<'a> {
     }
 
     /// Create the copy view ready for copying the pixel data to the texture.
-    pub fn buffer_copy_view<'b>(&self, buffer: &'b wgpu::Buffer) -> wgpu::BufferCopyView<'b> {
-        wgpu::BufferCopyView {
+    pub fn buffer_copy_view<'b>(&self, buffer: &'b wgpu::Buffer) -> wgpu::ImageCopyBuffer<'b> {
+        wgpu::ImageCopyBuffer {
             buffer,
-            layout: wgpu::TextureDataLayout {
+            layout: wgpu::ImageDataLayout {
                 offset: 0,
-                bytes_per_row: 4 * self.width,
-                rows_per_image: self.height,
+                bytes_per_row: NonZeroU32::new(4 * self.width),
+                rows_per_image: NonZeroU32::new(self.height),
             },
         }
     }
 
     /// Create the texture copy view ready for receiving the pixel data from the buffer.
-    pub fn texture_copy_view(&self) -> wgpu::TextureCopyView {
-        wgpu::TextureCopyView {
+    pub fn texture_copy_view(&self) -> wgpu::ImageCopyTexture {
+        wgpu::ImageCopyTexture {
             texture: &self.texture_atlas_texture,
             mip_level: 0,
             origin: wgpu::Origin3d::ZERO,
@@ -66,7 +68,7 @@ impl<'a> TextureAtlasCommand<'a> {
         wgpu::Extent3d {
             width: self.width,
             height: self.height,
-            depth: 1,
+            depth_or_array_layers: 1,
         }
     }
 
