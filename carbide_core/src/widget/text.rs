@@ -165,8 +165,6 @@ impl Layout for Text {
             self.dimension = internal.calculate_size(requested_size, env);
         }
 
-        println!("Time for calculate size: {}us", now.elapsed().as_micros());
-
         self.dimension
     }
 

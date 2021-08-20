@@ -13,7 +13,7 @@ use carbide_wgpu::window::*;
 fn main() {
     env_logger::init();
 
-    let icon_path = Window::path_to_assets("images/rust_press.png");
+    let icon_path = Window::relative_path_to_assets("images/rust_press.png");
 
     let mut window = Window::new(
         "Scale example".to_string(),

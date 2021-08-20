@@ -43,10 +43,10 @@ impl State<u32> for EnvironmentFontSizeState {
     fn release_state(&mut self, _: &mut Environment) {}
 
     fn value(&self) -> ValueRef<u32> {
-        todo!() //Box::new(self.value.borrow())
+        ValueRef::Borrow(&self.value)
     }
 
     fn value_mut(&mut self) -> ValueRefMut<u32> {
-        todo!() //Box::new(self.value.borrow_mut())
+        ValueRefMut::Borrow(&mut self.value)
     }
 }

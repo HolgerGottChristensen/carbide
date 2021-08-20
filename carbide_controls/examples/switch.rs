@@ -11,7 +11,7 @@ use carbide_wgpu::window::Window;
 fn main() {
     env_logger::init();
 
-    let icon_path = Window::<bool>::path_to_assets("images/rust_press.png");
+    let icon_path = Window::<bool>::relative_path_to_assets("images/rust_press.png");
 
     let mut window = Window::new(
         "Switch Example - Carbide".to_string(),

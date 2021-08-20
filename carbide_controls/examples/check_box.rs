@@ -10,7 +10,7 @@ use carbide_wgpu::window::Window;
 fn main() {
     env_logger::init();
 
-    let icon_path = Window::<String>::path_to_assets("images/rust_press.png");
+    let icon_path = Window::<String>::relative_path_to_assets("images/rust_press.png");
 
     let mut window = Window::new(
         "Checkbox Example - Carbide".to_string(),

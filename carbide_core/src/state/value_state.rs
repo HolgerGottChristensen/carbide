@@ -74,3 +74,9 @@ impl From<u32> for TState<f64> {
         WidgetState::new(ValueState::new(t as f64))
     }
 }
+
+impl From<&str> for TState<String> {
+    fn from(t: &str) -> Self {
+        WidgetState::new(ValueState::new(t.to_string()))
+    }
+}

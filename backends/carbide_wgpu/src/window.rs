@@ -39,6 +39,7 @@ use crate::texture_atlas_command::TextureAtlasCommand;
 use crate::vertex::Vertex;
 
 // Todo: Look in to multisampling: https://github.com/gfx-rs/wgpu-rs/blob/v0.6/examples/msaa-line/main.rs
+// An alternative is
 pub struct Window {
     surface: wgpu::Surface,
     pub(crate) device: wgpu::Device,
@@ -111,7 +112,7 @@ impl carbide_core::window::TWindow for Window {
 }
 
 impl Window {
-    pub fn path_to_assets(path: &str) -> PathBuf {
+    pub fn relative_path_to_assets(path: &str) -> PathBuf {
         let assets = find_folder::Search::KidsThenParents(3, 5)
             .for_folder("assets")
             .unwrap();
@@ -507,6 +508,15 @@ impl Window {
         });
         let depth_texture_view = depth_texture.create_view(&Default::default());
 
+        /*let smaa = SmaaTarget::new(
+            &device,
+            &queue,
+            window.inner_size().width,
+            window.inner_size().height,
+            swapchain_format,
+            SmaaMode::Smaa1X,
+        );*/
+
         Self {
             surface,
             device,
@@ -565,6 +575,126 @@ impl Window {
         let depth_texture_view = depth_texture.create_view(&Default::default());
         self.depth_texture_view = depth_texture_view;
 
+        let main_tex = self.device.create_texture(&main_render_tex_desc([new_size.width, new_size.height]));
+        let main_tex_view = main_tex.create_view(&Default::default());
+        let secondary_tex = self.device.create_texture(&secondary_render_tex_desc([new_size.width, new_size.height]));
+        let secondary_tex_view = secondary_tex.create_view(&Default::default());
+
+        self.main_tex = main_tex;
+        self.main_tex_view = main_tex_view;
+        self.secondary_tex = secondary_tex;
+        self.secondary_tex_view = secondary_tex_view;
+
+        let main_texture_bind_group_layout =
+            self.device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
+                entries: &[
+                    wgpu::BindGroupLayoutEntry {
+                        binding: 0,
+                        visibility: wgpu::ShaderStage::FRAGMENT,
+                        ty: wgpu::BindingType::SampledTexture {
+                            multisampled: false,
+                            dimension: wgpu::TextureViewDimension::D2,
+                            component_type: wgpu::TextureComponentType::Uint,
+                        },
+                        count: None,
+                    },
+                    wgpu::BindGroupLayoutEntry {
+                        binding: 1,
+                        visibility: wgpu::ShaderStage::FRAGMENT,
+                        ty: wgpu::BindingType::Sampler { comparison: false },
+                        count: None,
+                    },
+                    wgpu::BindGroupLayoutEntry {
+                        binding: 2,
+                        visibility: wgpu::ShaderStage::FRAGMENT,
+                        ty: wgpu::BindingType::SampledTexture {
+                            multisampled: false,
+                            dimension: wgpu::TextureViewDimension::D2,
+                            component_type: wgpu::TextureComponentType::Uint,
+                        },
+                        count: None,
+                    },
+                    wgpu::BindGroupLayoutEntry {
+                        binding: 3,
+                        visibility: wgpu::ShaderStage::FRAGMENT,
+                        ty: wgpu::BindingType::SampledTexture {
+                            multisampled: false,
+                            dimension: wgpu::TextureViewDimension::D2,
+                            component_type: wgpu::TextureComponentType::Uint,
+                        },
+                        count: None,
+                    },
+                ],
+                label: Some("texture_bind_group_layout"),
+            });
+
+        let main_tex_sampler = self.device.create_sampler(&wgpu::SamplerDescriptor {
+            address_mode_u: wgpu::AddressMode::ClampToEdge,
+            address_mode_v: wgpu::AddressMode::ClampToEdge,
+            address_mode_w: wgpu::AddressMode::ClampToEdge,
+            mag_filter: wgpu::FilterMode::Linear,
+            min_filter: wgpu::FilterMode::Linear,
+            mipmap_filter: wgpu::FilterMode::Nearest,
+            ..Default::default()
+        });
+
+        let main_bind_group = self.device.create_bind_group(&wgpu::BindGroupDescriptor {
+            layout: &main_texture_bind_group_layout,
+            entries: &[
+                wgpu::BindGroupEntry {
+                    binding: 0,
+                    resource: wgpu::BindingResource::TextureView(&self.main_tex_view),
+                },
+                wgpu::BindGroupEntry {
+                    binding: 1,
+                    resource: wgpu::BindingResource::Sampler(&main_tex_sampler),
+                },
+                wgpu::BindGroupEntry {
+                    binding: 2,
+                    resource: wgpu::BindingResource::TextureView(
+                        &self.glyph_cache_tex.create_view(&wgpu::TextureViewDescriptor::default()),
+                    ),
+                },
+                wgpu::BindGroupEntry {
+                    binding: 3,
+                    resource: wgpu::BindingResource::TextureView(
+                        &self.atlas_cache_tex.create_view(&wgpu::TextureViewDescriptor::default()),
+                    ),
+                },
+            ],
+            label: Some("diffuse_bind_group"),
+        });
+
+        let secondary_bind_group = self.device.create_bind_group(&wgpu::BindGroupDescriptor {
+            layout: &main_texture_bind_group_layout,
+            entries: &[
+                wgpu::BindGroupEntry {
+                    binding: 0,
+                    resource: wgpu::BindingResource::TextureView(&self.secondary_tex_view),
+                },
+                wgpu::BindGroupEntry {
+                    binding: 1,
+                    resource: wgpu::BindingResource::Sampler(&main_tex_sampler),
+                },
+                wgpu::BindGroupEntry {
+                    binding: 2,
+                    resource: wgpu::BindingResource::TextureView(
+                        &self.glyph_cache_tex.create_view(&wgpu::TextureViewDescriptor::default()),
+                    ),
+                },
+                wgpu::BindGroupEntry {
+                    binding: 3,
+                    resource: wgpu::BindingResource::TextureView(
+                        &self.atlas_cache_tex.create_view(&wgpu::TextureViewDescriptor::default()),
+                    ),
+                },
+            ],
+            label: Some("diffuse_bind_group"),
+        });
+
+        self.main_bind_group = main_bind_group;
+        self.secondary_bind_group = secondary_bind_group;
+
         let dimension = Dimension::new(new_size.width as Scalar, new_size.height as Scalar);
         let fov = 45.0;
         let scale_factor = self.inner_window.scale_factor();
@@ -591,7 +721,6 @@ impl Window {
     fn update(&mut self) {
         self.ui.delegate_events();
     }
-
 
     pub fn run_event_loop(mut self) {
         // Make the state sync on event loop run
