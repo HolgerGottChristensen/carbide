@@ -8,7 +8,7 @@ use std::time::{Duration, Instant};
 use cgmath::{Deg, Matrix4, Point3, Rad, SquareMatrix, Vector3};
 pub use futures::executor::block_on;
 use image::DynamicImage;
-use smaa::{SmaaMode, SmaaTarget};
+//use smaa::{SmaaMode, SmaaTarget};
 use uuid::Uuid;
 use wgpu::{BindGroup, BindGroupLayout, BufferBindingType, Device, Extent3d, PresentMode, Texture, TextureSampleType, TextureView, TextureViewDimension};
 use wgpu::util::DeviceExt;
