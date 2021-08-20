@@ -45,6 +45,7 @@ fn main() -> Result<()> {
         glob("./src/**/*.comp")?,
     ];
 
+
     // This could be parallelized
     let shaders = shader_paths
         .iter_mut()

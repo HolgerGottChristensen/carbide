@@ -4,6 +4,7 @@ pub use types::*;
 
 use crate::draw::Position;
 
+pub use self::blur::*;
 pub use self::border::*;
 pub use self::clip::*;
 pub use self::clip_shape::*;
@@ -51,6 +52,7 @@ mod v_stack;
 mod z_stack;
 mod rotation_3d_effect;
 mod transform;
+mod blur;
 
 pub type Id = uuid::Uuid;
 pub type ColoredPoint = (Position, crate::color::Rgba);

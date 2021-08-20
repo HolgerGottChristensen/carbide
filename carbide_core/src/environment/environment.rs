@@ -106,7 +106,6 @@ impl Environment {
     }
 
     pub fn capture_time(&mut self) {
-        println!("Capture time");
         *self.frame_start_time.borrow_mut() = Instant::now();
     }
 

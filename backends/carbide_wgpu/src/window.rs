@@ -9,7 +9,7 @@ use cgmath::{Deg, Matrix4, Point3, Rad, SquareMatrix, Vector3};
 pub use futures::executor::block_on;
 use image::DynamicImage;
 use uuid::Uuid;
-use wgpu::{BindGroup, BindGroupLayout, Device, PresentMode, RenderPassDepthStencilAttachmentDescriptor, Texture, TextureView};
+use wgpu::{BindGroup, BindGroupLayout, Device, Extent3d, PresentMode, RenderPassDepthStencilAttachmentDescriptor, Texture, TextureCopyView, TextureView};
 use wgpu::util::DeviceExt;
 use winit::dpi::{PhysicalPosition, PhysicalSize, Size};
 use winit::event::{ElementState, Event, KeyboardInput, VirtualKeyCode, WindowEvent};
@@ -34,34 +34,41 @@ use crate::glyph_cache_command::GlyphCacheCommand;
 use crate::image::Image;
 use crate::pipeline::{create_render_pipeline, MaskType};
 use crate::render_pass_command::{create_render_pass_commands, RenderPassCommand};
-use crate::renderer::{atlas_cache_tex_desc, glyph_cache_tex_desc};
+use crate::renderer::{atlas_cache_tex_desc, glyph_cache_tex_desc, main_render_tex_desc, secondary_render_tex_desc};
 use crate::texture_atlas_command::TextureAtlasCommand;
 use crate::vertex::Vertex;
 
 // Todo: Look in to multisampling: https://github.com/gfx-rs/wgpu-rs/blob/v0.6/examples/msaa-line/main.rs
 pub struct Window {
     surface: wgpu::Surface,
-    device: wgpu::Device,
-    queue: wgpu::Queue,
+    pub(crate) device: wgpu::Device,
+    pub(crate) queue: wgpu::Queue,
     sc_desc: wgpu::SwapChainDescriptor,
-    swap_chain: wgpu::SwapChain,
-    size: winit::dpi::PhysicalSize<u32>,
-    render_pipeline_no_mask: wgpu::RenderPipeline,
-    render_pipeline_add_mask: wgpu::RenderPipeline,
-    render_pipeline_in_mask: wgpu::RenderPipeline,
-    render_pipeline_remove_mask: wgpu::RenderPipeline,
-    depth_texture_view: TextureView,
-    diffuse_bind_group: wgpu::BindGroup,
-    mesh: Mesh,
-    ui: Ui,
-    image_map: ImageMap<Image>,
-    glyph_cache_tex: Texture,
-    atlas_cache_tex: Texture,
-    bind_groups: HashMap<Id, DiffuseBindGroup>,
-    texture_bind_group_layout: BindGroupLayout,
-    uniform_bind_group_layout: BindGroupLayout,
-    uniform_bind_group: wgpu::BindGroup,
-    carbide_to_wgpu_matrix: Matrix4<f32>,
+    pub(crate) swap_chain: wgpu::SwapChain,
+    pub(crate) size: winit::dpi::PhysicalSize<u32>,
+    pub(crate) render_pipeline_no_mask: wgpu::RenderPipeline,
+    pub(crate) render_pipeline_add_mask: wgpu::RenderPipeline,
+    pub(crate) render_pipeline_in_mask: wgpu::RenderPipeline,
+    pub(crate) render_pipeline_remove_mask: wgpu::RenderPipeline,
+    pub(crate) render_pipeline_in_mask_filter: wgpu::RenderPipeline,
+    pub(crate) depth_texture_view: TextureView,
+    pub(crate) diffuse_bind_group: wgpu::BindGroup,
+    pub(crate) main_bind_group: wgpu::BindGroup,
+    pub(crate) secondary_bind_group: wgpu::BindGroup,
+    pub(crate) mesh: Mesh,
+    pub(crate) ui: Ui,
+    pub(crate) image_map: ImageMap<Image>,
+    pub(crate) glyph_cache_tex: Texture,
+    pub(crate) atlas_cache_tex: Texture,
+    pub(crate) main_tex: Texture,
+    pub(crate) main_tex_view: TextureView,
+    pub(crate) secondary_tex: Texture,
+    pub(crate) secondary_tex_view: TextureView,
+    pub(crate) bind_groups: HashMap<Id, DiffuseBindGroup>,
+    pub(crate) texture_bind_group_layout: BindGroupLayout,
+    pub(crate) uniform_bind_group_layout: BindGroupLayout,
+    pub(crate) uniform_bind_group: wgpu::BindGroup,
+    pub(crate) carbide_to_wgpu_matrix: Matrix4<f32>,
     inner_window: winit::window::Window,
     event_loop: Option<EventLoop<()>>,
 }
@@ -293,7 +300,7 @@ impl Window {
             label: Some("uniform_bind_group"),
         });
 
-        let texture_bind_group_layout =
+        let main_texture_bind_group_layout =
             device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
                 entries: &[
                     wgpu::BindGroupLayoutEntry {
@@ -336,6 +343,11 @@ impl Window {
                 label: Some("texture_bind_group_layout"),
             });
 
+        let main_tex = device.create_texture(&main_render_tex_desc([pixel_dimensions.width as u32, pixel_dimensions.height as u32]));
+        let main_tex_view = main_tex.create_view(&Default::default());
+        let secondary_tex = device.create_texture(&secondary_render_tex_desc([size.width, size.height]));
+        let secondary_tex_view = secondary_tex.create_view(&Default::default());
+
         let text_cache_tex_desc = glyph_cache_tex_desc(DEFAULT_GLYPH_CACHE_DIMS);
         let glyph_cache_tex = device.create_texture(&text_cache_tex_desc);
         let atlas_cache_tex_desc = atlas_cache_tex_desc([512, 512]);
@@ -349,12 +361,13 @@ impl Window {
 
         let vs_module = device.create_shader_module(wgpu::include_spirv!("shader.vert.spv"));
         let fs_module = device.create_shader_module(wgpu::include_spirv!("shader.frag.spv"));
+        let fs_filter_module = device.create_shader_module(wgpu::include_spirv!("filter.frag.spv"));
 
         let render_pipeline_layout =
             device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
                 label: Some("Render Pipeline Layout"),
                 bind_group_layouts: &[
-                    &texture_bind_group_layout,
+                    &main_texture_bind_group_layout,
                     &uniform_bind_group_layout,
                 ],
                 push_constant_ranges: &[],
@@ -392,6 +405,14 @@ impl Window {
             &sc_desc,
             MaskType::RemoveMask,
         );
+        let render_pipeline_in_mask_filter = create_render_pipeline(
+            &device,
+            &render_pipeline_layout,
+            &vs_module,
+            &fs_filter_module,
+            &sc_desc,
+            MaskType::InMask,
+        );
 
         let bind_groups = HashMap::new();
 
@@ -400,8 +421,72 @@ impl Window {
             &image,
             &glyph_cache_tex,
             &atlas_cache_tex,
-            &texture_bind_group_layout,
+            &main_texture_bind_group_layout,
         );
+
+        let main_tex_sampler = device.create_sampler(&wgpu::SamplerDescriptor {
+            address_mode_u: wgpu::AddressMode::ClampToEdge,
+            address_mode_v: wgpu::AddressMode::ClampToEdge,
+            address_mode_w: wgpu::AddressMode::ClampToEdge,
+            mag_filter: wgpu::FilterMode::Linear,
+            min_filter: wgpu::FilterMode::Linear,
+            mipmap_filter: wgpu::FilterMode::Nearest,
+            ..Default::default()
+        });
+
+        let main_bind_group = device.create_bind_group(&wgpu::BindGroupDescriptor {
+            layout: &main_texture_bind_group_layout,
+            entries: &[
+                wgpu::BindGroupEntry {
+                    binding: 0,
+                    resource: wgpu::BindingResource::TextureView(&main_tex_view),
+                },
+                wgpu::BindGroupEntry {
+                    binding: 1,
+                    resource: wgpu::BindingResource::Sampler(&main_tex_sampler),
+                },
+                wgpu::BindGroupEntry {
+                    binding: 2,
+                    resource: wgpu::BindingResource::TextureView(
+                        &glyph_cache_tex.create_view(&wgpu::TextureViewDescriptor::default()),
+                    ),
+                },
+                wgpu::BindGroupEntry {
+                    binding: 3,
+                    resource: wgpu::BindingResource::TextureView(
+                        &atlas_cache_tex.create_view(&wgpu::TextureViewDescriptor::default()),
+                    ),
+                },
+            ],
+            label: Some("diffuse_bind_group"),
+        });
+
+        let secondary_bind_group = device.create_bind_group(&wgpu::BindGroupDescriptor {
+            layout: &main_texture_bind_group_layout,
+            entries: &[
+                wgpu::BindGroupEntry {
+                    binding: 0,
+                    resource: wgpu::BindingResource::TextureView(&secondary_tex_view),
+                },
+                wgpu::BindGroupEntry {
+                    binding: 1,
+                    resource: wgpu::BindingResource::Sampler(&main_tex_sampler),
+                },
+                wgpu::BindGroupEntry {
+                    binding: 2,
+                    resource: wgpu::BindingResource::TextureView(
+                        &glyph_cache_tex.create_view(&wgpu::TextureViewDescriptor::default()),
+                    ),
+                },
+                wgpu::BindGroupEntry {
+                    binding: 3,
+                    resource: wgpu::BindingResource::TextureView(
+                        &atlas_cache_tex.create_view(&wgpu::TextureViewDescriptor::default()),
+                    ),
+                },
+            ],
+            label: Some("diffuse_bind_group"),
+        });
 
         let mesh = Mesh::with_glyph_cache_dimensions(DEFAULT_GLYPH_CACHE_DIMS);
 
@@ -433,15 +518,22 @@ impl Window {
             render_pipeline_add_mask,
             render_pipeline_in_mask,
             render_pipeline_remove_mask,
+            render_pipeline_in_mask_filter,
             depth_texture_view,
             diffuse_bind_group,
+            main_bind_group,
+            secondary_bind_group,
             mesh,
             ui,
             image_map,
             glyph_cache_tex,
             atlas_cache_tex,
+            main_tex,
+            main_tex_view,
+            secondary_tex,
+            secondary_tex_view,
             bind_groups,
-            texture_bind_group_layout,
+            texture_bind_group_layout: main_texture_bind_group_layout,
             uniform_bind_group_layout,
             uniform_bind_group,
             inner_window,
@@ -497,208 +589,9 @@ impl Window {
     }
 
     fn update(&mut self) {
-        let update_start = Instant::now();
         self.ui.delegate_events();
-        println!(
-            "Time for update: {:?}us",
-            update_start.elapsed().as_micros()
-        );
     }
 
-    pub fn render(&mut self) -> Result<(), wgpu::SwapChainError> {
-        // This blocks until a new frame is available.
-        let frame = self.swap_chain.get_current_frame()?.output;
-
-        let render_start = Instant::now();
-
-        let now = Instant::now();
-        let mut encoder = self
-            .device
-            .create_command_encoder(&wgpu::CommandEncoderDescriptor {
-                label: Some("Render Encoder"),
-            });
-        println!("encodere: {:?}us", now.elapsed().as_micros());
-
-        let now = Instant::now();
-        let primitives = self.ui.draw();
-        println!("Time for draw: {:?}us", now.elapsed().as_micros());
-        let now = Instant::now();
-        let fill = self
-            .mesh
-            .fill(
-                Rect::new(
-                    Position::new(0.0, 0.0),
-                    Dimension::new(self.size.width as f64, self.size.height as f64),
-                ),
-                &mut self.ui.environment,
-                &self.image_map,
-                primitives,
-            )
-            .unwrap();
-        println!("Time for fill: {:?}us", now.elapsed().as_micros());
-
-        let now = Instant::now();
-        // Check if an upload to the glyph cache is needed
-        let glyph_cache_cmd = match fill.glyph_cache_requires_upload {
-            false => None,
-            true => {
-                let (width, height) = self.mesh.glyph_cache().dimensions();
-                Some(GlyphCacheCommand {
-                    glyph_cache_pixel_buffer: self.mesh.glyph_cache_pixel_buffer(),
-                    glyph_cache_texture: &self.glyph_cache_tex,
-                    width,
-                    height,
-                })
-            }
-        };
-
-        match glyph_cache_cmd {
-            None => (),
-            Some(cmd) => {
-                cmd.load_buffer_and_encode(&self.device, &mut encoder);
-            }
-        }
-        println!("glyph_cache_cmd: {:?}us", now.elapsed().as_micros());
-        let now = Instant::now();
-
-        // Check if an upload to texture atlas is needed.
-        let texture_atlas_cmd = match fill.atlas_requires_upload {
-            true => {
-                let width = self.mesh.texture_atlas().width();
-                let height = self.mesh.texture_atlas().height();
-                Some(TextureAtlasCommand {
-                    texture_atlas_buffer: self.mesh.texture_atlas_image_as_bytes(),
-                    texture_atlas_texture: &self.atlas_cache_tex,
-                    width: 512,
-                    height: 512,
-                })
-            }
-            false => None,
-        };
-
-        match texture_atlas_cmd {
-            None => (),
-            Some(cmd) => {
-                cmd.load_buffer_and_encode(&self.device, &mut encoder);
-            }
-        }
-        println!("atlas: {:?}us", now.elapsed().as_micros());
-        let now = Instant::now();
-
-        let mut uniform_bind_groups = vec![];
-
-        let commands = create_render_pass_commands(
-            &self.diffuse_bind_group,
-            &mut self.bind_groups,
-            &mut uniform_bind_groups,
-            &self.image_map,
-            &self.mesh,
-            &self.device,
-            &self.glyph_cache_tex,
-            &self.atlas_cache_tex,
-            &self.texture_bind_group_layout,
-            &self.uniform_bind_group_layout,
-            self.carbide_to_wgpu_matrix,
-        );
-        println!("commands: {:?}us", now.elapsed().as_micros());
-        //println!("{:#?}", self.mesh.vertices());
-
-        let vertices: Vec<Vertex> = self
-            .mesh
-            .vertices()
-            .iter()
-            .map(|v| Vertex::from(*v))
-            .collect::<Vec<_>>();
-
-        let now = Instant::now();
-        let vertex_buffer = self
-            .device
-            .create_buffer_init(&wgpu::util::BufferInitDescriptor {
-                label: Some("Vertex Buffer"),
-                contents: bytemuck::cast_slice(&vertices),
-                usage: wgpu::BufferUsage::VERTEX,
-            });
-        println!("vertex_buffer: {:?}us", now.elapsed().as_micros());
-
-        {
-            let mut render_pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
-                color_attachments: &[wgpu::RenderPassColorAttachmentDescriptor {
-                    attachment: &frame.view,
-                    resolve_target: None,
-                    ops: wgpu::Operations {
-                        load: wgpu::LoadOp::Clear(wgpu::Color {
-                            r: 0.0,
-                            g: 0.0,
-                            b: 0.0,
-                            a: 1.0,
-                        }),
-                        store: true,
-                    },
-                }],
-                depth_stencil_attachment: Some(RenderPassDepthStencilAttachmentDescriptor {
-                    attachment: &self.depth_texture_view,
-                    depth_ops: None,
-                    stencil_ops: Some(wgpu::Operations {
-                        load: wgpu::LoadOp::Clear(0),
-                        store: true,
-                    }),
-                }),
-            });
-            render_pass.set_pipeline(&self.render_pipeline_no_mask); // 2.
-            render_pass.set_vertex_buffer(0, vertex_buffer.slice(..));
-            render_pass.set_bind_group(1, &self.uniform_bind_group, &[]);
-
-            let instance_range = 0..1;
-            let mut stencil_level = 0;
-            for cmd in commands {
-                match cmd {
-                    RenderPassCommand::SetBindGroup { bind_group } => {
-                        render_pass.set_bind_group(0, bind_group, &[]);
-                    }
-                    RenderPassCommand::SetScissor {
-                        top_left,
-                        dimensions,
-                    } => {
-                        let [x, y] = top_left;
-                        let [w, h] = dimensions;
-                        render_pass.set_scissor_rect(x, y, w, h);
-                    }
-                    RenderPassCommand::Draw { vertex_range } => {
-                        render_pass.draw(vertex_range, instance_range.clone());
-                    }
-                    RenderPassCommand::Stencil { vertex_range } => {
-                        stencil_level += 1;
-                        render_pass.set_pipeline(&self.render_pipeline_add_mask);
-                        render_pass.draw(vertex_range, instance_range.clone());
-                        render_pass.set_pipeline(&self.render_pipeline_in_mask);
-                        render_pass.set_stencil_reference(stencil_level);
-                    }
-                    RenderPassCommand::DeStencil { vertex_range } => {
-                        stencil_level -= 1;
-                        render_pass.set_pipeline(&self.render_pipeline_remove_mask);
-                        render_pass.draw(vertex_range, instance_range.clone());
-                        render_pass.set_stencil_reference(stencil_level);
-                        if stencil_level == 0 {
-                            render_pass.set_pipeline(&self.render_pipeline_no_mask);
-                        } else {
-                            render_pass.set_pipeline(&self.render_pipeline_in_mask);
-                        }
-                    }
-                    RenderPassCommand::Transform { uniform_bind_group_index } => {
-                        render_pass.set_bind_group(1, &uniform_bind_groups[uniform_bind_group_index], &[]);
-                    }
-                }
-            }
-        }
-
-        // submit will accept anything that implements IntoIter
-        self.queue.submit(std::iter::once(encoder.finish()));
-        println!(
-            "Time for render: {:?}us",
-            render_start.elapsed().as_micros()
-        );
-        Ok(())
-    }
 
     pub fn run_event_loop(mut self) {
         // Make the state sync on event loop run

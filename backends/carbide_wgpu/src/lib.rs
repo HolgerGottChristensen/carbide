@@ -8,6 +8,7 @@ mod texture;
 mod texture_atlas_command;
 mod vertex;
 pub mod window;
+mod render;
 
 const GLYPH_TEX_FORMAT: wgpu::TextureFormat = wgpu::TextureFormat::R8Unorm;
 const DEFAULT_IMAGE_TEX_FORMAT: wgpu::TextureFormat = wgpu::TextureFormat::R8Unorm;

@@ -39,6 +39,11 @@ pub enum RenderPassCommand<'a> {
     },
 }
 
+pub enum RenderPass<'a> {
+    Normal(Vec<RenderPassCommand<'a>>),
+    Filter(std::ops::Range<u32>),
+}
+
 #[derive(PartialEq)]
 enum BindGroup {
     Default,
@@ -46,7 +51,7 @@ enum BindGroup {
 }
 
 pub fn create_render_pass_commands<'a>(
-    def_bind_group: &'a wgpu::BindGroup,
+    default_bind_group: &'a wgpu::BindGroup,
     bind_groups: &'a mut HashMap<Id, DiffuseBindGroup>,
     uniform_bind_groups: &mut Vec<wgpu::BindGroup>,
     image_map: &'a ImageMap<Image>,
@@ -57,7 +62,7 @@ pub fn create_render_pass_commands<'a>(
     bind_group_layout: &'a BindGroupLayout,
     uniform_bind_group_layout: &'a BindGroupLayout,
     carbide_to_wgpu_matrix: Matrix4<f32>,
-) -> Vec<RenderPassCommand<'a>> {
+) -> Vec<RenderPass<'a>> {
     bind_groups.retain(|k, _| image_map.contains_key(k));
 
     for (id, img) in image_map.iter() {
@@ -78,6 +83,7 @@ pub fn create_render_pass_commands<'a>(
     }
 
     let mut commands = vec![];
+    let mut inner_commands = vec![];
 
     let mut bind_group = None;
 
@@ -91,7 +97,29 @@ pub fn create_render_pass_commands<'a>(
                     top_left,
                     dimensions,
                 };
-                commands.push(cmd);
+                inner_commands.push(cmd);
+            }
+
+            mesh::Command::Filter(vertex_range) => {
+                let vertex_count = vertex_range.len();
+                if vertex_count <= 0 {
+                    continue;
+                }
+                // Ensure a render pipeline and bind group is set.
+                if bind_group.is_none() {
+                    bind_group = Some(BindGroup::Default);
+                    let cmd = RenderPassCommand::SetBindGroup {
+                        bind_group: default_bind_group,
+                    };
+                    inner_commands.push(cmd);
+                }
+
+                let range = vertex_range.start as u32..vertex_range.end as u32;
+                let mut new_inner_commands = vec![];
+                std::mem::swap(&mut new_inner_commands, &mut inner_commands);
+                commands.push(RenderPass::Normal(new_inner_commands));
+                commands.push(RenderPass::Filter(range));
+                bind_group = None;
             }
 
             mesh::Command::Stencil(vertex_range) => {
@@ -103,28 +131,28 @@ pub fn create_render_pass_commands<'a>(
                 if bind_group.is_none() {
                     bind_group = Some(BindGroup::Default);
                     let cmd = RenderPassCommand::SetBindGroup {
-                        bind_group: def_bind_group,
+                        bind_group: default_bind_group,
                     };
-                    commands.push(cmd);
+                    inner_commands.push(cmd);
                 }
                 let cmd = RenderPassCommand::Stencil {
                     vertex_range: vertex_range.start as u32..vertex_range.end as u32,
                 };
-                commands.push(cmd);
+                inner_commands.push(cmd);
             }
 
             mesh::Command::DeStencil(vertex_range) => {
                 let cmd = RenderPassCommand::DeStencil {
                     vertex_range: vertex_range.start as u32..vertex_range.end as u32,
                 };
-                commands.push(cmd);
+                inner_commands.push(cmd);
             }
 
             mesh::Command::Transform(matrix) => {
                 let transformed_matrix = carbide_to_wgpu_matrix * matrix;
                 let new_bind_group = Window::matrix_to_uniform_bind_group(device, uniform_bind_group_layout, transformed_matrix);
 
-                commands.push(RenderPassCommand::Transform { uniform_bind_group_index: uniform_bind_groups.len() });
+                inner_commands.push(RenderPassCommand::Transform { uniform_bind_group_index: uniform_bind_groups.len() });
                 uniform_bind_groups.push(new_bind_group);
             }
             // Draw to the target with the given `draw` command.
@@ -139,14 +167,14 @@ pub fn create_render_pass_commands<'a>(
                     if bind_group.is_none() {
                         bind_group = Some(BindGroup::Default);
                         let cmd = RenderPassCommand::SetBindGroup {
-                            bind_group: def_bind_group,
+                            bind_group: default_bind_group,
                         };
-                        commands.push(cmd);
+                        inner_commands.push(cmd);
                     }
                     let cmd = RenderPassCommand::Draw {
                         vertex_range: vertex_range.start as u32..vertex_range.end as u32,
                     };
-                    commands.push(cmd);
+                    inner_commands.push(cmd);
                 }
 
                 // Draw an image whose texture data lies within the `image_map` at the
@@ -165,16 +193,18 @@ pub fn create_render_pass_commands<'a>(
                         let cmd = RenderPassCommand::SetBindGroup {
                             bind_group: &bind_groups[&image_id],
                         };
-                        commands.push(cmd);
+                        inner_commands.push(cmd);
                     }
                     let cmd = RenderPassCommand::Draw {
                         vertex_range: vertex_range.start as u32..vertex_range.end as u32,
                     };
-                    commands.push(cmd);
+                    inner_commands.push(cmd);
                 }
             },
         }
     }
+
+    commands.push(RenderPass::Normal(inner_commands));
 
     commands
 }

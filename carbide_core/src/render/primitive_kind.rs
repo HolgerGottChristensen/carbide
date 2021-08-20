@@ -18,6 +18,9 @@ pub enum PrimitiveKind {
 
     Stencil(Vec<Triangle<Position>>),
     DeStencil,
+
+    Filter,
+
     Transform(Matrix4<f32>, BasicLayouter),
     DeTransform,
 

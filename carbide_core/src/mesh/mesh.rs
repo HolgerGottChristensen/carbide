@@ -65,6 +65,7 @@ pub enum Command {
     Stencil(std::ops::Range<usize>),
     DeStencil(std::ops::Range<usize>),
     Transform(Matrix4<f32>),
+    Filter(std::ops::Range<usize>),
 }
 
 /// An iterator yielding `Command`s, produced by the `Renderer::commands` method.
@@ -107,6 +108,7 @@ enum PreparedCommand {
     Stencil(std::ops::Range<usize>),
     DeStencil(std::ops::Range<usize>),
     Transform(Matrix4<f32>),
+    Filter(std::ops::Range<usize>),
 }
 
 impl Mesh {
@@ -328,6 +330,46 @@ impl Mesh {
                         start: vertices.len(),
                     };
                 }
+                PrimitiveKind::Filter => {
+                    match current_state {
+                        State::Plain { start } => {
+                            commands.push(PreparedCommand::Plain(start..vertices.len()))
+                        }
+                        State::Image { image_id, start } => {
+                            commands.push(PreparedCommand::Image(image_id, start..vertices.len()))
+                        }
+                    }
+
+                    let start_index_for_filter = vertices.len();
+
+                    let v = |p: Position| Vertex {
+                        position: [vx(p.x), vy(p.y), 0.0],
+                        tex_coords: [(p.x / viewport.dimension.width * scale_factor) as f32, (p.y / viewport.dimension.height * scale_factor) as f32],
+                        rgba: [1.0, 1.0, 1.0, 1.0],
+                        mode: MODE_GEOMETRY,
+                    };
+
+                    let (l, r, t, b) = rectangle.l_r_b_t();
+
+                    let mut push_v = |x, y| vertices.push(v(Position::new(x, y)));
+
+                    // Bottom left triangle.
+                    push_v(l, t);
+                    push_v(r, b);
+                    push_v(l, b);
+                    // Top right triangle.
+                    push_v(l, t);
+                    push_v(r, b);
+                    push_v(r, t);
+
+                    commands.push(PreparedCommand::Filter(
+                        start_index_for_filter..vertices.len(),
+                    ));
+
+                    current_state = State::Plain {
+                        start: vertices.len(),
+                    };
+                }
                 PrimitiveKind::Transform(matrix, alignment) => {
                     match current_state {
                         State::Plain { start } => {
@@ -440,7 +482,7 @@ impl Mesh {
                         start: vertices.len(),
                     };
                 }
-                render::PrimitiveKind::UnClip => {
+                PrimitiveKind::UnClip => {
                     match current_state {
                         State::Plain { start } => {
                             commands.push(PreparedCommand::Plain(start..vertices.len()))
@@ -463,7 +505,7 @@ impl Mesh {
                         start: vertices.len(),
                     };
                 }
-                render::PrimitiveKind::Rectangle { color } => {
+                PrimitiveKind::Rectangle { color } => {
                     switch_to_plain_state!();
 
                     let color = gamma_srgb_to_linear(color.to_fsa());
@@ -490,8 +532,7 @@ impl Mesh {
                     push_v(r, b);
                     push_v(r, t);
                 }
-
-                render::PrimitiveKind::TrianglesSingleColor { color, triangles } => {
+                PrimitiveKind::TrianglesSingleColor { color, triangles } => {
                     if triangles.is_empty() {
                         continue;
                     }
@@ -513,8 +554,7 @@ impl Mesh {
                         vertices.push(v(triangle[2]));
                     }
                 }
-
-                render::PrimitiveKind::TrianglesMultiColor { triangles } => {
+                PrimitiveKind::TrianglesMultiColor { triangles } => {
                     if triangles.is_empty() {
                         continue;
                     }
@@ -534,11 +574,7 @@ impl Mesh {
                         vertices.push(v(triangle[2]));
                     }
                 }
-
-                render::PrimitiveKind::Text {
-                    color,
-                    text: glyphs,
-                } => {
+                PrimitiveKind::Text { color, text: glyphs, } => {
                     switch_to_plain_state!();
                     let color = gamma_srgb_to_linear(color.to_fsa());
                     let texture_atlas = env.get_font_atlas();
@@ -602,12 +638,7 @@ impl Mesh {
                         }
                     }
                 }
-
-                render::PrimitiveKind::Image {
-                    image_id,
-                    color,
-                    source_rect,
-                } => {
+                PrimitiveKind::Image { image_id, color, source_rect, } => {
                     let image_ref = match image_map.get(&image_id) {
                         None => continue,
                         Some(img) => img,
@@ -777,7 +808,8 @@ impl<'a> Iterator for Commands<'a> {
             PreparedCommand::Image(id, ref range) => Command::Draw(Draw::Image(id, range.clone())),
             PreparedCommand::Stencil(ref range) => Command::Stencil(range.clone()),
             PreparedCommand::DeStencil(ref range) => Command::DeStencil(range.clone()),
-            PreparedCommand::Transform(ref transform) => Command::Transform(*transform)
+            PreparedCommand::Transform(ref transform) => Command::Transform(*transform),
+            PreparedCommand::Filter(ref range) => Command::Filter(range.clone()),
         })
     }
 }
