@@ -13,8 +13,10 @@ layout(set = 0, binding = 3) uniform texture2D atlas_texture;
 
 const vec4[] gaussKernel3x3 =
 {
+// Simple offset
 //vec4(7.0, 7.0, 0.0, 1.0),
 
+// Simple motion blur
 vec4(-3.0, -3.0, 0.0, 1.0 / 7.0),
 vec4(-2.0, -2.0, 0.0, 1.0 / 7.0),
 vec4(-1.0, -1.0, 0.0, 1.0 / 7.0),
@@ -23,6 +25,7 @@ vec4(1.0, 1.0, 0.0, 1.0 / 7.0),
 vec4(2.0, 2.0, 0.0, 1.0 / 7.0),
 vec4(3.0, 3.0, 0.0, 1.0 / 7.0),
 
+// 7x7 gaussian blur
 /*vec4(-3.0, -3.0, 0.0, 1.0 / 4096.0),
 vec4(-3.0, -2.0, 0.0, 6.0 / 4096.0),
 vec4(-3.0, -1.0, 0.0, 15.0 / 4096.0),
@@ -79,6 +82,7 @@ vec4(3.0, 1.0, 0.0, 15.0 / 4096.0),
 vec4(3.0, 2.0, 0.0, 6.0 / 4096.0),
 vec4(3.0, 3.0, 0.0, 1.0 / 4096.0),*/
 
+// 3x3 gaussian blur
 /*vec4(-1.0, -1.0, 0.0,  1.0 / 16.0),
 vec4(-1.0,  0.0, 0.0,  2.0 / 16.0),
 vec4(-1.0, +1.0, 0.0,  1.0 / 16.0),
@@ -91,7 +95,7 @@ vec4(+1.0, +1.0, 0.0,  1.0 / 16.0),*/
 };
 
 void main() {
-    const vec2 texelSize = vec2(1.0) / vec2(640.0, 426.0);
+    vec2 texelSize = vec2(1.0) / vec2(640.0, 426.0);
     vec4 color = vec4(0.0);
     for (int i = 0; i < gaussKernel3x3.length(); ++i) {
         color += gaussKernel3x3[i].w * textureLod(sampler2D(t_diffuse, s_diffuse), v_tex_coords + texelSize * gaussKernel3x3[i].xy, 0);
