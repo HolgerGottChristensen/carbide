@@ -1,18 +1,18 @@
-use carbide_core::text::PolarBearMarkup;
+use carbide_core::environment::EnvironmentColor;
+use carbide_core::text::{FontFamily, FontStyle, FontWeight, PolarBearMarkup};
 use carbide_core::widget::*;
 use carbide_wgpu::window::*;
 
 fn main() {
     env_logger::init();
 
-    let icon_path = Window::<String>::relative_path_to_assets("images/rust_press.png");
+    let icon_path = Window::relative_path_to_assets("images/rust_press.png");
 
     let mut window = Window::new(
         "Hello world 2".to_string(),
         800,
         1200,
         Some(icon_path),
-        String::from("Hejsa"),
     );
 
     let mut noto_family = FontFamily::new("NotoSans");

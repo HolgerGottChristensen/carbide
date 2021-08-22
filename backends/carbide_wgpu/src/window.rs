@@ -39,8 +39,10 @@ use crate::renderer::{atlas_cache_tex_desc, glyph_cache_tex_desc, main_render_te
 use crate::texture_atlas_command::TextureAtlasCommand;
 use crate::vertex::Vertex;
 
-// Todo: Look in to multisampling: https://github.com/gfx-rs/wgpu-rs/blob/v0.6/examples/msaa-line/main.rs
-// An alternative is
+// Todo: Look into multisampling: https://github.com/gfx-rs/wgpu-rs/blob/v0.6/examples/msaa-line/main.rs
+// An alternative is https://github.com/fintelia/smaa-rs (https://github.com/gfx-rs/naga/issues/1275)
+// In v0.8 and later I see performance degradation with the filter_shader (https://github.com/gfx-rs/wgpu/issues/1842)
+
 pub struct Window {
     surface: wgpu::Surface,
     pub(crate) device: wgpu::Device,
@@ -136,7 +138,7 @@ impl Window {
         );
 
         let uniform_bind_group = device.create_bind_group(&wgpu::BindGroupDescriptor {
-            layout: layout,
+            layout,
             entries: &[
                 wgpu::BindGroupEntry {
                     binding: 0,

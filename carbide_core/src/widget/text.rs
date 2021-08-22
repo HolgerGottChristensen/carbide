@@ -143,7 +143,6 @@ impl Text {
 
 impl Layout for Text {
     fn calculate_size(&mut self, requested_size: Dimension, env: &mut Environment) -> Dimension {
-        let now = Instant::now();
         let style = self.get_style();
 
         if let None = self.internal_text {

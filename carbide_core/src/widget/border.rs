@@ -42,7 +42,7 @@ impl Layout for Border {
     fn calculate_size(&mut self, requested_size: Dimension, env: &mut Environment) -> Dimension {
         let border_width = self.border_width as f64;
         let dimensions = Dimension::new(
-            requested_size.height - border_width - border_width,
+            requested_size.width - border_width - border_width,
             requested_size.height - border_width - border_width,
         );
 
