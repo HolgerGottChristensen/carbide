@@ -31,6 +31,7 @@ use carbide_core::widget::Widget;
 pub use carbide_core::window::TWindow;
 
 use crate::diffuse_bind_group::{DiffuseBindGroup, new_diffuse};
+use crate::filter::Filter;
 use crate::glyph_cache_command::GlyphCacheCommand;
 use crate::image::Image;
 use crate::pipeline::{create_render_pipeline, create_render_pipeline_wgsl, MaskType};
@@ -58,7 +59,6 @@ pub struct Window {
     pub(crate) depth_texture_view: TextureView,
     pub(crate) diffuse_bind_group: wgpu::BindGroup,
     pub(crate) main_bind_group: wgpu::BindGroup,
-    pub(crate) secondary_bind_group: wgpu::BindGroup,
     pub(crate) mesh: Mesh,
     pub(crate) ui: Ui,
     pub(crate) image_map: ImageMap<Image>,
@@ -69,8 +69,10 @@ pub struct Window {
     pub(crate) secondary_tex: Texture,
     pub(crate) secondary_tex_view: TextureView,
     pub(crate) bind_groups: HashMap<Id, DiffuseBindGroup>,
+    pub(crate) filter_bind_groups: HashMap<u32, BindGroup>,
     pub(crate) texture_bind_group_layout: BindGroupLayout,
     pub(crate) uniform_bind_group_layout: BindGroupLayout,
+    pub(crate) filter_uniform_bind_group_layout: BindGroupLayout,
     pub(crate) uniform_bind_group: wgpu::BindGroup,
     pub(crate) carbide_to_wgpu_matrix: Matrix4<f32>,
     inner_window: winit::window::Window,
@@ -274,7 +276,7 @@ impl Window {
             &wgpu::util::BufferInitDescriptor {
                 label: Some("Uniform Buffer"),
                 contents: bytemuck::cast_slice(&[uniforms]),
-                usage: wgpu::BufferUsage::UNIFORM | wgpu::BufferUsage::COPY_DST,
+                usage: wgpu::BufferUsage::UNIFORM,
             }
         );
 
@@ -294,6 +296,38 @@ impl Window {
             label: Some("uniform_bind_group_layout"),
         });
 
+        let filter_uniform_bind_group_layout = device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
+            entries: &[
+                wgpu::BindGroupLayoutEntry {
+                    binding: 0,
+                    visibility: wgpu::ShaderStage::FRAGMENT,
+                    ty: wgpu::BindingType::Texture {
+                        sample_type: TextureSampleType::Float { filterable: true },
+                        view_dimension: TextureViewDimension::D2,
+                        multisampled: false,
+                    },
+                    count: None,
+                },
+                wgpu::BindGroupLayoutEntry {
+                    binding: 1,
+                    visibility: wgpu::ShaderStage::FRAGMENT,
+                    ty: wgpu::BindingType::Sampler { filtering: true, comparison: false },
+                    count: None,
+                },
+                wgpu::BindGroupLayoutEntry {
+                    binding: 2,
+                    visibility: wgpu::ShaderStage::FRAGMENT,
+                    ty: wgpu::BindingType::Buffer {
+                        ty: BufferBindingType::Storage { read_only: true },
+                        min_binding_size: None,
+                        has_dynamic_offset: false,
+                    },
+                    count: None,
+                }
+            ],
+            label: Some("uniform_bind_group_layout"),
+        });
+
         let uniform_bind_group = device.create_bind_group(&wgpu::BindGroupDescriptor {
             layout: &uniform_bind_group_layout,
             entries: &[
@@ -304,6 +338,7 @@ impl Window {
             ],
             label: Some("uniform_bind_group"),
         });
+
 
         let main_texture_bind_group_layout =
             device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
@@ -379,6 +414,16 @@ impl Window {
                 push_constant_ranges: &[],
             });
 
+        let filter_render_pipeline_layout =
+            device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
+                label: Some("Render Pipeline Layout"),
+                bind_group_layouts: &[
+                    &filter_uniform_bind_group_layout,
+                    &uniform_bind_group_layout,
+                ],
+                push_constant_ranges: &[],
+            });
+
         let render_pipeline_no_mask = create_render_pipeline(
             &device,
             &render_pipeline_layout,
@@ -413,13 +458,14 @@ impl Window {
         );
         let render_pipeline_in_mask_filter = create_render_pipeline_wgsl(
             &device,
-            &render_pipeline_layout,
+            &filter_render_pipeline_layout,
             &wgsl_filter_shader,
             &sc_desc,
             MaskType::InMask,
         );
 
         let bind_groups = HashMap::new();
+        let mut filter_bind_groups = HashMap::new();
 
         let diffuse_bind_group = new_diffuse(
             &device,
@@ -466,8 +512,72 @@ impl Window {
             label: Some("diffuse_bind_group"),
         });
 
-        let secondary_bind_group = device.create_bind_group(&wgpu::BindGroupDescriptor {
-            layout: &main_texture_bind_group_layout,
+        let test_filter = Filter {
+            texture_size: [600.0, 450.0],
+            number_of_filter_entries: 49,
+            filter_entries: [
+                [0.0, -3.0, -3.0, 1.0 / 4096.0],
+                [0.0, -3.0, -2.0, 6.0 / 4096.0],
+                [0.0, -3.0, -1.0, 15.0 / 4096.0],
+                [0.0, -3.0, 0.0, 20.0 / 4096.0],
+                [0.0, -3.0, 1.0, 15.0 / 4096.0],
+                [0.0, -3.0, 2.0, 6.0 / 4096.0],
+                [0.0, -3.0, 3.0, 1.0 / 4096.0],
+                [0.0, -2.0, -3.0, 6.0 / 4096.0],
+                [0.0, -2.0, -2.0, 36.0 / 4096.0],
+                [0.0, -2.0, -1.0, 90.0 / 4096.0],
+                [0.0, -2.0, 0.0, 120.0 / 4096.0],
+                [0.0, -2.0, 1.0, 90.0 / 4096.0],
+                [0.0, -2.0, 2.0, 36.0 / 4096.0],
+                [0.0, -2.0, 3.0, 6.0 / 4096.0],
+                [0.0, -1.0, -3.0, 15.0 / 4096.0],
+                [0.0, -1.0, -2.0, 90.0 / 4096.0],
+                [0.0, -1.0, -1.0, 225.0 / 4096.0],
+                [0.0, -1.0, 0.0, 300.0 / 4096.0],
+                [0.0, -1.0, 1.0, 225.0 / 4096.0],
+                [0.0, -1.0, 2.0, 90.0 / 4096.0],
+                [0.0, -1.0, 3.0, 15.0 / 4096.0],
+                [0.0, 0.0, -3.0, 20.0 / 4096.0],
+                [0.0, 0.0, -2.0, 120.0 / 4096.0],
+                [0.0, 0.0, -1.0, 300.0 / 4096.0],
+                [0.0, 0.0, 0.0, 400.0 / 4096.0],
+                [0.0, 0.0, 1.0, 300.0 / 4096.0],
+                [0.0, 0.0, 2.0, 120.0 / 4096.0],
+                [0.0, 0.0, 3.0, 20.0 / 4096.0],
+                [0.0, 1.0, -3.0, 15.0 / 4096.0],
+                [0.0, 1.0, -2.0, 90.0 / 4096.0],
+                [0.0, 1.0, -1.0, 225.0 / 4096.0],
+                [0.0, 1.0, 0.0, 300.0 / 4096.0],
+                [0.0, 1.0, 1.0, 225.0 / 4096.0],
+                [0.0, 1.0, 2.0, 90.0 / 4096.0],
+                [0.0, 1.0, 3.0, 15.0 / 4096.0],
+                [0.0, 2.0, -3.0, 6.0 / 4096.0],
+                [0.0, 2.0, -2.0, 36.0 / 4096.0],
+                [0.0, 2.0, -1.0, 90.0 / 4096.0],
+                [0.0, 2.0, 0.0, 120.0 / 4096.0],
+                [0.0, 2.0, 1.0, 90.0 / 4096.0],
+                [0.0, 2.0, 2.0, 36.0 / 4096.0],
+                [0.0, 2.0, 3.0, 6.0 / 4096.0],
+                [0.0, 3.0, -3.0, 1.0 / 4096.0],
+                [0.0, 3.0, -2.0, 6.0 / 4096.0],
+                [0.0, 3.0, -1.0, 15.0 / 4096.0],
+                [0.0, 3.0, 0.0, 20.0 / 4096.0],
+                [0.0, 3.0, 1.0, 15.0 / 4096.0],
+                [0.0, 3.0, 2.0, 6.0 / 4096.0],
+                [0.0, 3.0, 3.0, 1.0 / 4096.0],
+            ],
+        };
+
+        let filter_buffer = device.create_buffer_init(
+            &wgpu::util::BufferInitDescriptor {
+                label: Some("Filter Buffer"),
+                contents: bytemuck::cast_slice(&[test_filter]),
+                usage: wgpu::BufferUsage::STORAGE,
+            }
+        );
+
+        let filter_bind_group = device.create_bind_group(&wgpu::BindGroupDescriptor {
+            layout: &filter_uniform_bind_group_layout,
             entries: &[
                 wgpu::BindGroupEntry {
                     binding: 0,
@@ -479,19 +589,13 @@ impl Window {
                 },
                 wgpu::BindGroupEntry {
                     binding: 2,
-                    resource: wgpu::BindingResource::TextureView(
-                        &glyph_cache_tex.create_view(&wgpu::TextureViewDescriptor::default()),
-                    ),
-                },
-                wgpu::BindGroupEntry {
-                    binding: 3,
-                    resource: wgpu::BindingResource::TextureView(
-                        &atlas_cache_tex.create_view(&wgpu::TextureViewDescriptor::default()),
-                    ),
-                },
+                    resource: wgpu::BindingResource::Buffer(filter_buffer.as_entire_buffer_binding()),
+                }
             ],
-            label: Some("diffuse_bind_group"),
+            label: Some("filter_bind_group"),
         });
+
+        filter_bind_groups.insert(0, filter_bind_group);
 
         let mesh = Mesh::with_glyph_cache_dimensions(DEFAULT_GLYPH_CACHE_DIMS);
 
@@ -536,7 +640,6 @@ impl Window {
             depth_texture_view,
             diffuse_bind_group,
             main_bind_group,
-            secondary_bind_group,
             mesh,
             ui,
             image_map,
@@ -547,7 +650,9 @@ impl Window {
             secondary_tex,
             secondary_tex_view,
             bind_groups,
+            filter_bind_groups,
             texture_bind_group_layout: main_texture_bind_group_layout,
+            filter_uniform_bind_group_layout,
             uniform_bind_group_layout,
             uniform_bind_group,
             inner_window,
@@ -697,7 +802,6 @@ impl Window {
         });
 
         self.main_bind_group = main_bind_group;
-        self.secondary_bind_group = secondary_bind_group;
 
         let dimension = Dimension::new(new_size.width as Scalar, new_size.height as Scalar);
         let fov = 45.0;

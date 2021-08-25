@@ -25,7 +25,7 @@ log = "0.4"
 #wgpu = {version = "0.9", features = ["trace"]} # For wgpu tracing
 wgpu = { version = "0.9", features = ["cross"] }
 futures = "0.3"
-bytemuck = { version = "1.4", features = ["derive"] }
+bytemuck = { version = "1.7", features = ["derive", "min_const_generics"] }
 anyhow = "1.0"
 find_folder = "0.3"
 uuid = { version = "0.8.1", features = ["serde", "v4"] }

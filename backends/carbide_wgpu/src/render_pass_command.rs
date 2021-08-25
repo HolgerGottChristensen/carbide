@@ -41,7 +41,7 @@ pub enum RenderPassCommand<'a> {
 
 pub enum RenderPass<'a> {
     Normal(Vec<RenderPassCommand<'a>>),
-    Filter(std::ops::Range<u32>),
+    Filter(std::ops::Range<u32>, u32),
 }
 
 #[derive(PartialEq)]
@@ -118,7 +118,7 @@ pub fn create_render_pass_commands<'a>(
                 let mut new_inner_commands = vec![];
                 std::mem::swap(&mut new_inner_commands, &mut inner_commands);
                 commands.push(RenderPass::Normal(new_inner_commands));
-                commands.push(RenderPass::Filter(range));
+                commands.push(RenderPass::Filter(range, 0));
                 bind_group = None;
             }
 

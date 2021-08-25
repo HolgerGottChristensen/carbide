@@ -172,7 +172,7 @@ impl Window {
                         }
                     }
                 }
-                RenderPass::Filter(vertex_range) => {
+                RenderPass::Filter(vertex_range, bind_group_index) => {
                     encoder.copy_texture_to_texture(ImageCopyTexture {
                         texture: &self.main_tex,
                         mip_level: 0,
@@ -206,7 +206,7 @@ impl Window {
                     render_pass.set_stencil_reference(stencil_level);
                     render_pass.set_vertex_buffer(0, current_vertex_buffer_slice);
                     render_pass.set_bind_group(1, current_uniform_bind_group, &[]);
-                    render_pass.set_bind_group(0, &self.secondary_bind_group, &[]);
+                    render_pass.set_bind_group(0, self.filter_bind_groups.get(&0).unwrap(), &[]);
                     render_pass.draw(vertex_range, instance_range.clone());
                     println!("Time for filter render pass: {:?}us", now.elapsed().as_micros());
                 }
