@@ -10,7 +10,7 @@ pub use futures::executor::block_on;
 use image::DynamicImage;
 //use smaa::{SmaaMode, SmaaTarget};
 use uuid::Uuid;
-use wgpu::{BindGroup, BindGroupLayout, BufferBindingType, Device, Extent3d, PresentMode, Texture, TextureSampleType, TextureView, TextureViewDimension};
+use wgpu::{BindGroup, BindGroupLayout, BufferBindingType, Device, Extent3d, PresentMode, ShaderModuleDescriptor, ShaderSource, Texture, TextureSampleType, TextureView, TextureViewDimension};
 use wgpu::util::DeviceExt;
 use winit::dpi::{PhysicalPosition, PhysicalSize, Size};
 use winit::event::{ElementState, Event, KeyboardInput, VirtualKeyCode, WindowEvent};
@@ -33,7 +33,7 @@ pub use carbide_core::window::TWindow;
 use crate::diffuse_bind_group::{DiffuseBindGroup, new_diffuse};
 use crate::glyph_cache_command::GlyphCacheCommand;
 use crate::image::Image;
-use crate::pipeline::{create_render_pipeline, MaskType};
+use crate::pipeline::{create_render_pipeline, create_render_pipeline_wgsl, MaskType};
 use crate::render_pass_command::{create_render_pass_commands, RenderPassCommand};
 use crate::renderer::{atlas_cache_tex_desc, glyph_cache_tex_desc, main_render_tex_desc, secondary_render_tex_desc};
 use crate::texture_atlas_command::TextureAtlasCommand;
@@ -367,6 +367,7 @@ impl Window {
         let vs_module = device.create_shader_module(&wgpu::include_spirv!("shader.vert.spv"));
         let fs_module = device.create_shader_module(&wgpu::include_spirv!("shader.frag.spv"));
         let fs_filter_module = device.create_shader_module(&wgpu::include_spirv!("filter.frag.spv"));
+        let wgsl_filter_shader = device.create_shader_module(&wgpu::include_wgsl!("filter.wgsl"));
 
         let render_pipeline_layout =
             device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
@@ -410,11 +411,10 @@ impl Window {
             &sc_desc,
             MaskType::RemoveMask,
         );
-        let render_pipeline_in_mask_filter = create_render_pipeline(
+        let render_pipeline_in_mask_filter = create_render_pipeline_wgsl(
             &device,
             &render_pipeline_layout,
-            &vs_module,
-            &fs_filter_module,
+            &wgsl_filter_shader,
             &sc_desc,
             MaskType::InMask,
         );

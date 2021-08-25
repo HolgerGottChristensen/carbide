@@ -95,10 +95,11 @@ vec4(+1.0, +1.0, 0.0,  1.0 / 16.0),*/
 };
 
 void main() {
+
     vec2 texelSize = vec2(1.0) / vec2(640.0, 426.0);
     vec4 color = vec4(0.0);
-    for (int i = 0; i < gaussKernel3x3.length(); ++i) {
+    /*for (int i = 0; i < 7; ++i) {
         color += gaussKernel3x3[i].w * textureLod(sampler2D(t_diffuse, s_diffuse), v_tex_coords + texelSize * gaussKernel3x3[i].xy, 0);
-    }
+    }*/
     f_color = color;
 }

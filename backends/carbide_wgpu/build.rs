@@ -8,6 +8,7 @@ struct ShaderData {
     src: String,
     src_path: PathBuf,
     spv_path: PathBuf,
+    assem_path: PathBuf,
     kind: shaderc::ShaderKind,
 }
 
@@ -27,11 +28,13 @@ impl ShaderData {
 
         let src = read_to_string(src_path.clone())?;
         let spv_path = src_path.with_extension(format!("{}.spv", extension));
+        let assem_path = src_path.with_extension(format!("{}.spv.asm", extension));
 
         Ok(Self {
             src,
             src_path,
             spv_path,
+            assem_path,
             kind,
         })
     }
@@ -69,12 +72,25 @@ fn main() -> Result<()> {
             shader.src_path.as_os_str().to_str().unwrap()
         );
 
+        let mut compile_options = shaderc::CompileOptions::new().unwrap();
+        //compile_options.set_optimization_level(shaderc::OptimizationLevel::Performance);
+
+        let assembly = compiler.compile_into_spirv_assembly(
+            &shader.src,
+            shader.kind,
+            &shader.src_path.to_str().unwrap(),
+            "main",
+            Some(&compile_options),
+        );
+
+        write(shader.assem_path, assembly.unwrap().as_text())?;
+
         let compiled = compiler.compile_into_spirv(
             &shader.src,
             shader.kind,
             &shader.src_path.to_str().unwrap(),
             "main",
-            None,
+            Some(&compile_options),
         )?;
         write(shader.spv_path, compiled.as_binary_u8())?;
     }
