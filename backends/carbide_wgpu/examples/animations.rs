@@ -46,7 +46,7 @@ fn main() {
             .spacing(10.0)
             .padding(30.0),
     );
-    window.run_event_loop();
+    window.launch();
 }
 
 fn animation_position_state(curve: fn(f64) -> f64, window: &Window) -> TState<f64> {

@@ -74,5 +74,5 @@ fn main() {
         PopUpButton::new(Box::new(selected_model), Box::new(selected_index)).frame(120.0, 100.0),
     );
 
-    window.run_event_loop();
+    window.launch();
 }

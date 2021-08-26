@@ -77,5 +77,5 @@ fn main() {
             .spacing(20.0),
     );
 
-    window.run_event_loop();
+    window.launch();
 }

@@ -10,6 +10,11 @@ mod vertex;
 pub mod window;
 mod render;
 mod filter;
+mod bind_group_layouts;
+mod render_pipeline_layouts;
+mod samplers;
+mod bind_groups;
+mod textures;
 
 const GLYPH_TEX_FORMAT: wgpu::TextureFormat = wgpu::TextureFormat::R8Unorm;
 const DEFAULT_IMAGE_TEX_FORMAT: wgpu::TextureFormat = wgpu::TextureFormat::R8Unorm;

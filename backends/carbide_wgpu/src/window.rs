@@ -10,11 +10,12 @@ pub use futures::executor::block_on;
 use image::DynamicImage;
 //use smaa::{SmaaMode, SmaaTarget};
 use uuid::Uuid;
-use wgpu::{BindGroup, BindGroupLayout, BufferBindingType, Device, Extent3d, PresentMode, ShaderModuleDescriptor, ShaderSource, Texture, TextureSampleType, TextureView, TextureViewDimension};
-use wgpu::util::DeviceExt;
+use wgpu::{BindGroup, BindGroupLayout, Buffer, BufferBindingType, BufferUsage, Device, Extent3d, PresentMode, ShaderModuleDescriptor, ShaderSource, Texture, TextureSampleType, TextureView, TextureViewDimension};
+use wgpu::util::{BufferInitDescriptor, DeviceExt};
 use winit::dpi::{PhysicalPosition, PhysicalSize, Size};
 use winit::event::{ElementState, Event, KeyboardInput, VirtualKeyCode, WindowEvent};
 use winit::event_loop::{ControlFlow, EventLoop};
+use winit::platform::macos::WindowBuilderExtMacOS;
 use winit::window::{Icon, WindowBuilder};
 
 use carbide_core::{Scalar, Ui};
@@ -30,14 +31,19 @@ use carbide_core::widget::OverlaidLayer;
 use carbide_core::widget::Widget;
 pub use carbide_core::window::TWindow;
 
+use crate::bind_group_layouts::{filter_bind_group_layout, main_texture_group_layout, uniform_bind_group_layout};
+use crate::bind_groups::{filter_bind_group, main_bind_group, matrix_to_uniform_bind_group, uniform_bind_group};
 use crate::diffuse_bind_group::{DiffuseBindGroup, new_diffuse};
 use crate::filter::Filter;
 use crate::glyph_cache_command::GlyphCacheCommand;
 use crate::image::Image;
 use crate::pipeline::{create_render_pipeline, create_render_pipeline_wgsl, MaskType};
 use crate::render_pass_command::{create_render_pass_commands, RenderPassCommand};
+use crate::render_pipeline_layouts::{filter_pipeline_layout, main_pipeline_layout};
 use crate::renderer::{atlas_cache_tex_desc, glyph_cache_tex_desc, main_render_tex_desc, secondary_render_tex_desc};
+use crate::samplers::main_sampler;
 use crate::texture_atlas_command::TextureAtlasCommand;
+use crate::textures::create_depth_stencil_texture;
 use crate::vertex::Vertex;
 
 // Todo: Look into multisampling: https://github.com/gfx-rs/wgpu-rs/blob/v0.6/examples/msaa-line/main.rs
@@ -75,6 +81,7 @@ pub struct Window {
     pub(crate) filter_uniform_bind_group_layout: BindGroupLayout,
     pub(crate) uniform_bind_group: wgpu::BindGroup,
     pub(crate) carbide_to_wgpu_matrix: Matrix4<f32>,
+    pub(crate) vertex_buffer: (Buffer, usize),
     inner_window: winit::window::Window,
     event_loop: Option<EventLoop<()>>,
 }
@@ -110,8 +117,8 @@ impl carbide_core::window::TWindow for Window {
         id
     }
 
-    fn set_widgets(&mut self, w: Box<dyn Widget>) {
-        self.ui.widgets = Rectangle::new(vec![OverlaidLayer::new("controls_popup_layer", w)])
+    fn set_widgets(&mut self, base_widget: Box<dyn Widget>) {
+        self.ui.widgets = Rectangle::new(vec![OverlaidLayer::new("controls_popup_layer", base_widget)])
             .fill(EnvironmentColor::SystemBackground);
     }
 }
@@ -128,33 +135,7 @@ impl Window {
         &self.ui.environment
     }
 
-    pub(crate) fn matrix_to_uniform_bind_group(device: &Device, layout: &BindGroupLayout, matrix: Matrix4<f32>) -> BindGroup {
-        let uniforms: [[f32; 4]; 4] = matrix.into();
-
-        let uniform_buffer = device.create_buffer_init(
-            &wgpu::util::BufferInitDescriptor {
-                label: Some("Uniform Buffer"),
-                contents: bytemuck::cast_slice(&[uniforms]),
-                usage: wgpu::BufferUsage::UNIFORM | wgpu::BufferUsage::COPY_DST,
-            }
-        );
-
-        let uniform_bind_group = device.create_bind_group(&wgpu::BindGroupDescriptor {
-            layout,
-            entries: &[
-                wgpu::BindGroupEntry {
-                    binding: 0,
-                    resource: wgpu::BindingResource::Buffer(uniform_buffer.as_entire_buffer_binding()),
-                }
-            ],
-            label: Some("uniform_bind_group"),
-        });
-
-        uniform_bind_group
-    }
-
-    fn calculate_carbide_to_wgpu_matrix(dimension: Dimension, fov: Scalar, scale_factor: Scalar) -> Matrix4<f32> {
-        let fov = fov as f32;
+    fn calculate_carbide_to_wgpu_matrix(dimension: Dimension, scale_factor: Scalar) -> Matrix4<f32> {
         let half_height = (dimension.height / 2.0);
         let scale = (scale_factor / half_height) as f32;
 
@@ -173,21 +154,8 @@ impl Window {
             [0.0, 0.0, 0.0, 1.0],
         ];
 
-        let angle_to_screen_center = 90.0;
-
-        let outer_angle = 180.0 - (fov / 2.0) - angle_to_screen_center;
-
-        let z = outer_angle.to_radians().tan() as f32;
         let aspect_ratio = (dimension.width / dimension.height) as f32;
 
-        let perspective = cgmath::perspective(cgmath::Deg(fov), aspect_ratio, 0.1, 100.0);
-        //let view = cgmath::Matrix4::look_at_lh(self.eye, self.target, self.up);
-        let up: Vector3<f32> = cgmath::Vector3::unit_y();
-        let target: Point3<f32> = Point3::new(0.0, 0.0, 0.0);
-        let eye: Point3<f32> = Point3::new(0.0, 0.0, z);
-
-        let view = Matrix4::look_at_rh(eye, target, up);
-        //perspective * view *
         let ortho = cgmath::ortho(-1.0 * aspect_ratio, 1.0 * aspect_ratio, -1.0, 1.0, 1.0, -1.0);
         let res = OPENGL_TO_WGPU_MATRIX * ortho * Matrix4::from_translation(Vector3::new(-aspect_ratio, 1.0, 0.0)) * Matrix4::from(pixel_to_points);
         res
@@ -265,123 +233,16 @@ impl Window {
             format: wgpu::TextureFormat::Bgra8UnormSrgb,
             width: size.width,
             height: size.height,
-            present_mode: PresentMode::Fifo,
+            present_mode: PresentMode::Mailbox,
         };
         let swap_chain = device.create_swap_chain(&surface, &sc_desc);
-        let fov = 45.0;
-        let matrix = Window::calculate_carbide_to_wgpu_matrix(pixel_dimensions, fov, scale_factor);
-        let uniforms: [[f32; 4]; 4] = matrix.clone().into();
 
-        let uniform_buffer = device.create_buffer_init(
-            &wgpu::util::BufferInitDescriptor {
-                label: Some("Uniform Buffer"),
-                contents: bytemuck::cast_slice(&[uniforms]),
-                usage: wgpu::BufferUsage::UNIFORM,
-            }
-        );
+        let uniform_bind_group_layout = uniform_bind_group_layout(&device);
+        let filter_bind_group_layout = filter_bind_group_layout(&device);
+        let main_texture_bind_group_layout = main_texture_group_layout(&device);
 
-        let uniform_bind_group_layout = device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
-            entries: &[
-                wgpu::BindGroupLayoutEntry {
-                    binding: 0,
-                    visibility: wgpu::ShaderStage::VERTEX,
-                    ty: wgpu::BindingType::Buffer {
-                        ty: BufferBindingType::Uniform,
-                        min_binding_size: None,
-                        has_dynamic_offset: false,
-                    },
-                    count: None,
-                }
-            ],
-            label: Some("uniform_bind_group_layout"),
-        });
-
-        let filter_uniform_bind_group_layout = device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
-            entries: &[
-                wgpu::BindGroupLayoutEntry {
-                    binding: 0,
-                    visibility: wgpu::ShaderStage::FRAGMENT,
-                    ty: wgpu::BindingType::Texture {
-                        sample_type: TextureSampleType::Float { filterable: true },
-                        view_dimension: TextureViewDimension::D2,
-                        multisampled: false,
-                    },
-                    count: None,
-                },
-                wgpu::BindGroupLayoutEntry {
-                    binding: 1,
-                    visibility: wgpu::ShaderStage::FRAGMENT,
-                    ty: wgpu::BindingType::Sampler { filtering: true, comparison: false },
-                    count: None,
-                },
-                wgpu::BindGroupLayoutEntry {
-                    binding: 2,
-                    visibility: wgpu::ShaderStage::FRAGMENT,
-                    ty: wgpu::BindingType::Buffer {
-                        ty: BufferBindingType::Storage { read_only: true },
-                        min_binding_size: None,
-                        has_dynamic_offset: false,
-                    },
-                    count: None,
-                }
-            ],
-            label: Some("uniform_bind_group_layout"),
-        });
-
-        let uniform_bind_group = device.create_bind_group(&wgpu::BindGroupDescriptor {
-            layout: &uniform_bind_group_layout,
-            entries: &[
-                wgpu::BindGroupEntry {
-                    binding: 0,
-                    resource: wgpu::BindingResource::Buffer(uniform_buffer.as_entire_buffer_binding()),
-                }
-            ],
-            label: Some("uniform_bind_group"),
-        });
-
-
-        let main_texture_bind_group_layout =
-            device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
-                entries: &[
-                    wgpu::BindGroupLayoutEntry {
-                        binding: 0,
-                        visibility: wgpu::ShaderStage::FRAGMENT,
-                        ty: wgpu::BindingType::Texture {
-                            sample_type: TextureSampleType::Float { filterable: true },
-                            view_dimension: TextureViewDimension::D2,
-                            multisampled: false,
-                        },
-                        count: None,
-                    },
-                    wgpu::BindGroupLayoutEntry {
-                        binding: 1,
-                        visibility: wgpu::ShaderStage::FRAGMENT,
-                        ty: wgpu::BindingType::Sampler { filtering: true, comparison: false },
-                        count: None,
-                    },
-                    wgpu::BindGroupLayoutEntry {
-                        binding: 2,
-                        visibility: wgpu::ShaderStage::FRAGMENT,
-                        ty: wgpu::BindingType::Texture {
-                            sample_type: TextureSampleType::Float { filterable: true },
-                            view_dimension: TextureViewDimension::D2,
-                            multisampled: false,
-                        },
-                        count: None,
-                    },
-                    wgpu::BindGroupLayoutEntry {
-                        binding: 3,
-                        visibility: wgpu::ShaderStage::FRAGMENT,
-                        ty: wgpu::BindingType::Texture {
-                            sample_type: TextureSampleType::Float { filterable: true },
-                            view_dimension: TextureViewDimension::D2,
-                            multisampled: false,
-                        },
-                        count: None,
-                    },
-                ],
-                label: Some("texture_bind_group_layout"),
-            });
+        let matrix = Window::calculate_carbide_to_wgpu_matrix(pixel_dimensions, scale_factor);
+        let uniform_bind_group = matrix_to_uniform_bind_group(&device, &uniform_bind_group_layout, matrix);
 
         let main_tex = device.create_texture(&main_render_tex_desc([pixel_dimensions.width as u32, pixel_dimensions.height as u32]));
         let main_tex_view = main_tex.create_view(&Default::default());
@@ -401,28 +262,10 @@ impl Window {
 
         let vs_module = device.create_shader_module(&wgpu::include_spirv!("shader.vert.spv"));
         let fs_module = device.create_shader_module(&wgpu::include_spirv!("shader.frag.spv"));
-        let fs_filter_module = device.create_shader_module(&wgpu::include_spirv!("filter.frag.spv"));
         let wgsl_filter_shader = device.create_shader_module(&wgpu::include_wgsl!("filter.wgsl"));
 
-        let render_pipeline_layout =
-            device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
-                label: Some("Render Pipeline Layout"),
-                bind_group_layouts: &[
-                    &main_texture_bind_group_layout,
-                    &uniform_bind_group_layout,
-                ],
-                push_constant_ranges: &[],
-            });
-
-        let filter_render_pipeline_layout =
-            device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
-                label: Some("Render Pipeline Layout"),
-                bind_group_layouts: &[
-                    &filter_uniform_bind_group_layout,
-                    &uniform_bind_group_layout,
-                ],
-                push_constant_ranges: &[],
-            });
+        let render_pipeline_layout = main_pipeline_layout(&device, &main_texture_bind_group_layout, &uniform_bind_group_layout);
+        let filter_render_pipeline_layout = filter_pipeline_layout(&device, &filter_bind_group_layout, &uniform_bind_group_layout);
 
         let render_pipeline_no_mask = create_render_pipeline(
             &device,
@@ -470,47 +313,13 @@ impl Window {
         let diffuse_bind_group = new_diffuse(
             &device,
             &image,
-            &glyph_cache_tex,
             &atlas_cache_tex,
             &main_texture_bind_group_layout,
         );
 
-        let main_tex_sampler = device.create_sampler(&wgpu::SamplerDescriptor {
-            address_mode_u: wgpu::AddressMode::ClampToEdge,
-            address_mode_v: wgpu::AddressMode::ClampToEdge,
-            address_mode_w: wgpu::AddressMode::ClampToEdge,
-            mag_filter: wgpu::FilterMode::Linear,
-            min_filter: wgpu::FilterMode::Linear,
-            mipmap_filter: wgpu::FilterMode::Nearest,
-            ..Default::default()
-        });
+        let main_sampler = main_sampler(&device);
 
-        let main_bind_group = device.create_bind_group(&wgpu::BindGroupDescriptor {
-            layout: &main_texture_bind_group_layout,
-            entries: &[
-                wgpu::BindGroupEntry {
-                    binding: 0,
-                    resource: wgpu::BindingResource::TextureView(&main_tex_view),
-                },
-                wgpu::BindGroupEntry {
-                    binding: 1,
-                    resource: wgpu::BindingResource::Sampler(&main_tex_sampler),
-                },
-                wgpu::BindGroupEntry {
-                    binding: 2,
-                    resource: wgpu::BindingResource::TextureView(
-                        &glyph_cache_tex.create_view(&wgpu::TextureViewDescriptor::default()),
-                    ),
-                },
-                wgpu::BindGroupEntry {
-                    binding: 3,
-                    resource: wgpu::BindingResource::TextureView(
-                        &atlas_cache_tex.create_view(&wgpu::TextureViewDescriptor::default()),
-                    ),
-                },
-            ],
-            label: Some("diffuse_bind_group"),
-        });
+        let main_bind_group = main_bind_group(&device, &main_texture_bind_group_layout, &main_tex_view, &main_sampler, &atlas_cache_tex);
 
         let test_filter = Filter {
             texture_size: [600.0, 450.0],
@@ -576,24 +385,7 @@ impl Window {
             }
         );
 
-        let filter_bind_group = device.create_bind_group(&wgpu::BindGroupDescriptor {
-            layout: &filter_uniform_bind_group_layout,
-            entries: &[
-                wgpu::BindGroupEntry {
-                    binding: 0,
-                    resource: wgpu::BindingResource::TextureView(&secondary_tex_view),
-                },
-                wgpu::BindGroupEntry {
-                    binding: 1,
-                    resource: wgpu::BindingResource::Sampler(&main_tex_sampler),
-                },
-                wgpu::BindGroupEntry {
-                    binding: 2,
-                    resource: wgpu::BindingResource::Buffer(filter_buffer.as_entire_buffer_binding()),
-                }
-            ],
-            label: Some("filter_bind_group"),
-        });
+        let filter_bind_group = filter_bind_group(&device, &filter_bind_group_layout, &secondary_tex_view, &main_sampler, &filter_buffer);
 
         filter_bind_groups.insert(0, filter_bind_group);
 
@@ -601,20 +393,15 @@ impl Window {
 
         let image_map = ImageMap::new();
 
-        let depth_texture = device.create_texture(&wgpu::TextureDescriptor {
-            label: Some("Depth texture descriptor"),
-            size: wgpu::Extent3d {
-                width,
-                height,
-                depth_or_array_layers: 1,
-            },
-            mip_level_count: 1,
-            sample_count: 1,
-            dimension: wgpu::TextureDimension::D2,
-            format: wgpu::TextureFormat::Depth24PlusStencil8,
-            usage: wgpu::TextureUsage::RENDER_ATTACHMENT,
-        });
+        let depth_texture = create_depth_stencil_texture(&device, width, height);
         let depth_texture_view = depth_texture.create_view(&Default::default());
+
+        let vertex_buffer = device
+            .create_buffer_init(&BufferInitDescriptor {
+                label: Some("Vertex Buffer"),
+                contents: &[],
+                usage: BufferUsage::VERTEX | BufferUsage::COPY_DST,
+            });
 
         /*let smaa = SmaaTarget::new(
             &device,
@@ -652,10 +439,11 @@ impl Window {
             bind_groups,
             filter_bind_groups,
             texture_bind_group_layout: main_texture_bind_group_layout,
-            filter_uniform_bind_group_layout,
+            filter_uniform_bind_group_layout: filter_bind_group_layout,
             uniform_bind_group_layout,
             uniform_bind_group,
             inner_window,
+            vertex_buffer: (vertex_buffer, 0),
             carbide_to_wgpu_matrix: matrix,
             event_loop: Some(event_loop),
         }
@@ -668,19 +456,7 @@ impl Window {
         self.ui.handle_event(Input::Redraw);
         self.sc_desc.width = new_size.width;
         self.sc_desc.height = new_size.height;
-        let depth_texture = self.device.create_texture(&wgpu::TextureDescriptor {
-            label: Some("Depth texture descriptor"),
-            size: wgpu::Extent3d {
-                width: new_size.width,
-                height: new_size.height,
-                depth_or_array_layers: 1,
-            },
-            mip_level_count: 1,
-            sample_count: 1,
-            dimension: wgpu::TextureDimension::D2,
-            format: wgpu::TextureFormat::Depth24PlusStencil8,
-            usage: wgpu::TextureUsage::RENDER_ATTACHMENT,
-        });
+        let depth_texture = create_depth_stencil_texture(&self.device, new_size.width, new_size.height);
         let depth_texture_view = depth_texture.create_view(&Default::default());
         self.depth_texture_view = depth_texture_view;
 
@@ -807,9 +583,9 @@ impl Window {
         let fov = 45.0;
         let scale_factor = self.inner_window.scale_factor();
 
-        self.carbide_to_wgpu_matrix = Window::calculate_carbide_to_wgpu_matrix(dimension, fov, scale_factor);
+        self.carbide_to_wgpu_matrix = Window::calculate_carbide_to_wgpu_matrix(dimension, scale_factor);
 
-        let uniform_bind_group = Window::matrix_to_uniform_bind_group(&self.device, &self.uniform_bind_group_layout, self.carbide_to_wgpu_matrix);
+        let uniform_bind_group = matrix_to_uniform_bind_group(&self.device, &self.uniform_bind_group_layout, self.carbide_to_wgpu_matrix);
 
         self.uniform_bind_group = uniform_bind_group;
 
@@ -830,7 +606,7 @@ impl Window {
         self.ui.delegate_events();
     }
 
-    pub fn run_event_loop(mut self) {
+    pub fn launch(mut self) {
         // Make the state sync on event loop run
         self.input(&WindowEvent::Focused(true));
 
@@ -838,7 +614,11 @@ impl Window {
 
         std::mem::swap(&mut event_loop, &mut self.event_loop);
 
-        event_loop.expect("The eventloop should be retrieved").run(
+        let mut last_update_inst = Instant::now();
+        let mut last_frame_inst = Instant::now();
+        let (mut frame_count, mut accum_time) = (0, 0.0);
+
+        event_loop.expect("The event loop should be retrieved").run(
             move |event, _, control_flow| {
                 match event {
                     Event::WindowEvent {
@@ -902,12 +682,36 @@ impl Window {
                     }
                     Event::RedrawRequested(_) => {
                         self.update();
+                        let time_since_last = last_frame_inst.elapsed().as_secs_f32();
+                        if time_since_last * 1000.0 > 20.0 {
+                            if time_since_last * 1000.0 > 50.0 {
+                                println!("Very slow frame: {}ms", time_since_last * 1000.0);
+                            } else {
+                                println!("Slow frame: {}ms", time_since_last * 1000.0);
+                            }
+                        }
+                        accum_time += time_since_last;
+                        last_frame_inst = Instant::now();
+                        frame_count += 1;
+
+                        if frame_count == 100 {
+                            println!(
+                                "Avg frame time {}ms",
+                                accum_time * 1000.0 / frame_count as f32
+                            );
+                            accum_time = 0.0;
+                            frame_count = 0;
+                        }
                         match self.render() {
                             Ok(_) => {}
                             // Recreate the swap_chain if lost
-                            Err(wgpu::SwapChainError::Lost) => self.resize(self.size),
+                            Err(wgpu::SwapChainError::Lost) => {
+                                println!("Swap chain lost");
+                                self.resize(self.size)
+                            },
                             // The system is out of memory, we should probably quit
                             Err(wgpu::SwapChainError::OutOfMemory) => {
+                                println!("Swap chain out of memory");
                                 *control_flow = ControlFlow::Exit
                             }
                             // All other errors (Outdated, Timeout) should be resolved by the next frame
@@ -917,7 +721,19 @@ impl Window {
                     Event::MainEventsCleared => {
                         // RedrawRequested will only trigger once, unless we manually
                         // request it.
-                        self.inner_window.request_redraw();
+                        //self.inner_window.request_redraw();
+                    }
+                    Event::RedrawEventsCleared => {
+                        let target_frame_time = Duration::from_secs_f64(1.0 / 60.0);
+                        let time_since_last_frame = last_update_inst.elapsed();
+                        if time_since_last_frame >= target_frame_time {
+                            self.inner_window.request_redraw();
+                            last_update_inst = Instant::now();
+                        } else {
+                            *control_flow = ControlFlow::WaitUntil(
+                                Instant::now() + target_frame_time - time_since_last_frame,
+                            );
+                        }
                     }
                     _ => {}
                 }

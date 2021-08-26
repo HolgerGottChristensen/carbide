@@ -108,5 +108,5 @@ fn main() {
             .spacing(3.0),
     );
 
-    window.run_event_loop();
+    window.launch();
 }

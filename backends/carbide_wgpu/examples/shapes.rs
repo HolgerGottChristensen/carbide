@@ -202,7 +202,7 @@ fn main() {
         ]),
     ]));
 
-    window.run_event_loop();
+    window.launch();
 }
 
 fn draw_star(

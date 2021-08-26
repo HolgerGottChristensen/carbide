@@ -28,5 +28,5 @@ fn main() {
             .border(),
     );
 
-    window.run_event_loop();
+    window.launch();
 }

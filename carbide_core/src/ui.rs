@@ -29,12 +29,6 @@ use crate::widget::Widget;
 /// * Maintains the latest window dimensions.
 #[derive(Debug)]
 pub struct Ui {
-    num_redraw_frames: u8,
-    /// Whether or not the `Ui` needs to be re-drawn to screen.
-    redraw_count: AtomicUsize,
-    /// A background color to clear the screen with before drawing if one was given.
-    maybe_background_color: Option<Color>,
-
     /// Mouse cursor
     mouse_cursor: cursor::MouseCursor,
 
@@ -44,10 +38,6 @@ pub struct Ui {
     any_focus: bool,
 }
 
-/// Each time carbide is required to redraw the GUI, it must draw for at least the next three frames
-/// to ensure that, in the case that graphics buffers are being swapped, we have filled each
-/// buffer. Otherwise if we don't draw into each buffer, we will probably be subject to flickering.
-pub const SAFE_REDRAW_COUNT: u8 = 3;
 
 impl Ui {
     /// A new, empty **Ui**.
@@ -379,9 +369,6 @@ impl Ui {
 
         Ui {
             widgets: Rectangle::new(vec![]),
-            num_redraw_frames: SAFE_REDRAW_COUNT,
-            redraw_count: AtomicUsize::new(SAFE_REDRAW_COUNT as usize),
-            maybe_background_color: None,
             mouse_cursor: cursor::MouseCursor::Arrow,
             event_handler: EventHandler::new(),
             environment,
@@ -530,17 +517,6 @@ impl Ui {
             }
 
             self.environment.clear();
-
-            // Todo check if this can be removed. It is for the overlay layer to have the same position
-            // as the thing below. This will not work if the thing below the overlay layers, position is
-            // dependent on some state that has not been synchronized. For a use case look at the pop up
-            // button in controls.
-            //self.widgets.calculate_size(self.environment.get_corrected_dimensions(), &mut self.environment);
-            //self.widgets.position_children();
-
-            //self.widgets.sync_state(&mut self.environment, global_state);
-
-            self.environment.clear();
         }
 
         self.event_handler.clear_events();
@@ -553,10 +529,6 @@ impl Ui {
         return true;
     }
 
-    /// Draw the `Ui` in it's current state.
-    ///
-    /// NOTE: If you don't need to redraw your carbide GUI every frame, it is recommended to use the
-    /// `Ui::draw_if_changed` method instead.
     pub fn draw(&mut self) -> CPrimitives {
         let corrected_dimensions = self.environment.get_corrected_dimensions();
         self.environment.capture_time();

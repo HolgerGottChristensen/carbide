@@ -1,6 +1,7 @@
 pub use corner_radii::*;
 pub use cross_axis_alignment::*;
 pub use edge_insets::*;
+pub use filter::*;
 pub use image_information::*;
 pub use justify::*;
 pub use scale_mode::*;
@@ -23,3 +24,4 @@ mod spacer_direction;
 mod stroke_style;
 mod text_wrap;
 mod triangle_store;
+mod filter;

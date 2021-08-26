@@ -1,7 +1,7 @@
 use std::time::Instant;
 
-use wgpu::{Extent3d, ImageCopyTexture, LoadOp, Operations, Origin3d, RenderPassDepthStencilAttachment};
-use wgpu::util::DeviceExt;
+use wgpu::{BufferUsage, Extent3d, ImageCopyTexture, LoadOp, Operations, Origin3d, RenderPassDepthStencilAttachment};
+use wgpu::util::{BufferInitDescriptor, DeviceExt};
 
 use carbide_core::draw::{Dimension, Position, Rect};
 use carbide_core::mesh::MODE_IMAGE;
@@ -14,14 +14,12 @@ use crate::window::Window;
 
 impl Window {
     pub fn render(&mut self) -> Result<(), wgpu::SwapChainError> {
-        // This blocks until a new frame is available.
-        let frame = self.swap_chain.get_current_frame()?.output;
-
         let mut encoder = self
             .device
             .create_command_encoder(&wgpu::CommandEncoderDescriptor {
                 label: Some("Render Encoder"),
             });
+
 
         let primitives = self.ui.draw();
         let fill = self
@@ -36,6 +34,7 @@ impl Window {
                 primitives,
             )
             .unwrap();
+
 
         // Check if an upload to texture atlas is needed.
         let texture_atlas_cmd = match fill.atlas_requires_upload {
@@ -82,20 +81,26 @@ impl Window {
             .map(|v| Vertex::from(*v))
             .collect::<Vec<_>>();
 
-        let vertex_buffer = self
-            .device
-            .create_buffer_init(&wgpu::util::BufferInitDescriptor {
-                label: Some("Vertex Buffer"),
-                contents: bytemuck::cast_slice(&vertices),
-                usage: wgpu::BufferUsage::VERTEX,
-            });
+        if vertices.len() <= self.vertex_buffer.1 {
+            // There is space in the current vertex buffer
+            self.queue.write_buffer(&self.vertex_buffer.0, 0, bytemuck::cast_slice(&vertices));
+        } else {
+            // We need to create a new and larger vertex buffer
+            let new_vertex_buffer = self.device
+                .create_buffer_init(&BufferInitDescriptor {
+                    label: Some("Vertex Buffer"),
+                    contents: bytemuck::cast_slice(&vertices),
+                    usage: BufferUsage::VERTEX | BufferUsage::COPY_DST,
+                });
+            self.vertex_buffer = (new_vertex_buffer, vertices.len());
+        }
 
         let instance_range = 0..1;
         let mut stencil_level = 0;
         let mut first_pass = true;
 
         let mut current_main_render_pipeline = &self.render_pipeline_no_mask;
-        let mut current_vertex_buffer_slice = vertex_buffer.slice(..);
+        let mut current_vertex_buffer_slice = self.vertex_buffer.0.slice(..);
         let mut current_uniform_bind_group = &self.uniform_bind_group;
 
         for command in commands {
@@ -187,7 +192,6 @@ impl Window {
                         depth_or_array_layers: 1,
                     });
 
-                    let now = Instant::now();
                     let (color_op, stencil_op) = render_pass_ops(RenderPassOps::Middle);
                     let mut render_pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
                         label: None,
@@ -208,7 +212,6 @@ impl Window {
                     render_pass.set_bind_group(1, current_uniform_bind_group, &[]);
                     render_pass.set_bind_group(0, self.filter_bind_groups.get(&0).unwrap(), &[]);
                     render_pass.draw(vertex_range, instance_range.clone());
-                    println!("Time for filter render pass: {:?}us", now.elapsed().as_micros());
                 }
             };
         }
@@ -232,6 +235,12 @@ impl Window {
             });
 
         let (color_op, stencil_op) = render_pass_ops(RenderPassOps::Middle);
+
+        // This blocks until a new frame is available.
+        let now = Instant::now();
+        let frame = self.swap_chain.get_current_frame()?.output;
+        println!("Time for get_current frame: {}ms", now.elapsed().as_millis());
+
         let mut render_pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
             label: None,
             color_attachments: &[wgpu::RenderPassColorAttachment {
@@ -255,9 +264,7 @@ impl Window {
         drop(render_pass);
 
         // submit will accept anything that implements IntoIter
-        let now = Instant::now();
         self.queue.submit(std::iter::once(encoder.finish()));
-        println!("Submit queue time: {:?}us", now.elapsed().as_micros());
         Ok(())
     }
 }

@@ -59,5 +59,5 @@ fn main() {
             .frame(SCALE, 500.0),
     );
 
-    window.run_event_loop();
+    window.launch();
 }

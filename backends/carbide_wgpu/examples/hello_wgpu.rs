@@ -63,7 +63,7 @@ fn main() {
                            ])),
     );
 
-    window.run_event_loop();
+    window.launch();
 }
 
 fn draw_heart<GS: GlobalStateContract>(_: OldRect, mut context: Context<GS>) -> Context<GS> {

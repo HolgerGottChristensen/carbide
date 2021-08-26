@@ -61,5 +61,5 @@ fn main() {
             .accent_color(EnvironmentColor::Green),
     );
 
-    window.run_event_loop();
+    window.launch();
 }

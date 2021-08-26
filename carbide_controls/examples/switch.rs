@@ -58,5 +58,5 @@ fn main() {
             .padding(EdgeInsets::all(40.0)),
     ));
 
-    window.run_event_loop();
+    window.launch();
 }

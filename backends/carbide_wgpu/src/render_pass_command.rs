@@ -7,6 +7,7 @@ use carbide_core::image_map::{Id, ImageMap};
 use carbide_core::mesh::mesh;
 use carbide_core::mesh::mesh::Mesh;
 
+use crate::bind_groups::matrix_to_uniform_bind_group;
 use crate::diffuse_bind_group::{DiffuseBindGroup, new_diffuse};
 use crate::image::Image;
 use crate::window::Window;
@@ -75,7 +76,6 @@ pub fn create_render_pass_commands<'a>(
         let bind_group = new_diffuse(
             &device,
             &img,
-            &glyph_texture,
             &atlas_tex,
             &bind_group_layout,
         );
@@ -150,7 +150,7 @@ pub fn create_render_pass_commands<'a>(
 
             mesh::Command::Transform(matrix) => {
                 let transformed_matrix = carbide_to_wgpu_matrix * matrix;
-                let new_bind_group = Window::matrix_to_uniform_bind_group(device, uniform_bind_group_layout, transformed_matrix);
+                let new_bind_group = matrix_to_uniform_bind_group(device, uniform_bind_group_layout, transformed_matrix);
 
                 inner_commands.push(RenderPassCommand::Transform { uniform_bind_group_index: uniform_bind_groups.len() });
                 uniform_bind_groups.push(new_bind_group);

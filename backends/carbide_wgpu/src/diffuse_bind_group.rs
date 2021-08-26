@@ -7,7 +7,6 @@ pub type DiffuseBindGroup = BindGroup;
 pub fn new_diffuse(
     device: &Device,
     image: &Image,
-    glyph_cache_tex: &Texture,
     atlas_cache_tex: &Texture,
     layout: &BindGroupLayout,
 ) -> DiffuseBindGroup {
@@ -24,12 +23,6 @@ pub fn new_diffuse(
             },
             wgpu::BindGroupEntry {
                 binding: 2,
-                resource: wgpu::BindingResource::TextureView(
-                    &glyph_cache_tex.create_view(&wgpu::TextureViewDescriptor::default()),
-                ),
-            },
-            wgpu::BindGroupEntry {
-                binding: 3,
                 resource: wgpu::BindingResource::TextureView(
                     &atlas_cache_tex.create_view(&wgpu::TextureViewDescriptor::default()),
                 ),
