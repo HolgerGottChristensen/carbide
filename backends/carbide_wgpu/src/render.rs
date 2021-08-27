@@ -217,29 +217,10 @@ impl Window {
         }
 
         // Render from the texture to the swap chain
-
-        let last_verts: Vec<Vertex> = vec![
-            Vertex::new_from_2d(0.0, 0.0, [0.0, 0.0, 0.0, 0.0], [0.0, 0.0], MODE_IMAGE),
-            Vertex::new_from_2d(self.size.width as f32 / self.ui.environment.get_scale_factor() as f32, 0.0, [0.0, 0.0, 0.0, 0.0], [1.0, 0.0], MODE_IMAGE),
-            Vertex::new_from_2d(0.0, self.size.height as f32 / self.ui.environment.get_scale_factor() as f32, [0.0, 0.0, 0.0, 0.0], [0.0, 1.0], MODE_IMAGE),
-            Vertex::new_from_2d(self.size.width as f32 / self.ui.environment.get_scale_factor() as f32, 0.0, [0.0, 0.0, 0.0, 0.0], [1.0, 0.0], MODE_IMAGE),
-            Vertex::new_from_2d(self.size.width as f32 / self.ui.environment.get_scale_factor() as f32, self.size.height as f32 / self.ui.environment.get_scale_factor() as f32, [0.0, 0.0, 0.0, 0.0], [1.0, 1.0], MODE_IMAGE),
-            Vertex::new_from_2d(0.0, self.size.height as f32 / self.ui.environment.get_scale_factor() as f32, [0.0, 0.0, 0.0, 0.0], [0.0, 1.0], MODE_IMAGE),
-        ];
-        let last_verts_buffer = self
-            .device
-            .create_buffer_init(&wgpu::util::BufferInitDescriptor {
-                label: Some("Vertex Buffer"),
-                contents: bytemuck::cast_slice(&last_verts),
-                usage: wgpu::BufferUsage::VERTEX,
-            });
-
         let (color_op, stencil_op) = render_pass_ops(RenderPassOps::Middle);
 
         // This blocks until a new frame is available.
-        let now = Instant::now();
         let frame = self.swap_chain.get_current_frame()?.output;
-        println!("Time for get_current frame: {}ms", now.elapsed().as_millis());
 
         let mut render_pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
             label: None,
@@ -256,7 +237,7 @@ impl Window {
         });
 
         render_pass.set_pipeline(&self.render_pipeline_no_mask);
-        render_pass.set_vertex_buffer(0, last_verts_buffer.slice(..));
+        render_pass.set_vertex_buffer(0, self.second_vertex_buffer.slice(..));
         render_pass.set_bind_group(0, &self.main_bind_group, &[]);
         render_pass.set_bind_group(1, &self.uniform_bind_group, &[]);
         render_pass.draw(0..6, instance_range);

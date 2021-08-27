@@ -1,7 +1,7 @@
 use std::time::Duration;
 
 use carbide_core::environment::*;
-use carbide_core::state::{AnimatedState, ease_in_out, linear};
+use carbide_core::state::{AnimatedState, ease_in_out};
 use carbide_core::text::*;
 use carbide_core::widget::*;
 use carbide_core::widget::canvas::*;
@@ -21,12 +21,12 @@ fn main() {
 
     let image_id = window.add_image("images/landscape.png");
 
-    let position_x = AnimatedState::custom(linear, window.environment())
+    let position_x = AnimatedState::custom(ease_in_out, window.environment())
         .duration(Duration::new(5, 0))
         .repeat_alternate()
         .range(-180.0, 180.0);
 
-    let position_neg_x = AnimatedState::custom(linear, window.environment())
+    let position_neg_x = AnimatedState::custom(ease_in_out, window.environment())
         .duration(Duration::new(7, 0))
         .repeat_alternate()
         .range(180.0, -180.0);

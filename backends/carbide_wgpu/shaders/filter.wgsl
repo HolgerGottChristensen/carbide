@@ -15,29 +15,19 @@ struct BlurUniforms {
     transform: [[stride(16)]] array<vec3<f32>>;
 };
 
-[[group(0), binding(2)]]
-var<storage> blur_uniforms: [[access(read)]] BlurUniforms; // This should change for wgpu 0.10
-
-[[group(1), binding(0)]]
-var uniforms: Uniforms;
-
-var window_size: vec2<f32> = vec2<f32>(1200.0, 900.0);
-
-var filter: array<vec3<f32>,7> = array<vec3<f32>,7>(
-    vec3<f32>(-3.0, -3.0, 0.1428571429),
-    vec3<f32>(-2.0, -2.0, 0.1428571429),
-    vec3<f32>(-1.0, -1.0, 0.1428571429),
-    vec3<f32>(0.0, 0.0, 0.1428571429),
-    vec3<f32>(1.0, 1.0, 0.1428571429),
-    vec3<f32>(2.0, 2.0, 0.1428571429),
-    vec3<f32>(3.0, 3.0, 0.1428571429),
-);
-
 [[group(0), binding(0)]]
 var main_texture: texture_2d<f32>;
 
 [[group(0), binding(1)]]
 var main_sampler: sampler;
+
+[[group(0), binding(2)]]
+var<storage> blur_uniforms: [[access(read)]] BlurUniforms; // This should change for wgpu 0.10
+
+
+[[group(1), binding(0)]]
+var uniforms: Uniforms;
+
 
 [[stage(fragment)]]
 fn main_fs(in: VertexOutput) -> [[location(0)]] vec4<f32> {

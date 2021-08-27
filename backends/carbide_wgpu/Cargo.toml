@@ -23,7 +23,7 @@ cgmath = "0.18"
 env_logger = "0.7"
 log = "0.4"
 #wgpu = {version = "0.9", features = ["trace"]} # For wgpu tracing
-wgpu = { version = "0.9", features = ["cross"] }
+wgpu = { version = "0.9" }
 futures = "0.3"
 bytemuck = { version = "1.7", features = ["derive", "min_const_generics"] }
 anyhow = "1.0"
@@ -37,9 +37,3 @@ find_folder = "0.3"
 futures = "0.3"
 image = "0.23"
 winit = "0.25"
-
-[build-dependencies]
-anyhow = "1.0"
-fs_extra = "1.1"
-glob = "0.3"
-shaderc = "*"

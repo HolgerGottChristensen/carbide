@@ -2,6 +2,7 @@ pub use corner_radii::*;
 pub use cross_axis_alignment::*;
 pub use edge_insets::*;
 pub use filter::*;
+pub use filter::*;
 pub use image_information::*;
 pub use justify::*;
 pub use scale_mode::*;

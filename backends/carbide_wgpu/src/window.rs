@@ -22,7 +22,7 @@ use carbide_core::{Scalar, Ui};
 use carbide_core::draw::{Dimension, Position, Rect};
 use carbide_core::event::Input;
 use carbide_core::image_map::{Id, ImageMap};
-use carbide_core::mesh::DEFAULT_GLYPH_CACHE_DIMS;
+use carbide_core::mesh::{DEFAULT_GLYPH_CACHE_DIMS, MODE_IMAGE};
 use carbide_core::mesh::mesh::Mesh;
 use carbide_core::prelude::{Environment, EnvironmentColor};
 use carbide_core::prelude::Rectangle;
@@ -82,6 +82,7 @@ pub struct Window {
     pub(crate) uniform_bind_group: wgpu::BindGroup,
     pub(crate) carbide_to_wgpu_matrix: Matrix4<f32>,
     pub(crate) vertex_buffer: (Buffer, usize),
+    pub(crate) second_vertex_buffer: Buffer,
     inner_window: winit::window::Window,
     event_loop: Option<EventLoop<()>>,
 }
@@ -260,42 +261,37 @@ impl Window {
 
         let image = Image::new(assets.join("images/happy-tree.png"), &device, &queue);
 
-        let vs_module = device.create_shader_module(&wgpu::include_spirv!("shader.vert.spv"));
-        let fs_module = device.create_shader_module(&wgpu::include_spirv!("shader.frag.spv"));
-        let wgsl_filter_shader = device.create_shader_module(&wgpu::include_wgsl!("filter.wgsl"));
+        let main_shader = device.create_shader_module(&wgpu::include_wgsl!("../shaders/shader.wgsl"));
+        let wgsl_filter_shader = device.create_shader_module(&wgpu::include_wgsl!("../shaders/filter.wgsl"));
 
         let render_pipeline_layout = main_pipeline_layout(&device, &main_texture_bind_group_layout, &uniform_bind_group_layout);
         let filter_render_pipeline_layout = filter_pipeline_layout(&device, &filter_bind_group_layout, &uniform_bind_group_layout);
 
-        let render_pipeline_no_mask = create_render_pipeline(
+        let render_pipeline_no_mask = create_render_pipeline_wgsl(
             &device,
             &render_pipeline_layout,
-            &vs_module,
-            &fs_module,
+            &main_shader,
             &sc_desc,
             MaskType::NoMask,
         );
-        let render_pipeline_add_mask = create_render_pipeline(
+        let render_pipeline_add_mask = create_render_pipeline_wgsl(
             &device,
             &render_pipeline_layout,
-            &vs_module,
-            &fs_module,
+            &main_shader,
             &sc_desc,
             MaskType::AddMask,
         );
-        let render_pipeline_in_mask = create_render_pipeline(
+        let render_pipeline_in_mask = create_render_pipeline_wgsl(
             &device,
             &render_pipeline_layout,
-            &vs_module,
-            &fs_module,
+            &main_shader,
             &sc_desc,
             MaskType::InMask,
         );
-        let render_pipeline_remove_mask = create_render_pipeline(
+        let render_pipeline_remove_mask = create_render_pipeline_wgsl(
             &device,
             &render_pipeline_layout,
-            &vs_module,
-            &fs_module,
+            &main_shader,
             &sc_desc,
             MaskType::RemoveMask,
         );
@@ -403,6 +399,22 @@ impl Window {
                 usage: BufferUsage::VERTEX | BufferUsage::COPY_DST,
             });
 
+        let last_verts: Vec<Vertex> = vec![
+            Vertex::new_from_2d(0.0, 0.0, [0.0, 0.0, 0.0, 0.0], [0.0, 0.0], MODE_IMAGE),
+            Vertex::new_from_2d(size.width as f32 / scale_factor as f32, 0.0, [0.0, 0.0, 0.0, 0.0], [1.0, 0.0], MODE_IMAGE),
+            Vertex::new_from_2d(0.0, size.height as f32 / scale_factor as f32, [0.0, 0.0, 0.0, 0.0], [0.0, 1.0], MODE_IMAGE),
+            Vertex::new_from_2d(size.width as f32 / scale_factor as f32, 0.0, [0.0, 0.0, 0.0, 0.0], [1.0, 0.0], MODE_IMAGE),
+            Vertex::new_from_2d(size.width as f32 / scale_factor as f32, size.height as f32 / scale_factor as f32, [0.0, 0.0, 0.0, 0.0], [1.0, 1.0], MODE_IMAGE),
+            Vertex::new_from_2d(0.0, size.height as f32 / scale_factor as f32, [0.0, 0.0, 0.0, 0.0], [0.0, 1.0], MODE_IMAGE),
+        ];
+
+        let second_verts_buffer = device
+            .create_buffer_init(&wgpu::util::BufferInitDescriptor {
+                label: Some("Vertex Buffer"),
+                contents: bytemuck::cast_slice(&last_verts),
+                usage: wgpu::BufferUsage::VERTEX,
+            });
+
         /*let smaa = SmaaTarget::new(
             &device,
             &queue,
@@ -446,6 +458,7 @@ impl Window {
             vertex_buffer: (vertex_buffer, 0),
             carbide_to_wgpu_matrix: matrix,
             event_loop: Some(event_loop),
+            second_vertex_buffer: second_verts_buffer,
         }
     }
 
@@ -550,37 +563,9 @@ impl Window {
             label: Some("diffuse_bind_group"),
         });
 
-        let secondary_bind_group = self.device.create_bind_group(&wgpu::BindGroupDescriptor {
-            layout: &main_texture_bind_group_layout,
-            entries: &[
-                wgpu::BindGroupEntry {
-                    binding: 0,
-                    resource: wgpu::BindingResource::TextureView(&self.secondary_tex_view),
-                },
-                wgpu::BindGroupEntry {
-                    binding: 1,
-                    resource: wgpu::BindingResource::Sampler(&main_tex_sampler),
-                },
-                wgpu::BindGroupEntry {
-                    binding: 2,
-                    resource: wgpu::BindingResource::TextureView(
-                        &self.glyph_cache_tex.create_view(&wgpu::TextureViewDescriptor::default()),
-                    ),
-                },
-                wgpu::BindGroupEntry {
-                    binding: 3,
-                    resource: wgpu::BindingResource::TextureView(
-                        &self.atlas_cache_tex.create_view(&wgpu::TextureViewDescriptor::default()),
-                    ),
-                },
-            ],
-            label: Some("diffuse_bind_group"),
-        });
-
         self.main_bind_group = main_bind_group;
 
         let dimension = Dimension::new(new_size.width as Scalar, new_size.height as Scalar);
-        let fov = 45.0;
         let scale_factor = self.inner_window.scale_factor();
 
         self.carbide_to_wgpu_matrix = Window::calculate_carbide_to_wgpu_matrix(dimension, scale_factor);
@@ -588,6 +573,17 @@ impl Window {
         let uniform_bind_group = matrix_to_uniform_bind_group(&self.device, &self.uniform_bind_group_layout, self.carbide_to_wgpu_matrix);
 
         self.uniform_bind_group = uniform_bind_group;
+
+        let last_verts: Vec<Vertex> = vec![
+            Vertex::new_from_2d(0.0, 0.0, [0.0, 0.0, 0.0, 0.0], [0.0, 0.0], MODE_IMAGE),
+            Vertex::new_from_2d(self.size.width as f32 / scale_factor as f32, 0.0, [0.0, 0.0, 0.0, 0.0], [1.0, 0.0], MODE_IMAGE),
+            Vertex::new_from_2d(0.0, self.size.height as f32 / scale_factor as f32, [0.0, 0.0, 0.0, 0.0], [0.0, 1.0], MODE_IMAGE),
+            Vertex::new_from_2d(self.size.width as f32 / scale_factor as f32, 0.0, [0.0, 0.0, 0.0, 0.0], [1.0, 0.0], MODE_IMAGE),
+            Vertex::new_from_2d(self.size.width as f32 / scale_factor as f32, self.size.height as f32 / scale_factor as f32, [0.0, 0.0, 0.0, 0.0], [1.0, 1.0], MODE_IMAGE),
+            Vertex::new_from_2d(0.0, self.size.height as f32 / scale_factor as f32, [0.0, 0.0, 0.0, 0.0], [0.0, 1.0], MODE_IMAGE),
+        ];
+
+        self.queue.write_buffer(&self.second_vertex_buffer, 0, bytemuck::cast_slice(&last_verts));
 
         self.swap_chain = self.device.create_swap_chain(&self.surface, &self.sc_desc);
     }
@@ -694,7 +690,7 @@ impl Window {
                         last_frame_inst = Instant::now();
                         frame_count += 1;
 
-                        if frame_count == 100 {
+                        if frame_count == 3600 {
                             println!(
                                 "Avg frame time {}ms",
                                 accum_time * 1000.0 / frame_count as f32
