@@ -75,7 +75,8 @@ pub struct Window {
     pub(crate) secondary_tex: Texture,
     pub(crate) secondary_tex_view: TextureView,
     pub(crate) bind_groups: HashMap<Id, DiffuseBindGroup>,
-    pub(crate) filter_bind_groups: HashMap<u32, BindGroup>,
+    /// The first bind group takes the secondary tex view and the second bind group takes the primary view.
+    pub(crate) filter_bind_groups: HashMap<u32, (BindGroup, BindGroup)>,
     pub(crate) texture_bind_group_layout: BindGroupLayout,
     pub(crate) uniform_bind_group_layout: BindGroupLayout,
     pub(crate) filter_uniform_bind_group_layout: BindGroupLayout,

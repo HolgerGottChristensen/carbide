@@ -77,8 +77,9 @@ impl Window {
                         usage: wgpu::BufferUsage::STORAGE,
                     }
                 );
-                let filter_bind_group = filter_bind_group(&self.device, &self.filter_uniform_bind_group_layout, &self.secondary_tex_view, &self.main_sampler, &filter_buffer);
-                self.filter_bind_groups.insert(*filter_id, filter_bind_group);
+                let filter_bind_group_secondary = filter_bind_group(&self.device, &self.filter_uniform_bind_group_layout, &self.main_tex_view, &self.main_sampler, &filter_buffer);
+                let filter_bind_group_main = filter_bind_group(&self.device, &self.filter_uniform_bind_group_layout, &self.secondary_tex_view, &self.main_sampler, &filter_buffer);
+                self.filter_bind_groups.insert(*filter_id, (filter_bind_group_main, filter_bind_group_secondary));
             }
         }
 
@@ -232,7 +233,51 @@ impl Window {
                     render_pass.set_stencil_reference(stencil_level);
                     render_pass.set_vertex_buffer(0, current_vertex_buffer_slice);
                     render_pass.set_bind_group(1, current_uniform_bind_group, &[]);
-                    render_pass.set_bind_group(0, self.filter_bind_groups.get(&0).unwrap(), &[]);
+                    render_pass.set_bind_group(0, &self.filter_bind_groups.get(&bind_group_index).unwrap().0, &[]);
+                    render_pass.draw(vertex_range, instance_range.clone());
+                }
+                RenderPass::FilterSplitPt1(vertex_range, filter_id) => {
+                    let (color_op, stencil_op) = render_pass_ops(RenderPassOps::Middle);
+                    let mut render_pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
+                        label: None,
+                        color_attachments: &[wgpu::RenderPassColorAttachment {
+                            view: &self.secondary_tex_view, // Here is the render target
+                            resolve_target: None,
+                            ops: color_op,
+                        }],
+                        depth_stencil_attachment: Some(RenderPassDepthStencilAttachment {
+                            view: &self.depth_texture_view,
+                            depth_ops: None,
+                            stencil_ops: Some(stencil_op),
+                        }),
+                    });
+                    render_pass.set_pipeline(&self.render_pipeline_in_mask_filter);
+                    render_pass.set_stencil_reference(stencil_level);
+                    render_pass.set_vertex_buffer(0, current_vertex_buffer_slice);
+                    render_pass.set_bind_group(1, current_uniform_bind_group, &[]);
+                    render_pass.set_bind_group(0, &self.filter_bind_groups.get(&filter_id).unwrap().1, &[]);
+                    render_pass.draw(vertex_range, instance_range.clone());
+                }
+                RenderPass::FilterSplitPt2(vertex_range, filter_id) => {
+                    let (color_op, stencil_op) = render_pass_ops(RenderPassOps::Middle);
+                    let mut render_pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
+                        label: None,
+                        color_attachments: &[wgpu::RenderPassColorAttachment {
+                            view: &self.main_tex_view, // Here is the render target
+                            resolve_target: None,
+                            ops: color_op,
+                        }],
+                        depth_stencil_attachment: Some(RenderPassDepthStencilAttachment {
+                            view: &self.depth_texture_view,
+                            depth_ops: None,
+                            stencil_ops: Some(stencil_op),
+                        }),
+                    });
+                    render_pass.set_pipeline(&self.render_pipeline_in_mask_filter);
+                    render_pass.set_stencil_reference(stencil_level);
+                    render_pass.set_vertex_buffer(0, current_vertex_buffer_slice);
+                    render_pass.set_bind_group(1, current_uniform_bind_group, &[]);
+                    render_pass.set_bind_group(0, &self.filter_bind_groups.get(&filter_id).unwrap().0, &[]);
                     render_pass.draw(vertex_range, instance_range.clone());
                 }
             };

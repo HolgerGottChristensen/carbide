@@ -36,7 +36,7 @@ pub fn secondary_render_tex_desc([width, height]: [u32; 2]) -> wgpu::TextureDesc
         sample_count: 1,
         dimension: wgpu::TextureDimension::D2,
         format: TextureFormat::Bgra8UnormSrgb,
-        usage: wgpu::TextureUsage::SAMPLED | wgpu::TextureUsage::COPY_DST,
+        usage: wgpu::TextureUsage::RENDER_ATTACHMENT | wgpu::TextureUsage::SAMPLED | wgpu::TextureUsage::COPY_DST,
     }
 }
 

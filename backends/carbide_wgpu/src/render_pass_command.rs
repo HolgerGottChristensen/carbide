@@ -43,6 +43,8 @@ pub enum RenderPassCommand<'a> {
 pub enum RenderPass<'a> {
     Normal(Vec<RenderPassCommand<'a>>),
     Filter(std::ops::Range<u32>, u32),
+    FilterSplitPt1(std::ops::Range<u32>, u32),
+    FilterSplitPt2(std::ops::Range<u32>, u32),
 }
 
 #[derive(PartialEq)]
@@ -119,6 +121,48 @@ pub fn create_render_pass_commands<'a>(
                 std::mem::swap(&mut new_inner_commands, &mut inner_commands);
                 commands.push(RenderPass::Normal(new_inner_commands));
                 commands.push(RenderPass::Filter(range, filter_id));
+                bind_group = None;
+            }
+            mesh::Command::FilterSplitPt1(vertex_range, filter_id) => {
+                let vertex_count = vertex_range.len();
+                if vertex_count <= 0 {
+                    continue;
+                }
+                // Ensure a render pipeline and bind group is set.
+                if bind_group.is_none() {
+                    bind_group = Some(BindGroup::Default);
+                    let cmd = RenderPassCommand::SetBindGroup {
+                        bind_group: default_bind_group,
+                    };
+                    inner_commands.push(cmd);
+                }
+
+                let range = vertex_range.start as u32..vertex_range.end as u32;
+                let mut new_inner_commands = vec![];
+                std::mem::swap(&mut new_inner_commands, &mut inner_commands);
+                commands.push(RenderPass::Normal(new_inner_commands));
+                commands.push(RenderPass::FilterSplitPt1(range, filter_id));
+                bind_group = None;
+            }
+            mesh::Command::FilterSplitPt2(vertex_range, filter_id) => {
+                let vertex_count = vertex_range.len();
+                if vertex_count <= 0 {
+                    continue;
+                }
+                // Ensure a render pipeline and bind group is set.
+                if bind_group.is_none() {
+                    bind_group = Some(BindGroup::Default);
+                    let cmd = RenderPassCommand::SetBindGroup {
+                        bind_group: default_bind_group,
+                    };
+                    inner_commands.push(cmd);
+                }
+
+                let range = vertex_range.start as u32..vertex_range.end as u32;
+                let mut new_inner_commands = vec![];
+                std::mem::swap(&mut new_inner_commands, &mut inner_commands);
+                commands.push(RenderPass::Normal(new_inner_commands));
+                commands.push(RenderPass::FilterSplitPt2(range, filter_id));
                 bind_group = None;
             }
 

@@ -66,6 +66,8 @@ pub enum Command {
     DeStencil(std::ops::Range<usize>),
     Transform(Matrix4<f32>),
     Filter(std::ops::Range<usize>, u32),
+    FilterSplitPt1(std::ops::Range<usize>, u32),
+    FilterSplitPt2(std::ops::Range<usize>, u32),
 }
 
 /// An iterator yielding `Command`s, produced by the `Renderer::commands` method.
@@ -109,6 +111,8 @@ enum PreparedCommand {
     DeStencil(std::ops::Range<usize>),
     Transform(Matrix4<f32>),
     Filter(std::ops::Range<usize>, u32),
+    FilterSplitPt1(std::ops::Range<usize>, u32),
+    FilterSplitPt2(std::ops::Range<usize>, u32),
 }
 
 impl Mesh {
@@ -363,6 +367,86 @@ impl Mesh {
                     push_v(r, t);
 
                     commands.push(PreparedCommand::Filter(
+                        start_index_for_filter..vertices.len(), filter_id,
+                    ));
+
+                    current_state = State::Plain {
+                        start: vertices.len(),
+                    };
+                }
+                PrimitiveKind::FilterSplitPt1(filter_id) => {
+                    match current_state {
+                        State::Plain { start } => {
+                            commands.push(PreparedCommand::Plain(start..vertices.len()))
+                        }
+                        State::Image { image_id, start } => {
+                            commands.push(PreparedCommand::Image(image_id, start..vertices.len()))
+                        }
+                    }
+
+                    let start_index_for_filter = vertices.len();
+
+                    let v = |p: Position| Vertex {
+                        position: [vx(p.x), vy(p.y), 0.0],
+                        tex_coords: [(p.x / viewport.dimension.width * scale_factor) as f32, (p.y / viewport.dimension.height * scale_factor) as f32],
+                        rgba: [1.0, 1.0, 1.0, 1.0],
+                        mode: MODE_GEOMETRY,
+                    };
+
+                    let (l, r, t, b) = rectangle.l_r_b_t();
+
+                    let mut push_v = |x, y| vertices.push(v(Position::new(x, y)));
+
+                    // Bottom left triangle.
+                    push_v(l, t);
+                    push_v(r, b);
+                    push_v(l, b);
+                    // Top right triangle.
+                    push_v(l, t);
+                    push_v(r, b);
+                    push_v(r, t);
+
+                    commands.push(PreparedCommand::FilterSplitPt1(
+                        start_index_for_filter..vertices.len(), filter_id,
+                    ));
+
+                    current_state = State::Plain {
+                        start: vertices.len(),
+                    };
+                }
+                PrimitiveKind::FilterSplitPt2(filter_id) => {
+                    match current_state {
+                        State::Plain { start } => {
+                            commands.push(PreparedCommand::Plain(start..vertices.len()))
+                        }
+                        State::Image { image_id, start } => {
+                            commands.push(PreparedCommand::Image(image_id, start..vertices.len()))
+                        }
+                    }
+
+                    let start_index_for_filter = vertices.len();
+
+                    let v = |p: Position| Vertex {
+                        position: [vx(p.x), vy(p.y), 0.0],
+                        tex_coords: [(p.x / viewport.dimension.width * scale_factor) as f32, (p.y / viewport.dimension.height * scale_factor) as f32],
+                        rgba: [1.0, 1.0, 1.0, 1.0],
+                        mode: MODE_GEOMETRY,
+                    };
+
+                    let (l, r, t, b) = rectangle.l_r_b_t();
+
+                    let mut push_v = |x, y| vertices.push(v(Position::new(x, y)));
+
+                    // Bottom left triangle.
+                    push_v(l, t);
+                    push_v(r, b);
+                    push_v(l, b);
+                    // Top right triangle.
+                    push_v(l, t);
+                    push_v(r, b);
+                    push_v(r, t);
+
+                    commands.push(PreparedCommand::FilterSplitPt2(
                         start_index_for_filter..vertices.len(), filter_id,
                     ));
 
@@ -810,6 +894,8 @@ impl<'a> Iterator for Commands<'a> {
             PreparedCommand::DeStencil(ref range) => Command::DeStencil(range.clone()),
             PreparedCommand::Transform(ref transform) => Command::Transform(*transform),
             PreparedCommand::Filter(ref range, filter_id) => Command::Filter(range.clone(), filter_id),
+            PreparedCommand::FilterSplitPt1(ref range, filter_id) => Command::FilterSplitPt1(range.clone(), filter_id),
+            PreparedCommand::FilterSplitPt2(ref range, filter_id) => Command::FilterSplitPt2(range.clone(), filter_id),
         })
     }
 }

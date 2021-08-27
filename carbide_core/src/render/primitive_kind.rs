@@ -19,7 +19,13 @@ pub enum PrimitiveKind {
     Stencil(Vec<Triangle<Position>>),
     DeStencil,
 
+    /// This is a filter and can take any 2d filter
     Filter(u32),
+
+    /// A part 1 should always be followed directly by a part 2. This is more performant for
+    /// filters that are seperable such as gaussian and box blur.
+    FilterSplitPt1(u32),
+    FilterSplitPt2(u32),
 
     Transform(Matrix4<f32>, BasicLayouter),
     DeTransform,
