@@ -40,6 +40,12 @@ fn main() {
             Blur::new(Hidden::new(Rectangle::new(vec![])))
                 .frame(200.0, 200.0)
                 .offset(position_x.clone(), 0.0),
+            /*Blur::new(Hidden::new(Rectangle::new(vec![])))
+                .frame(200.0, 200.0)
+                .offset(position_x.clone(), 0.0),
+            Blur::new(Hidden::new(Rectangle::new(vec![])))
+                .frame(200.0, 200.0)
+                .offset(position_x.clone(), 0.0),*/
             Blur::new(Hidden::new(Rectangle::new(vec![])))
                 .frame(100.0, 100.0)
                 .offset(position_neg_x.clone(), 0.0),

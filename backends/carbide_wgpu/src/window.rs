@@ -10,7 +10,7 @@ pub use futures::executor::block_on;
 use image::DynamicImage;
 //use smaa::{SmaaMode, SmaaTarget};
 use uuid::Uuid;
-use wgpu::{BindGroup, BindGroupLayout, Buffer, BufferBindingType, BufferUsage, Device, Extent3d, PresentMode, ShaderModuleDescriptor, ShaderSource, Texture, TextureSampleType, TextureView, TextureViewDimension};
+use wgpu::{BindGroup, BindGroupLayout, Buffer, BufferBindingType, BufferUsage, Device, Extent3d, PresentMode, Sampler, ShaderModuleDescriptor, ShaderSource, Texture, TextureSampleType, TextureView, TextureViewDimension};
 use wgpu::util::{BufferInitDescriptor, DeviceExt};
 use winit::dpi::{PhysicalPosition, PhysicalSize, Size};
 use winit::event::{ElementState, Event, KeyboardInput, VirtualKeyCode, WindowEvent};
@@ -83,6 +83,7 @@ pub struct Window {
     pub(crate) carbide_to_wgpu_matrix: Matrix4<f32>,
     pub(crate) vertex_buffer: (Buffer, usize),
     pub(crate) second_vertex_buffer: Buffer,
+    pub(crate) main_sampler: Sampler,
     inner_window: winit::window::Window,
     event_loop: Option<EventLoop<()>>,
 }
@@ -317,74 +318,6 @@ impl Window {
 
         let main_bind_group = main_bind_group(&device, &main_texture_bind_group_layout, &main_tex_view, &main_sampler, &atlas_cache_tex);
 
-        let test_filter = Filter {
-            texture_size: [600.0, 450.0],
-            number_of_filter_entries: 49,
-            filter_entries: [
-                [0.0, -3.0, -3.0, 1.0 / 4096.0],
-                [0.0, -3.0, -2.0, 6.0 / 4096.0],
-                [0.0, -3.0, -1.0, 15.0 / 4096.0],
-                [0.0, -3.0, 0.0, 20.0 / 4096.0],
-                [0.0, -3.0, 1.0, 15.0 / 4096.0],
-                [0.0, -3.0, 2.0, 6.0 / 4096.0],
-                [0.0, -3.0, 3.0, 1.0 / 4096.0],
-                [0.0, -2.0, -3.0, 6.0 / 4096.0],
-                [0.0, -2.0, -2.0, 36.0 / 4096.0],
-                [0.0, -2.0, -1.0, 90.0 / 4096.0],
-                [0.0, -2.0, 0.0, 120.0 / 4096.0],
-                [0.0, -2.0, 1.0, 90.0 / 4096.0],
-                [0.0, -2.0, 2.0, 36.0 / 4096.0],
-                [0.0, -2.0, 3.0, 6.0 / 4096.0],
-                [0.0, -1.0, -3.0, 15.0 / 4096.0],
-                [0.0, -1.0, -2.0, 90.0 / 4096.0],
-                [0.0, -1.0, -1.0, 225.0 / 4096.0],
-                [0.0, -1.0, 0.0, 300.0 / 4096.0],
-                [0.0, -1.0, 1.0, 225.0 / 4096.0],
-                [0.0, -1.0, 2.0, 90.0 / 4096.0],
-                [0.0, -1.0, 3.0, 15.0 / 4096.0],
-                [0.0, 0.0, -3.0, 20.0 / 4096.0],
-                [0.0, 0.0, -2.0, 120.0 / 4096.0],
-                [0.0, 0.0, -1.0, 300.0 / 4096.0],
-                [0.0, 0.0, 0.0, 400.0 / 4096.0],
-                [0.0, 0.0, 1.0, 300.0 / 4096.0],
-                [0.0, 0.0, 2.0, 120.0 / 4096.0],
-                [0.0, 0.0, 3.0, 20.0 / 4096.0],
-                [0.0, 1.0, -3.0, 15.0 / 4096.0],
-                [0.0, 1.0, -2.0, 90.0 / 4096.0],
-                [0.0, 1.0, -1.0, 225.0 / 4096.0],
-                [0.0, 1.0, 0.0, 300.0 / 4096.0],
-                [0.0, 1.0, 1.0, 225.0 / 4096.0],
-                [0.0, 1.0, 2.0, 90.0 / 4096.0],
-                [0.0, 1.0, 3.0, 15.0 / 4096.0],
-                [0.0, 2.0, -3.0, 6.0 / 4096.0],
-                [0.0, 2.0, -2.0, 36.0 / 4096.0],
-                [0.0, 2.0, -1.0, 90.0 / 4096.0],
-                [0.0, 2.0, 0.0, 120.0 / 4096.0],
-                [0.0, 2.0, 1.0, 90.0 / 4096.0],
-                [0.0, 2.0, 2.0, 36.0 / 4096.0],
-                [0.0, 2.0, 3.0, 6.0 / 4096.0],
-                [0.0, 3.0, -3.0, 1.0 / 4096.0],
-                [0.0, 3.0, -2.0, 6.0 / 4096.0],
-                [0.0, 3.0, -1.0, 15.0 / 4096.0],
-                [0.0, 3.0, 0.0, 20.0 / 4096.0],
-                [0.0, 3.0, 1.0, 15.0 / 4096.0],
-                [0.0, 3.0, 2.0, 6.0 / 4096.0],
-                [0.0, 3.0, 3.0, 1.0 / 4096.0],
-            ],
-        };
-
-        let filter_buffer = device.create_buffer_init(
-            &wgpu::util::BufferInitDescriptor {
-                label: Some("Filter Buffer"),
-                contents: bytemuck::cast_slice(&[test_filter]),
-                usage: wgpu::BufferUsage::STORAGE,
-            }
-        );
-
-        let filter_bind_group = filter_bind_group(&device, &filter_bind_group_layout, &secondary_tex_view, &main_sampler, &filter_buffer);
-
-        filter_bind_groups.insert(0, filter_bind_group);
-
         let mesh = Mesh::with_glyph_cache_dimensions(DEFAULT_GLYPH_CACHE_DIMS);
 
         let image_map = ImageMap::new();
@@ -412,7 +345,7 @@ impl Window {
             .create_buffer_init(&wgpu::util::BufferInitDescriptor {
                 label: Some("Vertex Buffer"),
                 contents: bytemuck::cast_slice(&last_verts),
-                usage: wgpu::BufferUsage::VERTEX,
+                usage: wgpu::BufferUsage::VERTEX | BufferUsage::COPY_DST,
             });
 
         /*let smaa = SmaaTarget::new(
@@ -459,6 +392,7 @@ impl Window {
             carbide_to_wgpu_matrix: matrix,
             event_loop: Some(event_loop),
             second_vertex_buffer: second_verts_buffer,
+            main_sampler,
         }
     }
 
@@ -478,92 +412,16 @@ impl Window {
         let secondary_tex = self.device.create_texture(&secondary_render_tex_desc([new_size.width, new_size.height]));
         let secondary_tex_view = secondary_tex.create_view(&Default::default());
 
+        let main_texture_bind_group_layout = main_texture_group_layout(&self.device);
+
+        self.main_bind_group = main_bind_group(&self.device, &main_texture_bind_group_layout, &main_tex_view, &self.main_sampler, &self.atlas_cache_tex);
+
+
         self.main_tex = main_tex;
         self.main_tex_view = main_tex_view;
         self.secondary_tex = secondary_tex;
         self.secondary_tex_view = secondary_tex_view;
 
-        let main_texture_bind_group_layout =
-            self.device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
-                entries: &[
-                    wgpu::BindGroupLayoutEntry {
-                        binding: 0,
-                        visibility: wgpu::ShaderStage::FRAGMENT,
-                        ty: wgpu::BindingType::Texture {
-                            sample_type: TextureSampleType::Float { filterable: true },
-                            view_dimension: TextureViewDimension::D2,
-                            multisampled: false,
-                        },
-                        count: None,
-                    },
-                    wgpu::BindGroupLayoutEntry {
-                        binding: 1,
-                        visibility: wgpu::ShaderStage::FRAGMENT,
-                        ty: wgpu::BindingType::Sampler { filtering: true, comparison: false },
-                        count: None,
-                    },
-                    wgpu::BindGroupLayoutEntry {
-                        binding: 2,
-                        visibility: wgpu::ShaderStage::FRAGMENT,
-                        ty: wgpu::BindingType::Texture {
-                            sample_type: TextureSampleType::Float { filterable: true },
-                            view_dimension: TextureViewDimension::D2,
-                            multisampled: false,
-                        },
-                        count: None,
-                    },
-                    wgpu::BindGroupLayoutEntry {
-                        binding: 3,
-                        visibility: wgpu::ShaderStage::FRAGMENT,
-                        ty: wgpu::BindingType::Texture {
-                            sample_type: TextureSampleType::Float { filterable: true },
-                            view_dimension: TextureViewDimension::D2,
-                            multisampled: false,
-                        },
-                        count: None,
-                    },
-                ],
-                label: Some("texture_bind_group_layout"),
-            });
-
-        let main_tex_sampler = self.device.create_sampler(&wgpu::SamplerDescriptor {
-            address_mode_u: wgpu::AddressMode::ClampToEdge,
-            address_mode_v: wgpu::AddressMode::ClampToEdge,
-            address_mode_w: wgpu::AddressMode::ClampToEdge,
-            mag_filter: wgpu::FilterMode::Linear,
-            min_filter: wgpu::FilterMode::Linear,
-            mipmap_filter: wgpu::FilterMode::Nearest,
-            ..Default::default()
-        });
-
-        let main_bind_group = self.device.create_bind_group(&wgpu::BindGroupDescriptor {
-            layout: &main_texture_bind_group_layout,
-            entries: &[
-                wgpu::BindGroupEntry {
-                    binding: 0,
-                    resource: wgpu::BindingResource::TextureView(&self.main_tex_view),
-                },
-                wgpu::BindGroupEntry {
-                    binding: 1,
-                    resource: wgpu::BindingResource::Sampler(&main_tex_sampler),
-                },
-                wgpu::BindGroupEntry {
-                    binding: 2,
-                    resource: wgpu::BindingResource::TextureView(
-                        &self.glyph_cache_tex.create_view(&wgpu::TextureViewDescriptor::default()),
-                    ),
-                },
-                wgpu::BindGroupEntry {
-                    binding: 3,
-                    resource: wgpu::BindingResource::TextureView(
-                        &self.atlas_cache_tex.create_view(&wgpu::TextureViewDescriptor::default()),
-                    ),
-                },
-            ],
-            label: Some("diffuse_bind_group"),
-        });
-
-        self.main_bind_group = main_bind_group;
 
         let dimension = Dimension::new(new_size.width as Scalar, new_size.height as Scalar);
         let scale_factor = self.inner_window.scale_factor();

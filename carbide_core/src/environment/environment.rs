@@ -16,6 +16,7 @@ use crate::prelude::EnvironmentVariable;
 use crate::state::{InnerState, StateKey, ValueCell};
 use crate::state::StateContract;
 use crate::text::{Font, FontFamily, FontId, FontSize, FontStyle, FontWeight, Glyph};
+use crate::widget::{ImageFilter, ImageFilterValue};
 use crate::widget::ImageInformation;
 use crate::widget::Widget;
 
@@ -73,6 +74,9 @@ pub struct Environment {
 
     /// The start time of the current frame. This is used to sync the animated states.
     frame_start_time: InnerState<Instant>,
+
+    filter_map: FxHashMap<u32, crate::widget::ImageFilter>,
+    next_filter_id: u32,
 }
 
 impl std::fmt::Debug for Environment {
@@ -89,6 +93,8 @@ impl Environment {
     ) -> Self {
         let default_font_family_name = "NotoSans";
 
+        let mut filters = HashMap::with_hasher(FxBuildHasher::default());
+
         Environment {
             stack: env_stack,
             fonts: vec![],
@@ -102,6 +108,8 @@ impl Environment {
             pixel_dimensions,
             scale_factor,
             frame_start_time: InnerState::new(ValueCell::new(Instant::now())),
+            filter_map: filters,
+            next_filter_id: 0,
         }
     }
 
@@ -190,6 +198,17 @@ impl Environment {
 
     pub fn get_global_state<T>(&self) -> InnerState<T> {
         todo!()
+    }
+
+    pub fn filters(&self) -> &FxHashMap<u32, crate::widget::ImageFilter> {
+        &self.filter_map
+    }
+
+    pub fn insert_filter(&mut self, filter: ImageFilter) -> u32 {
+        let filter_id = self.next_filter_id;
+        self.next_filter_id += 1;
+        self.filter_map.insert(filter_id, filter);
+        filter_id
     }
 
     /// Swaps the local state between the env and the state requesting it.

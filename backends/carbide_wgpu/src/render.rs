@@ -6,6 +6,8 @@ use wgpu::util::{BufferInitDescriptor, DeviceExt};
 use carbide_core::draw::{Dimension, Position, Rect};
 use carbide_core::mesh::MODE_IMAGE;
 
+use crate::bind_groups::filter_bind_group;
+use crate::filter::Filter;
 use crate::glyph_cache_command::GlyphCacheCommand;
 use crate::render_pass_command::{create_render_pass_commands, RenderPass, RenderPassCommand};
 use crate::texture_atlas_command::TextureAtlasCommand;
@@ -59,6 +61,26 @@ impl Window {
         }
 
         let mut uniform_bind_groups = vec![];
+
+        let keys = self.ui.environment.filters().keys().cloned().collect::<Vec<_>>();
+
+        self.filter_bind_groups.retain(|id, _| keys.contains(id));
+
+        for (filter_id, filter) in self.ui.environment.filters() {
+            if !self.filter_bind_groups.contains_key(filter_id) {
+                let mut filter: Filter = filter.clone().into();
+                let mut filter = filter.with_texture_size(self.size.width, self.size.height, self.ui.environment.get_scale_factor());
+                let filter_buffer = self.device.create_buffer_init(
+                    &wgpu::util::BufferInitDescriptor {
+                        label: Some("Filter Buffer"),
+                        contents: &*filter.as_bytes(),
+                        usage: wgpu::BufferUsage::STORAGE,
+                    }
+                );
+                let filter_bind_group = filter_bind_group(&self.device, &self.filter_uniform_bind_group_layout, &self.secondary_tex_view, &self.main_sampler, &filter_buffer);
+                self.filter_bind_groups.insert(*filter_id, filter_bind_group);
+            }
+        }
 
         let commands = create_render_pass_commands(
             &self.diffuse_bind_group,

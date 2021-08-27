@@ -65,7 +65,7 @@ pub enum Command {
     Stencil(std::ops::Range<usize>),
     DeStencil(std::ops::Range<usize>),
     Transform(Matrix4<f32>),
-    Filter(std::ops::Range<usize>),
+    Filter(std::ops::Range<usize>, u32),
 }
 
 /// An iterator yielding `Command`s, produced by the `Renderer::commands` method.
@@ -108,7 +108,7 @@ enum PreparedCommand {
     Stencil(std::ops::Range<usize>),
     DeStencil(std::ops::Range<usize>),
     Transform(Matrix4<f32>),
-    Filter(std::ops::Range<usize>),
+    Filter(std::ops::Range<usize>, u32),
 }
 
 impl Mesh {
@@ -330,7 +330,7 @@ impl Mesh {
                         start: vertices.len(),
                     };
                 }
-                PrimitiveKind::Filter => {
+                PrimitiveKind::Filter(filter_id) => {
                     match current_state {
                         State::Plain { start } => {
                             commands.push(PreparedCommand::Plain(start..vertices.len()))
@@ -363,7 +363,7 @@ impl Mesh {
                     push_v(r, t);
 
                     commands.push(PreparedCommand::Filter(
-                        start_index_for_filter..vertices.len(),
+                        start_index_for_filter..vertices.len(), filter_id,
                     ));
 
                     current_state = State::Plain {
@@ -809,7 +809,7 @@ impl<'a> Iterator for Commands<'a> {
             PreparedCommand::Stencil(ref range) => Command::Stencil(range.clone()),
             PreparedCommand::DeStencil(ref range) => Command::DeStencil(range.clone()),
             PreparedCommand::Transform(ref transform) => Command::Transform(*transform),
-            PreparedCommand::Filter(ref range) => Command::Filter(range.clone()),
+            PreparedCommand::Filter(ref range, filter_id) => Command::Filter(range.clone(), filter_id),
         })
     }
 }

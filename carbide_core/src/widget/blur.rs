@@ -10,6 +10,7 @@ pub struct Blur {
     child: Box<dyn Widget>,
     position: Position,
     dimension: Dimension,
+    filter_has_been_inserted: Option<u32>,
 }
 
 impl Blur {
@@ -19,7 +20,23 @@ impl Blur {
             child,
             position: Position::new(0.0, 0.0),
             dimension: Dimension::new(100.0, 100.0),
+            filter_has_been_inserted: None,
         })
+    }
+
+    fn blur(radius: u32) -> ImageFilter {
+        let radius = radius as i32;
+        let div = (2 * radius + 1).pow(2);
+
+        let mut entries = vec![];
+
+        for radius_y in -radius..=radius {
+            for radius_x in -radius..=radius {
+                entries.push(ImageFilterValue::new(radius_x, radius_y, 1.0 / div as f32))
+            }
+        }
+
+        ImageFilter { filter: entries }
     }
 }
 
@@ -79,14 +96,69 @@ impl CommonWidget for Blur {
 
 impl Render for Blur {
     fn process_get_primitives(&mut self, primitives: &mut Vec<Primitive>, env: &mut Environment) {
+        if self.filter_has_been_inserted == None {
+            let filter_id = env.insert_filter(Blur::blur(7));
+            self.filter_has_been_inserted = Some(filter_id);
+        }
+
+        /*[0.0, -3.0, -3.0, 1.0 / 4096.0],
+                [0.0, -3.0, -2.0, 6.0 / 4096.0],
+                [0.0, -3.0, -1.0, 15.0 / 4096.0],
+                [0.0, -3.0, 0.0, 20.0 / 4096.0],
+                [0.0, -3.0, 1.0, 15.0 / 4096.0],
+                [0.0, -3.0, 2.0, 6.0 / 4096.0],
+                [0.0, -3.0, 3.0, 1.0 / 4096.0],
+                [0.0, -2.0, -3.0, 6.0 / 4096.0],
+                [0.0, -2.0, -2.0, 36.0 / 4096.0],
+                [0.0, -2.0, -1.0, 90.0 / 4096.0],
+                [0.0, -2.0, 0.0, 120.0 / 4096.0],
+                [0.0, -2.0, 1.0, 90.0 / 4096.0],
+                [0.0, -2.0, 2.0, 36.0 / 4096.0],
+                [0.0, -2.0, 3.0, 6.0 / 4096.0],
+                [0.0, -1.0, -3.0, 15.0 / 4096.0],
+                [0.0, -1.0, -2.0, 90.0 / 4096.0],
+                [0.0, -1.0, -1.0, 225.0 / 4096.0],
+                [0.0, -1.0, 0.0, 300.0 / 4096.0],
+                [0.0, -1.0, 1.0, 225.0 / 4096.0],
+                [0.0, -1.0, 2.0, 90.0 / 4096.0],
+                [0.0, -1.0, 3.0, 15.0 / 4096.0],
+                [0.0, 0.0, -3.0, 20.0 / 4096.0],
+                [0.0, 0.0, -2.0, 120.0 / 4096.0],
+                [0.0, 0.0, -1.0, 300.0 / 4096.0],
+                [0.0, 0.0, 0.0, 400.0 / 4096.0],
+                [0.0, 0.0, 1.0, 300.0 / 4096.0],
+                [0.0, 0.0, 2.0, 120.0 / 4096.0],
+                [0.0, 0.0, 3.0, 20.0 / 4096.0],
+                [0.0, 1.0, -3.0, 15.0 / 4096.0],
+                [0.0, 1.0, -2.0, 90.0 / 4096.0],
+                [0.0, 1.0, -1.0, 225.0 / 4096.0],
+                [0.0, 1.0, 0.0, 300.0 / 4096.0],
+                [0.0, 1.0, 1.0, 225.0 / 4096.0],
+                [0.0, 1.0, 2.0, 90.0 / 4096.0],
+                [0.0, 1.0, 3.0, 15.0 / 4096.0],
+                [0.0, 2.0, -3.0, 6.0 / 4096.0],
+                [0.0, 2.0, -2.0, 36.0 / 4096.0],
+                [0.0, 2.0, -1.0, 90.0 / 4096.0],
+                [0.0, 2.0, 0.0, 120.0 / 4096.0],
+                [0.0, 2.0, 1.0, 90.0 / 4096.0],
+                [0.0, 2.0, 2.0, 36.0 / 4096.0],
+                [0.0, 2.0, 3.0, 6.0 / 4096.0],
+                [0.0, 3.0, -3.0, 1.0 / 4096.0],
+                [0.0, 3.0, -2.0, 6.0 / 4096.0],
+                [0.0, 3.0, -1.0, 15.0 / 4096.0],
+                [0.0, 3.0, 0.0, 20.0 / 4096.0],
+                [0.0, 3.0, 1.0, 15.0 / 4096.0],
+                [0.0, 3.0, 2.0, 6.0 / 4096.0],
+                [0.0, 3.0, 3.0, 1.0 / 4096.0],*/
         for child in self.children_mut() {
             child.process_get_primitives(primitives, env);
         }
-
-        primitives.push(Primitive {
-            kind: PrimitiveKind::Filter,
-            rect: Rect::new(self.position, self.dimension),
-        });
+        if let Some(filter_id) = self.filter_has_been_inserted {
+            primitives.push(Primitive {
+                kind: PrimitiveKind::Filter(filter_id),
+                rect: Rect::new(self.position, self.dimension),
+            });
+        }
     }
 }
 

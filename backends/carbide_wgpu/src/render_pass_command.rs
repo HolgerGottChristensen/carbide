@@ -100,7 +100,7 @@ pub fn create_render_pass_commands<'a>(
                 inner_commands.push(cmd);
             }
 
-            mesh::Command::Filter(vertex_range) => {
+            mesh::Command::Filter(vertex_range, filter_id) => {
                 let vertex_count = vertex_range.len();
                 if vertex_count <= 0 {
                     continue;
@@ -118,7 +118,7 @@ pub fn create_render_pass_commands<'a>(
                 let mut new_inner_commands = vec![];
                 std::mem::swap(&mut new_inner_commands, &mut inner_commands);
                 commands.push(RenderPass::Normal(new_inner_commands));
-                commands.push(RenderPass::Filter(range, 0));
+                commands.push(RenderPass::Filter(range, filter_id));
                 bind_group = None;
             }
 
