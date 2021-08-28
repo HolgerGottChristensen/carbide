@@ -47,6 +47,18 @@ impl RoundedRectangle {
         Box::new(self)
     }
 
+    pub fn material<C: Into<ColorState>>(mut self, material: C) -> Box<ZStack> {
+        let material = material.into();
+        self.fill_color = material.clone();
+        self.stroke_color = material;
+
+        ZStack::new(vec![
+            Blur::gaussian(10.0)
+                .clip_shape(Box::new(self.clone())),
+            Box::new(self),
+        ])
+    }
+
     pub fn new(corner_radii: CornerRadii) -> Box<RoundedRectangle> {
         Box::new(RoundedRectangle {
             id: Uuid::new_v4(),

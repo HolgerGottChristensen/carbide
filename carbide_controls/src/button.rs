@@ -128,7 +128,7 @@ impl<
                 },
             );
 
-        let child = PlainButton::new(ZStack::initialize(vec![
+        let child = PlainButton::new(ZStack::new(vec![
             RoundedRectangle::new(CornerRadii::all(3.0))
                 .fill(background_color)
                 .stroke(focus_color)

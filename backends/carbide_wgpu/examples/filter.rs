@@ -29,7 +29,7 @@ fn main() {
 
 
     window.set_widgets(
-        ZStack::initialize(vec![
+        ZStack::new(vec![
             Image::new(image_id)
                 .scaled_to_fill()
                 .clip_shape(Rectangle::new(vec![]))

@@ -48,6 +48,17 @@ impl Rectangle {
         Box::new(self)
     }
 
+    pub fn material<C: Into<ColorState>>(mut self, material: C) -> Box<ZStack> {
+        let material = material.into();
+        self.fill_color = material.clone();
+        self.stroke_color = material;
+
+        ZStack::new(vec![
+            Blur::gaussian(10.0),
+            Box::new(self),
+        ])
+    }
+
     pub fn shrink_to_fit(mut self) -> Box<Self> {
         self.shrink_to_fit = true;
         Box::new(self)

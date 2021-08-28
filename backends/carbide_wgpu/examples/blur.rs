@@ -33,15 +33,15 @@ fn main() {
         .range(180.0, -180.0);
 
     window.set_widgets(
-        ZStack::initialize(vec![
+        ZStack::new(vec![
             Image::new(image_id)
                 .scaled_to_fill()
                 .clip_shape(Rectangle::new(vec![]))
                 .frame(500.0, 400.0),
-            Blur::gaussian(10.0, Hidden::new(Rectangle::new(vec![])))
+            Blur::gaussian(10.0)
                 .frame(200.0, 200.0)
                 .offset(position_x.clone(), 0.0),
-            Blur::new(Hidden::new(Rectangle::new(vec![])))
+            Blur::mean(3)
                 .clip_shape(Circle::new())
                 .frame(100.0, 100.0)
                 .offset(position_neg_x.clone(), 0.0),

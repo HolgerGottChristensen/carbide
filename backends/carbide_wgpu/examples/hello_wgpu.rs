@@ -1,4 +1,7 @@
+use carbide_core::draw::Position;
+use carbide_core::environment::{EnvironmentColor, EnvironmentFontSize};
 use carbide_core::widget::*;
+use carbide_core::widget::canvas::Context;
 use carbide_wgpu::window::*;
 use hello::sync_test::SyncTest;
 
@@ -14,7 +17,6 @@ fn main() {
         800,
         1200,
         Some(icon_path),
-        String::from("Hejsa"),
     );
 
     window
@@ -27,7 +29,7 @@ fn main() {
     window.set_widgets(
         OverlaidLayer::new("overlay_test",
                            VStack::new(vec![
-                               Text::new("Hello world!y")
+                               Text::new("Hello world!")
                                    .font_size(EnvironmentFontSize::Title)
                                    .color(EnvironmentColor::Green)
                                    .padding(EdgeInsets::all(10.0)),
@@ -66,14 +68,14 @@ fn main() {
     window.launch();
 }
 
-fn draw_heart<GS: GlobalStateContract>(_: OldRect, mut context: Context<GS>) -> Context<GS> {
+fn draw_heart<GS: GlobalStateContract>(_: OldRect, mut context: Context) -> Context {
     context.move_to(75.0, 40.0);
-    context.bezier_curve_to([75.0, 37.0], [70.0, 25.0], [50.0, 25.0]);
-    context.bezier_curve_to([20.0, 25.0], [20.0, 62.5], [20.0, 62.5]);
-    context.bezier_curve_to([20.0, 80.0], [40.0, 102.0], [75.0, 120.0]);
-    context.bezier_curve_to([110.0, 102.0], [130.0, 80.0], [130.0, 62.5]);
-    context.bezier_curve_to([130.0, 62.5], [130.0, 25.0], [100.0, 25.0]);
-    context.bezier_curve_to([85.0, 25.0], [75.0, 37.0], [75.0, 40.0]);
+    context.bezier_curve_to(Position::new(75.0, 37.0), Position::new(70.0, 25.0), Position::new(50.0, 25.0));
+    context.bezier_curve_to(Position::new(20.0, 25.0), Position::new(20.0, 62.5), Position::new(20.0, 62.5));
+    context.bezier_curve_to(Position::new(20.0, 80.0), Position::new(40.0, 102.0), Position::new(75.0, 120.0));
+    context.bezier_curve_to(Position::new(110.0, 102.0), Position::new(130.0, 80.0), Position::new(130.0, 62.5));
+    context.bezier_curve_to(Position::new(130.0, 62.5), Position::new(130.0, 25.0), Position::new(100.0, 25.0));
+    context.bezier_curve_to(Position::new(85.0, 25.0), Position::new(75.0, 37.0), Position::new(75.0, 40.0));
     context.close_path();
     context.set_fill_style(EnvironmentColor::Accent);
     context.fill();

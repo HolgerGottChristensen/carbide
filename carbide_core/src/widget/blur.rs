@@ -7,7 +7,6 @@ use crate::utils::gaussian;
 #[carbide_exclude(Render)]
 pub struct Blur {
     id: Uuid,
-    child: Box<dyn Widget>,
     position: Position,
     dimension: Dimension,
     blur_type: BlurType,
@@ -18,22 +17,9 @@ pub struct Blur {
 }
 
 impl Blur {
-    pub fn new(child: Box<dyn Widget>) -> Box<Self> {
+    pub fn gaussian(sigma: f32) -> Box<Self> {
         Box::new(Blur {
             id: Uuid::new_v4(),
-            child,
-            position: Position::new(0.0, 0.0),
-            dimension: Dimension::new(100.0, 100.0),
-            blur_type: BlurType::Gaussian(2.0),
-            filter_horizontal_has_been_inserted: None,
-            filter_vertical_has_been_inserted: None,
-        })
-    }
-
-    pub fn gaussian(sigma: f32, child: Box<dyn Widget>) -> Box<Self> {
-        Box::new(Blur {
-            id: Uuid::new_v4(),
-            child,
             position: Position::new(0.0, 0.0),
             dimension: Dimension::new(100.0, 100.0),
             blur_type: BlurType::Gaussian(sigma),
@@ -42,10 +28,9 @@ impl Blur {
         })
     }
 
-    pub fn mean(radius: u32, child: Box<dyn Widget>) -> Box<Self> {
+    pub fn mean(radius: u32) -> Box<Self> {
         Box::new(Blur {
             id: Uuid::new_v4(),
-            child,
             position: Position::new(0.0, 0.0),
             dimension: Dimension::new(100.0, 100.0),
             blur_type: BlurType::Mean(radius),
@@ -58,7 +43,6 @@ impl Blur {
         assert!(sigma > 0.0);
         let mut entries = vec![];
         let radius = (3.0 * sigma).round() as i32;
-        println!("Generated gaussian with radius: {}", radius);
 
         for x in -radius..=radius {
             entries.push(ImageFilterValue::new(x, 0, gaussian(sigma as f64, x as f64) as f32))
@@ -97,27 +81,19 @@ impl CommonWidget for Blur {
     }
 
     fn children(&self) -> WidgetIter {
-        if self.child.flag() == Flags::PROXY {
-            self.child.children()
-        } else {
-            WidgetIter::single(self.child.deref())
-        }
+        WidgetIter::Empty
     }
 
     fn children_mut(&mut self) -> WidgetIterMut {
-        if self.child.flag() == Flags::PROXY {
-            self.child.children_mut()
-        } else {
-            WidgetIterMut::single(self.child.deref_mut())
-        }
+        WidgetIterMut::Empty
     }
 
     fn proxied_children(&mut self) -> WidgetIterMut {
-        WidgetIterMut::single(self.child.deref_mut())
+        WidgetIterMut::Empty
     }
 
     fn proxied_children_rev(&mut self) -> WidgetIterMut {
-        WidgetIterMut::single(self.child.deref_mut())
+        WidgetIterMut::Empty
     }
 
     fn position(&self) -> Position {
@@ -168,10 +144,6 @@ impl Render for Blur {
                 }
             };
             self.filter_vertical_has_been_inserted = Some((filter_id, radius));
-        }
-
-        for child in self.children_mut() {
-            child.process_get_primitives(primitives, env);
         }
 
         if let Some((filter_id, radius)) = self.filter_horizontal_has_been_inserted {

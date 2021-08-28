@@ -57,7 +57,7 @@ impl<GS: GlobalStateContract> CheckBox<GS> {
                 .clone()
                 .mapped(|checked| *checked == CheckBoxValue::Intermediate);
 
-            ZStack::initialize(vec![
+            ZStack::new(vec![
                 RoundedRectangle::new(CornerRadii::all(3.0))
                     .fill(checked_color)
                     .stroke(focus_color)

@@ -37,6 +37,28 @@ pub enum EnvironmentColor {
     DarkText,
     LightText,
     Accent,
+
+    // Material colors theme
+    UltraThick,
+    Thick,
+    Regular,
+    Thin,
+    UltraThin,
+
+    // Material colors theme light
+    UltraThickLight,
+    ThickLight,
+    RegularLight,
+    ThinLight,
+    UltraThinLight,
+
+    // Material colors theme dark
+    UltraThickDark,
+    ThickDark,
+    RegularDark,
+    ThinDark,
+    UltraThinDark,
+
     Custom(String),
 }
 

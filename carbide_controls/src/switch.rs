@@ -48,7 +48,7 @@ impl<GS: GlobalStateContract> Switch<GS> {
                     }
                 });
 
-            ZStack::initialize(vec![
+            ZStack::new(vec![
                 Capsule::new()
                     .fill(checked_color)
                     .stroke(focus_color)

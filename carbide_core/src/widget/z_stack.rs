@@ -15,7 +15,7 @@ pub struct ZStack {
 }
 
 impl ZStack {
-    pub fn initialize(children: Vec<Box<dyn Widget>>) -> Box<ZStack> {
+    pub fn new(children: Vec<Box<dyn Widget>>) -> Box<ZStack> {
         Box::new(ZStack {
             id: Uuid::new_v4(),
             children,

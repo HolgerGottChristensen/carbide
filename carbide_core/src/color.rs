@@ -40,6 +40,13 @@ impl Default for Color {
 }*/
 
 impl Color {
+    pub fn new_rgb(r: u8, g: u8, b: u8) -> Color {
+        let r = r as f32 / 255.0;
+        let g = g as f32 / 255.0;
+        let b = b as f32 / 255.0;
+        Color::Rgba(r, g, b, 1.0)
+    }
+
     pub fn random() -> Self {
         let mut rng = rand::thread_rng();
         return rgb(
@@ -245,6 +252,14 @@ impl Color {
 
     /// Return the same color but with the given alpha.
     pub fn with_alpha(self, a: f32) -> Color {
+        match self {
+            Color::Rgba(r, g, b, _) => Color::Rgba(r, g, b, a),
+            Color::Hsla(h, s, l, _) => Color::Hsla(h, s, l, a),
+        }
+    }
+
+    /// Return the same color but with the given alpha.
+    pub fn opacity(self, a: f32) -> Color {
         match self {
             Color::Rgba(r, g, b, _) => Color::Rgba(r, g, b, a),
             Color::Hsla(h, s, l, _) => Color::Hsla(h, s, l, a),

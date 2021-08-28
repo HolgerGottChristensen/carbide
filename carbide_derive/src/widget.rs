@@ -108,7 +108,6 @@ fn parse_attributes(attr: &Vec<Attribute>) -> HashSet<DeriveType> {
             }
         }
     }
-    println!("{:?}", set);
     set
 }
 

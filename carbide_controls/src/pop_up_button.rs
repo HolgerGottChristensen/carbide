@@ -46,13 +46,13 @@ impl<
                     }
                 });
 
-            ZStack::initialize(vec![
+            ZStack::new(vec![
                 RoundedRectangle::new(CornerRadii::all(3.0))
                     .fill(EnvironmentColor::SecondarySystemBackground),
                 HStack::new(vec![
                     Padding::init(EdgeInsets::single(0.0, 0.0, 7.0, 0.0), Text::new(text)),
                     Spacer::new(SpacerDirection::Horizontal),
-                    ZStack::initialize(vec![
+                    ZStack::new(vec![
                         RoundedRectangle::new(CornerRadii::single(0.0, 0.0, 0.0, 2.0))
                             .fill(EnvironmentColor::Accent),
                         Canvas::initialize(|_, mut context| {

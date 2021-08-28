@@ -69,11 +69,15 @@ impl Scroll {
             dimension: Dimension::new(0.0, 0.0),
             scroll_offset: Position::new(0.0, 0.0),
             scroll_directions: ScrollDirection::Both,
-            scrollbar_horizontal: Rectangle::new(vec![])
-                .fill(EnvironmentColor::Gray)
+            scrollbar_horizontal: Capsule::new()
+                .fill(EnvironmentColor::ThinLight)
+                .stroke(EnvironmentColor::ThinDark)
+                .stroke_style(1.0)
                 .frame(100.0, 10.0),
-            scrollbar_vertical: Rectangle::new(vec![])
-                .fill(EnvironmentColor::Gray)
+            scrollbar_vertical: Capsule::new()
+                .fill(EnvironmentColor::ThinLight)
+                .stroke(EnvironmentColor::ThinDark)
+                .stroke_style(1.0)
                 .frame(10.0, 100.0),
             drag_started_on_vertical_scrollbar: false,
             drag_started_on_horizontal_scrollbar: false,
@@ -119,7 +123,7 @@ impl MouseEventHandler for Scroll {
                     if modifiers.contains(ModifierKey::SHIFT) {
                         self.scroll_offset.x += y * offset_multiplier;
                     } else {
-                        self.scroll_offset.x -= x * offset_multiplier;
+                        self.scroll_offset.x += x * offset_multiplier;
                     }
 
                     self.keep_x_within_bounds();

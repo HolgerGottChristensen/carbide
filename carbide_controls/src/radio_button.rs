@@ -57,7 +57,7 @@ impl<
                     }
                 });
 
-            ZStack::initialize(vec![
+            ZStack::new(vec![
                 Ellipse::new()
                     .fill(selected_color)
                     .stroke(focus_color)
