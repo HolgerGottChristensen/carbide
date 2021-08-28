@@ -89,7 +89,6 @@ impl Window {
             &self.image_map,
             &self.mesh,
             &self.device,
-            &self.glyph_cache_tex,
             &self.atlas_cache_tex,
             &self.texture_bind_group_layout,
             &self.uniform_bind_group_layout,

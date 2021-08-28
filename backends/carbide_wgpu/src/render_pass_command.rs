@@ -10,7 +10,6 @@ use carbide_core::mesh::mesh::Mesh;
 use crate::bind_groups::matrix_to_uniform_bind_group;
 use crate::diffuse_bind_group::{DiffuseBindGroup, new_diffuse};
 use crate::image::Image;
-use crate::window::Window;
 
 /// A draw command that maps directly to the `wgpu::CommandEncoder` method. By returning
 /// `RenderPassCommand`s, we can avoid consuming the entire `AutoCommandBufferBuilder` itself which might
@@ -60,7 +59,6 @@ pub fn create_render_pass_commands<'a>(
     image_map: &'a ImageMap<Image>,
     mesh: &'a Mesh,
     device: &'a Device,
-    glyph_texture: &'a Texture,
     atlas_tex: &'a Texture,
     bind_group_layout: &'a BindGroupLayout,
     uniform_bind_group_layout: &'a BindGroupLayout,
@@ -109,7 +107,6 @@ pub fn create_render_pass_commands<'a>(
                 }
                 // Ensure a render pipeline and bind group is set.
                 if bind_group.is_none() {
-                    bind_group = Some(BindGroup::Default);
                     let cmd = RenderPassCommand::SetBindGroup {
                         bind_group: default_bind_group,
                     };
@@ -130,7 +127,6 @@ pub fn create_render_pass_commands<'a>(
                 }
                 // Ensure a render pipeline and bind group is set.
                 if bind_group.is_none() {
-                    bind_group = Some(BindGroup::Default);
                     let cmd = RenderPassCommand::SetBindGroup {
                         bind_group: default_bind_group,
                     };
@@ -151,7 +147,6 @@ pub fn create_render_pass_commands<'a>(
                 }
                 // Ensure a render pipeline and bind group is set.
                 if bind_group.is_none() {
-                    bind_group = Some(BindGroup::Default);
                     let cmd = RenderPassCommand::SetBindGroup {
                         bind_group: default_bind_group,
                     };

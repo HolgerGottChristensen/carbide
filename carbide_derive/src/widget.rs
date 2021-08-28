@@ -2,10 +2,9 @@ use std::collections::HashSet;
 
 use proc_macro2;
 use proc_macro2::{Ident, TokenStream};
-use quote::ToTokens;
 use syn;
 use syn::{
-    Attribute, DeriveInput, Error, Fields, GenericParam, Meta, MetaList, NestedMeta, Path, Type,
+    Attribute, DeriveInput, Fields, GenericParam, Meta, MetaList, NestedMeta, Path, Type,
     WherePredicate,
 };
 
@@ -163,31 +162,6 @@ fn path_to_string(path: Path) -> String {
 
     string.remove(string.len() - 1);
     string
-}
-
-fn filtered_where_clause(ast: &&DeriveInput) -> TokenStream {
-    if ast.generics.where_clause.is_none() {
-        return quote! {};
-    }
-
-    let _wheres = &ast.generics.where_clause.clone().unwrap();
-
-    let filtered = _wheres.predicates.iter().filter_map(|a| match a {
-        WherePredicate::Type(t) => match &t.bounded_ty {
-            Type::Path(path) => {
-                if path.path.segments.len() == 1
-                    && path.path.segments.first().unwrap().ident.to_string() == "GS"
-                {
-                    None
-                } else {
-                    Some(WherePredicate::Type(t.clone()))
-                }
-            }
-            _ => Some(WherePredicate::Type(t.clone())),
-        },
-        b => Some(b.clone()),
-    });
-    quote! { where #(#filtered),*}
 }
 
 fn is_attribute_path_state(path: Path) -> bool {

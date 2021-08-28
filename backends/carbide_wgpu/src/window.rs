@@ -1,25 +1,21 @@
-use std::cell::RefCell;
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
-use std::rc::Rc;
-use std::thread::sleep;
 use std::time::{Duration, Instant};
 
-use cgmath::{Deg, Matrix4, Point3, Rad, SquareMatrix, Vector3};
+use cgmath::{Matrix4, Vector3};
 pub use futures::executor::block_on;
 use image::DynamicImage;
 //use smaa::{SmaaMode, SmaaTarget};
 use uuid::Uuid;
-use wgpu::{BindGroup, BindGroupLayout, Buffer, BufferBindingType, BufferUsage, Device, Extent3d, PresentMode, Sampler, ShaderModuleDescriptor, ShaderSource, Texture, TextureSampleType, TextureView, TextureViewDimension};
+use wgpu::{BindGroup, BindGroupLayout, Buffer, BufferUsage, PresentMode, Sampler, Texture, TextureView};
 use wgpu::util::{BufferInitDescriptor, DeviceExt};
 use winit::dpi::{PhysicalPosition, PhysicalSize, Size};
 use winit::event::{ElementState, Event, KeyboardInput, VirtualKeyCode, WindowEvent};
 use winit::event_loop::{ControlFlow, EventLoop};
-use winit::platform::macos::WindowBuilderExtMacOS;
 use winit::window::{Icon, WindowBuilder};
 
 use carbide_core::{Scalar, Ui};
-use carbide_core::draw::{Dimension, Position, Rect};
+use carbide_core::draw::Dimension;
 use carbide_core::event::Input;
 use carbide_core::image_map::{Id, ImageMap};
 use carbide_core::mesh::{DEFAULT_GLYPH_CACHE_DIMS, MODE_IMAGE};
@@ -32,10 +28,8 @@ use carbide_core::widget::Widget;
 pub use carbide_core::window::TWindow;
 
 use crate::bind_group_layouts::{filter_buffer_bind_group_layout, filter_texture_bind_group_layout, main_texture_group_layout, uniform_bind_group_layout};
-use crate::bind_groups::{filter_texture_bind_group, main_bind_group, matrix_to_uniform_bind_group, size_to_uniform_bind_group, uniform_bind_group};
+use crate::bind_groups::{filter_texture_bind_group, main_bind_group, matrix_to_uniform_bind_group, size_to_uniform_bind_group};
 use crate::diffuse_bind_group::{DiffuseBindGroup, new_diffuse};
-use crate::filter::Filter;
-use crate::glyph_cache_command::GlyphCacheCommand;
 use crate::image::Image;
 use crate::pipeline::{create_render_pipeline, create_render_pipeline_wgsl, MaskType};
 use crate::render_pass_command::{create_render_pass_commands, RenderPassCommand};

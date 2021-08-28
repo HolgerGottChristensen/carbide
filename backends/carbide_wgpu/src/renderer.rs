@@ -1,6 +1,6 @@
 use wgpu::{TextureFormat, TextureUsage};
 
-use crate::{DEFAULT_IMAGE_TEX_FORMAT, GLYPH_TEX_FORMAT};
+use crate::GLYPH_TEX_FORMAT;
 
 pub fn main_render_tex_desc([width, height]: [u32; 2]) -> wgpu::TextureDescriptor<'static> {
     let depth_or_array_layers = 1;
