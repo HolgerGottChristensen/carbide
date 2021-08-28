@@ -1,8 +1,7 @@
-#![allow(unsafe_code)]
-
 use std::collections::HashMap;
 use std::fmt::Debug;
 use std::hash::Hash;
+use std::marker::PhantomData;
 
 use fxhash::{FxBuildHasher, FxHashMap};
 use serde::de::DeserializeOwned;
@@ -12,16 +11,12 @@ use crate::draw::{Dimension, Position};
 use crate::event::{KeyboardEvent, MouseEvent};
 use crate::prelude::*;
 
-pub trait Delegate<T: StateContract + Identifiable>: Fn(TState<T>, UsizeState) -> Box<dyn Widget> + Clone {}
+pub trait Delegate<T: StateContract, W: Widget>: Fn(TState<T>, UsizeState) -> W + Clone {}
 
-impl<I, T: StateContract + Identifiable> Delegate<T> for I where I: Fn(TState<T>, UsizeState) -> Box<dyn Widget> + Clone {}
-
-pub trait Identifiable {
-    fn id(&self) -> Uuid;
-}
+impl<I, T: StateContract, W: Widget> Delegate<T, W> for I where I: Fn(TState<T>, UsizeState) -> W + Clone {}
 
 #[derive(Clone, Widget)]
-pub struct ForEach<T, U> where T: StateContract + Identifiable, U: Delegate<T> {
+pub struct ForEach<T, U, W> where T: StateContract, W: Widget + Clone, U: Delegate<T, W> {
     id: Uuid,
     position: Position,
     dimension: Dimension,
@@ -29,17 +24,16 @@ pub struct ForEach<T, U> where T: StateContract + Identifiable, U: Delegate<T> {
     #[state] model: TState<Vec<T>>,
     delegate: U,
 
-    children: FxHashMap<Uuid, Box<dyn Widget>>,
+    children: Vec<W>,
     #[state] index_offset: UsizeState,
 }
 
-impl<T: StateContract + Identifiable + 'static, U: Delegate<T>> ForEach<T, U> {
+impl<T: StateContract + 'static, W: Widget + Clone, U: Delegate<T, W>> ForEach<T, U, W> {
     pub fn new<K: Into<TState<Vec<T>>>>(model: K, delegate: U) -> Box<Self> {
         let model = model.into();
-        let mut map = HashMap::with_hasher(FxBuildHasher::default());
+        let mut map = vec![];
 
         for (index, element) in model.value().deref().iter().enumerate() {
-            let id = element.id();
             let index_state: UsizeState = ValueState::new(index).into();
             let item_state: MapState<Vec<T>, T, usize> = MapState::new(model.clone(),
                                                                        index,
@@ -50,7 +44,7 @@ impl<T: StateContract + Identifiable + 'static, U: Delegate<T>> ForEach<T, U> {
                                                                            &mut a[index]
                                                                        });
             let widget = (delegate)(item_state.into(), index_state);
-            map.insert(id, widget);
+            map.push(widget);
         }
 
         Box::new(Self {
@@ -80,7 +74,7 @@ impl<T: StateContract + Identifiable + 'static, U: Delegate<T>> ForEach<T, U> {
     }*/
 }
 
-impl<T: StateContract + Identifiable, U: Delegate<T>> CommonWidget for ForEach<T, U> {
+impl<T: StateContract, W: Widget + Clone, U: Delegate<T, W>> CommonWidget for ForEach<T, U, W> {
     fn id(&self) -> Uuid {
         self.id
     }
@@ -94,101 +88,43 @@ impl<T: StateContract + Identifiable, U: Delegate<T>> CommonWidget for ForEach<T
     }
 
     fn children(&self) -> WidgetIter {
-        let mut w = WidgetIter::Empty;
-
-        for item in self.model.value().iter().rev() {
-            let id = item.id();
-            let item = self.children.get(&id).unwrap();
-
-            if item.flag() == Flags::PROXY {
-                w = WidgetIter::Multi(Box::new(item.children()), Box::new(w));
-            } else {
-                w = WidgetIter::Single(item, Box::new(w))
-            }
-        }
-
-        w
+        self.children
+            .iter()
+            .rfold(WidgetIter::Empty, |acc, x| {
+                if x.flag() == Flags::PROXY {
+                    WidgetIter::Multi(Box::new(x.children()), Box::new(acc))
+                } else {
+                    WidgetIter::Single(x, Box::new(acc))
+                }
+            })
     }
 
     fn children_mut(&mut self) -> WidgetIterMut {
-        let mut w = WidgetIterMut::Empty;
-
-        /*for id in self.model.value().iter().rev() {
-            let contains = self.children_map.contains_key(id).clone();
-            if !contains {
-                self.children_map.insert(id.clone(), Clone::clone(&self.delegate));
-            }
-        }*/
-
-        for item in self.model.value().iter().rev() {
-            let id = item.id();
-            let item: &mut Box<dyn Widget> = unsafe {
-                let p: *mut Box<dyn Widget> = self.children.get_mut(&id).unwrap();
-                p.as_mut().unwrap()
-            };
-
-            if item.flag() == Flags::PROXY {
-                w = WidgetIterMut::Multi(Box::new(item.children_mut()), Box::new(w));
-            } else {
-                w = WidgetIterMut::Single(item, Box::new(w))
-            }
-        }
-
-        w
+        self.children
+            .iter_mut()
+            .rfold(WidgetIterMut::Empty, |acc, x| {
+                if x.flag() == Flags::PROXY {
+                    WidgetIterMut::Multi(Box::new(x.children_mut()), Box::new(acc))
+                } else {
+                    WidgetIterMut::Single(x, Box::new(acc))
+                }
+            })
     }
 
     fn proxied_children(&mut self) -> WidgetIterMut {
-        let mut w = WidgetIterMut::Empty;
-
-        /*for id in self.ids.iter().rev() {
-            let contains = self.children_map.contains_key(id).clone();
-            if !contains {
-                self.children_map.insert(id.clone(), Clone::clone(&self.delegate));
-            }
-        }*/
-
-        for item in self.model.value().iter().rev() {
-            let id = item.id();
-            let item: &mut Box<dyn Widget> = unsafe {
-                let p: *mut Box<dyn Widget> = self.children.get_mut(&id).unwrap();
-                p.as_mut().unwrap()
-            };
-
-            if item.flag() == Flags::PROXY {
-                w = WidgetIterMut::Multi(Box::new(item.proxied_children()), Box::new(w));
-            } else {
-                w = WidgetIterMut::Single(item, Box::new(w))
-            }
-        }
-
-        w
+        self.children
+            .iter_mut()
+            .rfold(WidgetIterMut::Empty, |acc, x| {
+                WidgetIterMut::Single(x, Box::new(acc))
+            })
     }
 
     fn proxied_children_rev(&mut self) -> WidgetIterMut {
-        let mut w = WidgetIterMut::Empty;
-
-        /*for id in self.ids.iter() {
-            let contains = self.children_map.contains_key(id).clone();
-            if !contains {
-                self.children_map.insert(id.clone(), Clone::clone(&self.delegate));
-            }
-        }*/
-
-        for item in self.model.value().iter().rev() {
-            let id = item.id();
-            let item: &mut Box<dyn Widget> = unsafe {
-                let p: *mut Box<dyn Widget> = self.children.get_mut(&id).unwrap();
-                p.as_mut().unwrap()
-            };
-
-            if item.flag() == Flags::PROXY {
-                w = WidgetIterMut::Multi(Box::new(item.proxied_children_rev()), Box::new(w));
-            } else {
-                w = WidgetIterMut::Single(item, Box::new(w))
-            }
-        }
-
-        w
+        self.children
+            .iter_mut()
+            .fold(WidgetIterMut::Empty, |acc, x| {
+                WidgetIterMut::Single(x, Box::new(acc))
+            })
     }
 
     fn position(&self) -> Position {
@@ -208,4 +144,4 @@ impl<T: StateContract + Identifiable, U: Delegate<T>> CommonWidget for ForEach<T
     }
 }
 
-impl<T: StateContract + Identifiable + 'static, U: Delegate<T> + 'static> WidgetExt for ForEach<T, U> {}
+impl<T: StateContract + 'static, W: Widget + Clone + 'static, U: Delegate<T, W> + 'static> WidgetExt for ForEach<T, U, W> {}
