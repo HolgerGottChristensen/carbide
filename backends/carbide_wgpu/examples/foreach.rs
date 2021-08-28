@@ -3,7 +3,7 @@ use std::time::Duration;
 use carbide_core::Color;
 use carbide_core::environment::*;
 use carbide_core::state::{AnimatedState, ColorState, ease_in_out, State, TState};
-use carbide_core::text::*;
+use carbide_core::text::{FontFamily, FontStyle, FontWeight};
 use carbide_core::widget::*;
 use carbide_core::widget::canvas::*;
 use carbide_wgpu::window::*;
@@ -20,6 +20,24 @@ fn main() {
         Some(icon_path.clone()),
     );
 
+    let mut family = FontFamily::new("NotoSans");
+    family.add_font(
+        "fonts/NotoSans/NotoSans-Regular.ttf",
+        FontWeight::Normal,
+        FontStyle::Normal,
+    );
+    family.add_font(
+        "fonts/NotoSans/NotoSans-Italic.ttf",
+        FontWeight::Normal,
+        FontStyle::Italic,
+    );
+    family.add_font(
+        "fonts/NotoSans/NotoSans-Bold.ttf",
+        FontWeight::Bold,
+        FontStyle::Normal,
+    );
+    window.add_font_family(family);
+
     window.set_widgets(
         VStack::new(vec![
             ForEach::new(vec![
@@ -30,7 +48,10 @@ fn main() {
                 EnvironmentColor::Accent,
                 EnvironmentColor::Purple,
             ], |item: TState<EnvironmentColor>, index| {
-                *Rectangle::new(vec![])
+                *Rectangle::new(vec![
+                    Text::new(index)
+                        .font_size(EnvironmentFontSize::LargeTitle)
+                ])
                     .fill(item.value().clone())
                     .frame(100.0, 50.0)
             })

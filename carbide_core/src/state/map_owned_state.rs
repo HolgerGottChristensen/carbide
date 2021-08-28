@@ -5,7 +5,7 @@ use dyn_clone::DynClone;
 
 use crate::environment::Environment;
 use crate::prelude::{StateContract, TState};
-use crate::state::{InnerState, State, ValueCell};
+use crate::state::{InnerState, State, StringState, ValueCell};
 use crate::state::value_cell::{ValueRef, ValueRefMut};
 use crate::state::widget_state::WidgetState;
 
@@ -91,3 +91,23 @@ impl<T, FROM: StateContract, TO: StateContract> Map<FROM, TO> for T where
 {}
 
 dyn_clone::clone_trait_object!(<FROM: StateContract, TO: StateContract> Map<FROM, TO>);
+
+macro_rules! impl_string_state {
+    ($($typ: ty),*) => {
+        $(
+            impl Into<StringState> for TState<$typ> {
+                fn into(self) -> StringState {
+                    MapOwnedState::new(self, |s: &$typ| {s.to_string()}).into()
+                }
+            }
+        )*
+
+    };
+}
+
+impl_string_state!(
+    i8, u8, i16, u16,
+    i32, u32, i64, u64,
+    i128, u128, f32, f64,
+    bool, char, isize, usize
+);
