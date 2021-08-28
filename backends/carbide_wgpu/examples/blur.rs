@@ -1,5 +1,6 @@
 use std::time::Duration;
 
+use carbide_core::Color;
 use carbide_core::environment::*;
 use carbide_core::state::{AnimatedState, ease_in_out};
 use carbide_core::text::*;
@@ -37,16 +38,11 @@ fn main() {
                 .scaled_to_fill()
                 .clip_shape(Rectangle::new(vec![]))
                 .frame(500.0, 400.0),
-            Blur::new(Hidden::new(Rectangle::new(vec![])))
-                .frame(200.0, 200.0)
-                .offset(position_x.clone(), 0.0),
-            /*Blur::new(Hidden::new(Rectangle::new(vec![])))
+            Blur::gaussian(10.0, Hidden::new(Rectangle::new(vec![])))
                 .frame(200.0, 200.0)
                 .offset(position_x.clone(), 0.0),
             Blur::new(Hidden::new(Rectangle::new(vec![])))
-                .frame(200.0, 200.0)
-                .offset(position_x.clone(), 0.0),*/
-            Blur::new(Hidden::new(Rectangle::new(vec![])))
+                .clip_shape(Circle::new())
                 .frame(100.0, 100.0)
                 .offset(position_neg_x.clone(), 0.0),
             Rectangle::new(vec![])
@@ -54,7 +50,7 @@ fn main() {
                 .stroke_style(1.0)
                 .frame(200.0, 200.0)
                 .offset(position_x, 0.0),
-            Rectangle::new(vec![])
+            Circle::new()
                 .stroke(EnvironmentColor::Accent)
                 .stroke_style(1.0)
                 .frame(100.0, 100.0)

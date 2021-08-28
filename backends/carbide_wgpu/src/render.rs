@@ -6,7 +6,7 @@ use wgpu::util::{BufferInitDescriptor, DeviceExt};
 use carbide_core::draw::{Dimension, Position, Rect};
 use carbide_core::mesh::MODE_IMAGE;
 
-use crate::bind_groups::filter_bind_group;
+use crate::bind_groups::{filter_buffer_bind_group, filter_texture_bind_group};
 use crate::filter::Filter;
 use crate::glyph_cache_command::GlyphCacheCommand;
 use crate::render_pass_command::{create_render_pass_commands, RenderPass, RenderPassCommand};
@@ -64,10 +64,10 @@ impl Window {
 
         let keys = self.ui.environment.filters().keys().cloned().collect::<Vec<_>>();
 
-        self.filter_bind_groups.retain(|id, _| keys.contains(id));
+        self.filter_buffer_bind_groups.retain(|id, _| keys.contains(id));
 
         for (filter_id, filter) in self.ui.environment.filters() {
-            if !self.filter_bind_groups.contains_key(filter_id) {
+            if !self.filter_buffer_bind_groups.contains_key(filter_id) {
                 let mut filter: Filter = filter.clone().into();
                 let mut filter = filter.with_texture_size(self.size.width, self.size.height, self.ui.environment.get_scale_factor());
                 let filter_buffer = self.device.create_buffer_init(
@@ -77,9 +77,8 @@ impl Window {
                         usage: wgpu::BufferUsage::STORAGE,
                     }
                 );
-                let filter_bind_group_secondary = filter_bind_group(&self.device, &self.filter_uniform_bind_group_layout, &self.main_tex_view, &self.main_sampler, &filter_buffer);
-                let filter_bind_group_main = filter_bind_group(&self.device, &self.filter_uniform_bind_group_layout, &self.secondary_tex_view, &self.main_sampler, &filter_buffer);
-                self.filter_bind_groups.insert(*filter_id, (filter_bind_group_main, filter_bind_group_secondary));
+                let filter_buffer_bind_group = filter_buffer_bind_group(&self.device, &self.filter_buffer_bind_group_layout, &filter_buffer);
+                self.filter_buffer_bind_groups.insert(*filter_id, filter_buffer_bind_group);
             }
         }
 
@@ -152,6 +151,7 @@ impl Window {
                         }),
                     });
 
+                    render_pass.set_stencil_reference(stencil_level);
                     render_pass.set_pipeline(current_main_render_pipeline);
                     render_pass.set_vertex_buffer(0, current_vertex_buffer_slice);
                     render_pass.set_bind_group(1, current_uniform_bind_group, &[]);
@@ -232,8 +232,10 @@ impl Window {
                     render_pass.set_pipeline(&self.render_pipeline_in_mask_filter);
                     render_pass.set_stencil_reference(stencil_level);
                     render_pass.set_vertex_buffer(0, current_vertex_buffer_slice);
-                    render_pass.set_bind_group(1, current_uniform_bind_group, &[]);
-                    render_pass.set_bind_group(0, &self.filter_bind_groups.get(&bind_group_index).unwrap().0, &[]);
+                    render_pass.set_bind_group(0, &self.filter_secondary_texture_bind_group, &[]);
+                    render_pass.set_bind_group(1, &self.filter_buffer_bind_groups.get(&bind_group_index).unwrap(), &[]);
+                    render_pass.set_bind_group(2, current_uniform_bind_group, &[]);
+                    render_pass.set_bind_group(3, &self.texture_size_bind_group, &[]);
                     render_pass.draw(vertex_range, instance_range.clone());
                 }
                 RenderPass::FilterSplitPt1(vertex_range, filter_id) => {
@@ -251,11 +253,12 @@ impl Window {
                             stencil_ops: Some(stencil_op),
                         }),
                     });
-                    render_pass.set_pipeline(&self.render_pipeline_in_mask_filter);
-                    render_pass.set_stencil_reference(stencil_level);
+                    render_pass.set_pipeline(&self.render_pipeline_no_mask_filter);
                     render_pass.set_vertex_buffer(0, current_vertex_buffer_slice);
-                    render_pass.set_bind_group(1, current_uniform_bind_group, &[]);
-                    render_pass.set_bind_group(0, &self.filter_bind_groups.get(&filter_id).unwrap().1, &[]);
+                    render_pass.set_bind_group(0, &self.filter_main_texture_bind_group, &[]);
+                    render_pass.set_bind_group(1, &self.filter_buffer_bind_groups.get(&filter_id).unwrap(), &[]);
+                    render_pass.set_bind_group(2, current_uniform_bind_group, &[]);
+                    render_pass.set_bind_group(3, &self.texture_size_bind_group, &[]);
                     render_pass.draw(vertex_range, instance_range.clone());
                 }
                 RenderPass::FilterSplitPt2(vertex_range, filter_id) => {
@@ -276,8 +279,10 @@ impl Window {
                     render_pass.set_pipeline(&self.render_pipeline_in_mask_filter);
                     render_pass.set_stencil_reference(stencil_level);
                     render_pass.set_vertex_buffer(0, current_vertex_buffer_slice);
-                    render_pass.set_bind_group(1, current_uniform_bind_group, &[]);
-                    render_pass.set_bind_group(0, &self.filter_bind_groups.get(&filter_id).unwrap().0, &[]);
+                    render_pass.set_bind_group(0, &self.filter_secondary_texture_bind_group, &[]);
+                    render_pass.set_bind_group(1, &self.filter_buffer_bind_groups.get(&filter_id).unwrap(), &[]);
+                    render_pass.set_bind_group(2, current_uniform_bind_group, &[]);
+                    render_pass.set_bind_group(3, &self.texture_size_bind_group, &[]);
                     render_pass.draw(vertex_range, instance_range.clone());
                 }
             };

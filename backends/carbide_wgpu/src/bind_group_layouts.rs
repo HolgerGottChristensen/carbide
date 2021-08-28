@@ -5,7 +5,7 @@ pub(crate) fn uniform_bind_group_layout(device: &Device) -> BindGroupLayout {
         entries: &[
             wgpu::BindGroupLayoutEntry {
                 binding: 0,
-                visibility: wgpu::ShaderStage::VERTEX,
+                visibility: wgpu::ShaderStage::VERTEX | wgpu::ShaderStage::FRAGMENT,
                 ty: wgpu::BindingType::Buffer {
                     ty: BufferBindingType::Uniform,
                     min_binding_size: None,
@@ -18,7 +18,7 @@ pub(crate) fn uniform_bind_group_layout(device: &Device) -> BindGroupLayout {
     })
 }
 
-pub(crate) fn filter_bind_group_layout(device: &Device) -> BindGroupLayout {
+pub(crate) fn filter_texture_bind_group_layout(device: &Device) -> BindGroupLayout {
     device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
         entries: &[
             wgpu::BindGroupLayoutEntry {
@@ -36,9 +36,17 @@ pub(crate) fn filter_bind_group_layout(device: &Device) -> BindGroupLayout {
                 visibility: wgpu::ShaderStage::FRAGMENT,
                 ty: wgpu::BindingType::Sampler { filtering: true, comparison: false },
                 count: None,
-            },
+            }
+        ],
+        label: Some("uniform_bind_group_layout"),
+    })
+}
+
+pub(crate) fn filter_buffer_bind_group_layout(device: &Device) -> BindGroupLayout {
+    device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
+        entries: &[
             wgpu::BindGroupLayoutEntry {
-                binding: 2,
+                binding: 0,
                 visibility: wgpu::ShaderStage::FRAGMENT,
                 ty: wgpu::BindingType::Buffer {
                     ty: BufferBindingType::Storage { read_only: true },

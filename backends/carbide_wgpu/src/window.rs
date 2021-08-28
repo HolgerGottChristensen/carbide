@@ -31,8 +31,8 @@ use carbide_core::widget::OverlaidLayer;
 use carbide_core::widget::Widget;
 pub use carbide_core::window::TWindow;
 
-use crate::bind_group_layouts::{filter_bind_group_layout, main_texture_group_layout, uniform_bind_group_layout};
-use crate::bind_groups::{filter_bind_group, main_bind_group, matrix_to_uniform_bind_group, uniform_bind_group};
+use crate::bind_group_layouts::{filter_buffer_bind_group_layout, filter_texture_bind_group_layout, main_texture_group_layout, uniform_bind_group_layout};
+use crate::bind_groups::{filter_texture_bind_group, main_bind_group, matrix_to_uniform_bind_group, size_to_uniform_bind_group, uniform_bind_group};
 use crate::diffuse_bind_group::{DiffuseBindGroup, new_diffuse};
 use crate::filter::Filter;
 use crate::glyph_cache_command::GlyphCacheCommand;
@@ -62,9 +62,11 @@ pub struct Window {
     pub(crate) render_pipeline_in_mask: wgpu::RenderPipeline,
     pub(crate) render_pipeline_remove_mask: wgpu::RenderPipeline,
     pub(crate) render_pipeline_in_mask_filter: wgpu::RenderPipeline,
+    pub(crate) render_pipeline_no_mask_filter: wgpu::RenderPipeline,
     pub(crate) depth_texture_view: TextureView,
     pub(crate) diffuse_bind_group: wgpu::BindGroup,
     pub(crate) main_bind_group: wgpu::BindGroup,
+    pub(crate) texture_size_bind_group: wgpu::BindGroup,
     pub(crate) mesh: Mesh,
     pub(crate) ui: Ui,
     pub(crate) image_map: ImageMap<Image>,
@@ -75,11 +77,13 @@ pub struct Window {
     pub(crate) secondary_tex: Texture,
     pub(crate) secondary_tex_view: TextureView,
     pub(crate) bind_groups: HashMap<Id, DiffuseBindGroup>,
-    /// The first bind group takes the secondary tex view and the second bind group takes the primary view.
-    pub(crate) filter_bind_groups: HashMap<u32, (BindGroup, BindGroup)>,
+    pub(crate) filter_buffer_bind_groups: HashMap<u32, BindGroup>,
     pub(crate) texture_bind_group_layout: BindGroupLayout,
     pub(crate) uniform_bind_group_layout: BindGroupLayout,
-    pub(crate) filter_uniform_bind_group_layout: BindGroupLayout,
+    pub(crate) filter_texture_bind_group_layout: BindGroupLayout,
+    pub(crate) filter_buffer_bind_group_layout: BindGroupLayout,
+    pub(crate) filter_main_texture_bind_group: BindGroup,
+    pub(crate) filter_secondary_texture_bind_group: BindGroup,
     pub(crate) uniform_bind_group: wgpu::BindGroup,
     pub(crate) carbide_to_wgpu_matrix: Matrix4<f32>,
     pub(crate) vertex_buffer: (Buffer, usize),
@@ -241,11 +245,13 @@ impl Window {
         let swap_chain = device.create_swap_chain(&surface, &sc_desc);
 
         let uniform_bind_group_layout = uniform_bind_group_layout(&device);
-        let filter_bind_group_layout = filter_bind_group_layout(&device);
+        let filter_texture_bind_group_layout = filter_texture_bind_group_layout(&device);
+        let filter_buffer_bind_group_layout = filter_buffer_bind_group_layout(&device);
         let main_texture_bind_group_layout = main_texture_group_layout(&device);
 
         let matrix = Window::calculate_carbide_to_wgpu_matrix(pixel_dimensions, scale_factor);
         let uniform_bind_group = matrix_to_uniform_bind_group(&device, &uniform_bind_group_layout, matrix);
+        let texture_size_bind_group = size_to_uniform_bind_group(&device, &uniform_bind_group_layout, pixel_dimensions.width, pixel_dimensions.height, scale_factor);
 
         let main_tex = device.create_texture(&main_render_tex_desc([pixel_dimensions.width as u32, pixel_dimensions.height as u32]));
         let main_tex_view = main_tex.create_view(&Default::default());
@@ -267,7 +273,7 @@ impl Window {
         let wgsl_filter_shader = device.create_shader_module(&wgpu::include_wgsl!("../shaders/filter.wgsl"));
 
         let render_pipeline_layout = main_pipeline_layout(&device, &main_texture_bind_group_layout, &uniform_bind_group_layout);
-        let filter_render_pipeline_layout = filter_pipeline_layout(&device, &filter_bind_group_layout, &uniform_bind_group_layout);
+        let filter_render_pipeline_layout = filter_pipeline_layout(&device, &filter_texture_bind_group_layout, &filter_buffer_bind_group_layout, &uniform_bind_group_layout);
 
         let render_pipeline_no_mask = create_render_pipeline_wgsl(
             &device,
@@ -303,6 +309,13 @@ impl Window {
             &wgsl_filter_shader,
             &sc_desc,
             MaskType::InMask,
+        );
+        let render_pipeline_no_mask_filter = create_render_pipeline_wgsl(
+            &device,
+            &filter_render_pipeline_layout,
+            &wgsl_filter_shader,
+            &sc_desc,
+            MaskType::NoMask,
         );
 
         let bind_groups = HashMap::new();
@@ -349,6 +362,9 @@ impl Window {
                 usage: wgpu::BufferUsage::VERTEX | BufferUsage::COPY_DST,
             });
 
+        let filter_main_texture_bind_group = filter_texture_bind_group(&device, &filter_texture_bind_group_layout, &main_tex_view, &main_sampler);
+        let filter_secondary_texture_bind_group = filter_texture_bind_group(&device, &filter_texture_bind_group_layout, &secondary_tex_view, &main_sampler);
+
         /*let smaa = SmaaTarget::new(
             &device,
             &queue,
@@ -370,9 +386,11 @@ impl Window {
             render_pipeline_in_mask,
             render_pipeline_remove_mask,
             render_pipeline_in_mask_filter,
+            render_pipeline_no_mask_filter,
             depth_texture_view,
             diffuse_bind_group,
             main_bind_group,
+            texture_size_bind_group,
             mesh,
             ui,
             image_map,
@@ -383,9 +401,12 @@ impl Window {
             secondary_tex,
             secondary_tex_view,
             bind_groups,
-            filter_bind_groups,
+            filter_buffer_bind_groups: filter_bind_groups,
             texture_bind_group_layout: main_texture_bind_group_layout,
-            filter_uniform_bind_group_layout: filter_bind_group_layout,
+            filter_texture_bind_group_layout,
+            filter_buffer_bind_group_layout,
+            filter_main_texture_bind_group,
+            filter_secondary_texture_bind_group,
             uniform_bind_group_layout,
             uniform_bind_group,
             inner_window,
@@ -415,7 +436,11 @@ impl Window {
 
         let main_texture_bind_group_layout = main_texture_group_layout(&self.device);
 
+        let scale_factor = self.inner_window.scale_factor();
+
         self.main_bind_group = main_bind_group(&self.device, &main_texture_bind_group_layout, &main_tex_view, &self.main_sampler, &self.atlas_cache_tex);
+        let texture_size_bind_group = size_to_uniform_bind_group(&self.device, &self.uniform_bind_group_layout, self.size.width as f64, self.size.height as f64, scale_factor);
+        self.texture_size_bind_group = texture_size_bind_group;
 
 
         self.main_tex = main_tex;
@@ -423,9 +448,10 @@ impl Window {
         self.secondary_tex = secondary_tex;
         self.secondary_tex_view = secondary_tex_view;
 
+        self.filter_main_texture_bind_group = filter_texture_bind_group(&self.device, &self.filter_texture_bind_group_layout, &self.main_tex_view, &self.main_sampler);
+        self.filter_secondary_texture_bind_group = filter_texture_bind_group(&self.device, &self.filter_texture_bind_group_layout, &self.secondary_tex_view, &self.main_sampler);
 
         let dimension = Dimension::new(new_size.width as Scalar, new_size.height as Scalar);
-        let scale_factor = self.inner_window.scale_factor();
 
         self.carbide_to_wgpu_matrix = Window::calculate_carbide_to_wgpu_matrix(dimension, scale_factor);
 
@@ -527,8 +553,8 @@ impl Window {
                                     new_inner_size,
                                     scale_factor,
                                 } => {
-                                    self.resize(**new_inner_size);
                                     self.ui.set_scale_factor(*scale_factor);
+                                    self.resize(**new_inner_size);
                                     self.inner_window.request_redraw();
                                 }
                                 _ => {}

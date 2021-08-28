@@ -186,6 +186,18 @@ pub fn create_render_pass_commands<'a>(
             }
 
             mesh::Command::DeStencil(vertex_range) => {
+                let vertex_count = vertex_range.len();
+                if vertex_count <= 0 {
+                    continue;
+                }
+                // Ensure a render pipeline and bind group is set.
+                if bind_group.is_none() {
+                    bind_group = Some(BindGroup::Default);
+                    let cmd = RenderPassCommand::SetBindGroup {
+                        bind_group: default_bind_group,
+                    };
+                    inner_commands.push(cmd);
+                }
                 let cmd = RenderPassCommand::DeStencil {
                     vertex_range: vertex_range.start as u32..vertex_range.end as u32,
                 };

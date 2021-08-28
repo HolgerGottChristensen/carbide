@@ -4,6 +4,7 @@
 
 use std;
 use std::borrow::Cow;
+use std::f64::consts::{E, PI};
 use std::iter::{Chain, once, Once};
 
 use num::{Float, NumCast, PrimInt, ToPrimitive};
@@ -271,6 +272,17 @@ pub fn iter_eq<A, B>(mut a: A, mut b: B) -> bool
             }
         }
     }
+}
+
+pub fn gaussian(sigma: f64, x: f64) -> f64 {
+    (1.0 / f64::sqrt(2.0 * PI * sigma)) * E.powf(-(x.powi(2) / (2.0 * f64::powi(sigma, 2))))
+}
+
+#[test]
+fn gaussian_test() {
+    println!("{}", gaussian(1.0, 0.0));
+    println!("{}", gaussian(1.0, 0.5));
+    assert_eq!(gaussian(1.0, -0.5), gaussian(1.0, 0.5))
 }
 
 #[test]

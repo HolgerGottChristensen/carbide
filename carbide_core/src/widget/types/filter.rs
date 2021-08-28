@@ -4,6 +4,88 @@ pub struct ImageFilter {
 }
 
 impl ImageFilter {
+    pub fn sharpen() -> ImageFilter {
+        ImageFilter {
+            filter: vec![
+                ImageFilterValue::new(-1, 0, -1.0),
+                ImageFilterValue::new(1, 0, -1.0),
+                ImageFilterValue::new(0, -1, -1.0),
+                ImageFilterValue::new(0, 1, -1.0),
+                ImageFilterValue::new(0, 0, 5.0),
+            ]
+        }
+    }
+
+    pub fn sobel() -> ImageFilter {
+        let mut entries = ImageFilter::sobel_x().filter;
+        entries.extend(ImageFilter::sobel_y().filter);
+
+        ImageFilter {
+            filter: entries
+        }
+    }
+
+    pub fn sobel_x() -> ImageFilter {
+        ImageFilter {
+            filter: vec![
+                ImageFilterValue::new(-1, -1, 1.0),
+                ImageFilterValue::new(-1, 0, 2.0),
+                ImageFilterValue::new(-1, 1, 1.0),
+                ImageFilterValue::new(1, -1, -1.0),
+                ImageFilterValue::new(1, 0, -2.0),
+                ImageFilterValue::new(1, 1, -1.0),
+            ]
+        }
+    }
+
+    pub fn sobel_y() -> ImageFilter {
+        ImageFilter {
+            filter: vec![
+                ImageFilterValue::new(-1, -1, 1.0),
+                ImageFilterValue::new(0, -1, 2.0),
+                ImageFilterValue::new(1, -1, 1.0),
+                ImageFilterValue::new(-1, 1, -1.0),
+                ImageFilterValue::new(0, 1, -2.0),
+                ImageFilterValue::new(1, 1, -1.0),
+            ]
+        }
+    }
+
+    pub fn prewit() -> ImageFilter {
+        let mut entries = ImageFilter::prewit_x().filter;
+        entries.extend(ImageFilter::prewit_y().filter);
+
+        ImageFilter {
+            filter: entries
+        }
+    }
+
+    pub fn prewit_x() -> ImageFilter {
+        ImageFilter {
+            filter: vec![
+                ImageFilterValue::new(-1, -1, 1.0),
+                ImageFilterValue::new(-1, 0, 1.0),
+                ImageFilterValue::new(-1, 1, 1.0),
+                ImageFilterValue::new(1, -1, -1.0),
+                ImageFilterValue::new(1, 0, -1.0),
+                ImageFilterValue::new(1, 1, -1.0),
+            ]
+        }
+    }
+
+    pub fn prewit_y() -> ImageFilter {
+        ImageFilter {
+            filter: vec![
+                ImageFilterValue::new(-1, -1, 1.0),
+                ImageFilterValue::new(0, -1, 1.0),
+                ImageFilterValue::new(1, -1, 1.0),
+                ImageFilterValue::new(-1, 1, -1.0),
+                ImageFilterValue::new(0, 1, -1.0),
+                ImageFilterValue::new(1, 1, -1.0),
+            ]
+        }
+    }
+
     pub fn normalize(&mut self) {
         let mut acc = 0.0;
         for val in &self.filter {

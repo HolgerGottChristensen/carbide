@@ -9,6 +9,7 @@ pub use self::border::*;
 pub use self::clip::*;
 pub use self::clip_shape::*;
 pub use self::environment_updating::*;
+pub use self::filter::*;
 pub use self::foreach::*;
 pub use self::frame::*;
 pub use self::h_stack::*;
@@ -53,6 +54,7 @@ mod z_stack;
 mod rotation_3d_effect;
 mod transform;
 mod blur;
+mod filter;
 
 pub type Id = uuid::Uuid;
 pub type ColoredPoint = (Position, crate::color::Rgba);
