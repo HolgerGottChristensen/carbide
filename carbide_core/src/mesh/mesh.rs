@@ -825,10 +825,10 @@ impl Mesh {
     }
 
     pub fn texture_atlas_image_as_bytes(&self) -> &[u8] {
-        println!(
+        /*println!(
             "Number of bytes: {}",
             &self.texture_atlas_image.as_bytes().len()
-        );
+        );*/
         &self.texture_atlas_image.as_bytes()
     }
 

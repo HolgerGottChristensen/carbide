@@ -5,7 +5,7 @@ use dyn_clone::DynClone;
 
 use crate::environment::Environment;
 use crate::prelude::{StateContract, TState};
-use crate::state::{InnerState, State, StringState, ValueCell};
+use crate::state::{InnerState, LocalState, State, StringState, ValueCell, ValueState};
 use crate::state::value_cell::{ValueRef, ValueRefMut};
 use crate::state::widget_state::WidgetState;
 
@@ -98,6 +98,16 @@ macro_rules! impl_string_state {
             impl Into<StringState> for TState<$typ> {
                 fn into(self) -> StringState {
                     MapOwnedState::new(self, |s: &$typ| {s.to_string()}).into()
+                }
+            }
+            impl Into<StringState> for Box<ValueState<$typ>> {
+                fn into(self) -> StringState {
+                    MapOwnedState::new(WidgetState::new(self), |s: &$typ| {s.to_string()}).into()
+                }
+            }
+        impl Into<StringState> for Box<LocalState<$typ>> {
+                fn into(self) -> StringState {
+                    MapOwnedState::new(WidgetState::new(self), |s: &$typ| {s.to_string()}).into()
                 }
             }
         )*

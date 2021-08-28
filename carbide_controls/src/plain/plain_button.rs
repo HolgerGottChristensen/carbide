@@ -1,153 +1,129 @@
-use carbide_core::draw::Dimension;
-use carbide_core::event::event_handler::{KeyboardEvent, MouseEvent};
-use carbide_core::input::Key;
-use carbide_core::input::MouseButton;
-use carbide_core::prelude::Uuid;
-use carbide_core::state::state::State;
-use carbide_core::widget::*;
+use dyn_clone::DynClone;
+
+use carbide_core::draw::{Dimension, Position};
+use carbide_core::environment::Environment;
+use carbide_core::event::{Key, KeyboardEvent, KeyboardEventHandler, MouseButton, MouseEvent, MouseEventHandler};
+use carbide_core::flags::Flags;
+use carbide_core::focus::Focus;
+use carbide_core::state::{BoolState, FocusState, State};
+use carbide_core::widget::{CommonWidget, Id, Widget, WidgetExt, WidgetIter, WidgetIterMut};
+
+pub trait Action: Fn(&mut Environment) + DynClone {}
+
+impl<I> Action for I where I: Fn(&mut Environment) + Clone {}
+
+dyn_clone::clone_trait_object!(Action);
 
 #[derive(Clone, Widget)]
-#[event(handle_keyboard_event, handle_mouse_event)]
-#[focusable]
-pub struct PlainButton<T, GS>
-    where
-        GS: GlobalStateContract,
-        T: StateContract + 'static,
-{
+#[carbide_exclude(MouseEvent, KeyboardEvent)]
+pub struct PlainButton {
     id: Id,
     #[state]
-    focus: FocusState<GS>,
-    child: Box<dyn Widget<GS>>,
-    position: Point,
-    dimension: Dimensions,
-    on_click: Option<fn(myself: &mut Self, env: &mut Environment<GS>, global_state: &mut GS)>,
-    on_click_outside:
-    Option<fn(myself: &mut Self, env: &mut Environment<GS>, global_state: &mut GS)>,
+    focus: FocusState,
+    child: Box<dyn Widget>,
+    position: Position,
+    dimension: Dimension,
+    click: Box<dyn Action>,
+    click_outside: Box<dyn Action>,
     #[state]
-    is_hovered: BoolState<GS>,
+    is_hovered: BoolState,
     #[state]
-    is_pressed: BoolState<GS>,
-    #[state]
-    local_state: TState<T, GS>,
+    is_pressed: BoolState,
 }
 
-impl<T: StateContract + 'static, GS: GlobalStateContract> PlainButton<T, GS> {
+impl PlainButton {
     pub fn on_click(
         mut self,
-        fire: fn(myself: &mut Self, env: &mut Environment<GS>, global_state: &mut GS),
+        fire: impl Action + 'static,
     ) -> Box<Self> {
-        self.on_click = Some(fire);
+        self.click = Box::new(fire);
         Box::new(self)
     }
 
     pub fn on_click_outside(
         mut self,
-        fire: fn(myself: &mut Self, env: &mut Environment<GS>, global_state: &mut GS),
+        fire: impl Action + 'static,
     ) -> Box<Self> {
-        self.on_click_outside = Some(fire);
+        self.click_outside = Box::new(fire);
         Box::new(self)
     }
 
-    pub fn hover<K: Into<BoolState<GS>>>(mut self, is_hovered: K) -> Box<Self> {
+    pub fn hover<K: Into<BoolState>>(mut self, is_hovered: K) -> Box<Self> {
         self.is_hovered = is_hovered.into();
         Box::new(self)
     }
 
-    pub fn pressed<K: Into<BoolState<GS>>>(mut self, pressed: K) -> Box<Self> {
+    pub fn pressed<K: Into<BoolState>>(mut self, pressed: K) -> Box<Self> {
         self.is_pressed = pressed.into();
         Box::new(self)
     }
 
-    pub fn focused<K: Into<FocusState<GS>>>(mut self, focused: K) -> Box<Self> {
+    pub fn focused<K: Into<FocusState>>(mut self, focused: K) -> Box<Self> {
         self.focus = focused.into();
         Box::new(self)
     }
 
-    pub fn local_state<K: Into<TState<T, GS>>>(mut self, state: K) -> Box<Self> {
-        self.local_state = state.into();
-        Box::new(self)
-    }
-
-    pub fn get_local_state(&mut self) -> &mut TState<T, GS> {
-        &mut self.local_state
-    }
-
-    pub fn new(child: Box<dyn Widget<GS>>) -> Box<Self> {
+    pub fn new(child: Box<dyn Widget>) -> Box<Self> {
         Box::new(PlainButton {
             id: Id::new_v4(),
-            focus: CommonState::new_local_with_key(&Focus::Unfocused).into(),
+            focus: Focus::Unfocused.into(),
             child,
-            position: [0.0, 0.0],
-            dimension: [0.0, 0.0],
-            on_click: None,
-            on_click_outside: None,
+            position: Position::new(0.0, 0.0),
+            dimension: Dimension::new(100.0, 100.0),
+            click: Box::new(|_| {}),
+            click_outside: Box::new(|_| {}),
             is_hovered: false.into(),
             is_pressed: false.into(),
-            local_state: CommonState::new(&T::default()).into(),
         })
     }
+}
 
-    fn handle_mouse_event(
-        &mut self,
-        event: &MouseEvent,
-        _: &bool,
-        env: &mut Environment<GS>,
-        global_state: &mut GS,
-    ) {
-        match event {
-            MouseEvent::Press(MouseButton::Left, mouse_position, _) => {
-                if self.is_inside(*mouse_position) {
-                    *self.is_pressed.get_value_mut(env, global_state) = true;
-                }
-            }
-            MouseEvent::Release(MouseButton::Left, mouse_position, _) => {
-                if self.is_inside(*mouse_position) {
-                    *self.is_pressed.get_value_mut(env, global_state) = false;
-                }
-            }
-            MouseEvent::Move { to, .. } => {
-                if *self.is_hovered.get_value(env, global_state) {
-                    if !self.is_inside(*to) {
-                        *self.is_hovered.get_value_mut(env, global_state) = false;
-                        *self.is_pressed.get_value_mut(env, global_state) = false;
-                    }
-                } else {
-                    if self.is_inside(*to) {
-                        *self.is_hovered.get_value_mut(env, global_state) = true;
-                    }
-                }
-            }
-            MouseEvent::Click(MouseButton::Left, mouse_position, _)
-            | MouseEvent::NClick(MouseButton::Left, mouse_position, _, _) => {
-                if self.is_inside(*mouse_position) {
-                    if let Some(action) = self.on_click {
-                        action(self, env, global_state);
-                    }
-                } else {
-                    if let Some(action) = self.on_click_outside {
-                        action(self, env, global_state);
-                    }
-                }
-            }
-            _ => (),
-        }
-    }
-
-    fn handle_keyboard_event(
-        &mut self,
-        event: &KeyboardEvent,
-        env: &mut Environment<GS>,
-        global_state: &mut GS,
-    ) {
+impl KeyboardEventHandler for PlainButton {
+    fn handle_keyboard_event(&mut self, event: &KeyboardEvent, env: &mut Environment) {
         if self.get_focus() != Focus::Focused {
             return;
         }
 
         match event {
             KeyboardEvent::Click(Key::Return, _) => {
-                if let Some(action) = self.on_click {
-                    action(self, env, global_state);
-                    //self.set_focus_and_request(Focus::FocusReleased, env);
+                (self.click)(env);
+            }
+            _ => (),
+        }
+    }
+}
+
+impl MouseEventHandler for PlainButton {
+    fn handle_mouse_event(&mut self, event: &MouseEvent, _consumed: &bool, env: &mut Environment) {
+        match event {
+            MouseEvent::Press(MouseButton::Left, mouse_position, _) => {
+                if self.is_inside(*mouse_position) {
+                    *self.is_pressed.value_mut() = true;
+                }
+            }
+            MouseEvent::Release(MouseButton::Left, mouse_position, _) => {
+                if self.is_inside(*mouse_position) {
+                    *self.is_pressed.value_mut() = false;
+                }
+            }
+            MouseEvent::Move { to, .. } => {
+                if *self.is_hovered.value() {
+                    if !self.is_inside(*to) {
+                        *self.is_hovered.value_mut() = false;
+                        *self.is_pressed.value_mut() = false;
+                    }
+                } else {
+                    if self.is_inside(*to) {
+                        *self.is_hovered.value_mut() = true;
+                    }
+                }
+            }
+            MouseEvent::Click(MouseButton::Left, mouse_position, _)
+            | MouseEvent::NClick(MouseButton::Left, mouse_position, _, _) => {
+                if self.is_inside(*mouse_position) {
+                    (self.click)(env);
+                } else {
+                    (self.click_outside)(env);
                 }
             }
             _ => (),
@@ -155,7 +131,7 @@ impl<T: StateContract + 'static, GS: GlobalStateContract> PlainButton<T, GS> {
     }
 }
 
-impl<T: StateContract, GS: GlobalStateContract> CommonWidget<GS> for PlainButton<T, GS> {
+impl CommonWidget for PlainButton {
     fn id(&self) -> Id {
         self.id
     }
@@ -166,6 +142,15 @@ impl<T: StateContract, GS: GlobalStateContract> CommonWidget<GS> for PlainButton
 
     fn flag(&self) -> Flags {
         Flags::FOCUSABLE
+    }
+
+    fn get_focus(&self) -> Focus {
+        self.focus.value().clone()
+    }
+
+    fn set_focus(&mut self, focus: Focus) {
+        println!("Setting focus to: {:?}", focus);
+        *self.focus.value_mut() = focus;
     }
 
     fn children(&self) -> WidgetIter {
@@ -192,15 +177,15 @@ impl<T: StateContract, GS: GlobalStateContract> CommonWidget<GS> for PlainButton
         WidgetIterMut::single(&mut self.child)
     }
 
-    fn position(&self) -> Point {
+    fn position(&self) -> Position {
         self.position
     }
 
-    fn set_position(&mut self, position: Dimensions) {
+    fn set_position(&mut self, position: Position) {
         self.position = position;
     }
 
-    fn dimension(&self) -> Dimensions {
+    fn dimension(&self) -> Dimension {
         self.dimension
     }
 
@@ -209,33 +194,4 @@ impl<T: StateContract, GS: GlobalStateContract> CommonWidget<GS> for PlainButton
     }
 }
 
-impl<T: StateContract, GS: GlobalStateContract> ChildRender for PlainButton<T, GS> {}
-
-impl<T: StateContract, GS: GlobalStateContract> Layout<GS> for PlainButton<T, GS> {
-    fn flexibility(&self) -> u32 {
-        10
-    }
-
-    fn calculate_size(&mut self, requested_size: Dimensions, env: &mut Environment) -> Dimensions {
-        if let Some(child) = self.children_mut().next() {
-            child.calculate_size(requested_size, env);
-        }
-
-        self.set_dimension(requested_size);
-
-        requested_size
-    }
-
-    fn position_children(&mut self) {
-        let positioning = BasicLayouter::Center.position();
-        let position = self.position();
-        let dimension = self.dimension();
-
-        if let Some(child) = self.children_mut().next() {
-            positioning(position, dimension, child);
-            child.position_children();
-        }
-    }
-}
-
-impl<T: StateContract + 'static, GS: GlobalStateContract> WidgetExt<GS> for PlainButton<T, GS> {}
+impl WidgetExt for PlainButton {}

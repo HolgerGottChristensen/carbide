@@ -19,11 +19,11 @@ pub struct LocalState<T>
 }
 
 impl<T: StateContract + 'static> LocalState<T> {
-    pub fn new(value: T) -> Self {
-        LocalState {
+    pub fn new(value: T) -> Box<Self> {
+        Box::new(LocalState {
             key: StateKey::Uuid(Uuid::new_v4()),
             value: Rc::new(ValueCell::new(value)),
-        }
+        })
     }
 }
 
