@@ -1,5 +1,3 @@
-use instant::Instant;
-
 use crate::draw::Dimension;
 use crate::prelude::Environment;
 use crate::render::primitive::Primitive;

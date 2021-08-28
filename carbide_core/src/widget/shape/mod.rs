@@ -18,11 +18,11 @@ pub use rounded_rectangle::*;
 
 use crate::draw::{Position, Scalar};
 use crate::draw::shape::triangle::Triangle;
-use crate::prelude::{Environment, Primitive, PrimitiveKind};
-use crate::widget::{CommonWidget, Widget, WidgetExt};
+use crate::prelude::{Environment, PrimitiveKind};
 use crate::widget::types::ShapeStyle;
 use crate::widget::types::StrokeStyle;
 use crate::widget::types::TriangleStore;
+use crate::widget::Widget;
 
 mod capsule;
 mod circle;

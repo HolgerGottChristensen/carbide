@@ -1,4 +1,4 @@
-use cgmath::{Deg, Matrix3, Matrix4, Point3, SquareMatrix, Vector3};
+use cgmath::{Deg, Matrix4, SquareMatrix};
 
 use crate::draw::{Dimension, Position, Rect};
 use crate::prelude::*;

@@ -2,9 +2,7 @@ use lyon::algorithms::math::rect;
 use lyon::algorithms::path::builder::PathBuilder;
 use lyon::algorithms::path::Winding;
 
-use crate::color::Rgba;
 use crate::draw::{Dimension, Position, Rect};
-use crate::draw::shape::triangle::Triangle;
 use crate::prelude::*;
 use crate::render::PrimitiveKind;
 use crate::widget::shape::{Shape, tessellate};
@@ -278,7 +276,7 @@ impl Render for Rectangle {
             builder.add_rectangle(rectangle, Winding::Positive)
         });
 
-        let mut prims = self
+        let prims = self
             .triangle_store
             .get_primitives(*self.fill_color.value(), *self.stroke_color.value());
 

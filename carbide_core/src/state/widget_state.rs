@@ -1,9 +1,8 @@
 use std::fmt;
 use std::fmt::{Debug, Formatter};
-use std::ops::{Deref, DerefMut};
 
 use crate::prelude::Environment;
-use crate::state::{MapState, StateContract};
+use crate::state::StateContract;
 pub use crate::state::State;
 use crate::state::value_cell::{ValueRef, ValueRefMut};
 

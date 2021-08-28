@@ -23,7 +23,7 @@ impl Spacer {
 }
 
 impl Layout for Spacer {
-    fn calculate_size(&mut self, requested_size: Dimension, env: &mut Environment) -> Dimension {
+    fn calculate_size(&mut self, requested_size: Dimension, _env: &mut Environment) -> Dimension {
         match self.space {
             SpacerDirection::Vertical => {
                 self.dimension = Dimension::new(0.0, requested_size.height);

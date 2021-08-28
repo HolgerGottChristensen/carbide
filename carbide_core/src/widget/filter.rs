@@ -1,12 +1,6 @@
-use std::f32::consts::{E, PI};
-
-use num::traits::FloatConst;
-
 use crate::draw::{Dimension, Position, Rect};
-use crate::focus::Focus;
 use crate::prelude::*;
 use crate::render::PrimitiveKind;
-use crate::utils::gaussian;
 
 #[derive(Debug, Clone, Widget)]
 #[carbide_exclude(Render)]

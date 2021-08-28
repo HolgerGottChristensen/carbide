@@ -1,6 +1,5 @@
-use std::borrow::Borrow;
 use std::fmt::{Debug, Formatter};
-use std::ops::{Deref, DerefMut};
+use std::ops::Deref;
 
 use crate::environment::Environment;
 use crate::state::{State, StateContract, TState};

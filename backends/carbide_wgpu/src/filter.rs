@@ -1,5 +1,3 @@
-use carbide_core::Scalar;
-
 #[repr(C)]
 #[derive(Clone, Debug)]
 pub struct Filter {
@@ -9,11 +7,6 @@ pub struct Filter {
 }
 
 impl Filter {
-    pub(crate) fn with_texture_size(mut self, width: u32, height: u32, scale_factor: Scalar) -> Self {
-        self.texture_size = [width as f32 / scale_factor as f32, height as f32 / scale_factor as f32];
-        self
-    }
-
     pub(crate) fn as_bytes(&self) -> Vec<u8> {
         let mut bytes = vec![];
         bytes.extend_from_slice(bytemuck::bytes_of(&self.texture_size));

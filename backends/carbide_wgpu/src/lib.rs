@@ -1,5 +1,4 @@
 mod diffuse_bind_group;
-mod glyph_cache_command;
 mod image;
 mod pipeline;
 mod render_pass_command;
@@ -16,7 +15,6 @@ mod samplers;
 mod bind_groups;
 mod textures;
 
-const GLYPH_TEX_FORMAT: wgpu::TextureFormat = wgpu::TextureFormat::R8Unorm;
 const DEFAULT_IMAGE_TEX_FORMAT: wgpu::TextureFormat = wgpu::TextureFormat::R8Unorm;
 
 pub fn init_logger() {

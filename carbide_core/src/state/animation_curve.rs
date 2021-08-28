@@ -1,7 +1,6 @@
 use num::traits::FloatConst;
 
 use crate::draw::Position;
-use crate::Scalar;
 
 /* Animation curves based on https://easings.net/# and https://github.com/flutter/flutter/blob/f4abaa0735/packages/flutter/lib/src/animation/curves.dart#L1681*/
 

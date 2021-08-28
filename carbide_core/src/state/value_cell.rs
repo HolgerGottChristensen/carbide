@@ -1,6 +1,6 @@
 #![allow(unsafe_code)]
 
-use std::cell::{Cell, RefCell, UnsafeCell};
+use std::cell::{Cell, UnsafeCell};
 use std::cmp::Ordering;
 use std::fmt;
 use std::fmt::Debug;
@@ -259,23 +259,6 @@ impl<'b> BorrowRefMut<'b> {
                 Some(BorrowRefMut { borrow })
             }
             _ => None,
-        }
-    }
-
-    // Clones a `BorrowRefMut`.
-    //
-    // This is only valid if each `BorrowRefMut` is used to track a mutable
-    // reference to a distinct, nonoverlapping range of the original object.
-    // This isn't in a Clone impl so that code doesn't call this implicitly.
-    #[inline]
-    fn clone(&self) -> BorrowRefMut<'b> {
-        let borrow = self.borrow.get();
-        debug_assert!(is_writing(borrow));
-        // Prevent the borrow counter from underflowing.
-        assert!(borrow != isize::MIN);
-        self.borrow.set(borrow - 1);
-        BorrowRefMut {
-            borrow: self.borrow,
         }
     }
 }

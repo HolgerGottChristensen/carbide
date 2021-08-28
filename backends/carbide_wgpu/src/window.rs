@@ -31,12 +31,10 @@ use crate::bind_group_layouts::{filter_buffer_bind_group_layout, filter_texture_
 use crate::bind_groups::{filter_texture_bind_group, main_bind_group, matrix_to_uniform_bind_group, size_to_uniform_bind_group};
 use crate::diffuse_bind_group::{DiffuseBindGroup, new_diffuse};
 use crate::image::Image;
-use crate::pipeline::{create_render_pipeline, create_render_pipeline_wgsl, MaskType};
-use crate::render_pass_command::{create_render_pass_commands, RenderPassCommand};
+use crate::pipeline::{create_render_pipeline, MaskType};
 use crate::render_pipeline_layouts::{filter_pipeline_layout, main_pipeline_layout};
-use crate::renderer::{atlas_cache_tex_desc, glyph_cache_tex_desc, main_render_tex_desc, secondary_render_tex_desc};
+use crate::renderer::{atlas_cache_tex_desc, main_render_tex_desc, secondary_render_tex_desc};
 use crate::samplers::main_sampler;
-use crate::texture_atlas_command::TextureAtlasCommand;
 use crate::textures::create_depth_stencil_texture;
 use crate::vertex::Vertex;
 
@@ -64,7 +62,6 @@ pub struct Window {
     pub(crate) mesh: Mesh,
     pub(crate) ui: Ui,
     pub(crate) image_map: ImageMap<Image>,
-    pub(crate) glyph_cache_tex: Texture,
     pub(crate) atlas_cache_tex: Texture,
     pub(crate) main_tex: Texture,
     pub(crate) main_tex_view: TextureView,
@@ -88,7 +85,7 @@ pub struct Window {
 }
 
 impl carbide_core::window::TWindow for Window {
-    fn add_font_family(&mut self, mut family: FontFamily) -> String {
+    fn add_font_family(&mut self, family: FontFamily) -> String {
         let family_name = family.name.clone();
         self.ui.environment.add_font_family(family);
         family_name
@@ -137,7 +134,7 @@ impl Window {
     }
 
     fn calculate_carbide_to_wgpu_matrix(dimension: Dimension, scale_factor: Scalar) -> Matrix4<f32> {
-        let half_height = (dimension.height / 2.0);
+        let half_height = dimension.height / 2.0;
         let scale = (scale_factor / half_height) as f32;
 
         #[rustfmt::skip]
@@ -166,7 +163,7 @@ impl Window {
         let event_loop = EventLoop::new();
 
         let loaded_icon = if let Some(path) = icon {
-            let rgba_logo_image = image::open(path).expect("Couldn't load logo").to_rgba();
+            let rgba_logo_image = image::open(path).expect("Couldn't load logo").to_rgba8();
 
             let width = rgba_logo_image.width();
             let height = rgba_logo_image.height();
@@ -252,8 +249,6 @@ impl Window {
         let secondary_tex = device.create_texture(&secondary_render_tex_desc([size.width, size.height]));
         let secondary_tex_view = secondary_tex.create_view(&Default::default());
 
-        let text_cache_tex_desc = glyph_cache_tex_desc(DEFAULT_GLYPH_CACHE_DIMS);
-        let glyph_cache_tex = device.create_texture(&text_cache_tex_desc);
         let atlas_cache_tex_desc = atlas_cache_tex_desc([512, 512]);
         let atlas_cache_tex = device.create_texture(&atlas_cache_tex_desc);
 
@@ -269,42 +264,42 @@ impl Window {
         let render_pipeline_layout = main_pipeline_layout(&device, &main_texture_bind_group_layout, &uniform_bind_group_layout);
         let filter_render_pipeline_layout = filter_pipeline_layout(&device, &filter_texture_bind_group_layout, &filter_buffer_bind_group_layout, &uniform_bind_group_layout);
 
-        let render_pipeline_no_mask = create_render_pipeline_wgsl(
+        let render_pipeline_no_mask = create_render_pipeline(
             &device,
             &render_pipeline_layout,
             &main_shader,
             &sc_desc,
             MaskType::NoMask,
         );
-        let render_pipeline_add_mask = create_render_pipeline_wgsl(
+        let render_pipeline_add_mask = create_render_pipeline(
             &device,
             &render_pipeline_layout,
             &main_shader,
             &sc_desc,
             MaskType::AddMask,
         );
-        let render_pipeline_in_mask = create_render_pipeline_wgsl(
+        let render_pipeline_in_mask = create_render_pipeline(
             &device,
             &render_pipeline_layout,
             &main_shader,
             &sc_desc,
             MaskType::InMask,
         );
-        let render_pipeline_remove_mask = create_render_pipeline_wgsl(
+        let render_pipeline_remove_mask = create_render_pipeline(
             &device,
             &render_pipeline_layout,
             &main_shader,
             &sc_desc,
             MaskType::RemoveMask,
         );
-        let render_pipeline_in_mask_filter = create_render_pipeline_wgsl(
+        let render_pipeline_in_mask_filter = create_render_pipeline(
             &device,
             &filter_render_pipeline_layout,
             &wgsl_filter_shader,
             &sc_desc,
             MaskType::InMask,
         );
-        let render_pipeline_no_mask_filter = create_render_pipeline_wgsl(
+        let render_pipeline_no_mask_filter = create_render_pipeline(
             &device,
             &filter_render_pipeline_layout,
             &wgsl_filter_shader,
@@ -313,7 +308,7 @@ impl Window {
         );
 
         let bind_groups = HashMap::new();
-        let mut filter_bind_groups = HashMap::new();
+        let filter_bind_groups = HashMap::new();
 
         let diffuse_bind_group = new_diffuse(
             &device,
@@ -388,7 +383,6 @@ impl Window {
             mesh,
             ui,
             image_map,
-            glyph_cache_tex,
             atlas_cache_tex,
             main_tex,
             main_tex_view,
@@ -516,10 +510,10 @@ impl Window {
                                             let image_folder =
                                                 String::from("/tmp/carbide_img_dump_")
                                                     + &Uuid::new_v4().to_string();
-                                            create_dir_all(&image_folder);
+                                            create_dir_all(&image_folder).unwrap();
                                             self.mesh
                                                 .texture_atlas_image()
-                                                .save(image_folder.clone() + "/glyph_atlas0.png");
+                                                .save(image_folder.clone() + "/glyph_atlas0.png").unwrap();
                                             let atlas1 = DynamicImage::ImageLuma8(
                                                 GrayImage::from_raw(
                                                     DEFAULT_GLYPH_CACHE_DIMS[0],
@@ -528,7 +522,7 @@ impl Window {
                                                 )
                                                     .unwrap(),
                                             );
-                                            atlas1.save(image_folder.clone() + "/glyph_atlas1.png");
+                                            atlas1.save(image_folder.clone() + "/glyph_atlas1.png").unwrap();
                                             println!("Images dumped to: {}", image_folder);
                                         }
                                         KeyboardInput {

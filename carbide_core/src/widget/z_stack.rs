@@ -1,7 +1,6 @@
 use std::ops::Deref;
 
 use crate::draw::{Dimension, Position};
-use crate::focus::Focus;
 use crate::prelude::*;
 
 /// A basic, non-interactive rectangle shape widget.

@@ -3,7 +3,7 @@ use crate::render::primitive::Primitive;
 use crate::widget::CommonWidget;
 
 pub trait Render: CommonWidget + StateSync {
-    fn get_primitives(&mut self, env: &mut Environment) -> Vec<Primitive> {
+    fn get_primitives(&mut self, _env: &mut Environment) -> Vec<Primitive> {
         vec![]
     }
 

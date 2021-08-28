@@ -1,5 +1,4 @@
 use crate::draw::{Dimension, Position};
-use crate::event::Event;
 use crate::prelude::*;
 
 #[derive(Debug, Clone, Widget)]

@@ -1,7 +1,4 @@
-use std::any::Any;
-use std::cell::RefCell;
 use std::collections::HashMap;
-use std::rc::Rc;
 use std::time::Instant;
 
 use bitflags::_core::fmt::Formatter;
@@ -14,9 +11,8 @@ use crate::focus::Refocus;
 use crate::mesh::TextureAtlas;
 use crate::prelude::EnvironmentVariable;
 use crate::state::{InnerState, StateKey, ValueCell};
-use crate::state::StateContract;
 use crate::text::{Font, FontFamily, FontId, FontSize, FontStyle, FontWeight, Glyph};
-use crate::widget::{ImageFilter, ImageFilterValue};
+use crate::widget::ImageFilter;
 use crate::widget::ImageInformation;
 use crate::widget::Widget;
 
@@ -93,7 +89,7 @@ impl Environment {
     ) -> Self {
         let default_font_family_name = "NotoSans";
 
-        let mut filters = HashMap::with_hasher(FxBuildHasher::default());
+        let filters = HashMap::with_hasher(FxBuildHasher::default());
 
         Environment {
             stack: env_stack,
@@ -274,7 +270,7 @@ impl Environment {
         }
     }
 
-    pub fn remove_glyphs_from_atlas(&mut self, glyphs: &Vec<Glyph>) {}
+    pub fn remove_glyphs_from_atlas(&mut self, _glyphs: &Vec<Glyph>) {}
 
     pub fn get_glyph_from_fallback(
         &mut self,

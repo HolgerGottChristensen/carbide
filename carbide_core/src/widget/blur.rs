@@ -1,9 +1,4 @@
-use std::f32::consts::{E, PI};
-
-use num::traits::FloatConst;
-
 use crate::draw::{Dimension, Position, Rect};
-use crate::focus::Focus;
 use crate::prelude::*;
 use crate::render::PrimitiveKind;
 use crate::utils::gaussian;
@@ -62,7 +57,7 @@ impl Blur {
     fn gaussian_blur(sigma: f32) -> ImageFilter {
         assert!(sigma > 0.0);
         let mut entries = vec![];
-        let mut radius = (3.0 * sigma).round() as i32;
+        let radius = (3.0 * sigma).round() as i32;
         println!("Generated gaussian with radius: {}", radius);
 
         for x in -radius..=radius {

@@ -1,12 +1,9 @@
 use std::collections::HashSet;
 
 use proc_macro2;
-use proc_macro2::{Ident, TokenStream};
+use proc_macro2::Ident;
 use syn;
-use syn::{
-    Attribute, DeriveInput, Fields, GenericParam, Meta, MetaList, NestedMeta, Path, Type,
-    WherePredicate,
-};
+use syn::{Attribute, Fields, Meta, NestedMeta, Path};
 
 use derive_type::DeriveType;
 

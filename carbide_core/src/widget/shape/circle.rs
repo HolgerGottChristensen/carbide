@@ -1,6 +1,5 @@
-use lyon::algorithms::math::{Angle, rect};
+use lyon::algorithms::math::rect;
 use lyon::algorithms::path::builder::PathBuilder;
-use lyon::algorithms::path::geom::euclid::vec2;
 use lyon::algorithms::path::Winding;
 use lyon::math::point;
 

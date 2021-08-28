@@ -40,7 +40,7 @@ impl Image {
         where
             P: AsRef<Path>,
     {
-        let rgba_logo_image = image::open(path).expect("Couldn't load logo").to_rgba();
+        let rgba_logo_image = image::open(path).expect("Couldn't load logo").to_rgba8();
 
         // Create the GPU texture and upload the image data.
         let (width, height) = rgba_logo_image.dimensions();

@@ -9,11 +9,10 @@ use std::{fmt, ops};
 
 use cgmath::{Matrix4, SquareMatrix, Vector3};
 use image::{DynamicImage, GenericImage, GenericImageView};
-use instant::Instant;
 use rusttype::gpu_cache::Cache as RustTypeGlyphCache;
 use rusttype::gpu_cache::CacheWriteErr as RustTypeCacheWriteError;
 
-use crate::{color, image_map, render};
+use crate::{color, image_map};
 use crate::draw::{Position, Rect, Scalar};
 use crate::environment::Environment;
 use crate::layout::BasicLayouter;
@@ -24,7 +23,6 @@ use crate::mesh::{
 use crate::mesh::atlas::texture_atlas::TextureAtlas;
 use crate::mesh::vertex::Vertex;
 use crate::render::{PrimitiveKind, PrimitiveWalker};
-use crate::text::Glyph;
 
 /// Images within the given image map must know their dimensions in pixels.
 pub trait ImageDimensions {
@@ -167,10 +165,10 @@ impl Mesh {
 
         let Mesh {
             ref mut glyph_cache,
-            ref mut glyph_cache_pixel_buffer,
+            glyph_cache_pixel_buffer: _,
             ref mut commands,
             ref mut vertices,
-            ref mut texture_atlas,
+            texture_atlas: _,
             ref mut texture_atlas_image,
         } = *self;
 
@@ -178,7 +176,7 @@ impl Mesh {
         vertices.clear();
 
         // Keep track of whether or not the glyph cache texture needs to be updated.
-        let mut glyph_cache_requires_upload = false;
+        let glyph_cache_requires_upload = false;
         let mut atlas_requires_upload = false;
 
         // Todo: Queue glyphs here and check if there is space for all needed glyphs.
@@ -205,12 +203,12 @@ impl Mesh {
         let mut current_state = State::Plain { start: 0 };
 
         // Viewport dimensions and the "dots per inch" factor.
-        let half_viewport_w = viewport.width() / 2.0;
-        let half_viewport_h = viewport.height() / 2.0;
+        let _half_viewport_w = viewport.width() / 2.0;
+        let _half_viewport_h = viewport.height() / 2.0;
 
         // Width of the glyph cache is useful when writing to the pixel buffer.
         let (glyph_cache_w, _) = glyph_cache.dimensions();
-        let glyph_cache_w = glyph_cache_w as usize;
+        let _glyph_cache_w = glyph_cache_w as usize;
 
         // Functions for converting for carbide scalar coords to normalised vertex coords (-1.0 to 1.0).
         let vx = |x: Scalar| x as f32;//(x * scale_factor / half_viewport_w - 1.0) as f32;
@@ -688,7 +686,7 @@ impl Mesh {
                     };
 
                     for glyph in glyphs {
-                        let position = glyph.position();
+                        let _position = glyph.position();
                         if let Some(bb) = glyph.bb() {
                             let (left, right, bottom, top) = bb.l_r_b_t_scaled(scale_factor);
 
@@ -816,25 +814,6 @@ impl Mesh {
         };
 
         Ok(fill)
-    }
-
-    fn group_by_font_id(glyphs: Vec<Glyph>) -> Vec<Vec<Glyph>> {
-        let now = Instant::now();
-        let mut glyph_vecs: Vec<Vec<Glyph>> = Vec::new();
-        'glyph_for: for glyph in glyphs {
-            let font_id = glyph.font_id();
-            for glyph_vec in &mut glyph_vecs {
-                if glyph_vec[0].font_id() == font_id {
-                    glyph_vec.push(glyph);
-                    continue 'glyph_for;
-                }
-            }
-            glyph_vecs.push(vec![glyph]);
-        }
-
-        println!("Time for group by font: {:?}us", now.elapsed().as_micros());
-
-        glyph_vecs
     }
 
     pub fn texture_atlas(&self) -> &TextureAtlas {

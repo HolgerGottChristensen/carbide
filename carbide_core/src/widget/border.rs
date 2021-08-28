@@ -146,7 +146,7 @@ impl Render for Border {
         );
 
         let border_color = *self.color.value();
-        let mut prims = vec![
+        let prims = vec![
             Primitive {
                 kind: PrimitiveKind::Rectangle {
                     color: border_color,

@@ -1,8 +1,6 @@
 use std::borrow::Borrow;
 use std::fmt::Debug;
 
-use instant::Instant;
-
 use crate::draw::{Dimension, Position, Rect};
 use crate::prelude::*;
 //use crate::render::text::Text as RenderText;
@@ -121,7 +119,7 @@ impl Text {
         self.justify(Justify::Right)
     }
 
-    pub fn get_positioned_glyphs(&self, _: &Environment, scale_factor: f32) -> Vec<Glyph> {
+    pub fn get_positioned_glyphs(&self, _: &Environment, _scale_factor: f32) -> Vec<Glyph> {
         if let Some(internal) = &self.internal_text {
             internal.first_glyphs()
         } else {

@@ -1,14 +1,12 @@
 use std;
 use std::fmt::Debug;
-use std::sync::atomic::AtomicUsize;
 
 use instant::Instant;
 
 use crate::{color, cursor};
-use crate::color::Color;
 use crate::draw::Dimension;
 use crate::event::{
-    Event, EventHandler, Input, Key, KeyboardEvent, ModifierKey, WidgetEvent, WindowEvent,
+    EventHandler, Input, Key, KeyboardEvent, ModifierKey, WidgetEvent, WindowEvent,
 };
 use crate::focus::{Focusable, Refocus};
 use crate::prelude::Environment;

@@ -1,7 +1,6 @@
 use crate::draw::{Dimension, Position};
 use crate::event::{KeyboardEvent, KeyboardEventHandler, MouseEvent, MouseEventHandler, OtherEventHandler, WidgetEvent};
-use crate::event::Event;
-use crate::focus::{Focus, Focusable, Refocus};
+use crate::focus::{Focusable, Refocus};
 use crate::prelude::*;
 
 #[derive(Debug, Clone, Widget)]

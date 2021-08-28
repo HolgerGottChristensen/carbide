@@ -1,14 +1,4 @@
-use std::collections::HashMap;
-use std::fmt::Debug;
-use std::hash::Hash;
-use std::marker::PhantomData;
-
-use fxhash::{FxBuildHasher, FxHashMap};
-use serde::de::DeserializeOwned;
-use serde::Serialize;
-
 use crate::draw::{Dimension, Position};
-use crate::event::{KeyboardEvent, MouseEvent};
 use crate::prelude::*;
 
 pub trait Delegate<T: StateContract, W: Widget>: Fn(TState<T>, UsizeState) -> W + Clone {}
@@ -33,7 +23,7 @@ impl<T: StateContract + 'static, W: Widget + Clone, U: Delegate<T, W>> ForEach<T
         let model = model.into();
         let mut map = vec![];
 
-        for (index, element) in model.value().deref().iter().enumerate() {
+        for (index, _element) in model.value().deref().iter().enumerate() {
             let index_state: UsizeState = ValueState::new(index).into();
             let item_state: MapState<Vec<T>, T, usize> = MapState::new(model.clone(),
                                                                        index,

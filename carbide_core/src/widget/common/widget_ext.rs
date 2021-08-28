@@ -1,4 +1,4 @@
-use cgmath::{Matrix3, Matrix4};
+use cgmath::Matrix4;
 
 use crate::draw::Dimension;
 use crate::prelude::*;

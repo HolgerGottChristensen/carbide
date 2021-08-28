@@ -24,7 +24,6 @@ mod section;
 mod text;
 mod text_decoration;
 mod text_old;
-mod text_overflow;
 mod text_span;
 mod text_span_generator;
 mod text_style;

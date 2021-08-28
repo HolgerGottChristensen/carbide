@@ -359,7 +359,7 @@ fn create_packed_image() {
     );
     env.add_font_family(family);
 
-    let id = env.get_font(0).get_glyph_id('👴').unwrap();
+    let _id = env.get_font(0).get_glyph_id('👴').unwrap();
 
     atlas.queue_image(0.into(), image::open(image1).unwrap());
     atlas.queue_image(0.into(), image::open(image1).unwrap());

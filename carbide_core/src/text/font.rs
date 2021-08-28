@@ -11,7 +11,6 @@ use crate::text::glyph::Glyph;
 
 type RustTypeFont = rusttype::Font<'static>;
 type RustTypeScale = rusttype::Scale;
-type RustTypePoint = rusttype::Point<f32>;
 
 const POINT_TO_PIXEL: f32 = 1.0;
 
@@ -343,7 +342,7 @@ fn load_bitmap_font() {
     println!("Descender: {:?}", font.font.inner().descender());
     println!("Height: {:?}", font.font.inner().height());
 
-    let emoji_ranges: [std::ops::Range<u32>; 1] = [
+    let _emoji_ranges: [std::ops::Range<u32>; 1] = [
         0x1F601..0x1F64F,
         //0x2702..0x27B0,
         //0x1F680..0x1F6C0,

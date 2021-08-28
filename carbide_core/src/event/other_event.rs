@@ -9,7 +9,7 @@ pub trait OtherEventHandler: CommonWidget + StateSync + Focusable {
     /// This will get delegated to all widgets.
     /// It will never get called with mouse or keyboard events.
     /// TODO: Separate touch events.
-    fn handle_other_event(&mut self, event: &WidgetEvent, env: &mut Environment) {}
+    fn handle_other_event(&mut self, _event: &WidgetEvent, _env: &mut Environment) {}
 
     fn process_other_event(&mut self, event: &WidgetEvent, env: &mut Environment) {
         self.capture_state(env);

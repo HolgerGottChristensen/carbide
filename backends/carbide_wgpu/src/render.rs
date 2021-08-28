@@ -1,14 +1,10 @@
-use std::time::Instant;
-
-use wgpu::{BufferUsage, Extent3d, ImageCopyTexture, LoadOp, Operations, Origin3d, RenderPassDepthStencilAttachment};
+use wgpu::{BufferUsage, Extent3d, ImageCopyTexture, LoadOp, Operations, RenderPassDepthStencilAttachment};
 use wgpu::util::{BufferInitDescriptor, DeviceExt};
 
 use carbide_core::draw::{Dimension, Position, Rect};
-use carbide_core::mesh::MODE_IMAGE;
 
-use crate::bind_groups::{filter_buffer_bind_group, filter_texture_bind_group};
+use crate::bind_groups::filter_buffer_bind_group;
 use crate::filter::Filter;
-use crate::glyph_cache_command::GlyphCacheCommand;
 use crate::render_pass_command::{create_render_pass_commands, RenderPass, RenderPassCommand};
 use crate::texture_atlas_command::TextureAtlasCommand;
 use crate::vertex::Vertex;
@@ -46,8 +42,8 @@ impl Window {
                 Some(TextureAtlasCommand {
                     texture_atlas_buffer: self.mesh.texture_atlas_image_as_bytes(),
                     texture_atlas_texture: &self.atlas_cache_tex,
-                    width: 512,
-                    height: 512,
+                    width,
+                    height,
                 })
             }
             false => None,
@@ -68,8 +64,7 @@ impl Window {
 
         for (filter_id, filter) in self.ui.environment.filters() {
             if !self.filter_buffer_bind_groups.contains_key(filter_id) {
-                let mut filter: Filter = filter.clone().into();
-                let mut filter = filter.with_texture_size(self.size.width, self.size.height, self.ui.environment.get_scale_factor());
+                let filter: Filter = filter.clone().into();
                 let filter_buffer = self.device.create_buffer_init(
                     &wgpu::util::BufferInitDescriptor {
                         label: Some("Filter Buffer"),
@@ -121,7 +116,7 @@ impl Window {
         let mut first_pass = true;
 
         let mut current_main_render_pipeline = &self.render_pipeline_no_mask;
-        let mut current_vertex_buffer_slice = self.vertex_buffer.0.slice(..);
+        let current_vertex_buffer_slice = self.vertex_buffer.0.slice(..);
         let mut current_uniform_bind_group = &self.uniform_bind_group;
 
         for command in commands {

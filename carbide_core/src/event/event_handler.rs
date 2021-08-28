@@ -234,8 +234,6 @@ impl EventHandler {
 
                     None
                 }
-
-                _ => None,
             },
 
             // Some button was released.
@@ -322,8 +320,6 @@ impl EventHandler {
 
                     None
                 }
-
-                _ => None,
             },
 
             // The window was resized.

@@ -1,11 +1,7 @@
-use std::time::Duration;
-
-use carbide_core::Color;
 use carbide_core::environment::*;
-use carbide_core::state::{AnimatedState, ColorState, ease_in_out, State, TState};
+use carbide_core::state::{State, TState};
 use carbide_core::text::{FontFamily, FontStyle, FontWeight};
 use carbide_core::widget::*;
-use carbide_core::widget::canvas::*;
 use carbide_wgpu::window::*;
 
 fn main() {

@@ -8,7 +8,7 @@ pub trait KeyboardEventHandler: CommonWidget + StateSync + Focusable {
     /// A function that will get called when a keyboard event occurs.
     /// This event will be given to all widgets, no matter if they are in focus or not.
     /// This is because the focus will be decided by the widgets themselves.
-    fn handle_keyboard_event(&mut self, event: &KeyboardEvent, env: &mut Environment) {}
+    fn handle_keyboard_event(&mut self, _event: &KeyboardEvent, _env: &mut Environment) {}
 
     fn process_keyboard_event(&mut self, event: &KeyboardEvent, env: &mut Environment) {
         self.capture_state(env);

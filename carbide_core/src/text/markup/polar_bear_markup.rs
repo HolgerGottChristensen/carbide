@@ -23,7 +23,7 @@ pub enum PolarItem {
     Bold(String),
     Underline(String),
     Strike(String),
-    LineSeparator,
+    //LineSeparator,
     Newline,
     Paragraph(String),
 }
@@ -32,6 +32,10 @@ pub fn parse_polar_bear_markup(input: &str) -> IResult<&str, Vec<PolarItem>> {
     let (left, parsed) = many0(alt((
         parse_header_1,
         parse_header_2,
+        parse_header_3,
+        parse_header_4,
+        parse_header_5,
+        parse_header_6,
         parse_underline,
         parse_strike_through,
         parse_italic,
@@ -125,7 +129,7 @@ fn parse_header_6(input: &str) -> IResult<&str, PolarItem> {
 }
 
 fn parse_newline(input: &str) -> IResult<&str, PolarItem> {
-    let (left, parsed): (&str, &str) = tag("\n")(input)?;
+    let (left, _parsed): (&str, &str) = tag("\n")(input)?;
 
     Ok((left, PolarItem::Newline))
 }

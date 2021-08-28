@@ -1,5 +1,4 @@
 use crate::draw::{Dimension, Position};
-use crate::focus::Focus;
 use crate::prelude::*;
 use crate::widget::Widget;
 

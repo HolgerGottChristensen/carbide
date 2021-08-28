@@ -9,8 +9,6 @@ use crate::text::text_style::TextStyle;
 use crate::widget::Justify;
 use crate::widget::Wrap;
 
-type BoundingBox = Rect;
-
 #[derive(Debug, Clone)]
 pub struct Text {
     latest_requested_offset: Position,
@@ -40,7 +38,7 @@ impl Text {
         generator: &dyn TextSpanGenerator,
         env: &mut Environment,
     ) -> Text {
-        let mut spans = generator.generate(&string, &style, env);
+        let spans = generator.generate(&string, &style, env);
 
         Text {
             latest_requested_offset: Default::default(),
@@ -188,7 +186,7 @@ impl Text {
                     widths,
                     glyphs,
                     style,
-                    ascend,
+                    ascend: _,
                     ..
                 } => {
                     let mut current_glyph_index = 0;
@@ -351,7 +349,7 @@ impl Text {
                     widths,
                     glyphs,
                     style,
-                    ascend: ascending_pixels,
+                    ascend: _ascending_pixels,
                     ..
                 } => {
                     // Initiate strike lines
@@ -417,7 +415,7 @@ impl Text {
                         }
                     }
                 }
-                TextSpan::Widget(widget) => {}
+                TextSpan::Widget(_widget) => {}
                 TextSpan::NewLine => {
                     current_x = 0.0;
                     current_line += 1.0; // 1.0
@@ -430,7 +428,7 @@ impl Text {
         self.latest_max_width = max_width as f64;
     }
 
-    fn calculate_line_heights(&mut self, requested_size: Dimension, env: &Environment) {
+    fn calculate_line_heights(&mut self, _requested_size: Dimension, _env: &Environment) {
         let mut line_descends = vec![0.0];
         let mut line_ascends = vec![];
         let mut line_gaps = vec![];

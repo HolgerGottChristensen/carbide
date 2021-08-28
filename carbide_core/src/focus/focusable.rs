@@ -8,16 +8,16 @@ use crate::state::StateSync;
 pub trait Focusable: CommonWidget + StateSync {
     fn focus_retrieved(
         &mut self,
-        event: &WidgetEvent,
-        focus_request: &Refocus,
-        env: &mut Environment,
+        _event: &WidgetEvent,
+        _focus_request: &Refocus,
+        _env: &mut Environment,
     ) {}
 
     fn focus_dismissed(
         &mut self,
-        event: &WidgetEvent,
-        focus_request: &Refocus,
-        env: &mut Environment,
+        _event: &WidgetEvent,
+        _focus_request: &Refocus,
+        _env: &mut Environment,
     ) {}
 
     fn set_focus_and_request(&mut self, focus: Focus, env: &mut Environment) {
