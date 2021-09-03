@@ -8,13 +8,12 @@ extern crate unicode_segmentation;
 //pub use check_box::CheckBox;
 //pub use list::List;
 pub use plain::*;
-
 //pub use pop_up_button::PopUpButton;
 //pub use radio_button::RadioButton;
 ////pub use text_input::TextInput;
 //pub use switch::Switch;
-//pub use types::CheckBoxState;
-//pub use types::CheckBoxValue;
+pub use types::CheckBoxState;
+pub use types::CheckBoxValue;
 
 //mod button;
 //mod check_box;
@@ -24,4 +23,4 @@ mod plain;
 //mod radio_button;
 //mod switch;
 //mod text_input;
-//mod types;
+mod types;

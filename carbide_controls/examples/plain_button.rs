@@ -42,22 +42,22 @@ fn main() {
         VStack::new(vec![
             PlainButton::new(Rectangle::new(vec![]).fill(RED))
                 .on_click(move |_: &mut _| {
-                    *button_counter_state.clone().value_mut() += 1;
+                    let mut temp = button_counter_state.clone();
+                    *temp.value_mut() += 1;
                 })
                 .hover(hover_state.clone())
                 .pressed(pressed_state.clone())
                 .focused(focus_state.clone())
-                .padding(EdgeInsets::all(2.0))
                 .border()
                 .clip()
                 .frame(120.0, 70.0),
-            Text::new(counter_state)
+            Text::new(MapOwnedState::new(counter_state, |count: &i32| { format!("Count: {}", count) }))
                 .font_size(40),
-            Text::new(hover_state)
+            Text::new(MapOwnedState::new(hover_state, |hover: &bool| { format!("Hovered: {}", hover) }))
                 .font_size(40),
-            Text::new(pressed_state)
+            Text::new(MapOwnedState::new(pressed_state, |press: &bool| { format!("Pressed: {}", press) }))
                 .font_size(40),
-            Text::new(MapOwnedState::new(focus_state, |focus: &Focus| { format!("{:?}", focus) }))
+            Text::new(MapOwnedState::new(focus_state, |focus: &Focus| { format!("Focus: {:?}", focus) }))
                 .font_size(40),
         ])
             .spacing(20.0),

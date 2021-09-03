@@ -5,6 +5,7 @@ use carbide_core::environment::Environment;
 use carbide_core::event::{Key, KeyboardEvent, KeyboardEventHandler, MouseButton, MouseEvent, MouseEventHandler};
 use carbide_core::flags::Flags;
 use carbide_core::focus::Focus;
+use carbide_core::layout::Layout;
 use carbide_core::state::{BoolState, FocusState, State};
 use carbide_core::widget::{CommonWidget, Id, Widget, WidgetExt, WidgetIter, WidgetIterMut};
 
@@ -15,7 +16,7 @@ impl<I> Action for I where I: Fn(&mut Environment) + Clone {}
 dyn_clone::clone_trait_object!(Action);
 
 #[derive(Clone, Widget)]
-#[carbide_exclude(MouseEvent, KeyboardEvent)]
+#[carbide_exclude(MouseEvent, KeyboardEvent, Layout)]
 pub struct PlainButton {
     id: Id,
     #[state]
@@ -128,6 +129,14 @@ impl MouseEventHandler for PlainButton {
             }
             _ => (),
         }
+    }
+}
+
+impl Layout for PlainButton {
+    fn calculate_size(&mut self, requested_size: Dimension, env: &mut Environment) -> Dimension {
+        self.child.calculate_size(requested_size, env);
+        self.dimension = requested_size;
+        self.dimension
     }
 }
 

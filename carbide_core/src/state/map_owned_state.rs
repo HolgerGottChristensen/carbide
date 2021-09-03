@@ -42,26 +42,26 @@ impl<FROM: StateContract, TO: StateContract> MapOwnedState<FROM, TO> {
 
 impl<FROM: StateContract, TO: StateContract> State<TO> for MapOwnedState<FROM, TO> {
     fn capture_state(&mut self, env: &mut Environment) {
-        self.state.capture_state(env)
-    }
-
-    fn release_state(&mut self, env: &mut Environment) {
-        self.state.release_state(env)
-    }
-
-    fn value(&self) -> ValueRef<TO> {
-        let value: TO = (&self.map)(&*self.state.value());
+        self.state.capture_state(env);
+        let value: TO = (&self.map)(&*self.state.value(), env);
         if let Ok(mut borrow) = self.value.try_borrow_mut() {
             *borrow.deref_mut() = value;
         }
+    }
+
+    fn release_state(&mut self, env: &mut Environment) {
+        self.state.release_state(env);
+        let value: TO = (&self.map)(&*self.state.value(), env);
+        if let Ok(mut borrow) = self.value.try_borrow_mut() {
+            *borrow.deref_mut() = value;
+        }
+    }
+
+    fn value(&self) -> ValueRef<TO> {
         self.value.borrow()
     }
 
     fn value_mut(&mut self) -> ValueRefMut<TO> {
-        let value: TO = (&self.map)(&*self.state.value());
-        if let Ok(mut borrow) = self.value.try_borrow_mut() {
-            *borrow.deref_mut() = value;
-        }
         self.value.borrow_mut()
     }
 }
@@ -83,11 +83,11 @@ for MapOwnedState<FROM, TO>
 }
 
 pub trait Map<FROM: StateContract, TO: StateContract>:
-Fn(&FROM) -> TO + DynClone + 'static
+Fn(&FROM, &Environment) -> TO + DynClone + 'static
 {}
 
 impl<T, FROM: StateContract, TO: StateContract> Map<FROM, TO> for T where
-    T: Fn(&FROM) -> TO + DynClone + 'static
+    T: Fn(&FROM, &Environment) -> TO + DynClone + 'static
 {}
 
 dyn_clone::clone_trait_object!(<FROM: StateContract, TO: StateContract> Map<FROM, TO>);
@@ -97,17 +97,17 @@ macro_rules! impl_string_state {
         $(
             impl Into<StringState> for TState<$typ> {
                 fn into(self) -> StringState {
-                    MapOwnedState::new(self, |s: &$typ| {s.to_string()}).into()
+                    MapOwnedState::new(self, |s: &$typ, _: &_| {s.to_string()}).into()
                 }
             }
             impl Into<StringState> for Box<ValueState<$typ>> {
                 fn into(self) -> StringState {
-                    MapOwnedState::new(WidgetState::new(self), |s: &$typ| {s.to_string()}).into()
+                    MapOwnedState::new(WidgetState::new(self), |s: &$typ, _: &_| {s.to_string()}).into()
                 }
             }
         impl Into<StringState> for Box<LocalState<$typ>> {
                 fn into(self) -> StringState {
-                    MapOwnedState::new(WidgetState::new(self), |s: &$typ| {s.to_string()}).into()
+                    MapOwnedState::new(WidgetState::new(self), |s: &$typ, _: &_| {s.to_string()}).into()
                 }
             }
         )*

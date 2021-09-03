@@ -80,7 +80,7 @@ impl AnimatedState {
             <T as Mul<f64>>::Output: Add<U>,
             <U as Add<U>>::Output: StateContract + Default + 'static,
     {
-        MapOwnedState::new(WidgetState::new(Box::new(self)), move |t: &f64| {
+        MapOwnedState::new(WidgetState::new(Box::new(self)), move |t: &f64, _: &_| {
             from * (1.0 - *t) + to * *t
         })
             .into()
