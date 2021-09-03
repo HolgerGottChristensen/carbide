@@ -6,8 +6,9 @@ use carbide_core::environment::EnvironmentColor;
 use carbide_core::flags::Flags;
 use carbide_core::focus::{Focus, Refocus};
 use carbide_core::prelude::Environment;
+use carbide_core::render::PrimitiveKind::RectanglePrim;
 use carbide_core::state::{FocusState, LocalState, MapOwnedState, StateKey, StringState};
-use carbide_core::widget::{CommonWidget, HStack, Id, Spacer, SpacerDirection, Text, Widget, WidgetExt, WidgetIter, WidgetIterMut};
+use carbide_core::widget::{CommonWidget, HStack, Id, Rectangle, Spacer, Text, Widget, WidgetExt, WidgetIter, WidgetIterMut};
 
 use crate::carbide_core::prelude::State;
 use crate::PlainButton;
@@ -42,33 +43,32 @@ impl PlainCheckBox {
         label: S,
         checked: L,
     ) -> Box<Self> {
-        let focus_state = LocalState::new(Focus::Unfocused);
+        let focus = LocalState::new(Focus::Unfocused);
 
-        let default_delegate = |_focus_state: FocusState,
-                                checked: CheckBoxState,
-                                button: Box<dyn Widget>|
-                                -> Box<dyn Widget> {
-            let highlight_color = MapOwnedState::new(checked, |check: &CheckBoxState, env: &Environment| {
+        fn delegate(_: FocusState, checked: CheckBoxState, button: Box<dyn Widget>) -> Box<dyn Widget> {
+            let highlight_color = MapOwnedState::new(checked.clone(), |check: &CheckBoxState, env: &Environment| {
                 match *check.value() {
                     CheckBoxValue::True => {
-                        env.get_color(&StateKey::Color(EnvironmentColor::Red)).unwrap()
-                    }
-                    CheckBoxValue::Intermediate => {
                         env.get_color(&StateKey::Color(EnvironmentColor::Green)).unwrap()
                     }
-                    CheckBoxValue::False => {
+                    CheckBoxValue::Intermediate => {
                         env.get_color(&StateKey::Color(EnvironmentColor::Blue)).unwrap()
+                    }
+                    CheckBoxValue::False => {
+                        env.get_color(&StateKey::Color(EnvironmentColor::Red)).unwrap()
                     }
                 }
             });
-
-            widget::Rectangle::new(vec![button]).fill(highlight_color)
-        };
+            let val = MapOwnedState::new(checked, |check: &CheckBoxState, env: &Environment| {
+                format!("{:?}", *check.value())
+            });
+            Rectangle::new(vec![Text::new(val), button]).fill(highlight_color)
+        }
 
         Self::new_internal(
             checked.into(),
-            focus_state.into(),
-            default_delegate,
+            focus.into(),
+            delegate,
             label.into(),
         )
     }
@@ -90,7 +90,7 @@ impl PlainCheckBox {
 
     fn new_internal(
         checked: CheckBoxState,
-        focus_state: FocusState,
+        focus: FocusState,
         delegate: fn(
             focus: FocusState,
             selected: CheckBoxState,
@@ -98,39 +98,33 @@ impl PlainCheckBox {
         ) -> Box<dyn Widget>,
         label_state: StringState,
     ) -> Box<Self> {
-        let checked_for_button = checked.clone();
-        let focus_for_button = focus_state.clone();
-        let button = PlainButton::new(Spacer::new(SpacerDirection::Vertical))
-            .on_click(move |env: &mut Environment| {
-                let mut checked = checked_for_button.clone();
-
-                if *checked.value() == CheckBoxValue::True {
-                    *checked.value_mut() = CheckBoxValue::False;
+        let button = PlainButton::new(Spacer::new())
+            .on_click(capture!([checked, focus], |env: &mut Environment| {
+                if *checked == CheckBoxValue::True {
+                    *checked = CheckBoxValue::False;
                 } else {
-                    *checked.value_mut() = CheckBoxValue::True;
+                    *checked = CheckBoxValue::True;
                 }
 
-                let mut focus_for_button = focus_for_button.clone();
-
-                if *focus_for_button.value() != Focus::Focused {
-                    *focus_for_button.value_mut() = Focus::FocusRequested;
+                if *focus != Focus::Focused {
+                    *focus = Focus::FocusRequested;
                     env.request_focus(Refocus::FocusRequest);
                 }
-            })
-            .focused(focus_state.clone());
+            }))
+            .focused(focus.clone());
 
-        let delegate_widget = delegate(focus_state.clone(), checked.clone(), button);
+        let delegate_widget = delegate(focus.clone(), checked.clone(), button);
 
         let child = HStack::new(vec![
             delegate_widget,
             Text::new(label_state.clone()),
-            Spacer::new(SpacerDirection::Horizontal),
+            Spacer::new(),
         ])
             .spacing(5.0);
 
         Box::new(PlainCheckBox {
             id: Id::new_v4(),
-            focus: focus_state,
+            focus,
             child,
             position: Position::new(0.0, 0.0),
             dimension: Dimension::new(100.0, 100.0),

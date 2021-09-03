@@ -42,7 +42,7 @@ fn main() {
     window.set_widgets(
         VStack::new(vec![
             Rectangle::new(vec![HStack::new(vec![
-                Spacer::new(SpacerDirection::Horizontal),
+                Spacer::new(),
                 VStack::new(vec![
                     Text::new(CommonState::GlobalState {
                         function: |global_state: &CalculatorState| global_state.get_upper_display(),

@@ -3,7 +3,7 @@ use std::rc::Rc;
 
 use crate::Color;
 use crate::focus::Focus;
-pub(crate) use crate::state::value_cell::{ValueCell, ValueRef, ValueRefMut};
+pub use crate::state::value_cell::{ValueCell, ValueRef, ValueRefMut};
 
 pub use self::animated_state::*;
 pub use self::animation_curve::*;

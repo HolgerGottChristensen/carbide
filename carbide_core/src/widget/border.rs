@@ -148,25 +148,25 @@ impl Render for Border {
         let border_color = *self.color.value();
         let prims = vec![
             Primitive {
-                kind: PrimitiveKind::Rectangle {
+                kind: PrimitiveKind::RectanglePrim {
                     color: border_color,
                 },
                 rect: left_border,
             },
             Primitive {
-                kind: PrimitiveKind::Rectangle {
+                kind: PrimitiveKind::RectanglePrim {
                     color: border_color,
                 },
                 rect: right_border,
             },
             Primitive {
-                kind: PrimitiveKind::Rectangle {
+                kind: PrimitiveKind::RectanglePrim {
                     color: border_color,
                 },
                 rect: top_border,
             },
             Primitive {
-                kind: PrimitiveKind::Rectangle {
+                kind: PrimitiveKind::RectanglePrim {
                     color: border_color,
                 },
                 rect: bottom_border,

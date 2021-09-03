@@ -1,6 +1,5 @@
 use crate::draw::{Dimension, Position};
 use crate::prelude::*;
-use crate::widget::types::SpacerDirection;
 
 #[derive(Clone, Debug, Widget)]
 #[carbide_exclude(Layout)]
@@ -8,35 +7,22 @@ pub struct Spacer {
     id: Uuid,
     position: Position,
     dimension: Dimension,
-    space: SpacerDirection,
 }
 
 impl Spacer {
-    pub fn new(space: SpacerDirection) -> Box<Self> {
+    pub fn new() -> Box<Self> {
         Box::new(Spacer {
             id: Uuid::new_v4(),
             position: Position::new(0.0, 0.0),
             dimension: Dimension::new(100.0, 100.0),
-            space,
         })
     }
 }
 
 impl Layout for Spacer {
-    fn calculate_size(&mut self, requested_size: Dimension, _env: &mut Environment) -> Dimension {
-        match self.space {
-            SpacerDirection::Vertical => {
-                self.dimension = Dimension::new(0.0, requested_size.height);
-            }
-            SpacerDirection::Horizontal => {
-                self.dimension = Dimension::new(requested_size.width, 0.0);
-            }
-            SpacerDirection::Both => {
-                self.dimension = requested_size;
-            }
-        }
-
-        self.dimension
+    fn calculate_size(&mut self, requested_size: Dimension, _: &mut Environment) -> Dimension {
+        self.dimension = requested_size;
+        requested_size
     }
 }
 

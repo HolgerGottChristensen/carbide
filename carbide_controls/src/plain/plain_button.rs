@@ -158,7 +158,6 @@ impl CommonWidget for PlainButton {
     }
 
     fn set_focus(&mut self, focus: Focus) {
-        println!("Setting focus to: {:?}", focus);
         *self.focus.value_mut() = focus;
     }
 

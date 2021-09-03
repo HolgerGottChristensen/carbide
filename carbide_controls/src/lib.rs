@@ -1,6 +1,8 @@
 extern crate carbide_core;
 #[macro_use]
 extern crate carbide_derive;
+#[macro_use]
+extern crate closure;
 extern crate copypasta;
 extern crate unicode_segmentation;
 
@@ -15,6 +17,19 @@ pub use plain::*;
 pub use types::CheckBoxState;
 pub use types::CheckBoxValue;
 
+macro_rules! capture {
+    ([$($t:ident),*], |$($a:ident: $typ:ty),*| $b:block) => {
+        {
+            $(let $t = $t.clone();)*
+            move |$($a: $typ),*| {
+                $(let mut $t = $t.clone();)*
+                $(let mut $t = $t.value_mut();)*
+                $b
+            }
+        }
+    };
+}
+
 //mod button;
 //mod check_box;
 //mod list;
@@ -24,3 +39,4 @@ mod plain;
 //mod switch;
 //mod text_input;
 mod types;
+

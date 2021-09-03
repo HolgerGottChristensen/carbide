@@ -92,7 +92,7 @@ impl Layout for HStack {
 
         for spacer in self.children_mut().filter(|m| m.flag() == Flags::SPACER) {
             let chosen_size = spacer.calculate_size(
-                Dimension::new(rest_space / spacer_count, requested_size.height),
+                Dimension::new(rest_space / spacer_count, 0.0),
                 env,
             );
 

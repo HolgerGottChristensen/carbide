@@ -34,12 +34,12 @@ fn main() {
 
     let checkbox_state1 = LocalState::new(CheckBoxValue::False);
     let checkbox_state2 = LocalState::new(CheckBoxValue::False);
-    let checkbox_state3 = LocalState::new(CheckBoxValue::False);
-    let checkbox_state4 = LocalState::new(CheckBoxValue::False);
+    let checkbox_state3 = LocalState::new(CheckBoxValue::Intermediate);
+    let checkbox_state4 = LocalState::new(CheckBoxValue::True);
 
     window.set_widgets(
         VStack::new(vec![
-            PlainCheckBox::new("Rectangle", checkbox_state1).border(),
+            PlainCheckBox::new("Rectangle", checkbox_state1.clone()).border(),
             PlainCheckBox::new("Circle", checkbox_state2).border(),
             PlainCheckBox::new("Triangle", checkbox_state3).border(),
             PlainCheckBox::new("Star", checkbox_state4).border(),

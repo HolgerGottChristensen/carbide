@@ -204,7 +204,7 @@ impl Render for Text {
                         additional_rect.dimension.height,
                     );
                     prims.push(Primitive {
-                        kind: PrimitiveKind::Rectangle { color },
+                        kind: PrimitiveKind::RectanglePrim { color },
                         rect: Rect::new(position, dimension),
                     });
                 }

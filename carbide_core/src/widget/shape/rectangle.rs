@@ -98,25 +98,25 @@ impl Rectangle {
         let border_color = Color::Rgba(0.0 / 255.0, 255.0 / 255.0, 251.0 / 255.0, 1.0); //Color::random();
         vec![
             Primitive {
-                kind: PrimitiveKind::Rectangle {
+                kind: PrimitiveKind::RectanglePrim {
                     color: border_color.clone(),
                 },
                 rect: left_border,
             },
             Primitive {
-                kind: PrimitiveKind::Rectangle {
+                kind: PrimitiveKind::RectanglePrim {
                     color: border_color.clone(),
                 },
                 rect: right_border,
             },
             Primitive {
-                kind: PrimitiveKind::Rectangle {
+                kind: PrimitiveKind::RectanglePrim {
                     color: border_color.clone(),
                 },
                 rect: top_border,
             },
             Primitive {
-                kind: PrimitiveKind::Rectangle {
+                kind: PrimitiveKind::RectanglePrim {
                     color: border_color.clone(),
                 },
                 rect: bottom_border,

@@ -35,7 +35,7 @@ pub enum PrimitiveKind {
     /// These are produced by the `Rectangle` and `BorderedRectangle` primitive widgets. A `Filled`
     /// `Rectangle` widget produces a single `Rectangle`. The `BorderedRectangle` produces two
     /// `Rectangle`s, the first for the outer border and the second for the inner on top.
-    Rectangle {
+    RectanglePrim {
         /// The fill colour for the rectangle.
         color: Color,
     },

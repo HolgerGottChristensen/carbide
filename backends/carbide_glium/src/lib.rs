@@ -621,7 +621,7 @@ impl Renderer {
             }*/
 
             match kind {
-                PrimitiveKind::Rectangle { color } => {
+                PrimitiveKind::RectanglePrim { color } => {
                     switch_to_plain_state!();
 
                     let color = gamma_srgb_to_linear(color.to_fsa());

@@ -94,7 +94,7 @@ impl Layout for VStack {
 
         for spacer in self.children_mut().filter(|m| m.flag() == Flags::SPACER) {
             let chosen_size = spacer.calculate_size(
-                Dimension::new(requested_size.width, rest_space / spacer_count),
+                Dimension::new(0.0, rest_space / spacer_count),
                 env,
             );
 
