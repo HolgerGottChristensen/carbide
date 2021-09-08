@@ -1,48 +1,42 @@
 use std::fmt::Debug;
 
-use carbide_core::{DeserializeOwned, Serialize};
-use carbide_core::draw::Dimension;
-use carbide_core::prelude::Uuid;
-use carbide_core::state::state::State;
-use carbide_core::widget::*;
+use carbide_core::draw::{Dimension, Position};
+use carbide_core::environment::Environment;
+use carbide_core::flags::Flags;
+use carbide_core::focus::Focus;
+use carbide_core::layout::Layout;
+use carbide_core::state::{BoolState, FocusState, StateContract, StringState, TState};
+use carbide_core::widget::{HStack, Id, Spacer, Text, Widget};
 
 use crate::PlainButton;
 
 #[derive(Clone, Widget)]
-#[focusable(block_focus)]
-pub struct PlainRadioButton<T, GS>
-    where
-        GS: GlobalStateContract,
-        T: 'static + Serialize + Clone + Debug + Default + DeserializeOwned + PartialEq,
-{
+//#[focusable(block_focus)]
+pub struct PlainRadioButton<T> where T: 'static + StateContract + PartialEq {
     id: Id,
     #[state]
-    focus: FocusState<GS>,
-    child: Box<dyn Widget<GS>>,
+    focus: FocusState,
+    child: Box<dyn Widget>,
     position: Point,
     dimension: Dimensions,
     delegate: fn(
-        focus: FocusState<GS>,
-        selected: BoolState<GS>,
-        button: Box<dyn Widget<GS>>,
-    ) -> Box<dyn Widget<GS>>,
+        focus: FocusState,
+        selected: BoolState,
+        button: Box<dyn Widget>,
+    ) -> Box<dyn Widget>,
     reference: T,
-    label: StringState<GS>,
+    label: StringState,
     #[state]
-    local_state: TState<T, GS>,
+    local_state: TState<T>,
 }
 
-impl<
-    T: 'static + Serialize + Clone + Debug + Default + DeserializeOwned + PartialEq,
-    GS: GlobalStateContract,
-> PlainRadioButton<T, GS>
-{
-    pub fn focused<K: Into<FocusState<GS>>>(mut self, focused: K) -> Box<Self> {
+impl<T: 'static + StateContract + PartialEq> PlainRadioButton<T> {
+    pub fn focused<K: Into<FocusState>>(mut self, focused: K) -> Box<Self> {
         self.focus = focused.into();
         Box::new(self)
     }
 
-    pub fn new<S: Into<StringState<GS>>, L: Into<TState<T, GS>>>(
+    pub fn new<S: Into<StringState>, L: Into<TState<T>>>(
         label: S,
         reference: T,
         local_state: L,
@@ -110,7 +104,7 @@ impl<
         let selected_state = TupleState2::new(reference_state.clone(), local_state.clone())
             .mapped(|(reference, local_state)| reference == local_state);
 
-        let button = PlainButton::<(T, T), GS>::new(Spacer::new(SpacerDirection::Vertical))
+        let button = PlainButton::<(T, T), GS>::new(Spacer::new())
             .local_state(TupleState2::new(reference_state, local_state.clone()))
             .on_click(|myself, env, _| {
                 let (reference, local_state) = myself.get_local_state().get_latest_value_mut();
@@ -124,7 +118,7 @@ impl<
         let child = HStack::new(vec![
             delegate_widget,
             Text::new(label_state.clone()),
-            Spacer::new(SpacerDirection::Horizontal),
+            Spacer::new(),
         ])
             .spacing(5.0);
 
@@ -142,11 +136,7 @@ impl<
     }
 }
 
-impl<
-    T: Serialize + Clone + Debug + Default + DeserializeOwned + PartialEq,
-    GS: GlobalStateContract,
-> CommonWidget<GS> for PlainRadioButton<T, GS>
-{
+impl<T: 'static + StateContract + PartialEq> CommonWidget for PlainRadioButton<T> {
     fn id(&self) -> Id {
         self.id
     }
@@ -157,6 +147,10 @@ impl<
 
     fn flag(&self) -> Flags {
         Flags::FOCUSABLE
+    }
+
+    fn flexibility(&self) -> u32 {
+        10
     }
 
     fn children(&self) -> WidgetIter {
@@ -183,15 +177,15 @@ impl<
         WidgetIterMut::single(&mut self.child)
     }
 
-    fn position(&self) -> Point {
+    fn position(&self) -> Position {
         self.position
     }
 
-    fn set_position(&mut self, position: Dimensions) {
+    fn set_position(&mut self, position: Position) {
         self.position = position;
     }
 
-    fn dimension(&self) -> Dimensions {
+    fn dimension(&self) -> Dimension {
         self.dimension
     }
 
@@ -200,21 +194,7 @@ impl<
     }
 }
 
-impl<
-    T: Serialize + Clone + Debug + Default + DeserializeOwned + PartialEq,
-    GS: GlobalStateContract,
-> ChildRender for PlainRadioButton<T, GS>
-{}
-
-impl<
-    T: Serialize + Clone + Debug + Default + DeserializeOwned + PartialEq,
-    GS: GlobalStateContract,
-> Layout<GS> for PlainRadioButton<T, GS>
-{
-    fn flexibility(&self) -> u32 {
-        10
-    }
-
+impl<T: 'static + StateContract + PartialEq> Layout for PlainRadioButton<T> {
     fn calculate_size(&mut self, requested_size: Dimensions, env: &mut Environment) -> Dimensions {
         if let Some(child) = self.children_mut().next() {
             child.calculate_size(requested_size, env);
@@ -224,21 +204,6 @@ impl<
 
         requested_size
     }
-
-    fn position_children(&mut self) {
-        let positioning = BasicLayouter::Center.position();
-        let position = self.position();
-        let dimension = self.dimension();
-
-        if let Some(child) = self.children_mut().next() {
-            positioning(position, dimension, child);
-            child.position_children();
-        }
-    }
 }
 
-impl<
-    T: 'static + Serialize + Clone + Debug + Default + DeserializeOwned + PartialEq,
-    GS: GlobalStateContract,
-> WidgetExt<GS> for PlainRadioButton<T, GS>
-{}
+impl<T: 'static + StateContract + PartialEq> WidgetExt for PlainRadioButton<T> {}
