@@ -206,7 +206,7 @@ impl Shape for Canvas {
 }
 
 impl Render for Canvas {
-    fn get_primitives(&mut self, env: &mut Environment) -> Vec<Primitive> {
+    fn get_primitives(&mut self, primitives: &mut Vec<Primitive>, env: &mut Environment) {
         let context = Context::new();
 
         let rectangle = Rect::new(self.position(), self.dimension());
@@ -214,29 +214,20 @@ impl Render for Canvas {
 
         let paths = context.to_paths(self.position());
 
-        let mut prims = vec![];
-
         for (path, options) in paths {
             match options {
                 ShapeStyleWithOptions::Fill(fill_options, mut color) => {
                     color.capture_state(env);
-                    prims.push(self.get_fill_prim(path, fill_options, *color.value()));
+                    primitives.push(self.get_fill_prim(path, fill_options, *color.value()));
                     color.release_state(env);
                 }
                 ShapeStyleWithOptions::Stroke(stroke_options, mut color) => {
                     color.capture_state(env);
-                    prims.push(self.get_stroke_prim(path, stroke_options, *color.value()));
+                    primitives.push(self.get_stroke_prim(path, stroke_options, *color.value()));
                     color.release_state(env);
                 }
             }
         }
-
-        prims.extend(Rectangle::debug_outline(
-            Rect::new(self.position, self.dimension),
-            1.0,
-        ));
-
-        return prims;
     }
 }
 

@@ -174,8 +174,7 @@ impl Layout for Text {
 }
 
 impl Render for Text {
-    fn get_primitives(&mut self, env: &mut Environment) -> Vec<Primitive> {
-        let mut prims: Vec<Primitive> = vec![];
+    fn get_primitives(&mut self, primitives: &mut Vec<Primitive>, env: &mut Environment) {
         let default_color = *self.color.value();
 
         if let Some(internal) = &mut self.internal_text {
@@ -191,7 +190,7 @@ impl Render for Text {
                     color,
                     text: glyphs,
                 };
-                prims.push(new_primitive(
+                primitives.push(new_primitive(
                     kind,
                     Rect::new(self.position, self.dimension),
                 ));
@@ -203,20 +202,13 @@ impl Render for Text {
                         additional_rect.dimension.width,
                         additional_rect.dimension.height,
                     );
-                    prims.push(Primitive {
+                    primitives.push(Primitive {
                         kind: PrimitiveKind::RectanglePrim { color },
                         rect: Rect::new(position, dimension),
                     });
                 }
             }
         }
-
-        prims.extend(Rectangle::debug_outline(
-            Rect::new(self.position, self.dimension),
-            1.0,
-        ));
-
-        return prims;
     }
 }
 

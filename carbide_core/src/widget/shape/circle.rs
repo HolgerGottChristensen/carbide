@@ -123,7 +123,7 @@ impl Layout for Circle {
 }
 
 impl Render for Circle {
-    fn get_primitives(&mut self, _: &mut Environment) -> Vec<Primitive> {
+    fn get_primitives(&mut self, primitives: &mut Vec<Primitive>, _env: &mut Environment) {
         let radius = self.width() as f32 / 2.0;
         let center = point(self.x() as f32 + radius, self.y() as f32 + radius);
         let rectangle = rect(
@@ -137,16 +137,8 @@ impl Render for Circle {
             builder.add_circle(center, radius, Winding::Positive);
         });
 
-        let mut prims = self
-            .triangle_store
-            .get_primitives(*self.fill_color.value(), *self.stroke_color.value());
-
-        prims.extend(Rectangle::debug_outline(
-            Rect::new(self.position, self.dimension),
-            1.0,
-        ));
-
-        return prims;
+        self.triangle_store
+            .insert_primitives(primitives, *self.fill_color.value(), *self.stroke_color.value());
     }
 }
 

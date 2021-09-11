@@ -136,8 +136,8 @@ impl<T: Widget + ?Sized> Layout for Box<T> {
 }
 
 impl<T: Widget + ?Sized> Render for Box<T> {
-    fn get_primitives(&mut self, env: &mut Environment) -> Vec<Primitive> {
-        self.deref_mut().get_primitives(env)
+    fn get_primitives(&mut self, primitives: &mut Vec<Primitive>, env: &mut Environment) {
+        self.deref_mut().get_primitives(primitives, env);
     }
 
     fn process_get_primitives(&mut self, primitives: &mut Vec<Primitive>, env: &mut Environment) {

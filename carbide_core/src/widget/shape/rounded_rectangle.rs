@@ -121,7 +121,7 @@ impl CommonWidget for RoundedRectangle {
 }
 
 impl Render for RoundedRectangle {
-    fn get_primitives(&mut self, _: &mut Environment) -> Vec<Primitive> {
+    fn get_primitives(&mut self, primitives: &mut Vec<Primitive>, _env: &mut Environment) {
         let rectangle = rect(
             self.x() as f32,
             self.y() as f32,
@@ -144,16 +144,8 @@ impl Render for RoundedRectangle {
             );
         });
 
-        let mut prims = self
-            .triangle_store
-            .get_primitives(*self.fill_color.value(), *self.stroke_color.value());
-
-        prims.extend(Rectangle::debug_outline(
-            Rect::new(self.position, self.dimension),
-            1.0,
-        ));
-
-        return prims;
+        self.triangle_store
+            .insert_primitives(primitives, *self.fill_color.value(), *self.stroke_color.value());
     }
 }
 

@@ -54,6 +54,28 @@ impl TriangleStore {
         self.fill_triangles = triangles.clone()
     }
 
+    pub fn insert_primitives(&self, primitives: &mut Vec<Primitive>, fill_color: Color, stroke_color: Color) {
+        if self.fill_triangles.len() > 0 {
+            primitives.push(Primitive {
+                kind: PrimitiveKind::TrianglesSingleColor {
+                    color: Rgba::from(fill_color),
+                    triangles: self.fill_triangles.clone(),
+                },
+                rect: Rect::new(self.latest_fill_position, self.latest_fill_dimensions),
+            });
+        }
+
+        if self.stroke_triangles.len() > 0 {
+            primitives.push(Primitive {
+                kind: PrimitiveKind::TrianglesSingleColor {
+                    color: Rgba::from(stroke_color),
+                    triangles: self.stroke_triangles.clone(),
+                },
+                rect: Rect::new(self.latest_stroke_position, self.latest_stroke_dimensions),
+            });
+        }
+    }
+
     pub fn get_primitives(&self, fill_color: Color, stroke_color: Color) -> Vec<Primitive> {
         let mut res = vec![];
         if self.fill_triangles.len() > 0 {

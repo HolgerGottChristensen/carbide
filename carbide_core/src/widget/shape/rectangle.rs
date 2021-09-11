@@ -268,7 +268,7 @@ impl Layout for Rectangle {
 }
 
 impl Render for Rectangle {
-    fn get_primitives(&mut self, _: &mut Environment) -> Vec<Primitive> {
+    fn get_primitives(&mut self, primitives: &mut Vec<Primitive>, _env: &mut Environment) {
         let rect = rect(
             self.x() as f32,
             self.y() as f32,
@@ -279,11 +279,8 @@ impl Render for Rectangle {
             builder.add_rectangle(rectangle, Winding::Positive)
         });
 
-        let prims = self
-            .triangle_store
-            .get_primitives(*self.fill_color.value(), *self.stroke_color.value());
-
-        return prims;
+        self.triangle_store
+            .insert_primitives(primitives, *self.fill_color.value(), *self.stroke_color.value());
     }
 }
 

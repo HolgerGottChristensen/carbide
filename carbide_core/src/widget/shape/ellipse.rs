@@ -115,7 +115,7 @@ impl CommonWidget for Ellipse {
 }
 
 impl Render for Ellipse {
-    fn get_primitives(&mut self, _: &mut Environment) -> Vec<Primitive> {
+    fn get_primitives(&mut self, primitives: &mut Vec<Primitive>, _env: &mut Environment) {
         let radii = vec2(self.width() as f32 / 2.0, self.height() as f32 / 2.0);
         let center = point(self.x() as f32 + radii.x, self.y() as f32 + radii.y);
         let rectangle = rect(
@@ -129,16 +129,8 @@ impl Render for Ellipse {
             builder.add_ellipse(center, radii, Angle::degrees(0.0), Winding::Positive);
         });
 
-        let mut prims = self
-            .triangle_store
-            .get_primitives(*self.fill_color.value(), *self.stroke_color.value());
-
-        prims.extend(Rectangle::debug_outline(
-            Rect::new(self.position, self.dimension),
-            1.0,
-        ));
-
-        return prims;
+        self.triangle_store
+            .insert_primitives(primitives, *self.fill_color.value(), *self.stroke_color.value());
     }
 }
 

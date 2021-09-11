@@ -36,7 +36,8 @@ pub trait Shape: Widget + 'static {
     fn get_shape_style(&self) -> ShapeStyle;
     // Todo: add primitives to before and after the shape.
     fn triangles(&mut self, env: &mut Environment) -> Vec<Triangle<Position>> {
-        let mut primitives = self.get_primitives(env);
+        let mut primitives = vec![];
+        self.get_primitives(&mut primitives, env);
         if primitives.len() >= 1 {
             match primitives.remove(0).kind {
                 PrimitiveKind::TrianglesSingleColor { triangles, .. } => triangles,

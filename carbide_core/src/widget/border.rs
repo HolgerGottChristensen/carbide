@@ -121,7 +121,7 @@ impl CommonWidget for Border {
 }
 
 impl Render for Border {
-    fn get_primitives(&mut self, _: &mut Environment) -> Vec<Primitive> {
+    fn get_primitives(&mut self, primitives: &mut Vec<Primitive>, _env: &mut Environment) {
         let rect = Rect::new(self.position, self.dimension);
         let (l, r, b, t) = rect.l_r_b_t();
 
@@ -146,34 +146,30 @@ impl Render for Border {
         );
 
         let border_color = *self.color.value();
-        let prims = vec![
-            Primitive {
-                kind: PrimitiveKind::RectanglePrim {
-                    color: border_color,
-                },
-                rect: left_border,
+        primitives.push(Primitive {
+            kind: PrimitiveKind::RectanglePrim {
+                color: border_color,
             },
-            Primitive {
-                kind: PrimitiveKind::RectanglePrim {
-                    color: border_color,
-                },
-                rect: right_border,
+            rect: left_border,
+        });
+        primitives.push(Primitive {
+            kind: PrimitiveKind::RectanglePrim {
+                color: border_color,
             },
-            Primitive {
-                kind: PrimitiveKind::RectanglePrim {
-                    color: border_color,
-                },
-                rect: top_border,
+            rect: right_border,
+        });
+        primitives.push(Primitive {
+            kind: PrimitiveKind::RectanglePrim {
+                color: border_color,
             },
-            Primitive {
-                kind: PrimitiveKind::RectanglePrim {
-                    color: border_color,
-                },
-                rect: bottom_border,
+            rect: top_border,
+        });
+        primitives.push(Primitive {
+            kind: PrimitiveKind::RectanglePrim {
+                color: border_color,
             },
-        ];
-
-        return prims;
+            rect: bottom_border,
+        });
     }
 }
 

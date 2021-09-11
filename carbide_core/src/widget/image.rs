@@ -109,7 +109,7 @@ impl Layout for Image {
 }
 
 impl Render for Image {
-    fn get_primitives(&mut self, _: &mut Environment) -> Vec<Primitive> {
+    fn get_primitives(&mut self, primitives: &mut Vec<Primitive>, _env: &mut Environment) {
         let kind = PrimitiveKind::Image {
             color: None,
             image_id: self.image_id,
@@ -118,7 +118,7 @@ impl Render for Image {
 
         let rect = Rect::new(self.position, self.dimension);
 
-        return vec![new_primitive(kind, rect)];
+        primitives.push(Primitive { kind, rect });
     }
 }
 
