@@ -137,11 +137,11 @@ impl<S: GlobalStateContract> CommonWidget<S> for SyncTest<S> {
         }
     }
 
-    fn proxied_children(&mut self) -> WidgetIterMut {
+    fn children_direct(&mut self) -> WidgetIterMut {
         WidgetIterMut::single(self.child.deref_mut())
     }
 
-    fn proxied_children_rev(&mut self) -> WidgetIterMut {
+    fn children_direct_rev(&mut self) -> WidgetIterMut {
         WidgetIterMut::single(self.child.deref_mut())
     }
 

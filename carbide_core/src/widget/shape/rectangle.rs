@@ -201,20 +201,12 @@ impl CommonWidget for Rectangle {
             })
     }
 
-    fn proxied_children(&mut self) -> WidgetIterMut {
-        self.children
-            .iter_mut()
-            .rfold(WidgetIterMut::Empty, |acc, x| {
-                WidgetIterMut::Single(x, Box::new(acc))
-            })
+    fn children_direct(&mut self) -> WidgetIterMut {
+        WidgetIterMut::Vec(self.children.iter_mut())
     }
 
-    fn proxied_children_rev(&mut self) -> WidgetIterMut {
-        self.children
-            .iter_mut()
-            .fold(WidgetIterMut::Empty, |acc, x| {
-                WidgetIterMut::Single(x, Box::new(acc))
-            })
+    fn children_direct_rev(&mut self) -> WidgetIterMut {
+        WidgetIterMut::VecRev(self.children.iter_mut().rev())
     }
 
     fn flexibility(&self) -> u32 {

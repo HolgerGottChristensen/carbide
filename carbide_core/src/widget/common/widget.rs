@@ -48,12 +48,12 @@ impl<T: Widget + ?Sized> CommonWidget for Box<T> {
         self.deref_mut().children_mut()
     }
 
-    fn proxied_children(&mut self) -> WidgetIterMut {
-        self.deref_mut().proxied_children()
+    fn children_direct(&mut self) -> WidgetIterMut {
+        self.deref_mut().children_direct()
     }
 
-    fn proxied_children_rev(&mut self) -> WidgetIterMut {
-        self.deref_mut().proxied_children_rev()
+    fn children_direct_rev(&mut self) -> WidgetIterMut {
+        self.deref_mut().children_direct_rev()
     }
 
     fn position(&self) -> Position {

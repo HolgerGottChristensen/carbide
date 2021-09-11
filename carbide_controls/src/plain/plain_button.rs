@@ -177,11 +177,11 @@ impl CommonWidget for PlainButton {
         }
     }
 
-    fn proxied_children(&mut self) -> WidgetIterMut {
+    fn children_direct(&mut self) -> WidgetIterMut {
         WidgetIterMut::single(&mut self.child)
     }
 
-    fn proxied_children_rev(&mut self) -> WidgetIterMut {
+    fn children_direct_rev(&mut self) -> WidgetIterMut {
         WidgetIterMut::single(&mut self.child)
     }
 

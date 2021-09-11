@@ -18,7 +18,7 @@ pub trait MouseEventHandler: CommonWidget + StateSync + Focusable {
             self.release_state(env);
         }
 
-        for child in self.proxied_children() {
+        for child in self.children_direct() {
             child.process_mouse_event(event, &consumed, env);
             if *consumed {
                 return ();

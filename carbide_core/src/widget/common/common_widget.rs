@@ -17,10 +17,10 @@ pub trait CommonWidget {
     fn children(&self) -> WidgetIter;
     fn children_mut(&mut self) -> WidgetIterMut;
 
-    /// Get the actual children. This means for example for a vstack with a foreach,
+    /// Get the direct children. This means for example for a vstack with a foreach,
     /// the foreach widget is retrieved.
-    fn proxied_children(&mut self) -> WidgetIterMut;
-    fn proxied_children_rev(&mut self) -> WidgetIterMut;
+    fn children_direct(&mut self) -> WidgetIterMut;
+    fn children_direct_rev(&mut self) -> WidgetIterMut;
 
     fn position(&self) -> Position;
     fn set_position(&mut self, position: Position);

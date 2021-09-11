@@ -55,13 +55,13 @@ impl CommonWidget for IfElse {
             if self.when_true.flag() == Flags::PROXY {
                 self.when_true.children()
             } else {
-                WidgetIter::single(self.when_true.deref())
+                WidgetIter::single(&self.when_true)
             }
         } else {
             if self.when_false.flag() == Flags::PROXY {
                 self.when_false.children()
             } else {
-                WidgetIter::single(self.when_false.deref())
+                WidgetIter::single(&self.when_false)
             }
         }
     }
@@ -71,30 +71,30 @@ impl CommonWidget for IfElse {
             if self.when_true.flag() == Flags::PROXY {
                 self.when_true.children_mut()
             } else {
-                WidgetIterMut::single(self.when_true.deref_mut())
+                WidgetIterMut::single(&mut self.when_true)
             }
         } else {
             if self.when_false.flag() == Flags::PROXY {
                 self.when_false.children_mut()
             } else {
-                WidgetIterMut::single(self.when_false.deref_mut())
+                WidgetIterMut::single(&mut self.when_false)
             }
         }
     }
 
-    fn proxied_children(&mut self) -> WidgetIterMut {
+    fn children_direct(&mut self) -> WidgetIterMut {
         if *self.predicate.value() {
-            WidgetIterMut::single(self.when_true.deref_mut())
+            WidgetIterMut::single(&mut self.when_true)
         } else {
-            WidgetIterMut::single(self.when_false.deref_mut())
+            WidgetIterMut::single(&mut self.when_false)
         }
     }
 
-    fn proxied_children_rev(&mut self) -> WidgetIterMut {
+    fn children_direct_rev(&mut self) -> WidgetIterMut {
         if *self.predicate.value() {
-            WidgetIterMut::single(self.when_true.deref_mut())
+            WidgetIterMut::single(&mut self.when_true)
         } else {
-            WidgetIterMut::single(self.when_false.deref_mut())
+            WidgetIterMut::single(&mut self.when_false)
         }
     }
 

@@ -114,7 +114,7 @@ impl CommonWidget for Transform {
         if self.child.flag() == Flags::PROXY {
             self.child.children()
         } else {
-            WidgetIter::single(self.child.deref())
+            WidgetIter::single(&self.child)
         }
     }
 
@@ -122,16 +122,16 @@ impl CommonWidget for Transform {
         if self.child.flag() == Flags::PROXY {
             self.child.children_mut()
         } else {
-            WidgetIterMut::single(self.child.deref_mut())
+            WidgetIterMut::single(&mut self.child)
         }
     }
 
-    fn proxied_children(&mut self) -> WidgetIterMut {
-        WidgetIterMut::single(self.child.deref_mut())
+    fn children_direct(&mut self) -> WidgetIterMut {
+        WidgetIterMut::single(&mut self.child)
     }
 
-    fn proxied_children_rev(&mut self) -> WidgetIterMut {
-        WidgetIterMut::single(self.child.deref_mut())
+    fn children_direct_rev(&mut self) -> WidgetIterMut {
+        WidgetIterMut::single(&mut self.child)
     }
 
     fn position(&self) -> Position {

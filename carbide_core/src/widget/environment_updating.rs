@@ -88,7 +88,7 @@ impl OtherEventHandler for EnvUpdating {
     fn process_other_event(&mut self, event: &WidgetEvent, env: &mut Environment) {
         self.insert_into_env(env);
 
-        for child in self.proxied_children() {
+        for child in self.children_direct() {
             child.process_other_event(event, env);
         }
 
@@ -100,7 +100,7 @@ impl KeyboardEventHandler for EnvUpdating {
     fn process_keyboard_event(&mut self, event: &KeyboardEvent, env: &mut Environment) {
         self.insert_into_env(env);
 
-        for child in self.proxied_children() {
+        for child in self.children_direct() {
             child.process_keyboard_event(event, env);
         }
 
@@ -111,7 +111,7 @@ impl KeyboardEventHandler for EnvUpdating {
 impl MouseEventHandler for EnvUpdating {
     fn process_mouse_event(&mut self, event: &MouseEvent, consumed: &bool, env: &mut Environment) {
         self.insert_into_env(env);
-        for child in self.proxied_children() {
+        for child in self.children_direct() {
             child.process_mouse_event(event, &consumed, env);
             if *consumed {
                 self.remove_from_env(env);
@@ -128,7 +128,7 @@ impl Focusable for EnvUpdating {
         let mut any_focus = false;
         self.insert_into_env(env);
 
-        for child in self.proxied_children() {
+        for child in self.children_direct() {
             if child.process_focus_request(event, focus_request, env) {
                 any_focus = true;
             }
@@ -141,7 +141,7 @@ impl Focusable for EnvUpdating {
     fn process_focus_next(&mut self, event: &WidgetEvent, focus_request: &Refocus, focus_up_for_grab: bool, env: &mut Environment) -> bool {
         let mut focus_child = focus_up_for_grab;
         self.insert_into_env(env);
-        for child in self.proxied_children() {
+        for child in self.children_direct() {
             focus_child = child.process_focus_next(event, focus_request, focus_child, env);
         }
         self.remove_from_env(env);
@@ -151,7 +151,7 @@ impl Focusable for EnvUpdating {
     fn process_focus_previous(&mut self, event: &WidgetEvent, focus_request: &Refocus, focus_up_for_grab: bool, env: &mut Environment) -> bool {
         let mut focus_child = focus_up_for_grab;
         self.insert_into_env(env);
-        for child in self.proxied_children_rev() {
+        for child in self.children_direct_rev() {
             focus_child = child.process_focus_previous(event, focus_request, focus_child, env);
         }
         self.remove_from_env(env);
@@ -201,11 +201,11 @@ impl CommonWidget for EnvUpdating {
         }
     }
 
-    fn proxied_children(&mut self) -> WidgetIterMut {
+    fn children_direct(&mut self) -> WidgetIterMut {
         WidgetIterMut::single(&mut self.child)
     }
 
-    fn proxied_children_rev(&mut self) -> WidgetIterMut {
+    fn children_direct_rev(&mut self) -> WidgetIterMut {
         WidgetIterMut::single(&mut self.child)
     }
 

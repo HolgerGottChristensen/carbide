@@ -33,7 +33,7 @@ impl ZStack {
 
 impl Layout for ZStack {
     fn calculate_size(&mut self, requested_size: Dimension, env: &mut Environment) -> Dimension {
-        let mut children_flexibility: Vec<(u32, &mut dyn Widget)> = self
+        let mut children_flexibility: Vec<(u32, &mut Box<dyn Widget>)> = self
             .children_mut()
             .map(|child| (child.flexibility(), child))
             .collect();
@@ -85,47 +85,45 @@ impl CommonWidget for ZStack {
     }
 
     fn children(&self) -> WidgetIter {
-        self.children
-            .iter()
-            .map(|x| x.deref())
-            .rfold(WidgetIter::Empty, |acc, x| {
-                if x.flag() == Flags::PROXY {
-                    WidgetIter::Multi(Box::new(x.children()), Box::new(acc))
-                } else {
-                    WidgetIter::Single(x, Box::new(acc))
-                }
-            })
+        let contains_proxy = self.children.iter().fold(false, |a, b| a || b.flag() == Flags::PROXY);
+        if !contains_proxy {
+            WidgetIter::Vec(self.children.iter())
+        } else {
+            self.children
+                .iter()
+                .rfold(WidgetIter::Empty, |acc, x| {
+                    if x.flag() == Flags::PROXY {
+                        WidgetIter::Multi(Box::new(x.children()), Box::new(acc))
+                    } else {
+                        WidgetIter::Single(x, Box::new(acc))
+                    }
+                })
+        }
     }
 
     fn children_mut(&mut self) -> WidgetIterMut {
-        self.children
-            .iter_mut()
-            .map(|x| x.deref_mut())
-            .rfold(WidgetIterMut::Empty, |acc, x| {
-                if x.flag() == Flags::PROXY {
-                    WidgetIterMut::Multi(Box::new(x.children_mut()), Box::new(acc))
-                } else {
-                    WidgetIterMut::Single(x, Box::new(acc))
-                }
-            })
+        let contains_proxy = self.children.iter().fold(false, |a, b| a || b.flag() == Flags::PROXY);
+        if !contains_proxy {
+            WidgetIterMut::Vec(self.children.iter_mut())
+        } else {
+            self.children
+                .iter_mut()
+                .rfold(WidgetIterMut::Empty, |acc, x| {
+                    if x.flag() == Flags::PROXY {
+                        WidgetIterMut::Multi(Box::new(x.children_mut()), Box::new(acc))
+                    } else {
+                        WidgetIterMut::Single(x, Box::new(acc))
+                    }
+                })
+        }
     }
 
-    fn proxied_children(&mut self) -> WidgetIterMut {
-        self.children
-            .iter_mut()
-            .map(|x| x.deref_mut())
-            .rfold(WidgetIterMut::Empty, |acc, x| {
-                WidgetIterMut::Single(x, Box::new(acc))
-            })
+    fn children_direct(&mut self) -> WidgetIterMut {
+        WidgetIterMut::Vec(self.children.iter_mut())
     }
 
-    fn proxied_children_rev(&mut self) -> WidgetIterMut {
-        self.children
-            .iter_mut()
-            .map(|x| x.deref_mut())
-            .fold(WidgetIterMut::Empty, |acc, x| {
-                WidgetIterMut::Single(x, Box::new(acc))
-            })
+    fn children_direct_rev(&mut self) -> WidgetIterMut {
+        WidgetIterMut::VecRev(self.children.iter_mut().rev())
     }
 
     fn position(&self) -> Position {

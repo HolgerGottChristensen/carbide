@@ -237,11 +237,11 @@ impl CommonWidget for Text {
         WidgetIterMut::Empty
     }
 
-    fn proxied_children(&mut self) -> WidgetIterMut {
+    fn children_direct(&mut self) -> WidgetIterMut {
         WidgetIterMut::Empty
     }
 
-    fn proxied_children_rev(&mut self) -> WidgetIterMut {
+    fn children_direct_rev(&mut self) -> WidgetIterMut {
         WidgetIterMut::Empty
     }
 

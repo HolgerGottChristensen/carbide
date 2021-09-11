@@ -1,19 +1,25 @@
+use std::iter::Rev;
+use std::slice::{Iter, IterMut};
+
 use crate::widget::Widget;
 
 pub enum WidgetIterMut<'a> {
     Empty,
-    Single(&'a mut dyn Widget, Box<WidgetIterMut<'a>>),
+    Ref(&'a mut Box<dyn Widget>),
+    Vec(IterMut<'a, Box<dyn Widget>>),
+    VecRev(Rev<IterMut<'a, Box<dyn Widget>>>),
+    Single(&'a mut Box<dyn Widget>, Box<WidgetIterMut<'a>>),
     Multi(Box<WidgetIterMut<'a>>, Box<WidgetIterMut<'a>>),
 }
 
 impl<'a> WidgetIterMut<'a> {
-    pub fn single(widget: &'a mut dyn Widget) -> WidgetIterMut<'a> {
-        WidgetIterMut::Single(widget, Box::new(WidgetIterMut::Empty))
+    pub fn single(widget: &'a mut Box<dyn Widget>) -> WidgetIterMut<'a> {
+        WidgetIterMut::Ref(widget)
     }
 }
 
 impl<'a> Iterator for WidgetIterMut<'a> {
-    type Item = &'a mut dyn Widget;
+    type Item = &'a mut Box<dyn Widget>;
 
     fn next(&mut self) -> Option<Self::Item> {
         let mut i = WidgetIterMut::Empty;
@@ -36,24 +42,40 @@ impl<'a> Iterator for WidgetIterMut<'a> {
                     self.next()
                 }
             },
+            WidgetIterMut::Vec(mut vec) => {
+                let h = vec.next();
+                std::mem::swap(self, &mut WidgetIterMut::Vec(vec));
+                h
+            }
+            WidgetIterMut::Ref(w) => {
+                Some(w)
+            }
+            WidgetIterMut::VecRev(mut vec) => {
+                let h = vec.next();
+                std::mem::swap(self, &mut WidgetIterMut::VecRev(vec));
+                h
+            }
         }
     }
 }
 
 pub enum WidgetIter<'a> {
     Empty,
-    Single(&'a dyn Widget, Box<WidgetIter<'a>>),
+    Ref(&'a Box<dyn Widget>),
+    Vec(Iter<'a, Box<dyn Widget>>),
+    VecRev(Rev<Iter<'a, Box<dyn Widget>>>),
+    Single(&'a Box<dyn Widget>, Box<WidgetIter<'a>>),
     Multi(Box<WidgetIter<'a>>, Box<WidgetIter<'a>>),
 }
 
 impl<'a> WidgetIter<'a> {
-    pub fn single(widget: &'a dyn Widget) -> WidgetIter<'a> {
-        WidgetIter::Single(widget, Box::new(WidgetIter::Empty))
+    pub fn single(widget: &'a Box<dyn Widget>) -> WidgetIter<'a> {
+        WidgetIter::Ref(widget)
     }
 }
 
 impl<'a> Iterator for WidgetIter<'a> {
-    type Item = &'a dyn Widget;
+    type Item = &'a Box<dyn Widget>;
 
     fn next(&mut self) -> Option<Self::Item> {
         let mut i = WidgetIter::Empty;
@@ -76,6 +98,19 @@ impl<'a> Iterator for WidgetIter<'a> {
                     self.next()
                 }
             },
+            WidgetIter::Ref(w) => {
+                Some(w)
+            }
+            WidgetIter::Vec(mut vec) => {
+                let h = vec.next();
+                std::mem::swap(self, &mut WidgetIter::Vec(vec));
+                h
+            }
+            WidgetIter::VecRev(mut vec) => {
+                let h = vec.next();
+                std::mem::swap(self, &mut WidgetIter::VecRev(vec));
+                h
+            }
         }
     }
 }
