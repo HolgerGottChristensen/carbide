@@ -14,6 +14,7 @@ repository = "https://github.com/HolgerGottChristensen/carbide.git"
 homepage = "https://github.com/HolgerGottChristensen/carbide"
 categories = ["gui"]
 edition = "2018"
+resolver = "2"
 
 [package.metadata.docs.rs]
 all-features = true

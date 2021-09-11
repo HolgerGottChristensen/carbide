@@ -1,4 +1,5 @@
 [workspace]
+resolver = "2"
 members = [
     "carbide_core",
     "carbide_controls",

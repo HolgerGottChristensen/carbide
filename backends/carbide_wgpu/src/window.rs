@@ -7,7 +7,7 @@ pub use futures::executor::block_on;
 use image::DynamicImage;
 //use smaa::{SmaaMode, SmaaTarget};
 use uuid::Uuid;
-use wgpu::{BindGroup, BindGroupLayout, Buffer, BufferUsage, PresentMode, Sampler, Texture, TextureView};
+use wgpu::{BindGroup, BindGroupLayout, Buffer, BufferUsages, PresentMode, Sampler, SurfaceConfiguration, Texture, TextureView};
 use wgpu::util::{BufferInitDescriptor, DeviceExt};
 use winit::dpi::{PhysicalPosition, PhysicalSize, Size};
 use winit::event::{ElementState, Event, KeyboardInput, VirtualKeyCode, WindowEvent};
@@ -43,11 +43,9 @@ use crate::vertex::Vertex;
 // In v0.8 and later I see performance degradation with the filter_shader (https://github.com/gfx-rs/wgpu/issues/1842)
 
 pub struct Window {
-    surface: wgpu::Surface,
+    pub(crate) surface: wgpu::Surface,
     pub(crate) device: wgpu::Device,
     pub(crate) queue: wgpu::Queue,
-    sc_desc: wgpu::SwapChainDescriptor,
-    pub(crate) swap_chain: wgpu::SwapChain,
     pub(crate) size: winit::dpi::PhysicalSize<u32>,
     pub(crate) render_pipeline_no_mask: wgpu::RenderPipeline,
     pub(crate) render_pipeline_add_mask: wgpu::RenderPipeline,
@@ -207,7 +205,7 @@ impl Window {
 
         // The instance is a handle to our GPU
         // BackendBit::PRIMARY => Vulkan + Metal + DX12 + Browser WebGPU
-        let instance = wgpu::Instance::new(wgpu::BackendBit::PRIMARY);
+        let instance = wgpu::Instance::new(wgpu::Backends::PRIMARY);
         let surface = unsafe { instance.create_surface(&inner_window) };
 
         let adapter = block_on(instance.request_adapter(&wgpu::RequestAdapterOptions {
@@ -226,14 +224,13 @@ impl Window {
         ))
             .unwrap();
 
-        let sc_desc = wgpu::SwapChainDescriptor {
-            usage: wgpu::TextureUsage::RENDER_ATTACHMENT,
+        surface.configure(&device, &SurfaceConfiguration {
+            usage: wgpu::TextureUsages::RENDER_ATTACHMENT,
             format: wgpu::TextureFormat::Bgra8UnormSrgb,
             width: size.width,
             height: size.height,
             present_mode: PresentMode::Mailbox,
-        };
-        let swap_chain = device.create_swap_chain(&surface, &sc_desc);
+        });
 
         let uniform_bind_group_layout = uniform_bind_group_layout(&device);
         let filter_texture_bind_group_layout = filter_texture_bind_group_layout(&device);
@@ -268,42 +265,48 @@ impl Window {
             &device,
             &render_pipeline_layout,
             &main_shader,
-            &sc_desc,
+            &surface,
+            &adapter,
             MaskType::NoMask,
         );
         let render_pipeline_add_mask = create_render_pipeline(
             &device,
             &render_pipeline_layout,
             &main_shader,
-            &sc_desc,
+            &surface,
+            &adapter,
             MaskType::AddMask,
         );
         let render_pipeline_in_mask = create_render_pipeline(
             &device,
             &render_pipeline_layout,
             &main_shader,
-            &sc_desc,
+            &surface,
+            &adapter,
             MaskType::InMask,
         );
         let render_pipeline_remove_mask = create_render_pipeline(
             &device,
             &render_pipeline_layout,
             &main_shader,
-            &sc_desc,
+            &surface,
+            &adapter,
             MaskType::RemoveMask,
         );
         let render_pipeline_in_mask_filter = create_render_pipeline(
             &device,
             &filter_render_pipeline_layout,
             &wgsl_filter_shader,
-            &sc_desc,
+            &surface,
+            &adapter,
             MaskType::InMask,
         );
         let render_pipeline_no_mask_filter = create_render_pipeline(
             &device,
             &filter_render_pipeline_layout,
             &wgsl_filter_shader,
-            &sc_desc,
+            &surface,
+            &adapter,
             MaskType::NoMask,
         );
 
@@ -332,7 +335,7 @@ impl Window {
             .create_buffer_init(&BufferInitDescriptor {
                 label: Some("Vertex Buffer"),
                 contents: &[],
-                usage: BufferUsage::VERTEX | BufferUsage::COPY_DST,
+                usage: BufferUsages::VERTEX | BufferUsages::COPY_DST,
             });
 
         let last_verts: Vec<Vertex> = vec![
@@ -348,7 +351,7 @@ impl Window {
             .create_buffer_init(&wgpu::util::BufferInitDescriptor {
                 label: Some("Vertex Buffer"),
                 contents: bytemuck::cast_slice(&last_verts),
-                usage: wgpu::BufferUsage::VERTEX | BufferUsage::COPY_DST,
+                usage: wgpu::BufferUsages::VERTEX | BufferUsages::COPY_DST,
             });
 
         let filter_main_texture_bind_group = filter_texture_bind_group(&device, &filter_texture_bind_group_layout, &main_tex_view, &main_sampler);
@@ -367,8 +370,6 @@ impl Window {
             surface,
             device,
             queue,
-            sc_desc,
-            swap_chain,
             size,
             render_pipeline_no_mask,
             render_pipeline_add_mask,
@@ -411,8 +412,6 @@ impl Window {
         self.ui.set_window_width(self.size.width as f64);
         self.ui.set_window_height(self.size.height as f64);
         self.ui.handle_event(Input::Redraw);
-        self.sc_desc.width = new_size.width;
-        self.sc_desc.height = new_size.height;
         let depth_texture = create_depth_stencil_texture(&self.device, new_size.width, new_size.height);
         let depth_texture_view = depth_texture.create_view(&Default::default());
         self.depth_texture_view = depth_texture_view;
@@ -458,7 +457,13 @@ impl Window {
 
         self.queue.write_buffer(&self.second_vertex_buffer, 0, bytemuck::cast_slice(&last_verts));
 
-        self.swap_chain = self.device.create_swap_chain(&self.surface, &self.sc_desc);
+        self.surface.configure(&self.device, &SurfaceConfiguration {
+            usage: wgpu::TextureUsages::RENDER_ATTACHMENT,
+            format: wgpu::TextureFormat::Bgra8UnormSrgb,
+            width: new_size.width,
+            height: new_size.height,
+            present_mode: PresentMode::Mailbox,
+        });
     }
 
     fn input(&mut self, event: &WindowEvent) -> bool {
@@ -574,12 +579,12 @@ impl Window {
                         match self.render() {
                             Ok(_) => {}
                             // Recreate the swap_chain if lost
-                            Err(wgpu::SwapChainError::Lost) => {
+                            Err(wgpu::SurfaceError::Lost) => {
                                 println!("Swap chain lost");
                                 self.resize(self.size)
                             },
                             // The system is out of memory, we should probably quit
-                            Err(wgpu::SwapChainError::OutOfMemory) => {
+                            Err(wgpu::SurfaceError::OutOfMemory) => {
                                 println!("Swap chain out of memory");
                                 *control_flow = ControlFlow::Exit
                             }

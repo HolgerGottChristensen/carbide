@@ -17,7 +17,7 @@ fn main() {
 
     window.set_widgets(VStack::new(vec![
         HStack::new(vec![
-            Rectangle::new(vec![])
+            /*Rectangle::new(vec![])
                 .fill(EnvironmentColor::Accent)
                 .frame(100.0, 100.0),
             Rectangle::new(vec![])
@@ -35,7 +35,7 @@ fn main() {
                     Rectangle::new(vec![])
                         .fill(EnvironmentColor::Accent),
                 )
-                .frame(100.0, 100.0),
+                .frame(100.0, 100.0),*/
             Image::new(landscape_id)
                 .scaled_to_fill()
                 .frame(200.0, 200.0)
@@ -46,7 +46,7 @@ fn main() {
                 )
                 .frame(100.0, 100.0),
         ]),
-        HStack::new(vec![
+        /*HStack::new(vec![
             RoundedRectangle::new(CornerRadii::all(25.0))
                 .fill(EnvironmentColor::Accent)
                 .frame(100.0, 100.0),
@@ -198,7 +198,7 @@ fn main() {
                     context
                 }))
                 .frame(100.0, 100.0),
-        ]),
+        ]),*/
     ]));
 
     window.launch();

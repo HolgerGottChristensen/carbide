@@ -27,7 +27,7 @@ var main_texture: texture_2d<f32>;
 var main_sampler: sampler;
 
 [[group(1), binding(0)]]
-var<storage> blur_uniforms: [[access(read)]] BlurUniforms; // This should change for wgpu 0.10
+var<storage, read> blur_uniforms: BlurUniforms; // This should change for wgpu 0.10
 
 [[group(2), binding(0)]]
 var uniforms: Uniforms;

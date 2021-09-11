@@ -30,7 +30,7 @@ impl<'a> TextureAtlasCommand<'a> {
         device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
             label: Some("carbide_buffer_init_descriptor"),
             contents: &self.texture_atlas_buffer,
-            usage: wgpu::BufferUsage::COPY_SRC,
+            usage: wgpu::BufferUsages::COPY_SRC,
         })
     }
 
@@ -52,6 +52,7 @@ impl<'a> TextureAtlasCommand<'a> {
             texture: &self.texture_atlas_texture,
             mip_level: 0,
             origin: wgpu::Origin3d::ZERO,
+            aspect: Default::default(),
         }
     }
 

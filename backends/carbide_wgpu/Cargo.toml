@@ -12,6 +12,7 @@ repository = "https://github.com/pistondevelopers/carbide.git"
 homepage = "https://github.com/pistondevelopers/carbide"
 categories = ["gui"]
 edition = "2018"
+resolver = "2"
 
 [dependencies]
 carbide_core = { path = "../../carbide_core", version = "0.70" }
@@ -22,8 +23,7 @@ winit = "0.25"
 cgmath = "0.18"
 env_logger = "0.7"
 log = "0.4"
-#wgpu = {version = "0.9", features = ["trace"]} # For wgpu tracing
-wgpu = { version = "0.9" }
+wgpu = { version = "0.10" }
 futures = "0.3"
 bytemuck = { version = "1.7", features = ["derive", "min_const_generics"] }
 anyhow = "1.0"

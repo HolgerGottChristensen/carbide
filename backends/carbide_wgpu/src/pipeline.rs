@@ -1,4 +1,4 @@
-use wgpu::{BlendComponent, BlendFactor, BlendOperation, BlendState, ColorTargetState, CompareFunction, DepthBiasState, DepthStencilState, Device, FragmentState, FrontFace, PipelineLayout, PrimitiveState, PrimitiveTopology, RenderPipeline, ShaderModule, StencilFaceState, StencilOperation, SwapChainDescriptor, TextureFormat, VertexState};
+use wgpu::{Adapter, BlendComponent, BlendFactor, BlendOperation, BlendState, ColorTargetState, CompareFunction, DepthBiasState, DepthStencilState, Device, FragmentState, FrontFace, PipelineLayout, PrimitiveState, PrimitiveTopology, RenderPipeline, ShaderModule, StencilFaceState, StencilOperation, Surface, TextureFormat, VertexState};
 
 use crate::vertex::Vertex;
 
@@ -13,7 +13,8 @@ pub(crate) fn create_render_pipeline(
     device: &Device,
     render_pipeline_layout: &PipelineLayout,
     shader: &ShaderModule,
-    sc_desc: &SwapChainDescriptor,
+    surface: &Surface,
+    adapter: &Adapter,
     mask_type: MaskType,
 ) -> RenderPipeline {
     let (stencil_desc, col) = mask_render_state(mask_type);
@@ -51,7 +52,7 @@ pub(crate) fn create_render_pipeline(
             module: &shader,
             entry_point: "main_fs",
             targets: &[ColorTargetState {
-                format: sc_desc.format,
+                format: surface.get_preferred_format(adapter).unwrap(),
                 blend: Some(BlendState {
                     color: BlendComponent {
                         src_factor: BlendFactor::SrcAlpha,
@@ -71,7 +72,7 @@ pub(crate) fn create_render_pipeline(
 }
 
 // Inspired by ruffle: https://github.com/ruffle-rs/ruffle/blob/master/render/wgpu/src/pipelines.rs
-fn mask_render_state(state: MaskType) -> (wgpu::StencilState, wgpu::ColorWrite) {
+fn mask_render_state(state: MaskType) -> (wgpu::StencilState, wgpu::ColorWrites) {
     let (stencil_state, color_write) = match state {
         MaskType::NoMask => (
             wgpu::StencilState {
@@ -90,7 +91,7 @@ fn mask_render_state(state: MaskType) -> (wgpu::StencilState, wgpu::ColorWrite) 
                 read_mask: !0,
                 write_mask: !0,
             },
-            wgpu::ColorWrite::ALL,
+            wgpu::ColorWrites::ALL,
         ),
         MaskType::AddMask => (
             wgpu::StencilState {
@@ -109,7 +110,7 @@ fn mask_render_state(state: MaskType) -> (wgpu::StencilState, wgpu::ColorWrite) 
                 read_mask: !0,
                 write_mask: !0,
             },
-            wgpu::ColorWrite::empty(),
+            wgpu::ColorWrites::empty(),
         ),
         MaskType::InMask => (
             wgpu::StencilState {
@@ -128,7 +129,7 @@ fn mask_render_state(state: MaskType) -> (wgpu::StencilState, wgpu::ColorWrite) 
                 read_mask: !0,
                 write_mask: !0,
             },
-            wgpu::ColorWrite::ALL,
+            wgpu::ColorWrites::ALL,
         ),
         MaskType::RemoveMask => (
             wgpu::StencilState {
@@ -147,7 +148,7 @@ fn mask_render_state(state: MaskType) -> (wgpu::StencilState, wgpu::ColorWrite) 
                 read_mask: !0,
                 write_mask: !0,
             },
-            wgpu::ColorWrite::empty(),
+            wgpu::ColorWrites::empty(),
         ),
     };
 

@@ -1,4 +1,4 @@
-use wgpu::{TextureFormat, TextureUsage};
+use wgpu::{TextureFormat, TextureUsages};
 
 pub fn main_render_tex_desc([width, height]: [u32; 2]) -> wgpu::TextureDescriptor<'static> {
     let depth_or_array_layers = 1;
@@ -14,7 +14,7 @@ pub fn main_render_tex_desc([width, height]: [u32; 2]) -> wgpu::TextureDescripto
         sample_count: 1,
         dimension: wgpu::TextureDimension::D2,
         format: TextureFormat::Bgra8UnormSrgb,
-        usage: wgpu::TextureUsage::RENDER_ATTACHMENT | TextureUsage::SAMPLED | TextureUsage::COPY_SRC | wgpu::TextureUsage::COPY_DST,
+        usage: wgpu::TextureUsages::RENDER_ATTACHMENT | TextureUsages::TEXTURE_BINDING | TextureUsages::COPY_SRC | wgpu::TextureUsages::COPY_DST,
     }
 }
 
@@ -34,7 +34,7 @@ pub fn secondary_render_tex_desc([width, height]: [u32; 2]) -> wgpu::TextureDesc
         sample_count: 1,
         dimension: wgpu::TextureDimension::D2,
         format: TextureFormat::Bgra8UnormSrgb,
-        usage: wgpu::TextureUsage::RENDER_ATTACHMENT | wgpu::TextureUsage::SAMPLED | wgpu::TextureUsage::COPY_DST,
+        usage: wgpu::TextureUsages::RENDER_ATTACHMENT | wgpu::TextureUsages::TEXTURE_BINDING | wgpu::TextureUsages::COPY_DST,
     }
 }
 
@@ -52,6 +52,6 @@ pub fn atlas_cache_tex_desc([width, height]: [u32; 2]) -> wgpu::TextureDescripto
         sample_count: 1,
         dimension: wgpu::TextureDimension::D2,
         format: TextureFormat::Rgba8UnormSrgb,
-        usage: wgpu::TextureUsage::SAMPLED | wgpu::TextureUsage::COPY_DST,
+        usage: wgpu::TextureUsages::TEXTURE_BINDING | wgpu::TextureUsages::COPY_DST,
     }
 }

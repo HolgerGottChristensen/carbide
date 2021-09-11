@@ -24,7 +24,7 @@ pub(crate) fn matrix_to_uniform_bind_group(device: &Device, uniform_bind_group_l
         &wgpu::util::BufferInitDescriptor {
             label: Some("Uniform Buffer"),
             contents: bytemuck::cast_slice(&[uniforms]),
-            usage: wgpu::BufferUsage::UNIFORM,
+            usage: wgpu::BufferUsages::UNIFORM,
         }
     );
 
@@ -40,7 +40,7 @@ pub(crate) fn size_to_uniform_bind_group(device: &Device, uniform_bind_group_lay
         &wgpu::util::BufferInitDescriptor {
             label: Some("Uniform Buffer"),
             contents: bytemuck::cast_slice(&[uniforms]),
-            usage: wgpu::BufferUsage::UNIFORM,
+            usage: wgpu::BufferUsages::UNIFORM,
         }
     );
 

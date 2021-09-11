@@ -1,4 +1,4 @@
-use wgpu::{BufferUsage, Extent3d, ImageCopyTexture, LoadOp, Operations, RenderPassDepthStencilAttachment};
+use wgpu::{BufferUsages, Extent3d, ImageCopyTexture, LoadOp, Operations, RenderPassDepthStencilAttachment};
 use wgpu::util::{BufferInitDescriptor, DeviceExt};
 
 use carbide_core::draw::{Dimension, Position, Rect};
@@ -11,7 +11,7 @@ use crate::vertex::Vertex;
 use crate::window::Window;
 
 impl Window {
-    pub fn render(&mut self) -> Result<(), wgpu::SwapChainError> {
+    pub fn render(&mut self) -> Result<(), wgpu::SurfaceError> {
         let mut encoder = self
             .device
             .create_command_encoder(&wgpu::CommandEncoderDescriptor {
@@ -69,7 +69,7 @@ impl Window {
                     &wgpu::util::BufferInitDescriptor {
                         label: Some("Filter Buffer"),
                         contents: &*filter.as_bytes(),
-                        usage: wgpu::BufferUsage::STORAGE,
+                        usage: wgpu::BufferUsages::STORAGE,
                     }
                 );
                 let filter_buffer_bind_group = filter_buffer_bind_group(&self.device, &self.filter_buffer_bind_group_layout, &filter_buffer);
@@ -106,7 +106,7 @@ impl Window {
                 .create_buffer_init(&BufferInitDescriptor {
                     label: Some("Vertex Buffer"),
                     contents: bytemuck::cast_slice(&vertices),
-                    usage: BufferUsage::VERTEX | BufferUsage::COPY_DST,
+                    usage: BufferUsages::VERTEX | BufferUsages::COPY_DST,
                 });
             self.vertex_buffer = (new_vertex_buffer, vertices.len());
         }
@@ -199,10 +199,12 @@ impl Window {
                         texture: &self.main_tex,
                         mip_level: 0,
                         origin: Default::default(),
+                        aspect: Default::default(),
                     }, ImageCopyTexture {
                         texture: &self.secondary_tex,
                         mip_level: 0,
                         origin: Default::default(),
+                        aspect: Default::default(),
                     }, Extent3d {
                         width: self.size.width,
                         height: self.size.height,
@@ -286,12 +288,13 @@ impl Window {
         let (color_op, stencil_op) = render_pass_ops(RenderPassOps::Middle);
 
         // This blocks until a new frame is available.
-        let frame = self.swap_chain.get_current_frame()?.output;
+        let frame = self.surface.get_current_frame()?.output;
+        let frame_view = frame.texture.create_view(&Default::default());
 
         let mut render_pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
             label: None,
             color_attachments: &[wgpu::RenderPassColorAttachment {
-                view: &frame.view, // Here is the render target
+                view: &frame_view, // Here is the render target
                 resolve_target: None,
                 ops: color_op,
             }],
