@@ -4,7 +4,7 @@ use lyon::algorithms::path::geom::euclid::vec2;
 use lyon::algorithms::path::Winding;
 use lyon::math::point;
 
-use crate::draw::{Dimension, Position, Rect};
+use crate::draw::{Dimension, Position};
 use crate::prelude::*;
 use crate::widget::shape::{Shape, tessellate};
 use crate::widget::types::ShapeStyle;

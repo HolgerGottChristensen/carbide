@@ -1,5 +1,3 @@
-use std::ops::Deref;
-
 use crate::draw::{Dimension, Position};
 use crate::prelude::*;
 

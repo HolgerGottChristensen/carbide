@@ -554,9 +554,9 @@ impl Window {
                         let time_since_last = last_frame_inst.elapsed().as_secs_f32();
                         if time_since_last * 1000.0 > 20.0 {
                             if time_since_last * 1000.0 > 50.0 {
-                                println!("Very slow frame: {}ms", time_since_last * 1000.0);
+                                //println!("Very slow frame: {}ms", time_since_last * 1000.0);
                             } else {
-                                println!("Slow frame: {}ms", time_since_last * 1000.0);
+                                //println!("Slow frame: {}ms", time_since_last * 1000.0);
                             }
                         }
                         accum_time += time_since_last;

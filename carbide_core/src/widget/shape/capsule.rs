@@ -3,7 +3,7 @@ use lyon::tessellation::path::builder::BorderRadii;
 use lyon::tessellation::path::traits::PathBuilder;
 use lyon::tessellation::path::Winding;
 
-use crate::draw::{Dimension, Position, Rect};
+use crate::draw::{Dimension, Position};
 use crate::prelude::*;
 use crate::widget::shape::{Shape, tessellate};
 use crate::widget::types::ShapeStyle;

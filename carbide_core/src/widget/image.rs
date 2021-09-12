@@ -3,7 +3,6 @@
 use crate::draw::{Dimension, Position, Rect};
 use crate::image_map;
 use crate::prelude::*;
-use crate::render::new_primitive;
 use crate::render::PrimitiveKind;
 use crate::widget::types::ScaleMode;
 

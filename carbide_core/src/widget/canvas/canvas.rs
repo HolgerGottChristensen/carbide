@@ -10,7 +10,6 @@ use crate::draw::shape::triangle::Triangle;
 use crate::prelude::*;
 use crate::render::PrimitiveKind;
 use crate::widget::canvas::{Context, ShapeStyleWithOptions};
-use crate::widget::Rectangle;
 
 /// A basic, non-interactive rectangle shape widget.
 #[derive(Debug, Clone, Widget)]
