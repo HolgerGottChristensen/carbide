@@ -1,8 +1,6 @@
 extern crate carbide_core;
 #[macro_use]
 extern crate carbide_derive;
-#[macro_use]
-extern crate closure;
 extern crate copypasta;
 extern crate unicode_segmentation;
 

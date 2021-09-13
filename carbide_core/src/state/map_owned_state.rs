@@ -43,10 +43,6 @@ impl<FROM: StateContract, TO: StateContract> MapOwnedState<FROM, TO> {
 impl<FROM: StateContract, TO: StateContract> State<TO> for MapOwnedState<FROM, TO> {
     fn capture_state(&mut self, env: &mut Environment) {
         self.state.capture_state(env);
-        let value: TO = (&self.map)(&*self.state.value(), env);
-        if let Ok(mut borrow) = self.value.try_borrow_mut() {
-            *borrow.deref_mut() = value;
-        }
     }
 
     fn release_state(&mut self, env: &mut Environment) {
