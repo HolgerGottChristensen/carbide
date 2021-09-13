@@ -7,6 +7,7 @@ pub trait Vertex: Clone + Copy + PartialEq {
     fn point(&self) -> Position;
     /// Add the given vector onto the position of self and return the result.
     fn add_vertex(self, other: Position) -> Self;
+    fn offset(&mut self, other: Position);
 }
 
 impl Vertex for Position {
@@ -16,6 +17,10 @@ impl Vertex for Position {
 
     fn add_vertex(self, add: Position) -> Self {
         self + add
+    }
+
+    fn offset(&mut self, other: Position) {
+        *self = *self + other;
     }
 }
 
@@ -27,5 +32,10 @@ impl Vertex for ColoredPoint {
     fn add_vertex(self, add: Position) -> Self {
         let (p, c) = self;
         (p + add, c)
+    }
+
+    fn offset(&mut self, other: Position) {
+        let (p, _) = self;
+        *p = *p + other;
     }
 }

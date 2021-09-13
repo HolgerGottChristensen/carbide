@@ -1,4 +1,7 @@
+use std::marker::PhantomData;
+
 use crate::draw::{Dimension, Position};
+use crate::focus::Focus;
 use crate::prelude::*;
 
 pub trait Delegate<T: StateContract, W: Widget>: Fn(TState<T>, UsizeState) -> W + Clone {}
@@ -14,14 +17,15 @@ pub struct ForEach<T, U, W> where T: StateContract, W: Widget + Clone, U: Delega
     #[state] model: TState<Vec<T>>,
     delegate: U,
 
-    children: Vec<W>,
+    children: Vec<Box<dyn Widget>>,
     #[state] index_offset: UsizeState,
+    phantom: PhantomData<W>,
 }
 
-impl<T: StateContract + 'static, W: Widget + Clone, U: Delegate<T, W>> ForEach<T, U, W> {
+impl<T: StateContract + 'static, W: Widget + Clone + 'static, U: Delegate<T, W>> ForEach<T, U, W> {
     pub fn new<K: Into<TState<Vec<T>>>>(model: K, delegate: U) -> Box<Self> {
         let model = model.into();
-        let mut map = vec![];
+        let mut map: Vec<Box<dyn Widget>> = vec![];
 
         for (index, _element) in model.value().deref().iter().enumerate() {
             let index_state: UsizeState = ValueState::new(index).into();
@@ -34,7 +38,7 @@ impl<T: StateContract + 'static, W: Widget + Clone, U: Delegate<T, W>> ForEach<T
                                                                            &mut a[index]
                                                                        });
             let widget = (delegate)(item_state.into(), index_state);
-            map.push(widget);
+            map.push(Box::new(widget));
         }
 
         Box::new(Self {
@@ -45,6 +49,7 @@ impl<T: StateContract + 'static, W: Widget + Clone, U: Delegate<T, W>> ForEach<T
             delegate,
             children: map,
             index_offset: ValueState::new(0).into(),
+            phantom: Default::default(),
         })
     }
 
@@ -78,43 +83,45 @@ impl<T: StateContract, W: Widget + Clone, U: Delegate<T, W>> CommonWidget for Fo
     }
 
     fn children(&self) -> WidgetIter {
-        self.children
-            .iter()
-            .rfold(WidgetIter::Empty, |acc, x| {
-                if x.flag() == Flags::PROXY {
-                    WidgetIter::Multi(Box::new(x.children()), Box::new(acc))
-                } else {
-                    WidgetIter::Single(x, Box::new(acc))
-                }
-            })
+        let contains_proxy = self.children.iter().fold(false, |a, b| a || b.flag() == Flags::PROXY);
+        if !contains_proxy {
+            WidgetIter::Vec(self.children.iter())
+        } else {
+            self.children
+                .iter()
+                .rfold(WidgetIter::Empty, |acc, x| {
+                    if x.flag() == Flags::PROXY {
+                        WidgetIter::Multi(Box::new(x.children()), Box::new(acc))
+                    } else {
+                        WidgetIter::Single(x, Box::new(acc))
+                    }
+                })
+        }
     }
 
     fn children_mut(&mut self) -> WidgetIterMut {
-        self.children
-            .iter_mut()
-            .rfold(WidgetIterMut::Empty, |acc, x| {
-                if x.flag() == Flags::PROXY {
-                    WidgetIterMut::Multi(Box::new(x.children_mut()), Box::new(acc))
-                } else {
-                    WidgetIterMut::Single(x, Box::new(acc))
-                }
-            })
+        let contains_proxy = self.children.iter().fold(false, |a, b| a || b.flag() == Flags::PROXY);
+        if !contains_proxy {
+            WidgetIterMut::Vec(self.children.iter_mut())
+        } else {
+            self.children
+                .iter_mut()
+                .rfold(WidgetIterMut::Empty, |acc, x| {
+                    if x.flag() == Flags::PROXY {
+                        WidgetIterMut::Multi(Box::new(x.children_mut()), Box::new(acc))
+                    } else {
+                        WidgetIterMut::Single(x, Box::new(acc))
+                    }
+                })
+        }
     }
 
-    fn proxied_children(&mut self) -> WidgetIterMut {
-        self.children
-            .iter_mut()
-            .rfold(WidgetIterMut::Empty, |acc, x| {
-                WidgetIterMut::Single(x, Box::new(acc))
-            })
+    fn children_direct(&mut self) -> WidgetIterMut {
+        WidgetIterMut::Vec(self.children.iter_mut())
     }
 
-    fn proxied_children_rev(&mut self) -> WidgetIterMut {
-        self.children
-            .iter_mut()
-            .fold(WidgetIterMut::Empty, |acc, x| {
-                WidgetIterMut::Single(x, Box::new(acc))
-            })
+    fn children_direct_rev(&mut self) -> WidgetIterMut {
+        WidgetIterMut::VecRev(self.children.iter_mut().rev())
     }
 
     fn position(&self) -> Position {

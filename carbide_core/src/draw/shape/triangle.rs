@@ -21,6 +21,12 @@ impl<V> Triangle<V>
         Triangle([a, b, c])
     }
 
+    pub fn offset(&mut self, amount: Position) {
+        (self.0[0]).offset(amount);
+        (self.0[1]).offset(amount);
+        (self.0[2]).offset(amount);
+    }
+
     /// The three points that make up the triangle.
     pub fn points(self) -> [Position; 3] {
         [self[0].point(), self[1].point(), self[2].point()]

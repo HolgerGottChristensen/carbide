@@ -46,6 +46,14 @@ impl TriangleStore {
         self.fill_triangles.clone()
     }
 
+    pub fn stroke_triangles_mut(&mut self) -> &mut Vec<Triangle<Position>> {
+        &mut self.stroke_triangles
+    }
+
+    pub fn fill_triangles_mut(&mut self) -> &mut Vec<Triangle<Position>> {
+        &mut self.fill_triangles
+    }
+
     pub fn set_stroke_triangles(&mut self, triangles: &Vec<Triangle<Position>>) {
         self.stroke_triangles = triangles.clone()
     }

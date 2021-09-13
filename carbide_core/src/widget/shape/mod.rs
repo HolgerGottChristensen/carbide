@@ -80,7 +80,7 @@ pub fn fill(path: &dyn Fn(&mut Builder, &Rect), shape: &mut dyn Shape, rectangle
     let dimension = shape.dimension();
     let triangle_store = shape.get_triangle_store_mut();
 
-    if triangle_store.diff_fill(position, dimension) {
+    if dimension != triangle_store.latest_fill_dimensions {
         let mut builder = Path::builder();
 
         // Let the caller decide the geometry
@@ -120,6 +120,12 @@ pub fn fill(path: &dyn Fn(&mut Builder, &Rect), shape: &mut dyn Shape, rectangle
         triangle_store.latest_fill_position = position;
         triangle_store.latest_fill_dimensions = dimension;
         triangle_store.set_fill_triangles(&triangles);
+    } else if position != triangle_store.latest_fill_position {
+        let offset = position - triangle_store.latest_fill_position;
+        triangle_store.fill_triangles_mut().iter_mut().for_each(|t| {
+            t.offset(offset);
+        });
+        triangle_store.latest_fill_position = position;
     }
 }
 
@@ -129,7 +135,7 @@ pub fn stroke(path: &dyn Fn(&mut Builder, &Rect), shape: &mut dyn Shape, rectang
     let line_width = shape.get_stroke_style().get_line_width() as f32;
     let triangle_store = shape.get_triangle_store_mut();
 
-    if triangle_store.diff_stroke(position, dimension) {
+    if dimension != triangle_store.latest_stroke_dimensions {
         let mut builder = Path::builder();
 
         // Let the caller decide the geometry
@@ -220,5 +226,11 @@ pub fn stroke(path: &dyn Fn(&mut Builder, &Rect), shape: &mut dyn Shape, rectang
         triangle_store.latest_stroke_position = position;
         triangle_store.latest_stroke_dimensions = dimension;
         triangle_store.set_stroke_triangles(&triangles);
+    } else if position != triangle_store.latest_stroke_position {
+        let offset = position - triangle_store.latest_fill_position;
+        triangle_store.stroke_triangles_mut().iter_mut().for_each(|t| {
+            t.offset(offset);
+        });
+        triangle_store.latest_stroke_position = position;
     }
 }
