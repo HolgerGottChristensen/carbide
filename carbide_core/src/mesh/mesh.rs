@@ -794,8 +794,8 @@ impl Mesh {
 
                     // Top right triangle.
                     push_v(l, t, [uv_l, uv_t]);
-                    push_v(r, b, [uv_r, uv_b]);
                     push_v(r, t, [uv_r, uv_t]);
+                    push_v(r, b, [uv_r, uv_b]);
                 }
             }
         }
