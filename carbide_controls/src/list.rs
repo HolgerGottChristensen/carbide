@@ -7,8 +7,6 @@ use carbide_core::state::{F64State, LocalState, State, StateContract, TState, Us
 use carbide_core::widget::{CommonWidget, Delegate, ForEach, Id, Rectangle, SCALE, Scroll, VStack, Widget, WidgetExt, WidgetIter, WidgetIterMut};
 
 #[derive(Clone, Widget)]
-//#[event(handle_keyboard_event, handle_mouse_event)]
-//#[state_sync(sync_state)]
 pub struct List<T, U, W> where T: StateContract + 'static, W: Widget + Clone + 'static, U: Delegate<T, W> + 'static {
     id: Id,
     child: Box<dyn Widget>,
@@ -89,7 +87,6 @@ impl<T: StateContract + 'static, W: Widget + Clone + 'static, U: Delegate<T, W> 
     }
     /*
         fn _recalculate_visible_children(&mut self, env: &mut Environment<GS>) {
-            //println!("Med dig");
             // TODO: Handle when model changes.
             // If items in the internal model is removed, calculate new sizes, if items in between the items in the internal_model is added, do ???
 
@@ -277,19 +274,6 @@ impl<T: StateContract + 'static, W: Widget + Clone + 'static, U: Delegate<T, W> 
             // To this step while there are views below the bottom.
         }
     */
-    /*fn sync_state(&mut self, env: &mut Environment<GS>, global_state: &GS) {
-        self.update_all_widget_state(env, global_state);
-
-        //self.recalculate_visible_children(env);
-
-        self.insert_local_state(env);
-
-        for child in self.proxied_children() {
-            child.sync_state(env, global_state)
-        }
-
-        self.update_local_widget_state(env);
-    }*/
 }
 
 impl<T: StateContract + 'static, W: Widget + Clone + 'static, U: Delegate<T, W> + 'static> CommonWidget for List<T, U, W> {
@@ -345,34 +329,5 @@ impl<T: StateContract + 'static, W: Widget + Clone + 'static, U: Delegate<T, W> 
         self.dimension = dimension
     }
 }
-/*
-impl<GS: GlobalStateContract, T: ListIndex> Layout<GS> for List<GS, T> {
-    fn flexibility(&self) -> u32 {
-        10
-    }
 
-    fn calculate_size(&mut self, requested_size: Dimensions, env: &mut Environment) -> Dimensions {
-        if let Some(child) = self.children_mut().next() {
-            child.calculate_size(requested_size, env);
-        }
-
-        self.set_dimension(requested_size);
-
-        //self.recalculate_visible_children(env);
-
-        requested_size
-    }
-
-    fn position_children(&mut self) {
-        let positioning = BasicLayouter::Center.position();
-        let position = self.position();
-        let dimension = self.dimension();
-
-        if let Some(child) = self.children_mut().next() {
-            positioning(position, dimension, child);
-            child.position_children();
-        }
-    }
-}
-*/
 impl<T: StateContract + 'static, W: Widget + Clone + 'static, U: Delegate<T, W> + 'static> WidgetExt for List<T, U, W> {}

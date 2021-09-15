@@ -344,7 +344,7 @@ fn create_packed_image() {
 
     let mut env = Environment::new(vec![], Dimension::new(0.0, 0.0), 1.0);
     let mut family = FontFamily::new("Apple Color Emoji");
-    family.add_font(
+    family.add_font_with_hints(
         "/System/Library/Fonts/Apple Color Emoji.ttc",
         FontWeight::Normal,
         FontStyle::Normal,
@@ -352,7 +352,7 @@ fn create_packed_image() {
     env.add_font_family(family);
 
     let mut family = FontFamily::new("Noto Sans");
-    family.add_font(
+    family.add_font_with_hints(
         "fonts/NotoSans/NotoSans-Regular.ttf",
         FontWeight::Normal,
         FontStyle::Normal,

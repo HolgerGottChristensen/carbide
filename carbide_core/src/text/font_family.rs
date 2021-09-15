@@ -19,7 +19,30 @@ impl FontFamily {
         }
     }
 
-    pub fn add_font<P: AsRef<Path>>(
+    /// This will treat all paths as they are normal non-bitmap fonts.
+    pub fn new_from_paths<P: AsRef<Path>>(name: &str, paths: Vec<P>) -> FontFamily {
+        let mut family = FontFamily {
+            name: name.to_string(),
+            fonts: vec![],
+        };
+        for path in paths {
+            family.add_font(path)
+        }
+
+        family
+    }
+
+    pub fn add_font<P: AsRef<Path>>(&mut self, path: P) {
+        self.add_font_with_hints(path, FontWeight::Normal, FontStyle::Normal)
+    }
+
+    pub fn add_bitmap_font<P: AsRef<Path>>(&mut self, path: P) {
+        self.add_bitmap_font_with_hints(path, FontWeight::Normal, FontStyle::Normal)
+    }
+
+    /// This will add a normal font to the font family. The hints are overridden by the hints
+    /// within the font if these are present.
+    pub fn add_font_with_hints<P: AsRef<Path>>(
         &mut self,
         path: P,
         weight_hint: FontWeight,
@@ -34,7 +57,9 @@ impl FontFamily {
         })
     }
 
-    pub fn add_bitmap_font<P: AsRef<Path>>(
+    /// This will add a bitmap font to the font family. The hints are overridden by the hints
+    /// within the font if these are present.
+    pub fn add_bitmap_font_with_hints<P: AsRef<Path>>(
         &mut self,
         path: P,
         weight_hint: FontWeight,
@@ -87,7 +112,7 @@ impl FontFamily {
 pub struct FontDescriptor {
     pub path: PathBuf,
     pub font_id: FontId,
-    weight_hint: FontWeight,
-    style_hint: FontStyle,
+    pub(crate) weight_hint: FontWeight,
+    pub(crate) style_hint: FontStyle,
     pub(crate) is_bitmap: bool,
 }

@@ -95,7 +95,7 @@ impl carbide_core::window::TWindow for Window {
             .unwrap();
         let font_path = assets.join(path.as_ref());
 
-        self.ui.environment.insert_font_from_file(font_path)
+        self.ui.environment.insert_font_from_file(font_path).0
     }
 
     fn add_image(&mut self, path: &str) -> Id {

@@ -2,11 +2,12 @@ use std::fmt::{Debug, Formatter};
 
 use image::{DynamicImage, GenericImage, Rgba};
 use rusttype::{GlyphId, point, Scale, VMetrics};
+use ttf_parser::Weight;
 
 use crate::draw::Position;
 use crate::draw::Scalar;
 use crate::environment::Environment;
-use crate::text::{FontId, FontSize};
+use crate::text::{FontId, FontSize, FontStyle, FontWeight};
 use crate::text::glyph::Glyph;
 
 type RustTypeFont = rusttype::Font<'static>;
@@ -35,6 +36,29 @@ impl Debug for Font {
 impl Font {
     pub fn id(&self) -> FontId {
         self.font_id
+    }
+
+    pub fn weight(&self) -> FontWeight {
+        match self.font.inner().weight() {
+            Weight::Thin => FontWeight::Thin,
+            Weight::ExtraLight => FontWeight::ExtraLight,
+            Weight::Light => FontWeight::Light,
+            Weight::Normal => FontWeight::Normal,
+            Weight::Medium => FontWeight::Medium,
+            Weight::SemiBold => FontWeight::SemiBold,
+            Weight::Bold => FontWeight::Bold,
+            Weight::ExtraBold => FontWeight::ExtraBold,
+            Weight::Black => FontWeight::Black,
+            Weight::Other(val) => FontWeight::Other(val),
+        }
+    }
+
+    pub fn style(&self) -> FontStyle {
+        if self.font.inner().is_italic() {
+            FontStyle::Italic
+        } else {
+            FontStyle::Normal
+        }
     }
 
     pub fn get_glyph_raster_image(

@@ -15,26 +15,15 @@ fn main() {
         Some(icon_path),
     );
 
-    let mut noto_family = FontFamily::new("NotoSans");
-    noto_family.add_font(
+    let mut noto_family = FontFamily::new_from_paths("NotoSans", vec![
         "fonts/NotoSans/NotoSans-Regular.ttf",
-        FontWeight::Normal,
-        FontStyle::Normal,
-    );
-    noto_family.add_font(
         "fonts/NotoSans/NotoSans-Italic.ttf",
-        FontWeight::Normal,
-        FontStyle::Italic,
-    );
-    noto_family.add_font(
         "fonts/NotoSans/NotoSans-Bold.ttf",
-        FontWeight::Bold,
-        FontStyle::Normal,
-    );
+    ]);
     window.add_font_family(noto_family);
 
     let mut family = FontFamily::new("Apple Color Emoji");
-    family.add_bitmap_font(
+    family.add_bitmap_font_with_hints(
         "/System/Library/Fonts/Apple Color Emoji.ttc",
         FontWeight::Normal,
         FontStyle::Normal,

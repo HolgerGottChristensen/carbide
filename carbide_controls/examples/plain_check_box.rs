@@ -25,7 +25,7 @@ fn main() {
     );
 
     let mut family = FontFamily::new("NotoSans");
-    family.add_font(
+    family.add_font_with_hints(
         "fonts/NotoSans/NotoSans-Regular.ttf",
         FontWeight::Normal,
         FontStyle::Normal,

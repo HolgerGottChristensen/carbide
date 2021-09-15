@@ -237,26 +237,30 @@ impl Environment {
         self.local_state.insert(key.clone(), to_bin(value).unwrap());
     }*/
 
-    pub fn insert_font_from_file<P>(&mut self, path: P) -> FontId
+    pub fn insert_font_from_file<P>(&mut self, path: P) -> (FontId, FontWeight, FontStyle)
         where
             P: AsRef<std::path::Path>,
     {
         let mut font = Font::from_file(path).unwrap();
+        let weight = font.weight();
+        let style = font.style();
         let font_id = self.fonts.len();
         font.set_font_id(font_id);
         self.fonts.push(font);
-        font_id
+        (font_id, weight, style)
     }
 
-    pub fn insert_bitmap_font_from_file<P>(&mut self, path: P) -> FontId
+    pub fn insert_bitmap_font_from_file<P>(&mut self, path: P) -> (FontId, FontWeight, FontStyle)
         where
             P: AsRef<std::path::Path>,
     {
         let mut font = Font::from_file_bitmap(path).unwrap();
+        let weight = font.weight();
+        let style = font.style();
         let font_id = self.fonts.len();
         font.set_font_id(font_id);
         self.fonts.push(font);
-        font_id
+        (font_id, weight, style)
     }
 
     pub fn add_glyphs_to_atlas(&mut self, glyphs: Vec<&mut Glyph>) {
@@ -324,12 +328,14 @@ impl Environment {
                 .for_folder("assets")
                 .unwrap();
             let font_path = assets.join(&font.path);
-            let font_id = if font.is_bitmap {
+            let (font_id, weight, style) = if font.is_bitmap {
                 self.insert_bitmap_font_from_file(font_path)
             } else {
                 self.insert_font_from_file(font_path)
             };
             font.font_id = font_id;
+            font.weight_hint = weight;
+            font.style_hint = style;
         }
         let key = family.name.clone();
         self.font_families.insert(key, family);

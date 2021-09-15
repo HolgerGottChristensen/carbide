@@ -24,12 +24,7 @@ fn main() {
         Some(icon_path),
     );
 
-    let mut family = FontFamily::new("NotoSans");
-    family.add_font(
-        "fonts/NotoSans/NotoSans-Regular.ttf",
-        FontWeight::Normal,
-        FontStyle::Normal,
-    );
+    let family = FontFamily::new_from_paths("NotoSans", vec!["fonts/NotoSans/NotoSans-Regular.ttf"]);
     window.add_font_family(family);
 
     let list_model = (1..100)
@@ -48,8 +43,7 @@ fn main() {
 
     window.set_widgets(
         List::new(list_model_state, delegate)
-            .frame(350.0, SCALE)
-            .frame(SCALE, 500.0),
+            .frame(350.0, 500.0),
     );
 
     window.launch();
