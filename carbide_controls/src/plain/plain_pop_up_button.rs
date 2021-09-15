@@ -12,9 +12,9 @@ use crate::plain::plain_pop_up_button_popup::PlainPopUpButtonPopUp;
 use crate::PlainButton;
 
 #[derive(Clone, Widget)]
-#[focusable(block_focus)]
-#[event(handle_keyboard_event, handle_mouse_event)]
-#[state_sync(update_all_widget_state)]
+//#[focusable(block_focus)]
+//#[event(handle_keyboard_event, handle_mouse_event)]
+//#[state_sync(update_all_widget_state)]
 pub struct PlainPopUpButton<T, GS>
     where
         GS: GlobalStateContract,

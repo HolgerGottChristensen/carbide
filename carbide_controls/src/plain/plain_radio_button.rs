@@ -25,6 +25,7 @@ pub struct PlainRadioButton<T> where T: 'static + StateContract + PartialEq {
         button: Box<dyn Widget>,
     ) -> Box<dyn Widget>,
     reference: T,
+    #[state]
     label: StringState,
     #[state]
     local_state: TState<T>,
@@ -35,7 +36,7 @@ pub struct PlainRadioButton<T> where T: 'static + StateContract + PartialEq {
 impl<T: 'static + StateContract + PartialEq> PlainRadioButton<T> {
     pub fn focused<K: Into<FocusState>>(mut self, focused: K) -> Box<Self> {
         self.focus = focused.into();
-        Box::new(self)
+        Self::new_internal(self.reference, self.local_state, self.focus, self.delegate, self.label)
     }
 
     pub fn new<S: Into<StringState>, L: Into<TState<T>>>(

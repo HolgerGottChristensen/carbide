@@ -1,58 +1,61 @@
-use carbide_core::draw::Dimension;
-use carbide_core::prelude::Uuid;
-use carbide_core::state::state::State;
-use carbide_core::widget::*;
+use carbide_core::draw::{Dimension, Position};
+use carbide_core::environment::{Environment, EnvironmentColor};
+use carbide_core::flags::Flags;
+use carbide_core::focus::Focus;
+use carbide_core::focus::Refocus;
+use carbide_core::state::{BoolState, FocusState, LocalState, MapOwnedState, State, StateKey, StringState};
+use carbide_core::widget::{CommonWidget, HStack, Id, Rectangle, Spacer, Text, Widget, WidgetExt, WidgetIter, WidgetIterMut};
 
 use crate::PlainButton;
 
 #[derive(Clone, Widget)]
-#[focusable(block_focus)]
-pub struct PlainSwitch<GS>
-    where
-        GS: GlobalStateContract,
-{
+//#[focusable(block_focus)]
+pub struct PlainSwitch {
     id: Id,
     #[state]
-    focus: FocusState<GS>,
-    child: Box<dyn Widget<GS>>,
-    position: Point,
-    dimension: Dimensions,
+    focus: FocusState,
+    child: Box<dyn Widget>,
+    position: Position,
+    dimension: Dimension,
     delegate: fn(
-        focus: FocusState<GS>,
-        checked: BoolState<GS>,
-        button: Box<dyn Widget<GS>>,
-    ) -> Box<dyn Widget<GS>>,
-    label: StringState<GS>,
+        focus: FocusState,
+        checked: BoolState,
+        button: Box<dyn Widget>,
+    ) -> Box<dyn Widget>,
     #[state]
-    checked: BoolState<GS>,
+    label: StringState,
+    #[state]
+    checked: BoolState,
 }
 
-impl<GS: GlobalStateContract> PlainSwitch<GS> {
-    pub fn focused<K: Into<FocusState<GS>>>(mut self, focused: K) -> Box<Self> {
+impl PlainSwitch {
+    pub fn focused<K: Into<FocusState>>(mut self, focused: K) -> Box<Self> {
         self.focus = focused.into();
-        Box::new(self)
+        Self::new_internal(
+            self.checked,
+            self.focus,
+            self.delegate,
+            self.label,
+        )
     }
 
-    pub fn new<S: Into<StringState<GS>>, L: Into<BoolState<GS>>>(
+    pub fn new<S: Into<StringState>, L: Into<BoolState>>(
         label: S,
         checked: L,
     ) -> Box<Self> {
-        let focus_state = Box::new(CommonState::new_local_with_key(&Focus::Unfocused));
+        let focus_state = LocalState::new(Focus::Unfocused);
 
-        let default_delegate = |_focus_state: FocusState<GS>,
-                                checked: BoolState<GS>,
-                                button: Box<dyn Widget<GS>>|
-                                -> Box<dyn Widget<GS>> {
-            let highlight_color =
-                TupleState3::new(checked, EnvironmentColor::Red, EnvironmentColor::Blue).mapped(
-                    |(selected, true_color, false_color)| {
-                        if *selected {
-                            *true_color
-                        } else {
-                            *false_color
-                        }
-                    },
-                );
+        let default_delegate = |_focus_state: FocusState,
+                                checked: BoolState,
+                                button: Box<dyn Widget>|
+                                -> Box<dyn Widget> {
+            let highlight_color = MapOwnedState::new(checked.clone(), |checked: &BoolState, env: &Environment| {
+                if *checked.value() {
+                    env.get_color(&StateKey::Color(EnvironmentColor::Green)).unwrap()
+                } else {
+                    env.get_color(&StateKey::Color(EnvironmentColor::Red)).unwrap()
+                }
+            });
 
             Rectangle::new(vec![button]).fill(highlight_color)
         };
@@ -68,10 +71,10 @@ impl<GS: GlobalStateContract> PlainSwitch<GS> {
     pub fn delegate(
         self,
         delegate: fn(
-            focus: FocusState<GS>,
-            selected: BoolState<GS>,
-            button: Box<dyn Widget<GS>>,
-        ) -> Box<dyn Widget<GS>>,
+            focus: FocusState,
+            selected: BoolState,
+            button: Box<dyn Widget>,
+        ) -> Box<dyn Widget>,
     ) -> Box<Self> {
         let checked = self.checked;
         let focus_state = self.focus;
@@ -81,41 +84,41 @@ impl<GS: GlobalStateContract> PlainSwitch<GS> {
     }
 
     fn new_internal(
-        checked: BoolState<GS>,
-        focus_state: FocusState<GS>,
+        checked: BoolState,
+        focus: FocusState,
         delegate: fn(
-            focus: FocusState<GS>,
-            selected: BoolState<GS>,
-            button: Box<dyn Widget<GS>>,
-        ) -> Box<dyn Widget<GS>>,
-        label_state: StringState<GS>,
+            focus: FocusState,
+            selected: BoolState,
+            button: Box<dyn Widget>,
+        ) -> Box<dyn Widget>,
+        label_state: StringState,
     ) -> Box<Self> {
-        let button = PlainButton::<bool, GS>::new(Spacer::new(SpacerDirection::Vertical))
-            .local_state(checked.clone())
-            .on_click(|myself, env, global_state| {
-                let checked = myself.get_local_state().get_value_mut(env, global_state);
-
+        let button = PlainButton::new(Spacer::new())
+            .on_click(capture!([checked, focus], |env: &mut Environment| {
                 *checked = !*checked;
 
-                myself.set_focus_and_request(Focus::FocusRequested, env);
-            })
-            .focused(focus_state.clone());
+                if *focus != Focus::Focused {
+                    *focus = Focus::FocusRequested;
+                    env.request_focus(Refocus::FocusRequest);
+                }
+            }))
+            .focused(focus.clone());
 
-        let delegate_widget = delegate(focus_state.clone(), checked.clone(), button);
+        let delegate_widget = delegate(focus.clone(), checked.clone(), button);
 
         let child = HStack::new(vec![
             delegate_widget,
             Text::new(label_state.clone()),
-            Spacer::new(SpacerDirection::Horizontal),
+            Spacer::new(),
         ])
             .spacing(5.0);
 
         Box::new(PlainSwitch {
             id: Id::new_v4(),
-            focus: focus_state,
+            focus,
             child,
-            position: [0.0, 0.0],
-            dimension: [0.0, 0.0],
+            position: Position::new(0.0, 0.0),
+            dimension: Dimension::new(0.0, 0.0),
             delegate,
             label: label_state,
             checked,
@@ -123,7 +126,7 @@ impl<GS: GlobalStateContract> PlainSwitch<GS> {
     }
 }
 
-impl<GS: GlobalStateContract> CommonWidget<GS> for PlainSwitch<GS> {
+impl CommonWidget for PlainSwitch {
     fn id(&self) -> Id {
         self.id
     }
@@ -152,23 +155,23 @@ impl<GS: GlobalStateContract> CommonWidget<GS> for PlainSwitch<GS> {
         }
     }
 
-    fn proxied_children(&mut self) -> WidgetIterMut {
+    fn children_direct(&mut self) -> WidgetIterMut {
         WidgetIterMut::single(&mut self.child)
     }
 
-    fn proxied_children_rev(&mut self) -> WidgetIterMut {
+    fn children_direct_rev(&mut self) -> WidgetIterMut {
         WidgetIterMut::single(&mut self.child)
     }
 
-    fn position(&self) -> Point {
+    fn position(&self) -> Position {
         self.position
     }
 
-    fn set_position(&mut self, position: Dimensions) {
+    fn set_position(&mut self, position: Position) {
         self.position = position;
     }
 
-    fn dimension(&self) -> Dimensions {
+    fn dimension(&self) -> Dimension {
         self.dimension
     }
 
@@ -177,33 +180,4 @@ impl<GS: GlobalStateContract> CommonWidget<GS> for PlainSwitch<GS> {
     }
 }
 
-impl<GS: GlobalStateContract> ChildRender for PlainSwitch<GS> {}
-
-impl<GS: GlobalStateContract> Layout<GS> for PlainSwitch<GS> {
-    fn flexibility(&self) -> u32 {
-        10
-    }
-
-    fn calculate_size(&mut self, requested_size: Dimensions, env: &mut Environment) -> Dimensions {
-        if let Some(child) = self.children_mut().next() {
-            child.calculate_size(requested_size, env);
-        }
-
-        self.set_dimension(requested_size);
-
-        requested_size
-    }
-
-    fn position_children(&mut self) {
-        let positioning = BasicLayouter::Center.position();
-        let position = self.position();
-        let dimension = self.dimension();
-
-        if let Some(child) = self.children_mut().next() {
-            positioning(position, dimension, child);
-            child.position_children();
-        }
-    }
-}
-
-impl<GS: GlobalStateContract> WidgetExt<GS> for PlainSwitch<GS> {}
+impl WidgetExt for PlainSwitch {}

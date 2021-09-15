@@ -227,7 +227,7 @@ pub fn stroke(path: &dyn Fn(&mut Builder, &Rect), shape: &mut dyn Shape, rectang
         triangle_store.latest_stroke_dimensions = dimension;
         triangle_store.set_stroke_triangles(&triangles);
     } else if position != triangle_store.latest_stroke_position {
-        let offset = position - triangle_store.latest_fill_position;
+        let offset = position - triangle_store.latest_stroke_position;
         triangle_store.stroke_triangles_mut().iter_mut().for_each(|t| {
             t.offset(offset);
         });

@@ -28,6 +28,7 @@ pub struct PlainCheckBox {
         checked: CheckBoxState,
         button: Box<dyn Widget>,
     ) -> Box<dyn Widget>,
+    #[state]
     label: StringState,
     #[state]
     checked: CheckBoxState,
@@ -36,7 +37,7 @@ pub struct PlainCheckBox {
 impl PlainCheckBox {
     pub fn focused<K: Into<FocusState>>(mut self, focused: K) -> Box<Self> {
         self.focus = focused.into();
-        Box::new(self)
+        Self::new_internal(self.checked, self.focus, self.delegate, self.label)
     }
 
     pub fn new<S: Into<StringState>, L: Into<CheckBoxState>>(

@@ -46,7 +46,7 @@ pub struct Environment {
 
     /// A map from String to a widget.
     /// This key should correspond to the targeted overlay_layer
-    overlay_map: FxHashMap<String, Box<dyn Widget>>,
+    overlay_map: FxHashMap<String, Option<Box<dyn Widget>>>,
 
     /// Keep local state as a map from String, to a vector of bytes.
     /// The vector is used as a serializing target for the state value.
@@ -180,17 +180,15 @@ impl Environment {
         self.images_information.insert(id, image);
     }
 
-    pub fn get_overlay(&mut self, id: &String) -> Option<Box<dyn Widget>> {
+    pub fn overlay(&mut self, id: &String) -> Option<Option<Box<dyn Widget>>> {
         self.overlay_map.remove(id)
     }
 
-    pub fn add_overlay(&mut self, id: &str, overlay: Box<dyn Widget>) {
+    pub fn add_overlay(&mut self, id: &str, overlay: Option<Box<dyn Widget>>) {
         self.overlay_map.insert(id.to_string(), overlay);
     }
 
-    pub fn clear(&mut self) {
-        self.overlay_map.clear();
-    }
+    pub fn clear(&mut self) {}
 
     pub fn get_global_state<T>(&self) -> InnerState<T> {
         todo!()

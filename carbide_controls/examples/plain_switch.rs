@@ -4,20 +4,22 @@ extern crate env_logger;
 extern crate futures;
 
 use carbide_controls::PlainSwitch;
+use carbide_core::state::LocalState;
+use carbide_core::text::{FontFamily, FontStyle, FontWeight};
 use carbide_core::widget::*;
+use carbide_core::window::TWindow;
 use carbide_wgpu::window::Window;
 
 fn main() {
     env_logger::init();
 
-    let icon_path = Window::<String>::relative_path_to_assets("images/rust_press.png");
+    let icon_path = Window::relative_path_to_assets("images/rust_press.png");
 
     let mut window = Window::new(
         "Plain Switch Example - Carbide".to_string(),
         800,
         1200,
         Some(icon_path),
-        String::from("Hejsa"),
     );
 
     let mut family = FontFamily::new("NotoSans");
@@ -26,22 +28,12 @@ fn main() {
         FontWeight::Normal,
         FontStyle::Normal,
     );
-    family.add_font(
-        "fonts/NotoSans/NotoSans-Italic.ttf",
-        FontWeight::Normal,
-        FontStyle::Italic,
-    );
-    family.add_font(
-        "fonts/NotoSans/NotoSans-Bold.ttf",
-        FontWeight::Bold,
-        FontStyle::Normal,
-    );
     window.add_font_family(family);
 
-    let switch_state1 = CommonState::new_local_with_key(&false);
-    let switch_state2 = CommonState::new_local_with_key(&true);
-    let switch_state3 = CommonState::new_local_with_key(&true);
-    let switch_state4 = CommonState::new_local_with_key(&false);
+    let switch_state1 = LocalState::new(false);
+    let switch_state2 = LocalState::new(true);
+    let switch_state3 = LocalState::new(true);
+    let switch_state4 = LocalState::new(false);
 
     window.set_widgets(
         VStack::new(vec![

@@ -6,7 +6,7 @@ extern crate unicode_segmentation;
 
 //pub use button::Button;
 //pub use check_box::CheckBox;
-//pub use list::List;
+pub use list::List;
 pub use plain::*;
 //pub use pop_up_button::PopUpButton;
 //pub use radio_button::RadioButton;
@@ -30,7 +30,7 @@ macro_rules! capture {
 
 //mod button;
 //mod check_box;
-//mod list;
+mod list;
 mod plain;
 //mod pop_up_button;
 //mod radio_button;
