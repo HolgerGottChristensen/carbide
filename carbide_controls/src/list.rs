@@ -7,7 +7,7 @@ use carbide_core::state::{F64State, LocalState, State, StateContract, TState, Us
 use carbide_core::widget::{CommonWidget, Delegate, ForEach, Id, Rectangle, SCALE, Scroll, VStack, Widget, WidgetExt, WidgetIter, WidgetIterMut};
 
 #[derive(Clone, Widget)]
-pub struct List<T, U, W> where T: StateContract + 'static, W: Widget + Clone + 'static, U: Delegate<T, W> + 'static {
+pub struct List<T, U> where T: StateContract + 'static, U: Delegate<T> + 'static {
     id: Id,
     child: Box<dyn Widget>,
     delegate: U,
@@ -24,10 +24,9 @@ pub struct List<T, U, W> where T: StateContract + 'static, W: Widget + Clone + '
     start_offset: F64State,
     #[state]
     end_offset: F64State,
-    phantom: PhantomData<W>,
 }
 
-impl<T: StateContract + 'static, W: Widget + Clone + 'static, U: Delegate<T, W> + 'static> List<T, U, W> {
+impl<T: StateContract + 'static, U: Delegate<T> + 'static> List<T, U> {
     pub fn new<V: Into<TState<Vec<T>>>>(model: V, delegate: U) -> Box<Self> {
         let index_offset_state = LocalState::new(0 as usize);
 
@@ -60,7 +59,6 @@ impl<T: StateContract + 'static, W: Widget + Clone + 'static, U: Delegate<T, W> 
             index_offset: index_offset_state.into(),
             start_offset: start_offset.into(),
             end_offset: end_offset.into(),
-            phantom: Default::default(),
         })
     }
 
@@ -276,7 +274,7 @@ impl<T: StateContract + 'static, W: Widget + Clone + 'static, U: Delegate<T, W> 
     */
 }
 
-impl<T: StateContract + 'static, W: Widget + Clone + 'static, U: Delegate<T, W> + 'static> CommonWidget for List<T, U, W> {
+impl<T: StateContract + 'static, U: Delegate<T> + 'static> CommonWidget for List<T, U> {
     fn id(&self) -> Id {
         self.id
     }
@@ -330,4 +328,4 @@ impl<T: StateContract + 'static, W: Widget + Clone + 'static, U: Delegate<T, W> 
     }
 }
 
-impl<T: StateContract + 'static, W: Widget + Clone + 'static, U: Delegate<T, W> + 'static> WidgetExt for List<T, U, W> {}
+impl<T: StateContract + 'static, U: Delegate<T> + 'static> WidgetExt for List<T, U> {}

@@ -1,13 +1,7 @@
-extern crate carbide_core;
-extern crate carbide_wgpu;
-extern crate env_logger;
-extern crate futures;
-
 use carbide_controls::List;
-use carbide_core::color::GREEN;
 use carbide_core::environment::{EnvironmentColor, EnvironmentFontSize};
 use carbide_core::state::{LocalState, State, StringState, TState, UsizeState};
-use carbide_core::text::{FontFamily, FontStyle, FontWeight};
+use carbide_core::text::FontFamily;
 use carbide_core::widget::*;
 use carbide_core::window::TWindow;
 use carbide_wgpu::window::Window;
@@ -18,7 +12,7 @@ fn main() {
     let icon_path = Window::relative_path_to_assets("images/rust_press.png");
 
     let mut window = Window::new(
-        "List Example - Carbide".to_string(),
+        "List Example - Carbide",
         800,
         1200,
         Some(icon_path),
@@ -33,8 +27,8 @@ fn main() {
 
     let list_model_state = LocalState::new(list_model);
 
-    fn delegate(item: StringState, _: UsizeState) -> Frame {
-        *Rectangle::new(vec![
+    fn delegate(item: StringState, _: UsizeState) -> Box<dyn Widget> {
+        Rectangle::new(vec![
             Text::new(item)
         ])
             .fill(EnvironmentColor::Green)

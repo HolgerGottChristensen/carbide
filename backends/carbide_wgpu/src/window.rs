@@ -157,7 +157,7 @@ impl Window {
         res
     }
 
-    pub fn new(title: String, width: u32, height: u32, icon: Option<PathBuf>) -> Self {
+    pub fn new(title: impl Into<String>, width: u32, height: u32, icon: Option<PathBuf>) -> Self {
         let event_loop = EventLoop::new();
 
         let loaded_icon = if let Some(path) = icon {

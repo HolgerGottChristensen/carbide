@@ -1,5 +1,5 @@
 use carbide_core::environment::*;
-use carbide_core::state::{State, TState};
+use carbide_core::state::{State, TState, UsizeState};
 use carbide_core::text::{FontFamily, FontStyle, FontWeight};
 use carbide_core::widget::*;
 use carbide_wgpu::window::*;
@@ -34,6 +34,15 @@ fn main() {
     );
     window.add_font_family(family);
 
+    fn delegate(item: TState<EnvironmentColor>, index: UsizeState) -> Box<dyn Widget> {
+        Rectangle::new(vec![
+            Text::new(index)
+                .font_size(EnvironmentFontSize::LargeTitle)
+        ])
+            .fill(item.value().clone())
+            .frame(100.0, 50.0)
+    }
+
     window.set_widgets(
         VStack::new(vec![
             ForEach::new(vec![
@@ -43,14 +52,7 @@ fn main() {
                 EnvironmentColor::Green,
                 EnvironmentColor::Accent,
                 EnvironmentColor::Purple,
-            ], |item: TState<EnvironmentColor>, index| {
-                *Rectangle::new(vec![
-                    Text::new(index)
-                        .font_size(EnvironmentFontSize::LargeTitle)
-                ])
-                    .fill(item.value().clone())
-                    .frame(100.0, 50.0)
-            })
+            ], delegate)
         ]).spacing(10.0)
     );
 

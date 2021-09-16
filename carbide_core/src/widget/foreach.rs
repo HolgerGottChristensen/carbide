@@ -1,15 +1,14 @@
 use std::marker::PhantomData;
 
 use crate::draw::{Dimension, Position};
-use crate::focus::Focus;
 use crate::prelude::*;
 
-pub trait Delegate<T: StateContract, W: Widget>: Fn(TState<T>, UsizeState) -> W + Clone {}
+pub trait Delegate<T: StateContract>: Fn(TState<T>, UsizeState) -> Box<dyn Widget> + Clone {}
 
-impl<I, T: StateContract, W: Widget> Delegate<T, W> for I where I: Fn(TState<T>, UsizeState) -> W + Clone {}
+impl<I, T: StateContract> Delegate<T> for I where I: Fn(TState<T>, UsizeState) -> Box<dyn Widget> + Clone {}
 
 #[derive(Clone, Widget)]
-pub struct ForEach<T, U, W> where T: StateContract, W: Widget + Clone, U: Delegate<T, W> {
+pub struct ForEach<T, U> where T: StateContract, U: Delegate<T> {
     id: Uuid,
     position: Position,
     dimension: Dimension,
@@ -19,10 +18,9 @@ pub struct ForEach<T, U, W> where T: StateContract, W: Widget + Clone, U: Delega
 
     children: Vec<Box<dyn Widget>>,
     #[state] index_offset: UsizeState,
-    phantom: PhantomData<W>,
 }
 
-impl<T: StateContract + 'static, W: Widget + Clone + 'static, U: Delegate<T, W>> ForEach<T, U, W> {
+impl<T: StateContract + 'static, U: Delegate<T>> ForEach<T, U> {
     pub fn new<K: Into<TState<Vec<T>>>>(model: K, delegate: U) -> Box<Self> {
         let model = model.into();
         let mut map: Vec<Box<dyn Widget>> = vec![];
@@ -49,7 +47,6 @@ impl<T: StateContract + 'static, W: Widget + Clone + 'static, U: Delegate<T, W>>
             delegate,
             children: map,
             index_offset: ValueState::new(0).into(),
-            phantom: Default::default(),
         })
     }
 
@@ -69,7 +66,7 @@ impl<T: StateContract + 'static, W: Widget + Clone + 'static, U: Delegate<T, W>>
     }*/
 }
 
-impl<T: StateContract, W: Widget + Clone, U: Delegate<T, W>> CommonWidget for ForEach<T, U, W> {
+impl<T: StateContract, U: Delegate<T>> CommonWidget for ForEach<T, U> {
     fn id(&self) -> Uuid {
         self.id
     }
@@ -141,4 +138,4 @@ impl<T: StateContract, W: Widget + Clone, U: Delegate<T, W>> CommonWidget for Fo
     }
 }
 
-impl<T: StateContract + 'static, W: Widget + Clone + 'static, U: Delegate<T, W> + 'static> WidgetExt for ForEach<T, U, W> {}
+impl<T: StateContract + 'static, U: Delegate<T> + 'static> WidgetExt for ForEach<T, U> {}
