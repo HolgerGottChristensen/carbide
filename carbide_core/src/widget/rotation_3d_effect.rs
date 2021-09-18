@@ -95,6 +95,7 @@ impl CommonWidget for Rotation3DEffect {
 
 impl Render for Rotation3DEffect {
     fn process_get_primitives(&mut self, primitives: &mut Vec<Primitive>, env: &mut Environment) {
+        self.capture_state(env);
         // I do not understand why the fov needs to be 1.15, because my intuition says it should be 45deg
         let fov = self.fov as f32;
         let perspective = cgmath::perspective(Deg(fov), 1.0, 1.0, 10.0);
@@ -116,6 +117,8 @@ impl Render for Rotation3DEffect {
             kind: PrimitiveKind::Transform(matrix, self.anchor.clone()),
             rect: Rect::new(self.position, self.dimension),
         });
+
+        self.release_state(env);
 
         for child in self.children_mut() {
             child.process_get_primitives(primitives, env);

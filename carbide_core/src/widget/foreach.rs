@@ -1,5 +1,3 @@
-use std::marker::PhantomData;
-
 use crate::draw::{Dimension, Position};
 use crate::prelude::*;
 

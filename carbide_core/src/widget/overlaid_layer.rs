@@ -4,12 +4,10 @@ use crate::prelude::*;
 
 #[derive(Debug, Clone, Widget)]
 #[carbide_exclude(Render, Layout, MouseEvent, KeyboardEvent, OtherEvent)]
-//#[state_sync(sync_state, update_all_widget_state, update_local_widget_state)]
-//#[event(process_keyboard_event, process_mouse_event, process_other_event)]
 pub struct OverlaidLayer {
     id: Uuid,
     child: Box<dyn Widget>,
-    overlay: Option<Box<dyn Widget>>,
+    overlay: Option<Box<Overlay>>,
     overlay_id: String,
     position: Position,
     dimension: Dimension,
@@ -25,7 +23,7 @@ impl OverlaidLayer {
             overlay_id: overlay_id.to_string(),
             position: Position::new(0.0, 0.0),
             dimension: Dimension::new(0.0, 0.0),
-            steal_events_when_some: true,
+            steal_events_when_some: false,
         })
     }
 }
@@ -42,7 +40,7 @@ impl MouseEventHandler for OverlaidLayer {
             overlay.process_mouse_event(event, consumed, env);
             if *consumed { return (); }
 
-            if self.steal_events_when_some {
+            if !self.steal_events_when_some {
                 for child in self.children_direct() {
                     child.process_mouse_event(event, &consumed, env);
                     if *consumed {
@@ -69,7 +67,7 @@ impl KeyboardEventHandler for OverlaidLayer {
 
         if let Some(overlay) = &mut self.overlay {
             overlay.process_keyboard_event(event, env);
-            if self.steal_events_when_some {
+            if !self.steal_events_when_some {
                 for child in self.children_direct() {
                     child.process_keyboard_event(event, env);
                 }
@@ -90,7 +88,7 @@ impl OtherEventHandler for OverlaidLayer {
 
         if let Some(overlay) = &mut self.overlay {
             overlay.process_other_event(event, env);
-            if self.steal_events_when_some {
+            if !self.steal_events_when_some {
                 for child in self.children_direct() {
                     child.process_other_event(event, env);
                 }
@@ -106,28 +104,7 @@ impl OtherEventHandler for OverlaidLayer {
 impl Layout for OverlaidLayer {
     fn calculate_size(&mut self, requested_size: Dimension, env: &mut Environment) -> Dimension {
         self.dimension = self.child.calculate_size(requested_size, env);
-
-        if let Some(overlay) = env.overlay(&self.overlay_id) {
-            self.overlay = overlay;
-        }
-
-        if let Some(overlay) = &mut self.overlay {
-            overlay.calculate_size(requested_size, env);
-        }
-
         self.dimension
-    }
-
-    fn position_children(&mut self) {
-        let positioning = BasicLayouter::Center.positioner();
-        let position = self.position;
-        let dimension = self.dimension;
-
-        positioning(position, dimension, &mut self.child);
-        self.child.position_children();
-        if let Some(overlay) = &mut self.overlay {
-            overlay.position_children();
-        }
     }
 }
 
@@ -191,8 +168,27 @@ impl Render for OverlaidLayer {
             child.process_get_primitives(primitives, env);
         }
 
-        // We should not need to check for overlays in the env here,
-        // because we always calculate size before and we check there.
+        if let Some(overlay) = env.overlay(&self.overlay_id) {
+            match overlay {
+                OverlayValue::Insert(mut value) => {
+                    value.set_showing(true);
+                    self.overlay = Some(value)
+                }
+                OverlayValue::Update(position, dimension) => {
+                    if let Some(overlay) = &mut self.overlay {
+                        overlay.set_position(position);
+                        overlay.calculate_size(dimension, env);
+                        overlay.position_children();
+                    }
+                }
+                OverlayValue::Remove => {
+                    if let Some(overlay) = &mut self.overlay {
+                        overlay.set_showing(false);
+                    }
+                    self.overlay = None;
+                }
+            }
+        }
 
         if let Some(t) = &mut self.overlay {
             t.process_get_primitives(primitives, env);
@@ -201,3 +197,10 @@ impl Render for OverlaidLayer {
 }
 
 impl WidgetExt for OverlaidLayer {}
+
+#[derive(Debug, Clone)]
+pub enum OverlayValue {
+    Insert(Box<Overlay>),
+    Update(Position, Dimension),
+    Remove,
+}

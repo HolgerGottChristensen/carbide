@@ -18,6 +18,7 @@ pub use self::if_else::*;
 pub use self::image::*;
 pub use self::offset::*;
 pub use self::overlaid_layer::*;
+pub use self::overlay::*;
 pub use self::padding::*;
 pub use self::rotation_3d_effect::*;
 pub use self::scroll::*;
@@ -55,6 +56,7 @@ mod rotation_3d_effect;
 mod transform;
 mod blur;
 mod filter;
+mod overlay;
 
 pub type Id = uuid::Uuid;
 pub type ColoredPoint = (Position, crate::color::Rgba);
