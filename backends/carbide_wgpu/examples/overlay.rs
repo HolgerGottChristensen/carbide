@@ -7,10 +7,9 @@ use carbide_core::event::{Key, KeyboardEvent, KeyboardEventHandler};
 use carbide_core::layout::Layout;
 use carbide_core::prelude::{Primitive, Render};
 use carbide_core::state::{BoolState, LocalState, MapOwnedState};
-use carbide_core::text::{FontFamily, PolarBearMarkup};
+use carbide_core::text::FontFamily;
 use carbide_core::widget::*;
 use carbide_wgpu::window::*;
-
 
 fn main() {
     env_logger::init();
@@ -33,7 +32,7 @@ fn main() {
 
     window.set_widgets(
         VStack::new(vec![
-            Text::new(MapOwnedState::new(showing_state.clone(), |a: &bool, _: &Environment| format!("Currently showing overlay: {}", *a))),
+            Text::new(showing_state.mapped(|a: &bool| format!("Currently showing overlay: {}", *a))),
             ZStack::new(vec![
                 Rectangle::new(vec![Over::new(showing_state)]).fill(EnvironmentColor::Green).frame(200.0, 200.0),
                 Rectangle::new(vec![]).fill(EnvironmentColor::Red).frame(100.0, 100.0),

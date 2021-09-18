@@ -1,8 +1,10 @@
 use std::fmt;
 use std::fmt::{Debug, Formatter};
 
+use dyn_clone::DynClone;
+
 use crate::prelude::Environment;
-use crate::state::StateContract;
+use crate::state::{Map, MapOwnedState, StateContract, TState};
 pub use crate::state::State;
 use crate::state::value_cell::{ValueRef, ValueRefMut};
 
@@ -15,14 +17,13 @@ impl<T: StateContract> WidgetState<T> {
 }
 
 impl<T: StateContract + 'static> WidgetState<T> {
-    /*pub fn mapped<U, M1, M2>(self, map: M1, map_mut: M2) -> WidgetState<U>
-        where
-            U: StateContract + 'static,
-            M1: Map<T, U> + 'static,
-            M2: MapMut<T, U> + 'static,
-    {
-        MapState::new(self.0, map, map_mut).into()
-    }*/
+    pub fn mapped<TO: StateContract + Default + 'static, M: MapNoEnv<T, TO> + Clone>(&self, map: M) -> TState<TO> {
+        MapOwnedState::<T, TO>::new(self.clone(), move |s: &T, _: &_| { map(s) }).into()
+    }
+
+    pub fn mapped_env<TO: StateContract + Default + 'static, M: Map<T, TO>>(&self, map: M) -> TState<TO> {
+        MapOwnedState::<T, TO>::new(self.clone(), map).into()
+    }
 }
 
 impl<T: StateContract> Debug for WidgetState<T> {
@@ -60,3 +61,13 @@ impl<T: StateContract> State<T> for WidgetState<T> {
         self.0.value_mut()
     }
 }
+
+pub trait MapNoEnv<FROM: StateContract, TO: StateContract>:
+Fn(&FROM) -> TO + DynClone + 'static
+{}
+
+impl<T, FROM: StateContract, TO: StateContract> MapNoEnv<FROM, TO> for T where
+    T: Fn(&FROM) -> TO + DynClone + 'static
+{}
+
+dyn_clone::clone_trait_object!(<FROM: StateContract, TO: StateContract> MapNoEnv<FROM, TO>);

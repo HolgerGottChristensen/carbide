@@ -13,6 +13,7 @@ pub use self::local_state::LocalState;
 pub use self::map_owned_state::*;
 pub use self::map_state::*;
 pub use self::state::State;
+pub use self::state_ext::*;
 pub use self::state_key::StateKey;
 pub use self::state_sync::StateSync;
 pub use self::value_state::ValueState;
@@ -32,6 +33,7 @@ mod value_cell;
 mod value_state;
 mod vec_state;
 mod widget_state;
+mod state_ext;
 
 pub(crate) type InnerState<T> = Rc<ValueCell<T>>;
 
