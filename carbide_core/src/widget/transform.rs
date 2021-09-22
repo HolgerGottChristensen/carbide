@@ -159,7 +159,7 @@ impl Render for Transform {
             rect: Rect::new(self.position, self.dimension),
         });
 
-        for child in self.children_mut() {
+        for mut child in self.children_mut() {
             child.process_get_primitives(primitives, env);
         }
 

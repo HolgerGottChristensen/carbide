@@ -88,7 +88,7 @@ impl Render for Filter {
             self.filter_id = Some(env.insert_filter(self.filter.clone()));
         }
 
-        for child in self.children_mut() {
+        for mut child in self.children_mut() {
             child.process_get_primitives(primitives, env);
         }
 

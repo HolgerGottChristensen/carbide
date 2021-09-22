@@ -114,7 +114,7 @@ impl carbide_core::window::TWindow for Window {
     }
 
     fn set_widgets(&mut self, base_widget: Box<dyn Widget>) {
-        self.ui.widgets = Rectangle::new(vec![OverlaidLayer::new("controls_popup_layer", base_widget)])
+        self.ui.widgets = Rectangle::new(vec![OverlaidLayer::new("controls_popup_layer", base_widget).steal_events()])
             .fill(EnvironmentColor::SystemBackground);
     }
 }

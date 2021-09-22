@@ -34,12 +34,17 @@ pub struct Text {
 impl Text {
     pub fn new(
         string: String,
-        style: TextStyle,
+        mut style: TextStyle,
         generator: &dyn TextSpanGenerator,
         env: &mut Environment,
     ) -> Text {
         let spans = generator.generate(&string, &style, env);
 
+        if !generator.store_color() {
+            style.color = None;
+        }
+
+        //println!("Inserting text \"{}\" with style: {:#?}", string, style);
         Text {
             latest_requested_offset: Default::default(),
             latest_requested_size: Dimension::new(-1.0, -1.0),
@@ -51,7 +56,6 @@ impl Text {
             justify: Justify::Left,
             needs_to_update_atlas: true,
             already_added_to_atlas: false,
-
             string_that_generated_this: string,
             style_that_generated_this: style,
         }
@@ -59,6 +63,10 @@ impl Text {
 
     pub fn string_that_generated_this(&self) -> &String {
         &self.string_that_generated_this
+    }
+
+    pub fn style_that_generated_this(&self) -> &TextStyle {
+        &self.style_that_generated_this
     }
 
     pub fn first_glyphs(&self) -> Vec<Glyph> {

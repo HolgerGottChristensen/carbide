@@ -1,7 +1,4 @@
 //! A module encompassing the primitive 2D shape widgets.
-use std::fmt;
-use std::fmt::Debug;
-
 use lyon::lyon_tessellation::path::path::Builder;
 use lyon::math::Rect;
 use lyon::tessellation::{
@@ -54,11 +51,11 @@ pub trait Shape: Widget + 'static {
 dyn_clone::clone_trait_object!(Shape);
 impl Widget for Box<dyn Shape> {}
 
-impl Debug for dyn Shape {
+/*impl Debug for dyn Shape {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "Shape: {}", self.id())
     }
-}
+}*/
 
 pub fn tessellate(shape: &mut dyn Shape, rectangle: &Rect, path: &dyn Fn(&mut Builder, &Rect)) {
     match shape.get_shape_style() {

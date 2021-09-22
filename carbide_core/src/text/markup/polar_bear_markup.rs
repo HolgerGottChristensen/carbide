@@ -411,6 +411,10 @@ impl TextSpanGenerator for PolarBearMarkup {
 
         spans
     }
+
+    fn store_color(&self) -> bool {
+        true
+    }
 }
 
 impl Into<Box<dyn TextSpanGenerator>> for PolarBearMarkup {

@@ -26,6 +26,11 @@ impl OverlaidLayer {
             steal_events_when_some: false,
         })
     }
+
+    pub fn steal_events(mut self) -> Box<Self> {
+        self.steal_events_when_some = true;
+        Box::new(self)
+    }
 }
 
 impl MouseEventHandler for OverlaidLayer {
@@ -41,7 +46,7 @@ impl MouseEventHandler for OverlaidLayer {
             if *consumed { return (); }
 
             if !self.steal_events_when_some {
-                for child in self.children_direct() {
+                for mut child in self.children_direct() {
                     child.process_mouse_event(event, &consumed, env);
                     if *consumed {
                         return ();
@@ -49,7 +54,7 @@ impl MouseEventHandler for OverlaidLayer {
                 }
             }
         } else {
-            for child in self.children_direct() {
+            for mut child in self.children_direct() {
                 child.process_mouse_event(event, &consumed, env);
                 if *consumed {
                     return ();
@@ -68,12 +73,12 @@ impl KeyboardEventHandler for OverlaidLayer {
         if let Some(overlay) = &mut self.overlay {
             overlay.process_keyboard_event(event, env);
             if !self.steal_events_when_some {
-                for child in self.children_direct() {
+                for mut child in self.children_direct() {
                     child.process_keyboard_event(event, env);
                 }
             }
         } else {
-            for child in self.children_direct() {
+            for mut child in self.children_direct() {
                 child.process_keyboard_event(event, env);
             }
         }
@@ -89,12 +94,12 @@ impl OtherEventHandler for OverlaidLayer {
         if let Some(overlay) = &mut self.overlay {
             overlay.process_other_event(event, env);
             if !self.steal_events_when_some {
-                for child in self.children_direct() {
+                for mut child in self.children_direct() {
                     child.process_other_event(event, env);
                 }
             }
         } else {
-            for child in self.children_direct() {
+            for mut child in self.children_direct() {
                 child.process_other_event(event, env);
             }
         }
@@ -164,7 +169,7 @@ impl CommonWidget for OverlaidLayer {
 
 impl Render for OverlaidLayer {
     fn process_get_primitives(&mut self, primitives: &mut Vec<Primitive>, env: &mut Environment) {
-        for child in self.children_mut() {
+        for mut child in self.children_mut() {
             child.process_get_primitives(primitives, env);
         }
 

@@ -8,7 +8,7 @@ use carbide_core::widget::{CommonWidget, HStack, Id, Rectangle, Spacer, Text, Wi
 
 use crate::PlainButton;
 
-#[derive(Clone, Widget)]
+#[derive(Debug, Clone, Widget)]
 //#[focusable(block_focus)]
 pub struct PlainSwitch {
     id: Id,

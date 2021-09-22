@@ -1,5 +1,8 @@
+use std::fmt::Debug;
+
 use dyn_clone::DynClone;
 
+use carbide_core::__private::Formatter;
 use carbide_core::draw::{Dimension, Position};
 use carbide_core::environment::Environment;
 use carbide_core::event::{Key, KeyboardEvent, KeyboardEventHandler, MouseButton, MouseEvent, MouseEventHandler};
@@ -199,6 +202,14 @@ impl CommonWidget for PlainButton {
 
     fn set_dimension(&mut self, dimension: Dimension) {
         self.dimension = dimension
+    }
+}
+
+impl Debug for PlainButton {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("PlainButton")
+            .field("child", &self.child)
+            .finish()
     }
 }
 

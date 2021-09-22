@@ -52,7 +52,7 @@ impl Layout for HStack {
         let mut size_for_children =
             Dimension::new(requested_size.width - spacing_total, requested_size.height);
 
-        let mut children_flexibilty: Vec<(u32, &mut Box<dyn Widget>)> = self
+        let mut children_flexibilty: Vec<(u32, WidgetValMut)> = self
             .children_mut()
             .filter(|m| m.flag() != Flags::SPACER)
             .map(|child| (child.flexibility(), child))
@@ -63,7 +63,7 @@ impl Layout for HStack {
         let mut max_height = 0.0;
         let mut total_width = 0.0;
 
-        for (_, child) in children_flexibilty {
+        for (_, mut child) in children_flexibilty {
             let size_for_child = Dimension::new(
                 size_for_children.width / number_of_children_that_needs_sizing,
                 size_for_children.height,
@@ -90,7 +90,7 @@ impl Layout for HStack {
             .count() as f64;
         let rest_space = requested_size.width - total_width - spacing_total;
 
-        for spacer in self.children_mut().filter(|m| m.flag() == Flags::SPACER) {
+        for mut spacer in self.children_mut().filter(|m| m.flag() == Flags::SPACER) {
             let chosen_size = spacer.calculate_size(
                 Dimension::new(rest_space / spacer_count, 0.0),
                 env,
@@ -117,14 +117,16 @@ impl Layout for HStack {
 
         let spacers: Vec<bool> = self.children().map(|n| n.flag() == Flags::SPACER).collect();
 
-        for (n, child) in &mut self.children_mut().enumerate() {
+        for (n, mut child) in &mut self.children_mut().enumerate() {
             match cross_axis_alignment {
                 CrossAxisAlignment::Start => child.set_y(position.y),
                 CrossAxisAlignment::Center => {
-                    child.set_y(position.y + dimension.height / 2.0 - child.height() / 2.0)
+                    let height = child.height();
+                    child.set_y(position.y + dimension.height / 2.0 - height / 2.0)
                 }
                 CrossAxisAlignment::End => {
-                    child.set_y(position.y + dimension.height - child.height())
+                    let height = child.height();
+                    child.set_y(position.y + dimension.height - height)
                 }
             }
 

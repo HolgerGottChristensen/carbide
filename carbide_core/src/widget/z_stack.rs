@@ -31,7 +31,7 @@ impl ZStack {
 
 impl Layout for ZStack {
     fn calculate_size(&mut self, requested_size: Dimension, env: &mut Environment) -> Dimension {
-        let mut children_flexibility: Vec<(u32, &mut Box<dyn Widget>)> = self
+        let mut children_flexibility: Vec<(u32, WidgetValMut)> = self
             .children_mut()
             .map(|child| (child.flexibility(), child))
             .collect();
@@ -41,7 +41,7 @@ impl Layout for ZStack {
         let mut max_width = 0.0;
         let mut max_height = 0.0;
 
-        for (_, child) in children_flexibility {
+        for (_, mut child) in children_flexibility {
             let chosen_size = child.calculate_size(requested_size, env);
 
             if chosen_size.width > max_width {
@@ -62,8 +62,8 @@ impl Layout for ZStack {
         let position = self.position;
         let dimension = self.dimension;
 
-        for child in self.children_mut() {
-            positioning(position, dimension, child);
+        for mut child in self.children_mut() {
+            positioning(position, dimension, child.deref_mut());
             child.position_children();
         }
     }

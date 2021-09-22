@@ -128,21 +128,24 @@ impl Text {
     }
 
     pub fn get_style(&self) -> TextStyle {
+        let color = if self.text_span_generator.store_color() {
+            Some(self.color.value().deref().clone())
+        } else {
+            None
+        };
         TextStyle {
             font_family: self.font_family.clone(),
             font_size: *self.font_size.value(),
             font_style: self.font_style,
             font_weight: self.font_weight,
             text_decoration: self.text_decoration.clone(),
-            color: Some(self.color.value().deref().clone()),
+            color,
         }
     }
 }
 
 impl Layout for Text {
     fn calculate_size(&mut self, requested_size: Dimension, env: &mut Environment) -> Dimension {
-        let style = self.get_style();
-
         if let None = self.internal_text {
             let text = self.text.value().deref().clone();
             let style = self.get_style();
@@ -154,9 +157,10 @@ impl Layout for Text {
             ))
         }
 
+        let style = self.get_style();
         if let Some(internal) = &mut self.internal_text {
             let text = self.text.value().deref().clone();
-            if internal.string_that_generated_this() != &text {
+            if internal.string_that_generated_this() != &text || internal.style_that_generated_this() != &style {
                 *internal = InternalText::new(text, style, self.text_span_generator.borrow(), env);
             }
             self.dimension = internal.calculate_size(requested_size, env);
@@ -186,6 +190,7 @@ impl Render for Text {
                 } else {
                     default_color
                 };
+
                 let kind = PrimitiveKind::Text {
                     color,
                     text: glyphs,

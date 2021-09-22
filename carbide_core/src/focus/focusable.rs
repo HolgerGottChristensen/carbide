@@ -65,7 +65,7 @@ pub trait Focusable: CommonWidget + StateSync {
 
         self.release_state(env);
 
-        for child in self.children_direct() {
+        for mut child in self.children_direct() {
             if child.process_focus_request(event, focus_request, env) {
                 any_focus = true;
             }
@@ -104,7 +104,7 @@ pub trait Focusable: CommonWidget + StateSync {
 
         self.release_state(env);
 
-        for child in self.children_direct() {
+        for mut child in self.children_direct() {
             focus_child = child.process_focus_next(event, focus_request, focus_child, env);
         }
 
@@ -138,7 +138,7 @@ pub trait Focusable: CommonWidget + StateSync {
 
         self.release_state(env);
 
-        for child in self.children_direct_rev() {
+        for mut child in self.children_direct_rev() {
             focus_child = child.process_focus_previous(event, focus_request, focus_child, env);
         }
 

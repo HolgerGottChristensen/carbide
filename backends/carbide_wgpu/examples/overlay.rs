@@ -6,7 +6,7 @@ use carbide_core::environment::*;
 use carbide_core::event::{Key, KeyboardEvent, KeyboardEventHandler};
 use carbide_core::layout::Layout;
 use carbide_core::prelude::{Primitive, Render};
-use carbide_core::state::{BoolState, LocalState, MapOwnedState};
+use carbide_core::state::{BoolState, LocalState, MapOwnedState, StateSync};
 use carbide_core::text::FontFamily;
 use carbide_core::widget::*;
 use carbide_wgpu::window::*;
@@ -31,21 +31,22 @@ fn main() {
     let showing_state: BoolState = LocalState::new(false).into();
 
     window.set_widgets(
-        VStack::new(vec![
-            Text::new(showing_state.mapped(|a: &bool| format!("Currently showing overlay: {}", *a))),
-            ZStack::new(vec![
-                Rectangle::new(vec![Over::new(showing_state)]).fill(EnvironmentColor::Green).frame(200.0, 200.0),
-                Rectangle::new(vec![]).fill(EnvironmentColor::Red).frame(100.0, 100.0),
-            ]),
-            Text::new("Press space to toggle the overlay (yellow rectangle)"),
-        ])
+        OverlaidLayer::new("overlay",
+                           VStack::new(vec![
+                               Text::new(showing_state.mapped(|a: &bool| format!("Currently showing overlay: {}", *a))),
+                               ZStack::new(vec![
+                                   Rectangle::new(vec![Over::new(showing_state)]).fill(EnvironmentColor::Green).frame(200.0, 200.0),
+                                   Rectangle::new(vec![Text::new("Test").foreground_color(EnvironmentColor::Blue)]).fill(EnvironmentColor::Red).frame(100.0, 100.0),
+                               ]),
+                               Text::new("Press space to toggle the overlay (yellow rectangle)"),
+                           ]))
     );
 
     window.launch();
 }
 
 #[derive(Clone, Debug, Widget)]
-#[carbide_exclude(KeyboardEvent, Layout, Render)]
+#[carbide_exclude(KeyboardEvent, Layout)]
 struct Over {
     id: Id,
     position: Position,
@@ -61,7 +62,10 @@ impl Over {
                 position: Position::new(0.0, 0.0),
                 dimension: Dimension::new(100.0, 100.0),
                 overlay_widget: Overlay::new(
-                    Rectangle::new(vec![])
+                    Rectangle::new(vec![
+                        Text::new("Over")
+                            .foreground_color(EnvironmentColor::Red)
+                    ])
                         .fill(EnvironmentColor::Yellow)
                         .frame(50.0, 50.0)
                 ).showing(showing),
@@ -77,9 +81,9 @@ impl KeyboardEventHandler for Over {
                 if *k == Key::Space {
                     if !self.overlay_widget.is_showing() {
                         self.overlay_widget.set_showing(true);
-                        env.add_overlay("controls_popup_layer", OverlayValue::Insert(self.overlay_widget.clone()))
+                        env.add_overlay("overlay", OverlayValue::Insert(self.overlay_widget.clone()))
                     } else {
-                        env.add_overlay("controls_popup_layer", OverlayValue::Remove)
+                        env.add_overlay("overlay", OverlayValue::Remove)
                     }
                 }
             }
@@ -108,13 +112,13 @@ impl Layout for Over {
     }
 }
 
-impl Render for Over {
+/*impl Render for Over {
     fn process_get_primitives(&mut self, _: &mut Vec<Primitive>, env: &mut Environment) {
         if self.overlay_widget.is_showing() {
-            env.add_overlay("controls_popup_layer", OverlayValue::Update(self.overlay_widget.position(), self.overlay_widget.dimension()));
+            env.add_overlay("overlay", OverlayValue::Update(self.overlay_widget.position(), self.overlay_widget.dimension()));
         }
     }
-}
+}*/
 
 impl CommonWidget for Over {
     fn id(&self) -> Id {

@@ -1,3 +1,6 @@
+use std::fmt::Debug;
+
+use crate::__private::Formatter;
 use crate::draw::{Dimension, Position};
 use crate::prelude::*;
 
@@ -133,6 +136,14 @@ impl<T: StateContract, U: Delegate<T>> CommonWidget for ForEach<T, U> {
 
     fn set_dimension(&mut self, dimensions: Dimension) {
         self.dimension = dimensions
+    }
+}
+
+impl<T: StateContract, U: Delegate<T>> Debug for ForEach<T, U> {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("ForEach")
+            .field("children", &self.children)
+            .finish()
     }
 }
 

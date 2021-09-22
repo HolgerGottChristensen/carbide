@@ -1,3 +1,5 @@
+use std::ops::DerefMut;
+
 use crate::draw::Dimension;
 use crate::prelude::Environment;
 use crate::widget::CommonWidget;
@@ -11,14 +13,14 @@ pub trait Layout: CommonWidget {
     /// The default behavior is to calculate the size of the first child and return that as the
     /// chosen size. If no child are present, the widget will chose the requested size.
     fn calculate_size(&mut self, requested_size: Dimension, env: &mut Environment) -> Dimension {
-        if let Some(first_child) = self.children_mut().next() {
+        let choosen = if let Some(mut first_child) = self.children_mut().next() {
             let dimension = first_child.calculate_size(requested_size, env);
-            self.set_dimension(dimension);
             dimension
         } else {
-            self.set_dimension(requested_size);
             requested_size
-        }
+        };
+        self.set_dimension(choosen);
+        choosen
     }
 
     /// This method positions the children of the widget. When positioning, we use the alignment of
@@ -29,8 +31,8 @@ pub trait Layout: CommonWidget {
         let positioning = self.alignment().positioner();
         let position = self.position();
         let dimension = self.dimension();
-        if let Some(first_child) = self.children_mut().next() {
-            positioning(position, dimension, first_child);
+        if let Some(mut first_child) = self.children_mut().next() {
+            positioning(position, dimension, first_child.deref_mut());
             first_child.position_children();
         }
     }

@@ -6,7 +6,7 @@ use crate::text::font_weight::FontWeight;
 use crate::text::text_decoration::TextDecoration;
 
 /// The text style for a piece of text
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq)]
 pub struct TextStyle {
     /// A key to get the font family from the env.
     pub font_family: String,

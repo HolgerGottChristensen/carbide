@@ -14,7 +14,7 @@ use crate::carbide_core::prelude::State;
 use crate::PlainButton;
 use crate::types::*;
 
-#[derive(Clone, Widget)]
+#[derive(Debug, Clone, Widget)]
 //#[focusable(block_focus)]
 pub struct PlainCheckBox {
     id: Id,

@@ -2,6 +2,7 @@ use std::fmt::Debug;
 use std::rc::Rc;
 
 use crate::Color;
+use crate::draw::{Dimension, Position};
 use crate::focus::Focus;
 pub use crate::state::value_cell::{ValueCell, ValueRef, ValueRefMut};
 
@@ -45,6 +46,8 @@ pub type UsizeState = TState<usize>;
 pub type BoolState = TState<bool>;
 pub type F64State = TState<f64>;
 pub type FocusState = TState<Focus>;
+pub type PositionState = TState<Position>;
+pub type DimensionState = TState<Dimension>;
 pub type TState<T> = WidgetState<T>;
 
 pub trait StateContract: Clone + Debug {}

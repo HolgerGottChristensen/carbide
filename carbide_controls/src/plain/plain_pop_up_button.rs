@@ -1,93 +1,114 @@
-use carbide_core::draw::Dimension;
-use carbide_core::event::event_handler::{KeyboardEvent, MouseEvent};
-use carbide_core::input::Key;
-use carbide_core::prelude::EnvironmentColor;
+use carbide_core::draw::{Dimension, Position};
+use carbide_core::environment::Environment;
+use carbide_core::event::{Button, KeyboardEvent, MouseEvent, MouseEventHandler};
+use carbide_core::flags::Flags;
+use carbide_core::focus::{Focus, Refocus};
+use carbide_core::layout::Layout;
+use carbide_core::prelude::{EnvironmentColor, Primitive};
 use carbide_core::prelude::Uuid;
-use carbide_core::state::state::State;
-use carbide_core::state::TupleState2;
-use carbide_core::state::vec_state::VecState;
+use carbide_core::render::Render;
+use carbide_core::state::{BoolState, ColorState, FocusState, LocalState, MapState, State, StateContract, StateKey, TState, UsizeState, ValueState};
 use carbide_core::widget::*;
 
-use crate::plain::plain_pop_up_button_popup::PlainPopUpButtonPopUp;
-use crate::PlainButton;
+use crate::{List, PlainButton};
 
-#[derive(Clone, Widget)]
-//#[focusable(block_focus)]
-//#[event(handle_keyboard_event, handle_mouse_event)]
-//#[state_sync(update_all_widget_state)]
-pub struct PlainPopUpButton<T, GS>
-    where
-        GS: GlobalStateContract,
-        T: StateContract + 'static,
-{
+#[derive(Debug, Clone, Widget)]
+#[carbide_exclude(Render, Layout, MouseEvent)]
+pub struct PlainPopUpButton<T> where T: StateContract + PartialEq {
     id: Id,
-    #[state]
-    focus: Box<dyn State<Focus, GS>>,
-    child: Box<dyn Widget<GS>>,
-    popup_display_item: Option<
-        fn(
-            selected_item: Box<dyn State<T, GS>>,
-            selected_index: Box<dyn State<usize, GS>>,
-            index: Box<dyn State<usize, GS>>,
-            hovered: Box<dyn State<bool, GS>>,
-        ) -> Box<dyn Widget<GS>>,
-    >,
-    position: Point,
-    dimension: Dimensions,
-    popup_id: Id,
+    #[state] focus: FocusState,
+    child: Box<dyn Widget>,
+    popup_delegate: fn(
+        selected_item: TState<T>,
+        item: TState<T>,
+        index: UsizeState,
+        hovered: BoolState,
+    ) -> Box<dyn Widget>,
+    position: Position,
+    dimension: Dimension,
     popup_list_spacing: f64,
+    popup: Box<Overlay>,
     #[state]
-    opened: Box<dyn State<bool, GS>>,
+    selected_item: TState<T>,
     #[state]
-    selected_state: Box<dyn State<usize, GS>>,
-    #[state]
-    selected_item: Box<dyn State<T, GS>>,
-    #[state]
-    model: Box<dyn State<Vec<T>, GS>>,
+    model: TState<Vec<T>>,
 }
 
-impl<T: StateContract + 'static, GS: GlobalStateContract> PlainPopUpButton<T, GS> {
-    pub fn new(
-        model: Box<dyn State<Vec<T>, GS>>,
-        selected_state: Box<dyn State<usize, GS>>,
+impl<T: StateContract + PartialEq + 'static> PlainPopUpButton<T> {
+    pub fn new<M: Into<TState<Vec<T>>>, S: Into<TState<T>>>(
+        model: M,
+        selected_state: S,
     ) -> Box<Self> {
-        let opened = CommonState::new_local_with_key(&false);
+        let model = model.into();
+        let selected_item = selected_state.into();
+        let selected_item_del = selected_item.clone();
 
-        let start_item = model.get_latest_value().first().unwrap();
+        let focus_model: TState<Vec<bool>> = LocalState::new(vec![false; model.value().len()]).into();
 
-        let selected_item =
-            VecState::new(model.clone(), selected_state.clone(), start_item.clone());
+        let focus: FocusState = LocalState::new(Focus::Unfocused).into();
+        let text = selected_item.mapped(|a: &T| format!("{:?}", a));
 
-        let text = selected_item.clone().mapped(|a| format!("{:?}", a));
-
-        let child = PlainButton::<(bool, T), GS>::new(Rectangle::new(vec![Text::new(text)]))
-            .local_state(TupleState2::new(opened.clone(), selected_item.clone()))
-            .on_click(|myself, _, _| {
-                let (opened, selected_item) = myself.get_local_state().get_latest_value_mut();
-                *opened = true;
-                println!(
-                    "Opened popup. The currently selected item is: {:?}",
-                    selected_item
-                );
+        let delegate = move |item: TState<T>, index: UsizeState| -> Box<dyn Widget> {
+            let hover_state = focus_model.index(index);
+            let color = hover_state.mapped_env(|hovered: &bool, env: &Environment| {
+                if *hovered {
+                    env.get_color(&StateKey::Color(EnvironmentColor::Pink)).unwrap()
+                } else {
+                    env.get_color(&StateKey::Color(EnvironmentColor::Gray)).unwrap()
+                }
             });
+
+            PlainButton::new(
+                Rectangle::new(vec![
+                    Text::new(item.mapped(|a: &T| format!("{:?}", *a)))
+                ]).fill(color)
+            )
+                .hover(hover_state)
+                .on_click(capture!([selected_item_del, item], |env: &mut Environment| {
+                    *selected_item_del = item.clone();
+                    env.add_overlay("controls_popup_layer", OverlayValue::Remove);
+                }))
+                .frame(200.0, 30.0)
+        };
+
+        let popup = Overlay::new(
+            PlainButton::new(
+                List::new(model.clone(), delegate)
+                    .spacing(0.0)
+                    .clip()
+            )
+                .on_click_outside(capture!([], |env: &mut Environment|{
+                    env.add_overlay("controls_popup_layer", OverlayValue::Remove);
+                }))
+                .frame(200.0, 200.0)
+        );
+
+        let child = Rectangle::new(vec![Text::new(text)]);
 
         Box::new(PlainPopUpButton {
             id: Id::new_v4(),
-            focus: Box::new(CommonState::new_local_with_key(&Focus::Focused)),
+            focus,
             child,
-            popup_display_item: None,
-            position: [0.0, 0.0],
-            dimension: [0.0, 0.0],
-            popup_id: Uuid::new_v4(),
+            popup_delegate: Self::default_popup_item_delegate,
+            position: Position::new(0.0, 0.0),
+            dimension: Dimension::new(100.0, 100.0),
             popup_list_spacing: 0.0,
-            opened: Box::new(opened),
-            selected_state,
+            popup,
             selected_item,
             model,
         })
     }
 
-    fn handle_mouse_event(
+    fn default_popup_item_delegate(
+        selected_item: TState<T>,
+        item: TState<T>,
+        index: UsizeState,
+        hovered: BoolState,
+    ) -> Box<dyn Widget> {
+        Rectangle::new(vec![]).fill(EnvironmentColor::Purple).frame(20.0, 20.0)
+    }
+
+    /*fn handle_mouse_event(
         &mut self,
         event: &MouseEvent,
         _: &bool,
@@ -130,9 +151,9 @@ impl<T: StateContract + 'static, GS: GlobalStateContract> PlainPopUpButton<T, GS
             },
             _ => {}
         }
-    }
+    }*/
 
-    pub fn display_item(
+    /*pub fn display_item(
         mut self,
         item: fn(
             selected_item: Box<dyn State<T, GS>>,
@@ -165,14 +186,14 @@ impl<T: StateContract + 'static, GS: GlobalStateContract> PlainPopUpButton<T, GS
             hovered: Box<dyn State<bool, GS>>,
         ) -> Box<dyn Widget<GS>>,
     ) -> Box<Self> {
-        self.popup_display_item = Some(item);
+        self.popup_function = Some(item);
 
         Box::new(self)
-    }
+    }*/
 
-    fn update_all_widget_state(&mut self, env: &mut Environment<GS>, _: &GS) {
+    /*fn update_all_widget_state(&mut self, env: &mut Environment<GS>, _: &GS) {
         if *self.opened.get_latest_value() {
-            let display_item = if let Some(display_item_function) = self.popup_display_item {
+            let display_item = if let Some(display_item_function) = self.popup_function {
                 display_item_function
             } else {
                 |item: Box<dyn State<T, GS>>,
@@ -230,12 +251,26 @@ impl<T: StateContract + 'static, GS: GlobalStateContract> PlainPopUpButton<T, GS
 
             env.add_overlay("controls_popup_layer", overlay);
         }
+    }*/
+}
+
+impl<T: StateContract + PartialEq> MouseEventHandler for PlainPopUpButton<T> {
+    // Implementing this instead of handle_mouse_event makes all the children not receive events.
+    fn process_mouse_event(&mut self, event: &MouseEvent, _: &bool, env: &mut Environment) {
+        match event {
+            MouseEvent::Click(_, position, _) => {
+                if self.is_inside(*position) {
+                    self.popup.set_showing(true);
+                    //println!("{:#?}", self.popup);
+                    env.add_overlay("controls_popup_layer", OverlayValue::Insert(self.popup.clone()));
+                }
+            }
+            _ => ()
+        }
     }
 }
 
-impl<T: StateContract + 'static, GS: GlobalStateContract> CommonWidget<GS>
-for PlainPopUpButton<T, GS>
-{
+impl<T: StateContract + PartialEq> CommonWidget for PlainPopUpButton<T> {
     fn id(&self) -> Id {
         self.id
     }
@@ -264,23 +299,27 @@ for PlainPopUpButton<T, GS>
         }
     }
 
-    fn proxied_children(&mut self) -> WidgetIterMut {
+    fn children_direct(&mut self) -> WidgetIterMut {
         WidgetIterMut::single(&mut self.child)
     }
 
-    fn proxied_children_rev(&mut self) -> WidgetIterMut {
+    fn children_direct_rev(&mut self) -> WidgetIterMut {
         WidgetIterMut::single(&mut self.child)
     }
 
-    fn position(&self) -> Point {
+    fn position(&self) -> Position {
         self.position
     }
 
-    fn set_position(&mut self, position: Dimensions) {
+    fn set_position(&mut self, position: Position) {
         self.position = position;
     }
 
-    fn dimension(&self) -> Dimensions {
+    fn flexibility(&self) -> u32 {
+        10
+    }
+
+    fn dimension(&self) -> Dimension {
         self.dimension
     }
 
@@ -289,25 +328,21 @@ for PlainPopUpButton<T, GS>
     }
 }
 
-impl<T: StateContract + 'static, GS: GlobalStateContract> ChildRender for PlainPopUpButton<T, GS> {}
+impl<T: StateContract + PartialEq> Layout for PlainPopUpButton<T> {
+    fn calculate_size(&mut self, requested_size: Dimension, env: &mut Environment) -> Dimension {
+        let dimensions = self.child.calculate_size(requested_size, env);
+        self.set_dimension(dimensions);
 
-impl<T: StateContract + 'static, GS: GlobalStateContract> Layout<GS> for PlainPopUpButton<T, GS> {
-    fn flexibility(&self) -> u32 {
-        10
-    }
-
-    fn calculate_size(&mut self, requested_size: Dimensions, env: &mut Environment) -> Dimensions {
-        if let Some(child) = self.children_mut().next() {
-            child.calculate_size(requested_size, env);
+        // We calculate the size for the popup if it is open
+        if self.popup.is_showing() {
+            let popup_request = Dimension::new(dimensions.width, requested_size.height);
+            self.popup.calculate_size(popup_request, env);
         }
-
-        self.set_dimension(requested_size);
-
-        requested_size
+        dimensions
     }
 
     fn position_children(&mut self) {
-        let positioning = BasicLayouter::Center.position();
+        let positioning = self.alignment().positioner();
         let position = self.position();
         let dimension = self.dimension();
 
@@ -315,9 +350,25 @@ impl<T: StateContract + 'static, GS: GlobalStateContract> Layout<GS> for PlainPo
             positioning(position, dimension, child);
             child.position_children();
         }
+
+        if self.popup.is_showing() {
+            let positioning = self.alignment().positioner();
+            let position = self.position();
+            let dimension = self.dimension();
+            positioning(position, dimension, &mut *self.popup as &mut dyn Widget);
+            self.popup.position_children();
+        }
     }
 }
 
-impl<T: StateContract + 'static, GS: GlobalStateContract> WidgetExt<GS>
-for PlainPopUpButton<T, GS>
-{}
+impl<T: StateContract + PartialEq> Render for PlainPopUpButton<T> {
+    fn process_get_primitives(&mut self, primitives: &mut Vec<Primitive>, env: &mut Environment) {
+        self.child.process_get_primitives(primitives, env);
+
+        if self.popup.is_showing() {
+            env.add_overlay("controls_popup_layer", OverlayValue::Update(self.popup.position(), self.popup.dimension()));
+        }
+    }
+}
+
+impl<T: StateContract + PartialEq + 'static> WidgetExt for PlainPopUpButton<T> {}

@@ -102,7 +102,7 @@ impl Render for Clip {
             rect: Rect::new(self.position, self.dimension),
         });
 
-        for child in self.children_mut() {
+        for mut child in self.children_mut() {
             child.process_get_primitives(primitives, env);
         }
 

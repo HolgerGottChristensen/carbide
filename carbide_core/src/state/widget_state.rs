@@ -4,7 +4,7 @@ use std::fmt::{Debug, Formatter};
 use dyn_clone::DynClone;
 
 use crate::prelude::Environment;
-use crate::state::{Map, MapOwnedState, StateContract, TState};
+use crate::state::{Map, MapOwnedState, MapState, StateContract, TState, UsizeState};
 pub use crate::state::State;
 use crate::state::value_cell::{ValueRef, ValueRefMut};
 
@@ -23,6 +23,20 @@ impl<T: StateContract + 'static> WidgetState<T> {
 
     pub fn mapped_env<TO: StateContract + Default + 'static, M: Map<T, TO>>(&self, map: M) -> TState<TO> {
         MapOwnedState::<T, TO>::new(self.clone(), map).into()
+    }
+}
+
+impl<T: StateContract + 'static> WidgetState<Vec<T>> {
+    pub fn index(&self, index: UsizeState) -> TState<T> {
+        //Todo: In the future take index as a state instead of its value.
+        let s: MapState<Vec<T>, T, usize> =
+            MapState::new(self.clone(),
+                          *index.value(),
+                          |a, index| { &a[index] },
+                          |a, index| { &mut a[index] },
+            );
+
+        s.into()
     }
 }
 

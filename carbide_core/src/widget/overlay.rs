@@ -1,3 +1,5 @@
+use std::rc::Rc;
+
 use crate::draw::{Dimension, Position};
 use crate::prelude::*;
 
@@ -5,20 +7,20 @@ use crate::prelude::*;
 #[derive(Debug, Clone, Widget)]
 pub struct Overlay {
     id: Uuid,
-    child: Box<dyn Widget>,
+    child: Rc<ValueCell<Box<dyn Widget>>>,
     showing: BoolState,
-    position: Position,
-    dimension: Dimension,
+    position: PositionState,
+    dimension: DimensionState,
 }
 
 impl Overlay {
     pub fn new(child: Box<dyn Widget>) -> Box<Self> {
         Box::new(Overlay {
             id: Uuid::new_v4(),
-            child,
+            child: Rc::new(ValueCell::new(child)),
             showing: LocalState::new(false).into(),
-            position: Position::new(0.0, 0.0),
-            dimension: Dimension::new(100.0, 100.0),
+            position: LocalState::new(Position::new(0.0, 0.0)).into(),
+            dimension: LocalState::new(Dimension::new(100.0, 100.0)).into(),
         })
     }
 
@@ -46,43 +48,35 @@ impl CommonWidget for Overlay {
     }
 
     fn children(&self) -> WidgetIter {
-        if self.child.flag() == Flags::PROXY {
-            self.child.children()
-        } else {
-            WidgetIter::single(&self.child)
-        }
+        WidgetIter::borrow(self.child.borrow())
     }
 
     fn children_mut(&mut self) -> WidgetIterMut {
-        if self.child.flag() == Flags::PROXY {
-            self.child.children_mut()
-        } else {
-            WidgetIterMut::single(&mut self.child)
-        }
+        WidgetIterMut::borrow(self.child.borrow_mut())
     }
 
     fn children_direct(&mut self) -> WidgetIterMut {
-        WidgetIterMut::single(&mut self.child)
+        WidgetIterMut::borrow(self.child.borrow_mut())
     }
 
     fn children_direct_rev(&mut self) -> WidgetIterMut {
-        WidgetIterMut::single(&mut self.child)
+        WidgetIterMut::borrow(self.child.borrow_mut())
     }
 
     fn position(&self) -> Position {
-        self.position
+        *self.position.value()
     }
 
     fn set_position(&mut self, position: Position) {
-        self.position = position;
+        *self.position.value_mut() = position;
     }
 
     fn dimension(&self) -> Dimension {
-        self.dimension
+        *self.dimension.value()
     }
 
     fn set_dimension(&mut self, dimension: Dimension) {
-        self.dimension = dimension
+        *self.dimension.value_mut() = dimension;
     }
 }
 

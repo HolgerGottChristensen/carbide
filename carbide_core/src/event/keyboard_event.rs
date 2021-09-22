@@ -15,7 +15,7 @@ pub trait KeyboardEventHandler: CommonWidget + StateSync + Focusable {
         self.handle_keyboard_event(event, env);
         self.release_state(env);
 
-        for child in self.children_direct() {
+        for mut child in self.children_direct() {
             child.process_keyboard_event(event, env);
         }
     }

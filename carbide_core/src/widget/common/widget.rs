@@ -1,4 +1,3 @@
-use core::fmt;
 use std::fmt::Debug;
 use std::ops::{Deref, DerefMut};
 
@@ -12,7 +11,7 @@ use crate::event::{
 use crate::focus::{Focus, Focusable, Refocus};
 use crate::prelude::*;
 
-pub trait Widget: Event + Layout + Render + Focusable + DynClone {}
+pub trait Widget: Event + Layout + Render + Focusable + DynClone + Debug {}
 
 //impl<S, T> Widget<S> for T where T: Event<S> + Layout<S> + Render<S> + DynClone {}
 
@@ -201,8 +200,8 @@ impl<T: Widget + ?Sized> Focusable for Box<T> {
     }
 }
 
-impl Debug for dyn Widget {
+/*impl Debug for dyn Widget {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "Widget: {}", self.id())
     }
-}
+}*/

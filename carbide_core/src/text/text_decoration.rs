@@ -1,6 +1,6 @@
 use crate::draw::Rect;
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq)]
 pub enum TextDecoration {
     None,
     StrikeThrough(Vec<Rect>),

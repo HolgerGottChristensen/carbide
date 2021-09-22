@@ -120,7 +120,7 @@ impl Render for Rotation3DEffect {
 
         self.release_state(env);
 
-        for child in self.children_mut() {
+        for mut child in self.children_mut() {
             child.process_get_primitives(primitives, env);
         }
 

@@ -1,11 +1,15 @@
 use std::iter::Rev;
 use std::slice::{Iter, IterMut};
 
+use crate::state::{ValueRef, ValueRefMut};
 use crate::widget::Widget;
+
+pub type WidgetValMut<'a> = ValueRefMut<'a, Box<dyn Widget>>;
 
 pub enum WidgetIterMut<'a> {
     Empty,
     Ref(&'a mut Box<dyn Widget>),
+    Borrow(ValueRefMut<'a, Box<dyn Widget>>),
     Vec(IterMut<'a, Box<dyn Widget>>),
     VecRev(Rev<IterMut<'a, Box<dyn Widget>>>),
     Single(&'a mut Box<dyn Widget>, Box<WidgetIterMut<'a>>),
@@ -16,10 +20,14 @@ impl<'a> WidgetIterMut<'a> {
     pub fn single(widget: &'a mut Box<dyn Widget>) -> WidgetIterMut<'a> {
         WidgetIterMut::Ref(widget)
     }
+
+    pub fn borrow(widget: ValueRefMut<'a, Box<dyn Widget>>) -> WidgetIterMut<'a> {
+        WidgetIterMut::Borrow(widget)
+    }
 }
 
 impl<'a> Iterator for WidgetIterMut<'a> {
-    type Item = &'a mut Box<dyn Widget>;
+    type Item = WidgetValMut<'a>;
 
     fn next(&mut self) -> Option<Self::Item> {
         let mut i = WidgetIterMut::Empty;
@@ -30,7 +38,7 @@ impl<'a> Iterator for WidgetIterMut<'a> {
             WidgetIterMut::Empty => None,
             WidgetIterMut::Single(n, mut b) => {
                 std::mem::swap(self, &mut *b);
-                Some(n)
+                Some(ValueRefMut::Borrow(n))
             }
             WidgetIterMut::Multi(mut iter, mut b) => match iter.next() {
                 Some(n) => {
@@ -45,23 +53,29 @@ impl<'a> Iterator for WidgetIterMut<'a> {
             WidgetIterMut::Vec(mut vec) => {
                 let h = vec.next();
                 std::mem::swap(self, &mut WidgetIterMut::Vec(vec));
-                h
+                h.map(|f| ValueRefMut::Borrow(f))
             }
             WidgetIterMut::Ref(w) => {
-                Some(w)
+                Some(ValueRefMut::Borrow(w))
             }
             WidgetIterMut::VecRev(mut vec) => {
                 let h = vec.next();
                 std::mem::swap(self, &mut WidgetIterMut::VecRev(vec));
-                h
+                h.map(|f| ValueRefMut::Borrow(f))
+            }
+            WidgetIterMut::Borrow(w) => {
+                Some(w)
             }
         }
     }
 }
 
+pub type WidgetVal<'a> = ValueRef<'a, Box<dyn Widget>>;
+
 pub enum WidgetIter<'a> {
     Empty,
-    Ref(&'a Box<dyn Widget>),
+    SimpleRef(&'a Box<dyn Widget>),
+    Borrow(ValueRef<'a, Box<dyn Widget>>),
     Vec(Iter<'a, Box<dyn Widget>>),
     VecRev(Rev<Iter<'a, Box<dyn Widget>>>),
     Single(&'a Box<dyn Widget>, Box<WidgetIter<'a>>),
@@ -70,12 +84,16 @@ pub enum WidgetIter<'a> {
 
 impl<'a> WidgetIter<'a> {
     pub fn single(widget: &'a Box<dyn Widget>) -> WidgetIter<'a> {
-        WidgetIter::Ref(widget)
+        WidgetIter::SimpleRef(widget)
+    }
+
+    pub fn borrow(widget: ValueRef<'a, Box<dyn Widget>>) -> WidgetIter<'a> {
+        WidgetIter::Borrow(widget)
     }
 }
 
 impl<'a> Iterator for WidgetIter<'a> {
-    type Item = &'a Box<dyn Widget>;
+    type Item = WidgetVal<'a>;
 
     fn next(&mut self) -> Option<Self::Item> {
         let mut i = WidgetIter::Empty;
@@ -86,7 +104,7 @@ impl<'a> Iterator for WidgetIter<'a> {
             WidgetIter::Empty => None,
             WidgetIter::Single(n, mut b) => {
                 std::mem::swap(self, &mut *b);
-                Some(n)
+                Some(ValueRef::Borrow(n))
             }
             WidgetIter::Multi(mut iter, mut b) => match iter.next() {
                 Some(n) => {
@@ -98,18 +116,21 @@ impl<'a> Iterator for WidgetIter<'a> {
                     self.next()
                 }
             },
-            WidgetIter::Ref(w) => {
-                Some(w)
+            WidgetIter::SimpleRef(w) => {
+                Some(ValueRef::Borrow(w))
             }
             WidgetIter::Vec(mut vec) => {
                 let h = vec.next();
                 std::mem::swap(self, &mut WidgetIter::Vec(vec));
-                h
+                h.map(|f| ValueRef::Borrow(f))
             }
             WidgetIter::VecRev(mut vec) => {
                 let h = vec.next();
                 std::mem::swap(self, &mut WidgetIter::VecRev(vec));
-                h
+                h.map(|f| ValueRef::Borrow(f))
+            }
+            WidgetIter::Borrow(w) => {
+                Some(w)
             }
         }
     }

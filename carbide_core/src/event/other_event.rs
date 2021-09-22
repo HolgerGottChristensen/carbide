@@ -16,7 +16,7 @@ pub trait OtherEventHandler: CommonWidget + StateSync + Focusable {
         self.handle_other_event(event, env);
         self.release_state(env);
 
-        for child in self.children_direct() {
+        for mut child in self.children_direct() {
             child.process_other_event(event, env);
         }
     }

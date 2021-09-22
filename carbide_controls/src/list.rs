@@ -1,4 +1,4 @@
-use std::marker::PhantomData;
+use std::fmt::{Debug, Formatter};
 
 use carbide_core::color::{BLUE, RED};
 use carbide_core::draw::{Dimension, Position};
@@ -325,6 +325,14 @@ impl<T: StateContract + 'static, U: Delegate<T> + 'static> CommonWidget for List
 
     fn set_dimension(&mut self, dimension: Dimension) {
         self.dimension = dimension
+    }
+}
+
+impl<T: StateContract, U: Delegate<T>> Debug for List<T, U> {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("List")
+            .field("child", &self.child)
+            .finish()
     }
 }
 
