@@ -9,13 +9,11 @@ use crate::Color;
 use crate::draw::Dimension;
 use crate::draw::Scalar;
 use crate::focus::Refocus;
-use crate::layout::Layout;
 use crate::mesh::TextureAtlas;
 use crate::prelude::EnvironmentVariable;
 use crate::state::{InnerState, StateKey, ValueCell};
 use crate::text::{Font, FontFamily, FontId, FontSize, FontStyle, FontWeight, Glyph};
-use crate::widget::{ImageFilter, OverlayValue};
-use crate::widget::CommonWidget;
+use crate::widget::{ImageFilter, Overlay};
 use crate::widget::ImageInformation;
 
 pub struct Environment {
@@ -48,7 +46,7 @@ pub struct Environment {
 
     /// A map from String to a widget.
     /// This key should correspond to the targeted overlay_layer
-    overlay_map: FxHashMap<String, OverlayValue>,
+    overlay_map: FxHashMap<String, Option<Overlay>>,
 
     /// Keep local state as a map from String, to a vector of bytes.
     /// The vector is used as a serializing target for the state value.
@@ -182,25 +180,12 @@ impl Environment {
         self.images_information.insert(id, image);
     }
 
-    pub fn overlay(&mut self, id: &String) -> Option<OverlayValue> {
+    pub fn overlay(&mut self, id: &String) -> Option<Option<Overlay>> {
         self.overlay_map.remove(id)
     }
 
-    pub fn add_overlay(&mut self, id: &str, overlay: OverlayValue) {
-        if let OverlayValue::Update(p, d) = overlay {
-            if let Some(OverlayValue::Update(_, _)) = self.overlay_map.get(id) {
-                self.overlay_map.insert(id.to_string(), overlay);
-            } else if let Some(OverlayValue::Remove) = self.overlay_map.get(id) {} else if let Some(OverlayValue::Insert(mut w)) = self.overlay_map.remove(id) {
-                w.set_position(p);
-                w.calculate_size(d, self);
-                w.position_children();
-                self.overlay_map.insert(id.to_string(), OverlayValue::Insert(w));
-            } else {
-                self.overlay_map.insert(id.to_string(), overlay);
-            }
-        } else {
-            self.overlay_map.insert(id.to_string(), overlay);
-        }
+    pub fn add_overlay(&mut self, id: &str, overlay: Option<Overlay>) {
+        self.overlay_map.insert(id.to_string(), overlay);
     }
 
     pub fn clear(&mut self) {}

@@ -5,8 +5,7 @@ use carbide_core::draw::{Dimension, Position};
 use carbide_core::environment::*;
 use carbide_core::event::{Key, KeyboardEvent, KeyboardEventHandler};
 use carbide_core::layout::Layout;
-use carbide_core::prelude::{Primitive, Render};
-use carbide_core::state::{BoolState, LocalState, MapOwnedState, StateSync};
+use carbide_core::state::{BoolState, LocalState};
 use carbide_core::text::FontFamily;
 use carbide_core::widget::*;
 use carbide_wgpu::window::*;
@@ -51,7 +50,7 @@ struct Over {
     id: Id,
     position: Position,
     dimension: Dimension,
-    overlay_widget: Box<Overlay>,
+    overlay_widget: Overlay,
 }
 
 impl Over {
@@ -81,9 +80,9 @@ impl KeyboardEventHandler for Over {
                 if *k == Key::Space {
                     if !self.overlay_widget.is_showing() {
                         self.overlay_widget.set_showing(true);
-                        env.add_overlay("overlay", OverlayValue::Insert(self.overlay_widget.clone()))
+                        env.add_overlay("overlay", Some(self.overlay_widget.clone()))
                     } else {
-                        env.add_overlay("overlay", OverlayValue::Remove)
+                        env.add_overlay("overlay", None)
                     }
                 }
             }
@@ -106,7 +105,7 @@ impl Layout for Over {
             let positioning = self.alignment().positioner();
             let position = self.position();
             let dimension = self.dimension();
-            positioning(position, dimension, &mut *self.overlay_widget as &mut dyn Widget);
+            positioning(position, dimension, &mut self.overlay_widget as &mut dyn Widget);
             self.overlay_widget.position_children();
         }
     }

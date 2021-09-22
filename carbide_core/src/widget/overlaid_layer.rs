@@ -7,7 +7,7 @@ use crate::prelude::*;
 pub struct OverlaidLayer {
     id: Uuid,
     child: Box<dyn Widget>,
-    overlay: Option<Box<Overlay>>,
+    overlay: Option<Overlay>,
     overlay_id: String,
     position: Position,
     dimension: Dimension,
@@ -173,25 +173,17 @@ impl Render for OverlaidLayer {
             child.process_get_primitives(primitives, env);
         }
 
+        // If we have an overlay in the env
         if let Some(overlay) = env.overlay(&self.overlay_id) {
-            match overlay {
-                OverlayValue::Insert(mut value) => {
-                    value.set_showing(true);
-                    self.overlay = Some(value)
-                }
-                OverlayValue::Update(position, dimension) => {
-                    if let Some(overlay) = &mut self.overlay {
-                        overlay.set_position(position);
-                        overlay.calculate_size(dimension, env);
-                        overlay.position_children();
-                    }
-                }
-                OverlayValue::Remove => {
-                    if let Some(overlay) = &mut self.overlay {
-                        overlay.set_showing(false);
-                    }
-                    self.overlay = None;
-                }
+            // If we already contained an overlay, set its showing to false
+            if let Some(overlay) = &mut self.overlay {
+                overlay.set_showing(false);
+            }
+            // Insert the overlay
+            self.overlay = overlay;
+            // If there is a new overlay put in, set its showing to true
+            if let Some(overlay) = &mut self.overlay {
+                overlay.set_showing(true);
             }
         }
 

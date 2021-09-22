@@ -14,19 +14,20 @@ pub struct Overlay {
 }
 
 impl Overlay {
-    pub fn new(child: Box<dyn Widget>) -> Box<Self> {
-        Box::new(Overlay {
+    // We do not need to return this in a box, because the overlay widgets should only
+    pub fn new(child: Box<dyn Widget>) -> Self {
+        Overlay {
             id: Uuid::new_v4(),
             child: Rc::new(ValueCell::new(child)),
             showing: LocalState::new(false).into(),
             position: LocalState::new(Position::new(0.0, 0.0)).into(),
             dimension: LocalState::new(Dimension::new(100.0, 100.0)).into(),
-        })
+        }
     }
 
-    pub fn showing<S: Into<BoolState>>(mut self, showing: S) -> Box<Self> {
+    pub fn showing<S: Into<BoolState>>(mut self, showing: S) -> Self {
         self.showing = showing.into();
-        Box::new(self)
+        self
     }
 
     pub fn is_showing(&self) -> bool {
