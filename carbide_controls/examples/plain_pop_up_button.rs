@@ -13,22 +13,27 @@ use carbide_core::widget::*;
 use carbide_core::window::TWindow;
 use carbide_wgpu::window::Window;
 
-use crate::Day::{Friday, Monday, Saturday, Sunday, Thursday, Tuesday, Wednesday};
+use crate::Month::{April, December, February, January, July, June, March, May, November, October, September};
 
 #[derive(Debug, Clone, PartialEq)]
-pub enum Day {
-    Monday,
-    Tuesday,
-    Wednesday,
-    Thursday,
-    Friday,
-    Saturday,
-    Sunday,
+pub enum Month {
+    January,
+    February,
+    March,
+    April,
+    May,
+    June,
+    July,
+    August,
+    September,
+    October,
+    November,
+    December,
 }
 
-impl Default for Day {
+impl Default for Month {
     fn default() -> Self {
-        Monday
+        January
     }
 }
 
@@ -49,10 +54,10 @@ fn main() {
     ]);
     window.add_font_family(family);
 
-    let selected = LocalState::new(Monday);
+    let selected = LocalState::new(February);
 
     let model = LocalState::new(vec![
-        Monday, Tuesday, Wednesday, Thursday, Friday, Saturday, Sunday,
+        January, February, March, April, May, June, July, September, October, November, December,
     ]);
 
     window.set_widgets(

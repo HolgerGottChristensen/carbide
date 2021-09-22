@@ -1,3 +1,5 @@
+use std::ops::DerefMut;
+
 use carbide_core::draw::{Dimension, Position};
 use carbide_core::environment::Environment;
 use carbide_core::event::{Button, KeyboardEvent, MouseEvent, MouseEventHandler};
@@ -27,7 +29,7 @@ pub struct PlainPopUpButton<T> where T: StateContract + PartialEq {
     position: Position,
     dimension: Dimension,
     popup_list_spacing: f64,
-    popup: Box<Overlay>,
+    popup: Overlay,
     #[state]
     selected_item: TState<T>,
     #[state]
@@ -66,7 +68,7 @@ impl<T: StateContract + PartialEq + 'static> PlainPopUpButton<T> {
                 .hover(hover_state)
                 .on_click(capture!([selected_item_del, item], |env: &mut Environment| {
                     *selected_item_del = item.clone();
-                    env.add_overlay("controls_popup_layer", OverlayValue::Remove);
+                    env.add_overlay("controls_popup_layer", None);
                 }))
                 .frame(200.0, 30.0)
         };
@@ -78,7 +80,7 @@ impl<T: StateContract + PartialEq + 'static> PlainPopUpButton<T> {
                     .clip()
             )
                 .on_click_outside(capture!([], |env: &mut Environment|{
-                    env.add_overlay("controls_popup_layer", OverlayValue::Remove);
+                    env.add_overlay("controls_popup_layer", None);
                 }))
                 .frame(200.0, 200.0)
         );
@@ -262,7 +264,7 @@ impl<T: StateContract + PartialEq> MouseEventHandler for PlainPopUpButton<T> {
                 if self.is_inside(*position) {
                     self.popup.set_showing(true);
                     //println!("{:#?}", self.popup);
-                    env.add_overlay("controls_popup_layer", OverlayValue::Insert(self.popup.clone()));
+                    env.add_overlay("controls_popup_layer", Some(self.popup.clone()));
                 }
             }
             _ => ()
@@ -346,8 +348,8 @@ impl<T: StateContract + PartialEq> Layout for PlainPopUpButton<T> {
         let position = self.position();
         let dimension = self.dimension();
 
-        if let Some(child) = self.children_mut().next() {
-            positioning(position, dimension, child);
+        if let Some(mut child) = self.children_mut().next() {
+            positioning(position, dimension, child.deref_mut());
             child.position_children();
         }
 
@@ -355,7 +357,7 @@ impl<T: StateContract + PartialEq> Layout for PlainPopUpButton<T> {
             let positioning = self.alignment().positioner();
             let position = self.position();
             let dimension = self.dimension();
-            positioning(position, dimension, &mut *self.popup as &mut dyn Widget);
+            positioning(position, dimension, &mut self.popup as &mut dyn Widget);
             self.popup.position_children();
         }
     }
@@ -364,10 +366,6 @@ impl<T: StateContract + PartialEq> Layout for PlainPopUpButton<T> {
 impl<T: StateContract + PartialEq> Render for PlainPopUpButton<T> {
     fn process_get_primitives(&mut self, primitives: &mut Vec<Primitive>, env: &mut Environment) {
         self.child.process_get_primitives(primitives, env);
-
-        if self.popup.is_showing() {
-            env.add_overlay("controls_popup_layer", OverlayValue::Update(self.popup.position(), self.popup.dimension()));
-        }
     }
 }
 

@@ -195,9 +195,3 @@ impl Render for OverlaidLayer {
 
 impl WidgetExt for OverlaidLayer {}
 
-#[derive(Debug, Clone)]
-pub enum OverlayValue {
-    Insert(Box<Overlay>),
-    Update(Position, Dimension),
-    Remove,
-}
