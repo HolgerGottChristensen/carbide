@@ -4,7 +4,7 @@
 //!
 //! If you are new to carbide, we recommend checking out [The Guide](./guide/index.html).
 
-#![deny(unsafe_code)] //Todo deny when unsafe code removed from foreach
+#![deny(unsafe_code)]
 //#![feature(associated_type_bounds)]
 //#![warn(missing_copy_implementations)]
 //#![warn(missing_docs)]
@@ -13,7 +13,25 @@
 extern crate carbide_derive;
 extern crate lyon;
 extern crate self as carbide_core;
+/*
+macro_rules! delegate {
+    ($name:ident, |$($item:ident: $type:ty),*| $body:block) => {
+        struct $name<T> where T: StateContract {
+            $(
+            $item: $type,
+            )*
+        }
 
+        impl<T: StateContract> Delegate<T> for $name<T> {
+            fn call(&self, item: TState<T>, index: UsizeState) -> Box<dyn Widget> {
+                todo!()
+            }
+        }
+    };
+}
+
+delegate!(Name, |item: UsizeState, index: UsizeState| {});
+*/
 pub use serde::*;
 pub use serde::de::*;
 
@@ -21,6 +39,7 @@ pub use carbide_derive::*;
 pub use draw::Scalar;
 
 pub use crate::color::Color;
+use crate::state::UsizeState;
 pub use crate::ui::Ui;
 
 pub mod color;

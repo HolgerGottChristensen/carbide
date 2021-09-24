@@ -4,9 +4,15 @@ use crate::__private::Formatter;
 use crate::draw::{Dimension, Position};
 use crate::prelude::*;
 
-pub trait Delegate<T: StateContract>: Fn(TState<T>, UsizeState) -> Box<dyn Widget> + Clone {}
+pub trait Delegate<T: StateContract>: Clone {
+    fn call(&self, item: TState<T>, index: UsizeState) -> Box<dyn Widget>;
+}
 
-impl<I, T: StateContract> Delegate<T> for I where I: Fn(TState<T>, UsizeState) -> Box<dyn Widget> + Clone {}
+impl<T: StateContract, K> Delegate<T> for K where K: Fn(TState<T>, UsizeState) -> Box<dyn Widget> + Clone {
+    fn call(&self, item: TState<T>, index: UsizeState) -> Box<dyn Widget> {
+        self(item, index)
+    }
+}
 
 #[derive(Clone, Widget)]
 pub struct ForEach<T, U> where T: StateContract, U: Delegate<T> {
@@ -36,7 +42,7 @@ impl<T: StateContract + 'static, U: Delegate<T>> ForEach<T, U> {
                                                                        |a, index| {
                                                                            &mut a[index]
                                                                        });
-            let widget = (delegate)(item_state.into(), index_state);
+            let widget = delegate.call(item_state.into(), index_state);
             map.push(Box::new(widget));
         }
 

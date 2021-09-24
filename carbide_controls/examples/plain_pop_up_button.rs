@@ -1,12 +1,9 @@
-#[macro_use]
 extern crate carbide_core;
 extern crate carbide_wgpu;
 extern crate env_logger;
 extern crate futures;
 
-
 use carbide_controls::PlainPopUpButton;
-use carbide_core::environment::EnvironmentColor;
 use carbide_core::state::LocalState;
 use carbide_core::text::FontFamily;
 use carbide_core::widget::*;
@@ -54,7 +51,7 @@ fn main() {
     ]);
     window.add_font_family(family);
 
-    let selected = LocalState::new(February);
+    let selected = LocalState::new(January);
 
     let model = LocalState::new(vec![
         January, February, March, April, May, June, July, September, October, November, December,
@@ -62,9 +59,6 @@ fn main() {
 
     window.set_widgets(
         PlainPopUpButton::new(model, selected)
-            .border()
-            .color(EnvironmentColor::Red)
-            .clip()
             .frame(120.0, 40.0),
     );
 

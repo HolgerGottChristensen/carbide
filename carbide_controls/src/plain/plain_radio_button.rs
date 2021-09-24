@@ -4,8 +4,7 @@ use carbide_core::draw::{Dimension, Position};
 use carbide_core::environment::{Environment, EnvironmentColor};
 use carbide_core::flags::Flags;
 use carbide_core::focus::{Focus, Refocus};
-use carbide_core::layout::Layout;
-use carbide_core::state::{BoolState, FocusState, LocalState, MapOwnedState, State, StateContract, StateKey, StringState, TState, ValueState};
+use carbide_core::state::{BoolState, FocusState, LocalState, MapOwnedState, State, StateContract, StateKey, StringState, TState};
 use carbide_core::widget::{CommonWidget, HStack, Id, Rectangle, Spacer, Text, Widget, WidgetExt, WidgetIter, WidgetIterMut};
 
 use crate::PlainButton;
@@ -42,7 +41,7 @@ impl<T: 'static + StateContract + PartialEq> PlainRadioButton<T> {
     pub fn new<S: Into<StringState>, L: Into<TState<T>>>(
         label: S,
         reference: T,
-        local_state: L,
+        selected_state: L,
     ) -> Box<Self> {
         let focus_state = LocalState::new(Focus::Unfocused);
 
@@ -54,15 +53,15 @@ impl<T: 'static + StateContract + PartialEq> PlainRadioButton<T> {
                     env.get_color(&StateKey::Color(EnvironmentColor::Red)).unwrap()
                 }
             });
-            let val = MapOwnedState::new(selected, |check: &BoolState, env: &Environment| {
-                format!("{:?}", *check.value())
+            let val = selected.mapped(|selected: &bool| {
+                format!("{:?}", *selected)
             });
             Rectangle::new(vec![Text::new(val), button]).fill(highlight_color)
         }
 
         Self::new_internal(
             reference,
-            local_state.into(),
+            selected_state.into(),
             focus_state.into(),
             delegate,
             label.into(),
@@ -132,7 +131,7 @@ impl<T: 'static + StateContract + PartialEq> PlainRadioButton<T> {
             delegate,
             reference,
             label: label_state,
-            local_state,
+            local_state: local_state,
             selected_state,
         })
     }

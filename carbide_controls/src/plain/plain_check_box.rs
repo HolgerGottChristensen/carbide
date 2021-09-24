@@ -1,12 +1,8 @@
-use std::ops::{Deref, DerefMut};
-
-use carbide_core::{Color, widget};
 use carbide_core::draw::{Dimension, Position};
 use carbide_core::environment::EnvironmentColor;
 use carbide_core::flags::Flags;
 use carbide_core::focus::{Focus, Refocus};
 use carbide_core::prelude::Environment;
-use carbide_core::render::PrimitiveKind::RectanglePrim;
 use carbide_core::state::{FocusState, LocalState, MapOwnedState, StateKey, StringState};
 use carbide_core::widget::{CommonWidget, HStack, Id, Rectangle, Spacer, Text, Widget, WidgetExt, WidgetIter, WidgetIterMut};
 
@@ -60,8 +56,8 @@ impl PlainCheckBox {
                     }
                 }
             });
-            let val = MapOwnedState::new(checked, |check: &CheckBoxState, env: &Environment| {
-                format!("{:?}", *check.value())
+            let val = checked.mapped(|check: &CheckBoxValue| {
+                format!("{:?}", *check)
             });
             Rectangle::new(vec![Text::new(val), button]).fill(highlight_color)
         }

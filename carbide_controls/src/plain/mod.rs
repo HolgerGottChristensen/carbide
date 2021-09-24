@@ -11,6 +11,7 @@ mod plain_button;
 mod plain_check_box;
 mod plain_radio_button;
 mod plain_pop_up_button;
-//mod plain_pop_up_button_popup;
+mod plain_pop_up_button_popup;
 mod plain_switch;
+mod plain_pop_up_button_popup_item;
 //mod text_input_key_commands;

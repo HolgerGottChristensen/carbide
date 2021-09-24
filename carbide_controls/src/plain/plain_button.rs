@@ -19,7 +19,7 @@ impl<I> Action for I where I: Fn(&mut Environment) + Clone {}
 dyn_clone::clone_trait_object!(Action);
 
 #[derive(Clone, Widget)]
-#[carbide_exclude(MouseEvent, KeyboardEvent, Layout)]
+#[carbide_exclude(MouseEvent, KeyboardEvent)]
 pub struct PlainButton {
     id: Id,
     #[state]
@@ -135,13 +135,13 @@ impl MouseEventHandler for PlainButton {
     }
 }
 
-impl Layout for PlainButton {
+/*impl Layout for PlainButton {
     fn calculate_size(&mut self, requested_size: Dimension, env: &mut Environment) -> Dimension {
         self.child.calculate_size(requested_size, env);
         self.dimension = requested_size;
         self.dimension
     }
-}
+}*/
 
 impl CommonWidget for PlainButton {
     fn id(&self) -> Id {
