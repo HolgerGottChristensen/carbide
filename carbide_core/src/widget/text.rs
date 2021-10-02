@@ -119,7 +119,7 @@ impl Text {
         self.justify(Justify::Right)
     }
 
-    pub fn get_positioned_glyphs(&self, _: &Environment, _scale_factor: f32) -> Vec<Glyph> {
+    pub fn glyphs(&self) -> Vec<Glyph> {
         if let Some(internal) = &self.internal_text {
             internal.first_glyphs()
         } else {
@@ -152,6 +152,7 @@ impl Layout for Text {
             self.internal_text = Some(InternalText::new(
                 text,
                 style,
+                self.wrap_mode,
                 self.text_span_generator.borrow(),
                 env,
             ))
@@ -161,7 +162,7 @@ impl Layout for Text {
         if let Some(internal) = &mut self.internal_text {
             let text = self.text.value().deref().clone();
             if internal.string_that_generated_this() != &text || internal.style_that_generated_this() != &style {
-                *internal = InternalText::new(text, style, self.text_span_generator.borrow(), env);
+                *internal = InternalText::new(text, style, self.wrap_mode, self.text_span_generator.borrow(), env);
             }
             self.dimension = internal.calculate_size(requested_size, env);
         }

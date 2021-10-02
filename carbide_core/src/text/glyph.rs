@@ -2,6 +2,7 @@ use rusttype::{GlyphId, point, PositionedGlyph};
 
 use crate::draw::{Dimension, Position, Rect};
 use crate::mesh::TextureAtlasIndex;
+use crate::Scalar;
 use crate::text::{FontId, FontSize};
 
 #[derive(Debug, Clone)]
@@ -28,6 +29,8 @@ pub struct Glyph {
 
     /// This bb has been scaled to the correct size.
     inner_glyph_bb: Option<rusttype::Rect<f32>>,
+    width_of_glyph_from_origin: Scalar,
+    advance_width: Scalar,
 }
 
 impl Glyph {
@@ -45,6 +48,14 @@ impl Glyph {
 
     pub fn position(&self) -> Position {
         self.position
+    }
+
+    pub fn width_of_glyph_from_origin(&self) -> Scalar {
+        self.width_of_glyph_from_origin
+    }
+
+    pub fn advance_width(&self) -> Scalar {
+        self.advance_width
     }
 
     pub fn set_position(&mut self, position: Position) {
@@ -84,8 +95,12 @@ impl Glyph {
         })
     }
 
-    pub fn scale(&self) -> Dimension {
+    pub fn api_scale(&self) -> Dimension {
         self.api_scale
+    }
+
+    pub fn scale(&self) -> Dimension {
+        self.scale
     }
 
     pub fn bb(&self) -> Option<Rect> {
@@ -152,6 +167,8 @@ impl From<(FontSize, FontId, PositionedGlyph<'_>, bool)> for Glyph {
             }),
             texture_index: None,
             inner_glyph_bb,
+            width_of_glyph_from_origin: inner.unpositioned().h_metrics().left_side_bearing as f64,
+            advance_width: inner.unpositioned().h_metrics().advance_width as f64,
         }
     }
 }

@@ -9,7 +9,7 @@ pub struct ZStack {
     children: Vec<Box<dyn Widget>>,
     position: Position,
     dimension: Dimension,
-    alignment: BasicLayouter,
+    alignment: Box<dyn Layouter>,
 }
 
 impl ZStack {
@@ -19,12 +19,12 @@ impl ZStack {
             children,
             position: Position::new(0.0, 0.0),
             dimension: Dimension::new(100.0, 100.0),
-            alignment: BasicLayouter::Center,
+            alignment: Box::new(BasicLayouter::Center),
         })
     }
 
-    pub fn alignment(mut self, alignment: BasicLayouter) -> Box<Self> {
-        self.alignment = alignment;
+    pub fn with_alignment(mut self, layouter: BasicLayouter) -> Box<Self> {
+        self.alignment = Box::new(layouter);
         Box::new(self)
     }
 }
@@ -79,7 +79,11 @@ impl CommonWidget for ZStack {
     }
 
     fn alignment(&self) -> Box<dyn Layouter> {
-        Box::new(self.alignment.clone())
+        self.alignment.clone()
+    }
+
+    fn set_alignment(&mut self, alignment: Box<dyn Layouter>) {
+        self.alignment = alignment;
     }
 
     fn children(&self) -> WidgetIter {

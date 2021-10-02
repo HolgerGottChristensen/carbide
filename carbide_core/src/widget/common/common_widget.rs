@@ -33,6 +33,9 @@ pub trait CommonWidget {
     fn alignment(&self) -> Box<dyn Layouter> {
         Box::new(BasicLayouter::Center)
     }
+    fn set_alignment(&mut self, alignment: Box<dyn Layouter>) {
+        unimplemented!()
+    }
     /// 0 is the most flexible and the largest number is the least flexible
     /// The flexibility of the widget determines the order of which the widgets are processed
     /// when laying out in a vertical or horizontal stack. The least flexible are processed first.
