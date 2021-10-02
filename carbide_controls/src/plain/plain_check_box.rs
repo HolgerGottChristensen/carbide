@@ -22,7 +22,6 @@ pub struct PlainCheckBox {
     delegate: fn(
         focus: FocusState,
         checked: CheckBoxState,
-        button: Box<dyn Widget>,
     ) -> Box<dyn Widget>,
     #[state]
     label: StringState,
@@ -42,7 +41,7 @@ impl PlainCheckBox {
     ) -> Box<Self> {
         let focus = LocalState::new(Focus::Unfocused);
 
-        fn delegate(_: FocusState, checked: CheckBoxState, button: Box<dyn Widget>) -> Box<dyn Widget> {
+        fn delegate(_: FocusState, checked: CheckBoxState) -> Box<dyn Widget> {
             let highlight_color = MapOwnedState::new(checked.clone(), |check: &CheckBoxState, env: &Environment| {
                 match *check.value() {
                     CheckBoxValue::True => {
@@ -59,7 +58,7 @@ impl PlainCheckBox {
             let val = checked.mapped(|check: &CheckBoxValue| {
                 format!("{:?}", *check)
             });
-            Rectangle::new(vec![Text::new(val), button]).fill(highlight_color)
+            Rectangle::new(vec![Text::new(val)]).fill(highlight_color)
         }
 
         Self::new_internal(
@@ -75,7 +74,6 @@ impl PlainCheckBox {
         delegate: fn(
             focus: FocusState,
             selected: CheckBoxState,
-            button: Box<dyn Widget>,
         ) -> Box<dyn Widget>,
     ) -> Box<Self> {
         let checked = self.checked;
@@ -91,11 +89,12 @@ impl PlainCheckBox {
         delegate: fn(
             focus: FocusState,
             selected: CheckBoxState,
-            button: Box<dyn Widget>,
         ) -> Box<dyn Widget>,
         label_state: StringState,
     ) -> Box<Self> {
-        let button = PlainButton::new(Spacer::new())
+        let delegate_widget = delegate(focus.clone(), checked.clone());
+
+        let button = PlainButton::new(delegate_widget)
             .on_click(capture!([checked, focus], |env: &mut Environment| {
                 if *checked == CheckBoxValue::True {
                     *checked = CheckBoxValue::False;
@@ -110,10 +109,8 @@ impl PlainCheckBox {
             }))
             .focused(focus.clone());
 
-        let delegate_widget = delegate(focus.clone(), checked.clone(), button);
-
         let child = HStack::new(vec![
-            delegate_widget,
+            button,
             Text::new(label_state.clone()),
             Spacer::new(),
         ])

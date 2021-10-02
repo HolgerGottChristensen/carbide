@@ -6,7 +6,7 @@ extern crate futures;
 use carbide_controls::PlainButton;
 use carbide_core::color::RED;
 use carbide_core::focus::Focus;
-use carbide_core::state::{LocalState, MapOwnedState, State};
+use carbide_core::state::{BoolState, FocusState, I32State, LocalState, MapOwnedState, State};
 use carbide_core::text::{FontFamily, FontStyle, FontWeight};
 use carbide_core::widget::*;
 use carbide_core::window::TWindow;
@@ -32,11 +32,11 @@ fn main() {
     );
     window.add_font_family(family);
 
-    let hover_state = LocalState::new(false);
-    let pressed_state = LocalState::new(false);
-    let focus_state = LocalState::new(Focus::Focused);
-    let counter_state = LocalState::new(0);
-    let button_counter_state = counter_state.clone();
+    let hover_state: BoolState = LocalState::new(false).into();
+    let pressed_state: BoolState = LocalState::new(false).into();
+    let focus_state: FocusState = LocalState::new(Focus::Focused).into();
+    let counter_state: I32State = LocalState::new(0).into();
+    let button_counter_state: I32State = counter_state.clone();
 
     window.set_widgets(
         VStack::new(vec![
@@ -51,13 +51,13 @@ fn main() {
                 .border()
                 .clip()
                 .frame(120.0, 70.0),
-            Text::new(MapOwnedState::new(counter_state, |count: &i32| { format!("Count: {}", count) }))
+            Text::new(counter_state.mapped(|count: &i32| { format!("Count: {}", count) }))
                 .font_size(40),
-            Text::new(MapOwnedState::new(hover_state, |hover: &bool| { format!("Hovered: {}", hover) }))
+            Text::new(hover_state.mapped(|hover: &bool| { format!("Hovered: {}", hover) }))
                 .font_size(40),
-            Text::new(MapOwnedState::new(pressed_state, |press: &bool| { format!("Pressed: {}", press) }))
+            Text::new(pressed_state.mapped(|press: &bool| { format!("Pressed: {}", press) }))
                 .font_size(40),
-            Text::new(MapOwnedState::new(focus_state, |focus: &Focus| { format!("Focus: {:?}", focus) }))
+            Text::new(focus_state.mapped(|focus: &Focus| { format!("Focus: {:?}", focus) }))
                 .font_size(40),
         ])
             .spacing(20.0),

@@ -20,7 +20,6 @@ pub struct PlainSwitch {
     delegate: fn(
         focus: FocusState,
         checked: BoolState,
-        button: Box<dyn Widget>,
     ) -> Box<dyn Widget>,
     #[state]
     label: StringState,
@@ -46,8 +45,7 @@ impl PlainSwitch {
         let focus_state = LocalState::new(Focus::Unfocused);
 
         let default_delegate = |_focus_state: FocusState,
-                                checked: BoolState,
-                                button: Box<dyn Widget>|
+                                checked: BoolState, |
                                 -> Box<dyn Widget> {
             let highlight_color = MapOwnedState::new(checked.clone(), |checked: &BoolState, env: &Environment| {
                 if *checked.value() {
@@ -57,7 +55,7 @@ impl PlainSwitch {
                 }
             });
 
-            Rectangle::new(vec![button]).fill(highlight_color)
+            Rectangle::new(vec![Text::new(checked)]).fill(highlight_color)
         };
 
         Self::new_internal(
@@ -73,7 +71,6 @@ impl PlainSwitch {
         delegate: fn(
             focus: FocusState,
             selected: BoolState,
-            button: Box<dyn Widget>,
         ) -> Box<dyn Widget>,
     ) -> Box<Self> {
         let checked = self.checked;
@@ -89,11 +86,12 @@ impl PlainSwitch {
         delegate: fn(
             focus: FocusState,
             selected: BoolState,
-            button: Box<dyn Widget>,
         ) -> Box<dyn Widget>,
         label_state: StringState,
     ) -> Box<Self> {
-        let button = PlainButton::new(Spacer::new())
+        let delegate_widget = delegate(focus.clone(), checked.clone());
+
+        let button = PlainButton::new(delegate_widget)
             .on_click(capture!([checked, focus], |env: &mut Environment| {
                 *checked = !*checked;
 
@@ -104,10 +102,8 @@ impl PlainSwitch {
             }))
             .focused(focus.clone());
 
-        let delegate_widget = delegate(focus.clone(), checked.clone(), button);
-
         let child = HStack::new(vec![
-            delegate_widget,
+            button,
             Text::new(label_state.clone()),
             Spacer::new(),
         ])

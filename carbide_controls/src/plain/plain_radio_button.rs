@@ -21,7 +21,6 @@ pub struct PlainRadioButton<T> where T: 'static + StateContract + PartialEq {
     delegate: fn(
         focus: FocusState,
         selected: BoolState,
-        button: Box<dyn Widget>,
     ) -> Box<dyn Widget>,
     reference: T,
     #[state]
@@ -45,7 +44,7 @@ impl<T: 'static + StateContract + PartialEq> PlainRadioButton<T> {
     ) -> Box<Self> {
         let focus_state = LocalState::new(Focus::Unfocused);
 
-        fn delegate(_: FocusState, selected: BoolState, button: Box<dyn Widget>) -> Box<dyn Widget> {
+        fn delegate(_: FocusState, selected: BoolState) -> Box<dyn Widget> {
             let highlight_color = MapOwnedState::new(selected.clone(), |selected: &BoolState, env: &Environment| {
                 if *selected.value() {
                     env.get_color(&StateKey::Color(EnvironmentColor::Green)).unwrap()
@@ -56,7 +55,7 @@ impl<T: 'static + StateContract + PartialEq> PlainRadioButton<T> {
             let val = selected.mapped(|selected: &bool| {
                 format!("{:?}", *selected)
             });
-            Rectangle::new(vec![Text::new(val), button]).fill(highlight_color)
+            Rectangle::new(vec![Text::new(val)]).fill(highlight_color)
         }
 
         Self::new_internal(
@@ -73,7 +72,6 @@ impl<T: 'static + StateContract + PartialEq> PlainRadioButton<T> {
         delegate: fn(
             focus: FocusState,
             selected: BoolState,
-            button: Box<dyn Widget>,
         ) -> Box<dyn Widget>,
     ) -> Box<Self> {
         let reference = self.reference;
@@ -91,7 +89,6 @@ impl<T: 'static + StateContract + PartialEq> PlainRadioButton<T> {
         delegate: fn(
             focus: FocusState,
             selected: BoolState,
-            button: Box<dyn Widget>,
         ) -> Box<dyn Widget>,
         label_state: StringState,
     ) -> Box<Self> {
@@ -102,7 +99,10 @@ impl<T: 'static + StateContract + PartialEq> PlainRadioButton<T> {
         }).into();
 
         let reference2 = reference.clone();
-        let button = PlainButton::new(Spacer::new())
+
+        let delegate_widget = delegate(focus_state.clone(), selected_state.clone());
+
+        let button = PlainButton::new(delegate_widget)
             .on_click(capture!([local_state, focus_state], |env: &mut Environment| {
                 *local_state = reference2.clone();
 
@@ -113,10 +113,8 @@ impl<T: 'static + StateContract + PartialEq> PlainRadioButton<T> {
             }))
             .focused(focus_state.clone());
 
-        let delegate_widget = delegate(focus_state.clone(), selected_state.clone(), button);
-
         let child = HStack::new(vec![
-            delegate_widget,
+            button,
             Text::new(label_state.clone()),
             Spacer::new(),
         ])
@@ -131,7 +129,7 @@ impl<T: 'static + StateContract + PartialEq> PlainRadioButton<T> {
             delegate,
             reference,
             label: label_state,
-            local_state: local_state,
+            local_state,
             selected_state,
         })
     }
