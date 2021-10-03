@@ -2,170 +2,45 @@ use std::fmt::Debug;
 
 use carbide_core::{DeserializeOwned, Serialize};
 use carbide_core::draw::Dimension;
+use carbide_core::environment::{Environment, EnvironmentColor};
+use carbide_core::state::{BoolState, FocusState, StateContract, StateKey, StringState, TState};
 use carbide_core::widget::*;
 
 use crate::PlainRadioButton;
 
-#[derive(Clone, Widget)]
-pub struct RadioButton<T, GS>
-    where
-        GS: GlobalStateContract,
-        T: Serialize + Clone + Debug + Default + DeserializeOwned + PartialEq + 'static,
-{
-    id: Id,
-    child: PlainRadioButton<T, GS>,
-    position: Point,
-    dimension: Dimensions,
-}
+pub struct RadioButton();
 
-impl<
-    T: Serialize + Clone + Debug + Default + DeserializeOwned + PartialEq + 'static,
-    GS: GlobalStateContract,
-> RadioButton<T, GS>
-{
-    pub fn new<S: Into<StringState<GS>>, L: Into<TState<T, GS>>>(
+impl RadioButton {
+    pub fn new<T: StateContract + PartialEq + 'static, S: Into<StringState>, L: Into<TState<T>>>(
         label: S,
         reference: T,
         local_state: L,
-    ) -> Box<Self> {
-        let mut child = *PlainRadioButton::new(label, reference, local_state);
+    ) -> Box<PlainRadioButton<T>> {
+        let mut plain = PlainRadioButton::new(label, reference, local_state)
+            .delegate(Self::delegate);
+        plain
+    }
 
-        child = *child.delegate(|focus_state, selected_state, button: Box<dyn Widget<GS>>| {
-            let focus_color = TupleState3::new(
-                focus_state,
-                EnvironmentColor::OpaqueSeparator,
-                EnvironmentColor::Accent,
-            )
-                .mapped(|(focus, primary_color, focus_color)| {
-                    if focus == &Focus::Focused {
-                        *focus_color
-                    } else {
-                        *primary_color
-                    }
-                });
-
-            let selected_color = TupleState3::new(
-                selected_state.clone(),
-                EnvironmentColor::SecondarySystemBackground,
-                EnvironmentColor::Accent,
-            )
-                .mapped(|(selected, primary_color, selected_color)| {
-                    if *selected {
-                        *selected_color
-                    } else {
-                        *primary_color
-                    }
-                });
-
-            ZStack::new(vec![
-                Ellipse::new()
-                    .fill(selected_color)
-                    .stroke(focus_color)
-                    .stroke_style(1.0),
-                IfElse::new(selected_state).when_true(
-                    Ellipse::new()
-                        .fill(EnvironmentColor::DarkText)
-                        .frame(6.0, 6.0),
-                ),
-                button,
-            ])
-                .frame(16.0, 16.0)
+    fn delegate(_: FocusState, selected: BoolState) -> Box<dyn Widget> {
+        let selected_color = selected.mapped_env(|selected: &bool, env: &Environment| {
+            if *selected {
+                env.get_color(&StateKey::Color(EnvironmentColor::Accent)).unwrap()
+            } else {
+                env.get_color(&StateKey::Color(EnvironmentColor::SecondarySystemBackground)).unwrap()
+            }
         });
 
-        Box::new(RadioButton {
-            id: Id::new_v4(),
-            child,
-            position: [0.0, 0.0],
-            dimension: [235.0, 26.0],
-        })
+        ZStack::new(vec![
+            Ellipse::new()
+                .fill(selected_color)
+                .stroke(EnvironmentColor::OpaqueSeparator)
+                .stroke_style(1.0),
+            IfElse::new(selected).when_true(
+                Ellipse::new()
+                    .fill(EnvironmentColor::DarkText)
+                    .frame(4.0, 4.0),
+            ),
+        ])
+            .frame(14.0, 14.0)
     }
 }
-
-impl<
-    T: Serialize + Clone + Debug + Default + DeserializeOwned + PartialEq + 'static,
-    GS: GlobalStateContract,
-> CommonWidget<GS> for RadioButton<T, GS>
-{
-    fn id(&self) -> Id {
-        self.id
-    }
-
-    fn set_id(&mut self, id: Id) {
-        self.id = id;
-    }
-
-    fn flag(&self) -> Flags {
-        Flags::EMPTY
-    }
-
-    fn children(&self) -> WidgetIter {
-        WidgetIter::single(&self.child)
-    }
-
-    fn children_mut(&mut self) -> WidgetIterMut {
-        WidgetIterMut::single(&mut self.child)
-    }
-
-    fn proxied_children(&mut self) -> WidgetIterMut {
-        WidgetIterMut::single(&mut self.child)
-    }
-
-    fn proxied_children_rev(&mut self) -> WidgetIterMut {
-        WidgetIterMut::single(&mut self.child)
-    }
-
-    fn position(&self) -> Point {
-        self.position
-    }
-
-    fn set_position(&mut self, position: Dimensions) {
-        self.position = position;
-    }
-
-    fn dimension(&self) -> Dimensions {
-        self.dimension
-    }
-
-    fn set_dimension(&mut self, dimension: Dimension) {
-        self.dimension = dimension
-    }
-}
-
-impl<
-    T: Serialize + Clone + Debug + Default + DeserializeOwned + PartialEq + 'static,
-    GS: GlobalStateContract,
-> ChildRender for RadioButton<T, GS>
-{}
-
-impl<
-    T: Serialize + Clone + Debug + Default + DeserializeOwned + PartialEq + 'static,
-    GS: GlobalStateContract,
-> Layout<GS> for RadioButton<T, GS>
-{
-    fn flexibility(&self) -> u32 {
-        5
-    }
-
-    fn calculate_size(&mut self, requested_size: Dimensions, env: &mut Environment) -> Dimensions {
-        self.set_width(requested_size[0]);
-
-        self.child.calculate_size(self.dimension, env);
-
-        self.dimension
-    }
-
-    fn position_children(&mut self) {
-        let positioning = BasicLayouter::Center.position();
-        let position = self.position();
-        let dimension = self.dimension();
-
-        positioning(position, dimension, &mut self.child);
-        self.child.position_children();
-    }
-}
-
-impl<
-    T: Serialize + Clone + Debug + Default + DeserializeOwned + PartialEq + 'static,
-    GS: GlobalStateContract,
-> WidgetExt<GS> for RadioButton<T, GS>
-{}
