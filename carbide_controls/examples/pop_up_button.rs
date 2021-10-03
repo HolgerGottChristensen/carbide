@@ -4,6 +4,7 @@ extern crate env_logger;
 extern crate futures;
 
 use carbide_controls::{PlainPopUpButton, PopUpButton};
+use carbide_core::prelude::EnvironmentColor;
 use carbide_core::state::LocalState;
 use carbide_core::text::FontFamily;
 use carbide_core::widget::*;

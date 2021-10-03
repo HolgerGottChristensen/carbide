@@ -4,7 +4,7 @@ extern crate carbide_derive;
 extern crate copypasta;
 extern crate unicode_segmentation;
 
-//pub use button::Button;
+pub use button::Button;
 pub use check_box::*;
 pub use list::List;
 pub use plain::*;
@@ -28,7 +28,7 @@ macro_rules! capture {
     };
 }
 
-//mod button;
+mod button;
 mod check_box;
 mod list;
 mod plain;

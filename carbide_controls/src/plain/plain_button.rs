@@ -135,14 +135,6 @@ impl MouseEventHandler for PlainButton {
     }
 }
 
-/*impl Layout for PlainButton {
-    fn calculate_size(&mut self, requested_size: Dimension, env: &mut Environment) -> Dimension {
-        self.child.calculate_size(requested_size, env);
-        self.dimension = requested_size;
-        self.dimension
-    }
-}*/
-
 impl CommonWidget for PlainButton {
     fn id(&self) -> Id {
         self.id
