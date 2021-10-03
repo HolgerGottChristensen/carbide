@@ -9,7 +9,7 @@ use carbide_core::event::{Key, KeyboardEvent, KeyboardEventHandler, ModifierKey,
 use carbide_core::focus::Focus;
 use carbide_core::layout::BasicLayouter;
 use carbide_core::prelude::{EnvironmentColor, Layout};
-use carbide_core::state::{F64State, FocusState, LocalState, State, StringState, TState, U32State};
+use carbide_core::state::{ColorState, F64State, FocusState, LocalState, State, StringState, TState, U32State};
 use carbide_core::text::Glyph;
 use carbide_core::widget::{CommonWidget, CornerRadii, EdgeInsets, HStack, Id, Rectangle, RoundedRectangle, SCALE, Spacer, Text, Widget, WidgetExt, WidgetIter, WidgetIterMut, ZStack};
 use carbide_core::widget::Wrap;
@@ -34,12 +34,19 @@ impl TextInput {
         let text = text.into();
         let focus_state: FocusState = LocalState::new(Focus::Unfocused).into();
 
+        let cursor_color: ColorState = EnvironmentColor::Label.into();
+
+        let selection_color: ColorState = EnvironmentColor::Accent.into();
+        let darkened_selection_color = selection_color.darkened(0.2);
+
         let child = ZStack::new(vec![
             RoundedRectangle::new(CornerRadii::all(3.0))
                 .fill(EnvironmentColor::SecondarySystemBackground)
                 .stroke(EnvironmentColor::OpaqueSeparator)
                 .stroke_style(1.0),
             PlainTextInput::new(text)
+                .cursor_color(cursor_color)
+                .selection_color(darkened_selection_color)
                 .clip()
                 .padding(EdgeInsets::single(0.0, 0.0, 5.0, 5.0)),
         ]).frame(SCALE, 22);

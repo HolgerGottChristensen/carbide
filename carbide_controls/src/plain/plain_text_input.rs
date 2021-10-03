@@ -9,8 +9,8 @@ use carbide_core::event::{Key, KeyboardEvent, KeyboardEventHandler, ModifierKey,
 use carbide_core::focus::Focus;
 use carbide_core::layout::BasicLayouter;
 use carbide_core::prelude::{EnvironmentColor, Layout};
-use carbide_core::state::{AnimatedState, F64State, FocusState, LocalState, State, StringState, TState, U32State};
-use carbide_core::text::Glyph;
+use carbide_core::state::{AnimatedState, ColorState, F64State, FocusState, LocalState, State, StringState, TState, U32State};
+use carbide_core::text::{FontSize, Glyph};
 use carbide_core::widget::{CommonWidget, HStack, Id, Rectangle, SCALE, Spacer, Text, Widget, WidgetExt, WidgetIter, WidgetIterMut, ZStack};
 use carbide_core::widget::Wrap;
 
@@ -28,10 +28,15 @@ pub struct PlainTextInput {
     child: Box<dyn Widget>,
     position: Position,
     dimension: Dimension,
-    #[state] focus: FocusState,
     cursor: Cursor,
     drag_start_cursor: Option<Cursor>,
-    //     drag_start_cursor: Option<Cursor>,
+
+    // Colors
+    #[state] selection_color: ColorState,
+    #[state] cursor_color: ColorState,
+    #[state] text_color: ColorState,
+
+    #[state] focus: FocusState,
     #[state] text: StringState,
     #[state] cursor_x: F64State,
     #[state] selection_x: F64State,
@@ -46,13 +51,75 @@ impl PlainTextInput {
         let focus_state: FocusState = LocalState::new(Focus::Unfocused).into();
         let font_size: U32State = EnvironmentFontSize::Body.into();
 
-        Self::internal_new(text, font_size, focus_state)
+        let selection_color: ColorState = EnvironmentColor::Green.into();
+        let cursor_color: ColorState = EnvironmentColor::Red.into();
+        let text_color: ColorState = EnvironmentColor::Label.into();
+
+        Self::internal_new(
+            text,
+            font_size,
+            focus_state,
+            selection_color,
+            cursor_color,
+            text_color,
+        )
+    }
+
+    pub fn font_size<I: Into<U32State>>(mut self, font_size: I) -> Box<Self> {
+        self.font_size = font_size.into();
+        Self::internal_new(
+            self.text,
+            self.font_size,
+            self.focus,
+            self.selection_color,
+            self.cursor_color,
+            self.text_color,
+        )
+    }
+
+    pub fn selection_color<C: Into<ColorState>>(mut self, color: C) -> Box<Self> {
+        self.selection_color = color.into();
+        Self::internal_new(
+            self.text,
+            self.font_size,
+            self.focus,
+            self.selection_color,
+            self.cursor_color,
+            self.text_color,
+        )
+    }
+
+    pub fn cursor_color<C: Into<ColorState>>(mut self, color: C) -> Box<Self> {
+        self.cursor_color = color.into();
+        Self::internal_new(
+            self.text,
+            self.font_size,
+            self.focus,
+            self.selection_color,
+            self.cursor_color,
+            self.text_color,
+        )
+    }
+
+    pub fn text_color<C: Into<ColorState>>(mut self, color: C) -> Box<Self> {
+        self.text_color = color.into();
+        Self::internal_new(
+            self.text,
+            self.font_size,
+            self.focus,
+            self.selection_color,
+            self.cursor_color,
+            self.text_color,
+        )
     }
 
     pub fn internal_new(
         text: StringState,
         font_size: U32State,
         focus: FocusState,
+        selection_color: ColorState,
+        cursor_color: ColorState,
+        text_color: ColorState,
     ) -> Box<Self> {
         let cursor_x: F64State = LocalState::new(0.0).into();
         let selection_x: F64State = LocalState::new(0.0).into();
@@ -63,14 +130,15 @@ impl PlainTextInput {
             HStack::new(vec![
                 ZStack::new(vec![
                     Rectangle::new(vec![])
-                        .fill(EnvironmentColor::Green)
+                        .fill(selection_color.clone())
                         .frame(selection_width.clone(), font_size.clone().mapped(|val: &u32| *val as f64))
                         .offset(selection_x.clone(), 0.0),
                     Text::new(text.clone())
                         .font_size(font_size.clone())
-                        .wrap_mode(Wrap::None),
+                        .wrap_mode(Wrap::None)
+                        .foreground_color(text_color.clone()),
                     Rectangle::new(vec![])
-                        .fill(EnvironmentColor::Red)
+                        .fill(cursor_color.clone())
                         .frame(1.0, font_size.clone().mapped(|val: &u32| *val as f64))
                         .offset(cursor_x.clone(), 0.0),
                 ]).with_alignment(BasicLayouter::TopLeading)
@@ -86,188 +154,16 @@ impl PlainTextInput {
             focus,
             cursor: Cursor::Single(CursorIndex { line: 0, char: 0 }),
             drag_start_cursor: None,
+            selection_color,
+            cursor_color,
             text,
             cursor_x,
             selection_x,
             selection_width,
             text_offset,
             font_size,
+            text_color,
         })
-    }
-
-    /// Insert a string at a given grapheme index.
-    fn insert_str(&mut self, index: usize, string: &str) {
-        let offset = Self::byte_index_from_graphemes(index, &self.text.value());
-        self.text.value_mut().insert_str(offset, string);
-    }
-
-    /// Get the positioned glyphs of a given string. This is useful when needing to calculate cursor
-    /// position, or the width of a given string.
-    fn glyphs(&mut self, env: &mut Environment) -> Vec<Glyph> {
-        let mut text_scaler: Box<Text> = Text::new(self.text.clone())
-            .font_size(self.font_size.clone()).wrap_mode(Wrap::None);
-
-        text_scaler.set_position(Position::new(0.0, 0.0));
-        let normal_scale = env.get_scale_factor();
-        env.set_scale_factor(1.0);
-        text_scaler.calculate_size(Dimension::new(100.0, 100.0), env);
-        env.set_scale_factor(normal_scale);
-
-        let positioned_glyphs = text_scaler.glyphs();
-        positioned_glyphs
-    }
-
-    /// Remove a single grapheme at an index.
-    fn remove(&mut self, index: usize) {
-        let offset = Self::byte_index_from_graphemes(index, &*self.text.value());
-        self.text.value_mut().remove(offset);
-    }
-
-    /// Remove all the graphemes inside the range,
-    fn remove_range(&mut self, index: Range<usize>) {
-        let offset_start = Self::byte_index_from_graphemes(index.start, &*self.text.value());
-        let offset_end = Self::byte_index_from_graphemes(index.end, &*self.text.value());
-        self.text.value_mut().replace_range(offset_start..offset_end, "");
-    }
-
-    /// Get the range from the leftmost character in a word, to the current index.
-    /// When calculating this, all spaces to the left of the word is included as well.
-    fn prev_word_range(text: String, start_index: usize) -> Range<usize> {
-        let mut has_hit_space = false;
-
-        let number_left = text.chars().rev().skip(Self::len_in_graphemes(&text) - start_index).skip_while(|cur| {
-            if *cur == ' ' {
-                has_hit_space = true;
-                true
-            } else {
-                !has_hit_space
-            }
-        }).count();
-
-        number_left..start_index
-    }
-
-    /// Get the range from the current index to the rightmost character in a word.
-    /// When calculating this, all spaces to the right of the word is included as well.
-    fn next_word_range(text: String, start_index: usize) -> Range<usize> {
-        let mut has_hit_space = false;
-
-        let number_left = text.chars().skip(start_index).skip_while(|cur| {
-            if *cur == ' ' {
-                has_hit_space = true;
-                true
-            } else {
-                !has_hit_space
-            }
-        }).count();
-
-        let new_index = Self::len_in_graphemes(&text) - number_left;
-
-        start_index..new_index
-    }
-
-    /// Get a range of the graphemes in the word surrounded by spaces,
-    /// where the current index is within. The spaces is not included.
-    fn word_index_range(text: &String, start_index: usize) -> Range<usize> {
-        let mut max_iter = text.chars().enumerate().skip(start_index).skip_while(|(_, cur)| {
-            *cur != ' '
-        });
-
-        let mut min_iter = text.chars().rev().enumerate().skip(Self::len_in_graphemes(text) - start_index).skip_while(|(_, cur)| {
-            *cur != ' '
-        });
-
-        let max = match max_iter.next() {
-            None => { Self::len_in_graphemes(text) }
-            Some((u, _)) => u
-        };
-
-        let min = match min_iter.next() {
-            None => 0,
-            Some((u, _)) => Self::len_in_graphemes(text) - u
-        };
-
-        min..max
-    }
-
-    /// Recalculate the position of the cursor and the selection. This will not move the cursor
-    /// index, but move the visual positioning of the cursor and the selection box (if selection mode).
-    fn reposition_cursor(&mut self, env: &mut Environment) {
-        let text = self.text.value().clone();
-
-        let glyph = self.glyphs(env);
-
-        let index = match self.cursor {
-            Cursor::Single(index) => index,
-            Cursor::Selection { end, .. } => end
-        };
-
-        let point = index.position(&text, &glyph);
-
-        *self.cursor_x.value_mut() = point.x();
-        *self.selection_x.value_mut() = point.x();
-
-        let selection_width = self.cursor.width(&text, &glyph);
-
-        if selection_width < 0.0 {
-            *self.selection_width.value_mut() = selection_width.abs();
-        } else {
-            *self.selection_x.value_mut() -= selection_width;
-            *self.selection_width.value_mut() = selection_width;
-        }
-    }
-
-    /// This will change the text offset to make the cursor visible. It will result in the text
-    /// getting scrolled, such that the entire cursor is visible.
-    fn recalculate_offset_to_make_cursor_visible(&mut self, env: &mut Environment) {
-        let cursor_x = *self.cursor_x.value();
-        let cursor_width = 4.0;
-        let current_text_offset = *self.text_offset.value();
-
-        if cursor_x + cursor_width > self.width() && -current_text_offset < cursor_x + cursor_width - self.width() {
-            let new_text_offset = -(cursor_x + cursor_width - self.width());
-
-            *self.text_offset.value_mut() = new_text_offset;
-        } else if cursor_x + current_text_offset < 0.0 {
-            let new_text_offset = -(cursor_x);
-
-            *self.text_offset.value_mut() = new_text_offset;
-        }
-
-        let positioned_glyphs = self.glyphs(env);
-
-        if positioned_glyphs.len() != 0 {
-            let last_glyph = &positioned_glyphs[positioned_glyphs.len() - 1];
-
-            let point = last_glyph.position();
-
-            let width = last_glyph.advance_width();
-
-            let width_of_text = point.x() + width;
-
-            if width_of_text < self.width() {
-                *self.text_offset.value_mut() = 0.0;
-            } else if current_text_offset.abs() > width_of_text {
-                *self.text_offset.value_mut() = 0.0;
-                self.recalculate_offset_to_make_cursor_visible(env)
-            }
-        } else {
-            *self.text_offset.value_mut() = 0.0;
-        }
-    }
-
-    fn len_in_graphemes(text: &String) -> usize {
-        text.graphemes(true).count()
-    }
-
-    /// Get the index of the first byte for a given grapheme index.
-    fn byte_index_from_graphemes(index: usize, text: &String) -> usize {
-        if text.len() == 0 { return 0; }
-        let grapheme_byte_offset = match text.grapheme_indices(true).skip(index).next() {
-            None => text.len(),
-            Some((g, _)) => g
-        };
-        grapheme_byte_offset
     }
 }
 
@@ -710,6 +606,183 @@ impl MouseEventHandler for PlainTextInput {
         }
 
         self.reposition_cursor(env);
+    }
+}
+
+impl PlainTextInput {
+    /// Insert a string at a given grapheme index.
+    fn insert_str(&mut self, index: usize, string: &str) {
+        let offset = Self::byte_index_from_graphemes(index, &self.text.value());
+        self.text.value_mut().insert_str(offset, string);
+    }
+
+    /// Get the positioned glyphs of a given string. This is useful when needing to calculate cursor
+    /// position, or the width of a given string.
+    fn glyphs(&mut self, env: &mut Environment) -> Vec<Glyph> {
+        let mut text_scaler: Box<Text> = Text::new(self.text.clone())
+            .font_size(self.font_size.clone()).wrap_mode(Wrap::None);
+
+        text_scaler.set_position(Position::new(0.0, 0.0));
+        let normal_scale = env.get_scale_factor();
+        env.set_scale_factor(1.0);
+        text_scaler.calculate_size(Dimension::new(100.0, 100.0), env);
+        env.set_scale_factor(normal_scale);
+
+        let positioned_glyphs = text_scaler.glyphs();
+        positioned_glyphs
+    }
+
+    /// Remove a single grapheme at an index.
+    fn remove(&mut self, index: usize) {
+        let offset = Self::byte_index_from_graphemes(index, &*self.text.value());
+        self.text.value_mut().remove(offset);
+    }
+
+    /// Remove all the graphemes inside the range,
+    fn remove_range(&mut self, index: Range<usize>) {
+        let offset_start = Self::byte_index_from_graphemes(index.start, &*self.text.value());
+        let offset_end = Self::byte_index_from_graphemes(index.end, &*self.text.value());
+        self.text.value_mut().replace_range(offset_start..offset_end, "");
+    }
+
+    /// Get the range from the leftmost character in a word, to the current index.
+    /// When calculating this, all spaces to the left of the word is included as well.
+    fn prev_word_range(text: String, start_index: usize) -> Range<usize> {
+        let mut has_hit_space = false;
+
+        let number_left = text.chars().rev().skip(Self::len_in_graphemes(&text) - start_index).skip_while(|cur| {
+            if *cur == ' ' {
+                has_hit_space = true;
+                true
+            } else {
+                !has_hit_space
+            }
+        }).count();
+
+        number_left..start_index
+    }
+
+    /// Get the range from the current index to the rightmost character in a word.
+    /// When calculating this, all spaces to the right of the word is included as well.
+    fn next_word_range(text: String, start_index: usize) -> Range<usize> {
+        let mut has_hit_space = false;
+
+        let number_left = text.chars().skip(start_index).skip_while(|cur| {
+            if *cur == ' ' {
+                has_hit_space = true;
+                true
+            } else {
+                !has_hit_space
+            }
+        }).count();
+
+        let new_index = Self::len_in_graphemes(&text) - number_left;
+
+        start_index..new_index
+    }
+
+    /// Get a range of the graphemes in the word surrounded by spaces,
+    /// where the current index is within. The spaces is not included.
+    fn word_index_range(text: &String, start_index: usize) -> Range<usize> {
+        let mut max_iter = text.chars().enumerate().skip(start_index).skip_while(|(_, cur)| {
+            *cur != ' '
+        });
+
+        let mut min_iter = text.chars().rev().enumerate().skip(Self::len_in_graphemes(text) - start_index).skip_while(|(_, cur)| {
+            *cur != ' '
+        });
+
+        let max = match max_iter.next() {
+            None => { Self::len_in_graphemes(text) }
+            Some((u, _)) => u
+        };
+
+        let min = match min_iter.next() {
+            None => 0,
+            Some((u, _)) => Self::len_in_graphemes(text) - u
+        };
+
+        min..max
+    }
+
+    /// Recalculate the position of the cursor and the selection. This will not move the cursor
+    /// index, but move the visual positioning of the cursor and the selection box (if selection mode).
+    fn reposition_cursor(&mut self, env: &mut Environment) {
+        let text = self.text.value().clone();
+
+        let glyph = self.glyphs(env);
+
+        let index = match self.cursor {
+            Cursor::Single(index) => index,
+            Cursor::Selection { end, .. } => end
+        };
+
+        let point = index.position(&text, &glyph);
+
+        *self.cursor_x.value_mut() = point.x();
+        *self.selection_x.value_mut() = point.x();
+
+        let selection_width = self.cursor.width(&text, &glyph);
+
+        if selection_width < 0.0 {
+            *self.selection_width.value_mut() = selection_width.abs();
+        } else {
+            *self.selection_x.value_mut() -= selection_width;
+            *self.selection_width.value_mut() = selection_width;
+        }
+    }
+
+    /// This will change the text offset to make the cursor visible. It will result in the text
+    /// getting scrolled, such that the entire cursor is visible.
+    fn recalculate_offset_to_make_cursor_visible(&mut self, env: &mut Environment) {
+        let cursor_x = *self.cursor_x.value();
+        let cursor_width = 4.0;
+        let current_text_offset = *self.text_offset.value();
+
+        if cursor_x + cursor_width > self.width() && -current_text_offset < cursor_x + cursor_width - self.width() {
+            let new_text_offset = -(cursor_x + cursor_width - self.width());
+
+            *self.text_offset.value_mut() = new_text_offset;
+        } else if cursor_x + current_text_offset < 0.0 {
+            let new_text_offset = -(cursor_x);
+
+            *self.text_offset.value_mut() = new_text_offset;
+        }
+
+        let positioned_glyphs = self.glyphs(env);
+
+        if positioned_glyphs.len() != 0 {
+            let last_glyph = &positioned_glyphs[positioned_glyphs.len() - 1];
+
+            let point = last_glyph.position();
+
+            let width = last_glyph.advance_width();
+
+            let width_of_text = point.x() + width;
+
+            if width_of_text < self.width() {
+                *self.text_offset.value_mut() = 0.0;
+            } else if current_text_offset.abs() > width_of_text {
+                *self.text_offset.value_mut() = 0.0;
+                self.recalculate_offset_to_make_cursor_visible(env)
+            }
+        } else {
+            *self.text_offset.value_mut() = 0.0;
+        }
+    }
+
+    fn len_in_graphemes(text: &String) -> usize {
+        text.graphemes(true).count()
+    }
+
+    /// Get the index of the first byte for a given grapheme index.
+    fn byte_index_from_graphemes(index: usize, text: &String) -> usize {
+        if text.len() == 0 { return 0; }
+        let grapheme_byte_offset = match text.grapheme_indices(true).skip(index).next() {
+            None => text.len(),
+            Some((g, _)) => g
+        };
+        grapheme_byte_offset
     }
 }
 

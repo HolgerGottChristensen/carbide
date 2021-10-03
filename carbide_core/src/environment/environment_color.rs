@@ -1,3 +1,4 @@
+use crate::Color;
 use crate::prelude::EnvironmentColorState;
 use crate::state::*;
 use crate::state::WidgetState;
@@ -77,5 +78,19 @@ impl Into<StateKey> for EnvironmentColor {
 impl Into<ColorState> for EnvironmentColor {
     fn into(self) -> ColorState {
         WidgetState::new(Box::new(EnvironmentColorState::new(self)))
+    }
+}
+
+impl ColorState {
+    pub fn darkened(&self, percent: f32) -> ColorState {
+        self.mapped(move |col: &Color| {
+            col.darkened(percent)
+        })
+    }
+
+    pub fn lightened(&self, percent: f32) -> ColorState {
+        self.mapped(move |col: &Color| {
+            col.lightened(percent)
+        })
     }
 }

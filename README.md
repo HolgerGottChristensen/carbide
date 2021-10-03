@@ -28,7 +28,7 @@ don't have to leave the rust ecosystem to be able to develop quality application
 * **Platform agnostic** -- by providing a common interface to multiple platforms. There is currently not any plans for
   running the framework on mobile devices, but experiments have been made.
 
-* **Accessibility** -- by integrating with up incoming rust accessibility crates.
+* **Accessibility** -- by integrating with up-incoming rust accessibility crates.
 
 * **Localization** -- by providing widgets that are aware of language and providing an asset format for translations. We
   are looking at rust attempts at font shaping and ligatures, but it seems to be in its early stages.

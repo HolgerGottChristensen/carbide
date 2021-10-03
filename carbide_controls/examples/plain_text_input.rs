@@ -4,7 +4,7 @@ extern crate env_logger;
 extern crate futures;
 
 use carbide_controls::{PlainSwitch, PlainTextInput};
-use carbide_core::prelude::EnvironmentColor;
+use carbide_core::prelude::{EnvironmentColor, EnvironmentFontSize};
 use carbide_core::state::LocalState;
 use carbide_core::text::{FontFamily, FontStyle, FontWeight};
 use carbide_core::widget::*;
@@ -36,7 +36,10 @@ fn main() {
     window.set_widgets(
         VStack::new(vec![
             Rectangle::new(vec![
-                PlainTextInput::new(text_state).border().color(EnvironmentColor::DarkText)
+                PlainTextInput::new(text_state)
+                    .font_size(EnvironmentFontSize::Title)
+                    .border()
+                    .color(EnvironmentColor::DarkText)
             ]).shrink_to_fit().fill(EnvironmentColor::Blue),
         ])
             .spacing(10.0)
