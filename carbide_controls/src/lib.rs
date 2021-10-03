@@ -5,7 +5,7 @@ extern crate copypasta;
 extern crate unicode_segmentation;
 
 //pub use button::Button;
-//pub use check_box::CheckBox;
+pub use check_box::*;
 pub use list::List;
 pub use plain::*;
 //pub use pop_up_button::PopUpButton;
@@ -29,7 +29,7 @@ macro_rules! capture {
 }
 
 //mod button;
-//mod check_box;
+mod check_box;
 mod list;
 mod plain;
 //mod pop_up_button;

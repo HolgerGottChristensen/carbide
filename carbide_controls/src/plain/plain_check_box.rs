@@ -112,7 +112,6 @@ impl PlainCheckBox {
         let child = HStack::new(vec![
             button,
             Text::new(label_state.clone()),
-            Spacer::new(),
         ])
             .spacing(5.0);
 
