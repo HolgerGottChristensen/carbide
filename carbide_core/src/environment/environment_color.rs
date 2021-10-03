@@ -68,6 +68,12 @@ impl Default for EnvironmentColor {
     }
 }
 
+impl Into<StateKey> for EnvironmentColor {
+    fn into(self) -> StateKey {
+        StateKey::Color(self)
+    }
+}
+
 impl Into<ColorState> for EnvironmentColor {
     fn into(self) -> ColorState {
         WidgetState::new(Box::new(EnvironmentColorState::new(self)))

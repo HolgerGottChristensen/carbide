@@ -8,10 +8,10 @@ extern crate unicode_segmentation;
 pub use check_box::*;
 pub use list::List;
 pub use plain::*;
-//pub use pop_up_button::PopUpButton;
+pub use pop_up_button::PopUpButton;
 pub use radio_button::RadioButton;
 ////pub use text_input::TextInput;
-//pub use switch::Switch;
+pub use switch::Switch;
 pub use types::CheckBoxState;
 pub use types::CheckBoxValue;
 
@@ -32,9 +32,9 @@ macro_rules! capture {
 mod check_box;
 mod list;
 mod plain;
-//mod pop_up_button;
+mod pop_up_button;
 mod radio_button;
-//mod switch;
+mod switch;
 //mod text_input;
 mod types;
 

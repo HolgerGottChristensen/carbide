@@ -10,7 +10,7 @@ use crate::draw::Dimension;
 use crate::draw::Scalar;
 use crate::focus::Refocus;
 use crate::mesh::TextureAtlas;
-use crate::prelude::EnvironmentVariable;
+use crate::prelude::{EnvironmentColor, EnvironmentVariable};
 use crate::state::{InnerState, StateKey, ValueCell};
 use crate::text::{Font, FontFamily, FontId, FontSize, FontStyle, FontWeight, Glyph};
 use crate::widget::{ImageFilter, Overlay};
@@ -373,6 +373,10 @@ impl Environment {
 
     pub fn pop(&mut self) {
         self.stack.pop();
+    }
+
+    pub fn env_color(&self, color: EnvironmentColor) -> Option<Color> {
+        self.get_color(&StateKey::Color(color))
     }
 
     pub fn get_color(&self, color: &StateKey) -> Option<Color> {

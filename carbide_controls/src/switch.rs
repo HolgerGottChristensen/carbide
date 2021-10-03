@@ -1,155 +1,88 @@
 use carbide_core::draw::Dimension;
+use carbide_core::environment::{Environment, EnvironmentColor};
+use carbide_core::state::{BoolState, FocusState, StateKey, StringState};
 use carbide_core::widget::*;
 
 use crate::PlainSwitch;
 
-#[derive(Clone, Widget)]
-pub struct Switch<GS>
-    where
-        GS: GlobalStateContract,
-{
-    id: Id,
-    child: PlainSwitch<GS>,
-    position: Point,
-    dimension: Dimensions,
-}
+pub struct Switch();
 
-impl<GS: GlobalStateContract> Switch<GS> {
-    pub fn new<S: Into<StringState<GS>>, L: Into<BoolState<GS>>>(
+impl Switch {
+    pub fn new<S: Into<StringState>, L: Into<BoolState>>(
         label: S,
         checked: L,
-    ) -> Box<Self> {
-        let mut child = *PlainSwitch::new(label, checked.into());
+    ) -> Box<PlainSwitch> {
+        let mut plain = PlainSwitch::new(label, checked.into())
+            .delegate(Self::delegate);
+        /*
+                child = *child.delegate(|focus_state, checked_state, button: Box<dyn Widget<GS>>| {
+                    let focus_color = TupleState3::new(
+                        focus_state,
+                        EnvironmentColor::OpaqueSeparator,
+                        EnvironmentColor::Accent,
+                    )
+                        .mapped(|(focus, primary_color, focus_color)| {
+                            if focus == &Focus::Focused {
+                                *focus_color
+                            } else {
+                                *primary_color
+                            }
+                        });
 
-        child = *child.delegate(|focus_state, checked_state, button: Box<dyn Widget<GS>>| {
-            let focus_color = TupleState3::new(
-                focus_state,
-                EnvironmentColor::OpaqueSeparator,
-                EnvironmentColor::Accent,
-            )
-                .mapped(|(focus, primary_color, focus_color)| {
-                    if focus == &Focus::Focused {
-                        *focus_color
-                    } else {
-                        *primary_color
-                    }
+                    let checked_color = TupleState3::new(
+                        checked_state.clone(),
+                        EnvironmentColor::SecondarySystemBackground,
+                        EnvironmentColor::Accent,
+                    )
+                        .mapped(|(selected, primary_color, checked_color)| {
+                            if *selected {
+                                *checked_color
+                            } else {
+                                *primary_color
+                            }
+                        });
+
+
                 });
 
-            let checked_color = TupleState3::new(
-                checked_state.clone(),
-                EnvironmentColor::SecondarySystemBackground,
-                EnvironmentColor::Accent,
-            )
-                .mapped(|(selected, primary_color, checked_color)| {
-                    if *selected {
-                        *checked_color
-                    } else {
-                        *primary_color
-                    }
-                });
+                Box::new(Switch {
+                    id: Id::new_v4(),
+                    child,
+                    position: [0.0, 0.0],
+                    dimension: [235.0, 26.0],
+                })*/
+        plain
+    }
 
-            ZStack::new(vec![
-                Capsule::new()
-                    .fill(checked_color)
-                    .stroke(focus_color)
-                    .stroke_style(1.0),
-                IfElse::new(checked_state)
-                    .when_true(HStack::new(vec![
-                        Spacer::new(SpacerDirection::Horizontal),
-                        Ellipse::new()
-                            .fill(EnvironmentColor::DarkText)
-                            .frame(22.0, 22.0),
-                    ]))
-                    .when_false(HStack::new(vec![
-                        Ellipse::new()
-                            .fill(EnvironmentColor::DarkText)
-                            .frame(22.0, 22.0),
-                        Spacer::new(SpacerDirection::Horizontal),
-                    ]))
-                    .padding(2.0),
-                button,
-            ])
-                .frame(45.0, 26.0)
+    fn delegate(_focus: FocusState, checked: BoolState) -> Box<dyn Widget> {
+        let checked_color = checked.mapped_env(|check: &bool, env: &Environment| {
+            if *check {
+                env.get_color(&StateKey::Color(EnvironmentColor::Accent)).unwrap()
+            } else {
+                env.get_color(&StateKey::Color(EnvironmentColor::SecondarySystemBackground)).unwrap()
+            }
         });
 
-        Box::new(Switch {
-            id: Id::new_v4(),
-            child,
-            position: [0.0, 0.0],
-            dimension: [235.0, 26.0],
-        })
+        ZStack::new(vec![
+            Capsule::new()
+                .fill(checked_color)
+                .stroke(EnvironmentColor::OpaqueSeparator)
+                .stroke_style(1.0),
+            IfElse::new(checked)
+                .when_true(HStack::new(vec![
+                    Spacer::new(),
+                    Ellipse::new()
+                        .fill(EnvironmentColor::DarkText)
+                        .frame(20.0, 20.0),
+                ]))
+                .when_false(HStack::new(vec![
+                    Ellipse::new()
+                        .fill(EnvironmentColor::DarkText)
+                        .frame(18.0, 18.0),
+                    Spacer::new(),
+                ]))
+                .padding(2.0),
+        ])
+            .frame(39.0, 22.0)
     }
 }
-
-impl<GS: GlobalStateContract> CommonWidget<GS> for Switch<GS> {
-    fn id(&self) -> Id {
-        self.id
-    }
-
-    fn set_id(&mut self, id: Id) {
-        self.id = id;
-    }
-
-    fn flag(&self) -> Flags {
-        Flags::EMPTY
-    }
-
-    fn children(&self) -> WidgetIter {
-        WidgetIter::single(&self.child)
-    }
-
-    fn children_mut(&mut self) -> WidgetIterMut {
-        WidgetIterMut::single(&mut self.child)
-    }
-
-    fn proxied_children(&mut self) -> WidgetIterMut {
-        WidgetIterMut::single(&mut self.child)
-    }
-
-    fn proxied_children_rev(&mut self) -> WidgetIterMut {
-        WidgetIterMut::single(&mut self.child)
-    }
-
-    fn position(&self) -> Point {
-        self.position
-    }
-
-    fn set_position(&mut self, position: Dimensions) {
-        self.position = position;
-    }
-
-    fn dimension(&self) -> Dimensions {
-        self.dimension
-    }
-
-    fn set_dimension(&mut self, dimension: Dimension) {
-        self.dimension = dimension
-    }
-}
-
-impl<GS: GlobalStateContract> ChildRender for Switch<GS> {}
-
-impl<GS: GlobalStateContract> Layout<GS> for Switch<GS> {
-    fn flexibility(&self) -> u32 {
-        5
-    }
-
-    fn calculate_size(&mut self, requested_size: Dimensions, env: &mut Environment) -> Dimensions {
-        self.set_width(requested_size[0]);
-
-        self.child.calculate_size(self.dimension, env);
-
-        self.dimension
-    }
-
-    fn position_children(&mut self) {
-        let positioning = BasicLayouter::Center.position();
-        let position = self.position();
-        let dimension = self.dimension();
-
-        positioning(position, dimension, &mut self.child);
-        self.child.position_children();
-    }
-}
-
-impl<GS: GlobalStateContract> WidgetExt<GS> for Switch<GS> {}

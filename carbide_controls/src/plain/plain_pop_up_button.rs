@@ -18,7 +18,7 @@ use crate::plain::plain_pop_up_button_popup::PlainPopUpButtonPopUp;
 use crate::plain::plain_pop_up_button_popup_item::PlainPopUpButtonPopUpItem;
 
 #[derive(Clone)]
-struct PopupDelegate<T> where T: StateContract + 'static {
+pub struct PopupDelegate<T> where T: StateContract + 'static {
     hover_model: TState<Vec<bool>>,
     selected_item: TState<T>,
     popup_item_delegate: PopupItemDelegateGenerator<T>,
@@ -87,6 +87,42 @@ impl<T: StateContract + PartialEq + 'static> PlainPopUpButton<T> {
         )
     }
 
+    pub fn delegate(mut self, delegate: DelegateGenerator<T>) -> Box<Self> {
+        self.delegate = delegate;
+        Self::new_internal(
+            self.focus,
+            self.model,
+            self.selected_item,
+            self.popup_item_delegate,
+            self.popup_delegate,
+            self.delegate,
+        )
+    }
+
+    pub fn popup_item_delegate(mut self, popup_item_delegate: PopupItemDelegateGenerator<T>) -> Box<Self> {
+        self.popup_item_delegate = popup_item_delegate;
+        Self::new_internal(
+            self.focus,
+            self.model,
+            self.selected_item,
+            self.popup_item_delegate,
+            self.popup_delegate,
+            self.delegate,
+        )
+    }
+
+    pub fn popup_delegate(mut self, popup_delegate: PopupDelegateGenerator<T>) -> Box<Self> {
+        self.popup_delegate = popup_delegate;
+        Self::new_internal(
+            self.focus,
+            self.model,
+            self.selected_item,
+            self.popup_item_delegate,
+            self.popup_delegate,
+            self.delegate,
+        )
+    }
+
     fn new_internal<M: Into<TState<Vec<T>>>, S: Into<TState<T>>>(
         focus: FocusState,
         model: M,
@@ -148,7 +184,7 @@ impl<T: StateContract + PartialEq + 'static> PlainPopUpButton<T> {
 
         Rectangle::new(vec![
             Text::new(item.mapped(|a: &T| format!("{:?}", *a)))
-        ]).fill(color).frame(200.0, 30.0)
+        ]).fill(color).frame(SCALE, 30.0)
     }
 
     fn default_popup_delegate(
@@ -158,7 +194,7 @@ impl<T: StateContract + PartialEq + 'static> PlainPopUpButton<T> {
         List::new(model, delegate)
             .spacing(0.0)
             .clip()
-            .frame(200.0, 200.0)
+            .frame(SCALE, 200.0)
     }
 
     /*fn handle_mouse_event(
