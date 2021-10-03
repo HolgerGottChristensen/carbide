@@ -35,7 +35,9 @@ fn main() {
 
     window.set_widgets(
         VStack::new(vec![
-            PlainTextInput::new(text_state).border().color(EnvironmentColor::DarkText),
+            Rectangle::new(vec![
+                PlainTextInput::new(text_state).border().color(EnvironmentColor::DarkText)
+            ]).shrink_to_fit().fill(EnvironmentColor::Blue),
         ])
             .spacing(10.0)
             .padding(EdgeInsets::all(40.0)),

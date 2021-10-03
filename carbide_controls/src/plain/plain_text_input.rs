@@ -9,7 +9,7 @@ use carbide_core::event::{Key, KeyboardEvent, KeyboardEventHandler, ModifierKey,
 use carbide_core::focus::Focus;
 use carbide_core::layout::BasicLayouter;
 use carbide_core::prelude::{EnvironmentColor, Layout};
-use carbide_core::state::{F64State, FocusState, LocalState, State, StringState, TState, U32State};
+use carbide_core::state::{AnimatedState, F64State, FocusState, LocalState, State, StringState, TState, U32State};
 use carbide_core::text::Glyph;
 use carbide_core::widget::{CommonWidget, HStack, Id, Rectangle, SCALE, Spacer, Text, Widget, WidgetExt, WidgetIter, WidgetIterMut, ZStack};
 use carbide_core::widget::Wrap;
@@ -44,7 +44,7 @@ impl PlainTextInput {
     pub fn new<T: Into<StringState>>(text: T) -> Box<Self> {
         let text = text.into();
         let focus_state: FocusState = LocalState::new(Focus::Unfocused).into();
-        let font_size: U32State = EnvironmentFontSize::Headline.into();
+        let font_size: U32State = EnvironmentFontSize::Body.into();
 
         Self::internal_new(text, font_size, focus_state)
     }
@@ -59,7 +59,7 @@ impl PlainTextInput {
         let selection_width: F64State = LocalState::new(0.0).into();
         let text_offset: F64State = LocalState::new(0.0).into();
 
-        let child = Rectangle::new(vec![
+        let child =
             HStack::new(vec![
                 ZStack::new(vec![
                     Rectangle::new(vec![])
@@ -76,8 +76,7 @@ impl PlainTextInput {
                 ]).with_alignment(BasicLayouter::TopLeading)
                     .offset(text_offset.clone(), 0.0),
                 Spacer::new(),
-            ]).frame(SCALE, 30)
-        ]).shrink_to_fit().fill(EnvironmentColor::Blue);
+            ]).frame(SCALE, 30);
 
         Box::new(PlainTextInput {
             id: Id::new_v4(),
