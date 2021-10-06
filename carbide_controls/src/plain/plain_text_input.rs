@@ -508,23 +508,44 @@ impl MouseEventHandler for PlainTextInput {
         let text_offset = *self.text_offset.value();
 
         match event {
-            MouseEvent::Press(_, position, _) => {
+            MouseEvent::Press(_, position, modifier) => {
                 //self.request_focus(env);
+                if !modifier.contains(ModifierKey::SHIFT) {
+                    let relative_offset = position.x() - self.position.x() - text_offset;
+                    let char_index = Cursor::char_index(relative_offset, &self.glyphs(env));
 
-                let relative_offset = position.x() - self.position.x() - text_offset;
-                let char_index = Cursor::char_index(relative_offset, &self.glyphs(env));
-
-                self.drag_start_cursor = Some(Cursor::Single(CursorIndex { line: 0, char: char_index }));
-                if let Cursor::Single(_) = self.cursor {
-                    self.cursor = Cursor::Single(CursorIndex { line: 0, char: char_index });
+                    self.drag_start_cursor = Some(Cursor::Single(CursorIndex { line: 0, char: char_index }));
+                    if let Cursor::Single(_) = self.cursor {
+                        self.cursor = Cursor::Single(CursorIndex { line: 0, char: char_index });
+                    }
                 }
             }
-            MouseEvent::Click(_, position, _) => {
-                //self.request_focus(env);
-                let relative_offset = position.x() - self.position.x() - text_offset;
-                let char_index = Cursor::char_index(relative_offset, &self.glyphs(env));
+            MouseEvent::Click(_, position, modifier) => {
+                if modifier == &ModifierKey::SHIFT {
+                    let relative_offset = position.x() - self.position.x() - text_offset;
+                    let clicked_index = Cursor::char_index(relative_offset, &self.glyphs(env));
 
-                self.cursor = Cursor::Single(CursorIndex { line: 0, char: char_index });
+                    match self.cursor {
+                        Cursor::Single(CursorIndex { line, char }) => {
+                            self.cursor = Cursor::Selection {
+                                start: CursorIndex { line: 0, char },
+                                end: CursorIndex { line: 0, char: clicked_index },
+                            }
+                        }
+                        Cursor::Selection { start: CursorIndex { char, .. }, .. } => {
+                            self.cursor = Cursor::Selection {
+                                start: CursorIndex { line: 0, char },
+                                end: CursorIndex { line: 0, char: clicked_index },
+                            }
+                        }
+                    }
+                } else {
+                    //self.request_focus(env);
+                    let relative_offset = position.x() - self.position.x() - text_offset;
+                    let char_index = Cursor::char_index(relative_offset, &self.glyphs(env));
+
+                    self.cursor = Cursor::Single(CursorIndex { line: 0, char: char_index });
+                }
             }
             MouseEvent::NClick(_, position, _, n) => {
                 //self.request_focus(env);

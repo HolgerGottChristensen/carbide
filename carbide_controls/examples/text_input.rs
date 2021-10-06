@@ -31,6 +31,14 @@ fn main() {
     );
     window.add_font_family(family);
 
+    let mut family = FontFamily::new("Apple Color Emoji");
+    family.add_bitmap_font_with_hints(
+        "/System/Library/Fonts/Apple Color Emoji.ttc",
+        FontWeight::Normal,
+        FontStyle::Normal,
+    );
+    window.add_font_family(family);
+
     let text_state = LocalState::new("Hello World!".to_string());
 
     window.set_widgets(
