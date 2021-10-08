@@ -5,7 +5,7 @@ extern crate futures;
 
 use carbide_controls::{PlainSwitch, PlainTextInput, TextInput};
 use carbide_core::prelude::EnvironmentColor;
-use carbide_core::state::LocalState;
+use carbide_core::state::{LocalState, ResStringState, StringState};
 use carbide_core::text::{FontFamily, FontStyle, FontWeight};
 use carbide_core::widget::*;
 use carbide_core::window::TWindow;
@@ -39,7 +39,7 @@ fn main() {
     );
     window.add_font_family(family);
 
-    let text_state = LocalState::new("Hello World!".to_string());
+    let text_state = LocalState::new(Ok(32));
 
     window.set_widgets(
         VStack::new(vec![

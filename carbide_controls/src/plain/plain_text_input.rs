@@ -6,16 +6,21 @@ use unicode_segmentation::UnicodeSegmentation;
 use carbide_core::draw::{Dimension, Position};
 use carbide_core::environment::{Environment, EnvironmentFontSize};
 use carbide_core::event::{Key, KeyboardEvent, KeyboardEventHandler, ModifierKey, MouseButton, MouseEvent, MouseEventHandler, OtherEventHandler, WidgetEvent, WindowEvent};
+use carbide_core::flags::Flags;
 use carbide_core::focus::Focus;
-use carbide_core::layout::BasicLayouter;
+use carbide_core::focus::Focusable;
+use carbide_core::layout::{BasicLayouter, Layouter};
 use carbide_core::prelude::{EnvironmentColor, Layout};
-use carbide_core::state::{AnimatedState, ColorState, F64State, FocusState, LocalState, State, StringState, TState, U32State};
+use carbide_core::Scalar;
+use carbide_core::state::{AnimatedState, ColorState, F64State, FocusState, LocalState, ResStringState, State, StringState, TState, U32State};
 use carbide_core::text::{FontSize, Glyph};
-use carbide_core::widget::{CommonWidget, HStack, Id, Rectangle, SCALE, Spacer, Text, Widget, WidgetExt, WidgetIter, WidgetIterMut, ZStack};
+use carbide_core::widget::{CommonWidget, HStack, Id, IfElse, Rectangle, SCALE, Spacer, Text, Widget, WidgetExt, WidgetIter, WidgetIterMut, ZStack};
 use carbide_core::widget::Wrap;
 
 use crate::plain::cursor::{Cursor, CursorIndex};
 use crate::plain::text_input_key_commands::TextInputKeyCommand;
+
+pub type TextInputState = ResStringState;
 
 /// A plain text input widget. The widget contains no specific styling, other than text color,
 /// cursor color/width and selection color. Most common logic has been implemented, such as
@@ -37,6 +42,7 @@ pub struct PlainTextInput {
     #[state] text_color: ColorState,
 
     #[state] focus: FocusState,
+    #[state] input_state: TextInputState,
     #[state] text: StringState,
     #[state] cursor_x: F64State,
     #[state] selection_x: F64State,
@@ -46,7 +52,7 @@ pub struct PlainTextInput {
 }
 
 impl PlainTextInput {
-    pub fn new<T: Into<StringState>>(text: T) -> Box<Self> {
+    pub fn new<T: Into<TextInputState>>(text: T) -> Box<Self> {
         let text = text.into();
         let focus_state: FocusState = LocalState::new(Focus::Unfocused).into();
         let font_size: U32State = EnvironmentFontSize::Body.into();
@@ -65,10 +71,22 @@ impl PlainTextInput {
         )
     }
 
+    pub fn focus<F: Into<FocusState>>(mut self, focus: F) -> Box<Self> {
+        self.focus = focus.into();
+        Self::internal_new(
+            self.input_state,
+            self.font_size,
+            self.focus,
+            self.selection_color,
+            self.cursor_color,
+            self.text_color,
+        )
+    }
+
     pub fn font_size<I: Into<U32State>>(mut self, font_size: I) -> Box<Self> {
         self.font_size = font_size.into();
         Self::internal_new(
-            self.text,
+            self.input_state,
             self.font_size,
             self.focus,
             self.selection_color,
@@ -80,7 +98,7 @@ impl PlainTextInput {
     pub fn selection_color<C: Into<ColorState>>(mut self, color: C) -> Box<Self> {
         self.selection_color = color.into();
         Self::internal_new(
-            self.text,
+            self.input_state,
             self.font_size,
             self.focus,
             self.selection_color,
@@ -92,7 +110,7 @@ impl PlainTextInput {
     pub fn cursor_color<C: Into<ColorState>>(mut self, color: C) -> Box<Self> {
         self.cursor_color = color.into();
         Self::internal_new(
-            self.text,
+            self.input_state,
             self.font_size,
             self.focus,
             self.selection_color,
@@ -104,7 +122,7 @@ impl PlainTextInput {
     pub fn text_color<C: Into<ColorState>>(mut self, color: C) -> Box<Self> {
         self.text_color = color.into();
         Self::internal_new(
-            self.text,
+            self.input_state,
             self.font_size,
             self.focus,
             self.selection_color,
@@ -114,7 +132,7 @@ impl PlainTextInput {
     }
 
     pub fn internal_new(
-        text: StringState,
+        input: TextInputState,
         font_size: U32State,
         focus: FocusState,
         selection_color: ColorState,
@@ -126,21 +144,32 @@ impl PlainTextInput {
         let selection_width: F64State = LocalState::new(0.0).into();
         let text_offset: F64State = LocalState::new(0.0).into();
 
+        let is_focused = focus.mapped(|focus: &Focus| {
+            focus == &Focus::Focused
+        });
+        let text_string: StringState = input.clone().into();
+
         let child =
             HStack::new(vec![
                 ZStack::new(vec![
-                    Rectangle::new(vec![])
-                        .fill(selection_color.clone())
-                        .frame(selection_width.clone(), font_size.clone().mapped(|val: &u32| *val as f64))
-                        .offset(selection_x.clone(), 0.0),
-                    Text::new(text.clone())
+                    IfElse::new(is_focused.clone())
+                        .when_true(
+                            Rectangle::new(vec![])
+                                .fill(selection_color.clone())
+                                .frame(selection_width.clone(), font_size.clone().mapped(|val: &u32| *val as f64))
+                                .offset(selection_x.clone(), 0.0)
+                        ),
+                    Text::new(text_string)
                         .font_size(font_size.clone())
                         .wrap_mode(Wrap::None)
                         .foreground_color(text_color.clone()),
-                    Rectangle::new(vec![])
-                        .fill(cursor_color.clone())
-                        .frame(1.0, font_size.clone().mapped(|val: &u32| *val as f64))
-                        .offset(cursor_x.clone(), 0.0),
+                    IfElse::new(is_focused)
+                        .when_true(
+                            Rectangle::new(vec![])
+                                .fill(cursor_color.clone())
+                                .frame(1.0, font_size.clone().mapped(|val: &u32| *val as f64))
+                                .offset(cursor_x.clone(), 0.0),
+                        ),
                 ]).with_alignment(BasicLayouter::TopLeading)
                     .offset(text_offset.clone(), 0.0),
                 Spacer::new(),
@@ -156,19 +185,24 @@ impl PlainTextInput {
             drag_start_cursor: None,
             selection_color,
             cursor_color,
-            text,
+            text: input.clone().into(),
             cursor_x,
             selection_x,
             selection_width,
             text_offset,
             font_size,
             text_color,
+            input_state: input,
         })
     }
 }
 
 impl KeyboardEventHandler for PlainTextInput {
     fn handle_keyboard_event(&mut self, event: &KeyboardEvent, env: &mut Environment) {
+        if self.get_focus() == Focus::Unfocused {
+            return;
+        }
+
         match event {
             KeyboardEvent::Press(key, modifier) => {
                 let (current_movable_cursor_index, _is_selection) = match self.cursor {
@@ -472,7 +506,7 @@ impl KeyboardEventHandler for PlainTextInput {
                         }
                     }
                     TextInputKeyCommand::Enter => {
-                        //self.set_focus_and_request(Focus::FocusReleased, env);
+                        self.set_focus_and_request(Focus::FocusReleased, env);
                     }
                 }
             }
@@ -505,6 +539,19 @@ impl KeyboardEventHandler for PlainTextInput {
 
 impl MouseEventHandler for PlainTextInput {
     fn handle_mouse_event(&mut self, event: &MouseEvent, _consumed: &bool, env: &mut Environment) {
+        if !self.is_inside(event.get_current_mouse_position()) {
+            match event {
+                MouseEvent::Press(_, _, _) => {
+                    if self.get_focus() == Focus::Focused {
+                        self.set_focus_and_request(Focus::FocusReleased, env);
+                    }
+                }
+                _ => ()
+            }
+
+            return;
+        }
+
         let text_offset = *self.text_offset.value();
 
         match event {
@@ -521,6 +568,7 @@ impl MouseEventHandler for PlainTextInput {
                 }
             }
             MouseEvent::Click(_, position, modifier) => {
+                self.request_focus(env);
                 if modifier == &ModifierKey::SHIFT {
                     let relative_offset = position.x() - self.position.x() - text_offset;
                     let clicked_index = Cursor::char_index(relative_offset, &self.glyphs(env));
@@ -540,7 +588,6 @@ impl MouseEventHandler for PlainTextInput {
                         }
                     }
                 } else {
-                    //self.request_focus(env);
                     let relative_offset = position.x() - self.position.x() - text_offset;
                     let char_index = Cursor::char_index(relative_offset, &self.glyphs(env));
 
@@ -836,6 +883,19 @@ impl OtherEventHandler for PlainTextInput {
 impl CommonWidget for PlainTextInput {
     fn id(&self) -> Id {
         self.id
+    }
+
+    fn get_focus(&self) -> Focus {
+        self.focus.value().clone()
+    }
+
+    fn set_focus(&mut self, focus: Focus) {
+        println!("Set focus of plain field to: {:?}", focus);
+        *self.focus.value_mut() = focus;
+    }
+
+    fn flag(&self) -> Flags {
+        Flags::FOCUSABLE
     }
 
     fn set_id(&mut self, id: Id) {

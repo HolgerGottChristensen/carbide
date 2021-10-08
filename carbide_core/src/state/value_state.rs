@@ -2,7 +2,7 @@ use std::fmt::{Debug, Formatter};
 use std::ops::{Deref, DerefMut};
 
 use crate::environment::Environment;
-use crate::state::{State, StateContract, TState};
+use crate::state::{BoolState, MapOwnedState, MapState, ResStringState, State, StateContract, StringState, TState};
 use crate::state::{ValueRef, ValueRefMut};
 use crate::state::widget_state::WidgetState;
 
@@ -78,5 +78,50 @@ impl From<u32> for TState<f64> {
 impl From<&str> for TState<String> {
     fn from(t: &str) -> Self {
         WidgetState::new(ValueState::new(t.to_string()))
+    }
+}
+
+impl<T: StateContract + Default + 'static> Into<TState<Result<T, String>>> for TState<T> {
+    fn into(self) -> TState<Result<T, String>> {
+        MapOwnedState::new_with_default(self, |val: &T, env: &Environment| {
+            Ok(val.clone())
+        }, Ok(T::default())).into()
+    }
+}
+
+impl Into<ResStringState> for TState<Result<u32, String>> {
+    fn into(self) -> ResStringState {
+        MapOwnedState::new_with_default(self, |value: &Result<u32, String>, env: &Environment| {
+            match value {
+                Ok(val) => { Ok(val.to_string()) }
+                Err(val) => { Err(val.to_string()) }
+            }
+        }, Ok("".to_string())).into()
+    }
+}
+
+impl Into<StringState> for ResStringState {
+    fn into(self) -> StringState {
+        MapState::new(self, (), |res: &Result<String, String>, val| {
+            match res.as_ref() {
+                Ok(a) | Err(a) => {
+                    a
+                }
+            }
+        }, |res: &mut Result<String, String>, val| {
+            match res.as_mut() {
+                Ok(a) | Err(a) => {
+                    a
+                }
+            }
+        }).into()
+    }
+}
+
+impl Into<BoolState> for ResStringState {
+    fn into(self) -> BoolState {
+        self.mapped(|val: &Result<String, String>| {
+            val.is_err()
+        })
     }
 }

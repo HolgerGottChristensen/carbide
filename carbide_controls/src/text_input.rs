@@ -9,12 +9,12 @@ use carbide_core::event::{Key, KeyboardEvent, KeyboardEventHandler, ModifierKey,
 use carbide_core::focus::Focus;
 use carbide_core::layout::BasicLayouter;
 use carbide_core::prelude::{EnvironmentColor, Layout};
-use carbide_core::state::{ColorState, F64State, FocusState, LocalState, State, StringState, TState, U32State};
+use carbide_core::state::{BoolState, ColorState, F64State, FocusState, LocalState, State, StringState, TState, U32State};
 use carbide_core::text::Glyph;
 use carbide_core::widget::{CommonWidget, CornerRadii, EdgeInsets, HStack, Id, Rectangle, RoundedRectangle, SCALE, Spacer, Text, Widget, WidgetExt, WidgetIter, WidgetIterMut, ZStack};
 use carbide_core::widget::Wrap;
 
-use crate::PlainTextInput;
+use crate::{PlainTextInput, TextInputState};
 
 /// A plain text input widget. The widget contains no specific styling, other than text color,
 /// cursor color/width and selection color. Most common logic has been implemented, such as
@@ -27,24 +27,45 @@ pub struct TextInput {
     position: Position,
     dimension: Dimension,
     #[state] focus: FocusState,
+    #[state] is_error: BoolState,
 }
 
 impl TextInput {
-    pub fn new<T: Into<StringState>>(text: T) -> Box<Self> {
+    pub fn new<T: Into<TextInputState>>(text: T) -> Box<Self> {
         let text = text.into();
-        let focus_state: FocusState = LocalState::new(Focus::Unfocused).into();
+        let focus_state: FocusState = LocalState::new(Focus::Focused).into();
 
         let cursor_color: ColorState = EnvironmentColor::Label.into();
 
         let selection_color: ColorState = EnvironmentColor::Accent.into();
         let darkened_selection_color = selection_color.darkened(0.2);
 
+        let is_error: BoolState = text.clone().into();
+        let is_error_stroke: BoolState = is_error.clone();
+
+        let stroke_color = focus_state.mapped_env(move |focus: &Focus, env: &Environment| {
+            let e = is_error_stroke.clone();
+            if *e.value() {
+                env.env_color(EnvironmentColor::Red).unwrap()
+            } else {
+                match focus {
+                    Focus::Focused => {
+                        env.env_color(EnvironmentColor::Accent).unwrap()
+                    }
+                    _ => {
+                        env.env_color(EnvironmentColor::OpaqueSeparator).unwrap()
+                    }
+                }
+            }
+        });
+
         let child = ZStack::new(vec![
             RoundedRectangle::new(CornerRadii::all(3.0))
                 .fill(EnvironmentColor::SecondarySystemBackground)
-                .stroke(EnvironmentColor::OpaqueSeparator)
+                .stroke(stroke_color)
                 .stroke_style(1.0),
             PlainTextInput::new(text)
+                .focus(focus_state.clone())
                 .cursor_color(cursor_color)
                 .selection_color(darkened_selection_color)
                 .clip()
@@ -57,6 +78,7 @@ impl TextInput {
             position: Default::default(),
             dimension: Default::default(),
             focus: focus_state,
+            is_error,
         })
     }
 }

@@ -40,6 +40,7 @@ pub(crate) type InnerState<T> = Rc<ValueCell<T>>;
 
 pub type ColorState = TState<Color>;
 pub type StringState = TState<String>;
+pub type ResStringState = TState<Result<String, String>>;
 pub type U32State = TState<u32>;
 pub type I32State = TState<i32>;
 pub type UsizeState = TState<usize>;
