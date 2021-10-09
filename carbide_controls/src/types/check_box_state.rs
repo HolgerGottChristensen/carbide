@@ -1,6 +1,6 @@
 use serde::{Deserialize, Serialize};
 
-use carbide_core::state::TState;
+use carbide_core::state::{BoolState, MapOwnedState, TState};
 
 pub type CheckBoxState = TState<CheckBoxValue>;
 
@@ -16,3 +16,29 @@ impl Default for CheckBoxValue {
         CheckBoxValue::False
     }
 }
+
+/*impl From<BoolState> for CheckBoxState {
+    fn from(self) -> CheckBoxState {
+        MapOwnedState::new_with_default_and_rev(
+            self,
+            |from: &bool, _:&_, _:&_| {
+                if *from {
+                    CheckBoxValue::True
+                } else {
+                    CheckBoxValue::False
+                }
+            },
+            |to: &CheckBoxValue| {
+                match to {
+                    CheckBoxValue::True => {
+                        true
+                    }
+                    CheckBoxValue::Intermediate | CheckBoxValue::False => {
+                        false
+                    }
+                }
+            },
+            false
+        ).into()
+    }
+}*/

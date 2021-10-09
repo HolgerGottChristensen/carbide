@@ -45,7 +45,7 @@ impl<T: 'static + StateContract + PartialEq> PlainRadioButton<T> {
         let focus_state = LocalState::new(Focus::Unfocused);
 
         fn delegate(_: FocusState, selected: BoolState) -> Box<dyn Widget> {
-            let highlight_color = MapOwnedState::new(selected.clone(), |selected: &BoolState, env: &Environment| {
+            let highlight_color = MapOwnedState::new(selected.clone(), |selected: &BoolState, _: &_, env: &Environment| {
                 if *selected.value() {
                     env.get_color(&StateKey::Color(EnvironmentColor::Green)).unwrap()
                 } else {
@@ -94,7 +94,7 @@ impl<T: 'static + StateContract + PartialEq> PlainRadioButton<T> {
     ) -> Box<Self> {
         let reference1 = reference.clone();
 
-        let selected_state: BoolState = MapOwnedState::new(local_state.clone(), move |selected: &TState<T>, env: &Environment| {
+        let selected_state: BoolState = MapOwnedState::new(local_state.clone(), move |selected: &TState<T>, _: &_, env: &Environment| {
             reference1 == *selected.value()
         }).into();
 

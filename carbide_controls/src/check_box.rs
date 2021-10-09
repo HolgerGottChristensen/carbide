@@ -38,7 +38,7 @@ impl CheckBox {
                 }
             });*/
 
-        let checked_color = checked.mapped_env(|check: &CheckBoxValue, env: &Environment| {
+        let checked_color = checked.mapped_env(|check: &CheckBoxValue, _: &_, env: &Environment| {
             match *check {
                 CheckBoxValue::True | CheckBoxValue::Intermediate => {
                     env.get_color(&StateKey::Color(EnvironmentColor::Accent)).unwrap()

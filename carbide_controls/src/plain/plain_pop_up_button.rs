@@ -174,7 +174,7 @@ impl<T: StateContract + PartialEq + 'static> PlainPopUpButton<T> {
     fn default_popup_item_delegate(
         item: TState<T>, index: UsizeState, hover_state: BoolState, selected_state: TState<T>,
     ) -> Box<dyn Widget> {
-        let color = hover_state.mapped_env(|hovered: &bool, env: &Environment| {
+        let color = hover_state.mapped_env(|hovered: &bool, _: &_, env: &Environment| {
             if *hovered {
                 env.get_color(&StateKey::Color(EnvironmentColor::Pink)).unwrap()
             } else {

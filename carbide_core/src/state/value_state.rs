@@ -1,5 +1,6 @@
 use std::fmt::{Debug, Formatter};
 use std::ops::{Deref, DerefMut};
+use std::str::FromStr;
 
 use crate::environment::Environment;
 use crate::state::{BoolState, MapOwnedState, MapState, ResStringState, State, StateContract, StringState, TState};
@@ -46,6 +47,10 @@ impl<T: StateContract> State<T> for ValueState<T> {
     fn value_mut(&mut self) -> ValueRefMut<T> {
         ValueRefMut::Borrow(&mut self.value)
     }
+
+    fn set_value(&mut self, value: T) {
+        self.value = value;
+    }
 }
 
 impl<T: StateContract> Debug for ValueState<T> {
@@ -83,18 +88,88 @@ impl From<&str> for TState<String> {
 
 impl<T: StateContract + Default + 'static> Into<TState<Result<T, String>>> for TState<T> {
     fn into(self) -> TState<Result<T, String>> {
-        MapOwnedState::new_with_default(self, |val: &T, env: &Environment| {
+        MapOwnedState::new_with_default(self, |val: &T, _: &_, env: &Environment| {
             Ok(val.clone())
         }, Ok(T::default())).into()
     }
 }
 
-impl Into<ResStringState> for TState<Result<u32, String>> {
+macro_rules! impl_res_state_plain {
+    ($($typ: ty),*) => {
+        $(
+        impl Into<ResStringState> for TState<Result<$typ, String>> {
+            fn into(self) -> ResStringState {
+                MapOwnedState::new_with_default_and_rev(self, |value: &Result<$typ, String>, _: &_, env: &Environment| {
+                    match value {
+                        Ok(val) => { Ok(val.to_string()) }
+                        Err(val) => { Err(val.to_string()) }
+                    }
+                }, |val: &Result<String, String>| {
+                    match val {
+                        Ok(s) | Err(s) => {
+                            <$typ>::from_str(s)
+                                .map_err(|_| s.to_string())
+                        }
+                    }
+                },Ok("".to_string())).into()
+            }
+        }
+        )*
+    }
+}
+
+impl_res_state_plain! {
+    u8, u16, u32, u64, u128, usize,
+    i8, i16, i32, i64, i128, isize
+}
+
+impl Into<ResStringState> for TState<Result<f32, String>> {
     fn into(self) -> ResStringState {
-        MapOwnedState::new_with_default(self, |value: &Result<u32, String>, env: &Environment| {
-            match value {
-                Ok(val) => { Ok(val.to_string()) }
-                Err(val) => { Err(val.to_string()) }
+        MapOwnedState::new_with_default_and_rev(self, |value: &Result<f32, String>, prev: &Result<String, String>, env: &Environment| {
+            match (value, prev) {
+                (Ok(val), Ok(a)) => {
+                    if let Ok(v) = f32::from_str(a) {
+                        if *val == v {
+                            return Ok(a.clone())
+                        }
+                    }
+                    Ok(val.to_string())
+                }
+                (Ok(val), _) => Ok(val.to_string()),
+                (Err(val), _) => Err(val.to_string()),
+            }
+        }, |val: &Result<String, String>| {
+            match val {
+                Ok(s) | Err(s) => {
+                    f32::from_str(s)
+                        .map_err(|_| s.to_string())
+                }
+            }
+        }, Ok("".to_string())).into()
+    }
+}
+
+impl Into<ResStringState> for TState<Result<f64, String>> {
+    fn into(self) -> ResStringState {
+        MapOwnedState::new_with_default_and_rev(self, |value: &Result<f64, String>, prev: &Result<String, String>, env: &Environment| {
+            match (value, prev) {
+                (Ok(val), Ok(a)) => {
+                    if let Ok(v) = f64::from_str(a) {
+                        if *val == v {
+                            return Ok(a.clone())
+                        }
+                    }
+                    Ok(val.to_string())
+                }
+                (Ok(val), _) => Ok(val.to_string()),
+                (Err(val), _) => Err(val.to_string()),
+            }
+        }, |val: &Result<String, String>| {
+            match val {
+                Ok(s) | Err(s) => {
+                    f64::from_str(s)
+                        .map_err(|_| s.to_string())
+                }
             }
         }, Ok("".to_string())).into()
     }
@@ -114,6 +189,8 @@ impl Into<StringState> for ResStringState {
                     a
                 }
             }
+        }, |res: &String| {
+            Ok(res.to_string())
         }).into()
     }
 }

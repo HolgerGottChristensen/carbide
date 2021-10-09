@@ -33,7 +33,7 @@ pub struct TextInput {
 impl TextInput {
     pub fn new<T: Into<TextInputState>>(text: T) -> Box<Self> {
         let text = text.into();
-        let focus_state: FocusState = LocalState::new(Focus::Focused).into();
+        let focus_state: FocusState = LocalState::new(Focus::Unfocused).into();
 
         let cursor_color: ColorState = EnvironmentColor::Label.into();
 
@@ -43,7 +43,7 @@ impl TextInput {
         let is_error: BoolState = text.clone().into();
         let is_error_stroke: BoolState = is_error.clone();
 
-        let stroke_color = focus_state.mapped_env(move |focus: &Focus, env: &Environment| {
+        let stroke_color = focus_state.mapped_env(move |focus: &Focus, _: &_, env: &Environment| {
             let e = is_error_stroke.clone();
             if *e.value() {
                 env.env_color(EnvironmentColor::Red).unwrap()

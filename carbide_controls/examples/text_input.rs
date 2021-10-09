@@ -39,14 +39,11 @@ fn main() {
     );
     window.add_font_family(family);
 
-    let text_state = LocalState::new(Ok(32));
+    let text_state = LocalState::new(Ok(0i8));
 
     window.set_widgets(
-        VStack::new(vec![
-            TextInput::new(text_state),
-        ])
-            .spacing(10.0)
-            .padding(EdgeInsets::all(40.0)),
+        TextInput::new(text_state)
+            .padding(EdgeInsets::all(40.0))
     );
 
     window.launch();

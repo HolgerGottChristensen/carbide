@@ -80,7 +80,7 @@ impl AnimatedState {
             <T as Mul<f64>>::Output: Add<U>,
             <U as Add<U>>::Output: StateContract + Default + 'static,
     {
-        MapOwnedState::new(WidgetState::new(Box::new(self)), move |t: &f64, _: &_| {
+        MapOwnedState::new(WidgetState::new(Box::new(self)), move |t: &f64, _: &_, _: &_| {
             from * (1.0 - *t) + to * *t
         })
             .into()
@@ -128,6 +128,11 @@ impl State<f64> for AnimatedState {
     fn value_mut(&mut self) -> ValueRefMut<f64> {
         self.calc_percentage();
         self.percent.borrow_mut()
+    }
+
+    fn set_value(&mut self, value: f64) {
+        self.calc_percentage();
+        *self.percent.borrow_mut() = value;
     }
 }
 

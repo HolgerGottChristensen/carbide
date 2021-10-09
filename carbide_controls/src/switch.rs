@@ -55,7 +55,7 @@ impl Switch {
     }
 
     fn delegate(_focus: FocusState, checked: BoolState) -> Box<dyn Widget> {
-        let checked_color = checked.mapped_env(|check: &bool, env: &Environment| {
+        let checked_color = checked.mapped_env(|check: &bool, _: &_, env: &Environment| {
             if *check {
                 env.get_color(&StateKey::Color(EnvironmentColor::Accent)).unwrap()
             } else {

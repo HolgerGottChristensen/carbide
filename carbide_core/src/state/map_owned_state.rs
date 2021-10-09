@@ -1,5 +1,5 @@
 use std::fmt::Debug;
-use std::ops::DerefMut;
+use std::ops::{Deref, DerefMut};
 
 use dyn_clone::DynClone;
 
@@ -17,6 +17,7 @@ pub struct MapOwnedState<FROM, TO>
 {
     state: TState<FROM>,
     map: Box<dyn Map<FROM, TO>>,
+    map_rev: Option<Box<dyn MapRev<FROM, TO>>>,
     value: InnerState<TO>,
 }
 
@@ -25,6 +26,7 @@ impl<FROM: StateContract, TO: StateContract + Default> MapOwnedState<FROM, TO> {
         MapOwnedState {
             state: state.into(),
             map: Box::new(map),
+            map_rev: None,
             value: InnerState::new(ValueCell::new(TO::default())),
         }
     }
@@ -35,6 +37,16 @@ impl<FROM: StateContract, TO: StateContract> MapOwnedState<FROM, TO> {
         MapOwnedState {
             state: state.into(),
             map: Box::new(map),
+            map_rev: None,
+            value: InnerState::new(ValueCell::new(default)),
+        }
+    }
+
+    pub fn new_with_default_and_rev<I: Into<TState<FROM>>, M1: Map<FROM, TO>, M2: MapRev<FROM, TO>>(state: I, map: M1, map_rev: M2, default: TO) -> Self {
+        MapOwnedState {
+            state: state.into(),
+            map: Box::new(map),
+            map_rev: Some(Box::new(map_rev)),
             value: InnerState::new(ValueCell::new(default)),
         }
     }
@@ -47,8 +59,9 @@ impl<FROM: StateContract, TO: StateContract> State<TO> for MapOwnedState<FROM, T
 
     fn release_state(&mut self, env: &mut Environment) {
         self.state.release_state(env);
-        let value: TO = (&self.map)(&*self.state.value(), env);
+
         if let Ok(mut borrow) = self.value.try_borrow_mut() {
+            let value: TO = (&self.map)(&*self.state.value(), borrow.deref(), env);
             *borrow.deref_mut() = value;
         }
     }
@@ -59,6 +72,14 @@ impl<FROM: StateContract, TO: StateContract> State<TO> for MapOwnedState<FROM, T
 
     fn value_mut(&mut self) -> ValueRefMut<TO> {
         self.value.borrow_mut()
+    }
+
+    /// Set value will only update its containing state if the map_rev is specified.
+    fn set_value(&mut self, value: TO) {
+        if let Some(rev_map) = &self.map_rev {
+            let from: FROM = (rev_map)(&value);
+            self.state.set_value(from);
+        }
     }
 }
 
@@ -79,31 +100,41 @@ for MapOwnedState<FROM, TO>
 }
 
 pub trait Map<FROM: StateContract, TO: StateContract>:
-Fn(&FROM, &Environment) -> TO + DynClone + 'static
+Fn(&FROM, &TO, &Environment) -> TO + DynClone + 'static
 {}
 
 impl<T, FROM: StateContract, TO: StateContract> Map<FROM, TO> for T where
-    T: Fn(&FROM, &Environment) -> TO + DynClone + 'static
+    T: Fn(&FROM, &TO, &Environment) -> TO + DynClone + 'static
+{}
+
+pub trait MapRev<FROM: StateContract, TO: StateContract>:
+Fn(&TO) -> FROM + DynClone + 'static
+{}
+
+impl<T, FROM: StateContract, TO: StateContract> MapRev<FROM, TO> for T where
+    T: Fn(&TO) -> FROM + DynClone + 'static
 {}
 
 dyn_clone::clone_trait_object!(<FROM: StateContract, TO: StateContract> Map<FROM, TO>);
+
+dyn_clone::clone_trait_object!(<FROM: StateContract, TO: StateContract> MapRev<FROM, TO>);
 
 macro_rules! impl_string_state {
     ($($typ: ty),*) => {
         $(
             impl Into<StringState> for TState<$typ> {
                 fn into(self) -> StringState {
-                    MapOwnedState::new(self, |s: &$typ, _: &_| {s.to_string()}).into()
+                    MapOwnedState::new(self, |s: &$typ, _: &_, _: &_| {s.to_string()}).into()
                 }
             }
             impl Into<StringState> for Box<ValueState<$typ>> {
                 fn into(self) -> StringState {
-                    MapOwnedState::new(WidgetState::new(self), |s: &$typ, _: &_| {s.to_string()}).into()
+                    MapOwnedState::new(WidgetState::new(self), |s: &$typ, _: &_, _: &_| {s.to_string()}).into()
                 }
             }
         impl Into<StringState> for Box<LocalState<$typ>> {
                 fn into(self) -> StringState {
-                    MapOwnedState::new(WidgetState::new(self), |s: &$typ, _: &_| {s.to_string()}).into()
+                    MapOwnedState::new(WidgetState::new(self), |s: &$typ, _: &_, _: &_| {s.to_string()}).into()
                 }
             }
         )*

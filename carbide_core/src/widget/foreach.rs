@@ -41,7 +41,9 @@ impl<T: StateContract + 'static, U: Delegate<T>> ForEach<T, U> {
                                                                        },
                                                                        |a, index| {
                                                                            &mut a[index]
-                                                                       });
+                                                                       }, |a: &T| {
+                    todo!()
+                });
             let widget = delegate.call(item_state.into(), index_state);
             map.push(Box::new(widget));
         }

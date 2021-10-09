@@ -36,6 +36,10 @@ impl<T: StateContract> State<T> for VecState<T> {
     fn value_mut(&mut self) -> ValueRefMut<T> {
         todo!()
     }
+
+    fn set_value(&mut self, value: T) {
+        todo!()
+    }
 }
 
 impl<T: StateContract> Debug for VecState<T> {

@@ -47,7 +47,7 @@ impl PlainSwitch {
         let default_delegate = |_focus_state: FocusState,
                                 checked: BoolState, |
                                 -> Box<dyn Widget> {
-            let highlight_color = MapOwnedState::new(checked.clone(), |checked: &BoolState, env: &Environment| {
+            let highlight_color = MapOwnedState::new(checked.clone(), |checked: &BoolState, _: &_, env: &Environment| {
                 if *checked.value() {
                     env.get_color(&StateKey::Color(EnvironmentColor::Green)).unwrap()
                 } else {

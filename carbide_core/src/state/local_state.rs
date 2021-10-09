@@ -46,6 +46,10 @@ impl<T: StateContract + 'static> State<T> for LocalState<T> {
     fn value_mut(&mut self) -> ValueRefMut<T> {
         self.value.borrow_mut()
     }
+
+    fn set_value(&mut self, value: T) {
+        *self.value.borrow_mut() = value
+    }
 }
 
 impl<T: StateContract + 'static> Debug for LocalState<T> {

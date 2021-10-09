@@ -2,7 +2,7 @@ use std::fmt::Debug;
 
 use crate::environment::Environment;
 use crate::prelude::{StateContract, TState};
-use crate::state::State;
+use crate::state::{MapRev, State};
 use crate::state::value_cell::{ValueRef, ValueRefMut};
 use crate::state::widget_state::WidgetState;
 
@@ -23,22 +23,27 @@ pub struct MapState<FROM, TO, VALUE>
     state: TState<FROM>,
     inner_value: VALUE,
     map: for<'r, 's> fn(&'r FROM, VALUE) -> &'r TO,
-    //Box<dyn Map<FROM, TO>>,
-    map_mut: for<'r, 's> fn(&'r mut FROM, VALUE) -> &'r mut TO, //Box<dyn MapMut<FROM, TO>>,
+    map_mut: for<'r, 's> fn(&'r mut FROM, VALUE) -> &'r mut TO,
+    map_rev: Option<Box<dyn MapRev<FROM, TO>>>,
 }
 
 impl<FROM: StateContract + 'static, TO: StateContract + 'static, VALUE: StateContract + 'static> MapState<FROM, TO, VALUE> {
-    pub fn new<S>(state: S, value: VALUE, map: for<'r, 's> fn(&'r FROM, VALUE) -> &'r TO, map_mut: for<'r, 's> fn(&'r mut FROM, VALUE) -> &'r mut TO) -> Self
+    pub fn new<S, M1: MapRev<FROM, TO>>(
+        state: S,
+        value: VALUE,
+        map: for<'r, 's> fn(&'r FROM, VALUE) -> &'r TO,
+        map_mut: for<'r, 's> fn(&'r mut FROM, VALUE) -> &'r mut TO,
+        map_rev: M1,
+    ) -> Self
         where
             S: Into<TState<FROM>>,
-    //M1: Map<FROM, TO> + 'static,
-    //M2: MapMut<FROM, TO> + 'static,
     {
         MapState {
             state: state.into(),
             inner_value: value,
             map,
             map_mut,
+            map_rev: Some(Box::new(map_rev)),
         }
     }
 }
@@ -60,6 +65,17 @@ impl<FROM: StateContract + 'static, TO: StateContract + 'static, VALUE: StateCon
         let val = self.inner_value.clone();
         let function = self.map_mut;
         ValueRefMut::map(self.state.value_mut(), |a| { function(a, val) })
+    }
+
+    fn set_value(&mut self, value: TO) {
+        if let Some(map_rev) = &self.map_rev {
+            let from: FROM = map_rev(&value);
+            self.state.set_value(from);
+        }
+
+        let val = self.inner_value.clone();
+        let function = self.map_mut;
+        *ValueRefMut::map(self.state.value_mut(), |a| { function(a, val) }) = value;
     }
 }
 

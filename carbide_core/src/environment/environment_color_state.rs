@@ -51,4 +51,8 @@ impl State<Color> for EnvironmentColorState {
     fn value_mut(&mut self) -> ValueRefMut<Color> {
         ValueRefMut::Borrow(&mut self.value)
     }
+
+    fn set_value(&mut self, value: Color) {
+        self.value = value;
+    }
 }

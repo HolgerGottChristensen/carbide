@@ -33,6 +33,10 @@ impl<'a, T: StateContract> State<T> for GlobalState<T> {
     fn value_mut(&mut self) -> ValueRefMut<T> {
         self.value.borrow_mut()
     }
+
+    fn set_value(&mut self, value: T) {
+        *self.value.borrow_mut() = value;
+    }
 }
 
 impl<T: StateContract> Debug for GlobalState<T> {

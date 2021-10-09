@@ -36,6 +36,8 @@ pub trait State<T>: DynClone + Debug
     /// This is for example the case for MapOwnedState, EnvState and CloneState.
     /// If a ValueState is mutated, it will only affect that state, but not any clones of it.
     fn value_mut(&mut self) -> ValueRefMut<T>;
+
+    fn set_value(&mut self, value: T);
 }
 
 dyn_clone::clone_trait_object!(<T: StateContract> State<T>);

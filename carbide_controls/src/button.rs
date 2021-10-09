@@ -112,7 +112,7 @@ impl Button {
         };
 
         let pressed_for_color = pressed_state.clone();
-        let background_color = hover_state.mapped_env(move |hover: &bool, env: &Environment| {
+        let background_color = hover_state.mapped_env(move |hover: &bool, _: &_, env: &Environment| {
             let pressed = pressed_for_color.clone();
             let normal_color = normal_color.clone();
             if *pressed.value() {

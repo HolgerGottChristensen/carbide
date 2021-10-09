@@ -311,7 +311,7 @@ impl KeyboardEventHandler for PlainTextInput {
                         match self.cursor {
                             Cursor::Single(_) => {
                                 ctx.set_contents(text).unwrap();
-                                self.text.value_mut().clear();
+                                self.text.set_value("".to_string());
 
                                 self.cursor = Cursor::Single(CursorIndex { line: 0, char: 0 })
                             }
@@ -416,7 +416,7 @@ impl KeyboardEventHandler for PlainTextInput {
                         }
                     }
                     TextInputKeyCommand::RemoveAll => {
-                        self.text.value_mut().clear();
+                        self.text.set_value("".to_string());
                         self.cursor = Cursor::Single(CursorIndex { line: 0, char: 0 })
                     }
                     TextInputKeyCommand::RemoveWordLeft => {
@@ -449,7 +449,7 @@ impl KeyboardEventHandler for PlainTextInput {
                         match self.cursor {
                             Cursor::Single(_) => {
                                 let text = self.text.value().clone();
-                                self.text.value_mut().push_str(&text);
+                                self.push_str(&text);
                             }
                             Cursor::Selection { start, end } => {
                                 let text = self.text.value().clone();
@@ -464,7 +464,7 @@ impl KeyboardEventHandler for PlainTextInput {
                         match self.cursor {
                             Cursor::Single(_) => {
                                 let text = self.text.value().clone();
-                                self.text.value_mut().push_str(&text);
+                                self.push_str(&text);
 
                                 self.cursor = Cursor::Single(CursorIndex { line: 0, char: Self::len_in_graphemes(&text) * 2 })
                             }
@@ -681,7 +681,18 @@ impl PlainTextInput {
     /// Insert a string at a given grapheme index.
     fn insert_str(&mut self, index: usize, string: &str) {
         let offset = Self::byte_index_from_graphemes(index, &self.text.value());
-        self.text.value_mut().insert_str(offset, string);
+        //TODO: This might be rather inefficient
+        let mut next_string = self.text.value().clone();
+        next_string.insert_str(offset, string);
+        self.text.set_value(next_string);
+    }
+
+    /// Insert a string at a given grapheme index.
+    fn push_str(&mut self, string: &str) {
+        //TODO: This might be rather inefficient
+        let mut next_string = self.text.value().clone();
+        next_string.push_str(string);
+        self.text.set_value(next_string);
     }
 
     /// Get the positioned glyphs of a given string. This is useful when needing to calculate cursor
@@ -703,14 +714,18 @@ impl PlainTextInput {
     /// Remove a single grapheme at an index.
     fn remove(&mut self, index: usize) {
         let offset = Self::byte_index_from_graphemes(index, &*self.text.value());
-        self.text.value_mut().remove(offset);
+        let mut new_string = self.text.value().clone();
+        new_string.remove(offset);
+        self.text.set_value(new_string);
     }
 
     /// Remove all the graphemes inside the range,
     fn remove_range(&mut self, index: Range<usize>) {
         let offset_start = Self::byte_index_from_graphemes(index.start, &*self.text.value());
         let offset_end = Self::byte_index_from_graphemes(index.end, &*self.text.value());
-        self.text.value_mut().replace_range(offset_start..offset_end, "");
+        let mut new_string = self.text.value().clone();
+        new_string.replace_range(offset_start..offset_end, "");
+        self.text.set_value(new_string);
     }
 
     /// Get the range from the leftmost character in a word, to the current index.
@@ -780,8 +795,11 @@ impl PlainTextInput {
 
         let glyph = self.glyphs(env);
 
-        let index = match self.cursor {
-            Cursor::Single(index) => index,
+        let index = match &mut self.cursor {
+            Cursor::Single(index) => {
+                *index = CursorIndex { line: 0, char: index.char.min(Self::len_in_graphemes(&text)) };
+                index
+            }
             Cursor::Selection { end, .. } => end
         };
 

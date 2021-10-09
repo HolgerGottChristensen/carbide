@@ -42,7 +42,7 @@ impl PlainCheckBox {
         let focus = LocalState::new(Focus::Unfocused);
 
         fn delegate(_: FocusState, checked: CheckBoxState) -> Box<dyn Widget> {
-            let highlight_color = MapOwnedState::new(checked.clone(), |check: &CheckBoxState, env: &Environment| {
+            let highlight_color = MapOwnedState::new(checked.clone(), |check: &CheckBoxState, _: &_, env: &Environment| {
                 match *check.value() {
                     CheckBoxValue::True => {
                         env.get_color(&StateKey::Color(EnvironmentColor::Green)).unwrap()

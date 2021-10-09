@@ -62,7 +62,7 @@ impl PopUpButton {
     fn popup_item_delegate<T: StateContract + PartialEq + 'static>(
         item: TState<T>, _index: UsizeState, hover_state: BoolState, _selected_state: TState<T>,
     ) -> Box<dyn Widget> {
-        let background_color = hover_state.mapped_env(|hovered: &bool, env: &Environment| {
+        let background_color = hover_state.mapped_env(|hovered: &bool, _: &_, env: &Environment| {
             if *hovered {
                 env.env_color(EnvironmentColor::Accent).unwrap()
             } else {

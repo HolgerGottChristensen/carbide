@@ -41,6 +41,10 @@ impl<'a, T: StateContract> State<T> for EnvState<T> {
     fn value_mut(&mut self) -> ValueRefMut<T> {
         ValueRefMut::Borrow(&mut self.value)
     }
+
+    fn set_value(&mut self, value: T) {
+        self.value = value
+    }
 }
 
 impl<T: StateContract> Debug for EnvState<T> {

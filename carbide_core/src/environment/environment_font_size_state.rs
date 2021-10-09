@@ -49,4 +49,8 @@ impl State<u32> for EnvironmentFontSizeState {
     fn value_mut(&mut self) -> ValueRefMut<u32> {
         ValueRefMut::Borrow(&mut self.value)
     }
+
+    fn set_value(&mut self, value: u32) {
+        self.value = value;
+    }
 }

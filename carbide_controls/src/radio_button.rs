@@ -22,7 +22,7 @@ impl RadioButton {
     }
 
     fn delegate(_: FocusState, selected: BoolState) -> Box<dyn Widget> {
-        let selected_color = selected.mapped_env(|selected: &bool, env: &Environment| {
+        let selected_color = selected.mapped_env(|selected: &bool, _: &_, env: &Environment| {
             if *selected {
                 env.get_color(&StateKey::Color(EnvironmentColor::Accent)).unwrap()
             } else {
