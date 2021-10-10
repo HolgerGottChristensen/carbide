@@ -77,15 +77,19 @@ impl<FROM: StateContract, TO: StateContract> State<TO> for MapOwnedState<FROM, T
     /// Set value will only update its containing state if the map_rev is specified.
     fn set_value(&mut self, value: TO) {
         if let Some(rev_map) = &self.map_rev {
-            let from: FROM = (rev_map)(&value);
-            self.state.set_value(from);
+            let from: Option<FROM> = (rev_map)(&value);
+            if let Some(from) = from {
+                self.state.set_value(from);
+            }
         }
     }
 
     fn update_dependent(&mut self) {
         if let Some(rev_map) = &self.map_rev {
-            let from: FROM = (rev_map)(&*self.value.borrow());
-            self.state.set_value(from);
+            let from: Option<FROM> = (rev_map)(&*self.value.borrow());
+            if let Some(from) = from {
+                self.state.set_value(from);
+            }
         }
     }
 }
@@ -115,11 +119,11 @@ impl<T, FROM: StateContract, TO: StateContract> Map<FROM, TO> for T where
 {}
 
 pub trait MapRev<FROM: StateContract, TO: StateContract>:
-Fn(&TO) -> FROM + DynClone + 'static
+Fn(&TO) -> Option<FROM> + DynClone + 'static
 {}
 
 impl<T, FROM: StateContract, TO: StateContract> MapRev<FROM, TO> for T where
-    T: Fn(&TO) -> FROM + DynClone + 'static
+    T: Fn(&TO) -> Option<FROM> + DynClone + 'static
 {}
 
 dyn_clone::clone_trait_object!(<FROM: StateContract, TO: StateContract> Map<FROM, TO>);

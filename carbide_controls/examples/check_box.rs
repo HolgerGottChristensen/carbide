@@ -6,7 +6,7 @@ extern crate futures;
 use futures::executor::block_on;
 use serde::{Deserialize, Serialize};
 
-use carbide_controls::{CheckBox, CheckBoxValue, PlainCheckBox};
+use carbide_controls::{CheckBox, CheckBoxValue, PlainCheckBox, TextInput};
 use carbide_core::state::LocalState;
 use carbide_core::text::{FontFamily, FontStyle, FontWeight};
 use carbide_core::widget::*;
@@ -24,12 +24,9 @@ fn main() {
         Some(icon_path),
     );
 
-    let mut family = FontFamily::new("NotoSans");
-    family.add_font_with_hints(
-        "fonts/NotoSans/NotoSans-Regular.ttf",
-        FontWeight::Normal,
-        FontStyle::Normal,
-    );
+    let mut family = FontFamily::new_from_paths("NotoSans", vec![
+        "fonts/NotoSans/NotoSans-Regular.ttf"
+    ]);
     window.add_font_family(family);
 
     let checkbox_state1 = LocalState::new(CheckBoxValue::False);

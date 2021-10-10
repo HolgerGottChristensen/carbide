@@ -69,8 +69,10 @@ impl<FROM: StateContract + 'static, TO: StateContract + 'static, VALUE: StateCon
 
     fn set_value(&mut self, value: TO) {
         if let Some(map_rev) = &self.map_rev {
-            let from: FROM = map_rev(&value);
-            self.state.set_value(from);
+            let from: Option<FROM> = map_rev(&value);
+            if let Some(from) = from {
+                self.state.set_value(from);
+            }
         }
 
         let val = self.inner_value.clone();

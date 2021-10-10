@@ -88,8 +88,10 @@ impl From<&str> for TState<String> {
 
 impl<T: StateContract + Default + 'static> Into<TState<Result<T, String>>> for TState<T> {
     fn into(self) -> TState<Result<T, String>> {
-        MapOwnedState::new_with_default(self, |val: &T, _: &_, env: &Environment| {
+        MapOwnedState::new_with_default_and_rev(self, |val: &T, _: &_, env: &Environment| {
             Ok(val.clone())
+        }, |val: &Result<T, String>| {
+            val.as_ref().ok().map(|a| a.clone())
         }, Ok(T::default())).into()
     }
 }
@@ -107,8 +109,8 @@ macro_rules! impl_res_state_plain {
                 }, |val: &Result<String, String>| {
                     match val {
                         Ok(s) | Err(s) => {
-                            <$typ>::from_str(s)
-                                .map_err(|_| s.to_string())
+                            Some(<$typ>::from_str(s)
+                                .map_err(|_| s.to_string()))
                         }
                     }
                 },Ok("".to_string())).into()
@@ -141,8 +143,8 @@ impl Into<ResStringState> for TState<Result<f32, String>> {
         }, |val: &Result<String, String>| {
             match val {
                 Ok(s) | Err(s) => {
-                    f32::from_str(s)
-                        .map_err(|_| s.to_string())
+                    Some(f32::from_str(s)
+                        .map_err(|_| s.to_string()))
                 }
             }
         }, Ok("".to_string())).into()
@@ -167,8 +169,8 @@ impl Into<ResStringState> for TState<Result<f64, String>> {
         }, |val: &Result<String, String>| {
             match val {
                 Ok(s) | Err(s) => {
-                    f64::from_str(s)
-                        .map_err(|_| s.to_string())
+                    Some(f64::from_str(s)
+                        .map_err(|_| s.to_string()))
                 }
             }
         }, Ok("".to_string())).into()
@@ -190,7 +192,7 @@ impl Into<StringState> for ResStringState {
                 }
             }
         }, |res: &String| {
-            Ok(res.to_string())
+            Some(Ok(res.to_string()))
         }).into()
     }
 }

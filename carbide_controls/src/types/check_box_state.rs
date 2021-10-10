@@ -61,13 +61,13 @@ impl CheckBoxState {
         }
     }
 
-    fn val_to_bool(to: &CheckBoxValue) -> bool {
+    fn val_to_bool(to: &CheckBoxValue) -> Option<bool> {
         match to {
             CheckBoxValue::True => {
-                true
+                Some(true)
             }
             CheckBoxValue::Intermediate | CheckBoxValue::False => {
-                false
+                Some(false)
             }
         }
     }

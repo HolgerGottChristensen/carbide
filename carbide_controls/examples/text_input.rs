@@ -23,7 +23,7 @@ fn main() {
         Some(icon_path),
     );
 
-    let mut family = FontFamily::new_from_paths("NotoSans", vec![
+    let family = FontFamily::new_from_paths("NotoSans", vec![
         "fonts/NotoSans/NotoSans-Regular.ttf"
     ]);
     window.add_font_family(family);
@@ -37,6 +37,7 @@ fn main() {
     window.add_font_family(family);
 
     let text_state = LocalState::new(Ok(0i128));
+    //let text_state = LocalState::new("Hello world!".to_string());
 
     window.set_widgets(
         VStack::new(vec![
