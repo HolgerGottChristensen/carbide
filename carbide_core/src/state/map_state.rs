@@ -94,23 +94,3 @@ for MapState<FROM, TO, VALUE>
         WidgetState::new(Box::new(self))
     }
 }
-/*
-pub trait Map<FROM: StateContract + 'static, TO: StateContract + 'static>:
-for<'a> Fn(&'a FROM) -> &'a TO + DynClone
-{}
-
-pub trait MapMut<FROM: StateContract + 'static, TO: StateContract + 'static>:
-for<'a> Fn(&'a mut FROM) -> &'a mut TO + DynClone
-{}
-
-impl<T, FROM: StateContract + 'static, TO: StateContract + 'static> Map<FROM, TO> for T where
-    T: for<'a> Fn(&'a FROM) -> &'a TO + DynClone
-{}
-
-impl<T, FROM: StateContract + 'static, TO: StateContract + 'static> MapMut<FROM, TO> for T where
-    T: for<'a> Fn(&'a mut FROM) -> &'a mut TO + DynClone
-{}
-
-dyn_clone::clone_trait_object!(<FROM: StateContract + 'static, TO: StateContract + 'static> Map<FROM, TO>);
-dyn_clone::clone_trait_object!(<FROM: StateContract + 'static, TO: StateContract + 'static> MapMut<FROM, TO>);
-*/

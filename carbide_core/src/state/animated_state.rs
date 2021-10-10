@@ -28,15 +28,7 @@ pub struct AnimatedState {
 
 impl AnimatedState {
     pub fn linear(env: &Environment) -> Box<Self> {
-        Box::new(AnimatedState {
-            percent: InnerState::new(ValueCell::new(0.0)),
-            start_time: Instant::now(),
-            duration: Duration::new(1, 0),
-            repeat_mode: RepeatMode::None,
-            repeat_count: None,
-            frame_time: env.captured_time(),
-            animation_curve: linear,
-        })
+        Self::custom(linear, env)
     }
 
     pub fn custom(curve: fn(f64) -> f64, env: &Environment) -> Box<Self> {

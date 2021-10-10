@@ -19,8 +19,11 @@ controls = ["carbide_controls"]
 
 
 [dependencies]
-carbide_core = { path = "../carbide_core", version="0.70" }
-carbide_controls = { path = "../carbide_controls", version="0.70", optional = true }
-carbide_wgpu = { path = "../backends/carbide_wgpu", version="0.70", optional = true }
+carbide_core = { path = "../carbide_core", version = "0.70" }
+carbide_controls = { path = "../carbide_controls", version = "0.70", optional = true }
+carbide_wgpu = { path = "../backends/carbide_wgpu", version = "0.70", optional = true }
+
+[dev-dependencies]
+carbide_controls = { path = "../carbide_controls", version = "0.70" }
 
 

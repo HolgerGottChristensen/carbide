@@ -12,7 +12,7 @@ pub struct Transform {
     position: Position,
     dimension: Dimension,
     anchor: BasicLayouter,
-    matrix: TState<Matrix4<f32>>,
+    #[state] matrix: TState<Matrix4<f32>>,
 }
 
 impl Transform {
@@ -153,11 +153,15 @@ impl CommonWidget for Transform {
 
 impl Render for Transform {
     fn process_get_primitives(&mut self, primitives: &mut Vec<Primitive>, env: &mut Environment) {
+        self.capture_state(env);
         let matrix = *self.matrix.value();
+
         primitives.push(Primitive {
             kind: PrimitiveKind::Transform(matrix, self.anchor.clone()),
             rect: Rect::new(self.position, self.dimension),
         });
+
+        self.release_state(env);
 
         for mut child in self.children_mut() {
             child.process_get_primitives(primitives, env);

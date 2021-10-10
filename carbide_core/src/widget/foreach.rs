@@ -34,16 +34,20 @@ impl<T: StateContract + 'static, U: Delegate<T>> ForEach<T, U> {
 
         for (index, _element) in model.value().deref().iter().enumerate() {
             let index_state: UsizeState = ValueState::new(index).into();
-            let item_state: MapState<Vec<T>, T, usize> = MapState::new(model.clone(),
-                                                                       index,
-                                                                       |a, index| {
-                                                                           &a[index]
-                                                                       },
-                                                                       |a, index| {
-                                                                           &mut a[index]
-                                                                       }, |a: &T| {
-                    todo!()
-                });
+            let item_state: MapState<Vec<T>, T, usize> =
+                MapState::new(
+                    model.clone(),
+                    index,
+                    |a, index| {
+                        &a[index]
+                    },
+                    |a, index| {
+                        &mut a[index]
+                    },
+                    |a: &T| {
+                        todo!()
+                    },
+                );
             let widget = delegate.call(item_state.into(), index_state);
             map.push(Box::new(widget));
         }

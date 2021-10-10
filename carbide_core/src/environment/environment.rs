@@ -322,6 +322,7 @@ impl Environment {
         font_id
     }
 
+    // TODO: Add fonts automatically and warn if none could be loaded: https://github.com/RazrFalcon/fontdb/blob/master/src/lib.rs
     pub fn add_font_family(&mut self, mut family: FontFamily) {
         for font in &mut family.fonts {
             let assets = find_folder::Search::KidsThenParents(3, 5)

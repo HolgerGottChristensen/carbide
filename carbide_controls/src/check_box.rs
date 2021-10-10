@@ -16,28 +16,10 @@ impl CheckBox {
     ) -> Box<PlainCheckBox> {
         let mut plain = PlainCheckBox::new(label, checked.into())
             .delegate(Self::delegate);
-        /*
-                plain = *plain.delegate(|focus_state, checked_state, button: Box<dyn Widget<GS>>| {
-
-                });
-        */
         plain
     }
 
     fn delegate(_: FocusState, checked: CheckBoxState) -> Box<dyn Widget> {
-        /*let focus_color = TupleState3::new(
-            focus_state,
-            EnvironmentColor::OpaqueSeparator,
-            EnvironmentColor::Accent,
-        )
-            .mapped(|(focus, primary_color, focus_color)| {
-                if focus == &Focus::Focused {
-                    *focus_color
-                } else {
-                    *primary_color
-                }
-            });*/
-
         let checked_color = checked.mapped_env(|check: &CheckBoxValue, _: &_, env: &Environment| {
             match *check {
                 CheckBoxValue::True | CheckBoxValue::Intermediate => {
