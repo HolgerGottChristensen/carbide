@@ -35,7 +35,7 @@ fn main() {
     let checkbox_state1 = LocalState::new(CheckBoxValue::False);
     let checkbox_state2 = LocalState::new(CheckBoxValue::False);
     let checkbox_state3 = LocalState::new(CheckBoxValue::Intermediate);
-    let checkbox_state4 = LocalState::new(CheckBoxValue::True);
+    let checkbox_state4 = LocalState::new(true);
 
     window.set_widgets(
         VStack::new(vec![

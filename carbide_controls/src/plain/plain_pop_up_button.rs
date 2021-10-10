@@ -10,7 +10,7 @@ use carbide_core::focus::Focus;
 use carbide_core::layout::Layout;
 use carbide_core::prelude::{EnvironmentColor, Primitive};
 use carbide_core::render::Render;
-use carbide_core::state::{BoolState, FocusState, LocalState, State, StateContract, StateKey, TState, UsizeState};
+use carbide_core::state::{BoolState, FocusState, LocalState, State, StateContract, StateExt, StateKey, TState, UsizeState};
 use carbide_core::widget::*;
 
 use crate::{List, PlainButton};

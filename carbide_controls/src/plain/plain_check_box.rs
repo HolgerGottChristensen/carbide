@@ -3,7 +3,7 @@ use carbide_core::environment::EnvironmentColor;
 use carbide_core::flags::Flags;
 use carbide_core::focus::{Focus, Refocus};
 use carbide_core::prelude::Environment;
-use carbide_core::state::{FocusState, LocalState, MapOwnedState, StateKey, StringState};
+use carbide_core::state::{FocusState, LocalState, MapOwnedState, StateExt, StateKey, StringState};
 use carbide_core::widget::{CommonWidget, HStack, Id, Rectangle, Spacer, Text, Widget, WidgetExt, WidgetIter, WidgetIterMut};
 
 use crate::carbide_core::prelude::State;

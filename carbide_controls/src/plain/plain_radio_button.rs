@@ -4,7 +4,7 @@ use carbide_core::draw::{Dimension, Position};
 use carbide_core::environment::{Environment, EnvironmentColor};
 use carbide_core::flags::Flags;
 use carbide_core::focus::{Focus, Refocus};
-use carbide_core::state::{BoolState, FocusState, LocalState, MapOwnedState, State, StateContract, StateKey, StringState, TState};
+use carbide_core::state::{BoolState, FocusState, LocalState, MapOwnedState, State, StateContract, StateExt, StateKey, StringState, TState};
 use carbide_core::widget::{CommonWidget, HStack, Id, Rectangle, Spacer, Text, Widget, WidgetExt, WidgetIter, WidgetIterMut};
 
 use crate::PlainButton;

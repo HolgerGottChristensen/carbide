@@ -12,7 +12,7 @@ use carbide_core::focus::Focusable;
 use carbide_core::layout::{BasicLayouter, Layouter};
 use carbide_core::prelude::{EnvironmentColor, Layout};
 use carbide_core::Scalar;
-use carbide_core::state::{AnimatedState, ColorState, F64State, FocusState, LocalState, ResStringState, State, StringState, TState, U32State};
+use carbide_core::state::{AnimatedState, ColorState, F64State, FocusState, LocalState, ResStringState, State, StateExt, StringState, TState, U32State};
 use carbide_core::text::{FontSize, Glyph};
 use carbide_core::widget::{CommonWidget, HStack, Id, IfElse, Rectangle, SCALE, Spacer, Text, Widget, WidgetExt, WidgetIter, WidgetIterMut, ZStack};
 use carbide_core::widget::Wrap;

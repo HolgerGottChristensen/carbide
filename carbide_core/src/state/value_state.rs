@@ -3,7 +3,7 @@ use std::ops::{Deref, DerefMut};
 use std::str::FromStr;
 
 use crate::environment::Environment;
-use crate::state::{BoolState, MapOwnedState, MapState, ResStringState, State, StateContract, StringState, TState};
+use crate::state::{BoolState, MapOwnedState, MapState, ResStringState, State, StateContract, StateExt, StringState, TState};
 use crate::state::{ValueRef, ValueRefMut};
 use crate::state::widget_state::WidgetState;
 

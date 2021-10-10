@@ -3,7 +3,7 @@ use std::fmt::Debug;
 use carbide_core::{DeserializeOwned, Serialize};
 use carbide_core::draw::Dimension;
 use carbide_core::environment::{Environment, EnvironmentColor};
-use carbide_core::state::{BoolState, FocusState, StateContract, StateKey, StringState, TState};
+use carbide_core::state::{BoolState, FocusState, StateContract, StateExt, StateKey, StringState, TState};
 use carbide_core::widget::*;
 
 use crate::PlainRadioButton;

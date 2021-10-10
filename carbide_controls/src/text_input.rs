@@ -9,7 +9,7 @@ use carbide_core::event::{Key, KeyboardEvent, KeyboardEventHandler, ModifierKey,
 use carbide_core::focus::Focus;
 use carbide_core::layout::BasicLayouter;
 use carbide_core::prelude::{EnvironmentColor, Layout};
-use carbide_core::state::{BoolState, ColorState, F64State, FocusState, LocalState, State, StringState, TState, U32State};
+use carbide_core::state::{BoolState, ColorState, F64State, FocusState, LocalState, State, StateExt, StringState, TState, U32State};
 use carbide_core::text::Glyph;
 use carbide_core::widget::{CommonWidget, CornerRadii, EdgeInsets, HStack, Id, Rectangle, RoundedRectangle, SCALE, Spacer, Text, Widget, WidgetExt, WidgetIter, WidgetIterMut, ZStack};
 use carbide_core::widget::Wrap;
