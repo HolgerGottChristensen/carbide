@@ -16,16 +16,6 @@ impl<T: StateContract> WidgetState<T> {
     }
 }
 
-// impl<T: StateContract + 'static> WidgetState<T> {
-//     pub fn mapped<TO: StateContract + Default + 'static, M: MapNoEnv<T, TO> + Clone>(&self, map: M) -> TState<TO> {
-//         MapOwnedState::<T, TO>::new(self.clone(), move |s: &T, _: &_, _: &_| { map(s) }).into()
-//     }
-//
-//     pub fn mapped_env<TO: StateContract + Default + 'static, M: Map<T, TO>>(&self, map: M) -> TState<TO> {
-//         MapOwnedState::<T, TO>::new(self.clone(), map).into()
-//     }
-// }
-
 impl<T: StateContract + 'static> WidgetState<Vec<T>> {
     pub fn index(&self, index: UsizeState) -> TState<T> {
         //Todo: In the future take index as a state instead of its value.
@@ -78,6 +68,10 @@ impl<T: StateContract> State<T> for WidgetState<T> {
 
     fn set_value(&mut self, value: T) {
         self.0.set_value(value)
+    }
+
+    fn update_dependent(&mut self) {
+        self.0.update_dependent()
     }
 }
 

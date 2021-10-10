@@ -40,10 +40,6 @@ impl<T: StateContract> DerefMut for ValueState<T> {
 }
 
 impl<T: StateContract> State<T> for ValueState<T> {
-    fn capture_state(&mut self, _: &mut Environment) {}
-
-    fn release_state(&mut self, _: &mut Environment) {}
-
     fn value(&self) -> ValueRef<T> {
         ValueRef::Borrow(&self.value)
     }

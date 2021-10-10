@@ -40,6 +40,10 @@ impl State<CheckBoxValue> for CheckBoxState {
     fn set_value(&mut self, value: CheckBoxValue) {
         self.0.set_value(value)
     }
+
+    fn update_dependent(&mut self) {
+        self.0.update_dependent()
+    }
 }
 
 impl Into<CheckBoxState> for TState<CheckBoxValue> {
@@ -87,29 +91,3 @@ impl Into<TState<CheckBoxValue>> for CheckBoxState {
         self.0
     }
 }
-
-/*impl From<BoolState> for CheckBoxState {
-    fn from(self) -> CheckBoxState {
-        MapOwnedState::new_with_default_and_rev(
-            self,
-            |from: &bool, _:&_, _:&_| {
-                if *from {
-                    CheckBoxValue::True
-                } else {
-                    CheckBoxValue::False
-                }
-            },
-            |to: &CheckBoxValue| {
-                match to {
-                    CheckBoxValue::True => {
-                        true
-                    }
-                    CheckBoxValue::Intermediate | CheckBoxValue::False => {
-                        false
-                    }
-                }
-            },
-            false
-        ).into()
-    }
-}*/

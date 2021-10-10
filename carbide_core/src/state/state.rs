@@ -17,13 +17,13 @@ pub trait State<T>: DynClone + Debug
     /// This will always be the first thing called for the states of a widget when retrieving an
     /// event. This makes sure the local and other states are always up to date when recieving
     /// an event.
-    fn capture_state(&mut self, env: &mut Environment);
+    fn capture_state(&mut self, env: &mut Environment) {}
 
     /// This releases local state from the widget back into the environment. This is called
     /// after the event has been processed in a widget, but before the children of the widget
     /// has is being processed. This makes sure the state is always available for the widget
     /// being processed.
-    fn release_state(&mut self, env: &mut Environment);
+    fn release_state(&mut self, env: &mut Environment) {}
 
     /// This retrieves a immutable reference to the value contained in the state.
     /// This type implements deref to get a reference to the actual value. The valueRef
@@ -42,6 +42,8 @@ pub trait State<T>: DynClone + Debug
     /// state. If you just change the value using value_mut, it might not be persistent and
     /// update problems might occur.
     fn set_value(&mut self, value: T);
+
+    fn update_dependent(&mut self) {}
 }
 
 dyn_clone::clone_trait_object!(<T: StateContract> State<T>);

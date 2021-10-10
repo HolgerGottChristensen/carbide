@@ -81,6 +81,13 @@ impl<FROM: StateContract, TO: StateContract> State<TO> for MapOwnedState<FROM, T
             self.state.set_value(from);
         }
     }
+
+    fn update_dependent(&mut self) {
+        if let Some(rev_map) = &self.map_rev {
+            let from: FROM = (rev_map)(&*self.value.borrow());
+            self.state.set_value(from);
+        }
+    }
 }
 
 impl<FROM: StateContract, TO: StateContract> Debug for MapOwnedState<FROM, TO> {

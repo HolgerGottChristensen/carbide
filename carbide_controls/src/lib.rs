@@ -21,8 +21,11 @@ macro_rules! capture {
             $(let $t = $t.clone();)*
             move |$($a: $typ),*| {
                 $(let mut $t = $t.clone();)*
-                $(let mut $t = $t.value_mut();)*
-                $b
+                {
+                    $(let mut $t = $t.value_mut();)*
+                    $b
+                }
+                $($t.update_dependent();)*
             }
         }
     };
