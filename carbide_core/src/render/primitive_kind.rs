@@ -65,6 +65,8 @@ pub enum PrimitiveKind {
         color: Option<Color>,
         /// The area of the texture that will be drawn to the `Image`'s `Rect`.
         source_rect: Option<Rect>,
+        /// The mode of the image to draw, most commonly MODE_ICON or MODE_IMAGE
+        mode: u32,
     },
 
     /// A single block of `Text`, produced by the primitive `Text` widget.

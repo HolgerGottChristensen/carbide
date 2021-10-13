@@ -720,7 +720,7 @@ impl Mesh {
                         }
                     }
                 }
-                PrimitiveKind::Image { image_id, color, source_rect, } => {
+                PrimitiveKind::Image { image_id, color, source_rect, mode, } => {
                     let image_ref = match image_map.get(&image_id) {
                         None => continue,
                         Some(img) => img,
@@ -777,8 +777,8 @@ impl Mesh {
                         Vertex {
                             position: [x as f32, y as f32, 0.0],
                             tex_coords: t,
-                            rgba: color,
-                            mode: MODE_IMAGE,
+                            rgba: gamma_srgb_to_linear(color),
+                            mode,
                         }
                     };
 

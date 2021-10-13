@@ -10,7 +10,9 @@ use carbide_core::flags::Flags;
 use carbide_core::focus::Focus;
 use carbide_core::focus::Focusable;
 use carbide_core::layout::{BasicLayouter, Layouter};
-use carbide_core::prelude::{EnvironmentColor, Layout};
+use carbide_core::prelude::{EnvironmentColor, Layout, Primitive};
+use carbide_core::prelude::StateSync;
+use carbide_core::render::Render;
 use carbide_core::Scalar;
 use carbide_core::state::{AnimatedState, ColorState, F64State, FocusState, LocalState, ResStringState, State, StateExt, StringState, TState, U32State};
 use carbide_core::text::{FontSize, Glyph};
@@ -532,6 +534,8 @@ impl KeyboardEventHandler for PlainTextInput {
             _ => ()
         }
 
+        self.capture_state(env);
+        self.release_state(env);
         self.reposition_cursor(env);
         self.recalculate_offset_to_make_cursor_visible(env);
     }
@@ -566,6 +570,7 @@ impl MouseEventHandler for PlainTextInput {
                         self.cursor = Cursor::Single(CursorIndex { line: 0, char: char_index });
                     }
                 }
+                self.reposition_cursor(env);
             }
             MouseEvent::Click(_, position, modifier) => {
                 self.request_focus(env);
@@ -593,6 +598,7 @@ impl MouseEventHandler for PlainTextInput {
 
                     self.cursor = Cursor::Single(CursorIndex { line: 0, char: char_index });
                 }
+                self.reposition_cursor(env);
             }
             MouseEvent::NClick(_, position, _, n) => {
                 //self.request_focus(env);
@@ -609,6 +615,7 @@ impl MouseEventHandler for PlainTextInput {
 
                     self.cursor = Cursor::Selection { start: CursorIndex { line: 0, char: range.start }, end: CursorIndex { line: 0, char: range.end } }
                 }
+                self.reposition_cursor(env);
             }
             MouseEvent::Drag { to, delta_xy, .. } => {
                 // If we do not have focus, just return
@@ -669,11 +676,10 @@ impl MouseEventHandler for PlainTextInput {
                         self.drag_start_cursor = None;
                     }
                 }
+                self.reposition_cursor(env);
             }
             _ => ()
         }
-
-        self.reposition_cursor(env);
     }
 }
 
@@ -791,24 +797,25 @@ impl PlainTextInput {
     /// Recalculate the position of the cursor and the selection. This will not move the cursor
     /// index, but move the visual positioning of the cursor and the selection box (if selection mode).
     fn reposition_cursor(&mut self, env: &mut Environment) {
-        let text = self.text.value().clone();
-
         let glyph = self.glyphs(env);
+        let text = &*self.text.value();
 
         let index = match &mut self.cursor {
             Cursor::Single(index) => {
-                *index = CursorIndex { line: 0, char: index.char.min(Self::len_in_graphemes(&text)) };
+                let len_in_graphemes = Self::len_in_graphemes(text);
+                println!("len_in_graphemes: {}", len_in_graphemes);
+                *index = CursorIndex { line: 0, char: index.char.min(len_in_graphemes) };
                 index
             }
             Cursor::Selection { end, .. } => end
         };
 
-        let point = index.position(&text, &glyph);
+        let point = index.position(text, &glyph);
 
         *self.cursor_x.value_mut() = point.x();
         *self.selection_x.value_mut() = point.x();
 
-        let selection_width = self.cursor.width(&text, &glyph);
+        let selection_width = self.cursor.width(text, &glyph);
 
         if selection_width < 0.0 {
             *self.selection_width.value_mut() = selection_width.abs();

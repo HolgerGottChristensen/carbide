@@ -38,6 +38,9 @@ fn main_fs(in: VertexOutput) -> [[location(0)]] vec4<f32> {
     if (in.mode == 2u) {
         return in.color;
     }
+    if (in.mode == 3u) {
+        return vec4<f32>(in.color.r, in.color.g, in.color.b, main_pixel.a);
+    }
 
     return atlas_pixel;
 }

@@ -2,6 +2,7 @@
 
 use crate::draw::{Dimension, Position, Rect};
 use crate::image_map;
+use crate::mesh::{MODE_ICON, MODE_IMAGE};
 use crate::prelude::*;
 use crate::render::PrimitiveKind;
 use crate::widget::types::ScaleMode;
@@ -14,7 +15,9 @@ pub struct Image {
     /// The unique identifier for the image that will be drawn.
     pub image_id: image_map::Id,
     /// The rectangle area of the original source image that should be used.
-    pub src_rect: Option<Rect>,
+    src_rect: Option<Rect>,
+    color: Option<ColorState>,
+    mode: u32,
     position: Position,
     dimension: Dimension,
     scale_mode: ScaleMode,
@@ -28,6 +31,23 @@ impl Image {
             id: Uuid::new_v4(),
             image_id: id,
             src_rect: None,
+            color: None,
+            mode: MODE_IMAGE,
+            position: Position::new(0.0, 0.0),
+            dimension: Dimension::new(0.0, 0.0),
+            scale_mode: ScaleMode::Fit,
+            resizeable: false,
+            requested_size: Dimension::new(0.0, 0.0),
+        })
+    }
+
+    pub fn new_icon(id: image_map::Id) -> Box<Self> {
+        Box::new(Image {
+            id: Uuid::new_v4(),
+            image_id: id,
+            src_rect: None,
+            color: Some(EnvironmentColor::Accent.into()),
+            mode: MODE_ICON,
             position: Position::new(0.0, 0.0),
             dimension: Dimension::new(0.0, 0.0),
             scale_mode: ScaleMode::Fit,
@@ -108,11 +128,17 @@ impl Layout for Image {
 }
 
 impl Render for Image {
-    fn get_primitives(&mut self, primitives: &mut Vec<Primitive>, _env: &mut Environment) {
+    fn get_primitives(&mut self, primitives: &mut Vec<Primitive>, env: &mut Environment) {
+        if let Some(color) = &mut self.color {
+            color.capture_state(env);
+            color.release_state(env);
+        }
+
         let kind = PrimitiveKind::Image {
-            color: None,
+            color: self.color.as_ref().map(|col| *col.value()),
             image_id: self.image_id,
             source_rect: self.src_rect,
+            mode: self.mode,
         };
 
         let rect = Rect::new(self.position, self.dimension);
