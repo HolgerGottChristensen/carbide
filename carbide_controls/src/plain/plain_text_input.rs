@@ -24,6 +24,9 @@ use crate::plain::text_input_key_commands::TextInputKeyCommand;
 
 pub type TextInputState = ResStringState;
 
+pub const PASSWORD_CHAR: char = '●';
+pub const PASSWORD_CHAR_SMALL: char = '•';
+
 /// A plain text input widget. The widget contains no specific styling, other than text color,
 /// cursor color/width and selection color. Most common logic has been implemented, such as
 /// key shortcuts, mouse click and drag select along with copy and paste. For an example of
@@ -37,6 +40,7 @@ pub struct PlainTextInput {
     dimension: Dimension,
     cursor: Cursor,
     drag_start_cursor: Option<Cursor>,
+    obscure_text: Option<char>,
 
     // Colors
     #[state] selection_color: ColorState,
@@ -46,6 +50,7 @@ pub struct PlainTextInput {
     #[state] focus: FocusState,
     #[state] input_state: TextInputState,
     #[state] text: StringState,
+    #[state] display_text: StringState,
     #[state] cursor_x: F64State,
     #[state] selection_x: F64State,
     #[state] selection_width: F64State,
@@ -63,6 +68,8 @@ impl PlainTextInput {
         let cursor_color: ColorState = EnvironmentColor::Red.into();
         let text_color: ColorState = EnvironmentColor::Label.into();
 
+        let obscure_text = None;
+
         Self::internal_new(
             text,
             font_size,
@@ -70,6 +77,20 @@ impl PlainTextInput {
             selection_color,
             cursor_color,
             text_color,
+            obscure_text,
+        )
+    }
+
+    pub fn obscure(mut self, obscure: char) -> Box<Self> {
+        self.obscure_text = Some(obscure);
+        Self::internal_new(
+            self.input_state,
+            self.font_size,
+            self.focus,
+            self.selection_color,
+            self.cursor_color,
+            self.text_color,
+            self.obscure_text,
         )
     }
 
@@ -82,6 +103,7 @@ impl PlainTextInput {
             self.selection_color,
             self.cursor_color,
             self.text_color,
+            self.obscure_text,
         )
     }
 
@@ -94,6 +116,7 @@ impl PlainTextInput {
             self.selection_color,
             self.cursor_color,
             self.text_color,
+            self.obscure_text,
         )
     }
 
@@ -106,6 +129,7 @@ impl PlainTextInput {
             self.selection_color,
             self.cursor_color,
             self.text_color,
+            self.obscure_text,
         )
     }
 
@@ -118,6 +142,7 @@ impl PlainTextInput {
             self.selection_color,
             self.cursor_color,
             self.text_color,
+            self.obscure_text,
         )
     }
 
@@ -130,6 +155,7 @@ impl PlainTextInput {
             self.selection_color,
             self.cursor_color,
             self.text_color,
+            self.obscure_text,
         )
     }
 
@@ -140,6 +166,7 @@ impl PlainTextInput {
         selection_color: ColorState,
         cursor_color: ColorState,
         text_color: ColorState,
+        obscure_text: Option<char>,
     ) -> Box<Self> {
         let cursor_x: F64State = LocalState::new(0.0).into();
         let selection_x: F64State = LocalState::new(0.0).into();
@@ -149,7 +176,14 @@ impl PlainTextInput {
         let is_focused = focus.mapped(|focus: &Focus| {
             focus == &Focus::Focused
         });
-        let text_string: StringState = input.clone().into();
+
+        let display_text: StringState = if let Some(obscuring_char) = obscure_text {
+            input.mapped(move |val: &String| {
+                val.chars().map(|c| obscuring_char).collect::<String>()
+            })
+        } else {
+            input.clone().into()
+        };
 
         let child =
             HStack::new(vec![
@@ -161,7 +195,7 @@ impl PlainTextInput {
                                 .frame(selection_width.clone(), font_size.clone().mapped(|val: &u32| *val as f64))
                                 .offset(selection_x.clone(), 0.0)
                         ),
-                    Text::new(text_string)
+                    Text::new(display_text.clone())
                         .font_size(font_size.clone())
                         .wrap_mode(Wrap::None)
                         .foreground_color(text_color.clone()),
@@ -185,9 +219,11 @@ impl PlainTextInput {
             focus,
             cursor: Cursor::Single(CursorIndex { line: 0, char: 0 }),
             drag_start_cursor: None,
+            obscure_text,
             selection_color,
             cursor_color,
             text: input.clone().into(),
+            display_text,
             cursor_x,
             selection_x,
             selection_width,
@@ -269,17 +305,19 @@ impl KeyboardEventHandler for PlainTextInput {
                     TextInputKeyCommand::Undefined => {}
                     TextInputKeyCommand::Copy => {
                         let mut ctx = ClipboardContext::new().unwrap();
-                        let text = self.text.value().clone();
 
                         match self.cursor {
                             Cursor::Single(_) => {
-                                ctx.set_contents(text).unwrap();
+                                ctx.set_contents(self.display_text.value().clone()).unwrap();
                             }
                             Cursor::Selection { start, end } => {
                                 let min = start.char.min(end.char);
                                 let max = start.char.max(end.char);
 
-                                let s = text[min..max].to_string();
+                                let min_byte = Self::byte_index_from_graphemes(min, &*self.display_text.value());
+                                let max_byte = Self::byte_index_from_graphemes(max, &*self.display_text.value());
+
+                                let s = self.display_text.value()[min_byte..max_byte].to_string();
                                 ctx.set_contents(s).unwrap();
                             }
                         }
@@ -309,10 +347,10 @@ impl KeyboardEventHandler for PlainTextInput {
                     }
                     TextInputKeyCommand::Clip => {
                         let mut ctx = ClipboardContext::new().unwrap();
-                        let text = self.text.value().clone();
+
                         match self.cursor {
                             Cursor::Single(_) => {
-                                ctx.set_contents(text).unwrap();
+                                ctx.set_contents(self.display_text.value().to_string()).unwrap();
                                 self.text.set_value("".to_string());
 
                                 self.cursor = Cursor::Single(CursorIndex { line: 0, char: 0 })
@@ -320,7 +358,11 @@ impl KeyboardEventHandler for PlainTextInput {
                             Cursor::Selection { start, end } => {
                                 let min = start.char.min(end.char);
                                 let max = start.char.max(end.char);
-                                let s = text[min..max].to_string();
+
+                                let min_byte = Self::byte_index_from_graphemes(min, &*self.display_text.value());
+                                let max_byte = Self::byte_index_from_graphemes(max, &*self.display_text.value());
+
+                                let s = self.display_text.value()[min_byte..max_byte].to_string();
                                 ctx.set_contents(s).unwrap();
                                 self.remove_range(min..max);
 
@@ -372,26 +414,23 @@ impl KeyboardEventHandler for PlainTextInput {
                         self.cursor = Cursor::Selection { start: CursorIndex { line: 0, char: 0 }, end: CursorIndex { line: 0, char: Self::len_in_graphemes(&self.text.value()) } }
                     }
                     TextInputKeyCommand::JumpWordLeft => {
-                        let text = self.text.value().clone();
                         let start_index = current_movable_cursor_index.char;
 
-                        let range = Self::prev_word_range(text, start_index);
+                        let range = Self::prev_word_range(&*self.display_text.value(), start_index);
 
                         self.cursor = Cursor::Single(CursorIndex { line: 0, char: range.start })
                     }
                     TextInputKeyCommand::JumpWordRight => {
-                        let text = self.text.value().clone();
                         let start_index = current_movable_cursor_index.char;
 
-                        let range = Self::next_word_range(text, start_index);
+                        let range = Self::next_word_range(&*self.display_text.value(), start_index);
 
                         self.cursor = Cursor::Single(CursorIndex { line: 0, char: range.end })
                     }
                     TextInputKeyCommand::JumpSelectWordLeft => {
-                        let text = self.text.value().clone();
                         let start_index = current_movable_cursor_index.char;
 
-                        let range = Self::prev_word_range(text, start_index);
+                        let range = Self::prev_word_range(&*self.display_text.value(), start_index);
 
                         match self.cursor {
                             Cursor::Single(_) => {
@@ -403,10 +442,9 @@ impl KeyboardEventHandler for PlainTextInput {
                         }
                     }
                     TextInputKeyCommand::JumpSelectWordRight => {
-                        let text = self.text.value().clone();
                         let start_index = current_movable_cursor_index.char;
 
-                        let range = Self::next_word_range(text, start_index);
+                        let range = Self::next_word_range(&*self.display_text.value(), start_index);
 
                         match self.cursor {
                             Cursor::Single(_) => {
@@ -423,10 +461,9 @@ impl KeyboardEventHandler for PlainTextInput {
                     }
                     TextInputKeyCommand::RemoveWordLeft => {
                         if let Cursor::Single(index) = self.cursor {
-                            let text = self.text.value().clone();
                             let start_index = index.char;
 
-                            let range = Self::prev_word_range(text, start_index);
+                            let range = Self::prev_word_range(&*self.display_text.value(), start_index);
                             let start = range.start;
 
                             self.remove_range(range);
@@ -436,10 +473,9 @@ impl KeyboardEventHandler for PlainTextInput {
                     }
                     TextInputKeyCommand::RemoveWordRight => {
                         if let Cursor::Single(index) = self.cursor {
-                            let text = self.text.value().clone();
                             let start_index = index.char;
 
-                            let range = Self::next_word_range(text, start_index);
+                            let range = Self::next_word_range(&*self.display_text.value(), start_index);
                             let start = range.start;
 
                             self.remove_range(range);
@@ -611,7 +647,7 @@ impl MouseEventHandler for PlainTextInput {
 
                     let char_index = Cursor::char_index(relative_offset, &self.glyphs(env));
 
-                    let range = Self::word_index_range(&self.text.value(), char_index);
+                    let range = Self::word_index_range(&self.display_text.value(), char_index);
 
                     self.cursor = Cursor::Selection { start: CursorIndex { line: 0, char: range.start }, end: CursorIndex { line: 0, char: range.end } }
                 }
@@ -704,7 +740,7 @@ impl PlainTextInput {
     /// Get the positioned glyphs of a given string. This is useful when needing to calculate cursor
     /// position, or the width of a given string.
     fn glyphs(&mut self, env: &mut Environment) -> Vec<Glyph> {
-        let mut text_scaler: Box<Text> = Text::new(self.text.clone())
+        let mut text_scaler: Box<Text> = Text::new(self.display_text.clone())
             .font_size(self.font_size.clone()).wrap_mode(Wrap::None);
 
         text_scaler.set_position(Position::new(0.0, 0.0));
@@ -736,7 +772,7 @@ impl PlainTextInput {
 
     /// Get the range from the leftmost character in a word, to the current index.
     /// When calculating this, all spaces to the left of the word is included as well.
-    fn prev_word_range(text: String, start_index: usize) -> Range<usize> {
+    fn prev_word_range(text: &String, start_index: usize) -> Range<usize> {
         let mut has_hit_space = false;
 
         let number_left = text.chars().rev().skip(Self::len_in_graphemes(&text) - start_index).skip_while(|cur| {
@@ -753,7 +789,7 @@ impl PlainTextInput {
 
     /// Get the range from the current index to the rightmost character in a word.
     /// When calculating this, all spaces to the right of the word is included as well.
-    fn next_word_range(text: String, start_index: usize) -> Range<usize> {
+    fn next_word_range(text: &String, start_index: usize) -> Range<usize> {
         let mut has_hit_space = false;
 
         let number_left = text.chars().skip(start_index).skip_while(|cur| {
@@ -798,12 +834,11 @@ impl PlainTextInput {
     /// index, but move the visual positioning of the cursor and the selection box (if selection mode).
     fn reposition_cursor(&mut self, env: &mut Environment) {
         let glyph = self.glyphs(env);
-        let text = &*self.text.value();
+        let text = &*self.display_text.value();
 
         let index = match &mut self.cursor {
             Cursor::Single(index) => {
                 let len_in_graphemes = Self::len_in_graphemes(text);
-                println!("len_in_graphemes: {}", len_in_graphemes);
                 *index = CursorIndex { line: 0, char: index.char.min(len_in_graphemes) };
                 index
             }

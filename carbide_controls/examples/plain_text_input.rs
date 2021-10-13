@@ -3,7 +3,7 @@ extern crate carbide_wgpu;
 extern crate env_logger;
 extern crate futures;
 
-use carbide_controls::{PlainSwitch, PlainTextInput};
+use carbide_controls::{PASSWORD_CHAR, PlainSwitch, PlainTextInput};
 use carbide_core::prelude::{EnvironmentColor, EnvironmentFontSize};
 use carbide_core::state::LocalState;
 use carbide_core::text::{FontFamily, FontStyle, FontWeight};
@@ -36,11 +36,18 @@ fn main() {
     window.set_widgets(
         VStack::new(vec![
             Rectangle::new(vec![
-                PlainTextInput::new(text_state)
+                PlainTextInput::new(text_state.clone())
                     .font_size(EnvironmentFontSize::Title)
                     .border()
                     .color(EnvironmentColor::DarkText)
             ]).shrink_to_fit().fill(EnvironmentColor::Blue),
+            Rectangle::new(vec![
+                PlainTextInput::new(text_state)
+                    .font_size(EnvironmentFontSize::Title)
+                    .obscure(PASSWORD_CHAR)
+                    .border()
+                    .color(EnvironmentColor::DarkText)
+            ]).shrink_to_fit().fill(EnvironmentColor::Purple),
         ])
             .spacing(10.0)
             .padding(EdgeInsets::all(40.0)),
