@@ -37,7 +37,7 @@ fn main() {
     window.add_font_family(family);
 
     let text_state = LocalState::new(Ok(0i128));
-    //let text_state = LocalState::new("Hello world!".to_string());
+    let text_state2 = LocalState::new("Hello world!".to_string());
 
     window.set_widgets(
         VStack::new(vec![
@@ -45,7 +45,11 @@ fn main() {
                 .accent_color(EnvironmentColor::Green),
             TextInput::new(text_state.clone())
                 .accent_color(EnvironmentColor::Purple),
-            TextInput::new(text_state),
+            TextInput::new(text_state2.clone()),
+            TextInput::new(text_state2.clone())
+                .obscure(),
+            TextInput::new(text_state2.clone())
+                .obscure_with_char('©'),
         ]).spacing(10.0)
             .padding(EdgeInsets::all(40.0))
     );
