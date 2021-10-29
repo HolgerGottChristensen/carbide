@@ -60,4 +60,27 @@ impl Image {
             height,
         }
     }
+
+    pub fn new_from_dynamic(image: image::DynamicImage, device: &Device, queue: &Queue) -> Self
+    {
+        let rgba_logo_image = image.to_rgba8();
+
+        // Create the GPU texture and upload the image data.
+        let (width, height) = rgba_logo_image.dimensions();
+
+        let texture = texture::Texture::from_image(
+            device,
+            queue,
+            &rgba_logo_image,
+            Option::from("carbide_loaded_image"),
+        )
+            .unwrap();
+
+        Image {
+            texture,
+            texture_format: DEFAULT_IMAGE_TEX_FORMAT,
+            width,
+            height,
+        }
+    }
 }

@@ -42,6 +42,7 @@ pub use crate::color::Color;
 use crate::state::UsizeState;
 pub use crate::ui::Ui;
 
+pub mod futures;
 pub mod color;
 pub mod cursor;
 pub mod draw;
@@ -60,3 +61,4 @@ mod ui;
 pub mod utils;
 pub mod widget;
 pub mod window;
+

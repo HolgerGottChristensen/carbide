@@ -1,11 +1,15 @@
 use std::collections::HashMap;
+use std::future::Future;
 use std::option::Option::Some;
 use std::time::Instant;
 
 use bitflags::_core::fmt::Formatter;
+use futures::FutureExt;
 use fxhash::{FxBuildHasher, FxHashMap};
+use image::DynamicImage;
+use oneshot::TryRecvError;
 
-use crate::Color;
+use crate::{Color, image_map};
 use crate::draw::Dimension;
 use crate::draw::Scalar;
 use crate::focus::Refocus;
@@ -73,6 +77,10 @@ pub struct Environment {
 
     filter_map: FxHashMap<u32, crate::widget::ImageFilter>,
     next_filter_id: u32,
+
+    async_task_queue: Option<Vec<Box<dyn Fn(&mut Environment) -> bool>>>,
+    last_image_index: u32,
+    queued_images: Option<Vec<DynamicImage>>,
 }
 
 impl std::fmt::Debug for Environment {
@@ -106,7 +114,74 @@ impl Environment {
             frame_start_time: InnerState::new(ValueCell::new(Instant::now())),
             filter_map: filters,
             next_filter_id: 0,
+            async_task_queue: Some(vec![]),
+            last_image_index: 0,
+            queued_images: None,
         }
+    }
+
+    pub fn set_last_image_index(&mut self, next_index: u32) {
+        self.last_image_index = next_index;
+    }
+
+    pub fn queue_image(&mut self, image: DynamicImage) -> Option<image_map::Id> {
+        if let Some(images) = &mut self.queued_images {
+            images.push(image)
+        } else {
+            self.queued_images = Some(vec![image])
+        }
+        let id = image_map::Id(self.last_image_index);
+        self.last_image_index += 1;
+        Some(id)
+    }
+
+    pub fn queued_images(&mut self) -> Option<Vec<image::DynamicImage>> {
+        self.queued_images.take()
+    }
+
+    pub fn check_tasks(&mut self) {
+        let mut temp = None;
+        std::mem::swap(&mut temp, &mut self.async_task_queue);
+
+        temp.as_mut().map(|t| {
+            t.retain(|task| {
+                !task(self)
+            })
+        });
+
+        std::mem::swap(&mut temp, &mut self.async_task_queue);
+    }
+
+    pub fn spawn_task<T: Send + 'static>(
+        &mut self,
+        task: impl Future<Output=T> + Send + 'static,
+        cont: impl Fn(T, &mut Environment) + 'static,
+    ) {
+        let (sender, receiver) = oneshot::channel();
+
+        let task_with_oneshot = task.then(|message| async move {
+            let _ = sender.send(message);
+            ()
+        });
+
+        let poll_message: Box<dyn Fn(&mut Environment) -> bool> = Box::new(move |env| -> bool {
+            match receiver.try_recv() {
+                Ok(message) => {
+                    println!("Received futures state 2");
+                    cont(message, env);
+                    true
+                }
+                Err(TryRecvError::Empty) => {
+                    false
+                }
+                Err(e) => {
+                    eprintln!("{:?}", e);
+                    true
+                }
+            }
+        });
+        self.async_task_queue.as_mut().expect("No async task queue was present.").push(poll_message);
+        async_std::task::spawn(task_with_oneshot);
     }
 
     pub fn capture_time(&mut self) {
@@ -172,8 +247,10 @@ impl Environment {
         self.focus_request = Some(request_type);
     }
 
-    pub fn get_image_information(&self, id: &crate::image_map::Id) -> Option<&ImageInformation> {
-        self.images_information.get(id)
+    pub fn get_image_information(&self, id: &Option<crate::image_map::Id>) -> Option<&ImageInformation> {
+        id.as_ref().and_then(|id| {
+            self.images_information.get(id)
+        })
     }
 
     pub fn insert_image(&mut self, id: crate::image_map::Id, image: ImageInformation) {

@@ -13,7 +13,7 @@ fn main() {
 
     let mut window = Window::new("Shapes example".to_string(), 1200, 1200, Some(icon_path));
 
-    let landscape_id = window.add_image("images/landscape.png");
+    let landscape_id = window.add_image_from_path("images/landscape.png");
 
     window.set_widgets(VStack::new(vec![
         HStack::new(vec![

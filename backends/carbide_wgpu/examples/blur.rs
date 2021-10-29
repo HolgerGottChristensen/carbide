@@ -20,7 +20,7 @@ fn main() {
         Some(icon_path.clone()),
     );
 
-    let image_id = window.add_image("images/landscape.png");
+    let image_id = window.add_image_from_path("images/landscape.png");
 
     let position_x = AnimatedState::custom(ease_in_out, window.environment())
         .duration(Duration::new(5, 0))

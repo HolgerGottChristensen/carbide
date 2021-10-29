@@ -82,6 +82,10 @@ impl<Img> ImageMap<Img> {
         id
     }
 
+    pub fn next_index(&self) -> u32 {
+        self.next_index
+    }
+
     /// Replaces the given image in the map if it exists. Returns the image or None.
     ///
     /// Note: Calling this will trigger a redraw the next time `Ui::draw_if_changed` is called.

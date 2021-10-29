@@ -22,7 +22,7 @@ fn main() {
     window
         .add_font("fonts/NotoSans/NotoSans-Regular.ttf")
         .unwrap();
-    let rust_image = window.add_image("images/rust_press.png").unwrap();
+    let rust_image = window.add_image_from_path("images/rust_press.png").unwrap();
 
     let sync_state = CommonState::new_local_with_key(&"Hello".to_string());
 

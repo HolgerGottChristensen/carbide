@@ -1,5 +1,6 @@
 //! A simple, non-interactive widget for drawing an `Image`.
 
+use crate::color::WHITE;
 use crate::draw::{Dimension, Position, Rect};
 use crate::image_map;
 use crate::mesh::{MODE_ICON, MODE_IMAGE};
@@ -13,7 +14,7 @@ use crate::widget::types::ScaleMode;
 pub struct Image {
     id: Uuid,
     /// The unique identifier for the image that will be drawn.
-    pub image_id: image_map::Id,
+    #[state] pub image_id: TState<Option<image_map::Id>>,
     /// The rectangle area of the original source image that should be used.
     src_rect: Option<Rect>,
     color: Option<ColorState>,
@@ -26,10 +27,10 @@ pub struct Image {
 }
 
 impl Image {
-    pub fn new(id: image_map::Id) -> Box<Self> {
+    pub fn new<I: Into<TState<Option<image_map::Id>>>>(id: I) -> Box<Self> {
         Box::new(Image {
             id: Uuid::new_v4(),
-            image_id: id,
+            image_id: id.into(),
             src_rect: None,
             color: None,
             mode: MODE_IMAGE,
@@ -41,10 +42,10 @@ impl Image {
         })
     }
 
-    pub fn new_icon(id: image_map::Id) -> Box<Self> {
+    pub fn new_icon<I: Into<TState<Option<image_map::Id>>>>(id: I) -> Box<Self> {
         Box::new(Image {
             id: Uuid::new_v4(),
-            image_id: id,
+            image_id: id.into(),
             src_rect: None,
             color: Some(EnvironmentColor::Accent.into()),
             mode: MODE_ICON,
@@ -91,7 +92,8 @@ impl Layout for Image {
     fn calculate_size(&mut self, requested_size: Dimension, env: &mut Environment) -> Dimension {
         self.requested_size = requested_size;
 
-        let image_information = env.get_image_information(&self.image_id).unwrap();
+        let image_information =
+            env.get_image_information(&self.image_id.value()).unwrap_or(&ImageInformation { width: 100, height: 100 });
 
         if !self.resizeable {
             self.dimension = Dimension::new(
@@ -134,16 +136,28 @@ impl Render for Image {
             color.release_state(env);
         }
 
-        let kind = PrimitiveKind::Image {
-            color: self.color.as_ref().map(|col| *col.value()),
-            image_id: self.image_id,
-            source_rect: self.src_rect,
-            mode: self.mode,
-        };
+        if let Some(id) = self.image_id.value().deref() {
+            let kind = PrimitiveKind::Image {
+                color: self.color.as_ref().map(|col| *col.value()),
+                image_id: *id,
+                source_rect: self.src_rect,
+                mode: self.mode,
+            };
+            let rect = Rect::new(self.position, self.dimension);
 
-        let rect = Rect::new(self.position, self.dimension);
+            primitives.push(Primitive { kind, rect });
+        } else {
+            let color = if let Some(color) = &self.color {
+                *color.value()
+            } else {
+                WHITE
+            };
+            let kind = PrimitiveKind::RectanglePrim { color };
 
-        primitives.push(Primitive { kind, rect });
+            let rect = Rect::new(self.position, self.dimension);
+
+            primitives.push(Primitive { kind, rect });
+        }
     }
 }
 

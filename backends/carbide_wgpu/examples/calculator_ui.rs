@@ -37,7 +37,7 @@ fn main() {
     );
     window.add_font_family(family);
 
-    let rust_image = window.add_image("images/rust_press.png").unwrap();
+    let rust_image = window.add_image_from_path("images/rust_press.png").unwrap();
 
     window.set_widgets(
         VStack::new(vec![

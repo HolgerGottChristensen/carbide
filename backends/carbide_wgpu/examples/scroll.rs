@@ -13,7 +13,7 @@ fn main() {
         Some(icon_path.clone()),
     );
 
-    let image_id = window.add_image("images/landscape.png");
+    let image_id = window.add_image_from_path("images/landscape.png");
 
     window.set_widgets(
         Scroll::new(Image::new(image_id).resizeable().scaled_to_fill().frame(500.0, 500.0))

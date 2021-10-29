@@ -14,7 +14,7 @@ fn main() {
         Some(icon_path.clone()),
     );
 
-    let image_id = window.add_image("images/rust.png");
+    let image_id = window.add_image_from_path("images/rust.png");
 
     window.set_widgets(
         VStack::new(vec![

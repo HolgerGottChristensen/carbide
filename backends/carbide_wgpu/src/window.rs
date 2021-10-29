@@ -98,7 +98,7 @@ impl carbide_core::window::TWindow for Window {
         self.ui.environment.insert_font_from_file(font_path).0
     }
 
-    fn add_image(&mut self, path: &str) -> Id {
+    fn add_image_from_path(&mut self, path: &str) -> Option<Id> {
         let assets = find_folder::Search::KidsThenParents(3, 5)
             .for_folder("assets")
             .unwrap();
@@ -110,7 +110,19 @@ impl carbide_core::window::TWindow for Window {
 
         self.ui.environment.insert_image(id, information);
 
-        id
+        Some(id)
+    }
+
+    fn add_image(&mut self, image: image::DynamicImage) -> Option<Id> {
+        let image = Image::new_from_dynamic(image, &self.device, &self.queue);
+
+        let information = image.image_information();
+
+        let id = self.image_map.insert(image);
+
+        self.ui.environment.insert_image(id, information);
+
+        Some(id)
     }
 
     fn set_widgets(&mut self, base_widget: Box<dyn Widget>) {
@@ -129,6 +141,10 @@ impl Window {
 
     pub fn environment(&self) -> &Environment {
         &self.ui.environment
+    }
+
+    pub fn environment_mut(&mut self) -> &mut Environment {
+        &mut self.ui.environment
     }
 
     fn calculate_carbide_to_wgpu_matrix(dimension: Dimension, scale_factor: Scalar) -> Matrix4<f32> {
@@ -477,7 +493,19 @@ impl Window {
     }
 
     fn update(&mut self) {
+        let next_index = self.image_map.next_index();
+        self.environment_mut().set_last_image_index(next_index);
+        self.environment_mut().check_tasks();
+        self.add_queued_images();
         self.ui.delegate_events();
+    }
+
+    fn add_queued_images(&mut self) {
+        if let Some(queued_images) = self.environment_mut().queued_images() {
+            for queued_image in queued_images {
+                let _ = self.add_image(queued_image);
+            }
+        }
     }
 
     pub fn launch(mut self) {
