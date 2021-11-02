@@ -99,7 +99,7 @@ impl TextureAtlas {
             all_books_cabinet: HashMap::with_hasher(FxBuildHasher::default()),
             glyph_index: vec![],
             book_index: vec![],
-            position_tolerance: 0.2,
+            position_tolerance: 0.1,
         }
     }
 

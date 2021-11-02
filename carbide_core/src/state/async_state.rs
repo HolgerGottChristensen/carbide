@@ -31,7 +31,8 @@ impl<T: StateContract + Send + 'static + Default> AsyncState<T> {
             ()
         });
 
-        let _ = async_std::task::spawn(task);
+        #[cfg(feature = "async-std")]
+            let _ = async_std::task::spawn(task);
 
         Box::new(AsyncState {
             value: T::default(),
@@ -49,7 +50,8 @@ impl<T: StateContract + Send + 'static> AsyncState<T> {
             ()
         });
 
-        let _ = async_std::task::spawn(task);
+        #[cfg(feature = "async-std")]
+            let _ = async_std::task::spawn(task);
 
         Box::new(AsyncState {
             value: default,

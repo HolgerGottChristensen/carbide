@@ -75,12 +75,29 @@ pub struct Environment {
     /// The start time of the current frame. This is used to sync the animated states.
     frame_start_time: InnerState<Instant>,
 
+    /// A map that contains an image filter used for the Filter widget.
     filter_map: FxHashMap<u32, crate::widget::ImageFilter>,
+    /// The next id for the filter. This is used when inserting into the filter_map.
     next_filter_id: u32,
 
+    /// A queue of functions that should be evaluated called each frame. This is called from the
+    /// main thread, and will return a boolean true if the task is done and should be removed
+    /// from the list. Each task in the queue should be fast to call, and non-blocking. We use
+    /// oneshot for evaluating if tasks are completed. If they are, we run the continuation and
+    /// remove it from the list.
     async_task_queue: Option<Vec<Box<dyn Fn(&mut Environment) -> bool>>>,
+
+    /// The last image index used by the window. This is used when trying to add images from the
+    /// environment to the window. We increase this by one when queueing an image, and the value
+    /// is updated each frame.
     last_image_index: u32,
+
+    /// A list of queued images. When an image is added to this queue it will be added to the
+    /// window the next frame.
     queued_images: Option<Vec<DynamicImage>>,
+
+    #[cfg(feature = "tokio")]
+    tokio_runtime: tokio::runtime::Runtime,
 }
 
 impl std::fmt::Debug for Environment {
@@ -117,6 +134,10 @@ impl Environment {
             async_task_queue: Some(vec![]),
             last_image_index: 0,
             queued_images: None,
+            #[cfg(feature = "tokio")]
+            tokio_runtime: tokio::runtime::Builder::new_multi_thread()
+                .enable_all()
+                .build().expect("Could not create a tokio runtime"),
         }
     }
 
@@ -167,7 +188,6 @@ impl Environment {
         let poll_message: Box<dyn Fn(&mut Environment) -> bool> = Box::new(move |env| -> bool {
             match receiver.try_recv() {
                 Ok(message) => {
-                    println!("Received futures state 2");
                     cont(message, env);
                     true
                 }
@@ -181,7 +201,15 @@ impl Environment {
             }
         });
         self.async_task_queue.as_mut().expect("No async task queue was present.").push(poll_message);
-        async_std::task::spawn(task_with_oneshot);
+
+        #[cfg(feature = "tokio")]
+            self.tokio_runtime.spawn(task_with_oneshot);
+
+        #[cfg(all(feature = "async-std", not(feature = "tokio")))]
+            async_std::task::spawn(task_with_oneshot);
+
+        #[cfg(not(any(feature = "async-std", feature = "tokio")))]
+        println!("Tried to spawn an async task without having any async feature enabled. Try enabling 'async-std' or 'tokio'.")
     }
 
     pub fn capture_time(&mut self) {

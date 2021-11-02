@@ -37,5 +37,15 @@ find_folder = "0.3"
 futures = "0.3"
 image = "0.23"
 winit = "0.25"
-async-std = "1.10.0"
-surf = "2.3"
+async-std = { version = "1.10.0" }
+surf = { version = "2.3" }
+tokio = { version = "1", features = ["full"] }
+reqwest = "0.11.6"
+
+[[example]]
+name = "async"
+required-features = ["carbide_core/async-std"]
+
+[[example]]
+name = "async_tokio"
+required-features = ["carbide_core/tokio"]
