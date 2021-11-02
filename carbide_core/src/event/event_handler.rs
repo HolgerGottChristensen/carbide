@@ -33,6 +33,7 @@ pub enum WidgetEvent {
     Keyboard(KeyboardEvent),
     Window(WindowEvent),
     Touch(TouchEvent),
+    DoneProcessingEvents,
 }
 
 #[derive(Clone, Debug)]

@@ -1,6 +1,6 @@
 use std::fmt::{Debug, Formatter};
 
-use carbide_core::color::{BLUE, RED};
+use carbide_core::color::{BLUE, RED, TRANSPARENT};
 use carbide_core::draw::{Dimension, Position};
 use carbide_core::flags::Flags;
 use carbide_core::state::{F64State, LocalState, State, StateContract, TState, UsizeState};
@@ -40,12 +40,12 @@ impl<T: StateContract + 'static, U: Delegate<T> + 'static> List<T, U> {
             child: Scroll::new(
                 VStack::new(vec![
                     Rectangle::new(vec![])
-                        .fill(RED)
+                        .fill(TRANSPARENT) // RED for debugging
                         .frame(SCALE, start_offset.clone()),
                     ForEach::new(internal_model.clone(), delegate.clone()),
                     //.index_offset(index_offset_state.clone()),
                     Rectangle::new(vec![])
-                        .fill(BLUE)
+                        .fill(TRANSPARENT)// BLUE for debugging
                         .frame(SCALE, end_offset.clone()),
                 ])
                     .spacing(10.0),

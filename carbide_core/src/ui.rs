@@ -5,9 +5,7 @@ use instant::Instant;
 
 use crate::{color, cursor};
 use crate::draw::Dimension;
-use crate::event::{
-    EventHandler, Input, Key, KeyboardEvent, ModifierKey, WidgetEvent, WindowEvent,
-};
+use crate::event::{EventHandler, Input, Key, KeyboardEvent, ModifierKey, OtherEventHandler, WidgetEvent, WindowEvent};
 use crate::focus::{Focusable, Refocus};
 use crate::prelude::Environment;
 use crate::prelude::EnvironmentColor;
@@ -489,6 +487,9 @@ impl Ui {
                     self.widgets
                         .process_other_event(event, &mut self.environment);
                 }
+                WidgetEvent::DoneProcessingEvents => {
+                    self.widgets.process_other_event(event, &mut self.environment);
+                }
             }
 
             if let Some(request) = self.environment.focus_request.clone() {
@@ -564,10 +565,11 @@ impl Ui {
                     _ => {}
                 }
             }
-
-            self.environment.clear();
         }
 
+        // Todo: Consider being smarter about sending this event. We dont need to send it if no state changed this frame.
+        // Currently used by foreach to check if updates has been made to its model.
+        self.widgets.process_other_event(&WidgetEvent::DoneProcessingEvents, &mut self.environment);
         self.event_handler.clear_events();
 
         if now.elapsed().as_millis() > 16 {

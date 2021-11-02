@@ -16,6 +16,7 @@ pub use text_input::TextInput;
 pub use types::CheckBoxState;
 pub use types::CheckBoxValue;
 
+#[macro_export]
 macro_rules! capture {
     ([$($t:ident),*], |$($a:ident: $typ:ty),*| $b:block) => {
         {

@@ -2,6 +2,7 @@ use std::fmt::Debug;
 
 use crate::__private::Formatter;
 use crate::draw::{Dimension, Position};
+use crate::event::{OtherEventHandler, WidgetEvent};
 use crate::prelude::*;
 
 pub trait Delegate<T: StateContract>: Clone {
@@ -15,7 +16,8 @@ impl<T: StateContract, K> Delegate<T> for K where K: Fn(TState<T>, UsizeState) -
 }
 
 #[derive(Clone, Widget)]
-pub struct ForEach<T, U> where T: StateContract, U: Delegate<T> {
+#[carbide_exclude(OtherEvent)]
+pub struct ForEach<T, U> where T: StateContract + 'static, U: Delegate<T> {
     id: Uuid,
     position: Position,
     dimension: Dimension,
@@ -30,7 +32,7 @@ pub struct ForEach<T, U> where T: StateContract, U: Delegate<T> {
 impl<T: StateContract + 'static, U: Delegate<T>> ForEach<T, U> {
     pub fn new<K: Into<TState<Vec<T>>>>(model: K, delegate: U) -> Box<Self> {
         let model = model.into();
-        let mut map: Vec<Box<dyn Widget>> = vec![];
+        let mut list: Vec<Box<dyn Widget>> = vec![];
 
         for (index, _element) in model.value().deref().iter().enumerate() {
             let index_state: UsizeState = ValueState::new(index).into();
@@ -49,7 +51,7 @@ impl<T: StateContract + 'static, U: Delegate<T>> ForEach<T, U> {
                     },
                 );
             let widget = delegate.call(item_state.into(), index_state);
-            map.push(Box::new(widget));
+            list.push(widget);
         }
 
         Box::new(Self {
@@ -58,7 +60,7 @@ impl<T: StateContract + 'static, U: Delegate<T>> ForEach<T, U> {
             dimension: Dimension::default(),
             model,
             delegate,
-            children: map,
+            children: list,
             index_offset: ValueState::new(0).into(),
         })
     }
@@ -79,7 +81,40 @@ impl<T: StateContract + 'static, U: Delegate<T>> ForEach<T, U> {
     }*/
 }
 
-impl<T: StateContract, U: Delegate<T>> CommonWidget for ForEach<T, U> {
+impl<T: StateContract + 'static, U: Delegate<T>> OtherEventHandler for ForEach<T, U> {
+    fn handle_other_event(&mut self, _event: &WidgetEvent, _env: &mut Environment) {
+        if self.model.value().len() < self.children.len() { // Remove the excess elements
+            let number_to_remove = self.children.len() - self.model.value().len();
+            for _ in 0..number_to_remove {
+                self.children.pop();
+            }
+        } else if self.model.value().len() > self.children.len() { // Insert the missing elements
+            let number_to_insert = self.model.value().len() - self.children.len();
+
+            for _ in 0..number_to_insert {
+                let index_state: UsizeState = ValueState::new(self.children.len()).into();
+                let item_state: MapState<Vec<T>, T, usize> =
+                    MapState::new(
+                        self.model.clone(),
+                        *index_state.value(),
+                        |a, index| {
+                            &a[index]
+                        },
+                        |a, index| {
+                            &mut a[index]
+                        },
+                        |a: &T| {
+                            todo!()
+                        },
+                    );
+                let widget = self.delegate.call(item_state.into(), index_state);
+                self.children.push(widget);
+            }
+        }
+    }
+}
+
+impl<T: StateContract + 'static, U: Delegate<T>> CommonWidget for ForEach<T, U> {
     fn id(&self) -> Uuid {
         self.id
     }
@@ -151,7 +186,7 @@ impl<T: StateContract, U: Delegate<T>> CommonWidget for ForEach<T, U> {
     }
 }
 
-impl<T: StateContract, U: Delegate<T>> Debug for ForEach<T, U> {
+impl<T: StateContract + 'static, U: Delegate<T>> Debug for ForEach<T, U> {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("ForEach")
             .field("children", &self.children)

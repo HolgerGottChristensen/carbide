@@ -38,6 +38,7 @@ impl VStack {
 
 impl Layout for VStack {
     fn calculate_size(&mut self, requested_size: Dimension, env: &mut Environment) -> Dimension {
+        // TODO: Check if we get the correct result here, because I see it as always 1 even if proxy is used
         let mut number_of_children_that_needs_sizing = self.children.len() as f64;
 
         let non_spacers_vec: Vec<bool> =
