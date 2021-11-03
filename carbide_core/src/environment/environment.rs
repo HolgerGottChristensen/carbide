@@ -10,12 +10,13 @@ use image::DynamicImage;
 use oneshot::TryRecvError;
 
 use crate::{Color, image_map};
+use crate::animation::{Animatable, Animation};
 use crate::draw::Dimension;
 use crate::draw::Scalar;
 use crate::focus::Refocus;
 use crate::mesh::TextureAtlas;
 use crate::prelude::{EnvironmentColor, EnvironmentVariable};
-use crate::state::{InnerState, StateKey, ValueCell};
+use crate::state::{InnerState, StateContract, StateKey, ValueCell};
 use crate::text::{Font, FontFamily, FontId, FontSize, FontStyle, FontWeight, Glyph};
 use crate::widget::{ImageFilter, Overlay};
 use crate::widget::ImageInformation;
@@ -98,6 +99,8 @@ pub struct Environment {
 
     #[cfg(feature = "tokio")]
     tokio_runtime: tokio::runtime::Runtime,
+
+    animations: Option<Vec<Box<dyn Fn(&Instant) -> bool>>>,
 }
 
 impl std::fmt::Debug for Environment {
@@ -138,6 +141,7 @@ impl Environment {
             tokio_runtime: tokio::runtime::Builder::new_multi_thread()
                 .enable_all()
                 .build().expect("Could not create a tokio runtime"),
+            animations: Some(vec![]),
         }
     }
 
@@ -158,6 +162,29 @@ impl Environment {
 
     pub fn queued_images(&mut self) -> Option<Vec<image::DynamicImage>> {
         self.queued_images.take()
+    }
+
+    pub fn insert_animation<A: StateContract + 'static>(&mut self, animation: Animation<A>) {
+        let poll = move |time: &Instant| {
+            let mut animation = animation.clone();
+            animation.update(time)
+        };
+        self.animations.as_mut().expect("No animation queue was present.").push(Box::new(poll));
+    }
+
+    pub fn update_animation(&mut self) {
+        let mut temp = None;
+        std::mem::swap(&mut temp, &mut self.animations);
+
+        let instant = &*self.frame_start_time.borrow();
+
+        temp.as_mut().map(|t| {
+            t.retain(|update_animation| {
+                !update_animation(instant)
+            })
+        });
+
+        std::mem::swap(&mut temp, &mut self.animations);
     }
 
     pub fn check_tasks(&mut self) {

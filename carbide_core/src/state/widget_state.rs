@@ -14,6 +14,10 @@ impl<T: StateContract> WidgetState<T> {
     pub fn new(item: Box<dyn State<T>>) -> WidgetState<T> {
         WidgetState(item)
     }
+
+    pub fn to_boxed_state(self) -> Box<dyn State<T>> {
+        self.0
+    }
 }
 
 impl<T: StateContract + 'static> WidgetState<Vec<T>> {

@@ -72,8 +72,7 @@ fn main() {
                     .frame(150.0, 22.0)
                     .accent_color(EnvironmentColor::Red),
             ]),
-        ]).spacing(10.0)
-        ,
+        ]).spacing(10.0),
     );
 
     window.launch();

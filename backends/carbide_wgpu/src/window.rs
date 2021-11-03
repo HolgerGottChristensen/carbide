@@ -493,10 +493,15 @@ impl Window {
     }
 
     fn update(&mut self) {
+        // Capture the current time and update the animations in the environment.
+        self.environment_mut().capture_time();
+        self.environment_mut().update_animation();
+
         let next_index = self.image_map.next_index();
         self.environment_mut().set_last_image_index(next_index);
         self.environment_mut().check_tasks();
         self.add_queued_images();
+
         self.ui.delegate_events();
     }
 
