@@ -16,3 +16,9 @@ impl Animatable<f64> for f64 {
         *self * (1.0 - percentage) + *other * percentage
     }
 }
+
+impl Animatable<Color> for Color {
+    fn interpolate(&self, other: &Color, percentage: f64) -> Color {
+        Color::rgba_blend(self, other, percentage)
+    }
+}

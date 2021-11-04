@@ -48,6 +48,16 @@ impl<T: StateContract> Animation<T> {
         }
     }
 
+    pub fn interpolation(mut self, interpolation: fn(&T, &T, f64) -> T) -> Self {
+        self.custom_interpolation = interpolation;
+        self
+    }
+
+    pub fn from(mut self, from: T) -> Self {
+        self.from = from;
+        self
+    }
+
     pub fn curve(mut self, curve: fn(f64) -> f64) -> Self {
         self.animation_curve = curve;
         self

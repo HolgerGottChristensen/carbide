@@ -16,6 +16,7 @@ use std::f32::consts::PI;
 use rand::Rng;
 use serde::{Deserialize, Serialize};
 
+use crate::animation::Animatable;
 use crate::utils::{degrees, fmod, turns};
 
 /// Color supporting RGB and HSL variants.
@@ -136,6 +137,51 @@ fn clampf32(f: f32) -> f32 {
 }
 
 impl Color {
+    pub fn hsla_blend(from: &Color, to: &Color, percentage: f64) -> Color {
+        let from_hsla = from.to_hsl();
+        let to_hsla = to.to_hsl();
+
+        let from_h = from_hsla.0 * 180.0 / std::f32::consts::PI;
+        let to_h = to_hsla.0 * 180.0 / std::f32::consts::PI;
+
+        let d = to_h - from_h;
+        let delta = d + if d.abs() > 180.0 {
+            if d < 0.0 {
+                360.0
+            } else {
+                -360.0
+            }
+        } else {
+            0.0
+        };
+
+        let mut new_angle_deg = from_h as f64 + (percentage * delta as f64);
+
+        if new_angle_deg < 0.0 {
+            new_angle_deg = 360.0 + new_angle_deg;
+        } else if new_angle_deg >= 360.0 {
+            new_angle_deg = new_angle_deg - 360.0
+        }
+
+        Color::Hsla(
+            (new_angle_deg as f32).to_radians().abs(),
+            from_hsla.1.interpolate(&to_hsla.1, percentage),
+            from_hsla.2.interpolate(&to_hsla.2, percentage),
+            from_hsla.3.interpolate(&to_hsla.3, percentage),
+        )
+    }
+
+    pub fn rgba_blend(from: &Color, to: &Color, percentage: f64) -> Color {
+        let from_rgba = from.to_rgb();
+        let to_rgba = to.to_rgb();
+        Color::Rgba(
+            from_rgba.0.interpolate(&to_rgba.0, percentage),
+            from_rgba.1.interpolate(&to_rgba.1, percentage),
+            from_rgba.2.interpolate(&to_rgba.2, percentage),
+            from_rgba.3.interpolate(&to_rgba.3, percentage),
+        )
+    }
+
     /// The percent should be between 0 and 1.
     /// Lighting with negative values will darken the color.
     pub fn lightened(self, percent: f32) -> Color {

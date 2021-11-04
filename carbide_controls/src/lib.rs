@@ -18,16 +18,18 @@ pub use types::CheckBoxValue;
 
 #[macro_export]
 macro_rules! capture {
-    ([$($t:ident),*], |$($a:ident: $typ:ty),*| $b:block) => {
+    ($([$($t:ident),*],)? $({$($u:ident),*},)? |$($a:ident: $typ:ty),*| $b:block) => {
         {
-            $(let $t = $t.clone();)*
+            $($(let $t = $t.clone();)*)?
+            $($(let $u = $u.clone();)*)?
             move |$($a: $typ),*| {
-                $(let mut $t = $t.clone();)*
+                $($(let mut $t = $t.clone();)*)?
+                $($(let mut $u = $u.clone();)*)?
                 {
-                    $(let mut $t = $t.value_mut();)*
+                    $($(let mut $t = $t.value_mut();)*)?
                     $b
                 }
-                $($t.update_dependent();)*
+                $($($t.update_dependent();)*)?
             }
         }
     };
