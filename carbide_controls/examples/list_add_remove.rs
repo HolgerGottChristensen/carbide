@@ -30,11 +30,11 @@ fn main() {
     let list_model_state = LocalState::new(list_model);
 
     fn delegate(item: StringState, _: UsizeState) -> Box<dyn Widget> {
-        Rectangle::new(vec![
-            Text::new(item)
-        ])
-            .fill(EnvironmentColor::Green)
-            .frame(SCALE, 80.0)
+        ZStack::new(vec![
+            RoundedRectangle::new(CornerRadii::all(10.0))
+                .fill(EnvironmentColor::Green),
+            Text::new(item),
+        ]).frame(SCALE, 80.0)
     }
 
     window.set_widgets(

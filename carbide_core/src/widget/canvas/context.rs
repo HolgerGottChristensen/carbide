@@ -5,7 +5,7 @@ use lyon::lyon_algorithms::path::math::point;
 use lyon::tessellation::{FillOptions, LineCap, LineJoin, StrokeOptions};
 
 use crate::Color;
-use crate::draw::Position;
+use crate::draw::{Dimension, Position};
 use crate::draw::svg_path_builder::SVGPathBuilder;
 use crate::prelude::ColorState;
 
@@ -174,8 +174,15 @@ impl Context {
                 ContextAction::BeginPath => {
                     current_builder_begun = false;
                 }
-                ContextAction::Arc { .. } => {
-                    todo!()
+                ContextAction::Arc { x, y, r, start_angle, end_angle } => {
+                    let sweep_angle = end_angle - start_angle;
+
+                    current_builder.arc(
+                        offset_point(Position::new(*x, *y)),
+                        Dimension::new(*r, *r),
+                        sweep_angle as f32,
+                        *start_angle as f32,
+                    )
                 }
                 ContextAction::ArcTo { .. } => {
                     todo!()

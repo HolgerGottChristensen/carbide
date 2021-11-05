@@ -7,14 +7,13 @@ use futures::executor::block_on;
 use serde::{Deserialize, Serialize};
 
 use carbide_controls::{CheckBox, CheckBoxValue, PlainCheckBox, TextInput};
-use carbide_core::state::LocalState;
+use carbide_core::state::{LocalState, State};
 use carbide_core::text::{FontFamily, FontStyle, FontWeight};
 use carbide_core::widget::*;
 use carbide_wgpu::window::{TWindow, Window};
 
 fn main() {
     env_logger::init();
-
     let icon_path = Window::relative_path_to_assets("images/rust_press.png");
 
     let mut window = Window::new(
@@ -25,7 +24,7 @@ fn main() {
     );
 
     let mut family = FontFamily::new_from_paths("NotoSans", vec![
-        "fonts/NotoSans/NotoSans-Regular.ttf"
+        "fonts/NotoSans/NotoSans-Regular.ttf",
     ]);
     window.add_font_family(family);
 
@@ -33,6 +32,7 @@ fn main() {
     let checkbox_state2 = LocalState::new(CheckBoxValue::False);
     let checkbox_state3 = LocalState::new(CheckBoxValue::Intermediate);
     let checkbox_state4 = LocalState::new(true);
+
 
     window.set_widgets(
         VStack::new(vec![

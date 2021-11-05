@@ -22,23 +22,23 @@ pub struct AnimatedState {
     duration: Duration,
     repeat_mode: RepeatMode,
     repeat_count: Option<u32>,
-    frame_time: InnerState<Instant>,
+    frame_time: Option<InnerState<Instant>>,
     animation_curve: fn(f64) -> f64,
 }
 
 impl AnimatedState {
-    pub fn linear(env: &Environment) -> Box<Self> {
+    pub fn linear(env: Option<&Environment>) -> Box<Self> {
         Self::custom(linear, env)
     }
 
-    pub fn custom(curve: fn(f64) -> f64, env: &Environment) -> Box<Self> {
+    pub fn custom(curve: fn(f64) -> f64, env: Option<&Environment>) -> Box<Self> {
         Box::new(AnimatedState {
             percent: InnerState::new(ValueCell::new(0.0)),
             start_time: Instant::now(),
             duration: Duration::new(1, 0),
             repeat_mode: RepeatMode::None,
             repeat_count: None,
-            frame_time: env.captured_time(),
+            frame_time: env.map(|e| e.captured_time()),
             animation_curve: curve,
         })
     }
@@ -79,7 +79,12 @@ impl AnimatedState {
     }
 
     pub fn calc_percentage(&self) {
-        let current_time = self.frame_time.borrow();
+        let now = Instant::now();
+
+        let current_time = self.frame_time.as_ref()
+            .map(|time| time.borrow())
+            .unwrap_or(ValueRef::Borrow(&now));
+
         let duration = *current_time - self.start_time;
 
         let percentage = match self.repeat_mode {

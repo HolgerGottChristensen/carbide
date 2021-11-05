@@ -50,7 +50,7 @@ fn main() {
 }
 
 fn animation_position_state(curve: fn(f64) -> f64, window: &Window) -> TState<f64> {
-    AnimatedState::custom(curve, window.environment())
+    AnimatedState::custom(curve, Some(window.environment()))
         .duration(Duration::new(2, 0))
         .repeat_alternate()
         .range(0.0, 300.0)

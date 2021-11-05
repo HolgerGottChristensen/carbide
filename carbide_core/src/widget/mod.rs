@@ -20,6 +20,7 @@ pub use self::offset::*;
 pub use self::overlaid_layer::*;
 pub use self::overlay::*;
 pub use self::padding::*;
+pub use self::progress_view::*;
 pub use self::rotation_3d_effect::*;
 pub use self::scroll::*;
 pub use self::spacer::*;
@@ -57,6 +58,7 @@ mod transform;
 mod blur;
 mod filter;
 mod overlay;
+mod progress_view;
 
 pub type Id = uuid::Uuid;
 pub type ColoredPoint = (Position, crate::color::Rgba);
