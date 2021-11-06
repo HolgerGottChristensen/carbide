@@ -1,4 +1,5 @@
 use std::collections::HashMap;
+use std::ffi::c_void;
 use std::future::Future;
 use std::option::Option::Some;
 use std::time::Instant;
@@ -101,6 +102,9 @@ pub struct Environment {
     tokio_runtime: tokio::runtime::Runtime,
 
     animations: Option<Vec<Box<dyn Fn(&Instant) -> bool>>>,
+
+    #[cfg(target_os = "macos")]
+    macos_window_handle: Option<*mut c_void>,
 }
 
 impl std::fmt::Debug for Environment {
@@ -114,6 +118,7 @@ impl Environment {
         env_stack: Vec<EnvironmentVariable>,
         pixel_dimensions: Dimension,
         scale_factor: f64,
+        window_handle: Option<*mut c_void>,
     ) -> Self {
         let default_font_family_name = "NotoSans";
 
@@ -142,7 +147,14 @@ impl Environment {
                 .enable_all()
                 .build().expect("Could not create a tokio runtime"),
             animations: Some(vec![]),
+            #[cfg(target_os = "macos")]
+            macos_window_handle: window_handle,
         }
+    }
+
+    #[cfg(target_os = "macos")]
+    pub fn ns_window(&self) -> *mut c_void {
+        self.macos_window_handle.expect("No window for the environment")
     }
 
     pub fn set_last_image_index(&mut self, next_index: u32) {

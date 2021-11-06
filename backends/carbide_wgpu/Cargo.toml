@@ -31,6 +31,13 @@ find_folder = "0.3"
 uuid = { version = "0.8.1", features = ["serde", "v4"] }
 #smaa = "0.4.0"
 
+[target.'cfg(target_os="macos")'.dependencies]
+block = "0.1.6"
+cocoa = "0.24.0"
+objc = "0.2.7"
+core-graphics = "0.22.0"
+foreign-types = "0.3.2"
+
 [dev-dependencies]
 carbide_winit = { path = "../carbide_winit", version = "0.70" }
 find_folder = "0.3"

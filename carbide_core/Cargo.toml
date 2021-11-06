@@ -48,6 +48,13 @@ oneshot = "0.1.2"
 async-std = { version = "1.10.0", optional = true }
 tokio = { version = "1", features = ["full"], optional = true }
 
+[target.'cfg(target_os="macos")'.dependencies]
+block = "0.1.6"
+cocoa = "0.24.0"
+objc = "0.2.7"
+core-graphics = "0.22.0"
+foreign-types = "0.3.2"
+
 [dev-dependencies]
 # font-kit = "0.10.1"
 

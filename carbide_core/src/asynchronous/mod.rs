@@ -1,3 +1,7 @@
+use std::future::Future;
+
+use crate::prelude::Environment;
+
 pub mod executor;
 
 #[macro_export]
@@ -21,4 +25,14 @@ macro_rules! task {
             )
         }
     };
+}
+
+pub trait SpawnTask<G: Send + 'static> {
+    fn spawn(self, env: &mut Environment, cont: impl Fn(G, &mut Environment) + 'static);
+}
+
+impl<G: Send + 'static, T: Future<Output=G> + Send + 'static> SpawnTask<G> for T {
+    fn spawn(self, env: &mut Environment, cont: impl Fn(G, &mut Environment) + 'static) {
+        env.spawn_task(self, cont);
+    }
 }

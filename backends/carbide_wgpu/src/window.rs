@@ -12,6 +12,7 @@ use wgpu::util::{BufferInitDescriptor, DeviceExt};
 use winit::dpi::{PhysicalPosition, PhysicalSize, Size};
 use winit::event::{ElementState, Event, KeyboardInput, VirtualKeyCode, WindowEvent};
 use winit::event_loop::{ControlFlow, EventLoop};
+use winit::platform::macos::WindowExtMacOS;
 use winit::window::{Icon, WindowBuilder};
 
 use carbide_core::{Scalar, Ui};
@@ -217,7 +218,11 @@ impl Window {
         );
         let scale_factor = inner_window.scale_factor();
 
-        let ui = Ui::new(pixel_dimensions, scale_factor);
+        #[cfg(target_os = "macos")]
+            let ui = Ui::new(pixel_dimensions, scale_factor, Some(inner_window.ns_window()));
+
+        #[cfg(not(target_os = "macos"))]
+            let ui = Ui::new(pixel_dimensions, scale_factor, None);
 
         // The instance is a handle to our GPU
         // BackendBit::PRIMARY => Vulkan + Metal + DX12 + Browser WebGPU

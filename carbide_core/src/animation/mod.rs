@@ -59,7 +59,7 @@ macro_rules! animate {
     };
 }
 
-fn hejsa() {
+/*fn hejsa() {
     let mut env = Environment::new(vec![], Dimension::new(100.0, 100.0), 1.0);
     let mut state = LocalState::new(0.0);
     animate!(env, state => 3.0);
@@ -73,7 +73,7 @@ fn hejsa() {
     //animate!(env, state := <-> 3);
     //animate!(env, state := -3 <-> 3);
     //animate!(env, state := -3 >-> 3);
-}
+}*/
 
 
 

@@ -7,7 +7,10 @@ use std::borrow::Cow;
 use std::f64::consts::{E, PI};
 use std::iter::{Chain, once, Once};
 
+use futures::TryFutureExt;
 use num::{Float, NumCast, PrimInt, ToPrimitive};
+
+use crate::prelude::Environment;
 
 /// Compare to PartialOrd values and return the min.
 pub fn partial_min<T: PartialOrd>(a: T, b: T) -> T {

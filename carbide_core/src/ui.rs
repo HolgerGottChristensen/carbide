@@ -1,4 +1,5 @@
 use std;
+use std::ffi::c_void;
 use std::fmt::Debug;
 
 use instant::Instant;
@@ -37,7 +38,7 @@ pub struct Ui {
 
 impl Ui {
     /// A new, empty **Ui**.
-    pub fn new(window_pixel_dimensions: Dimension, scale_factor: f64) -> Self {
+    pub fn new(window_pixel_dimensions: Dimension, scale_factor: f64, window_handle: Option<*mut c_void>) -> Self {
         macro_rules! env_color {
             ($var:ident, $r:literal, $g:literal, $b:literal, $a:literal) => {
                 EnvironmentVariable::Color {
@@ -412,7 +413,7 @@ impl Ui {
             .map(|item| item.clone())
             .collect::<Vec<_>>();
 
-        let environment = Environment::new(base_environment, window_pixel_dimensions, scale_factor);
+        let environment = Environment::new(base_environment, window_pixel_dimensions, scale_factor, window_handle);
 
         Ui {
             widgets: Rectangle::new(vec![]),

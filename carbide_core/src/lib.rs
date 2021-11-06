@@ -32,9 +32,11 @@ macro_rules! delegate {
 
 delegate!(Name, |item: UsizeState, index: UsizeState| {});
 */
+pub use futures::TryFutureExt;
 pub use serde::*;
 pub use serde::de::*;
 
+pub use carbide_core::asynchronous::SpawnTask;
 pub use carbide_derive::*;
 pub use draw::Scalar;
 
@@ -42,7 +44,7 @@ pub use crate::color::Color;
 use crate::state::UsizeState;
 pub use crate::ui::Ui;
 
-pub mod futures;
+pub mod asynchronous;
 pub mod color;
 pub mod cursor;
 pub mod draw;
@@ -62,4 +64,6 @@ pub mod utils;
 pub mod widget;
 pub mod window;
 pub mod animation;
+pub mod platform;
+pub mod dialog;
 

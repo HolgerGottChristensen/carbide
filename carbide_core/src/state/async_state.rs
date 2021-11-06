@@ -65,7 +65,7 @@ impl<T: StateContract + Send + 'static> State<T> for AsyncState<T> {
         if let Some(receiver) = &self.receiver {
             match receiver.try_recv() {
                 Ok(message) => {
-                    println!("Received futures state");
+                    println!("Received asynchronous state");
                     self.value = message;
                     self.receiver = None;
                 }
