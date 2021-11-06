@@ -15,6 +15,8 @@ use crate::dialog::open_dialog::OpenDialog;
 use crate::prelude::Environment;
 use crate::state::{InnerState, ValueCell};
 
+mod color_dialog;
+
 pub(crate) type NSModalResponse = NSInteger;
 
 const NSModalResponseOK: NSInteger = 1;
