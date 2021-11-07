@@ -1,9 +1,11 @@
 use std::cell::RefCell;
 use std::ffi::c_void;
+use std::marker::PhantomPinned;
 
-use cocoa::appkit::{CGFloat, NSColor, NSView};
+use cocoa::appkit::{CGFloat, NSColor, NSView, NSWindow};
+use cocoa::appkit::NSWindowTitleVisibility::NSWindowTitleHidden;
 use cocoa::base::{id, nil, NO, YES};
-use cocoa::foundation::{NSPoint, NSRect, NSSize};
+use cocoa::foundation::{NSPoint, NSRect, NSSize, NSString};
 use objc::{class, msg_send, sel, sel_impl};
 use objc::declare::ClassDecl;
 use objc::runtime::{Class, Object, Sel};
@@ -11,10 +13,12 @@ use winit::dpi::PhysicalSize;
 use winit::dpi::Size::Physical;
 use winit::event::Event;
 use winit::event_loop::EventLoop;
-use winit::platform::macos::{ActivationPolicy, WindowExtMacOS};
+use winit::platform::macos::{ActivationPolicy, WindowBuilderExtMacOS, WindowExtMacOS};
 use winit::window::WindowBuilder;
 
 use carbide_core::Color;
+
+//use carbide_core::platform::mac::color_dialog::{COLOR_PICKER_RESPONDER, ColorPickerChannel};
 
 fn main() {
     unsafe {
@@ -24,66 +28,45 @@ fn main() {
             .with_inner_size(Physical(PhysicalSize::new(600, 600)))
             .with_visible(true)
             .with_title("Title")
-            .build(&event_loop).expect("Could not build window");
+            //.with_titlebar_transparent(true)
+            //.with_fullsize_content_view(true)
+            .build(&event_loop)
+            .expect("Could not build window");
 
-        let superclass = class!(NSResponder);
-        let mut decl = ClassDecl::new("Testername", superclass).unwrap();
 
-        decl.add_class_method(sel!(new), new as extern "C" fn(&Class, Sel) -> id);
-        decl.add_method(sel!(dealloc), dealloc as extern "C" fn(&Object, Sel));
+        let app: id = msg_send![class!(NSApplication), sharedApplication];
+        let window: id = msg_send![app, mainWindow];
+        //let () = msg_send![window, setAlphaValue: 0.3];
+        inner_window.set_title("true");
+        let title = NSString::alloc(nil).init_str("TitleNew");
+        window.setTitle_(title);
+        //let () = msg_send![window, setTitle: title];
 
-        decl.add_method(
-            sel!(colorUpdate:),
-            did_finish_launching as extern "C" fn(&Object, Sel, id),
-        );
-        //decl.add_ivar::<*mut c_void>("Tester");
-
-        extern "C" fn did_finish_launching(this: &Object, _: Sel, object: id) {
-            unsafe {
-                let color: id = msg_send![object, color];
-                let red: CGFloat = msg_send![color, redComponent];
-                let green: CGFloat = msg_send![color, greenComponent];
-                let blue: CGFloat = msg_send![color, blueComponent];
-                let alpha: CGFloat = msg_send![color, alphaComponent];
-                let color = Color::Rgba(red as f32, green as f32, blue as f32, alpha as f32);
-                println!("{:?}", color);
-            }
+        /*fn test(col: Color) {
+            println!("Oh shit: {:?}", col);
         }
 
-        extern "C" fn new(class: &Class, _: Sel) -> id {
-            unsafe {
-                let this: id = msg_send![class, alloc];
-                let this: id = msg_send![this, init];
-                /*(*this).set_ivar(
-                    "Tester",
-                    Box::into_raw(Box::new(RefCell::new(AuxDelegateState {
-                        activation_policy: ActivationPolicy::Regular,
-                        create_default_menu: true,
-                    }))) as *mut c_void,
-                );*/
-                this
+        let (sender, receiver) = std::sync::mpsc::channel();
+
+        let mut test2 = Box::pin(ColorPickerChannel(sender));
+
+        std::thread::spawn(move || {
+            loop {
+                let res = receiver.recv();
+                println!("Color received: {:?}", res.unwrap());
             }
-        }
+        });
 
-        extern "C" fn dealloc(this: &Object, _: Sel) {
-            unsafe {
-                //let state_ptr: *mut c_void = *(this.get_ivar(AUX_DELEGATE_STATE_NAME));
-                // As soon as the box is constructed it is immediately dropped, releasing the underlying
-                // memory
-                //Box::from_raw(state_ptr as *mut RefCell<AuxDelegateState>);
-            }
-        }
-
-        let a = decl.register();
-
-        let responder: id = msg_send![a, new];
+        let responder: id = msg_send![COLOR_PICKER_RESPONDER.0, new];
+        let () = msg_send![responder, setFunctionPointer: test2.as_mut().get_unchecked_mut()];
+        //let () = msg_send![responder, setFunctionPointer: test as *mut c_void];
 
         let panel: id = msg_send![class!(NSColorPanel), sharedColorPanel];
         let () = msg_send![panel, setContinuous: NO];
         let () = msg_send![panel, setAction: sel!(colorUpdate:)];
         let () = msg_send![panel, setTarget: responder];
         let () = msg_send![panel, setShowsAlpha: YES];
-        let () = msg_send![panel, orderFront: inner_window.ns_window()];
+        let () = msg_send![panel, orderFront: inner_window.ns_window()];*/
 
 
         //let panel: id = msg_send![class!(NSFontPanel), sharedFontPanel];
@@ -99,7 +82,21 @@ fn main() {
                 match event {
                     Event::NewEvents(_) => {}
                     Event::WindowEvent { window_id, event } => {
-                        println!("{:?}", event);
+                        //let app: id = msg_send![class!(NSApplication), sharedApplication];
+                        //let window: id = msg_send![app, mainWindow];
+                        //let () = msg_send![window, setAlphaValue: 0.3];
+                        //let toolbar_alloc: id = msg_send![class!(NSToolbar), alloc];
+                        //let toolbar: id = msg_send![toolbar_alloc, init];
+                        //println!("HERE");
+                        //window.setToolbar_(toolbar);
+                        //window.setTitlebarAppearsTransparent_(YES);
+                        //window.setBackgroundColor_(msg_send![class!(NSColor), systemBlueColor]);
+
+                        //let () = msg_send![window, toolbar: toolbar];
+                        //let () = msg_send![window, setTitleVisibility: NSWindowTitleHidden];
+                        //inner_window.set_title("true");
+                        //let title = NSString::alloc(nil).init_str("/Users/holgergottchristensen/carbide/backends/carbide_wgpu/examples/color_picker.rs");
+                        //window.setTitleWithRepresentedFilename_(title);
                     }
                     Event::DeviceEvent { .. } => {}
                     Event::UserEvent(_) => {}

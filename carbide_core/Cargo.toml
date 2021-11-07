@@ -54,6 +54,7 @@ cocoa = "0.24.0"
 objc = "0.2.7"
 core-graphics = "0.22.0"
 foreign-types = "0.3.2"
+lazy_static = "*"
 
 [dev-dependencies]
 # font-kit = "0.10.1"

@@ -15,7 +15,7 @@ use crate::dialog::open_dialog::OpenDialog;
 use crate::prelude::Environment;
 use crate::state::{InnerState, ValueCell};
 
-mod color_dialog;
+pub mod color_dialog;
 
 pub(crate) type NSModalResponse = NSInteger;
 
@@ -205,5 +205,12 @@ pub fn open_open_panel(env: &Environment, dialog: OpenDialog) -> Receiver<Option
         let () = msg_send![panel, beginSheetModalForWindow: env.ns_window() completionHandler: block];
 
         receiver
+    }
+}
+
+pub fn open_emoji_dialog() {
+    unsafe {
+        let app: id = msg_send![class!(NSApplication), sharedApplication];
+        let () = msg_send![app, orderFrontCharacterPalette: nil];
     }
 }

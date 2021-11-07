@@ -28,8 +28,8 @@ pub trait WidgetExt: Widget + Sized + 'static {
         Transform::new(Box::new(self), matrix)
     }
 
-    fn frame_width(self, width: F64State) -> Box<Frame> {
-        Frame::init_width(width, Box::new(self))
+    fn frame_width<K: Into<F64State>>(self, width: K) -> Box<Frame> {
+        Frame::init_width(width.into(), Box::new(self))
     }
 
     fn padding<E: Into<EdgeInsets>>(self, edge_insets: E) -> Box<Padding> {

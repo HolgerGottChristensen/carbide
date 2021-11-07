@@ -212,6 +212,44 @@ impl Environment {
         std::mem::swap(&mut temp, &mut self.async_task_queue);
     }
 
+    /// Starts a listener where next will be called each time something is sent to the channel.
+    /// The sender can be cloned and more values can be sent with it. If true is returned from
+    /// next, the stream is closed and will no longer receive values.
+    pub fn start_stream<T: Send + 'static>(
+        &mut self,
+        next: impl Fn(T, &mut Environment) -> bool + 'static,
+    ) -> std::sync::mpsc::Sender<T> {
+        let (sender, receiver) = std::sync::mpsc::channel();
+
+        let poll_message: Box<dyn Fn(&mut Environment) -> bool> = Box::new(
+            move |env| -> bool {
+                let mut stop = false;
+                loop {
+                    if stop {
+                        break;
+                    }
+                    match receiver.try_recv() {
+                        Ok(message) => {
+                            stop = next(message, env);
+                        }
+                        Err(std::sync::mpsc::TryRecvError::Empty) => {
+                            break;
+                        }
+                        Err(e) => {
+                            eprintln!("{:?}", e);
+                            stop = true;
+                        }
+                    }
+                }
+                stop
+            }
+        );
+
+        self.async_task_queue.as_mut().expect("No async task queue was present.").push(poll_message);
+
+        sender
+    }
+
     pub fn spawn_task<T: Send + 'static>(
         &mut self,
         task: impl Future<Output=T> + Send + 'static,
@@ -242,10 +280,16 @@ impl Environment {
         self.async_task_queue.as_mut().expect("No async task queue was present.").push(poll_message);
 
         #[cfg(feature = "tokio")]
-            self.tokio_runtime.spawn(task_with_oneshot);
+            {
+                self.tokio_runtime.spawn(task_with_oneshot);
+            }
+
 
         #[cfg(all(feature = "async-std", not(feature = "tokio")))]
-            async_std::task::spawn(task_with_oneshot);
+            {
+                async_std::task::spawn(task_with_oneshot);
+            }
+
 
         #[cfg(not(any(feature = "async-std", feature = "tokio")))]
         println!("Tried to spawn an async task without having any async feature enabled. Try enabling 'async-std' or 'tokio'.")
