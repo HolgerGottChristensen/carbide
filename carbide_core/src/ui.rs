@@ -415,7 +415,8 @@ impl Ui {
         let environment = Environment::new(base_environment, window_pixel_dimensions, scale_factor);
 
         Ui {
-            widgets: Rectangle::new(vec![]),
+            widgets: Rectangle::new(vec![])
+                .fill(EnvironmentColor::SystemBackground),
             mouse_cursor: cursor::MouseCursor::Arrow,
             event_handler: EventHandler::new(),
             environment,
