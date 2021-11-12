@@ -71,12 +71,12 @@ impl<T: StateContract + 'static, U: Delegate<T> + 'static> List<T, U> {
         self.child = Scroll::new(
             VStack::new(vec![
                 Rectangle::new(vec![])
-                    .fill(RED)
+                    .fill(TRANSPARENT)
                     .frame(SCALE, self.start_offset.clone()),
                 ForEach::new(self.internal_model.clone(), self.delegate.clone()),
                 //.index_offset(self.index_offset.clone()),
                 Rectangle::new(vec![])
-                    .fill(BLUE)
+                    .fill(TRANSPARENT)
                     .frame(SCALE, self.end_offset.clone()),
             ])
                 .spacing(spacing),

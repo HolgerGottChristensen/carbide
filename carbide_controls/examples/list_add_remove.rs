@@ -16,7 +16,7 @@ fn main() {
     let mut window = Window::new(
         "List Add/Remove Example - Carbide",
         800,
-        1200,
+        800,
         Some(icon_path),
     );
 
