@@ -190,7 +190,7 @@ impl PlainTextInput {
                 ZStack::new(vec![
                     IfElse::new(is_focused.clone())
                         .when_true(
-                            Rectangle::new(vec![])
+                            Rectangle::new()
                                 .fill(selection_color.clone())
                                 .frame(selection_width.clone(), font_size.clone().mapped(|val: &u32| *val as f64))
                                 .offset(selection_x.clone(), 0.0)
@@ -201,7 +201,7 @@ impl PlainTextInput {
                         .foreground_color(text_color.clone()),
                     IfElse::new(is_focused)
                         .when_true(
-                            Rectangle::new(vec![])
+                            Rectangle::new()
                                 .fill(cursor_color.clone())
                                 .frame(1.0, font_size.clone().mapped(|val: &u32| *val as f64))
                                 .offset(cursor_x.clone(), 0.0),

@@ -22,12 +22,12 @@ fn main() {
 
     let image_id = window.add_image_from_path("images/landscape.png");
 
-    let position_x = AnimatedState::custom(ease_in_out, window.environment())
+    let position_x = AnimatedState::custom(ease_in_out, Some(window.environment()))
         .duration(Duration::new(5, 0))
         .repeat_alternate()
         .range(-180.0, 180.0);
 
-    let position_neg_x = AnimatedState::custom(ease_in_out, window.environment())
+    let position_neg_x = AnimatedState::custom(ease_in_out, Some(window.environment()))
         .duration(Duration::new(7, 0))
         .repeat_alternate()
         .range(180.0, -180.0);
@@ -36,7 +36,7 @@ fn main() {
         ZStack::new(vec![
             Image::new(image_id)
                 .scaled_to_fill()
-                .clip_shape(Rectangle::new(vec![]))
+                .clip_shape(Rectangle::new())
                 .frame(500.0, 400.0),
             Blur::gaussian(10.0)
                 .frame(200.0, 200.0)
@@ -45,7 +45,7 @@ fn main() {
                 .clip_shape(Circle::new())
                 .frame(100.0, 100.0)
                 .offset(position_neg_x.clone(), 0.0),
-            Rectangle::new(vec![])
+            Rectangle::new()
                 .stroke(EnvironmentColor::Accent)
                 .stroke_style(1.0)
                 .frame(200.0, 200.0)

@@ -35,12 +35,11 @@ fn main() {
     window.add_font_family(family);
 
     fn delegate(item: TState<EnvironmentColor>, index: UsizeState) -> Box<dyn Widget> {
-        Rectangle::new(vec![
+        ZStack::new(vec![
+            Rectangle::new().fill(item.value().clone()),
             Text::new(index)
-                .font_size(EnvironmentFontSize::LargeTitle)
-        ])
-            .fill(item.value().clone())
-            .frame(100.0, 50.0)
+                .font_size(EnvironmentFontSize::LargeTitle),
+        ]).frame(100.0, 50.0)
     }
 
     window.set_widgets(

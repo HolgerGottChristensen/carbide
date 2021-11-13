@@ -12,17 +12,15 @@ use crate::widget::types::TriangleStore;
 
 /// A basic, non-interactive rectangle shape widget.
 #[derive(Debug, Clone, Widget)]
-#[carbide_exclude(Render, Layout)]
+#[carbide_exclude(Render)]
 pub struct Rectangle {
     id: Uuid,
-    children: Vec<Box<dyn Widget>>,
     position: Position,
     dimension: Dimension,
     #[state]
     fill_color: ColorState,
     #[state]
     stroke_color: ColorState,
-    shrink_to_fit: bool,
     style: ShapeStyle,
     stroke_style: StrokeStyle,
     // Store the triangles for the border
@@ -57,11 +55,6 @@ impl Rectangle {
             Blur::gaussian(10.0),
             Box::new(self),
         ])
-    }
-
-    pub fn shrink_to_fit(mut self) -> Box<Self> {
-        self.shrink_to_fit = true;
-        Box::new(self)
     }
 
     pub fn position(mut self, position: Position) -> Box<Self> {
@@ -154,15 +147,13 @@ impl Rectangle {
         ]
     }*/
 
-    pub fn new(children: Vec<Box<dyn Widget>>) -> Box<Rectangle> {
+    pub fn new() -> Box<Rectangle> {
         Box::new(Rectangle {
             id: Uuid::new_v4(),
-            children,
             position: Position::new(0.0, 0.0),
             dimension: Dimension::new(100.0, 100.0),
             fill_color: EnvironmentColor::Blue.into(),
             stroke_color: EnvironmentColor::Blue.into(),
-            shrink_to_fit: false,
             style: ShapeStyle::Default,
             stroke_style: StrokeStyle::Solid { line_width: 2.0 },
             triangle_store: TriangleStore::new(),
@@ -180,37 +171,19 @@ impl CommonWidget for Rectangle {
     }
 
     fn children(&self) -> WidgetIter {
-        self.children.iter().rfold(WidgetIter::Empty, |acc, x| {
-            if x.flag() == Flags::PROXY {
-                WidgetIter::Multi(Box::new(x.children()), Box::new(acc))
-            } else {
-                WidgetIter::Single(x, Box::new(acc))
-            }
-        })
+        WidgetIter::Empty
     }
 
     fn children_mut(&mut self) -> WidgetIterMut {
-        self.children
-            .iter_mut()
-            .rfold(WidgetIterMut::Empty, |acc, x| {
-                if x.flag() == Flags::PROXY {
-                    WidgetIterMut::Multi(Box::new(x.children_mut()), Box::new(acc))
-                } else {
-                    WidgetIterMut::Single(x, Box::new(acc))
-                }
-            })
+        WidgetIterMut::Empty
     }
 
     fn children_direct(&mut self) -> WidgetIterMut {
-        WidgetIterMut::Vec(self.children.iter_mut())
+        WidgetIterMut::Empty
     }
 
     fn children_direct_rev(&mut self) -> WidgetIterMut {
-        WidgetIterMut::VecRev(self.children.iter_mut().rev())
-    }
-
-    fn flexibility(&self) -> u32 {
-        0
+        WidgetIterMut::Empty
     }
 
     fn position(&self) -> Position {
@@ -227,43 +200,6 @@ impl CommonWidget for Rectangle {
 
     fn set_dimension(&mut self, dimension: Dimension) {
         self.dimension = dimension
-    }
-}
-
-impl Layout for Rectangle {
-    fn calculate_size(&mut self, requested_size: Dimension, env: &mut Environment) -> Dimension {
-        let mut max_child_size = Dimension::new(0.0, 0.0);
-
-        for child in &mut self.children {
-            let child_size = child.calculate_size(requested_size, env);
-
-            if child_size.width > max_child_size.width {
-                max_child_size.width = child_size.width;
-            }
-
-            if child_size.height > max_child_size.height {
-                max_child_size.height = child_size.height;
-            }
-        }
-
-        if self.shrink_to_fit {
-            self.dimension = max_child_size;
-        } else {
-            self.dimension = requested_size;
-        }
-
-        self.dimension
-    }
-
-    fn position_children(&mut self) {
-        let positioning = self.alignment().positioner();
-        let position = self.position;
-        let dimension = self.dimension;
-
-        for child in &mut self.children {
-            positioning(position, dimension, child);
-            child.position_children();
-        }
     }
 }
 

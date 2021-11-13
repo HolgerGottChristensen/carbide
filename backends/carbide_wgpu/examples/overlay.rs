@@ -5,7 +5,7 @@ use carbide_core::draw::{Dimension, Position};
 use carbide_core::environment::*;
 use carbide_core::event::{Key, KeyboardEvent, KeyboardEventHandler};
 use carbide_core::layout::Layout;
-use carbide_core::state::{BoolState, LocalState};
+use carbide_core::state::{BoolState, LocalState, StateExt};
 use carbide_core::text::FontFamily;
 use carbide_core::widget::*;
 use carbide_wgpu::window::*;
@@ -30,15 +30,24 @@ fn main() {
     let showing_state: BoolState = LocalState::new(false).into();
 
     window.set_widgets(
-        OverlaidLayer::new("overlay",
-                           VStack::new(vec![
-                               Text::new(showing_state.mapped(|a: &bool| format!("Currently showing overlay: {}", *a))),
-                               ZStack::new(vec![
-                                   Rectangle::new(vec![Over::new(showing_state)]).fill(EnvironmentColor::Green).frame(200.0, 200.0),
-                                   Rectangle::new(vec![Text::new("Test").foreground_color(EnvironmentColor::Blue)]).fill(EnvironmentColor::Red).frame(100.0, 100.0),
-                               ]),
-                               Text::new("Press space to toggle the overlay (yellow rectangle)"),
-                           ]))
+        OverlaidLayer::new(
+            "overlay",
+            VStack::new(vec![
+                Text::new(showing_state.mapped(|a: &bool| format!("Currently showing overlay: {}", *a))),
+                ZStack::new(vec![
+                    Over::new(showing_state)
+                        .frame(100.0, 100.0),
+                    Rectangle::new()
+                        .fill(EnvironmentColor::Green)
+                        .frame(200.0, 200.0),
+                    Rectangle::new()
+                        .fill(EnvironmentColor::Red)
+                        .frame(100.0, 100.0),
+                    Text::new("Test")
+                        .foreground_color(EnvironmentColor::Blue),
+                ]),
+                Text::new("Press space to toggle the overlay (yellow rectangle)"),
+            ]))
     );
 
     window.launch();
@@ -61,12 +70,11 @@ impl Over {
                 position: Position::new(0.0, 0.0),
                 dimension: Dimension::new(100.0, 100.0),
                 overlay_widget: Overlay::new(
-                    Rectangle::new(vec![
+                    ZStack::new(vec![
+                        Rectangle::new().fill(EnvironmentColor::Yellow),
                         Text::new("Over")
-                            .foreground_color(EnvironmentColor::Red)
-                    ])
-                        .fill(EnvironmentColor::Yellow)
-                        .frame(50.0, 50.0)
+                            .foreground_color(EnvironmentColor::Red),
+                    ]).frame(50.0, 50.0)
                 ).showing(showing),
             }
         )

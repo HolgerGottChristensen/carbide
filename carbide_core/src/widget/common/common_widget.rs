@@ -91,3 +91,130 @@ pub trait CommonWidget {
             && point.y < self.y() + self.height()
     }
 }
+
+#[macro_export]
+macro_rules! CommonWidgetImpl {
+    ($typ:ty, $self:ident, id: $id_expr:expr, child: $child:expr, position: $position:expr, dimension: $dimension:expr $(,flag: $flag:expr)? $(,flexibility: $flexibility:literal)?) => {
+        impl carbide_core::widget::CommonWidget for $typ {
+            fn id(&$self) -> carbide_core::widget::Id {
+                $id_expr
+            }
+
+            fn set_id(&mut $self, id: carbide_core::widget::Id) {
+                $id_expr = id;
+            }
+
+            $(
+                fn flag(&$self) -> carbide_core::flags::Flags {
+                    $flag
+                }
+            )?
+
+            $(
+                fn flexibility(&$self) -> u32 {
+                    $flexibility
+                }
+            )?
+
+            fn children(&$self) -> carbide_core::widget::WidgetIter {
+                if $child.flag() == carbide_core::flags::Flags::PROXY {
+                    $child.children()
+                } else if $child.flag() == carbide_core::flags::Flags::IGNORE {
+                    carbide_core::widget::WidgetIter::Empty
+                } else {
+                    carbide_core::widget::WidgetIter::single(&$child)
+                }
+            }
+
+            fn children_mut(&mut $self) -> carbide_core::widget::WidgetIterMut {
+                if $child.flag() == carbide_core::flags::Flags::PROXY {
+                    $child.children_mut()
+                } else if $child.flag() == carbide_core::flags::Flags::IGNORE {
+                    carbide_core::widget::WidgetIterMut::Empty
+                } else {
+                    carbide_core::widget::WidgetIterMut::single(&mut $child)
+                }
+            }
+
+            fn children_direct(&mut $self) -> carbide_core::widget::WidgetIterMut {
+                carbide_core::widget::WidgetIterMut::single(&mut $child)
+            }
+
+            fn children_direct_rev(&mut $self) -> carbide_core::widget::WidgetIterMut {
+                carbide_core::widget::WidgetIterMut::single(&mut $child)
+            }
+
+            fn position(&$self) -> carbide_core::draw::Position {
+                $position
+            }
+
+            fn set_position(&mut $self, position: carbide_core::draw::Position) {
+                $position = position;
+            }
+
+            fn dimension(&$self) -> carbide_core::draw::Dimension {
+                $dimension
+            }
+
+            fn set_dimension(&mut $self, dimension: carbide_core::draw::Dimension) {
+                $dimension = dimension
+            }
+        }
+    };
+
+    ($typ:ty, $self:ident, id: $id_expr:expr, position: $position:expr, dimension: $dimension:expr $(,flag: $flag:expr)? $(,flexibility: $flexibility:literal)?) => {
+        impl carbide_core::widget::CommonWidget for $typ {
+            fn id(&$self) -> carbide_core::widget::Id {
+                $id_expr
+            }
+
+            fn set_id(&mut $self, id: carbide_core::widget::Id) {
+                $id_expr = id;
+            }
+
+            $(
+                fn flag(&$self) -> carbide_core::flags::Flags {
+                    $flag
+                }
+            )?
+
+            $(
+                fn flexibility(&$self) -> u32 {
+                    $flexibility
+                }
+            )?
+
+            fn children(&$self) -> carbide_core::widget::WidgetIter {
+                carbide_core::widget::WidgetIter::Empty
+            }
+
+            fn children_mut(&mut $self) -> carbide_core::widget::WidgetIterMut {
+                carbide_core::widget::WidgetIterMut::Empty
+            }
+
+            fn children_direct(&mut $self) -> carbide_core::widget::WidgetIterMut {
+                carbide_core::widget::WidgetIterMut::Empty
+            }
+
+            fn children_direct_rev(&mut $self) -> carbide_core::widget::WidgetIterMut {
+                carbide_core::widget::WidgetIterMut::Empty
+            }
+
+            fn position(&$self) -> carbide_core::draw::Position {
+                $position
+            }
+
+            fn set_position(&mut $self, position: carbide_core::draw::Position) {
+                $position = position;
+            }
+
+            fn dimension(&$self) -> carbide_core::draw::Dimension {
+                $dimension
+            }
+
+            fn set_dimension(&mut $self, dimension: carbide_core::draw::Dimension) {
+                $dimension = dimension
+            }
+        }
+    };
+}

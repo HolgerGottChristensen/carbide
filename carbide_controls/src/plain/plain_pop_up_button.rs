@@ -168,7 +168,10 @@ impl<T: StateContract + PartialEq + 'static> PlainPopUpButton<T> {
 
     fn default_delegate(selected_item: TState<T>, focused: FocusState) -> Box<dyn Widget> {
         let text = selected_item.mapped(|a: &T| format!("{:?}", a));
-        Rectangle::new(vec![Text::new(text)])
+        ZStack::new(vec![
+            Rectangle::new(),
+            Text::new(text),
+        ])
     }
 
     fn default_popup_item_delegate(
@@ -182,9 +185,10 @@ impl<T: StateContract + PartialEq + 'static> PlainPopUpButton<T> {
             }
         });
 
-        Rectangle::new(vec![
-            Text::new(item.mapped(|a: &T| format!("{:?}", *a)))
-        ]).fill(color).frame(SCALE, 30.0)
+        ZStack::new(vec![
+            Rectangle::new().fill(color),
+            Text::new(item.mapped(|a: &T| format!("{:?}", *a))),
+        ]).frame(SCALE, 30.0)
     }
 
     fn default_popup_delegate(

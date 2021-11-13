@@ -83,10 +83,10 @@ impl Scroll {
             drag_started_on_horizontal_scrollbar: false,
             vertical_scrollbar_hovered: false,
             horizontal_scrollbar_hovered: false,
-            scrollbar_horizontal_background: Rectangle::new(vec![])
+            scrollbar_horizontal_background: Rectangle::new()
                 .fill(Color::Rgba(0.0, 0.0, 0.0, 0.5))
                 .frame(100.0, 10.0),
-            scrollbar_vertical_background: Rectangle::new(vec![])
+            scrollbar_vertical_background: Rectangle::new()
                 .fill(Color::Rgba(0.0, 0.0, 0.0, 0.5))
                 .frame(10.0, 100.0),
         })

@@ -4,10 +4,12 @@ pub use types::*;
 
 use crate::draw::Position;
 
+pub use self::background::*;
 pub use self::blur::*;
 pub use self::border::*;
 pub use self::clip::*;
 pub use self::clip_shape::*;
+pub use self::empty::*;
 pub use self::environment_updating::*;
 pub use self::filter::*;
 pub use self::foreach::*;
@@ -59,6 +61,8 @@ mod blur;
 mod filter;
 mod overlay;
 mod progress_view;
+mod background;
+mod empty;
 
 pub type Id = uuid::Uuid;
 pub type ColoredPoint = (Position, crate::color::Rgba);

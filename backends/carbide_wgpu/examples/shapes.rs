@@ -17,14 +17,14 @@ fn main() {
 
     window.set_widgets(VStack::new(vec![
         HStack::new(vec![
-            Rectangle::new(vec![])
+            Rectangle::new()
                 .fill(EnvironmentColor::Accent)
                 .frame(100.0, 100.0),
-            Rectangle::new(vec![])
+            Rectangle::new()
                 .stroke(EnvironmentColor::Accent)
                 .stroke_style(10.0)
                 .frame(100.0, 100.0),
-            Rectangle::new(vec![])
+            Rectangle::new()
                 .fill(EnvironmentColor::Accent)
                 .stroke(EnvironmentColor::Red)
                 .frame(100.0, 100.0),
@@ -32,7 +32,7 @@ fn main() {
                 .scaled_to_fill()
                 .frame(200.0, 200.0)
                 .clip_shape(
-                    Rectangle::new(vec![])
+                    Rectangle::new()
                         .fill(EnvironmentColor::Accent),
                 )
                 .frame(100.0, 100.0),
@@ -40,7 +40,7 @@ fn main() {
                 .scaled_to_fill()
                 .frame(200.0, 200.0)
                 .clip_shape(
-                    Rectangle::new(vec![])
+                    Rectangle::new()
                         .stroke(EnvironmentColor::Accent)
                         .stroke_style(10.0),
                 )

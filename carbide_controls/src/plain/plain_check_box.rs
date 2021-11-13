@@ -4,7 +4,7 @@ use carbide_core::flags::Flags;
 use carbide_core::focus::{Focus, Refocus};
 use carbide_core::prelude::Environment;
 use carbide_core::state::{FocusState, LocalState, MapOwnedState, StateExt, StateKey, StringState};
-use carbide_core::widget::{CommonWidget, HStack, Id, Rectangle, Spacer, Text, Widget, WidgetExt, WidgetIter, WidgetIterMut};
+use carbide_core::widget::{CommonWidget, HStack, Id, Rectangle, Spacer, Text, Widget, WidgetExt, WidgetIter, WidgetIterMut, ZStack};
 
 use crate::carbide_core::prelude::State;
 use crate::PlainButton;
@@ -58,7 +58,10 @@ impl PlainCheckBox {
             let val = checked.mapped(|check: &CheckBoxValue| {
                 format!("{:?}", *check)
             });
-            Rectangle::new(vec![Text::new(val)]).fill(highlight_color)
+            ZStack::new(vec![
+                Rectangle::new().fill(highlight_color),
+                Text::new(val),
+            ])
         }
 
         Self::new_internal(

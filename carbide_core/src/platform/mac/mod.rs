@@ -16,6 +16,7 @@ use crate::prelude::Environment;
 use crate::state::{InnerState, ValueCell};
 
 pub mod color_dialog;
+pub mod menu;
 
 pub(crate) type NSModalResponse = NSInteger;
 
@@ -30,11 +31,11 @@ pub fn from_nsstring(s: id) -> String {
     }
 }
 
-pub(crate) fn make_nsstring(s: &str) -> id {
+pub fn make_nsstring(s: &str) -> id {
     unsafe { NSString::alloc(nil).init_str(s).autorelease() }
 }
 
-pub(crate) fn make_nsurl(url: &PathBuf) -> id {
+pub fn make_nsurl(url: &PathBuf) -> id {
     unsafe {
         NSURL::alloc(nil)
             .initFileURLWithPath_isDirectory_(make_nsstring(url.to_str().expect("Could not convert pathbuf to &str")), YES)

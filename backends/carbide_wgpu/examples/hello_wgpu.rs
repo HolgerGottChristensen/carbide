@@ -36,31 +36,33 @@ fn main() {
                                Text::new("Hvad sker der i denne verden og vil den layoute rigtigt når der er en lang tekst og der ikke er nok plads til at det hele kan være på en linje")
                                    .padding(EdgeInsets::all(10.0)).border(),
                                Image::new(rust_image),
-                               Rectangle::new(vec![
-                                   SyncTest::new(sync_state)
-                               ]).fill(EnvironmentColor::SecondarySystemBackground),
+                               ZStack::new(vec![
+                                   Rectangle::new().fill(EnvironmentColor::SecondarySystemBackground),
+                                   SyncTest::new(sync_state),
+                               ]),
                                HStack::new(vec![
-                                   RoundedRectangle::new(CornerRadii::all(25.0))
+                                   RoundedRectangle::new(25.0)
                                        .frame(100.0, 100.0),
                                    Canvas::initialize(draw_heart)
                                        .frame(150.0, 150.0),
-                                   Rectangle::new(vec![
+                                   ZStack::new(vec![
+                                       Rectangle::new().fill(EnvironmentColor::SecondarySystemBackground),
                                        Scroll::new(
                                            Image::new(rust_image)
                                                .resizeable()
                                                .aspect_ratio(ScaleMode::Fill)
                                                .frame(800.0, 500.0)
                                        ).with_scroll_direction(ScrollDirection::Both)
-                                           .clip()
-                                   ]).fill(EnvironmentColor::SecondarySystemBackground).frame(SCALE, 200.0),
+                                           .clip(),
+                                   ]).frame(SCALE, 200.0),
                                ]).padding(EdgeInsets::all(10.0)),
                                HStack::new(vec![
-                                   Spacer::new(SpacerDirection::Horizontal),
+                                   Spacer::new(),
                                    Ellipse::new()
                                        .padding(EdgeInsets::all(10.0))
                                        .frame(150.0, 150.0),
-                                   Spacer::new(SpacerDirection::Horizontal),
-                                   Spacer::new(SpacerDirection::Horizontal),
+                                   Spacer::new(),
+                                   Spacer::new(),
                                ]),
                            ])),
     );

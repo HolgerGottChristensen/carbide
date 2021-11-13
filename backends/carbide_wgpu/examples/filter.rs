@@ -22,7 +22,7 @@ fn main() {
 
     let image_id = window.add_image_from_path("images/landscape.png");
 
-    let position_x = AnimatedState::custom(ease_in_out, window.environment())
+    let position_x = AnimatedState::custom(ease_in_out, Some(window.environment()))
         .duration(Duration::new(5, 0))
         .repeat_alternate()
         .range(-180.0, 180.0);
@@ -32,9 +32,9 @@ fn main() {
         ZStack::new(vec![
             Image::new(image_id)
                 .scaled_to_fill()
-                .clip_shape(Rectangle::new(vec![]))
+                .clip_shape(Rectangle::new())
                 .frame(500.0, 400.0),
-            Filter::new(ImageFilter::sobel(), Hidden::new(Rectangle::new(vec![])))
+            Filter::new(ImageFilter::sobel(), Hidden::new(Rectangle::new()))
                 .clip_shape(Circle::new())
                 .frame(200.0, 200.0)
                 .offset(position_x.clone(), 0.0),

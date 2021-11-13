@@ -32,7 +32,7 @@ fn main() {
     window.set_widgets(
         Image::new(image_id)
             .scaled_to_fill()
-            .clip_shape(Rectangle::new(vec![]))
+            .clip_shape(Rectangle::new())
             .rotation_3d_effect(rotation, 0.0)
             .with_fov(1.0)
             .frame(200.0, 100.0)

@@ -72,16 +72,18 @@ impl PopUpButton {
 
         let text = item.mapped(|item: &T| format!("{:?}", item));
 
-        Rectangle::new(vec![HStack::new(vec![
-            Padding::init(
-                EdgeInsets::single(0.0, 0.0, 5.0, 0.0),
-                Text::new(text).color(EnvironmentColor::Label),
-            ),
-            Spacer::new(),
-        ])])
-            .fill(background_color)
-            .stroke(EnvironmentColor::OpaqueSeparator)
-            .stroke_style(0.5)
-            .frame(SCALE, 24)
+        ZStack::new(vec![
+            Rectangle::new()
+                .fill(background_color)
+                .stroke(EnvironmentColor::OpaqueSeparator)
+                .stroke_style(0.5),
+            HStack::new(vec![
+                Padding::init(
+                    EdgeInsets::single(0.0, 0.0, 5.0, 0.0),
+                    Text::new(text).color(EnvironmentColor::Label),
+                ),
+                Spacer::new(),
+            ]),
+        ]).frame(SCALE, 24)
     }
 }

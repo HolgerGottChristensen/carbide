@@ -2,7 +2,6 @@ use std::ffi::OsString;
 use std::path::PathBuf;
 use std::time::Duration;
 
-use carbide::SpawnTask;
 use carbide::animation::Animation;
 use carbide::color::{BLUE, GREEN, RED};
 use carbide::dialog::color_dialog::ColorDialog;
@@ -12,6 +11,7 @@ use carbide::dialog::open_dialog::OpenDialog;
 use carbide::dialog::save_dialog::SaveDialog;
 use carbide::platform::mac::{open_open_panel, open_save_panel};
 use carbide::prelude::elastic_in_out;
+use carbide::SpawnTask;
 use carbide::state::{bounce_in, bounce_in_out, bounce_out, ease_in_out, linear, ValueState};
 use carbide_controls::{Button, List, TextInput};
 use carbide_controls::capture;
@@ -35,8 +35,8 @@ fn main() {
 
     let mut window = Window::new(
         "Dialogs - Carbide",
-        800,
         600,
+        400,
         Some(icon_path),
     );
 

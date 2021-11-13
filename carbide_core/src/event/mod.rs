@@ -1,6 +1,7 @@
 pub use button::Button;
 pub use event::Event;
 pub use event_handler::*;
+pub use hot_key::*;
 pub use input::Input;
 pub use key::Key;
 pub use keyboard_event::KeyboardEventHandler;
@@ -23,3 +24,4 @@ mod mouse_button;
 mod mouse_event;
 mod other_event;
 mod touch;
+mod hot_key;

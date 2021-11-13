@@ -87,12 +87,13 @@ impl CommonWidget for ZStack {
     }
 
     fn children(&self) -> WidgetIter {
-        let contains_proxy = self.children.iter().fold(false, |a, b| a || b.flag() == Flags::PROXY);
-        if !contains_proxy {
+        let contains_proxy_or_ignored = self.children.iter().fold(false, |a, b| a || (b.flag() == Flags::PROXY || b.flag() == Flags::IGNORE));
+        if !contains_proxy_or_ignored {
             WidgetIter::Vec(self.children.iter())
         } else {
             self.children
                 .iter()
+                .filter(|x| x.flag() != Flags::IGNORE)
                 .rfold(WidgetIter::Empty, |acc, x| {
                     if x.flag() == Flags::PROXY {
                         WidgetIter::Multi(Box::new(x.children()), Box::new(acc))
@@ -104,12 +105,13 @@ impl CommonWidget for ZStack {
     }
 
     fn children_mut(&mut self) -> WidgetIterMut {
-        let contains_proxy = self.children.iter().fold(false, |a, b| a || b.flag() == Flags::PROXY);
-        if !contains_proxy {
+        let contains_proxy_or_ignored = self.children.iter().fold(false, |a, b| a || (b.flag() == Flags::PROXY || b.flag() == Flags::IGNORE));
+        if !contains_proxy_or_ignored {
             WidgetIterMut::Vec(self.children.iter_mut())
         } else {
             self.children
                 .iter_mut()
+                .filter(|x| x.flag() != Flags::IGNORE)
                 .rfold(WidgetIterMut::Empty, |acc, x| {
                     if x.flag() == Flags::PROXY {
                         WidgetIterMut::Multi(Box::new(x.children_mut()), Box::new(acc))

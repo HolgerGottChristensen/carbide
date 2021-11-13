@@ -27,7 +27,7 @@ impl<S: GlobalStateContract> SyncTest<S> {
         if self.show_overlay {
             env.add_overlay(
                 "overlay_test",
-                Rectangle::new(vec![]).fill(EnvironmentColor::Red),
+                Rectangle::new().fill(EnvironmentColor::Red),
             )
         }
     }
@@ -83,21 +83,21 @@ impl<S: GlobalStateContract> SyncTest<S> {
             id: Uuid::new_v4(),
             child: HStack::new(vec![
                 Spacer::new(SpacerDirection::Horizontal),
-                VStack::new(vec![ForEach::new(
+                /*VStack::new(vec![ForEach::new(
                     Box::new(fore.clone()),
-                    Rectangle::new(vec![Text::new(mapped_state)])
+                    Rectangle::new_old(vec![Text::new(mapped_state)])
                         .fill(EnvironmentColor::Red)
                         .frame(60.0, 30.0),
                 )
-                    .index_state(index_state)]),
+                    .index_state(index_state)]),*/
                 ForEach::new(
                     (0..5).map(|_| Uuid::new_v4()).collect::<Vec<Uuid>>(),
-                    Rectangle::new(vec![]).frame(10.0, 10.0),
+                    Rectangle::new().frame(10.0, 10.0),
                 ),
                 Text::new(value.clone()),
-                Spacer::new(SpacerDirection::Horizontal),
+                Spacer::new(),
                 Text::new(value.clone()),
-                Spacer::new(SpacerDirection::Horizontal),
+                Spacer::new(),
             ]),
             position: [100.0, 100.0],
             dimension: [100.0, 100.0],

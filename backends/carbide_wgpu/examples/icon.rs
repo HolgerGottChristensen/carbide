@@ -19,7 +19,7 @@ fn main() {
     window.set_widgets(
         VStack::new(vec![
             Image::new_icon(image_id),
-            Rectangle::new(vec![])
+            Rectangle::new()
                 .fill(EnvironmentColor::Accent)
                 .frame(50, 50),
         ]).accent_color(EnvironmentColor::Red)

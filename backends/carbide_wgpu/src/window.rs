@@ -24,7 +24,7 @@ use carbide_core::mesh::mesh::Mesh;
 use carbide_core::prelude::{Environment, EnvironmentColor};
 use carbide_core::prelude::Rectangle;
 use carbide_core::text::{FontFamily, FontId};
-use carbide_core::widget::OverlaidLayer;
+use carbide_core::widget::{OverlaidLayer, ZStack};
 use carbide_core::widget::Widget;
 pub use carbide_core::window::TWindow;
 
@@ -127,8 +127,10 @@ impl carbide_core::window::TWindow for Window {
     }
 
     fn set_widgets(&mut self, base_widget: Box<dyn Widget>) {
-        self.ui.widgets = Rectangle::new(vec![OverlaidLayer::new("controls_popup_layer", base_widget).steal_events()])
-            .fill(EnvironmentColor::SystemBackground);
+        self.ui.widgets = ZStack::new(vec![
+            Rectangle::new().fill(EnvironmentColor::SystemBackground),
+            OverlaidLayer::new("controls_popup_layer", base_widget).steal_events(),
+        ]);
     }
 }
 

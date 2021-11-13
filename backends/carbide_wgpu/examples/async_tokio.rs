@@ -61,7 +61,7 @@ fn main() {
             Text::new(text)
                 .padding(20.0),
             Image::new(image_id),
-            Rectangle::new(vec![])
+            Rectangle::new()
                 .fill(EnvironmentColor::Accent)
                 .frame(block_width, 50),
         ]).accent_color(EnvironmentColor::Red)

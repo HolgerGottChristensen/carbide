@@ -35,19 +35,17 @@ fn main() {
 
     window.set_widgets(
         VStack::new(vec![
-            Rectangle::new(vec![
-                PlainTextInput::new(text_state.clone())
-                    .font_size(EnvironmentFontSize::Title)
-                    .border()
-                    .color(EnvironmentColor::DarkText)
-            ]).shrink_to_fit().fill(EnvironmentColor::Blue),
-            Rectangle::new(vec![
-                PlainTextInput::new(text_state)
-                    .font_size(EnvironmentFontSize::Title)
-                    .obscure(PASSWORD_CHAR)
-                    .border()
-                    .color(EnvironmentColor::DarkText)
-            ]).shrink_to_fit().fill(EnvironmentColor::Purple),
+            PlainTextInput::new(text_state.clone())
+                .font_size(EnvironmentFontSize::Title)
+                .border()
+                .color(EnvironmentColor::DarkText)
+                .background(Rectangle::new().fill(EnvironmentColor::Blue)),
+            PlainTextInput::new(text_state)
+                .font_size(EnvironmentFontSize::Title)
+                .obscure(PASSWORD_CHAR)
+                .border()
+                .color(EnvironmentColor::DarkText)
+                .background(Rectangle::new().fill(EnvironmentColor::Purple)),
         ])
             .spacing(10.0)
             .padding(EdgeInsets::all(40.0)),

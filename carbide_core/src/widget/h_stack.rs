@@ -10,6 +10,7 @@ pub struct HStack {
     position: Position,
     dimension: Dimension,
     spacing: Scalar,
+    cross_axis_alignment: CrossAxisAlignment,
 }
 
 impl HStack {
@@ -20,7 +21,13 @@ impl HStack {
             position: Position::new(0.0, 0.0),
             dimension: Dimension::new(100.0, 100.0),
             spacing: 10.0,
+            cross_axis_alignment: CrossAxisAlignment::Center,
         })
+    }
+
+    pub fn cross_axis_alignment(mut self, alignment: CrossAxisAlignment) -> Box<Self> {
+        self.cross_axis_alignment = alignment;
+        Box::new(self)
     }
 
     pub fn spacing(mut self, spacing: f64) -> Box<Self> {
@@ -31,114 +38,15 @@ impl HStack {
 
 impl Layout for HStack {
     fn calculate_size(&mut self, requested_size: Dimension, env: &mut Environment) -> Dimension {
-        // The number of children not containing any spacers
-        let mut number_of_children_that_needs_sizing = self
-            .children()
-            .filter(|m| m.flag() != Flags::SPACER)
-            .count() as f64;
-
-        let non_spacers_vec: Vec<bool> =
-            self.children().map(|n| n.flag() != Flags::SPACER).collect();
-        let non_spacers_vec_length = non_spacers_vec.len();
-
-        let number_of_spaces = non_spacers_vec
-            .iter()
-            .enumerate()
-            .take(non_spacers_vec_length - 1)
-            .filter(|(n, b)| **b && non_spacers_vec[n + 1])
-            .count() as f64;
-
-        let spacing_total = (number_of_spaces) * self.spacing;
-        let mut size_for_children =
-            Dimension::new(requested_size.width - spacing_total, requested_size.height);
-
-        let mut children_flexibilty: Vec<(u32, WidgetValMut)> = self
-            .children_mut()
-            .filter(|m| m.flag() != Flags::SPACER)
-            .map(|child| (child.flexibility(), child))
-            .collect();
-        children_flexibilty.sort_by(|(a, _), (b, _)| a.cmp(&b));
-        children_flexibilty.reverse();
-
-        let mut max_height = 0.0;
-        let mut total_width = 0.0;
-
-        for (_, mut child) in children_flexibilty {
-            let size_for_child = Dimension::new(
-                size_for_children.width / number_of_children_that_needs_sizing,
-                size_for_children.height,
-            );
-            let chosen_size = child.calculate_size(size_for_child, env);
-
-            if chosen_size.height > max_height {
-                max_height = chosen_size.height;
-            }
-
-            size_for_children = Dimension::new(
-                (size_for_children.width - chosen_size.width).max(0.0),
-                size_for_children.height,
-            );
-
-            number_of_children_that_needs_sizing -= 1.0;
-
-            total_width += chosen_size.width;
-        }
-
-        let spacer_count = self
-            .children()
-            .filter(|m| m.flag() == Flags::SPACER)
-            .count() as f64;
-        let rest_space = requested_size.width - total_width - spacing_total;
-
-        for mut spacer in self.children_mut().filter(|m| m.flag() == Flags::SPACER) {
-            let chosen_size = spacer.calculate_size(
-                Dimension::new(rest_space / spacer_count, 0.0),
-                env,
-            );
-
-            if chosen_size.height > max_height {
-                max_height = chosen_size.height;
-            }
-
-            total_width += chosen_size.width;
-        }
-
-        self.dimension = Dimension::new(total_width + spacing_total, max_height);
-
+        let spacing = self.spacing;
+        calculate_size_hstack(self, spacing, requested_size, env);
         self.dimension
     }
 
     fn position_children(&mut self) {
-        let cross_axis_alignment = CrossAxisAlignment::Center;
-        let mut width_offset = 0.0;
-        let position = self.position;
-        let dimension = self.dimension;
         let spacing = self.spacing;
-
-        let spacers: Vec<bool> = self.children().map(|n| n.flag() == Flags::SPACER).collect();
-
-        for (n, mut child) in &mut self.children_mut().enumerate() {
-            match cross_axis_alignment {
-                CrossAxisAlignment::Start => child.set_y(position.y),
-                CrossAxisAlignment::Center => {
-                    let height = child.height();
-                    child.set_y(position.y + dimension.height / 2.0 - height / 2.0)
-                }
-                CrossAxisAlignment::End => {
-                    let height = child.height();
-                    child.set_y(position.y + dimension.height - height)
-                }
-            }
-
-            child.set_x(position.x + width_offset);
-
-            if child.flag() != Flags::SPACER && n < spacers.len() - 1 && !spacers[n + 1] {
-                width_offset += spacing;
-            }
-            width_offset += child.width();
-
-            child.position_children();
-        }
+        let cross_axis_alignment = self.cross_axis_alignment;
+        position_children_hstack(self, spacing, cross_axis_alignment)
     }
 }
 
@@ -152,12 +60,13 @@ impl CommonWidget for HStack {
     }
 
     fn children(&self) -> WidgetIter {
-        let contains_proxy = self.children.iter().fold(false, |a, b| a || b.flag() == Flags::PROXY);
-        if !contains_proxy {
+        let contains_proxy_or_ignored = self.children.iter().fold(false, |a, b| a || (b.flag() == Flags::PROXY || b.flag() == Flags::IGNORE));
+        if !contains_proxy_or_ignored {
             WidgetIter::Vec(self.children.iter())
         } else {
             self.children
                 .iter()
+                .filter(|x| x.flag() != Flags::IGNORE)
                 .rfold(WidgetIter::Empty, |acc, x| {
                     if x.flag() == Flags::PROXY {
                         WidgetIter::Multi(Box::new(x.children()), Box::new(acc))
@@ -169,12 +78,13 @@ impl CommonWidget for HStack {
     }
 
     fn children_mut(&mut self) -> WidgetIterMut {
-        let contains_proxy = self.children.iter().fold(false, |a, b| a || b.flag() == Flags::PROXY);
-        if !contains_proxy {
+        let contains_proxy_or_ignored = self.children.iter().fold(false, |a, b| a || (b.flag() == Flags::PROXY || b.flag() == Flags::IGNORE));
+        if !contains_proxy_or_ignored {
             WidgetIterMut::Vec(self.children.iter_mut())
         } else {
             self.children
                 .iter_mut()
+                .filter(|x| x.flag() != Flags::IGNORE)
                 .rfold(WidgetIterMut::Empty, |acc, x| {
                     if x.flag() == Flags::PROXY {
                         WidgetIterMut::Multi(Box::new(x.children_mut()), Box::new(acc))

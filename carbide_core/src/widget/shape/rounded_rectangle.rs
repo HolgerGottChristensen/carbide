@@ -59,12 +59,12 @@ impl RoundedRectangle {
         ])
     }
 
-    pub fn new(corner_radii: CornerRadii) -> Box<RoundedRectangle> {
+    pub fn new<C: Into<CornerRadii>>(corner_radii: C) -> Box<RoundedRectangle> {
         Box::new(RoundedRectangle {
             id: Uuid::new_v4(),
             position: Position::new(0.0, 0.0),
             dimension: Dimension::new(100.0, 100.0),
-            corner_radii,
+            corner_radii: corner_radii.into(),
             stroke_color: EnvironmentColor::Blue.into(),
             fill_color: EnvironmentColor::Blue.into(),
             style: ShapeStyle::Default,
@@ -81,10 +81,6 @@ impl CommonWidget for RoundedRectangle {
 
     fn set_id(&mut self, id: Id) {
         self.id = id;
-    }
-
-    fn flag(&self) -> Flags {
-        Flags::EMPTY
     }
 
     fn children(&self) -> WidgetIter {

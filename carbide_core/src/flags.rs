@@ -6,5 +6,6 @@ bitflags! {
         const PROXY =  0b00000001;
         const SPACER = 0b00000010;
         const FOCUSABLE = 0b00000100;
+        const IGNORE = 0b00001000;
     }
 }

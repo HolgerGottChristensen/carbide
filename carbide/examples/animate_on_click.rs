@@ -38,7 +38,7 @@ fn main() {
 
     window.set_widgets(
         VStack::new(vec![
-            Rectangle::new(vec![])
+            Rectangle::new()
                 .fill(color.clone())
                 .frame(60.0, 60.0)
                 .offset(offset_x.clone(), 0.0),

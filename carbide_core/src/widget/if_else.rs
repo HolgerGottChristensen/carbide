@@ -19,8 +19,8 @@ impl IfElse {
         Box::new(IfElse {
             id: Uuid::new_v4(),
             predicate: predicate.into(),
-            when_true: Frame::init(0.0, 0.0, Rectangle::new(vec![])),
-            when_false: Frame::init(0.0, 0.0, Rectangle::new(vec![])),
+            when_true: Empty::new(),
+            when_false: Empty::new(),
             position: Position::new(0.0, 0.0),
             dimension: Dimension::new(0.0, 0.0),
         })
@@ -54,12 +54,16 @@ impl CommonWidget for IfElse {
         if *self.predicate.value() {
             if self.when_true.flag() == Flags::PROXY {
                 self.when_true.children()
+            } else if self.when_true.flag() == Flags::IGNORE {
+                WidgetIter::Empty
             } else {
                 WidgetIter::single(&self.when_true)
             }
         } else {
             if self.when_false.flag() == Flags::PROXY {
                 self.when_false.children()
+            } else if self.when_false.flag() == Flags::IGNORE {
+                WidgetIter::Empty
             } else {
                 WidgetIter::single(&self.when_false)
             }
@@ -70,12 +74,16 @@ impl CommonWidget for IfElse {
         if *self.predicate.value() {
             if self.when_true.flag() == Flags::PROXY {
                 self.when_true.children_mut()
+            } else if self.when_true.flag() == Flags::IGNORE {
+                WidgetIterMut::Empty
             } else {
                 WidgetIterMut::single(&mut self.when_true)
             }
         } else {
             if self.when_false.flag() == Flags::PROXY {
                 self.when_false.children_mut()
+            } else if self.when_false.flag() == Flags::IGNORE {
+                WidgetIterMut::Empty
             } else {
                 WidgetIterMut::single(&mut self.when_false)
             }

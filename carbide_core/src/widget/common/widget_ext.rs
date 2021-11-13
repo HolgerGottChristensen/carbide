@@ -8,6 +8,10 @@ pub trait WidgetExt: Widget + Sized + 'static {
         Frame::init(width.into(), height.into(), Box::new(self))
     }
 
+    fn background(self, background: Box<dyn Widget>) -> Box<Background> {
+        Background::new(Box::new(self), background)
+    }
+
     fn rotation_3d_effect<K1: Into<F64State>, K2: Into<F64State>>(self, x: K1, y: K2) -> Box<Rotation3DEffect> {
         Rotation3DEffect::new(Box::new(self), x.into(), y.into())
     }

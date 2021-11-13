@@ -39,12 +39,12 @@ impl<T: StateContract + 'static, U: Delegate<T> + 'static> List<T, U> {
             id: Id::new_v4(),
             child: Scroll::new(
                 VStack::new(vec![
-                    Rectangle::new(vec![])
+                    Rectangle::new()
                         .fill(TRANSPARENT) // RED for debugging
                         .frame(SCALE, start_offset.clone()),
                     ForEach::new(internal_model.clone(), delegate.clone()),
                     //.index_offset(index_offset_state.clone()),
-                    Rectangle::new(vec![])
+                    Rectangle::new()
                         .fill(TRANSPARENT)// BLUE for debugging
                         .frame(SCALE, end_offset.clone()),
                 ])
@@ -70,12 +70,12 @@ impl<T: StateContract + 'static, U: Delegate<T> + 'static> List<T, U> {
         self.end_offset = end_offset.into();
         self.child = Scroll::new(
             VStack::new(vec![
-                Rectangle::new(vec![])
+                Rectangle::new()
                     .fill(TRANSPARENT)
                     .frame(SCALE, self.start_offset.clone()),
                 ForEach::new(self.internal_model.clone(), self.delegate.clone()),
                 //.index_offset(self.index_offset.clone()),
-                Rectangle::new(vec![])
+                Rectangle::new()
                     .fill(TRANSPARENT)
                     .frame(SCALE, self.end_offset.clone()),
             ])

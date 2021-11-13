@@ -1,3 +1,4 @@
+use crate::CommonWidgetImpl;
 use crate::draw::{Dimension, Position, Rect};
 use crate::prelude::*;
 use crate::render::PrimitiveKind;
@@ -45,55 +46,8 @@ impl Layout for Clip {
     }
 }
 
-impl CommonWidget for Clip {
-    fn id(&self) -> Id {
-        self.id
-    }
+CommonWidgetImpl!(Clip, self, id: self.id, child: self.child, position: self.position, dimension: self.dimension);
 
-    fn set_id(&mut self, id: Id) {
-        self.id = id;
-    }
-
-    fn children(&self) -> WidgetIter {
-        if self.child.flag() == Flags::PROXY {
-            self.child.children()
-        } else {
-            WidgetIter::single(&self.child)
-        }
-    }
-
-    fn children_mut(&mut self) -> WidgetIterMut {
-        if self.child.flag() == Flags::PROXY {
-            self.child.children_mut()
-        } else {
-            WidgetIterMut::single(&mut self.child)
-        }
-    }
-
-    fn children_direct(&mut self) -> WidgetIterMut {
-        WidgetIterMut::single(&mut self.child)
-    }
-
-    fn children_direct_rev(&mut self) -> WidgetIterMut {
-        WidgetIterMut::single(&mut self.child)
-    }
-
-    fn position(&self) -> Position {
-        self.position
-    }
-
-    fn set_position(&mut self, position: Position) {
-        self.position = position;
-    }
-
-    fn dimension(&self) -> Dimension {
-        self.dimension
-    }
-
-    fn set_dimension(&mut self, dimension: Dimension) {
-        self.dimension = dimension
-    }
-}
 
 impl Render for Clip {
     fn process_get_primitives(&mut self, primitives: &mut Vec<Primitive>, env: &mut Environment) {

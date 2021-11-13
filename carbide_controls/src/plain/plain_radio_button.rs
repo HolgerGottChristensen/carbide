@@ -5,7 +5,7 @@ use carbide_core::environment::{Environment, EnvironmentColor};
 use carbide_core::flags::Flags;
 use carbide_core::focus::{Focus, Refocus};
 use carbide_core::state::{BoolState, FocusState, LocalState, MapOwnedState, State, StateContract, StateExt, StateKey, StringState, TState};
-use carbide_core::widget::{CommonWidget, HStack, Id, Rectangle, Spacer, Text, Widget, WidgetExt, WidgetIter, WidgetIterMut};
+use carbide_core::widget::{CommonWidget, HStack, Id, Rectangle, Spacer, Text, Widget, WidgetExt, WidgetIter, WidgetIterMut, ZStack};
 
 use crate::PlainButton;
 
@@ -55,7 +55,10 @@ impl<T: 'static + StateContract + PartialEq> PlainRadioButton<T> {
             let val = selected.mapped(|selected: &bool| {
                 format!("{:?}", *selected)
             });
-            Rectangle::new(vec![Text::new(val)]).fill(highlight_color)
+            ZStack::new(vec![
+                Rectangle::new().fill(highlight_color),
+                Text::new(val),
+            ])
         }
 
         Self::new_internal(

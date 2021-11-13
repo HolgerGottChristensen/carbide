@@ -40,7 +40,7 @@ fn main() {
 
     window.set_widgets(
         VStack::new(vec![
-            PlainButton::new(Rectangle::new(vec![]).fill(RED))
+            PlainButton::new(Rectangle::new().fill(RED))
                 .on_click(move |_: &mut _| {
                     let mut temp = button_counter_state.clone();
                     *temp.value_mut() += 1;

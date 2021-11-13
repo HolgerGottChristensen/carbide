@@ -72,13 +72,13 @@ fn main() {
             Text::new("Hello".into(), vec![]),
             Text::new("world! \nHvad sker der i denne verden og vil den layoute rigtigt når der er en lang tekst".into(), vec![]),
             Image::new(rust_image, [100.0, 100.0], vec![]),
-            Rectangle::new(vec![
+            Rectangle::new_old(vec![
                 SyncTest::new(sync_state)
             ]).fill(GREEN),
             HStack::initialize(vec![
                 Image::new(rust_image, [100.0, 100.0], vec![]),
                 //ZStack::initialize(vec![
-                Rectangle::new(vec![])
+                Rectangle::new()
                     .fill(LIGHT_BLUE)
                     .frame(SCALE, 120.0),
                 //Image::new(rust_image, [100.0,100.0], vec![])

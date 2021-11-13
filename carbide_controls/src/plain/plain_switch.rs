@@ -4,7 +4,7 @@ use carbide_core::flags::Flags;
 use carbide_core::focus::Focus;
 use carbide_core::focus::Refocus;
 use carbide_core::state::{BoolState, FocusState, LocalState, MapOwnedState, State, StateKey, StringState};
-use carbide_core::widget::{CommonWidget, HStack, Id, Rectangle, Spacer, Text, Widget, WidgetExt, WidgetIter, WidgetIterMut};
+use carbide_core::widget::{CommonWidget, HStack, Id, Rectangle, Spacer, Text, Widget, WidgetExt, WidgetIter, WidgetIterMut, ZStack};
 
 use crate::PlainButton;
 
@@ -54,8 +54,10 @@ impl PlainSwitch {
                     env.get_color(&StateKey::Color(EnvironmentColor::Red)).unwrap()
                 }
             });
-
-            Rectangle::new(vec![Text::new(checked)]).fill(highlight_color)
+            ZStack::new(vec![
+                Rectangle::new().fill(highlight_color),
+                Text::new(checked),
+            ])
         };
 
         Self::new_internal(
