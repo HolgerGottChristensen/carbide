@@ -5,6 +5,7 @@ use lyon::tessellation::{
 };
 
 use crate::color::Rgba;
+use crate::CommonWidgetImpl;
 use crate::draw::{Dimension, Position, Rect};
 use crate::draw::shape::triangle::Triangle;
 use crate::prelude::*;
@@ -110,47 +111,7 @@ impl Canvas {
     }
 }
 
-impl CommonWidget for Canvas {
-    fn id(&self) -> Id {
-        self.id
-    }
-
-    fn set_id(&mut self, id: Id) {
-        self.id = id;
-    }
-
-    fn children(&self) -> WidgetIter {
-        WidgetIter::Empty
-    }
-
-    fn children_mut(&mut self) -> WidgetIterMut {
-        WidgetIterMut::Empty
-    }
-
-    fn children_direct(&mut self) -> WidgetIterMut {
-        WidgetIterMut::Empty
-    }
-
-    fn children_direct_rev(&mut self) -> WidgetIterMut {
-        WidgetIterMut::Empty
-    }
-
-    fn position(&self) -> Position {
-        self.position
-    }
-
-    fn set_position(&mut self, position: Position) {
-        self.position = position;
-    }
-
-    fn dimension(&self) -> Dimension {
-        self.dimension
-    }
-
-    fn set_dimension(&mut self, dimension: Dimension) {
-        self.dimension = dimension
-    }
-}
+CommonWidgetImpl!(Canvas, self, id: self.id, position: self.position, dimension: self.dimension);
 
 impl Shape for Canvas {
     fn get_triangle_store_mut(&mut self) -> &mut TriangleStore {
