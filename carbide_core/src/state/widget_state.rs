@@ -4,7 +4,7 @@ use std::fmt::{Debug, Formatter};
 use dyn_clone::DynClone;
 
 use crate::prelude::Environment;
-use crate::state::{Map, MapOwnedState, MapState, StateContract, TState, UsizeState};
+use crate::state::{MapOwnedState, MapState, MapWithEnv, StateContract, TState, UsizeState};
 pub use crate::state::State;
 use crate::state::value_cell::{ValueRef, ValueRefMut};
 
@@ -79,12 +79,12 @@ impl<T: StateContract> State<T> for WidgetState<T> {
     }
 }
 
-pub trait MapNoEnv<FROM: StateContract, TO: StateContract>:
+pub trait Map<FROM: StateContract, TO: StateContract>:
 Fn(&FROM) -> TO + DynClone + 'static
 {}
 
-impl<T, FROM: StateContract, TO: StateContract> MapNoEnv<FROM, TO> for T where
+impl<T, FROM: StateContract, TO: StateContract> Map<FROM, TO> for T where
     T: Fn(&FROM) -> TO + DynClone + 'static
 {}
 
-dyn_clone::clone_trait_object!(<FROM: StateContract, TO: StateContract> MapNoEnv<FROM, TO>);
+dyn_clone::clone_trait_object!(<FROM: StateContract, TO: StateContract> Map<FROM, TO>);

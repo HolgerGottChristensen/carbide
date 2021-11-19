@@ -16,13 +16,13 @@ pub struct MapOwnedState<FROM, TO>
         TO: StateContract,
 {
     state: TState<FROM>,
-    map: Box<dyn Map<FROM, TO>>,
+    map: Box<dyn MapWithEnv<FROM, TO>>,
     map_rev: Option<Box<dyn MapRev<FROM, TO>>>,
     value: InnerState<TO>,
 }
 
 impl<FROM: StateContract, TO: StateContract + Default> MapOwnedState<FROM, TO> {
-    pub fn new<M1: Into<TState<FROM>>, M2: Map<FROM, TO>>(state: M1, map: M2) -> Self {
+    pub fn new<M1: Into<TState<FROM>>, M2: MapWithEnv<FROM, TO>>(state: M1, map: M2) -> Self {
         MapOwnedState {
             state: state.into(),
             map: Box::new(map),
@@ -33,7 +33,7 @@ impl<FROM: StateContract, TO: StateContract + Default> MapOwnedState<FROM, TO> {
 }
 
 impl<FROM: StateContract, TO: StateContract> MapOwnedState<FROM, TO> {
-    pub fn new_with_default<M1: Into<TState<FROM>>, M2: Map<FROM, TO>>(state: M1, map: M2, default: TO) -> Self {
+    pub fn new_with_default<M1: Into<TState<FROM>>, M2: MapWithEnv<FROM, TO>>(state: M1, map: M2, default: TO) -> Self {
         MapOwnedState {
             state: state.into(),
             map: Box::new(map),
@@ -42,7 +42,7 @@ impl<FROM: StateContract, TO: StateContract> MapOwnedState<FROM, TO> {
         }
     }
 
-    pub fn new_with_default_and_rev<I: Into<TState<FROM>>, M1: Map<FROM, TO>, M2: MapRev<FROM, TO>>(state: I, map: M1, map_rev: M2, default: TO) -> Self {
+    pub fn new_with_default_and_rev<I: Into<TState<FROM>>, M1: MapWithEnv<FROM, TO>, M2: MapRev<FROM, TO>>(state: I, map: M1, map_rev: M2, default: TO) -> Self {
         MapOwnedState {
             state: state.into(),
             map: Box::new(map),
@@ -110,11 +110,11 @@ for MapOwnedState<FROM, TO>
     }
 }
 
-pub trait Map<FROM: StateContract, TO: StateContract>:
+pub trait MapWithEnv<FROM: StateContract, TO: StateContract>:
 Fn(&FROM, &TO, &Environment) -> TO + DynClone + 'static
 {}
 
-impl<T, FROM: StateContract, TO: StateContract> Map<FROM, TO> for T where
+impl<T, FROM: StateContract, TO: StateContract> MapWithEnv<FROM, TO> for T where
     T: Fn(&FROM, &TO, &Environment) -> TO + DynClone + 'static
 {}
 
@@ -126,7 +126,7 @@ impl<T, FROM: StateContract, TO: StateContract> MapRev<FROM, TO> for T where
     T: Fn(&TO) -> Option<FROM> + DynClone + 'static
 {}
 
-dyn_clone::clone_trait_object!(<FROM: StateContract, TO: StateContract> Map<FROM, TO>);
+dyn_clone::clone_trait_object!(<FROM: StateContract, TO: StateContract> MapWithEnv<FROM, TO>);
 
 dyn_clone::clone_trait_object!(<FROM: StateContract, TO: StateContract> MapRev<FROM, TO>);
 
