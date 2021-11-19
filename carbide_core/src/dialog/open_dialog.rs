@@ -7,6 +7,7 @@ use oneshot::{Receiver, RecvError};
 
 use crate::dialog::FileSpecification;
 use crate::environment::Environment;
+#[cfg(target_os = "macos")]
 use crate::platform::mac::open_open_panel;
 
 pub type FuturePath = Map<Receiver<Option<Vec<OsString>>>, fn(Result<Option<Vec<OsString>>, RecvError>) -> Option<Vec<PathBuf>>>;
@@ -148,6 +149,7 @@ impl OpenDialog {
         self
     }*/
 
+    #[cfg(target_os = "macos")]
     pub fn open(mut self, env: &Environment) -> FuturePath {
         open_open_panel(env, self)
             .map(|a| {
@@ -159,5 +161,10 @@ impl OpenDialog {
                             .collect::<Vec<_>>()
                     })
             })
+    }
+
+    #[cfg(not(target_os = "macos"))]
+    pub fn open(mut self, env: &Environment) -> FuturePath {
+       todo!()
     }
 }

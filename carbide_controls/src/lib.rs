@@ -5,6 +5,7 @@ extern crate carbide_derive;
 extern crate copypasta;
 extern crate unicode_segmentation;
 
+pub use navigation_stack::NavigationStack;
 pub use button::Button;
 pub use check_box::*;
 pub use list::List;
@@ -44,3 +45,4 @@ mod radio_button;
 mod switch;
 mod text_input;
 mod types;
+mod navigation_stack;

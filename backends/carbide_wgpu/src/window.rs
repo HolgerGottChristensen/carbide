@@ -12,6 +12,7 @@ use wgpu::util::{BufferInitDescriptor, DeviceExt};
 use winit::dpi::{PhysicalPosition, PhysicalSize, Size};
 use winit::event::{ElementState, Event, KeyboardInput, VirtualKeyCode, WindowEvent};
 use winit::event_loop::{ControlFlow, EventLoop};
+#[cfg(target_os = "macos")]
 use winit::platform::macos::WindowExtMacOS;
 use winit::window::{Icon, WindowBuilder};
 
