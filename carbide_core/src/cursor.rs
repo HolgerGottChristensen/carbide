@@ -9,26 +9,41 @@
 /// cursor render, you can still use this enum by specifying a numbered custom variant.
 #[derive(Copy, Clone, Debug, PartialEq, Eq)]
 pub enum MouseCursor {
-    /// Default mouse cursor.
-    Arrow,
-    /// Text input cursor.
-    Text,
-    /// Text input for vertical text.
-    VerticalText,
-    /// Open hand with index finger pointing up.
+    Default,
+    Crosshair,
     Hand,
-    /// Open hand.
+    Arrow,
+    Move,
+    Text,
+    Wait,
+    Help,
+    Progress,
+    NotAllowed,
+    ContextMenu,
+    Cell,
+    VerticalText,
+    Alias,
+    Copy,
+    NoDrop,
     Grab,
-    /// Closed hand.
     Grabbing,
-    /// Vertical resize cursor.
-    ResizeVertical,
-    /// Horizontal resize cursor.
-    ResizeHorizontal,
-    /// Diagonal resize cursor pointing to top left and bottom right corners.
-    ResizeTopLeftBottomRight,
-    /// Diagonal resize cursor pointing to top right to bottom left corners.
-    ResizeTopRightBottomLeft,
+    AllScroll,
+    ZoomIn,
+    ZoomOut,
+    EResize,
+    NResize,
+    NeResize,
+    NwResize,
+    SResize,
+    SeResize,
+    SwResize,
+    WResize,
+    EwResize,
+    NsResize,
+    NeswResize,
+    NwseResize,
+    ColResize,
+    RowResize,
     /// Custom cursor variant. Encode your favourite cursor with a u8.
     Custom(u8),
 }

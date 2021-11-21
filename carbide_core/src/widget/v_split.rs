@@ -10,11 +10,11 @@ use crate::Widget;
 
 #[derive(Clone, Debug, Widget)]
 #[carbide_exclude(Layout, MouseEvent, OtherEvent)]
-pub struct HSplit {
+pub struct VSplit {
     id: Id,
     position: Position,
     dimension: Dimension,
-    // Leading - Trailing
+    // Top - Bottom
     children: Vec<Box<dyn Widget>>,
     split: F64State,
     cross_axis_alignment: CrossAxisAlignment,
@@ -22,7 +22,7 @@ pub struct HSplit {
     hovering: bool,
 }
 
-impl HSplit {
+impl VSplit {
     pub fn new(leading: Box<dyn Widget>, trailing: Box<dyn Widget>) -> Box<Self> {
         let split = LocalState::new(0.1);
         Self::new_internal(leading, trailing, split)
@@ -38,7 +38,7 @@ impl HSplit {
     }
 
     fn new_internal(leading: Box<dyn Widget>, trailing: Box<dyn Widget>, split: impl Into<F64State>) -> Box<Self> {
-        Box::new(HSplit {
+        Box::new(VSplit {
             id: Id::new_v4(),
             position: Default::default(),
             dimension: Default::default(),
@@ -51,15 +51,15 @@ impl HSplit {
     }
 }
 
-impl OtherEventHandler for HSplit {
+impl OtherEventHandler for VSplit {
     fn handle_other_event(&mut self, _event: &WidgetEvent, env: &mut Environment) {
         if self.dragging || self.hovering {
-            env.set_cursor(MouseCursor::ColResize);
+            env.set_cursor(MouseCursor::RowResize);
         }
     }
 }
 
-impl MouseEventHandler for HSplit {
+impl MouseEventHandler for VSplit {
     fn handle_mouse_event(&mut self, event: &MouseEvent, _consumed: &bool, _env: &mut Environment) {
         let press_margin = 5.0;
 
@@ -69,8 +69,8 @@ impl MouseEventHandler for HSplit {
 
                 let split = self.children[0].dimension();
 
-                if relative_to_position.x > split.width - press_margin &&
-                    relative_to_position.x < split.width + press_margin {
+                if relative_to_position.y > split.height - press_margin &&
+                    relative_to_position.y < split.height + press_margin {
                     self.dragging = true;
                 }
             }
@@ -79,10 +79,10 @@ impl MouseEventHandler for HSplit {
             }
             MouseEvent::Move { to, .. } => {
                 let relative_to_position = *to - self.position;
-                let split = self.children[0].dimension();
 
-                if relative_to_position.x > split.width - press_margin &&
-                    relative_to_position.x < split.width + press_margin {
+                let split = self.children[0].dimension();
+                if relative_to_position.y > split.height - press_margin &&
+                    relative_to_position.y < split.height + press_margin {
                     self.hovering = true;
                 } else {
                     self.hovering = false;
@@ -90,7 +90,7 @@ impl MouseEventHandler for HSplit {
 
                 if !self.dragging { return; }
 
-                let percent = relative_to_position.x / self.dimension.width;
+                let percent = relative_to_position.y / self.dimension.height;
 
                 self.split.set_value(percent.max(0.0).min(1.0))
             }
@@ -99,26 +99,26 @@ impl MouseEventHandler for HSplit {
     }
 }
 
-impl Layout for HSplit {
+impl Layout for VSplit {
     fn calculate_size(&mut self, requested_size: Dimension, env: &mut Environment) -> Dimension {
-        let requested_leading_width = requested_size.width * *self.split.value();
-        let requested_trailing_width = requested_size.width * (1.0 - *self.split.value());
+        let requested_top_height = requested_size.height * *self.split.value();
+        let requested_bottom_height = requested_size.height * (1.0 - *self.split.value());
 
-        let leading_size = Dimension::new(requested_leading_width, requested_size.height);
-        let mut leading = self.children[0].calculate_size(leading_size, env);
+        let top_size = Dimension::new(requested_size.width, requested_top_height);
+        let mut top = self.children[0].calculate_size(top_size, env);
 
-        let trailing_size = Dimension::new(requested_trailing_width, requested_size.height);
-        let mut trailing = self.children[1].calculate_size(trailing_size, env);
+        let bottom_size = Dimension::new(requested_size.width, requested_bottom_height);
+        let mut bottom = self.children[1].calculate_size(bottom_size, env);
 
-        if leading.width > requested_leading_width {
-            let trailing_size = Dimension::new(requested_size.width - leading.width, requested_size.height);
-            trailing = self.children[1].calculate_size(trailing_size, env);
-        } else if trailing.width > requested_trailing_width {
-            let leading_size = Dimension::new(requested_size.width - trailing.width, requested_size.height);
-            leading = self.children[0].calculate_size(leading_size, env);
+        if top.height > requested_top_height {
+            let bottom_size = Dimension::new(requested_size.width, requested_size.height - top.height);
+            bottom = self.children[1].calculate_size(bottom_size, env);
+        } else if bottom.height > requested_bottom_height {
+            let top_size = Dimension::new(requested_size.width, requested_size.height - bottom.height);
+            top = self.children[0].calculate_size(top_size, env);
         }
 
-        self.set_dimension(Dimension::new(requested_size.width, leading.height.max(trailing.height)));
+        self.set_dimension(Dimension::new(top.width.max(bottom.width), requested_size.height));
         self.dimension
     }
 
@@ -131,22 +131,22 @@ impl Layout for HSplit {
 
         for mut child in self.children_mut() {
             let cross = match alignment {
-                CrossAxisAlignment::Start => position.y,
+                CrossAxisAlignment::Start => position.x,
                 CrossAxisAlignment::Center => {
-                    position.y + dimension.height / 2.0 - child.dimension().height / 2.0
+                    position.x + dimension.width / 2.0 - child.dimension().width / 2.0
                 }
                 CrossAxisAlignment::End => {
-                    position.y + dimension.height - child.dimension().height
+                    position.x + dimension.width - child.dimension().width
                 }
             };
 
-            child.set_position(Position::new(position.x + main_axis_offset, cross));
-            main_axis_offset += child.dimension().width;
+            child.set_position(Position::new(cross, position.y + main_axis_offset));
+            main_axis_offset += child.dimension().height;
             child.position_children();
         }
     }
 }
 
-CommonWidgetImpl!(HSplit, self, id: self.id, children: self.children, position: self.position, dimension: self.dimension);
+CommonWidgetImpl!(VSplit, self, id: self.id, children: self.children, position: self.position, dimension: self.dimension);
 
-impl WidgetExt for HSplit {}
+impl WidgetExt for VSplit {}

@@ -5,6 +5,7 @@ use std::fmt::Debug;
 use instant::Instant;
 
 use crate::{color, cursor};
+use crate::cursor::MouseCursor;
 use crate::draw::Dimension;
 use crate::event::{EventHandler, Input, Key, KeyboardEvent, ModifierKey, OtherEventHandler, WidgetEvent, WindowEvent};
 use crate::focus::{Focusable, Refocus};
@@ -26,9 +27,6 @@ use crate::widget::Widget;
 /// * Maintains the latest window dimensions.
 #[derive(Debug)]
 pub struct Ui {
-    /// Mouse cursor
-    mouse_cursor: cursor::MouseCursor,
-
     pub widgets: Box<dyn Widget>,
     event_handler: EventHandler,
     pub environment: Environment,
@@ -418,7 +416,6 @@ impl Ui {
         Ui {
             widgets: Rectangle::new()
                 .fill(EnvironmentColor::SystemBackground),
-            mouse_cursor: cursor::MouseCursor::Arrow,
             event_handler: EventHandler::new(),
             environment,
             any_focus: false,
@@ -468,6 +465,10 @@ impl Ui {
     pub fn delegate_events(&mut self) -> bool {
         let now = Instant::now();
         let events = self.event_handler.get_events();
+
+        if events.len() > 0 {
+            self.environment.set_cursor(MouseCursor::Arrow);
+        }
 
         for event in events {
             self.environment.capture_time();
@@ -595,6 +596,6 @@ impl Ui {
 
     /// Get mouse cursor state.
     pub fn mouse_cursor(&self) -> cursor::MouseCursor {
-        self.mouse_cursor
+        self.environment.cursor()
     }
 }

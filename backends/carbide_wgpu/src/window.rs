@@ -597,6 +597,7 @@ impl Window {
                     }
                     Event::RedrawRequested(_) => {
                         self.update();
+                        self.inner_window.set_cursor_icon(convert_mouse_cursor(self.ui.mouse_cursor()));
                         let time_since_last = last_frame_inst.elapsed().as_secs_f32();
                         if time_since_last * 1000.0 > 20.0 {
                             if time_since_last * 1000.0 > 50.0 {

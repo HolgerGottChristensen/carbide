@@ -271,25 +271,41 @@ macro_rules! v023_convert_event {
 macro_rules! v023_convert_mouse_cursor {
     ($cursor:expr) => {{
         match $cursor {
-            carbide_core::cursor::MouseCursor::Text => winit::window::CursorIcon::Text,
-            carbide_core::cursor::MouseCursor::VerticalText => {
-                winit::window::CursorIcon::VerticalText
-            }
+            carbide_core::cursor::MouseCursor::Default => winit::window::CursorIcon::Arrow,
+            carbide_core::cursor::MouseCursor::Crosshair => winit::window::CursorIcon::Crosshair,
             carbide_core::cursor::MouseCursor::Hand => winit::window::CursorIcon::Hand,
+            carbide_core::cursor::MouseCursor::Arrow => winit::window::CursorIcon::Arrow,
+            carbide_core::cursor::MouseCursor::Move => winit::window::CursorIcon::Move,
+            carbide_core::cursor::MouseCursor::Text => winit::window::CursorIcon::Text,
+            carbide_core::cursor::MouseCursor::Wait => winit::window::CursorIcon::Wait,
+            carbide_core::cursor::MouseCursor::Help => winit::window::CursorIcon::Help,
+            carbide_core::cursor::MouseCursor::Progress => winit::window::CursorIcon::Progress,
+            carbide_core::cursor::MouseCursor::NotAllowed => winit::window::CursorIcon::NotAllowed,
+            carbide_core::cursor::MouseCursor::ContextMenu => winit::window::CursorIcon::ContextMenu,
+            carbide_core::cursor::MouseCursor::Cell => winit::window::CursorIcon::Cell,
+            carbide_core::cursor::MouseCursor::VerticalText => winit::window::CursorIcon::VerticalText,
+            carbide_core::cursor::MouseCursor::Alias => winit::window::CursorIcon::Alias,
+            carbide_core::cursor::MouseCursor::Copy => winit::window::CursorIcon::Copy,
+            carbide_core::cursor::MouseCursor::NoDrop => winit::window::CursorIcon::NoDrop,
             carbide_core::cursor::MouseCursor::Grab => winit::window::CursorIcon::Grab,
             carbide_core::cursor::MouseCursor::Grabbing => winit::window::CursorIcon::Grabbing,
-            carbide_core::cursor::MouseCursor::ResizeVertical => {
-                winit::window::CursorIcon::NsResize
-            }
-            carbide_core::cursor::MouseCursor::ResizeHorizontal => {
-                winit::window::CursorIcon::EwResize
-            }
-            carbide_core::cursor::MouseCursor::ResizeTopLeftBottomRight => {
-                winit::window::CursorIcon::NwseResize
-            }
-            carbide_core::cursor::MouseCursor::ResizeTopRightBottomLeft => {
-                winit::window::CursorIcon::NeswResize
-            }
+            carbide_core::cursor::MouseCursor::AllScroll => winit::window::CursorIcon::AllScroll,
+            carbide_core::cursor::MouseCursor::ZoomIn => winit::window::CursorIcon::ZoomIn,
+            carbide_core::cursor::MouseCursor::ZoomOut => winit::window::CursorIcon::ZoomOut,
+            carbide_core::cursor::MouseCursor::EResize => winit::window::CursorIcon::EResize,
+            carbide_core::cursor::MouseCursor::NResize => winit::window::CursorIcon::NResize,
+            carbide_core::cursor::MouseCursor::NeResize => winit::window::CursorIcon::NeResize,
+            carbide_core::cursor::MouseCursor::NwResize => winit::window::CursorIcon::NwResize,
+            carbide_core::cursor::MouseCursor::SResize => winit::window::CursorIcon::SResize,
+            carbide_core::cursor::MouseCursor::SeResize => winit::window::CursorIcon::SeResize,
+            carbide_core::cursor::MouseCursor::SwResize => winit::window::CursorIcon::SwResize,
+            carbide_core::cursor::MouseCursor::WResize => winit::window::CursorIcon::WResize,
+            carbide_core::cursor::MouseCursor::EwResize => winit::window::CursorIcon::EwResize,
+            carbide_core::cursor::MouseCursor::NsResize => winit::window::CursorIcon::NsResize,
+            carbide_core::cursor::MouseCursor::NeswResize => winit::window::CursorIcon::NeswResize,
+            carbide_core::cursor::MouseCursor::NwseResize => winit::window::CursorIcon::NwseResize,
+            carbide_core::cursor::MouseCursor::ColResize => winit::window::CursorIcon::ColResize,
+            carbide_core::cursor::MouseCursor::RowResize => winit::window::CursorIcon::RowResize,
             _ => winit::window::CursorIcon::Arrow,
         }
     }};

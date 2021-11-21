@@ -29,6 +29,7 @@ pub use self::scroll::*;
 pub use self::spacer::*;
 pub use self::text::*;
 pub use self::transform::*;
+pub use self::v_split::*;
 pub use self::v_stack::*;
 pub use self::z_stack::*;
 
@@ -65,6 +66,7 @@ mod progress_view;
 mod background;
 mod empty;
 mod h_split;
+mod v_split;
 
 pub type Id = uuid::Uuid;
 pub type ColoredPoint = (Position, crate::color::Rgba);

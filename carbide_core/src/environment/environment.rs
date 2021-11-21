@@ -12,6 +12,7 @@ use oneshot::TryRecvError;
 
 use crate::{Color, image_map};
 use crate::animation::{Animatable, Animation};
+use crate::cursor::MouseCursor;
 use crate::draw::Dimension;
 use crate::draw::Scalar;
 use crate::environment::WidgetTransferAction;
@@ -105,6 +106,8 @@ pub struct Environment {
     /// window the next frame.
     queued_images: Option<Vec<DynamicImage>>,
 
+    cursor: MouseCursor,
+
     #[cfg(feature = "tokio")]
     tokio_runtime: tokio::runtime::Runtime,
 
@@ -150,6 +153,7 @@ impl Environment {
             async_task_queue: Some(vec![]),
             last_image_index: 0,
             queued_images: None,
+            cursor: MouseCursor::Arrow,
             #[cfg(feature = "tokio")]
             tokio_runtime: tokio::runtime::Builder::new_multi_thread()
                 .enable_all()
@@ -360,6 +364,14 @@ impl Environment {
 
     pub fn get_font_atlas(&self) -> &TextureAtlas {
         &self.font_texture_atlas
+    }
+
+    pub fn cursor(&self) -> MouseCursor {
+        self.cursor
+    }
+
+    pub fn set_cursor(&mut self, cursor: MouseCursor) {
+        self.cursor = cursor;
     }
 
     pub fn request_focus(&mut self, request_type: Refocus) {
