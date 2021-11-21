@@ -162,6 +162,90 @@ macro_rules! CommonWidgetImpl {
         }
     };
 
+    ($typ:ty, $self:ident, id: $id_expr:expr, children: $children:expr, position: $position:expr, dimension: $dimension:expr $(,flag: $flag:expr)? $(,flexibility: $flexibility:literal)?) => {
+        impl carbide_core::widget::CommonWidget for $typ {
+            fn id(&$self) -> carbide_core::widget::Id {
+                $id_expr
+            }
+
+            fn set_id(&mut $self, id: carbide_core::widget::Id) {
+                $id_expr = id;
+            }
+
+            $(
+                fn flag(&$self) -> carbide_core::flags::Flags {
+                    $flag
+                }
+            )?
+
+            $(
+                fn flexibility(&$self) -> u32 {
+                    $flexibility
+                }
+            )?
+
+            fn children(&$self) -> carbide_core::widget::WidgetIter {
+                let contains_proxy_or_ignored = $children.iter().fold(false, |a, b| a || (b.flag() == carbide_core::flags::Flags::PROXY || b.flag() == carbide_core::flags::Flags::IGNORE));
+                if !contains_proxy_or_ignored {
+                    carbide_core::widget::WidgetIter::Vec($children.iter())
+                } else {
+                    $children
+                        .iter()
+                        .filter(|x| x.flag() != carbide_core::flags::Flags::IGNORE)
+                        .rfold(carbide_core::widget::WidgetIter::Empty, |acc, x| {
+                            if x.flag() == carbide_core::flags::Flags::PROXY {
+                                carbide_core::widget::WidgetIter::Multi(Box::new(x.children()), Box::new(acc))
+                            } else {
+                                carbide_core::widget::WidgetIter::Single(x, Box::new(acc))
+                            }
+                        })
+                }
+            }
+
+            fn children_mut(&mut $self) -> carbide_core::widget::WidgetIterMut {
+                let contains_proxy_or_ignored = $children.iter().fold(false, |a, b| a || (b.flag() == carbide_core::flags::Flags::PROXY || b.flag() == carbide_core::flags::Flags::IGNORE));
+                if !contains_proxy_or_ignored {
+                    carbide_core::widget::WidgetIterMut::Vec($children.iter_mut())
+                } else {
+                    $children
+                        .iter_mut()
+                        .filter(|x| x.flag() != carbide_core::flags::Flags::IGNORE)
+                        .rfold(carbide_core::widget::WidgetIterMut::Empty, |acc, x| {
+                            if x.flag() == carbide_core::flags::Flags::PROXY {
+                                carbide_core::widget::WidgetIterMut::Multi(Box::new(x.children_mut()), Box::new(acc))
+                            } else {
+                                carbide_core::widget::WidgetIterMut::Single(x, Box::new(acc))
+                            }
+                        })
+                }
+            }
+
+            fn children_direct(&mut $self) -> carbide_core::widget::WidgetIterMut {
+                carbide_core::widget::WidgetIterMut::Vec($children.iter_mut())
+            }
+
+            fn children_direct_rev(&mut $self) -> carbide_core::widget::WidgetIterMut {
+                carbide_core::widget::WidgetIterMut::VecRev($children.iter_mut().rev())
+            }
+
+            fn position(&$self) -> carbide_core::draw::Position {
+                $position
+            }
+
+            fn set_position(&mut $self, position: carbide_core::draw::Position) {
+                $position = position;
+            }
+
+            fn dimension(&$self) -> carbide_core::draw::Dimension {
+                $dimension
+            }
+
+            fn set_dimension(&mut $self, dimension: carbide_core::draw::Dimension) {
+                $dimension = dimension
+            }
+        }
+    };
+
     ($typ:ty, $self:ident, id: $id_expr:expr, position: $position:expr, dimension: $dimension:expr $(,flag: $flag:expr)? $(,flexibility: $flexibility:literal)?) => {
         impl carbide_core::widget::CommonWidget for $typ {
             fn id(&$self) -> carbide_core::widget::Id {

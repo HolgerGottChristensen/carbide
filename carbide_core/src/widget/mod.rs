@@ -14,6 +14,7 @@ pub use self::environment_updating::*;
 pub use self::filter::*;
 pub use self::foreach::*;
 pub use self::frame::*;
+pub use self::h_split::*;
 pub use self::h_stack::*;
 pub use self::hidden::*;
 pub use self::if_else::*;
@@ -63,6 +64,7 @@ mod overlay;
 mod progress_view;
 mod background;
 mod empty;
+mod h_split;
 
 pub type Id = uuid::Uuid;
 pub type ColoredPoint = (Position, crate::color::Rgba);

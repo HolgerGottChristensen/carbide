@@ -42,7 +42,11 @@ impl Layout for ZStack {
         let mut max_height = 0.0;
 
         for (_, mut child) in children_flexibility {
-            let chosen_size = child.calculate_size(requested_size, env);
+            let new_requested_size = Dimension::new(
+                requested_size.width.max(max_width),
+                requested_size.height.max(max_height),
+            );
+            let chosen_size = child.calculate_size(new_requested_size, env);
 
             if chosen_size.width > max_width {
                 max_width = chosen_size.width;

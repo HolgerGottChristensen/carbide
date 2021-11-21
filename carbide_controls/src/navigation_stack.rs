@@ -1,96 +1,92 @@
-use carbide_core::Widget;
 use carbide_core::CommonWidgetImpl;
 use carbide_core::draw::{Dimension, Position};
-use carbide_core::environment::Environment;
+use carbide_core::environment::{Environment, WidgetTransferAction};
 use carbide_core::flags::Flags;
 use carbide_core::prelude::TState;
+use carbide_core::render::{Primitive, Render};
 use carbide_core::state::{LocalState, MapState, State, StateExt, StateSync, UsizeState};
-use carbide_core::widget::{CommonWidget, CornerRadii, EdgeInsets, HStack, Id, IfElse, Rectangle, RoundedRectangle, Spacer, Text, Widget, WidgetExt, WidgetIter, WidgetIterMut, ZStack};
-
-
+use carbide_core::Widget;
+use carbide_core::widget::{CommonWidget, CornerRadii, EdgeInsets, Empty, HStack, Id, IfElse, Rectangle, RoundedRectangle, Spacer, Text, Widget, WidgetExt, WidgetIter, WidgetIterMut, ZStack};
 
 #[derive(Debug, Clone, Widget)]
-#[carbide_exclude(StateSync)]
+#[carbide_exclude(Render)]
 pub struct NavigationStack {
     id: Id,
     position: Position,
     dimension: Dimension,
-    stack: TState<Vec<Box<dyn Widget>>>,
-    child: TState<Box<dyn Widget>>,
-    child_index: UsizeState,
+    stack: Vec<Box<dyn Widget>>,
+    top: Box<dyn Widget>,
+    transfer_id: Option<String>,
 }
 
 impl NavigationStack {
-    pub fn empty() -> Box<NavigationStack> {
-        todo!()
-    }
-
-    pub fn new(stack: TState<Vec<Box<dyn Widget>>>) -> Box<NavigationStack> {
-
-        let child_index = LocalState::new(0);
-        let child = stack.index(child_index.clone());
+    pub fn new(initial: Box<dyn Widget>) -> Box<NavigationStack> {
         Box::new(NavigationStack {
             id: Id::new_v4(),
             position: Default::default(),
             dimension: Default::default(),
-            stack,
-            child,
-            child_index,
+            stack: vec![],
+            top: initial,
+            transfer_id: None,
         })
     }
-}
 
-impl CommonWidget for NavigationStack {
-    fn id(&self) -> Id {
-        self.id
-    }
-
-    fn set_id(&mut self, id: Id) {
-        self.id = id;
-    }
-
-    fn children(&self) -> WidgetIter {
-        WidgetIter::Borrow(self.child.value())
-    }
-
-    fn children_mut(&mut self) -> WidgetIterMut {
-        WidgetIterMut::Borrow(self.child.value_mut())
-    }
-
-    fn children_direct(&mut self) -> WidgetIterMut {
-        WidgetIterMut::Borrow(self.child.value_mut())
-    }
-
-    fn children_direct_rev(&mut self) -> WidgetIterMut {
-        WidgetIterMut::Borrow(self.child.value_mut())
-    }
-
-    fn position(&self) -> Position {
-        self.position
-    }
-
-    fn set_position(&mut self, position: Position) {
-        self.position = position;
-    }
-
-    fn dimension(&self) -> Dimension {
-        self.dimension
-    }
-
-    fn set_dimension(&mut self, dimension: Dimension) {
-        self.dimension = dimension
+    pub fn transfer_id(mut self, transfer_id: impl Into<String>) -> Box<Self> {
+        self.transfer_id = Some(transfer_id.into());
+        Box::new(self)
     }
 }
 
-impl StateSync for NavigationStack {
-    fn capture_state(&mut self, env: &mut Environment) {
-        let i = self.stack.value().len() - 1;
-        self.child_index.set_value(i)
-    }
+impl Render for NavigationStack {
+    fn process_get_primitives(&mut self, primitives: &mut Vec<Primitive>, env: &mut Environment) {
+        // Draw first because we are sure it is layed out.
+        self.top.process_get_primitives(primitives, env);
 
-    fn release_state(&mut self, env: &mut Environment) {
-
+        // Take out the transferred widget with the key if it exists
+        if let Some(action) = env.transferred_widget(self.transfer_id.clone()) {
+            match action {
+                WidgetTransferAction::Push(mut widget) => {
+                    let top = &mut self.top;
+                    std::mem::swap(top, &mut widget);
+                    self.stack.push(widget)
+                }
+                WidgetTransferAction::Pop => {
+                    if let Some(new_top) = self.stack.pop() {
+                        self.top = new_top
+                    }
+                }
+                WidgetTransferAction::Replace(widget) => {
+                    self.top = widget
+                }
+                WidgetTransferAction::PushVec(vec) => {
+                    for mut widget in vec {
+                        let top = &mut self.top;
+                        std::mem::swap(top, &mut widget);
+                        self.stack.push(widget)
+                    }
+                }
+                WidgetTransferAction::PopN(n) => {
+                    for _ in 0..n {
+                        if let Some(new_top) = self.stack.pop() {
+                            self.top = new_top
+                        }
+                    }
+                }
+                WidgetTransferAction::PopAll => {
+                    if self.stack.len() > 0 {
+                        self.top = self.stack.remove(0);
+                        self.stack = vec![];
+                    }
+                }
+                WidgetTransferAction::ReplaceAll(widget) => {
+                    self.stack = vec![];
+                    self.top = widget
+                }
+            }
+        }
     }
 }
+
+CommonWidgetImpl!(NavigationStack, self, id: self.id, child: self.top, position: self.position, dimension: self.dimension);
 
 impl WidgetExt for NavigationStack {}

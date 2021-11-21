@@ -14,6 +14,7 @@ use crate::{Color, image_map};
 use crate::animation::{Animatable, Animation};
 use crate::draw::Dimension;
 use crate::draw::Scalar;
+use crate::environment::WidgetTransferAction;
 use crate::focus::Refocus;
 use crate::mesh::TextureAtlas;
 use crate::prelude::{EnvironmentColor, EnvironmentVariable};
@@ -53,6 +54,12 @@ pub struct Environment {
     /// A map from String to a widget.
     /// This key should correspond to the targeted overlay_layer
     overlay_map: FxHashMap<String, Option<Overlay>>,
+
+    /// A transfer place for widgets. It is a map with key Option<String>. If None it means the
+    /// action should be picked up by the closest parent consumer. If Some it will look at the Id
+    /// and only consume if the id matches. The consumer should first take out the None key if
+    /// exists, and afterwards take out the special keyed value.
+    widget_transfer: FxHashMap<Option<String>, WidgetTransferAction>,
 
     /// Keep local state as a map from String, to a vector of bytes.
     /// The vector is used as a serializing target for the state value.
@@ -133,6 +140,7 @@ impl Environment {
             images_information: HashMap::with_hasher(FxBuildHasher::default()),
             overlay_map: HashMap::with_hasher(FxBuildHasher::default()),
             //local_state: HashMap::with_hasher(FxBuildHasher::default()),
+            widget_transfer: HashMap::with_hasher(FxBuildHasher::default()),
             focus_request: None,
             pixel_dimensions,
             scale_factor,
@@ -374,6 +382,14 @@ impl Environment {
 
     pub fn add_overlay(&mut self, id: &str, overlay: Option<Overlay>) {
         self.overlay_map.insert(id.to_string(), overlay);
+    }
+
+    pub fn transferred_widget(&mut self, id: Option<String>) -> Option<WidgetTransferAction> {
+        self.widget_transfer.remove(&id)
+    }
+
+    pub fn transfer_widget(&mut self, id: Option<String>, widget_transfer: WidgetTransferAction) {
+        self.widget_transfer.insert(id, widget_transfer);
     }
 
     pub fn clear(&mut self) {}

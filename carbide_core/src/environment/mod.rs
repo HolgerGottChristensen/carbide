@@ -6,6 +6,7 @@ pub use environment_font_size_state::EnvironmentFontSizeState;
 pub use environment_variable::EnvironmentVariable;
 
 use crate::prelude::{ColorState, F64State, I32State, StringState, U32State};
+use crate::widget::Widget;
 
 mod environment;
 mod environment_color;
@@ -13,6 +14,17 @@ mod environment_color_state;
 mod environment_font_size;
 mod environment_font_size_state;
 mod environment_variable;
+
+#[derive(Debug, Clone)]
+pub enum WidgetTransferAction {
+    Push(Box<dyn Widget>),
+    Pop,
+    Replace(Box<dyn Widget>),
+    PushVec(Vec<Box<dyn Widget>>),
+    PopN(usize),
+    PopAll,
+    ReplaceAll(Box<dyn Widget>),
+}
 
 #[derive(Debug, Clone)]
 pub enum EnvironmentStateContainer {
