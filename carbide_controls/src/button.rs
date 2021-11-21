@@ -1,6 +1,7 @@
 use std::fmt::{Debug, Formatter};
 
 use carbide_core::{DeserializeOwned, Serialize};
+use carbide_core::cursor::MouseCursor;
 use carbide_core::draw::{Dimension, Position};
 use carbide_core::environment::Environment;
 use carbide_core::flags::Flags;
@@ -27,6 +28,8 @@ pub struct Button {
     is_pressed: BoolState,
     #[state]
     label: StringState,
+    hover_cursor: MouseCursor,
+    pressed_cursor: Option<MouseCursor>,
 }
 
 impl Button {
@@ -43,6 +46,8 @@ impl Button {
             pressed_state,
             Box::new(|_| {}),
             label,
+            MouseCursor::Hand,
+            None,
         )
     }
 
@@ -58,6 +63,8 @@ impl Button {
             self.is_pressed,
             self.click,
             self.label,
+            self.hover_cursor,
+            self.pressed_cursor,
         )
     }
 
@@ -70,6 +77,8 @@ impl Button {
             self.is_pressed,
             self.click,
             self.label,
+            self.hover_cursor,
+            self.pressed_cursor,
         )
     }
 
@@ -82,6 +91,36 @@ impl Button {
             self.is_pressed,
             self.click,
             self.label,
+            self.hover_cursor,
+            self.pressed_cursor,
+        )
+    }
+
+    pub fn hover_cursor(mut self, cursor: MouseCursor) -> Box<Self> {
+        self.hover_cursor = cursor;
+        Self::new_internal(
+            self.is_primary,
+            self.focus,
+            self.is_hovered,
+            self.is_pressed,
+            self.click,
+            self.label,
+            self.hover_cursor,
+            self.pressed_cursor,
+        )
+    }
+
+    pub fn pressed_cursor(mut self, cursor: MouseCursor) -> Box<Self> {
+        self.pressed_cursor = Some(cursor);
+        Self::new_internal(
+            self.is_primary,
+            self.focus,
+            self.is_hovered,
+            self.is_pressed,
+            self.click,
+            self.label,
+            self.hover_cursor,
+            self.pressed_cursor,
         )
     }
 
@@ -94,6 +133,8 @@ impl Button {
             self.is_pressed,
             self.click,
             self.label,
+            self.hover_cursor,
+            self.pressed_cursor,
         )
     }
 
@@ -104,6 +145,8 @@ impl Button {
         pressed_state: BoolState,
         clicked: Box<dyn Action>,
         label: StringState,
+        hover_cursor: MouseCursor,
+        pressed_cursor: Option<MouseCursor>,
     ) -> Box<Self> {
         let normal_color = if is_primary {
             EnvironmentColor::Accent
@@ -137,7 +180,14 @@ impl Button {
             .hover(hover_state.clone())
             .pressed(pressed_state.clone())
             .on_click(clicked.clone())
-            .focused(focus_state.clone());
+            .focused(focus_state.clone())
+            .hover_cursor(hover_cursor);
+
+        let child = if let Some(cursor) = pressed_cursor {
+            child.pressed_cursor(cursor)
+        } else {
+            child
+        };
 
         Box::new(Button {
             id: Uuid::new_v4(),
@@ -150,6 +200,8 @@ impl Button {
             is_hovered: hover_state,
             is_pressed: pressed_state,
             label,
+            hover_cursor,
+            pressed_cursor,
         })
     }
     /*

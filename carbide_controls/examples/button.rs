@@ -6,7 +6,7 @@ extern crate futures;
 use carbide_controls::{Button, PlainButton};
 use carbide_core::color::RED;
 use carbide_core::focus::Focus;
-use carbide_core::state::{BoolState, FocusState, I32State, LocalState, MapOwnedState, State};
+use carbide_core::state::{BoolState, FocusState, I32State, LocalState, MapOwnedState, State, StateExt};
 use carbide_core::text::{FontFamily, FontStyle, FontWeight};
 use carbide_core::widget::*;
 use carbide_core::window::TWindow;

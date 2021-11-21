@@ -3,9 +3,10 @@ use std::fmt::Debug;
 use dyn_clone::DynClone;
 
 use carbide_core::__private::Formatter;
+use carbide_core::cursor::MouseCursor;
 use carbide_core::draw::{Dimension, Position};
 use carbide_core::environment::Environment;
-use carbide_core::event::{Key, KeyboardEvent, KeyboardEventHandler, MouseButton, MouseEvent, MouseEventHandler};
+use carbide_core::event::{Key, KeyboardEvent, KeyboardEventHandler, MouseButton, MouseEvent, MouseEventHandler, OtherEventHandler, WidgetEvent};
 use carbide_core::flags::Flags;
 use carbide_core::focus::Focus;
 use carbide_core::layout::Layout;
@@ -19,7 +20,7 @@ impl<I> Action for I where I: Fn(&mut Environment) + Clone {}
 dyn_clone::clone_trait_object!(Action);
 
 #[derive(Clone, Widget)]
-#[carbide_exclude(MouseEvent, KeyboardEvent)]
+#[carbide_exclude(MouseEvent, KeyboardEvent, OtherEvent)]
 pub struct PlainButton {
     id: Id,
     #[state]
@@ -33,6 +34,8 @@ pub struct PlainButton {
     is_hovered: BoolState,
     #[state]
     is_pressed: BoolState,
+    hover_cursor: MouseCursor,
+    pressed_cursor: Option<MouseCursor>,
 }
 
 impl PlainButton {
@@ -67,6 +70,16 @@ impl PlainButton {
         Box::new(self)
     }
 
+    pub fn hover_cursor(mut self, cursor: MouseCursor) -> Box<Self> {
+        self.hover_cursor = cursor;
+        Box::new(self)
+    }
+
+    pub fn pressed_cursor(mut self, cursor: MouseCursor) -> Box<Self> {
+        self.pressed_cursor = Some(cursor);
+        Box::new(self)
+    }
+
     pub fn new(child: Box<dyn Widget>) -> Box<Self> {
         Box::new(PlainButton {
             id: Id::new_v4(),
@@ -78,7 +91,22 @@ impl PlainButton {
             click_outside: Box::new(|_| {}),
             is_hovered: false.into(),
             is_pressed: false.into(),
+            hover_cursor: MouseCursor::Hand,
+            pressed_cursor: None,
         })
+    }
+}
+
+impl OtherEventHandler for PlainButton {
+    fn handle_other_event(&mut self, _event: &WidgetEvent, env: &mut Environment) {
+        if *self.is_hovered.value() {
+            env.set_cursor(self.hover_cursor);
+        }
+        if *self.is_pressed.value() {
+            if let Some(cursor) = self.pressed_cursor {
+                env.set_cursor(cursor);
+            }
+        }
     }
 }
 
