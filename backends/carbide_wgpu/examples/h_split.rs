@@ -29,10 +29,11 @@ fn main() {
                 Rectangle::new().fill(EnvironmentColor::Green),
                 Text::new(percent.mapped(|t: &f64| { format!("{:.2}", t) })).wrap_mode(Wrap::None),
             ]),
-            HSplit::new(
+            ZStack::new(vec![
                 Rectangle::new().fill(EnvironmentColor::Accent),
-                Rectangle::new().fill(EnvironmentColor::Yellow),
-            ),
+                Rectangle::new().fill(EnvironmentColor::Yellow)
+                    .frame(100.0, 100.0),
+            ]),
         ).percent(percent)
     );
 

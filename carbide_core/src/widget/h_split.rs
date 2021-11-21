@@ -80,11 +80,22 @@ impl MouseEventHandler for HSplit {
 
 impl Layout for HSplit {
     fn calculate_size(&mut self, requested_size: Dimension, env: &mut Environment) -> Dimension {
-        let leading_size = Dimension::new(requested_size.width * *self.split.value(), requested_size.height);
-        let leading = self.children[0].calculate_size(leading_size, env);
+        let requested_leading_width = requested_size.width * *self.split.value();
+        let requested_trailing_width = requested_size.width * (1.0 - *self.split.value());
 
-        let trailing_size = Dimension::new(requested_size.width - leading.width, requested_size.height);
-        let trailing = self.children[1].calculate_size(trailing_size, env);
+        let leading_size = Dimension::new(requested_leading_width, requested_size.height);
+        let mut leading = self.children[0].calculate_size(leading_size, env);
+
+        let trailing_size = Dimension::new(requested_trailing_width, requested_size.height);
+        let mut trailing = self.children[1].calculate_size(trailing_size, env);
+
+        if leading.width > requested_leading_width {
+            let trailing_size = Dimension::new(requested_size.width - leading.width, requested_size.height);
+            trailing = self.children[1].calculate_size(trailing_size, env);
+        } else if trailing.width > requested_trailing_width {
+            let leading_size = Dimension::new(requested_size.width - trailing.width, requested_size.height);
+            leading = self.children[0].calculate_size(leading_size, env);
+        }
 
         self.set_dimension(Dimension::new(requested_size.width, leading.height.max(trailing.height)));
         self.dimension
