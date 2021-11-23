@@ -3,6 +3,7 @@ use std::future::Future;
 use crate::prelude::Environment;
 
 pub mod executor;
+pub mod thread_task;
 
 #[macro_export]
 macro_rules! task {

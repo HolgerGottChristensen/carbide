@@ -39,6 +39,7 @@ use crate::renderer::{atlas_cache_tex_desc, main_render_tex_desc, secondary_rend
 use crate::samplers::main_sampler;
 use crate::textures::create_depth_stencil_texture;
 use crate::vertex::Vertex;
+use winit::platform::windows::WindowExtWindows;
 
 // Todo: Look into multisampling: https://github.com/gfx-rs/wgpu-rs/blob/v0.6/examples/msaa-line/main.rs
 // An alternative is https://github.com/fintelia/smaa-rs (https://github.com/gfx-rs/naga/issues/1275)
@@ -224,7 +225,11 @@ impl Window {
         #[cfg(target_os = "macos")]
             let ui = Ui::new(pixel_dimensions, scale_factor, Some(inner_window.ns_window()));
 
-        #[cfg(not(target_os = "macos"))]
+        #[cfg(target_os = "windows")]
+            let ui = Ui::new(pixel_dimensions, scale_factor, Some(inner_window.hwnd()));
+
+
+        #[cfg(all(not(target_os = "macos"), not(target_os = "windows")))]
             let ui = Ui::new(pixel_dimensions, scale_factor, None);
 
         // The instance is a handle to our GPU

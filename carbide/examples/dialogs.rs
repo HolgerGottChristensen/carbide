@@ -9,7 +9,6 @@ use carbide::dialog::emoji_dialog::EmojiDialog;
 use carbide::dialog::FileSpecification;
 use carbide::dialog::open_dialog::OpenDialog;
 use carbide::dialog::save_dialog::SaveDialog;
-use carbide::platform::mac::{open_open_panel, open_save_panel};
 use carbide::prelude::elastic_in_out;
 use carbide::SpawnTask;
 use carbide::state::{bounce_in, bounce_in_out, bounce_out, ease_in_out, linear, ValueState};
@@ -43,13 +42,17 @@ fn main() {
     let family = FontFamily::new_from_paths("NotoSans", vec!["fonts/NotoSans/NotoSans-Regular.ttf"]);
     window.add_font_family(family);
 
-    let mut family = FontFamily::new("Apple Color Emoji");
-    family.add_bitmap_font_with_hints(
-        "/System/Library/Fonts/Apple Color Emoji.ttc",
-        FontWeight::Normal,
-        FontStyle::Normal,
-    );
-    window.add_font_family(family);
+    #[cfg(target_os = "macos")]
+    {
+        let mut family = FontFamily::new("Apple Color Emoji");
+        family.add_bitmap_font_with_hints(
+            "/System/Library/Fonts/Apple Color Emoji.ttc",
+            FontWeight::Normal,
+            FontStyle::Normal,
+        );
+        window.add_font_family(family);
+    }
+
 
     let text_state = LocalState::new("Hello world!".to_string());
     let color = LocalState::new(GREEN);
@@ -99,6 +102,7 @@ fn main() {
                 })
                 .accent_color(color)
                 .frame(200.0, 22.0),
+            ProgressView::new(),
         ]).spacing(10.0)
     );
 

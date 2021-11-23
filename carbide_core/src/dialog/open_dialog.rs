@@ -9,6 +9,8 @@ use crate::dialog::FileSpecification;
 use crate::environment::Environment;
 #[cfg(target_os = "macos")]
 use crate::platform::mac::open_open_panel;
+#[cfg(target_os = "windows")]
+use crate::platform::windows::open_open_panel;
 
 pub type FuturePath = Map<Receiver<Option<Vec<OsString>>>, fn(Result<Option<Vec<OsString>>, RecvError>) -> Option<Vec<PathBuf>>>;
 
@@ -163,7 +165,20 @@ impl OpenDialog {
             })
     }
 
-    #[cfg(not(target_os = "macos"))]
+    #[cfg(target_os = "windows")]
+    pub fn open(mut self, env: &Environment) -> FuturePath {
+        open_open_panel(env, self).map(|a| {
+            a.ok()
+                .flatten()
+                .map(|a| {
+                    a.iter()
+                        .map(|o| PathBuf::from(o))
+                        .collect::<Vec<_>>()
+                })
+        })
+    }
+
+    #[cfg(all(not(target_os = "macos"), not(target_os = "windows")))]
     pub fn open(mut self, env: &Environment) -> FuturePath {
        todo!()
     }

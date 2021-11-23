@@ -6,8 +6,8 @@ pub mod font_dialog;
 
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct FileSpecification {
-    name: &'static str,
-    extensions: &'static [&'static str],
+    pub(crate) name: &'static str,
+    pub(crate) extensions: &'static [&'static str],
 }
 
 impl FileSpecification {

@@ -115,6 +115,8 @@ pub struct Environment {
 
     #[cfg(target_os = "macos")]
     macos_window_handle: Option<*mut c_void>,
+    #[cfg(target_os = "windows")]
+    windows_window_handle: Option<*mut c_void>,
 }
 
 impl std::fmt::Debug for Environment {
@@ -161,12 +163,18 @@ impl Environment {
             animations: Some(vec![]),
             #[cfg(target_os = "macos")]
             macos_window_handle: window_handle,
+            windows_window_handle: window_handle
         }
     }
 
     #[cfg(target_os = "macos")]
     pub fn ns_window(&self) -> *mut c_void {
         self.macos_window_handle.expect("No window for the environment")
+    }
+
+    #[cfg(target_os = "windows")]
+    pub fn hwnd(&self) -> *mut c_void {
+        self.windows_window_handle.expect("No window for the environment")
     }
 
     pub fn set_last_image_index(&mut self, next_index: u32) {
