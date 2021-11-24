@@ -39,6 +39,7 @@ use crate::renderer::{atlas_cache_tex_desc, main_render_tex_desc, secondary_rend
 use crate::samplers::main_sampler;
 use crate::textures::create_depth_stencil_texture;
 use crate::vertex::Vertex;
+#[cfg(target_os = "windows")]
 use winit::platform::windows::WindowExtWindows;
 
 // Todo: Look into multisampling: https://github.com/gfx-rs/wgpu-rs/blob/v0.6/examples/msaa-line/main.rs

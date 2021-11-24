@@ -1,4 +1,5 @@
 use carbide_core::environment::EnvironmentColor;
+use carbide_core::prelude::TState;
 use carbide_core::state::{LocalState, StateExt};
 use carbide_core::text::FontFamily;
 use carbide_core::widget::*;
@@ -21,21 +22,32 @@ fn main() {
     ]);
     window.add_font_family(family);
 
+    let width1 = LocalState::new(0.1);
     let percent = LocalState::new(0.1);
+    let width2 = LocalState::new(0.1);
 
     window.set_widgets(
-        HSplit::new(
-            ZStack::new(vec![
-                Rectangle::new().fill(EnvironmentColor::Green),
-                Text::new(percent.mapped(|t: &f64| { format!("{:.2}", t) })).wrap_mode(Wrap::None),
-            ]),
-            ZStack::new(vec![
-                Rectangle::new().fill(EnvironmentColor::Accent),
-                Rectangle::new().fill(EnvironmentColor::Yellow)
-                    .frame(100.0, 100.0),
-            ]),
-        ).percent(percent)
+        VStack::new(vec![
+            h_split(&width1).relative_to_start(width1),
+            h_split(&percent).percent(percent),
+            h_split(&width2).relative_to_end(width2),
+        ]),
+
     );
 
     window.launch();
+}
+
+fn h_split(size: &TState<f64>) -> Box<HSplit> {
+    HSplit::new(
+        ZStack::new(vec![
+            Rectangle::new().fill(EnvironmentColor::Green),
+            Text::new(size.mapped(|t: &f64| { format!("{:.2}", t) })).wrap_mode(Wrap::None),
+        ]),
+        ZStack::new(vec![
+            Rectangle::new().fill(EnvironmentColor::Accent),
+            Rectangle::new().fill(EnvironmentColor::Yellow)
+                .frame(100.0, 100.0),
+        ]),
+    )
 }

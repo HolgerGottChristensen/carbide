@@ -11,6 +11,7 @@ pub use shape_style::*;
 pub use stroke_style::*;
 pub use text_wrap::*;
 pub use triangle_store::*;
+pub use split_type::*;
 
 mod corner_radii;
 mod cross_axis_alignment;
@@ -25,3 +26,4 @@ mod text_wrap;
 mod triangle_store;
 mod filter;
 mod blur_type;
+mod split_type;

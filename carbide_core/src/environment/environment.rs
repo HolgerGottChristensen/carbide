@@ -163,6 +163,7 @@ impl Environment {
             animations: Some(vec![]),
             #[cfg(target_os = "macos")]
             macos_window_handle: window_handle,
+            #[cfg(target_os = "windows")]
             windows_window_handle: window_handle
         }
     }

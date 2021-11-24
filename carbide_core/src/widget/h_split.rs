@@ -5,7 +5,7 @@ use crate::environment::Environment;
 use crate::event::{MouseEvent, MouseEventHandler, OtherEventHandler, WidgetEvent};
 use crate::layout::Layout;
 use crate::state::{F64State, LocalState, State};
-use crate::widget::{CommonWidget, CrossAxisAlignment, Id, Widget, WidgetExt};
+use crate::widget::{CommonWidget, CrossAxisAlignment, Id, SplitType, Widget, WidgetExt};
 use crate::Widget;
 
 #[derive(Clone, Debug, Widget)]
@@ -16,7 +16,7 @@ pub struct HSplit {
     dimension: Dimension,
     // Leading - Trailing
     children: Vec<Box<dyn Widget>>,
-    split: F64State,
+    split: SplitType,
     cross_axis_alignment: CrossAxisAlignment,
     dragging: bool,
     hovering: bool,
@@ -25,11 +25,19 @@ pub struct HSplit {
 impl HSplit {
     pub fn new(leading: Box<dyn Widget>, trailing: Box<dyn Widget>) -> Box<Self> {
         let split = LocalState::new(0.1);
-        Self::new_internal(leading, trailing, split)
+        Self::new_internal(leading, trailing, SplitType::Percent(split))
+    }
+
+    pub fn relative_to_start(mut self, width: impl Into<F64State>) -> Box<Self> {
+        Self::new_internal(self.children.remove(0), self.children.remove(0), SplitType::Start(width.into()))
     }
 
     pub fn percent(mut self, percent: impl Into<F64State>) -> Box<Self> {
-        Self::new_internal(self.children.remove(0), self.children.remove(0), percent.into())
+        Self::new_internal(self.children.remove(0), self.children.remove(0), SplitType::Percent(percent.into()))
+    }
+
+    pub fn relative_to_end(mut self, width: impl Into<F64State>) -> Box<Self> {
+        Self::new_internal(self.children.remove(0), self.children.remove(0), SplitType::End(width.into()))
     }
 
     pub fn cross_axis_alignment(mut self, alignment: CrossAxisAlignment) -> Box<Self> {
@@ -37,13 +45,13 @@ impl HSplit {
         Box::new(self)
     }
 
-    fn new_internal(leading: Box<dyn Widget>, trailing: Box<dyn Widget>, split: impl Into<F64State>) -> Box<Self> {
+    fn new_internal(leading: Box<dyn Widget>, trailing: Box<dyn Widget>, split: SplitType) -> Box<Self> {
         Box::new(HSplit {
             id: Id::new_v4(),
             position: Default::default(),
             dimension: Default::default(),
             children: vec![leading, trailing],
-            split: split.into(),
+            split,
             cross_axis_alignment: CrossAxisAlignment::Center,
             dragging: false,
             hovering: false,
@@ -70,7 +78,9 @@ impl MouseEventHandler for HSplit {
                 let split = self.children[0].dimension();
 
                 if relative_to_position.x > split.width - press_margin &&
-                    relative_to_position.x < split.width + press_margin {
+                    relative_to_position.x < split.width + press_margin &&
+                    relative_to_position.y <= split.height &&
+                    relative_to_position.y > 0.0 {
                     self.dragging = true;
                 }
             }
@@ -82,7 +92,9 @@ impl MouseEventHandler for HSplit {
                 let split = self.children[0].dimension();
 
                 if relative_to_position.x > split.width - press_margin &&
-                    relative_to_position.x < split.width + press_margin {
+                    relative_to_position.x < split.width + press_margin &&
+                    relative_to_position.y <= split.height &&
+                    relative_to_position.y > 0.0 {
                     self.hovering = true;
                 } else {
                     self.hovering = false;
@@ -90,9 +102,22 @@ impl MouseEventHandler for HSplit {
 
                 if !self.dragging { return; }
 
-                let percent = relative_to_position.x / self.dimension.width;
+                let width = self.width();
 
-                self.split.set_value(percent.max(0.0).min(1.0))
+                match &mut self.split {
+                    SplitType::Start(offset) => {
+                        let new_offset = relative_to_position.x;
+                        offset.set_value(new_offset.max(0.0).min(width));
+                    }
+                    SplitType::Percent(percent) => {
+                        let p = relative_to_position.x / self.dimension.width;
+                        percent.set_value(p.max(0.0).min(1.0));
+                    }
+                    SplitType::End(offset) => {
+                        let new_offset = width - relative_to_position.x;
+                        offset.set_value(new_offset.max(0.0).min(width));
+                    }
+                }
             }
             _ => ()
         }
@@ -101,8 +126,20 @@ impl MouseEventHandler for HSplit {
 
 impl Layout for HSplit {
     fn calculate_size(&mut self, requested_size: Dimension, env: &mut Environment) -> Dimension {
-        let requested_leading_width = requested_size.width * *self.split.value();
-        let requested_trailing_width = requested_size.width * (1.0 - *self.split.value());
+
+        let (requested_leading_width, requested_trailing_width) = match &self.split {
+            SplitType::Start(offset) => {
+                (*offset.value(), requested_size.width - *offset.value())
+            }
+            SplitType::Percent(percent) => {
+                let leading = requested_size.width * *percent.value();
+                let trailing = requested_size.width * (1.0 - *percent.value());
+                (leading, trailing)
+            }
+            SplitType::End(offset) => {
+                (requested_size.width - *offset.value(), *offset.value())
+            }
+        };
 
         let leading_size = Dimension::new(requested_leading_width, requested_size.height);
         let mut leading = self.children[0].calculate_size(leading_size, env);
