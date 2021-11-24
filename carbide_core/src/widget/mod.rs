@@ -32,6 +32,7 @@ pub use self::transform::*;
 pub use self::v_split::*;
 pub use self::v_stack::*;
 pub use self::z_stack::*;
+pub use self::progress_bar::*;
 
 pub mod canvas;
 mod common;
@@ -67,6 +68,7 @@ mod background;
 mod empty;
 mod h_split;
 mod v_split;
+mod progress_bar;
 
 pub type Id = uuid::Uuid;
 pub type ColoredPoint = (Position, crate::color::Rgba);

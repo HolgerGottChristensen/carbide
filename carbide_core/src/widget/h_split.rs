@@ -20,24 +20,29 @@ pub struct HSplit {
     cross_axis_alignment: CrossAxisAlignment,
     dragging: bool,
     hovering: bool,
+    draggable: bool,
 }
 
 impl HSplit {
     pub fn new(leading: Box<dyn Widget>, trailing: Box<dyn Widget>) -> Box<Self> {
         let split = LocalState::new(0.1);
-        Self::new_internal(leading, trailing, SplitType::Percent(split))
+        Self::new_internal(leading, trailing, SplitType::Percent(split), true)
     }
 
     pub fn relative_to_start(mut self, width: impl Into<F64State>) -> Box<Self> {
-        Self::new_internal(self.children.remove(0), self.children.remove(0), SplitType::Start(width.into()))
+        Self::new_internal(self.children.remove(0), self.children.remove(0), SplitType::Start(width.into()), self.draggable)
     }
 
     pub fn percent(mut self, percent: impl Into<F64State>) -> Box<Self> {
-        Self::new_internal(self.children.remove(0), self.children.remove(0), SplitType::Percent(percent.into()))
+        Self::new_internal(self.children.remove(0), self.children.remove(0), SplitType::Percent(percent.into()), self.draggable)
+    }
+
+    pub fn non_draggable(mut self) -> Box<Self> {
+        Self::new_internal(self.children.remove(0), self.children.remove(0), self.split, false)
     }
 
     pub fn relative_to_end(mut self, width: impl Into<F64State>) -> Box<Self> {
-        Self::new_internal(self.children.remove(0), self.children.remove(0), SplitType::End(width.into()))
+        Self::new_internal(self.children.remove(0), self.children.remove(0), SplitType::End(width.into()), self.draggable)
     }
 
     pub fn cross_axis_alignment(mut self, alignment: CrossAxisAlignment) -> Box<Self> {
@@ -45,7 +50,7 @@ impl HSplit {
         Box::new(self)
     }
 
-    fn new_internal(leading: Box<dyn Widget>, trailing: Box<dyn Widget>, split: SplitType) -> Box<Self> {
+    fn new_internal(leading: Box<dyn Widget>, trailing: Box<dyn Widget>, split: SplitType, draggable: bool) -> Box<Self> {
         Box::new(HSplit {
             id: Id::new_v4(),
             position: Default::default(),
@@ -55,6 +60,7 @@ impl HSplit {
             cross_axis_alignment: CrossAxisAlignment::Center,
             dragging: false,
             hovering: false,
+            draggable,
         })
     }
 }
@@ -69,6 +75,10 @@ impl OtherEventHandler for HSplit {
 
 impl MouseEventHandler for HSplit {
     fn handle_mouse_event(&mut self, event: &MouseEvent, _consumed: &bool, _env: &mut Environment) {
+        if !self.draggable {
+            return;
+        }
+
         let press_margin = 5.0;
 
         match event {
