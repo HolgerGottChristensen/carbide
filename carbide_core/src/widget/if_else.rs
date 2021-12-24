@@ -1,6 +1,7 @@
 use crate::draw::{Dimension, Position};
 use crate::prelude::*;
 use crate::widget::Widget;
+use carbide_derive::Widget;
 
 /// A basic, non-interactive rectangle shape widget.
 #[derive(Debug, Clone, Widget)]

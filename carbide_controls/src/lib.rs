@@ -24,6 +24,7 @@ macro_rules! capture {
             $($(let $t = $t.clone();)*)?
             $($(let $u = $u.clone();)*)?
             move |$($a: $typ),*| {
+                use carbide_core::prelude::State;
                 $($(let mut $t = $t.clone();)*)?
                 $($(let mut $u = $u.clone();)*)?
                 {

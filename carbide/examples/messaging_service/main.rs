@@ -34,7 +34,7 @@ fn main() {
 
     let text_state = LocalState::new("Write Message".to_string());
 
-    let mut texfield_container = HStack::new(vec![
+    let mut textfield_container = HStack::new(vec![
        TextInput::new(text_state.clone()),
        Button::new("Send")
            .on_click(capture!([text_state, model], |env: &mut Environment|{
@@ -47,7 +47,7 @@ fn main() {
 
     let mut root = VStack::new(vec![
         list,
-        texfield_container,
+        textfield_container,
     ]);
 
     window.set_widgets(root);

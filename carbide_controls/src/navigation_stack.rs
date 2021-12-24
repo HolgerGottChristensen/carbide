@@ -39,7 +39,7 @@ impl NavigationStack {
 
 impl Render for NavigationStack {
     fn process_get_primitives(&mut self, primitives: &mut Vec<Primitive>, env: &mut Environment) {
-        // Draw first because we are sure it is layed out.
+        // Draw first because we are sure it is laid out.
         self.top.process_get_primitives(primitives, env);
 
         // Take out the transferred widget with the key if it exists
