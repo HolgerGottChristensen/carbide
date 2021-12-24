@@ -16,6 +16,7 @@ pub trait Widget: Event + Layout + Render + Focusable + DynClone + Debug {}
 //impl<S, T> Widget<S> for T where T: Event<S> + Layout<S> + Render<S> + DynClone {}
 
 impl Widget for Box<dyn Widget> {}
+impl WidgetExt for Box<dyn Widget> {}
 
 dyn_clone::clone_trait_object!(Widget);
 

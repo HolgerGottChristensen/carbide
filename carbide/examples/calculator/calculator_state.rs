@@ -59,6 +59,9 @@ impl CalculatorState {
 
     pub fn get_display(&self) -> String {
         if !self.string.is_empty() {
+            if self.string == "-" {
+                return "-0".to_string()
+            }
             return self.string.to_string();
         } else if self.current_operation == Operation::Eq {
             if let Some(val) = self.result {
@@ -97,6 +100,53 @@ impl CalculatorState {
         println!("{:?}", self);
     }
 
+    pub fn push_separator(&mut self) {
+        if self.current_operation == Operation::Eq {
+            self.left = None;
+            self.right = None;
+            self.result = None;
+            self.current_operation = Operation::None;
+            self.old_operation = Operation::None;
+            self.string = "".to_string();
+        }
+
+        if self.string.is_empty() {
+            self.string.push_str("0,");
+        } else {
+            if !self.string.contains(",") {
+                self.string.push_str(",");
+            }
+        }
+        println!("{:?}", self);
+    }
+
+    pub fn negate_current(&mut self) {
+        if self.string.starts_with("-") {
+            self.string.remove(0);
+        } else {
+            self.string.insert(0, '-');
+        }
+    }
+
+    pub fn percent_to_decimal(&mut self) {
+        let res = f64::from_str(&self.string.replace(",", ".")).unwrap();
+
+        self.string = (res / 100.0).to_string()
+    }
+
+    pub fn clear(&mut self) {
+        self.string = "".to_string();
+    }
+
+    pub fn clear_all(&mut self) {
+        self.left = None;
+        self.right = None;
+        self.result = None;
+        self.current_operation = Operation::None;
+        self.old_operation = Operation::None;
+        self.string = "".to_string();
+    }
+
     pub fn pop_char(&mut self) {
         self.string.pop();
         ()
@@ -110,12 +160,12 @@ impl CalculatorState {
 
         if let None = self.left {
             if !self.string.is_empty() {
-                self.left = Some(f64::from_str(&self.string).unwrap());
+                self.left = Some(f64::from_str(&self.string.replace(",", ".")).unwrap());
                 self.string = String::new()
             }
         } else {
             if !self.string.is_empty() {
-                self.right = Some(f64::from_str(&self.string).unwrap());
+                self.right = Some(f64::from_str(&self.string.replace(",", ".")).unwrap());
                 self.calculate();
                 self.string = String::new()
             }
@@ -134,4 +184,17 @@ pub enum Operation {
     Sub,
     Mul,
     Div,
+}
+
+impl Operation {
+    pub fn to_symbol(&self) -> &'static str {
+        match self {
+            Operation::None => "",
+            Operation::Eq => "=",
+            Operation::Add => "+",
+            Operation::Sub => "-",
+            Operation::Mul => "×",
+            Operation::Div => "/",
+        }
+    }
 }

@@ -33,3 +33,9 @@ impl Into<EdgeInsets> for f64 {
         EdgeInsets::all(self)
     }
 }
+
+impl Into<EdgeInsets> for u32 {
+    fn into(self) -> EdgeInsets {
+        EdgeInsets::all(self as f64)
+    }
+}

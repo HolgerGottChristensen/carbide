@@ -138,6 +138,11 @@ macro_rules! impl_string_state {
                     MapOwnedState::new(self, |s: &$typ, _: &_, _: &_| {s.to_string()}).into()
                 }
             }
+            impl Into<StringState> for $typ {
+                fn into(self) -> StringState {
+                    MapOwnedState::new(ValueState::new(self), |s: &$typ, _: &_, _: &_| {s.to_string()}).into()
+                }
+            }
             impl Into<StringState> for Box<ValueState<$typ>> {
                 fn into(self) -> StringState {
                     MapOwnedState::new(WidgetState::new(self), |s: &$typ, _: &_, _: &_| {s.to_string()}).into()
