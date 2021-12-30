@@ -1,6 +1,7 @@
 pub use atlas::texture_atlas::AtlasId;
 pub use atlas::texture_atlas::TextureAtlas;
 pub use atlas::texture_atlas::TextureAtlasIndex;
+pub use atlas::texture_atlas::AtlasEntry;
 
 mod atlas;
 pub mod mesh;

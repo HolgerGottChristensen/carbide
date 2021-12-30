@@ -4,7 +4,7 @@ use std::fmt::{Debug, Formatter};
 use dyn_clone::DynClone;
 
 use crate::prelude::Environment;
-use crate::state::{MapOwnedState, MapState, MapWithEnv, StateContract, TState, UsizeState};
+use crate::state::{MapState, StateContract, TState, UsizeState};
 pub use crate::state::State;
 use crate::state::value_cell::{ValueRef, ValueRefMut};
 
@@ -28,7 +28,7 @@ impl<T: StateContract + 'static> WidgetState<Vec<T>> {
                           *index.value(),
                           |a, index| { &a[index] },
                           |a, index| { &mut a[index] },
-                          |a: &T| { todo!() },
+                          |_: &T| { todo!() },
             );
 
         s.into()

@@ -41,7 +41,6 @@ pub use carbide_derive::*;
 pub use draw::Scalar;
 
 pub use crate::color::Color;
-use crate::state::UsizeState;
 pub use crate::ui::Ui;
 
 pub mod asynchronous;

@@ -2,15 +2,12 @@ use std::fmt::{Debug, Formatter};
 use std::future::Future;
 use std::rc::Rc;
 
-use futures::{FutureExt, TryFutureExt};
-use futures::executor::block_on;
+use futures::{FutureExt};
 use oneshot::{Receiver, TryRecvError};
-use uuid::Uuid;
 
 use crate::environment::Environment;
-use crate::state::{InnerState, State, StateContract, TState};
-use crate::state::state_key::StateKey;
-use crate::state::value_cell::{ValueCell, ValueRef, ValueRefMut};
+use crate::state::{State, StateContract, TState};
+use crate::state::value_cell::{ValueRef, ValueRefMut};
 use crate::state::widget_state::WidgetState;
 
 #[derive(Clone)]

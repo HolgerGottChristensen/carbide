@@ -34,7 +34,7 @@ impl<T: StateContract + 'static> Delegate<T> for PopupDelegate<T> {
 
         let hovered = PlainButton::new(
             popup_item_delegate
-        ).hover(hover_state.clone());
+        ).hovered(hover_state.clone());
 
         PlainPopUpButtonPopUpItem::new(
             hovered,

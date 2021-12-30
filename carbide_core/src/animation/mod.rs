@@ -1,11 +1,5 @@
-use std::time::Duration;
-
 pub use animatable::Animatable;
 pub use animation::Animation;
-
-use crate::draw::Dimension;
-use crate::prelude::{elastic_in_out, Environment};
-use crate::state::LocalState;
 
 mod animation;
 mod animatable;

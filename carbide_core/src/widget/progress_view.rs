@@ -1,10 +1,9 @@
 use instant::Duration;
 
 use crate::color::WHITE;
-use crate::draw::{Dimension, Position, Rect};
+use crate::draw::{Dimension, Position};
 use crate::prelude::*;
 use crate::prelude::canvas::LineCap;
-use crate::render::PrimitiveKind;
 use crate::widget::canvas::Canvas;
 use crate::CommonWidgetImpl;
 
@@ -21,7 +20,7 @@ impl ProgressView {
         ProgressView::new_internal(30.0)
     }
 
-    pub fn size(mut self, size: f64) -> Box<Self> {
+    pub fn size(self, size: f64) -> Box<Self> {
         ProgressView::new_internal(size)
     }
 

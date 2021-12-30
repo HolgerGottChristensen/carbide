@@ -1,12 +1,5 @@
-use instant::Duration;
-use carbide_core::color::TRANSPARENT;
-
-use crate::color::WHITE;
-use crate::draw::{Dimension, Position, Rect};
+use crate::draw::{Dimension, Position};
 use crate::prelude::*;
-use crate::prelude::canvas::LineCap;
-use crate::render::PrimitiveKind;
-use crate::widget::canvas::Canvas;
 use crate::CommonWidgetImpl;
 
 #[derive(Debug, Clone, Widget)]

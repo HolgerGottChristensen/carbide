@@ -129,7 +129,7 @@ impl CalculatorState {
     }
 
     pub fn percent_to_decimal(&mut self) {
-        let res = f64::from_str(&self.string.replace(",", ".")).unwrap();
+        let res = f64::from_str(&self.string.replace(",", ".")).unwrap_or(0.0);
 
         self.string = (res / 100.0).to_string()
     }

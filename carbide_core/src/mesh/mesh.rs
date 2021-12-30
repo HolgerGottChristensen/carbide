@@ -18,7 +18,7 @@ use crate::environment::Environment;
 use crate::layout::BasicLayouter;
 use crate::mesh::{
     DEFAULT_GLYPH_CACHE_DIMS, GLYPH_CACHE_POSITION_TOLERANCE, GLYPH_CACHE_SCALE_TOLERANCE,
-    MODE_GEOMETRY, MODE_IMAGE, MODE_TEXT, MODE_TEXT_COLOR,
+    MODE_GEOMETRY, MODE_TEXT, MODE_TEXT_COLOR,
 };
 use crate::mesh::atlas::texture_atlas::TextureAtlas;
 use crate::mesh::vertex::Vertex;
@@ -179,7 +179,6 @@ impl Mesh {
         let glyph_cache_requires_upload = false;
         let mut atlas_requires_upload = false;
 
-        // Todo: Queue glyphs here and check if there is space for all needed glyphs.
         let texture_atlas = env.get_font_atlas_mut();
         texture_atlas.cache_queued(|x, y, image_data| {
             //println!("Insert the image at: {}, {} with size {}, {}", x, y, image_data.width(), image_data.height());
@@ -661,8 +660,6 @@ impl Mesh {
                     let color = gamma_srgb_to_linear(color.to_fsa());
                     let texture_atlas = env.get_font_atlas();
 
-                    //glyph_cache.0.rect_for()
-
                     let v_normal = |x, y, t| Vertex {
                         position: [vx(x), vy(y), 0.0],
                         tex_coords: t,
@@ -690,8 +687,11 @@ impl Mesh {
                         if let Some(bb) = glyph.bb() {
                             let (left, right, bottom, top) = bb.l_r_b_t_scaled(scale_factor);
 
-                            if let Some(index) = glyph.texture_index() {
-                                let coords = texture_atlas.get_tex_coords_by_index(index);
+                            if let Some(index) = glyph.atlas_entry() {
+                                if !index.borrow().is_active {
+                                    println!("Trying to show glyph that is not in the texture atlas.");
+                                }
+                                let coords = index.borrow().tex_coords;
 
                                 push_v(left, top, [coords.min.x, coords.max.y], glyph.is_bitmap());
                                 push_v(

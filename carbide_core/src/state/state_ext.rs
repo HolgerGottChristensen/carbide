@@ -1,4 +1,4 @@
-use crate::state::{MapOwnedState, MapWithEnv, State, StateContract, TState};
+use crate::state::{MapOwnedState, MapWithEnv, StateContract, TState};
 use crate::state::widget_state::Map;
 
 pub trait StateExt<T>: Into<TState<T>> + Clone where T: StateContract + 'static {

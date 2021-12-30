@@ -45,7 +45,7 @@ fn main() {
                     let mut temp = button_counter_state.clone();
                     *temp.value_mut() += 1;
                 })
-                .hover(hover_state.clone())
+                .hovered(hover_state.clone())
                 .pressed(pressed_state.clone())
                 .focused(focus_state.clone())
                 .border()

@@ -1,4 +1,5 @@
 use rusttype::{GlyphId, point, PositionedGlyph};
+use carbide_core::mesh::AtlasEntry;
 
 use crate::draw::{Dimension, Position, Rect};
 use crate::mesh::TextureAtlasIndex;
@@ -25,7 +26,7 @@ pub struct Glyph {
 
     /// The index of this glyph in the texture atlas.
     /// If this is None, this glyph is not queued.
-    texture_index: Option<TextureAtlasIndex>,
+    atlas_entry: Option<AtlasEntry>,
 
     /// This bb has been scaled to the correct size.
     inner_glyph_bb: Option<rusttype::Rect<f32>>,
@@ -107,12 +108,12 @@ impl Glyph {
         self.bb
     }
 
-    pub fn set_texture_index(&mut self, index: TextureAtlasIndex) {
-        self.texture_index = Some(index)
+    pub fn set_texture_index(&mut self, index: AtlasEntry) {
+        self.atlas_entry = Some(index)
     }
 
-    pub fn texture_index(&self) -> Option<TextureAtlasIndex> {
-        self.texture_index
+    pub fn atlas_entry(&self) -> &Option<AtlasEntry> {
+        &self.atlas_entry
     }
 
     pub fn is_bitmap(&self) -> bool {
@@ -165,7 +166,7 @@ impl From<(FontSize, FontId, PositionedGlyph<'_>, bool)> for Glyph {
                     dimension: Dimension::new(width, height),
                 }
             }),
-            texture_index: None,
+            atlas_entry: None,
             inner_glyph_bb,
             width_of_glyph_from_origin: inner.unpositioned().h_metrics().left_side_bearing as f64,
             advance_width: inner.unpositioned().h_metrics().advance_width as f64,

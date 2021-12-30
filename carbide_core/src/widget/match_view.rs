@@ -1,6 +1,5 @@
 use std::collections::HashMap;
 use std::hash::Hash;
-use crate::CommonWidgetImpl;
 use crate::draw::{Dimension, Position};
 use crate::prelude::*;
 use crate::widget::Widget;
@@ -44,9 +43,8 @@ impl<T: Hash + StateContract + PartialEq + Eq  + 'static> StateSync for Match<T>
         if let Some(current_key) = &self.current_key {
             if current_key == self.local_state.value().deref() { return; }
             if let Some(mut w) = self.widgets.remove(&self.local_state.value()) {
-                let mut swapping = w;
-                std::mem::swap(&mut swapping, &mut self.current_child);
-                self.widgets.insert(current_key.clone(), swapping);
+                std::mem::swap(&mut w, &mut self.current_child);
+                self.widgets.insert(current_key.clone(), w);
                 self.current_key = Some(self.local_state.value().clone());
             } else {
                 self.current_child = Rectangle::new().fill(EnvironmentColor::Green);
@@ -67,11 +65,11 @@ impl<T: Hash + StateContract + PartialEq + Eq  + 'static> StateSync for Match<T>
 
 impl<T: Hash + StateContract + PartialEq + Eq  + 'static> carbide_core::widget::CommonWidget for Match<T> {
     fn id(&self) -> carbide_core::widget::Id {
-        (self.id)
+        self.id
     }
 
     fn set_id(&mut self, id: carbide_core::widget::Id) {
-        (self.id) = id;
+        self.id = id;
     }
 
     fn children(&self) -> carbide_core::widget::WidgetIter {
@@ -103,7 +101,7 @@ impl<T: Hash + StateContract + PartialEq + Eq  + 'static> carbide_core::widget::
     }
 
     fn position(&self) -> carbide_core::draw::Position {
-        (self.position)
+        self.position
     }
 
     fn set_position(&mut self, position: carbide_core::draw::Position) {
@@ -111,7 +109,7 @@ impl<T: Hash + StateContract + PartialEq + Eq  + 'static> carbide_core::widget::
     }
 
     fn dimension(&self) -> carbide_core::draw::Dimension {
-        (self.dimension)
+        self.dimension
     }
 
     fn set_dimension(&mut self, dimension: carbide_core::draw::Dimension) {

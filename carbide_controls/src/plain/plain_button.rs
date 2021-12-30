@@ -55,7 +55,7 @@ impl PlainButton {
         Box::new(self)
     }
 
-    pub fn hover<K: Into<BoolState>>(mut self, is_hovered: K) -> Box<Self> {
+    pub fn hovered<K: Into<BoolState>>(mut self, is_hovered: K) -> Box<Self> {
         self.is_hovered = is_hovered.into();
         Box::new(self)
     }

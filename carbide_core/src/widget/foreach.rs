@@ -46,7 +46,7 @@ impl<T: StateContract + 'static, U: Delegate<T>> ForEach<T, U> {
                     |a, index| {
                         &mut a[index]
                     },
-                    |a: &T| {
+                    |_: &T| {
                         todo!()
                     },
                 );
@@ -103,7 +103,7 @@ impl<T: StateContract + 'static, U: Delegate<T>> OtherEventHandler for ForEach<T
                         |a, index| {
                             &mut a[index]
                         },
-                        |a: &T| {
+                        |_: &T| {
                             todo!()
                         },
                     );

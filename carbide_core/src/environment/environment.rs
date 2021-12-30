@@ -11,7 +11,7 @@ use image::DynamicImage;
 use oneshot::TryRecvError;
 
 use crate::{Color, image_map};
-use crate::animation::{Animatable, Animation};
+use crate::animation::Animation;
 use crate::cursor::MouseCursor;
 use crate::draw::Dimension;
 use crate::draw::Scalar;
@@ -492,8 +492,9 @@ impl Environment {
         let scale_factor = self.get_scale_factor();
         for glyph in glyphs {
             let font = &self.fonts[glyph.font_id()];
-            self.font_texture_atlas
-                .queue_glyph(glyph, font, scale_factor);
+            if let Some(entry) = self.font_texture_atlas.queue_glyph(glyph, font, scale_factor) {
+                glyph.set_texture_index(entry);
+            }
         }
     }
 

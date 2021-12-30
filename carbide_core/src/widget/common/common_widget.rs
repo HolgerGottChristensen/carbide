@@ -28,11 +28,14 @@ pub trait CommonWidget {
     fn get_focus(&self) -> Focus {
         Focus::Unfocused
     }
-    fn set_focus(&mut self, _focus: Focus) {}
+    #[allow(unused_variables)]
+    fn set_focus(&mut self, focus: Focus) {}
 
     fn alignment(&self) -> Box<dyn Layouter> {
         Box::new(BasicLayouter::Center)
     }
+
+    #[allow(unused_variables)]
     fn set_alignment(&mut self, alignment: Box<dyn Layouter>) {
         unimplemented!()
     }

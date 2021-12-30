@@ -6,12 +6,15 @@ use std::path::PathBuf;
 use std::rc::Rc;
 
 use block::ConcreteBlock;
+use cocoa::appkit::CGFloat;
 use cocoa::base::{id, nil, NO, YES};
 use cocoa::foundation::{NSArray, NSAutoreleasePool, NSInteger, NSString, NSURL};
 use objc::{class, msg_send, sel, sel_impl};
 use oneshot::Receiver;
+use crate::Color;
 
 use crate::dialog::open_dialog::OpenDialog;
+use crate::environment::{EnvironmentColor, EnvironmentVariable};
 use crate::prelude::Environment;
 use crate::state::{InnerState, ValueCell};
 
@@ -43,6 +46,22 @@ pub fn make_nsurl(url: &PathBuf) -> id {
     }
 }
 
+pub fn from_ns_color(color: id) -> Color {
+    unsafe {
+        let space: id = msg_send![class!(NSColorSpace), genericRGBColorSpace];
+        let calibrated_color: id = msg_send![color, colorUsingColorSpace: space];
+        let red: CGFloat = msg_send![calibrated_color, redComponent];
+        let green: CGFloat = msg_send![calibrated_color, greenComponent];
+        let blue: CGFloat = msg_send![calibrated_color, blueComponent];
+        let alpha: CGFloat = msg_send![calibrated_color, alphaComponent];
+        let color = Color::Rgba(red as f32, green as f32, blue as f32, alpha as f32);
+        color
+    }
+}
+
+pub fn get_control_accent_color() -> Color {
+    unsafe { from_ns_color(msg_send![class!(NSColor), controlAccentColor]) }
+}
 
 pub fn open_save_panel(env: &Environment) -> Receiver<Option<OsString>> {
     let (sender, receiver) = oneshot::channel();

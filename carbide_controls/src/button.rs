@@ -177,7 +177,7 @@ impl Button {
                 Text::new(label.clone()),
             ])
         )
-            .hover(hover_state.clone())
+            .hovered(hover_state.clone())
             .pressed(pressed_state.clone())
             .on_click(clicked.clone())
             .focused(focus_state.clone())
