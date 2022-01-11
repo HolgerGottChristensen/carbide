@@ -2,6 +2,7 @@ use crate::state::{MapOwnedState, MapWithEnv, StateContract, TState};
 use crate::state::widget_state::Map;
 
 pub trait StateExt<T>: Into<TState<T>> + Clone where T: StateContract + 'static {
+    /// Example: size.mapped(|t: &f64| { format!("{:.2}", t) })
     fn mapped<TO: StateContract + Default + 'static, M: Map<T, TO> + Clone>(&self, map: M) -> TState<TO> {
         MapOwnedState::<T, TO>::new(self.clone(), move |s: &T, _: &_, _: &_| { map(s) }).into()
     }

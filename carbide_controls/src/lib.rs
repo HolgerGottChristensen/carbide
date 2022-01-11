@@ -8,7 +8,7 @@ extern crate unicode_segmentation;
 pub use navigation_stack::NavigationStack;
 pub use button::Button;
 pub use check_box::*;
-pub use list::List;
+pub use list::*;
 pub use plain::*;
 pub use pop_up_button::PopUpButton;
 pub use radio_button::RadioButton;
@@ -23,7 +23,7 @@ macro_rules! capture {
         {
             $($(let $t = $t.clone();)*)?
             $($(let $u = $u.clone();)*)?
-            move |$($a: $typ),*| {
+            move |$($a: $typ),*, modifier: carbide_core::event::ModifierKey| {
                 use carbide_core::prelude::State;
                 $($(let mut $t = $t.clone();)*)?
                 $($(let mut $u = $u.clone();)*)?

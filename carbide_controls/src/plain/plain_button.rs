@@ -6,16 +6,16 @@ use carbide_core::__private::Formatter;
 use carbide_core::cursor::MouseCursor;
 use carbide_core::draw::{Dimension, Position};
 use carbide_core::environment::Environment;
-use carbide_core::event::{Key, KeyboardEvent, KeyboardEventHandler, MouseButton, MouseEvent, MouseEventHandler, OtherEventHandler, WidgetEvent};
+use carbide_core::event::{Key, KeyboardEvent, KeyboardEventHandler, ModifierKey, MouseButton, MouseEvent, MouseEventHandler, OtherEventHandler, WidgetEvent};
 use carbide_core::flags::Flags;
 use carbide_core::focus::Focus;
 use carbide_core::layout::Layout;
 use carbide_core::state::{BoolState, FocusState, State};
 use carbide_core::widget::{CommonWidget, Id, Widget, WidgetExt, WidgetIter, WidgetIterMut};
 
-pub trait Action: Fn(&mut Environment) + DynClone {}
+pub trait Action: Fn(&mut Environment, ModifierKey) + DynClone {}
 
-impl<I> Action for I where I: Fn(&mut Environment) + Clone {}
+impl<I> Action for I where I: Fn(&mut Environment, ModifierKey) + Clone {}
 
 dyn_clone::clone_trait_object!(Action);
 
@@ -39,6 +39,7 @@ pub struct PlainButton {
 }
 
 impl PlainButton {
+    /// Example: .on_click(move |env: &mut Environment, modifier: ModifierKey| {})
     pub fn on_click(
         mut self,
         fire: impl Action + 'static,
@@ -87,8 +88,8 @@ impl PlainButton {
             child,
             position: Position::new(0.0, 0.0),
             dimension: Dimension::new(100.0, 100.0),
-            click: Box::new(|_| {}),
-            click_outside: Box::new(|_| {}),
+            click: Box::new(|_, _| {}),
+            click_outside: Box::new(|_, _| {}),
             is_hovered: false.into(),
             is_pressed: false.into(),
             hover_cursor: MouseCursor::Hand,
@@ -118,7 +119,7 @@ impl KeyboardEventHandler for PlainButton {
 
         match event {
             KeyboardEvent::Click(Key::Return, _) => {
-                (self.click)(env);
+                (self.click)(env, ModifierKey::NO_MODIFIER);
             }
             _ => (),
         }
@@ -150,12 +151,12 @@ impl MouseEventHandler for PlainButton {
                     }
                 }
             }
-            MouseEvent::Click(MouseButton::Left, mouse_position, _)
-            | MouseEvent::NClick(MouseButton::Left, mouse_position, _, _) => {
+            MouseEvent::Click(MouseButton::Left, mouse_position, modifier)
+            | MouseEvent::NClick(MouseButton::Left, mouse_position, modifier, _) => {
                 if self.is_inside(*mouse_position) {
-                    (self.click)(env);
+                    (self.click)(env, *modifier);
                 } else {
-                    (self.click_outside)(env);
+                    (self.click_outside)(env, *modifier);
                 }
             }
             _ => (),

@@ -55,15 +55,21 @@ impl<FROM: StateContract, TO: StateContract> MapOwnedState<FROM, TO> {
 impl<FROM: StateContract, TO: StateContract> State<TO> for MapOwnedState<FROM, TO> {
     fn capture_state(&mut self, env: &mut Environment) {
         self.state.capture_state(env);
-    }
-
-    fn release_state(&mut self, env: &mut Environment) {
-        self.state.release_state(env);
 
         if let Ok(mut borrow) = self.value.try_borrow_mut() {
             let value: TO = (&self.map)(&*self.state.value(), borrow.deref(), env);
             *borrow.deref_mut() = value;
         }
+    }
+
+    fn release_state(&mut self, env: &mut Environment) {
+        self.state.release_state(env);
+
+        // If we see more state update issues consider uncommenting this.
+        /*if let Ok(mut borrow) = self.value.try_borrow_mut() {
+            let value: TO = (&self.map)(&*self.state.value(), borrow.deref(), env);
+            *borrow.deref_mut() = value;
+        }*/
     }
 
     fn value(&self) -> ValueRef<TO> {
@@ -148,7 +154,7 @@ macro_rules! impl_string_state {
                     MapOwnedState::new(WidgetState::new(self), |s: &$typ, _: &_, _: &_| {s.to_string()}).into()
                 }
             }
-        impl Into<StringState> for Box<LocalState<$typ>> {
+            impl Into<StringState> for Box<LocalState<$typ>> {
                 fn into(self) -> StringState {
                     MapOwnedState::new(WidgetState::new(self), |s: &$typ, _: &_, _: &_| {s.to_string()}).into()
                 }

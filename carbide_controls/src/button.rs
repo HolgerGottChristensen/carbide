@@ -44,7 +44,7 @@ impl Button {
             focus_state,
             hover_state,
             pressed_state,
-            Box::new(|_| {}),
+            Box::new(|_, _| {}),
             label,
             MouseCursor::Hand,
             None,
@@ -159,13 +159,13 @@ impl Button {
             let pressed = pressed_for_color.clone();
             let normal_color = normal_color.clone();
             if *pressed.value() {
-                return env.env_color(normal_color).unwrap().darkened(0.05)
+                return env.env_color(normal_color).darkened(0.05)
             }
             if *hover {
-                return env.env_color(normal_color).unwrap().lightened(0.05);
+                return env.env_color(normal_color).lightened(0.05);
             }
 
-            env.env_color(normal_color).unwrap()
+            env.env_color(normal_color)
         });
 
         let child = PlainButton::new(

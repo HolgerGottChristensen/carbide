@@ -74,14 +74,14 @@ impl TextInput {
         let stroke_color = focus.mapped_env(move |focus: &Focus, _: &_, env: &Environment| {
             let e = is_error_stroke.clone();
             if *e.value() {
-                env.env_color(EnvironmentColor::Red).unwrap()
+                env.env_color(EnvironmentColor::Red)
             } else {
                 match focus {
                     Focus::Focused => {
-                        env.env_color(EnvironmentColor::Accent).unwrap()
+                        env.env_color(EnvironmentColor::Accent)
                     }
                     _ => {
-                        env.env_color(EnvironmentColor::OpaqueSeparator).unwrap()
+                        env.env_color(EnvironmentColor::OpaqueSeparator)
                     }
                 }
             }

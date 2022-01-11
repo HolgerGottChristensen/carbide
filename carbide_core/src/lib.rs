@@ -32,6 +32,22 @@ macro_rules! delegate {
 
 delegate!(Name, |item: UsizeState, index: UsizeState| {});
 */
+
+#[macro_export]
+macro_rules! lens {
+    ($type:ty; $i:ident $(. $field:ident)+) => {
+        carbide_core::state::WidgetState::new(Box::new(
+            carbide_core::state::FieldState::new(
+                $i.clone(),
+                |item: &$type| { &item$(.$field)+ },
+                |item: &mut $type| { &mut item$(.$field)+ }
+            )
+        ))
+    };
+    ($type:ty; |$i:ident| $bl:block ) => {
+        $i.mapped(|$i: &$type| $bl)
+    }
+}
 pub use futures::TryFutureExt;
 pub use serde::*;
 pub use serde::de::*;

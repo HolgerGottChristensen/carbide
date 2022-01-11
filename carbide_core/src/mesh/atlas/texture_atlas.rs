@@ -60,7 +60,7 @@ impl TextureAtlas {
             not_yet_added_queue: vec![],
             shelves: vec![],
             all_books_cabinet: HashMap::with_hasher(FxBuildHasher::default()),
-            position_tolerance: 0.1,
+            position_tolerance: 0.5,
         }
     }
 

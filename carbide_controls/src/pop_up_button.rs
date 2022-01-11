@@ -64,9 +64,9 @@ impl PopUpButton {
     ) -> Box<dyn Widget> {
         let background_color = hover_state.mapped_env(|hovered: &bool, _: &_, env: &Environment| {
             if *hovered {
-                env.env_color(EnvironmentColor::Accent).unwrap()
+                env.env_color(EnvironmentColor::Accent)
             } else {
-                env.env_color(EnvironmentColor::SecondarySystemBackground).unwrap()
+                env.env_color(EnvironmentColor::SecondarySystemBackground)
             }
         });
 

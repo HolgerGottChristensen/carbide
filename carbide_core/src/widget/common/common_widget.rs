@@ -97,7 +97,7 @@ pub trait CommonWidget {
 
 #[macro_export]
 macro_rules! CommonWidgetImpl {
-    ($typ:ty, $self:ident, id: $id_expr:expr, child: $child:expr, position: $position:expr, dimension: $dimension:expr $(,flag: $flag:expr)? $(,flexibility: $flexibility:literal)?) => {
+    ($typ:ty, $self:ident, id: $id_expr:expr, child: $child:expr, position: $position:expr, dimension: $dimension:expr $(,flag: $flag:expr)? $(,flexibility: $flexibility:expr)? $(,alignment: $alignment:expr)?) => {
         impl carbide_core::widget::CommonWidget for $typ {
             fn id(&$self) -> carbide_core::widget::Id {
                 $id_expr
@@ -106,6 +106,12 @@ macro_rules! CommonWidgetImpl {
             fn set_id(&mut $self, id: carbide_core::widget::Id) {
                 $id_expr = id;
             }
+
+            $(
+                fn alignment(&$self) -> Box<dyn carbide_core::layout::Layouter> {
+                    $alignment.clone()
+                }
+            )?
 
             $(
                 fn flag(&$self) -> carbide_core::flags::Flags {

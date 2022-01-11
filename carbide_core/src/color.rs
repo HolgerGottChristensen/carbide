@@ -30,6 +30,7 @@ pub enum Color {
 
 impl Default for Color {
     fn default() -> Self {
+        // 0.8, 0.0, 0.0, 1.0
         RED
     }
 }

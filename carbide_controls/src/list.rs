@@ -1,10 +1,20 @@
+use std::borrow::Borrow;
+use std::cmp::{max, min};
+use std::collections::HashSet;
 use std::fmt::{Debug, Formatter};
+use std::rc::Rc;
 
 use carbide_core::color::{BLUE, RED, TRANSPARENT};
 use carbide_core::draw::{Dimension, Position};
+use carbide_core::environment::Environment;
+use carbide_core::event::ModifierKey;
 use carbide_core::flags::Flags;
-use carbide_core::state::{F64State, LocalState, State, StateContract, TState, UsizeState};
+use carbide_core::state::{F64State, LocalState, State, StateContract, TState, UsizeState, ValueState};
 use carbide_core::widget::{CommonWidget, Delegate, ForEach, Id, Rectangle, SCALE, Scroll, VStack, Widget, WidgetExt, WidgetIter, WidgetIterMut};
+use crate::PlainButton;
+
+const MULTI_SELECTION_MODIFIER: ModifierKey = if cfg!(target_os = "macos") {ModifierKey::GUI} else {ModifierKey::CTRL};
+const LIST_SELECTION_MODIFIER: ModifierKey = ModifierKey::SHIFT;
 
 #[derive(Clone, Widget)]
 pub struct List<T, U> where T: StateContract + 'static, U: Delegate<T> + 'static {
@@ -24,6 +34,9 @@ pub struct List<T, U> where T: StateContract + 'static, U: Delegate<T> + 'static
     start_offset: F64State,
     #[state]
     end_offset: F64State,
+    item_id_function: Option<fn(&T) -> Id>,
+    selection: Option<Selection>,
+    last_index_clicked: UsizeState,
 }
 
 impl<T: StateContract + 'static, U: Delegate<T> + 'static> List<T, U> {
@@ -59,6 +72,9 @@ impl<T: StateContract + 'static, U: Delegate<T> + 'static> List<T, U> {
             index_offset: index_offset_state.into(),
             start_offset: start_offset.into(),
             end_offset: end_offset.into(),
+            item_id_function: None,
+            selection: None,
+            last_index_clicked: ValueState::new(0)
         })
     }
 
@@ -83,6 +99,58 @@ impl<T: StateContract + 'static, U: Delegate<T> + 'static> List<T, U> {
         );
         Box::new(self)
     }
+
+    /// Returns a list selectable where the items within are selectable
+    ///
+    /// Consumes the `self` argument. It takes an `id` function from the item **T** to the
+    /// [`Id`]. It also takes something that can be turned into a selection
+    ///
+    /// Examples of this is [`Option<Id>`] for single-selection and
+    /// [`HashSet<Id>`] for multi-selection.
+    pub fn selectable(mut self, id: fn(&T) -> Id, selection: impl Into<Selection>) -> Box<List<T, SelectableListDelegate<T, U>>> {
+        let selection = selection.into();
+        let last_index_clicked = LocalState::new(0);
+
+        let new_delegate = SelectableListDelegate {
+            item_id_function: id,
+            selection: selection.clone(),
+            inner_delegate: self.delegate,
+            last_selected_index: last_index_clicked.clone(),
+            internal_model: self.internal_model.clone(),
+        };
+
+        let child = Scroll::new(
+            VStack::new(vec![
+                Rectangle::new()
+                    .fill(TRANSPARENT)
+                    .frame(SCALE, self.start_offset.clone()),
+                ForEach::new(self.internal_model.clone(), new_delegate.clone()),
+                Rectangle::new()
+                    .fill(TRANSPARENT)
+                    .frame(SCALE, self.end_offset.clone()),
+            ])
+                .spacing(self.spacing),
+        );
+
+        Box::new(List {
+            id: self.id,
+            child,
+            delegate: new_delegate,
+            position: Default::default(),
+            dimension: Default::default(),
+            spacing: self.spacing,
+            model: self.model,
+            internal_model: self.internal_model,
+            index_offset: self.index_offset,
+            start_offset: self.start_offset,
+            end_offset: self.end_offset,
+            item_id_function: Some(id),
+            selection: Some(selection.clone()),
+            last_index_clicked,
+        })
+    }
+
+
     /*
         fn _recalculate_visible_children(&mut self, env: &mut Environment<GS>) {
             // TODO: Handle when model changes.
@@ -337,3 +405,99 @@ impl<T: StateContract, U: Delegate<T>> Debug for List<T, U> {
 }
 
 impl<T: StateContract + 'static, U: Delegate<T> + 'static> WidgetExt for List<T, U> {}
+
+
+#[derive(Clone)]
+pub struct SelectableListDelegate<T, U> where T: StateContract + 'static, U: Delegate<T> + 'static {
+    item_id_function: fn(&T) -> Id,
+    selection: Selection,
+    inner_delegate: U,
+    last_selected_index: UsizeState,
+    internal_model: TState<Vec<T>>,
+}
+
+impl<T: StateContract + 'static, U: Delegate<T> + 'static> Delegate<T> for SelectableListDelegate<T, U> {
+    fn call(&self, item: TState<T>, index: UsizeState) -> Box<dyn Widget> {
+        let selection = self.selection.clone();
+        let last_selected_index = self.last_selected_index.clone();
+        let internal_model = self.internal_model.clone();
+        let id_function = self.item_id_function;
+
+        PlainButton::new(
+            self.inner_delegate.call(item.clone(), index.clone())
+        ).on_click(move |env: &mut Environment, modifier: ModifierKey| {
+            let mut selection = selection.clone();
+            let mut last_selected_index = last_selected_index.clone();
+            let value = id_function(&*item.value());
+
+            match &mut selection {
+                // If we are in single selection mode
+                Selection::Single(id) => {
+                    let val = id.value_mut().clone();
+
+                    // If the value we clicked while holding down GUI (on mac) and Ctrl (on windows)
+                    // is the same as already selected, deselect the value. Otherwise select the
+                    // item clicked.
+                    if let Some(val) = val {
+                        if val == value && modifier == MULTI_SELECTION_MODIFIER {
+                            *id.value_mut() = None;
+                        } else {
+                            *id.value_mut() = Some(value);
+                        }
+                    } else {
+                        *id.value_mut() = Some(value);
+                    }
+
+                }
+                // If we are in multi-select mode
+                Selection::Multi(selections) => {
+                    match modifier {
+                        // If we are holding down GUI (on mac) or CTRL (on windows), add the item
+                        // to the set if it does not already contain it. Otherwise remove it from
+                        // the set.
+                        MULTI_SELECTION_MODIFIER => {
+                            if !selections.value_mut().remove(&value) {
+                                selections.value_mut().insert(value);
+                            }
+                            *last_selected_index.value_mut() = *index.value();
+                        }
+                        LIST_SELECTION_MODIFIER => {
+                            selections.value_mut().clear();
+                            let min = min(*index.value(), *last_selected_index.value());
+                            let max = max(*index.value(), *last_selected_index.value());
+
+                            for val in min..=max {
+                                selections.value_mut().insert(id_function(&internal_model.value()[val]));
+                            }
+                        }
+                        // If we are not holding it down, remove all elements from the set and add
+                        // the newly clicked element.
+                        _ => {
+                            selections.value_mut().clear();
+                            selections.value_mut().insert(value);
+                            *last_selected_index.value_mut() = *index.value();
+                        }
+                    }
+                }
+            }
+        })
+    }
+}
+
+#[derive(Clone, Debug)]
+pub enum Selection {
+    Single(TState<Option<Id>>),
+    Multi(TState<HashSet<Id>>),
+}
+
+impl Into<Selection> for TState<Option<Id>> {
+    fn into(self) -> Selection {
+        Selection::Single(self)
+    }
+}
+
+impl Into<Selection> for TState<HashSet<Id>> {
+    fn into(self) -> Selection {
+        Selection::Multi(self)
+    }
+}

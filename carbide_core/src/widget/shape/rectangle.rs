@@ -1,6 +1,9 @@
+use std::thread::sleep;
+use std::time::Duration;
 use lyon::algorithms::math::rect;
 use lyon::algorithms::path::builder::PathBuilder;
 use lyon::algorithms::path::Winding;
+use crate::Color::Rgba;
 
 use crate::draw::{Dimension, Position, Rect};
 use crate::prelude::*;

@@ -8,6 +8,10 @@ pub trait WidgetExt: Widget + Sized + 'static {
         Frame::init(width.into(), height.into(), Box::new(self))
     }
 
+    fn custom_flexibility(self, flexibility: u32) -> Box<Flexibility> {
+        Flexibility::new(Box::new(self), flexibility)
+    }
+
     fn background(self, background: Box<dyn Widget>) -> Box<Background> {
         Background::new(Box::new(self), background)
     }

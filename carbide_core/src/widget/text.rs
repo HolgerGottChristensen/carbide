@@ -95,6 +95,11 @@ impl Text {
         Box::new(self)
     }
 
+    pub fn font_weight<K: Into<FontWeight>>(mut self, weight: K) -> Box<Self> {
+        self.font_weight = weight.into();
+        Box::new(self)
+    }
+
     pub fn wrap_mode(mut self, wrap: Wrap) -> Box<Self> {
         self.wrap_mode = wrap;
         Box::new(self)

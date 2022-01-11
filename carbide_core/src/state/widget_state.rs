@@ -4,7 +4,7 @@ use std::fmt::{Debug, Formatter};
 use dyn_clone::DynClone;
 
 use crate::prelude::Environment;
-use crate::state::{MapState, StateContract, TState, UsizeState};
+use crate::state::{MapState, StateContract, StateExt, TState, UsizeState};
 pub use crate::state::State;
 use crate::state::value_cell::{ValueRef, ValueRefMut};
 
@@ -23,15 +23,31 @@ impl<T: StateContract> WidgetState<T> {
 impl<T: StateContract + 'static> WidgetState<Vec<T>> {
     pub fn index(&self, index: UsizeState) -> TState<T> {
         //Todo: In the future take index as a state instead of its value.
-        let s: MapState<Vec<T>, T, usize> =
+        let s: MapState<Vec<T>, T, UsizeState> =
             MapState::new(self.clone(),
-                          *index.value(),
-                          |a, index| { &a[index] },
-                          |a, index| { &mut a[index] },
+                          index,
+                          |a, index| { &a[*index.value()] },
+                          |a, index| { &mut a[*index.value()] },
                           |_: &T| { todo!() },
             );
 
         s.into()
+    }
+}
+
+impl<T: StateContract + 'static> WidgetState<Option<T>> {
+    pub fn is_some(&self) -> TState<bool> {
+        self.mapped(|t: &Option<T>| { t.is_some() })
+    }
+
+    pub fn is_none(&self) -> TState<bool> {
+        self.mapped(|t: &Option<T>| { t.is_none() })
+    }
+}
+
+impl<T: StateContract + Default + 'static> WidgetState<Option<T>> {
+    pub fn unwrap_or_default(&self) -> TState<T> {
+        self.mapped(|t: &Option<T>| { t.clone().unwrap_or_default() })
     }
 }
 

@@ -584,7 +584,7 @@ impl Environment {
         if name == "system-font" {
             self.get_system_font_family()
         } else {
-            self.font_families.get(name).unwrap()
+            self.font_families.get(name).expect("Could not find a suitable font family")
         }
     }
 
@@ -602,8 +602,8 @@ impl Environment {
         self.stack.pop();
     }
 
-    pub fn env_color(&self, color: EnvironmentColor) -> Option<Color> {
-        self.get_color(&StateKey::Color(color))
+    pub fn env_color(&self, color: EnvironmentColor) -> Color {
+        self.get_color(&StateKey::Color(color)).unwrap()
     }
 
     pub fn get_color(&self, color: &StateKey) -> Option<Color> {

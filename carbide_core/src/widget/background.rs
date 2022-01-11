@@ -27,10 +27,10 @@ impl Background {
         })
     }
 
-    /*pub fn with_alignment(mut self, layouter: BasicLayouter) -> Box<Self> {
+    pub fn with_alignment(mut self, layouter: BasicLayouter) -> Box<Self> {
         self.alignment = Box::new(layouter);
         Box::new(self)
-    }*/
+    }
 }
 
 impl Layout for Background {
@@ -60,7 +60,7 @@ impl Render for Background {
     }
 }
 
-CommonWidgetImpl!(Background, self, id: self.id, child: self.child, position: self.position, dimension: self.dimension);
+CommonWidgetImpl!(Background, self, id: self.id, child: self.child, position: self.position, dimension: self.dimension, alignment: self.alignment);
 
 
 impl WidgetExt for Background {}

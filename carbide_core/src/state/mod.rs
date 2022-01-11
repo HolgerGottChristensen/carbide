@@ -9,6 +9,7 @@ pub use crate::state::value_cell::{ValueCell, ValueRef, ValueRefMut};
 pub use self::animated_state::*;
 pub use self::animation_curve::*;
 pub use self::async_state::*;
+pub use self::field_state::*;
 pub use self::env_state::EnvState;
 pub use self::global_state::GlobalState;
 pub use self::local_state::LocalState;
@@ -37,6 +38,7 @@ mod vec_state;
 mod widget_state;
 mod state_ext;
 mod async_state;
+mod field_state;
 
 pub(crate) type InnerState<T> = Rc<ValueCell<T>>;
 
