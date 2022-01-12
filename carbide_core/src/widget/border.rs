@@ -16,7 +16,7 @@ pub struct Border {
 }
 
 impl Border {
-    pub fn color<C: Into<ColorState>>(mut self, color: C) -> Box<Self> {
+    pub fn color(mut self, color: impl Into<ColorState>) -> Box<Self> {
         self.color = color.into();
         Box::new(self)
     }

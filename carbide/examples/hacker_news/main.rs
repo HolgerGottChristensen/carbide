@@ -81,7 +81,7 @@ fn main() {
     let delegate = move |article: TState<Article>, index: UsizeState| -> Box<dyn Widget> {
         let selected_item = article.clone();
 
-        let selected = selected_items_delegate.clone().mapped(move |map: &HashSet<Id>| {
+        let selected = selected_items_delegate.mapped(move |map: &HashSet<Id>| {
             map.contains(&id_function(&*selected_item.value()))
         });
 

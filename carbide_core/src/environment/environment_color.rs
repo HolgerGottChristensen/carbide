@@ -1,4 +1,5 @@
 use crate::Color;
+use crate::environment::Environment;
 use crate::prelude::EnvironmentColorState;
 use crate::state::*;
 use crate::state::WidgetState;
@@ -78,6 +79,14 @@ impl Into<StateKey> for EnvironmentColor {
 impl Into<ColorState> for EnvironmentColor {
     fn into(self) -> ColorState {
         WidgetState::new(Box::new(EnvironmentColorState::new(self)))
+    }
+}
+
+impl Into<ColorState> for TState<EnvironmentColor> {
+    fn into(self) -> ColorState {
+        self.mapped_env(|color: &EnvironmentColor, _: &_, env: &Environment| {
+            env.env_color(color.clone())
+        })
     }
 }
 

@@ -6,11 +6,12 @@ use std::rc::Rc;
 
 use carbide_core::color::{BLUE, RED, TRANSPARENT};
 use carbide_core::draw::{Dimension, Position};
-use carbide_core::environment::Environment;
+use carbide_core::environment::{Environment, EnvironmentColor};
 use carbide_core::event::ModifierKey;
 use carbide_core::flags::Flags;
-use carbide_core::state::{F64State, LocalState, State, StateContract, TState, UsizeState, ValueState};
-use carbide_core::widget::{CommonWidget, Delegate, ForEach, Id, Rectangle, SCALE, Scroll, VStack, Widget, WidgetExt, WidgetIter, WidgetIterMut};
+use carbide_core::state::{F64State, LocalState, State, StateContract, StateExt, TState, UsizeState, ValueState};
+use carbide_core::widget::{CommonWidget, Delegate, EdgeInsets, ForEach, HStack, Id, IfElse, Rectangle, SCALE, Scroll, VStack, Widget, WidgetExt, WidgetIter, WidgetIterMut};
+use carbide_core::widget::canvas::Canvas;
 use crate::PlainButton;
 
 const MULTI_SELECTION_MODIFIER: ModifierKey = if cfg!(target_os = "macos") {ModifierKey::GUI} else {ModifierKey::CTRL};
@@ -37,6 +38,8 @@ pub struct List<T, U> where T: StateContract + 'static, U: Delegate<T> + 'static
     item_id_function: Option<fn(&T) -> Id>,
     selection: Option<Selection>,
     last_index_clicked: UsizeState,
+    sub_tree_function: Option<fn(TState<T>) -> TState<Option<Vec<T>>>>,
+    tree_disclosure: TreeDisclosure,
 }
 
 impl<T: StateContract + 'static, U: Delegate<T> + 'static> List<T, U> {
@@ -74,7 +77,9 @@ impl<T: StateContract + 'static, U: Delegate<T> + 'static> List<T, U> {
             end_offset: end_offset.into(),
             item_id_function: None,
             selection: None,
-            last_index_clicked: ValueState::new(0)
+            last_index_clicked: ValueState::new(0),
+            sub_tree_function: None,
+            tree_disclosure: TreeDisclosure::Arrow
         })
     }
 
@@ -98,6 +103,48 @@ impl<T: StateContract + 'static, U: Delegate<T> + 'static> List<T, U> {
                 .spacing(spacing),
         );
         Box::new(self)
+    }
+
+    pub fn tree(mut self, children: fn(TState<T>) -> TState<Option<Vec<T>>>, tree_disclosure: impl Into<TreeDisclosure>) -> Box<List<T, TreeListDelegate<T, U>>> {
+        let tree_disclosure = tree_disclosure.into();
+
+        let new_delegate = TreeListDelegate {
+            sub_tree_function: children,
+            tree_disclosure: tree_disclosure.clone(),
+            inner_delegate: self.delegate
+        };
+
+        let child = Scroll::new(
+            VStack::new(vec![
+                Rectangle::new()
+                    .fill(TRANSPARENT)
+                    .frame(SCALE, self.start_offset.clone()),
+                ForEach::new(self.internal_model.clone(), new_delegate.clone()),
+                Rectangle::new()
+                    .fill(TRANSPARENT)
+                    .frame(SCALE, self.end_offset.clone()),
+            ])
+                .spacing(self.spacing),
+        );
+
+        Box::new(List {
+            id: self.id,
+            child,
+            delegate: new_delegate,
+            position: Default::default(),
+            dimension: Default::default(),
+            spacing: self.spacing,
+            model: self.model,
+            internal_model: self.internal_model,
+            index_offset: self.index_offset,
+            start_offset: self.start_offset,
+            end_offset: self.end_offset,
+            item_id_function: self.item_id_function,
+            selection: self.selection,
+            last_index_clicked: self.last_index_clicked,
+            sub_tree_function: Some(children),
+            tree_disclosure
+        })
     }
 
     /// Returns a list selectable where the items within are selectable
@@ -147,6 +194,8 @@ impl<T: StateContract + 'static, U: Delegate<T> + 'static> List<T, U> {
             item_id_function: Some(id),
             selection: Some(selection.clone()),
             last_index_clicked,
+            sub_tree_function: None,
+            tree_disclosure: self.tree_disclosure,
         })
     }
 
@@ -408,6 +457,74 @@ impl<T: StateContract + 'static, U: Delegate<T> + 'static> WidgetExt for List<T,
 
 
 #[derive(Clone)]
+pub struct TreeListDelegate<T, U> where T: StateContract + 'static, U: Delegate<T> + 'static {
+    sub_tree_function: fn(TState<T>) -> TState<Option<Vec<T>>>,
+    tree_disclosure: TreeDisclosure,
+    inner_delegate: U,
+}
+
+impl<T: StateContract + 'static, U: Delegate<T> + 'static> Delegate<T> for TreeListDelegate<T, U> {
+    fn call(&self, item: TState<T>, index: UsizeState) -> Box<dyn Widget> {
+        let widget = self.inner_delegate.call(item.clone(), index.clone());
+
+        let cloned = self.clone();
+        let inner_delegate = move |item: TState<T>, index: UsizeState| -> Box<dyn Widget> {
+            let view = cloned.clone().call(item, index);
+            view.padding(EdgeInsets::single(0.0, 0.0, 20.0, 0.0))
+        };
+
+        let opened = LocalState::new(false);
+
+        let disclosure_item: Box<dyn Widget> = match self.tree_disclosure {
+            TreeDisclosure::Arrow => {
+                let rotation = opened.mapped(|b: &bool| {
+                    if *b {
+                        90.0
+                    } else {
+                        0.0
+                    }
+                });
+
+                Canvas::new(|_, mut context| {
+                    context.move_to(8.0, 5.0);
+                    context.line_to(13.0, 10.0);
+                    context.line_to(8.0, 15.0);
+                    context.set_stroke_style(EnvironmentColor::DarkText);
+                    context.set_line_width(1.5);
+                    context.stroke();
+
+                    context
+                }).frame(20.0, 20.0)
+                    .rotation_effect(rotation)
+            }
+            TreeDisclosure::Custom(f) => {
+                f(opened.clone())
+            }
+        };
+
+        let disclosure = PlainButton::new(disclosure_item.clone())
+            .on_click(capture!([opened], |env: &mut Environment| {
+                *opened = !*opened
+            }));
+
+        let sub_tree_model = (self.sub_tree_function)(item);
+
+        VStack::new(vec![
+            HStack::new(vec![
+                IfElse::new(sub_tree_model.is_some())
+                    .when_true(disclosure)
+                    .when_false(disclosure_item.hidden()),
+                widget
+            ]).spacing(0.0),
+            IfElse::new(opened)
+                .when_true(
+                    ForEach::new(sub_tree_model.unwrap_or_default(), inner_delegate)
+                ),
+        ])
+    }
+}
+
+#[derive(Clone)]
 pub struct SelectableListDelegate<T, U> where T: StateContract + 'static, U: Delegate<T> + 'static {
     item_id_function: fn(&T) -> Id,
     selection: Selection,
@@ -499,5 +616,23 @@ impl Into<Selection> for TState<Option<Id>> {
 impl Into<Selection> for TState<HashSet<Id>> {
     fn into(self) -> Selection {
         Selection::Multi(self)
+    }
+}
+
+#[derive(Clone, Debug)]
+pub enum TreeDisclosure {
+    Arrow,
+    Custom(fn(TState<bool>) -> Box<dyn Widget>),
+}
+
+impl Into<TreeDisclosure> for () {
+    fn into(self) -> TreeDisclosure {
+        TreeDisclosure::Arrow
+    }
+}
+
+impl Into<TreeDisclosure> for fn(TState<bool>) -> Box<dyn Widget> {
+    fn into(self) -> TreeDisclosure {
+        TreeDisclosure::Custom(self)
     }
 }

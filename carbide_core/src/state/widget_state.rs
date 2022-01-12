@@ -1,3 +1,4 @@
+use std::collections::HashSet;
 use std::fmt;
 use std::fmt::{Debug, Formatter};
 
@@ -48,6 +49,14 @@ impl<T: StateContract + 'static> WidgetState<Option<T>> {
 impl<T: StateContract + Default + 'static> WidgetState<Option<T>> {
     pub fn unwrap_or_default(&self) -> TState<T> {
         self.mapped(|t: &Option<T>| { t.clone().unwrap_or_default() })
+    }
+}
+
+impl<T: StateContract + 'static> WidgetState<HashSet<T>> {
+    pub fn len(&self) -> TState<usize> {
+        self.mapped(|map: &HashSet<T>| {
+            map.len()
+        })
     }
 }
 
