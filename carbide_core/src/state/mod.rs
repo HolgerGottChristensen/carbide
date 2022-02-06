@@ -11,7 +11,7 @@ pub use self::animated_state::*;
 pub use crate::animation::animation_curve::*;
 pub use self::async_state::*;
 pub use self::field_state::*;
-pub use self::env_state::EnvState;
+pub use readonly::env_state::EnvState;
 pub use self::global_state::GlobalState;
 pub use self::local_state::LocalState;
 pub use self::map_owned_state::*;
@@ -32,7 +32,6 @@ pub use self::listener::Listener;
 //pub use self::readonly::ReadStateExt;
 
 mod animated_state;
-mod env_state;
 mod global_state;
 mod local_state;
 mod map_owned_state;
