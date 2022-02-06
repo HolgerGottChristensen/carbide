@@ -5,8 +5,8 @@ use carbide_core::prelude::{NewStateSync, Listenable};
 
 use crate::environment::Environment;
 use crate::state::{InnerState, MapOwnedState, ReadState, State, StateContract, Listener, TState};
-use crate::state::animation_curve::linear;
-use crate::state::value_cell::{ValueCell, ValueRef, ValueRefMut};
+use crate::animation::animation_curve::linear;
+use crate::state::util::value_cell::{ValueCell, ValueRef, ValueRefMut};
 use crate::state::widget_state::WidgetState;
 
 #[derive(Clone, Debug)]

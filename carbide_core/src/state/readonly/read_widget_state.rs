@@ -8,7 +8,7 @@ use carbide_core::prelude::{NewStateSync, Listenable};
 use crate::prelude::Environment;
 use crate::state::{MapState, ReadState, StateContract, StateExt, Listener, TState, UsizeState};
 pub use crate::state::State;
-use crate::state::value_cell::{ValueRef, ValueRefMut};
+use crate::state::util::value_cell::{ValueRef, ValueRefMut};
 
 pub enum ReadWidgetState<T> {
     ReadState(Box<dyn ReadState<T>>),

@@ -2,7 +2,7 @@ use std::thread::sleep;
 use std::time::Duration;
 
 use carbide_core::prelude::EnvironmentColor;
-use carbide_core::state::{AsyncState, Listenable, LocalState, NewMapState, ReadState, State, StateExt, ValueState};
+use carbide_core::state::{Listenable, LocalState, NewMapState, ReadState, State, StateExt, ValueState};
 use carbide_core::{Color, task};
 use carbide_core::text::FontFamily;
 use carbide_core::widget::*;

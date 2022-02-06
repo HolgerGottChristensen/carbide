@@ -5,9 +5,9 @@ use dyn_clone::DynClone;
 use crate::prelude::Environment;
 use crate::state::*;
 use crate::state::state_sync::NewStateSync;
-use crate::state::subscriber::Listenable;
+use crate::state::util::subscriber::Listenable;
 
-use super::super::value_cell::{ValueRef, ValueRefMut};
+use crate::state::util::value_cell::{ValueRef, ValueRefMut};
 
 /// The trait to implement for read-only state.
 pub trait ReadState<T>: DynClone + NewStateSync + Listenable<T> + Debug where T: StateContract {

@@ -10,7 +10,7 @@ use carbide_core::state::RState;
 use crate::prelude::Environment;
 use crate::state::{MapState, NewMapState, StateContract, StateExt, Listener, TState, UsizeState};
 pub use crate::state::State;
-use crate::state::value_cell::{ValueRef, ValueRefMut};
+use crate::state::util::value_cell::{ValueRef, ValueRefMut};
 
 pub struct WidgetState<T>(Box<dyn State<T>>);
 
@@ -115,10 +115,6 @@ impl<T: StateContract> ReadState<T> for WidgetState<T> {
     fn value(&self) -> ValueRef<T> {
         self.0.value()
     }
-
-    /*fn value_changed(&mut self) {
-        self.0.value_changed()
-    }*/
 }
 
 impl<T: StateContract> State<T> for WidgetState<T> {

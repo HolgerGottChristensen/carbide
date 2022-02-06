@@ -10,12 +10,22 @@ use crate::state::{BoolState, InnerState, MapOwnedState, MapState, ResStringStat
 use crate::state::{ValueRef, ValueRefMut};
 use crate::state::widget_state::WidgetState;
 
+/// # ValueState
+/// Value state is a state that can be used for constants and values that are not shared. When
+/// cloning this state the value is cloned, but when the clone changes the original will not
+/// change. For shared state use [LocalState].
+///
+/// ValueState is [Listenable] which means you can subscribe to it changing. When listening to
+/// state changes and cloning the state, it will listen to all changed also from the clone.
+/// This is not finally decided to be the correct behavior so dont build code that depend upon this.
+///
+/// Local state implements [NewStateSync] but without implementing any behavior when
+/// [NewStateSync::sync()] is called.
 #[derive(Clone)]
-pub struct ValueState<T>
-    where
-        T: StateContract,
-{
+pub struct ValueState<T> where T: StateContract {
+    /// The value contained as the state
     value: T,
+    /// The list of listeners to notify when the state changes.
     subscribers: SubscriberList<T>,
 }
 
@@ -41,6 +51,7 @@ impl<T: StateContract> Deref for ValueState<T> {
 }
 
 impl<T: StateContract> DerefMut for ValueState<T> {
+    /// You should make sure to call notify manually after modifying the state using deref_mut.
     fn deref_mut(&mut self) -> &mut Self::Target {
         &mut self.value
     }
@@ -78,7 +89,7 @@ impl<T: StateContract> State<T> for ValueState<T> {
 
 impl<T: StateContract> Debug for ValueState<T> {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        f.debug_struct("State::ValueState")
+        f.debug_struct("ValueState")
             .field("value", self.deref())
             .finish()
     }
@@ -90,7 +101,7 @@ impl<T: StateContract> Into<TState<T>> for Box<ValueState<T>> {
     }
 }
 
-/// This should implement into T state for pretty much all T.
+// This should implement into T state for pretty much all T.
 impl<T: StateContract> From<T> for TState<T> {
     fn from(t: T) -> Self {
         ValueState::new(t)

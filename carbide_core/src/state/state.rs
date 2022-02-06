@@ -6,7 +6,7 @@ use crate::prelude::Environment;
 use crate::state::*;
 use crate::state::readonly::ReadState;
 
-use super::value_cell::{ValueRef, ValueRefMut};
+use crate::state::util::value_cell::{ValueRef, ValueRefMut};
 
 pub trait State<T>: DynClone + Debug + ReadState<T>
     where

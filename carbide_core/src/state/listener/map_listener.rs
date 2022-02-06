@@ -2,7 +2,7 @@ use std::marker::PhantomData;
 use std::rc::{Rc, Weak};
 use crate::prelude::StateContract;
 use crate::state::listener::listener::Listener;
-use crate::state::subscriber::WeakSubscriberList;
+use crate::state::util::subscriber::WeakSubscriberList;
 use crate::state::{InnerState, SubscriberList, ValueCell};
 use crate::state::readonly::ReadMap;
 

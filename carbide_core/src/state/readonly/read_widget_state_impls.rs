@@ -2,6 +2,16 @@ use carbide_core::state::RState;
 use crate::state::readonly::{ReadWidgetState};
 use crate::state::{ReadState, StateContract, ValueState, WidgetState};
 
+impl<T: StateContract, E: StateContract> ReadWidgetState<Result<T, E>> {
+    pub fn is_ok(&self) -> RState<bool> {
+        self.read_map(|t: &Result<T, E>| { t.is_ok() })
+    }
+
+    pub fn is_err(&self) -> RState<bool> {
+        self.read_map(|t: &Result<T, E>| { t.is_err() })
+    }
+}
+
 impl<T: StateContract> ReadWidgetState<Option<T>> {
     pub fn is_some(&self) -> RState<bool> {
         self.read_map(|t: &Option<T>| { t.is_some() })

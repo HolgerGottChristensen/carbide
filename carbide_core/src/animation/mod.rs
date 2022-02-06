@@ -3,6 +3,7 @@ pub use animation::Animation;
 
 mod animation;
 mod animatable;
+pub mod animation_curve;
 
 #[macro_export]
 macro_rules! animate {

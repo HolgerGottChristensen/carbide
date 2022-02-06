@@ -5,10 +5,10 @@ use crate::Color;
 use crate::draw::{Dimension, Position};
 use crate::focus::Focus;
 use crate::state::readonly::ReadWidgetState;
-pub use crate::state::value_cell::{ValueCell, ValueRef, ValueRefMut};
+pub use util::value_cell::{ValueCell, ValueRef, ValueRefMut};
 
 pub use self::animated_state::*;
-pub use self::animation_curve::*;
+pub use crate::animation::animation_curve::*;
 pub use self::async_state::*;
 pub use self::field_state::*;
 pub use self::env_state::EnvState;
@@ -25,14 +25,13 @@ pub use self::value_state::ValueState;
 pub use self::widget_state::WidgetState;
 pub use self::new_map_owned_state::NewMapState;
 pub use self::readonly::ReadState;
-pub use self::subscriber::SubscriberList;
-pub use self::subscriber::Listenable;
+pub use util::subscriber::SubscriberList;
+pub use util::subscriber::Listenable;
 pub use self::listener::MapListener;
 pub use self::listener::Listener;
 //pub use self::readonly::ReadStateExt;
 
 mod animated_state;
-mod animation_curve;
 mod env_state;
 mod global_state;
 mod local_state;
@@ -41,7 +40,6 @@ mod map_state;
 mod state;
 mod state_key;
 mod state_sync;
-mod value_cell;
 mod value_state;
 mod vec_state;
 mod widget_state;
@@ -50,8 +48,8 @@ mod async_state;
 mod field_state;
 mod new_map_owned_state;
 mod readonly;
-mod subscriber;
 mod listener;
+mod util;
 
 pub(crate) type InnerState<T> = Rc<ValueCell<T>>;
 

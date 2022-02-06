@@ -4,7 +4,7 @@ use carbide_core::prelude::{NewStateSync, Listenable, Listener};
 
 use crate::environment::Environment;
 use crate::state::{ReadState, State, StateContract, TState};
-use crate::state::value_cell::{ValueRef, ValueRefMut};
+use crate::state::util::value_cell::{ValueRef, ValueRefMut};
 use crate::state::widget_state::WidgetState;
 
 /// Warning. This state can not be used to modify the environment, as it pulls the value out

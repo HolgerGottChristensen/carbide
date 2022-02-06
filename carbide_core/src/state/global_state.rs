@@ -3,7 +3,7 @@ use carbide_core::prelude::{NewStateSync, Listenable, Listener};
 
 use crate::prelude::Environment;
 use crate::state::{InnerState, ReadState, State, StateContract, TState};
-use crate::state::value_cell::{ValueRef, ValueRefMut};
+use crate::state::util::value_cell::{ValueRef, ValueRefMut};
 use crate::state::widget_state::WidgetState;
 
 #[derive(Clone)]

@@ -10,7 +10,7 @@ use crate::environment::Environment;
 use crate::prelude::{StateContract, TState};
 use crate::state::{InnerState, LocalState, MapListener, ReadState, RState, State, StateExt, StringState, SubscriberList, ValueCell, ValueState};
 use crate::state::readonly::{ReadMap, ReadWidgetState};
-use crate::state::value_cell::{ValueRef, ValueRefMut};
+use crate::state::util::value_cell::{ValueRef, ValueRefMut};
 use crate::state::widget_state::WidgetState;
 
 #[derive(Clone)]

@@ -1,7 +1,7 @@
 use tokio::time::{Duration, sleep};
 
 use carbide_core::prelude::EnvironmentColor;
-use carbide_core::state::{AsyncState, LocalState, State, ValueState};
+use carbide_core::state::{LocalState, State, ValueState};
 use carbide_core::task;
 use carbide_core::text::FontFamily;
 use carbide_core::widget::*;

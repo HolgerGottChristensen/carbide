@@ -8,7 +8,7 @@ use carbide_core::prelude::{NewStateSync, Listenable, Listener};
 
 use crate::environment::Environment;
 use crate::state::{ReadState, State, StateContract, TState};
-use crate::state::value_cell::{ValueRef, ValueRefMut};
+use crate::state::util::value_cell::{ValueRef, ValueRefMut};
 use crate::state::widget_state::WidgetState;
 
 #[derive(Clone)]
@@ -30,7 +30,7 @@ impl<T: StateContract + Send + 'static + Default> AsyncState<T> {
         });
 
         #[cfg(feature = "async-std")]
-            let _ = async_std::task::spawn(task);
+        let _ = async_std::task::spawn(task);
 
         Box::new(AsyncState {
             value: T::default(),
