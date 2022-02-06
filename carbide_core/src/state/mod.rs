@@ -4,6 +4,7 @@ use std::rc::Rc;
 use crate::Color;
 use crate::draw::{Dimension, Position};
 use crate::focus::Focus;
+use crate::state::readonly::ReadWidgetState;
 pub use crate::state::value_cell::{ValueCell, ValueRef, ValueRefMut};
 
 pub use self::animated_state::*;
@@ -19,8 +20,16 @@ pub use self::state::State;
 pub use self::state_ext::*;
 pub use self::state_key::StateKey;
 pub use self::state_sync::StateSync;
+pub use self::state_sync::NewStateSync;
 pub use self::value_state::ValueState;
 pub use self::widget_state::WidgetState;
+pub use self::new_map_owned_state::NewMapState;
+pub use self::readonly::ReadState;
+pub use self::subscriber::SubscriberList;
+pub use self::subscriber::Listenable;
+pub use self::listener::MapListener;
+pub use self::listener::Listener;
+//pub use self::readonly::ReadStateExt;
 
 mod animated_state;
 mod animation_curve;
@@ -39,6 +48,10 @@ mod widget_state;
 mod state_ext;
 mod async_state;
 mod field_state;
+mod new_map_owned_state;
+mod readonly;
+mod subscriber;
+mod listener;
 
 pub(crate) type InnerState<T> = Rc<ValueCell<T>>;
 
@@ -54,7 +67,8 @@ pub type FocusState = TState<Focus>;
 pub type PositionState = TState<Position>;
 pub type DimensionState = TState<Dimension>;
 pub type TState<T> = WidgetState<T>;
+pub type RState<T> = ReadWidgetState<T>;
 
-pub trait StateContract: Clone + Debug {}
+pub trait StateContract: Clone + Debug + 'static {}
 
-impl<T> StateContract for T where T: Clone + Debug {}
+impl<T> StateContract for T where T: Clone + Debug + 'static {}

@@ -3,7 +3,7 @@ use std::ops::DerefMut;
 use carbide_core::draw::{Dimension, Position};
 use carbide_core::environment::Environment;
 use carbide_core::event::{Key, KeyboardEvent, KeyboardEventHandler, MouseButton, MouseEvent, MouseEventHandler};
-use carbide_core::state::{State, StateContract, TState};
+use carbide_core::state::{ReadState, State, StateContract, TState};
 use carbide_core::widget::{CommonWidget, Id, Widget, WidgetIter, WidgetIterMut};
 
 #[derive(Debug, Clone, Widget)]
@@ -45,6 +45,7 @@ impl<T: StateContract> KeyboardEventHandler for PlainPopUpButtonPopUpItem<T> {
                         if *self.hovered.value() {
                             *self.selected_item.value_mut() = self.item.value().clone();
                             Self::close_overlay(env);
+                            env.request_animation_frame();
                         }
                     }
                     _ => ()
@@ -61,7 +62,8 @@ impl<T: StateContract> MouseEventHandler for PlainPopUpButtonPopUpItem<T> {
             MouseEvent::Click(MouseButton::Left, mouse_position, _) => {
                 if self.is_inside(*mouse_position) {
                     *self.selected_item.value_mut() = self.item.value().clone();
-                    Self::close_overlay(env)
+                    Self::close_overlay(env);
+                    env.request_animation_frame();
                 }
             }
             _ => ()

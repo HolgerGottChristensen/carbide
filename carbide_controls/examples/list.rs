@@ -31,7 +31,8 @@ fn main() {
         ZStack::new(vec![
             Rectangle::new().fill(EnvironmentColor::Green),
             Text::new(item),
-        ]).frame(SCALE, 80.0)
+        ]).frame(0.0, 80.0)
+            .expand_width()
     }
 
     window.set_widgets(

@@ -10,7 +10,7 @@ use carbide_core::focus::Focus;
 use carbide_core::layout::Layout;
 use carbide_core::prelude::{EnvironmentColor, Primitive};
 use carbide_core::render::Render;
-use carbide_core::state::{BoolState, FocusState, LocalState, State, StateContract, StateExt, StateKey, TState, UsizeState};
+use carbide_core::state::{BoolState, FocusState, LocalState, ReadState, State, StateContract, StateExt, StateKey, TState, UsizeState};
 use carbide_core::widget::*;
 
 use crate::{List, PlainButton};
@@ -18,13 +18,13 @@ use crate::plain::plain_pop_up_button_popup::PlainPopUpButtonPopUp;
 use crate::plain::plain_pop_up_button_popup_item::PlainPopUpButtonPopUpItem;
 
 #[derive(Clone)]
-pub struct PopupDelegate<T> where T: StateContract + 'static {
+pub struct PopupDelegate<T> where T: StateContract {
     hover_model: TState<Vec<bool>>,
     selected_item: TState<T>,
     popup_item_delegate: PopupItemDelegateGenerator<T>,
 }
 
-impl<T: StateContract + 'static> Delegate<T> for PopupDelegate<T> {
+impl<T: StateContract> Delegate<T> for PopupDelegate<T> {
     fn call(&self, item: TState<T>, index: UsizeState) -> Box<dyn Widget> {
         let hover_state = self.hover_model.index(index.clone());
         let selected_item_del = self.selected_item.clone();
@@ -188,7 +188,7 @@ impl<T: StateContract + PartialEq + 'static> PlainPopUpButton<T> {
         ZStack::new(vec![
             Rectangle::new().fill(color),
             Text::new(item.mapped(|a: &T| format!("{:?}", *a))),
-        ]).frame(SCALE, 30.0)
+        ]).frame_expand_width(30.0)
     }
 
     fn default_popup_delegate(
@@ -198,7 +198,7 @@ impl<T: StateContract + PartialEq + 'static> PlainPopUpButton<T> {
         List::new(model, delegate)
             .spacing(0.0)
             .clip()
-            .frame(SCALE, 200.0)
+            .frame_expand_width(200.0)
     }
 
     /*fn handle_mouse_event(
@@ -318,6 +318,7 @@ impl<T: StateContract + PartialEq + 'static> MouseEventHandler for PlainPopUpBut
                     self.popup.set_showing(true);
                     //println!("{:#?}", self.popup);
                     env.add_overlay("controls_popup_layer", Some(self.popup.clone()));
+                    env.request_animation_frame();
                 }
             }
             _ => ()

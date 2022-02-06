@@ -1,15 +1,17 @@
 use std::ops::{Deref, DerefMut};
+use carbide_core::prelude::Listener;
 
 use crate::Color;
 use crate::prelude::{Environment, State};
 use crate::prelude::EnvironmentColor;
-use crate::state::{ValueRef, ValueRefMut};
+use crate::state::{Listenable, ReadState, SubscriberList, ValueRef, ValueRefMut};
 use crate::state::StateKey;
 
 #[derive(Clone, Debug)]
 pub struct EnvironmentColorState {
     key: StateKey,
     value: Color,
+    subscribers: SubscriberList<Color>,
 }
 
 impl EnvironmentColorState {
@@ -17,6 +19,7 @@ impl EnvironmentColorState {
         EnvironmentColorState {
             key: StateKey::Color(key),
             value: Color::Rgba(0.0, 0.0, 0.0, 1.0),
+            subscribers: SubscriberList::new(),
         }
     }
 }
@@ -35,18 +38,30 @@ impl DerefMut for EnvironmentColorState {
     }
 }
 
-impl State<Color> for EnvironmentColorState {
-    fn capture_state(&mut self, env: &mut Environment) {
+impl crate::state::NewStateSync for EnvironmentColorState {
+    fn sync(&mut self, env: &mut Environment) {
         if let Some(color) = env.get_color(&self.key) {
-            self.value = color;
+            if self.value != color {
+                self.value = color;
+                self.subscribers.notify(&color)
+            }
         }
     }
+}
 
-    fn release_state(&mut self, _: &mut Environment) {}
+impl Listenable<Color> for EnvironmentColorState {
+    fn subscribe(&self, subscriber: Box<dyn Listener<Color>>) {
+        self.subscribers.add_subscriber(subscriber)
+    }
+}
 
+impl ReadState<Color> for EnvironmentColorState {
     fn value(&self) -> ValueRef<Color> {
         ValueRef::Borrow(&self.value)
     }
+}
+
+impl State<Color> for EnvironmentColorState {
 
     fn value_mut(&mut self) -> ValueRefMut<Color> {
         ValueRefMut::Borrow(&mut self.value)
@@ -54,5 +69,10 @@ impl State<Color> for EnvironmentColorState {
 
     fn set_value(&mut self, value: Color) {
         self.value = value;
+        self.notify();
+    }
+
+    fn notify(&self) {
+        self.subscribers.notify(&self.value)
     }
 }

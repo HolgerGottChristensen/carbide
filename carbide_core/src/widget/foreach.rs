@@ -17,7 +17,7 @@ impl<T: StateContract, K> Delegate<T> for K where K: Fn(TState<T>, UsizeState) -
 
 #[derive(Clone, Widget)]
 #[carbide_exclude(OtherEvent)]
-pub struct ForEach<T, U> where T: StateContract + 'static, U: Delegate<T> {
+pub struct ForEach<T, U> where T: StateContract, U: Delegate<T> {
     id: Uuid,
     position: Position,
     dimension: Dimension,
@@ -29,7 +29,7 @@ pub struct ForEach<T, U> where T: StateContract + 'static, U: Delegate<T> {
     #[state] index_offset: UsizeState,
 }
 
-impl<T: StateContract + 'static, U: Delegate<T>> ForEach<T, U> {
+impl<T: StateContract, U: Delegate<T>> ForEach<T, U> {
     pub fn new<K: Into<TState<Vec<T>>>>(model: K, delegate: U) -> Box<Self> {
         let model = model.into();
         let mut list: Vec<Box<dyn Widget>> = vec![];
@@ -81,7 +81,7 @@ impl<T: StateContract + 'static, U: Delegate<T>> ForEach<T, U> {
     }*/
 }
 
-impl<T: StateContract + 'static, U: Delegate<T>> OtherEventHandler for ForEach<T, U> {
+impl<T: StateContract, U: Delegate<T>> OtherEventHandler for ForEach<T, U> {
     fn handle_other_event(&mut self, _event: &WidgetEvent, _env: &mut Environment) {
         if self.model.value().len() < self.children.len() { // Remove the excess elements
             let number_to_remove = self.children.len() - self.model.value().len();
@@ -114,7 +114,7 @@ impl<T: StateContract + 'static, U: Delegate<T>> OtherEventHandler for ForEach<T
     }
 }
 
-impl<T: StateContract + 'static, U: Delegate<T>> CommonWidget for ForEach<T, U> {
+impl<T: StateContract, U: Delegate<T>> CommonWidget for ForEach<T, U> {
     fn id(&self) -> Uuid {
         self.id
     }
@@ -188,7 +188,7 @@ impl<T: StateContract + 'static, U: Delegate<T>> CommonWidget for ForEach<T, U> 
     }
 }
 
-impl<T: StateContract + 'static, U: Delegate<T>> Debug for ForEach<T, U> {
+impl<T: StateContract, U: Delegate<T>> Debug for ForEach<T, U> {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("ForEach")
             .field("children", &self.children)
@@ -196,4 +196,4 @@ impl<T: StateContract + 'static, U: Delegate<T>> Debug for ForEach<T, U> {
     }
 }
 
-impl<T: StateContract + 'static, U: Delegate<T> + 'static> WidgetExt for ForEach<T, U> {}
+impl<T: StateContract, U: Delegate<T> + 'static> WidgetExt for ForEach<T, U> {}

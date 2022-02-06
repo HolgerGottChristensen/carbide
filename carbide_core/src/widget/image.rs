@@ -132,8 +132,8 @@ impl Layout for Image {
 impl Render for Image {
     fn get_primitives(&mut self, primitives: &mut Vec<Primitive>, env: &mut Environment) {
         if let Some(color) = &mut self.color {
-            color.capture_state(env);
-            color.release_state(env);
+            color.sync(env);
+            //color.release_state(env);
         }
 
         if let Some(id) = self.image_id.value().deref() {

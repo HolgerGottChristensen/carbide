@@ -2,10 +2,11 @@ use std::fmt::Debug;
 use std::ops::{Deref, DerefMut};
 
 use dyn_clone::DynClone;
+use carbide_core::prelude::{NewStateSync, Listenable, Listener};
 
 use crate::environment::Environment;
 use crate::prelude::{StateContract, TState};
-use crate::state::{InnerState, LocalState, State, StringState, ValueCell, ValueState};
+use crate::state::{InnerState, LocalState, ReadState, State, StringState, ValueCell, ValueState};
 use crate::state::value_cell::{ValueRef, ValueRefMut};
 use crate::state::widget_state::WidgetState;
 
@@ -52,30 +53,30 @@ impl<FROM: StateContract, TO: StateContract> MapOwnedState<FROM, TO> {
     }
 }
 
-impl<FROM: StateContract, TO: StateContract> State<TO> for MapOwnedState<FROM, TO> {
-    fn capture_state(&mut self, env: &mut Environment) {
-        self.state.capture_state(env);
+impl<FROM: StateContract, TO: StateContract> NewStateSync for MapOwnedState<FROM, TO> {
+    fn sync(&mut self, env: &mut Environment) {
+        self.state.sync(env);
 
         if let Ok(mut borrow) = self.value.try_borrow_mut() {
             let value: TO = (&self.map)(&*self.state.value(), borrow.deref(), env);
             *borrow.deref_mut() = value;
         }
     }
+}
 
-    fn release_state(&mut self, env: &mut Environment) {
-        self.state.release_state(env);
-
-        // If we see more state update issues consider uncommenting this.
-        /*if let Ok(mut borrow) = self.value.try_borrow_mut() {
-            let value: TO = (&self.map)(&*self.state.value(), borrow.deref(), env);
-            *borrow.deref_mut() = value;
-        }*/
+impl<FROM: StateContract, TO: StateContract> Listenable<TO> for MapOwnedState<FROM, TO> {
+    fn subscribe(&self, subscriber: Box<dyn Listener<TO>>) {
+        todo!()
     }
+}
 
+impl<FROM: StateContract, TO: StateContract> ReadState<TO> for MapOwnedState<FROM, TO> {
     fn value(&self) -> ValueRef<TO> {
         self.value.borrow()
     }
+}
 
+impl<FROM: StateContract, TO: StateContract> State<TO> for MapOwnedState<FROM, TO> {
     fn value_mut(&mut self) -> ValueRefMut<TO> {
         self.value.borrow_mut()
     }
@@ -88,6 +89,10 @@ impl<FROM: StateContract, TO: StateContract> State<TO> for MapOwnedState<FROM, T
                 self.state.set_value(from);
             }
         }
+    }
+
+    fn notify(&self) {
+        todo!()
     }
 
     fn update_dependent(&mut self) {
@@ -108,7 +113,7 @@ impl<FROM: StateContract, TO: StateContract> Debug for MapOwnedState<FROM, TO> {
     }
 }
 
-impl<FROM: StateContract + 'static, TO: StateContract + 'static> Into<TState<TO>>
+impl<FROM: StateContract, TO: StateContract> Into<TState<TO>>
 for MapOwnedState<FROM, TO>
 {
     fn into(self) -> TState<TO> {

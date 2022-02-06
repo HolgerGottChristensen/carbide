@@ -1,4 +1,5 @@
 use std::collections::HashMap;
+use std::ops::Add;
 use std::path::{Path, PathBuf};
 use std::time::{Duration, Instant};
 
@@ -27,6 +28,7 @@ use carbide_core::prelude::Rectangle;
 use carbide_core::text::{FontFamily, FontId};
 use carbide_core::widget::{OverlaidLayer, ZStack};
 use carbide_core::widget::Widget;
+use carbide_core::event::CustomEvent;
 pub use carbide_core::window::TWindow;
 
 use crate::bind_group_layouts::{filter_buffer_bind_group_layout, filter_texture_bind_group_layout, main_texture_group_layout, uniform_bind_group_layout};
@@ -39,6 +41,7 @@ use crate::renderer::{atlas_cache_tex_desc, main_render_tex_desc, secondary_rend
 use crate::samplers::main_sampler;
 use crate::textures::create_depth_stencil_texture;
 use crate::vertex::Vertex;
+use crate::proxy_event_loop::ProxyEventLoop;
 #[cfg(target_os = "windows")]
 use winit::platform::windows::WindowExtWindows;
 
@@ -83,7 +86,7 @@ pub struct Window {
     pub(crate) second_vertex_buffer: Buffer,
     pub(crate) main_sampler: Sampler,
     inner_window: winit::window::Window,
-    event_loop: Option<EventLoop<()>>,
+    event_loop: Option<EventLoop<CustomEvent>>,
 }
 
 impl carbide_core::window::TWindow for Window {
@@ -180,7 +183,7 @@ impl Window {
     }
 
     pub fn new(title: impl Into<String>, width: u32, height: u32, icon: Option<PathBuf>) -> Self {
-        let event_loop = EventLoop::new();
+        let event_loop = EventLoop::<CustomEvent>::with_user_event();
 
         let loaded_icon = if let Some(path) = icon {
             let rgba_logo_image = image::open(path).expect("Couldn't load logo").to_rgba8();
@@ -224,14 +227,19 @@ impl Window {
         let scale_factor = inner_window.scale_factor();
 
         #[cfg(target_os = "macos")]
-            let ui = Ui::new(pixel_dimensions, scale_factor, Some(inner_window.ns_window()));
+            let ui = Ui::new(
+            pixel_dimensions,
+            scale_factor,
+            Some(inner_window.ns_window()),
+            Box::new(ProxyEventLoop(event_loop.create_proxy()))
+        );
 
         #[cfg(target_os = "windows")]
-            let ui = Ui::new(pixel_dimensions, scale_factor, Some(inner_window.hwnd()));
+            let ui = Ui::new(pixel_dimensions, scale_factor, Some(inner_window.hwnd()), Box::new(event_sink));
 
 
         #[cfg(all(not(target_os = "macos"), not(target_os = "windows")))]
-            let ui = Ui::new(pixel_dimensions, scale_factor, None);
+            let ui = Ui::new(pixel_dimensions, scale_factor, None, Box::new(event_sink));
 
         // The instance is a handle to our GPU
         // BackendBit::PRIMARY => Vulkan + Metal + DX12 + Browser WebGPU
@@ -441,7 +449,7 @@ impl Window {
         self.size = new_size;
         self.ui.set_window_width(self.size.width as f64);
         self.ui.set_window_height(self.size.height as f64);
-        self.ui.handle_event(Input::Redraw);
+        self.ui.compound_and_add_event(Input::Redraw);
         let depth_texture = create_depth_stencil_texture(&self.device, new_size.width, new_size.height);
         let depth_texture_view = depth_texture.create_view(&Default::default());
         self.depth_texture_view = depth_texture_view;
@@ -496,27 +504,35 @@ impl Window {
         });
     }
 
+    /// Request the window to redraw next frame
+    fn request_redraw(&self) {
+        self.inner_window.request_redraw();
+    }
+
     fn input(&mut self, event: &WindowEvent) -> bool {
         match convert_window_event(event, &self.inner_window) {
             None => false,
             Some(input) => {
-                self.ui.handle_event(input);
+                self.ui.compound_and_add_event(input);
                 false
             }
         }
     }
 
-    fn update(&mut self) {
+    /// Update the state of the UI by delegating all captured events to the widgets
+    /// Returns *true* if the update should result in a redraw.
+    fn update(&mut self) -> bool {
         // Capture the current time and update the animations in the environment.
         self.environment_mut().capture_time();
         self.environment_mut().update_animation();
+        self.environment_mut().clear_animation_frame();
 
         let next_index = self.image_map.next_index();
         self.environment_mut().set_last_image_index(next_index);
         self.environment_mut().check_tasks();
         self.add_queued_images();
 
-        self.ui.delegate_events();
+        self.ui.delegate_events()
     }
 
     fn add_queued_images(&mut self) {
@@ -527,17 +543,15 @@ impl Window {
         }
     }
 
+    /// This method launches the application. It is a call that only completed after the window
+    /// is closed.
     pub fn launch(mut self) {
         // Make the state sync on event loop run
         self.input(&WindowEvent::Focused(true));
-
         let mut event_loop = None;
-
         std::mem::swap(&mut event_loop, &mut self.event_loop);
 
-        let mut last_update_inst = Instant::now();
-        let mut last_frame_inst = Instant::now();
-        let (mut frame_count, mut accum_time) = (0, 0.0);
+        let mut last_render_start_time = Instant::now();
 
         event_loop.expect("The event loop should be retrieved").run(
             move |event, _, control_flow| {
@@ -601,35 +615,38 @@ impl Window {
                             }
                         }
                     }
-                    Event::RedrawRequested(_) => {
-                        self.update();
-                        self.inner_window.set_cursor_icon(convert_mouse_cursor(self.ui.mouse_cursor()));
-                        let time_since_last = last_frame_inst.elapsed().as_secs_f32();
-                        if time_since_last * 1000.0 > 20.0 {
-                            if time_since_last * 1000.0 > 50.0 {
-                                //println!("Very slow frame: {}ms", time_since_last * 1000.0);
-                            } else {
-                                //println!("Slow frame: {}ms", time_since_last * 1000.0);
-                            }
-                        }
-                        accum_time += time_since_last;
-                        last_frame_inst = Instant::now();
-                        frame_count += 1;
 
-                        if frame_count == 3600 {
-                            println!(
-                                "Avg frame time {}ms",
-                                accum_time * 1000.0 / frame_count as f32
-                            );
-                            accum_time = 0.0;
-                            frame_count = 0;
+                    // Gets called whenever we receive carbide sent events
+                    Event::UserEvent(event) => {
+                        println!("{:?}", event);
+                        self.ui.compound_and_add_event(Input::Custom(event));
+                        self.request_redraw();
+                    }
+
+                    // Gets called when all window and user events are delivered
+                    Event::MainEventsCleared => {
+                        // If we have any events queued up and update the UI
+                        if self.ui.has_queued_events() || self.ui.has_animations() {
+                            // If the ui should redraw because of the update
+                            if self.update() || self.ui.has_animations() {
+                                self.request_redraw();
+                            }
+
+                            self.inner_window.set_cursor_icon(convert_mouse_cursor(self.ui.mouse_cursor()));
                         }
+                    }
+
+                    // Gets called if redrawing is requested.
+                    Event::RedrawRequested(_) => {
+                        last_render_start_time = Instant::now();
+
                         match self.render() {
                             Ok(_) => {}
                             // Recreate the swap_chain if lost
                             Err(wgpu::SurfaceError::Lost) => {
                                 println!("Swap chain lost");
-                                self.resize(self.size)
+                                self.resize(self.size);
+                                self.request_redraw();
                             },
                             // The system is out of memory, we should probably quit
                             Err(wgpu::SurfaceError::OutOfMemory) => {
@@ -637,25 +654,24 @@ impl Window {
                                 *control_flow = ControlFlow::Exit
                             }
                             // All other errors (Outdated, Timeout) should be resolved by the next frame
-                            Err(e) => eprintln!("{:?}", e),
+                            Err(e) => {
+                                // We request a redraw the next frame
+                                self.request_redraw();
+                                eprintln!("{:?}", e)
+                            },
                         }
+
+                        // Wait for the next event to be received
+                        *control_flow = ControlFlow::Wait;
                     }
-                    Event::MainEventsCleared => {
-                        // RedrawRequested will only trigger once, unless we manually
-                        // request it.
-                        //self.inner_window.request_redraw();
-                    }
+
+                    // This is called after the rendering
                     Event::RedrawEventsCleared => {
-                        let target_frame_time = Duration::from_secs_f64(1.0 / 60.0);
-                        let time_since_last_frame = last_update_inst.elapsed();
-                        if time_since_last_frame >= target_frame_time {
-                            self.inner_window.request_redraw();
-                            last_update_inst = Instant::now();
-                        } else {
-                            *control_flow = ControlFlow::WaitUntil(
-                                Instant::now() + target_frame_time - time_since_last_frame,
-                            );
+                        // If we have any animations running we should draw as soon as possible next frame
+                        if self.ui.has_animations() {
+                            self.request_redraw();
                         }
+                        //self.request_redraw();
                     }
                     _ => {}
                 }

@@ -12,6 +12,7 @@
 //!
 
 use std::f32::consts::PI;
+use std::time::{Instant, SystemTime, UNIX_EPOCH};
 
 use rand::Rng;
 use serde::{Deserialize, Serialize};
@@ -56,6 +57,17 @@ impl Color {
             rng.gen_range(0.0, 1.0),
             rng.gen_range(0.0, 1.0),
         );
+    }
+
+    pub fn time() -> Self {
+        let now = SystemTime::now();
+        let duration = now.duration_since(UNIX_EPOCH).expect("Could not get duration since UNIX_EPOCH");
+        let duration_since = duration.as_millis() / 8 % 360;
+        return hsl(
+            degrees(duration_since as f32),
+            1.0,
+            0.5
+        )
     }
 }
 

@@ -59,7 +59,8 @@ fn main() {
                     Leaf(s, _) => s.clone(),
                 }
             })),
-        ]).frame(SCALE, 30.0)
+        ]).frame(0.0, 30.0)
+            .expand_width()
             .padding(EdgeInsets::single(0.0, 0.0, 0.0, 10.0))
     };
 

@@ -75,7 +75,7 @@ impl CursorIndex {
 
                 point
             } else {
-                panic!("The char index is outside of the letters({}): {} > {}", text, self.char, glyphs.len() - 1)
+                panic!("The char index is outside of the letters({}): {} > {}", text, self.char, glyphs.len() + 1)
             }
         } else {
             panic!("For now only operate on single line things")

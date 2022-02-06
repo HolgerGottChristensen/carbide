@@ -34,7 +34,8 @@ fn main() {
             RoundedRectangle::new(CornerRadii::all(10.0))
                 .fill(EnvironmentColor::Green),
             Text::new(item),
-        ]).frame(SCALE, 80.0)
+        ]).frame(0.0, 80.0)
+            .expand_width()
     }
 
     window.set_widgets(

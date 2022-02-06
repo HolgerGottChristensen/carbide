@@ -16,6 +16,7 @@ use crate::cursor::MouseCursor;
 use crate::draw::Dimension;
 use crate::draw::Scalar;
 use crate::environment::WidgetTransferAction;
+use crate::event::{CustomEvent, EventSink};
 use crate::focus::Refocus;
 use crate::mesh::TextureAtlas;
 use crate::prelude::{EnvironmentColor, EnvironmentVariable};
@@ -117,6 +118,10 @@ pub struct Environment {
     macos_window_handle: Option<*mut c_void>,
     #[cfg(target_os = "windows")]
     windows_window_handle: Option<*mut c_void>,
+
+    event_sink: Box<dyn EventSink>,
+
+    animation_widget_in_frame: usize,
 }
 
 impl std::fmt::Debug for Environment {
@@ -131,6 +136,7 @@ impl Environment {
         pixel_dimensions: Dimension,
         scale_factor: f64,
         window_handle: Option<*mut c_void>,
+        event_sink: Box<dyn EventSink>,
     ) -> Self {
         let default_font_family_name = "NotoSans";
 
@@ -164,7 +170,9 @@ impl Environment {
             #[cfg(target_os = "macos")]
             macos_window_handle: window_handle,
             #[cfg(target_os = "windows")]
-            windows_window_handle: window_handle
+            windows_window_handle: window_handle,
+            event_sink,
+            animation_widget_in_frame: 0
         }
     }
 
@@ -197,7 +205,7 @@ impl Environment {
         self.queued_images.take()
     }
 
-    pub fn insert_animation<A: StateContract + 'static>(&mut self, animation: Animation<A>) {
+    pub fn insert_animation<A: StateContract>(&mut self, animation: Animation<A>) {
         let poll = move |time: &Instant| {
             let mut animation = animation.clone();
             animation.update(time)
@@ -220,6 +228,12 @@ impl Environment {
         std::mem::swap(&mut temp, &mut self.animations);
     }
 
+    pub fn has_animations(&self) -> bool {
+        self.animations.as_ref().map(|a| a.len() > 0).unwrap_or(false)
+        || self.animation_widget_in_frame > 0
+    }
+
+    /// Check if any async tasks have completed and if so call their continuation.
     pub fn check_tasks(&mut self) {
         let mut temp = None;
         std::mem::swap(&mut temp, &mut self.async_task_queue);
@@ -278,8 +292,10 @@ impl Environment {
     ) {
         let (sender, receiver) = oneshot::channel();
 
+        let event_sink = self.event_sink.clone();
         let task_with_oneshot = task.then(|message| async move {
             let _ = sender.send(message);
+            event_sink.call(CustomEvent::Async);
             ()
         });
 
@@ -413,7 +429,19 @@ impl Environment {
         self.widget_transfer.insert(id, widget_transfer);
     }
 
-    pub fn clear(&mut self) {}
+    pub fn clear_animation_frame(&mut self) {
+        if self.animation_widget_in_frame > 0 {
+            self.animation_widget_in_frame -= 1;
+        }
+    }
+
+    pub fn request_animation_frame(&mut self) {
+        self.animation_widget_in_frame = self.animation_widget_in_frame.max(1);
+    }
+
+    pub fn request_multiple_animation_frames(&mut self, n: usize) {
+        self.animation_widget_in_frame = self.animation_widget_in_frame.max(n);
+    }
 
     pub fn get_global_state<T>(&self) -> InnerState<T> {
         todo!()
@@ -431,7 +459,7 @@ impl Environment {
     }
 
     /// Swaps the local state between the env and the state requesting it.
-    /*pub fn swap_local_state<T: StateContract + 'static>(&mut self, local_state: &mut LocalState<T>) {
+    /*pub fn swap_local_state<T: StateContract>(&mut self, local_state: &mut LocalState<T>) {
         if let Some(state_in_env) = self.local_state.get_mut(local_state.key()) {
             std::mem::swap(state_in_env, local_state.value());
         } else {

@@ -137,7 +137,7 @@ impl<S: 'static + Clone> Window<S> {
                 };
 
                 // Handle the input with the `Ui`.
-                self.ui.handle_event(input, &mut self.state);
+                self.ui.compound_and_add_event(input, &mut self.state);
 
                 // Set the widgets.
                 let ui = &mut self.ui.set_widgets();

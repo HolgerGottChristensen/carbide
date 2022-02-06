@@ -24,7 +24,8 @@ impl ProgressBar {
                 Spacer::new()
             ).percent(progress.clone())
                 .non_draggable()
-        ]).frame(SCALE, 5);
+        ]).frame(0.0, 5)
+            .expand_width();
 
         Box::new(ProgressBar {
             id: Id::new_v4(),

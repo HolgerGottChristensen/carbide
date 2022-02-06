@@ -11,6 +11,8 @@ pub use mouse_button::MouseButton;
 pub use mouse_event::MouseEventHandler;
 pub use other_event::OtherEventHandler;
 pub use touch::*;
+pub use custom_event::CustomEvent;
+pub use custom_event::EventSink;
 
 mod button;
 mod event;
@@ -25,3 +27,4 @@ mod mouse_event;
 mod other_event;
 mod touch;
 mod hot_key;
+mod custom_event;

@@ -1,3 +1,5 @@
+use std::fmt::{Debug, Formatter};
+use dyn_clone::DynClone;
 use crate::draw::{Dimension, Position};
 use crate::prelude::*;
 
@@ -9,31 +11,22 @@ pub struct Frame {
     id: Uuid,
     child: Box<dyn Widget>,
     position: Position,
-    #[state]
-    x: F64State,
-    #[state]
-    y: F64State,
+    #[state] x: F64State,
+    #[state] y: F64State,
     fixed_x: bool,
     fixed_y: bool,
-    #[state]
-    width: F64State,
-    #[state]
-    height: F64State,
-    expand_width: bool,
-    expand_height: bool,
+    #[state] width: FrameState,
+    #[state] height: FrameState,
 }
 
 impl Frame {
-    pub fn init<W: Into<F64State>, H: Into<F64State>>(
-        width: W,
-        height: H,
+    pub fn init(
+        width: impl Into<RState<f64>>,
+        height: impl Into<RState<f64>>,
         child: Box<dyn Widget>,
     ) -> Box<Frame> {
         let width = width.into();
         let height = height.into();
-        let expand_width = *width.value() == SCALE;
-
-        let expand_height = *height.value() == SCALE;
 
         Box::new(Frame {
             id: Default::default(),
@@ -43,14 +36,22 @@ impl Frame {
             y: 0.0.into(),
             fixed_x: false,
             fixed_y: false,
-            width: width.into(),
-            height: height.into(),
-            expand_width,
-            expand_height,
+            width: FrameState::Fixed(width),
+            height: FrameState::Fixed(height),
         })
     }
 
-    pub fn init_width(width: F64State, child: Box<dyn Widget>) -> Box<Frame> {
+    pub fn expand_width(mut self) -> Box<Frame> {
+        self.width = FrameState::Expand(10.0.into());
+        Box::new(self)
+    }
+
+    pub fn expand_height(mut self) -> Box<Frame> {
+        self.height = FrameState::Expand(10.0.into());
+        Box::new(self)
+    }
+
+    pub fn init_width(width: impl Into<RState<f64>>, child: Box<dyn Widget>) -> Box<Frame> {
         Box::new(Frame {
             id: Default::default(),
             child,
@@ -59,14 +60,12 @@ impl Frame {
             y: 0.0.into(),
             fixed_x: false,
             fixed_y: false,
-            width,
-            height: 0.0.into(),
-            expand_width: false,
-            expand_height: true,
+            width: FrameState::Fixed(width.into()),
+            height: FrameState::Expand(0.0.into()),
         })
     }
 
-    pub fn init_height(height: F64State, child: Box<dyn Widget>) -> Box<Frame> {
+    pub fn init_height(height: impl Into<RState<f64>>, child: Box<dyn Widget>) -> Box<Frame> {
         Box::new(Frame {
             id: Default::default(),
             child,
@@ -75,10 +74,8 @@ impl Frame {
             y: 0.0.into(),
             fixed_x: false,
             fixed_y: false,
-            width: 0.0.into(),
-            height,
-            expand_width: true,
-            expand_height: false,
+            width: FrameState::Expand(0.0.into()),
+            height: FrameState::Fixed(height.into()),
         })
     }
 
@@ -148,7 +145,9 @@ impl CommonWidget for Frame {
     }
 
     fn flexibility(&self) -> u32 {
-        if self.expand_width || self.expand_height {
+        if let FrameState::Expand(_) = self.width {
+            8
+        } else if let FrameState::Expand(_) = self.height {
             8
         } else {
             9
@@ -160,19 +159,19 @@ impl CommonWidget for Frame {
     }
 
     fn set_dimension(&mut self, dimension: Dimension) {
-        *self.width.value_mut() = dimension.width;
-        *self.height.value_mut() = dimension.height;
+        self.width.set_value(dimension.width);
+        self.height.set_value(dimension.height);
     }
 }
 
 impl Layout for Frame {
     fn calculate_size(&mut self, requested_size: Dimension, env: &mut Environment) -> Dimension {
-        if self.expand_width {
-            self.set_width(requested_size.width);
+        if let FrameState::Expand(e) = &mut self.width {
+            e.set_value(requested_size.width);
         }
 
-        if self.expand_height {
-            self.set_height(requested_size.height);
+        if let FrameState::Expand(e) = &mut self.height {
+            e.set_value(requested_size.height);
         }
 
         let dimensions = self.dimension();
@@ -203,3 +202,67 @@ impl Layout for Frame {
 }
 
 impl WidgetExt for Frame {}
+
+#[derive(Clone, Debug)]
+enum FrameState {
+    Expand(TState<f64>),
+    Fixed(RState<f64>)
+}
+
+impl NewStateSync for FrameState {
+    fn sync(&mut self, env: &mut Environment) {
+        match self {
+            FrameState::Expand(e) => {
+                e.sync(env)
+            }
+            FrameState::Fixed(f) => {
+                f.sync(env)
+            }
+        }
+    }
+}
+
+impl Listenable<f64> for FrameState {
+    fn subscribe(&self, subscriber: Box<dyn Listener<f64>>) {
+        match self {
+            FrameState::Expand(e) => {
+                e.subscribe(subscriber)
+            }
+            FrameState::Fixed(f) => {
+                f.subscribe(subscriber)
+            }
+        }
+    }
+}
+
+impl ReadState<f64> for FrameState {
+    fn value(&self) -> ValueRef<f64> {
+        match self {
+            FrameState::Expand(e) => {
+                e.value()
+            }
+            FrameState::Fixed(f) => {
+                f.value()
+            }
+        }
+    }
+}
+
+impl State<f64> for FrameState {
+    fn value_mut(&mut self) -> ValueRefMut<f64> {
+        unimplemented!("Should not be called")
+    }
+
+    fn set_value(&mut self, value: f64) {
+        match self {
+            FrameState::Expand(e) => {
+                e.set_value(value)
+            }
+            FrameState::Fixed(_) => {}
+        }
+    }
+
+    fn notify(&self) {
+        unimplemented!()
+    }
+}

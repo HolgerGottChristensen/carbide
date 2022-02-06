@@ -9,7 +9,7 @@ use carbide_core::draw::{Dimension, Position};
 use carbide_core::environment::{Environment, EnvironmentColor};
 use carbide_core::event::ModifierKey;
 use carbide_core::flags::Flags;
-use carbide_core::state::{F64State, LocalState, State, StateContract, StateExt, TState, UsizeState, ValueState};
+use carbide_core::state::{F64State, LocalState, ReadState, State, StateContract, StateExt, TState, UsizeState, ValueState};
 use carbide_core::widget::{CommonWidget, Delegate, EdgeInsets, ForEach, HStack, Id, IfElse, Rectangle, SCALE, Scroll, VStack, Widget, WidgetExt, WidgetIter, WidgetIterMut};
 use carbide_core::widget::canvas::Canvas;
 use crate::PlainButton;
@@ -18,7 +18,7 @@ const MULTI_SELECTION_MODIFIER: ModifierKey = if cfg!(target_os = "macos") {Modi
 const LIST_SELECTION_MODIFIER: ModifierKey = ModifierKey::SHIFT;
 
 #[derive(Clone, Widget)]
-pub struct List<T, U> where T: StateContract + 'static, U: Delegate<T> + 'static {
+pub struct List<T, U> where T: StateContract, U: Delegate<T> + 'static {
     id: Id,
     child: Box<dyn Widget>,
     delegate: U,
@@ -42,7 +42,7 @@ pub struct List<T, U> where T: StateContract + 'static, U: Delegate<T> + 'static
     tree_disclosure: TreeDisclosure,
 }
 
-impl<T: StateContract + 'static, U: Delegate<T> + 'static> List<T, U> {
+impl<T: StateContract, U: Delegate<T> + 'static> List<T, U> {
     pub fn new<V: Into<TState<Vec<T>>>>(model: V, delegate: U) -> Box<Self> {
         let index_offset_state = LocalState::new(0 as usize);
 
@@ -57,12 +57,14 @@ impl<T: StateContract + 'static, U: Delegate<T> + 'static> List<T, U> {
                 VStack::new(vec![
                     Rectangle::new()
                         .fill(TRANSPARENT) // RED for debugging
-                        .frame(SCALE, start_offset.clone()),
+                        .frame(0.0, start_offset.clone())
+                        .expand_width(),
                     ForEach::new(internal_model.clone(), delegate.clone()),
                     //.index_offset(index_offset_state.clone()),
                     Rectangle::new()
                         .fill(TRANSPARENT)// BLUE for debugging
-                        .frame(SCALE, end_offset.clone()),
+                        .frame(0.0, end_offset.clone())
+                        .expand_width(),
                 ])
                     .spacing(10.0),
             ),
@@ -93,12 +95,14 @@ impl<T: StateContract + 'static, U: Delegate<T> + 'static> List<T, U> {
             VStack::new(vec![
                 Rectangle::new()
                     .fill(TRANSPARENT)
-                    .frame(SCALE, self.start_offset.clone()),
+                    .frame(0.0, self.start_offset.clone())
+                    .expand_width(),
                 ForEach::new(self.internal_model.clone(), self.delegate.clone()),
                 //.index_offset(self.index_offset.clone()),
                 Rectangle::new()
                     .fill(TRANSPARENT)
-                    .frame(SCALE, self.end_offset.clone()),
+                    .frame(0.0, self.end_offset.clone())
+                    .expand_width(),
             ])
                 .spacing(spacing),
         );
@@ -118,11 +122,13 @@ impl<T: StateContract + 'static, U: Delegate<T> + 'static> List<T, U> {
             VStack::new(vec![
                 Rectangle::new()
                     .fill(TRANSPARENT)
-                    .frame(SCALE, self.start_offset.clone()),
+                    .frame(0.0, self.start_offset.clone())
+                    .expand_width(),
                 ForEach::new(self.internal_model.clone(), new_delegate.clone()),
                 Rectangle::new()
                     .fill(TRANSPARENT)
-                    .frame(SCALE, self.end_offset.clone()),
+                    .frame(0.0, self.end_offset.clone())
+                    .expand_width(),
             ])
                 .spacing(self.spacing),
         );
@@ -170,11 +176,13 @@ impl<T: StateContract + 'static, U: Delegate<T> + 'static> List<T, U> {
             VStack::new(vec![
                 Rectangle::new()
                     .fill(TRANSPARENT)
-                    .frame(SCALE, self.start_offset.clone()),
+                    .frame(0.0, self.start_offset.clone())
+                    .expand_width(),
                 ForEach::new(self.internal_model.clone(), new_delegate.clone()),
                 Rectangle::new()
                     .fill(TRANSPARENT)
-                    .frame(SCALE, self.end_offset.clone()),
+                    .frame(0.0, self.end_offset.clone())
+                    .expand_width(),
             ])
                 .spacing(self.spacing),
         );
@@ -391,7 +399,7 @@ impl<T: StateContract + 'static, U: Delegate<T> + 'static> List<T, U> {
     */
 }
 
-impl<T: StateContract + 'static, U: Delegate<T> + 'static> CommonWidget for List<T, U> {
+impl<T: StateContract, U: Delegate<T> + 'static> CommonWidget for List<T, U> {
     fn id(&self) -> Id {
         self.id
     }
@@ -453,17 +461,17 @@ impl<T: StateContract, U: Delegate<T>> Debug for List<T, U> {
     }
 }
 
-impl<T: StateContract + 'static, U: Delegate<T> + 'static> WidgetExt for List<T, U> {}
+impl<T: StateContract, U: Delegate<T> + 'static> WidgetExt for List<T, U> {}
 
 
 #[derive(Clone)]
-pub struct TreeListDelegate<T, U> where T: StateContract + 'static, U: Delegate<T> + 'static {
+pub struct TreeListDelegate<T, U> where T: StateContract, U: Delegate<T> + 'static {
     sub_tree_function: fn(TState<T>) -> TState<Option<Vec<T>>>,
     tree_disclosure: TreeDisclosure,
     inner_delegate: U,
 }
 
-impl<T: StateContract + 'static, U: Delegate<T> + 'static> Delegate<T> for TreeListDelegate<T, U> {
+impl<T: StateContract, U: Delegate<T> + 'static> Delegate<T> for TreeListDelegate<T, U> {
     fn call(&self, item: TState<T>, index: UsizeState) -> Box<dyn Widget> {
         let widget = self.inner_delegate.call(item.clone(), index.clone());
 
@@ -511,9 +519,9 @@ impl<T: StateContract + 'static, U: Delegate<T> + 'static> Delegate<T> for TreeL
 
         VStack::new(vec![
             HStack::new(vec![
-                IfElse::new(sub_tree_model.is_some())
-                    .when_true(disclosure)
-                    .when_false(disclosure_item.hidden()),
+                //IfElse::new(sub_tree_model.is_some())
+                //    .when_true(disclosure)
+                //    .when_false(disclosure_item.hidden()),
                 widget
             ]).spacing(0.0),
             IfElse::new(opened)
@@ -525,7 +533,7 @@ impl<T: StateContract + 'static, U: Delegate<T> + 'static> Delegate<T> for TreeL
 }
 
 #[derive(Clone)]
-pub struct SelectableListDelegate<T, U> where T: StateContract + 'static, U: Delegate<T> + 'static {
+pub struct SelectableListDelegate<T, U> where T: StateContract, U: Delegate<T> + 'static {
     item_id_function: fn(&T) -> Id,
     selection: Selection,
     inner_delegate: U,
@@ -533,7 +541,7 @@ pub struct SelectableListDelegate<T, U> where T: StateContract + 'static, U: Del
     internal_model: TState<Vec<T>>,
 }
 
-impl<T: StateContract + 'static, U: Delegate<T> + 'static> Delegate<T> for SelectableListDelegate<T, U> {
+impl<T: StateContract, U: Delegate<T> + 'static> Delegate<T> for SelectableListDelegate<T, U> {
     fn call(&self, item: TState<T>, index: UsizeState) -> Box<dyn Widget> {
         let selection = self.selection.clone();
         let last_selected_index = self.last_selected_index.clone();

@@ -14,7 +14,7 @@ use carbide_core::prelude::{EnvironmentColor, Layout, Primitive};
 use carbide_core::prelude::StateSync;
 use carbide_core::render::Render;
 use carbide_core::Scalar;
-use carbide_core::state::{AnimatedState, ColorState, F64State, FocusState, LocalState, ResStringState, State, StateExt, StringState, TState, U32State};
+use carbide_core::state::{AnimatedState, ColorState, F64State, FocusState, LocalState, ReadState, ResStringState, State, StateExt, StringState, TState, U32State};
 use carbide_core::text::{FontSize, Glyph};
 use carbide_core::widget::{CommonWidget, HStack, Id, IfElse, Rectangle, SCALE, Spacer, Text, Widget, WidgetExt, WidgetIter, WidgetIterMut, ZStack};
 use carbide_core::widget::Wrap;
@@ -192,7 +192,7 @@ impl PlainTextInput {
                         .when_true(
                             Rectangle::new()
                                 .fill(selection_color.clone())
-                                .frame(selection_width.clone(), font_size.clone().mapped(|val: &u32| *val as f64))
+                                .frame(selection_width.clone(), font_size.read_map(|val: &u32| *val as f64))
                                 .offset(selection_x.clone(), 0.0)
                         ),
                     Text::new(display_text.clone())
@@ -203,13 +203,13 @@ impl PlainTextInput {
                         .when_true(
                             Rectangle::new()
                                 .fill(cursor_color.clone())
-                                .frame(1.0, font_size.clone().mapped(|val: &u32| *val as f64))
+                                .frame(1.0, font_size.read_map(|val: &u32| *val as f64))
                                 .offset(cursor_x.clone(), 0.0),
                         ),
-                ]).with_alignment(BasicLayouter::TopLeading)
+                ]).with_alignment(BasicLayouter::Leading)
                     .offset(text_offset.clone(), 0.0),
                 Spacer::new(),
-            ]).frame(SCALE, 30);
+            ]).frame_expand_width(30);
 
         Box::new(PlainTextInput {
             id: Id::new_v4(),

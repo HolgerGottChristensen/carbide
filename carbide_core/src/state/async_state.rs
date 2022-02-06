@@ -4,9 +4,10 @@ use std::rc::Rc;
 
 use futures::{FutureExt};
 use oneshot::{Receiver, TryRecvError};
+use carbide_core::prelude::{NewStateSync, Listenable, Listener};
 
 use crate::environment::Environment;
-use crate::state::{State, StateContract, TState};
+use crate::state::{ReadState, State, StateContract, TState};
 use crate::state::value_cell::{ValueRef, ValueRefMut};
 use crate::state::widget_state::WidgetState;
 
@@ -57,8 +58,8 @@ impl<T: StateContract + Send + 'static> AsyncState<T> {
     }
 }
 
-impl<T: StateContract + Send + 'static> State<T> for AsyncState<T> {
-    fn capture_state(&mut self, _: &mut Environment) {
+impl<T: StateContract + Send> NewStateSync for AsyncState<T> {
+    fn sync(&mut self, env: &mut Environment) {
         if let Some(receiver) = &self.receiver {
             match receiver.try_recv() {
                 Ok(message) => {
@@ -73,19 +74,32 @@ impl<T: StateContract + Send + 'static> State<T> for AsyncState<T> {
             }
         }
     }
+}
 
-    fn release_state(&mut self, _: &mut Environment) {}
+impl<T: StateContract + Send> Listenable<T> for AsyncState<T> {
+    fn subscribe(&self, subscriber: Box<dyn Listener<T>>) {
+        todo!()
+    }
+}
 
+impl<T: StateContract + Send> ReadState<T> for AsyncState<T> {
     fn value(&self) -> ValueRef<T> {
         ValueRef::Borrow(&self.value)
     }
 
+}
+
+impl<T: StateContract + Send> State<T> for AsyncState<T> {
     fn value_mut(&mut self) -> ValueRefMut<T> {
         ValueRefMut::Borrow(&mut self.value)
     }
 
     fn set_value(&mut self, value: T) {
         self.value = value
+    }
+
+    fn notify(&self) {
+        todo!()
     }
 }
 

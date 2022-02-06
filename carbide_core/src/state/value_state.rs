@@ -1,9 +1,12 @@
 use std::fmt::{Debug, Formatter};
 use std::ops::{Deref, DerefMut};
+use std::rc::Rc;
 use std::str::FromStr;
+use carbide_core::prelude::{NewStateSync, Listenable};
 
 use crate::environment::Environment;
-use crate::state::{BoolState, MapOwnedState, MapState, ResStringState, State, StateContract, StateExt, StringState, TState};
+use crate::prelude::ReadState;
+use crate::state::{BoolState, InnerState, MapOwnedState, MapState, ResStringState, State, StateContract, StateExt, StringState, Listener, TState, ValueCell, SubscriberList};
 use crate::state::{ValueRef, ValueRefMut};
 use crate::state::widget_state::WidgetState;
 
@@ -13,15 +16,19 @@ pub struct ValueState<T>
         T: StateContract,
 {
     value: T,
+    subscribers: SubscriberList<T>,
 }
 
-impl<T: StateContract + 'static> ValueState<T> {
+impl<T: StateContract> ValueState<T> {
     pub fn new(value: T) -> TState<T> {
-        Box::new(ValueState { value }).into()
+        Self::new_raw(value).into()
     }
 
     pub fn new_raw(value: T) -> Box<Self> {
-        Box::new(ValueState { value })
+        Box::new(ValueState {
+            value,
+            subscribers: SubscriberList::new()
+        })
     }
 }
 
@@ -39,17 +46,33 @@ impl<T: StateContract> DerefMut for ValueState<T> {
     }
 }
 
-impl<T: StateContract> State<T> for ValueState<T> {
+impl<T: StateContract> NewStateSync for ValueState<T> {}
+
+impl<T: StateContract> Listenable<T> for ValueState<T> {
+    fn subscribe(&self, subscriber: Box<dyn Listener<T>>) {
+        self.subscribers.add_subscriber(subscriber)
+    }
+}
+
+impl<T: StateContract> ReadState<T> for ValueState<T> {
     fn value(&self) -> ValueRef<T> {
         ValueRef::Borrow(&self.value)
     }
+}
 
+
+impl<T: StateContract> State<T> for ValueState<T> {
     fn value_mut(&mut self) -> ValueRefMut<T> {
         ValueRefMut::Borrow(&mut self.value)
     }
 
     fn set_value(&mut self, value: T) {
         self.value = value;
+        self.notify();
+    }
+
+    fn notify(&self) {
+        self.subscribers.notify(&self.value);
     }
 }
 
@@ -61,14 +84,14 @@ impl<T: StateContract> Debug for ValueState<T> {
     }
 }
 
-impl<T: StateContract + 'static> Into<TState<T>> for Box<ValueState<T>> {
+impl<T: StateContract> Into<TState<T>> for Box<ValueState<T>> {
     fn into(self) -> TState<T> {
         WidgetState::new(self)
     }
 }
 
 /// This should implement into T state for pretty much all T.
-impl<T: StateContract + 'static> From<T> for TState<T> {
+impl<T: StateContract> From<T> for TState<T> {
     fn from(t: T) -> Self {
         ValueState::new(t)
     }

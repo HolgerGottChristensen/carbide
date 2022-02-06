@@ -10,6 +10,7 @@ macro_rules! animate {
     ($env:ident, $state:ident $(:= $from:expr)? => $to:expr $(, curve: $curve:expr)? $(, duration: $duration:expr)?) => {
         {
             use carbide_core::state::State;
+            use carbide_core::state::ReadState;
 
             let start = $state.value().clone();
             let animation = carbide_core::animation::Animation::new(
@@ -32,6 +33,8 @@ macro_rules! animate {
     ($env:ident, $state:ident $(:= $from:expr)? => $to:expr, interpolation: $interpolation:expr $(, curve: $curve:expr)? $(, duration: $duration:expr)?) => {
         {
             use carbide_core::state::State;
+            use carbide_core::state::ReadState;
+
 
             let start = $state.value().clone();
             let animation = carbide_core::animation::Animation::new_custom(

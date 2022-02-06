@@ -111,11 +111,13 @@ fn state_sync_token_stream(
         #[automatically_derived]
         impl #generics carbide_core::state::StateSync for #ident #generics #wheres {
             fn capture_state(&mut self, env: &mut carbide_core::environment::Environment) {
-                #(self.#state_idents.capture_state(env);)*
+                use carbide_core::state::NewStateSync;
+                #(self.#state_idents.sync(env);)*
             }
 
             fn release_state(&mut self, env: &mut carbide_core::environment::Environment) {
-                #(self.#state_idents.release_state(env);)*
+                use carbide_core::state::NewStateSync;
+                #(self.#state_idents.sync(env);)*
             }
         }
     }

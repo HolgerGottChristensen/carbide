@@ -44,7 +44,8 @@ fn main() {
                 .font_size(40)
         ]).cross_axis_alignment(CrossAxisAlignment::End)
             .spacing(3.0)
-    ]).frame(SCALE, 60.0)
+    ]).frame(0.0, 60.0)
+        .expand_width()
         .padding(5);
 
     window.set_widgets(

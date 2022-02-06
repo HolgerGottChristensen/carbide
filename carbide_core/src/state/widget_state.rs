@@ -3,9 +3,12 @@ use std::fmt;
 use std::fmt::{Debug, Formatter};
 
 use dyn_clone::DynClone;
+use carbide_core::prelude::{NewStateSync, ReadState, Listenable};
+use carbide_core::state::readonly::ReadWidgetState;
+use carbide_core::state::RState;
 
 use crate::prelude::Environment;
-use crate::state::{MapState, StateContract, StateExt, TState, UsizeState};
+use crate::state::{MapState, NewMapState, StateContract, StateExt, Listener, TState, UsizeState};
 pub use crate::state::State;
 use crate::state::value_cell::{ValueRef, ValueRefMut};
 
@@ -21,7 +24,7 @@ impl<T: StateContract> WidgetState<T> {
     }
 }
 
-impl<T: StateContract + 'static> WidgetState<Vec<T>> {
+impl<T: StateContract> WidgetState<Vec<T>> {
     pub fn index(&self, index: UsizeState) -> TState<T> {
         //Todo: In the future take index as a state instead of its value.
         let s: MapState<Vec<T>, T, UsizeState> =
@@ -36,25 +39,37 @@ impl<T: StateContract + 'static> WidgetState<Vec<T>> {
     }
 }
 
-impl<T: StateContract + 'static> WidgetState<Option<T>> {
-    pub fn is_some(&self) -> TState<bool> {
-        self.mapped(|t: &Option<T>| { t.is_some() })
+impl<T: StateContract> WidgetState<Option<T>> {
+    pub fn is_some(&self) -> RState<bool> {
+        self.read_map(|t: &Option<T>| {
+            t.is_some()
+        })
     }
 
-    pub fn is_none(&self) -> TState<bool> {
-        self.mapped(|t: &Option<T>| { t.is_none() })
+    pub fn is_none(&self) -> RState<bool> {
+        self.read_map(|t: &Option<T>| {
+            t.is_none()
+        })
     }
 }
 
 impl<T: StateContract + Default + 'static> WidgetState<Option<T>> {
     pub fn unwrap_or_default(&self) -> TState<T> {
-        self.mapped(|t: &Option<T>| { t.clone().unwrap_or_default() })
+        NewMapState::<Option<T>, T>::new(
+            self.clone(),
+            |val| {
+                val.clone().unwrap_or_default()
+            },
+            |new, old| {
+                Some(new)
+            }
+        )
     }
 }
 
-impl<T: StateContract + 'static> WidgetState<HashSet<T>> {
-    pub fn len(&self) -> TState<usize> {
-        self.mapped(|map: &HashSet<T>| {
+impl<T: StateContract> WidgetState<HashSet<T>> {
+    pub fn len(&self) -> RState<usize> {
+        self.read_map(|map: &HashSet<T>| {
             map.len()
         })
     }
@@ -78,25 +93,45 @@ impl<T: StateContract> Into<WidgetState<T>> for Box<dyn State<T>> {
     }
 }
 
-impl<T: StateContract> State<T> for WidgetState<T> {
-    fn capture_state(&mut self, env: &mut Environment) {
-        self.0.capture_state(env)
+impl<T: StateContract> Into<ReadWidgetState<T>> for WidgetState<T> {
+    fn into(self) -> ReadWidgetState<T> {
+        ReadWidgetState::ReadWriteState(self)
     }
+}
 
-    fn release_state(&mut self, env: &mut Environment) {
-        self.0.release_state(env)
+impl<T: StateContract> NewStateSync for WidgetState<T> {
+    fn sync(&mut self, env: &mut Environment) {
+        self.0.sync(env)
     }
+}
 
+impl<T: StateContract> Listenable<T> for WidgetState<T> {
+    fn subscribe(&self, subscriber: Box<dyn Listener<T>>) {
+        self.0.subscribe(subscriber)
+    }
+}
+
+impl<T: StateContract> ReadState<T> for WidgetState<T> {
     fn value(&self) -> ValueRef<T> {
         self.0.value()
     }
 
+    /*fn value_changed(&mut self) {
+        self.0.value_changed()
+    }*/
+}
+
+impl<T: StateContract> State<T> for WidgetState<T> {
     fn value_mut(&mut self) -> ValueRefMut<T> {
         self.0.value_mut()
     }
 
     fn set_value(&mut self, value: T) {
         self.0.set_value(value)
+    }
+
+    fn notify(&self) {
+        self.0.notify()
     }
 
     fn update_dependent(&mut self) {

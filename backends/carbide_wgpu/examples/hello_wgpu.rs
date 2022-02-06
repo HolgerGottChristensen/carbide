@@ -54,7 +54,8 @@ fn main() {
                                                .frame(800.0, 500.0)
                                        ).with_scroll_direction(ScrollDirection::Both)
                                            .clip(),
-                                   ]).frame(SCALE, 200.0),
+                                   ]).frame(0.0, 200.0)
+                                       .expand_width(),
                                ]).padding(EdgeInsets::all(10.0)),
                                HStack::new(vec![
                                    Spacer::new(),

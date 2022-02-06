@@ -60,7 +60,7 @@ fn main() {
 
     window.set_widgets(
         PopUpButton::new(model, selected)
-            .frame(200, SCALE),
+            .frame_expand_height(200),
     );
 
     window.launch();

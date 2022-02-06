@@ -129,7 +129,7 @@ fn main() {
         ]).spacing(0.0)
             .cross_axis_alignment(CrossAxisAlignment::Start)
             .padding(EdgeInsets::single(top_padding, 3.0, 10.0, 10.0))
-            .background(Rectangle::new().fill(background_color).frame_width(6.0))
+            .background(Rectangle::new().fill(background_color).frame_expand_height(6.0))
                 .with_alignment(BasicLayouter::Leading)
     };
 

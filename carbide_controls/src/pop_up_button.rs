@@ -51,12 +51,12 @@ impl PopUpButton {
                     }),
                 ])
                     .padding(EdgeInsets::single(0.0, 0.0, 0.0, 1.0))
-                    .frame(20.0, SCALE),
+                    .frame_expand_height(20.0),
             ]),
             RoundedRectangle::new(CornerRadii::all(3.0))
                 .stroke_style(1.0)
                 .stroke(EnvironmentColor::OpaqueSeparator),
-        ]).frame(SCALE, 22)
+        ]).frame_expand_width(22)
     }
 
     fn popup_item_delegate<T: StateContract + PartialEq + 'static>(
@@ -84,6 +84,6 @@ impl PopUpButton {
                 ),
                 Spacer::new(),
             ]),
-        ]).frame(SCALE, 24)
+        ]).frame_expand_width(24)
     }
 }

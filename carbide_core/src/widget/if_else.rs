@@ -11,12 +11,11 @@ pub struct IfElse {
     when_false: Box<dyn Widget>,
     position: Position,
     dimension: Dimension,
-    #[state]
-    predicate: BoolState,
+    #[state] predicate: TState<bool>,
 }
 
 impl IfElse {
-    pub fn new<B: Into<BoolState>>(predicate: B) -> Box<Self> {
+    pub fn new(predicate: impl Into<TState<bool>>) -> Box<Self> {
         Box::new(IfElse {
             id: Uuid::new_v4(),
             predicate: predicate.into(),

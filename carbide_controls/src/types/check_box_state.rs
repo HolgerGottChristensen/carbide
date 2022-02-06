@@ -1,8 +1,8 @@
 use serde::{Deserialize, Serialize};
 
 use carbide_core::environment::Environment;
-use carbide_core::prelude::{ValueRef, ValueRefMut};
-use carbide_core::state::{BoolState, MapOwnedState, State, TState};
+use carbide_core::prelude::{NewStateSync, Listenable, Listener, ValueRef, ValueRefMut};
+use carbide_core::state::{BoolState, MapOwnedState, ReadState, State, TState};
 
 #[derive(Clone, Debug)]
 pub struct CheckBoxState(TState<CheckBoxValue>);
@@ -20,18 +20,26 @@ impl Default for CheckBoxValue {
     }
 }
 
-impl State<CheckBoxValue> for CheckBoxState {
-    fn capture_state(&mut self, env: &mut Environment) {
-        self.0.capture_state(env)
+impl NewStateSync for CheckBoxState {
+    fn sync(&mut self, env: &mut Environment) {
+        self.0.sync(env)
     }
+}
 
-    fn release_state(&mut self, env: &mut Environment) {
-        self.0.release_state(env)
+impl Listenable for CheckBoxState {
+    fn subscribe(&self, subscriber: Box<dyn Listener>) {
+        todo!()
     }
+}
 
+impl ReadState<CheckBoxValue> for CheckBoxState {
     fn value(&self) -> ValueRef<CheckBoxValue> {
         self.0.value()
     }
+}
+
+
+impl State<CheckBoxValue> for CheckBoxState {
 
     fn value_mut(&mut self) -> ValueRefMut<CheckBoxValue> {
         self.0.value_mut()

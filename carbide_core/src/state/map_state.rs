@@ -1,8 +1,9 @@
 use std::fmt::Debug;
+use carbide_core::prelude::{NewStateSync, Listenable, Listener};
 
 use crate::environment::Environment;
 use crate::prelude::{StateContract, TState};
-use crate::state::{MapRev, State};
+use crate::state::{MapRev, ReadState, State};
 use crate::state::value_cell::{ValueRef, ValueRefMut};
 use crate::state::widget_state::WidgetState;
 
@@ -16,9 +17,9 @@ use crate::state::widget_state::WidgetState;
 #[derive(Clone)]
 pub struct MapState<FROM, TO, VALUE>
     where
-        FROM: StateContract + 'static,
-        TO: StateContract + 'static,
-        VALUE: StateContract + 'static
+        FROM: StateContract,
+        TO: StateContract,
+        VALUE: StateContract
 {
     state: TState<FROM>,
     inner_value: VALUE,
@@ -27,7 +28,7 @@ pub struct MapState<FROM, TO, VALUE>
     map_rev: Option<Box<dyn MapRev<FROM, TO>>>,
 }
 
-impl<FROM: StateContract + 'static, TO: StateContract + 'static, VALUE: StateContract + 'static> MapState<FROM, TO, VALUE> {
+impl<FROM: StateContract, TO: StateContract, VALUE: StateContract> MapState<FROM, TO, VALUE> {
     pub fn new<S, M1: MapRev<FROM, TO>>(
         state: S,
         value: VALUE,
@@ -48,19 +49,26 @@ impl<FROM: StateContract + 'static, TO: StateContract + 'static, VALUE: StateCon
     }
 }
 
-impl<FROM: StateContract + 'static, TO: StateContract + 'static, VALUE: StateContract + 'static> State<TO> for MapState<FROM, TO, VALUE> {
-    fn capture_state(&mut self, env: &mut Environment) {
-        self.state.capture_state(env)
+impl<FROM: StateContract, TO: StateContract, VALUE: StateContract> NewStateSync for MapState<FROM, TO, VALUE> {
+    fn sync(&mut self, env: &mut Environment) {
+        self.state.sync(env)
     }
+}
 
-    fn release_state(&mut self, env: &mut Environment) {
-        self.state.release_state(env)
+impl<FROM: StateContract, TO: StateContract, VALUE: StateContract> Listenable<TO> for MapState<FROM, TO, VALUE> {
+    fn subscribe(&self, subscriber: Box<dyn Listener<TO>>) {
+        todo!()
     }
+}
 
+impl<FROM: StateContract, TO: StateContract, VALUE: StateContract> ReadState<TO> for MapState<FROM, TO, VALUE> {
     fn value(&self) -> ValueRef<TO> {
         ValueRef::map(self.state.value(), |a| { (self.map)(a, self.inner_value.clone()) })
     }
+}
 
+
+impl<FROM: StateContract, TO: StateContract, VALUE: StateContract> State<TO> for MapState<FROM, TO, VALUE> {
     fn value_mut(&mut self) -> ValueRefMut<TO> {
         let val = self.inner_value.clone();
         let function = self.map_mut;
@@ -79,9 +87,13 @@ impl<FROM: StateContract + 'static, TO: StateContract + 'static, VALUE: StateCon
         let function = self.map_mut;
         *ValueRefMut::map(self.state.value_mut(), |a| { function(a, val) }) = value;
     }
+
+    fn notify(&self) {
+        todo!()
+    }
 }
 
-impl<FROM: StateContract + 'static, TO: StateContract + 'static, VALUE: StateContract + 'static> Debug for MapState<FROM, TO, VALUE> {
+impl<FROM: StateContract, TO: StateContract, VALUE: StateContract> Debug for MapState<FROM, TO, VALUE> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("MapState")
             .field("value", &*self.value())
@@ -89,7 +101,7 @@ impl<FROM: StateContract + 'static, TO: StateContract + 'static, VALUE: StateCon
     }
 }
 
-impl<FROM: StateContract + 'static, TO: StateContract + 'static, VALUE: StateContract + 'static> Into<TState<TO>>
+impl<FROM: StateContract, TO: StateContract, VALUE: StateContract> Into<TState<TO>>
 for MapState<FROM, TO, VALUE>
 {
     fn into(self) -> TState<TO> {

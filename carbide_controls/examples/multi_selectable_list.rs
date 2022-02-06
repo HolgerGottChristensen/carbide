@@ -52,7 +52,8 @@ fn main() {
         ZStack::new(vec![
             Rectangle::new().fill(background_color),
             Text::new(lens!((String, Id); |item| {item.0.clone()})),
-        ]).frame(SCALE, 80.0)
+        ]).frame(0.0, 80.0)
+            .expand_width()
     };
 
     window.set_widgets(

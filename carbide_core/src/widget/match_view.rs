@@ -39,7 +39,7 @@ impl<T: StateContract + Hash + PartialEq + Eq  + 'static> Match<T> {
 
 impl<T: Hash + StateContract + PartialEq + Eq  + 'static> StateSync for Match<T> {
     fn capture_state(&mut self, env: &mut Environment) {
-        self.local_state.capture_state(env);
+        self.local_state.sync(env);
         if let Some(current_key) = &self.current_key {
             if current_key == self.local_state.value().deref() { return; }
             if let Some(mut w) = self.widgets.remove(&self.local_state.value()) {
@@ -59,7 +59,7 @@ impl<T: Hash + StateContract + PartialEq + Eq  + 'static> StateSync for Match<T>
     }
 
     fn release_state(&mut self, env: &mut Environment) {
-        self.local_state.release_state(env);
+        self.local_state.sync(env);
     }
 }
 

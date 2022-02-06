@@ -38,45 +38,45 @@ impl EnvUpdating {
         for env_to_update in &mut self.envs_to_update {
             match env_to_update {
                 EnvironmentStateContainer::String { key, value } => {
-                    value.capture_state(env);
+                    value.sync(env);
                     let to_update = value.value().clone();
 
                     env.push(EnvironmentVariable::String { key: key.clone(), value: to_update });
-                    value.release_state(env);
+                    //value.release_state(env);
                 }
                 EnvironmentStateContainer::U32 { key, value } => {
-                    value.capture_state(env);
+                    value.sync(env);
                     let to_update = *value.value();
 
                     env.push(EnvironmentVariable::U32 { key: key.clone(), value: to_update });
-                    value.release_state(env);
+                    //value.release_state(env);
                 }
                 EnvironmentStateContainer::F64 { key, value } => {
-                    value.capture_state(env);
+                    value.sync(env);
                     let to_update = *value.value();
 
                     env.push(EnvironmentVariable::F64 { key: key.clone(), value: to_update });
-                    value.release_state(env);
+                    //value.release_state(env);
                 }
                 EnvironmentStateContainer::Color { key, value } => {
-                    value.capture_state(env);
+                    value.sync(env);
                     let to_update = *value.value();
                     env.push(EnvironmentVariable::Color { key: key.clone(), value: to_update });
-                    value.release_state(env);
+                    //value.release_state(env);
                 }
                 EnvironmentStateContainer::FontSize { key, value } => {
-                    value.capture_state(env);
+                    value.sync(env);
                     let to_update = *value.value();
 
                     env.push(EnvironmentVariable::FontSize { key: key.clone(), value: to_update });
-                    value.release_state(env);
+                    //value.release_state(env);
                 }
                 EnvironmentStateContainer::I32 { key, value } => {
-                    value.capture_state(env);
+                    value.sync(env);
                     let to_update = *value.value();
 
                     env.push(EnvironmentVariable::I32 { key: key.clone(), value: to_update });
-                    value.release_state(env);
+                    //value.release_state(env);
                 }
             }
         }

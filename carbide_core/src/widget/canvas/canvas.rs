@@ -138,14 +138,14 @@ impl Shape for Canvas {
         for (path, options) in paths {
             match options {
                 ShapeStyleWithOptions::Fill(fill_options, mut color) => {
-                    color.capture_state(env);
+                    color.sync(env);
                     prims.push(self.get_fill_prim(path, fill_options, *color.value()));
-                    color.release_state(env);
+                    //color.release_state(env);
                 }
                 ShapeStyleWithOptions::Stroke(stroke_options, mut color) => {
-                    color.capture_state(env);
+                    color.sync(env);
                     prims.push(self.get_stroke_prim(path, stroke_options, *color.value()));
-                    color.release_state(env);
+                    //color.release_state(env);
                 }
             }
         }
@@ -177,14 +177,14 @@ impl Render for Canvas {
         for (path, options) in paths {
             match options {
                 ShapeStyleWithOptions::Fill(fill_options, mut color) => {
-                    color.capture_state(env);
+                    color.sync(env);
                     primitives.push(self.get_fill_prim(path, fill_options, *color.value()));
-                    color.release_state(env);
+                    //color.release_state(env);
                 }
                 ShapeStyleWithOptions::Stroke(stroke_options, mut color) => {
-                    color.capture_state(env);
+                    color.sync(env);
                     primitives.push(self.get_stroke_prim(path, stroke_options, *color.value()));
-                    color.release_state(env);
+                    //color.release_state(env);
                 }
             }
         }

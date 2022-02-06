@@ -7,7 +7,7 @@ use instant::Instant;
 use crate::{color, cursor};
 use crate::cursor::MouseCursor;
 use crate::draw::Dimension;
-use crate::event::{EventHandler, Input, Key, KeyboardEvent, ModifierKey, OtherEventHandler, WidgetEvent, WindowEvent};
+use crate::event::{CustomEvent, EventHandler, EventSink, Input, Key, KeyboardEvent, ModifierKey, OtherEventHandler, WidgetEvent, WindowEvent};
 use crate::focus::{Focusable, Refocus};
 use crate::prelude::Environment;
 use crate::prelude::EnvironmentColor;
@@ -36,7 +36,7 @@ pub struct Ui {
 
 impl Ui {
     /// A new, empty **Ui**.
-    pub fn new(window_pixel_dimensions: Dimension, scale_factor: f64, window_handle: Option<*mut c_void>) -> Self {
+    pub fn new(window_pixel_dimensions: Dimension, scale_factor: f64, window_handle: Option<*mut c_void>, event_sink: Box<dyn EventSink>) -> Self {
         macro_rules! env_color {
             ($var:ident, $r:literal, $g:literal, $b:literal, $a:literal) => {
                 EnvironmentVariable::Color {
@@ -411,7 +411,14 @@ impl Ui {
             .map(|item| item.clone())
             .collect::<Vec<_>>();
 
-        let environment = Environment::new(base_environment, window_pixel_dimensions, scale_factor, window_handle);
+        let environment =
+            Environment::new(
+                base_environment,
+                window_pixel_dimensions,
+                scale_factor,
+                window_handle,
+                event_sink
+            );
 
         Ui {
             widgets: Rectangle::new()
@@ -434,10 +441,19 @@ impl Ui {
         self.environment.set_scale_factor(scale_factor);
     }
 
-    pub fn handle_event(&mut self, event: Input) {
+    pub fn has_animations(&self) -> bool {
+        self.environment.has_animations()
+    }
+
+    pub fn has_queued_events(&self) -> bool {
+        self.event_handler.get_events().len() > 0
+    }
+
+    pub fn compound_and_add_event(&mut self, event: Input) {
+
         let window_event = self
             .event_handler
-            .handle_event(event, self.environment.get_corrected_dimensions());
+            .compound_and_add_event(event, self.environment.get_corrected_dimensions());
 
         //let mut _needs_redraw = self.delegate_events(global_state);
 
@@ -466,9 +482,7 @@ impl Ui {
         let now = Instant::now();
         let events = self.event_handler.get_events();
 
-        if events.len() > 0 {
-            self.environment.set_cursor(MouseCursor::Arrow);
-        }
+        self.environment.set_cursor(MouseCursor::Arrow);
 
         for event in events {
             self.environment.capture_time();
@@ -490,6 +504,7 @@ impl Ui {
                     self.widgets
                         .process_other_event(event, &mut self.environment);
                 }
+                WidgetEvent::Custom(_) => {}
                 WidgetEvent::DoneProcessingEvents => {
                     self.widgets.process_other_event(event, &mut self.environment);
                 }

@@ -1,4 +1,4 @@
-use crate::event::Button;
+use crate::event::{Button, CustomEvent};
 use crate::event::Motion;
 use crate::event::touch::Touch;
 
@@ -35,6 +35,8 @@ pub enum Input {
     Focus(bool),
     /// The backed requested to redraw.
     Redraw,
+    /// Custom carbide event
+    Custom(CustomEvent)
 }
 
 impl From<Touch> for Input {

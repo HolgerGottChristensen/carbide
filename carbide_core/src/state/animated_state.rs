@@ -1,9 +1,10 @@
 use std::fmt::Debug;
 use std::ops::{Add, DerefMut, Mul};
 use std::time::{Duration, Instant};
+use carbide_core::prelude::{NewStateSync, Listenable};
 
 use crate::environment::Environment;
-use crate::state::{InnerState, MapOwnedState, State, StateContract, TState};
+use crate::state::{InnerState, MapOwnedState, ReadState, State, StateContract, Listener, TState};
 use crate::state::animation_curve::linear;
 use crate::state::value_cell::{ValueCell, ValueRef, ValueRefMut};
 use crate::state::widget_state::WidgetState;
@@ -112,16 +113,26 @@ impl AnimatedState {
     }
 }
 
-impl State<f64> for AnimatedState {
-    fn capture_state(&mut self, _: &mut Environment) {}
+impl NewStateSync for AnimatedState {
+    fn sync(&mut self, env: &mut Environment) {
+        env.request_animation_frame();
+    }
+}
 
-    fn release_state(&mut self, _: &mut Environment) {}
+impl Listenable<f64> for AnimatedState {
+    fn subscribe(&self, subscriber: Box<dyn Listener<f64>>) {
+        todo!()
+    }
+}
 
+impl ReadState<f64> for AnimatedState {
     fn value(&self) -> ValueRef<f64> {
         self.calc_percentage();
         self.percent.borrow()
     }
+}
 
+impl State<f64> for AnimatedState {
     fn value_mut(&mut self) -> ValueRefMut<f64> {
         self.calc_percentage();
         self.percent.borrow_mut()
@@ -130,6 +141,10 @@ impl State<f64> for AnimatedState {
     fn set_value(&mut self, value: f64) {
         self.calc_percentage();
         *self.percent.borrow_mut() = value;
+    }
+
+    fn notify(&self) {
+        todo!()
     }
 }
 

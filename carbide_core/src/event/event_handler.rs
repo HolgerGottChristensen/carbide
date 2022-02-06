@@ -4,7 +4,7 @@ use std::time::Duration;
 use instant::Instant;
 
 use crate::draw::{Dimension, Position, Scalar};
-use crate::event::{Button, Input, Key, ModifierKey, Motion, MouseButton};
+use crate::event::{Button, CustomEvent, Input, Key, ModifierKey, Motion, MouseButton};
 
 /// A basic, non-interactive rectangle shape widget.
 #[derive(Debug)]
@@ -33,6 +33,7 @@ pub enum WidgetEvent {
     Keyboard(KeyboardEvent),
     Window(WindowEvent),
     Touch(TouchEvent),
+    Custom(CustomEvent),
     DoneProcessingEvents,
 }
 
@@ -191,7 +192,7 @@ impl EventHandler {
     ///
     /// The given `event` must implement the **ToRawEvent** trait so that it can be converted to a
     /// `RawEvent` that can be used by the `Ui`.
-    pub fn handle_event(
+    pub fn compound_and_add_event(
         &mut self,
         event: Input,
         window_dimensions: Dimension,
@@ -434,6 +435,10 @@ impl EventHandler {
             Input::Redraw => {
                 //ui.needs_redraw();
                 Some(WindowEvent::Redraw)
+            }
+            Input::Custom(event) => {
+                self.add_event(WidgetEvent::Custom(event));
+                None
             }
         }
     }

@@ -20,12 +20,12 @@ fn left_click_mouse(ui: &mut Ui) {
 
 fn release_mouse_button(button: MouseButton, ui: &mut Ui) {
     let event = Input::Release(Button::Mouse(button));
-    ui.handle_event(event);
+    ui.compound_and_add_event(event);
 }
 
 fn press_mouse_button(button: MouseButton, ui: &mut Ui) {
     let event = Input::Press(Button::Mouse(button));
-    ui.handle_event(event);
+    ui.compound_and_add_event(event);
 }
 
 fn move_mouse_to_widget(widget_id: widget::Id, ui: &mut Ui) {
@@ -36,13 +36,13 @@ fn move_mouse_to_widget(widget_id: widget::Id, ui: &mut Ui) {
 }
 
 fn move_mouse_to_abs_coordinates(x: f64, y: f64, ui: &mut Ui) {
-    ui.handle_event(Input::Motion(
+    ui.compound_and_add_event(Input::Motion(
         crate::carbide_core::input::Motion::MouseCursor { x, y },
     ));
 }
 
 fn test_handling_basic_input_event(ui: &mut Ui, event: Input) {
-    ui.handle_event(event.clone());
+    ui.compound_and_add_event(event.clone());
     assert_event_was_pushed(ui, event::Event::Raw(event));
 }
 
@@ -115,7 +115,7 @@ fn ui_should_push_input_events_to_aggregator() {
 #[test]
 fn high_level_scroll_event_should_be_created_from_a_raw_mouse_scroll() {
     let mut ui = windowless_ui();
-    ui.handle_event(Input::Motion(Motion::Scroll { x: 10.0, y: 33.0 }));
+    ui.compound_and_add_event(Input::Motion(Motion::Scroll { x: 10.0, y: 33.0 }));
 
     let expected_scroll = event::Scroll {
         x: 10.0,

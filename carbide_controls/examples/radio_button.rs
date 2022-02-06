@@ -58,7 +58,7 @@ fn main() {
             RadioButton::new("Star", Shape::Star, shape_state.clone()),
         ]).spacing(10.0)
             .cross_axis_alignment(CrossAxisAlignment::Start)
-            .accent_color(EnvironmentColor::Orange)
+            //.accent_color(EnvironmentColor::Orange)
             .padding(EdgeInsets::all(40.0)),
     );
 

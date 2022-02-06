@@ -1,7 +1,8 @@
 use std::fmt::{Debug, Formatter};
+use carbide_core::prelude::{NewStateSync, Listenable, Listener};
 
 use crate::prelude::Environment;
-use crate::state::{StateContract, TState, UsizeState};
+use crate::state::{ReadState, StateContract, TState, UsizeState};
 use crate::state::state::State;
 use crate::state::value_cell::{ValueRef, ValueRefMut};
 use crate::state::widget_state::WidgetState;
@@ -24,20 +25,30 @@ impl<T: StateContract> VecState<T> {
     }
 }
 
-impl<T: StateContract> State<T> for VecState<T> {
-    fn capture_state(&mut self, _: &mut Environment) {}
+impl<T: StateContract> NewStateSync for VecState<T> {}
 
-    fn release_state(&mut self, _: &mut Environment) {}
+impl<T: StateContract> Listenable<T> for VecState<T> {
+    fn subscribe(&self, subscriber: Box<dyn Listener<T>>) {
+        todo!()
+    }
+}
 
+impl<T: StateContract> ReadState<T> for VecState<T> {
     fn value(&self) -> ValueRef<T> {
         todo!()
     }
+}
 
+impl<T: StateContract> State<T> for VecState<T> {
     fn value_mut(&mut self) -> ValueRefMut<T> {
         todo!()
     }
 
     fn set_value(&mut self, value: T) {
+        todo!()
+    }
+
+    fn notify(&self) {
         todo!()
     }
 }
@@ -51,13 +62,13 @@ impl<T: StateContract> Debug for VecState<T> {
     }
 }
 
-impl<T: StateContract + 'static> Into<TState<T>> for VecState<T> {
+impl<T: StateContract> Into<TState<T>> for VecState<T> {
     fn into(self) -> TState<T> {
         WidgetState::new(Box::new(self))
     }
 }
 
-impl<T: StateContract + 'static> Into<TState<T>> for Box<VecState<T>> {
+impl<T: StateContract> Into<TState<T>> for Box<VecState<T>> {
     fn into(self) -> TState<T> {
         WidgetState::new(self)
     }
