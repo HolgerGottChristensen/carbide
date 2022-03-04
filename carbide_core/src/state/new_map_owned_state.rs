@@ -2,7 +2,7 @@ use std::fmt::Debug;
 use std::ops::{Deref, DerefMut};
 
 use dyn_clone::DynClone;
-use carbide_core::prelude::{NewStateSync, Listenable};
+use carbide_core::prelude::{NewStateSync, Listenable, Id};
 use carbide_core::state::Listener;
 
 use crate::environment::Environment;
@@ -51,8 +51,12 @@ impl<FROM: StateContract, TO: StateContract> NewMapState<FROM, TO> {
 impl<FROM: StateContract, TO: StateContract> NewStateSync for NewMapState<FROM, TO> {}
 
 impl<FROM: StateContract, TO: StateContract> Listenable<TO> for NewMapState<FROM, TO> {
-    fn subscribe(&self, subscriber: Box<dyn Listener<TO>>) {
-        self.listeners.add_subscriber(subscriber);
+    fn subscribe(&self, subscriber: Box<dyn Listener<TO>>) -> Id {
+        self.listeners.add_subscriber(subscriber)
+    }
+
+    fn unsubscribe(&self, id: &Id) {
+        self.listeners.remove_subscriber(id)
     }
 }
 

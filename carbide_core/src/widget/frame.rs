@@ -223,13 +223,24 @@ impl NewStateSync for FrameState {
 }
 
 impl Listenable<f64> for FrameState {
-    fn subscribe(&self, subscriber: Box<dyn Listener<f64>>) {
+    fn subscribe(&self, subscriber: Box<dyn Listener<f64>>) -> Id {
         match self {
             FrameState::Expand(e) => {
                 e.subscribe(subscriber)
             }
             FrameState::Fixed(f) => {
                 f.subscribe(subscriber)
+            }
+        }
+    }
+
+    fn unsubscribe(&self, id: &Id) {
+        match self {
+            FrameState::Expand(e) => {
+                e.unsubscribe(id)
+            }
+            FrameState::Fixed(f) => {
+                f.unsubscribe(id)
             }
         }
     }

@@ -1,5 +1,5 @@
 use std::fmt::Debug;
-use carbide_core::prelude::{NewStateSync, Listenable, Listener};
+use carbide_core::prelude::{NewStateSync, Listenable, Listener, Id};
 
 use crate::environment::Environment;
 use crate::prelude::{StateContract, TState};
@@ -56,7 +56,11 @@ impl<FROM: StateContract, TO: StateContract, VALUE: StateContract> NewStateSync 
 }
 
 impl<FROM: StateContract, TO: StateContract, VALUE: StateContract> Listenable<TO> for MapState<FROM, TO, VALUE> {
-    fn subscribe(&self, subscriber: Box<dyn Listener<TO>>) {
+    fn subscribe(&self, subscriber: Box<dyn Listener<TO>>) -> Id {
+        todo!()
+    }
+
+    fn unsubscribe(&self, id: &Id) {
         todo!()
     }
 }

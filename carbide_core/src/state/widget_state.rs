@@ -3,7 +3,7 @@ use std::fmt;
 use std::fmt::{Debug, Formatter};
 
 use dyn_clone::DynClone;
-use carbide_core::prelude::{NewStateSync, ReadState, Listenable};
+use carbide_core::prelude::{NewStateSync, ReadState, Listenable, Id};
 use carbide_core::state::readonly::ReadWidgetState;
 use carbide_core::state::RState;
 
@@ -12,6 +12,13 @@ use crate::state::{MapState, NewMapState, StateContract, StateExt, Listener, TSt
 pub use crate::state::State;
 use crate::state::util::value_cell::{ValueRef, ValueRefMut};
 
+/// # Widget state
+/// This is a wrapper to make it easier to work with different kinds of read-write state.
+/// It is commonly seen as ['TState'].
+///
+/// Its generic value is the type of state that will be received when calling ['value()']
+/// It implements ['Clone'], ['Debug'] and is also listenable. When subscribing to this value
+/// the listener is actually added to the inner state.
 pub struct WidgetState<T>(Box<dyn State<T>>);
 
 impl<T: StateContract> WidgetState<T> {
@@ -40,6 +47,9 @@ impl<T: StateContract> WidgetState<Vec<T>> {
 }
 
 impl<T: StateContract> WidgetState<Option<T>> {
+    /// Allows calling is_some in the option. Returns a read-only boolean state. The reason it is
+    /// read-only is because it would not be meaningful to set the state with a boolean and expect
+    /// the original state to be changed.
     pub fn is_some(&self) -> RState<bool> {
         self.read_map(|t: &Option<T>| {
             t.is_some()
@@ -106,8 +116,12 @@ impl<T: StateContract> NewStateSync for WidgetState<T> {
 }
 
 impl<T: StateContract> Listenable<T> for WidgetState<T> {
-    fn subscribe(&self, subscriber: Box<dyn Listener<T>>) {
+    fn subscribe(&self, subscriber: Box<dyn Listener<T>>) -> Id {
         self.0.subscribe(subscriber)
+    }
+
+    fn unsubscribe(&self, id: &Id) {
+        self.0.unsubscribe(id)
     }
 }
 

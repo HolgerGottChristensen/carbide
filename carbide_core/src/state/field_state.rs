@@ -1,6 +1,6 @@
 use std::fmt::Debug;
 use std::rc::Rc;
-use carbide_core::prelude::{NewStateSync, Listenable};
+use carbide_core::prelude::{NewStateSync, Listenable, Id};
 
 use crate::environment::Environment;
 use crate::prelude::{StateContract, TState};
@@ -81,8 +81,12 @@ impl<FROM: StateContract, TO: StateContract> NewStateSync for FieldState<FROM, T
 }
 
 impl<FROM: StateContract, TO: StateContract> Listenable<TO> for FieldState<FROM, TO> {
-    fn subscribe(&self, subscriber: Box<dyn Listener<TO>>) {
+    fn subscribe(&self, subscriber: Box<dyn Listener<TO>>) -> Id {
         self.subscribers.add_subscriber(subscriber)
+    }
+
+    fn unsubscribe(&self, id: &Id) {
+        self.subscribers.remove_subscriber(id)
     }
 }
 

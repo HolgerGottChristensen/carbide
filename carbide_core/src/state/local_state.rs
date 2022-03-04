@@ -3,6 +3,7 @@ use std::ops::Deref;
 use std::rc::Rc;
 
 use uuid::Uuid;
+use carbide_core::prelude::Id;
 use carbide_core::state::state_sync::NewStateSync;
 use crate::state::util::subscriber::Listenable;
 
@@ -54,8 +55,12 @@ impl<T: StateContract> LocalState<T> {
 impl<T: StateContract> NewStateSync for LocalState<T> {}
 
 impl<T: StateContract> Listenable<T> for LocalState<T> {
-    fn subscribe(&self, listener: Box<dyn Listener<T>>) {
-        self.listeners.add_subscriber(listener)
+    fn subscribe(&self, subscriber: Box<dyn Listener<T>>) -> Id {
+        self.listeners.add_subscriber(subscriber)
+    }
+
+    fn unsubscribe(&self, id: &Id) {
+        self.listeners.remove_subscriber(id)
     }
 }
 

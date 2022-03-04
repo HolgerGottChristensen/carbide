@@ -1,7 +1,7 @@
 use std::fmt::Debug;
 use std::ops::{Add, DerefMut, Mul};
 use std::time::{Duration, Instant};
-use carbide_core::prelude::{NewStateSync, Listenable};
+use carbide_core::prelude::{NewStateSync, Listenable, Id};
 
 use crate::environment::Environment;
 use crate::state::{InnerState, MapOwnedState, ReadState, State, StateContract, Listener, TState};
@@ -120,7 +120,11 @@ impl NewStateSync for AnimatedState {
 }
 
 impl Listenable<f64> for AnimatedState {
-    fn subscribe(&self, subscriber: Box<dyn Listener<f64>>) {
+    fn subscribe(&self, subscriber: Box<dyn Listener<f64>>) -> Id {
+        todo!()
+    }
+
+    fn unsubscribe(&self, id: &Id) {
         todo!()
     }
 }

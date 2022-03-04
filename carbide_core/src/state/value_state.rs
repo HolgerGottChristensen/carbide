@@ -2,7 +2,7 @@ use std::fmt::{Debug, Formatter};
 use std::ops::{Deref, DerefMut};
 use std::rc::Rc;
 use std::str::FromStr;
-use carbide_core::prelude::{NewStateSync, Listenable};
+use carbide_core::prelude::{NewStateSync, Listenable, Id};
 
 use crate::environment::Environment;
 use crate::prelude::ReadState;
@@ -60,8 +60,12 @@ impl<T: StateContract> DerefMut for ValueState<T> {
 impl<T: StateContract> NewStateSync for ValueState<T> {}
 
 impl<T: StateContract> Listenable<T> for ValueState<T> {
-    fn subscribe(&self, subscriber: Box<dyn Listener<T>>) {
+    fn subscribe(&self, subscriber: Box<dyn Listener<T>>) -> Id {
         self.subscribers.add_subscriber(subscriber)
+    }
+
+    fn unsubscribe(&self, id: &Id) {
+        self.subscribers.remove_subscriber(id)
     }
 }
 

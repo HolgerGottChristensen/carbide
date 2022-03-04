@@ -36,20 +36,8 @@ impl<T: StateContract, U: Delegate<T>> ForEach<T, U> {
 
         for (index, _element) in model.value().deref().iter().enumerate() {
             let index_state: UsizeState = ValueState::new(index).into();
-            let item_state: MapState<Vec<T>, T, usize> =
-                MapState::new(
-                    model.clone(),
-                    index,
-                    |a, index| {
-                        &a[index]
-                    },
-                    |a, index| {
-                        &mut a[index]
-                    },
-                    |_: &T| {
-                        todo!()
-                    },
-                );
+            let item_state = VecState::new(model.clone(), index);
+
             let widget = delegate.call(item_state.into(), index_state);
             list.push(widget);
         }
@@ -92,21 +80,12 @@ impl<T: StateContract, U: Delegate<T>> OtherEventHandler for ForEach<T, U> {
             let number_to_insert = self.model.value().len() - self.children.len();
 
             for _ in 0..number_to_insert {
-                let index_state: UsizeState = ValueState::new(self.children.len()).into();
-                let item_state: MapState<Vec<T>, T, usize> =
-                    MapState::new(
-                        self.model.clone(),
-                        *index_state.value(),
-                        |a, index| {
-                            &a[index]
-                        },
-                        |a, index| {
-                            &mut a[index]
-                        },
-                        |_: &T| {
-                            todo!()
-                        },
-                    );
+                let index = self.children.len();
+
+                let index_state: UsizeState = ValueState::new(index).into();
+                let item_state = VecState::new(self.model.clone(), index);
+
+
                 let widget = self.delegate.call(item_state.into(), index_state);
                 self.children.push(widget);
             }

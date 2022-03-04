@@ -1,6 +1,6 @@
 use std::fmt::{Debug, Formatter};
 use std::ops::Deref;
-use carbide_core::prelude::{NewStateSync, Listenable, Listener};
+use carbide_core::prelude::{NewStateSync, Listenable, Listener, Id};
 
 use crate::environment::Environment;
 use crate::state::{ReadState, RState, State, StateContract, SubscriberList, TState};
@@ -35,6 +35,12 @@ pub struct EnvState<T>
 }
 
 impl<T: StateContract + PartialEq + Default> EnvState<T> {
+    /// Create a new environment state that takes the value out from the environment.
+    ///
+    /// ## Description
+    /// * `map` - The mapping function that takes a reference to an env and returns a value.
+    ///           Make sure this function is not to expensive, because it might be run often
+    ///           depending on the use of the state.
     pub fn new(map: fn(env: &Environment) -> T) -> Self {
         EnvState {
             map,
@@ -55,8 +61,12 @@ impl<T: StateContract + PartialEq> NewStateSync for EnvState<T> {
 }
 
 impl<T: StateContract + PartialEq> Listenable<T> for EnvState<T> {
-    fn subscribe(&self, subscriber: Box<dyn Listener<T>>) {
-        self.listeners.add_subscriber(subscriber);
+    fn subscribe(&self, subscriber: Box<dyn Listener<T>>) -> Id {
+        self.listeners.add_subscriber(subscriber)
+    }
+
+    fn unsubscribe(&self, id: &Id) {
+        self.listeners.remove_subscriber(id)
     }
 }
 

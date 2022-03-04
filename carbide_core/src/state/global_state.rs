@@ -1,5 +1,5 @@
 use std::fmt::{Debug, Formatter};
-use carbide_core::prelude::{NewStateSync, Listenable, Listener};
+use carbide_core::prelude::{NewStateSync, Listenable, Listener, Id};
 
 use crate::prelude::Environment;
 use crate::state::{InnerState, ReadState, State, StateContract, TState};
@@ -25,7 +25,11 @@ impl<T: StateContract> GlobalState<T> {
 impl<T: StateContract> NewStateSync for GlobalState<T> {}
 
 impl<T: StateContract> Listenable<T> for GlobalState<T> {
-    fn subscribe(&self, subscriber: Box<dyn Listener<T>>) {
+    fn subscribe(&self, subscriber: Box<dyn Listener<T>>) -> Id {
+        todo!()
+    }
+
+    fn unsubscribe(&self, id: &Id) {
         todo!()
     }
 }

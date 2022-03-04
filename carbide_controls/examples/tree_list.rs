@@ -2,7 +2,7 @@ use std::collections::HashSet;
 use carbide_controls::{List, TreeDisclosure};
 use carbide_core::environment::{EnvironmentColor, EnvironmentFontSize};
 use carbide_core::lens;
-use carbide_core::state::{LocalState, State, StateExt, StringState, TState, UsizeState};
+use carbide_core::state::{LocalState, NewMapState, State, StateExt, StringState, TState, UsizeState};
 use carbide_core::text::FontFamily;
 use carbide_core::widget::*;
 use carbide_core::window::TWindow;
@@ -65,12 +65,12 @@ fn main() {
     };
 
     fn tree_children(t: TState<Tree>) -> TState<Option<Vec<Tree>>> {
-        t.mapped(|tree: &Tree| {
+        t.read_map(|tree: &Tree| {
             match tree {
                 SubTree(_, _, c) => Some(c.clone()),
                 Leaf(_, _) => None,
             }
-        })
+        }).ignore_writes()
     }
 
     window.set_widgets(

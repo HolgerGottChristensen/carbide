@@ -1,5 +1,5 @@
 use std::ops::{Deref, DerefMut};
-use carbide_core::prelude::{NewStateSync, Listenable, Listener};
+use carbide_core::prelude::{NewStateSync, Listenable, Listener, Id};
 
 use crate::prelude::{Environment, EnvironmentFontSize, State};
 use crate::state::{ReadState, SubscriberList, ValueRef, ValueRefMut};
@@ -41,7 +41,6 @@ impl NewStateSync for EnvironmentFontSizeState {
         if let Some(size) = env.get_font_size(&self.key) {
             if self.value != size {
                 self.value = size;
-                println!("Env font size changed to: {}", self.value);
                 self.subscribers.notify(&size);
             }
         }
@@ -49,14 +48,17 @@ impl NewStateSync for EnvironmentFontSizeState {
 }
 
 impl Listenable<u32> for EnvironmentFontSizeState {
-    fn subscribe(&self, subscriber: Box<dyn Listener<u32>>) {
+    fn subscribe(&self, subscriber: Box<dyn Listener<u32>>) -> Id {
         self.subscribers.add_subscriber(subscriber)
+    }
+
+    fn unsubscribe(&self, id: &Id) {
+        self.subscribers.remove_subscriber(id)
     }
 }
 
 impl ReadState<u32> for EnvironmentFontSizeState {
     fn value(&self) -> ValueRef<u32> {
-        println!("{}", self.value);
         ValueRef::Borrow(&self.value)
     }
 }

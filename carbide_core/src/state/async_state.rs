@@ -4,7 +4,7 @@ use std::rc::Rc;
 
 use futures::{FutureExt};
 use oneshot::{Receiver, TryRecvError};
-use carbide_core::prelude::{NewStateSync, Listenable, Listener};
+use carbide_core::prelude::{NewStateSync, Listenable, Listener, Id};
 
 use crate::environment::Environment;
 use crate::state::{ReadState, State, StateContract, TState};
@@ -77,7 +77,11 @@ impl<T: StateContract + Send> NewStateSync for AsyncState<T> {
 }
 
 impl<T: StateContract + Send> Listenable<T> for AsyncState<T> {
-    fn subscribe(&self, subscriber: Box<dyn Listener<T>>) {
+    fn subscribe(&self, subscriber: Box<dyn Listener<T>>) -> Id {
+        todo!()
+    }
+
+    fn unsubscribe(&self, id: &Id) {
         todo!()
     }
 }

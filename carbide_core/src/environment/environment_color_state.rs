@@ -1,5 +1,5 @@
 use std::ops::{Deref, DerefMut};
-use carbide_core::prelude::Listener;
+use carbide_core::prelude::{Id, Listener};
 
 use crate::Color;
 use crate::prelude::{Environment, State};
@@ -50,8 +50,12 @@ impl crate::state::NewStateSync for EnvironmentColorState {
 }
 
 impl Listenable<Color> for EnvironmentColorState {
-    fn subscribe(&self, subscriber: Box<dyn Listener<Color>>) {
+    fn subscribe(&self, subscriber: Box<dyn Listener<Color>>) -> Id {
         self.subscribers.add_subscriber(subscriber)
+    }
+
+    fn unsubscribe(&self, id: &Id) {
+        self.subscribers.remove_subscriber(id)
     }
 }
 

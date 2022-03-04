@@ -22,6 +22,7 @@ pub use self::state_key::StateKey;
 pub use self::state_sync::StateSync;
 pub use self::state_sync::NewStateSync;
 pub use self::value_state::ValueState;
+pub use self::vec_state::VecState;
 pub use self::widget_state::WidgetState;
 pub use self::new_map_owned_state::NewMapState;
 pub use self::readonly::ReadState;
