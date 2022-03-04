@@ -519,9 +519,9 @@ impl<T: StateContract, U: Delegate<T> + 'static> Delegate<T> for TreeListDelegat
 
         VStack::new(vec![
             HStack::new(vec![
-                //IfElse::new(sub_tree_model.is_some())
-                //    .when_true(disclosure)
-                //    .when_false(disclosure_item.hidden()),
+                IfElse::new(sub_tree_model.is_some().ignore_writes())
+                    .when_true(disclosure)
+                    .when_false(disclosure_item.hidden()),
                 widget
             ]).spacing(0.0),
             IfElse::new(opened)

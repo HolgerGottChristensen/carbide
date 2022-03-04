@@ -27,7 +27,7 @@ impl NewStateSync for CheckBoxState {
 }
 
 impl Listenable<CheckBoxValue> for CheckBoxState {
-    fn subscribe(&self, subscriber: Box<dyn Listener<T>>) -> Id {
+    fn subscribe(&self, subscriber: Box<dyn Listener<CheckBoxValue>>) -> Id {
         todo!()
     }
 
