@@ -31,7 +31,12 @@ pub struct VecState<T>
 }
 
 impl<T: StateContract> VecState<T> {
-    pub fn new(vec: impl Into<TState<Vec<T>>>, index: impl Into<UsizeState>) -> VecState<T> {
+    pub fn new(vec: impl Into<TState<Vec<T>>>, index: impl Into<UsizeState>) -> TState<T> {
+        Self::new_inner(vec, index)
+            .into()
+    }
+
+    pub fn new_inner(vec: impl Into<TState<Vec<T>>>, index: impl Into<UsizeState>) -> VecState<T> {
         let list = SubscriberList::new();
         let list_for_listener1 = list.clone();
         let list_for_listener2 = list.clone();

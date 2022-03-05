@@ -24,7 +24,7 @@ fn main() {
 
     let image_id = window.add_image_from_path("images/landscape.png");
 
-    let rotation = AnimatedState::linear(window.environment())
+    let rotation = AnimatedState::linear(Some(window.environment()))
         .duration(Duration::new(5, 0))
         .repeat_alternate()
         .range(0.0, 180.0);

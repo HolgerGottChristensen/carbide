@@ -6,7 +6,7 @@ use carbide_core::widget::*;
 use carbide_wgpu::window::*;
 
 use carbide_core::prelude::LocalState;
-use carbide_core::state::{BoolState, State, StateExt, StringState, TState};
+use carbide_core::state::{BoolState, ReadState, State, StateExt, StringState, TState};
 use carbide_core::text::FontFamily;
 use crate::calculator_state::{CalculatorState, Operation};
 use carbide_core::widget::WidgetExt;
@@ -105,11 +105,11 @@ fn calculator_button(label: Box<dyn Widget>, action: impl Action + 'static) -> B
     let background_color = pressed_state.mapped_env(move |pressed: &bool, _: &_, env: &Environment| {
         let hovered = &*hovered_bg.value();
         if *pressed {
-            env.env_color(EnvironmentColor::Accent).unwrap().darkened(0.05)
+            env.env_color(EnvironmentColor::Accent).darkened(0.05)
         } else if *hovered {
-            env.env_color(EnvironmentColor::Accent).unwrap().lightened(0.05)
+            env.env_color(EnvironmentColor::Accent).lightened(0.05)
         } else {
-            env.env_color(EnvironmentColor::Accent).unwrap()
+            env.env_color(EnvironmentColor::Accent)
         }
     });
 

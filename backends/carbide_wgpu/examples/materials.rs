@@ -15,18 +15,19 @@ fn main() {
         Some(icon_path.clone()),
     );
 
+    let background = HStack::new(vec![
+        Rectangle::new().fill(Color::new_rgb(251, 61, 56)).frame(200.0, 800.0),
+        Rectangle::new().fill(Color::new_rgb(253, 148, 38)).frame(80.0, 800.0),
+        Rectangle::new().fill(Color::new_rgb(254, 203, 47)).frame(80.0, 800.0),
+        Rectangle::new().fill(Color::new_rgb(61, 198, 95)).frame(80.0, 800.0),
+        Rectangle::new().fill(Color::new_rgb(21, 126, 251)).frame(80.0, 800.0),
+        Rectangle::new().fill(Color::new_rgb(174, 89, 219)).frame(80.0, 800.0),
+        Rectangle::new().fill(Color::new_rgb(251, 61, 56)).frame(200.0, 800.0),
+    ]).spacing(0.0).rotation_effect(45.0);
 
     window.set_widgets(
         ZStack::new(vec![
-            HStack::new(vec![
-                Rectangle::new().fill(Color::new_rgb(251, 61, 56)).frame(200.0, 800.0),
-                Rectangle::new().fill(Color::new_rgb(253, 148, 38)).frame(80.0, 800.0),
-                Rectangle::new().fill(Color::new_rgb(254, 203, 47)).frame(80.0, 800.0),
-                Rectangle::new().fill(Color::new_rgb(61, 198, 95)).frame(80.0, 800.0),
-                Rectangle::new().fill(Color::new_rgb(21, 126, 251)).frame(80.0, 800.0),
-                Rectangle::new().fill(Color::new_rgb(174, 89, 219)).frame(80.0, 800.0),
-                Rectangle::new().fill(Color::new_rgb(251, 61, 56)).frame(200.0, 800.0),
-            ]).spacing(0.0).rotation_effect(45.0),
+            background,
             VStack::new(vec![
                 HStack::new(vec![
                     Rectangle::new().material(EnvironmentColor::UltraThickLight).frame(100.0, 100.0),

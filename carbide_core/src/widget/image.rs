@@ -57,12 +57,12 @@ impl Image {
         })
     }
 
-    /// The rectangular area of the image that we wish to display.
-    ///
-    /// If this method is not called, the entire image will be used.
-    pub fn source_rectangle(mut self, rect: Rect) -> Self {
+    /// Set the source rectangle of the image to use. The rect is given in image pixel coordinates.
+    /// A source rect outside the size of the image will result in a larger image, but where the
+    /// bottom right is blank.
+    pub fn source_rectangle(mut self, rect: Rect) -> Box<Self> {
         self.src_rect = Some(rect);
-        self
+        Box::new(self)
     }
 
     pub fn resizeable(mut self) -> Box<Self> {
@@ -92,33 +92,38 @@ impl Layout for Image {
     fn calculate_size(&mut self, requested_size: Dimension, env: &mut Environment) -> Dimension {
         self.requested_size = requested_size;
 
-        let image_information =
-            env.get_image_information(&self.image_id.value()).unwrap_or(&ImageInformation { width: 100, height: 100 });
+        let image_information = if let Some(source_rect) = self.src_rect {
+            source_rect.dimension
+        } else {
+            env.get_image_information(&self.image_id.value())
+                .map(|i| Dimension::new(i.width as f64, i.width as f64))
+                .unwrap_or(Dimension::new(100.0, 100.0))
+        };
 
         if !self.resizeable {
             self.dimension = Dimension::new(
-                image_information.width as f64,
-                image_information.height as f64,
+                image_information.width,
+                image_information.height,
             );
         } else {
-            let width_factor = requested_size.width / (image_information.width as f64);
-            let height_factor = requested_size.height / (image_information.height as f64);
+            let width_factor = requested_size.width / image_information.width;
+            let height_factor = requested_size.height / image_information.height;
 
             match self.scale_mode {
                 ScaleMode::Fit => {
                     let scale_factor = width_factor.min(height_factor);
 
                     self.dimension = Dimension::new(
-                        (image_information.width as f64) * scale_factor,
-                        (image_information.height as f64) * scale_factor,
+                        image_information.width * scale_factor,
+                        image_information.height * scale_factor,
                     )
                 }
                 ScaleMode::Fill => {
                     let scale_factor = width_factor.max(height_factor);
 
                     self.dimension = Dimension::new(
-                        (image_information.width as f64) * scale_factor,
-                        (image_information.height as f64) * scale_factor,
+                        image_information.width * scale_factor,
+                        image_information.height * scale_factor,
                     )
                 }
                 ScaleMode::Stretch => self.dimension = requested_size,

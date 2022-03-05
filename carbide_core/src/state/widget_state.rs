@@ -8,7 +8,7 @@ use carbide_core::state::readonly::ReadWidgetState;
 use carbide_core::state::RState;
 
 use crate::prelude::Environment;
-use crate::state::{MapState, NewMapState, StateContract, StateExt, Listener, TState, UsizeState};
+use crate::state::{MapState, NewMapState, StateContract, StateExt, Listener, TState, UsizeState, VecState};
 pub use crate::state::State;
 use crate::state::util::value_cell::{ValueRef, ValueRefMut};
 
@@ -32,17 +32,11 @@ impl<T: StateContract> WidgetState<T> {
 }
 
 impl<T: StateContract> WidgetState<Vec<T>> {
+    /// Returns a state that given an index will return a state containing the item at that index
+    /// in the vector. It takes an UsizeState and will update the resulting state if either index
+    /// or the vector changes.
     pub fn index(&self, index: UsizeState) -> TState<T> {
-        //Todo: In the future take index as a state instead of its value.
-        let s: MapState<Vec<T>, T, UsizeState> =
-            MapState::new(self.clone(),
-                          index,
-                          |a, index| { &a[*index.value()] },
-                          |a, index| { &mut a[*index.value()] },
-                          |_: &T| { todo!() },
-            );
-
-        s.into()
+        VecState::new(self.clone(), index)
     }
 }
 

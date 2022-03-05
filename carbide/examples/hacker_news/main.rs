@@ -12,7 +12,7 @@ use carbide_core::widget::*;
 use carbide_wgpu::window::*;
 
 use carbide_core::prelude::{EnvironmentFontSize, LocalState};
-use carbide_core::state::{BoolState, State, StateExt, StringState, TState, UsizeState};
+use carbide_core::state::{BoolState, ReadState, State, StateExt, StringState, TState, UsizeState};
 use carbide_core::{lens, task};
 use carbide_core::text::{FontFamily, FontWeight};
 use carbide_core::widget::WidgetExt;
@@ -145,7 +145,7 @@ fn main() {
 
     window.set_widgets(
         HSplit::new(
-            IfElse::new(news_articles.is_some())
+            IfElse::new(news_articles.is_some().ignore_writes())
                 .when_true(list)
                 .when_false(loader),
             detail_view(first_selected_article)
