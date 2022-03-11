@@ -51,6 +51,25 @@ CommonWidgetImpl!(Clip, self, id: self.id, child: self.child, position: self.pos
 
 impl Render for Clip {
     fn process_get_primitives(&mut self, primitives: &mut Vec<Primitive>, env: &mut Environment) {
+        // Cut the rendering if either the width or the height is 0
+        if self.dimension.width == 0.0 || self.dimension.height == 0.0 {
+            return
+        }
+
+        // If the clip is completely out of frame
+        if self.position.x + self.dimension.width < 0.0 {
+            return
+        }
+        if self.position.y + self.dimension.height < 0.0 {
+            return
+        }
+        if self.position.x >= env.get_corrected_width() {
+            return
+        }
+        if self.position.y >= env.get_corrected_height() {
+            return
+        }
+
         primitives.push(Primitive {
             kind: PrimitiveKind::Clip,
             rect: Rect::new(self.position, self.dimension),

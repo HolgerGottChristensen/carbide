@@ -178,16 +178,20 @@ pub fn stroke(path: &dyn Fn(&mut Builder, &Rect), shape: &mut dyn Shape, rectang
 
         // Todo: This is linear and should be optimized
         fn get_closest_point(point: Position, points: &Vec<Position>) -> Position {
-            let mut closest = points[0];
-            let mut dist = 1000000.0;
-            for p in points {
-                let cur_dist = ((point.x - p.x).powi(2) + (point.y - p.y).powi(2)).sqrt();
-                if cur_dist < dist {
-                    dist = cur_dist;
-                    closest = *p;
+            if points.len() > 0 {
+                let mut closest = points[0];
+                let mut dist = 1000000.0;
+                for p in points {
+                    let cur_dist = ((point.x - p.x).powi(2) + (point.y - p.y).powi(2)).sqrt();
+                    if cur_dist < dist {
+                        dist = cur_dist;
+                        closest = *p;
+                    }
                 }
+                closest
+            } else {
+                point
             }
-            closest
         }
 
         {

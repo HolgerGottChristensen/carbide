@@ -216,18 +216,36 @@ impl Mesh {
         let rect_to_scizzor = |rect: Rect| {
             // We need to restrict the scissor x and y to [0, ~].
             // This means we might need to subtract from the width and height.
-            let width = if rect.left() < 0.0 {
-                rect.width() + rect.left()
-            } else {
-                rect.width()
-            };
-            let height = if rect.bottom() < 0.0 {
-                rect.height() + rect.bottom()
-            } else {
-                rect.height()
-            };
+
+            let mut x = rect.position.x;
+            let mut y = rect.position.y;
+            let mut width = rect.dimension.width;
+            let mut height = rect.dimension.height;
+
+            // Make the x in range
+            if x < 0.0 {
+                width -= x;
+                x = 0.0;
+            }
+
+            // Make the y in range
+            if y < 0.0 {
+                height -= y;
+                y = 0.0;
+            }
+
+            // Make the width in range
+            if x + width > viewport.width() {
+                width = viewport.width() - x
+            }
+
+            // Make the height in range
+            if y + height > viewport.height() {
+                height = viewport.height() - y
+            }
+
             Scissor {
-                top_left: [rect.left().max(0.0) as i32, rect.bottom().max(0.0) as i32],
+                top_left: [x as i32, y as i32],
                 dimensions: [width as u32, height as u32],
             }
         };
