@@ -79,9 +79,7 @@ impl TextureAtlas {
     /// within the atlas.
     pub fn queue_glyph(&mut self, glyph: &Glyph, font: &Font, scale_factor: Scalar) -> Option<AtlasEntry> {
         if font.is_bitmap() {
-            println!("Trying to add bitmap glyph");
-            None
-            //self.queue_raster_glyph_id(glyph.id(), glyph.font_size(), font, scale_factor)
+            self.queue_raster_glyph_id(glyph.id(), glyph.font_size(), font, scale_factor)
         } else {
             self.queue_glyph_id(
                 glyph.id(),
@@ -141,26 +139,32 @@ impl TextureAtlas {
         }
     }
 
-    /*pub fn queue_image(&mut self, image_id: ImageId, image_data: ImageData) -> TextureAtlasIndex {
+    pub fn queue_image(&mut self, image_id: ImageId, image_data: ImageData) -> Option<AtlasEntry> {
         let atlas_id = AtlasId::Image(image_id);
-        let next_glyph_index = self.glyph_index.len();
 
-        if !self.all_books_cabinet.contains_key(&atlas_id) {
-            if let Some(id_index) = self.id_queue.iter().position(|i| i == &atlas_id) {
-                self.data_queue[id_index].1.push(next_glyph_index);
-            } else {
-                self.id_queue.push(atlas_id);
-                self.data_queue.push((image_data, vec![next_glyph_index]));
-            }
-            self.glyph_index.push(0);
-        } else {
-            let book_index = self.all_books_cabinet.get(&atlas_id).unwrap();
-            self.glyph_index.push(*book_index);
+        // Check if a suitable item has already been added.
+        if let Some(item) = self.all_books_cabinet.get(&atlas_id) {
+            return Some(item.0.clone())
         }
 
-        next_glyph_index
-    }
+        if let Some(already_in_queue) = self.not_yet_added_queue.iter().find(|&a| &a.0 == &atlas_id) {
+            Some(already_in_queue.2.clone())
+        } else {
+            // Generate a new empty book. This will be added to a shelf when cache_queued is called.
+            let book = Book {
+                x: 0,
+                y: 0,
+                width: image_data.width(),
+                height: image_data.height(),
+                is_active: false,
+                tex_coords: Default::default()
+            };
 
+            self.not_yet_added_queue.push((atlas_id, image_data, Rc::new(RefCell::new(book))));
+            Some(self.not_yet_added_queue[self.not_yet_added_queue.len() - 1].2.clone())
+        }
+    }
+/*
     pub fn queue_raster_glyph(
         &mut self,
         c: char,
@@ -171,7 +175,7 @@ impl TextureAtlas {
         let id = font.get_glyph_id(c);
         self.queue_raster_glyph_id(id.unwrap(), font_size, font, scale_factor)
     }
-
+*/
     pub fn queue_raster_glyph_id(
         &mut self,
         id: GlyphId,
@@ -180,27 +184,40 @@ impl TextureAtlas {
         scale_factor: Scalar,
     ) -> Option<AtlasEntry> {
         let atlas_id = AtlasId::RasterGlyph(font.id(), id, font_size);
-        let next_glyph_index = self.glyph_index.len();
 
-        if !self.all_books_cabinet.contains_key(&atlas_id) {
-            if let Some(id_index) = self.id_queue.iter().position(|i| i == &atlas_id) {
-                self.data_queue[id_index].1.push(next_glyph_index);
-            } else {
-                let image_data = font
-                    .get_glyph_raster_image_from_id(id, font_size, scale_factor)
-                    .unwrap();
-                self.id_queue.push(atlas_id);
-                self.data_queue.push((image_data, vec![next_glyph_index]));
-            }
-            self.glyph_index.push(0);
-        } else {
-            let book_index = self.all_books_cabinet.get(&atlas_id).unwrap();
-            self.glyph_index.push(*book_index);
+        // Check if a suitable item has already been added.
+        if let Some(item) = self.all_books_cabinet.get(&atlas_id) {
+            return Some(item.0.clone())
         }
 
-        next_glyph_index
-    }
+        // Get the image data for the given raster image glyph
+        let image_data = font
+            .get_glyph_raster_image_from_id(id, font_size, scale_factor);
 
+        if let Some(image_data) = image_data {
+            if let Some(already_in_queue) = self.not_yet_added_queue.iter().find(|&a| &a.0 == &atlas_id) {
+                Some(already_in_queue.2.clone())
+            } else {
+                // Generate a new empty book. This will be added to a shelf when cache_queued is called.
+                let book = Book {
+                    x: 0,
+                    y: 0,
+                    width: image_data.width(),
+                    height: image_data.height(),
+                    is_active: false,
+                    tex_coords: Default::default()
+                };
+
+                self.not_yet_added_queue.push((atlas_id, image_data, Rc::new(RefCell::new(book))));
+                Some(self.not_yet_added_queue[self.not_yet_added_queue.len() - 1].2.clone())
+            }
+        } else {
+            println!("The raster glyph could not be found in the font.");
+            None
+        }
+
+    }
+/*
     pub fn get_tex_coords_by_index(&self, id: TextureAtlasIndex) -> Rect<f32> {
         let book = self.book_index[self.glyph_index[id]];
         Rect {
