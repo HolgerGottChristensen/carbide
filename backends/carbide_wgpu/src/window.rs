@@ -293,7 +293,7 @@ impl Window {
 
         let image = Image::new(assets.join("images/happy-tree.png"), &device, &queue);
 
-        let main_shader = device.create_shader_module(&wgpu::include_wgsl!("../shaders/shader.wgsl"));
+        let main_shader = device.create_shader_module(&wgpu::include_wgsl!("../shaders/gradient.wgsl"));
         let wgsl_filter_shader = device.create_shader_module(&wgpu::include_wgsl!("../shaders/filter.wgsl"));
 
         let render_pipeline_layout = main_pipeline_layout(&device, &main_texture_bind_group_layout, &uniform_bind_group_layout);
