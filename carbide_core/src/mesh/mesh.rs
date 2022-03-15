@@ -11,6 +11,7 @@ use cgmath::{Matrix4, SquareMatrix, Vector3};
 use image::{DynamicImage, GenericImage, GenericImageView};
 use rusttype::gpu_cache::Cache as RustTypeGlyphCache;
 use rusttype::gpu_cache::CacheWriteErr as RustTypeCacheWriteError;
+use carbide_core::widget::Gradient;
 
 use crate::{color, image_map};
 use crate::draw::{Position, Rect, Scalar};
@@ -83,6 +84,8 @@ pub enum Draw {
     Image(image_map::Id, std::ops::Range<usize>),
     /// A range of vertices representing plain triangles.
     Plain(std::ops::Range<usize>),
+    /// A range of vertices that should be drawn as a gradient
+    Gradient(std::ops::Range<usize>, Gradient, Matrix4<f32>),
 }
 
 /// The result of filling the mesh.
@@ -104,6 +107,7 @@ struct GlyphCache(RustTypeGlyphCache<'static>);
 enum PreparedCommand {
     Image(image_map::Id, std::ops::Range<usize>),
     Plain(std::ops::Range<usize>),
+    Gradient(std::ops::Range<usize>, Gradient, Matrix4<f32>),
     Scissor(Scissor),
     Stencil(std::ops::Range<usize>),
     DeStencil(std::ops::Range<usize>),
@@ -815,6 +819,40 @@ impl Mesh {
                     push_v(r, t, [uv_r, uv_t]);
                     push_v(r, b, [uv_r, uv_b]);
                 }
+                PrimitiveKind::Gradient(triangles) => {
+                    match current_state {
+                        State::Plain { start } => {
+                            commands.push(PreparedCommand::Plain(start..vertices.len()))
+                        }
+                        State::Image { image_id, start } => {
+                            commands.push(PreparedCommand::Image(image_id, start..vertices.len()))
+                        }
+                    }
+
+
+                    let v = |p: Position| Vertex {
+                        position: [vx(p.x), vy(p.y), 0.0],
+                        tex_coords: [0.0, 0.0],
+                        rgba: [0.0, 0.0, 0.0, 1.0],
+                        mode: MODE_GEOMETRY,
+                    };
+
+                    let len_before_push = vertices.len();
+
+                    for triangle in triangles {
+                        vertices.push(v(triangle[0]));
+                        vertices.push(v(triangle[1]));
+                        vertices.push(v(triangle[2]));
+                    }
+
+                    let gradient = Gradient::test();
+
+                    commands.push(PreparedCommand::Gradient(len_before_push..vertices.len(), gradient, transform_stack[transform_stack.len() - 1]));
+
+                    current_state = State::Plain {
+                        start: vertices.len(),
+                    };
+                }
             }
         }
 
@@ -886,6 +924,7 @@ impl<'a> Iterator for Commands<'a> {
         commands.next().map(|command| match *command {
             PreparedCommand::Scissor(scizzor) => Command::Scissor(scizzor),
             PreparedCommand::Plain(ref range) => Command::Draw(Draw::Plain(range.clone())),
+            PreparedCommand::Gradient(ref range, ref gradient, ref matrix) => Command::Draw(Draw::Gradient(range.clone(), gradient.clone(), matrix.clone())),
             PreparedCommand::Image(id, ref range) => Command::Draw(Draw::Image(id, range.clone())),
             PreparedCommand::Stencil(ref range) => Command::Stencil(range.clone()),
             PreparedCommand::DeStencil(ref range) => Command::DeStencil(range.clone()),

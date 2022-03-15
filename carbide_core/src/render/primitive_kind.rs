@@ -49,6 +49,8 @@ pub enum PrimitiveKind {
         triangles: Vec<Triangle<Position>>,
     },
 
+    Gradient(Vec<Triangle<Position>>),
+
     /// A series of consecutive `Triangles` with unique colors per vertex.
     ///
     /// This variant is produced by the general purpose `Triangles` primitive widget.

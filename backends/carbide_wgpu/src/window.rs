@@ -31,12 +31,12 @@ use carbide_core::widget::Widget;
 use carbide_core::event::CustomEvent;
 pub use carbide_core::window::TWindow;
 
-use crate::bind_group_layouts::{filter_buffer_bind_group_layout, filter_texture_bind_group_layout, main_texture_group_layout, uniform_bind_group_layout};
+use crate::bind_group_layouts::{filter_buffer_bind_group_layout, filter_texture_bind_group_layout, gradient_buffer_bind_group_layout, main_texture_group_layout, uniform_bind_group_layout};
 use crate::bind_groups::{filter_texture_bind_group, main_bind_group, matrix_to_uniform_bind_group, size_to_uniform_bind_group};
 use crate::diffuse_bind_group::{DiffuseBindGroup, new_diffuse};
 use crate::image::Image;
 use crate::pipeline::{create_render_pipeline, MaskType};
-use crate::render_pipeline_layouts::{filter_pipeline_layout, main_pipeline_layout};
+use crate::render_pipeline_layouts::{filter_pipeline_layout, gradient_pipeline_layout, main_pipeline_layout};
 use crate::renderer::{atlas_cache_tex_desc, main_render_tex_desc, secondary_render_tex_desc};
 use crate::samplers::main_sampler;
 use crate::textures::create_depth_stencil_texture;
@@ -58,8 +58,12 @@ pub struct Window {
     pub(crate) render_pipeline_add_mask: wgpu::RenderPipeline,
     pub(crate) render_pipeline_in_mask: wgpu::RenderPipeline,
     pub(crate) render_pipeline_remove_mask: wgpu::RenderPipeline,
+
+    /// This is used when applying normal filter, or in the second pass of the of the two pass filter
     pub(crate) render_pipeline_in_mask_filter: wgpu::RenderPipeline,
     pub(crate) render_pipeline_no_mask_filter: wgpu::RenderPipeline,
+
+    pub(crate) render_pipeline_in_mask_gradient: wgpu::RenderPipeline,
     pub(crate) depth_texture_view: TextureView,
     pub(crate) diffuse_bind_group: wgpu::BindGroup,
     pub(crate) main_bind_group: wgpu::BindGroup,
@@ -78,6 +82,7 @@ pub struct Window {
     pub(crate) uniform_bind_group_layout: BindGroupLayout,
     pub(crate) filter_texture_bind_group_layout: BindGroupLayout,
     pub(crate) filter_buffer_bind_group_layout: BindGroupLayout,
+    pub(crate) gradient_bind_group_layout: BindGroupLayout,
     pub(crate) filter_main_texture_bind_group: BindGroup,
     pub(crate) filter_secondary_texture_bind_group: BindGroup,
     pub(crate) uniform_bind_group: wgpu::BindGroup,
@@ -274,6 +279,7 @@ impl Window {
         let filter_texture_bind_group_layout = filter_texture_bind_group_layout(&device);
         let filter_buffer_bind_group_layout = filter_buffer_bind_group_layout(&device);
         let main_texture_bind_group_layout = main_texture_group_layout(&device);
+        let gradient_bind_group_layout = gradient_buffer_bind_group_layout(&device);
 
         let matrix = Window::calculate_carbide_to_wgpu_matrix(pixel_dimensions, scale_factor);
         let uniform_bind_group = matrix_to_uniform_bind_group(&device, &uniform_bind_group_layout, matrix);
@@ -293,11 +299,13 @@ impl Window {
 
         let image = Image::new(assets.join("images/happy-tree.png"), &device, &queue);
 
-        let main_shader = device.create_shader_module(&wgpu::include_wgsl!("../shaders/gradient.wgsl"));
+        let main_shader = device.create_shader_module(&wgpu::include_wgsl!("../shaders/shader.wgsl"));
+        let gradient_shader = device.create_shader_module(&wgpu::include_wgsl!("../shaders/gradient.wgsl"));
         let wgsl_filter_shader = device.create_shader_module(&wgpu::include_wgsl!("../shaders/filter.wgsl"));
 
         let render_pipeline_layout = main_pipeline_layout(&device, &main_texture_bind_group_layout, &uniform_bind_group_layout);
         let filter_render_pipeline_layout = filter_pipeline_layout(&device, &filter_texture_bind_group_layout, &filter_buffer_bind_group_layout, &uniform_bind_group_layout);
+        let gradient_render_pipeline_layout = gradient_pipeline_layout(&device, &gradient_bind_group_layout, &uniform_bind_group_layout);
 
         let render_pipeline_no_mask = create_render_pipeline(
             &device,
@@ -346,6 +354,15 @@ impl Window {
             &surface,
             &adapter,
             MaskType::NoMask,
+        );
+
+        let render_pipeline_in_mask_gradient = create_render_pipeline(
+            &device,
+            &gradient_render_pipeline_layout,
+            &gradient_shader,
+            &surface,
+            &adapter,
+            MaskType::InMask,
         );
 
         let bind_groups = HashMap::new();
@@ -415,6 +432,7 @@ impl Window {
             render_pipeline_remove_mask,
             render_pipeline_in_mask_filter,
             render_pipeline_no_mask_filter,
+            render_pipeline_in_mask_gradient,
             depth_texture_view,
             diffuse_bind_group,
             main_bind_group,
@@ -432,6 +450,7 @@ impl Window {
             texture_bind_group_layout: main_texture_bind_group_layout,
             filter_texture_bind_group_layout,
             filter_buffer_bind_group_layout,
+            gradient_bind_group_layout,
             filter_main_texture_bind_group,
             filter_secondary_texture_bind_group,
             uniform_bind_group_layout,

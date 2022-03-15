@@ -79,6 +79,19 @@ pub(crate) fn filter_buffer_bind_group(device: &Device, filter_bind_group_layout
     })
 }
 
+pub(crate) fn gradient_buffer_bind_group(device: &Device, gradient_bind_group_layout: &BindGroupLayout, buffer: &Buffer) -> BindGroup {
+    device.create_bind_group(&wgpu::BindGroupDescriptor {
+        layout: &gradient_bind_group_layout,
+        entries: &[
+            wgpu::BindGroupEntry {
+                binding: 0,
+                resource: wgpu::BindingResource::Buffer(buffer.as_entire_buffer_binding()),
+            }
+        ],
+        label: Some("filter_bind_group"),
+    })
+}
+
 pub(crate) fn main_bind_group(device: &Device, main_bind_group_layout: &BindGroupLayout, texture: &TextureView, sampler: &Sampler, atlas_texture: &Texture) -> BindGroup {
     device.create_bind_group(&wgpu::BindGroupDescriptor {
         layout: &main_bind_group_layout,

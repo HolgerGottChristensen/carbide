@@ -2,13 +2,15 @@ use std::collections::HashMap;
 
 use cgmath::Matrix4;
 use wgpu::{BindGroupLayout, Device, Texture};
+use wgpu::util::DeviceExt;
 
 use carbide_core::image_map::{Id, ImageMap};
 use carbide_core::mesh::mesh;
-use carbide_core::mesh::mesh::Mesh;
+use carbide_core::mesh::mesh::{Draw, Mesh};
 
-use crate::bind_groups::matrix_to_uniform_bind_group;
+use crate::bind_groups::{gradient_buffer_bind_group, matrix_to_uniform_bind_group};
 use crate::diffuse_bind_group::{DiffuseBindGroup, new_diffuse};
+use crate::gradient::Gradient;
 use crate::image::Image;
 
 /// A draw command that maps directly to the `wgpu::CommandEncoder` method. By returning
@@ -41,6 +43,7 @@ pub enum RenderPassCommand<'a> {
 
 pub enum RenderPass<'a> {
     Normal(Vec<RenderPassCommand<'a>>),
+    Gradient(std::ops::Range<u32>, usize),
     Filter(std::ops::Range<u32>, u32),
     FilterSplitPt1(std::ops::Range<u32>, u32),
     FilterSplitPt2(std::ops::Range<u32>, u32),
@@ -62,8 +65,11 @@ pub fn create_render_pass_commands<'a>(
     atlas_tex: &'a Texture,
     bind_group_layout: &'a BindGroupLayout,
     uniform_bind_group_layout: &'a BindGroupLayout,
+    gradient_bind_group_layout: &'a BindGroupLayout,
     carbide_to_wgpu_matrix: Matrix4<f32>,
 ) -> Vec<RenderPass<'a>> {
+
+
     bind_groups.retain(|k, _| image_map.contains_key(k));
 
     for (id, img) in image_map.iter() {
@@ -250,6 +256,41 @@ pub fn create_render_pass_commands<'a>(
                         vertex_range: vertex_range.start as u32..vertex_range.end as u32,
                     };
                     inner_commands.push(cmd);
+                }
+                Draw::Gradient(vertex_range, gradient, matrix) => {
+
+                    // If there is no vertices continue
+                    let vertex_count = vertex_range.len();
+                    if vertex_count <= 0 {
+                        continue;
+                    }
+
+                    // Ensure a render pipeline and bind group is set.
+                    if bind_group.is_none() {
+                        bind_group = Some(BindGroup::Default);
+                        let cmd = RenderPassCommand::SetBindGroup {
+                            bind_group: default_bind_group,
+                        };
+                        inner_commands.push(cmd);
+                    }
+
+                    let gradient = Gradient::convert(gradient);
+                    let gradient_buffer = device.create_buffer_init(
+                        &wgpu::util::BufferInitDescriptor {
+                            label: Some("Gradient Buffer"),
+                            contents: &*gradient.as_bytes(),
+                            usage: wgpu::BufferUsages::STORAGE,
+                        }
+                    );
+                    let gradient_buffer_bind_group = gradient_buffer_bind_group(&device, &gradient_bind_group_layout, &gradient_buffer);
+
+                    let range = vertex_range.start as u32..vertex_range.end as u32;
+                    let mut new_inner_commands = vec![];
+                    std::mem::swap(&mut new_inner_commands, &mut inner_commands);
+                    commands.push(RenderPass::Normal(new_inner_commands));
+                    commands.push(RenderPass::Gradient(range, uniform_bind_groups.len()));
+                    uniform_bind_groups.push(gradient_buffer_bind_group);
+                    bind_group = None;
                 }
             },
         }

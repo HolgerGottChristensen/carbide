@@ -15,6 +15,7 @@ mod samplers;
 mod bind_groups;
 mod textures;
 mod proxy_event_loop;
+mod gradient;
 
 const DEFAULT_IMAGE_TEX_FORMAT: wgpu::TextureFormat = wgpu::TextureFormat::R8Unorm;
 

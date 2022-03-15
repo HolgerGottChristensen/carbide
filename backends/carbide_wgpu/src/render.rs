@@ -3,8 +3,9 @@ use wgpu::util::{BufferInitDescriptor, DeviceExt};
 
 use carbide_core::draw::{Dimension, Position, Rect};
 
-use crate::bind_groups::filter_buffer_bind_group;
+use crate::bind_groups::{filter_buffer_bind_group, gradient_buffer_bind_group};
 use crate::filter::Filter;
+use crate::gradient::Gradient;
 use crate::render_pass_command::{create_render_pass_commands, RenderPass, RenderPassCommand};
 use crate::texture_atlas_command::TextureAtlasCommand;
 use crate::vertex::Vertex;
@@ -77,6 +78,8 @@ impl Window {
             }
         }
 
+        let aspect_ratio = (self.size.width as f32) / (self.size.height as f32);
+
         let commands = create_render_pass_commands(
             &self.diffuse_bind_group,
             &mut self.bind_groups,
@@ -87,7 +90,8 @@ impl Window {
             &self.atlas_cache_tex,
             &self.texture_bind_group_layout,
             &self.uniform_bind_group_layout,
-            self.carbide_to_wgpu_matrix,
+            &self.gradient_bind_group_layout,
+            self.carbide_to_wgpu_matrix
         );
 
         let vertices: Vec<Vertex> = self
@@ -193,6 +197,30 @@ impl Window {
                             }
                         }
                     }
+                }
+                RenderPass::Gradient(vertex_range, bind_group_index) => {
+                    let (color_op, stencil_op) = render_pass_ops(RenderPassOps::Middle);
+                    let mut render_pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
+                        label: None,
+                        color_attachments: &[wgpu::RenderPassColorAttachment {
+                            view: &self.main_tex_view, // Here is the render target
+                            resolve_target: None,
+                            ops: color_op,
+                        }],
+                        depth_stencil_attachment: Some(RenderPassDepthStencilAttachment {
+                            view: &self.depth_texture_view,
+                            depth_ops: None,
+                            stencil_ops: Some(stencil_op),
+                        }),
+                    });
+
+                    render_pass.set_pipeline(&self.render_pipeline_in_mask_gradient);
+                    render_pass.set_stencil_reference(stencil_level);
+                    render_pass.set_vertex_buffer(0, current_vertex_buffer_slice);
+                    render_pass.set_bind_group(0, &uniform_bind_groups[bind_group_index], &[]);
+                    render_pass.set_bind_group(1, current_uniform_bind_group, &[]);
+                    render_pass.draw(vertex_range, instance_range.clone());
+
                 }
                 RenderPass::Filter(vertex_range, bind_group_index) => {
                     encoder.copy_texture_to_texture(ImageCopyTexture {
