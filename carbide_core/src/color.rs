@@ -504,34 +504,34 @@ pub fn hsl_to_rgb(hue: f32, saturation: f32, lightness: f32) -> (f32, f32, f32) 
     let m = lightness - chroma / 2.0;
     (r + m, g + m, b + m)
 }
-
-/// Linear or Radial Gradient.
-#[derive(Clone, Debug)]
-pub enum Gradient {
-    /// Takes a start and end point and then a series of color stops that indicate how to
-    /// interpolate between the start and end points.
-    Linear((f64, f64), (f64, f64), Vec<(f64, Color)>),
-    /// First takes a start point and inner radius. Then takes an end point and outer radius.
-    /// It then takes a series of color stops that indicate how to interpolate between the
-    /// inner and outer circles.
-    Radial((f64, f64), f64, (f64, f64), f64, Vec<(f64, Color)>),
-}
-
-/// Create a linear gradient.
-pub fn linear(start: (f64, f64), end: (f64, f64), colors: Vec<(f64, Color)>) -> Gradient {
-    Gradient::Linear(start, end, colors)
-}
-
-/// Create a radial gradient.
-pub fn radial(
-    start: (f64, f64),
-    start_r: f64,
-    end: (f64, f64),
-    end_r: f64,
-    colors: Vec<(f64, Color)>,
-) -> Gradient {
-    Gradient::Radial(start, start_r, end, end_r, colors)
-}
+//
+// /// Linear or Radial Gradient.
+// #[derive(Clone, Debug)]
+// pub enum Gradient {
+//     /// Takes a start and end point and then a series of color stops that indicate how to
+//     /// interpolate between the start and end points.
+//     Linear((f64, f64), (f64, f64), Vec<(f64, Color)>),
+//     /// First takes a start point and inner radius. Then takes an end point and outer radius.
+//     /// It then takes a series of color stops that indicate how to interpolate between the
+//     /// inner and outer circles.
+//     Radial((f64, f64), f64, (f64, f64), f64, Vec<(f64, Color)>),
+// }
+//
+// /// Create a linear gradient.
+// pub fn linear(start: (f64, f64), end: (f64, f64), colors: Vec<(f64, Color)>) -> Gradient {
+//     Gradient::Linear(start, end, colors)
+// }
+//
+// /// Create a radial gradient.
+// pub fn radial(
+//     start: (f64, f64),
+//     start_r: f64,
+//     end: (f64, f64),
+//     end_r: f64,
+//     colors: Vec<(f64, Color)>,
+// ) -> Gradient {
+//     Gradient::Radial(start, start_r, end, end_r, colors)
+// }
 
 /// Built-in colors.
 ///

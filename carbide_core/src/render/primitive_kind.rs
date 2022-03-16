@@ -3,11 +3,12 @@ use cgmath::Matrix4;
 use crate::Color;
 use crate::color::Rgba;
 use crate::draw::{Position, Rect};
+use crate::draw::draw_gradient::DrawGradient;
 use crate::draw::shape::triangle::Triangle;
 use crate::image_map;
 use crate::layout::BasicLayouter;
 use crate::text::Glyph;
-use crate::widget::ColoredPoint;
+use crate::widget::{ColoredPoint, Gradient};
 
 /// The unique kind for each primitive element in the Ui.
 pub enum PrimitiveKind {
@@ -49,7 +50,7 @@ pub enum PrimitiveKind {
         triangles: Vec<Triangle<Position>>,
     },
 
-    Gradient(Vec<Triangle<Position>>),
+    Gradient(Vec<Triangle<Position>>, DrawGradient),
 
     /// A series of consecutive `Triangles` with unique colors per vertex.
     ///

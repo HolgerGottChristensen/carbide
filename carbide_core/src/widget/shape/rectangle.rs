@@ -21,7 +21,7 @@ pub struct Rectangle {
     position: Position,
     dimension: Dimension,
     #[state]
-    fill_color: ColorState,
+    fill_color: TState<AdvancedColor>,
     #[state]
     stroke_color: ColorState,
     style: ShapeStyle,
@@ -31,7 +31,7 @@ pub struct Rectangle {
 }
 
 impl Rectangle {
-    pub fn fill<C: Into<ColorState>>(mut self, color: C) -> Box<Self> {
+    pub fn fill(mut self, color: impl Into<TState<AdvancedColor>>) -> Box<Self> {
         self.fill_color = color.into();
         self.style += ShapeStyle::Fill;
         Box::new(self)
@@ -50,9 +50,10 @@ impl Rectangle {
     }
 
     pub fn material<C: Into<ColorState>>(mut self, material: C) -> Box<ZStack> {
-        let material = material.into();
-        self.fill_color = material.clone();
-        self.stroke_color = material;
+        let material_state = material.into();
+        let advanced_material_state: RState<AdvancedColor> = material_state.clone().into();
+        self.fill_color = advanced_material_state.ignore_writes();
+        self.stroke_color = material_state;
 
         ZStack::new(vec![
             Blur::gaussian(10.0),
@@ -218,8 +219,10 @@ impl Render for Rectangle {
             builder.add_rectangle(rectangle, Winding::Positive)
         });
 
+        let fill_color =  self.fill_color.value().clone();
+
         self.triangle_store
-            .insert_primitives(primitives, *self.fill_color.value(), *self.stroke_color.value());
+            .insert_primitives(primitives, fill_color, *self.stroke_color.value(), self.position, self.dimension);
     }
 }
 

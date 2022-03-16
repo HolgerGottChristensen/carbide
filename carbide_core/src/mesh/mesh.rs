@@ -15,6 +15,7 @@ use carbide_core::widget::Gradient;
 
 use crate::{color, image_map};
 use crate::draw::{Position, Rect, Scalar};
+use crate::draw::draw_gradient::DrawGradient;
 use crate::environment::Environment;
 use crate::layout::BasicLayouter;
 use crate::mesh::{
@@ -85,7 +86,7 @@ pub enum Draw {
     /// A range of vertices representing plain triangles.
     Plain(std::ops::Range<usize>),
     /// A range of vertices that should be drawn as a gradient
-    Gradient(std::ops::Range<usize>, Gradient, Matrix4<f32>),
+    Gradient(std::ops::Range<usize>, DrawGradient),
 }
 
 /// The result of filling the mesh.
@@ -107,7 +108,7 @@ struct GlyphCache(RustTypeGlyphCache<'static>);
 enum PreparedCommand {
     Image(image_map::Id, std::ops::Range<usize>),
     Plain(std::ops::Range<usize>),
-    Gradient(std::ops::Range<usize>, Gradient, Matrix4<f32>),
+    Gradient(std::ops::Range<usize>, DrawGradient),
     Scissor(Scissor),
     Stencil(std::ops::Range<usize>),
     DeStencil(std::ops::Range<usize>),
@@ -819,7 +820,7 @@ impl Mesh {
                     push_v(r, t, [uv_r, uv_t]);
                     push_v(r, b, [uv_r, uv_b]);
                 }
-                PrimitiveKind::Gradient(triangles) => {
+                PrimitiveKind::Gradient(triangles, gradient) => {
                     match current_state {
                         State::Plain { start } => {
                             commands.push(PreparedCommand::Plain(start..vertices.len()))
@@ -845,9 +846,7 @@ impl Mesh {
                         vertices.push(v(triangle[2]));
                     }
 
-                    let gradient = Gradient::test();
-
-                    commands.push(PreparedCommand::Gradient(len_before_push..vertices.len(), gradient, transform_stack[transform_stack.len() - 1]));
+                    commands.push(PreparedCommand::Gradient(len_before_push..vertices.len(), gradient));
 
                     current_state = State::Plain {
                         start: vertices.len(),
@@ -924,7 +923,7 @@ impl<'a> Iterator for Commands<'a> {
         commands.next().map(|command| match *command {
             PreparedCommand::Scissor(scizzor) => Command::Scissor(scizzor),
             PreparedCommand::Plain(ref range) => Command::Draw(Draw::Plain(range.clone())),
-            PreparedCommand::Gradient(ref range, ref gradient, ref matrix) => Command::Draw(Draw::Gradient(range.clone(), gradient.clone(), matrix.clone())),
+            PreparedCommand::Gradient(ref range, ref gradient) => Command::Draw(Draw::Gradient(range.clone(), gradient.clone())),
             PreparedCommand::Image(id, ref range) => Command::Draw(Draw::Image(id, range.clone())),
             PreparedCommand::Stencil(ref range) => Command::Stencil(range.clone()),
             PreparedCommand::DeStencil(ref range) => Command::DeStencil(range.clone()),

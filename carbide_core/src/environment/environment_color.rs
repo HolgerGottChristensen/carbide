@@ -1,8 +1,10 @@
+use std::os::macos::raw::stat;
 use crate::Color;
 use crate::environment::Environment;
 use crate::prelude::EnvironmentColorState;
 use crate::state::*;
 use crate::state::WidgetState;
+use crate::widget::AdvancedColor;
 
 #[derive(Hash, Eq, PartialEq, Clone, Debug)]
 pub enum EnvironmentColor {
@@ -86,6 +88,22 @@ impl Into<ColorState> for TState<EnvironmentColor> {
     fn into(self) -> ColorState {
         self.mapped_env(|color: &EnvironmentColor, _: &_, env: &Environment| {
             env.env_color(color.clone())
+        })
+    }
+}
+
+impl Into<TState<AdvancedColor>> for EnvironmentColor {
+    fn into(self) -> TState<AdvancedColor> {
+        let state: ColorState = WidgetState::new(Box::new(EnvironmentColorState::new(self)));
+        let state: RState<AdvancedColor> = state.into();
+        state.ignore_writes()
+    }
+}
+
+impl Into<TState<AdvancedColor>> for TState<EnvironmentColor> {
+    fn into(self) -> TState<AdvancedColor> {
+        self.mapped_env(|color: &EnvironmentColor, _: &_, env: &Environment| {
+            env.env_color(color.clone()).into()
         })
     }
 }

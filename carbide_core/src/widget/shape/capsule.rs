@@ -149,8 +149,10 @@ impl Render for Capsule {
             );
         });
 
+        let fill_color = *self.fill_color.value();
+
         self.triangle_store
-            .insert_primitives(primitives, *self.fill_color.value(), *self.stroke_color.value());
+            .insert_primitives(primitives, fill_color.into(), *self.stroke_color.value(), self.position, self.dimension);
     }
 }
 

@@ -9,6 +9,8 @@ mod position;
 mod rect;
 pub mod shape;
 pub mod svg_path_builder;
+pub mod draw_gradient;
+pub mod alignment;
 
 /// An alias over the Scalar type used throughout carbide.
 ///

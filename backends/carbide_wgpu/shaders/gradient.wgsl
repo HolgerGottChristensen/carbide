@@ -25,76 +25,73 @@ var<storage, read> gradient: Gradient;
 [[group(1), binding(0)]]
 var uniforms: Uniforms;
 
-var colors: array<vec4<f32>,3> = array<vec4<f32>,3>(
-    vec4<f32>(1.0, 0.0, 0.0, 1.0),
-    vec4<f32>(0.0, 1.0, 0.0, 1.0),
-    vec4<f32>(0.0, 0.0, 1.0, 1.0),
-);
-
-var ratios: array<f32,3> = array<f32,3>(
-    0.0,
-    0.5,
-    1.0,
-);
-
 [[stage(fragment)]]
 fn main_fs(in: VertexOutput) -> [[location(0)]] vec4<f32> {
     let last = gradient.num_colors - 1u;
     var t: f32;
-    // Linear gradient
-    //let start = vec2<f32>(-1.0, 0.0);
-    //let end = vec2<f32>(1.0, 0.0);
-    //t = dot(normalize(gradient.end - gradient.start), in.tex_coord - gradient.start) / distance(gradient.start, gradient.end);
 
     if (distance(in.tex_coord, gradient.start) < 3.0) {
-        discard;
+            discard;
     }
     if (distance(in.tex_coord, gradient.end) < 3.0) {
         discard;
     }
 
+    switch (gradient.gradient_type) {
+        case 0u: {
+            // Linear gradient
+            t = dot(normalize(gradient.end - gradient.start), in.tex_coord - gradient.start) / distance(gradient.start, gradient.end);
+        }
+        case 1u: {
+            // Radial gradient
+            t = length(in.tex_coord - gradient.start) / distance(gradient.start, gradient.end);
+        }
+        case 2u: {
+            // Diamond gradient
+            let f = gradient.end - gradient.start;
+            let de = atan2(f.y, f.x);
+            let rot = mat2x2<f32>(vec2<f32>(cos(de), -sin(de)), vec2<f32>(sin(de), cos(de)));
+            let d = (rot*(in.tex_coord - gradient.start));
+            t = (abs(d.x) + abs(d.y)) / length(f);
+        }
+        case 3u: {
+            // Conic gradient
+            let f = gradient.end - gradient.start;
+            let de = atan2(f.y, f.x) - 3.14159;
+            let rot = mat2x2<f32>(vec2<f32>(cos(de), -sin(de)), vec2<f32>(sin(de), cos(de)));
+            let d = rot*(in.tex_coord - gradient.start);
+            t = (atan2(d.y, d.x) * 180.0 / 3.14159 + 180.0) / 360.0;
+        }
+        default: {
+            t = 1.0;
+        }
+    }
 
-    // Radial gradient
-    //let center = vec2<f32>(0.0, 0.0);
-    //let distance = vec2<f32>(0.1, 0.0);
-    //t = length(in.tex_coord - gradient.start) / distance(gradient.start, gradient.end);
-
-    // Diamond gradient
-    //let center = vec2<f32>(0.0, 0.0);
-    //let end = vec2<f32>(0.5, 0.5);
-    //let f = gradient.end - gradient.start;
-    //let de = atan2(f.y, f.x);
-    //let rot = mat2x2<f32>(vec2<f32>(cos(de), -sin(de)), vec2<f32>(sin(de), cos(de)));
-    //let d = (rot*(in.tex_coord - gradient.start));
-    //t = (abs(d.x) + abs(d.y)) / length(f);
-
-    // Conic gradient
-    //let center = vec2<f32>(-0.5, 0.0);
-    //let end = vec2<f32>(0.0, 1.0);
-    let f = gradient.end - gradient.start;
-    let de = atan2(f.y, f.x) - 3.14159;
-    let rot = mat2x2<f32>(vec2<f32>(cos(de), -sin(de)), vec2<f32>(sin(de), cos(de)));
-    let d = rot*(in.tex_coord - gradient.start);
-    t = (atan2(d.y, d.x) * 180.0 / 3.14159 + 180.0) / 360.0;
-
-
-    // Repeat
-    //t = fract(t);
-
-    // Mirror
-    //if( t < 0.0 ) {
-    //    t = -t;
-    //}
-    //if((i32(t)&1) == 0) {
-    //    t = fract(t);
-    //} else {
-    //    t = 1.0 - fract(t);
-    //}
-
-    // Clamp
-    t = clamp(t, 0.0, 1.0);
-
-
+    switch (gradient.repeat_mode) {
+        case 0u: {
+            // Clamp
+            t = clamp(t, 0.0, 1.0);
+        }
+        case 1u: {
+            // Repeat
+            t = fract(t);
+        }
+        case 2u: {
+            // Mirror
+            if( t < 0.0 ) {
+                t = -t;
+            }
+            if((i32(t)&1) == 0) {
+                t = fract(t);
+            } else {
+                t = 1.0 - fract(t);
+            }
+        }
+        default: {
+            // Default to clamp
+            t = clamp(t, 0.0, 1.0);
+        }
+    }
 
     t = clamp(t, gradient.ratios[0], gradient.ratios[last]);
 

@@ -3,12 +3,14 @@ use std::ops::{Deref, DerefMut};
 use std::rc::Rc;
 use std::str::FromStr;
 use carbide_core::prelude::{NewStateSync, Listenable, Id};
+use crate::Color;
 
 use crate::environment::Environment;
-use crate::prelude::ReadState;
-use crate::state::{BoolState, InnerState, MapOwnedState, MapState, ResStringState, State, StateContract, StateExt, StringState, Listener, TState, ValueCell, SubscriberList};
+use crate::prelude::{AdvancedColor, ColorState, ReadState};
+use crate::state::{BoolState, InnerState, MapOwnedState, MapState, ResStringState, State, StateContract, StateExt, StringState, Listener, TState, ValueCell, SubscriberList, RState};
 use crate::state::{ValueRef, ValueRefMut};
 use crate::state::widget_state::WidgetState;
+use crate::widget::Gradient;
 
 /// # ValueState
 /// Value state is a state that can be used for constants and values that are not shared. When
@@ -240,5 +242,23 @@ impl Into<BoolState> for ResStringState {
         self.mapped(|val: &Result<String, String>| {
             val.is_err()
         })
+    }
+}
+
+impl Into<RState<AdvancedColor>> for TState<Color> {
+    fn into(self) -> RState<AdvancedColor> {
+        self.read_map(|c: &Color| { AdvancedColor::from(*c) })
+    }
+}
+
+impl Into<TState<AdvancedColor>> for Color {
+    fn into(self) -> TState<AdvancedColor> {
+        ValueState::new(AdvancedColor::Color(self))
+    }
+}
+
+impl Into<TState<AdvancedColor>> for Gradient {
+    fn into(self) -> TState<AdvancedColor> {
+        ValueState::new(AdvancedColor::SingleGradient(self))
     }
 }

@@ -257,7 +257,7 @@ pub fn create_render_pass_commands<'a>(
                     };
                     inner_commands.push(cmd);
                 }
-                Draw::Gradient(vertex_range, gradient, matrix) => {
+                Draw::Gradient(vertex_range, gradient) => {
 
                     // If there is no vertices continue
                     let vertex_count = vertex_range.len();

@@ -1,9 +1,11 @@
 use crate::Color;
 use crate::color::Rgba;
 use crate::draw::{Dimension, Position, Rect};
+use crate::draw::draw_gradient::DrawGradient;
 use crate::draw::shape::triangle::Triangle;
 use crate::prelude::Primitive;
 use crate::render::PrimitiveKind;
+use crate::widget::types::advanced_color::AdvancedColor;
 
 #[derive(PartialEq, Clone, Debug)]
 pub struct TriangleStore {
@@ -62,21 +64,30 @@ impl TriangleStore {
         self.fill_triangles = triangles.clone()
     }
 
-    pub fn insert_primitives(&self, primitives: &mut Vec<Primitive>, fill_color: Color, stroke_color: Color) {
+    pub fn insert_primitives(&self, primitives: &mut Vec<Primitive>, fill_color: AdvancedColor, stroke_color: Color, position: Position, dimension: Dimension) {
         if self.fill_triangles.len() > 0 {
-            primitives.push(Primitive {
-                kind: PrimitiveKind::Gradient(
-                    self.fill_triangles.clone(),
-                ),
-                rect: Rect::new(self.latest_fill_position, self.latest_fill_dimensions),
-            });
-            /*primitives.push(Primitive {
-                kind: PrimitiveKind::TrianglesSingleColor {
-                    color: Rgba::from(fill_color),
-                    triangles: self.fill_triangles.clone(),
-                },
-                rect: Rect::new(self.latest_fill_position, self.latest_fill_dimensions),
-            });*/
+            let fill_color = fill_color.into();
+            match fill_color {
+                AdvancedColor::Color(c) => {
+                    primitives.push(Primitive {
+                        kind: PrimitiveKind::TrianglesSingleColor {
+                            color: Rgba::from(c),
+                            triangles: self.fill_triangles.clone(),
+                        },
+                        rect: Rect::new(self.latest_fill_position, self.latest_fill_dimensions),
+                    });
+                }
+                AdvancedColor::SingleGradient(g) => {
+                    primitives.push(Primitive {
+                        kind: PrimitiveKind::Gradient (
+                            self.fill_triangles.clone(),
+                            DrawGradient::convert(g, position, dimension),
+                        ),
+                        rect: Rect::new(self.latest_fill_position, self.latest_fill_dimensions),
+                    });
+                }
+                AdvancedColor::MultiGradient(_) => {}
+            }
         }
 
         if self.stroke_triangles.len() > 0 {

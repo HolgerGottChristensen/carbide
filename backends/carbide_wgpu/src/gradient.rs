@@ -1,4 +1,6 @@
 use cgmath::{Matrix, Matrix4, Vector2, Vector3, Vector4};
+use carbide_core::draw::draw_gradient::DrawGradient;
+use carbide_core::prelude::{GradientRepeat, GradientType};
 
 #[repr(C)]
 #[derive(Clone, Debug)]
@@ -36,7 +38,7 @@ impl Gradient {
         bytes
     }
 
-    pub fn convert(gradient: carbide_core::prelude::Gradient) -> Self {
+    pub fn convert(gradient: DrawGradient) -> Self {
 
         let mut colors = [
             [0.0, 0.0, 0.0, 0.0],
@@ -85,20 +87,49 @@ impl Gradient {
             ratios[index] = *ratio;
         }
 
-        assert_ne!(
-            gradient.start,
-            gradient.end,
-            "The start and end points should not be equal, because we can have division by 0 in the shader."
-        );
+        let gradient_type = match gradient.gradient_type {
+            GradientType::Linear => 0,
+            GradientType::Radial => 1,
+            GradientType::Diamond => 2,
+            GradientType::Conic => 3,
+        };
 
-        Self {
-            colors,
-            ratios,
-            num_colors: 2,
-            gradient_type: 0,
-            repeat_mode: 0,
-            start: [gradient.start.x() as f32, gradient.start.y() as f32],
-            end: [gradient.end.x() as f32, gradient.end.y() as f32]
+        let repeat_mode = match gradient.gradient_repeat {
+            GradientRepeat::Clamp => 0,
+            GradientRepeat::Repeat => 1,
+            GradientRepeat::Mirror => 2,
+        };
+
+        if gradient.start == gradient.end && gradient.gradient_type == GradientType::Radial {
+            Self {
+                colors,
+                ratios,
+                num_colors: gradient.colors.len() as u32,
+                gradient_type,
+                repeat_mode,
+                start: [gradient.start.x() as f32, gradient.start.y() as f32],
+                end: [(gradient.end.x() + 1.0) as f32, gradient.end.y() as f32]
+            }
+        } else if gradient.start == gradient.end {
+            Self {
+                colors,
+                ratios,
+                num_colors: gradient.colors.len() as u32,
+                gradient_type: 100, // This means we should hit the default course.
+                repeat_mode,
+                start: [gradient.start.x() as f32, gradient.start.y() as f32],
+                end: [gradient.end.x() as f32, gradient.end.y() as f32]
+            }
+        } else {
+            Self {
+                colors,
+                ratios,
+                num_colors: gradient.colors.len() as u32,
+                gradient_type,
+                repeat_mode,
+                start: [gradient.start.x() as f32, gradient.start.y() as f32],
+                end: [gradient.end.x() as f32, gradient.end.y() as f32]
+            }
         }
     }
 }
