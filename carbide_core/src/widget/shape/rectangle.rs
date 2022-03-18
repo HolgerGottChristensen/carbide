@@ -23,7 +23,7 @@ pub struct Rectangle {
     #[state]
     fill_color: TState<AdvancedColor>,
     #[state]
-    stroke_color: ColorState,
+    stroke_color: TState<AdvancedColor>,
     style: ShapeStyle,
     stroke_style: StrokeStyle,
     // Store the triangles for the border
@@ -37,7 +37,7 @@ impl Rectangle {
         Box::new(self)
     }
 
-    pub fn stroke<C: Into<ColorState>>(mut self, color: C) -> Box<Self> {
+    pub fn stroke(mut self, color: impl Into<TState<AdvancedColor>>) -> Box<Self> {
         self.stroke_color = color.into();
         self.style += ShapeStyle::Stroke;
         Box::new(self)
@@ -51,9 +51,9 @@ impl Rectangle {
 
     pub fn material<C: Into<ColorState>>(mut self, material: C) -> Box<ZStack> {
         let material_state = material.into();
-        let advanced_material_state: RState<AdvancedColor> = material_state.clone().into();
-        self.fill_color = advanced_material_state.ignore_writes();
-        self.stroke_color = material_state;
+        let advanced_material_state: RState<AdvancedColor> = material_state.into();
+        self.fill_color = advanced_material_state.clone().ignore_writes();
+        self.stroke_color = advanced_material_state.clone().ignore_writes();
 
         ZStack::new(vec![
             Blur::gaussian(10.0),
@@ -220,9 +220,10 @@ impl Render for Rectangle {
         });
 
         let fill_color =  self.fill_color.value().clone();
+        let stroke_color =  self.stroke_color.value().clone();
 
         self.triangle_store
-            .insert_primitives(primitives, fill_color, *self.stroke_color.value(), self.position, self.dimension);
+            .insert_primitives(primitives, fill_color, stroke_color, self.position, self.dimension);
     }
 }
 

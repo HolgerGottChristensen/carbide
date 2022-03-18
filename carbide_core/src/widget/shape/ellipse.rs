@@ -19,22 +19,22 @@ pub struct Ellipse {
     position: Position,
     dimension: Dimension,
     #[state]
-    stroke_color: ColorState,
+    stroke_color: TState<AdvancedColor>,
     #[state]
-    fill_color: ColorState,
+    fill_color: TState<AdvancedColor>,
     style: ShapeStyle,
     stroke_style: StrokeStyle,
     triangle_store: TriangleStore,
 }
 
 impl Ellipse {
-    pub fn fill<C: Into<ColorState>>(mut self, color: C) -> Box<Self> {
+    pub fn fill(mut self, color: impl Into<TState<AdvancedColor>>) -> Box<Self> {
         self.fill_color = color.into();
         self.style += ShapeStyle::Fill;
         Box::new(self)
     }
 
-    pub fn stroke<C: Into<ColorState>>(mut self, color: C) -> Box<Self> {
+    pub fn stroke(mut self, color: impl Into<TState<AdvancedColor>>) -> Box<Self> {
         self.stroke_color = color.into();
         self.style += ShapeStyle::Stroke;
         Box::new(self)
@@ -47,9 +47,10 @@ impl Ellipse {
     }
 
     pub fn material<C: Into<ColorState>>(mut self, material: C) -> Box<ZStack> {
-        let material = material.into();
-        self.fill_color = material.clone();
-        self.stroke_color = material;
+        let material_state = material.into();
+        let advanced_material_state: RState<AdvancedColor> = material_state.into();
+        self.fill_color = advanced_material_state.clone().ignore_writes();
+        self.stroke_color = advanced_material_state.clone().ignore_writes();
 
         ZStack::new(vec![
             Blur::gaussian(10.0)
@@ -129,10 +130,11 @@ impl Render for Ellipse {
             builder.add_ellipse(center, radii, Angle::degrees(0.0), Winding::Positive);
         });
 
-        let fill_color = *self.fill_color.value();
+        let fill_color =  self.fill_color.value().clone();
+        let stroke_color =  self.stroke_color.value().clone();
 
         self.triangle_store
-            .insert_primitives(primitives, fill_color.into(), *self.stroke_color.value(), self.position, self.dimension);
+            .insert_primitives(primitives, fill_color, stroke_color, self.position, self.dimension);
     }
 }
 

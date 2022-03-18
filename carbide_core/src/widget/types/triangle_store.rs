@@ -64,9 +64,10 @@ impl TriangleStore {
         self.fill_triangles = triangles.clone()
     }
 
-    pub fn insert_primitives(&self, primitives: &mut Vec<Primitive>, fill_color: AdvancedColor, stroke_color: Color, position: Position, dimension: Dimension) {
+    pub fn insert_primitives(&self, primitives: &mut Vec<Primitive>, fill_color: AdvancedColor, stroke_color: AdvancedColor, position: Position, dimension: Dimension) {
         if self.fill_triangles.len() > 0 {
             let fill_color = fill_color.into();
+
             match fill_color {
                 AdvancedColor::Color(c) => {
                     primitives.push(Primitive {
@@ -91,13 +92,30 @@ impl TriangleStore {
         }
 
         if self.stroke_triangles.len() > 0 {
-            primitives.push(Primitive {
-                kind: PrimitiveKind::TrianglesSingleColor {
-                    color: Rgba::from(stroke_color),
-                    triangles: self.stroke_triangles.clone(),
-                },
-                rect: Rect::new(self.latest_stroke_position, self.latest_stroke_dimensions),
-            });
+            let stroke_color = stroke_color.into();
+
+            match stroke_color {
+                AdvancedColor::Color(c) => {
+                    primitives.push(Primitive {
+                        kind: PrimitiveKind::TrianglesSingleColor {
+                            color: Rgba::from(c),
+                            triangles: self.stroke_triangles.clone(),
+                        },
+                        rect: Rect::new(self.latest_stroke_position, self.latest_stroke_dimensions),
+                    });
+                }
+                AdvancedColor::SingleGradient(g) => {
+                    primitives.push(Primitive {
+                        kind: PrimitiveKind::Gradient (
+                            self.stroke_triangles.clone(),
+                            DrawGradient::convert(g, position, dimension),
+                        ),
+                        rect: Rect::new(self.latest_stroke_position, self.latest_stroke_dimensions),
+                    });
+                }
+                AdvancedColor::MultiGradient(_) => {}
+            }
+
         }
     }
 

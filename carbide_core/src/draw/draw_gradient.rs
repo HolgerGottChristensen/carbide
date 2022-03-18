@@ -22,12 +22,18 @@ impl DrawGradient {
 
         let start = match g.start {
             GradientPosition::Absolute(p) => p,
-            GradientPosition::Alignment(l) => l.position(position, dimension)
+            GradientPosition::Alignment(l) => l.position(position, dimension),
+            GradientPosition::Relative(x, y) => {
+                Position::new(position.x + dimension.width * x, position.y + dimension.height * y)
+            }
         };
 
         let end = match g.end {
             GradientPosition::Absolute(p) => p,
-            GradientPosition::Alignment(l) => l.position(position, dimension)
+            GradientPosition::Alignment(l) => l.position(position, dimension),
+            GradientPosition::Relative(x, y) => {
+                Position::new(position.x + dimension.width * x, position.y + dimension.height * y)
+            }
         };
 
         Self {

@@ -8,6 +8,7 @@ use crate::state::ColorState;
 #[derive(Debug, Clone)]
 pub enum GradientPosition {
     Absolute(Position),
+    Relative(f64, f64),
     Alignment(Alignment)
 }
 
@@ -196,5 +197,11 @@ impl Into<GradientPosition> for Alignment {
 impl Into<GradientPosition> for Position {
     fn into(self) -> GradientPosition {
         GradientPosition::Absolute(self)
+    }
+}
+
+impl Into<GradientPosition> for (f64, f64) {
+    fn into(self) -> GradientPosition {
+        GradientPosition::Relative(self.0, self.1)
     }
 }

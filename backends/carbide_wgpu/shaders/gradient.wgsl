@@ -1,3 +1,7 @@
+// The contents of this file is inspired by:
+// https://github.com/ruffle-rs/ruffle/blob/master/render/wgpu/shaders/gradient.wgsl
+// but modified to work with carbide coordinates and diamond and conic gradients.
+
 struct VertexOutput {
     [[location(0)]] tex_coord: vec2<f32>;
     [[builtin(position)]] position: vec4<f32>;
@@ -29,13 +33,6 @@ var uniforms: Uniforms;
 fn main_fs(in: VertexOutput) -> [[location(0)]] vec4<f32> {
     let last = gradient.num_colors - 1u;
     var t: f32;
-
-    if (distance(in.tex_coord, gradient.start) < 3.0) {
-            discard;
-    }
-    if (distance(in.tex_coord, gradient.end) < 3.0) {
-        discard;
-    }
 
     switch (gradient.gradient_type) {
         case 0u: {
