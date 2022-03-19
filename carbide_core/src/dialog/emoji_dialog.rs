@@ -1,8 +1,3 @@
-use crate::Color;
-use crate::color::WHITE;
-use crate::environment::Environment;
-#[cfg(target_os = "macos")]
-use crate::platform::mac::color_dialog::open_color_dialog;
 #[cfg(target_os = "macos")]
 use crate::platform::mac::open_emoji_dialog;
 
@@ -14,7 +9,7 @@ impl EmojiDialog {
     }
 
     #[cfg(target_os = "macos")]
-    pub fn open(mut self) {
+    pub fn open(self) {
         open_emoji_dialog()
     }
 

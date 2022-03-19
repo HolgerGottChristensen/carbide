@@ -399,8 +399,16 @@ impl Environment {
         self.cursor = cursor;
     }
 
+    /// This method is used to request focus. The focus handling is done after each event is
+    /// completed, meaning that this can be called multiple times per frame. The default
+    /// behavior is on tab and shift-tab, but you can avoid this by having a widget call
+    /// [Self::reset_focus_requests].
     pub fn request_focus(&mut self, request_type: Refocus) {
         self.focus_request = Some(request_type);
+    }
+
+    pub fn reset_focus_requests(&mut self) {
+        self.focus_request = None;
     }
 
     pub fn get_image_information(&self, id: &Option<crate::image_map::Id>) -> Option<&ImageInformation> {

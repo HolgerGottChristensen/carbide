@@ -1,13 +1,13 @@
 use std::fmt::{Debug, Formatter};
 
-use carbide_core::{DeserializeOwned, Serialize};
+use carbide_core::{Color, DeserializeOwned, Serialize};
 use carbide_core::cursor::MouseCursor;
 use carbide_core::draw::{Dimension, Position};
 use carbide_core::environment::Environment;
 use carbide_core::flags::Flags;
 use carbide_core::focus::Focus;
 use carbide_core::prelude::{EnvironmentColor, Uuid};
-use carbide_core::state::{BoolState, FocusState, LocalState, ReadState, State, StateExt, StringState, TState};
+use carbide_core::state::{BoolState, FocusState, LocalState, Map3, ReadState, State, StateExt, StringState, TState};
 use carbide_core::widget::*;
 
 use crate::{Action, PlainButton};
@@ -149,24 +149,23 @@ impl Button {
         pressed_cursor: Option<MouseCursor>,
     ) -> Box<Self> {
         let normal_color = if is_primary {
-            EnvironmentColor::Accent
+            EnvironmentColor::Accent.state()
         } else {
-            EnvironmentColor::SecondarySystemBackground
+            EnvironmentColor::SecondarySystemBackground.state()
         };
 
-        let pressed_for_color = pressed_state.clone();
-        let background_color = hover_state.mapped_env(move |hover: &bool, _: &_, env: &Environment| {
-            let pressed = pressed_for_color.clone();
-            let normal_color = normal_color.clone();
-            if *pressed.value() {
-                return env.env_color(normal_color).darkened(0.05)
-            }
-            if *hover {
-                return env.env_color(normal_color).lightened(0.05);
-            }
+        let background_color = Map3::read_map(
+            hover_state.clone(), pressed_state.clone(), normal_color,
+            |hover: &bool, pressed: &bool, normal: &Color| {
+                if *pressed {
+                    return normal.darkened(0.05);
+                }
+                if *hover {
+                    return normal.lightened(0.05);
+                }
 
-            env.env_color(normal_color)
-        });
+                *normal
+            }).ignore_writes();
 
         let child = PlainButton::new(
             ZStack::new(vec![

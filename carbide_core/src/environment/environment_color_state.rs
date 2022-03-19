@@ -1,17 +1,15 @@
 use std::ops::{Deref, DerefMut};
-use carbide_core::prelude::{Id, Listener};
 
 use crate::Color;
 use crate::prelude::{Environment, State};
 use crate::prelude::EnvironmentColor;
-use crate::state::{Listenable, ReadState, SubscriberList, ValueRef, ValueRefMut};
+use crate::state::{NewStateSync, ReadState, ValueRef, ValueRefMut};
 use crate::state::StateKey;
 
 #[derive(Clone, Debug)]
 pub struct EnvironmentColorState {
     key: StateKey,
     value: Color,
-    subscribers: SubscriberList<Color>,
 }
 
 impl EnvironmentColorState {
@@ -19,7 +17,6 @@ impl EnvironmentColorState {
         EnvironmentColorState {
             key: StateKey::Color(key),
             value: Color::Rgba(0.0, 0.0, 0.0, 1.0),
-            subscribers: SubscriberList::new(),
         }
     }
 }
@@ -38,24 +35,18 @@ impl DerefMut for EnvironmentColorState {
     }
 }
 
-impl crate::state::NewStateSync for EnvironmentColorState {
-    fn sync(&mut self, env: &mut Environment) {
+impl NewStateSync for EnvironmentColorState {
+    fn sync(&mut self, env: &mut Environment) -> bool {
         if let Some(color) = env.get_color(&self.key) {
             if self.value != color {
                 self.value = color;
-                self.subscribers.notify(&color)
+                true
+            } else {
+                false
             }
+        } else {
+            false
         }
-    }
-}
-
-impl Listenable<Color> for EnvironmentColorState {
-    fn subscribe(&self, subscriber: Box<dyn Listener<Color>>) -> Id {
-        self.subscribers.add_subscriber(subscriber)
-    }
-
-    fn unsubscribe(&self, id: &Id) {
-        self.subscribers.remove_subscriber(id)
     }
 }
 
@@ -73,10 +64,5 @@ impl State<Color> for EnvironmentColorState {
 
     fn set_value(&mut self, value: Color) {
         self.value = value;
-        self.notify();
-    }
-
-    fn notify(&self) {
-        self.subscribers.notify(&self.value)
     }
 }

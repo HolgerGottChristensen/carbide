@@ -8,7 +8,7 @@ use crate::draw::shape::triangle::Triangle;
 use crate::image_map;
 use crate::layout::BasicLayouter;
 use crate::text::Glyph;
-use crate::widget::{ColoredPoint, Gradient};
+use crate::widget::ColoredPoint;
 
 /// The unique kind for each primitive element in the Ui.
 pub enum PrimitiveKind {

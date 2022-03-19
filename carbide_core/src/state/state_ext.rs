@@ -1,4 +1,4 @@
-use crate::state::{MapOwnedState, MapWithEnv, ReadState, RState, StateContract, TState};
+use crate::state::{MapOwnedState, MapWithEnv, RState, StateContract, TState};
 use crate::state::readonly::{ReadMap, ReadMapState};
 use crate::state::widget_state::Map;
 
@@ -14,7 +14,7 @@ pub trait StateExt<T>: Into<TState<T>> + Clone where T: StateContract {
 
     fn read_map<TO: StateContract, MAP: ReadMap<T, TO>>(&self, map: MAP) -> RState<TO> {
         let state = self.clone().into();
-        ReadMapState::<T, TO>::new(state, map)
+        ReadMapState::<T, TO, MAP>::new(state, map)
     }
 }
 

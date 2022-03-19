@@ -1,5 +1,4 @@
 use crate::Color;
-use crate::color::WHITE;
 use crate::environment::Environment;
 #[cfg(target_os = "macos")]
 use crate::platform::mac::color_dialog::open_color_dialog;
@@ -7,7 +6,7 @@ use crate::platform::mac::color_dialog::open_color_dialog;
 pub struct ColorDialog {
     pub(crate) show_alpha: bool,
     pub(crate) continuous: bool,
-    pub(crate) initial_color: Option<Color>,
+    //pub(crate) initial_color: Option<Color>,
 }
 
 impl ColorDialog {
@@ -15,7 +14,7 @@ impl ColorDialog {
         ColorDialog {
             show_alpha: false,
             continuous: true,
-            initial_color: None,
+            //initial_color: None,
         }
     }
 
@@ -35,7 +34,7 @@ impl ColorDialog {
     }
 
     #[cfg(target_os = "macos")]
-    pub fn open(mut self, env: &mut Environment, color_change: impl Fn(Color, &mut Environment) -> bool + 'static) {
+    pub fn open(self, env: &mut Environment, color_change: impl Fn(Color, &mut Environment) -> bool + 'static) {
         let on_next = move |color: Color, env: &mut Environment| -> bool {
             color_change(color, env);
             false

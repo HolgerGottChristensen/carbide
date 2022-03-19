@@ -2,7 +2,7 @@ use std::thread::sleep;
 use std::time::Duration;
 
 use carbide_core::prelude::EnvironmentColor;
-use carbide_core::state::{Listenable, LocalState, NewMapState, ReadState, State, StateExt, ValueState};
+use carbide_core::state::{LocalState, Map1, State, StateExt};
 use carbide_core::{Color, task};
 use carbide_core::text::FontFamily;
 use carbide_core::widget::*;
@@ -34,13 +34,12 @@ fn main() {
 
     let block_width = LocalState::new(50.0);
 
-    let new_state = NewMapState::new(
+    let new_state = Map1::map(
         block_width.clone(),
         |x: &f64| {*x * 2.0},
-        |x: f64, y: &f64| {x / 2.0});
-    block_width.subscribe(Box::new(|a: &f64| {
-        println!("Value changed: {}", a)
-    }));
+        |x: f64, _: &f64| {
+            Some(x / 2.0)
+        });
 
     let new_state1 = block_width.read_map(|x: &f64| {*x * 3.0});
     let new_state2 = new_state1.read_map(|x: &f64| {*x * 1.2});

@@ -1,15 +1,14 @@
 use std::ops::{Deref, DerefMut};
-use carbide_core::prelude::{NewStateSync, Listenable, Listener, Id};
+use carbide_core::prelude::NewStateSync;
 
 use crate::prelude::{Environment, EnvironmentFontSize, State};
-use crate::state::{ReadState, SubscriberList, ValueRef, ValueRefMut};
+use crate::state::{ReadState, ValueRef, ValueRefMut};
 use crate::state::StateKey;
 
 #[derive(Clone, Debug)]
 pub struct EnvironmentFontSizeState {
     key: StateKey,
     value: u32,
-    subscribers: SubscriberList<u32>,
 }
 
 impl EnvironmentFontSizeState {
@@ -17,7 +16,6 @@ impl EnvironmentFontSizeState {
         EnvironmentFontSizeState {
             key: StateKey::FontSize(key),
             value: 20,
-            subscribers: SubscriberList::new()
         }
     }
 }
@@ -37,23 +35,17 @@ impl DerefMut for EnvironmentFontSizeState {
 }
 
 impl NewStateSync for EnvironmentFontSizeState {
-    fn sync(&mut self, env: &mut Environment) {
+    fn sync(&mut self, env: &mut Environment) -> bool {
         if let Some(size) = env.get_font_size(&self.key) {
             if self.value != size {
                 self.value = size;
-                self.subscribers.notify(&size);
+                true
+            } else {
+                false
             }
+        } else {
+            false
         }
-    }
-}
-
-impl Listenable<u32> for EnvironmentFontSizeState {
-    fn subscribe(&self, subscriber: Box<dyn Listener<u32>>) -> Id {
-        self.subscribers.add_subscriber(subscriber)
-    }
-
-    fn unsubscribe(&self, id: &Id) {
-        self.subscribers.remove_subscriber(id)
     }
 }
 
@@ -70,10 +62,5 @@ impl State<u32> for EnvironmentFontSizeState {
 
     fn set_value(&mut self, value: u32) {
         self.value = value;
-        self.notify();
-    }
-
-    fn notify(&self) {
-        self.subscribers.notify(&self.value);
     }
 }

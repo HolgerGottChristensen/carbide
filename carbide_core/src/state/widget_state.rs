@@ -3,12 +3,12 @@ use std::fmt;
 use std::fmt::{Debug, Formatter};
 
 use dyn_clone::DynClone;
-use carbide_core::prelude::{NewStateSync, ReadState, Listenable, Id};
+use carbide_core::prelude::{NewStateSync, ReadState};
 use carbide_core::state::readonly::ReadWidgetState;
 use carbide_core::state::RState;
 
 use crate::prelude::Environment;
-use crate::state::{MapState, NewMapState, StateContract, StateExt, Listener, TState, UsizeState, VecState};
+use crate::state::{Map1, StateContract, StateExt, TState, UsizeState, VecState};
 pub use crate::state::State;
 use crate::state::util::value_cell::{ValueRef, ValueRefMut};
 
@@ -59,13 +59,12 @@ impl<T: StateContract> WidgetState<Option<T>> {
 
 impl<T: StateContract + Default + 'static> WidgetState<Option<T>> {
     pub fn unwrap_or_default(&self) -> TState<T> {
-        NewMapState::<Option<T>, T>::new(
+        Map1::map(
             self.clone(),
-            |val| {
+            |val: &Option<T>| {
                 val.clone().unwrap_or_default()
-            },
-            |new, old| {
-                Some(new)
+            }, |new, _| {
+                Some(Some(new))
             }
         )
     }
@@ -104,18 +103,8 @@ impl<T: StateContract> Into<ReadWidgetState<T>> for WidgetState<T> {
 }
 
 impl<T: StateContract> NewStateSync for WidgetState<T> {
-    fn sync(&mut self, env: &mut Environment) {
+    fn sync(&mut self, env: &mut Environment) -> bool {
         self.0.sync(env)
-    }
-}
-
-impl<T: StateContract> Listenable<T> for WidgetState<T> {
-    fn subscribe(&self, subscriber: Box<dyn Listener<T>>) -> Id {
-        self.0.subscribe(subscriber)
-    }
-
-    fn unsubscribe(&self, id: &Id) {
-        self.0.unsubscribe(id)
     }
 }
 
@@ -132,10 +121,6 @@ impl<T: StateContract> State<T> for WidgetState<T> {
 
     fn set_value(&mut self, value: T) {
         self.0.set_value(value)
-    }
-
-    fn notify(&self) {
-        self.0.notify()
     }
 
     fn update_dependent(&mut self) {

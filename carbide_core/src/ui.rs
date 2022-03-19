@@ -7,7 +7,7 @@ use instant::Instant;
 use crate::{color, cursor};
 use crate::cursor::MouseCursor;
 use crate::draw::Dimension;
-use crate::event::{CustomEvent, EventHandler, EventSink, Input, Key, KeyboardEvent, ModifierKey, OtherEventHandler, WidgetEvent, WindowEvent};
+use crate::event::{EventHandler, EventSink, Input, Key, KeyboardEvent, ModifierKey, OtherEventHandler, WidgetEvent, WindowEvent};
 use crate::focus::{Focusable, Refocus};
 use crate::prelude::Environment;
 use crate::prelude::EnvironmentColor;
@@ -493,6 +493,21 @@ impl Ui {
                         .process_mouse_event(mouse_event, &consumed, &mut self.environment);
                 }
                 WidgetEvent::Keyboard(keyboard_event) => {
+
+                    match keyboard_event {
+                        KeyboardEvent::Press(key, modifier) => {
+                            if key == &Key::Tab {
+                                if modifier == &ModifierKey::SHIFT {
+                                    //self.set_focus(Focus::FocusReleased);
+                                    self.environment.request_focus(Refocus::FocusPrevious);
+                                } else if modifier == &ModifierKey::NO_MODIFIER {
+                                    //self.set_focus(Focus::FocusReleased);
+                                    self.environment.request_focus(Refocus::FocusNext);
+                                }
+                            }
+                        }
+                        _ => ()
+                    }
                     self.widgets
                         .process_keyboard_event(keyboard_event, &mut self.environment);
                 }

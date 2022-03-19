@@ -1,12 +1,11 @@
 use std::fmt::{Debug, Formatter};
 use std::ops::Deref;
-use carbide_core::prelude::{NewStateSync, Listenable, Listener, Id};
+use carbide_core::prelude::NewStateSync;
 
 use crate::environment::Environment;
-use crate::state::{ReadState, RState, State, StateContract, SubscriberList, TState};
+use crate::state::{ReadState, RState, StateContract};
 use crate::state::readonly::ReadWidgetState;
-use crate::state::util::value_cell::{ValueRef, ValueRefMut};
-use crate::state::widget_state::WidgetState;
+use crate::state::util::value_cell::ValueRef;
 
 /// # Environment state
 /// EnvState is a read-only state that takes a function from the environment and returns a value.
@@ -30,8 +29,6 @@ pub struct EnvState<T>
     map: fn(env: &Environment) -> T,
     /// The value from the last mapping.
     value: T,
-    /// The list of listeners that will be notified whenever the state changes.
-    listeners: SubscriberList<T>,
 }
 
 impl<T: StateContract + PartialEq + Default> EnvState<T> {
@@ -45,28 +42,19 @@ impl<T: StateContract + PartialEq + Default> EnvState<T> {
         EnvState {
             map,
             value: T::default(),
-            listeners: SubscriberList::new(),
         }
     }
 }
 
 impl<T: StateContract + PartialEq> NewStateSync for EnvState<T> {
-    fn sync(&mut self, env: &mut Environment) {
+    fn sync(&mut self, env: &mut Environment) -> bool {
         let val = (self.map)(env);
         if val != self.value {
             self.value = val;
-            self.listeners.notify(&self.value);
+            true
+        } else {
+            false
         }
-    }
-}
-
-impl<T: StateContract + PartialEq> Listenable<T> for EnvState<T> {
-    fn subscribe(&self, subscriber: Box<dyn Listener<T>>) -> Id {
-        self.listeners.add_subscriber(subscriber)
-    }
-
-    fn unsubscribe(&self, id: &Id) {
-        self.listeners.remove_subscriber(id)
     }
 }
 

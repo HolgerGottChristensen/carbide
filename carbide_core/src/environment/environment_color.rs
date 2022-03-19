@@ -1,4 +1,3 @@
-use std::os::macos::raw::stat;
 use crate::Color;
 use crate::environment::Environment;
 use crate::prelude::EnvironmentColorState;
@@ -66,6 +65,12 @@ pub enum EnvironmentColor {
     Custom(String),
 }
 
+impl EnvironmentColor {
+    pub fn state(&self) -> TState<Color> {
+        WidgetState::new(Box::new(EnvironmentColorState::new(self.clone())))
+    }
+}
+
 impl Default for EnvironmentColor {
     fn default() -> Self {
         EnvironmentColor::Blue
@@ -80,7 +85,7 @@ impl Into<StateKey> for EnvironmentColor {
 
 impl Into<ColorState> for EnvironmentColor {
     fn into(self) -> ColorState {
-        WidgetState::new(Box::new(EnvironmentColorState::new(self)))
+        self.state()
     }
 }
 

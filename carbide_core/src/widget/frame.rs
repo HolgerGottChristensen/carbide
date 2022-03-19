@@ -1,5 +1,4 @@
-use std::fmt::{Debug, Formatter};
-use dyn_clone::DynClone;
+use std::fmt::Debug;
 use crate::draw::{Dimension, Position};
 use crate::prelude::*;
 
@@ -210,7 +209,7 @@ enum FrameState {
 }
 
 impl NewStateSync for FrameState {
-    fn sync(&mut self, env: &mut Environment) {
+    fn sync(&mut self, env: &mut Environment) -> bool {
         match self {
             FrameState::Expand(e) => {
                 e.sync(env)
@@ -222,29 +221,6 @@ impl NewStateSync for FrameState {
     }
 }
 
-impl Listenable<f64> for FrameState {
-    fn subscribe(&self, subscriber: Box<dyn Listener<f64>>) -> Id {
-        match self {
-            FrameState::Expand(e) => {
-                e.subscribe(subscriber)
-            }
-            FrameState::Fixed(f) => {
-                f.subscribe(subscriber)
-            }
-        }
-    }
-
-    fn unsubscribe(&self, id: &Id) {
-        match self {
-            FrameState::Expand(e) => {
-                e.unsubscribe(id)
-            }
-            FrameState::Fixed(f) => {
-                f.unsubscribe(id)
-            }
-        }
-    }
-}
 
 impl ReadState<f64> for FrameState {
     fn value(&self) -> ValueRef<f64> {
@@ -273,7 +249,4 @@ impl State<f64> for FrameState {
         }
     }
 
-    fn notify(&self) {
-        unimplemented!()
-    }
 }

@@ -1,10 +1,9 @@
 use std::fmt::Debug;
-use std::rc::Rc;
-use carbide_core::prelude::{NewStateSync, Listenable, Id};
+use carbide_core::prelude::NewStateSync;
 
 use crate::environment::Environment;
 use crate::prelude::{StateContract, TState};
-use crate::state::{InnerState, MapRev, ReadState, State, Listener, ValueCell, SubscriberList};
+use crate::state::{ReadState, State};
 use crate::state::util::value_cell::{ValueRef, ValueRefMut};
 use crate::state::widget_state::WidgetState;
 
@@ -42,8 +41,6 @@ pub struct FieldState<FROM, TO>
     /// The mutable reference mapping that can return a mutable reference to the field when
     /// provided with a mutable reference to the struct.
     map_mut: for<'r, 's> fn(&'r mut FROM) -> &'r mut TO,
-    /// The list of subscribers to notify whenever the state changes.
-    subscribers: SubscriberList<TO>,
 }
 
 impl<FROM: StateContract, TO: StateContract> FieldState<FROM, TO> {
@@ -54,39 +51,19 @@ impl<FROM: StateContract, TO: StateContract> FieldState<FROM, TO> {
     ) -> TState<TO> {
         let state = state.into();
 
-        let list = SubscriberList::new();
-
         let res = FieldState {
             state: state.clone(),
             map,
             map_mut,
-            subscribers: list.clone(),
         };
-
-        // Subscribe to state changes from the parent.
-        // TODO limit the subscription to only notify when the actual field changes and not any change in the struct
-        state.subscribe(Box::new(move |val: &FROM| {
-            // When the parent changes we should notify the listeners to this state.
-            list.notify(map(val))
-        }));
 
         res.into()
     }
 }
 
 impl<FROM: StateContract, TO: StateContract> NewStateSync for FieldState<FROM, TO> {
-    fn sync(&mut self, env: &mut Environment) {
+    fn sync(&mut self, env: &mut Environment) -> bool {
         self.state.sync(env)
-    }
-}
-
-impl<FROM: StateContract, TO: StateContract> Listenable<TO> for FieldState<FROM, TO> {
-    fn subscribe(&self, subscriber: Box<dyn Listener<TO>>) -> Id {
-        self.subscribers.add_subscriber(subscriber)
-    }
-
-    fn unsubscribe(&self, id: &Id) {
-        self.subscribers.remove_subscriber(id)
     }
 }
 
@@ -106,12 +83,8 @@ impl<FROM: StateContract, TO: StateContract> State<TO> for FieldState<FROM, TO> 
     fn set_value(&mut self, value: TO) {
         let map_mut = self.map_mut;
         *ValueRefMut::map(self.state.value_mut(), |a| { map_mut(a) }) = value;
-        self.notify();
     }
 
-    fn notify(&self) {
-        self.state.notify()
-    }
 }
 
 impl<FROM: StateContract, TO: StateContract> Debug for FieldState<FROM, TO> {

@@ -1,5 +1,5 @@
 use std::fmt::Debug;
-use carbide_core::prelude::{NewStateSync, Listenable, Listener, Id};
+use carbide_core::prelude::NewStateSync;
 
 use crate::environment::Environment;
 use crate::prelude::{StateContract, TState};
@@ -50,18 +50,8 @@ impl<FROM: StateContract, TO: StateContract, VALUE: StateContract> MapState<FROM
 }
 
 impl<FROM: StateContract, TO: StateContract, VALUE: StateContract> NewStateSync for MapState<FROM, TO, VALUE> {
-    fn sync(&mut self, env: &mut Environment) {
+    fn sync(&mut self, env: &mut Environment) -> bool {
         self.state.sync(env)
-    }
-}
-
-impl<FROM: StateContract, TO: StateContract, VALUE: StateContract> Listenable<TO> for MapState<FROM, TO, VALUE> {
-    fn subscribe(&self, subscriber: Box<dyn Listener<TO>>) -> Id {
-        todo!()
-    }
-
-    fn unsubscribe(&self, id: &Id) {
-        todo!()
     }
 }
 
@@ -90,10 +80,6 @@ impl<FROM: StateContract, TO: StateContract, VALUE: StateContract> State<TO> for
         let val = self.inner_value.clone();
         let function = self.map_mut;
         *ValueRefMut::map(self.state.value_mut(), |a| { function(a, val) }) = value;
-    }
-
-    fn notify(&self) {
-        todo!()
     }
 }
 

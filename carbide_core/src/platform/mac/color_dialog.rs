@@ -2,8 +2,7 @@ use std::ffi::c_void;
 use std::sync::mpsc::Sender;
 
 use cocoa::appkit::CGFloat;
-use cocoa::base::{id, nil, NO, YES};
-use cocoa::foundation::NSAutoreleasePool;
+use cocoa::base::{id, NO, YES};
 use lazy_static::lazy_static;
 use objc::{class, msg_send, sel, sel_impl};
 use objc::declare::ClassDecl;
@@ -23,7 +22,7 @@ struct ColorPickerChannel(Sender<Color>);
 
 impl ColorPickerChannel {
     fn received(&self, color: Color) {
-        self.0.send(color);
+        self.0.send(color).unwrap();
     }
 }
 
@@ -82,14 +81,14 @@ lazy_static! {
             }
         }
 
-        extern "C" fn dealloc(this: &Object, _: Sel) {
+        extern "C" fn dealloc(_this: &Object, _: Sel) {
             println!("Dealloc called");
-            unsafe {
+            //unsafe {
                 //let state_ptr: *mut c_void = *(this.get_ivar(AUX_DELEGATE_STATE_NAME));
                 // As soon as the box is constructed it is immediately dropped, releasing the underlying
                 // memory
                 //Box::from_raw(state_ptr as *mut RefCell<AuxDelegateState>);
-            }
+            //}
         }
 
         ColorPickerResponder(decl.register())

@@ -1,15 +1,9 @@
 use std::fmt::{Debug, Formatter};
-use std::ops::Deref;
 use std::rc::Rc;
-
-use uuid::Uuid;
-use carbide_core::prelude::Id;
 use carbide_core::state::state_sync::NewStateSync;
-use crate::state::util::subscriber::Listenable;
 
 use crate::environment::Environment;
-use crate::state::{InnerState, ReadState, State, StateContract, Listener, SubscriberList, TState};
-use crate::state::state_key::StateKey;
+use crate::state::{InnerState, ReadState, State, StateContract, TState};
 use crate::state::util::value_cell::{ValueCell, ValueRef, ValueRefMut};
 use crate::state::widget_state::WidgetState;
 
@@ -26,9 +20,6 @@ use crate::state::widget_state::WidgetState;
 /// Also it does not depend on any other states and therefore the event can be ignored.
 #[derive(Clone)]
 pub struct LocalState<T> where T: StateContract {
-    /// A list of listeners that contains all the states that should
-    /// change whenever this state changes.
-    listeners: SubscriberList<T>,
     /// The shared state
     inner_value: InnerState<T>,
 }
@@ -43,24 +34,21 @@ impl<T: StateContract> LocalState<T> {
     /// Returns a new local state containing the value provided.
     /// Often you should use `new` when creating states, but this can be used to get the state
     /// within a box.
-    pub fn new_raw(value: T) -> Box<Self> {
+    fn new_raw(value: T) -> Box<Self> {
         Box::new(LocalState {
-            listeners: SubscriberList::new(),
             inner_value: Rc::new(ValueCell::new(value)),
         })
     }
 }
 
 
-impl<T: StateContract> NewStateSync for LocalState<T> {}
-
-impl<T: StateContract> Listenable<T> for LocalState<T> {
-    fn subscribe(&self, subscriber: Box<dyn Listener<T>>) -> Id {
-        self.listeners.add_subscriber(subscriber)
-    }
-
-    fn unsubscribe(&self, id: &Id) {
-        self.listeners.remove_subscriber(id)
+impl<T: StateContract> NewStateSync for LocalState<T> {
+    fn sync(&mut self, _env: &mut Environment) -> bool {
+        // TODO: find a smarter way to determine if local state has been updated.
+        // I guess we can figuring it out by storing a frame number in the local state
+        // and in the env, and then comparing and updating whenever this is called and set_value
+        // is called.
+        true
     }
 }
 
@@ -77,11 +65,6 @@ impl<T: StateContract> State<T> for LocalState<T> {
 
     fn set_value(&mut self, value: T) {
         *self.inner_value.borrow_mut() = value;
-        self.notify();
-    }
-
-    fn notify(&self) {
-        self.listeners.notify(&*self.inner_value.borrow());
     }
 }
 

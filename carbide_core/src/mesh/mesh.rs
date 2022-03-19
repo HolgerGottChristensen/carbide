@@ -11,7 +11,6 @@ use cgmath::{Matrix4, SquareMatrix, Vector3};
 use image::{DynamicImage, GenericImage, GenericImageView};
 use rusttype::gpu_cache::Cache as RustTypeGlyphCache;
 use rusttype::gpu_cache::CacheWriteErr as RustTypeCacheWriteError;
-use carbide_core::widget::Gradient;
 
 use crate::{color, image_map};
 use crate::draw::{Position, Rect, Scalar};
@@ -681,7 +680,7 @@ impl Mesh {
                 PrimitiveKind::Text { color, text: glyphs, } => {
                     switch_to_plain_state!();
                     let color = gamma_srgb_to_linear(color.to_fsa());
-                    let texture_atlas = env.get_font_atlas();
+                    //let texture_atlas = env.get_font_atlas();
 
                     let v_normal = |x, y, t| Vertex {
                         position: [vx(x), vy(y), 0.0],

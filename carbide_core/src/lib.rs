@@ -48,6 +48,18 @@ macro_rules! lens {
         $i.mapped(|$i: &$type| $bl)
     }
 }
+
+#[macro_export]
+macro_rules! set_state {
+    ($env:ident, self.$i:ident := $bl:block) => {
+        {
+            let res = $bl;
+            self.$i.set_value(res);
+            self.sync($env);
+        }
+    };
+}
+
 pub use futures::TryFutureExt;
 pub use serde::*;
 pub use serde::de::*;

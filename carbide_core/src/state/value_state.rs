@@ -1,13 +1,12 @@
 use std::fmt::{Debug, Formatter};
 use std::ops::{Deref, DerefMut};
-use std::rc::Rc;
 use std::str::FromStr;
-use carbide_core::prelude::{NewStateSync, Listenable, Id};
+use carbide_core::prelude::NewStateSync;
 use crate::Color;
 
 use crate::environment::Environment;
-use crate::prelude::{AdvancedColor, ColorState, ReadState};
-use crate::state::{BoolState, InnerState, MapOwnedState, MapState, ResStringState, State, StateContract, StateExt, StringState, Listener, TState, ValueCell, SubscriberList, RState};
+use crate::prelude::{AdvancedColor, ReadState};
+use crate::state::{BoolState, MapOwnedState, ResStringState, State, StateContract, StateExt, StringState, TState, RState, MapState};
 use crate::state::{ValueRef, ValueRefMut};
 use crate::state::widget_state::WidgetState;
 use crate::widget::Gradient;
@@ -27,8 +26,6 @@ use crate::widget::Gradient;
 pub struct ValueState<T> where T: StateContract {
     /// The value contained as the state
     value: T,
-    /// The list of listeners to notify when the state changes.
-    subscribers: SubscriberList<T>,
 }
 
 impl<T: StateContract> ValueState<T> {
@@ -39,7 +36,6 @@ impl<T: StateContract> ValueState<T> {
     pub fn new_raw(value: T) -> Box<Self> {
         Box::new(ValueState {
             value,
-            subscribers: SubscriberList::new()
         })
     }
 }
@@ -61,22 +57,11 @@ impl<T: StateContract> DerefMut for ValueState<T> {
 
 impl<T: StateContract> NewStateSync for ValueState<T> {}
 
-impl<T: StateContract> Listenable<T> for ValueState<T> {
-    fn subscribe(&self, subscriber: Box<dyn Listener<T>>) -> Id {
-        self.subscribers.add_subscriber(subscriber)
-    }
-
-    fn unsubscribe(&self, id: &Id) {
-        self.subscribers.remove_subscriber(id)
-    }
-}
-
 impl<T: StateContract> ReadState<T> for ValueState<T> {
     fn value(&self) -> ValueRef<T> {
         ValueRef::Borrow(&self.value)
     }
 }
-
 
 impl<T: StateContract> State<T> for ValueState<T> {
     fn value_mut(&mut self) -> ValueRefMut<T> {
@@ -85,12 +70,8 @@ impl<T: StateContract> State<T> for ValueState<T> {
 
     fn set_value(&mut self, value: T) {
         self.value = value;
-        self.notify();
     }
 
-    fn notify(&self) {
-        self.subscribers.notify(&self.value);
-    }
 }
 
 impl<T: StateContract> Debug for ValueState<T> {
@@ -128,7 +109,7 @@ impl From<&str> for TState<String> {
 
 impl<T: StateContract + Default + 'static> Into<TState<Result<T, String>>> for TState<T> {
     fn into(self) -> TState<Result<T, String>> {
-        MapOwnedState::new_with_default_and_rev(self, |val: &T, _: &_, env: &Environment| {
+        MapOwnedState::new_with_default_and_rev(self, |val: &T, _: &_, _: &Environment| {
             Ok(val.clone())
         }, |val: &Result<T, String>| {
             val.as_ref().ok().map(|a| a.clone())
@@ -141,7 +122,7 @@ macro_rules! impl_res_state_plain {
         $(
         impl Into<ResStringState> for TState<Result<$typ, String>> {
             fn into(self) -> ResStringState {
-                MapOwnedState::new_with_default_and_rev(self, |value: &Result<$typ, String>, _: &_, env: &Environment| {
+                MapOwnedState::new_with_default_and_rev(self, |value: &Result<$typ, String>, _: &_, _: &Environment| {
                     match value {
                         Ok(val) => { Ok(val.to_string()) }
                         Err(val) => { Err(val.to_string()) }
@@ -167,7 +148,7 @@ impl_res_state_plain! {
 
 impl Into<ResStringState> for TState<Result<f32, String>> {
     fn into(self) -> ResStringState {
-        MapOwnedState::new_with_default_and_rev(self, |value: &Result<f32, String>, prev: &Result<String, String>, env: &Environment| {
+        MapOwnedState::new_with_default_and_rev(self, |value: &Result<f32, String>, prev: &Result<String, String>, _: &Environment| {
             match (value, prev) {
                 (Ok(val), Ok(a)) => {
                     if let Ok(v) = f32::from_str(a) {
@@ -193,7 +174,7 @@ impl Into<ResStringState> for TState<Result<f32, String>> {
 
 impl Into<ResStringState> for TState<Result<f64, String>> {
     fn into(self) -> ResStringState {
-        MapOwnedState::new_with_default_and_rev(self, |value: &Result<f64, String>, prev: &Result<String, String>, env: &Environment| {
+        MapOwnedState::new_with_default_and_rev(self, |value: &Result<f64, String>, prev: &Result<String, String>, _: &Environment| {
             match (value, prev) {
                 (Ok(val), Ok(a)) => {
                     if let Ok(v) = f64::from_str(a) {
@@ -219,13 +200,13 @@ impl Into<ResStringState> for TState<Result<f64, String>> {
 
 impl Into<StringState> for ResStringState {
     fn into(self) -> StringState {
-        MapState::new(self, (), |res: &Result<String, String>, val| {
+        MapState::new(self, (), |res: &Result<String, String>, _| {
             match res.as_ref() {
                 Ok(a) | Err(a) => {
                     a
                 }
             }
-        }, |res: &mut Result<String, String>, val| {
+        }, |res: &mut Result<String, String>, _| {
             match res.as_mut() {
                 Ok(a) | Err(a) => {
                     a
@@ -248,6 +229,12 @@ impl Into<BoolState> for ResStringState {
 impl Into<RState<AdvancedColor>> for TState<Color> {
     fn into(self) -> RState<AdvancedColor> {
         self.read_map(|c: &Color| { AdvancedColor::from(*c) })
+    }
+}
+
+impl Into<TState<AdvancedColor>> for TState<Color> {
+    fn into(self) -> TState<AdvancedColor> {
+        self.read_map(|c: &Color| { AdvancedColor::from(*c) }).ignore_writes()
     }
 }
 

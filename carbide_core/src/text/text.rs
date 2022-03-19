@@ -453,7 +453,7 @@ impl Text {
                 TextSpan::Text {
                     widths,
                     glyphs,
-                    style,
+                    style: _,
                     ascend: _ascending_pixels,
                     ..
                 } => {

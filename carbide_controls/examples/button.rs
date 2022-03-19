@@ -41,7 +41,7 @@ fn main() {
     window.set_widgets(
         VStack::new(vec![
             Button::new("Add 1")
-                .on_click(move |_: &mut _| {
+                .on_click(move |_: &mut _, _: _| {
                     let mut temp = button_counter_state.clone();
                     *temp.value_mut() += 1;
                 })

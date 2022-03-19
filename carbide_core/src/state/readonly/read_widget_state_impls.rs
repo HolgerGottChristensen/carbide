@@ -1,6 +1,6 @@
 use carbide_core::state::RState;
 use crate::state::readonly::{ReadWidgetState};
-use crate::state::{ReadState, StateContract, ValueState, WidgetState};
+use crate::state::{StateContract, ValueState};
 
 impl<T: StateContract, E: StateContract> ReadWidgetState<Result<T, E>> {
     pub fn is_ok(&self) -> RState<bool> {

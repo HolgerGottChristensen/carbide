@@ -1,15 +1,12 @@
-use std::collections::HashSet;
 use std::fmt;
 use std::fmt::{Debug, Formatter};
+use carbide_core::prelude::NewStateSync;
 
-use dyn_clone::DynClone;
-use carbide_core::prelude::{NewStateSync, Listenable, Id};
-
-use crate::prelude::{Environment, WidgetState};
-use crate::state::{MapState, ReadState, StateContract, StateExt, Listener, TState, UsizeState};
+use crate::prelude::Environment;
+use crate::state::{ReadState, StateContract, TState};
 use crate::state::readonly::ignore_write_state::IgnoreWritesState;
 pub use crate::state::State;
-use crate::state::util::value_cell::{ValueRef, ValueRefMut};
+use crate::state::util::value_cell::ValueRef;
 
 pub enum ReadWidgetState<T> {
     ReadState(Box<dyn ReadState<T>>),
@@ -64,7 +61,7 @@ impl<T: StateContract> Into<ReadWidgetState<T>> for Box<dyn ReadState<T>> {
 }
 
 impl<T: StateContract> NewStateSync for ReadWidgetState<T> {
-    fn sync(&mut self, env: &mut Environment) {
+    fn sync(&mut self, env: &mut Environment) -> bool {
         match self {
             ReadWidgetState::ReadState(r) => {
                 r.sync(env)
@@ -76,29 +73,6 @@ impl<T: StateContract> NewStateSync for ReadWidgetState<T> {
     }
 }
 
-impl<T: StateContract> Listenable<T> for ReadWidgetState<T> {
-    fn subscribe(&self, subscriber: Box<dyn Listener<T>>) -> Id {
-        match self {
-            ReadWidgetState::ReadState(n) => {
-                n.subscribe(subscriber)
-            }
-            ReadWidgetState::ReadWriteState(n) => {
-                n.subscribe(subscriber)
-            }
-        }
-    }
-
-    fn unsubscribe(&self, id: &Id) {
-        match self {
-            ReadWidgetState::ReadState(n) => {
-                n.unsubscribe(id)
-            }
-            ReadWidgetState::ReadWriteState(n) => {
-                n.unsubscribe(id)
-            }
-        }
-    }
-}
 
 impl<T: StateContract> ReadState<T> for ReadWidgetState<T> {
     fn value(&self) -> ValueRef<T> {
@@ -111,15 +85,4 @@ impl<T: StateContract> ReadState<T> for ReadWidgetState<T> {
             }
         }
     }
-
-    /*fn value_changed(&mut self) {
-        match self {
-            ReadWidgetState::ReadState(n) => {
-                n.value_changed()
-            }
-            ReadWidgetState::ReadWriteState(n) => {
-                n.value_changed()
-            }
-        }
-    }*/
 }

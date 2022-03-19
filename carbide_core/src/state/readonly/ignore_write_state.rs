@@ -1,5 +1,5 @@
 use carbide_core::environment::Environment;
-use carbide_core::prelude::{Id, Listenable, Listener, NewStateSync, ReadState, ValueRef, ValueRefMut};
+use carbide_core::prelude::{NewStateSync, ReadState, ValueRef, ValueRefMut};
 use crate::state::{RState, State, StateContract, TState, WidgetState};
 
 #[derive(Clone, Debug)]
@@ -18,20 +18,11 @@ impl<T: StateContract> ReadState<T> for IgnoreWritesState<T> {
 }
 
 impl<T: StateContract> NewStateSync for IgnoreWritesState<T> {
-    fn sync(&mut self, env: &mut Environment) {
+    fn sync(&mut self, env: &mut Environment) -> bool {
         self.0.sync(env)
     }
 }
 
-impl<T: StateContract> Listenable<T> for IgnoreWritesState<T> {
-    fn subscribe(&self, subscriber: Box<dyn Listener<T>>) -> Id {
-        self.0.subscribe(subscriber)
-    }
-
-    fn unsubscribe(&self, id: &Id) {
-        self.0.unsubscribe(id)
-    }
-}
 
 impl<T: StateContract> State<T> for IgnoreWritesState<T> {
     fn value_mut(&mut self) -> ValueRefMut<T> {
@@ -39,6 +30,4 @@ impl<T: StateContract> State<T> for IgnoreWritesState<T> {
     }
 
     fn set_value(&mut self, _: T) {}
-
-    fn notify(&self) {}
 }

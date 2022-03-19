@@ -2,7 +2,7 @@ use std::fmt::Debug;
 use std::ops::{Deref, DerefMut};
 
 use dyn_clone::DynClone;
-use carbide_core::prelude::{NewStateSync, Listenable, Listener, Id};
+use carbide_core::prelude::NewStateSync;
 
 use crate::environment::Environment;
 use crate::prelude::{StateContract, TState};
@@ -23,13 +23,13 @@ pub struct MapOwnedState<FROM, TO>
 }
 
 impl<FROM: StateContract, TO: StateContract + Default> MapOwnedState<FROM, TO> {
-    pub fn new<M1: Into<TState<FROM>>, M2: MapWithEnv<FROM, TO>>(state: M1, map: M2) -> Self {
+    pub fn new<M1: Into<TState<FROM>>, M2: MapWithEnv<FROM, TO>>(state: M1, map: M2) -> TState<TO> {
         MapOwnedState {
             state: state.into(),
             map: Box::new(map),
             map_rev: None,
-            value: InnerState::new(ValueCell::new(TO::default())),
-        }
+            value: InnerState::new(ValueCell::new(TO::default()))
+        }.into()
     }
 }
 
@@ -39,7 +39,7 @@ impl<FROM: StateContract, TO: StateContract> MapOwnedState<FROM, TO> {
             state: state.into(),
             map: Box::new(map),
             map_rev: None,
-            value: InnerState::new(ValueCell::new(default)),
+            value: InnerState::new(ValueCell::new(default))
         }
     }
 
@@ -48,29 +48,22 @@ impl<FROM: StateContract, TO: StateContract> MapOwnedState<FROM, TO> {
             state: state.into(),
             map: Box::new(map),
             map_rev: Some(Box::new(map_rev)),
-            value: InnerState::new(ValueCell::new(default)),
+            value: InnerState::new(ValueCell::new(default))
         }
     }
 }
 
 impl<FROM: StateContract, TO: StateContract> NewStateSync for MapOwnedState<FROM, TO> {
-    fn sync(&mut self, env: &mut Environment) {
+    fn sync(&mut self, env: &mut Environment) -> bool {
         self.state.sync(env);
 
         if let Ok(mut borrow) = self.value.try_borrow_mut() {
             let value: TO = (&self.map)(&*self.state.value(), borrow.deref(), env);
             *borrow.deref_mut() = value;
+            true
+        } else {
+            false
         }
-    }
-}
-
-impl<FROM: StateContract, TO: StateContract> Listenable<TO> for MapOwnedState<FROM, TO> {
-    fn subscribe(&self, subscriber: Box<dyn Listener<TO>>) -> Id {
-        todo!()
-    }
-
-    fn unsubscribe(&self, id: &Id) {
-        todo!()
     }
 }
 
@@ -93,10 +86,6 @@ impl<FROM: StateContract, TO: StateContract> State<TO> for MapOwnedState<FROM, T
                 self.state.set_value(from);
             }
         }
-    }
-
-    fn notify(&self) {
-        todo!()
     }
 
     fn update_dependent(&mut self) {

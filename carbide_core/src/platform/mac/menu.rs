@@ -1,9 +1,8 @@
 use cocoa::appkit::{NSEventModifierFlags, NSMenuItem};
 use cocoa::base::{id, nil, NO, YES};
 use cocoa::foundation::NSAutoreleasePool;
-use objc::{class, msg_send, sel, sel_impl};
+use objc::{msg_send, sel, sel_impl};
 
-use carbide_core::event::Key;
 
 use crate::event::{HotKey, ModifierKey};
 use crate::platform::mac::make_nsstring;
@@ -29,7 +28,7 @@ pub fn make_menu_item(title: &str, key: Option<HotKey>, code: String) -> id {
 }
 
 impl HotKey {
-    /// Return the string value of this hotkey, for use with Cocoa `NSResponder`
+    /*/// Return the string value of this hotkey, for use with Cocoa `NSResponder`
     /// objects.
     ///
     /// Returns the empty string if no key equivalent is known.
@@ -82,7 +81,7 @@ impl HotKey {
             //KbKey::F19            => "\u{F716}",
             //KbKey::F20            => "\u{F717}",
         */
-    }
+    }*/
 
     fn key_modifier_mask(self) -> NSEventModifierFlags {
         let mods = self.modifier;

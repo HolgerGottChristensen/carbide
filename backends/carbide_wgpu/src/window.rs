@@ -1,7 +1,5 @@
 use std::collections::HashMap;
-use std::ops::Add;
 use std::path::{Path, PathBuf};
-use std::time::{Duration, Instant};
 
 use cgmath::{Matrix4, Vector3};
 pub use futures::executor::block_on;
@@ -570,7 +568,7 @@ impl Window {
         let mut event_loop = None;
         std::mem::swap(&mut event_loop, &mut self.event_loop);
 
-        let mut last_render_start_time = Instant::now();
+        //let mut last_render_start_time = Instant::now();
 
         event_loop.expect("The event loop should be retrieved").run(
             move |event, _, control_flow| {
@@ -657,7 +655,7 @@ impl Window {
 
                     // Gets called if redrawing is requested.
                     Event::RedrawRequested(_) => {
-                        last_render_start_time = Instant::now();
+                        //last_render_start_time = Instant::now();
 
                         match self.render() {
                             Ok(_) => {}

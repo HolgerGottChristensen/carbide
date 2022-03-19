@@ -1,9 +1,6 @@
 use carbide_core::Color;
-use crate::color::{BLUE, RED};
 use crate::draw::alignment::Alignment;
 use crate::draw::Position;
-use crate::layout::BasicLayouter;
-use crate::state::ColorState;
 
 #[derive(Debug, Clone)]
 pub enum GradientPosition {

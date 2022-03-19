@@ -6,6 +6,6 @@ pub(crate) struct ProxyEventLoop(pub EventLoopProxy<CustomEvent>);
 
 impl EventSink for ProxyEventLoop {
     fn call(&self, event: CustomEvent) {
-        self.0.send_event(event);
+        self.0.send_event(event).unwrap();
     }
 }

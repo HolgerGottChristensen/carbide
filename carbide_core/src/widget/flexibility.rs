@@ -1,7 +1,6 @@
 use crate::CommonWidgetImpl;
-use crate::draw::{Dimension, Position, Rect};
+use crate::draw::{Dimension, Position};
 use crate::prelude::*;
-use crate::render::PrimitiveKind;
 
 #[derive(Debug, Clone, Widget)]
 pub struct Flexibility {

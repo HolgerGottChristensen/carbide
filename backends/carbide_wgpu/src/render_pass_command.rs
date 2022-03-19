@@ -265,15 +265,6 @@ pub fn create_render_pass_commands<'a>(
                         continue;
                     }
 
-                    // Ensure a render pipeline and bind group is set.
-                    if bind_group.is_none() {
-                        bind_group = Some(BindGroup::Default);
-                        let cmd = RenderPassCommand::SetBindGroup {
-                            bind_group: default_bind_group,
-                        };
-                        inner_commands.push(cmd);
-                    }
-
                     let gradient = Gradient::convert(gradient);
                     let gradient_buffer = device.create_buffer_init(
                         &wgpu::util::BufferInitDescriptor {

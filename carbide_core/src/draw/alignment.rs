@@ -1,4 +1,3 @@
-use carbide_core::Scalar;
 use crate::draw::{Dimension, Position};
 
 #[derive(Clone, Debug)]

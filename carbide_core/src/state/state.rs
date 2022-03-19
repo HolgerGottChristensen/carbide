@@ -2,11 +2,10 @@ use std::fmt::Debug;
 
 use dyn_clone::DynClone;
 
-use crate::prelude::Environment;
 use crate::state::*;
 use crate::state::readonly::ReadState;
 
-use crate::state::util::value_cell::{ValueRef, ValueRefMut};
+use crate::state::util::value_cell::ValueRefMut;
 
 pub trait State<T>: DynClone + Debug + ReadState<T> where T: StateContract {
     /// This retrieves the value mutably. This is the entry point to changing a value in a state.
@@ -23,10 +22,6 @@ pub trait State<T>: DynClone + Debug + ReadState<T> where T: StateContract {
     /// state. If you just change the value using value_mut, it might not be persistent and
     /// update problems might occur.
     fn set_value(&mut self, value: T);
-
-    /// This function will notify all dependent states that this state has updated. This should be
-    /// used for example by the dependents also updating their state.
-    fn notify(&self);
 
     fn update_dependent(&mut self) {}
 }

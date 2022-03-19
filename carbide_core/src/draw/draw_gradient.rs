@@ -1,5 +1,4 @@
 use carbide_core::Color;
-use carbide_core::layout::Layouter;
 use carbide_core::prelude::GradientPosition;
 use carbide_core::widget::Gradient;
 use crate::draw::{Dimension, Position};

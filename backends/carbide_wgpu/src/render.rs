@@ -3,9 +3,8 @@ use wgpu::util::{BufferInitDescriptor, DeviceExt};
 
 use carbide_core::draw::{Dimension, Position, Rect};
 
-use crate::bind_groups::{filter_buffer_bind_group, gradient_buffer_bind_group};
+use crate::bind_groups::filter_buffer_bind_group;
 use crate::filter::Filter;
-use crate::gradient::Gradient;
 use crate::render_pass_command::{create_render_pass_commands, RenderPass, RenderPassCommand};
 use crate::texture_atlas_command::TextureAtlasCommand;
 use crate::vertex::Vertex;
@@ -77,8 +76,6 @@ impl Window {
                 self.filter_buffer_bind_groups.insert(*filter_id, filter_buffer_bind_group);
             }
         }
-
-        let aspect_ratio = (self.size.width as f32) / (self.size.height as f32);
 
         let commands = create_render_pass_commands(
             &self.diffuse_bind_group,

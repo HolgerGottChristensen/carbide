@@ -1,4 +1,3 @@
-use cgmath::{Matrix, Matrix4, Vector2, Vector3, Vector4};
 use carbide_core::draw::draw_gradient::DrawGradient;
 use carbide_core::prelude::{GradientRepeat, GradientType};
 

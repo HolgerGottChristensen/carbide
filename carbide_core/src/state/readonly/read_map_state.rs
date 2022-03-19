@@ -1,74 +1,61 @@
 use std::fmt::Debug;
-use std::ops::{Deref, DerefMut};
-use std::rc::Rc;
-
-use dyn_clone::DynClone;
-use carbide_core::prelude::{NewStateSync, Listenable, Id};
-use carbide_core::state::Listener;
+use carbide_core::prelude::NewStateSync;
 
 use crate::environment::Environment;
-use crate::prelude::{StateContract, TState};
-use crate::state::{InnerState, LocalState, MapListener, ReadState, RState, State, StateExt, StringState, SubscriberList, ValueCell, ValueState};
+use crate::prelude::StateContract;
+use crate::state::{InnerState, ReadState, RState, ValueCell};
 use crate::state::readonly::{ReadMap, ReadWidgetState};
-use crate::state::util::value_cell::{ValueRef, ValueRefMut};
-use crate::state::widget_state::WidgetState;
+use crate::state::util::value_cell::ValueRef;
 
 #[derive(Clone)]
-pub struct ReadMapState<FROM, TO>
+pub struct ReadMapState<FROM, TO, MAP>
     where
         FROM: StateContract,
-        TO: StateContract
+        TO: StateContract,
+        MAP: ReadMap<FROM, TO>,
 {
     state: RState<FROM>,
     value: InnerState<TO>,
-    subscribers: SubscriberList<TO>
+    map: MAP
 }
 
-impl<FROM: StateContract, TO: StateContract> ReadMapState<FROM, TO> {
-    pub fn new<M1: Into<RState<FROM>>, MAP: ReadMap<FROM, TO>>(state: M1, map: MAP) -> RState<TO> {
+impl<FROM: StateContract, TO: StateContract, MAP: ReadMap<FROM, TO>> ReadMapState<FROM, TO, MAP> {
+    pub fn new<M1: Into<RState<FROM>>>(state: M1, map: MAP) -> RState<TO> {
         let state = state.into();
         let value = map.map(&*state.value());
 
         let inner_state = InnerState::new(ValueCell::new(value));
-        let list = SubscriberList::new();
 
         let res = ReadMapState {
             state: state.clone(),
             value: inner_state.clone(),
-            subscribers: list.clone(),
+            map
         };
-
-        let listener = MapListener::new(inner_state, map, list);
-
-        state.subscribe(Box::new(listener));
 
         res.into()
     }
 }
 
-impl<FROM: StateContract, TO: StateContract> NewStateSync for ReadMapState<FROM, TO> {
-    fn sync(&mut self, env: &mut Environment) {
-        self.state.sync(env)
+impl<FROM: StateContract, TO: StateContract, MAP: ReadMap<FROM, TO>> NewStateSync for ReadMapState<FROM, TO, MAP> {
+    fn sync(&mut self, env: &mut Environment) -> bool {
+        let updated = self.state.sync(env);
+
+        if updated {
+            *self.value.borrow_mut() = self.map.map(&*self.state.value());
+        }
+
+        updated
     }
 }
 
-impl<FROM: StateContract, TO: StateContract> Listenable<TO> for ReadMapState<FROM, TO> {
-    fn subscribe(&self, subscriber: Box<dyn Listener<TO>>) -> Id {
-        self.subscribers.add_subscriber(subscriber)
-    }
 
-    fn unsubscribe(&self, id: &Id) {
-        self.subscribers.remove_subscriber(id)
-    }
-}
-
-impl<FROM: StateContract, TO: StateContract> ReadState<TO> for ReadMapState<FROM, TO> {
+impl<FROM: StateContract, TO: StateContract, MAP: ReadMap<FROM, TO>> ReadState<TO> for ReadMapState<FROM, TO, MAP> {
     fn value(&self) -> ValueRef<TO> {
         self.value.borrow()
     }
 }
 
-impl<FROM: StateContract, TO: StateContract> Debug for ReadMapState<FROM, TO> {
+impl<FROM: StateContract, TO: StateContract, MAP: ReadMap<FROM, TO>> Debug for ReadMapState<FROM, TO, MAP> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("MapState")
             .field("value", &*self.value())
@@ -76,7 +63,7 @@ impl<FROM: StateContract, TO: StateContract> Debug for ReadMapState<FROM, TO> {
     }
 }
 
-impl<FROM: StateContract, TO: StateContract> Into<RState<TO>> for ReadMapState<FROM, TO> {
+impl<FROM: StateContract, TO: StateContract, MAP: ReadMap<FROM, TO>> Into<RState<TO>> for ReadMapState<FROM, TO, MAP> {
     fn into(self) -> RState<TO> {
         ReadWidgetState::new(Box::new(self))
     }

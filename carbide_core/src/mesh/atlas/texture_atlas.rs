@@ -10,7 +10,6 @@ use crate::draw::Position;
 use crate::draw::Scalar;
 use crate::mesh::atlas::lossy_glyph_info::LossyGlyphInfo;
 use crate::text::{Font, FontId, FontSize, Glyph};
-use crate::widget::Image;
 
 type ImageId = crate::image_map::Id;
 type ImageData = image::DynamicImage;
@@ -383,7 +382,7 @@ impl Shelf {
         atlas_size: (u32, u32),
         image_data: &ImageData,
         uploader: &mut F,
-        mut entry: AtlasEntry,
+        entry: AtlasEntry,
     ) {
         let mut book = entry.borrow_mut();
         book.x = self.shelf_current_x;

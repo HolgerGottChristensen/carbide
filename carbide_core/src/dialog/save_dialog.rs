@@ -1,7 +1,7 @@
-use std::ffi::{c_void, OsString};
+use std::ffi::OsString;
 use std::path::PathBuf;
 
-use futures::future::{Map, Then};
+use futures::future::Map;
 use futures::FutureExt;
 use oneshot::{Receiver, RecvError};
 
@@ -21,7 +21,7 @@ impl SaveDialog {
     }
 
     #[cfg(target_os = "macos")]
-    pub fn open(mut self, env: &Environment) -> FuturePath {
+    pub fn open(self, env: &Environment) -> FuturePath {
         open_save_panel(env).map(|a| a.ok().flatten().map(|a| PathBuf::from(a)))
     }
 

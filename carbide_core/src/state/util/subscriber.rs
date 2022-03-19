@@ -1,7 +1,7 @@
 use std::fmt::{Debug, Formatter};
 use std::ops::DerefMut;
 use std::rc::{Rc, Weak};
-use crate::state::{InnerState, Listener, StateContract, ValueCell};
+use crate::state::{InnerState, StateContract, ValueCell};
 use crate::widget::Id;
 
 pub trait Listenable<T: StateContract> {

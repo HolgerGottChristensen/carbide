@@ -1,9 +1,8 @@
 #![allow(non_upper_case_globals, clippy::upper_case_acronyms)]
 #![allow(unsafe_code)]
 
-use std::ffi::{c_void, OsString};
+use std::ffi::OsString;
 use std::path::PathBuf;
-use std::rc::Rc;
 
 use block::ConcreteBlock;
 use cocoa::appkit::CGFloat;
@@ -14,7 +13,6 @@ use oneshot::Receiver;
 use crate::Color;
 
 use crate::dialog::open_dialog::OpenDialog;
-use crate::environment::{EnvironmentColor, EnvironmentVariable};
 use crate::prelude::Environment;
 use crate::state::{InnerState, ValueCell};
 
@@ -72,7 +70,7 @@ pub fn open_save_panel(env: &Environment) -> Receiver<Option<OsString>> {
         let panel: id = msg_send![class!(NSSavePanel), savePanel];
 
         let block = ConcreteBlock::new(move |response: NSModalResponse| {
-            let mut sender = sender.clone();
+            let sender = sender.clone();
             match response {
                 NSModalResponseOK => {
                     let url: id = msg_send![panel, URL];
@@ -181,7 +179,7 @@ pub fn open_open_panel(env: &Environment, dialog: OpenDialog) -> Receiver<Option
         }
 
         let block = ConcreteBlock::new(move |response: NSModalResponse| {
-            let mut sender = sender.clone();
+            let sender = sender.clone();
             match response {
                 NSModalResponseOK => {
                     let urls: id = msg_send![panel, URLs];

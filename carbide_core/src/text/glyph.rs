@@ -2,7 +2,6 @@ use rusttype::{GlyphId, point, PositionedGlyph};
 use carbide_core::mesh::AtlasEntry;
 
 use crate::draw::{Dimension, Position, Rect};
-use crate::mesh::TextureAtlasIndex;
 use crate::Scalar;
 use crate::text::{FontId, FontSize};
 

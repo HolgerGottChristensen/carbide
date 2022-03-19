@@ -12,7 +12,7 @@
 //!
 
 use std::f32::consts::PI;
-use std::time::{Instant, SystemTime, UNIX_EPOCH};
+use std::time::{SystemTime, UNIX_EPOCH};
 
 use rand::Rng;
 use serde::{Deserialize, Serialize};

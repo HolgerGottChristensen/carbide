@@ -6,18 +6,20 @@ use crate::prelude::{CommonWidget, Environment};
 use crate::state::StateSync;
 
 pub trait Focusable: CommonWidget + StateSync {
+    #[allow(unused_variables)]
     fn focus_retrieved(
         &mut self,
-        _event: &WidgetEvent,
-        _focus_request: &Refocus,
-        _env: &mut Environment,
+        event: &WidgetEvent,
+        focus_request: &Refocus,
+        env: &mut Environment,
     ) {}
 
+    #[allow(unused_variables)]
     fn focus_dismissed(
         &mut self,
-        _event: &WidgetEvent,
-        _focus_request: &Refocus,
-        _env: &mut Environment,
+        event: &WidgetEvent,
+        focus_request: &Refocus,
+        env: &mut Environment,
     ) {}
 
     fn set_focus_and_request(&mut self, focus: Focus, env: &mut Environment) {
@@ -90,7 +92,7 @@ pub trait Focusable: CommonWidget + StateSync {
                 self.focus_retrieved(event, focus_request, env);
                 //println!("{}, {:?}", focus_up_for_grab, self.get_focus());
                 false
-            } else if self.get_focus() == Focus::FocusReleased {
+            } else if self.get_focus() == Focus::Focused {
                 self.set_focus(Focus::Unfocused);
                 self.focus_dismissed(event, focus_request, env);
                 //println!("{}, {:?}", focus_up_for_grab, self.get_focus());

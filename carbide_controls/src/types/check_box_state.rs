@@ -1,7 +1,7 @@
 use serde::{Deserialize, Serialize};
 
 use carbide_core::environment::Environment;
-use carbide_core::prelude::{NewStateSync, Listenable, Listener, ValueRef, ValueRefMut, Id};
+use carbide_core::prelude::{NewStateSync, ValueRef, ValueRefMut, Id};
 use carbide_core::state::{BoolState, MapOwnedState, ReadState, State, TState};
 
 #[derive(Clone, Debug)]
@@ -21,18 +21,8 @@ impl Default for CheckBoxValue {
 }
 
 impl NewStateSync for CheckBoxState {
-    fn sync(&mut self, env: &mut Environment) {
+    fn sync(&mut self, env: &mut Environment) -> bool {
         self.0.sync(env)
-    }
-}
-
-impl Listenable<CheckBoxValue> for CheckBoxState {
-    fn subscribe(&self, subscriber: Box<dyn Listener<CheckBoxValue>>) -> Id {
-        todo!()
-    }
-
-    fn unsubscribe(&self, id: &Id) {
-        todo!()
     }
 }
 
@@ -51,10 +41,6 @@ impl State<CheckBoxValue> for CheckBoxState {
 
     fn set_value(&mut self, value: CheckBoxValue) {
         self.0.set_value(value)
-    }
-
-    fn notify(&self) {
-        todo!()
     }
 
     fn update_dependent(&mut self) {
