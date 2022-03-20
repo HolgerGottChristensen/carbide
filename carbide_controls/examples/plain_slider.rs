@@ -1,0 +1,45 @@
+use std::time::Duration;
+use carbide_controls::PlainSlider;
+use carbide_core::prelude::EnvironmentColor;
+use carbide_core::state::{AnimatedState, F64State, LocalState, StateExt};
+use carbide_core::text::FontFamily;
+use carbide_core::widget::*;
+use carbide_wgpu::window::*;
+
+fn main() {
+    env_logger::init();
+
+    let icon_path = Window::relative_path_to_assets("images/rust_press.png");
+
+    let mut window = Window::new(
+        "Plain slider example".to_string(),
+        800,
+        800,
+        Some(icon_path.clone()),
+    );
+
+    let family = FontFamily::new_from_paths("NotoSans", vec![
+        "fonts/NotoSans/NotoSans-Regular.ttf"
+    ]);
+    window.add_font_family(family);
+
+    let progress = LocalState::new(80.0);
+    let progress2 = LocalState::new(80.0);
+
+    window.set_widgets(
+        VStack::new(vec![
+            Text::new(progress.clone().map(|a: &f64| {format!("Slider value: {:.2}", a)}).ignore_writes()),
+            PlainSlider::new(progress, 20.0, 100.0)
+                .border()
+                .padding(20.0),
+            Empty::new().frame(20.0, 20.0),
+            Text::new(progress2.clone().map(|a: &f64| {format!("Slider step value: {:.2}", a)}).ignore_writes()),
+            PlainSlider::new(progress2, 20.0, 100.0)
+                .step(5.0)
+                .border()
+                .padding(20.0),
+        ])
+    );
+
+    window.launch();
+}

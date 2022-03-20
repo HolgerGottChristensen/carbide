@@ -4,6 +4,7 @@ pub use plain_pop_up_button::*;
 pub use plain_radio_button::PlainRadioButton;
 pub use plain_switch::PlainSwitch;
 pub use plain_text_input::*;
+pub use plain_slider::*;
 
 mod cursor;
 mod plain_button;
@@ -15,3 +16,4 @@ mod plain_switch;
 mod plain_pop_up_button_popup_item;
 mod plain_text_input;
 mod text_input_key_commands;
+mod plain_slider;
