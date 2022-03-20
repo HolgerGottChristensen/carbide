@@ -6,6 +6,8 @@ use crate::prelude::{CommonWidget, Environment};
 use crate::state::StateSync;
 
 pub trait Focusable: CommonWidget + StateSync {
+    fn focus_children(&self) -> bool { true }
+
     #[allow(unused_variables)]
     fn focus_retrieved(
         &mut self,
@@ -67,11 +69,14 @@ pub trait Focusable: CommonWidget + StateSync {
 
         self.release_state(env);
 
-        for mut child in self.children_direct() {
-            if child.process_focus_request(event, focus_request, env) {
-                any_focus = true;
+        if self.focus_children() {
+            for mut child in self.children_direct() {
+                if child.process_focus_request(event, focus_request, env) {
+                    any_focus = true;
+                }
             }
         }
+
 
         any_focus
     }
@@ -92,7 +97,7 @@ pub trait Focusable: CommonWidget + StateSync {
                 self.focus_retrieved(event, focus_request, env);
                 //println!("{}, {:?}", focus_up_for_grab, self.get_focus());
                 false
-            } else if self.get_focus() == Focus::Focused {
+            } else if self.get_focus() == Focus::FocusReleased {
                 self.set_focus(Focus::Unfocused);
                 self.focus_dismissed(event, focus_request, env);
                 //println!("{}, {:?}", focus_up_for_grab, self.get_focus());
@@ -106,8 +111,10 @@ pub trait Focusable: CommonWidget + StateSync {
 
         self.release_state(env);
 
-        for mut child in self.children_direct() {
-            focus_child = child.process_focus_next(event, focus_request, focus_child, env);
+        if self.focus_children() {
+            for mut child in self.children_direct() {
+                focus_child = child.process_focus_next(event, focus_request, focus_child, env);
+            }
         }
 
         focus_child
@@ -140,8 +147,10 @@ pub trait Focusable: CommonWidget + StateSync {
 
         self.release_state(env);
 
-        for mut child in self.children_direct_rev() {
-            focus_child = child.process_focus_previous(event, focus_request, focus_child, env);
+        if self.focus_children() {
+            for mut child in self.children_direct_rev() {
+                focus_child = child.process_focus_previous(event, focus_request, focus_child, env);
+            }
         }
 
         focus_child

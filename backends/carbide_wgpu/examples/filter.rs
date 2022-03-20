@@ -14,7 +14,7 @@ fn main() {
     let icon_path = Window::relative_path_to_assets("images/rust_press.png");
 
     let mut window = Window::new(
-        "Blur example".to_string(),
+        "Filter example".to_string(),
         1200,
         900,
         Some(icon_path.clone()),

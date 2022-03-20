@@ -20,8 +20,8 @@ pub struct Frame {
 
 impl Frame {
     pub fn init(
-        width: impl Into<RState<f64>>,
-        height: impl Into<RState<f64>>,
+        width: impl Into<TState<f64>>,
+        height: impl Into<TState<f64>>,
         child: Box<dyn Widget>,
     ) -> Box<Frame> {
         let width = width.into();
@@ -50,7 +50,7 @@ impl Frame {
         Box::new(self)
     }
 
-    pub fn init_width(width: impl Into<RState<f64>>, child: Box<dyn Widget>) -> Box<Frame> {
+    pub fn init_width(width: impl Into<TState<f64>>, child: Box<dyn Widget>) -> Box<Frame> {
         Box::new(Frame {
             id: Default::default(),
             child,
@@ -64,7 +64,7 @@ impl Frame {
         })
     }
 
-    pub fn init_height(height: impl Into<RState<f64>>, child: Box<dyn Widget>) -> Box<Frame> {
+    pub fn init_height(height: impl Into<TState<f64>>, child: Box<dyn Widget>) -> Box<Frame> {
         Box::new(Frame {
             id: Default::default(),
             child,
@@ -205,7 +205,7 @@ impl WidgetExt for Frame {}
 #[derive(Clone, Debug)]
 enum FrameState {
     Expand(TState<f64>),
-    Fixed(RState<f64>)
+    Fixed(TState<f64>)
 }
 
 impl NewStateSync for FrameState {
@@ -245,7 +245,9 @@ impl State<f64> for FrameState {
             FrameState::Expand(e) => {
                 e.set_value(value)
             }
-            FrameState::Fixed(_) => {}
+            FrameState::Fixed(f) => {
+                f.set_value(value)
+            }
         }
     }
 

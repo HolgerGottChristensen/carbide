@@ -29,5 +29,7 @@ impl<T: StateContract> State<T> for IgnoreWritesState<T> {
         panic!("Trying to get mutable value for a state that is readonly and ignoring writes.")
     }
 
-    fn set_value(&mut self, _: T) {}
+    fn set_value(&mut self, _: T) {
+        println!("WARNING: You are trying to set a state that is set to ignore writes");
+    }
 }

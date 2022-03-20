@@ -31,13 +31,13 @@ fn main() {
         ZStack::new(vec![
             Rectangle::new().fill(EnvironmentColor::Green),
             Text::new(item),
-        ]).frame(0.0, 80.0)
-            .expand_width()
+        ]).frame_fixed_height(80.0)
     }
 
     window.set_widgets(
         List::new(list_model_state, delegate)
-            .frame(350.0, 500.0),
+            .clip()
+            .padding(50.0),
     );
 
     window.launch();

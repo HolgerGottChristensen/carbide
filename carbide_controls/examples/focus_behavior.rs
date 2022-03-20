@@ -2,7 +2,7 @@ use futures::executor::block_on;
 use serde::Deserialize;
 use serde::Serialize;
 
-use carbide_controls::PlainTextInput;
+use carbide_controls::{PlainPopUpButton, PlainTextInput};
 use carbide_controls::PopUpButton;
 use carbide_core::state::LocalState;
 use carbide_core::text::FontFamily;
@@ -100,7 +100,8 @@ fn main() {
                 .border()
                 .clip()
                 .padding(EdgeInsets::all(30.0)),*/
-            PopUpButton::new(model, selected).padding(EdgeInsets::all(50.0)),
+            //PopUpButton::new(model, selected).padding(EdgeInsets::all(50.0)),
+            PlainPopUpButton::new(model, selected).padding(50.0)
         ])
             .spacing(20.0),
     );

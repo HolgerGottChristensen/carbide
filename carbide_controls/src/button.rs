@@ -1,13 +1,12 @@
 use std::fmt::{Debug, Formatter};
 
-use carbide_core::{Color, DeserializeOwned, Serialize};
+use carbide_core::Color;
 use carbide_core::cursor::MouseCursor;
 use carbide_core::draw::{Dimension, Position};
-use carbide_core::environment::Environment;
 use carbide_core::flags::Flags;
 use carbide_core::focus::Focus;
 use carbide_core::prelude::{EnvironmentColor, Uuid};
-use carbide_core::state::{BoolState, FocusState, LocalState, Map3, ReadState, State, StateExt, StringState, TState};
+use carbide_core::state::{BoolState, FocusState, LocalState, Map3, ReadState, State, StringState};
 use carbide_core::widget::*;
 
 use crate::{Action, PlainButton};
@@ -51,6 +50,7 @@ impl Button {
         )
     }
 
+    /// |env: &mut Environment, modifier_key: ModifierKey| {}
     pub fn on_click(
         mut self,
         fire: impl Action + 'static,
@@ -203,79 +203,6 @@ impl Button {
             pressed_cursor,
         })
     }
-    /*
-        fn new_internal(
-            is_primary: bool,
-            focus_state: FocusState<GS>,
-            display_item: Box<dyn Widget<GS>>,
-            local_state: TState<T, GS>,
-            clicked: fn(
-                myself: &mut PlainButton<T, GS>,
-                env: &mut Environment<GS>,
-                global_state: &mut GS,
-            ),
-        ) -> Box<Self> {
-            let focus_color = TupleState3::new(
-                focus_state.clone(),
-                EnvironmentColor::OpaqueSeparator,
-                EnvironmentColor::Accent,
-            )
-                .mapped(|(focus, primary_color, focus_color)| {
-                    if focus == &Focus::Focused {
-                        *focus_color
-                    } else {
-                        *primary_color
-                    }
-                });
-
-            let hover_state = CommonState::new_local_with_key(&false);
-            let pressed_state = CommonState::new_local_with_key(&false);
-
-            let normal_color = if is_primary {
-                EnvironmentColor::Accent
-            } else {
-                EnvironmentColor::SecondarySystemBackground
-            };
-
-            let background_color =
-                TupleState3::new(hover_state.clone(), pressed_state.clone(), normal_color).mapped(
-                    |(hover, pressed, normal_color)| {
-                        if *pressed {
-                            return normal_color.darkened(0.05);
-                        }
-                        if *hover {
-                            return normal_color.lightened(0.05);
-                        }
-
-                        *normal_color
-                    },
-                );
-
-            let child = PlainButton::new(ZStack::new(vec![
-                RoundedRectangle::new(CornerRadii::all(3.0))
-                    .fill(background_color)
-                    .stroke(focus_color)
-                    .stroke_style(1.0),
-                display_item.clone(),
-            ]))
-                .local_state(local_state.clone())
-                .focused(focus_state.clone())
-                .on_click(clicked)
-                .hover(hover_state)
-                .pressed(pressed_state);
-
-            Box::new(Button {
-                id: Id::new_v4(),
-                child,
-                position: [0.0, 0.0],
-                dimension: [235.0, 26.0],
-                focus: focus_state,
-                is_primary,
-                local_state,
-                on_click: clicked,
-                display_item,
-            })
-        }*/
 }
 
 impl CommonWidget for Button {

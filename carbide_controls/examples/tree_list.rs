@@ -1,8 +1,7 @@
-use std::collections::HashSet;
 use carbide_controls::{List, TreeDisclosure};
-use carbide_core::environment::{EnvironmentColor, EnvironmentFontSize};
+use carbide_core::environment::EnvironmentColor;
 use carbide_core::lens;
-use carbide_core::state::{LocalState, State, StateExt, StringState, TState, UsizeState};
+use carbide_core::state::{LocalState, StateExt, TState, UsizeState};
 use carbide_core::text::FontFamily;
 use carbide_core::widget::*;
 use carbide_core::window::TWindow;

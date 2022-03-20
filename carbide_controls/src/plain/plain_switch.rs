@@ -1,15 +1,16 @@
+use carbide_core::Color;
 use carbide_core::draw::{Dimension, Position};
 use carbide_core::environment::{Environment, EnvironmentColor};
 use carbide_core::flags::Flags;
-use carbide_core::focus::Focus;
+use carbide_core::focus::{Focus, Focusable};
 use carbide_core::focus::Refocus;
-use carbide_core::state::{BoolState, FocusState, LocalState, MapOwnedState, ReadState, State, StateKey, StringState};
+use carbide_core::state::{BoolState, FocusState, LocalState, Map2, MapOwnedState, ReadState, State, StateKey, StringState, TState};
 use carbide_core::widget::{CommonWidget, HStack, Id, Rectangle, Spacer, Text, Widget, WidgetExt, WidgetIter, WidgetIterMut, ZStack};
 
 use crate::PlainButton;
 
 #[derive(Debug, Clone, Widget)]
-//#[focusable(block_focus)]
+#[carbide_exclude(Focusable)]
 pub struct PlainSwitch {
     id: Id,
     #[state]
@@ -28,15 +29,6 @@ pub struct PlainSwitch {
 }
 
 impl PlainSwitch {
-    pub fn focused<K: Into<FocusState>>(mut self, focused: K) -> Box<Self> {
-        self.focus = focused.into();
-        Self::new_internal(
-            self.checked,
-            self.focus,
-            self.delegate,
-            self.label,
-        )
-    }
 
     pub fn new<S: Into<StringState>, L: Into<BoolState>>(
         label: S,
@@ -44,28 +36,27 @@ impl PlainSwitch {
     ) -> Box<Self> {
         let focus_state = LocalState::new(Focus::Unfocused);
 
-        let default_delegate = |_focus_state: FocusState,
-                                checked: BoolState, |
-                                -> Box<dyn Widget> {
-            let highlight_color = MapOwnedState::new(checked.clone(), |checked: &BoolState, _: &_, env: &Environment| {
-                if *checked.value() {
-                    env.get_color(&StateKey::Color(EnvironmentColor::Green)).unwrap()
-                } else {
-                    env.get_color(&StateKey::Color(EnvironmentColor::Red)).unwrap()
-                }
-            });
-            ZStack::new(vec![
-                Rectangle::new().fill(highlight_color),
-                Text::new(checked),
-            ])
-        };
-
         Self::new_internal(
             checked.into(),
             focus_state.into(),
-            default_delegate,
+            Self::default_delegate,
             label.into(),
         )
+    }
+
+    fn default_delegate(focus: TState<Focus>, checked: TState<bool>) -> Box<dyn Widget> {
+        let background_color: TState<Color> = checked
+            .choice(EnvironmentColor::Green.state(), EnvironmentColor::Red.state())
+            .ignore_writes();
+
+        let val = Map2::read_map(checked, focus, |checked: &bool, focus: &Focus| {
+            format!("{:?}, {:?}", *checked, focus)
+        }).ignore_writes();
+
+        ZStack::new(vec![
+            Rectangle::new().fill(background_color),
+            Text::new(val),
+        ])
     }
 
     pub fn delegate(
@@ -80,6 +71,16 @@ impl PlainSwitch {
         let label_state = self.label;
 
         Self::new_internal(checked, focus_state, delegate, label_state)
+    }
+
+    pub fn focused<K: Into<FocusState>>(mut self, focused: K) -> Box<Self> {
+        self.focus = focused.into();
+        Self::new_internal(
+            self.checked,
+            self.focus,
+            self.delegate,
+            self.label,
+        )
     }
 
     fn new_internal(
@@ -123,6 +124,12 @@ impl PlainSwitch {
     }
 }
 
+impl Focusable for PlainSwitch {
+    fn focus_children(&self) -> bool {
+        false
+    }
+}
+
 impl CommonWidget for PlainSwitch {
     fn id(&self) -> Id {
         self.id
@@ -150,6 +157,14 @@ impl CommonWidget for PlainSwitch {
         } else {
             WidgetIterMut::single(&mut self.child)
         }
+    }
+
+    fn get_focus(&self) -> Focus {
+        self.focus.value().clone()
+    }
+
+    fn set_focus(&mut self, focus: Focus) {
+        *self.focus.value_mut() = focus;
     }
 
     fn children_direct(&mut self) -> WidgetIterMut {

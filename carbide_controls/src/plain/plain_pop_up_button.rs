@@ -2,15 +2,16 @@ use std::fmt::Debug;
 use std::ops::DerefMut;
 
 use carbide_core::__private::Formatter;
+use carbide_core::{Color, Scalar};
 use carbide_core::draw::{Dimension, Position};
 use carbide_core::environment::Environment;
-use carbide_core::event::{MouseEvent, MouseEventHandler};
+use carbide_core::event::{Key, KeyboardEvent, KeyboardEventHandler, MouseEvent, MouseEventHandler, WidgetEvent};
 use carbide_core::flags::Flags;
-use carbide_core::focus::Focus;
-use carbide_core::layout::Layout;
+use carbide_core::focus::{Focus, Focusable, Refocus};
+use carbide_core::layout::{Layout, Layouter};
 use carbide_core::prelude::{EnvironmentColor, Primitive};
 use carbide_core::render::Render;
-use carbide_core::state::{BoolState, FocusState, LocalState, ReadState, State, StateContract, StateExt, StateKey, TState, UsizeState};
+use carbide_core::state::{BoolState, FocusState, LocalState, Map3, ReadState, State, StateContract, StateExt, StateKey, StateSync, TState, UsizeState};
 use carbide_core::widget::*;
 
 use crate::{List, PlainButton};
@@ -50,7 +51,7 @@ type PopupDelegateGenerator<T: StateContract + PartialEq + 'static> = fn(model: 
 type PopupItemDelegateGenerator<T: StateContract + PartialEq + 'static> = fn(item: TState<T>, index: UsizeState, hover: BoolState, selected: TState<T>) -> Box<dyn Widget>;
 
 #[derive(Clone, Widget)]
-#[carbide_exclude(Render, Layout, MouseEvent)]
+#[carbide_exclude(Render, Layout, MouseEvent, KeyboardEvent)]
 pub struct PlainPopUpButton<T> where T: StateContract + PartialEq + 'static {
     id: Id,
     #[state] focus: FocusState,
@@ -167,28 +168,37 @@ impl<T: StateContract + PartialEq + 'static> PlainPopUpButton<T> {
     }
 
     fn default_delegate(selected_item: TState<T>, focused: FocusState) -> Box<dyn Widget> {
-        let text = selected_item.mapped(|a: &T| format!("{:?}", a));
+        let blue = EnvironmentColor::Blue.state();
+        let green = EnvironmentColor::Green.state();
+
+        let background_color = Map3::read_map(focused, blue, green,
+        |focus: &Focus, blue: &Color, green: &Color| {
+            match focus {
+                Focus::Focused => *green,
+                _ => *blue
+            }
+        }
+        ).ignore_writes();
+
+
+        let text = selected_item.map(|a: &T| format!("{:?}", a));
         ZStack::new(vec![
-            Rectangle::new(),
-            Text::new(text),
+            Rectangle::new().fill(background_color),
+            Text::new(text.ignore_writes()),
         ])
     }
 
     fn default_popup_item_delegate(
         item: TState<T>, index: UsizeState, hover_state: BoolState, selected_state: TState<T>,
     ) -> Box<dyn Widget> {
-        let color = hover_state.mapped_env(|hovered: &bool, _: &_, env: &Environment| {
-            if *hovered {
-                env.get_color(&StateKey::Color(EnvironmentColor::Pink)).unwrap()
-            } else {
-                env.get_color(&StateKey::Color(EnvironmentColor::Gray)).unwrap()
-            }
-        });
+        let item_color: TState<Color> = hover_state
+            .choice(EnvironmentColor::Pink.state(), EnvironmentColor::Gray.state())
+            .ignore_writes();
 
         ZStack::new(vec![
-            Rectangle::new().fill(color),
-            Text::new(item.mapped(|a: &T| format!("{:?}", *a))),
-        ]).frame_expand_width(30.0)
+            Rectangle::new().fill(item_color),
+            Text::new(item.map(|a: &T| format!("{:?}", *a)).ignore_writes()),
+        ]).frame_fixed_height(30.0)
     }
 
     fn default_popup_delegate(
@@ -198,39 +208,11 @@ impl<T: StateContract + PartialEq + 'static> PlainPopUpButton<T> {
         List::new(model, delegate)
             .spacing(0.0)
             .clip()
-            .frame_expand_width(200.0)
     }
+}
 
-    /*fn handle_mouse_event(
-        &mut self,
-        event: &MouseEvent,
-        _: &bool,
-        env: &mut Environment<GS>,
-        _: &mut GS,
-    ) {
-        if !self.is_inside(event.get_current_mouse_position()) {
-            match event {
-                MouseEvent::Press(_, _, _) => {
-                    self.release_focus(env);
-                }
-                _ => (),
-            }
-        } else {
-            match event {
-                MouseEvent::Press(_, _, _) => {
-                    self.request_focus(env);
-                }
-                _ => (),
-            }
-        }
-    }
-
-    fn handle_keyboard_event(
-        &mut self,
-        event: &KeyboardEvent,
-        env: &mut Environment<GS>,
-        global_state: &mut GS,
-    ) {
+impl<T: StateContract + PartialEq + 'static> KeyboardEventHandler for PlainPopUpButton<T> {
+    fn handle_keyboard_event(&mut self, event: &KeyboardEvent, env: &mut Environment) {
         if self.get_focus() != Focus::Focused {
             return;
         }
@@ -238,75 +220,15 @@ impl<T: StateContract + PartialEq + 'static> PlainPopUpButton<T> {
         match event {
             KeyboardEvent::Press(key, modifier) => match (key, modifier) {
                 (Key::Space, _) | (Key::Return, _) => {
-                    *self.opened.get_value_mut(env, global_state) = true;
+                    self.popup.set_showing(true);
+                    env.add_overlay("controls_popup_layer", Some(self.popup.clone()));
+                    env.request_animation_frame();
                 }
                 (_, _) => {}
             },
             _ => {}
         }
-    }*/
-
-    /*fn update_all_widget_state(&mut self, env: &mut Environment<GS>, _: &GS) {
-        if *self.opened.get_latest_value() {
-            let display_item = if let Some(display_item_function) = self.popup_function {
-                display_item_function
-            } else {
-                |item: Box<dyn State<T, GS>>,
-                 _parent_selected_index: Box<dyn State<usize, GS>>,
-                 _item_index: Box<dyn State<usize, GS>>,
-                 partially_chosen: Box<dyn State<bool, GS>>|
-                 -> Box<dyn Widget<GS>> {
-                    let text = item.mapped(|item| format!("{:?}", item));
-                    Rectangle::new(vec![Text::new(text).color(
-                        partially_chosen.clone().mapped(|partially_chosen| {
-                            if *partially_chosen {
-                                Color::Rgba(0.0, 0.0, 0.0, 1.0)
-                            } else {
-                                Color::Rgba(1.0, 1.0, 1.0, 1.0)
-                            }
-                        }),
-                    )])
-                        .fill(partially_chosen.clone().mapped(|partially_chosen| {
-                            if *partially_chosen {
-                                Color::Rgba(0.0, 1.0, 0.0, 1.0)
-                            } else {
-                                Color::Rgba(0.0, 0.0, 1.0, 1.0)
-                            }
-                        }))
-                        .border()
-                        .border_width(1)
-                        .color(EnvironmentColor::Blue)
-                }
-            };
-
-            let mut overlay = PlainPopUpButtonPopUp::new(
-                display_item,
-                self.opened.clone(),
-                self.model.clone(),
-                self.selected_state.clone(),
-                self.popup_list_spacing,
-                self.dimension,
-                env.get_corrected_dimensions(),
-            );
-
-            overlay.calculate_size([5000.0, 5000.0], env);
-
-            let popup_x = self.x() - 1.0;
-
-            let mut popup_y = self.y() - overlay.height() / 2.0 + self.height() / 2.0;
-
-            if popup_y < 0.0 {
-                popup_y = 0.0;
-            } else if popup_y + overlay.height() > env.get_corrected_height() {
-                popup_y = env.get_corrected_height() - overlay.height();
-            }
-
-            overlay.set_position([popup_x, popup_y]);
-            overlay.set_id(self.popup_id);
-
-            env.add_overlay("controls_popup_layer", overlay);
-        }
-    }*/
+    }
 }
 
 impl<T: StateContract + PartialEq + 'static> MouseEventHandler for PlainPopUpButton<T> {
@@ -355,6 +277,14 @@ impl<T: StateContract + PartialEq + 'static> CommonWidget for PlainPopUpButton<T
         }
     }
 
+    fn get_focus(&self) -> Focus {
+        self.focus.value().clone()
+    }
+
+    fn set_focus(&mut self, focus: Focus) {
+        *self.focus.value_mut() = focus;
+    }
+
     fn children_direct(&mut self) -> WidgetIterMut {
         WidgetIterMut::single(&mut self.child)
     }
@@ -391,8 +321,11 @@ impl<T: StateContract + PartialEq + 'static> Layout for PlainPopUpButton<T> {
 
         // We calculate the size for the popup if it is open
         if self.popup.is_showing() {
-            let popup_request = Dimension::new(dimensions.width, requested_size.height);
+            let max_height = 400.0;
+            let max_height = env.get_corrected_height().min(max_height);
+            let popup_request = Dimension::new(dimensions.width, max_height);
             self.popup.calculate_size(popup_request, env);
+            self.popup.set_y(env.get_corrected_height());
         }
         dimensions
     }
@@ -408,10 +341,19 @@ impl<T: StateContract + PartialEq + 'static> Layout for PlainPopUpButton<T> {
         }
 
         if self.popup.is_showing() {
-            let positioning = self.alignment().positioner();
-            let position = self.position();
-            let dimension = self.dimension();
-            positioning(position, dimension, &mut self.popup as &mut dyn Widget);
+            // This is kinda a hack to get the window height, by setting it in the size calculation
+            // where we have that information. In the future we should probably allow the position
+            // children to have access to the environment.
+            let window_height = self.popup.y();
+            let child_height = self.popup.height();
+
+            let y = self.position.y() + self.dimension.height / 2.0 - child_height / 2.0;
+
+            // We need the y to inside the window
+            let y = y.min(window_height - child_height).max(0.0);
+
+            self.popup.set_x(self.x());
+            self.popup.set_y(y);
             self.popup.position_children();
         }
     }
@@ -425,7 +367,9 @@ impl<T: StateContract + PartialEq + 'static> Render for PlainPopUpButton<T> {
 
 impl<T: StateContract + PartialEq + 'static> Debug for PlainPopUpButton<T> {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        todo!()
+        f.debug_struct("PlainPopUpButton")
+            .field("child", &self.child)
+            .finish()
     }
 }
 

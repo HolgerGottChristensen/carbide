@@ -39,22 +39,9 @@ fn main() {
         Some(icon_path),
     );
 
-    let mut family = FontFamily::new("NotoSans");
-    family.add_font_with_hints(
-        "fonts/NotoSans/NotoSans-Regular.ttf",
-        FontWeight::Normal,
-        FontStyle::Normal,
-    );
-    family.add_font_with_hints(
-        "fonts/NotoSans/NotoSans-Italic.ttf",
-        FontWeight::Normal,
-        FontStyle::Italic,
-    );
-    family.add_font_with_hints(
-        "fonts/NotoSans/NotoSans-Bold.ttf",
-        FontWeight::Bold,
-        FontStyle::Normal,
-    );
+    let family = FontFamily::new_from_paths("NotoSans", vec![
+        "fonts/NotoSans/NotoSans-Regular.ttf"
+    ]);
     window.add_font_family(family);
 
     let shape_state = LocalState::new(Shape::Rectangle);

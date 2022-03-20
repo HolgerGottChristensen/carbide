@@ -4,7 +4,7 @@ use crate::draw::Dimension;
 use crate::prelude::*;
 
 pub trait WidgetExt: Widget + Sized + 'static {
-    fn frame(self, width: impl Into<RState<f64>>, height: impl Into<RState<f64>>) -> Box<Frame> {
+    fn frame(self, width: impl Into<TState<f64>>, height: impl Into<TState<f64>>) -> Box<Frame> {
         Frame::init(width, height, Box::new(self))
     }
 
@@ -36,11 +36,11 @@ pub trait WidgetExt: Widget + Sized + 'static {
         Transform::new(Box::new(self), matrix)
     }
 
-    fn frame_expand_height(self, width: impl Into<RState<f64>>) -> Box<Frame> {
+    fn frame_fixed_width(self, width: impl Into<TState<f64>>) -> Box<Frame> {
         Frame::init_width(width.into(), Box::new(self))
     }
 
-    fn frame_expand_width(self, height: impl Into<RState<f64>>) -> Box<Frame> {
+    fn frame_fixed_height(self, height: impl Into<TState<f64>>) -> Box<Frame> {
         Frame::init_height(height.into(), Box::new(self))
     }
 

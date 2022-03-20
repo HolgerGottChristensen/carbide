@@ -8,7 +8,7 @@ use carbide_core::state::readonly::ReadWidgetState;
 use carbide_core::state::RState;
 
 use crate::prelude::Environment;
-use crate::state::{Map1, StateContract, StateExt, TState, UsizeState, VecState};
+use crate::state::{Map1, Map2, Map3, StateContract, StateExt, TState, UsizeState, VecState};
 pub use crate::state::State;
 use crate::state::util::value_cell::{ValueRef, ValueRefMut};
 
@@ -75,6 +75,26 @@ impl<T: StateContract> WidgetState<HashSet<T>> {
         self.read_map(|map: &HashSet<T>| {
             map.len()
         })
+    }
+}
+
+impl<T: StateContract> WidgetState<T> {
+    pub fn eq<U: StateContract + PartialEq<T>>(&self, other: impl Into<TState<U>>) -> RState<bool> {
+        let other = other.into();
+        Map2::read_map(self.clone(), other, |s1: &T, s2: &U| { s2 == s1 })
+    }
+}
+
+impl WidgetState<bool> {
+    pub fn choice<T: StateContract>(&self, s1: impl Into<RState<T>>, s2: impl Into<RState<T>>) -> RState<T> {
+        Map3::read_map(self.clone(), s1, s2,
+            |boolean: &bool, s1: &T, s2: &T| {
+                           if *boolean {
+                               s1.clone()
+                           } else {
+                               s2.clone()
+                           }
+            })
     }
 }
 

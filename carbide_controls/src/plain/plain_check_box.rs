@@ -1,9 +1,11 @@
+use carbide_core::Color;
 use carbide_core::draw::{Dimension, Position};
 use carbide_core::environment::EnvironmentColor;
+use carbide_core::event::{Key, KeyboardEvent, KeyboardEventHandler, ModifierKey, WidgetEvent};
 use carbide_core::flags::Flags;
-use carbide_core::focus::{Focus, Refocus};
-use carbide_core::prelude::Environment;
-use carbide_core::state::{FocusState, LocalState, MapOwnedState, ReadState, StateExt, StateKey, StringState};
+use carbide_core::focus::{Focus, Focusable, Refocus};
+use carbide_core::prelude::{Environment, StateContract, StateSync};
+use carbide_core::state::{FocusState, LocalState, Map2, Map4, MapOwnedState, ReadState, StateExt, StateKey, StringState};
 use carbide_core::widget::{CommonWidget, HStack, Id, Rectangle, Spacer, Text, Widget, WidgetExt, WidgetIter, WidgetIterMut, ZStack};
 
 use crate::carbide_core::prelude::State;
@@ -11,7 +13,7 @@ use crate::PlainButton;
 use crate::types::*;
 
 #[derive(Debug, Clone, Widget)]
-//#[focusable(block_focus)]
+#[carbide_exclude(Focusable)]
 pub struct PlainCheckBox {
     id: Id,
     #[state]
@@ -41,35 +43,36 @@ impl PlainCheckBox {
     ) -> Box<Self> {
         let focus = LocalState::new(Focus::Unfocused);
 
-        fn delegate(_: FocusState, checked: CheckBoxState) -> Box<dyn Widget> {
-            let highlight_color = MapOwnedState::new(checked.clone(), |check: &CheckBoxState, _: &_, env: &Environment| {
-                match *check.value() {
-                    CheckBoxValue::True => {
-                        env.get_color(&StateKey::Color(EnvironmentColor::Green)).unwrap()
-                    }
-                    CheckBoxValue::Intermediate => {
-                        env.get_color(&StateKey::Color(EnvironmentColor::Blue)).unwrap()
-                    }
-                    CheckBoxValue::False => {
-                        env.get_color(&StateKey::Color(EnvironmentColor::Red)).unwrap()
-                    }
-                }
-            });
-            let val = checked.mapped(|check: &CheckBoxValue| {
-                format!("{:?}", *check)
-            });
-            ZStack::new(vec![
-                Rectangle::new().fill(highlight_color),
-                Text::new(val),
-            ])
-        }
-
         Self::new_internal(
             checked.into(),
             focus.into(),
-            delegate,
+            Self::default_delegate,
             label.into(),
         )
+    }
+
+    fn default_delegate(focus: FocusState, checked: CheckBoxState) -> Box<dyn Widget> {
+        let green = EnvironmentColor::Green.state();
+        let blue = EnvironmentColor::Blue.state();
+        let red = EnvironmentColor::Red.state();
+
+        let background_color = Map4::read_map(checked.clone(), green, blue, red,
+        |checked: &CheckBoxValue, green: &Color, blue: &Color, red: &Color| {
+            match *checked {
+                CheckBoxValue::True => *green,
+                CheckBoxValue::Intermediate => *blue,
+                CheckBoxValue::False => *red,
+            }
+        }).ignore_writes();
+
+        let val = Map2::read_map(checked, focus, |checked: &CheckBoxValue, focus: &Focus| {
+            format!("{:?}, {:?}", *checked, focus)
+        }).ignore_writes();
+
+        ZStack::new(vec![
+            Rectangle::new().fill(background_color),
+            Text::new(val),
+        ])
     }
 
     pub fn delegate(
@@ -107,6 +110,7 @@ impl PlainCheckBox {
 
                 if *focus != Focus::Focused {
                     *focus = Focus::FocusRequested;
+                    println!("Focus request");
                     env.request_focus(Refocus::FocusRequest);
                 }
             }))
@@ -131,6 +135,12 @@ impl PlainCheckBox {
     }
 }
 
+impl Focusable for PlainCheckBox {
+    fn focus_children(&self) -> bool {
+        false
+    }
+}
+
 impl CommonWidget for PlainCheckBox {
     fn id(&self) -> Id {
         self.id
@@ -146,6 +156,15 @@ impl CommonWidget for PlainCheckBox {
 
     fn flexibility(&self) -> u32 {
         10
+    }
+
+    fn get_focus(&self) -> Focus {
+        self.focus.value().clone()
+    }
+
+    fn set_focus(&mut self, focus: Focus) {
+        println!("Set focus: {:?}", focus);
+        *self.focus.value_mut() = focus;
     }
 
     fn children(&self) -> WidgetIter {

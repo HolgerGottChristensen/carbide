@@ -493,21 +493,6 @@ impl Ui {
                         .process_mouse_event(mouse_event, &consumed, &mut self.environment);
                 }
                 WidgetEvent::Keyboard(keyboard_event) => {
-
-                    match keyboard_event {
-                        KeyboardEvent::Press(key, modifier) => {
-                            if key == &Key::Tab {
-                                if modifier == &ModifierKey::SHIFT {
-                                    //self.set_focus(Focus::FocusReleased);
-                                    self.environment.request_focus(Refocus::FocusPrevious);
-                                } else if modifier == &ModifierKey::NO_MODIFIER {
-                                    //self.set_focus(Focus::FocusReleased);
-                                    self.environment.request_focus(Refocus::FocusNext);
-                                }
-                            }
-                        }
-                        _ => ()
-                    }
                     self.widgets
                         .process_keyboard_event(keyboard_event, &mut self.environment);
                 }

@@ -1,12 +1,9 @@
 use carbide_core::CommonWidgetImpl;
 use carbide_core::draw::{Dimension, Position};
 use carbide_core::environment::{Environment, WidgetTransferAction};
-use carbide_core::flags::Flags;
-use carbide_core::prelude::TState;
 use carbide_core::render::{Primitive, Render};
-use carbide_core::state::{LocalState, MapState, State, StateExt, StateSync, UsizeState};
 use carbide_core::Widget;
-use carbide_core::widget::{CommonWidget, CornerRadii, EdgeInsets, Empty, HStack, Id, IfElse, Rectangle, RoundedRectangle, Spacer, Text, Widget, WidgetExt, WidgetIter, WidgetIterMut, ZStack};
+use carbide_core::widget::{Id, Widget, WidgetExt};
 
 #[derive(Debug, Clone, Widget)]
 #[carbide_exclude(Render)]

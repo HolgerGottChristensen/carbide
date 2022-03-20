@@ -1,8 +1,8 @@
 use std::collections::HashSet;
 use carbide_controls::List;
 use carbide_core::environment::{EnvironmentColor, EnvironmentFontSize};
-use carbide_core::lens;
-use carbide_core::state::{LocalState, ReadState, State, StateExt, StringState, TState, UsizeState};
+use carbide_core::{Color, lens};
+use carbide_core::state::{LocalState, Map2, Map3, ReadState, State, StateExt, StringState, TState, UsizeState};
 use carbide_core::text::FontFamily;
 use carbide_core::widget::*;
 use carbide_core::window::TWindow;
@@ -35,19 +35,15 @@ fn main() {
     let selected_items_delegate = selected_items.clone();
 
     let delegate = move |item: TState<(String, Id)>, _: UsizeState| -> Box<dyn Widget> {
-        let selected_item = item.clone();
 
-        let selected = selected_items_delegate.clone().mapped(move |map: &HashSet<Id>| {
-            map.contains(&id_function(&*selected_item.clone().value()))
-        });
+        let selected = Map2::read_map(selected_items_delegate.clone(), item.clone(),
+                                      |map: &HashSet<Id>, item: &(String, Id)| {
+                                          map.contains(&id_function(item))
+                                      }).ignore_writes();
 
-        let background_color = selected.mapped(|selected: &bool| {
-            if *selected {
-                EnvironmentColor::Blue
-            } else {
-                EnvironmentColor::SystemFill
-            }
-        });
+        let background_color: TState<Color> = selected
+            .choice(EnvironmentColor::Blue.state(), EnvironmentColor::SystemFill.state())
+            .ignore_writes();
 
         ZStack::new(vec![
             Rectangle::new().fill(background_color),
@@ -59,6 +55,7 @@ fn main() {
     window.set_widgets(
         List::new(list_model_state, delegate)
             .selectable(id_function, selected_items)
+            .clip()
             .frame(350.0, 500.0),
     );
 

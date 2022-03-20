@@ -217,7 +217,7 @@ impl Mesh {
         let vx = |x: Scalar| x as f32;//(x * scale_factor / half_viewport_w - 1.0) as f32;
         let vy = |y: Scalar| y as f32;//-1.0 * (y * scale_factor / half_viewport_h - 1.0) as f32;
 
-        let rect_to_scizzor = |rect: Rect| {
+        let rect_to_scissor = |rect: Rect| {
             // We need to restrict the scissor x and y to [0, ~].
             // This means we might need to subtract from the width and height.
 
@@ -255,7 +255,7 @@ impl Mesh {
         };
 
         // Keep track of the scissor as it changes.
-        let mut scissor_stack = vec![rect_to_scizzor(viewport)];
+        let mut scissor_stack = vec![rect_to_scissor(viewport)];
         let mut stencil_stack = vec![];
         let mut transform_stack = vec![Matrix4::identity()];
 
@@ -577,9 +577,9 @@ impl Mesh {
 
                     let new_rect = Rect::from_corners(Position::new(r, b), Position::new(l, t));
 
-                    commands.push(PreparedCommand::Scissor(rect_to_scizzor(new_rect)));
+                    commands.push(PreparedCommand::Scissor(rect_to_scissor(new_rect)));
 
-                    scissor_stack.push(rect_to_scizzor(new_rect));
+                    scissor_stack.push(rect_to_scissor(new_rect));
 
                     current_state = State::Plain {
                         start: vertices.len(),

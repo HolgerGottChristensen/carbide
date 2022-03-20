@@ -1,6 +1,6 @@
 use std::fmt::Debug;
 
-use carbide_core::DeserializeOwned;
+use carbide_core::{Color, DeserializeOwned};
 use carbide_core::draw::Dimension;
 use carbide_core::environment::{Environment, EnvironmentColor};
 use carbide_core::Serialize;
@@ -10,7 +10,7 @@ use carbide_core::widget::canvas::Canvas;
 
 use crate::{List, PlainPopUpButton, PopupDelegate};
 
-pub struct PopUpButton();
+pub struct PopUpButton;
 
 impl PopUpButton {
     pub fn new<T: StateContract + PartialEq + 'static, M: Into<TState<Vec<T>>>, S: Into<TState<T>>>(
@@ -25,7 +25,22 @@ impl PopUpButton {
     }
 
     fn delegate<T: StateContract + PartialEq + 'static>(selected_item: TState<T>, _focused: FocusState) -> Box<dyn Widget> {
-        let text = selected_item.mapped(|a: &T| format!("{:?}", a));
+        let text = selected_item.map(|a: &T| format!("{:?}", a)).ignore_writes();
+
+        let arrows = Canvas::new(|_, mut context| {
+            context.move_to(6.0, 9.0);
+            context.line_to(10.0, 5.0);
+            context.line_to(14.0, 9.0);
+            context.move_to(6.0, 13.0);
+            context.line_to(10.0, 17.0);
+            context.line_to(14.0, 13.0);
+            context.set_stroke_style(EnvironmentColor::DarkText);
+            context.set_line_width(1.5);
+            context.stroke();
+
+            context
+        });
+
 
         ZStack::new(vec![
             RoundedRectangle::new(CornerRadii::all(3.0))
@@ -36,41 +51,25 @@ impl PopUpButton {
                 ZStack::new(vec![
                     RoundedRectangle::new(CornerRadii::single(0.0, 0.0, 0.0, 2.0))
                         .fill(EnvironmentColor::Accent),
-                    Canvas::new(|_, mut context| {
-                        context.move_to(6.0, 9.0);
-                        context.line_to(10.0, 5.0);
-                        context.line_to(14.0, 9.0);
-                        context.move_to(6.0, 13.0);
-                        context.line_to(10.0, 17.0);
-                        context.line_to(14.0, 13.0);
-                        context.set_stroke_style(EnvironmentColor::DarkText);
-                        context.set_line_width(1.5);
-                        context.stroke();
-
-                        context
-                    }),
+                    arrows,
                 ])
                     .padding(EdgeInsets::single(0.0, 0.0, 0.0, 1.0))
-                    .frame_expand_height(20.0),
+                    .frame_fixed_width(20.0),
             ]),
             RoundedRectangle::new(CornerRadii::all(3.0))
                 .stroke_style(1.0)
                 .stroke(EnvironmentColor::OpaqueSeparator),
-        ]).frame_expand_width(22)
+        ]).frame_fixed_height(22)
     }
 
     fn popup_item_delegate<T: StateContract + PartialEq + 'static>(
         item: TState<T>, _index: UsizeState, hover_state: BoolState, _selected_state: TState<T>,
     ) -> Box<dyn Widget> {
-        let background_color = hover_state.mapped_env(|hovered: &bool, _: &_, env: &Environment| {
-            if *hovered {
-                env.env_color(EnvironmentColor::Accent)
-            } else {
-                env.env_color(EnvironmentColor::SecondarySystemBackground)
-            }
-        });
+        let background_color: TState<Color> = hover_state
+            .choice(EnvironmentColor::Accent.state(), EnvironmentColor::SecondarySystemBackground.state())
+            .ignore_writes();
 
-        let text = item.mapped(|item: &T| format!("{:?}", item));
+        let text = item.map(|item: &T| format!("{:?}", item)).ignore_writes();
 
         ZStack::new(vec![
             Rectangle::new()
@@ -84,6 +83,6 @@ impl PopUpButton {
                 ),
                 Spacer::new(),
             ]),
-        ]).frame_expand_width(24)
+        ]).frame_fixed_height(24)
     }
 }

@@ -1,6 +1,7 @@
+use carbide_core::Color;
 use carbide_core::draw::Dimension;
 use carbide_core::environment::{Environment, EnvironmentColor};
-use carbide_core::state::{ColorState, FocusState, MapOwnedState, State, StateExt, StateKey, StringState};
+use carbide_core::state::{ColorState, FocusState, Map1, Map3, MapOwnedState, State, StateExt, StateKey, StringState};
 use carbide_core::widget::*;
 use carbide_core::widget::canvas::Canvas;
 
@@ -20,19 +21,24 @@ impl CheckBox {
     }
 
     fn delegate(_: FocusState, checked: CheckBoxState) -> Box<dyn Widget> {
-        let checked_color = checked.mapped_env(|check: &CheckBoxValue, _: &_, env: &Environment| {
-            match *check {
-                CheckBoxValue::True | CheckBoxValue::Intermediate => {
-                    env.get_color(&StateKey::Color(EnvironmentColor::Accent)).unwrap()
-                }
-                CheckBoxValue::False => {
-                    env.get_color(&StateKey::Color(EnvironmentColor::SecondarySystemBackground)).unwrap()
-                }
-            }
-        });
+        let accent = EnvironmentColor::Accent.state();
+        let secondary = EnvironmentColor::SecondarySystemBackground.state();
 
-        let checked_true = checked.mapped(|check: &CheckBoxValue| { *check == CheckBoxValue::True });
-        let checked_intermediate = checked.mapped(|check: &CheckBoxValue| { *check == CheckBoxValue::Intermediate });
+        let checked_color = Map3::read_map(checked.clone(), accent, secondary,
+        |checked: &CheckBoxValue, accent: &Color, secondary: &Color| {
+            match *checked {
+                CheckBoxValue::True | CheckBoxValue::Intermediate => *accent,
+                CheckBoxValue::False => *secondary,
+            }
+        }).ignore_writes();
+
+        let checked_true = checked.map(|check: &CheckBoxValue| {
+            *check == CheckBoxValue::True
+        }).ignore_writes();
+
+        let checked_intermediate = checked.map(|check: &CheckBoxValue| {
+            *check == CheckBoxValue::Intermediate
+        }).ignore_writes();
 
         ZStack::new(vec![
             RoundedRectangle::new(CornerRadii::all(3.0))

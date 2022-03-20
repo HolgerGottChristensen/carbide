@@ -285,6 +285,7 @@ impl Environment {
         sender
     }
 
+    #[allow(unused_variables)]
     pub fn spawn_task<T: Send + 'static>(
         &mut self,
         task: impl Future<Output=T> + Send + 'static,
@@ -356,6 +357,7 @@ impl Environment {
         self.pixel_dimensions.width / self.scale_factor
     }
 
+    /// Get the height in carbide points. (Actual pixels / dpi)
     pub fn get_corrected_height(&self) -> f64 {
         self.pixel_dimensions.height / self.scale_factor
     }
@@ -435,6 +437,7 @@ impl Environment {
 
     pub fn transfer_widget(&mut self, id: Option<String>, widget_transfer: WidgetTransferAction) {
         self.widget_transfer.insert(id, widget_transfer);
+        self.request_animation_frame();
     }
 
     pub fn clear_animation_frame(&mut self) {

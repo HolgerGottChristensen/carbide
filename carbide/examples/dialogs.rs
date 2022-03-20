@@ -61,7 +61,7 @@ fn main() {
     window.set_widgets(
         VStack::new(vec![
             Button::new("Open Save-dialog")
-                .on_click(|env: &mut Environment| {
+                .on_click(|env: &mut Environment, _:_| {
                     SaveDialog::new().open(env)
                         .spawn(env, |res: Option<PathBuf>, _| {
                             println!("Received save path: {:?}", res);
@@ -69,7 +69,7 @@ fn main() {
                 })
                 .frame(200.0, 22.0),
             Button::new("Open Open-dialog")
-                .on_click(|env: &mut Environment| {
+                .on_click(|env: &mut Environment, _:_| {
                     OpenDialog::new()
                         .message("Hejsa, det er en besked".to_string())
                         .default_type(FileSpecification::new("Gif", &["gif"]))
@@ -81,7 +81,7 @@ fn main() {
                 })
                 .frame(200.0, 22.0),
             Button::new("Open Emoji-dialog")
-                .on_click(|env: &mut Environment| {
+                .on_click(|env: &mut Environment, _:_| {
                     EmojiDialog::new()
                         .open()
                 })
@@ -89,7 +89,7 @@ fn main() {
             TextInput::new(text_state)
                 .frame(200.0, 22.0),
             Button::new("Open Color-dialog")
-                .on_click(move |env: &mut Environment| {
+                .on_click(move |env: &mut Environment, _:_| {
                     let color = color_dialog.clone();
                     ColorDialog::new()
                         .show_alpha()

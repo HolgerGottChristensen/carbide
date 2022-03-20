@@ -192,7 +192,7 @@ impl PlainTextInput {
                         .when_true(
                             Rectangle::new()
                                 .fill(selection_color.clone())
-                                .frame(selection_width.clone(), font_size.read_map(|val: &u32| *val as f64))
+                                .frame(selection_width.clone(), font_size.read_map(|val: &u32| *val as f64).ignore_writes())
                                 .offset(selection_x.clone(), 0.0)
                         ),
                     Text::new(display_text.clone())
@@ -203,13 +203,13 @@ impl PlainTextInput {
                         .when_true(
                             Rectangle::new()
                                 .fill(cursor_color.clone())
-                                .frame(1.0, font_size.read_map(|val: &u32| *val as f64))
+                                .frame(1.0, font_size.read_map(|val: &u32| *val as f64).ignore_writes())
                                 .offset(cursor_x.clone(), 0.0),
                         ),
                 ]).with_alignment(BasicLayouter::Leading)
                     .offset(text_offset.clone(), 0.0),
                 Spacer::new(),
-            ]).frame_expand_width(30);
+            ]).frame_fixed_height(30);
 
         Box::new(PlainTextInput {
             id: Id::new_v4(),

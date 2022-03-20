@@ -34,45 +34,54 @@ fn main() {
             RoundedRectangle::new(CornerRadii::all(10.0))
                 .fill(EnvironmentColor::Green),
             Text::new(item),
-        ]).frame(0.0, 80.0)
+        ]).frame(0.0, 40.0)
             .expand_width()
     }
+
+    let add_element = Button::new("Add element")
+        .on_click(capture!([list_model_state], |env: &mut Environment| {
+                        let len = list_model_state.len();
+                        list_model_state.push(format!("New element: {}", len + 1));
+                    }))
+        .frame(150.0, 22.0);
+
+    let remove_element = Button::new("Remove element")
+        .on_click(capture!([list_model_state], |env: &mut Environment| {
+                        list_model_state.pop();
+                    }))
+        .frame(150.0, 22.0)
+        .accent_color(EnvironmentColor::Red);
+
+    let add_to_start = Button::new("Add element to start")
+        .on_click(capture!([list_model_state], |env: &mut Environment| {
+                        let len = list_model_state.len();
+                        list_model_state.insert(0, format!("New element start: {}", len + 1));
+                    }))
+        .frame(150.0, 22.0);
+
+    let remove_first = Button::new("Remove first element")
+        .on_click(capture!([list_model_state], |env: &mut Environment| {
+                        if list_model_state.len() > 0 {
+                            list_model_state.remove(0);
+                        }
+                    }))
+        .frame(150.0, 22.0)
+        .accent_color(EnvironmentColor::Red);
+
 
     window.set_widgets(
         VStack::new(vec![
             List::new(list_model_state.clone(), delegate)
                 .clip()
-                .frame(350.0, 450.0),
+                .frame(350.0, 200.0),
             HStack::new(vec![
-                Button::new("Add element")
-                    .on_click(capture!([list_model_state], |env: &mut Environment| {
-                        let len = list_model_state.len();
-                        list_model_state.push(format!("New element: {}", len + 1));
-                    }))
-                    .frame(150.0, 22.0),
-                Button::new("Remove element")
-                    .on_click(capture!([list_model_state], |env: &mut Environment| {
-                        list_model_state.pop();
-                    }))
-                    .frame(150.0, 22.0)
-                    .accent_color(EnvironmentColor::Red),
+                add_element,
+                remove_element,
             ]).spacing(10.0),
             HStack::new(vec![
-                Button::new("Add element to start")
-                    .on_click(capture!([list_model_state], |env: &mut Environment| {
-                        let len = list_model_state.len();
-                        list_model_state.insert(0, format!("New element start: {}", len + 1));
-                    }))
-                    .frame(150.0, 22.0),
-                Button::new("Remove first element")
-                    .on_click(capture!([list_model_state], |env: &mut Environment| {
-                        if list_model_state.len() > 0 {
-                            list_model_state.remove(0);
-                        }
-                    }))
-                    .frame(150.0, 22.0)
-                    .accent_color(EnvironmentColor::Red),
-            ]),
+                add_to_start,
+                remove_first,
+            ]).spacing(10.0),
         ]).spacing(10.0),
     );
 
