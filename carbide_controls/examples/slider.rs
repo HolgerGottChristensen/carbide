@@ -35,6 +35,7 @@ fn main() {
             Text::new(progress2.clone().map(|a: &f64| {format!("Slider step value: {:.2}", a)}).ignore_writes()),
             Slider::new(progress2, 20.0, 100.0)
                 .step(5.0)
+                .accent_color(EnvironmentColor::Orange)
                 .padding(20.0),
         ])
     );
