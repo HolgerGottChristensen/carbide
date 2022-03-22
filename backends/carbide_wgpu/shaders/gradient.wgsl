@@ -7,7 +7,6 @@ struct VertexOutput {
     [[builtin(position)]] position: vec4<f32>;
 };
 
-[[block]]
 struct Gradient {
     colors: array<vec4<f32>,16u>;
     ratios: array<f32,16u>;
@@ -18,7 +17,6 @@ struct Gradient {
     end: vec2<f32>;
 };
 
-[[block]]
 struct Uniforms {
     transform: mat4x4<f32>;
 };
@@ -27,7 +25,7 @@ struct Uniforms {
 var<storage, read> gradient: Gradient;
 
 [[group(1), binding(0)]]
-var uniforms: Uniforms;
+var<uniform> uniforms: Uniforms;
 
 [[stage(fragment)]]
 fn main_fs(in: VertexOutput) -> [[location(0)]] vec4<f32> {

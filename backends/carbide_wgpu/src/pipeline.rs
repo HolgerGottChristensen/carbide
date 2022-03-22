@@ -32,7 +32,7 @@ pub(crate) fn create_render_pipeline(
             strip_index_format: None,
             front_face: FrontFace::Ccw,
             cull_mode: None,
-            clamp_depth: false,
+            unclipped_depth: false,
             polygon_mode: Default::default(),
             conservative: false,
         },
@@ -68,6 +68,7 @@ pub(crate) fn create_render_pipeline(
                 write_mask: col,
             }],
         }),
+        multiview: None
     })
 }
 

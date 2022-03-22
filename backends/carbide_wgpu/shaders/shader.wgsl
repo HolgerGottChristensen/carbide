@@ -5,7 +5,6 @@ struct VertexOutput {
     [[location(2)]] mode: u32;
 };
 
-[[block]]
 struct Uniforms {
     transform: mat4x4<f32>;
 };
@@ -21,7 +20,7 @@ var atlas_texture: texture_2d<f32>;
 
 
 [[group(1), binding(0)]]
-var uniforms: Uniforms;
+var<uniform> uniforms: Uniforms;
 
 
 [[stage(fragment)]]

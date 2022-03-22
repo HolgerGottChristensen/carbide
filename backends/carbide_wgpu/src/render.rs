@@ -313,8 +313,8 @@ impl Window {
         let (color_op, stencil_op) = render_pass_ops(RenderPassOps::Middle);
 
         // This blocks until a new frame is available.
-        let frame = self.surface.get_current_frame()?.output;
-        let frame_view = frame.texture.create_view(&Default::default());
+        let output = self.surface.get_current_texture()?;
+        let frame_view = output.texture.create_view(&Default::default());
 
         let mut render_pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
             label: None,
@@ -340,6 +340,7 @@ impl Window {
 
         // submit will accept anything that implements IntoIter
         self.queue.submit(std::iter::once(encoder.finish()));
+        output.present();
         Ok(())
     }
 }

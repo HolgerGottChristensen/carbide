@@ -1,4 +1,4 @@
-use wgpu::{BindGroupLayout, BufferBindingType, Device, TextureSampleType, TextureViewDimension};
+use wgpu::{BindGroupLayout, BufferBindingType, Device, SamplerBindingType, TextureSampleType, TextureViewDimension};
 
 pub(crate) fn uniform_bind_group_layout(device: &Device) -> BindGroupLayout {
     device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
@@ -34,7 +34,7 @@ pub(crate) fn filter_texture_bind_group_layout(device: &Device) -> BindGroupLayo
             wgpu::BindGroupLayoutEntry {
                 binding: 1,
                 visibility: wgpu::ShaderStages::FRAGMENT,
-                ty: wgpu::BindingType::Sampler { filtering: true, comparison: false },
+                ty: wgpu::BindingType::Sampler(SamplerBindingType::Filtering),
                 count: None,
             }
         ],
@@ -94,7 +94,7 @@ pub(crate) fn main_texture_group_layout(device: &Device) -> BindGroupLayout {
             wgpu::BindGroupLayoutEntry {
                 binding: 1,
                 visibility: wgpu::ShaderStages::FRAGMENT,
-                ty: wgpu::BindingType::Sampler { filtering: true, comparison: false },
+                ty: wgpu::BindingType::Sampler(SamplerBindingType::Filtering),
                 count: None,
             },
             wgpu::BindGroupLayoutEntry {

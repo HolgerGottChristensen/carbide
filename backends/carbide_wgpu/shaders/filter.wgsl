@@ -3,17 +3,14 @@ struct VertexOutput {
     [[builtin(position)]] position: vec4<f32>;
 };
 
-[[block]]
 struct Uniforms {
     transform: mat4x4<f32>;
 };
 
-[[block]]
 struct SizeUniforms {
     size: vec2<f32>;
 };
 
-[[block]]
 struct BlurUniforms {
     texture_size: vec2<f32>;
     number_of_blurs: u32;
@@ -30,10 +27,10 @@ var main_sampler: sampler;
 var<storage, read> blur_uniforms: BlurUniforms; // This should change for wgpu 0.10
 
 [[group(2), binding(0)]]
-var uniforms: Uniforms;
+var<uniform> uniforms: Uniforms;
 
 [[group(3), binding(0)]]
-var tex_size: SizeUniforms;
+var<uniform> tex_size: SizeUniforms;
 
 [[stage(fragment)]]
 fn main_fs(in: VertexOutput) -> [[location(0)]] vec4<f32> {

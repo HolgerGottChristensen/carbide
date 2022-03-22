@@ -9,20 +9,20 @@ use crate::platform::mac::make_nsstring;
 
 pub fn make_menu_item(title: &str, key: Option<HotKey>, code: String) -> id {
     unsafe {
-        let key_combination = code;//key.map(HotKey::key_equivalent).unwrap_or("".to_string());
+        let key_combination = "";//code;//key.map(HotKey::key_equivalent).unwrap_or("".to_string());
 
         let menu_item = NSMenuItem::alloc(nil).initWithTitle_action_keyEquivalent_(
             make_nsstring(title),
-            sel!(handleMenuItem:),
+            sel!(aaa:),
             make_nsstring(&key_combination),
         ).autorelease();
 
-        if let Some(mask) = key.map(HotKey::key_modifier_mask) {
+        /*if let Some(mask) = key.map(HotKey::key_modifier_mask) {
             let () = msg_send![menu_item, setKeyEquivalentModifierMask: mask];
-        }
+        }*/
 
-        let () = msg_send![menu_item, setEnabled: YES];
-        let () = msg_send![menu_item, setState: NO];
+        //let () = msg_send![menu_item, setEnabled: YES];
+        //let () = msg_send![menu_item, setState: NO];
         menu_item
     }
 }

@@ -251,6 +251,7 @@ impl Window {
 
         let adapter = block_on(instance.request_adapter(&wgpu::RequestAdapterOptions {
             power_preference: wgpu::PowerPreference::HighPerformance,
+            force_fallback_adapter: false,
             compatible_surface: Some(&surface),
         }))
             .unwrap();
