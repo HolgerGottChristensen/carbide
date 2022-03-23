@@ -3,6 +3,7 @@ use std::ffi::c_void;
 use std::fmt::Debug;
 
 use instant::Instant;
+use carbide_core::platform::mac::menu::set_application_menu;
 
 use crate::{color, cursor};
 use crate::cursor::MouseCursor;
@@ -14,7 +15,7 @@ use crate::prelude::EnvironmentColor;
 use crate::prelude::EnvironmentFontSize;
 use crate::prelude::EnvironmentVariable;
 use crate::render::CPrimitives;
-use crate::widget::Rectangle;
+use crate::widget::{Menu, Rectangle};
 use crate::widget::Widget;
 
 /// `Ui` is the most important type within carbide and is necessary for rendering and maintaining
@@ -28,6 +29,7 @@ use crate::widget::Widget;
 #[derive(Debug)]
 pub struct Ui {
     pub widgets: Box<dyn Widget>,
+    pub menu: Option<Vec<Menu>>,
     event_handler: EventHandler,
     pub environment: Environment,
     any_focus: bool,
@@ -423,6 +425,7 @@ impl Ui {
         Ui {
             widgets: Rectangle::new()
                 .fill(EnvironmentColor::SystemBackground),
+            menu: None,
             event_handler: EventHandler::new(),
             environment,
             any_focus: false,
@@ -439,6 +442,18 @@ impl Ui {
 
     pub fn set_scale_factor(&mut self, scale_factor: f64) {
         self.environment.set_scale_factor(scale_factor);
+    }
+
+    #[cfg(target_os = "macos")]
+    pub fn refresh_application_menu(&self) {
+        if let Some(menu) = &self.menu {
+            set_application_menu(menu);
+        }
+    }
+
+    #[cfg(not(target_os = "macos"))]
+    pub fn refresh_application_menu(&self) {
+
     }
 
     pub fn has_animations(&self) -> bool {

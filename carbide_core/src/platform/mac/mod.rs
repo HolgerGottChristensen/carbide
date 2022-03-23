@@ -7,7 +7,7 @@ use std::path::PathBuf;
 use block::ConcreteBlock;
 use cocoa::appkit::CGFloat;
 use cocoa::base::{id, nil, NO, YES};
-use cocoa::foundation::{NSArray, NSAutoreleasePool, NSInteger, NSString, NSURL};
+use cocoa::foundation::{NSArray, NSAutoreleasePool, NSInteger, NSProcessInfo, NSString, NSURL};
 use objc::{class, msg_send, sel, sel_impl};
 use oneshot::Receiver;
 use crate::Color;
@@ -30,6 +30,11 @@ pub fn from_nsstring(s: id) -> String {
         let result = std::str::from_utf8_unchecked(slice);
         result.into()
     }
+}
+
+/// Returns a pointer to the nsstring containing the process name
+pub fn process_name() -> id {
+    unsafe { NSProcessInfo::processInfo(nil).processName() }
 }
 
 pub fn make_nsstring(s: &str) -> id {

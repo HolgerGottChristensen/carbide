@@ -35,6 +35,7 @@ pub use self::z_stack::*;
 pub use self::match_view::*;
 pub use self::progress_bar::*;
 pub use self::flexibility::*;
+pub use self::menu::*;
 
 pub mod canvas;
 mod common;
@@ -73,6 +74,7 @@ mod v_split;
 mod progress_bar;
 mod match_view;
 mod flexibility;
+mod menu;
 
 pub type Id = uuid::Uuid;
 pub type ColoredPoint = (Position, crate::color::Rgba);

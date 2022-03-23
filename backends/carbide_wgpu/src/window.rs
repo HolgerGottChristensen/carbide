@@ -21,7 +21,7 @@ use carbide_core::event::Input;
 use carbide_core::image_map::{Id, ImageMap};
 use carbide_core::mesh::{DEFAULT_GLYPH_CACHE_DIMS, MODE_IMAGE};
 use carbide_core::mesh::mesh::Mesh;
-use carbide_core::prelude::{Environment, EnvironmentColor};
+use carbide_core::prelude::{Environment, EnvironmentColor, Menu};
 use carbide_core::prelude::Rectangle;
 use carbide_core::text::{FontFamily, FontId};
 use carbide_core::widget::{OverlaidLayer, ZStack};
@@ -140,6 +140,10 @@ impl carbide_core::window::TWindow for Window {
             Rectangle::new().fill(EnvironmentColor::SystemBackground),
             OverlaidLayer::new("controls_popup_layer", base_widget).steal_events(),
         ]);
+    }
+
+    fn set_menu(&mut self, menu: Vec<Menu>) {
+        self.ui.menu = Some(menu);
     }
 }
 
@@ -628,6 +632,9 @@ impl Window {
                                     self.ui.set_scale_factor(*scale_factor);
                                     self.resize(**new_inner_size);
                                     self.inner_window.request_redraw();
+                                }
+                                WindowEvent::Focused(true) => {
+                                    self.ui.refresh_application_menu();
                                 }
                                 _ => {}
                             }
