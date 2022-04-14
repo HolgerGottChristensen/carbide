@@ -17,7 +17,6 @@ mod textures;
 mod proxy_event_loop;
 mod gradient;
 
-const DEFAULT_IMAGE_TEX_FORMAT: wgpu::TextureFormat = wgpu::TextureFormat::R8Unorm;
 
 pub fn init_logger() {
     env_logger::init();

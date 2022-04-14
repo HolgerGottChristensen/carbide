@@ -19,6 +19,8 @@ pub(crate) fn create_render_pipeline(
 ) -> RenderPipeline {
     let (stencil_desc, col) = mask_render_state(mask_type);
 
+    let preferred_format = surface.get_preferred_format(adapter).unwrap();
+
     device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
         label: Some("Render Pipeline"),
         layout: Some(render_pipeline_layout),
@@ -52,7 +54,7 @@ pub(crate) fn create_render_pipeline(
             module: &shader,
             entry_point: "main_fs",
             targets: &[ColorTargetState {
-                format: surface.get_preferred_format(adapter).unwrap(),
+                format: preferred_format,
                 blend: Some(BlendState {
                     color: BlendComponent {
                         src_factor: BlendFactor::SrcAlpha,

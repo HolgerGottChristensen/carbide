@@ -96,7 +96,7 @@ impl Layout for Image {
             source_rect.dimension
         } else {
             env.get_image_information(&self.image_id.value())
-                .map(|i| Dimension::new(i.width as f64, i.width as f64))
+                .map(|i| Dimension::new(i.width as f64, i.height as f64))
                 .unwrap_or(Dimension::new(100.0, 100.0))
         };
 
