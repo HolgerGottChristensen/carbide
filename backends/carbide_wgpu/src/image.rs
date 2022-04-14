@@ -5,7 +5,7 @@ use wgpu::{Device, Queue};
 use carbide_core::mesh;
 use carbide_core::widget::ImageInformation;
 
-use crate::{DEFAULT_IMAGE_TEX_FORMAT, texture};
+use crate::texture;
 use crate::texture::Texture;
 
 /// A loaded wgpu texture and it's width/height
@@ -14,8 +14,6 @@ pub struct Image {
     ///
     /// Uses a dynamic format for flexibility on the kinds of images that might be loaded.
     pub texture: Texture,
-    /// The format of the `texture`.
-    pub texture_format: wgpu::TextureFormat,
     /// The width of the image.
     pub width: u32,
     /// The height of the image.
@@ -55,7 +53,6 @@ impl Image {
 
         Image {
             texture,
-            texture_format: DEFAULT_IMAGE_TEX_FORMAT,
             width,
             height,
         }
@@ -78,7 +75,6 @@ impl Image {
 
         Image {
             texture,
-            texture_format: DEFAULT_IMAGE_TEX_FORMAT,
             width,
             height,
         }
