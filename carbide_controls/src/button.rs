@@ -9,7 +9,8 @@ use carbide_core::prelude::{EnvironmentColor, Uuid};
 use carbide_core::state::{BoolState, FocusState, LocalState, Map3, ReadState, State, StringState};
 use carbide_core::widget::*;
 
-use crate::{Action, PlainButton};
+use carbide_core::widget::Action;
+use crate::PlainButton;
 
 #[derive(Clone, Widget)]
 pub struct Button {

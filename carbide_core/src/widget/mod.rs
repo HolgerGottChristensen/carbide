@@ -36,6 +36,8 @@ pub use self::match_view::*;
 pub use self::progress_bar::*;
 pub use self::flexibility::*;
 pub use self::menu::*;
+pub use self::mouse_area::*;
+pub use self::flag::*;
 
 pub mod canvas;
 mod common;
@@ -75,6 +77,10 @@ mod progress_bar;
 mod match_view;
 mod flexibility;
 mod menu;
+mod window_menu;
+mod mouse_area;
+mod popup_menu;
+mod flag;
 
 pub type Id = uuid::Uuid;
 pub type ColoredPoint = (Position, crate::color::Rgba);

@@ -9,7 +9,8 @@ pub trait MouseEventHandler: CommonWidget + StateSync + Focusable {
     /// It will only get called on the events where the cursor is inside.
     /// Return true if the event is consumed, and will thus not be delegated to other
     /// widgets.
-    fn handle_mouse_event(&mut self, _event: &MouseEvent, _consumed: &bool, _env: &mut Environment) {}
+    #[allow(unused_variables)]
+    fn handle_mouse_event(&mut self, event: &MouseEvent, consumed: &bool, env: &mut Environment) {}
 
     fn process_mouse_event(&mut self, event: &MouseEvent, consumed: &bool, env: &mut Environment) {
         if !*consumed {

@@ -1,6 +1,6 @@
 use std::ops::Deref;
 use env_logger::Env;
-use carbide_controls::{Action, capture, PlainButton};
+use carbide_controls::{capture, PlainButton};
 use carbide_core::environment::{Environment, EnvironmentColor};
 use carbide_core::widget::*;
 use carbide_wgpu::window::*;

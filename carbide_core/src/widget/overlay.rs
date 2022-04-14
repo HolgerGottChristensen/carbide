@@ -8,7 +8,7 @@ use crate::prelude::*;
 pub struct Overlay {
     id: Uuid,
     child: Rc<ValueCell<Box<dyn Widget>>>,
-    showing: BoolState,
+    #[state] showing: BoolState,
     position: PositionState,
     dimension: DimensionState,
 }

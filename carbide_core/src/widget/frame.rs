@@ -50,6 +50,16 @@ impl Frame {
         Box::new(self)
     }
 
+    pub fn fit_width(mut self) -> Box<Frame> {
+        self.width = FrameState::Fit(10.0.into());
+        Box::new(self)
+    }
+
+    pub fn fit_height(mut self) -> Box<Frame> {
+        self.height = FrameState::Fit(10.0.into());
+        Box::new(self)
+    }
+
     pub fn init_width(width: impl Into<TState<f64>>, child: Box<dyn Widget>) -> Box<Frame> {
         Box::new(Frame {
             id: Default::default(),
@@ -165,12 +175,30 @@ impl CommonWidget for Frame {
 
 impl Layout for Frame {
     fn calculate_size(&mut self, requested_size: Dimension, env: &mut Environment) -> Dimension {
+        let fixed_height = matches!(&self.height, FrameState::Fixed(_));
+
+
+        let height = *self.height.value();
+
+
         if let FrameState::Expand(e) = &mut self.width {
             e.set_value(requested_size.width);
+        } else if let FrameState::Fit(f) = &mut self.width {
+            let child_dimensions = if fixed_height {
+                self.child.calculate_size(Dimension::new(requested_size.width, height), env)
+            } else {
+                self.child.calculate_size(requested_size, env)
+            };
+            f.set_value(child_dimensions.width);
         }
+
+        let width = *self.width.value();
 
         if let FrameState::Expand(e) = &mut self.height {
             e.set_value(requested_size.height);
+        } else if let FrameState::Fit(f) = &mut self.height {
+            let child_dimensions = self.child.calculate_size(Dimension::new(width, requested_size.height), env);
+            f.set_value(child_dimensions.height);
         }
 
         let dimensions = self.dimension();
@@ -205,18 +233,16 @@ impl WidgetExt for Frame {}
 #[derive(Clone, Debug)]
 enum FrameState {
     Expand(TState<f64>),
+    Fit(TState<f64>),
     Fixed(TState<f64>)
 }
 
 impl NewStateSync for FrameState {
     fn sync(&mut self, env: &mut Environment) -> bool {
         match self {
-            FrameState::Expand(e) => {
-                e.sync(env)
-            }
-            FrameState::Fixed(f) => {
-                f.sync(env)
-            }
+            FrameState::Expand(e) => e.sync(env),
+            FrameState::Fixed(f) => f.sync(env),
+            FrameState::Fit(f) => f.sync(env)
         }
     }
 }
@@ -231,6 +257,7 @@ impl ReadState<f64> for FrameState {
             FrameState::Fixed(f) => {
                 f.value()
             }
+            FrameState::Fit(f) => f.value()
         }
     }
 }
@@ -248,6 +275,7 @@ impl State<f64> for FrameState {
             FrameState::Fixed(f) => {
                 f.set_value(value)
             }
+            FrameState::Fit(f) => f.set_value(value)
         }
     }
 

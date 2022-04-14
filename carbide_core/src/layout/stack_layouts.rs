@@ -77,19 +77,23 @@ fn calculate_size_stack(widget: &mut dyn Layout, main_axis: fn(Dimension) -> f64
     let mut size_for_children =
         dimension(main_axis(requested_size) - spacing_total, cross_axis(requested_size));
 
-    let mut children_flexibility: Vec<(u32, WidgetValMut)> = widget
+    //
+    let (mut children_flexibility_using_max_val, mut children_flexibility_rest): (Vec<(u32, WidgetValMut)>, Vec<(u32, WidgetValMut)>) = widget
         .children_mut()
         .filter(|m| m.flag() != Flags::SPACER)
         .map(|child| (child.flexibility(), child))
-        .collect();
+        .partition(|(_, child)| {
+            child.flag().contains(Flags::USEMAXCROSSAXIS)
+        });
 
-    children_flexibility.sort_by(|(a, _), (b, _)| b.cmp(&a));
+    children_flexibility_using_max_val.sort_by(|(a, _), (b, _)| b.cmp(&a));
+    children_flexibility_rest.sort_by(|(a, _), (b, _)| b.cmp(&a));
 
     let mut max_cross_axis = 0.0;
 
     let mut total_main_axis = 0.0;
 
-    for (_, mut child) in children_flexibility {
+    for (_, mut child) in children_flexibility_rest {
         let size_for_child = dimension(
             main_axis(size_for_children) / number_of_children_that_needs_sizing as f64,
             cross_axis(size_for_children),
@@ -100,6 +104,21 @@ fn calculate_size_stack(widget: &mut dyn Layout, main_axis: fn(Dimension) -> f64
         if cross_axis(chosen_size) > max_cross_axis {
             max_cross_axis = cross_axis(chosen_size);
         }
+
+        size_for_children = dimension((main_axis(size_for_children) - main_axis(chosen_size)).max(0.0), cross_axis(size_for_children));
+
+        number_of_children_that_needs_sizing -= 1;
+
+        total_main_axis += main_axis(chosen_size);
+    }
+
+    for (_, mut child) in children_flexibility_using_max_val {
+        let size_for_child = dimension(
+            main_axis(size_for_children) / number_of_children_that_needs_sizing as f64,
+            max_cross_axis,
+        );
+
+        let chosen_size = child.calculate_size(size_for_child, env);
 
         size_for_children = dimension((main_axis(size_for_children) - main_axis(chosen_size)).max(0.0), cross_axis(size_for_children));
 

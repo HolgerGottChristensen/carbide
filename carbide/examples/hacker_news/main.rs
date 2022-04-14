@@ -6,7 +6,7 @@ use std::ops::Deref;
 use chrono::{TimeZone, Utc};
 use env_logger::Env;
 use futures::future::join_all;
-use carbide_controls::{Action, capture, List, PlainButton, Selection};
+use carbide_controls::{capture, List, PlainButton, Selection};
 use carbide_core::environment::{Environment, EnvironmentColor};
 use carbide_core::widget::*;
 use carbide_wgpu::window::*;

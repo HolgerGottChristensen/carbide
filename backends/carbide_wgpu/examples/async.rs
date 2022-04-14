@@ -90,10 +90,10 @@ fn main() {
                 .frame(new_state, 50),
             Rectangle::new()
                 .fill(EnvironmentColor::Accent)
-                .frame(new_state1, 50),
+                .frame(new_state1.ignore_writes(), 50),
             Rectangle::new()
                 .fill(EnvironmentColor::Accent)
-                .frame(new_state2, 50),
+                .frame(new_state2.ignore_writes(), 50),
         ]).accent_color(EnvironmentColor::Red)
     );
 

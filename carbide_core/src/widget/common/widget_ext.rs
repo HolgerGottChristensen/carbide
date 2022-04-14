@@ -2,14 +2,19 @@ use cgmath::Matrix4;
 
 use crate::draw::Dimension;
 use crate::prelude::*;
+use crate::widget::window_menu::MenuBar;
 
 pub trait WidgetExt: Widget + Sized + 'static {
     fn frame(self, width: impl Into<TState<f64>>, height: impl Into<TState<f64>>) -> Box<Frame> {
         Frame::init(width, height, Box::new(self))
     }
 
-    fn custom_flexibility(self, flexibility: u32) -> Box<Flexibility> {
+    fn custom_flexibility(self, flexibility: u32) -> Box<dyn Widget> {
         Flexibility::new(Box::new(self), flexibility)
+    }
+
+    fn custom_flags(self, flags: Flags) -> Box<dyn Widget> {
+        Flagged::new(Box::new(self), flags)
     }
 
     fn background(self, background: Box<dyn Widget>) -> Box<Background> {
@@ -42,6 +47,10 @@ pub trait WidgetExt: Widget + Sized + 'static {
 
     fn frame_fixed_height(self, height: impl Into<TState<f64>>) -> Box<Frame> {
         Frame::init_height(height.into(), Box::new(self))
+    }
+
+    fn menu(self, menus: Vec<Menu>) -> Box<dyn Widget> {
+        MenuBar::new(menus, Box::new(self))
     }
 
     fn padding<E: Into<EdgeInsets>>(self, edge_insets: E) -> Box<Padding> {

@@ -2,7 +2,6 @@ use std::collections::HashMap;
 use std::hash::Hash;
 use crate::draw::{Dimension, Position};
 use crate::prelude::*;
-use crate::widget::Widget;
 
 /// A basic, non-interactive rectangle shape widget.
 #[derive(Debug, Clone, Widget)]
