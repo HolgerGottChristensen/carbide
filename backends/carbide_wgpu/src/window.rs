@@ -238,7 +238,7 @@ impl Window {
         );
 
         #[cfg(target_os = "windows")]
-            let ui = Ui::new(pixel_dimensions, scale_factor, Some(inner_window.hwnd()), Box::new(event_sink));
+            let ui = Ui::new(pixel_dimensions, scale_factor, Some(inner_window.hwnd()), Box::new(ProxyEventLoop(event_loop.create_proxy())));
 
 
         #[cfg(all(not(target_os = "macos"), not(target_os = "windows")))]
