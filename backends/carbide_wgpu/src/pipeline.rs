@@ -57,7 +57,7 @@ pub(crate) fn create_render_pipeline(
                 format: preferred_format,
                 blend: Some(BlendState {
                     color: BlendComponent {
-                        src_factor: BlendFactor::SrcAlpha,
+                        src_factor: BlendFactor::One,
                         dst_factor: BlendFactor::OneMinusSrcAlpha,
                         operation: BlendOperation::Add,
                     },
