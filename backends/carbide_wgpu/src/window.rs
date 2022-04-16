@@ -296,11 +296,8 @@ impl Window {
         let atlas_cache_tex_desc = atlas_cache_tex_desc([512, 512]);
         let atlas_cache_tex = device.create_texture(&atlas_cache_tex_desc);
 
-        /*let assets = find_folder::Search::KidsThenParents(3, 5)
-            .for_folder("assets")
-            .unwrap();
-*/
-        let image = Image::new("/Users/holgerchristensen/carbide/assets/images/happy-tree.png", &device, &queue);
+        let image = Image::new_from_dynamic(DynamicImage::new_rgba8(1, 1), &device, &queue);
+
 
         let main_shader = device.create_shader_module(&wgpu::include_wgsl!("../shaders/shader.wgsl"));
         let gradient_shader = device.create_shader_module(&wgpu::include_wgsl!("../shaders/gradient.wgsl"));

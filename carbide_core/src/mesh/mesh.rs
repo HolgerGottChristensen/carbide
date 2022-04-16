@@ -22,6 +22,7 @@ use crate::mesh::{
     MODE_GEOMETRY, MODE_TEXT, MODE_TEXT_COLOR,
 };
 use crate::mesh::atlas::texture_atlas::TextureAtlas;
+use crate::mesh::pre_multiply::PreMultiply;
 use crate::mesh::vertex::Vertex;
 use crate::render::{PrimitiveKind, PrimitiveWalker};
 
@@ -185,6 +186,7 @@ impl Mesh {
 
         let texture_atlas = env.get_font_atlas_mut();
         texture_atlas.cache_queued(|x, y, image_data| {
+
             //println!("Insert the image at: {}, {} with size {}, {}", x, y, image_data.width(), image_data.height());
             for (ix, iy, pixel) in image_data.pixels() {
                 texture_atlas_image.put_pixel(x + ix, y + iy, pixel);
@@ -643,11 +645,12 @@ impl Mesh {
                     switch_to_plain_state!();
 
                     let color = gamma_srgb_to_linear(color.into());
+                    let pre_multiplied_color = [color[0] * color[3], color[1] * color[3], color[2] * color[3], color[3]];
 
                     let v = |p: Position| Vertex {
                         position: [vx(p.x), vy(p.y), 0.0],
                         tex_coords: [0.0, 0.0],
-                        rgba: color,
+                        rgba: pre_multiplied_color,
                         mode: MODE_GEOMETRY,
                     };
 

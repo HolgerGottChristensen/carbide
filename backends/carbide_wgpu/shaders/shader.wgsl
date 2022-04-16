@@ -29,7 +29,7 @@ fn main_fs(in: VertexOutput) -> [[location(0)]] vec4<f32> {
     let main_pixel = textureSample(main_texture, main_sampler, in.tex_coord);
 
     if (in.mode == 0u) {
-        return vec4<f32>(in.color.r, in.color.g, in.color.b, atlas_pixel.a);
+        return vec4<f32>(in.color.r * atlas_pixel.a, in.color.g * atlas_pixel.a, in.color.b * atlas_pixel.a, atlas_pixel.a);
     }
     if (in.mode == 1u) {
         return main_pixel;
@@ -38,7 +38,7 @@ fn main_fs(in: VertexOutput) -> [[location(0)]] vec4<f32> {
         return in.color;
     }
     if (in.mode == 3u) {
-        return vec4<f32>(in.color.r, in.color.g, in.color.b, main_pixel.a);
+        return vec4<f32>(in.color.r * main_pixel.a, in.color.g * main_pixel.a, in.color.b * main_pixel.a, main_pixel.a);
     }
 
     return atlas_pixel;

@@ -270,6 +270,11 @@ impl Color {
         }
     }
 
+    pub fn pre_multiply(self) -> Self {
+        let Rgba(r, g, b, a) = self.to_rgb();
+        Color::Rgba(r * a, g * a, b * a, a)
+    }
+
     /// Extract the components of a color in the RGB format within a fixed-size array.
     pub fn to_fsa(self) -> [f32; 4] {
         let Rgba(r, g, b, a) = self.to_rgb();

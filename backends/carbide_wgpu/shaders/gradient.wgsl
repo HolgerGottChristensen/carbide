@@ -101,6 +101,10 @@ fn main_fs(in: VertexOutput) -> [[location(0)]] vec4<f32> {
 
     var color: vec4<f32> = mix(gradient.colors[i], gradient.colors[j], a);
 
+    color.r = color.r * color.a;
+    color.g = color.g * color.a;
+    color.b = color.b * color.a;
+
     return color;
 }
 

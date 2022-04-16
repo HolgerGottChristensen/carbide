@@ -6,7 +6,7 @@ use carbide_wgpu::window::*;
 
 fn main() {
 
-    let icon_path = PathBuf::from("/Users/holgerchristensen/carbide/assets/images/rust.png");//Window::relative_path_to_assets("images/rust.png");
+    let icon_path = Window::relative_path_to_assets("images/rust.png");
     println!("{:?}", icon_path);
 
     let mut window = Window::new(
@@ -21,9 +21,7 @@ fn main() {
     ]);
     window.add_font_family(family);*/
 
-
-    let dynamic_image = image::open("/Users/holgerchristensen/carbide/assets/images/lcabyg.png").expect("Couldn't load logo");
-    let lcabyg_icon_id = window.add_image(dynamic_image);
+    let lcabyg_icon_id = window.add_image_from_path("images/lcabyg.png");
 
 
     window.set_widgets(Image::new(lcabyg_icon_id).resizeable());
