@@ -41,7 +41,7 @@ fn main_fs(in: VertexOutput) -> [[location(0)]] vec4<f32> {
         return vec4<f32>(in.color.r * main_pixel.a, in.color.g * main_pixel.a, in.color.b * main_pixel.a, main_pixel.a);
     }
 
-    return atlas_pixel;
+    return vec4<f32>(atlas_pixel.r * atlas_pixel.a, atlas_pixel.g * atlas_pixel.a, atlas_pixel.b * atlas_pixel.a, atlas_pixel.a);
 }
 
 [[stage(vertex)]]
