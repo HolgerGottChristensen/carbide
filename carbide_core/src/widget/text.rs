@@ -215,7 +215,7 @@ impl Render for Text {
                     );
                     primitives.push(Primitive {
                         kind: PrimitiveKind::RectanglePrim { color },
-                        rect: Rect::new(position, dimension),
+                        bounding_box: Rect::new(position, dimension),
                     });
                 }
             }

@@ -597,7 +597,7 @@ impl Renderer {
             let Primitive {
                 kind,
                 scizzor: _,
-                rect,
+                bounding_box: rect,
                 ..
             } = primitive;
 

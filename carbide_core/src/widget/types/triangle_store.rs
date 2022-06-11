@@ -75,7 +75,7 @@ impl TriangleStore {
                             color: Rgba::from(c),
                             triangles: self.fill_triangles.clone(),
                         },
-                        rect: Rect::new(self.latest_fill_position, self.latest_fill_dimensions),
+                        bounding_box: Rect::new(self.latest_fill_position, self.latest_fill_dimensions),
                     });
                 }
                 AdvancedColor::SingleGradient(g) => {
@@ -84,7 +84,7 @@ impl TriangleStore {
                             self.fill_triangles.clone(),
                             DrawGradient::convert(g, position, dimension),
                         ),
-                        rect: Rect::new(self.latest_fill_position, self.latest_fill_dimensions),
+                        bounding_box: Rect::new(self.latest_fill_position, self.latest_fill_dimensions),
                     });
                 }
                 AdvancedColor::MultiGradient(_) => {}
@@ -101,7 +101,7 @@ impl TriangleStore {
                             color: Rgba::from(c),
                             triangles: self.stroke_triangles.clone(),
                         },
-                        rect: Rect::new(self.latest_stroke_position, self.latest_stroke_dimensions),
+                        bounding_box: Rect::new(self.latest_stroke_position, self.latest_stroke_dimensions),
                     });
                 }
                 AdvancedColor::SingleGradient(g) => {
@@ -110,7 +110,7 @@ impl TriangleStore {
                             self.stroke_triangles.clone(),
                             DrawGradient::convert(g, position, dimension),
                         ),
-                        rect: Rect::new(self.latest_stroke_position, self.latest_stroke_dimensions),
+                        bounding_box: Rect::new(self.latest_stroke_position, self.latest_stroke_dimensions),
                     });
                 }
                 AdvancedColor::MultiGradient(_) => {}
@@ -127,7 +127,7 @@ impl TriangleStore {
                     color: Rgba::from(fill_color),
                     triangles: self.fill_triangles.clone(),
                 },
-                rect: Rect::new(self.latest_fill_position, self.latest_fill_dimensions),
+                bounding_box: Rect::new(self.latest_fill_position, self.latest_fill_dimensions),
             });
         }
 
@@ -137,7 +137,7 @@ impl TriangleStore {
                     color: Rgba::from(stroke_color),
                     triangles: self.stroke_triangles.clone(),
                 },
-                rect: Rect::new(self.latest_stroke_position, self.latest_stroke_dimensions),
+                bounding_box: Rect::new(self.latest_stroke_position, self.latest_stroke_dimensions),
             });
         }
 

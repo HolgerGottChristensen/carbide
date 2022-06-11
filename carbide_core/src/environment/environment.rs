@@ -331,6 +331,7 @@ impl Environment {
 
         #[cfg(not(any(feature = "async-std", feature = "tokio")))]
         println!("Tried to spawn an async task without having any async feature enabled. Try enabling 'async-std' or 'tokio'.")
+
     }
 
     pub fn capture_time(&mut self) {

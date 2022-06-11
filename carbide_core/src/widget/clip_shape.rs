@@ -105,7 +105,7 @@ impl Render for ClipShape {
 
         primitives.push(Primitive {
             kind: PrimitiveKind::Stencil(stencil_triangles),
-            rect: Rect::new(self.position, self.dimension),
+            bounding_box: Rect::new(self.position, self.dimension),
         });
 
         for mut child in self.children_mut() {
@@ -114,7 +114,7 @@ impl Render for ClipShape {
 
         primitives.push(Primitive {
             kind: PrimitiveKind::DeStencil,
-            rect: Rect::new(self.position, self.dimension),
+            bounding_box: Rect::new(self.position, self.dimension),
         });
     }
 }

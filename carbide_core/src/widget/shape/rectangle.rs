@@ -95,25 +95,25 @@ impl Rectangle {
                 kind: PrimitiveKind::RectanglePrim {
                     color: border_color.clone(),
                 },
-                rect: left_border,
+                bounding_box: left_border,
             },
             Primitive {
                 kind: PrimitiveKind::RectanglePrim {
                     color: border_color.clone(),
                 },
-                rect: right_border,
+                bounding_box: right_border,
             },
             Primitive {
                 kind: PrimitiveKind::RectanglePrim {
                     color: border_color.clone(),
                 },
-                rect: top_border,
+                bounding_box: top_border,
             },
             Primitive {
                 kind: PrimitiveKind::RectanglePrim {
                     color: border_color.clone(),
                 },
-                rect: bottom_border,
+                bounding_box: bottom_border,
             },
         ]
     }

@@ -95,7 +95,7 @@ impl Render for Filter {
         if let Some(filter_id) = self.filter_id {
             primitives.push(Primitive {
                 kind: PrimitiveKind::Filter(filter_id),
-                rect: Rect::new(self.position, self.dimension),
+                bounding_box: Rect::new(self.position, self.dimension),
             });
         }
     }

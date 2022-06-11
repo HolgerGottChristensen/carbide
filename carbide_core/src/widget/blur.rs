@@ -151,14 +151,14 @@ impl Render for Blur {
             let dimension = self.dimension + Dimension::new(0.0, radius as f64 * 2.0);
             primitives.push(Primitive {
                 kind: PrimitiveKind::FilterSplitPt1(filter_id),
-                rect: Rect::new(position, dimension),
+                bounding_box: Rect::new(position, dimension),
             });
         }
 
         if let Some((filter_id, _)) = self.filter_vertical_has_been_inserted {
             primitives.push(Primitive {
                 kind: PrimitiveKind::FilterSplitPt2(filter_id),
-                rect: Rect::new(self.position, self.dimension),
+                bounding_box: Rect::new(self.position, self.dimension),
             });
         }
     }

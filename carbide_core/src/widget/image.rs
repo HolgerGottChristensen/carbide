@@ -150,7 +150,7 @@ impl Render for Image {
             };
             let rect = Rect::new(self.position, self.dimension);
 
-            primitives.push(Primitive { kind, rect });
+            primitives.push(Primitive { kind, bounding_box: rect });
         } else {
             let color = if let Some(color) = &self.color {
                 *color.value()
@@ -161,7 +161,7 @@ impl Render for Image {
 
             let rect = Rect::new(self.position, self.dimension);
 
-            primitives.push(Primitive { kind, rect });
+            primitives.push(Primitive { kind, bounding_box: rect });
         }
     }
 }

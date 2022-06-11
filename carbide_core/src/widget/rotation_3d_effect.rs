@@ -115,7 +115,7 @@ impl Render for Rotation3DEffect {
 
         primitives.push(Primitive {
             kind: PrimitiveKind::Transform(matrix, self.anchor.clone()),
-            rect: Rect::new(self.position, self.dimension),
+            bounding_box: Rect::new(self.position, self.dimension),
         });
 
         self.release_state(env);
@@ -126,7 +126,7 @@ impl Render for Rotation3DEffect {
 
         primitives.push(Primitive {
             kind: PrimitiveKind::DeTransform,
-            rect: Rect::new(self.position, self.dimension),
+            bounding_box: Rect::new(self.position, self.dimension),
         });
     }
 }

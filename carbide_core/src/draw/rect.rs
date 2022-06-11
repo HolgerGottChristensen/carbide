@@ -4,6 +4,8 @@ use crate::draw::dimension::Dimension;
 use crate::draw::Position;
 use crate::draw::Scalar;
 
+pub type BoundingBox = Rect;
+
 #[derive(Copy, Clone, PartialOrd, PartialEq, Debug, Default)]
 pub struct Rect {
     pub position: Position,

@@ -150,25 +150,25 @@ impl Render for Border {
             kind: PrimitiveKind::RectanglePrim {
                 color: border_color,
             },
-            rect: left_border,
+            bounding_box: left_border,
         });
         primitives.push(Primitive {
             kind: PrimitiveKind::RectanglePrim {
                 color: border_color,
             },
-            rect: right_border,
+            bounding_box: right_border,
         });
         primitives.push(Primitive {
             kind: PrimitiveKind::RectanglePrim {
                 color: border_color,
             },
-            rect: top_border,
+            bounding_box: top_border,
         });
         primitives.push(Primitive {
             kind: PrimitiveKind::RectanglePrim {
                 color: border_color,
             },
-            rect: bottom_border,
+            bounding_box: bottom_border,
         });
     }
 }

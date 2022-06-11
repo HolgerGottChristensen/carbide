@@ -1,16 +1,13 @@
 use std::f64::consts::PI;
 use std::time::Duration;
+use carbide_core::Color;
 
 use carbide_core::draw::{Dimension, Position};
 use carbide_core::environment::*;
 use carbide_core::prelude::{
     Deref, DerefMut, ease, ease_in, elastic_in, elastic_in_out, Flags, Uuid,
 };
-use carbide_core::state::{
-    AnimatedState, bounce_in, bounce_in_out, bounce_out, cubic_bezier, ease_in_out, ease_in_to_linear,
-    ease_out, elastic_out, F64State, fast_linear_to_slow_ease_in, fast_out_slow_in, linear,
-    MapOwnedState, slow_middle, TState,
-};
+use carbide_core::state::{AnimatedState, bounce_in, bounce_in_out, bounce_out, cubic_bezier, ease_in_out, ease_in_to_linear, ease_out, elastic_out, F64State, fast_linear_to_slow_ease_in, fast_out_slow_in, linear, LocalState, MapOwnedState, slow_middle, TState};
 use carbide_core::text::*;
 use carbide_core::widget::*;
 use carbide_core::widget::canvas::*;

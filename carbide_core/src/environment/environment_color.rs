@@ -112,17 +112,3 @@ impl Into<TState<AdvancedColor>> for TState<EnvironmentColor> {
         })
     }
 }
-
-impl ColorState {
-    pub fn darkened(&self, percent: f32) -> ColorState {
-        self.mapped(move |col: &Color| {
-            col.darkened(percent)
-        })
-    }
-
-    pub fn lightened(&self, percent: f32) -> ColorState {
-        self.mapped(move |col: &Color| {
-            col.lightened(percent)
-        })
-    }
-}

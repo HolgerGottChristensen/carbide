@@ -1,5 +1,4 @@
 use crate::draw::{Dimension, Position};
-use crate::draw::shape::vertex::Vertex;
 use crate::event::{
     ModifierKey, MouseButton, MouseEvent, MouseEventHandler, OtherEventHandler, WidgetEvent,
 };
@@ -308,15 +307,15 @@ impl Layout for Scroll {
 
         // Position scrollbars
         self.scrollbar_vertical
-            .set_position(self.position().add_vertex(Position::new(
+            .set_position(self.position() + Position::new(
                 self.dimension.width - self.scrollbar_vertical.width(),
                 0.0,
-            )));
+            ));
         self.scrollbar_vertical_background
-            .set_position(self.position().add_vertex(Position::new(
+            .set_position(self.position() + Position::new(
                 self.dimension.width - self.scrollbar_vertical.width(),
                 0.0,
-            )));
+            ));
 
         let scroll_vertical_percent = if self.child.height() - self.height() != 0.0 {
             self.scroll_offset.y / (self.child.height() - self.height())
@@ -333,22 +332,22 @@ impl Layout for Scroll {
         };
 
         self.scrollbar_vertical
-            .set_position(self.scrollbar_vertical.position().add_vertex(Position::new(
+            .set_position(self.scrollbar_vertical.position() + Position::new(
                 0.0,
                 -(self.height() - horizontal_height - self.scrollbar_vertical.height())
                     * scroll_vertical_percent,
-            )));
+            ));
 
         self.scrollbar_horizontal
-            .set_position(self.position().add_vertex(Position::new(
+            .set_position(self.position() + Position::new(
                 0.0,
                 self.dimension.height - self.scrollbar_horizontal.height(),
-            )));
+            ));
         self.scrollbar_horizontal_background
-            .set_position(self.position().add_vertex(Position::new(
+            .set_position(self.position() + Position::new(
                 0.0,
                 self.dimension.height - self.scrollbar_horizontal.height(),
-            )));
+            ));
 
         let scroll_horizontal_percent = if self.child.width() - self.width() != 0.0 {
             self.scroll_offset.x / (self.child.width() - self.width())
@@ -367,12 +366,11 @@ impl Layout for Scroll {
         self.scrollbar_horizontal
             .set_position(
                 self.scrollbar_horizontal
-                    .position()
-                    .add_vertex(Position::new(
+                    .position() + Position::new(
                         (self.width() - vertical_width - self.scrollbar_horizontal.width())
                             * scroll_horizontal_percent,
                         0.0,
-                    )),
+                    ),
             );
 
         self.scrollbar_vertical.position_children();

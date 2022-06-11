@@ -12,12 +12,14 @@ use crate::widget::ColoredPoint;
 
 /// The unique kind for each primitive element in the Ui.
 pub enum PrimitiveKind {
-    /// Start a clip for the rectangle given by the primitive
+    /// Add a clip for the rectangle given by the primitive to the stack
     Clip,
-    /// Remove a clip
+    /// Remove a clip area from the stack.
     UnClip,
 
+    /// Add a stencil layer with the given triangles to the stack
     Stencil(Vec<Triangle<Position>>),
+    /// Remove a stencil layer from the stack
     DeStencil,
 
     /// This is a filter and can take any 2d filter
@@ -28,7 +30,10 @@ pub enum PrimitiveKind {
     FilterSplitPt1(u32),
     FilterSplitPt2(u32),
 
+    /// Add a transformation matrix to the current stack of transforms. The basic layouter will
+    /// be used to get a reference point for the transformation
     Transform(Matrix4<f32>, BasicLayouter),
+    /// Remove a transformation from the transform stack.
     DeTransform,
 
     /// A filled `Rectangle`.

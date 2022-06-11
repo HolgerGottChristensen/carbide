@@ -2,7 +2,7 @@ use cocoa::appkit::{NSEventModifierFlags, NSMenu, NSMenuItem};
 use cocoa::base::{id, nil, NO, selector, YES};
 use cocoa::foundation::{NSAutoreleasePool, NSString};
 use objc::{msg_send, sel, sel_impl, class};
-use objc::runtime::{Object, Sel};
+use objc::runtime::Sel;
 use carbide_core::prelude::{MenuItem, MenuKind};
 
 

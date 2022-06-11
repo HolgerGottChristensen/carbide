@@ -22,7 +22,6 @@ use crate::mesh::{
     MODE_GEOMETRY, MODE_TEXT, MODE_TEXT_COLOR,
 };
 use crate::mesh::atlas::texture_atlas::TextureAtlas;
-use crate::mesh::pre_multiply::PreMultiply;
 use crate::mesh::vertex::Vertex;
 use crate::render::{PrimitiveKind, PrimitiveWalker};
 
@@ -281,7 +280,7 @@ impl Mesh {
 
         // Draw each primitive in order of depth.
         while let Some(primitive) = primitives.next_primitive() {
-            let rectangle = primitive.rect;
+            let rectangle = primitive.bounding_box;
             match primitive.kind {
                 PrimitiveKind::Stencil(triangles) => {
                     match current_state {
@@ -570,7 +569,7 @@ impl Mesh {
                         }
                     }
 
-                    let (mut l, mut r, mut b, mut t) = primitive.rect.l_r_b_t();
+                    let (mut l, mut r, mut b, mut t) = primitive.bounding_box.l_r_b_t();
 
                     l *= scale_factor;
                     r *= scale_factor;
@@ -614,7 +613,7 @@ impl Mesh {
                     switch_to_plain_state!();
 
                     let color = gamma_srgb_to_linear(color.to_fsa());
-                    let (l, r, b, t) = primitive.rect.l_r_b_t();
+                    let (l, r, b, t) = primitive.bounding_box.l_r_b_t();
 
                     let v = |x, y| {
                         // Convert from carbide Scalar range to GL range -1.0 to 1.0.
@@ -810,7 +809,7 @@ impl Mesh {
                     let mut push_v = |x, y, t| vertices.push(v(x, y, t));
 
                     // Swap bottom and top to suit reversed vulkan coords.
-                    let (l, r, b, t) = primitive.rect.l_r_b_t();
+                    let (l, r, b, t) = primitive.bounding_box.l_r_b_t();
 
                     // Bottom left triangle.
                     push_v(l, t, [uv_l, uv_t]);

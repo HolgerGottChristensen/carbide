@@ -410,7 +410,7 @@ impl Shelf {
     }
 }
 
-#[test]
+/*#[test]
 fn create_packed_image() {
     use crate::draw::Dimension;
     use crate::environment::Environment;
@@ -482,4 +482,4 @@ fn create_packed_image() {
     texture
         .save("/Users/holgergottchristensen/carbide/target/smile_atlas.png")
         .unwrap();
-}
+}*/

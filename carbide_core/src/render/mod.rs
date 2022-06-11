@@ -1,27 +1,17 @@
-pub use cprimitives::*;
-pub use owned_primitive::*;
-pub use owned_primitive_kind::*;
-pub use owned_primitives::*;
-pub use owned_text::*;
+pub use primitives::*;
 pub use primitive::*;
 pub use primitive_kind::*;
 pub use primitive_walker::*;
-pub use primitives::*;
 pub use render::*;
-pub use text::*;
-pub use util::*;
-pub use walk_owned_primitives::*;
+use crate::draw::Rect;
 
-mod cprimitives;
-mod owned_primitive;
-mod owned_primitive_kind;
-mod owned_primitives;
-mod owned_text;
+mod primitives;
 mod primitive;
 mod primitive_kind;
 mod primitive_walker;
-mod primitives;
 mod render;
-mod text;
-mod util;
-mod walk_owned_primitives;
+
+/// Simplify the constructor for a `Primitive`.
+pub fn new_primitive(kind: PrimitiveKind, rect: Rect) -> Primitive {
+    Primitive { kind, bounding_box: rect }
+}

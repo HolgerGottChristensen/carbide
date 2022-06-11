@@ -1,5 +1,4 @@
 use std::path::Path;
-use image::{DynamicImage, GenericImage, GenericImageView, Rgba};
 
 use wgpu::{Device, Queue};
 

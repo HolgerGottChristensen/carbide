@@ -72,7 +72,7 @@ impl Canvas {
                 color: Rgba::from(color),
                 triangles: Triangle::from_point_list(points),
             },
-            rect: Rect::new(self.position, self.dimension),
+            bounding_box: Rect::new(self.position, self.dimension),
         }
     }
 
@@ -106,7 +106,7 @@ impl Canvas {
                 color: Rgba::from(color),
                 triangles: Triangle::from_point_list(points),
             },
-            rect: Rect::new(self.position, self.dimension),
+            bounding_box: Rect::new(self.position, self.dimension),
         }
     }
 }

@@ -1,6 +1,7 @@
 pub use dimension::Dimension;
 pub use position::Position;
 pub use rect::Rect;
+pub use rect::BoundingBox;
 
 mod dimension;
 pub mod lyon_builder_addition;
@@ -11,6 +12,7 @@ pub mod shape;
 pub mod svg_path_builder;
 pub mod draw_gradient;
 pub mod alignment;
+pub mod theme;
 
 /// An alias over the Scalar type used throughout carbide.
 ///

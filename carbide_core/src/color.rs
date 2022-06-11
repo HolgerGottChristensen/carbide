@@ -36,12 +36,6 @@ impl Default for Color {
     }
 }
 
-/*impl<GS: GlobalStateContract> Into<ColorState<GS>> for Color {
-    fn into(self) -> ColorState<GS> {
-        WidgetState::new(Box::new(ValueState::new(&self)))
-    }
-}*/
-
 impl Color {
     pub fn new_rgb(r: u8, g: u8, b: u8) -> Color {
         let r = r as f32 / 255.0;
@@ -70,9 +64,6 @@ impl Color {
         )
     }
 }
-
-/// Regional spelling alias.
-pub type Colour = Color;
 
 /// Create RGB colors with an alpha component for transparency.
 /// The alpha component is specified with numbers between 0 and 1.
@@ -133,11 +124,6 @@ pub fn grayscale(p: f32) -> Color {
     Color::Hsla(0.0, 0.0, 1.0 - p, 1.0)
 }
 
-/// Produce a gray based on the input. 0.0 is white, 1.0 is black.
-pub fn greyscale(p: f32) -> Color {
-    Color::Hsla(0.0, 0.0, 1.0 - p, 1.0)
-}
-
 /// Clamp a f32 between 0f32 and 1f32.
 fn clampf32(f: f32) -> f32 {
     if f < 0.0 {
@@ -150,6 +136,11 @@ fn clampf32(f: f32) -> f32 {
 }
 
 impl Color {
+
+    /// Blend the colors between from and to, by retrieving their hsla values and
+    /// interpolating the hue angle and s, l and a value. This will blend through the smallest
+    /// way around the hue value, clockwise or counter clockwise.
+    /// A related blending function is [Self::rgba_blend]
     pub fn hsla_blend(from: &Color, to: &Color, percentage: f64) -> Color {
         let from_hsla = from.to_hsl();
         let to_hsla = to.to_hsl();
@@ -184,6 +175,9 @@ impl Color {
         )
     }
 
+    /// Blend between the color from and to by interpolating the r, g, b and a values
+    /// of the two colors.
+    /// A related blending function is [Self::hsla_blend]
     pub fn rgba_blend(from: &Color, to: &Color, percentage: f64) -> Color {
         let from_rgba = from.to_rgb();
         let to_rgba = to.to_rgb();
@@ -221,13 +215,7 @@ impl Color {
         }
     }
 
-    /// Calculate and return the luminance of the Color.
-    pub fn luminance(&self) -> f32 {
-        match *self {
-            Color::Rgba(r, g, b, _) => (r + g + b) / 3.0,
-            Color::Hsla(_, _, l, _) => l,
-        }
-    }
+
 
     /// Return either black or white, depending which contrasts the Color the most. This will be
     /// useful for determining a readable color for text on any given background Color.
@@ -270,6 +258,7 @@ impl Color {
         }
     }
 
+    /// Pre multiply the color. https://microsoft.github.io/Win2D/WinUI3/html/PremultipliedAlpha.htm
     pub fn pre_multiply(self) -> Self {
         let Rgba(r, g, b, a) = self.to_rgb();
         Color::Rgba(r * a, g * a, b * a, a)
@@ -300,6 +289,14 @@ impl Color {
     //     format!("#{}", &hex)
     // }
 
+    /// Calculate and return the luminance of the Color.
+    pub fn luminance(&self) -> f32 {
+        match *self {
+            Color::Rgba(r, g, b, _) => (r + g + b) / 3.0,
+            Color::Hsla(_, _, l, _) => l,
+        }
+    }
+
     /// Return the same color but with the given luminance.
     pub fn with_luminance(self, l: f32) -> Color {
         let Hsla(h, s, _, a) = self.to_hsl();
@@ -322,8 +319,16 @@ impl Color {
         }
     }
 
-    /// Return the same color but with the given alpha.
-    pub fn opacity(self, a: f32) -> Color {
+    /// Return the opacity of the color.
+    pub fn opacity(self) -> f32 {
+        match self {
+            Color::Rgba(_, _, _, a) => a,
+            Color::Hsla(_, _, _, a) => a,
+        }
+    }
+
+    /// Return the same color but with the given opacity/alpha.
+    pub fn with_opacity(self, a: f32) -> Color {
         match self {
             Color::Rgba(r, g, b, _) => Color::Rgba(r, g, b, a),
             Color::Hsla(h, s, l, _) => Color::Hsla(h, s, l, a),
@@ -378,37 +383,106 @@ impl Color {
         rgba((r - 1.0).abs(), (g - 1.0).abs(), (b - 1.0).abs(), a)
     }
 
-    /// Return the red value.
+    /// Return the red component. The value returned should be between 0.0 and 1.0
     pub fn red(&self) -> f32 {
         let Rgba(r, _, _, _) = self.to_rgb();
         r
     }
 
-    /// Return the green value.
+    /// Return the same color but with the given red component.
+    /// The value provided should be between 0.0 and 1.0
+    pub fn with_red(self, r: f32) -> Color {
+        assert!((0.0 <= r && r <= 1.0), "The value r={} should be [0.0, 1.0]", r);
+        let Rgba(_, g, b, a) = self.to_rgb();
+        rgba(r, g, b, a)
+    }
+
+    /// Return the green value. The value returned should be between 0.0 and 1.0
     pub fn green(&self) -> f32 {
         let Rgba(_, g, _, _) = self.to_rgb();
         g
     }
 
-    /// Return the blue value.
+    /// Return the same color but with the given green component.
+    /// The value provided should be between 0.0 and 1.0
+    pub fn with_green(self, g: f32) -> Color {
+        assert!((0.0 <= g && g <= 1.0), "The value g={} should be [0.0, 1.0]", g);
+        let Rgba(r, _, b, a) = self.to_rgb();
+        rgba(r, g, b, a)
+    }
+
+    /// Return the blue value. The value returned should be between 0.0 and 1.0
     pub fn blue(&self) -> f32 {
         let Rgba(_, _, b, _) = self.to_rgb();
         b
     }
 
+    /// Return the same color but with the given green component.
+    /// The value provided should be between 0.0 and 1.0
+    pub fn with_blue(self, b: f32) -> Color {
+        assert!((0.0 <= b && b <= 1.0), "The value b={} should be [0.0, 1.0]", b);
+        let Rgba(r, g, _, a) = self.to_rgb();
+        rgba(r, g, b, a)
+    }
+
+    /// Return the hue value. The value returned should be between 0.0 and 1.0
+    pub fn hue(&self) -> f32 {
+        let Hsla(h, _, _, _) = self.to_hsl();
+        h
+    }
+
+    /// Return the same color but with the given hue.
+    /// The value returned should be between 0.0 and 1.0
+    pub fn with_hue(self, h: f32) -> Color {
+        assert!((0.0 <= h && h <= 1.0), "The value h={} should be [0.0, 1.0]", h);
+        let Hsla(_, s, l, a) = self.to_hsl();
+        hsla(h, s, l, a)
+    }
+
+    /// Return the saturation value. The value returned should be between 0.0 and 1.0
+    pub fn saturation(&self) -> f32 {
+        let Hsla(_, s, _, _) = self.to_hsl();
+        s
+    }
+
+    /// Return the same color but with the given saturation.
+    /// The value returned should be between 0.0 and 1.0
+    pub fn with_saturation(self, s: f32) -> Color {
+        assert!((0.0 <= s && s <= 1.0), "The value s={} should be [0.0, 1.0]", s);
+        let Hsla(h, _, l, a) = self.to_hsl();
+        hsla(h, s, l, a)
+    }
+
+    /// Return the lightness value. The value returned should be between 0.0 and 1.0
+    pub fn lightness(&self) -> f32 {
+        let Hsla(_, s, _, _) = self.to_hsl();
+        s
+    }
+
+    /// Return the same color but with the given lightness.
+    /// The value returned should be between 0.0 and 1.0
+    pub fn with_lightness(self, l: f32) -> Color {
+        assert!((0.0 <= l && l <= 1.0), "The value l={} should be [0.0, 1.0]", l);
+        let Hsla(h, s, _, a) = self.to_hsl();
+        hsla(h, s, l, a)
+    }
+
     /// Set the red value.
+    /// Notice: This will mutate self. Use [Self::with_red()] for a pure function.
     pub fn set_red(&mut self, r: f32) {
         let Rgba(_, g, b, a) = self.to_rgb();
         *self = rgba(r, g, b, a);
     }
 
-    /// Set the green value.
+    /// Set the green
+    /// Notice: This will mutate self. Use [Self::with_green()] for a pure function.
     pub fn set_green(&mut self, g: f32) {
         let Rgba(r, _, b, a) = self.to_rgb();
         *self = rgba(r, g, b, a);
     }
 
     /// Set the blue value.
+    /// Notice: This will mutate self. Use [Self::with_blue()] for a pure function.
     pub fn set_blue(&mut self, b: f32) {
         let Rgba(r, g, _, a) = self.to_rgb();
         *self = rgba(r, g, b, a);

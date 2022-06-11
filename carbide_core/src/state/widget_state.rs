@@ -1,6 +1,7 @@
 use std::collections::HashSet;
 use std::fmt;
-use std::fmt::{Debug, Formatter};
+use std::fmt::{Debug, Display, Formatter};
+use std::ops::{Add, AddAssign, Mul};
 
 use dyn_clone::DynClone;
 use carbide_core::prelude::{NewStateSync, ReadState};
@@ -29,78 +30,39 @@ impl<T: StateContract> WidgetState<T> {
     pub fn to_boxed_state(self) -> Box<dyn State<T>> {
         self.0
     }
-}
 
-impl<T: StateContract> WidgetState<Vec<T>> {
-    /// Returns a state that given an index will return a state containing the item at that index
-    /// in the vector. It takes an UsizeState and will update the resulting state if either index
-    /// or the vector changes.
-    pub fn index(&self, index: UsizeState) -> TState<T> {
-        VecState::new(self.clone(), index)
+    pub fn read_state(self) -> RState<T> {
+        self.into()
     }
 }
 
-impl<T: StateContract> WidgetState<Option<T>> {
-    /// Allows calling is_some in the option. Returns a read-only boolean state. The reason it is
-    /// read-only is because it would not be meaningful to set the state with a boolean and expect
-    /// the original state to be changed.
-    pub fn is_some(&self) -> RState<bool> {
-        self.read_map(|t: &Option<T>| {
-            t.is_some()
-        })
-    }
 
-    pub fn is_none(&self) -> RState<bool> {
-        self.read_map(|t: &Option<T>| {
-            t.is_none()
-        })
-    }
-}
-
-impl<T: StateContract + Default + 'static> WidgetState<Option<T>> {
-    pub fn unwrap_or_default(&self) -> TState<T> {
-        Map1::map(
-            self.clone(),
-            |val: &Option<T>| {
-                val.clone().unwrap_or_default()
-            }, |new, _| {
-                Some(Some(new))
-            }
-        )
-    }
-}
-
-impl<T: StateContract> WidgetState<HashSet<T>> {
-    pub fn len(&self) -> RState<usize> {
-        self.read_map(|map: &HashSet<T>| {
-            map.len()
-        })
-    }
-}
 
 impl<T: StateContract> WidgetState<T> {
+    /// Return a read-only state containing a boolean, which is true when self and other are
+    /// equals.
     pub fn eq<U: StateContract + PartialEq<T>>(&self, other: impl Into<TState<U>>) -> RState<bool> {
         let other = other.into();
         Map2::read_map(self.clone(), other, |s1: &T, s2: &U| { s2 == s1 })
     }
-}
 
-impl WidgetState<bool> {
-    pub fn choice<T: StateContract>(&self, s1: impl Into<RState<T>>, s2: impl Into<RState<T>>) -> RState<T> {
-        Map3::read_map(self.clone(), s1, s2,
-            |boolean: &bool, s1: &T, s2: &T| {
-                           if *boolean {
-                               s1.clone()
-                           } else {
-                               s2.clone()
-                           }
-            })
+    /// Return a read-only state containing a boolean, which is true when self and other are not
+    /// equals.
+    pub fn ne<U: StateContract + PartialEq<T>>(&self, other: impl Into<TState<U>>) -> RState<bool> {
+        let other = other.into();
+        Map2::read_map(self.clone(), other, |s1: &T, s2: &U| { s2 != s1 })
     }
 }
 
-impl<T: StateContract> Debug for WidgetState<T> {
-    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-        self.0.fmt(f)
+impl<T: Debug> Debug for WidgetState<T> {
+    fn fmt(&self, fmt: &mut Formatter) -> fmt::Result {
+        self.0.fmt(fmt)
+    }
+}
+
+impl<T: Display> Display for WidgetState<T> {
+    fn fmt(&self, fmt: &mut Formatter) -> fmt::Result {
+        self.0.fmt(fmt)
     }
 }
 

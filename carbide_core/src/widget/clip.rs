@@ -73,7 +73,7 @@ impl Render for Clip {
 
         primitives.push(Primitive {
             kind: PrimitiveKind::Clip,
-            rect: Rect::new(self.position, self.dimension),
+            bounding_box: Rect::new(self.position, self.dimension),
         });
 
         for mut child in self.children_mut() {
@@ -82,7 +82,7 @@ impl Render for Clip {
 
         primitives.push(Primitive {
             kind: PrimitiveKind::UnClip,
-            rect: Rect::new(self.position, self.dimension),
+            bounding_box: Rect::new(self.position, self.dimension),
         });
     }
 }
