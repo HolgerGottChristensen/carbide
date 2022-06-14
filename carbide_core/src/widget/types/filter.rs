@@ -1,9 +1,16 @@
+
+
+/// Filter struct containing a matrix of filter weights that can be applied to change the rendering
+/// of a sub tree. For more information on image filters look at:
+/// https://en.wikipedia.org/wiki/Kernel_(image_processing)
 #[derive(Clone, Debug)]
 pub struct ImageFilter {
     pub filter: Vec<ImageFilterValue>,
 }
 
 impl ImageFilter {
+
+    /// Applying this filter will sharpen the image
     pub fn sharpen() -> ImageFilter {
         ImageFilter {
             filter: vec![
@@ -16,6 +23,8 @@ impl ImageFilter {
         }
     }
 
+    /// The sobel filter is used to detect edges: https://en.wikipedia.org/wiki/Sobel_operator
+    /// Another edge detection filter is [Self::prewit()]
     pub fn sobel() -> ImageFilter {
         let mut entries = ImageFilter::sobel_x().filter;
         entries.extend(ImageFilter::sobel_y().filter);
@@ -25,6 +34,7 @@ impl ImageFilter {
         }
     }
 
+    /// The x component of the sobel filter
     pub fn sobel_x() -> ImageFilter {
         ImageFilter {
             filter: vec![
@@ -38,6 +48,7 @@ impl ImageFilter {
         }
     }
 
+    /// The y component of the sobel filter
     pub fn sobel_y() -> ImageFilter {
         ImageFilter {
             filter: vec![
@@ -51,6 +62,9 @@ impl ImageFilter {
         }
     }
 
+    /// The prewit filter can be used to detect edges in an image.
+    /// For more information on the filter look at: https://en.wikipedia.org/wiki/Prewitt_operator
+    /// Another edge detection filter is [Self::sobel()]
     pub fn prewit() -> ImageFilter {
         let mut entries = ImageFilter::prewit_x().filter;
         entries.extend(ImageFilter::prewit_y().filter);
@@ -60,6 +74,7 @@ impl ImageFilter {
         }
     }
 
+    /// The x component of the prewit filter
     pub fn prewit_x() -> ImageFilter {
         ImageFilter {
             filter: vec![
@@ -73,6 +88,7 @@ impl ImageFilter {
         }
     }
 
+    /// The y component of the prewit filter
     pub fn prewit_y() -> ImageFilter {
         ImageFilter {
             filter: vec![
@@ -86,6 +102,8 @@ impl ImageFilter {
         }
     }
 
+    /// Normalize a filter by calculating the sum and dividing all filters with that.
+    /// This will make the sum of all the filter values 1.0.
     pub fn normalize(&mut self) {
         let mut acc = 0.0;
         for val in &self.filter {
@@ -97,6 +115,8 @@ impl ImageFilter {
         }
     }
 
+    /// Flip the x and y axis of the filter. This is also the same as changing a convolution to a
+    /// cross-correlation or changing a cross-correlation to a convolution.
     pub fn flip(&mut self) {
         for val in self.filter.iter_mut() {
             let temp = val.offset_x;
@@ -105,11 +125,13 @@ impl ImageFilter {
         }
     }
 
+    /// Convenience function to flip filter and return the resulting filter using [Self::flip()]
     pub fn flipped(mut self) -> ImageFilter {
         self.flip();
         self
     }
 
+    /// Calculate the radius of the filter on the x axis
     pub fn radius_x(&self) -> u32 {
         let mut largest = 0;
         for val in &self.filter {
@@ -121,6 +143,7 @@ impl ImageFilter {
         largest as u32
     }
 
+    /// Calculate the radius of the filter on the y axis
     pub fn radius_y(&self) -> u32 {
         let mut largest = 0;
         for val in &self.filter {
@@ -133,6 +156,7 @@ impl ImageFilter {
     }
 }
 
+/// A single filter value containing the position in the matrix and a weight.
 #[derive(Clone, Debug)]
 pub struct ImageFilterValue {
     pub offset_x: i32,
