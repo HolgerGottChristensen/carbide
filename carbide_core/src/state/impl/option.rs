@@ -92,13 +92,13 @@ impl<T: StateContract, U: StateContract> TState<Option<(T, U)>> {
         let a = Map1::read_map(self.clone(), |a: &Option<(T, U)>| {
                 match a {
                     None => None,
-                    Some((b, _)) => b.clone()
+                    Some((b, _)) => Some(b.clone())
                 }
             });
         let b = Map1::read_map(self.clone(), |a: &Option<(T, U)>| {
                 match a {
                     None => None,
-                    Some((_, b)) => b.clone()
+                    Some((_, b)) => Some(b.clone())
                 }
             });
 
