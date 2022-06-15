@@ -1,5 +1,6 @@
 use crate::draw::{Dimension, Position};
 use crate::prelude::*;
+use crate::CommonWidgetImpl;
 
 /// A basic, non-interactive rectangle shape widget.
 #[derive(Debug, Clone, Widget)]
@@ -22,55 +23,7 @@ impl Hidden {
     }
 }
 
-impl CommonWidget for Hidden {
-    fn id(&self) -> WidgetId {
-        self.id
-    }
-
-    fn set_id(&mut self, id: WidgetId) {
-        self.id = id;
-    }
-
-    fn children(&self) -> WidgetIter {
-        if self.child.flag() == Flags::PROXY {
-            self.child.children()
-        } else {
-            WidgetIter::single(&self.child)
-        }
-    }
-
-    fn children_mut(&mut self) -> WidgetIterMut {
-        if self.child.flag() == Flags::PROXY {
-            self.child.children_mut()
-        } else {
-            WidgetIterMut::single(&mut self.child)
-        }
-    }
-
-    fn children_direct(&mut self) -> WidgetIterMut {
-        WidgetIterMut::single(&mut self.child)
-    }
-
-    fn children_direct_rev(&mut self) -> WidgetIterMut {
-        WidgetIterMut::single(&mut self.child)
-    }
-
-    fn position(&self) -> Position {
-        self.position
-    }
-
-    fn set_position(&mut self, position: Position) {
-        self.position = position;
-    }
-
-    fn dimension(&self) -> Dimension {
-        self.dimension
-    }
-
-    fn set_dimension(&mut self, dimension: Dimension) {
-        self.dimension = dimension
-    }
-}
+CommonWidgetImpl!(Hidden, self, id: self.id, child: self.child, position: self.position, dimension: self.dimension);
 
 impl Render for Hidden {
     // Because we try to hide all children, we just stop the rendering tree.

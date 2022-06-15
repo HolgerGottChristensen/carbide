@@ -33,10 +33,6 @@ impl CommonWidget for Filter {
         self.id
     }
 
-    fn set_id(&mut self, id: WidgetId) {
-        self.id = id;
-    }
-
     fn children(&self) -> WidgetIter {
         if self.child.flag() == Flags::PROXY {
             self.child.children()

@@ -98,10 +98,6 @@ impl<T: StateContract, U: Delegate<T>> CommonWidget for ForEach<T, U> {
         self.id
     }
 
-    fn set_id(&mut self, id: Uuid) {
-        self.id = id;
-    }
-
     fn flag(&self) -> Flags {
         Flags::PROXY
     }

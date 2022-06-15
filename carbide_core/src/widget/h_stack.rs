@@ -55,10 +55,6 @@ impl CommonWidget for HStack {
         self.id
     }
 
-    fn set_id(&mut self, id: WidgetId) {
-        self.id = id;
-    }
-
     fn children(&self) -> WidgetIter {
         let contains_proxy_or_ignored = self.children.iter().fold(false, |a, b| a || (b.flag() == Flags::PROXY || b.flag() == Flags::IGNORE));
         if !contains_proxy_or_ignored {

@@ -76,10 +76,6 @@ impl CommonWidget for Blur {
         self.id
     }
 
-    fn set_id(&mut self, id: WidgetId) {
-        self.id = id;
-    }
-
     fn children(&self) -> WidgetIter {
         WidgetIter::Empty
     }

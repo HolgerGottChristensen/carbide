@@ -44,10 +44,6 @@ impl CommonWidget for Overlay {
         self.id
     }
 
-    fn set_id(&mut self, id: WidgetId) {
-        self.id = id;
-    }
-
     fn children(&self) -> WidgetIter {
         WidgetIter::borrow(self.child.borrow())
     }

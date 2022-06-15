@@ -7,7 +7,6 @@ use crate::widget::WidgetId;
 
 pub trait CommonWidget {
     fn id(&self) -> WidgetId;
-    fn set_id(&mut self, id: WidgetId);
     fn flag(&self) -> Flags {
         Flags::EMPTY
     }
@@ -103,10 +102,6 @@ macro_rules! CommonWidgetImpl {
                 $id_expr
             }
 
-            fn set_id(&mut $self, id: carbide_core::widget::WidgetId) {
-                $id_expr = id;
-            }
-
             $(
                 fn alignment(&$self) -> Box<dyn carbide_core::layout::Layouter> {
                     $alignment.clone()
@@ -175,10 +170,6 @@ macro_rules! CommonWidgetImpl {
         impl carbide_core::widget::CommonWidget for $typ {
             fn id(&$self) -> carbide_core::widget::WidgetId {
                 $id_expr
-            }
-
-            fn set_id(&mut $self, id: carbide_core::widget::WidgetId) {
-                $id_expr = id;
             }
 
             $(
@@ -259,10 +250,6 @@ macro_rules! CommonWidgetImpl {
         impl carbide_core::widget::CommonWidget for $typ {
             fn id(&$self) -> carbide_core::widget::WidgetId {
                 $id_expr
-            }
-
-            fn set_id(&mut $self, id: carbide_core::widget::WidgetId) {
-                $id_expr = id;
             }
 
             $(

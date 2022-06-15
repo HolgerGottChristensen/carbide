@@ -28,10 +28,6 @@ impl<T: Widget + ?Sized> CommonWidget for Box<T> {
         self.deref().id()
     }
 
-    fn set_id(&mut self, id: WidgetId) {
-        self.deref_mut().set_id(id);
-    }
-
     fn flag(&self) -> Flags {
         self.deref().flag()
     }

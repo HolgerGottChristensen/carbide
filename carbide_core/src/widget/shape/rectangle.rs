@@ -9,6 +9,7 @@ use crate::widget::shape::{Shape, tessellate};
 use crate::widget::types::ShapeStyle;
 use crate::widget::types::StrokeStyle;
 use crate::widget::types::PrimitiveStore;
+use crate::CommonWidgetImpl;
 
 /// A basic, non-interactive rectangle shape widget.
 #[derive(Debug, Clone, Widget)]
@@ -162,47 +163,7 @@ impl Rectangle {
     }
 }
 
-impl CommonWidget for Rectangle {
-    fn id(&self) -> WidgetId {
-        self.id
-    }
-
-    fn set_id(&mut self, id: WidgetId) {
-        self.id = id;
-    }
-
-    fn children(&self) -> WidgetIter {
-        WidgetIter::Empty
-    }
-
-    fn children_mut(&mut self) -> WidgetIterMut {
-        WidgetIterMut::Empty
-    }
-
-    fn children_direct(&mut self) -> WidgetIterMut {
-        WidgetIterMut::Empty
-    }
-
-    fn children_direct_rev(&mut self) -> WidgetIterMut {
-        WidgetIterMut::Empty
-    }
-
-    fn position(&self) -> Position {
-        self.position
-    }
-
-    fn set_position(&mut self, position: Position) {
-        self.position = position;
-    }
-
-    fn dimension(&self) -> Dimension {
-        self.dimension
-    }
-
-    fn set_dimension(&mut self, dimension: Dimension) {
-        self.dimension = dimension
-    }
-}
+CommonWidgetImpl!(Rectangle, self, id: self.id, position: self.position, dimension: self.dimension);
 
 impl Render for Rectangle {
     fn get_primitives(&mut self, primitives: &mut Vec<Primitive>, _env: &mut Environment) {

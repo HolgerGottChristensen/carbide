@@ -170,10 +170,6 @@ impl CommonWidget for MouseArea {
         self.id
     }
 
-    fn set_id(&mut self, id: WidgetId) {
-        self.id = id;
-    }
-
     fn flag(&self) -> Flags {
         Flags::FOCUSABLE
     }

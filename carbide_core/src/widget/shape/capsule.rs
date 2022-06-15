@@ -9,6 +9,7 @@ use crate::widget::shape::{Shape, tessellate};
 use crate::widget::types::ShapeStyle;
 use crate::widget::types::StrokeStyle;
 use crate::widget::types::PrimitiveStore;
+use crate::CommonWidgetImpl;
 
 /// A basic, non-interactive rectangle shape widget.
 #[derive(Debug, Clone, Widget)]
@@ -72,47 +73,7 @@ impl Capsule {
     }
 }
 
-impl CommonWidget for Capsule {
-    fn id(&self) -> WidgetId {
-        self.id
-    }
-
-    fn set_id(&mut self, id: WidgetId) {
-        self.id = id;
-    }
-
-    fn children(&self) -> WidgetIter {
-        WidgetIter::Empty
-    }
-
-    fn children_mut(&mut self) -> WidgetIterMut {
-        WidgetIterMut::Empty
-    }
-
-    fn children_direct(&mut self) -> WidgetIterMut {
-        WidgetIterMut::Empty
-    }
-
-    fn children_direct_rev(&mut self) -> WidgetIterMut {
-        WidgetIterMut::Empty
-    }
-
-    fn position(&self) -> Position {
-        self.position
-    }
-
-    fn set_position(&mut self, position: Position) {
-        self.position = position;
-    }
-
-    fn dimension(&self) -> Dimension {
-        self.dimension
-    }
-
-    fn set_dimension(&mut self, dimension: Dimension) {
-        self.dimension = dimension
-    }
-}
+CommonWidgetImpl!(Capsule, self, id: self.id, position: self.position, dimension: self.dimension);
 
 impl Shape for Capsule {
     fn get_triangle_store_mut(&mut self) -> &mut PrimitiveStore {

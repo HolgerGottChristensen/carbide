@@ -67,10 +67,6 @@ impl<T: Hash + StateContract + PartialEq + Eq  + 'static> carbide_core::widget::
         self.id
     }
 
-    fn set_id(&mut self, id: carbide_core::widget::WidgetId) {
-        self.id = id;
-    }
-
     fn children(&self) -> carbide_core::widget::WidgetIter {
         if (self.current_child).flag() == carbide_core::flags::Flags::PROXY {
             (self.current_child).children()

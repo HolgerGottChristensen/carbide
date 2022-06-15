@@ -386,10 +386,6 @@ impl CommonWidget for Scroll {
         self.id
     }
 
-    fn set_id(&mut self, id: WidgetId) {
-        self.id = id;
-    }
-
     fn flag(&self) -> Flags {
         Flags::EMPTY
     }

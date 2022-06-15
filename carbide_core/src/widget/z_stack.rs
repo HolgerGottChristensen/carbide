@@ -78,10 +78,6 @@ impl CommonWidget for ZStack {
         self.id
     }
 
-    fn set_id(&mut self, id: WidgetId) {
-        self.id = id;
-    }
-
     fn alignment(&self) -> Box<dyn Layouter> {
         self.alignment.clone()
     }

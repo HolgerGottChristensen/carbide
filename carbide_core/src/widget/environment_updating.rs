@@ -2,6 +2,7 @@ use crate::draw::{Dimension, Position};
 use crate::event::{KeyboardEvent, KeyboardEventHandler, MouseEvent, MouseEventHandler, OtherEventHandler, WidgetEvent};
 use crate::focus::{Focusable, Refocus};
 use crate::prelude::*;
+use crate::CommonWidgetImpl;
 
 #[derive(Debug, Clone, Widget)]
 #[carbide_derive(Layout, StateSync)]
@@ -169,60 +170,6 @@ impl Render for EnvUpdating {
     }
 }
 
-
-impl CommonWidget for EnvUpdating {
-    fn id(&self) -> Uuid {
-        self.id
-    }
-
-    fn set_id(&mut self, id: Uuid) {
-        self.id = id;
-    }
-
-    fn flag(&self) -> Flags {
-        Flags::EMPTY
-    }
-
-    fn children(&self) -> WidgetIter {
-        if self.child.flag() == Flags::PROXY {
-            self.child.children()
-        } else {
-            WidgetIter::single(&self.child)
-        }
-    }
-
-    fn children_mut(&mut self) -> WidgetIterMut {
-        if self.child.flag() == Flags::PROXY {
-            self.child.children_mut()
-        } else {
-            WidgetIterMut::single(&mut self.child)
-        }
-    }
-
-    fn children_direct(&mut self) -> WidgetIterMut {
-        WidgetIterMut::single(&mut self.child)
-    }
-
-    fn children_direct_rev(&mut self) -> WidgetIterMut {
-        WidgetIterMut::single(&mut self.child)
-    }
-
-    fn position(&self) -> Position {
-        self.position
-    }
-
-    fn set_position(&mut self, position: Position) {
-        self.position = position;
-    }
-
-    fn dimension(&self) -> Dimension {
-        self.dimension
-    }
-
-    fn set_dimension(&mut self, dimensions: Dimension) {
-        self.dimension = dimensions
-    }
-}
-
+CommonWidgetImpl!(EnvUpdating, self, id: self.id, child: self.child, position: self.position, dimension: self.dimension);
 
 impl WidgetExt for EnvUpdating {}

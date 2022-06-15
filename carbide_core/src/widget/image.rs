@@ -8,6 +8,7 @@ use crate::mesh::{MODE_ICON, MODE_IMAGE};
 use crate::prelude::*;
 use crate::render::PrimitiveKind;
 use crate::widget::types::ScaleMode;
+use crate::CommonWidgetImpl;
 
 /// A primitive and basic widget for drawing an `Image`.
 #[derive(Debug, Clone, Widget)]
@@ -167,50 +168,6 @@ impl Render for Image {
     }
 }
 
-impl CommonWidget for Image {
-    fn id(&self) -> WidgetId {
-        self.id
-    }
-
-    fn set_id(&mut self, id: WidgetId) {
-        self.id = id
-    }
-
-    fn children(&self) -> WidgetIter {
-        WidgetIter::Empty
-    }
-
-    fn children_mut(&mut self) -> WidgetIterMut {
-        WidgetIterMut::Empty
-    }
-
-    fn children_direct(&mut self) -> WidgetIterMut {
-        WidgetIterMut::Empty
-    }
-
-    fn children_direct_rev(&mut self) -> WidgetIterMut {
-        WidgetIterMut::Empty
-    }
-
-    fn position(&self) -> Position {
-        self.position
-    }
-
-    fn set_position(&mut self, position: Position) {
-        self.position = position;
-    }
-
-    fn flexibility(&self) -> u32 {
-        10
-    }
-
-    fn dimension(&self) -> Dimension {
-        self.dimension
-    }
-
-    fn set_dimension(&mut self, dimension: Dimension) {
-        self.dimension = dimension
-    }
-}
+CommonWidgetImpl!(Image, self, id: self.id, position: self.position, dimension: self.dimension, flexibility: 10);
 
 impl WidgetExt for Image {}
