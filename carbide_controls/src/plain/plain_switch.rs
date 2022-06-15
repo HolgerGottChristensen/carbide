@@ -112,7 +112,7 @@ impl PlainSwitch {
             .spacing(5.0);
 
         Box::new(PlainSwitch {
-            id: WidgetId::new_v4(),
+            id: WidgetId::new(),
             focus,
             child,
             position: Position::new(0.0, 0.0),
@@ -133,10 +133,6 @@ impl Focusable for PlainSwitch {
 impl CommonWidget for PlainSwitch {
     fn id(&self) -> WidgetId {
         self.id
-    }
-
-    fn set_id(&mut self, id: WidgetId) {
-        self.id = id;
     }
 
     fn flag(&self) -> Flags {

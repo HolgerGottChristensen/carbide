@@ -5,7 +5,7 @@ use carbide_core::cursor::MouseCursor;
 use carbide_core::draw::{Dimension, Position};
 use carbide_core::flags::Flags;
 use carbide_core::focus::Focus;
-use carbide_core::prelude::{EnvironmentColor, Uuid};
+use carbide_core::prelude::{EnvironmentColor};
 use carbide_core::state::{BoolState, FocusState, LocalState, Map3, ReadState, State, StringState};
 use carbide_core::widget::*;
 
@@ -190,7 +190,7 @@ impl Button {
         };
 
         Box::new(Button {
-            id: Uuid::new_v4(),
+            id: WidgetId::new(),
             focus: focus_state,
             child,
             position: Position::new(0.0, 0.0),
@@ -209,10 +209,6 @@ impl Button {
 impl CommonWidget for Button {
     fn id(&self) -> WidgetId {
         self.id
-    }
-
-    fn set_id(&mut self, id: WidgetId) {
-        self.id = id;
     }
 
     fn flag(&self) -> Flags {

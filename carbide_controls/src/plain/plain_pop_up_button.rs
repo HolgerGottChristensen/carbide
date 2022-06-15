@@ -152,7 +152,7 @@ impl<T: StateContract + PartialEq + 'static> PlainPopUpButton<T> {
             delegate(selected_item.clone(), focus.clone());
 
         Box::new(PlainPopUpButton {
-            id: WidgetId::new_v4(),
+            id: WidgetId::new(),
             focus,
             child,
             popup_item_delegate,
@@ -251,10 +251,6 @@ impl<T: StateContract + PartialEq + 'static> MouseEventHandler for PlainPopUpBut
 impl<T: StateContract + PartialEq + 'static> CommonWidget for PlainPopUpButton<T> {
     fn id(&self) -> WidgetId {
         self.id
-    }
-
-    fn set_id(&mut self, id: WidgetId) {
-        self.id = id;
     }
 
     fn flag(&self) -> Flags {

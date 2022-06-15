@@ -109,7 +109,7 @@ impl TextInput {
             .expand_width();
 
         Box::new(TextInput {
-            id: WidgetId::new_v4(),
+            id: WidgetId::new(),
             child,
             position: Default::default(),
             dimension: Default::default(),
@@ -124,10 +124,6 @@ impl TextInput {
 impl CommonWidget for TextInput {
     fn id(&self) -> WidgetId {
         self.id
-    }
-
-    fn set_id(&mut self, id: WidgetId) {
-        self.id = id;
     }
 
     fn children(&self) -> WidgetIter {

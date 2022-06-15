@@ -123,7 +123,7 @@ impl PlainCheckBox {
             .spacing(5.0);
 
         Box::new(PlainCheckBox {
-            id: WidgetId::new_v4(),
+            id: WidgetId::new(),
             focus,
             child,
             position: Position::new(0.0, 0.0),
@@ -144,10 +144,6 @@ impl Focusable for PlainCheckBox {
 impl CommonWidget for PlainCheckBox {
     fn id(&self) -> WidgetId {
         self.id
-    }
-
-    fn set_id(&mut self, id: WidgetId) {
-        self.id = id;
     }
 
     fn flag(&self) -> Flags {

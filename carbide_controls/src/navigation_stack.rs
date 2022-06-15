@@ -19,7 +19,7 @@ pub struct NavigationStack {
 impl NavigationStack {
     pub fn new(initial: Box<dyn Widget>) -> Box<NavigationStack> {
         Box::new(NavigationStack {
-            id: WidgetId::new_v4(),
+            id: WidgetId::new(),
             position: Default::default(),
             dimension: Default::default(),
             stack: vec![],

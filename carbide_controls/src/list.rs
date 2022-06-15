@@ -52,7 +52,7 @@ impl<T: StateContract, U: Delegate<T> + 'static> List<T, U> {
         let internal_model = model.into();
 
         Box::new(List {
-            id: WidgetId::new_v4(),
+            id: WidgetId::new(),
             child: Scroll::new(
                 VStack::new(vec![
                     Rectangle::new()
@@ -404,9 +404,6 @@ impl<T: StateContract, U: Delegate<T> + 'static> CommonWidget for List<T, U> {
         self.id
     }
 
-    fn set_id(&mut self, id: WidgetId) {
-        self.id = id;
-    }
 
     fn flag(&self) -> Flags {
         Flags::EMPTY

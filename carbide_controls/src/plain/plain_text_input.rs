@@ -212,7 +212,7 @@ impl PlainTextInput {
             ]).frame_fixed_height(30);
 
         Box::new(PlainTextInput {
-            id: WidgetId::new_v4(),
+            id: WidgetId::new(),
             child,
             position: Default::default(),
             dimension: Default::default(),
@@ -956,10 +956,6 @@ impl CommonWidget for PlainTextInput {
 
     fn flag(&self) -> Flags {
         Flags::FOCUSABLE
-    }
-
-    fn set_id(&mut self, id: WidgetId) {
-        self.id = id;
     }
 
     fn children(&self) -> WidgetIter {

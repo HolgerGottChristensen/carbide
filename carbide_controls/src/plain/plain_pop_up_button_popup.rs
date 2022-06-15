@@ -19,7 +19,7 @@ pub struct PlainPopUpButtonPopUp {
 impl PlainPopUpButtonPopUp {
     pub fn new(child: Box<dyn Widget>, hover_model: TState<Vec<bool>>) -> Box<Self> {
         Box::new(PlainPopUpButtonPopUp {
-            id: WidgetId::new_v4(),
+            id: WidgetId::new(),
             child,
             position: Default::default(),
             dimension: Default::default(),
@@ -104,10 +104,6 @@ impl MouseEventHandler for PlainPopUpButtonPopUp {
 impl CommonWidget for PlainPopUpButtonPopUp {
     fn id(&self) -> WidgetId {
         self.id
-    }
-
-    fn set_id(&mut self, id: WidgetId) {
-        self.id = id;
     }
 
     fn children(&self) -> WidgetIter {

@@ -118,7 +118,7 @@ impl<T: StateContract + PartialEq> PlainRadioButton<T> {
             .spacing(5.0);
 
         Box::new(PlainRadioButton {
-            id: WidgetId::new_v4(),
+            id: WidgetId::new(),
             focus: focus_state,
             child,
             position: Position::new(0.0, 0.0),
@@ -141,10 +141,6 @@ impl<T: StateContract + PartialEq> Focusable for PlainRadioButton<T> {
 impl<T: StateContract + PartialEq> CommonWidget for PlainRadioButton<T> {
     fn id(&self) -> WidgetId {
         self.id
-    }
-
-    fn set_id(&mut self, id: WidgetId) {
-        self.id = id;
     }
 
     fn flag(&self) -> Flags {

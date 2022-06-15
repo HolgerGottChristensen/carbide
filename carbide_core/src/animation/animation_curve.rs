@@ -1,6 +1,6 @@
-use num::traits::FloatConst;
-
 use crate::draw::Position;
+
+const PI: f64 = std::f64::consts::PI;
 
 /* Animation curves based on https://easings.net/# and https://github.com/flutter/flutter/blob/f4abaa0735/packages/flutter/lib/src/animation/curves.dart#L1681*/
 
@@ -257,16 +257,16 @@ pub fn inverse(input: f64, curve: fn(f64) -> f64) -> f64 {
 pub fn elastic_helper(input: f64, period: f64) -> f64 {
     let s = period / 4.0;
     let t = input - 1.0;
-    -f64::powf(2.0, 10.0 * t) * f64::sin((t - s) * (f64::PI() * 2.0) / period)
+    -f64::powf(2.0, 10.0 * t) * f64::sin((t - s) * (PI * 2.0) / period)
 }
 
 pub fn elastic_in_out_helper(input: f64, period: f64) -> f64 {
     let s = period / 4.0;
     let t = 2.0 * input - 1.0;
     if t < 0.0 {
-        -0.5 * f64::powf(2.0, 10.0 * t) * f64::sin((t - s) * (f64::PI() * 2.0) / period)
+        -0.5 * f64::powf(2.0, 10.0 * t) * f64::sin((t - s) * (PI * 2.0) / period)
     } else {
-        f64::powf(2.0, -10.0 * t) * f64::sin((t - s) * (f64::PI() * 2.0) / period) * 0.5 + 1.0
+        f64::powf(2.0, -10.0 * t) * f64::sin((t - s) * (PI * 2.0) / period) * 0.5 + 1.0
     }
 }
 

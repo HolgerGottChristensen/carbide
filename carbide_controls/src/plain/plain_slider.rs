@@ -151,7 +151,7 @@ impl PlainSlider {
         ];
 
         Box::new(PlainSlider {
-            id: WidgetId::new_v4(),
+            id: WidgetId::new(),
             focus,
             child: children,
             position: Position::new(0.0, 0.0),
@@ -273,10 +273,6 @@ impl Layout for PlainSlider {
 impl CommonWidget for PlainSlider {
     fn id(&self) -> WidgetId {
         self.id
-    }
-
-    fn set_id(&mut self, id: WidgetId) {
-        self.id = id;
     }
 
     fn flag(&self) -> Flags {

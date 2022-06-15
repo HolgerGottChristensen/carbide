@@ -58,7 +58,7 @@ impl Color {
         let duration = now.duration_since(UNIX_EPOCH).expect("Could not get duration since UNIX_EPOCH");
         let duration_since = duration.as_millis() / 8 % 360;
         return hsl(
-            degrees(duration_since as f32),
+            f32::to_radians(duration_since as f32),
             1.0,
             0.5
         )
@@ -207,10 +207,10 @@ impl Color {
     /// rotating the hue by 180 degrees.
     pub fn complement(self) -> Color {
         match self {
-            Color::Hsla(h, s, l, a) => hsla(h + degrees(180.0), s, l, a),
+            Color::Hsla(h, s, l, a) => hsla(h + f32::to_radians(180.0), s, l, a),
             Color::Rgba(r, g, b, a) => {
                 let (h, s, l) = rgb_to_hsl(r, g, b);
-                hsla(h + degrees(180.0), s, l, a)
+                hsla(h + f32::to_radians(180.0), s, l, a)
             }
         }
     }
@@ -546,7 +546,7 @@ pub fn rgb_to_hsl(r: f32, g: f32, b: f32) -> (f32, f32, f32) {
         // If there's no difference in the channels we have grayscale, so the hue is undefined.
         0.0
     } else {
-        degrees(60.0)
+        f32::to_radians(60.0)
             * if c_max == r {
             fmod((g - b) / c, 6)
         } else if c_max == g {
@@ -568,7 +568,7 @@ pub fn rgb_to_hsl(r: f32, g: f32, b: f32) -> (f32, f32, f32) {
 /// Pure function for converting hsl to rgb.
 pub fn hsl_to_rgb(hue: f32, saturation: f32, lightness: f32) -> (f32, f32, f32) {
     let chroma = (1.0 - (2.0 * lightness - 1.0).abs()) * saturation;
-    let hue = hue / degrees(60.0);
+    let hue = hue / f32::to_radians(60.0);
     let x = chroma * (1.0 - (fmod(hue, 2) - 1.0).abs());
     let (r, g, b) = match hue {
         hue if hue < 0.0 => (0.0, 0.0, 0.0),

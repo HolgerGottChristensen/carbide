@@ -21,7 +21,7 @@ pub struct PlainPopUpButtonPopUpItem<T> where T: StateContract {
 impl<T: StateContract> PlainPopUpButtonPopUpItem<T> {
     pub fn new(child: Box<dyn Widget>, hovered: TState<bool>, item: TState<T>, selected_item: TState<T>) -> Box<Self> {
         Box::new(PlainPopUpButtonPopUpItem {
-            id: WidgetId::new_v4(),
+            id: WidgetId::new(),
             child,
             position: Default::default(),
             dimension: Default::default(),
@@ -74,10 +74,6 @@ impl<T: StateContract> MouseEventHandler for PlainPopUpButtonPopUpItem<T> {
 impl<T: StateContract> CommonWidget for PlainPopUpButtonPopUpItem<T> {
     fn id(&self) -> WidgetId {
         self.id
-    }
-
-    fn set_id(&mut self, id: WidgetId) {
-        self.id = id;
     }
 
     fn children(&self) -> WidgetIter {
