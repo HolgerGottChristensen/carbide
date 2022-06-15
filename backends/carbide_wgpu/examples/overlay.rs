@@ -56,7 +56,7 @@ fn main() {
 #[derive(Clone, Debug, Widget)]
 #[carbide_exclude(KeyboardEvent, Layout)]
 struct Over {
-    id: Id,
+    id: WidgetId,
     position: Position,
     dimension: Dimension,
     overlay_widget: Overlay,
@@ -66,7 +66,7 @@ impl Over {
     pub fn new(showing: BoolState) -> Box<Over> {
         Box::new(
             Over {
-                id: Id::new_v4(),
+                id: WidgetId::new_v4(),
                 position: Position::new(0.0, 0.0),
                 dimension: Dimension::new(100.0, 100.0),
                 overlay_widget: Overlay::new(
@@ -128,11 +128,11 @@ impl Layout for Over {
 }*/
 
 impl CommonWidget for Over {
-    fn id(&self) -> Id {
+    fn id(&self) -> WidgetId {
         self.id
     }
 
-    fn set_id(&mut self, id: Id) {
+    fn set_id(&mut self, id: WidgetId) {
         self.id = id;
     }
 

@@ -82,5 +82,5 @@ mod mouse_area;
 mod popup_menu;
 mod flag;
 
-pub type Id = uuid::Uuid;
+pub type WidgetId = uuid::Uuid;
 pub type ColoredPoint = (Position, crate::color::Rgba);

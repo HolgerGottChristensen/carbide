@@ -7,7 +7,7 @@ use crate::event::{MouseButton, MouseEventHandler};
 #[derive(Debug, Clone, Widget)]
 #[carbide_exclude(MouseEvent, Layout)]
 pub struct PopupMenu {
-    id: Id,
+    id: WidgetId,
     child: Box<dyn Widget>,
     position: Position,
     dimension: Dimension,
@@ -40,7 +40,7 @@ impl PopupMenu {
 
         if top_level {
             Box::new(PopupMenu {
-                id: Id::new_v4(),
+                id: WidgetId::new_v4(),
                 child: item,
                 position: Default::default(),
                 dimension: Default::default(),
@@ -55,7 +55,7 @@ impl PopupMenu {
             let hovered = LocalState::new(false);
 
             Box::new(PopupMenu {
-                id: Id::new_v4(),
+                id: WidgetId::new_v4(),
                 child: MouseArea::new(item).hovered(hovered),
                 position: Default::default(),
                 dimension: Default::default(),

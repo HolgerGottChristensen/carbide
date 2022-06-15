@@ -11,7 +11,7 @@ use carbide_core::flags::Flags;
 use carbide_core::focus::Focus;
 use carbide_core::layout::Layout;
 use carbide_core::state::{BoolState, FocusState, ReadState, State};
-use carbide_core::widget::{CommonWidget, Id, Widget, WidgetExt, WidgetIter, WidgetIterMut};
+use carbide_core::widget::{CommonWidget, WidgetId, Widget, WidgetExt, WidgetIter, WidgetIterMut};
 
 pub trait Action: Fn(&mut Environment, ModifierKey) + DynClone {}
 
@@ -22,7 +22,7 @@ dyn_clone::clone_trait_object!(Action);
 #[derive(Clone, Widget)]
 #[carbide_exclude(MouseEvent, KeyboardEvent, OtherEvent)]
 pub struct MouseArea {
-    id: Id,
+    id: WidgetId,
     #[state]
     focus: FocusState,
     child: Box<dyn Widget>,
@@ -84,7 +84,7 @@ impl MouseArea {
 
     pub fn new(child: Box<dyn Widget>) -> Box<Self> {
         Box::new(MouseArea {
-            id: Id::new_v4(),
+            id: WidgetId::new_v4(),
             focus: Focus::Unfocused.into(),
             child,
             position: Position::new(0.0, 0.0),
@@ -166,11 +166,11 @@ impl MouseEventHandler for MouseArea {
 }
 
 impl CommonWidget for MouseArea {
-    fn id(&self) -> Id {
+    fn id(&self) -> WidgetId {
         self.id
     }
 
-    fn set_id(&mut self, id: Id) {
+    fn set_id(&mut self, id: WidgetId) {
         self.id = id;
     }
 

@@ -4,7 +4,7 @@ use carbide_core::draw::{Dimension, Position};
 use carbide_core::flags::Flags;
 use carbide_core::prelude::TState;
 use carbide_core::state::{LocalState, StateExt};
-use carbide_core::widget::{CommonWidget, CornerRadii, EdgeInsets, HStack, Id, IfElse, Rectangle, RoundedRectangle, Spacer, Text, Widget, WidgetExt, WidgetIter, WidgetIterMut, ZStack};
+use carbide_core::widget::{CommonWidget, CornerRadii, EdgeInsets, HStack, WidgetId, IfElse, Rectangle, RoundedRectangle, Spacer, Text, Widget, WidgetExt, WidgetIter, WidgetIterMut, ZStack};
 
 #[derive(Debug, Clone)]
 pub struct Message {
@@ -23,7 +23,7 @@ impl Message {
 
 #[derive(Debug, Clone, Widget)]
 pub struct MessageBubble {
-    id: Id,
+    id: WidgetId,
     position: Position,
     dimension: Dimension,
     child: Box<dyn Widget>,
@@ -49,7 +49,7 @@ impl MessageBubble {
         ]);
 
         Box::new(MessageBubble {
-            id: Id::new_v4(),
+            id: WidgetId::new_v4(),
             position: Default::default(),
             dimension: Default::default(),
             child,

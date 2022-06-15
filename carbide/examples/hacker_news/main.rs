@@ -46,11 +46,11 @@ fn main() {
     let env = window.environment_mut();
 
     let news_articles: TState<Option<Vec<Article>>> = LocalState::new(None);
-    let selected_items: TState<HashSet<Id>> = LocalState::new(HashSet::new());
+    let selected_items: TState<HashSet<WidgetId>> = LocalState::new(HashSet::new());
 
     let news_articles_for_index = news_articles.clone();
 
-    let first_selected_article = selected_items.mapped(move |a: &HashSet<Id>| {
+    let first_selected_article = selected_items.mapped(move |a: &HashSet<WidgetId>| {
         match (news_articles_for_index.clone().value().deref(), a.iter().next()) {
             (Some(l), Some(id)) => {
                 l.iter().find(|&a| &a.carbide_id == id).cloned()
@@ -59,14 +59,14 @@ fn main() {
         }
     });
 
-    fn id_function(article: &Article) -> Id { article.carbide_id }
+    fn id_function(article: &Article) -> WidgetId { article.carbide_id }
 
     task!(env, news_articles := {
         let response: Vec<u64> = reqwest::get("https://hacker-news.firebaseio.com/v0/topstories.json").await.unwrap().json().await.unwrap();
         let texts = response.iter().take(25).map(|id| {
             async move {
                 let mut article = reqwest::get(format!("https://hacker-news.firebaseio.com/v0/item/{}.json", id)).await.unwrap().json::<Article>().await.unwrap();
-                article.carbide_id = Id::new_v4();
+                article.carbide_id = WidgetId::new_v4();
                 article
             }
         });
@@ -81,7 +81,7 @@ fn main() {
     let delegate = move |article: TState<Article>, index: UsizeState| -> Box<dyn Widget> {
         let selected_item = article.clone();
 
-        let selected = selected_items_delegate.mapped(move |map: &HashSet<Id>| {
+        let selected = selected_items_delegate.mapped(move |map: &HashSet<WidgetId>| {
             map.contains(&id_function(&*selected_item.value()))
         });
 

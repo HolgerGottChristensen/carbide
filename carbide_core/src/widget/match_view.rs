@@ -63,11 +63,11 @@ impl<T: Hash + StateContract + PartialEq + Eq  + 'static> StateSync for Match<T>
 }
 
 impl<T: Hash + StateContract + PartialEq + Eq  + 'static> carbide_core::widget::CommonWidget for Match<T> {
-    fn id(&self) -> carbide_core::widget::Id {
+    fn id(&self) -> carbide_core::widget::WidgetId {
         self.id
     }
 
-    fn set_id(&mut self, id: carbide_core::widget::Id) {
+    fn set_id(&mut self, id: carbide_core::widget::WidgetId) {
         self.id = id;
     }
 

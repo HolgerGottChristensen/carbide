@@ -6,7 +6,7 @@ use carbide_core::flags::Flags;
 use carbide_core::focus::{Focus, Focusable, Refocus};
 use carbide_core::prelude::{Environment, StateContract, StateSync};
 use carbide_core::state::{FocusState, LocalState, Map2, Map4, MapOwnedState, ReadState, StateExt, StateKey, StringState};
-use carbide_core::widget::{CommonWidget, HStack, Id, Rectangle, Spacer, Text, Widget, WidgetExt, WidgetIter, WidgetIterMut, ZStack};
+use carbide_core::widget::{CommonWidget, HStack, WidgetId, Rectangle, Spacer, Text, Widget, WidgetExt, WidgetIter, WidgetIterMut, ZStack};
 
 use crate::carbide_core::prelude::State;
 use crate::PlainButton;
@@ -15,7 +15,7 @@ use crate::types::*;
 #[derive(Debug, Clone, Widget)]
 #[carbide_exclude(Focusable)]
 pub struct PlainCheckBox {
-    id: Id,
+    id: WidgetId,
     #[state]
     focus: FocusState,
     child: Box<dyn Widget>,
@@ -123,7 +123,7 @@ impl PlainCheckBox {
             .spacing(5.0);
 
         Box::new(PlainCheckBox {
-            id: Id::new_v4(),
+            id: WidgetId::new_v4(),
             focus,
             child,
             position: Position::new(0.0, 0.0),
@@ -142,11 +142,11 @@ impl Focusable for PlainCheckBox {
 }
 
 impl CommonWidget for PlainCheckBox {
-    fn id(&self) -> Id {
+    fn id(&self) -> WidgetId {
         self.id
     }
 
-    fn set_id(&mut self, id: Id) {
+    fn set_id(&mut self, id: WidgetId) {
         self.id = id;
     }
 

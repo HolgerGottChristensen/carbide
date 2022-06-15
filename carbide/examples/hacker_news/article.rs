@@ -1,10 +1,10 @@
 use serde::Deserialize;
-use carbide_core::widget::Id;
+use carbide_core::widget::WidgetId;
 
 #[derive(Deserialize, Clone, Debug)]
 pub struct Article {
     #[serde(default)]
-    pub carbide_id: Id,
+    pub carbide_id: WidgetId,
     pub title: String,
     pub url: Option<String>,
     pub by: String,

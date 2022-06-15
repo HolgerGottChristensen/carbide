@@ -9,7 +9,7 @@ use crate::CommonWidgetImpl;
 
 #[derive(Debug, Clone, Widget)]
 pub struct ProgressView {
-    id: Id,
+    id: WidgetId,
     child: Box<dyn Widget>,
     position: Position,
     dimension: Dimension,

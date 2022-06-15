@@ -5,13 +5,13 @@ use crate::environment::Environment;
 use crate::event::{MouseEvent, MouseEventHandler, OtherEventHandler, WidgetEvent};
 use crate::layout::Layout;
 use crate::state::{F64State, LocalState, ReadState, State};
-use crate::widget::{CommonWidget, CrossAxisAlignment, Id, SplitType, Widget, WidgetExt};
+use crate::widget::{CommonWidget, CrossAxisAlignment, WidgetId, SplitType, Widget, WidgetExt};
 use crate::Widget;
 
 #[derive(Clone, Debug, Widget)]
 #[carbide_exclude(Layout, MouseEvent, OtherEvent)]
 pub struct VSplit {
-    id: Id,
+    id: WidgetId,
     position: Position,
     dimension: Dimension,
     // Top - Bottom
@@ -47,7 +47,7 @@ impl VSplit {
 
     fn new_internal(leading: Box<dyn Widget>, trailing: Box<dyn Widget>, split: SplitType) -> Box<Self> {
         Box::new(VSplit {
-            id: Id::new_v4(),
+            id: WidgetId::new_v4(),
             position: Default::default(),
             dimension: Default::default(),
             children: vec![leading, trailing],

@@ -53,7 +53,7 @@ type PopupItemDelegateGenerator<T: StateContract + PartialEq + 'static> = fn(ite
 #[derive(Clone, Widget)]
 #[carbide_exclude(Render, Layout, MouseEvent, KeyboardEvent)]
 pub struct PlainPopUpButton<T> where T: StateContract + PartialEq + 'static {
-    id: Id,
+    id: WidgetId,
     #[state] focus: FocusState,
     child: Box<dyn Widget>,
 
@@ -152,7 +152,7 @@ impl<T: StateContract + PartialEq + 'static> PlainPopUpButton<T> {
             delegate(selected_item.clone(), focus.clone());
 
         Box::new(PlainPopUpButton {
-            id: Id::new_v4(),
+            id: WidgetId::new_v4(),
             focus,
             child,
             popup_item_delegate,
@@ -249,11 +249,11 @@ impl<T: StateContract + PartialEq + 'static> MouseEventHandler for PlainPopUpBut
 }
 
 impl<T: StateContract + PartialEq + 'static> CommonWidget for PlainPopUpButton<T> {
-    fn id(&self) -> Id {
+    fn id(&self) -> WidgetId {
         self.id
     }
 
-    fn set_id(&mut self, id: Id) {
+    fn set_id(&mut self, id: WidgetId) {
         self.id = id;
     }
 

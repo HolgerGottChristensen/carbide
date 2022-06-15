@@ -4,7 +4,7 @@ use crate::CommonWidgetImpl;
 
 #[derive(Debug, Clone, Widget)]
 pub struct ProgressBar {
-    id: Id,
+    id: WidgetId,
     child: Box<dyn Widget>,
     position: Position,
     dimension: Dimension,
@@ -28,7 +28,7 @@ impl ProgressBar {
             .expand_width();
 
         Box::new(ProgressBar {
-            id: Id::new_v4(),
+            id: WidgetId::new_v4(),
             child,
             position: Default::default(),
             dimension: Default::default(),

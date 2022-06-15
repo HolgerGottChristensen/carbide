@@ -4,12 +4,12 @@ use carbide_core::draw::{Dimension, Position};
 use carbide_core::environment::Environment;
 use carbide_core::event::{Key, KeyboardEvent, KeyboardEventHandler, MouseButton, MouseEvent, MouseEventHandler};
 use carbide_core::state::{State, TState};
-use carbide_core::widget::{CommonWidget, Id, Widget, WidgetIter, WidgetIterMut};
+use carbide_core::widget::{CommonWidget, WidgetId, Widget, WidgetIter, WidgetIterMut};
 
 #[derive(Debug, Clone, Widget)]
 #[carbide_exclude(MouseEvent, KeyboardEvent)]
 pub struct PlainPopUpButtonPopUp {
-    id: Id,
+    id: WidgetId,
     child: Box<dyn Widget>,
     position: Position,
     dimension: Dimension,
@@ -19,7 +19,7 @@ pub struct PlainPopUpButtonPopUp {
 impl PlainPopUpButtonPopUp {
     pub fn new(child: Box<dyn Widget>, hover_model: TState<Vec<bool>>) -> Box<Self> {
         Box::new(PlainPopUpButtonPopUp {
-            id: Id::new_v4(),
+            id: WidgetId::new_v4(),
             child,
             position: Default::default(),
             dimension: Default::default(),
@@ -102,11 +102,11 @@ impl MouseEventHandler for PlainPopUpButtonPopUp {
 }
 
 impl CommonWidget for PlainPopUpButtonPopUp {
-    fn id(&self) -> Id {
+    fn id(&self) -> WidgetId {
         self.id
     }
 
-    fn set_id(&mut self, id: Id) {
+    fn set_id(&mut self, id: WidgetId) {
         self.id = id;
     }
 

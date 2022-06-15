@@ -16,7 +16,7 @@ use carbide_core::render::Render;
 use carbide_core::Scalar;
 use carbide_core::state::{AnimatedState, ColorState, F64State, FocusState, LocalState, ReadState, ResStringState, State, StateExt, StringState, TState, U32State};
 use carbide_core::text::{FontSize, Glyph};
-use carbide_core::widget::{CommonWidget, HStack, Id, IfElse, Rectangle, SCALE, Spacer, Text, Widget, WidgetExt, WidgetIter, WidgetIterMut, ZStack};
+use carbide_core::widget::{CommonWidget, HStack, WidgetId, IfElse, Rectangle, SCALE, Spacer, Text, Widget, WidgetExt, WidgetIter, WidgetIterMut, ZStack};
 use carbide_core::widget::Wrap;
 
 use crate::plain::cursor::{Cursor, CursorIndex};
@@ -34,7 +34,7 @@ pub const PASSWORD_CHAR_SMALL: char = '•';
 #[derive(Debug, Clone, Widget)]
 #[carbide_exclude(MouseEvent, KeyboardEvent, OtherEvent)]
 pub struct PlainTextInput {
-    id: Id,
+    id: WidgetId,
     child: Box<dyn Widget>,
     position: Position,
     dimension: Dimension,
@@ -212,7 +212,7 @@ impl PlainTextInput {
             ]).frame_fixed_height(30);
 
         Box::new(PlainTextInput {
-            id: Id::new_v4(),
+            id: WidgetId::new_v4(),
             child,
             position: Default::default(),
             dimension: Default::default(),
@@ -941,7 +941,7 @@ impl OtherEventHandler for PlainTextInput {
 }
 
 impl CommonWidget for PlainTextInput {
-    fn id(&self) -> Id {
+    fn id(&self) -> WidgetId {
         self.id
     }
 
@@ -958,7 +958,7 @@ impl CommonWidget for PlainTextInput {
         Flags::FOCUSABLE
     }
 
-    fn set_id(&mut self, id: Id) {
+    fn set_id(&mut self, id: WidgetId) {
         self.id = id;
     }
 

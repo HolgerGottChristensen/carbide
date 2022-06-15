@@ -24,7 +24,7 @@ use carbide_core::flags::Flags;
 use carbide_core::layout::basic_layouter::BasicLayouter;
 use carbide_core::layout::Layout;
 use carbide_core::layout::layouter::Layouter;
-use carbide_core::prelude::{Environment, Id};
+use carbide_core::prelude::{Environment, WidgetId};
 use carbide_core::render::render::ChildRender;
 use carbide_core::state::environment::Environment;
 use carbide_core::state::state::{CommonState, LocalStateList};
@@ -123,11 +123,11 @@ impl CustomWidget {
 }
 
 impl CommonWidget<GState> for CustomWidget {
-    fn id(&self) -> Id {
+    fn id(&self) -> WidgetId {
         self.id
     }
 
-    fn set_id(&mut self, id: Id) {
+    fn set_id(&mut self, id: WidgetId) {
         self.id = id;
     }
 

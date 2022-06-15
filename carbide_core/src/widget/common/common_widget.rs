@@ -3,11 +3,11 @@ use crate::flags::Flags;
 use crate::focus::Focus;
 use crate::layout::{BasicLayouter, Layouter};
 use crate::widget::common::widget_iterator::{WidgetIter, WidgetIterMut};
-use crate::widget::Id;
+use crate::widget::WidgetId;
 
 pub trait CommonWidget {
-    fn id(&self) -> Id;
-    fn set_id(&mut self, id: Id);
+    fn id(&self) -> WidgetId;
+    fn set_id(&mut self, id: WidgetId);
     fn flag(&self) -> Flags {
         Flags::EMPTY
     }
@@ -99,11 +99,11 @@ pub trait CommonWidget {
 macro_rules! CommonWidgetImpl {
     ($typ:ty, $self:ident, id: $id_expr:expr, child: $child:expr, position: $position:expr, dimension: $dimension:expr $(,flag: $flag:expr)? $(,flexibility: $flexibility:expr)? $(,alignment: $alignment:expr)?) => {
         impl carbide_core::widget::CommonWidget for $typ {
-            fn id(&$self) -> carbide_core::widget::Id {
+            fn id(&$self) -> carbide_core::widget::WidgetId {
                 $id_expr
             }
 
-            fn set_id(&mut $self, id: carbide_core::widget::Id) {
+            fn set_id(&mut $self, id: carbide_core::widget::WidgetId) {
                 $id_expr = id;
             }
 
@@ -173,11 +173,11 @@ macro_rules! CommonWidgetImpl {
 
     ($typ:ty, $self:ident, id: $id_expr:expr, children: $children:expr, position: $position:expr, dimension: $dimension:expr $(,flag: $flag:expr)? $(,flexibility: $flexibility:literal)?) => {
         impl carbide_core::widget::CommonWidget for $typ {
-            fn id(&$self) -> carbide_core::widget::Id {
+            fn id(&$self) -> carbide_core::widget::WidgetId {
                 $id_expr
             }
 
-            fn set_id(&mut $self, id: carbide_core::widget::Id) {
+            fn set_id(&mut $self, id: carbide_core::widget::WidgetId) {
                 $id_expr = id;
             }
 
@@ -257,11 +257,11 @@ macro_rules! CommonWidgetImpl {
 
     ($typ:ty, $self:ident, id: $id_expr:expr, position: $position:expr, dimension: $dimension:expr $(,flag: $flag:expr)? $(,flexibility: $flexibility:literal)?) => {
         impl carbide_core::widget::CommonWidget for $typ {
-            fn id(&$self) -> carbide_core::widget::Id {
+            fn id(&$self) -> carbide_core::widget::WidgetId {
                 $id_expr
             }
 
-            fn set_id(&mut $self, id: carbide_core::widget::Id) {
+            fn set_id(&mut $self, id: carbide_core::widget::WidgetId) {
                 $id_expr = id;
             }
 

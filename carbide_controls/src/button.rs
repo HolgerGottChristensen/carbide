@@ -14,7 +14,7 @@ use crate::PlainButton;
 
 #[derive(Clone, Widget)]
 pub struct Button {
-    id: Id,
+    id: WidgetId,
     #[state]
     focus: FocusState,
     child: Box<dyn Widget>,
@@ -207,11 +207,11 @@ impl Button {
 }
 
 impl CommonWidget for Button {
-    fn id(&self) -> Id {
+    fn id(&self) -> WidgetId {
         self.id
     }
 
-    fn set_id(&mut self, id: Id) {
+    fn set_id(&mut self, id: WidgetId) {
         self.id = id;
     }
 

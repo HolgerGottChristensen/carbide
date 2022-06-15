@@ -3,12 +3,12 @@ use carbide_core::draw::{Dimension, Position};
 use carbide_core::environment::{Environment, WidgetTransferAction};
 use carbide_core::render::{Primitive, Render};
 use carbide_core::Widget;
-use carbide_core::widget::{Id, Widget, WidgetExt};
+use carbide_core::widget::{WidgetId, Widget, WidgetExt};
 
 #[derive(Debug, Clone, Widget)]
 #[carbide_exclude(Render)]
 pub struct NavigationStack {
-    id: Id,
+    id: WidgetId,
     position: Position,
     dimension: Dimension,
     stack: Vec<Box<dyn Widget>>,
@@ -19,7 +19,7 @@ pub struct NavigationStack {
 impl NavigationStack {
     pub fn new(initial: Box<dyn Widget>) -> Box<NavigationStack> {
         Box::new(NavigationStack {
-            id: Id::new_v4(),
+            id: WidgetId::new_v4(),
             position: Default::default(),
             dimension: Default::default(),
             stack: vec![],

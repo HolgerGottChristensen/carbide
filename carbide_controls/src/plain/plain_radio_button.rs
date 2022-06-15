@@ -7,14 +7,14 @@ use carbide_core::flags::Flags;
 use carbide_core::focus::{Focus, Focusable, Refocus};
 use carbide_core::layout::Layouter;
 use carbide_core::state::{BoolState, FocusState, LocalState, Map2, Map3, MapOwnedState, ReadState, State, StateContract, StateExt, StateKey, StringState, TState};
-use carbide_core::widget::{CommonWidget, HStack, Id, Rectangle, Spacer, Text, Widget, WidgetExt, WidgetIter, WidgetIterMut, ZStack};
+use carbide_core::widget::{CommonWidget, HStack, WidgetId, Rectangle, Spacer, Text, Widget, WidgetExt, WidgetIter, WidgetIterMut, ZStack};
 
 use crate::PlainButton;
 
 #[derive(Debug, Clone, Widget)]
 #[carbide_exclude(Focusable)]
 pub struct PlainRadioButton<T> where T: StateContract + PartialEq {
-    id: Id,
+    id: WidgetId,
     #[state]
     focus: FocusState,
     child: Box<dyn Widget>,
@@ -118,7 +118,7 @@ impl<T: StateContract + PartialEq> PlainRadioButton<T> {
             .spacing(5.0);
 
         Box::new(PlainRadioButton {
-            id: Id::new_v4(),
+            id: WidgetId::new_v4(),
             focus: focus_state,
             child,
             position: Position::new(0.0, 0.0),
@@ -139,11 +139,11 @@ impl<T: StateContract + PartialEq> Focusable for PlainRadioButton<T> {
 }
 
 impl<T: StateContract + PartialEq> CommonWidget for PlainRadioButton<T> {
-    fn id(&self) -> Id {
+    fn id(&self) -> WidgetId {
         self.id
     }
 
-    fn set_id(&mut self, id: Id) {
+    fn set_id(&mut self, id: WidgetId) {
         self.id = id;
     }
 

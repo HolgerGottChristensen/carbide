@@ -19,7 +19,7 @@ fn mouse_should_return_none_if_another_widget_is_capturing_mouse() {
     let source = input::Source::Mouse;
     push_event(
         &mut global_input,
-        event::Ui::WidgetCapturesInputSource(widget::Id::new(999), source).into(),
+        event::Ui::WidgetCapturesInputSource(widget::WidgetId::new(999), source).into(),
     );
     push_event(
         &mut global_input,
@@ -32,7 +32,7 @@ fn mouse_should_return_none_if_another_widget_is_capturing_mouse() {
         event::Event::Raw(Input::Press(Button::Mouse(MouseButton::Left))),
     );
 
-    let widget_input = input::Widget::for_widget(widget::Id::new(2), widget_area, &global_input);
+    let widget_input = input::Widget::for_widget(widget::WidgetId::new(2), widget_area, &global_input);
 
     assert!(widget_input.mouse().is_none());
 }
@@ -40,7 +40,7 @@ fn mouse_should_return_none_if_another_widget_is_capturing_mouse() {
 #[test]
 fn widget_input_should_provide_any_mouse_events_over_the_widgets_area_if_nothing_is_capturing_mouse() {
     let mut global_input = input::Global::new();
-    let widget = widget::Id::new(4);
+    let widget = widget::WidgetId::new(4);
 
     push_event(
         &mut global_input,
@@ -65,7 +65,7 @@ fn widget_input_should_provide_any_mouse_events_over_the_widgets_area_if_nothing
         .next()
         .expect("Expected to get a mouse click event");
 
-    let another_widget = widget::Id::new(7);
+    let another_widget = widget::WidgetId::new(7);
     let another_area = OldRect::from_corners([-20.0, -20.0], [0.0, 0.0]);
     let another_widget_input =
         input::Widget::for_widget(another_widget, another_area, &global_input);

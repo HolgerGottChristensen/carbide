@@ -10,7 +10,7 @@ use carbide_core::environment::{Environment, EnvironmentColor};
 use carbide_core::event::ModifierKey;
 use carbide_core::flags::Flags;
 use carbide_core::state::{F64State, LocalState, ReadState, State, StateContract, StateExt, TState, UsizeState, ValueState};
-use carbide_core::widget::{CommonWidget, Delegate, EdgeInsets, ForEach, HStack, Id, IfElse, Rectangle, SCALE, Scroll, VStack, Widget, WidgetExt, WidgetIter, WidgetIterMut};
+use carbide_core::widget::{CommonWidget, Delegate, EdgeInsets, ForEach, HStack, WidgetId, IfElse, Rectangle, SCALE, Scroll, VStack, Widget, WidgetExt, WidgetIter, WidgetIterMut};
 use carbide_core::widget::canvas::Canvas;
 use crate::PlainButton;
 
@@ -19,7 +19,7 @@ const LIST_SELECTION_MODIFIER: ModifierKey = ModifierKey::SHIFT;
 
 #[derive(Clone, Widget)]
 pub struct List<T, U> where T: StateContract, U: Delegate<T> + 'static {
-    id: Id,
+    id: WidgetId,
     child: Box<dyn Widget>,
     delegate: U,
     position: Position,
@@ -35,7 +35,7 @@ pub struct List<T, U> where T: StateContract, U: Delegate<T> + 'static {
     start_offset: F64State,
     #[state]
     end_offset: F64State,
-    item_id_function: Option<fn(&T) -> Id>,
+    item_id_function: Option<fn(&T) -> WidgetId>,
     selection: Option<Selection>,
     last_index_clicked: UsizeState,
     sub_tree_function: Option<fn(TState<T>) -> TState<Option<Vec<T>>>>,
@@ -52,7 +52,7 @@ impl<T: StateContract, U: Delegate<T> + 'static> List<T, U> {
         let internal_model = model.into();
 
         Box::new(List {
-            id: Id::new_v4(),
+            id: WidgetId::new_v4(),
             child: Scroll::new(
                 VStack::new(vec![
                     Rectangle::new()
@@ -160,7 +160,7 @@ impl<T: StateContract, U: Delegate<T> + 'static> List<T, U> {
     ///
     /// Examples of this is [`Option<Id>`] for single-selection and
     /// [`HashSet<Id>`] for multi-selection.
-    pub fn selectable(mut self, id: fn(&T) -> Id, selection: impl Into<Selection>) -> Box<List<T, SelectableListDelegate<T, U>>> {
+    pub fn selectable(mut self, id: fn(&T) -> WidgetId, selection: impl Into<Selection>) -> Box<List<T, SelectableListDelegate<T, U>>> {
         let selection = selection.into();
         let last_index_clicked = LocalState::new(0);
 
@@ -400,11 +400,11 @@ impl<T: StateContract, U: Delegate<T> + 'static> List<T, U> {
 }
 
 impl<T: StateContract, U: Delegate<T> + 'static> CommonWidget for List<T, U> {
-    fn id(&self) -> Id {
+    fn id(&self) -> WidgetId {
         self.id
     }
 
-    fn set_id(&mut self, id: Id) {
+    fn set_id(&mut self, id: WidgetId) {
         self.id = id;
     }
 
@@ -534,7 +534,7 @@ impl<T: StateContract, U: Delegate<T> + 'static> Delegate<T> for TreeListDelegat
 
 #[derive(Clone)]
 pub struct SelectableListDelegate<T, U> where T: StateContract, U: Delegate<T> + 'static {
-    item_id_function: fn(&T) -> Id,
+    item_id_function: fn(&T) -> WidgetId,
     selection: Selection,
     inner_delegate: U,
     last_selected_index: UsizeState,
@@ -611,17 +611,17 @@ impl<T: StateContract, U: Delegate<T> + 'static> Delegate<T> for SelectableListD
 
 #[derive(Clone, Debug)]
 pub enum Selection {
-    Single(TState<Option<Id>>),
-    Multi(TState<HashSet<Id>>),
+    Single(TState<Option<WidgetId>>),
+    Multi(TState<HashSet<WidgetId>>),
 }
 
-impl Into<Selection> for TState<Option<Id>> {
+impl Into<Selection> for TState<Option<WidgetId>> {
     fn into(self) -> Selection {
         Selection::Single(self)
     }
 }
 
-impl Into<Selection> for TState<HashSet<Id>> {
+impl Into<Selection> for TState<HashSet<WidgetId>> {
     fn into(self) -> Selection {
         Selection::Multi(self)
     }

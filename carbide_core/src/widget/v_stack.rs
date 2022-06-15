@@ -5,7 +5,7 @@ use crate::prelude::*;
 #[derive(Debug, Clone, Widget)]
 #[carbide_exclude(Layout)]
 pub struct VStack {
-    id: Id,
+    id: WidgetId,
     children: Vec<Box<dyn Widget>>,
     position: Position,
     dimension: Dimension,
@@ -51,11 +51,11 @@ impl Layout for VStack {
 }
 
 impl CommonWidget for VStack {
-    fn id(&self) -> Id {
+    fn id(&self) -> WidgetId {
         self.id
     }
 
-    fn set_id(&mut self, id: Id) {
+    fn set_id(&mut self, id: WidgetId) {
         self.id = id;
     }
 

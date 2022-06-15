@@ -24,20 +24,20 @@ fn main() {
     window.add_font_family(family);
 
     let list_model = (1..20)
-        .map(|i| (format!("Number {}", i), Id::new_v4()))
+        .map(|i| (format!("Number {}", i), WidgetId::new_v4()))
         .collect::<Vec<_>>();
 
     let list_model_state = LocalState::new(list_model);
-    let selected_items: TState<HashSet<Id>> = LocalState::new(HashSet::new());
+    let selected_items: TState<HashSet<WidgetId>> = LocalState::new(HashSet::new());
 
-    fn id_function(item: &(String, Id)) -> Id { item.1 }
+    fn id_function(item: &(String, WidgetId)) -> WidgetId { item.1 }
 
     let selected_items_delegate = selected_items.clone();
 
-    let delegate = move |item: TState<(String, Id)>, _: UsizeState| -> Box<dyn Widget> {
+    let delegate = move |item: TState<(String, WidgetId)>, _: UsizeState| -> Box<dyn Widget> {
 
         let selected = Map2::read_map(selected_items_delegate.clone(), item.clone(),
-                                      |map: &HashSet<Id>, item: &(String, Id)| {
+                                      |map: &HashSet<WidgetId>, item: &(String, WidgetId)| {
                                           map.contains(&id_function(item))
                                       }).ignore_writes();
 
@@ -47,7 +47,7 @@ fn main() {
 
         ZStack::new(vec![
             Rectangle::new().fill(background_color),
-            Text::new(lens!((String, Id); |item| {item.0.clone()})),
+            Text::new(lens!((String, WidgetId); |item| {item.0.clone()})),
         ]).frame(0.0, 80.0)
             .expand_width()
     };

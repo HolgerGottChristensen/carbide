@@ -28,7 +28,7 @@ fn press_mouse_button(button: MouseButton, ui: &mut Ui) {
     ui.compound_and_add_event(event);
 }
 
-fn move_mouse_to_widget(widget_id: widget::Id, ui: &mut Ui) {
+fn move_mouse_to_widget(widget_id: widget::WidgetId, ui: &mut Ui) {
     ui.xy_of(widget_id).map(|point| {
         let abs_xy = to_window_coordinates(point, ui);
         move_mouse_to_abs_coordinates(abs_xy[0], abs_xy[1], ui);

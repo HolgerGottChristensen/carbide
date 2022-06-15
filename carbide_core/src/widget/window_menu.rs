@@ -5,7 +5,7 @@ use crate::CommonWidgetImpl;
 
 #[derive(Debug, Clone, Widget)]
 pub struct MenuBar {
-    id: Id,
+    id: WidgetId,
     child: Box<dyn Widget>,
     menus: TState<Vec<Menu>>,
     position: Position,
@@ -27,7 +27,7 @@ impl MenuBar {
         ]);
 
         Box::new(MenuBar {
-            id: Id::new_v4(),
+            id: WidgetId::new_v4(),
             child,
             menus,
             position: Default::default(),

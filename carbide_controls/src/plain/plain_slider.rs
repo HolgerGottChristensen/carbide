@@ -8,13 +8,13 @@ use carbide_core::focus::{Focus, Focusable};
 use carbide_core::focus::Refocus;
 use carbide_core::layout::Layout;
 use carbide_core::state::{BoolState, FocusState, LocalState, Map2, Map3, Map4, MapOwnedState, ReadState, State, StateKey, StringState, TState, ValueState};
-use carbide_core::widget::{Capsule, CommonWidget, CrossAxisAlignment, HSplit, HStack, Id, Rectangle, Spacer, Text, Widget, WidgetExt, WidgetIter, WidgetIterMut, ZStack};
+use carbide_core::widget::{Capsule, CommonWidget, CrossAxisAlignment, HSplit, HStack, WidgetId, Rectangle, Spacer, Text, Widget, WidgetExt, WidgetIter, WidgetIterMut, ZStack};
 use crate::PlainButton;
 
 #[derive(Debug, Clone, Widget)]
 #[carbide_exclude(Focusable, Layout, MouseEvent)]
 pub struct PlainSlider {
-    id: Id,
+    id: WidgetId,
     #[state]
     focus: FocusState,
     child: Vec<Box<dyn Widget>>,
@@ -151,7 +151,7 @@ impl PlainSlider {
         ];
 
         Box::new(PlainSlider {
-            id: Id::new_v4(),
+            id: WidgetId::new_v4(),
             focus,
             child: children,
             position: Position::new(0.0, 0.0),
@@ -271,11 +271,11 @@ impl Layout for PlainSlider {
 }
 
 impl CommonWidget for PlainSlider {
-    fn id(&self) -> Id {
+    fn id(&self) -> WidgetId {
         self.id
     }
 
-    fn set_id(&mut self, id: Id) {
+    fn set_id(&mut self, id: WidgetId) {
         self.id = id;
     }
 

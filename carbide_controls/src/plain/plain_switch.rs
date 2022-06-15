@@ -5,14 +5,14 @@ use carbide_core::flags::Flags;
 use carbide_core::focus::{Focus, Focusable};
 use carbide_core::focus::Refocus;
 use carbide_core::state::{BoolState, FocusState, LocalState, Map2, MapOwnedState, ReadState, State, StateKey, StringState, TState};
-use carbide_core::widget::{CommonWidget, HStack, Id, Rectangle, Spacer, Text, Widget, WidgetExt, WidgetIter, WidgetIterMut, ZStack};
+use carbide_core::widget::{CommonWidget, HStack, WidgetId, Rectangle, Spacer, Text, Widget, WidgetExt, WidgetIter, WidgetIterMut, ZStack};
 
 use crate::PlainButton;
 
 #[derive(Debug, Clone, Widget)]
 #[carbide_exclude(Focusable)]
 pub struct PlainSwitch {
-    id: Id,
+    id: WidgetId,
     #[state]
     focus: FocusState,
     child: Box<dyn Widget>,
@@ -112,7 +112,7 @@ impl PlainSwitch {
             .spacing(5.0);
 
         Box::new(PlainSwitch {
-            id: Id::new_v4(),
+            id: WidgetId::new_v4(),
             focus,
             child,
             position: Position::new(0.0, 0.0),
@@ -131,11 +131,11 @@ impl Focusable for PlainSwitch {
 }
 
 impl CommonWidget for PlainSwitch {
-    fn id(&self) -> Id {
+    fn id(&self) -> WidgetId {
         self.id
     }
 
-    fn set_id(&mut self, id: Id) {
+    fn set_id(&mut self, id: WidgetId) {
         self.id = id;
     }
 

@@ -1,7 +1,7 @@
 use serde::{Deserialize, Serialize};
 
 use carbide_core::environment::Environment;
-use carbide_core::prelude::{NewStateSync, ValueRef, ValueRefMut, Id};
+use carbide_core::prelude::{NewStateSync, ValueRef, ValueRefMut, WidgetId};
 use carbide_core::state::{BoolState, MapOwnedState, ReadState, RState, State, TState};
 
 #[derive(Clone, Debug)]

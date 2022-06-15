@@ -11,7 +11,7 @@ use carbide_core::layout::BasicLayouter;
 use carbide_core::prelude::{EnvironmentColor, Layout};
 use carbide_core::state::{BoolState, ColorState, F64State, FocusState, LocalState, ReadState, State, StateExt, StringState, TState, U32State};
 use carbide_core::text::Glyph;
-use carbide_core::widget::{CommonWidget, CornerRadii, EdgeInsets, HStack, Id, Rectangle, RoundedRectangle, SCALE, Spacer, Text, Widget, WidgetExt, WidgetIter, WidgetIterMut, ZStack};
+use carbide_core::widget::{CommonWidget, CornerRadii, EdgeInsets, HStack, WidgetId, Rectangle, RoundedRectangle, SCALE, Spacer, Text, Widget, WidgetExt, WidgetIter, WidgetIterMut, ZStack};
 use carbide_core::widget::Wrap;
 
 use crate::{PASSWORD_CHAR, PlainTextInput, TextInputState};
@@ -22,7 +22,7 @@ use crate::{PASSWORD_CHAR, PlainTextInput, TextInputState};
 /// how to use this widget look at examples/plain_text_input
 #[derive(Debug, Clone, Widget)]
 pub struct TextInput {
-    id: Id,
+    id: WidgetId,
     child: Box<dyn Widget>,
     position: Position,
     dimension: Dimension,
@@ -109,7 +109,7 @@ impl TextInput {
             .expand_width();
 
         Box::new(TextInput {
-            id: Id::new_v4(),
+            id: WidgetId::new_v4(),
             child,
             position: Default::default(),
             dimension: Default::default(),
@@ -122,11 +122,11 @@ impl TextInput {
 }
 
 impl CommonWidget for TextInput {
-    fn id(&self) -> Id {
+    fn id(&self) -> WidgetId {
         self.id
     }
 
-    fn set_id(&mut self, id: Id) {
+    fn set_id(&mut self, id: WidgetId) {
         self.id = id;
     }
 

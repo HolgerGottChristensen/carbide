@@ -10,8 +10,8 @@ use crate::Tree::{Leaf, SubTree};
 
 #[derive(Clone, Debug)]
 enum Tree {
-    SubTree(String, Id, Vec<Tree>),
-    Leaf(String, Id)
+    SubTree(String, WidgetId, Vec<Tree>),
+    Leaf(String, WidgetId)
 }
 
 fn main() {
@@ -30,20 +30,20 @@ fn main() {
     window.add_font_family(family);
 
     let list_model: Tree =
-        SubTree("Root".to_string(), Id::new_v4(), vec![
-            SubTree("Subtree 1".to_string(), Id::new_v4(), vec![
-                    Leaf("Leaf 1".to_string(), Id::new_v4()),
+        SubTree("Root".to_string(), WidgetId::new_v4(), vec![
+            SubTree("Subtree 1".to_string(), WidgetId::new_v4(), vec![
+                Leaf("Leaf 1".to_string(), WidgetId::new_v4()),
                 ]),
-            Leaf("Leaf 2".to_string(), Id::new_v4()),
-            SubTree("Subtree 2".to_string(), Id::new_v4(), vec![
-                Leaf("Leaf 3".to_string(), Id::new_v4()),
-                Leaf("Leaf 4".to_string(), Id::new_v4()),
-                SubTree("Subtree 3".to_string(), Id::new_v4(), vec![
-                    Leaf("Leaf 5".to_string(), Id::new_v4()),
-                    Leaf("Leaf 6".to_string(), Id::new_v4()),
+            Leaf("Leaf 2".to_string(), WidgetId::new_v4()),
+            SubTree("Subtree 2".to_string(), WidgetId::new_v4(), vec![
+                Leaf("Leaf 3".to_string(), WidgetId::new_v4()),
+                Leaf("Leaf 4".to_string(), WidgetId::new_v4()),
+                SubTree("Subtree 3".to_string(), WidgetId::new_v4(), vec![
+                    Leaf("Leaf 5".to_string(), WidgetId::new_v4()),
+                    Leaf("Leaf 6".to_string(), WidgetId::new_v4()),
                 ]),
             ]),
-            Leaf("Leaf 7".to_string(), Id::new_v4()),
+            Leaf("Leaf 7".to_string(), WidgetId::new_v4()),
         ]);
 
     let list_model_state = LocalState::new(vec![list_model]);

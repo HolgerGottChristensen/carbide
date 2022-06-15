@@ -24,11 +24,11 @@ dyn_clone::clone_trait_object!(Widget);
 //impl<T> WidgetExt for T where T: Widget + 'static {}
 
 impl<T: Widget + ?Sized> CommonWidget for Box<T> {
-    fn id(&self) -> Id {
+    fn id(&self) -> WidgetId {
         self.deref().id()
     }
 
-    fn set_id(&mut self, id: Id) {
+    fn set_id(&mut self, id: WidgetId) {
         self.deref_mut().set_id(id);
     }
 
