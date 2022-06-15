@@ -26,7 +26,6 @@ wasm-bindgen = ["instant/wasm-bindgen"]
 
 [dependencies]
 carbide_derive = { path = "../carbide_derive", version = "0.70" }
-fnv = "1.0"
 num = "0.2"
 rusttype = { git = "https://github.com/HolgerGottChristensen/rusttype.git", features = ["gpu_cache"] }
 instant = "0.1"

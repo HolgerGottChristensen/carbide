@@ -4,8 +4,6 @@
 
 use std;
 
-use fnv;
-
 /// Unique image identifier.
 ///
 /// Throughout carbide, images are referred to via their unique `Id`. By referring to images via
@@ -34,7 +32,7 @@ pub struct ImageMap<Img> {
 }
 
 /// The type of `std::collections::HashMap` with `fnv::FnvHasher` used within the `image::Map`.
-pub type FHashMap<Img> = fnv::FnvHashMap<ImageId, Img>;
+pub type FHashMap<Img> = fxhash::FxHashMap<ImageId, Img>;
 
 /// An iterator yielding an `Id` for each new `Img` inserted into the `Map` via the `extend`
 /// method.
