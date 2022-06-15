@@ -7,7 +7,7 @@ pub static SCALE: f64 = -1.0;
 #[derive(Debug, Clone, Widget)]
 #[carbide_exclude(Layout)]
 pub struct Frame {
-    id: Uuid,
+    id: WidgetId,
     child: Box<dyn Widget>,
     position: Position,
     #[state] x: F64State,
@@ -28,7 +28,7 @@ impl Frame {
         let height = height.into();
 
         Box::new(Frame {
-            id: Default::default(),
+            id: WidgetId::new(),
             child,
             position: Position::new(0.0, 0.0),
             x: 0.0.into(),
@@ -62,7 +62,7 @@ impl Frame {
 
     pub fn init_width(width: impl Into<TState<f64>>, child: Box<dyn Widget>) -> Box<Frame> {
         Box::new(Frame {
-            id: Default::default(),
+            id: WidgetId::new(),
             child,
             position: Position::new(0.0, 0.0),
             x: 0.0.into(),
@@ -76,7 +76,7 @@ impl Frame {
 
     pub fn init_height(height: impl Into<TState<f64>>, child: Box<dyn Widget>) -> Box<Frame> {
         Box::new(Frame {
-            id: Default::default(),
+            id: WidgetId::new(),
             child,
             position: Position::new(0.0, 0.0),
             x: 0.0.into(),

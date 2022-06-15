@@ -16,7 +16,7 @@ use crate::CommonWidgetImpl;
 #[derive(Debug, Clone, Widget)]
 #[carbide_exclude(Render)]
 pub struct Ellipse {
-    pub id: Uuid,
+    pub id: WidgetId,
     position: Position,
     dimension: Dimension,
     #[state]
@@ -62,7 +62,7 @@ impl Ellipse {
 
     pub fn new() -> Box<Ellipse> {
         Box::new(Ellipse {
-            id: Uuid::new_v4(),
+            id: WidgetId::new(),
             position: Position::new(0.0, 0.0),
             dimension: Dimension::new(100.0, 100.0),
             stroke_color: EnvironmentColor::Blue.into(),

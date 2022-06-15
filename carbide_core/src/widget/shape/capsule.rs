@@ -15,7 +15,7 @@ use crate::CommonWidgetImpl;
 #[derive(Debug, Clone, Widget)]
 #[carbide_exclude(Render)]
 pub struct Capsule {
-    id: Uuid,
+    id: WidgetId,
     position: Position,
     dimension: Dimension,
     #[state]
@@ -61,7 +61,7 @@ impl Capsule {
 
     pub fn new() -> Box<Capsule> {
         Box::new(Capsule {
-            id: Uuid::new_v4(),
+            id: WidgetId::new(),
             position: Position::new(0.0, 0.0),
             dimension: Dimension::new(100.0, 100.0),
             stroke_color: EnvironmentColor::Blue.into(),

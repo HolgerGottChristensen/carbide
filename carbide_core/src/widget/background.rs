@@ -7,7 +7,7 @@ use crate::prelude::*;
 #[derive(Debug, Clone, Widget)]
 #[carbide_exclude(Layout, Render)]
 pub struct Background {
-    id: Uuid,
+    id: WidgetId,
     child: Box<dyn Widget>,
     background: Box<dyn Widget>,
     position: Position,
@@ -18,7 +18,7 @@ pub struct Background {
 impl Background {
     pub fn new(child: Box<dyn Widget>, background: Box<dyn Widget>) -> Box<Background> {
         Box::new(Background {
-            id: Uuid::new_v4(),
+            id: WidgetId::new(),
             child,
             background,
             position: Position::new(0.0, 0.0),

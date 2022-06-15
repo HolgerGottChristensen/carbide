@@ -15,7 +15,7 @@ use crate::CommonWidgetImpl;
 #[derive(Debug, Clone, Widget)]
 #[carbide_exclude(Render, Layout)]
 pub struct Circle {
-    pub id: Uuid,
+    pub id: WidgetId,
     position: Position,
     dimension: Dimension,
     #[state]
@@ -61,7 +61,7 @@ impl Circle {
 
     pub fn new() -> Box<Circle> {
         Box::new(Circle {
-            id: Uuid::new_v4(),
+            id: WidgetId::new(),
             position: Position::new(0.0, 0.0),
             dimension: Dimension::new(100.0, 100.0),
             stroke_color: EnvironmentColor::Blue.into(),

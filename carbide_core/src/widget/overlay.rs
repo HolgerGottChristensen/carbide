@@ -6,7 +6,7 @@ use crate::prelude::*;
 /// A basic, non-interactive rectangle shape widget.
 #[derive(Debug, Clone, Widget)]
 pub struct Overlay {
-    id: Uuid,
+    id: WidgetId,
     child: Rc<ValueCell<Box<dyn Widget>>>,
     #[state] showing: BoolState,
     position: PositionState,
@@ -17,7 +17,7 @@ impl Overlay {
     // We do not need to return this in a box, because the overlay widgets should only
     pub fn new(child: Box<dyn Widget>) -> Self {
         Overlay {
-            id: Uuid::new_v4(),
+            id: WidgetId::new(),
             child: Rc::new(ValueCell::new(child)),
             showing: LocalState::new(false).into(),
             position: LocalState::new(Position::new(0.0, 0.0)).into(),

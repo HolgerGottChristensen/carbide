@@ -5,7 +5,7 @@ use crate::prelude::*;
 
 #[derive(Clone, Debug, Widget)]
 pub struct Empty {
-    id: Uuid,
+    id: WidgetId,
     position: Position,
     dimension: Dimension,
 }
@@ -13,7 +13,7 @@ pub struct Empty {
 impl Empty {
     pub fn new() -> Box<Self> {
         Box::new(Empty {
-            id: Uuid::new_v4(),
+            id: WidgetId::new(),
             position: Position::new(0.0, 0.0),
             dimension: Dimension::new(100.0, 100.0),
         })

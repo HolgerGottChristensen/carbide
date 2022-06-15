@@ -4,7 +4,7 @@ use crate::prelude::*;
 #[derive(Clone, Debug, Widget)]
 #[carbide_exclude(Layout)]
 pub struct Spacer {
-    id: Uuid,
+    id: WidgetId,
     position: Position,
     dimension: Dimension,
 }
@@ -12,7 +12,7 @@ pub struct Spacer {
 impl Spacer {
     pub fn new() -> Box<Self> {
         Box::new(Spacer {
-            id: Uuid::new_v4(),
+            id: WidgetId::new(),
             position: Position::new(0.0, 0.0),
             dimension: Dimension::new(100.0, 100.0),
         })

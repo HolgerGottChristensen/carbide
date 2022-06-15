@@ -5,7 +5,7 @@ use crate::CommonWidgetImpl;
 #[derive(Debug, Clone, Widget)]
 #[carbide_exclude(Layout)]
 pub struct Offset {
-    id: Uuid,
+    id: WidgetId,
     child: Box<dyn Widget>,
     position: Position,
     dimension: Dimension,
@@ -18,7 +18,7 @@ pub struct Offset {
 impl Offset {
     pub fn new(offset_x: F64State, offset_y: F64State, child: Box<dyn Widget>) -> Box<Self> {
         Box::new(Offset {
-            id: Uuid::new_v4(),
+            id: WidgetId::new(),
             child,
             position: Position::new(0.0, 0.0),
             dimension: Dimension::new(0.0, 0.0),

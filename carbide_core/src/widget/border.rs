@@ -7,7 +7,7 @@ use crate::CommonWidgetImpl;
 #[derive(Debug, Clone, Widget)]
 #[carbide_exclude(Render, Layout)]
 pub struct Border {
-    id: Uuid,
+    id: WidgetId,
     child: Box<dyn Widget>,
     position: Position,
     dimension: Dimension,
@@ -29,7 +29,7 @@ impl Border {
 
     pub fn initialize(child: Box<dyn Widget>) -> Box<Self> {
         Box::new(Border {
-            id: Uuid::new_v4(),
+            id: WidgetId::new(),
             child,
             position: Position::new(0.0, 0.0),
             dimension: Dimension::new(100.0, 100.0),

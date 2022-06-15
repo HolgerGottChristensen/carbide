@@ -28,7 +28,7 @@ impl ProgressBar {
             .expand_width();
 
         Box::new(ProgressBar {
-            id: WidgetId::new_v4(),
+            id: WidgetId::new(),
             child,
             position: Default::default(),
             dimension: Default::default(),

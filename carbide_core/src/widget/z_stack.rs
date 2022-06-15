@@ -5,7 +5,7 @@ use crate::prelude::*;
 #[derive(Debug, Clone, Widget)]
 #[carbide_exclude(Layout)]
 pub struct ZStack {
-    id: Uuid,
+    id: WidgetId,
     children: Vec<Box<dyn Widget>>,
     position: Position,
     dimension: Dimension,
@@ -15,7 +15,7 @@ pub struct ZStack {
 impl ZStack {
     pub fn new(children: Vec<Box<dyn Widget>>) -> Box<ZStack> {
         Box::new(ZStack {
-            id: Uuid::new_v4(),
+            id: WidgetId::new(),
             children,
             position: Position::new(0.0, 0.0),
             dimension: Dimension::new(100.0, 100.0),

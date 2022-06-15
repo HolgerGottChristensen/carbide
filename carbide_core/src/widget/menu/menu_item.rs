@@ -24,7 +24,7 @@ impl MenuItem {
 
     pub fn new(name: String, hotkey: Option<HotKey>, enabled: bool, selected: bool) -> MenuItem {
         MenuItem::Item {
-            id: WidgetId::new_v4(),
+            id: WidgetId::new(),
             name,
             hotkey,
             enabled,

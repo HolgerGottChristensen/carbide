@@ -18,7 +18,7 @@ impl<T: StateContract, K> Delegate<T> for K where K: Fn(TState<T>, UsizeState) -
 #[derive(Clone, Widget)]
 #[carbide_exclude(OtherEvent)]
 pub struct ForEach<T, U> where T: StateContract, U: Delegate<T> {
-    id: Uuid,
+    id: WidgetId,
     position: Position,
     dimension: Dimension,
 
@@ -43,7 +43,7 @@ impl<T: StateContract, U: Delegate<T>> ForEach<T, U> {
         }
 
         Box::new(Self {
-            id: Uuid::new_v4(),
+            id: WidgetId::new(),
             position: Position::default(),
             dimension: Dimension::default(),
             model,
@@ -94,7 +94,7 @@ impl<T: StateContract, U: Delegate<T>> OtherEventHandler for ForEach<T, U> {
 }
 
 impl<T: StateContract, U: Delegate<T>> CommonWidget for ForEach<T, U> {
-    fn id(&self) -> Uuid {
+    fn id(&self) -> WidgetId {
         self.id
     }
 

@@ -40,7 +40,7 @@ impl PopupMenu {
 
         if top_level {
             Box::new(PopupMenu {
-                id: WidgetId::new_v4(),
+                id: WidgetId::new(),
                 child: item,
                 position: Default::default(),
                 dimension: Default::default(),
@@ -55,7 +55,7 @@ impl PopupMenu {
             let hovered = LocalState::new(false);
 
             Box::new(PopupMenu {
-                id: WidgetId::new_v4(),
+                id: WidgetId::new(),
                 child: MouseArea::new(item).hovered(hovered),
                 position: Default::default(),
                 dimension: Default::default(),

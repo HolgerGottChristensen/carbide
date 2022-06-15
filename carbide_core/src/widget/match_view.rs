@@ -7,7 +7,7 @@ use crate::prelude::*;
 #[derive(Debug, Clone, Widget)]
 #[carbide_exclude(StateSync)]
 pub struct Match<T> where T: StateContract + Hash + PartialEq + Eq + 'static {
-    id: Uuid,
+    id: WidgetId,
     position: Position,
     dimension: Dimension,
     #[state]
@@ -25,7 +25,7 @@ impl<T: StateContract + Hash + PartialEq + Eq  + 'static> Match<T> {
         }
 
         Box::new(Match {
-            id: Uuid::new_v4(),
+            id: WidgetId::new(),
             position: Position::new(0.0, 0.0),
             dimension: Dimension::new(0.0, 0.0),
             local_state: state.into(),

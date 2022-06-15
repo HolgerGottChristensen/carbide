@@ -7,7 +7,7 @@ use crate::CommonWidgetImpl;
 #[derive(Debug, Clone, Widget)]
 #[carbide_derive(Layout, StateSync)]
 pub struct EnvUpdating {
-    id: Uuid,
+    id: WidgetId,
     child: Box<dyn Widget>,
     position: Position,
     dimension: Dimension,
@@ -17,7 +17,7 @@ pub struct EnvUpdating {
 impl EnvUpdating {
     pub fn new(child: Box<dyn Widget>) -> Box<Self> {
         Box::new(EnvUpdating {
-            id: Uuid::new_v4(),
+            id: WidgetId::new(),
             child,
             position: Position::default(),
             dimension: Dimension::default(),

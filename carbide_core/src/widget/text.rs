@@ -23,7 +23,7 @@ use crate::widget::types::Wrap;
 #[derive(Debug, Clone, Widget)]
 #[carbide_exclude(Render, Layout)]
 pub struct Text {
-    id: Uuid,
+    id: WidgetId,
     position: Position,
     dimension: Dimension,
     wrap_mode: Wrap,
@@ -46,7 +46,7 @@ impl Text {
         let text = text.into();
 
         Box::new(Text {
-            id: Uuid::new_v4(),
+            id: WidgetId::new(),
             text,
             font_size: EnvironmentFontSize::Body.into(),
             position: Position::new(0.0, 0.0),
@@ -69,7 +69,7 @@ impl Text {
         let text = text.into();
 
         Box::new(Text {
-            id: Uuid::new_v4(),
+            id: WidgetId::new(),
             text,
             font_size: EnvironmentFontSize::Body.into(),
             position: Position::new(0.0, 0.0),

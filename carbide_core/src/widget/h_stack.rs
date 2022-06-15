@@ -5,7 +5,7 @@ use crate::widget::CrossAxisAlignment;
 #[derive(Debug, Clone, Widget)]
 #[carbide_exclude(Layout)]
 pub struct HStack {
-    id: Uuid,
+    id: WidgetId,
     children: Vec<Box<dyn Widget>>,
     position: Position,
     dimension: Dimension,
@@ -16,7 +16,7 @@ pub struct HStack {
 impl HStack {
     pub fn new(children: Vec<Box<dyn Widget>>) -> Box<Self> {
         Box::new(HStack {
-            id: Uuid::new_v4(),
+            id: WidgetId::new(),
             children,
             position: Position::new(0.0, 0.0),
             dimension: Dimension::new(100.0, 100.0),

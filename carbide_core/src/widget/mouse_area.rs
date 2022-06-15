@@ -84,7 +84,7 @@ impl MouseArea {
 
     pub fn new(child: Box<dyn Widget>) -> Box<Self> {
         Box::new(MouseArea {
-            id: WidgetId::new_v4(),
+            id: WidgetId::new(),
             focus: Focus::Unfocused.into(),
             child,
             position: Position::new(0.0, 0.0),

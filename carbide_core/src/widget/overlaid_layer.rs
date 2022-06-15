@@ -6,7 +6,7 @@ use crate::CommonWidgetImpl;
 #[derive(Debug, Clone, Widget)]
 #[carbide_exclude(Render, Layout, MouseEvent, KeyboardEvent, OtherEvent)]
 pub struct OverlaidLayer {
-    id: Uuid,
+    id: WidgetId,
     child: Box<dyn Widget>,
     overlay: Option<Overlay>,
     overlay_id: String,
@@ -18,7 +18,7 @@ pub struct OverlaidLayer {
 impl OverlaidLayer {
     pub fn new(overlay_id: &str, child: Box<dyn Widget>) -> Box<Self> {
         Box::new(Self {
-            id: Uuid::new_v4(),
+            id: WidgetId::new(),
             child,
             overlay: None,
             overlay_id: overlay_id.to_string(),

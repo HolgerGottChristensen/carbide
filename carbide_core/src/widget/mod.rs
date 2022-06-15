@@ -1,3 +1,4 @@
+use std::sync::atomic::{AtomicU32, Ordering};
 pub use common::*;
 pub use shape::*;
 pub use types::*;
@@ -82,5 +83,15 @@ mod mouse_area;
 mod popup_menu;
 mod flag;
 
-pub type WidgetId = uuid::Uuid;
+#[derive(Clone, Debug, Copy, Hash, Eq, PartialEq, Ord, PartialOrd)]
+pub struct WidgetId(u32);
+
+impl WidgetId {
+    /// Generate a new widget ID.
+    pub fn new() -> Self {
+        static WIDGET_ID_COUNTER: AtomicU32 = AtomicU32::new(1);
+        WidgetId(WIDGET_ID_COUNTER.fetch_add(1, Ordering::Relaxed))
+    }
+}
+
 pub type ColoredPoint = (Position, crate::color::Rgba);

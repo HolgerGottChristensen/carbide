@@ -16,7 +16,7 @@ use crate::widget::canvas::{Context, ShapeStyleWithOptions};
 #[derive(Debug, Clone, Widget)]
 #[carbide_exclude(Render)]
 pub struct Canvas {
-    id: Uuid,
+    id: WidgetId,
     position: Position,
     dimension: Dimension,
     #[state]
@@ -28,7 +28,7 @@ pub struct Canvas {
 impl Canvas {
     pub fn new(context: fn(Rect, Context) -> Context) -> Box<Self> {
         Box::new(Canvas {
-            id: Uuid::new_v4(),
+            id: WidgetId::new(),
             position: Position::new(0.0, 0.0),
             dimension: Dimension::new(100.0, 100.0),
             color: EnvironmentColor::Accent.into(),

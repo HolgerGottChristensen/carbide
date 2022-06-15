@@ -5,7 +5,7 @@ use crate::widget::types::EdgeInsets;
 #[derive(Debug, Clone, Widget)]
 #[carbide_exclude(Layout)]
 pub struct Padding {
-    id: Uuid,
+    id: WidgetId,
     child: Box<dyn Widget>,
     position: Position,
     dimension: Dimension,
@@ -15,7 +15,7 @@ pub struct Padding {
 impl Padding {
     pub fn init(edge_insets: EdgeInsets, child: Box<dyn Widget>) -> Box<Self> {
         Box::new(Padding {
-            id: Default::default(),
+            id: WidgetId::new(),
             child,
             position: Position::new(0.0, 0.0),
             dimension: Dimension::new(0.0, 0.0),

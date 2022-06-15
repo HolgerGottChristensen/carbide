@@ -15,7 +15,7 @@ use crate::CommonWidgetImpl;
 #[derive(Debug, Clone, Widget)]
 #[carbide_exclude(Render)]
 pub struct Rectangle {
-    id: Uuid,
+    id: WidgetId,
     position: Position,
     dimension: Dimension,
     #[state]
@@ -151,7 +151,7 @@ impl Rectangle {
 
     pub fn new() -> Box<Rectangle> {
         Box::new(Rectangle {
-            id: Uuid::new_v4(),
+            id: WidgetId::new(),
             position: Position::new(0.0, 0.0),
             dimension: Dimension::new(100.0, 100.0),
             fill_color: EnvironmentColor::Blue.into(),

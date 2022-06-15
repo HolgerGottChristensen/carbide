@@ -16,7 +16,7 @@ use crate::CommonWidgetImpl;
 #[derive(Debug, Clone, Widget)]
 #[carbide_exclude(Render)]
 pub struct RoundedRectangle {
-    id: Uuid,
+    id: WidgetId,
     position: Position,
     dimension: Dimension,
     corner_radii: CornerRadii,
@@ -63,7 +63,7 @@ impl RoundedRectangle {
 
     pub fn new<C: Into<CornerRadii>>(corner_radii: C) -> Box<RoundedRectangle> {
         Box::new(RoundedRectangle {
-            id: Uuid::new_v4(),
+            id: WidgetId::new(),
             position: Position::new(0.0, 0.0),
             dimension: Dimension::new(100.0, 100.0),
             corner_radii: corner_radii.into(),

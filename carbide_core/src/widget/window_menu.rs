@@ -27,7 +27,7 @@ impl MenuBar {
         ]);
 
         Box::new(MenuBar {
-            id: WidgetId::new_v4(),
+            id: WidgetId::new(),
             child,
             menus,
             position: Default::default(),

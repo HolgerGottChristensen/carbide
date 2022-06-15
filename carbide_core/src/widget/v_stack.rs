@@ -16,7 +16,7 @@ pub struct VStack {
 impl VStack {
     pub fn new(children: Vec<Box<dyn Widget>>) -> Box<Self> {
         Box::new(VStack {
-            id: Uuid::new_v4(),
+            id: WidgetId::new(),
             children,
             position: Position::new(0.0, 0.0),
             dimension: Dimension::new(100.0, 100.0),

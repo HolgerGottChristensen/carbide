@@ -14,7 +14,7 @@ use crate::CommonWidgetImpl;
 #[derive(Debug, Clone, Widget)]
 #[carbide_exclude(Render, Layout)]
 pub struct Image {
-    id: Uuid,
+    id: WidgetId,
     /// The unique identifier for the image that will be drawn.
     #[state] pub image_id: TState<Option<image_map::ImageId>>,
     /// The rectangle area of the original source image that should be used.
@@ -31,7 +31,7 @@ pub struct Image {
 impl Image {
     pub fn new<I: Into<TState<Option<image_map::ImageId>>>>(id: I) -> Box<Self> {
         Box::new(Image {
-            id: Uuid::new_v4(),
+            id: WidgetId::new(),
             image_id: id.into(),
             src_rect: None,
             color: None,
@@ -46,7 +46,7 @@ impl Image {
 
     pub fn new_icon<I: Into<TState<Option<image_map::ImageId>>>>(id: I) -> Box<Self> {
         Box::new(Image {
-            id: Uuid::new_v4(),
+            id: WidgetId::new(),
             image_id: id.into(),
             src_rect: None,
             color: Some(EnvironmentColor::Accent.into()),

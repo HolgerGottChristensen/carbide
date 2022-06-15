@@ -4,7 +4,7 @@ use crate::prelude::*;
 
 #[derive(Debug, Clone, Widget)]
 pub struct Flexibility {
-    id: Uuid,
+    id: WidgetId,
     child: Box<dyn Widget>,
     position: Position,
     dimension: Dimension,
@@ -14,7 +14,7 @@ pub struct Flexibility {
 impl Flexibility {
     pub fn new(child: Box<dyn Widget>, flexibility: u32) -> Box<Self> {
         Box::new(Flexibility {
-            id: Uuid::new_v4(),
+            id: WidgetId::new(),
             child,
             position: Position::new(0.0, 0.0),
             dimension: Dimension::new(100.0, 100.0),

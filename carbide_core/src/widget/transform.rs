@@ -7,7 +7,7 @@ use crate::render::PrimitiveKind;
 #[derive(Debug, Clone, Widget)]
 #[carbide_exclude(Render)]
 pub struct Transform {
-    id: Uuid,
+    id: WidgetId,
     child: Box<dyn Widget>,
     position: Position,
     dimension: Dimension,
@@ -35,7 +35,7 @@ impl Transform {
 
     pub fn new<P1: Into<TState<Matrix4<f32>>>>(child: Box<dyn Widget>, matrix: P1) -> Box<Self> {
         Box::new(Transform {
-            id: Uuid::new_v4(),
+            id: WidgetId::new(),
             child,
             position: Position::new(0.0, 0.0),
             dimension: Dimension::new(100.0, 100.0),
@@ -52,7 +52,7 @@ impl Transform {
         let matrix = MapOwnedState::new_with_default(rotation.into(), rotation_to_matrix, Matrix4::identity());
 
         Box::new(Transform {
-            id: Uuid::new_v4(),
+            id: WidgetId::new(),
             child,
             position: Position::new(0.0, 0.0),
             dimension: Dimension::new(100.0, 100.0),
@@ -69,7 +69,7 @@ impl Transform {
         let matrix = MapOwnedState::new_with_default(scale.into(), scale_to_matrix, Matrix4::identity());
 
         Box::new(Transform {
-            id: Uuid::new_v4(),
+            id: WidgetId::new(),
             child,
             position: Position::new(0.0, 0.0),
             dimension: Dimension::new(100.0, 100.0),
@@ -86,7 +86,7 @@ impl Transform {
         let matrix = MapOwnedState::new_with_default(scale.into(), scale_to_matrix, Matrix4::identity());
 
         Box::new(Transform {
-            id: Uuid::new_v4(),
+            id: WidgetId::new(),
             child,
             position: Position::new(0.0, 0.0),
             dimension: Dimension::new(100.0, 100.0),

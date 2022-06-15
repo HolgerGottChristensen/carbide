@@ -52,7 +52,7 @@ impl HSplit {
 
     fn new_internal(leading: Box<dyn Widget>, trailing: Box<dyn Widget>, split: SplitType, draggable: bool) -> Box<Self> {
         Box::new(HSplit {
-            id: WidgetId::new_v4(),
+            id: WidgetId::new(),
             position: Default::default(),
             dimension: Default::default(),
             children: vec![leading, trailing],

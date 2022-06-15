@@ -6,7 +6,7 @@ use crate::CommonWidgetImpl;
 #[derive(Debug, Clone, Widget)]
 #[carbide_exclude(Render, Layout)]
 pub struct ClipShape {
-    id: Uuid,
+    id: WidgetId,
     child: Box<dyn Widget>,
     shape: Box<dyn Shape>,
     position: Position,
@@ -16,7 +16,7 @@ pub struct ClipShape {
 impl ClipShape {
     pub fn new(child: Box<dyn Widget>, shape: Box<dyn Shape>) -> Box<Self> {
         Box::new(ClipShape {
-            id: Uuid::new_v4(),
+            id: WidgetId::new(),
             child,
             shape,
             position: Position::new(0.0, 0.0),

@@ -6,7 +6,7 @@ use carbide_derive::Widget;
 /// A basic, non-interactive rectangle shape widget.
 #[derive(Debug, Clone, Widget)]
 pub struct IfElse {
-    id: Uuid,
+    id: WidgetId,
     when_true: Box<dyn Widget>,
     when_false: Box<dyn Widget>,
     position: Position,
@@ -17,7 +17,7 @@ pub struct IfElse {
 impl IfElse {
     pub fn new(predicate: impl Into<TState<bool>>) -> Box<Self> {
         Box::new(IfElse {
-            id: Uuid::new_v4(),
+            id: WidgetId::new(),
             predicate: predicate.into(),
             when_true: Empty::new(),
             when_false: Empty::new(),

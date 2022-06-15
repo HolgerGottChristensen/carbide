@@ -8,7 +8,7 @@ use crate::widget::types::ScrollDirection;
 #[derive(Debug, Clone, Widget)]
 #[carbide_exclude(Render, MouseEvent, OtherEvent, Layout)]
 pub struct Scroll {
-    id: Uuid,
+    id: WidgetId,
     child: Box<dyn Widget>,
     position: Position,
     dimension: Dimension,
@@ -62,7 +62,7 @@ impl Scroll {
 
     pub fn new(child: Box<dyn Widget>) -> Box<Self> {
         Box::new(Self {
-            id: Uuid::new_v4(),
+            id: WidgetId::new(),
             child,
             position: Position::new(0.0, 0.0),
             dimension: Dimension::new(0.0, 0.0),

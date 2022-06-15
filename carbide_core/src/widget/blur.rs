@@ -6,7 +6,7 @@ use crate::utils::gaussian;
 #[derive(Debug, Clone, Widget)]
 #[carbide_exclude(Render)]
 pub struct Blur {
-    id: Uuid,
+    id: WidgetId,
     position: Position,
     dimension: Dimension,
     blur_type: BlurType,
@@ -19,7 +19,7 @@ pub struct Blur {
 impl Blur {
     pub fn gaussian(sigma: f32) -> Box<Self> {
         Box::new(Blur {
-            id: Uuid::new_v4(),
+            id: WidgetId::new(),
             position: Position::new(0.0, 0.0),
             dimension: Dimension::new(100.0, 100.0),
             blur_type: BlurType::Gaussian(sigma),
@@ -30,7 +30,7 @@ impl Blur {
 
     pub fn mean(radius: u32) -> Box<Self> {
         Box::new(Blur {
-            id: Uuid::new_v4(),
+            id: WidgetId::new(),
             position: Position::new(0.0, 0.0),
             dimension: Dimension::new(100.0, 100.0),
             blur_type: BlurType::Mean(radius),

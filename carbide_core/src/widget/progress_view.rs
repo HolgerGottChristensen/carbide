@@ -61,7 +61,7 @@ impl ProgressView {
 
 
         Box::new(ProgressView {
-            id: Uuid::new_v4(),
+            id: WidgetId::new(),
             child,
             position: Position::new(0.0, 0.0),
             dimension: Dimension::new(100.0, 100.0),

@@ -47,7 +47,7 @@ impl VSplit {
 
     fn new_internal(leading: Box<dyn Widget>, trailing: Box<dyn Widget>, split: SplitType) -> Box<Self> {
         Box::new(VSplit {
-            id: WidgetId::new_v4(),
+            id: WidgetId::new(),
             position: Default::default(),
             dimension: Default::default(),
             children: vec![leading, trailing],

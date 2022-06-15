@@ -1,7 +1,5 @@
 pub use std::ops::{Deref, DerefMut};
 
-pub use uuid::Uuid;
-
 pub use crate::Color;
 pub use crate::draw::Scalar;
 pub use crate::environment::*;

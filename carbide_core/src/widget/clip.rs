@@ -6,7 +6,7 @@ use crate::render::PrimitiveKind;
 #[derive(Debug, Clone, Widget)]
 #[carbide_exclude(Render, Layout)]
 pub struct Clip {
-    id: Uuid,
+    id: WidgetId,
     child: Box<dyn Widget>,
     position: Position,
     dimension: Dimension,
@@ -15,7 +15,7 @@ pub struct Clip {
 impl Clip {
     pub fn new(child: Box<dyn Widget>) -> Box<Self> {
         Box::new(Clip {
-            id: Uuid::new_v4(),
+            id: WidgetId::new(),
             child,
             position: Position::new(0.0, 0.0),
             dimension: Dimension::new(100.0, 100.0),

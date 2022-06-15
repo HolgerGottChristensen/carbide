@@ -7,7 +7,7 @@ use crate::render::PrimitiveKind;
 #[derive(Debug, Clone, Widget)]
 #[carbide_exclude(Render)]
 pub struct Rotation3DEffect {
-    id: Uuid,
+    id: WidgetId,
     child: Box<dyn Widget>,
     position: Position,
     dimension: Dimension,
@@ -20,7 +20,7 @@ pub struct Rotation3DEffect {
 impl Rotation3DEffect {
     pub fn new<P1: Into<F64State>, P2: Into<F64State>>(child: Box<dyn Widget>, rotation_x: P1, rotation_y: P2) -> Box<Self> {
         Box::new(Rotation3DEffect {
-            id: Uuid::new_v4(),
+            id: WidgetId::new(),
             child,
             position: Position::new(0.0, 0.0),
             dimension: Dimension::new(100.0, 100.0),

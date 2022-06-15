@@ -6,7 +6,7 @@ use crate::CommonWidgetImpl;
 #[derive(Debug, Clone, Widget)]
 #[carbide_exclude(Render)]
 pub struct Hidden {
-    id: Uuid,
+    id: WidgetId,
     child: Box<dyn Widget>,
     position: Position,
     dimension: Dimension,
@@ -15,7 +15,7 @@ pub struct Hidden {
 impl Hidden {
     pub fn new(child: Box<dyn Widget>) -> Box<Self> {
         Box::new(Hidden {
-            id: Uuid::new_v4(),
+            id: WidgetId::new(),
             child,
             position: Position::new(0.0, 0.0),
             dimension: Dimension::new(100.0, 100.0),
