@@ -8,6 +8,9 @@ pub struct ImageFilter {
     pub filter: Vec<ImageFilterValue>,
 }
 
+#[derive(Clone, Debug, Copy)]
+pub struct FilterId(u32);
+
 impl ImageFilter {
 
     /// Applying this filter will sharpen the image

@@ -12,7 +12,7 @@ pub use scroll_direction::*;
 pub use shape_style::*;
 pub use stroke_style::*;
 pub use text_wrap::*;
-pub use triangle_store::*;
+pub use primitive_store::*;
 pub use split_type::*;
 
 mod corner_radii;
@@ -25,7 +25,7 @@ mod scroll_direction;
 mod shape_style;
 mod stroke_style;
 mod text_wrap;
-mod triangle_store;
+mod primitive_store;
 mod filter;
 mod blur_type;
 mod split_type;

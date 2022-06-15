@@ -1,7 +1,7 @@
 use carbide_core::Color;
 use carbide_core::widget::Gradient;
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum AdvancedColor {
     Color(Color),
     SingleGradient(Gradient),

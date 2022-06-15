@@ -18,7 +18,7 @@ use crate::draw::shape::triangle::Triangle;
 use crate::prelude::{Environment, PrimitiveKind};
 use crate::widget::types::ShapeStyle;
 use crate::widget::types::StrokeStyle;
-use crate::widget::types::TriangleStore;
+use crate::widget::types::PrimitiveStore;
 use crate::widget::Widget;
 
 mod capsule;
@@ -28,7 +28,7 @@ mod rectangle;
 mod rounded_rectangle;
 
 pub trait Shape: Widget + 'static {
-    fn get_triangle_store_mut(&mut self) -> &mut TriangleStore;
+    fn get_triangle_store_mut(&mut self) -> &mut PrimitiveStore;
     fn get_stroke_style(&self) -> StrokeStyle;
     fn get_shape_style(&self) -> ShapeStyle;
     // Todo: add primitives to before and after the shape.

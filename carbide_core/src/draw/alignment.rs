@@ -1,6 +1,6 @@
 use crate::draw::{Dimension, Position};
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq)]
 pub enum Alignment {
     TopLeading,
     Top,

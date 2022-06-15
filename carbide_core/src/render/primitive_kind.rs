@@ -49,8 +49,7 @@ pub enum PrimitiveKind {
     /// A series of consecutive `Triangles` that are all the same color.
     TrianglesSingleColor {
         /// The color of all triangles.
-        color: Rgba,
-        //Todo why is this not Color
+        color: Color,
         /// An ordered slice of triangles.
         triangles: Vec<Triangle<Position>>,
     },

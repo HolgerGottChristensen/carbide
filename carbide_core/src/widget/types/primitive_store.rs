@@ -7,25 +7,35 @@ use crate::prelude::Primitive;
 use crate::render::PrimitiveKind;
 use crate::widget::types::advanced_color::AdvancedColor;
 
+/// A storage container for primitives that can be used to cache tessellated shapes.
 #[derive(PartialEq, Clone, Debug)]
-pub struct TriangleStore {
+pub struct PrimitiveStore {
     pub latest_stroke_position: Position,
     pub latest_stroke_dimensions: Dimension,
+    pub latest_stoke_color: Option<AdvancedColor>,
+    //pub stroke_primitive: Option<Primitive>,
 
     pub latest_fill_position: Position,
     pub latest_fill_dimensions: Dimension,
+    pub latest_fill_color: Option<AdvancedColor>,
+    //pub fill_primitive: Option<Primitive>,
+
 
     pub stroke_triangles: Vec<Triangle<Position>>,
     pub fill_triangles: Vec<Triangle<Position>>,
 }
 
-impl TriangleStore {
-    pub fn new() -> TriangleStore {
-        TriangleStore {
+impl PrimitiveStore {
+    pub fn new() -> PrimitiveStore {
+        PrimitiveStore {
             latest_stroke_position: Position::new(0.0, 0.0),
             latest_stroke_dimensions: Dimension::new(0.0, 0.0),
+            latest_stoke_color: None,
+            //stroke_primitive: None,
             latest_fill_position: Position::new(0.0, 0.0),
             latest_fill_dimensions: Dimension::new(0.0, 0.0),
+            latest_fill_color: None,
+            //fill_primitive: None,
             stroke_triangles: vec![],
             fill_triangles: vec![],
         }
@@ -72,7 +82,7 @@ impl TriangleStore {
                 AdvancedColor::Color(c) => {
                     primitives.push(Primitive {
                         kind: PrimitiveKind::TrianglesSingleColor {
-                            color: Rgba::from(c),
+                            color: c,
                             triangles: self.fill_triangles.clone(),
                         },
                         bounding_box: Rect::new(self.latest_fill_position, self.latest_fill_dimensions),
@@ -98,7 +108,7 @@ impl TriangleStore {
                 AdvancedColor::Color(c) => {
                     primitives.push(Primitive {
                         kind: PrimitiveKind::TrianglesSingleColor {
-                            color: Rgba::from(c),
+                            color: c,
                             triangles: self.stroke_triangles.clone(),
                         },
                         bounding_box: Rect::new(self.latest_stroke_position, self.latest_stroke_dimensions),
@@ -124,7 +134,7 @@ impl TriangleStore {
         if self.fill_triangles.len() > 0 {
             res.push(Primitive {
                 kind: PrimitiveKind::TrianglesSingleColor {
-                    color: Rgba::from(fill_color),
+                    color: fill_color,
                     triangles: self.fill_triangles.clone(),
                 },
                 bounding_box: Rect::new(self.latest_fill_position, self.latest_fill_dimensions),
@@ -134,7 +144,7 @@ impl TriangleStore {
         if self.stroke_triangles.len() > 0 {
             res.push(Primitive {
                 kind: PrimitiveKind::TrianglesSingleColor {
-                    color: Rgba::from(stroke_color),
+                    color: stroke_color,
                     triangles: self.stroke_triangles.clone(),
                 },
                 bounding_box: Rect::new(self.latest_stroke_position, self.latest_stroke_dimensions),
@@ -145,8 +155,8 @@ impl TriangleStore {
     }
 }
 
-impl Default for TriangleStore {
+impl Default for PrimitiveStore {
     fn default() -> Self {
-        TriangleStore::new()
+        PrimitiveStore::new()
     }
 }

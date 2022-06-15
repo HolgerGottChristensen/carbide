@@ -2,7 +2,7 @@ use carbide_core::Color;
 use crate::draw::alignment::Alignment;
 use crate::draw::Position;
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum GradientPosition {
     Absolute(Position),
     Relative(f64, f64),
@@ -25,7 +25,7 @@ pub enum GradientRepeat {
     Mirror
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct Gradient {
     pub colors: Vec<Color>,
     pub ratios: Vec<f32>,

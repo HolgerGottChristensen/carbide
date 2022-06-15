@@ -69,7 +69,7 @@ impl Canvas {
 
         Primitive {
             kind: PrimitiveKind::TrianglesSingleColor {
-                color: Rgba::from(color),
+                color,
                 triangles: Triangle::from_point_list(points),
             },
             bounding_box: Rect::new(self.position, self.dimension),
@@ -103,7 +103,7 @@ impl Canvas {
 
         Primitive {
             kind: PrimitiveKind::TrianglesSingleColor {
-                color: Rgba::from(color),
+                color,
                 triangles: Triangle::from_point_list(points),
             },
             bounding_box: Rect::new(self.position, self.dimension),
@@ -114,7 +114,7 @@ impl Canvas {
 CommonWidgetImpl!(Canvas, self, id: self.id, position: self.position, dimension: self.dimension);
 
 impl Shape for Canvas {
-    fn get_triangle_store_mut(&mut self) -> &mut TriangleStore {
+    fn get_triangle_store_mut(&mut self) -> &mut PrimitiveStore {
         todo!()
     }
 

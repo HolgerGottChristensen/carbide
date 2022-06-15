@@ -8,7 +8,7 @@ use crate::render::PrimitiveKind;
 use crate::widget::shape::{Shape, tessellate};
 use crate::widget::types::ShapeStyle;
 use crate::widget::types::StrokeStyle;
-use crate::widget::types::TriangleStore;
+use crate::widget::types::PrimitiveStore;
 
 /// A basic, non-interactive rectangle shape widget.
 #[derive(Debug, Clone, Widget)]
@@ -24,7 +24,7 @@ pub struct Rectangle {
     style: ShapeStyle,
     stroke_style: StrokeStyle,
     // Store the triangles for the border
-    triangle_store: TriangleStore,
+    triangle_store: PrimitiveStore,
 }
 
 impl Rectangle {
@@ -157,7 +157,7 @@ impl Rectangle {
             stroke_color: EnvironmentColor::Blue.into(),
             style: ShapeStyle::Default,
             stroke_style: StrokeStyle::Solid { line_width: 2.0 },
-            triangle_store: TriangleStore::new(),
+            triangle_store: PrimitiveStore::new(),
         })
     }
 }
@@ -225,7 +225,7 @@ impl Render for Rectangle {
 }
 
 impl Shape for Rectangle {
-    fn get_triangle_store_mut(&mut self) -> &mut TriangleStore {
+    fn get_triangle_store_mut(&mut self) -> &mut PrimitiveStore {
         &mut self.triangle_store
     }
 

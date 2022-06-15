@@ -9,7 +9,7 @@ use crate::prelude::*;
 use crate::widget::shape::{Shape, tessellate};
 use crate::widget::types::ShapeStyle;
 use crate::widget::types::StrokeStyle;
-use crate::widget::types::TriangleStore;
+use crate::widget::types::PrimitiveStore;
 
 /// A simple, non-interactive widget for drawing a single **Ellipse**.
 #[derive(Debug, Clone, Widget)]
@@ -24,7 +24,7 @@ pub struct Ellipse {
     fill_color: TState<AdvancedColor>,
     style: ShapeStyle,
     stroke_style: StrokeStyle,
-    triangle_store: TriangleStore,
+    triangle_store: PrimitiveStore,
 }
 
 impl Ellipse {
@@ -68,7 +68,7 @@ impl Ellipse {
             fill_color: EnvironmentColor::Blue.into(),
             style: ShapeStyle::Default,
             stroke_style: StrokeStyle::Solid { line_width: 2.0 },
-            triangle_store: TriangleStore::new(),
+            triangle_store: PrimitiveStore::new(),
         })
     }
 }
@@ -139,7 +139,7 @@ impl Render for Ellipse {
 }
 
 impl Shape for Ellipse {
-    fn get_triangle_store_mut(&mut self) -> &mut TriangleStore {
+    fn get_triangle_store_mut(&mut self) -> &mut PrimitiveStore {
         &mut self.triangle_store
     }
 
