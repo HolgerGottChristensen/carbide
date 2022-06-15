@@ -1,8 +1,7 @@
-use std::fmt::Debug;
+use std::fmt::{Debug, Formatter};
 
 use dyn_clone::DynClone;
 
-use carbide_core::__private::Formatter;
 use carbide_core::cursor::MouseCursor;
 use carbide_core::draw::{Dimension, Position};
 use carbide_core::environment::Environment;

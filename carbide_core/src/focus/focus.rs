@@ -1,6 +1,5 @@
-use serde::{Deserialize, Serialize};
 
-#[derive(Eq, PartialEq, Clone, Debug, Serialize, Deserialize)]
+#[derive(Eq, PartialEq, Clone, Debug)]
 pub enum Focus {
     Focused,
     FocusRequested,

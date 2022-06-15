@@ -1,6 +1,5 @@
-use serde::{Deserialize, Serialize};
 
-#[derive(Copy, Clone, Deserialize, Serialize, PartialEq, Eq, Ord, PartialOrd, Hash, Debug)]
+#[derive(Copy, Clone, PartialEq, Eq, Ord, PartialOrd, Hash, Debug)]
 pub enum MouseButton {
     /// Unknown mouse button.
     Unknown,

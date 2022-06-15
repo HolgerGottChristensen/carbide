@@ -1,7 +1,6 @@
-use std::fmt::Debug;
+use std::fmt::{Debug, Formatter};
 use std::ops::DerefMut;
 
-use carbide_core::__private::Formatter;
 use carbide_core::{Color, Scalar};
 use carbide_core::draw::{Dimension, Position};
 use carbide_core::environment::Environment;

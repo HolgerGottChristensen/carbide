@@ -1,6 +1,5 @@
-use std::fmt::Debug;
+use std::fmt::{Debug, Formatter};
 
-use crate::__private::Formatter;
 use crate::draw::{Dimension, Position};
 use crate::event::{OtherEventHandler, WidgetEvent};
 use crate::prelude::*;

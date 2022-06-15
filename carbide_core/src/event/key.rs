@@ -1,11 +1,9 @@
 use std::cmp::Ordering;
 
-use serde::{Deserialize, Serialize};
-
 /// Represent a keyboard key.
 /// Keycodes follows SDL http://wiki.libsdl.org/SDLKeycodeLookup
 #[allow(missing_docs)]
-#[derive(Copy, Clone, Deserialize, Serialize, Debug, Hash)]
+#[derive(Copy, Clone, Debug, Hash)]
 pub enum Key {
     Unknown = 0x00,
     Backspace = 0x08,

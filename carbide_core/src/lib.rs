@@ -61,8 +61,6 @@ macro_rules! set_state {
 }
 
 pub use futures::TryFutureExt;
-pub use serde::*;
-pub use serde::de::*;
 
 pub use carbide_core::asynchronous::SpawnTask;
 pub use carbide_derive::*;

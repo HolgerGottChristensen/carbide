@@ -15,13 +15,12 @@ use std::f32::consts::PI;
 use std::time::{SystemTime, UNIX_EPOCH};
 
 use rand::Rng;
-use serde::{Deserialize, Serialize};
 
 use crate::animation::Animatable;
 use crate::utils::{fmod, turns_to_radians};
 
 /// Color supporting RGB and HSL variants.
-#[derive(PartialEq, Copy, Clone, Debug, Serialize, Deserialize)]
+#[derive(PartialEq, Copy, Clone, Debug)]
 pub enum Color {
     /// Red, Green, Blue, Alpha - All values' scales represented between 0.0 and 1.0.
     Rgba(f32, f32, f32, f32),
@@ -47,9 +46,9 @@ impl Color {
     pub fn random() -> Self {
         let mut rng = rand::thread_rng();
         return rgb(
-            rng.gen_range(0.0, 1.0),
-            rng.gen_range(0.0, 1.0),
-            rng.gen_range(0.0, 1.0),
+            rng.gen_range(0.0..=1.0),
+            rng.gen_range(0.0..=1.0),
+            rng.gen_range(0.0..=1.0),
         );
     }
 

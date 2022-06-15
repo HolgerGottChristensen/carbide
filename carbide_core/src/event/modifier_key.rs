@@ -1,10 +1,9 @@
 use bitflags::bitflags;
-use serde::{Deserialize, Serialize};
 
 // Defining every combination to allow assignment in static expressions.
 bitflags!(
     #[allow(missing_docs)]
-    #[derive(Deserialize, Serialize)]
+    //#[derive(Deserialize, Serialize)]
     pub struct ModifierKey: u8 {
         /// No modifier.
         const NO_MODIFIER           = 0b00000000;

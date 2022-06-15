@@ -3,10 +3,8 @@
 use std::cell::{Cell, UnsafeCell};
 use std::cmp::Ordering;
 use std::fmt;
-use std::fmt::Debug;
+use std::fmt::{Debug, Formatter};
 use std::ops::{Deref, DerefMut};
-
-use crate::__private::Formatter;
 
 type BorrowFlag = isize;
 
