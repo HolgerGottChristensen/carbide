@@ -8,7 +8,7 @@ use crate::draw::shape::triangle::Triangle;
 use crate::image_map;
 use crate::layout::BasicLayouter;
 use crate::text::Glyph;
-use crate::widget::ColoredPoint;
+use crate::widget::{ColoredPoint, FilterId};
 
 /// The unique kind for each primitive element in the Ui.
 pub enum PrimitiveKind {
@@ -23,12 +23,12 @@ pub enum PrimitiveKind {
     DeStencil,
 
     /// This is a filter and can take any 2d filter
-    Filter(u32),
+    Filter(FilterId),
 
     /// A part 1 should always be followed directly by a part 2. This is more performant for
     /// filters that are seperable such as gaussian and box blur.
-    FilterSplitPt1(u32),
-    FilterSplitPt2(u32),
+    FilterSplitPt1(FilterId),
+    FilterSplitPt2(FilterId),
 
     /// Add a transformation matrix to the current stack of transforms. The basic layouter will
     /// be used to get a reference point for the transformation

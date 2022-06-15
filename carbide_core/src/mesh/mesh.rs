@@ -24,6 +24,7 @@ use crate::mesh::{
 use crate::mesh::atlas::texture_atlas::TextureAtlas;
 use crate::mesh::vertex::Vertex;
 use crate::render::{PrimitiveKind, PrimitiveWalker};
+use crate::widget::FilterId;
 
 /// Images within the given image map must know their dimensions in pixels.
 pub trait ImageDimensions {
@@ -64,9 +65,9 @@ pub enum Command {
     Stencil(std::ops::Range<usize>),
     DeStencil(std::ops::Range<usize>),
     Transform(Matrix4<f32>),
-    Filter(std::ops::Range<usize>, u32),
-    FilterSplitPt1(std::ops::Range<usize>, u32),
-    FilterSplitPt2(std::ops::Range<usize>, u32),
+    Filter(std::ops::Range<usize>, FilterId),
+    FilterSplitPt1(std::ops::Range<usize>, FilterId),
+    FilterSplitPt2(std::ops::Range<usize>, FilterId),
 }
 
 /// An iterator yielding `Command`s, produced by the `Renderer::commands` method.
@@ -112,9 +113,9 @@ enum PreparedCommand {
     Stencil(std::ops::Range<usize>),
     DeStencil(std::ops::Range<usize>),
     Transform(Matrix4<f32>),
-    Filter(std::ops::Range<usize>, u32),
-    FilterSplitPt1(std::ops::Range<usize>, u32),
-    FilterSplitPt2(std::ops::Range<usize>, u32),
+    Filter(std::ops::Range<usize>, FilterId),
+    FilterSplitPt1(std::ops::Range<usize>, FilterId),
+    FilterSplitPt2(std::ops::Range<usize>, FilterId),
 }
 
 impl Mesh {

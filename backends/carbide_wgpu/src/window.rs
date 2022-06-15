@@ -24,7 +24,7 @@ use carbide_core::mesh::mesh::Mesh;
 use carbide_core::prelude::{Environment, EnvironmentColor, Menu};
 use carbide_core::prelude::Rectangle;
 use carbide_core::text::{FontFamily, FontId};
-use carbide_core::widget::{OverlaidLayer, ZStack};
+use carbide_core::widget::{FilterId, OverlaidLayer, ZStack};
 use carbide_core::widget::Widget;
 use carbide_core::event::CustomEvent;
 pub use carbide_core::window::TWindow;
@@ -75,7 +75,7 @@ pub struct Window {
     pub(crate) secondary_tex: Texture,
     pub(crate) secondary_tex_view: TextureView,
     pub(crate) bind_groups: HashMap<ImageId, DiffuseBindGroup>,
-    pub(crate) filter_buffer_bind_groups: HashMap<u32, BindGroup>,
+    pub(crate) filter_buffer_bind_groups: HashMap<FilterId, BindGroup>,
     pub(crate) texture_bind_group_layout: BindGroupLayout,
     pub(crate) uniform_bind_group_layout: BindGroupLayout,
     pub(crate) filter_texture_bind_group_layout: BindGroupLayout,

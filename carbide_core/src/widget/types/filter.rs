@@ -1,4 +1,4 @@
-
+use std::sync::atomic::{AtomicU32, Ordering};
 
 /// Filter struct containing a matrix of filter weights that can be applied to change the rendering
 /// of a sub tree. For more information on image filters look at:
@@ -8,8 +8,15 @@ pub struct ImageFilter {
     pub filter: Vec<ImageFilterValue>,
 }
 
-#[derive(Clone, Debug, Copy)]
+#[derive(Clone, Debug, Copy, Hash, Eq, PartialEq, Ord, PartialOrd)]
 pub struct FilterId(u32);
+
+impl FilterId {
+    pub fn next() -> FilterId {
+        static FILTER_ID_COUNTER: AtomicU32 = AtomicU32::new(1);
+        FilterId(FILTER_ID_COUNTER.fetch_add(1, Ordering::Relaxed))
+    }
+}
 
 impl ImageFilter {
 

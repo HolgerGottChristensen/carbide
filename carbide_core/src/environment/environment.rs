@@ -22,7 +22,7 @@ use crate::mesh::TextureAtlas;
 use crate::prelude::{EnvironmentColor, EnvironmentVariable};
 use crate::state::{InnerState, StateContract, StateKey, ValueCell};
 use crate::text::{Font, FontFamily, FontId, FontSize, FontStyle, FontWeight, Glyph};
-use crate::widget::{ImageFilter, Overlay};
+use crate::widget::{FilterId, ImageFilter, Overlay};
 use crate::widget::ImageInformation;
 
 pub struct Environment {
@@ -87,7 +87,7 @@ pub struct Environment {
     frame_start_time: InnerState<Instant>,
 
     /// A map that contains an image filter used for the Filter widget.
-    filter_map: FxHashMap<u32, crate::widget::ImageFilter>,
+    filter_map: FxHashMap<FilterId, crate::widget::ImageFilter>,
     /// The next id for the filter. This is used when inserting into the filter_map.
     next_filter_id: u32,
 
@@ -459,13 +459,12 @@ impl Environment {
         todo!()
     }
 
-    pub fn filters(&self) -> &FxHashMap<u32, crate::widget::ImageFilter> {
+    pub fn filters(&self) -> &FxHashMap<FilterId, crate::widget::ImageFilter> {
         &self.filter_map
     }
 
-    pub fn insert_filter(&mut self, filter: ImageFilter) -> u32 {
-        let filter_id = self.next_filter_id;
-        self.next_filter_id += 1;
+    pub fn insert_filter(&mut self, filter: ImageFilter) -> FilterId {
+        let filter_id = FilterId::next();
         self.filter_map.insert(filter_id, filter);
         filter_id
     }

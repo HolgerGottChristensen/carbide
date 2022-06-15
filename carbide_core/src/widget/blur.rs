@@ -11,9 +11,9 @@ pub struct Blur {
     dimension: Dimension,
     blur_type: BlurType,
     /// The first is the filter id and the second is the filters radius
-    filter_horizontal_has_been_inserted: Option<(u32, u32)>,
+    filter_horizontal_has_been_inserted: Option<(FilterId, u32)>,
     /// The first is the filter id and the second is the filters radius
-    filter_vertical_has_been_inserted: Option<(u32, u32)>,
+    filter_vertical_has_been_inserted: Option<(FilterId, u32)>,
 }
 
 impl Blur {

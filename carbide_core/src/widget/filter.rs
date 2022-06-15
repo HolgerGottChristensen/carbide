@@ -11,7 +11,7 @@ pub struct Filter {
     dimension: Dimension,
     blur_type: BlurType,
     filter: ImageFilter,
-    filter_id: Option<u32>,
+    filter_id: Option<FilterId>,
 }
 
 impl Filter {

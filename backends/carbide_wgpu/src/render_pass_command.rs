@@ -7,6 +7,7 @@ use wgpu::util::DeviceExt;
 use carbide_core::image_map::{ImageId, ImageMap};
 use carbide_core::mesh::mesh;
 use carbide_core::mesh::mesh::{Draw, Mesh};
+use carbide_core::widget::FilterId;
 
 use crate::bind_groups::{gradient_buffer_bind_group, matrix_to_uniform_bind_group};
 use crate::diffuse_bind_group::{DiffuseBindGroup, new_diffuse};
@@ -44,9 +45,9 @@ pub enum RenderPassCommand<'a> {
 pub enum RenderPass<'a> {
     Normal(Vec<RenderPassCommand<'a>>),
     Gradient(std::ops::Range<u32>, usize),
-    Filter(std::ops::Range<u32>, u32),
-    FilterSplitPt1(std::ops::Range<u32>, u32),
-    FilterSplitPt2(std::ops::Range<u32>, u32),
+    Filter(std::ops::Range<u32>, FilterId),
+    FilterSplitPt1(std::ops::Range<u32>, FilterId),
+    FilterSplitPt2(std::ops::Range<u32>, FilterId),
 }
 
 #[derive(PartialEq)]
