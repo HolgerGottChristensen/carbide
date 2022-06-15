@@ -51,7 +51,7 @@ pub struct Environment {
     /// This map contains the widths and heights for loaded images.
     /// This is used to make the static size of the Image widget its
     /// required size.
-    images_information: FxHashMap<crate::image_map::Id, ImageInformation>,
+    images_information: FxHashMap<crate::image_map::ImageId, ImageInformation>,
 
     /// A map from String to a widget.
     /// This key should correspond to the targeted overlay_layer
@@ -190,13 +190,13 @@ impl Environment {
         self.last_image_index = next_index;
     }
 
-    pub fn queue_image(&mut self, image: DynamicImage) -> Option<image_map::Id> {
+    pub fn queue_image(&mut self, image: DynamicImage) -> Option<image_map::ImageId> {
         if let Some(images) = &mut self.queued_images {
             images.push(image)
         } else {
             self.queued_images = Some(vec![image])
         }
-        let id = image_map::Id(self.last_image_index);
+        let id = image_map::ImageId(self.last_image_index);
         self.last_image_index += 1;
         Some(id)
     }
@@ -414,13 +414,13 @@ impl Environment {
         self.focus_request = None;
     }
 
-    pub fn get_image_information(&self, id: &Option<crate::image_map::Id>) -> Option<&ImageInformation> {
+    pub fn get_image_information(&self, id: &Option<crate::image_map::ImageId>) -> Option<&ImageInformation> {
         id.as_ref().and_then(|id| {
             self.images_information.get(id)
         })
     }
 
-    pub fn insert_image(&mut self, id: crate::image_map::Id, image: ImageInformation) {
+    pub fn insert_image(&mut self, id: crate::image_map::ImageId, image: ImageInformation) {
         self.images_information.insert(id, image);
     }
 

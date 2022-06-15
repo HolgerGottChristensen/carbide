@@ -4,7 +4,7 @@ use cgmath::Matrix4;
 use wgpu::{BindGroupLayout, Device, Texture};
 use wgpu::util::DeviceExt;
 
-use carbide_core::image_map::{Id, ImageMap};
+use carbide_core::image_map::{ImageId, ImageMap};
 use carbide_core::mesh::mesh;
 use carbide_core::mesh::mesh::{Draw, Mesh};
 
@@ -52,12 +52,12 @@ pub enum RenderPass<'a> {
 #[derive(PartialEq)]
 enum BindGroup {
     Default,
-    Image(carbide_core::image_map::Id),
+    Image(carbide_core::image_map::ImageId),
 }
 
 pub fn create_render_pass_commands<'a>(
     default_bind_group: &'a wgpu::BindGroup,
-    bind_groups: &'a mut HashMap<Id, DiffuseBindGroup>,
+    bind_groups: &'a mut HashMap<ImageId, DiffuseBindGroup>,
     uniform_bind_groups: &mut Vec<wgpu::BindGroup>,
     image_map: &'a ImageMap<Image>,
     mesh: &'a Mesh,

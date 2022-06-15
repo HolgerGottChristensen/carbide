@@ -18,7 +18,7 @@ use winit::window::{Icon, WindowBuilder};
 use carbide_core::{Scalar, Ui};
 use carbide_core::draw::Dimension;
 use carbide_core::event::Input;
-use carbide_core::image_map::{Id, ImageMap};
+use carbide_core::image_map::{ImageId, ImageMap};
 use carbide_core::mesh::{DEFAULT_GLYPH_CACHE_DIMS, MODE_IMAGE};
 use carbide_core::mesh::mesh::Mesh;
 use carbide_core::prelude::{Environment, EnvironmentColor, Menu};
@@ -74,7 +74,7 @@ pub struct Window {
     pub(crate) main_tex_view: TextureView,
     pub(crate) secondary_tex: Texture,
     pub(crate) secondary_tex_view: TextureView,
-    pub(crate) bind_groups: HashMap<Id, DiffuseBindGroup>,
+    pub(crate) bind_groups: HashMap<ImageId, DiffuseBindGroup>,
     pub(crate) filter_buffer_bind_groups: HashMap<u32, BindGroup>,
     pub(crate) texture_bind_group_layout: BindGroupLayout,
     pub(crate) uniform_bind_group_layout: BindGroupLayout,
@@ -108,7 +108,7 @@ impl carbide_core::window::TWindow for Window {
         self.ui.environment.insert_font_from_file(font_path).0
     }
 
-    fn add_image_from_path(&mut self, path: &str) -> Option<Id> {
+    fn add_image_from_path(&mut self, path: &str) -> Option<ImageId> {
         let assets = find_folder::Search::KidsThenParents(3, 5)
             .for_folder("assets")
             .unwrap();
@@ -123,7 +123,7 @@ impl carbide_core::window::TWindow for Window {
         Some(id)
     }
 
-    fn add_image(&mut self, image: image::DynamicImage) -> Option<Id> {
+    fn add_image(&mut self, image: image::DynamicImage) -> Option<ImageId> {
         let image = Image::new_from_dynamic(image, &self.device, &self.queue);
 
         let information = image.image_information();

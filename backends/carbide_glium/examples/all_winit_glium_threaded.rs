@@ -68,7 +68,7 @@ fn main() {
 
     // A function that runs the carbide loop.
     fn run_carbide(
-        rust_logo: carbide_core::image_map::Id,
+        rust_logo: carbide_core::image_map::ImageId,
         event_rx: std::sync::mpsc::Receiver<carbide_core::event::Input>,
         render_tx: std::sync::mpsc::Sender<carbide_core::render::OwnedPrimitives>,
         events_loop_proxy: glium::glutin::EventsLoopProxy,

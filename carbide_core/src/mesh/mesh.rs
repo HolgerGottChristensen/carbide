@@ -81,7 +81,7 @@ pub struct Commands<'a> {
 pub enum Draw {
     /// A range of vertices representing triangles textured with the image in the
     /// image_map at the given `widget::Id`.
-    Image(image_map::Id, std::ops::Range<usize>),
+    Image(image_map::ImageId, std::ops::Range<usize>),
     /// A range of vertices representing plain triangles.
     Plain(std::ops::Range<usize>),
     /// A range of vertices that should be drawn as a gradient
@@ -105,7 +105,7 @@ struct GlyphCache(RustTypeGlyphCache<'static>);
 
 #[derive(Debug)]
 enum PreparedCommand {
-    Image(image_map::Id, std::ops::Range<usize>),
+    Image(image_map::ImageId, std::ops::Range<usize>),
     Plain(std::ops::Range<usize>),
     Gradient(std::ops::Range<usize>, DrawGradient),
     Scissor(Scissor),
@@ -196,7 +196,7 @@ impl Mesh {
 
         enum State {
             Image {
-                image_id: image_map::Id,
+                image_id: image_map::ImageId,
                 start: usize,
             },
             Plain {

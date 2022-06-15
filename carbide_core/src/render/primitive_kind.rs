@@ -68,7 +68,7 @@ pub enum PrimitiveKind {
     /// A single `Image`, produced by the primitive `Image` widget.
     Image {
         /// The unique identifier of the image that will be drawn.
-        image_id: image_map::Id,
+        image_id: image_map::ImageId,
         /// When `Some`, colours the `Image`. When `None`, the `Image` uses its regular colours.
         color: Option<Color>,
         /// The area of the texture that will be drawn to the `Image`'s `Rect`.

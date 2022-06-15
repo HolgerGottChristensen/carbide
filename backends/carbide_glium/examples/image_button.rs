@@ -61,9 +61,9 @@ fn main() {
     let mut image_map = carbide_core::image_map::ImageMap::new();
 
     struct ImageIds {
-        normal: carbide_core::image_map::Id,
-        hover: carbide_core::image_map::Id,
-        press: carbide_core::image_map::Id,
+        normal: carbide_core::image_map::ImageId,
+        hover: carbide_core::image_map::ImageId,
+        press: carbide_core::image_map::ImageId,
     }
 
     // Load the images into our `ImageIds` type for easy access.

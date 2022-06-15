@@ -12,11 +12,11 @@ use fnv;
 /// `Id`s, carbide can remain agnostic of the actual image or texture render used to represent each
 /// image.
 #[derive(Copy, Clone, Debug, Eq, PartialEq, Ord, PartialOrd, Hash)]
-pub struct Id(pub u32);
+pub struct ImageId(pub u32);
 
-impl From<u32> for Id {
+impl From<u32> for ImageId {
     fn from(id: u32) -> Self {
-        Id(id)
+        ImageId(id)
     }
 }
 
@@ -34,7 +34,7 @@ pub struct ImageMap<Img> {
 }
 
 /// The type of `std::collections::HashMap` with `fnv::FnvHasher` used within the `image::Map`.
-pub type FHashMap<Img> = fnv::FnvHashMap<Id, Img>;
+pub type FHashMap<Img> = fnv::FnvHashMap<ImageId, Img>;
 
 /// An iterator yielding an `Id` for each new `Img` inserted into the `Map` via the `extend`
 /// method.
@@ -64,7 +64,7 @@ impl<Img> ImageMap<Img> {
     /// Uniquely borrow the `Img` associated with the given widget.
     ///
     /// Note: Calling this will trigger a redraw the next time `Ui::draw_if_changed` is called.
-    pub fn get_mut(&mut self, id: Id) -> Option<&mut Img> {
+    pub fn get_mut(&mut self, id: ImageId) -> Option<&mut Img> {
         self.trigger_redraw.set(true);
         self.map.get_mut(&id)
     }
@@ -73,11 +73,11 @@ impl<Img> ImageMap<Img> {
     /// store the returned `image::Id` in order to use, modify or remove the inserted image.
     ///
     /// Note: Calling this will trigger a redraw the next time `Ui::draw_if_changed` is called.
-    pub fn insert(&mut self, img: Img) -> Id {
+    pub fn insert(&mut self, img: Img) -> ImageId {
         self.trigger_redraw.set(true);
         let index = self.next_index;
         self.next_index = index.wrapping_add(1);
-        let id = Id(index);
+        let id = ImageId(index);
         self.map.insert(id, img);
         id
     }
@@ -89,7 +89,7 @@ impl<Img> ImageMap<Img> {
     /// Replaces the given image in the map if it exists. Returns the image or None.
     ///
     /// Note: Calling this will trigger a redraw the next time `Ui::draw_if_changed` is called.
-    pub fn replace(&mut self, id: Id, img: Img) -> Option<Img> {
+    pub fn replace(&mut self, id: ImageId, img: Img) -> Option<Img> {
         self.trigger_redraw.set(true);
         self.map.insert(id, img)
     }
@@ -99,7 +99,7 @@ impl<Img> ImageMap<Img> {
     /// Any future use of the given `image::Id` will be invalid.
     ///
     /// Note: Calling this will trigger a redraw the next time `Ui::draw_if_changed` is called.
-    pub fn remove(&mut self, id: Id) -> Option<Img> {
+    pub fn remove(&mut self, id: ImageId) -> Option<Img> {
         self.trigger_redraw.set(true);
         self.map.remove(&id)
     }
@@ -116,7 +116,7 @@ impl<Img> ImageMap<Img> {
         let start_index = self.next_index;
         let mut end_index = start_index;
         for image in images {
-            self.map.insert(Id(end_index), image);
+            self.map.insert(ImageId(end_index), image);
             end_index += 1;
         }
         NewIds {
@@ -126,9 +126,9 @@ impl<Img> ImageMap<Img> {
 }
 
 impl Iterator for NewIds {
-    type Item = Id;
+    type Item = ImageId;
     fn next(&mut self) -> Option<Self::Item> {
-        self.index_range.next().map(|i| Id(i))
+        self.index_range.next().map(|i| ImageId(i))
     }
     fn size_hint(&self) -> (usize, Option<usize>) {
         (0, Some(self.len()))

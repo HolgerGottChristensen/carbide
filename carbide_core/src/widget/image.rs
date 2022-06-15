@@ -1,5 +1,6 @@
 //! A simple, non-interactive widget for drawing an `Image`.
 
+use std::path::PathBuf;
 use crate::color::WHITE;
 use crate::draw::{Dimension, Position, Rect};
 use crate::image_map;
@@ -14,7 +15,7 @@ use crate::widget::types::ScaleMode;
 pub struct Image {
     id: Uuid,
     /// The unique identifier for the image that will be drawn.
-    #[state] pub image_id: TState<Option<image_map::Id>>,
+    #[state] pub image_id: TState<Option<image_map::ImageId>>,
     /// The rectangle area of the original source image that should be used.
     src_rect: Option<Rect>,
     color: Option<ColorState>,
@@ -27,7 +28,7 @@ pub struct Image {
 }
 
 impl Image {
-    pub fn new<I: Into<TState<Option<image_map::Id>>>>(id: I) -> Box<Self> {
+    pub fn new<I: Into<TState<Option<image_map::ImageId>>>>(id: I) -> Box<Self> {
         Box::new(Image {
             id: Uuid::new_v4(),
             image_id: id.into(),
@@ -42,7 +43,7 @@ impl Image {
         })
     }
 
-    pub fn new_icon<I: Into<TState<Option<image_map::Id>>>>(id: I) -> Box<Self> {
+    pub fn new_icon<I: Into<TState<Option<image_map::ImageId>>>>(id: I) -> Box<Self> {
         Box::new(Image {
             id: Uuid::new_v4(),
             image_id: id.into(),

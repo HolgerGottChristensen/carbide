@@ -31,13 +31,13 @@ pub enum Command<'a> {
 pub enum Draw<'a> {
     /// A range of vertices representing triangles textured with the image in the
     /// image_map at the given `widget::Id`.
-    Image(image_map::Id, &'a [Vertex]),
+    Image(image_map::ImageId, &'a [Vertex]),
     /// A range of vertices representing plain triangles.
     Plain(&'a [Vertex]),
 }
 
 enum PreparedCommand {
-    Image(image_map::Id, std::ops::Range<usize>),
+    Image(image_map::ImageId, std::ops::Range<usize>),
     Plain(std::ops::Range<usize>),
     Scizzor(glium::Rect),
 }
@@ -534,7 +534,7 @@ impl Renderer {
 
         enum State {
             Image {
-                image_id: image_map::Id,
+                image_id: image_map::ImageId,
                 start: usize,
             },
             Plain {

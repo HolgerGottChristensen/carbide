@@ -11,7 +11,7 @@ use crate::draw::Scalar;
 use crate::mesh::atlas::lossy_glyph_info::LossyGlyphInfo;
 use crate::text::{Font, FontId, FontSize, Glyph};
 
-type ImageId = crate::image_map::Id;
+type ImageId = crate::image_map::ImageId;
 type ImageData = image::DynamicImage;
 pub type TextureAtlasIndex = usize;
 
