@@ -91,4 +91,5 @@ pub mod window;
 pub mod animation;
 pub mod platform;
 pub mod dialog;
+pub mod locate_folder;
 

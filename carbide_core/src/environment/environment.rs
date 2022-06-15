@@ -10,7 +10,7 @@ use fxhash::{FxBuildHasher, FxHashMap};
 use image::DynamicImage;
 use oneshot::TryRecvError;
 
-use crate::{Color, image_map};
+use crate::{Color, image_map, locate_folder};
 use crate::animation::Animation;
 use crate::cursor::MouseCursor;
 use crate::draw::Dimension;
@@ -590,7 +590,7 @@ impl Environment {
     // TODO: Add fonts automatically and warn if none could be loaded: https://github.com/RazrFalcon/fontdb/blob/master/src/lib.rs
     pub fn add_font_family(&mut self, mut family: FontFamily) {
         for font in &mut family.fonts {
-            let assets = find_folder::Search::KidsThenParents(3, 5)
+            let assets = locate_folder::Search::KidsThenParents(3, 5)
                 .for_folder("assets")
                 .unwrap();
             let font_path = assets.join(&font.path);
