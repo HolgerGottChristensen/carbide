@@ -1,6 +1,7 @@
 use std::path::Path;
 
 use wgpu::{Device, Queue};
+use carbide_core::image::DynamicImage;
 
 use carbide_core::mesh;
 use carbide_core::mesh::pre_multiply::PreMultiply;
@@ -39,7 +40,7 @@ impl Image {
         where
             P: AsRef<Path>,
     {
-        let rgba_logo_image = image::open(path).expect("Couldn't load logo").pre_multiplied().to_rgba8();
+        let rgba_logo_image = carbide_core::image::open(path).expect("Couldn't load logo").pre_multiplied().to_rgba8();
 
         // Create the GPU texture and upload the image data.
         let (width, height) = rgba_logo_image.dimensions();
@@ -59,7 +60,7 @@ impl Image {
         }
     }
 
-    pub fn new_from_dynamic(image: image::DynamicImage, device: &Device, queue: &Queue) -> Self
+    pub fn new_from_dynamic(image: DynamicImage, device: &Device, queue: &Queue) -> Self
     {
 
         let rgba_logo_image = image.pre_multiplied().to_rgba8();

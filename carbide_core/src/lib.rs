@@ -93,3 +93,7 @@ pub mod platform;
 pub mod dialog;
 pub mod locate_folder;
 
+/// Reexport of the image crate
+pub mod image {
+    pub use image::*;
+}

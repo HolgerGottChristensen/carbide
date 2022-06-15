@@ -3,7 +3,7 @@ use std::path::{Path, PathBuf};
 
 use cgmath::{Matrix4, Vector3};
 pub use futures::executor::block_on;
-use image::DynamicImage;
+use carbide_core::image::DynamicImage;
 //use smaa::{SmaaMode, SmaaTarget};
 use uuid::Uuid;
 use wgpu::{BindGroup, BindGroupLayout, Buffer, BufferUsages, PresentMode, Sampler, SurfaceConfiguration, Texture, TextureView};
@@ -15,7 +15,7 @@ use winit::event_loop::{ControlFlow, EventLoop};
 use winit::platform::macos::WindowExtMacOS;
 use winit::window::{Icon, WindowBuilder};
 
-use carbide_core::{Scalar, Ui};
+use carbide_core::{image, Scalar, Ui};
 use carbide_core::draw::Dimension;
 use carbide_core::event::Input;
 use carbide_core::image_map::{ImageId, ImageMap};
@@ -123,7 +123,7 @@ impl carbide_core::window::TWindow for Window {
         Some(id)
     }
 
-    fn add_image(&mut self, image: image::DynamicImage) -> Option<ImageId> {
+    fn add_image(&mut self, image: carbide_core::image::DynamicImage) -> Option<ImageId> {
         let image = Image::new_from_dynamic(image, &self.device, &self.queue);
 
         let information = image.image_information();
@@ -590,7 +590,7 @@ impl Window {
                                             ..
                                         } => {
                                             // This is only for debugging purposes.
-                                            use image::GrayImage;
+                                            use carbide_core::image::GrayImage;
                                             use std::fs::*;
                                             let image_folder =
                                                 String::from("/tmp/carbide_img_dump_")

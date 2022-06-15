@@ -18,7 +18,6 @@ resolver = "2"
 carbide_core = { path = "../../carbide_core", version = "0.70" }
 carbide_derive = { path = "../../carbide_derive", version = "0.70" }
 carbide_winit = { path = "../carbide_winit", version = "0.70" }
-image = "0.23"
 winit = "0.26.1"
 cgmath = "0.18"
 env_logger = "0.7"
@@ -42,7 +41,6 @@ foreign-types = "0.3.2"
 carbide_winit = { path = "../carbide_winit", version = "0.70" }
 find_folder = "0.3"
 futures = "0.3"
-image = "0.23"
 winit = "0.26.1"
 async-std = { version = "1.10.0" }
 surf = { version = "2.3" }

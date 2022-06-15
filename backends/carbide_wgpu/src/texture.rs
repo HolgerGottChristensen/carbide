@@ -1,6 +1,7 @@
 use std::num::NonZeroU32;
 
 use anyhow::*;
+use carbide_core::image::RgbaImage;
 
 pub struct Texture {
     pub texture: wgpu::Texture,
@@ -12,7 +13,7 @@ impl Texture {
     pub fn from_image(
         device: &wgpu::Device,
         queue: &wgpu::Queue,
-        img: &image::RgbaImage,
+        img: &RgbaImage,
         label: Option<&str>,
     ) -> Result<Self> {
         let rgba = img;
