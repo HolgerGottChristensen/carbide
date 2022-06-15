@@ -18,7 +18,7 @@ use rand::Rng;
 use serde::{Deserialize, Serialize};
 
 use crate::animation::Animatable;
-use crate::utils::{degrees, fmod, turns};
+use crate::utils::{fmod, turns_to_radians};
 
 /// Color supporting RGB and HSL variants.
 #[derive(PartialEq, Copy, Clone, Debug, Serialize, Deserialize)]
@@ -96,7 +96,7 @@ pub fn rgb_bytes(r: u8, g: u8, b: u8) -> Color {
 #[inline]
 pub fn hsla(hue: f32, saturation: f32, lightness: f32, alpha: f32) -> Color {
     Color::Hsla(
-        hue - turns((hue / (2.0 * PI)).floor()),
+        hue - turns_to_radians((hue / (2.0 * PI)).floor()),
         saturation,
         lightness,
         alpha,
