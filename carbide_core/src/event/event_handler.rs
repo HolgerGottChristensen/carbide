@@ -1,7 +1,5 @@
 use std::collections::HashMap;
-use std::time::Duration;
-
-use instant::Instant;
+use std::time::{Duration, Instant};
 
 use crate::draw::{Dimension, Position, Scalar};
 use crate::event::{Button, CustomEvent, Input, Key, ModifierKey, Motion, MouseButton};

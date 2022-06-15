@@ -1,5 +1,4 @@
-use instant::Duration;
-
+use std::time::Duration;
 use crate::color::WHITE;
 use crate::draw::{Dimension, Position};
 use crate::prelude::*;

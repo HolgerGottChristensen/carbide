@@ -1,8 +1,7 @@
 use std;
 use std::ffi::c_void;
 use std::fmt::Debug;
-
-use instant::Instant;
+use std::time::Instant;
 use carbide_core::platform::mac::menu::set_application_menu;
 
 use crate::{color, cursor};
