@@ -6,25 +6,6 @@ use std;
 use std::borrow::Cow;
 use std::f64::consts::{E, PI};
 use std::iter::{Chain, once, Once};
-use num::{Float, NumCast, PrimInt, ToPrimitive};
-
-/// Compare to PartialOrd values and return the min.
-pub fn partial_min<T: PartialOrd>(a: T, b: T) -> T {
-    if a <= b {
-        a
-    } else {
-        b
-    }
-}
-
-/// Compare to PartialOrd values and return the max.
-pub fn partial_max<T: PartialOrd>(a: T, b: T) -> T {
-    if a >= b {
-        a
-    } else {
-        b
-    }
-}
 
 /// Clamp a value between some range.
 pub fn clamp<T: PartialOrd>(n: T, start: T, end: T) -> T {
