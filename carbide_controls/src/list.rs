@@ -490,7 +490,7 @@ impl<T: StateContract, U: Delegate<T> + 'static> Delegate<T> for TreeListDelegat
                     }
                 });
 
-                Canvas::new(|_, mut context| {
+                Canvas::new(|_, mut context, _| {
                     context.move_to(8.0, 5.0);
                     context.line_to(13.0, 10.0);
                     context.line_to(8.0, 15.0);

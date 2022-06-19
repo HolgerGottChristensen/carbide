@@ -9,7 +9,7 @@ use carbide_core::{animate, Scalar};
 use carbide_core::draw::Position;
 use carbide_core::environment::Environment;
 use carbide_core::prelude::EnvironmentColor;
-use carbide_core::state::LocalState;
+use carbide_core::state::{LocalState, ReadState, State};
 use carbide_core::text::FontFamily;
 use carbide_core::widget::*;
 use carbide_core::widget::canvas::{Canvas, Context};
@@ -35,10 +35,24 @@ fn main() {
     ]);
     window.add_font_family(family);
 
+    let mut graph = Graph{ nodes: vec![], edges: vec![] };
+    graph.add_node(Node::new(Position::new(0.0, 0.0)));
+    graph.add_node(Node::new(Position::new(200.0, 0.0)));
+    graph.add_node(Node::new(Position::new(200.0, 100.0)));
+    graph.add_node(Node::new(Position::new(100.0, 100.0)));
+    graph.add_node(Node::new(Position::new(50.0, 200.0)));
 
+    graph.add_edge(0, 1, Edge::new());
+    graph.add_edge(1, 2, Edge::new());
+    graph.add_edge(2, 3, Edge::new());
+    graph.add_edge(3, 0, Edge::new());
+    graph.add_edge(0, 4, Edge::new());
+
+
+    let state = LocalState::new(graph);
 
     window.set_widgets(
-        Canvas::new(|rect, mut context| {
+        Canvas::<Graph>::new_with_state(state, |s, rect, mut context, _| {
 
             fn line_between(context: &mut Context, line: &Line) {
                 let center_point = Position::new(300.0, 300.0);
@@ -47,18 +61,7 @@ fn main() {
                 context.line_to(center_point.x() + line.end.x(), center_point.y() + line.end.y());
             }
 
-            let mut graph = Graph{ nodes: vec![], edges: vec![] };
-            graph.add_node(Node::new(Position::new(0.0, 0.0)));
-            graph.add_node(Node::new(Position::new(200.0, 0.0)));
-            graph.add_node(Node::new(Position::new(200.0, 100.0)));
-            graph.add_node(Node::new(Position::new(100.0, 100.0)));
-            graph.add_node(Node::new(Position::new(50.0, 200.0)));
-
-            graph.add_edge(0, 1, Edge::new());
-            graph.add_edge(1, 2, Edge::new());
-            graph.add_edge(2, 3, Edge::new());
-            graph.add_edge(3, 0, Edge::new());
-            graph.add_edge(0, 4, Edge::new());
+            let mut graph = s.value_mut();
 
 
             context.set_stroke_style(EnvironmentColor::DarkText);
@@ -101,7 +104,6 @@ fn main() {
                         let intersect1 = offset1.intersect(&offset2);
 
                         let edge_before = graph.get_edge_mut(before.0);
-                        println!("set neg line before {} to {:?}", edge_before.id, intersect1);
                         if before.2 {
                             edge_before.neg_line.start = intersect1;
                             edge_before.neg_line.flip();
@@ -137,7 +139,6 @@ fn main() {
                                         line_between(&mut context, &offset2);*/
                 }
             }
-            println!("Boom");
             context.stroke();
 
 

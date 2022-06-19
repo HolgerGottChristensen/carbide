@@ -26,7 +26,7 @@ impl PopUpButton {
     fn delegate<T: StateContract + PartialEq + 'static>(selected_item: TState<T>, _focused: FocusState) -> Box<dyn Widget> {
         let text = selected_item.map(|a: &T| format!("{:?}", a)).ignore_writes();
 
-        let arrows = Canvas::new(|_, mut context| {
+        let arrows = Canvas::new(|_, mut context, _| {
             context.move_to(6.0, 9.0);
             context.line_to(10.0, 5.0);
             context.line_to(14.0, 9.0);

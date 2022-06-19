@@ -1,6 +1,7 @@
 use crate::edge::Edge;
 use crate::node::Node;
 
+#[derive(Clone, Debug)]
 pub struct Graph {
     pub nodes: Vec<Node>,
     pub edges: Vec<Edge>,

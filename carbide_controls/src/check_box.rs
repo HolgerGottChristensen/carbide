@@ -46,7 +46,7 @@ impl CheckBox {
                 .stroke(EnvironmentColor::OpaqueSeparator)
                 .stroke_style(1.0),
             IfElse::new(checked_intermediate).when_true(Canvas::new(
-                |_, mut context| {
+                |_, mut context, _| {
                     context.move_to(4.0, 7.0);
                     context.line_to(10.0, 7.0);
 
@@ -57,7 +57,7 @@ impl CheckBox {
                     context
                 },
             )),
-            IfElse::new(checked_true).when_true(Canvas::new(|_, mut context| {
+            IfElse::new(checked_true).when_true(Canvas::new(|_, mut context, _| {
                 context.move_to(4.0, 8.0);
                 context.line_to(6.0, 10.0);
                 context.line_to(10.0, 4.0);

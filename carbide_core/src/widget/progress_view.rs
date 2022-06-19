@@ -38,7 +38,7 @@ impl ProgressView {
             Circle::new()
                 .stroke(EnvironmentColor::Separator)
                 .stroke_style(4.0),
-            Canvas::new(|rect, mut context| {
+            Canvas::new(|rect, mut context, _| {
                 context.move_to(2.0, rect.height() / 2.0);
                 context.arc(rect.width() / 2.0, rect.height() / 2.0, rect.height() / 2.0 - 2.0, 0.0, 60.0);
                 context.set_stroke_style(WHITE);
@@ -47,7 +47,7 @@ impl ProgressView {
                 context.stroke();
                 context
             }).rotation_effect(animation),
-            Canvas::new(|rect, mut context| {
+            Canvas::new(|rect, mut context, _| {
                 context.move_to(2.0, rect.height() / 2.0);
                 context.arc(rect.width() / 2.0, rect.height() / 2.0, rect.height() / 2.0 - 2.0, 0.0, 120.0);
                 context.set_stroke_style(WHITE);

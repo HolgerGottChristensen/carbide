@@ -1,3 +1,4 @@
+use std::fmt::{Debug, Formatter};
 use lyon::algorithms::path::Path;
 use lyon::tessellation::{
     BuffersBuilder, FillOptions, FillTessellator, FillVertex, StrokeOptions, StrokeTessellator,
@@ -11,29 +12,52 @@ use crate::draw::shape::triangle::Triangle;
 use crate::prelude::*;
 use crate::render::PrimitiveKind;
 use crate::widget::canvas::{Context, ShapeStyleWithOptions};
+use crate::widget::canvas::canvas::Contexts::{NoState, WithState};
 
 /// A basic, non-interactive rectangle shape widget.
-#[derive(Debug, Clone, Widget)]
+#[derive(Clone, Widget)]
 #[carbide_exclude(Render)]
-pub struct Canvas {
+pub struct Canvas<T> where T: StateContract {
     id: WidgetId,
     position: Position,
     dimension: Dimension,
     #[state]
     color: ColorState,
     //prim_store: Vec<Primitive>,
-    context: fn(Rect, Context) -> Context,
+    context: Contexts<T>,
+    #[state] state: TState<T>,
 }
 
-impl Canvas {
-    pub fn new(context: fn(Rect, Context) -> Context) -> Box<Self> {
+#[derive(Clone)]
+enum Contexts<T> where T: StateContract {
+    WithState(fn(&mut TState<T>, Rect, Context, &mut Environment) -> Context),
+    NoState(fn(Rect, Context, &mut Environment) -> Context)
+}
+
+impl Canvas<()> {
+    pub fn new(context: fn(Rect, Context, &mut Environment) -> Context) -> Box<Canvas<()>> {
         Box::new(Canvas {
             id: WidgetId::new(),
             position: Position::new(0.0, 0.0),
             dimension: Dimension::new(100.0, 100.0),
             color: EnvironmentColor::Accent.into(),
             //prim_store: vec![],
-            context,
+            context: NoState(context),
+            state: ValueState::new(())
+        })
+    }
+}
+
+impl<T: StateContract> Canvas<T> {
+    pub fn new_with_state(state: impl Into<TState<T>>, context: fn(&mut TState<T>, Rect, Context, &mut Environment) -> Context) -> Box<Canvas<T>> {
+        Box::new(Canvas {
+            id: WidgetId::new(),
+            position: Position::new(0.0, 0.0),
+            dimension: Dimension::new(100.0, 100.0),
+            color: EnvironmentColor::Accent.into(),
+            //prim_store: vec![],
+            context: WithState(context),
+            state: state.into()
         })
     }
 
@@ -111,9 +135,46 @@ impl Canvas {
     }
 }
 
-CommonWidgetImpl!(Canvas, self, id: self.id, position: self.position, dimension: self.dimension);
+impl<T: StateContract> CommonWidget for Canvas<T> {
+    fn id(&self) -> carbide_core::widget::WidgetId {
+        (self.id)
+    }
 
-impl Shape for Canvas {
+
+    fn children(&self) -> carbide_core::widget::WidgetIter {
+        carbide_core::widget::WidgetIter::Empty
+    }
+
+    fn children_mut(&mut self) -> carbide_core::widget::WidgetIterMut {
+        carbide_core::widget::WidgetIterMut::Empty
+    }
+
+    fn children_direct(&mut self) -> carbide_core::widget::WidgetIterMut {
+        carbide_core::widget::WidgetIterMut::Empty
+    }
+
+    fn children_direct_rev(&mut self) -> carbide_core::widget::WidgetIterMut {
+        carbide_core::widget::WidgetIterMut::Empty
+    }
+
+    fn position(&self) -> carbide_core::draw::Position {
+        (self.position)
+    }
+
+    fn set_position(&mut self, position: carbide_core::draw::Position) {
+        (self.position) = position;
+    }
+
+    fn dimension(&self) -> carbide_core::draw::Dimension {
+        (self.dimension)
+    }
+
+    fn set_dimension(&mut self, dimension: carbide_core::draw::Dimension) {
+        (self.dimension) = dimension
+    }
+}
+
+impl<T: StateContract> Shape for Canvas<T> {
     fn get_triangle_store_mut(&mut self) -> &mut PrimitiveStore {
         todo!()
     }
@@ -130,7 +191,15 @@ impl Shape for Canvas {
         let context = Context::new();
 
         let rectangle = Rect::new(self.position(), self.dimension());
-        let context = (self.context)(rectangle, context);
+
+        let context = match self.context {
+            WithState(c) => {
+                c(&mut self.state, rectangle, context, env)
+            }
+            NoState(c) => {
+                c(rectangle, context, env)
+            }
+        };
 
         let paths = context.to_paths(self.position());
         let mut prims = vec![];
@@ -165,12 +234,19 @@ impl Shape for Canvas {
     }
 }
 
-impl Render for Canvas {
+impl<T: StateContract> Render for Canvas<T> {
     fn get_primitives(&mut self, primitives: &mut Vec<Primitive>, env: &mut Environment) {
         let context = Context::new();
 
         let rectangle = Rect::new(self.position(), self.dimension());
-        let context = (self.context)(rectangle, context);
+        let context = match self.context {
+            WithState(c) => {
+                c(&mut self.state, rectangle, context, env)
+            }
+            NoState(c) => {
+                c(rectangle, context, env)
+            }
+        };
 
         let paths = context.to_paths(self.position());
 
@@ -191,4 +267,10 @@ impl Render for Canvas {
     }
 }
 
-impl WidgetExt for Canvas {}
+impl<T: StateContract> Debug for Canvas<T> {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        todo!()
+    }
+}
+
+impl<T: StateContract> WidgetExt for Canvas<T> {}
