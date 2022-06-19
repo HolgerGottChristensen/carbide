@@ -112,6 +112,23 @@ impl Position {
         let y = self.y.abs() <= f64::EPSILON;
         x && y
     }
+
+    pub fn orthogonal(self) -> Position {
+        Position::new(self.y, -self.x)
+    }
+
+    pub fn reverse(self) -> Position {
+        Position::new(-self.x, -self.y)
+    }
+
+    pub fn len(self) -> Scalar {
+        (self.x.powi(2) + self.y.powi(2)).sqrt()
+    }
+
+    pub fn normalized(self) -> Position {
+        let len = self.len();
+        Position::new(self.x / len, self.y / len)
+    }
 }
 
 impl AddAssign<Dimension> for Position {
