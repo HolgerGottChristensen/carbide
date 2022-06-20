@@ -129,6 +129,10 @@ impl Position {
         let len = self.len();
         Position::new(self.x / len, self.y / len)
     }
+
+    pub fn dist(&self, other: &Position) -> Scalar {
+        (*self - *other).len()
+    }
 }
 
 impl AddAssign<Dimension> for Position {

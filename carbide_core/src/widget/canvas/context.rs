@@ -51,6 +51,13 @@ impl Context {
             .push(ContextAction::Rect(x, y, width, height))
     }
 
+    /// x, y is the top left corner of the box enclosing the circle
+    pub fn circle(&mut self, x: f64, y: f64, diameter: f64) {
+        self.move_to(x, y + diameter / 2.0);
+        self.arc(x + diameter / 2.0, y + diameter / 2.0, diameter / 2.0, 0.0, 360.0);
+        self.move_to(0.0, 0.0);
+    }
+
     pub fn clear_rect(&mut self) {
         todo!()
     }

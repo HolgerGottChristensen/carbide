@@ -7,6 +7,7 @@ pub struct Node {
     pub position: Position,
     pub incoming_edges: Vec<usize>,
     pub outgoing_edges: Vec<usize>,
+    pub hovered: bool,
 }
 
 impl Node {
@@ -15,7 +16,8 @@ impl Node {
             id: 0,
             position: pos,
             incoming_edges: vec![],
-            outgoing_edges: vec![]
+            outgoing_edges: vec![],
+            hovered: false
         }
     }
 

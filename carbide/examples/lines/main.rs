@@ -1,6 +1,8 @@
 mod node;
 mod edge;
 mod graph;
+mod node_editor;
+mod line;
 
 use std::cmp::Ordering;
 use std::time::Duration;
@@ -16,7 +18,9 @@ use carbide_core::widget::canvas::{Canvas, Context};
 use carbide_wgpu::window::*;
 use crate::edge::Edge;
 use crate::graph::Graph;
+use crate::line::Line;
 use crate::node::Node;
+use crate::node_editor::NodeEditor;
 
 fn main() {
     env_logger::init();
@@ -24,7 +28,7 @@ fn main() {
     let icon_path = Window::relative_path_to_assets("images/rust_press.png");
 
     let mut window = Window::new(
-        "Match example".to_string(),
+        "Lines example".to_string(),
         1200,
         1200,
         Some(icon_path.clone()),
@@ -36,11 +40,11 @@ fn main() {
     window.add_font_family(family);
 
     let mut graph = Graph{ nodes: vec![], edges: vec![] };
-    graph.add_node(Node::new(Position::new(0.0, 0.0)));
-    graph.add_node(Node::new(Position::new(200.0, 0.0)));
-    graph.add_node(Node::new(Position::new(200.0, 100.0)));
     graph.add_node(Node::new(Position::new(100.0, 100.0)));
-    graph.add_node(Node::new(Position::new(50.0, 200.0)));
+    graph.add_node(Node::new(Position::new(300.0, 100.0)));
+    graph.add_node(Node::new(Position::new(300.0, 200.0)));
+    graph.add_node(Node::new(Position::new(200.0, 200.0)));
+    graph.add_node(Node::new(Position::new(150.0, 300.0)));
 
     graph.add_edge(0, 1, Edge::new());
     graph.add_edge(1, 2, Edge::new());
@@ -51,195 +55,137 @@ fn main() {
 
     let state = LocalState::new(graph);
 
-    window.set_widgets(
-        Canvas::<Graph>::new_with_state(state, |s, rect, mut context, _| {
+    let canvas = Canvas::<Graph>::new_with_state(&state, |s, rect, mut context, _| {
 
-            fn line_between(context: &mut Context, line: &Line) {
-                let center_point = Position::new(300.0, 300.0);
+        fn line_between(context: &mut Context, line: &Line) {
+            let center_point = Position::new(0.0, 0.0);
+            //let center_point = Position::new(300.0, 300.0);
 
-                context.move_to(center_point.x() + line.start.x(), center_point.y() + line.start.y());
-                context.line_to(center_point.x() + line.end.x(), center_point.y() + line.end.y());
+            context.move_to(center_point.x() + line.start.x(), center_point.y() + line.start.y());
+            context.line_to(center_point.x() + line.end.x(), center_point.y() + line.end.y());
+        }
+
+        let mut graph = s.value_mut();
+
+
+        context.set_stroke_style(EnvironmentColor::DarkText);
+        context.set_line_width(1.0);
+
+        let width1 = 10.0;
+
+        for node_id in 0..graph.nodes.len() {
+            //println!("Nodeid: {:?}", node_id);
+            let start_node = graph.get_node(node_id);
+            let mut lines = vec![];
+            for neighbor in graph.get_outgoing_neighbors_iter(node_id) {
+                let end_node = graph.get_node(neighbor.to);
+
+                lines.push((neighbor.id, Line::new(start_node.position, end_node.position), true));
             }
 
-            let mut graph = s.value_mut();
+            for neighbor in graph.get_incoming_neighbors_iter(node_id) {
+                let end_node = graph.get_node(neighbor.from);
 
+                lines.push((neighbor.id, Line::new(start_node.position, end_node.position), false));
+            }
 
-            context.set_stroke_style(EnvironmentColor::DarkText);
-            context.set_line_width(1.0);
+            lines.sort_by(|a, b| {
+                total_cmp(a.1.angle(), b.1.angle())
+            });
 
-            let width1 = 10.0;
+            for (before, after) in lines.iter().zip(lines.iter().skip(1).chain(lines.iter())) {
+                line_between(&mut context, &before.1);
 
-            for node_id in 0..graph.nodes.len() {
-                //println!("Nodeid: {:?}", node_id);
-                let start_node = graph.get_node(node_id);
-                let mut lines = vec![];
-                for neighbor in graph.get_outgoing_neighbors_iter(node_id) {
-                    let end_node = graph.get_node(neighbor.to);
+                if lines.len() > 1 {
+                    let mut offset1 = before.1.normal_offset(-width1);
+                    let mut offset2 = after.1.normal_offset(width1);
 
-                    lines.push((neighbor.id, Line::new(start_node.position, end_node.position), true));
-                }
+                    let intersect1 = offset1.intersect(&offset2);
 
-                for neighbor in graph.get_incoming_neighbors_iter(node_id) {
-                    let end_node = graph.get_node(neighbor.from);
-
-                    lines.push((neighbor.id, Line::new(start_node.position, end_node.position), false));
-                }
-
-                lines.sort_by(|a, b| {
-                    total_cmp(a.1.angle(), b.1.angle())
-                });
-
-                for (before, after) in lines.iter().zip(lines.iter().skip(1).chain(lines.iter())) {
-                    //println!("{:?} - {:?}", before, after);
-                    line_between(&mut context, &before.1);
-
-
-
-                    if lines.len() > 1 {
-                        let mut offset1 = before.1.normal_offset(-width1);
-                        let mut offset2 = after.1.normal_offset(width1);
-                        //line_between(&mut context, &offset1);
-                        //line_between(&mut context, &offset2);
-
-                        let intersect1 = offset1.intersect(&offset2);
-
-                        let edge_before = graph.get_edge_mut(before.0);
-                        if before.2 {
-                            edge_before.neg_line.start = intersect1;
-                            edge_before.neg_line.flip();
-                        } else {
-                            edge_before.pos_line.start = intersect1;
-                            edge_before.pos_line.flip();
-                        }
-
-
-                        let edge_after = graph.get_edge_mut(after.0);
-                        //println!("set pos line after {} to {:?}", edge_after.id, intersect1);
-                        if after.2 {
-                            edge_after.pos_line.start = intersect1;
-                            edge_after.pos_line.flip();
-                        } else {
-                            edge_after.neg_line.start = intersect1;
-                            edge_after.neg_line.flip();
-                        }
-
-
-                    } else {
-                        let mut offset1 = before.1.normal_offset(-width1);
-                        let mut offset2 = before.1.normal_offset(width1);
-
-                        let edge_before = graph.get_edge_mut(before.0);
-                        edge_before.pos_line.start = offset1.start;
-                        edge_before.neg_line.start = offset2.start;
+                    let edge_before = graph.get_edge_mut(before.0);
+                    if before.2 {
+                        edge_before.neg_line.start = intersect1;
                         edge_before.neg_line.flip();
+                    } else {
+                        edge_before.pos_line.start = intersect1;
                         edge_before.pos_line.flip();
                     }
-                    /*
-                                        line_between(&mut context, &offset1);
-                                        line_between(&mut context, &offset2);*/
+
+
+                    let edge_after = graph.get_edge_mut(after.0);
+                    if after.2 {
+                        edge_after.pos_line.start = intersect1;
+                        edge_after.pos_line.flip();
+                    } else {
+                        edge_after.neg_line.start = intersect1;
+                        edge_after.neg_line.flip();
+                    }
+
+
+                } else {
+                    let mut offset1 = before.1.normal_offset(-width1);
+                    let mut offset2 = before.1.normal_offset(width1);
+
+                    let edge_before = graph.get_edge_mut(before.0);
+                    edge_before.pos_line.start = offset1.start;
+                    edge_before.neg_line.start = offset2.start;
+                    edge_before.neg_line.flip();
+                    edge_before.pos_line.flip();
                 }
             }
-            context.stroke();
+        }
+        context.stroke();
 
 
-            context.begin_path();
+        context.begin_path();
 
-            context.set_stroke_style(EnvironmentColor::Blue);
+        context.set_stroke_style(EnvironmentColor::Blue);
 
-            for edge in &graph.edges {
-                line_between(&mut context, &edge.neg_line);
-                line_between(&mut context, &edge.pos_line);
+        for edge in &graph.edges {
+            line_between(&mut context, &edge.neg_line);
+            line_between(&mut context, &edge.pos_line);
+        }
+
+        context.stroke();
+
+        context.set_fill_style(EnvironmentColor::DarkText);
+
+        context.begin_path();
+
+        for node in &graph.nodes {
+            if node.hovered {
+                context.fill();
+
+                context.begin_path();
+                context.set_fill_style(EnvironmentColor::Blue);
+                context.circle(node.position.x() - 4.5, node.position.y() - 4.5, 9.0);
+
+                context.fill();
+                context.begin_path();
+                context.set_fill_style(EnvironmentColor::DarkText);
+            } else {
+                context.circle(node.position.x() - 4.5, node.position.y() - 4.5, 9.0);
             }
+        }
 
-            context.stroke();
+        context.fill();
 
-            /*context.begin_path();
+        context
+    });
 
-            context.set_stroke_style(EnvironmentColor::Green);
+    let node_editor = NodeEditor::new(state);
 
-            for edge in &graph.edges {
-                line_between(&mut context, &edge.pos_line);
-            }
-
-            context.stroke();*/
-
-            /*let width1 = 10.0;
-
-            let mut offset1 = line1.normal_offset(width1);
-            let mut offset2 = line1.normal_offset(-width1);
-            let mut offset3 = line2.normal_offset(width1);
-            let mut offset4 = line2.normal_offset(-width1);
-
-            let intersect1 = offset1.intersect(&offset4);
-            offset1.start = intersect1;
-            offset4.start = intersect1;
-
-            let intersect2 = offset2.intersect(&offset3);
-            offset2.start = intersect2;
-            offset3.start = intersect2;
-
-            line_between(&mut context, offset1);
-            line_between(&mut context, offset2);
-            line_between(&mut context, offset3);
-            line_between(&mut context, offset4);
-
-            context.stroke();*/
-
-            context
-        })
+    window.set_widgets(
+        ZStack::new(vec![
+            node_editor,
+            canvas
+        ])
     );
 
     window.launch();
 }
 
-#[derive(Debug, Clone, Copy)]
-pub struct Line {
-    pub start: Position,
-    pub end: Position,
-}
 
-impl Line {
-    pub fn new(start: Position, end: Position) -> Line {
-        Line {
-            start,
-            end
-        }
-    }
-
-    pub fn flip(&mut self) {
-        let temp = self.start;
-        self.start = self.end;
-        self.end = temp;
-    }
-
-    pub fn half(&self) -> Line {
-        Line {
-            start: self.start,
-            end: (self.end - self.start) / 2.0 + self.start,
-        }
-    }
-
-    /// Return the angle in degrees
-    pub fn angle(&self) -> Scalar {
-        f64::atan2(self.end.y() - self.start.y(), self.end.x() - self.start.x()) * 180.0 * std::f64::consts::PI
-    }
-
-    pub fn intersect(&self, other: &Line) -> Position {
-        intersect(self.start, self.end, other.start, other.end).unwrap()
-    }
-
-    pub fn direction(&self) -> Position {
-        self.end - self.start
-    }
-
-    pub fn normal_offset(&self, distance: Scalar) -> Line {
-        let dir = self.direction().orthogonal().normalized() * distance;
-        Line {
-            start: self.start + dir,
-            end: self.end + dir,
-        }
-    }
-}
 
 // https://math.stackexchange.com/questions/3176543/intersection-point-of-2-lines-defined-by-2-points-each
 /// # a = pt 1 on line 1

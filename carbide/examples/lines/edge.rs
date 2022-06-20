@@ -1,4 +1,4 @@
-use crate::Line;
+use crate::line::Line;
 
 #[derive(Debug, Clone)]
 pub struct Edge {
@@ -7,6 +7,8 @@ pub struct Edge {
     pub to: usize,
     pub pos_line: Line,
     pub neg_line: Line,
+    pub offset: f64,
+    pub width: f64,
 }
 
 impl Edge {
@@ -22,7 +24,9 @@ impl Edge {
             neg_line: Line {
                 start: Default::default(),
                 end: Default::default(),
-            }
+            },
+            offset: 0.5,
+            width: 20.0
         }
     }
 

@@ -49,7 +49,7 @@ impl MessageBubble {
         ]);
 
         Box::new(MessageBubble {
-            id: WidgetId::new_v4(),
+            id: WidgetId::new(),
             position: Default::default(),
             dimension: Default::default(),
             child,

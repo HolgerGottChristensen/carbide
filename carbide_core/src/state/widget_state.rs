@@ -110,6 +110,12 @@ impl<T: StateContract> State<T> for WidgetState<T> {
     }
 }
 
+impl<T: StateContract> From<&WidgetState<T>> for WidgetState<T> {
+    fn from(s: &WidgetState<T>) -> Self {
+        s.clone()
+    }
+}
+
 pub trait Map<FROM: StateContract, TO: StateContract>:
 Fn(&FROM) -> TO + DynClone + 'static
 {}
