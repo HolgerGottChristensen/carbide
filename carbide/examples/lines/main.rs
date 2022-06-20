@@ -47,10 +47,10 @@ fn main() {
     graph.add_node(Node::new(Position::new(150.0, 300.0)));
 
     graph.add_edge(0, 1, Edge::new());
-    graph.add_edge(1, 2, Edge::new());
+    graph.add_edge(1, 2, Edge::new().width(30.0));
     graph.add_edge(2, 3, Edge::new());
     graph.add_edge(3, 0, Edge::new());
-    graph.add_edge(0, 4, Edge::new());
+    graph.add_edge(0, 4, Edge::new().offset(0.3));
 
 
     let state = LocalState::new(graph);
@@ -80,13 +80,13 @@ fn main() {
             for neighbor in graph.get_outgoing_neighbors_iter(node_id) {
                 let end_node = graph.get_node(neighbor.to);
 
-                lines.push((neighbor.id, Line::new(start_node.position, end_node.position), true));
+                lines.push((neighbor.id, Line::new(start_node.position, end_node.position), true, neighbor.offset, neighbor.width));
             }
 
             for neighbor in graph.get_incoming_neighbors_iter(node_id) {
                 let end_node = graph.get_node(neighbor.from);
 
-                lines.push((neighbor.id, Line::new(start_node.position, end_node.position), false));
+                lines.push((neighbor.id, Line::new(start_node.position, end_node.position), false, neighbor.offset, neighbor.width));
             }
 
             lines.sort_by(|a, b| {
@@ -97,8 +97,12 @@ fn main() {
                 line_between(&mut context, &before.1);
 
                 if lines.len() > 1 {
-                    let mut offset1 = before.1.normal_offset(-width1);
-                    let mut offset2 = after.1.normal_offset(width1);
+
+                    let w1 = if before.2 { before.4 * (1.0 - before.3) } else { before.4 * before.3 };
+                    let w2 = if !after.2 { after.4 * (1.0 - after.3) } else { after.4 * after.3 };
+
+                    let mut offset1 = before.1.normal_offset(-w1);
+                    let mut offset2 = after.1.normal_offset(w2);
 
                     let intersect1 = offset1.intersect(&offset2);
 
@@ -123,8 +127,11 @@ fn main() {
 
 
                 } else {
-                    let mut offset1 = before.1.normal_offset(-width1);
-                    let mut offset2 = before.1.normal_offset(width1);
+                    let multiplier1 = if before.2 { (1.0 - before.3) } else { before.3 };
+                    let multiplier2 = if before.2 { before.3 } else { (1.0 - before.3) };
+
+                    let mut offset1 = before.1.normal_offset(-before.4 * multiplier1);
+                    let mut offset2 = before.1.normal_offset(before.4 * multiplier2);
 
                     let edge_before = graph.get_edge_mut(before.0);
                     edge_before.pos_line.start = offset1.start;

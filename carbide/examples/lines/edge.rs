@@ -35,4 +35,14 @@ impl Edge {
         self.pos_line = self.neg_line;
         self.neg_line = temp;
     }
+
+    pub fn offset(mut self, offset: f64) -> Self {
+        self.offset = offset;
+        self
+    }
+
+    pub fn width(mut self, width: f64) -> Self {
+        self.width = width;
+        self
+    }
 }
