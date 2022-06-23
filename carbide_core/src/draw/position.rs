@@ -1,6 +1,6 @@
 use std::fmt;
 use std::fmt::{Display, Formatter};
-use std::ops::{Add, AddAssign, Div, Mul, Sub};
+use std::ops::{Add, AddAssign, Div, Mul, Sub, SubAssign};
 
 use rusttype::Point;
 
@@ -133,11 +133,27 @@ impl Position {
     pub fn dist(&self, other: &Position) -> Scalar {
         (*self - *other).len()
     }
+
+    pub fn dot(&self, other: &Position) -> Scalar {
+        self.x * other.x + self.y * other.y
+    }
 }
 
 impl AddAssign<Dimension> for Position {
     fn add_assign(&mut self, rhs: Dimension) {
         *self = *self + rhs;
+    }
+}
+
+impl AddAssign<Position> for Position {
+    fn add_assign(&mut self, rhs: Position) {
+        *self = *self + rhs;
+    }
+}
+
+impl SubAssign<Position> for Position {
+    fn sub_assign(&mut self, rhs: Position) {
+        *self = *self - rhs;
     }
 }
 

@@ -1,10 +1,15 @@
+use carbide_core::draw::Position;
 use crate::edge::Edge;
+use crate::guide::Guide;
 use crate::node::Node;
 
 #[derive(Clone, Debug)]
 pub struct Graph {
+    pub offset: Position,
     pub nodes: Vec<Node>,
     pub edges: Vec<Edge>,
+
+    pub guides: Vec<Guide>,
 }
 
 impl Graph {
@@ -49,16 +54,26 @@ impl Graph {
         id
     }
 
-    /*pub fn get_neighbors_iter(
+    pub fn get_connected_edges_iter(
+        &self,
+        node_id: usize,
+    ) -> impl Iterator<Item = &Edge> + '_ {
+        self
+            .get_incoming_edges_iter(node_id)
+            .chain(self.get_outgoing_edges_iter(node_id))
+    }
+
+    pub fn get_connected_neighbours_iter(
         &self,
         node_id: usize,
     ) -> impl Iterator<Item = usize> + '_ {
         self
-            .get_incoming_neighbors_iter(node_id)
-            .chain(self.get_outgoing_neighbors_iter(node_id))
-    }*/
+            .get_incoming_edges_iter(node_id)
+            .map(|a| a.from)
+            .chain(self.get_outgoing_edges_iter(node_id).map(|a| a.to))
+    }
 
-    pub fn get_incoming_neighbors_iter(
+    pub fn get_incoming_edges_iter(
         &self,
         node_id: usize,
     ) -> impl Iterator<Item = &Edge> + '_ {
@@ -72,7 +87,7 @@ impl Graph {
             })
     }
 
-    pub fn get_outgoing_neighbors_iter(
+    pub fn get_outgoing_edges_iter(
         &self,
         node_id: usize,
     ) -> impl Iterator<Item = &Edge> + '_ {
