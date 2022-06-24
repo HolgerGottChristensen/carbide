@@ -37,12 +37,13 @@ impl NodeEditor {
 impl MouseEventHandler for NodeEditor {
     fn handle_mouse_event(&mut self, event: &MouseEvent, consumed: &bool, env: &mut Environment) {
         match event {
-            MouseEvent::Press(a, b, c) => {
+            MouseEvent::Press(_, b, _) => {
+                let b = *b - self.position;
                 let mut closest_id = 0;
-                let mut closest_distance = self.graph.value().get_node(0).position.dist(b);
+                let mut closest_distance = self.graph.value().get_node(0).position.dist(&b);
 
                 for node in &self.graph.value().nodes {
-                    let dist = node.position.dist(b);
+                    let dist = node.position.dist(&b);
                     if dist < closest_distance {
                         closest_distance = dist;
                         closest_id = node.id;
@@ -61,10 +62,10 @@ impl MouseEventHandler for NodeEditor {
             }
             MouseEvent::Click(_, _, _) => {}
             MouseEvent::Move { from, to, delta_xy, modifiers } => {
-
+                let to = *to - self.position;
                 if *self.selected_node.value() == None {
                     for node in &mut self.graph.value_mut().nodes {
-                        if node.position.dist(to) < 10.0 {
+                        if node.position.dist(&to) < 10.0 {
                             node.hovered = true;
                         } else {
                             node.hovered = false;
@@ -73,14 +74,9 @@ impl MouseEventHandler for NodeEditor {
                 }
 
                 if let Some(id) = *self.selected_node.value() {
-                    let mut new_position = *to;
-
+                    let mut new_position = to;
                     let graph = self.graph.value();
-
                     let mut guides = vec![];
-
-
-
 
                     for edge_id in 0..graph.edges.len() {
                         let edge = graph.get_edge(edge_id);
@@ -93,8 +89,8 @@ impl MouseEventHandler for NodeEditor {
                             graph.get_node(edge.to).position,
                         );
 
-                        if line.dist_inf_line_to_point(*to) < 5.0 {
-                            new_position = line.closest_point_on_line_infinite(*to);
+                        if line.dist_inf_line_to_point(to) < 5.0 {
+                            new_position = line.closest_point_on_line_infinite(to);
                             guides.push(Guide::Directional(line));
                         }
                     }
@@ -126,6 +122,8 @@ impl MouseEventHandler for NodeEditor {
             }
             MouseEvent::NClick(_, position, _, number_of_clicks) => {
                 if *number_of_clicks != 2 {return;}
+
+                let position = *position - self.position;
                 if *self.selected_node.value() == None {
                     let graph = self.graph.value();
                     let mut number_of_close_lines = 0;
@@ -139,8 +137,8 @@ impl MouseEventHandler for NodeEditor {
                             graph.get_node(edge.to).position,
                         );
 
-                        if let Some(_) = line.closest_point_on_line(*position) {
-                            if line.dist_inf_line_to_point(*position) < 5.0 {
+                        if let Some(_) = line.closest_point_on_line(position) {
+                            if line.dist_inf_line_to_point(position) < 5.0 {
                                 number_of_close_lines += 1;
                                 close_line_id = edge_id;
                             }
@@ -159,19 +157,10 @@ impl MouseEventHandler for NodeEditor {
                                 graph.get_node(edge.to).position,
                             );
 
-                            line.closest_point_on_line_infinite(*position)
+                            line.closest_point_on_line_infinite(position)
                         };
 
-                        let new_id = self.graph.value_mut().add_node(Node::new(new_pos));
-                        let old_to = self.graph.value_mut().get_edge_mut(close_line_id).to;
-
-                        self.graph.value_mut().get_node_mut(old_to).incoming_edges.retain(|a| *a != close_line_id);
-
-                        self.graph.value_mut().get_edge_mut(close_line_id).to = new_id;
-
-                        self.graph.value_mut().get_node_mut(new_id).incoming_edges.push(close_line_id);
-
-                        self.graph.value_mut().add_edge(new_id, old_to, Edge::new());
+                        self.graph.value_mut().split_edge_with_node(close_line_id, new_pos);
                     }
                 }
             }

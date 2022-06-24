@@ -5,20 +5,22 @@ mod node_editor;
 mod line;
 mod constraints;
 mod guide;
+mod editing_mode;
 
 use std::cmp::Ordering;
 use std::time::Duration;
 use carbide_controls::{Button, capture, TextInput};
-use carbide_core::{animate, Scalar};
+use carbide_core::{animate, lens, Scalar};
 use carbide_core::draw::Position;
 use carbide_core::environment::Environment;
 use carbide_core::prelude::EnvironmentColor;
-use carbide_core::state::{LocalState, ReadState, State};
+use carbide_core::state::{LocalState, ReadState, State, TState};
 use carbide_core::text::FontFamily;
 use carbide_core::widget::*;
 use carbide_core::widget::canvas::{Canvas, Context};
 use carbide_wgpu::window::*;
 use crate::edge::Edge;
+use crate::editing_mode::EditingMode;
 use crate::graph::Graph;
 use crate::guide::Guide;
 use crate::line::Line;
@@ -42,7 +44,7 @@ fn main() {
     ]);
     window.add_font_family(family);
 
-    let mut graph = Graph { offset: Default::default(), nodes: vec![], edges: vec![], guides: vec![] };
+    let mut graph = Graph::new();
     graph.add_node(Node::new(Position::new(100.0, 100.0)));
     graph.add_node(Node::new(Position::new(300.0, 100.0)));
     graph.add_node(Node::new(Position::new(300.0, 200.0)));
@@ -56,6 +58,8 @@ fn main() {
 
 
     let state = LocalState::new(graph);
+
+    let editing_mode: TState<EditingMode> = lens!(Graph; state.editing_mode);
 
     let canvas = Canvas::<Graph>::new_with_state(&state, |s, rect, mut context, _| {
 
@@ -157,11 +161,9 @@ fn main() {
                 }
             }
         }
+
         context.stroke();
-
-
         context.begin_path();
-
         context.set_stroke_style(EnvironmentColor::Blue);
 
         for edge in &graph.edges {
@@ -170,9 +172,7 @@ fn main() {
         }
 
         context.stroke();
-
         context.set_fill_style(EnvironmentColor::DarkText);
-
         context.begin_path();
 
         for node in &graph.nodes {
@@ -192,25 +192,21 @@ fn main() {
         }
 
         context.fill();
-
         context.begin_path();
-
-        let (left, right, bottom, top) = rect.l_r_b_t();
-
         context.set_stroke_style(EnvironmentColor::Green);
 
         for guide in &graph.guides {
             match guide {
                 Guide::Vertical(x) => {
                     line_between(&mut context, &Line::new(
-                        Position::new(*x, bottom),
-                        Position::new(*x, top),
+                        Position::new(*x, 0.0),
+                        Position::new(*x, rect.height()),
                     ), graph.offset);
                 }
                 Guide::Horizontal(y) => {
                     line_between(&mut context, &Line::new(
-                        Position::new(left, *y),
-                        Position::new(right, *y),
+                        Position::new(0.0, *y),
+                        Position::new(rect.width(), *y),
                     ), graph.offset);
                 }
                 Guide::Directional(line) => {
@@ -228,10 +224,21 @@ fn main() {
     let node_editor = NodeEditor::new(state);
 
     window.set_widgets(
-        ZStack::new(vec![
-            node_editor,
-            canvas
-        ])
+        VStack::new(vec![
+            HStack::new(vec![
+                Button::new("Hello")
+                    .on_click(move || {
+                        println!("{:?}", editing_mode)
+                    })
+                    .frame(70.0, 26.0),
+                Spacer::new()
+            ]).padding(EdgeInsets::single(0.0, 0.0, 10.0, 10.0)).frame_fixed_height(35.0)
+                .background(Rectangle::new().fill(EnvironmentColor::SystemFill)),
+            ZStack::new(vec![
+                node_editor,
+                canvas
+            ])
+        ]).spacing(0.0)
     );
 
     window.launch();

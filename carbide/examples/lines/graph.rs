@@ -1,5 +1,6 @@
 use carbide_core::draw::Position;
 use crate::edge::Edge;
+use crate::editing_mode::EditingMode;
 use crate::guide::Guide;
 use crate::node::Node;
 
@@ -10,9 +11,19 @@ pub struct Graph {
     pub edges: Vec<Edge>,
 
     pub guides: Vec<Guide>,
+    pub editing_mode: EditingMode,
 }
 
 impl Graph {
+    pub fn new() -> Graph {
+        Graph {
+            offset: Default::default(),
+            nodes: vec![],
+            edges: vec![],
+            guides: vec![],
+            editing_mode: EditingMode::Normal
+        }
+    }
 
     pub fn get_node(&self, node_id: usize) -> &Node {
         &self.nodes[node_id as usize]
@@ -99,5 +110,18 @@ impl Graph {
                 let edge = self.get_edge(*edge_id);
                 edge
             })
+    }
+
+    pub fn split_edge_with_node(&mut self, edge_id: usize, pos: Position) {
+        let new_id = self.add_node(Node::new(pos));
+        let old_to = self.get_edge_mut(edge_id).to;
+
+        self.get_node_mut(old_to).incoming_edges.retain(|a| *a != edge_id);
+
+        self.get_edge_mut(edge_id).to = new_id;
+
+        self.get_node_mut(new_id).incoming_edges.push(edge_id);
+
+        self.add_edge(new_id, old_to, Edge::new());
     }
 }
