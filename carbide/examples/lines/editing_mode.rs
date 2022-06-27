@@ -3,7 +3,10 @@ use carbide_core::draw::Position;
 
 #[derive(Debug, Clone)]
 pub enum EditingMode {
-    Selection,
+    Selection {
+        selected: SelectedState,
+        hovered: SelectedState,
+    },
     Editing,
     CreateWallP1 {
         mouse_position: Position,
@@ -19,7 +22,7 @@ pub enum EditingMode {
 impl Display for EditingMode {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         match self {
-            EditingMode::Selection => {
+            EditingMode::Selection{..} => {
                 f.write_str("Selection")
             }
             EditingMode::Editing => {
@@ -33,6 +36,13 @@ impl Display for EditingMode {
             }
         }
     }
+}
+
+#[derive(Debug, Clone, Copy)]
+pub enum SelectedState {
+    None,
+    Node(usize),
+    Edge(usize)
 }
 
 #[derive(Debug, Clone, Copy)]

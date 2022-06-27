@@ -8,7 +8,7 @@ use carbide_core::event::{ModifierKey, MouseEvent, MouseEventHandler};
 use carbide_core::prelude::{State, WidgetId};
 use carbide_core::state::{LocalState, ReadState, TState};
 use carbide_core::widget::WidgetExt;
-use crate::{CreateWallState, Edge, EditingMode, Graph, Line, Node};
+use crate::{CreateWallState, Edge, EditingMode, Graph, Line, Node, SelectedState};
 use crate::guide::Guide;
 
 #[derive(Clone, Debug, Widget)]
@@ -336,6 +336,48 @@ impl NodeEditor {
             _ => ()
         }
     }
+
+    fn selection_mode_mouse_event(&mut self, event: &MouseEvent, consumed: &bool, env: &mut Environment, selected: SelectedState) {
+        match event {
+            MouseEvent::Press(_, _, _) => {}
+            MouseEvent::Release(_, _, _) => {}
+            MouseEvent::Click(_, to, _) => {
+                let to = *to - self.position;
+
+                let close_node = self.graph.value().node_in_range(to);
+                let close_edge = self.graph.value().edge_in_range(to);
+
+                let closest_selection = if let Some(node_id) = close_node {
+                    SelectedState::Node(node_id)
+                } else if let Some(edge_id) = close_edge {
+                    SelectedState::Edge(edge_id)
+                } else {
+                    SelectedState::None
+                };
+
+                self.graph.value_mut().editing_mode = EditingMode::Selection { selected: closest_selection, hovered: closest_selection }
+            }
+            MouseEvent::Move { to, .. } => {
+                let to = *to - self.position;
+
+                let close_node = self.graph.value().node_in_range(to);
+                let close_edge = self.graph.value().edge_in_range(to);
+
+                let closest_selection = if let Some(node_id) = close_node {
+                    SelectedState::Node(node_id)
+                } else if let Some(edge_id) = close_edge {
+                    SelectedState::Edge(edge_id)
+                } else {
+                    SelectedState::None
+                };
+
+                self.graph.value_mut().editing_mode = EditingMode::Selection { selected, hovered: closest_selection }
+            }
+            MouseEvent::NClick(_, _, _, _) => {}
+            MouseEvent::Scroll { .. } => {}
+            MouseEvent::Drag { .. } => {}
+        }
+    }
 }
 
 impl MouseEventHandler for NodeEditor {
@@ -351,7 +393,9 @@ impl MouseEventHandler for NodeEditor {
             EditingMode::CreateWallP2 { first_node_id, .. } => {
                 self.create_wall_p2_mouse_event(first_node_id, event, consumed, env);
             }
-            EditingMode::Selection => {}
+            EditingMode::Selection { selected, .. } => {
+                self.selection_mode_mouse_event(event, consumed, env, selected);
+            }
         }
 
     }

@@ -20,7 +20,7 @@ use carbide_core::widget::*;
 use carbide_core::widget::canvas::{Canvas, Context};
 use carbide_wgpu::window::*;
 use crate::edge::Edge;
-use crate::editing_mode::{CreateWallState, EditingMode};
+use crate::editing_mode::{CreateWallState, EditingMode, SelectedState};
 use crate::graph::Graph;
 use crate::guide::Guide;
 use crate::line::Line;
@@ -271,7 +271,55 @@ fn main() {
                 context.circle(mouse_position.x() - 4.5, mouse_position.y() - 4.5, 9.0);
                 context.fill();
             }
-            EditingMode::Selection => {}
+            EditingMode::Selection { hovered, selected } => {
+                match hovered {
+                    SelectedState::None => {}
+                    SelectedState::Node(node_id) => {
+                        let node = graph.get_node(node_id);
+
+                        context.begin_path();
+                        context.set_fill_style(EnvironmentColor::Green);
+                        context.circle(node.position.x() - 4.5, node.position.y() - 4.5, 9.0);
+                        context.fill();
+                    }
+                    SelectedState::Edge(edge_id) => {
+                        let edge = graph.get_edge(edge_id);
+                        let line = Line::new(
+                            graph.get_node(edge.to).position,
+                            graph.get_node(edge.from).position,
+                        );
+
+                        context.begin_path();
+                        context.set_stroke_style(EnvironmentColor::Green);
+                        line_between(&mut context, &line, graph.offset);
+                        context.stroke();
+                    }
+                }
+
+                match selected {
+                    SelectedState::None => {}
+                    SelectedState::Node(node_id) => {
+                        let node = graph.get_node(node_id);
+
+                        context.begin_path();
+                        context.set_fill_style(EnvironmentColor::Yellow);
+                        context.circle(node.position.x() - 4.5, node.position.y() - 4.5, 9.0);
+                        context.fill();
+                    }
+                    SelectedState::Edge(edge_id) => {
+                        let edge = graph.get_edge(edge_id);
+                        let line = Line::new(
+                            graph.get_node(edge.to).position,
+                            graph.get_node(edge.from).position,
+                        );
+
+                        context.begin_path();
+                        context.set_stroke_style(EnvironmentColor::Yellow);
+                        line_between(&mut context, &line, graph.offset);
+                        context.stroke();
+                    }
+                }
+            }
         }
 
         context
@@ -288,10 +336,27 @@ fn main() {
                     }))
         .frame(70.0, 26.0);
 
+    let selection_button = Button::new("Selection")
+        .on_click(capture!([editing_mode], |env: &mut Environment| {
+                        *editing_mode = EditingMode::Selection {
+                selected: SelectedState::None,
+                hovered: SelectedState::None
+            };
+                    }))
+        .frame(70.0, 26.0);
+
+    let editing_button = Button::new("Editing")
+        .on_click(capture!([editing_mode], |env: &mut Environment| {
+                        *editing_mode = EditingMode::Editing;
+                    }))
+        .frame(70.0, 26.0);
+
     window.set_widgets(
         VStack::new(vec![
             HStack::new(vec![
                 add_wall_button,
+                selection_button,
+                editing_button,
                 Spacer::new()
             ]).padding(EdgeInsets::single(0.0, 0.0, 10.0, 10.0)).frame_fixed_height(35.0)
                 .background(Rectangle::new().fill(EnvironmentColor::SystemFill)),
