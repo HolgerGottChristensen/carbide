@@ -11,16 +11,16 @@ use std::cmp::Ordering;
 use std::time::Duration;
 use carbide_controls::{Button, capture, TextInput};
 use carbide_core::{animate, lens, Scalar};
-use carbide_core::draw::Position;
+use carbide_core::draw::{Dimension, Position, Rect};
 use carbide_core::environment::Environment;
 use carbide_core::prelude::EnvironmentColor;
-use carbide_core::state::{LocalState, ReadState, State, TState};
+use carbide_core::state::{LocalState, ReadState, State, StateExt, TState};
 use carbide_core::text::FontFamily;
 use carbide_core::widget::*;
 use carbide_core::widget::canvas::{Canvas, Context};
 use carbide_wgpu::window::*;
 use crate::edge::Edge;
-use crate::editing_mode::EditingMode;
+use crate::editing_mode::{CreateWallState, EditingMode};
 use crate::graph::Graph;
 use crate::guide::Guide;
 use crate::line::Line;
@@ -34,8 +34,8 @@ fn main() {
 
     let mut window = Window::new(
         "Lines example".to_string(),
-        1200,
-        1200,
+        800,
+        600,
         Some(icon_path.clone()),
     );
 
@@ -64,7 +64,7 @@ fn main() {
     let canvas = Canvas::<Graph>::new_with_state(&state, |s, rect, mut context, _| {
 
         fn line_between(context: &mut Context, line: &Line, offset: Position) {
-            if line.len() != 0.0 {
+            if line.len().is_normal() {
                 context.move_to(offset.x() + line.start.x(), offset.y() + line.start.y());
                 context.line_to(offset.x() + line.end.x(), offset.y() + line.end.y());
             }
@@ -192,6 +192,7 @@ fn main() {
         }
 
         context.fill();
+
         context.begin_path();
         context.set_stroke_style(EnvironmentColor::Green);
 
@@ -210,34 +211,102 @@ fn main() {
                     ), graph.offset);
                 }
                 Guide::Directional(line) => {
-                    //line_between(&mut context, line);
-                    line_between(&mut context, &line.extend(rect), graph.offset);
+                    line_between(&mut context, &line.extend(Rect::new(
+                        Position::new(0.0, 0.0),
+                        Dimension::new(rect.width(), rect.height())
+                    )), graph.offset);
                 }
             }
         }
 
         context.stroke();
 
+
+        match graph.editing_mode {
+            EditingMode::Editing => {}
+            EditingMode::CreateWallP1 { mouse_position, state } => {
+                context.begin_path();
+                match state {
+                    CreateWallState::Invalid => {
+                        context.set_fill_style(EnvironmentColor::Red);
+                    }
+                    CreateWallState::ExistingNode => {
+                        context.set_fill_style(EnvironmentColor::Blue);
+                    }
+                    CreateWallState::SplitEdge => {
+                        context.set_fill_style(EnvironmentColor::Green);
+                    }
+                    CreateWallState::Floating => {
+                        context.set_fill_style(EnvironmentColor::Red);
+                    }
+                }
+
+                context.circle(mouse_position.x() - 4.5, mouse_position.y() - 4.5, 9.0);
+                context.fill();
+            }
+            EditingMode::CreateWallP2 { mouse_position, state, first_node_id } => {
+                let pos = graph.get_node(first_node_id).position;
+                context.begin_path();
+                context.set_fill_style(EnvironmentColor::Yellow);
+                context.circle(pos.x() - 4.5, pos.y() - 4.5, 9.0);
+                context.fill();
+
+                context.begin_path();
+
+                match state {
+                    CreateWallState::Invalid => {
+                        context.set_fill_style(EnvironmentColor::Red);
+                    }
+                    CreateWallState::ExistingNode => {
+                        context.set_fill_style(EnvironmentColor::Blue);
+                    }
+                    CreateWallState::SplitEdge => {
+                        context.set_fill_style(EnvironmentColor::Green);
+                    }
+                    CreateWallState::Floating => {
+                        context.set_fill_style(EnvironmentColor::Blue);
+                    }
+                }
+
+                context.circle(mouse_position.x() - 4.5, mouse_position.y() - 4.5, 9.0);
+                context.fill();
+            }
+            EditingMode::Selection => {}
+        }
+
         context
     });
 
     let node_editor = NodeEditor::new(state);
 
+    let add_wall_button = Button::new("Add Wall")
+        .on_click(capture!([editing_mode], |env: &mut Environment| {
+                        *editing_mode = EditingMode::CreateWallP1 {
+                            mouse_position: Position::new(0.0, 0.0),
+                            state: CreateWallState::Invalid,
+                        };
+                    }))
+        .frame(70.0, 26.0);
+
     window.set_widgets(
         VStack::new(vec![
             HStack::new(vec![
-                Button::new("Hello")
-                    .on_click(move || {
-                        println!("{:?}", editing_mode)
-                    })
-                    .frame(70.0, 26.0),
+                add_wall_button,
                 Spacer::new()
             ]).padding(EdgeInsets::single(0.0, 0.0, 10.0, 10.0)).frame_fixed_height(35.0)
                 .background(Rectangle::new().fill(EnvironmentColor::SystemFill)),
-            ZStack::new(vec![
-                node_editor,
-                canvas
-            ])
+            HSplit::new(ZStack::new(vec![
+                    node_editor,
+                    canvas.clip()
+                ]),
+                Rectangle::new().fill(EnvironmentColor::Teal)
+            ).relative_to_end(250.0),
+            HStack::new(vec![
+                Text::new(editing_mode.read_map(|a: &EditingMode| format!("Mode: {}", a)).ignore_writes()),
+                Spacer::new()
+            ]).padding(EdgeInsets::single(0.0, 0.0, 10.0, 10.0))
+                .frame_fixed_height(20.0)
+                .background(Rectangle::new().fill(EnvironmentColor::SystemFill)),
         ]).spacing(0.0)
     );
 

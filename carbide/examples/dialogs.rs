@@ -34,8 +34,8 @@ fn main() {
 
     let mut window = Window::new(
         "Dialogs - Carbide",
-        600,
-        400,
+        300,
+        200,
         Some(icon_path),
     );
 

@@ -18,8 +18,8 @@ fn main() {
     env_logger::init();
     let mut window = Window::new(
         "My first calculator",
-        470,
-        600,
+        470 / 2,
+        300,
         None,
     );
 

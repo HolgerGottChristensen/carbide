@@ -11,8 +11,8 @@ fn main() {
 
     let mut window = Window::new(
         "VSplit example".to_string(),
-        1200,
-        800,
+        600,
+        400,
         Some(icon_path.clone()),
     );
 

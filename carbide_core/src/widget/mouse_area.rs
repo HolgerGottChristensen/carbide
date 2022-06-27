@@ -16,10 +16,6 @@ pub trait Action: Fn(&mut Environment, ModifierKey) + DynClone {}
 
 impl<I> Action for I where I: Fn(&mut Environment, ModifierKey) + Clone {}
 
-impl<I> Action for I where I: Fn(&mut Environment) + Clone {}
-
-impl<I> Action for I where I: Fn() + Clone {}
-
 dyn_clone::clone_trait_object!(Action);
 
 #[derive(Clone, Widget)]

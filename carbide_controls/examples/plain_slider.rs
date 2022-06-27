@@ -13,8 +13,8 @@ fn main() {
 
     let mut window = Window::new(
         "Plain slider example".to_string(),
-        800,
-        800,
+        400,
+        400,
         Some(icon_path.clone()),
     );
 

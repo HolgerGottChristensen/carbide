@@ -15,8 +15,8 @@ fn main() {
 
     let mut window = Window::new(
         "Blur example".to_string(),
-        1200,
-        900,
+        600,
+        450,
         Some(icon_path.clone()),
     );
 

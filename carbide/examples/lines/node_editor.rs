@@ -1,13 +1,14 @@
+use std::iter::once;
 use std::ops::Deref;
 use carbide::Widget;
 use carbide_core::CommonWidgetImpl;
 use carbide_core::draw::{Dimension, Position};
 use carbide_core::environment::Environment;
-use carbide_core::event::{MouseEvent, MouseEventHandler};
+use carbide_core::event::{ModifierKey, MouseEvent, MouseEventHandler};
 use carbide_core::prelude::{State, WidgetId};
 use carbide_core::state::{LocalState, ReadState, TState};
 use carbide_core::widget::WidgetExt;
-use crate::{Edge, Graph, Line, Node};
+use crate::{CreateWallState, Edge, EditingMode, Graph, Line, Node};
 use crate::guide::Guide;
 
 #[derive(Clone, Debug, Widget)]
@@ -32,10 +33,8 @@ impl NodeEditor {
             }
         )
     }
-}
 
-impl MouseEventHandler for NodeEditor {
-    fn handle_mouse_event(&mut self, event: &MouseEvent, consumed: &bool, env: &mut Environment) {
+    fn normal_mode_mouse_event(&mut self, event: &MouseEvent, consumed: &bool, env: &mut Environment) {
         match event {
             MouseEvent::Press(_, b, _) => {
                 let b = *b - self.position;
@@ -74,50 +73,8 @@ impl MouseEventHandler for NodeEditor {
                 }
 
                 if let Some(id) = *self.selected_node.value() {
-                    let mut new_position = to;
-                    let graph = self.graph.value();
-                    let mut guides = vec![];
-
-                    for edge_id in 0..graph.edges.len() {
-                        let edge = graph.get_edge(edge_id);
-                        if edge.to == id || edge.from == id {
-                            continue;
-                        }
-
-                        let line = Line::new(
-                            graph.get_node(edge.from).position,
-                            graph.get_node(edge.to).position,
-                        );
-
-                        if line.dist_inf_line_to_point(to) < 5.0 {
-                            new_position = line.closest_point_on_line_infinite(to);
-                            guides.push(Guide::Directional(line));
-                        }
-                    }
-
-                    //for neighbour_id in graph.get_connected_neighbours_iter(id) {
-                    for neighbour_id in 0..graph.nodes.len() {
-                        if neighbour_id == id {continue}
-
-                        let node = graph.get_node(neighbour_id);
-
-                        if (to.x() - node.position.x()).abs() < 5.0 {
-                            guides.push(Guide::Vertical(node.position.x()));
-                            new_position = Position::new(node.position.x(), new_position.y());
-                        }
-
-                        if (to.y() - node.position.y()).abs() < 5.0 {
-                            guides.push(Guide::Horizontal(node.position.y()));
-                            new_position = Position::new(new_position.x(), node.position.y());
-                        }
-                    }
-
-                    drop(graph);
-
+                    let mut new_position = self.graph.value_mut().guides_and_position(to, id);
                     self.graph.value_mut().get_node_mut(id).position = new_position;
-
-                    self.graph.value_mut().guides = guides;
-
                 }
             }
             MouseEvent::NClick(_, position, _, number_of_clicks) => {
@@ -125,32 +82,12 @@ impl MouseEventHandler for NodeEditor {
 
                 let position = *position - self.position;
                 if *self.selected_node.value() == None {
-                    let graph = self.graph.value();
-                    let mut number_of_close_lines = 0;
-                    let mut close_line_id = 0;
+                    let close_line = self.graph.value().edge_in_range(position);
 
-                    for edge_id in 0..graph.edges.len() {
-                        let edge = graph.get_edge(edge_id);
-
-                        let line = Line::new(
-                            graph.get_node(edge.from).position,
-                            graph.get_node(edge.to).position,
-                        );
-
-                        if let Some(_) = line.closest_point_on_line(position) {
-                            if line.dist_inf_line_to_point(position) < 5.0 {
-                                number_of_close_lines += 1;
-                                close_line_id = edge_id;
-                            }
-                        }
-                    }
-
-                    drop(graph);
-
-                    if number_of_close_lines == 1 {
+                    if let Some(edge_id) = close_line {
                         let new_pos = {
                             let graph = self.graph.value();
-                            let edge = graph.get_edge(close_line_id);
+                            let edge = graph.get_edge(edge_id);
 
                             let line = Line::new(
                                 graph.get_node(edge.from).position,
@@ -160,7 +97,7 @@ impl MouseEventHandler for NodeEditor {
                             line.closest_point_on_line_infinite(position)
                         };
 
-                        self.graph.value_mut().split_edge_with_node(close_line_id, new_pos);
+                        self.graph.value_mut().split_edge_with_node(edge_id, new_pos);
                     }
                 }
             }
@@ -169,6 +106,254 @@ impl MouseEventHandler for NodeEditor {
             }
             MouseEvent::Drag { .. } => {}
         }
+    }
+
+    fn create_wall_p1_mouse_event(&mut self, event: &MouseEvent, consumed: &bool, env: &mut Environment) {
+        match event {
+            MouseEvent::Press(_, _, _) => {}
+            MouseEvent::Release(_, to, _) => {
+                let to = *to - self.position;
+                let close_node = self.graph.value().node_in_range(to);
+                let close_edge = self.graph.value().edge_in_range(to);
+                if let Some(close_node_id) = close_node {
+                    let pos = self.graph.value().get_node(close_node_id).position;
+                    self.graph.value_mut().editing_mode = EditingMode::CreateWallP2 {
+                        mouse_position: pos,
+                        state: CreateWallState::ExistingNode,
+                        first_node_id: close_node_id
+                    }
+                } else if let Some(close_edge_id) = close_edge {
+                    let new_pos = {
+                        let graph = self.graph.value();
+                        let edge = graph.get_edge(close_edge_id);
+
+                        let line = Line::new(
+                            graph.get_node(edge.from).position,
+                            graph.get_node(edge.to).position,
+                        );
+
+                        line.closest_point_on_line_infinite(to)
+                    };
+
+                    let id = self.graph.value_mut().split_edge_with_node(close_edge_id, new_pos);
+
+                    self.graph.value_mut().editing_mode = EditingMode::CreateWallP2 {
+                        mouse_position: new_pos,
+                        first_node_id: id,
+                        state: CreateWallState::SplitEdge
+                    }
+                }
+            }
+            MouseEvent::Click(_, _, _) => {}
+            MouseEvent::Move { to, .. } => {
+                let to = *to - self.position;
+                let close_node = self.graph.value().node_in_range(to);
+                let close_edge = self.graph.value().edge_in_range(to);
+                if let Some(close_node_id) = close_node {
+                    let pos = self.graph.value().get_node(close_node_id).position;
+                    self.graph.value_mut().editing_mode = EditingMode::CreateWallP1 {
+                        mouse_position: pos,
+                        state: CreateWallState::ExistingNode
+                    }
+                } else if let Some(close_edge_id) = close_edge {
+                    let new_pos = {
+                        let graph = self.graph.value();
+                        let edge = graph.get_edge(close_edge_id);
+
+                        let line = Line::new(
+                            graph.get_node(edge.from).position,
+                            graph.get_node(edge.to).position,
+                        );
+
+                        line.closest_point_on_line_infinite(to)
+                    };
+
+                    self.graph.value_mut().editing_mode = EditingMode::CreateWallP1 {
+                        mouse_position: new_pos,
+                        state: CreateWallState::SplitEdge
+                    }
+                } else {
+                    self.graph.value_mut().editing_mode = EditingMode::CreateWallP1 {
+                        mouse_position: to,
+                        state: CreateWallState::Invalid
+                    }
+                }
+            }
+            MouseEvent::NClick(_, _, _, _) => {}
+            MouseEvent::Scroll { .. } => {}
+            MouseEvent::Drag { .. } => {}
+        }
+    }
+
+    fn create_wall_p2_mouse_event(&mut self, first_id: usize, event: &MouseEvent, consumed: &bool, env: &mut Environment) {
+        match event {
+            MouseEvent::Release(_, to, modifier) => {
+                let to = *to - self.position;
+                let close_node = self.graph.value().node_in_range(to);
+                let close_edge = self.graph.value().edge_in_range(to);
+                if let Some(close_node_id) = close_node {
+                    let pos = self.graph.value().get_node(close_node_id).position;
+
+                    let valid =
+                        !self.graph.value()
+                            .get_connected_neighbours_iter(first_id)
+                            .chain(once(first_id))
+                            .any(|a| a == close_node_id);
+
+                    if valid {
+                        self.graph.value_mut().add_edge(first_id, close_node_id, Edge::new());
+                        self.graph.value_mut().editing_mode = EditingMode::Editing;
+                    } else {
+                        self.graph.value_mut().editing_mode = EditingMode::CreateWallP2 {
+                            mouse_position: pos,
+                            first_node_id: first_id,
+                            state: CreateWallState::Invalid
+                        }
+                    }
+
+                } else if let Some(close_edge_id) = close_edge {
+                    let new_pos = {
+                        let graph = self.graph.value();
+                        let edge = graph.get_edge(close_edge_id);
+
+                        let line = Line::new(
+                            graph.get_node(edge.from).position,
+                            graph.get_node(edge.to).position,
+                        );
+
+                        line.closest_point_on_line_infinite(to)
+                    };
+
+                    let valid =
+                        !self.graph.value()
+                            .get_connected_edges_iter(first_id)
+                            .any(|a| a.id == close_edge_id);
+
+                    if valid {
+                        let id = self.graph.value_mut().split_edge_with_node(close_edge_id, new_pos);
+
+                        self.graph.value_mut().add_edge(first_id, id, Edge::new());
+
+                        self.graph.value_mut().editing_mode = EditingMode::Editing;
+                    } else {
+                        self.graph.value_mut().editing_mode = EditingMode::CreateWallP2 {
+                            mouse_position: new_pos,
+                            first_node_id: first_id,
+                            state: CreateWallState::Invalid
+                        }
+                    }
+
+                } else {
+                    let mut new_position = self.graph.value_mut().guides_and_position(to, usize::MAX);
+
+                    let new = self.graph.value_mut().add_node(Node::new(new_position));
+
+                    if modifier.contains(ModifierKey::SHIFT) {
+                        self.graph.value_mut().add_edge(first_id, new, Edge::new());
+                        self.graph.value_mut().editing_mode = EditingMode::Editing;
+                    } else {
+                        self.graph.value_mut().add_edge(first_id, new, Edge::new());
+                        self.graph.value_mut().editing_mode = EditingMode::CreateWallP2 {
+                            mouse_position: new_position,
+                            first_node_id: new,
+                            state: CreateWallState::Floating
+                        }
+                    }
+                }
+            }
+            MouseEvent::Move { to, .. } => {
+                let to = *to - self.position;
+                let close_node = self.graph.value().node_in_range(to);
+                let close_edge = self.graph.value().edge_in_range(to);
+
+                self.graph.value_mut().guides.clear();
+
+                if let Some(close_node_id) = close_node {
+                    let pos = self.graph.value().get_node(close_node_id).position;
+
+                    let valid =
+                        !self.graph.value()
+                            .get_connected_neighbours_iter(first_id)
+                            .chain(once(first_id))
+                            .any(|a| a == close_node_id);
+
+                    if valid {
+                        self.graph.value_mut().editing_mode = EditingMode::CreateWallP2 {
+                            mouse_position: pos,
+                            first_node_id: first_id,
+                            state: CreateWallState::ExistingNode
+                        }
+                    } else {
+                        self.graph.value_mut().editing_mode = EditingMode::CreateWallP2 {
+                            mouse_position: pos,
+                            first_node_id: first_id,
+                            state: CreateWallState::Invalid
+                        }
+                    }
+
+                } else if let Some(close_edge_id) = close_edge {
+                    let new_pos = {
+                        let graph = self.graph.value();
+                        let edge = graph.get_edge(close_edge_id);
+
+                        let line = Line::new(
+                            graph.get_node(edge.from).position,
+                            graph.get_node(edge.to).position,
+                        );
+
+                        line.closest_point_on_line_infinite(to)
+                    };
+
+                    let valid =
+                        !self.graph.value()
+                            .get_connected_edges_iter(first_id)
+                            .any(|a| a.id == close_edge_id);
+
+                    if valid {
+                        self.graph.value_mut().editing_mode = EditingMode::CreateWallP2 {
+                            mouse_position: new_pos,
+                            first_node_id: first_id,
+                            state: CreateWallState::SplitEdge
+                        }
+                    } else {
+                        self.graph.value_mut().editing_mode = EditingMode::CreateWallP2 {
+                            mouse_position: new_pos,
+                            first_node_id: first_id,
+                            state: CreateWallState::Invalid
+                        }
+                    }
+
+                } else {
+                    let mut new_position = self.graph.value_mut().guides_and_position(to, usize::MAX);
+
+                    self.graph.value_mut().editing_mode = EditingMode::CreateWallP2 {
+                        mouse_position: new_position,
+                        first_node_id: first_id,
+                        state: CreateWallState::Floating
+                    };
+                }
+            }
+            _ => ()
+        }
+    }
+}
+
+impl MouseEventHandler for NodeEditor {
+    fn handle_mouse_event(&mut self, event: &MouseEvent, consumed: &bool, env: &mut Environment) {
+        let mode = self.graph.value().editing_mode.clone();
+        match mode {
+            EditingMode::Editing => {
+                self.normal_mode_mouse_event(event, consumed, env);
+            }
+            EditingMode::CreateWallP1 { .. } => {
+                self.create_wall_p1_mouse_event(event, consumed, env);
+            }
+            EditingMode::CreateWallP2 { first_node_id, .. } => {
+                self.create_wall_p2_mouse_event(first_node_id, event, consumed, env);
+            }
+            EditingMode::Selection => {}
+        }
+
     }
 }
 

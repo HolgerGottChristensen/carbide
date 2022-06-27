@@ -12,8 +12,8 @@ fn main() {
 
     let mut window = Window::new(
         "HSplit example".to_string(),
+        200,
         400,
-        800,
         Some(icon_path.clone()),
     );
 

@@ -11,8 +11,8 @@ fn main() {
 
     let mut window = Window::new(
         "Progress bar example".to_string(),
-        800,
-        800,
+        400,
+        400,
         Some(icon_path.clone()),
     );
 

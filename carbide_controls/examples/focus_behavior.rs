@@ -41,8 +41,8 @@ fn main() {
 
     let mut window = Window::new(
         "Focus behavior example - Carbide".to_string(),
-        800,
-        1200,
+        400,
+        600,
         Some(icon_path),
     );
 

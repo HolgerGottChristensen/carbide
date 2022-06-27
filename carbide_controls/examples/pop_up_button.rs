@@ -42,8 +42,8 @@ fn main() {
 
     let mut window = Window::new(
         "Pop up Button Example - Carbide".to_string(),
-        800,
-        1200,
+        400,
+        600,
         Some(icon_path),
     );
 

@@ -26,8 +26,8 @@ fn main() {
 
     let mut window = Window::new(
         "Animate on click - Carbide",
-        800,
-        600,
+        400,
+        300,
         Some(icon_path),
     );
 

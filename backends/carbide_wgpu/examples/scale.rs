@@ -17,8 +17,8 @@ fn main() {
 
     let mut window = Window::new(
         "Scale example".to_string(),
-        1200,
-        1200,
+        600,
+        600,
         Some(icon_path.clone()),
     );
 

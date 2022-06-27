@@ -12,7 +12,7 @@ use crate::message_bubble::{Message, MessageBubble};
 
 fn main() {
 
-    let mut window = Window::new("Messaging Service", 800, 600, None);
+    let mut window = Window::new("Messaging Service", 400, 300, None);
 
     let family = FontFamily::new_from_paths("NotoSans", vec![
         "fonts/NotoSans/NotoSans-Regular.ttf"

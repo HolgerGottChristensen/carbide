@@ -27,8 +27,8 @@ fn main() {
 
     let mut window = Window::new(
         "Hacker-news example",
-        1800,
-        1000,
+        900,
+        500,
         None,
     );
 

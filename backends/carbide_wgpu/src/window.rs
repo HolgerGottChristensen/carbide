@@ -8,7 +8,7 @@ use carbide_core::image::DynamicImage;
 use uuid::Uuid;
 use wgpu::{BindGroup, BindGroupLayout, Buffer, BufferUsages, PresentMode, Sampler, SurfaceConfiguration, Texture, TextureView};
 use wgpu::util::{BufferInitDescriptor, DeviceExt};
-use winit::dpi::{PhysicalPosition, PhysicalSize, Size};
+use winit::dpi::{LogicalSize, PhysicalPosition, PhysicalSize, Size};
 use winit::event::{ElementState, Event, KeyboardInput, VirtualKeyCode, WindowEvent};
 use winit::event_loop::{ControlFlow, EventLoop};
 #[cfg(target_os = "macos")]
@@ -204,7 +204,7 @@ impl Window {
         };
 
         let inner_window = WindowBuilder::new()
-            .with_inner_size(Size::Physical(PhysicalSize { width, height }))
+            .with_inner_size(Size::Logical(LogicalSize { width: width as f64, height: height as f64 }))
             .with_title(title)
             .with_window_icon(loaded_icon)
             .build(&event_loop)
@@ -383,7 +383,7 @@ impl Window {
 
         let image_map = ImageMap::new();
 
-        let depth_texture = create_depth_stencil_texture(&device, width, height);
+        let depth_texture = create_depth_stencil_texture(&device, size.width, size.height);
         let depth_texture_view = depth_texture.create_view(&Default::default());
 
         let vertex_buffer = device

@@ -315,3 +315,12 @@ impl<T: ?Sized + fmt::Display> fmt::Display for ValueRefMut<'_, T> {
         }
     }
 }
+
+impl<T: ?Sized + fmt::Debug> fmt::Debug for ValueRefMut<'_, T> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            ValueRefMut::CellBorrow { value, .. } => value.fmt(f),
+            ValueRefMut::Borrow(value) => value.fmt(f),
+        }
+    }
+}

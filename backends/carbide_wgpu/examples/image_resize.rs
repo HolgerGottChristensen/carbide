@@ -11,8 +11,8 @@ fn main() {
 
     let mut window = Window::new(
         "Materials example".to_string(),
-        800,
-        600,
+        400,
+        300,
         Some(icon_path.clone()),
     );
 

@@ -14,8 +14,8 @@ fn main() {
 
     let mut window = Window::new(
         "Hello world 2".to_string(),
-        800,
-        1200,
+        400,
+        600,
         Some(icon_path),
     );
 

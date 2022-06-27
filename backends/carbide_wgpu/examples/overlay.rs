@@ -17,8 +17,8 @@ fn main() {
 
     let mut window = Window::new(
         "Overlay example - Carbide".to_string(),
-        1200,
-        900,
+        600,
+        450,
         Some(icon_path.clone()),
     );
 

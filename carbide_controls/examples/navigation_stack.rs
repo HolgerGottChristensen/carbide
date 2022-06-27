@@ -14,8 +14,8 @@ fn main() {
 
     let mut window = Window::new(
         "NavigationStack Example - Carbide",
-        600,
-        600,
+        300,
+        300,
         Some(icon_path),
     );
 

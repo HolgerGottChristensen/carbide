@@ -11,7 +11,7 @@ fn main() {
 
     let icon_path = Window::relative_path_to_assets("images/rust_press.png");
 
-    let mut window = Window::new("Shapes example".to_string(), 1200, 1200, Some(icon_path));
+    let mut window = Window::new("Shapes example".to_string(), 600, 600, Some(icon_path));
 
     let landscape_id = window.add_image_from_path("images/landscape.png");
 

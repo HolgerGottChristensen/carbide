@@ -2,6 +2,7 @@ use carbide_core::draw::Position;
 use crate::edge::Edge;
 use crate::editing_mode::EditingMode;
 use crate::guide::Guide;
+use crate::Line;
 use crate::node::Node;
 
 #[derive(Clone, Debug)]
@@ -21,7 +22,7 @@ impl Graph {
             nodes: vec![],
             edges: vec![],
             guides: vec![],
-            editing_mode: EditingMode::Normal
+            editing_mode: EditingMode::Editing
         }
     }
 
@@ -112,7 +113,7 @@ impl Graph {
             })
     }
 
-    pub fn split_edge_with_node(&mut self, edge_id: usize, pos: Position) {
+    pub fn split_edge_with_node(&mut self, edge_id: usize, pos: Position) -> usize {
         let new_id = self.add_node(Node::new(pos));
         let old_to = self.get_edge_mut(edge_id).to;
 
@@ -123,5 +124,95 @@ impl Graph {
         self.get_node_mut(new_id).incoming_edges.push(edge_id);
 
         self.add_edge(new_id, old_to, Edge::new());
+
+        new_id
+    }
+
+    pub fn node_in_range(&self, position: Position) -> Option<usize> {
+        let mut number_of_close_nodes = 0;
+        let mut close_node_id = 0;
+
+        for node_id in 0..self.nodes.len() {
+            let node = self.get_node(node_id);
+
+            if node.position.dist(&position) < 5.0 {
+                number_of_close_nodes += 1;
+                close_node_id = node_id;
+            }
+        }
+
+        if number_of_close_nodes != 1 {
+            None
+        } else {
+            Some(close_node_id)
+        }
+    }
+
+    pub fn edge_in_range(&self, position: Position) -> Option<usize> {
+        let mut number_of_close_lines = 0;
+        let mut close_line_id = 0;
+
+        for edge_id in 0..self.edges.len() {
+            let edge = self.get_edge(edge_id);
+
+            let line = Line::new(
+                self.get_node(edge.from).position,
+                self.get_node(edge.to).position,
+            );
+
+            if let Some(_) = line.closest_point_on_line(position) {
+                if line.dist_inf_line_to_point(position) < 5.0 {
+                    number_of_close_lines += 1;
+                    close_line_id = edge_id;
+                }
+            }
+        }
+
+        if number_of_close_lines != 1 {
+            None
+        } else {
+            Some(close_line_id)
+        }
+    }
+
+    pub fn guides_and_position(&mut self, position: Position, ignore_node_id: usize) -> Position {
+        let mut new_position = position;
+        let mut guides = vec![];
+
+        for edge_id in 0..self.edges.len() {
+            let edge = self.get_edge(edge_id);
+            if edge.to == ignore_node_id || edge.from == ignore_node_id {
+                continue;
+            }
+
+            let line = Line::new(
+                self.get_node(edge.from).position,
+                self.get_node(edge.to).position,
+            );
+
+            if line.dist_inf_line_to_point(position) < 5.0 {
+                new_position = line.closest_point_on_line_infinite(position);
+                guides.push(Guide::Directional(line));
+            }
+        }
+
+        for neighbour_id in 0..self.nodes.len() {
+            let node = self.get_node(neighbour_id);
+            if neighbour_id == ignore_node_id {continue}
+
+            if (position.x() - node.position.x()).abs() < 5.0 {
+                guides.push(Guide::Vertical(node.position.x()));
+                new_position = Position::new(node.position.x(), new_position.y());
+            }
+
+            if (position.y() - node.position.y()).abs() < 5.0 {
+                guides.push(Guide::Horizontal(node.position.y()));
+                new_position = Position::new(new_position.x(), node.position.y());
+            }
+        }
+
+        self.guides = guides;
+
+        new_position
     }
 }

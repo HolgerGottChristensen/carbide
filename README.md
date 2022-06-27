@@ -39,8 +39,8 @@ use carbide_core::window::TWindow;
 fn main() {
     let mut window = Window::new(
         "My first counter",
-        470,
-        600,
+        235,
+        300,
         None,
     );
 

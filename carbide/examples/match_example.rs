@@ -15,8 +15,8 @@ fn main() {
 
     let mut window = Window::new(
         "Match example".to_string(),
-        800,
-        1200,
+        400,
+        600,
         Some(icon_path.clone()),
     );
 
