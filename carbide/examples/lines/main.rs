@@ -10,11 +10,11 @@ mod editing_mode;
 use std::cmp::Ordering;
 use std::time::Duration;
 use carbide_controls::{Button, capture, TextInput};
-use carbide_core::{animate, lens, Scalar};
+use carbide_core::{animate, lens, Scalar, matches_case};
 use carbide_core::draw::{Dimension, Position, Rect};
 use carbide_core::environment::Environment;
 use carbide_core::prelude::EnvironmentColor;
-use carbide_core::state::{LocalState, ReadState, State, StateExt, TState};
+use carbide_core::state::{FieldState, LocalState, Map1, ReadState, State, StateExt, TState};
 use carbide_core::text::FontFamily;
 use carbide_core::widget::*;
 use carbide_core::widget::canvas::{Canvas, Context};
@@ -325,7 +325,7 @@ fn main() {
         context
     });
 
-    let node_editor = NodeEditor::new(state);
+    let node_editor = NodeEditor::new(&state);
 
     let add_wall_button = Button::new("Add Wall")
         .on_click(capture!([editing_mode], |env: &mut Environment| {
@@ -351,6 +351,32 @@ fn main() {
                     }))
         .frame(70.0, 26.0);
 
+    /*let selected_node_id = FieldState::new(state.clone(), |a: &Graph| {
+        match a {
+            Graph { editing_mode: EditingMode::Selection { selected: SelectedState::Node(x), .. }, .. } => {
+                x
+            }
+            _ => panic!("Not matching")
+        }
+    }, |b: &mut Graph| {
+        match b {
+            Graph { editing_mode: EditingMode::Selection { selected: SelectedState::Node(x), .. }, .. } => {
+                x
+            }
+            _ => panic!("Not matching")
+        }
+    });
+
+    let selected_id = Match::<Graph>::new(&state)
+        .case(|a| {
+            //println!("{:?}", a);
+
+            matches!(a, Graph { editing_mode: EditingMode::Selection { selected: SelectedState::Node(x), .. }, .. })
+        }, Text::new(selected_node_id));*/
+
+    let selected_id = Match::new(&state)
+        .case(matches_case!(state, Graph { editing_mode: EditingMode::Selection { selected: SelectedState::Node(x), .. }, .. }, x => Text::new(x)));
+
     window.set_widgets(
         VStack::new(vec![
             HStack::new(vec![
@@ -364,7 +390,10 @@ fn main() {
                     node_editor,
                     canvas.clip()
                 ]),
-                Rectangle::new().fill(EnvironmentColor::Teal)
+                ZStack::new(vec![
+                    Rectangle::new().fill(EnvironmentColor::Teal),
+                    selected_id,
+                ])
             ).relative_to_end(250.0),
             HStack::new(vec![
                 Text::new(editing_mode.read_map(|a: &EditingMode| format!("Mode: {}", a)).ignore_writes()),

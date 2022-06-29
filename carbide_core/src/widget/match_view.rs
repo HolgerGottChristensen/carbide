@@ -1,59 +1,65 @@
 use std::collections::HashMap;
+use std::fmt::{Debug, Formatter};
 use std::hash::Hash;
 use crate::draw::{Dimension, Position};
 use crate::prelude::*;
 
+
 /// A basic, non-interactive rectangle shape widget.
-#[derive(Debug, Clone, Widget)]
+#[derive(Clone, Widget)]
 #[carbide_exclude(StateSync)]
-pub struct Match<T> where T: StateContract + Hash + PartialEq + Eq + 'static {
+pub struct Match<T> where T: StateContract  {
     id: WidgetId,
     position: Position,
     dimension: Dimension,
     #[state]
     local_state: TState<T>,
-    widgets: HashMap<T, Box<dyn Widget>>,
-    current_key: Option<T>,
-    current_child: Box<dyn Widget>,
+    widgets: Vec<(fn(&T) -> bool, Box<dyn Widget>)>,
+    current_index: Option<usize>,
 }
 
-impl<T: StateContract + Hash + PartialEq + Eq  + 'static> Match<T> {
-    pub fn new<V: Into<TState<T>>>(state: V, widgets: Vec<(T, Box<dyn Widget>)>) -> Box<Self> {
-        let mut w = HashMap::new();
-        for (key, value) in widgets {
-            w.insert(key, value);
-        }
-
+impl<T: StateContract> Match<T> {
+    pub fn new(state: impl Into<TState<T>>) -> Box<Self> {
         Box::new(Match {
             id: WidgetId::new(),
             position: Position::new(0.0, 0.0),
             dimension: Dimension::new(0.0, 0.0),
             local_state: state.into(),
-            widgets: w,
-            current_key: None,
-            current_child: Rectangle::new().fill(EnvironmentColor::Green)
+            widgets: vec![],
+            current_index: None,
+        })
+    }
+
+    pub fn case(mut self, f: (fn(&T) -> bool, Box<dyn Widget>)) -> Box<Self> {
+        self.widgets.push(f);
+        Box::new(self)
+    }
+
+    pub fn default(mut self, widget: Box<dyn Widget>) -> Box<Self> {
+        self.widgets.push((|_|{true}, widget));
+        Box::new(self)
+    }
+
+    fn find_new_matching_child(&self) -> Option<usize> {
+        let val = self.local_state.value();
+
+        self.widgets.iter().position(|a| {
+            a.0(&val)
         })
     }
 }
 
-impl<T: Hash + StateContract + PartialEq + Eq  + 'static> StateSync for Match<T> {
+impl<T: StateContract> StateSync for Match<T> {
     fn capture_state(&mut self, env: &mut Environment) {
         self.local_state.sync(env);
-        if let Some(current_key) = &self.current_key {
-            if current_key == self.local_state.value().deref() { return; }
-            if let Some(mut w) = self.widgets.remove(&self.local_state.value()) {
-                std::mem::swap(&mut w, &mut self.current_child);
-                self.widgets.insert(current_key.clone(), w);
-                self.current_key = Some(self.local_state.value().clone());
+        if let Some(index) = self.current_index {
+            if self.widgets[index].0(&self.local_state.value()) {
+                // If we match the current case still we are happy
             } else {
-                self.current_child = Rectangle::new().fill(EnvironmentColor::Green);
-                self.current_key = None;
+                self.current_index = self.find_new_matching_child();
             }
         } else {
-            if let Some(w) = self.widgets.remove(&self.local_state.value()) {
-                self.current_child = w;
-                self.current_key = Some(self.local_state.value().clone());
-            }
+            self.current_index = self.find_new_matching_child();
         }
     }
 
@@ -62,37 +68,54 @@ impl<T: Hash + StateContract + PartialEq + Eq  + 'static> StateSync for Match<T>
     }
 }
 
-impl<T: Hash + StateContract + PartialEq + Eq  + 'static> carbide_core::widget::CommonWidget for Match<T> {
+impl<T: StateContract> carbide_core::widget::CommonWidget for Match<T> {
     fn id(&self) -> carbide_core::widget::WidgetId {
         self.id
     }
 
     fn children(&self) -> carbide_core::widget::WidgetIter {
-        if (self.current_child).flag() == carbide_core::flags::Flags::PROXY {
-            (self.current_child).children()
-        } else if (self.current_child).flag() == carbide_core::flags::Flags::IGNORE {
-            carbide_core::widget::WidgetIter::Empty
+        if let Some(index) = self.current_index {
+            if (self.widgets[index].1).flag() == carbide_core::flags::Flags::PROXY {
+                (self.widgets[index].1).children()
+            } else if (self.widgets[index].1).flag() == carbide_core::flags::Flags::IGNORE {
+                carbide_core::widget::WidgetIter::Empty
+            } else {
+                carbide_core::widget::WidgetIter::single(&(self.widgets[index].1))
+            }
         } else {
-            carbide_core::widget::WidgetIter::single(&(self.current_child))
+            carbide_core::widget::WidgetIter::Empty
         }
+
     }
 
     fn children_mut(&mut self) -> carbide_core::widget::WidgetIterMut {
-        if (self.current_child).flag() == carbide_core::flags::Flags::PROXY {
-            (self.current_child).children_mut()
-        } else if (self.current_child).flag() == carbide_core::flags::Flags::IGNORE {
-            carbide_core::widget::WidgetIterMut::Empty
+        if let Some(index) = self.current_index {
+            if (self.widgets[index].1).flag() == carbide_core::flags::Flags::PROXY {
+                (self.widgets[index].1).children_mut()
+            } else if (self.widgets[index].1).flag() == carbide_core::flags::Flags::IGNORE {
+                carbide_core::widget::WidgetIterMut::Empty
+            } else {
+                carbide_core::widget::WidgetIterMut::single(&mut (self.widgets[index].1))
+            }
         } else {
-            carbide_core::widget::WidgetIterMut::single(&mut (self.current_child))
+            carbide_core::widget::WidgetIterMut::Empty
         }
     }
 
     fn children_direct(&mut self) -> carbide_core::widget::WidgetIterMut {
-        carbide_core::widget::WidgetIterMut::single(&mut (self.current_child))
+        if let Some(index) = self.current_index {
+            carbide_core::widget::WidgetIterMut::single(&mut (self.widgets[index].1))
+        } else {
+            carbide_core::widget::WidgetIterMut::Empty
+        }
     }
 
     fn children_direct_rev(&mut self) -> carbide_core::widget::WidgetIterMut {
-        carbide_core::widget::WidgetIterMut::single(&mut (self.current_child))
+        if let Some(index) = self.current_index {
+            carbide_core::widget::WidgetIterMut::single(&mut (self.widgets[index].1))
+        } else {
+            carbide_core::widget::WidgetIterMut::Empty
+        }
     }
 
     fn position(&self) -> carbide_core::draw::Position {
@@ -114,4 +137,41 @@ impl<T: Hash + StateContract + PartialEq + Eq  + 'static> carbide_core::widget::
 
 //CommonWidgetImpl!(Match, self, id: self.id, child: self.current_child, position: self.position, dimension: self.dimension);
 
-impl<T: Hash + StateContract + PartialEq + Eq + 'static> WidgetExt for Match<T> {}
+impl<T: StateContract> WidgetExt for Match<T> {}
+
+impl<T: StateContract> Debug for Match<T> {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("Match")
+            .field("current_index", &self.current_index)
+            .finish()
+    }
+}
+
+#[macro_export]
+macro_rules! matches_case {
+    ($i2:ident, $(|)? $( $pattern:pat_param )|+ $( if $guard: expr )?, $i1:ident => $widget:expr) => {
+        (|a| {
+            match a {
+                $( $pattern )|+ $( if $guard )? => true,
+                _ => false
+            }
+        },{
+            let $i1 = FieldState::new($i2.clone(), |a| {
+                match a {
+                    $( $pattern )|+ $( if $guard )? => {
+                        $i1
+                    }
+                    _ => panic!("Not matching")
+                }
+            }, |b| {
+                match b {
+                    $( $pattern )|+ $( if $guard )? => {
+                        $i1
+                    }
+                    _ => panic!("Not matching")
+                }
+            });
+            $widget
+        })
+    }
+}

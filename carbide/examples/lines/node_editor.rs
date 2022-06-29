@@ -22,13 +22,13 @@ pub struct NodeEditor {
 }
 
 impl NodeEditor {
-    pub fn new(graph: TState<Graph>) -> Box<Self> {
+    pub fn new(graph: &TState<Graph>) -> Box<Self> {
         Box::new(
             Self {
                 id: WidgetId::new(),
                 position: Default::default(),
                 dimension: Default::default(),
-                graph,
+                graph: graph.clone(),
                 selected_node: LocalState::new(None),
             }
         )

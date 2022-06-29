@@ -84,7 +84,6 @@ impl<FROM: StateContract, TO: StateContract> State<TO> for FieldState<FROM, TO> 
         let map_mut = self.map_mut;
         *ValueRefMut::map(self.state.value_mut(), |a| { map_mut(a) }) = value;
     }
-
 }
 
 impl<FROM: StateContract, TO: StateContract> Debug for FieldState<FROM, TO> {

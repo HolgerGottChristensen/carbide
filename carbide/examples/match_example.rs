@@ -39,11 +39,10 @@ fn main() {
                 .on_click(capture!([integer_state], |env: &mut Environment| {
                     *integer_state = (*integer_state + 1) % 3;
                 })),
-            Match::new(integer_state, vec![
-                (0, Rectangle::new().fill(EnvironmentColor::Blue)),
-                (1, middle),
-                (2, Rectangle::new().fill(EnvironmentColor::Red)),
-            ])
+            Match::new(integer_state)
+                .case(|a| matches!(a, 0), Rectangle::new().fill(EnvironmentColor::Blue))
+                .case(|a| matches!(a, 1), middle)
+                .case(|a| matches!(a, 2), Rectangle::new().fill(EnvironmentColor::Red))
         ]),
 
     );

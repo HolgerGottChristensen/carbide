@@ -66,7 +66,7 @@ fn main() {
         let texts = response.iter().take(25).map(|id| {
             async move {
                 let mut article = reqwest::get(format!("https://hacker-news.firebaseio.com/v0/item/{}.json", id)).await.unwrap().json::<Article>().await.unwrap();
-                article.carbide_id = WidgetId::new_v4();
+                article.carbide_id = WidgetId::new();
                 article
             }
         });
