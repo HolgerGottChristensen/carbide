@@ -375,7 +375,10 @@ fn main() {
         }, Text::new(selected_node_id));*/
 
     let selected_id = Match::new(&state)
-        .case(matches_case!(state, Graph { editing_mode: EditingMode::Selection { selected: SelectedState::Node(x), .. }, .. }, x => Text::new(x)));
+        .case(matches_case!(state, Graph { editing_mode: EditingMode::Selection { selected, hovered }, .. }, selected, hovered => VStack::new(vec![
+            Text::new(Map1::read_map(selected, |a: &SelectedState| format!("Selected: {:?}", a)).ignore_writes()),
+            Text::new(Map1::read_map(hovered, |a: &SelectedState| format!("Selected: {:?}", a)).ignore_writes()),
+        ])));
 
     window.set_widgets(
         VStack::new(vec![

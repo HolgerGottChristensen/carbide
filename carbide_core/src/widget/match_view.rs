@@ -149,29 +149,39 @@ impl<T: StateContract> Debug for Match<T> {
 
 #[macro_export]
 macro_rules! matches_case {
-    ($i2:ident, $(|)? $( $pattern:pat_param )|+ $( if $guard: expr )?, $i1:ident => $widget:expr) => {
+    (@inner $i2:ident, $( $pattern:pat_param )|+ $( if $guard: expr )?, $next:ident) => {
+        let $next = FieldState::new($i2.clone(), |a| {
+            match a {
+                $( $pattern )|+ $( if $guard )? => {
+                    $next
+                }
+                _ => panic!("Not matching: &{}", stringify!{$next})
+            }
+        }, |b| {
+            match b {
+                $( $pattern )|+ $( if $guard )? => {
+                    $next
+                }
+                _ => panic!("Not matching: &mut {}", stringify!{$next})
+            }
+        });
+    };
+    (@inner $i2:ident, $( $pattern:pat_param )|+ $( if $guard: expr )?, $next:ident, $($rest:ident),+) => {
+
+        matches_case!(@inner $i2, $( $pattern )|+ $( if $guard )?, $next);
+        matches_case!(@inner $i2, $( $pattern )|+ $( if $guard )?, $($rest),+);
+    };
+    ($i2:ident, $(|)? $( $pattern:pat_param )|+ $( if $guard: expr )?, $($i1:ident),+ => $widget:expr) => {
         (|a| {
             match a {
                 $( $pattern )|+ $( if $guard )? => true,
                 _ => false
             }
         },{
-            let $i1 = FieldState::new($i2.clone(), |a| {
-                match a {
-                    $( $pattern )|+ $( if $guard )? => {
-                        $i1
-                    }
-                    _ => panic!("Not matching")
-                }
-            }, |b| {
-                match b {
-                    $( $pattern )|+ $( if $guard )? => {
-                        $i1
-                    }
-                    _ => panic!("Not matching")
-                }
-            });
+            matches_case!(@inner $i2, $( $pattern )|+ $( if $guard )?, $($i1),+);
+
             $widget
         })
     }
 }
+
