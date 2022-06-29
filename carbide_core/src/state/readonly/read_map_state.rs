@@ -15,20 +15,17 @@ pub struct ReadMapState<FROM, TO, MAP>
         MAP: ReadMap<FROM, TO>,
 {
     state: RState<FROM>,
-    value: InnerState<TO>,
+    value: Option<InnerState<TO>>,
     map: MAP
 }
 
 impl<FROM: StateContract, TO: StateContract, MAP: ReadMap<FROM, TO>> ReadMapState<FROM, TO, MAP> {
     pub fn new<M1: Into<RState<FROM>>>(state: M1, map: MAP) -> RState<TO> {
         let state = state.into();
-        let value = map.map(&*state.value());
-
-        let inner_state = InnerState::new(ValueCell::new(value));
 
         let res = ReadMapState {
             state: state.clone(),
-            value: inner_state.clone(),
+            value: None,
             map
         };
 
@@ -40,8 +37,16 @@ impl<FROM: StateContract, TO: StateContract, MAP: ReadMap<FROM, TO>> NewStateSyn
     fn sync(&mut self, env: &mut Environment) -> bool {
         let updated = self.state.sync(env);
 
-        if updated {
-            *self.value.borrow_mut() = self.map.map(&*self.state.value());
+        if let Some(inner) = &mut self.value {
+            if updated {
+                *inner.borrow_mut() = self.map.map(&*self.state.value());
+            }
+        } else {
+            let value = self.map.map(&*self.state.value());
+
+            let inner_state = InnerState::new(ValueCell::new(value));
+
+            self.value = Some(inner_state)
         }
 
         updated
@@ -51,7 +56,7 @@ impl<FROM: StateContract, TO: StateContract, MAP: ReadMap<FROM, TO>> NewStateSyn
 
 impl<FROM: StateContract, TO: StateContract, MAP: ReadMap<FROM, TO>> ReadState<TO> for ReadMapState<FROM, TO, MAP> {
     fn value(&self) -> ValueRef<TO> {
-        self.value.borrow()
+        self.value.as_ref().expect("Tried to get value without having synced first. Maps are not initialized before the first sync").borrow()
     }
 }
 

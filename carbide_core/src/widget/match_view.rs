@@ -52,7 +52,15 @@ impl<T: StateContract> Match<T> {
 impl<T: StateContract> StateSync for Match<T> {
     fn capture_state(&mut self, env: &mut Environment) {
         self.local_state.sync(env);
-        if let Some(index) = self.current_index {
+
+        // Always find the first match in the vec
+        self.current_index = self.find_new_matching_child();
+
+        // With the below code we match in the order of the vec and stay at an item as long as it
+        // matches. I dont know if this is desirable. I think it is more efficient, because we dont
+        // have to iterate the vec all the times.
+
+        /*if let Some(index) = self.current_index {
             if self.widgets[index].0(&self.local_state.value()) {
                 // If we match the current case still we are happy
             } else {
@@ -60,7 +68,7 @@ impl<T: StateContract> StateSync for Match<T> {
             }
         } else {
             self.current_index = self.find_new_matching_child();
-        }
+        }*/
     }
 
     fn release_state(&mut self, env: &mut Environment) {
@@ -180,6 +188,16 @@ macro_rules! matches_case {
         },{
             matches_case!(@inner $i2, $( $pattern )|+ $( if $guard )?, $($i1),+);
 
+            $widget
+        })
+    };
+    ($i2:ident, $(|)? $( $pattern:pat_param )|+ $( if $guard: expr )?, $widget:expr) => {
+        (|a| {
+            match a {
+                $( $pattern )|+ $( if $guard )? => true,
+                _ => false
+            }
+        },{
             $widget
         })
     }

@@ -12,7 +12,7 @@ use std::time::Duration;
 use carbide_controls::{Button, capture, TextInput};
 use carbide_core::{animate, lens, Scalar, matches_case};
 use carbide_core::draw::{Dimension, Position, Rect};
-use carbide_core::environment::Environment;
+use carbide_core::environment::{Environment, EnvironmentFontSize};
 use carbide_core::prelude::EnvironmentColor;
 use carbide_core::state::{FieldState, LocalState, Map1, ReadState, State, StateExt, TState};
 use carbide_core::text::FontFamily;
@@ -375,9 +375,19 @@ fn main() {
         }, Text::new(selected_node_id));*/
 
     let selected_id = Match::new(&state)
+        .case(matches_case!(state, Graph { editing_mode: EditingMode::Selection { selected: SelectedState::None, .. }, .. }, {
+            VStack::new(vec![
+                HStack::new(vec![
+                    Text::new("Nothing is selected")
+                        .font_size(EnvironmentFontSize::Title),
+                    Spacer::new()
+                ]),
+                Spacer::new(),
+            ]).padding(10.0)
+        }))
         .case(matches_case!(state, Graph { editing_mode: EditingMode::Selection { selected, hovered }, .. }, selected, hovered => VStack::new(vec![
             Text::new(Map1::read_map(selected, |a: &SelectedState| format!("Selected: {:?}", a)).ignore_writes()),
-            Text::new(Map1::read_map(hovered, |a: &SelectedState| format!("Selected: {:?}", a)).ignore_writes()),
+            Text::new(Map1::read_map(hovered, |a: &SelectedState| format!("Hovered: {:?}", a)).ignore_writes()),
         ])));
 
     window.set_widgets(
@@ -394,7 +404,7 @@ fn main() {
                     canvas.clip()
                 ]),
                 ZStack::new(vec![
-                    Rectangle::new().fill(EnvironmentColor::Teal),
+                    Rectangle::new().fill(EnvironmentColor::Blue),
                     selected_id,
                 ])
             ).relative_to_end(250.0),

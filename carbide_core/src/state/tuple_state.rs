@@ -9,7 +9,7 @@ macro_rules! tuple_state {
             $(
                 $name: TState<$type>,
             )*
-            inner_value: InnerState<TO>,
+            inner_value: Option<InnerState<TO>>,
             map: fn($($name: &$type),*) -> TO,
             replace: Option<fn(TO, $($name: &$type),*) -> ($(Option<$type>),*)>,
         }
@@ -22,8 +22,13 @@ macro_rules! tuple_state {
                     updated |= self.$name.sync(env);
                 )*
 
-                if updated {
-                    *self.inner_value.borrow_mut() = (self.map)($(&*self.$name.value()),*);
+                if let Some(inner) = &mut self.inner_value {
+                    if updated {
+                    *inner.borrow_mut() = (self.map)($(&*self.$name.value()),*);
+                }
+                } else {
+                    let val = (self.map)($(&*self.$name.value()),*);
+                    self.inner_value = Some(InnerState::new(ValueCell::new(val)));
                 }
 
                 updated
@@ -32,7 +37,7 @@ macro_rules! tuple_state {
 
         impl<$($type: StateContract),*, TO: StateContract> ReadState<TO> for $struct_name<$($type),*, TO> {
             fn value(&self) -> ValueRef<TO> {
-                self.inner_value.borrow()
+                self.inner_value.as_ref().expect("Tried to get value without having synced first. Maps are not initialized before the first sync").borrow()
             }
         }
 
@@ -53,7 +58,7 @@ macro_rules! tuple_state {
                         }
                     )*
 
-                    *self.inner_value.borrow_mut() = (self.map)($(&*self.$name.value()),*);
+                    *self.inner_value.as_ref().unwrap().borrow_mut() = (self.map)($(&*self.$name.value()),*);
                 } else {
                     panic!("This should not be reachable.")
                 }
@@ -77,9 +82,9 @@ macro_rules! tuple_state {
                 $(
                     let $name = $name.into().ignore_writes();
                 )*
-                let val = map($(&*$name.value()),*);
+                //let val = map($(&*$name.value()),*);
 
-                let inner_value = InnerState::new(ValueCell::new(val));
+                let inner_value = None;//InnerState::new(ValueCell::new(val));
 
                 let n = Self {
                     $(
@@ -97,9 +102,9 @@ macro_rules! tuple_state {
                 $(
                     let $name = $name.into();
                 )*
-                let val = map($(&*$name.value()),*);
+                //let val = map($(&*$name.value()),*);
 
-                let inner_value = InnerState::new(ValueCell::new(val));
+                let inner_value = None;//InnerState::new(ValueCell::new(val));
 
                 let n = Self {
                     $(
