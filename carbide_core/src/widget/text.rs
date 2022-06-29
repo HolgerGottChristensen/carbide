@@ -249,7 +249,10 @@ impl CommonWidget for Text {
     }
 
     fn set_position(&mut self, position: Position) {
-        self.position = position;
+        self.position = Position::new(
+            position.x.round(),
+            position.y.round(),
+        );
     }
 
     fn flexibility(&self) -> u32 {
