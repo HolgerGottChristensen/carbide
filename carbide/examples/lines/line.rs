@@ -2,7 +2,7 @@ use carbide_core::draw::{Position, Rect};
 use carbide_core::Scalar;
 use crate::intersect;
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, PartialEq)]
 pub struct Line {
     pub start: Position,
     pub end: Position,

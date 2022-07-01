@@ -27,7 +27,7 @@ impl Border {
         Box::new(self)
     }
 
-    pub fn initialize(child: Box<dyn Widget>) -> Box<Self> {
+    pub fn new(child: Box<dyn Widget>) -> Box<Self> {
         Box::new(Border {
             id: WidgetId::new(),
             child,

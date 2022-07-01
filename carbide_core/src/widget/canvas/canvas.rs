@@ -269,7 +269,8 @@ impl<T: StateContract> Render for Canvas<T> {
 
 impl<T: StateContract> Debug for Canvas<T> {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        todo!()
+        f.debug_struct("Canvas")
+            .finish()
     }
 }
 

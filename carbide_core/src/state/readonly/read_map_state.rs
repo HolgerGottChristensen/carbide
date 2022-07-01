@@ -63,7 +63,7 @@ impl<FROM: StateContract, TO: StateContract, MAP: ReadMap<FROM, TO>> ReadState<T
 impl<FROM: StateContract, TO: StateContract, MAP: ReadMap<FROM, TO>> Debug for ReadMapState<FROM, TO, MAP> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("MapState")
-            .field("value", &*self.value())
+            .field("value", &self.value)
             .finish()
     }
 }

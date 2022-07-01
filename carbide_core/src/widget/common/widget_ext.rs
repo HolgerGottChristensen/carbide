@@ -116,7 +116,7 @@ pub trait WidgetExt: Widget + Sized + 'static {
     }
 
     fn border(self) -> Box<Border> {
-        Border::initialize(Box::new(self))
+        Border::new(Box::new(self))
     }
 
     fn foreground_color<C: Into<ColorState>>(self, color: C) -> Box<EnvUpdating> {

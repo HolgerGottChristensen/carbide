@@ -7,6 +7,7 @@ pub struct Spacer {
     id: WidgetId,
     position: Position,
     dimension: Dimension,
+    max_size: Option<Scalar>,
 }
 
 impl Spacer {
@@ -15,14 +16,33 @@ impl Spacer {
             id: WidgetId::new(),
             position: Position::new(0.0, 0.0),
             dimension: Dimension::new(100.0, 100.0),
+            max_size: None
+        })
+    }
+
+    pub fn fixed(max: Scalar) -> Box<Self> {
+        Box::new(Spacer {
+            id: WidgetId::new(),
+            position: Position::new(0.0, 0.0),
+            dimension: Dimension::new(100.0, 100.0),
+            max_size: Some(max)
         })
     }
 }
 
 impl Layout for Spacer {
     fn calculate_size(&mut self, requested_size: Dimension, _: &mut Environment) -> Dimension {
-        self.dimension = requested_size;
-        requested_size
+        if let Some(max) = self.max_size {
+            self.dimension = Dimension::new(
+                requested_size.width.min(max),
+                requested_size.height.min(max),
+            );
+            self.dimension
+        } else {
+            self.dimension = requested_size;
+            requested_size
+        }
+
     }
 }
 
@@ -32,7 +52,11 @@ impl CommonWidget for Spacer {
     }
 
     fn flag(&self) -> Flags {
-        Flags::SPACER
+        if let Some(_) = self.max_size {
+            Flags::EMPTY
+        } else {
+            Flags::SPACER
+        }
     }
 
     fn children(&self) -> WidgetIter {

@@ -982,6 +982,10 @@ impl CommonWidget for PlainTextInput {
         self.position = position;
     }
 
+    fn flexibility(&self) -> u32 {
+        1
+    }
+
     fn dimension(&self) -> Dimension {
         self.dimension
     }

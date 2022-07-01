@@ -21,6 +21,10 @@ impl Context {
         }
     }
 
+    pub fn append(&mut self, mut other: Context) {
+        self.generator.append(&mut other.generator);
+    }
+
     pub fn set_line_width(&mut self, width: f64) {
         self.generator.push(ContextAction::LineWidth(width))
     }

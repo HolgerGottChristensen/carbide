@@ -7,7 +7,7 @@ use carbide_core::environment::Environment;
 use carbide_core::event::{ModifierKey, MouseEvent, MouseEventHandler};
 use carbide_core::prelude::{State, WidgetId};
 use carbide_core::state::{LocalState, ReadState, TState};
-use carbide_core::widget::WidgetExt;
+use carbide_core::widget::{CommonWidget, WidgetExt};
 use crate::{CreateWallState, Edge, EditingMode, Graph, Line, Node, SelectedState};
 use crate::guide::Guide;
 
@@ -342,6 +342,7 @@ impl NodeEditor {
             MouseEvent::Press(_, _, _) => {}
             MouseEvent::Release(_, _, _) => {}
             MouseEvent::Click(_, to, _) => {
+                if !self.is_inside(*to) {return}
                 let to = *to - self.position;
 
                 let close_node = self.graph.value().node_in_range(to);

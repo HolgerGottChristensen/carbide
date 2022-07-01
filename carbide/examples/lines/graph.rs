@@ -2,7 +2,7 @@ use carbide_core::draw::Position;
 use crate::edge::Edge;
 use crate::editing_mode::EditingMode;
 use crate::guide::Guide;
-use crate::Line;
+use crate::{Line, total_cmp};
 use crate::node::Node;
 
 #[derive(Clone, Debug)]
@@ -178,6 +178,7 @@ impl Graph {
     pub fn guides_and_position(&mut self, position: Position, ignore_node_id: usize) -> Position {
         let mut new_position = position;
         let mut guides = vec![];
+        let mut point_guides = vec![];
 
         for edge_id in 0..self.edges.len() {
             let edge = self.get_edge(edge_id);
@@ -211,8 +212,133 @@ impl Graph {
             }
         }
 
+        for guide1_index in 0..guides.len() {
+            for guide2_index in guide1_index..guides.len() {
+                if guide1_index == guide2_index {continue}
+
+                let line1 = Self::line_from_guide(&guides[guide1_index]).unwrap();
+                let line2 = Self::line_from_guide(&guides[guide2_index]).unwrap();
+
+                let point = line1.intersect(&line2);
+
+                if let Some(point) = point {
+                    if point.dist(&position) < 10.0 {
+                        new_position = point;
+                    }
+                    point_guides.push(Guide::Point(point));
+                }
+            }
+        }
+
+        guides.append(&mut point_guides);
+
         self.guides = guides;
 
         new_position
+    }
+
+    fn line_from_guide(guide: &Guide) -> Option<Line> {
+        match guide {
+            Guide::Vertical(x) => {
+                Some(Line::new(
+                    Position::new(*x, 0.0),
+                    Position::new(*x, 30.0),
+                ))
+            }
+            Guide::Horizontal(y) => {
+                Some(Line::new(
+                    Position::new(0.0, *y),
+                    Position::new(30.0, *y),
+                ))
+            }
+            Guide::Directional(line) => {
+                Some(*line)
+            }
+            Guide::Point(_) => {
+                None
+            }
+        }
+    }
+
+    pub fn calculate_lines(&mut self) {
+        for node_id in 0..self.nodes.len() {
+            //println!("Nodeid: {:?}", node_id);
+            let start_node = self.get_node(node_id);
+            let mut lines = vec![];
+            for neighbor in self.get_outgoing_edges_iter(node_id) {
+                let end_node = self.get_node(neighbor.to);
+
+                lines.push((neighbor.id, Line::new(start_node.position, end_node.position), true, neighbor.offset, neighbor.width));
+            }
+
+            for neighbor in self.get_incoming_edges_iter(node_id) {
+                let end_node = self.get_node(neighbor.from);
+
+                lines.push((neighbor.id, Line::new(start_node.position, end_node.position), false, neighbor.offset, neighbor.width));
+            }
+
+            lines.sort_by(|a, b| {
+                total_cmp(a.1.angle(), b.1.angle())
+            });
+
+            for (before, after) in lines.iter().zip(lines.iter().skip(1).chain(lines.iter())) {
+                if lines.len() > 1 {
+                    let w1 = if before.2 { before.4 * (1.0 - before.3) } else { before.4 * before.3 };
+                    let w2 = if !after.2 { after.4 * (1.0 - after.3) } else { after.4 * after.3 };
+
+                    let offset1 = before.1.normal_offset(-w1);
+                    let offset2 = after.1.normal_offset(w2);
+
+                    let a = offset1.intersect(&offset2);
+
+                    let angle = (after.1.angle() - before.1.angle()).abs() % 180.0;
+
+                    let (intersect1, intersect2) = if let Some(a) = a {
+                        if (angle < 15.0 || angle > 165.0) && (
+                            offset1.start.dist(&a) > offset1.len() / 10.0 &&
+                                offset2.start.dist(&a) > offset2.len() / 10.0
+                        ) {
+                            (offset1.start, offset2.start)
+                        } else {
+                            (a, a)
+                        }
+                    } else {
+                        (offset1.start, offset2.start)
+                    };
+
+
+                    let edge_before = self.get_edge_mut(before.0);
+                    if before.2 {
+                        edge_before.neg_line.start = intersect1;
+                        edge_before.neg_line.flip();
+                    } else {
+                        edge_before.pos_line.start = intersect1;
+                        edge_before.pos_line.flip();
+                    }
+
+
+                    let edge_after = self.get_edge_mut(after.0);
+                    if after.2 {
+                        edge_after.pos_line.start = intersect2;
+                        edge_after.pos_line.flip();
+                    } else {
+                        edge_after.neg_line.start = intersect2;
+                        edge_after.neg_line.flip();
+                    }
+                } else {
+                    let multiplier1 = if before.2 { (1.0 - before.3) } else { before.3 };
+                    let multiplier2 = if before.2 { before.3 } else { (1.0 - before.3) };
+
+                    let offset1 = before.1.normal_offset(-before.4 * multiplier1);
+                    let offset2 = before.1.normal_offset(before.4 * multiplier2);
+
+                    let edge_before = self.get_edge_mut(before.0);
+                    edge_before.pos_line.start = offset1.start;
+                    edge_before.neg_line.start = offset2.start;
+                    edge_before.neg_line.flip();
+                    edge_before.pos_line.flip();
+                }
+            }
+        }
     }
 }

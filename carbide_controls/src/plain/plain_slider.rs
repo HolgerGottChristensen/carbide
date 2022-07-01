@@ -1,15 +1,16 @@
 use std::ascii::escape_default;
-use carbide_core::Color;
+use carbide_core::{Color, Scalar};
 use carbide_core::draw::{Dimension, Position};
 use carbide_core::environment::{Environment, EnvironmentColor};
 use carbide_core::event::{MouseEvent, MouseEventHandler};
 use carbide_core::flags::Flags;
 use carbide_core::focus::{Focus, Focusable};
 use carbide_core::focus::Refocus;
-use carbide_core::layout::Layout;
-use carbide_core::state::{BoolState, FocusState, LocalState, Map2, Map3, Map4, MapOwnedState, ReadState, State, StateKey, StringState, TState, ValueState};
+use carbide_core::layout::{Layout, Layouter};
+use carbide_core::state::{BoolState, FocusState, LocalState, Map2, Map3, Map4, MapOwnedState, ReadState, State, StateKey, StateSync, StringState, TState, ValueState};
 use carbide_core::widget::{Capsule, CommonWidget, CrossAxisAlignment, HSplit, HStack, WidgetId, Rectangle, Spacer, Text, Widget, WidgetExt, WidgetIter, WidgetIterMut, ZStack};
 use crate::PlainButton;
+
 
 #[derive(Debug, Clone, Widget)]
 #[carbide_exclude(Focusable, Layout, MouseEvent)]
@@ -22,11 +23,13 @@ pub struct PlainSlider {
     dimension: Dimension,
     #[state]
     state: TState<f64>,
+    #[state]
     percent: TState<f64>,
     start: f64,
     end: f64,
     cross_axis_alignment: CrossAxisAlignment,
     dragging: bool,
+    #[state]
     steps: TState<Option<f64>>,
     thumb: fn() -> Box<dyn Widget>,
     indicator: fn() -> Box<dyn Widget>,
@@ -340,6 +343,9 @@ impl CommonWidget for PlainSlider {
         self.position = position;
     }
 
+    fn flexibility(&self) -> u32 {
+        1
+    }
     fn dimension(&self) -> Dimension {
         self.dimension
     }
