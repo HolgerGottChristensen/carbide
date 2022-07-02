@@ -83,6 +83,7 @@ impl From<(&Key, &ModifierKey)> for TextInputKeyCommand {
             (Key::Backspace, &ModifierKey::NO_MODIFIER) => TextInputKeyCommand::RemoveLeft,
             (Key::Backspace, &ModifierKey::SHIFT) => TextInputKeyCommand::RemoveLeft,
             (Key::Backspace, &ModifierKey::ALT) => TextInputKeyCommand::RemoveWordLeft,
+
             (Key::Delete, &ModifierKey::NO_MODIFIER) => TextInputKeyCommand::RemoveRight,
             (Key::Delete, &ModifierKey::SHIFT) => TextInputKeyCommand::RemoveAll,
             (Key::Delete, &ModifierKey::ALT) => TextInputKeyCommand::RemoveWordRight,

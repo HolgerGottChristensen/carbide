@@ -562,6 +562,7 @@ impl KeyboardEventHandler for PlainTextInput {
                         let min = start.char.min(end.char);
                         let max = start.char.max(end.char);
                         self.remove_range(min..max);
+                        self.capture_state(env);
                         self.insert_str(min, string);
                         self.cursor = Cursor::Single(CursorIndex { line: 0, char: min + Self::len_in_graphemes(&string) });
                     }
