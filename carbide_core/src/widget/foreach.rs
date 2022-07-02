@@ -31,15 +31,6 @@ pub struct ForEach<T, U> where T: StateContract, U: Delegate<T> {
 impl<T: StateContract, U: Delegate<T>> ForEach<T, U> {
     pub fn new<K: Into<TState<Vec<T>>>>(model: K, delegate: U) -> Box<Self> {
         let model = model.into();
-        let mut list: Vec<Box<dyn Widget>> = vec![];
-
-        for (index, _element) in model.value().deref().iter().enumerate() {
-            let index_state: UsizeState = ValueState::new(index).into();
-            let item_state = VecState::new(model.clone(), index);
-
-            let widget = delegate.call(item_state.into(), index_state);
-            list.push(widget);
-        }
 
         Box::new(Self {
             id: WidgetId::new(),
@@ -47,7 +38,7 @@ impl<T: StateContract, U: Delegate<T>> ForEach<T, U> {
             dimension: Dimension::default(),
             model,
             delegate,
-            children: list,
+            children: vec![],
             index_offset: ValueState::new(0).into(),
         })
     }

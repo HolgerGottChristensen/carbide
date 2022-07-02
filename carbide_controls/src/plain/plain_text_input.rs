@@ -192,7 +192,7 @@ impl PlainTextInput {
                         .when_true(
                             Rectangle::new()
                                 .fill(selection_color.clone())
-                                .frame(selection_width.clone(), font_size.read_map(|val: &u32| *val as f64).ignore_writes())
+                                .frame(selection_width.clone(), font_size.map(|val: &u32| *val as f64).ignore_writes())
                                 .offset(selection_x.clone(), 0.0)
                         ),
                     Text::new(display_text.clone())
@@ -203,7 +203,7 @@ impl PlainTextInput {
                         .when_true(
                             Rectangle::new()
                                 .fill(cursor_color.clone())
-                                .frame(1.0, font_size.read_map(|val: &u32| *val as f64).ignore_writes())
+                                .frame(1.0, font_size.map(|val: &u32| *val as f64).ignore_writes())
                                 .offset(cursor_x.clone(), 0.0),
                         ),
                 ]).with_alignment(BasicLayouter::Leading)

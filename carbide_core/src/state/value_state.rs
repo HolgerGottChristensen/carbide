@@ -2,11 +2,12 @@ use std::fmt::{Debug, Formatter};
 use std::ops::{Deref, DerefMut};
 use std::str::FromStr;
 use carbide_core::prelude::NewStateSync;
+use carbide_core::state::Map1;
 use crate::Color;
 
 use crate::environment::Environment;
 use crate::prelude::{AdvancedColor, ReadState};
-use crate::state::{BoolState, MapOwnedState, ResStringState, State, StateContract, StateExt, StringState, TState, RState, MapState};
+use crate::state::{BoolState, MapOwnedState, ResStringState, State, StateContract, StateExt, StringState, TState, RState};
 use crate::state::{ValueRef, ValueRefMut};
 use crate::state::widget_state::WidgetState;
 use crate::widget::Gradient;
@@ -198,23 +199,15 @@ impl Into<ResStringState> for TState<Result<f64, String>> {
     }
 }
 
-impl Into<StringState> for ResStringState {
-    fn into(self) -> StringState {
-        MapState::new(self, (), |res: &Result<String, String>, _| {
+impl Into<TState<String>> for TState<Result<String, String>> {
+    fn into(self) -> TState<String> {
+        Map1::map(self, |res: &Result<String, String>| {
             match res.as_ref() {
-                Ok(a) | Err(a) => {
-                    a
-                }
+                Ok(s) | Err(s) => s.clone(),
             }
-        }, |res: &mut Result<String, String>, _| {
-            match res.as_mut() {
-                Ok(a) | Err(a) => {
-                    a
-                }
-            }
-        }, |res: &String| {
-            Some(Ok(res.to_string()))
-        }).into()
+        }, |new, _| {
+            Some(Ok(new))
+        })
     }
 }
 
@@ -228,13 +221,13 @@ impl Into<BoolState> for ResStringState {
 
 impl Into<RState<AdvancedColor>> for TState<Color> {
     fn into(self) -> RState<AdvancedColor> {
-        self.read_map(|c: &Color| { AdvancedColor::from(*c) })
+        self.map(|c: &Color| { AdvancedColor::from(*c) })
     }
 }
 
 impl Into<TState<AdvancedColor>> for TState<Color> {
     fn into(self) -> TState<AdvancedColor> {
-        self.read_map(|c: &Color| { AdvancedColor::from(*c) }).ignore_writes()
+        self.map(|c: &Color| { AdvancedColor::from(*c) }).ignore_writes()
     }
 }
 

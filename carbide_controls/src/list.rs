@@ -37,6 +37,7 @@ pub struct List<T, U> where T: StateContract, U: Delegate<T> + 'static {
     end_offset: F64State,
     item_id_function: Option<fn(&T) -> WidgetId>,
     selection: Option<Selection>,
+    #[state]
     last_index_clicked: UsizeState,
     sub_tree_function: Option<fn(TState<T>) -> TState<Option<Vec<T>>>>,
     tree_disclosure: TreeDisclosure,

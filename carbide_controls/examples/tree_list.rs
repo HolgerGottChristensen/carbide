@@ -30,20 +30,20 @@ fn main() {
     window.add_font_family(family);
 
     let list_model: Tree =
-        SubTree("Root".to_string(), WidgetId::new_v4(), vec![
-            SubTree("Subtree 1".to_string(), WidgetId::new_v4(), vec![
-                Leaf("Leaf 1".to_string(), WidgetId::new_v4()),
+        SubTree("Root".to_string(), WidgetId::new(), vec![
+            SubTree("Subtree 1".to_string(), WidgetId::new(), vec![
+                Leaf("Leaf 1".to_string(), WidgetId::new()),
                 ]),
-            Leaf("Leaf 2".to_string(), WidgetId::new_v4()),
-            SubTree("Subtree 2".to_string(), WidgetId::new_v4(), vec![
-                Leaf("Leaf 3".to_string(), WidgetId::new_v4()),
-                Leaf("Leaf 4".to_string(), WidgetId::new_v4()),
-                SubTree("Subtree 3".to_string(), WidgetId::new_v4(), vec![
-                    Leaf("Leaf 5".to_string(), WidgetId::new_v4()),
-                    Leaf("Leaf 6".to_string(), WidgetId::new_v4()),
+            Leaf("Leaf 2".to_string(), WidgetId::new()),
+            SubTree("Subtree 2".to_string(), WidgetId::new(), vec![
+                Leaf("Leaf 3".to_string(), WidgetId::new()),
+                Leaf("Leaf 4".to_string(), WidgetId::new()),
+                SubTree("Subtree 3".to_string(), WidgetId::new(), vec![
+                    Leaf("Leaf 5".to_string(), WidgetId::new()),
+                    Leaf("Leaf 6".to_string(), WidgetId::new()),
                 ]),
             ]),
-            Leaf("Leaf 7".to_string(), WidgetId::new_v4()),
+            Leaf("Leaf 7".to_string(), WidgetId::new()),
         ]);
 
     let list_model_state = LocalState::new(vec![list_model]);
@@ -64,7 +64,7 @@ fn main() {
     };
 
     fn tree_children(t: TState<Tree>) -> TState<Option<Vec<Tree>>> {
-        t.read_map(|tree: &Tree| {
+        t.map(|tree| {
             match tree {
                 SubTree(_, _, c) => Some(c.clone()),
                 Leaf(_, _) => None,

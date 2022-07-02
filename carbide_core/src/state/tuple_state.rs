@@ -58,7 +58,14 @@ macro_rules! tuple_state {
                         }
                     )*
 
-                    *self.inner_value.as_ref().unwrap().borrow_mut() = (self.map)($(&*self.$name.value()),*);
+                    let val = (self.map)($(&*self.$name.value()),*);
+
+                    if let Some(inner) = &mut self.inner_value {
+                        *inner.borrow_mut() = val;
+                    } else {
+                        self.inner_value = Some(InnerState::new(ValueCell::new(val)));
+                    }
+
                 } else {
                     panic!("This should not be reachable.")
                 }

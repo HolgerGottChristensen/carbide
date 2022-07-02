@@ -24,7 +24,7 @@ fn main() {
     window.add_font_family(family);
 
     let list_model = (1..20)
-        .map(|i| (format!("Number {}", i), WidgetId::new_v4()))
+        .map(|i| (format!("Number {}", i), WidgetId::new()))
         .collect::<Vec<_>>();
 
     let list_model_state = LocalState::new(list_model);
