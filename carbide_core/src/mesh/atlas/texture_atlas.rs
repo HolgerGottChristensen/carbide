@@ -5,13 +5,13 @@ use std::rc::{Rc, Weak};
 use fxhash::{FxBuildHasher, FxHashMap};
 use image::GenericImageView;
 use rusttype::{GlyphId, Point, Rect};
+use crate::draw::image::ImageId;
 
 use crate::draw::Position;
 use crate::draw::Scalar;
 use crate::mesh::atlas::lossy_glyph_info::LossyGlyphInfo;
 use crate::text::{Font, FontId, FontSize, Glyph};
 
-type ImageId = crate::image_map::ImageId;
 type ImageData = image::DynamicImage;
 pub type TextureAtlasIndex = usize;
 

@@ -13,6 +13,7 @@ pub mod svg_path_builder;
 pub mod draw_gradient;
 pub mod alignment;
 pub mod theme;
+pub mod image;
 
 /// An alias over the Scalar type used throughout carbide.
 ///

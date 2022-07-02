@@ -46,7 +46,7 @@ fn main() {
     // Create our `carbide_core::image::Map` which describes each of our widget->image mappings.
     let rust_logo = load_rust_logo(&display.0);
     let (w, h) = (rust_logo.get_width(), rust_logo.get_height().unwrap());
-    let mut image_map = carbide_core::image_map::ImageMap::new();
+    let mut image_map = carbide_core::draw::image::image_map::ImageMap::new();
     let rust_logo = image_map.insert(rust_logo);
 
     // Poll events from the window.

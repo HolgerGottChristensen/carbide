@@ -50,7 +50,7 @@ fn main() {
 
     task!(env, {
         let response = reqwest::get("https://picsum.photos/300").await.unwrap().bytes().await.expect("Could not get bytes");
-        let image = image::load_from_memory(&response).unwrap();
+        let image = carbide_core::image::load_from_memory(&response).unwrap();
         image
     }, move |res, env: &mut Environment| {
         image_id_for_async.clone().set_value(env.queue_image(res))

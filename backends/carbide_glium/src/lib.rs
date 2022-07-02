@@ -5,7 +5,8 @@ extern crate carbide_winit;
 #[macro_use]
 extern crate glium;
 
-use carbide_core::{color, Color, image_map, OldRect, Range, render, text_old};
+use carbide_core::{color, Color, OldRect, Range, render, text_old};
+use carbide_core::draw::image::{image_id, image_map};
 use carbide_core::draw::Scalar;
 use carbide_core::render::primitive::Primitive;
 use carbide_core::render::primitive_kind::PrimitiveKind;
@@ -31,13 +32,13 @@ pub enum Command<'a> {
 pub enum Draw<'a> {
     /// A range of vertices representing triangles textured with the image in the
     /// image_map at the given `widget::Id`.
-    Image(image_map::ImageId, &'a [Vertex]),
+    Image(image_id::ImageId, &'a [Vertex]),
     /// A range of vertices representing plain triangles.
     Plain(&'a [Vertex]),
 }
 
 enum PreparedCommand {
-    Image(image_map::ImageId, std::ops::Range<usize>),
+    Image(image_id::ImageId, std::ops::Range<usize>),
     Plain(std::ops::Range<usize>),
     Scizzor(glium::Rect),
 }
@@ -534,7 +535,7 @@ impl Renderer {
 
         enum State {
             Image {
-                image_id: image_map::ImageId,
+                image_id: image_id::ImageId,
                 start: usize,
             },
             Plain {

@@ -56,7 +56,7 @@ fn main() {
         texture
     }
 
-    let mut image_map = carbide_core::image_map::ImageMap::new();
+    let mut image_map = carbide_core::draw::image::image_map::ImageMap::new();
     let rust_logo = image_map.insert(load_rust_logo(&display.0));
 
     // A channel to send events from the main `winit` thread to the carbide thread.
@@ -68,7 +68,7 @@ fn main() {
 
     // A function that runs the carbide loop.
     fn run_carbide(
-        rust_logo: carbide_core::image_map::ImageId,
+        rust_logo: carbide_core::draw::image::image_id::ImageId,
         event_rx: std::sync::mpsc::Receiver<carbide_core::event::Input>,
         render_tx: std::sync::mpsc::Sender<carbide_core::render::OwnedPrimitives>,
         events_loop_proxy: glium::glutin::EventsLoopProxy,
@@ -136,7 +136,7 @@ fn main() {
     fn draw(
         display: &glium::Display,
         renderer: &mut Renderer,
-        image_map: &carbide_core::image_map::ImageMap<glium::Texture2d>,
+        image_map: &carbide_core::draw::image::image_map::ImageMap<glium::Texture2d>,
         primitives: &carbide_core::render::OwnedPrimitives,
     ) {
         renderer.fill(display, primitives.walk(), &image_map);

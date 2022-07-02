@@ -4,8 +4,8 @@ use crate::Color;
 use crate::color::Rgba;
 use crate::draw::{Position, Rect};
 use crate::draw::draw_gradient::DrawGradient;
+use crate::draw::image::ImageId;
 use crate::draw::shape::triangle::Triangle;
-use crate::image_map;
 use crate::layout::BasicLayouter;
 use crate::text::Glyph;
 use crate::widget::{ColoredPoint, FilterId};
@@ -67,7 +67,7 @@ pub enum PrimitiveKind {
     /// A single `Image`, produced by the primitive `Image` widget.
     Image {
         /// The unique identifier of the image that will be drawn.
-        image_id: image_map::ImageId,
+        image_id: ImageId,
         /// When `Some`, colours the `Image`. When `None`, the `Image` uses its regular colours.
         color: Option<Color>,
         /// The area of the texture that will be drawn to the `Image`'s `Rect`.

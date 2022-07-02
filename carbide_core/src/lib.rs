@@ -77,7 +77,6 @@ pub mod environment;
 pub mod event;
 pub mod flags;
 pub mod focus;
-pub mod image_map;
 pub mod layout;
 pub mod mesh;
 pub mod prelude;

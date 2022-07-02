@@ -58,12 +58,12 @@ fn main() {
     let ids = Ids::new(ui.widget_id_generator());
 
     // Create our `carbide_core::image::Map` which describes each of our widget->image mappings.
-    let mut image_map = carbide_core::image_map::ImageMap::new();
+    let mut image_map = carbide_core::draw::image::image_map::ImageMap::new();
 
     struct ImageIds {
-        normal: carbide_core::image_map::ImageId,
-        hover: carbide_core::image_map::ImageId,
-        press: carbide_core::image_map::ImageId,
+        normal: carbide_core::draw::image::image_id::ImageId,
+        hover: carbide_core::draw::image::image_id::ImageId,
+        press: carbide_core::draw::image::image_id::ImageId,
     }
 
     // Load the images into our `ImageIds` type for easy access.

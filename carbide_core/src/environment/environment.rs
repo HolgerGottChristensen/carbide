@@ -10,10 +10,11 @@ use fxhash::{FxBuildHasher, FxHashMap};
 use image::DynamicImage;
 use oneshot::TryRecvError;
 
-use crate::{Color, image_map, locate_folder};
+use crate::{Color, locate_folder};
 use crate::animation::Animation;
 use crate::cursor::MouseCursor;
 use crate::draw::Dimension;
+use crate::draw::image::ImageId;
 use crate::draw::Scalar;
 use crate::environment::WidgetTransferAction;
 use crate::event::{CustomEvent, EventSink};
@@ -51,7 +52,7 @@ pub struct Environment {
     /// This map contains the widths and heights for loaded images.
     /// This is used to make the static size of the Image widget its
     /// required size.
-    images_information: FxHashMap<crate::image_map::ImageId, ImageInformation>,
+    images_information: FxHashMap<ImageId, ImageInformation>,
 
     /// A map from String to a widget.
     /// This key should correspond to the targeted overlay_layer
@@ -98,14 +99,9 @@ pub struct Environment {
     /// remove it from the list.
     async_task_queue: Option<Vec<Box<dyn Fn(&mut Environment) -> bool>>>,
 
-    /// The last image index used by the window. This is used when trying to add images from the
-    /// environment to the window. We increase this by one when queueing an image, and the value
-    /// is updated each frame.
-    last_image_index: u32,
-
     /// A list of queued images. When an image is added to this queue it will be added to the
     /// window the next frame.
-    queued_images: Option<Vec<DynamicImage>>,
+    queued_images: Option<Vec<(ImageId, DynamicImage)>>,
 
     cursor: MouseCursor,
 
@@ -159,7 +155,6 @@ impl Environment {
             filter_map: filters,
             next_filter_id: 0,
             async_task_queue: Some(vec![]),
-            last_image_index: 0,
             queued_images: None,
             cursor: MouseCursor::Arrow,
             #[cfg(feature = "tokio")]
@@ -186,22 +181,20 @@ impl Environment {
         self.windows_window_handle.expect("No window for the environment")
     }
 
-    pub fn set_last_image_index(&mut self, next_index: u32) {
-        self.last_image_index = next_index;
-    }
 
-    pub fn queue_image(&mut self, image: DynamicImage) -> Option<image_map::ImageId> {
+    pub fn queue_image(&mut self, image: DynamicImage) -> Option<ImageId> {
+        let id = ImageId::new();
+
         if let Some(images) = &mut self.queued_images {
-            images.push(image)
+            images.push((id, image))
         } else {
-            self.queued_images = Some(vec![image])
+            self.queued_images = Some(vec![(id, image)])
         }
-        let id = image_map::ImageId(self.last_image_index);
-        self.last_image_index += 1;
+
         Some(id)
     }
 
-    pub fn queued_images(&mut self) -> Option<Vec<image::DynamicImage>> {
+    pub fn queued_images(&mut self) -> Option<Vec<(ImageId, DynamicImage)>> {
         self.queued_images.take()
     }
 
@@ -414,13 +407,13 @@ impl Environment {
         self.focus_request = None;
     }
 
-    pub fn get_image_information(&self, id: &Option<crate::image_map::ImageId>) -> Option<&ImageInformation> {
+    pub fn get_image_information(&self, id: &Option<ImageId>) -> Option<&ImageInformation> {
         id.as_ref().and_then(|id| {
             self.images_information.get(id)
         })
     }
 
-    pub fn insert_image(&mut self, id: crate::image_map::ImageId, image: ImageInformation) {
+    pub fn insert_image(&mut self, id: ImageId, image: ImageInformation) {
         self.images_information.insert(id, image);
     }
 

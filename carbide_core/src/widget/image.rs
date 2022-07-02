@@ -3,12 +3,12 @@
 use std::path::PathBuf;
 use crate::color::WHITE;
 use crate::draw::{Dimension, Position, Rect};
-use crate::image_map;
 use crate::mesh::{MODE_ICON, MODE_IMAGE};
 use crate::prelude::*;
 use crate::render::PrimitiveKind;
 use crate::widget::types::ScaleMode;
 use crate::CommonWidgetImpl;
+use crate::draw::image::ImageId;
 
 /// A primitive and basic widget for drawing an `Image`.
 #[derive(Debug, Clone, Widget)]
@@ -16,7 +16,7 @@ use crate::CommonWidgetImpl;
 pub struct Image {
     id: WidgetId,
     /// The unique identifier for the image that will be drawn.
-    #[state] pub image_id: TState<Option<image_map::ImageId>>,
+    #[state] pub image_id: TState<Option<ImageId>>,
     /// The rectangle area of the original source image that should be used.
     src_rect: Option<Rect>,
     color: Option<ColorState>,
@@ -29,7 +29,7 @@ pub struct Image {
 }
 
 impl Image {
-    pub fn new<I: Into<TState<Option<image_map::ImageId>>>>(id: I) -> Box<Self> {
+    pub fn new<I: Into<TState<Option<ImageId>>>>(id: I) -> Box<Self> {
         Box::new(Image {
             id: WidgetId::new(),
             image_id: id.into(),
@@ -44,7 +44,7 @@ impl Image {
         })
     }
 
-    pub fn new_icon<I: Into<TState<Option<image_map::ImageId>>>>(id: I) -> Box<Self> {
+    pub fn new_icon<I: Into<TState<Option<ImageId>>>>(id: I) -> Box<Self> {
         Box::new(Image {
             id: WidgetId::new(),
             image_id: id.into(),

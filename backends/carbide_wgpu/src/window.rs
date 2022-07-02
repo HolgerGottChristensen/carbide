@@ -18,7 +18,7 @@ use winit::window::{Icon, WindowBuilder};
 use carbide_core::{image, Scalar, Ui};
 use carbide_core::draw::Dimension;
 use carbide_core::event::Input;
-use carbide_core::image_map::{ImageId, ImageMap};
+use carbide_core::draw::image::ImageMap;
 use carbide_core::mesh::{DEFAULT_GLYPH_CACHE_DIMS, MODE_IMAGE};
 use carbide_core::mesh::mesh::Mesh;
 use carbide_core::prelude::{Environment, EnvironmentColor, Menu};
@@ -42,6 +42,7 @@ use crate::vertex::Vertex;
 use crate::proxy_event_loop::ProxyEventLoop;
 #[cfg(target_os = "windows")]
 use winit::platform::windows::WindowExtWindows;
+use carbide_core::draw::image::ImageId;
 
 // Todo: Look into multisampling: https://github.com/gfx-rs/wgpu-rs/blob/v0.6/examples/msaa-line/main.rs
 // An alternative is https://github.com/fintelia/smaa-rs (https://github.com/gfx-rs/naga/issues/1275)
@@ -123,12 +124,12 @@ impl carbide_core::window::TWindow for Window {
         Some(id)
     }
 
-    fn add_image(&mut self, image: carbide_core::image::DynamicImage) -> Option<ImageId> {
+    fn add_image(&mut self, id: ImageId, image: carbide_core::image::DynamicImage) -> Option<ImageId> {
         let image = Image::new_from_dynamic(image, &self.device, &self.queue);
 
         let information = image.image_information();
 
-        let id = self.image_map.insert(image);
+        let id = self.image_map.insert_with_id(id, image);
 
         self.ui.environment.insert_image(id, information);
 
@@ -546,8 +547,6 @@ impl Window {
         self.environment_mut().update_animation();
         self.environment_mut().clear_animation_frame();
 
-        let next_index = self.image_map.next_index();
-        self.environment_mut().set_last_image_index(next_index);
         self.environment_mut().check_tasks();
         self.add_queued_images();
 
@@ -557,7 +556,7 @@ impl Window {
     fn add_queued_images(&mut self) {
         if let Some(queued_images) = self.environment_mut().queued_images() {
             for queued_image in queued_images {
-                let _ = self.add_image(queued_image);
+                let _ = self.add_image(queued_image.0, queued_image.1);
             }
         }
     }

@@ -3,8 +3,9 @@ use std::collections::HashMap;
 use cgmath::Matrix4;
 use wgpu::{BindGroupLayout, Device, Texture};
 use wgpu::util::DeviceExt;
+use carbide_core::draw::image::ImageId;
 
-use carbide_core::image_map::{ImageId, ImageMap};
+use carbide_core::draw::image::ImageMap;
 use carbide_core::mesh::mesh;
 use carbide_core::mesh::mesh::{Draw, Mesh};
 use carbide_core::widget::FilterId;
@@ -53,7 +54,7 @@ pub enum RenderPass<'a> {
 #[derive(PartialEq)]
 enum BindGroup {
     Default,
-    Image(carbide_core::image_map::ImageId),
+    Image(ImageId),
 }
 
 pub fn create_render_pass_commands<'a>(

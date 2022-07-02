@@ -12,9 +12,10 @@ use image::{DynamicImage, GenericImage, GenericImageView};
 use rusttype::gpu_cache::Cache as RustTypeGlyphCache;
 use rusttype::gpu_cache::CacheWriteErr as RustTypeCacheWriteError;
 
-use crate::{color, image_map};
+use crate::color;
 use crate::draw::{Position, Rect, Scalar};
 use crate::draw::draw_gradient::DrawGradient;
+use crate::draw::image::{ImageId, ImageMap};
 use crate::environment::Environment;
 use crate::layout::BasicLayouter;
 use crate::mesh::{
@@ -82,7 +83,7 @@ pub struct Commands<'a> {
 pub enum Draw {
     /// A range of vertices representing triangles textured with the image in the
     /// image_map at the given `widget::Id`.
-    Image(image_map::ImageId, std::ops::Range<usize>),
+    Image(ImageId, std::ops::Range<usize>),
     /// A range of vertices representing plain triangles.
     Plain(std::ops::Range<usize>),
     /// A range of vertices that should be drawn as a gradient
@@ -106,7 +107,7 @@ struct GlyphCache(RustTypeGlyphCache<'static>);
 
 #[derive(Debug)]
 enum PreparedCommand {
-    Image(image_map::ImageId, std::ops::Range<usize>),
+    Image(ImageId, std::ops::Range<usize>),
     Plain(std::ops::Range<usize>),
     Gradient(std::ops::Range<usize>, DrawGradient),
     Scissor(Scissor),
@@ -159,7 +160,7 @@ impl Mesh {
         &mut self,
         viewport: Rect,
         env: &mut Environment,
-        image_map: &image_map::ImageMap<I>,
+        image_map: &ImageMap<I>,
         mut primitives: P,
     ) -> Result<Fill, RustTypeCacheWriteError>
         where
@@ -197,7 +198,7 @@ impl Mesh {
 
         enum State {
             Image {
-                image_id: image_map::ImageId,
+                image_id: ImageId,
                 start: usize,
             },
             Plain {

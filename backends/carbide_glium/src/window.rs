@@ -25,7 +25,7 @@ pub struct Window<S: 'static + Clone> {
     display: GliumDisplayWinitWrapper,
     ui: Ui<S>,
     renderer: Renderer,
-    image_map: carbide_core::image_map::ImageMap<glium::texture::Texture2d>,
+    image_map: carbide_core::draw::image::image_map::ImageMap<glium::texture::Texture2d>,
     pub widgets: Option<Box<dyn Fn(&mut UiCell<S>) -> ()>>,
     pub state: S,
 }
@@ -49,7 +49,7 @@ impl<S: 'static + Clone> Window<S> {
         let renderer = Renderer::new(&display.0).unwrap();
 
         // The image map describing each of our widget->image mappings (in our case, none).
-        let image_map = carbide_core::image_map::ImageMap::<glium::texture::Texture2d>::new();
+        let image_map = carbide_core::draw::image::image_map::ImageMap::<glium::texture::Texture2d>::new();
 
         Window {
             title,
@@ -75,7 +75,7 @@ impl<S: 'static + Clone> Window<S> {
         self.ui.environment.insert_font_from_file(font_path)
     }
 
-    pub fn add_image(&mut self, path: &str) -> Result<carbide_core::image_map::ImageId, Error> {
+    pub fn add_image(&mut self, path: &str) -> Result<carbide_core::draw::image::image_map::ImageId, Error> {
         let assets = find_folder::Search::ParentsThenKids(5, 3)
             .for_folder("assets")
             .unwrap();
