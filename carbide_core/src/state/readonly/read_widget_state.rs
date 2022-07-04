@@ -8,7 +8,7 @@ use crate::state::readonly::ignore_write_state::IgnoreWritesState;
 pub use crate::state::State;
 use crate::state::util::value_cell::ValueRef;
 
-pub enum ReadWidgetState<T> {
+pub enum ReadWidgetState<T> where T: StateContract {
     ReadState(Box<dyn ReadState<T>>),
     ReadWriteState(TState<T>)
 }

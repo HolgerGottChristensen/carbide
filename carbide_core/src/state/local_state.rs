@@ -28,7 +28,9 @@ impl<T: StateContract> LocalState<T> {
     /// Returns a new local state containing the value provided.
     /// Returns the local state wrapped within a WidgetState.
     pub fn new(value: T) -> TState<T> {
-        WidgetState::new(Self::new_raw(value))
+        WidgetState::Local(LocalState {
+            inner_value: Rc::new(ValueCell::new(value)),
+        })
     }
 
     /// Returns a new local state containing the value provided.

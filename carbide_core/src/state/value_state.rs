@@ -31,7 +31,7 @@ pub struct ValueState<T> where T: StateContract {
 
 impl<T: StateContract> ValueState<T> {
     pub fn new(value: T) -> TState<T> {
-        Self::new_raw(value).into()
+        WidgetState::Value(ValueState {value})
     }
 
     pub fn new_raw(value: T) -> Box<Self> {

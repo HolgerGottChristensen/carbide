@@ -1,7 +1,7 @@
 use std::collections::HashSet;
 use std::fmt;
-use std::fmt::{Debug, Display, Formatter};
-use std::ops::{Add, AddAssign, Mul};
+use std::fmt::{Debug, Display, Formatter, Pointer};
+use std::ops::{Add, AddAssign, Deref, Mul};
 
 use dyn_clone::DynClone;
 use carbide_core::prelude::{NewStateSync, ReadState};
@@ -9,7 +9,7 @@ use carbide_core::state::readonly::ReadWidgetState;
 use carbide_core::state::RState;
 
 use crate::prelude::Environment;
-use crate::state::{Map1, Map2, Map3, StateContract, StateExt, TState, UsizeState, VecState};
+use crate::state::{AnimatedState, FieldState, Flatten, LocalState, Map1, Map2, Map3, StateContract, StateExt, TState, UsizeState, ValueState, VecState};
 pub use crate::state::State;
 use crate::state::util::value_cell::{ValueRef, ValueRefMut};
 
@@ -20,15 +20,37 @@ use crate::state::util::value_cell::{ValueRef, ValueRefMut};
 /// Its generic value is the type of state that will be received when calling ['value()']
 /// It implements ['Clone'], ['Debug'] and is also listenable. When subscribing to this value
 /// the listener is actually added to the inner state.
-pub struct WidgetState<T>(Box<dyn State<T>>);
+///
+/// Below are the few enum cases that are able to be represented without requiring indirection.
+/// Because of the need for indirection, we cannot create cases for Vec(VecState<T>), Flatten(Flatten<T>),
+/// and so on, because they themselves contain WidgetState. Note: Interestingly, the rust compiler
+/// will not even compile and through an error if both of these are added, causing compile times
+/// to go through the roof(waited 5min and expect it to be an infinite loop, when trying to expand
+/// the types).
+///
+/// FieldState and Map1-MapN states can not be represented, both because of the need for indirection
+/// and because of the need for each enum case to contain generics, that are not shared across the
+/// whole enum.
+///
+/// The fix for both of these is to use the Boxed enum case.
+#[derive(Clone, Debug)]
+pub enum WidgetState<T> where T: StateContract {
+    Value(ValueState<T>),
+    Local(LocalState<T>),
+    Boxed(Box<dyn State<T>>),
+}
 
 impl<T: StateContract> WidgetState<T> {
     pub fn new(item: Box<dyn State<T>>) -> WidgetState<T> {
-        WidgetState(item)
+        WidgetState::Boxed(item)
     }
 
     pub fn to_boxed_state(self) -> Box<dyn State<T>> {
-        self.0
+        match self {
+            WidgetState::Boxed(i) => i,
+            WidgetState::Value(v) => Box::new(v),
+            WidgetState::Local(v) => Box::new(v),
+        }
     }
 
     pub fn read_state(self) -> RState<T> {
@@ -54,27 +76,19 @@ impl<T: StateContract> WidgetState<T> {
     }
 }
 
-impl<T: Debug> Debug for WidgetState<T> {
+impl<T: Display + StateContract> Display for WidgetState<T> {
     fn fmt(&self, fmt: &mut Formatter) -> fmt::Result {
-        self.0.fmt(fmt)
-    }
-}
-
-impl<T: Display> Display for WidgetState<T> {
-    fn fmt(&self, fmt: &mut Formatter) -> fmt::Result {
-        self.0.fmt(fmt)
-    }
-}
-
-impl<T: StateContract> Clone for WidgetState<T> {
-    fn clone(&self) -> Self {
-        WidgetState(self.0.clone())
+        match self {
+            WidgetState::Boxed(i) => Display::fmt(&*i.value(), fmt),
+            WidgetState::Value(v) => Display::fmt(&*v.value(), fmt),
+            WidgetState::Local(v) => Display::fmt(&*v.value(), fmt),
+        }
     }
 }
 
 impl<T: StateContract> Into<WidgetState<T>> for Box<dyn State<T>> {
     fn into(self) -> WidgetState<T> {
-        WidgetState(self)
+        WidgetState::new(self)
     }
 }
 
@@ -86,27 +100,47 @@ impl<T: StateContract> Into<ReadWidgetState<T>> for WidgetState<T> {
 
 impl<T: StateContract> NewStateSync for WidgetState<T> {
     fn sync(&mut self, env: &mut Environment) -> bool {
-        self.0.sync(env)
+        match self {
+            WidgetState::Boxed(i) => i.sync(env),
+            WidgetState::Value(v) => v.sync(env),
+            WidgetState::Local(v) => v.sync(env),
+        }
     }
 }
 
 impl<T: StateContract> ReadState<T> for WidgetState<T> {
     fn value(&self) -> ValueRef<T> {
-        self.0.value()
+        match self {
+            WidgetState::Boxed(i) => i.value(),
+            WidgetState::Value(v) => v.value(),
+            WidgetState::Local(v) => v.value(),
+        }
     }
 }
 
 impl<T: StateContract> State<T> for WidgetState<T> {
     fn value_mut(&mut self) -> ValueRefMut<T> {
-        self.0.value_mut()
+        match self {
+            WidgetState::Boxed(i) => i.value_mut(),
+            WidgetState::Value(v) => v.value_mut(),
+            WidgetState::Local(v) => v.value_mut(),
+        }
     }
 
     fn set_value(&mut self, value: T) {
-        self.0.set_value(value)
+        match self {
+            WidgetState::Boxed(i) => i.set_value(value),
+            WidgetState::Value(v) => v.set_value(value),
+            WidgetState::Local(v) => v.set_value(value),
+        }
     }
 
     fn update_dependent(&mut self) {
-        self.0.update_dependent()
+        match self {
+            WidgetState::Boxed(i) => i.update_dependent(),
+            WidgetState::Value(v) => v.update_dependent(),
+            WidgetState::Local(v) => v.update_dependent(),
+        }
     }
 }
 

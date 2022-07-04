@@ -16,7 +16,7 @@ use crate::state::widget_state::WidgetState;
 #[derive(Clone)]
 pub struct VecState<T> where T: StateContract {
     /// The state that is evaluated whenever trying to get the index within the vec.
-    index_state: UsizeState,
+    index_state: TState<usize>,
     /// The state containing the vec.
     vec_state: TState<Vec<T>>,
 }
