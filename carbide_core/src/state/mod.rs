@@ -30,6 +30,7 @@ pub use self::readonly::ReadState;
 //pub use self::listener::Listener;
 //pub use self::readonly::ReadStateExt;
 pub use tuple_state::*;
+pub use flatten::Flatten;
 
 pub use r#impl::*;
 
@@ -51,6 +52,7 @@ mod readonly;
 mod util;
 mod tuple_state;
 mod r#impl;
+mod flatten;
 
 pub(crate) type InnerState<T> = Rc<ValueCell<T>>;
 

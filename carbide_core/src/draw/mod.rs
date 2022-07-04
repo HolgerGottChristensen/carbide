@@ -4,7 +4,6 @@ pub use rect::Rect;
 pub use rect::BoundingBox;
 
 mod dimension;
-pub mod lyon_builder_addition;
 pub mod path_builder;
 mod position;
 mod rect;

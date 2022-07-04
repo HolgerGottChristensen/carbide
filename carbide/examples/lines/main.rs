@@ -220,7 +220,7 @@ fn main() {
         .case(matches_case!(state, Graph { editing_mode: EditingMode::Selection { selected: SelectedState::Edge(x), .. }, .. }, x => selected_edge_view(&state, x)));
 
     let status_bar = HStack::new(vec![
-        Text::new(editing_mode.read_map(|a: &EditingMode| format!("Mode: {}", a)).ignore_writes()),
+        Text::new(Map1::read_map(editing_mode, |a: &EditingMode| format!("Mode: {}", a)).ignore_writes()),
         Spacer::new()
     ]).padding(EdgeInsets::single(0.0, 0.0, 10.0, 10.0))
         .frame_fixed_height(20.0)

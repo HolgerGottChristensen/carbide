@@ -12,8 +12,8 @@ use carbide_core::widget::*;
 use carbide_wgpu::window::*;
 
 use carbide_core::prelude::{EnvironmentFontSize, LocalState};
-use carbide_core::state::{BoolState, ReadState, State, StateExt, StringState, TState, UsizeState};
-use carbide_core::{lens, task};
+use carbide_core::state::{BoolState, Map2, ReadState, State, StateExt, StringState, TState, UsizeState};
+use carbide_core::{Color, lens, task};
 use carbide_core::text::{FontFamily, FontWeight};
 use carbide_core::widget::WidgetExt;
 use reqwest::Response;
@@ -87,13 +87,13 @@ fn main() {
 
         let top_padding = if *index.value() == 0 { 5.0 } else { 0.0 };
 
-        let background_color = selected.mapped_env(|selected: &bool, _: &_, env: &Environment| {
+        let background_color = Map2::read_map(selected.clone(), EnvironmentColor::Accent.state(), |selected: &bool, base_color: &Color| {
             if *selected {
-                env.env_color(EnvironmentColor::Accent)
+                *base_color
             } else {
                 TRANSPARENT
             }
-        });
+        }).ignore_writes();
 
         VStack::new(vec![
             HStack::new(vec![

@@ -1,6 +1,7 @@
+use carbide_core::Color;
 use carbide_core::draw::Dimension;
 use carbide_core::environment::{Environment, EnvironmentColor};
-use carbide_core::state::{BoolState, FocusState, StateExt, StateKey, StringState};
+use carbide_core::state::{BoolState, FocusState, Map3, StateExt, StateKey, StringState};
 use carbide_core::widget::*;
 
 use crate::PlainSwitch;
@@ -55,13 +56,10 @@ impl Switch {
     }
 
     fn delegate(_focus: FocusState, checked: BoolState) -> Box<dyn Widget> {
-        let checked_color = checked.mapped_env(|check: &bool, _: &_, env: &Environment| {
-            if *check {
-                env.get_color(&StateKey::Color(EnvironmentColor::Accent)).unwrap()
-            } else {
-                env.get_color(&StateKey::Color(EnvironmentColor::SecondarySystemBackground)).unwrap()
-            }
-        });
+
+        let checked_color = Map3::read_map(checked.clone(), EnvironmentColor::Accent.state(), EnvironmentColor::SecondarySystemBackground.state(), |check: &bool, checked_color: &Color, unchecked_color: &Color| {
+            if *check { *checked_color } else { *unchecked_color }
+        }).ignore_writes();
 
         ZStack::new(vec![
             Capsule::new()

@@ -41,8 +41,8 @@ fn main() {
             Some(x / 2.0)
         });
 
-    let new_state1 = block_width.read_map(|x: &f64| {*x * 3.0});
-    let new_state2 = new_state1.read_map(|x: &f64| {*x * 1.2});
+    let new_state1 = Map1::read_map(block_width.clone(), |x: &f64| {*x * 3.0});
+    let new_state2 = Map1::read_map(new_state1.clone(), |x: &f64| {*x * 1.2});
     //let text = LocalState::new("Hello World!".to_string());
 
     let env = window.environment_mut();

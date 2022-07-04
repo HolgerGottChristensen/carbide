@@ -1,12 +1,13 @@
 use std::ops::Deref;
 use env_logger::Env;
 use carbide_controls::{capture, PlainButton};
+use carbide_core::Color;
 use carbide_core::environment::{Environment, EnvironmentColor};
 use carbide_core::widget::*;
 use carbide_wgpu::window::*;
 
 use carbide_core::prelude::LocalState;
-use carbide_core::state::{BoolState, ReadState, State, StateExt, StringState, TState};
+use carbide_core::state::{BoolState, Map3, ReadState, State, StateExt, StringState, TState};
 use carbide_core::text::FontFamily;
 use crate::calculator_state::{CalculatorState, Operation};
 use carbide_core::widget::WidgetExt;
@@ -100,18 +101,15 @@ fn calculator_button(label: Box<dyn Widget>, action: impl Action + 'static) -> B
     let pressed_state: BoolState = LocalState::new(false).into();
     let hovered_state: BoolState = LocalState::new(false).into();
 
-    let hovered_bg = hovered_state.clone();
-
-    let background_color = pressed_state.mapped_env(move |pressed: &bool, _: &_, env: &Environment| {
-        let hovered = &*hovered_bg.value();
+    let background_color = Map3::read_map(pressed_state.clone(), hovered_state.clone(), EnvironmentColor::Accent.state(), |pressed: &bool, hovered: &bool, base_color: &Color| {
         if *pressed {
-            env.env_color(EnvironmentColor::Accent).darkened(0.05)
+            base_color.darkened(0.05)
         } else if *hovered {
-            env.env_color(EnvironmentColor::Accent).lightened(0.05)
+            base_color.lightened(0.05)
         } else {
-            env.env_color(EnvironmentColor::Accent)
+            *base_color
         }
-    });
+    }).ignore_writes();
 
     PlainButton::new(
     ZStack::new(vec![

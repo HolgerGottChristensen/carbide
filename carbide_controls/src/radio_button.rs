@@ -1,8 +1,9 @@
 use std::fmt::Debug;
+use carbide_core::Color;
 
 use carbide_core::draw::Dimension;
 use carbide_core::environment::{Environment, EnvironmentColor};
-use carbide_core::state::{BoolState, FocusState, StateContract, StateExt, StateKey, StringState, TState};
+use carbide_core::state::{BoolState, FocusState, Map3, StateContract, StateExt, StateKey, StringState, TState};
 use carbide_core::widget::*;
 
 use crate::PlainRadioButton;
@@ -21,13 +22,18 @@ impl RadioButton {
     }
 
     fn delegate(_: FocusState, selected: BoolState) -> Box<dyn Widget> {
-        let selected_color = selected.mapped_env(|selected: &bool, _: &_, env: &Environment| {
-            if *selected {
-                env.get_color(&StateKey::Color(EnvironmentColor::Accent)).unwrap()
-            } else {
-                env.get_color(&StateKey::Color(EnvironmentColor::SecondarySystemBackground)).unwrap()
-            }
-        });
+
+        let selected_color = Map3::read_map(
+            selected.clone(),
+            EnvironmentColor::Accent.state(),
+            EnvironmentColor::SecondarySystemBackground.state(),
+            |selected: &bool, selected_color: &Color, unselected_color: &Color| {
+                if *selected {
+                    *selected_color
+                } else {
+                    *unselected_color
+                }
+            }).ignore_writes();
 
         ZStack::new(vec![
             Ellipse::new()

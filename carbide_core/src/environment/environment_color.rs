@@ -89,11 +89,13 @@ impl Into<ColorState> for EnvironmentColor {
     }
 }
 
-impl Into<ColorState> for TState<EnvironmentColor> {
+impl Into<TState<Color>> for TState<EnvironmentColor> {
     fn into(self) -> ColorState {
-        self.mapped_env(|color: &EnvironmentColor, _: &_, env: &Environment| {
-            env.env_color(color.clone())
-        })
+        let state = Map1::read_map(self, |e: &EnvironmentColor| {
+            e.state()
+        }).ignore_writes();
+
+        Flatten::new(state)
     }
 }
 
@@ -107,8 +109,10 @@ impl Into<TState<AdvancedColor>> for EnvironmentColor {
 
 impl Into<TState<AdvancedColor>> for TState<EnvironmentColor> {
     fn into(self) -> TState<AdvancedColor> {
-        self.mapped_env(|color: &EnvironmentColor, _: &_, env: &Environment| {
-            env.env_color(color.clone()).into()
-        })
+        let state: TState<Color> = self.into();
+
+        Map1::read_map(state, |s: &Color| {
+            AdvancedColor::Color(*s)
+        }).ignore_writes()
     }
 }

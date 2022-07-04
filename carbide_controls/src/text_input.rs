@@ -10,8 +10,8 @@ use carbide_core::flags::Flags;
 use carbide_core::focus::Focus;
 use carbide_core::layout::{BasicLayouter, Layouter};
 use carbide_core::prelude::{EnvironmentColor, Layout};
-use carbide_core::Scalar;
-use carbide_core::state::{BoolState, ColorState, F64State, FocusState, LocalState, ReadState, State, StateExt, StringState, TState, U32State};
+use carbide_core::{Color, Scalar};
+use carbide_core::state::{BoolState, ColorState, F64State, FocusState, LocalState, Map5, ReadState, State, StateExt, StringState, TState, U32State};
 use carbide_core::text::Glyph;
 use carbide_core::widget::{CommonWidget, CornerRadii, EdgeInsets, HStack, WidgetId, Rectangle, RoundedRectangle, SCALE, Spacer, Text, Widget, WidgetExt, WidgetIter, WidgetIterMut, ZStack};
 use carbide_core::widget::Wrap;
@@ -73,21 +73,22 @@ impl TextInput {
         let is_error: BoolState = text.clone().into();
         let is_error_stroke: BoolState = is_error.clone();
 
-        let stroke_color = focus.mapped_env(move |focus: &Focus, _: &_, env: &Environment| {
-            let e = is_error_stroke.clone();
-            if *e.value() {
-                env.env_color(EnvironmentColor::Red)
-            } else {
-                match focus {
-                    Focus::Focused => {
-                        env.env_color(EnvironmentColor::Accent)
-                    }
-                    _ => {
-                        env.env_color(EnvironmentColor::OpaqueSeparator)
+        let stroke_color = Map5::read_map(
+            focus.clone(),
+            is_error_stroke.clone(),
+            EnvironmentColor::Red.state(),
+            EnvironmentColor::Accent.state(),
+            EnvironmentColor::OpaqueSeparator.state(),
+            |focus: &Focus, is_error: &bool, error_color: &Color, accent_color: &Color, default_color: &Color| {
+                if *is_error {
+                    *error_color
+                } else {
+                    match focus {
+                        Focus::Focused => *accent_color,
+                        _ => *default_color,
                     }
                 }
-            }
-        });
+            }).ignore_writes();
 
         let text_field = if let Some(obscure) = obscure {
             PlainTextInput::new(text.clone())

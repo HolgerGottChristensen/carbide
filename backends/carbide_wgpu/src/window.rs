@@ -27,7 +27,7 @@ use carbide_core::text::{FontFamily, FontId};
 use carbide_core::widget::{FilterId, OverlaidLayer, ZStack};
 use carbide_core::widget::Widget;
 use carbide_core::event::CustomEvent;
-pub use carbide_core::window::TWindow;
+pub use carbide_core::window::TWindow as CoreWindow;
 
 use crate::bind_group_layouts::{filter_buffer_bind_group_layout, filter_texture_bind_group_layout, gradient_buffer_bind_group_layout, main_texture_group_layout, uniform_bind_group_layout};
 use crate::bind_groups::{filter_texture_bind_group, main_bind_group, matrix_to_uniform_bind_group, size_to_uniform_bind_group};
@@ -93,7 +93,7 @@ pub struct Window {
     event_loop: Option<EventLoop<CustomEvent>>,
 }
 
-impl carbide_core::window::TWindow for Window {
+impl CoreWindow for Window {
     fn add_font_family(&mut self, family: FontFamily) -> String {
         let family_name = family.name.clone();
         self.ui.environment.add_font_family(family);
