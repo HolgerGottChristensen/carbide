@@ -4,7 +4,7 @@ use carbide_core::prelude::NewStateSync;
 
 use crate::environment::Environment;
 use crate::state::{ReadState, RState, StateContract};
-use crate::state::readonly::ReadWidgetState;
+use crate::state::ReadWidgetState;
 use crate::state::util::value_cell::ValueRef;
 
 /// # Environment state
@@ -38,11 +38,11 @@ impl<T: StateContract + PartialEq + Default> EnvState<T> {
     /// * `map` - The mapping function that takes a reference to an env and returns a value.
     ///           Make sure this function is not to expensive, because it might be run often
     ///           depending on the use of the state.
-    pub fn new(map: fn(env: &Environment) -> T) -> Self {
-        EnvState {
+    pub fn new(map: fn(env: &Environment) -> T) -> RState<T> {
+        ReadWidgetState::new(Box::new(EnvState {
             map,
             value: T::default(),
-        }
+        }))
     }
 }
 

@@ -8,7 +8,7 @@ use carbide_core::image::DynamicImage;
 use uuid::Uuid;
 use wgpu::{BindGroup, BindGroupLayout, Buffer, BufferUsages, PresentMode, Sampler, SurfaceConfiguration, Texture, TextureView};
 use wgpu::util::{BufferInitDescriptor, DeviceExt};
-use winit::dpi::{LogicalSize, PhysicalPosition, PhysicalSize, Size};
+use winit::dpi::{LogicalSize, PhysicalPosition, Size};
 use winit::event::{ElementState, Event, KeyboardInput, VirtualKeyCode, WindowEvent};
 use winit::event_loop::{ControlFlow, EventLoop};
 #[cfg(target_os = "macos")]

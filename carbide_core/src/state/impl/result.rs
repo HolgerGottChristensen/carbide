@@ -41,6 +41,16 @@ impl<T: StateContract, E: StateContract> TState<Result<T, E>> {
     }
 }
 
+impl<T: StateContract, E: StateContract> RState<Result<T, E>> {
+    pub fn is_ok(&self) -> RState<bool> {
+        Map1::read_map(self.clone(), |t: &Result<T, E>| { t.is_ok() })
+    }
+
+    pub fn is_err(&self) -> RState<bool> {
+        Map1::read_map(self.clone(), |t: &Result<T, E>| { t.is_err() })
+    }
+}
+
 impl<T: StateContract + Default + 'static, E: StateContract> TState<Result<T, E>> {
 
     /// If the value is Err, the default value will be returned.

@@ -11,7 +11,7 @@ use carbide_core::focus::Focus;
 use carbide_core::layout::{BasicLayouter, Layouter};
 use carbide_core::prelude::{EnvironmentColor, Layout};
 use carbide_core::{Color, Scalar};
-use carbide_core::state::{BoolState, ColorState, F64State, FocusState, LocalState, Map5, ReadState, State, StateExt, StringState, TState, U32State};
+use carbide_core::state::{BoolState, F64State, FocusState, LocalState, Map5, ReadState, State, StateExt, StringState, TState, U32State};
 use carbide_core::text::Glyph;
 use carbide_core::widget::{CommonWidget, CornerRadii, EdgeInsets, HStack, WidgetId, Rectangle, RoundedRectangle, SCALE, Spacer, Text, Widget, WidgetExt, WidgetIter, WidgetIterMut, ZStack};
 use carbide_core::widget::Wrap;
@@ -65,9 +65,9 @@ impl TextInput {
         obscure: Option<char>,
         focus: FocusState,
     ) -> Box<Self> {
-        let cursor_color: ColorState = EnvironmentColor::Label.into();
+        let cursor_color: TState<Color> = EnvironmentColor::Label.into();
 
-        let selection_color: ColorState = EnvironmentColor::Accent.into();
+        let selection_color: TState<Color> = EnvironmentColor::Accent.into();
         let darkened_selection_color = selection_color.darkened(0.2);
 
         let is_error: BoolState = text.clone().into();

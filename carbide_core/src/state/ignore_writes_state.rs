@@ -6,8 +6,8 @@ use crate::state::{RState, State, StateContract, TState, WidgetState};
 pub struct IgnoreWritesState<T: StateContract>(RState<T>);
 
 impl<T: StateContract> IgnoreWritesState<T> {
-    pub fn new(inner: RState<T>) -> TState<T> {
-        WidgetState::new(Box::new(Self(inner)))
+    pub fn new(inner: impl Into<RState<T>>) -> TState<T> {
+        WidgetState::new(Box::new(Self(inner.into())))
     }
 }
 

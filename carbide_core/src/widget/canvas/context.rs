@@ -7,7 +7,8 @@ use lyon::tessellation::{FillOptions, LineCap, LineJoin, StrokeOptions};
 use crate::Color;
 use crate::draw::{Dimension, Position};
 use crate::draw::svg_path_builder::SVGPathBuilder;
-use crate::prelude::ColorState;
+use crate::state::TState;
+
 
 #[derive(Debug, Clone)]
 pub struct Context {
@@ -41,11 +42,11 @@ impl Context {
         self.generator.push(ContextAction::MiterLimit(limit))
     }
 
-    pub fn set_fill_style<C: Into<ColorState>>(&mut self, color: C) {
+    pub fn set_fill_style<C: Into<TState<Color>>>(&mut self, color: C) {
         self.generator.push(ContextAction::FillStyle(color.into()))
     }
 
-    pub fn set_stroke_style<C: Into<ColorState>>(&mut self, color: C) {
+    pub fn set_stroke_style<C: Into<TState<Color>>>(&mut self, color: C) {
         self.generator
             .push(ContextAction::StrokeStyle(color.into()))
     }
@@ -228,8 +229,8 @@ impl Context {
 }
 
 pub enum ShapeStyleWithOptions {
-    Fill(FillOptions, ColorState),
-    Stroke(StrokeOptions, ColorState),
+    Fill(FillOptions, TState<Color>),
+    Stroke(StrokeOptions, TState<Color>),
 }
 
 #[derive(Debug, Clone)]
@@ -268,6 +269,6 @@ enum ContextAction {
         y2: f64,
         r: f64,
     },
-    FillStyle(ColorState),
-    StrokeStyle(ColorState),
+    FillStyle(TState<Color>),
+    StrokeStyle(TState<Color>),
 }

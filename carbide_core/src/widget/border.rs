@@ -12,12 +12,12 @@ pub struct Border {
     position: Position,
     dimension: Dimension,
     #[state]
-    color: ColorState,
+    color: TState<Color>,
     border_width: u32,
 }
 
 impl Border {
-    pub fn color(mut self, color: impl Into<ColorState>) -> Box<Self> {
+    pub fn color(mut self, color: impl Into<TState<Color>>) -> Box<Self> {
         self.color = color.into();
         Box::new(self)
     }

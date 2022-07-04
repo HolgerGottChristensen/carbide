@@ -1,5 +1,4 @@
 use std;
-use std::sync::atomic::{AtomicU32, Ordering};
 use crate::draw::image::image_id::ImageId;
 
 

@@ -9,8 +9,8 @@ pub struct Overlay {
     id: WidgetId,
     child: Rc<ValueCell<Box<dyn Widget>>>,
     #[state] showing: BoolState,
-    position: PositionState,
-    dimension: DimensionState,
+    position: TState<Position>,
+    dimension: TState<Dimension>,
 }
 
 impl Overlay {

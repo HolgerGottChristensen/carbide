@@ -1,6 +1,6 @@
 use std::ops::Mul;
 use crate::state::{Map2, StateContract, WidgetState, RState};
-use crate::state::readonly::ReadWidgetState;
+use crate::state::ReadWidgetState;
 
 macro_rules! mul {
     ($($typ1: ty, $typ2: ty;)*) => {

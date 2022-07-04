@@ -3,8 +3,8 @@ use std::fmt::{Debug, Formatter};
 use carbide_core::prelude::NewStateSync;
 
 use crate::prelude::Environment;
-use crate::state::{ReadState, StateContract, TState};
-use crate::state::readonly::ignore_write_state::IgnoreWritesState;
+use crate::state::{ReadState, RState, StateContract, TState, ValueState};
+use crate::state::ignore_writes_state::IgnoreWritesState;
 pub use crate::state::State;
 use crate::state::util::value_cell::ValueRef;
 
@@ -84,5 +84,23 @@ impl<T: StateContract> ReadState<T> for ReadWidgetState<T> {
                 n.value()
             }
         }
+    }
+}
+
+impl<T: StateContract> From<T> for RState<T> {
+    fn from(t: T) -> Self {
+        ReadWidgetState::ReadWriteState(ValueState::new(t))
+    }
+}
+
+impl From<u32> for RState<f64> {
+    fn from(t: u32) -> Self {
+        ValueState::new(t as f64).into()
+    }
+}
+
+impl From<&str> for RState<String> {
+    fn from(t: &str) -> Self {
+        ValueState::new(t.to_string()).into()
     }
 }

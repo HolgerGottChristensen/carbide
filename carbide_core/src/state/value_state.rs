@@ -7,7 +7,7 @@ use crate::Color;
 
 use crate::environment::Environment;
 use crate::prelude::{AdvancedColor, ReadState};
-use crate::state::{BoolState, MapOwnedState, ResStringState, State, StateContract, StateExt, StringState, TState, RState};
+use crate::state::{BoolState, MapOwnedState, ResStringState, State, StateContract, StateExt, TState, RState};
 use crate::state::{ValueRef, ValueRefMut};
 use crate::state::widget_state::WidgetState;
 use crate::widget::Gradient;
@@ -17,9 +17,10 @@ use crate::widget::Gradient;
 /// cloning this state the value is cloned, but when the clone changes the original will not
 /// change. For shared state use [LocalState].
 ///
-/// ValueState is [Listenable] which means you can subscribe to it changing. When listening to
-/// state changes and cloning the state, it will listen to all changed also from the clone.
-/// This is not finally decided to be the correct behavior so dont build code that depend upon this.
+/// One important thing to know is that state might be cloned depending on the widgets you use.
+/// When storing state inside a ValueState it is important to remember, because if you store
+/// large values those will be cloned as well. Using a local state, it is only a Rc that will be
+/// cloned which will be way more efficient.
 ///
 /// Local state implements [NewStateSync] but without implementing any behavior when
 /// [NewStateSync::sync()] is called.

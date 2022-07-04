@@ -1,6 +1,6 @@
 use std::ops::Rem;
 use crate::state::{Map2, StateContract, WidgetState, RState};
-use crate::state::readonly::ReadWidgetState;
+use crate::state::ReadWidgetState;
 
 macro_rules! rem {
     ($($typ1: ty, $typ2: ty;)*) => {

@@ -1,6 +1,6 @@
 use std::ops::Not;
 use crate::state::{Map1, StateContract, WidgetState};
-use crate::state::readonly::ReadWidgetState;
+use crate::state::ReadWidgetState;
 
 impl<T: StateContract + Not> Not for WidgetState<T>
     where <T as Not>::Output: StateContract {

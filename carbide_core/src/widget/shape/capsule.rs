@@ -46,7 +46,7 @@ impl Capsule {
         Box::new(self)
     }
 
-    pub fn material<C: Into<ColorState>>(mut self, material: C) -> Box<ZStack> {
+    pub fn material<C: Into<TState<Color>>>(mut self, material: C) -> Box<ZStack> {
         let material_state = material.into();
         let advanced_material_state: RState<AdvancedColor> = material_state.into();
         self.fill_color = advanced_material_state.clone().ignore_writes();

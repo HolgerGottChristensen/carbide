@@ -19,7 +19,7 @@ pub struct Image {
     #[state] pub image_id: TState<Option<ImageId>>,
     /// The rectangle area of the original source image that should be used.
     src_rect: Option<Rect>,
-    color: Option<ColorState>,
+    color: Option<TState<Color>>,
     mode: u32,
     position: Position,
     dimension: Dimension,

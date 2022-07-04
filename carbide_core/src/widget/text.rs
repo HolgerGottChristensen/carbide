@@ -32,7 +32,7 @@ pub struct Text {
     #[state]
     font_size: U32State,
     #[state]
-    color: ColorState,
+    color: TState<Color>,
     font_family: String,
     font_style: FontStyle,
     font_weight: FontWeight,
@@ -85,7 +85,7 @@ impl Text {
         })
     }
 
-    pub fn color<C: Into<ColorState>>(mut self, color: C) -> Box<Self> {
+    pub fn color<C: Into<TState<Color>>>(mut self, color: C) -> Box<Self> {
         self.color = color.into();
         Box::new(self)
     }

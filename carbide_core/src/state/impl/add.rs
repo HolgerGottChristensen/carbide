@@ -1,7 +1,7 @@
 use std::ops::Add;
 use crate::state::{LocalState, Map2, ReadState, StateContract, ValueState, WidgetState};
 use crate::state::RState;
-use crate::state::readonly::ReadWidgetState;
+use crate::state::ReadWidgetState;
 
 macro_rules! add {
     ($($typ1: ty, $typ2: ty;)*) => {

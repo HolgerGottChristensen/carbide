@@ -1,7 +1,6 @@
 use cgmath::Matrix4;
 
 use crate::Color;
-use crate::color::Rgba;
 use crate::draw::{Position, Rect};
 use crate::draw::draw_gradient::DrawGradient;
 use crate::draw::image::ImageId;

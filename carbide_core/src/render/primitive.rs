@@ -1,4 +1,4 @@
-use crate::draw::{BoundingBox, Rect};
+use crate::draw::BoundingBox;
 use crate::render::primitive_kind::PrimitiveKind;
 
 /// Data required for rendering a single primitive widget.

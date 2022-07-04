@@ -13,8 +13,8 @@ use carbide_core::layout::{BasicLayouter, Layouter};
 use carbide_core::prelude::{EnvironmentColor, Layout, Primitive};
 use carbide_core::prelude::StateSync;
 use carbide_core::render::Render;
-use carbide_core::Scalar;
-use carbide_core::state::{AnimatedState, ColorState, F64State, FocusState, LocalState, ReadState, ResStringState, State, StateExt, StringState, TState, U32State};
+use carbide_core::{Color, Scalar};
+use carbide_core::state::{AnimatedState, F64State, FocusState, LocalState, ReadState, ResStringState, State, StateExt, StringState, TState, U32State};
 use carbide_core::text::{FontSize, Glyph};
 use carbide_core::widget::{CommonWidget, HStack, WidgetId, IfElse, Rectangle, SCALE, Spacer, Text, Widget, WidgetExt, WidgetIter, WidgetIterMut, ZStack};
 use carbide_core::widget::Wrap;
@@ -43,9 +43,9 @@ pub struct PlainTextInput {
     obscure_text: Option<char>,
 
     // Colors
-    #[state] selection_color: ColorState,
-    #[state] cursor_color: ColorState,
-    #[state] text_color: ColorState,
+    #[state] selection_color: TState<Color>,
+    #[state] cursor_color: TState<Color>,
+    #[state] text_color: TState<Color>,
 
     #[state] focus: FocusState,
     #[state] input_state: TextInputState,
@@ -64,9 +64,9 @@ impl PlainTextInput {
         let focus_state: FocusState = LocalState::new(Focus::Unfocused).into();
         let font_size: U32State = EnvironmentFontSize::Body.into();
 
-        let selection_color: ColorState = EnvironmentColor::Green.into();
-        let cursor_color: ColorState = EnvironmentColor::Red.into();
-        let text_color: ColorState = EnvironmentColor::Label.into();
+        let selection_color: TState<Color> = EnvironmentColor::Green.into();
+        let cursor_color: TState<Color> = EnvironmentColor::Red.into();
+        let text_color: TState<Color> = EnvironmentColor::Label.into();
 
         let obscure_text = None;
 
@@ -120,7 +120,7 @@ impl PlainTextInput {
         )
     }
 
-    pub fn selection_color<C: Into<ColorState>>(mut self, color: C) -> Box<Self> {
+    pub fn selection_color<C: Into<TState<Color>>>(mut self, color: C) -> Box<Self> {
         self.selection_color = color.into();
         Self::internal_new(
             self.input_state,
@@ -133,7 +133,7 @@ impl PlainTextInput {
         )
     }
 
-    pub fn cursor_color<C: Into<ColorState>>(mut self, color: C) -> Box<Self> {
+    pub fn cursor_color<C: Into<TState<Color>>>(mut self, color: C) -> Box<Self> {
         self.cursor_color = color.into();
         Self::internal_new(
             self.input_state,
@@ -146,7 +146,7 @@ impl PlainTextInput {
         )
     }
 
-    pub fn text_color<C: Into<ColorState>>(mut self, color: C) -> Box<Self> {
+    pub fn text_color<C: Into<TState<Color>>>(mut self, color: C) -> Box<Self> {
         self.text_color = color.into();
         Self::internal_new(
             self.input_state,
@@ -163,9 +163,9 @@ impl PlainTextInput {
         input: TextInputState,
         font_size: U32State,
         focus: FocusState,
-        selection_color: ColorState,
-        cursor_color: ColorState,
-        text_color: ColorState,
+        selection_color: TState<Color>,
+        cursor_color: TState<Color>,
+        text_color: TState<Color>,
         obscure_text: Option<char>,
     ) -> Box<Self> {
         let cursor_x: F64State = LocalState::new(0.0).into();

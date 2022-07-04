@@ -1,6 +1,6 @@
 use std::ops::Neg;
 use crate::state::{Map1, StateContract, WidgetState};
-use crate::state::readonly::ReadWidgetState;
+use crate::state::ReadWidgetState;
 
 impl<T: StateContract + Neg> Neg for WidgetState<T>
     where <T as Neg>::Output: StateContract {

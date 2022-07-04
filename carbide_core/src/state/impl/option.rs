@@ -1,5 +1,6 @@
 use carbide_core::prelude::RState;
 use crate::state::{Map1, Map2, StateContract, TState};
+use crate::state::ReadWidgetState;
 
 impl<T: StateContract> TState<Option<T>> {
     /// Allows calling is_some in the option. Returns a read-only boolean state. The reason it is
@@ -83,6 +84,37 @@ impl<T: StateContract> TState<Option<T>> {
     }
 }
 
+impl<T: StateContract> RState<Option<T>> {
+    /// Allows calling is_some in the option. Returns a read-only boolean state. The reason it is
+    /// read-only is because it would not be meaningful to set the state with a boolean and expect
+    /// the original state to be changed.
+    /// Opposite of: [Self::is_none()]
+    pub fn is_some(&self) -> RState<bool> {
+        Map1::read_map(self.clone(), |t: &Option<T>| {
+            t.is_some()
+        })
+    }
+
+    /// This returns a read-only state of boolean with value true if None and false if some.
+    /// Related: [Self::is_some()]
+    pub fn is_none(&self) -> RState<bool> {
+        Map1::read_map(self.clone(), |t: &Option<T>| {
+            t.is_none()
+        })
+    }
+
+    /// Returns a boolean state of true if the value within the x state is contained within self.
+    pub fn contains<U: StateContract + PartialEq<T>>(&self, x: impl Into<RState<U>>) -> RState<bool> {
+        Map2::read_map(self.clone(), x.into(), |option: &Option<T>, value: &U| {
+            // Change to https://github.com/rust-lang/rust/issues/62358 when stabilized
+            match option {
+                Some(y) => value == y,
+                None => false,
+            }
+        })
+    }
+}
+
 impl<T: StateContract, U: StateContract> TState<Option<(T, U)>> {
 
     /// Turns a state of option with a tuple into a tuple of states of options.
@@ -120,5 +152,11 @@ impl<T: StateContract + Default + 'static> TState<Option<T>> {
                 Some(Some(new))
             }
         )
+    }
+}
+
+impl<T: StateContract + Default> RState<Option<T>> {
+    pub fn unwrap_or_default(&self) -> RState<T> {
+        Map1::read_map(self.clone(),|t: &Option<T>| { t.clone().unwrap_or_default() } )
     }
 }

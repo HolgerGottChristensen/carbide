@@ -22,7 +22,7 @@ pub struct Canvas<T> where T: StateContract {
     position: Position,
     dimension: Dimension,
     #[state]
-    color: ColorState,
+    color: TState<Color>,
     //prim_store: Vec<Primitive>,
     context: Contexts<T>,
     #[state] state: TState<T>,
