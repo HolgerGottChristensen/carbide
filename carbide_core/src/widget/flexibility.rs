@@ -1,6 +1,6 @@
-use crate::CommonWidgetImpl;
 use crate::draw::{Dimension, Position};
 use crate::prelude::*;
+use crate::CommonWidgetImpl;
 
 #[derive(Debug, Clone, Widget)]
 pub struct Flexibility {
@@ -18,7 +18,7 @@ impl Flexibility {
             child,
             position: Position::new(0.0, 0.0),
             dimension: Dimension::new(100.0, 100.0),
-            flexibility
+            flexibility,
         })
     }
 }

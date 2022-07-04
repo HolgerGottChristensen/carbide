@@ -1,5 +1,5 @@
-use carbide_core::platform::mac::menu::set_application_menu;
 use crate::widget::menu::menu_item::MenuItem;
+use carbide_core::platform::mac::menu::set_application_menu;
 
 pub type ContextMenu = Menu;
 
@@ -23,7 +23,11 @@ pub enum MenuKind {
 
 impl Menu {
     pub fn new(title: String) -> Menu {
-        Menu { name: title, items: vec![], kind: None }
+        Menu {
+            name: title,
+            items: vec![],
+            kind: None,
+        }
     }
 
     pub fn kind(mut self, kind: MenuKind) -> Menu {
@@ -45,7 +49,6 @@ impl Menu {
     }
 
     pub fn sub_menu(self) -> MenuItem {
-        MenuItem::SubMenu {menu: self}
+        MenuItem::SubMenu { menu: self }
     }
-
 }

@@ -1,4 +1,3 @@
-
 #[derive(Copy, Clone, PartialEq, Eq, Ord, PartialOrd, Hash, Debug)]
 pub enum MouseButton {
     /// Unknown mouse button.

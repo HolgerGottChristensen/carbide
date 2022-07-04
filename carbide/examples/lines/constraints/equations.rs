@@ -1,12 +1,12 @@
+use crate::constraints::ops::{Context, EvaluationError};
+use crate::constraints::solve::{Solution, SolveError};
+use crate::constraints::{ops, solve, Expression, Parameter, ParseError};
 use nalgebra::DVector as Vector;
 use std::{
     fmt::Debug,
     iter::{Extend, FromIterator},
     str::FromStr,
 };
-use crate::constraints::{Expression, ops, Parameter, ParseError, solve};
-use crate::constraints::ops::{Context, EvaluationError};
-use crate::constraints::solve::{Solution, SolveError};
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct Equation {
@@ -33,7 +33,7 @@ impl FromStr for Equation {
                 let (left, right) = s.split_at(index);
                 let right = &right[1..];
                 Ok(Equation::new(left.parse()?, right.parse()?))
-            },
+            }
             None => Ok(Equation { body: s.parse()? }),
         }
     }
@@ -46,7 +46,9 @@ pub struct SystemOfEquations {
 }
 
 impl SystemOfEquations {
-    pub fn new() -> Self { SystemOfEquations::default() }
+    pub fn new() -> Self {
+        SystemOfEquations::default()
+    }
 
     pub fn with(mut self, equation: Equation) -> Self {
         self.push(equation);
@@ -78,7 +80,9 @@ impl SystemOfEquations {
         unknowns
     }
 
-    pub fn num_unknowns(&self) -> usize { self.unknowns().len() }
+    pub fn num_unknowns(&self) -> usize {
+        self.unknowns().len()
+    }
 
     pub fn from_equations<E, S>(equations: E) -> Result<Self, ParseError>
     where
@@ -106,11 +110,7 @@ impl SystemOfEquations {
         let mut values = Vec::new();
 
         for equation in &self.equations {
-            values.push(ops::evaluate(
-                &equation.body,
-                &lookup_parameter_value,
-                ctx,
-            )?);
+            values.push(ops::evaluate(&equation.body, &lookup_parameter_value, ctx)?);
         }
 
         Ok(Vector::from_vec(values))
@@ -135,12 +135,16 @@ impl<'a> IntoIterator for &'a SystemOfEquations {
     type IntoIter = <&'a [Equation] as IntoIterator>::IntoIter;
     type Item = &'a Equation;
 
-    fn into_iter(self) -> Self::IntoIter { self.equations.iter() }
+    fn into_iter(self) -> Self::IntoIter {
+        self.equations.iter()
+    }
 }
 
 impl IntoIterator for SystemOfEquations {
     type IntoIter = <Vec<Equation> as IntoIterator>::IntoIter;
     type Item = Equation;
 
-    fn into_iter(self) -> Self::IntoIter { self.equations.into_iter() }
+    fn into_iter(self) -> Self::IntoIter {
+        self.equations.into_iter()
+    }
 }

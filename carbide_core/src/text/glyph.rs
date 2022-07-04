@@ -1,9 +1,9 @@
-use rusttype::{GlyphId, point, PositionedGlyph};
 use carbide_core::mesh::AtlasEntry;
+use rusttype::{point, GlyphId, PositionedGlyph};
 
 use crate::draw::{Dimension, Position, Rect};
-use crate::Scalar;
 use crate::text::{FontId, FontSize};
+use crate::Scalar;
 
 #[derive(Debug, Clone)]
 pub struct Glyph {

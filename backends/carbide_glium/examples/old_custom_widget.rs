@@ -23,8 +23,8 @@ mod support;
 
 /// The module in which we'll implement our own custom circular button.
 mod circular_button {
-    use carbide_core::{self, Colorable, Labelable, OldWidget, Positionable, widget, widget_ids};
     use carbide_core::draw::Point;
+    use carbide_core::{self, widget, widget_ids, Colorable, Labelable, OldWidget, Positionable};
 
     /// The type upon which we'll implement the `Widget` trait.
     #[derive(WidgetCommon)]
@@ -288,7 +288,8 @@ fn main() {
     let mut renderer = carbide_glium::Renderer::new(&display.0).unwrap();
 
     // The image map describing each of our widget->image mappings (in our case, none).
-    let image_map = carbide_core::draw::image::image_map::ImageMap::<glium::texture::Texture2d>::new();
+    let image_map =
+        carbide_core::draw::image::image_map::ImageMap::<glium::texture::Texture2d>::new();
 
     // Poll events from the window.
     let mut event_loop = support::EventLoop::new();
@@ -307,10 +308,10 @@ fn main() {
                     glium::glutin::WindowEvent::CloseRequested
                     | glium::glutin::WindowEvent::KeyboardInput {
                         input:
-                        glium::glutin::KeyboardInput {
-                            virtual_keycode: Some(glium::glutin::VirtualKeyCode::Escape),
-                            ..
-                        },
+                            glium::glutin::KeyboardInput {
+                                virtual_keycode: Some(glium::glutin::VirtualKeyCode::Escape),
+                                ..
+                            },
                         ..
                     } => break 'main,
                     _ => (),

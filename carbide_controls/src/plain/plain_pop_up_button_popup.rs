@@ -2,9 +2,11 @@ use std::ops::DerefMut;
 
 use carbide_core::draw::{Dimension, Position};
 use carbide_core::environment::Environment;
-use carbide_core::event::{Key, KeyboardEvent, KeyboardEventHandler, MouseButton, MouseEvent, MouseEventHandler};
+use carbide_core::event::{
+    Key, KeyboardEvent, KeyboardEventHandler, MouseButton, MouseEvent, MouseEventHandler,
+};
 use carbide_core::state::{State, TState};
-use carbide_core::widget::{CommonWidget, WidgetId, Widget, WidgetIter, WidgetIterMut};
+use carbide_core::widget::{CommonWidget, Widget, WidgetId, WidgetIter, WidgetIterMut};
 
 #[derive(Debug, Clone, Widget)]
 #[carbide_exclude(MouseEvent, KeyboardEvent)]
@@ -35,55 +37,51 @@ impl PlainPopUpButtonPopUp {
 impl KeyboardEventHandler for PlainPopUpButtonPopUp {
     fn handle_keyboard_event(&mut self, event: &KeyboardEvent, env: &mut Environment) {
         match event {
-            KeyboardEvent::Press(key, _) => {
-                match key {
-                    Key::Escape => {
-                        Self::close_overlay(env)
-                    }
-                    Key::Up => {
-                        let mut hovers = self.hover_model.value_mut();
-                        let mut true_at_any_point = false;
-                        let mut last_item_had_hover = false;
+            KeyboardEvent::Press(key, _) => match key {
+                Key::Escape => Self::close_overlay(env),
+                Key::Up => {
+                    let mut hovers = self.hover_model.value_mut();
+                    let mut true_at_any_point = false;
+                    let mut last_item_had_hover = false;
 
-                        for hover in hovers.iter_mut().rev() {
-                            if last_item_had_hover {
-                                last_item_had_hover = false;
-                                *hover = true;
-                            } else if *hover {
-                                last_item_had_hover = true;
-                                true_at_any_point = true;
-                                *hover = false;
-                            }
-                        }
-                        let hover_len = hovers.len();
-                        if last_item_had_hover || (!true_at_any_point && hover_len > 0) {
-                            hovers[hover_len - 1] = true;
+                    for hover in hovers.iter_mut().rev() {
+                        if last_item_had_hover {
+                            last_item_had_hover = false;
+                            *hover = true;
+                        } else if *hover {
+                            last_item_had_hover = true;
+                            true_at_any_point = true;
+                            *hover = false;
                         }
                     }
-                    Key::Down => {
-                        let mut hovers = self.hover_model.value_mut();
-                        let mut true_at_any_point = false;
-                        let mut last_item_had_hover = false;
-
-                        for hover in hovers.iter_mut() {
-                            if last_item_had_hover {
-                                last_item_had_hover = false;
-                                *hover = true;
-                            } else if *hover {
-                                last_item_had_hover = true;
-                                true_at_any_point = true;
-                                *hover = false;
-                            }
-                        }
-
-                        if last_item_had_hover || (!true_at_any_point && hovers.len() > 0) {
-                            hovers[0] = true;
-                        }
+                    let hover_len = hovers.len();
+                    if last_item_had_hover || (!true_at_any_point && hover_len > 0) {
+                        hovers[hover_len - 1] = true;
                     }
-                    _ => ()
                 }
-            }
-            _ => ()
+                Key::Down => {
+                    let mut hovers = self.hover_model.value_mut();
+                    let mut true_at_any_point = false;
+                    let mut last_item_had_hover = false;
+
+                    for hover in hovers.iter_mut() {
+                        if last_item_had_hover {
+                            last_item_had_hover = false;
+                            *hover = true;
+                        } else if *hover {
+                            last_item_had_hover = true;
+                            true_at_any_point = true;
+                            *hover = false;
+                        }
+                    }
+
+                    if last_item_had_hover || (!true_at_any_point && hovers.len() > 0) {
+                        hovers[0] = true;
+                    }
+                }
+                _ => (),
+            },
+            _ => (),
         }
     }
 }
@@ -96,7 +94,7 @@ impl MouseEventHandler for PlainPopUpButtonPopUp {
                     Self::close_overlay(env)
                 }
             }
-            _ => ()
+            _ => (),
         }
     }
 }

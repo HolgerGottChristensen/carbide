@@ -60,7 +60,7 @@ impl FontWeight {
             FontWeight::W900 => 900.0,
             FontWeight::Black => 900.0,
 
-            FontWeight::Other(val) => *val as f64
+            FontWeight::Other(val) => *val as f64,
         }
     }
 }

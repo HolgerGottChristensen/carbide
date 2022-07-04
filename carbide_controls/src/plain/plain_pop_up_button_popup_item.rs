@@ -2,13 +2,18 @@ use std::ops::DerefMut;
 
 use carbide_core::draw::{Dimension, Position};
 use carbide_core::environment::Environment;
-use carbide_core::event::{Key, KeyboardEvent, KeyboardEventHandler, MouseButton, MouseEvent, MouseEventHandler};
+use carbide_core::event::{
+    Key, KeyboardEvent, KeyboardEventHandler, MouseButton, MouseEvent, MouseEventHandler,
+};
 use carbide_core::state::{ReadState, State, StateContract, TState};
-use carbide_core::widget::{CommonWidget, WidgetId, Widget, WidgetIter, WidgetIterMut};
+use carbide_core::widget::{CommonWidget, Widget, WidgetId, WidgetIter, WidgetIterMut};
 
 #[derive(Debug, Clone, Widget)]
 #[carbide_exclude(MouseEvent, KeyboardEvent)]
-pub struct PlainPopUpButtonPopUpItem<T> where T: StateContract {
+pub struct PlainPopUpButtonPopUpItem<T>
+where
+    T: StateContract,
+{
     id: WidgetId,
     child: Box<dyn Widget>,
     position: Position,
@@ -19,7 +24,12 @@ pub struct PlainPopUpButtonPopUpItem<T> where T: StateContract {
 }
 
 impl<T: StateContract> PlainPopUpButtonPopUpItem<T> {
-    pub fn new(child: Box<dyn Widget>, hovered: TState<bool>, item: TState<T>, selected_item: TState<T>) -> Box<Self> {
+    pub fn new(
+        child: Box<dyn Widget>,
+        hovered: TState<bool>,
+        item: TState<T>,
+        selected_item: TState<T>,
+    ) -> Box<Self> {
         Box::new(PlainPopUpButtonPopUpItem {
             id: WidgetId::new(),
             child,
@@ -39,19 +49,17 @@ impl<T: StateContract> PlainPopUpButtonPopUpItem<T> {
 impl<T: StateContract> KeyboardEventHandler for PlainPopUpButtonPopUpItem<T> {
     fn handle_keyboard_event(&mut self, event: &KeyboardEvent, env: &mut Environment) {
         match event {
-            KeyboardEvent::Press(key, _) => {
-                match key {
-                    Key::Return | Key::Return2 => {
-                        if *self.hovered.value() {
-                            *self.selected_item.value_mut() = self.item.value().clone();
-                            Self::close_overlay(env);
-                            env.request_animation_frame();
-                        }
+            KeyboardEvent::Press(key, _) => match key {
+                Key::Return | Key::Return2 => {
+                    if *self.hovered.value() {
+                        *self.selected_item.value_mut() = self.item.value().clone();
+                        Self::close_overlay(env);
+                        env.request_animation_frame();
                     }
-                    _ => ()
                 }
-            }
-            _ => ()
+                _ => (),
+            },
+            _ => (),
         }
     }
 }
@@ -66,7 +74,7 @@ impl<T: StateContract> MouseEventHandler for PlainPopUpButtonPopUpItem<T> {
                     env.request_animation_frame();
                 }
             }
-            _ => ()
+            _ => (),
         }
     }
 }

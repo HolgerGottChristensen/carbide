@@ -209,8 +209,8 @@ impl<'b, T: ?Sized> ValueRef<'b, T> {
 
     #[inline]
     pub fn map<U: ?Sized, F>(orig: ValueRef<'b, T>, f: F) -> ValueRef<'b, U>
-        where
-            F: FnOnce(&T) -> &U,
+    where
+        F: FnOnce(&T) -> &U,
     {
         match orig {
             ValueRef::CellBorrow { value, borrow } => ValueRef::CellBorrow {
@@ -272,8 +272,8 @@ pub enum ValueRefMut<'a, T: ?Sized + 'a> {
 impl<'b, T: ?Sized> ValueRefMut<'b, T> {
     #[inline]
     pub fn map<U: ?Sized, F>(orig: ValueRefMut<'b, T>, f: F) -> ValueRefMut<'b, U>
-        where
-            F: FnOnce(&mut T) -> &mut U,
+    where
+        F: FnOnce(&mut T) -> &mut U,
     {
         match orig {
             ValueRefMut::CellBorrow { value, borrow } => ValueRefMut::CellBorrow {

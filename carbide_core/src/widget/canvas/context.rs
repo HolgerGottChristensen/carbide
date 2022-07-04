@@ -4,11 +4,10 @@ use lyon::algorithms::path::Path;
 use lyon::lyon_algorithms::path::math::point;
 use lyon::tessellation::{FillOptions, LineCap, LineJoin, StrokeOptions};
 
-use crate::Color;
-use crate::draw::{Dimension, Position};
 use crate::draw::svg_path_builder::SVGPathBuilder;
+use crate::draw::{Dimension, Position};
 use crate::state::TState;
-
+use crate::Color;
 
 #[derive(Debug, Clone)]
 pub struct Context {
@@ -59,7 +58,13 @@ impl Context {
     /// x, y is the top left corner of the box enclosing the circle
     pub fn circle(&mut self, x: f64, y: f64, diameter: f64) {
         self.move_to(x, y + diameter / 2.0);
-        self.arc(x + diameter / 2.0, y + diameter / 2.0, diameter / 2.0, 0.0, 360.0);
+        self.arc(
+            x + diameter / 2.0,
+            y + diameter / 2.0,
+            diameter / 2.0,
+            0.0,
+            360.0,
+        );
         self.move_to(0.0, 0.0);
     }
 
@@ -186,7 +191,13 @@ impl Context {
                 ContextAction::BeginPath => {
                     current_builder_begun = false;
                 }
-                ContextAction::Arc { x, y, r, start_angle, end_angle } => {
+                ContextAction::Arc {
+                    x,
+                    y,
+                    r,
+                    start_angle,
+                    end_angle,
+                } => {
                     let sweep_angle = end_angle - start_angle;
 
                     current_builder.arc(

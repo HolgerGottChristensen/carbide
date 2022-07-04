@@ -1,6 +1,6 @@
-use carbide_core::color;
 use crate::environment::EnvironmentColor;
 use crate::prelude::EnvironmentVariable;
+use carbide_core::color;
 
 macro_rules! env_color {
     ($var:ident, $r:literal, $g:literal, $b:literal, $a:literal) => {
@@ -145,21 +145,18 @@ pub fn light_mode_color_theme() -> Vec<EnvironmentVariable> {
             key: EnvironmentColor::DarkText,
             value: color::rgba_bytes(255, 255, 255, 1.0),
         },
-
         // Material colors
         env_color!(UltraThick, 255, 255, 255, 0.8),
         env_color!(Thick, 255, 255, 255, 0.6),
         env_color!(Regular, 255, 255, 255, 0.4),
         env_color!(Thin, 255, 255, 255, 0.25),
         env_color!(UltraThin, 255, 255, 255, 0.15),
-
         // Material colors light
         env_color!(UltraThickLight, 255, 255, 255, 0.8),
         env_color!(ThickLight, 255, 255, 255, 0.6),
         env_color!(RegularLight, 255, 255, 255, 0.4),
         env_color!(ThinLight, 255, 255, 255, 0.25),
         env_color!(UltraThinLight, 255, 255, 255, 0.15),
-
         // Material colors dark
         env_color!(UltraThickDark, 0, 0, 0, 0.8),
         env_color!(ThickDark, 0, 0, 0, 0.6),
@@ -303,21 +300,18 @@ pub fn dark_mode_color_theme() -> Vec<EnvironmentVariable> {
             key: EnvironmentColor::DarkText,
             value: color::rgba_bytes(255, 255, 255, 1.0),
         },
-
         // Material colors
         env_color!(UltraThick, 0, 0, 0, 0.8),
         env_color!(Thick, 0, 0, 0, 0.6),
         env_color!(Regular, 0, 0, 0, 0.4),
         env_color!(Thin, 0, 0, 0, 0.25),
         env_color!(UltraThin, 0, 0, 0, 0.15),
-
         // Material colors light
         env_color!(UltraThickLight, 255, 255, 255, 0.8),
         env_color!(ThickLight, 255, 255, 255, 0.6),
         env_color!(RegularLight, 255, 255, 255, 0.4),
         env_color!(ThinLight, 255, 255, 255, 0.25),
         env_color!(UltraThinLight, 255, 255, 255, 0.15),
-
         // Material colors dark
         env_color!(UltraThickDark, 0, 0, 0, 0.8),
         env_color!(ThickDark, 0, 0, 0, 0.6),

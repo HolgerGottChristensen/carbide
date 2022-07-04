@@ -19,9 +19,8 @@ fn main() {
         Some(icon_path.clone()),
     );
 
-    let family = FontFamily::new_from_paths("NotoSans", vec![
-        "fonts/NotoSans/NotoSans-Regular.ttf"
-    ]);
+    let family =
+        FontFamily::new_from_paths("NotoSans", vec!["fonts/NotoSans/NotoSans-Regular.ttf"]);
     window.add_font_family(family);
 
     let cursors1 = vec![
@@ -65,7 +64,6 @@ fn main() {
         MouseCursor::RowResize,
     ];
 
-
     fn delegate(item: TState<MouseCursor>, _: UsizeState) -> Box<dyn Widget> {
         Button::new(format!("{:?}", *item.value()))
             .hover_cursor(*item.value())
@@ -74,13 +72,10 @@ fn main() {
 
     window.set_widgets(
         HStack::new(vec![
-            VStack::new(vec![
-                ForEach::new(cursors1, delegate)
-            ]),
-            VStack::new(vec![
-                ForEach::new(cursors2, delegate)
-            ]),
-        ]).cross_axis_alignment(CrossAxisAlignment::Start)
+            VStack::new(vec![ForEach::new(cursors1, delegate)]),
+            VStack::new(vec![ForEach::new(cursors2, delegate)]),
+        ])
+        .cross_axis_alignment(CrossAxisAlignment::Start),
     );
 
     window.launch();

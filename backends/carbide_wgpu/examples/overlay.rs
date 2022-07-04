@@ -22,33 +22,31 @@ fn main() {
         Some(icon_path.clone()),
     );
 
-    let family = FontFamily::new_from_paths("NotoSans", vec![
-        "fonts/NotoSans/NotoSans-Regular.ttf"
-    ]);
+    let family =
+        FontFamily::new_from_paths("NotoSans", vec!["fonts/NotoSans/NotoSans-Regular.ttf"]);
     window.add_font_family(family);
 
     let showing_state: BoolState = LocalState::new(false).into();
 
-    window.set_widgets(
-        OverlaidLayer::new(
-            "overlay",
-            VStack::new(vec![
-                Text::new(showing_state.mapped(|a: &bool| format!("Currently showing overlay: {}", *a))),
-                ZStack::new(vec![
-                    Over::new(showing_state)
-                        .frame(100.0, 100.0),
-                    Rectangle::new()
-                        .fill(EnvironmentColor::Green)
-                        .frame(200.0, 200.0),
-                    Rectangle::new()
-                        .fill(EnvironmentColor::Red)
-                        .frame(100.0, 100.0),
-                    Text::new("Test")
-                        .foreground_color(EnvironmentColor::Blue),
-                ]),
-                Text::new("Press space to toggle the overlay (yellow rectangle)"),
-            ]))
-    );
+    window.set_widgets(OverlaidLayer::new(
+        "overlay",
+        VStack::new(vec![
+            Text::new(
+                showing_state.mapped(|a: &bool| format!("Currently showing overlay: {}", *a)),
+            ),
+            ZStack::new(vec![
+                Over::new(showing_state).frame(100.0, 100.0),
+                Rectangle::new()
+                    .fill(EnvironmentColor::Green)
+                    .frame(200.0, 200.0),
+                Rectangle::new()
+                    .fill(EnvironmentColor::Red)
+                    .frame(100.0, 100.0),
+                Text::new("Test").foreground_color(EnvironmentColor::Blue),
+            ]),
+            Text::new("Press space to toggle the overlay (yellow rectangle)"),
+        ]),
+    ));
 
     window.launch();
 }
@@ -64,20 +62,19 @@ struct Over {
 
 impl Over {
     pub fn new(showing: BoolState) -> Box<Over> {
-        Box::new(
-            Over {
-                id: WidgetId::new_v4(),
-                position: Position::new(0.0, 0.0),
-                dimension: Dimension::new(100.0, 100.0),
-                overlay_widget: Overlay::new(
-                    ZStack::new(vec![
-                        Rectangle::new().fill(EnvironmentColor::Yellow),
-                        Text::new("Over")
-                            .foreground_color(EnvironmentColor::Red),
-                    ]).frame(50.0, 50.0)
-                ).showing(showing),
-            }
-        )
+        Box::new(Over {
+            id: WidgetId::new_v4(),
+            position: Position::new(0.0, 0.0),
+            dimension: Dimension::new(100.0, 100.0),
+            overlay_widget: Overlay::new(
+                ZStack::new(vec![
+                    Rectangle::new().fill(EnvironmentColor::Yellow),
+                    Text::new("Over").foreground_color(EnvironmentColor::Red),
+                ])
+                .frame(50.0, 50.0),
+            )
+            .showing(showing),
+        })
     }
 }
 
@@ -94,7 +91,7 @@ impl KeyboardEventHandler for Over {
                     }
                 }
             }
-            _ => ()
+            _ => (),
         }
     }
 }
@@ -113,7 +110,11 @@ impl Layout for Over {
             let positioning = self.alignment().positioner();
             let position = self.position();
             let dimension = self.dimension();
-            positioning(position, dimension, &mut self.overlay_widget as &mut dyn Widget);
+            positioning(
+                position,
+                dimension,
+                &mut self.overlay_widget as &mut dyn Widget,
+            );
             self.overlay_widget.position_children();
         }
     }

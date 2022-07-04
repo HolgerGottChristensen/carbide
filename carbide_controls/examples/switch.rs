@@ -43,9 +43,9 @@ fn main() {
             Switch::new("Triangle", switch_state3),
             Switch::new("Star", switch_state4),
         ])
-            .spacing(10.0)
-            .cross_axis_alignment(CrossAxisAlignment::Start)
-            .accent_color(EnvironmentColor::Purple),
+        .spacing(10.0)
+        .cross_axis_alignment(CrossAxisAlignment::Start)
+        .accent_color(EnvironmentColor::Purple),
     );
 
     window.launch();

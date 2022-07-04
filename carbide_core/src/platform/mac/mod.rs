@@ -4,13 +4,13 @@
 use std::ffi::OsString;
 use std::path::PathBuf;
 
+use crate::Color;
 use block::ConcreteBlock;
 use cocoa::appkit::CGFloat;
 use cocoa::base::{id, nil, NO, YES};
 use cocoa::foundation::{NSArray, NSAutoreleasePool, NSInteger, NSProcessInfo, NSString, NSURL};
 use objc::{class, msg_send, sel, sel_impl};
 use oneshot::Receiver;
-use crate::Color;
 
 use crate::dialog::open_dialog::OpenDialog;
 use crate::prelude::Environment;
@@ -44,7 +44,10 @@ pub fn make_nsstring(s: &str) -> id {
 pub fn make_nsurl(url: &PathBuf) -> id {
     unsafe {
         NSURL::alloc(nil)
-            .initFileURLWithPath_isDirectory_(make_nsstring(url.to_str().expect("Could not convert pathbuf to &str")), YES)
+            .initFileURLWithPath_isDirectory_(
+                make_nsstring(url.to_str().expect("Could not convert pathbuf to &str")),
+                YES,
+            )
             .autorelease()
     }
 }
@@ -105,7 +108,8 @@ pub fn open_save_panel(env: &Environment) -> Receiver<Option<OsString>> {
             }*/
         });
         let block = block.copy();
-        let () = msg_send![panel, beginSheetModalForWindow: env.ns_window() completionHandler: block];
+        let () =
+            msg_send![panel, beginSheetModalForWindow: env.ns_window() completionHandler: block];
 
         receiver
     }
@@ -157,7 +161,9 @@ pub fn open_open_panel(env: &Environment, dialog: OpenDialog) -> Receiver<Option
             // If a default type was specified, then we must reorder the allowed types,
             // because there's no way to specify the default type other than having it be first.
             let allowed_types = if let Some(default_type) = dialog.containing_default_type() {
-                if let Some(mut allowed_types) = dialog.containing_allowed_types().map(|v| v.clone()) {
+                if let Some(mut allowed_types) =
+                    dialog.containing_allowed_types().map(|v| v.clone())
+                {
                     allowed_types.retain(|f| f != default_type);
                     allowed_types.insert(0, default_type.clone());
                     Some(allowed_types)
@@ -165,7 +171,10 @@ pub fn open_open_panel(env: &Environment, dialog: OpenDialog) -> Receiver<Option
                     Some(vec![default_type.clone()])
                 }
             } else {
-                dialog.containing_allowed_types().map(|v| Some(v.clone())).unwrap_or(None)
+                dialog
+                    .containing_allowed_types()
+                    .map(|v| Some(v.clone()))
+                    .unwrap_or(None)
             };
 
             let converted_allowed_types = allowed_types.as_ref().map(|t| {
@@ -225,7 +234,8 @@ pub fn open_open_panel(env: &Environment, dialog: OpenDialog) -> Receiver<Option
             }*/
         });
         let block = block.copy();
-        let () = msg_send![panel, beginSheetModalForWindow: env.ns_window() completionHandler: block];
+        let () =
+            msg_send![panel, beginSheetModalForWindow: env.ns_window() completionHandler: block];
 
         receiver
     }

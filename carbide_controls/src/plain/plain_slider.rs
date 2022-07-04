@@ -1,16 +1,21 @@
-use std::ascii::escape_default;
-use carbide_core::{Color, Scalar};
+use crate::PlainButton;
 use carbide_core::draw::{Dimension, Position};
 use carbide_core::environment::{Environment, EnvironmentColor};
 use carbide_core::event::{MouseEvent, MouseEventHandler};
 use carbide_core::flags::Flags;
-use carbide_core::focus::{Focus, Focusable};
 use carbide_core::focus::Refocus;
+use carbide_core::focus::{Focus, Focusable};
 use carbide_core::layout::{Layout, Layouter};
-use carbide_core::state::{BoolState, FocusState, LocalState, Map2, Map3, Map4, MapOwnedState, ReadState, State, StateKey, StateSync, StringState, TState, ValueState};
-use carbide_core::widget::{Capsule, CommonWidget, CrossAxisAlignment, HSplit, HStack, WidgetId, Rectangle, Spacer, Text, Widget, WidgetExt, WidgetIter, WidgetIterMut, ZStack};
-use crate::PlainButton;
-
+use carbide_core::state::{
+    BoolState, FocusState, LocalState, Map2, Map3, Map4, MapOwnedState, ReadState, State, StateKey,
+    StateSync, StringState, TState, ValueState,
+};
+use carbide_core::widget::{
+    Capsule, CommonWidget, CrossAxisAlignment, HSplit, HStack, Rectangle, Spacer, Text, Widget,
+    WidgetExt, WidgetId, WidgetIter, WidgetIterMut, ZStack,
+};
+use carbide_core::{Color, Scalar};
+use std::ascii::escape_default;
 
 #[derive(Debug, Clone, Widget)]
 #[carbide_exclude(Focusable, Layout, MouseEvent)]
@@ -37,7 +42,6 @@ pub struct PlainSlider {
 }
 
 impl PlainSlider {
-
     pub fn new(value: impl Into<TState<f64>>, start: f64, end: f64) -> Box<Self> {
         let focus_state = LocalState::new(Focus::Unfocused);
 
@@ -62,7 +66,7 @@ impl PlainSlider {
             ValueState::new(Some(step)),
             self.background,
             self.indicator,
-            self.thumb
+            self.thumb,
         )
     }
 
@@ -75,7 +79,7 @@ impl PlainSlider {
             self.steps,
             background,
             self.indicator,
-            self.thumb
+            self.thumb,
         )
     }
 
@@ -88,7 +92,7 @@ impl PlainSlider {
             self.steps,
             self.background,
             indicator,
-            self.thumb
+            self.thumb,
         )
     }
 
@@ -101,23 +105,24 @@ impl PlainSlider {
             self.steps,
             self.background,
             self.indicator,
-            thumb
+            thumb,
         )
     }
 
     fn default_background() -> Box<dyn Widget> {
-        Rectangle::new().fill(EnvironmentColor::Red)
+        Rectangle::new()
+            .fill(EnvironmentColor::Red)
             .frame_fixed_height(10.0)
     }
 
     fn default_indicator() -> Box<dyn Widget> {
-        Rectangle::new().fill(EnvironmentColor::Green)
+        Rectangle::new()
+            .fill(EnvironmentColor::Green)
             .frame_fixed_height(10.0)
     }
 
     fn default_thumb() -> Box<dyn Widget> {
-        Rectangle::new().fill(EnvironmentColor::Blue)
-            .frame(26, 26)
+        Rectangle::new().fill(EnvironmentColor::Blue).frame(26, 26)
     }
 
     fn new_internal(
@@ -130,28 +135,33 @@ impl PlainSlider {
         indicator: fn() -> Box<dyn Widget>,
         thumb: fn() -> Box<dyn Widget>,
     ) -> Box<Self> {
+        let progress_state = Map4::map(
+            state.clone(),
+            start,
+            end,
+            steps.clone(),
+            |state: &f64, start: &f64, end: &f64, steps: &Option<f64>| {
+                (*state - *start) / (*end - *start)
+            },
+            |new_value: f64, state: &f64, start: &f64, end: &f64, steps: &Option<f64>| {
+                if let Some(steps) = *steps {
+                    let number_of_steps = ((end - start) / steps).ceil();
 
-        let progress_state = Map4::map(state.clone(), start, end, steps.clone(), |state: &f64, start: &f64, end: &f64, steps: &Option<f64>| {
-            (*state - *start) / (*end - *start)
-        }, |new_value: f64, state: &f64, start: &f64, end: &f64, steps: &Option<f64>| {
+                    let stepped_percent = (number_of_steps * new_value).round() / number_of_steps;
 
-            if let Some(steps) = *steps {
-                let number_of_steps = ((end - start) / steps).ceil();
+                    (
+                        Some(stepped_percent * (*end - *start) + *start),
+                        None,
+                        None,
+                        None,
+                    )
+                } else {
+                    (Some(new_value * (*end - *start) + *start), None, None, None)
+                }
+            },
+        );
 
-                let stepped_percent = (number_of_steps * new_value).round() / number_of_steps;
-
-                (Some(stepped_percent * (*end - *start) + *start), None, None, None)
-            } else {
-                (Some(new_value * (*end - *start) + *start), None, None, None)
-            }
-
-        });
-
-        let children = vec![
-            background(),
-            indicator(),
-            thumb()
-        ];
+        let children = vec![background(), indicator(), thumb()];
 
         Box::new(PlainSlider {
             id: WidgetId::new(),
@@ -168,7 +178,7 @@ impl PlainSlider {
             steps,
             thumb,
             indicator,
-            background
+            background,
         })
     }
 }
@@ -181,14 +191,14 @@ impl Focusable for PlainSlider {
 
 impl MouseEventHandler for PlainSlider {
     fn handle_mouse_event(&mut self, event: &MouseEvent, _consumed: &bool, _env: &mut Environment) {
-
         match event {
             MouseEvent::Press(_, position, _) => {
                 if self.child[2].is_inside(*position) || self.child[0].is_inside(*position) {
                     self.dragging = true;
 
                     let relative_to_position = *position - self.position;
-                    let p = (relative_to_position.x() - self.child[2].width() / 2.0) / (self.dimension.width - self.child[2].width());
+                    let p = (relative_to_position.x() - self.child[2].width() / 2.0)
+                        / (self.dimension.width - self.child[2].width());
                     self.percent.set_value(p.max(0.0).min(1.0));
                 }
             }
@@ -196,13 +206,16 @@ impl MouseEventHandler for PlainSlider {
                 self.dragging = false;
             }
             MouseEvent::Move { to, .. } => {
-                if !self.dragging { return; }
+                if !self.dragging {
+                    return;
+                }
 
                 let relative_to_position = *to - self.position;
-                let p = (relative_to_position.x() - self.child[2].width() / 2.0) / (self.dimension.width - self.child[2].width());
+                let p = (relative_to_position.x() - self.child[2].width() / 2.0)
+                    / (self.dimension.width - self.child[2].width());
                 self.percent.set_value(p.max(0.0).min(1.0));
             }
-            _ => ()
+            _ => (),
         }
     }
 }
@@ -232,35 +245,29 @@ impl Layout for PlainSlider {
         let cross = self.cross_axis_alignment;
 
         let (child0_height, child1_height, child2_height) = match cross {
-            CrossAxisAlignment::Start => {
-                (position.y(), position.y(), position.y())
-            }
-            CrossAxisAlignment::Center => {
-                (
-                    position.y() + self.height() / 2.0 - self.child[0].height() / 2.0,
-                    position.y() + self.height() / 2.0 - self.child[1].height() / 2.0,
-                    position.y() + self.height() / 2.0 - self.child[2].height() / 2.0,
-                )
-            }
-            CrossAxisAlignment::End => {
-                (
-                    position.y() + self.height() - self.child[0].height(),
-                    position.y() + self.height() - self.child[1].height(),
-                    position.y() + self.height() - self.child[2].height(),
-                )
-            }
+            CrossAxisAlignment::Start => (position.y(), position.y(), position.y()),
+            CrossAxisAlignment::Center => (
+                position.y() + self.height() / 2.0 - self.child[0].height() / 2.0,
+                position.y() + self.height() / 2.0 - self.child[1].height() / 2.0,
+                position.y() + self.height() / 2.0 - self.child[2].height() / 2.0,
+            ),
+            CrossAxisAlignment::End => (
+                position.y() + self.height() - self.child[0].height(),
+                position.y() + self.height() - self.child[1].height(),
+                position.y() + self.height() - self.child[2].height(),
+            ),
         };
 
-        self.child[0].set_position(Position::new(position.x(),  child0_height));
-        self.child[1].set_position(Position::new(position.x(),  child1_height));
+        self.child[0].set_position(Position::new(position.x(), child0_height));
+        self.child[1].set_position(Position::new(position.x(), child1_height));
 
         let x = if let Some(steps) = *self.steps.value() {
             let number_of_steps = ((self.end - self.start) / steps).ceil();
 
-            let stepped_percent = (number_of_steps * *self.percent.value()).round() / number_of_steps;
+            let stepped_percent =
+                (number_of_steps * *self.percent.value()).round() / number_of_steps;
 
             self.x() + (self.child[0].width() - self.child[2].width()) * stepped_percent
-
         } else {
             self.x() + (self.child[0].width() - self.child[2].width()) * *self.percent.value()
         };
@@ -282,7 +289,6 @@ impl CommonWidget for PlainSlider {
         Flags::FOCUSABLE
     }
 
-
     fn get_focus(&self) -> Focus {
         self.focus.value().clone()
     }
@@ -292,7 +298,10 @@ impl CommonWidget for PlainSlider {
     }
 
     fn children(&self) -> carbide_core::widget::WidgetIter {
-        let contains_proxy_or_ignored = (self.child).iter().fold(false, |a, b| a || (b.flag() == carbide_core::flags::Flags::PROXY || b.flag() == carbide_core::flags::Flags::IGNORE));
+        let contains_proxy_or_ignored = (self.child).iter().fold(false, |a, b| {
+            a || (b.flag() == carbide_core::flags::Flags::PROXY
+                || b.flag() == carbide_core::flags::Flags::IGNORE)
+        });
         if !contains_proxy_or_ignored {
             carbide_core::widget::WidgetIter::Vec((self.child).iter())
         } else {
@@ -301,7 +310,10 @@ impl CommonWidget for PlainSlider {
                 .filter(|x| x.flag() != carbide_core::flags::Flags::IGNORE)
                 .rfold(carbide_core::widget::WidgetIter::Empty, |acc, x| {
                     if x.flag() == carbide_core::flags::Flags::PROXY {
-                        carbide_core::widget::WidgetIter::Multi(Box::new(x.children()), Box::new(acc))
+                        carbide_core::widget::WidgetIter::Multi(
+                            Box::new(x.children()),
+                            Box::new(acc),
+                        )
                     } else {
                         carbide_core::widget::WidgetIter::Single(x, Box::new(acc))
                     }
@@ -310,7 +322,10 @@ impl CommonWidget for PlainSlider {
     }
 
     fn children_mut(&mut self) -> carbide_core::widget::WidgetIterMut {
-        let contains_proxy_or_ignored = (self.child).iter().fold(false, |a, b| a || (b.flag() == carbide_core::flags::Flags::PROXY || b.flag() == carbide_core::flags::Flags::IGNORE));
+        let contains_proxy_or_ignored = (self.child).iter().fold(false, |a, b| {
+            a || (b.flag() == carbide_core::flags::Flags::PROXY
+                || b.flag() == carbide_core::flags::Flags::IGNORE)
+        });
         if !contains_proxy_or_ignored {
             carbide_core::widget::WidgetIterMut::Vec((self.child).iter_mut())
         } else {
@@ -319,7 +334,10 @@ impl CommonWidget for PlainSlider {
                 .filter(|x| x.flag() != carbide_core::flags::Flags::IGNORE)
                 .rfold(carbide_core::widget::WidgetIterMut::Empty, |acc, x| {
                     if x.flag() == carbide_core::flags::Flags::PROXY {
-                        carbide_core::widget::WidgetIterMut::Multi(Box::new(x.children_mut()), Box::new(acc))
+                        carbide_core::widget::WidgetIterMut::Multi(
+                            Box::new(x.children_mut()),
+                            Box::new(acc),
+                        )
                     } else {
                         carbide_core::widget::WidgetIterMut::Single(x, Box::new(acc))
                     }

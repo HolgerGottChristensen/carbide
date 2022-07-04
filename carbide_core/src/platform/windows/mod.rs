@@ -1,16 +1,20 @@
 #![allow(unsafe_code)]
-use crate::environment::Environment;
-use crate::dialog::open_dialog::OpenDialog;
-use oneshot::Receiver;
-use std::ffi::{OsString, OsStr};
 use crate::asynchronous::thread_task::ThreadTask;
-use windows::Win32::UI::Shell::{IFileOpenDialog, FileOpenDialog, IShellItemArray, IShellItem, SIGDN_FILESYSPATH, FOS_ALLOWMULTISELECT, FOS_PICKFOLDERS, FOS_FORCESHOWHIDDEN, SHCreateItemFromParsingName, IFileSaveDialog, FileSaveDialog};
-use windows::Win32::System::Com::{CoCreateInstance, CLSCTX_INPROC_SERVER, CoTaskMemFree};
-use windows::Win32::Foundation::{HWND, PWSTR};
-use windows::Win32::UI::Shell::Common::COMDLG_FILTERSPEC;
+use crate::dialog::open_dialog::OpenDialog;
+use crate::dialog::save_dialog::SaveDialog;
+use crate::environment::Environment;
+use oneshot::Receiver;
+use std::ffi::{OsStr, OsString};
 use std::os::windows::ffi::OsStrExt;
 use windows::core::Interface;
-use crate::dialog::save_dialog::SaveDialog;
+use windows::Win32::Foundation::{HWND, PWSTR};
+use windows::Win32::System::Com::{CoCreateInstance, CoTaskMemFree, CLSCTX_INPROC_SERVER};
+use windows::Win32::UI::Shell::Common::COMDLG_FILTERSPEC;
+use windows::Win32::UI::Shell::{
+    FileOpenDialog, FileSaveDialog, IFileOpenDialog, IFileSaveDialog, IShellItem, IShellItemArray,
+    SHCreateItemFromParsingName, FOS_ALLOWMULTISELECT, FOS_FORCESHOWHIDDEN, FOS_PICKFOLDERS,
+    SIGDN_FILESYSPATH,
+};
 
 unsafe fn read_to_string(ptr: PWSTR) -> String {
     let mut len = 0usize;
@@ -36,7 +40,8 @@ pub fn open_save_panel(env: &Environment, dialog: SaveDialog) -> Receiver<Option
     ThreadTask::new(move || {
         unsafe {
             // Create dialog instance from the GUID with the specific context.
-            let save_dialog: IFileSaveDialog = CoCreateInstance(&FileSaveDialog, None, CLSCTX_INPROC_SERVER).unwrap();
+            let save_dialog: IFileSaveDialog =
+                CoCreateInstance(&FileSaveDialog, None, CLSCTX_INPROC_SERVER).unwrap();
             match save_dialog.Show(HWND(handle)) {
                 Ok(_) => {
                     let items: IShellItem = save_dialog.GetResult().unwrap();
@@ -49,10 +54,8 @@ pub fn open_save_panel(env: &Environment, dialog: SaveDialog) -> Receiver<Option
                     let path = OsString::from(filename);
 
                     sender.send(Some(path)).unwrap()
-                },
-                Err(_) => {
-                    sender.send(None).unwrap()
                 }
+                Err(_) => sender.send(None).unwrap(),
             }
         }
     });
@@ -68,7 +71,8 @@ pub fn open_open_panel(env: &Environment, dialog: OpenDialog) -> Receiver<Option
     ThreadTask::new(move || {
         unsafe {
             // Create dialog instance from the GUID with the specific context.
-            let open_dialog: IFileOpenDialog = CoCreateInstance(&FileOpenDialog, None, CLSCTX_INPROC_SERVER).unwrap();
+            let open_dialog: IFileOpenDialog =
+                CoCreateInstance(&FileOpenDialog, None, CLSCTX_INPROC_SERVER).unwrap();
 
             if dialog.allow_select_multiple() {
                 open_dialog.SetOptions(FOS_ALLOWMULTISELECT.0 as _).unwrap();
@@ -83,13 +87,19 @@ pub fn open_open_panel(env: &Environment, dialog: OpenDialog) -> Receiver<Option
             }
 
             if let Some(title) = dialog.showing_title() {
-                let mut wide_title: Vec<u16> = OsStr::new(title).encode_wide().chain(std::iter::once(0)).collect();
+                let mut wide_title: Vec<u16> = OsStr::new(title)
+                    .encode_wide()
+                    .chain(std::iter::once(0))
+                    .collect();
                 let pwstr = PWSTR(wide_title.as_mut_ptr());
                 open_dialog.SetTitle(pwstr).unwrap();
             }
 
             if let Some(button) = dialog.showing_default_button_text() {
-                let mut wide_button_title: Vec<u16> = OsStr::new(button).encode_wide().chain(std::iter::once(0)).collect();
+                let mut wide_button_title: Vec<u16> = OsStr::new(button)
+                    .encode_wide()
+                    .chain(std::iter::once(0))
+                    .collect();
                 let pwstr = PWSTR(wide_button_title.as_mut_ptr());
                 open_dialog.SetOkButtonLabel(pwstr).unwrap();
             }
@@ -108,7 +118,7 @@ pub fn open_open_panel(env: &Environment, dialog: OpenDialog) -> Receiver<Option
                             &IShellItem::IID,
                             &mut item as *mut _ as *mut _,
                         )
-                            .ok();
+                        .ok();
 
                         if let Some(item) = item {
                             // For some reason SetDefaultFolder(), does not guarantees default path, so we use SetFolder
@@ -120,14 +130,21 @@ pub fn open_open_panel(env: &Environment, dialog: OpenDialog) -> Receiver<Option
 
             let extensions_list = if let Some(default_type) = dialog.containing_default_type() {
                 if let Some(first_extension) = default_type.extensions.first() {
-                    let mut extension: Vec<u16> = first_extension.encode_utf16().chain(Some(0)).collect();
-                    open_dialog.SetDefaultExtension(PWSTR(extension.as_mut_ptr())).unwrap();
+                    let mut extension: Vec<u16> =
+                        first_extension.encode_utf16().chain(Some(0)).collect();
+                    open_dialog
+                        .SetDefaultExtension(PWSTR(extension.as_mut_ptr()))
+                        .unwrap();
                 }
-                dialog.containing_allowed_types().cloned().map(|mut list| {
-                    list.retain(|f| f != default_type);
-                    list.insert(0, default_type.clone());
-                    list
-                }).or(Some(vec![default_type.clone()]))
+                dialog
+                    .containing_allowed_types()
+                    .cloned()
+                    .map(|mut list| {
+                        list.retain(|f| f != default_type);
+                        list.insert(0, default_type.clone());
+                        list
+                    })
+                    .or(Some(vec![default_type.clone()]))
             } else {
                 dialog.containing_allowed_types().cloned()
             };
@@ -137,7 +154,8 @@ pub fn open_open_panel(env: &Environment, dialog: OpenDialog) -> Receiver<Option
                     let mut f_list = Vec::new();
 
                     for f in extensions.iter() {
-                        let name: Vec<u16> = OsStr::new(&f.name).encode_wide().chain(Some(0)).collect();
+                        let name: Vec<u16> =
+                            OsStr::new(&f.name).encode_wide().chain(Some(0)).collect();
                         let ext_string = f
                             .extensions
                             .iter()
@@ -164,10 +182,11 @@ pub fn open_open_panel(env: &Environment, dialog: OpenDialog) -> Receiver<Option
                     .collect();
 
                 if !spec.is_empty() {
-                    open_dialog.SetFileTypes(spec.len() as _, spec.as_ptr()).unwrap();
+                    open_dialog
+                        .SetFileTypes(spec.len() as _, spec.as_ptr())
+                        .unwrap();
                 }
             }
-
 
             match open_dialog.Show(HWND(handle)) {
                 Ok(_) => {
@@ -179,7 +198,8 @@ pub fn open_open_panel(env: &Environment, dialog: OpenDialog) -> Receiver<Option
                     for id in 0..count {
                         let res_item: IShellItem = items.GetItemAt(id).unwrap();
 
-                        let display_name: PWSTR = res_item.GetDisplayName(SIGDN_FILESYSPATH).unwrap();
+                        let display_name: PWSTR =
+                            res_item.GetDisplayName(SIGDN_FILESYSPATH).unwrap();
 
                         let filename = read_to_string(display_name);
 
@@ -190,14 +210,11 @@ pub fn open_open_panel(env: &Environment, dialog: OpenDialog) -> Receiver<Option
                     }
 
                     sender.send(Some(paths)).unwrap()
-                },
-                Err(_) => {
-                    sender.send(None).unwrap()
                 }
+                Err(_) => sender.send(None).unwrap(),
             }
         }
     });
-
 
     receiver
 }

@@ -11,14 +11,10 @@ fn main() {
 
     let icon_path = Window::relative_path_to_assets("images/rust_press.png");
 
-    let mut window = Window::new(
-        "List Example - Carbide",
-        400,
-        600,
-        Some(icon_path),
-    );
+    let mut window = Window::new("List Example - Carbide", 400, 600, Some(icon_path));
 
-    let family = FontFamily::new_from_paths("NotoSans", vec!["fonts/NotoSans/NotoSans-Regular.ttf"]);
+    let family =
+        FontFamily::new_from_paths("NotoSans", vec!["fonts/NotoSans/NotoSans-Regular.ttf"]);
     window.add_font_family(family);
 
     let list_model = (1..100)
@@ -31,14 +27,11 @@ fn main() {
         ZStack::new(vec![
             Rectangle::new().fill(EnvironmentColor::Green),
             Text::new(item),
-        ]).frame_fixed_height(80.0)
+        ])
+        .frame_fixed_height(80.0)
     }
 
-    window.set_widgets(
-        List::new(list_model_state, delegate)
-            .clip()
-            .padding(50.0),
-    );
+    window.set_widgets(List::new(list_model_state, delegate).clip().padding(50.0));
 
     window.launch();
 }

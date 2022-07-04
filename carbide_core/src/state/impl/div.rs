@@ -1,6 +1,6 @@
-use std::ops::Div;
-use crate::state::{Map2, StateContract, WidgetState, RState};
 use crate::state::ReadWidgetState;
+use crate::state::{Map2, RState, StateContract, WidgetState};
+use std::ops::Div;
 
 macro_rules! div {
     ($($typ1: ty, $typ2: ty;)*) => {

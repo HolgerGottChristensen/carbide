@@ -1,5 +1,5 @@
-use serde::Deserialize;
 use carbide_core::widget::WidgetId;
+use serde::Deserialize;
 
 #[derive(Deserialize, Clone, Debug)]
 pub struct Article {

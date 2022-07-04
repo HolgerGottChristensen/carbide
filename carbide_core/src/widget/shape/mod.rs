@@ -1,11 +1,11 @@
 //! A module encompassing the primitive 2D shape widgets.
 use lyon::lyon_tessellation::path::path::Builder;
 use lyon::math::Rect;
+use lyon::tessellation::path::Path;
 use lyon::tessellation::{
     BuffersBuilder, FillOptions, FillTessellator, FillVertex, Side, StrokeOptions,
     StrokeTessellator, StrokeVertex, VertexBuffers,
 };
-use lyon::tessellation::path::Path;
 
 pub use capsule::*;
 pub use circle::*;
@@ -13,12 +13,12 @@ pub use ellipse::*;
 pub use rectangle::*;
 pub use rounded_rectangle::*;
 
-use crate::draw::{Position, Scalar};
 use crate::draw::shape::triangle::Triangle;
+use crate::draw::{Position, Scalar};
 use crate::prelude::{Environment, PrimitiveKind};
+use crate::widget::types::PrimitiveStore;
 use crate::widget::types::ShapeStyle;
 use crate::widget::types::StrokeStyle;
-use crate::widget::types::PrimitiveStore;
 use crate::widget::Widget;
 
 mod capsule;
@@ -119,9 +119,12 @@ pub fn fill(path: &dyn Fn(&mut Builder, &Rect), shape: &mut dyn Shape, rectangle
         triangle_store.set_fill_triangles(&triangles);
     } else if position != triangle_store.latest_fill_position {
         let offset = position - triangle_store.latest_fill_position;
-        triangle_store.fill_triangles_mut().iter_mut().for_each(|t| {
-            t.offset(offset);
-        });
+        triangle_store
+            .fill_triangles_mut()
+            .iter_mut()
+            .for_each(|t| {
+                t.offset(offset);
+            });
         triangle_store.latest_fill_position = position;
     }
 }
@@ -229,9 +232,12 @@ pub fn stroke(path: &dyn Fn(&mut Builder, &Rect), shape: &mut dyn Shape, rectang
         triangle_store.set_stroke_triangles(&triangles);
     } else if position != triangle_store.latest_stroke_position {
         let offset = position - triangle_store.latest_stroke_position;
-        triangle_store.stroke_triangles_mut().iter_mut().for_each(|t| {
-            t.offset(offset);
-        });
+        triangle_store
+            .stroke_triangles_mut()
+            .iter_mut()
+            .for_each(|t| {
+                t.offset(offset);
+            });
         triangle_store.latest_stroke_position = position;
     }
 }

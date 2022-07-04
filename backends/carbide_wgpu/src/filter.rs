@@ -19,9 +19,11 @@ impl Filter {
 impl From<carbide_core::widget::ImageFilter> for Filter {
     fn from(filter: carbide_core::widget::ImageFilter) -> Self {
         let filter_len = filter.filter.len();
-        let converted_filters = filter.filter.iter().map(|f| {
-            [0.0, f.offset_x as f32, f.offset_y as f32, f.weight]
-        }).collect::<Vec<_>>();
+        let converted_filters = filter
+            .filter
+            .iter()
+            .map(|f| [0.0, f.offset_x as f32, f.offset_y as f32, f.weight])
+            .collect::<Vec<_>>();
 
         Filter {
             texture_size: [100.0, 100.0],

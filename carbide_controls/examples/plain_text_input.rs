@@ -3,7 +3,7 @@ extern crate carbide_wgpu;
 extern crate env_logger;
 extern crate futures;
 
-use carbide_controls::{PASSWORD_CHAR, PlainSwitch, PlainTextInput};
+use carbide_controls::{PlainSwitch, PlainTextInput, PASSWORD_CHAR};
 use carbide_core::prelude::{EnvironmentColor, EnvironmentFontSize};
 use carbide_core::state::LocalState;
 use carbide_core::text::{FontFamily, FontStyle, FontWeight};
@@ -47,8 +47,8 @@ fn main() {
                 .color(EnvironmentColor::DarkText)
                 .background(Rectangle::new().fill(EnvironmentColor::Purple)),
         ])
-            .spacing(10.0)
-            .padding(EdgeInsets::all(40.0)),
+        .spacing(10.0)
+        .padding(EdgeInsets::all(40.0)),
     );
 
     window.launch();

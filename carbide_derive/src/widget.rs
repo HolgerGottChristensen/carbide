@@ -163,9 +163,9 @@ fn path_to_string(path: Path) -> String {
 fn is_attribute_path_state(path: Path) -> bool {
     let is_state = path.segments.len() == 1
         && match path.segments.first() {
-        None => false,
-        Some(segment) => segment.ident.to_string() == "state",
-    };
+            None => false,
+            Some(segment) => segment.ident.to_string() == "state",
+        };
 
     is_state
 }

@@ -1,21 +1,24 @@
+use carbide_core::platform::mac::menu::set_application_menu;
 use std;
 use std::ffi::c_void;
 use std::fmt::Debug;
 use std::time::Instant;
-use carbide_core::platform::mac::menu::set_application_menu;
 
-use crate::{color, cursor};
 use crate::cursor::MouseCursor;
-use crate::draw::{Dimension, theme};
-use crate::event::{EventHandler, EventSink, Input, Key, KeyboardEvent, ModifierKey, OtherEventHandler, WidgetEvent, WindowEvent};
+use crate::draw::{theme, Dimension};
+use crate::event::{
+    EventHandler, EventSink, Input, Key, KeyboardEvent, ModifierKey, OtherEventHandler,
+    WidgetEvent, WindowEvent,
+};
 use crate::focus::{Focusable, Refocus};
 use crate::prelude::Environment;
 use crate::prelude::EnvironmentColor;
 use crate::prelude::EnvironmentFontSize;
 use crate::prelude::EnvironmentVariable;
 use crate::render::Primitives;
-use crate::widget::{Menu, Rectangle};
 use crate::widget::Widget;
+use crate::widget::{Menu, Rectangle};
+use crate::{color, cursor};
 
 /// `Ui` is the most important type within carbide and is necessary for rendering and maintaining
 /// widget state.
@@ -34,10 +37,14 @@ pub struct Ui {
     any_focus: bool,
 }
 
-
 impl Ui {
     /// A new, empty **Ui**.
-    pub fn new(window_pixel_dimensions: Dimension, scale_factor: f64, window_handle: Option<*mut c_void>, event_sink: Box<dyn EventSink>) -> Self {
+    pub fn new(
+        window_pixel_dimensions: Dimension,
+        scale_factor: f64,
+        window_handle: Option<*mut c_void>,
+        event_sink: Box<dyn EventSink>,
+    ) -> Self {
         let font_sizes_large = vec![
             EnvironmentVariable::FontSize {
                 key: EnvironmentFontSize::LargeTitle,
@@ -91,18 +98,16 @@ impl Ui {
             .map(|item| item.clone())
             .collect::<Vec<_>>();
 
-        let environment =
-            Environment::new(
-                base_environment,
-                window_pixel_dimensions,
-                scale_factor,
-                window_handle,
-                event_sink
-            );
+        let environment = Environment::new(
+            base_environment,
+            window_pixel_dimensions,
+            scale_factor,
+            window_handle,
+            event_sink,
+        );
 
         Ui {
-            widgets: Rectangle::new()
-                .fill(EnvironmentColor::SystemBackground),
+            widgets: Rectangle::new().fill(EnvironmentColor::SystemBackground),
             menu: None,
             event_handler: EventHandler::new(),
             environment,
@@ -130,9 +135,7 @@ impl Ui {
     }
 
     #[cfg(not(target_os = "macos"))]
-    pub fn refresh_application_menu(&self) {
-
-    }
+    pub fn refresh_application_menu(&self) {}
 
     pub fn has_animations(&self) -> bool {
         self.environment.has_animations()
@@ -143,7 +146,6 @@ impl Ui {
     }
 
     pub fn compound_and_add_event(&mut self, event: Input) {
-
         let window_event = self
             .event_handler
             .compound_and_add_event(event, self.environment.get_corrected_dimensions());
@@ -199,7 +201,8 @@ impl Ui {
                 }
                 WidgetEvent::Custom(_) => {}
                 WidgetEvent::DoneProcessingEvents => {
-                    self.widgets.process_other_event(event, &mut self.environment);
+                    self.widgets
+                        .process_other_event(event, &mut self.environment);
                 }
             }
 
@@ -280,7 +283,8 @@ impl Ui {
 
         // Todo: Consider being smarter about sending this event. We dont need to send it if no state changed this frame.
         // Currently used by foreach to check if updates has been made to its model.
-        self.widgets.process_other_event(&WidgetEvent::DoneProcessingEvents, &mut self.environment);
+        self.widgets
+            .process_other_event(&WidgetEvent::DoneProcessingEvents, &mut self.environment);
         self.event_handler.clear_events();
 
         if now.elapsed().as_millis() > 16 {

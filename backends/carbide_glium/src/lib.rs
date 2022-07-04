@@ -5,12 +5,12 @@ extern crate carbide_winit;
 #[macro_use]
 extern crate glium;
 
-use carbide_core::{color, Color, OldRect, Range, render, text_old};
 use carbide_core::draw::image::{image_id, image_map};
 use carbide_core::draw::Scalar;
 use carbide_core::render::primitive::Primitive;
 use carbide_core::render::primitive_kind::PrimitiveKind;
 use carbide_core::render::primitive_walker::PrimitiveWalker;
+use carbide_core::{color, render, text_old, Color, OldRect, Range};
 
 pub use crate::window::Window;
 
@@ -277,8 +277,8 @@ pub trait TextureDimensions {
 }
 
 impl<T> TextureDimensions for T
-    where
-        T: std::ops::Deref<Target=glium::texture::TextureAny>,
+where
+    T: std::ops::Deref<Target = glium::texture::TextureAny>,
 {
     fn dimensions(&self) -> (u32, u32) {
         (self.get_width(), self.get_height().unwrap_or(0))
@@ -287,8 +287,8 @@ impl<T> TextureDimensions for T
 
 /// Construct the glium shader program that can be used to render `Vertex`es.
 pub fn program<F>(facade: &F) -> Result<glium::Program, glium::program::ProgramChooserCreationError>
-    where
-        F: glium::backend::Facade,
+where
+    F: glium::backend::Facade,
 {
     program!(facade,
              120 => { vertex: VERTEX_SHADER_120, fragment: FRAGMENT_SHADER_120 },
@@ -361,8 +361,8 @@ fn glyph_cache_texture<F>(
     width: u32,
     height: u32,
 ) -> Result<glium::texture::Texture2d, glium::texture::TextureCreationError>
-    where
-        F: glium::backend::Facade,
+where
+    F: glium::backend::Facade,
 {
     // Determine the optimal texture format to use given the opengl version.
     let context = facade.get_context();
@@ -395,8 +395,8 @@ impl GlyphCache {
         width: u32,
         height: u32,
     ) -> Result<Self, glium::texture::TextureCreationError>
-        where
-            F: glium::backend::Facade,
+    where
+        F: glium::backend::Facade,
     {
         // First, the rusttype `Cache` which performs the logic for rendering and laying out glyphs
         // in the cache.
@@ -414,8 +414,8 @@ impl GlyphCache {
     /// Construct a `GlyphCache` with a size equal to the given `Display`'s current framebuffer
     /// dimensions.
     pub fn new<F>(facade: &F) -> Result<Self, glium::texture::TextureCreationError>
-        where
-            F: glium::backend::Facade,
+    where
+        F: glium::backend::Facade,
     {
         let (w, h) = facade.get_context().get_framebuffer_dimensions();
         Self::with_dimensions(facade, w, h)
@@ -453,8 +453,8 @@ impl Renderer {
     /// The dimensions of the inner glyph cache will be equal to the dimensions of the given
     /// facade's framebuffer.
     pub fn new<F>(facade: &F) -> Result<Self, RendererCreationError>
-        where
-            F: glium::backend::Facade,
+    where
+        F: glium::backend::Facade,
     {
         let glyph_cache = GlyphCache::new(facade)?;
         Self::with_glyph_cache(facade, glyph_cache)
@@ -466,8 +466,8 @@ impl Renderer {
         width: u32,
         height: u32,
     ) -> Result<Self, RendererCreationError>
-        where
-            F: glium::backend::Facade,
+    where
+        F: glium::backend::Facade,
     {
         let glyph_cache = GlyphCache::with_dimensions(facade, width, height)?;
         Self::with_glyph_cache(facade, glyph_cache)
@@ -475,8 +475,8 @@ impl Renderer {
 
     // Construct a new **Renderer** that uses the given glyph cache for caching text.
     fn with_glyph_cache<F>(facade: &F, gc: GlyphCache) -> Result<Self, RendererCreationError>
-        where
-            F: glium::backend::Facade,
+    where
+        F: glium::backend::Facade,
     {
         let program = program(facade)?;
         Ok(Renderer {
@@ -939,10 +939,10 @@ impl Renderer {
         surface: &mut S,
         image_map: &image_map::ImageMap<T>,
     ) -> Result<(), DrawError>
-        where
-            F: glium::backend::Facade,
-            S: glium::Surface,
-            for<'a> glium::uniforms::Sampler<'a, T>: glium::uniforms::AsUniformValue,
+    where
+        F: glium::backend::Facade,
+        S: glium::Surface,
+        for<'a> glium::uniforms::Sampler<'a, T>: glium::uniforms::AsUniformValue,
     {
         let mut draw_params = draw_parameters();
         let no_indices = glium::index::NoIndices(glium::index::PrimitiveType::TrianglesList);

@@ -4,21 +4,34 @@ use std::collections::HashSet;
 use std::fmt::{Debug, Formatter};
 use std::rc::Rc;
 
+use crate::PlainButton;
 use carbide_core::color::{BLUE, RED, TRANSPARENT};
 use carbide_core::draw::{Dimension, Position};
 use carbide_core::environment::{Environment, EnvironmentColor};
 use carbide_core::event::ModifierKey;
 use carbide_core::flags::Flags;
-use carbide_core::state::{F64State, LocalState, ReadState, State, StateContract, StateExt, TState, UsizeState, ValueState};
-use carbide_core::widget::{CommonWidget, Delegate, EdgeInsets, ForEach, HStack, WidgetId, IfElse, Rectangle, SCALE, Scroll, VStack, Widget, WidgetExt, WidgetIter, WidgetIterMut};
+use carbide_core::state::{
+    F64State, LocalState, ReadState, State, StateContract, StateExt, TState, UsizeState, ValueState,
+};
 use carbide_core::widget::canvas::Canvas;
-use crate::PlainButton;
+use carbide_core::widget::{
+    CommonWidget, Delegate, EdgeInsets, ForEach, HStack, IfElse, Rectangle, Scroll, VStack, Widget,
+    WidgetExt, WidgetId, WidgetIter, WidgetIterMut, SCALE,
+};
 
-const MULTI_SELECTION_MODIFIER: ModifierKey = if cfg!(target_os = "macos") {ModifierKey::GUI} else {ModifierKey::CTRL};
+const MULTI_SELECTION_MODIFIER: ModifierKey = if cfg!(target_os = "macos") {
+    ModifierKey::GUI
+} else {
+    ModifierKey::CTRL
+};
 const LIST_SELECTION_MODIFIER: ModifierKey = ModifierKey::SHIFT;
 
 #[derive(Clone, Widget)]
-pub struct List<T, U> where T: StateContract, U: Delegate<T> + 'static {
+pub struct List<T, U>
+where
+    T: StateContract,
+    U: Delegate<T> + 'static,
+{
     id: WidgetId,
     child: Box<dyn Widget>,
     delegate: U,
@@ -63,11 +76,11 @@ impl<T: StateContract, U: Delegate<T> + 'static> List<T, U> {
                     ForEach::new(internal_model.clone(), delegate.clone()),
                     //.index_offset(index_offset_state.clone()),
                     Rectangle::new()
-                        .fill(TRANSPARENT)// BLUE for debugging
+                        .fill(TRANSPARENT) // BLUE for debugging
                         .frame(0.0, end_offset.clone())
                         .expand_width(),
                 ])
-                    .spacing(10.0),
+                .spacing(10.0),
             ),
             delegate,
             position: Position::new(0.0, 0.0),
@@ -82,7 +95,7 @@ impl<T: StateContract, U: Delegate<T> + 'static> List<T, U> {
             selection: None,
             last_index_clicked: ValueState::new(0),
             sub_tree_function: None,
-            tree_disclosure: TreeDisclosure::Arrow
+            tree_disclosure: TreeDisclosure::Arrow,
         })
     }
 
@@ -105,18 +118,22 @@ impl<T: StateContract, U: Delegate<T> + 'static> List<T, U> {
                     .frame(0.0, self.end_offset.clone())
                     .expand_width(),
             ])
-                .spacing(spacing),
+            .spacing(spacing),
         );
         Box::new(self)
     }
 
-    pub fn tree(mut self, children: fn(TState<T>) -> TState<Option<Vec<T>>>, tree_disclosure: impl Into<TreeDisclosure>) -> Box<List<T, TreeListDelegate<T, U>>> {
+    pub fn tree(
+        mut self,
+        children: fn(TState<T>) -> TState<Option<Vec<T>>>,
+        tree_disclosure: impl Into<TreeDisclosure>,
+    ) -> Box<List<T, TreeListDelegate<T, U>>> {
         let tree_disclosure = tree_disclosure.into();
 
         let new_delegate = TreeListDelegate {
             sub_tree_function: children,
             tree_disclosure: tree_disclosure.clone(),
-            inner_delegate: self.delegate
+            inner_delegate: self.delegate,
         };
 
         let child = Scroll::new(
@@ -131,7 +148,7 @@ impl<T: StateContract, U: Delegate<T> + 'static> List<T, U> {
                     .frame(0.0, self.end_offset.clone())
                     .expand_width(),
             ])
-                .spacing(self.spacing),
+            .spacing(self.spacing),
         );
 
         Box::new(List {
@@ -150,7 +167,7 @@ impl<T: StateContract, U: Delegate<T> + 'static> List<T, U> {
             selection: self.selection,
             last_index_clicked: self.last_index_clicked,
             sub_tree_function: Some(children),
-            tree_disclosure
+            tree_disclosure,
         })
     }
 
@@ -161,7 +178,11 @@ impl<T: StateContract, U: Delegate<T> + 'static> List<T, U> {
     ///
     /// Examples of this is [`Option<Id>`] for single-selection and
     /// [`HashSet<Id>`] for multi-selection.
-    pub fn selectable(mut self, id: fn(&T) -> WidgetId, selection: impl Into<Selection>) -> Box<List<T, SelectableListDelegate<T, U>>> {
+    pub fn selectable(
+        mut self,
+        id: fn(&T) -> WidgetId,
+        selection: impl Into<Selection>,
+    ) -> Box<List<T, SelectableListDelegate<T, U>>> {
         let selection = selection.into();
         let last_index_clicked = LocalState::new(0);
 
@@ -185,7 +206,7 @@ impl<T: StateContract, U: Delegate<T> + 'static> List<T, U> {
                     .frame(0.0, self.end_offset.clone())
                     .expand_width(),
             ])
-                .spacing(self.spacing),
+            .spacing(self.spacing),
         );
 
         Box::new(List {
@@ -207,7 +228,6 @@ impl<T: StateContract, U: Delegate<T> + 'static> List<T, U> {
             tree_disclosure: self.tree_disclosure,
         })
     }
-
 
     /*
         fn _recalculate_visible_children(&mut self, env: &mut Environment<GS>) {
@@ -405,7 +425,6 @@ impl<T: StateContract, U: Delegate<T> + 'static> CommonWidget for List<T, U> {
         self.id
     }
 
-
     fn flag(&self) -> Flags {
         Flags::EMPTY
     }
@@ -453,17 +472,18 @@ impl<T: StateContract, U: Delegate<T> + 'static> CommonWidget for List<T, U> {
 
 impl<T: StateContract, U: Delegate<T>> Debug for List<T, U> {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        f.debug_struct("List")
-            .field("child", &self.child)
-            .finish()
+        f.debug_struct("List").field("child", &self.child).finish()
     }
 }
 
 impl<T: StateContract, U: Delegate<T> + 'static> WidgetExt for List<T, U> {}
 
-
 #[derive(Clone)]
-pub struct TreeListDelegate<T, U> where T: StateContract, U: Delegate<T> + 'static {
+pub struct TreeListDelegate<T, U>
+where
+    T: StateContract,
+    U: Delegate<T> + 'static,
+{
     sub_tree_function: fn(TState<T>) -> TState<Option<Vec<T>>>,
     tree_disclosure: TreeDisclosure,
     inner_delegate: U,
@@ -483,13 +503,7 @@ impl<T: StateContract, U: Delegate<T> + 'static> Delegate<T> for TreeListDelegat
 
         let disclosure_item: Box<dyn Widget> = match self.tree_disclosure {
             TreeDisclosure::Arrow => {
-                let rotation = opened.mapped(|b: &bool| {
-                    if *b {
-                        90.0
-                    } else {
-                        0.0
-                    }
-                });
+                let rotation = opened.mapped(|b: &bool| if *b { 90.0 } else { 0.0 });
 
                 Canvas::new(|_, mut context, _| {
                     context.move_to(8.0, 5.0);
@@ -500,12 +514,11 @@ impl<T: StateContract, U: Delegate<T> + 'static> Delegate<T> for TreeListDelegat
                     context.stroke();
 
                     context
-                }).frame(20.0, 20.0)
-                    .rotation_effect(rotation)
+                })
+                .frame(20.0, 20.0)
+                .rotation_effect(rotation)
             }
-            TreeDisclosure::Custom(f) => {
-                f(opened.clone())
-            }
+            TreeDisclosure::Custom(f) => f(opened.clone()),
         };
 
         let disclosure = PlainButton::new(disclosure_item.clone())
@@ -520,18 +533,23 @@ impl<T: StateContract, U: Delegate<T> + 'static> Delegate<T> for TreeListDelegat
                 IfElse::new(sub_tree_model.is_some().ignore_writes())
                     .when_true(disclosure)
                     .when_false(disclosure_item.hidden()),
-                widget
-            ]).spacing(0.0),
-            IfElse::new(opened)
-                .when_true(
-                    ForEach::new(sub_tree_model.unwrap_or_default(), inner_delegate)
-                ),
+                widget,
+            ])
+            .spacing(0.0),
+            IfElse::new(opened).when_true(ForEach::new(
+                sub_tree_model.unwrap_or_default(),
+                inner_delegate,
+            )),
         ])
     }
 }
 
 #[derive(Clone)]
-pub struct SelectableListDelegate<T, U> where T: StateContract, U: Delegate<T> + 'static {
+pub struct SelectableListDelegate<T, U>
+where
+    T: StateContract,
+    U: Delegate<T> + 'static,
+{
     item_id_function: fn(&T) -> WidgetId,
     selection: Selection,
     inner_delegate: U,
@@ -546,64 +564,65 @@ impl<T: StateContract, U: Delegate<T> + 'static> Delegate<T> for SelectableListD
         let internal_model = self.internal_model.clone();
         let id_function = self.item_id_function;
 
-        PlainButton::new(
-            self.inner_delegate.call(item.clone(), index.clone())
-        ).on_click(move |env: &mut Environment, modifier: ModifierKey| {
-            let mut selection = selection.clone();
-            let mut last_selected_index = last_selected_index.clone();
-            let value = id_function(&*item.value());
+        PlainButton::new(self.inner_delegate.call(item.clone(), index.clone())).on_click(
+            move |env: &mut Environment, modifier: ModifierKey| {
+                let mut selection = selection.clone();
+                let mut last_selected_index = last_selected_index.clone();
+                let value = id_function(&*item.value());
 
-            match &mut selection {
-                // If we are in single selection mode
-                Selection::Single(id) => {
-                    let val = id.value_mut().clone();
+                match &mut selection {
+                    // If we are in single selection mode
+                    Selection::Single(id) => {
+                        let val = id.value_mut().clone();
 
-                    // If the value we clicked while holding down GUI (on mac) and Ctrl (on windows)
-                    // is the same as already selected, deselect the value. Otherwise select the
-                    // item clicked.
-                    if let Some(val) = val {
-                        if val == value && modifier == MULTI_SELECTION_MODIFIER {
-                            *id.value_mut() = None;
+                        // If the value we clicked while holding down GUI (on mac) and Ctrl (on windows)
+                        // is the same as already selected, deselect the value. Otherwise select the
+                        // item clicked.
+                        if let Some(val) = val {
+                            if val == value && modifier == MULTI_SELECTION_MODIFIER {
+                                *id.value_mut() = None;
+                            } else {
+                                *id.value_mut() = Some(value);
+                            }
                         } else {
                             *id.value_mut() = Some(value);
                         }
-                    } else {
-                        *id.value_mut() = Some(value);
                     }
+                    // If we are in multi-select mode
+                    Selection::Multi(selections) => {
+                        match modifier {
+                            // If we are holding down GUI (on mac) or CTRL (on windows), add the item
+                            // to the set if it does not already contain it. Otherwise remove it from
+                            // the set.
+                            MULTI_SELECTION_MODIFIER => {
+                                if !selections.value_mut().remove(&value) {
+                                    selections.value_mut().insert(value);
+                                }
+                                *last_selected_index.value_mut() = *index.value();
+                            }
+                            LIST_SELECTION_MODIFIER => {
+                                selections.value_mut().clear();
+                                let min = min(*index.value(), *last_selected_index.value());
+                                let max = max(*index.value(), *last_selected_index.value());
 
-                }
-                // If we are in multi-select mode
-                Selection::Multi(selections) => {
-                    match modifier {
-                        // If we are holding down GUI (on mac) or CTRL (on windows), add the item
-                        // to the set if it does not already contain it. Otherwise remove it from
-                        // the set.
-                        MULTI_SELECTION_MODIFIER => {
-                            if !selections.value_mut().remove(&value) {
+                                for val in min..=max {
+                                    selections
+                                        .value_mut()
+                                        .insert(id_function(&internal_model.value()[val]));
+                                }
+                            }
+                            // If we are not holding it down, remove all elements from the set and add
+                            // the newly clicked element.
+                            _ => {
+                                selections.value_mut().clear();
                                 selections.value_mut().insert(value);
+                                *last_selected_index.value_mut() = *index.value();
                             }
-                            *last_selected_index.value_mut() = *index.value();
-                        }
-                        LIST_SELECTION_MODIFIER => {
-                            selections.value_mut().clear();
-                            let min = min(*index.value(), *last_selected_index.value());
-                            let max = max(*index.value(), *last_selected_index.value());
-
-                            for val in min..=max {
-                                selections.value_mut().insert(id_function(&internal_model.value()[val]));
-                            }
-                        }
-                        // If we are not holding it down, remove all elements from the set and add
-                        // the newly clicked element.
-                        _ => {
-                            selections.value_mut().clear();
-                            selections.value_mut().insert(value);
-                            *last_selected_index.value_mut() = *index.value();
                         }
                     }
                 }
-            }
-        })
+            },
+        )
     }
 }
 

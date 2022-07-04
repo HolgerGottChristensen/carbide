@@ -96,10 +96,10 @@ fn common_builder_field(ast: &syn::DeriveInput) -> Result<&syn::Ident, Error> {
 
                     has_common_builder = _metalist.nested.iter().any(|v| match *v {
                         syn::NestedMeta::Meta(syn::Meta::Path(ref p))
-                        if p.is_ident("common_builder") =>
-                            {
-                                true
-                            }
+                            if p.is_ident("common_builder") =>
+                        {
+                            true
+                        }
                         _ => false,
                     });
                 }

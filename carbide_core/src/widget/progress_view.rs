@@ -1,10 +1,10 @@
-use std::time::Duration;
 use crate::color::WHITE;
 use crate::draw::{Dimension, Position};
-use crate::prelude::*;
 use crate::prelude::canvas::LineCap;
+use crate::prelude::*;
 use crate::widget::canvas::Canvas;
 use crate::CommonWidgetImpl;
+use std::time::Duration;
 
 #[derive(Debug, Clone, Widget)]
 pub struct ProgressView {
@@ -40,24 +40,38 @@ impl ProgressView {
                 .stroke_style(4.0),
             Canvas::new(|rect, mut context, _| {
                 context.move_to(2.0, rect.height() / 2.0);
-                context.arc(rect.width() / 2.0, rect.height() / 2.0, rect.height() / 2.0 - 2.0, 0.0, 60.0);
+                context.arc(
+                    rect.width() / 2.0,
+                    rect.height() / 2.0,
+                    rect.height() / 2.0 - 2.0,
+                    0.0,
+                    60.0,
+                );
                 context.set_stroke_style(WHITE);
                 context.set_line_width(4.0);
                 context.set_line_cap(LineCap::Round);
                 context.stroke();
                 context
-            }).rotation_effect(animation),
+            })
+            .rotation_effect(animation),
             Canvas::new(|rect, mut context, _| {
                 context.move_to(2.0, rect.height() / 2.0);
-                context.arc(rect.width() / 2.0, rect.height() / 2.0, rect.height() / 2.0 - 2.0, 0.0, 120.0);
+                context.arc(
+                    rect.width() / 2.0,
+                    rect.height() / 2.0,
+                    rect.height() / 2.0 - 2.0,
+                    0.0,
+                    120.0,
+                );
                 context.set_stroke_style(WHITE);
                 context.set_line_width(4.0);
                 context.set_line_cap(LineCap::Round);
                 context.stroke();
                 context
-            }).rotation_effect(animation2),
-        ]).frame(size, size);
-
+            })
+            .rotation_effect(animation2),
+        ])
+        .frame(size, size);
 
         Box::new(ProgressView {
             id: WidgetId::new(),

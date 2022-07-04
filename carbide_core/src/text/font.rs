@@ -1,14 +1,14 @@
 use std::fmt::{Debug, Formatter};
 
 use image::{DynamicImage, GenericImage, Rgba};
-use rusttype::{GlyphId, point, Scale, VMetrics};
+use rusttype::{point, GlyphId, Scale, VMetrics};
 use ttf_parser::Weight;
 
 use crate::draw::Position;
 use crate::draw::Scalar;
 use crate::environment::Environment;
-use crate::text::{FontId, FontSize, FontStyle, FontWeight};
 use crate::text::glyph::Glyph;
+use crate::text::{FontId, FontSize, FontStyle, FontWeight};
 
 type RustTypeFont = rusttype::Font<'static>;
 type RustTypeScale = rusttype::Scale;
@@ -272,8 +272,8 @@ impl Font {
 impl Font {
     /// Load a single `Font` from a file at the given path.
     pub fn from_file<P>(path: P) -> Result<Self, Error>
-        where
-            P: AsRef<std::path::Path>,
+    where
+        P: AsRef<std::path::Path>,
     {
         use std::io::Read;
         let path = path.as_ref();
@@ -293,8 +293,8 @@ impl Font {
 
     /// Load a single `Font` from a file at the given path.
     pub fn from_file_bitmap<P>(path: P) -> Result<Self, Error>
-        where
-            P: AsRef<std::path::Path>,
+    where
+        P: AsRef<std::path::Path>,
     {
         use std::io::Read;
         let path = path.as_ref();

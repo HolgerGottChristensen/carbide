@@ -8,7 +8,8 @@ pub struct ProgressBar {
     child: Box<dyn Widget>,
     position: Position,
     dimension: Dimension,
-    #[state] progress: F64State,
+    #[state]
+    progress: F64State,
 }
 
 impl ProgressBar {
@@ -19,13 +20,12 @@ impl ProgressBar {
     fn new_internal(progress: F64State) -> Box<Self> {
         let child = ZStack::new(vec![
             Capsule::new().fill(EnvironmentColor::SystemFill),
-            HSplit::new(
-                Capsule::new().fill(EnvironmentColor::Accent),
-                Spacer::new()
-            ).percent(progress.clone())
-                .non_draggable()
-        ]).frame(0.0, 5)
-            .expand_width();
+            HSplit::new(Capsule::new().fill(EnvironmentColor::Accent), Spacer::new())
+                .percent(progress.clone())
+                .non_draggable(),
+        ])
+        .frame(0.0, 5)
+        .expand_width();
 
         Box::new(ProgressBar {
             id: WidgetId::new(),

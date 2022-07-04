@@ -45,11 +45,17 @@ impl Alignment {
     }
 
     fn center(position: Position, dimension: Dimension) -> Position {
-        Position::new(position.x + dimension.width / 2.0, position.y + dimension.height / 2.0)
+        Position::new(
+            position.x + dimension.width / 2.0,
+            position.y + dimension.height / 2.0,
+        )
     }
 
     fn trailing(position: Position, dimension: Dimension) -> Position {
-        Position::new(position.x + dimension.width, position.y + dimension.height / 2.0)
+        Position::new(
+            position.x + dimension.width,
+            position.y + dimension.height / 2.0,
+        )
     }
 
     fn bottom_leading(position: Position, dimension: Dimension) -> Position {
@@ -57,7 +63,10 @@ impl Alignment {
     }
 
     fn bottom(position: Position, dimension: Dimension) -> Position {
-        Position::new(position.x + dimension.width / 2.0, position.y + dimension.height)
+        Position::new(
+            position.x + dimension.width / 2.0,
+            position.y + dimension.height,
+        )
     }
 
     fn bottom_trailing(position: Position, dimension: Dimension) -> Position {

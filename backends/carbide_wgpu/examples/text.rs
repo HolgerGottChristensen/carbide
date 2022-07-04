@@ -8,12 +8,7 @@ fn main() {
 
     let icon_path = Window::relative_path_to_assets("images/rust_press.png");
 
-    let mut window = Window::new(
-        "Pretty text example".to_string(),
-        400,
-        600,
-        Some(icon_path),
-    );
+    let mut window = Window::new("Pretty text example".to_string(), 400, 600, Some(icon_path));
 
     let mut family = FontFamily::new("NotoSans");
     family.add_font_with_hints(

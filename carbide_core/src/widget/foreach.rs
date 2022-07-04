@@ -8,7 +8,10 @@ pub trait Delegate<T: StateContract>: Clone {
     fn call(&self, item: TState<T>, index: UsizeState) -> Box<dyn Widget>;
 }
 
-impl<T: StateContract, K> Delegate<T> for K where K: Fn(TState<T>, UsizeState) -> Box<dyn Widget> + Clone {
+impl<T: StateContract, K> Delegate<T> for K
+where
+    K: Fn(TState<T>, UsizeState) -> Box<dyn Widget> + Clone,
+{
     fn call(&self, item: TState<T>, index: UsizeState) -> Box<dyn Widget> {
         self(item, index)
     }
@@ -16,16 +19,22 @@ impl<T: StateContract, K> Delegate<T> for K where K: Fn(TState<T>, UsizeState) -
 
 #[derive(Clone, Widget)]
 #[carbide_exclude(OtherEvent)]
-pub struct ForEach<T, U> where T: StateContract, U: Delegate<T> {
+pub struct ForEach<T, U>
+where
+    T: StateContract,
+    U: Delegate<T>,
+{
     id: WidgetId,
     position: Position,
     dimension: Dimension,
 
-    #[state] model: TState<Vec<T>>,
+    #[state]
+    model: TState<Vec<T>>,
     delegate: U,
 
     children: Vec<Box<dyn Widget>>,
-    #[state] index_offset: UsizeState,
+    #[state]
+    index_offset: UsizeState,
 }
 
 impl<T: StateContract, U: Delegate<T>> ForEach<T, U> {
@@ -61,12 +70,14 @@ impl<T: StateContract, U: Delegate<T>> ForEach<T, U> {
 
 impl<T: StateContract, U: Delegate<T>> OtherEventHandler for ForEach<T, U> {
     fn handle_other_event(&mut self, _event: &WidgetEvent, _env: &mut Environment) {
-        if self.model.value().len() < self.children.len() { // Remove the excess elements
+        if self.model.value().len() < self.children.len() {
+            // Remove the excess elements
             let number_to_remove = self.children.len() - self.model.value().len();
             for _ in 0..number_to_remove {
                 self.children.pop();
             }
-        } else if self.model.value().len() > self.children.len() { // Insert the missing elements
+        } else if self.model.value().len() > self.children.len() {
+            // Insert the missing elements
             let number_to_insert = self.model.value().len() - self.children.len();
 
             for _ in 0..number_to_insert {
@@ -74,7 +85,6 @@ impl<T: StateContract, U: Delegate<T>> OtherEventHandler for ForEach<T, U> {
 
                 let index_state: UsizeState = ValueState::new(index).into();
                 let item_state = VecState::new(self.model.clone(), index);
-
 
                 let widget = self.delegate.call(item_state.into(), index_state);
                 self.children.push(widget);
@@ -93,7 +103,9 @@ impl<T: StateContract, U: Delegate<T>> CommonWidget for ForEach<T, U> {
     }
 
     fn children(&self) -> WidgetIter {
-        let contains_proxy_or_ignored = self.children.iter().fold(false, |a, b| a || (b.flag() == Flags::PROXY || b.flag() == Flags::IGNORE));
+        let contains_proxy_or_ignored = self.children.iter().fold(false, |a, b| {
+            a || (b.flag() == Flags::PROXY || b.flag() == Flags::IGNORE)
+        });
         if !contains_proxy_or_ignored {
             WidgetIter::Vec(self.children.iter())
         } else {
@@ -111,7 +123,9 @@ impl<T: StateContract, U: Delegate<T>> CommonWidget for ForEach<T, U> {
     }
 
     fn children_mut(&mut self) -> WidgetIterMut {
-        let contains_proxy_or_ignored = self.children.iter().fold(false, |a, b| a || (b.flag() == Flags::PROXY || b.flag() == Flags::IGNORE));
+        let contains_proxy_or_ignored = self.children.iter().fold(false, |a, b| {
+            a || (b.flag() == Flags::PROXY || b.flag() == Flags::IGNORE)
+        });
         if !contains_proxy_or_ignored {
             WidgetIterMut::Vec(self.children.iter_mut())
         } else {

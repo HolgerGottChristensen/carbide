@@ -13,17 +13,17 @@ use rusttype::gpu_cache::Cache as RustTypeGlyphCache;
 use rusttype::gpu_cache::CacheWriteErr as RustTypeCacheWriteError;
 
 use crate::color;
-use crate::draw::{Position, Rect, Scalar};
 use crate::draw::draw_gradient::DrawGradient;
 use crate::draw::image::{ImageId, ImageMap};
+use crate::draw::{Position, Rect, Scalar};
 use crate::environment::Environment;
 use crate::layout::BasicLayouter;
+use crate::mesh::atlas::texture_atlas::TextureAtlas;
+use crate::mesh::vertex::Vertex;
 use crate::mesh::{
     DEFAULT_GLYPH_CACHE_DIMS, GLYPH_CACHE_POSITION_TOLERANCE, GLYPH_CACHE_SCALE_TOLERANCE,
     MODE_GEOMETRY, MODE_TEXT, MODE_TEXT_COLOR,
 };
-use crate::mesh::atlas::texture_atlas::TextureAtlas;
-use crate::mesh::vertex::Vertex;
 use crate::render::{PrimitiveKind, PrimitiveWalker};
 use crate::widget::FilterId;
 
@@ -163,9 +163,9 @@ impl Mesh {
         image_map: &ImageMap<I>,
         mut primitives: P,
     ) -> Result<Fill, RustTypeCacheWriteError>
-        where
-            P: PrimitiveWalker,
-            I: ImageDimensions,
+    where
+        P: PrimitiveWalker,
+        I: ImageDimensions,
     {
         let scale_factor = env.get_scale_factor();
 
@@ -187,7 +187,6 @@ impl Mesh {
 
         let texture_atlas = env.get_font_atlas_mut();
         texture_atlas.cache_queued(|x, y, image_data| {
-
             //println!("Insert the image at: {}, {} with size {}, {}", x, y, image_data.width(), image_data.height());
             for (ix, iy, pixel) in image_data.pixels() {
                 texture_atlas_image.put_pixel(x + ix, y + iy, pixel);
@@ -197,13 +196,8 @@ impl Mesh {
         });
 
         enum State {
-            Image {
-                image_id: ImageId,
-                start: usize,
-            },
-            Plain {
-                start: usize,
-            },
+            Image { image_id: ImageId, start: usize },
+            Plain { start: usize },
         }
 
         let mut current_state = State::Plain { start: 0 };
@@ -217,8 +211,8 @@ impl Mesh {
         let _glyph_cache_w = glyph_cache_w as usize;
 
         // Functions for converting for carbide scalar coords to normalised vertex coords (-1.0 to 1.0).
-        let vx = |x: Scalar| x as f32;//(x * scale_factor / half_viewport_w - 1.0) as f32;
-        let vy = |y: Scalar| y as f32;//-1.0 * (y * scale_factor / half_viewport_h - 1.0) as f32;
+        let vx = |x: Scalar| x as f32; //(x * scale_factor / half_viewport_w - 1.0) as f32;
+        let vy = |y: Scalar| y as f32; //-1.0 * (y * scale_factor / half_viewport_h - 1.0) as f32;
 
         let rect_to_scissor = |rect: Rect| {
             // We need to restrict the scissor x and y to [0, ~].
@@ -370,7 +364,10 @@ impl Mesh {
 
                     let v = |p: Position| Vertex {
                         position: [vx(p.x), vy(p.y), 0.0],
-                        tex_coords: [(p.x / viewport.dimension.width * scale_factor) as f32, (p.y / viewport.dimension.height * scale_factor) as f32],
+                        tex_coords: [
+                            (p.x / viewport.dimension.width * scale_factor) as f32,
+                            (p.y / viewport.dimension.height * scale_factor) as f32,
+                        ],
                         rgba: [1.0, 1.0, 1.0, 1.0],
                         mode: MODE_GEOMETRY,
                     };
@@ -389,7 +386,8 @@ impl Mesh {
                     push_v(r, t);
 
                     commands.push(PreparedCommand::Filter(
-                        start_index_for_filter..vertices.len(), filter_id,
+                        start_index_for_filter..vertices.len(),
+                        filter_id,
                     ));
 
                     current_state = State::Plain {
@@ -410,7 +408,10 @@ impl Mesh {
 
                     let v = |p: Position| Vertex {
                         position: [vx(p.x), vy(p.y), 0.0],
-                        tex_coords: [(p.x / viewport.dimension.width * scale_factor) as f32, (p.y / viewport.dimension.height * scale_factor) as f32],
+                        tex_coords: [
+                            (p.x / viewport.dimension.width * scale_factor) as f32,
+                            (p.y / viewport.dimension.height * scale_factor) as f32,
+                        ],
                         rgba: [1.0, 1.0, 1.0, 1.0],
                         mode: MODE_GEOMETRY,
                     };
@@ -429,7 +430,8 @@ impl Mesh {
                     push_v(r, t);
 
                     commands.push(PreparedCommand::FilterSplitPt1(
-                        start_index_for_filter..vertices.len(), filter_id,
+                        start_index_for_filter..vertices.len(),
+                        filter_id,
                     ));
 
                     current_state = State::Plain {
@@ -450,7 +452,10 @@ impl Mesh {
 
                     let v = |p: Position| Vertex {
                         position: [vx(p.x), vy(p.y), 0.0],
-                        tex_coords: [(p.x / viewport.dimension.width * scale_factor) as f32, (p.y / viewport.dimension.height * scale_factor) as f32],
+                        tex_coords: [
+                            (p.x / viewport.dimension.width * scale_factor) as f32,
+                            (p.y / viewport.dimension.height * scale_factor) as f32,
+                        ],
                         rgba: [1.0, 1.0, 1.0, 1.0],
                         mode: MODE_GEOMETRY,
                     };
@@ -469,7 +474,8 @@ impl Mesh {
                     push_v(r, t);
 
                     commands.push(PreparedCommand::FilterSplitPt2(
-                        start_index_for_filter..vertices.len(), filter_id,
+                        start_index_for_filter..vertices.len(),
+                        filter_id,
                     ));
 
                     current_state = State::Plain {
@@ -492,47 +498,86 @@ impl Mesh {
                         BasicLayouter::TopLeading => {
                             let center_x = (rectangle.position.x) as f32;
                             let center_y = (rectangle.position.y) as f32;
-                            latest_transform * Matrix4::from_translation(Vector3::new(center_x, center_y, 0.0)) * matrix * Matrix4::from_translation(Vector3::new(-center_x, -center_y, 0.0))
+                            latest_transform
+                                * Matrix4::from_translation(Vector3::new(center_x, center_y, 0.0))
+                                * matrix
+                                * Matrix4::from_translation(Vector3::new(-center_x, -center_y, 0.0))
                         }
                         BasicLayouter::Top => {
-                            let center_x = (rectangle.position.x + rectangle.dimension.width / 2.0) as f32;
+                            let center_x =
+                                (rectangle.position.x + rectangle.dimension.width / 2.0) as f32;
                             let center_y = (rectangle.position.y) as f32;
-                            latest_transform * Matrix4::from_translation(Vector3::new(center_x, center_y, 0.0)) * matrix * Matrix4::from_translation(Vector3::new(-center_x, -center_y, 0.0))
+                            latest_transform
+                                * Matrix4::from_translation(Vector3::new(center_x, center_y, 0.0))
+                                * matrix
+                                * Matrix4::from_translation(Vector3::new(-center_x, -center_y, 0.0))
                         }
                         BasicLayouter::TopTrailing => {
-                            let center_x = (rectangle.position.x + rectangle.dimension.width) as f32;
+                            let center_x =
+                                (rectangle.position.x + rectangle.dimension.width) as f32;
                             let center_y = (rectangle.position.y) as f32;
-                            latest_transform * Matrix4::from_translation(Vector3::new(center_x, center_y, 0.0)) * matrix * Matrix4::from_translation(Vector3::new(-center_x, -center_y, 0.0))
+                            latest_transform
+                                * Matrix4::from_translation(Vector3::new(center_x, center_y, 0.0))
+                                * matrix
+                                * Matrix4::from_translation(Vector3::new(-center_x, -center_y, 0.0))
                         }
                         BasicLayouter::Leading => {
                             let center_x = (rectangle.position.x) as f32;
-                            let center_y = (rectangle.position.y + rectangle.dimension.height / 2.0) as f32;
-                            latest_transform * Matrix4::from_translation(Vector3::new(center_x, center_y, 0.0)) * matrix * Matrix4::from_translation(Vector3::new(-center_x, -center_y, 0.0))
+                            let center_y =
+                                (rectangle.position.y + rectangle.dimension.height / 2.0) as f32;
+                            latest_transform
+                                * Matrix4::from_translation(Vector3::new(center_x, center_y, 0.0))
+                                * matrix
+                                * Matrix4::from_translation(Vector3::new(-center_x, -center_y, 0.0))
                         }
                         BasicLayouter::Center => {
-                            let center_x = (rectangle.position.x + rectangle.dimension.width / 2.0) as f32;
-                            let center_y = (rectangle.position.y + rectangle.dimension.height / 2.0) as f32;
-                            latest_transform * Matrix4::from_translation(Vector3::new(center_x, center_y, 0.0)) * matrix * Matrix4::from_translation(Vector3::new(-center_x, -center_y, 0.0))
+                            let center_x =
+                                (rectangle.position.x + rectangle.dimension.width / 2.0) as f32;
+                            let center_y =
+                                (rectangle.position.y + rectangle.dimension.height / 2.0) as f32;
+                            latest_transform
+                                * Matrix4::from_translation(Vector3::new(center_x, center_y, 0.0))
+                                * matrix
+                                * Matrix4::from_translation(Vector3::new(-center_x, -center_y, 0.0))
                         }
                         BasicLayouter::Trailing => {
-                            let center_x = (rectangle.position.x + rectangle.dimension.width) as f32;
-                            let center_y = (rectangle.position.y + rectangle.dimension.height / 2.0) as f32;
-                            latest_transform * Matrix4::from_translation(Vector3::new(center_x, center_y, 0.0)) * matrix * Matrix4::from_translation(Vector3::new(-center_x, -center_y, 0.0))
+                            let center_x =
+                                (rectangle.position.x + rectangle.dimension.width) as f32;
+                            let center_y =
+                                (rectangle.position.y + rectangle.dimension.height / 2.0) as f32;
+                            latest_transform
+                                * Matrix4::from_translation(Vector3::new(center_x, center_y, 0.0))
+                                * matrix
+                                * Matrix4::from_translation(Vector3::new(-center_x, -center_y, 0.0))
                         }
                         BasicLayouter::BottomLeading => {
                             let center_x = (rectangle.position.x) as f32;
-                            let center_y = (rectangle.position.y + rectangle.dimension.height) as f32;
-                            latest_transform * Matrix4::from_translation(Vector3::new(center_x, center_y, 0.0)) * matrix * Matrix4::from_translation(Vector3::new(-center_x, -center_y, 0.0))
+                            let center_y =
+                                (rectangle.position.y + rectangle.dimension.height) as f32;
+                            latest_transform
+                                * Matrix4::from_translation(Vector3::new(center_x, center_y, 0.0))
+                                * matrix
+                                * Matrix4::from_translation(Vector3::new(-center_x, -center_y, 0.0))
                         }
                         BasicLayouter::Bottom => {
-                            let center_x = (rectangle.position.x + rectangle.dimension.width / 2.0) as f32;
-                            let center_y = (rectangle.position.y + rectangle.dimension.height) as f32;
-                            latest_transform * Matrix4::from_translation(Vector3::new(center_x, center_y, 0.0)) * matrix * Matrix4::from_translation(Vector3::new(-center_x, -center_y, 0.0))
+                            let center_x =
+                                (rectangle.position.x + rectangle.dimension.width / 2.0) as f32;
+                            let center_y =
+                                (rectangle.position.y + rectangle.dimension.height) as f32;
+                            latest_transform
+                                * Matrix4::from_translation(Vector3::new(center_x, center_y, 0.0))
+                                * matrix
+                                * Matrix4::from_translation(Vector3::new(-center_x, -center_y, 0.0))
                         }
                         BasicLayouter::BottomTrailing => {
-                            let center_x = (rectangle.position.x + rectangle.dimension.width) as f32;
-                            let center_y = (rectangle.position.y + rectangle.dimension.height) as f32;
-                            latest_transform * Matrix4::from_translation(Vector3::new(center_x, center_y, 0.0)) * matrix * Matrix4::from_translation(Vector3::new(-center_x, -center_y, 0.0))
+                            let center_x =
+                                (rectangle.position.x + rectangle.dimension.width) as f32;
+                            let center_y =
+                                (rectangle.position.y + rectangle.dimension.height) as f32;
+                            latest_transform
+                                * Matrix4::from_translation(Vector3::new(center_x, center_y, 0.0))
+                                * matrix
+                                * Matrix4::from_translation(Vector3::new(-center_x, -center_y, 0.0))
                         }
                     };
 
@@ -555,7 +600,9 @@ impl Mesh {
                     }
 
                     transform_stack.pop();
-                    commands.push(PreparedCommand::Transform(*&transform_stack[transform_stack.len() - 1]));
+                    commands.push(PreparedCommand::Transform(
+                        *&transform_stack[transform_stack.len() - 1],
+                    ));
 
                     current_state = State::Plain {
                         start: vertices.len(),
@@ -646,7 +693,12 @@ impl Mesh {
                     switch_to_plain_state!();
 
                     let color = gamma_srgb_to_linear(color.to_fsa());
-                    let pre_multiplied_color = [color[0] * color[3], color[1] * color[3], color[2] * color[3], color[3]];
+                    let pre_multiplied_color = [
+                        color[0] * color[3],
+                        color[1] * color[3],
+                        color[2] * color[3],
+                        color[3],
+                    ];
 
                     let v = |p: Position| Vertex {
                         position: [vx(p.x), vy(p.y), 0.0],
@@ -681,7 +733,10 @@ impl Mesh {
                         vertices.push(v(triangle[2]));
                     }
                 }
-                PrimitiveKind::Text { color, text: glyphs, } => {
+                PrimitiveKind::Text {
+                    color,
+                    text: glyphs,
+                } => {
                     switch_to_plain_state!();
                     let color = gamma_srgb_to_linear(color.to_fsa());
                     //let texture_atlas = env.get_font_atlas();
@@ -715,7 +770,9 @@ impl Mesh {
 
                             if let Some(index) = glyph.atlas_entry() {
                                 if !index.borrow().is_active {
-                                    println!("Trying to show glyph that is not in the texture atlas.");
+                                    println!(
+                                        "Trying to show glyph that is not in the texture atlas."
+                                    );
                                 }
                                 let coords = index.borrow().tex_coords;
 
@@ -746,7 +803,12 @@ impl Mesh {
                         }
                     }
                 }
-                PrimitiveKind::Image { image_id, color, source_rect, mode, } => {
+                PrimitiveKind::Image {
+                    image_id,
+                    color,
+                    source_rect,
+                    mode,
+                } => {
                     let image_ref = match image_map.get(&image_id) {
                         None => continue,
                         Some(img) => img,
@@ -799,13 +861,11 @@ impl Mesh {
                         None => (0.0, 1.0, 0.0, 1.0),
                     };
 
-                    let v = |x, y, t| {
-                        Vertex {
-                            position: [x as f32, y as f32, 0.0],
-                            tex_coords: t,
-                            rgba: gamma_srgb_to_linear(color),
-                            mode,
-                        }
+                    let v = |x, y, t| Vertex {
+                        position: [x as f32, y as f32, 0.0],
+                        tex_coords: t,
+                        rgba: gamma_srgb_to_linear(color),
+                        mode,
                     };
 
                     let mut push_v = |x, y, t| vertices.push(v(x, y, t));
@@ -833,7 +893,6 @@ impl Mesh {
                         }
                     }
 
-
                     let v = |p: Position| Vertex {
                         position: [vx(p.x), vy(p.y), 0.0],
                         tex_coords: [0.0, 0.0],
@@ -849,7 +908,10 @@ impl Mesh {
                         vertices.push(v(triangle[2]));
                     }
 
-                    commands.push(PreparedCommand::Gradient(len_before_push..vertices.len(), gradient));
+                    commands.push(PreparedCommand::Gradient(
+                        len_before_push..vertices.len(),
+                        gradient,
+                    ));
 
                     current_state = State::Plain {
                         start: vertices.len(),
@@ -926,14 +988,22 @@ impl<'a> Iterator for Commands<'a> {
         commands.next().map(|command| match *command {
             PreparedCommand::Scissor(scizzor) => Command::Scissor(scizzor),
             PreparedCommand::Plain(ref range) => Command::Draw(Draw::Plain(range.clone())),
-            PreparedCommand::Gradient(ref range, ref gradient) => Command::Draw(Draw::Gradient(range.clone(), gradient.clone())),
+            PreparedCommand::Gradient(ref range, ref gradient) => {
+                Command::Draw(Draw::Gradient(range.clone(), gradient.clone()))
+            }
             PreparedCommand::Image(id, ref range) => Command::Draw(Draw::Image(id, range.clone())),
             PreparedCommand::Stencil(ref range) => Command::Stencil(range.clone()),
             PreparedCommand::DeStencil(ref range) => Command::DeStencil(range.clone()),
             PreparedCommand::Transform(ref transform) => Command::Transform(*transform),
-            PreparedCommand::Filter(ref range, filter_id) => Command::Filter(range.clone(), filter_id),
-            PreparedCommand::FilterSplitPt1(ref range, filter_id) => Command::FilterSplitPt1(range.clone(), filter_id),
-            PreparedCommand::FilterSplitPt2(ref range, filter_id) => Command::FilterSplitPt2(range.clone(), filter_id),
+            PreparedCommand::Filter(ref range, filter_id) => {
+                Command::Filter(range.clone(), filter_id)
+            }
+            PreparedCommand::FilterSplitPt1(ref range, filter_id) => {
+                Command::FilterSplitPt1(range.clone(), filter_id)
+            }
+            PreparedCommand::FilterSplitPt2(ref range, filter_id) => {
+                Command::FilterSplitPt2(range.clone(), filter_id)
+            }
         })
     }
 }

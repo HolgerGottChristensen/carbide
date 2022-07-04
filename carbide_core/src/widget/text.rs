@@ -6,11 +6,11 @@ use crate::prelude::*;
 //use crate::render::text::Text as RenderText;
 use crate::render::new_primitive;
 use crate::render::PrimitiveKind;
+use crate::text::Text as InternalText;
 use crate::text::{
     FontStyle, FontWeight, Glyph, NoStyleTextSpanGenerator, TextDecoration, TextSpanGenerator,
     TextStyle,
 };
-use crate::text::Text as InternalText;
 //use crate::text_old::PositionedGlyph;
 use crate::widget::types::Wrap;
 
@@ -166,8 +166,16 @@ impl Layout for Text {
         let style = self.get_style();
         if let Some(internal) = &mut self.internal_text {
             let text = self.text.value().deref().clone();
-            if internal.string_that_generated_this() != &text || internal.style_that_generated_this() != &style {
-                *internal = InternalText::new(text, style, self.wrap_mode, self.text_span_generator.borrow(), env);
+            if internal.string_that_generated_this() != &text
+                || internal.style_that_generated_this() != &style
+            {
+                *internal = InternalText::new(
+                    text,
+                    style,
+                    self.wrap_mode,
+                    self.text_span_generator.borrow(),
+                    env,
+                );
             }
             self.dimension = internal.calculate_size(requested_size, env);
         }
@@ -249,10 +257,7 @@ impl CommonWidget for Text {
     }
 
     fn set_position(&mut self, position: Position) {
-        self.position = Position::new(
-            position.x.round(),
-            position.y.round(),
-        );
+        self.position = Position::new(position.x.round(), position.y.round());
     }
 
     fn flexibility(&self) -> u32 {

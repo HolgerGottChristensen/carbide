@@ -1,13 +1,13 @@
 use cgmath::Matrix4;
 
-use crate::Color;
-use crate::draw::{Position, Rect};
 use crate::draw::draw_gradient::DrawGradient;
 use crate::draw::image::ImageId;
 use crate::draw::shape::triangle::Triangle;
+use crate::draw::{Position, Rect};
 use crate::layout::BasicLayouter;
 use crate::text::Glyph;
 use crate::widget::{ColoredPoint, FilterId};
+use crate::Color;
 
 /// The unique kind for each primitive element in the Ui.
 pub enum PrimitiveKind {

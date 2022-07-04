@@ -1,7 +1,7 @@
-use carbide_core::widget::popup_menu::PopupMenu;
 use crate::draw::{Dimension, Position};
 use crate::prelude::*;
 use crate::CommonWidgetImpl;
+use carbide_core::widget::popup_menu::PopupMenu;
 
 #[derive(Debug, Clone, Widget)]
 pub struct MenuBar {
@@ -18,12 +18,13 @@ impl MenuBar {
         let child = VStack::new(vec![
             HStack::new(vec![
                 ForEach::new(menus.clone(), Self::menu_delegate),
-                Spacer::new()
-            ]).spacing(1.0)
-                .background(Rectangle::new().fill(EnvironmentColor::Green)),
+                Spacer::new(),
+            ])
+            .spacing(1.0)
+            .background(Rectangle::new().fill(EnvironmentColor::Green)),
             Spacer::new(),
             child,
-            Spacer::new()
+            Spacer::new(),
         ]);
 
         Box::new(MenuBar {

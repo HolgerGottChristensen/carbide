@@ -1,13 +1,16 @@
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
 
+use carbide_core::image::DynamicImage;
 use cgmath::{Matrix4, Vector3};
 pub use futures::executor::block_on;
-use carbide_core::image::DynamicImage;
 //use smaa::{SmaaMode, SmaaTarget};
 use uuid::Uuid;
-use wgpu::{BindGroup, BindGroupLayout, Buffer, BufferUsages, PresentMode, Sampler, SurfaceConfiguration, Texture, TextureView};
 use wgpu::util::{BufferInitDescriptor, DeviceExt};
+use wgpu::{
+    BindGroup, BindGroupLayout, Buffer, BufferUsages, PresentMode, Sampler, SurfaceConfiguration,
+    Texture, TextureView,
+};
 use winit::dpi::{LogicalSize, PhysicalPosition, Size};
 use winit::event::{ElementState, Event, KeyboardInput, VirtualKeyCode, WindowEvent};
 use winit::event_loop::{ControlFlow, EventLoop};
@@ -15,34 +18,42 @@ use winit::event_loop::{ControlFlow, EventLoop};
 use winit::platform::macos::WindowExtMacOS;
 use winit::window::{Icon, WindowBuilder};
 
-use carbide_core::{image, Scalar, Ui};
-use carbide_core::draw::Dimension;
-use carbide_core::event::Input;
 use carbide_core::draw::image::ImageMap;
-use carbide_core::mesh::{DEFAULT_GLYPH_CACHE_DIMS, MODE_IMAGE};
-use carbide_core::mesh::mesh::Mesh;
-use carbide_core::prelude::{Environment, EnvironmentColor, Menu};
-use carbide_core::prelude::Rectangle;
-use carbide_core::text::{FontFamily, FontId};
-use carbide_core::widget::{FilterId, OverlaidLayer, ZStack};
-use carbide_core::widget::Widget;
+use carbide_core::draw::Dimension;
 use carbide_core::event::CustomEvent;
+use carbide_core::event::Input;
+use carbide_core::mesh::mesh::Mesh;
+use carbide_core::mesh::{DEFAULT_GLYPH_CACHE_DIMS, MODE_IMAGE};
+use carbide_core::prelude::Rectangle;
+use carbide_core::prelude::{Environment, EnvironmentColor, Menu};
+use carbide_core::text::{FontFamily, FontId};
+use carbide_core::widget::Widget;
+use carbide_core::widget::{FilterId, OverlaidLayer, ZStack};
 pub use carbide_core::window::TWindow as CoreWindow;
+use carbide_core::{image, Scalar, Ui};
 
-use crate::bind_group_layouts::{filter_buffer_bind_group_layout, filter_texture_bind_group_layout, gradient_buffer_bind_group_layout, main_texture_group_layout, uniform_bind_group_layout};
-use crate::bind_groups::{filter_texture_bind_group, main_bind_group, matrix_to_uniform_bind_group, size_to_uniform_bind_group};
-use crate::diffuse_bind_group::{DiffuseBindGroup, new_diffuse};
+use crate::bind_group_layouts::{
+    filter_buffer_bind_group_layout, filter_texture_bind_group_layout,
+    gradient_buffer_bind_group_layout, main_texture_group_layout, uniform_bind_group_layout,
+};
+use crate::bind_groups::{
+    filter_texture_bind_group, main_bind_group, matrix_to_uniform_bind_group,
+    size_to_uniform_bind_group,
+};
+use crate::diffuse_bind_group::{new_diffuse, DiffuseBindGroup};
 use crate::image::Image;
 use crate::pipeline::{create_render_pipeline, MaskType};
-use crate::render_pipeline_layouts::{filter_pipeline_layout, gradient_pipeline_layout, main_pipeline_layout};
+use crate::proxy_event_loop::ProxyEventLoop;
+use crate::render_pipeline_layouts::{
+    filter_pipeline_layout, gradient_pipeline_layout, main_pipeline_layout,
+};
 use crate::renderer::{atlas_cache_tex_desc, main_render_tex_desc, secondary_render_tex_desc};
 use crate::samplers::main_sampler;
 use crate::textures::create_depth_stencil_texture;
 use crate::vertex::Vertex;
-use crate::proxy_event_loop::ProxyEventLoop;
+use carbide_core::draw::image::ImageId;
 #[cfg(target_os = "windows")]
 use winit::platform::windows::WindowExtWindows;
-use carbide_core::draw::image::ImageId;
 
 // Todo: Look into multisampling: https://github.com/gfx-rs/wgpu-rs/blob/v0.6/examples/msaa-line/main.rs
 // An alternative is https://github.com/fintelia/smaa-rs (https://github.com/gfx-rs/naga/issues/1275)
@@ -124,7 +135,11 @@ impl CoreWindow for Window {
         Some(id)
     }
 
-    fn add_image(&mut self, id: ImageId, image: carbide_core::image::DynamicImage) -> Option<ImageId> {
+    fn add_image(
+        &mut self,
+        id: ImageId,
+        image: carbide_core::image::DynamicImage,
+    ) -> Option<ImageId> {
         let image = Image::new_from_dynamic(image, &self.device, &self.queue);
 
         let information = image.image_information();
@@ -164,7 +179,10 @@ impl Window {
         &mut self.ui.environment
     }
 
-    fn calculate_carbide_to_wgpu_matrix(dimension: Dimension, scale_factor: Scalar) -> Matrix4<f32> {
+    fn calculate_carbide_to_wgpu_matrix(
+        dimension: Dimension,
+        scale_factor: Scalar,
+    ) -> Matrix4<f32> {
         let half_height = dimension.height / 2.0;
         let scale = (scale_factor / half_height) as f32;
 
@@ -185,8 +203,18 @@ impl Window {
 
         let aspect_ratio = (dimension.width / dimension.height) as f32;
 
-        let ortho = cgmath::ortho(-1.0 * aspect_ratio, 1.0 * aspect_ratio, -1.0, 1.0, 1.0, -1.0);
-        let res = OPENGL_TO_WGPU_MATRIX * ortho * Matrix4::from_translation(Vector3::new(-aspect_ratio, 1.0, 0.0)) * Matrix4::from(pixel_to_points);
+        let ortho = cgmath::ortho(
+            -1.0 * aspect_ratio,
+            1.0 * aspect_ratio,
+            -1.0,
+            1.0,
+            1.0,
+            -1.0,
+        );
+        let res = OPENGL_TO_WGPU_MATRIX
+            * ortho
+            * Matrix4::from_translation(Vector3::new(-aspect_ratio, 1.0, 0.0))
+            * Matrix4::from(pixel_to_points);
         res
     }
 
@@ -205,7 +233,10 @@ impl Window {
         };
 
         let inner_window = WindowBuilder::new()
-            .with_inner_size(Size::Logical(LogicalSize { width: width as f64, height: height as f64 }))
+            .with_inner_size(Size::Logical(LogicalSize {
+                width: width as f64,
+                height: height as f64,
+            }))
             .with_title(title)
             .with_window_icon(loaded_icon)
             .build(&event_loop)
@@ -235,19 +266,23 @@ impl Window {
         let scale_factor = inner_window.scale_factor();
 
         #[cfg(target_os = "macos")]
-            let ui = Ui::new(
+        let ui = Ui::new(
             pixel_dimensions,
             scale_factor,
             Some(inner_window.ns_window()),
-            Box::new(ProxyEventLoop(event_loop.create_proxy()))
+            Box::new(ProxyEventLoop(event_loop.create_proxy())),
         );
 
         #[cfg(target_os = "windows")]
-            let ui = Ui::new(pixel_dimensions, scale_factor, Some(inner_window.hwnd()), Box::new(ProxyEventLoop(event_loop.create_proxy())));
-
+        let ui = Ui::new(
+            pixel_dimensions,
+            scale_factor,
+            Some(inner_window.hwnd()),
+            Box::new(ProxyEventLoop(event_loop.create_proxy())),
+        );
 
         #[cfg(all(not(target_os = "macos"), not(target_os = "windows")))]
-            let ui = Ui::new(pixel_dimensions, scale_factor, None, Box::new(event_sink));
+        let ui = Ui::new(pixel_dimensions, scale_factor, None, Box::new(event_sink));
 
         // The instance is a handle to our GPU
         // BackendBit::PRIMARY => Vulkan + Metal + DX12 + Browser WebGPU
@@ -259,7 +294,7 @@ impl Window {
             force_fallback_adapter: false,
             compatible_surface: Some(&surface),
         }))
-            .unwrap();
+        .unwrap();
 
         let (device, queue) = block_on(adapter.request_device(
             &wgpu::DeviceDescriptor {
@@ -269,15 +304,18 @@ impl Window {
             },
             None, // Trace path
         ))
-            .unwrap();
+        .unwrap();
 
-        surface.configure(&device, &SurfaceConfiguration {
-            usage: wgpu::TextureUsages::RENDER_ATTACHMENT,
-            format: wgpu::TextureFormat::Bgra8UnormSrgb,
-            width: size.width,
-            height: size.height,
-            present_mode: PresentMode::Mailbox,
-        });
+        surface.configure(
+            &device,
+            &SurfaceConfiguration {
+                usage: wgpu::TextureUsages::RENDER_ATTACHMENT,
+                format: wgpu::TextureFormat::Bgra8UnormSrgb,
+                width: size.width,
+                height: size.height,
+                present_mode: PresentMode::Mailbox,
+            },
+        );
 
         let uniform_bind_group_layout = uniform_bind_group_layout(&device);
         let filter_texture_bind_group_layout = filter_texture_bind_group_layout(&device);
@@ -286,12 +324,23 @@ impl Window {
         let gradient_bind_group_layout = gradient_buffer_bind_group_layout(&device);
 
         let matrix = Window::calculate_carbide_to_wgpu_matrix(pixel_dimensions, scale_factor);
-        let uniform_bind_group = matrix_to_uniform_bind_group(&device, &uniform_bind_group_layout, matrix);
-        let texture_size_bind_group = size_to_uniform_bind_group(&device, &uniform_bind_group_layout, pixel_dimensions.width, pixel_dimensions.height, scale_factor);
+        let uniform_bind_group =
+            matrix_to_uniform_bind_group(&device, &uniform_bind_group_layout, matrix);
+        let texture_size_bind_group = size_to_uniform_bind_group(
+            &device,
+            &uniform_bind_group_layout,
+            pixel_dimensions.width,
+            pixel_dimensions.height,
+            scale_factor,
+        );
 
-        let main_tex = device.create_texture(&main_render_tex_desc([pixel_dimensions.width as u32, pixel_dimensions.height as u32]));
+        let main_tex = device.create_texture(&main_render_tex_desc([
+            pixel_dimensions.width as u32,
+            pixel_dimensions.height as u32,
+        ]));
         let main_tex_view = main_tex.create_view(&Default::default());
-        let secondary_tex = device.create_texture(&secondary_render_tex_desc([size.width, size.height]));
+        let secondary_tex =
+            device.create_texture(&secondary_render_tex_desc([size.width, size.height]));
         let secondary_tex_view = secondary_tex.create_view(&Default::default());
 
         let atlas_cache_tex_desc = atlas_cache_tex_desc([512, 512]);
@@ -299,14 +348,29 @@ impl Window {
 
         let image = Image::new_from_dynamic(DynamicImage::new_rgba8(1, 1), &device, &queue);
 
+        let main_shader =
+            device.create_shader_module(&wgpu::include_wgsl!("../shaders/shader.wgsl"));
+        let gradient_shader =
+            device.create_shader_module(&wgpu::include_wgsl!("../shaders/gradient.wgsl"));
+        let wgsl_filter_shader =
+            device.create_shader_module(&wgpu::include_wgsl!("../shaders/filter.wgsl"));
 
-        let main_shader = device.create_shader_module(&wgpu::include_wgsl!("../shaders/shader.wgsl"));
-        let gradient_shader = device.create_shader_module(&wgpu::include_wgsl!("../shaders/gradient.wgsl"));
-        let wgsl_filter_shader = device.create_shader_module(&wgpu::include_wgsl!("../shaders/filter.wgsl"));
-
-        let render_pipeline_layout = main_pipeline_layout(&device, &main_texture_bind_group_layout, &uniform_bind_group_layout);
-        let filter_render_pipeline_layout = filter_pipeline_layout(&device, &filter_texture_bind_group_layout, &filter_buffer_bind_group_layout, &uniform_bind_group_layout);
-        let gradient_render_pipeline_layout = gradient_pipeline_layout(&device, &gradient_bind_group_layout, &uniform_bind_group_layout);
+        let render_pipeline_layout = main_pipeline_layout(
+            &device,
+            &main_texture_bind_group_layout,
+            &uniform_bind_group_layout,
+        );
+        let filter_render_pipeline_layout = filter_pipeline_layout(
+            &device,
+            &filter_texture_bind_group_layout,
+            &filter_buffer_bind_group_layout,
+            &uniform_bind_group_layout,
+        );
+        let gradient_render_pipeline_layout = gradient_pipeline_layout(
+            &device,
+            &gradient_bind_group_layout,
+            &uniform_bind_group_layout,
+        );
 
         let render_pipeline_no_mask = create_render_pipeline(
             &device,
@@ -378,7 +442,13 @@ impl Window {
 
         let main_sampler = main_sampler(&device);
 
-        let main_bind_group = main_bind_group(&device, &main_texture_bind_group_layout, &main_tex_view, &main_sampler, &atlas_cache_tex);
+        let main_bind_group = main_bind_group(
+            &device,
+            &main_texture_bind_group_layout,
+            &main_tex_view,
+            &main_sampler,
+            &atlas_cache_tex,
+        );
 
         let mesh = Mesh::with_glyph_cache_dimensions(DEFAULT_GLYPH_CACHE_DIMS);
 
@@ -387,31 +457,69 @@ impl Window {
         let depth_texture = create_depth_stencil_texture(&device, size.width, size.height);
         let depth_texture_view = depth_texture.create_view(&Default::default());
 
-        let vertex_buffer = device
-            .create_buffer_init(&BufferInitDescriptor {
-                label: Some("Vertex Buffer"),
-                contents: &[],
-                usage: BufferUsages::VERTEX | BufferUsages::COPY_DST,
-            });
+        let vertex_buffer = device.create_buffer_init(&BufferInitDescriptor {
+            label: Some("Vertex Buffer"),
+            contents: &[],
+            usage: BufferUsages::VERTEX | BufferUsages::COPY_DST,
+        });
 
         let last_verts: Vec<Vertex> = vec![
             Vertex::new_from_2d(0.0, 0.0, [0.0, 0.0, 0.0, 0.0], [0.0, 0.0], MODE_IMAGE),
-            Vertex::new_from_2d(size.width as f32 / scale_factor as f32, 0.0, [0.0, 0.0, 0.0, 0.0], [1.0, 0.0], MODE_IMAGE),
-            Vertex::new_from_2d(0.0, size.height as f32 / scale_factor as f32, [0.0, 0.0, 0.0, 0.0], [0.0, 1.0], MODE_IMAGE),
-            Vertex::new_from_2d(size.width as f32 / scale_factor as f32, 0.0, [0.0, 0.0, 0.0, 0.0], [1.0, 0.0], MODE_IMAGE),
-            Vertex::new_from_2d(size.width as f32 / scale_factor as f32, size.height as f32 / scale_factor as f32, [0.0, 0.0, 0.0, 0.0], [1.0, 1.0], MODE_IMAGE),
-            Vertex::new_from_2d(0.0, size.height as f32 / scale_factor as f32, [0.0, 0.0, 0.0, 0.0], [0.0, 1.0], MODE_IMAGE),
+            Vertex::new_from_2d(
+                size.width as f32 / scale_factor as f32,
+                0.0,
+                [0.0, 0.0, 0.0, 0.0],
+                [1.0, 0.0],
+                MODE_IMAGE,
+            ),
+            Vertex::new_from_2d(
+                0.0,
+                size.height as f32 / scale_factor as f32,
+                [0.0, 0.0, 0.0, 0.0],
+                [0.0, 1.0],
+                MODE_IMAGE,
+            ),
+            Vertex::new_from_2d(
+                size.width as f32 / scale_factor as f32,
+                0.0,
+                [0.0, 0.0, 0.0, 0.0],
+                [1.0, 0.0],
+                MODE_IMAGE,
+            ),
+            Vertex::new_from_2d(
+                size.width as f32 / scale_factor as f32,
+                size.height as f32 / scale_factor as f32,
+                [0.0, 0.0, 0.0, 0.0],
+                [1.0, 1.0],
+                MODE_IMAGE,
+            ),
+            Vertex::new_from_2d(
+                0.0,
+                size.height as f32 / scale_factor as f32,
+                [0.0, 0.0, 0.0, 0.0],
+                [0.0, 1.0],
+                MODE_IMAGE,
+            ),
         ];
 
-        let second_verts_buffer = device
-            .create_buffer_init(&wgpu::util::BufferInitDescriptor {
-                label: Some("Vertex Buffer"),
-                contents: bytemuck::cast_slice(&last_verts),
-                usage: wgpu::BufferUsages::VERTEX | BufferUsages::COPY_DST,
-            });
+        let second_verts_buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
+            label: Some("Vertex Buffer"),
+            contents: bytemuck::cast_slice(&last_verts),
+            usage: wgpu::BufferUsages::VERTEX | BufferUsages::COPY_DST,
+        });
 
-        let filter_main_texture_bind_group = filter_texture_bind_group(&device, &filter_texture_bind_group_layout, &main_tex_view, &main_sampler);
-        let filter_secondary_texture_bind_group = filter_texture_bind_group(&device, &filter_texture_bind_group_layout, &secondary_tex_view, &main_sampler);
+        let filter_main_texture_bind_group = filter_texture_bind_group(
+            &device,
+            &filter_texture_bind_group_layout,
+            &main_tex_view,
+            &main_sampler,
+        );
+        let filter_secondary_texture_bind_group = filter_texture_bind_group(
+            &device,
+            &filter_texture_bind_group_layout,
+            &secondary_tex_view,
+            &main_sampler,
+        );
 
         /*let smaa = SmaaTarget::new(
             &device,
@@ -470,58 +578,127 @@ impl Window {
         self.ui.set_window_width(self.size.width as f64);
         self.ui.set_window_height(self.size.height as f64);
         self.ui.compound_and_add_event(Input::Redraw);
-        let depth_texture = create_depth_stencil_texture(&self.device, new_size.width, new_size.height);
+        let depth_texture =
+            create_depth_stencil_texture(&self.device, new_size.width, new_size.height);
         let depth_texture_view = depth_texture.create_view(&Default::default());
         self.depth_texture_view = depth_texture_view;
 
-        let main_tex = self.device.create_texture(&main_render_tex_desc([new_size.width, new_size.height]));
+        let main_tex = self
+            .device
+            .create_texture(&main_render_tex_desc([new_size.width, new_size.height]));
         let main_tex_view = main_tex.create_view(&Default::default());
-        let secondary_tex = self.device.create_texture(&secondary_render_tex_desc([new_size.width, new_size.height]));
+        let secondary_tex = self.device.create_texture(&secondary_render_tex_desc([
+            new_size.width,
+            new_size.height,
+        ]));
         let secondary_tex_view = secondary_tex.create_view(&Default::default());
 
         let main_texture_bind_group_layout = main_texture_group_layout(&self.device);
 
         let scale_factor = self.inner_window.scale_factor();
 
-        self.main_bind_group = main_bind_group(&self.device, &main_texture_bind_group_layout, &main_tex_view, &self.main_sampler, &self.atlas_cache_tex);
-        let texture_size_bind_group = size_to_uniform_bind_group(&self.device, &self.uniform_bind_group_layout, self.size.width as f64, self.size.height as f64, scale_factor);
+        self.main_bind_group = main_bind_group(
+            &self.device,
+            &main_texture_bind_group_layout,
+            &main_tex_view,
+            &self.main_sampler,
+            &self.atlas_cache_tex,
+        );
+        let texture_size_bind_group = size_to_uniform_bind_group(
+            &self.device,
+            &self.uniform_bind_group_layout,
+            self.size.width as f64,
+            self.size.height as f64,
+            scale_factor,
+        );
         self.texture_size_bind_group = texture_size_bind_group;
-
 
         self.main_tex = main_tex;
         self.main_tex_view = main_tex_view;
         self.secondary_tex = secondary_tex;
         self.secondary_tex_view = secondary_tex_view;
 
-        self.filter_main_texture_bind_group = filter_texture_bind_group(&self.device, &self.filter_texture_bind_group_layout, &self.main_tex_view, &self.main_sampler);
-        self.filter_secondary_texture_bind_group = filter_texture_bind_group(&self.device, &self.filter_texture_bind_group_layout, &self.secondary_tex_view, &self.main_sampler);
+        self.filter_main_texture_bind_group = filter_texture_bind_group(
+            &self.device,
+            &self.filter_texture_bind_group_layout,
+            &self.main_tex_view,
+            &self.main_sampler,
+        );
+        self.filter_secondary_texture_bind_group = filter_texture_bind_group(
+            &self.device,
+            &self.filter_texture_bind_group_layout,
+            &self.secondary_tex_view,
+            &self.main_sampler,
+        );
 
         let dimension = Dimension::new(new_size.width as Scalar, new_size.height as Scalar);
 
-        self.carbide_to_wgpu_matrix = Window::calculate_carbide_to_wgpu_matrix(dimension, scale_factor);
+        self.carbide_to_wgpu_matrix =
+            Window::calculate_carbide_to_wgpu_matrix(dimension, scale_factor);
 
-        let uniform_bind_group = matrix_to_uniform_bind_group(&self.device, &self.uniform_bind_group_layout, self.carbide_to_wgpu_matrix);
+        let uniform_bind_group = matrix_to_uniform_bind_group(
+            &self.device,
+            &self.uniform_bind_group_layout,
+            self.carbide_to_wgpu_matrix,
+        );
 
         self.uniform_bind_group = uniform_bind_group;
 
         let last_verts: Vec<Vertex> = vec![
             Vertex::new_from_2d(0.0, 0.0, [0.0, 0.0, 0.0, 0.0], [0.0, 0.0], MODE_IMAGE),
-            Vertex::new_from_2d(self.size.width as f32 / scale_factor as f32, 0.0, [0.0, 0.0, 0.0, 0.0], [1.0, 0.0], MODE_IMAGE),
-            Vertex::new_from_2d(0.0, self.size.height as f32 / scale_factor as f32, [0.0, 0.0, 0.0, 0.0], [0.0, 1.0], MODE_IMAGE),
-            Vertex::new_from_2d(self.size.width as f32 / scale_factor as f32, 0.0, [0.0, 0.0, 0.0, 0.0], [1.0, 0.0], MODE_IMAGE),
-            Vertex::new_from_2d(self.size.width as f32 / scale_factor as f32, self.size.height as f32 / scale_factor as f32, [0.0, 0.0, 0.0, 0.0], [1.0, 1.0], MODE_IMAGE),
-            Vertex::new_from_2d(0.0, self.size.height as f32 / scale_factor as f32, [0.0, 0.0, 0.0, 0.0], [0.0, 1.0], MODE_IMAGE),
+            Vertex::new_from_2d(
+                self.size.width as f32 / scale_factor as f32,
+                0.0,
+                [0.0, 0.0, 0.0, 0.0],
+                [1.0, 0.0],
+                MODE_IMAGE,
+            ),
+            Vertex::new_from_2d(
+                0.0,
+                self.size.height as f32 / scale_factor as f32,
+                [0.0, 0.0, 0.0, 0.0],
+                [0.0, 1.0],
+                MODE_IMAGE,
+            ),
+            Vertex::new_from_2d(
+                self.size.width as f32 / scale_factor as f32,
+                0.0,
+                [0.0, 0.0, 0.0, 0.0],
+                [1.0, 0.0],
+                MODE_IMAGE,
+            ),
+            Vertex::new_from_2d(
+                self.size.width as f32 / scale_factor as f32,
+                self.size.height as f32 / scale_factor as f32,
+                [0.0, 0.0, 0.0, 0.0],
+                [1.0, 1.0],
+                MODE_IMAGE,
+            ),
+            Vertex::new_from_2d(
+                0.0,
+                self.size.height as f32 / scale_factor as f32,
+                [0.0, 0.0, 0.0, 0.0],
+                [0.0, 1.0],
+                MODE_IMAGE,
+            ),
         ];
 
-        self.queue.write_buffer(&self.second_vertex_buffer, 0, bytemuck::cast_slice(&last_verts));
+        self.queue.write_buffer(
+            &self.second_vertex_buffer,
+            0,
+            bytemuck::cast_slice(&last_verts),
+        );
 
-        self.surface.configure(&self.device, &SurfaceConfiguration {
-            usage: wgpu::TextureUsages::RENDER_ATTACHMENT,
-            format: wgpu::TextureFormat::Bgra8UnormSrgb,
-            width: new_size.width,
-            height: new_size.height,
-            present_mode: PresentMode::Mailbox,
-        });
+        self.surface.configure(
+            &self.device,
+            &SurfaceConfiguration {
+                usage: wgpu::TextureUsages::RENDER_ATTACHMENT,
+                format: wgpu::TextureFormat::Bgra8UnormSrgb,
+                width: new_size.width,
+                height: new_size.height,
+                present_mode: PresentMode::Mailbox,
+            },
+        );
     }
 
     /// Request the window to redraw next frame
@@ -597,16 +774,19 @@ impl Window {
                                             create_dir_all(&image_folder).unwrap();
                                             self.mesh
                                                 .texture_atlas_image()
-                                                .save(image_folder.clone() + "/glyph_atlas0.png").unwrap();
+                                                .save(image_folder.clone() + "/glyph_atlas0.png")
+                                                .unwrap();
                                             let atlas1 = DynamicImage::ImageLuma8(
                                                 GrayImage::from_raw(
                                                     DEFAULT_GLYPH_CACHE_DIMS[0],
                                                     DEFAULT_GLYPH_CACHE_DIMS[1],
                                                     self.mesh.glyph_cache_pixel_buffer().to_vec(),
                                                 )
-                                                    .unwrap(),
+                                                .unwrap(),
                                             );
-                                            atlas1.save(image_folder.clone() + "/glyph_atlas1.png").unwrap();
+                                            atlas1
+                                                .save(image_folder.clone() + "/glyph_atlas1.png")
+                                                .unwrap();
                                             println!("Images dumped to: {}", image_folder);
                                         }
                                         KeyboardInput {
@@ -653,7 +833,8 @@ impl Window {
                                 self.request_redraw();
                             }
 
-                            self.inner_window.set_cursor_icon(convert_mouse_cursor(self.ui.mouse_cursor()));
+                            self.inner_window
+                                .set_cursor_icon(convert_mouse_cursor(self.ui.mouse_cursor()));
                         }
                     }
 
@@ -668,7 +849,7 @@ impl Window {
                                 println!("Swap chain lost");
                                 self.resize(self.size);
                                 self.request_redraw();
-                            },
+                            }
                             // The system is out of memory, we should probably quit
                             Err(wgpu::SurfaceError::OutOfMemory) => {
                                 println!("Swap chain out of memory");
@@ -679,7 +860,7 @@ impl Window {
                                 // We request a redraw the next frame
                                 self.request_redraw();
                                 eprintln!("{:?}", e)
-                            },
+                            }
                         }
 
                         // Wait for the next event to be received

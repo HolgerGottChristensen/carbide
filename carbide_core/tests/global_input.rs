@@ -3,9 +3,9 @@ use carbide_core::event::event;
 use carbide_core::event::input::Input;
 use carbide_core::input::{Button, Key, Motion};
 use event::{self, Input};
-use input::{self, Key, Motion, MouseButton};
-use input::Button::{Keyboard, Mouse};
 use input::Button::Mouse;
+use input::Button::{Keyboard, Mouse};
+use input::{self, Key, Motion, MouseButton};
 use position::Scalar;
 
 // Pushes an event onto the given global input with a default drag threshold.

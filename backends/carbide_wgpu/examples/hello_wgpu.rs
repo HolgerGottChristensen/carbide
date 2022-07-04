@@ -1,7 +1,7 @@
 use carbide_core::draw::Position;
 use carbide_core::environment::{EnvironmentColor, EnvironmentFontSize};
-use carbide_core::widget::*;
 use carbide_core::widget::canvas::Context;
+use carbide_core::widget::*;
 use carbide_wgpu::window::*;
 use hello::sync_test::SyncTest;
 
@@ -12,12 +12,7 @@ fn main() {
 
     let icon_path = Window::<String>::relative_path_to_assets("images/rust_press.png");
 
-    let mut window = Window::new(
-        "Hello world 2".to_string(),
-        400,
-        600,
-        Some(icon_path),
-    );
+    let mut window = Window::new("Hello world 2".to_string(), 400, 600, Some(icon_path));
 
     window
         .add_font("fonts/NotoSans/NotoSans-Regular.ttf")
@@ -73,12 +68,36 @@ fn main() {
 
 fn draw_heart<GS: GlobalStateContract>(_: OldRect, mut context: Context) -> Context {
     context.move_to(75.0, 40.0);
-    context.bezier_curve_to(Position::new(75.0, 37.0), Position::new(70.0, 25.0), Position::new(50.0, 25.0));
-    context.bezier_curve_to(Position::new(20.0, 25.0), Position::new(20.0, 62.5), Position::new(20.0, 62.5));
-    context.bezier_curve_to(Position::new(20.0, 80.0), Position::new(40.0, 102.0), Position::new(75.0, 120.0));
-    context.bezier_curve_to(Position::new(110.0, 102.0), Position::new(130.0, 80.0), Position::new(130.0, 62.5));
-    context.bezier_curve_to(Position::new(130.0, 62.5), Position::new(130.0, 25.0), Position::new(100.0, 25.0));
-    context.bezier_curve_to(Position::new(85.0, 25.0), Position::new(75.0, 37.0), Position::new(75.0, 40.0));
+    context.bezier_curve_to(
+        Position::new(75.0, 37.0),
+        Position::new(70.0, 25.0),
+        Position::new(50.0, 25.0),
+    );
+    context.bezier_curve_to(
+        Position::new(20.0, 25.0),
+        Position::new(20.0, 62.5),
+        Position::new(20.0, 62.5),
+    );
+    context.bezier_curve_to(
+        Position::new(20.0, 80.0),
+        Position::new(40.0, 102.0),
+        Position::new(75.0, 120.0),
+    );
+    context.bezier_curve_to(
+        Position::new(110.0, 102.0),
+        Position::new(130.0, 80.0),
+        Position::new(130.0, 62.5),
+    );
+    context.bezier_curve_to(
+        Position::new(130.0, 62.5),
+        Position::new(130.0, 25.0),
+        Position::new(100.0, 25.0),
+    );
+    context.bezier_curve_to(
+        Position::new(85.0, 25.0),
+        Position::new(75.0, 37.0),
+        Position::new(75.0, 40.0),
+    );
     context.close_path();
     context.set_fill_style(EnvironmentColor::Accent);
     context.fill();

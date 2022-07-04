@@ -281,9 +281,13 @@ macro_rules! v023_convert_mouse_cursor {
             carbide_core::cursor::MouseCursor::Help => winit::window::CursorIcon::Help,
             carbide_core::cursor::MouseCursor::Progress => winit::window::CursorIcon::Progress,
             carbide_core::cursor::MouseCursor::NotAllowed => winit::window::CursorIcon::NotAllowed,
-            carbide_core::cursor::MouseCursor::ContextMenu => winit::window::CursorIcon::ContextMenu,
+            carbide_core::cursor::MouseCursor::ContextMenu => {
+                winit::window::CursorIcon::ContextMenu
+            }
             carbide_core::cursor::MouseCursor::Cell => winit::window::CursorIcon::Cell,
-            carbide_core::cursor::MouseCursor::VerticalText => winit::window::CursorIcon::VerticalText,
+            carbide_core::cursor::MouseCursor::VerticalText => {
+                winit::window::CursorIcon::VerticalText
+            }
             carbide_core::cursor::MouseCursor::Alias => winit::window::CursorIcon::Alias,
             carbide_core::cursor::MouseCursor::Copy => winit::window::CursorIcon::Copy,
             carbide_core::cursor::MouseCursor::NoDrop => winit::window::CursorIcon::NoDrop,

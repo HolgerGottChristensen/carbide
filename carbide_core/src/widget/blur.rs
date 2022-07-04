@@ -45,12 +45,14 @@ impl Blur {
         let radius = (3.0 * sigma).round() as i32;
 
         for x in -radius..=radius {
-            entries.push(ImageFilterValue::new(x, 0, gaussian(sigma as f64, x as f64) as f32))
+            entries.push(ImageFilterValue::new(
+                x,
+                0,
+                gaussian(sigma as f64, x as f64) as f32,
+            ))
         }
 
-        let mut filter = ImageFilter {
-            filter: entries
-        };
+        let mut filter = ImageFilter { filter: entries };
 
         filter.normalize();
         filter
@@ -117,9 +119,7 @@ impl Render for Blur {
     fn process_get_primitives(&mut self, primitives: &mut Vec<Primitive>, env: &mut Environment) {
         if self.filter_horizontal_has_been_inserted == None {
             let (filter_id, radius) = match self.blur_type {
-                BlurType::Mean(radius) => {
-                    (env.insert_filter(Blur::mean_blur(radius)), radius)
-                }
+                BlurType::Mean(radius) => (env.insert_filter(Blur::mean_blur(radius)), radius),
                 BlurType::Gaussian(sigma) => {
                     let filter = Blur::gaussian_blur(sigma);
                     let radius = filter.radius_x();

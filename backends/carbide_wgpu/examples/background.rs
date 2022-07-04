@@ -14,17 +14,14 @@ fn main() {
         Some(icon_path.clone()),
     );
 
-    let family = FontFamily::new_from_paths("NotoSans", vec![
-        "fonts/NotoSans/NotoSans-Regular.ttf"
-    ]);
+    let family =
+        FontFamily::new_from_paths("NotoSans", vec!["fonts/NotoSans/NotoSans-Regular.ttf"]);
     window.add_font_family(family);
 
     window.set_widgets(
         Text::new("Hello world!")
             .padding(20.0)
-            .background(
-                RoundedRectangle::new(10.0)
-            )
+            .background(RoundedRectangle::new(10.0)),
     );
 
     window.launch();

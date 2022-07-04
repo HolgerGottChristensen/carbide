@@ -5,12 +5,15 @@ use dyn_clone::DynClone;
 use carbide_core::cursor::MouseCursor;
 use carbide_core::draw::{Dimension, Position};
 use carbide_core::environment::Environment;
-use carbide_core::event::{Key, KeyboardEvent, KeyboardEventHandler, ModifierKey, MouseButton, MouseEvent, MouseEventHandler, OtherEventHandler, WidgetEvent};
+use carbide_core::event::{
+    Key, KeyboardEvent, KeyboardEventHandler, ModifierKey, MouseButton, MouseEvent,
+    MouseEventHandler, OtherEventHandler, WidgetEvent,
+};
 use carbide_core::flags::Flags;
 use carbide_core::focus::Focus;
 use carbide_core::layout::Layout;
 use carbide_core::state::{BoolState, FocusState, ReadState, State};
-use carbide_core::widget::{CommonWidget, WidgetId, Widget, WidgetExt, WidgetIter, WidgetIterMut};
+use carbide_core::widget::{CommonWidget, Widget, WidgetExt, WidgetId, WidgetIter, WidgetIterMut};
 
 pub trait Action: Fn(&mut Environment, ModifierKey) + DynClone {}
 
@@ -39,18 +42,12 @@ pub struct MouseArea {
 
 impl MouseArea {
     /// Example: .on_click(move |env: &mut Environment, modifier: ModifierKey| {})
-    pub fn on_click(
-        mut self,
-        fire: impl Action + 'static,
-    ) -> Box<Self> {
+    pub fn on_click(mut self, fire: impl Action + 'static) -> Box<Self> {
         self.click = Box::new(fire);
         Box::new(self)
     }
 
-    pub fn on_click_outside(
-        mut self,
-        fire: impl Action + 'static,
-    ) -> Box<Self> {
+    pub fn on_click_outside(mut self, fire: impl Action + 'static) -> Box<Self> {
         self.click_outside = Box::new(fire);
         self.hover_cursor = MouseCursor::Default;
         Box::new(self)

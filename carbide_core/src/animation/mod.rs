@@ -1,8 +1,8 @@
 pub use animatable::Animatable;
 pub use animation::Animation;
 
-mod animation;
 mod animatable;
+mod animation;
 pub mod animation_curve;
 
 #[macro_export]
@@ -72,6 +72,3 @@ macro_rules! animate {
     //animate!(env, state := -3 <-> 3);
     //animate!(env, state := -3 >-> 3);
 }*/
-
-
-

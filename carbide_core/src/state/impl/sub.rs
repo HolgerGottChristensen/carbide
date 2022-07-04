@@ -1,6 +1,6 @@
-use std::ops::Sub;
-use crate::state::{Map2, StateContract, WidgetState, RState};
 use crate::state::ReadWidgetState;
+use crate::state::{Map2, RState, StateContract, WidgetState};
+use std::ops::Sub;
 
 macro_rules! sub {
     ($($typ1: ty, $typ2: ty;)*) => {

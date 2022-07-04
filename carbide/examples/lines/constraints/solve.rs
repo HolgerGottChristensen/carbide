@@ -1,11 +1,11 @@
+use crate::constraints::ops::{Context, EvaluationError};
+use crate::constraints::{ops, Equation, Expression, Parameter, SystemOfEquations};
 use nalgebra::{DMatrix as Matrix, DVector as Vector};
 use std::{
     collections::HashMap,
     error::Error,
     fmt::{self, Debug, Display, Formatter},
 };
-use crate::constraints::{Equation, Expression, ops, Parameter, SystemOfEquations};
-use crate::constraints::ops::{Context, EvaluationError};
 
 pub(crate) fn solve<C>(
     equations: &[Equation],
@@ -37,7 +37,9 @@ pub enum SolveError {
 }
 
 impl From<EvaluationError> for SolveError {
-    fn from(e: EvaluationError) -> Self { SolveError::Eval(e) }
+    fn from(e: EvaluationError) -> Self {
+        SolveError::Eval(e)
+    }
 }
 
 impl Display for SolveError {
@@ -46,7 +48,7 @@ impl Display for SolveError {
             SolveError::Eval(_) => write!(f, "Evaluation failed"),
             SolveError::DidntConverge => {
                 write!(f, "The solution didn't converge")
-            },
+            }
             SolveError::NoSolution => write!(f, "No solution found"),
         }
     }
@@ -104,8 +106,7 @@ where
 
     for _ in 0..MAX_ITERATIONS {
         let x_next = {
-            let evaluated_jacobian =
-                jacobian.evaluate(solution.as_slice(), ctx)?;
+            let evaluated_jacobian = jacobian.evaluate(solution.as_slice(), ctx)?;
 
             let lookup = jacobian.lookup_value_by_name(solution.as_slice());
             let f_of_x = system.evaluate(&lookup, ctx)?;
@@ -166,8 +167,7 @@ impl<'a> Jacobian<'a> {
         for equation in equations {
             for unknown in unknowns {
                 let value = if equation.body.depends_on(unknown) {
-                    let derivative =
-                        ops::partial_derivative(&equation.body, unknown, ctx)?;
+                    let derivative = ops::partial_derivative(&equation.body, unknown, ctx)?;
                     ops::fold_constants(&derivative, ctx)
                 } else {
                     Expression::Constant(0.0)
@@ -183,15 +183,15 @@ impl<'a> Jacobian<'a> {
         })
     }
 
-    fn rows(&self) -> usize { self.equations.len() }
+    fn rows(&self) -> usize {
+        self.equations.len()
+    }
 
-    fn columns(&self) -> usize { self.unknowns.len() }
+    fn columns(&self) -> usize {
+        self.unknowns.len()
+    }
 
-    fn evaluate<C>(
-        &self,
-        parameter_values: &[f64],
-        ctx: &C,
-    ) -> Result<Matrix<f64>, EvaluationError>
+    fn evaluate<C>(&self, parameter_values: &[f64], ctx: &C) -> Result<Matrix<f64>, EvaluationError>
     where
         C: Context,
     {
@@ -221,10 +221,7 @@ impl<'a> Jacobian<'a> {
         }
     }
 
-    pub(crate) fn collate_unknowns(
-        &self,
-        parameter_values: &[f64],
-    ) -> HashMap<Parameter, f64> {
+    pub(crate) fn collate_unknowns(&self, parameter_values: &[f64]) -> HashMap<Parameter, f64> {
         self.unknowns
             .iter()
             .cloned()
@@ -264,23 +261,14 @@ mod tests {
     #[test]
     fn calculate_jacobian_of_known_system_of_equations() {
         // See https://en.wikipedia.org/wiki/Jacobian_matrix_and_determinant#Example_5
-        let system = SystemOfEquations::from_equations(&[
-            "5 * b",
-            "4*a*a - 2*sin(b*c)",
-            "b*c",
-        ])
-        .unwrap();
+        let system =
+            SystemOfEquations::from_equations(&["5 * b", "4*a*a - 2*sin(b*c)", "b*c"]).unwrap();
         let ctx = Builtins::default();
 
         let unknowns = system.unknowns();
-        let got = Jacobian::for_equations(&system.equations, &unknowns, &ctx)
-            .unwrap();
+        let got = Jacobian::for_equations(&system.equations, &unknowns, &ctx).unwrap();
 
-        assert_eq!(
-            got.columns(),
-            system.num_unknowns(),
-            "There are 3 unknowns"
-        );
+        assert_eq!(got.columns(), system.num_unknowns(), "There are 3 unknowns");
         assert_eq!(got.rows(), system.equations.len(), "There are 3 equations");
         // Note: I needed to rearrange the Wikipedia equations a bit because
         // our solver multiplied things differently (i.e. "c*2" instead of
@@ -312,13 +300,10 @@ mod tests {
 
     #[test]
     fn solve_simple_equations() {
-        let system =
-            SystemOfEquations::from_equations(&["x-1", "y-2", "z-3"]).unwrap();
+        let system = SystemOfEquations::from_equations(&["x-1", "y-2", "z-3"]).unwrap();
         let ctx = Builtins::default();
         let unknowns = system.unknowns();
-        let jacobian =
-            Jacobian::for_equations(&system.equations, &unknowns, &ctx)
-                .unwrap();
+        let jacobian = Jacobian::for_equations(&system.equations, &unknowns, &ctx).unwrap();
 
         let got = solve_with_newtons_method(&jacobian, &system, &ctx).unwrap();
 
@@ -334,30 +319,21 @@ mod tests {
     #[test]
     fn work_through_youtube_example() {
         // From https://www.youtube.com/watch?v=zPDp_ewoyhM
-        let system = SystemOfEquations::from_equations(&[
-            "a + 2*b - 2",
-            "a*a + 4*b*b - 4",
-        ])
-        .unwrap();
+        let system =
+            SystemOfEquations::from_equations(&["a + 2*b - 2", "a*a + 4*b*b - 4"]).unwrap();
         let ctx = Builtins::default();
 
         // first we need to calculate the jacobian
         let unknowns = system.unknowns();
-        let jacobian =
-            Jacobian::for_equations(&system.equations, &unknowns, &ctx)
-                .unwrap();
-        assert_jacobian_eq(
-            &jacobian,
-            &[&["1 + -0", "2"], &["2*a + -0", "8*b"]],
-        );
+        let jacobian = Jacobian::for_equations(&system.equations, &unknowns, &ctx).unwrap();
+        assert_jacobian_eq(&jacobian, &[&["1 + -0", "2"], &["2*a + -0", "8*b"]]);
 
         // make an initial guess
         let x_0 = Vector::from_vec(vec![1.0, 2.0]);
 
         // evaluate the components we need
         let jacobian_of_x_0 = jacobian.evaluate(x_0.as_slice(), &ctx).unwrap();
-        let lookup_parameter_value =
-            jacobian.lookup_value_by_name(x_0.as_slice());
+        let lookup_parameter_value = jacobian.lookup_value_by_name(x_0.as_slice());
         let f_of_x_0 = system.evaluate(lookup_parameter_value, &ctx).unwrap();
 
         // and double-check them

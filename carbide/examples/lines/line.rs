@@ -1,6 +1,6 @@
+use crate::intersect;
 use carbide_core::draw::{Position, Rect};
 use carbide_core::Scalar;
-use crate::intersect;
 
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct Line {
@@ -10,10 +10,7 @@ pub struct Line {
 
 impl Line {
     pub fn new(start: Position, end: Position) -> Line {
-        Line {
-            start,
-            end
-        }
+        Line { start, end }
     }
 
     pub fn flip(&mut self) {
@@ -23,10 +20,7 @@ impl Line {
     }
 
     pub fn flipped(&self) -> Line {
-        Line::new(
-            self.end,
-            self.start
-        )
+        Line::new(self.end, self.start)
     }
 
     pub fn half(&self) -> Line {
@@ -38,7 +32,10 @@ impl Line {
 
     /// Return the angle in degrees
     pub fn angle(&self) -> Scalar {
-        f64::to_degrees(f64::atan2(self.end.y() - self.start.y(), self.end.x() - self.start.x()))
+        f64::to_degrees(f64::atan2(
+            self.end.y() - self.start.y(),
+            self.end.x() - self.start.x(),
+        ))
     }
 
     pub fn intersect(&self, other: &Line) -> Option<Position> {
@@ -65,12 +62,12 @@ impl Line {
         let dx = self.start.x() - self.end.x();
         let dy = self.start.y() - self.end.y();
 
-        let length = (dx*dx + dy*dy).sqrt();
+        let length = (dx * dx + dy * dy).sqrt();
 
         let dx = dx / length;
         let dy = dy / length;
 
-        (dy*(point.x() - self.start.x()) - dx*(point.y() - self.start.y())).abs()
+        (dy * (point.x() - self.start.x()) - dx * (point.y() - self.start.y())).abs()
     }
 
     pub fn closest_point_on_line_infinite(&self, point: Position) -> Position {
@@ -98,19 +95,18 @@ impl Line {
     }
 
     pub fn extend(&self, bounding_box: Rect) -> Line {
-
         if self.start.y() == self.end.y() {
             return Line::new(
                 Position::new(bounding_box.bottom(), self.start.y()),
-                Position::new(bounding_box.top(), self.start.y())
-            )
+                Position::new(bounding_box.top(), self.start.y()),
+            );
         }
 
         if self.start.x() == self.end.x() {
             return Line::new(
                 Position::new(self.start.x(), bounding_box.left()),
-                Position::new(self.start.x(), bounding_box.right())
-            )
+                Position::new(self.start.x(), bounding_box.right()),
+            );
         }
 
         let bottom_line = Line::new(

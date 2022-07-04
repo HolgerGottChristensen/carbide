@@ -1,8 +1,8 @@
-use std::time::Duration;
 use carbide_core::prelude::EnvironmentColor;
 use carbide_core::state::{AnimatedState, F64State, LocalState};
 use carbide_core::widget::*;
 use carbide_wgpu::window::*;
+use std::time::Duration;
 
 fn main() {
     env_logger::init();
@@ -22,7 +22,9 @@ fn main() {
         .range(0.0, 1.0);
 
     window.set_widgets(
-        ProgressBar::new(progress).padding(20.0).accent_color(EnvironmentColor::Yellow)
+        ProgressBar::new(progress)
+            .padding(20.0)
+            .accent_color(EnvironmentColor::Yellow),
     );
 
     window.launch();

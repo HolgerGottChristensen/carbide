@@ -10,11 +10,10 @@ use fxhash::{FxBuildHasher, FxHashMap};
 use image::DynamicImage;
 use oneshot::TryRecvError;
 
-use crate::{Color, locate_folder};
 use crate::animation::Animation;
 use crate::cursor::MouseCursor;
-use crate::draw::Dimension;
 use crate::draw::image::ImageId;
+use crate::draw::Dimension;
 use crate::draw::Scalar;
 use crate::environment::WidgetTransferAction;
 use crate::event::{CustomEvent, EventSink};
@@ -23,8 +22,9 @@ use crate::mesh::TextureAtlas;
 use crate::prelude::{EnvironmentColor, EnvironmentVariable};
 use crate::state::{InnerState, StateContract, StateKey, ValueCell};
 use crate::text::{Font, FontFamily, FontId, FontSize, FontStyle, FontWeight, Glyph};
-use crate::widget::{FilterId, ImageFilter, Overlay};
 use crate::widget::ImageInformation;
+use crate::widget::{FilterId, ImageFilter, Overlay};
+use crate::{locate_folder, Color};
 
 pub struct Environment {
     /// This stack should be used to scope the environment. This contains information such as
@@ -160,27 +160,29 @@ impl Environment {
             #[cfg(feature = "tokio")]
             tokio_runtime: tokio::runtime::Builder::new_multi_thread()
                 .enable_all()
-                .build().expect("Could not create a tokio runtime"),
+                .build()
+                .expect("Could not create a tokio runtime"),
             animations: Some(vec![]),
             #[cfg(target_os = "macos")]
             macos_window_handle: window_handle,
             #[cfg(target_os = "windows")]
             windows_window_handle: window_handle,
             event_sink,
-            animation_widget_in_frame: 0
+            animation_widget_in_frame: 0,
         }
     }
 
     #[cfg(target_os = "macos")]
     pub fn ns_window(&self) -> *mut c_void {
-        self.macos_window_handle.expect("No window for the environment")
+        self.macos_window_handle
+            .expect("No window for the environment")
     }
 
     #[cfg(target_os = "windows")]
     pub fn hwnd(&self) -> *mut c_void {
-        self.windows_window_handle.expect("No window for the environment")
+        self.windows_window_handle
+            .expect("No window for the environment")
     }
-
 
     pub fn queue_image(&mut self, image: DynamicImage) -> Option<ImageId> {
         let id = ImageId::new();
@@ -203,7 +205,10 @@ impl Environment {
             let mut animation = animation.clone();
             animation.update(time)
         };
-        self.animations.as_mut().expect("No animation queue was present.").push(Box::new(poll));
+        self.animations
+            .as_mut()
+            .expect("No animation queue was present.")
+            .push(Box::new(poll));
     }
 
     pub fn update_animation(&mut self) {
@@ -212,18 +217,18 @@ impl Environment {
 
         let instant = &*self.frame_start_time.borrow();
 
-        temp.as_mut().map(|t| {
-            t.retain(|update_animation| {
-                !update_animation(instant)
-            })
-        });
+        temp.as_mut()
+            .map(|t| t.retain(|update_animation| !update_animation(instant)));
 
         std::mem::swap(&mut temp, &mut self.animations);
     }
 
     pub fn has_animations(&self) -> bool {
-        self.animations.as_ref().map(|a| a.len() > 0).unwrap_or(false)
-        || self.animation_widget_in_frame > 0
+        self.animations
+            .as_ref()
+            .map(|a| a.len() > 0)
+            .unwrap_or(false)
+            || self.animation_widget_in_frame > 0
     }
 
     /// Check if any async tasks have completed and if so call their continuation.
@@ -231,11 +236,7 @@ impl Environment {
         let mut temp = None;
         std::mem::swap(&mut temp, &mut self.async_task_queue);
 
-        temp.as_mut().map(|t| {
-            t.retain(|task| {
-                !task(self)
-            })
-        });
+        temp.as_mut().map(|t| t.retain(|task| !task(self)));
 
         std::mem::swap(&mut temp, &mut self.async_task_queue);
     }
@@ -249,31 +250,32 @@ impl Environment {
     ) -> std::sync::mpsc::Sender<T> {
         let (sender, receiver) = std::sync::mpsc::channel();
 
-        let poll_message: Box<dyn Fn(&mut Environment) -> bool> = Box::new(
-            move |env| -> bool {
-                let mut stop = false;
-                loop {
-                    if stop {
+        let poll_message: Box<dyn Fn(&mut Environment) -> bool> = Box::new(move |env| -> bool {
+            let mut stop = false;
+            loop {
+                if stop {
+                    break;
+                }
+                match receiver.try_recv() {
+                    Ok(message) => {
+                        stop = next(message, env);
+                    }
+                    Err(std::sync::mpsc::TryRecvError::Empty) => {
                         break;
                     }
-                    match receiver.try_recv() {
-                        Ok(message) => {
-                            stop = next(message, env);
-                        }
-                        Err(std::sync::mpsc::TryRecvError::Empty) => {
-                            break;
-                        }
-                        Err(e) => {
-                            eprintln!("{:?}", e);
-                            stop = true;
-                        }
+                    Err(e) => {
+                        eprintln!("{:?}", e);
+                        stop = true;
                     }
                 }
-                stop
             }
-        );
+            stop
+        });
 
-        self.async_task_queue.as_mut().expect("No async task queue was present.").push(poll_message);
+        self.async_task_queue
+            .as_mut()
+            .expect("No async task queue was present.")
+            .push(poll_message);
 
         sender
     }
@@ -281,7 +283,7 @@ impl Environment {
     #[allow(unused_variables)]
     pub fn spawn_task<T: Send + 'static>(
         &mut self,
-        task: impl Future<Output=T> + Send + 'static,
+        task: impl Future<Output = T> + Send + 'static,
         cont: impl Fn(T, &mut Environment) + 'static,
     ) {
         let (sender, receiver) = oneshot::channel();
@@ -299,32 +301,30 @@ impl Environment {
                     cont(message, env);
                     true
                 }
-                Err(TryRecvError::Empty) => {
-                    false
-                }
+                Err(TryRecvError::Empty) => false,
                 Err(e) => {
                     eprintln!("{:?}", e);
                     true
                 }
             }
         });
-        self.async_task_queue.as_mut().expect("No async task queue was present.").push(poll_message);
+        self.async_task_queue
+            .as_mut()
+            .expect("No async task queue was present.")
+            .push(poll_message);
 
         #[cfg(feature = "tokio")]
-            {
-                self.tokio_runtime.spawn(task_with_oneshot);
-            }
-
+        {
+            self.tokio_runtime.spawn(task_with_oneshot);
+        }
 
         #[cfg(all(feature = "async-std", not(feature = "tokio")))]
-            {
-                async_std::task::spawn(task_with_oneshot);
-            }
-
+        {
+            async_std::task::spawn(task_with_oneshot);
+        }
 
         #[cfg(not(any(feature = "async-std", feature = "tokio")))]
         println!("Tried to spawn an async task without having any async feature enabled. Try enabling 'async-std' or 'tokio'.")
-
     }
 
     pub fn capture_time(&mut self) {
@@ -408,9 +408,7 @@ impl Environment {
     }
 
     pub fn get_image_information(&self, id: &Option<ImageId>) -> Option<&ImageInformation> {
-        id.as_ref().and_then(|id| {
-            self.images_information.get(id)
-        })
+        id.as_ref().and_then(|id| self.images_information.get(id))
     }
 
     pub fn insert_image(&mut self, id: ImageId, image: ImageInformation) {
@@ -495,8 +493,8 @@ impl Environment {
     }*/
 
     pub fn insert_font_from_file<P>(&mut self, path: P) -> (FontId, FontWeight, FontStyle)
-        where
-            P: AsRef<std::path::Path>,
+    where
+        P: AsRef<std::path::Path>,
     {
         let mut font = Font::from_file(path).unwrap();
         let weight = font.weight();
@@ -508,8 +506,8 @@ impl Environment {
     }
 
     pub fn insert_bitmap_font_from_file<P>(&mut self, path: P) -> (FontId, FontWeight, FontStyle)
-        where
-            P: AsRef<std::path::Path>,
+    where
+        P: AsRef<std::path::Path>,
     {
         let mut font = Font::from_file_bitmap(path).unwrap();
         let weight = font.weight();
@@ -524,7 +522,10 @@ impl Environment {
         let scale_factor = self.get_scale_factor();
         for glyph in glyphs {
             let font = &self.fonts[glyph.font_id()];
-            if let Some(entry) = self.font_texture_atlas.queue_glyph(glyph, font, scale_factor) {
+            if let Some(entry) = self
+                .font_texture_atlas
+                .queue_glyph(glyph, font, scale_factor)
+            {
                 glyph.set_texture_index(entry);
             }
         }
@@ -616,7 +617,9 @@ impl Environment {
         if name == "system-font" {
             self.get_system_font_family()
         } else {
-            self.font_families.get(name).expect("Could not find a suitable font family")
+            self.font_families
+                .get(name)
+                .expect("Could not find a suitable font family")
         }
     }
 

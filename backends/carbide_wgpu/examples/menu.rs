@@ -15,9 +15,8 @@ fn main() {
         Some(icon_path.clone()),
     );
 
-    let family = FontFamily::new_from_paths("NotoSans", vec![
-        "fonts/NotoSans/NotoSans-Regular.ttf"
-    ]);
+    let family =
+        FontFamily::new_from_paths("NotoSans", vec!["fonts/NotoSans/NotoSans-Regular.ttf"]);
     window.add_font_family(family);
 
     let image_id = window.add_image_from_path("images/rust.png");
@@ -28,20 +27,25 @@ fn main() {
             Rectangle::new()
                 .fill(EnvironmentColor::Accent)
                 .frame(50, 50),
-        ]).accent_color(EnvironmentColor::Red)
-            .menu(vec![
-                Menu::new("File".to_string())
-                    .item(MenuItem::new("Item 1".to_string(), None, true, false))
-                    .item(MenuItem::separator())
-                    .item(MenuItem::new("Item 2".to_string(), None, true, false)),
-                Menu::new("Edit".to_string())
-                    .item(MenuItem::new("Item 1".to_string(), None, true, false))
-                    .item(Menu::new("Hello".to_string()).item(MenuItem::new("Item 78".to_string(), None, true, false)).sub_menu())
-                    .item(MenuItem::new("Item 2".to_string(), None, true, false)),
-                Menu::new("Very long menu item".to_string())
-                    .item(MenuItem::new("Item 1".to_string(), None, true, false))
-                    .item(MenuItem::new("Item 2".to_string(), None, true, false)),
-            ])
+        ])
+        .accent_color(EnvironmentColor::Red)
+        .menu(vec![
+            Menu::new("File".to_string())
+                .item(MenuItem::new("Item 1".to_string(), None, true, false))
+                .item(MenuItem::separator())
+                .item(MenuItem::new("Item 2".to_string(), None, true, false)),
+            Menu::new("Edit".to_string())
+                .item(MenuItem::new("Item 1".to_string(), None, true, false))
+                .item(
+                    Menu::new("Hello".to_string())
+                        .item(MenuItem::new("Item 78".to_string(), None, true, false))
+                        .sub_menu(),
+                )
+                .item(MenuItem::new("Item 2".to_string(), None, true, false)),
+            Menu::new("Very long menu item".to_string())
+                .item(MenuItem::new("Item 1".to_string(), None, true, false))
+                .item(MenuItem::new("Item 2".to_string(), None, true, false)),
+        ]),
     );
 
     window.set_menu(vec![
@@ -55,7 +59,6 @@ fn main() {
             .item(MenuItem::new("Item 4".to_string(), None, false, false))
             .item(MenuItem::separator())
             .item(MenuItem::new("Item 4".to_string(), None, false, false)),
-
         Menu::new("Test 2".to_string())
             .item(MenuItem::new("Item 5".to_string(), None, true, false))
             .item(MenuItem::new("Item 6".to_string(), None, true, false))
@@ -67,8 +70,9 @@ fn main() {
                     .item(MenuItem::new("Item 9".to_string(), None, true, false))
                     .item(MenuItem::new("Item 10".to_string(), None, true, false))
                     .item(MenuItem::new("Item 11".to_string(), None, true, false))
-                    .sub_menu()
-            ).kind(MenuKind::Help)
+                    .sub_menu(),
+            )
+            .kind(MenuKind::Help),
     ]);
 
     window.launch();

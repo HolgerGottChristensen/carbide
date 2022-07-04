@@ -1,29 +1,35 @@
-use std::fmt::Debug;
 use carbide_core::{Color, Scalar};
+use std::fmt::Debug;
 
 use carbide_core::draw::{Dimension, Position};
 use carbide_core::environment::{Environment, EnvironmentColor};
 use carbide_core::flags::Flags;
 use carbide_core::focus::{Focus, Focusable, Refocus};
 use carbide_core::layout::Layouter;
-use carbide_core::state::{BoolState, FocusState, LocalState, Map2, Map3, MapOwnedState, ReadState, State, StateContract, StateExt, StateKey, StringState, TState};
-use carbide_core::widget::{CommonWidget, HStack, WidgetId, Rectangle, Spacer, Text, Widget, WidgetExt, WidgetIter, WidgetIterMut, ZStack};
+use carbide_core::state::{
+    BoolState, FocusState, LocalState, Map2, Map3, MapOwnedState, ReadState, State, StateContract,
+    StateExt, StateKey, StringState, TState,
+};
+use carbide_core::widget::{
+    CommonWidget, HStack, Rectangle, Spacer, Text, Widget, WidgetExt, WidgetId, WidgetIter,
+    WidgetIterMut, ZStack,
+};
 
 use crate::PlainButton;
 
 #[derive(Debug, Clone, Widget)]
 #[carbide_exclude(Focusable)]
-pub struct PlainRadioButton<T> where T: StateContract + PartialEq {
+pub struct PlainRadioButton<T>
+where
+    T: StateContract + PartialEq,
+{
     id: WidgetId,
     #[state]
     focus: FocusState,
     child: Box<dyn Widget>,
     position: Position,
     dimension: Dimension,
-    delegate: fn(
-        focus: FocusState,
-        selected: BoolState,
-    ) -> Box<dyn Widget>,
+    delegate: fn(focus: FocusState, selected: BoolState) -> Box<dyn Widget>,
     reference: T,
     #[state]
     label: StringState,
@@ -36,7 +42,13 @@ pub struct PlainRadioButton<T> where T: StateContract + PartialEq {
 impl<T: StateContract + PartialEq> PlainRadioButton<T> {
     pub fn focused<K: Into<FocusState>>(mut self, focused: K) -> Box<Self> {
         self.focus = focused.into();
-        Self::new_internal(self.reference, self.local_state, self.focus, self.delegate, self.label)
+        Self::new_internal(
+            self.reference,
+            self.local_state,
+            self.focus,
+            self.delegate,
+            self.label,
+        )
     }
 
     pub fn new<S: Into<StringState>, L: Into<TState<T>>>(
@@ -57,12 +69,16 @@ impl<T: StateContract + PartialEq> PlainRadioButton<T> {
 
     fn default_delegate(focus: FocusState, selected: BoolState) -> Box<dyn Widget> {
         let background_color: TState<Color> = selected
-            .choice(EnvironmentColor::Green.state(), EnvironmentColor::Red.state())
+            .choice(
+                EnvironmentColor::Green.state(),
+                EnvironmentColor::Red.state(),
+            )
             .ignore_writes();
 
         let val = Map2::read_map(selected, focus, |checked: &bool, focus: &Focus| {
             format!("{:?}, {:?}", *checked, focus)
-        }).ignore_writes();
+        })
+        .ignore_writes();
 
         ZStack::new(vec![
             Rectangle::new().fill(background_color),
@@ -72,10 +88,7 @@ impl<T: StateContract + PartialEq> PlainRadioButton<T> {
 
     pub fn delegate(
         self,
-        delegate: fn(
-            focus: FocusState,
-            selected: BoolState,
-        ) -> Box<dyn Widget>,
+        delegate: fn(focus: FocusState, selected: BoolState) -> Box<dyn Widget>,
     ) -> Box<Self> {
         let reference = self.reference;
         let local_state = self.local_state;
@@ -89,10 +102,7 @@ impl<T: StateContract + PartialEq> PlainRadioButton<T> {
         reference: T,
         local_state: TState<T>,
         focus_state: FocusState,
-        delegate: fn(
-            focus: FocusState,
-            selected: BoolState,
-        ) -> Box<dyn Widget>,
+        delegate: fn(focus: FocusState, selected: BoolState) -> Box<dyn Widget>,
         label_state: StringState,
     ) -> Box<Self> {
         let selected = local_state.eq(reference.clone()).ignore_writes();
@@ -101,21 +111,20 @@ impl<T: StateContract + PartialEq> PlainRadioButton<T> {
 
         let reference2 = reference.clone();
         let button = PlainButton::new(delegate_widget)
-            .on_click(capture!([local_state, focus_state], |env: &mut Environment| {
-                *local_state = reference2.clone();
+            .on_click(capture!(
+                [local_state, focus_state],
+                |env: &mut Environment| {
+                    *local_state = reference2.clone();
 
-                if *focus_state != Focus::Focused {
-                    *focus_state = Focus::FocusRequested;
-                    env.request_focus(Refocus::FocusRequest);
+                    if *focus_state != Focus::Focused {
+                        *focus_state = Focus::FocusRequested;
+                        env.request_focus(Refocus::FocusRequest);
+                    }
                 }
-            }))
+            ))
             .focused(focus_state.clone());
 
-        let child = HStack::new(vec![
-            button,
-            Text::new(label_state.clone()),
-        ])
-            .spacing(5.0);
+        let child = HStack::new(vec![button, Text::new(label_state.clone())]).spacing(5.0);
 
         Box::new(PlainRadioButton {
             id: WidgetId::new(),
@@ -199,6 +208,5 @@ impl<T: StateContract + PartialEq> CommonWidget for PlainRadioButton<T> {
         self.dimension = dimension
     }
 }
-
 
 impl<T: StateContract + PartialEq> WidgetExt for PlainRadioButton<T> {}

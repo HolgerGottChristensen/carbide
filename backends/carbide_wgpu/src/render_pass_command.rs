@@ -1,9 +1,9 @@
 use std::collections::HashMap;
 
-use cgmath::Matrix4;
-use wgpu::{BindGroupLayout, Device, Texture};
-use wgpu::util::DeviceExt;
 use carbide_core::draw::image::ImageId;
+use cgmath::Matrix4;
+use wgpu::util::DeviceExt;
+use wgpu::{BindGroupLayout, Device, Texture};
 
 use carbide_core::draw::image::ImageMap;
 use carbide_core::mesh::mesh;
@@ -11,7 +11,7 @@ use carbide_core::mesh::mesh::{Draw, Mesh};
 use carbide_core::widget::FilterId;
 
 use crate::bind_groups::{gradient_buffer_bind_group, matrix_to_uniform_bind_group};
-use crate::diffuse_bind_group::{DiffuseBindGroup, new_diffuse};
+use crate::diffuse_bind_group::{new_diffuse, DiffuseBindGroup};
 use crate::gradient::Gradient;
 use crate::image::Image;
 
@@ -70,8 +70,6 @@ pub fn create_render_pass_commands<'a>(
     gradient_bind_group_layout: &'a BindGroupLayout,
     carbide_to_wgpu_matrix: Matrix4<f32>,
 ) -> Vec<RenderPass<'a>> {
-
-
     bind_groups.retain(|k, _| image_map.contains_key(k));
 
     for (id, img) in image_map.iter() {
@@ -81,12 +79,7 @@ pub fn create_render_pass_commands<'a>(
         }
 
         // Create the bind
-        let bind_group = new_diffuse(
-            &device,
-            &img,
-            &atlas_tex,
-            &bind_group_layout,
-        );
+        let bind_group = new_diffuse(&device, &img, &atlas_tex, &bind_group_layout);
         bind_groups.insert(*id, bind_group);
     }
 
@@ -209,9 +202,15 @@ pub fn create_render_pass_commands<'a>(
 
             mesh::Command::Transform(matrix) => {
                 let transformed_matrix = carbide_to_wgpu_matrix * matrix;
-                let new_bind_group = matrix_to_uniform_bind_group(device, uniform_bind_group_layout, transformed_matrix);
+                let new_bind_group = matrix_to_uniform_bind_group(
+                    device,
+                    uniform_bind_group_layout,
+                    transformed_matrix,
+                );
 
-                inner_commands.push(RenderPassCommand::Transform { uniform_bind_group_index: uniform_bind_groups.len() });
+                inner_commands.push(RenderPassCommand::Transform {
+                    uniform_bind_group_index: uniform_bind_groups.len(),
+                });
                 uniform_bind_groups.push(new_bind_group);
             }
             // Draw to the target with the given `draw` command.
@@ -260,7 +259,6 @@ pub fn create_render_pass_commands<'a>(
                     inner_commands.push(cmd);
                 }
                 Draw::Gradient(vertex_range, gradient) => {
-
                     // If there is no vertices continue
                     let vertex_count = vertex_range.len();
                     if vertex_count <= 0 {
@@ -268,14 +266,17 @@ pub fn create_render_pass_commands<'a>(
                     }
 
                     let gradient = Gradient::convert(gradient);
-                    let gradient_buffer = device.create_buffer_init(
-                        &wgpu::util::BufferInitDescriptor {
+                    let gradient_buffer =
+                        device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
                             label: Some("Gradient Buffer"),
                             contents: &*gradient.as_bytes(),
                             usage: wgpu::BufferUsages::STORAGE,
-                        }
+                        });
+                    let gradient_buffer_bind_group = gradient_buffer_bind_group(
+                        &device,
+                        &gradient_bind_group_layout,
+                        &gradient_buffer,
                     );
-                    let gradient_buffer_bind_group = gradient_buffer_bind_group(&device, &gradient_bind_group_layout, &gradient_buffer);
 
                     let range = vertex_range.start as u32..vertex_range.end as u32;
                     let mut new_inner_commands = vec![];

@@ -1,11 +1,11 @@
-use carbide_core::Color;
 use carbide_core::widget::Gradient;
+use carbide_core::Color;
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum AdvancedColor {
     Color(Color),
     SingleGradient(Gradient),
-    MultiGradient(Vec<Gradient>)
+    MultiGradient(Vec<Gradient>),
 }
 
 impl Default for AdvancedColor {

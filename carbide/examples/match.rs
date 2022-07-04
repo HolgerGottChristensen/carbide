@@ -1,6 +1,6 @@
 use std::time::Duration;
 
-use carbide_controls::{Button, capture, TextInput};
+use carbide_controls::{capture, Button, TextInput};
 use carbide_core::environment::Environment;
 use carbide_core::matches_case;
 use carbide_core::prelude::EnvironmentColor;
@@ -21,31 +21,36 @@ fn main() {
         Some(icon_path.clone()),
     );
 
-    let family = FontFamily::new_from_paths("NotoSans", vec![
-        "fonts/NotoSans/NotoSans-Regular.ttf"
-    ]);
+    let family =
+        FontFamily::new_from_paths("NotoSans", vec!["fonts/NotoSans/NotoSans-Regular.ttf"]);
     window.add_font_family(family);
 
     let integer_state = LocalState::new(0);
 
     let middle = ZStack::new(vec![
         Rectangle::new().fill(EnvironmentColor::Yellow),
-        TextInput::new(LocalState::new("Hello world!".to_string()))
-            .padding(30.0),
+        TextInput::new(LocalState::new("Hello world!".to_string())).padding(30.0),
     ]);
 
-    window.set_widgets(
-        VStack::new(vec![
-            Button::new("Click to change the view below")
-                .on_click(capture!([integer_state], |_env: &mut Environment| {
-                    *integer_state = (*integer_state + 1) % 3;
-                })),
-            Match::new(integer_state)
-                .case((|a| matches!(a, 0), Rectangle::new().fill(EnvironmentColor::Blue)))
-                .case((|a| matches!(a, 1), middle))
-                .case(matches_case!(integer_state, 2, Rectangle::new().fill(EnvironmentColor::Red))),
-        ]),
-    );
+    window.set_widgets(VStack::new(vec![
+        Button::new("Click to change the view below").on_click(capture!(
+            [integer_state],
+            |_env: &mut Environment| {
+                *integer_state = (*integer_state + 1) % 3;
+            }
+        )),
+        Match::new(integer_state)
+            .case((
+                |a| matches!(a, 0),
+                Rectangle::new().fill(EnvironmentColor::Blue),
+            ))
+            .case((|a| matches!(a, 1), middle))
+            .case(matches_case!(
+                integer_state,
+                2,
+                Rectangle::new().fill(EnvironmentColor::Red)
+            )),
+    ]));
 
     window.launch();
 }

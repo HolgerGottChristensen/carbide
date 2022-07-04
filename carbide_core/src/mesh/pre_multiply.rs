@@ -13,7 +13,12 @@ impl PreMultiply for DynamicImage {
             let blue = rgba.0[2] as f64 / 255.0;
             let alpha = rgba.0[3] as f64 / 255.0;
 
-            let new_pixel = Rgba([(red * alpha * 255.0) as u8, (green * alpha * 255.0) as u8, (blue * alpha * 255.0) as u8, (alpha * 255.0) as u8]);
+            let new_pixel = Rgba([
+                (red * alpha * 255.0) as u8,
+                (green * alpha * 255.0) as u8,
+                (blue * alpha * 255.0) as u8,
+                (alpha * 255.0) as u8,
+            ]);
             premultiplied.put_pixel(x, y, new_pixel);
         }
         premultiplied

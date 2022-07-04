@@ -48,7 +48,8 @@ fn main() {
     let mut renderer = carbide_glium::Renderer::new(&display.0).unwrap();
 
     // The image map describing each of our widget->image mappings (in our case, none).
-    let image_map = carbide_core::draw::image::image_map::ImageMap::<glium::texture::Texture2d>::new();
+    let image_map =
+        carbide_core::draw::image::image_map::ImageMap::<glium::texture::Texture2d>::new();
 
     let mut list = vec![true; 16];
 
@@ -69,10 +70,10 @@ fn main() {
                     glium::glutin::WindowEvent::CloseRequested
                     | glium::glutin::WindowEvent::KeyboardInput {
                         input:
-                        glium::glutin::KeyboardInput {
-                            virtual_keycode: Some(glium::glutin::VirtualKeyCode::Escape),
-                            ..
-                        },
+                            glium::glutin::KeyboardInput {
+                                virtual_keycode: Some(glium::glutin::VirtualKeyCode::Escape),
+                                ..
+                            },
                         ..
                     } => break 'main,
                     _ => (),

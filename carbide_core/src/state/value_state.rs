@@ -1,15 +1,17 @@
+use crate::Color;
+use carbide_core::prelude::NewStateSync;
+use carbide_core::state::Map1;
 use std::fmt::{Debug, Formatter};
 use std::ops::{Deref, DerefMut};
 use std::str::FromStr;
-use carbide_core::prelude::NewStateSync;
-use carbide_core::state::Map1;
-use crate::Color;
 
 use crate::environment::Environment;
 use crate::prelude::{AdvancedColor, ReadState};
-use crate::state::{BoolState, MapOwnedState, ResStringState, State, StateContract, StateExt, TState, RState};
-use crate::state::{ValueRef, ValueRefMut};
 use crate::state::widget_state::WidgetState;
+use crate::state::{
+    BoolState, MapOwnedState, RState, ResStringState, State, StateContract, StateExt, TState,
+};
+use crate::state::{ValueRef, ValueRefMut};
 use crate::widget::Gradient;
 
 /// # ValueState
@@ -25,20 +27,21 @@ use crate::widget::Gradient;
 /// Local state implements [NewStateSync] but without implementing any behavior when
 /// [NewStateSync::sync()] is called.
 #[derive(Clone)]
-pub struct ValueState<T> where T: StateContract {
+pub struct ValueState<T>
+where
+    T: StateContract,
+{
     /// The value contained as the state
     value: T,
 }
 
 impl<T: StateContract> ValueState<T> {
     pub fn new(value: T) -> TState<T> {
-        WidgetState::Value(ValueState {value})
+        WidgetState::Value(ValueState { value })
     }
 
     pub fn new_raw(value: T) -> Box<Self> {
-        Box::new(ValueState {
-            value,
-        })
+        Box::new(ValueState { value })
     }
 }
 
@@ -73,7 +76,6 @@ impl<T: StateContract> State<T> for ValueState<T> {
     fn set_value(&mut self, value: T) {
         self.value = value;
     }
-
 }
 
 impl<T: StateContract> Debug for ValueState<T> {
@@ -111,11 +113,13 @@ impl From<&str> for TState<String> {
 
 impl<T: StateContract + Default + 'static> Into<TState<Result<T, String>>> for TState<T> {
     fn into(self) -> TState<Result<T, String>> {
-        MapOwnedState::new_with_default_and_rev(self, |val: &T, _: &_, _: &Environment| {
-            Ok(val.clone())
-        }, |val: &Result<T, String>| {
-            val.as_ref().ok().map(|a| a.clone())
-        }, Ok(T::default())).into()
+        MapOwnedState::new_with_default_and_rev(
+            self,
+            |val: &T, _: &_, _: &Environment| Ok(val.clone()),
+            |val: &Result<T, String>| val.as_ref().ok().map(|a| a.clone()),
+            Ok(T::default()),
+        )
+        .into()
     }
 }
 
@@ -150,85 +154,86 @@ impl_res_state_plain! {
 
 impl Into<ResStringState> for TState<Result<f32, String>> {
     fn into(self) -> ResStringState {
-        MapOwnedState::new_with_default_and_rev(self, |value: &Result<f32, String>, prev: &Result<String, String>, _: &Environment| {
-            match (value, prev) {
+        MapOwnedState::new_with_default_and_rev(
+            self,
+            |value: &Result<f32, String>, prev: &Result<String, String>, _: &Environment| match (
+                value, prev,
+            ) {
                 (Ok(val), Ok(a)) => {
                     if let Ok(v) = f32::from_str(a) {
                         if *val == v {
-                            return Ok(a.clone())
+                            return Ok(a.clone());
                         }
                     }
                     Ok(val.to_string())
                 }
                 (Ok(val), _) => Ok(val.to_string()),
                 (Err(val), _) => Err(val.to_string()),
-            }
-        }, |val: &Result<String, String>| {
-            match val {
-                Ok(s) | Err(s) => {
-                    Some(f32::from_str(s)
-                        .map_err(|_| s.to_string()))
-                }
-            }
-        }, Ok("".to_string())).into()
+            },
+            |val: &Result<String, String>| match val {
+                Ok(s) | Err(s) => Some(f32::from_str(s).map_err(|_| s.to_string())),
+            },
+            Ok("".to_string()),
+        )
+        .into()
     }
 }
 
 impl Into<ResStringState> for TState<Result<f64, String>> {
     fn into(self) -> ResStringState {
-        MapOwnedState::new_with_default_and_rev(self, |value: &Result<f64, String>, prev: &Result<String, String>, _: &Environment| {
-            match (value, prev) {
+        MapOwnedState::new_with_default_and_rev(
+            self,
+            |value: &Result<f64, String>, prev: &Result<String, String>, _: &Environment| match (
+                value, prev,
+            ) {
                 (Ok(val), Ok(a)) => {
                     if let Ok(v) = f64::from_str(a) {
                         if *val == v {
-                            return Ok(a.clone())
+                            return Ok(a.clone());
                         }
                     }
                     Ok(val.to_string())
                 }
                 (Ok(val), _) => Ok(val.to_string()),
                 (Err(val), _) => Err(val.to_string()),
-            }
-        }, |val: &Result<String, String>| {
-            match val {
-                Ok(s) | Err(s) => {
-                    Some(f64::from_str(s)
-                        .map_err(|_| s.to_string()))
-                }
-            }
-        }, Ok("".to_string())).into()
+            },
+            |val: &Result<String, String>| match val {
+                Ok(s) | Err(s) => Some(f64::from_str(s).map_err(|_| s.to_string())),
+            },
+            Ok("".to_string()),
+        )
+        .into()
     }
 }
 
 impl Into<TState<String>> for TState<Result<String, String>> {
     fn into(self) -> TState<String> {
-        Map1::map(self, |res: &Result<String, String>| {
-            match res.as_ref() {
+        Map1::map(
+            self,
+            |res: &Result<String, String>| match res.as_ref() {
                 Ok(s) | Err(s) => s.clone(),
-            }
-        }, |new, _| {
-            Some(Ok(new))
-        })
+            },
+            |new, _| Some(Ok(new)),
+        )
     }
 }
 
 impl Into<BoolState> for ResStringState {
     fn into(self) -> BoolState {
-        self.mapped(|val: &Result<String, String>| {
-            val.is_err()
-        })
+        self.mapped(|val: &Result<String, String>| val.is_err())
     }
 }
 
 impl Into<RState<AdvancedColor>> for TState<Color> {
     fn into(self) -> RState<AdvancedColor> {
-        self.map(|c: &Color| { AdvancedColor::from(*c) })
+        self.map(|c: &Color| AdvancedColor::from(*c))
     }
 }
 
 impl Into<TState<AdvancedColor>> for TState<Color> {
     fn into(self) -> TState<AdvancedColor> {
-        self.map(|c: &Color| { AdvancedColor::from(*c) }).ignore_writes()
+        self.map(|c: &Color| AdvancedColor::from(*c))
+            .ignore_writes()
     }
 }
 

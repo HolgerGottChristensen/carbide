@@ -13,8 +13,8 @@ use std::collections::HashMap;
 
 use glium::Surface;
 
-use carbide_core::{Borderable, Colorable, Labelable, OldWidget, Positionable, Sizeable, widget};
-use carbide_core::widget::graph::{EdgeEvent, Event, node, Node, NodeEvent, NodeSocket};
+use carbide_core::widget::graph::{node, EdgeEvent, Event, Node, NodeEvent, NodeSocket};
+use carbide_core::{widget, Borderable, Colorable, Labelable, OldWidget, Positionable, Sizeable};
 
 mod support;
 
@@ -86,7 +86,8 @@ fn main() {
     let mut renderer = carbide_glium::Renderer::new(&display.0).unwrap();
 
     // The image map describing each of our widget->image mappings (in our case, none).
-    let image_map = carbide_core::draw::image::image_map::ImageMap::<glium::texture::Texture2d>::new();
+    let image_map =
+        carbide_core::draw::image::image_map::ImageMap::<glium::texture::Texture2d>::new();
 
     // Begin the event loop.
     let mut event_loop = support::EventLoop::new();
@@ -105,10 +106,10 @@ fn main() {
                     glium::glutin::WindowEvent::CloseRequested
                     | glium::glutin::WindowEvent::KeyboardInput {
                         input:
-                        glium::glutin::KeyboardInput {
-                            virtual_keycode: Some(glium::glutin::VirtualKeyCode::Escape),
-                            ..
-                        },
+                            glium::glutin::KeyboardInput {
+                                virtual_keycode: Some(glium::glutin::VirtualKeyCode::Escape),
+                                ..
+                            },
                         ..
                     } => break 'main,
                     _ => (),

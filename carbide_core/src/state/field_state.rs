@@ -1,11 +1,11 @@
-use std::fmt::Debug;
 use carbide_core::prelude::NewStateSync;
+use std::fmt::Debug;
 
 use crate::environment::Environment;
 use crate::prelude::{StateContract, TState};
-use crate::state::{ReadState, State};
 use crate::state::util::value_cell::{ValueRef, ValueRefMut};
 use crate::state::widget_state::WidgetState;
+use crate::state::{ReadState, State};
 
 /// # FieldState
 /// The FieldState is a state mapping that should be used to retrieve a field of a struct or enum
@@ -29,9 +29,9 @@ use crate::state::widget_state::WidgetState;
 /// itself.
 #[derive(Clone)]
 pub struct FieldState<FROM, TO>
-    where
-        FROM: StateContract,
-        TO: StateContract,
+where
+    FROM: StateContract,
+    TO: StateContract,
 {
     /// The state containing the original data to get the field from
     state: TState<FROM>,
@@ -70,19 +70,19 @@ impl<FROM: StateContract, TO: StateContract> NewStateSync for FieldState<FROM, T
 impl<FROM: StateContract, TO: StateContract> ReadState<TO> for FieldState<FROM, TO> {
     fn value(&self) -> ValueRef<TO> {
         let map = self.map;
-        ValueRef::map(self.state.value(), |a| { map(a) })
+        ValueRef::map(self.state.value(), |a| map(a))
     }
 }
 
 impl<FROM: StateContract, TO: StateContract> State<TO> for FieldState<FROM, TO> {
     fn value_mut(&mut self) -> ValueRefMut<TO> {
         let map_mut = self.map_mut;
-        ValueRefMut::map(self.state.value_mut(), |a| { map_mut(a) })
+        ValueRefMut::map(self.state.value_mut(), |a| map_mut(a))
     }
 
     fn set_value(&mut self, value: TO) {
         let map_mut = self.map_mut;
-        *ValueRefMut::map(self.state.value_mut(), |a| { map_mut(a) }) = value;
+        *ValueRefMut::map(self.state.value_mut(), |a| map_mut(a)) = value;
     }
 }
 

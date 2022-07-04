@@ -1,11 +1,11 @@
+use carbide_core::prelude::NewStateSync;
 use std::fmt::{Debug, Formatter};
 use std::ops::Deref;
-use carbide_core::prelude::NewStateSync;
 
 use crate::environment::Environment;
-use crate::state::{ReadState, RState, StateContract};
-use crate::state::ReadWidgetState;
 use crate::state::util::value_cell::ValueRef;
+use crate::state::ReadWidgetState;
+use crate::state::{RState, ReadState, StateContract};
 
 /// # Environment state
 /// EnvState is a read-only state that takes a function from the environment and returns a value.
@@ -21,8 +21,8 @@ use crate::state::util::value_cell::ValueRef;
 /// of listeners. Note: This might change in the future.
 #[derive(Clone)]
 pub struct EnvState<T>
-    where
-        T: StateContract + PartialEq,
+where
+    T: StateContract + PartialEq,
 {
     /// The mapping function that take the environment and returns `T`, but you should make sure
     /// this function is not too expensive because it is called on every [NewStateSync::sync()].

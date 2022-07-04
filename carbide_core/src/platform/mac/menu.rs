@@ -1,10 +1,9 @@
-use cocoa::appkit::{NSEventModifierFlags, NSMenu, NSMenuItem};
-use cocoa::base::{id, nil, NO, selector, YES};
-use cocoa::foundation::{NSAutoreleasePool, NSString};
-use objc::{msg_send, sel, sel_impl, class};
-use objc::runtime::Sel;
 use carbide_core::prelude::{MenuItem, MenuKind};
-
+use cocoa::appkit::{NSEventModifierFlags, NSMenu, NSMenuItem};
+use cocoa::base::{id, nil, selector, NO, YES};
+use cocoa::foundation::{NSAutoreleasePool, NSString};
+use objc::runtime::Sel;
+use objc::{class, msg_send, sel, sel_impl};
 
 use crate::event::{HotKey, ModifierKey};
 use crate::platform::mac::{from_nsstring, make_nsstring, process_name};
@@ -31,30 +30,34 @@ pub fn convert_menu(menu: &Menu) -> id {
     let converted = make_menu(menu.name());
 
     match &menu.kind {
-        Some(kind) => {
-            match kind {
-                MenuKind::Window => {
-                    let app: id = unsafe { msg_send![class!(NSApplication), sharedApplication] };
-                    let () = unsafe { msg_send![app, setWindowsMenu: converted] };
-                }
-                MenuKind::Help => {
-                    let app: id = unsafe { msg_send![class!(NSApplication), sharedApplication] };
-                    let () = unsafe { msg_send![app, setHelpMenu: converted] };
-                }
+        Some(kind) => match kind {
+            MenuKind::Window => {
+                let app: id = unsafe { msg_send![class!(NSApplication), sharedApplication] };
+                let () = unsafe { msg_send![app, setWindowsMenu: converted] };
             }
-        }
+            MenuKind::Help => {
+                let app: id = unsafe { msg_send![class!(NSApplication), sharedApplication] };
+                let () = unsafe { msg_send![app, setHelpMenu: converted] };
+            }
+        },
         None => (),
     }
     for item in menu.items() {
         match item {
-            MenuItem::Item { id, name, hotkey, enabled, selected } => {
+            MenuItem::Item {
+                id,
+                name,
+                hotkey,
+                enabled,
+                selected,
+            } => {
                 let menu_item = make_menu_item(&name, hotkey.clone(), "", *enabled);
                 add_item(converted, menu_item);
             }
             MenuItem::Separator => {
                 let sep = make_separator();
                 add_item(converted, sep);
-            },
+            }
             MenuItem::SubMenu { menu } => {
                 let sub = convert_menu(menu);
                 add_sub_menu(converted, sub);
@@ -80,7 +83,7 @@ fn default_app_menu() -> id {
         make_nsstring(&about_name),
         selector("orderFrontStandardAboutPanel:"),
         None,
-        true
+        true,
     );
 
     let preferences = make_internal_menu_item(
@@ -90,14 +93,13 @@ fn default_app_menu() -> id {
             key: ",",
             masks: None, //Some(NSEventModifierFlags::NSCommandKeyMask)
         }),
-        false
+        false,
     );
 
     let services = make_menu("Services");
 
     let app: id = unsafe { msg_send![class!(NSApplication), sharedApplication] };
     let () = unsafe { msg_send![app, setServicesMenu: services] };
-
 
     let mut hide_item_name = "Hide ".to_string();
     hide_item_name.push_str(&process_name);
@@ -108,7 +110,7 @@ fn default_app_menu() -> id {
             key: "h",
             masks: None,
         }),
-        true
+        true,
     );
 
     let hide_others = make_internal_menu_item(
@@ -117,18 +119,17 @@ fn default_app_menu() -> id {
         Some(KeyEquivalent {
             key: "h",
             masks: Some(
-                NSEventModifierFlags::NSAlternateKeyMask
-                    | NSEventModifierFlags::NSCommandKeyMask,
+                NSEventModifierFlags::NSAlternateKeyMask | NSEventModifierFlags::NSCommandKeyMask,
             ),
         }),
-        true
+        true,
     );
 
     let show_all = make_internal_menu_item(
         make_nsstring("Show All"),
         selector("unhideAllApplications:"),
         None,
-        true
+        true,
     );
 
     let mut quit_item_name = "Quit ".to_string();
@@ -140,7 +141,7 @@ fn default_app_menu() -> id {
             key: "q",
             masks: None,
         }),
-        true
+        true,
     );
 
     add_item(menu, about);
@@ -180,9 +181,7 @@ fn menu_title(menu: id) -> String {
 }
 
 fn make_separator() -> id {
-    unsafe {
-        msg_send![class!(NSMenuItem), separatorItem]
-    }
+    unsafe { msg_send![class!(NSMenuItem), separatorItem] }
 }
 
 fn make_menu(title: &str) -> id {
@@ -206,7 +205,7 @@ fn make_internal_menu_item(
     title: id,
     selector: Sel,
     key_equivalent: Option<KeyEquivalent<'_>>,
-    enabled: bool
+    enabled: bool,
 ) -> id {
     unsafe {
         let (key, masks) = match key_equivalent {
@@ -230,13 +229,15 @@ fn make_internal_menu_item(
 
 fn make_menu_item(title: &str, key: Option<HotKey>, code: &str, enabled: bool) -> id {
     unsafe {
-        let key_combination = code;//key.map(HotKey::key_equivalent).unwrap_or("".to_string());
+        let key_combination = code; //key.map(HotKey::key_equivalent).unwrap_or("".to_string());
 
-        let menu_item = NSMenuItem::alloc(nil).initWithTitle_action_keyEquivalent_(
-            make_nsstring(title),
-            sel!(handleMenuItem:),
-            make_nsstring(key_combination),
-        ).autorelease();
+        let menu_item = NSMenuItem::alloc(nil)
+            .initWithTitle_action_keyEquivalent_(
+                make_nsstring(title),
+                sel!(handleMenuItem:),
+                make_nsstring(key_combination),
+            )
+            .autorelease();
 
         if let Some(mask) = key.map(HotKey::key_modifier_mask) {
             let () = msg_send![menu_item, setKeyEquivalentModifierMask: mask];

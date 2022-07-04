@@ -1,9 +1,9 @@
-use carbide_core::{OldRect, widget};
 use carbide_core::event::event;
 use carbide_core::event::input::Input;
+use carbide_core::{widget, OldRect};
 use event::{self, Input};
-use input::{self, Button, Motion, MouseButton};
 use input::keyboard::ModifierKey;
+use input::{self, Button, Motion, MouseButton};
 use position::Rect;
 use widget;
 
@@ -32,13 +32,15 @@ fn mouse_should_return_none_if_another_widget_is_capturing_mouse() {
         event::Event::Raw(Input::Press(Button::Mouse(MouseButton::Left))),
     );
 
-    let widget_input = input::Widget::for_widget(widget::WidgetId::new(2), widget_area, &global_input);
+    let widget_input =
+        input::Widget::for_widget(widget::WidgetId::new(2), widget_area, &global_input);
 
     assert!(widget_input.mouse().is_none());
 }
 
 #[test]
-fn widget_input_should_provide_any_mouse_events_over_the_widgets_area_if_nothing_is_capturing_mouse() {
+fn widget_input_should_provide_any_mouse_events_over_the_widgets_area_if_nothing_is_capturing_mouse(
+) {
     let mut global_input = input::Global::new();
     let widget = widget::WidgetId::new(4);
 
@@ -52,7 +54,7 @@ fn widget_input_should_provide_any_mouse_events_over_the_widgets_area_if_nothing
                 modifiers: ModifierKey::NO_MODIFIER,
             },
         )
-            .into(),
+        .into(),
     );
     assert!(global_input.current.widget_capturing_mouse.is_none());
 

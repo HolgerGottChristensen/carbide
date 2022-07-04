@@ -37,22 +37,24 @@ fn main() {
     fn delegate(item: TState<EnvironmentColor>, index: UsizeState) -> Box<dyn Widget> {
         ZStack::new(vec![
             Rectangle::new().fill(item.value().clone()),
-            Text::new(index)
-                .font_size(EnvironmentFontSize::LargeTitle),
-        ]).frame(100.0, 50.0)
+            Text::new(index).font_size(EnvironmentFontSize::LargeTitle),
+        ])
+        .frame(100.0, 50.0)
     }
 
     window.set_widgets(
-        VStack::new(vec![
-            ForEach::new(vec![
+        VStack::new(vec![ForEach::new(
+            vec![
                 EnvironmentColor::Red,
                 EnvironmentColor::Orange,
                 EnvironmentColor::Yellow,
                 EnvironmentColor::Green,
                 EnvironmentColor::Accent,
                 EnvironmentColor::Purple,
-            ], delegate)
-        ]).spacing(10.0)
+            ],
+            delegate,
+        )])
+        .spacing(10.0),
     );
 
     window.launch();

@@ -11,7 +11,9 @@ use carbide_core::widget::*;
 use carbide_core::window::TWindow;
 use carbide_wgpu::window::Window;
 
-use crate::Month::{April, December, February, January, July, June, March, May, November, October, September};
+use crate::Month::{
+    April, December, February, January, July, June, March, May, November, October, September,
+};
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum Month {
@@ -47,9 +49,8 @@ fn main() {
         Some(icon_path),
     );
 
-    let family = FontFamily::new_from_paths("NotoSans", vec![
-        "fonts/NotoSans/NotoSans-Regular.ttf"
-    ]);
+    let family =
+        FontFamily::new_from_paths("NotoSans", vec!["fonts/NotoSans/NotoSans-Regular.ttf"]);
     window.add_font_family(family);
 
     let selected = LocalState::new(January);
@@ -58,10 +59,7 @@ fn main() {
         January, February, March, April, May, June, July, September, October, November, December,
     ]);
 
-    window.set_widgets(
-        PopUpButton::new(model, selected)
-            .frame_fixed_width(200),
-    );
+    window.set_widgets(PopUpButton::new(model, selected).frame_fixed_width(200));
 
     window.launch();
 }

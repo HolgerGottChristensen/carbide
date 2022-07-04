@@ -3,13 +3,13 @@ use std::ffi::c_void;
 use std::marker::PhantomPinned;
 use std::sync::Mutex;
 
-use cocoa::appkit::{CGFloat, NSApplication, NSColor, NSMenu, NSMenuItem, NSView, NSWindow};
 use cocoa::appkit::NSWindowTitleVisibility::NSWindowTitleHidden;
+use cocoa::appkit::{CGFloat, NSApplication, NSColor, NSMenu, NSMenuItem, NSView, NSWindow};
 use cocoa::base::{id, nil, NO, YES};
 use cocoa::foundation::{NSAutoreleasePool, NSPoint, NSRect, NSSize, NSString};
-use objc::{class, msg_send, sel, sel_impl};
 use objc::declare::ClassDecl;
-use objc::runtime::{BOOL, Class, Object, Sel};
+use objc::runtime::{Class, Object, Sel, BOOL};
+use objc::{class, msg_send, sel, sel_impl};
 use winit::dpi::PhysicalSize;
 use winit::dpi::Size::Physical;
 use winit::event::{Event, ModifiersState, WindowEvent};
@@ -17,9 +17,9 @@ use winit::event_loop::EventLoop;
 use winit::platform::macos::{ActivationPolicy, WindowBuilderExtMacOS, WindowExtMacOS};
 use winit::window::WindowBuilder;
 
-use carbide_core::Color;
 use carbide_core::event::{HotKey, Key, ModifierKey};
 use carbide_core::platform::mac::make_nsstring;
+use carbide_core::Color;
 
 //use carbide_core::platform::mac::color_dialog::{COLOR_PICKER_RESPONDER, ColorPickerChannel};
 
@@ -35,7 +35,6 @@ fn main() {
             //.with_fullsize_content_view(true)
             .build(&event_loop)
             .expect("Could not build window");
-
 
         //let app: id = msg_send![class!(NSApplication), sharedApplication];
         //let window: id = msg_send![app, mainWindow];
@@ -71,7 +70,6 @@ fn main() {
         let () = msg_send![panel, setShowsAlpha: YES];
         let () = msg_send![panel, orderFront: inner_window.ns_window()];*/
 
-
         //let panel: id = msg_send![class!(NSFontPanel), sharedFontPanel];
         //let () = msg_send![panel, orderFront: inner_window.ns_window()];
 
@@ -79,7 +77,6 @@ fn main() {
         //let () = msg_send![app, orderFrontCharacterPalette: nil];
         //let () = msg_send![app, orderFrontColorPanel: nil];
         //let () = msg_send![app, orderFrontStandardAboutPanel: nil];
-
 
         /*let app: id = msg_send![class!(NSApplication), sharedApplication];
 
@@ -300,13 +297,15 @@ fn main() {
 
 fn make_menu_item(title: &str, key: Option<HotKey>, code: &str, enabled: bool) -> id {
     unsafe {
-        let key_combination = code;//key.map(HotKey::key_equivalent).unwrap_or("".to_string());
+        let key_combination = code; //key.map(HotKey::key_equivalent).unwrap_or("".to_string());
 
-        let menu_item = NSMenuItem::alloc(nil).initWithTitle_action_keyEquivalent_(
-            make_nsstring(title),
-            sel!(handleMenuItem:),
-            make_nsstring(key_combination),
-        ).autorelease();
+        let menu_item = NSMenuItem::alloc(nil)
+            .initWithTitle_action_keyEquivalent_(
+                make_nsstring(title),
+                sel!(handleMenuItem:),
+                make_nsstring(key_combination),
+            )
+            .autorelease();
 
         /*if let Some(mask) = key.map(HotKey::key_modifier_mask) {
             let () = msg_send![menu_item, setKeyEquivalentModifierMask: mask];
@@ -324,7 +323,5 @@ fn make_menu_item(title: &str, key: Option<HotKey>, code: &str, enabled: bool) -
 }
 
 fn make_separator() -> id {
-    unsafe {
-        msg_send![class!(NSMenuItem), separatorItem]
-    }
+    unsafe { msg_send![class!(NSMenuItem), separatorItem] }
 }

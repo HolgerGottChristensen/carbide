@@ -55,17 +55,13 @@ impl<'a> Iterator for WidgetIterMut<'a> {
                 std::mem::swap(self, &mut WidgetIterMut::Vec(vec));
                 h.map(|f| ValueRefMut::Borrow(f))
             }
-            WidgetIterMut::Ref(w) => {
-                Some(ValueRefMut::Borrow(w))
-            }
+            WidgetIterMut::Ref(w) => Some(ValueRefMut::Borrow(w)),
             WidgetIterMut::VecRev(mut vec) => {
                 let h = vec.next();
                 std::mem::swap(self, &mut WidgetIterMut::VecRev(vec));
                 h.map(|f| ValueRefMut::Borrow(f))
             }
-            WidgetIterMut::Borrow(w) => {
-                Some(w)
-            }
+            WidgetIterMut::Borrow(w) => Some(w),
         }
     }
 }
@@ -116,9 +112,7 @@ impl<'a> Iterator for WidgetIter<'a> {
                     self.next()
                 }
             },
-            WidgetIter::SimpleRef(w) => {
-                Some(ValueRef::Borrow(w))
-            }
+            WidgetIter::SimpleRef(w) => Some(ValueRef::Borrow(w)),
             WidgetIter::Vec(mut vec) => {
                 let h = vec.next();
                 std::mem::swap(self, &mut WidgetIter::Vec(vec));
@@ -129,9 +123,7 @@ impl<'a> Iterator for WidgetIter<'a> {
                 std::mem::swap(self, &mut WidgetIter::VecRev(vec));
                 h.map(|f| ValueRef::Borrow(f))
             }
-            WidgetIter::Borrow(w) => {
-                Some(w)
-            }
+            WidgetIter::Borrow(w) => Some(w),
         }
     }
 }

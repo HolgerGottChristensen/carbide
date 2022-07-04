@@ -306,16 +306,14 @@ impl Layout for Scroll {
         ));
 
         // Position scrollbars
-        self.scrollbar_vertical
-            .set_position(self.position() + Position::new(
-                self.dimension.width - self.scrollbar_vertical.width(),
-                0.0,
-            ));
-        self.scrollbar_vertical_background
-            .set_position(self.position() + Position::new(
-                self.dimension.width - self.scrollbar_vertical.width(),
-                0.0,
-            ));
+        self.scrollbar_vertical.set_position(
+            self.position()
+                + Position::new(self.dimension.width - self.scrollbar_vertical.width(), 0.0),
+        );
+        self.scrollbar_vertical_background.set_position(
+            self.position()
+                + Position::new(self.dimension.width - self.scrollbar_vertical.width(), 0.0),
+        );
 
         let scroll_vertical_percent = if self.child.height() - self.height() != 0.0 {
             self.scroll_offset.y / (self.child.height() - self.height())
@@ -331,23 +329,29 @@ impl Layout for Scroll {
             0.0
         };
 
-        self.scrollbar_vertical
-            .set_position(self.scrollbar_vertical.position() + Position::new(
-                0.0,
-                -(self.height() - horizontal_height - self.scrollbar_vertical.height())
-                    * scroll_vertical_percent,
-            ));
+        self.scrollbar_vertical.set_position(
+            self.scrollbar_vertical.position()
+                + Position::new(
+                    0.0,
+                    -(self.height() - horizontal_height - self.scrollbar_vertical.height())
+                        * scroll_vertical_percent,
+                ),
+        );
 
-        self.scrollbar_horizontal
-            .set_position(self.position() + Position::new(
-                0.0,
-                self.dimension.height - self.scrollbar_horizontal.height(),
-            ));
-        self.scrollbar_horizontal_background
-            .set_position(self.position() + Position::new(
-                0.0,
-                self.dimension.height - self.scrollbar_horizontal.height(),
-            ));
+        self.scrollbar_horizontal.set_position(
+            self.position()
+                + Position::new(
+                    0.0,
+                    self.dimension.height - self.scrollbar_horizontal.height(),
+                ),
+        );
+        self.scrollbar_horizontal_background.set_position(
+            self.position()
+                + Position::new(
+                    0.0,
+                    self.dimension.height - self.scrollbar_horizontal.height(),
+                ),
+        );
 
         let scroll_horizontal_percent = if self.child.width() - self.width() != 0.0 {
             self.scroll_offset.x / (self.child.width() - self.width())
@@ -363,15 +367,14 @@ impl Layout for Scroll {
             0.0
         };
 
-        self.scrollbar_horizontal
-            .set_position(
-                self.scrollbar_horizontal
-                    .position() + Position::new(
-                        (self.width() - vertical_width - self.scrollbar_horizontal.width())
-                            * scroll_horizontal_percent,
-                        0.0,
-                    ),
-            );
+        self.scrollbar_horizontal.set_position(
+            self.scrollbar_horizontal.position()
+                + Position::new(
+                    (self.width() - vertical_width - self.scrollbar_horizontal.width())
+                        * scroll_horizontal_percent,
+                    0.0,
+                ),
+        );
 
         self.scrollbar_vertical.position_children();
         self.scrollbar_horizontal.position_children();

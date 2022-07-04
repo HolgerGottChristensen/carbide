@@ -19,7 +19,6 @@ impl FilterId {
 }
 
 impl ImageFilter {
-
     /// Applying this filter will sharpen the image
     pub fn sharpen() -> ImageFilter {
         ImageFilter {
@@ -29,7 +28,7 @@ impl ImageFilter {
                 ImageFilterValue::new(0, -1, -1.0),
                 ImageFilterValue::new(0, 1, -1.0),
                 ImageFilterValue::new(0, 0, 5.0),
-            ]
+            ],
         }
     }
 
@@ -39,9 +38,7 @@ impl ImageFilter {
         let mut entries = ImageFilter::sobel_x().filter;
         entries.extend(ImageFilter::sobel_y().filter);
 
-        ImageFilter {
-            filter: entries
-        }
+        ImageFilter { filter: entries }
     }
 
     /// The x component of the sobel filter
@@ -54,7 +51,7 @@ impl ImageFilter {
                 ImageFilterValue::new(1, -1, -1.0),
                 ImageFilterValue::new(1, 0, -2.0),
                 ImageFilterValue::new(1, 1, -1.0),
-            ]
+            ],
         }
     }
 
@@ -68,7 +65,7 @@ impl ImageFilter {
                 ImageFilterValue::new(-1, 1, -1.0),
                 ImageFilterValue::new(0, 1, -2.0),
                 ImageFilterValue::new(1, 1, -1.0),
-            ]
+            ],
         }
     }
 
@@ -79,9 +76,7 @@ impl ImageFilter {
         let mut entries = ImageFilter::prewit_x().filter;
         entries.extend(ImageFilter::prewit_y().filter);
 
-        ImageFilter {
-            filter: entries
-        }
+        ImageFilter { filter: entries }
     }
 
     /// The x component of the prewit filter
@@ -94,7 +89,7 @@ impl ImageFilter {
                 ImageFilterValue::new(1, -1, -1.0),
                 ImageFilterValue::new(1, 0, -1.0),
                 ImageFilterValue::new(1, 1, -1.0),
-            ]
+            ],
         }
     }
 
@@ -108,7 +103,7 @@ impl ImageFilter {
                 ImageFilterValue::new(-1, 1, -1.0),
                 ImageFilterValue::new(0, 1, -1.0),
                 ImageFilterValue::new(1, 1, -1.0),
-            ]
+            ],
         }
     }
 
@@ -183,4 +178,3 @@ impl ImageFilterValue {
         }
     }
 }
-

@@ -1,10 +1,10 @@
+use crate::Color;
 pub use environment::Environment;
 pub use environment_color::EnvironmentColor;
 pub use environment_color_state::EnvironmentColorState;
 pub use environment_font_size::EnvironmentFontSize;
 pub use environment_font_size_state::EnvironmentFontSizeState;
 pub use environment_variable::EnvironmentVariable;
-use crate::Color;
 
 use crate::prelude::{F64State, I32State, StringState, U32State};
 use crate::state::TState;

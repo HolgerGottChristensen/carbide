@@ -1,4 +1,4 @@
-use tokio::time::{Duration, sleep};
+use tokio::time::{sleep, Duration};
 
 use carbide_core::prelude::EnvironmentColor;
 use carbide_core::state::{LocalState, State, ValueState};
@@ -19,9 +19,8 @@ fn main() {
         Some(icon_path.clone()),
     );
 
-    let family = FontFamily::new_from_paths("NotoSans", vec![
-        "fonts/NotoSans/NotoSans-Regular.ttf"
-    ]);
+    let family =
+        FontFamily::new_from_paths("NotoSans", vec!["fonts/NotoSans/NotoSans-Regular.ttf"]);
     window.add_font_family(family);
 
     let image_id = LocalState::new(None);
@@ -48,23 +47,32 @@ fn main() {
         tokio::fs::read_to_string(ipsum_path).await.unwrap()
     });
 
-    task!(env, {
-        let response = reqwest::get("https://picsum.photos/300").await.unwrap().bytes().await.expect("Could not get bytes");
-        let image = carbide_core::image::load_from_memory(&response).unwrap();
-        image
-    }, move |res, env: &mut Environment| {
-        image_id_for_async.clone().set_value(env.queue_image(res))
-    });
+    task!(
+        env,
+        {
+            let response = reqwest::get("https://picsum.photos/300")
+                .await
+                .unwrap()
+                .bytes()
+                .await
+                .expect("Could not get bytes");
+            let image = carbide_core::image::load_from_memory(&response).unwrap();
+            image
+        },
+        move |res, env: &mut Environment| {
+            image_id_for_async.clone().set_value(env.queue_image(res))
+        }
+    );
 
     window.set_widgets(
         VStack::new(vec![
-            Text::new(text)
-                .padding(20.0),
+            Text::new(text).padding(20.0),
             Image::new(image_id),
             Rectangle::new()
                 .fill(EnvironmentColor::Accent)
                 .frame(block_width, 50),
-        ]).accent_color(EnvironmentColor::Red)
+        ])
+        .accent_color(EnvironmentColor::Red),
     );
 
     window.launch();

@@ -50,17 +50,11 @@ impl Position {
     }
 
     pub fn translate_x(&self, x: Scalar) -> Position {
-        Position::new(
-            self.x + x,
-            self.y,
-        )
+        Position::new(self.x + x, self.y)
     }
 
     pub fn translate_y(&self, y: Scalar) -> Position {
-        Position::new(
-            self.x,
-            self.y + y,
-        )
+        Position::new(self.x, self.y + y)
     }
 
     pub fn normalized_offset(&self) -> Position {

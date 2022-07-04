@@ -12,13 +12,19 @@ pub struct Rotation3DEffect {
     position: Position,
     dimension: Dimension,
     anchor: BasicLayouter,
-    #[state] rotation_x: F64State,
-    #[state] rotation_y: F64State,
+    #[state]
+    rotation_x: F64State,
+    #[state]
+    rotation_y: F64State,
     fov: f64,
 }
 
 impl Rotation3DEffect {
-    pub fn new<P1: Into<F64State>, P2: Into<F64State>>(child: Box<dyn Widget>, rotation_x: P1, rotation_y: P2) -> Box<Self> {
+    pub fn new<P1: Into<F64State>, P2: Into<F64State>>(
+        child: Box<dyn Widget>,
+        rotation_x: P1,
+        rotation_y: P2,
+    ) -> Box<Self> {
         Box::new(Rotation3DEffect {
             id: WidgetId::new(),
             child,

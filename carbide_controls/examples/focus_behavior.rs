@@ -2,15 +2,17 @@ use futures::executor::block_on;
 use serde::Deserialize;
 use serde::Serialize;
 
-use carbide_controls::{PlainPopUpButton, PlainTextInput};
 use carbide_controls::PopUpButton;
+use carbide_controls::{PlainPopUpButton, PlainTextInput};
 use carbide_core::state::LocalState;
 use carbide_core::text::FontFamily;
 use carbide_core::widget::*;
 use carbide_core::window::TWindow;
 use carbide_wgpu::window::Window;
 
-use crate::Month::{April, December, February, January, July, June, March, May, November, October, September};
+use crate::Month::{
+    April, December, February, January, July, June, March, May, November, October, September,
+};
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum Month {
@@ -46,9 +48,8 @@ fn main() {
         Some(icon_path),
     );
 
-    let mut family = FontFamily::new_from_paths("NotoSans", vec![
-        "fonts/NotoSans/NotoSans-Regular.ttf",
-    ]);
+    let mut family =
+        FontFamily::new_from_paths("NotoSans", vec!["fonts/NotoSans/NotoSans-Regular.ttf"]);
     window.add_font_family(family);
 
     let text_state = LocalState::new("Hello World!".to_string());
@@ -101,9 +102,9 @@ fn main() {
                 .clip()
                 .padding(EdgeInsets::all(30.0)),*/
             //PopUpButton::new(model, selected).padding(EdgeInsets::all(50.0)),
-            PlainPopUpButton::new(model, selected).padding(50.0)
+            PlainPopUpButton::new(model, selected).padding(50.0),
         ])
-            .spacing(20.0),
+        .spacing(20.0),
     );
 
     window.launch();

@@ -1,10 +1,10 @@
+use crate::constraints::{BinaryOperation, Expression, Parameter};
 use std::{
     fmt::{self, Display, Formatter},
     iter::Peekable,
     ops::Range,
     rc::Rc,
 };
-use crate::constraints::{BinaryOperation, Expression, Parameter};
 
 /// Parse an [`Expression`] tree from some text.
 pub fn parse(s: &str) -> Result<Expression, ParseError> {
@@ -52,7 +52,7 @@ impl<'a> Parser<'a> {
             None => Ok(expr),
             Some(Ok(token)) => {
                 panic!("Not all tokens consumed! Found {:?}", token)
-            },
+            }
             Some(Err(e)) => Err(e),
         }
     }
@@ -74,21 +74,17 @@ impl<'a> Parser<'a> {
     fn expression(&mut self) -> Result<Expression, ParseError> {
         let left = self.term()?;
 
-        self.then_right_part_of_binary_op(
-            left,
-            &[TokenKind::Plus, TokenKind::Minus],
-            |p| p.expression(),
-        )
+        self.then_right_part_of_binary_op(left, &[TokenKind::Plus, TokenKind::Minus], |p| {
+            p.expression()
+        })
     }
 
     fn term(&mut self) -> Result<Expression, ParseError> {
         let left = self.factor()?;
 
-        self.then_right_part_of_binary_op(
-            left,
-            &[TokenKind::Times, TokenKind::Divide],
-            |p| p.term(),
-        )
+        self.then_right_part_of_binary_op(left, &[TokenKind::Times, TokenKind::Divide], |p| {
+            p.term()
+        })
     }
 
     fn then_right_part_of_binary_op<F>(
@@ -121,21 +117,18 @@ impl<'a> Parser<'a> {
     }
 
     fn factor(&mut self) -> Result<Expression, ParseError> {
-        let expected =
-            &[TokenKind::Number, TokenKind::Identifier, TokenKind::Minus];
+        let expected = &[TokenKind::Number, TokenKind::Identifier, TokenKind::Minus];
 
         match self.peek() {
             Some(TokenKind::Number) => {
                 return self.number();
-            },
+            }
             Some(TokenKind::Minus) => {
                 let _ = self.advance()?;
                 let operand = self.factor()?;
                 return Ok(-operand);
-            },
-            Some(TokenKind::Identifier) => {
-                return self.variable_or_function_call()
-            },
+            }
+            Some(TokenKind::Identifier) => return self.variable_or_function_call(),
             Some(TokenKind::OpenParen) => {
                 let _ = self.advance()?;
                 let expr = self.expression()?;
@@ -150,19 +143,17 @@ impl<'a> Parser<'a> {
                         expected: &[TokenKind::CloseParen],
                     });
                 }
-            },
-            _ => {},
+            }
+            _ => {}
         }
 
         // we couldn't parse the factor, return a nice error
         match self.tokens.next() {
-            Some(Ok(Token { span, kind, .. })) => {
-                Err(ParseError::UnexpectedToken {
-                    found: kind,
-                    expected,
-                    span,
-                })
-            },
+            Some(Ok(Token { span, kind, .. })) => Err(ParseError::UnexpectedToken {
+                found: kind,
+                expected,
+                span,
+            }),
             Some(Err(e)) => Err(e),
             None => Err(ParseError::UnexpectedEndOfInput),
         }
@@ -179,10 +170,7 @@ impl<'a> Parser<'a> {
         }
     }
 
-    fn function_call(
-        &mut self,
-        identifier: Token<'a>,
-    ) -> Result<Expression, ParseError> {
+    fn function_call(&mut self, identifier: Token<'a>) -> Result<Expression, ParseError> {
         let open_paren = self.advance()?;
         debug_assert_eq!(open_paren.kind, TokenKind::OpenParen);
 
@@ -211,8 +199,7 @@ impl<'a> Parser<'a> {
             .ok_or(ParseError::UnexpectedEndOfInput)??;
 
         debug_assert_eq!(token.kind, TokenKind::Number);
-        let number =
-            token.text.parse().expect("Guaranteed correct by the lexer");
+        let number = token.text.parse().expect("Guaranteed correct by the lexer");
 
         Ok(Expression::Constant(number))
     }
@@ -243,7 +230,7 @@ impl Display for ParseError {
             ),
             ParseError::UnexpectedEndOfInput => {
                 write!(f, "Unexpected end of input")
-            },
+            }
             ParseError::UnexpectedToken {
                 found,
                 span,
@@ -264,7 +251,7 @@ impl Display for ParseError {
                 write!(f, "]")?;
 
                 Ok(())
-            },
+            }
         }
     }
 }
@@ -276,11 +263,17 @@ struct Tokens<'a> {
 }
 
 impl<'a> Tokens<'a> {
-    fn new(src: &'a str) -> Self { Tokens { src, cursor: 0 } }
+    fn new(src: &'a str) -> Self {
+        Tokens { src, cursor: 0 }
+    }
 
-    fn rest(&self) -> &'a str { &self.src[self.cursor..] }
+    fn rest(&self) -> &'a str {
+        &self.src[self.cursor..]
+    }
 
-    fn peek(&self) -> Option<char> { self.rest().chars().next() }
+    fn peek(&self) -> Option<char> {
+        self.rest().chars().next()
+    }
 
     fn advance(&mut self) -> Option<char> {
         let c = self.peek()?;
@@ -288,10 +281,7 @@ impl<'a> Tokens<'a> {
         Some(c)
     }
 
-    fn chomp(
-        &mut self,
-        kind: TokenKind,
-    ) -> Option<Result<Token<'a>, ParseError>> {
+    fn chomp(&mut self, kind: TokenKind) -> Option<Result<Token<'a>, ParseError>> {
         let start = self.cursor;
         self.advance()?;
         let end = self.cursor;
@@ -305,10 +295,7 @@ impl<'a> Tokens<'a> {
         Some(Ok(tok))
     }
 
-    fn take_while<P>(
-        &mut self,
-        mut predicate: P,
-    ) -> Option<(&'a str, Range<usize>)>
+    fn take_while<P>(&mut self, mut predicate: P) -> Option<(&'a str, Range<usize>)>
     where
         P: FnMut(char) -> bool,
     {
@@ -340,7 +327,7 @@ impl<'a> Tokens<'a> {
                 '.' if !seen_decimal_point => {
                     seen_decimal_point = true;
                     true
-                },
+                }
                 '0'..='9' => true,
                 _ => false,
             })
@@ -395,9 +382,7 @@ impl<'a> Iterator for Tokens<'a> {
                 '-' => self.chomp(TokenKind::Minus),
                 '*' => self.chomp(TokenKind::Times),
                 '/' => self.chomp(TokenKind::Divide),
-                '_' | 'a'..='z' | 'A'..='Z' => {
-                    Some(Ok(self.chomp_identifier()))
-                },
+                '_' | 'a'..='z' | 'A'..='Z' => Some(Ok(self.chomp_identifier())),
                 '0'..='9' => Some(Ok(self.chomp_number())),
                 other => Some(Err(ParseError::InvalidCharacter {
                     character: other,
@@ -457,11 +442,7 @@ mod tokenizer_tests {
                 assert_eq!(end, $src.len());
                 assert_eq!(got.kind, $should_be);
 
-                assert!(
-                    tokens.next().is_none(),
-                    "{:?} should be empty",
-                    tokens
-                );
+                assert!(tokens.next().is_none(), "{:?} should be empty", tokens);
             }
         };
     }

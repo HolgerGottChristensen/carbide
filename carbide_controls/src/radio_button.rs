@@ -1,9 +1,11 @@
-use std::fmt::Debug;
 use carbide_core::Color;
+use std::fmt::Debug;
 
 use carbide_core::draw::Dimension;
 use carbide_core::environment::{Environment, EnvironmentColor};
-use carbide_core::state::{BoolState, FocusState, Map3, StateContract, StateExt, StateKey, StringState, TState};
+use carbide_core::state::{
+    BoolState, FocusState, Map3, StateContract, StateExt, StateKey, StringState, TState,
+};
 use carbide_core::widget::*;
 
 use crate::PlainRadioButton;
@@ -16,13 +18,12 @@ impl RadioButton {
         reference: T,
         local_state: L,
     ) -> Box<PlainRadioButton<T>> {
-        let mut plain = PlainRadioButton::new(label, reference, local_state)
-            .delegate(Self::delegate);
+        let mut plain =
+            PlainRadioButton::new(label, reference, local_state).delegate(Self::delegate);
         plain
     }
 
     fn delegate(_: FocusState, selected: BoolState) -> Box<dyn Widget> {
-
         let selected_color = Map3::read_map(
             selected.clone(),
             EnvironmentColor::Accent.state(),
@@ -33,7 +34,9 @@ impl RadioButton {
                 } else {
                     *unselected_color
                 }
-            }).ignore_writes();
+            },
+        )
+        .ignore_writes();
 
         ZStack::new(vec![
             Ellipse::new()
@@ -46,6 +49,6 @@ impl RadioButton {
                     .frame(4.0, 4.0),
             ),
         ])
-            .frame(14.0, 14.0)
+        .frame(14.0, 14.0)
     }
 }

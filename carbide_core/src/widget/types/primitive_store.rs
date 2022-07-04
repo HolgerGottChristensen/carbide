@@ -1,11 +1,11 @@
-use crate::Color;
 use crate::color::Rgba;
-use crate::draw::{Dimension, Position, Rect};
 use crate::draw::draw_gradient::DrawGradient;
 use crate::draw::shape::triangle::Triangle;
+use crate::draw::{Dimension, Position, Rect};
 use crate::prelude::Primitive;
 use crate::render::PrimitiveKind;
 use crate::widget::types::advanced_color::AdvancedColor;
+use crate::Color;
 
 /// A storage container for primitives that can be used to cache tessellated shapes.
 #[derive(PartialEq, Clone, Debug)]
@@ -14,13 +14,10 @@ pub struct PrimitiveStore {
     pub latest_stroke_dimensions: Dimension,
     pub latest_stoke_color: Option<AdvancedColor>,
     //pub stroke_primitive: Option<Primitive>,
-
     pub latest_fill_position: Position,
     pub latest_fill_dimensions: Dimension,
     pub latest_fill_color: Option<AdvancedColor>,
     //pub fill_primitive: Option<Primitive>,
-
-
     pub stroke_triangles: Vec<Triangle<Position>>,
     pub fill_triangles: Vec<Triangle<Position>>,
 }
@@ -74,7 +71,14 @@ impl PrimitiveStore {
         self.fill_triangles = triangles.clone()
     }
 
-    pub fn insert_primitives(&self, primitives: &mut Vec<Primitive>, fill_color: AdvancedColor, stroke_color: AdvancedColor, position: Position, dimension: Dimension) {
+    pub fn insert_primitives(
+        &self,
+        primitives: &mut Vec<Primitive>,
+        fill_color: AdvancedColor,
+        stroke_color: AdvancedColor,
+        position: Position,
+        dimension: Dimension,
+    ) {
         if self.fill_triangles.len() > 0 {
             let fill_color = fill_color.into();
 
@@ -85,16 +89,22 @@ impl PrimitiveStore {
                             color: c,
                             triangles: self.fill_triangles.clone(),
                         },
-                        bounding_box: Rect::new(self.latest_fill_position, self.latest_fill_dimensions),
+                        bounding_box: Rect::new(
+                            self.latest_fill_position,
+                            self.latest_fill_dimensions,
+                        ),
                     });
                 }
                 AdvancedColor::SingleGradient(g) => {
                     primitives.push(Primitive {
-                        kind: PrimitiveKind::Gradient (
+                        kind: PrimitiveKind::Gradient(
                             self.fill_triangles.clone(),
                             DrawGradient::convert(g, position, dimension),
                         ),
-                        bounding_box: Rect::new(self.latest_fill_position, self.latest_fill_dimensions),
+                        bounding_box: Rect::new(
+                            self.latest_fill_position,
+                            self.latest_fill_dimensions,
+                        ),
                     });
                 }
                 AdvancedColor::MultiGradient(_) => {}
@@ -111,21 +121,26 @@ impl PrimitiveStore {
                             color: c,
                             triangles: self.stroke_triangles.clone(),
                         },
-                        bounding_box: Rect::new(self.latest_stroke_position, self.latest_stroke_dimensions),
+                        bounding_box: Rect::new(
+                            self.latest_stroke_position,
+                            self.latest_stroke_dimensions,
+                        ),
                     });
                 }
                 AdvancedColor::SingleGradient(g) => {
                     primitives.push(Primitive {
-                        kind: PrimitiveKind::Gradient (
+                        kind: PrimitiveKind::Gradient(
                             self.stroke_triangles.clone(),
                             DrawGradient::convert(g, position, dimension),
                         ),
-                        bounding_box: Rect::new(self.latest_stroke_position, self.latest_stroke_dimensions),
+                        bounding_box: Rect::new(
+                            self.latest_stroke_position,
+                            self.latest_stroke_dimensions,
+                        ),
                     });
                 }
                 AdvancedColor::MultiGradient(_) => {}
             }
-
         }
     }
 

@@ -1,65 +1,70 @@
-use carbide_core::Color;
 use carbide_core::draw::Dimension;
 use carbide_core::environment::{Environment, EnvironmentColor};
 use carbide_core::state::{BoolState, FocusState, Map3, StateExt, StateKey, StringState};
 use carbide_core::widget::*;
+use carbide_core::Color;
 
 use crate::PlainSwitch;
 
 pub struct Switch();
 
 impl Switch {
-    pub fn new<S: Into<StringState>, L: Into<BoolState>>(
-        label: S,
-        checked: L,
-    ) -> Box<PlainSwitch> {
-        let mut plain = PlainSwitch::new(label, checked.into())
-            .delegate(Self::delegate);
+    pub fn new<S: Into<StringState>, L: Into<BoolState>>(label: S, checked: L) -> Box<PlainSwitch> {
+        let mut plain = PlainSwitch::new(label, checked.into()).delegate(Self::delegate);
         /*
-                child = *child.delegate(|focus_state, checked_state, button: Box<dyn Widget<GS>>| {
-                    let focus_color = TupleState3::new(
-                        focus_state,
-                        EnvironmentColor::OpaqueSeparator,
-                        EnvironmentColor::Accent,
-                    )
-                        .mapped(|(focus, primary_color, focus_color)| {
-                            if focus == &Focus::Focused {
-                                *focus_color
-                            } else {
-                                *primary_color
-                            }
-                        });
-
-                    let checked_color = TupleState3::new(
-                        checked_state.clone(),
-                        EnvironmentColor::SecondarySystemBackground,
-                        EnvironmentColor::Accent,
-                    )
-                        .mapped(|(selected, primary_color, checked_color)| {
-                            if *selected {
-                                *checked_color
-                            } else {
-                                *primary_color
-                            }
-                        });
-
-
+        child = *child.delegate(|focus_state, checked_state, button: Box<dyn Widget<GS>>| {
+            let focus_color = TupleState3::new(
+                focus_state,
+                EnvironmentColor::OpaqueSeparator,
+                EnvironmentColor::Accent,
+            )
+                .mapped(|(focus, primary_color, focus_color)| {
+                    if focus == &Focus::Focused {
+                        *focus_color
+                    } else {
+                        *primary_color
+                    }
                 });
 
-                Box::new(Switch {
-                    id: Id::new_v4(),
-                    child,
-                    position: [0.0, 0.0],
-                    dimension: [235.0, 26.0],
-                })*/
+            let checked_color = TupleState3::new(
+                checked_state.clone(),
+                EnvironmentColor::SecondarySystemBackground,
+                EnvironmentColor::Accent,
+            )
+                .mapped(|(selected, primary_color, checked_color)| {
+                    if *selected {
+                        *checked_color
+                    } else {
+                        *primary_color
+                    }
+                });
+
+
+        });
+
+        Box::new(Switch {
+            id: Id::new_v4(),
+            child,
+            position: [0.0, 0.0],
+            dimension: [235.0, 26.0],
+        })*/
         plain
     }
 
     fn delegate(_focus: FocusState, checked: BoolState) -> Box<dyn Widget> {
-
-        let checked_color = Map3::read_map(checked.clone(), EnvironmentColor::Accent.state(), EnvironmentColor::SecondarySystemBackground.state(), |check: &bool, checked_color: &Color, unchecked_color: &Color| {
-            if *check { *checked_color } else { *unchecked_color }
-        }).ignore_writes();
+        let checked_color = Map3::read_map(
+            checked.clone(),
+            EnvironmentColor::Accent.state(),
+            EnvironmentColor::SecondarySystemBackground.state(),
+            |check: &bool, checked_color: &Color, unchecked_color: &Color| {
+                if *check {
+                    *checked_color
+                } else {
+                    *unchecked_color
+                }
+            },
+        )
+        .ignore_writes();
 
         ZStack::new(vec![
             Capsule::new()
@@ -81,6 +86,6 @@ impl Switch {
                 ]))
                 .padding(2.0),
         ])
-            .frame(39.0, 22.0)
+        .frame(39.0, 22.0)
     }
 }

@@ -6,8 +6,8 @@ pub struct CarbideAttrs<I> {
 }
 
 pub fn carbide_attrs<'a, I>(attrs: I) -> CarbideAttrs<I::IntoIter>
-    where
-        I: IntoIterator<Item=&'a syn::Attribute>,
+where
+    I: IntoIterator<Item = &'a syn::Attribute>,
 {
     CarbideAttrs {
         attrs: attrs.into_iter(),
@@ -15,8 +15,8 @@ pub fn carbide_attrs<'a, I>(attrs: I) -> CarbideAttrs<I::IntoIter>
 }
 
 impl<'a, I> Iterator for CarbideAttrs<I>
-    where
-        I: Iterator<Item=&'a syn::Attribute>,
+where
+    I: Iterator<Item = &'a syn::Attribute>,
 {
     type Item = Vec<syn::NestedMeta>;
     fn next(&mut self) -> Option<Self::Item> {

@@ -1,10 +1,13 @@
 use carbide::Widget;
-use carbide_core::CommonWidgetImpl;
 use carbide_core::draw::{Dimension, Position};
 use carbide_core::flags::Flags;
 use carbide_core::prelude::TState;
 use carbide_core::state::{LocalState, StateExt};
-use carbide_core::widget::{CommonWidget, CornerRadii, EdgeInsets, HStack, WidgetId, IfElse, Rectangle, RoundedRectangle, Spacer, Text, Widget, WidgetExt, WidgetIter, WidgetIterMut, ZStack};
+use carbide_core::widget::{
+    CommonWidget, CornerRadii, EdgeInsets, HStack, IfElse, Rectangle, RoundedRectangle, Spacer,
+    Text, Widget, WidgetExt, WidgetId, WidgetIter, WidgetIterMut, ZStack,
+};
+use carbide_core::CommonWidgetImpl;
 
 #[derive(Debug, Clone)]
 pub struct Message {
@@ -14,10 +17,7 @@ pub struct Message {
 
 impl Message {
     pub fn new(text: String, sender: String) -> Message {
-        Message {
-            text,
-            sender,
-        }
+        Message { text, sender }
     }
 }
 
@@ -32,20 +32,14 @@ pub struct MessageBubble {
 
 impl MessageBubble {
     pub fn new(message: TState<Message>, me: String) -> Box<MessageBubble> {
-        let message_state = message.mapped(|m: &Message| {
-            format!("{}: {}", m.sender, m.text)
-        });
-        let is_me_state = message.mapped(move |m: &Message| {
-            *m.sender == me
-        });
+        let message_state = message.mapped(|m: &Message| format!("{}: {}", m.sender, m.text));
+        let is_me_state = message.mapped(move |m: &Message| *m.sender == me);
         let child = HStack::new(vec![
-            IfElse::new(is_me_state.clone())
-                .when_true(Spacer::new()),
+            IfElse::new(is_me_state.clone()).when_true(Spacer::new()),
             Text::new(message_state)
                 .padding(10.0)
                 .background(RoundedRectangle::new(6.0)),
-            IfElse::new(is_me_state.clone())
-                .when_false(Spacer::new()),
+            IfElse::new(is_me_state.clone()).when_false(Spacer::new()),
         ]);
 
         Box::new(MessageBubble {

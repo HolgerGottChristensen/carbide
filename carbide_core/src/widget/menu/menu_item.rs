@@ -1,6 +1,6 @@
-use carbide_core::widget::menu::menu::Menu;
 use crate::event::HotKey;
 use crate::widget::WidgetId;
+use carbide_core::widget::menu::menu::Menu;
 
 #[derive(Debug, Clone)]
 pub enum MenuItem {
@@ -13,8 +13,8 @@ pub enum MenuItem {
     },
     Separator,
     SubMenu {
-        menu: Menu
-    }
+        menu: Menu,
+    },
 }
 
 impl MenuItem {
@@ -28,7 +28,7 @@ impl MenuItem {
             name,
             hotkey,
             enabled,
-            selected
+            selected,
         }
     }
 }

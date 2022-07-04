@@ -5,10 +5,10 @@ use lyon::algorithms::path::Winding;
 use crate::draw::{Dimension, Position, Rect};
 use crate::prelude::*;
 use crate::render::PrimitiveKind;
-use crate::widget::shape::{Shape, tessellate};
+use crate::widget::shape::{tessellate, Shape};
+use crate::widget::types::PrimitiveStore;
 use crate::widget::types::ShapeStyle;
 use crate::widget::types::StrokeStyle;
-use crate::widget::types::PrimitiveStore;
 use crate::CommonWidgetImpl;
 
 /// A basic, non-interactive rectangle shape widget.
@@ -53,10 +53,7 @@ impl Rectangle {
         self.fill_color = advanced_material_state.clone().ignore_writes();
         self.stroke_color = advanced_material_state.clone().ignore_writes();
 
-        ZStack::new(vec![
-            Blur::gaussian(10.0),
-            Box::new(self),
-        ])
+        ZStack::new(vec![Blur::gaussian(10.0), Box::new(self)])
     }
 
     pub fn position(mut self, position: Position) -> Box<Self> {
@@ -177,11 +174,16 @@ impl Render for Rectangle {
             builder.add_rectangle(rectangle, Winding::Positive)
         });
 
-        let fill_color =  self.fill_color.value().clone();
-        let stroke_color =  self.stroke_color.value().clone();
+        let fill_color = self.fill_color.value().clone();
+        let stroke_color = self.stroke_color.value().clone();
 
-        self.triangle_store
-            .insert_primitives(primitives, fill_color, stroke_color, self.position, self.dimension);
+        self.triangle_store.insert_primitives(
+            primitives,
+            fill_color,
+            stroke_color,
+            self.position,
+            self.dimension,
+        );
     }
 }
 

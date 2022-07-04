@@ -5,7 +5,6 @@ use crate::prelude::*;
 use crate::widget::window_menu::MenuBar;
 
 pub trait WidgetExt: Widget + Sized + 'static {
-
     /// Surround the widget with a frame. The frame is a widget that has fixed width, height or both.
     /// The frame takes two parameters. Both parameters take f64 state. This means you can pass
     /// constant values like 10, 100.2, varying values like LocalState and AnimationState.
@@ -37,7 +36,11 @@ pub trait WidgetExt: Widget + Sized + 'static {
     /// areas for event handling. The widget will still take up the same space as if the effect
     /// wasn't applies. This only changes the visual. The function takes anything that can be
     /// converted into a state of f64.
-    fn rotation_3d_effect(self, x: impl Into<TState<f64>>, y: impl  Into<TState<f64>>) -> Box<Rotation3DEffect> {
+    fn rotation_3d_effect(
+        self,
+        x: impl Into<TState<f64>>,
+        y: impl Into<TState<f64>>,
+    ) -> Box<Rotation3DEffect> {
         Rotation3DEffect::new(Box::new(self), x.into(), y.into())
     }
 
@@ -121,14 +124,20 @@ pub trait WidgetExt: Widget + Sized + 'static {
 
     fn foreground_color<C: Into<TState<Color>>>(self, color: C) -> Box<EnvUpdating> {
         let mut e = EnvUpdating::new(Box::new(self));
-        e.add(EnvironmentStateContainer::Color { key: EnvironmentColor::Label, value: color.into() });
+        e.add(EnvironmentStateContainer::Color {
+            key: EnvironmentColor::Label,
+            value: color.into(),
+        });
 
         e
     }
 
     fn accent_color<C: Into<TState<Color>>>(self, color: C) -> Box<EnvUpdating> {
         let mut e = EnvUpdating::new(Box::new(self));
-        e.add(EnvironmentStateContainer::Color { key: EnvironmentColor::Accent, value: color.into() });
+        e.add(EnvironmentStateContainer::Color {
+            key: EnvironmentColor::Accent,
+            value: color.into(),
+        });
 
         e
     }

@@ -22,7 +22,8 @@ fn main() {
             Rectangle::new()
                 .fill(EnvironmentColor::Accent)
                 .frame(50, 50),
-        ]).accent_color(EnvironmentColor::Green)
+        ])
+        .accent_color(EnvironmentColor::Green),
     );
 
     window.launch();

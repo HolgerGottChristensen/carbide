@@ -1,5 +1,5 @@
-use std::fmt::{Display, Formatter, Write};
 use carbide_core::draw::Position;
+use std::fmt::{Display, Formatter, Write};
 
 #[derive(Debug, Clone)]
 pub enum EditingMode {
@@ -16,24 +16,16 @@ pub enum EditingMode {
         mouse_position: Position,
         first_node_id: usize,
         state: CreateWallState,
-    }
+    },
 }
 
 impl Display for EditingMode {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         match self {
-            EditingMode::Selection{..} => {
-                f.write_str("Selection")
-            }
-            EditingMode::Editing => {
-                f.write_str("Editing")
-            }
-            EditingMode::CreateWallP1 { .. } => {
-                f.write_str("Create Wall Initial")
-            }
-            EditingMode::CreateWallP2 { .. } => {
-                f.write_str("Create Wall Subsequent")
-            }
+            EditingMode::Selection { .. } => f.write_str("Selection"),
+            EditingMode::Editing => f.write_str("Editing"),
+            EditingMode::CreateWallP1 { .. } => f.write_str("Create Wall Initial"),
+            EditingMode::CreateWallP2 { .. } => f.write_str("Create Wall Subsequent"),
         }
     }
 }
@@ -42,7 +34,7 @@ impl Display for EditingMode {
 pub enum SelectedState {
     None,
     Node(usize),
-    Edge(usize)
+    Edge(usize),
 }
 
 #[derive(Debug, Clone, Copy)]

@@ -6,7 +6,9 @@ extern crate futures;
 use carbide_controls::{Button, PlainButton};
 use carbide_core::color::RED;
 use carbide_core::focus::Focus;
-use carbide_core::state::{BoolState, FocusState, I32State, LocalState, MapOwnedState, State, StateExt};
+use carbide_core::state::{
+    BoolState, FocusState, I32State, LocalState, MapOwnedState, State, StateExt,
+};
 use carbide_core::text::{FontFamily, FontStyle, FontWeight};
 use carbide_core::widget::*;
 use carbide_core::window::TWindow;
@@ -49,16 +51,16 @@ fn main() {
                 .pressed(pressed_state.clone())
                 .focused(focus_state.clone())
                 .frame(60.0, 22.0),
-            Text::new(counter_state.mapped(|count: &i32| { format!("Count: {}", count) }))
+            Text::new(counter_state.mapped(|count: &i32| format!("Count: {}", count)))
                 .font_size(40),
-            Text::new(hover_state.mapped(|hover: &bool| { format!("Hovered: {}", hover) }))
+            Text::new(hover_state.mapped(|hover: &bool| format!("Hovered: {}", hover)))
                 .font_size(40),
-            Text::new(pressed_state.mapped(|press: &bool| { format!("Pressed: {}", press) }))
+            Text::new(pressed_state.mapped(|press: &bool| format!("Pressed: {}", press)))
                 .font_size(40),
-            Text::new(focus_state.mapped(|focus: &Focus| { format!("Focus: {:?}", focus) }))
+            Text::new(focus_state.mapped(|focus: &Focus| format!("Focus: {:?}", focus)))
                 .font_size(40),
         ])
-            .spacing(20.0),
+        .spacing(20.0),
     );
 
     window.launch();

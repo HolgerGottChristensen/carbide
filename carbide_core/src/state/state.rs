@@ -2,12 +2,15 @@ use std::fmt::Debug;
 
 use dyn_clone::DynClone;
 
-use crate::state::*;
 use crate::state::ReadState;
+use crate::state::*;
 
 use crate::state::util::value_cell::ValueRefMut;
 
-pub trait State<T>: DynClone + Debug + ReadState<T> where T: StateContract {
+pub trait State<T>: DynClone + Debug + ReadState<T>
+where
+    T: StateContract,
+{
     /// This retrieves the value mutably. This is the entry point to changing a value in a state.
     /// This implements deref and deref_mut. Most state mutates the actual value in the state, but
     /// this is not guarantied, for example in state that contains a cloned version of another state.

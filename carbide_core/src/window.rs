@@ -1,20 +1,18 @@
-use std::path::Path;
 use image::DynamicImage;
+use std::path::Path;
 
-use crate::draw::image::{ImageId};
+use crate::draw::image::ImageId;
 use crate::locate_folder::Search;
 use crate::text::{FontFamily, FontId};
-use crate::widget::Widget;
 use crate::widget::Menu;
+use crate::widget::Widget;
 
 pub trait TWindow {
     fn add_font_family(&mut self, family: FontFamily) -> String;
     fn add_font<P: AsRef<Path>>(&mut self, path: P) -> FontId;
 
     fn add_image_from_path(&mut self, path: &str) -> Option<ImageId> {
-        let assets = Search::KidsThenParents(3, 5)
-            .for_folder("assets")
-            .unwrap();
+        let assets = Search::KidsThenParents(3, 5).for_folder("assets").unwrap();
 
         let image = carbide_core::image::open(assets.join(path)).expect("Couldn't load logo");
 

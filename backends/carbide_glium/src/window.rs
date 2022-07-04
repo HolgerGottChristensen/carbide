@@ -8,9 +8,9 @@ use glium::backend::glutin::Display;
 use glium::glutin::WindowBuilder;
 use glium::Surface;
 
-use carbide_core::{Colorable, Positionable, Ui, UiBuilder, UiCell, widget};
 use carbide_core::text_old::font::{Error, Id};
 use carbide_core::widget::primitive::Widget;
+use carbide_core::{widget, Colorable, Positionable, Ui, UiBuilder, UiCell};
 use carbide_winit::WinitWindow;
 
 use crate::Renderer;
@@ -49,7 +49,8 @@ impl<S: 'static + Clone> Window<S> {
         let renderer = Renderer::new(&display.0).unwrap();
 
         // The image map describing each of our widget->image mappings (in our case, none).
-        let image_map = carbide_core::draw::image::image_map::ImageMap::<glium::texture::Texture2d>::new();
+        let image_map =
+            carbide_core::draw::image::image_map::ImageMap::<glium::texture::Texture2d>::new();
 
         Window {
             title,
@@ -75,7 +76,10 @@ impl<S: 'static + Clone> Window<S> {
         self.ui.environment.insert_font_from_file(font_path)
     }
 
-    pub fn add_image(&mut self, path: &str) -> Result<carbide_core::draw::image::image_map::ImageId, Error> {
+    pub fn add_image(
+        &mut self,
+        path: &str,
+    ) -> Result<carbide_core::draw::image::image_map::ImageId, Error> {
         let assets = find_folder::Search::ParentsThenKids(5, 3)
             .for_folder("assets")
             .unwrap();
@@ -119,10 +123,10 @@ impl<S: 'static + Clone> Window<S> {
                         glium::glutin::WindowEvent::CloseRequested
                         | glium::glutin::WindowEvent::KeyboardInput {
                             input:
-                            glium::glutin::KeyboardInput {
-                                virtual_keycode: Some(glium::glutin::VirtualKeyCode::Escape),
-                                ..
-                            },
+                                glium::glutin::KeyboardInput {
+                                    virtual_keycode: Some(glium::glutin::VirtualKeyCode::Escape),
+                                    ..
+                                },
                             ..
                         } => break 'render,
                         _ => (),

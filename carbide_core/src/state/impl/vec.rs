@@ -11,23 +11,17 @@ impl<T: StateContract> WidgetState<Vec<T>> {
     /// Return the length of the vec as a state. This is read only, because setting the length
     /// of a Vec is not possible.
     pub fn len(&self) -> RState<usize> {
-        Map1::read_map(self.clone(), |vec: &Vec<T>| {
-            vec.len()
-        })
+        Map1::read_map(self.clone(), |vec: &Vec<T>| vec.len())
     }
 
     /// Return the capacity of the Vec.
     pub fn capacity(&self) -> RState<usize> {
-        Map1::read_map(self.clone(), |vec: &Vec<T>| {
-            vec.capacity()
-        })
+        Map1::read_map(self.clone(), |vec: &Vec<T>| vec.capacity())
     }
 
     /// Returns a boolean state with true if the vec is empty.
     pub fn is_empty(&self) -> RState<bool> {
-        Map1::read_map(self.clone(), |vec: &Vec<T>| {
-            vec.is_empty()
-        })
+        Map1::read_map(self.clone(), |vec: &Vec<T>| vec.is_empty())
     }
 }
 

@@ -51,13 +51,11 @@ macro_rules! lens {
 
 #[macro_export]
 macro_rules! set_state {
-    ($env:ident, self.$i:ident := $bl:block) => {
-        {
-            let res = $bl;
-            self.$i.set_value(res);
-            self.sync($env);
-        }
-    };
+    ($env:ident, self.$i:ident := $bl:block) => {{
+        let res = $bl;
+        self.$i.set_value(res);
+        self.sync($env);
+    }};
 }
 
 pub use futures::TryFutureExt;
@@ -69,16 +67,20 @@ pub use draw::Scalar;
 pub use crate::color::Color;
 pub use crate::ui::Ui;
 
+pub mod animation;
 pub mod asynchronous;
 pub mod color;
 pub mod cursor;
+pub mod dialog;
 pub mod draw;
 pub mod environment;
 pub mod event;
 pub mod flags;
 pub mod focus;
 pub mod layout;
+pub mod locate_folder;
 pub mod mesh;
+pub mod platform;
 pub mod prelude;
 pub mod render;
 pub mod state;
@@ -87,10 +89,6 @@ mod ui;
 pub mod utils;
 pub mod widget;
 pub mod window;
-pub mod animation;
-pub mod platform;
-pub mod dialog;
-pub mod locate_folder;
 
 /// Reexport of the image crate
 pub mod image {

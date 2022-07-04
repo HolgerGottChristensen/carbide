@@ -1,6 +1,6 @@
-use std::slice::Iter;
 use carbide_core::draw::Position;
 use carbide_core::Scalar;
+use std::slice::Iter;
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct Node {
@@ -20,7 +20,7 @@ impl Node {
             incoming_edges: vec![],
             outgoing_edges: vec![],
             hovered: false,
-            height: Ok(210.0)
+            height: Ok(210.0),
         }
     }
 

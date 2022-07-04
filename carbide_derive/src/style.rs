@@ -50,10 +50,10 @@ fn impl_tokens(params: &Params, crate_tokens: Option<syn::Ident>) -> proc_macro2
     } = *params;
     let getter_methods = fields.iter().map(
         |&FieldParams {
-            ref default,
-            ref ty,
-            ref ident,
-        }| {
+             ref default,
+             ref ty,
+             ref ident,
+         }| {
             quote! {
                 /// Retrieves the value, falling back to a default values in the following order:
                 ///
@@ -140,8 +140,8 @@ fn params(ast: &syn::DeriveInput) -> Result<Params, Error> {
 
             let literal = match item {
                 syn::Meta::NameValue(syn::MetaNameValue {
-                                         ref path, ref lit, ..
-                                     }) if path.is_ident("default") => lit,
+                    ref path, ref lit, ..
+                }) if path.is_ident("default") => lit,
                 ref item => return Some(Err(Error::UnexpectedMetaItem(item.clone()))),
             };
 

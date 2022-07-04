@@ -1,23 +1,26 @@
-use std::fmt::{Debug, Formatter};
 use lyon::algorithms::path::Path;
 use lyon::tessellation::{
     BuffersBuilder, FillOptions, FillTessellator, FillVertex, StrokeOptions, StrokeTessellator,
     StrokeVertex, VertexBuffers,
 };
+use std::fmt::{Debug, Formatter};
 
 use crate::color::Rgba;
-use crate::CommonWidgetImpl;
-use crate::draw::{Dimension, Position, Rect};
 use crate::draw::shape::triangle::Triangle;
+use crate::draw::{Dimension, Position, Rect};
 use crate::prelude::*;
 use crate::render::PrimitiveKind;
-use crate::widget::canvas::{Context, ShapeStyleWithOptions};
 use crate::widget::canvas::canvas::Contexts::{NoState, WithState};
+use crate::widget::canvas::{Context, ShapeStyleWithOptions};
+use crate::CommonWidgetImpl;
 
 /// A basic, non-interactive rectangle shape widget.
 #[derive(Clone, Widget)]
 #[carbide_exclude(Render)]
-pub struct Canvas<T> where T: StateContract {
+pub struct Canvas<T>
+where
+    T: StateContract,
+{
     id: WidgetId,
     position: Position,
     dimension: Dimension,
@@ -25,13 +28,17 @@ pub struct Canvas<T> where T: StateContract {
     color: TState<Color>,
     //prim_store: Vec<Primitive>,
     context: Contexts<T>,
-    #[state] state: TState<T>,
+    #[state]
+    state: TState<T>,
 }
 
 #[derive(Clone)]
-enum Contexts<T> where T: StateContract {
+enum Contexts<T>
+where
+    T: StateContract,
+{
     WithState(fn(&mut TState<T>, Rect, Context, &mut Environment) -> Context),
-    NoState(fn(Rect, Context, &mut Environment) -> Context)
+    NoState(fn(Rect, Context, &mut Environment) -> Context),
 }
 
 impl Canvas<()> {
@@ -43,13 +50,16 @@ impl Canvas<()> {
             color: EnvironmentColor::Accent.into(),
             //prim_store: vec![],
             context: NoState(context),
-            state: ValueState::new(())
+            state: ValueState::new(()),
         })
     }
 }
 
 impl<T: StateContract> Canvas<T> {
-    pub fn new_with_state(state: impl Into<TState<T>>, context: fn(&mut TState<T>, Rect, Context, &mut Environment) -> Context) -> Box<Canvas<T>> {
+    pub fn new_with_state(
+        state: impl Into<TState<T>>,
+        context: fn(&mut TState<T>, Rect, Context, &mut Environment) -> Context,
+    ) -> Box<Canvas<T>> {
         Box::new(Canvas {
             id: WidgetId::new(),
             position: Position::new(0.0, 0.0),
@@ -57,7 +67,7 @@ impl<T: StateContract> Canvas<T> {
             color: EnvironmentColor::Accent.into(),
             //prim_store: vec![],
             context: WithState(context),
-            state: state.into()
+            state: state.into(),
         })
     }
 
@@ -140,7 +150,6 @@ impl<T: StateContract> CommonWidget for Canvas<T> {
         (self.id)
     }
 
-
     fn children(&self) -> carbide_core::widget::WidgetIter {
         carbide_core::widget::WidgetIter::Empty
     }
@@ -193,12 +202,8 @@ impl<T: StateContract> Shape for Canvas<T> {
         let rectangle = Rect::new(self.position(), self.dimension());
 
         let context = match self.context {
-            WithState(c) => {
-                c(&mut self.state, rectangle, context, env)
-            }
-            NoState(c) => {
-                c(rectangle, context, env)
-            }
+            WithState(c) => c(&mut self.state, rectangle, context, env),
+            NoState(c) => c(rectangle, context, env),
         };
 
         let paths = context.to_paths(self.position());
@@ -240,12 +245,8 @@ impl<T: StateContract> Render for Canvas<T> {
 
         let rectangle = Rect::new(self.position(), self.dimension());
         let context = match self.context {
-            WithState(c) => {
-                c(&mut self.state, rectangle, context, env)
-            }
-            NoState(c) => {
-                c(rectangle, context, env)
-            }
+            WithState(c) => c(&mut self.state, rectangle, context, env),
+            NoState(c) => c(rectangle, context, env),
         };
 
         let paths = context.to_paths(self.position());
@@ -269,8 +270,7 @@ impl<T: StateContract> Render for Canvas<T> {
 
 impl<T: StateContract> Debug for Canvas<T> {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        f.debug_struct("Canvas")
-            .finish()
+        f.debug_struct("Canvas").finish()
     }
 }
 

@@ -39,9 +39,8 @@ fn main() {
         Some(icon_path),
     );
 
-    let family = FontFamily::new_from_paths("NotoSans", vec![
-        "fonts/NotoSans/NotoSans-Regular.ttf"
-    ]);
+    let family =
+        FontFamily::new_from_paths("NotoSans", vec!["fonts/NotoSans/NotoSans-Regular.ttf"]);
     window.add_font_family(family);
 
     let shape_state = LocalState::new(Shape::Rectangle);
@@ -52,8 +51,9 @@ fn main() {
             PlainRadioButton::new("Circle", Shape::Circle, shape_state.clone()).border(),
             PlainRadioButton::new("Triangle", Shape::Triangle, shape_state.clone()).border(),
             PlainRadioButton::new("Star", Shape::Star, shape_state.clone()).border(),
-        ]).spacing(10.0)
-            .padding(EdgeInsets::all(40.0)),
+        ])
+        .spacing(10.0)
+        .padding(EdgeInsets::all(40.0)),
     );
 
     window.launch();

@@ -1,6 +1,6 @@
-use std::ops::Shl;
-use crate::state::{Map2, StateContract, WidgetState, RState};
 use crate::state::ReadWidgetState;
+use crate::state::{Map2, RState, StateContract, WidgetState};
+use std::ops::Shl;
 
 macro_rules! shl {
     ($($typ1: ty, $typ2: ty;)*) => {

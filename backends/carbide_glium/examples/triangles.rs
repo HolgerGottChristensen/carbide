@@ -10,8 +10,8 @@ extern crate glium;
 
 use glium::Surface;
 
-use carbide_core::{color, OldWidget, widget};
 use carbide_core::widget::triangles::Triangle;
+use carbide_core::{color, widget, OldWidget};
 
 mod support;
 
@@ -49,7 +49,8 @@ fn main() {
     let mut renderer = carbide_glium::Renderer::new(&display.0).unwrap();
 
     // The image map describing each of our widget->image mappings (in our case, none).
-    let image_map = carbide_core::draw::image::image_map::ImageMap::<glium::texture::Texture2d>::new();
+    let image_map =
+        carbide_core::draw::image::image_map::ImageMap::<glium::texture::Texture2d>::new();
 
     events_loop.run_forever(|event| {
         match event.clone() {
@@ -58,10 +59,10 @@ fn main() {
                 glium::glutin::WindowEvent::CloseRequested
                 | glium::glutin::WindowEvent::KeyboardInput {
                     input:
-                    glium::glutin::KeyboardInput {
-                        virtual_keycode: Some(glium::glutin::VirtualKeyCode::Escape),
-                        ..
-                    },
+                        glium::glutin::KeyboardInput {
+                            virtual_keycode: Some(glium::glutin::VirtualKeyCode::Escape),
+                            ..
+                        },
                     ..
                 } => return glium::glutin::ControlFlow::Break,
 

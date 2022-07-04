@@ -23,16 +23,14 @@ fn main() {
         Some(icon_path),
     );
 
-    let mut family = FontFamily::new_from_paths("NotoSans", vec![
-        "fonts/NotoSans/NotoSans-Regular.ttf",
-    ]);
+    let mut family =
+        FontFamily::new_from_paths("NotoSans", vec!["fonts/NotoSans/NotoSans-Regular.ttf"]);
     window.add_font_family(family);
 
     let checkbox_state1 = LocalState::new(CheckBoxValue::False);
     let checkbox_state2 = LocalState::new(CheckBoxValue::False);
     let checkbox_state3 = LocalState::new(CheckBoxValue::Intermediate);
     let checkbox_state4 = LocalState::new(true);
-
 
     window.set_widgets(
         VStack::new(vec![
@@ -41,9 +39,9 @@ fn main() {
             CheckBox::new("Triangle", checkbox_state3),
             CheckBox::new("Star", checkbox_state4),
         ])
-            .spacing(10.0)
-            .cross_axis_alignment(CrossAxisAlignment::Start)
-            .padding(EdgeInsets::all(40.0)),
+        .spacing(10.0)
+        .cross_axis_alignment(CrossAxisAlignment::Start)
+        .padding(EdgeInsets::all(40.0)),
     );
 
     window.launch();

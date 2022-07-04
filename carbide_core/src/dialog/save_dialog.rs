@@ -11,7 +11,8 @@ use crate::platform::mac::open_save_panel;
 #[cfg(target_os = "windows")]
 use crate::platform::windows::open_save_panel;
 
-pub type FuturePath = Map<Receiver<Option<OsString>>, fn(Result<Option<OsString>, RecvError>) -> Option<PathBuf>>;
+pub type FuturePath =
+    Map<Receiver<Option<OsString>>, fn(Result<Option<OsString>, RecvError>) -> Option<PathBuf>>;
 
 pub struct SaveDialog {}
 

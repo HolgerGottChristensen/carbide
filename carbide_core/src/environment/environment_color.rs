@@ -1,8 +1,8 @@
-use crate::Color;
 use crate::prelude::EnvironmentColorState;
-use crate::state::*;
 use crate::state::WidgetState;
+use crate::state::*;
 use crate::widget::AdvancedColor;
+use crate::Color;
 
 #[derive(Hash, Eq, PartialEq, Clone, Debug)]
 pub enum EnvironmentColor {
@@ -90,9 +90,7 @@ impl Into<TState<Color>> for EnvironmentColor {
 
 impl Into<TState<Color>> for TState<EnvironmentColor> {
     fn into(self) -> TState<Color> {
-        let state = Map1::read_map(self, |e: &EnvironmentColor| {
-            e.state()
-        }).ignore_writes();
+        let state = Map1::read_map(self, |e: &EnvironmentColor| e.state()).ignore_writes();
 
         Flatten::new(state)
     }
@@ -110,8 +108,6 @@ impl Into<TState<AdvancedColor>> for TState<EnvironmentColor> {
     fn into(self) -> TState<AdvancedColor> {
         let state: TState<Color> = self.into();
 
-        Map1::read_map(state, |s: &Color| {
-            AdvancedColor::Color(*s)
-        }).ignore_writes()
+        Map1::read_map(state, |s: &Color| AdvancedColor::Color(*s)).ignore_writes()
     }
 }

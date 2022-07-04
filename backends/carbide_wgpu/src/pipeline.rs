@@ -1,4 +1,9 @@
-use wgpu::{Adapter, BlendComponent, BlendFactor, BlendOperation, BlendState, ColorTargetState, CompareFunction, DepthBiasState, DepthStencilState, Device, FragmentState, FrontFace, PipelineLayout, PrimitiveState, PrimitiveTopology, RenderPipeline, ShaderModule, StencilFaceState, StencilOperation, Surface, TextureFormat, VertexState};
+use wgpu::{
+    Adapter, BlendComponent, BlendFactor, BlendOperation, BlendState, ColorTargetState,
+    CompareFunction, DepthBiasState, DepthStencilState, Device, FragmentState, FrontFace,
+    PipelineLayout, PrimitiveState, PrimitiveTopology, RenderPipeline, ShaderModule,
+    StencilFaceState, StencilOperation, Surface, TextureFormat, VertexState,
+};
 
 use crate::vertex::Vertex;
 
@@ -70,7 +75,7 @@ pub(crate) fn create_render_pipeline(
                 write_mask: col,
             }],
         }),
-        multiview: None
+        multiview: None,
     })
 }
 

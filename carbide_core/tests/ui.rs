@@ -1,15 +1,15 @@
-use {Color, Colorable, Labelable, Positionable, Sizeable, Ui, UiBuilder, Widget};
-use carbide_core::{
-    Color, Colorable, Labelable, Positionable, Sizeable, Ui, UiBuilder, widget, Widget,
-};
 use carbide_core::draw::Point;
 use carbide_core::event::event;
 use carbide_core::event::input::Input;
+use carbide_core::{
+    widget, Color, Colorable, Labelable, Positionable, Sizeable, Ui, UiBuilder, Widget,
+};
 use event::{self, Input};
-use input::{self, Button, Key, Motion, MouseButton};
 use input::keyboard::ModifierKey;
+use input::{self, Button, Key, Motion, MouseButton};
 use position::Point;
 use widget;
+use {Color, Colorable, Labelable, Positionable, Sizeable, Ui, UiBuilder, Widget};
 
 ///// Test assist code.
 

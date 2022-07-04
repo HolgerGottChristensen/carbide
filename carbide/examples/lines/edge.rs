@@ -26,7 +26,7 @@ impl Edge {
                 end: Default::default(),
             },
             offset: 0.5,
-            width: 20.0
+            width: 20.0,
         }
     }
 

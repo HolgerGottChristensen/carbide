@@ -56,7 +56,9 @@ impl CommonWidget for HStack {
     }
 
     fn children(&self) -> WidgetIter {
-        let contains_proxy_or_ignored = self.children.iter().fold(false, |a, b| a || (b.flag() == Flags::PROXY || b.flag() == Flags::IGNORE));
+        let contains_proxy_or_ignored = self.children.iter().fold(false, |a, b| {
+            a || (b.flag() == Flags::PROXY || b.flag() == Flags::IGNORE)
+        });
         if !contains_proxy_or_ignored {
             WidgetIter::Vec(self.children.iter())
         } else {
@@ -74,7 +76,9 @@ impl CommonWidget for HStack {
     }
 
     fn children_mut(&mut self) -> WidgetIterMut {
-        let contains_proxy_or_ignored = self.children.iter().fold(false, |a, b| a || (b.flag() == Flags::PROXY || b.flag() == Flags::IGNORE));
+        let contains_proxy_or_ignored = self.children.iter().fold(false, |a, b| {
+            a || (b.flag() == Flags::PROXY || b.flag() == Flags::IGNORE)
+        });
         if !contains_proxy_or_ignored {
             WidgetIterMut::Vec(self.children.iter_mut())
         } else {

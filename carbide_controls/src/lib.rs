@@ -5,16 +5,16 @@ extern crate carbide_derive;
 extern crate copypasta;
 extern crate unicode_segmentation;
 
-pub use navigation_stack::NavigationStack;
 pub use button::Button;
 pub use check_box::*;
 pub use list::*;
+pub use navigation_stack::NavigationStack;
 pub use plain::*;
 pub use pop_up_button::PopUpButton;
 pub use radio_button::RadioButton;
+pub use slider::Slider;
 pub use switch::Switch;
 pub use text_input::TextInput;
-pub use slider::Slider;
 pub use types::CheckBoxState;
 pub use types::CheckBoxValue;
 
@@ -41,11 +41,11 @@ macro_rules! capture {
 mod button;
 mod check_box;
 mod list;
+mod navigation_stack;
 mod plain;
 mod pop_up_button;
 mod radio_button;
+mod slider;
 mod switch;
 mod text_input;
 mod types;
-mod navigation_stack;
-mod slider;

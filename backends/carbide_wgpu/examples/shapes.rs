@@ -2,8 +2,8 @@ use std::f64::consts::PI;
 
 use carbide_core::draw::Position;
 use carbide_core::environment::*;
-use carbide_core::widget::*;
 use carbide_core::widget::canvas::*;
+use carbide_core::widget::*;
 use carbide_wgpu::window::*;
 
 fn main() {
@@ -31,10 +31,7 @@ fn main() {
             Image::new(landscape_id)
                 .scaled_to_fill()
                 .frame(200.0, 200.0)
-                .clip_shape(
-                    Rectangle::new()
-                        .fill(EnvironmentColor::Accent),
-                )
+                .clip_shape(Rectangle::new().fill(EnvironmentColor::Accent))
                 .frame(100.0, 100.0),
             Image::new(landscape_id)
                 .scaled_to_fill()
@@ -161,7 +158,7 @@ fn main() {
                 context.fill();
                 context
             })
-                .frame(100.0, 100.0),
+            .frame(100.0, 100.0),
             Canvas::new(|_, mut context| {
                 context = draw_star(Position::new(50.0, 50.0), 5, 45.0, 20.0, context);
                 context.set_line_width(10.0);
@@ -169,7 +166,7 @@ fn main() {
                 context.stroke();
                 context
             })
-                .frame(100.0, 100.0),
+            .frame(100.0, 100.0),
             Canvas::new(|_, mut context| {
                 context = draw_star(Position::new(50.0, 50.0), 5, 45.0, 20.0, context);
                 context.set_fill_style(EnvironmentColor::Accent);
@@ -178,7 +175,7 @@ fn main() {
                 context.stroke();
                 context
             })
-                .frame(100.0, 100.0),
+            .frame(100.0, 100.0),
             Image::new(landscape_id)
                 .scaled_to_fill()
                 .frame(200.0, 200.0)

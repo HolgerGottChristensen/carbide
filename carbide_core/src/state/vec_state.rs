@@ -1,11 +1,11 @@
-use std::fmt::{Debug, Formatter};
 use carbide_core::prelude::NewStateSync;
+use std::fmt::{Debug, Formatter};
 
 use crate::prelude::Environment;
-use crate::state::{ReadState, StateContract, TState, UsizeState};
 use crate::state::state::State;
 use crate::state::util::value_cell::{ValueRef, ValueRefMut};
 use crate::state::widget_state::WidgetState;
+use crate::state::{ReadState, StateContract, TState, UsizeState};
 
 /// # Vector state
 /// Vector state is a state mapping from a state of `Vec<T>` and a state of `usize` to a state of `T`.
@@ -14,7 +14,10 @@ use crate::state::widget_state::WidgetState;
 /// This state is ['Listenable'] and handles the subscriptions such that a change in either the
 /// `usize` state or the `Vec<T>` state changes, the listener will receive a notification.
 #[derive(Clone)]
-pub struct VecState<T> where T: StateContract {
+pub struct VecState<T>
+where
+    T: StateContract,
+{
     /// The state that is evaluated whenever trying to get the index within the vec.
     index_state: TState<usize>,
     /// The state containing the vec.
@@ -23,8 +26,7 @@ pub struct VecState<T> where T: StateContract {
 
 impl<T: StateContract> VecState<T> {
     pub fn new(vec: impl Into<TState<Vec<T>>>, index: impl Into<UsizeState>) -> TState<T> {
-        Self::new_inner(vec, index)
-            .into()
+        Self::new_inner(vec, index).into()
     }
 
     fn new_inner(vec: impl Into<TState<Vec<T>>>, index: impl Into<UsizeState>) -> VecState<T> {
@@ -51,7 +53,7 @@ impl<T: StateContract> NewStateSync for VecState<T> {
 impl<T: StateContract> ReadState<T> for VecState<T> {
     fn value(&self) -> ValueRef<T> {
         let index = *self.index_state.value();
-        ValueRef::map(self.vec_state.value(), |a| { &a[index] })
+        ValueRef::map(self.vec_state.value(), |a| &a[index])
     }
 }
 

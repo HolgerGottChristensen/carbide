@@ -1,4 +1,3 @@
-
 #[derive(Eq, PartialEq, Clone, Debug)]
 pub enum Focus {
     Focused,

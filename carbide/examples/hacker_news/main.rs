@@ -1,42 +1,41 @@
-mod hacker_news_api;
 mod article;
+mod hacker_news_api;
 
-use std::collections::HashSet;
-use std::ops::Deref;
-use chrono::{TimeZone, Utc};
-use env_logger::Env;
-use futures::future::join_all;
 use carbide_controls::{capture, List, PlainButton, Selection};
 use carbide_core::environment::{Environment, EnvironmentColor};
 use carbide_core::widget::*;
 use carbide_wgpu::window::*;
+use chrono::{TimeZone, Utc};
+use env_logger::Env;
+use futures::future::join_all;
+use std::collections::HashSet;
+use std::ops::Deref;
 
-use carbide_core::prelude::{EnvironmentFontSize, LocalState};
-use carbide_core::state::{BoolState, Map2, ReadState, State, StateExt, StringState, TState, UsizeState};
-use carbide_core::{Color, lens, task};
-use carbide_core::text::{FontFamily, FontWeight};
-use carbide_core::widget::WidgetExt;
-use reqwest::Response;
+use crate::article::Article;
 use carbide_core::color::TRANSPARENT;
 use carbide_core::layout::BasicLayouter;
-use crate::article::Article;
-
+use carbide_core::prelude::{EnvironmentFontSize, LocalState};
+use carbide_core::state::{
+    BoolState, Map2, ReadState, State, StateExt, StringState, TState, UsizeState,
+};
+use carbide_core::text::{FontFamily, FontWeight};
+use carbide_core::widget::WidgetExt;
+use carbide_core::{lens, task, Color};
+use reqwest::Response;
 
 fn main() {
     env_logger::init();
 
-    let mut window = Window::new(
-        "Hacker-news example",
-        900,
-        500,
-        None,
-    );
+    let mut window = Window::new("Hacker-news example", 900, 500, None);
 
-    let mut family = FontFamily::new_from_paths("NotoSans", vec![
-        "fonts/NotoSans/NotoSans-Regular.ttf",
-        "fonts/NotoSans/NotoSans-Italic.ttf",
-        "fonts/NotoSans/NotoSans-Bold.ttf",
-    ]);
+    let mut family = FontFamily::new_from_paths(
+        "NotoSans",
+        vec![
+            "fonts/NotoSans/NotoSans-Regular.ttf",
+            "fonts/NotoSans/NotoSans-Italic.ttf",
+            "fonts/NotoSans/NotoSans-Bold.ttf",
+        ],
+    );
 
     window.add_font_family(family);
 
@@ -51,15 +50,18 @@ fn main() {
     let news_articles_for_index = news_articles.clone();
 
     let first_selected_article = selected_items.mapped(move |a: &HashSet<WidgetId>| {
-        match (news_articles_for_index.clone().value().deref(), a.iter().next()) {
-            (Some(l), Some(id)) => {
-                l.iter().find(|&a| &a.carbide_id == id).cloned()
-            }
-            _ => None
+        match (
+            news_articles_for_index.clone().value().deref(),
+            a.iter().next(),
+        ) {
+            (Some(l), Some(id)) => l.iter().find(|&a| &a.carbide_id == id).cloned(),
+            _ => None,
         }
     });
 
-    fn id_function(article: &Article) -> WidgetId { article.carbide_id }
+    fn id_function(article: &Article) -> WidgetId {
+        article.carbide_id
+    }
 
     task!(env, news_articles := {
         let response: Vec<u64> = reqwest::get("https://hacker-news.firebaseio.com/v0/topstories.json").await.unwrap().json().await.unwrap();
@@ -87,50 +89,53 @@ fn main() {
 
         let top_padding = if *index.value() == 0 { 5.0 } else { 0.0 };
 
-        let background_color = Map2::read_map(selected.clone(), EnvironmentColor::Accent.state(), |selected: &bool, base_color: &Color| {
-            if *selected {
-                *base_color
-            } else {
-                TRANSPARENT
-            }
-        }).ignore_writes();
+        let background_color = Map2::read_map(
+            selected.clone(),
+            EnvironmentColor::Accent.state(),
+            |selected: &bool, base_color: &Color| {
+                if *selected {
+                    *base_color
+                } else {
+                    TRANSPARENT
+                }
+            },
+        )
+        .ignore_writes();
 
         VStack::new(vec![
             HStack::new(vec![
-                Text::new(lens!(Article; article.title))
-                    .font_weight(FontWeight::Bold),
-                Spacer::new()
+                Text::new(lens!(Article; article.title)).font_weight(FontWeight::Bold),
+                Spacer::new(),
             ]),
             HStack::new(vec![
-
                 Text::new(lens!(Article; |article| {
                     let dt = Utc.timestamp(article.time as i64, 0);
                     format!("by {} {}, {}", article.by, dt.format("%D"), dt.format("%I:%M %p"))
                 })),
-
                 Image::new_icon(thumbs_up_icon.clone())
                     .resizeable()
                     .frame(16, 16)
                     .accent_color(EnvironmentColor::SecondaryLabel),
-
-                Text::new(lens!(Article; article.score))
-                    .custom_flexibility(3),
-
+                Text::new(lens!(Article; article.score)).custom_flexibility(3),
                 Image::new_icon(comments_icon.clone())
                     .resizeable()
                     .frame(16, 16)
                     .accent_color(EnvironmentColor::SecondaryLabel),
-
                 Text::new(lens!(Article; article.descendants).unwrap_or_default())
                     .custom_flexibility(3),
-
-            ]).spacing(3.0)
-                .foreground_color(EnvironmentColor::SecondaryLabel),
-        ]).spacing(0.0)
-            .cross_axis_alignment(CrossAxisAlignment::Start)
-            .padding(EdgeInsets::single(top_padding, 3.0, 10.0, 10.0))
-            .background(Rectangle::new().fill(background_color).frame_fixed_width(6.0))
-                .with_alignment(BasicLayouter::Leading)
+            ])
+            .spacing(3.0)
+            .foreground_color(EnvironmentColor::SecondaryLabel),
+        ])
+        .spacing(0.0)
+        .cross_axis_alignment(CrossAxisAlignment::Start)
+        .padding(EdgeInsets::single(top_padding, 3.0, 10.0, 10.0))
+        .background(
+            Rectangle::new()
+                .fill(background_color)
+                .frame_fixed_width(6.0),
+        )
+        .with_alignment(BasicLayouter::Leading)
     };
 
     let list = List::new(news_articles.unwrap_or_default(), delegate)
@@ -138,9 +143,8 @@ fn main() {
         .selectable(id_function, selected_items);
 
     let loader = ZStack::new(vec![
-        Rectangle::new()
-            .fill(EnvironmentColor::SystemBackground),
-        ProgressView::new()
+        Rectangle::new().fill(EnvironmentColor::SystemBackground),
+        ProgressView::new(),
     ]);
 
     window.set_widgets(
@@ -148,8 +152,9 @@ fn main() {
             IfElse::new(news_articles.is_some().ignore_writes())
                 .when_true(list)
                 .when_false(loader),
-            detail_view(first_selected_article)
-        ).relative_to_start(400.0)
+            detail_view(first_selected_article),
+        )
+        .relative_to_start(400.0),
     );
 
     window.launch();

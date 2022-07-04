@@ -38,7 +38,6 @@ impl Gradient {
     }
 
     pub fn convert(gradient: DrawGradient) -> Self {
-
         let mut colors = [
             [0.0, 0.0, 0.0, 0.0],
             [0.0, 0.0, 0.0, 0.0],
@@ -55,7 +54,7 @@ impl Gradient {
             [0.0, 0.0, 0.0, 0.0],
             [0.0, 0.0, 0.0, 0.0],
             [0.0, 0.0, 0.0, 0.0],
-            [0.0, 0.0, 0.0, 0.0]
+            [0.0, 0.0, 0.0, 0.0],
         ];
 
         for (index, color) in gradient.colors.iter().enumerate() {
@@ -64,22 +63,7 @@ impl Gradient {
         }
 
         let mut ratios = [
-            0.0,
-            0.0,
-            0.0,
-            0.0,
-            0.0,
-            0.0,
-            0.0,
-            0.0,
-            0.0,
-            0.0,
-            0.0,
-            0.0,
-            0.0,
-            0.0,
-            0.0,
-            0.0,
+            0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
         ];
 
         for (index, ratio) in gradient.ratios.iter().enumerate() {
@@ -107,7 +91,7 @@ impl Gradient {
                 gradient_type,
                 repeat_mode,
                 start: [gradient.start.x() as f32, gradient.start.y() as f32],
-                end: [(gradient.end.x() + 1.0) as f32, gradient.end.y() as f32]
+                end: [(gradient.end.x() + 1.0) as f32, gradient.end.y() as f32],
             }
         } else if gradient.start == gradient.end {
             Self {
@@ -117,7 +101,7 @@ impl Gradient {
                 gradient_type: 100, // This means we should hit the default course.
                 repeat_mode,
                 start: [gradient.start.x() as f32, gradient.start.y() as f32],
-                end: [gradient.end.x() as f32, gradient.end.y() as f32]
+                end: [gradient.end.x() as f32, gradient.end.y() as f32],
             }
         } else {
             Self {
@@ -127,12 +111,11 @@ impl Gradient {
                 gradient_type,
                 repeat_mode,
                 start: [gradient.start.x() as f32, gradient.start.y() as f32],
-                end: [gradient.end.x() as f32, gradient.end.y() as f32]
+                end: [gradient.end.x() as f32, gradient.end.y() as f32],
             }
         }
     }
 }
-
 
 // impl From<carbide_core::widget::ImageFilter> for Gradient {
 //     fn from(filter: carbide_core::widget::ImageFilter) -> Self {

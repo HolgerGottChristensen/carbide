@@ -1,5 +1,5 @@
-use crate::Color;
 use crate::draw::{Dimension, Position};
+use crate::Color;
 
 /// This trait is the base for things that are animatable. To animate a value in an [Animation]
 /// you can either provide a value that is animatable or provide a value with a custom interpolation.
@@ -11,7 +11,6 @@ use crate::draw::{Dimension, Position};
 pub trait Animatable<T> {
     fn interpolate(&self, other: &T, percentage: f64) -> T;
 }
-
 
 impl Animatable<f32> for f32 {
     fn interpolate(&self, other: &f32, percentage: f64) -> f32 {

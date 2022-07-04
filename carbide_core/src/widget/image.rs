@@ -1,14 +1,14 @@
 //! A simple, non-interactive widget for drawing an `Image`.
 
-use std::path::PathBuf;
 use crate::color::WHITE;
+use crate::draw::image::ImageId;
 use crate::draw::{Dimension, Position, Rect};
 use crate::mesh::{MODE_ICON, MODE_IMAGE};
 use crate::prelude::*;
 use crate::render::PrimitiveKind;
 use crate::widget::types::ScaleMode;
 use crate::CommonWidgetImpl;
-use crate::draw::image::ImageId;
+use std::path::PathBuf;
 
 /// A primitive and basic widget for drawing an `Image`.
 #[derive(Debug, Clone, Widget)]
@@ -16,7 +16,8 @@ use crate::draw::image::ImageId;
 pub struct Image {
     id: WidgetId,
     /// The unique identifier for the image that will be drawn.
-    #[state] pub image_id: TState<Option<ImageId>>,
+    #[state]
+    pub image_id: TState<Option<ImageId>>,
     /// The rectangle area of the original source image that should be used.
     src_rect: Option<Rect>,
     color: Option<TState<Color>>,
@@ -103,10 +104,7 @@ impl Layout for Image {
         };
 
         if !self.resizeable {
-            self.dimension = Dimension::new(
-                image_information.width,
-                image_information.height,
-            );
+            self.dimension = Dimension::new(image_information.width, image_information.height);
         } else {
             let width_factor = requested_size.width / image_information.width;
             let height_factor = requested_size.height / image_information.height;
@@ -152,7 +150,10 @@ impl Render for Image {
             };
             let rect = Rect::new(self.position, self.dimension);
 
-            primitives.push(Primitive { kind, bounding_box: rect });
+            primitives.push(Primitive {
+                kind,
+                bounding_box: rect,
+            });
         } else {
             let color = if let Some(color) = &self.color {
                 *color.value()
@@ -163,7 +164,10 @@ impl Render for Image {
 
             let rect = Rect::new(self.position, self.dimension);
 
-            primitives.push(Primitive { kind, bounding_box: rect });
+            primitives.push(Primitive {
+                kind,
+                bounding_box: rect,
+            });
         }
     }
 }

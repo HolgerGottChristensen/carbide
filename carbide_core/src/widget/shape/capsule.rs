@@ -5,10 +5,10 @@ use lyon::tessellation::path::Winding;
 
 use crate::draw::{Dimension, Position};
 use crate::prelude::*;
-use crate::widget::shape::{Shape, tessellate};
+use crate::widget::shape::{tessellate, Shape};
+use crate::widget::types::PrimitiveStore;
 use crate::widget::types::ShapeStyle;
 use crate::widget::types::StrokeStyle;
-use crate::widget::types::PrimitiveStore;
 use crate::CommonWidgetImpl;
 
 /// A basic, non-interactive rectangle shape widget.
@@ -53,8 +53,7 @@ impl Capsule {
         self.stroke_color = advanced_material_state.clone().ignore_writes();
 
         ZStack::new(vec![
-            Blur::gaussian(10.0)
-                .clip_shape(Box::new(self.clone())),
+            Blur::gaussian(10.0).clip_shape(Box::new(self.clone())),
             Box::new(self),
         ])
     }
@@ -111,11 +110,16 @@ impl Render for Capsule {
             );
         });
 
-        let fill_color =  self.fill_color.value().clone();
-        let stroke_color =  self.stroke_color.value().clone();
+        let fill_color = self.fill_color.value().clone();
+        let stroke_color = self.stroke_color.value().clone();
 
-        self.triangle_store
-            .insert_primitives(primitives, fill_color, stroke_color, self.position, self.dimension);
+        self.triangle_store.insert_primitives(
+            primitives,
+            fill_color,
+            stroke_color,
+            self.position,
+            self.dimension,
+        );
     }
 }
 

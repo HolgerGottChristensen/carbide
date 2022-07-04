@@ -8,8 +8,8 @@ use carbide_core::widget::*;
 #[state_sync(insert_local_state)]
 #[event(handle_keyboard_event)]
 pub struct SyncTest<GS>
-    where
-        GS: GlobalStateContract,
+where
+    GS: GlobalStateContract,
 {
     id: Uuid,
     child: Box<dyn Widget<GS>>,
@@ -25,10 +25,7 @@ pub struct SyncTest<GS>
 impl<S: GlobalStateContract> SyncTest<S> {
     fn insert_local_state(&self, env: &mut Environment<S>) {
         if self.show_overlay {
-            env.add_overlay(
-                "overlay_test",
-                Rectangle::new().fill(EnvironmentColor::Red),
-            )
+            env.add_overlay("overlay_test", Rectangle::new().fill(EnvironmentColor::Red))
         }
     }
 

@@ -3,9 +3,9 @@ use std::time::Duration;
 
 use carbide_core::prelude::EnvironmentColor;
 use carbide_core::state::{LocalState, Map1, State, StateExt};
-use carbide_core::{Color, task};
 use carbide_core::text::FontFamily;
 use carbide_core::widget::*;
+use carbide_core::{task, Color};
 use carbide_wgpu::window::*;
 
 fn main() {
@@ -20,9 +20,8 @@ fn main() {
         Some(icon_path.clone()),
     );
 
-    let family = FontFamily::new_from_paths("NotoSans", vec![
-        "fonts/NotoSans/NotoSans-Regular.ttf"
-    ]);
+    let family =
+        FontFamily::new_from_paths("NotoSans", vec!["fonts/NotoSans/NotoSans-Regular.ttf"]);
     window.add_font_family(family);
 
     //let image_id = LocalState::new(None);
@@ -36,13 +35,12 @@ fn main() {
 
     let new_state = Map1::map(
         block_width.clone(),
-        |x: &f64| {*x * 2.0},
-        |x: f64, _: &f64| {
-            Some(x / 2.0)
-        });
+        |x: &f64| *x * 2.0,
+        |x: f64, _: &f64| Some(x / 2.0),
+    );
 
-    let new_state1 = Map1::read_map(block_width.clone(), |x: &f64| {*x * 3.0});
-    let new_state2 = Map1::read_map(new_state1.clone(), |x: &f64| {*x * 1.2});
+    let new_state1 = Map1::read_map(block_width.clone(), |x: &f64| *x * 3.0);
+    let new_state2 = Map1::read_map(new_state1.clone(), |x: &f64| *x * 1.2);
     //let text = LocalState::new("Hello World!".to_string());
 
     let env = window.environment_mut();
@@ -73,18 +71,14 @@ fn main() {
         image_id_for_async.clone().set_value(env.queue_image(res))
     });*/
 
-    let random_color = 10.mapped(|_: &i32| {
-        Color::random()
-    });
+    let random_color = 10.mapped(|_: &i32| Color::random());
 
     window.set_widgets(
         VStack::new(vec![
             //Text::new(text)
             //    .padding(20.0),
             //Image::new(image_id),
-            Rectangle::new()
-                .fill(random_color)
-                .frame(block_width, 50),
+            Rectangle::new().fill(random_color).frame(block_width, 50),
             Rectangle::new()
                 .fill(EnvironmentColor::Accent)
                 .frame(new_state, 50),
@@ -94,7 +88,8 @@ fn main() {
             Rectangle::new()
                 .fill(EnvironmentColor::Accent)
                 .frame(new_state2.ignore_writes(), 50),
-        ]).accent_color(EnvironmentColor::Red)
+        ])
+        .accent_color(EnvironmentColor::Red),
     );
 
     window.launch();

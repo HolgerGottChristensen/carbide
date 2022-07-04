@@ -42,8 +42,8 @@ fn main() {
             PlainSwitch::new("Triangle", switch_state3).border(),
             PlainSwitch::new("Star", switch_state4).border(),
         ])
-            .spacing(10.0)
-            .padding(EdgeInsets::all(40.0)),
+        .spacing(10.0)
+        .padding(EdgeInsets::all(40.0)),
     );
 
     window.launch();

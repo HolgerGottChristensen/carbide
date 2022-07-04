@@ -1,16 +1,16 @@
 use std::fmt::{Debug, Formatter};
 
-use carbide_core::Color;
 use carbide_core::cursor::MouseCursor;
 use carbide_core::draw::{Dimension, Position};
 use carbide_core::flags::Flags;
 use carbide_core::focus::Focus;
-use carbide_core::prelude::{EnvironmentColor};
+use carbide_core::prelude::EnvironmentColor;
 use carbide_core::state::{BoolState, FocusState, LocalState, Map3, ReadState, State, StringState};
 use carbide_core::widget::*;
+use carbide_core::Color;
 
-use carbide_core::widget::Action;
 use crate::PlainButton;
+use carbide_core::widget::Action;
 
 #[derive(Clone, Widget)]
 pub struct Button {
@@ -52,10 +52,7 @@ impl Button {
     }
 
     /// |env: &mut Environment, modifier_key: ModifierKey| {}
-    pub fn on_click(
-        mut self,
-        fire: impl Action + 'static,
-    ) -> Box<Self> {
+    pub fn on_click(mut self, fire: impl Action + 'static) -> Box<Self> {
         self.click = Box::new(fire);
         Self::new_internal(
             self.is_primary,
@@ -156,7 +153,9 @@ impl Button {
         };
 
         let background_color = Map3::read_map(
-            hover_state.clone(), pressed_state.clone(), normal_color,
+            hover_state.clone(),
+            pressed_state.clone(),
+            normal_color,
             |hover: &bool, pressed: &bool, normal: &Color| {
                 if *pressed {
                     return normal.darkened(0.05);
@@ -166,22 +165,22 @@ impl Button {
                 }
 
                 *normal
-            }).ignore_writes();
-
-        let child = PlainButton::new(
-            ZStack::new(vec![
-                RoundedRectangle::new(CornerRadii::all(3.0))
-                    .fill(background_color)
-                    .stroke(EnvironmentColor::OpaqueSeparator)
-                    .stroke_style(1.0),
-                Text::new(label.clone()),
-            ])
+            },
         )
-            .hovered(hover_state.clone())
-            .pressed(pressed_state.clone())
-            .on_click(clicked.clone())
-            .focused(focus_state.clone())
-            .hover_cursor(hover_cursor);
+        .ignore_writes();
+
+        let child = PlainButton::new(ZStack::new(vec![
+            RoundedRectangle::new(CornerRadii::all(3.0))
+                .fill(background_color)
+                .stroke(EnvironmentColor::OpaqueSeparator)
+                .stroke_style(1.0),
+            Text::new(label.clone()),
+        ]))
+        .hovered(hover_state.clone())
+        .pressed(pressed_state.clone())
+        .on_click(clicked.clone())
+        .focused(focus_state.clone())
+        .hover_cursor(hover_cursor);
 
         let child = if let Some(cursor) = pressed_cursor {
             child.pressed_cursor(cursor)

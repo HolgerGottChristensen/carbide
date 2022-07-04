@@ -1,10 +1,10 @@
 use std::ops::{Deref, DerefMut};
 
-use crate::Color;
-use crate::prelude::{Environment, State};
 use crate::prelude::EnvironmentColor;
-use crate::state::{NewStateSync, ReadState, ValueRef, ValueRefMut};
+use crate::prelude::{Environment, State};
 use crate::state::StateKey;
+use crate::state::{NewStateSync, ReadState, ValueRef, ValueRefMut};
+use crate::Color;
 
 #[derive(Clone, Debug)]
 pub struct EnvironmentColorState {
@@ -57,7 +57,6 @@ impl ReadState<Color> for EnvironmentColorState {
 }
 
 impl State<Color> for EnvironmentColorState {
-
     fn value_mut(&mut self) -> ValueRefMut<Color> {
         ValueRefMut::Borrow(&mut self.value)
     }

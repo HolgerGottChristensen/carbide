@@ -4,13 +4,13 @@ use std::sync::mpsc::Sender;
 use cocoa::appkit::CGFloat;
 use cocoa::base::{id, NO, YES};
 use lazy_static::lazy_static;
-use objc::{class, msg_send, sel, sel_impl};
 use objc::declare::ClassDecl;
 use objc::runtime::{Class, Object, Sel};
+use objc::{class, msg_send, sel, sel_impl};
 
-use crate::Color;
 use crate::dialog::color_dialog::ColorDialog;
 use crate::prelude::Environment;
+use crate::Color;
 
 struct ColorPickerResponder(*const Class);
 
@@ -95,7 +95,11 @@ lazy_static! {
     };
 }
 
-pub fn open_color_dialog(env: &Environment, sender: std::sync::mpsc::Sender<Color>, dialog: ColorDialog) {
+pub fn open_color_dialog(
+    env: &Environment,
+    sender: std::sync::mpsc::Sender<Color>,
+    dialog: ColorDialog,
+) {
     let inner_window = env.ns_window();
 
     unsafe {

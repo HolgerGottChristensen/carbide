@@ -1,5 +1,8 @@
 use crate::draw::{Dimension, Position};
-use crate::event::{KeyboardEvent, KeyboardEventHandler, MouseEvent, MouseEventHandler, OtherEventHandler, WidgetEvent};
+use crate::event::{
+    KeyboardEvent, KeyboardEventHandler, MouseEvent, MouseEventHandler, OtherEventHandler,
+    WidgetEvent,
+};
 use crate::focus::{Focusable, Refocus};
 use crate::prelude::*;
 use crate::CommonWidgetImpl;
@@ -42,41 +45,59 @@ impl EnvUpdating {
                     value.sync(env);
                     let to_update = value.value().clone();
 
-                    env.push(EnvironmentVariable::String { key: key.clone(), value: to_update });
+                    env.push(EnvironmentVariable::String {
+                        key: key.clone(),
+                        value: to_update,
+                    });
                     //value.release_state(env);
                 }
                 EnvironmentStateContainer::U32 { key, value } => {
                     value.sync(env);
                     let to_update = *value.value();
 
-                    env.push(EnvironmentVariable::U32 { key: key.clone(), value: to_update });
+                    env.push(EnvironmentVariable::U32 {
+                        key: key.clone(),
+                        value: to_update,
+                    });
                     //value.release_state(env);
                 }
                 EnvironmentStateContainer::F64 { key, value } => {
                     value.sync(env);
                     let to_update = *value.value();
 
-                    env.push(EnvironmentVariable::F64 { key: key.clone(), value: to_update });
+                    env.push(EnvironmentVariable::F64 {
+                        key: key.clone(),
+                        value: to_update,
+                    });
                     //value.release_state(env);
                 }
                 EnvironmentStateContainer::Color { key, value } => {
                     value.sync(env);
                     let to_update = *value.value();
-                    env.push(EnvironmentVariable::Color { key: key.clone(), value: to_update });
+                    env.push(EnvironmentVariable::Color {
+                        key: key.clone(),
+                        value: to_update,
+                    });
                     //value.release_state(env);
                 }
                 EnvironmentStateContainer::FontSize { key, value } => {
                     value.sync(env);
                     let to_update = *value.value();
 
-                    env.push(EnvironmentVariable::FontSize { key: key.clone(), value: to_update });
+                    env.push(EnvironmentVariable::FontSize {
+                        key: key.clone(),
+                        value: to_update,
+                    });
                     //value.release_state(env);
                 }
                 EnvironmentStateContainer::I32 { key, value } => {
                     value.sync(env);
                     let to_update = *value.value();
 
-                    env.push(EnvironmentVariable::I32 { key: key.clone(), value: to_update });
+                    env.push(EnvironmentVariable::I32 {
+                        key: key.clone(),
+                        value: to_update,
+                    });
                     //value.release_state(env);
                 }
             }
@@ -114,7 +135,7 @@ impl MouseEventHandler for EnvUpdating {
         for mut child in self.children_direct() {
             child.process_mouse_event(event, &consumed, env);
             if *consumed {
-                break
+                break;
             }
         }
 
@@ -123,7 +144,12 @@ impl MouseEventHandler for EnvUpdating {
 }
 
 impl Focusable for EnvUpdating {
-    fn process_focus_request(&mut self, event: &WidgetEvent, focus_request: &Refocus, env: &mut Environment) -> bool {
+    fn process_focus_request(
+        &mut self,
+        event: &WidgetEvent,
+        focus_request: &Refocus,
+        env: &mut Environment,
+    ) -> bool {
         let mut any_focus = false;
         self.insert_into_env(env);
 
@@ -137,7 +163,13 @@ impl Focusable for EnvUpdating {
         any_focus
     }
 
-    fn process_focus_next(&mut self, event: &WidgetEvent, focus_request: &Refocus, focus_up_for_grab: bool, env: &mut Environment) -> bool {
+    fn process_focus_next(
+        &mut self,
+        event: &WidgetEvent,
+        focus_request: &Refocus,
+        focus_up_for_grab: bool,
+        env: &mut Environment,
+    ) -> bool {
         let mut focus_child = focus_up_for_grab;
         self.insert_into_env(env);
         for mut child in self.children_direct() {
@@ -147,7 +179,13 @@ impl Focusable for EnvUpdating {
         focus_child
     }
 
-    fn process_focus_previous(&mut self, event: &WidgetEvent, focus_request: &Refocus, focus_up_for_grab: bool, env: &mut Environment) -> bool {
+    fn process_focus_previous(
+        &mut self,
+        event: &WidgetEvent,
+        focus_request: &Refocus,
+        focus_up_for_grab: bool,
+        env: &mut Environment,
+    ) -> bool {
         let mut focus_child = focus_up_for_grab;
         self.insert_into_env(env);
         for mut child in self.children_direct_rev() {

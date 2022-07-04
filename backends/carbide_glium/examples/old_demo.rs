@@ -140,7 +140,8 @@ fn main() {
     let mut renderer = carbide_glium::Renderer::new(&display.0).unwrap();
 
     // The image map describing each of our widget->image mappings (in our case, none).
-    let image_map = carbide_core::draw::image::image_map::ImageMap::<glium::texture::Texture2d>::new();
+    let image_map =
+        carbide_core::draw::image::image_map::ImageMap::<glium::texture::Texture2d>::new();
 
     // Our demonstration app that we'll control with our GUI.
     let mut app = DemoApp::new();
@@ -162,10 +163,10 @@ fn main() {
                     glium::glutin::WindowEvent::CloseRequested
                     | glium::glutin::WindowEvent::KeyboardInput {
                         input:
-                        glium::glutin::KeyboardInput {
-                            virtual_keycode: Some(glium::glutin::VirtualKeyCode::Escape),
-                            ..
-                        },
+                            glium::glutin::KeyboardInput {
+                                virtual_keycode: Some(glium::glutin::VirtualKeyCode::Escape),
+                                ..
+                            },
                         ..
                     } => break 'main,
                     _ => (),
@@ -438,16 +439,16 @@ fn set_widgets(ui: &mut carbide_core::UiCell, app: &mut DemoApp, ids: &mut Ids) 
         95.0,
         245.0,
     ) // y range.
-        .w_h(150.0, 150.0)
-        .right_from(ids.toggle_matrix, 30.0)
-        .align_bottom_of(ids.toggle_matrix) // Align to the bottom of the last toggle_matrix element.
-        .color(app.ddl_color)
-        .border(app.border_width)
-        .border_color(color::WHITE)
-        .label("Circle Position")
-        .label_color(app.ddl_color.plain_contrast().alpha(0.5))
-        .line_thickness(2.0)
-        .set(ids.circle_position, ui)
+    .w_h(150.0, 150.0)
+    .right_from(ids.toggle_matrix, 30.0)
+    .align_bottom_of(ids.toggle_matrix) // Align to the bottom of the last toggle_matrix element.
+    .color(app.ddl_color)
+    .border(app.border_width)
+    .border_color(color::WHITE)
+    .label("Circle Position")
+    .label_color(app.ddl_color.plain_contrast().alpha(0.5))
+    .line_thickness(2.0)
+    .set(ids.circle_position, ui)
     {
         app.circle_pos[0] = x;
         app.circle_pos[1] = y;

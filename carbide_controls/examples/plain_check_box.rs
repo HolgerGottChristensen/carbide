@@ -44,8 +44,8 @@ fn main() {
             PlainCheckBox::new("Triangle", checkbox_state3).border(),
             PlainCheckBox::new("Star", checkbox_state4).border(),
         ])
-            .spacing(10.0)
-            .padding(EdgeInsets::all(40.0)),
+        .spacing(10.0)
+        .padding(EdgeInsets::all(40.0)),
     );
 
     window.launch();

@@ -12,7 +12,8 @@ pub struct Transform {
     position: Position,
     dimension: Dimension,
     anchor: BasicLayouter,
-    #[state] matrix: TState<Matrix4<f32>>,
+    #[state]
+    matrix: TState<Matrix4<f32>>,
 }
 
 impl Transform {
@@ -45,11 +46,14 @@ impl Transform {
     }
 
     pub fn rotation<P1: Into<F64State>>(child: Box<dyn Widget>, rotation: P1) -> Box<Self> {
-        let rotation_to_matrix = |rotation: &f64, _: &_, _: &_| {
-            Matrix4::from_angle_z(Deg(*rotation as f32))
-        };
+        let rotation_to_matrix =
+            |rotation: &f64, _: &_, _: &_| Matrix4::from_angle_z(Deg(*rotation as f32));
 
-        let matrix = MapOwnedState::new_with_default(rotation.into(), rotation_to_matrix, Matrix4::identity());
+        let matrix = MapOwnedState::new_with_default(
+            rotation.into(),
+            rotation_to_matrix,
+            Matrix4::identity(),
+        );
 
         Box::new(Transform {
             id: WidgetId::new(),
@@ -62,11 +66,10 @@ impl Transform {
     }
 
     pub fn scale<P1: Into<F64State>>(child: Box<dyn Widget>, scale: P1) -> Box<Self> {
-        let scale_to_matrix = |scale: &f64, _: &_, _: &_| {
-            Matrix4::from_scale(*scale as f32)
-        };
+        let scale_to_matrix = |scale: &f64, _: &_, _: &_| Matrix4::from_scale(*scale as f32);
 
-        let matrix = MapOwnedState::new_with_default(scale.into(), scale_to_matrix, Matrix4::identity());
+        let matrix =
+            MapOwnedState::new_with_default(scale.into(), scale_to_matrix, Matrix4::identity());
 
         Box::new(Transform {
             id: WidgetId::new(),
@@ -78,12 +81,16 @@ impl Transform {
         })
     }
 
-    pub fn scale_non_uniform<P1: Into<TState<Dimension>>>(child: Box<dyn Widget>, scale: P1) -> Box<Self> {
+    pub fn scale_non_uniform<P1: Into<TState<Dimension>>>(
+        child: Box<dyn Widget>,
+        scale: P1,
+    ) -> Box<Self> {
         let scale_to_matrix = |scale: &Dimension, _: &_, _: &_| {
             Matrix4::from_nonuniform_scale(scale.width as f32, scale.height as f32, 1.0)
         };
 
-        let matrix = MapOwnedState::new_with_default(scale.into(), scale_to_matrix, Matrix4::identity());
+        let matrix =
+            MapOwnedState::new_with_default(scale.into(), scale_to_matrix, Matrix4::identity());
 
         Box::new(Transform {
             id: WidgetId::new(),

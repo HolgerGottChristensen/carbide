@@ -20,7 +20,6 @@ pub trait KeyboardEventHandler: CommonWidget + StateSync + Focusable {
     /// manage the events yourself. Overriding this you are thereby able to restrict events to
     /// a widgets children.
     fn process_keyboard_event(&mut self, event: &KeyboardEvent, env: &mut Environment) {
-
         if self.flag().contains(Flags::FOCUSABLE) && self.get_focus() == Focus::Focused {
             match event {
                 KeyboardEvent::Press(key, modifier) => {
@@ -34,7 +33,7 @@ pub trait KeyboardEventHandler: CommonWidget + StateSync + Focusable {
                         }
                     }
                 }
-                _ => ()
+                _ => (),
             }
         }
 

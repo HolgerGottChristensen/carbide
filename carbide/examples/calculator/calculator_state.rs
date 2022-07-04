@@ -60,7 +60,7 @@ impl CalculatorState {
     pub fn get_display(&self) -> String {
         if !self.string.is_empty() {
             if self.string == "-" {
-                return "-0".to_string()
+                return "-0".to_string();
             }
             return self.string.to_string();
         } else if self.current_operation == Operation::Eq {

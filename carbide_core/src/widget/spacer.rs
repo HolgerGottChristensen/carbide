@@ -16,7 +16,7 @@ impl Spacer {
             id: WidgetId::new(),
             position: Position::new(0.0, 0.0),
             dimension: Dimension::new(100.0, 100.0),
-            max_size: None
+            max_size: None,
         })
     }
 
@@ -25,7 +25,7 @@ impl Spacer {
             id: WidgetId::new(),
             position: Position::new(0.0, 0.0),
             dimension: Dimension::new(100.0, 100.0),
-            max_size: Some(max)
+            max_size: Some(max),
         })
     }
 }
@@ -42,7 +42,6 @@ impl Layout for Spacer {
             self.dimension = requested_size;
             requested_size
         }
-
     }
 }
 

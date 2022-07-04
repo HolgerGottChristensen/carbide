@@ -1,17 +1,20 @@
-use winit::window::WindowBuilder;
-use winit::dpi::Size::Physical;
-use winit::dpi::PhysicalSize;
-use winit::event::{WindowEvent, Event};
-use winit::event_loop::EventLoop;
-use windows::Win32::UI::Shell::*;
-use winit::platform::windows::WindowExtWindows;
-use windows::Win32::System::Com::{CLSCTX_INPROC_SERVER, CoCreateInstance, CoTaskMemFree, CoInitializeEx, COINIT_APARTMENTTHREADED, COINIT_DISABLE_OLE1DDE, CoUninitialize};
-use windows::Win32::Foundation::{HWND, PWSTR};
+use std::ffi::OsStr;
 use std::os::windows::ffi::OsStrExt;
 use std::path::PathBuf;
 use std::ptr;
 use windows::core::Result as WindowsResult;
-use std::ffi::OsStr;
+use windows::Win32::Foundation::{HWND, PWSTR};
+use windows::Win32::System::Com::{
+    CoCreateInstance, CoInitializeEx, CoTaskMemFree, CoUninitialize, CLSCTX_INPROC_SERVER,
+    COINIT_APARTMENTTHREADED, COINIT_DISABLE_OLE1DDE,
+};
+use windows::Win32::UI::Shell::*;
+use winit::dpi::PhysicalSize;
+use winit::dpi::Size::Physical;
+use winit::event::{Event, WindowEvent};
+use winit::event_loop::EventLoop;
+use winit::platform::windows::WindowExtWindows;
+use winit::window::WindowBuilder;
 
 fn main() {
     let mut event_loop = EventLoop::new();
@@ -59,14 +62,17 @@ fn main() {
         Ok(out)
     }
 
-
     let window_id = inner_window.hwnd() as isize;
 
     std::thread::spawn(move || {
         unsafe {
             init_com(|| {
-                let dialog: IFileOpenDialog = CoCreateInstance(&FileOpenDialog, None, CLSCTX_INPROC_SERVER).unwrap();
-                let mut wide_title: Vec<u16> = OsStr::new("Hejsa").encode_wide().chain(std::iter::once(0)).collect();
+                let dialog: IFileOpenDialog =
+                    CoCreateInstance(&FileOpenDialog, None, CLSCTX_INPROC_SERVER).unwrap();
+                let mut wide_title: Vec<u16> = OsStr::new("Hejsa")
+                    .encode_wide()
+                    .chain(std::iter::once(0))
+                    .collect();
                 let pwstr = PWSTR(wide_title.as_mut_ptr());
                 dialog.SetOkButtonLabel(pwstr).unwrap();
                 dialog.SetTitle(pwstr).unwrap();
@@ -94,47 +100,42 @@ fn main() {
         }
     });
 
-    event_loop.run(
-        move |event, _, control_flow| {
-            match event {
-                Event::NewEvents(_) => {}
-                Event::WindowEvent { window_id, event } => {
-                    match event {
-                        WindowEvent::Resized(_) => {}
-                        WindowEvent::Moved(_) => {}
-                        WindowEvent::CloseRequested => {}
-                        WindowEvent::Destroyed => {}
-                        WindowEvent::DroppedFile(_) => {}
-                        WindowEvent::HoveredFile(_) => {}
-                        WindowEvent::HoveredFileCancelled => {}
-                        WindowEvent::ReceivedCharacter(_) => {}
-                        WindowEvent::Focused(focused) => {
-                            if focused {
-                                println!("Hejsa");
-                            }
-                        }
-                        WindowEvent::KeyboardInput { .. } => {}
-                        WindowEvent::ModifiersChanged(_) => {}
-                        WindowEvent::CursorMoved { .. } => {}
-                        WindowEvent::CursorEntered { .. } => {}
-                        WindowEvent::CursorLeft { .. } => {}
-                        WindowEvent::MouseWheel { .. } => {}
-                        WindowEvent::MouseInput { .. } => {}
-                        WindowEvent::TouchpadPressure { .. } => {}
-                        WindowEvent::AxisMotion { .. } => {}
-                        WindowEvent::Touch(_) => {}
-                        WindowEvent::ScaleFactorChanged { .. } => {}
-                        WindowEvent::ThemeChanged(_) => {}
-                    }
+    event_loop.run(move |event, _, control_flow| match event {
+        Event::NewEvents(_) => {}
+        Event::WindowEvent { window_id, event } => match event {
+            WindowEvent::Resized(_) => {}
+            WindowEvent::Moved(_) => {}
+            WindowEvent::CloseRequested => {}
+            WindowEvent::Destroyed => {}
+            WindowEvent::DroppedFile(_) => {}
+            WindowEvent::HoveredFile(_) => {}
+            WindowEvent::HoveredFileCancelled => {}
+            WindowEvent::ReceivedCharacter(_) => {}
+            WindowEvent::Focused(focused) => {
+                if focused {
+                    println!("Hejsa");
                 }
-                Event::DeviceEvent { .. } => {}
-                Event::UserEvent(_) => {}
-                Event::Suspended => {}
-                Event::Resumed => {}
-                Event::MainEventsCleared => {}
-                Event::RedrawRequested(_) => {}
-                Event::RedrawEventsCleared => {}
-                Event::LoopDestroyed => {}
             }
-        });
+            WindowEvent::KeyboardInput { .. } => {}
+            WindowEvent::ModifiersChanged(_) => {}
+            WindowEvent::CursorMoved { .. } => {}
+            WindowEvent::CursorEntered { .. } => {}
+            WindowEvent::CursorLeft { .. } => {}
+            WindowEvent::MouseWheel { .. } => {}
+            WindowEvent::MouseInput { .. } => {}
+            WindowEvent::TouchpadPressure { .. } => {}
+            WindowEvent::AxisMotion { .. } => {}
+            WindowEvent::Touch(_) => {}
+            WindowEvent::ScaleFactorChanged { .. } => {}
+            WindowEvent::ThemeChanged(_) => {}
+        },
+        Event::DeviceEvent { .. } => {}
+        Event::UserEvent(_) => {}
+        Event::Suspended => {}
+        Event::Resumed => {}
+        Event::MainEventsCleared => {}
+        Event::RedrawRequested(_) => {}
+        Event::RedrawEventsCleared => {}
+        Event::LoopDestroyed => {}
+    });
 }

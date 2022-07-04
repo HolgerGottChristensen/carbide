@@ -1,11 +1,11 @@
+use carbide_core::state::state_sync::NewStateSync;
 use std::fmt::{Debug, Formatter};
 use std::rc::Rc;
-use carbide_core::state::state_sync::NewStateSync;
 
 use crate::environment::Environment;
-use crate::state::{InnerState, ReadState, State, StateContract, TState};
 use crate::state::util::value_cell::{ValueCell, ValueRef, ValueRefMut};
 use crate::state::widget_state::WidgetState;
+use crate::state::{InnerState, ReadState, State, StateContract, TState};
 
 /// # Local state
 /// The local state is used as a shared state between multiple widgets within the same widget tree.
@@ -19,7 +19,10 @@ use crate::state::widget_state::WidgetState;
 /// all state is stored directly within.
 /// Also it does not depend on any other states and therefore the event can be ignored.
 #[derive(Clone)]
-pub struct LocalState<T> where T: StateContract {
+pub struct LocalState<T>
+where
+    T: StateContract,
+{
     /// The shared state
     inner_value: InnerState<T>,
 }
@@ -42,7 +45,6 @@ impl<T: StateContract> LocalState<T> {
         })
     }
 }
-
 
 impl<T: StateContract> NewStateSync for LocalState<T> {
     fn sync(&mut self, _env: &mut Environment) -> bool {

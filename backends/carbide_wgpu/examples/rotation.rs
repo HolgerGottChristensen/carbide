@@ -4,10 +4,10 @@ use std::time::Duration;
 use carbide_core::draw::Position;
 use carbide_core::environment::*;
 use carbide_core::layout::BasicLayouter;
-use carbide_core::state::{AnimatedState, ease_in_out};
+use carbide_core::state::{ease_in_out, AnimatedState};
 use carbide_core::text::*;
-use carbide_core::widget::*;
 use carbide_core::widget::canvas::*;
+use carbide_core::widget::*;
 use carbide_wgpu::window::*;
 
 fn main() {

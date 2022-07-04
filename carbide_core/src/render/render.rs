@@ -4,7 +4,6 @@ use crate::widget::CommonWidget;
 
 /// The render trait is used to get the primitives from a widget. It contains two basic functions.
 pub trait Render: CommonWidget + StateSync {
-
     /// Get the primitives from a widget. You should insert the primitives into the vec.
     /// The default implementation does not add any primitives and is used by most widgets.
     #[allow(unused_variables)]

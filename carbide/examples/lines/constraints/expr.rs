@@ -1,3 +1,4 @@
+use crate::constraints::{parse, ParseError};
 use smol_str::SmolStr;
 use std::{
     fmt::{self, Display, Formatter},
@@ -5,7 +6,6 @@ use std::{
     rc::Rc,
     str::FromStr,
 };
-use crate::constraints::{parse, ParseError};
 
 // PERF: Switch from Rc<Expression> to Arc<Expression> and use Arc::make_mut()
 // to get efficient copy-on-write semantics
@@ -91,12 +91,10 @@ impl<'expr> Iterator for Iter<'expr> {
             Expression::Binary { left, right, .. } => {
                 self.to_visit.push(right);
                 self.to_visit.push(left);
-            },
+            }
             Expression::Negate(inner) => self.to_visit.push(inner),
-            Expression::FunctionCall { argument, .. } => {
-                self.to_visit.push(argument)
-            },
-            _ => {},
+            Expression::FunctionCall { argument, .. } => self.to_visit.push(argument),
+            _ => {}
         }
 
         Some(next_item)
@@ -194,13 +192,17 @@ impl Div for Expression {
 impl Neg for Expression {
     type Output = Expression;
 
-    fn neg(self) -> Self::Output { Expression::Negate(Rc::new(self)) }
+    fn neg(self) -> Self::Output {
+        Expression::Negate(Rc::new(self))
+    }
 }
 
 impl FromStr for Expression {
     type Err = ParseError;
 
-    fn from_str(s: &str) -> Result<Self, Self::Err> { parse(s) }
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        parse(s)
+    }
 }
 
 impl Display for Expression {
@@ -222,20 +224,16 @@ impl Display for Expression {
                 write_with_precedence(op.precedence(), right, f)?;
 
                 Ok(())
-            },
+            }
             Expression::Negate(inner) => {
                 write!(f, "-")?;
 
-                write_with_precedence(
-                    BinaryOperation::Times.precedence(),
-                    inner,
-                    f,
-                )?;
+                write_with_precedence(BinaryOperation::Times.precedence(), inner, f)?;
                 Ok(())
-            },
+            }
             Expression::FunctionCall { name, argument } => {
                 write!(f, "{}({})", name, argument)
-            },
+            }
         }
     }
 }
@@ -386,8 +384,7 @@ mod tests {
 
     #[test]
     fn iterate_over_parameters_in_an_expression() {
-        let expr: Expression =
-            "a + sin(5*(b + (c - d)) / -e) - a * f".parse().unwrap();
+        let expr: Expression = "a + sin(5*(b + (c - d)) / -e) - a * f".parse().unwrap();
         let a = Parameter::named("a");
         let b = Parameter::named("b");
         let c = Parameter::named("c");

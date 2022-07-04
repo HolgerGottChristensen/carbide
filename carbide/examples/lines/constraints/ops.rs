@@ -1,5 +1,6 @@
 //! [`Expression`] operations.
 
+use crate::constraints::{BinaryOperation, Expression, Parameter};
 use euclid::approxeq::ApproxEq;
 use smol_str::SmolStr;
 use std::{
@@ -7,16 +8,11 @@ use std::{
     fmt::{self, Display, Formatter},
     rc::Rc,
 };
-use crate::constraints::{BinaryOperation, Expression, Parameter};
 
 /// Contextual information used when evaluating an [`Expression`].
 pub trait Context {
     /// Evaluate a function by name.
-    fn evaluate_function(
-        &self,
-        name: &str,
-        argument: f64,
-    ) -> Result<f64, EvaluationError>;
+    fn evaluate_function(&self, name: &str, argument: f64) -> Result<f64, EvaluationError>;
 
     /// For some [`Parameter`], `x`, and a function called `name`, get
     /// `name'(x)`.
@@ -53,13 +49,13 @@ impl Display for EvaluationError {
         match self {
             EvaluationError::UnknownFunction { name } => {
                 write!(f, "No known function called \"{}\"", name)
-            },
+            }
             EvaluationError::UnableToDifferentiate { name } => {
                 write!(f, "Unable to differentiate \"{}\"", name)
-            },
+            }
             EvaluationError::UnevaluatedParameter(p) => {
                 write!(f, "The parameter, {}, needs to have a value", p)
-            },
+            }
         }
     }
 }
@@ -71,11 +67,7 @@ impl Error for EvaluationError {}
 pub struct Builtins;
 
 impl Context for Builtins {
-    fn evaluate_function(
-        &self,
-        name: &str,
-        argument: f64,
-    ) -> Result<f64, EvaluationError> {
+    fn evaluate_function(&self, name: &str, argument: f64) -> Result<f64, EvaluationError> {
         match name {
             "sin" => Ok(argument.to_radians().sin()),
             "cos" => Ok(argument.to_radians().cos()),
@@ -108,10 +100,8 @@ impl Context for Builtins {
                     argument: Rc::new(Expression::Parameter(param.clone())),
                 };
                 Ok(Expression::Constant(0.5) / sqrt_x)
-            },
-            _ => Err(EvaluationError::UnableToDifferentiate {
-                name: name.into(),
-            }),
+            }
+            _ => Err(EvaluationError::UnableToDifferentiate { name: name.into() }),
         }
     }
 }
@@ -122,9 +112,7 @@ where
     C: Context,
 {
     match expr {
-        Expression::Binary { left, right, op } => {
-            fold_binary_op(left, right, *op, ctx)
-        },
+        Expression::Binary { left, right, op } => fold_binary_op(left, right, *op, ctx),
         Expression::Negate(expr) => match fold_constants(expr, ctx) {
             Expression::Constant(value) => Expression::Constant(-value),
             // double negative
@@ -144,7 +132,7 @@ where
                 name: name.clone(),
                 argument: Rc::new(argument),
             }
-        },
+        }
         _ => expr.clone(),
     }
 }
@@ -164,18 +152,16 @@ where
     // If our operands contain constants, we can use arithmetic's identity laws
     // to simplify things
     match (left, right, op) {
-        (
-            Expression::Parameter(p_left),
-            Expression::Parameter(p_right),
-            BinaryOperation::Plus,
-        ) if p_left == p_right => {
+        (Expression::Parameter(p_left), Expression::Parameter(p_right), BinaryOperation::Plus)
+            if p_left == p_right =>
+        {
             Expression::Constant(2.0) * Expression::Parameter(p_right.clone())
-        },
-        (
-            Expression::Parameter(p_left),
-            Expression::Parameter(p_right),
-            BinaryOperation::Minus,
-        ) if p_left == p_right => Expression::Constant(0.0),
+        }
+        (Expression::Parameter(p_left), Expression::Parameter(p_right), BinaryOperation::Minus)
+            if p_left == p_right =>
+        {
+            Expression::Constant(0.0)
+        }
         (
             Expression::Parameter(p_left),
             Expression::Parameter(p_right),
@@ -183,68 +169,34 @@ where
         ) if p_left == p_right => Expression::Constant(1.0),
 
         // x + 0 = x
-        (Expression::Constant(l), right, BinaryOperation::Plus)
-            if l.approx_eq(&0.0) =>
-        {
-            right
-        },
-        (left, Expression::Constant(r), BinaryOperation::Plus)
-            if r.approx_eq(&0.0) =>
-        {
-            left
-        },
+        (Expression::Constant(l), right, BinaryOperation::Plus) if l.approx_eq(&0.0) => right,
+        (left, Expression::Constant(r), BinaryOperation::Plus) if r.approx_eq(&0.0) => left,
 
         // 0 * x = 0
-        (Expression::Constant(l), _, BinaryOperation::Times)
-            if l.approx_eq(&0.0) =>
-        {
+        (Expression::Constant(l), _, BinaryOperation::Times) if l.approx_eq(&0.0) => {
             Expression::Constant(0.0)
-        },
-        (_, Expression::Constant(r), BinaryOperation::Times)
-            if r.approx_eq(&0.0) =>
-        {
+        }
+        (_, Expression::Constant(r), BinaryOperation::Times) if r.approx_eq(&0.0) => {
             Expression::Constant(0.0)
-        },
+        }
 
         // 1 * x = x
-        (Expression::Constant(l), right, BinaryOperation::Times)
-            if l.approx_eq(&1.0) =>
-        {
-            right
-        },
-        (left, Expression::Constant(r), BinaryOperation::Times)
-            if r.approx_eq(&1.0) =>
-        {
-            left
-        },
+        (Expression::Constant(l), right, BinaryOperation::Times) if l.approx_eq(&1.0) => right,
+        (left, Expression::Constant(r), BinaryOperation::Times) if r.approx_eq(&1.0) => left,
 
         // 0 / x = 0
-        (Expression::Constant(l), _, BinaryOperation::Divide)
-            if l.approx_eq(&0.0) =>
-        {
+        (Expression::Constant(l), _, BinaryOperation::Divide) if l.approx_eq(&0.0) => {
             Expression::Constant(0.0)
-        },
+        }
 
         // x / 1 = x
-        (left, Expression::Constant(r), BinaryOperation::Divide)
-            if r.approx_eq(&1.0) =>
-        {
-            left
-        },
+        (left, Expression::Constant(r), BinaryOperation::Divide) if r.approx_eq(&1.0) => left,
 
         // 0 - x = -x
-        (Expression::Constant(l), right, BinaryOperation::Minus)
-            if l.approx_eq(&0.0) =>
-        {
-            -right
-        },
+        (Expression::Constant(l), right, BinaryOperation::Minus) if l.approx_eq(&0.0) => -right,
 
         // x - 0 = x
-        (left, Expression::Constant(r), BinaryOperation::Minus)
-            if r.approx_eq(&0.0) =>
-        {
-            left
-        },
+        (left, Expression::Constant(r), BinaryOperation::Minus) if r.approx_eq(&0.0) => left,
 
         // (x * y) * z
         (
@@ -261,9 +213,8 @@ where
                 (left, Expression::Constant(right)) => (right, left),
                 _ => unreachable!(),
             };
-            Expression::Constant(constant_a * constant_b)
-                * Expression::clone(expr)
-        },
+            Expression::Constant(constant_a * constant_b) * Expression::clone(expr)
+        }
         (
             Expression::Binary {
                 left,
@@ -278,9 +229,8 @@ where
                 (left, Expression::Constant(right)) => (right, left),
                 _ => unreachable!(),
             };
-            Expression::Constant(constant_a * constant_b)
-                * Expression::clone(expr)
-        },
+            Expression::Constant(constant_a * constant_b) * Expression::clone(expr)
+        }
 
         // Evaluate in-place
         (Expression::Constant(l), Expression::Constant(r), op) => {
@@ -292,7 +242,7 @@ where
             };
 
             Expression::Constant(value)
-        },
+        }
 
         // Oh well, we tried
         (left, right, op) => Expression::Binary {
@@ -304,11 +254,7 @@ where
 }
 
 /// Replace all references to a [`Parameter`] with an [`Expression`].
-pub fn substitute(
-    expression: &Expression,
-    param: &Parameter,
-    value: &Expression,
-) -> Expression {
+pub fn substitute(expression: &Expression, param: &Parameter, value: &Expression) -> Expression {
     match expression {
         Expression::Parameter(p) => {
             if p == param {
@@ -316,7 +262,7 @@ pub fn substitute(
             } else {
                 Expression::Parameter(p.clone())
             }
-        },
+        }
         Expression::Constant(value) => Expression::Constant(*value),
         Expression::Binary { left, right, op } => {
             let left = substitute(left, param, value);
@@ -326,13 +272,11 @@ pub fn substitute(
                 right: Rc::new(right),
                 op: *op,
             }
-        },
+        }
         Expression::Negate(inner) => -substitute(inner, param, value),
-        Expression::FunctionCall { name, argument } => {
-            Expression::FunctionCall {
-                name: name.clone(),
-                argument: Rc::new(substitute(argument, param, value)),
-            }
+        Expression::FunctionCall { name, argument } => Expression::FunctionCall {
+            name: name.clone(),
+            argument: Rc::new(substitute(argument, param, value)),
         },
     }
 }
@@ -354,24 +298,18 @@ where
             } else {
                 Expression::Constant(0.0)
             }
-        },
+        }
         Expression::Constant(_) => Expression::Constant(0.0),
         Expression::Binary {
             left,
             right,
             op: BinaryOperation::Plus,
-        } => {
-            partial_derivative(left, param, ctx)?
-                + partial_derivative(right, param, ctx)?
-        },
+        } => partial_derivative(left, param, ctx)? + partial_derivative(right, param, ctx)?,
         Expression::Binary {
             left,
             right,
             op: BinaryOperation::Minus,
-        } => {
-            partial_derivative(left, param, ctx)?
-                - partial_derivative(right, param, ctx)?
-        },
+        } => partial_derivative(left, param, ctx)? - partial_derivative(right, param, ctx)?,
         Expression::Binary {
             left,
             right,
@@ -384,7 +322,7 @@ where
             let right = Expression::clone(right);
 
             d_left * right + d_right * left
-        },
+        }
         Expression::Binary {
             left,
             right,
@@ -397,7 +335,7 @@ where
             let left = Expression::clone(left);
 
             (d_left * right.clone() + left * d_right) / (right.clone() * right)
-        },
+        }
 
         Expression::Negate(inner) => -partial_derivative(inner, param, ctx)?,
         Expression::FunctionCall { name, argument } => {
@@ -407,7 +345,7 @@ where
             let g_dash = partial_derivative(argument, param, ctx)?;
 
             substitute(&f_dash_of_g, &g, argument) * g_dash
-        },
+        }
     };
 
     Ok(got)
@@ -437,15 +375,15 @@ where
                 BinaryOperation::Times => left * right,
                 BinaryOperation::Divide => left / right,
             })
-        },
+        }
         Expression::Negate(inner) => {
             let inner = evaluate(inner, parameter_value, ctx)?;
             Ok(-inner)
-        },
+        }
         Expression::FunctionCall { name, argument } => {
             let argument = evaluate(argument, parameter_value, ctx)?;
             ctx.evaluate_function(name, argument)
-        },
+        }
     }
 }
 
@@ -478,15 +416,10 @@ mod tests {
             let got = fold_constants(&expr, &ctx);
 
             match got {
-                Expression::Constant(value) => assert_eq!(
-                    value, should_be,
-                    "{} -> {} != {}",
-                    expr, value, should_be
-                ),
-                other => panic!(
-                    "Expected a constant expression, but got \"{}\"",
-                    other
-                ),
+                Expression::Constant(value) => {
+                    assert_eq!(value, should_be, "{} -> {} != {}", expr, value, should_be)
+                }
+                other => panic!("Expected a constant expression, but got \"{}\"", other),
             }
         }
     }
@@ -576,8 +509,7 @@ mod tests {
 
     #[test]
     fn evaluate_some_expressions() {
-        let inputs =
-            vec![("1", 1.0), ("1+1", 2.0), ("sin(90)", 1.0), ("x", 0.5)];
+        let inputs = vec![("1", 1.0), ("1+1", 2.0), ("sin(90)", 1.0), ("x", 0.5)];
         let ctx = Builtins::default();
 
         for (src, should_be) in inputs {

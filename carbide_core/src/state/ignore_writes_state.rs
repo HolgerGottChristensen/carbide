@@ -1,6 +1,6 @@
+use crate::state::{RState, State, StateContract, TState, WidgetState};
 use carbide_core::environment::Environment;
 use carbide_core::prelude::{NewStateSync, ReadState, ValueRef, ValueRefMut};
-use crate::state::{RState, State, StateContract, TState, WidgetState};
 
 #[derive(Clone, Debug)]
 pub struct IgnoreWritesState<T: StateContract>(RState<T>);
@@ -22,7 +22,6 @@ impl<T: StateContract> NewStateSync for IgnoreWritesState<T> {
         self.0.sync(env)
     }
 }
-
 
 impl<T: StateContract> State<T> for IgnoreWritesState<T> {
     fn value_mut(&mut self) -> ValueRefMut<T> {

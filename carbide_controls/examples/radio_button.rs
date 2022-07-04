@@ -56,10 +56,11 @@ fn main() {
             RadioButton::new("Circle", Shape::Circle, shape_state.clone()),
             RadioButton::new("Triangle", Shape::Triangle, shape_state.clone()),
             RadioButton::new("Star", Shape::Star, shape_state.clone()),
-        ]).spacing(10.0)
-            .cross_axis_alignment(CrossAxisAlignment::Start)
-            //.accent_color(EnvironmentColor::Orange)
-            .padding(EdgeInsets::all(40.0)),
+        ])
+        .spacing(10.0)
+        .cross_axis_alignment(CrossAxisAlignment::Start)
+        //.accent_color(EnvironmentColor::Orange)
+        .padding(EdgeInsets::all(40.0)),
     );
 
     window.launch();

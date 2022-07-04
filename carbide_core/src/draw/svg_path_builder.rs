@@ -1,6 +1,6 @@
 use lyon::algorithms::math::{Angle, Point, Vector};
-use lyon::algorithms::path::{ArcFlags, Path};
 use lyon::algorithms::path::builder::Build;
+use lyon::algorithms::path::{ArcFlags, Path};
 use lyon::math::vector;
 
 use crate::draw::Dimension;
@@ -39,9 +39,17 @@ impl Build for SVGPathBuilder {
                 SVGBuildAction::CubicBezierTo { ctrl1, ctrl2, to } => {
                     builder.cubic_bezier_to(*ctrl1, *ctrl2, *to);
                 }
-                SVGBuildAction::Arc { center, radius, sweep_angle, x_rotation } => {
-                    builder.arc(*center, vector(radius.width as f32, radius.height as f32), Angle::degrees(*sweep_angle), Angle::degrees(*x_rotation))
-                }
+                SVGBuildAction::Arc {
+                    center,
+                    radius,
+                    sweep_angle,
+                    x_rotation,
+                } => builder.arc(
+                    *center,
+                    vector(radius.width as f32, radius.height as f32),
+                    Angle::degrees(*sweep_angle),
+                    Angle::degrees(*x_rotation),
+                ),
             }
         }
 

@@ -1,6 +1,6 @@
-use std::ops::BitXor;
-use crate::state::{Map2, StateContract, WidgetState, RState};
 use crate::state::ReadWidgetState;
+use crate::state::{Map2, RState, StateContract, WidgetState};
+use std::ops::BitXor;
 
 macro_rules! bitxor {
     ($($typ1: ty, $typ2: ty;)*) => {

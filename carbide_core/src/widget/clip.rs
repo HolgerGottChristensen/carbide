@@ -1,7 +1,7 @@
-use crate::CommonWidgetImpl;
 use crate::draw::{Dimension, Position, Rect};
 use crate::prelude::*;
 use crate::render::PrimitiveKind;
+use crate::CommonWidgetImpl;
 
 #[derive(Debug, Clone, Widget)]
 #[carbide_exclude(Render, Layout)]
@@ -48,27 +48,26 @@ impl Layout for Clip {
 
 CommonWidgetImpl!(Clip, self, id: self.id, child: self.child, position: self.position, dimension: self.dimension);
 
-
 impl Render for Clip {
     fn process_get_primitives(&mut self, primitives: &mut Vec<Primitive>, env: &mut Environment) {
         // Cut the rendering if either the width or the height is 0
         let min = 1.0 / env.get_scale_factor();
         if self.dimension.width <= min || self.dimension.height <= min {
-            return
+            return;
         }
 
         // If the clip is completely out of frame
         if self.position.x + self.dimension.width < 0.0 {
-            return
+            return;
         }
         if self.position.y + self.dimension.height < 0.0 {
-            return
+            return;
         }
         if self.position.x >= env.get_corrected_width() {
-            return
+            return;
         }
         if self.position.y >= env.get_corrected_height() {
-            return
+            return;
         }
 
         primitives.push(Primitive {

@@ -20,7 +20,7 @@ extern crate rand;
 
 use glium::Surface;
 
-use carbide_core::{Borderable, color, Colorable, OldWidget, Positionable, Sizeable, widget};
+use carbide_core::{color, widget, Borderable, Colorable, OldWidget, Positionable, Sizeable};
 
 mod support;
 
@@ -96,10 +96,10 @@ fn main() {
                     glium::glutin::WindowEvent::CloseRequested
                     | glium::glutin::WindowEvent::KeyboardInput {
                         input:
-                        glium::glutin::KeyboardInput {
-                            virtual_keycode: Some(glium::glutin::VirtualKeyCode::Escape),
-                            ..
-                        },
+                            glium::glutin::KeyboardInput {
+                                virtual_keycode: Some(glium::glutin::VirtualKeyCode::Escape),
+                                ..
+                            },
                         ..
                     } => break 'main,
                     _ => (),
@@ -144,8 +144,8 @@ fn main() {
 
 // Load an image from our assets folder as a texture we can draw to the screen.
 fn load_image<P>(display: &glium::Display, path: P) -> glium::texture::SrgbTexture2d
-    where
-        P: AsRef<std::path::Path>,
+where
+    P: AsRef<std::path::Path>,
 {
     let path = path.as_ref();
     let rgba_image = image::open(&std::path::Path::new(&path)).unwrap().to_rgba();

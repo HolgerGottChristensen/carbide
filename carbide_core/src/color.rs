@@ -54,13 +54,11 @@ impl Color {
 
     pub fn time() -> Self {
         let now = SystemTime::now();
-        let duration = now.duration_since(UNIX_EPOCH).expect("Could not get duration since UNIX_EPOCH");
+        let duration = now
+            .duration_since(UNIX_EPOCH)
+            .expect("Could not get duration since UNIX_EPOCH");
         let duration_since = duration.as_millis() / 8 % 360;
-        return hsl(
-            f32::to_radians(duration_since as f32),
-            1.0,
-            0.5
-        )
+        return hsl(f32::to_radians(duration_since as f32), 1.0, 0.5);
     }
 }
 
@@ -135,7 +133,6 @@ fn clampf32(f: f32) -> f32 {
 }
 
 impl Color {
-
     /// Blend the colors between from and to, by retrieving their hsla values and
     /// interpolating the hue angle and s, l and a value. This will blend through the smallest
     /// way around the hue value, clockwise or counter clockwise.
@@ -213,8 +210,6 @@ impl Color {
             }
         }
     }
-
-
 
     /// Return either black or white, depending which contrasts the Color the most. This will be
     /// useful for determining a readable color for text on any given background Color.
@@ -391,7 +386,11 @@ impl Color {
     /// Return the same color but with the given red component.
     /// The value provided should be between 0.0 and 1.0
     pub fn with_red(self, r: f32) -> Color {
-        assert!((0.0 <= r && r <= 1.0), "The value r={} should be [0.0, 1.0]", r);
+        assert!(
+            (0.0 <= r && r <= 1.0),
+            "The value r={} should be [0.0, 1.0]",
+            r
+        );
         let Rgba(_, g, b, a) = self.to_rgb();
         rgba(r, g, b, a)
     }
@@ -405,7 +404,11 @@ impl Color {
     /// Return the same color but with the given green component.
     /// The value provided should be between 0.0 and 1.0
     pub fn with_green(self, g: f32) -> Color {
-        assert!((0.0 <= g && g <= 1.0), "The value g={} should be [0.0, 1.0]", g);
+        assert!(
+            (0.0 <= g && g <= 1.0),
+            "The value g={} should be [0.0, 1.0]",
+            g
+        );
         let Rgba(r, _, b, a) = self.to_rgb();
         rgba(r, g, b, a)
     }
@@ -419,7 +422,11 @@ impl Color {
     /// Return the same color but with the given green component.
     /// The value provided should be between 0.0 and 1.0
     pub fn with_blue(self, b: f32) -> Color {
-        assert!((0.0 <= b && b <= 1.0), "The value b={} should be [0.0, 1.0]", b);
+        assert!(
+            (0.0 <= b && b <= 1.0),
+            "The value b={} should be [0.0, 1.0]",
+            b
+        );
         let Rgba(r, g, _, a) = self.to_rgb();
         rgba(r, g, b, a)
     }
@@ -433,7 +440,11 @@ impl Color {
     /// Return the same color but with the given hue.
     /// The value returned should be between 0.0 and 1.0
     pub fn with_hue(self, h: f32) -> Color {
-        assert!((0.0 <= h && h <= 1.0), "The value h={} should be [0.0, 1.0]", h);
+        assert!(
+            (0.0 <= h && h <= 1.0),
+            "The value h={} should be [0.0, 1.0]",
+            h
+        );
         let Hsla(_, s, l, a) = self.to_hsl();
         hsla(h, s, l, a)
     }
@@ -447,7 +458,11 @@ impl Color {
     /// Return the same color but with the given saturation.
     /// The value returned should be between 0.0 and 1.0
     pub fn with_saturation(self, s: f32) -> Color {
-        assert!((0.0 <= s && s <= 1.0), "The value s={} should be [0.0, 1.0]", s);
+        assert!(
+            (0.0 <= s && s <= 1.0),
+            "The value s={} should be [0.0, 1.0]",
+            s
+        );
         let Hsla(h, _, l, a) = self.to_hsl();
         hsla(h, s, l, a)
     }
@@ -461,7 +476,11 @@ impl Color {
     /// Return the same color but with the given lightness.
     /// The value returned should be between 0.0 and 1.0
     pub fn with_lightness(self, l: f32) -> Color {
-        assert!((0.0 <= l && l <= 1.0), "The value l={} should be [0.0, 1.0]", l);
+        assert!(
+            (0.0 <= l && l <= 1.0),
+            "The value l={} should be [0.0, 1.0]",
+            l
+        );
         let Hsla(h, s, _, a) = self.to_hsl();
         hsla(h, s, l, a)
     }
@@ -547,12 +566,12 @@ pub fn rgb_to_hsl(r: f32, g: f32, b: f32) -> (f32, f32, f32) {
     } else {
         f32::to_radians(60.0)
             * if c_max == r {
-            fmod((g - b) / c, 6)
-        } else if c_max == g {
-            ((b - r) / c) + 2.0
-        } else {
-            ((r - g) / c) + 4.0
-        }
+                fmod((g - b) / c, 6)
+            } else if c_max == g {
+                ((b - r) / c) + 2.0
+            } else {
+                ((r - g) / c) + 4.0
+            }
     };
 
     let lightness = (c_max + c_min) / 2.0;

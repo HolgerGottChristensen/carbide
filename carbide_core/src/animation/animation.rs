@@ -5,7 +5,10 @@ use crate::animation::animatable::Animatable;
 use crate::state::{linear, RepeatMode, State, StateContract};
 
 #[derive(Clone)]
-pub struct Animation<T> where T: StateContract {
+pub struct Animation<T>
+where
+    T: StateContract,
+{
     start_time: Instant,
     duration: Duration,
     repeat_mode: RepeatMode,
@@ -34,7 +37,12 @@ impl<T: StateContract + Animatable<T>> Animation<T> {
 }
 
 impl<T: StateContract> Animation<T> {
-    pub fn new_custom<S: Into<Box<dyn State<T>>>>(state: S, from: T, to: T, interpolation: fn(&T, &T, f64) -> T) -> Self {
+    pub fn new_custom<S: Into<Box<dyn State<T>>>>(
+        state: S,
+        from: T,
+        to: T,
+        interpolation: fn(&T, &T, f64) -> T,
+    ) -> Self {
         Animation {
             start_time: Instant::now(),
             duration: Duration::new(1, 0),
@@ -103,11 +111,7 @@ impl<T: StateContract> Animation<T> {
             }
             RepeatMode::Alternate => {
                 let temp = duration.as_secs_f64() / self.duration.as_secs_f64() % 2.0;
-                let percentage = if temp >= 1.0 {
-                    2.0 - temp
-                } else {
-                    temp
-                };
+                let percentage = if temp >= 1.0 { 2.0 - temp } else { temp };
 
                 let percentage = (self.animation_curve)(percentage);
 
@@ -120,10 +124,8 @@ impl<T: StateContract> Animation<T> {
     }
 }
 
-
 impl<T: StateContract> Debug for Animation<T> {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        f.debug_struct("Animation")
-            .finish()
+        f.debug_struct("Animation").finish()
     }
 }

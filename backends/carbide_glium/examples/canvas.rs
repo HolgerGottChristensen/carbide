@@ -43,7 +43,8 @@ fn main() {
     let mut renderer = carbide_glium::Renderer::new(&display.0).unwrap();
 
     // The image map describing each of our widget->image mappings (in our case, none).
-    let image_map = carbide_core::draw::image::image_map::ImageMap::<glium::texture::Texture2d>::new();
+    let image_map =
+        carbide_core::draw::image::image_map::ImageMap::<glium::texture::Texture2d>::new();
 
     // Instantiate the generated list of widget identifiers.
     let ids = &mut Ids::new(ui.widget_id_generator());
@@ -65,10 +66,10 @@ fn main() {
                     glium::glutin::WindowEvent::CloseRequested
                     | glium::glutin::WindowEvent::KeyboardInput {
                         input:
-                        glium::glutin::KeyboardInput {
-                            virtual_keycode: Some(glium::glutin::VirtualKeyCode::Escape),
-                            ..
-                        },
+                            glium::glutin::KeyboardInput {
+                                virtual_keycode: Some(glium::glutin::VirtualKeyCode::Escape),
+                                ..
+                            },
                         ..
                     } => break 'main,
                     _ => (),
@@ -155,11 +156,11 @@ fn set_widgets(ref mut ui: carbide_core::UiCell, ids: &mut Ids) {
         (ids.tab_bar, "BAR"),
         (ids.tab_baz, "BAZ"),
     ])
-        .wh_of(ids.middle_column)
-        .color(color::BLUE)
-        .label_color(color::WHITE)
-        .middle_of(ids.middle_column)
-        .set(ids.tabs, ui);
+    .wh_of(ids.middle_column)
+    .color(color::BLUE)
+    .label_color(color::WHITE)
+    .middle_of(ids.middle_column)
+    .set(ids.tabs, ui);
 
     widget::Text::new("Fancy Title")
         .color(color::LIGHT_ORANGE)

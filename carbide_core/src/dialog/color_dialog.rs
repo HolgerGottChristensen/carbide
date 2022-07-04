@@ -1,7 +1,7 @@
-use crate::Color;
 use crate::environment::Environment;
 #[cfg(target_os = "macos")]
 use crate::platform::mac::color_dialog::open_color_dialog;
+use crate::Color;
 
 pub struct ColorDialog {
     pub(crate) show_alpha: bool,
@@ -34,7 +34,11 @@ impl ColorDialog {
     }
 
     #[cfg(target_os = "macos")]
-    pub fn open(self, env: &mut Environment, color_change: impl Fn(Color, &mut Environment) -> bool + 'static) {
+    pub fn open(
+        self,
+        env: &mut Environment,
+        color_change: impl Fn(Color, &mut Environment) -> bool + 'static,
+    ) {
         let on_next = move |color: Color, env: &mut Environment| -> bool {
             color_change(color, env);
             false
@@ -46,7 +50,11 @@ impl ColorDialog {
     }
 
     #[cfg(not(target_os = "macos"))]
-    pub fn open(mut self, env: &mut Environment, color_change: impl Fn(Color, &mut Environment) -> bool + 'static) {
+    pub fn open(
+        mut self,
+        env: &mut Environment,
+        color_change: impl Fn(Color, &mut Environment) -> bool + 'static,
+    ) {
         todo!()
     }
 }

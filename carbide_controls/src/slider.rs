@@ -17,12 +17,14 @@ impl Slider {
     }
 
     fn background() -> Box<dyn Widget> {
-        Capsule::new().fill(EnvironmentColor::SystemFill)
+        Capsule::new()
+            .fill(EnvironmentColor::SystemFill)
             .frame_fixed_height(5.0)
     }
 
     fn indicator() -> Box<dyn Widget> {
-        Capsule::new().fill(EnvironmentColor::Accent)
+        Capsule::new()
+            .fill(EnvironmentColor::Accent)
             .frame_fixed_height(5.0)
     }
 

@@ -23,9 +23,8 @@ fn main() {
         Some(icon_path),
     );
 
-    let family = FontFamily::new_from_paths("NotoSans", vec![
-        "fonts/NotoSans/NotoSans-Regular.ttf"
-    ]);
+    let family =
+        FontFamily::new_from_paths("NotoSans", vec!["fonts/NotoSans/NotoSans-Regular.ttf"]);
     window.add_font_family(family);
 
     let mut family = FontFamily::new("Apple Color Emoji");
@@ -41,17 +40,14 @@ fn main() {
 
     window.set_widgets(
         VStack::new(vec![
-            TextInput::new(text_state.clone())
-                .accent_color(EnvironmentColor::Green),
-            TextInput::new(text_state.clone())
-                .accent_color(EnvironmentColor::Purple),
+            TextInput::new(text_state.clone()).accent_color(EnvironmentColor::Green),
+            TextInput::new(text_state.clone()).accent_color(EnvironmentColor::Purple),
             TextInput::new(text_state2.clone()),
-            TextInput::new(text_state2.clone())
-                .obscure(),
-            TextInput::new(text_state2.clone())
-                .obscure_with_char('©'),
-        ]).spacing(10.0)
-            .padding(EdgeInsets::all(40.0))
+            TextInput::new(text_state2.clone()).obscure(),
+            TextInput::new(text_state2.clone()).obscure_with_char('©'),
+        ])
+        .spacing(10.0)
+        .padding(EdgeInsets::all(40.0)),
     );
 
     window.launch();

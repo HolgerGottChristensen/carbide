@@ -14,7 +14,10 @@ pub fn main_render_tex_desc([width, height]: [u32; 2]) -> wgpu::TextureDescripto
         sample_count: 1,
         dimension: wgpu::TextureDimension::D2,
         format: TextureFormat::Bgra8UnormSrgb,
-        usage: wgpu::TextureUsages::RENDER_ATTACHMENT | TextureUsages::TEXTURE_BINDING | TextureUsages::COPY_SRC | wgpu::TextureUsages::COPY_DST,
+        usage: wgpu::TextureUsages::RENDER_ATTACHMENT
+            | TextureUsages::TEXTURE_BINDING
+            | TextureUsages::COPY_SRC
+            | wgpu::TextureUsages::COPY_DST,
     }
 }
 
@@ -34,7 +37,9 @@ pub fn secondary_render_tex_desc([width, height]: [u32; 2]) -> wgpu::TextureDesc
         sample_count: 1,
         dimension: wgpu::TextureDimension::D2,
         format: TextureFormat::Bgra8UnormSrgb,
-        usage: wgpu::TextureUsages::RENDER_ATTACHMENT | wgpu::TextureUsages::TEXTURE_BINDING | wgpu::TextureUsages::COPY_DST,
+        usage: wgpu::TextureUsages::RENDER_ATTACHMENT
+            | wgpu::TextureUsages::TEXTURE_BINDING
+            | wgpu::TextureUsages::COPY_DST,
     }
 }
 

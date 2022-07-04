@@ -1,12 +1,15 @@
 use carbide_core::draw::Position;
-use carbide_core::Scalar;
 use carbide_core::text::Glyph;
 use carbide_core::utils::binary_search;
+use carbide_core::Scalar;
 
 #[derive(Debug, Clone, Copy)]
 pub enum Cursor {
     Single(CursorIndex),
-    Selection { start: CursorIndex, end: CursorIndex },
+    Selection {
+        start: CursorIndex,
+        end: CursorIndex,
+    },
 }
 
 impl Cursor {
@@ -38,7 +41,10 @@ impl Cursor {
         let splits = splits.collect::<Vec<_>>();
         let rightmost_closest = binary_search(relative_offset as f32, &splits);
 
-        let new_closest = if rightmost_closest < splits.len() - 1 && ((relative_offset as f32) - splits[rightmost_closest + 1]).abs() < ((relative_offset as f32) - splits[rightmost_closest]).abs() {
+        let new_closest = if rightmost_closest < splits.len() - 1
+            && ((relative_offset as f32) - splits[rightmost_closest + 1]).abs()
+                < ((relative_offset as f32) - splits[rightmost_closest]).abs()
+        {
             rightmost_closest + 1
         } else {
             rightmost_closest
@@ -59,7 +65,6 @@ pub struct CursorIndex {
     pub char: usize,
 }
 
-
 impl CursorIndex {
     /// Get the position of the cursor, based on the glyphs. Index 0 is before all the text, and
     /// the cursor can be in range 0..glyphs.len()+1
@@ -71,11 +76,18 @@ impl CursorIndex {
             if self.char <= glyphs.len() {
                 let positioned = &glyphs[self.char - 1];
 
-                let point = positioned.position().translate_x(positioned.advance_width());
+                let point = positioned
+                    .position()
+                    .translate_x(positioned.advance_width());
 
                 point
             } else {
-                panic!("The char index is outside of the letters({}): {} > {}", text, self.char, glyphs.len() + 1)
+                panic!(
+                    "The char index is outside of the letters({}): {} > {}",
+                    text,
+                    self.char,
+                    glyphs.len() + 1
+                )
             }
         } else {
             panic!("For now only operate on single line things")

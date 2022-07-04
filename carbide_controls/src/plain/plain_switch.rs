@@ -1,11 +1,17 @@
-use carbide_core::Color;
 use carbide_core::draw::{Dimension, Position};
 use carbide_core::environment::{Environment, EnvironmentColor};
 use carbide_core::flags::Flags;
-use carbide_core::focus::{Focus, Focusable};
 use carbide_core::focus::Refocus;
-use carbide_core::state::{BoolState, FocusState, LocalState, Map2, MapOwnedState, ReadState, State, StateKey, StringState, TState};
-use carbide_core::widget::{CommonWidget, HStack, WidgetId, Rectangle, Spacer, Text, Widget, WidgetExt, WidgetIter, WidgetIterMut, ZStack};
+use carbide_core::focus::{Focus, Focusable};
+use carbide_core::state::{
+    BoolState, FocusState, LocalState, Map2, MapOwnedState, ReadState, State, StateKey,
+    StringState, TState,
+};
+use carbide_core::widget::{
+    CommonWidget, HStack, Rectangle, Spacer, Text, Widget, WidgetExt, WidgetId, WidgetIter,
+    WidgetIterMut, ZStack,
+};
+use carbide_core::Color;
 
 use crate::PlainButton;
 
@@ -18,10 +24,7 @@ pub struct PlainSwitch {
     child: Box<dyn Widget>,
     position: Position,
     dimension: Dimension,
-    delegate: fn(
-        focus: FocusState,
-        checked: BoolState,
-    ) -> Box<dyn Widget>,
+    delegate: fn(focus: FocusState, checked: BoolState) -> Box<dyn Widget>,
     #[state]
     label: StringState,
     #[state]
@@ -29,11 +32,7 @@ pub struct PlainSwitch {
 }
 
 impl PlainSwitch {
-
-    pub fn new<S: Into<StringState>, L: Into<BoolState>>(
-        label: S,
-        checked: L,
-    ) -> Box<Self> {
+    pub fn new<S: Into<StringState>, L: Into<BoolState>>(label: S, checked: L) -> Box<Self> {
         let focus_state = LocalState::new(Focus::Unfocused);
 
         Self::new_internal(
@@ -46,12 +45,16 @@ impl PlainSwitch {
 
     fn default_delegate(focus: TState<Focus>, checked: TState<bool>) -> Box<dyn Widget> {
         let background_color: TState<Color> = checked
-            .choice(EnvironmentColor::Green.state(), EnvironmentColor::Red.state())
+            .choice(
+                EnvironmentColor::Green.state(),
+                EnvironmentColor::Red.state(),
+            )
             .ignore_writes();
 
         let val = Map2::read_map(checked, focus, |checked: &bool, focus: &Focus| {
             format!("{:?}, {:?}", *checked, focus)
-        }).ignore_writes();
+        })
+        .ignore_writes();
 
         ZStack::new(vec![
             Rectangle::new().fill(background_color),
@@ -61,10 +64,7 @@ impl PlainSwitch {
 
     pub fn delegate(
         self,
-        delegate: fn(
-            focus: FocusState,
-            selected: BoolState,
-        ) -> Box<dyn Widget>,
+        delegate: fn(focus: FocusState, selected: BoolState) -> Box<dyn Widget>,
     ) -> Box<Self> {
         let checked = self.checked;
         let focus_state = self.focus;
@@ -75,21 +75,13 @@ impl PlainSwitch {
 
     pub fn focused<K: Into<FocusState>>(mut self, focused: K) -> Box<Self> {
         self.focus = focused.into();
-        Self::new_internal(
-            self.checked,
-            self.focus,
-            self.delegate,
-            self.label,
-        )
+        Self::new_internal(self.checked, self.focus, self.delegate, self.label)
     }
 
     fn new_internal(
         checked: BoolState,
         focus: FocusState,
-        delegate: fn(
-            focus: FocusState,
-            selected: BoolState,
-        ) -> Box<dyn Widget>,
+        delegate: fn(focus: FocusState, selected: BoolState) -> Box<dyn Widget>,
         label_state: StringState,
     ) -> Box<Self> {
         let delegate_widget = delegate(focus.clone(), checked.clone());
@@ -105,11 +97,7 @@ impl PlainSwitch {
             }))
             .focused(focus.clone());
 
-        let child = HStack::new(vec![
-            button,
-            Text::new(label_state.clone()),
-        ])
-            .spacing(5.0);
+        let child = HStack::new(vec![button, Text::new(label_state.clone())]).spacing(5.0);
 
         Box::new(PlainSwitch {
             id: WidgetId::new(),

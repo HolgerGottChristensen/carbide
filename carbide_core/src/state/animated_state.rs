@@ -1,13 +1,13 @@
+use carbide_core::prelude::NewStateSync;
 use std::fmt::Debug;
 use std::ops::{Add, DerefMut, Mul};
 use std::time::{Duration, Instant};
-use carbide_core::prelude::NewStateSync;
 
-use crate::environment::Environment;
-use crate::state::{InnerState, MapOwnedState, ReadState, State, StateContract, TState};
 use crate::animation::animation_curve::linear;
+use crate::environment::Environment;
 use crate::state::util::value_cell::{ValueCell, ValueRef, ValueRefMut};
 use crate::state::widget_state::WidgetState;
+use crate::state::{InnerState, MapOwnedState, ReadState, State, StateContract, TState};
 
 #[derive(Clone, Debug)]
 pub enum RepeatMode {
@@ -64,25 +64,28 @@ impl AnimatedState {
         Box::new(self)
     }
 
-    pub fn range<T: Mul<f64, Output=U> + Copy + 'static, U: Add>(
+    pub fn range<T: Mul<f64, Output = U> + Copy + 'static, U: Add>(
         self,
         from: T,
         to: T,
     ) -> TState<<U as Add>::Output>
-        where
-            <T as Mul<f64>>::Output: Add<U>,
-            <U as Add<U>>::Output: StateContract + Default + 'static,
+    where
+        <T as Mul<f64>>::Output: Add<U>,
+        <U as Add<U>>::Output: StateContract + Default + 'static,
     {
-        MapOwnedState::new(WidgetState::new(Box::new(self)), move |t: &f64, _: &_, _: &_| {
-            from * (1.0 - *t) + to * *t
-        })
-            .into()
+        MapOwnedState::new(
+            WidgetState::new(Box::new(self)),
+            move |t: &f64, _: &_, _: &_| from * (1.0 - *t) + to * *t,
+        )
+        .into()
     }
 
     pub fn calc_percentage(&self) {
         let now = Instant::now();
 
-        let current_time = self.frame_time.as_ref()
+        let current_time = self
+            .frame_time
+            .as_ref()
             .map(|time| time.borrow())
             .unwrap_or(ValueRef::Borrow(&now));
 
@@ -119,7 +122,6 @@ impl NewStateSync for AnimatedState {
         false
     }
 }
-
 
 impl ReadState<f64> for AnimatedState {
     fn value(&self) -> ValueRef<f64> {

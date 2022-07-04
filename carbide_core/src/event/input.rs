@@ -1,6 +1,6 @@
-use crate::event::{Button, CustomEvent};
-use crate::event::Motion;
 use crate::event::touch::Touch;
+use crate::event::Motion;
+use crate::event::{Button, CustomEvent};
 
 /// The event type that is used by carbide to track inputs from the world. Events yielded by polling
 /// window backends should be converted to this type. This can be thought of as the event type
@@ -36,7 +36,7 @@ pub enum Input {
     /// The backed requested to redraw.
     Redraw,
     /// Custom carbide event
-    Custom(CustomEvent)
+    Custom(CustomEvent),
 }
 
 impl From<Touch> for Input {

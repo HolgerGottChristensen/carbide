@@ -8,18 +8,16 @@ fn main() {
 
     let icon_path = Window::relative_path_to_assets("images/rust_press.png");
 
-    let mut window = Window::new(
-        "Bitmap text example".to_string(),
-        400,
-        600,
-        Some(icon_path),
-    );
+    let mut window = Window::new("Bitmap text example".to_string(), 400, 600, Some(icon_path));
 
-    let mut noto_family = FontFamily::new_from_paths("NotoSans", vec![
-        "fonts/NotoSans/NotoSans-Regular.ttf",
-        "fonts/NotoSans/NotoSans-Italic.ttf",
-        "fonts/NotoSans/NotoSans-Bold.ttf",
-    ]);
+    let mut noto_family = FontFamily::new_from_paths(
+        "NotoSans",
+        vec![
+            "fonts/NotoSans/NotoSans-Regular.ttf",
+            "fonts/NotoSans/NotoSans-Italic.ttf",
+            "fonts/NotoSans/NotoSans-Bold.ttf",
+        ],
+    );
     window.add_font_family(noto_family);
 
     let mut family = FontFamily::new("Apple Color Emoji");

@@ -1,6 +1,5 @@
-use std;
 use crate::draw::image::image_id::ImageId;
-
+use std;
 
 /// A type used to map the `widget::Id` of `Image` widgets to their associated `Img` data.
 ///

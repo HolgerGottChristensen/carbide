@@ -1,8 +1,8 @@
-use carbide_core::Color;
-use carbide_core::prelude::GradientPosition;
-use carbide_core::widget::Gradient;
 use crate::draw::{Dimension, Position};
 use crate::widget::{GradientRepeat, GradientType};
+use carbide_core::prelude::GradientPosition;
+use carbide_core::widget::Gradient;
+use carbide_core::Color;
 
 #[derive(Debug, Clone)]
 pub struct DrawGradient {
@@ -18,21 +18,22 @@ pub struct DrawGradient {
 
 impl DrawGradient {
     pub fn convert(g: Gradient, position: Position, dimension: Dimension) -> Self {
-
         let start = match g.start {
             GradientPosition::Absolute(p) => p,
             GradientPosition::Alignment(l) => l.position(position, dimension),
-            GradientPosition::Relative(x, y) => {
-                Position::new(position.x + dimension.width * x, position.y + dimension.height * y)
-            }
+            GradientPosition::Relative(x, y) => Position::new(
+                position.x + dimension.width * x,
+                position.y + dimension.height * y,
+            ),
         };
 
         let end = match g.end {
             GradientPosition::Absolute(p) => p,
             GradientPosition::Alignment(l) => l.position(position, dimension),
-            GradientPosition::Relative(x, y) => {
-                Position::new(position.x + dimension.width * x, position.y + dimension.height * y)
-            }
+            GradientPosition::Relative(x, y) => Position::new(
+                position.x + dimension.width * x,
+                position.y + dimension.height * y,
+            ),
         };
 
         Self {
@@ -41,7 +42,7 @@ impl DrawGradient {
             gradient_type: g.gradient_type,
             gradient_repeat: g.gradient_repeat,
             start,
-            end
+            end,
         }
     }
 }

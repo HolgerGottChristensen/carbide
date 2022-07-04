@@ -11,7 +11,8 @@ pub struct IfElse {
     when_false: Box<dyn Widget>,
     position: Position,
     dimension: Dimension,
-    #[state] predicate: TState<bool>,
+    #[state]
+    predicate: TState<bool>,
 }
 
 impl IfElse {

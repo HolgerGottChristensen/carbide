@@ -1,20 +1,20 @@
 use std::fmt::Debug;
 use std::ops::{Deref, DerefMut};
 
-use dyn_clone::DynClone;
 use carbide_core::prelude::NewStateSync;
+use dyn_clone::DynClone;
 
 use crate::environment::Environment;
 use crate::prelude::{StateContract, TState};
-use crate::state::{InnerState, LocalState, ReadState, State, StringState, ValueCell, ValueState};
 use crate::state::util::value_cell::{ValueRef, ValueRefMut};
 use crate::state::widget_state::WidgetState;
+use crate::state::{InnerState, LocalState, ReadState, State, StringState, ValueCell, ValueState};
 
 #[derive(Clone)]
 pub struct MapOwnedState<FROM, TO>
-    where
-        FROM: StateContract,
-        TO: StateContract,
+where
+    FROM: StateContract,
+    TO: StateContract,
 {
     state: TState<FROM>,
     map: Box<dyn MapWithEnv<FROM, TO>>,
@@ -28,27 +28,41 @@ impl<FROM: StateContract, TO: StateContract + Default> MapOwnedState<FROM, TO> {
             state: state.into(),
             map: Box::new(map),
             map_rev: None,
-            value: InnerState::new(ValueCell::new(TO::default()))
-        }.into()
+            value: InnerState::new(ValueCell::new(TO::default())),
+        }
+        .into()
     }
 }
 
 impl<FROM: StateContract, TO: StateContract> MapOwnedState<FROM, TO> {
-    pub fn new_with_default<M1: Into<TState<FROM>>, M2: MapWithEnv<FROM, TO>>(state: M1, map: M2, default: TO) -> Self {
+    pub fn new_with_default<M1: Into<TState<FROM>>, M2: MapWithEnv<FROM, TO>>(
+        state: M1,
+        map: M2,
+        default: TO,
+    ) -> Self {
         MapOwnedState {
             state: state.into(),
             map: Box::new(map),
             map_rev: None,
-            value: InnerState::new(ValueCell::new(default))
+            value: InnerState::new(ValueCell::new(default)),
         }
     }
 
-    pub fn new_with_default_and_rev<I: Into<TState<FROM>>, M1: MapWithEnv<FROM, TO>, M2: MapRev<FROM, TO>>(state: I, map: M1, map_rev: M2, default: TO) -> Self {
+    pub fn new_with_default_and_rev<
+        I: Into<TState<FROM>>,
+        M1: MapWithEnv<FROM, TO>,
+        M2: MapRev<FROM, TO>,
+    >(
+        state: I,
+        map: M1,
+        map_rev: M2,
+        default: TO,
+    ) -> Self {
         MapOwnedState {
             state: state.into(),
             map: Box::new(map),
             map_rev: Some(Box::new(map_rev)),
-            value: InnerState::new(ValueCell::new(default))
+            value: InnerState::new(ValueCell::new(default)),
         }
     }
 }
@@ -106,29 +120,31 @@ impl<FROM: StateContract, TO: StateContract> Debug for MapOwnedState<FROM, TO> {
     }
 }
 
-impl<FROM: StateContract, TO: StateContract> Into<TState<TO>>
-for MapOwnedState<FROM, TO>
-{
+impl<FROM: StateContract, TO: StateContract> Into<TState<TO>> for MapOwnedState<FROM, TO> {
     fn into(self) -> TState<TO> {
         WidgetState::new(Box::new(self))
     }
 }
 
 pub trait MapWithEnv<FROM: StateContract, TO: StateContract>:
-Fn(&FROM, &TO, &Environment) -> TO + DynClone + 'static
-{}
+    Fn(&FROM, &TO, &Environment) -> TO + DynClone + 'static
+{
+}
 
 impl<T, FROM: StateContract, TO: StateContract> MapWithEnv<FROM, TO> for T where
     T: Fn(&FROM, &TO, &Environment) -> TO + DynClone + 'static
-{}
+{
+}
 
 pub trait MapRev<FROM: StateContract, TO: StateContract>:
-Fn(&TO) -> Option<FROM> + DynClone + 'static
-{}
+    Fn(&TO) -> Option<FROM> + DynClone + 'static
+{
+}
 
 impl<T, FROM: StateContract, TO: StateContract> MapRev<FROM, TO> for T where
     T: Fn(&TO) -> Option<FROM> + DynClone + 'static
-{}
+{
+}
 
 dyn_clone::clone_trait_object!(<FROM: StateContract, TO: StateContract> MapWithEnv<FROM, TO>);
 
@@ -163,8 +179,5 @@ macro_rules! impl_string_state {
 }
 
 impl_string_state!(
-    i8, u8, i16, u16,
-    i32, u32, i64, u64,
-    i128, u128, f32, f64,
-    bool, char, isize, usize
+    i8, u8, i16, u16, i32, u32, i64, u64, i128, u128, f32, f64, bool, char, isize, usize
 );

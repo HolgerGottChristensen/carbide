@@ -1,5 +1,8 @@
 use crate::draw::{Dimension, Position};
-use crate::event::{KeyboardEvent, KeyboardEventHandler, MouseEvent, MouseEventHandler, OtherEventHandler, WidgetEvent};
+use crate::event::{
+    KeyboardEvent, KeyboardEventHandler, MouseEvent, MouseEventHandler, OtherEventHandler,
+    WidgetEvent,
+};
 use crate::prelude::*;
 use crate::CommonWidgetImpl;
 
@@ -44,7 +47,9 @@ impl MouseEventHandler for OverlaidLayer {
 
         if let Some(overlay) = &mut self.overlay {
             overlay.process_mouse_event(event, consumed, env);
-            if *consumed { return (); }
+            if *consumed {
+                return ();
+            }
 
             if !self.steal_events_when_some {
                 for mut child in self.children_direct() {
@@ -143,4 +148,3 @@ impl Render for OverlaidLayer {
 }
 
 impl WidgetExt for OverlaidLayer {}
-

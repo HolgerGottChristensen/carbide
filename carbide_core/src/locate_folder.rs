@@ -1,10 +1,9 @@
-use std::{env, fs};
 use std::io;
 use std::path::{Path, PathBuf};
+use std::{env, fs};
 
 /// This file originated from https://github.com/PistonDevelopers/find_folder/blob/master/src/lib.rs
 /// Updated to not use deprecated try macro
-
 
 /// Depth of recursion through kids.
 pub type KidsDepth = u8;
@@ -44,7 +43,6 @@ pub enum Error {
     NotFound,
 }
 
-
 impl ::std::convert::From<io::Error> for Error {
     fn from(io_err: io::Error) -> Error {
         Error::IO(io_err)
@@ -65,7 +63,6 @@ impl ::std::error::Error for Error {
         }
     }
 }
-
 
 impl Search {
     /// An easy API method for finding a folder with a given name.
@@ -97,7 +94,6 @@ impl Search {
     }
 }
 
-
 impl SearchFolder {
     /// Search for a folder with the given name.
     pub fn for_folder(&self, target: &str) -> Result<PathBuf, Error> {
@@ -109,17 +105,16 @@ impl SearchFolder {
                     Err(Error::NotFound) => check_kids(kids_depth, target, &self.start),
                     other_result => other_result,
                 }
-            },
+            }
             Search::KidsThenParents(kids_depth, parents_depth) => {
                 match check_kids(kids_depth, target, &self.start) {
                     Err(Error::NotFound) => check_parents(parents_depth, target, &self.start),
                     other_result => other_result,
                 }
-            },
+            }
         }
     }
 }
-
 
 /// Check the contents of this folder and children folders.
 pub fn check_kids(depth: u8, name: &str, path: &Path) -> Result<PathBuf, Error> {
@@ -130,13 +125,13 @@ pub fn check_kids(depth: u8, name: &str, path: &Path) -> Result<PathBuf, Error> 
                     let entry = entry?;
                     let entry_path = entry.path();
                     if fs::metadata(&entry_path)?.is_dir() {
-                        if let Ok(folder) = check_kids(depth-1, name, &entry_path) {
+                        if let Ok(folder) = check_kids(depth - 1, name, &entry_path) {
                             return Ok(folder);
                         }
                     }
                 }
                 err
-            },
+            }
             false => err,
         },
         other_result => other_result,
@@ -149,7 +144,7 @@ pub fn check_parents(depth: u8, name: &str, path: &Path) -> Result<PathBuf, Erro
         err @ Err(Error::NotFound) => match depth > 0 {
             true => match path.parent() {
                 None => err,
-                Some(parent) => check_parents(depth-1, name, parent),
+                Some(parent) => check_parents(depth - 1, name, parent),
             },
             false => err,
         },
@@ -163,7 +158,7 @@ pub fn check_dir(name: &str, path: &Path) -> Result<PathBuf, Error> {
         let entry = entry?;
         let entry_path = entry.path();
         if entry_path.ends_with(name) {
-            return Ok(entry_path)
+            return Ok(entry_path);
         }
     }
     Err(Error::NotFound)

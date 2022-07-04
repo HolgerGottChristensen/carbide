@@ -1,14 +1,16 @@
+use crate::draw::{Dimension, Position};
+use crate::prelude::*;
 use std::collections::HashMap;
 use std::fmt::{Debug, Formatter};
 use std::hash::Hash;
-use crate::draw::{Dimension, Position};
-use crate::prelude::*;
-
 
 /// A basic, non-interactive rectangle shape widget.
 #[derive(Clone, Widget)]
 #[carbide_exclude(StateSync)]
-pub struct Match<T> where T: StateContract  {
+pub struct Match<T>
+where
+    T: StateContract,
+{
     id: WidgetId,
     position: Position,
     dimension: Dimension,
@@ -36,16 +38,14 @@ impl<T: StateContract> Match<T> {
     }
 
     pub fn default(mut self, widget: Box<dyn Widget>) -> Box<Self> {
-        self.widgets.push((|_|{true}, widget));
+        self.widgets.push((|_| true, widget));
         Box::new(self)
     }
 
     fn find_new_matching_child(&self) -> Option<usize> {
         let val = self.local_state.value();
 
-        self.widgets.iter().position(|a| {
-            a.0(&val)
-        })
+        self.widgets.iter().position(|a| a.0(&val))
     }
 }
 
@@ -93,7 +93,6 @@ impl<T: StateContract> carbide_core::widget::CommonWidget for Match<T> {
         } else {
             carbide_core::widget::WidgetIter::Empty
         }
-
     }
 
     fn children_mut(&mut self) -> carbide_core::widget::WidgetIterMut {
@@ -202,4 +201,3 @@ macro_rules! matches_case {
         })
     }
 }
-

@@ -22,12 +22,12 @@ impl Vertex {
     pub fn desc<'a>() -> wgpu::VertexBufferLayout<'a> {
         wgpu::VertexBufferLayout {
             array_stride: std::mem::size_of::<Vertex>() as wgpu::BufferAddress, // 1.
-            step_mode: wgpu::VertexStepMode::Vertex,                       // 2.
+            step_mode: wgpu::VertexStepMode::Vertex,                            // 2.
             attributes: &[
                 // 3.
                 wgpu::VertexAttribute {
-                    offset: 0,                          // 4.
-                    shader_location: 0,                 // 5.
+                    offset: 0,                       // 4.
+                    shader_location: 0,              // 5.
                     format: VertexFormat::Float32x3, // 6.
                 },
                 wgpu::VertexAttribute {

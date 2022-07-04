@@ -1,15 +1,15 @@
 use std::fmt;
 use std::fmt::{Debug, Display, Formatter};
 
-use dyn_clone::DynClone;
 use carbide_core::prelude::{NewStateSync, ReadState};
-use carbide_core::state::ReadWidgetState;
 use carbide_core::state::RState;
+use carbide_core::state::ReadWidgetState;
+use dyn_clone::DynClone;
 
 use crate::prelude::Environment;
-use crate::state::{LocalState, Map2, StateContract, TState, ValueState};
-pub use crate::state::State;
 use crate::state::util::value_cell::{ValueRef, ValueRefMut};
+pub use crate::state::State;
+use crate::state::{LocalState, Map2, StateContract, TState, ValueState};
 
 /// # Widget state
 /// This is a wrapper to make it easier to work with different kinds of read-write state.
@@ -32,7 +32,10 @@ use crate::state::util::value_cell::{ValueRef, ValueRefMut};
 ///
 /// The fix for both of these is to use the Boxed enum case.
 #[derive(Clone, Debug)]
-pub enum WidgetState<T> where T: StateContract {
+pub enum WidgetState<T>
+where
+    T: StateContract,
+{
     Value(ValueState<T>),
     Local(LocalState<T>),
     Boxed(Box<dyn State<T>>),
@@ -56,21 +59,19 @@ impl<T: StateContract> WidgetState<T> {
     }
 }
 
-
-
 impl<T: StateContract> WidgetState<T> {
     /// Return a read-only state containing a boolean, which is true when self and other are
     /// equals.
     pub fn eq<U: StateContract + PartialEq<T>>(&self, other: impl Into<TState<U>>) -> RState<bool> {
         let other = other.into();
-        Map2::read_map(self.clone(), other, |s1: &T, s2: &U| { s2 == s1 })
+        Map2::read_map(self.clone(), other, |s1: &T, s2: &U| s2 == s1)
     }
 
     /// Return a read-only state containing a boolean, which is true when self and other are not
     /// equals.
     pub fn ne<U: StateContract + PartialEq<T>>(&self, other: impl Into<TState<U>>) -> RState<bool> {
         let other = other.into();
-        Map2::read_map(self.clone(), other, |s1: &T, s2: &U| { s2 != s1 })
+        Map2::read_map(self.clone(), other, |s1: &T, s2: &U| s2 != s1)
     }
 }
 
@@ -149,11 +150,13 @@ impl<T: StateContract> From<&WidgetState<T>> for WidgetState<T> {
 }
 
 pub trait Map<FROM: StateContract, TO: StateContract>:
-Fn(&FROM) -> TO + DynClone + 'static
-{}
+    Fn(&FROM) -> TO + DynClone + 'static
+{
+}
 
 impl<T, FROM: StateContract, TO: StateContract> Map<FROM, TO> for T where
     T: Fn(&FROM) -> TO + DynClone + 'static
-{}
+{
+}
 
 dyn_clone::clone_trait_object!(<FROM: StateContract, TO: StateContract> Map<FROM, TO>);

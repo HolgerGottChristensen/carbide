@@ -1,11 +1,10 @@
-use std::path::PathBuf;
 use carbide_core::prelude::EnvironmentColor;
 use carbide_core::text::FontFamily;
 use carbide_core::widget::*;
 use carbide_wgpu::window::*;
+use std::path::PathBuf;
 
 fn main() {
-
     let icon_path = Window::relative_path_to_assets("images/rust.png");
     println!("{:?}", icon_path);
 
@@ -22,7 +21,6 @@ fn main() {
     window.add_font_family(family);*/
 
     let lcabyg_icon_id = window.add_image_from_path("images/lcabyg.png");
-
 
     window.set_widgets(Image::new(lcabyg_icon_id).resizeable());
 

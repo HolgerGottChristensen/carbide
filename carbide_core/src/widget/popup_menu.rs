@@ -1,8 +1,8 @@
-use carbide_core::event::MouseEvent;
 use crate::draw::{Dimension, Position};
+use crate::event::{MouseButton, MouseEventHandler};
 use crate::prelude::*;
 use crate::CommonWidgetImpl;
-use crate::event::{MouseButton, MouseEventHandler};
+use carbide_core::event::MouseEvent;
 
 #[derive(Debug, Clone, Widget)]
 #[carbide_exclude(MouseEvent, Layout)]
@@ -17,26 +17,20 @@ pub struct PopupMenu {
 
 impl PopupMenu {
     pub fn new(menu: TState<Menu>, top_level: bool) -> Box<Self> {
+        let item = Text::new(
+            Map1::read_map(menu.clone(), |a: &Menu| a.name().to_string()).ignore_writes(),
+        )
+        .wrap_mode(Wrap::None)
+        .padding(EdgeInsets::single(5.0, 5.0, 7.0, 7.0))
+        .background(Rectangle::new().fill(EnvironmentColor::Orange));
 
-        let item = Text::new(Map1::read_map(menu.clone(), |a: &Menu| {
-            a.name().to_string()
-        }).ignore_writes())
-            .wrap_mode(Wrap::None)
-            .padding(EdgeInsets::single(5.0, 5.0, 7.0, 7.0))
-            .background(
-                Rectangle::new().fill(EnvironmentColor::Orange)
-            );
+        let menu_items =
+            Map1::read_map(menu.clone(), |menu: &Menu| menu.items().clone()).ignore_writes();
 
-        let menu_items = Map1::read_map(menu.clone(), |menu: &Menu| {
-            menu.items().clone()
-        }).ignore_writes();
-
-        let list = VStack::new(vec![
-            ForEach::new(menu_items, Self::menu_item_delegate)
-        ]).spacing(1.0)
+        let list = VStack::new(vec![ForEach::new(menu_items, Self::menu_item_delegate)])
+            .spacing(1.0)
             .padding(1.0)
             .background(Rectangle::new().fill(EnvironmentColor::Blue));
-
 
         if top_level {
             Box::new(PopupMenu {
@@ -44,12 +38,13 @@ impl PopupMenu {
                 child: item,
                 position: Default::default(),
                 dimension: Default::default(),
-                popup: Ok(Overlay::new(MouseArea::new(list)
-                    .on_click_outside(move |env: &mut Environment, _:_| {
+                popup: Ok(Overlay::new(MouseArea::new(list).on_click_outside(
+                    move |env: &mut Environment, _: _| {
                         env.add_overlay("controls_popup_layer", None);
                         env.request_animation_frame();
-                    }))),
-                menu
+                    },
+                ))),
+                menu,
             })
         } else {
             let hovered = LocalState::new(false);
@@ -60,61 +55,58 @@ impl PopupMenu {
                 position: Default::default(),
                 dimension: Default::default(),
                 popup: Err(list),
-                menu
+                menu,
             })
         }
-
     }
 
     fn menu_item_delegate(item: TState<MenuItem>, index: UsizeState) -> Box<dyn Widget> {
         let default_item = Map1::read_map(item.clone(), |item: &MenuItem| {
-            matches!(item, MenuItem::Item {..})
-        }).ignore_writes();
+            matches!(item, MenuItem::Item { .. })
+        })
+        .ignore_writes();
 
         let separator_item = Map1::read_map(item.clone(), |item: &MenuItem| {
             matches!(item, MenuItem::Separator)
-        }).ignore_writes();
+        })
+        .ignore_writes();
 
-        let name = Map1::read_map(item.clone(), |item: &MenuItem| {
-            match item {
-                MenuItem::Item { name, .. } => {name.clone()}
-                MenuItem::Separator => String::new(),
-                MenuItem::SubMenu { menu } => {
-                    menu.name().to_string()
-                }
-            }
+        let name = Map1::read_map(item.clone(), |item: &MenuItem| match item {
+            MenuItem::Item { name, .. } => name.clone(),
+            MenuItem::Separator => String::new(),
+            MenuItem::SubMenu { menu } => menu.name().to_string(),
         });
 
-        let submenu = Map1::read_map(item, |item: &MenuItem| {
-            match item {
-                MenuItem::SubMenu { menu } => {
-                    menu.clone()
-                }
-                MenuItem::Item { .. } => Menu::new("".to_string()),
-                MenuItem::Separator => Menu::new("".to_string()),
-            }
+        let submenu = Map1::read_map(item, |item: &MenuItem| match item {
+            MenuItem::SubMenu { menu } => menu.clone(),
+            MenuItem::Item { .. } => Menu::new("".to_string()),
+            MenuItem::Separator => Menu::new("".to_string()),
         });
 
         let separator_or_submenu = IfElse::new(separator_item)
-            .when_true(Rectangle::new().fill(EnvironmentColor::Red)
-                .frame_fixed_height(1)
-                .custom_flags(Flags::USEMAXCROSSAXIS))
+            .when_true(
+                Rectangle::new()
+                    .fill(EnvironmentColor::Red)
+                    .frame_fixed_height(1)
+                    .custom_flags(Flags::USEMAXCROSSAXIS),
+            )
             .when_false(PopupMenu::new(submenu.ignore_writes(), false));
 
         IfElse::new(default_item)
-            .when_true(Text::new(name.ignore_writes())
-                           .padding(5.0)
-                           .background(Rectangle::new().fill(EnvironmentColor::Green)))
+            .when_true(
+                Text::new(name.ignore_writes())
+                    .padding(5.0)
+                    .background(Rectangle::new().fill(EnvironmentColor::Green)),
+            )
             .when_false(separator_or_submenu)
-
     }
 }
 
 impl MouseEventHandler for PopupMenu {
     fn handle_mouse_event(&mut self, event: &MouseEvent, _consumed: &bool, env: &mut Environment) {
         match event {
-            MouseEvent::NClick(MouseButton::Left, pos, _, _) |
-            MouseEvent::Click(MouseButton::Left, pos, _) => {
+            MouseEvent::NClick(MouseButton::Left, pos, _, _)
+            | MouseEvent::Click(MouseButton::Left, pos, _) => {
                 if self.is_inside(*pos) {
                     if let Ok(over) = &mut self.popup {
                         over.set_showing(true);
@@ -123,13 +115,12 @@ impl MouseEventHandler for PopupMenu {
                     }
                 }
             }
-            _ => ()
+            _ => (),
         }
     }
 }
 
 impl Layout for PopupMenu {
-
     fn calculate_size(&mut self, requested_size: Dimension, env: &mut Environment) -> Dimension {
         let dim = self.child.calculate_size(requested_size, env);
         if let Ok(over) = &mut self.popup {
@@ -161,11 +152,8 @@ impl Layout for PopupMenu {
             //b.set_position(position);
             b.position_children();
         }
-
     }
 }
-
-
 
 CommonWidgetImpl!(PopupMenu, self, id: self.id, child: self.child, position: self.position, dimension: self.dimension);
 

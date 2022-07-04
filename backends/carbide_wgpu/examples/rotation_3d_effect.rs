@@ -6,8 +6,8 @@ use carbide_core::environment::*;
 use carbide_core::layout::BasicLayouter;
 use carbide_core::state::AnimatedState;
 use carbide_core::text::*;
-use carbide_core::widget::*;
 use carbide_core::widget::canvas::*;
+use carbide_core::widget::*;
 use carbide_wgpu::window::*;
 
 fn main() {

@@ -1,16 +1,21 @@
-use carbide_core::Color;
 use carbide_core::draw::{Dimension, Position};
 use carbide_core::environment::EnvironmentColor;
 use carbide_core::event::{Key, KeyboardEvent, KeyboardEventHandler, ModifierKey, WidgetEvent};
 use carbide_core::flags::Flags;
 use carbide_core::focus::{Focus, Focusable, Refocus};
 use carbide_core::prelude::{Environment, StateContract, StateSync};
-use carbide_core::state::{FocusState, LocalState, Map2, Map4, MapOwnedState, ReadState, StateExt, StateKey, StringState};
-use carbide_core::widget::{CommonWidget, HStack, WidgetId, Rectangle, Spacer, Text, Widget, WidgetExt, WidgetIter, WidgetIterMut, ZStack};
+use carbide_core::state::{
+    FocusState, LocalState, Map2, Map4, MapOwnedState, ReadState, StateExt, StateKey, StringState,
+};
+use carbide_core::widget::{
+    CommonWidget, HStack, Rectangle, Spacer, Text, Widget, WidgetExt, WidgetId, WidgetIter,
+    WidgetIterMut, ZStack,
+};
+use carbide_core::Color;
 
 use crate::carbide_core::prelude::State;
-use crate::PlainButton;
 use crate::types::*;
+use crate::PlainButton;
 
 #[derive(Debug, Clone, Widget)]
 #[carbide_exclude(Focusable)]
@@ -21,10 +26,7 @@ pub struct PlainCheckBox {
     child: Box<dyn Widget>,
     position: Position,
     dimension: Dimension,
-    delegate: fn(
-        focus: FocusState,
-        checked: CheckBoxState,
-    ) -> Box<dyn Widget>,
+    delegate: fn(focus: FocusState, checked: CheckBoxState) -> Box<dyn Widget>,
     #[state]
     label: StringState,
     #[state]
@@ -37,10 +39,7 @@ impl PlainCheckBox {
         Self::new_internal(self.checked, self.focus, self.delegate, self.label)
     }
 
-    pub fn new<S: Into<StringState>, L: Into<CheckBoxState>>(
-        label: S,
-        checked: L,
-    ) -> Box<Self> {
+    pub fn new<S: Into<StringState>, L: Into<CheckBoxState>>(label: S, checked: L) -> Box<Self> {
         let focus = LocalState::new(Focus::Unfocused);
 
         Self::new_internal(
@@ -56,18 +55,23 @@ impl PlainCheckBox {
         let blue = EnvironmentColor::Blue.state();
         let red = EnvironmentColor::Red.state();
 
-        let background_color = Map4::read_map(checked.clone(), green, blue, red,
-        |checked: &CheckBoxValue, green: &Color, blue: &Color, red: &Color| {
-            match *checked {
+        let background_color = Map4::read_map(
+            checked.clone(),
+            green,
+            blue,
+            red,
+            |checked: &CheckBoxValue, green: &Color, blue: &Color, red: &Color| match *checked {
                 CheckBoxValue::True => *green,
                 CheckBoxValue::Intermediate => *blue,
                 CheckBoxValue::False => *red,
-            }
-        }).ignore_writes();
+            },
+        )
+        .ignore_writes();
 
         let val = Map2::read_map(checked, focus, |checked: &CheckBoxValue, focus: &Focus| {
             format!("{:?}, {:?}", *checked, focus)
-        }).ignore_writes();
+        })
+        .ignore_writes();
 
         ZStack::new(vec![
             Rectangle::new().fill(background_color),
@@ -77,10 +81,7 @@ impl PlainCheckBox {
 
     pub fn delegate(
         self,
-        delegate: fn(
-            focus: FocusState,
-            selected: CheckBoxState,
-        ) -> Box<dyn Widget>,
+        delegate: fn(focus: FocusState, selected: CheckBoxState) -> Box<dyn Widget>,
     ) -> Box<Self> {
         let checked = self.checked;
         let focus_state = self.focus;
@@ -92,10 +93,7 @@ impl PlainCheckBox {
     fn new_internal(
         checked: CheckBoxState,
         focus: FocusState,
-        delegate: fn(
-            focus: FocusState,
-            selected: CheckBoxState,
-        ) -> Box<dyn Widget>,
+        delegate: fn(focus: FocusState, selected: CheckBoxState) -> Box<dyn Widget>,
         label_state: StringState,
     ) -> Box<Self> {
         let delegate_widget = delegate(focus.clone(), checked.clone());
@@ -116,11 +114,7 @@ impl PlainCheckBox {
             }))
             .focused(focus.clone());
 
-        let child = HStack::new(vec![
-            button,
-            Text::new(label_state.clone()),
-        ])
-            .spacing(5.0);
+        let child = HStack::new(vec![button, Text::new(label_state.clone())]).spacing(5.0);
 
         Box::new(PlainCheckBox {
             id: WidgetId::new(),

@@ -1,10 +1,16 @@
-use crate::state::{Map1, MapOwnedState, RState, StateContract, TState};
 use crate::state::widget_state::Map;
+use crate::state::{Map1, MapOwnedState, RState, StateContract, TState};
 
-pub trait StateExt<T>: Into<TState<T>> + Clone where T: StateContract {
+pub trait StateExt<T>: Into<TState<T>> + Clone
+where
+    T: StateContract,
+{
     /// Example: size.mapped(|t: &f64| { format!("{:.2}", t) })
-    fn mapped<TO: StateContract + Default + 'static, M: Map<T, TO> + Clone>(&self, map: M) -> TState<TO> {
-        MapOwnedState::<T, TO>::new(self.clone(), move |s: &T, _: &_, _: &_| { map(s) }).into()
+    fn mapped<TO: StateContract + Default + 'static, M: Map<T, TO> + Clone>(
+        &self,
+        map: M,
+    ) -> TState<TO> {
+        MapOwnedState::<T, TO>::new(self.clone(), move |s: &T, _: &_, _: &_| map(s)).into()
     }
 
     /// This map a state to another state. The resulting state is read-only.

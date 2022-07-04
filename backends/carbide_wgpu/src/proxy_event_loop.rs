@@ -1,5 +1,5 @@
-use winit::event_loop::EventLoopProxy;
 use carbide_core::event::{CustomEvent, EventSink};
+use winit::event_loop::EventLoopProxy;
 
 #[derive(Clone)]
 pub(crate) struct ProxyEventLoop(pub EventLoopProxy<CustomEvent>);

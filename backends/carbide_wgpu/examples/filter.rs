@@ -1,11 +1,11 @@
 use std::time::Duration;
 
-use carbide_core::Color;
 use carbide_core::environment::*;
-use carbide_core::state::{AnimatedState, ease_in_out};
+use carbide_core::state::{ease_in_out, AnimatedState};
 use carbide_core::text::*;
-use carbide_core::widget::*;
 use carbide_core::widget::canvas::*;
+use carbide_core::widget::*;
+use carbide_core::Color;
 use carbide_wgpu::window::*;
 
 fn main() {
@@ -27,24 +27,21 @@ fn main() {
         .repeat_alternate()
         .range(-180.0, 180.0);
 
-
-    window.set_widgets(
-        ZStack::new(vec![
-            Image::new(image_id)
-                .scaled_to_fill()
-                .clip_shape(Rectangle::new())
-                .frame(500.0, 400.0),
-            Filter::new(ImageFilter::sobel(), Hidden::new(Rectangle::new()))
-                .clip_shape(Circle::new())
-                .frame(200.0, 200.0)
-                .offset(position_x.clone(), 0.0),
-            Circle::new()
-                .stroke(EnvironmentColor::Accent)
-                .stroke_style(1.0)
-                .frame(200.0, 200.0)
-                .offset(position_x, 0.0),
-        ]),
-    );
+    window.set_widgets(ZStack::new(vec![
+        Image::new(image_id)
+            .scaled_to_fill()
+            .clip_shape(Rectangle::new())
+            .frame(500.0, 400.0),
+        Filter::new(ImageFilter::sobel(), Hidden::new(Rectangle::new()))
+            .clip_shape(Circle::new())
+            .frame(200.0, 200.0)
+            .offset(position_x.clone(), 0.0),
+        Circle::new()
+            .stroke(EnvironmentColor::Accent)
+            .stroke_style(1.0)
+            .frame(200.0, 200.0)
+            .offset(position_x, 0.0),
+    ]));
 
     window.launch();
 }

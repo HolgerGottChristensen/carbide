@@ -1,5 +1,7 @@
-use wgpu::{BufferUsages, Extent3d, ImageCopyTexture, LoadOp, Operations, RenderPassDepthStencilAttachment};
 use wgpu::util::{BufferInitDescriptor, DeviceExt};
+use wgpu::{
+    BufferUsages, Extent3d, ImageCopyTexture, LoadOp, Operations, RenderPassDepthStencilAttachment,
+};
 
 use carbide_core::draw::{Dimension, Position, Rect};
 
@@ -18,7 +20,6 @@ impl Window {
                 label: Some("Render Encoder"),
             });
 
-
         let primitives = self.ui.draw();
         let fill = self
             .mesh
@@ -32,7 +33,6 @@ impl Window {
                 primitives,
             )
             .unwrap();
-
 
         // Check if an upload to texture atlas is needed.
         let texture_atlas_cmd = match fill.atlas_requires_upload {
@@ -58,22 +58,34 @@ impl Window {
 
         let mut uniform_bind_groups = vec![];
 
-        let keys = self.ui.environment.filters().keys().cloned().collect::<Vec<_>>();
+        let keys = self
+            .ui
+            .environment
+            .filters()
+            .keys()
+            .cloned()
+            .collect::<Vec<_>>();
 
-        self.filter_buffer_bind_groups.retain(|id, _| keys.contains(id));
+        self.filter_buffer_bind_groups
+            .retain(|id, _| keys.contains(id));
 
         for (filter_id, filter) in self.ui.environment.filters() {
             if !self.filter_buffer_bind_groups.contains_key(filter_id) {
                 let filter: Filter = filter.clone().into();
-                let filter_buffer = self.device.create_buffer_init(
-                    &wgpu::util::BufferInitDescriptor {
-                        label: Some("Filter Buffer"),
-                        contents: &*filter.as_bytes(),
-                        usage: wgpu::BufferUsages::STORAGE,
-                    }
+                let filter_buffer =
+                    self.device
+                        .create_buffer_init(&wgpu::util::BufferInitDescriptor {
+                            label: Some("Filter Buffer"),
+                            contents: &*filter.as_bytes(),
+                            usage: wgpu::BufferUsages::STORAGE,
+                        });
+                let filter_buffer_bind_group = filter_buffer_bind_group(
+                    &self.device,
+                    &self.filter_buffer_bind_group_layout,
+                    &filter_buffer,
                 );
-                let filter_buffer_bind_group = filter_buffer_bind_group(&self.device, &self.filter_buffer_bind_group_layout, &filter_buffer);
-                self.filter_buffer_bind_groups.insert(*filter_id, filter_buffer_bind_group);
+                self.filter_buffer_bind_groups
+                    .insert(*filter_id, filter_buffer_bind_group);
             }
         }
 
@@ -88,7 +100,7 @@ impl Window {
             &self.texture_bind_group_layout,
             &self.uniform_bind_group_layout,
             &self.gradient_bind_group_layout,
-            self.carbide_to_wgpu_matrix
+            self.carbide_to_wgpu_matrix,
         );
 
         let vertices: Vec<Vertex> = self
@@ -100,15 +112,15 @@ impl Window {
 
         if vertices.len() <= self.vertex_buffer.1 {
             // There is space in the current vertex buffer
-            self.queue.write_buffer(&self.vertex_buffer.0, 0, bytemuck::cast_slice(&vertices));
+            self.queue
+                .write_buffer(&self.vertex_buffer.0, 0, bytemuck::cast_slice(&vertices));
         } else {
             // We need to create a new and larger vertex buffer
-            let new_vertex_buffer = self.device
-                .create_buffer_init(&BufferInitDescriptor {
-                    label: Some("Vertex Buffer"),
-                    contents: bytemuck::cast_slice(&vertices),
-                    usage: BufferUsages::VERTEX | BufferUsages::COPY_DST,
-                });
+            let new_vertex_buffer = self.device.create_buffer_init(&BufferInitDescriptor {
+                label: Some("Vertex Buffer"),
+                contents: bytemuck::cast_slice(&vertices),
+                usage: BufferUsages::VERTEX | BufferUsages::COPY_DST,
+            });
             self.vertex_buffer = (new_vertex_buffer, vertices.len());
         }
 
@@ -188,8 +200,11 @@ impl Window {
                                     render_pass.set_pipeline(current_main_render_pipeline);
                                 }
                             }
-                            RenderPassCommand::Transform { uniform_bind_group_index } => {
-                                current_uniform_bind_group = &uniform_bind_groups[uniform_bind_group_index];
+                            RenderPassCommand::Transform {
+                                uniform_bind_group_index,
+                            } => {
+                                current_uniform_bind_group =
+                                    &uniform_bind_groups[uniform_bind_group_index];
                                 render_pass.set_bind_group(1, current_uniform_bind_group, &[]);
                             }
                         }
@@ -217,24 +232,27 @@ impl Window {
                     render_pass.set_bind_group(0, &uniform_bind_groups[bind_group_index], &[]);
                     render_pass.set_bind_group(1, current_uniform_bind_group, &[]);
                     render_pass.draw(vertex_range, instance_range.clone());
-
                 }
                 RenderPass::Filter(vertex_range, bind_group_index) => {
-                    encoder.copy_texture_to_texture(ImageCopyTexture {
-                        texture: &self.main_tex,
-                        mip_level: 0,
-                        origin: Default::default(),
-                        aspect: Default::default(),
-                    }, ImageCopyTexture {
-                        texture: &self.secondary_tex,
-                        mip_level: 0,
-                        origin: Default::default(),
-                        aspect: Default::default(),
-                    }, Extent3d {
-                        width: self.size.width,
-                        height: self.size.height,
-                        depth_or_array_layers: 1,
-                    });
+                    encoder.copy_texture_to_texture(
+                        ImageCopyTexture {
+                            texture: &self.main_tex,
+                            mip_level: 0,
+                            origin: Default::default(),
+                            aspect: Default::default(),
+                        },
+                        ImageCopyTexture {
+                            texture: &self.secondary_tex,
+                            mip_level: 0,
+                            origin: Default::default(),
+                            aspect: Default::default(),
+                        },
+                        Extent3d {
+                            width: self.size.width,
+                            height: self.size.height,
+                            depth_or_array_layers: 1,
+                        },
+                    );
 
                     let (color_op, stencil_op) = render_pass_ops(RenderPassOps::Middle);
                     let mut render_pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
@@ -254,7 +272,14 @@ impl Window {
                     render_pass.set_stencil_reference(stencil_level);
                     render_pass.set_vertex_buffer(0, current_vertex_buffer_slice);
                     render_pass.set_bind_group(0, &self.filter_secondary_texture_bind_group, &[]);
-                    render_pass.set_bind_group(1, &self.filter_buffer_bind_groups.get(&bind_group_index).unwrap(), &[]);
+                    render_pass.set_bind_group(
+                        1,
+                        &self
+                            .filter_buffer_bind_groups
+                            .get(&bind_group_index)
+                            .unwrap(),
+                        &[],
+                    );
                     render_pass.set_bind_group(2, current_uniform_bind_group, &[]);
                     render_pass.set_bind_group(3, &self.texture_size_bind_group, &[]);
                     render_pass.draw(vertex_range, instance_range.clone());
@@ -277,7 +302,11 @@ impl Window {
                     render_pass.set_pipeline(&self.render_pipeline_no_mask_filter);
                     render_pass.set_vertex_buffer(0, current_vertex_buffer_slice);
                     render_pass.set_bind_group(0, &self.filter_main_texture_bind_group, &[]);
-                    render_pass.set_bind_group(1, &self.filter_buffer_bind_groups.get(&filter_id).unwrap(), &[]);
+                    render_pass.set_bind_group(
+                        1,
+                        &self.filter_buffer_bind_groups.get(&filter_id).unwrap(),
+                        &[],
+                    );
                     render_pass.set_bind_group(2, current_uniform_bind_group, &[]);
                     render_pass.set_bind_group(3, &self.texture_size_bind_group, &[]);
                     render_pass.draw(vertex_range, instance_range.clone());
@@ -301,7 +330,11 @@ impl Window {
                     render_pass.set_stencil_reference(stencil_level);
                     render_pass.set_vertex_buffer(0, current_vertex_buffer_slice);
                     render_pass.set_bind_group(0, &self.filter_secondary_texture_bind_group, &[]);
-                    render_pass.set_bind_group(1, &self.filter_buffer_bind_groups.get(&filter_id).unwrap(), &[]);
+                    render_pass.set_bind_group(
+                        1,
+                        &self.filter_buffer_bind_groups.get(&filter_id).unwrap(),
+                        &[],
+                    );
                     render_pass.set_bind_group(2, current_uniform_bind_group, &[]);
                     render_pass.set_bind_group(3, &self.texture_size_bind_group, &[]);
                     render_pass.draw(vertex_range, instance_range.clone());
@@ -352,38 +385,30 @@ enum RenderPassOps {
 
 fn render_pass_ops(ops_type: RenderPassOps) -> (Operations<wgpu::Color>, Operations<u32>) {
     let color_op = match ops_type {
-        RenderPassOps::Start => {
-            wgpu::Operations {
-                load: wgpu::LoadOp::Clear(wgpu::Color {
-                    r: 0.0,
-                    g: 0.0,
-                    b: 0.0,
-                    a: 1.0,
-                }),
-                store: true,
-            }
-        }
-        RenderPassOps::Middle => {
-            wgpu::Operations {
-                load: LoadOp::Load,
-                store: true,
-            }
-        }
+        RenderPassOps::Start => wgpu::Operations {
+            load: wgpu::LoadOp::Clear(wgpu::Color {
+                r: 0.0,
+                g: 0.0,
+                b: 0.0,
+                a: 1.0,
+            }),
+            store: true,
+        },
+        RenderPassOps::Middle => wgpu::Operations {
+            load: LoadOp::Load,
+            store: true,
+        },
     };
 
     let stencil_op = match ops_type {
-        RenderPassOps::Start => {
-            wgpu::Operations {
-                load: wgpu::LoadOp::Clear(0),
-                store: true,
-            }
-        }
-        RenderPassOps::Middle => {
-            wgpu::Operations {
-                load: LoadOp::Load,
-                store: true,
-            }
-        }
+        RenderPassOps::Start => wgpu::Operations {
+            load: wgpu::LoadOp::Clear(0),
+            store: true,
+        },
+        RenderPassOps::Middle => wgpu::Operations {
+            load: LoadOp::Load,
+            store: true,
+        },
     };
 
     (color_op, stencil_op)

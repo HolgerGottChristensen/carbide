@@ -123,21 +123,21 @@ impl EventHandler {
 
     fn add_event(&mut self, event: WidgetEvent) {
         if let WidgetEvent::Mouse(MouseEvent::Move {
-                                      delta_xy,
-                                      to,
-                                      modifiers,
-                                      ..
-                                  }) = event
+            delta_xy,
+            to,
+            modifiers,
+            ..
+        }) = event
         {
             // We should only add move events where the mouse have actually moved
             if delta_xy.x != 0.0 || delta_xy.y != 0.0 {
                 // If the last event was also a move event we can compress it to a single move event.
                 if let Some(WidgetEvent::Mouse(MouseEvent::Move {
-                                                   delta_xy: old_delta_xy,
-                                                   modifiers: old_modifiers,
-                                                   to: old_to,
-                                                   ..
-                                               })) = self.events.last_mut()
+                    delta_xy: old_delta_xy,
+                    modifiers: old_modifiers,
+                    to: old_to,
+                    ..
+                })) = self.events.last_mut()
                 {
                     old_delta_xy.x += delta_xy.x;
                     old_delta_xy.y += delta_xy.y;
@@ -148,19 +148,19 @@ impl EventHandler {
                 }
             }
         } else if let WidgetEvent::Mouse(MouseEvent::Scroll {
-                                             x: new_x,
-                                             y: new_y,
-                                             mouse_position: new_mouse_position,
-                                             modifiers: new_modifiers,
-                                         }) = event
+            x: new_x,
+            y: new_y,
+            mouse_position: new_mouse_position,
+            modifiers: new_modifiers,
+        }) = event
         {
             // If the last event was a scroll, we can compress the events into a single scroll event.
             if let Some(WidgetEvent::Mouse(MouseEvent::Scroll {
-                                               x,
-                                               y,
-                                               mouse_position,
-                                               modifiers,
-                                           })) = self.events.last_mut()
+                x,
+                y,
+                mouse_position,
+                modifiers,
+            })) = self.events.last_mut()
             {
                 *x += new_x;
                 *y += new_y;
@@ -257,11 +257,11 @@ impl EventHandler {
                     }
 
                     if let Some((time, MouseEvent::NClick(button, location, _, n))) =
-                    self.last_click
+                        self.last_click
                     {
                         if button == mouse_button
                             && dist(location, mouse_xy)
-                            < click_distance_from_original_radius_threshold
+                                < click_distance_from_original_radius_threshold
                             && now.duration_since(time) < n_click_threshold
                         {
                             let n_click_event =
@@ -270,11 +270,11 @@ impl EventHandler {
                             self.last_click = Some((now, n_click_event));
                         }
                     } else if let Some((time, MouseEvent::Click(button, location, _))) =
-                    self.last_click
+                        self.last_click
                     {
                         if button == mouse_button
                             && dist(location, mouse_xy)
-                            < click_distance_from_original_radius_threshold
+                                < click_distance_from_original_radius_threshold
                             && now.duration_since(time) < n_click_threshold
                         {
                             let n_click_event =

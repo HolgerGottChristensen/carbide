@@ -1,13 +1,13 @@
-use crate::Color;
 use crate::draw::{Dimension, Position, Rect, Scalar};
 use crate::environment::Environment;
-use crate::text::Glyph;
 use crate::text::text_decoration::TextDecoration;
 use crate::text::text_span::TextSpan;
 use crate::text::text_span_generator::TextSpanGenerator;
 use crate::text::text_style::TextStyle;
+use crate::text::Glyph;
 use crate::widget::Justify;
 use crate::widget::Wrap;
+use crate::Color;
 
 #[derive(Debug, Clone)]
 pub struct Text {
@@ -439,11 +439,7 @@ impl Text {
         self.latest_max_width = max_width as f64;
     }
 
-    fn calculate_size_with_no_breaks(
-        &mut self,
-        requested_size: Dimension,
-        env: &Environment,
-    ) {
+    fn calculate_size_with_no_breaks(&mut self, requested_size: Dimension, env: &Environment) {
         self.scale_factor = env.get_scale_factor();
         let mut current_x = 0.0;
 

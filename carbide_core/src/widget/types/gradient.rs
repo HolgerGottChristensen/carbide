@@ -1,12 +1,12 @@
-use carbide_core::Color;
 use crate::draw::alignment::Alignment;
 use crate::draw::Position;
+use carbide_core::Color;
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum GradientPosition {
     Absolute(Position),
     Relative(f64, f64),
-    Alignment(Alignment)
+    Alignment(Alignment),
 }
 
 /// The different types of gradients in carbide.
@@ -15,14 +15,14 @@ pub enum GradientType {
     Linear,
     Radial,
     Diamond,
-    Conic
+    Conic,
 }
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum GradientRepeat {
     Clamp,
     Repeat,
-    Mirror
+    Mirror,
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -43,16 +43,24 @@ impl Gradient {
     /// If the points are on top of each other, the last color in the list of color will show.
     /// This is probably not intended and should not be used to fill a shape. Use a normal color
     /// instead.
-    pub fn linear(colors: Vec<Color>, start: impl Into<GradientPosition>, end: impl Into<GradientPosition>) -> Self {
-        let number_of_colors = (colors.len()  - 1) as f32;
-        let ratios = colors.iter().enumerate().map(|a| a.0 as f32 / number_of_colors).collect::<Vec<_>>();
+    pub fn linear(
+        colors: Vec<Color>,
+        start: impl Into<GradientPosition>,
+        end: impl Into<GradientPosition>,
+    ) -> Self {
+        let number_of_colors = (colors.len() - 1) as f32;
+        let ratios = colors
+            .iter()
+            .enumerate()
+            .map(|a| a.0 as f32 / number_of_colors)
+            .collect::<Vec<_>>();
         Self {
             colors,
             ratios,
             gradient_type: GradientType::Linear,
             gradient_repeat: GradientRepeat::Clamp,
             start: start.into(),
-            end: end.into()
+            end: end.into(),
         }
     }
 
@@ -62,16 +70,24 @@ impl Gradient {
     /// If the points are on top of each other, the last color in the list of color will show.
     /// This is probably not intended and should not be used to fill a shape. Use a normal color
     /// instead.
-    pub fn radial(colors: Vec<Color>, center: impl Into<GradientPosition>, edge: impl Into<GradientPosition>) -> Self {
-        let number_of_colors = (colors.len()  - 1) as f32;
-        let ratios = colors.iter().enumerate().map(|a| a.0 as f32 / number_of_colors).collect::<Vec<_>>();
+    pub fn radial(
+        colors: Vec<Color>,
+        center: impl Into<GradientPosition>,
+        edge: impl Into<GradientPosition>,
+    ) -> Self {
+        let number_of_colors = (colors.len() - 1) as f32;
+        let ratios = colors
+            .iter()
+            .enumerate()
+            .map(|a| a.0 as f32 / number_of_colors)
+            .collect::<Vec<_>>();
         Self {
             colors,
             ratios,
             gradient_type: GradientType::Radial,
             gradient_repeat: GradientRepeat::Clamp,
             start: center.into(),
-            end: edge.into()
+            end: edge.into(),
         }
     }
 
@@ -81,16 +97,24 @@ impl Gradient {
     /// [Gradient::diamond_ratios()]. If the points are on top of each other, the last color in the
     /// list will be shown. This is probably not intended and should not be used to fill a shape.
     /// Use a normal color instead.
-    pub fn diamond(colors: Vec<Color>, center: impl Into<GradientPosition>, end: impl Into<GradientPosition>) -> Self {
-        let number_of_colors = (colors.len()  - 1) as f32;
-        let ratios = colors.iter().enumerate().map(|a| a.0 as f32 / number_of_colors).collect::<Vec<_>>();
+    pub fn diamond(
+        colors: Vec<Color>,
+        center: impl Into<GradientPosition>,
+        end: impl Into<GradientPosition>,
+    ) -> Self {
+        let number_of_colors = (colors.len() - 1) as f32;
+        let ratios = colors
+            .iter()
+            .enumerate()
+            .map(|a| a.0 as f32 / number_of_colors)
+            .collect::<Vec<_>>();
         Self {
             colors,
             ratios,
             gradient_type: GradientType::Diamond,
             gradient_repeat: GradientRepeat::Clamp,
             start: center.into(),
-            end: end.into()
+            end: end.into(),
         }
     }
 
@@ -99,20 +123,32 @@ impl Gradient {
     /// the colors are moving in the clockwise direction. The colors are split equally. If you need
     /// to customize this, see [Gradient::conic_ratios()]. If the points are on top of each other
     /// the line will point right.
-    pub fn conic(colors: Vec<Color>, center: impl Into<GradientPosition>, end: impl Into<GradientPosition>) -> Self {
-        let number_of_colors = (colors.len()  - 1) as f32;
-        let ratios = colors.iter().enumerate().map(|a| a.0 as f32 / number_of_colors).collect::<Vec<_>>();
+    pub fn conic(
+        colors: Vec<Color>,
+        center: impl Into<GradientPosition>,
+        end: impl Into<GradientPosition>,
+    ) -> Self {
+        let number_of_colors = (colors.len() - 1) as f32;
+        let ratios = colors
+            .iter()
+            .enumerate()
+            .map(|a| a.0 as f32 / number_of_colors)
+            .collect::<Vec<_>>();
         Self {
             colors,
             ratios,
             gradient_type: GradientType::Conic,
             gradient_repeat: GradientRepeat::Clamp,
             start: center.into(),
-            end: end.into()
+            end: end.into(),
         }
     }
 
-    pub fn linear_ratios(colors: Vec<(Color, f32)>, start: impl Into<GradientPosition>, end: impl Into<GradientPosition>) -> Self {
+    pub fn linear_ratios(
+        colors: Vec<(Color, f32)>,
+        start: impl Into<GradientPosition>,
+        end: impl Into<GradientPosition>,
+    ) -> Self {
         let cols = colors.iter().map(|(c, _)| *c).collect();
         let ratios = colors.iter().map(|(_, r)| *r).collect();
         Self {
@@ -121,11 +157,15 @@ impl Gradient {
             gradient_type: GradientType::Linear,
             gradient_repeat: GradientRepeat::Clamp,
             start: start.into(),
-            end: end.into()
+            end: end.into(),
         }
     }
 
-    pub fn radial_ratios(colors: Vec<(Color, f32)>, center: impl Into<GradientPosition>, edge: impl Into<GradientPosition>) -> Self {
+    pub fn radial_ratios(
+        colors: Vec<(Color, f32)>,
+        center: impl Into<GradientPosition>,
+        edge: impl Into<GradientPosition>,
+    ) -> Self {
         let cols = colors.iter().map(|(c, _)| *c).collect();
         let ratios = colors.iter().map(|(_, r)| *r).collect();
         Self {
@@ -134,11 +174,15 @@ impl Gradient {
             gradient_type: GradientType::Radial,
             gradient_repeat: GradientRepeat::Clamp,
             start: center.into(),
-            end: edge.into()
+            end: edge.into(),
         }
     }
 
-    pub fn diamond_ratios(colors: Vec<(Color, f32)>, center: impl Into<GradientPosition>, end: impl Into<GradientPosition>) -> Self {
+    pub fn diamond_ratios(
+        colors: Vec<(Color, f32)>,
+        center: impl Into<GradientPosition>,
+        end: impl Into<GradientPosition>,
+    ) -> Self {
         let cols = colors.iter().map(|(c, _)| *c).collect();
         let ratios = colors.iter().map(|(_, r)| *r).collect();
         Self {
@@ -147,11 +191,15 @@ impl Gradient {
             gradient_type: GradientType::Diamond,
             gradient_repeat: GradientRepeat::Clamp,
             start: center.into(),
-            end: end.into()
+            end: end.into(),
         }
     }
 
-    pub fn conic_ratios(colors: Vec<(Color, f32)>, center: impl Into<GradientPosition>, end: impl Into<GradientPosition>) -> Self {
+    pub fn conic_ratios(
+        colors: Vec<(Color, f32)>,
+        center: impl Into<GradientPosition>,
+        end: impl Into<GradientPosition>,
+    ) -> Self {
         let cols = colors.iter().map(|(c, _)| *c).collect();
         let ratios = colors.iter().map(|(_, r)| *r).collect();
         Self {
@@ -160,7 +208,7 @@ impl Gradient {
             gradient_type: GradientType::Conic,
             gradient_repeat: GradientRepeat::Clamp,
             start: center.into(),
-            end: end.into()
+            end: end.into(),
         }
     }
 

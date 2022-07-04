@@ -123,21 +123,33 @@ fn state_sync_token_stream(
     }
 }
 
-fn render_token_stream(ident: &Ident, generics: &Generics, wheres: &Option<WhereClause>) -> TokenStream {
+fn render_token_stream(
+    ident: &Ident,
+    generics: &Generics,
+    wheres: &Option<WhereClause>,
+) -> TokenStream {
     quote! {
         #[automatically_derived]
         impl #generics carbide_core::render::Render for #ident #generics #wheres {}
     }
 }
 
-fn focusable_token_stream(ident: &Ident, generics: &Generics, wheres: &Option<WhereClause>) -> TokenStream {
+fn focusable_token_stream(
+    ident: &Ident,
+    generics: &Generics,
+    wheres: &Option<WhereClause>,
+) -> TokenStream {
     quote! {
         #[automatically_derived]
         impl #generics carbide_core::focus::Focusable for #ident #generics #wheres {}
     }
 }
 
-fn layout_token_stream(ident: &Ident, generics: &Generics, wheres: &Option<WhereClause>) -> TokenStream {
+fn layout_token_stream(
+    ident: &Ident,
+    generics: &Generics,
+    wheres: &Option<WhereClause>,
+) -> TokenStream {
     quote! {
         #[automatically_derived]
         impl #generics carbide_core::layout::Layout for #ident #generics #wheres {}

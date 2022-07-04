@@ -5,7 +5,7 @@
 use std;
 use std::borrow::Cow;
 use std::f64::consts::{E, PI};
-use std::iter::{Chain, once, Once};
+use std::iter::{once, Chain, Once};
 
 /// Clamp a value between some range.
 pub fn clamp<T: PartialOrd>(n: T, start: T, end: T) -> T {
@@ -69,7 +69,7 @@ pub fn fmod(f: f32, n: i32) -> f32 {
 
 pub fn turns_to_radians(turns: f32) -> f32 {
     use std::f32::consts::PI;
-    let f= 2.0 * PI;
+    let f = 2.0 * PI;
     f * turns
 }
 

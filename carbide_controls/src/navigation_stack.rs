@@ -1,9 +1,9 @@
-use carbide_core::CommonWidgetImpl;
 use carbide_core::draw::{Dimension, Position};
 use carbide_core::environment::{Environment, WidgetTransferAction};
 use carbide_core::render::{Primitive, Render};
+use carbide_core::widget::{Widget, WidgetExt, WidgetId};
+use carbide_core::CommonWidgetImpl;
 use carbide_core::Widget;
-use carbide_core::widget::{WidgetId, Widget, WidgetExt};
 
 #[derive(Debug, Clone, Widget)]
 #[carbide_exclude(Render)]
@@ -52,9 +52,7 @@ impl Render for NavigationStack {
                         self.top = new_top
                     }
                 }
-                WidgetTransferAction::Replace(widget) => {
-                    self.top = widget
-                }
+                WidgetTransferAction::Replace(widget) => self.top = widget,
                 WidgetTransferAction::PushVec(vec) => {
                     for mut widget in vec {
                         let top = &mut self.top;

@@ -1,5 +1,8 @@
-use crate::state::{InnerState, ReadState, StateContract, ReadWidgetState, NewStateSync, ValueRef, State, ValueRefMut, TState, RState, ValueCell, WidgetState};
 use crate::prelude::Environment;
+use crate::state::{
+    InnerState, NewStateSync, RState, ReadState, ReadWidgetState, State, StateContract, TState,
+    ValueCell, ValueRef, ValueRefMut, WidgetState,
+};
 
 macro_rules! tuple_state {
     ($struct_name:ident, $($name:ident : $type:ident),*) => {
@@ -127,15 +130,75 @@ macro_rules! tuple_state {
     };
 }
 
-tuple_state!(Map1,  s1: T1);
-tuple_state!(Map2,  s1: T1, s2: T2);
-tuple_state!(Map3,  s1: T1, s2: T2, s3: T3);
-tuple_state!(Map4,  s1: T1, s2: T2, s3: T3, s4: T4);
-tuple_state!(Map5,  s1: T1, s2: T2, s3: T3, s4: T4, s5: T5);
-tuple_state!(Map6,  s1: T1, s2: T2, s3: T3, s4: T4, s5: T5, s6: T6);
-tuple_state!(Map7,  s1: T1, s2: T2, s3: T3, s4: T4, s5: T5, s6: T6, s7: T7);
-tuple_state!(Map8,  s1: T1, s2: T2, s3: T3, s4: T4, s5: T5, s6: T6, s7: T7, s8: T8);
-tuple_state!(Map9,  s1: T1, s2: T2, s3: T3, s4: T4, s5: T5, s6: T6, s7: T7, s8: T8, s9: T9);
-tuple_state!(Map10, s1: T1, s2: T2, s3: T3, s4: T4, s5: T5, s6: T6, s7: T7, s8: T8, s9: T9, s10: T10);
-tuple_state!(Map11, s1: T1, s2: T2, s3: T3, s4: T4, s5: T5, s6: T6, s7: T7, s8: T8, s9: T9, s10: T10, s11: T11);
-tuple_state!(Map12, s1: T1, s2: T2, s3: T3, s4: T4, s5: T5, s6: T6, s7: T7, s8: T8, s9: T9, s10: T10, s11: T11, s12: T12);
+tuple_state!(Map1, s1: T1);
+tuple_state!(Map2, s1: T1, s2: T2);
+tuple_state!(Map3, s1: T1, s2: T2, s3: T3);
+tuple_state!(Map4, s1: T1, s2: T2, s3: T3, s4: T4);
+tuple_state!(Map5, s1: T1, s2: T2, s3: T3, s4: T4, s5: T5);
+tuple_state!(Map6, s1: T1, s2: T2, s3: T3, s4: T4, s5: T5, s6: T6);
+tuple_state!(Map7, s1: T1, s2: T2, s3: T3, s4: T4, s5: T5, s6: T6, s7: T7);
+tuple_state!(
+    Map8,
+    s1: T1,
+    s2: T2,
+    s3: T3,
+    s4: T4,
+    s5: T5,
+    s6: T6,
+    s7: T7,
+    s8: T8
+);
+tuple_state!(
+    Map9,
+    s1: T1,
+    s2: T2,
+    s3: T3,
+    s4: T4,
+    s5: T5,
+    s6: T6,
+    s7: T7,
+    s8: T8,
+    s9: T9
+);
+tuple_state!(
+    Map10,
+    s1: T1,
+    s2: T2,
+    s3: T3,
+    s4: T4,
+    s5: T5,
+    s6: T6,
+    s7: T7,
+    s8: T8,
+    s9: T9,
+    s10: T10
+);
+tuple_state!(
+    Map11,
+    s1: T1,
+    s2: T2,
+    s3: T3,
+    s4: T4,
+    s5: T5,
+    s6: T6,
+    s7: T7,
+    s8: T8,
+    s9: T9,
+    s10: T10,
+    s11: T11
+);
+tuple_state!(
+    Map12,
+    s1: T1,
+    s2: T2,
+    s3: T3,
+    s4: T4,
+    s5: T5,
+    s6: T6,
+    s7: T7,
+    s8: T8,
+    s9: T9,
+    s10: T10,
+    s11: T11,
+    s12: T12
+);

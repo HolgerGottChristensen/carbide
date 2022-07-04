@@ -1,11 +1,11 @@
-use crate::CommonWidgetImpl;
 use crate::cursor::MouseCursor;
 use crate::draw::{Dimension, Position};
 use crate::environment::Environment;
 use crate::event::{MouseEvent, MouseEventHandler, OtherEventHandler, WidgetEvent};
 use crate::layout::Layout;
 use crate::state::{F64State, LocalState, ReadState, State};
-use crate::widget::{CommonWidget, CrossAxisAlignment, WidgetId, SplitType, Widget, WidgetExt};
+use crate::widget::{CommonWidget, CrossAxisAlignment, SplitType, Widget, WidgetExt, WidgetId};
+use crate::CommonWidgetImpl;
 use crate::Widget;
 
 #[derive(Clone, Debug, Widget)]
@@ -30,19 +30,39 @@ impl HSplit {
     }
 
     pub fn relative_to_start(mut self, width: impl Into<F64State>) -> Box<Self> {
-        Self::new_internal(self.children.remove(0), self.children.remove(0), SplitType::Start(width.into()), self.draggable)
+        Self::new_internal(
+            self.children.remove(0),
+            self.children.remove(0),
+            SplitType::Start(width.into()),
+            self.draggable,
+        )
     }
 
     pub fn percent(mut self, percent: impl Into<F64State>) -> Box<Self> {
-        Self::new_internal(self.children.remove(0), self.children.remove(0), SplitType::Percent(percent.into()), self.draggable)
+        Self::new_internal(
+            self.children.remove(0),
+            self.children.remove(0),
+            SplitType::Percent(percent.into()),
+            self.draggable,
+        )
     }
 
     pub fn non_draggable(mut self) -> Box<Self> {
-        Self::new_internal(self.children.remove(0), self.children.remove(0), self.split, false)
+        Self::new_internal(
+            self.children.remove(0),
+            self.children.remove(0),
+            self.split,
+            false,
+        )
     }
 
     pub fn relative_to_end(mut self, width: impl Into<F64State>) -> Box<Self> {
-        Self::new_internal(self.children.remove(0), self.children.remove(0), SplitType::End(width.into()), self.draggable)
+        Self::new_internal(
+            self.children.remove(0),
+            self.children.remove(0),
+            SplitType::End(width.into()),
+            self.draggable,
+        )
     }
 
     pub fn cross_axis_alignment(mut self, alignment: CrossAxisAlignment) -> Box<Self> {
@@ -50,7 +70,12 @@ impl HSplit {
         Box::new(self)
     }
 
-    fn new_internal(leading: Box<dyn Widget>, trailing: Box<dyn Widget>, split: SplitType, draggable: bool) -> Box<Self> {
+    fn new_internal(
+        leading: Box<dyn Widget>,
+        trailing: Box<dyn Widget>,
+        split: SplitType,
+        draggable: bool,
+    ) -> Box<Self> {
         Box::new(HSplit {
             id: WidgetId::new(),
             position: Default::default(),
@@ -87,10 +112,11 @@ impl MouseEventHandler for HSplit {
 
                 let split = self.children[0].dimension();
 
-                if relative_to_position.x > split.width - press_margin &&
-                    relative_to_position.x < split.width + press_margin &&
-                    relative_to_position.y <= split.height &&
-                    relative_to_position.y > 0.0 {
+                if relative_to_position.x > split.width - press_margin
+                    && relative_to_position.x < split.width + press_margin
+                    && relative_to_position.y <= split.height
+                    && relative_to_position.y > 0.0
+                {
                     self.dragging = true;
                 }
             }
@@ -101,16 +127,19 @@ impl MouseEventHandler for HSplit {
                 let relative_to_position = *to - self.position;
                 let split = self.children[0].dimension();
 
-                if relative_to_position.x > split.width - press_margin &&
-                    relative_to_position.x < split.width + press_margin &&
-                    relative_to_position.y <= split.height &&
-                    relative_to_position.y > 0.0 {
+                if relative_to_position.x > split.width - press_margin
+                    && relative_to_position.x < split.width + press_margin
+                    && relative_to_position.y <= split.height
+                    && relative_to_position.y > 0.0
+                {
                     self.hovering = true;
                 } else {
                     self.hovering = false;
                 }
 
-                if !self.dragging { return; }
+                if !self.dragging {
+                    return;
+                }
 
                 let width = self.width();
 
@@ -129,26 +158,21 @@ impl MouseEventHandler for HSplit {
                     }
                 }
             }
-            _ => ()
+            _ => (),
         }
     }
 }
 
 impl Layout for HSplit {
     fn calculate_size(&mut self, requested_size: Dimension, env: &mut Environment) -> Dimension {
-
         let (requested_leading_width, requested_trailing_width) = match &self.split {
-            SplitType::Start(offset) => {
-                (*offset.value(), requested_size.width - *offset.value())
-            }
+            SplitType::Start(offset) => (*offset.value(), requested_size.width - *offset.value()),
             SplitType::Percent(percent) => {
                 let leading = requested_size.width * *percent.value();
                 let trailing = requested_size.width * (1.0 - *percent.value());
                 (leading, trailing)
             }
-            SplitType::End(offset) => {
-                (requested_size.width - *offset.value(), *offset.value())
-            }
+            SplitType::End(offset) => (requested_size.width - *offset.value(), *offset.value()),
         };
 
         let leading_size = Dimension::new(requested_leading_width, requested_size.height);
@@ -158,14 +182,19 @@ impl Layout for HSplit {
         let mut trailing = self.children[1].calculate_size(trailing_size, env);
 
         if leading.width > requested_leading_width {
-            let trailing_size = Dimension::new(requested_size.width - leading.width, requested_size.height);
+            let trailing_size =
+                Dimension::new(requested_size.width - leading.width, requested_size.height);
             trailing = self.children[1].calculate_size(trailing_size, env);
         } else if trailing.width > requested_trailing_width {
-            let leading_size = Dimension::new(requested_size.width - trailing.width, requested_size.height);
+            let leading_size =
+                Dimension::new(requested_size.width - trailing.width, requested_size.height);
             leading = self.children[0].calculate_size(leading_size, env);
         }
 
-        self.set_dimension(Dimension::new(requested_size.width, leading.height.max(trailing.height)));
+        self.set_dimension(Dimension::new(
+            requested_size.width,
+            leading.height.max(trailing.height),
+        ));
         self.dimension
     }
 
@@ -182,9 +211,7 @@ impl Layout for HSplit {
                 CrossAxisAlignment::Center => {
                     position.y + dimension.height / 2.0 - child.dimension().height / 2.0
                 }
-                CrossAxisAlignment::End => {
-                    position.y + dimension.height - child.dimension().height
-                }
+                CrossAxisAlignment::End => position.y + dimension.height - child.dimension().height,
             };
 
             child.set_position(Position::new(position.x + main_axis_offset, cross));

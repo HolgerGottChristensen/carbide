@@ -15,11 +15,7 @@ fn main() {
     );
 
     window.set_widgets(
-        VStack::new(vec![
-            ProgressView::new(),
-            ProgressView::new()
-                .size(50.0),
-        ]).spacing(10.0)
+        VStack::new(vec![ProgressView::new(), ProgressView::new().size(50.0)]).spacing(10.0),
     );
 
     window.launch();
