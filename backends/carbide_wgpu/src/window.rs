@@ -30,7 +30,7 @@ use carbide_core::text::{FontFamily, FontId};
 use carbide_core::widget::Widget;
 use carbide_core::widget::{FilterId, OverlaidLayer, ZStack};
 pub use carbide_core::window::TWindow as CoreWindow;
-use carbide_core::{image, Scalar, Ui};
+use carbide_core::{image, locate_folder, Scalar, Ui};
 
 use crate::bind_group_layouts::{
     filter_buffer_bind_group_layout, filter_texture_bind_group_layout,
@@ -44,9 +44,7 @@ use crate::diffuse_bind_group::{new_diffuse, DiffuseBindGroup};
 use crate::image::Image;
 use crate::pipeline::{create_render_pipeline, MaskType};
 use crate::proxy_event_loop::ProxyEventLoop;
-use crate::render_pipeline_layouts::{
-    filter_pipeline_layout, gradient_pipeline_layout, main_pipeline_layout,
-};
+use crate::render_pipeline_layouts::{filter_pipeline_layout, gradient_pipeline_layout, main_pipeline_layout, RenderPipelines};
 use crate::renderer::{atlas_cache_tex_desc, main_render_tex_desc, secondary_render_tex_desc};
 use crate::samplers::main_sampler;
 use crate::textures::create_depth_stencil_texture;
@@ -64,16 +62,9 @@ pub struct Window {
     pub(crate) device: wgpu::Device,
     pub(crate) queue: wgpu::Queue,
     pub(crate) size: winit::dpi::PhysicalSize<u32>,
-    pub(crate) render_pipeline_no_mask: wgpu::RenderPipeline,
-    pub(crate) render_pipeline_add_mask: wgpu::RenderPipeline,
-    pub(crate) render_pipeline_in_mask: wgpu::RenderPipeline,
-    pub(crate) render_pipeline_remove_mask: wgpu::RenderPipeline,
 
-    /// This is used when applying normal filter, or in the second pass of the of the two pass filter
-    pub(crate) render_pipeline_in_mask_filter: wgpu::RenderPipeline,
-    pub(crate) render_pipeline_no_mask_filter: wgpu::RenderPipeline,
+    pub(crate) render_pipelines: RenderPipelines,
 
-    pub(crate) render_pipeline_in_mask_gradient: wgpu::RenderPipeline,
     pub(crate) depth_texture_view: TextureView,
     pub(crate) diffuse_bind_group: wgpu::BindGroup,
     pub(crate) main_bind_group: wgpu::BindGroup,
@@ -112,7 +103,7 @@ impl CoreWindow for Window {
     }
 
     fn add_font<P: AsRef<Path>>(&mut self, path: P) -> FontId {
-        let assets = find_folder::Search::KidsThenParents(3, 5)
+        let assets = locate_folder::Search::KidsThenParents(3, 5)
             .for_folder("assets")
             .unwrap();
         let font_path = assets.join(path.as_ref());
@@ -121,7 +112,7 @@ impl CoreWindow for Window {
     }
 
     fn add_image_from_path(&mut self, path: &str) -> Option<ImageId> {
-        let assets = find_folder::Search::KidsThenParents(3, 5)
+        let assets = locate_folder::Search::KidsThenParents(3, 5)
             .for_folder("assets")
             .unwrap();
         let image = Image::new(assets.join(path), &self.device, &self.queue);
@@ -165,7 +156,7 @@ impl CoreWindow for Window {
 
 impl Window {
     pub fn relative_path_to_assets(path: &str) -> PathBuf {
-        let assets = find_folder::Search::KidsThenParents(3, 5)
+        let assets = locate_folder::Search::KidsThenParents(3, 5)
             .for_folder("assets")
             .unwrap();
         assets.join(path)
@@ -535,13 +526,15 @@ impl Window {
             device,
             queue,
             size,
-            render_pipeline_no_mask,
-            render_pipeline_add_mask,
-            render_pipeline_in_mask,
-            render_pipeline_remove_mask,
-            render_pipeline_in_mask_filter,
-            render_pipeline_no_mask_filter,
-            render_pipeline_in_mask_gradient,
+            render_pipelines: RenderPipelines {
+                render_pipeline_no_mask,
+                render_pipeline_add_mask,
+                render_pipeline_in_mask,
+                render_pipeline_remove_mask,
+                render_pipeline_in_mask_filter,
+                render_pipeline_no_mask_filter,
+                render_pipeline_in_mask_gradient,
+            },
             depth_texture_view,
             diffuse_bind_group,
             main_bind_group,

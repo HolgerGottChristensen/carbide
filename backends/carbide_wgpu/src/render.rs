@@ -128,7 +128,7 @@ impl Window {
         let mut stencil_level = 0;
         let mut first_pass = true;
 
-        let mut current_main_render_pipeline = &self.render_pipeline_no_mask;
+        let mut current_main_render_pipeline = &self.render_pipelines.render_pipeline_no_mask;
         let current_vertex_buffer_slice = self.vertex_buffer.0.slice(..);
         let mut current_uniform_bind_group = &self.uniform_bind_group;
 
@@ -181,22 +181,22 @@ impl Window {
                             }
                             RenderPassCommand::Stencil { vertex_range } => {
                                 stencil_level += 1;
-                                render_pass.set_pipeline(&self.render_pipeline_add_mask);
+                                render_pass.set_pipeline(&self.render_pipelines.render_pipeline_add_mask);
                                 render_pass.draw(vertex_range, instance_range.clone());
-                                current_main_render_pipeline = &self.render_pipeline_in_mask;
+                                current_main_render_pipeline = &self.render_pipelines.render_pipeline_in_mask;
                                 render_pass.set_pipeline(current_main_render_pipeline);
                                 render_pass.set_stencil_reference(stencil_level);
                             }
                             RenderPassCommand::DeStencil { vertex_range } => {
                                 stencil_level -= 1;
-                                render_pass.set_pipeline(&self.render_pipeline_remove_mask);
+                                render_pass.set_pipeline(&self.render_pipelines.render_pipeline_remove_mask);
                                 render_pass.draw(vertex_range, instance_range.clone());
                                 render_pass.set_stencil_reference(stencil_level);
                                 if stencil_level == 0 {
-                                    current_main_render_pipeline = &self.render_pipeline_no_mask;
+                                    current_main_render_pipeline = &self.render_pipelines.render_pipeline_no_mask;
                                     render_pass.set_pipeline(current_main_render_pipeline);
                                 } else {
-                                    current_main_render_pipeline = &self.render_pipeline_in_mask;
+                                    current_main_render_pipeline = &self.render_pipelines.render_pipeline_in_mask;
                                     render_pass.set_pipeline(current_main_render_pipeline);
                                 }
                             }
@@ -226,7 +226,7 @@ impl Window {
                         }),
                     });
 
-                    render_pass.set_pipeline(&self.render_pipeline_in_mask_gradient);
+                    render_pass.set_pipeline(&self.render_pipelines.render_pipeline_in_mask_gradient);
                     render_pass.set_stencil_reference(stencil_level);
                     render_pass.set_vertex_buffer(0, current_vertex_buffer_slice);
                     render_pass.set_bind_group(0, &uniform_bind_groups[bind_group_index], &[]);
@@ -268,7 +268,7 @@ impl Window {
                             stencil_ops: Some(stencil_op),
                         }),
                     });
-                    render_pass.set_pipeline(&self.render_pipeline_in_mask_filter);
+                    render_pass.set_pipeline(&self.render_pipelines.render_pipeline_in_mask_filter);
                     render_pass.set_stencil_reference(stencil_level);
                     render_pass.set_vertex_buffer(0, current_vertex_buffer_slice);
                     render_pass.set_bind_group(0, &self.filter_secondary_texture_bind_group, &[]);
@@ -299,7 +299,7 @@ impl Window {
                             stencil_ops: Some(stencil_op),
                         }),
                     });
-                    render_pass.set_pipeline(&self.render_pipeline_no_mask_filter);
+                    render_pass.set_pipeline(&self.render_pipelines.render_pipeline_no_mask_filter);
                     render_pass.set_vertex_buffer(0, current_vertex_buffer_slice);
                     render_pass.set_bind_group(0, &self.filter_main_texture_bind_group, &[]);
                     render_pass.set_bind_group(
@@ -326,7 +326,7 @@ impl Window {
                             stencil_ops: Some(stencil_op),
                         }),
                     });
-                    render_pass.set_pipeline(&self.render_pipeline_in_mask_filter);
+                    render_pass.set_pipeline(&self.render_pipelines.render_pipeline_in_mask_filter);
                     render_pass.set_stencil_reference(stencil_level);
                     render_pass.set_vertex_buffer(0, current_vertex_buffer_slice);
                     render_pass.set_bind_group(0, &self.filter_secondary_texture_bind_group, &[]);
@@ -363,7 +363,7 @@ impl Window {
             }),
         });
 
-        render_pass.set_pipeline(&self.render_pipeline_no_mask);
+        render_pass.set_pipeline(&self.render_pipelines.render_pipeline_no_mask);
         render_pass.set_vertex_buffer(0, self.second_vertex_buffer.slice(..));
         render_pass.set_bind_group(0, &self.main_bind_group, &[]);
         render_pass.set_bind_group(1, &self.uniform_bind_group, &[]);

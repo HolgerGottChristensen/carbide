@@ -1,5 +1,19 @@
 use wgpu::{BindGroupLayout, Device, PipelineLayout};
 
+pub struct RenderPipelines {
+    pub(crate) render_pipeline_no_mask: wgpu::RenderPipeline,
+    pub(crate) render_pipeline_add_mask: wgpu::RenderPipeline,
+    pub(crate) render_pipeline_in_mask: wgpu::RenderPipeline,
+    pub(crate) render_pipeline_remove_mask: wgpu::RenderPipeline,
+
+    /// This is used when applying normal filter, or in the second pass of the of the two pass filter
+    pub(crate) render_pipeline_in_mask_filter: wgpu::RenderPipeline,
+    pub(crate) render_pipeline_no_mask_filter: wgpu::RenderPipeline,
+
+    pub(crate) render_pipeline_in_mask_gradient: wgpu::RenderPipeline,
+}
+
+
 pub(crate) fn main_pipeline_layout(
     device: &Device,
     main_bind_group_layout: &BindGroupLayout,
