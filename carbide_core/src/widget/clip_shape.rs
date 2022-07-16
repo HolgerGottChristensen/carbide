@@ -4,7 +4,7 @@ use crate::render::PrimitiveKind;
 use crate::CommonWidgetImpl;
 
 #[derive(Debug, Clone, Widget)]
-#[carbide_exclude(Render, Layout)]
+#[carbide_exclude(Render, Layout, StateSync)]
 pub struct ClipShape {
     id: WidgetId,
     child: Box<dyn Widget>,
@@ -22,6 +22,18 @@ impl ClipShape {
             position: Position::new(0.0, 0.0),
             dimension: Dimension::new(100.0, 100.0),
         })
+    }
+}
+
+impl StateSync for ClipShape {
+    fn capture_state(&mut self, env: &mut Environment) {
+        self.child.capture_state(env);
+        self.shape.capture_state(env);
+    }
+
+    fn release_state(&mut self, env: &mut Environment) {
+        self.child.release_state(env);
+        self.shape.release_state(env);
     }
 }
 

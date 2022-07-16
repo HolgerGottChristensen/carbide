@@ -1,6 +1,7 @@
 pub use button::Button;
 pub use custom_event::CustomEvent;
 pub use custom_event::EventSink;
+pub use custom_event::NoopEventSink;
 pub use event::Event;
 pub use event_handler::*;
 pub use hot_key::*;

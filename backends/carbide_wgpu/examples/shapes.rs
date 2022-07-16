@@ -152,14 +152,14 @@ fn main() {
                 .frame(100.0, 50.0),
         ]),
         HStack::new(vec![
-            Canvas::new(|_, mut context| {
+            Canvas::new(|_, mut context, _| {
                 context = draw_star(Position::new(50.0, 50.0), 5, 45.0, 20.0, context);
                 context.set_fill_style(EnvironmentColor::Accent);
                 context.fill();
                 context
             })
             .frame(100.0, 100.0),
-            Canvas::new(|_, mut context| {
+            Canvas::new(|_, mut context, _| {
                 context = draw_star(Position::new(50.0, 50.0), 5, 45.0, 20.0, context);
                 context.set_line_width(10.0);
                 context.set_stroke_style(EnvironmentColor::Accent);
@@ -167,7 +167,7 @@ fn main() {
                 context
             })
             .frame(100.0, 100.0),
-            Canvas::new(|_, mut context| {
+            Canvas::new(|_, mut context, _| {
                 context = draw_star(Position::new(50.0, 50.0), 5, 45.0, 20.0, context);
                 context.set_fill_style(EnvironmentColor::Accent);
                 context.set_stroke_style(EnvironmentColor::Red);
@@ -179,7 +179,7 @@ fn main() {
             Image::new(landscape_id)
                 .scaled_to_fill()
                 .frame(200.0, 200.0)
-                .clip_shape(Canvas::new(|_, mut context| {
+                .clip_shape(Canvas::new(|_, mut context, _| {
                     context = draw_star(Position::new(50.0, 50.0), 5, 45.0, 20.0, context);
                     context.fill();
                     context
@@ -188,7 +188,7 @@ fn main() {
             Image::new(landscape_id)
                 .scaled_to_fill()
                 .frame(200.0, 200.0)
-                .clip_shape(Canvas::new(|_, mut context| {
+                .clip_shape(Canvas::new(|_, mut context, _| {
                     context = draw_star(Position::new(50.0, 50.0), 5, 45.0, 20.0, context);
                     context.set_line_width(10.0);
                     context.stroke();

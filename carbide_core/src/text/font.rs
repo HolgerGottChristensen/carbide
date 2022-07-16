@@ -38,6 +38,10 @@ impl Font {
         self.font_id
     }
 
+    pub fn path(&self) -> String {
+        self.path.clone()
+    }
+
     pub fn weight(&self) -> FontWeight {
         match self.font.inner().weight() {
             Weight::Thin => FontWeight::Thin,
@@ -154,7 +158,7 @@ impl Font {
             let positioned = glyph_scaled.positioned(point(0.0, 0.0));
             (
                 w as f64,
-                Glyph::from((font_size, self.font_id, positioned, self.bitmap_font)),
+                Glyph::new(c, font_size, self.font_id, positioned, self.bitmap_font),
             )
         })
     }
@@ -174,12 +178,12 @@ impl Font {
 
         let glyph_ids = text
             .chars()
-            .map(|c| self.get_glyph_id(c).ok_or(c))
+            .map(|c| self.get_glyph_id(c).map(|id| (id, c)).ok_or(c))
             .collect::<Vec<_>>();
 
         for glyph_id in glyph_ids {
             match glyph_id {
-                Ok(id) => {
+                Ok((id, c)) => {
                     // If we have the glyph in our font.
                     let glyph = self.font.glyph(id);
                     let glyph_scaled = glyph.scaled(scale);
@@ -194,12 +198,13 @@ impl Font {
                     let next = glyph_scaled.positioned(point(0.0, 0.0));
                     last = Some(next.id());
                     next_width += w as f64;
-                    glyphs.push(Glyph::from((
+                    glyphs.push(Glyph::new(
+                        c,
                         font_size,
                         self.font_id,
                         next,
                         self.bitmap_font,
-                    )));
+                    ));
                 }
                 Err(c) => {
                     // Font fallback

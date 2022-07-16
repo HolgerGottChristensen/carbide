@@ -3,7 +3,16 @@ use carbide_core::CommonWidgetImpl;
 use crate::draw::{Dimension, Position};
 use crate::prelude::*;
 
-/// A basic, non-interactive rectangle shape widget.
+/// Takes a child and a background widget, and sizes the background the same as the child.
+/// The background will be shown behind the child widget.
+///
+/// # Examples
+/// The example will show some text, with a filled rectangle in the background
+/// ```
+///     Text::new("Hello world")
+///         .background(Rectangle::new())
+/// ```
+///
 #[derive(Debug, Clone, Widget)]
 #[carbide_exclude(Layout, Render)]
 pub struct Background {

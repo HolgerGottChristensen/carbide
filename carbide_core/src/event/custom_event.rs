@@ -10,3 +10,12 @@ pub trait EventSink: DynClone + Send {
 }
 
 dyn_clone::clone_trait_object!(EventSink);
+
+#[derive(Clone)]
+pub struct NoopEventSink;
+
+impl EventSink for NoopEventSink {
+    fn call(&self, _: CustomEvent) {
+
+    }
+}

@@ -31,11 +31,63 @@ pub struct Glyph {
     inner_glyph_bb: Option<rusttype::Rect<f32>>,
     width_of_glyph_from_origin: Scalar,
     advance_width: Scalar,
+
+    character: char,
 }
 
 impl Glyph {
+    pub fn new(character: char, font_size: FontSize, font_id: FontId, inner: PositionedGlyph, is_bitmap: bool) -> Self {
+        let scale = inner.scale();
+        let scale_y = inner.font().scale_for_pixel_height(scale.y);
+        let scale_x = scale_y * scale.x / scale.y;
+
+        let glyph_id = inner.id();
+        let inner_glyph_bb = inner
+            .font()
+            .inner()
+            .glyph_bounding_box(glyph_id.into())
+            .map(|ttf_bb| rusttype::Rect {
+                min: point(
+                    ttf_bb.x_min as f32 * scale_x,
+                    -ttf_bb.y_max as f32 * scale_y,
+                ),
+                max: point(
+                    ttf_bb.x_max as f32 * scale_x,
+                    -ttf_bb.y_min as f32 * scale_y,
+                ),
+            });
+
+        Glyph {
+            id: glyph_id,
+            font_id,
+            bitmap_glyph: is_bitmap,
+            api_scale: Dimension::new(inner.scale().x as f64, inner.scale().y as f64),
+            scale: Dimension::new(scale_x as f64, scale_y as f64),
+            font_size,
+            position: Position::new(inner.position().x as f64, inner.position().y as f64),
+            bb: inner.pixel_bounding_box().map(|bb| {
+                let width = bb.max.x as f64 - bb.min.x as f64;
+                let height = bb.max.y as f64 - bb.min.y as f64;
+
+                Rect {
+                    position: Position::new(bb.min.x as f64, bb.min.y as f64),
+                    dimension: Dimension::new(width, height),
+                }
+            }),
+            atlas_entry: None,
+            inner_glyph_bb,
+            width_of_glyph_from_origin: inner.unpositioned().h_metrics().left_side_bearing as f64,
+            advance_width: inner.unpositioned().h_metrics().advance_width as f64,
+            character
+        }
+    }
+
     pub fn id(&self) -> GlyphId {
         self.id
+    }
+
+    pub fn character(&self) -> char {
+        self.character
     }
 
     pub fn font_size(&self) -> FontSize {
@@ -122,53 +174,4 @@ impl Glyph {
     // pub fn l_r_b_t(&self) -> Option<Rect> {
     //
     // }
-}
-
-impl From<(FontSize, FontId, PositionedGlyph<'_>, bool)> for Glyph {
-    fn from(
-        (font_size, font_id, inner, is_bitmap): (FontSize, FontId, PositionedGlyph, bool),
-    ) -> Self {
-        let scale = inner.scale();
-        let scale_y = inner.font().scale_for_pixel_height(scale.y);
-        let scale_x = scale_y * scale.x / scale.y;
-
-        let glyph_id = inner.id();
-        let inner_glyph_bb = inner
-            .font()
-            .inner()
-            .glyph_bounding_box(glyph_id.into())
-            .map(|ttf_bb| rusttype::Rect {
-                min: point(
-                    ttf_bb.x_min as f32 * scale_x,
-                    -ttf_bb.y_max as f32 * scale_y,
-                ),
-                max: point(
-                    ttf_bb.x_max as f32 * scale_x,
-                    -ttf_bb.y_min as f32 * scale_y,
-                ),
-            });
-
-        Glyph {
-            id: glyph_id,
-            font_id,
-            bitmap_glyph: is_bitmap,
-            api_scale: Dimension::new(inner.scale().x as f64, inner.scale().y as f64),
-            scale: Dimension::new(scale_x as f64, scale_y as f64),
-            font_size,
-            position: Position::new(inner.position().x as f64, inner.position().y as f64),
-            bb: inner.pixel_bounding_box().map(|bb| {
-                let width = bb.max.x as f64 - bb.min.x as f64;
-                let height = bb.max.y as f64 - bb.min.y as f64;
-
-                Rect {
-                    position: Position::new(bb.min.x as f64, bb.min.y as f64),
-                    dimension: Dimension::new(width, height),
-                }
-            }),
-            atlas_entry: None,
-            inner_glyph_bb,
-            width_of_glyph_from_origin: inner.unpositioned().h_metrics().left_side_bearing as f64,
-            advance_width: inner.unpositioned().h_metrics().advance_width as f64,
-        }
-    }
 }

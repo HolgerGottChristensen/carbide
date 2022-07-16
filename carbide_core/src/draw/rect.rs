@@ -53,6 +53,22 @@ impl Rect {
         self.position.y + self.dimension.height
     }
 
+    pub fn bottom_left(&self) -> Position {
+        Position::new(self.left(), self.bottom())
+    }
+
+    pub fn bottom_right(&self) -> Position {
+        Position::new(self.right(), self.bottom())
+    }
+
+    pub fn top_left(&self) -> Position {
+        Position::new(self.left(), self.top())
+    }
+
+    pub fn top_right(&self) -> Position {
+        Position::new(self.right(), self.top())
+    }
+
     pub fn round(&mut self) {
         self.position.x = self.position.x.round();
         self.position.y = self.position.y.round();

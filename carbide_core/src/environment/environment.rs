@@ -25,6 +25,7 @@ use crate::text::{Font, FontFamily, FontId, FontSize, FontStyle, FontWeight, Gly
 use crate::widget::ImageInformation;
 use crate::widget::{FilterId, ImageFilter, Overlay};
 use crate::{locate_folder, Color};
+use crate::layout::BasicLayouter;
 
 pub struct Environment {
     /// This stack should be used to scope the environment. This contains information such as
@@ -32,6 +33,8 @@ pub struct Environment {
     /// styling that is applied to all of its children, unless some child overrides that style.
     // TODO: Consider switching to a map, so we dont need to search through the vec for better performance
     stack: Vec<EnvironmentVariable>,
+
+    root_alignment: BasicLayouter,
 
     /// Keep the loaded fonts in a map from font id to font. This is used when
     /// calculating the size of rendered strings.
@@ -140,6 +143,7 @@ impl Environment {
 
         Environment {
             stack: env_stack,
+            root_alignment: BasicLayouter::Center,
             fonts: vec![],
             font_families: HashMap::with_hasher(FxBuildHasher::default()),
             font_texture_atlas: TextureAtlas::new(512, 512),
@@ -170,6 +174,14 @@ impl Environment {
             event_sink,
             animation_widget_in_frame: 0,
         }
+    }
+
+    pub fn root_alignment(&self) -> BasicLayouter {
+        self.root_alignment
+    }
+
+    pub fn set_root_alignment(&mut self, layout: BasicLayouter) {
+        self.root_alignment = layout;
     }
 
     #[cfg(target_os = "macos")]

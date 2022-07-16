@@ -151,9 +151,11 @@ impl Text {
 
 impl Layout for Text {
     fn calculate_size(&mut self, requested_size: Dimension, env: &mut Environment) -> Dimension {
+        self.capture_state(env);
         if let None = self.internal_text {
             let text = self.text.value().deref().clone();
             let style = self.get_style();
+            dbg!(&style);
             self.internal_text = Some(InternalText::new(
                 text,
                 style,
