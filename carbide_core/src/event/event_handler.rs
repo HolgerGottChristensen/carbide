@@ -1,7 +1,11 @@
 use std::collections::HashMap;
 use std::time::{Duration, Instant};
+use carbide_core::cursor::MouseCursor;
+use carbide_core::focus::Refocus;
+use carbide_core::widget::Widget;
 
 use crate::draw::{Dimension, Position, Scalar};
+use crate::environment::Environment;
 use crate::event::{Button, CustomEvent, Input, Key, ModifierKey, Motion, MouseButton};
 
 /// A basic, non-interactive rectangle shape widget.
@@ -13,11 +17,134 @@ pub struct EventHandler {
     last_click: Option<(Instant, MouseEvent)>,
     mouse_position: Position,
     events: Vec<WidgetEvent>,
+    any_focus: bool,
 }
 
 impl EventHandler {
+    pub fn delegate_events(&mut self, widgets: &mut impl Widget, env: &mut Environment) -> bool {
+        let now = Instant::now();
+        let mut any_focus = self.any_focus;
+        let events = self.get_events();
+
+        env.set_cursor(MouseCursor::Arrow);
+
+        for event in events {
+            env.capture_time();
+            match event {
+                WidgetEvent::Mouse(mouse_event) => {
+                    let consumed = false;
+                    widgets.process_mouse_event(mouse_event, &consumed, env);
+                }
+                WidgetEvent::Keyboard(keyboard_event) => {
+                    widgets.process_keyboard_event(keyboard_event, env);
+                }
+                WidgetEvent::Window(_) => {
+                    widgets.process_other_event(event, env);
+                }
+                WidgetEvent::Touch(_) => {
+                    widgets.process_other_event(event, env);
+                }
+                WidgetEvent::Custom(_) => {}
+                WidgetEvent::DoneProcessingEvents => {
+                    widgets.process_other_event(event, env);
+                }
+            }
+
+            if let Some(request) = env.focus_request.clone() {
+                match request {
+                    Refocus::FocusRequest => {
+                        println!("Process focus request");
+                        any_focus = widgets.process_focus_request(
+                            event,
+                            &request,
+                            env,
+                        );
+                    }
+                    Refocus::FocusNext => {
+                        println!("Focus next");
+                        let focus_first = widgets.process_focus_next(
+                            event,
+                            &request,
+                            false,
+                            env,
+                        );
+                        if focus_first {
+                            println!("Focus next back to first");
+                            widgets.process_focus_next(
+                                event,
+                                &request,
+                                true,
+                                env,
+                            );
+                        }
+                    }
+                    Refocus::FocusPrevious => {
+                        let focus_last = widgets.process_focus_previous(
+                            event,
+                            &request,
+                            false,
+                            env,
+                        );
+                        if focus_last {
+                            widgets.process_focus_previous(
+                                event,
+                                &request,
+                                true,
+                                env,
+                            );
+                        }
+                    }
+                }
+                env.focus_request = None;
+            } else if !any_focus {
+                match event {
+                    WidgetEvent::Keyboard(KeyboardEvent::Press(key, modifier)) => {
+                        if key == &Key::Tab {
+                            if modifier == &ModifierKey::SHIFT {
+                                // If focus is still up for grab we can assume that no element
+                                // has been focused. This assumption breaks if there can be multiple
+                                // widgets with focus at the same time
+                                any_focus = !widgets.process_focus_previous(
+                                    event,
+                                    &Refocus::FocusPrevious,
+                                    true,
+                                    env
+                                );
+                            } else if modifier == &ModifierKey::NO_MODIFIER {
+                                any_focus = !widgets.process_focus_next(
+                                    event,
+                                    &Refocus::FocusNext,
+                                    true,
+                                    env
+                                );
+                            }
+                        }
+                    }
+                    _ => {}
+                }
+            }
+        }
+
+        // Todo: Consider being smarter about sending this event. We dont need to send it if no state changed this frame.
+        // Currently used by foreach to check if updates has been made to its model.
+        widgets.process_other_event(&WidgetEvent::DoneProcessingEvents, env);
+        self.clear_events();
+        self.any_focus = any_focus;
+
+        if now.elapsed().as_millis() > 16 {
+            println!("Frame took: {}", now.elapsed().as_secs_f32());
+        }
+
+        // Todo: Determine if an redraw is needed after events are processed
+        return true;
+    }
+
     pub fn get_events(&self) -> &Vec<WidgetEvent> {
         &self.events
+    }
+
+    pub fn has_queued_events(&self) -> bool {
+        self.get_events().len() > 0
     }
 
     pub fn clear_events(&mut self) {
@@ -92,6 +219,7 @@ pub enum WindowEvent {
     Focus,
     UnFocus,
     Redraw,
+    CloseRequested,
 }
 
 #[derive(Clone, Debug)]
@@ -118,6 +246,7 @@ impl EventHandler {
             last_click: None,
             mouse_position: Position::new(0.0, 0.0),
             events: vec![],
+            any_focus: false
         }
     }
 
@@ -193,7 +322,6 @@ impl EventHandler {
     pub fn compound_and_add_event(
         &mut self,
         event: Input,
-        window_dimensions: Dimension,
     ) -> Option<WindowEvent> {
         // A function for filtering `ModifierKey`s.
 
@@ -234,7 +362,7 @@ impl EventHandler {
 
                     None
                 }
-            },
+            }
 
             // Some button was released.
             //
@@ -320,7 +448,7 @@ impl EventHandler {
 
                     None
                 }
-            },
+            }
 
             // The window was resized.
             Input::Resize(w, h) => {
@@ -341,10 +469,8 @@ impl EventHandler {
                 match motion {
                     Motion::MouseCursor { x, y } => {
                         let last_mouse_xy = self.mouse_position;
-                        let mouse_xy = Position::new(
-                            x + window_dimensions.width / 2.0,
-                            window_dimensions.height - (y + window_dimensions.height / 2.0),
-                        );
+                        let mouse_xy = Position::new(x, y);
+
                         let delta_xy = mouse_xy - last_mouse_xy;
 
                         let move_event = MouseEvent::Move {
@@ -418,7 +544,7 @@ impl EventHandler {
 
             Input::Touch(touch) => match touch.phase {
                 _ => None,
-            },
+            }
 
             Input::Focus(focused) if focused == true => {
                 self.add_event(WidgetEvent::Window(WindowEvent::Focus));
@@ -436,6 +562,10 @@ impl EventHandler {
             }
             Input::Custom(event) => {
                 self.add_event(WidgetEvent::Custom(event));
+                None
+            }
+            Input::CloseRequested => {
+                self.add_event(WidgetEvent::Window(WindowEvent::CloseRequested));
                 None
             }
         }

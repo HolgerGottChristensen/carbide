@@ -2,6 +2,7 @@ use std::collections::HashMap;
 use std::ffi::c_void;
 use std::future::Future;
 use std::option::Option::Some;
+use std::path::PathBuf;
 use std::time::Instant;
 
 use bitflags::_core::fmt::Formatter;
@@ -9,13 +10,14 @@ use futures::FutureExt;
 use fxhash::{FxBuildHasher, FxHashMap};
 use image::DynamicImage;
 use oneshot::TryRecvError;
+use carbide_core::draw::theme;
 
 use crate::animation::Animation;
 use crate::cursor::MouseCursor;
-use crate::draw::image::ImageId;
+use crate::draw::image::{ImageId, ImageMap};
 use crate::draw::Dimension;
 use crate::draw::Scalar;
-use crate::environment::WidgetTransferAction;
+use crate::environment::{EnvironmentFontSize, WidgetTransferAction};
 use crate::event::{CustomEvent, EventSink};
 use crate::focus::Refocus;
 use crate::mesh::TextureAtlas;
@@ -51,11 +53,6 @@ pub struct Environment {
     /// System font family name. This is used to get the font family for default text rendering.
     /// This should always be expected to exist.
     default_font_family_name: String,
-
-    /// This map contains the widths and heights for loaded images.
-    /// This is used to make the static size of the Image widget its
-    /// required size.
-    images_information: FxHashMap<ImageId, ImageInformation>,
 
     /// A map from String to a widget.
     /// This key should correspond to the targeted overlay_layer
@@ -102,9 +99,12 @@ pub struct Environment {
     /// remove it from the list.
     async_task_queue: Option<Vec<Box<dyn Fn(&mut Environment) -> bool>>>,
 
+
     /// A list of queued images. When an image is added to this queue it will be added to the
     /// window the next frame.
     queued_images: Option<Vec<(ImageId, DynamicImage)>>,
+
+    pub image_map: ImageMap<DynamicImage>,
 
     cursor: MouseCursor,
 
@@ -121,6 +121,8 @@ pub struct Environment {
     event_sink: Box<dyn EventSink>,
 
     animation_widget_in_frame: usize,
+
+    request_application_close: bool,
 }
 
 impl std::fmt::Debug for Environment {
@@ -131,12 +133,64 @@ impl std::fmt::Debug for Environment {
 
 impl Environment {
     pub fn new(
-        env_stack: Vec<EnvironmentVariable>,
         pixel_dimensions: Dimension,
         scale_factor: f64,
         window_handle: Option<*mut c_void>,
         event_sink: Box<dyn EventSink>,
     ) -> Self {
+        let font_sizes_large = vec![
+            EnvironmentVariable::FontSize {
+                key: EnvironmentFontSize::LargeTitle,
+                value: 34,
+            },
+            EnvironmentVariable::FontSize {
+                key: EnvironmentFontSize::Title,
+                value: 28,
+            },
+            EnvironmentVariable::FontSize {
+                key: EnvironmentFontSize::Title2,
+                value: 22,
+            },
+            EnvironmentVariable::FontSize {
+                key: EnvironmentFontSize::Title3,
+                value: 20,
+            },
+            EnvironmentVariable::FontSize {
+                key: EnvironmentFontSize::Headline,
+                value: 17,
+            },
+            EnvironmentVariable::FontSize {
+                key: EnvironmentFontSize::Body,
+                value: 17,
+            },
+            EnvironmentVariable::FontSize {
+                key: EnvironmentFontSize::Callout,
+                value: 16,
+            },
+            EnvironmentVariable::FontSize {
+                key: EnvironmentFontSize::Subhead,
+                value: 15,
+            },
+            EnvironmentVariable::FontSize {
+                key: EnvironmentFontSize::Footnote,
+                value: 13,
+            },
+            EnvironmentVariable::FontSize {
+                key: EnvironmentFontSize::Caption,
+                value: 12,
+            },
+            EnvironmentVariable::FontSize {
+                key: EnvironmentFontSize::Caption2,
+                value: 11,
+            },
+        ];
+
+        let env_stack = theme::dark_mode_color_theme()
+            .iter()
+            .chain(font_sizes_large.iter())
+            .map(|item| item.clone())
+            .collect::<Vec<_>>();
+
         let default_font_family_name = "NotoSans";
 
         let filters = HashMap::with_hasher(FxBuildHasher::default());
@@ -148,7 +202,6 @@ impl Environment {
             font_families: HashMap::with_hasher(FxBuildHasher::default()),
             font_texture_atlas: TextureAtlas::new(512, 512),
             default_font_family_name: default_font_family_name.to_string(),
-            images_information: HashMap::with_hasher(FxBuildHasher::default()),
             overlay_map: HashMap::with_hasher(FxBuildHasher::default()),
             //local_state: HashMap::with_hasher(FxBuildHasher::default()),
             widget_transfer: HashMap::with_hasher(FxBuildHasher::default()),
@@ -160,6 +213,7 @@ impl Environment {
             next_filter_id: 0,
             async_task_queue: Some(vec![]),
             queued_images: None,
+            image_map: Default::default(),
             cursor: MouseCursor::Arrow,
             #[cfg(feature = "tokio")]
             tokio_runtime: tokio::runtime::Builder::new_multi_thread()
@@ -173,7 +227,16 @@ impl Environment {
             windows_window_handle: window_handle,
             event_sink,
             animation_widget_in_frame: 0,
+            request_application_close: false
         }
+    }
+
+    pub fn close_application(&mut self) {
+        self.request_application_close = true;
+    }
+
+    pub fn should_close_application(&self) -> bool {
+        self.request_application_close
     }
 
     pub fn root_alignment(&self) -> BasicLayouter {
@@ -196,13 +259,13 @@ impl Environment {
             .expect("No window for the environment")
     }
 
-    pub fn queue_image(&mut self, image: DynamicImage) -> Option<ImageId> {
-        let id = ImageId::new();
+    pub fn queue_image(&mut self, path: PathBuf, image: DynamicImage) -> Option<ImageId> {
+        let id = ImageId::new(path);
 
         if let Some(images) = &mut self.queued_images {
-            images.push((id, image))
+            images.push((id.clone(), image))
         } else {
-            self.queued_images = Some(vec![(id, image)])
+            self.queued_images = Some(vec![(id.clone(), image)])
         }
 
         Some(id)
@@ -210,6 +273,14 @@ impl Environment {
 
     pub fn queued_images(&mut self) -> Option<Vec<(ImageId, DynamicImage)>> {
         self.queued_images.take()
+    }
+
+    pub fn add_queued_images(&mut self) {
+        if let Some(queued_images) = self.queued_images() {
+            for queued_image in queued_images {
+                let _ = self.image_map.insert(queued_image.0, queued_image.1);
+            }
+        }
     }
 
     pub fn insert_animation<A: StateContract>(&mut self, animation: Animation<A>) {
@@ -419,13 +490,13 @@ impl Environment {
         self.focus_request = None;
     }
 
-    pub fn get_image_information(&self, id: &Option<ImageId>) -> Option<&ImageInformation> {
-        id.as_ref().and_then(|id| self.images_information.get(id))
+    pub fn get_image_information(&self, id: &Option<ImageId>) -> Option<ImageInformation> {
+        id.as_ref().and_then(|id| self.image_map.get(id).map(|a| ImageInformation {
+            width: a.width(),
+            height: a.height()
+        }))
     }
 
-    pub fn insert_image(&mut self, id: ImageId, image: ImageInformation) {
-        self.images_information.insert(id, image);
-    }
 
     pub fn overlay(&mut self, id: &String) -> Option<Option<Overlay>> {
         self.overlay_map.remove(id)

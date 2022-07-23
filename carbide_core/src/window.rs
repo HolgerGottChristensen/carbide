@@ -7,6 +7,9 @@ use crate::text::{FontFamily, FontId};
 use crate::widget::Menu;
 use crate::widget::Widget;
 
+#[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub struct WindowId(pub usize);
+
 pub trait TWindow {
     fn add_font_family(&mut self, family: FontFamily) -> String;
     fn add_font<P: AsRef<Path>>(&mut self, path: P) -> FontId;
@@ -14,10 +17,11 @@ pub trait TWindow {
     fn add_image_from_path(&mut self, path: &str) -> Option<ImageId> {
         let assets = Search::KidsThenParents(3, 5).for_folder("assets").unwrap();
 
-        let image = carbide_core::image::open(assets.join(path)).expect("Couldn't load logo");
+        let path = assets.join(path);
+        let image = carbide_core::image::open(&path).expect("Couldn't load logo");
 
-        let id = ImageId::new();
-        self.add_image(id, image);
+        let id = ImageId::new(path);
+        self.add_image(id.clone(), image);
 
         Some(id)
     }

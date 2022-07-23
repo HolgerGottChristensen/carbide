@@ -45,61 +45,9 @@ impl Ui {
         window_handle: Option<*mut c_void>,
         event_sink: Box<dyn EventSink>,
     ) -> Self {
-        let font_sizes_large = vec![
-            EnvironmentVariable::FontSize {
-                key: EnvironmentFontSize::LargeTitle,
-                value: 34,
-            },
-            EnvironmentVariable::FontSize {
-                key: EnvironmentFontSize::Title,
-                value: 28,
-            },
-            EnvironmentVariable::FontSize {
-                key: EnvironmentFontSize::Title2,
-                value: 22,
-            },
-            EnvironmentVariable::FontSize {
-                key: EnvironmentFontSize::Title3,
-                value: 20,
-            },
-            EnvironmentVariable::FontSize {
-                key: EnvironmentFontSize::Headline,
-                value: 17,
-            },
-            EnvironmentVariable::FontSize {
-                key: EnvironmentFontSize::Body,
-                value: 17,
-            },
-            EnvironmentVariable::FontSize {
-                key: EnvironmentFontSize::Callout,
-                value: 16,
-            },
-            EnvironmentVariable::FontSize {
-                key: EnvironmentFontSize::Subhead,
-                value: 15,
-            },
-            EnvironmentVariable::FontSize {
-                key: EnvironmentFontSize::Footnote,
-                value: 13,
-            },
-            EnvironmentVariable::FontSize {
-                key: EnvironmentFontSize::Caption,
-                value: 12,
-            },
-            EnvironmentVariable::FontSize {
-                key: EnvironmentFontSize::Caption2,
-                value: 11,
-            },
-        ];
 
-        let base_environment = theme::dark_mode_color_theme()
-            .iter()
-            .chain(font_sizes_large.iter())
-            .map(|item| item.clone())
-            .collect::<Vec<_>>();
 
         let environment = Environment::new(
-            base_environment,
             window_pixel_dimensions,
             scale_factor,
             window_handle,
@@ -148,7 +96,7 @@ impl Ui {
     pub fn compound_and_add_event(&mut self, event: Input) {
         let window_event = self
             .event_handler
-            .compound_and_add_event(event, self.environment.get_corrected_dimensions());
+            .compound_and_add_event(event);
 
         //let mut _needs_redraw = self.delegate_events(global_state);
 
@@ -164,6 +112,7 @@ impl Ui {
                     WindowEvent::Focus => (), //_needs_redraw = true,
                     WindowEvent::UnFocus => (),
                     WindowEvent::Redraw => (), //_needs_redraw = true,
+                    WindowEvent::CloseRequested => {}
                 }
             }
         }

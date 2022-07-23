@@ -1,204 +1,220 @@
 use std::f64::consts::PI;
 
-use carbide_core::draw::Position;
+use carbide_core::draw::{Dimension, Position};
+use carbide_core::draw::image::ImageId;
 use carbide_core::environment::*;
+use carbide_core::locate_folder;
 use carbide_core::widget::canvas::*;
 use carbide_core::widget::*;
-use carbide_wgpu::window::*;
+use carbide_wgpu::{Application, Window};
 
 fn main() {
     env_logger::init();
 
-    let icon_path = Window::relative_path_to_assets("images/rust_press.png");
+    let mut application = Application::new();
 
-    let mut window = Window::new("Shapes example".to_string(), 600, 600, Some(icon_path));
+    let image_path = Application::assets().join("images/landscape.png");
+    let landscape_id = Some(ImageId::new(image_path));
 
-    let landscape_id = window.add_image_from_path("images/landscape.png");
+    let rectangles = HStack::new(vec![
+        Rectangle::new()
+            .fill(EnvironmentColor::Accent)
+            .frame(100.0, 100.0),
+        Rectangle::new()
+            .stroke(EnvironmentColor::Accent)
+            .stroke_style(10.0)
+            .frame(100.0, 100.0),
+        Rectangle::new()
+            .fill(EnvironmentColor::Accent)
+            .stroke(EnvironmentColor::Red)
+            .frame(100.0, 100.0),
+        Image::new(landscape_id.clone())
+            .scaled_to_fill()
+            .frame(200.0, 200.0)
+            .clip_shape(Rectangle::new().fill(EnvironmentColor::Accent))
+            .frame(100.0, 100.0),
+        Image::new(landscape_id.clone())
+            .scaled_to_fill()
+            .frame(200.0, 200.0)
+            .clip_shape(
+                Rectangle::new()
+                    .stroke(EnvironmentColor::Accent)
+                    .stroke_style(10.0),
+            )
+            .frame(100.0, 100.0),
+    ]);
 
-    window.set_widgets(VStack::new(vec![
-        HStack::new(vec![
-            Rectangle::new()
-                .fill(EnvironmentColor::Accent)
-                .frame(100.0, 100.0),
-            Rectangle::new()
-                .stroke(EnvironmentColor::Accent)
-                .stroke_style(10.0)
-                .frame(100.0, 100.0),
-            Rectangle::new()
-                .fill(EnvironmentColor::Accent)
-                .stroke(EnvironmentColor::Red)
-                .frame(100.0, 100.0),
-            Image::new(landscape_id)
-                .scaled_to_fill()
-                .frame(200.0, 200.0)
-                .clip_shape(Rectangle::new().fill(EnvironmentColor::Accent))
-                .frame(100.0, 100.0),
-            Image::new(landscape_id)
-                .scaled_to_fill()
-                .frame(200.0, 200.0)
-                .clip_shape(
-                    Rectangle::new()
-                        .stroke(EnvironmentColor::Accent)
-                        .stroke_style(10.0),
-                )
-                .frame(100.0, 100.0),
-        ]),
-        HStack::new(vec![
-            RoundedRectangle::new(CornerRadii::all(25.0))
-                .fill(EnvironmentColor::Accent)
-                .frame(100.0, 100.0),
-            RoundedRectangle::new(CornerRadii::all(25.0))
-                .stroke(EnvironmentColor::Accent)
-                .stroke_style(10.0)
-                .frame(100.0, 100.0),
-            RoundedRectangle::new(CornerRadii::all(25.0))
-                .fill(EnvironmentColor::Accent)
-                .stroke(EnvironmentColor::Red)
-                .frame(100.0, 100.0),
-            Image::new(landscape_id)
-                .scaled_to_fill()
-                .frame(200.0, 200.0)
-                .clip_shape(RoundedRectangle::new(CornerRadii::all(25.0)))
-                .frame(100.0, 100.0),
-            Image::new(landscape_id)
-                .scaled_to_fill()
-                .frame(200.0, 200.0)
-                .clip_shape(
-                    RoundedRectangle::new(CornerRadii::all(25.0))
-                        .stroke(EnvironmentColor::Accent)
-                        .stroke_style(10.0),
-                )
-                .frame(100.0, 100.0),
-        ]),
-        HStack::new(vec![
-            Circle::new()
-                .fill(EnvironmentColor::Accent)
-                .frame(100.0, 100.0),
-            Circle::new()
-                .stroke(EnvironmentColor::Accent)
-                .stroke_style(10.0)
-                .frame(100.0, 100.0),
-            Circle::new()
-                .fill(EnvironmentColor::Accent)
-                .stroke(EnvironmentColor::Red)
-                .frame(100.0, 100.0),
-            Image::new(landscape_id)
-                .scaled_to_fill()
-                .frame(200.0, 200.0)
-                .clip_shape(Circle::new())
-                .frame(100.0, 100.0),
-            Image::new(landscape_id)
-                .scaled_to_fill()
-                .frame(200.0, 200.0)
-                .clip_shape(
-                    Circle::new()
-                        .stroke(EnvironmentColor::Accent)
-                        .stroke_style(10.0),
-                )
-                .frame(100.0, 100.0),
-        ]),
-        HStack::new(vec![
-            Ellipse::new()
-                .fill(EnvironmentColor::Accent)
-                .frame(100.0, 50.0),
-            Ellipse::new()
-                .stroke(EnvironmentColor::Accent)
-                .stroke_style(10.0)
-                .frame(100.0, 50.0),
-            Ellipse::new()
-                .fill(EnvironmentColor::Accent)
-                .stroke(EnvironmentColor::Red)
-                .frame(100.0, 50.0),
-            Image::new(landscape_id)
-                .scaled_to_fill()
-                .frame(200.0, 200.0)
-                .clip_shape(Ellipse::new())
-                .frame(100.0, 50.0),
-            Image::new(landscape_id)
-                .scaled_to_fill()
-                .frame(200.0, 200.0)
-                .clip_shape(
-                    Ellipse::new()
-                        .stroke(EnvironmentColor::Accent)
-                        .stroke_style(10.0),
-                )
-                .frame(100.0, 50.0),
-        ]),
-        HStack::new(vec![
-            Capsule::new()
-                .fill(EnvironmentColor::Accent)
-                .frame(100.0, 50.0),
-            Capsule::new()
-                .stroke(EnvironmentColor::Accent)
-                .stroke_style(10.0)
-                .frame(100.0, 50.0),
-            Capsule::new()
-                .fill(EnvironmentColor::Accent)
-                .stroke(EnvironmentColor::Red)
-                .frame(100.0, 50.0),
-            Image::new(landscape_id)
-                .scaled_to_fill()
-                .frame(200.0, 200.0)
-                .clip_shape(Capsule::new())
-                .frame(100.0, 50.0),
-            Image::new(landscape_id)
-                .scaled_to_fill()
-                .frame(200.0, 200.0)
-                .clip_shape(
-                    Capsule::new()
-                        .stroke(EnvironmentColor::Accent)
-                        .stroke_style(10.0),
-                )
-                .frame(100.0, 50.0),
-        ]),
-        HStack::new(vec![
-            Canvas::new(|_, mut context, _| {
+    let rounded_rectangles = HStack::new(vec![
+        RoundedRectangle::new(CornerRadii::all(25.0))
+            .fill(EnvironmentColor::Accent)
+            .frame(100.0, 100.0),
+        RoundedRectangle::new(CornerRadii::all(25.0))
+            .stroke(EnvironmentColor::Accent)
+            .stroke_style(10.0)
+            .frame(100.0, 100.0),
+        RoundedRectangle::new(CornerRadii::all(25.0))
+            .fill(EnvironmentColor::Accent)
+            .stroke(EnvironmentColor::Red)
+            .frame(100.0, 100.0),
+        Image::new(landscape_id.clone())
+            .scaled_to_fill()
+            .frame(200.0, 200.0)
+            .clip_shape(RoundedRectangle::new(CornerRadii::all(25.0)))
+            .frame(100.0, 100.0),
+        Image::new(landscape_id.clone())
+            .scaled_to_fill()
+            .frame(200.0, 200.0)
+            .clip_shape(
+                RoundedRectangle::new(CornerRadii::all(25.0))
+                    .stroke(EnvironmentColor::Accent)
+                    .stroke_style(10.0),
+            )
+            .frame(100.0, 100.0),
+    ]);
+
+    let circles = HStack::new(vec![
+        Circle::new()
+            .fill(EnvironmentColor::Accent)
+            .frame(100.0, 100.0),
+        Circle::new()
+            .stroke(EnvironmentColor::Accent)
+            .stroke_style(10.0)
+            .frame(100.0, 100.0),
+        Circle::new()
+            .fill(EnvironmentColor::Accent)
+            .stroke(EnvironmentColor::Red)
+            .frame(100.0, 100.0),
+        Image::new(landscape_id.clone())
+            .scaled_to_fill()
+            .frame(200.0, 200.0)
+            .clip_shape(Circle::new())
+            .frame(100.0, 100.0),
+        Image::new(landscape_id.clone())
+            .scaled_to_fill()
+            .frame(200.0, 200.0)
+            .clip_shape(
+                Circle::new()
+                    .stroke(EnvironmentColor::Accent)
+                    .stroke_style(10.0),
+            )
+            .frame(100.0, 100.0),
+    ]);
+
+    let ellipsis = HStack::new(vec![
+        Ellipse::new()
+            .fill(EnvironmentColor::Accent)
+            .frame(100.0, 50.0),
+        Ellipse::new()
+            .stroke(EnvironmentColor::Accent)
+            .stroke_style(10.0)
+            .frame(100.0, 50.0),
+        Ellipse::new()
+            .fill(EnvironmentColor::Accent)
+            .stroke(EnvironmentColor::Red)
+            .frame(100.0, 50.0),
+        Image::new(landscape_id.clone())
+            .scaled_to_fill()
+            .frame(200.0, 200.0)
+            .clip_shape(Ellipse::new())
+            .frame(100.0, 50.0),
+        Image::new(landscape_id.clone())
+            .scaled_to_fill()
+            .frame(200.0, 200.0)
+            .clip_shape(
+                Ellipse::new()
+                    .stroke(EnvironmentColor::Accent)
+                    .stroke_style(10.0),
+            )
+            .frame(100.0, 50.0),
+    ]);
+
+    let capsules = HStack::new(vec![
+        Capsule::new()
+            .fill(EnvironmentColor::Accent)
+            .frame(100.0, 50.0),
+        Capsule::new()
+            .stroke(EnvironmentColor::Accent)
+            .stroke_style(10.0)
+            .frame(100.0, 50.0),
+        Capsule::new()
+            .fill(EnvironmentColor::Accent)
+            .stroke(EnvironmentColor::Red)
+            .frame(100.0, 50.0),
+        Image::new(landscape_id.clone())
+            .scaled_to_fill()
+            .frame(200.0, 200.0)
+            .clip_shape(Capsule::new())
+            .frame(100.0, 50.0),
+        Image::new(landscape_id.clone())
+            .scaled_to_fill()
+            .frame(200.0, 200.0)
+            .clip_shape(
+                Capsule::new()
+                    .stroke(EnvironmentColor::Accent)
+                    .stroke_style(10.0),
+            )
+            .frame(100.0, 50.0),
+    ]);
+
+    let stars = HStack::new(vec![
+        Canvas::new(|_, mut context, _| {
+            context = draw_star(Position::new(50.0, 50.0), 5, 45.0, 20.0, context);
+            context.set_fill_style(EnvironmentColor::Accent);
+            context.fill();
+            context
+        }).frame(100.0, 100.0),
+        Canvas::new(|_, mut context, _| {
+            context = draw_star(Position::new(50.0, 50.0), 5, 45.0, 20.0, context);
+            context.set_line_width(10.0);
+            context.set_stroke_style(EnvironmentColor::Accent);
+            context.stroke();
+            context
+        }).frame(100.0, 100.0),
+        Canvas::new(|_, mut context, _| {
+            context = draw_star(Position::new(50.0, 50.0), 5, 45.0, 20.0, context);
+            context.set_fill_style(EnvironmentColor::Accent);
+            context.set_stroke_style(EnvironmentColor::Red);
+            context.fill();
+            context.stroke();
+            context
+        }).frame(100.0, 100.0),
+        Image::new(landscape_id.clone())
+            .scaled_to_fill()
+            .frame(200.0, 200.0)
+            .clip_shape(Canvas::new(|_, mut context, _| {
                 context = draw_star(Position::new(50.0, 50.0), 5, 45.0, 20.0, context);
-                context.set_fill_style(EnvironmentColor::Accent);
                 context.fill();
                 context
-            })
+            }))
             .frame(100.0, 100.0),
-            Canvas::new(|_, mut context, _| {
+        Image::new(landscape_id.clone())
+            .scaled_to_fill()
+            .frame(200.0, 200.0)
+            .clip_shape(Canvas::new(|_, mut context, _| {
                 context = draw_star(Position::new(50.0, 50.0), 5, 45.0, 20.0, context);
                 context.set_line_width(10.0);
-                context.set_stroke_style(EnvironmentColor::Accent);
                 context.stroke();
                 context
-            })
+            }))
             .frame(100.0, 100.0),
-            Canvas::new(|_, mut context, _| {
-                context = draw_star(Position::new(50.0, 50.0), 5, 45.0, 20.0, context);
-                context.set_fill_style(EnvironmentColor::Accent);
-                context.set_stroke_style(EnvironmentColor::Red);
-                context.fill();
-                context.stroke();
-                context
-            })
-            .frame(100.0, 100.0),
-            Image::new(landscape_id)
-                .scaled_to_fill()
-                .frame(200.0, 200.0)
-                .clip_shape(Canvas::new(|_, mut context, _| {
-                    context = draw_star(Position::new(50.0, 50.0), 5, 45.0, 20.0, context);
-                    context.fill();
-                    context
-                }))
-                .frame(100.0, 100.0),
-            Image::new(landscape_id)
-                .scaled_to_fill()
-                .frame(200.0, 200.0)
-                .clip_shape(Canvas::new(|_, mut context, _| {
-                    context = draw_star(Position::new(50.0, 50.0), 5, 45.0, 20.0, context);
-                    context.set_line_width(10.0);
-                    context.stroke();
-                    context
-                }))
-                .frame(100.0, 100.0),
-        ]),
-    ]));
+    ]);
 
-    window.launch();
+    application.set_scene(
+        Window::new(
+            "Shapes example",
+            Dimension::new(600.0, 600.0),
+            VStack::new(vec![
+                rectangles,
+                rounded_rectangles,
+                circles,
+                ellipsis,
+                capsules,
+                stars,
+            ]),
+        ).close_application_on_window_close()
+    );
+
+    application.launch()
 }
 
 fn draw_star(

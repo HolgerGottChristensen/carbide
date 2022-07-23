@@ -377,39 +377,3 @@ impl Window {
         Ok(())
     }
 }
-
-enum RenderPassOps {
-    Start,
-    Middle,
-}
-
-fn render_pass_ops(ops_type: RenderPassOps) -> (Operations<wgpu::Color>, Operations<u32>) {
-    let color_op = match ops_type {
-        RenderPassOps::Start => wgpu::Operations {
-            load: wgpu::LoadOp::Clear(wgpu::Color {
-                r: 0.0,
-                g: 0.0,
-                b: 0.0,
-                a: 1.0,
-            }),
-            store: true,
-        },
-        RenderPassOps::Middle => wgpu::Operations {
-            load: LoadOp::Load,
-            store: true,
-        },
-    };
-
-    let stencil_op = match ops_type {
-        RenderPassOps::Start => wgpu::Operations {
-            load: wgpu::LoadOp::Clear(0),
-            store: true,
-        },
-        RenderPassOps::Middle => wgpu::Operations {
-            load: LoadOp::Load,
-            store: true,
-        },
-    };
-
-    (color_op, stencil_op)
-}

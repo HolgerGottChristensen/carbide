@@ -2,6 +2,7 @@ use carbide_core::CommonWidgetImpl;
 
 use crate::draw::{Dimension, Position};
 use crate::prelude::*;
+use crate::Scene;
 
 #[derive(Clone, Debug, Widget)]
 pub struct Empty {
@@ -23,3 +24,9 @@ impl Empty {
 CommonWidgetImpl!(Empty, self, id: self.id, position: self.position, dimension: self.dimension, flag: Flags::IGNORE);
 
 impl WidgetExt for Empty {}
+
+impl Scene for Empty {
+    fn request_redraw(&self) {
+        // Empty request redraw, because no redrawing is necessary.
+    }
+}

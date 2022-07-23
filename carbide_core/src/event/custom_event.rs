@@ -1,6 +1,7 @@
 use dyn_clone::DynClone;
+use crate::widget::Widget;
 
-#[derive(Debug, Copy, Clone, PartialEq)]
+#[derive(Debug, Clone)]
 pub enum CustomEvent {
     Async,
 }

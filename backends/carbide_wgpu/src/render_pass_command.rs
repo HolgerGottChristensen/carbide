@@ -1,11 +1,10 @@
 use std::collections::HashMap;
 
-use carbide_core::draw::image::ImageId;
+use carbide_core::draw::image::{ImageId, ImageMap};
 use cgmath::Matrix4;
 use wgpu::util::DeviceExt;
 use wgpu::{BindGroupLayout, Device, Texture};
 
-use carbide_core::draw::image::ImageMap;
 use carbide_core::mesh::mesh;
 use carbide_core::mesh::mesh::{Draw, Mesh};
 use carbide_core::widget::FilterId;
@@ -80,7 +79,7 @@ pub fn create_render_pass_commands<'a>(
 
         // Create the bind
         let bind_group = new_diffuse(&device, &img, &atlas_tex, &bind_group_layout);
-        bind_groups.insert(*id, bind_group);
+        bind_groups.insert(id.clone(), bind_group);
     }
 
     let mut commands = vec![];
@@ -244,7 +243,7 @@ pub fn create_render_pass_commands<'a>(
                     }
 
                     // Ensure the bind group matches this image.
-                    let expected_bind_group = Some(BindGroup::Image(image_id));
+                    let expected_bind_group = Some(BindGroup::Image(image_id.clone()));
                     if bind_group != expected_bind_group {
                         // Now update the bind group and add the new bind group command.
                         bind_group = expected_bind_group;

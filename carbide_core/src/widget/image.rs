@@ -9,6 +9,7 @@ use crate::render::PrimitiveKind;
 use crate::widget::types::ScaleMode;
 use crate::CommonWidgetImpl;
 use std::path::PathBuf;
+use crate::mesh::pre_multiply::PreMultiply;
 
 /// A primitive and basic widget for drawing an `Image`.
 #[derive(Debug, Clone, Widget)]
@@ -95,6 +96,16 @@ impl Layout for Image {
     fn calculate_size(&mut self, requested_size: Dimension, env: &mut Environment) -> Dimension {
         self.requested_size = requested_size;
 
+        if let Some(image_id) = &*self.image_id.value() {
+            if !env.image_map.contains_key(image_id) {
+                let image = image::open(image_id)
+                    .expect("Couldn't load logo")
+                    .pre_multiplied();
+
+                env.image_map.insert(image_id.clone(), image);
+            }
+        }
+
         let image_information = if let Some(source_rect) = self.src_rect {
             source_rect.dimension
         } else {
@@ -144,7 +155,7 @@ impl Render for Image {
         if let Some(id) = self.image_id.value().deref() {
             let kind = PrimitiveKind::Image {
                 color: self.color.as_ref().map(|col| *col.value()),
-                image_id: *id,
+                image_id: id.clone(),
                 source_rect: self.src_rect,
                 mode: self.mode,
             };

@@ -1,3 +1,4 @@
+use std::path::{Path, PathBuf};
 use std::sync::atomic::{AtomicU32, Ordering};
 
 /// Unique image identifier.
@@ -5,13 +6,18 @@ use std::sync::atomic::{AtomicU32, Ordering};
 /// Throughout carbide, images are referred to via their unique `Id`. By referring to images via
 /// `Id`s, carbide can remain agnostic of the actual image or texture render used to represent each
 /// image.
-#[derive(Clone, Debug, Copy, Hash, Eq, PartialEq, Ord, PartialOrd)]
-pub struct ImageId(u32);
+#[derive(Clone, Debug, Hash, Eq, PartialEq, Ord, PartialOrd)]
+pub struct ImageId(PathBuf);
 
 impl ImageId {
     /// Generate a new image ID.
-    pub fn new() -> Self {
-        static WIDGET_ID_COUNTER: AtomicU32 = AtomicU32::new(1);
-        ImageId(WIDGET_ID_COUNTER.fetch_add(1, Ordering::Relaxed))
+    pub fn new(path: impl Into<PathBuf>) -> Self {
+        ImageId(path.into())
+    }
+}
+
+impl AsRef<Path> for ImageId {
+    fn as_ref(&self) -> &Path {
+        self.0.as_path()
     }
 }

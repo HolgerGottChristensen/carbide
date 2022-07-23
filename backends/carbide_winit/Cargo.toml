@@ -19,3 +19,5 @@ name = "carbide_winit"
 path = "./src/lib.rs"
 
 [dependencies]
+winit = "0.26.1"
+carbide_core = { path = "../../carbide_core", version = "0.70" }

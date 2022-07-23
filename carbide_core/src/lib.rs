@@ -66,6 +66,7 @@ pub use draw::Scalar;
 
 pub use crate::color::Color;
 pub use crate::ui::Ui;
+pub use scene::Scene;
 
 pub mod animation;
 pub mod asynchronous;
@@ -89,6 +90,7 @@ mod ui;
 pub mod utils;
 pub mod widget;
 pub mod window;
+mod scene;
 
 /// Reexport of the image crate
 pub mod image {

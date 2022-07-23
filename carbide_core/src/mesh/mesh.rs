@@ -8,13 +8,14 @@
 use std::{fmt, ops};
 
 use cgmath::{Matrix4, SquareMatrix, Vector3};
+use fxhash::FxHashMap;
 use image::{DynamicImage, GenericImage, GenericImageView};
 use rusttype::gpu_cache::Cache as RustTypeGlyphCache;
 use rusttype::gpu_cache::CacheWriteErr as RustTypeCacheWriteError;
 
 use crate::color;
 use crate::draw::draw_gradient::DrawGradient;
-use crate::draw::image::{ImageId, ImageMap};
+use crate::draw::image::ImageId;
 use crate::draw::{Position, Rect, Scalar};
 use crate::environment::Environment;
 use crate::layout::BasicLayouter;
@@ -160,7 +161,7 @@ impl Mesh {
         &mut self,
         viewport: Rect,
         env: &mut Environment,
-        image_map: &ImageMap<I>,
+        image_map: &FxHashMap<ImageId, I>,
         mut primitives: P,
     ) -> Result<Fill, RustTypeCacheWriteError>
     where
@@ -279,12 +280,12 @@ impl Mesh {
             let rectangle = primitive.bounding_box;
             match primitive.kind {
                 PrimitiveKind::Stencil(triangles) => {
-                    match current_state {
+                    match &current_state {
                         State::Plain { start } => {
-                            commands.push(PreparedCommand::Plain(start..vertices.len()))
+                            commands.push(PreparedCommand::Plain(*start..vertices.len()))
                         }
                         State::Image { image_id, start } => {
-                            commands.push(PreparedCommand::Image(image_id, start..vertices.len()))
+                            commands.push(PreparedCommand::Image(image_id.clone(), *start..vertices.len()))
                         }
                     }
 
@@ -314,12 +315,12 @@ impl Mesh {
                     };
                 }
                 PrimitiveKind::DeStencil => {
-                    match current_state {
+                    match &current_state {
                         State::Plain { start } => {
-                            commands.push(PreparedCommand::Plain(start..vertices.len()))
+                            commands.push(PreparedCommand::Plain(*start..vertices.len()))
                         }
                         State::Image { image_id, start } => {
-                            commands.push(PreparedCommand::Image(image_id, start..vertices.len()))
+                            commands.push(PreparedCommand::Image(image_id.clone(), *start..vertices.len()))
                         }
                     }
 
@@ -351,12 +352,12 @@ impl Mesh {
                     };
                 }
                 PrimitiveKind::Filter(filter_id) => {
-                    match current_state {
+                    match &current_state {
                         State::Plain { start } => {
-                            commands.push(PreparedCommand::Plain(start..vertices.len()))
+                            commands.push(PreparedCommand::Plain(*start..vertices.len()))
                         }
                         State::Image { image_id, start } => {
-                            commands.push(PreparedCommand::Image(image_id, start..vertices.len()))
+                            commands.push(PreparedCommand::Image(image_id.clone(), *start..vertices.len()))
                         }
                     }
 
@@ -395,12 +396,12 @@ impl Mesh {
                     };
                 }
                 PrimitiveKind::FilterSplitPt1(filter_id) => {
-                    match current_state {
+                    match &current_state {
                         State::Plain { start } => {
-                            commands.push(PreparedCommand::Plain(start..vertices.len()))
+                            commands.push(PreparedCommand::Plain(*start..vertices.len()))
                         }
                         State::Image { image_id, start } => {
-                            commands.push(PreparedCommand::Image(image_id, start..vertices.len()))
+                            commands.push(PreparedCommand::Image(image_id.clone(), *start..vertices.len()))
                         }
                     }
 
@@ -439,12 +440,12 @@ impl Mesh {
                     };
                 }
                 PrimitiveKind::FilterSplitPt2(filter_id) => {
-                    match current_state {
+                    match &current_state {
                         State::Plain { start } => {
-                            commands.push(PreparedCommand::Plain(start..vertices.len()))
+                            commands.push(PreparedCommand::Plain(*start..vertices.len()))
                         }
                         State::Image { image_id, start } => {
-                            commands.push(PreparedCommand::Image(image_id, start..vertices.len()))
+                            commands.push(PreparedCommand::Image(image_id.clone(), *start..vertices.len()))
                         }
                     }
 
@@ -483,12 +484,12 @@ impl Mesh {
                     };
                 }
                 PrimitiveKind::Transform(matrix, alignment) => {
-                    match current_state {
+                    match &current_state {
                         State::Plain { start } => {
-                            commands.push(PreparedCommand::Plain(start..vertices.len()))
+                            commands.push(PreparedCommand::Plain(*start..vertices.len()))
                         }
                         State::Image { image_id, start } => {
-                            commands.push(PreparedCommand::Image(image_id, start..vertices.len()))
+                            commands.push(PreparedCommand::Image(image_id.clone(), *start..vertices.len()))
                         }
                     }
 
@@ -590,12 +591,12 @@ impl Mesh {
                     };
                 }
                 PrimitiveKind::DeTransform => {
-                    match current_state {
+                    match &current_state {
                         State::Plain { start } => {
-                            commands.push(PreparedCommand::Plain(start..vertices.len()))
+                            commands.push(PreparedCommand::Plain(*start..vertices.len()))
                         }
                         State::Image { image_id, start } => {
-                            commands.push(PreparedCommand::Image(image_id, start..vertices.len()))
+                            commands.push(PreparedCommand::Image(image_id.clone(), *start..vertices.len()))
                         }
                     }
 
@@ -609,12 +610,12 @@ impl Mesh {
                     };
                 }
                 PrimitiveKind::Clip => {
-                    match current_state {
+                    match &current_state {
                         State::Plain { start } => {
-                            commands.push(PreparedCommand::Plain(start..vertices.len()))
+                            commands.push(PreparedCommand::Plain(*start..vertices.len()))
                         }
                         State::Image { image_id, start } => {
-                            commands.push(PreparedCommand::Image(image_id, start..vertices.len()))
+                            commands.push(PreparedCommand::Image(image_id.clone(), *start..vertices.len()))
                         }
                     }
 
@@ -636,12 +637,12 @@ impl Mesh {
                     };
                 }
                 PrimitiveKind::UnClip => {
-                    match current_state {
+                    match &current_state {
                         State::Plain { start } => {
-                            commands.push(PreparedCommand::Plain(start..vertices.len()))
+                            commands.push(PreparedCommand::Plain(*start..vertices.len()))
                         }
                         State::Image { image_id, start } => {
-                            commands.push(PreparedCommand::Image(image_id, start..vertices.len()))
+                            commands.push(PreparedCommand::Image(image_id.clone(), *start..vertices.len()))
                         }
                     }
 
@@ -810,19 +811,22 @@ impl Mesh {
                     mode,
                 } => {
                     let image_ref = match image_map.get(&image_id) {
-                        None => continue,
+                        None => {
+                            println!("Image missing in map: {:?}", image_id);
+                            continue
+                        },
                         Some(img) => img,
                     };
 
                     // Switch to the `Image` state for this image if we're not in it already.
                     let new_image_id = image_id;
-                    match current_state {
+                    match &current_state {
                         // If we're already in the drawing mode for this image, we're done.
-                        State::Image { image_id, .. } if image_id == new_image_id => (),
+                        State::Image { image_id, .. } if image_id == &new_image_id => (),
 
                         // If we were in the `Plain` drawing state, switch to Image drawing state.
                         State::Plain { start } => {
-                            commands.push(PreparedCommand::Plain(start..vertices.len()));
+                            commands.push(PreparedCommand::Plain(*start..vertices.len()));
                             current_state = State::Image {
                                 image_id: new_image_id,
                                 start: vertices.len(),
@@ -831,7 +835,7 @@ impl Mesh {
 
                         // If we were drawing a different image, switch state to draw *this* image.
                         State::Image { image_id, start } => {
-                            commands.push(PreparedCommand::Image(image_id, start..vertices.len()));
+                            commands.push(PreparedCommand::Image(image_id.clone(), *start..vertices.len()));
                             current_state = State::Image {
                                 image_id: new_image_id,
                                 start: vertices.len(),
@@ -985,24 +989,24 @@ impl<'a> Iterator for Commands<'a> {
     type Item = Command;
     fn next(&mut self) -> Option<Self::Item> {
         let Commands { ref mut commands } = *self;
-        commands.next().map(|command| match *command {
-            PreparedCommand::Scissor(scizzor) => Command::Scissor(scizzor),
+        commands.next().map(|command| match command {
+            PreparedCommand::Scissor(scizzor) => Command::Scissor(*scizzor),
             PreparedCommand::Plain(ref range) => Command::Draw(Draw::Plain(range.clone())),
             PreparedCommand::Gradient(ref range, ref gradient) => {
                 Command::Draw(Draw::Gradient(range.clone(), gradient.clone()))
             }
-            PreparedCommand::Image(id, ref range) => Command::Draw(Draw::Image(id, range.clone())),
+            PreparedCommand::Image(id, ref range) => Command::Draw(Draw::Image(id.clone(), range.clone())),
             PreparedCommand::Stencil(ref range) => Command::Stencil(range.clone()),
             PreparedCommand::DeStencil(ref range) => Command::DeStencil(range.clone()),
             PreparedCommand::Transform(ref transform) => Command::Transform(*transform),
             PreparedCommand::Filter(ref range, filter_id) => {
-                Command::Filter(range.clone(), filter_id)
+                Command::Filter(range.clone(), *filter_id)
             }
             PreparedCommand::FilterSplitPt1(ref range, filter_id) => {
-                Command::FilterSplitPt1(range.clone(), filter_id)
+                Command::FilterSplitPt1(range.clone(), *filter_id)
             }
             PreparedCommand::FilterSplitPt2(ref range, filter_id) => {
-                Command::FilterSplitPt2(range.clone(), filter_id)
+                Command::FilterSplitPt2(range.clone(), *filter_id)
             }
         })
     }

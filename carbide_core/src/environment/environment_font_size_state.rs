@@ -36,7 +36,6 @@ impl DerefMut for EnvironmentFontSizeState {
 
 impl NewStateSync for EnvironmentFontSizeState {
     fn sync(&mut self, env: &mut Environment) -> bool {
-        println!("Sync");
         if let Some(size) = env.get_font_size(&self.key) {
             if self.value != size {
                 self.value = size;

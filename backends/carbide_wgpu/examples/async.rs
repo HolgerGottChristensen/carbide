@@ -6,23 +6,26 @@ use carbide_core::state::{LocalState, Map1, State, StateExt};
 use carbide_core::text::FontFamily;
 use carbide_core::widget::*;
 use carbide_core::{task, Color};
-use carbide_wgpu::window::*;
+use carbide_core::draw::Dimension;
+use carbide_wgpu::{Application, Window};
 
 fn main() {
     env_logger::init();
 
-    let icon_path = Window::relative_path_to_assets("images/rust_press.png");
+    let mut application = Application::new();
 
-    let mut window = Window::new(
-        "Async example".to_string(),
-        400,
-        600,
-        Some(icon_path.clone()),
-    );
+    fn window(child: Box<dyn Widget>) -> Box<Window> {
+        Window::new(
+            "Async example",
+            Dimension::new(400.0, 600.0),
+            child
+        ).close_application_on_window_close()
+    }
 
     let family =
         FontFamily::new_from_paths("NotoSans", vec!["fonts/NotoSans/NotoSans-Regular.ttf"]);
-    window.add_font_family(family);
+
+    application.add_font_family(family);
 
     //let image_id = LocalState::new(None);
     //let image_id_for_async = image_id.clone();
@@ -43,7 +46,7 @@ fn main() {
     let new_state2 = Map1::read_map(new_state1.clone(), |x: &f64| *x * 1.2);
     //let text = LocalState::new("Hello World!".to_string());
 
-    let env = window.environment_mut();
+    let env = application.environment_mut();
 
     task!(env, block_width := {
         sleep(Duration::new(1, 0));
@@ -73,24 +76,26 @@ fn main() {
 
     let random_color = 10.mapped(|_: &i32| Color::random());
 
-    window.set_widgets(
-        VStack::new(vec![
-            //Text::new(text)
-            //    .padding(20.0),
-            //Image::new(image_id),
-            Rectangle::new().fill(random_color).frame(block_width, 50),
-            Rectangle::new()
-                .fill(EnvironmentColor::Accent)
-                .frame(new_state, 50),
-            Rectangle::new()
-                .fill(EnvironmentColor::Accent)
-                .frame(new_state1.ignore_writes(), 50),
-            Rectangle::new()
-                .fill(EnvironmentColor::Accent)
-                .frame(new_state2.ignore_writes(), 50),
-        ])
-        .accent_color(EnvironmentColor::Red),
+    let widgets = VStack::new(vec![
+        //Text::new(text)
+        //    .padding(20.0),
+        //Image::new(image_id),
+        Rectangle::new().fill(random_color).frame(block_width, 50),
+        Rectangle::new()
+            .fill(EnvironmentColor::Accent)
+            .frame(new_state, 50),
+        Rectangle::new()
+            .fill(EnvironmentColor::Accent)
+            .frame(new_state1.ignore_writes(), 50),
+        Rectangle::new()
+            .fill(EnvironmentColor::Accent)
+            .frame(new_state2.ignore_writes(), 50),
+    ])
+        .accent_color(EnvironmentColor::Red);
+
+    application.set_scene(
+        window(widgets)
     );
 
-    window.launch();
+    application.launch()
 }

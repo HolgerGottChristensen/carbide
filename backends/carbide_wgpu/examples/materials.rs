@@ -1,19 +1,13 @@
 use carbide_core::environment::*;
 use carbide_core::widget::*;
 use carbide_core::Color;
-use carbide_wgpu::window::*;
+use carbide_core::draw::Dimension;
+use carbide_wgpu::{Application, Window};
 
 fn main() {
     env_logger::init();
 
-    let icon_path = Window::relative_path_to_assets("images/rust_press.png");
-
-    let mut window = Window::new(
-        "Materials example".to_string(),
-        600,
-        450,
-        Some(icon_path.clone()),
-    );
+    let mut application = Application::new();
 
     let background = HStack::new(vec![
         Rectangle::new()
@@ -41,7 +35,7 @@ fn main() {
     .spacing(0.0)
     .rotation_effect(45.0);
 
-    window.set_widgets(ZStack::new(vec![
+    let materials = ZStack::new(vec![
         background,
         VStack::new(vec![
             HStack::new(vec![
@@ -61,7 +55,7 @@ fn main() {
                     .material(EnvironmentColor::UltraThinLight)
                     .frame(100.0, 100.0),
             ])
-            .spacing(10.0),
+                .spacing(10.0),
             HStack::new(vec![
                 Rectangle::new()
                     .material(EnvironmentColor::UltraThickDark)
@@ -79,10 +73,16 @@ fn main() {
                     .material(EnvironmentColor::UltraThinDark)
                     .frame(100.0, 100.0),
             ])
-            .spacing(10.0),
+                .spacing(10.0),
         ])
-        .spacing(10.0),
-    ]));
+            .spacing(10.0),
+    ]);
 
-    window.launch();
+    application.set_scene(Window::new(
+        "Materials example",
+        Dimension::new(600.0, 450.0),
+        materials
+    ).close_application_on_window_close());
+
+    application.launch();
 }

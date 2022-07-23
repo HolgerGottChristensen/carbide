@@ -17,7 +17,7 @@ use crate::event::{Button, CustomEvent};
 /// with the origin in the top left with *y* pointing down, so you might need to translate these
 /// co-ordinates when converting to this event. Also be sure to invert the *y* axis of MouseScroll
 /// events.
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug)]
 pub enum Input {
     /// A button on some input device was pressed.
     Press(Button),
@@ -35,6 +35,7 @@ pub enum Input {
     Focus(bool),
     /// The backed requested to redraw.
     Redraw,
+    CloseRequested,
     /// Custom carbide event
     Custom(CustomEvent),
 }

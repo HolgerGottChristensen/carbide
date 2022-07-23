@@ -52,6 +52,7 @@ use crate::vertex::Vertex;
 use carbide_core::draw::image::ImageId;
 #[cfg(target_os = "windows")]
 use winit::platform::windows::WindowExtWindows;
+use carbide_winit::convert_window_event;
 
 // Todo: Look into multisampling: https://github.com/gfx-rs/wgpu-rs/blob/v0.6/examples/msaa-line/main.rs
 // An alternative is https://github.com/fintelia/smaa-rs (https://github.com/gfx-rs/naga/issues/1275)
@@ -700,7 +701,7 @@ impl Window {
     }
 
     fn input(&mut self, event: &WindowEvent) -> bool {
-        match convert_window_event(event, &self.inner_window) {
+        match convert_window_event(event) {
             None => false,
             Some(input) => {
                 self.ui.compound_and_add_event(input);
@@ -742,7 +743,7 @@ impl Window {
         //let mut last_render_start_time = Instant::now();
 
         event_loop.expect("The event loop should be retrieved").run(
-            move |event, _, control_flow| {
+            move |event, event_loop, control_flow| {
                 match event {
                     Event::WindowEvent {
                         ref event,
@@ -874,5 +875,3 @@ impl Window {
         );
     }
 }
-
-carbide_winit::v023_conversion_fns!();

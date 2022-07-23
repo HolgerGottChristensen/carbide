@@ -19,7 +19,7 @@ pub type AtlasEntry = Rc<RefCell<Book>>;
 
 const SHELVE_WIDTH: u32 = 512;
 
-#[derive(Copy, Clone, Hash, Eq, PartialEq, Debug)]
+#[derive(Clone, Hash, Eq, PartialEq, Debug)]
 pub enum AtlasId {
     Image(ImageId),
     RasterGlyph(FontId, GlyphId, u32),
