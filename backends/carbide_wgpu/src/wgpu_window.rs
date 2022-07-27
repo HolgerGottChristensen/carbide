@@ -11,9 +11,9 @@ use winit::window::{Window as WinitWindow, WindowBuilder};
 use carbide_core::draw::{Dimension, Position, Rect};
 use carbide_core::draw::image::{ImageId, ImageMap};
 use carbide_core::environment::{Environment, EnvironmentColor};
-use carbide_core::event::{Event, KeyboardEventHandler, MouseEventHandler, OtherEventHandler, WidgetEvent, WindowEvent};
+use carbide_core::event::{Event, KeyboardEvent, KeyboardEventHandler, MouseEvent, MouseEventHandler, OtherEventHandler, WidgetEvent, WindowEvent};
 use carbide_core::flags::Flags;
-use carbide_core::focus::Focusable;
+use carbide_core::focus::{Focus, Focusable};
 use carbide_core::image::DynamicImage;
 use carbide_core::layout::Layout;
 use carbide_core::mesh::{DEFAULT_GLYPH_CACHE_DIMS, MODE_IMAGE};
@@ -77,14 +77,20 @@ pub struct WGPUWindow {
     inner: Rc<WinitWindow>,
 
     id: WidgetId,
+    window_id: WindowId,
+    title: String,
     position: Position,
     dimension: Dimension,
     child: Box<dyn Widget>,
     close_application_on_window_close: bool,
+    visible: bool,
 }
 
 impl WGPUWindow {
     pub fn new(title: impl Into<String>, dimension: Dimension, child: Box<dyn Widget>) -> Box<Self> {
+        let window_id = WindowId::new();
+        let title = title.into();
+
 
         let child = ZStack::new(vec![
             Rectangle::new().fill(EnvironmentColor::SystemBackground),
@@ -96,7 +102,7 @@ impl WGPUWindow {
                 width: dimension.width,
                 height: dimension.height,
             }))
-            .with_title(title)
+            .with_title(title.clone())
             //.with_window_icon(loaded_icon)
             ;
 
@@ -106,7 +112,7 @@ impl WGPUWindow {
 
         // Add the window to the list of IDS to make event propagate when received by the window.
         WINDOW_IDS.with(|a| {
-            a.borrow_mut().push(inner.id())
+            a.borrow_mut().insert(inner.id(), window_id);
         });
 
         // Position the window in the middle of the screen.
@@ -414,10 +420,13 @@ impl WGPUWindow {
 
             inner: Rc::new(inner),
             id: WidgetId::new(),
+            window_id,
+            title,
             position: Default::default(),
             dimension: Default::default(),
             child,
-            close_application_on_window_close: false
+            close_application_on_window_close: false,
+            visible: true,
         })
     }
 
@@ -466,7 +475,38 @@ impl WGPUWindow {
     }
 }
 
-impl MouseEventHandler for WGPUWindow {}
+impl MouseEventHandler for WGPUWindow {
+    fn process_mouse_event(&mut self, event: &MouseEvent, consumed: &bool, env: &mut Environment) {
+        let old_is_current = env.is_event_current();
+        let old_dimension = env.pixel_dimensions();
+        let old_scale_factor = env.scale_factor();
+        let scale_factor = self.inner.scale_factor();
+        let physical_dimensions = self.inner.inner_size();
+
+        env.set_event_is_current_by_id(self.window_id);
+        env.set_pixel_dimensions(Dimension::new(physical_dimensions.width as f64, physical_dimensions.height as f64));
+        env.set_scale_factor(scale_factor);
+
+        if !*consumed {
+            if env.is_event_current() {
+                self.capture_state(env);
+                self.handle_mouse_event(event, consumed, env);
+                self.release_state(env);
+            }
+        }
+
+        for mut child in self.children_direct() {
+            child.process_mouse_event(event, &consumed, env);
+            if *consumed {
+                return ();
+            }
+        }
+
+        env.set_event_is_current(old_is_current);
+        env.set_pixel_dimensions(old_dimension);
+        env.set_scale_factor(old_scale_factor);
+    }
+}
 
 impl CommonWidget for WGPUWindow {
     fn id(&self) -> WidgetId {
@@ -530,7 +570,33 @@ impl StateSync for WGPUWindow {
 
 impl Focusable for WGPUWindow {}
 
-impl KeyboardEventHandler for WGPUWindow {}
+impl KeyboardEventHandler for WGPUWindow {
+    fn process_keyboard_event(&mut self, event: &KeyboardEvent, env: &mut Environment) {
+        let old_is_current = env.is_event_current();
+        let old_dimension = env.pixel_dimensions();
+        let old_scale_factor = env.scale_factor();
+        let scale_factor = self.inner.scale_factor();
+        let physical_dimensions = self.inner.inner_size();
+
+        env.set_event_is_current_by_id(self.window_id);
+        env.set_pixel_dimensions(Dimension::new(physical_dimensions.width as f64, physical_dimensions.height as f64));
+        env.set_scale_factor(scale_factor);
+
+        if env.is_event_current() {
+            self.capture_state(env);
+            self.handle_keyboard_event(event, env);
+            self.release_state(env);
+        }
+
+        for mut child in self.children_direct() {
+            child.process_keyboard_event(event, env);
+        }
+
+        env.set_event_is_current(old_is_current);
+        env.set_pixel_dimensions(old_dimension);
+        env.set_scale_factor(old_scale_factor);
+    }
+}
 
 impl OtherEventHandler for WGPUWindow {
     fn handle_other_event(&mut self, event: &WidgetEvent, env: &mut Environment) {
@@ -557,6 +623,7 @@ impl OtherEventHandler for WGPUWindow {
                     WindowEvent::UnFocus => {}
                     WindowEvent::Redraw => {}
                     WindowEvent::CloseRequested => {
+                        self.visible = false;
                         if self.close_application_on_window_close {
                             env.close_application();
                         } else {
@@ -568,18 +635,56 @@ impl OtherEventHandler for WGPUWindow {
             _ => ()
         }
     }
+
+    fn process_other_event(&mut self, event: &WidgetEvent, env: &mut Environment) {
+        let old_is_current = env.is_event_current();
+        let old_dimension = env.pixel_dimensions();
+        let old_scale_factor = env.scale_factor();
+        let scale_factor = self.inner.scale_factor();
+        let physical_dimensions = self.inner.inner_size();
+
+        env.set_event_is_current_by_id(self.window_id);
+        env.set_pixel_dimensions(Dimension::new(physical_dimensions.width as f64, physical_dimensions.height as f64));
+        env.set_scale_factor(scale_factor);
+
+        if env.is_event_current() {
+            self.capture_state(env);
+            self.handle_other_event(event, env);
+            self.release_state(env);
+        }
+
+        for mut child in self.children_direct() {
+            child.process_other_event(event, env);
+        }
+
+        env.set_event_is_current(old_is_current);
+        env.set_pixel_dimensions(old_dimension);
+        env.set_scale_factor(old_scale_factor);
+    }
 }
 
-impl Layout for WGPUWindow {}
+impl Layout for WGPUWindow {
+    fn calculate_size(&mut self, requested_size: Dimension, env: &mut Environment) -> Dimension {
+        Dimension::new(0.0, 0.0)
+    }
+
+    fn position_children(&mut self) {}
+}
 
 impl Render for WGPUWindow {
     fn process_get_primitives(&mut self, _: &mut Vec<Primitive>, env: &mut Environment) {
+        let old_scale_factor = env.scale_factor();
+        let old_pixel_dimensions = env.pixel_dimensions();
+
         let scale_factor = self.inner.scale_factor();
-        let logical_dimensions = self.inner.inner_size().to_logical(scale_factor);
+        let physical_dimensions = self.inner.inner_size();
+        let logical_dimensions = physical_dimensions.to_logical(scale_factor);
         let dimensions = Dimension::new(logical_dimensions.width, logical_dimensions.height);
 
-
         env.capture_time();
+
+        env.set_pixel_dimensions(Dimension::new(physical_dimensions.width as f64, physical_dimensions.height as f64));
+        env.set_scale_factor(scale_factor);
 
         let primitives = Primitives::new(
             dimensions,
@@ -587,26 +692,31 @@ impl Render for WGPUWindow {
             env,
         );
 
-        match self.render(primitives, env) {
-            Ok(_) => {}
-            // Recreate the swap_chain if lost
-            Err(wgpu::SurfaceError::Lost) => {
-                println!("Swap chain lost");
-                self.resize(self.inner.inner_size(), env);
-                self.request_redraw();
-            }
-            // The system is out of memory, we should probably quit
-            Err(wgpu::SurfaceError::OutOfMemory) => {
-                println!("Swap chain out of memory");
-                env.close_application();
-            }
-            // All other errors (Outdated, Timeout) should be resolved by the next frame
-            Err(e) => {
-                // We request a redraw the next frame
-                self.request_redraw();
-                eprintln!("{:?}", e)
+        if self.visible {
+            match self.render(primitives, env) {
+                Ok(_) => {}
+                // Recreate the swap_chain if lost
+                Err(wgpu::SurfaceError::Lost) => {
+                    println!("Swap chain lost");
+                    self.resize(self.inner.inner_size(), env);
+                    self.request_redraw();
+                }
+                // The system is out of memory, we should probably quit
+                Err(wgpu::SurfaceError::OutOfMemory) => {
+                    println!("Swap chain out of memory");
+                    env.close_application();
+                }
+                // All other errors (Outdated, Timeout) should be resolved by the next frame
+                Err(e) => {
+                    // We request a redraw the next frame
+                    self.request_redraw();
+                    eprintln!("{:?}", e)
+                }
             }
         }
+
+        env.set_pixel_dimensions(old_pixel_dimensions);
+        env.set_scale_factor(old_scale_factor);
     }
 }
 
@@ -620,7 +730,7 @@ impl Scene for WGPUWindow {
 }
 
 impl WGPUWindow {
-    fn render(&mut self, primitives: Primitives, env: &mut Environment) -> Result<(), wgpu::SurfaceError> {
+    fn render(&mut self, primitives: Vec<Primitive>, env: &mut Environment) -> Result<(), wgpu::SurfaceError> {
         let mut encoder = self
             .device
             .create_command_encoder(&wgpu::CommandEncoderDescriptor {
@@ -997,10 +1107,10 @@ impl WGPUWindow {
         Ok(())
     }
 
-    pub fn resize(&mut self, new_size: winit::dpi::PhysicalSize<u32>, env: &mut Environment) {
+    pub fn resize(&mut self, new_size: winit::dpi::PhysicalSize<u32>, _: &mut Environment) {
         let size = new_size;
-        env.set_pixel_width(size.width as f64);
-        env.set_pixel_height(size.height as f64);
+        //env.set_pixel_dimensions(size.width as f64);
+        //env.set_pixel_height(size.height as f64);
         //self.ui.compound_and_add_event(Input::Redraw);
 
         let depth_texture =
@@ -1124,6 +1234,8 @@ impl WGPUWindow {
                 present_mode: PresentMode::Mailbox,
             },
         );
+
+        println!("Resized window: {:?} to: {:?}", self.window_id, new_size);
     }
 }
 

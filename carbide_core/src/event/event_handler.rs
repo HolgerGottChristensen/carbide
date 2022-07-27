@@ -7,6 +7,7 @@ use carbide_core::widget::Widget;
 use crate::draw::{Dimension, Position, Scalar};
 use crate::environment::Environment;
 use crate::event::{Button, CustomEvent, Input, Key, ModifierKey, Motion, MouseButton};
+use crate::window::WindowId;
 
 /// A basic, non-interactive rectangle shape widget.
 #[derive(Debug)]
@@ -16,7 +17,7 @@ pub struct EventHandler {
     modifiers: ModifierKey,
     last_click: Option<(Instant, MouseEvent)>,
     mouse_position: Position,
-    events: Vec<WidgetEvent>,
+    events: Vec<(WidgetEvent, Option<WindowId>)>,
     any_focus: bool,
 }
 
@@ -28,7 +29,11 @@ impl EventHandler {
 
         env.set_cursor(MouseCursor::Arrow);
 
-        for event in events {
+        for (event, window_id) in events {
+            let window_id = *window_id;
+            env.set_current_event_window_id(Box::new(move |e| {
+                window_id.map(|id| id == e).unwrap_or(true)
+            }));
             env.capture_time();
             match event {
                 WidgetEvent::Mouse(mouse_event) => {
@@ -139,7 +144,7 @@ impl EventHandler {
         return true;
     }
 
-    pub fn get_events(&self) -> &Vec<WidgetEvent> {
+    pub fn get_events(&self) -> &Vec<(WidgetEvent, Option<WindowId>)> {
         &self.events
     }
 
@@ -250,7 +255,7 @@ impl EventHandler {
         }
     }
 
-    fn add_event(&mut self, event: WidgetEvent) {
+    fn add_event(&mut self, event: WidgetEvent, window_id: Option<WindowId>) {
         if let WidgetEvent::Mouse(MouseEvent::Move {
             delta_xy,
             to,
@@ -261,19 +266,19 @@ impl EventHandler {
             // We should only add move events where the mouse have actually moved
             if delta_xy.x != 0.0 || delta_xy.y != 0.0 {
                 // If the last event was also a move event we can compress it to a single move event.
-                if let Some(WidgetEvent::Mouse(MouseEvent::Move {
+                if let Some((WidgetEvent::Mouse(MouseEvent::Move {
                     delta_xy: old_delta_xy,
                     modifiers: old_modifiers,
                     to: old_to,
                     ..
-                })) = self.events.last_mut()
+                }), w_id)) = self.events.last_mut()
                 {
                     old_delta_xy.x += delta_xy.x;
                     old_delta_xy.y += delta_xy.y;
                     *old_modifiers = modifiers;
                     *old_to = to;
                 } else {
-                    self.events.push(event);
+                    self.events.push((event, window_id));
                 }
             }
         } else if let WidgetEvent::Mouse(MouseEvent::Scroll {
@@ -284,22 +289,22 @@ impl EventHandler {
         }) = event
         {
             // If the last event was a scroll, we can compress the events into a single scroll event.
-            if let Some(WidgetEvent::Mouse(MouseEvent::Scroll {
+            if let Some((WidgetEvent::Mouse(MouseEvent::Scroll {
                 x,
                 y,
                 mouse_position,
                 modifiers,
-            })) = self.events.last_mut()
+            }), w_id)) = self.events.last_mut()
             {
                 *x += new_x;
                 *y += new_y;
                 *mouse_position = new_mouse_position;
                 *modifiers = new_modifiers;
             } else {
-                self.events.push(event);
+                self.events.push((event, window_id));
             }
         } else {
-            self.events.push(event);
+            self.events.push((event, window_id));
         }
     }
 
@@ -322,6 +327,7 @@ impl EventHandler {
     pub fn compound_and_add_event(
         &mut self,
         event: Input,
+        window_id: Option<WindowId>
     ) -> Option<WindowEvent> {
         // A function for filtering `ModifierKey`s.
 
@@ -344,7 +350,7 @@ impl EventHandler {
                 // Check to see whether we need to (un)capture the keyboard or mouse.
                 Button::Mouse(mouse_button) => {
                     let event = MouseEvent::Press(mouse_button, mouse_xy, modifiers);
-                    self.add_event(WidgetEvent::Mouse(event.clone()));
+                    self.add_event(WidgetEvent::Mouse(event.clone()), window_id);
                     self.pressed_buttons.insert(mouse_button, event);
 
                     None
@@ -352,7 +358,7 @@ impl EventHandler {
 
                 Button::Keyboard(key) => {
                     let event = KeyboardEvent::Press(key, modifiers);
-                    self.add_event(WidgetEvent::Keyboard(event.clone()));
+                    self.add_event(WidgetEvent::Keyboard(event.clone()), window_id);
                     self.pressed_keys.insert(key, event);
 
                     // If some modifier key was pressed, add it to the current modifiers.
@@ -373,7 +379,7 @@ impl EventHandler {
             Input::Release(button_type) => match button_type {
                 Button::Mouse(mouse_button) => {
                     let event = MouseEvent::Release(mouse_button, mouse_xy, modifiers);
-                    self.add_event(WidgetEvent::Mouse(event));
+                    self.add_event(WidgetEvent::Mouse(event), window_id);
                     let pressed_event = self.pressed_buttons.remove(&mouse_button);
                     let now = Instant::now();
                     let n_click_threshold = Duration::from_millis(500);
@@ -394,7 +400,7 @@ impl EventHandler {
                         {
                             let n_click_event =
                                 MouseEvent::NClick(mouse_button, mouse_xy, modifiers, n + 1);
-                            self.add_event(WidgetEvent::Mouse(n_click_event.clone()));
+                            self.add_event(WidgetEvent::Mouse(n_click_event.clone()), window_id);
                             self.last_click = Some((now, n_click_event));
                         }
                     } else if let Some((time, MouseEvent::Click(button, location, _))) =
@@ -407,7 +413,7 @@ impl EventHandler {
                         {
                             let n_click_event =
                                 MouseEvent::NClick(mouse_button, mouse_xy, modifiers, 2);
-                            self.add_event(WidgetEvent::Mouse(n_click_event.clone()));
+                            self.add_event(WidgetEvent::Mouse(n_click_event.clone()), window_id);
                             self.last_click = Some((now, n_click_event));
                         }
                     }
@@ -419,11 +425,11 @@ impl EventHandler {
                             let click_event = MouseEvent::Click(mouse_button, mouse_xy, modifiers);
                             if let Some((time, MouseEvent::NClick(_, _, _, _))) = self.last_click {
                                 if now.duration_since(time) >= n_click_threshold {
-                                    self.add_event(WidgetEvent::Mouse(click_event.clone()));
+                                    self.add_event(WidgetEvent::Mouse(click_event.clone()), window_id);
                                     self.last_click = Some((now, click_event));
                                 }
                             } else {
-                                self.add_event(WidgetEvent::Mouse(click_event.clone()));
+                                self.add_event(WidgetEvent::Mouse(click_event.clone()), window_id);
                                 self.last_click = Some((now, click_event));
                             }
                         }
@@ -434,12 +440,12 @@ impl EventHandler {
 
                 Button::Keyboard(key) => {
                     let event = KeyboardEvent::Release(key, modifiers);
-                    self.add_event(WidgetEvent::Keyboard(event));
+                    self.add_event(WidgetEvent::Keyboard(event), window_id);
                     let pressed_event = self.pressed_keys.remove(&key);
 
                     if let Some(KeyboardEvent::Press(..)) = pressed_event {
                         let click_event = KeyboardEvent::Click(key, modifiers);
-                        self.add_event(WidgetEvent::Keyboard(click_event));
+                        self.add_event(WidgetEvent::Keyboard(click_event), window_id);
                     }
 
                     if let Some(modifier) = filter_modifier(key) {
@@ -455,7 +461,7 @@ impl EventHandler {
                 // Create a `WindowResized` event.
                 let (w, h) = (w as Scalar, h as Scalar);
                 let event = WindowEvent::Resize(Dimension::new(w, h));
-                self.add_event(WidgetEvent::Window(event));
+                self.add_event(WidgetEvent::Window(event), window_id);
                 Some(WindowEvent::Resize(Dimension::new(w, h)))
             }
 
@@ -480,7 +486,7 @@ impl EventHandler {
                             modifiers,
                         };
 
-                        self.add_event(WidgetEvent::Mouse(move_event));
+                        self.add_event(WidgetEvent::Mouse(move_event), window_id);
 
                         // Check for drag events.
 
@@ -509,7 +515,7 @@ impl EventHandler {
                                 }
                             }
 
-                            events.iter().for_each(|evt| self.add_event(evt.clone()))
+                            events.iter().for_each(|evt| self.add_event(evt.clone(), window_id))
                         }
 
                         // Update the position of the mouse within the global_input's
@@ -527,7 +533,7 @@ impl EventHandler {
                             mouse_position: mouse_xy,
                             modifiers,
                         };
-                        self.add_event(WidgetEvent::Mouse(event));
+                        self.add_event(WidgetEvent::Mouse(event), window_id);
                     }
 
                     _ => (),
@@ -537,7 +543,7 @@ impl EventHandler {
 
             Input::Text(string) => {
                 let event = KeyboardEvent::Text(string, modifiers);
-                self.add_event(WidgetEvent::Keyboard(event));
+                self.add_event(WidgetEvent::Keyboard(event), window_id);
 
                 None
             }
@@ -547,12 +553,12 @@ impl EventHandler {
             }
 
             Input::Focus(focused) if focused == true => {
-                self.add_event(WidgetEvent::Window(WindowEvent::Focus));
+                self.add_event(WidgetEvent::Window(WindowEvent::Focus), window_id);
                 Some(WindowEvent::Focus)
                 //ui.needs_redraw()
             }
             Input::Focus(_focused) => {
-                self.add_event(WidgetEvent::Window(WindowEvent::UnFocus));
+                self.add_event(WidgetEvent::Window(WindowEvent::UnFocus), window_id);
                 None
             }
 
@@ -561,11 +567,11 @@ impl EventHandler {
                 Some(WindowEvent::Redraw)
             }
             Input::Custom(event) => {
-                self.add_event(WidgetEvent::Custom(event));
+                self.add_event(WidgetEvent::Custom(event), window_id);
                 None
             }
             Input::CloseRequested => {
-                self.add_event(WidgetEvent::Window(WindowEvent::CloseRequested));
+                self.add_event(WidgetEvent::Window(WindowEvent::CloseRequested), window_id);
                 None
             }
         }

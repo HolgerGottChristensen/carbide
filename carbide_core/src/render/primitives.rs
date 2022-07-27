@@ -15,7 +15,7 @@ impl Primitives {
         window_dimensions: Dimension,
         root: &mut Box<dyn Widget>,
         environment: &mut Environment,
-    ) -> Self {
+    ) -> Vec<Primitive> {
         root.calculate_size(window_dimensions, environment);
 
         let layout = environment.root_alignment();
@@ -26,18 +26,6 @@ impl Primitives {
         root.position_children();
         let mut prims: Vec<Primitive> = vec![];
         root.process_get_primitives(&mut prims, environment);
-        Primitives { primitives: prims }
-    }
-}
-
-impl PrimitiveWalker for Primitives {
-
-    // TODO: This implementation is very inefficient
-    fn next_primitive(&mut self) -> Option<Primitive> {
-        return if !self.primitives.is_empty() {
-            Some(self.primitives.remove(0))
-        } else {
-            None
-        };
+        prims
     }
 }

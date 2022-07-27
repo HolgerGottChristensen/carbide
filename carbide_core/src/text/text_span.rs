@@ -21,7 +21,7 @@ pub enum TextSpan {
 
 impl TextSpan {
     pub fn new(string: &str, style: &TextStyle, env: &mut Environment) -> Vec<TextSpan> {
-        let scale_factor = env.get_scale_factor();
+        let scale_factor = env.scale_factor();
 
         let mut res = vec![];
 

@@ -25,7 +25,7 @@ use crate::mesh::{
     DEFAULT_GLYPH_CACHE_DIMS, GLYPH_CACHE_POSITION_TOLERANCE, GLYPH_CACHE_SCALE_TOLERANCE,
     MODE_GEOMETRY, MODE_TEXT, MODE_TEXT_COLOR,
 };
-use crate::render::{PrimitiveKind, PrimitiveWalker};
+use crate::render::{Primitive, PrimitiveKind, PrimitiveWalker};
 use crate::widget::FilterId;
 
 /// Images within the given image map must know their dimensions in pixels.
@@ -157,18 +157,17 @@ impl Mesh {
     ///   pixel space of the viewport.
     /// - `image_map`: a map from image IDs to images.
     /// - `primitives`: the sequence of UI primitives in order of depth to be rendered.
-    pub fn fill<P, I>(
+    pub fn fill<I>(
         &mut self,
         viewport: Rect,
         env: &mut Environment,
         image_map: &FxHashMap<ImageId, I>,
-        mut primitives: P,
+        primitives: Vec<Primitive>,
     ) -> Result<Fill, RustTypeCacheWriteError>
     where
-        P: PrimitiveWalker,
         I: ImageDimensions,
     {
-        let scale_factor = env.get_scale_factor();
+        let scale_factor = env.scale_factor();
 
         let Mesh {
             ref mut glyph_cache,
@@ -276,7 +275,7 @@ impl Mesh {
         }
 
         // Draw each primitive in order of depth.
-        while let Some(primitive) = primitives.next_primitive() {
+        for primitive in primitives {
             let rectangle = primitive.bounding_box;
             match primitive.kind {
                 PrimitiveKind::Stencil(triangles) => {

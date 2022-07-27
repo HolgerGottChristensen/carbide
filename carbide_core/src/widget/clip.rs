@@ -51,7 +51,7 @@ CommonWidgetImpl!(Clip, self, id: self.id, child: self.child, position: self.pos
 impl Render for Clip {
     fn process_get_primitives(&mut self, primitives: &mut Vec<Primitive>, env: &mut Environment) {
         // Cut the rendering if either the width or the height is 0
-        let min = 1.0 / env.get_scale_factor();
+        let min = 1.0 / env.scale_factor();
         if self.dimension.width <= min || self.dimension.height <= min {
             return;
         }
@@ -63,10 +63,10 @@ impl Render for Clip {
         if self.position.y + self.dimension.height < 0.0 {
             return;
         }
-        if self.position.x >= env.get_corrected_width() {
+        if self.position.x >= env.current_window_width() {
             return;
         }
-        if self.position.y >= env.get_corrected_height() {
+        if self.position.y >= env.current_window_height() {
             return;
         }
 

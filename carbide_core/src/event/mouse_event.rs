@@ -13,10 +13,12 @@ pub trait MouseEventHandler: CommonWidget + StateSync + Focusable {
     fn handle_mouse_event(&mut self, event: &MouseEvent, consumed: &bool, env: &mut Environment) {}
 
     fn process_mouse_event(&mut self, event: &MouseEvent, consumed: &bool, env: &mut Environment) {
-        if !*consumed {
-            self.capture_state(env);
-            self.handle_mouse_event(event, consumed, env);
-            self.release_state(env);
+        if env.is_event_current() {
+            if !*consumed {
+                self.capture_state(env);
+                self.handle_mouse_event(event, consumed, env);
+                self.release_state(env);
+            }
         }
 
         for mut child in self.children_direct() {

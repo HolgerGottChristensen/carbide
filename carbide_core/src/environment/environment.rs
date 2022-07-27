@@ -28,6 +28,7 @@ use crate::widget::ImageInformation;
 use crate::widget::{FilterId, ImageFilter, Overlay};
 use crate::{locate_folder, Color};
 use crate::layout::BasicLayouter;
+use crate::window::WindowId;
 
 pub struct Environment {
     /// This stack should be used to scope the environment. This contains information such as
@@ -123,6 +124,9 @@ pub struct Environment {
     animation_widget_in_frame: usize,
 
     request_application_close: bool,
+
+    current_event_window_id: Box<dyn Fn(WindowId) -> bool>,
+    current_event_active: bool,
 }
 
 impl std::fmt::Debug for Environment {
@@ -227,8 +231,26 @@ impl Environment {
             windows_window_handle: window_handle,
             event_sink,
             animation_widget_in_frame: 0,
-            request_application_close: false
+            request_application_close: false,
+            current_event_window_id: Box::new(|_| true),
+            current_event_active: false
         }
+    }
+
+    pub fn is_event_current(&self) -> bool {
+        self.current_event_active
+    }
+
+    pub fn set_current_event_window_id(&mut self, e: Box<dyn Fn(WindowId) -> bool>) {
+        self.current_event_window_id = e;
+    }
+
+    pub fn set_event_is_current_by_id(&mut self, id: WindowId) {
+        self.current_event_active = (self.current_event_window_id)(id);
+    }
+
+    pub fn set_event_is_current(&mut self, is_current: bool) {
+        self.current_event_active = is_current;
     }
 
     pub fn close_application(&mut self) {
@@ -418,47 +440,28 @@ impl Environment {
         self.frame_start_time.clone()
     }
 
-    pub fn set_pixel_width(&mut self, new_pixel_width: f64) {
-        self.pixel_dimensions.width = new_pixel_width;
+    pub fn pixel_dimensions(&self) -> Dimension {
+        self.pixel_dimensions
     }
 
-    pub fn set_pixel_height(&mut self, new_pixel_height: f64) {
-        self.pixel_dimensions.height = new_pixel_height;
+    /// This is the dimensions in pixels
+    pub fn set_pixel_dimensions(&mut self, dimension: Dimension) {
+        self.pixel_dimensions = dimension;
     }
 
     pub fn set_scale_factor(&mut self, new_scale_factor: f64) {
         self.scale_factor = new_scale_factor;
     }
 
-    pub fn get_corrected_width(&self) -> f64 {
-        self.pixel_dimensions.width / self.scale_factor
-    }
+    /// Get the width in carbide points. (Actual pixels / dpi)
+    pub fn current_window_width(&self) -> f64 { self.pixel_dimensions.width / self.scale_factor }
 
     /// Get the height in carbide points. (Actual pixels / dpi)
-    pub fn get_corrected_height(&self) -> f64 {
+    pub fn current_window_height(&self) -> f64 {
         self.pixel_dimensions.height / self.scale_factor
     }
 
-    pub fn get_corrected_dimensions(&self) -> Dimension {
-        Dimension::new(
-            self.pixel_dimensions.width / self.scale_factor,
-            self.pixel_dimensions.height / self.scale_factor,
-        )
-    }
-
-    pub fn get_pixel_width(&self) -> f64 {
-        self.pixel_dimensions.width / self.scale_factor
-    }
-
-    pub fn get_pixel_height(&self) -> f64 {
-        self.pixel_dimensions.height / self.scale_factor
-    }
-
-    pub fn get_pixel_dimensions(&self) -> Dimension {
-        self.pixel_dimensions
-    }
-
-    pub fn get_scale_factor(&self) -> f64 {
+    pub fn scale_factor(&self) -> f64 {
         self.scale_factor
     }
 
@@ -602,7 +605,7 @@ impl Environment {
     }
 
     pub fn add_glyphs_to_atlas(&mut self, glyphs: Vec<&mut Glyph>) {
-        let scale_factor = self.get_scale_factor();
+        let scale_factor = self.scale_factor();
         for glyph in glyphs {
             let font = &self.fonts[glyph.font_id()];
             if let Some(entry) = self

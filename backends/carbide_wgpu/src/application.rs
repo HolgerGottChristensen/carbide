@@ -1,8 +1,9 @@
+use std::borrow::Borrow;
 use std::collections::HashMap;
 use winit::dpi::{LogicalSize, Size};
 use winit::event::{Event, VirtualKeyCode, WindowEvent as WinitWindowEvent};
 use winit::event_loop::{EventLoopWindowTarget, EventLoop as WinitEventLoop, ControlFlow};
-use winit::window::{WindowBuilder, WindowId};
+use winit::window::{WindowBuilder, WindowId as WinitWindowId};
 use carbide_core::environment::Environment;
 use carbide_core::event::{CustomEvent, EventHandler, Input, WindowEvent};
 use carbide_core::widget::{Empty, Rectangle, Widget};
@@ -18,9 +19,10 @@ use carbide_core::{locate_folder, Scene};
 use carbide_core::draw::image::ImageId;
 use carbide_core::text::{FontFamily, FontId};
 use crate::proxy_event_loop::ProxyEventLoop;
+use carbide_core::window::WindowId;
 
 thread_local!(pub static EVENT_LOOP: RefCell<EventLoop<CustomEvent>> = RefCell::new(EventLoop::Owned(WinitEventLoop::<CustomEvent>::with_user_event())));
-thread_local!(pub static WINDOW_IDS: RefCell<Vec<WindowId>> = RefCell::new(vec![]));
+thread_local!(pub static WINDOW_IDS: RefCell<HashMap<WinitWindowId, WindowId>> = RefCell::new(HashMap::new()));
 
 pub struct Application {
     // /// This contains the whole widget tree. This includes windows and other widgets.
@@ -75,10 +77,11 @@ impl Application {
         self.root = scene;
     }
 
-    fn input(&mut self, event: &WinitWindowEvent) {
+    fn input(&mut self, event: &WinitWindowEvent, window_id: WinitWindowId) {
         let input = convert_window_event(event);
         if let Some(input) = input {
-            self.event_handler.compound_and_add_event(input);
+            let id = WINDOW_IDS.with(|a| *a.borrow().get(&window_id).unwrap());
+            self.event_handler.compound_and_add_event(input, Some(id));
         }
     }
 
@@ -163,7 +166,7 @@ impl Application {
         });
 
         // Make the state sync on event loop run
-        self.input(&WinitWindowEvent::Focused(true));
+        //self.input(&WinitWindowEvent::Focused(true));
 
         event_loop.run(
             move |event, event_loop, control_flow| {
@@ -181,8 +184,8 @@ impl Application {
                     Event::WindowEvent {
                         ref event,
                         window_id,
-                    } if WINDOW_IDS.with(|a| a.borrow().contains(&window_id)) => {
-                        self.input(event);
+                    } if WINDOW_IDS.with(|a| a.borrow().contains_key(&window_id)) => {
+                        self.input(event, window_id);
 
                         /*if !self.input(event) {
                             match event {
@@ -249,7 +252,7 @@ impl Application {
                     // Gets called whenever we receive carbide sent events
                     Event::UserEvent(event) => {
                         println!("{:?}", event);
-                        self.event_handler.compound_and_add_event(Input::Custom(event));
+                        self.event_handler.compound_and_add_event(Input::Custom(event), None);
                         self.request_redraw();
                     }
 

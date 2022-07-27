@@ -39,11 +39,6 @@ impl OverlaidLayer {
 
 impl MouseEventHandler for OverlaidLayer {
     fn process_mouse_event(&mut self, event: &MouseEvent, consumed: &bool, env: &mut Environment) {
-        if !*consumed {
-            self.capture_state(env);
-            self.handle_mouse_event(event, consumed, env);
-            self.release_state(env);
-        }
 
         if let Some(overlay) = &mut self.overlay {
             overlay.process_mouse_event(event, consumed, env);
@@ -72,9 +67,6 @@ impl MouseEventHandler for OverlaidLayer {
 
 impl KeyboardEventHandler for OverlaidLayer {
     fn process_keyboard_event(&mut self, event: &KeyboardEvent, env: &mut Environment) {
-        self.capture_state(env);
-        self.handle_keyboard_event(event, env);
-        self.release_state(env);
 
         if let Some(overlay) = &mut self.overlay {
             overlay.process_keyboard_event(event, env);
@@ -93,9 +85,6 @@ impl KeyboardEventHandler for OverlaidLayer {
 
 impl OtherEventHandler for OverlaidLayer {
     fn process_other_event(&mut self, event: &WidgetEvent, env: &mut Environment) {
-        self.capture_state(env);
-        self.handle_other_event(event, env);
-        self.release_state(env);
 
         if let Some(overlay) = &mut self.overlay {
             overlay.process_other_event(event, env);

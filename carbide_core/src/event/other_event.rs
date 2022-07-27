@@ -12,9 +12,11 @@ pub trait OtherEventHandler: CommonWidget + StateSync + Focusable {
     fn handle_other_event(&mut self, _event: &WidgetEvent, _env: &mut Environment) {}
 
     fn process_other_event(&mut self, event: &WidgetEvent, env: &mut Environment) {
-        self.capture_state(env);
-        self.handle_other_event(event, env);
-        self.release_state(env);
+        if env.is_event_current() {
+            self.capture_state(env);
+            self.handle_other_event(event, env);
+            self.release_state(env);
+        }
 
         for mut child in self.children_direct() {
             child.process_other_event(event, env);

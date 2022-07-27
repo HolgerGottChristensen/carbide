@@ -259,6 +259,7 @@ impl<T: StateContract + PartialEq + 'static> KeyboardEventHandler for PlainPopUp
 impl<T: StateContract + PartialEq + 'static> MouseEventHandler for PlainPopUpButton<T> {
     // Implementing this instead of handle_mouse_event makes all the children not receive events.
     fn process_mouse_event(&mut self, event: &MouseEvent, _: &bool, env: &mut Environment) {
+        if !env.is_event_current() { return }
         match event {
             MouseEvent::Click(_, position, _) => {
                 if self.is_inside(*position) {
@@ -343,10 +344,10 @@ impl<T: StateContract + PartialEq + 'static> Layout for PlainPopUpButton<T> {
         // We calculate the size for the popup if it is open
         if self.popup.is_showing() {
             let max_height = 400.0;
-            let max_height = env.get_corrected_height().min(max_height);
+            let max_height = env.current_window_height().min(max_height);
             let popup_request = Dimension::new(dimensions.width, max_height);
             self.popup.calculate_size(popup_request, env);
-            self.popup.set_y(env.get_corrected_height());
+            self.popup.set_y(env.current_window_height());
         }
         dimensions
     }

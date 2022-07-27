@@ -183,7 +183,7 @@ impl Text {
 
     // Todo: add underline, strikethrough, and fix when that is char wraps for the first word in the span even when its not the first span.
     fn calculate_size_with_word_break(&mut self, requested_size: Dimension, env: &Environment) {
-        self.scale_factor = env.get_scale_factor();
+        self.scale_factor = env.scale_factor();
         let requested_width = requested_size.width * self.scale_factor;
         let mut max_width = 0.0;
         let mut current_x = 0.0;
@@ -347,7 +347,7 @@ impl Text {
         requested_size: Dimension,
         env: &Environment,
     ) {
-        self.scale_factor = env.get_scale_factor();
+        self.scale_factor = env.scale_factor();
         let width = requested_size.width * self.scale_factor;
         let mut max_width = 0.0;
         let mut current_x = 0.0;
@@ -440,7 +440,7 @@ impl Text {
     }
 
     fn calculate_size_with_no_breaks(&mut self, requested_size: Dimension, env: &Environment) {
-        self.scale_factor = env.get_scale_factor();
+        self.scale_factor = env.scale_factor();
         let mut current_x = 0.0;
 
         // Flatten the spans into lines by layout the widths and x axis.

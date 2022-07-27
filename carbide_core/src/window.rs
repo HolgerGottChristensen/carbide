@@ -1,5 +1,6 @@
 use image::DynamicImage;
 use std::path::Path;
+use std::sync::atomic::{AtomicUsize, Ordering};
 
 use crate::draw::image::ImageId;
 use crate::locate_folder::Search;
@@ -9,6 +10,14 @@ use crate::widget::Widget;
 
 #[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct WindowId(pub usize);
+
+impl WindowId {
+    pub fn new() -> WindowId {
+        static WINDOW_ID_COUNTER: AtomicUsize = AtomicUsize::new(0);
+        WindowId(WINDOW_ID_COUNTER.fetch_add(1, Ordering::Relaxed))
+    }
+}
+
 
 pub trait TWindow {
     fn add_font_family(&mut self, family: FontFamily) -> String;

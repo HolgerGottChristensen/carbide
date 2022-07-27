@@ -6,6 +6,7 @@ use crate::prelude::{CommonWidget, Environment};
 use crate::state::StateSync;
 
 pub trait Focusable: CommonWidget + StateSync {
+
     fn focus_children(&self) -> bool {
         true
     }

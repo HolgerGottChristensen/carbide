@@ -985,7 +985,7 @@ impl PlainTextInput {
             .wrap_mode(Wrap::None);
 
         text_scaler.set_position(Position::new(0.0, 0.0));
-        let normal_scale = env.get_scale_factor();
+        let normal_scale = env.scale_factor();
         env.set_scale_factor(1.0);
         text_scaler.calculate_size(Dimension::new(100.0, 100.0), env);
         env.set_scale_factor(normal_scale);
