@@ -18,13 +18,12 @@ pub(crate) fn create_render_pipeline(
     device: &Device,
     render_pipeline_layout: &PipelineLayout,
     shader: &ShaderModule,
-    surface: &Surface,
-    adapter: &Adapter,
+    preferred_format: TextureFormat,
     mask_type: MaskType,
 ) -> RenderPipeline {
     let (stencil_desc, col) = mask_render_state(mask_type);
 
-    let preferred_format = surface.get_preferred_format(adapter).unwrap();
+
 
     device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
         label: Some("Render Pipeline"),
