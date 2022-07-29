@@ -28,18 +28,12 @@ use crate::mesh::{
 use crate::render::{Primitive, PrimitiveKind, PrimitiveWalker};
 use crate::widget::FilterId;
 
-/// Images within the given image map must know their dimensions in pixels.
-pub trait ImageDimensions {
-    /// The dimensions of the image in pixels.
-    fn dimensions(&self) -> [u32; 2];
-}
-
 /// A mesh whose vertices may be populated by a list of render primitives.
 ///
 /// This is a convenience type for simplifying backend implementations.
 #[derive(Debug)]
 pub struct Mesh {
-    // TODO: Consider mooving glyphcache and atlas to env, such that we can cache texture coords.
+    // TODO: Consider moving glyphcache and atlas to env, such that we can cache texture coords.
     glyph_cache: GlyphCache,
     glyph_cache_pixel_buffer: Vec<u8>,
     texture_atlas: TextureAtlas,
@@ -157,25 +151,19 @@ impl Mesh {
     ///   pixel space of the viewport.
     /// - `image_map`: a map from image IDs to images.
     /// - `primitives`: the sequence of UI primitives in order of depth to be rendered.
-    pub fn fill<I>(
+    pub fn fill(
         &mut self,
         viewport: Rect,
         env: &mut Environment,
-        image_map: &FxHashMap<ImageId, I>,
         primitives: Vec<Primitive>,
-    ) -> Result<Fill, RustTypeCacheWriteError>
-    where
-        I: ImageDimensions,
-    {
+    ) -> Result<Fill, RustTypeCacheWriteError> {
         let scale_factor = env.scale_factor();
 
         let Mesh {
-            ref mut glyph_cache,
-            glyph_cache_pixel_buffer: _,
             ref mut commands,
             ref mut vertices,
-            texture_atlas: _,
             ref mut texture_atlas_image,
+            ..
         } = *self;
 
         commands.clear();
@@ -202,17 +190,6 @@ impl Mesh {
 
         let mut current_state = State::Plain { start: 0 };
 
-        // Viewport dimensions and the "dots per inch" factor.
-        let _half_viewport_w = viewport.width() / 2.0;
-        let _half_viewport_h = viewport.height() / 2.0;
-
-        // Width of the glyph cache is useful when writing to the pixel buffer.
-        let (glyph_cache_w, _) = glyph_cache.dimensions();
-        let _glyph_cache_w = glyph_cache_w as usize;
-
-        // Functions for converting for carbide scalar coords to normalised vertex coords (-1.0 to 1.0).
-        let vx = |x: Scalar| x as f32; //(x * scale_factor / half_viewport_w - 1.0) as f32;
-        let vy = |y: Scalar| y as f32; //-1.0 * (y * scale_factor / half_viewport_h - 1.0) as f32;
 
         let rect_to_scissor = |rect: Rect| {
             // We need to restrict the scissor x and y to [0, ~].
@@ -290,17 +267,19 @@ impl Mesh {
 
                     let start_index_for_stencil = vertices.len();
 
-                    let v = |p: Position| Vertex {
-                        position: [vx(p.x), vy(p.y), 0.0],
-                        tex_coords: [0.0, 0.0],
-                        rgba: [1.0, 1.0, 1.0, 1.0],
-                        mode: MODE_GEOMETRY,
-                    };
+                    fn position_to_vertex(p: Position) -> Vertex {
+                        Vertex {
+                            position: [p.x as f32, p.y as f32, 0.0],
+                            tex_coords: [0.0, 0.0],
+                            rgba: [1.0, 1.0, 1.0, 1.0],
+                            mode: MODE_GEOMETRY,
+                        }
+                    }
 
                     for triangle in &triangles {
-                        vertices.push(v(triangle[0]));
-                        vertices.push(v(triangle[1]));
-                        vertices.push(v(triangle[2]));
+                        vertices.push(position_to_vertex(triangle[0]));
+                        vertices.push(position_to_vertex(triangle[1]));
+                        vertices.push(position_to_vertex(triangle[2]));
                     }
 
                     stencil_stack.push(triangles);
@@ -326,17 +305,19 @@ impl Mesh {
                     if let Some(triangles) = stencil_stack.pop() {
                         let start_index_for_de_stencil = vertices.len();
 
-                        let v = |p: Position| Vertex {
-                            position: [vx(p.x), vy(p.y), 0.0],
-                            tex_coords: [0.0, 0.0],
-                            rgba: [1.0, 1.0, 1.0, 1.0],
-                            mode: MODE_GEOMETRY,
-                        };
+                        fn position_to_vertex(p: Position) -> Vertex {
+                            Vertex {
+                                position: [p.x as f32, p.y as f32, 0.0],
+                                tex_coords: [0.0, 0.0],
+                                rgba: [1.0, 1.0, 1.0, 1.0],
+                                mode: MODE_GEOMETRY,
+                            }
+                        }
 
                         for triangle in &triangles {
-                            vertices.push(v(triangle[0]));
-                            vertices.push(v(triangle[1]));
-                            vertices.push(v(triangle[2]));
+                            vertices.push(position_to_vertex(triangle[0]));
+                            vertices.push(position_to_vertex(triangle[1]));
+                            vertices.push(position_to_vertex(triangle[2]));
                         }
 
                         commands.push(PreparedCommand::DeStencil(
@@ -363,7 +344,7 @@ impl Mesh {
                     let start_index_for_filter = vertices.len();
 
                     let v = |p: Position| Vertex {
-                        position: [vx(p.x), vy(p.y), 0.0],
+                        position: [p.x as f32, p.y as f32, 0.0],
                         tex_coords: [
                             (p.x / viewport.dimension.width * scale_factor) as f32,
                             (p.y / viewport.dimension.height * scale_factor) as f32,
@@ -407,7 +388,7 @@ impl Mesh {
                     let start_index_for_filter = vertices.len();
 
                     let v = |p: Position| Vertex {
-                        position: [vx(p.x), vy(p.y), 0.0],
+                        position: [p.x as f32, p.y as f32, 0.0],
                         tex_coords: [
                             (p.x / viewport.dimension.width * scale_factor) as f32,
                             (p.y / viewport.dimension.height * scale_factor) as f32,
@@ -451,7 +432,7 @@ impl Mesh {
                     let start_index_for_filter = vertices.len();
 
                     let v = |p: Position| Vertex {
-                        position: [vx(p.x), vy(p.y), 0.0],
+                        position: [p.x as f32, p.y as f32, 0.0],
                         tex_coords: [
                             (p.x / viewport.dimension.width * scale_factor) as f32,
                             (p.y / viewport.dimension.height * scale_factor) as f32,
@@ -667,7 +648,7 @@ impl Mesh {
                     let v = |x, y| {
                         // Convert from carbide Scalar range to GL range -1.0 to 1.0.
                         Vertex {
-                            position: [vx(x), vy(y), 0.0],
+                            position: [x as f32, y as f32, 0.0],
                             tex_coords: [0.0, 0.0],
                             rgba: color,
                             mode: MODE_GEOMETRY,
@@ -701,7 +682,7 @@ impl Mesh {
                     ];
 
                     let v = |p: Position| Vertex {
-                        position: [vx(p.x), vy(p.y), 0.0],
+                        position: [p.x as f32, p.y as f32, 0.0],
                         tex_coords: [0.0, 0.0],
                         rgba: pre_multiplied_color,
                         mode: MODE_GEOMETRY,
@@ -721,7 +702,7 @@ impl Mesh {
                     switch_to_plain_state!();
 
                     let v = |(p, c): (Position, color::Rgba)| Vertex {
-                        position: [vx(p.x), vy(p.y), 0.0],
+                        position: [p.x as f32, p.y as f32, 0.0],
                         tex_coords: [0.0, 0.0],
                         rgba: gamma_srgb_to_linear(c.into()),
                         mode: MODE_GEOMETRY,
@@ -742,14 +723,14 @@ impl Mesh {
                     //let texture_atlas = env.get_font_atlas();
 
                     let v_normal = |x, y, t| Vertex {
-                        position: [vx(x), vy(y), 0.0],
+                        position: [x as f32, y as f32, 0.0],
                         tex_coords: t,
                         rgba: color,
                         mode: MODE_TEXT,
                     };
 
                     let v_color = |x, y, t| Vertex {
-                        position: [vx(x), vy(y), 0.0],
+                        position: [x as f32, y as f32, 0.0],
                         tex_coords: t,
                         rgba: color,
                         mode: MODE_TEXT_COLOR,
@@ -809,7 +790,7 @@ impl Mesh {
                     source_rect,
                     mode,
                 } => {
-                    let image_ref = match image_map.get(&image_id) {
+                    let image_ref = match env.image_map.get(&image_id) {
                         None => {
                             println!("Image missing in map: {:?}", image_id);
                             continue
@@ -843,7 +824,7 @@ impl Mesh {
                     }
 
                     let color = color.unwrap_or(color::WHITE).to_fsa();
-                    let [image_w, image_h] = image_ref.dimensions();
+                    let (image_w, image_h) = image_ref.dimensions();
                     let (image_w, image_h) = (image_w as Scalar, image_h as Scalar);
 
                     // Get the sides of the source rectangle as uv coordinates.
@@ -897,7 +878,7 @@ impl Mesh {
                     }
 
                     let v = |p: Position| Vertex {
-                        position: [vx(p.x), vy(p.y), 0.0],
+                        position: [p.x as f32, p.y as f32, 0.0],
                         tex_coords: [0.0, 0.0],
                         rgba: [0.0, 0.0, 0.0, 1.0],
                         mode: MODE_GEOMETRY,

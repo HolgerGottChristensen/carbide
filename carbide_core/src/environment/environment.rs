@@ -199,6 +199,9 @@ impl Environment {
 
         let filters = HashMap::with_hasher(FxBuildHasher::default());
 
+        let mut image_map = ImageMap::default();
+        image_map.insert(ImageId::default(), DynamicImage::new_rgba8(1, 1));
+
         Environment {
             stack: env_stack,
             root_alignment: BasicLayouter::Center,
@@ -217,7 +220,7 @@ impl Environment {
             next_filter_id: 0,
             async_task_queue: Some(vec![]),
             queued_images: None,
-            image_map: Default::default(),
+            image_map,
             cursor: MouseCursor::Arrow,
             #[cfg(feature = "tokio")]
             tokio_runtime: tokio::runtime::Builder::new_multi_thread()

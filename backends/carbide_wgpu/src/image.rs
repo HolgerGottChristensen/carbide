@@ -22,12 +22,6 @@ pub struct Image {
     pub height: u32,
 }
 
-impl mesh::mesh::ImageDimensions for Image {
-    fn dimensions(&self) -> [u32; 2] {
-        [self.width, self.height]
-    }
-}
-
 impl Image {
     pub fn image_information(&self) -> ImageInformation {
         ImageInformation {

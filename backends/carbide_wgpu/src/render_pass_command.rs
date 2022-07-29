@@ -57,35 +57,19 @@ enum BindGroup {
 }
 
 pub fn create_render_pass_commands<'a>(
-    default_bind_group: &'a wgpu::BindGroup,
-    bind_groups: &'a mut HashMap<ImageId, DiffuseBindGroup>,
+    bind_groups: &'a HashMap<ImageId, DiffuseBindGroup>,
     uniform_bind_groups: &mut Vec<wgpu::BindGroup>,
-    image_map: &ImageMap<Image>,
     mesh: &Mesh,
     device: &Device,
-    atlas_tex: &Texture,
-    bind_group_layout: &BindGroupLayout,
     uniform_bind_group_layout: &BindGroupLayout,
     gradient_bind_group_layout: &BindGroupLayout,
     carbide_to_wgpu_matrix: Matrix4<f32>,
 ) -> Vec<RenderPass<'a>> {
-    bind_groups.retain(|k, _| image_map.contains_key(k));
-
-    for (id, img) in image_map.iter() {
-        // If we already have a bind group for this image move on.
-        if bind_groups.contains_key(id) {
-            continue;
-        }
-
-        // Create the bind
-        let bind_group = new_diffuse(&device, &img, &atlas_tex, &bind_group_layout);
-        bind_groups.insert(id.clone(), bind_group);
-    }
 
     let mut commands = vec![];
     let mut inner_commands = vec![];
 
-    let mut bind_group = None;
+    let mut current_bind_group = None;
 
     for command in mesh.commands() {
         match command {
@@ -106,9 +90,9 @@ pub fn create_render_pass_commands<'a>(
                     continue;
                 }
                 // Ensure a render pipeline and bind group is set.
-                if bind_group.is_none() {
+                if current_bind_group.is_none() {
                     let cmd = RenderPassCommand::SetBindGroup {
-                        bind_group: default_bind_group,
+                        bind_group: &bind_groups[&ImageId::default()],
                     };
                     inner_commands.push(cmd);
                 }
@@ -118,7 +102,7 @@ pub fn create_render_pass_commands<'a>(
                 std::mem::swap(&mut new_inner_commands, &mut inner_commands);
                 commands.push(RenderPass::Normal(new_inner_commands));
                 commands.push(RenderPass::Filter(range, filter_id));
-                bind_group = None;
+                current_bind_group = None;
             }
             mesh::Command::FilterSplitPt1(vertex_range, filter_id) => {
                 let vertex_count = vertex_range.len();
@@ -126,9 +110,9 @@ pub fn create_render_pass_commands<'a>(
                     continue;
                 }
                 // Ensure a render pipeline and bind group is set.
-                if bind_group.is_none() {
+                if current_bind_group.is_none() {
                     let cmd = RenderPassCommand::SetBindGroup {
-                        bind_group: default_bind_group,
+                        bind_group: &bind_groups[&ImageId::default()],
                     };
                     inner_commands.push(cmd);
                 }
@@ -138,7 +122,7 @@ pub fn create_render_pass_commands<'a>(
                 std::mem::swap(&mut new_inner_commands, &mut inner_commands);
                 commands.push(RenderPass::Normal(new_inner_commands));
                 commands.push(RenderPass::FilterSplitPt1(range, filter_id));
-                bind_group = None;
+                current_bind_group = None;
             }
             mesh::Command::FilterSplitPt2(vertex_range, filter_id) => {
                 let vertex_count = vertex_range.len();
@@ -146,9 +130,9 @@ pub fn create_render_pass_commands<'a>(
                     continue;
                 }
                 // Ensure a render pipeline and bind group is set.
-                if bind_group.is_none() {
+                if current_bind_group.is_none() {
                     let cmd = RenderPassCommand::SetBindGroup {
-                        bind_group: default_bind_group,
+                        bind_group: &bind_groups[&ImageId::default()],
                     };
                     inner_commands.push(cmd);
                 }
@@ -158,7 +142,7 @@ pub fn create_render_pass_commands<'a>(
                 std::mem::swap(&mut new_inner_commands, &mut inner_commands);
                 commands.push(RenderPass::Normal(new_inner_commands));
                 commands.push(RenderPass::FilterSplitPt2(range, filter_id));
-                bind_group = None;
+                current_bind_group = None;
             }
 
             mesh::Command::Stencil(vertex_range) => {
@@ -167,10 +151,10 @@ pub fn create_render_pass_commands<'a>(
                     continue;
                 }
                 // Ensure a render pipeline and bind group is set.
-                if bind_group.is_none() {
-                    bind_group = Some(BindGroup::Default);
+                if current_bind_group.is_none() {
+                    current_bind_group = Some(BindGroup::Default);
                     let cmd = RenderPassCommand::SetBindGroup {
-                        bind_group: default_bind_group,
+                        bind_group: &bind_groups[&ImageId::default()],
                     };
                     inner_commands.push(cmd);
                 }
@@ -186,10 +170,10 @@ pub fn create_render_pass_commands<'a>(
                     continue;
                 }
                 // Ensure a render pipeline and bind group is set.
-                if bind_group.is_none() {
-                    bind_group = Some(BindGroup::Default);
+                if current_bind_group.is_none() {
+                    current_bind_group = Some(BindGroup::Default);
                     let cmd = RenderPassCommand::SetBindGroup {
-                        bind_group: default_bind_group,
+                        bind_group: &bind_groups[&ImageId::default()],
                     };
                     inner_commands.push(cmd);
                 }
@@ -221,10 +205,10 @@ pub fn create_render_pass_commands<'a>(
                         continue;
                     }
                     // Ensure a render pipeline and bind group is set.
-                    if bind_group.is_none() {
-                        bind_group = Some(BindGroup::Default);
+                    if current_bind_group.is_none() {
+                        current_bind_group = Some(BindGroup::Default);
                         let cmd = RenderPassCommand::SetBindGroup {
-                            bind_group: default_bind_group,
+                            bind_group: &bind_groups[&ImageId::default()],
                         };
                         inner_commands.push(cmd);
                     }
@@ -244,9 +228,9 @@ pub fn create_render_pass_commands<'a>(
 
                     // Ensure the bind group matches this image.
                     let expected_bind_group = Some(BindGroup::Image(image_id.clone()));
-                    if bind_group != expected_bind_group {
+                    if current_bind_group != expected_bind_group {
                         // Now update the bind group and add the new bind group command.
-                        bind_group = expected_bind_group;
+                        current_bind_group = expected_bind_group;
                         let cmd = RenderPassCommand::SetBindGroup {
                             bind_group: &bind_groups[&image_id],
                         };
@@ -283,7 +267,7 @@ pub fn create_render_pass_commands<'a>(
                     commands.push(RenderPass::Normal(new_inner_commands));
                     commands.push(RenderPass::Gradient(range, uniform_bind_groups.len()));
                     uniform_bind_groups.push(gradient_buffer_bind_group);
-                    bind_group = None;
+                    current_bind_group = None;
                 }
             },
         }
