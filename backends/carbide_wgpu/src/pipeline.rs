@@ -4,14 +4,119 @@ use wgpu::{
     PipelineLayout, PrimitiveState, PrimitiveTopology, RenderPipeline, ShaderModule,
     StencilFaceState, StencilOperation, Surface, TextureFormat, VertexState,
 };
+use crate::render_pipeline_layouts::RenderPipelines;
 
 use crate::vertex::Vertex;
+use crate::wgpu_window::{FILTER_RENDER_PIPELINE_LAYOUT, FILTER_SHADER, GRADIENT_RENDER_PIPELINE_LAYOUT, GRADIENT_SHADER, MAIN_SHADER, RENDER_PIPELINE_LAYOUT};
 
 pub(crate) enum MaskType {
     NoMask,
     AddMask,
     InMask,
     RemoveMask,
+}
+
+pub(crate) fn create_pipelines(device: &Device, preferred_format: TextureFormat) -> RenderPipelines {
+    let render_pipeline_no_mask =
+        RENDER_PIPELINE_LAYOUT.with(|render_pipeline_layout| {
+            MAIN_SHADER.with(|main_shader| {
+                create_render_pipeline(
+                    device,
+                    render_pipeline_layout,
+                    main_shader,
+                    preferred_format,
+                    MaskType::NoMask,
+                )
+            })
+        });
+
+    let render_pipeline_add_mask =
+        RENDER_PIPELINE_LAYOUT.with(|render_pipeline_layout| {
+            MAIN_SHADER.with(|main_shader| {
+                create_render_pipeline(
+                    device,
+                    render_pipeline_layout,
+                    main_shader,
+                    preferred_format,
+                    MaskType::AddMask,
+                )
+            })
+        });
+
+    let render_pipeline_in_mask =
+        RENDER_PIPELINE_LAYOUT.with(|render_pipeline_layout| {
+            MAIN_SHADER.with(|main_shader| {
+                create_render_pipeline(
+                    device,
+                    render_pipeline_layout,
+                    main_shader,
+                    preferred_format,
+                    MaskType::InMask,
+                )
+            })
+        });
+
+    let render_pipeline_remove_mask =
+        RENDER_PIPELINE_LAYOUT.with(|render_pipeline_layout| {
+            MAIN_SHADER.with(|main_shader| {
+                create_render_pipeline(
+                    device,
+                    render_pipeline_layout,
+                    main_shader,
+                    preferred_format,
+                    MaskType::RemoveMask,
+                )
+            })
+        });
+
+    let render_pipeline_in_mask_filter =
+        FILTER_RENDER_PIPELINE_LAYOUT.with(|filter_render_pipeline_layout| {
+            FILTER_SHADER.with(|filter_shader| {
+                create_render_pipeline(
+                    device,
+                    filter_render_pipeline_layout,
+                    filter_shader,
+                    preferred_format,
+                    MaskType::InMask,
+                )
+            })
+        });
+
+    let render_pipeline_no_mask_filter =
+        FILTER_RENDER_PIPELINE_LAYOUT.with(|filter_render_pipeline_layout| {
+            FILTER_SHADER.with(|filter_shader| {
+                create_render_pipeline(
+                    device,
+                    filter_render_pipeline_layout,
+                    filter_shader,
+                    preferred_format,
+                    MaskType::NoMask,
+                )
+            })
+        });
+
+    let render_pipeline_in_mask_gradient =
+        GRADIENT_RENDER_PIPELINE_LAYOUT.with(|gradient_render_pipeline_layout| {
+            GRADIENT_SHADER.with(|gradient_shader| {
+                create_render_pipeline(
+                    device,
+                    gradient_render_pipeline_layout,
+                    gradient_shader,
+                    preferred_format,
+                    MaskType::InMask,
+                )
+            })
+        });
+
+    RenderPipelines {
+        render_pipeline_no_mask,
+        render_pipeline_add_mask,
+        render_pipeline_in_mask,
+        render_pipeline_remove_mask,
+        render_pipeline_in_mask_filter,
+        render_pipeline_no_mask_filter,
+        render_pipeline_in_mask_gradient,
+    }
 }
 
 pub(crate) fn create_render_pipeline(

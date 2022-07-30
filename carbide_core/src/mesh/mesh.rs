@@ -33,9 +33,6 @@ use crate::widget::FilterId;
 /// This is a convenience type for simplifying backend implementations.
 #[derive(Debug)]
 pub struct Mesh {
-    // TODO: Consider moving glyphcache and atlas to env, such that we can cache texture coords.
-    glyph_cache: GlyphCache,
-    glyph_cache_pixel_buffer: Vec<u8>,
     texture_atlas: TextureAtlas,
     texture_atlas_image: DynamicImage,
     commands: Vec<PreparedCommand>,
@@ -97,11 +94,8 @@ pub struct Fill {
     pub atlas_requires_upload: bool,
 }
 
-// A wrapper around an owned glyph cache, providing `Debug` and `Deref` impls.
-struct GlyphCache(RustTypeGlyphCache<'static>);
-
 #[derive(Debug)]
-enum PreparedCommand {
+pub enum PreparedCommand {
     Image(ImageId, std::ops::Range<usize>),
     Plain(std::ops::Range<usize>),
     Gradient(std::ops::Range<usize>, DrawGradient),
@@ -122,20 +116,10 @@ impl Mesh {
 
     /// Construct a `Mesh` with the given glyph cache dimensions.
     pub fn with_glyph_cache_dimensions(glyph_cache_dims: [u32; 2]) -> Self {
-        let [gc_width, gc_height] = glyph_cache_dims;
-
-        let glyph_cache = RustTypeGlyphCache::builder()
-            .dimensions(gc_width, gc_height)
-            .scale_tolerance(GLYPH_CACHE_SCALE_TOLERANCE)
-            .position_tolerance(GLYPH_CACHE_POSITION_TOLERANCE)
-            .build()
-            .into();
-        let glyph_cache_pixel_buffer = vec![0u8; gc_width as usize * gc_height as usize];
         let commands = vec![];
         let vertices = vec![];
+
         Mesh {
-            glyph_cache,
-            glyph_cache_pixel_buffer,
             texture_atlas: TextureAtlas::new(512, 512),
             texture_atlas_image: DynamicImage::new_rgba8(512, 512),
             commands,
@@ -156,7 +140,7 @@ impl Mesh {
         viewport: Rect,
         env: &mut Environment,
         primitives: Vec<Primitive>,
-    ) -> Result<Fill, RustTypeCacheWriteError> {
+    ) -> Fill {
         let scale_factor = env.scale_factor();
 
         let Mesh {
@@ -642,7 +626,7 @@ impl Mesh {
                 PrimitiveKind::RectanglePrim { color } => {
                     switch_to_plain_state!();
 
-                    let color = gamma_srgb_to_linear(color.to_fsa());
+                    let color = color.gamma_srgb_to_linear().to_fsa();
                     let (l, r, b, t) = primitive.bounding_box.l_r_b_t();
 
                     let v = |x, y| {
@@ -673,18 +657,14 @@ impl Mesh {
 
                     switch_to_plain_state!();
 
-                    let color = gamma_srgb_to_linear(color.to_fsa());
-                    let pre_multiplied_color = [
-                        color[0] * color[3],
-                        color[1] * color[3],
-                        color[2] * color[3],
-                        color[3],
-                    ];
+                    let color = color.gamma_srgb_to_linear()
+                        .pre_multiply()
+                        .to_fsa();
 
                     let v = |p: Position| Vertex {
                         position: [p.x as f32, p.y as f32, 0.0],
                         tex_coords: [0.0, 0.0],
-                        rgba: pre_multiplied_color,
+                        rgba: color,
                         mode: MODE_GEOMETRY,
                     };
 
@@ -695,31 +675,14 @@ impl Mesh {
                     }
                 }
                 PrimitiveKind::TrianglesMultiColor { triangles } => {
-                    if triangles.is_empty() {
-                        continue;
-                    }
-
-                    switch_to_plain_state!();
-
-                    let v = |(p, c): (Position, color::Rgba)| Vertex {
-                        position: [p.x as f32, p.y as f32, 0.0],
-                        tex_coords: [0.0, 0.0],
-                        rgba: gamma_srgb_to_linear(c.into()),
-                        mode: MODE_GEOMETRY,
-                    };
-
-                    for triangle in triangles {
-                        vertices.push(v(triangle[0]));
-                        vertices.push(v(triangle[1]));
-                        vertices.push(v(triangle[2]));
-                    }
+                    todo!()
                 }
                 PrimitiveKind::Text {
                     color,
                     text: glyphs,
                 } => {
                     switch_to_plain_state!();
-                    let color = gamma_srgb_to_linear(color.to_fsa());
+                    let color = color.gamma_srgb_to_linear().to_fsa();
                     //let texture_atlas = env.get_font_atlas();
 
                     let v_normal = |x, y, t| Vertex {
@@ -823,7 +786,7 @@ impl Mesh {
                         }
                     }
 
-                    let color = color.unwrap_or(color::WHITE).to_fsa();
+                    let color = color.unwrap_or(color::WHITE);
                     let (image_w, image_h) = image_ref.dimensions();
                     let (image_w, image_h) = (image_w as Scalar, image_h as Scalar);
 
@@ -848,7 +811,7 @@ impl Mesh {
                     let v = |x, y, t| Vertex {
                         position: [x as f32, y as f32, 0.0],
                         tex_coords: t,
-                        rgba: gamma_srgb_to_linear(color),
+                        rgba: color.gamma_srgb_to_linear().to_fsa(),
                         mode,
                     };
 
@@ -917,7 +880,7 @@ impl Mesh {
             atlas_requires_upload,
         };
 
-        Ok(fill)
+        fill
     }
 
     pub fn texture_atlas(&self) -> &TextureAtlas {
@@ -929,21 +892,7 @@ impl Mesh {
     }
 
     pub fn texture_atlas_image_as_bytes(&self) -> &[u8] {
-        /*println!(
-            "Number of bytes: {}",
-            &self.texture_atlas_image.as_bytes().len()
-        );*/
         &self.texture_atlas_image.as_bytes()
-    }
-
-    /// The rusttype glyph cache used for managing caching of glyphs into the pixel buffer.
-    pub fn glyph_cache(&self) -> &RustTypeGlyphCache {
-        &self.glyph_cache.0
-    }
-
-    /// The CPU-side of the glyph cache, storing all necessary pixel data in a single slice.
-    pub fn glyph_cache_pixel_buffer(&self) -> &[u8] {
-        &self.glyph_cache_pixel_buffer
     }
 
     /// Produce an `Iterator` yielding `Command`s.
@@ -990,41 +939,4 @@ impl<'a> Iterator for Commands<'a> {
             }
         })
     }
-}
-
-impl ops::Deref for GlyphCache {
-    type Target = RustTypeGlyphCache<'static>;
-    fn deref(&self) -> &Self::Target {
-        &self.0
-    }
-}
-
-impl ops::DerefMut for GlyphCache {
-    fn deref_mut(&mut self) -> &mut Self::Target {
-        &mut self.0
-    }
-}
-
-impl fmt::Debug for GlyphCache {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "GlyphCache")
-    }
-}
-
-impl From<RustTypeGlyphCache<'static>> for GlyphCache {
-    fn from(gc: RustTypeGlyphCache<'static>) -> Self {
-        GlyphCache(gc)
-    }
-}
-
-fn gamma_srgb_to_linear(c: [f32; 4]) -> [f32; 4] {
-    fn component(f: f32) -> f32 {
-        // Taken from https://github.com/PistonDevelopers/graphics/src/color.rs#L42
-        if f <= 0.04045 {
-            f / 12.92
-        } else {
-            ((f + 0.055) / 1.055).powf(2.4)
-        }
-    }
-    [component(c[0]), component(c[1]), component(c[2]), c[3]]
 }

@@ -1,4 +1,7 @@
 use wgpu::VertexFormat;
+use winit::dpi::PhysicalSize;
+use carbide_core::mesh::MODE_IMAGE;
+use carbide_core::Scalar;
 
 #[repr(C)]
 #[derive(Copy, Clone, Debug, bytemuck::Pod, bytemuck::Zeroable)]
@@ -10,6 +13,48 @@ pub struct Vertex {
 }
 
 impl Vertex {
+
+    pub fn rect(size: PhysicalSize<u32>, scale_factor: Scalar) -> Vec<Vertex> {
+        vec![
+            Vertex::new_from_2d(0.0, 0.0, [0.0, 0.0, 0.0, 0.0], [0.0, 0.0], MODE_IMAGE),
+            Vertex::new_from_2d(
+                size.width as f32 / scale_factor as f32,
+                0.0,
+                [0.0, 0.0, 0.0, 0.0],
+                [1.0, 0.0],
+                MODE_IMAGE,
+            ),
+            Vertex::new_from_2d(
+                0.0,
+                size.height as f32 / scale_factor as f32,
+                [0.0, 0.0, 0.0, 0.0],
+                [0.0, 1.0],
+                MODE_IMAGE,
+            ),
+            Vertex::new_from_2d(
+                size.width as f32 / scale_factor as f32,
+                0.0,
+                [0.0, 0.0, 0.0, 0.0],
+                [1.0, 0.0],
+                MODE_IMAGE,
+            ),
+            Vertex::new_from_2d(
+                size.width as f32 / scale_factor as f32,
+                size.height as f32 / scale_factor as f32,
+                [0.0, 0.0, 0.0, 0.0],
+                [1.0, 1.0],
+                MODE_IMAGE,
+            ),
+            Vertex::new_from_2d(
+                0.0,
+                size.height as f32 / scale_factor as f32,
+                [0.0, 0.0, 0.0, 0.0],
+                [0.0, 1.0],
+                MODE_IMAGE,
+            ),
+        ]
+    }
+
     pub fn new_from_2d(x: f32, y: f32, color: [f32; 4], tex_coords: [f32; 2], mode: u32) -> Vertex {
         Vertex {
             position: [x, y, 0.0],

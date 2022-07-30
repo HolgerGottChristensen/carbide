@@ -505,6 +505,21 @@ impl Color {
         let Rgba(r, g, _, a) = self.to_rgb();
         *self = rgba(r, g, b, a);
     }
+
+    pub fn gamma_srgb_to_linear(&self) -> Color {
+        let rgba = self.to_rgb();
+
+        fn component(f: f32) -> f32 {
+            // Taken from https://github.com/PistonDevelopers/graphics/src/color.rs#L42
+            if f <= 0.04045 {
+                f / 12.92
+            } else {
+                ((f + 0.055) / 1.055).powf(2.4)
+            }
+        }
+
+        Color::Rgba(component(rgba.0), component(rgba.1), component(rgba.2), rgba.3)
+    }
 }
 
 /// The parts of HSL along with an alpha for transparency.

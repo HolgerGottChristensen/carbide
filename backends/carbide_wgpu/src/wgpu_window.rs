@@ -5,7 +5,7 @@ use std::rc::Rc;
 use std::thread::LocalKey;
 use cgmath::{Matrix4, Vector3};
 use futures::executor::block_on;
-use wgpu::{Adapter, BindGroup, BindGroupLayout, Buffer, BufferUsages, Device, Extent3d, ImageCopyTexture, Instance, PipelineLayout, PresentMode, Queue, RenderPassDepthStencilAttachment, Sampler, ShaderModel, ShaderModule, Surface, SurfaceConfiguration, Texture, TextureView};
+use wgpu::{Adapter, BindGroup, BindGroupLayout, Buffer, BufferUsages, Device, Extent3d, ImageCopyTexture, Instance, PipelineLayout, PresentMode, Queue, RenderPassDepthStencilAttachment, Sampler, ShaderModel, ShaderModule, Surface, SurfaceConfiguration, Texture, TextureFormat, TextureView};
 use wgpu::util::{BufferInitDescriptor, DeviceExt};
 use winit::dpi::{LogicalSize, PhysicalPosition, PhysicalSize, Size};
 use winit::event_loop::ControlFlow;
@@ -30,7 +30,7 @@ use crate::bind_group_layouts::{filter_buffer_bind_group_layout, filter_texture_
 use crate::bind_groups::{filter_buffer_bind_group, filter_texture_bind_group, main_bind_group, matrix_to_uniform_bind_group, size_to_uniform_bind_group};
 use crate::diffuse_bind_group::{DiffuseBindGroup, new_diffuse};
 use crate::image::Image;
-use crate::pipeline::{create_render_pipeline, MaskType};
+use crate::pipeline::{create_pipelines, create_render_pipeline, MaskType};
 use crate::render_pass_command::{create_render_pass_commands, RenderPass, RenderPassCommand};
 use crate::{render_pass_ops, RenderPassOps};
 use crate::filter::Filter;
@@ -177,10 +177,12 @@ thread_local!(pub static ATLAS_CACHE_TEXTURE: Texture = {
 thread_local!(pub static BIND_GROUPS: RefCell<HashMap<ImageId, DiffuseBindGroup>> = RefCell::new(HashMap::new()));
 thread_local!(pub static FILTER_BIND_GROUPS: RefCell<HashMap<FilterId, BindGroup>> = RefCell::new(HashMap::new()));
 
+thread_local!(pub static PIPELINES: RefCell<Vec<(TextureFormat, RenderPipelines)>> = RefCell::new(vec![]));
+
 pub struct WGPUWindow {
     pub(crate) surface: Surface,
 
-    pub(crate) render_pipelines: RenderPipelines,
+    pub(crate) render_pipelines_index: usize,
 
     pub(crate) depth_texture_view: TextureView,
     pub(crate) main_bind_group: BindGroup,
@@ -307,100 +309,24 @@ impl WGPUWindow {
                 device.create_texture(&secondary_render_tex_desc([size.width, size.height]));
             let secondary_tex_view = secondary_tex.create_view(&Default::default());
 
-            let preferred_format = ADAPTER.with(|adapter| {
-                surface.get_preferred_format(adapter).unwrap()
+            let render_pipelines_index = PIPELINES.with(|pipelines| {
+                let pipelines = &mut *pipelines.borrow_mut();
+                let preferred_format = ADAPTER.with(|adapter| {
+                    surface.get_preferred_format(adapter).unwrap()
+                });
+
+                if let Some(index) = pipelines.iter().position(|(format, _)| format == &preferred_format) {
+                    index
+                } else {
+                    let new_pipelines = create_pipelines(device, preferred_format);
+                    pipelines.push((preferred_format, new_pipelines));
+                    pipelines.len() - 1
+                }
             });
 
-            let render_pipeline_no_mask =
-                RENDER_PIPELINE_LAYOUT.with(|render_pipeline_layout| {
-                    MAIN_SHADER.with(|main_shader| {
-                        create_render_pipeline(
-                            device,
-                            render_pipeline_layout,
-                            main_shader,
-                            preferred_format,
-                            MaskType::NoMask,
-                        )
-                    })
-                });
 
-            let render_pipeline_add_mask =
-                RENDER_PIPELINE_LAYOUT.with(|render_pipeline_layout| {
-                    MAIN_SHADER.with(|main_shader| {
-                        create_render_pipeline(
-                            device,
-                            render_pipeline_layout,
-                            main_shader,
-                            preferred_format,
-                            MaskType::AddMask,
-                        )
-                    })
-                });
 
-            let render_pipeline_in_mask =
-                RENDER_PIPELINE_LAYOUT.with(|render_pipeline_layout| {
-                    MAIN_SHADER.with(|main_shader| {
-                        create_render_pipeline(
-                            device,
-                            render_pipeline_layout,
-                            main_shader,
-                            preferred_format,
-                            MaskType::InMask,
-                        )
-                    })
-                });
 
-            let render_pipeline_remove_mask =
-                RENDER_PIPELINE_LAYOUT.with(|render_pipeline_layout| {
-                    MAIN_SHADER.with(|main_shader| {
-                        create_render_pipeline(
-                            device,
-                            render_pipeline_layout,
-                            main_shader,
-                            preferred_format,
-                            MaskType::RemoveMask,
-                        )
-                    })
-                });
-
-            let render_pipeline_in_mask_filter =
-                FILTER_RENDER_PIPELINE_LAYOUT.with(|filter_render_pipeline_layout| {
-                    FILTER_SHADER.with(|filter_shader| {
-                        create_render_pipeline(
-                            device,
-                            filter_render_pipeline_layout,
-                            filter_shader,
-                            preferred_format,
-                            MaskType::InMask,
-                        )
-                    })
-                });
-
-            let render_pipeline_no_mask_filter =
-                FILTER_RENDER_PIPELINE_LAYOUT.with(|filter_render_pipeline_layout| {
-                    FILTER_SHADER.with(|filter_shader| {
-                        create_render_pipeline(
-                            device,
-                            filter_render_pipeline_layout,
-                            filter_shader,
-                            preferred_format,
-                            MaskType::NoMask,
-                        )
-                    })
-                });
-
-            let render_pipeline_in_mask_gradient =
-                GRADIENT_RENDER_PIPELINE_LAYOUT.with(|gradient_render_pipeline_layout| {
-                    GRADIENT_SHADER.with(|gradient_shader| {
-                        create_render_pipeline(
-                            device,
-                            gradient_render_pipeline_layout,
-                            gradient_shader,
-                            preferred_format,
-                            MaskType::InMask,
-                        )
-                    })
-                });
 
             let main_bind_group =
                 MAIN_TEXTURE_BIND_GROUP_LAYOUT.with(|main_texture_bind_group_layout| {
@@ -428,48 +354,9 @@ impl WGPUWindow {
                 usage: BufferUsages::VERTEX | BufferUsages::COPY_DST,
             });
 
-            let last_verts: Vec<Vertex> = vec![
-                Vertex::new_from_2d(0.0, 0.0, [0.0, 0.0, 0.0, 0.0], [0.0, 0.0], MODE_IMAGE),
-                Vertex::new_from_2d(
-                    size.width as f32 / scale_factor as f32,
-                    0.0,
-                    [0.0, 0.0, 0.0, 0.0],
-                    [1.0, 0.0],
-                    MODE_IMAGE,
-                ),
-                Vertex::new_from_2d(
-                    0.0,
-                    size.height as f32 / scale_factor as f32,
-                    [0.0, 0.0, 0.0, 0.0],
-                    [0.0, 1.0],
-                    MODE_IMAGE,
-                ),
-                Vertex::new_from_2d(
-                    size.width as f32 / scale_factor as f32,
-                    0.0,
-                    [0.0, 0.0, 0.0, 0.0],
-                    [1.0, 0.0],
-                    MODE_IMAGE,
-                ),
-                Vertex::new_from_2d(
-                    size.width as f32 / scale_factor as f32,
-                    size.height as f32 / scale_factor as f32,
-                    [0.0, 0.0, 0.0, 0.0],
-                    [1.0, 1.0],
-                    MODE_IMAGE,
-                ),
-                Vertex::new_from_2d(
-                    0.0,
-                    size.height as f32 / scale_factor as f32,
-                    [0.0, 0.0, 0.0, 0.0],
-                    [0.0, 1.0],
-                    MODE_IMAGE,
-                ),
-            ];
-
             let second_verts_buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
                 label: Some("Vertex Buffer"),
-                contents: bytemuck::cast_slice(&last_verts),
+                contents: bytemuck::cast_slice(&Vertex::rect(size, scale_factor)),
                 usage: wgpu::BufferUsages::VERTEX | BufferUsages::COPY_DST,
             });
 
@@ -499,15 +386,7 @@ impl WGPUWindow {
 
             Box::new(WGPUWindow {
                 surface,
-                render_pipelines: RenderPipelines {
-                    render_pipeline_no_mask,
-                    render_pipeline_add_mask,
-                    render_pipeline_in_mask,
-                    render_pipeline_remove_mask,
-                    render_pipeline_in_mask_filter,
-                    render_pipeline_no_mask_filter,
-                    render_pipeline_in_mask_gradient,
-                },
+                render_pipelines_index,
                 depth_texture_view,
                 main_bind_group,
                 texture_size_bind_group,
@@ -840,399 +719,402 @@ impl WGPUWindow {
         DEVICE_QUEUE.with(|(device, queue)| {
             BIND_GROUPS.with(|bind_groups| {
                 FILTER_BIND_GROUPS.with(|filter_bind_groups| {
-                    let filter_bind_groups = &mut *filter_bind_groups.borrow_mut();
-                    let bind_groups = &mut *bind_groups.borrow_mut();
+                    PIPELINES.with(|render_pipelines| {
+                        let render_pipelines = &render_pipelines.borrow()[self.render_pipelines_index].1;
 
-                    let mut encoder = device
-                        .create_command_encoder(&wgpu::CommandEncoderDescriptor {
-                            label: Some("Render Encoder"),
+                        let filter_bind_groups = &mut *filter_bind_groups.borrow_mut();
+                        let bind_groups = &mut *bind_groups.borrow_mut();
+
+                        let mut encoder = device
+                            .create_command_encoder(&wgpu::CommandEncoderDescriptor {
+                                label: Some("Render Encoder"),
+                            });
+
+                        let size = self.inner.inner_size();
+
+                        let fill = self
+                            .mesh
+                            .fill(
+                                Rect::new(
+                                    Position::new(0.0, 0.0),
+                                    Dimension::new(size.width as f64, size.height as f64),
+                                ),
+                                env,
+                                primitives,
+                            );
+
+                        // Check if an upload to texture atlas is needed.
+                        ATLAS_CACHE_TEXTURE.with(|atlas_cache_tex| {
+                            let texture_atlas_cmd = match fill.atlas_requires_upload {
+                                true => {
+                                    let width = self.mesh.texture_atlas().width();
+                                    let height = self.mesh.texture_atlas().height();
+                                    Some(TextureAtlasCommand {
+                                        texture_atlas_buffer: self.mesh.texture_atlas_image_as_bytes(),
+                                        texture_atlas_texture: atlas_cache_tex,
+                                        width,
+                                        height,
+                                    })
+                                }
+                                false => None,
+                            };
+
+                            match texture_atlas_cmd {
+                                None => (),
+                                Some(cmd) => {
+                                    cmd.load_buffer_and_encode(device, &mut encoder);
+                                }
+                            }
                         });
 
-                    let size = self.inner.inner_size();
+                        let mut uniform_bind_groups = vec![];
 
-                    let fill = self
-                        .mesh
-                        .fill(
-                            Rect::new(
-                                Position::new(0.0, 0.0),
-                                Dimension::new(size.width as f64, size.height as f64),
-                            ),
-                            env,
-                            primitives,
-                        )
-                        .unwrap();
+                        let keys = env
+                            .filters()
+                            .keys()
+                            .cloned()
+                            .collect::<Vec<_>>();
 
-                    // Check if an upload to texture atlas is needed.
-                    ATLAS_CACHE_TEXTURE.with(|atlas_cache_tex| {
-                        let texture_atlas_cmd = match fill.atlas_requires_upload {
-                            true => {
-                                let width = self.mesh.texture_atlas().width();
-                                let height = self.mesh.texture_atlas().height();
-                                Some(TextureAtlasCommand {
-                                    texture_atlas_buffer: self.mesh.texture_atlas_image_as_bytes(),
-                                    texture_atlas_texture: atlas_cache_tex,
-                                    width,
-                                    height,
-                                })
-                            }
-                            false => None,
-                        };
+                        filter_bind_groups
+                            .retain(|id, _| keys.contains(id));
 
-                        match texture_atlas_cmd {
-                            None => (),
-                            Some(cmd) => {
-                                cmd.load_buffer_and_encode(device, &mut encoder);
-                            }
-                        }
-                    });
-
-                    let mut uniform_bind_groups = vec![];
-
-                    let keys = env
-                        .filters()
-                        .keys()
-                        .cloned()
-                        .collect::<Vec<_>>();
-
-                    filter_bind_groups
-                        .retain(|id, _| keys.contains(id));
-
-                    for (filter_id, filter) in env.filters() {
-                        if !filter_bind_groups.contains_key(filter_id) {
-                            let filter: Filter = filter.clone().into();
-                            let filter_buffer =
-                                device
-                                    .create_buffer_init(&wgpu::util::BufferInitDescriptor {
-                                        label: Some("Filter Buffer"),
-                                        contents: &*filter.as_bytes(),
-                                        usage: wgpu::BufferUsages::STORAGE,
+                        for (filter_id, filter) in env.filters() {
+                            if !filter_bind_groups.contains_key(filter_id) {
+                                let filter: Filter = filter.clone().into();
+                                let filter_buffer =
+                                    device
+                                        .create_buffer_init(&wgpu::util::BufferInitDescriptor {
+                                            label: Some("Filter Buffer"),
+                                            contents: &*filter.as_bytes(),
+                                            usage: wgpu::BufferUsages::STORAGE,
+                                        });
+                                let filter_buffer_bind_group =
+                                    FILTER_BUFFER_BIND_GROUP_LAYOUT.with(|filter_buffer_bind_group_layout| {
+                                        filter_buffer_bind_group(
+                                            device,
+                                            filter_buffer_bind_group_layout,
+                                            &filter_buffer,
+                                        )
                                     });
-                            let filter_buffer_bind_group =
-                                FILTER_BUFFER_BIND_GROUP_LAYOUT.with(|filter_buffer_bind_group_layout| {
-                                    filter_buffer_bind_group(
-                                        device,
-                                        filter_buffer_bind_group_layout,
-                                        &filter_buffer,
-                                    )
-                                });
-                            filter_bind_groups
-                                .insert(*filter_id, filter_buffer_bind_group);
-                        }
-                    }
-
-                    let WGPUWindow {
-                        ref mesh,
-                        ref carbide_to_wgpu_matrix,
-                        ..
-                    } = self;
-
-                    // Ensure the images are added as bind groups
-                    ATLAS_CACHE_TEXTURE.with(|atlas_cache_tex| {
-                        MAIN_TEXTURE_BIND_GROUP_LAYOUT.with(|texture_bind_group_layout| {
-                            bind_groups.retain(|k, _| env.image_map.contains_key(k));
-
-                            for (id, img) in env.image_map.iter() {
-                                // If we already have a bind group for this image move on.
-                                if bind_groups.contains_key(id) {
-                                    continue;
-                                }
-
-                                let img = Image::new_from_dynamic(img.clone(), device, queue);
-
-                                // Create the bind
-                                let bind_group = new_diffuse(&device, &img, &atlas_cache_tex, &texture_bind_group_layout);
-                                bind_groups.insert(id.clone(), bind_group);
+                                filter_bind_groups
+                                    .insert(*filter_id, filter_buffer_bind_group);
                             }
-                        })
-                    });
+                        }
 
+                        let WGPUWindow {
+                            ref mesh,
+                            ref carbide_to_wgpu_matrix,
+                            ..
+                        } = self;
 
-                    let commands =
-                        UNIFORM_BIND_GROUP_LAYOUT.with(|uniform_bind_group_layout| {
-                            GRADIENT_BIND_GROUP_LAYOUT.with(|gradient_bind_group_layout| {
-                                create_render_pass_commands(
-                                    bind_groups,
-                                    &mut uniform_bind_groups,
-                                    mesh,
-                                    device,
-                                    uniform_bind_group_layout,
-                                    gradient_bind_group_layout,
-                                    *carbide_to_wgpu_matrix,
-                                )
+                        // Ensure the images are added as bind groups
+                        ATLAS_CACHE_TEXTURE.with(|atlas_cache_tex| {
+                            MAIN_TEXTURE_BIND_GROUP_LAYOUT.with(|texture_bind_group_layout| {
+                                bind_groups.retain(|k, _| env.image_map.contains_key(k));
+
+                                for (id, img) in env.image_map.iter() {
+                                    // If we already have a bind group for this image move on.
+                                    if bind_groups.contains_key(id) {
+                                        continue;
+                                    }
+
+                                    let img = Image::new_from_dynamic(img.clone(), device, queue);
+
+                                    // Create the bind
+                                    let bind_group = new_diffuse(&device, &img, &atlas_cache_tex, &texture_bind_group_layout);
+                                    bind_groups.insert(id.clone(), bind_group);
+                                }
                             })
                         });
 
-                    let vertices: Vec<Vertex> = self
-                        .mesh
-                        .vertices()
-                        .iter()
-                        .map(|v| Vertex::from(*v))
-                        .collect::<Vec<_>>();
 
-                    if vertices.len() <= self.vertex_buffer.1 {
-                        // There is space in the current vertex buffer
-                        queue
-                            .write_buffer(&self.vertex_buffer.0, 0, bytemuck::cast_slice(&vertices));
-                    } else {
-                        // We need to create a new and larger vertex buffer
-                        let new_vertex_buffer = device.create_buffer_init(&BufferInitDescriptor {
-                            label: Some("Vertex Buffer"),
-                            contents: bytemuck::cast_slice(&vertices),
-                            usage: BufferUsages::VERTEX | BufferUsages::COPY_DST,
-                        });
-                        self.vertex_buffer = (new_vertex_buffer, vertices.len());
-                    }
+                        let commands =
+                            UNIFORM_BIND_GROUP_LAYOUT.with(|uniform_bind_group_layout| {
+                                GRADIENT_BIND_GROUP_LAYOUT.with(|gradient_bind_group_layout| {
+                                    create_render_pass_commands(
+                                        bind_groups,
+                                        &mut uniform_bind_groups,
+                                        mesh,
+                                        device,
+                                        uniform_bind_group_layout,
+                                        gradient_bind_group_layout,
+                                        *carbide_to_wgpu_matrix,
+                                    )
+                                })
+                            });
 
-                    let instance_range = 0..1;
-                    let mut stencil_level = 0;
-                    let mut first_pass = true;
+                        let vertices: Vec<Vertex> = self
+                            .mesh
+                            .vertices()
+                            .iter()
+                            .map(|v| Vertex::from(*v))
+                            .collect::<Vec<_>>();
 
-                    let mut current_main_render_pipeline = &self.render_pipelines.render_pipeline_no_mask;
-                    let current_vertex_buffer_slice = self.vertex_buffer.0.slice(..);
-                    let mut current_uniform_bind_group = &self.uniform_bind_group;
+                        if vertices.len() <= self.vertex_buffer.1 {
+                            // There is space in the current vertex buffer
+                            queue
+                                .write_buffer(&self.vertex_buffer.0, 0, bytemuck::cast_slice(&vertices));
+                        } else {
+                            // We need to create a new and larger vertex buffer
+                            let new_vertex_buffer = device.create_buffer_init(&BufferInitDescriptor {
+                                label: Some("Vertex Buffer"),
+                                contents: bytemuck::cast_slice(&vertices),
+                                usage: BufferUsages::VERTEX | BufferUsages::COPY_DST,
+                            });
+                            self.vertex_buffer = (new_vertex_buffer, vertices.len());
+                        }
 
-                    for command in commands {
-                        match command {
-                            RenderPass::Normal(inner) => {
-                                if inner.len() == 0 {
-                                    continue;
-                                }
-                                let (color_op, stencil_op) = if first_pass {
-                                    first_pass = false;
-                                    render_pass_ops(RenderPassOps::Start)
-                                } else {
-                                    render_pass_ops(RenderPassOps::Middle)
-                                };
-                                let mut render_pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
-                                    label: None,
-                                    color_attachments: &[wgpu::RenderPassColorAttachment {
-                                        view: &self.main_tex_view, // Here is the render target
-                                        resolve_target: None,
-                                        ops: color_op,
-                                    }],
-                                    depth_stencil_attachment: Some(RenderPassDepthStencilAttachment {
-                                        view: &self.depth_texture_view,
-                                        depth_ops: None,
-                                        stencil_ops: Some(stencil_op),
-                                    }),
-                                });
+                        let instance_range = 0..1;
+                        let mut stencil_level = 0;
+                        let mut first_pass = true;
 
-                                render_pass.set_stencil_reference(stencil_level);
-                                render_pass.set_pipeline(current_main_render_pipeline);
-                                render_pass.set_vertex_buffer(0, current_vertex_buffer_slice);
-                                render_pass.set_bind_group(1, current_uniform_bind_group, &[]);
+                        let mut current_main_render_pipeline = &render_pipelines.render_pipeline_no_mask;
+                        let current_vertex_buffer_slice = self.vertex_buffer.0.slice(..);
+                        let mut current_uniform_bind_group = &self.uniform_bind_group;
 
-                                for inner_command in inner {
-                                    match inner_command {
-                                        RenderPassCommand::SetBindGroup { bind_group } => {
-                                            render_pass.set_bind_group(0, bind_group, &[]);
-                                        }
-                                        RenderPassCommand::SetScissor {
-                                            top_left,
-                                            dimensions,
-                                        } => {
-                                            let [x, y] = top_left;
-                                            let [w, h] = dimensions;
-                                            render_pass.set_scissor_rect(x, y, w, h);
-                                        }
-                                        RenderPassCommand::Draw { vertex_range } => {
-                                            render_pass.draw(vertex_range, instance_range.clone());
-                                        }
-                                        RenderPassCommand::Stencil { vertex_range } => {
-                                            stencil_level += 1;
-                                            render_pass.set_pipeline(&self.render_pipelines.render_pipeline_add_mask);
-                                            render_pass.draw(vertex_range, instance_range.clone());
-                                            current_main_render_pipeline = &self.render_pipelines.render_pipeline_in_mask;
-                                            render_pass.set_pipeline(current_main_render_pipeline);
-                                            render_pass.set_stencil_reference(stencil_level);
-                                        }
-                                        RenderPassCommand::DeStencil { vertex_range } => {
-                                            stencil_level -= 1;
-                                            render_pass.set_pipeline(&self.render_pipelines.render_pipeline_remove_mask);
-                                            render_pass.draw(vertex_range, instance_range.clone());
-                                            render_pass.set_stencil_reference(stencil_level);
-                                            if stencil_level == 0 {
-                                                current_main_render_pipeline = &self.render_pipelines.render_pipeline_no_mask;
-                                                render_pass.set_pipeline(current_main_render_pipeline);
-                                            } else {
-                                                current_main_render_pipeline = &self.render_pipelines.render_pipeline_in_mask;
-                                                render_pass.set_pipeline(current_main_render_pipeline);
+                        for command in commands {
+                            match command {
+                                RenderPass::Normal(inner) => {
+                                    if inner.len() == 0 {
+                                        continue;
+                                    }
+                                    let (color_op, stencil_op) = if first_pass {
+                                        first_pass = false;
+                                        render_pass_ops(RenderPassOps::Start)
+                                    } else {
+                                        render_pass_ops(RenderPassOps::Middle)
+                                    };
+                                    let mut render_pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
+                                        label: None,
+                                        color_attachments: &[wgpu::RenderPassColorAttachment {
+                                            view: &self.main_tex_view, // Here is the render target
+                                            resolve_target: None,
+                                            ops: color_op,
+                                        }],
+                                        depth_stencil_attachment: Some(RenderPassDepthStencilAttachment {
+                                            view: &self.depth_texture_view,
+                                            depth_ops: None,
+                                            stencil_ops: Some(stencil_op),
+                                        }),
+                                    });
+
+                                    render_pass.set_stencil_reference(stencil_level);
+                                    render_pass.set_pipeline(current_main_render_pipeline);
+                                    render_pass.set_vertex_buffer(0, current_vertex_buffer_slice);
+                                    render_pass.set_bind_group(1, current_uniform_bind_group, &[]);
+
+                                    for inner_command in inner {
+                                        match inner_command {
+                                            RenderPassCommand::SetBindGroup { bind_group } => {
+                                                render_pass.set_bind_group(0, bind_group, &[]);
                                             }
-                                        }
-                                        RenderPassCommand::Transform {
-                                            uniform_bind_group_index,
-                                        } => {
-                                            current_uniform_bind_group =
-                                                &uniform_bind_groups[uniform_bind_group_index];
-                                            render_pass.set_bind_group(1, current_uniform_bind_group, &[]);
+                                            RenderPassCommand::SetScissor {
+                                                top_left,
+                                                dimensions,
+                                            } => {
+                                                let [x, y] = top_left;
+                                                let [w, h] = dimensions;
+                                                render_pass.set_scissor_rect(x, y, w, h);
+                                            }
+                                            RenderPassCommand::Draw { vertex_range } => {
+                                                render_pass.draw(vertex_range, instance_range.clone());
+                                            }
+                                            RenderPassCommand::Stencil { vertex_range } => {
+                                                stencil_level += 1;
+                                                render_pass.set_pipeline(&render_pipelines.render_pipeline_add_mask);
+                                                render_pass.draw(vertex_range, instance_range.clone());
+                                                current_main_render_pipeline = &render_pipelines.render_pipeline_in_mask;
+                                                render_pass.set_pipeline(current_main_render_pipeline);
+                                                render_pass.set_stencil_reference(stencil_level);
+                                            }
+                                            RenderPassCommand::DeStencil { vertex_range } => {
+                                                stencil_level -= 1;
+                                                render_pass.set_pipeline(&render_pipelines.render_pipeline_remove_mask);
+                                                render_pass.draw(vertex_range, instance_range.clone());
+                                                render_pass.set_stencil_reference(stencil_level);
+                                                if stencil_level == 0 {
+                                                    current_main_render_pipeline = &render_pipelines.render_pipeline_no_mask;
+                                                    render_pass.set_pipeline(current_main_render_pipeline);
+                                                } else {
+                                                    current_main_render_pipeline = &render_pipelines.render_pipeline_in_mask;
+                                                    render_pass.set_pipeline(current_main_render_pipeline);
+                                                }
+                                            }
+                                            RenderPassCommand::Transform {
+                                                uniform_bind_group_index,
+                                            } => {
+                                                current_uniform_bind_group =
+                                                    &uniform_bind_groups[uniform_bind_group_index];
+                                                render_pass.set_bind_group(1, current_uniform_bind_group, &[]);
+                                            }
                                         }
                                     }
                                 }
-                            }
-                            RenderPass::Gradient(vertex_range, bind_group_index) => {
-                                let (color_op, stencil_op) = render_pass_ops(RenderPassOps::Middle);
-                                let mut render_pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
-                                    label: None,
-                                    color_attachments: &[wgpu::RenderPassColorAttachment {
-                                        view: &self.main_tex_view, // Here is the render target
-                                        resolve_target: None,
-                                        ops: color_op,
-                                    }],
-                                    depth_stencil_attachment: Some(RenderPassDepthStencilAttachment {
-                                        view: &self.depth_texture_view,
-                                        depth_ops: None,
-                                        stencil_ops: Some(stencil_op),
-                                    }),
-                                });
+                                RenderPass::Gradient(vertex_range, bind_group_index) => {
+                                    let (color_op, stencil_op) = render_pass_ops(RenderPassOps::Middle);
+                                    let mut render_pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
+                                        label: None,
+                                        color_attachments: &[wgpu::RenderPassColorAttachment {
+                                            view: &self.main_tex_view, // Here is the render target
+                                            resolve_target: None,
+                                            ops: color_op,
+                                        }],
+                                        depth_stencil_attachment: Some(RenderPassDepthStencilAttachment {
+                                            view: &self.depth_texture_view,
+                                            depth_ops: None,
+                                            stencil_ops: Some(stencil_op),
+                                        }),
+                                    });
 
-                                render_pass.set_pipeline(&self.render_pipelines.render_pipeline_in_mask_gradient);
-                                render_pass.set_stencil_reference(stencil_level);
-                                render_pass.set_vertex_buffer(0, current_vertex_buffer_slice);
-                                render_pass.set_bind_group(0, &uniform_bind_groups[bind_group_index], &[]);
-                                render_pass.set_bind_group(1, current_uniform_bind_group, &[]);
-                                render_pass.draw(vertex_range, instance_range.clone());
-                            }
-                            RenderPass::Filter(vertex_range, bind_group_index) => {
-                                encoder.copy_texture_to_texture(
-                                    ImageCopyTexture {
-                                        texture: &self.main_tex,
-                                        mip_level: 0,
-                                        origin: Default::default(),
-                                        aspect: Default::default(),
-                                    },
-                                    ImageCopyTexture {
-                                        texture: &self.secondary_tex,
-                                        mip_level: 0,
-                                        origin: Default::default(),
-                                        aspect: Default::default(),
-                                    },
-                                    Extent3d {
-                                        width: size.width,
-                                        height: size.height,
-                                        depth_or_array_layers: 1,
-                                    },
-                                );
+                                    render_pass.set_pipeline(&render_pipelines.render_pipeline_in_mask_gradient);
+                                    render_pass.set_stencil_reference(stencil_level);
+                                    render_pass.set_vertex_buffer(0, current_vertex_buffer_slice);
+                                    render_pass.set_bind_group(0, &uniform_bind_groups[bind_group_index], &[]);
+                                    render_pass.set_bind_group(1, current_uniform_bind_group, &[]);
+                                    render_pass.draw(vertex_range, instance_range.clone());
+                                }
+                                RenderPass::Filter(vertex_range, bind_group_index) => {
+                                    encoder.copy_texture_to_texture(
+                                        ImageCopyTexture {
+                                            texture: &self.main_tex,
+                                            mip_level: 0,
+                                            origin: Default::default(),
+                                            aspect: Default::default(),
+                                        },
+                                        ImageCopyTexture {
+                                            texture: &self.secondary_tex,
+                                            mip_level: 0,
+                                            origin: Default::default(),
+                                            aspect: Default::default(),
+                                        },
+                                        Extent3d {
+                                            width: size.width,
+                                            height: size.height,
+                                            depth_or_array_layers: 1,
+                                        },
+                                    );
 
-                                let (color_op, stencil_op) = render_pass_ops(RenderPassOps::Middle);
-                                let mut render_pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
-                                    label: None,
-                                    color_attachments: &[wgpu::RenderPassColorAttachment {
-                                        view: &self.main_tex_view, // Here is the render target
-                                        resolve_target: None,
-                                        ops: color_op,
-                                    }],
-                                    depth_stencil_attachment: Some(RenderPassDepthStencilAttachment {
-                                        view: &self.depth_texture_view,
-                                        depth_ops: None,
-                                        stencil_ops: Some(stencil_op),
-                                    }),
-                                });
-                                render_pass.set_pipeline(&self.render_pipelines.render_pipeline_in_mask_filter);
-                                render_pass.set_stencil_reference(stencil_level);
-                                render_pass.set_vertex_buffer(0, current_vertex_buffer_slice);
-                                render_pass.set_bind_group(0, &self.filter_secondary_texture_bind_group, &[]);
-                                render_pass.set_bind_group(
-                                    1,
-                                    &filter_bind_groups
-                                        .get(&bind_group_index)
-                                        .unwrap(),
-                                    &[],
-                                );
-                                render_pass.set_bind_group(2, current_uniform_bind_group, &[]);
-                                render_pass.set_bind_group(3, &self.texture_size_bind_group, &[]);
-                                render_pass.draw(vertex_range, instance_range.clone());
-                            }
-                            RenderPass::FilterSplitPt1(vertex_range, filter_id) => {
-                                let (color_op, stencil_op) = render_pass_ops(RenderPassOps::Middle);
-                                let mut render_pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
-                                    label: None,
-                                    color_attachments: &[wgpu::RenderPassColorAttachment {
-                                        view: &self.secondary_tex_view, // Here is the render target
-                                        resolve_target: None,
-                                        ops: color_op,
-                                    }],
-                                    depth_stencil_attachment: Some(RenderPassDepthStencilAttachment {
-                                        view: &self.depth_texture_view,
-                                        depth_ops: None,
-                                        stencil_ops: Some(stencil_op),
-                                    }),
-                                });
-                                render_pass.set_pipeline(&self.render_pipelines.render_pipeline_no_mask_filter);
-                                render_pass.set_vertex_buffer(0, current_vertex_buffer_slice);
-                                render_pass.set_bind_group(0, &self.filter_main_texture_bind_group, &[]);
-                                render_pass.set_bind_group(
-                                    1,
-                                    &filter_bind_groups.get(&filter_id).unwrap(),
-                                    &[],
-                                );
-                                render_pass.set_bind_group(2, current_uniform_bind_group, &[]);
-                                render_pass.set_bind_group(3, &self.texture_size_bind_group, &[]);
-                                render_pass.draw(vertex_range, instance_range.clone());
-                            }
-                            RenderPass::FilterSplitPt2(vertex_range, filter_id) => {
-                                let (color_op, stencil_op) = render_pass_ops(RenderPassOps::Middle);
-                                let mut render_pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
-                                    label: None,
-                                    color_attachments: &[wgpu::RenderPassColorAttachment {
-                                        view: &self.main_tex_view, // Here is the render target
-                                        resolve_target: None,
-                                        ops: color_op,
-                                    }],
-                                    depth_stencil_attachment: Some(RenderPassDepthStencilAttachment {
-                                        view: &self.depth_texture_view,
-                                        depth_ops: None,
-                                        stencil_ops: Some(stencil_op),
-                                    }),
-                                });
-                                render_pass.set_pipeline(&self.render_pipelines.render_pipeline_in_mask_filter);
-                                render_pass.set_stencil_reference(stencil_level);
-                                render_pass.set_vertex_buffer(0, current_vertex_buffer_slice);
-                                render_pass.set_bind_group(0, &self.filter_secondary_texture_bind_group, &[]);
-                                render_pass.set_bind_group(
-                                    1,
-                                    &filter_bind_groups.get(&filter_id).unwrap(),
-                                    &[],
-                                );
-                                render_pass.set_bind_group(2, current_uniform_bind_group, &[]);
-                                render_pass.set_bind_group(3, &self.texture_size_bind_group, &[]);
-                                render_pass.draw(vertex_range, instance_range.clone());
-                            }
-                        };
-                    }
+                                    let (color_op, stencil_op) = render_pass_ops(RenderPassOps::Middle);
+                                    let mut render_pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
+                                        label: None,
+                                        color_attachments: &[wgpu::RenderPassColorAttachment {
+                                            view: &self.main_tex_view, // Here is the render target
+                                            resolve_target: None,
+                                            ops: color_op,
+                                        }],
+                                        depth_stencil_attachment: Some(RenderPassDepthStencilAttachment {
+                                            view: &self.depth_texture_view,
+                                            depth_ops: None,
+                                            stencil_ops: Some(stencil_op),
+                                        }),
+                                    });
+                                    render_pass.set_pipeline(&render_pipelines.render_pipeline_in_mask_filter);
+                                    render_pass.set_stencil_reference(stencil_level);
+                                    render_pass.set_vertex_buffer(0, current_vertex_buffer_slice);
+                                    render_pass.set_bind_group(0, &self.filter_secondary_texture_bind_group, &[]);
+                                    render_pass.set_bind_group(
+                                        1,
+                                        &filter_bind_groups
+                                            .get(&bind_group_index)
+                                            .unwrap(),
+                                        &[],
+                                    );
+                                    render_pass.set_bind_group(2, current_uniform_bind_group, &[]);
+                                    render_pass.set_bind_group(3, &self.texture_size_bind_group, &[]);
+                                    render_pass.draw(vertex_range, instance_range.clone());
+                                }
+                                RenderPass::FilterSplitPt1(vertex_range, filter_id) => {
+                                    let (color_op, stencil_op) = render_pass_ops(RenderPassOps::Middle);
+                                    let mut render_pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
+                                        label: None,
+                                        color_attachments: &[wgpu::RenderPassColorAttachment {
+                                            view: &self.secondary_tex_view, // Here is the render target
+                                            resolve_target: None,
+                                            ops: color_op,
+                                        }],
+                                        depth_stencil_attachment: Some(RenderPassDepthStencilAttachment {
+                                            view: &self.depth_texture_view,
+                                            depth_ops: None,
+                                            stencil_ops: Some(stencil_op),
+                                        }),
+                                    });
+                                    render_pass.set_pipeline(&render_pipelines.render_pipeline_no_mask_filter);
+                                    render_pass.set_vertex_buffer(0, current_vertex_buffer_slice);
+                                    render_pass.set_bind_group(0, &self.filter_main_texture_bind_group, &[]);
+                                    render_pass.set_bind_group(
+                                        1,
+                                        &filter_bind_groups.get(&filter_id).unwrap(),
+                                        &[],
+                                    );
+                                    render_pass.set_bind_group(2, current_uniform_bind_group, &[]);
+                                    render_pass.set_bind_group(3, &self.texture_size_bind_group, &[]);
+                                    render_pass.draw(vertex_range, instance_range.clone());
+                                }
+                                RenderPass::FilterSplitPt2(vertex_range, filter_id) => {
+                                    let (color_op, stencil_op) = render_pass_ops(RenderPassOps::Middle);
+                                    let mut render_pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
+                                        label: None,
+                                        color_attachments: &[wgpu::RenderPassColorAttachment {
+                                            view: &self.main_tex_view, // Here is the render target
+                                            resolve_target: None,
+                                            ops: color_op,
+                                        }],
+                                        depth_stencil_attachment: Some(RenderPassDepthStencilAttachment {
+                                            view: &self.depth_texture_view,
+                                            depth_ops: None,
+                                            stencil_ops: Some(stencil_op),
+                                        }),
+                                    });
+                                    render_pass.set_pipeline(&render_pipelines.render_pipeline_in_mask_filter);
+                                    render_pass.set_stencil_reference(stencil_level);
+                                    render_pass.set_vertex_buffer(0, current_vertex_buffer_slice);
+                                    render_pass.set_bind_group(0, &self.filter_secondary_texture_bind_group, &[]);
+                                    render_pass.set_bind_group(
+                                        1,
+                                        &filter_bind_groups.get(&filter_id).unwrap(),
+                                        &[],
+                                    );
+                                    render_pass.set_bind_group(2, current_uniform_bind_group, &[]);
+                                    render_pass.set_bind_group(3, &self.texture_size_bind_group, &[]);
+                                    render_pass.draw(vertex_range, instance_range.clone());
+                                }
+                            };
+                        }
 
-                    // Render from the texture to the swap chain
-                    let (color_op, stencil_op) = render_pass_ops(RenderPassOps::Middle);
+                        // Render from the texture to the swap chain
+                        let (color_op, stencil_op) = render_pass_ops(RenderPassOps::Middle);
 
-                    // This blocks until a new frame is available.
-                    let output = self.surface.get_current_texture()?;
-                    let frame_view = output.texture.create_view(&Default::default());
+                        // This blocks until a new frame is available.
+                        let output = self.surface.get_current_texture()?;
+                        let frame_view = output.texture.create_view(&Default::default());
 
-                    let mut render_pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
-                        label: None,
-                        color_attachments: &[wgpu::RenderPassColorAttachment {
-                            view: &frame_view, // Here is the render target
-                            resolve_target: None,
-                            ops: color_op,
-                        }],
-                        depth_stencil_attachment: Some(RenderPassDepthStencilAttachment {
-                            view: &self.depth_texture_view,
-                            depth_ops: None,
-                            stencil_ops: Some(stencil_op),
-                        }),
-                    });
+                        let mut render_pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
+                            label: None,
+                            color_attachments: &[wgpu::RenderPassColorAttachment {
+                                view: &frame_view, // Here is the render target
+                                resolve_target: None,
+                                ops: color_op,
+                            }],
+                            depth_stencil_attachment: Some(RenderPassDepthStencilAttachment {
+                                view: &self.depth_texture_view,
+                                depth_ops: None,
+                                stencil_ops: Some(stencil_op),
+                            }),
+                        });
 
-                    render_pass.set_pipeline(&self.render_pipelines.render_pipeline_no_mask);
-                    render_pass.set_vertex_buffer(0, self.second_vertex_buffer.slice(..));
-                    render_pass.set_bind_group(0, &self.main_bind_group, &[]);
-                    render_pass.set_bind_group(1, &self.uniform_bind_group, &[]);
-                    render_pass.draw(0..6, instance_range);
+                        render_pass.set_pipeline(&render_pipelines.render_pipeline_no_mask);
+                        render_pass.set_vertex_buffer(0, self.second_vertex_buffer.slice(..));
+                        render_pass.set_bind_group(0, &self.main_bind_group, &[]);
+                        render_pass.set_bind_group(1, &self.uniform_bind_group, &[]);
+                        render_pass.draw(0..6, instance_range);
 
-                    drop(render_pass);
+                        drop(render_pass);
 
-                    // submit will accept anything that implements IntoIter
-                    queue.submit(std::iter::once(encoder.finish()));
-                    output.present();
-                    Ok(())
+                        // submit will accept anything that implements IntoIter
+                        queue.submit(std::iter::once(encoder.finish()));
+                        output.present();
+                        Ok(())
+                    })
                 })
             })
         })
@@ -1333,49 +1215,10 @@ impl WGPUWindow {
 
             self.uniform_bind_group = uniform_bind_group;
 
-            let last_verts: Vec<Vertex> = vec![
-                Vertex::new_from_2d(0.0, 0.0, [0.0, 0.0, 0.0, 0.0], [0.0, 0.0], MODE_IMAGE),
-                Vertex::new_from_2d(
-                    size.width as f32 / scale_factor as f32,
-                    0.0,
-                    [0.0, 0.0, 0.0, 0.0],
-                    [1.0, 0.0],
-                    MODE_IMAGE,
-                ),
-                Vertex::new_from_2d(
-                    0.0,
-                    size.height as f32 / scale_factor as f32,
-                    [0.0, 0.0, 0.0, 0.0],
-                    [0.0, 1.0],
-                    MODE_IMAGE,
-                ),
-                Vertex::new_from_2d(
-                    size.width as f32 / scale_factor as f32,
-                    0.0,
-                    [0.0, 0.0, 0.0, 0.0],
-                    [1.0, 0.0],
-                    MODE_IMAGE,
-                ),
-                Vertex::new_from_2d(
-                    size.width as f32 / scale_factor as f32,
-                    size.height as f32 / scale_factor as f32,
-                    [0.0, 0.0, 0.0, 0.0],
-                    [1.0, 1.0],
-                    MODE_IMAGE,
-                ),
-                Vertex::new_from_2d(
-                    0.0,
-                    size.height as f32 / scale_factor as f32,
-                    [0.0, 0.0, 0.0, 0.0],
-                    [0.0, 1.0],
-                    MODE_IMAGE,
-                ),
-            ];
-
             queue.write_buffer(
                 &self.second_vertex_buffer,
                 0,
-                bytemuck::cast_slice(&last_verts),
+                bytemuck::cast_slice(&Vertex::rect(size, scale_factor)),
             );
 
             self.surface.configure(
@@ -1388,8 +1231,6 @@ impl WGPUWindow {
                     present_mode: PresentMode::Mailbox,
                 },
             );
-
-            println!("Resized window: {:?} to: {:?}", self.window_id, new_size);
         })
     }
 }

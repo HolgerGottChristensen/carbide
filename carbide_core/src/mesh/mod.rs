@@ -7,6 +7,7 @@ mod atlas;
 pub mod mesh;
 pub mod pre_multiply;
 pub mod vertex;
+mod draw_command;
 
 /// Draw text from the text cache texture `tex` in the fragment shader.
 pub const MODE_TEXT: u32 = 0;
