@@ -25,6 +25,7 @@ use crate::mesh::{
     DEFAULT_GLYPH_CACHE_DIMS, GLYPH_CACHE_POSITION_TOLERANCE, GLYPH_CACHE_SCALE_TOLERANCE,
     MODE_GEOMETRY, MODE_TEXT, MODE_TEXT_COLOR,
 };
+use crate::mesh::draw_command::DrawCommand;
 use crate::render::{Primitive, PrimitiveKind, PrimitiveWalker};
 use crate::widget::FilterId;
 
@@ -33,9 +34,7 @@ use crate::widget::FilterId;
 /// This is a convenience type for simplifying backend implementations.
 #[derive(Debug)]
 pub struct Mesh {
-    texture_atlas: TextureAtlas,
-    texture_atlas_image: DynamicImage,
-    commands: Vec<PreparedCommand>,
+    commands: Vec<DrawCommand>,
     vertices: Vec<Vertex>,
 }
 
@@ -63,11 +62,6 @@ pub enum Command {
     FilterSplitPt2(std::ops::Range<usize>, FilterId),
 }
 
-/// An iterator yielding `Command`s, produced by the `Renderer::commands` method.
-pub struct Commands<'a> {
-    commands: std::slice::Iter<'a, PreparedCommand>,
-}
-
 /// A `Command` for drawing to the target.
 ///
 /// Each variant describes how to draw the contents of the vertex buffer.
@@ -80,18 +74,6 @@ pub enum Draw {
     Plain(std::ops::Range<usize>),
     /// A range of vertices that should be drawn as a gradient
     Gradient(std::ops::Range<usize>, DrawGradient),
-}
-
-/// The result of filling the mesh.
-///
-/// Provides information on whether or not the glyph cache has been updated and requires
-/// re-uploading to the GPU.
-#[allow(missing_copy_implementations)]
-pub struct Fill {
-    /// Whether or not the glyph cache pixel data should be written to the GPU.
-    pub glyph_cache_requires_upload: bool,
-    /// Whether or not the atlas pixel data should be written to the GPU.
-    pub atlas_requires_upload: bool,
 }
 
 #[derive(Debug)]
@@ -109,22 +91,19 @@ pub enum PreparedCommand {
 }
 
 impl Mesh {
-    /// Construct a new empty `Mesh` with default glyph cache dimensions.
     pub fn new() -> Self {
-        Self::with_glyph_cache_dimensions(DEFAULT_GLYPH_CACHE_DIMS)
+        Mesh {
+            commands: vec![],
+            vertices: vec![],
+        }
     }
 
-    /// Construct a `Mesh` with the given glyph cache dimensions.
-    pub fn with_glyph_cache_dimensions(glyph_cache_dims: [u32; 2]) -> Self {
-        let commands = vec![];
-        let vertices = vec![];
+    pub fn commands(&self) -> &[DrawCommand] {
+        &self.commands
+    }
 
-        Mesh {
-            texture_atlas: TextureAtlas::new(512, 512),
-            texture_atlas_image: DynamicImage::new_rgba8(512, 512),
-            commands,
-            vertices,
-        }
+    pub fn vertices(&self) -> &[Vertex] {
+        &self.vertices
     }
 
     /// Fill the inner vertex buffer from the given primitives.
@@ -140,32 +119,16 @@ impl Mesh {
         viewport: Rect,
         env: &mut Environment,
         primitives: Vec<Primitive>,
-    ) -> Fill {
+    ) {
         let scale_factor = env.scale_factor();
 
         let Mesh {
             ref mut commands,
             ref mut vertices,
-            ref mut texture_atlas_image,
-            ..
         } = *self;
 
         commands.clear();
         vertices.clear();
-
-        // Keep track of whether or not the glyph cache texture needs to be updated.
-        let glyph_cache_requires_upload = false;
-        let mut atlas_requires_upload = false;
-
-        let texture_atlas = env.get_font_atlas_mut();
-        texture_atlas.cache_queued(|x, y, image_data| {
-            //println!("Insert the image at: {}, {} with size {}, {}", x, y, image_data.width(), image_data.height());
-            for (ix, iy, pixel) in image_data.pixels() {
-                texture_atlas_image.put_pixel(x + ix, y + iy, pixel);
-            }
-
-            atlas_requires_upload = true;
-        });
 
         enum State {
             Image { image_id: ImageId, start: usize },
@@ -174,78 +137,27 @@ impl Mesh {
 
         let mut current_state = State::Plain { start: 0 };
 
-
-        let rect_to_scissor = |rect: Rect| {
-            // We need to restrict the scissor x and y to [0, ~].
-            // This means we might need to subtract from the width and height.
-
-            let mut x = rect.position.x;
-            let mut y = rect.position.y;
-            let mut width = rect.dimension.width;
-            let mut height = rect.dimension.height;
-
-            // Make the x in range
-            if x < 0.0 {
-                width -= x;
-                x = 0.0;
-            }
-
-            // Make the y in range
-            if y < 0.0 {
-                height -= y;
-                y = 0.0;
-            }
-
-            // Make the width in range
-            if x + width > viewport.width() {
-                width = viewport.width() - x
-            }
-
-            // Make the height in range
-            if y + height > viewport.height() {
-                height = viewport.height() - y
-            }
-
-            Scissor {
-                top_left: [x as i32, y as i32],
-                dimensions: [width as u32, height as u32],
-            }
-        };
-
         // Keep track of the scissor as it changes.
-        let mut scissor_stack = vec![rect_to_scissor(viewport)];
+        let mut scissor_stack = vec![viewport];
         let mut stencil_stack = vec![];
         let mut transform_stack = vec![Matrix4::identity()];
 
-        commands.push(PreparedCommand::Scissor(*scissor_stack.first().unwrap()));
-
-        // Switches to the `Plain` state and completes the previous `Command` if not already in the
-        // `Plain` state.
-        macro_rules! switch_to_plain_state {
-            () => {
-                match current_state {
-                    State::Plain { .. } => (),
-                    State::Image { image_id, start } => {
-                        commands.push(PreparedCommand::Image(image_id, start..vertices.len()));
-                        current_state = State::Plain {
-                            start: vertices.len(),
-                        };
-                    }
-                }
-            };
-        }
+        commands.push(DrawCommand::Scissor(scissor_stack[0]));
 
         // Draw each primitive in order of depth.
         for primitive in primitives {
             let rectangle = primitive.bounding_box;
             match primitive.kind {
                 PrimitiveKind::Stencil(triangles) => {
+                    if triangles.len() == 0 {
+                        continue;
+                    }
                     match &current_state {
                         State::Plain { start } => {
-                            commands.push(PreparedCommand::Plain(*start..vertices.len()))
+                            commands.push(DrawCommand::Geometry(*start..vertices.len()))
                         }
                         State::Image { image_id, start } => {
-                            commands.push(PreparedCommand::Image(image_id.clone(), *start..vertices.len()))
+                            commands.push(DrawCommand::Image(*start..vertices.len(), image_id.clone()))
                         }
                     }
 
@@ -268,7 +180,7 @@ impl Mesh {
 
                     stencil_stack.push(triangles);
 
-                    commands.push(PreparedCommand::Stencil(
+                    commands.push(DrawCommand::Stencil(
                         start_index_for_stencil..vertices.len(),
                     ));
 
@@ -277,16 +189,21 @@ impl Mesh {
                     };
                 }
                 PrimitiveKind::DeStencil => {
-                    match &current_state {
-                        State::Plain { start } => {
-                            commands.push(PreparedCommand::Plain(*start..vertices.len()))
-                        }
-                        State::Image { image_id, start } => {
-                            commands.push(PreparedCommand::Image(image_id.clone(), *start..vertices.len()))
-                        }
-                    }
-
                     if let Some(triangles) = stencil_stack.pop() {
+                        if triangles.len() == 0 {
+                            continue
+                        }
+
+                        match &current_state {
+                            State::Plain { start } => {
+                                commands.push(DrawCommand::Geometry(*start..vertices.len()))
+                            }
+                            State::Image { image_id, start } => {
+                                commands.push(DrawCommand::Image(*start..vertices.len(), image_id.clone()))
+                            }
+                        }
+
+
                         let start_index_for_de_stencil = vertices.len();
 
                         fn position_to_vertex(p: Position) -> Vertex {
@@ -304,7 +221,7 @@ impl Mesh {
                             vertices.push(position_to_vertex(triangle[2]));
                         }
 
-                        commands.push(PreparedCommand::DeStencil(
+                        commands.push(DrawCommand::DeStencil(
                             start_index_for_de_stencil..vertices.len(),
                         ));
                     } else {
@@ -318,10 +235,10 @@ impl Mesh {
                 PrimitiveKind::Filter(filter_id) => {
                     match &current_state {
                         State::Plain { start } => {
-                            commands.push(PreparedCommand::Plain(*start..vertices.len()))
+                            commands.push(DrawCommand::Geometry(*start..vertices.len()))
                         }
                         State::Image { image_id, start } => {
-                            commands.push(PreparedCommand::Image(image_id.clone(), *start..vertices.len()))
+                            commands.push(DrawCommand::Image(*start..vertices.len(), image_id.clone()))
                         }
                     }
 
@@ -350,7 +267,7 @@ impl Mesh {
                     push_v(r, b);
                     push_v(r, t);
 
-                    commands.push(PreparedCommand::Filter(
+                    commands.push(DrawCommand::Filter(
                         start_index_for_filter..vertices.len(),
                         filter_id,
                     ));
@@ -362,10 +279,10 @@ impl Mesh {
                 PrimitiveKind::FilterSplitPt1(filter_id) => {
                     match &current_state {
                         State::Plain { start } => {
-                            commands.push(PreparedCommand::Plain(*start..vertices.len()))
+                            commands.push(DrawCommand::Geometry(*start..vertices.len()))
                         }
                         State::Image { image_id, start } => {
-                            commands.push(PreparedCommand::Image(image_id.clone(), *start..vertices.len()))
+                            commands.push(DrawCommand::Image(*start..vertices.len(), image_id.clone()))
                         }
                     }
 
@@ -394,7 +311,7 @@ impl Mesh {
                     push_v(r, b);
                     push_v(r, t);
 
-                    commands.push(PreparedCommand::FilterSplitPt1(
+                    commands.push(DrawCommand::FilterSplitPt1(
                         start_index_for_filter..vertices.len(),
                         filter_id,
                     ));
@@ -406,10 +323,10 @@ impl Mesh {
                 PrimitiveKind::FilterSplitPt2(filter_id) => {
                     match &current_state {
                         State::Plain { start } => {
-                            commands.push(PreparedCommand::Plain(*start..vertices.len()))
+                            commands.push(DrawCommand::Geometry(*start..vertices.len()))
                         }
                         State::Image { image_id, start } => {
-                            commands.push(PreparedCommand::Image(image_id.clone(), *start..vertices.len()))
+                            commands.push(DrawCommand::Image(*start..vertices.len(), image_id.clone()))
                         }
                     }
 
@@ -438,7 +355,7 @@ impl Mesh {
                     push_v(r, b);
                     push_v(r, t);
 
-                    commands.push(PreparedCommand::FilterSplitPt2(
+                    commands.push(DrawCommand::FilterSplitPt2(
                         start_index_for_filter..vertices.len(),
                         filter_id,
                     ));
@@ -450,10 +367,10 @@ impl Mesh {
                 PrimitiveKind::Transform(matrix, alignment) => {
                     match &current_state {
                         State::Plain { start } => {
-                            commands.push(PreparedCommand::Plain(*start..vertices.len()))
+                            commands.push(DrawCommand::Geometry(*start..vertices.len()))
                         }
                         State::Image { image_id, start } => {
-                            commands.push(PreparedCommand::Image(image_id.clone(), *start..vertices.len()))
+                            commands.push(DrawCommand::Image(*start..vertices.len(), image_id.clone()))
                         }
                     }
 
@@ -548,7 +465,7 @@ impl Mesh {
 
                     transform_stack.push(new_transform);
 
-                    commands.push(PreparedCommand::Transform(new_transform));
+                    commands.push(DrawCommand::Transform(new_transform));
 
                     current_state = State::Plain {
                         start: vertices.len(),
@@ -557,15 +474,15 @@ impl Mesh {
                 PrimitiveKind::DeTransform => {
                     match &current_state {
                         State::Plain { start } => {
-                            commands.push(PreparedCommand::Plain(*start..vertices.len()))
+                            commands.push(DrawCommand::Geometry(*start..vertices.len()))
                         }
                         State::Image { image_id, start } => {
-                            commands.push(PreparedCommand::Image(image_id.clone(), *start..vertices.len()))
+                            commands.push(DrawCommand::Image(*start..vertices.len(), image_id.clone()))
                         }
                     }
 
                     transform_stack.pop();
-                    commands.push(PreparedCommand::Transform(
+                    commands.push(DrawCommand::Transform(
                         *&transform_stack[transform_stack.len() - 1],
                     ));
 
@@ -576,10 +493,10 @@ impl Mesh {
                 PrimitiveKind::Clip => {
                     match &current_state {
                         State::Plain { start } => {
-                            commands.push(PreparedCommand::Plain(*start..vertices.len()))
+                            commands.push(DrawCommand::Geometry(*start..vertices.len()))
                         }
                         State::Image { image_id, start } => {
-                            commands.push(PreparedCommand::Image(image_id.clone(), *start..vertices.len()))
+                            commands.push(DrawCommand::Image(*start..vertices.len(), image_id.clone()))
                         }
                     }
 
@@ -590,11 +507,12 @@ impl Mesh {
                     t *= scale_factor;
                     b *= scale_factor;
 
-                    let new_rect = Rect::from_corners(Position::new(r, b), Position::new(l, t));
+                    let new_rect = Rect::from_corners(Position::new(r, b), Position::new(l, t))
+                        .within_bounding_box(&viewport);
 
-                    commands.push(PreparedCommand::Scissor(rect_to_scissor(new_rect)));
+                    commands.push(DrawCommand::Scissor(new_rect));
 
-                    scissor_stack.push(rect_to_scissor(new_rect));
+                    scissor_stack.push(new_rect);
 
                     current_state = State::Plain {
                         start: vertices.len(),
@@ -603,10 +521,10 @@ impl Mesh {
                 PrimitiveKind::UnClip => {
                     match &current_state {
                         State::Plain { start } => {
-                            commands.push(PreparedCommand::Plain(*start..vertices.len()))
+                            commands.push(DrawCommand::Geometry(*start..vertices.len()))
                         }
                         State::Image { image_id, start } => {
-                            commands.push(PreparedCommand::Image(image_id.clone(), *start..vertices.len()))
+                            commands.push(DrawCommand::Image(*start..vertices.len(), image_id.clone()))
                         }
                     }
 
@@ -617,14 +535,22 @@ impl Mesh {
                         None => panic!("Trying to pop scizzor, when there is none on the stack"),
                     };
 
-                    commands.push(PreparedCommand::Scissor(*new_scizzor));
+                    commands.push(DrawCommand::Scissor(*new_scizzor));
 
                     current_state = State::Plain {
                         start: vertices.len(),
                     };
                 }
                 PrimitiveKind::RectanglePrim { color } => {
-                    switch_to_plain_state!();
+                    match current_state {
+                        State::Plain { .. } => (),
+                        State::Image { image_id, start } => {
+                            commands.push(DrawCommand::Image(start..vertices.len(), image_id));
+                            current_state = State::Plain {
+                                start: vertices.len(),
+                            };
+                        }
+                    }
 
                     let color = color.gamma_srgb_to_linear().to_fsa();
                     let (l, r, b, t) = primitive.bounding_box.l_r_b_t();
@@ -655,7 +581,15 @@ impl Mesh {
                         continue;
                     }
 
-                    switch_to_plain_state!();
+                    match current_state {
+                        State::Plain { .. } => (),
+                        State::Image { image_id, start } => {
+                            commands.push(DrawCommand::Image(start..vertices.len(), image_id));
+                            current_state = State::Plain {
+                                start: vertices.len(),
+                            };
+                        }
+                    }
 
                     let color = color.gamma_srgb_to_linear()
                         .pre_multiply()
@@ -677,11 +611,17 @@ impl Mesh {
                 PrimitiveKind::TrianglesMultiColor { triangles } => {
                     todo!()
                 }
-                PrimitiveKind::Text {
-                    color,
-                    text: glyphs,
-                } => {
-                    switch_to_plain_state!();
+                PrimitiveKind::Text { color, text: glyphs, } => {
+                    match current_state {
+                        State::Plain { .. } => (),
+                        State::Image { image_id, start } => {
+                            commands.push(DrawCommand::Image(start..vertices.len(), image_id));
+                            current_state = State::Plain {
+                                start: vertices.len(),
+                            };
+                        }
+                    }
+
                     let color = color.gamma_srgb_to_linear().to_fsa();
                     //let texture_atlas = env.get_font_atlas();
 
@@ -747,12 +687,7 @@ impl Mesh {
                         }
                     }
                 }
-                PrimitiveKind::Image {
-                    image_id,
-                    color,
-                    source_rect,
-                    mode,
-                } => {
+                PrimitiveKind::Image { image_id, color, source_rect, mode} => {
                     let image_ref = match env.image_map.get(&image_id) {
                         None => {
                             println!("Image missing in map: {:?}", image_id);
@@ -769,7 +704,7 @@ impl Mesh {
 
                         // If we were in the `Plain` drawing state, switch to Image drawing state.
                         State::Plain { start } => {
-                            commands.push(PreparedCommand::Plain(*start..vertices.len()));
+                            commands.push(DrawCommand::Geometry(*start..vertices.len()));
                             current_state = State::Image {
                                 image_id: new_image_id,
                                 start: vertices.len(),
@@ -778,7 +713,7 @@ impl Mesh {
 
                         // If we were drawing a different image, switch state to draw *this* image.
                         State::Image { image_id, start } => {
-                            commands.push(PreparedCommand::Image(image_id.clone(), *start..vertices.len()));
+                            commands.push(DrawCommand::Image(*start..vertices.len(), image_id.clone()));
                             current_state = State::Image {
                                 image_id: new_image_id,
                                 start: vertices.len(),
@@ -833,10 +768,10 @@ impl Mesh {
                 PrimitiveKind::Gradient(triangles, gradient) => {
                     match current_state {
                         State::Plain { start } => {
-                            commands.push(PreparedCommand::Plain(start..vertices.len()))
+                            commands.push(DrawCommand::Geometry(start..vertices.len()))
                         }
                         State::Image { image_id, start } => {
-                            commands.push(PreparedCommand::Image(image_id, start..vertices.len()))
+                            commands.push(DrawCommand::Image(start..vertices.len(), image_id))
                         }
                     }
 
@@ -855,7 +790,7 @@ impl Mesh {
                         vertices.push(v(triangle[2]));
                     }
 
-                    commands.push(PreparedCommand::Gradient(
+                    commands.push(DrawCommand::Gradient(
                         len_before_push..vertices.len(),
                         gradient,
                     ));
@@ -869,74 +804,10 @@ impl Mesh {
 
         // Enter the final command.
         match current_state {
-            State::Plain { start } => commands.push(PreparedCommand::Plain(start..vertices.len())),
+            State::Plain { start } => commands.push(DrawCommand::Geometry(start..vertices.len())),
             State::Image { image_id, start } => {
-                commands.push(PreparedCommand::Image(image_id, start..vertices.len()))
+                commands.push(DrawCommand::Image(start..vertices.len(), image_id))
             }
         }
-
-        let fill = Fill {
-            glyph_cache_requires_upload,
-            atlas_requires_upload,
-        };
-
-        fill
-    }
-
-    pub fn texture_atlas(&self) -> &TextureAtlas {
-        &self.texture_atlas
-    }
-
-    pub fn texture_atlas_image(&self) -> &DynamicImage {
-        &self.texture_atlas_image
-    }
-
-    pub fn texture_atlas_image_as_bytes(&self) -> &[u8] {
-        &self.texture_atlas_image.as_bytes()
-    }
-
-    /// Produce an `Iterator` yielding `Command`s.
-    ///
-    /// These commands describe the order in which unique draw commands and scizzor updates should
-    /// occur.
-    pub fn commands(&self) -> Commands {
-        let Mesh { ref commands, .. } = *self;
-        Commands {
-            commands: commands.iter(),
-        }
-    }
-
-    /// The slice containing all `vertices` produced by the `fill` function.
-    ///
-    /// Note that these vertices may be represent geometry across multiple `Command`s.
-    pub fn vertices(&self) -> &[Vertex] {
-        &self.vertices
-    }
-}
-
-impl<'a> Iterator for Commands<'a> {
-    type Item = Command;
-    fn next(&mut self) -> Option<Self::Item> {
-        let Commands { ref mut commands } = *self;
-        commands.next().map(|command| match command {
-            PreparedCommand::Scissor(scizzor) => Command::Scissor(*scizzor),
-            PreparedCommand::Plain(ref range) => Command::Draw(Draw::Plain(range.clone())),
-            PreparedCommand::Gradient(ref range, ref gradient) => {
-                Command::Draw(Draw::Gradient(range.clone(), gradient.clone()))
-            }
-            PreparedCommand::Image(id, ref range) => Command::Draw(Draw::Image(id.clone(), range.clone())),
-            PreparedCommand::Stencil(ref range) => Command::Stencil(range.clone()),
-            PreparedCommand::DeStencil(ref range) => Command::DeStencil(range.clone()),
-            PreparedCommand::Transform(ref transform) => Command::Transform(*transform),
-            PreparedCommand::Filter(ref range, filter_id) => {
-                Command::Filter(range.clone(), *filter_id)
-            }
-            PreparedCommand::FilterSplitPt1(ref range, filter_id) => {
-                Command::FilterSplitPt1(range.clone(), *filter_id)
-            }
-            PreparedCommand::FilterSplitPt2(ref range, filter_id) => {
-                Command::FilterSplitPt2(range.clone(), *filter_id)
-            }
-        })
     }
 }

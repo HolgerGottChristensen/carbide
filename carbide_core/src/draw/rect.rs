@@ -28,6 +28,19 @@ impl Rect {
         self.dimension.height
     }
 
+    pub fn within_bounding_box(&self, bounding_box: &Rect) -> Rect {
+        let bottom_left_1 = self.bottom_left();
+        let bottom_left_2 = bounding_box.bottom_left();
+
+        let top_right_1 = self.top_right();
+        let top_right_2 = bounding_box.top_right();
+
+        let bottom_left = bottom_left_1.max(&bottom_left_2);
+        let top_right = top_right_1.min(&top_right_2);
+
+        Rect::from_corners(bottom_left, top_right)
+    }
+
     pub fn from_corners(corner1: Position, corner2: Position) -> Rect {
         let min_x = corner1.x.min(corner2.x);
         let min_y = corner1.y.min(corner2.y);

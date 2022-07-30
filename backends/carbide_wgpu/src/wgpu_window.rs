@@ -16,7 +16,7 @@ use carbide_core::environment::{Environment, EnvironmentColor};
 use carbide_core::event::{Event, KeyboardEvent, KeyboardEventHandler, MouseEvent, MouseEventHandler, OtherEventHandler, WidgetEvent, WindowEvent};
 use carbide_core::flags::Flags;
 use carbide_core::focus::{Focus, Focusable};
-use carbide_core::image::DynamicImage;
+use carbide_core::image::{DynamicImage, GenericImage, GenericImageView};
 use carbide_core::layout::Layout;
 use carbide_core::mesh::{DEFAULT_GLYPH_CACHE_DIMS, MODE_IMAGE};
 use carbide_core::mesh::mesh::Mesh;
@@ -31,7 +31,7 @@ use crate::bind_groups::{filter_buffer_bind_group, filter_texture_bind_group, ma
 use crate::diffuse_bind_group::{DiffuseBindGroup, new_diffuse};
 use crate::image::Image;
 use crate::pipeline::{create_pipelines, create_render_pipeline, MaskType};
-use crate::render_pass_command::{create_render_pass_commands, RenderPass, RenderPassCommand};
+use crate::render_pass_command::{draw_commands_to_render_pass_commands, RenderPass, RenderPassCommand};
 use crate::{render_pass_ops, RenderPassOps};
 use crate::filter::Filter;
 use crate::render_pipeline_layouts::{filter_pipeline_layout, gradient_pipeline_layout, main_pipeline_layout, RenderPipelines};
@@ -166,6 +166,8 @@ thread_local!(pub static MAIN_SAMPLER: Sampler = {
         main_sampler(device)
     })
 });
+
+thread_local!(pub static ATLAS_CACHE: RefCell<DynamicImage> = RefCell::new(DynamicImage::new_rgba8(512, 512)));
 
 thread_local!(pub static ATLAS_CACHE_TEXTURE: Texture = {
     DEVICE_QUEUE.with(|(device, _)| {
@@ -343,7 +345,7 @@ impl WGPUWindow {
                     })
                 });
 
-            let mesh = Mesh::with_glyph_cache_dimensions(DEFAULT_GLYPH_CACHE_DIMS);
+            let mesh = Mesh::new();
 
             let depth_texture = create_depth_stencil_texture(&device, size.width, size.height);
             let depth_texture_view = depth_texture.create_view(&Default::default());
@@ -721,7 +723,6 @@ impl WGPUWindow {
                 FILTER_BIND_GROUPS.with(|filter_bind_groups| {
                     PIPELINES.with(|render_pipelines| {
                         let render_pipelines = &render_pipelines.borrow()[self.render_pipelines_index].1;
-
                         let filter_bind_groups = &mut *filter_bind_groups.borrow_mut();
                         let bind_groups = &mut *bind_groups.borrow_mut();
 
@@ -732,51 +733,41 @@ impl WGPUWindow {
 
                         let size = self.inner.inner_size();
 
-                        let fill = self
-                            .mesh
-                            .fill(
-                                Rect::new(
-                                    Position::new(0.0, 0.0),
-                                    Dimension::new(size.width as f64, size.height as f64),
-                                ),
-                                env,
-                                primitives,
-                            );
-
-                        // Check if an upload to texture atlas is needed.
+                        // Handle update of atlas cache
                         ATLAS_CACHE_TEXTURE.with(|atlas_cache_tex| {
-                            let texture_atlas_cmd = match fill.atlas_requires_upload {
-                                true => {
-                                    let width = self.mesh.texture_atlas().width();
-                                    let height = self.mesh.texture_atlas().height();
-                                    Some(TextureAtlasCommand {
-                                        texture_atlas_buffer: self.mesh.texture_atlas_image_as_bytes(),
-                                        texture_atlas_texture: atlas_cache_tex,
-                                        width,
-                                        height,
-                                    })
-                                }
-                                false => None,
-                            };
+                            ATLAS_CACHE.with(|atlas_image| {
+                                let atlas_image = &mut *atlas_image.borrow_mut();
+                                let texture_atlas = env.get_font_atlas_mut();
+                                let mut upload_needed = false;
+                                texture_atlas.cache_queued(|x, y, image_data| {
+                                    //println!("Insert the image at: {}, {} with size {}, {}", x, y, image_data.width(), image_data.height());
+                                    for (ix, iy, pixel) in image_data.pixels() {
+                                        atlas_image.put_pixel(x + ix, y + iy, pixel);
+                                    }
+                                    upload_needed = true;
+                                });
 
-                            match texture_atlas_cmd {
-                                None => (),
-                                Some(cmd) => {
-                                    cmd.load_buffer_and_encode(device, &mut encoder);
+                                if upload_needed {
+                                    TextureAtlasCommand {
+                                        texture_atlas_buffer: atlas_image.as_bytes(),
+                                        texture_atlas_texture: atlas_cache_tex,
+                                        width: atlas_image.width(),
+                                        height: atlas_image.height(),
+                                    }.load_buffer_and_encode(device, &mut encoder)
                                 }
-                            }
+                            })
                         });
+
+                        let viewport = Rect::new(
+                            Position::new(0.0, 0.0),
+                            Dimension::new(size.width as f64, size.height as f64),
+                        );
+
+                        self.mesh.fill(viewport, env, primitives);
 
                         let mut uniform_bind_groups = vec![];
 
-                        let keys = env
-                            .filters()
-                            .keys()
-                            .cloned()
-                            .collect::<Vec<_>>();
-
-                        filter_bind_groups
-                            .retain(|id, _| keys.contains(id));
+                        filter_bind_groups.retain(|id, _| env.filters().contains_key(id));
 
                         for (filter_id, filter) in env.filters() {
                             if !filter_bind_groups.contains_key(filter_id) {
@@ -800,12 +791,6 @@ impl WGPUWindow {
                                     .insert(*filter_id, filter_buffer_bind_group);
                             }
                         }
-
-                        let WGPUWindow {
-                            ref mesh,
-                            ref carbide_to_wgpu_matrix,
-                            ..
-                        } = self;
 
                         // Ensure the images are added as bind groups
                         ATLAS_CACHE_TEXTURE.with(|atlas_cache_tex| {
@@ -831,14 +816,14 @@ impl WGPUWindow {
                         let commands =
                             UNIFORM_BIND_GROUP_LAYOUT.with(|uniform_bind_group_layout| {
                                 GRADIENT_BIND_GROUP_LAYOUT.with(|gradient_bind_group_layout| {
-                                    create_render_pass_commands(
+                                    draw_commands_to_render_pass_commands(
+                                        self.mesh.commands(),
                                         bind_groups,
                                         &mut uniform_bind_groups,
-                                        mesh,
                                         device,
                                         uniform_bind_group_layout,
                                         gradient_bind_group_layout,
-                                        *carbide_to_wgpu_matrix,
+                                        self.carbide_to_wgpu_matrix,
                                     )
                                 })
                             });
@@ -1244,5 +1229,13 @@ impl Clone for WGPUWindow {
 impl Debug for WGPUWindow {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         todo!()
+    }
+}
+
+impl Drop for WGPUWindow {
+    fn drop(&mut self) {
+        WINDOW_IDS.with(|a| {
+            a.borrow_mut().remove(&self.inner.id());
+        });
     }
 }

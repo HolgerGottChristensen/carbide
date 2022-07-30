@@ -53,4 +53,9 @@ pub enum DrawCommand {
     /// within the filter should be applied. Filters are things like gaussian blurs,
     /// and other convolution filters.
     Filter(VertexRange, FilterId),
+
+    /// To have more efficient filters, we can apply them in two steps, first in one axis and
+    /// then in the other. These are defined on FilterSplitPt1 and FilterSplitPt2
+    FilterSplitPt1(VertexRange, FilterId),
+    FilterSplitPt2(VertexRange, FilterId),
 }

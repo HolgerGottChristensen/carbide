@@ -26,6 +26,20 @@ impl Position {
         self.y
     }
 
+    pub fn min(&self, other: &Position) -> Position {
+        Position::new(
+            self.x.min(other.x),
+            self.y.min(other.y),
+        )
+    }
+
+    pub fn max(&self, other: &Position) -> Position {
+        Position::new(
+            self.x.max(other.x),
+            self.y.max(other.y),
+        )
+    }
+
     /// Returns the fraction of the position between 0.0 and 1.0 (exclusive)
     /// 0.0 will return 0.0
     /// 1.0 will return 0.0

@@ -2,6 +2,8 @@ pub use atlas::texture_atlas::AtlasEntry;
 pub use atlas::texture_atlas::AtlasId;
 pub use atlas::texture_atlas::TextureAtlas;
 pub use atlas::texture_atlas::TextureAtlasIndex;
+pub use draw_command::DrawCommand;
+pub use draw_command::VertexRange;
 
 mod atlas;
 pub mod mesh;

@@ -1,4 +1,5 @@
 use std::path::{Path, PathBuf};
+use std::rc::Rc;
 use std::sync::atomic::{AtomicU32, Ordering};
 
 /// Unique image identifier.
@@ -7,18 +8,18 @@ use std::sync::atomic::{AtomicU32, Ordering};
 /// `Id`s, carbide can remain agnostic of the actual image or texture render used to represent each
 /// image.
 #[derive(Clone, Debug, Hash, Eq, PartialEq, Ord, PartialOrd)]
-pub struct ImageId(PathBuf);
+pub struct ImageId(Rc<PathBuf>);
 
 impl ImageId {
     /// Generate a new image ID.
     pub fn new(path: impl Into<PathBuf>) -> Self {
-        ImageId(path.into())
+        ImageId(Rc::new(path.into()))
     }
 }
 
 impl Default for ImageId {
     fn default() -> Self {
-        ImageId(PathBuf::default())
+        ImageId(Rc::new(PathBuf::default()))
     }
 }
 

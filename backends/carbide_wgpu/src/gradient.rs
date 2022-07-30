@@ -37,7 +37,7 @@ impl Gradient {
         bytes
     }
 
-    pub fn convert(gradient: DrawGradient) -> Self {
+    pub fn convert(gradient: &DrawGradient) -> Self {
         let mut colors = [
             [0.0, 0.0, 0.0, 0.0],
             [0.0, 0.0, 0.0, 0.0],
