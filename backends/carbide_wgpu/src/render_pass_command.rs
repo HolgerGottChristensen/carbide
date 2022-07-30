@@ -5,8 +5,8 @@ use cgmath::Matrix4;
 use wgpu::util::DeviceExt;
 use wgpu::{BindGroupLayout, Device, Texture};
 
-use carbide_core::mesh::{DrawCommand, mesh};
-use carbide_core::mesh::mesh::{Draw, Mesh};
+use carbide_core::mesh::DrawCommand;
+use carbide_core::mesh::mesh::Mesh;
 use carbide_core::widget::FilterId;
 
 use crate::bind_groups::{gradient_buffer_bind_group, matrix_to_uniform_bind_group};

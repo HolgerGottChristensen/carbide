@@ -3,15 +3,11 @@
 //!
 //! While populating the vertices buffer ready for uploading to the GPU, the `Mesh` will also
 //! produce a sequence of commands describing the order in which draw commands should occur and
-//! whether or not the `Scizzor` should be updated between draws.
+//! whether or not the `Scissor` should be updated between draws.
 
-use std::{fmt, ops};
 
 use cgmath::{Matrix4, SquareMatrix, Vector3};
-use fxhash::FxHashMap;
-use image::{DynamicImage, GenericImage, GenericImageView};
-use rusttype::gpu_cache::Cache as RustTypeGlyphCache;
-use rusttype::gpu_cache::CacheWriteErr as RustTypeCacheWriteError;
+use image::{GenericImageView};
 
 use crate::color;
 use crate::draw::draw_gradient::DrawGradient;
@@ -19,14 +15,10 @@ use crate::draw::image::ImageId;
 use crate::draw::{Position, Rect, Scalar};
 use crate::environment::Environment;
 use crate::layout::BasicLayouter;
-use crate::mesh::atlas::texture_atlas::TextureAtlas;
 use crate::mesh::vertex::Vertex;
-use crate::mesh::{
-    DEFAULT_GLYPH_CACHE_DIMS, GLYPH_CACHE_POSITION_TOLERANCE, GLYPH_CACHE_SCALE_TOLERANCE,
-    MODE_GEOMETRY, MODE_TEXT, MODE_TEXT_COLOR,
-};
+use crate::mesh::{MODE_GEOMETRY, MODE_TEXT, MODE_TEXT_COLOR};
 use crate::mesh::draw_command::DrawCommand;
-use crate::render::{Primitive, PrimitiveKind, PrimitiveWalker};
+use crate::render::{Primitive, PrimitiveKind};
 use crate::widget::FilterId;
 
 /// A mesh whose vertices may be populated by a list of render primitives.
@@ -36,58 +28,6 @@ use crate::widget::FilterId;
 pub struct Mesh {
     commands: Vec<DrawCommand>,
     vertices: Vec<Vertex>,
-}
-
-/// Represents the scissor in pixel coordinates.
-#[derive(Copy, Clone, Debug, Eq, PartialEq)]
-pub struct Scissor {
-    /// The top left of the scissor rectangle, where the top-left corner of the viewport is [0, 0].
-    pub top_left: [i32; 2],
-    /// The dimensions of the `Scissor` rect.
-    pub dimensions: [u32; 2],
-}
-
-/// A `Command` describing a step in the drawing process.
-#[derive(Clone, Debug)]
-pub enum Command {
-    /// Draw to the target.
-    Draw(Draw),
-    /// Update the scizzor within the pipeline.
-    Scissor(Scissor),
-    Stencil(std::ops::Range<usize>),
-    DeStencil(std::ops::Range<usize>),
-    Transform(Matrix4<f32>),
-    Filter(std::ops::Range<usize>, FilterId),
-    FilterSplitPt1(std::ops::Range<usize>, FilterId),
-    FilterSplitPt2(std::ops::Range<usize>, FilterId),
-}
-
-/// A `Command` for drawing to the target.
-///
-/// Each variant describes how to draw the contents of the vertex buffer.
-#[derive(Clone, Debug)]
-pub enum Draw {
-    /// A range of vertices representing triangles textured with the image in the
-    /// image_map at the given `widget::Id`.
-    Image(ImageId, std::ops::Range<usize>),
-    /// A range of vertices representing plain triangles.
-    Plain(std::ops::Range<usize>),
-    /// A range of vertices that should be drawn as a gradient
-    Gradient(std::ops::Range<usize>, DrawGradient),
-}
-
-#[derive(Debug)]
-pub enum PreparedCommand {
-    Image(ImageId, std::ops::Range<usize>),
-    Plain(std::ops::Range<usize>),
-    Gradient(std::ops::Range<usize>, DrawGradient),
-    Scissor(Scissor),
-    Stencil(std::ops::Range<usize>),
-    DeStencil(std::ops::Range<usize>),
-    Transform(Matrix4<f32>),
-    Filter(std::ops::Range<usize>, FilterId),
-    FilterSplitPt1(std::ops::Range<usize>, FilterId),
-    FilterSplitPt2(std::ops::Range<usize>, FilterId),
 }
 
 impl Mesh {
@@ -576,7 +516,7 @@ impl Mesh {
                     push_v(r, b);
                     push_v(r, t);
                 }
-                PrimitiveKind::TrianglesSingleColor { color, triangles } => {
+                PrimitiveKind::Geometry { color, triangles } => {
                     if triangles.is_empty() {
                         continue;
                     }

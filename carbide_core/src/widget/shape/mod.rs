@@ -37,7 +37,7 @@ pub trait Shape: Widget + 'static {
         self.get_primitives(&mut primitives, env);
         if primitives.len() >= 1 {
             match primitives.remove(0).kind {
-                PrimitiveKind::TrianglesSingleColor { triangles, .. } => triangles,
+                PrimitiveKind::Geometry { triangles, .. } => triangles,
                 _ => {
                     panic!("Can only return triangles of PrimitiveKind::TrianglesSingleColor. This error might happen if you use a rectangle with content.")
                 }

@@ -85,7 +85,7 @@ impl PrimitiveStore {
             match fill_color {
                 AdvancedColor::Color(c) => {
                     primitives.push(Primitive {
-                        kind: PrimitiveKind::TrianglesSingleColor {
+                        kind: PrimitiveKind::Geometry {
                             color: c,
                             triangles: self.fill_triangles.clone(),
                         },
@@ -117,7 +117,7 @@ impl PrimitiveStore {
             match stroke_color {
                 AdvancedColor::Color(c) => {
                     primitives.push(Primitive {
-                        kind: PrimitiveKind::TrianglesSingleColor {
+                        kind: PrimitiveKind::Geometry {
                             color: c,
                             triangles: self.stroke_triangles.clone(),
                         },
@@ -148,7 +148,7 @@ impl PrimitiveStore {
         let mut res = vec![];
         if self.fill_triangles.len() > 0 {
             res.push(Primitive {
-                kind: PrimitiveKind::TrianglesSingleColor {
+                kind: PrimitiveKind::Geometry {
                     color: fill_color,
                     triangles: self.fill_triangles.clone(),
                 },
@@ -158,7 +158,7 @@ impl PrimitiveStore {
 
         if self.stroke_triangles.len() > 0 {
             res.push(Primitive {
-                kind: PrimitiveKind::TrianglesSingleColor {
+                kind: PrimitiveKind::Geometry {
                     color: stroke_color,
                     triangles: self.stroke_triangles.clone(),
                 },

@@ -46,7 +46,7 @@ pub enum PrimitiveKind {
     },
 
     /// A series of consecutive `Triangles` that are all the same color.
-    TrianglesSingleColor {
+    Geometry {
         /// The color of all triangles.
         color: Color,
         /// An ordered slice of triangles.

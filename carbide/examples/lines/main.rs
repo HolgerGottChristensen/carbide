@@ -25,25 +25,18 @@ use carbide_core::text::FontFamily;
 use carbide_core::widget::canvas::{Canvas, Context};
 use carbide_core::widget::*;
 use carbide_core::{animate, lens, matches_case, Scalar};
-use carbide_wgpu::window::*;
 use std::cmp::Ordering;
 use std::time::Duration;
+use carbide_wgpu::{Application, Window};
 
 fn main() {
     env_logger::init();
 
-    let icon_path = Window::relative_path_to_assets("images/rust_press.png");
-
-    let mut window = Window::new(
-        "Lines example".to_string(),
-        800,
-        600,
-        Some(icon_path.clone()),
-    );
+    let mut application = Application::new();
 
     let family =
         FontFamily::new_from_paths("NotoSans", vec!["fonts/NotoSans/NotoSans-Regular.ttf"]);
-    window.add_font_family(family);
+    application.add_font_family(family);
 
     let mut graph = Graph::new();
     graph.add_node(Node::new(Position::new(100.0, 100.0)));
@@ -267,7 +260,10 @@ fn main() {
     .frame_fixed_height(35.0)
     .background(Rectangle::new().fill(EnvironmentColor::SystemFill));
 
-    window.set_widgets(
+
+    application.set_scene(Window::new(
+        "Lines example".to_string(),
+        Dimension::new(800.0, 600.0),
         VStack::new(vec![
             tool_bar,
             HSplit::new(
@@ -277,13 +273,13 @@ fn main() {
                     selected_id,
                 ]),
             )
-            .relative_to_end(250.0),
+                .relative_to_end(250.0),
             status_bar,
         ])
-        .spacing(0.0),
-    );
+            .spacing(0.0),
+    ).close_application_on_window_close());
 
-    window.launch();
+    application.launch();
 }
 
 fn draw_selection_selected(

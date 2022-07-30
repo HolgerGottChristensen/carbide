@@ -102,7 +102,7 @@ impl<T: StateContract> Canvas<T> {
         let points: Vec<Position> = point_iter.collect();
 
         Primitive {
-            kind: PrimitiveKind::TrianglesSingleColor {
+            kind: PrimitiveKind::Geometry {
                 color,
                 triangles: Triangle::from_point_list(points),
             },
@@ -136,7 +136,7 @@ impl<T: StateContract> Canvas<T> {
         let points: Vec<Position> = point_iter.collect();
 
         Primitive {
-            kind: PrimitiveKind::TrianglesSingleColor {
+            kind: PrimitiveKind::Geometry {
                 color,
                 triangles: Triangle::from_point_list(points),
             },
@@ -228,7 +228,7 @@ impl<T: StateContract> Shape for Canvas<T> {
 
         for prim in prims {
             match prim.kind {
-                PrimitiveKind::TrianglesSingleColor { triangles, .. } => {
+                PrimitiveKind::Geometry { triangles, .. } => {
                     res_triangle_list.extend(triangles);
                 }
                 _ => (),

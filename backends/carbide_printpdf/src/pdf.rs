@@ -56,7 +56,7 @@ impl Pdf {
         while let Some(primitive) = primitives.next_primitive() {
             let rectangle = primitive.bounding_box;
             match primitive.kind {
-                PrimitiveKind::TrianglesSingleColor { color, triangles } => {
+                PrimitiveKind::Geometry { color, triangles } => {
                     current_layer.set_fill_color(Color::Rgb(Rgb::new(
                         color.red() as f64,
                         color.green() as f64,

@@ -651,7 +651,7 @@ impl Renderer {
                     push_v(r, t);
                 }
 
-                PrimitiveKind::TrianglesSingleColor { color, triangles } => {
+                PrimitiveKind::Geometry { color, triangles } => {
                     if triangles.is_empty() {
                         continue;
                     }
