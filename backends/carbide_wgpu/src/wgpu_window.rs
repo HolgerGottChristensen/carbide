@@ -41,6 +41,7 @@ use crate::texture_atlas_command::TextureAtlasCommand;
 use crate::textures::create_depth_stencil_texture;
 use crate::vertex::Vertex;
 use std::cell::RefCell;
+use carbide_winit::convert_mouse_cursor;
 //use crate::diffuse_bind_group::DiffuseBindGroup;
 //use crate::image::Image;
 //use crate::render_pipeline_layouts::RenderPipelines;
@@ -643,6 +644,9 @@ impl OtherEventHandler for WGPUWindow {
         for mut child in self.children_direct() {
             child.process_other_event(event, env);
         }
+
+        // Set the cursor of the window.
+        self.inner.set_cursor_icon(convert_mouse_cursor(env.cursor()));
 
         env.set_event_is_current(old_is_current);
         env.set_pixel_dimensions(old_dimension);

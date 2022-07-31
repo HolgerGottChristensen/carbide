@@ -1,27 +1,21 @@
 use carbide::cursor::MouseCursor;
 use carbide::state::{State, TState, UsizeState};
 use carbide_controls::Button;
+use carbide_core::draw::Dimension;
 use carbide_core::environment::EnvironmentColor;
 use carbide_core::state::{LocalState, ReadState, StateExt};
 use carbide_core::text::FontFamily;
 use carbide_core::widget::*;
-use carbide_wgpu::window::*;
+use carbide_wgpu::{Application, Window};
 
 fn main() {
     env_logger::init();
 
-    let icon_path = Window::relative_path_to_assets("images/rust_press.png");
-
-    let mut window = Window::new(
-        "Mouse cursors example".to_string(),
-        400,
-        600,
-        Some(icon_path.clone()),
-    );
+    let mut application = Application::new();
 
     let family =
         FontFamily::new_from_paths("NotoSans", vec!["fonts/NotoSans/NotoSans-Regular.ttf"]);
-    window.add_font_family(family);
+    application.add_font_family(family);
 
     let cursors1 = vec![
         MouseCursor::Default,
@@ -70,13 +64,15 @@ fn main() {
             .frame(100.0, 22.0)
     }
 
-    window.set_widgets(
+    application.set_scene(Window::new(
+        "Mouse cursors example".to_string(),
+        Dimension::new(400.0, 600.0),
         HStack::new(vec![
             VStack::new(vec![ForEach::new(cursors1, delegate)]),
             VStack::new(vec![ForEach::new(cursors2, delegate)]),
         ])
-        .cross_axis_alignment(CrossAxisAlignment::Start),
-    );
+            .cross_axis_alignment(CrossAxisAlignment::Start)
+    ).close_application_on_window_close());
 
-    window.launch();
+    application.launch();
 }
