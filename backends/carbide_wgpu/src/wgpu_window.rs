@@ -42,9 +42,6 @@ use crate::textures::create_depth_stencil_texture;
 use crate::vertex::Vertex;
 use std::cell::RefCell;
 use carbide_winit::convert_mouse_cursor;
-//use crate::diffuse_bind_group::DiffuseBindGroup;
-//use crate::image::Image;
-//use crate::render_pipeline_layouts::RenderPipelines;
 
 thread_local!(pub static INSTANCE: Instance = Instance::new(wgpu::Backends::PRIMARY));
 thread_local!(pub static ADAPTER: Adapter = {
@@ -190,7 +187,7 @@ pub struct WGPUWindow {
     pub(crate) depth_texture_view: TextureView,
     pub(crate) main_bind_group: BindGroup,
     pub(crate) texture_size_bind_group: BindGroup,
-    pub(crate) mesh: Mesh, //Todo: Make a mapping instead?
+    pub(crate) mesh: Mesh,
     pub(crate) main_tex: Texture,
     pub(crate) main_tex_view: TextureView,
     pub(crate) secondary_tex: Texture,

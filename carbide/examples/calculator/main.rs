@@ -2,21 +2,23 @@ use carbide_controls::{capture, PlainButton};
 use carbide_core::environment::{Environment, EnvironmentColor};
 use carbide_core::widget::*;
 use carbide_core::Color;
-use carbide_wgpu::window::*;
 use env_logger::Env;
 use std::ops::Deref;
+use carbide_core::draw::Dimension;
 
 use crate::calculator_state::{CalculatorState, Operation};
 use carbide_core::prelude::LocalState;
 use carbide_core::state::{BoolState, Map3, ReadState, State, StateExt, StringState, TState};
 use carbide_core::text::FontFamily;
 use carbide_core::widget::WidgetExt;
+use carbide_wgpu::{Application, Window};
 
 pub mod calculator_state;
 
 fn main() {
     env_logger::init();
-    let mut window = Window::new("My first calculator", 470 / 2, 300, None);
+
+    let mut application = Application::new();
 
     let mut family = FontFamily::new_from_paths(
         "NotoSans",
@@ -26,7 +28,7 @@ fn main() {
             "fonts/NotoSans/NotoSans-Bold.ttf",
         ],
     );
-    window.add_font_family(family);
+    application.add_font_family(family);
 
     let mut calculator_state = LocalState::new(CalculatorState::new());
 
@@ -46,7 +48,9 @@ fn main() {
     .expand_width()
     .padding(5);
 
-    window.set_widgets(
+    application.set_scene(Window::new(
+        "My first calculator",
+        Dimension::new(235.0, 300.0),
         VStack::new(vec![
             display,
             HStack::new(vec![
@@ -56,45 +60,45 @@ fn main() {
                         calculator_state.clear_all()
                     }),
                 )
-                .accent_color(EnvironmentColor::TertiarySystemFill),
+                    .accent_color(EnvironmentColor::TertiarySystemFill),
                 calculator_button(
                     Text::new("±").font_size(32),
                     capture!([calculator_state], |env: &mut Environment| {
                         calculator_state.negate_current()
                     }),
                 )
-                .accent_color(EnvironmentColor::TertiarySystemFill),
+                    .accent_color(EnvironmentColor::TertiarySystemFill),
                 calculator_button(
                     Text::new("%").font_size(32),
                     capture!([calculator_state], |env: &mut Environment| {
                         calculator_state.percent_to_decimal()
                     }),
                 )
-                .accent_color(EnvironmentColor::TertiarySystemFill),
+                    .accent_color(EnvironmentColor::TertiarySystemFill),
                 operator_button(Operation::Div, &calculator_state),
             ])
-            .spacing(1.0),
+                .spacing(1.0),
             HStack::new(vec![
                 number_button(7, &calculator_state),
                 number_button(8, &calculator_state),
                 number_button(9, &calculator_state),
                 operator_button(Operation::Mul, &calculator_state),
             ])
-            .spacing(1.0),
+                .spacing(1.0),
             HStack::new(vec![
                 number_button(4, &calculator_state),
                 number_button(5, &calculator_state),
                 number_button(6, &calculator_state),
                 operator_button(Operation::Sub, &calculator_state),
             ])
-            .spacing(1.0),
+                .spacing(1.0),
             HStack::new(vec![
                 number_button(1, &calculator_state),
                 number_button(2, &calculator_state),
                 number_button(3, &calculator_state),
                 operator_button(Operation::Add, &calculator_state),
             ])
-            .spacing(1.0),
+                .spacing(1.0),
             HStack::new(vec![
                 number_button(0, &calculator_state),
                 HStack::new(vec![
@@ -104,17 +108,17 @@ fn main() {
                             calculator_state.push_separator()
                         }),
                     )
-                    .accent_color(EnvironmentColor::SystemFill),
+                        .accent_color(EnvironmentColor::SystemFill),
                     operator_button(Operation::Eq, &calculator_state),
                 ])
-                .spacing(1.0),
+                    .spacing(1.0),
             ])
-            .spacing(1.0),
+                .spacing(1.0),
         ])
-        .spacing(1.0),
-    );
+            .spacing(1.0)
+    ).close_application_on_window_close());
 
-    window.launch();
+    application.launch();
 }
 
 fn calculator_button(label: Box<dyn Widget>, action: impl Action + 'static) -> Box<dyn Widget> {
