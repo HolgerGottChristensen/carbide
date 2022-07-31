@@ -1,6 +1,6 @@
 use crate::draw::{Dimension, Position, Rect, Scalar};
 use crate::environment::Environment;
-use crate::text::text_decoration::TextDecoration;
+use crate::text::types::text_decoration::TextDecoration;
 use crate::text::text_span::TextSpan;
 use crate::text::text_span_generator::TextSpanGenerator;
 use crate::text::text_style::TextStyle;

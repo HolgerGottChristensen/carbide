@@ -188,6 +188,7 @@ pub struct WGPUWindow {
     pub(crate) main_bind_group: BindGroup,
     pub(crate) texture_size_bind_group: BindGroup,
     pub(crate) mesh: Mesh,
+
     pub(crate) main_tex: Texture,
     pub(crate) main_tex_view: TextureView,
     pub(crate) secondary_tex: Texture,

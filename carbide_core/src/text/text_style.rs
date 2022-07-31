@@ -1,7 +1,7 @@
 use crate::environment::Environment;
-use crate::text::font_style::FontStyle;
-use crate::text::font_weight::FontWeight;
-use crate::text::text_decoration::TextDecoration;
+use crate::text::types::font_style::FontStyle;
+use crate::text::types::font_weight::FontWeight;
+use crate::text::types::text_decoration::TextDecoration;
 use crate::text::{Font, FontId, FontSize};
 use crate::Color;
 

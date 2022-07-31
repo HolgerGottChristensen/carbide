@@ -6,7 +6,7 @@ use nom::sequence::{delimited, preceded, tuple};
 use nom::IResult;
 
 use crate::prelude::Environment;
-use crate::text::text_decoration::TextDecoration;
+use crate::text::types::text_decoration::TextDecoration;
 use crate::text::text_span::TextSpan;
 use crate::text::text_style::TextStyle;
 use crate::text::{FontStyle, FontWeight, TextSpanGenerator};

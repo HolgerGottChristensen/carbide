@@ -1,14 +1,12 @@
 //!
-//! A library providing simple `Color` and `Gradient` render along with useful transformations and
-//! presets.
+//! # Color
 //!
+//! A type providing simple `Color`s with different representations, and transformations between
+//! different colors.
 //!
-//! Inspiration taken from [elm-lang's color module]
-//! (https://github.com/elm-lang/core/blob/62b22218c42fb8ccc996c86bea450a14991ab815/src/Color.elm)
-//!
-//!
-//! Module for working with colors. Includes [RGB](https://en.wikipedia.org/wiki/RGB_color_model)
-//! and [HSL](http://en.wikipedia.org/wiki/HSL_and_HSV) creation, gradients and built-in names.
+//! We also include a list of default colors that can be used.
+//! When used in carbide it is recommended to use [crate::environment::EnvironmentColor] since
+//! it will react to different themes provided by carbide.
 //!
 
 use std::f32::consts::PI;
@@ -36,6 +34,8 @@ impl Default for Color {
 }
 
 impl Color {
+    /// Create a new color based on r, g, and b values.
+    /// The alpha will be 1.0 for all colors.
     pub fn new_rgb(r: u8, g: u8, b: u8) -> Color {
         let r = r as f32 / 255.0;
         let g = g as f32 / 255.0;
@@ -43,6 +43,8 @@ impl Color {
         Color::Rgba(r, g, b, 1.0)
     }
 
+    /// This method will generate a random color each time it
+    /// is called.
     pub fn random() -> Self {
         let mut rng = rand::thread_rng();
         return rgb(
@@ -52,6 +54,10 @@ impl Color {
         );
     }
 
+    /// This method will generate a color based on the time since the UNIX_EPOCH.
+    /// We do some modification to make the color change slower and to bound it
+    /// between [0; 360] degrees. This will then be used to as the hue in a HSL color
+    /// with the saturation always set to 1.0 and lightness to 0.5
     pub fn time() -> Self {
         let now = SystemTime::now();
         let duration = now
@@ -386,7 +392,7 @@ impl Color {
     /// Return the same color but with the given red component.
     /// The value provided should be between 0.0 and 1.0
     pub fn with_red(self, r: f32) -> Color {
-        assert!(
+        debug_assert!(
             (0.0 <= r && r <= 1.0),
             "The value r={} should be [0.0, 1.0]",
             r
@@ -404,7 +410,7 @@ impl Color {
     /// Return the same color but with the given green component.
     /// The value provided should be between 0.0 and 1.0
     pub fn with_green(self, g: f32) -> Color {
-        assert!(
+        debug_assert!(
             (0.0 <= g && g <= 1.0),
             "The value g={} should be [0.0, 1.0]",
             g
@@ -422,7 +428,7 @@ impl Color {
     /// Return the same color but with the given green component.
     /// The value provided should be between 0.0 and 1.0
     pub fn with_blue(self, b: f32) -> Color {
-        assert!(
+        debug_assert!(
             (0.0 <= b && b <= 1.0),
             "The value b={} should be [0.0, 1.0]",
             b
@@ -440,7 +446,7 @@ impl Color {
     /// Return the same color but with the given hue.
     /// The value returned should be between 0.0 and 1.0
     pub fn with_hue(self, h: f32) -> Color {
-        assert!(
+        debug_assert!(
             (0.0 <= h && h <= 1.0),
             "The value h={} should be [0.0, 1.0]",
             h
@@ -458,7 +464,7 @@ impl Color {
     /// Return the same color but with the given saturation.
     /// The value returned should be between 0.0 and 1.0
     pub fn with_saturation(self, s: f32) -> Color {
-        assert!(
+        debug_assert!(
             (0.0 <= s && s <= 1.0),
             "The value s={} should be [0.0, 1.0]",
             s
@@ -476,7 +482,7 @@ impl Color {
     /// Return the same color but with the given lightness.
     /// The value returned should be between 0.0 and 1.0
     pub fn with_lightness(self, l: f32) -> Color {
-        assert!(
+        debug_assert!(
             (0.0 <= l && l <= 1.0),
             "The value l={} should be [0.0, 1.0]",
             l
@@ -616,34 +622,6 @@ pub fn hsl_to_rgb(hue: f32, saturation: f32, lightness: f32) -> (f32, f32, f32) 
     let m = lightness - chroma / 2.0;
     (r + m, g + m, b + m)
 }
-//
-// /// Linear or Radial Gradient.
-// #[derive(Clone, Debug)]
-// pub enum Gradient {
-//     /// Takes a start and end point and then a series of color stops that indicate how to
-//     /// interpolate between the start and end points.
-//     Linear((f64, f64), (f64, f64), Vec<(f64, Color)>),
-//     /// First takes a start point and inner radius. Then takes an end point and outer radius.
-//     /// It then takes a series of color stops that indicate how to interpolate between the
-//     /// inner and outer circles.
-//     Radial((f64, f64), f64, (f64, f64), f64, Vec<(f64, Color)>),
-// }
-//
-// /// Create a linear gradient.
-// pub fn linear(start: (f64, f64), end: (f64, f64), colors: Vec<(f64, Color)>) -> Gradient {
-//     Gradient::Linear(start, end, colors)
-// }
-//
-// /// Create a radial gradient.
-// pub fn radial(
-//     start: (f64, f64),
-//     start_r: f64,
-//     end: (f64, f64),
-//     end_r: f64,
-//     colors: Vec<(f64, Color)>,
-// ) -> Gradient {
-//     Gradient::Radial(start, start_r, end, end_r, colors)
-// }
 
 /// Built-in colors.
 ///

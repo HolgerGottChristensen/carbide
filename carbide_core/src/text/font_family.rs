@@ -1,7 +1,7 @@
 use std::path::{Path, PathBuf};
 
-use crate::text::font_style::FontStyle;
-use crate::text::font_weight::FontWeight;
+use crate::text::types::font_style::FontStyle;
+use crate::text::types::font_weight::FontWeight;
 use crate::text::FontId;
 
 /// Font families should only contain the same sets of glyphs.
@@ -104,8 +104,6 @@ impl FontFamily {
 
         best_fit
     }
-
-    //Todo: create a method to get closest font, specified by weight and bold/italic
 }
 
 #[derive(Clone, Debug)]

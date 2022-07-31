@@ -9,6 +9,8 @@ use env_logger::Env;
 use futures::future::join_all;
 use std::collections::HashSet;
 use std::ops::Deref;
+use futures::stream::FuturesOrdered;
+use futures::StreamExt;
 
 use crate::article::Article;
 use carbide_core::color::TRANSPARENT;
@@ -64,15 +66,19 @@ fn main() {
 
     task!(env, news_articles := {
         let response: Vec<u64> = reqwest::get("https://hacker-news.firebaseio.com/v0/topstories.json").await.unwrap().json().await.unwrap();
-        let texts = response.iter().take(25).map(|id| {
-            async move {
-                let mut article = reqwest::get(format!("https://hacker-news.firebaseio.com/v0/item/{}.json", id)).await.unwrap().json::<Article>().await.unwrap();
-                article.carbide_id = WidgetId::new();
-                article
-            }
+
+        let mut futures = FuturesOrdered::new();
+        response.iter().take(25).for_each(|id| {
+            futures.push(
+                async move {
+                    let mut article = reqwest::get(format!("https://hacker-news.firebaseio.com/v0/item/{}.json", id)).await.unwrap().json::<Article>().await.unwrap();
+                    article.carbide_id = WidgetId::new();
+                    article
+                }
+            )
         });
 
-        Some(join_all(texts).await)
+        Some(futures.collect::<Vec<_>>().await)
     });
 
     println!("Hello hacker news");

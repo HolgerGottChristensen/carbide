@@ -1,13 +1,11 @@
 use crate::draw::Rect;
 pub use primitive::*;
 pub use primitive_kind::*;
-pub use primitive_walker::*;
 pub use primitives::*;
 pub use render::*;
 
 mod primitive;
 mod primitive_kind;
-mod primitive_walker;
 mod primitives;
 mod render;
 
