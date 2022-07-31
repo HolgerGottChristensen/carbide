@@ -1,15 +1,16 @@
 use carbide_controls::{capture, Button};
+use carbide_core::draw::Dimension;
 use carbide_core::prelude::*;
 use carbide_core::text::FontFamily;
 use carbide_core::window::TWindow;
-use carbide_wgpu::window::Window;
+use carbide_wgpu::{Application, Window};
 
 fn main() {
-    let mut window = Window::new("My first counter", 235, 300, None);
+    let mut application = Application::new();
 
     let family =
         FontFamily::new_from_paths("NotoSans", vec!["fonts/NotoSans/NotoSans-Regular.ttf"]);
-    window.add_font_family(family);
+    application.add_font_family(family);
 
     let counter = LocalState::new(0);
 
@@ -21,7 +22,11 @@ fn main() {
         }))
         .frame(200, 30);
 
-    window.set_widgets(VStack::new(vec![text, button]));
+    application.set_scene(Window::new(
+        "My first counter",
+        Dimension::new(235.0, 300.0),
+        VStack::new(vec![text, button])
+    ).close_application_on_window_close());
 
-    window.launch()
+    application.launch()
 }
