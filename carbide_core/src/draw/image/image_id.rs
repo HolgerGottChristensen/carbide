@@ -1,6 +1,7 @@
 use std::path::{Path, PathBuf};
 use std::rc::Rc;
 use std::sync::atomic::{AtomicU32, Ordering};
+use crate::state::{TState, ValueState};
 
 /// Unique image identifier.
 ///
@@ -26,5 +27,17 @@ impl Default for ImageId {
 impl AsRef<Path> for ImageId {
     fn as_ref(&self) -> &Path {
         self.0.as_path()
+    }
+}
+
+impl Into<TState<Option<ImageId>>> for &str {
+    fn into(self) -> TState<Option<ImageId>> {
+        ValueState::new(Some(ImageId::new(self)))
+    }
+}
+
+impl Into<TState<Option<ImageId>>> for PathBuf {
+    fn into(self) -> TState<Option<ImageId>> {
+        ValueState::new(Some(ImageId::new(self)))
     }
 }

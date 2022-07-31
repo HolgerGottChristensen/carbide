@@ -83,7 +83,7 @@ mod v_stack;
 mod window_menu;
 mod z_stack;
 
-#[derive(Clone, Debug, Copy, Hash, Eq, PartialEq, Ord, PartialOrd)]
+#[derive(Clone, Debug, Default, Copy, Hash, Eq, PartialEq, Ord, PartialOrd)]
 pub struct WidgetId(u32);
 
 impl WidgetId {

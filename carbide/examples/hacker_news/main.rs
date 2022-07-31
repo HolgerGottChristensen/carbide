@@ -4,7 +4,6 @@ mod hacker_news_api;
 use carbide_controls::{capture, List, PlainButton, Selection};
 use carbide_core::environment::{Environment, EnvironmentColor};
 use carbide_core::widget::*;
-use carbide_wgpu::window::*;
 use chrono::{TimeZone, Utc};
 use env_logger::Env;
 use futures::future::join_all;
@@ -22,11 +21,14 @@ use carbide_core::text::{FontFamily, FontWeight};
 use carbide_core::widget::WidgetExt;
 use carbide_core::{lens, task, Color};
 use reqwest::Response;
+use carbide_core::draw::Dimension;
+use carbide_wgpu::{Application, Window};
 
 fn main() {
     env_logger::init();
 
-    let mut window = Window::new("Hacker-news example", 900, 500, None);
+    let mut application = Application::new();
+
 
     let mut family = FontFamily::new_from_paths(
         "NotoSans",
@@ -37,12 +39,9 @@ fn main() {
         ],
     );
 
-    window.add_font_family(family);
+    application.add_font_family(family);
 
-    let thumbs_up_icon = window.add_image_from_path("icons/thumb-up-line.png");
-    let comments_icon = window.add_image_from_path("icons/chat-1-line.png");
-
-    let env = window.environment_mut();
+    let env = application.environment_mut();
 
     let news_articles: TState<Option<Vec<Article>>> = LocalState::new(None);
     let selected_items: TState<HashSet<WidgetId>> = LocalState::new(HashSet::new());
@@ -112,12 +111,12 @@ fn main() {
                     let dt = Utc.timestamp(article.time as i64, 0);
                     format!("by {} {}, {}", article.by, dt.format("%D"), dt.format("%I:%M %p"))
                 })),
-                Image::new_icon(thumbs_up_icon.clone())
+                Image::new_icon(Application::assets().join("icons/thumb-up-line.png"))
                     .resizeable()
                     .frame(16, 16)
                     .accent_color(EnvironmentColor::SecondaryLabel),
                 Text::new(lens!(Article; article.score)).custom_flexibility(3),
-                Image::new_icon(comments_icon.clone())
+                Image::new_icon(Application::assets().join("icons/chat-1-line.png"))
                     .resizeable()
                     .frame(16, 16)
                     .accent_color(EnvironmentColor::SecondaryLabel),
@@ -147,17 +146,19 @@ fn main() {
         ProgressView::new(),
     ]);
 
-    window.set_widgets(
+    application.set_scene(Window::new(
+        "Hacker-news example",
+        Dimension::new(900.0, 500.0),
         HSplit::new(
             IfElse::new(news_articles.is_some().ignore_writes())
                 .when_true(list)
                 .when_false(loader),
             detail_view(first_selected_article),
         )
-        .relative_to_start(400.0),
-    );
+            .relative_to_start(400.0),
+    ).close_application_on_window_close());
 
-    window.launch();
+    application.launch();
 }
 
 fn detail_view(selected_article: TState<Option<Article>>) -> Box<dyn Widget> {

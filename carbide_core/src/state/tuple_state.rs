@@ -12,7 +12,7 @@ macro_rules! tuple_state {
             $(
                 $name: TState<$type>,
             )*
-            inner_value: Option<InnerState<TO>>,
+            inner_value: InnerState<Option<TO>>,
             map: fn($($name: &$type),*) -> TO,
             replace: Option<fn(TO, $($name: &$type),*) -> ($(Option<$type>),*)>,
         }
@@ -25,13 +25,15 @@ macro_rules! tuple_state {
                     updated |= self.$name.sync(env);
                 )*
 
-                if let Some(inner) = &mut self.inner_value {
+                let borrowed = &mut *self.inner_value.borrow_mut();
+
+                if let Some(inner) = borrowed {
                     if updated {
-                    *inner.borrow_mut() = (self.map)($(&*self.$name.value()),*);
-                }
+                        *inner = (self.map)($(&*self.$name.value()),*);
+                    }
                 } else {
                     let val = (self.map)($(&*self.$name.value()),*);
-                    self.inner_value = Some(InnerState::new(ValueCell::new(val)));
+                    *borrowed = Some(val);
                 }
 
                 updated
@@ -40,7 +42,7 @@ macro_rules! tuple_state {
 
         impl<$($type: StateContract),*, TO: StateContract> ReadState<TO> for $struct_name<$($type),*, TO> {
             fn value(&self) -> ValueRef<TO> {
-                self.inner_value.as_ref().expect("Tried to get value without having synced first. Maps are not initialized before the first sync").borrow()
+                ValueRef::map(self.inner_value.borrow(), |v| {v.as_ref().expect("Tried to get value without having synced first. Maps are not initialized before the first sync")})
             }
         }
 
@@ -63,10 +65,12 @@ macro_rules! tuple_state {
 
                     let val = (self.map)($(&*self.$name.value()),*);
 
-                    if let Some(inner) = &mut self.inner_value {
-                        *inner.borrow_mut() = val;
+                    let borrowed = &mut *self.inner_value.borrow_mut();
+
+                    if let Some(inner) = borrowed {
+                        *inner = val;
                     } else {
-                        self.inner_value = Some(InnerState::new(ValueCell::new(val)));
+                        *borrowed = Some(val);
                     }
 
                 } else {
@@ -81,6 +85,8 @@ macro_rules! tuple_state {
             fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
                 f.debug_struct(stringify!($struct_name))
                     $(
+                    .field("initialized", &self.inner_value.borrow().is_some())
+                    .field("times_shared", &InnerState::strong_count(&self.inner_value))
                     .field(stringify!($name), &*self.$name.value())
                     )*
                     .finish()
@@ -92,9 +98,8 @@ macro_rules! tuple_state {
                 $(
                     let $name = $name.into().ignore_writes();
                 )*
-                //let val = map($(&*$name.value()),*);
 
-                let inner_value = None;//InnerState::new(ValueCell::new(val));
+                let inner_value = InnerState::new(ValueCell::new(None));
 
                 let n = Self {
                     $(
@@ -112,9 +117,8 @@ macro_rules! tuple_state {
                 $(
                     let $name = $name.into();
                 )*
-                //let val = map($(&*$name.value()),*);
 
-                let inner_value = None;//InnerState::new(ValueCell::new(val));
+                let inner_value = InnerState::new(ValueCell::new(None));
 
                 let n = Self {
                     $(
