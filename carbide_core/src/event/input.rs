@@ -1,4 +1,4 @@
-use crate::event::touch::Touch;
+use crate::event::types::touch::Touch;
 use crate::event::Motion;
 use crate::event::{Button, CustomEvent};
 

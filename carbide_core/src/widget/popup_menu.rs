@@ -79,8 +79,8 @@ impl PopupMenu {
 
         let submenu = Map1::read_map(item, |item: &MenuItem| match item {
             MenuItem::SubMenu { menu } => menu.clone(),
-            MenuItem::Item { .. } => Menu::new("".to_string()),
-            MenuItem::Separator => Menu::new("".to_string()),
+            MenuItem::Item { .. } => Menu::new(""),
+            MenuItem::Separator => Menu::new(""),
         });
 
         let separator_or_submenu = IfElse::new(separator_item)

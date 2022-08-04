@@ -13,7 +13,7 @@ use winit::window::{Window as WinitWindow, WindowBuilder};
 use carbide_core::draw::{Dimension, Position, Rect};
 use carbide_core::draw::image::{ImageId, ImageMap};
 use carbide_core::environment::{Environment, EnvironmentColor};
-use carbide_core::event::{Event, KeyboardEvent, KeyboardEventHandler, MouseEvent, MouseEventHandler, OtherEventHandler, WidgetEvent, WindowEvent};
+use carbide_core::event::{Event, HotKey, KeyboardEvent, KeyboardEventHandler, MouseEvent, MouseEventHandler, OtherEventHandler, WidgetEvent, WindowEvent};
 use carbide_core::flags::Flags;
 use carbide_core::focus::{Focus, Focusable};
 use carbide_core::image::{DynamicImage, GenericImage, GenericImageView};
@@ -23,7 +23,7 @@ use carbide_core::mesh::mesh::Mesh;
 use carbide_core::prelude::{CommonWidget, Primitive, Rectangle, Render, StateSync, WidgetId, WidgetIter, WidgetIterMut};
 use carbide_core::render::Primitives;
 use carbide_core::{Scalar, Scene};
-use carbide_core::widget::{FilterId, OverlaidLayer, Widget, ZStack};
+use carbide_core::widget::{FilterId, Menu, OverlaidLayer, Widget, ZStack};
 use carbide_core::window::WindowId;
 use crate::application::{EVENT_LOOP, WINDOW_IDS};
 use crate::bind_group_layouts::{filter_buffer_bind_group_layout, filter_texture_bind_group_layout, gradient_buffer_bind_group_layout, main_texture_group_layout, uniform_bind_group_layout};
@@ -41,6 +41,7 @@ use crate::texture_atlas_command::TextureAtlasCommand;
 use crate::textures::create_depth_stencil_texture;
 use crate::vertex::Vertex;
 use std::cell::RefCell;
+use raw_window_handle::HasRawWindowHandle;
 use carbide_winit::convert_mouse_cursor;
 
 thread_local!(pub static INSTANCE: Instance = Instance::new(wgpu::Backends::PRIMARY));
@@ -211,6 +212,7 @@ pub struct WGPUWindow {
     child: Box<dyn Widget>,
     close_application_on_window_close: bool,
     visible: bool,
+    window_menu: Option<Vec<Menu>>,
 }
 
 impl WGPUWindow {
@@ -412,8 +414,14 @@ impl WGPUWindow {
                 child,
                 close_application_on_window_close: false,
                 visible: true,
+                window_menu: None
             })
         })
+    }
+
+    pub fn menu(mut self, menu: Vec<Menu>) -> Box<Self> {
+        self.window_menu = Some(menu);
+        Box::new(self)
     }
 
     pub fn close_application_on_window_close(mut self) -> Box<Self> {
@@ -466,12 +474,14 @@ impl MouseEventHandler for WGPUWindow {
         let old_is_current = env.is_event_current();
         let old_dimension = env.pixel_dimensions();
         let old_scale_factor = env.scale_factor();
+        let old_window_handle = env.window_handle();
         let scale_factor = self.inner.scale_factor();
         let physical_dimensions = self.inner.inner_size();
 
         env.set_event_is_current_by_id(self.window_id);
         env.set_pixel_dimensions(Dimension::new(physical_dimensions.width as f64, physical_dimensions.height as f64));
         env.set_scale_factor(scale_factor);
+        env.set_window_handle(Some(self.inner.raw_window_handle()));
 
         if !*consumed {
             if env.is_event_current() {
@@ -491,6 +501,7 @@ impl MouseEventHandler for WGPUWindow {
         env.set_event_is_current(old_is_current);
         env.set_pixel_dimensions(old_dimension);
         env.set_scale_factor(old_scale_factor);
+        env.set_window_handle(old_window_handle);
     }
 }
 
@@ -561,12 +572,14 @@ impl KeyboardEventHandler for WGPUWindow {
         let old_is_current = env.is_event_current();
         let old_dimension = env.pixel_dimensions();
         let old_scale_factor = env.scale_factor();
+        let old_window_handle = env.window_handle();
         let scale_factor = self.inner.scale_factor();
         let physical_dimensions = self.inner.inner_size();
 
         env.set_event_is_current_by_id(self.window_id);
         env.set_pixel_dimensions(Dimension::new(physical_dimensions.width as f64, physical_dimensions.height as f64));
         env.set_scale_factor(scale_factor);
+        env.set_window_handle(Some(self.inner.raw_window_handle()));
 
         if env.is_event_current() {
             self.capture_state(env);
@@ -581,6 +594,7 @@ impl KeyboardEventHandler for WGPUWindow {
         env.set_event_is_current(old_is_current);
         env.set_pixel_dimensions(old_dimension);
         env.set_scale_factor(old_scale_factor);
+        env.set_window_handle(old_window_handle);
     }
 }
 
@@ -605,7 +619,31 @@ impl OtherEventHandler for WGPUWindow {
                         self.resize(LogicalSize::new(size.width, size.height).to_physical(2.0), env);
                         self.request_redraw();
                     }
-                    WindowEvent::Focus => {}
+                    WindowEvent::Focus => {
+                        #[cfg(target_os = "macos")]
+                        {
+                            use carbide_macos::NSMenu;
+                            use carbide_macos::NSMenuItem;
+
+                            // The outer menu is not visible, but only a container for
+                            // other menus.
+
+                            if let Some(menu) = &self.window_menu {
+                                let mut outer_menu = NSMenu::new("");
+
+                                for m in menu {
+                                    let item = NSMenuItem::new(m.name(), "", None)
+                                        .set_submenu(NSMenu::from(m));
+
+                                    outer_menu = outer_menu.add_item(item);
+                                }
+
+                                outer_menu.set_as_main_menu();
+                            } else {
+                                // Todo: Set default application menu
+                            }
+                        }
+                    }
                     WindowEvent::UnFocus => {}
                     WindowEvent::Redraw => {}
                     WindowEvent::CloseRequested => {
@@ -626,12 +664,14 @@ impl OtherEventHandler for WGPUWindow {
         let old_is_current = env.is_event_current();
         let old_dimension = env.pixel_dimensions();
         let old_scale_factor = env.scale_factor();
+        let old_window_handle = env.window_handle();
         let scale_factor = self.inner.scale_factor();
         let physical_dimensions = self.inner.inner_size();
 
         env.set_event_is_current_by_id(self.window_id);
         env.set_pixel_dimensions(Dimension::new(physical_dimensions.width as f64, physical_dimensions.height as f64));
         env.set_scale_factor(scale_factor);
+        env.set_window_handle(Some(self.inner.raw_window_handle()));
 
         if env.is_event_current() {
             self.capture_state(env);
@@ -649,6 +689,7 @@ impl OtherEventHandler for WGPUWindow {
         env.set_event_is_current(old_is_current);
         env.set_pixel_dimensions(old_dimension);
         env.set_scale_factor(old_scale_factor);
+        env.set_window_handle(old_window_handle);
     }
 }
 

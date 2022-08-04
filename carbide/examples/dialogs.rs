@@ -4,9 +4,9 @@ use std::time::Duration;
 
 use carbide::animation::Animation;
 use carbide::color::{BLUE, GREEN, RED};
-use carbide::dialog::color_dialog::ColorDialog;
+use carbide::dialog::color_dialog::ColorDialogSettings;
 use carbide::dialog::emoji_dialog::EmojiDialog;
-use carbide::dialog::open_dialog::OpenDialog;
+use carbide::dialog::open_dialog::OpenDialogSettings;
 use carbide::dialog::save_dialog::SaveDialog;
 use carbide::dialog::FileSpecification;
 use carbide::prelude::elastic_in_out;
@@ -66,7 +66,7 @@ fn main() {
                 .frame(200.0, 22.0),
             Button::new("Open Open-dialog")
                 .on_click(|env: &mut Environment, _: _| {
-                    OpenDialog::new()
+                    OpenDialogSettings::new()
                         .message("Hejsa, det er en besked".to_string())
                         .default_type(FileSpecification::new("Gif", &["gif"]))
                         .button_text("Åben".to_string())
@@ -83,7 +83,7 @@ fn main() {
             Button::new("Open Color-dialog")
                 .on_click(move |env: &mut Environment, _: _| {
                     let color = color_dialog.clone();
-                    ColorDialog::new().show_alpha().open(env, move |col, env| {
+                    ColorDialogSettings::new().show_alpha().open(env, move |col, env| {
                         let mut color = color.clone();
                         color.set_value(col);
                         //println!("Color: {:?}", col);

@@ -30,3 +30,13 @@ impl<G: Send + 'static, T: Future<Output = G> + Send + 'static> SpawnTask<G> for
         env.spawn_task(self, cont);
     }
 }
+
+pub trait StartStream<G: Send + 'static> {
+    fn start_stream(self, env: &mut Environment, cont: impl Fn(G, &mut Environment) -> bool + 'static);
+}
+
+impl<T: Send + 'static> StartStream<T> for std::sync::mpsc::Receiver<T> {
+    fn start_stream(self, env: &mut Environment, cont: impl Fn(T, &mut Environment) -> bool + 'static) {
+        env.start_stream(self, cont);
+    }
+}

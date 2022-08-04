@@ -4,6 +4,7 @@ use crate::widget::Widget;
 #[derive(Debug, Clone)]
 pub enum CustomEvent {
     Async,
+    AsyncStream,
 }
 
 pub trait EventSink: DynClone + Send {
@@ -19,4 +20,9 @@ impl EventSink for NoopEventSink {
     fn call(&self, _: CustomEvent) {
 
     }
+}
+
+
+pub trait HasEventSink {
+    fn event_sink(&self) -> Box<dyn EventSink>;
 }

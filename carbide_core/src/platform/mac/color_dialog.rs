@@ -8,7 +8,7 @@ use objc::declare::ClassDecl;
 use objc::runtime::{Class, Object, Sel};
 use objc::{class, msg_send, sel, sel_impl};
 
-use crate::dialog::color_dialog::ColorDialog;
+use crate::dialog::color_dialog::ColorDialogSettings;
 use crate::prelude::Environment;
 use crate::Color;
 
@@ -98,9 +98,10 @@ lazy_static! {
 pub fn open_color_dialog(
     env: &Environment,
     sender: std::sync::mpsc::Sender<Color>,
-    dialog: ColorDialog,
+    dialog: ColorDialogSettings,
 ) {
-    let inner_window = env.ns_window();
+    todo!()
+    /*let inner_window = env.ns_window();
 
     unsafe {
         let mut receiver = Box::pin(ColorPickerChannel(sender));
@@ -135,5 +136,5 @@ pub fn open_color_dialog(
         }
 
         let () = msg_send![panel, orderFront: inner_window];
-    }
+    }*/
 }

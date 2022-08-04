@@ -3,15 +3,15 @@ use crate::environment::Environment;
 use crate::platform::mac::color_dialog::open_color_dialog;
 use crate::Color;
 
-pub struct ColorDialog {
+pub struct ColorDialogSettings {
     pub(crate) show_alpha: bool,
     pub(crate) continuous: bool,
     //pub(crate) initial_color: Option<Color>,
 }
 
-impl ColorDialog {
+impl ColorDialogSettings {
     pub fn new() -> Self {
-        ColorDialog {
+        ColorDialogSettings {
             show_alpha: false,
             continuous: true,
             //initial_color: None,
@@ -44,9 +44,9 @@ impl ColorDialog {
             false
         };
 
-        let sender = env.start_stream(on_next);
+       // let sender = env.start_stream(on_next);
 
-        open_color_dialog(env, sender, self);
+        //open_color_dialog(env, sender, self);
     }
 
     #[cfg(not(target_os = "macos"))]

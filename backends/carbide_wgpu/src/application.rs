@@ -56,7 +56,6 @@ impl Application {
         let environment = Environment::new(
             window_pixel_dimensions,
             scale_factor,
-            None,
             event_sink,
         );
 

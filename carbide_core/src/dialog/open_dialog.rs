@@ -17,7 +17,7 @@ pub type FuturePath = Map<
     fn(Result<Option<Vec<OsString>>, RecvError>) -> Option<Vec<PathBuf>>,
 >;
 
-pub struct OpenDialog {
+pub struct OpenDialogSettings {
     allow_select_multiple: bool,
     allow_select_directories: bool,
     show_hidden: bool,
@@ -30,9 +30,9 @@ pub struct OpenDialog {
     default_type: Option<FileSpecification>,
 }
 
-impl OpenDialog {
+impl OpenDialogSettings {
     pub fn new() -> Self {
-        OpenDialog {
+        OpenDialogSettings {
             allow_select_multiple: false,
             allow_select_directories: false,
             show_hidden: false,
@@ -46,43 +46,43 @@ impl OpenDialog {
         }
     }
 
-    pub(crate) fn allow_select_multiple(&self) -> bool {
+    pub fn allow_select_multiple(&self) -> bool {
         self.allow_select_multiple
     }
 
-    pub(crate) fn allow_select_directories(&self) -> bool {
+    pub fn allow_select_directories(&self) -> bool {
         self.allow_select_directories
     }
 
-    pub(crate) fn allow_show_hidden(&self) -> bool {
+    pub fn allow_show_hidden(&self) -> bool {
         self.show_hidden
     }
 
-    pub(crate) fn allow_packages_as_directories(&self) -> bool {
+    pub fn allow_packages_as_directories(&self) -> bool {
         self.packages_as_directories
     }
 
-    pub(crate) fn showing_title(&self) -> Option<&String> {
+    pub fn showing_title(&self) -> Option<&String> {
         self.title.as_ref()
     }
 
-    pub(crate) fn showing_message(&self) -> Option<&String> {
+    pub fn showing_message(&self) -> Option<&String> {
         self.message.as_ref()
     }
 
-    pub(crate) fn showing_default_button_text(&self) -> Option<&String> {
+    pub fn showing_default_button_text(&self) -> Option<&String> {
         self.button.as_ref()
     }
 
-    pub(crate) fn showing_starting_directory(&self) -> Option<&PathBuf> {
+    pub fn showing_starting_directory(&self) -> Option<&PathBuf> {
         self.starting_directory.as_ref()
     }
 
-    pub(crate) fn containing_default_type(&self) -> Option<&FileSpecification> {
+    pub fn containing_default_type(&self) -> Option<&FileSpecification> {
         self.default_type.as_ref()
     }
 
-    pub(crate) fn containing_allowed_types(&self) -> Option<&Vec<FileSpecification>> {
+    pub fn containing_allowed_types(&self) -> Option<&Vec<FileSpecification>> {
         self.allowed_types.as_ref()
     }
 

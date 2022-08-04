@@ -12,7 +12,7 @@ use cocoa::foundation::{NSArray, NSAutoreleasePool, NSInteger, NSProcessInfo, NS
 use objc::{class, msg_send, sel, sel_impl};
 use oneshot::Receiver;
 
-use crate::dialog::open_dialog::OpenDialog;
+use crate::dialog::open_dialog::OpenDialogSettings;
 use crate::prelude::Environment;
 use crate::state::{InnerState, ValueCell};
 
@@ -21,8 +21,8 @@ pub mod menu;
 
 pub(crate) type NSModalResponse = NSInteger;
 
-const NSModalResponseOK: NSInteger = 1;
-const NSModalResponseCancel: NSInteger = 0;
+const NSModalResponseOK: NSModalResponse = 1;
+const NSModalResponseCancel: NSModalResponse = 0;
 
 pub fn from_nsstring(s: id) -> String {
     unsafe {
@@ -33,9 +33,7 @@ pub fn from_nsstring(s: id) -> String {
 }
 
 /// Returns a pointer to the nsstring containing the process name
-pub fn process_name() -> id {
-    unsafe { NSProcessInfo::processInfo(nil).processName() }
-}
+
 
 pub fn make_nsstring(s: &str) -> id {
     unsafe { NSString::alloc(nil).init_str(s).autorelease() }
@@ -70,7 +68,8 @@ pub fn get_control_accent_color() -> Color {
 }
 
 pub fn open_save_panel(env: &Environment) -> Receiver<Option<OsString>> {
-    let (sender, receiver) = oneshot::channel();
+    todo!()
+    /*let (sender, receiver) = oneshot::channel();
 
     let sender = InnerState::new(ValueCell::new(Some(sender)));
 
@@ -112,11 +111,12 @@ pub fn open_save_panel(env: &Environment) -> Receiver<Option<OsString>> {
             msg_send![panel, beginSheetModalForWindow: env.ns_window() completionHandler: block];
 
         receiver
-    }
+    }*/
 }
 
-pub fn open_open_panel(env: &Environment, dialog: OpenDialog) -> Receiver<Option<Vec<OsString>>> {
-    let (sender, receiver) = oneshot::channel();
+pub fn open_open_panel(env: &Environment, dialog: OpenDialogSettings) -> Receiver<Option<Vec<OsString>>> {
+    todo!()
+    /*let (sender, receiver) = oneshot::channel();
 
     let sender = InnerState::new(ValueCell::new(Some(sender)));
 
@@ -238,7 +238,7 @@ pub fn open_open_panel(env: &Environment, dialog: OpenDialog) -> Receiver<Option
             msg_send![panel, beginSheetModalForWindow: env.ns_window() completionHandler: block];
 
         receiver
-    }
+    }*/
 }
 
 pub fn open_emoji_dialog() {

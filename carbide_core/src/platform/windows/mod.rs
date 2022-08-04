@@ -1,6 +1,6 @@
 #![allow(unsafe_code)]
 use crate::asynchronous::thread_task::ThreadTask;
-use crate::dialog::open_dialog::OpenDialog;
+use crate::dialog::open_dialog::OpenDialogSettings;
 use crate::dialog::save_dialog::SaveDialog;
 use crate::environment::Environment;
 use oneshot::Receiver;
@@ -63,7 +63,7 @@ pub fn open_save_panel(env: &Environment, dialog: SaveDialog) -> Receiver<Option
     receiver
 }
 
-pub fn open_open_panel(env: &Environment, dialog: OpenDialog) -> Receiver<Option<Vec<OsString>>> {
+pub fn open_open_panel(env: &Environment, dialog: OpenDialogSettings) -> Receiver<Option<Vec<OsString>>> {
     let (sender, receiver) = oneshot::channel::<Option<Vec<OsString>>>();
 
     let handle = env.hwnd() as isize;

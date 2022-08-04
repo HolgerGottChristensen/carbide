@@ -27,9 +27,11 @@ futures = "0.3"
 bytemuck = { version = "1.7", features = ["derive", "min_const_generics"] }
 anyhow = "1.0"
 uuid = { version = "0.8.1", features = ["serde", "v4"] }
+raw-window-handle = "0.4.2"
 #smaa = "0.4.0"
 
 [target.'cfg(target_os="macos")'.dependencies]
+carbide_macos = { path = "../carbide_macos", version = "0.1.0"}
 block = "0.1.6"
 cocoa = "0.24.0"
 objc = "0.2.7"

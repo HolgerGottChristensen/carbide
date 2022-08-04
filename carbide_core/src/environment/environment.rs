@@ -10,6 +10,7 @@ use futures::FutureExt;
 use fxhash::{FxBuildHasher, FxHashMap};
 use image::DynamicImage;
 use oneshot::TryRecvError;
+use raw_window_handle::{HasRawWindowHandle, RawWindowHandle};
 use carbide_core::draw::theme;
 
 use crate::animation::Animation;
@@ -18,7 +19,7 @@ use crate::draw::image::{ImageId, ImageMap};
 use crate::draw::Dimension;
 use crate::draw::Scalar;
 use crate::environment::{EnvironmentFontSize, WidgetTransferAction};
-use crate::event::{CustomEvent, EventSink};
+use crate::event::{CustomEvent, EventSink, HasEventSink};
 use crate::focus::Refocus;
 use crate::mesh::TextureAtlas;
 use crate::prelude::{EnvironmentColor, EnvironmentVariable};
@@ -114,10 +115,7 @@ pub struct Environment {
 
     animations: Option<Vec<Box<dyn Fn(&Instant) -> bool>>>,
 
-    #[cfg(target_os = "macos")]
-    macos_window_handle: Option<*mut c_void>,
-    #[cfg(target_os = "windows")]
-    windows_window_handle: Option<*mut c_void>,
+    raw_window_handle: Option<RawWindowHandle>,
 
     event_sink: Box<dyn EventSink>,
 
@@ -139,7 +137,6 @@ impl Environment {
     pub fn new(
         pixel_dimensions: Dimension,
         scale_factor: f64,
-        window_handle: Option<*mut c_void>,
         event_sink: Box<dyn EventSink>,
     ) -> Self {
         let font_sizes_large = vec![
@@ -228,10 +225,7 @@ impl Environment {
                 .build()
                 .expect("Could not create a tokio runtime"),
             animations: Some(vec![]),
-            #[cfg(target_os = "macos")]
-            macos_window_handle: window_handle,
-            #[cfg(target_os = "windows")]
-            windows_window_handle: window_handle,
+            raw_window_handle: None,
             event_sink,
             animation_widget_in_frame: 0,
             request_application_close: false,
@@ -270,18 +264,6 @@ impl Environment {
 
     pub fn set_root_alignment(&mut self, layout: BasicLayouter) {
         self.root_alignment = layout;
-    }
-
-    #[cfg(target_os = "macos")]
-    pub fn ns_window(&self) -> *mut c_void {
-        self.macos_window_handle
-            .expect("No window for the environment")
-    }
-
-    #[cfg(target_os = "windows")]
-    pub fn hwnd(&self) -> *mut c_void {
-        self.windows_window_handle
-            .expect("No window for the environment")
     }
 
     pub fn queue_image(&mut self, path: PathBuf, image: DynamicImage) -> Option<ImageId> {
@@ -354,9 +336,9 @@ impl Environment {
     /// next, the stream is closed and will no longer receive values.
     pub fn start_stream<T: Send + 'static>(
         &mut self,
+        receiver: std::sync::mpsc::Receiver<T>,
         next: impl Fn(T, &mut Environment) -> bool + 'static,
-    ) -> std::sync::mpsc::Sender<T> {
-        let (sender, receiver) = std::sync::mpsc::channel();
+    ) {
 
         let poll_message: Box<dyn Fn(&mut Environment) -> bool> = Box::new(move |env| -> bool {
             let mut stop = false;
@@ -384,8 +366,6 @@ impl Environment {
             .as_mut()
             .expect("No async task queue was present.")
             .push(poll_message);
-
-        sender
     }
 
     #[allow(unused_variables)]
@@ -762,5 +742,26 @@ impl Environment {
         }
 
         None
+    }
+
+    pub fn window_handle(&self) -> Option<RawWindowHandle> {
+        self.raw_window_handle
+    }
+
+    pub fn set_window_handle(&mut self, window_handle: Option<RawWindowHandle>) {
+        self.raw_window_handle = window_handle;
+    }
+}
+
+#[allow(unsafe_code)]
+unsafe impl HasRawWindowHandle for Environment {
+    fn raw_window_handle(&self) -> RawWindowHandle {
+        self.raw_window_handle.expect("This can only be called after launch of the application and within handler methods")
+    }
+}
+
+impl HasEventSink for Environment {
+    fn event_sink(&self) -> Box<dyn EventSink> {
+        self.event_sink.clone()
     }
 }

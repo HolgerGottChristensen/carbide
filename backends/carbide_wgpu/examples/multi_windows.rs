@@ -1,9 +1,9 @@
 use carbide_core::draw::Dimension;
 use carbide_core::environment::{Environment, EnvironmentFontSize};
-use carbide_core::prelude::{EnvironmentColor, Rectangle};
+use carbide_core::prelude::{EnvironmentColor, MenuItem, Rectangle};
 use carbide_core::state::LocalState;
 use carbide_core::text::FontFamily;
-use carbide_core::widget::{MouseArea, Text, WidgetExt, ZStack};
+use carbide_core::widget::{Menu, MouseArea, Text, WidgetExt, ZStack};
 use carbide_wgpu::{Application, Window};
 
 fn main() {

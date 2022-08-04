@@ -55,7 +55,7 @@ mod read_widget_state;
 mod tuple_state;
 mod util;
 
-pub(crate) type InnerState<T> = Rc<ValueCell<T>>;
+pub type InnerState<T> = Rc<ValueCell<T>>;
 
 pub type StringState = TState<String>;
 pub type ResStringState = TState<Result<String, String>>;

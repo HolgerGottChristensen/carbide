@@ -81,10 +81,6 @@ pub trait WidgetExt: Widget + Sized + 'static {
         Frame::init_height(height.into(), Box::new(self))
     }
 
-    fn menu(self, menus: Vec<Menu>) -> Box<dyn Widget> {
-        MenuBar::new(menus, Box::new(self))
-    }
-
     /// Set a padding around a widget. This will take any value that can be converted into EdgeInsets
     /// This includes values like 10.0 which will apply a padding of 10.0 at all sides of the widget.
     fn padding(self, edge_insets: impl Into<EdgeInsets>) -> Box<Padding> {

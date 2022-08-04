@@ -1,8 +1,8 @@
-pub mod color_dialog;
-pub mod emoji_dialog;
-pub mod font_dialog;
-pub mod open_dialog;
-pub mod save_dialog;
+//pub mod color_dialog;
+//pub mod emoji_dialog;
+//pub mod font_dialog;
+//pub mod open_dialog;
+//pub mod save_dialog;
 
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct FileSpecification {

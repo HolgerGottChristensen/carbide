@@ -1,79 +1,51 @@
-use carbide_core::prelude::EnvironmentColor;
+use carbide_core::draw::Dimension;
+use carbide_core::environment::{Environment, EnvironmentFontSize};
+use carbide_core::prelude::{EnvironmentColor, MenuItem, Rectangle};
+use carbide_core::state::LocalState;
 use carbide_core::text::FontFamily;
-use carbide_core::widget::*;
-use carbide_wgpu::window::*;
+use carbide_core::widget::{Menu, MouseArea, Text, WidgetExt, ZStack};
+use carbide_wgpu::{Application, Window};
 
 fn main() {
-    env_logger::init();
+    let mut application = Application::new();
 
-    let icon_path = Window::relative_path_to_assets("images/rust_press.png");
+    let menu1 = vec![
+        Menu::new("Test1")
+            .item(MenuItem::new("Test1.1", None, true, true))
+            .item(MenuItem::new("Test1.2", None, true, true))
+            .item(MenuItem::new("Test1.3", None, true, true)),
+        Menu::new("Test2")
+            .item(MenuItem::new("Test2.1", None, true, true))
+            .item(MenuItem::new("Test2.2", None, true, true))
+            .item(MenuItem::new("Test2.3", None, true, true)),
+    ];
 
-    let mut window = Window::new(
-        "Icon example".to_string(),
-        400,
-        600,
-        Some(icon_path.clone()),
-    );
-
-    let family =
-        FontFamily::new_from_paths("NotoSans", vec!["fonts/NotoSans/NotoSans-Regular.ttf"]);
-    window.add_font_family(family);
-
-    let image_id = window.add_image_from_path("images/rust.png");
-
-    window.set_widgets(
-        VStack::new(vec![
-            Image::new_icon(image_id),
-            Rectangle::new()
-                .fill(EnvironmentColor::Accent)
-                .frame(50, 50),
-        ])
-        .accent_color(EnvironmentColor::Red)
-        .menu(vec![
-            Menu::new("File".to_string())
-                .item(MenuItem::new("Item 1".to_string(), None, true, false))
-                .item(MenuItem::separator())
-                .item(MenuItem::new("Item 2".to_string(), None, true, false)),
-            Menu::new("Edit".to_string())
-                .item(MenuItem::new("Item 1".to_string(), None, true, false))
-                .item(
-                    Menu::new("Hello".to_string())
-                        .item(MenuItem::new("Item 78".to_string(), None, true, false))
-                        .sub_menu(),
-                )
-                .item(MenuItem::new("Item 2".to_string(), None, true, false)),
-            Menu::new("Very long menu item".to_string())
-                .item(MenuItem::new("Item 1".to_string(), None, true, false))
-                .item(MenuItem::new("Item 2".to_string(), None, true, false)),
-        ]),
-    );
-
-    window.set_menu(vec![
-        Menu::new("Test 1".to_string())
-            .item(MenuItem::new("Item 1".to_string(), None, true, false))
-            .item(MenuItem::new("Item 2".to_string(), None, true, false))
-            .item(MenuItem::separator())
-            .item(MenuItem::new("Item 3".to_string(), None, false, false))
-            .item(MenuItem::separator())
-            .item(MenuItem::new("Item 4".to_string(), None, false, false))
-            .item(MenuItem::new("Item 4".to_string(), None, false, false))
-            .item(MenuItem::separator())
-            .item(MenuItem::new("Item 4".to_string(), None, false, false)),
-        Menu::new("Test 2".to_string())
-            .item(MenuItem::new("Item 5".to_string(), None, true, false))
-            .item(MenuItem::new("Item 6".to_string(), None, true, false))
-            .item(MenuItem::new("Item 7".to_string(), None, false, false))
-            .item(MenuItem::separator())
-            .item(MenuItem::new("Item 8".to_string(), None, false, false))
-            .item(
-                Menu::new("Sub-menu".to_string())
-                    .item(MenuItem::new("Item 9".to_string(), None, true, false))
-                    .item(MenuItem::new("Item 10".to_string(), None, true, false))
-                    .item(MenuItem::new("Item 11".to_string(), None, true, false))
-                    .sub_menu(),
+    let menu2 = vec![
+        Menu::new("Test3")
+            .item(MenuItem::new("Test3.1", None, true, true))
+            .item(MenuItem::new("Test3.2", None, true, true))
+            .item(MenuItem::new("Test3.3", None, true, true)),
+        Menu::new("File")
+            .sub_menu(
+                Menu::new("New")
+                    .item(MenuItem::new("Project", None, true, true))
+                    .item(MenuItem::separator())
+                    .item(MenuItem::new("Module", None, true, true))
             )
-            .kind(MenuKind::Help),
-    ]);
+            .item(MenuItem::new("Test4.2", None, true, true))
+            .item(MenuItem::new("Test4.3", None, true, true)),
+    ];
 
-    window.launch();
+    application.set_scene(
+        Window::new("Look at the window menu", Dimension::new(300.0, 200.0),ZStack::new(vec![
+            Rectangle::new().fill(EnvironmentColor::Yellow),
+            Window::new(
+                "Different menus for different windows",
+                Dimension::new(300.0, 100.0),
+                Rectangle::new()
+            ).menu(menu1),
+        ])).menu(menu2)
+    );
+
+    application.launch()
 }

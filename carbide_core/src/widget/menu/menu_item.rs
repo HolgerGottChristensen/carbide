@@ -22,10 +22,10 @@ impl MenuItem {
         MenuItem::Separator
     }
 
-    pub fn new(name: String, hotkey: Option<HotKey>, enabled: bool, selected: bool) -> MenuItem {
+    pub fn new(name: &str, hotkey: Option<HotKey>, enabled: bool, selected: bool) -> MenuItem {
         MenuItem::Item {
             id: WidgetId::new(),
-            name,
+            name: name.to_string(),
             hotkey,
             enabled,
             selected,
