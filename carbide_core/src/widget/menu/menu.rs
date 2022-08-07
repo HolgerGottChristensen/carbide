@@ -40,6 +40,11 @@ impl Menu {
         self
     }
 
+    pub fn separator(mut self) -> Menu {
+        self.items.push(MenuItem::separator());
+        self
+    }
+
     pub fn items(&self) -> &Vec<MenuItem> {
         &self.items
     }

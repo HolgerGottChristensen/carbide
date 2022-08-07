@@ -5,3 +5,12 @@ pub struct HotKey {
     pub key: Key,
     pub modifier: ModifierKey,
 }
+
+impl HotKey {
+    pub fn new(key: Key, modifier: ModifierKey) -> Self {
+        HotKey {
+            key,
+            modifier
+        }
+    }
+}

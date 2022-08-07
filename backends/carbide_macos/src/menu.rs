@@ -197,6 +197,7 @@ impl NSMenu {
     }
 
     pub fn remove_item(mut self, item: NSMenuItem) -> Self {
+        item.cleanup();
         unsafe {
             let () = msg_send![self.id(), removeItem: item.id()];
         }
@@ -212,6 +213,7 @@ impl NSMenu {
     }
 
     pub fn remove_all_items(mut self) -> Self {
+        self.cleanup();
         unsafe {
             let () = msg_send![self.id(), removeAllItems];
         }
@@ -223,12 +225,10 @@ impl NSMenu {
 
         for item in menu.items() {
             match item {
-                MenuItem::Item { id, name, hotkey, enabled, selected } => {
-                    let item = NSMenuItem::new(name, None)
+                MenuItem::Item { id, name, hotkey, enabled, selected, action } => {
+                    let item = NSMenuItem::new(name, *hotkey)
                         .set_enabled(*enabled)
-                        .set_action(|_| {
-                            println!("Hejsa");
-                        }, env);
+                        .set_action(action.clone(), env);
 
                     new_menu = new_menu.add_item(item);
                 }

@@ -17,6 +17,13 @@ impl From<&str> for NSString {
     }
 }
 
+impl From<char> for NSString {
+    fn from(s: char) -> Self {
+        let id = unsafe { InnerNSString::alloc(nil).init_str(&s.to_string()).autorelease() };
+        NSString(id)
+    }
+}
+
 impl From<NSString> for String {
     fn from(s: NSString) -> Self {
         unsafe {

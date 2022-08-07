@@ -1,6 +1,6 @@
 use cocoa::appkit::NSEventModifierFlags;
 use cocoa::base::{id, nil, selector};
-use carbide_core::event::{CustomEvent, EventSink, HasEventSink, HotKey};
+use carbide_core::event::{CustomEvent, EventSink, HasEventSink, HotKey, Key, ModifierKey};
 use crate::id::Id;
 use cocoa::appkit::NSMenuItem as InnerNSMenuItem;
 use cocoa::foundation::{NSAutoreleasePool, NSInteger};
@@ -14,6 +14,7 @@ use objc::declare::ClassDecl;
 use std::ffi::c_void;
 use std::sync::mpsc::{channel, Receiver, Sender};
 use carbide_core::environment::Environment;
+use carbide_core::widget::MenuAction;
 
 pub struct NSMenuItem {
     pub id: id,
@@ -21,24 +22,26 @@ pub struct NSMenuItem {
 }
 
 impl NSMenuItem {
-    pub fn new(title: &str, hot_key: Option<HotKey>) -> NSMenuItem {
-        /*let (key, masks) = match key_equivalent {
-            Some(ke) => (NSString::alloc(nil).init_str(ke.key), ke.masks),
-            None => (NSString::alloc(nil).init_str(""), None),
-        };*/
+    pub fn new(title: &str, hotkey: Option<HotKey>) -> NSMenuItem {
+
+        let k = hotkey.map(KeyEquivalent::from).unwrap_or_else(|| {
+            KeyEquivalent {
+                key: NSString::from(""),
+                masks: None
+            }
+        });
 
         let title = NSString::from(title);
-        let key = NSString::from("");
 
         let id = unsafe {
             InnerNSMenuItem::alloc(nil)
-                .initWithTitle_action_keyEquivalent_(title.id(), sel!(handleMenuItem:), key.id())
+                .initWithTitle_action_keyEquivalent_(title.id(), sel!(handleMenuItem:), k.key.id())
                 .autorelease()
         };
 
-        //if let Some(mask) = key.map(HotKey::key_modifier_mask) {
-        //    let () = msg_send![menu_item, setKeyEquivalentModifierMask: mask];
-        //}
+        if let Some(mask) = k.masks {
+            let () = unsafe { msg_send![id, setKeyEquivalentModifierMask: mask] };
+        }
 
         NSMenuItem {
             id,
@@ -78,12 +81,12 @@ impl NSMenuItem {
         self
     }
 
-    pub fn set_action(mut self, action: impl Fn(&mut Environment) + 'static, env: &mut Environment) -> NSMenuItem {
+    pub fn set_action(mut self, action: Box<dyn MenuAction>, env: &mut Environment) -> NSMenuItem {
 
         let (pointer, receiver) = CarbideChannel::new(env);
 
         env.start_stream(receiver, move |_: (), env: &mut Environment| -> bool {
-            action(env);
+            (action)(env);
             false
         });
 
@@ -151,16 +154,178 @@ impl Id for NSMenuItem {
     }
 }
 
-// struct KeyEquivalent<'a> {
-//     key: &'a str,
-//     masks: Option<NSEventModifierFlags>,
-// }
-//
-// impl From<HotKey> for KeyEquivalent {
-//     fn from(hot: HotKey) -> Self {
-//         todo!()
-//     }
-// }
+struct KeyEquivalent {
+    key: NSString,
+    masks: Option<NSEventModifierFlags>,
+}
+
+impl From<HotKey> for KeyEquivalent {
+    fn from(hot: HotKey) -> Self {
+        let char = match hot.key {
+            Key::Backspace => '\u{0008}',
+            Key::Delete => '\u{0008}',
+            Key::Return => '\u{0003}',
+
+            Key::Insert => '\u{F727}',
+            Key::Home => '\u{F729}',
+            Key::End => '\u{F72B}',
+            Key::PageUp => '\u{F72C}',
+            Key::PageDown => '\u{F72D}',
+            Key::PrintScreen => '\u{F72E}',
+            Key::ScrollLock => '\u{F72F}',
+            Key::Up => '\u{F700}',
+            Key::Down => '\u{F701}',
+            Key::Left => '\u{F702}',
+            Key::Right => '\u{F703}',
+
+            Key::F1 => '\u{F704}',
+            Key::F2 => '\u{F705}',
+            Key::F3 => '\u{F706}',
+            Key::F4 => '\u{F707}',
+            Key::F5 => '\u{F708}',
+            Key::F6 => '\u{F709}',
+            Key::F7 => '\u{F70A}',
+            Key::F8 => '\u{F70B}',
+            Key::F9 => '\u{F70C}',
+            Key::F10 => '\u{F70D}',
+            Key::F11 => '\u{F70E}',
+            Key::F12 => '\u{F70F}',
+            Key::F13 => '\u{F710}',
+            Key::F14 => '\u{F711}',
+            Key::F15 => '\u{F712}',
+            Key::F16 => '\u{F713}',
+            Key::F17 => '\u{F714}',
+            Key::F18 => '\u{F715}',
+            Key::F19 => '\u{F716}',
+            Key::F20 => '\u{F717}',
+            Key::F21 => '\u{F718}',
+            Key::F22 => '\u{F719}',
+            Key::F23 => '\u{F71A}',
+            Key::F24 => '\u{F71B}',
+
+            Key::Pause => '\u{F730}',
+            Key::SysReq => '\u{F731}',
+
+            //NSBreakFunctionKey          = 0xF732,
+            //NSResetFunctionKey          = 0xF733,
+
+            Key::Stop => '\u{F734}',
+            Key::Menu => '\u{F735}',
+
+            //NSUserFunctionKey           = 0xF736,
+            //NSSystemFunctionKey         = 0xF737,
+            //NSPrintFunctionKey          = 0xF738,
+            //NSClearLineFunctionKey      = 0xF739,
+            //NSClearDisplayFunctionKey   = 0xF73A,
+            //NSInsertLineFunctionKey     = 0xF73B,
+            //NSDeleteLineFunctionKey     = 0xF73C,
+            //NSInsertCharFunctionKey     = 0xF73D,
+            //NSDeleteCharFunctionKey     = 0xF73E,
+            //NSPrevFunctionKey           = 0xF73F,
+            //NSNextFunctionKey           = 0xF740,
+
+            Key::Select => '\u{F741}',
+            Key::Execute => '\u{F741}',
+            Key::Undo => '\u{F743}',
+
+            //NSRedoFunctionKey           = 0xF744,
+
+            Key::Find => '\u{F745}',
+            Key::Help => '\u{F746}',
+            Key::Mode => '\u{F747}',
+
+            Key::Tab => '\t',
+            Key::Space => ' ',
+            Key::Exclaim => '!',
+            Key::Hash => '#',
+            Key::Dollar => '$',
+            Key::Percent => '%',
+            Key::Ampersand => '&',
+            Key::Quote => '"',
+            Key::LeftParen => '(',
+            Key::RightParen => ')',
+            Key::Asterisk => '*',
+            Key::Plus => '+',
+            Key::Comma => ',',
+            Key::Minus => '-',
+            Key::Period => '.',
+            Key::Slash => '/',
+            Key::D0 => '0',
+            Key::D1 => '1',
+            Key::D2 => '2',
+            Key::D3 => '3',
+            Key::D4 => '4',
+            Key::D5 => '5',
+            Key::D6 => '6',
+            Key::D7 => '7',
+            Key::D8 => '8',
+            Key::D9 => '9',
+            Key::Colon => ':',
+            Key::Semicolon => ';',
+            Key::Less => '<',
+            Key::Equals => '=',
+            Key::Greater => '>',
+            Key::Question => '?',
+            Key::At => '@',
+            Key::LeftBracket => '[',
+            Key::Backslash => '\\',
+            Key::RightBracket => ']',
+            Key::A => 'a',
+            Key::B => 'b',
+            Key::C => 'c',
+            Key::D => 'd',
+            Key::E => 'e',
+            Key::F => 'f',
+            Key::G => 'g',
+            Key::H => 'h',
+            Key::I => 'i',
+            Key::J => 'j',
+            Key::K => 'k',
+            Key::L => 'l',
+            Key::M => 'm',
+            Key::N => 'n',
+            Key::O => 'o',
+            Key::P => 'p',
+            Key::Q => 'q',
+            Key::R => 'r',
+            Key::S => 's',
+            Key::T => 't',
+            Key::U => 'u',
+            Key::V => 'v',
+            Key::W => 'w',
+            Key::X => 'x',
+            Key::Y => 'y',
+            Key::Z => 'z',
+            _ => panic!("You are trying to use a key that is not mapped on the macos platform."),
+        };
+
+        let modifiers = if hot.modifier == ModifierKey::NO_MODIFIER {
+            None
+        } else {
+            let mut k = NSEventModifierFlags::empty();
+
+            if hot.modifier.contains(ModifierKey::SHIFT) {
+                k = k | NSEventModifierFlags::NSShiftKeyMask;
+            }
+            if hot.modifier.contains(ModifierKey::CTRL) {
+                k = k | NSEventModifierFlags::NSControlKeyMask;
+            }
+            if hot.modifier.contains(ModifierKey::ALT) {
+                k = k | NSEventModifierFlags::NSAlternateKeyMask;
+            }
+            if hot.modifier.contains(ModifierKey::GUI) {
+                k = k | NSEventModifierFlags::NSCommandKeyMask;
+            }
+
+            Some(k)
+        };
+
+        KeyEquivalent {
+            key: NSString::from(char),
+            masks: modifiers
+        }
+    }
+}
 
 struct NSCarbideResponder(*const Class);
 
