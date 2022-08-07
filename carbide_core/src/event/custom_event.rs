@@ -1,4 +1,5 @@
 use dyn_clone::DynClone;
+use raw_window_handle::HasRawWindowHandle;
 use crate::widget::Widget;
 
 #[derive(Debug, Clone)]
@@ -26,3 +27,7 @@ impl EventSink for NoopEventSink {
 pub trait HasEventSink {
     fn event_sink(&self) -> Box<dyn EventSink>;
 }
+
+pub trait HasRawWindowHandleAndEventSink: HasRawWindowHandle + HasEventSink {}
+
+impl<T> HasRawWindowHandleAndEventSink for T where T: HasRawWindowHandle + HasEventSink {}

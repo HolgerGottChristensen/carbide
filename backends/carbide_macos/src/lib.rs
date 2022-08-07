@@ -11,6 +11,8 @@ use cocoa::foundation::NSProcessInfo;
 pub use dialogs::*;
 pub use menu::*;
 pub use menu_item::*;
+pub use string::*;
+pub use array::*;
 
 /*pub fn process_name() -> id {
     unsafe { NSProcessInfo::processInfo(nil).processName() }

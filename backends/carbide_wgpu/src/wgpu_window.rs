@@ -632,8 +632,8 @@ impl OtherEventHandler for WGPUWindow {
                                 let mut outer_menu = NSMenu::new("");
 
                                 for m in menu {
-                                    let item = NSMenuItem::new(m.name(), "", None)
-                                        .set_submenu(NSMenu::from(m));
+                                    let item = NSMenuItem::new(m.name(), None)
+                                        .set_submenu(NSMenu::from(m, env));
 
                                     outer_menu = outer_menu.add_item(item);
                                 }

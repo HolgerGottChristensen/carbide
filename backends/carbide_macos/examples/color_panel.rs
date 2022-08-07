@@ -39,6 +39,7 @@ fn main() {
             let color_for_stream = color_for_stream.clone();
 
             ColorPanel::new()
+                .set_shows_alpha(true)
                 .order_front(env)
                 .start_stream(env, move |color: Color, env| {
                     let mut color_for_stream = color_for_stream.clone();

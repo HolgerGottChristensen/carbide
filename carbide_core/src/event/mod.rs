@@ -1,6 +1,7 @@
 pub use types::button::Button;
 pub use custom_event::CustomEvent;
 pub use custom_event::HasEventSink;
+pub use custom_event::HasRawWindowHandleAndEventSink;
 pub use custom_event::EventSink;
 pub use custom_event::NoopEventSink;
 pub use event::Event;

@@ -7,10 +7,11 @@ use crate::id::Id;
 use crate::menu_item::NSMenuItem;
 use cocoa::base::NO;
 use cocoa::base::YES;
-use carbide_core::prelude::{Menu, MenuItem};
+use carbide_core::prelude::{Environment, Menu, MenuItem};
+use crate::NSArray;
 
 pub struct NSMenu {
-    id: id,
+    pub(crate) id: id,
 }
 
 impl NSMenu {
@@ -55,7 +56,40 @@ impl NSMenu {
 
     pub fn set_as_main_menu(self) {
         let app: id = unsafe { msg_send![class!(NSApplication), sharedApplication] };
+
+        let main_menu: id = unsafe { msg_send![app, mainMenu] };
+
+        // Do manual cleanup of the previous menu. This is only cleaning up the
+        // streams in the environment,
+        if main_menu != nil {
+            NSMenu {id: main_menu}.cleanup();
+        }
+
         let () = unsafe { msg_send![app, setMainMenu: self.id()] };
+    }
+
+    pub fn cleanup(&self) {
+        for menu_item in self.menu_items() {
+            menu_item.cleanup()
+        }
+    }
+
+    pub fn menu_items(&self) -> Vec<NSMenuItem> {
+        unsafe {
+            let items = NSArray {inner: msg_send![self.id(), itemArray]};
+
+            let mut res = vec![];
+
+            for index in 0..items.len() {
+                let item = NSMenuItem {
+                    id: items.at(index),
+                    responder: nil,
+                };
+                res.push(item)
+            }
+
+            res
+        }
     }
 
     pub fn default_menu() -> NSMenu {
@@ -183,17 +217,18 @@ impl NSMenu {
         }
         self
     }
-}
 
-impl From<&Menu> for NSMenu {
-    fn from(menu: &Menu) -> Self {
+    pub fn from(menu: &Menu, env: &mut Environment) -> Self {
         let mut new_menu = NSMenu::new(menu.name());
 
         for item in menu.items() {
             match item {
                 MenuItem::Item { id, name, hotkey, enabled, selected } => {
-                    let item = NSMenuItem::new(name, "", None)
-                        .set_enabled(*enabled);
+                    let item = NSMenuItem::new(name, None)
+                        .set_enabled(*enabled)
+                        .set_action(|_| {
+                            println!("Hejsa");
+                        }, env);
 
                     new_menu = new_menu.add_item(item);
                 }
@@ -201,8 +236,8 @@ impl From<&Menu> for NSMenu {
                     new_menu = new_menu.add_item(NSMenuItem::separator());
                 }
                 MenuItem::SubMenu { menu } => {
-                    let item = NSMenuItem::new(menu.name(), "", None)
-                        .set_submenu(NSMenu::from(menu));
+                    let item = NSMenuItem::new(menu.name(), None)
+                        .set_submenu(NSMenu::from(menu, env));
 
                     new_menu = new_menu.add_item(item);
                 }

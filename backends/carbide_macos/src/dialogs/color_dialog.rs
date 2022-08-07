@@ -9,8 +9,9 @@ use objc::runtime::{Class, Object, Sel};
 use objc::{class, msg_send, sel, sel_impl};
 use raw_window_handle::{AppKitHandle, HasRawWindowHandle, RawWindowHandle};
 use carbide_core::Color;
-use carbide_core::event::{CustomEvent, EventSink, HasEventSink};
+use carbide_core::event::{CustomEvent, EventSink, HasEventSink, HasRawWindowHandleAndEventSink};
 use carbide_core::prelude::Environment;
+use crate::string::NSString;
 
 
 pub struct ColorPanel {
@@ -74,18 +75,6 @@ impl ColorPanel {
 }
 
 
-
-
-pub trait HasRawWindowHandleAndEventSink: HasRawWindowHandle + HasEventSink {}
-
-impl<T> HasRawWindowHandleAndEventSink for T where T: HasRawWindowHandle + HasEventSink {}
-
-struct ColorPickerResponder(*const Class);
-
-unsafe impl Send for ColorPickerResponder {}
-
-unsafe impl Sync for ColorPickerResponder {}
-
 struct ColorPickerChannel(Sender<Color>, Box<dyn EventSink>);
 
 impl ColorPickerChannel {
@@ -95,10 +84,21 @@ impl ColorPickerChannel {
     }
 }
 
+
+
+
+
+
+struct ColorPickerResponder(*const Class);
+
+unsafe impl Send for ColorPickerResponder {}
+
+unsafe impl Sync for ColorPickerResponder {}
+
 lazy_static! {
     static ref COLOR_PICKER_RESPONDER: ColorPickerResponder = unsafe {
         let superclass = class!(NSResponder);
-        let mut decl = ClassDecl::new("Testername", superclass).unwrap();
+        let mut decl = ClassDecl::new("ColorPickerResponder", superclass).unwrap();
         decl.add_ivar::<*mut c_void>("method");
 
         decl.add_class_method(sel!(new), new as extern "C" fn(&Class, Sel) -> id);

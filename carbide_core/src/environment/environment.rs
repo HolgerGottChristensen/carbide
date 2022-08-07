@@ -353,8 +353,7 @@ impl Environment {
                     Err(std::sync::mpsc::TryRecvError::Empty) => {
                         break;
                     }
-                    Err(e) => {
-                        eprintln!("{:?}", e);
+                    Err(std::sync::mpsc::TryRecvError::Disconnected) => {
                         stop = true;
                     }
                 }
