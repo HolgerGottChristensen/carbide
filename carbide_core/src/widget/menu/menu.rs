@@ -7,11 +7,11 @@ pub type ContextMenu = Menu;
 pub struct Menu {
     name: String,
     items: Vec<MenuItem>,
-    pub(crate) kind: Option<MenuKind>,
+    pub(crate) hint: Option<MenuHint>,
 }
 
 #[derive(Debug, Clone)]
-pub enum MenuKind {
+pub enum MenuHint {
     /// This is not really recommended to be used for now, since the menu it creates is not looking
     /// like the one from swiftui. It for example is missing minimize, zoom and bring all to front.
     /// It will also contain tab things, but I think that is unstable in winit and the app keeps
@@ -26,12 +26,12 @@ impl Menu {
         Menu {
             name: title.to_string(),
             items: vec![],
-            kind: None,
+            hint: None,
         }
     }
 
-    pub fn kind(mut self, kind: MenuKind) -> Menu {
-        self.kind = Some(kind);
+    pub fn hint(mut self, kind: MenuHint) -> Menu {
+        self.hint = Some(kind);
         self
     }
 

@@ -147,6 +147,16 @@ impl Text {
             color,
         }
     }
+
+    pub fn with_optional_decoration(mut self, decoration: TextDecoration) -> Box<Self> {
+        self.text_decoration = decoration;
+        Box::new(self)
+    }
+
+    pub fn with_optional_weight(mut self, weight: FontWeight) -> Box<Self> {
+        self.font_weight = weight;
+        Box::new(self)
+    }
 }
 
 impl Layout for Text {

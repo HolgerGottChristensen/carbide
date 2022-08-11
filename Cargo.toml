@@ -2,6 +2,7 @@
 resolver = "2"
 members = [
     "carbide_core",
+    "carbide_macro",
     "carbide_controls",
     "carbide_derive",
     "backends/carbide_example_shared",

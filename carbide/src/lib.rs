@@ -1,3 +1,7 @@
+
+#[macro_use]
+extern crate carbide_macro;
+
 #[cfg(feature = "controls")]
 pub use carbide_controls::*;
 pub use carbide_core::*;
