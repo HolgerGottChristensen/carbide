@@ -3,6 +3,7 @@ use lyon::algorithms::path::builder::PathBuilder;
 use lyon::algorithms::path::geom::euclid::vec2;
 use lyon::algorithms::path::Winding;
 use lyon::math::point;
+use carbide_macro::carbide_default_builder;
 
 use crate::draw::{Dimension, Position};
 use crate::prelude::*;
@@ -59,6 +60,7 @@ impl Ellipse {
         ])
     }
 
+    #[carbide_default_builder]
     pub fn new() -> Box<Ellipse> {
         Box::new(Ellipse {
             id: WidgetId::new(),

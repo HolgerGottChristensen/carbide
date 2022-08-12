@@ -1,3 +1,4 @@
+use carbide_macro::{carbide_default_builder, gen_optionals};
 use crate::draw::{Dimension, Position};
 use crate::prelude::*;
 use crate::widget::CrossAxisAlignment;
@@ -14,6 +15,8 @@ pub struct HStack {
 }
 
 impl HStack {
+
+    #[carbide_default_builder]
     pub fn new(children: Vec<Box<dyn Widget>>) -> Box<Self> {
         Box::new(HStack {
             id: WidgetId::new(),
@@ -35,6 +38,12 @@ impl HStack {
         Box::new(self)
     }
 }
+
+#[cfg(feature = "macro")]
+gen_optionals!(
+    HStack,
+    spacing: f64,
+);
 
 impl Layout for HStack {
     fn calculate_size(&mut self, requested_size: Dimension, env: &mut Environment) -> Dimension {

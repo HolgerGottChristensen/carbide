@@ -1,4 +1,4 @@
-use carbide_macro::CarbideUI;
+use carbide_macro::{CarbideUI, gen_optionals};
 use carbide::cursor::MouseCursor;
 use carbide::state::{State, TState, UsizeState};
 use carbide_controls::Button;
@@ -14,17 +14,44 @@ use carbide_core::draw::Position;
 fn main() {
     CarbideUI!{
         struct AlbumDetail {
+            //let articles: Vec<String>
+            let alignment: u32 = 53
 
             fn body() -> Widget {
                 VStack {
-                    HStack {
-                        Text("Hejsa", weight: FontWeight::Bold)
-                        Text("Verden", decoration: TextDecoration::Underline(vec![]))
+                    HStack(spacing: 20.0) {
+                        Text("Hejsa").bold()
+                        Text("Verden").underline()
                     }
-                    Rectangle
-                        .fill(EnvironmentColor::Red)
-                        .frame(100.0, 100.0)
+                    ZStack {
+                        Rectangle.fill(EnvironmentColor::Red)
+                        Circle.fill(EnvironmentColor::Green)
+                            .frame(50.0, 50.0)
+                    }.frame(100.0, 100.0)
                 }
+
+                /*HStack (articles: arts, aaa, optionally: 2 + 23) {
+
+                }
+                VStack {
+                    VStack { hejsa in
+
+                    }
+                    VStack {
+
+                    }
+                }
+                List(articles) { article in
+                    HStack {
+                        Image(article.front_image)
+                        VStack(alignment: Alignment::Leading) {
+                            Text(song.title)
+                            Text(song.artist.name)
+                                .foregroundStyle(Alignment::Leading)
+                                .foregroundStyle(Alignment::Leading)
+                        }
+                    }
+                }*/
             }
         }
     }

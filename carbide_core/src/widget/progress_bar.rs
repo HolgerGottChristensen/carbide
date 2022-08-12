@@ -1,3 +1,4 @@
+use carbide_macro::carbide_default_builder;
 use crate::draw::{Dimension, Position};
 use crate::prelude::*;
 use crate::CommonWidgetImpl;
@@ -13,19 +14,18 @@ pub struct ProgressBar {
 }
 
 impl ProgressBar {
+    #[carbide_default_builder]
     pub fn new(progress: impl Into<F64State>) -> Box<Self> {
-        ProgressBar::new_internal(progress.into())
-    }
+        let progress = progress.into();
 
-    fn new_internal(progress: F64State) -> Box<Self> {
         let child = ZStack::new(vec![
             Capsule::new().fill(EnvironmentColor::SystemFill),
             HSplit::new(Capsule::new().fill(EnvironmentColor::Accent), Spacer::new())
                 .percent(progress.clone())
                 .non_draggable(),
         ])
-        .frame(0.0, 5)
-        .expand_width();
+            .frame(0.0, 5)
+            .expand_width();
 
         Box::new(ProgressBar {
             id: WidgetId::new(),

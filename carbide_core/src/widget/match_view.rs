@@ -3,6 +3,7 @@ use crate::prelude::*;
 use std::collections::HashMap;
 use std::fmt::{Debug, Formatter};
 use std::hash::Hash;
+use carbide_macro::carbide_default_builder;
 
 /// A basic, non-interactive rectangle shape widget.
 #[derive(Clone, Widget)]
@@ -21,6 +22,7 @@ where
 }
 
 impl<T: StateContract> Match<T> {
+    #[carbide_default_builder]
     pub fn new(state: impl Into<TState<T>>) -> Box<Self> {
         Box::new(Match {
             id: WidgetId::new(),

@@ -1,3 +1,4 @@
+use carbide_macro::carbide_default_builder;
 use crate::draw::{Dimension, Position};
 use crate::prelude::*;
 
@@ -13,6 +14,8 @@ pub struct ZStack {
 }
 
 impl ZStack {
+
+    #[carbide_default_builder]
     pub fn new(children: Vec<Box<dyn Widget>>) -> Box<ZStack> {
         Box::new(ZStack {
             id: WidgetId::new(),

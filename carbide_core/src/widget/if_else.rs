@@ -2,6 +2,7 @@ use crate::draw::{Dimension, Position};
 use crate::prelude::*;
 use crate::widget::Widget;
 use carbide_derive::Widget;
+use carbide_macro::carbide_default_builder;
 
 /// A basic, non-interactive rectangle shape widget.
 #[derive(Debug, Clone, Widget)]
@@ -16,6 +17,7 @@ pub struct IfElse {
 }
 
 impl IfElse {
+    #[carbide_default_builder]
     pub fn new(predicate: impl Into<TState<bool>>) -> Box<Self> {
         Box::new(IfElse {
             id: WidgetId::new(),

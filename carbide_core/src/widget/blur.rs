@@ -1,3 +1,4 @@
+use carbide_macro::carbide_default_builder;
 use crate::draw::{Dimension, Position, Rect};
 use crate::prelude::*;
 use crate::render::PrimitiveKind;
@@ -17,6 +18,8 @@ pub struct Blur {
 }
 
 impl Blur {
+
+    #[carbide_default_builder]
     pub fn gaussian(sigma: f32) -> Box<Self> {
         Box::new(Blur {
             id: WidgetId::new(),

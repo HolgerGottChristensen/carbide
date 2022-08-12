@@ -5,6 +5,7 @@ use crate::prelude::*;
 use crate::widget::canvas::Canvas;
 use crate::CommonWidgetImpl;
 use std::time::Duration;
+use carbide_macro::carbide_default_builder;
 
 #[derive(Debug, Clone, Widget)]
 pub struct ProgressView {
@@ -15,6 +16,7 @@ pub struct ProgressView {
 }
 
 impl ProgressView {
+    #[carbide_default_builder]
     pub fn new() -> Box<Self> {
         ProgressView::new_internal(30.0)
     }

@@ -1,4 +1,5 @@
 use carbide_core::CommonWidgetImpl;
+use carbide_macro::carbide_default_builder;
 
 use crate::draw::{Dimension, Position};
 use crate::prelude::*;
@@ -12,6 +13,7 @@ pub struct Empty {
 }
 
 impl Empty {
+    #[carbide_default_builder]
     pub fn new() -> Box<Self> {
         Box::new(Empty {
             id: WidgetId::new(),

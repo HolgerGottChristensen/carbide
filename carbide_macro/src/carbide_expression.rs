@@ -77,7 +77,6 @@ impl ToTokens for CarbideInstantiate {
         };
 
         let optional = if let Some(params) = params {
-
             let mapped = params.iter().filter_map(|param| {
                 param.optional_init_function()
             });
@@ -90,10 +89,11 @@ impl ToTokens for CarbideInstantiate {
         };
 
         tokens.extend(quote!(
-            #ident::new(
+            #ident::builder(
                 #children
                 #required
             )#optional
+            .finish()
             #(#modifiers)*
         ))
     }

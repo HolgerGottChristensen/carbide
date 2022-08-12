@@ -9,7 +9,7 @@ pub trait WidgetExt: Widget + Sized + 'static {
     /// The frame takes two parameters. Both parameters take f64 state. This means you can pass
     /// constant values like 10, 100.2, varying values like LocalState and AnimationState.
     fn frame(self, width: impl Into<TState<f64>>, height: impl Into<TState<f64>>) -> Box<Frame> {
-        Frame::init(width, height, Box::new(self))
+        Frame::new(width, height, Box::new(self))
     }
 
     /// Changes the flexibility of the widget to a custom value. This can be useful when the
@@ -84,7 +84,7 @@ pub trait WidgetExt: Widget + Sized + 'static {
     /// Set a padding around a widget. This will take any value that can be converted into EdgeInsets
     /// This includes values like 10.0 which will apply a padding of 10.0 at all sides of the widget.
     fn padding(self, edge_insets: impl Into<EdgeInsets>) -> Box<Padding> {
-        Padding::init(edge_insets.into(), Box::new(self))
+        Padding::new(edge_insets.into(), Box::new(self))
     }
 
     /// Clip the content of the widget. The clip area will be the requested area for the widget. It

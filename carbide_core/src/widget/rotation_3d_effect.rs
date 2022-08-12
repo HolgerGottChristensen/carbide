@@ -1,4 +1,5 @@
 use cgmath::{Deg, Matrix4, Point3, Vector3};
+use carbide_macro::carbide_default_builder;
 
 use crate::draw::{Dimension, Position, Rect};
 use crate::prelude::*;
@@ -13,17 +14,18 @@ pub struct Rotation3DEffect {
     dimension: Dimension,
     anchor: BasicLayouter,
     #[state]
-    rotation_x: F64State,
+    rotation_x: TState<f64>,
     #[state]
-    rotation_y: F64State,
+    rotation_y: TState<f64>,
     fov: f64,
 }
 
 impl Rotation3DEffect {
-    pub fn new<P1: Into<F64State>, P2: Into<F64State>>(
+    #[carbide_default_builder]
+    pub fn new(
         child: Box<dyn Widget>,
-        rotation_x: P1,
-        rotation_y: P2,
+        rotation_x: impl Into<TState<f64>>,
+        rotation_y: impl Into<TState<f64>>,
     ) -> Box<Self> {
         Box::new(Rotation3DEffect {
             id: WidgetId::new(),

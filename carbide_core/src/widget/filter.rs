@@ -1,3 +1,4 @@
+use carbide_macro::carbide_default_builder;
 use crate::draw::{Dimension, Position, Rect};
 use crate::prelude::*;
 use crate::render::PrimitiveKind;
@@ -15,6 +16,7 @@ pub struct Filter {
 }
 
 impl Filter {
+    #[carbide_default_builder]
     pub fn new(filter: ImageFilter, child: Box<dyn Widget>) -> Box<Self> {
         Box::new(Filter {
             id: WidgetId::new(),

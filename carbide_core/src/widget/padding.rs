@@ -1,3 +1,4 @@
+use carbide_macro::carbide_default_builder;
 use crate::draw::{Dimension, Position};
 use crate::prelude::*;
 use crate::widget::types::EdgeInsets;
@@ -13,13 +14,14 @@ pub struct Padding {
 }
 
 impl Padding {
-    pub fn init(edge_insets: EdgeInsets, child: Box<dyn Widget>) -> Box<Self> {
+    #[carbide_default_builder]
+    pub fn new(edge_insets: impl Into<EdgeInsets>, child: Box<dyn Widget>) -> Box<Self> {
         Box::new(Padding {
             id: WidgetId::new(),
             child,
             position: Position::new(0.0, 0.0),
             dimension: Dimension::new(0.0, 0.0),
-            edge_insets,
+            edge_insets: edge_insets.into(),
         })
     }
 }

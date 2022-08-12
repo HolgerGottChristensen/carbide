@@ -1,3 +1,4 @@
+use carbide_macro::carbide_default_builder;
 use crate::draw::{Dimension, Position};
 use crate::event::{
     KeyboardEvent, KeyboardEventHandler, MouseEvent, MouseEventHandler, OtherEventHandler,
@@ -18,6 +19,7 @@ pub struct EnvUpdating {
 }
 
 impl EnvUpdating {
+    #[carbide_default_builder]
     pub fn new(child: Box<dyn Widget>) -> Box<Self> {
         Box::new(EnvUpdating {
             id: WidgetId::new(),

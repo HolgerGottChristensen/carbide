@@ -1,4 +1,5 @@
 use carbide_core::CommonWidgetImpl;
+use carbide_macro::carbide_default_builder;
 
 use crate::draw::{Dimension, Position};
 use crate::prelude::*;
@@ -25,6 +26,8 @@ pub struct Background {
 }
 
 impl Background {
+
+    #[carbide_default_builder]
     pub fn new(child: Box<dyn Widget>, background: Box<dyn Widget>) -> Box<Background> {
         Box::new(Background {
             id: WidgetId::new(),

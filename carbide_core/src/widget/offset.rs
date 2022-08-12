@@ -1,3 +1,4 @@
+use carbide_macro::carbide_default_builder;
 use crate::draw::{Dimension, Position};
 use crate::prelude::*;
 use crate::CommonWidgetImpl;
@@ -10,20 +11,21 @@ pub struct Offset {
     position: Position,
     dimension: Dimension,
     #[state]
-    offset_x: F64State,
+    offset_x: TState<f64>,
     #[state]
-    offset_y: F64State,
+    offset_y: TState<f64>,
 }
 
 impl Offset {
-    pub fn new(offset_x: F64State, offset_y: F64State, child: Box<dyn Widget>) -> Box<Self> {
+    #[carbide_default_builder]
+    pub fn new(offset_x: impl Into<TState<f64>>, offset_y: impl Into<TState<f64>>, child: Box<dyn Widget>) -> Box<Self> {
         Box::new(Offset {
             id: WidgetId::new(),
             child,
             position: Position::new(0.0, 0.0),
             dimension: Dimension::new(0.0, 0.0),
-            offset_x,
-            offset_y,
+            offset_x: offset_x.into(),
+            offset_y: offset_y.into(),
         })
     }
 }

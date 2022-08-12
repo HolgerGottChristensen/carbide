@@ -14,6 +14,7 @@ use carbide_core::focus::Focus;
 use carbide_core::layout::Layout;
 use carbide_core::state::{BoolState, FocusState, ReadState, State};
 use carbide_core::widget::{CommonWidget, Widget, WidgetExt, WidgetId, WidgetIter, WidgetIterMut};
+use carbide_macro::carbide_default_builder;
 
 pub trait Action: Fn(&mut Environment, ModifierKey) + DynClone {}
 
@@ -78,6 +79,7 @@ impl MouseArea {
         Box::new(self)
     }
 
+    #[carbide_default_builder]
     pub fn new(child: Box<dyn Widget>) -> Box<Self> {
         Box::new(MouseArea {
             id: WidgetId::new(),

@@ -1,3 +1,4 @@
+use carbide_macro::carbide_default_builder;
 use crate::draw::{Dimension, Position};
 use crate::prelude::*;
 use crate::CommonWidgetImpl;
@@ -12,6 +13,7 @@ pub struct Flagged {
 }
 
 impl Flagged {
+    #[carbide_default_builder]
     pub fn new(child: Box<dyn Widget>, flags: Flags) -> Box<Self> {
         Box::new(Flagged {
             id: WidgetId::new(),

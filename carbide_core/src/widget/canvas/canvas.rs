@@ -4,6 +4,7 @@ use lyon::tessellation::{
     StrokeVertex, VertexBuffers,
 };
 use std::fmt::{Debug, Formatter};
+use carbide_macro::carbide_default_builder;
 
 use crate::color::Rgba;
 use crate::draw::shape::triangle::Triangle;
@@ -42,6 +43,8 @@ where
 }
 
 impl Canvas<()> {
+
+    #[carbide_default_builder]
     pub fn new(context: fn(Rect, Context, &mut Environment) -> Context) -> Box<Canvas<()>> {
         Box::new(Canvas {
             id: WidgetId::new(),

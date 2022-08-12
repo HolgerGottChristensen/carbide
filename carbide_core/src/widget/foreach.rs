@@ -1,4 +1,5 @@
 use std::fmt::{Debug, Formatter};
+use carbide_macro::carbide_default_builder;
 
 use crate::draw::{Dimension, Position};
 use crate::event::{OtherEventHandler, WidgetEvent};
@@ -38,7 +39,8 @@ where
 }
 
 impl<T: StateContract, U: Delegate<T>> ForEach<T, U> {
-    pub fn new<K: Into<TState<Vec<T>>>>(model: K, delegate: U) -> Box<Self> {
+    #[carbide_default_builder]
+    pub fn new(model: impl Into<TState<Vec<T>>>, delegate: U) -> Box<Self> {
         let model = model.into();
 
         Box::new(Self {

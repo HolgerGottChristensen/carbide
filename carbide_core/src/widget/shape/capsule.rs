@@ -2,6 +2,7 @@ use lyon::tessellation::math::rect;
 use lyon::tessellation::path::builder::BorderRadii;
 use lyon::tessellation::path::traits::PathBuilder;
 use lyon::tessellation::path::Winding;
+use carbide_macro::carbide_default_builder;
 
 use crate::draw::{Dimension, Position};
 use crate::prelude::*;
@@ -58,6 +59,7 @@ impl Capsule {
         ])
     }
 
+    #[carbide_default_builder]
     pub fn new() -> Box<Capsule> {
         Box::new(Capsule {
             id: WidgetId::new(),

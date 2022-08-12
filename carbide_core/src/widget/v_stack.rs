@@ -1,3 +1,4 @@
+use carbide_macro::carbide_default_builder;
 use crate::draw::{Dimension, Position};
 use crate::prelude::*;
 
@@ -14,6 +15,8 @@ pub struct VStack {
 }
 
 impl VStack {
+
+    #[carbide_default_builder]
     pub fn new(children: Vec<Box<dyn Widget>>) -> Box<Self> {
         Box::new(VStack {
             id: WidgetId::new(),

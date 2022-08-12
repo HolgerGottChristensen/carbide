@@ -1,6 +1,7 @@
 use crate::draw::{Dimension, Position};
 use crate::prelude::*;
 use std::fmt::Debug;
+use carbide_macro::carbide_default_builder;
 
 pub static SCALE: f64 = -1.0;
 
@@ -23,7 +24,8 @@ pub struct Frame {
 }
 
 impl Frame {
-    pub fn init(
+    #[carbide_default_builder]
+    pub fn new(
         width: impl Into<TState<f64>>,
         height: impl Into<TState<f64>>,
         child: Box<dyn Widget>,

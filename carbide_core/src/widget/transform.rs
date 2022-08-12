@@ -1,4 +1,5 @@
 use cgmath::{Deg, Matrix4, SquareMatrix};
+use carbide_macro::carbide_default_builder;
 
 use crate::draw::{Dimension, Position, Rect};
 use crate::prelude::*;
@@ -34,7 +35,8 @@ impl Transform {
         })
     }*/
 
-    pub fn new<P1: Into<TState<Matrix4<f32>>>>(child: Box<dyn Widget>, matrix: P1) -> Box<Self> {
+    #[carbide_default_builder]
+    pub fn new(child: Box<dyn Widget>, matrix: impl Into<TState<Matrix4<f32>>>) -> Box<Self> {
         Box::new(Transform {
             id: WidgetId::new(),
             child,

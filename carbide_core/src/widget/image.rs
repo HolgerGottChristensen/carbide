@@ -9,6 +9,7 @@ use crate::render::PrimitiveKind;
 use crate::widget::types::ScaleMode;
 use crate::CommonWidgetImpl;
 use std::path::PathBuf;
+use carbide_macro::carbide_default_builder;
 use crate::mesh::pre_multiply::PreMultiply;
 
 /// A primitive and basic widget for drawing an `Image`.
@@ -31,7 +32,8 @@ pub struct Image {
 }
 
 impl Image {
-    pub fn new<I: Into<TState<Option<ImageId>>>>(id: I) -> Box<Self> {
+    #[carbide_default_builder]
+    pub fn new(id: impl Into<TState<Option<ImageId>>>) -> Box<Self> {
         Box::new(Image {
             id: WidgetId::new(),
             image_id: id.into(),

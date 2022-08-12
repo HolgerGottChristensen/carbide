@@ -2,6 +2,7 @@ use lyon::algorithms::math::rect;
 use lyon::algorithms::path::builder::PathBuilder;
 use lyon::algorithms::path::Winding;
 use lyon::math::point;
+use carbide_macro::carbide_default_builder;
 
 use crate::draw::{Dimension, Position};
 use crate::prelude::*;
@@ -58,6 +59,7 @@ impl Circle {
         ])
     }
 
+    #[carbide_default_builder]
     pub fn new() -> Box<Circle> {
         Box::new(Circle {
             id: WidgetId::new(),

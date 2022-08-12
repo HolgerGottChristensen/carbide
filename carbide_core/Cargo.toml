@@ -20,11 +20,13 @@ resolver = "2"
 all-features = true
 
 [features]
-#default = [""]
+default = ["macro"]
+macro = ["carbide_macro"]
 
 [dependencies]
 raw-window-handle = "0.4.2"
 carbide_derive = { path = "../carbide_derive", version = "0.70" }
+carbide_macro = { path = "../carbide_macro", version = "0.1.0", optional = true}
 rusttype = { git = "https://github.com/HolgerGottChristensen/rusttype.git", features = ["gpu_cache"] }
 copypasta = "0.7.1"
 rand = "0.8.5"

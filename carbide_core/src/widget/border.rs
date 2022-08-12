@@ -1,3 +1,4 @@
+use carbide_macro::carbide_default_builder;
 use crate::draw::{Dimension, Position, Rect};
 use crate::prelude::*;
 use crate::render::PrimitiveKind;
@@ -27,6 +28,7 @@ impl Border {
         Box::new(self)
     }
 
+    #[carbide_default_builder]
     pub fn new(child: Box<dyn Widget>) -> Box<Self> {
         Box::new(Border {
             id: WidgetId::new(),

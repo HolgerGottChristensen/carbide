@@ -55,7 +55,7 @@ impl PopUpButton {
             RoundedRectangle::new(CornerRadii::all(3.0))
                 .fill(EnvironmentColor::SecondarySystemBackground),
             HStack::new(vec![
-                Padding::init(EdgeInsets::single(0.0, 0.0, 7.0, 0.0), Text::new(text)),
+                Padding::new(EdgeInsets::single(0.0, 0.0, 7.0, 0.0), Text::new(text)),
                 Spacer::new(),
                 ZStack::new(vec![
                     RoundedRectangle::new(CornerRadii::single(0.0, 0.0, 0.0, 2.0))
@@ -93,7 +93,7 @@ impl PopUpButton {
                 .stroke(EnvironmentColor::OpaqueSeparator)
                 .stroke_style(0.5),
             HStack::new(vec![
-                Padding::init(
+                Padding::new(
                     EdgeInsets::single(0.0, 0.0, 5.0, 0.0),
                     Text::new(text).color(EnvironmentColor::Label),
                 ),

@@ -67,6 +67,8 @@ impl ToTokens for CarbideStruct {
             field.to_struct_field()
         });
 
+        let struct_fields2 = struct_fields.clone();
+
         let optional_field_methods = fields.iter().filter_map(|field| {
             field.to_optional_function()
         });
@@ -75,9 +77,23 @@ impl ToTokens for CarbideStruct {
             field.to_required_arg()
         });
 
+        let required_fields_arg_names = fields.iter().filter_map(|field| {
+            field.to_required_arg_name()
+        });
+
+        let required_fields_args2 = required_fields_args.clone();
+
         let struct_init_fields = fields.iter().map(|field| {
             field.to_struct_init_field()
         });
+
+        let struct_init_fields2 = struct_init_fields.clone();
+
+        let struct_fields_use = fields.iter().map(|field| {
+            field.to_struct_field_names()
+        });
+
+        let struct_fields_use2 = struct_fields_use.clone();
 
         // If we have a body with multiple widget returns we store them in a field in the struct
         let child_field = if self.body.body.len() == 0 {
@@ -120,7 +136,10 @@ impl ToTokens for CarbideStruct {
             )
         };
 
+        let builder_ident = Ident::new(&format!("{}Builder", &ident.to_string()), ident.span());
+
         tokens.extend(quote!(
+            /// The resulting widget
             #[derive(Clone, Debug, Widget)]
             pub struct #ident {
                 id: WidgetId,
@@ -133,22 +152,49 @@ impl ToTokens for CarbideStruct {
             /// Body new function
             impl #ident {
                 pub fn new(#(#required_fields_args, )*) -> Box<Self> {
+                    #ident::builder(#(#required_fields_arg_names, )*).finish()
+                }
+            }
+
+            /// The builder struct
+            pub struct #builder_ident {
+                #(#struct_fields2, )*
+            }
+
+            /// Create a builder
+            impl #ident {
+                pub fn builder(#(#required_fields_args2, )*) -> #builder_ident {
+                    #builder_ident {
+                        #(#struct_init_fields2, )*
+                    }
+                }
+            }
+
+            /// Optional fields impl
+            impl #builder_ident {
+                #(#optional_field_methods)*
+            }
+
+            /// Builder finish, construct the actual widget
+            impl #builder_ident {
+                pub fn finish(self) -> Box<#ident> {
+                    let #builder_ident {
+                        #(#struct_fields_use,)*
+                    } = self;
+
                     #children_let
 
                     Box::new(#ident {
                         id: WidgetId::new(),
                         position: Position::new(0.0, 0.0),
                         dimension: Dimension::new(100.0, 100.0),
-                        #(#struct_init_fields, )*
+                        #(#struct_fields_use2,)*
                         #child_init_field
                     })
                 }
             }
 
-            /// Optional fields impl
-            impl #ident {
-                #(#optional_field_methods)*
-            }
+
 
             carbide_core::CommonWidgetImpl!(#ident, self, id: self.id, #children_common position: self.position, dimension: self.dimension);
 
@@ -227,6 +273,7 @@ impl Parse for CarbideBodyFunction {
     }
 }
 
+#[derive(Clone)]
 pub enum CarbideStructField {
     Optional {
         l: Let,
@@ -278,56 +325,33 @@ impl CarbideStructField {
         }
     }
 
+    fn to_struct_field_names(&self) -> TokenStream {
+        match self {
+            CarbideStructField::Required { ident, .. } => {
+                quote!(
+                    #ident
+                )
+            }
+            CarbideStructField::Optional { ident, .. } => {
+                quote!(
+                    #ident
+                )
+            }
+        }
+    }
+
     fn to_optional_function(&self) -> Option<ItemFn> {
         match self {
-            CarbideStructField::Optional { ident, t, .. } => {
+            CarbideStructField::Optional { ident, t: ty, .. } => {
 
-                // Make a punctuated list of parameters for the optional function
-                let mut inputs = Punctuated::new();
+                let method_ident = Ident::new(&format!("with_optional_{}", ident.to_string()), ident.span());
 
-                // Push "mut self" to the list of parameters
-                inputs.push(FnArg::Receiver(Receiver {
-                    attrs: vec![],
-                    reference: None,
-                    mutability: Some(Default::default()),
-                    self_token: Default::default()
-                }));
-
-                // Push "ident: type" to the list of parameters
-                inputs.push(FnArg::Typed(PatType {
-                    attrs: vec![],
-                    pat: Box::new(Pat::Ident(PatIdent {
-                        attrs: vec![],
-                        by_ref: None,
-                        mutability: None,
-                        ident: ident.clone(),
-                        subpat: None
-                    })),
-                    colon_token: Default::default(),
-                    ty: Box::new(t.clone())
-                }));
-
-                Some(ItemFn {
-                    attrs: vec![],
-                    vis: Visibility::Public(VisPublic {pub_token: Default::default() }),
-                    sig: Signature {
-                        constness: None,
-                        asyncness: None,
-                        unsafety: None,
-                        abi: None,
-                        fn_token: Default::default(),
-                        ident: Ident::new(&format!("with_optional_{}", ident.to_string()), Span::call_site()),
-                        generics: Default::default(),
-                        paren_token: Default::default(),
-                        inputs,
-                        variadic: None,
-                        output: parse_quote!(-> Box<Self>),
-                    },
-                    block: parse_quote!({
-                        self.#ident = #ident;
-                        Box::new(self)
-                    })
-                })
+                Some(parse_quote!(
+                    pub fn #method_ident (mut self, #ident: impl Into<#ty>) -> Self {
+                        self. #ident = #ident.into();
+                        self
+                    }
+                ))
             }
             CarbideStructField::Required { .. } => None,
         }
@@ -348,6 +372,15 @@ impl CarbideStructField {
                     colon_token: Default::default(),
                     ty: Box::new(t.clone())
                 }))
+            }
+            CarbideStructField::Optional { .. } => None,
+        }
+    }
+
+    fn to_required_arg_name(&self) -> Option<Ident> {
+        match self {
+            CarbideStructField::Required { ident, .. } => {
+                Some(ident.clone())
             }
             CarbideStructField::Optional { .. } => None,
         }

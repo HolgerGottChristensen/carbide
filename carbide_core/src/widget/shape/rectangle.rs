@@ -1,6 +1,7 @@
 use lyon::algorithms::math::rect;
 use lyon::algorithms::path::builder::PathBuilder;
 use lyon::algorithms::path::Winding;
+use carbide_macro::carbide_default_builder;
 
 use crate::draw::{Dimension, Position, Rect};
 use crate::prelude::*;
@@ -29,6 +30,21 @@ pub struct Rectangle {
 }
 
 impl Rectangle {
+
+    #[carbide_default_builder]
+    pub fn new() -> Box<Rectangle> {
+        Box::new(Rectangle {
+            id: WidgetId::new(),
+            position: Position::new(0.0, 0.0),
+            dimension: Dimension::new(100.0, 100.0),
+            fill_color: EnvironmentColor::Blue.into(),
+            stroke_color: EnvironmentColor::Blue.into(),
+            style: ShapeStyle::Default,
+            stroke_style: StrokeStyle::Solid { line_width: 2.0 },
+            triangle_store: PrimitiveStore::new(),
+        })
+    }
+
     pub fn fill(mut self, color: impl Into<TState<AdvancedColor>>) -> Box<Self> {
         self.fill_color = color.into();
         self.style += ShapeStyle::Fill;
@@ -145,19 +161,6 @@ impl Rectangle {
             },
         ]
     }*/
-
-    pub fn new() -> Box<Rectangle> {
-        Box::new(Rectangle {
-            id: WidgetId::new(),
-            position: Position::new(0.0, 0.0),
-            dimension: Dimension::new(100.0, 100.0),
-            fill_color: EnvironmentColor::Blue.into(),
-            stroke_color: EnvironmentColor::Blue.into(),
-            style: ShapeStyle::Default,
-            stroke_style: StrokeStyle::Solid { line_width: 2.0 },
-            triangle_store: PrimitiveStore::new(),
-        })
-    }
 }
 
 CommonWidgetImpl!(Rectangle, self, id: self.id, position: self.position, dimension: self.dimension);

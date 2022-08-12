@@ -1,5 +1,6 @@
 use std::borrow::Borrow;
 use std::fmt::Debug;
+use carbide_macro::carbide_default_builder;
 
 use crate::draw::{Dimension, Position, Rect};
 use crate::prelude::*;
@@ -42,7 +43,9 @@ pub struct Text {
 }
 
 impl Text {
-    pub fn new<K: Into<StringState>>(text: K) -> Box<Self> {
+
+    #[carbide_default_builder]
+    pub fn new(text: impl Into<StringState>) -> Box<Self> {
         let text = text.into();
 
         Box::new(Text {
@@ -100,6 +103,11 @@ impl Text {
         Box::new(self)
     }
 
+    /// Take a given text element and make it render with the font weight: Bold
+    pub fn bold(mut self) -> Box<Self> {
+        self.font_weight(FontWeight::Bold)
+    }
+
     pub fn wrap_mode(mut self, wrap: Wrap) -> Box<Self> {
         self.wrap_mode = wrap;
         Box::new(self)
@@ -146,6 +154,12 @@ impl Text {
             text_decoration: self.text_decoration.clone(),
             color,
         }
+    }
+
+    /// Take a given text element and make it render with an underline
+    pub fn underline(mut self) -> Box<Self> {
+        self.text_decoration = TextDecoration::Underline(vec![]);
+        Box::new(self)
     }
 
     pub fn with_optional_decoration(mut self, decoration: TextDecoration) -> Box<Self> {

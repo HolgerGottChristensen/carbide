@@ -1,3 +1,4 @@
+use carbide_macro::carbide_default_builder;
 use crate::draw::{Dimension, Position, Rect};
 use crate::prelude::*;
 use crate::render::PrimitiveKind;
@@ -13,6 +14,7 @@ pub struct Clip {
 }
 
 impl Clip {
+    #[carbide_default_builder]
     pub fn new(child: Box<dyn Widget>) -> Box<Self> {
         Box::new(Clip {
             id: WidgetId::new(),
@@ -21,19 +23,6 @@ impl Clip {
             dimension: Dimension::new(100.0, 100.0),
         })
     }
-
-    /*pub fn body(&mut self) -> Box<Self> {
-        widget_body!(
-            HStack (
-                alignment: Alignment::Top,
-                spacing: 10.0,
-            ) {
-                for i in $self.model {
-                    Text("Item: {}, index: {}", $item, $index),
-                }
-            }
-        )
-    }*/
 }
 
 impl Layout for Clip {
