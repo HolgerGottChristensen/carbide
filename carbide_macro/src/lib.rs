@@ -1,16 +1,18 @@
 mod carbide_struct;
 mod carbide_expression;
 mod carbide_gen_optionals;
+mod ident_extraction;
 
 use proc_macro::TokenStream;
 use quote::{quote, ToTokens};
-use syn::{FnArg, parse_macro_input};
+use syn::{Expr, FnArg, parse_macro_input, parse_quote};
 use carbide_struct::CarbideStruct;
 use crate::carbide_gen_optionals::{CarbideGenOptionals};
 
 #[proc_macro]
 pub fn CarbideUI(item: TokenStream) -> TokenStream {
     let input = parse_macro_input!(item as CarbideStruct);
+
     //panic!("\n{:#?}", &input);
     TokenStream::from(input.into_token_stream())
 }

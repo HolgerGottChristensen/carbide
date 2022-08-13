@@ -59,6 +59,21 @@ impl<FROM: StateContract, TO: StateContract> FieldState<FROM, TO> {
 
         res.into()
     }
+
+    pub fn new2(
+        state: TState<FROM>,
+        map: for<'r, 's> fn(&'r FROM) -> &'r TO,
+        map_mut: for<'r, 's> fn(&'r mut FROM) -> &'r mut TO,
+    ) -> TState<TO> {
+
+        let res = FieldState {
+            state: state.clone(),
+            map,
+            map_mut,
+        };
+
+        res.into()
+    }
 }
 
 impl<FROM: StateContract, TO: StateContract> NewStateSync for FieldState<FROM, TO> {

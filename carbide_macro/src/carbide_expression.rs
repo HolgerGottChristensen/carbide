@@ -1,20 +1,182 @@
 use std::fmt::{Debug, Formatter, Pointer};
 use proc_macro2::{Span, TokenStream};
 use quote::{quote, ToTokens};
-use syn::{Attribute, Block, Error, ExprForLoop, ExprIf, Ident, Pat, PatOr};
+use syn::{Arm, Attribute, Block, Error, ExprForLoop, ExprIf, Ident, Pat, PatOr};
 use syn::token::{Brace, Colon, Comma, Dot, Else, In, Let, Paren, Token};
 use syn::{braced, Expr, parenthesized, Token, Type};
 use syn::__private::{parse_braces, parse_parens};
 use syn::parse::{Parse, ParseStream};
 use syn::punctuated::Punctuated;
-use crate::carbide_expression::CarbideExpression::{For, If, Instantiate};
+use crate::carbide_expression::CarbideExpression::{ForLoop, If, Instantiate, Match};
 use crate::carbide_expression::CarbideInstantiateParam::{Optional, Required};
+use crate::ident_extraction::extract_idents_from_pattern;
 
 #[derive(Debug)]
 pub enum CarbideExpression {
     Instantiate(CarbideInstantiate),
     If(CarbideExprIf),
-    For(CarbideExprForLoop)
+    ForLoop(CarbideExprForLoop),
+    Match(CarbideExprMatch)
+}
+
+pub struct CarbideExprMatch {
+    pub attrs: Vec<Attribute>,
+    pub match_token: Token![match],
+    pub expr: Box<Expr>,
+    pub brace_token: Brace,
+    pub arms: Vec<CarbideArm>,
+}
+
+pub struct CarbideArm {
+    pub attrs: Vec<Attribute>,
+    pub pat: Pat,
+    pub guard: Option<(Token![if], Box<Expr>)>,
+    pub fat_arrow_token: Token![=>],
+    pub body: Box<CarbideBlock>,
+    pub comma: Option<Token![,]>,
+}
+
+impl ToTokens for CarbideExprMatch {
+    fn to_tokens(&self, tokens: &mut TokenStream) {
+        let CarbideExprMatch {
+            attrs,
+            match_token,
+            expr,
+            brace_token,
+            arms
+        } = self;
+
+        let arms = arms.iter().map(|arm| {
+            CarbideArm::tokens(arm, *expr.clone())
+        });
+
+        tokens.extend(quote!(
+            {
+                let into_state = TState::from({#expr});
+                Match::new(into_state.clone())
+                #(#arms)*
+            }
+
+        ))
+    }
+}
+
+impl CarbideArm {
+    fn tokens(&self, match_expr: Expr) -> TokenStream {
+        let CarbideArm {
+            attrs,
+            pat,
+            guard,
+            fat_arrow_token,
+            body,
+            comma
+        } = self;
+
+        let idents = extract_idents_from_pattern(pat.clone());
+
+        let quoted_idents = if idents.len() == 0 {
+            quote!()
+        } else {
+            quote!(
+                #(#idents),* =>
+            )
+        };
+
+        let body = if body.exprs.len() == 0 {
+            quote!(#body)
+        } else if body.exprs.len() == 1 {
+            let item = &body.exprs[0];
+            quote!(#item)
+        } else {
+            quote!(ZStack::new(#body))
+        };
+
+        let guard = if let Some((_, expr)) = guard {
+            quote!(if #expr)
+        } else {
+            quote!()
+        };
+
+        quote!(
+            .case({let into_state_cl = into_state.clone(); carbide_core::matches_case!(into_state_cl, #pat #guard, #quoted_idents {#body})})
+        )
+    }
+}
+
+impl Debug for CarbideExprMatch {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("CarbideExprMatch")
+            .field("expr", &self.expr.to_token_stream().to_string())
+            .field("arms", &self.arms)
+            .finish()
+    }
+}
+
+impl Debug for CarbideArm {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("CarbideArm")
+            .field("pat", &self.pat.to_token_stream().to_string())
+            .field("guard", &self.guard.as_ref().map(|a| a.1.to_token_stream().to_string()).unwrap_or("".to_string()))
+            .field("body", &self.body)
+            .finish()
+    }
+}
+
+impl Parse for CarbideExprMatch {
+    fn parse(input: ParseStream) -> syn::Result<Self> {
+        let mut attrs = input.call(Attribute::parse_outer)?;
+        let match_token: Token![match] = input.parse()?;
+        let expr = Expr::parse_without_eager_brace(input)?;
+
+        let content;
+        let brace_token = braced!(content in input);
+        //attr::parsing::parse_inner(&content, &mut attrs)?;
+
+        let mut arms = Vec::new();
+        while !content.is_empty() {
+            arms.push(content.call(CarbideArm::parse)?);
+        }
+
+        Ok(CarbideExprMatch {
+            attrs,
+            match_token,
+            expr: Box::new(expr),
+            brace_token,
+            arms,
+        })
+    }
+}
+
+impl Parse for CarbideArm {
+    fn parse(input: ParseStream) -> syn::Result<CarbideArm> {
+        let requires_comma;
+        Ok(CarbideArm {
+            attrs: input.call(Attribute::parse_outer)?,
+            pat: CarbideExprForLoop::multi_pat_with_leading_vert(input)?,
+            guard: {
+                if input.peek(Token![if]) {
+                    let if_token: Token![if] = input.parse()?;
+                    let guard: Expr = input.parse()?;
+                    Some((if_token, Box::new(guard)))
+                } else {
+                    None
+                }
+            },
+            fat_arrow_token: input.parse()?,
+            body: {
+                let body = CarbideBlock::parse(input)?;
+                requires_comma = false;
+                Box::new(body)
+            },
+            comma: {
+                if requires_comma && !input.is_empty() {
+                    Some(input.parse()?)
+                } else {
+                    input.parse()?
+                }
+            },
+        })
+    }
 }
 
 pub struct CarbideExprForLoop {
@@ -42,7 +204,8 @@ impl ToTokens for CarbideExprForLoop {
             ForEach::new(
                 #expr,
                 |item: TState<_>, _| -> Box<dyn Widget> {
-                    let #pat = &*item.value();
+                    //let #pat = &*item.value();
+                    let #pat = item;
                     ZStack::new(
                         #body
                     )
@@ -280,7 +443,12 @@ impl ToTokens for CarbideExpression {
                     #i
                 ))
             }
-            CarbideExpression::For(i) => {
+            ForLoop(i) => {
+                tokens.extend(quote!(
+                    #i
+                ))
+            }
+            Match(i) => {
                 tokens.extend(quote!(
                     #i
                 ))
@@ -292,9 +460,12 @@ impl ToTokens for CarbideExpression {
 // Todo: we should probably look more into how to choose the different expressions and not just looking at the first token
 impl Parse for CarbideExpression {
     fn parse(input: ParseStream) -> syn::Result<Self> {
-        if input.peek(Token!(for)) {
+        if input.peek(Token!(match)) {
+            let match_expr = CarbideExprMatch::parse(input)?;
+            Ok(Match(match_expr))
+        } else if input.peek(Token!(for)) {
             let for_expr = CarbideExprForLoop::parse(input)?;
-            Ok(For(for_expr))
+            Ok(ForLoop(for_expr))
         } else if input.peek(Token!(if)) {
             let if_expr = CarbideExprIf::parse(input)?;
             Ok(If(if_expr))

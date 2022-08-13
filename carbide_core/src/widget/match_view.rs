@@ -159,7 +159,7 @@ impl<T: StateContract> Debug for Match<T> {
 #[macro_export]
 macro_rules! matches_case {
     (@inner $i2:ident, $( $pattern:pat_param )|+ $( if $guard: expr )?, $next:ident) => {
-        let $next = FieldState::new($i2.clone(), |a| {
+        let $next = carbide_core::state::FieldState::new2($i2.clone(), |a| {
             match a {
                 $( $pattern )|+ $( if $guard )? => {
                     $next
@@ -177,8 +177,8 @@ macro_rules! matches_case {
     };
     (@inner $i2:ident, $( $pattern:pat_param )|+ $( if $guard: expr )?, $next:ident, $($rest:ident),+) => {
 
-        matches_case!(@inner $i2, $( $pattern )|+ $( if $guard )?, $next);
-        matches_case!(@inner $i2, $( $pattern )|+ $( if $guard )?, $($rest),+);
+        carbide_core::matches_case!(@inner $i2, $( $pattern )|+ $( if $guard )?, $next);
+        carbide_core::matches_case!(@inner $i2, $( $pattern )|+ $( if $guard )?, $($rest),+);
     };
     ($i2:ident, $(|)? $( $pattern:pat_param )|+ $( if $guard: expr )?, $($i1:ident),+ => $widget:expr) => {
         (|a| {
@@ -187,7 +187,7 @@ macro_rules! matches_case {
                 _ => false
             }
         },{
-            matches_case!(@inner $i2, $( $pattern )|+ $( if $guard )?, $($i1),+);
+            carbide_core::matches_case!(@inner $i2, $( $pattern )|+ $( if $guard )?, $($i1),+);
 
             $widget
         })

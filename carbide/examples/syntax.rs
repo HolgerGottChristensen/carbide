@@ -16,14 +16,42 @@ fn main() {
     CarbideUI!{
         struct AlbumDetail {
             //let articles: Vec<String>
+            //let articles: Vec<String> = vec!["Hej".to_string(), "Verden".to_string()]
             let alignment: u32 = 53
 
             fn body() -> Widget {
-                VStack {
+                match alignment {
+                    20 => {
+                        Text("It is 20")
+                    }
+                    x => {
+                        Text(x)
+                    }
+                }
+
+                /*match alignment {
+                    53 => {
+                        Text("Its default")
+                    }
+                    42 => {
+                        Text("Its nice")
+                    }
+                    x => {
+                        Text("Not as nice")
+                    }
+                }*/
+
+                /*VStack {
+                    for i in articles.clone() {
+                        Text(i).font_size(EnvironmentFontSize::LargeTitle)
+                    }
+                }*/
+
+                /*VStack {
                     for i in vec![1, 2, 3, 42] {
                         Text(*i).font_size(EnvironmentFontSize::LargeTitle)
                     }
-                }
+                }*/
 
                 /*VStack {
                     for (i, j) in vec![(1, 2), (3, 42)] {
