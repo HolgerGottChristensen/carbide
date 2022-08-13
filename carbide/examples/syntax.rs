@@ -4,6 +4,7 @@ use carbide::state::{State, TState, UsizeState};
 use carbide_controls::Button;
 use carbide_core::draw::Dimension;
 use carbide_core::environment::EnvironmentColor;
+use carbide_core::environment::EnvironmentFontSize;
 use carbide_core::state::{LocalState, ReadState, StateExt};
 use carbide_core::text::{FontFamily, FontWeight, TextDecoration};
 use carbide_core::widget::*;
@@ -18,13 +19,17 @@ fn main() {
             let alignment: u32 = 53
 
             fn body() -> Widget {
-                if alignment == 42 {
-                    Text("Its nice")
-                } else if alignment == 53 {
-                    Text("Its default")
-                } else {
-                    Text("Not as nice")
+                VStack {
+                    for i in vec![1, 2, 3, 42] {
+                        Text(*i).font_size(EnvironmentFontSize::LargeTitle)
+                    }
                 }
+
+                /*VStack {
+                    for (i, j) in vec![(1, 2), (3, 42)] {
+                        Text(*i + *j).font_size(EnvironmentFontSize::LargeTitle)
+                    }
+                }*/
 
                 /*if alignment == 42 {
                     Text("Its nice")

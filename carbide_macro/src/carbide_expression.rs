@@ -1,19 +1,120 @@
 use std::fmt::{Debug, Formatter, Pointer};
 use proc_macro2::{Span, TokenStream};
 use quote::{quote, ToTokens};
-use syn::{Attribute, Block, Error, ExprIf, Ident};
+use syn::{Attribute, Block, Error, ExprForLoop, ExprIf, Ident, Pat, PatOr};
 use syn::token::{Brace, Colon, Comma, Dot, Else, In, Let, Paren, Token};
 use syn::{braced, Expr, parenthesized, Token, Type};
 use syn::__private::{parse_braces, parse_parens};
 use syn::parse::{Parse, ParseStream};
 use syn::punctuated::Punctuated;
-use crate::carbide_expression::CarbideExpression::{If, Instantiate};
+use crate::carbide_expression::CarbideExpression::{For, If, Instantiate};
 use crate::carbide_expression::CarbideInstantiateParam::{Optional, Required};
 
 #[derive(Debug)]
 pub enum CarbideExpression {
     Instantiate(CarbideInstantiate),
     If(CarbideExprIf),
+    For(CarbideExprForLoop)
+}
+
+pub struct CarbideExprForLoop {
+    pub attrs: Vec<Attribute>,
+    pub for_token: Token![for],
+    pub pat: Pat,
+    pub in_token: Token![in],
+    pub expr: Box<Expr>,
+    pub body: CarbideBlock,
+}
+
+impl ToTokens for CarbideExprForLoop {
+    fn to_tokens(&self, tokens: &mut TokenStream) {
+
+        let CarbideExprForLoop {
+            attrs,
+            for_token,
+            pat,
+            in_token,
+            expr,
+            body
+        } = self;
+
+        tokens.extend(quote!(
+            ForEach::new(
+                #expr,
+                |item: TState<_>, _| -> Box<dyn Widget> {
+                    let #pat = &*item.value();
+                    ZStack::new(
+                        #body
+                    )
+                }
+            )
+        ))
+    }
+}
+
+impl Debug for CarbideExprForLoop {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("CarbideExprForLoop")
+            .field("pat", &self.pat.to_token_stream().to_string())
+            .field("expr", &self.expr.to_token_stream().to_string())
+            .field("body", &self.body)
+            .finish()
+    }
+}
+
+impl Parse for CarbideExprForLoop {
+    fn parse(input: ParseStream) -> syn::Result<Self> {
+        let mut attrs = input.call(Attribute::parse_outer)?;
+
+        let for_token: Token![for] = input.parse()?;
+
+        let pat = CarbideExprForLoop::multi_pat_with_leading_vert(input)?;
+
+        let in_token: Token![in] = input.parse()?;
+        let expr: Expr = input.call(Expr::parse_without_eager_brace)?;
+
+        let body = CarbideBlock::parse(input)?;
+
+        Ok(CarbideExprForLoop {
+            attrs,
+            for_token,
+            pat,
+            in_token,
+            expr: Box::new(expr),
+            body,
+        })
+    }
+}
+
+/// The code in this impl is copied from syn::pat::parsing, since they dont expose it
+/// and the goal is to parse stuff as close to syn as possible
+impl CarbideExprForLoop {
+    fn multi_pat_with_leading_vert(input: ParseStream) -> syn::Result<Pat> {
+        let leading_vert: Option<Token![|]> = input.parse()?;
+        CarbideExprForLoop::multi_pat_impl(input, leading_vert)
+    }
+
+    fn multi_pat_impl(input: ParseStream, leading_vert: Option<Token![|]>) -> syn::Result<Pat> {
+        let mut pat: Pat = input.parse()?;
+        if leading_vert.is_some()
+            || input.peek(Token![|]) && !input.peek(Token![||]) && !input.peek(Token![|=])
+        {
+            let mut cases = Punctuated::new();
+            cases.push_value(pat);
+            while input.peek(Token![|]) && !input.peek(Token![||]) && !input.peek(Token![|=]) {
+                let punct = input.parse()?;
+                cases.push_punct(punct);
+                let pat: Pat = input.parse()?;
+                cases.push_value(pat);
+            }
+            pat = Pat::Or(PatOr {
+                attrs: Vec::new(),
+                leading_vert,
+                cases,
+            });
+        }
+        Ok(pat)
+    }
 }
 
 pub struct CarbideExprIf {
@@ -96,7 +197,6 @@ impl Parse for CarbideExprIf {
 impl Parse for CarbideBlock {
     fn parse(input: ParseStream) -> syn::Result<Self> {
         let brace_content;
-        println!("{:?}", input);
         if let Ok(brace) = parse_braces(input) {
             brace_content = brace.content;
 
@@ -180,13 +280,22 @@ impl ToTokens for CarbideExpression {
                     #i
                 ))
             }
+            CarbideExpression::For(i) => {
+                tokens.extend(quote!(
+                    #i
+                ))
+            }
         }
     }
 }
 
+// Todo: we should probably look more into how to choose the different expressions and not just looking at the first token
 impl Parse for CarbideExpression {
     fn parse(input: ParseStream) -> syn::Result<Self> {
-        if input.peek(Token!(if)) {
+        if input.peek(Token!(for)) {
+            let for_expr = CarbideExprForLoop::parse(input)?;
+            Ok(For(for_expr))
+        } else if input.peek(Token!(if)) {
             let if_expr = CarbideExprIf::parse(input)?;
             Ok(If(if_expr))
         } else {

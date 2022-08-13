@@ -39,6 +39,7 @@ where
 }
 
 impl<T: StateContract, U: Delegate<T>> ForEach<T, U> {
+
     #[carbide_default_builder]
     pub fn new(model: impl Into<TState<Vec<T>>>, delegate: U) -> Box<Self> {
         let model = model.into();
