@@ -18,17 +18,34 @@ fn main() {
             let alignment: u32 = 53
 
             fn body() -> Widget {
-                VStack {
+                if alignment == 42 {
+                    Text("Its nice")
+                } else if alignment == 53 {
+                    Text("Its default")
+                } else {
+                    Text("Not as nice")
+                }
+
+                /*if alignment == 42 {
+                    Text("Its nice")
+                } else if alignment == 53 {
+                    Text("Its default")
+                } else {
+                    Text("Not as nice")
+                }*/
+
+                /*VStack {
                     HStack(spacing: 20.0) {
                         Text("Hejsa").bold()
                         Text("Verden").underline()
+                        Text(alignment)
                     }
                     ZStack {
                         Rectangle.fill(EnvironmentColor::Red)
                         Circle.fill(EnvironmentColor::Green)
                             .frame(50.0, 50.0)
                     }.frame(100.0, 100.0)
-                }
+                }*/
 
                 /*HStack (articles: arts, aaa, optionally: 2 + 23) {
 
@@ -68,7 +85,9 @@ fn main() {
     application.set_scene(Window::new(
         "Carbide syntax example".to_string(),
         Dimension::new(400.0, 600.0),
-        AlbumDetail::new()
+        AlbumDetail::builder()
+            .with_optional_alignment(42u32)
+            .finish()
     ).close_application_on_window_close());
 
     application.launch();

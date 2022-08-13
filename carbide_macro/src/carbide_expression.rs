@@ -1,18 +1,170 @@
-use std::fmt::{Debug, Formatter};
+use std::fmt::{Debug, Formatter, Pointer};
 use proc_macro2::{Span, TokenStream};
 use quote::{quote, ToTokens};
-use syn::{Error, Ident};
-use syn::token::{Brace, Colon, Comma, Dot, In, Let, Paren, Token};
+use syn::{Attribute, Block, Error, ExprIf, Ident};
+use syn::token::{Brace, Colon, Comma, Dot, Else, In, Let, Paren, Token};
 use syn::{braced, Expr, parenthesized, Token, Type};
 use syn::__private::{parse_braces, parse_parens};
 use syn::parse::{Parse, ParseStream};
 use syn::punctuated::Punctuated;
-use crate::carbide_expression::CarbideExpression::Instantiate;
+use crate::carbide_expression::CarbideExpression::{If, Instantiate};
 use crate::carbide_expression::CarbideInstantiateParam::{Optional, Required};
 
 #[derive(Debug)]
 pub enum CarbideExpression {
     Instantiate(CarbideInstantiate),
+    If(CarbideExprIf),
+}
+
+pub struct CarbideExprIf {
+    pub attrs: Vec<Attribute>,
+    pub if_token: Token![if],
+    pub cond: Box<Expr>,
+    pub then_branch: CarbideBlock,
+    pub else_branch: CarbideElseBranch,
+}
+
+pub enum CarbideElseBranch {
+    ElseIf (Token![else], Box<CarbideExprIf>),
+    Else (Token![else], CarbideBlock),
+    None
+}
+
+pub struct CarbideBlock {
+    pub brace_token: Brace,
+    pub exprs: Vec<CarbideExpression>,
+}
+
+impl Debug for CarbideExprIf {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("CarbideExprIf")
+            .field("expr", &self.cond.to_token_stream().to_string())
+            .field("then", &self.then_branch)
+            .field("else", &self.else_branch)
+            .finish()
+    }
+}
+
+impl Debug for CarbideElseBranch {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        match self {
+            CarbideElseBranch::ElseIf(_, if_expr) => {
+                Debug::fmt(if_expr, f)
+            }
+            CarbideElseBranch::Else(_, el) => {
+                Debug::fmt(el, f)
+            }
+            CarbideElseBranch::None => {
+                f.write_str("None")
+            }
+        }
+    }
+}
+
+impl Debug for CarbideBlock {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("CarbideBlock")
+            .field("exprs", &self.exprs)
+            .finish()
+    }
+}
+
+impl Parse for CarbideExprIf {
+    fn parse(input: ParseStream) -> syn::Result<Self> {
+        let attrs = input.call(Attribute::parse_outer)?;
+        Ok(CarbideExprIf {
+            attrs,
+            if_token: input.parse()?,
+            cond: Box::new(input.call(Expr::parse_without_eager_brace)?),
+            then_branch: input.parse()?,
+            else_branch: {
+                if !input.peek(Token![else]) {
+                    CarbideElseBranch::None
+                } else if input.peek2(Token![if]) {
+                    println!("Else if");
+                    CarbideElseBranch::ElseIf(Else::parse(input)?, Box::new(CarbideExprIf::parse(input)?))
+                } else {
+                    println!("Else");
+                    CarbideElseBranch::Else(Else::parse(input)?, CarbideBlock::parse(input)?)
+                }
+            },
+        })
+    }
+}
+
+
+impl Parse for CarbideBlock {
+    fn parse(input: ParseStream) -> syn::Result<Self> {
+        let brace_content;
+        println!("{:?}", input);
+        if let Ok(brace) = parse_braces(input) {
+            brace_content = brace.content;
+
+            let mut body = vec![];
+
+            while let Ok(expr) = CarbideExpression::parse(&brace_content) {
+                body.push(expr)
+            }
+
+            Ok(CarbideBlock {
+                brace_token: brace.token,
+                exprs: body
+            })
+        } else {
+            panic!("The block should have braces. Otherwise its not a block")
+        }
+    }
+}
+
+impl ToTokens for CarbideBlock {
+    fn to_tokens(&self, tokens: &mut TokenStream) {
+
+        let CarbideBlock {
+            brace_token,
+            exprs
+        } = self;
+
+        if exprs.len() == 0 {
+            tokens.extend(quote!(
+                Empty::new()
+            ))
+        } else {
+            tokens.extend(quote!(vec![
+                #(#exprs,)*
+            ]))
+        }
+    }
+}
+
+impl ToTokens for CarbideExprIf {
+    fn to_tokens(&self, tokens: &mut TokenStream) {
+
+        let CarbideExprIf {
+            attrs,
+            if_token,
+            cond,
+            then_branch,
+            else_branch
+        } = self;
+
+        let else_quote = match else_branch {
+            CarbideElseBranch::ElseIf(_, e) => {
+                quote!(.when_false(#e))
+            }
+            CarbideElseBranch::Else(_, e) => {
+                quote!(.when_false(ZStack::new(#e)))
+            }
+            CarbideElseBranch::None => {
+                quote!()
+            }
+        };
+
+        tokens.extend(quote!(
+            IfElse::new(#cond)
+                .when_true(ZStack::new(#then_branch))
+                #else_quote
+        ))
+    }
 }
 
 impl ToTokens for CarbideExpression {
@@ -23,14 +175,24 @@ impl ToTokens for CarbideExpression {
                     #i
                 ))
             }
+            If(i) => {
+                tokens.extend(quote!(
+                    #i
+                ))
+            }
         }
     }
 }
 
 impl Parse for CarbideExpression {
     fn parse(input: ParseStream) -> syn::Result<Self> {
-        let instantiate = CarbideInstantiate::parse(input)?;
-        Ok(Instantiate(instantiate))
+        if input.peek(Token!(if)) {
+            let if_expr = CarbideExprIf::parse(input)?;
+            Ok(If(if_expr))
+        } else {
+            let instantiate = CarbideInstantiate::parse(input)?;
+            Ok(Instantiate(instantiate))
+        }
     }
 }
 
