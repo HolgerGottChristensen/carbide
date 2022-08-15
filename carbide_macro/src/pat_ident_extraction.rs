@@ -146,7 +146,7 @@ pub fn extract_idents_from_pattern(pat: Pat) -> Vec<Ident> {
 mod tests {
     use proc_macro2::{Ident, Span};
     use syn::{parse_quote, Pat};
-    use crate::ident_extraction::extract_idents_from_pattern;
+    use crate::pat_ident_extraction::extract_idents_from_pattern;
 
     #[test]
     fn extract_from_lit() {

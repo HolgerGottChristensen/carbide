@@ -8,26 +8,36 @@ use carbide_core::environment::EnvironmentFontSize;
 use carbide_core::state::{LocalState, ReadState, StateExt};
 use carbide_core::text::{FontFamily, FontWeight, TextDecoration};
 use carbide_core::widget::*;
-use carbide_core::Widget;
+use carbide_core::{task, Widget};
 use carbide_wgpu::{Application, Window};
 use carbide_core::draw::Position;
+use tokio::time::{sleep, Duration};
 
 fn main() {
     CarbideUI!{
         struct AlbumDetail {
-            //let articles: Vec<String>
+            #[binding] let articles: Vec<String>
             //let articles: Vec<String> = vec!["Hej".to_string(), "Verden".to_string()]
-            let alignment: u32 = 53
+            #[state] let alignment: u32 = 53
+            #[state] let test: String = String::from("Hejsa")
 
             fn body() -> Widget {
-                match alignment {
+                HStack {
+                    Text(test.clone())
+                    Text("+")
+                    Text(10)
+                    Text("=")
+                    Text(alignment + 10)
+                }
+
+                /*match alignment {
                     20 => {
                         Text("It is 20")
                     }
                     x => {
                         Text(x)
                     }
-                }
+                }*/
 
                 /*match alignment {
                     53 => {
@@ -106,7 +116,18 @@ fn main() {
         }
     }
 
+
+    let count = LocalState::new(42);
+
+
     let mut application = Application::new();
+
+    let env = application.environment_mut();
+
+    task!(env, count := {
+        sleep(Duration::new(2, 0)).await;
+        420
+    });
 
     let family =
         FontFamily::new_from_paths("NotoSans", vec![
@@ -115,12 +136,14 @@ fn main() {
         ]);
     application.add_font_family(family);
 
+    let child = CarbideUI! {
+        AlbumDetail(vec!["Hejsa".to_string()], alignment: count)
+    };
+
     application.set_scene(Window::new(
         "Carbide syntax example".to_string(),
         Dimension::new(400.0, 600.0),
-        AlbumDetail::builder()
-            .with_optional_alignment(42u32)
-            .finish()
+        child
     ).close_application_on_window_close());
 
     application.launch();

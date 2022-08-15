@@ -9,7 +9,8 @@ use syn::parse::{Parse, ParseStream};
 use syn::punctuated::Punctuated;
 use crate::carbide_expression::CarbideExpression::{ForLoop, If, Instantiate, Match};
 use crate::carbide_expression::CarbideInstantiateParam::{Optional, Required};
-use crate::ident_extraction::extract_idents_from_pattern;
+use crate::expr_ident_extraction::extract_idents_from_expression;
+use crate::pat_ident_extraction::extract_idents_from_pattern;
 
 #[derive(Debug)]
 pub enum CarbideExpression {
@@ -712,9 +713,22 @@ impl CarbideInstantiateParam {
     fn required_init_field(&self) -> Option<TokenStream> {
         match self {
             CarbideInstantiateParam::Required { expr } => {
-                Some(quote!({
-                    #expr
-                }))
+
+                let idents = extract_idents_from_expression(expr.clone());
+
+                if idents.is_empty() {
+                    Some(quote!({
+                        #expr.clone()
+                    }))
+                } else {
+                    let map_ident = Ident::new(&format!("Map{}", idents.len()), Span::call_site());
+
+                    Some(quote!(
+                        carbide_core::state:: #map_ident::read_map_test(#(#idents . clone()),*, |#(#idents),*| {
+                            #expr
+                        }).ignore_writes()
+                    ))
+                }
             }
             CarbideInstantiateParam::Optional { .. } => None,
         }

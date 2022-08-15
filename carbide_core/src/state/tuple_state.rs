@@ -112,6 +112,20 @@ macro_rules! tuple_state {
                 ReadWidgetState::new(Box::new(n))
             }
 
+            pub fn read_map_test($($name: TState<$type>),*, map: fn($($name: &$type),*) -> TO) -> RState<TO> {
+                let inner_value = InnerState::new(ValueCell::new(None));
+
+                let n = Self {
+                    $(
+                        $name,
+                    )*
+                    map,
+                    inner_value,
+                    replace: None,
+                };
+                ReadWidgetState::new(Box::new(n))
+            }
+
             #[allow(unused_parens)]
             pub fn map($($name: impl Into<TState<$type>>),*, map: fn($($name: &$type),*) -> TO, replace: fn(TO, $($name: &$type),*) -> ($(Option<$type>),*)) -> TState<TO> {
                 $(
