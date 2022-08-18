@@ -7,6 +7,7 @@ use syn::{braced, Expr, parenthesized, Token, Type};
 use syn::__private::{parse_braces, parse_parens};
 use syn::parse::{Parse, ParseStream};
 use syn::punctuated::Punctuated;
+use crate::carbide_expr::CarbideExpr;
 use crate::carbide_expression::CarbideExpression::{ForLoop, If, Instantiate, Match};
 use crate::carbide_expression::CarbideInstantiateParam::{Optional, Required};
 use crate::expr_ident_extraction::extract_idents_from_expression;
@@ -23,7 +24,7 @@ pub enum CarbideExpression {
 pub struct CarbideExprMatch {
     pub attrs: Vec<Attribute>,
     pub match_token: Token![match],
-    pub expr: Box<Expr>,
+    pub expr: Box<CarbideExpr>,
     pub brace_token: Brace,
     pub arms: Vec<CarbideArm>,
 }
@@ -48,7 +49,7 @@ impl ToTokens for CarbideExprMatch {
         } = self;
 
         let arms = arms.iter().map(|arm| {
-            CarbideArm::tokens(arm, *expr.clone())
+            CarbideArm::tokens(arm)
         });
 
         tokens.extend(quote!(
@@ -63,7 +64,7 @@ impl ToTokens for CarbideExprMatch {
 }
 
 impl CarbideArm {
-    fn tokens(&self, match_expr: Expr) -> TokenStream {
+    fn tokens(&self) -> TokenStream {
         let CarbideArm {
             attrs,
             pat,
@@ -127,7 +128,7 @@ impl Parse for CarbideExprMatch {
     fn parse(input: ParseStream) -> syn::Result<Self> {
         let mut attrs = input.call(Attribute::parse_outer)?;
         let match_token: Token![match] = input.parse()?;
-        let expr = Expr::parse_without_eager_brace(input)?;
+        let expr = CarbideExpr::parse(input)?;
 
         let content;
         let brace_token = braced!(content in input);
@@ -185,7 +186,7 @@ pub struct CarbideExprForLoop {
     pub for_token: Token![for],
     pub pat: Pat,
     pub in_token: Token![in],
-    pub expr: Box<Expr>,
+    pub expr: Box<CarbideExpr>,
     pub body: CarbideBlock,
 }
 
@@ -235,7 +236,7 @@ impl Parse for CarbideExprForLoop {
         let pat = CarbideExprForLoop::multi_pat_with_leading_vert(input)?;
 
         let in_token: Token![in] = input.parse()?;
-        let expr: Expr = input.call(Expr::parse_without_eager_brace)?;
+        let expr = CarbideExpr::parse(input)?;
 
         let body = CarbideBlock::parse(input)?;
 
@@ -700,12 +701,12 @@ impl Parse for CarbideInstantiateIterate {
 
 pub enum CarbideInstantiateParam {
     Required {
-        expr: Expr,
+        expr: CarbideExpr,
     },
     Optional {
         ident: Ident,
         colon: Colon,
-        expr: Expr,
+        expr: CarbideExpr,
     }
 }
 
@@ -714,7 +715,7 @@ impl CarbideInstantiateParam {
         match self {
             CarbideInstantiateParam::Required { expr } => {
 
-                let idents = extract_idents_from_expression(expr.clone());
+                /*let idents = extract_idents_from_expression(expr.clone());
 
                 if idents.is_empty() {
                     Some(quote!({
@@ -728,7 +729,11 @@ impl CarbideInstantiateParam {
                             #expr
                         }).ignore_writes()
                     ))
-                }
+                }*/
+
+                Some(quote!({
+                    #expr
+                }))
             }
             CarbideInstantiateParam::Optional { .. } => None,
         }
@@ -773,11 +778,11 @@ impl Parse for CarbideInstantiateParam {
             Optional {
                 ident: Ident::parse(input)?,
                 colon: Colon::parse(input)?,
-                expr: Expr::parse(input)?
+                expr: CarbideExpr::parse(input)?
             }
         } else {
             Required {
-                expr: Expr::parse(input)?
+                expr: CarbideExpr::parse(input)?
             }
         };
 

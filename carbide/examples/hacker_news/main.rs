@@ -65,13 +65,17 @@ fn main() {
     }
 
     task!(env, news_articles := {
-        let response: Vec<u64> = reqwest::get("https://hacker-news.firebaseio.com/v0/topstories.json").await.unwrap().json().await.unwrap();
+        let client = reqwest::Client::new();
+
+        let response: Vec<u64> = client.get("https://hacker-news.firebaseio.com/v0/topstories.json").send().await.unwrap().json().await.unwrap();
 
         let mut futures = FuturesOrdered::new();
         response.iter().take(25).for_each(|id| {
+            let client = client.clone();
+
             futures.push(
                 async move {
-                    let mut article = reqwest::get(format!("https://hacker-news.firebaseio.com/v0/item/{}.json", id)).await.unwrap().json::<Article>().await.unwrap();
+                    let mut article = client.get(format!("https://hacker-news.firebaseio.com/v0/item/{}.json", id)).send().await.unwrap().json::<Article>().await.unwrap();
                     article.carbide_id = WidgetId::new();
                     article
                 }

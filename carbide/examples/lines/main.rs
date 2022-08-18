@@ -19,7 +19,7 @@ use carbide_core::draw::{Dimension, Position, Rect};
 use carbide_core::environment::{Environment, EnvironmentFontSize};
 use carbide_core::prelude::{EnvironmentColor, ValueRefMut};
 use carbide_core::state::{
-    FieldState, LocalState, Map1, Map2, ReadState, State, StateExt, TState, VecState,
+    FieldState, LocalState, Map1, Map2, ReadState, State, StateExt, TState, IndexState,
 };
 use carbide_core::text::FontFamily;
 use carbide_core::widget::canvas::{Canvas, Context};
@@ -159,7 +159,7 @@ fn main() {
 
     fn selected_node_view(graph: &TState<Graph>, selected_state: TState<usize>) -> Box<dyn Widget> {
         let nodes = lens!(Graph; graph.nodes);
-        let node = VecState::new(nodes, selected_state.clone());
+        let node = IndexState::new(nodes, selected_state.clone());
 
         let height = lens!(Node; node.height);
 
@@ -194,7 +194,7 @@ fn main() {
 
     fn selected_edge_view(graph: &TState<Graph>, selected_state: TState<usize>) -> Box<dyn Widget> {
         let edges = lens!(Graph; graph.edges);
-        let edge = VecState::new(edges, selected_state.clone());
+        let edge = IndexState::new(edges, selected_state.clone());
 
         let offset = lens!(Edge; edge.offset);
         let width = lens!(Edge; edge.width);

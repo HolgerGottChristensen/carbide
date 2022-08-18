@@ -23,14 +23,14 @@ fn main() {
 
             fn body() -> Widget {
                 HStack {
-                    Text(test.clone())
-                    Text("+")
+                    Text($test)
+                    Text($articles[0])
                     Text(10)
-                    Text("=")
-                    Text(alignment + 10)
+                    Text("Text")
+                    Text($alignment)
                 }
 
-                /*match alignment {
+                /*match $alignment {
                     20 => {
                         Text("It is 20")
                     }
@@ -39,7 +39,7 @@ fn main() {
                     }
                 }*/
 
-                /*match alignment {
+                /*match $alignment {
                     53 => {
                         Text("Its default")
                     }
@@ -52,14 +52,14 @@ fn main() {
                 }*/
 
                 /*VStack {
-                    for i in articles.clone() {
+                    for i in $articles {
                         Text(i).font_size(EnvironmentFontSize::LargeTitle)
                     }
                 }*/
 
                 /*VStack {
                     for i in vec![1, 2, 3, 42] {
-                        Text(*i).font_size(EnvironmentFontSize::LargeTitle)
+                        Text(i).font_size(EnvironmentFontSize::LargeTitle)
                     }
                 }*/
 
@@ -81,7 +81,7 @@ fn main() {
                     HStack(spacing: 20.0) {
                         Text("Hejsa").bold()
                         Text("Verden").underline()
-                        Text(alignment)
+                        Text($alignment)
                     }
                     ZStack {
                         Rectangle.fill(EnvironmentColor::Red)
@@ -137,7 +137,7 @@ fn main() {
     application.add_font_family(family);
 
     let child = CarbideUI! {
-        AlbumDetail(vec!["Hejsa".to_string()], alignment: count)
+        AlbumDetail(vec!["Album 1".to_string(), "Album 2".to_string()], alignment: $count)
     };
 
     application.set_scene(Window::new(

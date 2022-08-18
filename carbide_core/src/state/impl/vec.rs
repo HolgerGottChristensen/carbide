@@ -1,11 +1,11 @@
-use crate::state::{Map1, Map2, RState, StateContract, TState, VecState, WidgetState};
+use crate::state::{Map1, Map2, RState, StateContract, TState, IndexState, WidgetState};
 
 impl<T: StateContract> WidgetState<Vec<T>> {
     /// Returns a state that given an index will return a state containing the item at that index
     /// in the vector. It takes an UsizeState and will update the resulting state if either index
     /// or the vector changes.
     pub fn index(&self, index: TState<usize>) -> TState<T> {
-        VecState::new(self.clone(), index)
+        IndexState::new(self.clone(), index)
     }
 
     /// Return the length of the vec as a state. This is read only, because setting the length

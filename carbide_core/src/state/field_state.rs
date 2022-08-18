@@ -44,8 +44,8 @@ where
 }
 
 impl<FROM: StateContract, TO: StateContract> FieldState<FROM, TO> {
-    pub fn new<S: Into<TState<FROM>>>(
-        state: S,
+    pub fn new(
+        state: impl Into<TState<FROM>>,
         map: for<'r, 's> fn(&'r FROM) -> &'r TO,
         map_mut: for<'r, 's> fn(&'r mut FROM) -> &'r mut TO,
     ) -> TState<TO> {

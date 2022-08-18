@@ -87,7 +87,7 @@ impl<T: StateContract, U: Delegate<T>> OtherEventHandler for ForEach<T, U> {
                 let index = self.children.len();
 
                 let index_state: UsizeState = ValueState::new(index).into();
-                let item_state = VecState::new(self.model.clone(), index);
+                let item_state = IndexState::new(self.model.clone(), index);
 
                 let widget = self.delegate.call(item_state.into(), index_state);
                 self.children.push(widget);
