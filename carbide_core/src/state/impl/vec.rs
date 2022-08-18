@@ -4,9 +4,9 @@ impl<T: StateContract> WidgetState<Vec<T>> {
     /// Returns a state that given an index will return a state containing the item at that index
     /// in the vector. It takes an UsizeState and will update the resulting state if either index
     /// or the vector changes.
-    pub fn index(&self, index: TState<usize>) -> TState<T> {
-        IndexState::new(self.clone(), index)
-    }
+    /*pub fn index(&self, index: TState<usize>) -> TState<T> {
+        IndexState::<Vec<T>, T, usize>::new2(self.clone(), RState::new_from_read_write_state(index))
+    }*/
 
     /// Return the length of the vec as a state. This is read only, because setting the length
     /// of a Vec is not possible.

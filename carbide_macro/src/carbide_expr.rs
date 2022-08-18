@@ -139,7 +139,9 @@ impl ToTokens for IndexExpr {
         } = self;
 
         tokens.extend(quote!(
-            carbide_core::state::IndexState::new2(#expr.clone(), carbide_core::state::TState::<usize>::from(#index.clone()))
+            {
+                carbide_core::state::IndexableState::index(&#expr, &carbide_core::state::TState::from(#index.clone()))
+            }
         ))
     }
 }

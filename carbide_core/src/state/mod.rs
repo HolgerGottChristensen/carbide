@@ -21,6 +21,7 @@ pub use self::state_sync::NewStateSync;
 pub use self::state_sync::StateSync;
 pub use self::value_state::ValueState;
 pub use self::index_state::IndexState;
+pub use self::index_state::IndexableState;
 pub use self::widget_state::WidgetState;
 //pub use util::subscriber::SubscriberList;
 //pub use util::subscriber::Listenable;

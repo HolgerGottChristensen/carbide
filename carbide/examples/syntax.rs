@@ -24,7 +24,7 @@ fn main() {
             fn body() -> Widget {
                 HStack {
                     Text($test)
-                    Text($articles[0])
+                    Text($articles[0usize])
                     Text(10)
                     Text("Text")
                     Text($alignment)

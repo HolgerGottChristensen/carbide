@@ -11,10 +11,7 @@ use carbide_core::focus::{Focus, Focusable, Refocus};
 use carbide_core::layout::{Layout, Layouter};
 use carbide_core::prelude::{EnvironmentColor, Primitive};
 use carbide_core::render::Render;
-use carbide_core::state::{
-    BoolState, FocusState, LocalState, Map3, ReadState, State, StateContract, StateExt, StateKey,
-    StateSync, TState, UsizeState,
-};
+use carbide_core::state::{BoolState, FocusState, IndexableState, LocalState, Map3, ReadState, State, StateContract, StateExt, StateKey, StateSync, TState, UsizeState};
 use carbide_core::widget::*;
 use carbide_core::{Color, Scalar};
 
@@ -34,7 +31,7 @@ where
 
 impl<T: StateContract> Delegate<T> for PopupDelegate<T> {
     fn call(&self, item: TState<T>, index: UsizeState) -> Box<dyn Widget> {
-        let hover_state = self.hover_model.index(index.clone());
+        let hover_state = self.hover_model.index(&index.clone());
         let selected_item_del = self.selected_item.clone();
 
         let popup_item_delegate = (self.popup_item_delegate)(

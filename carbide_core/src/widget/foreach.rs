@@ -4,6 +4,7 @@ use carbide_macro::carbide_default_builder;
 use crate::draw::{Dimension, Position};
 use crate::event::{OtherEventHandler, WidgetEvent};
 use crate::prelude::*;
+use crate::state::IndexableState;
 
 pub trait Delegate<T: StateContract>: Clone {
     fn call(&self, item: TState<T>, index: UsizeState) -> Box<dyn Widget>;
@@ -87,7 +88,7 @@ impl<T: StateContract, U: Delegate<T>> OtherEventHandler for ForEach<T, U> {
                 let index = self.children.len();
 
                 let index_state: UsizeState = ValueState::new(index).into();
-                let item_state = IndexState::new(self.model.clone(), index);
+                let item_state = self.model.index(&TState::<usize>::from(index));
 
                 let widget = self.delegate.call(item_state.into(), index_state);
                 self.children.push(widget);
