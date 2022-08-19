@@ -1,6 +1,6 @@
 use carbide_macro::{CarbideUI, gen_optionals};
 use carbide::cursor::MouseCursor;
-use carbide::state::{State, TState, UsizeState};
+use carbide::state::{State, TState};
 use carbide_controls::Button;
 use carbide_core::draw::Dimension;
 use carbide_core::environment::EnvironmentColor;
@@ -16,19 +16,26 @@ use tokio::time::{sleep, Duration};
 fn main() {
     CarbideUI!{
         struct AlbumDetail {
-            #[binding] let articles: Vec<String>
+            let articles: Vec<String>
             //let articles: Vec<String> = vec!["Hej".to_string(), "Verden".to_string()]
-            #[state] let alignment: u32 = 53
-            #[state] let test: String = String::from("Hejsa")
+            let alignment: u32 = 53
+            let option: Option<usize> = Some(42)
+            let test: String = String::from("Hejsa")
 
             fn body() -> Widget {
-                HStack {
+                if $option.is_some() {
+                    Text("Is some")
+                } else {
+                    Text("Is none")
+                }
+
+                /*HStack {
                     Text($test)
                     Text($articles[0usize])
                     Text(10)
                     Text("Text")
                     Text($alignment)
-                }
+                }*/
 
                 /*match $alignment {
                     20 => {

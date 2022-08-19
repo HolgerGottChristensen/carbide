@@ -273,8 +273,6 @@ impl Parse for CarbideBodyFunction {
     }
 }
 
-/// Optional struct fields can be marked with #\[state]
-/// Required struct fields can be marked with #\[binding]
 #[derive(Clone)]
 pub enum CarbideStructField {
     Optional {
@@ -300,26 +298,14 @@ impl CarbideStructField {
 
         match self {
             CarbideStructField::Optional { attrs, ident, t, .. } => {
-                if attrs.contains(&parse_quote!( #[state] )){
-                    quote!(
-                        #[state] pub #ident: #t
-                    )
-                } else {
-                    quote!(
-                        pub #ident: #t
-                    )
-                }
+                quote!(
+                    #[state] pub #ident: #t
+                )
             }
             CarbideStructField::Required { attrs, ident, t, .. } => {
-                if attrs.contains(&parse_quote!( #[binding] )){
-                    quote!(
-                        #[state] pub #ident: #t
-                    )
-                } else {
-                    quote!(
-                        pub #ident: #t
-                    )
-                }
+                quote!(
+                    #[state] pub #ident: #t
+                )
             }
         }
     }
@@ -343,30 +329,16 @@ impl CarbideStructField {
     fn to_struct_init_field(&self) -> TokenStream {
         match self {
             CarbideStructField::Required { attrs, ident, .. } => {
-                if attrs.contains(&parse_quote!( #[binding] )){
-                    quote!(
-                        #ident: #ident.into()
-                    )
-                } else {
-                    quote!(
-                        #ident
-                    )
-                }
+                quote!(
+                    #ident: #ident.into()
+                )
             }
             CarbideStructField::Optional { attrs, ident, expr, .. } => {
-                if attrs.contains(&parse_quote!( #[state] )){
-                    quote!(
-                        #ident: carbide_core::state::LocalState::new({
-                            #expr
-                        })
-                    )
-                } else {
-                    quote!(
-                        #ident: {
-                            #expr
-                        }
-                    )
-                }
+                quote!(
+                    #ident: carbide_core::state::LocalState::new({
+                        #expr
+                    })
+                )
             }
         }
     }
@@ -406,15 +378,9 @@ impl CarbideStructField {
     fn to_required_arg(&self) -> Option<TokenStream> {
         match self {
             CarbideStructField::Required { attrs, ident, t, .. } => {
-                if attrs.contains(&parse_quote!( #[binding] )){
-                    Some(quote!(
+                Some(quote!(
                         #ident: impl Into<#t>
                     ))
-                } else {
-                    Some(quote!(
-                        #ident: #t
-                    ))
-                }
             }
             CarbideStructField::Optional { .. } => None,
         }
@@ -459,11 +425,7 @@ impl Parse for CarbideStructField {
         let types = Type::parse(input)?;
 
         Ok(if let Ok(token) = syn::token::Eq::parse(input) {
-            let types = if attrs.contains(&parse_quote!( #[state] )){
-                parse_quote!(carbide_core::state::TState<#types>)
-            } else {
-                types
-            };
+            let types = parse_quote!(carbide_core::state::TState<#types>);
 
             Optional {
                 attrs,
@@ -475,11 +437,7 @@ impl Parse for CarbideStructField {
                 expr: Expr::parse(input)?
             }
         } else {
-            let types = if attrs.contains(&parse_quote!( #[binding] )){
-                parse_quote!(carbide_core::state::TState<#types>)
-            } else {
-                types
-            };
+            let types = parse_quote!(carbide_core::state::TState<#types>);
 
             Required {
                 attrs,

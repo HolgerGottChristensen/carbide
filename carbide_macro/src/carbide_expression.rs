@@ -285,7 +285,7 @@ impl CarbideExprForLoop {
 pub struct CarbideExprIf {
     pub attrs: Vec<Attribute>,
     pub if_token: Token![if],
-    pub cond: Box<Expr>,
+    pub cond: Box<CarbideExpr>,
     pub then_branch: CarbideBlock,
     pub else_branch: CarbideElseBranch,
 }
@@ -341,7 +341,7 @@ impl Parse for CarbideExprIf {
         Ok(CarbideExprIf {
             attrs,
             if_token: input.parse()?,
-            cond: Box::new(input.call(Expr::parse_without_eager_brace)?),
+            cond: Box::new(CarbideExpr::parse(input)?),
             then_branch: input.parse()?,
             else_branch: {
                 if !input.peek(Token![else]) {
@@ -393,6 +393,10 @@ impl ToTokens for CarbideBlock {
             tokens.extend(quote!(
                 Empty::new()
             ))
+        } else if exprs.len() == 1 {
+            tokens.extend(quote!(
+                #(#exprs)*
+            ))
         } else {
             tokens.extend(quote!(vec![
                 #(#exprs,)*
@@ -417,16 +421,27 @@ impl ToTokens for CarbideExprIf {
                 quote!(.when_false(#e))
             }
             CarbideElseBranch::Else(_, e) => {
-                quote!(.when_false(ZStack::new(#e)))
+                if e.exprs.len() > 1 {
+                    quote!(.when_false(ZStack::new(#e)))
+                } else {
+                    quote!(.when_false(#e))
+                }
+
             }
             CarbideElseBranch::None => {
                 quote!()
             }
         };
 
+        let then = if then_branch.exprs.len() > 1 {
+            quote!(ZStack::new(#then_branch))
+        } else {
+            quote!(#then_branch)
+        };
+
         tokens.extend(quote!(
             IfElse::new(#cond)
-                .when_true(ZStack::new(#then_branch))
+                .when_true(#then)
                 #else_quote
         ))
     }

@@ -22,6 +22,8 @@ pub use self::state_sync::StateSync;
 pub use self::value_state::ValueState;
 pub use self::index_state::IndexState;
 pub use self::index_state::IndexableState;
+pub use self::cache_state::CacheTState;
+pub use self::cache_state::CacheRState;
 pub use self::widget_state::WidgetState;
 //pub use util::subscriber::SubscriberList;
 //pub use util::subscriber::Listenable;
@@ -55,6 +57,7 @@ mod read_state;
 mod read_widget_state;
 mod tuple_state;
 mod util;
+mod cache_state;
 
 pub type InnerState<T> = Rc<ValueCell<T>>;
 

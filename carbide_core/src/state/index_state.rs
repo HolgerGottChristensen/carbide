@@ -9,10 +9,8 @@ use crate::state::widget_state::WidgetState;
 use crate::state::{ReadState, RState, StateContract, TState, UsizeState};
 
 /// # Index state
-/// Index state is a general implementation that
-///
-/// This state is ['Listenable'] and handles the subscriptions such that a change in either the
-/// `usize` state or the `Vec<T>` state changes, the listener will receive a notification.
+/// Index state is a general implementation that can take any state that is Index and IndexMut
+/// with the same Idx and the same Output, and return a state containing that Output.
 #[derive(Clone)]
 pub struct IndexState<T, U, Idx>
 where

@@ -13,12 +13,12 @@ pub struct IfElse {
     position: Position,
     dimension: Dimension,
     #[state]
-    predicate: TState<bool>,
+    predicate: RState<bool>,
 }
 
 impl IfElse {
     #[carbide_default_builder]
-    pub fn new(predicate: impl Into<TState<bool>>) -> Box<Self> {
+    pub fn new(predicate: impl Into<RState<bool>>) -> Box<Self> {
         Box::new(IfElse {
             id: WidgetId::new(),
             predicate: predicate.into(),

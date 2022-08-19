@@ -2,7 +2,8 @@ use std::mem;
 use proc_macro2::{Delimiter, Ident, Span, TokenStream, TokenTree};
 use quote::{quote, ToTokens};
 use syn::parse::{Parse, ParseBuffer, ParseStream};
-use syn::{bracketed, ExprPath, Index, Lit, LitFloat, LitInt, Macro, MacroDelimiter, Path, PathArguments, QSelf, Token};
+use syn::{bracketed, Expr, ExprPath, Index, Lit, LitFloat, LitInt, Macro, MacroDelimiter, MethodTurbofish, parenthesized, Path, PathArguments, QSelf, Token};
+use syn::punctuated::Punctuated;
 use syn::token::{Brace, Bracket, Dollar, Paren};
 
 #[derive(PartialEq, Clone, Debug)]
@@ -13,6 +14,17 @@ pub enum CarbideExpr {
     Field(FieldExpr),
     Index(IndexExpr),
     Macro(MacroExpr),
+    MethodCall(MethodCallExpr),
+}
+
+#[derive(PartialEq, Clone, Debug)]
+pub struct MethodCallExpr {
+    pub receiver: Box<CarbideExpr>,
+    pub dot_token: Token![.],
+    pub method: Ident,
+    pub turbofish: Option<MethodTurbofish>,
+    pub paren_token: Paren,
+    pub args: Punctuated<CarbideExpr, Token![,]>,
 }
 
 #[derive(PartialEq, Clone, Debug)]
@@ -71,7 +83,20 @@ impl ToTokens for CarbideExpr {
             CarbideExpr::Index(i) => {i.to_tokens(tokens)}
             CarbideExpr::Lit(i) => {i.to_tokens(tokens)}
             CarbideExpr::Macro(i) => {i.to_tokens(tokens)}
+            CarbideExpr::MethodCall(i) => {i.to_tokens(tokens)}
         }
+    }
+}
+
+impl ToTokens for MethodCallExpr {
+    fn to_tokens(&self, tokens: &mut TokenStream) {
+        self.receiver.to_tokens(tokens);
+        self.dot_token.to_tokens(tokens);
+        self.method.to_tokens(tokens);
+        self.turbofish.to_tokens(tokens);
+        self.paren_token.surround(tokens, |tokens| {
+            self.args.to_tokens(tokens);
+        });
     }
 }
 
@@ -122,7 +147,7 @@ impl ToTokens for FieldExpr {
 
         tokens.extend(quote!(
             carbide_core::state::FieldState::new2(
-                #base.clone(),
+                #base,
                 |item| { &item.#member },
                 |item| { &mut item.#member }
             )
@@ -243,7 +268,7 @@ impl CarbideExpr {
     /// $ <trailer>
     fn parse_unary_expr(input: ParseStream) -> syn::Result<CarbideExpr> {
 
-        if input.peek(Token![$]) {
+        /*if input.peek(Token![$]) {
             let dollar_token: Token![$] = input.parse()?;
             let expr = Box::new(CarbideExpr::parse_unary_expr(input)?);
 
@@ -251,9 +276,9 @@ impl CarbideExpr {
                 dollar_token,
                 expr
             }))
-        } else {
+        } else {*/
             CarbideExpr::parse_trailer_expr(input)
-        }
+        //}
 
     }
 
@@ -276,10 +301,32 @@ impl CarbideExpr {
                     }
                 }
 
+                let member = CarbideMember::parse(input)?;
+                let turbofish = if matches!(member, CarbideMember::Named(_)) && input.peek(Token![::]) {
+                    Some(input.parse::<MethodTurbofish>()?)
+                } else {
+                    None
+                };
+
+                if turbofish.is_some() || input.peek(Paren) {
+                    if let CarbideMember::Named(method) = member {
+                        let content;
+                        e = CarbideExpr::MethodCall(MethodCallExpr {
+                            receiver: Box::new(e),
+                            dot_token,
+                            method,
+                            turbofish,
+                            paren_token: parenthesized!(content in input),
+                            args: content.parse_terminated(CarbideExpr::parse)?,
+                        });
+                        continue;
+                    }
+                }
+
                 e = CarbideExpr::Field(FieldExpr {
                     base: Box::new(e),
                     dot_token,
-                    member: input.parse()?,
+                    member,
                 });
             } else if input.peek(Bracket) {
                 let content;
@@ -306,6 +353,7 @@ impl CarbideExpr {
             || input.peek(Token![Self])
             || input.peek(Token![super])
             || input.peek(Token![crate])
+            || input.peek(Token![$])
         {
             CarbideExpr::parse_path_or_macro(input)
         } else {
@@ -314,9 +362,12 @@ impl CarbideExpr {
     }
 
     fn parse_path_or_macro(input: ParseStream) -> syn::Result<CarbideExpr> {
+
+        let state = Dollar::parse(input).ok();
+
         let expr: PathExpr = input.parse()?;
 
-        if expr.qself.is_none() && input.peek(Token![!]) && !input.peek(Token![!=]) {
+        if expr.qself.is_none() && state.is_none() && input.peek(Token![!]) && !input.peek(Token![!=]) {
             let mut contains_arguments = false;
             for segment in &expr.path.segments {
                 match segment.arguments {
@@ -341,7 +392,16 @@ impl CarbideExpr {
             }
         }
 
-        Ok(CarbideExpr::Path(expr))
+        if let Some(dollar) = state {
+            Ok(CarbideExpr::State(StateExpr {
+                dollar_token: dollar,
+                expr: Box::new(CarbideExpr::Path(expr))
+            }))
+        } else {
+            Ok(CarbideExpr::Path(expr))
+        }
+
+
     }
 }
 
@@ -451,7 +511,7 @@ mod tests {
         use syn::parse::Parse;
         use syn::{Lit, parse_quote, Path, PathSegment};
         use syn::punctuated::Punctuated;
-        use crate::carbide_expr::{CarbideExpr, CarbideMember, FieldExpr, PathExpr, LitExpr, StateExpr};
+        use crate::carbide_expr::{CarbideExpr, CarbideMember, FieldExpr, PathExpr, LitExpr, StateExpr, MethodCallExpr};
 
         #[test]
         fn parse_lit() {
@@ -568,6 +628,64 @@ mod tests {
                 })),
                 dot_token: Default::default(),
                 member: CarbideMember::Named(Ident::new("field2", Span::call_site()))
+            });
+
+            assert_eq!(expected, actual)
+        }
+
+        #[test]
+        fn parse_method_call() {
+            // Arrange
+
+            let stream = quote!(
+                test.method()
+            );
+
+            println!("{:#?}", &stream);
+
+            // Act
+            let actual: CarbideExpr = syn::parse2(stream).unwrap();
+
+            // Assert
+            let expected = CarbideExpr::MethodCall(MethodCallExpr {
+                receiver: Box::new(CarbideExpr::Path(PathExpr {
+                    qself: None,
+                    path: parse_quote!(test)
+                })),
+                dot_token: Default::default(),
+                method: parse_quote!(method),
+                turbofish: None,
+                paren_token: Default::default(),
+                args: Default::default()
+            });
+
+            assert_eq!(expected, actual)
+        }
+
+        #[test]
+        fn parse_state_with_field() {
+            // Arrange
+
+            let stream = quote!(
+                $test.field1
+            );
+
+            println!("{:#?}", &stream);
+
+            // Act
+            let actual: CarbideExpr = syn::parse2(stream).unwrap();
+
+            // Assert
+            let expected = CarbideExpr::Field(FieldExpr {
+                base: Box::new(CarbideExpr::State(StateExpr {
+                    dollar_token: Default::default(),
+                    expr: Box::new(CarbideExpr::Path(PathExpr {
+                        qself: None,
+                        path: parse_quote!(test)
+                    }))
+                })),
+                dot_token: Default::default(),
+                member: CarbideMember::Named(Ident::new("field1", Span::call_site()))
             });
 
             assert_eq!(expected, actual)
