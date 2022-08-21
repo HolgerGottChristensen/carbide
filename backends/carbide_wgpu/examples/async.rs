@@ -74,7 +74,7 @@ fn main() {
         image_id_for_async.clone().set_value(env.queue_image(res))
     });*/
 
-    let random_color = 10.mapped(|_: &i32| Color::random());
+    let random_color = 10.map(|_: &i32| Color::random());
 
     let widgets = VStack::new(vec![
         //Text::new(text)

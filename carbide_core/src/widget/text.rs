@@ -29,7 +29,7 @@ pub struct Text {
     dimension: Dimension,
     wrap_mode: Wrap,
     #[state]
-    pub text: StringState,
+    pub text: RState<String>,
     #[state]
     font_size: U32State,
     #[state]
@@ -45,7 +45,7 @@ pub struct Text {
 impl Text {
 
     #[carbide_default_builder]
-    pub fn new(text: impl Into<StringState>) -> Box<Self> {
+    pub fn new(text: impl Into<RState<String>>) -> Box<Self> {
         let text = text.into();
 
         Box::new(Text {
@@ -65,7 +65,7 @@ impl Text {
         })
     }
 
-    pub fn new_with_generator<K: Into<StringState>, G: Into<Box<dyn TextSpanGenerator>>>(
+    pub fn new_with_generator<K: Into<RState<String>>, G: Into<Box<dyn TextSpanGenerator>>>(
         text: K,
         generator: G,
     ) -> Box<Self> {

@@ -6,10 +6,12 @@ use carbide_core::environment::{Environment, EnvironmentColor};
 use carbide_core::flags::Flags;
 use carbide_core::focus::{Focus, Focusable, Refocus};
 use carbide_core::layout::Layouter;
+use carbide_core::prelude::ValueState;
 use carbide_core::state::{
     BoolState, FocusState, LocalState, Map2, Map3, MapOwnedState, ReadState, State, StateContract,
     StateExt, StateKey, StringState, TState,
 };
+use carbide_core::state::eq::StatePartialEq;
 use carbide_core::widget::{
     CommonWidget, HStack, Rectangle, Spacer, Text, Widget, WidgetExt, WidgetId, WidgetIter,
     WidgetIterMut, ZStack,
@@ -105,7 +107,7 @@ impl<T: StateContract + PartialEq> PlainRadioButton<T> {
         delegate: fn(focus: FocusState, selected: BoolState) -> Box<dyn Widget>,
         label_state: StringState,
     ) -> Box<Self> {
-        let selected = local_state.eq(reference.clone()).ignore_writes();
+        let selected = local_state.clone().eq(ValueState::new(reference.clone())).ignore_writes();
 
         let delegate_widget = delegate(focus_state.clone(), selected.clone());
 

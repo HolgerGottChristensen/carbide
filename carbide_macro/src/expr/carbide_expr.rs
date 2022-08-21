@@ -1,3 +1,4 @@
+use std::cmp::Ordering;
 use std::mem;
 use proc_macro2::{Delimiter, Ident, Span, TokenStream, TokenTree};
 use quote::{quote, ToTokens};
@@ -9,12 +10,34 @@ use syn::token::{Brace, Bracket, Dollar, Paren};
 #[derive(PartialEq, Clone, Debug)]
 pub enum CarbideExpr {
     Lit(LitExpr),
+    Binary(BinaryExpr),
     Path(PathExpr),
+    Paren(ParenExpr),
     State(StateExpr),
+    Unary(UnaryExpr),
     Field(FieldExpr),
     Index(IndexExpr),
     Macro(MacroExpr),
     MethodCall(MethodCallExpr),
+}
+
+#[derive(PartialEq, Clone, Debug)]
+pub struct BinaryExpr {
+    pub left: Box<CarbideExpr>,
+    pub op: CarbideBinOp,
+    pub right: Box<CarbideExpr>,
+}
+
+#[derive(PartialEq, Clone, Debug)]
+pub struct UnaryExpr {
+    pub op: CarbideUnOp,
+    pub expr: Box<CarbideExpr>,
+}
+
+#[derive(PartialEq, Clone, Debug)]
+pub struct ParenExpr {
+    pub paren_token: Paren,
+    pub expr: Box<CarbideExpr>,
 }
 
 #[derive(PartialEq, Clone, Debug)]
@@ -45,8 +68,8 @@ pub struct PathExpr {
 
 #[derive(PartialEq, Clone, Debug)]
 pub struct StateExpr {
-    dollar_token: Token![$],
-    expr: Box<CarbideExpr>,
+    pub dollar_token: Token![$],
+    pub expr: Box<CarbideExpr>,
 }
 
 #[derive(PartialEq, Clone, Debug)]
@@ -74,120 +97,6 @@ pub enum CarbideMember {
     },
 }
 
-impl ToTokens for CarbideExpr {
-    fn to_tokens(&self, tokens: &mut TokenStream) {
-        match self {
-            CarbideExpr::Path(i) => {i.to_tokens(tokens)}
-            CarbideExpr::State(i) => {i.to_tokens(tokens)}
-            CarbideExpr::Field(i) => {i.to_tokens(tokens)}
-            CarbideExpr::Index(i) => {i.to_tokens(tokens)}
-            CarbideExpr::Lit(i) => {i.to_tokens(tokens)}
-            CarbideExpr::Macro(i) => {i.to_tokens(tokens)}
-            CarbideExpr::MethodCall(i) => {i.to_tokens(tokens)}
-        }
-    }
-}
-
-impl ToTokens for MethodCallExpr {
-    fn to_tokens(&self, tokens: &mut TokenStream) {
-        self.receiver.to_tokens(tokens);
-        self.dot_token.to_tokens(tokens);
-        self.method.to_tokens(tokens);
-        self.turbofish.to_tokens(tokens);
-        self.paren_token.surround(tokens, |tokens| {
-            self.args.to_tokens(tokens);
-        });
-    }
-}
-
-impl ToTokens for MacroExpr {
-    fn to_tokens(&self, tokens: &mut TokenStream) {
-        self.mac.to_tokens(tokens);
-    }
-}
-
-impl ToTokens for LitExpr {
-    fn to_tokens(&self, tokens: &mut TokenStream) {
-        let LitExpr {
-            lit
-        } = self;
-
-        tokens.extend(quote!(
-            #lit
-        ))
-    }
-}
-
-impl ToTokens for PathExpr {
-    fn to_tokens(&self, tokens: &mut TokenStream) {
-        CarbideExpr::print_path(tokens, &self.qself, &self.path);
-    }
-}
-
-impl ToTokens for StateExpr {
-    fn to_tokens(&self, tokens: &mut TokenStream) {
-        let StateExpr {
-            dollar_token,
-            expr
-        } = self;
-
-        tokens.extend(quote!(
-            #expr.clone()
-        ))
-    }
-}
-
-impl ToTokens for FieldExpr {
-    fn to_tokens(&self, tokens: &mut TokenStream) {
-        let FieldExpr {
-            base,
-            dot_token,
-            member
-        } = self;
-
-        tokens.extend(quote!(
-            carbide_core::state::FieldState::new2(
-                #base,
-                |item| { &item.#member },
-                |item| { &mut item.#member }
-            )
-        ))
-    }
-}
-
-impl ToTokens for IndexExpr {
-    fn to_tokens(&self, tokens: &mut TokenStream) {
-        let IndexExpr {
-            expr,
-            bracket_token,
-            index
-        } = self;
-
-        tokens.extend(quote!(
-            {
-                carbide_core::state::IndexableState::index(&#expr, &carbide_core::state::TState::from(#index.clone()))
-            }
-        ))
-    }
-}
-
-impl ToTokens for CarbideMember {
-    fn to_tokens(&self, tokens: &mut TokenStream) {
-        match self {
-            CarbideMember::Named(ident) => {
-                tokens.extend(quote!(
-                    #ident
-                ))
-            }
-            CarbideMember::Unnamed { index, .. } => {
-                tokens.extend(quote!(
-                    #index
-                ))
-            }
-        }
-    }
-}
-
 impl PartialEq for CarbideMember {
     fn eq(&self, other: &Self) -> bool {
         match (self, other) {
@@ -202,83 +111,205 @@ impl PartialEq for CarbideMember {
     }
 }
 
-impl Parse for PathExpr {
-    fn parse(input: ParseStream) -> syn::Result<Self> {
-        let expr = ExprPath::parse(input)?;
-        Ok(PathExpr {
-            qself: expr.qself,
-            path: expr.path
-        })
-    }
+#[derive(PartialEq, Clone, Debug)]
+pub enum CarbideUnOp {
+    /// The `!` operator for logical inversion
+    Not(Token![!]),
+    /// The `-` operator for negation
+    Neg(Token![-]),
 }
 
-impl Parse for CarbideMember {
-    fn parse(input: ParseStream) -> syn::Result<Self> {
-        if input.peek(syn::Ident) {
-            input.parse().map(CarbideMember::Named)
-        } else if input.peek(LitInt) {
-            let lit: LitInt = input.parse()?;
-            if lit.suffix().is_empty() {
-                Ok(CarbideMember::Unnamed {
-                    index: lit
-                        .base10_digits()
-                        .parse()
-                        .map_err(|err| syn::Error::new(lit.span(), err))?,
-                    span: lit.span(),
-                })
-            } else {
-                Err(syn::Error::new(lit.span(), "expected unsuffixed integer"))
-            }
-        } else {
-            Err(input.error("expected identifier or integer"))
+#[derive(PartialEq, Clone, Debug)]
+pub enum CarbideBinOp {
+    /// The `+` operator (addition)
+    Add(Token![+]),
+    /// The `-` operator (subtraction)
+    Sub(Token![-]),
+    /// The `*` operator (multiplication)
+    Mul(Token![*]),
+    /// The `/` operator (division)
+    Div(Token![/]),
+    /// The `%` operator (modulus)
+    Rem(Token![%]),
+    /// The `&&` operator (logical and)
+    And(Token![&&]),
+    /// The `||` operator (logical or)
+    Or(Token![||]),
+    /// The `^` operator (bitwise xor)
+    BitXor(Token![^]),
+    /// The `&` operator (bitwise and)
+    BitAnd(Token![&]),
+    /// The `|` operator (bitwise or)
+    BitOr(Token![|]),
+    /// The `<<` operator (shift left)
+    Shl(Token![<<]),
+    /// The `>>` operator (shift right)
+    Shr(Token![>>]),
+    /// The `==` operator (equality)
+    Eq(Token![==]),
+    /// The `<` operator (less than)
+    Lt(Token![<]),
+    /// The `<=` operator (less than or equal to)
+    Le(Token![<=]),
+    /// The `!=` operator (not equal to)
+    Ne(Token![!=]),
+    /// The `>=` operator (greater than or equal to)
+    Ge(Token![>=]),
+    /// The `>` operator (greater than)
+    Gt(Token![>]),
+}
+
+pub(crate) enum CarbidePrecedence {
+    Any,
+    Range,
+    Or,
+    And,
+    Compare,
+    BitOr,
+    BitXor,
+    BitAnd,
+    Shift,
+    Arithmetic,
+    Term,
+    Cast,
+}
+
+impl CarbidePrecedence {
+    fn of(op: &CarbideBinOp) -> Self {
+        match *op {
+            CarbideBinOp::Add(_) | CarbideBinOp::Sub(_) => CarbidePrecedence::Arithmetic,
+            CarbideBinOp::Mul(_) | CarbideBinOp::Div(_) | CarbideBinOp::Rem(_) => CarbidePrecedence::Term,
+            CarbideBinOp::And(_) => CarbidePrecedence::And,
+            CarbideBinOp::Or(_) => CarbidePrecedence::Or,
+            CarbideBinOp::BitXor(_) => CarbidePrecedence::BitXor,
+            CarbideBinOp::BitAnd(_) => CarbidePrecedence::BitAnd,
+            CarbideBinOp::BitOr(_) => CarbidePrecedence::BitOr,
+            CarbideBinOp::Shl(_) | CarbideBinOp::Shr(_) => CarbidePrecedence::Shift,
+            CarbideBinOp::Eq(_)
+            | CarbideBinOp::Lt(_)
+            | CarbideBinOp::Le(_)
+            | CarbideBinOp::Ne(_)
+            | CarbideBinOp::Ge(_)
+            | CarbideBinOp::Gt(_) => CarbidePrecedence::Compare,
         }
     }
 }
 
-impl Parse for MacroExpr {
-    fn parse(input: ParseStream) -> syn::Result<Self> {
-        Ok(MacroExpr {
-            mac: input.parse()?,
-        })
+impl Copy for CarbidePrecedence {}
+
+impl Clone for CarbidePrecedence {
+    fn clone(&self) -> Self {
+        *self
     }
 }
 
-impl Parse for LitExpr {
-    fn parse(input: ParseStream) -> syn::Result<Self> {
-        Ok(LitExpr {
-            lit: input.parse()?,
-        })
+impl PartialEq for CarbidePrecedence {
+    fn eq(&self, other: &Self) -> bool {
+        *self as u8 == *other as u8
     }
 }
 
-impl Parse for CarbideExpr {
-    fn parse(input: ParseStream) -> syn::Result<Self> {
-        CarbideExpr::parse_expr(input)
+impl PartialOrd for CarbidePrecedence {
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+        let this = *self as u8;
+        let other = *other as u8;
+        Some(this.cmp(&other))
     }
 }
+
+
 
 /// This has been adapted from syn's src/expr.rs
 impl CarbideExpr {
+    pub(crate) fn parse_expr(input: ParseStream, mut lhs: CarbideExpr, base: CarbidePrecedence,) -> syn::Result<CarbideExpr> {
+        loop {
+            if input
+                .fork()
+                .parse::<CarbideBinOp>()
+                .ok()
+                .map_or(false, |op| CarbidePrecedence::of(&op) >= base)
+            {
+                let op = CarbideBinOp::parse(input)?;
+                let precedence = CarbidePrecedence::of(&op);
+                let mut rhs = CarbideExpr::parse_unary_expr(input)?;
 
-    /// <unary>
-    fn parse_expr(input: ParseStream) -> syn::Result<CarbideExpr> {
-        CarbideExpr::parse_unary_expr(input)
+                loop {
+                    let next = CarbideExpr::peek_precedence(input);
+                    if next > precedence {
+                        rhs = CarbideExpr::parse_expr(input, rhs, next)?;
+                    } else {
+                        break;
+                    }
+                }
+
+                lhs = CarbideExpr::Binary(BinaryExpr {
+                    left: Box::new(lhs),
+                    op,
+                    right: Box::new(rhs),
+                });
+            } /*else if Precedence::Range >= base && input.peek(Token![..]) {
+                let limits: RangeLimits = input.parse()?;
+                let rhs = if input.is_empty()
+                    || input.peek(Token![,])
+                    || input.peek(Token![;])
+                    || input.peek(Token![.]) && !input.peek(Token![..])
+                    || !allow_struct.0 && input.peek(token::Brace)
+                {
+                    None
+                } else {
+                    let mut rhs = unary_expr(input, allow_struct)?;
+                    loop {
+                        let next = peek_precedence(input);
+                        if next > Precedence::Range {
+                            rhs = parse_expr(input, rhs, allow_struct, next)?;
+                        } else {
+                            break;
+                        }
+                    }
+                    Some(rhs)
+                };
+                lhs = Expr::Range(ExprRange {
+                    attrs: Vec::new(),
+                    from: Some(Box::new(lhs)),
+                    limits,
+                    to: rhs.map(Box::new),
+                });
+            } else if Precedence::Cast >= base && input.peek(Token![as]) {
+                let as_token: Token![as] = input.parse()?;
+                let ty = input.call(Type::without_plus)?;
+                check_cast(input)?;
+                lhs = Expr::Cast(ExprCast {
+                    attrs: Vec::new(),
+                    expr: Box::new(lhs),
+                    as_token,
+                    ty: Box::new(ty),
+                });
+            } else if Precedence::Cast >= base && input.peek(Token![:]) && !input.peek(Token![::]) {
+                let colon_token: Token![:] = input.parse()?;
+                let ty = input.call(Type::without_plus)?;
+                check_cast(input)?;
+                lhs = Expr::Type(ExprType {
+                    attrs: Vec::new(),
+                    expr: Box::new(lhs),
+                    colon_token,
+                    ty: Box::new(ty),
+                });
+            }*/ else {
+                break;
+            }
+        }
+        Ok(lhs)
     }
 
-    /// $ <trailer>
-    fn parse_unary_expr(input: ParseStream) -> syn::Result<CarbideExpr> {
+    /// ! <trailer>
+    /// - <trailer>
+    pub(crate) fn parse_unary_expr(input: ParseStream) -> syn::Result<CarbideExpr> {
 
-        /*if input.peek(Token![$]) {
-            let dollar_token: Token![$] = input.parse()?;
-            let expr = Box::new(CarbideExpr::parse_unary_expr(input)?);
-
-            Ok(CarbideExpr::State(StateExpr {
-                dollar_token,
-                expr
-            }))
-        } else {*/
+        if input.peek(Token![!]) || input.peek(Token!(-)) {
+            UnaryExpr::parse(input).map(CarbideExpr::Unary)
+        } else {
             CarbideExpr::parse_trailer_expr(input)
-        //}
+        }
 
     }
 
@@ -356,6 +387,8 @@ impl CarbideExpr {
             || input.peek(Token![$])
         {
             CarbideExpr::parse_path_or_macro(input)
+        } else if input.peek(Paren) {
+            input.parse().map(CarbideExpr::Paren)
         } else {
             Err(input.error("unsupported expression"))
         }
@@ -403,6 +436,18 @@ impl CarbideExpr {
 
 
     }
+
+    fn peek_precedence(input: ParseStream) -> CarbidePrecedence {
+        if let Ok(op) = input.fork().parse() {
+            CarbidePrecedence::of(&op)
+        } else if input.peek(Token![..]) {
+            CarbidePrecedence::Range
+        } else if input.peek(Token![as]) || input.peek(Token![:]) && !input.peek(Token![::]) {
+            CarbidePrecedence::Cast
+        } else {
+            CarbidePrecedence::Any
+        }
+    }
 }
 
 
@@ -439,7 +484,7 @@ impl CarbideExpr {
         Ok(!trailing_dot)
     }
 
-    fn print_path(tokens: &mut TokenStream, qself: &Option<QSelf>, path: &Path) {
+    pub(crate) fn print_path(tokens: &mut TokenStream, qself: &Option<QSelf>, path: &Path) {
         pub struct TokensOrDefault<'a, T: 'a>(pub &'a Option<T>);
 
         impl<'a, T> ToTokens for TokensOrDefault<'a, T> where T: ToTokens + Default {
@@ -511,7 +556,7 @@ mod tests {
         use syn::parse::Parse;
         use syn::{Lit, parse_quote, Path, PathSegment};
         use syn::punctuated::Punctuated;
-        use crate::carbide_expr::{CarbideExpr, CarbideMember, FieldExpr, PathExpr, LitExpr, StateExpr, MethodCallExpr};
+        use crate::expr::carbide_expr::{CarbideExpr, CarbideMember, FieldExpr, PathExpr, LitExpr, StateExpr, MethodCallExpr, ParenExpr, UnaryExpr, CarbideUnOp, BinaryExpr, CarbideBinOp};
 
         #[test]
         fn parse_lit() {
@@ -547,6 +592,276 @@ mod tests {
             let expected = CarbideExpr::Path(PathExpr {
                 qself: None,
                 path: parse_quote!(test)
+            });
+
+            assert_eq!(expected, actual)
+        }
+
+        #[test]
+        fn parse_unary1() {
+            // Arrange
+
+            let stream = quote!(
+                !test
+            );
+
+            println!("{:#?}", &stream);
+
+            // Act
+            let actual: CarbideExpr = syn::parse2(stream).unwrap();
+
+            // Assert
+            let expected = CarbideExpr::Unary(UnaryExpr {
+                op: CarbideUnOp::Not(Default::default()),
+                expr: Box::new(CarbideExpr::Path(PathExpr {
+                    qself: None,
+                    path: parse_quote!(test)
+                }))
+            });
+
+            assert_eq!(expected, actual)
+        }
+
+        #[test]
+        fn parse_unary2() {
+            // Arrange
+
+            let stream = quote!(
+                -!test
+            );
+
+            println!("{:#?}", &stream);
+
+            // Act
+            let actual: CarbideExpr = syn::parse2(stream).unwrap();
+
+            // Assert
+            let expected = CarbideExpr::Unary(UnaryExpr {
+                op: CarbideUnOp::Neg(Default::default()),
+                expr: Box::new(CarbideExpr::Unary(UnaryExpr {
+                    op: CarbideUnOp::Not(Default::default()),
+                    expr: Box::new(CarbideExpr::Path(PathExpr {
+                        qself: None,
+                        path: parse_quote!(test)
+                    }))
+                }))
+            });
+
+            assert_eq!(expected, actual)
+        }
+
+        #[test]
+        fn parse_unary3() {
+            // Arrange
+
+            let stream = quote!(
+                -!$test
+            );
+
+            println!("{:#?}", &stream);
+
+            // Act
+            let actual: CarbideExpr = syn::parse2(stream).unwrap();
+
+            // Assert
+            let expected = CarbideExpr::Unary(UnaryExpr {
+                op: CarbideUnOp::Neg(Default::default()),
+                expr: Box::new(CarbideExpr::Unary(UnaryExpr {
+                    op: CarbideUnOp::Not(Default::default()),
+                    expr: Box::new(CarbideExpr::State(StateExpr {
+                        dollar_token: Default::default(),
+                        expr: Box::new(CarbideExpr::Path(PathExpr {
+                            qself: None,
+                            path: parse_quote!(test)
+                        }))
+                    }))
+                }))
+            });
+
+            assert_eq!(expected, actual)
+        }
+
+        #[test]
+        fn parse_binary1() {
+            // Arrange
+
+            let stream = quote!(
+                test1 == test2
+            );
+
+            println!("{:#?}", &stream);
+
+            // Act
+            let actual: CarbideExpr = syn::parse2(stream).unwrap();
+
+            // Assert
+            let expected = CarbideExpr::Binary(BinaryExpr {
+                left: Box::new(parse_quote!(test1)),
+                op: CarbideBinOp::Eq(Default::default()),
+                right: Box::new(parse_quote!(test2))
+            });
+
+            assert_eq!(expected, actual)
+        }
+
+        #[test]
+        fn parse_binary2() {
+            // Arrange
+
+            let stream = quote!(
+                test1 == test2 == test3
+            );
+
+            println!("{:#?}", &stream);
+
+            // Act
+            let actual: CarbideExpr = syn::parse2(stream).unwrap();
+
+            // Assert
+            let expected = CarbideExpr::Binary(BinaryExpr {
+                left: Box::new(CarbideExpr::Binary(BinaryExpr {
+                    left: Box::new(parse_quote!(test1)),
+                    op: CarbideBinOp::Eq(Default::default()),
+                    right: Box::new(parse_quote!(test2))
+                })),
+                op: CarbideBinOp::Eq(Default::default()),
+                right: Box::new(parse_quote!(test3)),
+            });
+
+            assert_eq!(expected, actual)
+        }
+
+        #[test]
+        fn parse_binary3() {
+            // Arrange
+
+            let stream = quote!(
+                test1 || test2 && test3
+            );
+
+            println!("{:#?}", &stream);
+
+            // Act
+            let actual: CarbideExpr = syn::parse2(stream).unwrap();
+
+            // Assert
+            let expected = CarbideExpr::Binary(BinaryExpr {
+                left: Box::new(parse_quote!(test1)),
+                op: CarbideBinOp::Or(Default::default()),
+                right: Box::new(CarbideExpr::Binary(BinaryExpr {
+                    left: Box::new(parse_quote!(test2)),
+                    op: CarbideBinOp::And(Default::default()),
+                    right: Box::new(parse_quote!(test3))
+                })),
+            });
+
+            assert_eq!(expected, actual)
+        }
+
+        #[test]
+        fn parse_binary4() {
+            // Arrange
+
+            let stream = quote!(
+                test1 && test2 <= test3
+            );
+
+            println!("{:#?}", &stream);
+
+            // Act
+            let actual: CarbideExpr = syn::parse2(stream).unwrap();
+
+            // Assert
+            let expected = CarbideExpr::Binary(BinaryExpr {
+                left: Box::new(parse_quote!(test1)),
+                op: CarbideBinOp::And(Default::default()),
+                right: Box::new(CarbideExpr::Binary(BinaryExpr {
+                    left: Box::new(parse_quote!(test2)),
+                    op: CarbideBinOp::Le(Default::default()),
+                    right: Box::new(parse_quote!(test3))
+                })),
+            });
+
+            assert_eq!(expected, actual)
+        }
+
+        #[test]
+        fn parse_binary5() {
+            // Arrange
+
+            let stream = quote!(
+                test1 + test2 * test3
+            );
+
+            println!("{:#?}", &stream);
+
+            // Act
+            let actual: CarbideExpr = syn::parse2(stream).unwrap();
+
+            // Assert
+            let expected = CarbideExpr::Binary(BinaryExpr {
+                left: Box::new(parse_quote!(test1)),
+                op: CarbideBinOp::Add(Default::default()),
+                right: Box::new(CarbideExpr::Binary(BinaryExpr {
+                    left: Box::new(parse_quote!(test2)),
+                    op: CarbideBinOp::Mul(Default::default()),
+                    right: Box::new(parse_quote!(test3))
+                })),
+            });
+
+            assert_eq!(expected, actual)
+        }
+
+        #[test]
+        fn parse_binary6() {
+            // Arrange
+
+            let stream = quote!(
+                (test1 + test2) * test3
+            );
+
+            println!("{:#?}", &stream);
+
+            // Act
+            let actual: CarbideExpr = syn::parse2(stream).unwrap();
+
+            // Assert
+            let expected = CarbideExpr::Binary(BinaryExpr {
+                left: Box::new(CarbideExpr::Paren(ParenExpr {
+                    paren_token: Default::default(),
+                    expr: Box::new(CarbideExpr::Binary(BinaryExpr {
+                        left: Box::new(parse_quote!(test1)),
+                        op: CarbideBinOp::Add(Default::default()),
+                        right: Box::new(parse_quote!(test2))
+                    }))
+                })),
+                op: CarbideBinOp::Mul(Default::default()),
+                right: Box::new(parse_quote!(test3))
+            });
+
+            assert_eq!(expected, actual)
+        }
+
+        #[test]
+        fn parse_parenthesis() {
+            // Arrange
+
+            let stream = quote!(
+                (test)
+            );
+
+            println!("{:#?}", &stream);
+
+            // Act
+            let actual: CarbideExpr = syn::parse2(stream).unwrap();
+
+            // Assert
+            let expected = CarbideExpr::Paren(ParenExpr {
+                paren_token: Default::default(),
+                expr: Box::new(CarbideExpr::Path(PathExpr {
+                    qself: None,
+                    path: parse_quote!(test)
+                }))
             });
 
             assert_eq!(expected, actual)
@@ -696,7 +1011,7 @@ mod tests {
         use proc_macro2::TokenStream;
         use quote::ToTokens;
         use syn::{Expr, parse_quote};
-        use crate::carbide_expr::CarbideExpr;
+        use crate::expr::carbide_expr::CarbideExpr;
 
         #[test]
         fn print_ident() {

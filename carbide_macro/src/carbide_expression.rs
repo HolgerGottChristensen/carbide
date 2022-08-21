@@ -7,7 +7,7 @@ use syn::{braced, Expr, parenthesized, Token, Type};
 use syn::__private::{parse_braces, parse_parens};
 use syn::parse::{Parse, ParseStream};
 use syn::punctuated::Punctuated;
-use crate::carbide_expr::CarbideExpr;
+use crate::expr::carbide_expr::CarbideExpr;
 use crate::carbide_expression::CarbideExpression::{ForLoop, If, Instantiate, Match};
 use crate::carbide_expression::CarbideInstantiateParam::{Optional, Required};
 use crate::expr_ident_extraction::extract_idents_from_expression;
@@ -202,15 +202,42 @@ impl ToTokens for CarbideExprForLoop {
             body
         } = self;
 
+        let body = if body.exprs.len() > 1 {
+            quote!(
+                ZStack::new(
+                    #body
+                )
+            )
+        } else {
+            quote!(#body)
+        };
+
+        let idents = extract_idents_from_pattern(pat.clone());
+
+        let unpacked = if idents.len() == 0 {
+            quote!()
+        } else {
+            if let Pat::Ident(ident) = pat {
+                quote!(
+                    let #ident = item;
+                )
+            } else {
+                quote!(
+                    carbide_core::matches_case!(@inner item, #pat, #(#idents),*);
+
+                )
+            }
+        };
+
+
+
         tokens.extend(quote!(
             ForEach::new(
                 #expr,
                 |item: TState<_>, _| -> Box<dyn Widget> {
-                    //let #pat = &*item.value();
-                    let #pat = item;
-                    ZStack::new(
-                        #body
-                    )
+                    #unpacked
+
+                    #body
                 }
             )
         ))

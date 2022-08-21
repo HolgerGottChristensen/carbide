@@ -5,10 +5,9 @@ use carbide_core::prelude::NewStateSync;
 use dyn_clone::DynClone;
 
 use crate::environment::Environment;
-use crate::prelude::{StateContract, TState};
 use crate::state::util::value_cell::{ValueRef, ValueRefMut};
 use crate::state::widget_state::WidgetState;
-use crate::state::{InnerState, LocalState, ReadState, State, StringState, ValueCell, ValueState};
+use crate::state::{InnerState, LocalState, ReadState, State, StringState, ValueCell, ValueState, Map1, TState, RState, StateContract};
 
 #[derive(Clone)]
 pub struct MapOwnedState<FROM, TO>
@@ -153,31 +152,51 @@ dyn_clone::clone_trait_object!(<FROM: StateContract, TO: StateContract> MapRev<F
 macro_rules! impl_string_state {
     ($($typ: ty),*) => {
         $(
-            impl Into<StringState> for TState<$typ> {
-                fn into(self) -> StringState {
-                    MapOwnedState::new(self, |s: &$typ, _: &_, _: &_| {s.to_string()}).into()
+            impl From<TState<$typ>> for RState<String> {
+                fn from(t: TState<$typ>) -> Self {
+                    Map1::read_map_cached(t, |s: &$typ| s.to_string())
                 }
             }
-            impl Into<StringState> for $typ {
-                fn into(self) -> StringState {
-                    MapOwnedState::new(ValueState::new(self), |s: &$typ, _: &_, _: &_| {s.to_string()}).into()
+
+            impl From<RState<$typ>> for RState<String> {
+                fn from(t: RState<$typ>) -> Self {
+                    Map1::read_map_cached(t, |s: &$typ| s.to_string())
                 }
             }
-            impl Into<StringState> for Box<ValueState<$typ>> {
-                fn into(self) -> StringState {
-                    MapOwnedState::new(WidgetState::new(self), |s: &$typ, _: &_, _: &_| {s.to_string()}).into()
+
+            impl From<$typ> for RState<String> {
+                fn from(t: $typ) -> Self {
+                    Map1::read_map_cached(ValueState::new(t), |s: &$typ| s.to_string())
                 }
             }
-            impl Into<StringState> for Box<LocalState<$typ>> {
-                fn into(self) -> StringState {
-                    MapOwnedState::new(WidgetState::new(self), |s: &$typ, _: &_, _: &_| {s.to_string()}).into()
+
+
+            impl From<TState<$typ>> for TState<String> {
+                fn from(t: TState<$typ>) -> Self {
+                    Map1::read_map_cached(t, |s: &$typ| s.to_string()).ignore_writes()
                 }
             }
+
+            impl From<RState<$typ>> for TState<String> {
+                fn from(t: RState<$typ>) -> Self {
+                    Map1::read_map_cached(t, |s: &$typ| s.to_string()).ignore_writes()
+                }
+            }
+
+            impl From<$typ> for TState<String> {
+                fn from(t: $typ) -> Self {
+                    Map1::read_map_cached(ValueState::new(t), |s: &$typ| s.to_string()).ignore_writes()
+                }
+            }
+
         )*
 
     };
 }
 
 impl_string_state!(
-    i8, u8, i16, u16, i32, u32, i64, u64, i128, u128, f32, f64, bool, char, isize, usize
+    i8, u8, i16, u16,
+    i32, u32, i64, u64,
+    i128, u128, f32, f64,
+    bool, char, isize, usize
 );

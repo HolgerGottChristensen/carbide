@@ -59,22 +59,6 @@ impl<T: StateContract> WidgetState<T> {
     }
 }
 
-impl<T: StateContract> WidgetState<T> {
-    /// Return a read-only state containing a boolean, which is true when self and other are
-    /// equals.
-    pub fn eq<U: StateContract + PartialEq<T>>(&self, other: impl Into<TState<U>>) -> RState<bool> {
-        let other = other.into();
-        Map2::read_map(self.clone(), other, |s1: &T, s2: &U| s2 == s1)
-    }
-
-    /// Return a read-only state containing a boolean, which is true when self and other are not
-    /// equals.
-    pub fn ne<U: StateContract + PartialEq<T>>(&self, other: impl Into<TState<U>>) -> RState<bool> {
-        let other = other.into();
-        Map2::read_map(self.clone(), other, |s1: &T, s2: &U| s2 != s1)
-    }
-}
-
 impl<T: Display + StateContract> Display for WidgetState<T> {
     fn fmt(&self, fmt: &mut Formatter) -> fmt::Result {
         match self {

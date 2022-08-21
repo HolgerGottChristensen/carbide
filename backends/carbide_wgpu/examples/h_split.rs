@@ -38,7 +38,7 @@ fn h_split(size: &TState<f64>) -> Box<HSplit> {
     HSplit::new(
         ZStack::new(vec![
             Rectangle::new().fill(EnvironmentColor::Green),
-            Text::new(size.mapped(|t: &f64| format!("{:.2}", t))).wrap_mode(Wrap::None),
+            Text::new(size.map(|t: &f64| format!("{:.2}", t))).wrap_mode(Wrap::None),
         ]),
         ZStack::new(vec![
             Rectangle::new().fill(EnvironmentColor::Accent),

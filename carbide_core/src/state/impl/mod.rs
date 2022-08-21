@@ -18,3 +18,7 @@ pub mod result;
 pub mod shl;
 pub mod shr;
 pub mod sub;
+pub mod eq;
+pub mod and;
+pub mod or;
+pub mod ord;

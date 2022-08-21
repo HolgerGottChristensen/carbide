@@ -8,9 +8,7 @@ use std::str::FromStr;
 use crate::environment::Environment;
 use crate::prelude::{AdvancedColor, ReadState};
 use crate::state::widget_state::WidgetState;
-use crate::state::{
-    BoolState, MapOwnedState, RState, ResStringState, State, StateContract, StateExt, TState,
-};
+use crate::state::{BoolState, MapOwnedState, RState, ResStringState, State, StateContract, StateExt, TState, ReadWidgetState};
 use crate::state::{ValueRef, ValueRefMut};
 use crate::widget::Gradient;
 
@@ -111,6 +109,12 @@ impl From<&str> for TState<String> {
     }
 }
 
+impl From<&str> for RState<String> {
+    fn from(t: &str) -> Self {
+        ReadWidgetState::ReadWriteState(ValueState::new(t.to_string()))
+    }
+}
+
 impl<T: StateContract + Default + 'static> Into<TState<Result<T, String>>> for TState<T> {
     fn into(self) -> TState<Result<T, String>> {
         MapOwnedState::new_with_default_and_rev(
@@ -208,12 +212,23 @@ impl Into<ResStringState> for TState<Result<f64, String>> {
 
 impl Into<TState<String>> for TState<Result<String, String>> {
     fn into(self) -> TState<String> {
-        Map1::map(
+        Map1::map_cached(
             self,
             |res: &Result<String, String>| match res.as_ref() {
                 Ok(s) | Err(s) => s.clone(),
             },
             |new, _| Some(Ok(new)),
+        )
+    }
+}
+
+impl From<TState<Result<String, String>>> for RState<String> {
+    fn from(t: TState<Result<String, String>>) -> RState<String> {
+        Map1::read_map_cached(
+            t,
+            |res: &Result<String, String>| match res.as_ref() {
+                Ok(s) | Err(s) => s.clone(),
+            }
         )
     }
 }

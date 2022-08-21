@@ -23,11 +23,23 @@ fn main() {
             let test: String = String::from("Hejsa")
 
             fn body() -> Widget {
-                if $option.is_some() {
-                    Text("Is some")
+                if $alignment < 100 || $alignment >= 42 {
+                    Text("Is [42;100[")
                 } else {
                     Text("Is none")
                 }
+
+                /*if ($alignment + 10) * 1 == 52 || $alignment == 32 {
+                    Text("Is some")
+                } else {
+                    Text("Is none")
+                }*/
+
+                /*if $option.is_some() {
+                    Text("Is some")
+                } else {
+                    Text("Is none")
+                }*/
 
                 /*HStack {
                     Text($test)
@@ -72,7 +84,7 @@ fn main() {
 
                 /*VStack {
                     for (i, j) in vec![(1, 2), (3, 42)] {
-                        Text(*i + *j).font_size(EnvironmentFontSize::LargeTitle)
+                        Text((i + j).ignore_writes()).font_size(EnvironmentFontSize::LargeTitle)
                     }
                 }*/
 

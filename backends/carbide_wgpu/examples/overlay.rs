@@ -5,7 +5,7 @@ use carbide_core::draw::{Dimension, Position};
 use carbide_core::environment::*;
 use carbide_core::event::{Key, KeyboardEvent, KeyboardEventHandler};
 use carbide_core::layout::Layout;
-use carbide_core::state::{BoolState, LocalState, StateExt};
+use carbide_core::state::{BoolState, LocalState, StateExt, TState};
 use carbide_core::text::FontFamily;
 use carbide_core::widget::*;
 use carbide_wgpu::window::*;
@@ -26,13 +26,13 @@ fn main() {
         FontFamily::new_from_paths("NotoSans", vec!["fonts/NotoSans/NotoSans-Regular.ttf"]);
     window.add_font_family(family);
 
-    let showing_state: BoolState = LocalState::new(false).into();
+    let showing_state: TState<bool> = LocalState::new(false).into();
 
     window.set_widgets(OverlaidLayer::new(
         "overlay",
         VStack::new(vec![
             Text::new(
-                showing_state.mapped(|a: &bool| format!("Currently showing overlay: {}", *a)),
+                showing_state.map(|a: &bool| format!("Currently showing overlay: {}", *a)),
             ),
             ZStack::new(vec![
                 Over::new(showing_state).frame(100.0, 100.0),

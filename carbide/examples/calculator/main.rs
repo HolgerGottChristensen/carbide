@@ -32,8 +32,8 @@ fn main() {
 
     let mut calculator_state = LocalState::new(CalculatorState::new());
 
-    let upper_display_string = calculator_state.mapped(|m: &CalculatorState| m.get_upper_display());
-    let display_string = calculator_state.mapped(|m: &CalculatorState| m.get_display());
+    let upper_display_string = calculator_state.map(|m: &CalculatorState| m.get_upper_display());
+    let display_string = calculator_state.map(|m: &CalculatorState| m.get_display());
 
     let display = HStack::new(vec![
         Spacer::new(),

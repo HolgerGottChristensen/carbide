@@ -84,8 +84,3 @@ impl From<u32> for RState<f64> {
     }
 }
 
-impl From<&str> for RState<String> {
-    fn from(t: &str) -> Self {
-        ValueState::new(t.to_string()).into()
-    }
-}
