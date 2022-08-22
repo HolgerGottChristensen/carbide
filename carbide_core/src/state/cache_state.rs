@@ -1,7 +1,5 @@
-use carbide_core::environment::Environment;
-use carbide_core::prelude::ValueRef;
-use carbide_core::state::RState;
-use crate::state::{InnerState, NewStateSync, ReadState, State, StateContract, TState, ValueCell, ValueRefMut};
+use crate::environment::Environment;
+use crate::state::{InnerState, NewStateSync, ReadState, State, StateContract, TState, ValueCell, ValueRefMut, ValueRef, RState};
 
 #[derive(Clone)]
 pub struct CacheRState<T> where T: StateContract {

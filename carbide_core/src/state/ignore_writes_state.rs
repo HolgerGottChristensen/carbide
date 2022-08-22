@@ -1,6 +1,6 @@
 use crate::state::{RState, State, StateContract, TState, WidgetState};
-use carbide_core::environment::Environment;
-use carbide_core::prelude::{NewStateSync, ReadState, ValueRef, ValueRefMut};
+use crate::environment::Environment;
+use crate::state::{NewStateSync, ReadState, ValueRef, ValueRefMut};
 
 #[derive(Clone, Debug)]
 pub struct IgnoreWritesState<T: StateContract>(RState<T>);

@@ -1,7 +1,8 @@
 use carbide_macro::carbide_default_builder;
 use crate::draw::{Dimension, Position};
-use crate::prelude::*;
 use crate::CommonWidgetImpl;
+use crate::flags::Flags;
+use crate::widget::{Widget, WidgetExt, WidgetId};
 
 #[derive(Debug, Clone, Widget)]
 pub struct Flagged {

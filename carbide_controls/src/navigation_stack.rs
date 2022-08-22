@@ -3,7 +3,6 @@ use carbide_core::environment::{Environment, WidgetTransferAction};
 use carbide_core::render::{Primitive, Render};
 use carbide_core::widget::{Widget, WidgetExt, WidgetId};
 use carbide_core::CommonWidgetImpl;
-use carbide_core::Widget;
 
 #[derive(Debug, Clone, Widget)]
 #[carbide_exclude(Render)]

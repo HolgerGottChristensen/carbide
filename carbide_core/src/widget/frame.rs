@@ -1,7 +1,11 @@
 use crate::draw::{Dimension, Position};
-use crate::prelude::*;
 use std::fmt::Debug;
 use carbide_macro::carbide_default_builder;
+use crate::environment::Environment;
+use crate::flags::Flags;
+use crate::layout::{BasicLayouter, Layout, Layouter};
+use crate::state::{NewStateSync, ReadState, State, TState, ValueRef, ValueRefMut};
+use crate::widget::{CommonWidget, Widget, WidgetExt, WidgetId, WidgetIter, WidgetIterMut};
 
 pub static SCALE: f64 = -1.0;
 
@@ -12,9 +16,9 @@ pub struct Frame {
     child: Box<dyn Widget>,
     position: Position,
     #[state]
-    x: F64State,
+    x: TState<f64>,
     #[state]
-    y: F64State,
+    y: TState<f64>,
     fixed_x: bool,
     fixed_y: bool,
     #[state]
@@ -94,21 +98,21 @@ impl Frame {
         })
     }
 
-    pub fn with_fixed_x(mut self, x: F64State) -> Box<Frame> {
+    pub fn with_fixed_x(mut self, x: TState<f64>) -> Box<Frame> {
         self.x = x;
         self.fixed_x = true;
 
         Box::new(self)
     }
 
-    pub fn with_fixed_y(mut self, y: F64State) -> Box<Frame> {
+    pub fn with_fixed_y(mut self, y: TState<f64>) -> Box<Frame> {
         self.y = y;
         self.fixed_y = true;
 
         Box::new(self)
     }
 
-    pub fn with_fixed_position(mut self, x: F64State, y: F64State) -> Box<Frame> {
+    pub fn with_fixed_position(mut self, x: TState<f64>, y: TState<f64>) -> Box<Frame> {
         self.x = x;
         self.fixed_x = true;
         self.y = y;

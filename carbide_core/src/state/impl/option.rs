@@ -1,6 +1,4 @@
-use crate::state::ReadWidgetState;
-use crate::state::{Map1, Map2, StateContract, TState};
-use carbide_core::prelude::RState;
+use crate::state::{Map1, Map2, StateContract, TState, RState, ReadWidgetState};
 
 impl<T: StateContract> TState<Option<T>> {
     /// Allows calling is_some in the option. Returns a read-only boolean state. The reason it is

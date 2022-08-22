@@ -1,8 +1,8 @@
-use carbide_core::prelude::NewStateSync;
+use carbide_core::state::NewStateSync;
 use std::fmt::{Debug, Formatter};
 use std::ops::{Deref, Index, IndexMut};
 
-use crate::prelude::Environment;
+use crate::environment::Environment;
 use crate::state::state::State;
 use crate::state::util::value_cell::{ValueRef, ValueRefMut};
 use crate::state::widget_state::WidgetState;

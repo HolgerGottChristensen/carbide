@@ -15,7 +15,8 @@ pub use rounded_rectangle::*;
 
 use crate::draw::shape::triangle::Triangle;
 use crate::draw::{Position, Scalar};
-use crate::prelude::{Environment, PrimitiveKind};
+use crate::environment::Environment;
+use crate::render::PrimitiveKind;
 use crate::widget::types::PrimitiveStore;
 use crate::widget::types::ShapeStyle;
 use crate::widget::types::StrokeStyle;

@@ -1,6 +1,5 @@
-use crate::state::{NewStateSync, ReadState, State, StateContract, TState};
-use carbide_core::environment::Environment;
-use carbide_core::prelude::{ValueRef, ValueRefMut};
+use crate::state::{NewStateSync, ReadState, State, StateContract, TState, ValueRef, ValueRefMut};
+use crate::environment::Environment;
 use std::ops::Deref;
 
 #[derive(Debug, Clone)]

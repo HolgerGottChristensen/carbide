@@ -1,6 +1,6 @@
 // Which keys can be selected enum
-use crate::prelude::EnvironmentColor;
-use crate::prelude::EnvironmentFontSize;
+use crate::environment::EnvironmentColor;
+use crate::environment::EnvironmentFontSize;
 
 #[derive(Hash, Eq, PartialEq, Clone, Debug)]
 pub enum StateKey {

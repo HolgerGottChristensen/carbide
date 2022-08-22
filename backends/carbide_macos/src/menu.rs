@@ -7,7 +7,8 @@ use crate::id::Id;
 use crate::menu_item::NSMenuItem;
 use cocoa::base::NO;
 use cocoa::base::YES;
-use carbide_core::prelude::{Environment, Menu, MenuItem};
+use carbide_core::widget::{Menu, MenuItem};
+use carbide_core::environment::Environment;
 use crate::NSArray;
 
 pub struct NSMenu {

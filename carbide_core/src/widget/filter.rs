@@ -1,7 +1,9 @@
 use carbide_macro::carbide_default_builder;
 use crate::draw::{Dimension, Position, Rect};
-use crate::prelude::*;
-use crate::render::PrimitiveKind;
+use crate::environment::Environment;
+use crate::flags::Flags;
+use crate::render::{Primitive, PrimitiveKind, Render};
+use crate::widget::*;
 
 #[derive(Debug, Clone, Widget)]
 #[carbide_exclude(Render)]

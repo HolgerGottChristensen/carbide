@@ -1,6 +1,6 @@
 use crate::draw::{Dimension, Position};
 use crate::widget::{GradientRepeat, GradientType};
-use carbide_core::prelude::GradientPosition;
+use carbide_core::widget::GradientPosition;
 use carbide_core::widget::Gradient;
 use carbide_core::Color;
 

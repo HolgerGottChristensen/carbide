@@ -5,12 +5,16 @@ use lyon::tessellation::path::Winding;
 use carbide_macro::carbide_default_builder;
 
 use crate::draw::{Dimension, Position};
-use crate::prelude::*;
 use crate::widget::shape::{tessellate, Shape};
 use crate::widget::types::PrimitiveStore;
 use crate::widget::types::ShapeStyle;
 use crate::widget::types::StrokeStyle;
-use crate::CommonWidgetImpl;
+use crate::{Color, CommonWidgetImpl};
+use crate::environment::Environment;
+use crate::environment::EnvironmentColor;
+use crate::render::{Primitive, Render};
+use crate::state::{ReadState, RState, TState};
+use crate::widget::{AdvancedColor, Blur, CommonWidget, Widget, WidgetExt, WidgetId, ZStack};
 
 /// A basic, non-interactive rectangle shape widget.
 #[derive(Debug, Clone, Widget)]
@@ -47,7 +51,7 @@ impl Capsule {
         Box::new(self)
     }
 
-    pub fn material<C: Into<TState<Color>>>(mut self, material: C) -> Box<ZStack> {
+    pub fn material(mut self, material: impl Into<TState<Color>>) -> Box<ZStack> {
         let material_state = material.into();
         let advanced_material_state: RState<AdvancedColor> = material_state.into();
         self.fill_color = advanced_material_state.clone().ignore_writes();

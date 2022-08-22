@@ -8,7 +8,7 @@ use carbide_core::environment::EnvironmentFontSize;
 use carbide_core::state::{LocalState, ReadState, StateExt};
 use carbide_core::text::{FontFamily, FontWeight, TextDecoration};
 use carbide_core::widget::*;
-use carbide_core::{task, Widget};
+use carbide_core::task;
 use carbide_wgpu::{Application, Window};
 use carbide_core::draw::Position;
 use tokio::time::{sleep, Duration};

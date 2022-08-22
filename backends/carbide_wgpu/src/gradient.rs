@@ -1,5 +1,5 @@
 use carbide_core::draw::draw_gradient::DrawGradient;
-use carbide_core::prelude::{GradientRepeat, GradientType};
+use carbide_core::widget::{GradientRepeat, GradientType};
 
 #[repr(C)]
 #[derive(Clone, Debug)]

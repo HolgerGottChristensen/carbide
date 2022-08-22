@@ -14,6 +14,7 @@ pub use self::local_state::LocalState;
 pub use self::map_owned_state::*;
 pub use self::read_state::ReadState;
 pub use self::read_widget_state::ReadWidgetState;
+pub use self::ignore_writes_state::IgnoreWritesState;
 pub use self::state::State;
 pub use self::state_ext::*;
 pub use self::state_key::StateKey;

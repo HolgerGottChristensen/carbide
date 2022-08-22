@@ -1,10 +1,16 @@
 use carbide_macro::carbide_default_builder;
 use crate::draw::{Dimension, Position};
+use crate::environment::Environment;
+use crate::environment::EnvironmentColor;
 use crate::event::{
     ModifierKey, MouseButton, MouseEvent, MouseEventHandler, OtherEventHandler, WidgetEvent,
 };
-use crate::prelude::*;
+use crate::color::Color;
+use crate::flags::Flags;
+use crate::layout::{BasicLayouter, Layout, Layouter};
+use crate::render::{Primitive, Render};
 use crate::widget::types::ScrollDirection;
+use crate::widget::{CommonWidget, Widget, WidgetExt, WidgetId, WidgetIter, WidgetIterMut, Capsule, Rectangle};
 
 #[derive(Debug, Clone, Widget)]
 #[carbide_exclude(Render, MouseEvent, OtherEvent, Layout)]

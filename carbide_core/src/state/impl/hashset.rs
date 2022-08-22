@@ -1,5 +1,4 @@
-use crate::prelude::TState;
-use crate::state::{Map1, Map2, RState, StateContract, WidgetState};
+use crate::state::{Map1, Map2, RState, StateContract, WidgetState, TState};
 use std::collections::HashSet;
 use std::hash::Hash;
 

@@ -1,8 +1,7 @@
-use carbide_core::prelude::NewStateSync;
 use std::fmt::Debug;
 
 use crate::environment::Environment;
-use crate::prelude::{StateContract, TState};
+use crate::state::{StateContract, TState, NewStateSync};
 use crate::state::util::value_cell::{ValueRef, ValueRefMut};
 use crate::state::widget_state::WidgetState;
 use crate::state::{ReadState, State};

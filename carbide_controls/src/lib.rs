@@ -1,10 +1,3 @@
-#[macro_use]
-extern crate carbide_core;
-#[macro_use]
-extern crate carbide_derive;
-extern crate copypasta;
-extern crate unicode_segmentation;
-
 pub use button::Button;
 pub use check_box::*;
 pub use list::*;
@@ -25,7 +18,7 @@ macro_rules! capture {
             $($(let $t = $t.clone();)*)?
             $($(let $u = $u.clone();)*)?
             move |$($a: $typ),*, modifier: carbide_core::event::ModifierKey| {
-                use carbide_core::prelude::State;
+                use carbide_core::state::State;
                 $($(let mut $t = $t.clone();)*)?
                 $($(let mut $u = $u.clone();)*)?
                 {

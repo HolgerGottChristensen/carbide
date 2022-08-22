@@ -5,7 +5,7 @@ use nom::multi::{many0, many1};
 use nom::sequence::{delimited, preceded, tuple};
 use nom::IResult;
 
-use crate::prelude::Environment;
+use crate::environment::Environment;
 use crate::text::types::text_decoration::TextDecoration;
 use crate::text::text_span::TextSpan;
 use crate::text::text_style::TextStyle;

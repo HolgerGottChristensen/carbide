@@ -2,19 +2,21 @@ use std::fmt::{Debug, Formatter};
 use carbide_macro::carbide_default_builder;
 
 use crate::draw::{Dimension, Position};
+use crate::environment::Environment;
 use crate::event::{OtherEventHandler, WidgetEvent};
-use crate::prelude::*;
-use crate::state::IndexableState;
+use crate::flags::Flags;
+use crate::state::{IndexableState, ReadState, StateContract, TState, ValueState};
+use crate::widget::{CommonWidget, Widget, WidgetExt, WidgetId, WidgetIter, WidgetIterMut};
 
 pub trait Delegate<T: StateContract>: Clone {
-    fn call(&self, item: TState<T>, index: UsizeState) -> Box<dyn Widget>;
+    fn call(&self, item: TState<T>, index: TState<usize>) -> Box<dyn Widget>;
 }
 
 impl<T: StateContract, K> Delegate<T> for K
 where
-    K: Fn(TState<T>, UsizeState) -> Box<dyn Widget> + Clone,
+    K: Fn(TState<T>, TState<usize>) -> Box<dyn Widget> + Clone,
 {
-    fn call(&self, item: TState<T>, index: UsizeState) -> Box<dyn Widget> {
+    fn call(&self, item: TState<T>, index: TState<usize>) -> Box<dyn Widget> {
         self(item, index)
     }
 }
@@ -36,7 +38,7 @@ where
 
     children: Vec<Box<dyn Widget>>,
     #[state]
-    index_offset: UsizeState,
+    index_offset: TState<usize>,
 }
 
 impl<T: StateContract, U: Delegate<T>> ForEach<T, U> {
@@ -87,7 +89,7 @@ impl<T: StateContract, U: Delegate<T>> OtherEventHandler for ForEach<T, U> {
             for _ in 0..number_to_insert {
                 let index = self.children.len();
 
-                let index_state: UsizeState = ValueState::new(index).into();
+                let index_state: TState<usize> = ValueState::new(index).into();
                 let item_state = self.model.index(&TState::<usize>::from(index));
 
                 let widget = self.delegate.call(item_state.into(), index_state);

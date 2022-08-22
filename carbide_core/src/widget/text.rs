@@ -1,12 +1,16 @@
 use std::borrow::Borrow;
 use std::fmt::Debug;
+use std::ops::Deref;
 use carbide_macro::carbide_default_builder;
+use crate::Color;
 
 use crate::draw::{Dimension, Position, Rect};
-use crate::prelude::*;
+use crate::environment::{Environment, EnvironmentColor, EnvironmentFontSize};
+use crate::layout::Layout;
 //use crate::render::text::Text as RenderText;
-use crate::render::new_primitive;
+use crate::render::{new_primitive, Primitive, Render};
 use crate::render::PrimitiveKind;
+use crate::state::{ReadState, RState, StateSync, TState, U32State};
 use crate::text::Text as InternalText;
 use crate::text::{
     FontStyle, FontWeight, Glyph, NoStyleTextSpanGenerator, TextDecoration, TextSpanGenerator,
@@ -14,6 +18,7 @@ use crate::text::{
 };
 //use crate::text_old::PositionedGlyph;
 use crate::widget::types::Wrap;
+use crate::widget::{CommonWidget, Justify, Widget, WidgetExt, WidgetId, WidgetIter, WidgetIterMut};
 
 /// Displays some given text centered within a rectangular area.
 ///
@@ -31,7 +36,7 @@ pub struct Text {
     #[state]
     pub text: RState<String>,
     #[state]
-    font_size: U32State,
+    font_size: TState<u32>,
     #[state]
     color: TState<Color>,
     font_family: String,

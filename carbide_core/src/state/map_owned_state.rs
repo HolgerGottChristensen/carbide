@@ -1,7 +1,7 @@
 use std::fmt::Debug;
 use std::ops::{Deref, DerefMut};
 
-use carbide_core::prelude::NewStateSync;
+use carbide_core::state::NewStateSync;
 use dyn_clone::DynClone;
 
 use crate::environment::Environment;

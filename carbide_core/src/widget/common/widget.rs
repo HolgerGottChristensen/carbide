@@ -4,12 +4,17 @@ use std::ops::{Deref, DerefMut};
 use dyn_clone::DynClone;
 
 use crate::draw::{Dimension, Position};
+use crate::environment::Environment;
 use crate::event::{
     Event, KeyboardEvent, KeyboardEventHandler, MouseEvent, MouseEventHandler, OtherEventHandler,
     WidgetEvent,
 };
+use crate::flags::Flags;
 use crate::focus::{Focus, Focusable, Refocus};
-use crate::prelude::*;
+use crate::layout::{Layout, Layouter};
+use crate::render::{Primitive, Render};
+use crate::state::StateSync;
+use crate::widget::{CommonWidget, WidgetExt, WidgetId, WidgetIter, WidgetIterMut};
 
 pub trait Widget: Event + Layout + Render + Focusable + DynClone + Debug {}
 

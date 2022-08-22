@@ -1,7 +1,7 @@
 use std::ops::DerefMut;
 
 use crate::draw::Dimension;
-use crate::prelude::Environment;
+use crate::environment::Environment;
 use crate::widget::CommonWidget;
 
 pub trait Layout: CommonWidget {

@@ -2,7 +2,7 @@ use std::fmt::Debug;
 
 use dyn_clone::DynClone;
 
-use crate::prelude::Environment;
+use crate::environment::Environment;
 use crate::text::text_span::TextSpan;
 use crate::text::text_style::TextStyle;
 

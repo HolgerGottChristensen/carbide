@@ -1,15 +1,15 @@
 use std::fmt;
 use std::fmt::{Debug, Display, Formatter};
 
-use carbide_core::prelude::{NewStateSync, ReadState};
+use carbide_core::state::ReadState;
 use carbide_core::state::RState;
 use carbide_core::state::ReadWidgetState;
 use dyn_clone::DynClone;
 
-use crate::prelude::Environment;
+use crate::environment::Environment;
 use crate::state::util::value_cell::{ValueRef, ValueRefMut};
 pub use crate::state::State;
-use crate::state::{LocalState, Map2, StateContract, TState, ValueState};
+use crate::state::{LocalState, Map2, StateContract, TState, ValueState, NewStateSync};
 
 /// # Widget state
 /// This is a wrapper to make it easier to work with different kinds of read-write state.

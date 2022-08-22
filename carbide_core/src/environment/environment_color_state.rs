@@ -1,9 +1,7 @@
 use std::ops::{Deref, DerefMut};
 
-use crate::prelude::EnvironmentColor;
-use crate::prelude::{Environment, State};
-use crate::state::StateKey;
-use crate::state::{NewStateSync, ReadState, ValueRef, ValueRefMut};
+use crate::environment::{Environment, EnvironmentColor};
+use crate::state::{NewStateSync, ReadState, ValueRef, ValueRefMut, StateKey, State};
 use crate::Color;
 
 #[derive(Clone, Debug)]

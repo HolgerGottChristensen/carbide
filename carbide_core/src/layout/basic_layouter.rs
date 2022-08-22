@@ -1,6 +1,6 @@
 use crate::draw::{Dimension, Position, Scalar};
 use crate::layout::layouter::Layouter;
-use crate::prelude::Widget;
+use crate::widget::Widget;
 
 #[derive(Copy, Clone, Debug)]
 pub enum BasicLayouter {

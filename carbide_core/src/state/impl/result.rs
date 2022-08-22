@@ -1,5 +1,4 @@
-use crate::state::{Map1, Map2, State, StateContract, TState};
-use carbide_core::prelude::RState;
+use crate::state::{Map1, Map2, State, StateContract, TState, RState};
 
 impl<T: StateContract, E: StateContract> TState<Result<T, E>> {
     /// Return a boolean state that is true if the original state is Ok.

@@ -2,7 +2,7 @@ use crate::color::Rgba;
 use crate::draw::draw_gradient::DrawGradient;
 use crate::draw::shape::triangle::Triangle;
 use crate::draw::{Dimension, Position, Rect};
-use crate::prelude::Primitive;
+use crate::render::Primitive;
 use crate::render::PrimitiveKind;
 use crate::widget::types::advanced_color::AdvancedColor;
 use crate::Color;

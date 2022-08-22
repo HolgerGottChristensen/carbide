@@ -6,10 +6,9 @@ use carbide_core::environment::{Environment, EnvironmentColor};
 use carbide_core::flags::Flags;
 use carbide_core::focus::{Focus, Focusable, Refocus};
 use carbide_core::layout::Layouter;
-use carbide_core::prelude::ValueState;
 use carbide_core::state::{
     BoolState, FocusState, LocalState, Map2, Map3, MapOwnedState, ReadState, State, StateContract,
-    StateExt, StateKey, StringState, TState,
+    StateExt, StateKey, StringState, TState, ValueState,
 };
 use carbide_core::state::eq::StatePartialEq;
 use carbide_core::widget::{

@@ -1,8 +1,12 @@
 use carbide_macro::carbide_default_builder;
 use crate::draw::{Dimension, Position, Rect};
-use crate::prelude::*;
-use crate::render::PrimitiveKind;
-use crate::CommonWidgetImpl;
+use crate::render::{Primitive, PrimitiveKind, Render};
+use crate::{Color, CommonWidgetImpl};
+use crate::environment::Environment;
+use crate::layout::Layout;
+use crate::state::{ReadState, TState};
+use crate::widget::{CommonWidget, Widget, WidgetExt, WidgetId};
+
 
 /// A basic, non-interactive rectangle shape widget.
 #[derive(Debug, Clone, Widget)]

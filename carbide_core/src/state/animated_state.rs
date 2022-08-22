@@ -1,4 +1,4 @@
-use carbide_core::prelude::NewStateSync;
+use carbide_core::state::NewStateSync;
 use std::fmt::Debug;
 use std::ops::{Add, DerefMut, Mul};
 use std::time::{Duration, Instant};

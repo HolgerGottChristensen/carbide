@@ -22,7 +22,7 @@ use crate::environment::{EnvironmentFontSize, WidgetTransferAction};
 use crate::event::{CustomEvent, EventSink, HasEventSink};
 use crate::focus::Refocus;
 use crate::mesh::TextureAtlas;
-use crate::prelude::{EnvironmentColor, EnvironmentVariable};
+use crate::environment::{EnvironmentColor, EnvironmentVariable};
 use crate::state::{InnerState, StateContract, StateKey, ValueCell};
 use crate::text::{Font, FontFamily, FontId, FontSize, FontStyle, FontWeight, Glyph};
 use crate::widget::ImageInformation;

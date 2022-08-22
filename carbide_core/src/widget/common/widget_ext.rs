@@ -1,7 +1,11 @@
 use cgmath::Matrix4;
+use crate::Color;
 
 use crate::draw::Dimension;
-use crate::prelude::*;
+use crate::environment::{EnvironmentColor, EnvironmentStateContainer};
+use crate::flags::Flags;
+use crate::state::TState;
+use crate::widget::{Background, Border, Clip, ClipShape, CornerRadii, EdgeInsets, EnvUpdating, Flagged, Flexibility, Frame, Hidden, Offset, Padding, Rotation3DEffect, RoundedRectangle, Shape, Transform, Widget};
 use crate::widget::window_menu::MenuBar;
 
 pub trait WidgetExt: Widget + Sized + 'static {
@@ -63,13 +67,13 @@ pub trait WidgetExt: Widget + Sized + 'static {
     /// with the width value and the y axis with the height value. A value of less than 1.0 will
     /// make the given scale smaller and a value larger than 1.0 will result in a larger widget.
     /// The effect is only graphical and will not change the actual scale of the widget.
-    fn scale_effect_non_uniform<K1: Into<TState<Dimension>>>(self, scale: K1) -> Box<Transform> {
+    fn scale_effect_non_uniform(self, scale: impl Into<TState<Dimension>>) -> Box<Transform> {
         Transform::scale_non_uniform(Box::new(self), scale)
     }
 
     /// This can be used to apply a custom transformation matrix to the given widget. This will
     /// only result in visual changes and not affect the actual size of the widget.
-    fn transform<K1: Into<TState<Matrix4<f32>>>>(self, matrix: K1) -> Box<Transform> {
+    fn transform(self, matrix: impl Into<TState<Matrix4<f32>>>) -> Box<Transform> {
         Transform::new(Box::new(self), matrix)
     }
 
@@ -98,7 +102,7 @@ pub trait WidgetExt: Widget + Sized + 'static {
         ClipShape::new(Box::new(self), shape)
     }
 
-    fn corner_radius<R: Into<CornerRadii>>(self, radius: R) -> Box<ClipShape> {
+    fn corner_radius(self, radius: impl Into<CornerRadii>) -> Box<ClipShape> {
         ClipShape::new(Box::new(self), RoundedRectangle::new(radius.into()))
     }
 
@@ -106,10 +110,10 @@ pub trait WidgetExt: Widget + Sized + 'static {
         Hidden::new(Box::new(self))
     }
 
-    fn offset<K1: Into<F64State>, K2: Into<F64State>>(
+    fn offset(
         self,
-        offset_x: K1,
-        offset_y: K2,
+        offset_x: impl Into<TState<f64>>,
+        offset_y: impl Into<TState<f64>>,
     ) -> Box<Offset> {
         Offset::new(offset_x.into(), offset_y.into(), Box::new(self))
     }
@@ -118,7 +122,7 @@ pub trait WidgetExt: Widget + Sized + 'static {
         Border::new(Box::new(self))
     }
 
-    fn foreground_color<C: Into<TState<Color>>>(self, color: C) -> Box<EnvUpdating> {
+    fn foreground_color(self, color: impl Into<TState<Color>>) -> Box<EnvUpdating> {
         let mut e = EnvUpdating::new(Box::new(self));
         e.add(EnvironmentStateContainer::Color {
             key: EnvironmentColor::Label,
@@ -128,7 +132,7 @@ pub trait WidgetExt: Widget + Sized + 'static {
         e
     }
 
-    fn accent_color<C: Into<TState<Color>>>(self, color: C) -> Box<EnvUpdating> {
+    fn accent_color(self, color: impl Into<TState<Color>>) -> Box<EnvUpdating> {
         let mut e = EnvUpdating::new(Box::new(self));
         e.add(EnvironmentStateContainer::Color {
             key: EnvironmentColor::Accent,

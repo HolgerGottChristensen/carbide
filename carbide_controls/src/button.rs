@@ -4,7 +4,7 @@ use carbide_core::cursor::MouseCursor;
 use carbide_core::draw::{Dimension, Position};
 use carbide_core::flags::Flags;
 use carbide_core::focus::Focus;
-use carbide_core::prelude::EnvironmentColor;
+use carbide_core::environment::EnvironmentColor;
 use carbide_core::state::{BoolState, FocusState, LocalState, Map3, ReadState, State, StringState};
 use carbide_core::widget::*;
 use carbide_core::Color;

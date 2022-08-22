@@ -2,8 +2,8 @@ use crate::draw::{Dimension, Position};
 use crate::environment::Environment;
 use crate::flags::Flags;
 use crate::layout::Layout;
-use crate::prelude::CrossAxisAlignment;
-use crate::prelude::WidgetValMut;
+use crate::widget::CrossAxisAlignment;
+use crate::widget::WidgetValMut;
 
 pub(crate) fn calculate_size_vstack(
     widget: &mut dyn Layout,

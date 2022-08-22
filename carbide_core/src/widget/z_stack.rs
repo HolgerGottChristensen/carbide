@@ -1,6 +1,10 @@
+use std::ops::DerefMut;
 use carbide_macro::carbide_default_builder;
 use crate::draw::{Dimension, Position};
-use crate::prelude::*;
+use crate::environment::Environment;
+use crate::flags::Flags;
+use crate::layout::{BasicLayouter, Layout, Layouter};
+use crate::widget::{CommonWidget, Widget, WidgetExt, WidgetId, WidgetIter, WidgetIterMut, WidgetValMut};
 
 /// A basic, non-interactive rectangle shape widget.
 #[derive(Debug, Clone, Widget)]

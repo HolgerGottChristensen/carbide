@@ -1,16 +1,20 @@
 //! A simple, non-interactive widget for drawing an `Image`.
 
+use std::ops::Deref;
 use crate::color::WHITE;
 use crate::draw::image::ImageId;
 use crate::draw::{Dimension, Position, Rect};
 use crate::mesh::{MODE_ICON, MODE_IMAGE};
-use crate::prelude::*;
-use crate::render::PrimitiveKind;
+use crate::render::{Primitive, PrimitiveKind, Render};
 use crate::widget::types::ScaleMode;
-use crate::CommonWidgetImpl;
+use crate::{Color, CommonWidgetImpl};
 use std::path::PathBuf;
 use carbide_macro::carbide_default_builder;
+use crate::environment::{Environment, EnvironmentColor};
+use crate::layout::Layout;
 use crate::mesh::pre_multiply::PreMultiply;
+use crate::state::{NewStateSync, ReadState, TState};
+use crate::widget::{Widget, WidgetExt, WidgetId};
 
 /// A primitive and basic widget for drawing an `Image`.
 #[derive(Debug, Clone, Widget)]

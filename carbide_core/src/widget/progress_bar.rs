@@ -1,7 +1,9 @@
 use carbide_macro::carbide_default_builder;
 use crate::draw::{Dimension, Position};
-use crate::prelude::*;
 use crate::CommonWidgetImpl;
+use crate::state::TState;
+use crate::widget::{Widget, WidgetExt, WidgetId, ZStack, Capsule, HSplit, Spacer};
+use crate::environment::EnvironmentColor;
 
 #[derive(Debug, Clone, Widget)]
 pub struct ProgressBar {
@@ -10,12 +12,12 @@ pub struct ProgressBar {
     position: Position,
     dimension: Dimension,
     #[state]
-    progress: F64State,
+    progress: TState<f64>,
 }
 
 impl ProgressBar {
     #[carbide_default_builder]
-    pub fn new(progress: impl Into<F64State>) -> Box<Self> {
+    pub fn new(progress: impl Into<TState<f64>>) -> Box<Self> {
         let progress = progress.into();
 
         let child = ZStack::new(vec![

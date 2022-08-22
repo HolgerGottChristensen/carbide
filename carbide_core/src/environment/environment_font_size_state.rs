@@ -1,9 +1,7 @@
-use carbide_core::prelude::NewStateSync;
 use std::ops::{Deref, DerefMut};
 
-use crate::prelude::{Environment, EnvironmentFontSize, State};
-use crate::state::StateKey;
-use crate::state::{ReadState, ValueRef, ValueRefMut};
+use crate::environment::{Environment, EnvironmentFontSize};
+use crate::state::{ReadState, ValueRef, ValueRefMut, NewStateSync, State, StateKey};
 
 #[derive(Clone, Debug)]
 pub struct EnvironmentFontSizeState {

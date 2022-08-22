@@ -1,16 +1,16 @@
 use crate::Color;
-use carbide_core::prelude::NewStateSync;
+use carbide_core::state::NewStateSync;
 use carbide_core::state::Map1;
 use std::fmt::{Debug, Formatter};
 use std::ops::{Deref, DerefMut};
 use std::str::FromStr;
 
 use crate::environment::Environment;
-use crate::prelude::{AdvancedColor, ReadState};
+use crate::state::ReadState;
 use crate::state::widget_state::WidgetState;
 use crate::state::{BoolState, MapOwnedState, RState, ResStringState, State, StateContract, StateExt, TState, ReadWidgetState};
 use crate::state::{ValueRef, ValueRefMut};
-use crate::widget::Gradient;
+use crate::widget::{AdvancedColor, Gradient};
 
 /// # ValueState
 /// Value state is a state that can be used for constants and values that are not shared. When

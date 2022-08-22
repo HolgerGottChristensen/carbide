@@ -1,7 +1,7 @@
 use carbide_core::draw::Position;
 use crate::draw::Dimension;
 use crate::layout::Layouter;
-use crate::prelude::Environment;
+use crate::environment::Environment;
 use crate::render::primitive::Primitive;
 use crate::widget::Widget;
 

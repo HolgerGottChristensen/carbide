@@ -4,7 +4,7 @@ use copypasta::{ClipboardContext, ClipboardProvider};
 use unicode_segmentation::UnicodeSegmentation;
 
 use carbide_core::draw::{Dimension, Position};
-use carbide_core::environment::{Environment, EnvironmentFontSize};
+use carbide_core::environment::{Environment, EnvironmentFontSize, EnvironmentColor};
 use carbide_core::event::{
     Key, KeyboardEvent, KeyboardEventHandler, ModifierKey, MouseButton, MouseEvent,
     MouseEventHandler, OtherEventHandler, WidgetEvent, WindowEvent,
@@ -12,10 +12,9 @@ use carbide_core::event::{
 use carbide_core::flags::Flags;
 use carbide_core::focus::Focus;
 use carbide_core::focus::Focusable;
-use carbide_core::layout::{BasicLayouter, Layouter};
-use carbide_core::prelude::StateSync;
-use carbide_core::prelude::{EnvironmentColor, Layout, Primitive};
-use carbide_core::render::Render;
+use carbide_core::layout::{BasicLayouter, Layouter, Layout};
+use carbide_core::state::StateSync;
+use carbide_core::render::{Render, Primitive};
 use carbide_core::state::{
     AnimatedState, F64State, FocusState, LocalState, ReadState, ResStringState, State, StateExt,
     StringState, TState, U32State,

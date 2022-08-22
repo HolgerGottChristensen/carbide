@@ -2,8 +2,9 @@ use carbide_core::CommonWidgetImpl;
 use carbide_macro::carbide_default_builder;
 
 use crate::draw::{Dimension, Position};
-use crate::prelude::*;
 use crate::Scene;
+use crate::flags::Flags;
+use crate::widget::{Widget, WidgetExt, WidgetId};
 
 #[derive(Clone, Debug, Widget)]
 pub struct Empty {

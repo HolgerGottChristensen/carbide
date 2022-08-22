@@ -9,11 +9,13 @@ use carbide_macro::carbide_default_builder;
 use crate::color::Rgba;
 use crate::draw::shape::triangle::Triangle;
 use crate::draw::{Dimension, Position, Rect};
-use crate::prelude::*;
-use crate::render::PrimitiveKind;
+use crate::render::{Primitive, PrimitiveKind, Render};
 use crate::widget::canvas::canvas::Contexts::{NoState, WithState};
 use crate::widget::canvas::{Context, ShapeStyleWithOptions};
-use crate::CommonWidgetImpl;
+use crate::{Color, CommonWidgetImpl, Scalar};
+use crate::environment::{Environment, EnvironmentColor};
+use crate::state::{NewStateSync, ReadState, StateContract, TState, ValueState};
+use crate::widget::{CommonWidget, PrimitiveStore, Shape, ShapeStyle, StrokeStyle, Widget, WidgetExt, WidgetId};
 
 /// A basic, non-interactive rectangle shape widget.
 #[derive(Clone, Widget)]

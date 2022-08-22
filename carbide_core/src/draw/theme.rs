@@ -1,5 +1,5 @@
 use crate::environment::EnvironmentColor;
-use crate::prelude::EnvironmentVariable;
+use crate::environment::EnvironmentVariable;
 use carbide_core::color;
 
 macro_rules! env_color {

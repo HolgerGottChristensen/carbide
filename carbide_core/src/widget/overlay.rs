@@ -1,7 +1,8 @@
 use std::rc::Rc;
 
 use crate::draw::{Dimension, Position};
-use crate::prelude::*;
+use crate::state::{LocalState, ReadState, State, TState, ValueCell};
+use crate::widget::{CommonWidget, Widget, WidgetExt, WidgetId, WidgetIter, WidgetIterMut};
 
 /// A basic, non-interactive rectangle shape widget.
 #[derive(Debug, Clone, Widget)]
@@ -9,7 +10,7 @@ pub struct Overlay {
     id: WidgetId,
     child: Rc<ValueCell<Box<dyn Widget>>>,
     #[state]
-    showing: BoolState,
+    showing: TState<bool>,
     position: TState<Position>,
     dimension: TState<Dimension>,
 }
@@ -20,13 +21,13 @@ impl Overlay {
         Overlay {
             id: WidgetId::new(),
             child: Rc::new(ValueCell::new(child)),
-            showing: LocalState::new(false).into(),
-            position: LocalState::new(Position::new(0.0, 0.0)).into(),
-            dimension: LocalState::new(Dimension::new(100.0, 100.0)).into(),
+            showing: LocalState::new(false),
+            position: LocalState::new(Position::new(0.0, 0.0)),
+            dimension: LocalState::new(Dimension::new(100.0, 100.0)),
         }
     }
 
-    pub fn showing<S: Into<BoolState>>(mut self, showing: S) -> Self {
+    pub fn showing(mut self, showing: impl Into<TState<bool>>) -> Self {
         self.showing = showing.into();
         self
     }
@@ -36,7 +37,7 @@ impl Overlay {
     }
 
     pub fn set_showing(&mut self, val: bool) {
-        *self.showing.value_mut() = val;
+        self.showing.set_value(val);
     }
 }
 

@@ -3,7 +3,7 @@ use dyn_clone::DynClone;
 use crate::event::HotKey;
 use crate::widget::WidgetId;
 use carbide_core::widget::menu::menu::Menu;
-use crate::prelude::Environment;
+use crate::environment::Environment;
 
 pub trait MenuAction: Fn(&mut Environment) + DynClone {}
 

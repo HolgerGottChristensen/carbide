@@ -7,7 +7,6 @@ use crate::layout::Layout;
 use crate::state::{F64State, LocalState, ReadState, State};
 use crate::widget::{CommonWidget, CrossAxisAlignment, SplitType, Widget, WidgetExt, WidgetId};
 use crate::CommonWidgetImpl;
-use crate::Widget;
 
 #[derive(Clone, Debug, Widget)]
 #[carbide_exclude(Layout, MouseEvent, OtherEvent)]

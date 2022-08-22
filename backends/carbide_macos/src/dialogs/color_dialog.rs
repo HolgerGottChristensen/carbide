@@ -10,7 +10,7 @@ use objc::{class, msg_send, sel, sel_impl};
 use raw_window_handle::{AppKitHandle, HasRawWindowHandle, RawWindowHandle};
 use carbide_core::Color;
 use carbide_core::event::{CustomEvent, EventSink, HasEventSink, HasRawWindowHandleAndEventSink};
-use carbide_core::prelude::Environment;
+use carbide_core::environment::Environment;
 use crate::string::NSString;
 
 

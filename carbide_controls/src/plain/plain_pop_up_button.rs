@@ -9,7 +9,8 @@ use carbide_core::event::{
 use carbide_core::flags::Flags;
 use carbide_core::focus::{Focus, Focusable, Refocus};
 use carbide_core::layout::{Layout, Layouter};
-use carbide_core::prelude::{EnvironmentColor, Primitive};
+use carbide_core::render::Primitive;
+use carbide_core::environment::EnvironmentColor;
 use carbide_core::render::Render;
 use carbide_core::state::{BoolState, FocusState, IndexableState, LocalState, Map3, ReadState, State, StateContract, StateExt, StateKey, StateSync, TState, UsizeState};
 use carbide_core::widget::*;
