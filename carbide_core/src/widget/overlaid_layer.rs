@@ -24,6 +24,8 @@ pub struct OverlaidLayer {
 
 impl OverlaidLayer {
     #[carbide_default_builder]
+    pub fn new(overlay_id: &str, child: Box<dyn Widget>) -> Box<Self> {}
+
     pub fn new(overlay_id: &str, child: Box<dyn Widget>) -> Box<Self> {
         Box::new(Self {
             id: WidgetId::new(),

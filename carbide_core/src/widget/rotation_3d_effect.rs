@@ -30,6 +30,12 @@ impl Rotation3DEffect {
         child: Box<dyn Widget>,
         rotation_x: impl Into<TState<f64>>,
         rotation_y: impl Into<TState<f64>>,
+    ) -> Box<Self> {}
+
+    pub fn new(
+        child: Box<dyn Widget>,
+        rotation_x: impl Into<TState<f64>>,
+        rotation_y: impl Into<TState<f64>>,
     ) -> Box<Self> {
         Box::new(Rotation3DEffect {
             id: WidgetId::new(),

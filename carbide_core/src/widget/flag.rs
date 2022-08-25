@@ -15,6 +15,8 @@ pub struct Flagged {
 
 impl Flagged {
     #[carbide_default_builder]
+    pub fn new(child: Box<dyn Widget>, flags: Flags) -> Box<Self> {}
+
     pub fn new(child: Box<dyn Widget>, flags: Flags) -> Box<Self> {
         Box::new(Flagged {
             id: WidgetId::new(),

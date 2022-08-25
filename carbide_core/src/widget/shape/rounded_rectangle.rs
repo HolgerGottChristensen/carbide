@@ -65,6 +65,8 @@ impl RoundedRectangle {
     }
 
     #[carbide_default_builder]
+    pub fn new(corner_radii: impl Into<CornerRadii>) -> Box<RoundedRectangle> {}
+
     pub fn new(corner_radii: impl Into<CornerRadii>) -> Box<RoundedRectangle> {
         Box::new(RoundedRectangle {
             id: WidgetId::new(),

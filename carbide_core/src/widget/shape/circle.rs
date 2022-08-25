@@ -65,6 +65,8 @@ impl Circle {
     }
 
     #[carbide_default_builder]
+    pub fn new() -> Box<Circle> {}
+
     pub fn new() -> Box<Circle> {
         Box::new(Circle {
             id: WidgetId::new(),

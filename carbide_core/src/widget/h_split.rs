@@ -26,6 +26,8 @@ pub struct HSplit {
 impl HSplit {
 
     #[carbide_default_builder]
+    pub fn new(leading: Box<dyn Widget>, trailing: Box<dyn Widget>) -> Box<Self> {}
+
     pub fn new(leading: Box<dyn Widget>, trailing: Box<dyn Widget>) -> Box<Self> {
         let split = LocalState::new(0.1);
         Self::new_internal(leading, trailing, SplitType::Percent(split), true)

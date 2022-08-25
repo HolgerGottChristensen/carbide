@@ -25,6 +25,8 @@ where
 
 impl<T: StateContract> Match<T> {
     #[carbide_default_builder]
+    pub fn new(state: impl Into<TState<T>>) -> Box<Self> {}
+
     pub fn new(state: impl Into<TState<T>>) -> Box<Self> {
         Box::new(Match {
             id: WidgetId::new(),

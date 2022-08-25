@@ -20,6 +20,8 @@ pub struct Offset {
 
 impl Offset {
     #[carbide_default_builder]
+    pub fn new(offset_x: impl Into<TState<f64>>, offset_y: impl Into<TState<f64>>, child: Box<dyn Widget>) -> Box<Self> {}
+
     pub fn new(offset_x: impl Into<TState<f64>>, offset_y: impl Into<TState<f64>>, child: Box<dyn Widget>) -> Box<Self> {
         Box::new(Offset {
             id: WidgetId::new(),

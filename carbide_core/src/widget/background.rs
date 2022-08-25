@@ -33,6 +33,8 @@ pub struct Background {
 impl Background {
 
     #[carbide_default_builder]
+    pub fn new(child: Box<dyn Widget>, background: Box<dyn Widget>) -> Box<Background> {}
+
     pub fn new(child: Box<dyn Widget>, background: Box<dyn Widget>) -> Box<Background> {
         Box::new(Background {
             id: WidgetId::new(),

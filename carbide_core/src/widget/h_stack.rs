@@ -20,6 +20,8 @@ pub struct HStack {
 impl HStack {
 
     #[carbide_default_builder]
+    pub fn new(children: Vec<Box<dyn Widget>>) -> Box<Self> {}
+
     pub fn new(children: Vec<Box<dyn Widget>>) -> Box<Self> {
         Box::new(HStack {
             id: WidgetId::new(),

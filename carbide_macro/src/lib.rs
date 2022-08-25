@@ -62,8 +62,8 @@ pub fn carbide_default_builder(_: TokenStream, item: TokenStream) -> TokenStream
         }
     );
 
-    let mut stream = input.into_token_stream();
-    stream.extend(builder);
+    //let mut stream = input.into_token_stream();
+    //stream.extend(builder);
     //panic!("\n{:#?}", &input.into_token_stream());
-    TokenStream::from(stream)
+    TokenStream::from(builder)
 }

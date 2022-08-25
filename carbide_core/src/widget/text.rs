@@ -50,6 +50,8 @@ pub struct Text {
 impl Text {
 
     #[carbide_default_builder]
+    pub fn new(text: impl Into<RState<String>>) -> Box<Self> {}
+
     pub fn new(text: impl Into<RState<String>>) -> Box<Self> {
         let text = text.into();
 

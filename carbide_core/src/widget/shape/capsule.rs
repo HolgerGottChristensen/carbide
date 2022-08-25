@@ -64,6 +64,8 @@ impl Capsule {
     }
 
     #[carbide_default_builder]
+    pub fn new() -> Box<Capsule> {}
+
     pub fn new() -> Box<Capsule> {
         Box::new(Capsule {
             id: WidgetId::new(),

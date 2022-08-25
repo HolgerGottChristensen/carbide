@@ -19,6 +19,8 @@ pub struct ClipShape {
 
 impl ClipShape {
     #[carbide_default_builder]
+    pub fn new(child: Box<dyn Widget>, shape: Box<dyn Shape>) -> Box<Self> {}
+
     pub fn new(child: Box<dyn Widget>, shape: Box<dyn Shape>) -> Box<Self> {
         Box::new(ClipShape {
             id: WidgetId::new(),

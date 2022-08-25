@@ -17,6 +17,8 @@ pub struct ProgressBar {
 
 impl ProgressBar {
     #[carbide_default_builder]
+    pub fn new(progress: impl Into<TState<f64>>) -> Box<Self> {}
+
     pub fn new(progress: impl Into<TState<f64>>) -> Box<Self> {
         let progress = progress.into();
 

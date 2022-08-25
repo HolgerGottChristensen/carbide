@@ -37,6 +37,8 @@ pub struct Image {
 
 impl Image {
     #[carbide_default_builder]
+    pub fn new(id: impl Into<TState<Option<ImageId>>>) -> Box<Self> {}
+
     pub fn new(id: impl Into<TState<Option<ImageId>>>) -> Box<Self> {
         Box::new(Image {
             id: WidgetId::new(),

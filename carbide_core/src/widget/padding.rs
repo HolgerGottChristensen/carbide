@@ -18,6 +18,8 @@ pub struct Padding {
 
 impl Padding {
     #[carbide_default_builder]
+    pub fn new(edge_insets: impl Into<EdgeInsets>, child: Box<dyn Widget>) -> Box<Self> {}
+
     pub fn new(edge_insets: impl Into<EdgeInsets>, child: Box<dyn Widget>) -> Box<Self> {
         Box::new(Padding {
             id: WidgetId::new(),

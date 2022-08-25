@@ -33,6 +33,12 @@ impl Frame {
         width: impl Into<TState<f64>>,
         height: impl Into<TState<f64>>,
         child: Box<dyn Widget>,
+    ) -> Box<Frame> {}
+
+    pub fn new(
+        width: impl Into<TState<f64>>,
+        height: impl Into<TState<f64>>,
+        child: Box<dyn Widget>,
     ) -> Box<Frame> {
         let width = width.into();
         let height = height.into();

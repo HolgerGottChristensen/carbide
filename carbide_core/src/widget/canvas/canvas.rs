@@ -47,6 +47,8 @@ where
 impl Canvas<()> {
 
     #[carbide_default_builder]
+    pub fn new(context: fn(Rect, Context, &mut Environment) -> Context) -> Box<Canvas<()>> {}
+
     pub fn new(context: fn(Rect, Context, &mut Environment) -> Context) -> Box<Canvas<()>> {
         Box::new(Canvas {
             id: WidgetId::new(),

@@ -17,6 +17,8 @@ pub struct Spacer {
 
 impl Spacer {
     #[carbide_default_builder]
+    pub fn new() -> Box<Self> {}
+
     pub fn new() -> Box<Self> {
         Box::new(Spacer {
             id: WidgetId::new(),

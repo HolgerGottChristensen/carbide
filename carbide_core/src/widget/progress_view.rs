@@ -19,6 +19,8 @@ pub struct ProgressView {
 
 impl ProgressView {
     #[carbide_default_builder]
+    pub fn new() -> Box<Self> {}
+
     pub fn new() -> Box<Self> {
         ProgressView::new_internal(30.0)
     }

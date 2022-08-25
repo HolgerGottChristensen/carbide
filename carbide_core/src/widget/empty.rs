@@ -15,6 +15,8 @@ pub struct Empty {
 
 impl Empty {
     #[carbide_default_builder]
+    pub fn new() -> Box<Self> {}
+
     pub fn new() -> Box<Self> {
         Box::new(Empty {
             id: WidgetId::new(),

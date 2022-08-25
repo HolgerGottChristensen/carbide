@@ -20,6 +20,8 @@ pub struct ZStack {
 impl ZStack {
 
     #[carbide_default_builder]
+    pub fn new(children: Vec<Box<dyn Widget>>) -> Box<ZStack> {}
+
     pub fn new(children: Vec<Box<dyn Widget>>) -> Box<ZStack> {
         Box::new(ZStack {
             id: WidgetId::new(),

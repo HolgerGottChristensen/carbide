@@ -65,6 +65,8 @@ impl Ellipse {
     }
 
     #[carbide_default_builder]
+    pub fn new() -> Box<Ellipse> {}
+
     pub fn new() -> Box<Ellipse> {
         Box::new(Ellipse {
             id: WidgetId::new(),

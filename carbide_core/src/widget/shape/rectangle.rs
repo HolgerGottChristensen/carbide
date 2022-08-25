@@ -35,6 +35,8 @@ pub struct Rectangle {
 impl Rectangle {
 
     #[carbide_default_builder]
+    pub fn new() -> Box<Rectangle> {}
+
     pub fn new() -> Box<Rectangle> {
         Box::new(Rectangle {
             id: WidgetId::new(),

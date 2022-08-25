@@ -17,6 +17,8 @@ pub struct Clip {
 
 impl Clip {
     #[carbide_default_builder]
+    pub fn new(child: Box<dyn Widget>) -> Box<Self> {}
+
     pub fn new(child: Box<dyn Widget>) -> Box<Self> {
         Box::new(Clip {
             id: WidgetId::new(),

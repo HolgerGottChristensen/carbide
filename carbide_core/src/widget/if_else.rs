@@ -17,7 +17,10 @@ pub struct IfElse {
 }
 
 impl IfElse {
+
     #[carbide_default_builder]
+    pub fn new(predicate: impl Into<RState<bool>>) -> Box<Self> {}
+
     pub fn new(predicate: impl Into<RState<bool>>) -> Box<Self> {
         Box::new(IfElse {
             id: WidgetId::new(),

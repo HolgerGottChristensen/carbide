@@ -14,6 +14,8 @@ pub struct Flexibility {
 
 impl Flexibility {
     #[carbide_default_builder]
+    pub fn new(child: Box<dyn Widget>, flexibility: u32) -> Box<Self> {}
+
     pub fn new(child: Box<dyn Widget>, flexibility: u32) -> Box<Self> {
         Box::new(Flexibility {
             id: WidgetId::new(),
