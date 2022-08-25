@@ -7,8 +7,8 @@ use carbide_core::focus::Refocus;
 use carbide_core::focus::{Focus, Focusable};
 use carbide_core::layout::{Layout, Layouter};
 use carbide_core::state::{
-    BoolState, FocusState, LocalState, Map2, Map3, Map4, MapOwnedState, ReadState, State, StateKey,
-    StateSync, StringState, TState, ValueState,
+    LocalState, Map2, Map3, Map4, MapOwnedState, ReadState, State, StateKey,
+    StateSync, TState, ValueState,
 };
 use carbide_core::widget::{
     Capsule, CommonWidget, CrossAxisAlignment, HSplit, HStack, Rectangle, Spacer, Text, Widget,
@@ -22,7 +22,7 @@ use std::ascii::escape_default;
 pub struct PlainSlider {
     id: WidgetId,
     #[state]
-    focus: FocusState,
+    focus: TState<Focus>,
     child: Vec<Box<dyn Widget>>,
     position: Position,
     dimension: Dimension,
@@ -46,7 +46,7 @@ impl PlainSlider {
         let focus_state = LocalState::new(Focus::Unfocused);
 
         Self::new_internal(
-            focus_state.into(),
+            focus_state,
             value.into(),
             start,
             end,
@@ -126,7 +126,7 @@ impl PlainSlider {
     }
 
     fn new_internal(
-        focus: FocusState,
+        focus: TState<Focus>,
         state: TState<f64>,
         start: f64,
         end: f64,

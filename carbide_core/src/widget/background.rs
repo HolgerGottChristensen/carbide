@@ -1,7 +1,8 @@
 use std::ops::DerefMut;
-use carbide_core::CommonWidgetImpl;
+
 use carbide_macro::carbide_default_builder;
 
+use crate::CommonWidgetImpl;
 use crate::draw::{Dimension, Position};
 use crate::environment::Environment;
 use crate::layout::{BasicLayouter, Layout, Layouter};

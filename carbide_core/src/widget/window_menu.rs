@@ -2,7 +2,7 @@ use crate::draw::{Dimension, Position};
 use crate::CommonWidgetImpl;
 use carbide_core::widget::popup_menu::PopupMenu;
 use crate::environment::EnvironmentColor;
-use crate::state::{TState, UsizeState, ValueState};
+use crate::state::{TState, ValueState};
 use crate::widget::{ForEach, HStack, Menu, Rectangle, Spacer, VStack, Widget, WidgetExt, WidgetId};
 
 #[derive(Debug, Clone, Widget)]
@@ -38,7 +38,7 @@ impl MenuBar {
         })
     }
 
-    fn menu_delegate(item: TState<Menu>, index: UsizeState) -> Box<dyn Widget> {
+    fn menu_delegate(item: TState<Menu>, index: TState<usize>) -> Box<dyn Widget> {
         PopupMenu::new(item, true)
     }
 }

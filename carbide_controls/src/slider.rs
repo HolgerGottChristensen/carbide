@@ -1,6 +1,6 @@
 use carbide_core::draw::Dimension;
 use carbide_core::environment::{Environment, EnvironmentColor};
-use carbide_core::state::{BoolState, FocusState, StateExt, StateKey, StringState, TState};
+use carbide_core::state::{StateExt, StateKey, TState};
 use carbide_core::widget::*;
 
 use crate::{PlainSlider, PlainSwitch};

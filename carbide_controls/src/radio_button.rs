@@ -3,27 +3,28 @@ use std::fmt::Debug;
 
 use carbide_core::draw::Dimension;
 use carbide_core::environment::{Environment, EnvironmentColor};
+use carbide_core::focus::Focus;
 use carbide_core::state::{
-    BoolState, FocusState, Map3, StateContract, StateExt, StateKey, StringState, TState,
+    Map3, StateContract, StateExt, StateKey, TState,
 };
 use carbide_core::widget::*;
 
 use crate::PlainRadioButton;
 
-pub struct RadioButton();
+pub struct RadioButton;
 
 impl RadioButton {
-    pub fn new<T: StateContract + PartialEq + 'static, S: Into<StringState>, L: Into<TState<T>>>(
-        label: S,
+    pub fn new<T: StateContract + PartialEq + 'static>(
+        label: impl Into<TState<String>>,
         reference: T,
-        local_state: L,
+        local_state: impl Into<TState<T>>,
     ) -> Box<PlainRadioButton<T>> {
         let mut plain =
             PlainRadioButton::new(label, reference, local_state).delegate(Self::delegate);
         plain
     }
 
-    fn delegate(_: FocusState, selected: BoolState) -> Box<dyn Widget> {
+    fn delegate(_: TState<Focus>, selected: TState<bool>) -> Box<dyn Widget> {
         let selected_color = Map3::read_map(
             selected.clone(),
             EnvironmentColor::Accent.state(),

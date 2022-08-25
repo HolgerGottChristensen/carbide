@@ -2,7 +2,7 @@ use serde::{Deserialize, Serialize};
 
 use carbide_core::environment::Environment;
 use carbide_core::widget::WidgetId;
-use carbide_core::state::{BoolState, MapOwnedState, RState, ReadState, State, TState, NewStateSync, ValueRef, ValueRefMut};
+use carbide_core::state::{MapOwnedState, RState, ReadState, State, TState, NewStateSync, ValueRef, ValueRefMut};
 
 #[derive(Clone, Debug)]
 pub struct CheckBoxState(TState<CheckBoxValue>);
@@ -69,7 +69,7 @@ impl CheckBoxState {
     }
 }
 
-impl Into<CheckBoxState> for BoolState {
+impl Into<CheckBoxState> for TState<bool> {
     fn into(self) -> CheckBoxState {
         CheckBoxState(
             MapOwnedState::new_with_default_and_rev(

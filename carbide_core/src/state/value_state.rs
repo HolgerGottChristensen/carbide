@@ -8,22 +8,21 @@ use std::str::FromStr;
 use crate::environment::Environment;
 use crate::state::ReadState;
 use crate::state::widget_state::WidgetState;
-use crate::state::{BoolState, MapOwnedState, RState, ResStringState, State, StateContract, StateExt, TState, ReadWidgetState};
+use crate::state::{MapOwnedState, RState, State, StateContract, StateExt, TState, ReadWidgetState};
 use crate::state::{ValueRef, ValueRefMut};
 use crate::widget::{AdvancedColor, Gradient};
 
 /// # ValueState
 /// Value state is a state that can be used for constants and values that are not shared. When
-/// cloning this state the value is cloned, but when the clone changes the original will not
+/// cloning this state the value is cloned and when the clone changes the original will not
 /// change. For shared state use [LocalState].
 ///
 /// One important thing to know is that state might be cloned depending on the widgets you use.
 /// When storing state inside a ValueState it is important to remember, because if you store
 /// large values those will be cloned as well. Using a local state, it is only a Rc that will be
-/// cloned which will be way more efficient.
+/// cloned which will be way more efficient and use much less space.
 ///
-/// Local state implements [NewStateSync] but without implementing any behavior when
-/// [NewStateSync::sync()] is called.
+/// Local state implements [NewStateSync] where [NewStateSync::sync()] is a NoOp.
 #[derive(Clone)]
 pub struct ValueState<T>
 where
@@ -40,21 +39,6 @@ impl<T: StateContract> ValueState<T> {
 
     pub fn new_raw(value: T) -> Box<Self> {
         Box::new(ValueState { value })
-    }
-}
-
-impl<T: StateContract> Deref for ValueState<T> {
-    type Target = T;
-
-    fn deref(&self) -> &Self::Target {
-        &self.value
-    }
-}
-
-impl<T: StateContract> DerefMut for ValueState<T> {
-    /// You should make sure to call notify manually after modifying the state using deref_mut.
-    fn deref_mut(&mut self) -> &mut Self::Target {
-        &mut self.value
     }
 }
 
@@ -130,8 +114,8 @@ impl<T: StateContract + Default + 'static> Into<TState<Result<T, String>>> for T
 macro_rules! impl_res_state_plain {
     ($($typ: ty),*) => {
         $(
-        impl Into<ResStringState> for TState<Result<$typ, String>> {
-            fn into(self) -> ResStringState {
+        impl Into<TState<Result<String, String>>> for TState<Result<$typ, String>> {
+            fn into(self) -> TState<Result<String, String>> {
                 MapOwnedState::new_with_default_and_rev(self, |value: &Result<$typ, String>, _: &_, _: &Environment| {
                     match value {
                         Ok(val) => { Ok(val.to_string()) }
@@ -156,8 +140,8 @@ impl_res_state_plain! {
     i8, i16, i32, i64, i128, isize
 }
 
-impl Into<ResStringState> for TState<Result<f32, String>> {
-    fn into(self) -> ResStringState {
+impl Into<TState<Result<String, String>>> for TState<Result<f32, String>> {
+    fn into(self) -> TState<Result<String, String>> {
         MapOwnedState::new_with_default_and_rev(
             self,
             |value: &Result<f32, String>, prev: &Result<String, String>, _: &Environment| match (
@@ -183,8 +167,8 @@ impl Into<ResStringState> for TState<Result<f32, String>> {
     }
 }
 
-impl Into<ResStringState> for TState<Result<f64, String>> {
-    fn into(self) -> ResStringState {
+impl Into<TState<Result<String, String>>> for TState<Result<f64, String>> {
+    fn into(self) -> TState<Result<String, String>> {
         MapOwnedState::new_with_default_and_rev(
             self,
             |value: &Result<f64, String>, prev: &Result<String, String>, _: &Environment| match (
@@ -233,11 +217,11 @@ impl From<TState<Result<String, String>>> for RState<String> {
     }
 }
 
-impl Into<BoolState> for ResStringState {
+/*impl Into<BoolState> for ResStringState {
     fn into(self) -> BoolState {
         self.mapped(|val: &Result<String, String>| val.is_err())
     }
-}
+}*/
 
 impl Into<RState<AdvancedColor>> for TState<Color> {
     fn into(self) -> RState<AdvancedColor> {

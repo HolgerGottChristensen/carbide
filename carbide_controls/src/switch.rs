@@ -1,15 +1,16 @@
 use carbide_core::draw::Dimension;
 use carbide_core::environment::{Environment, EnvironmentColor};
-use carbide_core::state::{BoolState, FocusState, Map3, StateExt, StateKey, StringState};
+use carbide_core::state::{Map3, StateExt, StateKey, TState};
 use carbide_core::widget::*;
 use carbide_core::Color;
+use carbide_core::focus::Focus;
 
 use crate::PlainSwitch;
 
 pub struct Switch();
 
 impl Switch {
-    pub fn new<S: Into<StringState>, L: Into<BoolState>>(label: S, checked: L) -> Box<PlainSwitch> {
+    pub fn new(label: impl Into<TState<String>>, checked: impl Into<TState<bool>>) -> Box<PlainSwitch> {
         let mut plain = PlainSwitch::new(label, checked.into()).delegate(Self::delegate);
         /*
         child = *child.delegate(|focus_state, checked_state, button: Box<dyn Widget<GS>>| {
@@ -51,7 +52,7 @@ impl Switch {
         plain
     }
 
-    fn delegate(_focus: FocusState, checked: BoolState) -> Box<dyn Widget> {
+    fn delegate(_focus: TState<Focus>, checked: TState<bool>) -> Box<dyn Widget> {
         let checked_color = Map3::read_map(
             checked.clone(),
             EnvironmentColor::Accent.state(),

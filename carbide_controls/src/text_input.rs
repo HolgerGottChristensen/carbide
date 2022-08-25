@@ -13,8 +13,8 @@ use carbide_core::flags::Flags;
 use carbide_core::focus::Focus;
 use carbide_core::layout::{BasicLayouter, Layouter, Layout};
 use carbide_core::state::{
-    BoolState, F64State, FocusState, LocalState, Map5, ReadState, State, StateExt, StringState,
-    TState, U32State,
+    LocalState, Map5, ReadState, State, StateExt,
+    TState,
 };
 use carbide_core::text::Glyph;
 use carbide_core::widget::Wrap;
@@ -40,15 +40,15 @@ pub struct TextInput {
     #[state]
     text: TextInputState,
     #[state]
-    focus: FocusState,
+    focus: TState<Focus>,
     #[state]
-    is_error: BoolState,
+    is_error: TState<bool>,
 }
 
 impl TextInput {
-    pub fn new<T: Into<TextInputState>>(text: T) -> Box<Self> {
+    pub fn new(text: impl Into<TextInputState>) -> Box<Self> {
         let text = text.into();
-        let focus: FocusState = LocalState::new(Focus::Unfocused).into();
+        let focus = LocalState::new(Focus::Unfocused);
 
         Self::internal_new(text, None, focus)
     }
@@ -63,14 +63,14 @@ impl TextInput {
         Self::internal_new(self.text, self.obscure, self.focus)
     }
 
-    fn internal_new(text: TextInputState, obscure: Option<char>, focus: FocusState) -> Box<Self> {
+    fn internal_new(text: TextInputState, obscure: Option<char>, focus: TState<Focus>) -> Box<Self> {
         let cursor_color: TState<Color> = EnvironmentColor::Label.into();
 
         let selection_color: TState<Color> = EnvironmentColor::Accent.into();
         let darkened_selection_color = selection_color.darkened(0.2);
 
-        let is_error: BoolState = text.clone().into();
-        let is_error_stroke: BoolState = is_error.clone();
+        let is_error = text.is_err().ignore_writes();
+        let is_error_stroke = is_error.clone();
 
         let stroke_color = Map5::read_map(
             focus.clone(),

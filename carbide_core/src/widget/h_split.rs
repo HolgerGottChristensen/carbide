@@ -4,7 +4,7 @@ use crate::draw::{Dimension, Position};
 use crate::environment::Environment;
 use crate::event::{MouseEvent, MouseEventHandler, OtherEventHandler, WidgetEvent};
 use crate::layout::Layout;
-use crate::state::{F64State, LocalState, ReadState, State};
+use crate::state::{LocalState, ReadState, State, TState};
 use crate::widget::{CommonWidget, CrossAxisAlignment, SplitType, Widget, WidgetExt, WidgetId};
 use crate::CommonWidgetImpl;
 
@@ -31,7 +31,7 @@ impl HSplit {
         Self::new_internal(leading, trailing, SplitType::Percent(split), true)
     }
 
-    pub fn relative_to_start(mut self, width: impl Into<F64State>) -> Box<Self> {
+    pub fn relative_to_start(mut self, width: impl Into<TState<f64>>) -> Box<Self> {
         Self::new_internal(
             self.children.remove(0),
             self.children.remove(0),
@@ -40,7 +40,7 @@ impl HSplit {
         )
     }
 
-    pub fn percent(mut self, percent: impl Into<F64State>) -> Box<Self> {
+    pub fn percent(mut self, percent: impl Into<TState<f64>>) -> Box<Self> {
         Self::new_internal(
             self.children.remove(0),
             self.children.remove(0),
@@ -58,7 +58,7 @@ impl HSplit {
         )
     }
 
-    pub fn relative_to_end(mut self, width: impl Into<F64State>) -> Box<Self> {
+    pub fn relative_to_end(mut self, width: impl Into<TState<f64>>) -> Box<Self> {
         Self::new_internal(
             self.children.remove(0),
             self.children.remove(0),

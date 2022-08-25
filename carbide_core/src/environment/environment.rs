@@ -329,6 +329,16 @@ impl Environment {
         temp.as_mut().map(|t| t.retain(|task| !task(self)));
 
         std::mem::swap(&mut temp, &mut self.async_task_queue);
+
+        match (temp, &mut self.async_task_queue) {
+            (Some(t), Some(queue)) => {
+                queue.extend(t);
+            }
+            (None, _) => (),
+            (_, _) => {
+                panic!("The async queue was empty, which is not good.")
+            }
+        }
     }
 
     /// Starts a listener where next will be called each time something is sent to the channel.
@@ -395,10 +405,12 @@ impl Environment {
                 }
             }
         });
-        self.async_task_queue
-            .as_mut()
-            .expect("No async task queue was present.")
-            .push(poll_message);
+
+        if let Some(queue) = &mut self.async_task_queue {
+            queue.push(poll_message)
+        } else {
+            self.async_task_queue = Some(vec![poll_message])
+        }
 
         #[cfg(feature = "tokio")]
         {

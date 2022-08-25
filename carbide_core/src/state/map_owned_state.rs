@@ -7,7 +7,7 @@ use dyn_clone::DynClone;
 use crate::environment::Environment;
 use crate::state::util::value_cell::{ValueRef, ValueRefMut};
 use crate::state::widget_state::WidgetState;
-use crate::state::{InnerState, LocalState, ReadState, State, StringState, ValueCell, ValueState, Map1, TState, RState, StateContract};
+use crate::state::{InnerState, LocalState, ReadState, State, ValueCell, ValueState, Map1, TState, RState, StateContract, GlobalState};
 
 #[derive(Clone)]
 pub struct MapOwnedState<FROM, TO>
@@ -167,6 +167,12 @@ macro_rules! impl_string_state {
             impl From<$typ> for RState<String> {
                 fn from(t: $typ) -> Self {
                     Map1::read_map_cached(ValueState::new(t), |s: &$typ| s.to_string())
+                }
+            }
+
+            impl From<GlobalState<$typ>> for RState<String> {
+                fn from(t: GlobalState<$typ>) -> Self {
+                    Map1::read_map_cached(TState::Global(t), |s: &$typ| s.to_string())
                 }
             }
 

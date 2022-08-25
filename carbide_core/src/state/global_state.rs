@@ -1,69 +1,85 @@
 use std::fmt::{Debug, Formatter};
-use carbide_core::prelude::{NewStateSync, Listenable, Listener, Id};
+use std::mem;
+use std::ops::Deref;
+use std::rc::Rc;
+use std::sync::{Arc};
+use parking_lot::{RawRwLock, RwLock, RwLockReadGuard, RwLockWriteGuard};
+use crate::environment::Environment;
+use crate::state::{NewStateSync, ReadState, State, StateContract, TState, ValueRef, ValueRefMut};
 
-use crate::prelude::Environment;
-use crate::state::{InnerState, ReadState, State, StateContract, TState};
-use crate::state::util::value_cell::{ValueRef, ValueRefMut};
-use crate::state::widget_state::WidgetState;
-
+/// # Local state
+/// The local state is used as a shared state between multiple widgets within the same widget tree.
+/// When cloning this the inner state will be shared between the original and the clone.
+/// The same is the case for the list of listeners.
+///
+/// Local state is [Listenable]. You are able to [Listenable::subscribe()] for notifications
+/// whenever this state changes.
+///
+/// Local state does not need to do any updating when [NewStateSync::sync()] is called because
+/// all state is stored directly within.
+/// Also it does not depend on any other states and therefore the event can be ignored.
 #[derive(Clone)]
 pub struct GlobalState<T>
     where
         T: StateContract,
 {
-    value: InnerState<T>,
+    /// The shared state
+    inner_value: Arc<RwLock<T>>,
 }
 
 impl<T: StateContract> GlobalState<T> {
-    pub fn new(env: &Environment) -> Self {
+    /// Returns a new local state containing the value provided.
+    /// Returns the local state wrapped within a WidgetState.
+    pub fn new(value: T) -> GlobalState<T> {
         GlobalState {
-            value: env.get_global_state::<T>(),
+            inner_value: Arc::new(RwLock::new(value)),
         }
+    }
+
+    /// Returns a new local state containing the value provided.
+    /// Often you should use `new` when creating states, but this can be used to get the state
+    /// within a box.
+    fn new_raw(value: T) -> Box<Self> {
+        Box::new(GlobalState {
+            inner_value: Arc::new(RwLock::new(value)),
+        })
     }
 }
 
-impl<T: StateContract> NewStateSync for GlobalState<T> {}
-
-impl<T: StateContract> Listenable<T> for GlobalState<T> {
-    fn subscribe(&self, subscriber: Box<dyn Listener<T>>) -> Id {
-        todo!()
-    }
-
-    fn unsubscribe(&self, id: &Id) {
-        todo!()
+impl<T: StateContract> NewStateSync for GlobalState<T> {
+    fn sync(&mut self, _env: &mut Environment) -> bool {
+        // TODO: find a smarter way to determine if local state has been updated.
+        // I guess we can figuring it out by storing a frame number in the local state
+        // and in the env, and then comparing and updating whenever this is called and set_value
+        // is called.
+        true
     }
 }
 
 impl<T: StateContract> ReadState<T> for GlobalState<T> {
     fn value(&self) -> ValueRef<T> {
-        self.value.borrow()
+        ValueRef::Locked(
+            RwLockReadGuard::map(self.inner_value.read(), |a| a)
+        )
     }
 }
 
 impl<T: StateContract> State<T> for GlobalState<T> {
     fn value_mut(&mut self) -> ValueRefMut<T> {
-        self.value.borrow_mut()
+        ValueRefMut::Locked(
+            RwLockWriteGuard::map(self.inner_value.write(), |a| a)
+        )
     }
 
     fn set_value(&mut self, value: T) {
-        *self.value.borrow_mut() = value;
-    }
-
-    fn notify(&self) {
-        todo!()
+        *self.inner_value.write() = value;
     }
 }
 
 impl<T: StateContract> Debug for GlobalState<T> {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        f.debug_struct("State::GlobalState")
+        f.debug_struct("GlobalState")
             .field("value", &*self.value())
             .finish()
-    }
-}
-
-impl<T: StateContract> Into<TState<T>> for Box<GlobalState<T>> {
-    fn into(self) -> TState<T> {
-        WidgetState::new(self)
     }
 }

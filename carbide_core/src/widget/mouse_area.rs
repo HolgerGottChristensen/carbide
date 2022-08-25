@@ -12,9 +12,10 @@ use carbide_core::event::{
 use carbide_core::flags::Flags;
 use carbide_core::focus::Focus;
 use carbide_core::layout::Layout;
-use carbide_core::state::{BoolState, FocusState, ReadState, State};
+use carbide_core::state::{ReadState, State};
 use carbide_core::widget::{CommonWidget, Widget, WidgetExt, WidgetId, WidgetIter, WidgetIterMut};
 use carbide_macro::carbide_default_builder;
+use crate::state::TState;
 
 pub trait Action: Fn(&mut Environment, ModifierKey) + DynClone {}
 
@@ -27,16 +28,16 @@ dyn_clone::clone_trait_object!(Action);
 pub struct MouseArea {
     id: WidgetId,
     #[state]
-    focus: FocusState,
+    focus: TState<Focus>,
     child: Box<dyn Widget>,
     position: Position,
     dimension: Dimension,
     click: Box<dyn Action>,
     click_outside: Box<dyn Action>,
     #[state]
-    is_hovered: BoolState,
+    is_hovered: TState<bool>,
     #[state]
-    is_pressed: BoolState,
+    is_pressed: TState<bool>,
     hover_cursor: MouseCursor,
     pressed_cursor: Option<MouseCursor>,
 }
@@ -54,17 +55,17 @@ impl MouseArea {
         Box::new(self)
     }
 
-    pub fn hovered<K: Into<BoolState>>(mut self, is_hovered: K) -> Box<Self> {
+    pub fn hovered(mut self, is_hovered: impl Into<TState<bool>>) -> Box<Self> {
         self.is_hovered = is_hovered.into();
         Box::new(self)
     }
 
-    pub fn pressed<K: Into<BoolState>>(mut self, pressed: K) -> Box<Self> {
+    pub fn pressed(mut self, pressed: impl Into<TState<bool>>) -> Box<Self> {
         self.is_pressed = pressed.into();
         Box::new(self)
     }
 
-    pub fn focused<K: Into<FocusState>>(mut self, focused: K) -> Box<Self> {
+    pub fn focused(mut self, focused: impl Into<TState<Focus>>) -> Box<Self> {
         self.focus = focused.into();
         Box::new(self)
     }

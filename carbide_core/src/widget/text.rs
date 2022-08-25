@@ -10,7 +10,7 @@ use crate::layout::Layout;
 //use crate::render::text::Text as RenderText;
 use crate::render::{new_primitive, Primitive, Render};
 use crate::render::PrimitiveKind;
-use crate::state::{ReadState, RState, StateSync, TState, U32State};
+use crate::state::{ReadState, RState, StateSync, TState};
 use crate::text::Text as InternalText;
 use crate::text::{
     FontStyle, FontWeight, Glyph, NoStyleTextSpanGenerator, TextDecoration, TextSpanGenerator,
@@ -70,9 +70,9 @@ impl Text {
         })
     }
 
-    pub fn new_with_generator<K: Into<RState<String>>, G: Into<Box<dyn TextSpanGenerator>>>(
-        text: K,
-        generator: G,
+    pub fn new_with_generator(
+        text: impl Into<RState<String>>,
+        generator: impl Into<Box<dyn TextSpanGenerator>>,
     ) -> Box<Self> {
         let text = text.into();
 
@@ -93,17 +93,17 @@ impl Text {
         })
     }
 
-    pub fn color<C: Into<TState<Color>>>(mut self, color: C) -> Box<Self> {
+    pub fn color(mut self, color: impl Into<TState<Color>>) -> Box<Self> {
         self.color = color.into();
         Box::new(self)
     }
 
-    pub fn font_size<K: Into<U32State>>(mut self, size: K) -> Box<Self> {
+    pub fn font_size(mut self, size: impl Into<TState<u32>>) -> Box<Self> {
         self.font_size = size.into();
         Box::new(self)
     }
 
-    pub fn font_weight<K: Into<FontWeight>>(mut self, weight: K) -> Box<Self> {
+    pub fn font_weight(mut self, weight: impl Into<FontWeight>) -> Box<Self> {
         self.font_weight = weight.into();
         Box::new(self)
     }

@@ -1,10 +1,13 @@
 #![allow(unsafe_code)]
 
+use std::any::Any;
 use std::cell::{Cell, UnsafeCell};
 use std::cmp::Ordering;
 use std::fmt;
 use std::fmt::{Debug, Formatter};
 use std::ops::{Deref, DerefMut};
+use std::rc::Rc;
+use parking_lot::{MappedRwLockReadGuard, MappedRwLockWriteGuard, RwLockReadGuard};
 
 type BorrowFlag = isize;
 
@@ -180,6 +183,7 @@ impl Clone for BorrowRef<'_> {
 
 pub enum ValueRef<'a, T: 'a> {
     CellBorrow { value: &'a T, borrow: BorrowRef<'a> },
+    Locked(MappedRwLockReadGuard<'a, T>),
     Borrow(&'a T),
     Owned(T),
 }
@@ -193,12 +197,14 @@ impl<T> Deref for ValueRef<'_, T> {
             ValueRef::CellBorrow { value, .. } => *value,
             ValueRef::Borrow(value) => *value,
             ValueRef::Owned(value) => value,
+            ValueRef::Locked(val) => &*val,
         }
     }
 }
 
-impl<'b, T: Clone> ValueRef<'b, T> {
-    #[inline]
+//impl<'b, T: Clone> ValueRef<'b, T> {
+impl<'b, T> ValueRef<'b, T> {
+    /*#[inline]
     pub fn clone(orig: &ValueRef<'b, T>) -> ValueRef<'b, T> {
         match orig {
             ValueRef::CellBorrow { value, borrow } => ValueRef::CellBorrow {
@@ -207,8 +213,12 @@ impl<'b, T: Clone> ValueRef<'b, T> {
             },
             ValueRef::Borrow(value) => ValueRef::Borrow(*value),
             ValueRef::Owned(value) => ValueRef::Owned(value.clone()),
+            ValueRef::Locked(val) => {
+                todo!()
+                //ValueRef::Locked(*val, guard.clone())
+            }
         }
-    }
+    }*/
 
     #[inline]
     pub fn map<U: Clone, F>(orig: ValueRef<'b, T>, f: F) -> ValueRef<'b, U>
@@ -222,6 +232,9 @@ impl<'b, T: Clone> ValueRef<'b, T> {
             },
             ValueRef::Borrow(value) => ValueRef::Borrow(f(value)),
             ValueRef::Owned(value) => ValueRef::Owned(f(&value).clone()),
+            ValueRef::Locked(value) => {
+                ValueRef::Locked(MappedRwLockReadGuard::map(value, f))
+            }
         }
     }
 }
@@ -232,6 +245,7 @@ impl<T: fmt::Display> fmt::Display for ValueRef<'_, T> {
             ValueRef::CellBorrow { value, .. } => value.fmt(f),
             ValueRef::Borrow(value) => value.fmt(f),
             ValueRef::Owned(value) => value.fmt(f),
+            ValueRef::Locked(value) => value.fmt(f),
         }
     }
 }
@@ -273,6 +287,7 @@ pub enum ValueRefMut<'a, T: 'a> {
     },
     Borrow(&'a mut T),
     Owned(T),
+    Locked(MappedRwLockWriteGuard<'a, T>),
 }
 
 impl<'b, T: Clone> ValueRefMut<'b, T> {
@@ -287,7 +302,10 @@ impl<'b, T: Clone> ValueRefMut<'b, T> {
                 borrow,
             },
             ValueRefMut::Borrow(value) => ValueRefMut::Borrow(f(value)),
-            ValueRefMut::Owned(mut value) => ValueRefMut::Owned(f(&mut value).clone())
+            ValueRefMut::Owned(mut value) => ValueRefMut::Owned(f(&mut value).clone()),
+            ValueRefMut::Locked(value) => {
+                ValueRefMut::Locked(MappedRwLockWriteGuard::map(value, f))
+            }
         }
     }
 }
@@ -301,6 +319,7 @@ impl<T> Deref for ValueRefMut<'_, T> {
             ValueRefMut::CellBorrow { value, .. } => *value,
             ValueRefMut::Borrow(value) => *value,
             ValueRefMut::Owned(value) => value,
+            ValueRefMut::Locked(value) => value.deref(),
         }
     }
 }
@@ -312,6 +331,7 @@ impl<T> DerefMut for ValueRefMut<'_, T> {
             ValueRefMut::CellBorrow { value, .. } => *value,
             ValueRefMut::Borrow(value) => *value,
             ValueRefMut::Owned(value) => value,
+            ValueRefMut::Locked(value) => value.deref_mut(),
         }
     }
 }
@@ -322,6 +342,7 @@ impl<T: fmt::Display> fmt::Display for ValueRefMut<'_, T> {
             ValueRefMut::CellBorrow { value, .. } => value.fmt(f),
             ValueRefMut::Borrow(value) => value.fmt(f),
             ValueRefMut::Owned(value) => value.fmt(f),
+            ValueRefMut::Locked(value) => value.fmt(f),
         }
     }
 }
@@ -332,6 +353,7 @@ impl<T: fmt::Debug> fmt::Debug for ValueRefMut<'_, T> {
             ValueRefMut::CellBorrow { value, .. } => value.fmt(f),
             ValueRefMut::Borrow(value) => value.fmt(f),
             ValueRefMut::Owned(value) => value.fmt(f),
+            ValueRefMut::Locked(value) => value.fmt(f),
         }
     }
 }

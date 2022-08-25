@@ -5,7 +5,7 @@ use carbide_core::event::MouseEvent;
 use crate::environment::{Environment, EnvironmentColor};
 use crate::flags::Flags;
 use crate::layout::Layout;
-use crate::state::{LocalState, Map1, TState, UsizeState};
+use crate::state::{LocalState, Map1, TState};
 use crate::widget::{Background, CommonWidget, EdgeInsets, ForEach, IfElse, Menu, MenuItem, MouseArea, Overlay, Rectangle, Text, VStack, Widget, WidgetExt, WidgetId, Wrap};
 
 #[derive(Debug, Clone, Widget)]
@@ -64,7 +64,7 @@ impl PopupMenu {
         }
     }
 
-    fn menu_item_delegate(item: TState<MenuItem>, index: UsizeState) -> Box<dyn Widget> {
+    fn menu_item_delegate(item: TState<MenuItem>, index: TState<usize>) -> Box<dyn Widget> {
         let default_item = Map1::read_map(item.clone(), |item: &MenuItem| {
             matches!(item, MenuItem::Item { .. })
         })

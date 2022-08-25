@@ -1,27 +1,26 @@
 use carbide_core::draw::Dimension;
 use carbide_core::environment::{Environment, EnvironmentColor};
-use carbide_core::state::{
-    FocusState, Map1, Map3, MapOwnedState, State, StateExt, StateKey, StringState,
-};
+use carbide_core::state::{Map1, Map3, MapOwnedState, State, StateExt, StateKey, TState};
 use carbide_core::widget::canvas::Canvas;
 use carbide_core::widget::*;
 use carbide_core::Color;
+use carbide_core::focus::Focus;
 
 use crate::types::*;
 use crate::PlainCheckBox;
 
-pub struct CheckBox();
+pub struct CheckBox;
 
 impl CheckBox {
-    pub fn new<S: Into<StringState>, L: Into<CheckBoxState>>(
-        label: S,
-        checked: L,
+    pub fn new<S: , L: >(
+        label: impl Into<TState<String>>,
+        checked: impl Into<CheckBoxState>,
     ) -> Box<PlainCheckBox> {
         let mut plain = PlainCheckBox::new(label, checked.into()).delegate(Self::delegate);
         plain
     }
 
-    fn delegate(_: FocusState, checked: CheckBoxState) -> Box<dyn Widget> {
+    fn delegate(_: TState<Focus>, checked: CheckBoxState) -> Box<dyn Widget> {
         let accent = EnvironmentColor::Accent.state();
         let secondary = EnvironmentColor::SecondarySystemBackground.state();
 

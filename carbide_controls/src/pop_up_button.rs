@@ -3,24 +3,21 @@ use std::fmt::Debug;
 use carbide_core::draw::Dimension;
 use carbide_core::environment::{Environment, EnvironmentColor};
 use carbide_core::state::{
-    BoolState, FocusState, StateContract, StateExt, StateKey, TState, UsizeState,
+    StateContract, StateExt, StateKey, TState
 };
 use carbide_core::widget::canvas::Canvas;
 use carbide_core::widget::*;
 use carbide_core::Color;
+use carbide_core::focus::Focus;
 
 use crate::{List, PlainPopUpButton, PopupDelegate};
 
 pub struct PopUpButton;
 
 impl PopUpButton {
-    pub fn new<
-        T: StateContract + PartialEq + 'static,
-        M: Into<TState<Vec<T>>>,
-        S: Into<TState<T>>,
-    >(
-        model: M,
-        selected_state: S,
+    pub fn new<T: StateContract + PartialEq + 'static>(
+        model: impl Into<TState<Vec<T>>>,
+        selected_state: impl Into<TState<T>>,
     ) -> Box<PlainPopUpButton<T>> {
         let mut plain = PlainPopUpButton::new(model, selected_state)
             .delegate(Self::delegate)
@@ -31,7 +28,7 @@ impl PopUpButton {
 
     fn delegate<T: StateContract + PartialEq + 'static>(
         selected_item: TState<T>,
-        _focused: FocusState,
+        _focused: TState<Focus>,
     ) -> Box<dyn Widget> {
         let text = selected_item
             .map(|a: &T| format!("{:?}", a))
@@ -74,8 +71,8 @@ impl PopUpButton {
 
     fn popup_item_delegate<T: StateContract + PartialEq + 'static>(
         item: TState<T>,
-        _index: UsizeState,
-        hover_state: BoolState,
+        _index: TState<usize>,
+        hover_state: TState<bool>,
         _selected_state: TState<T>,
     ) -> Box<dyn Widget> {
         let background_color: TState<Color> = hover_state

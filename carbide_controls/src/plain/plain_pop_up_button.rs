@@ -12,7 +12,7 @@ use carbide_core::layout::{Layout, Layouter};
 use carbide_core::render::Primitive;
 use carbide_core::environment::EnvironmentColor;
 use carbide_core::render::Render;
-use carbide_core::state::{BoolState, FocusState, IndexableState, LocalState, Map3, ReadState, State, StateContract, StateExt, StateKey, StateSync, TState, UsizeState};
+use carbide_core::state::{IndexableState, LocalState, Map3, ReadState, State, StateContract, StateExt, StateKey, StateSync, TState};
 use carbide_core::widget::*;
 use carbide_core::{Color, Scalar};
 
@@ -31,7 +31,7 @@ where
 }
 
 impl<T: StateContract> Delegate<T> for PopupDelegate<T> {
-    fn call(&self, item: TState<T>, index: UsizeState) -> Box<dyn Widget> {
+    fn call(&self, item: TState<T>, index: TState<usize>) -> Box<dyn Widget> {
         let hover_state = self.hover_model.index(&index.clone());
         let selected_item_del = self.selected_item.clone();
 
@@ -49,13 +49,15 @@ impl<T: StateContract> Delegate<T> for PopupDelegate<T> {
 }
 
 type DelegateGenerator<T: StateContract + PartialEq + 'static> =
-    fn(selected_item: TState<T>, focused: FocusState) -> Box<dyn Widget>;
+    fn(selected_item: TState<T>, focused: TState<Focus>) -> Box<dyn Widget>;
+
 type PopupDelegateGenerator<T: StateContract + PartialEq + 'static> =
     fn(model: TState<Vec<T>>, delegate: PopupDelegate<T>) -> Box<dyn Widget>;
+
 type PopupItemDelegateGenerator<T: StateContract + PartialEq + 'static> = fn(
     item: TState<T>,
-    index: UsizeState,
-    hover: BoolState,
+    index: TState<usize>,
+    hover: TState<bool>,
     selected: TState<T>,
 ) -> Box<dyn Widget>;
 
@@ -67,7 +69,7 @@ where
 {
     id: WidgetId,
     #[state]
-    focus: FocusState,
+    focus: TState<Focus>,
     child: Box<dyn Widget>,
 
     popup_item_delegate: PopupItemDelegateGenerator<T>,
@@ -89,7 +91,7 @@ impl<T: StateContract + PartialEq + 'static> PlainPopUpButton<T> {
         model: M,
         selected_state: S,
     ) -> Box<Self> {
-        let focus: FocusState = LocalState::new(Focus::Unfocused).into();
+        let focus = LocalState::new(Focus::Unfocused);
 
         Self::new_internal(
             focus,
@@ -140,10 +142,10 @@ impl<T: StateContract + PartialEq + 'static> PlainPopUpButton<T> {
         )
     }
 
-    fn new_internal<M: Into<TState<Vec<T>>>, S: Into<TState<T>>>(
-        focus: FocusState,
-        model: M,
-        selected_state: S,
+    fn new_internal(
+        focus: TState<Focus>,
+        model: impl Into<TState<Vec<T>>>,
+        selected_state: impl Into<TState<T>>,
         popup_item_delegate: PopupItemDelegateGenerator<T>,
         popup_delegate: PopupDelegateGenerator<T>,
         delegate: DelegateGenerator<T>,
@@ -184,7 +186,7 @@ impl<T: StateContract + PartialEq + 'static> PlainPopUpButton<T> {
         })
     }
 
-    fn default_delegate(selected_item: TState<T>, focused: FocusState) -> Box<dyn Widget> {
+    fn default_delegate(selected_item: TState<T>, focused: TState<Focus>) -> Box<dyn Widget> {
         let blue = EnvironmentColor::Blue.state();
         let green = EnvironmentColor::Green.state();
 
@@ -208,8 +210,8 @@ impl<T: StateContract + PartialEq + 'static> PlainPopUpButton<T> {
 
     fn default_popup_item_delegate(
         item: TState<T>,
-        index: UsizeState,
-        hover_state: BoolState,
+        index: TState<usize>,
+        hover_state: TState<bool>,
         selected_state: TState<T>,
     ) -> Box<dyn Widget> {
         let item_color: TState<Color> = hover_state

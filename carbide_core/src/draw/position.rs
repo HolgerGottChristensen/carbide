@@ -7,6 +7,13 @@ use rusttype::Point;
 use crate::draw::Dimension;
 use crate::draw::Scalar;
 
+/// # Position
+///
+/// The position is used to represent a vector in 2d space.
+/// All widgets has a position, and is usually relative to the top-left corner of a window.
+///
+/// The position can be seen as a vector and can be translated, reversed, normalized and more.
+/// You are also able to add Positions and [super::Dimension], to get new offset positions.
 #[derive(Copy, Clone, PartialOrd, PartialEq, Debug, Default)]
 pub struct Position {
     pub(crate) x: Scalar,
@@ -14,18 +21,23 @@ pub struct Position {
 }
 
 impl Position {
+    /// Create a new Position from scalar values.
     pub fn new(x: Scalar, y: Scalar) -> Position {
         Position { x, y }
     }
 
+    /// Get the x component of the position. This is the horizontal component.
     pub fn x(&self) -> Scalar {
         self.x
     }
 
+    /// Get the y component of the position. This is the vertical component.
     pub fn y(&self) -> Scalar {
         self.y
     }
 
+    /// Get a new position that takes the min x position from the two positions and uses it as
+    /// its x, and the minimum y position of the two positions and uses it as its y.
     pub fn min(&self, other: &Position) -> Position {
         Position::new(
             self.x.min(other.x),
@@ -33,6 +45,8 @@ impl Position {
         )
     }
 
+    /// Get a new position that takes the maximum x position from the two positions and uses it as
+    /// its x, and the maximum y position of the two positions and uses it as its y.
     pub fn max(&self, other: &Position) -> Position {
         Position::new(
             self.x.max(other.x),
@@ -63,10 +77,12 @@ impl Position {
         Position::new(x, y)
     }
 
+    /// Translate the position. Positive is rightwards and negative is leftwards.
     pub fn translate_x(&self, x: Scalar) -> Position {
         Position::new(self.x + x, self.y)
     }
 
+    /// Translate the position. Positive is downwards and negative is upwards.
     pub fn translate_y(&self, y: Scalar) -> Position {
         Position::new(self.x, self.y + y)
     }
@@ -93,6 +109,7 @@ impl Position {
         (x, y)
     }
 
+    /// Returns a new position where x and y is rounded to the nearest whole number.
     #[inline]
     pub fn rounded(&self) -> Position {
         let x = self.x.round();
@@ -100,6 +117,7 @@ impl Position {
         Position::new(x, y)
     }
 
+    /// Returns a new position where x and y is truncated, always rounded towards 0
     #[inline]
     pub fn truncated(&self) -> Position {
         let x = self.x.trunc();
@@ -107,6 +125,7 @@ impl Position {
         Position::new(x, y)
     }
 
+    /// Returns the fractional parts of the x and y components using [f64::fract()]
     #[inline]
     pub fn fraction(&self) -> Position {
         let x = self.x.fract();
@@ -114,6 +133,7 @@ impl Position {
         Position::new(x, y)
     }
 
+    /// Returns a boolean indicating whether the position is realistically 0
     #[inline]
     pub fn is_near_zero(&self) -> bool {
         let x = self.x.abs() <= f64::EPSILON;
@@ -121,27 +141,34 @@ impl Position {
         x && y
     }
 
-    pub fn orthogonal(self) -> Position {
+    /// Returns a new position orthogonal to the original.
+    /// If the position is seen as a vector, the vector is rotated 90 deg anti-clockwise
+    pub fn orthogonal(&self) -> Position {
         Position::new(self.y, -self.x)
     }
 
-    pub fn reverse(self) -> Position {
+    /// Returns a new position in the opposite direction of the original.
+    pub fn reverse(&self) -> Position {
         Position::new(-self.x, -self.y)
     }
 
-    pub fn len(self) -> Scalar {
+    /// Get the length of a given position vector
+    pub fn len(&self) -> Scalar {
         (self.x.powi(2) + self.y.powi(2)).sqrt()
     }
 
-    pub fn normalized(self) -> Position {
+    /// Returns a new position in the same direction of the given, with a length of 1
+    pub fn normalized(&self) -> Position {
         let len = self.len();
         Position::new(self.x / len, self.y / len)
     }
 
+    /// Get the absolute distance between two points.
     pub fn dist(&self, other: &Position) -> Scalar {
         (*self - *other).len()
     }
 
+    /// Get the dot product between two positions.
     pub fn dot(&self, other: &Position) -> Scalar {
         self.x * other.x + self.y * other.y
     }

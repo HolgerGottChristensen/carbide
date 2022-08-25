@@ -6,7 +6,6 @@ pub use environment_font_size::EnvironmentFontSize;
 pub use environment_font_size_state::EnvironmentFontSizeState;
 pub use environment_variable::EnvironmentVariable;
 
-use crate::state::{F64State, I32State, StringState, U32State};
 use crate::state::TState;
 use crate::widget::Widget;
 
@@ -32,15 +31,15 @@ pub enum WidgetTransferAction {
 pub enum EnvironmentStateContainer {
     String {
         key: String,
-        value: StringState,
+        value: TState<String>,
     },
     U32 {
         key: String,
-        value: U32State,
+        value: TState<u32>,
     },
     F64 {
         key: String,
-        value: F64State,
+        value: TState<f64>,
     },
     Color {
         key: EnvironmentColor,
@@ -48,10 +47,10 @@ pub enum EnvironmentStateContainer {
     },
     FontSize {
         key: EnvironmentFontSize,
-        value: U32State,
+        value: TState<u32>,
     },
     I32 {
         key: String,
-        value: I32State,
+        value: TState<i32>,
     },
 }

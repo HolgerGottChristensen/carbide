@@ -3,10 +3,7 @@ use carbide_core::environment::{Environment, EnvironmentColor};
 use carbide_core::flags::Flags;
 use carbide_core::focus::Refocus;
 use carbide_core::focus::{Focus, Focusable};
-use carbide_core::state::{
-    BoolState, FocusState, LocalState, Map2, MapOwnedState, ReadState, State, StateKey,
-    StringState, TState,
-};
+use carbide_core::state::{LocalState, Map2, MapOwnedState, ReadState, State, StateKey, TState};
 use carbide_core::widget::{
     CommonWidget, HStack, Rectangle, Spacer, Text, Widget, WidgetExt, WidgetId, WidgetIter,
     WidgetIterMut, ZStack,
@@ -20,24 +17,24 @@ use crate::PlainButton;
 pub struct PlainSwitch {
     id: WidgetId,
     #[state]
-    focus: FocusState,
+    focus: TState<Focus>,
     child: Box<dyn Widget>,
     position: Position,
     dimension: Dimension,
-    delegate: fn(focus: FocusState, checked: BoolState) -> Box<dyn Widget>,
+    delegate: fn(focus: TState<Focus>, checked: TState<bool>) -> Box<dyn Widget>,
     #[state]
-    label: StringState,
+    label: TState<String>,
     #[state]
-    checked: BoolState,
+    checked: TState<bool>,
 }
 
 impl PlainSwitch {
-    pub fn new<S: Into<StringState>, L: Into<BoolState>>(label: S, checked: L) -> Box<Self> {
+    pub fn new(label: impl Into<TState<String>>, checked: impl Into<TState<bool>>) -> Box<Self> {
         let focus_state = LocalState::new(Focus::Unfocused);
 
         Self::new_internal(
             checked.into(),
-            focus_state.into(),
+            focus_state,
             Self::default_delegate,
             label.into(),
         )
@@ -64,7 +61,7 @@ impl PlainSwitch {
 
     pub fn delegate(
         self,
-        delegate: fn(focus: FocusState, selected: BoolState) -> Box<dyn Widget>,
+        delegate: fn(focus: TState<Focus>, selected: TState<bool>) -> Box<dyn Widget>,
     ) -> Box<Self> {
         let checked = self.checked;
         let focus_state = self.focus;
@@ -73,16 +70,16 @@ impl PlainSwitch {
         Self::new_internal(checked, focus_state, delegate, label_state)
     }
 
-    pub fn focused<K: Into<FocusState>>(mut self, focused: K) -> Box<Self> {
+    pub fn focused(mut self, focused: impl Into<TState<Focus>>) -> Box<Self> {
         self.focus = focused.into();
         Self::new_internal(self.checked, self.focus, self.delegate, self.label)
     }
 
     fn new_internal(
-        checked: BoolState,
-        focus: FocusState,
-        delegate: fn(focus: FocusState, selected: BoolState) -> Box<dyn Widget>,
-        label_state: StringState,
+        checked: TState<bool>,
+        focus: TState<Focus>,
+        delegate: fn(focus: TState<Focus>, selected: TState<bool>) -> Box<dyn Widget>,
+        label_state: TState<String>,
     ) -> Box<Self> {
         let delegate_widget = delegate(focus.clone(), checked.clone());
 

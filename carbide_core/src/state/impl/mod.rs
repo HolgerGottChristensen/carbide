@@ -1,5 +1,4 @@
 pub mod color;
-pub mod f64;
 pub mod hashset;
 pub mod option;
 pub mod vec;

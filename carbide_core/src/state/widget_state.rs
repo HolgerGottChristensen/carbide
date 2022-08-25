@@ -10,6 +10,7 @@ use crate::environment::Environment;
 use crate::state::util::value_cell::{ValueRef, ValueRefMut};
 pub use crate::state::State;
 use crate::state::{LocalState, Map2, StateContract, TState, ValueState, NewStateSync};
+use crate::state::global_state::GlobalState;
 
 /// # Widget state
 /// This is a wrapper to make it easier to work with different kinds of read-write state.
@@ -38,6 +39,7 @@ where
 {
     Value(ValueState<T>),
     Local(LocalState<T>),
+    Global(GlobalState<T>),
     Boxed(Box<dyn State<T>>),
 }
 
@@ -51,6 +53,7 @@ impl<T: StateContract> WidgetState<T> {
             WidgetState::Boxed(i) => i,
             WidgetState::Value(v) => Box::new(v),
             WidgetState::Local(v) => Box::new(v),
+            WidgetState::Global(v) => Box::new(v),
         }
     }
 
@@ -65,6 +68,7 @@ impl<T: Display + StateContract> Display for WidgetState<T> {
             WidgetState::Boxed(i) => Display::fmt(&*i.value(), fmt),
             WidgetState::Value(v) => Display::fmt(&*v.value(), fmt),
             WidgetState::Local(v) => Display::fmt(&*v.value(), fmt),
+            WidgetState::Global(v) => Display::fmt(&*v.value(), fmt),
         }
     }
 }
@@ -87,6 +91,7 @@ impl<T: StateContract> NewStateSync for WidgetState<T> {
             WidgetState::Boxed(i) => i.sync(env),
             WidgetState::Value(v) => v.sync(env),
             WidgetState::Local(v) => v.sync(env),
+            WidgetState::Global(v) => v.sync(env),
         }
     }
 }
@@ -97,6 +102,7 @@ impl<T: StateContract> ReadState<T> for WidgetState<T> {
             WidgetState::Boxed(i) => i.value(),
             WidgetState::Value(v) => v.value(),
             WidgetState::Local(v) => v.value(),
+            WidgetState::Global(v) => v.value(),
         }
     }
 }
@@ -107,6 +113,7 @@ impl<T: StateContract> State<T> for WidgetState<T> {
             WidgetState::Boxed(i) => i.value_mut(),
             WidgetState::Value(v) => v.value_mut(),
             WidgetState::Local(v) => v.value_mut(),
+            WidgetState::Global(v) => v.value_mut(),
         }
     }
 
@@ -115,6 +122,7 @@ impl<T: StateContract> State<T> for WidgetState<T> {
             WidgetState::Boxed(i) => i.set_value(value),
             WidgetState::Value(v) => v.set_value(value),
             WidgetState::Local(v) => v.set_value(value),
+            WidgetState::Global(v) => v.set_value(value),
         }
     }
 
@@ -123,6 +131,7 @@ impl<T: StateContract> State<T> for WidgetState<T> {
             WidgetState::Boxed(i) => i.update_dependent(),
             WidgetState::Value(v) => v.update_dependent(),
             WidgetState::Local(v) => v.update_dependent(),
+            WidgetState::Global(v) => v.update_dependent(),
         }
     }
 }

@@ -34,6 +34,9 @@ impl<T: StateContract> NewStateSync for CacheRState<T> {
                     ValueRef::Owned(o) => {
                         *inner = o;
                     }
+                    ValueRef::Locked(_) => {
+                        panic!("Dont cache locked")
+                    }
                 }
             }
         } else {
@@ -46,6 +49,9 @@ impl<T: StateContract> NewStateSync for CacheRState<T> {
                 }
                 ValueRef::Owned(o) => {
                     *borrowed = Some(o);
+                }
+                ValueRef::Locked(_) => {
+                    panic!("Dont cache locked")
                 }
             }
         }
@@ -104,6 +110,9 @@ impl<T: StateContract> NewStateSync for CacheTState<T> {
                     ValueRef::Owned(o) => {
                         *inner = o;
                     }
+                    ValueRef::Locked(_) => {
+                        panic!("Dont cache locked")
+                    }
                 }
             }
         } else {
@@ -116,6 +125,9 @@ impl<T: StateContract> NewStateSync for CacheTState<T> {
                 }
                 ValueRef::Owned(o) => {
                     *borrowed = Some(o);
+                }
+                ValueRef::Locked(_) => {
+                    panic!("Dont cache locked")
                 }
             }
         }
@@ -153,6 +165,9 @@ impl<T: StateContract> State<T> for CacheTState<T> {
                 ValueRef::Owned(o) => {
                     *inner = o;
                 }
+                ValueRef::Locked(_) => {
+                    panic!("Dont cache locked")
+                }
             }
         } else {
             match self.state.value() {
@@ -164,6 +179,9 @@ impl<T: StateContract> State<T> for CacheTState<T> {
                 }
                 ValueRef::Owned(o) => {
                     *borrowed = Some(o);
+                }
+                ValueRef::Locked(_) => {
+                    panic!("Dont cache locked")
                 }
             }
         }

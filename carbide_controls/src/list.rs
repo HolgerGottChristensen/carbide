@@ -11,7 +11,7 @@ use carbide_core::environment::{Environment, EnvironmentColor};
 use carbide_core::event::ModifierKey;
 use carbide_core::flags::Flags;
 use carbide_core::state::{
-    F64State, LocalState, ReadState, State, StateContract, StateExt, TState, UsizeState, ValueState,
+    LocalState, ReadState, State, StateContract, StateExt, TState, ValueState,
 };
 use carbide_core::widget::canvas::Canvas;
 use carbide_core::widget::{
@@ -43,21 +43,21 @@ where
     #[state]
     internal_model: TState<Vec<T>>,
     #[state]
-    index_offset: UsizeState,
+    index_offset: TState<usize>,
     #[state]
-    start_offset: F64State,
+    start_offset: TState<f64>,
     #[state]
-    end_offset: F64State,
+    end_offset: TState<f64>,
     item_id_function: Option<fn(&T) -> WidgetId>,
     selection: Option<Selection>,
     #[state]
-    last_index_clicked: UsizeState,
+    last_index_clicked: TState<usize>,
     sub_tree_function: Option<fn(TState<T>) -> TState<Option<Vec<T>>>>,
     tree_disclosure: TreeDisclosure,
 }
 
 impl<T: StateContract, U: Delegate<T> + 'static> List<T, U> {
-    pub fn new<V: Into<TState<Vec<T>>>>(model: V, delegate: U) -> Box<Self> {
+    pub fn new(model: impl Into<TState<Vec<T>>>, delegate: U) -> Box<Self> {
         let index_offset_state = LocalState::new(0 as usize);
 
         let start_offset = LocalState::new(-10.0);
@@ -490,11 +490,11 @@ where
 }
 
 impl<T: StateContract, U: Delegate<T> + 'static> Delegate<T> for TreeListDelegate<T, U> {
-    fn call(&self, item: TState<T>, index: UsizeState) -> Box<dyn Widget> {
+    fn call(&self, item: TState<T>, index: TState<usize>) -> Box<dyn Widget> {
         let widget = self.inner_delegate.call(item.clone(), index.clone());
 
         let cloned = self.clone();
-        let inner_delegate = move |item: TState<T>, index: UsizeState| -> Box<dyn Widget> {
+        let inner_delegate = move |item: TState<T>, index: TState<usize>| -> Box<dyn Widget> {
             let view = cloned.clone().call(item, index);
             view.padding(EdgeInsets::single(0.0, 0.0, 20.0, 0.0))
         };
@@ -553,12 +553,12 @@ where
     item_id_function: fn(&T) -> WidgetId,
     selection: Selection,
     inner_delegate: U,
-    last_selected_index: UsizeState,
+    last_selected_index: TState<usize>,
     internal_model: TState<Vec<T>>,
 }
 
 impl<T: StateContract, U: Delegate<T> + 'static> Delegate<T> for SelectableListDelegate<T, U> {
-    fn call(&self, item: TState<T>, index: UsizeState) -> Box<dyn Widget> {
+    fn call(&self, item: TState<T>, index: TState<usize>) -> Box<dyn Widget> {
         let selection = self.selection.clone();
         let last_selected_index = self.last_selected_index.clone();
         let internal_model = self.internal_model.clone();

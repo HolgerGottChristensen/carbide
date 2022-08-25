@@ -10,8 +10,15 @@ macro_rules! task {
     ($env:ident, $state:ident := $body:block) => {{
         let $state = $state.clone();
         $env.spawn_task(async move { $body }, move |result, env| {
-            $state.clone().set_value(result)
-        })
+            $state.clone().set_value(result);
+        });
+    }};
+    ($env:ident, $state:ident := $body:block $(, $state1:ident := $body1:block)*) => {{
+        let $state = $state.clone();
+        $env.spawn_task(async move { $body }, move |result, env| {
+            $state.clone().set_value(result);
+            task!(env, $($state1 :=  $body1),*);
+        });
     }};
     ($env:ident, $body:block, move |$result:ident, $env_param:ident: &mut Environment| $cont:block) => {{
         $env.spawn_task(

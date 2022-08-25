@@ -6,7 +6,7 @@ use crate::environment::Environment;
 use crate::flags::Flags;
 use crate::layout::BasicLayouter;
 use crate::render::{Primitive, PrimitiveKind, Render};
-use crate::state::{F64State, MapOwnedState, ReadState, StateSync, TState};
+use crate::state::{MapOwnedState, ReadState, StateSync, TState};
 use crate::widget::{CommonWidget, Widget, WidgetExt, WidgetId, WidgetIter, WidgetIterMut};
 
 #[derive(Debug, Clone, Widget)]
@@ -51,7 +51,7 @@ impl Transform {
         })
     }
 
-    pub fn rotation<P1: Into<F64State>>(child: Box<dyn Widget>, rotation: P1) -> Box<Self> {
+    pub fn rotation(child: Box<dyn Widget>, rotation: impl Into<TState<f64>>) -> Box<Self> {
         let rotation_to_matrix =
             |rotation: &f64, _: &_, _: &_| Matrix4::from_angle_z(Deg(*rotation as f32));
 
@@ -71,7 +71,7 @@ impl Transform {
         })
     }
 
-    pub fn scale<P1: Into<F64State>>(child: Box<dyn Widget>, scale: P1) -> Box<Self> {
+    pub fn scale(child: Box<dyn Widget>, scale: impl Into<TState<f64>>) -> Box<Self> {
         let scale_to_matrix = |scale: &f64, _: &_, _: &_| Matrix4::from_scale(*scale as f32);
 
         let matrix =
@@ -87,9 +87,9 @@ impl Transform {
         })
     }
 
-    pub fn scale_non_uniform<P1: Into<TState<Dimension>>>(
+    pub fn scale_non_uniform(
         child: Box<dyn Widget>,
-        scale: P1,
+        scale: impl Into<TState<Dimension>>,
     ) -> Box<Self> {
         let scale_to_matrix = |scale: &Dimension, _: &_, _: &_| {
             Matrix4::from_nonuniform_scale(scale.width as f32, scale.height as f32, 1.0)

@@ -4,9 +4,7 @@ use carbide_core::event::{Key, KeyboardEvent, KeyboardEventHandler, ModifierKey,
 use carbide_core::flags::Flags;
 use carbide_core::focus::{Focus, Focusable, Refocus};
 use carbide_core::environment::Environment;
-use carbide_core::state::{
-    FocusState, LocalState, Map2, Map4, MapOwnedState, ReadState, StateExt, StateKey, StringState, StateContract, StateSync
-};
+use carbide_core::state::{LocalState, Map2, Map4, MapOwnedState, ReadState, StateExt, StateKey, StateContract, StateSync, TState};
 use carbide_core::widget::{
     CommonWidget, HStack, Rectangle, Spacer, Text, Widget, WidgetExt, WidgetId, WidgetIter,
     WidgetIterMut, ZStack,
@@ -22,24 +20,24 @@ use crate::PlainButton;
 pub struct PlainCheckBox {
     id: WidgetId,
     #[state]
-    focus: FocusState,
+    focus: TState<Focus>,
     child: Box<dyn Widget>,
     position: Position,
     dimension: Dimension,
-    delegate: fn(focus: FocusState, checked: CheckBoxState) -> Box<dyn Widget>,
+    delegate: fn(focus: TState<Focus>, checked: CheckBoxState) -> Box<dyn Widget>,
     #[state]
-    label: StringState,
+    label: TState<String>,
     #[state]
     checked: CheckBoxState,
 }
 
 impl PlainCheckBox {
-    pub fn focused<K: Into<FocusState>>(mut self, focused: K) -> Box<Self> {
+    pub fn focused(mut self, focused: impl Into<TState<Focus>>) -> Box<Self> {
         self.focus = focused.into();
         Self::new_internal(self.checked, self.focus, self.delegate, self.label)
     }
 
-    pub fn new<S: Into<StringState>, L: Into<CheckBoxState>>(label: S, checked: L) -> Box<Self> {
+    pub fn new(label: impl Into<TState<String>>, checked: impl Into<CheckBoxState>) -> Box<Self> {
         let focus = LocalState::new(Focus::Unfocused);
 
         Self::new_internal(
@@ -50,7 +48,7 @@ impl PlainCheckBox {
         )
     }
 
-    fn default_delegate(focus: FocusState, checked: CheckBoxState) -> Box<dyn Widget> {
+    fn default_delegate(focus: TState<Focus>, checked: CheckBoxState) -> Box<dyn Widget> {
         let green = EnvironmentColor::Green.state();
         let blue = EnvironmentColor::Blue.state();
         let red = EnvironmentColor::Red.state();
@@ -81,7 +79,7 @@ impl PlainCheckBox {
 
     pub fn delegate(
         self,
-        delegate: fn(focus: FocusState, selected: CheckBoxState) -> Box<dyn Widget>,
+        delegate: fn(focus: TState<Focus>, selected: CheckBoxState) -> Box<dyn Widget>,
     ) -> Box<Self> {
         let checked = self.checked;
         let focus_state = self.focus;
@@ -92,9 +90,9 @@ impl PlainCheckBox {
 
     fn new_internal(
         checked: CheckBoxState,
-        focus: FocusState,
-        delegate: fn(focus: FocusState, selected: CheckBoxState) -> Box<dyn Widget>,
-        label_state: StringState,
+        focus: TState<Focus>,
+        delegate: fn(focus: TState<Focus>, selected: CheckBoxState) -> Box<dyn Widget>,
+        label_state: TState<String>,
     ) -> Box<Self> {
         let delegate_widget = delegate(focus.clone(), checked.clone());
 

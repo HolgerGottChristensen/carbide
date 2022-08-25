@@ -6,7 +6,7 @@ use crate::environment::Environment;
 use crate::state::state::State;
 use crate::state::util::value_cell::{ValueRef, ValueRefMut};
 use crate::state::widget_state::WidgetState;
-use crate::state::{ReadState, RState, StateContract, TState, UsizeState};
+use crate::state::{ReadState, RState, StateContract, TState};
 
 /// # Index state
 /// Index state is a general implementation that can take any state that is Index and IndexMut
