@@ -11,6 +11,8 @@ use carbide_winit::{convert_mouse_cursor, convert_window_event};
 use carbide_winit::EventLoop;
 use crate::wgpu_window::WGPUWindow;
 use std::cell::RefCell;
+use std::ffi::OsStr;
+use std::fs;
 use std::mem::transmute;
 use std::path::{Path, PathBuf};
 use carbide_core::draw::Dimension;
@@ -94,6 +96,41 @@ impl Application {
         self.environment.add_queued_images();
 
         self.event_handler.delegate_events(&mut self.root, &mut self.environment)
+    }
+
+    /// Locates the default asset folder and tries to load fonts from a subfolder called /fonts.
+    /// For each sub folder in the fonts folder will create a new family with the name of that folder
+    /// and load in any fonts within it.
+    pub fn with_asset_fonts(mut self) -> Self {
+        let assets = locate_folder::Search::KidsThenParents(3, 5)
+            .for_folder("assets")
+            .unwrap();
+
+        let fonts_path = assets.join("fonts");
+
+        let directories = fs::read_dir(fonts_path).unwrap();
+
+        for entry in directories.filter_map(|a| a.ok()) {
+            let path = entry.path();
+            if path.is_dir() {
+
+                let name = path.file_name()
+                    .map(|name| name.to_string_lossy().to_string())
+                    .unwrap();
+
+                let mut fonts = vec![];
+
+                for font_path in fs::read_dir(path).unwrap().filter_map(|a| a.ok()) {
+                    if font_path.path().extension() == Some(OsStr::new("ttf")) {
+                        fonts.push(font_path.path());
+                    }
+                }
+
+                self.add_font_family(FontFamily::new_from_paths(&name, fonts));
+            }
+        }
+
+        self
     }
 
     pub fn add_font_family(&mut self, family: FontFamily) -> String {
