@@ -5,7 +5,7 @@ use proc_macro2::Ident;
 use syn;
 use syn::{Attribute, Fields, Meta, NestedMeta, Path};
 
-use derive_type::DeriveType;
+use crate::derive_type::DeriveType;
 
 // The implementation for `Widget`.
 pub fn impl_widget(ast: &syn::DeriveInput) -> proc_macro2::TokenStream {
