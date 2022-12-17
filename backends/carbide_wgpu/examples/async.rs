@@ -1,12 +1,12 @@
 use std::thread::sleep;
 use std::time::Duration;
 
-use carbide_core::prelude::EnvironmentColor;
 use carbide_core::state::{LocalState, Map1, State, StateExt};
 use carbide_core::text::FontFamily;
 use carbide_core::widget::*;
 use carbide_core::{task, Color};
 use carbide_core::draw::Dimension;
+use carbide_core::environment::EnvironmentColor;
 use carbide_wgpu::{Application, Window};
 
 fn main() {

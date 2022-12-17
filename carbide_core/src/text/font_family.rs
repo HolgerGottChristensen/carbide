@@ -74,6 +74,16 @@ impl FontFamily {
         })
     }
 
+    /// Get the best fitting font in the font family based on the weight and style hints.
+    /// Since all fonts variations might not exist we try to score them according to some
+    /// parameters and return the closest.
+    ///
+    /// For example if you have a family with W400 and W700, and you request a font with
+    /// W900, it will return the W700 font and not the W400.
+    ///
+    /// The implementation is somewhat arbitrary and might change over time, but with the
+    /// requirement that if there is a perfectly matching font in the family this should
+    /// be returned.
     pub fn get_best_fit(&self, weight_hint: FontWeight, style_hint: FontStyle) -> FontId {
         let mut best_fit = 0;
         let mut best_score = 0.0;

@@ -1,14 +1,22 @@
 //! A function for converting a `winit::Event` to a `carbide::event::Input`.
-mod event_loop;
-
-pub use event_loop::*;
-
 use winit::dpi::{LogicalPosition, LogicalSize};
-use winit::event::{ElementState, MouseButton as WinitMouseButton, MouseScrollDelta, Touch as WinitTouch, TouchPhase as WinitTouchPhase, VirtualKeyCode, WindowEvent};
-use winit::window::{CursorIcon, WindowId};
+use winit::event::{
+    ElementState,
+    MouseButton as WinitMouseButton,
+    MouseScrollDelta,
+    Touch as WinitTouch,
+    TouchPhase as WinitTouchPhase,
+    VirtualKeyCode,
+    WindowEvent
+};
+use winit::window::CursorIcon;
+
 use carbide_core::cursor::MouseCursor;
 use carbide_core::draw::Position;
 use carbide_core::event::{Button, Input, Key, Motion, MouseButton, Touch, TouchId, TouchPhase};
+pub use event_loop::*;
+
+mod event_loop;
 
 const ARBITRARY_POINTS_PER_LINE_FACTOR: f64 = 10.0;
 

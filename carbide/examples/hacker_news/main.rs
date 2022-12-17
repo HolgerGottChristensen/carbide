@@ -1,44 +1,32 @@
-mod article;
-mod hacker_news_api;
-
-use carbide_controls::{capture, List, PlainButton, Selection};
-use carbide_core::environment::{Environment, EnvironmentColor, EnvironmentFontSize};
-use carbide_core::widget::*;
-use chrono::{TimeZone, Utc};
-use env_logger::Env;
-use futures::future::join_all;
 use std::collections::HashSet;
 use std::ops::Deref;
+
+use chrono::{TimeZone, Utc};
 use futures::stream::FuturesOrdered;
 use futures::StreamExt;
 
+use carbide::{Color, lens, task};
+use carbide::{Application, Window};
+use carbide::color::TRANSPARENT;
+use carbide::draw::Dimension;
+use carbide::environment::{Environment, EnvironmentColor, EnvironmentFontSize};
+use carbide::layout::BasicLayouter;
+use carbide::state::{LocalState, Map2, ReadState, State, StateExt, TState};
+use carbide::text::FontWeight;
+use carbide::widget::*;
+use carbide::widget::WidgetExt;
+use carbide_controls::{List, PlainButton};
+
 use crate::article::Article;
-use carbide_core::color::TRANSPARENT;
-use carbide_core::layout::BasicLayouter;
-use carbide_core::state::{BoolState, LocalState, Map2, ReadState, State, StateExt, StringState, TState, UsizeState};
-use carbide_core::text::{FontFamily, FontWeight};
-use carbide_core::widget::WidgetExt;
-use carbide_core::{lens, task, Color};
-use reqwest::Response;
-use carbide_core::draw::Dimension;
-use carbide_wgpu::{Application, Window};
+
+mod article;
+mod hacker_news_api;
 
 fn main() {
     env_logger::init();
 
-    let mut application = Application::new();
-
-
-    let mut family = FontFamily::new_from_paths(
-        "NotoSans",
-        vec![
-            "fonts/NotoSans/NotoSans-Regular.ttf",
-            "fonts/NotoSans/NotoSans-Italic.ttf",
-            "fonts/NotoSans/NotoSans-Bold.ttf",
-        ],
-    );
-
-    application.add_font_family(family);
+    let mut application = Application::new()
+        .with_asset_fonts();
 
     let env = application.environment_mut();
 
@@ -86,7 +74,7 @@ fn main() {
 
     let selected_items_delegate = selected_items.clone();
 
-    let delegate = move |article: TState<Article>, index: UsizeState| -> Box<dyn Widget> {
+    let delegate = move |article: TState<Article>, index: TState<usize>| -> Box<dyn Widget> {
         let selected_item = article.clone();
 
         let selected = selected_items_delegate.mapped(move |map: &HashSet<WidgetId>| {

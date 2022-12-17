@@ -2,12 +2,7 @@ use carbide_core::draw::{Dimension, Position};
 use carbide_core::environment::Environment;
 use carbide_core::flags::Flags;
 use carbide_core::layout::Layout;
-use carbide_core::prelude::WidgetExt;
-use carbide_core::Scalar;
 use carbide_core::widget::{CommonWidget, CrossAxisAlignment, EdgeInsets, Spacer, Widget, WidgetId, WidgetIter, WidgetIterMut};
-use carbide_derive::Widget;
-use crate::draw::{Dimension, Position};
-use crate::prelude::*;
 
 type NewPage = Spacer;
 

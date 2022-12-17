@@ -1,34 +1,23 @@
-use carbide_controls::{capture, PlainButton};
-use carbide_core::environment::{Environment, EnvironmentColor};
-use carbide_core::widget::*;
-use carbide_core::Color;
-use env_logger::Env;
 use std::ops::Deref;
-use carbide_core::draw::Dimension;
+
+use carbide::{Application, Window};
+use carbide::Color;
+use carbide::draw::Dimension;
+use carbide::environment::{Environment, EnvironmentColor};
+use carbide::state::{LocalState, Map3, ReadState, State, StateExt, TState};
+use carbide::widget::*;
+use carbide::widget::WidgetExt;
+use carbide_controls::{capture, PlainButton};
 
 use crate::calculator_state::{CalculatorState, Operation};
-use carbide_core::prelude::LocalState;
-use carbide_core::state::{BoolState, Map3, ReadState, State, StateExt, StringState, TState};
-use carbide_core::text::FontFamily;
-use carbide_core::widget::WidgetExt;
-use carbide_wgpu::{Application, Window};
 
 pub mod calculator_state;
 
 fn main() {
     env_logger::init();
 
-    let mut application = Application::new();
-
-    let mut family = FontFamily::new_from_paths(
-        "NotoSans",
-        vec![
-            "fonts/NotoSans/NotoSans-Regular.ttf",
-            "fonts/NotoSans/NotoSans-Italic.ttf",
-            "fonts/NotoSans/NotoSans-Bold.ttf",
-        ],
-    );
-    application.add_font_family(family);
+    let mut application = Application::new()
+        .with_asset_fonts();
 
     let mut calculator_state = LocalState::new(CalculatorState::new());
 
@@ -122,8 +111,8 @@ fn main() {
 }
 
 fn calculator_button(label: Box<dyn Widget>, action: impl Action + 'static) -> Box<dyn Widget> {
-    let pressed_state: BoolState = LocalState::new(false).into();
-    let hovered_state: BoolState = LocalState::new(false).into();
+    let pressed_state: TState<bool> = LocalState::new(false).into();
+    let hovered_state: TState<bool> = LocalState::new(false).into();
 
     let background_color = Map3::read_map(
         pressed_state.clone(),

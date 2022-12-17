@@ -4,16 +4,16 @@ use std::io::{BufWriter, Read};
 use std::path::Path;
 use carbide_core::draw::image::{ImageId, ImageMap};
 use carbide_core::image::DynamicImage;
-use carbide_core::prelude::{ImageInformation, Menu, Primitive, PrimitiveKind, Widget};
 use carbide_core::text::{FontFamily, FontId};
-use carbide_core::{locate_folder, Ui};
+use carbide_core::{locate_folder};
 use carbide_core::window::TWindow;
 use printpdf::{Color, Image as PdfImage, ImageTransform, Line, Mm, OP_PATH_CONST_LINE_TO, OP_PATH_CONST_MOVE_TO, OP_PATH_PAINT_FILL_NZ, PdfDocument, PdfDocumentReference, PdfLayerIndex, PdfPageIndex, Point, Px, Rgb};
 use printpdf::lopdf::content::Operation;
 use carbide_core::draw::{Dimension, Position};
 use carbide_core::event::NoopEventSink;
 use carbide_core::layout::BasicLayouter;
-use carbide_core::render::PrimitiveWalker;
+use carbide_core::render::PrimitiveKind;
+use carbide_core::widget::{ImageInformation, Menu, Widget};
 
 pub struct Pdf {
     pub(crate) ui: Ui,

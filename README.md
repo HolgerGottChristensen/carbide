@@ -232,8 +232,8 @@ defined in the Apache-2.0 license, shall be dual licensed as above, without any 
 
 [3.4]:      https://docs.rs/carbide_core/latest/carbide_core/guide/chapter_3/index.html#handling-events
 
-[issues]: https://github.com/PistonDevelopers/carbide/issues
+[issues]: https://github.com/HolgerGottChristensen/carbide/issues
 
-[1.0.0 milestone]: https://github.com/PistonDevelopers/carbide/milestones/1.0.0
+[1.0.0 milestone]: https://github.com/HolgerGottChristensen/carbide/milestones/1.0.0
 
 [Contributing]: https://github.com/PistonDevelopers/piston/blob/master/CONTRIBUTING.md

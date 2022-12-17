@@ -1,7 +1,5 @@
-use std::ops::Deref;
 use winit::event_loop::{EventLoop as WinitEventLoop, EventLoopWindowTarget};
 use winit::window::{Window, WindowBuilder};
-use crate::WinitWindow;
 
 pub enum EventLoop<T: 'static> {
     Owned(WinitEventLoop<T>),

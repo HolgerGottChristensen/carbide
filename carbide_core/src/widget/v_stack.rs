@@ -6,7 +6,6 @@ use crate::layout::{calculate_size_vstack, Layout, position_children_vstack};
 use crate::Scalar;
 use crate::widget::{CommonWidget, CrossAxisAlignment, Widget, WidgetExt, WidgetId, WidgetIter, WidgetIterMut};
 
-/// A basic, non-interactive rectangle shape widget.
 #[derive(Debug, Clone, Widget)]
 #[carbide_exclude(Layout)]
 pub struct VStack {

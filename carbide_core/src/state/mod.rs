@@ -4,7 +4,6 @@ use std::rc::Rc;
 pub use util::value_cell::{ValueCell, ValueRef, ValueRefMut};
 
 pub use self::animated_state::*;
-pub use crate::animation::animation_curve::*;
 //pub use self::async_state::*;
 pub use self::field_state::*;
 pub use self::env_state::EnvState;

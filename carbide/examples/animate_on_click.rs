@@ -1,38 +1,27 @@
 use std::time::Duration;
 
-use carbide::animation::Animation;
 use carbide::color::{BLUE, GREEN, RED};
-use carbide::prelude::elastic_in_out;
-use carbide::prelude::ReadState;
-use carbide::state::{bounce_in, bounce_in_out, bounce_out, ease_in_out, linear, ValueState};
-use carbide_controls::capture;
-use carbide_controls::Button;
-use carbide_core::animate;
-use carbide_core::animation::Animatable;
-use carbide_core::environment::Environment;
-use carbide_core::environment::{EnvironmentColor, EnvironmentFontSize};
-use carbide_core::state::{LocalState, State, StateExt, StringState, TState, UsizeState};
-use carbide_core::text::FontFamily;
-use carbide_core::widget::*;
-use carbide_core::window::TWindow;
-use carbide_core::Color;
-use carbide_wgpu::window::Window;
+use carbide::animation::{bounce_out, ease_in_out, linear, elastic_in_out};
+use carbide::state::{LocalState, TState, ReadState};
+use carbide::animate;
+use carbide::controls::capture;
+use carbide::controls::Button;
+use carbide::environment::Environment;
+use carbide::widget::*;
+use carbide::Color;
+use carbide::draw::Dimension;
+use carbide::{Application, Window};
 
 fn main() {
-    env_logger::init();
-
-    let icon_path = Window::relative_path_to_assets("images/rust_press.png");
-
-    let mut window = Window::new("Animate on click - Carbide", 400, 300, Some(icon_path));
-
-    let family =
-        FontFamily::new_from_paths("NotoSans", vec!["fonts/NotoSans/NotoSans-Regular.ttf"]);
-    window.add_font_family(family);
+    let mut application = Application::new()
+        .with_asset_fonts();
 
     let offset_x = LocalState::new(-120.0);
     let color = LocalState::new(RED);
 
-    window.set_widgets(
+    application.set_scene(Window::new(
+        "Animate on click - Carbide",
+        Dimension::new(400.0, 300.0),
         VStack::new(vec![
             Rectangle::new()
                 .fill(color.clone())
@@ -59,10 +48,11 @@ fn main() {
             animation_buttons(elastic_in_out, "Elastic", &offset_x),
             animation_buttons(bounce_out, "Bounce out", &offset_x),
             animation_buttons(ease_in_out, "Ease in-out", &offset_x),
-        ]).spacing(10.0),
-    );
+        ]).spacing(10.0)
+    ).close_application_on_window_close());
 
-    window.launch();
+
+    application.launch();
 }
 
 fn animation_buttons(curve: fn(f64) -> f64, name: &str, offset: &TState<f64>) -> Box<dyn Widget> {

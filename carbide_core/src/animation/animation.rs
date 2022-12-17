@@ -2,7 +2,8 @@ use std::fmt::{Debug, Formatter};
 use std::time::{Duration, Instant};
 
 use crate::animation::animatable::Animatable;
-use crate::state::{linear, RepeatMode, State, StateContract};
+use crate::animation::linear;
+use crate::state::{RepeatMode, State, StateContract};
 
 #[derive(Clone)]
 pub struct Animation<T>

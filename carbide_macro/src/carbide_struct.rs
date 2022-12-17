@@ -7,7 +7,7 @@ use syn::__private::parse_parens;
 use syn::parse::{Parse, ParseStream};
 use syn::punctuated::Punctuated;
 use syn::token::parsing::keyword;
-use crate::carbide_expression::CarbideExpression;
+use crate::carbide_expression::{CarbideBlock, CarbideExpression};
 use crate::carbide_struct::CarbideStructField::{Required, Optional};
 
 
@@ -96,45 +96,17 @@ impl ToTokens for CarbideStruct {
         let struct_fields_use2 = struct_fields_use.clone();
 
         // If we have a body with multiple widget returns we store them in a field in the struct
-        let child_field = if self.body.body.len() == 0 {
-            quote!()
-        } else if self.body.body.len() == 1 {
-            quote!(child: Box<dyn Widget>,)
-        } else {
-            quote!(child: Vec<Box<dyn Widget>>,)
-        };
+        let child_field = quote!(child: Box<dyn Widget>,);
 
-        let child_init_field = if self.body.body.len() == 0 {
-            quote!()
-        } else {
-            quote!(child: children,)
-        };
+        let child_init_field = quote!(child: child,);
 
-        let children_let = if self.body.body.len() == 0 {
-            quote!()
-        } else if self.body.body.len() == 1 {
-            quote!(
-                let children = #body;
-            )
-        } else {
-            quote!(
-                let children = vec![
-                    #body
-                ];
-            )
-        };
+        let children_let = quote!(
+                let child = #body;
+            );
 
-        let children_common = if self.body.body.len() == 0 {
-            quote!()
-        } else if self.body.body.len() == 1 {
-            quote!(
+        let children_common = quote!(
                 child: self.child,
-            )
-        } else {
-            quote!(
-                children: self.child,
-            )
-        };
+            );
 
         let builder_ident = Ident::new(&format!("{}Builder", &ident.to_string()), ident.span());
 
@@ -209,8 +181,7 @@ pub struct CarbideBodyFunction {
     parenthesis: Paren,
     arrow: Token![->],
     return_type: Type,
-    braces: Brace,
-    body: Vec<CarbideExpression>,
+    body: CarbideBlock,
 }
 
 impl ToTokens for CarbideBodyFunction {
@@ -221,9 +192,17 @@ impl ToTokens for CarbideBodyFunction {
             ..
         } = self;
 
-        tokens.extend(quote!(
-            #(#body),*
-        ))
+        let body = if body.produces_vec() {
+            quote!(
+                ZStack::new(
+                    #body
+                )
+            )
+        } else {
+            quote!(#body)
+        };
+
+        tokens.extend(body);
     }
 }
 
@@ -252,14 +231,7 @@ impl Parse for CarbideBodyFunction {
         let arrow = syn::token::RArrow::parse(input)?;
         let return_type = Type::parse(input)?;
 
-        let brace_content;
-        let brace = braced!(brace_content in input);
-
-        let mut body = vec![];
-
-        while let Ok(expr) = CarbideExpression::parse(&brace_content) {
-            body.push(expr);
-        }
+        let mut body = CarbideBlock::parse(input)?;
 
         Ok(CarbideBodyFunction {
             fn_token,
@@ -267,7 +239,6 @@ impl Parse for CarbideBodyFunction {
             parenthesis: paren,
             arrow,
             return_type,
-            braces: brace,
             body
         })
     }

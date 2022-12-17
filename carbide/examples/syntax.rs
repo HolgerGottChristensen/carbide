@@ -23,11 +23,22 @@ fn main() {
             let test: String = String::from("Hejsa")
 
             fn body() -> Widget {
-                if $alignment < 100 && $alignment >= 42 {
+
+
+                //Text($alignment)
+                let t = $articles.len();
+
+                VStack {
+                    Text($t)
+                    Text($t)
+                    Text($t)
+                }
+
+                /*if $alignment < 100 && $alignment >= 42 {
                     Text("Is [42;100[")
                 } else {
                     Text($alignment)
-                }
+                }*/
 
                 /*if ($alignment + 10) * 1 == 52 || $alignment == 32 {
                     Text("Is some")

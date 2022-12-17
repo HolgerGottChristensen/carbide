@@ -1,10 +1,10 @@
 use std::fmt::{Debug, Formatter, Pointer};
 use proc_macro2::{Span, TokenStream};
 use quote::{quote, ToTokens};
-use syn::{Arm, Attribute, Block, Error, ExprForLoop, ExprIf, Ident, Pat, PatOr};
-use syn::token::{Brace, Colon, Comma, Dot, Else, In, Let, Paren, Token};
+use syn::{Arm, Attribute, Block, Error, ExprForLoop, ExprIf, Ident, Pat, PatOr, token};
+use syn::token::{Brace, Colon, Comma, Dot, Else, In, Let, Paren, Semi, Token};
 use syn::{braced, Expr, parenthesized, Token, Type};
-use syn::__private::{parse_braces, parse_parens};
+use syn::__private::{parse_braces, parse_parens, TokenStream2};
 use syn::parse::{Parse, ParseStream};
 use syn::punctuated::Punctuated;
 use crate::expr::carbide_expr::CarbideExpr;
@@ -17,8 +17,55 @@ use crate::pat_ident_extraction::extract_idents_from_pattern;
 pub enum CarbideExpression {
     Instantiate(CarbideInstantiate),
     If(CarbideExprIf),
+    Let(CarbideExprLet),
     ForLoop(CarbideExprForLoop),
     Match(CarbideExprMatch)
+}
+
+pub struct CarbideExprLet {
+    pub let_token: Let,
+    pub pat: Pat,
+    pub eq_token: token::Eq,
+    pub expr: CarbideExpr,
+    pub semi_token: Semi,
+}
+
+impl Debug for CarbideExprLet {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("CarbideExprLet")
+            .field("pat", &self.pat.to_token_stream().to_string())
+            .field("expr", &self.expr)
+            .finish()
+    }
+}
+
+impl ToTokens for CarbideExprLet {
+    fn to_tokens(&self, tokens: &mut TokenStream) {
+
+        let CarbideExprLet {
+            let_token,
+            pat,
+            eq_token,
+            expr,
+            semi_token
+        } = self;
+        tokens.extend(quote!(
+            let #pat = { #expr };
+        ))
+    }
+}
+
+impl Parse for CarbideExprLet {
+    fn parse(input: ParseStream) -> syn::Result<Self> {
+
+        Ok(CarbideExprLet {
+            let_token: Let::parse(input)?,
+            pat: Pat::parse(input)?,
+            eq_token: token::Eq::parse(input)?,
+            expr: CarbideExpr::parse(input)?,
+            semi_token: Semi::parse(input)?
+        })
+    }
 }
 
 pub struct CarbideExprMatch {
@@ -84,13 +131,10 @@ impl CarbideArm {
             )
         };
 
-        let body = if body.exprs.len() == 0 {
-            quote!(#body)
-        } else if body.exprs.len() == 1 {
-            let item = &body.exprs[0];
-            quote!(#item)
-        } else {
+        let body = if body.produces_vec() {
             quote!(ZStack::new(#body))
+        } else {
+            quote!(#body)
         };
 
         let guard = if let Some((_, expr)) = guard {
@@ -202,7 +246,7 @@ impl ToTokens for CarbideExprForLoop {
             body
         } = self;
 
-        let body = if body.exprs.len() > 1 {
+        let body = if body.produces_vec() {
             quote!(
                 ZStack::new(
                     #body
@@ -328,6 +372,16 @@ pub struct CarbideBlock {
     pub exprs: Vec<CarbideExpression>,
 }
 
+impl CarbideBlock {
+    pub fn produces_vec(&self) -> bool {
+        self.expression_count() > 1
+    }
+
+    pub fn expression_count(&self) -> usize {
+        self.exprs.iter().filter(|a| !matches!(a, CarbideExpression::Let(_))).count()
+    }
+}
+
 impl Debug for CarbideExprIf {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("CarbideExprIf")
@@ -416,18 +470,55 @@ impl ToTokens for CarbideBlock {
             exprs
         } = self;
 
-        if exprs.len() == 0 {
+        if self.expression_count() == 0 {
             tokens.extend(quote!(
                 Empty::new()
             ))
-        } else if exprs.len() == 1 {
+        } else if self.expression_count() == 1 {
+            let mut inners = TokenStream2::new();
+            for expr in &self.exprs {
+                if matches!(expr, CarbideExpression::Let(_)) {
+                    inners.extend(quote!(
+                        #expr
+                    ))
+                } else {
+                    inners.extend(quote!(
+                        #expr
+                    ));
+                    break;
+                }
+            }
+
             tokens.extend(quote!(
-                #(#exprs)*
+                {
+                    #inners
+                }
             ))
+
+
         } else {
-            tokens.extend(quote!(vec![
-                #(#exprs,)*
-            ]))
+            let expressions = self.expression_count();
+            let mut inners = quote!(let mut items: Vec<Box<dyn Widget>> = Vec::with_capacity(#expressions););
+
+            for expr in &self.exprs {
+                if matches!(expr, CarbideExpression::Let(_)) {
+                    inners.extend(quote!(
+                        #expr
+                    ))
+                } else {
+                    inners.extend(quote!(
+                        items.push(#expr);
+                    ));
+                }
+            }
+
+            inners.extend(quote!(
+                items
+            ));
+
+            tokens.extend(quote!({
+                #inners
+            }))
         }
     }
 }
@@ -448,7 +539,7 @@ impl ToTokens for CarbideExprIf {
                 quote!(.when_false(#e))
             }
             CarbideElseBranch::Else(_, e) => {
-                if e.exprs.len() > 1 {
+                if e.produces_vec() {
                     quote!(.when_false(ZStack::new(#e)))
                 } else {
                     quote!(.when_false(#e))
@@ -460,7 +551,7 @@ impl ToTokens for CarbideExprIf {
             }
         };
 
-        let then = if then_branch.exprs.len() > 1 {
+        let then = if then_branch.produces_vec() {
             quote!(ZStack::new(#then_branch))
         } else {
             quote!(#then_branch)
@@ -497,6 +588,7 @@ impl ToTokens for CarbideExpression {
                     #i
                 ))
             }
+            CarbideExpression::Let(i) => i.to_tokens(tokens)
         }
     }
 }
@@ -513,6 +605,9 @@ impl Parse for CarbideExpression {
         } else if input.peek(Token!(if)) {
             let if_expr = CarbideExprIf::parse(input)?;
             Ok(If(if_expr))
+        } else if input.peek(Token!(let)) {
+            let let_expr = CarbideExprLet::parse(input)?;
+            Ok(CarbideExpression::Let(let_expr))
         } else {
             let instantiate = CarbideInstantiate::parse(input)?;
             Ok(Instantiate(instantiate))

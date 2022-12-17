@@ -1,11 +1,14 @@
-mod constraints;
-mod edge;
-mod editing_mode;
-mod graph;
-mod guide;
-mod line;
-mod node;
-mod node_editor;
+use std::cmp::Ordering;
+
+use carbide::{lens, matches_case, Scalar};
+use carbide::{Application, Window};
+use carbide::draw::{Dimension, Position, Rect};
+use carbide::environment::{Environment, EnvironmentColor, EnvironmentFontSize};
+use carbide::state::{IndexableState, LocalState, Map1, ReadState, State, StateExt, TState, ValueRefMut};
+use carbide::text::FontFamily;
+use carbide::widget::*;
+use carbide::widget::canvas::{Canvas, Context};
+use carbide_controls::{Button, capture, Slider, TextInput};
 
 use crate::edge::Edge;
 use crate::editing_mode::{CreateWallState, EditingMode, SelectedState};
@@ -14,18 +17,15 @@ use crate::guide::Guide;
 use crate::line::Line;
 use crate::node::Node;
 use crate::node_editor::NodeEditor;
-use carbide_controls::{capture, Button, Slider, TextInput};
-use carbide_core::draw::{Dimension, Position, Rect};
-use carbide_core::environment::{Environment, EnvironmentFontSize};
-use carbide_core::prelude::{EnvironmentColor, ValueRefMut};
-use carbide_core::state::{FieldState, LocalState, Map1, Map2, ReadState, State, StateExt, TState, IndexState, IndexableState};
-use carbide_core::text::FontFamily;
-use carbide_core::widget::canvas::{Canvas, Context};
-use carbide_core::widget::*;
-use carbide_core::{animate, lens, matches_case, Scalar};
-use std::cmp::Ordering;
-use std::time::Duration;
-use carbide_wgpu::{Application, Window};
+
+mod constraints;
+mod edge;
+mod editing_mode;
+mod graph;
+mod guide;
+mod line;
+mod node;
+mod node_editor;
 
 fn main() {
     env_logger::init();

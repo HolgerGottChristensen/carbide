@@ -1,16 +1,13 @@
-use carbide_controls::{capture, Button};
-use carbide_core::draw::Dimension;
-use carbide_core::prelude::*;
-use carbide_core::text::FontFamily;
-use carbide_core::window::TWindow;
-use carbide_wgpu::{Application, Window};
+use carbide::{Application, Window};
+use carbide::draw::Dimension;
+use carbide::environment::{Environment, EnvironmentFontSize};
+use carbide::state::LocalState;
+use carbide::widget::{Text, VStack, WidgetExt};
+use carbide_controls::{Button, capture};
 
 fn main() {
-    let mut application = Application::new();
-
-    let family =
-        FontFamily::new_from_paths("NotoSans", vec!["fonts/NotoSans/NotoSans-Regular.ttf"]);
-    application.add_font_family(family);
+    let mut application = Application::new()
+        .with_asset_fonts();
 
     let counter = LocalState::new(0);
 

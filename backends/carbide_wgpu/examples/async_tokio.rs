@@ -1,8 +1,8 @@
 use std::path::PathBuf;
 use tokio::time::{sleep, Duration};
 use carbide_core::draw::Dimension;
+use carbide_core::environment::EnvironmentColor;
 
-use carbide_core::prelude::EnvironmentColor;
 use carbide_core::state::{LocalState, State, ValueState};
 use carbide_core::task;
 use carbide_core::text::FontFamily;

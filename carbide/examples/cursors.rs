@@ -1,21 +1,15 @@
 use carbide::cursor::MouseCursor;
-use carbide::state::{State, TState, UsizeState};
+use carbide::state::{ReadState, TState};
 use carbide_controls::Button;
-use carbide_core::draw::Dimension;
-use carbide_core::environment::EnvironmentColor;
-use carbide_core::state::{LocalState, ReadState, StateExt};
-use carbide_core::text::FontFamily;
-use carbide_core::widget::*;
-use carbide_wgpu::{Application, Window};
+use carbide::draw::Dimension;
+use carbide::widget::*;
+use carbide::{Application, Window};
 
 fn main() {
     env_logger::init();
 
-    let mut application = Application::new();
-
-    let family =
-        FontFamily::new_from_paths("NotoSans", vec!["fonts/NotoSans/NotoSans-Regular.ttf"]);
-    application.add_font_family(family);
+    let mut application = Application::new()
+        .with_asset_fonts();
 
     let cursors1 = vec![
         MouseCursor::Default,
@@ -58,7 +52,7 @@ fn main() {
         MouseCursor::RowResize,
     ];
 
-    fn delegate(item: TState<MouseCursor>, _: UsizeState) -> Box<dyn Widget> {
+    fn delegate(item: TState<MouseCursor>, _: TState<usize>) -> Box<dyn Widget> {
         Button::new(format!("{:?}", *item.value()))
             .hover_cursor(*item.value())
             .frame(100.0, 22.0)
