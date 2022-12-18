@@ -1,30 +1,23 @@
-use carbide_core::prelude::EnvironmentColor;
+use carbide_core::draw::Dimension;
+use carbide_core::environment::EnvironmentColor;
 use carbide_core::widget::*;
-use carbide_wgpu::window::*;
+use carbide_wgpu::{Application, Window};
 
 fn main() {
-    env_logger::init();
+    let mut application = Application::new()
+        .with_asset_fonts();
 
-    let icon_path = Window::relative_path_to_assets("images/rust_press.png");
-
-    let mut window = Window::new(
-        "Icon example".to_string(),
-        400,
-        600,
-        Some(icon_path.clone()),
-    );
-
-    let image_id = window.add_image_from_path("images/rust.png");
-
-    window.set_widgets(
+    application.set_scene(Window::new(
+        "Icon example",
+        Dimension::new(400.0, 600.0),
         VStack::new(vec![
-            Image::new_icon(image_id),
+            Image::new_icon("images/rust.png"),
             Rectangle::new()
                 .fill(EnvironmentColor::Accent)
                 .frame(50, 50),
         ])
-        .accent_color(EnvironmentColor::Green),
-    );
+            .accent_color(EnvironmentColor::Green),
+    ).close_application_on_window_close());
 
-    window.launch();
+    application.launch();
 }

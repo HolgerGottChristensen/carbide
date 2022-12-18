@@ -1,54 +1,42 @@
-#[macro_use]
-extern crate carbide_derive;
-
 use carbide_core::draw::{Dimension, Position};
 use carbide_core::environment::*;
 use carbide_core::event::{Key, KeyboardEvent, KeyboardEventHandler};
 use carbide_core::layout::Layout;
-use carbide_core::state::{BoolState, LocalState, StateExt, TState};
-use carbide_core::text::FontFamily;
+use carbide_core::state::{LocalState, StateExt, TState};
 use carbide_core::widget::*;
-use carbide_wgpu::window::*;
+use carbide_wgpu::{Application, Window};
 
 fn main() {
-    env_logger::init();
-
-    let icon_path = Window::relative_path_to_assets("images/rust_press.png");
-
-    let mut window = Window::new(
-        "Overlay example - Carbide".to_string(),
-        600,
-        450,
-        Some(icon_path.clone()),
-    );
-
-    let family =
-        FontFamily::new_from_paths("NotoSans", vec!["fonts/NotoSans/NotoSans-Regular.ttf"]);
-    window.add_font_family(family);
-
     let showing_state: TState<bool> = LocalState::new(false).into();
 
-    window.set_widgets(OverlaidLayer::new(
-        "overlay",
-        VStack::new(vec![
-            Text::new(
-                showing_state.map(|a: &bool| format!("Currently showing overlay: {}", *a)),
-            ),
-            ZStack::new(vec![
-                Over::new(showing_state).frame(100.0, 100.0),
-                Rectangle::new()
-                    .fill(EnvironmentColor::Green)
-                    .frame(200.0, 200.0),
-                Rectangle::new()
-                    .fill(EnvironmentColor::Red)
-                    .frame(100.0, 100.0),
-                Text::new("Test").foreground_color(EnvironmentColor::Blue),
-            ]),
-            Text::new("Press space to toggle the overlay (yellow rectangle)"),
-        ]),
-    ));
+    let mut application = Application::new()
+        .with_asset_fonts();
 
-    window.launch();
+    application.set_scene(Window::new(
+        "Overlay example - Carbide",
+        Dimension::new(600.0, 450.0),
+        OverlaidLayer::new(
+            "overlay",
+            VStack::new(vec![
+                Text::new(
+                    showing_state.map(|a: &bool| format!("Currently showing overlay: {}", *a)),
+                ),
+                ZStack::new(vec![
+                    Over::new(showing_state).frame(100.0, 100.0),
+                    Rectangle::new()
+                        .fill(EnvironmentColor::Green)
+                        .frame(200.0, 200.0),
+                    Rectangle::new()
+                        .fill(EnvironmentColor::Red)
+                        .frame(100.0, 100.0),
+                    Text::new("Test").foreground_color(EnvironmentColor::Blue),
+                ]),
+                Text::new("Press space to toggle the overlay (yellow rectangle)"),
+            ]),
+        )
+    ).close_application_on_window_close());
+
+    application.launch();
 }
 
 #[derive(Clone, Debug, Widget)]
@@ -61,9 +49,9 @@ struct Over {
 }
 
 impl Over {
-    pub fn new(showing: BoolState) -> Box<Over> {
+    pub fn new(showing: TState<bool>) -> Box<Over> {
         Box::new(Over {
-            id: WidgetId::new_v4(),
+            id: WidgetId::new(),
             position: Position::new(0.0, 0.0),
             dimension: Dimension::new(100.0, 100.0),
             overlay_widget: Overlay::new(
@@ -131,10 +119,6 @@ impl Layout for Over {
 impl CommonWidget for Over {
     fn id(&self) -> WidgetId {
         self.id
-    }
-
-    fn set_id(&mut self, id: WidgetId) {
-        self.id = id;
     }
 
     fn children(&self) -> WidgetIter {

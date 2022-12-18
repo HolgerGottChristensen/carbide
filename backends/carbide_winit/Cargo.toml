@@ -12,7 +12,7 @@ readme = "../../README.md"
 repository = "https://github.com/HolgerGottChristensen/carbide.git"
 homepage = "https://github.com/HolgerGottChristensen/carbide"
 categories = ["gui"]
-edition="2021"
+edition="2018"
 
 
 [dependencies]

@@ -1,12 +1,9 @@
-use carbide_core::Color;
-use std::f64::consts::PI;
 use std::time::Duration;
 
-use carbide_core::draw::{Dimension, Position};
+use carbide_core::animation::{bounce_in, bounce_in_out, bounce_out, ease_in, ease_in_out, ease_out, elastic_in, elastic_in_out, elastic_out, fast_linear_to_slow_ease_in, fast_out_slow_in, linear, slow_middle};
+use carbide_core::draw::Dimension;
 use carbide_core::environment::*;
-use carbide_core::state::{bounce_in, bounce_in_out, bounce_out, cubic_bezier, ease_in_out, ease_in_to_linear, ease_out, elastic_out, fast_linear_to_slow_ease_in, fast_out_slow_in, linear, slow_middle, AnimatedState, LocalState, MapOwnedState, TState, ease_in, elastic_in, elastic_in_out};
-use carbide_core::text::*;
-use carbide_core::widget::canvas::*;
+use carbide_core::state::{AnimatedState, TState};
 use carbide_core::widget::*;
 use carbide_wgpu::{Application, Window};
 

@@ -1,9 +1,8 @@
 use carbide_core::draw::Dimension;
-use carbide_core::environment::{Environment, EnvironmentFontSize};
-use carbide_core::prelude::{EnvironmentColor, MenuItem, Rectangle};
-use carbide_core::state::LocalState;
+use carbide_core::environment::{Environment, EnvironmentColor, EnvironmentFontSize};
+use carbide_core::state::{LocalState, State};
 use carbide_core::text::FontFamily;
-use carbide_core::widget::{Menu, MouseArea, Text, WidgetExt, ZStack};
+use carbide_core::widget::{Menu, MouseArea, Rectangle, Text, WidgetExt, ZStack};
 use carbide_wgpu::{Application, Window};
 
 fn main() {
@@ -21,7 +20,7 @@ fn main() {
             let counter = counter.clone();
 
             move |_env: &mut Environment, modifier: carbide_core::event::ModifierKey| {
-                use carbide_core::prelude::State;
+                use carbide_core::state::State;
                 let mut counter = counter.clone();
 
                 {

@@ -9,7 +9,7 @@ description = "A set of control widgets for the carbide core crate"
 license = "MIT OR Apache-2.0"
 readme = "../README.md"
 categories = ["gui"]
-edition = "2018"
+edition = "2021"
 repository = "https://github.com/HolgerGottChristensen/carbide.git"
 homepage = "https://github.com/HolgerGottChristensen/carbide"
 

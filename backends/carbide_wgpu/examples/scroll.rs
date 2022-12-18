@@ -1,30 +1,23 @@
+use carbide_core::draw::Dimension;
 use carbide_core::widget::*;
-use carbide_wgpu::window::*;
+use carbide_wgpu::{Application, Window};
 
 fn main() {
-    env_logger::init();
+    let mut application = Application::new()
+        .with_asset_fonts();
 
-    let icon_path = Window::relative_path_to_assets("images/rust_press.png");
-
-    let mut window = Window::new(
-        "Scroll example".to_string(),
-        400,
-        600,
-        Some(icon_path.clone()),
-    );
-
-    let image_id = window.add_image_from_path("images/landscape.png");
-
-    window.set_widgets(
+    application.set_scene(Window::new(
+        "Scroll example",
+        Dimension::new(400.0, 600.0),
         Scroll::new(
-            Image::new(image_id)
+            Image::new("images/landscape.png")
                 .resizeable()
                 .scaled_to_fill()
                 .frame(500.0, 500.0),
         )
-        .clip()
-        .frame(250.0, 250.0),
-    );
+            .clip()
+            .frame(250.0, 250.0),
+    ).close_application_on_window_close());
 
-    window.launch();
+    application.launch();
 }

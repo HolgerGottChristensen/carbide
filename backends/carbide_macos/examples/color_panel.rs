@@ -1,22 +1,12 @@
-use std::path::PathBuf;
-use std::thread::sleep;
-use std::time::Duration;
-
-use carbide_core::prelude::EnvironmentColor;
-use carbide_core::state::{LocalState, Map1, State, StateExt};
-use carbide_core::text::FontFamily;
-use carbide_core::widget::*;
-use carbide_core::{task, Color, SpawnTask};
-use carbide_core::draw::Dimension;
-use carbide_core::environment::Environment;
-use carbide_macos::{ColorPanel, SavePanel};
-use carbide_wgpu::{Application, Window};
-use futures::future::Map;
-use futures::FutureExt;
-use oneshot::RecvError;
+use carbide_core::Color;
 use carbide_core::asynchronous::StartStream;
 use carbide_core::color::YELLOW;
-use carbide_core::event::CustomEvent;
+use carbide_core::draw::Dimension;
+use carbide_core::environment::Environment;
+use carbide_core::state::{LocalState, State};
+use carbide_core::widget::*;
+use carbide_macos::ColorPanel;
+use carbide_wgpu::{Application, Window};
 
 fn main() {
 

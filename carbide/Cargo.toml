@@ -2,7 +2,7 @@
 name = "carbide"
 version = "0.70.1"
 authors = ["Holger Gott Christensen <hoch@itu.dk>"]
-edition = "2018"
+edition = "2021"
 keywords = ["ui", "widgets", "gui", "interface", "graphics"]
 categories = ["gui"]
 license = "MIT OR Apache-2.0"

@@ -1,46 +1,40 @@
 use carbide_core::draw::{Dimension, Position, Rect};
-use carbide_core::prelude::EnvironmentColor::{Blue, Green, Red, Yellow};
+use carbide_core::environment::EnvironmentColor::*;
 use carbide_core::widget::*;
-use carbide_wgpu::window::*;
+use carbide_wgpu::{Application, Window};
 
 fn main() {
-    env_logger::init();
+    let mut application = Application::new()
+        .with_asset_fonts();
 
-    let icon_path = Window::relative_path_to_assets("images/rust_press.png");
+    application.set_scene(Window::new(
+        "Sub images example",
+        Dimension::new(400.0, 600.0),
+        VStack::new(vec![
+            HStack::new(vec![
+                Image::new_icon("images/rust.png")
+                    .source_rectangle(rect(0, 0))
+                    .border()
+                    .accent_color(Yellow),
+                Image::new_icon("images/rust.png")
+                    .source_rectangle(rect(1, 0))
+                    .border()
+                    .accent_color(Red),
+            ]),
+            HStack::new(vec![
+                Image::new_icon("images/rust.png")
+                    .source_rectangle(rect(0, 1))
+                    .border()
+                    .accent_color(Green),
+                Image::new_icon("images/rust.png")
+                    .source_rectangle(rect(1, 1))
+                    .border()
+                    .accent_color(Blue),
+            ]),
+        ])
+    ).close_application_on_window_close());
 
-    let mut window = Window::new(
-        "Sub images example".to_string(),
-        400,
-        600,
-        Some(icon_path.clone()),
-    );
-
-    let image_id = window.add_image_from_path("images/rust.png");
-
-    window.set_widgets(VStack::new(vec![
-        HStack::new(vec![
-            Image::new_icon(image_id)
-                .source_rectangle(rect(0, 0))
-                .border()
-                .accent_color(Yellow),
-            Image::new_icon(image_id)
-                .source_rectangle(rect(1, 0))
-                .border()
-                .accent_color(Red),
-        ]),
-        HStack::new(vec![
-            Image::new_icon(image_id)
-                .source_rectangle(rect(0, 1))
-                .border()
-                .accent_color(Green),
-            Image::new_icon(image_id)
-                .source_rectangle(rect(1, 1))
-                .border()
-                .accent_color(Blue),
-        ]),
-    ]));
-
-    window.launch();
+    application.launch();
 }
 
 fn rect(pos_x: u32, pos_y: u32) -> Rect {

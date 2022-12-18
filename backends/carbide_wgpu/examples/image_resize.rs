@@ -1,28 +1,16 @@
-use carbide_core::prelude::EnvironmentColor;
-use carbide_core::text::FontFamily;
+use carbide_core::draw::Dimension;
 use carbide_core::widget::*;
-use carbide_wgpu::window::*;
-use std::path::PathBuf;
+use carbide_wgpu::{Application, Window};
 
 fn main() {
-    let icon_path = Window::relative_path_to_assets("images/rust.png");
-    println!("{:?}", icon_path);
+    let mut application = Application::new()
+        .with_asset_fonts();
 
-    let mut window = Window::new(
-        "Materials example".to_string(),
-        400,
-        300,
-        Some(icon_path.clone()),
-    );
+    application.set_scene(Window::new(
+        "Image resize example",
+        Dimension::new(400.0, 300.0),
+        Image::new("images/lcabyg.png").resizeable()
+    ));
 
-    /*et family = FontFamily::new_from_paths("NotoSans", vec![
-        "fonts/NotoSans/NotoSans-Regular.ttf",
-    ]);
-    window.add_font_family(family);*/
-
-    let lcabyg_icon_id = window.add_image_from_path("images/lcabyg.png");
-
-    window.set_widgets(Image::new(lcabyg_icon_id).resizeable());
-
-    window.launch();
+    application.launch();
 }

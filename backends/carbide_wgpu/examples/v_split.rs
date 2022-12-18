@@ -1,36 +1,29 @@
+use carbide_core::draw::Dimension;
 use carbide_core::environment::EnvironmentColor;
 use carbide_core::state::{LocalState, StateExt, TState};
-use carbide_core::text::FontFamily;
 use carbide_core::widget::*;
-use carbide_wgpu::window::*;
+use carbide_wgpu::{Application, Window};
 
 fn main() {
-    env_logger::init();
-
-    let icon_path = Window::relative_path_to_assets("images/rust_press.png");
-
-    let mut window = Window::new(
-        "VSplit example".to_string(),
-        600,
-        400,
-        Some(icon_path.clone()),
-    );
-
-    let family =
-        FontFamily::new_from_paths("NotoSans", vec!["fonts/NotoSans/NotoSans-Regular.ttf"]);
-    window.add_font_family(family);
-
     let height1 = LocalState::new(0.1);
     let percent = LocalState::new(0.1);
     let height2 = LocalState::new(0.1);
 
-    window.set_widgets(HStack::new(vec![
-        v_split(&height1).relative_to_start(height1),
-        v_split(&percent).percent(percent),
-        v_split(&height2).relative_to_end(height2),
-    ]));
+    let mut application = Application::new()
+        .with_asset_fonts();
 
-    window.launch();
+
+    application.set_scene(Window::new(
+        "VSplit example",
+        Dimension::new(600.0, 400.0),
+        HStack::new(vec![
+            v_split(&height1).relative_to_start(height1),
+            v_split(&percent).percent(percent),
+            v_split(&height2).relative_to_end(height2),
+        ])
+    ));
+
+    application.launch();
 }
 
 fn v_split(size: &TState<f64>) -> Box<VSplit> {
