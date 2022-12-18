@@ -75,12 +75,14 @@ pub fn draw_commands_to_render_pass_commands<'a>(
         match command {
             // Update the `scissor` before continuing to draw.
             DrawCommand::Scissor(scissor_rect) => {
-                let top_left = [scissor_rect.bottom() as u32, scissor_rect.left() as u32];
+                let top_left = [scissor_rect.left() as u32, scissor_rect.bottom() as u32];
                 let dimensions = [scissor_rect.width() as u32, scissor_rect.height() as u32];
+
                 let cmd = RenderPassCommand::SetScissor {
                     top_left,
                     dimensions,
                 };
+
                 inner_commands.push(cmd);
             }
 

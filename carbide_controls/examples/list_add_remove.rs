@@ -60,6 +60,7 @@ fn main() {
         VStack::new(vec![
             List::new(list_model_state.clone(), delegate)
                 .clip()
+                .border()
                 .frame(350.0, 200.0),
             HStack::new(vec![add_element, remove_element]).spacing(10.0),
             HStack::new(vec![add_to_start, remove_first]).spacing(10.0),
