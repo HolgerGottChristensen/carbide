@@ -106,12 +106,12 @@ fn main() {
                     let dt = Utc.timestamp(article.time as i64, 0);
                     format!("by {} {}, {}", article.by, dt.format("%D"), dt.format("%I:%M %p"))
                 })),
-                Image::new_icon(Application::assets().join("icons/thumb-up-line.png"))
+                Image::new_icon("icons/thumb-up-line.png")
                     .resizeable()
                     .frame(16, 16)
                     .accent_color(EnvironmentColor::SecondaryLabel),
                 Text::new(lens!(Article; article.score)).custom_flexibility(3),
-                Image::new_icon(Application::assets().join("icons/chat-1-line.png"))
+                Image::new_icon("icons/chat-1-line.png")
                     .resizeable()
                     .frame(16, 16)
                     .accent_color(EnvironmentColor::SecondaryLabel),

@@ -106,7 +106,19 @@ impl Layout for Image {
 
         if let Some(image_id) = &*self.image_id.value() {
             if !env.image_map.contains_key(image_id) {
-                let image = image::open(image_id)
+                let path = if image_id.is_relative() {
+                    let assets = carbide_core::locate_folder::Search::KidsThenParents(3, 5)
+                        .for_folder("assets")
+                        .unwrap();
+
+                    assets.join(image_id)
+                } else {
+                    image_id.as_ref().to_path_buf()
+                };
+
+
+
+                let image = image::open(path)
                     .expect("Couldn't load logo")
                     .pre_multiplied();
 

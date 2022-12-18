@@ -16,6 +16,10 @@ impl ImageId {
     pub fn new(path: impl Into<PathBuf>) -> Self {
         ImageId(Rc::new(path.into()))
     }
+
+    pub fn is_relative(&self) -> bool {
+        self.0.is_relative()
+    }
 }
 
 impl Default for ImageId {
