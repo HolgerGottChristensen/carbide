@@ -1,27 +1,27 @@
 use std::borrow::Borrow;
-use std::collections::HashMap;
-use winit::dpi::{LogicalSize, Size};
-use winit::event::{Event, VirtualKeyCode, WindowEvent as WinitWindowEvent};
-use winit::event_loop::{EventLoopWindowTarget, EventLoop as WinitEventLoop, ControlFlow};
-use winit::window::{WindowBuilder, WindowId as WinitWindowId};
-use carbide_core::environment::Environment;
-use carbide_core::event::{CustomEvent, EventHandler, Input, WindowEvent};
-use carbide_core::widget::{Empty, Rectangle, Widget};
-use carbide_winit::{convert_mouse_cursor, convert_window_event};
-use carbide_winit::EventLoop;
-use crate::wgpu_window::WGPUWindow;
 use std::cell::RefCell;
+use std::collections::HashMap;
 use std::ffi::OsStr;
 use std::fs;
 use std::mem::transmute;
 use std::path::{Path, PathBuf};
-use carbide_core::draw::Dimension;
-use carbide_core::render::Render;
+
+use winit::event::{Event, WindowEvent as WinitWindowEvent};
+use winit::event_loop::{ControlFlow, EventLoop as WinitEventLoop, EventLoopWindowTarget};
+use winit::window::WindowId as WinitWindowId;
+
 use carbide_core::{locate_folder, Scene};
-use carbide_core::draw::image::ImageId;
+use carbide_core::draw::Dimension;
+use carbide_core::environment::Environment;
+use carbide_core::event::{CustomEvent, EventHandler, Input};
+use carbide_core::render::Render;
 use carbide_core::text::{FontFamily, FontId};
-use crate::proxy_event_loop::ProxyEventLoop;
+use carbide_core::widget::Empty;
 use carbide_core::window::WindowId;
+use carbide_winit::convert_window_event;
+use carbide_winit::EventLoop;
+
+use crate::proxy_event_loop::ProxyEventLoop;
 
 thread_local!(pub static EVENT_LOOP: RefCell<EventLoop<CustomEvent>> = RefCell::new(EventLoop::Owned(WinitEventLoop::<CustomEvent>::with_user_event())));
 thread_local!(pub static WINDOW_IDS: RefCell<HashMap<WinitWindowId, WindowId>> = RefCell::new(HashMap::new()));

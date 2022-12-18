@@ -7,19 +7,17 @@
 
 
 use cgmath::{Matrix4, SquareMatrix, Vector3};
-use image::{GenericImageView};
+use image::GenericImageView;
 
 use crate::color;
-use crate::draw::draw_gradient::DrawGradient;
-use crate::draw::image::ImageId;
 use crate::draw::{Position, Rect, Scalar};
+use crate::draw::image::ImageId;
 use crate::environment::Environment;
 use crate::layout::BasicLayouter;
-use crate::mesh::vertex::Vertex;
 use crate::mesh::{MODE_GEOMETRY, MODE_TEXT, MODE_TEXT_COLOR};
 use crate::mesh::draw_command::DrawCommand;
+use crate::mesh::vertex::Vertex;
 use crate::render::{Primitive, PrimitiveKind};
-use crate::widget::FilterId;
 
 /// A mesh whose vertices may be populated by a list of render primitives.
 ///

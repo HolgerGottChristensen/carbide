@@ -14,6 +14,6 @@ members = [
     # "backends/carbide_vulkano",
     "backends/carbide_wgpu",
     "backends/carbide_macos",
-    #"backends/carbide_printpdf",
+    "backends/carbide_printpdf",
     "carbide"
 ]
