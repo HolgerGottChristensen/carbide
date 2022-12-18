@@ -1,14 +1,8 @@
-use futures::executor::block_on;
-use serde::Deserialize;
-use serde::Serialize;
-
-use carbide_controls::PopUpButton;
 use carbide_controls::{PlainPopUpButton, PlainTextInput};
+use carbide_core::draw::Dimension;
 use carbide_core::state::LocalState;
-use carbide_core::text::FontFamily;
 use carbide_core::widget::*;
-use carbide_core::window::TWindow;
-use carbide_wgpu::window::Window;
+use carbide_wgpu::{Application, Window};
 
 use crate::Month::{
     April, December, February, January, July, June, March, May, November, October, September,
@@ -37,21 +31,6 @@ impl Default for Month {
 }
 
 fn main() {
-    env_logger::init();
-
-    let icon_path = Window::relative_path_to_assets("images/rust_press.png");
-
-    let mut window = Window::new(
-        "Focus behavior example - Carbide".to_string(),
-        400,
-        600,
-        Some(icon_path),
-    );
-
-    let mut family =
-        FontFamily::new_from_paths("NotoSans", vec!["fonts/NotoSans/NotoSans-Regular.ttf"]);
-    window.add_font_family(family);
-
     let text_state = LocalState::new("Hello World!".to_string());
     let text_state2 = LocalState::new("Hej Verden!".to_string());
     let text_state3 = LocalState::new("Hallo Welt!".to_string());
@@ -65,7 +44,12 @@ fn main() {
         January, February, March, April, May, June, July, September, October, November, December,
     ]);
 
-    window.set_widgets(
+    let mut application = Application::new()
+        .with_asset_fonts();
+
+    application.set_scene(Window::new(
+        "Focus behavior example - Carbide",
+        Dimension::new(400.0, 600.0),
         VStack::new(vec![
             PlainTextInput::new(text_state)
                 .font_size(40)
@@ -104,8 +88,8 @@ fn main() {
             //PopUpButton::new(model, selected).padding(EdgeInsets::all(50.0)),
             PlainPopUpButton::new(model, selected).padding(50.0),
         ])
-        .spacing(20.0),
-    );
+            .spacing(20.0)
+    ).close_application_on_window_close());
 
-    window.launch();
+    application.launch();
 }

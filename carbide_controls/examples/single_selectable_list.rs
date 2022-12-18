@@ -1,30 +1,16 @@
 use carbide_controls::List;
-use carbide_core::environment::{EnvironmentColor, EnvironmentFontSize};
+use carbide_core::{Color, lens};
+use carbide_core::draw::Dimension;
+use carbide_core::environment::EnvironmentColor;
 use carbide_core::state::{
-    LocalState, Map2, ReadState, State, StateExt, StringState, TState, UsizeState,
+    LocalState, Map2, StateExt, TState,
 };
-use carbide_core::text::FontFamily;
 use carbide_core::widget::*;
-use carbide_core::window::TWindow;
-use carbide_core::{lens, Color};
-use carbide_wgpu::window::Window;
-use std::collections::HashSet;
+use carbide_wgpu::{Application, Window};
 
 fn main() {
-    env_logger::init();
-
-    let icon_path = Window::relative_path_to_assets("images/rust_press.png");
-
-    let mut window = Window::new(
-        "Single-Selectable List Example - Carbide",
-        400,
-        600,
-        Some(icon_path),
-    );
-
-    let family =
-        FontFamily::new_from_paths("NotoSans", vec!["fonts/NotoSans/NotoSans-Regular.ttf"]);
-    window.add_font_family(family);
+    let mut application = Application::new()
+        .with_asset_fonts();
 
     let list_model = (1..20)
         .map(|i| (format!("Number {}", i), WidgetId::new()))
@@ -39,7 +25,7 @@ fn main() {
 
     let selected_item_delegate = selected_item.clone();
 
-    let delegate = move |item: TState<(String, WidgetId)>, _: UsizeState| -> Box<dyn Widget> {
+    let delegate = move |item: TState<(String, WidgetId)>, _: TState<usize>| -> Box<dyn Widget> {
         let selected = Map2::read_map(
             selected_item_delegate.clone(),
             item.clone(),
@@ -64,11 +50,13 @@ fn main() {
         .expand_width()
     };
 
-    window.set_widgets(
+    application.set_scene(Window::new(
+        "Single-Selectable List Example - Carbide",
+        Dimension::new(400.0, 600.0),
         List::new(list_model_state, delegate)
             .selectable(id_function, selected_item)
             .frame(350.0, 500.0),
-    );
+    ).close_application_on_window_close());
 
-    window.launch();
+    application.launch();
 }

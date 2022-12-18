@@ -1,15 +1,8 @@
-extern crate carbide_core;
-extern crate carbide_wgpu;
-extern crate env_logger;
-extern crate futures;
-
-use carbide_controls::{PlainPopUpButton, PopUpButton};
-use carbide_core::prelude::EnvironmentColor;
+use carbide_controls::PopUpButton;
+use carbide_core::draw::Dimension;
 use carbide_core::state::LocalState;
-use carbide_core::text::FontFamily;
 use carbide_core::widget::*;
-use carbide_core::window::TWindow;
-use carbide_wgpu::window::Window;
+use carbide_wgpu::{Application, Window};
 
 use crate::Month::{
     April, December, February, January, July, June, March, May, November, October, September,
@@ -38,28 +31,20 @@ impl Default for Month {
 }
 
 fn main() {
-    env_logger::init();
-
-    let icon_path = Window::relative_path_to_assets("images/rust_press.png");
-
-    let mut window = Window::new(
-        "Pop up Button Example - Carbide".to_string(),
-        400,
-        600,
-        Some(icon_path),
-    );
-
-    let family =
-        FontFamily::new_from_paths("NotoSans", vec!["fonts/NotoSans/NotoSans-Regular.ttf"]);
-    window.add_font_family(family);
-
     let selected = LocalState::new(January);
 
     let model = LocalState::new(vec![
         January, February, March, April, May, June, July, September, October, November, December,
     ]);
 
-    window.set_widgets(PopUpButton::new(model, selected).frame_fixed_width(200));
+    let mut application = Application::new()
+        .with_asset_fonts();
 
-    window.launch();
+    application.set_scene(Window::new(
+        "Pop up Button Example - Carbide",
+        Dimension::new(400.0, 600.0),
+        PopUpButton::new(model, selected).frame_fixed_width(200)
+    ).close_application_on_window_close());
+
+    application.launch();
 }

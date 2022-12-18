@@ -1,48 +1,31 @@
-extern crate carbide_core;
-extern crate carbide_wgpu;
-extern crate env_logger;
-extern crate futures;
-
-use futures::executor::block_on;
-use serde::{Deserialize, Serialize};
-
-use carbide_controls::{CheckBox, CheckBoxValue, PlainCheckBox, TextInput};
-use carbide_core::state::{LocalState, State};
-use carbide_core::text::{FontFamily, FontStyle, FontWeight};
+use carbide_controls::{CheckBox, CheckBoxValue};
+use carbide_core::draw::Dimension;
+use carbide_core::state::LocalState;
 use carbide_core::widget::*;
-use carbide_wgpu::window::{TWindow, Window};
+use carbide_wgpu::{Application, Window};
 
 fn main() {
-    env_logger::init();
-    let icon_path = Window::relative_path_to_assets("images/rust_press.png");
-
-    let mut window = Window::new(
-        "Checkbox Example - Carbide".to_string(),
-        400,
-        600,
-        Some(icon_path),
-    );
-
-    let mut family =
-        FontFamily::new_from_paths("NotoSans", vec!["fonts/NotoSans/NotoSans-Regular.ttf"]);
-    window.add_font_family(family);
-
     let checkbox_state1 = LocalState::new(CheckBoxValue::False);
     let checkbox_state2 = LocalState::new(CheckBoxValue::False);
     let checkbox_state3 = LocalState::new(CheckBoxValue::Intermediate);
     let checkbox_state4 = LocalState::new(true);
 
-    window.set_widgets(
+    let mut application = Application::new()
+        .with_asset_fonts();
+
+    application.set_scene(Window::new(
+        "Checkbox Example - Carbide",
+        Dimension::new(400.0, 600.0),
         VStack::new(vec![
             CheckBox::new("Rectangle", checkbox_state1),
             CheckBox::new("Circle", checkbox_state2),
             CheckBox::new("Triangle", checkbox_state3),
             CheckBox::new("Star", checkbox_state4),
         ])
-        .spacing(10.0)
-        .cross_axis_alignment(CrossAxisAlignment::Start)
-        .padding(EdgeInsets::all(40.0)),
-    );
+            .spacing(10.0)
+            .cross_axis_alignment(CrossAxisAlignment::Start)
+            .padding(EdgeInsets::all(40.0))
+    ).close_application_on_window_close());
 
-    window.launch();
+    application.launch();
 }

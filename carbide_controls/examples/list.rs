@@ -1,21 +1,13 @@
 use carbide_controls::List;
-use carbide_core::environment::{EnvironmentColor, EnvironmentFontSize};
-use carbide_core::state::{LocalState, State, StringState, TState, UsizeState};
-use carbide_core::text::FontFamily;
+use carbide_core::draw::Dimension;
+use carbide_core::environment::EnvironmentColor;
+use carbide_core::state::{LocalState, TState};
 use carbide_core::widget::*;
-use carbide_core::window::TWindow;
-use carbide_wgpu::window::Window;
+use carbide_wgpu::{Application, Window};
 
 fn main() {
-    env_logger::init();
-
-    let icon_path = Window::relative_path_to_assets("images/rust_press.png");
-
-    let mut window = Window::new("List Example - Carbide", 400, 600, Some(icon_path));
-
-    let family =
-        FontFamily::new_from_paths("NotoSans", vec!["fonts/NotoSans/NotoSans-Regular.ttf"]);
-    window.add_font_family(family);
+    let mut application = Application::new()
+        .with_asset_fonts();
 
     let list_model = (1..100)
         .map(|i| format!("Number {}", i))
@@ -23,7 +15,7 @@ fn main() {
 
     let list_model_state = LocalState::new(list_model);
 
-    fn delegate(item: StringState, _: UsizeState) -> Box<dyn Widget> {
+    fn delegate(item: TState<String>, _: TState<usize>) -> Box<dyn Widget> {
         ZStack::new(vec![
             Rectangle::new().fill(EnvironmentColor::Green),
             Text::new(item),
@@ -31,7 +23,11 @@ fn main() {
         .frame_fixed_height(80.0)
     }
 
-    window.set_widgets(List::new(list_model_state, delegate).clip().padding(50.0));
+    application.set_scene(Window::new(
+        "List Example - Carbide",
+        Dimension::new(400.0, 600.0),
+        List::new(list_model_state, delegate).clip().padding(50.0)
+    ).close_application_on_window_close());
 
-    window.launch();
+    application.launch();
 }

@@ -1,46 +1,23 @@
-extern crate carbide_core;
-extern crate carbide_wgpu;
-extern crate env_logger;
-extern crate futures;
-
-use carbide_controls::{Button, PlainButton};
-use carbide_core::color::RED;
+use carbide_controls::Button;
+use carbide_core::draw::Dimension;
 use carbide_core::focus::Focus;
-use carbide_core::state::{
-    BoolState, FocusState, I32State, LocalState, MapOwnedState, State, StateExt,
-};
-use carbide_core::text::{FontFamily, FontStyle, FontWeight};
+use carbide_core::state::{LocalState, State, StateExt};
 use carbide_core::widget::*;
-use carbide_core::window::TWindow;
-use carbide_wgpu::window::Window;
+use carbide_wgpu::{Application, Window};
 
 fn main() {
-    env_logger::init();
+    let mut application = Application::new()
+        .with_asset_fonts();
 
-    let icon_path = Window::relative_path_to_assets("images/rust_press.png");
+    let hover_state = LocalState::new(false);
+    let pressed_state = LocalState::new(false);
+    let focus_state = LocalState::new(Focus::Focused);
+    let counter_state = LocalState::new(0);
+    let button_counter_state = counter_state.clone();
 
-    let mut window = Window::new(
-        "Button Example - Carbide".to_string(),
-        400,
-        600,
-        Some(icon_path),
-    );
-
-    let mut family = FontFamily::new("NotoSans");
-    family.add_font_with_hints(
-        "fonts/NotoSans/NotoSans-Regular.ttf",
-        FontWeight::Normal,
-        FontStyle::Normal,
-    );
-    window.add_font_family(family);
-
-    let hover_state: BoolState = LocalState::new(false).into();
-    let pressed_state: BoolState = LocalState::new(false).into();
-    let focus_state: FocusState = LocalState::new(Focus::Focused).into();
-    let counter_state: I32State = LocalState::new(0).into();
-    let button_counter_state: I32State = counter_state.clone();
-
-    window.set_widgets(
+    application.set_scene(Window::new(
+        "Button Example - Carbide",
+        Dimension::new(400.0, 600.0),
         VStack::new(vec![
             Button::new("Add 1")
                 .on_click(move |_: &mut _, _: _| {
@@ -60,8 +37,8 @@ fn main() {
             Text::new(focus_state.mapped(|focus: &Focus| format!("Focus: {:?}", focus)))
                 .font_size(40),
         ])
-        .spacing(20.0),
-    );
+            .spacing(20.0)
+    ).close_application_on_window_close());
 
-    window.launch();
+    application.launch();
 }

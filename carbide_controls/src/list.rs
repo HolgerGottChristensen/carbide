@@ -606,7 +606,7 @@ impl<T: StateContract, U: Delegate<T> + 'static> Delegate<T> for SelectableListD
                                 let max = max(*index.value(), *last_selected_index.value());
 
                                 for val in min..=max {
-                                    dbg!(&internal_model);
+                                    //dbg!(&internal_model);
                                     let id = id_function(&internal_model.value()[val]);
 
                                     selections.value_mut().insert(id);

@@ -12,7 +12,7 @@ use crate::PlainCheckBox;
 pub struct CheckBox;
 
 impl CheckBox {
-    pub fn new<S: , L: >(
+    pub fn new(
         label: impl Into<TState<String>>,
         checked: impl Into<CheckBoxState>,
     ) -> Box<PlainCheckBox> {

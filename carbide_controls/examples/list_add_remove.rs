@@ -1,34 +1,21 @@
-use carbide_controls::capture;
 use carbide_controls::{Button, List};
+use carbide_controls::capture;
+use carbide_core::draw::Dimension;
+use carbide_core::environment::EnvironmentColor;
 use carbide_core::environment::Environment;
-use carbide_core::environment::{EnvironmentColor, EnvironmentFontSize};
-use carbide_core::state::{LocalState, State, StringState, TState, UsizeState};
-use carbide_core::text::FontFamily;
+use carbide_core::state::{LocalState, State, TState};
 use carbide_core::widget::*;
-use carbide_core::window::TWindow;
-use carbide_wgpu::window::Window;
+use carbide_wgpu::{Application, Window};
 
 fn main() {
-    env_logger::init();
-
-    let icon_path = Window::relative_path_to_assets("images/rust_press.png");
-
-    let mut window = Window::new(
-        "List Add/Remove Example - Carbide",
-        400,
-        400,
-        Some(icon_path),
-    );
-
-    let family =
-        FontFamily::new_from_paths("NotoSans", vec!["fonts/NotoSans/NotoSans-Regular.ttf"]);
-    window.add_font_family(family);
+    let mut application = Application::new()
+        .with_asset_fonts();
 
     let list_model = (1..10).map(|i| format!("Number {}", i)).collect::<Vec<_>>();
 
     let list_model_state = LocalState::new(list_model);
 
-    fn delegate(item: StringState, _: UsizeState) -> Box<dyn Widget> {
+    fn delegate(item: TState<String>, _: TState<usize>) -> Box<dyn Widget> {
         ZStack::new(vec![
             RoundedRectangle::new(CornerRadii::all(10.0)).fill(EnvironmentColor::Green),
             Text::new(item),
@@ -67,7 +54,9 @@ fn main() {
         .frame(150.0, 22.0)
         .accent_color(EnvironmentColor::Red);
 
-    window.set_widgets(
+    application.set_scene(Window::new(
+        "List Add/Remove Example - Carbide",
+        Dimension::new(400.0, 400.0),
         VStack::new(vec![
             List::new(list_model_state.clone(), delegate)
                 .clip()
@@ -75,8 +64,8 @@ fn main() {
             HStack::new(vec![add_element, remove_element]).spacing(10.0),
             HStack::new(vec![add_to_start, remove_first]).spacing(10.0),
         ])
-        .spacing(10.0),
-    );
+            .spacing(10.0)
+    ).close_application_on_window_close());
 
-    window.launch();
+    application.launch();
 }

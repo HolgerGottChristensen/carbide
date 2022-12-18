@@ -1,12 +1,12 @@
-use crate::Tree::{Leaf, SubTree};
 use carbide_controls::{List, TreeDisclosure};
+use carbide_core::draw::Dimension;
 use carbide_core::environment::EnvironmentColor;
 use carbide_core::lens;
-use carbide_core::state::{LocalState, StateExt, TState, UsizeState};
-use carbide_core::text::FontFamily;
+use carbide_core::state::{LocalState, StateExt, TState};
 use carbide_core::widget::*;
-use carbide_core::window::TWindow;
-use carbide_wgpu::window::Window;
+use carbide_wgpu::{Application, Window};
+
+use crate::Tree::{Leaf, SubTree};
 
 #[derive(Clone, Debug)]
 enum Tree {
@@ -15,15 +15,8 @@ enum Tree {
 }
 
 fn main() {
-    env_logger::init();
-
-    let icon_path = Window::relative_path_to_assets("images/rust_press.png");
-
-    let mut window = Window::new("Tree List Example - Carbide", 400, 600, Some(icon_path));
-
-    let family =
-        FontFamily::new_from_paths("NotoSans", vec!["fonts/NotoSans/NotoSans-Regular.ttf"]);
-    window.add_font_family(family);
+    let mut application = Application::new()
+        .with_asset_fonts();
 
     let list_model: Tree = SubTree(
         "Root".to_string(),
@@ -57,7 +50,7 @@ fn main() {
 
     let list_model_state = LocalState::new(vec![list_model]);
 
-    let delegate = move |item: TState<Tree>, _: UsizeState| -> Box<dyn Widget> {
+    let delegate = move |item: TState<Tree>, _: TState<usize>| -> Box<dyn Widget> {
         ZStack::new(vec![
             Rectangle::new().fill(EnvironmentColor::SystemFill),
             Text::new(lens!(Tree; |item| {
@@ -80,7 +73,9 @@ fn main() {
         .ignore_writes()
     }
 
-    window.set_widgets(
+    application.set_scene(Window::new(
+        "Tree List Example - Carbide",
+        Dimension::new(400.0, 600.0),
         List::new(list_model_state, delegate)
             .tree(tree_children, TreeDisclosure::Arrow)
             .clip()
@@ -88,7 +83,7 @@ fn main() {
             .border_width(1)
             .color(EnvironmentColor::OpaqueSeparator)
             .padding(40.0),
-    );
+    ).close_application_on_window_close());
 
-    window.launch();
+    application.launch();
 }
