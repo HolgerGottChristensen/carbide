@@ -1,7 +1,7 @@
 use std::fmt::{Debug, Formatter};
 
 use image::{DynamicImage, GenericImage, Rgba};
-use rusttype::{point, GlyphId, Scale, VMetrics};
+use carbide_rusttype::{point, GlyphId, Scale, VMetrics};
 use ttf_parser::Weight;
 
 use crate::draw::Position;
@@ -10,8 +10,8 @@ use crate::environment::Environment;
 use crate::text::glyph::Glyph;
 use crate::text::{FontId, FontSize, FontStyle, FontWeight};
 
-type RustTypeFont = rusttype::Font<'static>;
-type RustTypeScale = rusttype::Scale;
+type RustTypeFont = carbide_rusttype::Font<'static>;
+type RustTypeScale = carbide_rusttype::Scale;
 
 const POINT_TO_PIXEL: f32 = 1.0;
 
@@ -21,7 +21,6 @@ pub struct Font {
     path: String,
     // Should in the future be a collection of different font weights
     font: RustTypeFont,
-    height: Scalar,
     bitmap_font: bool,
 }
 
@@ -291,7 +290,6 @@ impl Font {
             font_id: usize::MAX,
             path: path.display().to_string(),
             font: inner_font,
-            height: 0.0,
             bitmap_font: false,
         })
     }
@@ -317,7 +315,6 @@ impl Font {
             font_id: usize::MAX,
             path: path.display().to_string(),
             font: inner_font,
-            height: 0.0,
             bitmap_font: true,
         })
     }

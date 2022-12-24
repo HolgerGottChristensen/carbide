@@ -2,7 +2,7 @@ use std::fmt;
 use std::fmt::{Display, Formatter};
 use std::ops::{Add, AddAssign, Div, Mul, Sub, SubAssign};
 
-use rusttype::Point;
+use carbide_rusttype::Point;
 
 use crate::draw::Dimension;
 use crate::draw::Scalar;

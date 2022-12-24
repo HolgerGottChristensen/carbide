@@ -5,7 +5,7 @@ use std::rc::{Rc, Weak};
 use crate::draw::image::ImageId;
 use fxhash::{FxBuildHasher, FxHashMap};
 use image::GenericImageView;
-use rusttype::{GlyphId, Point, Rect};
+use carbide_rusttype::{GlyphId, Point, Rect};
 
 use crate::draw::Position;
 use crate::draw::Scalar;

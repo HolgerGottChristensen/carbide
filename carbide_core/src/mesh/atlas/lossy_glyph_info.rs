@@ -1,4 +1,4 @@
-use rusttype::GlyphId;
+use carbide_rusttype::GlyphId;
 
 use crate::text::{FontId, FontSize};
 

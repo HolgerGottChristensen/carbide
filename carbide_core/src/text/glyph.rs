@@ -1,5 +1,5 @@
 use carbide_core::mesh::AtlasEntry;
-use rusttype::{point, GlyphId, PositionedGlyph};
+use carbide_rusttype::{point, GlyphId, PositionedGlyph};
 
 use crate::draw::{Dimension, Position, Rect};
 use crate::text::{FontId, FontSize};
@@ -28,7 +28,7 @@ pub struct Glyph {
     atlas_entry: Option<AtlasEntry>,
 
     /// This bb has been scaled to the correct size.
-    inner_glyph_bb: Option<rusttype::Rect<f32>>,
+    inner_glyph_bb: Option<carbide_rusttype::Rect<f32>>,
     width_of_glyph_from_origin: Scalar,
     advance_width: Scalar,
 
@@ -46,7 +46,7 @@ impl Glyph {
             .font()
             .inner()
             .glyph_bounding_box(glyph_id.into())
-            .map(|ttf_bb| rusttype::Rect {
+            .map(|ttf_bb| carbide_rusttype::Rect {
                 min: point(
                     ttf_bb.x_min as f32 * scale_x,
                     -ttf_bb.y_max as f32 * scale_y,
@@ -126,7 +126,7 @@ impl Glyph {
     fn recalculate_bb(&self, position: Position) -> Option<Rect> {
         let fraction_of_position = position.fraction();
         let truncated = position.truncated();
-        let translated_bb = self.inner_glyph_bb.map(|bb| rusttype::Rect {
+        let translated_bb = self.inner_glyph_bb.map(|bb| carbide_rusttype::Rect {
             min: point(
                 (bb.min.x as f64 + fraction_of_position.x).floor() + truncated.x,
                 (bb.min.y as f64 + fraction_of_position.y).floor() + truncated.y,

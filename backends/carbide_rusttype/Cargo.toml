@@ -1,0 +1,15 @@
+[package]
+name = "carbide_rusttype"
+version = "0.1.0"
+edition = "2021"
+authors = [
+    "Dylan Ede <dylanede@googlemail.com>",
+    "Jeremy Soller <jackpot51@gmail.com>",
+    "Alex Butler <alexheretic@gmail.com>",
+]
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+owned_ttf_parser = { version = "0.17.1" }
+ab_glyph_rasterizer = { version = "0.1.1" }

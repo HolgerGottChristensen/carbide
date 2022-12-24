@@ -5,7 +5,7 @@ use std::fs::File;
 use std::io::BufWriter;
 use std::path::Path;
 
-use printpdf::{Color, Image as PdfImage, ImageTransform, Mm, OP_PATH_CONST_LINE_TO, OP_PATH_CONST_MOVE_TO, OP_PATH_CONST_RECT, OP_PATH_PAINT_FILL_NZ, PdfDocument, PdfDocumentReference, PdfLayerIndex, PdfPageIndex, Point, Px, Rgb};
+use printpdf::{Color, Image as PdfImage, ImageTransform, Mm, OP_PATH_CONST_LINE_TO, OP_PATH_CONST_MOVE_TO, OP_PATH_PAINT_FILL_NZ, PdfDocument, PdfDocumentReference, PdfLayerIndex, PdfPageIndex, Point, Px, Rgb};
 use printpdf::lopdf::content::Operation;
 
 use carbide_core::locate_folder;
