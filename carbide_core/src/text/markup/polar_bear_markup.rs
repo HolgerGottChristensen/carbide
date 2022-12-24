@@ -209,7 +209,7 @@ impl TextSpanGenerator for PolarBearMarkup {
                     let font = style.get_font(env);
 
                     let (widths, glyphs) =
-                        font.get_glyphs(&text, style.font_size, scale_factor, env);
+                        font.glyphs_for(&text, style.font_size, scale_factor, env);
                     let ascending_pixels = font.ascend(style.font_size, scale_factor);
                     let line_height = font.descend(style.font_size, scale_factor);
                     let line_gap = font.line_gap(style.font_size, scale_factor);
@@ -239,7 +239,7 @@ impl TextSpanGenerator for PolarBearMarkup {
                     let font = style.get_font(env);
 
                     let (widths, glyphs) =
-                        font.get_glyphs(&text, style.font_size, scale_factor, env);
+                        font.glyphs_for(&text, style.font_size, scale_factor, env);
                     let ascending_pixels = font.ascend(style.font_size, scale_factor);
                     let line_height = font.descend(style.font_size, scale_factor);
 
@@ -270,7 +270,7 @@ impl TextSpanGenerator for PolarBearMarkup {
                     let font = style.get_font(env);
 
                     let (widths, glyphs) =
-                        font.get_glyphs(&text, style.font_size, scale_factor, env);
+                        font.glyphs_for(&text, style.font_size, scale_factor, env);
                     let ascending_pixels = font.ascend(style.font_size, scale_factor);
                     let line_height = font.descend(style.font_size, scale_factor);
 
@@ -300,7 +300,7 @@ impl TextSpanGenerator for PolarBearMarkup {
                     let font = style.get_font(env);
 
                     let (widths, glyphs) =
-                        font.get_glyphs(&text, style.font_size, scale_factor, env);
+                        font.glyphs_for(&text, style.font_size, scale_factor, env);
                     let ascending_pixels = font.ascend(style.font_size, scale_factor);
                     let line_height = font.descend(style.font_size, scale_factor);
                     let line_gap = font.line_gap(style.font_size, scale_factor);
@@ -329,7 +329,7 @@ impl TextSpanGenerator for PolarBearMarkup {
                     let font = style.get_font(env);
 
                     let (widths, glyphs) =
-                        font.get_glyphs(&text, style.font_size, scale_factor, env);
+                        font.glyphs_for(&text, style.font_size, scale_factor, env);
                     let ascending_pixels = font.ascend(style.font_size, scale_factor);
                     let line_height = font.descend(style.font_size, scale_factor);
                     let line_gap = font.line_gap(style.font_size, scale_factor);
@@ -358,7 +358,7 @@ impl TextSpanGenerator for PolarBearMarkup {
                     let font = style.get_font(env);
 
                     let (widths, glyphs) =
-                        font.get_glyphs(&text, style.font_size, scale_factor, env);
+                        font.glyphs_for(&text, style.font_size, scale_factor, env);
                     let ascending_pixels = font.ascend(style.font_size, scale_factor);
                     let line_height = font.descend(style.font_size, scale_factor);
                     let line_gap = font.line_gap(style.font_size, scale_factor);
@@ -387,7 +387,7 @@ impl TextSpanGenerator for PolarBearMarkup {
                     let font = style.get_font(env);
 
                     let (widths, glyphs) =
-                        font.get_glyphs(&text, style.font_size, scale_factor, env);
+                        font.glyphs_for(&text, style.font_size, scale_factor, env);
                     let ascending_pixels = font.ascend(style.font_size, scale_factor);
                     let line_height = font.descend(style.font_size, scale_factor);
                     let line_gap = font.line_gap(style.font_size, scale_factor);

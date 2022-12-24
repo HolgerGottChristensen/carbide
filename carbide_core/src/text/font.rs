@@ -1,4 +1,5 @@
 use std::fmt::{Debug, Formatter};
+use std::path::Path;
 
 use image::{DynamicImage, GenericImage, Rgba};
 use carbide_rusttype::{point, GlyphId, Scale, VMetrics};
@@ -21,14 +22,147 @@ pub struct Font {
     path: String,
     // Should in the future be a collection of different font weights
     font: RustTypeFont,
-    bitmap_font: bool,
 }
 
 impl Debug for Font {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("Font")
-            .field("is_bitmap", &self.bitmap_font)
             .finish()
+    }
+}
+
+impl Font {
+    pub fn glyph_id(&self, c: char) -> Option<GlyphId> {
+        self.font
+            .inner()
+            .glyph_index(c)
+            .map(|ttf_parser::GlyphId(id)| GlyphId(id))
+    }
+
+    pub fn glyph_image(&self, id: GlyphId, size: FontSize, scale_factor: Scalar, position_offset: Position) -> Option<DynamicImage> {
+        let face = self.font.inner();
+        let raster_image = face.glyph_raster_image(
+            ttf_parser::GlyphId(id.0),
+            (size as f64 * scale_factor) as u16,
+        );
+
+        // If we got a raster image, we return that
+        if let Some(raster_image) = raster_image {
+            return Some(image::load_from_memory(raster_image.data).unwrap());
+        }
+
+        // Lookup the glyph outline
+        let scale = Font::size_to_scale(size, scale_factor);
+
+        let positioned_glyph = self
+            .get_inner()
+            .glyph(id)
+            .scaled(scale)
+            .positioned(point(position_offset.x as f32, position_offset.y as f32));
+
+        if let Some(bb) = positioned_glyph.pixel_bounding_box() {
+            let mut image_data = DynamicImage::new_rgba8(bb.width() as u32, bb.height() as u32);
+            positioned_glyph.draw(|x, y, value| {
+                image_data.put_pixel(x, y, Rgba::from([0, 0, 0, (value * 255.0) as u8]))
+            });
+            Some(image_data)
+        } else {
+            None
+        }
+    }
+
+    pub fn glyph_for(
+        &self,
+        c: char,
+        font_size: FontSize,
+        scale_factor: Scalar,
+    ) -> Option<(Scalar, Glyph)> {
+        println!("Looking up glyph for char: {} in font: {}", c, self.path);
+        let glyph_id = self.glyph_id(c);
+
+        glyph_id.map(|id| {
+            let scale = Font::size_to_scale(font_size, scale_factor);
+            let glyph_scaled = self.font.glyph(id).scaled(scale);
+            let w = glyph_scaled.h_metrics().advance_width;
+            let positioned = glyph_scaled.positioned(point(0.0, 0.0));
+            (
+                w as f64,
+                Glyph::new(c, font_size, self.font_id, positioned, self.is_bitmap(id)),
+            )
+        })
+    }
+
+    fn is_bitmap(&self, id: GlyphId) -> bool {
+        self.font.inner().glyph_raster_image(
+            ttf_parser::GlyphId(id.0),
+            1,
+        ).is_some()
+    }
+
+    pub fn glyphs_for(
+        &self,
+        text: &str,
+        font_size: FontSize,
+        scale_factor: Scalar,
+        env: &mut Environment,
+    ) -> (Vec<Scalar>, Vec<Glyph>) {
+        let scale = Font::size_to_scale(font_size, scale_factor);
+        let mut next_width = 0.0;
+        let mut widths = vec![];
+        let mut glyphs = vec![];
+        let mut last = None;
+
+        let glyph_ids = text
+            .chars()
+            .map(|c| self.glyph_id(c).map(|id| (id, c)).ok_or(c))
+            .collect::<Vec<_>>();
+
+        for glyph_id in glyph_ids {
+            match glyph_id {
+                Ok((id, c)) => {
+                    // If we have the glyph in our font.
+                    let glyph = self.font.glyph(id);
+                    let glyph_scaled = glyph.scaled(scale);
+                    if let Some(last) = last {
+                        let kerning = self.font.pair_kerning(scale, last, glyph_scaled.id());
+                        next_width += kerning as f64;
+                        widths.push(next_width);
+                        next_width = 0.0;
+                    }
+
+                    let w = glyph_scaled.h_metrics().advance_width;
+                    let next = glyph_scaled.positioned(point(0.0, 0.0));
+                    last = Some(next.id());
+                    next_width += w as f64;
+                    glyphs.push(Glyph::new(
+                        c,
+                        font_size,
+                        self.font_id,
+                        next,
+                        false,
+                    ));
+                }
+                Err(c) => {
+                    // Font fallback
+                    if let Some(_) = last {
+                        widths.push(next_width);
+                        next_width = 0.0;
+                    }
+                    last = None;
+
+                    let (width, glyph) = env.get_glyph_from_fallback(c, font_size, scale_factor);
+                    glyphs.push(glyph);
+                    widths.push(width);
+                }
+            }
+        }
+        // Widths are pushed such that they contain the width and the kerning between itself and the
+        // next character. If its the last, we push here.
+        if let Some(_) = last {
+            widths.push(next_width);
+        }
+
+        (widths, glyphs)
     }
 }
 
@@ -64,72 +198,8 @@ impl Font {
         }
     }
 
-    pub fn get_glyph_raster_image(
-        &self,
-        character: char,
-        font_size: FontSize,
-    ) -> Option<DynamicImage> {
-        let face = self.font.inner();
-        if let Some(id) = face.glyph_index(character) {
-            let raster_image = face.glyph_raster_image(id, font_size as u16);
-            raster_image.map(|raster| image::load_from_memory(raster.data).unwrap())
-        } else {
-            None
-        }
-    }
-
     pub fn set_font_id(&mut self, font_id: FontId) {
         self.font_id = font_id;
-    }
-
-    pub fn get_glyph_id(&self, c: char) -> Option<GlyphId> {
-        self.font
-            .inner()
-            .glyph_index(c)
-            .map(|ttf_parser::GlyphId(id)| GlyphId(id))
-    }
-
-    pub fn is_bitmap(&self) -> bool {
-        self.bitmap_font
-    }
-
-    pub fn get_glyph_raster_image_from_id(
-        &self,
-        id: GlyphId,
-        font_size: FontSize,
-        scale_factor: Scalar,
-    ) -> Option<DynamicImage> {
-        let face = self.font.inner();
-        let raster_image = face.glyph_raster_image(
-            ttf_parser::GlyphId(id.0),
-            (font_size as f64 * scale_factor) as u16,
-        );
-        raster_image.map(|raster| image::load_from_memory(raster.data).unwrap())
-    }
-
-    /// This will return None if the glyph has no boundingbox, for example the ' ' space character
-    pub fn get_glyph_image_from_id(
-        &self,
-        id: GlyphId,
-        font_size: FontSize,
-        scale_factor: Scalar,
-        position_offset: Position,
-    ) -> Option<DynamicImage> {
-        let scale = Font::size_to_scale(font_size, scale_factor);
-        let positioned_glyph = self
-            .get_inner()
-            .glyph(id)
-            .scaled(scale)
-            .positioned(point(position_offset.x as f32, position_offset.y as f32));
-        if let Some(bb) = positioned_glyph.pixel_bounding_box() {
-            let mut image_data = DynamicImage::new_rgba8(bb.width() as u32, bb.height() as u32);
-            positioned_glyph.draw(|x, y, value| {
-                image_data.put_pixel(x, y, Rgba::from([0, 0, 0, (value * 255.0) as u8]))
-            });
-            Some(image_data)
-        } else {
-            None
-        }
     }
 
     pub fn get_inner(&self) -> RustTypeFont {
@@ -139,93 +209,6 @@ impl Font {
 
     fn size_to_scale(font_size: FontSize, scale_factor: Scalar) -> RustTypeScale {
         Font::f32_pt_to_scale(font_size as f32 * scale_factor as f32)
-    }
-
-    pub fn get_glyph(
-        &self,
-        c: char,
-        font_size: FontSize,
-        scale_factor: Scalar,
-    ) -> Option<(Scalar, Glyph)> {
-        println!("Looking up glyph for char: {} in font: {}", c, self.path);
-        let glyph_id = self.get_glyph_id(c);
-
-        glyph_id.map(|id| {
-            let scale = Font::size_to_scale(font_size, scale_factor);
-            let glyph_scaled = self.font.glyph(id).scaled(scale);
-            let w = glyph_scaled.h_metrics().advance_width;
-            let positioned = glyph_scaled.positioned(point(0.0, 0.0));
-            (
-                w as f64,
-                Glyph::new(c, font_size, self.font_id, positioned, self.bitmap_font),
-            )
-        })
-    }
-
-    pub fn get_glyphs(
-        &self,
-        text: &str,
-        font_size: FontSize,
-        scale_factor: Scalar,
-        env: &mut Environment,
-    ) -> (Vec<Scalar>, Vec<Glyph>) {
-        let scale = Font::size_to_scale(font_size, scale_factor);
-        let mut next_width = 0.0;
-        let mut widths = vec![];
-        let mut glyphs = vec![];
-        let mut last = None;
-
-        let glyph_ids = text
-            .chars()
-            .map(|c| self.get_glyph_id(c).map(|id| (id, c)).ok_or(c))
-            .collect::<Vec<_>>();
-
-        for glyph_id in glyph_ids {
-            match glyph_id {
-                Ok((id, c)) => {
-                    // If we have the glyph in our font.
-                    let glyph = self.font.glyph(id);
-                    let glyph_scaled = glyph.scaled(scale);
-                    if let Some(last) = last {
-                        let kerning = self.font.pair_kerning(scale, last, glyph_scaled.id());
-                        next_width += kerning as f64;
-                        widths.push(next_width);
-                        next_width = 0.0;
-                    }
-
-                    let w = glyph_scaled.h_metrics().advance_width;
-                    let next = glyph_scaled.positioned(point(0.0, 0.0));
-                    last = Some(next.id());
-                    next_width += w as f64;
-                    glyphs.push(Glyph::new(
-                        c,
-                        font_size,
-                        self.font_id,
-                        next,
-                        self.bitmap_font,
-                    ));
-                }
-                Err(c) => {
-                    // Font fallback
-                    if let Some(_) = last {
-                        widths.push(next_width);
-                        next_width = 0.0;
-                    }
-                    last = None;
-
-                    let (width, glyph) = env.get_glyph_from_fallback(c, font_size, scale_factor);
-                    glyphs.push(glyph);
-                    widths.push(width);
-                }
-            }
-        }
-        // Widths are pushed such that they contain the width and the kerning between itself and the
-        // next character. If its the last, we push here.
-        if let Some(_) = last {
-            widths.push(next_width);
-        }
-
-        (widths, glyphs)
     }
 
     pub fn height(font_size: FontSize, scale_factor: Scalar) -> Scalar {
@@ -275,82 +258,19 @@ impl Font {
 /// New font creation
 impl Font {
     /// Load a single `Font` from a file at the given path.
-    pub fn from_file<P>(path: P) -> Result<Self, Error>
-    where
-        P: AsRef<std::path::Path>,
-    {
+    pub fn from_file(path: impl AsRef<Path>) -> Self {
         use std::io::Read;
         let path = path.as_ref();
-        let mut file = std::fs::File::open(path)?;
+        let mut file = std::fs::File::open(path).unwrap();
         let mut file_buffer = Vec::new();
-        file.read_to_end(&mut file_buffer)?;
+        file.read_to_end(&mut file_buffer).unwrap();
         let inner_font = RustTypeFont::try_from_vec(file_buffer).unwrap();
 
-        Ok(Font {
+        Font {
             font_id: usize::MAX,
             path: path.display().to_string(),
             font: inner_font,
-            bitmap_font: false,
-        })
-    }
-
-    /// Load a single `Font` from a file at the given path.
-    pub fn from_file_bitmap<P>(path: P) -> Result<Self, Error>
-    where
-        P: AsRef<std::path::Path>,
-    {
-        use std::io::Read;
-        let path = path.as_ref();
-        let mut file = std::fs::File::open(path)?;
-        let mut file_buffer = Vec::new();
-        file.read_to_end(&mut file_buffer)?;
-        let mut inner_font = RustTypeFont::try_from_vec(file_buffer).unwrap();
-        inner_font.with_custom_v_metrics(VMetrics {
-            ascent: 1200.0,
-            descent: 0.0,
-            line_gap: 0.0,
-        });
-
-        Ok(Font {
-            font_id: usize::MAX,
-            path: path.display().to_string(),
-            font: inner_font,
-            bitmap_font: true,
-        })
-    }
-}
-
-/// Returned when loading new fonts from file or bytes.
-#[derive(Debug)]
-pub enum Error {
-    /// Some error occurred while loading a `FontCollection` from a file.
-    IO(std::io::Error),
-    /// No `Font`s could be yielded from the `FontCollection`.
-    NoFont,
-}
-
-impl From<std::io::Error> for Error {
-    fn from(e: std::io::Error) -> Self {
-        Error::IO(e)
-    }
-}
-
-impl std::error::Error for Error {
-    fn cause(&self) -> Option<&dyn std::error::Error> {
-        match *self {
-            Error::IO(ref e) => Some(e),
-            _ => None,
         }
-    }
-}
-
-impl std::fmt::Display for Error {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> Result<(), std::fmt::Error> {
-        let s = match *self {
-            Error::IO(ref e) => return std::fmt::Display::fmt(e, f),
-            Error::NoFont => "No `Font` found in the loaded `FontCollection`.",
-        };
-        write!(f, "{}", s)
     }
 }
 

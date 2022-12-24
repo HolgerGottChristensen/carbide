@@ -2,7 +2,7 @@ use std::collections::HashMap;
 use std::ffi::c_void;
 use std::future::Future;
 use std::option::Option::Some;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use std::time::Instant;
 
 use bitflags::_core::fmt::Formatter;
@@ -530,7 +530,7 @@ impl Environment {
         todo!()
     }
 
-    pub fn filters(&self) -> &FxHashMap<FilterId, crate::widget::ImageFilter> {
+    pub fn filters(&self) -> &FxHashMap<FilterId, ImageFilter> {
         &self.filter_map
     }
 
@@ -572,24 +572,8 @@ impl Environment {
         self.local_state.insert(key.clone(), to_bin(value).unwrap());
     }*/
 
-    pub fn insert_font_from_file<P>(&mut self, path: P) -> (FontId, FontWeight, FontStyle)
-    where
-        P: AsRef<std::path::Path>,
-    {
-        let mut font = Font::from_file(path).unwrap();
-        let weight = font.weight();
-        let style = font.style();
-        let font_id = self.fonts.len();
-        font.set_font_id(font_id);
-        self.fonts.push(font);
-        (font_id, weight, style)
-    }
-
-    pub fn insert_bitmap_font_from_file<P>(&mut self, path: P) -> (FontId, FontWeight, FontStyle)
-    where
-        P: AsRef<std::path::Path>,
-    {
-        let mut font = Font::from_file_bitmap(path).unwrap();
+    pub fn insert_font_from_file(&mut self, path: impl AsRef<Path>) -> (FontId, FontWeight, FontStyle) {
+        let mut font = Font::from_file(path);
         let weight = font.weight();
         let style = font.style();
         let font_id = self.fonts.len();
@@ -625,7 +609,7 @@ impl Environment {
         for (_, font_family) in &self.font_families {
             println!("Looking up in font family: {:?}", font_family);
             let font_id = font_family.get_best_fit(FontWeight::Normal, FontStyle::Normal);
-            if let Some(res) = self.get_font(font_id).get_glyph(c, font_size, scale_factor) {
+            if let Some(res) = self.get_font(font_id).glyph_for(c, font_size, scale_factor) {
                 return res;
             }
         }
@@ -668,11 +652,7 @@ impl Environment {
                 .for_folder("assets")
                 .unwrap();
             let font_path = assets.join(&font.path);
-            let (font_id, weight, style) = if font.is_bitmap {
-                self.insert_bitmap_font_from_file(font_path)
-            } else {
-                self.insert_font_from_file(font_path)
-            };
+            let (font_id, weight, style) = self.insert_font_from_file(font_path);
             font.font_id = font_id;
             font.weight_hint = weight;
             font.style_hint = style;

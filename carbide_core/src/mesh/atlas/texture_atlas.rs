@@ -92,17 +92,13 @@ impl TextureAtlas {
         font: &Font,
         scale_factor: Scalar,
     ) -> Option<AtlasEntry> {
-        if font.is_bitmap() {
-            self.queue_raster_glyph_id(glyph.id(), glyph.font_size(), font, scale_factor)
-        } else {
-            self.queue_glyph_id(
-                glyph.id(),
-                glyph.font_size(),
-                glyph.position(),
-                font,
-                scale_factor,
-            )
-        }
+        self.queue_glyph_id(
+            glyph.id(),
+            glyph.font_size(),
+            glyph.position(),
+            font,
+            scale_factor,
+        )
     }
 
     pub fn queue_glyph_id(
@@ -124,7 +120,7 @@ impl TextureAtlas {
         }
 
         // Get the image data for the given glyph from the font
-        let image_data = font.get_glyph_image_from_id(
+        let image_data = font.glyph_image(
             glyph_id,
             font_size,
             scale_factor,
@@ -191,78 +187,6 @@ impl TextureAtlas {
             )
         }
     }
-    /*
-        pub fn queue_raster_glyph(
-            &mut self,
-            c: char,
-            font_size: FontSize,
-            font: &Font,
-            scale_factor: Scalar,
-        ) -> TextureAtlasIndex {
-            let id = font.get_glyph_id(c);
-            self.queue_raster_glyph_id(id.unwrap(), font_size, font, scale_factor)
-        }
-    */
-    pub fn queue_raster_glyph_id(
-        &mut self,
-        id: GlyphId,
-        font_size: FontSize,
-        font: &Font,
-        scale_factor: Scalar,
-    ) -> Option<AtlasEntry> {
-        let atlas_id = AtlasId::RasterGlyph(font.id(), id, font_size);
-
-        // Check if a suitable item has already been added.
-        if let Some(item) = self.all_books_cabinet.get(&atlas_id) {
-            return Some(item.0.clone());
-        }
-
-        // Get the image data for the given raster image glyph
-        let image_data = font.get_glyph_raster_image_from_id(id, font_size, scale_factor);
-
-        if let Some(image_data) = image_data {
-            if let Some(already_in_queue) =
-                self.not_yet_added_queue.iter().find(|&a| &a.0 == &atlas_id)
-            {
-                Some(already_in_queue.2.clone())
-            } else {
-                // Generate a new empty book. This will be added to a shelf when cache_queued is called.
-                let book = Book {
-                    x: 0,
-                    y: 0,
-                    width: image_data.width(),
-                    height: image_data.height(),
-                    is_active: false,
-                    tex_coords: Default::default(),
-                };
-
-                self.not_yet_added_queue
-                    .push((atlas_id, image_data, Rc::new(RefCell::new(book))));
-                Some(
-                    self.not_yet_added_queue[self.not_yet_added_queue.len() - 1]
-                        .2
-                        .clone(),
-                )
-            }
-        } else {
-            println!("The raster glyph could not be found in the font.");
-            None
-        }
-    }
-    /*
-    pub fn get_tex_coords_by_index(&self, id: TextureAtlasIndex) -> Rect<f32> {
-        let book = self.book_index[self.glyph_index[id]];
-        Rect {
-            min: Point {
-                x: book.x as f32 / self.width as f32,
-                y: book.y as f32 / self.height as f32,
-            },
-            max: Point {
-                x: (book.x as f32 + book.width as f32) / self.width as f32,
-                y: (book.y as f32 + book.height as f32) / self.height as f32,
-            },
-        }
-    }*/
 
     /// The uploader should be x, y, image_data
     pub fn cache_queued<F: FnMut(u32, u32, &ImageData)>(&mut self, mut uploader: F) {
@@ -360,25 +284,6 @@ impl TextureAtlas {
         let new_shelf_number = self.shelves.len() - 1;
         Some(&mut self.shelves[new_shelf_number])
     }
-
-    /*pub fn get_glyph_index(&mut self, font_id: FontId, glyph_id: GlyphId, font_size: FontSize, position: Position) -> Option<TextureAtlasIndex> {
-        let offset = (position.fraction_0_1() / self.position_tolerance).round_to_u16();
-        let atlas_id = AtlasId::LossyGlyph(LossyGlyphInfo::new(font_id, glyph_id, font_size, offset));
-
-        self.all_books_cabinet.get(&atlas_id).cloned()
-    }
-
-    pub fn get_raster_glyph_index(&mut self, font_id: FontId, id: GlyphId, font_size: FontSize) -> Option<TextureAtlasIndex> {
-        let atlas_id = AtlasId::RasterGlyph(font_id, id, font_size);
-
-        self.all_books_cabinet.get(&atlas_id).cloned()
-    }
-
-    pub fn get_image_index(&mut self, image_id: ImageId) -> Option<TextureAtlasIndex> {
-        let atlas_id = AtlasId::Image(image_id);
-
-        self.all_books_cabinet.get(&atlas_id).cloned()
-    }*/
 }
 
 /// The book is an area of the shelf where a single image is stored.

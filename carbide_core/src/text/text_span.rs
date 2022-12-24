@@ -31,7 +31,7 @@ impl TextSpan {
             let ascend = font.ascend(style.font_size, scale_factor);
             let descend = font.descend(style.font_size, scale_factor);
             let line_gap = font.line_gap(style.font_size, scale_factor);
-            let (widths, glyphs) = font.get_glyphs(line, style.font_size, scale_factor, env);
+            let (widths, glyphs) = font.glyphs_for(line, style.font_size, scale_factor, env);
 
             res.push(TextSpan::Text {
                 style: Some(style.clone()),

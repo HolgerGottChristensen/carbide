@@ -36,10 +36,6 @@ impl FontFamily {
         self.add_font_with_hints(path, FontWeight::Normal, FontStyle::Normal)
     }
 
-    pub fn add_bitmap_font<P: AsRef<Path>>(&mut self, path: P) {
-        self.add_bitmap_font_with_hints(path, FontWeight::Normal, FontStyle::Normal)
-    }
-
     /// This will add a normal font to the font family. The hints are overridden by the hints
     /// within the font if these are present.
     pub fn add_font_with_hints<P: AsRef<Path>>(
@@ -53,24 +49,6 @@ impl FontFamily {
             font_id: 0,
             weight_hint,
             style_hint,
-            is_bitmap: false,
-        })
-    }
-
-    /// This will add a bitmap font to the font family. The hints are overridden by the hints
-    /// within the font if these are present.
-    pub fn add_bitmap_font_with_hints<P: AsRef<Path>>(
-        &mut self,
-        path: P,
-        weight_hint: FontWeight,
-        style_hint: FontStyle,
-    ) {
-        self.fonts.push(FontDescriptor {
-            path: path.as_ref().to_path_buf(),
-            font_id: 0,
-            weight_hint,
-            style_hint,
-            is_bitmap: true,
         })
     }
 
@@ -122,5 +100,4 @@ pub struct FontDescriptor {
     pub font_id: FontId,
     pub(crate) weight_hint: FontWeight,
     pub(crate) style_hint: FontStyle,
-    pub(crate) is_bitmap: bool,
 }

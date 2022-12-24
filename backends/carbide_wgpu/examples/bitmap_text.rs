@@ -9,7 +9,7 @@ fn main() {
         .with_asset_fonts();
 
     let mut family = FontFamily::new("Apple Color Emoji");
-    family.add_bitmap_font_with_hints(
+    family.add_font_with_hints(
         "/System/Library/Fonts/Apple Color Emoji.ttc",
         FontWeight::Normal,
         FontStyle::Normal,
