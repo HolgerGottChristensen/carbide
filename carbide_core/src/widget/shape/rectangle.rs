@@ -1,6 +1,6 @@
-use lyon::algorithms::math::rect;
 use lyon::algorithms::path::builder::PathBuilder;
 use lyon::algorithms::path::Winding;
+use lyon::geom::euclid::rect;
 use carbide_macro::carbide_default_builder;
 
 use crate::draw::{Dimension, Position, Rect};
@@ -178,7 +178,7 @@ impl Render for Rectangle {
             self.width() as f32,
             self.height() as f32,
         );
-        tessellate(self, &rect, &|builder, rectangle| {
+        tessellate(self, &rect.to_box2d(), &|builder, rectangle| {
             builder.add_rectangle(rectangle, Winding::Positive)
         });
 

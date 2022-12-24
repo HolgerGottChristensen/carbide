@@ -1,6 +1,7 @@
 //! A module encompassing the primitive 2D shape widgets.
+use lyon::geom::euclid::Rect;
 use lyon::lyon_tessellation::path::path::Builder;
-use lyon::math::Rect;
+use lyon::math::Box2D;
 use lyon::tessellation::path::Path;
 use lyon::tessellation::{
     BuffersBuilder, FillOptions, FillTessellator, FillVertex, Side, StrokeOptions,
@@ -58,7 +59,7 @@ impl Widget for Box<dyn Shape> {}
     }
 }*/
 
-pub fn tessellate(shape: &mut dyn Shape, rectangle: &Rect, path: &dyn Fn(&mut Builder, &Rect)) {
+pub fn tessellate(shape: &mut dyn Shape, rectangle: &Box2D, path: &dyn Fn(&mut Builder, &Box2D)) {
     match shape.get_shape_style() {
         ShapeStyle::Default | ShapeStyle::Fill => {
             fill(path, shape, rectangle);
@@ -73,7 +74,7 @@ pub fn tessellate(shape: &mut dyn Shape, rectangle: &Rect, path: &dyn Fn(&mut Bu
     }
 }
 
-pub fn fill(path: &dyn Fn(&mut Builder, &Rect), shape: &mut dyn Shape, rectangle: &Rect) {
+pub fn fill(path: &dyn Fn(&mut Builder, &Box2D), shape: &mut dyn Shape, rectangle: &Box2D) {
     let position = shape.position();
     let dimension = shape.dimension();
     let triangle_store = shape.get_triangle_store_mut();
@@ -130,7 +131,7 @@ pub fn fill(path: &dyn Fn(&mut Builder, &Rect), shape: &mut dyn Shape, rectangle
     }
 }
 
-pub fn stroke(path: &dyn Fn(&mut Builder, &Rect), shape: &mut dyn Shape, rectangle: &Rect) {
+pub fn stroke(path: &dyn Fn(&mut Builder, &Box2D), shape: &mut dyn Shape, rectangle: &Box2D) {
     let position = shape.position();
     let dimension = shape.dimension();
     let line_width = shape.get_stroke_style().get_line_width() as f32;
@@ -207,7 +208,7 @@ pub fn stroke(path: &dyn Fn(&mut Builder, &Rect), shape: &mut dyn Shape, rectang
                     &mut BuffersBuilder::new(&mut geometry, |vertex: StrokeVertex| {
                         let point = vertex.position().to_array();
                         let point = Position::new(point[0] as Scalar, point[1] as Scalar);
-                        if vertex.side() == Side::Left {
+                        if vertex.side() == Side::Positive {
                             point
                         } else {
                             let p = point;

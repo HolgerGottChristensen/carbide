@@ -1,6 +1,6 @@
-use lyon::algorithms::math::rect;
 use lyon::algorithms::path::builder::PathBuilder;
 use lyon::algorithms::path::Winding;
+use lyon::geom::euclid::rect;
 use lyon::math::point;
 use carbide_macro::carbide_default_builder;
 
@@ -103,7 +103,7 @@ impl Render for Circle {
             self.height() as f32,
         );
 
-        tessellate(self, &rectangle, &|builder, _| {
+        tessellate(self, &rectangle.to_box2d(), &|builder, _| {
             builder.add_circle(center, radius, Winding::Positive);
         });
 

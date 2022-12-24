@@ -1,4 +1,4 @@
-use lyon::tessellation::math::rect;
+use lyon::geom::euclid::rect;
 use lyon::tessellation::path::builder::BorderRadii;
 use lyon::tessellation::path::traits::PathBuilder;
 use lyon::tessellation::path::Winding;
@@ -105,7 +105,7 @@ impl Render for Capsule {
             self.height() as f32,
         );
 
-        tessellate(self, &rectangle, &|builder, rect| {
+        tessellate(self, &rectangle.to_box2d(), &|builder, rect| {
             builder.add_rounded_rectangle(
                 rect,
                 &BorderRadii {

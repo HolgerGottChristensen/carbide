@@ -1,7 +1,8 @@
-use lyon::algorithms::math::{rect, Angle};
+use lyon::algorithms::math::{Angle};
 use lyon::algorithms::path::builder::PathBuilder;
 use lyon::algorithms::path::geom::euclid::vec2;
 use lyon::algorithms::path::Winding;
+use lyon::geom::euclid::rect;
 use lyon::math::point;
 use carbide_macro::carbide_default_builder;
 
@@ -94,7 +95,7 @@ impl Render for Ellipse {
             self.height() as f32,
         );
 
-        tessellate(self, &rectangle, &|builder, _| {
+        tessellate(self, &rectangle.to_box2d(), &|builder, _| {
             builder.add_ellipse(center, radii, Angle::degrees(0.0), Winding::Positive);
         });
 

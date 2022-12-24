@@ -1,5 +1,6 @@
 use lyon::algorithms::path::{EndpointId, Path};
 use lyon::math::Point;
+use lyon::path::Attributes;
 
 #[derive(Clone)]
 pub struct PathBuilder {
@@ -45,7 +46,11 @@ impl lyon::path::builder::Build for PathBuilder {
 }
 
 impl lyon::path::builder::PathBuilder for PathBuilder {
-    fn begin(&mut self, at: Point) -> EndpointId {
+    fn num_attributes(&self) -> usize {
+        0
+    }
+
+    fn begin(&mut self, at: Point, attr: Attributes) -> EndpointId {
         self.actions.push(BuildAction::Begin { at });
         EndpointId(self.current_end_point)
     }
@@ -54,7 +59,7 @@ impl lyon::path::builder::PathBuilder for PathBuilder {
         self.actions.push(BuildAction::End { close })
     }
 
-    fn line_to(&mut self, to: Point) -> EndpointId {
+    fn line_to(&mut self, to: Point, attr: Attributes) -> EndpointId {
         self.actions.push(BuildAction::LineTo { to });
         let id = EndpointId(self.current_end_point);
         self.current_end_point += 1;
@@ -62,7 +67,7 @@ impl lyon::path::builder::PathBuilder for PathBuilder {
         id
     }
 
-    fn quadratic_bezier_to(&mut self, ctrl: Point, to: Point) -> EndpointId {
+    fn quadratic_bezier_to(&mut self, ctrl: Point, to: Point, attr: Attributes) -> EndpointId {
         self.actions
             .push(BuildAction::QuadraticBezierTo { ctrl, to });
         self.current_end_point += 1;
@@ -72,7 +77,7 @@ impl lyon::path::builder::PathBuilder for PathBuilder {
         id
     }
 
-    fn cubic_bezier_to(&mut self, ctrl1: Point, ctrl2: Point, to: Point) -> EndpointId {
+    fn cubic_bezier_to(&mut self, ctrl1: Point, ctrl2: Point, to: Point, attr: Attributes) -> EndpointId {
         self.actions
             .push(BuildAction::CubicBezierTo { ctrl1, ctrl2, to });
         self.current_end_point += 2;
