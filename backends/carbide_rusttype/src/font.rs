@@ -1,7 +1,7 @@
-use crate::{IntoGlyphId, Scale, VMetrics};
+use crate::{GlyphId, IntoGlyphId, Scale, VMetrics};
 use core::fmt;
 use std::sync::Arc;
-use owned_ttf_parser::AsFaceRef;
+use owned_ttf_parser::{AsFaceRef, RasterGlyphImage};
 use crate::glyph::Glyph;
 use crate::glyph_iter::GlyphIter;
 
@@ -183,4 +183,19 @@ impl<'font> Font<'font> {
 
         height / f_height
     }
+
+
+    pub fn glyph_id(&self, c: char) -> Option<GlyphId> {
+        self.inner()
+            .glyph_index(c)
+            .map(|owned_ttf_parser::GlyphId(id)| GlyphId(id))
+    }
+
+    pub fn glyph_raster_image(&self, id: GlyphId, pixels_per_em: u16) -> Option<RasterGlyphImage> {
+        self.inner().glyph_raster_image(
+            owned_ttf_parser::GlyphId(id.0),
+            pixels_per_em,
+        )
+    }
+
 }

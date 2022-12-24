@@ -2,8 +2,7 @@ use std::fmt::{Debug, Formatter};
 use std::path::Path;
 
 use image::{DynamicImage, GenericImage, Rgba};
-use carbide_rusttype::{point, GlyphId, Scale, VMetrics};
-use ttf_parser::Weight;
+use carbide_rusttype::{point, GlyphId, Scale, VMetrics, Weight};
 
 use crate::draw::Position;
 use crate::draw::Scalar;
@@ -33,18 +32,11 @@ impl Debug for Font {
 
 impl Font {
     pub fn glyph_id(&self, c: char) -> Option<GlyphId> {
-        self.font
-            .inner()
-            .glyph_index(c)
-            .map(|ttf_parser::GlyphId(id)| GlyphId(id))
+        self.font.glyph_id(c)
     }
 
     pub fn glyph_image(&self, id: GlyphId, size: FontSize, scale_factor: Scalar, position_offset: Position) -> Option<DynamicImage> {
-        let face = self.font.inner();
-        let raster_image = face.glyph_raster_image(
-            ttf_parser::GlyphId(id.0),
-            (size as f64 * scale_factor) as u16,
-        );
+        let raster_image = self.font.glyph_raster_image(id, (size as f64 * scale_factor) as u16);
 
         // If we got a raster image, we return that
         if let Some(raster_image) = raster_image {
@@ -93,10 +85,7 @@ impl Font {
     }
 
     fn is_bitmap(&self, id: GlyphId) -> bool {
-        self.font.inner().glyph_raster_image(
-            ttf_parser::GlyphId(id.0),
-            1,
-        ).is_some()
+        self.font.glyph_raster_image(id, 1).is_some()
     }
 
     pub fn glyphs_for(

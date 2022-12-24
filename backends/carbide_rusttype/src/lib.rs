@@ -91,6 +91,7 @@
 
 
 pub use owned_ttf_parser::OutlineBuilder;
+pub use owned_ttf_parser::Weight;
 
 pub use font::*;
 
