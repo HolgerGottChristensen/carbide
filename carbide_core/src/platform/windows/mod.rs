@@ -1,20 +1,24 @@
 #![allow(unsafe_code)]
+
+use std::ffi::{OsStr, OsString};
+use std::os::windows::ffi::OsStrExt;
+
+use oneshot::Receiver;
+
+use windows::core::Interface;
+use windows::Win32::Foundation::{HWND, PWSTR};
+use windows::Win32::System::Com::{CLSCTX_INPROC_SERVER, CoCreateInstance, CoTaskMemFree};
+use windows::Win32::UI::Shell::{
+    FileOpenDialog, FileSaveDialog, FOS_ALLOWMULTISELECT, FOS_FORCESHOWHIDDEN, FOS_PICKFOLDERS, IFileOpenDialog,
+    IFileSaveDialog, IShellItem, IShellItemArray, SHCreateItemFromParsingName,
+    SIGDN_FILESYSPATH,
+};
+use windows::Win32::UI::Shell::Common::COMDLG_FILTERSPEC;
+
 use crate::asynchronous::thread_task::ThreadTask;
 use crate::dialog::open_dialog::OpenDialogSettings;
 use crate::dialog::save_dialog::SaveDialog;
 use crate::environment::Environment;
-use oneshot::Receiver;
-use std::ffi::{OsStr, OsString};
-use std::os::windows::ffi::OsStrExt;
-use windows::core::Interface;
-use windows::Win32::Foundation::{HWND, PWSTR};
-use windows::Win32::System::Com::{CoCreateInstance, CoTaskMemFree, CLSCTX_INPROC_SERVER};
-use windows::Win32::UI::Shell::Common::COMDLG_FILTERSPEC;
-use windows::Win32::UI::Shell::{
-    FileOpenDialog, FileSaveDialog, IFileOpenDialog, IFileSaveDialog, IShellItem, IShellItemArray,
-    SHCreateItemFromParsingName, FOS_ALLOWMULTISELECT, FOS_FORCESHOWHIDDEN, FOS_PICKFOLDERS,
-    SIGDN_FILESYSPATH,
-};
 
 unsafe fn read_to_string(ptr: PWSTR) -> String {
     let mut len = 0usize;

@@ -1,11 +1,11 @@
 use wgpu::{
-    Adapter, BlendComponent, BlendFactor, BlendOperation, BlendState, ColorTargetState,
+    BlendComponent, BlendFactor, BlendOperation, BlendState, ColorTargetState,
     CompareFunction, DepthBiasState, DepthStencilState, Device, FragmentState, FrontFace,
     PipelineLayout, PrimitiveState, PrimitiveTopology, RenderPipeline, ShaderModule,
-    StencilFaceState, StencilOperation, Surface, TextureFormat, VertexState,
+    StencilFaceState, StencilOperation, TextureFormat, VertexState,
 };
-use crate::render_pipeline_layouts::RenderPipelines;
 
+use crate::render_pipeline_layouts::RenderPipelines;
 use crate::vertex::Vertex;
 use crate::wgpu_window::{FILTER_RENDER_PIPELINE_LAYOUT, FILTER_SHADER, GRADIENT_RENDER_PIPELINE_LAYOUT, GRADIENT_SHADER, MAIN_SHADER, RENDER_PIPELINE_LAYOUT};
 

@@ -1,21 +1,22 @@
+use std::fmt::{Debug, Formatter};
+
 use lyon::algorithms::path::Path;
 use lyon::tessellation::{
     BuffersBuilder, FillOptions, FillTessellator, FillVertex, StrokeOptions, StrokeTessellator,
     StrokeVertex, VertexBuffers,
 };
-use std::fmt::{Debug, Formatter};
+
 use carbide_macro::carbide_default_builder;
 
-use crate::color::Rgba;
-use crate::draw::shape::triangle::Triangle;
+use crate::{Color, Scalar};
 use crate::draw::{Dimension, Position, Rect};
-use crate::render::{Primitive, PrimitiveKind, Render};
-use crate::widget::canvas::canvas::Contexts::{NoState, WithState};
-use crate::widget::canvas::{Context, ShapeStyleWithOptions};
-use crate::{Color, CommonWidgetImpl, Scalar};
+use crate::draw::shape::triangle::Triangle;
 use crate::environment::{Environment, EnvironmentColor};
+use crate::render::{Primitive, PrimitiveKind, Render};
 use crate::state::{NewStateSync, ReadState, StateContract, TState, ValueState};
 use crate::widget::{CommonWidget, PrimitiveStore, Shape, ShapeStyle, StrokeStyle, Widget, WidgetExt, WidgetId};
+use crate::widget::canvas::{Context, ShapeStyleWithOptions};
+use crate::widget::canvas::canvas::Contexts::{NoState, WithState};
 
 /// A basic, non-interactive rectangle shape widget.
 #[derive(Clone, Widget)]

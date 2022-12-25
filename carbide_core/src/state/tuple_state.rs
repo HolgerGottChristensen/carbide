@@ -1,7 +1,7 @@
 use crate::environment::Environment;
 use crate::state::{
-    InnerState, NewStateSync, RState, ReadState, ReadWidgetState, State, StateContract, TState,
-    ValueCell, ValueRef, ValueRefMut, WidgetState, CacheTState, CacheRState
+    CacheRState, CacheTState, NewStateSync, ReadState, ReadWidgetState, RState, State,
+    StateContract, TState, ValueRef, ValueRefMut, WidgetState
 };
 
 macro_rules! tuple_state {

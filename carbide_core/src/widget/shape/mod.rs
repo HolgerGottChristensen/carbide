@@ -1,12 +1,11 @@
 //! A module encompassing the primitive 2D shape widgets.
-use lyon::geom::euclid::Rect;
 use lyon::lyon_tessellation::path::path::Builder;
 use lyon::math::Box2D;
-use lyon::tessellation::path::Path;
 use lyon::tessellation::{
     BuffersBuilder, FillOptions, FillTessellator, FillVertex, Side, StrokeOptions,
     StrokeTessellator, StrokeVertex, VertexBuffers,
 };
+use lyon::tessellation::path::Path;
 
 pub use capsule::*;
 pub use circle::*;
@@ -14,8 +13,8 @@ pub use ellipse::*;
 pub use rectangle::*;
 pub use rounded_rectangle::*;
 
-use crate::draw::shape::triangle::Triangle;
 use crate::draw::{Position, Scalar};
+use crate::draw::shape::triangle::Triangle;
 use crate::environment::Environment;
 use crate::render::PrimitiveKind;
 use crate::widget::types::PrimitiveStore;

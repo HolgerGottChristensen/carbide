@@ -1,9 +1,8 @@
-use carbide_core::draw::Dimension;
-use carbide_core::environment::{Environment, EnvironmentColor};
-use carbide_core::state::{StateExt, StateKey, TState};
+use carbide_core::environment::EnvironmentColor;
+use carbide_core::state::TState;
 use carbide_core::widget::*;
 
-use crate::{PlainSlider, PlainSwitch};
+use crate::PlainSlider;
 
 pub struct Slider;
 

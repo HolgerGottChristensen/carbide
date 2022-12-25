@@ -1,5 +1,5 @@
-use crate::state::{RState, State, StateContract, TState, WidgetState};
 use crate::environment::Environment;
+use crate::state::{RState, State, StateContract, TState, WidgetState};
 use crate::state::{NewStateSync, ReadState, ValueRef, ValueRefMut};
 
 #[derive(Clone, Debug)]

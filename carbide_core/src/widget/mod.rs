@@ -1,6 +1,7 @@
+use std::sync::atomic::{AtomicU32, Ordering};
+
 pub use common::*;
 pub use shape::*;
-use std::sync::atomic::{AtomicU32, Ordering};
 pub use types::*;
 
 use crate::draw::Position;

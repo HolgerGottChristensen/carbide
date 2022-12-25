@@ -1,6 +1,6 @@
 use std::path::{Path, PathBuf};
 use std::rc::Rc;
-use std::sync::atomic::{AtomicU32, Ordering};
+
 use crate::state::{TState, ValueState};
 
 /// Unique image identifier.

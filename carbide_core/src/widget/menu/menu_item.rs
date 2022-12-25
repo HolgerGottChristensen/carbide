@@ -1,9 +1,12 @@
 use std::fmt::{Debug, Formatter};
+
 use dyn_clone::DynClone;
+
+use carbide_core::widget::menu::menu::Menu;
+
+use crate::environment::Environment;
 use crate::event::HotKey;
 use crate::widget::WidgetId;
-use carbide_core::widget::menu::menu::Menu;
-use crate::environment::Environment;
 
 pub trait MenuAction: Fn(&mut Environment) + DynClone {}
 

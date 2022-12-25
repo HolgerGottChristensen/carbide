@@ -1,6 +1,6 @@
+use std::{env, fs};
 use std::io;
 use std::path::{Path, PathBuf};
-use std::{env, fs};
 
 /// This file originated from https://github.com/PistonDevelopers/find_folder/blob/master/src/lib.rs
 /// Updated to not use deprecated try macro

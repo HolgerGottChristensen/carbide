@@ -1,6 +1,5 @@
 use dyn_clone::DynClone;
 use raw_window_handle::HasRawWindowHandle;
-use crate::widget::Widget;
 
 #[derive(Debug, Clone)]
 pub enum CustomEvent {

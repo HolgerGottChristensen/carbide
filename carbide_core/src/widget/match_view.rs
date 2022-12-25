@@ -1,8 +1,9 @@
-use crate::draw::{Dimension, Position};
-use std::collections::HashMap;
 use std::fmt::{Debug, Formatter};
 use std::hash::Hash;
+
 use carbide_macro::carbide_default_builder;
+
+use crate::draw::{Dimension, Position};
 use crate::environment::Environment;
 use crate::state::{NewStateSync, ReadState, StateContract, StateSync, TState};
 use crate::widget::{Widget, WidgetExt, WidgetId};

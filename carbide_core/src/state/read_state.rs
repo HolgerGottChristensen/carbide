@@ -2,9 +2,8 @@ use std::fmt::Debug;
 
 use dyn_clone::DynClone;
 
-use crate::state::state_sync::NewStateSync;
 use crate::state::*;
-
+use crate::state::state_sync::NewStateSync;
 use crate::state::util::value_cell::ValueRef;
 
 /// The trait to implement for read-only state.

@@ -1,13 +1,15 @@
-use crate::color::WHITE;
-use crate::draw::{Dimension, Position};
-use crate::widget::canvas::LineCap;
-use crate::widget::canvas::Canvas;
-use crate::CommonWidgetImpl;
 use std::time::Duration;
+
 use carbide_macro::carbide_default_builder;
+
+use crate::color::WHITE;
+use crate::CommonWidgetImpl;
+use crate::draw::{Dimension, Position};
 use crate::environment::EnvironmentColor;
 use crate::state::AnimatedState;
 use crate::widget::{Circle, Widget, WidgetExt, WidgetId, ZStack};
+use crate::widget::canvas::Canvas;
+use crate::widget::canvas::LineCap;
 
 #[derive(Debug, Clone, Widget)]
 pub struct ProgressView {

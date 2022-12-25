@@ -1,13 +1,12 @@
-use carbide_core::draw::Dimension;
-use carbide_core::environment::{Environment, EnvironmentColor};
-use carbide_core::state::{Map1, Map3, MapOwnedState, State, StateExt, StateKey, TState};
-use carbide_core::widget::canvas::Canvas;
-use carbide_core::widget::*;
 use carbide_core::Color;
+use carbide_core::environment::EnvironmentColor;
 use carbide_core::focus::Focus;
+use carbide_core::state::{Map3, StateExt, TState};
+use carbide_core::widget::*;
+use carbide_core::widget::canvas::Canvas;
 
-use crate::types::*;
 use crate::PlainCheckBox;
+use crate::types::*;
 
 pub struct CheckBox;
 

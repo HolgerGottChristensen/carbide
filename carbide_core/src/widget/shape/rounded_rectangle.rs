@@ -2,19 +2,20 @@ use lyon::geom::euclid::rect;
 use lyon::tessellation::path::builder::BorderRadii;
 use lyon::tessellation::path::traits::PathBuilder;
 use lyon::tessellation::path::Winding;
+
 use carbide_macro::carbide_default_builder;
 
-use crate::draw::{Dimension, Position};
-use crate::widget::shape::{tessellate, Shape};
-use crate::widget::types::PrimitiveStore;
-use crate::widget::types::ShapeStyle;
-use crate::widget::types::StrokeStyle;
-use crate::widget::{AdvancedColor, Blur, CommonWidget, CornerRadii, Widget, WidgetExt, WidgetId, ZStack};
 use crate::{Color, CommonWidgetImpl};
+use crate::draw::{Dimension, Position};
 use crate::environment::Environment;
 use crate::environment::EnvironmentColor;
 use crate::render::{Primitive, Render};
 use crate::state::{ReadState, RState, TState};
+use crate::widget::{AdvancedColor, Blur, CommonWidget, CornerRadii, Widget, WidgetExt, WidgetId, ZStack};
+use crate::widget::shape::{Shape, tessellate};
+use crate::widget::types::PrimitiveStore;
+use crate::widget::types::ShapeStyle;
+use crate::widget::types::StrokeStyle;
 
 /// A basic, non-interactive rectangle shape widget.
 #[derive(Debug, Clone, Widget)]

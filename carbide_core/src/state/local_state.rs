@@ -1,11 +1,12 @@
-use carbide_core::state::state_sync::NewStateSync;
 use std::fmt::{Debug, Formatter};
 use std::rc::Rc;
 
+use carbide_core::state::state_sync::NewStateSync;
+
 use crate::environment::Environment;
+use crate::state::{InnerState, ReadState, State, StateContract, TState};
 use crate::state::util::value_cell::{ValueCell, ValueRef, ValueRefMut};
 use crate::state::widget_state::WidgetState;
-use crate::state::{InnerState, ReadState, State, StateContract, TState};
 
 /// # Local state
 /// The local state is used as a shared state between multiple widgets within the same widget tree.

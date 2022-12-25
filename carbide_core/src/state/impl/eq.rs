@@ -1,4 +1,4 @@
-use crate::state::{Map2, ReadWidgetState, RState, StateContract, TState, WidgetState};
+use crate::state::{Map2, ReadWidgetState, RState, StateContract, WidgetState};
 
 pub trait StatePartialEq<Rhs> {
     fn eq(self, other: Rhs) -> RState<bool>;

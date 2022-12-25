@@ -1,8 +1,5 @@
-use serde::{Deserialize, Serialize};
-
 use carbide_core::environment::Environment;
-use carbide_core::widget::WidgetId;
-use carbide_core::state::{MapOwnedState, RState, ReadState, State, TState, NewStateSync, ValueRef, ValueRefMut};
+use carbide_core::state::{MapOwnedState, NewStateSync, ReadState, RState, State, TState, ValueRef, ValueRefMut};
 
 #[derive(Clone, Debug)]
 pub struct CheckBoxState(TState<CheckBoxValue>);

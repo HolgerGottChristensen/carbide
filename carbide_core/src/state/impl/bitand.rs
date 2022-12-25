@@ -1,6 +1,7 @@
-use crate::state::ReadWidgetState;
-use crate::state::{LocalState, Map2, RState, ReadState, StateContract, ValueState, WidgetState};
 use std::ops::BitAnd;
+
+use crate::state::{LocalState, Map2, ReadState, RState, StateContract, ValueState, WidgetState};
+use crate::state::ReadWidgetState;
 
 macro_rules! bitand {
     ($($typ1: ty, $typ2: ty;)*) => {

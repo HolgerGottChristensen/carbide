@@ -1,5 +1,5 @@
 use crate::environment::Environment;
-use crate::state::{InnerState, NewStateSync, ReadState, State, StateContract, TState, ValueCell, ValueRefMut, ValueRef, RState};
+use crate::state::{InnerState, NewStateSync, ReadState, RState, State, StateContract, TState, ValueCell, ValueRef, ValueRefMut};
 
 #[derive(Clone)]
 pub struct CacheRState<T> where T: StateContract {

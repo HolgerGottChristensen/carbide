@@ -1,18 +1,16 @@
 use std::collections::HashMap;
 
-use carbide_core::draw::image::{ImageId, ImageMap};
 use cgmath::Matrix4;
+use wgpu::{BindGroupLayout, Device};
 use wgpu::util::DeviceExt;
-use wgpu::{BindGroupLayout, Device, Texture};
 
+use carbide_core::draw::image::ImageId;
 use carbide_core::mesh::DrawCommand;
-use carbide_core::mesh::mesh::Mesh;
 use carbide_core::widget::FilterId;
 
 use crate::bind_groups::{gradient_buffer_bind_group, matrix_to_uniform_bind_group};
-use crate::diffuse_bind_group::{new_diffuse, DiffuseBindGroup};
+use crate::diffuse_bind_group::DiffuseBindGroup;
 use crate::gradient::Gradient;
-use crate::image::Image;
 
 /// A draw command that maps directly to the `wgpu::CommandEncoder` method. By returning
 /// `RenderPassCommand`s, we can avoid consuming the entire `AutoCommandBufferBuilder` itself which might

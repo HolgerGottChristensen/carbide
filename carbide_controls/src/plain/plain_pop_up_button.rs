@@ -1,24 +1,24 @@
 use std::fmt::{Debug, Formatter};
 use std::ops::DerefMut;
 
+use carbide_core::Color;
 use carbide_core::draw::{Dimension, Position};
 use carbide_core::environment::Environment;
+use carbide_core::environment::EnvironmentColor;
 use carbide_core::event::{
-    Key, KeyboardEvent, KeyboardEventHandler, MouseEvent, MouseEventHandler, WidgetEvent,
+    Key, KeyboardEvent, KeyboardEventHandler, MouseEvent, MouseEventHandler,
 };
 use carbide_core::flags::Flags;
-use carbide_core::focus::{Focus, Focusable, Refocus};
+use carbide_core::focus::Focus;
 use carbide_core::layout::{Layout, Layouter};
 use carbide_core::render::Primitive;
-use carbide_core::environment::EnvironmentColor;
 use carbide_core::render::Render;
-use carbide_core::state::{IndexableState, LocalState, Map3, ReadState, State, StateContract, StateExt, StateKey, StateSync, TState};
+use carbide_core::state::{IndexableState, LocalState, Map3, ReadState, State, StateContract, StateExt, TState};
 use carbide_core::widget::*;
-use carbide_core::{Color, Scalar};
 
+use crate::{List, PlainButton};
 use crate::plain::plain_pop_up_button_popup::PlainPopUpButtonPopUp;
 use crate::plain::plain_pop_up_button_popup_item::PlainPopUpButtonPopUpItem;
-use crate::{List, PlainButton};
 
 #[derive(Clone)]
 pub struct PopupDelegate<T>

@@ -1,11 +1,10 @@
-use crate::color::Rgba;
+use crate::Color;
+use crate::draw::{Dimension, Position, Rect};
 use crate::draw::draw_gradient::DrawGradient;
 use crate::draw::shape::triangle::Triangle;
-use crate::draw::{Dimension, Position, Rect};
 use crate::render::Primitive;
 use crate::render::PrimitiveKind;
 use crate::widget::types::advanced_color::AdvancedColor;
-use crate::Color;
 
 /// A storage container for primitives that can be used to cache tessellated shapes.
 #[derive(PartialEq, Clone, Debug)]

@@ -1,9 +1,10 @@
 use std::borrow::Borrow;
 use std::fmt::Debug;
 use std::ops::Deref;
-use carbide_macro::carbide_default_builder;
-use crate::Color;
 
+use carbide_macro::carbide_default_builder;
+
+use crate::Color;
 use crate::draw::{Dimension, Position, Rect};
 use crate::environment::{Environment, EnvironmentColor, EnvironmentFontSize};
 use crate::layout::Layout;
@@ -11,14 +12,14 @@ use crate::layout::Layout;
 use crate::render::{new_primitive, Primitive, Render};
 use crate::render::PrimitiveKind;
 use crate::state::{ReadState, RState, StateSync, TState};
-use crate::text::Text as InternalText;
 use crate::text::{
     FontStyle, FontWeight, Glyph, NoStyleTextSpanGenerator, TextDecoration, TextSpanGenerator,
     TextStyle,
 };
+use crate::text::Text as InternalText;
+use crate::widget::{CommonWidget, Justify, Widget, WidgetExt, WidgetId, WidgetIter, WidgetIterMut};
 //use crate::text_old::PositionedGlyph;
 use crate::widget::types::Wrap;
-use crate::widget::{CommonWidget, Justify, Widget, WidgetExt, WidgetId, WidgetIter, WidgetIterMut};
 
 /// Displays some given text centered within a rectangular area.
 ///

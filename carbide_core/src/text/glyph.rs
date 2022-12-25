@@ -3,8 +3,8 @@ use carbide_rusttype::{GlyphId, point};
 use carbide_rusttype::PositionedGlyph;
 
 use crate::draw::{Dimension, Position, Rect};
-use crate::text::{FontId, FontSize};
 use crate::Scalar;
+use crate::text::{FontId, FontSize};
 
 #[derive(Debug, Clone)]
 pub struct Glyph {

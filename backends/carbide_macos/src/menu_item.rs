@@ -1,20 +1,23 @@
-use cocoa::appkit::NSEventModifierFlags;
-use cocoa::base::{id, nil, selector};
-use carbide_core::event::{CustomEvent, EventSink, HasEventSink, HotKey, Key, ModifierKey};
-use crate::id::Id;
-use cocoa::appkit::NSMenuItem as InnerNSMenuItem;
-use cocoa::foundation::{NSAutoreleasePool, NSInteger};
-use lazy_static::lazy_static;
-use objc::runtime::{BOOL, Class, Object, Sel};
-use objc::runtime::{NO, YES};
-use objc::{msg_send, class, sel, sel_impl};
-use crate::menu::NSMenu;
-use crate::string::NSString;
-use objc::declare::ClassDecl;
 use std::ffi::c_void;
 use std::sync::mpsc::{channel, Receiver, Sender};
+
+use cocoa::appkit::NSEventModifierFlags;
+use cocoa::appkit::NSMenuItem as InnerNSMenuItem;
+use cocoa::base::{id, nil};
+use cocoa::foundation::{NSAutoreleasePool, NSInteger};
+use lazy_static::lazy_static;
+use objc::{class, msg_send, sel, sel_impl};
+use objc::declare::ClassDecl;
+use objc::runtime::{BOOL, Class, Object, Sel};
+use objc::runtime::{NO, YES};
+
 use carbide_core::environment::Environment;
+use carbide_core::event::{CustomEvent, EventSink, HasEventSink, HotKey, Key, ModifierKey};
 use carbide_core::widget::MenuAction;
+
+use crate::id::Id;
+use crate::menu::NSMenu;
+use crate::string::NSString;
 
 pub struct NSMenuItem {
     pub id: id,

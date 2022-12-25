@@ -1,5 +1,6 @@
-use crate::draw::Position;
 use std::f64::consts::PI;
+
+use crate::draw::Position;
 
 /* Animation curves based on https://easings.net/# and https://github.com/flutter/flutter/blob/f4abaa0735/packages/flutter/lib/src/animation/curves.dart#L1681*/
 

@@ -1,5 +1,3 @@
-use std::ops::DerefMut;
-
 use carbide_core::draw::{Dimension, Position};
 use carbide_core::environment::Environment;
 use carbide_core::event::{

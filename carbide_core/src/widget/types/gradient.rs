@@ -1,6 +1,7 @@
+use carbide_core::Color;
+
 use crate::draw::alignment::Alignment;
 use crate::draw::Position;
-use carbide_core::Color;
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum GradientPosition {

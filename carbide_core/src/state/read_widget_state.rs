@@ -2,7 +2,7 @@ use std::fmt;
 use std::fmt::{Debug, Formatter};
 
 use crate::environment::Environment;
-use crate::state::{State, RState, ReadState, StateContract, TState, ValueState, NewStateSync, ValueRef, IgnoreWritesState};
+use crate::state::{IgnoreWritesState, NewStateSync, ReadState, RState, StateContract, TState, ValueRef, ValueState};
 
 pub enum ReadWidgetState<T>
 where

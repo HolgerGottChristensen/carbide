@@ -2,9 +2,8 @@ use std::fmt::Debug;
 
 use dyn_clone::DynClone;
 
-use crate::state::ReadState;
 use crate::state::*;
-
+use crate::state::ReadState;
 use crate::state::util::value_cell::ValueRefMut;
 
 pub trait State<T>: DynClone + Debug + ReadState<T>

@@ -1,11 +1,10 @@
 use std::fmt::{Debug, Formatter};
-use std::mem;
-use std::ops::Deref;
-use std::rc::Rc;
-use std::sync::{Arc};
-use parking_lot::{RawRwLock, RwLock, RwLockReadGuard, RwLockWriteGuard};
+use std::sync::Arc;
+
+use parking_lot::{RwLock, RwLockReadGuard, RwLockWriteGuard};
+
 use crate::environment::Environment;
-use crate::state::{NewStateSync, ReadState, State, StateContract, TState, ValueRef, ValueRefMut};
+use crate::state::{NewStateSync, ReadState, State, StateContract, ValueRef, ValueRefMut};
 
 /// # Local state
 /// The local state is used as a shared state between multiple widgets within the same widget tree.

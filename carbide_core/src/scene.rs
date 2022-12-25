@@ -1,5 +1,7 @@
 use std::ops::Deref;
+
 use dyn_clone::DynClone;
+
 use carbide_core::widget::Widget;
 
 pub trait Scene: Widget + DynClone + 'static {

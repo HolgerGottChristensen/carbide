@@ -1,7 +1,7 @@
+use crate::Color;
 use crate::environment::Environment;
 #[cfg(target_os = "macos")]
 use crate::platform::mac::color_dialog::open_color_dialog;
-use crate::Color;
 
 pub struct ColorDialogSettings {
     pub(crate) show_alpha: bool,

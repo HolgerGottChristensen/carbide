@@ -1,6 +1,7 @@
-use image::DynamicImage;
 use std::path::Path;
 use std::sync::atomic::{AtomicUsize, Ordering};
+
+use image::DynamicImage;
 
 use crate::draw::image::ImageId;
 use crate::locate_folder::Search;

@@ -1,6 +1,7 @@
+use carbide_core::color;
+
 use crate::environment::EnvironmentColor;
 use crate::environment::EnvironmentVariable;
-use carbide_core::color;
 
 macro_rules! env_color {
     ($var:ident, $r:literal, $g:literal, $b:literal, $a:literal) => {

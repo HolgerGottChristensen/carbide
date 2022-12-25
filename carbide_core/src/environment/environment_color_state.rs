@@ -1,8 +1,8 @@
 use std::ops::{Deref, DerefMut};
 
-use crate::environment::{Environment, EnvironmentColor};
-use crate::state::{NewStateSync, ReadState, ValueRef, ValueRefMut, StateKey, State};
 use crate::Color;
+use crate::environment::{Environment, EnvironmentColor};
+use crate::state::{NewStateSync, ReadState, State, StateKey, ValueRef, ValueRefMut};
 
 #[derive(Clone, Debug)]
 pub struct EnvironmentColorState {

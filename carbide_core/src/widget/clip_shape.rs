@@ -1,9 +1,10 @@
 use carbide_macro::carbide_default_builder;
-use crate::draw::{Dimension, Position, Rect};
-use crate::render::{Primitive, PrimitiveKind, Render};
+
 use crate::CommonWidgetImpl;
+use crate::draw::{Dimension, Position, Rect};
 use crate::environment::Environment;
 use crate::layout::{BasicLayouter, Layout, Layouter};
+use crate::render::{Primitive, PrimitiveKind, Render};
 use crate::state::StateSync;
 use crate::widget::{CommonWidget, Shape, Widget, WidgetExt, WidgetId};
 

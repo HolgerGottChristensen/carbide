@@ -1,5 +1,5 @@
-use crate::draw::{Dimension, Position};
 use crate::Color;
+use crate::draw::{Dimension, Position};
 
 /// This trait is the base for things that are animatable. To animate a value in an [Animation]
 /// you can either provide a value that is animatable or provide a value with a custom interpolation.

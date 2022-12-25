@@ -1,6 +1,7 @@
-use crate::state::{Map1, Map2, RState, StateContract, WidgetState, TState};
 use std::collections::HashSet;
 use std::hash::Hash;
+
+use crate::state::{Map1, Map2, RState, StateContract, TState, WidgetState};
 
 impl<T: StateContract + Eq + Hash> WidgetState<HashSet<T>> {
     /// Returns the number of elements in the set.

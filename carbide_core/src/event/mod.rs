@@ -1,20 +1,20 @@
-pub use types::button::Button;
 pub use custom_event::CustomEvent;
+pub use custom_event::EventSink;
 pub use custom_event::HasEventSink;
 pub use custom_event::HasRawWindowHandleAndEventSink;
-pub use custom_event::EventSink;
 pub use custom_event::NoopEventSink;
 pub use event::Event;
 pub use event_handler::*;
-pub use types::hot_key::*;
 pub use input::Input;
-pub use types::key::Key;
 pub use keyboard_event_handler::KeyboardEventHandler;
+pub use mouse_event_handler::MouseEventHandler;
+pub use other_event_handler::OtherEventHandler;
+pub use types::button::Button;
+pub use types::hot_key::*;
+pub use types::key::Key;
 pub use types::modifier_key::ModifierKey;
 pub use types::motion::Motion;
 pub use types::mouse_button::MouseButton;
-pub use mouse_event_handler::MouseEventHandler;
-pub use other_event_handler::OtherEventHandler;
 pub use types::touch::*;
 
 mod custom_event;

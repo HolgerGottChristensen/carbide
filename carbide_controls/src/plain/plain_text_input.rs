@@ -1,31 +1,30 @@
-use std::ops::{DerefMut, Range};
+use std::ops::Range;
 
 use copypasta::{ClipboardContext, ClipboardProvider};
 use unicode_segmentation::UnicodeSegmentation;
 
+use carbide_core::Color;
 use carbide_core::draw::{Dimension, Position};
-use carbide_core::environment::{Environment, EnvironmentFontSize, EnvironmentColor};
+use carbide_core::environment::{Environment, EnvironmentColor, EnvironmentFontSize};
 use carbide_core::event::{
-    Key, KeyboardEvent, KeyboardEventHandler, ModifierKey, MouseButton, MouseEvent,
+    KeyboardEvent, KeyboardEventHandler, ModifierKey, MouseEvent,
     MouseEventHandler, OtherEventHandler, WidgetEvent, WindowEvent,
 };
 use carbide_core::flags::Flags;
 use carbide_core::focus::Focus;
 use carbide_core::focus::Focusable;
-use carbide_core::layout::{BasicLayouter, Layouter, Layout};
-use carbide_core::state::StateSync;
-use carbide_core::render::{Render, Primitive};
+use carbide_core::layout::{BasicLayouter, Layout};
 use carbide_core::state::{
-    AnimatedState, LocalState, ReadState, State, StateExt,
+    LocalState, ReadState, State, StateExt,
     TState,
 };
-use carbide_core::text::{FontSize, Glyph};
-use carbide_core::widget::Wrap;
+use carbide_core::state::StateSync;
+use carbide_core::text::Glyph;
 use carbide_core::widget::{
     CommonWidget, HStack, IfElse, Rectangle, Spacer, Text, Widget, WidgetExt, WidgetId, WidgetIter,
-    WidgetIterMut, ZStack, SCALE,
+    WidgetIterMut, ZStack,
 };
-use carbide_core::{Color, Scalar};
+use carbide_core::widget::Wrap;
 
 use crate::plain::cursor::{Cursor, CursorIndex};
 use crate::plain::text_input_key_commands::TextInputKeyCommand;

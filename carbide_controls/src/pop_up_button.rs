@@ -1,16 +1,15 @@
 use std::fmt::Debug;
 
-use carbide_core::draw::Dimension;
-use carbide_core::environment::{Environment, EnvironmentColor};
-use carbide_core::state::{
-    StateContract, StateExt, StateKey, TState
-};
-use carbide_core::widget::canvas::Canvas;
-use carbide_core::widget::*;
 use carbide_core::Color;
+use carbide_core::environment::EnvironmentColor;
 use carbide_core::focus::Focus;
+use carbide_core::state::{
+    StateContract, StateExt, TState
+};
+use carbide_core::widget::*;
+use carbide_core::widget::canvas::Canvas;
 
-use crate::{List, PlainPopUpButton, PopupDelegate};
+use crate::PlainPopUpButton;
 
 pub struct PopUpButton;
 

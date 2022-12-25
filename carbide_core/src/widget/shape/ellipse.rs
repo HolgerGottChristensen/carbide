@@ -1,22 +1,23 @@
-use lyon::algorithms::math::{Angle};
+use lyon::algorithms::math::Angle;
 use lyon::algorithms::path::builder::PathBuilder;
 use lyon::algorithms::path::geom::euclid::vec2;
 use lyon::algorithms::path::Winding;
 use lyon::geom::euclid::rect;
 use lyon::math::point;
+
 use carbide_macro::carbide_default_builder;
 
-use crate::draw::{Dimension, Position};
-use crate::widget::shape::{tessellate, Shape};
-use crate::widget::types::PrimitiveStore;
-use crate::widget::types::ShapeStyle;
-use crate::widget::types::StrokeStyle;
 use crate::{Color, CommonWidgetImpl};
+use crate::draw::{Dimension, Position};
 use crate::environment::Environment;
 use crate::environment::EnvironmentColor;
 use crate::render::{Primitive, Render};
 use crate::state::{ReadState, RState, TState};
 use crate::widget::{AdvancedColor, Blur, CommonWidget, Widget, WidgetExt, WidgetId, ZStack};
+use crate::widget::shape::{Shape, tessellate};
+use crate::widget::types::PrimitiveStore;
+use crate::widget::types::ShapeStyle;
+use crate::widget::types::StrokeStyle;
 
 /// A simple, non-interactive widget for drawing a single **Ellipse**.
 #[derive(Debug, Clone, Widget)]

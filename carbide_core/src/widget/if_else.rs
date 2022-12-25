@@ -1,8 +1,9 @@
-use crate::draw::{Dimension, Position};
-use crate::widget::{CommonWidget, Widget, WidgetExt, WidgetId, WidgetIter, WidgetIterMut, Empty};
 use carbide_macro::carbide_default_builder;
+
+use crate::draw::{Dimension, Position};
 use crate::flags::Flags;
 use crate::state::{ReadState, RState};
+use crate::widget::{CommonWidget, Empty, Widget, WidgetExt, WidgetId, WidgetIter, WidgetIterMut};
 
 /// A basic, non-interactive rectangle shape widget.
 #[derive(Debug, Clone, Widget)]

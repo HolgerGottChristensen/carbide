@@ -1,12 +1,13 @@
 use carbide_macro::carbide_default_builder;
+
+use crate::CommonWidgetImpl;
 use crate::draw::{Dimension, Position};
+use crate::environment::{Environment, EnvironmentStateContainer, EnvironmentVariable};
 use crate::event::{
     KeyboardEvent, KeyboardEventHandler, MouseEvent, MouseEventHandler, OtherEventHandler,
     WidgetEvent,
 };
 use crate::focus::{Focusable, Refocus};
-use crate::CommonWidgetImpl;
-use crate::environment::{Environment, EnvironmentStateContainer, EnvironmentVariable};
 use crate::render::{Primitive, Render};
 use crate::state::{NewStateSync, ReadState};
 use crate::widget::{CommonWidget, Widget, WidgetExt, WidgetId};

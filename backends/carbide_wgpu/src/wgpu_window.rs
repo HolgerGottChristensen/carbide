@@ -1,48 +1,48 @@
 use std::borrow::{Borrow, BorrowMut};
+use std::cell::RefCell;
 use std::collections::HashMap;
 use std::fmt::{Debug, Formatter};
 use std::rc::Rc;
-use std::thread::LocalKey;
+
 use cgmath::{Matrix4, Vector3};
 use futures::executor::block_on;
-use wgpu::{Adapter, BindGroup, BindGroupLayout, Buffer, BufferUsages, Device, Extent3d, ImageCopyTexture, Instance, PipelineLayout, PresentMode, Queue, RenderPassDepthStencilAttachment, Sampler, ShaderModel, ShaderModule, Surface, SurfaceConfiguration, Texture, TextureFormat, TextureView};
+use raw_window_handle::HasRawWindowHandle;
+use wgpu::{Adapter, BindGroup, BindGroupLayout, Buffer, BufferUsages, Device, Extent3d, ImageCopyTexture, Instance, PipelineLayout, PresentMode, Queue, RenderPassDepthStencilAttachment, Sampler, ShaderModule, Surface, SurfaceConfiguration, Texture, TextureFormat, TextureView};
 use wgpu::util::{BufferInitDescriptor, DeviceExt};
-use winit::dpi::{LogicalSize, PhysicalPosition, PhysicalSize, Size};
-use winit::event_loop::ControlFlow;
+use winit::dpi::{LogicalSize, PhysicalPosition, Size};
 use winit::window::{Window as WinitWindow, WindowBuilder};
+
+use carbide_core::{Scalar, Scene};
 use carbide_core::draw::{Dimension, Position, Rect};
-use carbide_core::draw::image::{ImageId, ImageMap};
+use carbide_core::draw::image::ImageId;
 use carbide_core::environment::{Environment, EnvironmentColor};
-use carbide_core::event::{Event, HotKey, KeyboardEvent, KeyboardEventHandler, MouseEvent, MouseEventHandler, OtherEventHandler, WidgetEvent, WindowEvent};
+use carbide_core::event::{KeyboardEvent, KeyboardEventHandler, MouseEvent, MouseEventHandler, OtherEventHandler, WidgetEvent, WindowEvent};
 use carbide_core::flags::Flags;
-use carbide_core::focus::{Focus, Focusable};
+use carbide_core::focus::Focusable;
 use carbide_core::image::{DynamicImage, GenericImage, GenericImageView};
 use carbide_core::layout::Layout;
-use carbide_core::mesh::{DEFAULT_GLYPH_CACHE_DIMS, MODE_IMAGE};
 use carbide_core::mesh::mesh::Mesh;
 use carbide_core::render::{Primitive, Primitives, Render};
-use carbide_core::{Scalar, Scene};
+use carbide_core::state::StateSync;
 use carbide_core::widget::{CommonWidget, FilterId, Menu, OverlaidLayer, Rectangle, Widget, WidgetId, WidgetIter, WidgetIterMut, ZStack};
 use carbide_core::window::WindowId;
+use carbide_winit::convert_mouse_cursor;
+
+use crate::{render_pass_ops, RenderPassOps};
 use crate::application::{EVENT_LOOP, WINDOW_IDS};
 use crate::bind_group_layouts::{filter_buffer_bind_group_layout, filter_texture_bind_group_layout, gradient_buffer_bind_group_layout, main_texture_group_layout, uniform_bind_group_layout};
 use crate::bind_groups::{filter_buffer_bind_group, filter_texture_bind_group, main_bind_group, matrix_to_uniform_bind_group, size_to_uniform_bind_group};
 use crate::diffuse_bind_group::{DiffuseBindGroup, new_diffuse};
-use crate::image::Image;
-use crate::pipeline::{create_pipelines, create_render_pipeline, MaskType};
-use crate::render_pass_command::{draw_commands_to_render_pass_commands, RenderPass, RenderPassCommand};
-use crate::{render_pass_ops, RenderPassOps};
 use crate::filter::Filter;
+use crate::image::Image;
+use crate::pipeline::create_pipelines;
+use crate::render_pass_command::{draw_commands_to_render_pass_commands, RenderPass, RenderPassCommand};
 use crate::render_pipeline_layouts::{filter_pipeline_layout, gradient_pipeline_layout, main_pipeline_layout, RenderPipelines};
 use crate::renderer::{atlas_cache_tex_desc, main_render_tex_desc, secondary_render_tex_desc};
 use crate::samplers::main_sampler;
 use crate::texture_atlas_command::TextureAtlasCommand;
 use crate::textures::create_depth_stencil_texture;
 use crate::vertex::Vertex;
-use std::cell::RefCell;
-use raw_window_handle::HasRawWindowHandle;
-use carbide_core::state::StateSync;
-use carbide_winit::convert_mouse_cursor;
 
 thread_local!(pub static INSTANCE: Instance = Instance::new(wgpu::Backends::PRIMARY));
 thread_local!(pub static ADAPTER: Adapter = {

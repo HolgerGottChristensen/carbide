@@ -2,10 +2,8 @@ use std::borrow::Borrow;
 use std::cmp::{max, min};
 use std::collections::HashSet;
 use std::fmt::{Debug, Formatter};
-use std::rc::Rc;
 
-use crate::PlainButton;
-use carbide_core::color::{BLUE, RED, TRANSPARENT};
+use carbide_core::color::TRANSPARENT;
 use carbide_core::draw::{Dimension, Position};
 use carbide_core::environment::{Environment, EnvironmentColor};
 use carbide_core::event::ModifierKey;
@@ -13,11 +11,13 @@ use carbide_core::flags::Flags;
 use carbide_core::state::{
     LocalState, ReadState, State, StateContract, StateExt, TState, ValueState,
 };
-use carbide_core::widget::canvas::Canvas;
 use carbide_core::widget::{
     CommonWidget, Delegate, EdgeInsets, ForEach, HStack, IfElse, Rectangle, Scroll, VStack, Widget,
-    WidgetExt, WidgetId, WidgetIter, WidgetIterMut, SCALE,
+    WidgetExt, WidgetId, WidgetIter, WidgetIterMut,
 };
+use carbide_core::widget::canvas::Canvas;
+
+use crate::PlainButton;
 
 const MULTI_SELECTION_MODIFIER: ModifierKey = if cfg!(target_os = "macos") {
     ModifierKey::GUI

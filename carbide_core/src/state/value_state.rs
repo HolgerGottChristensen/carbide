@@ -1,15 +1,16 @@
-use crate::Color;
-use carbide_core::state::NewStateSync;
-use carbide_core::state::Map1;
 use std::fmt::{Debug, Formatter};
-use std::ops::{Deref, DerefMut};
+use std::ops::Deref;
 use std::str::FromStr;
 
+use carbide_core::state::Map1;
+use carbide_core::state::NewStateSync;
+
+use crate::Color;
 use crate::environment::Environment;
+use crate::state::{MapOwnedState, ReadWidgetState, RState, State, StateContract, StateExt, TState};
+use crate::state::{ValueRef, ValueRefMut};
 use crate::state::ReadState;
 use crate::state::widget_state::WidgetState;
-use crate::state::{MapOwnedState, RState, State, StateContract, StateExt, TState, ReadWidgetState};
-use crate::state::{ValueRef, ValueRefMut};
 use crate::widget::{AdvancedColor, Gradient};
 
 /// # ValueState

@@ -1,4 +1,4 @@
-use crate::state::{Map1, Map2, RState, StateContract, TState, IndexState, WidgetState};
+use crate::state::{Map1, Map2, RState, StateContract, TState, WidgetState};
 
 impl<T: StateContract> WidgetState<Vec<T>> {
     /// Returns a state that given an index will return a state containing the item at that index

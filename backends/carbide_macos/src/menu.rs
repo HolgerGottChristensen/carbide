@@ -1,15 +1,16 @@
-use cocoa::base::{id, nil};
-use crate::string::NSString;
 use cocoa::appkit::NSMenu as InnerNSMenu;
+use cocoa::base::{id, nil};
+use cocoa::base::NO;
 use cocoa::foundation::{NSAutoreleasePool, NSInteger};
-use objc::{msg_send, class, sel, sel_impl};
+use objc::{class, msg_send, sel, sel_impl};
+
+use carbide_core::environment::Environment;
+use carbide_core::widget::{Menu, MenuItem};
+
 use crate::id::Id;
 use crate::menu_item::NSMenuItem;
-use cocoa::base::NO;
-use cocoa::base::YES;
-use carbide_core::widget::{Menu, MenuItem};
-use carbide_core::environment::Environment;
 use crate::NSArray;
+use crate::string::NSString;
 
 pub struct NSMenu {
     pub(crate) id: id,

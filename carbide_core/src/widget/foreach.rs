@@ -1,4 +1,5 @@
 use std::fmt::{Debug, Formatter};
+
 use carbide_macro::carbide_default_builder;
 
 use crate::draw::{Dimension, Position};

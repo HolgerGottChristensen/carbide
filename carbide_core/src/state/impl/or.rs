@@ -1,5 +1,5 @@
 use crate::environment::Environment;
-use crate::state::{Map2, NewStateSync, ReadState, ReadWidgetState, RState, StateContract, TState, ValueRef, WidgetState};
+use crate::state::{NewStateSync, ReadState, ReadWidgetState, RState, ValueRef, WidgetState};
 
 pub trait StateOr<Rhs> {
     fn or(self, other: Rhs) -> RState<bool>;

@@ -11,6 +11,14 @@
 
 extern crate self as carbide_core;
 
+pub use futures::TryFutureExt;
+
+pub use carbide_core::asynchronous::SpawnTask;
+pub use draw::Scalar;
+pub use scene::Scene;
+
+pub use crate::color::Color;
+
 #[macro_export]
 macro_rules! lens {
     ($type:ty; $i:ident $(. $field:ident)+) => {
@@ -35,14 +43,6 @@ macro_rules! set_state {
         self.sync($env);
     }};
 }
-
-pub use futures::TryFutureExt;
-
-pub use carbide_core::asynchronous::SpawnTask;
-pub use draw::Scalar;
-
-pub use crate::color::Color;
-pub use scene::Scene;
 
 pub mod animation;
 pub mod asynchronous;

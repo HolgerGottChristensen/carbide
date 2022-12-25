@@ -1,13 +1,12 @@
 #![allow(unsafe_code)]
 
-use std::any::Any;
 use std::cell::{Cell, UnsafeCell};
 use std::cmp::Ordering;
 use std::fmt;
 use std::fmt::{Debug, Formatter};
 use std::ops::{Deref, DerefMut};
-use std::rc::Rc;
-use parking_lot::{MappedRwLockReadGuard, MappedRwLockWriteGuard, RwLockReadGuard};
+
+use parking_lot::{MappedRwLockReadGuard, MappedRwLockWriteGuard};
 
 type BorrowFlag = isize;
 

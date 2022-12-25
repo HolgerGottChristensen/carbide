@@ -1,12 +1,13 @@
-use carbide_core::state::NewStateSync;
 use std::fmt::{Debug, Formatter};
 use std::ops::{Deref, Index, IndexMut};
 
+use carbide_core::state::NewStateSync;
+
 use crate::environment::Environment;
+use crate::state::{ReadState, RState, StateContract, TState};
 use crate::state::state::State;
 use crate::state::util::value_cell::{ValueRef, ValueRefMut};
 use crate::state::widget_state::WidgetState;
-use crate::state::{ReadState, RState, StateContract, TState};
 
 /// # Index state
 /// Index state is a general implementation that can take any state that is Index and IndexMut

@@ -1,4 +1,4 @@
-use crate::state::{Map2, ReadWidgetState, RState, StateContract, TState, WidgetState};
+use crate::state::{Map2, ReadWidgetState, RState, StateContract, WidgetState};
 
 pub trait StatePartialOrd<Rhs> {
     fn lt(self, other: Rhs) -> RState<bool>;

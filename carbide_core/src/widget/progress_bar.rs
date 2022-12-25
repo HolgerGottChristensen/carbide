@@ -1,9 +1,10 @@
 use carbide_macro::carbide_default_builder;
-use crate::draw::{Dimension, Position};
+
 use crate::CommonWidgetImpl;
-use crate::state::TState;
-use crate::widget::{Widget, WidgetExt, WidgetId, ZStack, Capsule, HSplit, Spacer};
+use crate::draw::{Dimension, Position};
 use crate::environment::EnvironmentColor;
+use crate::state::TState;
+use crate::widget::{Capsule, HSplit, Spacer, Widget, WidgetExt, WidgetId, ZStack};
 
 #[derive(Debug, Clone, Widget)]
 pub struct ProgressBar {

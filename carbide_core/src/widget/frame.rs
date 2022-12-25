@@ -1,6 +1,8 @@
-use crate::draw::{Dimension, Position};
 use std::fmt::Debug;
+
 use carbide_macro::carbide_default_builder;
+
+use crate::draw::{Dimension, Position};
 use crate::environment::Environment;
 use crate::flags::Flags;
 use crate::layout::{BasicLayouter, Layout, Layouter};

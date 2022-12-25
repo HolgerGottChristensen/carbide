@@ -1,4 +1,6 @@
 use carbide_macro::carbide_default_builder;
+
+use crate::CommonWidgetImpl;
 use crate::cursor::MouseCursor;
 use crate::draw::{Dimension, Position};
 use crate::environment::Environment;
@@ -6,7 +8,6 @@ use crate::event::{MouseEvent, MouseEventHandler, OtherEventHandler, WidgetEvent
 use crate::layout::Layout;
 use crate::state::{LocalState, ReadState, State, TState};
 use crate::widget::{CommonWidget, CrossAxisAlignment, SplitType, Widget, WidgetExt, WidgetId};
-use crate::CommonWidgetImpl;
 
 #[derive(Clone, Debug, Widget)]
 #[carbide_exclude(Layout, MouseEvent, OtherEvent)]

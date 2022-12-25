@@ -1,10 +1,10 @@
+use crate::environment::Environment;
 use crate::event::WidgetEvent;
 use crate::flags::Flags;
 use crate::focus::focus::Focus;
 use crate::focus::Refocus;
-use crate::environment::Environment;
-use crate::widget::CommonWidget;
 use crate::state::StateSync;
+use crate::widget::CommonWidget;
 
 pub trait Focusable: CommonWidget + StateSync {
 

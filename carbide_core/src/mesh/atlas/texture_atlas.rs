@@ -2,11 +2,12 @@ use std::cell::RefCell;
 use std::collections::HashMap;
 use std::rc::{Rc, Weak};
 
-use crate::draw::image::ImageId;
 use fxhash::{FxBuildHasher, FxHashMap};
 use image::GenericImageView;
+
 use carbide_rusttype::{GlyphId, Point, Rect};
 
+use crate::draw::image::ImageId;
 use crate::draw::Position;
 use crate::draw::Scalar;
 use crate::mesh::atlas::lossy_glyph_info::LossyGlyphInfo;

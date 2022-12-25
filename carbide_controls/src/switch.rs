@@ -1,9 +1,8 @@
-use carbide_core::draw::Dimension;
-use carbide_core::environment::{Environment, EnvironmentColor};
-use carbide_core::state::{Map3, StateExt, StateKey, TState};
-use carbide_core::widget::*;
 use carbide_core::Color;
+use carbide_core::environment::EnvironmentColor;
 use carbide_core::focus::Focus;
+use carbide_core::state::{Map3, TState};
+use carbide_core::widget::*;
 
 use crate::PlainSwitch;
 

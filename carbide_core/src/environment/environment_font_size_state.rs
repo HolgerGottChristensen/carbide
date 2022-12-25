@@ -1,7 +1,7 @@
 use std::ops::{Deref, DerefMut};
 
 use crate::environment::{Environment, EnvironmentFontSize};
-use crate::state::{ReadState, ValueRef, ValueRefMut, NewStateSync, State, StateKey};
+use crate::state::{NewStateSync, ReadState, State, StateKey, ValueRef, ValueRefMut};
 
 #[derive(Clone, Debug)]
 pub struct EnvironmentFontSizeState {

@@ -3,7 +3,6 @@ use std::path::Path;
 use carbide_core::image::DynamicImage;
 use wgpu::{Device, Queue};
 
-use carbide_core::mesh;
 use carbide_core::mesh::pre_multiply::PreMultiply;
 use carbide_core::widget::ImageInformation;
 

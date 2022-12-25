@@ -1,15 +1,15 @@
 use nom::branch::alt;
 use nom::bytes::complete::{is_not, tag, take};
 use nom::combinator::{map, not};
+use nom::IResult;
 use nom::multi::{many0, many1};
 use nom::sequence::{delimited, preceded, tuple};
-use nom::IResult;
 
 use crate::environment::Environment;
-use crate::text::types::text_decoration::TextDecoration;
+use crate::text::{FontStyle, FontWeight, TextSpanGenerator};
 use crate::text::text_span::TextSpan;
 use crate::text::text_style::TextStyle;
-use crate::text::{FontStyle, FontWeight, TextSpanGenerator};
+use crate::text::types::text_decoration::TextDecoration;
 
 #[derive(PartialEq, Debug, Clone)]
 pub enum PolarItem {

@@ -1,5 +1,7 @@
 use std::ops::Range;
+
 use cgmath::Matrix4;
+
 use crate::draw::draw_gradient::DrawGradient;
 use crate::draw::image::ImageId;
 use crate::draw::Rect;

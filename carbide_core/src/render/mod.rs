@@ -1,8 +1,9 @@
-use crate::draw::Rect;
 pub use primitive::*;
 pub use primitive_kind::*;
 pub use primitives::*;
 pub use render::*;
+
+use crate::draw::Rect;
 
 mod primitive;
 mod primitive_kind;

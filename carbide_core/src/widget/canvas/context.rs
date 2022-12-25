@@ -4,10 +4,10 @@ use lyon::algorithms::path::Path;
 use lyon::lyon_algorithms::path::math::point;
 use lyon::tessellation::{FillOptions, LineCap, LineJoin, StrokeOptions};
 
-use crate::draw::svg_path_builder::SVGPathBuilder;
-use crate::draw::{Dimension, Position};
-use crate::state::TState;
 use crate::Color;
+use crate::draw::{Dimension, Position};
+use crate::draw::svg_path_builder::SVGPathBuilder;
+use crate::state::TState;
 
 #[derive(Debug, Clone)]
 pub struct Context {

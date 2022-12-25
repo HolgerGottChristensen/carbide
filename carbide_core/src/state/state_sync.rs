@@ -1,6 +1,7 @@
+use dyn_clone::DynClone;
+
 use crate::environment::Environment;
 use crate::widget::CommonWidget;
-use dyn_clone::DynClone;
 
 pub trait StateSync: CommonWidget {
     fn capture_state(&mut self, env: &mut Environment);

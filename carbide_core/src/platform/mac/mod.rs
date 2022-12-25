@@ -4,7 +4,6 @@
 use std::ffi::OsString;
 use std::path::PathBuf;
 
-use crate::Color;
 use block::ConcreteBlock;
 use cocoa::appkit::CGFloat;
 use cocoa::base::{id, nil, NO, YES};
@@ -12,6 +11,7 @@ use cocoa::foundation::{NSArray, NSAutoreleasePool, NSInteger, NSProcessInfo, NS
 use objc::{class, msg_send, sel, sel_impl};
 use oneshot::Receiver;
 
+use crate::Color;
 use crate::dialog::open_dialog::OpenDialogSettings;
 use crate::prelude::Environment;
 use crate::state::{InnerState, ValueCell};

@@ -67,7 +67,6 @@ impl Font<'_> {
 impl<'font> Font<'font> {
     #[inline]
     pub fn inner(&self) -> &owned_ttf_parser::Face<'_> {
-        use owned_ttf_parser::AsFaceRef;
         match self {
             Self::Ref(f) => f,
             Self::Owned(f) => f.as_face_ref(),

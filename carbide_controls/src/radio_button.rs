@@ -1,11 +1,10 @@
-use carbide_core::Color;
 use std::fmt::Debug;
 
-use carbide_core::draw::Dimension;
-use carbide_core::environment::{Environment, EnvironmentColor};
+use carbide_core::Color;
+use carbide_core::environment::EnvironmentColor;
 use carbide_core::focus::Focus;
 use carbide_core::state::{
-    Map3, StateContract, StateExt, StateKey, TState,
+    Map3, StateContract, TState,
 };
 use carbide_core::widget::*;
 

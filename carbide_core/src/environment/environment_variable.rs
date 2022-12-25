@@ -1,5 +1,5 @@
-use crate::environment::{EnvironmentColor, EnvironmentFontSize};
 use crate::Color;
+use crate::environment::{EnvironmentColor, EnvironmentFontSize};
 
 #[derive(Debug, Clone)]
 pub enum EnvironmentVariable {

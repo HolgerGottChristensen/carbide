@@ -1,27 +1,27 @@
-use std::ffi::OsString;
 use std::path::{Path, PathBuf};
+
 use block::ConcreteBlock;
-use cocoa::base::{id, nil};
-use cocoa::foundation::{NSInteger};
+use cocoa::base::id;
+use cocoa::base::NO;
+use cocoa::base::YES;
+use cocoa::foundation::NSInteger;
+use objc::class;
 use objc::msg_send;
 use objc::sel;
 use objc::sel_impl;
-use objc::class;
+use oneshot::Receiver;
 use raw_window_handle::{AppKitHandle, HasRawWindowHandle, RawWindowHandle};
+
+use carbide_core::dialog::FileSpecification;
 use carbide_core::state::{InnerState, ValueCell};
+
+use crate::array::NSArray;
 use crate::dialogs::NSModalResponse;
-use crate::dialogs::NSModalResponseOK;
 use crate::dialogs::NSModalResponseCancel;
+use crate::dialogs::NSModalResponseOK;
 use crate::id::Id;
 use crate::string::NSString;
 use crate::url::NSURL;
-use cocoa::base::YES;
-use cocoa::base::NO;
-use objc::runtime::Sel;
-use oneshot::Receiver;
-use carbide_core::dialog::FileSpecification;
-use crate::array::NSArray;
-
 
 /// A rust wrapper around: https://developer.apple.com/documentation/appkit/nsopenpanel?language=objc
 pub struct OpenPanel {

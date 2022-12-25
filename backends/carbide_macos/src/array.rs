@@ -1,7 +1,8 @@
 use cocoa::base::{id, nil};
 use cocoa::foundation::{NSArray as InnerNSArray, NSInteger};
+use objc::{msg_send, sel, sel_impl};
+
 use crate::id::Id;
-use objc::{msg_send, class, sel, sel_impl};
 
 pub struct NSArray {
     pub inner: id,

@@ -1,30 +1,17 @@
-use std::ops::{DerefMut, Range};
-
-use copypasta::{ClipboardContext, ClipboardProvider};
-use unicode_segmentation::UnicodeSegmentation;
-
+use carbide_core::Color;
 use carbide_core::draw::{Dimension, Position};
-use carbide_core::environment::{Environment, EnvironmentFontSize, EnvironmentColor};
-use carbide_core::event::{
-    Key, KeyboardEvent, KeyboardEventHandler, ModifierKey, MouseButton, MouseEvent,
-    MouseEventHandler, OtherEventHandler, WidgetEvent, WindowEvent,
-};
-use carbide_core::flags::Flags;
+use carbide_core::environment::EnvironmentColor;
 use carbide_core::focus::Focus;
-use carbide_core::layout::{BasicLayouter, Layouter, Layout};
 use carbide_core::state::{
-    LocalState, Map5, ReadState, State, StateExt,
+    LocalState, Map5,
     TState,
 };
-use carbide_core::text::Glyph;
-use carbide_core::widget::Wrap;
 use carbide_core::widget::{
-    CommonWidget, CornerRadii, EdgeInsets, HStack, Rectangle, RoundedRectangle, Spacer, Text,
-    Widget, WidgetExt, WidgetId, WidgetIter, WidgetIterMut, ZStack, SCALE,
+    CommonWidget, CornerRadii, EdgeInsets, RoundedRectangle,
+    Widget, WidgetExt, WidgetId, WidgetIter, WidgetIterMut, ZStack,
 };
-use carbide_core::{Color, Scalar};
 
-use crate::{PlainTextInput, TextInputState, PASSWORD_CHAR};
+use crate::{PASSWORD_CHAR, PlainTextInput, TextInputState};
 
 /// A plain text input widget. The widget contains no specific styling, other than text color,
 /// cursor color/width and selection color. Most common logic has been implemented, such as

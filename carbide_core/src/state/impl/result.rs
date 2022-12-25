@@ -1,4 +1,4 @@
-use crate::state::{Map1, Map2, State, StateContract, TState, RState};
+use crate::state::{Map1, Map2, RState, StateContract, TState};
 
 impl<T: StateContract, E: StateContract> TState<Result<T, E>> {
     /// Return a boolean state that is true if the original state is Ok.

@@ -1,5 +1,4 @@
 use std::collections::HashMap;
-use std::ffi::c_void;
 use std::future::Future;
 use std::option::Option::Some;
 use std::path::{Path, PathBuf};
@@ -11,24 +10,24 @@ use fxhash::{FxBuildHasher, FxHashMap};
 use image::DynamicImage;
 use oneshot::TryRecvError;
 use raw_window_handle::{HasRawWindowHandle, RawWindowHandle};
-use carbide_core::draw::theme;
 
+use crate::{Color, locate_folder};
 use crate::animation::Animation;
 use crate::cursor::MouseCursor;
-use crate::draw::image::{ImageId, ImageMap};
 use crate::draw::Dimension;
+use crate::draw::image::{ImageId, ImageMap};
 use crate::draw::Scalar;
+use crate::draw::theme;
 use crate::environment::{EnvironmentFontSize, WidgetTransferAction};
+use crate::environment::{EnvironmentColor, EnvironmentVariable};
 use crate::event::{CustomEvent, EventSink, HasEventSink};
 use crate::focus::Refocus;
+use crate::layout::BasicLayouter;
 use crate::mesh::TextureAtlas;
-use crate::environment::{EnvironmentColor, EnvironmentVariable};
 use crate::state::{InnerState, StateContract, StateKey, ValueCell};
 use crate::text::{Font, FontFamily, FontId, FontSize, FontStyle, FontWeight, Glyph};
-use crate::widget::ImageInformation;
 use crate::widget::{FilterId, ImageFilter, Overlay};
-use crate::{locate_folder, Color};
-use crate::layout::BasicLayouter;
+use crate::widget::ImageInformation;
 use crate::window::WindowId;
 
 pub struct Environment {

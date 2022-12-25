@@ -1,5 +1,5 @@
-use crate::state::{Map1, Map2, RState, TState};
 use crate::Color;
+use crate::state::{Map1, Map2, RState, TState};
 
 impl TState<Color> {
     /// Get the same color darkened. The color is darkened with percent.

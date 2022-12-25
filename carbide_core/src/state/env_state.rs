@@ -2,9 +2,9 @@ use std::fmt::{Debug, Formatter};
 use std::ops::Deref;
 
 use crate::environment::Environment;
-use crate::state::util::value_cell::ValueRef;
+use crate::state::{NewStateSync, ReadState, RState, StateContract};
 use crate::state::ReadWidgetState;
-use crate::state::{RState, ReadState, StateContract, NewStateSync};
+use crate::state::util::value_cell::ValueRef;
 
 /// # Environment state
 /// EnvState is a read-only state that takes a function from the environment and returns a value.

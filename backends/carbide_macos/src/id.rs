@@ -1,6 +1,7 @@
 use cocoa::base::id;
+use objc::{msg_send, sel, sel_impl};
+
 use crate::NSString;
-use objc::{msg_send, class, sel, sel_impl};
 
 pub trait Id {
     fn id(&self) -> id;

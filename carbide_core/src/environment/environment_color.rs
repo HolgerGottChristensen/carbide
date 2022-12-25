@@ -1,8 +1,8 @@
-use crate::environment::EnvironmentColorState;
-use crate::state::WidgetState;
-use crate::state::*;
-use crate::widget::AdvancedColor;
 use crate::Color;
+use crate::environment::EnvironmentColorState;
+use crate::state::*;
+use crate::state::WidgetState;
+use crate::widget::AdvancedColor;
 
 #[derive(Hash, Eq, PartialEq, Clone, Debug)]
 pub enum EnvironmentColor {

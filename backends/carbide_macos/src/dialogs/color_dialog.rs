@@ -1,18 +1,16 @@
 use std::ffi::c_void;
-use std::sync::mpsc::{Sender, Receiver, channel};
+use std::sync::mpsc::{channel, Receiver, Sender};
 
 use cocoa::appkit::CGFloat;
 use cocoa::base::{id, NO, YES};
 use lazy_static::lazy_static;
+use objc::{class, msg_send, sel, sel_impl};
 use objc::declare::ClassDecl;
 use objc::runtime::{Class, Object, Sel};
-use objc::{class, msg_send, sel, sel_impl};
 use raw_window_handle::{AppKitHandle, HasRawWindowHandle, RawWindowHandle};
+
 use carbide_core::Color;
 use carbide_core::event::{CustomEvent, EventSink, HasEventSink, HasRawWindowHandleAndEventSink};
-use carbide_core::environment::Environment;
-use crate::string::NSString;
-
 
 pub struct ColorPanel {
     id: id,

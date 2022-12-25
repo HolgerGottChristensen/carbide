@@ -1,6 +1,5 @@
-use crate::state::{NewStateSync, ReadState, State, StateContract, TState, ValueRef, ValueRefMut};
 use crate::environment::Environment;
-use std::ops::Deref;
+use crate::state::{NewStateSync, ReadState, State, StateContract, TState, ValueRef, ValueRefMut};
 
 #[derive(Debug, Clone)]
 pub struct Flatten<T>

@@ -1,12 +1,11 @@
 use cgmath::Matrix4;
-use crate::Color;
 
+use crate::Color;
 use crate::draw::Dimension;
 use crate::environment::{EnvironmentColor, EnvironmentStateContainer};
 use crate::flags::Flags;
 use crate::state::TState;
 use crate::widget::{Background, Border, Clip, ClipShape, CornerRadii, EdgeInsets, EnvUpdating, Flagged, Flexibility, Frame, Hidden, Offset, Padding, Rotation3DEffect, RoundedRectangle, Shape, Transform, Widget};
-use crate::widget::window_menu::MenuBar;
 
 pub trait WidgetExt: Widget + Sized + 'static {
     /// Surround the widget with a frame. The frame is a widget that has fixed width, height or both.

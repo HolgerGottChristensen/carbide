@@ -1,6 +1,7 @@
 use carbide_macro::carbide_default_builder;
-use crate::draw::{Dimension, Position};
+
 use crate::CommonWidgetImpl;
+use crate::draw::{Dimension, Position};
 use crate::widget::{Widget, WidgetExt, WidgetId};
 
 #[derive(Debug, Clone, Widget)]

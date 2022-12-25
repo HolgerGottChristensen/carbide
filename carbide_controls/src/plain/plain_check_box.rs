@@ -1,19 +1,18 @@
+use carbide_core::Color;
 use carbide_core::draw::{Dimension, Position};
+use carbide_core::environment::Environment;
 use carbide_core::environment::EnvironmentColor;
-use carbide_core::event::{Key, KeyboardEvent, KeyboardEventHandler, ModifierKey, WidgetEvent};
 use carbide_core::flags::Flags;
 use carbide_core::focus::{Focus, Focusable, Refocus};
-use carbide_core::environment::Environment;
-use carbide_core::state::{LocalState, Map2, Map4, MapOwnedState, ReadState, StateExt, StateKey, StateContract, StateSync, TState};
+use carbide_core::state::{LocalState, Map2, Map4, ReadState, TState};
+use carbide_core::state::State;
 use carbide_core::widget::{
-    CommonWidget, HStack, Rectangle, Spacer, Text, Widget, WidgetExt, WidgetId, WidgetIter,
+    CommonWidget, HStack, Rectangle, Text, Widget, WidgetExt, WidgetId, WidgetIter,
     WidgetIterMut, ZStack,
 };
-use carbide_core::Color;
 
-use carbide_core::state::State;
-use crate::types::*;
 use crate::PlainButton;
+use crate::types::*;
 
 #[derive(Debug, Clone, Widget)]
 #[carbide_exclude(Focusable)]

@@ -1,6 +1,7 @@
-use crate::draw::{Dimension, Position};
-use crate::CommonWidgetImpl;
 use carbide_core::widget::popup_menu::PopupMenu;
+
+use crate::CommonWidgetImpl;
+use crate::draw::{Dimension, Position};
 use crate::environment::EnvironmentColor;
 use crate::state::{TState, ValueState};
 use crate::widget::{ForEach, HStack, Menu, Rectangle, Spacer, VStack, Widget, WidgetExt, WidgetId};

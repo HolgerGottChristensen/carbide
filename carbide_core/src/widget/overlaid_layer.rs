@@ -1,11 +1,12 @@
 use carbide_macro::carbide_default_builder;
+
+use crate::CommonWidgetImpl;
 use crate::draw::{Dimension, Position};
+use crate::environment::Environment;
 use crate::event::{
     KeyboardEvent, KeyboardEventHandler, MouseEvent, MouseEventHandler, OtherEventHandler,
     WidgetEvent,
 };
-use crate::CommonWidgetImpl;
-use crate::environment::Environment;
 use crate::layout::Layout;
 use crate::render::{Primitive, Render};
 use crate::widget::{CommonWidget, Overlay, Widget, WidgetExt, WidgetId};

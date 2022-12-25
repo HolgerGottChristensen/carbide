@@ -1,8 +1,9 @@
-use crate::draw::{Dimension, Position};
-use crate::event::{MouseButton, MouseEventHandler};
-use crate::CommonWidgetImpl;
 use carbide_core::event::MouseEvent;
+
+use crate::CommonWidgetImpl;
+use crate::draw::{Dimension, Position};
 use crate::environment::{Environment, EnvironmentColor};
+use crate::event::{MouseButton, MouseEventHandler};
 use crate::flags::Flags;
 use crate::layout::Layout;
 use crate::state::{LocalState, Map1, TState};

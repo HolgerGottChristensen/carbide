@@ -2,9 +2,9 @@ use std::fmt::{Debug, Formatter};
 use std::future::Future;
 use std::rc::Rc;
 
-use futures::{FutureExt};
+use carbide_core::prelude::{Id, Listenable, Listener, NewStateSync};
+use futures::FutureExt;
 use oneshot::{Receiver, TryRecvError};
-use carbide_core::prelude::{NewStateSync, Listenable, Listener, Id};
 
 use crate::environment::Environment;
 use crate::state::{ReadState, State, StateContract, TState};

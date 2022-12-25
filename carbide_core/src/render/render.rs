@@ -1,6 +1,6 @@
 use crate::environment::Environment;
-use crate::state::StateSync;
 use crate::render::primitive::Primitive;
+use crate::state::StateSync;
 use crate::widget::CommonWidget;
 
 /// The render trait is used to get the primitives from a widget. It contains two basic functions.

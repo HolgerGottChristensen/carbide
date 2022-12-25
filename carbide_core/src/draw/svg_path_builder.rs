@@ -1,6 +1,6 @@
 use lyon::algorithms::math::{Angle, Point, Vector};
-use lyon::algorithms::path::builder::Build;
 use lyon::algorithms::path::{ArcFlags, Path};
+use lyon::algorithms::path::builder::Build;
 use lyon::math::vector;
 
 use crate::draw::Dimension;

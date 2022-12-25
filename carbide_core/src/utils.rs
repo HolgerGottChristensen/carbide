@@ -3,9 +3,7 @@
 //!
 
 use std;
-use std::borrow::Cow;
 use std::f64::consts::{E, PI};
-use std::iter::{once, Chain, Once};
 
 /// Clamp a value between some range.
 pub fn clamp<T: PartialOrd>(n: T, start: T, end: T) -> T {

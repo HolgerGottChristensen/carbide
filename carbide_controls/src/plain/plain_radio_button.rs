@@ -1,18 +1,17 @@
-use carbide_core::{Color, Scalar};
 use std::fmt::Debug;
 
+use carbide_core::Color;
 use carbide_core::draw::{Dimension, Position};
 use carbide_core::environment::{Environment, EnvironmentColor};
 use carbide_core::flags::Flags;
 use carbide_core::focus::{Focus, Focusable, Refocus};
-use carbide_core::layout::Layouter;
 use carbide_core::state::{
-    LocalState, Map2, Map3, MapOwnedState, ReadState, State, StateContract,
-    StateExt, StateKey, TState, ValueState,
+    LocalState, Map2, ReadState, State, StateContract,
+    TState, ValueState,
 };
 use carbide_core::state::eq::StatePartialEq;
 use carbide_core::widget::{
-    CommonWidget, HStack, Rectangle, Spacer, Text, Widget, WidgetExt, WidgetId, WidgetIter,
+    CommonWidget, HStack, Rectangle, Text, Widget, WidgetExt, WidgetId, WidgetIter,
     WidgetIterMut, ZStack,
 };
 
