@@ -2,9 +2,9 @@
 use carbide_rusttype::PositionedGlyph;
 pub use font::*;
 pub use font_family::FontFamily;
-pub use glyph::Glyph;
+pub use glyph::*;
 pub use markup::PolarBearMarkup;
-pub use text::Text;
+pub(crate) use internal_text::Text;
 pub use text_span_generator::NoStyleTextSpanGenerator;
 pub use text_span_generator::TextSpanGenerator;
 pub use text_style::TextStyle;
@@ -12,11 +12,11 @@ pub use types::font_style::FontStyle;
 pub use types::font_weight::FontWeight;
 pub use types::text_decoration::TextDecoration;
 
-pub mod font;
+mod font;
 mod font_family;
 mod glyph;
 mod markup;
-mod text;
+mod internal_text;
 mod text_span;
 mod text_span_generator;
 mod text_style;

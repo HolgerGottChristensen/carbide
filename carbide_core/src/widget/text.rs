@@ -217,17 +217,16 @@ impl Layout for Text {
         self.dimension
     }
 
-    fn position_children(&mut self) {
-        let position = Position::new(self.x(), self.y());
-        if let Some(internal) = &mut self.internal_text {
-            internal.position(position)
-        }
-    }
+    fn position_children(&mut self) {}
 }
 
 impl Render for Text {
     fn get_primitives(&mut self, primitives: &mut Vec<Primitive>, env: &mut Environment) {
         let default_color = *self.color.value();
+
+        if let Some(internal) = &mut self.internal_text {
+            internal.position(self.position.tolerance(1.0/env.scale_factor()));
+        }
 
         if let Some(internal) = &mut self.internal_text {
             internal.ensure_glyphs_added_to_atlas(env);
@@ -291,7 +290,7 @@ impl CommonWidget for Text {
     }
 
     fn set_position(&mut self, position: Position) {
-        self.position = Position::new(position.x.round(), position.y.round());
+        self.position = position;
     }
 
     fn flexibility(&self) -> u32 {

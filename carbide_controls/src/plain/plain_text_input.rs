@@ -967,9 +967,8 @@ impl PlainTextInput {
         self.text.set_value(next_string);
     }
 
-    /// Insert a string at a given grapheme index.
+    /// Push a string to the end of the input
     fn push_str(&mut self, string: &str) {
-        //TODO: This might be rather inefficient
         let mut next_string = self.text.value().clone();
         next_string.push_str(string);
         self.text.set_value(next_string);

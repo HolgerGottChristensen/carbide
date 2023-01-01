@@ -117,6 +117,28 @@ impl Rect {
     }
 }
 
+impl From<carbide_rusttype::Rect<f64>> for Rect {
+    fn from(rect: carbide_rusttype::Rect<f64>) -> Self {
+        let width = rect.max.x - rect.min.x;
+        let height = rect.max.y - rect.min.y;
+        Rect {
+            position: Position::new(rect.min.x, rect.min.y),
+            dimension: Dimension::new(width, height),
+        }
+    }
+}
+
+impl From<carbide_rusttype::Rect<i32>> for Rect {
+    fn from(rect: carbide_rusttype::Rect<i32>) -> Self {
+        let width = rect.max.x - rect.min.x;
+        let height = rect.max.y - rect.min.y;
+        Rect {
+            position: Position::new(rect.min.x as f64, rect.min.y as f64),
+            dimension: Dimension::new(width as f64, height as f64),
+        }
+    }
+}
+
 impl Add<Position> for Rect {
     type Output = Rect;
 

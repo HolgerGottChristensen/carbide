@@ -586,7 +586,6 @@ impl Mesh {
                     };
 
                     for glyph in glyphs {
-                        let _position = glyph.position();
                         if let Some(bb) = glyph.bb() {
                             let (left, right, bottom, top) = bb.l_r_b_t_scaled(scale_factor);
 

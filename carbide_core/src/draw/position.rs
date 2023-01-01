@@ -136,8 +136,8 @@ impl Position {
     /// Returns a boolean indicating whether the position is realistically 0
     #[inline]
     pub fn is_near_zero(&self) -> bool {
-        let x = self.x.abs() <= f64::EPSILON;
-        let y = self.y.abs() <= f64::EPSILON;
+        let x = self.x.abs() <= Scalar::EPSILON;
+        let y = self.y.abs() <= Scalar::EPSILON;
         x && y
     }
 
@@ -171,6 +171,13 @@ impl Position {
     /// Get the dot product between two positions.
     pub fn dot(&self, other: &Position) -> Scalar {
         self.x * other.x + self.y * other.y
+    }
+
+    pub fn tolerance(&self, tolerance: Scalar) -> Position {
+        let mut position = *self / tolerance;
+        position = position.rounded();
+        position = position * tolerance;
+        position
     }
 }
 
@@ -245,8 +252,8 @@ impl Add<Dimension> for Position {
 impl From<Point<f32>> for Position {
     fn from(pos: Point<f32>) -> Self {
         Position {
-            x: pos.x as f64,
-            y: pos.y as f64,
+            x: pos.x as Scalar,
+            y: pos.y as Scalar,
         }
     }
 }

@@ -105,16 +105,16 @@ impl<'font> PositionedGlyph<'font> {
 
     /// Resets positioning information and recalculates the pixel bounding box
     pub fn set_position(&mut self, p: Point<f32>) {
-        let p_diff = p - self.position;
+        /*let p_diff = p - self.position;
         if p_diff.x.fract().is_near_zero() && p_diff.y.fract().is_near_zero() {
             if let Some(bb) = self.bb.as_mut() {
                 let rounded_diff = vector(p_diff.x.round() as i32, p_diff.y.round() as i32);
                 bb.min = bb.min + rounded_diff;
                 bb.max = bb.max + rounded_diff;
             }
-        } else {
+        } else {*/
             self.bb = self.sg.pixel_bounds_at(p);
-        }
+        //}
         self.position = p;
     }
 }

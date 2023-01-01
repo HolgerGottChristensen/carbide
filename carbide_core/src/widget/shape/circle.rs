@@ -17,7 +17,7 @@ use crate::widget::types::PrimitiveStore;
 use crate::widget::types::ShapeStyle;
 use crate::widget::types::StrokeStyle;
 
-/// A simple, non-interactive widget for drawing a single **Ellipse**.
+/// A simple, non-interactive widget for drawing a single **Circle**.
 #[derive(Debug, Clone, Widget)]
 #[carbide_exclude(Render, Layout)]
 pub struct Circle {

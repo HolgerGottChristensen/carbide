@@ -11,7 +11,7 @@ use crate::draw::image::ImageId;
 use crate::draw::Position;
 use crate::draw::Scalar;
 use crate::mesh::atlas::lossy_glyph_info::LossyGlyphInfo;
-use crate::text::{Font, FontId, FontSize, Glyph};
+use crate::text::{Font, FontId, FontSize, Glyph, GLYPH_TOLERANCE};
 
 type ImageData = image::DynamicImage;
 pub type TextureAtlasIndex = usize;
@@ -23,24 +23,7 @@ const SHELVE_WIDTH: u32 = 512;
 #[derive(Clone, Hash, Eq, PartialEq, Debug)]
 pub enum AtlasId {
     Image(ImageId),
-    RasterGlyph(FontId, GlyphId, u32),
-    LossyGlyph(LossyGlyphInfo),
-}
-
-impl AtlasId {
-    fn new_lossy(
-        font_id: FontId,
-        glyph_id: GlyphId,
-        font_size: FontSize,
-        offset_over_tolerance: (u16, u16),
-    ) -> AtlasId {
-        AtlasId::LossyGlyph(LossyGlyphInfo::new(
-            font_id,
-            glyph_id,
-            font_size,
-            offset_over_tolerance,
-        ))
-    }
+    Glyph(FontId, GlyphId, FontSize, (u16, u16)),
 }
 
 /// Inspired by the gpu_cache from rusttype
@@ -58,7 +41,6 @@ pub struct TextureAtlas {
     shelves: Vec<Shelf>,
 
     all_books_cabinet: FxHashMap<AtlasId, (AtlasEntry, ImageData)>,
-    position_tolerance: Scalar,
 }
 
 impl TextureAtlas {
@@ -70,7 +52,6 @@ impl TextureAtlas {
             not_yet_added_queue: vec![],
             shelves: vec![],
             all_books_cabinet: HashMap::with_hasher(FxBuildHasher::default()),
-            position_tolerance: 0.1,
         }
     }
 
@@ -93,27 +74,8 @@ impl TextureAtlas {
         font: &Font,
         scale_factor: Scalar,
     ) -> Option<AtlasEntry> {
-        self.queue_glyph_id(
-            glyph.id(),
-            glyph.font_size(),
-            glyph.position(),
-            font,
-            scale_factor,
-        )
-    }
-
-    pub fn queue_glyph_id(
-        &mut self,
-        glyph_id: GlyphId,
-        font_size: FontSize,
-        position: Position,
-        font: &Font,
-        scale_factor: Scalar,
-    ) -> Option<AtlasEntry> {
-        let offset =
-            (position.fraction_0_1() / (self.position_tolerance * scale_factor)).round_to_u16();
-
-        let atlas_id = AtlasId::new_lossy(font.id(), glyph_id, font_size, offset);
+        let tolerance = (glyph.position().fraction_0_1() / GLYPH_TOLERANCE).round_to_u16();
+        let atlas_id = AtlasId::Glyph(font.id(), glyph.id(), glyph.font_size(), tolerance);
 
         // Check if a suitable item has already been added.
         if let Some(item) = self.all_books_cabinet.get(&atlas_id) {
@@ -122,10 +84,10 @@ impl TextureAtlas {
 
         // Get the image data for the given glyph from the font
         let image_data = font.glyph_image(
-            glyph_id,
-            font_size,
+            glyph.id(),
+            glyph.font_size(),
             scale_factor,
-            position.fraction_0_1(),
+            glyph.position().fraction_0_1(),
         );
 
         if let Some(image_data) = image_data {

@@ -1,4 +1,3 @@
-use std::borrow::Borrow;
 use std::cell::RefCell;
 use std::collections::HashMap;
 use std::ffi::OsStr;
@@ -139,7 +138,8 @@ impl Application {
         family_name
     }
 
-    fn add_font<P: AsRef<Path>>(&mut self, path: P) -> FontId {
+
+    pub fn add_font<P: AsRef<Path>>(&mut self, path: P) -> FontId {
         let assets = locate_folder::Search::KidsThenParents(3, 5)
             .for_folder("assets")
             .unwrap();

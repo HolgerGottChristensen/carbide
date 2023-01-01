@@ -28,7 +28,7 @@ pub trait TWindow {
         let assets = Search::KidsThenParents(3, 5).for_folder("assets").unwrap();
 
         let path = assets.join(path);
-        let image = carbide_core::image::open(&path).expect("Couldn't load logo");
+        let image = image::open(&path).expect("Couldn't load logo");
 
         let id = ImageId::new(path);
         self.add_image(id.clone(), image);

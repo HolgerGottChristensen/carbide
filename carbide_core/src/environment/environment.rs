@@ -198,7 +198,7 @@ impl Environment {
         let mut image_map = ImageMap::default();
         image_map.insert(ImageId::default(), DynamicImage::new_rgba8(1, 1));
 
-        Environment {
+        let mut res = Environment {
             stack: env_stack,
             root_alignment: BasicLayouter::Center,
             fonts: vec![],
@@ -230,7 +230,22 @@ impl Environment {
             request_application_close: false,
             current_event_window_id: Box::new(|_| true),
             current_event_active: false
+        };
+
+
+        #[cfg(target_os = "macos")]
+        {
+            let mut family = FontFamily::new("Apple Color Emoji");
+            family.add_font_with_hints(
+                "/System/Library/Fonts/Apple Color Emoji.ttc",
+                FontWeight::Normal,
+                FontStyle::Normal,
+            );
+            res.add_font_family(family);
         }
+
+
+        res
     }
 
     pub fn is_event_current(&self) -> bool {
@@ -589,7 +604,7 @@ impl Environment {
                 .font_texture_atlas
                 .queue_glyph(glyph, font, scale_factor)
             {
-                glyph.set_texture_index(entry);
+                glyph.set_atlas_entry(entry);
             }
         }
     }

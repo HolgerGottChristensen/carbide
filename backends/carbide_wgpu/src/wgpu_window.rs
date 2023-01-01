@@ -1,4 +1,3 @@
-use std::borrow::{Borrow, BorrowMut};
 use std::cell::RefCell;
 use std::collections::HashMap;
 use std::fmt::{Debug, Formatter};
@@ -7,7 +6,7 @@ use std::rc::Rc;
 use cgmath::{Matrix4, Vector3};
 use futures::executor::block_on;
 use raw_window_handle::HasRawWindowHandle;
-use wgpu::{Adapter, BindGroup, BindGroupLayout, Buffer, BufferUsages, Device, Extent3d, ImageCopyTexture, Instance, PipelineLayout, PresentMode, Queue, RenderPassDepthStencilAttachment, Sampler, ShaderModule, Surface, SurfaceConfiguration, Texture, TextureFormat, TextureView};
+use wgpu::{Adapter, BindGroup, BindGroupLayout, Buffer, BufferUsages, Device, Extent3d, ImageCopyTexture, Instance, PipelineLayout, PresentMode, Queue, RenderPassDepthStencilAttachment, Sampler, ShaderModule, Surface, SurfaceConfiguration, Texture, TextureFormat, TextureUsages, TextureView};
 use wgpu::util::{BufferInitDescriptor, DeviceExt};
 use winit::dpi::{LogicalSize, PhysicalPosition, Size};
 use winit::window::{Window as WinitWindow, WindowBuilder};
@@ -44,7 +43,14 @@ use crate::texture_atlas_command::TextureAtlasCommand;
 use crate::textures::create_depth_stencil_texture;
 use crate::vertex::Vertex;
 
+
+const ZOOM: f32 = 1.0;
+
+// The instance is a handle to our GPU
+// BackendBit::PRIMARY => Vulkan + Metal + DX12 + Browser WebGPU
+//let instance = wgpu::Instance::new(wgpu::Backends::PRIMARY);
 thread_local!(pub static INSTANCE: Instance = Instance::new(wgpu::Backends::PRIMARY));
+
 thread_local!(pub static ADAPTER: Adapter = {
     INSTANCE.with(|instance| {
         block_on(instance.request_adapter(&wgpu::RequestAdapterOptions {
@@ -269,9 +275,7 @@ impl WGPUWindow {
         );
         let scale_factor = inner.scale_factor();
 
-        // The instance is a handle to our GPU
-        // BackendBit::PRIMARY => Vulkan + Metal + DX12 + Browser WebGPU
-        //let instance = wgpu::Instance::new(wgpu::Backends::PRIMARY);
+
         let surface = INSTANCE.with(|instance| {
             unsafe { instance.create_surface(&inner) }
         });
@@ -281,8 +285,8 @@ impl WGPUWindow {
             surface.configure(
                 &device,
                 &SurfaceConfiguration {
-                    usage: wgpu::TextureUsages::RENDER_ATTACHMENT,
-                    format: wgpu::TextureFormat::Bgra8UnormSrgb,
+                    usage: TextureUsages::RENDER_ATTACHMENT,
+                    format: TextureFormat::Bgra8UnormSrgb,
                     width: inner.inner_size().width,
                     height: inner.inner_size().height,
                     present_mode: PresentMode::Mailbox,
@@ -357,10 +361,10 @@ impl WGPUWindow {
                 usage: BufferUsages::VERTEX | BufferUsages::COPY_DST,
             });
 
-            let second_verts_buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
+            let second_vertex_buffer = device.create_buffer_init(&BufferInitDescriptor {
                 label: Some("Vertex Buffer"),
-                contents: bytemuck::cast_slice(&Vertex::rect(size, scale_factor)),
-                usage: wgpu::BufferUsages::VERTEX | BufferUsages::COPY_DST,
+                contents: bytemuck::cast_slice(&Vertex::rect(size, scale_factor, ZOOM)),
+                usage: BufferUsages::VERTEX | BufferUsages::COPY_DST,
             });
 
             let filter_main_texture_bind_group =
@@ -403,7 +407,7 @@ impl WGPUWindow {
                 uniform_bind_group,
                 carbide_to_wgpu_matrix: matrix,
                 vertex_buffer: (vertex_buffer, 0),
-                second_vertex_buffer: second_verts_buffer,
+                second_vertex_buffer,
 
                 inner: Rc::new(inner),
                 id: WidgetId::new(),
@@ -817,7 +821,7 @@ impl WGPUWindow {
                                 let filter: Filter = filter.clone().into();
                                 let filter_buffer =
                                     device
-                                        .create_buffer_init(&wgpu::util::BufferInitDescriptor {
+                                        .create_buffer_init(&BufferInitDescriptor {
                                             label: Some("Filter Buffer"),
                                             contents: &*filter.as_bytes(),
                                             usage: wgpu::BufferUsages::STORAGE,
@@ -1246,14 +1250,14 @@ impl WGPUWindow {
             queue.write_buffer(
                 &self.second_vertex_buffer,
                 0,
-                bytemuck::cast_slice(&Vertex::rect(size, scale_factor)),
+                bytemuck::cast_slice(&Vertex::rect(size, scale_factor, ZOOM)),
             );
 
             self.surface.configure(
                 device,
                 &SurfaceConfiguration {
-                    usage: wgpu::TextureUsages::RENDER_ATTACHMENT,
-                    format: wgpu::TextureFormat::Bgra8UnormSrgb,
+                    usage: TextureUsages::RENDER_ATTACHMENT,
+                    format: TextureFormat::Bgra8UnormSrgb,
                     width: new_size.width,
                     height: new_size.height,
                     present_mode: PresentMode::Mailbox,
