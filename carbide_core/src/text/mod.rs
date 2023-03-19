@@ -1,4 +1,3 @@
-//pub use text_old::Text;
 use carbide_rusttype::PositionedGlyph;
 pub use font::*;
 pub use font_family::FontFamily;

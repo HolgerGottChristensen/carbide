@@ -3,11 +3,17 @@ use tokio::time::{sleep, Duration};
 use carbide_core::draw::Dimension;
 use carbide_core::environment::EnvironmentColor;
 
-use carbide_core::state::{LocalState, State, ValueState};
+use carbide_core::state::{LocalState, State};
 use carbide_core::task;
 use carbide_core::text::FontFamily;
 use carbide_core::widget::*;
 use carbide_wgpu::{Application, Window};
+
+static APP_USER_AGENT: &str = concat!(
+    env!("CARGO_PKG_NAME"),
+    "/",
+    env!("CARGO_PKG_VERSION"),
+);
 
 fn main() {
     env_logger::init();
@@ -55,13 +61,25 @@ fn main() {
     task!(
         env,
         {
-            let response = reqwest::get("https://picsum.photos/300")
+            let client = reqwest::Client::builder()
+                .user_agent(APP_USER_AGENT)
+                .build().unwrap();
+
+            //println!("{:?}", client);
+
+            let response = client.get("https://picsum.photos/300")
+                .send()
                 .await
-                .unwrap()
-                .bytes()
+                .unwrap();
+
+            //.text().await;
+
+            //println!("{:#?}", response);
+
+            let data = response.bytes()
                 .await
                 .expect("Could not get bytes");
-            let image = carbide_core::image::load_from_memory(&response).unwrap();
+            let image = carbide_core::image::load_from_memory(&data).unwrap();
             image
         },
         move |res, env: &mut Environment| {

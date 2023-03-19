@@ -2,7 +2,7 @@ use carbide_core::mesh::AtlasEntry;
 use carbide_rusttype::{GlyphId, point};
 use carbide_rusttype::PositionedGlyph;
 
-use crate::draw::{Dimension, Position, Rect};
+use crate::draw::{Position, Rect};
 use crate::Scalar;
 use crate::text::{FontId, FontSize};
 
