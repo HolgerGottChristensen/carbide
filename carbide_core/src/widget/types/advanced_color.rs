@@ -8,6 +8,16 @@ pub enum AdvancedColor {
     MultiGradient(Vec<Gradient>),
 }
 
+impl AdvancedColor {
+    pub fn expect_color(self) -> Color {
+        match self {
+            AdvancedColor::Color(c) => c,
+            AdvancedColor::SingleGradient(_) => todo!(),
+            AdvancedColor::MultiGradient(_) => todo!()
+        }
+    }
+}
+
 impl Default for AdvancedColor {
     fn default() -> Self {
         AdvancedColor::Color(Color::default())

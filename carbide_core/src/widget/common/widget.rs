@@ -2,6 +2,7 @@ use std::fmt::Debug;
 use std::ops::{Deref, DerefMut};
 
 use dyn_clone::DynClone;
+use carbide_core::render::RenderContext;
 
 use crate::draw::{Dimension, Position};
 use crate::environment::Environment;
@@ -137,6 +138,10 @@ impl<T: Widget + ?Sized> Layout for Box<T> {
 }
 
 impl<T: Widget + ?Sized> Render for Box<T> {
+    fn render(&mut self, context: &mut RenderContext, env: &mut Environment) {
+        self.deref_mut().render(context, env)
+    }
+
     fn get_primitives(&mut self, primitives: &mut Vec<Primitive>, env: &mut Environment) {
         self.deref_mut().get_primitives(primitives, env);
     }

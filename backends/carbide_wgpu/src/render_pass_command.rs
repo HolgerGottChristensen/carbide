@@ -15,7 +15,8 @@ use crate::gradient::Gradient;
 /// A draw command that maps directly to the `wgpu::CommandEncoder` method. By returning
 /// `RenderPassCommand`s, we can avoid consuming the entire `AutoCommandBufferBuilder` itself which might
 /// not always be available from APIs that wrap Vulkan.
-pub enum RenderPassCommand<'a> {
+#[derive(Debug)]
+pub enum RenderPassCommand {
     /// Specify the rectangle to which drawing should be cropped.
     SetScissor {
         top_left: [u32; 2],
@@ -36,33 +37,42 @@ pub enum RenderPassCommand<'a> {
     },
     /// A new image requires drawing and in turn a new bind group requires setting.
     SetBindGroup {
-        bind_group: &'a wgpu::BindGroup,
+        bind_group: WGPUBindGroup,
     },
 }
 
-pub enum RenderPass<'a> {
-    Normal(Vec<RenderPassCommand<'a>>),
+#[derive(Debug)]
+pub enum RenderPass {
+    Normal(Vec<RenderPassCommand>),
     Gradient(std::ops::Range<u32>, usize),
     Filter(std::ops::Range<u32>, FilterId),
     FilterSplitPt1(std::ops::Range<u32>, FilterId),
     FilterSplitPt2(std::ops::Range<u32>, FilterId),
 }
 
-#[derive(PartialEq)]
-enum BindGroup {
+#[derive(PartialEq, Debug)]
+pub enum WGPUBindGroup {
     Default,
     Image(ImageId),
 }
 
+impl WGPUBindGroup {
+    pub fn get(&self) -> ImageId {
+        match self {
+            WGPUBindGroup::Default => ImageId::default(),
+            WGPUBindGroup::Image(id) => id.clone(),
+        }
+    }
+}
+
 pub fn draw_commands_to_render_pass_commands<'a>(
     draw_commands: &[DrawCommand],
-    bind_groups: &'a HashMap<ImageId, DiffuseBindGroup>,
     uniform_bind_groups: &mut Vec<wgpu::BindGroup>,
     device: &Device,
     uniform_bind_group_layout: &BindGroupLayout,
     gradient_bind_group_layout: &BindGroupLayout,
     carbide_to_wgpu_matrix: Matrix4<f32>,
-) -> Vec<RenderPass<'a>> {
+) -> Vec<RenderPass> {
 
     let mut commands = vec![];
     let mut inner_commands = vec![];
@@ -88,7 +98,7 @@ pub fn draw_commands_to_render_pass_commands<'a>(
                 // Ensure a render pipeline and bind group is set.
                 if current_bind_group.is_none() {
                     let cmd = RenderPassCommand::SetBindGroup {
-                        bind_group: &bind_groups[&ImageId::default()],
+                        bind_group: WGPUBindGroup::Default,
                     };
                     inner_commands.push(cmd);
                 }
@@ -104,7 +114,7 @@ pub fn draw_commands_to_render_pass_commands<'a>(
                 // Ensure a render pipeline and bind group is set.
                 if current_bind_group.is_none() {
                     let cmd = RenderPassCommand::SetBindGroup {
-                        bind_group: &bind_groups[&ImageId::default()],
+                        bind_group: WGPUBindGroup::Default,
                     };
                     inner_commands.push(cmd);
                 }
@@ -120,7 +130,7 @@ pub fn draw_commands_to_render_pass_commands<'a>(
                 // Ensure a render pipeline and bind group is set.
                 if current_bind_group.is_none() {
                     let cmd = RenderPassCommand::SetBindGroup {
-                        bind_group: &bind_groups[&ImageId::default()],
+                        bind_group: WGPUBindGroup::Default,
                     };
                     inner_commands.push(cmd);
                 }
@@ -140,9 +150,9 @@ pub fn draw_commands_to_render_pass_commands<'a>(
                 }
                 // Ensure a render pipeline and bind group is set.
                 if current_bind_group.is_none() {
-                    current_bind_group = Some(BindGroup::Default);
+                    current_bind_group = Some(WGPUBindGroup::Default);
                     let cmd = RenderPassCommand::SetBindGroup {
-                        bind_group: &bind_groups[&ImageId::default()],
+                        bind_group: WGPUBindGroup::Default,
                     };
                     inner_commands.push(cmd);
                 }
@@ -159,9 +169,9 @@ pub fn draw_commands_to_render_pass_commands<'a>(
                 }
                 // Ensure a render pipeline and bind group is set.
                 if current_bind_group.is_none() {
-                    current_bind_group = Some(BindGroup::Default);
+                    current_bind_group = Some(WGPUBindGroup::Default);
                     let cmd = RenderPassCommand::SetBindGroup {
-                        bind_group: &bind_groups[&ImageId::default()],
+                        bind_group: WGPUBindGroup::Default,
                     };
                     inner_commands.push(cmd);
                 }
@@ -191,9 +201,9 @@ pub fn draw_commands_to_render_pass_commands<'a>(
                 }
                 // Ensure a render pipeline and bind group is set.
                 if current_bind_group.is_none() {
-                    current_bind_group = Some(BindGroup::Default);
+                    current_bind_group = Some(WGPUBindGroup::Default);
                     let cmd = RenderPassCommand::SetBindGroup {
-                        bind_group: &bind_groups[&ImageId::default()],
+                        bind_group: WGPUBindGroup::Default,
                     };
                     inner_commands.push(cmd);
                 }
@@ -209,12 +219,13 @@ pub fn draw_commands_to_render_pass_commands<'a>(
                 }
 
                 // Ensure the bind group matches this image.
-                let expected_bind_group = Some(BindGroup::Image(image_id.clone()));
+                let new_group = WGPUBindGroup::Image(image_id.clone());
+                let expected_bind_group = Some(WGPUBindGroup::Image(image_id.clone()));
                 if current_bind_group != expected_bind_group {
                     // Now update the bind group and add the new bind group command.
                     current_bind_group = expected_bind_group;
                     let cmd = RenderPassCommand::SetBindGroup {
-                        bind_group: &bind_groups[&image_id],
+                        bind_group: new_group,
                     };
                     inner_commands.push(cmd);
                 }

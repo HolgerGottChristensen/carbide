@@ -13,7 +13,7 @@ use carbide_core::{locate_folder, Scene};
 use carbide_core::draw::Dimension;
 use carbide_core::environment::Environment;
 use carbide_core::event::{CustomEvent, EventHandler, Input};
-use carbide_core::render::Render;
+use carbide_core::render::{NoopRenderContext, Render, RenderContext};
 use carbide_core::text::{FontFamily, FontId};
 use carbide_core::widget::Empty;
 use carbide_core::window::WindowId;
@@ -308,6 +308,8 @@ impl Application {
 
                     // Gets called if redrawing is requested.
                     Event::RedrawRequested(_) => {
+                        self.root.render(&mut RenderContext::new(&mut NoopRenderContext), &mut self.environment);
+
                         self.root.process_get_primitives(&mut vec![], &mut self.environment);
 
                         // Wait for the next event to be received

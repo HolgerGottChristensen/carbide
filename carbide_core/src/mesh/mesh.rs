@@ -592,7 +592,7 @@ impl Mesh {
                             if let Some(index) = glyph.atlas_entry() {
                                 if !index.borrow().is_active {
                                     println!(
-                                        "Trying to show glyph that is not in the texture atlas."
+                                        "Trying to show glyph that is not in the texture atlas 1."
                                     );
                                 }
                                 let coords = index.borrow().tex_coords;

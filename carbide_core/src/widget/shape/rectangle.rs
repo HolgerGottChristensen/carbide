@@ -1,10 +1,12 @@
 use lyon::algorithms::path::builder::PathBuilder;
 use lyon::algorithms::path::Winding;
 use lyon::geom::euclid::rect;
+use carbide_core::render::{RenderContext, Style};
 
 use carbide_macro::carbide_default_builder;
 
 use crate::{Color, CommonWidgetImpl, Scalar};
+use crate::color::WHITE;
 use crate::draw::{Dimension, Position, Rect};
 use crate::environment::Environment;
 use crate::environment::EnvironmentColor;
@@ -172,6 +174,31 @@ impl Rectangle {
 CommonWidgetImpl!(Rectangle, self, id: self.id, position: self.position, dimension: self.dimension);
 
 impl Render for Rectangle {
+    fn render(&mut self, context: &mut RenderContext, _: &mut Environment) {
+        let rect = rect(
+            self.x() as f32,
+            self.y() as f32,
+            self.width() as f32,
+            self.height() as f32,
+        );
+
+        tessellate(self, &rect.to_box2d(), &|builder, rectangle| {
+            builder.add_rectangle(rectangle, Winding::Positive)
+        });
+
+        if self.triangle_store.fill_triangles.len() > 0 {
+            context.style(Style::Color(self.fill_color.value().clone().expect_color()), |this| {
+                this.geometry(&self.triangle_store.fill_triangles)
+            })
+        }
+
+        if self.triangle_store.stroke_triangles.len() > 0 {
+            context.style(Style::Color(self.stroke_color.value().clone().expect_color()), |this| {
+                this.geometry(&self.triangle_store.stroke_triangles)
+            })
+        }
+    }
+
     fn get_primitives(&mut self, primitives: &mut Vec<Primitive>, _env: &mut Environment) {
         let rect = rect(
             self.x() as f32,

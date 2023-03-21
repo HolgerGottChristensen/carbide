@@ -1,10 +1,18 @@
 use crate::environment::Environment;
 use crate::render::primitive::Primitive;
+use crate::render::RenderContext;
 use crate::state::StateSync;
 use crate::widget::CommonWidget;
 
 /// The render trait is used to get the primitives from a widget. It contains two basic functions.
 pub trait Render: CommonWidget + StateSync {
+
+    fn render(&mut self, context: &mut RenderContext, env: &mut Environment) {
+        for mut child in self.children_mut() {
+            child.render(context, env);
+        }
+    }
+
     /// Get the primitives from a widget. You should insert the primitives into the vec.
     /// The default implementation does not add any primitives and is used by most widgets.
     #[allow(unused_variables)]

@@ -18,6 +18,7 @@ mod vertex;
 //pub mod window;
 mod application;
 mod wgpu_window;
+mod render_context;
 
 use wgpu::{LoadOp, Operations};
 pub use application::Application;
