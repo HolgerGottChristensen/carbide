@@ -7,11 +7,12 @@ use carbide_core::state::NewStateSync;
 
 use crate::Color;
 use crate::environment::Environment;
+use crate::render::Style;
 use crate::state::{MapOwnedState, ReadWidgetState, RState, State, StateContract, StateExt, TState};
 use crate::state::{ValueRef, ValueRefMut};
 use crate::state::ReadState;
 use crate::state::widget_state::WidgetState;
-use crate::widget::{AdvancedColor, Gradient};
+use crate::widget::{Gradient};
 
 /// # ValueState
 /// Value state is a state that can be used for constants and values that are not shared. When
@@ -224,27 +225,27 @@ impl From<TState<Result<String, String>>> for RState<String> {
     }
 }*/
 
-impl Into<RState<AdvancedColor>> for TState<Color> {
-    fn into(self) -> RState<AdvancedColor> {
-        self.map(|c: &Color| AdvancedColor::from(*c))
+impl Into<RState<Style>> for TState<Color> {
+    fn into(self) -> RState<Style> {
+        self.map(|c: &Color| Style::from(*c))
     }
 }
 
-impl Into<TState<AdvancedColor>> for TState<Color> {
-    fn into(self) -> TState<AdvancedColor> {
-        self.map(|c: &Color| AdvancedColor::from(*c))
+impl Into<TState<Style>> for TState<Color> {
+    fn into(self) -> TState<Style> {
+        self.map(|c: &Color| Style::from(*c))
             .ignore_writes()
     }
 }
 
-impl Into<TState<AdvancedColor>> for Color {
-    fn into(self) -> TState<AdvancedColor> {
-        ValueState::new(AdvancedColor::Color(self))
+impl Into<TState<Style>> for Color {
+    fn into(self) -> TState<Style> {
+        ValueState::new(Style::Color(self))
     }
 }
 
-impl Into<TState<AdvancedColor>> for Gradient {
-    fn into(self) -> TState<AdvancedColor> {
-        ValueState::new(AdvancedColor::SingleGradient(self))
+impl Into<TState<Style>> for Gradient {
+    fn into(self) -> TState<Style> {
+        ValueState::new(Style::Gradient(self))
     }
 }

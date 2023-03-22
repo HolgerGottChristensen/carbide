@@ -26,9 +26,9 @@ pub struct Rectangle {
     position: Position,
     dimension: Dimension,
     #[state]
-    fill_color: TState<AdvancedColor>,
+    fill_color: TState<Style>,
     #[state]
-    stroke_color: TState<AdvancedColor>,
+    stroke_color: TState<Style>,
     style: ShapeStyle,
     stroke_style: StrokeStyle,
     // Store the triangles for the border
@@ -53,13 +53,13 @@ impl Rectangle {
         })
     }
 
-    pub fn fill(mut self, color: impl Into<TState<AdvancedColor>>) -> Box<Self> {
+    pub fn fill(mut self, color: impl Into<TState<Style>>) -> Box<Self> {
         self.fill_color = color.into();
         self.style += ShapeStyle::Fill;
         Box::new(self)
     }
 
-    pub fn stroke(mut self, color: impl Into<TState<AdvancedColor>>) -> Box<Self> {
+    pub fn stroke(mut self, color: impl Into<TState<Style>>) -> Box<Self> {
         self.stroke_color = color.into();
         self.style += ShapeStyle::Stroke;
         Box::new(self)
@@ -73,7 +73,7 @@ impl Rectangle {
 
     pub fn material(mut self, material: impl Into<TState<Color>>) -> Box<ZStack> {
         let material_state = material.into();
-        let advanced_material_state: RState<AdvancedColor> = material_state.into();
+        let advanced_material_state: RState<Style> = material_state.into();
         self.fill_color = advanced_material_state.clone().ignore_writes();
         self.stroke_color = advanced_material_state.clone().ignore_writes();
 
@@ -187,13 +187,13 @@ impl Render for Rectangle {
         });
 
         if self.triangle_store.fill_triangles.len() > 0 {
-            context.style(Style::Color(self.fill_color.value().clone().expect_color()), |this| {
+            context.style(self.fill_color.value().clone(), |this| {
                 this.geometry(&self.triangle_store.fill_triangles)
             })
         }
 
         if self.triangle_store.stroke_triangles.len() > 0 {
-            context.style(Style::Color(self.stroke_color.value().clone().expect_color()), |this| {
+            context.style(self.stroke_color.value().clone(), |this| {
                 this.geometry(&self.triangle_store.stroke_triangles)
             })
         }

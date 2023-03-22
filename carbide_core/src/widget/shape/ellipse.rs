@@ -11,7 +11,7 @@ use crate::{Color, CommonWidgetImpl};
 use crate::draw::{Dimension, Position};
 use crate::environment::Environment;
 use crate::environment::EnvironmentColor;
-use crate::render::{Primitive, Render};
+use crate::render::{Primitive, Render, RenderContext, Style};
 use crate::state::{ReadState, RState, TState};
 use crate::widget::{AdvancedColor, Blur, CommonWidget, Widget, WidgetExt, WidgetId, ZStack};
 use crate::widget::shape::{Shape, tessellate};
@@ -27,22 +27,22 @@ pub struct Ellipse {
     position: Position,
     dimension: Dimension,
     #[state]
-    stroke_color: TState<AdvancedColor>,
+    stroke_color: TState<Style>,
     #[state]
-    fill_color: TState<AdvancedColor>,
+    fill_color: TState<Style>,
     style: ShapeStyle,
     stroke_style: StrokeStyle,
     triangle_store: PrimitiveStore,
 }
 
 impl Ellipse {
-    pub fn fill(mut self, color: impl Into<TState<AdvancedColor>>) -> Box<Self> {
+    pub fn fill(mut self, color: impl Into<TState<Style>>) -> Box<Self> {
         self.fill_color = color.into();
         self.style += ShapeStyle::Fill;
         Box::new(self)
     }
 
-    pub fn stroke(mut self, color: impl Into<TState<AdvancedColor>>) -> Box<Self> {
+    pub fn stroke(mut self, color: impl Into<TState<Style>>) -> Box<Self> {
         self.stroke_color = color.into();
         self.style += ShapeStyle::Stroke;
         Box::new(self)
@@ -56,7 +56,7 @@ impl Ellipse {
 
     pub fn material(mut self, material: impl Into<TState<Color>>) -> Box<ZStack> {
         let material_state = material.into();
-        let advanced_material_state: RState<AdvancedColor> = material_state.into();
+        let advanced_material_state: RState<Style> = material_state.into();
         self.fill_color = advanced_material_state.clone().ignore_writes();
         self.stroke_color = advanced_material_state.clone().ignore_writes();
 
@@ -86,6 +86,33 @@ impl Ellipse {
 CommonWidgetImpl!(Ellipse, self, id: self.id, position: self.position, dimension: self.dimension);
 
 impl Render for Ellipse {
+    fn render(&mut self, context: &mut RenderContext, _: &mut Environment) {
+        let radii = vec2(self.width() as f32 / 2.0, self.height() as f32 / 2.0);
+        let center = point(self.x() as f32 + radii.x, self.y() as f32 + radii.y);
+        let rectangle = rect(
+            self.x() as f32,
+            self.y() as f32,
+            self.width() as f32,
+            self.height() as f32,
+        );
+
+        tessellate(self, &rectangle.to_box2d(), &|builder, _| {
+            builder.add_ellipse(center, radii, Angle::degrees(0.0), Winding::Positive);
+        });
+
+        if self.triangle_store.fill_triangles.len() > 0 {
+            context.style(self.fill_color.value().clone(), |this| {
+                this.geometry(&self.triangle_store.fill_triangles)
+            })
+        }
+
+        if self.triangle_store.stroke_triangles.len() > 0 {
+            context.style(self.stroke_color.value().clone(), |this| {
+                this.geometry(&self.triangle_store.stroke_triangles)
+            })
+        }
+    }
+
     fn get_primitives(&mut self, primitives: &mut Vec<Primitive>, _env: &mut Environment) {
         let radii = vec2(self.width() as f32 / 2.0, self.height() as f32 / 2.0);
         let center = point(self.x() as f32 + radii.x, self.y() as f32 + radii.y);

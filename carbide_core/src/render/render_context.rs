@@ -1,3 +1,5 @@
+use image::DynamicImage;
+use carbide_core::draw::Rect;
 use crate::draw::{BoundingBox, Position};
 use crate::draw::image::ImageId;
 use crate::draw::shape::triangle::Triangle;
@@ -63,8 +65,8 @@ impl<'a> RenderContext<'a> {
         res
     }
 
-    pub fn image(&mut self, id: ImageId, bounding_box: BoundingBox) {
-        self.inner.image(id, bounding_box);
+    pub fn image(&mut self, id: ImageId, bounding_box: BoundingBox, source_rect: Rect, mode: u32) {
+        self.inner.image(id, bounding_box, source_rect, mode);
     }
 
     pub fn text(&mut self, text: &Vec<Glyph>) {
@@ -91,7 +93,7 @@ pub trait InnerRenderContext {
 
     fn de_style(&mut self);
 
-    fn image(&mut self, id: ImageId, bounding_box: BoundingBox);
+    fn image(&mut self, id: ImageId, bounding_box: Rect, source_rect: Rect, mode: u32);
 
     fn text(&mut self, text: &Vec<Glyph>);
 }
@@ -119,7 +121,7 @@ impl InnerRenderContext for NoopRenderContext {
 
     fn de_style(&mut self) {}
 
-    fn image(&mut self, id: ImageId, bounding_box: BoundingBox) {}
+    fn image(&mut self, id: ImageId, bounding_box: Rect, source_rect: Rect, mode: u32) {}
 
     fn text(&mut self, text: &Vec<Glyph>) {}
 }

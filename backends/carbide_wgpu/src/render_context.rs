@@ -1,10 +1,13 @@
 use std::ops::Range;
-use carbide_core::draw::{BoundingBox, Position};
+use carbide_core::color::WHITE;
+use carbide_core::draw::{BoundingBox, Position, Rect};
 use carbide_core::draw::image::ImageId;
 use carbide_core::draw::shape::triangle::Triangle;
+use carbide_core::image::{DynamicImage, GenericImageView};
 use carbide_core::layout::BasicLayouter;
 use carbide_core::mesh::{MODE_GEOMETRY};
 use carbide_core::render::{CarbideTransform, InnerRenderContext, Style};
+use carbide_core::Scalar;
 use carbide_core::text::Glyph;
 use carbide_core::widget::FilterId;
 use crate::render_pass_command::{RenderPass, RenderPassCommand, WGPUBindGroup};
@@ -13,6 +16,7 @@ use crate::vertex::Vertex;
 #[derive(Debug)]
 pub struct WGPURenderContext {
     style: Vec<WGPUStyle>,
+    stencil_stack: Vec<Range<u32>>,
     state: State,
     render_pass: Vec<RenderPass>,
     render_pass_inner: Vec<RenderPassCommand>,
@@ -36,6 +40,7 @@ impl WGPURenderContext {
     pub fn new() -> WGPURenderContext {
         WGPURenderContext {
             style: vec![],
+            stencil_stack: vec![],
             state: State::Plain { start: 0 },
             render_pass: vec![],
             render_pass_inner: vec![],
@@ -83,6 +88,23 @@ impl WGPURenderContext {
 
         swap
 
+    }
+
+    fn freshen_state(&mut self) {
+        match &self.state {
+            State::Image { id, start } => {
+                self.push_image_command(id.clone(), *start..self.vertices.len());
+
+            }
+            State::Plain { start } => {
+                self.push_geometry_command(*start..self.vertices.len());
+            }
+            State::Finished => {}
+        }
+
+        self.state = State::Plain {
+            start: self.vertices.len(),
+        };
     }
 
     fn ensure_state_plain(&mut self) {
@@ -185,11 +207,46 @@ impl InnerRenderContext for WGPURenderContext {
     }
 
     fn stencil(&mut self, geometry: &Vec<Triangle<Position>>) {
-        todo!()
+        self.freshen_state();
+
+        let start_index_for_stencil = self.vertices.len();
+
+        self.vertices.extend(
+            geometry.iter()
+                .flat_map(|triangle| &triangle.0)
+                .map(|position| Vertex::new_from_2d(
+                    position.x() as f32,
+                    position.y() as f32,
+                    [1.0, 1.0, 1.0, 1.0],
+                    [0.0, 0.0],
+                    MODE_GEOMETRY
+                ))
+        );
+
+        let range = start_index_for_stencil as u32..self.vertices.len() as u32;
+
+        self.stencil_stack.push(range.clone());
+
+        let cmd = RenderPassCommand::Stencil {
+            vertex_range: range,
+        };
+
+        self.render_pass_inner.push(cmd);
+
     }
 
     fn de_stencil(&mut self) {
-        todo!()
+        self.freshen_state();
+
+        if let Some(range) = self.stencil_stack.pop() {
+            let cmd = RenderPassCommand::DeStencil {
+                vertex_range: range,
+            };
+
+            self.render_pass_inner.push(cmd);
+        } else {
+            panic!("Trying to pop from empty stencil stack")
+        }
     }
 
     fn geometry(&mut self, geometry: &Vec<Triangle<Position>>) {
@@ -225,6 +282,9 @@ impl InnerRenderContext for WGPURenderContext {
             Style::Gradient(_) => {
                 todo!()
             }
+            Style::MultiGradient(_) => {
+                todo!()
+            }
         }
 
     }
@@ -233,8 +293,34 @@ impl InnerRenderContext for WGPURenderContext {
         assert!(self.style.pop().is_some(), "A style was popped, when no style is present.")
     }
 
-    fn image(&mut self, id: ImageId, bounding_box: BoundingBox) {
-        todo!()
+    fn image(&mut self, id: ImageId, bounding_box: Rect, source_rect: Rect, mode: u32) {
+        self.ensure_state_image(&id);
+
+        let color = match self.style.last().unwrap_or(&WGPUStyle::Color(WHITE.gamma_srgb_to_linear().to_fsa())) {
+            WGPUStyle::Color(c) => *c,
+        };
+
+        let (uv_l, uv_r, uv_b, uv_t) = source_rect.l_r_b_t();
+
+        let create_vertex = |x, y, tx, ty| Vertex {
+            position: [x as f32, y as f32, 0.0],
+            tex_coords: [tx as f32, ty as f32],
+            rgba: color,
+            mode,
+        };
+
+
+        let (l, r, b, t) = bounding_box.l_r_b_t();
+
+        // Bottom left triangle.
+        self.vertices.push(create_vertex(l, t, uv_l, uv_t));
+        self.vertices.push(create_vertex(r, b, uv_r, uv_b));
+        self.vertices.push(create_vertex(l, b, uv_l, uv_b));
+
+        // Top right triangle.
+        self.vertices.push(create_vertex(l, t, uv_l, uv_t));
+        self.vertices.push(create_vertex(r, t, uv_r, uv_t));
+        self.vertices.push(create_vertex(r, b, uv_r, uv_b));
     }
 
     fn text(&mut self, text: &Vec<Glyph>) {

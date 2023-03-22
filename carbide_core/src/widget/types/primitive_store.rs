@@ -2,7 +2,7 @@ use crate::Color;
 use crate::draw::{Dimension, Position, Rect};
 use crate::draw::draw_gradient::DrawGradient;
 use crate::draw::shape::triangle::Triangle;
-use crate::render::Primitive;
+use crate::render::{Primitive, Style};
 use crate::render::PrimitiveKind;
 use crate::widget::types::advanced_color::AdvancedColor;
 
@@ -73,8 +73,8 @@ impl PrimitiveStore {
     pub fn insert_primitives(
         &self,
         primitives: &mut Vec<Primitive>,
-        fill_color: AdvancedColor,
-        stroke_color: AdvancedColor,
+        fill_color: Style,
+        stroke_color: Style,
         position: Position,
         dimension: Dimension,
     ) {
@@ -82,7 +82,7 @@ impl PrimitiveStore {
             let fill_color = fill_color.into();
 
             match fill_color {
-                AdvancedColor::Color(c) => {
+                Style::Color(c) => {
                     primitives.push(Primitive {
                         kind: PrimitiveKind::Geometry {
                             color: c,
@@ -94,7 +94,7 @@ impl PrimitiveStore {
                         ),
                     });
                 }
-                AdvancedColor::SingleGradient(g) => {
+                Style::Gradient(g) => {
                     primitives.push(Primitive {
                         kind: PrimitiveKind::Gradient(
                             self.fill_triangles.clone(),
@@ -106,7 +106,7 @@ impl PrimitiveStore {
                         ),
                     });
                 }
-                AdvancedColor::MultiGradient(_) => {}
+                Style::MultiGradient(_) => {}
             }
         }
 
@@ -114,7 +114,7 @@ impl PrimitiveStore {
             let stroke_color = stroke_color.into();
 
             match stroke_color {
-                AdvancedColor::Color(c) => {
+                Style::Color(c) => {
                     primitives.push(Primitive {
                         kind: PrimitiveKind::Geometry {
                             color: c,
@@ -126,7 +126,7 @@ impl PrimitiveStore {
                         ),
                     });
                 }
-                AdvancedColor::SingleGradient(g) => {
+                Style::Gradient(g) => {
                     primitives.push(Primitive {
                         kind: PrimitiveKind::Gradient(
                             self.stroke_triangles.clone(),
@@ -138,7 +138,7 @@ impl PrimitiveStore {
                         ),
                     });
                 }
-                AdvancedColor::MultiGradient(_) => {}
+                Style::MultiGradient(_) => {}
             }
         }
     }

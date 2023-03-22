@@ -1,3 +1,4 @@
+use carbide_core::render::RenderContext;
 use carbide_macro::carbide_default_builder;
 
 use crate::CommonWidgetImpl;
@@ -69,6 +70,17 @@ impl Layout for ClipShape {
 CommonWidgetImpl!(ClipShape, self, id: self.id, child: self.child, position: self.position, dimension: self.dimension, flexibility: 0);
 
 impl Render for ClipShape {
+    fn render(&mut self, context: &mut RenderContext, env: &mut Environment) {
+        let stencil_triangles = &self.shape.triangles(env);
+
+        context.stencil(stencil_triangles, |this| {
+            for mut child in self.children_mut() {
+                child.render(this, env);
+            }
+        })
+
+    }
+
     fn process_get_primitives(&mut self, primitives: &mut Vec<Primitive>, env: &mut Environment) {
         let stencil_triangles = self.shape.triangles(env);
 

@@ -9,7 +9,7 @@ use crate::{Color, CommonWidgetImpl};
 use crate::draw::{Dimension, Position};
 use crate::environment::Environment;
 use crate::environment::EnvironmentColor;
-use crate::render::{Primitive, Render};
+use crate::render::{Primitive, Render, RenderContext, Style};
 use crate::state::{ReadState, RState, TState};
 use crate::widget::{AdvancedColor, Blur, CommonWidget, Widget, WidgetExt, WidgetId, ZStack};
 use crate::widget::shape::{Shape, tessellate};
@@ -25,22 +25,22 @@ pub struct Capsule {
     position: Position,
     dimension: Dimension,
     #[state]
-    stroke_color: TState<AdvancedColor>,
+    stroke_color: TState<Style>,
     #[state]
-    fill_color: TState<AdvancedColor>,
+    fill_color: TState<Style>,
     style: ShapeStyle,
     stroke_style: StrokeStyle,
     triangle_store: PrimitiveStore,
 }
 
 impl Capsule {
-    pub fn fill(mut self, color: impl Into<TState<AdvancedColor>>) -> Box<Self> {
+    pub fn fill(mut self, color: impl Into<TState<Style>>) -> Box<Self> {
         self.fill_color = color.into();
         self.style += ShapeStyle::Fill;
         Box::new(self)
     }
 
-    pub fn stroke(mut self, color: impl Into<TState<AdvancedColor>>) -> Box<Self> {
+    pub fn stroke(mut self, color: impl Into<TState<Style>>) -> Box<Self> {
         self.stroke_color = color.into();
         self.style += ShapeStyle::Stroke;
         Box::new(self)
@@ -54,7 +54,7 @@ impl Capsule {
 
     pub fn material(mut self, material: impl Into<TState<Color>>) -> Box<ZStack> {
         let material_state = material.into();
-        let advanced_material_state: RState<AdvancedColor> = material_state.into();
+        let advanced_material_state: RState<Style> = material_state.into();
         self.fill_color = advanced_material_state.clone().ignore_writes();
         self.stroke_color = advanced_material_state.clone().ignore_writes();
 
@@ -98,6 +98,40 @@ impl Shape for Capsule {
 }
 
 impl Render for Capsule {
+    fn render(&mut self, context: &mut RenderContext, _: &mut Environment) {
+        let rect = rect(
+            self.x() as f32,
+            self.y() as f32,
+            self.width() as f32,
+            self.height() as f32,
+        );
+
+        tessellate(self, &rect.to_box2d(), &|builder, rect| {
+            builder.add_rounded_rectangle(
+                rect,
+                &BorderRadii {
+                    top_left: f32::MAX,
+                    top_right: f32::MAX,
+                    bottom_left: f32::MAX,
+                    bottom_right: f32::MAX,
+                },
+                Winding::Positive,
+            );
+        });
+
+        if self.triangle_store.fill_triangles.len() > 0 {
+            context.style(self.fill_color.value().clone(), |this| {
+                this.geometry(&self.triangle_store.fill_triangles)
+            })
+        }
+
+        if self.triangle_store.stroke_triangles.len() > 0 {
+            context.style(self.stroke_color.value().clone(), |this| {
+                this.geometry(&self.triangle_store.stroke_triangles)
+            })
+        }
+    }
+
     fn get_primitives(&mut self, primitives: &mut Vec<Primitive>, _env: &mut Environment) {
         let rectangle = rect(
             self.x() as f32,

@@ -1,5 +1,6 @@
 use crate::Color;
 use crate::environment::EnvironmentColorState;
+use crate::render::Style;
 use crate::state::*;
 use crate::state::WidgetState;
 use crate::widget::AdvancedColor;
@@ -96,18 +97,18 @@ impl Into<TState<Color>> for TState<EnvironmentColor> {
     }
 }
 
-impl Into<TState<AdvancedColor>> for EnvironmentColor {
-    fn into(self) -> TState<AdvancedColor> {
+impl Into<TState<Style>> for EnvironmentColor {
+    fn into(self) -> TState<Style> {
         let state: TState<Color> = WidgetState::new(Box::new(EnvironmentColorState::new(self)));
-        let state: RState<AdvancedColor> = state.into();
+        let state: RState<Style> = state.into();
         state.ignore_writes()
     }
 }
 
-impl Into<TState<AdvancedColor>> for TState<EnvironmentColor> {
-    fn into(self) -> TState<AdvancedColor> {
+impl Into<TState<Style>> for TState<EnvironmentColor> {
+    fn into(self) -> TState<Style> {
         let state: TState<Color> = self.into();
 
-        Map1::read_map(state, |s: &Color| AdvancedColor::Color(*s)).ignore_writes()
+        Map1::read_map(state, |s: &Color| Style::Color(*s)).ignore_writes()
     }
 }

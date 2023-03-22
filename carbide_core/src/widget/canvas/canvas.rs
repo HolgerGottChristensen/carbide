@@ -5,6 +5,7 @@ use lyon::tessellation::{
     BuffersBuilder, FillOptions, FillTessellator, FillVertex, StrokeOptions, StrokeTessellator,
     StrokeVertex, VertexBuffers,
 };
+use carbide_core::render::{RenderContext, Style};
 
 use carbide_macro::carbide_default_builder;
 
@@ -151,6 +152,66 @@ impl<T: StateContract> Canvas<T> {
             bounding_box: Rect::new(self.position, self.dimension),
         }
     }
+
+    pub fn get_fill_geometry(&self, path: Path, fill_options: FillOptions) -> Vec<Triangle<Position>> {
+        let mut geometry: VertexBuffers<Position, u16> = VertexBuffers::new();
+        let mut tessellator = FillTessellator::new();
+
+        {
+            // Compute the tessellation.
+            tessellator
+                .tessellate_path(
+                    &path,
+                    &fill_options,
+                    &mut BuffersBuilder::new(&mut geometry, |vertex: FillVertex| {
+                        let point = vertex.position().to_array();
+                        Position::new(point[0] as Scalar, point[1] as Scalar)
+                    }),
+                )
+                .unwrap();
+        }
+
+        let point_iter = geometry
+            .indices
+            .iter()
+            .map(|index| geometry.vertices[*index as usize]);
+
+        let points: Vec<Position> = point_iter.collect();
+
+        Triangle::from_point_list(points)
+    }
+
+    pub fn get_stroke_geometry(
+        &self,
+        path: Path,
+        stroke_options: StrokeOptions,
+    ) -> Vec<Triangle<Position>> {
+        let mut geometry: VertexBuffers<Position, u16> = VertexBuffers::new();
+        let mut tessellator = StrokeTessellator::new();
+
+        {
+            // Compute the tessellation.
+            tessellator
+                .tessellate_path(
+                    &path,
+                    &stroke_options,
+                    &mut BuffersBuilder::new(&mut geometry, |vertex: StrokeVertex| {
+                        let point = vertex.position().to_array();
+                        Position::new(point[0] as Scalar, point[1] as Scalar)
+                    }),
+                )
+                .unwrap();
+        }
+
+        let point_iter = geometry
+            .indices
+            .iter()
+            .map(|index| geometry.vertices[*index as usize]);
+
+        let points: Vec<Position> = point_iter.collect();
+
+        Triangle::from_point_list(points)
+    }
 }
 
 impl<T: StateContract> CommonWidget for Canvas<T> {
@@ -248,6 +309,34 @@ impl<T: StateContract> Shape for Canvas<T> {
 }
 
 impl<T: StateContract> Render for Canvas<T> {
+    fn render(&mut self, render_context: &mut RenderContext, env: &mut Environment) {
+        let context = Context::new();
+
+        let rectangle = Rect::new(self.position(), self.dimension());
+        let context = match self.context {
+            WithState(c) => c(&mut self.state, rectangle, context, env),
+            NoState(c) => c(rectangle, context, env),
+        };
+
+        let paths = context.to_paths(self.position());
+
+        for (path, options) in paths {
+            match options {
+                ShapeStyleWithOptions::Fill(fill_options, mut color) => {
+                    color.sync(env);
+                    render_context.style(Style::Color(*color.value()), |this| {
+                        this.geometry(&self.get_fill_geometry(path, fill_options))
+                    })
+                }
+                ShapeStyleWithOptions::Stroke(stroke_options, mut color) => {
+                    color.sync(env);
+                    render_context.style(Style::Color(*color.value()), |this| {
+                        this.geometry(&self.get_stroke_geometry(path, stroke_options))
+                    })
+                }
+            }
+        }
+    }
     fn get_primitives(&mut self, primitives: &mut Vec<Primitive>, env: &mut Environment) {
         let context = Context::new();
 

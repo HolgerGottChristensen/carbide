@@ -1,10 +1,12 @@
 //! A simple, non-interactive widget for drawing an `Image`.
 
 use std::ops::Deref;
+use image::GenericImageView;
+use carbide_core::render::RenderContext;
 
 use carbide_macro::carbide_default_builder;
 
-use crate::{Color, CommonWidgetImpl};
+use crate::{Color, CommonWidgetImpl, Scalar};
 use crate::color::WHITE;
 use crate::draw::{Dimension, Position, Rect};
 use crate::draw::image::ImageId;
@@ -12,7 +14,7 @@ use crate::environment::{Environment, EnvironmentColor};
 use crate::layout::Layout;
 use crate::mesh::{MODE_ICON, MODE_IMAGE};
 use crate::mesh::pre_multiply::PreMultiply;
-use crate::render::{Primitive, PrimitiveKind, Render};
+use crate::render::{Primitive, PrimitiveKind, Render, Style};
 use crate::state::{NewStateSync, ReadState, TState};
 use crate::widget::{Widget, WidgetExt, WidgetId};
 use crate::widget::types::ScaleMode;
@@ -167,6 +169,36 @@ impl Layout for Image {
 }
 
 impl Render for Image {
+    fn render(&mut self, context: &mut RenderContext, env: &mut Environment) {
+        if let Some(id) = self.image_id.value().deref() {
+            let source_rect = match self.src_rect {
+                None => Rect::from_corners(Position::new(0.0, 1.0), Position::new(1.0, 0.0)),
+                Some(src_rect) => {
+                    let image = env.image_map.get(id).unwrap();
+
+                    let (image_w, image_h) = image.dimensions();
+                    let (image_w, image_h) = (image_w as Scalar, image_h as Scalar);
+
+                    let (l, r, b, t) = src_rect.l_r_b_t();
+
+                    Rect::from_corners(
+                        Position::new(l / image_w, b / image_h),
+                        Position::new(r / image_w, t / image_h),
+                    )
+                }
+            };
+
+
+            if let Some(color) = self.color.as_ref().map(|col| *col.value()) {
+                context.style(Style::Color(color), |this| {
+                    this.image(id.clone(), Rect::new(self.position, self.dimension), source_rect, self.mode)
+                })
+            } else {
+                context.image(id.clone(), Rect::new(self.position, self.dimension), source_rect, self.mode)
+            }
+        }
+    }
+
     fn get_primitives(&mut self, primitives: &mut Vec<Primitive>, env: &mut Environment) {
         if let Some(color) = &mut self.color {
             color.sync(env);
