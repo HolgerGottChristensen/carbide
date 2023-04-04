@@ -54,7 +54,7 @@ impl Layout for ClipShape {
         requested_size
     }
 
-    fn position_children(&mut self) {
+    fn position_children(&mut self, env: &mut Environment) {
         let positioning = BasicLayouter::Center.positioner();
         let position = self.position;
         let dimension = self.dimension;
@@ -62,8 +62,8 @@ impl Layout for ClipShape {
         positioning(position, dimension, &mut self.child);
         positioning(position, dimension, &mut self.shape);
 
-        self.child.position_children();
-        self.shape.position_children();
+        self.child.position_children(env);
+        self.shape.position_children(env);
     }
 }
 

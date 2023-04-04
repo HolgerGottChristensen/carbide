@@ -95,7 +95,7 @@ impl Layout for Padding {
         self.dimension
     }
 
-    fn position_children(&mut self) {
+    fn position_children(&mut self, env: &mut Environment) {
         let positioning = BasicLayouter::Center.positioner();
         let position = Position::new(
             self.x() + self.edge_insets.left,
@@ -107,7 +107,7 @@ impl Layout for Padding {
         );
 
         positioning(position, dimension, &mut self.child);
-        self.child.position_children();
+        self.child.position_children(env);
     }
 }
 

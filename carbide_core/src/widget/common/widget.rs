@@ -132,8 +132,8 @@ impl<T: Widget + ?Sized> Layout for Box<T> {
         self.deref_mut().calculate_size(requested_size, env)
     }
 
-    fn position_children(&mut self) {
-        self.deref_mut().position_children()
+    fn position_children(&mut self, env: &mut Environment) {
+        self.deref_mut().position_children(env)
     }
 }
 

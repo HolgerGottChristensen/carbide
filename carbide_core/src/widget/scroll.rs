@@ -302,7 +302,7 @@ impl Layout for Scroll {
         requested_size
     }
 
-    fn position_children(&mut self) {
+    fn position_children(&mut self, env: &mut Environment) {
         let positioning = BasicLayouter::TopLeading.positioner(); // Top for center
         let position = self.position;
         let dimension = self.dimension;
@@ -387,11 +387,11 @@ impl Layout for Scroll {
                 ),
         );
 
-        self.scrollbar_vertical.position_children();
-        self.scrollbar_horizontal.position_children();
-        self.scrollbar_vertical_background.position_children();
-        self.scrollbar_horizontal_background.position_children();
-        self.child.position_children();
+        self.scrollbar_vertical.position_children(env);
+        self.scrollbar_horizontal.position_children(env);
+        self.scrollbar_vertical_background.position_children(env);
+        self.scrollbar_horizontal_background.position_children(env);
+        self.child.position_children(env);
     }
 }
 

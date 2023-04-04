@@ -440,10 +440,6 @@ impl Mesh {
 
                     let (mut l, mut r, mut b, mut t) = primitive.bounding_box.l_r_b_t();
 
-                    l *= scale_factor;
-                    r *= scale_factor;
-                    t *= scale_factor;
-                    b *= scale_factor;
 
                     let new_rect = Rect::from_corners(Position::new(r, b), Position::new(l, t))
                         .within_bounding_box(&viewport);

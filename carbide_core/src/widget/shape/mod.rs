@@ -40,7 +40,7 @@ pub trait Shape: Widget + 'static {
             match primitives.remove(0).kind {
                 PrimitiveKind::Geometry { triangles, .. } => triangles,
                 _ => {
-                    panic!("Can only return triangles of PrimitiveKind::TrianglesSingleColor. This error might happen if you use a rectangle with content.")
+                    panic!("Can only return triangles of PrimitiveKind::Geometry. This error might happen if you use a rectangle with content.")
                 }
             }
         } else {
@@ -184,9 +184,9 @@ pub fn stroke(path: &dyn Fn(&mut Builder, &Box2D), shape: &mut dyn Shape, rectan
         fn get_closest_point(point: Position, points: &Vec<Position>) -> Position {
             if points.len() > 0 {
                 let mut closest = points[0];
-                let mut dist = 1000000.0;
+                let mut dist = f64::MAX;
                 for p in points {
-                    let cur_dist = ((point.x - p.x).powi(2) + (point.y - p.y).powi(2)).sqrt();
+                    let cur_dist = (point.x - p.x).powi(2) + (point.y - p.y).powi(2);
                     if cur_dist < dist {
                         dist = cur_dist;
                         closest = *p;

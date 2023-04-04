@@ -72,14 +72,14 @@ impl Layout for ZStack {
         self.dimension
     }
 
-    fn position_children(&mut self) {
+    fn position_children(&mut self, env: &mut Environment) {
         let positioning = self.alignment.positioner();
         let position = self.position;
         let dimension = self.dimension;
 
         for mut child in self.children_mut() {
             positioning(position, dimension, child.deref_mut());
-            child.position_children();
+            child.position_children(env);
         }
     }
 }

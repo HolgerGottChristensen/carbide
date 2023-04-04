@@ -78,14 +78,14 @@ impl Text {
         }
     }
 
-    pub fn span_glyphs(&self) -> Vec<(Vec<Glyph>, Option<Color>, Vec<Rect>)> {
+    pub fn span_glyphs(&self, scale_factor: Scalar) -> Vec<(Vec<Glyph>, Option<Color>, Vec<Rect>)> {
         self.spans
             .iter()
             .filter_map(|a| match a {
                 TextSpan::Text { style, glyphs, .. } => {
                     let style = style.clone().unwrap();
                     Some((
-                        glyphs.to_vec(),
+                        glyphs.iter().cloned().map(|g| g.with_scale_factor(scale_factor)).collect::<Vec<_>>(),
                         style.color,
                         style.text_decoration.get_rects(),
                     ))

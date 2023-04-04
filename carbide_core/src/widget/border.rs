@@ -65,7 +65,7 @@ impl Layout for Border {
         self.dimension
     }
 
-    fn position_children(&mut self) {
+    fn position_children(&mut self, env: &mut Environment) {
         let border_width = self.border_width as f64;
         let positioning = self.alignment().positioner();
         let position = Position::new(self.x() + border_width, self.y() + border_width);
@@ -75,7 +75,7 @@ impl Layout for Border {
         );
 
         positioning(position, dimension, &mut self.child);
-        self.child.position_children();
+        self.child.position_children(env);
     }
 }
 

@@ -138,24 +138,24 @@ impl Layout for PopupMenu {
         dim
     }
 
-    fn position_children(&mut self) {
+    fn position_children(&mut self, env: &mut Environment) {
         let positioning = self.alignment().positioner();
         let position = self.position();
         let dimension = self.dimension();
         positioning(position, dimension, &mut *self.child);
-        self.child.position_children();
+        self.child.position_children(env);
 
         if let Ok(over) = &mut self.popup {
             let position = position + Dimension::new(0.0, dimension.height);
 
             over.set_position(position);
-            over.position_children();
+            over.position_children(env);
         }
         if let Err(b) = &mut self.popup {
             //let position = position + Dimension::new(dimension.width, 0.0);
 
             //b.set_position(position);
-            b.position_children();
+            b.position_children(env);
         }
     }
 }

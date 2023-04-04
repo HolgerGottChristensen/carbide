@@ -184,7 +184,7 @@ impl Layout for VSplit {
         self.dimension
     }
 
-    fn position_children(&mut self) {
+    fn position_children(&mut self, env: &mut Environment) {
         let position = self.position();
         let dimension = self.dimension();
         let alignment = self.cross_axis_alignment;
@@ -202,7 +202,7 @@ impl Layout for VSplit {
 
             child.set_position(Position::new(cross, position.y + main_axis_offset));
             main_axis_offset += child.dimension().height;
-            child.position_children();
+            child.position_children(env);
         }
     }
 }

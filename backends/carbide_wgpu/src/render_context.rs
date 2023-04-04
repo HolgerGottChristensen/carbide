@@ -1,11 +1,11 @@
 use std::ops::Range;
+use cgmath::{Matrix4, SquareMatrix, Vector3};
 use carbide_core::color::WHITE;
 use carbide_core::draw::{BoundingBox, Position, Rect};
 use carbide_core::draw::image::ImageId;
 use carbide_core::draw::shape::triangle::Triangle;
-use carbide_core::image::{DynamicImage, GenericImageView};
 use carbide_core::layout::BasicLayouter;
-use carbide_core::mesh::{MODE_GEOMETRY};
+use carbide_core::mesh::{MODE_GEOMETRY, MODE_TEXT, MODE_TEXT_COLOR};
 use carbide_core::render::{CarbideTransform, InnerRenderContext, Style};
 use carbide_core::Scalar;
 use carbide_core::text::Glyph;
@@ -17,6 +17,9 @@ use crate::vertex::Vertex;
 pub struct WGPURenderContext {
     style: Vec<WGPUStyle>,
     stencil_stack: Vec<Range<u32>>,
+    scissor_stack: Vec<BoundingBox>,
+    transform_stack: Vec<(Matrix4<f32>, usize)>,
+    transforms: Vec<Matrix4<f32>>,
     state: State,
     render_pass: Vec<RenderPass>,
     render_pass_inner: Vec<RenderPassCommand>,
@@ -41,6 +44,9 @@ impl WGPURenderContext {
         WGPURenderContext {
             style: vec![],
             stencil_stack: vec![],
+            scissor_stack: vec![],
+            transform_stack: vec![(Matrix4::identity(), 0)],
+            transforms: vec![Matrix4::identity()],
             state: State::Plain { start: 0 },
             render_pass: vec![],
             render_pass_inner: vec![],
@@ -53,6 +59,14 @@ impl WGPURenderContext {
         assert!(self.style.is_empty());
         self.render_pass.clear();
         self.render_pass_inner.clear();
+        self.scissor_stack.clear();
+
+        self.transform_stack.clear();
+        self.transforms.clear();
+        self.transforms.push(Matrix4::identity());
+        self.transform_stack.push((Matrix4::identity(), 0));
+
+        self.stencil_stack.clear();
         self.state = State::Plain { start: 0 };
         self.vertices.clear();
         self.current_bind_group = None;
@@ -60,6 +74,9 @@ impl WGPURenderContext {
 
     pub fn vertices(&self) -> &Vec<Vertex> {
         &self.vertices
+    }
+    pub fn transforms(&self) -> &Vec<Matrix4<f32>> {
+        &self.transforms
     }
 
     pub fn finish(&mut self) -> Vec<RenderPass> {
@@ -178,6 +195,10 @@ impl WGPURenderContext {
     fn push_geometry_command(&mut self, vertices: Range<usize>) {
         self.ensure_current_bind_group_is_some();
 
+        if vertices.len() == 0 {
+            return;
+        }
+
         let cmd = RenderPassCommand::Draw {
             vertex_range: vertices.start as u32..vertices.end as u32,
         };
@@ -186,20 +207,60 @@ impl WGPURenderContext {
 }
 
 impl InnerRenderContext for WGPURenderContext {
-    fn transform(&mut self, transform: CarbideTransform, anchor: BasicLayouter) {
-        todo!()
+    fn transform(&mut self, transform: CarbideTransform) {
+        self.freshen_state();
+
+        let (latest_transform, _) = &self.transform_stack[self.transform_stack.len() - 1];
+
+        let new_transform = latest_transform * transform;
+
+        let index = self.transforms.len();
+        self.transform_stack.push((new_transform, index));
+        self.transforms.push(new_transform);
+
+        self.render_pass_inner.push(RenderPassCommand::Transform { uniform_bind_group_index: index });
     }
 
-    fn de_transform(&mut self) {
-        todo!()
+    fn pop_transform(&mut self) {
+        self.freshen_state();
+
+        self.transform_stack.pop();
+        self.render_pass_inner.push(RenderPassCommand::Transform {
+            uniform_bind_group_index: self.transform_stack[self.transform_stack.len() - 1].1
+        });
     }
 
+    // TODO: clip is broken atm. And no color on hacker news list example...
     fn clip(&mut self, bounding_box: BoundingBox) {
-        todo!()
+        /*self.freshen_state();
+
+        let corrected = if let Some(outer) = self.scissor_stack.first() {
+            bounding_box.within_bounding_box(outer)
+        } else {
+            bounding_box
+        };
+
+
+        self.render_pass_inner.push(RenderPassCommand::SetScissor {
+            rect: corrected
+        });
+
+        self.scissor_stack.push(corrected);*/
     }
 
-    fn de_clip(&mut self) {
-        todo!()
+    fn pop_clip(&mut self) {
+        /*self.freshen_state();
+
+        self.scissor_stack.pop();
+
+        match self.scissor_stack.last() {
+            Some(n) => {
+                self.render_pass_inner.push(RenderPassCommand::SetScissor {
+                    rect: *n
+                })
+            },
+            None => (),
+        }*/
     }
 
     fn filter(&mut self, id: FilterId) {
@@ -227,23 +288,14 @@ impl InnerRenderContext for WGPURenderContext {
 
         self.stencil_stack.push(range.clone());
 
-        let cmd = RenderPassCommand::Stencil {
-            vertex_range: range,
-        };
-
-        self.render_pass_inner.push(cmd);
-
+        self.render_pass_inner.push(RenderPassCommand::Stencil { vertex_range: range });
     }
 
-    fn de_stencil(&mut self) {
+    fn pop_stencil(&mut self) {
         self.freshen_state();
 
         if let Some(range) = self.stencil_stack.pop() {
-            let cmd = RenderPassCommand::DeStencil {
-                vertex_range: range,
-            };
-
-            self.render_pass_inner.push(cmd);
+            self.render_pass_inner.push(RenderPassCommand::DeStencil { vertex_range: range });
         } else {
             panic!("Trying to pop from empty stencil stack")
         }
@@ -255,7 +307,6 @@ impl InnerRenderContext for WGPURenderContext {
         let color = match self.style.last().unwrap() {
             WGPUStyle::Color(c) => *c,
         };
-
 
         self.vertices.extend(
             geometry.iter()
@@ -289,7 +340,7 @@ impl InnerRenderContext for WGPURenderContext {
 
     }
 
-    fn de_style(&mut self) {
+    fn pop_style(&mut self) {
         assert!(self.style.pop().is_some(), "A style was popped, when no style is present.")
     }
 
@@ -324,6 +375,71 @@ impl InnerRenderContext for WGPURenderContext {
     }
 
     fn text(&mut self, text: &Vec<Glyph>) {
-        todo!()
+        self.ensure_state_plain();
+
+        let color = match self.style.last().unwrap_or(&WGPUStyle::Color(WHITE.gamma_srgb_to_linear().to_fsa())) {
+            WGPUStyle::Color(c) => *c,
+        };
+
+        let v_normal = |x, y, t| Vertex {
+            position: [x as f32, y as f32, 0.0],
+            tex_coords: t,
+            rgba: color,
+            mode: MODE_TEXT,
+        };
+
+        let v_color = |x, y, t| Vertex {
+            position: [x as f32, y as f32, 0.0],
+            tex_coords: t,
+            rgba: color,
+            mode: MODE_TEXT_COLOR,
+        };
+
+        let mut push_v = |x: Scalar, y: Scalar, t: [f32; 2], is_bitmap: bool| {
+            if is_bitmap {
+                self.vertices.push(v_color(x, y, t));
+            } else {
+                self.vertices.push(v_normal(x, y, t));
+            }
+        };
+
+        for glyph in text {
+            if let Some(bb) = glyph.bb() {
+                let (left, right, bottom, top) = bb.l_r_b_t();
+
+                if let Some(index) = glyph.atlas_entry() {
+                    if !index.borrow().is_active {
+                        println!(
+                            "Trying to show glyph that is not in the texture atlas 11111."
+                        );
+                    }
+                    let coords = index.borrow().tex_coords;
+
+                    push_v(left, top, [coords.min.x, coords.max.y], glyph.is_bitmap());
+                    push_v(
+                        right,
+                        bottom,
+                        [coords.max.x, coords.min.y],
+                        glyph.is_bitmap(),
+                    );
+                    push_v(
+                        left,
+                        bottom,
+                        [coords.min.x, coords.min.y],
+                        glyph.is_bitmap(),
+                    );
+                    push_v(left, top, [coords.min.x, coords.max.y], glyph.is_bitmap());
+                    push_v(
+                        right,
+                        bottom,
+                        [coords.max.x, coords.min.y],
+                        glyph.is_bitmap(),
+                    );
+                    push_v(right, top, [coords.max.x, coords.max.y], glyph.is_bitmap());
+                } else {
+                    println!("Trying to show glyph that is not in the texture atlas.");
+                }
+            }
+        }
     }
 }

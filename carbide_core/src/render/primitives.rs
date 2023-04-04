@@ -21,7 +21,7 @@ impl Primitives {
         let layout = environment.root_alignment();
         (layout.positioner())(Position::new(0.0, 0.0), window_dimensions, root);
 
-        root.position_children();
+        root.position_children(environment);
         let mut prims: Vec<Primitive> = vec![];
         root.process_get_primitives(&mut prims, environment);
         prims

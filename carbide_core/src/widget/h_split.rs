@@ -203,7 +203,7 @@ impl Layout for HSplit {
         self.dimension
     }
 
-    fn position_children(&mut self) {
+    fn position_children(&mut self, env: &mut Environment) {
         let position = self.position();
         let dimension = self.dimension();
         let alignment = self.cross_axis_alignment;
@@ -221,7 +221,7 @@ impl Layout for HSplit {
 
             child.set_position(Position::new(position.x + main_axis_offset, cross));
             main_axis_offset += child.dimension().width;
-            child.position_children();
+            child.position_children(env);
         }
     }
 }

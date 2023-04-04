@@ -34,7 +34,8 @@ pub struct TextureAtlas {
     width: u32,
     height: u32,
 
-    not_yet_added_queue: Vec<(AtlasId, ImageData, AtlasEntry)>,
+    insertion_queue: Vec<(AtlasId, ImageData, AtlasEntry)>,
+    cache_queue: Vec<(u32, u32, AtlasId)>,
 
     /// An atlas is split up into a number of shelves. Each shelf can hold a number of images that
     /// are less than or equal to that space.
@@ -49,7 +50,8 @@ impl TextureAtlas {
         TextureAtlas {
             width,
             height,
-            not_yet_added_queue: vec![],
+            insertion_queue: vec![],
+            cache_queue: vec![],
             shelves: vec![],
             all_books_cabinet: HashMap::with_hasher(FxBuildHasher::default()),
         }
@@ -92,7 +94,7 @@ impl TextureAtlas {
 
         if let Some(image_data) = image_data {
             if let Some(already_in_queue) =
-                self.not_yet_added_queue.iter().find(|&a| &a.0 == &atlas_id)
+                self.insertion_queue.iter().find(|&a| &a.0 == &atlas_id)
             {
                 Some(already_in_queue.2.clone())
             } else {
@@ -106,10 +108,10 @@ impl TextureAtlas {
                     tex_coords: Default::default(),
                 };
 
-                self.not_yet_added_queue
+                self.insertion_queue
                     .push((atlas_id, image_data, Rc::new(RefCell::new(book))));
                 Some(
-                    self.not_yet_added_queue[self.not_yet_added_queue.len() - 1]
+                    self.insertion_queue[self.insertion_queue.len() - 1]
                         .2
                         .clone(),
                 )
@@ -127,7 +129,7 @@ impl TextureAtlas {
             return Some(item.0.clone());
         }
 
-        if let Some(already_in_queue) = self.not_yet_added_queue.iter().find(|&a| &a.0 == &atlas_id)
+        if let Some(already_in_queue) = self.insertion_queue.iter().find(|&a| &a.0 == &atlas_id)
         {
             Some(already_in_queue.2.clone())
         } else {
@@ -141,33 +143,65 @@ impl TextureAtlas {
                 tex_coords: Default::default(),
             };
 
-            self.not_yet_added_queue
+            self.insertion_queue
                 .push((atlas_id, image_data, Rc::new(RefCell::new(book))));
             Some(
-                self.not_yet_added_queue[self.not_yet_added_queue.len() - 1]
+                self.insertion_queue[self.insertion_queue.len() - 1]
                     .2
                     .clone(),
             )
         }
     }
 
-    /// The uploader should be x, y, image_data
-    pub fn cache_queued<F: FnMut(u32, u32, &ImageData)>(&mut self, mut uploader: F) {
-        if self.not_yet_added_queue.len() == 0 {
+    pub fn prepare_queued(&mut self) {
+        if self.insertion_queue.len() == 0 {
             return;
         }
 
-        let mut queue = self.not_yet_added_queue.drain(..).collect::<Vec<_>>();
-
-        queue.sort_unstable_by(|(_, data1, _), (_, data2, _)| data2.height().cmp(&data1.height()));
+        // Take everything out of the insertion queue, to handle borrow checking
+        let mut queue = vec![];
+        std::mem::swap(&mut queue, &mut self.insertion_queue);
 
         let size = (self.width, self.height);
 
-        let all_queued = queue.drain(..).fold(true, |state, (id, image_data, book)| {
+        // Store if everything was managed to be queued
+        let all_queued = self.append_from_queue(&mut queue, size);
+
+        // If there was not space for all the queued images, try to clean up.
+        if !all_queued {
+            println!("Not space for all glyphs. Trying to cleanup atlas.");
+            self.shelves.clear();
+            self.cache_queue.clear();
+
+            let mut queue = self
+                .all_books_cabinet
+                .drain()
+                .map(|(key, (entry, img))| (key, img, entry))
+                .filter(|(_, _, e)| Rc::strong_count(e) > 1)
+                .collect::<Vec<_>>();
+
+            let all_queued = self.append_from_queue(&mut queue, size);
+
+            if !all_queued {
+                println!("Tried to add more images to the atlas but there was not enough space even after cleanup.");
+            }
+        }
+
+    }
+
+    fn append_from_queue(&mut self, queue: &mut Vec<(AtlasId, ImageData, AtlasEntry)>, size: (u32, u32)) -> bool {
+
+        // Sort by height, to allow for better caching density
+        queue.sort_unstable_by(|(_, data1, _), (_, data2, _)| data2.height().cmp(&data1.height()));
+
+
+        queue.drain(..).fold(true, |state, (id, image_data, book)| {
             let shelf = self.get_or_new_fitting_shelve(image_data.width(), image_data.height());
 
+
             let res = if let Some(shelf) = shelf {
-                shelf.append(size, &image_data, &mut uploader, book.clone());
+                let position = shelf.append(size, book.clone());
+                self.cache_queue.push((position.0, position.1, id.clone()));
                 state
             } else {
                 false
@@ -176,42 +210,14 @@ impl TextureAtlas {
             self.all_books_cabinet.insert(id, (book, image_data));
 
             res
+        })
+    }
+
+    /// The uploader should be x, y, image_data
+    pub fn cache_queued<F: FnMut(u32, u32, &ImageData)>(&mut self, mut uploader: F) {
+        self.cache_queue.drain(..).for_each(|(x, y, id)| {
+            uploader(x, y, &self.all_books_cabinet.get(&id).unwrap().1)
         });
-
-        // If there was not space for all the queued images, try to clean up.
-        if !all_queued {
-            println!("Not space for all glyphs. Trying to cleanup atlas.");
-            self.shelves = vec![];
-            let mut queue = self
-                .all_books_cabinet
-                .drain()
-                .map(|(key, (entry, img))| (key, img, entry))
-                .filter(|(_, _, e)| Rc::strong_count(e) > 1)
-                .collect::<Vec<_>>();
-
-            queue.sort_unstable_by(|(_, data1, _), (_, data2, _)| {
-                data2.height().cmp(&data1.height())
-            });
-
-            let all_queued = queue.drain(..).fold(true, |state, (id, image_data, book)| {
-                let shelf = self.get_or_new_fitting_shelve(image_data.width(), image_data.height());
-
-                let res = if let Some(shelf) = shelf {
-                    shelf.append(size, &image_data, &mut uploader, book.clone());
-                    state
-                } else {
-                    false
-                };
-
-                self.all_books_cabinet.insert(id, (book, image_data));
-
-                res
-            });
-
-            if !all_queued {
-                println!("Tried to add more images to the atlas but there was not enough space even after cleanup.");
-            }
-        }
     }
 
     fn get_or_new_fitting_shelve(&mut self, width: u32, height: u32) -> Option<&mut Shelf> {
@@ -276,13 +282,7 @@ pub struct Shelf {
 }
 
 impl Shelf {
-    fn append<F: FnMut(u32, u32, &ImageData)>(
-        &mut self,
-        atlas_size: (u32, u32),
-        image_data: &ImageData,
-        uploader: &mut F,
-        entry: AtlasEntry,
-    ) {
+    fn append(&mut self, atlas_size: (u32, u32), entry: AtlasEntry) -> (u32, u32) {
         let mut book = entry.borrow_mut();
         book.x = self.shelf_current_x;
         book.y = self.shelf_y;
@@ -298,10 +298,15 @@ impl Shelf {
             },
         };
 
-        (*uploader)(self.shelf_current_x, self.shelf_y, image_data);
+        let res = (self.shelf_current_x, self.shelf_y);
+
         book.is_active = true;
         self.shelf_current_x += book.width + 1;
         self.books.push(Rc::downgrade(&entry));
+
+        res
+
+
     }
 
     fn get_width_left(&self) -> u32 {

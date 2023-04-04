@@ -1,3 +1,4 @@
+use carbide_core::render::RenderContext;
 use carbide_macro::carbide_default_builder;
 
 use crate::CommonWidgetImpl;
@@ -43,6 +44,34 @@ impl Layout for Clip {
 CommonWidgetImpl!(Clip, self, id: self.id, child: self.child, position: self.position, dimension: self.dimension);
 
 impl Render for Clip {
+    fn render(&mut self, context: &mut RenderContext, env: &mut Environment) {
+        let min = 1.0 / env.scale_factor();
+        if self.dimension.width <= min || self.dimension.height <= min {
+            return;
+        }
+
+        // If the clip is completely out of frame
+        if self.position.x + self.dimension.width < 0.0 {
+            return;
+        }
+        if self.position.y + self.dimension.height < 0.0 {
+            return;
+        }
+        if self.position.x >= env.current_window_width() {
+            return;
+        }
+        if self.position.y >= env.current_window_height() {
+            return;
+        }
+
+        context.clip(Rect::new(self.position, self.dimension), |this| {
+            for mut child in self.children_mut() {
+                child.render(this, env);
+            }
+        })
+
+    }
+
     fn process_get_primitives(&mut self, primitives: &mut Vec<Primitive>, env: &mut Environment) {
         // Cut the rendering if either the width or the height is 0
         let min = 1.0 / env.scale_factor();

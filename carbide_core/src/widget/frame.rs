@@ -223,7 +223,7 @@ impl Layout for Frame {
         self.dimension()
     }
 
-    fn position_children(&mut self) {
+    fn position_children(&mut self, env: &mut Environment) {
         if self.fixed_x {
             let new_x = *self.x.value();
             self.set_x(new_x);
@@ -239,7 +239,7 @@ impl Layout for Frame {
         let dimension = Dimension::new(self.width(), self.height());
 
         positioning(position, dimension, &mut self.child);
-        self.child.position_children();
+        self.child.position_children(env);
     }
 }
 

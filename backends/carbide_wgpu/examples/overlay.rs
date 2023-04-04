@@ -93,7 +93,7 @@ impl Layout for Over {
         requested_size
     }
 
-    fn position_children(&mut self) {
+    fn position_children(&mut self, env: &mut Environment) {
         if self.overlay_widget.is_showing() {
             let positioning = self.alignment().positioner();
             let position = self.position();
@@ -103,7 +103,7 @@ impl Layout for Over {
                 dimension,
                 &mut self.overlay_widget as &mut dyn Widget,
             );
-            self.overlay_widget.position_children();
+            self.overlay_widget.position_children(env);
         }
     }
 }

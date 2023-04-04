@@ -22,17 +22,17 @@ impl<'a> RenderContext<'a> {
     }
 
     // TODO: Change BasicLayouter to something more suitable
-    pub fn transform<R, F: FnOnce(&mut RenderContext) -> R>(&mut self, transform: CarbideTransform, anchor: BasicLayouter, f: F) -> R {
-        self.inner.transform(transform, anchor);
+    pub fn transform<R, F: FnOnce(&mut RenderContext) -> R>(&mut self, transform: CarbideTransform, f: F) -> R {
+        self.inner.transform(transform);
         let res = f(self);
-        self.inner.de_transform();
+        self.inner.pop_transform();
         res
     }
 
     pub fn clip<R, F: FnOnce(&mut RenderContext) -> R>(&mut self, bounding_box: BoundingBox, f: F) -> R {
         self.inner.clip(bounding_box);
         let res = f(self);
-        self.inner.de_clip();
+        self.inner.pop_clip();
         res
     }
 
@@ -45,7 +45,7 @@ impl<'a> RenderContext<'a> {
     pub fn stencil<R, F: FnOnce(&mut RenderContext) -> R>(&mut self, geometry: &Vec<Triangle<Position>>, f: F) -> R {
         self.inner.stencil(geometry);
         let res = f(self);
-        self.inner.de_stencil();
+        self.inner.pop_stencil();
         res
     }
 
@@ -61,7 +61,7 @@ impl<'a> RenderContext<'a> {
     pub fn style<R, F: FnOnce(&mut RenderContext) -> R>(&mut self, style: Style, f: F) -> R {
         self.inner.style(style);
         let res = f(self);
-        self.inner.de_style();
+        self.inner.pop_style();
         res
     }
 
@@ -75,23 +75,22 @@ impl<'a> RenderContext<'a> {
 }
 
 pub trait InnerRenderContext {
-    fn transform(&mut self, transform: CarbideTransform, anchor: BasicLayouter);
-    fn de_transform(&mut self);
+    fn transform(&mut self, transform: CarbideTransform);
+    fn pop_transform(&mut self);
 
     fn clip(&mut self, bounding_box: BoundingBox);
-    fn de_clip(&mut self);
+    fn pop_clip(&mut self);
 
     fn filter(&mut self, id: FilterId);
 
     fn stencil(&mut self, geometry: &Vec<Triangle<Position>>);
-    fn de_stencil(&mut self);
+    fn pop_stencil(&mut self);
 
     /// Renders the geometry with the current style
     fn geometry(&mut self, geometry: &Vec<Triangle<Position>>);
 
     fn style(&mut self, style: Style);
-
-    fn de_style(&mut self);
+    fn pop_style(&mut self);
 
     fn image(&mut self, id: ImageId, bounding_box: Rect, source_rect: Rect, mode: u32);
 
@@ -101,25 +100,25 @@ pub trait InnerRenderContext {
 pub struct NoopRenderContext;
 
 impl InnerRenderContext for NoopRenderContext {
-    fn transform(&mut self, transform: CarbideTransform, anchor: BasicLayouter) {}
+    fn transform(&mut self, transform: CarbideTransform) {}
 
-    fn de_transform(&mut self) {}
+    fn pop_transform(&mut self) {}
 
     fn clip(&mut self, bounding_box: BoundingBox) {}
 
-    fn de_clip(&mut self) {}
+    fn pop_clip(&mut self) {}
 
     fn filter(&mut self, id: FilterId) {}
 
     fn stencil(&mut self, geometry: &Vec<Triangle<Position>>) {}
 
-    fn de_stencil(&mut self) {}
+    fn pop_stencil(&mut self) {}
 
     fn geometry(&mut self, geometry: &Vec<Triangle<Position>>) {}
 
     fn style(&mut self, style: Style) {}
 
-    fn de_style(&mut self) {}
+    fn pop_style(&mut self) {}
 
     fn image(&mut self, id: ImageId, bounding_box: Rect, source_rect: Rect, mode: u32) {}
 

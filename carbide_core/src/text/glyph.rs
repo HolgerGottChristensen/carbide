@@ -80,6 +80,11 @@ impl Glyph {
         self.bb
     }
 
+    pub fn with_scale_factor(mut self, scale_factor: Scalar) -> Self {
+        self.bb = self.bb.map(|a| a / scale_factor);
+        self
+    }
+
     pub fn set_atlas_entry(&mut self, entry: AtlasEntry) {
         self.atlas_entry = Some(entry)
     }

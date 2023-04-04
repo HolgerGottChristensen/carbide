@@ -235,7 +235,7 @@ impl Layout for PlainSlider {
         self.dimension
     }
 
-    fn position_children(&mut self) {
+    fn position_children(&mut self, env: &mut Environment) {
         let position = self.position();
 
         let cross = self.cross_axis_alignment;
@@ -270,9 +270,9 @@ impl Layout for PlainSlider {
 
         self.child[2].set_position(Position::new(x, child2_height));
 
-        self.child[0].position_children();
-        self.child[1].position_children();
-        self.child[2].position_children();
+        self.child[0].position_children(env);
+        self.child[1].position_children(env);
+        self.child[2].position_children(env);
     }
 }
 

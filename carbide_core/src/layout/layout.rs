@@ -27,13 +27,13 @@ pub trait Layout: CommonWidget {
     /// the widget to position. The default alignment is Center.
     /// The default behavior is to position the first child using the alignment of the widget. If
     /// no child are present the default is a no-op.
-    fn position_children(&mut self) {
+    fn position_children(&mut self, env: &mut Environment) {
         let positioning = self.alignment().positioner();
         let position = self.position();
         let dimension = self.dimension();
         if let Some(mut first_child) = self.children_mut().next() {
             positioning(position, dimension, first_child.deref_mut());
-            first_child.position_children();
+            first_child.position_children(env);
         }
     }
 }

@@ -1,6 +1,7 @@
 use std::borrow::Borrow;
 use std::fmt::Debug;
 use std::ops::Deref;
+use carbide_core::render::{RenderContext, Style};
 
 use carbide_macro::carbide_default_builder;
 
@@ -217,10 +218,58 @@ impl Layout for Text {
         self.dimension
     }
 
-    fn position_children(&mut self) {}
+    fn position_children(&mut self, env: &mut Environment) {
+        if let Some(internal) = &mut self.internal_text {
+            internal.position(self.position.tolerance(1.0/env.scale_factor()));
+
+            internal.ensure_glyphs_added_to_atlas(env);
+        }
+    }
 }
 
 impl Render for Text {
+    fn render(&mut self, context: &mut RenderContext, env: &mut Environment) {
+        let default_color = *self.color.value();
+
+        if let Some(internal) = &mut self.internal_text {
+            context.style(Style::Color(default_color), |context| {
+                for (glyphs, color, additional_rects) in &internal.span_glyphs(env.scale_factor()) {
+
+                    context.text(glyphs);
+
+
+                    /*let color = if let Some(color) = color {
+                        color
+                    } else {
+                        default_color
+                    };
+
+                    let kind = PrimitiveKind::Text {
+                        color,
+                        text: glyphs,
+                    };
+                    primitives.push(new_primitive(
+                        kind,
+                        Rect::new(self.position, self.dimension),
+                    ));
+
+                    for additional_rect in additional_rects {
+                        let position =
+                            Position::new(additional_rect.position.x, additional_rect.position.y);
+                        let dimension = Dimension::new(
+                            additional_rect.dimension.width,
+                            additional_rect.dimension.height,
+                        );
+                        primitives.push(Primitive {
+                            kind: PrimitiveKind::RectanglePrim { color },
+                            bounding_box: Rect::new(position, dimension),
+                        });
+                    }*/
+                }
+            });
+        }
+    }
+
     fn get_primitives(&mut self, primitives: &mut Vec<Primitive>, env: &mut Environment) {
         let default_color = *self.color.value();
 
@@ -231,7 +280,7 @@ impl Render for Text {
         if let Some(internal) = &mut self.internal_text {
             internal.ensure_glyphs_added_to_atlas(env);
 
-            for (glyphs, color, additional_rects) in internal.span_glyphs() {
+            for (glyphs, color, additional_rects) in internal.span_glyphs(env.scale_factor()) {
                 let color = if let Some(color) = color {
                     color
                 } else {

@@ -1,3 +1,4 @@
+use carbide_core::environment::Environment;
 use carbide_macro::carbide_default_builder;
 
 use crate::CommonWidgetImpl;
@@ -36,7 +37,7 @@ impl Offset {
 }
 
 impl Layout for Offset {
-    fn position_children(&mut self) {
+    fn position_children(&mut self, env: &mut Environment) {
         let positioning = BasicLayouter::Center.positioner();
         let position = self.position;
         let dimension = self.dimension;
@@ -50,7 +51,7 @@ impl Layout for Offset {
 
         self.child.set_position(child_position);
 
-        self.child.position_children();
+        self.child.position_children(env);
     }
 }
 

@@ -705,7 +705,7 @@ impl Layout for WGPUWindow {
         Dimension::new(0.0, 0.0)
     }
 
-    fn position_children(&mut self) {}
+    fn position_children(&mut self, env: &mut Environment) {}
 }
 
 impl Render for WGPUWindow {
@@ -729,11 +729,13 @@ impl Render for WGPUWindow {
         let layout = env.root_alignment();
         (layout.positioner())(Position::new(0.0, 0.0), dimensions, &mut self.child);
 
-        self.child.position_children();
+        self.child.position_children(env);
 
         // Render the children
         self.render_context.clear();
         let mut wrapper_context = RenderContext::new(&mut self.render_context);
+
+        env.get_font_atlas_mut().prepare_queued();
 
         self.child.render(&mut wrapper_context, env);
 
@@ -742,12 +744,18 @@ impl Render for WGPUWindow {
         println!("Context: {:#?}", render_passes);
         //println!("Vertices: {:#?}", &self.render_context.vertices()[0..10]);
 
+        let mut uniform_bind_groups = vec![];
+
         DEVICE_QUEUE.with(|(device, queue)| {
             Self::ensure_vertices_in_buffer(device, queue, self.render_context.vertices(), &mut self.vertex_buffer.0, &mut self.vertex_buffer.1);
+
+            UNIFORM_BIND_GROUP_LAYOUT.with(|uniform_bind_group_layout| {
+                Self::ensure_uniforms_in_buffer(device, &self.carbide_to_wgpu_matrix, self.render_context.transforms(), uniform_bind_group_layout, &mut uniform_bind_groups);
+            });
         });
 
         if self.visible {
-            match self.render_inner(render_passes,vec![], env) {
+            match self.render_inner(render_passes, uniform_bind_groups, env) {
                 Ok(_) => {}
                 // Recreate the swap_chain if lost
                 Err(wgpu::SurfaceError::Lost) => {
@@ -875,6 +883,7 @@ impl WGPUWindow {
                 let atlas_image = &mut *atlas_image.borrow_mut();
                 let texture_atlas = env.get_font_atlas_mut();
                 let mut upload_needed = false;
+
                 texture_atlas.cache_queued(|x, y, image_data| {
                     //println!("Insert the image at: {}, {} with size {}, {}", x, y, image_data.width(), image_data.height());
                     for (ix, iy, pixel) in image_data.pixels() {
@@ -959,6 +968,19 @@ impl WGPUWindow {
         }
     }
 
+    fn ensure_uniforms_in_buffer(device: &Device, carbide_to_wgpu_matrix: &Matrix4<f32>, transforms: &Vec<Matrix4<f32>>, uniform_bind_group_layout: &BindGroupLayout, uniform_bind_groups: &mut Vec<BindGroup>) {
+        for transform in transforms {
+            let transformed_matrix = carbide_to_wgpu_matrix * transform;
+            let new_bind_group = matrix_to_uniform_bind_group(
+                device,
+                uniform_bind_group_layout,
+                transformed_matrix,
+            );
+
+            uniform_bind_groups.push(new_bind_group);
+        }
+    }
+
     fn render_texture_to_swapchain(&self, encoder: &mut CommandEncoder, render_pipeline_no_mask: &RenderPipeline, output: &SurfaceTexture) {
         let instance_range = 0..1;
 
@@ -985,6 +1007,7 @@ impl WGPUWindow {
         render_pass.set_bind_group(0, &self.main_bind_group, &[]);
         render_pass.set_bind_group(1, &self.uniform_bind_group, &[]);
         render_pass.draw(0..6, instance_range);
+
     }
 
     fn process_render_passes(
@@ -995,7 +1018,8 @@ impl WGPUWindow {
         bind_groups: &HashMap<ImageId, DiffuseBindGroup>,
         uniform_bind_groups: &Vec<BindGroup>,
         filter_bind_groups: &HashMap<FilterId, BindGroup>,
-        size: PhysicalSize<u32>
+        size: PhysicalSize<u32>,
+        scale_factor: Scalar,
     ) {
         let instance_range = 0..1;
         let mut stencil_level = 0;
@@ -1041,13 +1065,8 @@ impl WGPUWindow {
                             RenderPassCommand::SetBindGroup { bind_group } => {
                                 render_pass.set_bind_group(0, &bind_groups[&bind_group.get()], &[]);
                             }
-                            RenderPassCommand::SetScissor {
-                                top_left,
-                                dimensions,
-                            } => {
-                                let [x, y] = top_left;
-                                let [w, h] = dimensions;
-                                render_pass.set_scissor_rect(x, y, w, h);
+                            RenderPassCommand::SetScissor { rect } => {
+                                render_pass.set_scissor_rect((rect.left() * scale_factor) as u32, (rect.bottom() * scale_factor) as u32, (rect.width() * scale_factor) as u32, (rect.height() * scale_factor) as u32);
                             }
                             RenderPassCommand::Draw { vertex_range } => {
                                 render_pass.draw(vertex_range, instance_range.clone());
@@ -1240,7 +1259,7 @@ impl WGPUWindow {
                         // Ensure the images are added as bind groups
                         Self::ensure_images_exist_as_bind_groups(device, queue, bind_groups, env);
 
-                        self.process_render_passes(render_passes, &mut encoder, render_pipelines, bind_groups, &uniform_bind_groups, filter_bind_groups, size);
+                        self.process_render_passes(render_passes, &mut encoder, render_pipelines, bind_groups, &uniform_bind_groups, filter_bind_groups, size, env.scale_factor());
 
                         // This blocks until a new frame is available.
                         let output = self.surface.get_current_texture()?;

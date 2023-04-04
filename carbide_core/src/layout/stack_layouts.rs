@@ -26,6 +26,7 @@ pub(crate) fn position_children_vstack(
     widget: &mut dyn Layout,
     spacing: f64,
     cross_axis_alignment: CrossAxisAlignment,
+    env: &mut Environment,
 ) {
     position_children_stack(
         widget,
@@ -36,6 +37,7 @@ pub(crate) fn position_children_vstack(
         y_x,
         cross_axis_alignment,
         spacing,
+        env,
     );
 }
 
@@ -60,6 +62,7 @@ pub(crate) fn position_children_hstack(
     widget: &mut dyn Layout,
     spacing: f64,
     cross_axis_alignment: CrossAxisAlignment,
+    env: &mut Environment,
 ) {
     position_children_stack(
         widget,
@@ -70,6 +73,7 @@ pub(crate) fn position_children_hstack(
         x_y,
         cross_axis_alignment,
         spacing,
+        env,
     );
 }
 
@@ -225,6 +229,7 @@ fn position_children_stack(
     position_from_main_and_cross: fn(f64, f64) -> Position,
     cross_axis_alignment: CrossAxisAlignment,
     spacing: f64,
+    env: &mut Environment,
 ) {
     let alignment = cross_axis_alignment;
     let mut main_axis_offset = 0.0;
@@ -260,6 +265,6 @@ fn position_children_stack(
         }
         main_axis_offset += main_axis_dimension(child.dimension());
 
-        child.position_children();
+        child.position_children(env);
     }
 }

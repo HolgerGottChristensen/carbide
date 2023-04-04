@@ -1,4 +1,5 @@
-use cgmath::{Deg, Matrix4, SquareMatrix};
+use cgmath::{Deg, Matrix4, SquareMatrix, Vector3};
+use carbide_core::render::RenderContext;
 
 use carbide_macro::carbide_default_builder;
 
@@ -164,6 +165,83 @@ impl CommonWidget for Transform {
 }
 
 impl Render for Transform {
+    fn render(&mut self, context: &mut RenderContext, env: &mut Environment) {
+        let bounding_box = Rect::new(self.position, self.dimension);
+        let matrix = *self.matrix.value();
+
+        let new_transform = match self.anchor {
+            BasicLayouter::TopLeading => {
+                let center_x = (bounding_box.position.x()) as f32;
+                let center_y = (bounding_box.position.y()) as f32;
+                Matrix4::from_translation(Vector3::new(center_x, center_y, 0.0))
+                    * matrix
+                    * Matrix4::from_translation(Vector3::new(-center_x, -center_y, 0.0))
+            }
+            BasicLayouter::Top => {
+                let center_x = (bounding_box.position.x() + bounding_box.dimension.width / 2.0) as f32;
+                let center_y = (bounding_box.position.y()) as f32;
+                Matrix4::from_translation(Vector3::new(center_x, center_y, 0.0))
+                    * matrix
+                    * Matrix4::from_translation(Vector3::new(-center_x, -center_y, 0.0))
+            }
+            BasicLayouter::TopTrailing => {
+                let center_x = (bounding_box.position.x() + bounding_box.dimension.width) as f32;
+                let center_y = (bounding_box.position.y()) as f32;
+                Matrix4::from_translation(Vector3::new(center_x, center_y, 0.0))
+                    * matrix
+                    * Matrix4::from_translation(Vector3::new(-center_x, -center_y, 0.0))
+            }
+            BasicLayouter::Leading => {
+                let center_x = (bounding_box.position.x()) as f32;
+                let center_y = (bounding_box.position.y() + bounding_box.dimension.height / 2.0) as f32;
+                Matrix4::from_translation(Vector3::new(center_x, center_y, 0.0))
+                    * matrix
+                    * Matrix4::from_translation(Vector3::new(-center_x, -center_y, 0.0))
+            }
+            BasicLayouter::Center => {
+                let center_x = (bounding_box.position.x() + bounding_box.dimension.width / 2.0) as f32;
+                let center_y = (bounding_box.position.y() + bounding_box.dimension.height / 2.0) as f32;
+                Matrix4::from_translation(Vector3::new(center_x, center_y, 0.0))
+                    * matrix
+                    * Matrix4::from_translation(Vector3::new(-center_x, -center_y, 0.0))
+            }
+            BasicLayouter::Trailing => {
+                let center_x = (bounding_box.position.x() + bounding_box.dimension.width) as f32;
+                let center_y = (bounding_box.position.y() + bounding_box.dimension.height / 2.0) as f32;
+                Matrix4::from_translation(Vector3::new(center_x, center_y, 0.0))
+                    * matrix
+                    * Matrix4::from_translation(Vector3::new(-center_x, -center_y, 0.0))
+            }
+            BasicLayouter::BottomLeading => {
+                let center_x = (bounding_box.position.x()) as f32;
+                let center_y = (bounding_box.position.y() + bounding_box.dimension.height) as f32;
+                Matrix4::from_translation(Vector3::new(center_x, center_y, 0.0))
+                    * matrix
+                    * Matrix4::from_translation(Vector3::new(-center_x, -center_y, 0.0))
+            }
+            BasicLayouter::Bottom => {
+                let center_x = (bounding_box.position.x() + bounding_box.dimension.width / 2.0) as f32;
+                let center_y = (bounding_box.position.y() + bounding_box.dimension.height) as f32;
+                Matrix4::from_translation(Vector3::new(center_x, center_y, 0.0))
+                    * matrix
+                    * Matrix4::from_translation(Vector3::new(-center_x, -center_y, 0.0))
+            }
+            BasicLayouter::BottomTrailing => {
+                let center_x = (bounding_box.position.x() + bounding_box.dimension.width) as f32;
+                let center_y = (bounding_box.position.y() + bounding_box.dimension.height) as f32;
+                Matrix4::from_translation(Vector3::new(center_x, center_y, 0.0))
+                    * matrix
+                    * Matrix4::from_translation(Vector3::new(-center_x, -center_y, 0.0))
+            }
+        };
+
+        context.transform(new_transform, |this| {
+            for mut child in self.children_mut() {
+                child.render(this, env);
+            }
+        })
+    }
+
     fn process_get_primitives(&mut self, primitives: &mut Vec<Primitive>, env: &mut Environment) {
         self.capture_state(env);
         let matrix = *self.matrix.value();

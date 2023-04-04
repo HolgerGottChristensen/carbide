@@ -352,14 +352,14 @@ impl<T: StateContract + PartialEq + 'static> Layout for PlainPopUpButton<T> {
         dimensions
     }
 
-    fn position_children(&mut self) {
+    fn position_children(&mut self, env: &mut Environment) {
         let positioning = self.alignment().positioner();
         let position = self.position();
         let dimension = self.dimension();
 
         if let Some(mut child) = self.children_mut().next() {
             positioning(position, dimension, child.deref_mut());
-            child.position_children();
+            child.position_children(env);
         }
 
         if self.popup.is_showing() {
@@ -376,7 +376,7 @@ impl<T: StateContract + PartialEq + 'static> Layout for PlainPopUpButton<T> {
 
             self.popup.set_x(self.x());
             self.popup.set_y(y);
-            self.popup.position_children();
+            self.popup.position_children(env);
         }
     }
 }

@@ -60,15 +60,15 @@ impl Layout for Background {
         self.dimension
     }
 
-    fn position_children(&mut self) {
+    fn position_children(&mut self, env: &mut Environment) {
         let positioning = self.alignment.positioner();
         let position = self.position;
         let dimension = self.dimension;
 
         positioning(position, dimension, self.child.deref_mut());
         positioning(position, dimension, self.background.deref_mut());
-        self.child.position_children();
-        self.background.position_children();
+        self.child.position_children(env);
+        self.background.position_children(env);
     }
 }
 

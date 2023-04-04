@@ -219,10 +219,10 @@ impl Layout for HStack {
         self.dimension
     }
 
-    fn position_children(&mut self) {
+    fn position_children(&mut self, env: &mut Environment) {
         let spacing = self.spacing;
         let cross_axis_alignment = self.cross_axis_alignment;
-        position_children_hstack(self, spacing, cross_axis_alignment)
+        position_children_hstack(self, spacing, cross_axis_alignment, env)
     }
 }
 
