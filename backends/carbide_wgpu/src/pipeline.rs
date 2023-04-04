@@ -9,6 +9,7 @@ use crate::render_pipeline_layouts::RenderPipelines;
 use crate::vertex::Vertex;
 use crate::wgpu_window::{FILTER_RENDER_PIPELINE_LAYOUT, FILTER_SHADER, GRADIENT_RENDER_PIPELINE_LAYOUT, GRADIENT_SHADER, MAIN_SHADER, RENDER_PIPELINE_LAYOUT};
 
+#[derive(Debug, Copy, Clone)]
 pub(crate) enum MaskType {
     NoMask,
     AddMask,
@@ -131,7 +132,7 @@ pub(crate) fn create_render_pipeline(
 
 
     device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
-        label: Some("Render Pipeline"),
+        label: Some(&format!("Render Pipeline, {:?}", mask_type)),
         layout: Some(render_pipeline_layout),
         vertex: VertexState {
             module: &shader,
@@ -162,7 +163,7 @@ pub(crate) fn create_render_pipeline(
         fragment: Some(FragmentState {
             module: &shader,
             entry_point: "main_fs",
-            targets: &[ColorTargetState {
+            targets: &[Some(ColorTargetState {
                 format: preferred_format,
                 blend: Some(BlendState {
                     color: BlendComponent {
@@ -177,7 +178,7 @@ pub(crate) fn create_render_pipeline(
                     },
                 }),
                 write_mask: col,
-            }],
+            })],
         }),
         multiview: None,
     })

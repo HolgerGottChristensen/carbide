@@ -33,7 +33,7 @@ enum RenderPassOps {
     Middle,
 }
 
-fn render_pass_ops(ops_type: RenderPassOps) -> (Operations<wgpu::Color>, Operations<u32>) {
+fn render_pass_ops(ops_type: RenderPassOps) -> (Operations<wgpu::Color>, Operations<u32>, Operations<f32>) {
     let color_op = match ops_type {
         RenderPassOps::Start => wgpu::Operations {
             load: wgpu::LoadOp::Clear(wgpu::Color {
@@ -61,6 +61,17 @@ fn render_pass_ops(ops_type: RenderPassOps) -> (Operations<wgpu::Color>, Operati
         },
     };
 
-    (color_op, stencil_op)
+    let depth_op = match ops_type {
+        RenderPassOps::Start => wgpu::Operations {
+            load: wgpu::LoadOp::Clear(1.0),
+            store: true,
+        },
+        RenderPassOps::Middle => wgpu::Operations {
+            load: LoadOp::Load,
+            store: true,
+        },
+    };
+
+    (color_op, stencil_op, depth_op)
 }
 

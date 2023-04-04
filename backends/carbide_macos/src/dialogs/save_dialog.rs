@@ -9,7 +9,7 @@ use objc::msg_send;
 use objc::sel;
 use objc::sel_impl;
 use oneshot::Receiver;
-use raw_window_handle::{AppKitHandle, HasRawWindowHandle, RawWindowHandle};
+use raw_window_handle::{AppKitWindowHandle, HasRawWindowHandle, RawWindowHandle};
 
 use carbide_core::dialog::FileSpecification;
 use carbide_core::state::{InnerState, ValueCell};
@@ -179,7 +179,7 @@ impl SavePanel {
 
         let block = block.copy();
         let handle = match window.raw_window_handle() {
-            RawWindowHandle::AppKit(AppKitHandle { ns_window, .. }) => {
+            RawWindowHandle::AppKit(AppKitWindowHandle { ns_window, .. }) => {
                 ns_window
             }
             _ => unreachable!("This is macos platform code, but you have a window that is not AppKit? Please report a bug")

@@ -13,6 +13,7 @@ members = [
     # "backends/carbide_rendy",
     # "backends/carbide_vulkano",
     "backends/carbide_wgpu",
+    "backends/carbide_rend3",
     "backends/carbide_rusttype",
     "backends/carbide_macos",
     "backends/carbide_printpdf",

@@ -18,6 +18,7 @@ pub fn main_render_tex_desc([width, height]: [u32; 2]) -> wgpu::TextureDescripto
             | TextureUsages::TEXTURE_BINDING
             | TextureUsages::COPY_SRC
             | wgpu::TextureUsages::COPY_DST,
+        view_formats: &[],
     }
 }
 
@@ -40,6 +41,7 @@ pub fn secondary_render_tex_desc([width, height]: [u32; 2]) -> wgpu::TextureDesc
         usage: wgpu::TextureUsages::RENDER_ATTACHMENT
             | wgpu::TextureUsages::TEXTURE_BINDING
             | wgpu::TextureUsages::COPY_DST,
+        view_formats: &[],
     }
 }
 
@@ -58,5 +60,6 @@ pub fn atlas_cache_tex_desc([width, height]: [u32; 2]) -> wgpu::TextureDescripto
         dimension: wgpu::TextureDimension::D2,
         format: TextureFormat::Rgba8UnormSrgb,
         usage: wgpu::TextureUsages::TEXTURE_BINDING | wgpu::TextureUsages::COPY_DST,
+        view_formats: &[],
     }
 }

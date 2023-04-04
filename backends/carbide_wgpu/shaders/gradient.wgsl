@@ -3,45 +3,45 @@
 // but modified to work with carbide coordinates and diamond and conic gradients.
 
 struct VertexOutput {
-    [[location(0)]] tex_coord: vec2<f32>;
-    [[builtin(position)]] position: vec4<f32>;
-};
+    @location(0) tex_coord: vec2<f32>,
+    @builtin(position) position: vec4<f32>,
+}
 
 struct Gradient {
-    colors: array<vec4<f32>,16u>;
-    ratios: array<f32,16u>;
-    num_colors: u32;
-    gradient_type: i32;
-    repeat_mode: i32;
-    start: vec2<f32>;
-    end: vec2<f32>;
-};
+    colors: array<vec4<f32>,16u>,
+    ratios: array<f32,16u>,
+    num_colors: u32,
+    gradient_type: i32,
+    repeat_mode: i32,
+    start: vec2<f32>,
+    end: vec2<f32>,
+}
 
 struct Uniforms {
-    transform: mat4x4<f32>;
-};
+    transform: mat4x4<f32>,
+}
 
-[[group(0), binding(0)]]
+@group(0) @binding(0)
 var<storage, read> gradient: Gradient;
 
-[[group(1), binding(0)]]
+@group(1) @binding(0)
 var<uniform> uniforms: Uniforms;
 
-[[stage(fragment)]]
-fn main_fs(in: VertexOutput) -> [[location(0)]] vec4<f32> {
+@fragment
+fn main_fs(in: VertexOutput) -> @location(0) vec4<f32> {
     let last = gradient.num_colors - 1u;
     var t: f32;
 
     switch (gradient.gradient_type) {
-        case 0u: {
+        case 0: {
             // Linear gradient
             t = dot(normalize(gradient.end - gradient.start), in.tex_coord - gradient.start) / distance(gradient.start, gradient.end);
         }
-        case 1u: {
+        case 1: {
             // Radial gradient
             t = length(in.tex_coord - gradient.start) / distance(gradient.start, gradient.end);
         }
-        case 2u: {
+        case 2: {
             // Diamond gradient
             let f = gradient.end - gradient.start;
             let de = atan2(f.y, f.x);
@@ -49,7 +49,7 @@ fn main_fs(in: VertexOutput) -> [[location(0)]] vec4<f32> {
             let d = (rot*(in.tex_coord - gradient.start));
             t = (abs(d.x) + abs(d.y)) / length(f);
         }
-        case 3u: {
+        case 3: {
             // Conic gradient
             let f = gradient.end - gradient.start;
             let de = atan2(f.y, f.x) - 3.14159;
@@ -63,15 +63,15 @@ fn main_fs(in: VertexOutput) -> [[location(0)]] vec4<f32> {
     }
 
     switch (gradient.repeat_mode) {
-        case 0u: {
+        case 0: {
             // Clamp
             t = clamp(t, 0.0, 1.0);
         }
-        case 1u: {
+        case 1: {
             // Repeat
             t = fract(t);
         }
-        case 2u: {
+        case 2: {
             // Mirror
             if( t < 0.0 ) {
                 t = -t;
@@ -110,9 +110,9 @@ fn main_fs(in: VertexOutput) -> [[location(0)]] vec4<f32> {
 
 
 
-[[stage(vertex)]]
+@vertex
 fn main_vs(
-    [[location(0)]] position: vec4<f32>,
+    @location(0) position: vec4<f32>,
 ) -> VertexOutput {
     var out: VertexOutput;
     out.tex_coord = position.xy;

@@ -16,5 +16,5 @@ edition="2018"
 
 
 [dependencies]
-winit = "0.26.1"
+winit = "0.28"
 carbide_core = { path = "../../carbide_core", version = "0.70" }

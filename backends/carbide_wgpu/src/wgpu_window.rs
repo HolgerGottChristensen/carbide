@@ -50,7 +50,12 @@ const ZOOM: f32 = 1.0;
 // The instance is a handle to our GPU
 // BackendBit::PRIMARY => Vulkan + Metal + DX12 + Browser WebGPU
 //let instance = wgpu::Instance::new(wgpu::Backends::PRIMARY);
-thread_local!(pub static INSTANCE: Instance = Instance::new(wgpu::Backends::PRIMARY));
+thread_local!(pub static INSTANCE: Instance =
+    Instance::new(wgpu::InstanceDescriptor {
+        backends: wgpu::Backends::all(),
+        dx12_shader_compiler: Default::default(),
+    })
+);
 
 thread_local!(pub static ADAPTER: Adapter = {
     INSTANCE.with(|instance| {
@@ -106,19 +111,19 @@ thread_local!(pub static GRADIENT_BIND_GROUP_LAYOUT: BindGroupLayout = {
 
 thread_local!(pub static MAIN_SHADER: ShaderModule = {
     DEVICE_QUEUE.with(|(device, queue)| {
-        device.create_shader_module(&wgpu::include_wgsl!("../shaders/shader.wgsl"))
+        device.create_shader_module(wgpu::include_wgsl!("../shaders/shader.wgsl"))
     })
 });
 
 thread_local!(pub static GRADIENT_SHADER: ShaderModule = {
     DEVICE_QUEUE.with(|(device, queue)| {
-        device.create_shader_module(&wgpu::include_wgsl!("../shaders/gradient.wgsl"))
+        device.create_shader_module(wgpu::include_wgsl!("../shaders/gradient.wgsl"))
     })
 });
 
 thread_local!(pub static FILTER_SHADER: ShaderModule = {
     DEVICE_QUEUE.with(|(device, queue)| {
-        device.create_shader_module(&wgpu::include_wgsl!("../shaders/filter.wgsl"))
+        device.create_shader_module(wgpu::include_wgsl!("../shaders/filter.wgsl"))
     })
 });
 
@@ -280,10 +285,14 @@ impl WGPUWindow {
 
         let surface = INSTANCE.with(|instance| {
             unsafe { instance.create_surface(&inner) }
-        });
+        }).unwrap();
 
         DEVICE_QUEUE.with(|(device, queue)| {
             // Configure the surface with format, size and usage
+            let surface_caps = ADAPTER.with(|adapter| {
+                surface.get_capabilities(adapter)
+            });
+
             surface.configure(
                 &device,
                 &SurfaceConfiguration {
@@ -291,7 +300,9 @@ impl WGPUWindow {
                     format: TextureFormat::Bgra8UnormSrgb,
                     width: inner.inner_size().width,
                     height: inner.inner_size().height,
-                    present_mode: PresentMode::Mailbox,
+                    present_mode: surface_caps.present_modes[0],
+                    alpha_mode: wgpu::CompositeAlphaMode::Auto,
+                    view_formats: vec![],
                 },
             );
 
@@ -320,9 +331,16 @@ impl WGPUWindow {
 
             let render_pipelines_index = PIPELINES.with(|pipelines| {
                 let pipelines = &mut *pipelines.borrow_mut();
+
                 let preferred_format = ADAPTER.with(|adapter| {
-                    surface.get_preferred_format(adapter).unwrap()
+                    let surface_caps = surface.get_capabilities(adapter);
+                    surface_caps.formats.iter()
+                        .copied()
+                        .filter(|f| f.describe().srgb)
+                        .next()
+                        .unwrap_or(surface_caps.formats[0])
                 });
+
 
                 if let Some(index) = pipelines.iter().position(|(format, _)| format == &preferred_format) {
                     index
@@ -984,20 +1002,20 @@ impl WGPUWindow {
     fn render_texture_to_swapchain(&self, encoder: &mut CommandEncoder, render_pipeline_no_mask: &RenderPipeline, output: &SurfaceTexture) {
         let instance_range = 0..1;
 
-        let (color_op, stencil_op) = render_pass_ops(RenderPassOps::Middle);
+        let (color_op, stencil_op, depth_op) = render_pass_ops(RenderPassOps::Middle);
 
         let frame_view = output.texture.create_view(&Default::default());
 
         let mut render_pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
             label: None,
-            color_attachments: &[wgpu::RenderPassColorAttachment {
+            color_attachments: &[Some(wgpu::RenderPassColorAttachment {
                 view: &frame_view, // Here is the render target
                 resolve_target: None,
                 ops: color_op,
-            }],
+            })],
             depth_stencil_attachment: Some(RenderPassDepthStencilAttachment {
                 view: &self.depth_texture_view,
-                depth_ops: None,
+                depth_ops: Some(depth_op),
                 stencil_ops: Some(stencil_op),
             }),
         });
@@ -1035,22 +1053,23 @@ impl WGPUWindow {
                     if inner.len() == 0 {
                         continue;
                     }
-                    let (color_op, stencil_op) = if first_pass {
+                    let (color_op, stencil_op, depth_op) = if first_pass {
                         first_pass = false;
                         render_pass_ops(RenderPassOps::Start)
                     } else {
                         render_pass_ops(RenderPassOps::Middle)
                     };
+
                     let mut render_pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
                         label: None,
-                        color_attachments: &[wgpu::RenderPassColorAttachment {
+                        color_attachments: &[Some(wgpu::RenderPassColorAttachment {
                             view: &self.main_tex_view, // Here is the render target
                             resolve_target: None,
                             ops: color_op,
-                        }],
+                        })],
                         depth_stencil_attachment: Some(RenderPassDepthStencilAttachment {
                             view: &self.depth_texture_view,
-                            depth_ops: None,
+                            depth_ops: Some(depth_op),
                             stencil_ops: Some(stencil_op),
                         }),
                     });
@@ -1103,17 +1122,17 @@ impl WGPUWindow {
                     }
                 }
                 RenderPass::Gradient(vertex_range, bind_group_index) => {
-                    let (color_op, stencil_op) = render_pass_ops(RenderPassOps::Middle);
+                    let (color_op, stencil_op, depth_op) = render_pass_ops(RenderPassOps::Middle);
                     let mut render_pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
                         label: None,
-                        color_attachments: &[wgpu::RenderPassColorAttachment {
+                        color_attachments: &[Some(wgpu::RenderPassColorAttachment {
                             view: &self.main_tex_view, // Here is the render target
                             resolve_target: None,
                             ops: color_op,
-                        }],
+                        })],
                         depth_stencil_attachment: Some(RenderPassDepthStencilAttachment {
                             view: &self.depth_texture_view,
-                            depth_ops: None,
+                            depth_ops: Some(depth_op),
                             stencil_ops: Some(stencil_op),
                         }),
                     });
@@ -1146,17 +1165,17 @@ impl WGPUWindow {
                         },
                     );
 
-                    let (color_op, stencil_op) = render_pass_ops(RenderPassOps::Middle);
+                    let (color_op, stencil_op, depth_op) = render_pass_ops(RenderPassOps::Middle);
                     let mut render_pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
                         label: None,
-                        color_attachments: &[wgpu::RenderPassColorAttachment {
+                        color_attachments: &[Some(wgpu::RenderPassColorAttachment {
                             view: &self.main_tex_view, // Here is the render target
                             resolve_target: None,
                             ops: color_op,
-                        }],
+                        })],
                         depth_stencil_attachment: Some(RenderPassDepthStencilAttachment {
                             view: &self.depth_texture_view,
-                            depth_ops: None,
+                            depth_ops: Some(depth_op),
                             stencil_ops: Some(stencil_op),
                         }),
                     });
@@ -1176,17 +1195,18 @@ impl WGPUWindow {
                     render_pass.draw(vertex_range, instance_range.clone());
                 }
                 RenderPass::FilterSplitPt1(vertex_range, filter_id) => {
-                    let (color_op, stencil_op) = render_pass_ops(RenderPassOps::Middle);
+                    let (color_op, stencil_op, depth_op) = render_pass_ops(RenderPassOps::Middle);
+
                     let mut render_pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
                         label: None,
-                        color_attachments: &[wgpu::RenderPassColorAttachment {
+                        color_attachments: &[Some(wgpu::RenderPassColorAttachment {
                             view: &self.secondary_tex_view, // Here is the render target
                             resolve_target: None,
                             ops: color_op,
-                        }],
+                        })],
                         depth_stencil_attachment: Some(RenderPassDepthStencilAttachment {
                             view: &self.depth_texture_view,
-                            depth_ops: None,
+                            depth_ops: Some(depth_op),
                             stencil_ops: Some(stencil_op),
                         }),
                     });
@@ -1203,17 +1223,17 @@ impl WGPUWindow {
                     render_pass.draw(vertex_range, instance_range.clone());
                 }
                 RenderPass::FilterSplitPt2(vertex_range, filter_id) => {
-                    let (color_op, stencil_op) = render_pass_ops(RenderPassOps::Middle);
+                    let (color_op, stencil_op, depth_op) = render_pass_ops(RenderPassOps::Middle);
                     let mut render_pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
                         label: None,
-                        color_attachments: &[wgpu::RenderPassColorAttachment {
+                        color_attachments: &[Some(wgpu::RenderPassColorAttachment {
                             view: &self.main_tex_view, // Here is the render target
                             resolve_target: None,
                             ops: color_op,
-                        }],
+                        })],
                         depth_stencil_attachment: Some(RenderPassDepthStencilAttachment {
                             view: &self.depth_texture_view,
-                            depth_ops: None,
+                            depth_ops: Some(depth_op),
                             stencil_ops: Some(stencil_op),
                         }),
                     });
@@ -1287,6 +1307,7 @@ impl WGPUWindow {
             let depth_texture =
                 create_depth_stencil_texture(device, new_size.width, new_size.height);
             let depth_texture_view = depth_texture.create_view(&Default::default());
+
             self.depth_texture_view = depth_texture_view;
 
             let main_tex = device
@@ -1378,6 +1399,10 @@ impl WGPUWindow {
                 bytemuck::cast_slice(&Vertex::rect(size, scale_factor, ZOOM)),
             );
 
+            let surface_caps = ADAPTER.with(|adapter| {
+                self.surface.get_capabilities(adapter)
+            });
+
             self.surface.configure(
                 device,
                 &SurfaceConfiguration {
@@ -1385,7 +1410,9 @@ impl WGPUWindow {
                     format: TextureFormat::Bgra8UnormSrgb,
                     width: new_size.width,
                     height: new_size.height,
-                    present_mode: PresentMode::Mailbox,
+                    present_mode: surface_caps.present_modes[0],
+                    alpha_mode: wgpu::CompositeAlphaMode::Auto,
+                    view_formats: vec![],
                 },
             );
         })

@@ -24,7 +24,7 @@ default = ["macro"]
 macro = ["carbide_macro"]
 
 [dependencies]
-raw-window-handle = "0.4.2"
+raw-window-handle = "0.5"
 carbide_derive = { path = "../carbide_derive", version = "0.70" }
 carbide_macro = { path = "../carbide_macro", version = "0.1.0", optional = true}
 carbide_rusttype = { path = "../backends/carbide_rusttype" }

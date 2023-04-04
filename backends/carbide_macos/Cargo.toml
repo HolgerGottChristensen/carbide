@@ -7,7 +7,7 @@ edition = "2021"
 
 [dependencies]
 carbide_core = { path = "../../carbide_core", version = "0.70" }
-raw-window-handle = "0.4.2"
+raw-window-handle = "0.5"
 block = "0.1.6"
 cocoa = "0.24.0"
 objc = "0.2.7"
