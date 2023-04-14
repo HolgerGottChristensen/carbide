@@ -3,6 +3,7 @@
 use std::ops::Deref;
 use image::GenericImageView;
 use carbide_core::render::RenderContext;
+use carbide_core::state::StateSync;
 
 use carbide_macro::carbide_default_builder;
 
@@ -170,6 +171,12 @@ impl Layout for Image {
 
 impl Render for Image {
     fn render(&mut self, context: &mut RenderContext, env: &mut Environment) {
+        self.capture_state(env);
+
+        if let Some(color) = &mut self.color {
+            color.sync(env);
+        }
+
         if let Some(id) = self.image_id.value().deref() {
             let source_rect = match self.src_rect {
                 None => Rect::from_corners(Position::new(0.0, 1.0), Position::new(1.0, 0.0)),
@@ -187,6 +194,8 @@ impl Render for Image {
                     )
                 }
             };
+
+
 
 
             if let Some(color) = self.color.as_ref().map(|col| *col.value()) {

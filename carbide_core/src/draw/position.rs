@@ -26,6 +26,10 @@ impl Position {
         Position { x, y }
     }
 
+    pub fn origin() -> Position {
+        Position { x: 0.0, y: 0.0 }
+    }
+
     /// Get the x component of the position. This is the horizontal component.
     pub fn x(&self) -> Scalar {
         self.x

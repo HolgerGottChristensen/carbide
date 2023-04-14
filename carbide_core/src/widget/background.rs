@@ -1,4 +1,5 @@
 use std::ops::DerefMut;
+use carbide_core::render::RenderContext;
 
 use carbide_macro::carbide_default_builder;
 
@@ -76,6 +77,11 @@ impl Render for Background {
     fn process_get_primitives(&mut self, primitives: &mut Vec<Primitive>, env: &mut Environment) {
         self.background.process_get_primitives(primitives, env);
         self.child.process_get_primitives(primitives, env);
+    }
+
+    fn render(&mut self, context: &mut RenderContext, env: &mut Environment) {
+        self.background.render(context, env);
+        self.child.render(context, env);
     }
 }
 

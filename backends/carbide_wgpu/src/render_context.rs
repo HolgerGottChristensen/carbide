@@ -25,6 +25,8 @@ pub struct WGPURenderContext {
     render_pass_inner: Vec<RenderPassCommand>,
     vertices: Vec<Vertex>,
     current_bind_group: Option<WGPUBindGroup>,
+    window_bounding_box: Rect,
+    frame_count: usize,
 }
 
 #[derive(Debug)]
@@ -52,6 +54,8 @@ impl WGPURenderContext {
             render_pass_inner: vec![],
             vertices: vec![],
             current_bind_group: None,
+            window_bounding_box: Rect::default(),
+            frame_count: 0,
         }
     }
 
@@ -79,10 +83,19 @@ impl WGPURenderContext {
         &self.transforms
     }
 
+    pub fn start(&mut self, window_bounding_box: Rect) {
+        self.frame_count += 1;
+        println!("Start render frame: {}", self.frame_count);
+        self.window_bounding_box = window_bounding_box;
+        self.clear()
+    }
+
     pub fn finish(&mut self) -> Vec<RenderPass> {
         if let State::Finished = self.state {
             panic!("Trying to finish a render context that is already in a finished state.");
         }
+
+        println!("Finish render frame: {}", self.frame_count);
 
         match &self.state {
             State::Plain { start } => {
@@ -232,12 +245,12 @@ impl InnerRenderContext for WGPURenderContext {
 
     // TODO: clip is broken atm. And no color on hacker news list example...
     fn clip(&mut self, bounding_box: BoundingBox) {
-        /*self.freshen_state();
+        self.freshen_state();
 
-        let corrected = if let Some(outer) = self.scissor_stack.first() {
+        let corrected = if let Some(outer) = self.scissor_stack.last() {
             bounding_box.within_bounding_box(outer)
         } else {
-            bounding_box
+            bounding_box.within_bounding_box(&self.window_bounding_box)
         };
 
 
@@ -245,11 +258,11 @@ impl InnerRenderContext for WGPURenderContext {
             rect: corrected
         });
 
-        self.scissor_stack.push(corrected);*/
+        self.scissor_stack.push(corrected);
     }
 
     fn pop_clip(&mut self) {
-        /*self.freshen_state();
+        self.freshen_state();
 
         self.scissor_stack.pop();
 
@@ -258,9 +271,13 @@ impl InnerRenderContext for WGPURenderContext {
                 self.render_pass_inner.push(RenderPassCommand::SetScissor {
                     rect: *n
                 })
-            },
-            None => (),
-        }*/
+            }
+            None => {
+                self.render_pass_inner.push(RenderPassCommand::SetScissor {
+                    rect: self.window_bounding_box
+                })
+            }
+        }
     }
 
     fn filter(&mut self, id: FilterId) {

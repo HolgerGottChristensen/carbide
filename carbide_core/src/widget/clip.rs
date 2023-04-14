@@ -1,9 +1,9 @@
 use carbide_core::render::RenderContext;
 use carbide_macro::carbide_default_builder;
 
-use crate::CommonWidgetImpl;
+use crate::{Color, CommonWidgetImpl};
 use crate::draw::{Dimension, Position, Rect};
-use crate::environment::Environment;
+use crate::environment::{Environment, EnvironmentColor};
 use crate::layout::Layout;
 use crate::render::{Primitive, PrimitiveKind, Render};
 use crate::widget::*;
@@ -24,7 +24,10 @@ impl Clip {
     pub fn new(child: Box<dyn Widget>) -> Box<Self> {
         Box::new(Clip {
             id: WidgetId::new(),
-            child,
+            child: ZStack::new(vec![
+                Rectangle::new().stroke(EnvironmentColor::Red),
+                child
+            ]),
             position: Position::new(0.0, 0.0),
             dimension: Dimension::new(100.0, 100.0),
         })
@@ -45,11 +48,6 @@ CommonWidgetImpl!(Clip, self, id: self.id, child: self.child, position: self.pos
 
 impl Render for Clip {
     fn render(&mut self, context: &mut RenderContext, env: &mut Environment) {
-        let min = 1.0 / env.scale_factor();
-        if self.dimension.width <= min || self.dimension.height <= min {
-            return;
-        }
-
         // If the clip is completely out of frame
         if self.position.x + self.dimension.width < 0.0 {
             return;
@@ -61,6 +59,10 @@ impl Render for Clip {
             return;
         }
         if self.position.y >= env.current_window_height() {
+            return;
+        }
+
+        if self.dimension.width < 1.0 || self.dimension.height < 1.0 {
             return;
         }
 

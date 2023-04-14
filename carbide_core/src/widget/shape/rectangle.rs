@@ -2,6 +2,7 @@ use lyon::algorithms::path::builder::PathBuilder;
 use lyon::algorithms::path::Winding;
 use lyon::geom::euclid::rect;
 use carbide_core::render::{RenderContext, Style};
+use carbide_core::state::StateSync;
 
 use carbide_macro::carbide_default_builder;
 
@@ -174,7 +175,10 @@ impl Rectangle {
 CommonWidgetImpl!(Rectangle, self, id: self.id, position: self.position, dimension: self.dimension);
 
 impl Render for Rectangle {
-    fn render(&mut self, context: &mut RenderContext, _: &mut Environment) {
+    fn render(&mut self, context: &mut RenderContext, env: &mut Environment) {
+
+        self.capture_state(env);
+
         let rect = rect(
             self.x() as f32,
             self.y() as f32,

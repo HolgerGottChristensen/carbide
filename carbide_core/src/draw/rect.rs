@@ -1,4 +1,4 @@
-use std::ops::{Add, Div};
+use std::ops::{Add, Div, Mul};
 
 use crate::draw::dimension::Dimension;
 use crate::draw::Position;
@@ -154,6 +154,16 @@ impl Div<Scalar> for Rect {
     fn div(mut self, rhs: f64) -> Self::Output {
         self.position = self.position / rhs;
         self.dimension = self.dimension / rhs;
+        self
+    }
+}
+
+impl Mul<Scalar> for Rect {
+    type Output = Rect;
+
+    fn mul(mut self, rhs: f64) -> Self::Output {
+        self.position = self.position * rhs;
+        self.dimension = self.dimension * rhs;
         self
     }
 }

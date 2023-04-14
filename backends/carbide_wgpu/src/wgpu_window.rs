@@ -750,7 +750,7 @@ impl Render for WGPUWindow {
         self.child.position_children(env);
 
         // Render the children
-        self.render_context.clear();
+        self.render_context.start(Rect::new(Position::origin(), dimensions));
         let mut wrapper_context = RenderContext::new(&mut self.render_context);
 
         env.get_font_atlas_mut().prepare_queued();
@@ -759,7 +759,7 @@ impl Render for WGPUWindow {
 
         let render_passes = self.render_context.finish();
 
-        println!("Context: {:#?}", render_passes);
+        //println!("Context: {:#?}", render_passes);
         //println!("Vertices: {:#?}", &self.render_context.vertices()[0..10]);
 
         let mut uniform_bind_groups = vec![];

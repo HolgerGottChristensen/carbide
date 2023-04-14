@@ -1,3 +1,4 @@
+use carbide_core::render::RenderContext;
 use carbide_macro::carbide_default_builder;
 
 use crate::CommonWidgetImpl;
@@ -205,6 +206,16 @@ impl Focusable for EnvUpdating {
 }
 
 impl Render for EnvUpdating {
+    fn render(&mut self, context: &mut RenderContext, env: &mut Environment) {
+        self.insert_into_env(env);
+
+        for mut child in self.children_mut() {
+            child.render(context, env);
+        }
+
+        self.remove_from_env(env);
+    }
+
     fn process_get_primitives(&mut self, primitives: &mut Vec<Primitive>, env: &mut Environment) {
         self.insert_into_env(env);
 
