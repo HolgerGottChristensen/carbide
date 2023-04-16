@@ -404,12 +404,30 @@ impl CommonWidget for Scroll {
         Flags::EMPTY
     }
 
-    fn children(&self) -> WidgetIter {
-        if self.child.flag() == Flags::PROXY {
-            self.child.children()
-        } else {
-            WidgetIter::single(&self.child)
+    fn foreach_child(&self, f: &mut dyn FnMut(&dyn Widget)) {
+        if self.child.is_ignore() {
+            return;
         }
+
+        if self.child.is_proxy() {
+            self.child.foreach_child(f);
+            return;
+        }
+
+        f(&self.child);
+    }
+
+    fn foreach_child_mut(&mut self, f: &mut dyn FnMut(&mut dyn Widget)) {
+        if self.child.is_ignore() {
+            return;
+        }
+
+        if self.child.is_proxy() {
+            self.child.foreach_child_mut(f);
+            return;
+        }
+
+        f(&mut self.child);
     }
 
     fn children_mut(&mut self) -> WidgetIterMut {

@@ -50,9 +50,12 @@ pub fn carbide_default_builder(_: TokenStream, item: TokenStream) -> TokenStream
         }
     });
 
+    let output = i.sig.output;
+    let generics = i.sig.generics;
+
     let builder = quote!(
         #[automatically_derived]
-        pub fn builder(#(#params,)*) -> Box<Self> {
+        pub fn builder #generics (#(#params,)*) #output {
             Self:: #method_name (#(#param_names,)*)
         }
 

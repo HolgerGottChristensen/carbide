@@ -1222,10 +1222,6 @@ impl CommonWidget for PlainTextInput {
         Flags::FOCUSABLE
     }
 
-    fn children(&self) -> WidgetIter {
-        WidgetIter::single(&self.child)
-    }
-
     fn children_mut(&mut self) -> WidgetIterMut {
         WidgetIterMut::single(&mut self.child)
     }

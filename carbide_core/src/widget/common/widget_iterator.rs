@@ -9,6 +9,7 @@ pub type WidgetValMut<'a> = ValueRefMut<'a, Box<dyn Widget>>;
 pub enum WidgetIterMut<'a> {
     Empty,
     Ref(&'a mut Box<dyn Widget>),
+    Owned(Box<dyn Widget>),
     Borrow(ValueRefMut<'a, Box<dyn Widget>>),
     Vec(IterMut<'a, Box<dyn Widget>>),
     VecRev(Rev<IterMut<'a, Box<dyn Widget>>>),
@@ -19,6 +20,10 @@ pub enum WidgetIterMut<'a> {
 impl<'a> WidgetIterMut<'a> {
     pub fn single(widget: &'a mut Box<dyn Widget>) -> WidgetIterMut<'a> {
         WidgetIterMut::Ref(widget)
+    }
+
+    pub fn owned(widget: Box<dyn Widget>) -> WidgetIterMut<'a> {
+        WidgetIterMut::Owned(widget)
     }
 
     pub fn borrow(widget: ValueRefMut<'a, Box<dyn Widget>>) -> WidgetIterMut<'a> {
@@ -62,6 +67,7 @@ impl<'a> Iterator for WidgetIterMut<'a> {
                 h.map(|f| ValueRefMut::Borrow(f))
             }
             WidgetIterMut::Borrow(w) => Some(w),
+            WidgetIterMut::Owned(w) => Some(ValueRefMut::Owned(w))
         }
     }
 }
@@ -71,6 +77,7 @@ pub type WidgetVal<'a> = ValueRef<'a, Box<dyn Widget>>;
 pub enum WidgetIter<'a> {
     Empty,
     SimpleRef(&'a Box<dyn Widget>),
+    SimpleOwned(Box<dyn Widget>),
     Borrow(ValueRef<'a, Box<dyn Widget>>),
     Vec(Iter<'a, Box<dyn Widget>>),
     VecRev(Rev<Iter<'a, Box<dyn Widget>>>),
@@ -124,6 +131,7 @@ impl<'a> Iterator for WidgetIter<'a> {
                 h.map(|f| ValueRef::Borrow(f))
             }
             WidgetIter::Borrow(w) => Some(w),
+            WidgetIter::SimpleOwned(w) => Some(ValueRef::Owned(w)),
         }
     }
 }

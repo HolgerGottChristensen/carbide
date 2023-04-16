@@ -121,10 +121,6 @@ impl CommonWidget for TextInput {
         self.id
     }
 
-    fn children(&self) -> WidgetIter {
-        WidgetIter::single(&self.child)
-    }
-
     fn children_mut(&mut self) -> WidgetIterMut {
         WidgetIterMut::single(&mut self.child)
     }

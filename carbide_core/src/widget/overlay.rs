@@ -1,3 +1,4 @@
+use std::ops::{Deref, DerefMut};
 use std::rc::Rc;
 
 use crate::draw::{Dimension, Position};
@@ -46,8 +47,30 @@ impl CommonWidget for Overlay {
         self.id
     }
 
-    fn children(&self) -> WidgetIter {
-        WidgetIter::borrow(self.child.borrow())
+    fn foreach_child(&self, f: &mut dyn FnMut(&dyn Widget)) {
+        if self.child.borrow().is_ignore() {
+            return;
+        }
+
+        if self.child.borrow().is_proxy() {
+            self.child.borrow().foreach_child(f);
+            return;
+        }
+
+        f(self.child.borrow().deref());
+    }
+
+    fn foreach_child_mut(&mut self, f: &mut dyn FnMut(&mut dyn Widget)) {
+        if self.child.borrow().is_ignore() {
+            return;
+        }
+
+        if self.child.borrow().is_proxy() {
+            self.child.borrow_mut().foreach_child_mut(f);
+            return;
+        }
+
+        f(self.child.borrow_mut().deref_mut());
     }
 
     fn children_mut(&mut self) -> WidgetIterMut {

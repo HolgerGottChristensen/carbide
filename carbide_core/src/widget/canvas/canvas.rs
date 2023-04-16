@@ -219,9 +219,9 @@ impl<T: StateContract> CommonWidget for Canvas<T> {
         (self.id)
     }
 
-    fn children(&self) -> carbide_core::widget::WidgetIter {
-        carbide_core::widget::WidgetIter::Empty
-    }
+    fn foreach_child(&self, f: &mut dyn FnMut(&dyn Widget)) {}
+
+    fn foreach_child_mut(&mut self, f: &mut dyn FnMut(&mut dyn Widget)) {}
 
     fn children_mut(&mut self) -> carbide_core::widget::WidgetIterMut {
         carbide_core::widget::WidgetIterMut::Empty

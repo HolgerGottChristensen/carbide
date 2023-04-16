@@ -17,14 +17,14 @@ pub trait WidgetExt: Widget + Sized + 'static {
 
     /// Changes the flexibility of the widget to a custom value. This can be useful when the
     /// default value does not provide the expected layout for example within a VStack.
-    fn custom_flexibility(self, flexibility: u32) -> Box<dyn Widget> {
+    fn custom_flexibility(self, flexibility: u32) -> Box<Flexibility> {
         Flexibility::new(Box::new(self), flexibility)
     }
 
     /// Change the flags of a given widget. This can for example be used to make any widget take
     /// Flags::USEMAXCROSSAXIS to make it use the max cross axis instead of expanding infinitely
     /// within a VStack or HStack.
-    fn custom_flags(self, flags: Flags) -> Box<dyn Widget> {
+    fn custom_flags(self, flags: Flags) -> Box<Flagged> {
         Flagged::new(Box::new(self), flags)
     }
 

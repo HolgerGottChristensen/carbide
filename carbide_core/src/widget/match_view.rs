@@ -84,23 +84,18 @@ impl<T: StateContract> StateSync for Match<T> {
 }
 
 impl<T: StateContract> carbide_core::widget::CommonWidget for Match<T> {
-    fn id(&self) -> carbide_core::widget::WidgetId {
+    fn id(&self) -> WidgetId {
         self.id
     }
 
-    fn children(&self) -> carbide_core::widget::WidgetIter {
-        if let Some(index) = self.current_index {
-            if (self.widgets[index].1).flag() == carbide_core::flags::Flags::PROXY {
-                (self.widgets[index].1).children()
-            } else if (self.widgets[index].1).flag() == carbide_core::flags::Flags::IGNORE {
-                carbide_core::widget::WidgetIter::Empty
-            } else {
-                carbide_core::widget::WidgetIter::single(&(self.widgets[index].1))
-            }
-        } else {
-            carbide_core::widget::WidgetIter::Empty
-        }
+    fn foreach_child(&self, f: &mut dyn FnMut(&dyn Widget)) {
+        todo!()
     }
+
+    fn foreach_child_mut(&mut self, f: &mut dyn FnMut(&mut dyn Widget)) {
+        todo!()
+    }
+
 
     fn children_mut(&mut self) -> carbide_core::widget::WidgetIterMut {
         if let Some(index) = self.current_index {

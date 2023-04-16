@@ -1,19 +1,42 @@
+use carbide_core::widget::Widget;
 use crate::draw::{Dimension, Position, Scalar};
 use crate::flags::Flags;
 use crate::focus::Focus;
 use crate::layout::{BasicLayouter, Layouter};
 use crate::widget::common::widget_iterator::{WidgetIter, WidgetIterMut};
-use crate::widget::WidgetId;
+use crate::widget::{WidgetId};
 
 pub trait CommonWidget {
     fn id(&self) -> WidgetId;
     fn flag(&self) -> Flags {
         Flags::EMPTY
     }
+    fn is_proxy(&self) -> bool {
+        self.flag() == Flags::PROXY
+    }
+    fn is_ignore(&self) -> bool {
+        self.flag() == Flags::IGNORE
+    }
+
+    fn is_spacer(&self) -> bool {
+        self.flag() == Flags::SPACER
+    }
+
+    fn foreach_child(&self, f: &mut dyn FnMut(&dyn Widget));
+    fn foreach_child_mut(&mut self, f: &mut dyn FnMut(&mut dyn Widget));
+
+    fn child_count(&self) -> usize {
+        let mut count = 0;
+
+        self.foreach_child(&mut |child| {
+            count += 1;
+        });
+
+        count
+    }
 
     /// Get the logical children. This means for example for a vstack with a foreach,
     /// the children of the foreach is retrieved.
-    fn children(&self) -> WidgetIter;
     fn children_mut(&mut self) -> WidgetIterMut;
 
     /// Get the direct children. This means for example for a vstack with a foreach,
@@ -44,11 +67,22 @@ pub trait CommonWidget {
     /// If not overwritten, the default behavior is to either use the first child's flexibility or
     /// if no child are present, be 0.
     fn flexibility(&self) -> u32 {
-        if let Some(first_child) = self.children().next() {
+        let mut is_first = true;
+        let mut flexibility = 0;
+
+        self.foreach_child(&mut |s| {
+            if !is_first { return }
+            flexibility = s.flexibility();
+            is_first = false;
+        });
+
+        flexibility
+
+        /*if let Some(first_child) = self.children().next() {
             first_child.flexibility()
         } else {
             0
-        }
+        }*/
     }
 
     fn x(&self) -> Scalar {
@@ -120,14 +154,30 @@ macro_rules! CommonWidgetImpl {
                 }
             )?
 
-            fn children(&$self) -> carbide_core::widget::WidgetIter {
-                if $child.flag() == carbide_core::flags::Flags::PROXY {
-                    $child.children()
-                } else if $child.flag() == carbide_core::flags::Flags::IGNORE {
-                    carbide_core::widget::WidgetIter::Empty
-                } else {
-                    carbide_core::widget::WidgetIter::single(&$child)
+            fn foreach_child(&$self, f: &mut dyn FnMut(&dyn Widget)) {
+                if $child.is_ignore() {
+                    return;
                 }
+
+                if $child.is_proxy() {
+                    $child.foreach_child(f);
+                    return;
+                }
+
+                f(&$child);
+            }
+
+            fn foreach_child_mut(&mut $self, f: &mut dyn FnMut(&mut dyn Widget)) {
+                if $child.is_ignore() {
+                    return;
+                }
+
+                if $child.is_proxy() {
+                    $child.foreach_child_mut(f);
+                    return;
+                }
+
+                f(&mut $child);
             }
 
             fn children_mut(&mut $self) -> carbide_core::widget::WidgetIterMut {
@@ -184,21 +234,33 @@ macro_rules! CommonWidgetImpl {
                 }
             )?
 
-            fn children(&$self) -> carbide_core::widget::WidgetIter {
-                let contains_proxy_or_ignored = $children.iter().fold(false, |a, b| a || (b.flag() == carbide_core::flags::Flags::PROXY || b.flag() == carbide_core::flags::Flags::IGNORE));
-                if !contains_proxy_or_ignored {
-                    carbide_core::widget::WidgetIter::Vec($children.iter())
-                } else {
-                    $children
-                        .iter()
-                        .filter(|x| x.flag() != carbide_core::flags::Flags::IGNORE)
-                        .rfold(carbide_core::widget::WidgetIter::Empty, |acc, x| {
-                            if x.flag() == carbide_core::flags::Flags::PROXY {
-                                carbide_core::widget::WidgetIter::Multi(Box::new(x.children()), Box::new(acc))
-                            } else {
-                                carbide_core::widget::WidgetIter::Single(x, Box::new(acc))
-                            }
-                        })
+            fn foreach_child(&$self, f: &mut dyn FnMut(&dyn Widget)) {
+                for child in &$children {
+                    if child.is_ignore() {
+                        continue;
+                    }
+
+                    if child.is_proxy() {
+                        child.foreach_child(f);
+                        continue;
+                    }
+
+                    f(child);
+                }
+            }
+
+            fn foreach_child_mut(&mut $self, f: &mut dyn FnMut(&mut dyn Widget)) {
+                for child in &mut $children {
+                    if child.is_ignore() {
+                        continue;
+                    }
+
+                    if child.is_proxy() {
+                        child.foreach_child_mut(f);
+                        continue;
+                    }
+
+                    f(child);
                 }
             }
 
@@ -264,9 +326,8 @@ macro_rules! CommonWidgetImpl {
                 }
             )?
 
-            fn children(&$self) -> carbide_core::widget::WidgetIter {
-                carbide_core::widget::WidgetIter::Empty
-            }
+            fn foreach_child(&$self, _: &mut dyn FnMut(&dyn Widget)) {}
+            fn foreach_child_mut(&mut $self, _: &mut dyn FnMut(&mut dyn Widget)) {}
 
             fn children_mut(&mut $self) -> carbide_core::widget::WidgetIterMut {
                 carbide_core::widget::WidgetIterMut::Empty

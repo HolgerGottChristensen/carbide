@@ -17,7 +17,7 @@ use crate::render::{Primitive, Render};
 use crate::state::StateSync;
 use crate::widget::{CommonWidget, WidgetExt, WidgetId, WidgetIter, WidgetIterMut};
 
-pub trait Widget: Event + Layout + Render + Focusable + DynClone + Debug {}
+pub trait Widget: Event + Layout + Render + Focusable + DynClone + Debug + 'static {}
 
 //impl<S, T> Widget<S> for T where T: Event<S> + Layout<S> + Render<S> + DynClone {}
 
@@ -42,8 +42,12 @@ impl<T: Widget + ?Sized> CommonWidget for Box<T> {
         self.deref().alignment()
     }
 
-    fn children(&self) -> WidgetIter {
-        self.deref().children()
+    fn foreach_child(&self, f: &mut dyn FnMut(&dyn Widget)) {
+        self.deref().foreach_child(f)
+    }
+
+    fn foreach_child_mut(&mut self, f: &mut dyn FnMut(&mut dyn Widget)) {
+        self.deref_mut().foreach_child_mut(f)
     }
 
     fn children_mut(&mut self) -> WidgetIterMut {

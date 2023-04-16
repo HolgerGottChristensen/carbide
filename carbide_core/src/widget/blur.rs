@@ -85,9 +85,9 @@ impl CommonWidget for Blur {
         self.id
     }
 
-    fn children(&self) -> WidgetIter {
-        WidgetIter::Empty
-    }
+    fn foreach_child(&self, f: &mut dyn FnMut(&dyn Widget)) {}
+
+    fn foreach_child_mut(&mut self, f: &mut dyn FnMut(&mut dyn Widget)) {}
 
     fn children_mut(&mut self) -> WidgetIterMut {
         WidgetIterMut::Empty

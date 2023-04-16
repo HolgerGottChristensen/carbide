@@ -90,20 +90,20 @@ impl PopupMenu {
 
         let separator_or_submenu = IfElse::new(separator_item)
             .when_true(
-                Rectangle::new()
+                *Rectangle::new()
                     .fill(EnvironmentColor::Red)
                     .frame_fixed_height(1)
                     .custom_flags(Flags::USEMAXCROSSAXIS),
             )
-            .when_false(PopupMenu::new(submenu.ignore_writes(), false));
+            .when_false(*PopupMenu::new(submenu.ignore_writes(), false));
 
         IfElse::new(default_item)
             .when_true(
-                Text::new(name.ignore_writes())
+                *Text::new(name.ignore_writes())
                     .padding(5.0)
                     .background(Rectangle::new().fill(EnvironmentColor::Green)),
             )
-            .when_false(separator_or_submenu)
+            .when_false(*separator_or_submenu)
     }
 }
 

@@ -293,29 +293,7 @@ impl CommonWidget for PlainSlider {
         *self.focus.value_mut() = focus;
     }
 
-    fn children(&self) -> carbide_core::widget::WidgetIter {
-        let contains_proxy_or_ignored = (self.child).iter().fold(false, |a, b| {
-            a || (b.flag() == carbide_core::flags::Flags::PROXY
-                || b.flag() == carbide_core::flags::Flags::IGNORE)
-        });
-        if !contains_proxy_or_ignored {
-            carbide_core::widget::WidgetIter::Vec((self.child).iter())
-        } else {
-            (self.child)
-                .iter()
-                .filter(|x| x.flag() != carbide_core::flags::Flags::IGNORE)
-                .rfold(carbide_core::widget::WidgetIter::Empty, |acc, x| {
-                    if x.flag() == carbide_core::flags::Flags::PROXY {
-                        carbide_core::widget::WidgetIter::Multi(
-                            Box::new(x.children()),
-                            Box::new(acc),
-                        )
-                    } else {
-                        carbide_core::widget::WidgetIter::Single(x, Box::new(acc))
-                    }
-                })
-        }
-    }
+
 
     fn children_mut(&mut self) -> carbide_core::widget::WidgetIterMut {
         let contains_proxy_or_ignored = (self.child).iter().fold(false, |a, b| {

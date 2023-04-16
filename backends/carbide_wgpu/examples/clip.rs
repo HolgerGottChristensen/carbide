@@ -1,5 +1,4 @@
 use carbide_core::draw::Dimension;
-use carbide_core::environment::EnvironmentColor;
 use carbide_core::widget::*;
 use carbide_wgpu::{Application, Window};
 

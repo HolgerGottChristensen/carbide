@@ -64,23 +64,33 @@ impl CommonWidget for VStack {
         self.id
     }
 
-    fn children(&self) -> WidgetIter {
-        let contains_proxy_or_ignored = self.children.iter().fold(false, |a, b| {
-            a || (b.flag() == Flags::PROXY || b.flag() == Flags::IGNORE)
-        });
-        if !contains_proxy_or_ignored {
-            WidgetIter::Vec(self.children.iter())
-        } else {
-            self.children
-                .iter()
-                .filter(|x| x.flag() != Flags::IGNORE)
-                .rfold(WidgetIter::Empty, |acc, x| {
-                    if x.flag() == Flags::PROXY {
-                        WidgetIter::Multi(Box::new(x.children()), Box::new(acc))
-                    } else {
-                        WidgetIter::Single(x, Box::new(acc))
-                    }
-                })
+    fn foreach_child(&self, f: &mut dyn FnMut(&dyn Widget)) {
+        for child in &self.children {
+            if child.is_ignore() {
+                continue;
+            }
+
+            if child.is_proxy() {
+                child.foreach_child(f);
+                continue;
+            }
+
+            f(child);
+        }
+    }
+
+    fn foreach_child_mut(&mut self, f: &mut dyn FnMut(&mut dyn Widget)) {
+        for child in &mut self.children {
+            if child.is_ignore() {
+                continue;
+            }
+
+            if child.is_proxy() {
+                child.foreach_child_mut(f);
+                continue;
+            }
+
+            f(child);
         }
     }
 

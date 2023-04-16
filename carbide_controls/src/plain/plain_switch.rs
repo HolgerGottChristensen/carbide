@@ -124,14 +124,6 @@ impl CommonWidget for PlainSwitch {
         Flags::FOCUSABLE
     }
 
-    fn children(&self) -> WidgetIter {
-        if self.child.flag() == Flags::PROXY {
-            self.child.children()
-        } else {
-            WidgetIter::single(&self.child)
-        }
-    }
-
     fn children_mut(&mut self) -> WidgetIterMut {
         if self.child.flag() == Flags::PROXY {
             self.child.children_mut()

@@ -121,10 +121,6 @@ impl CommonWidget for Over {
         self.id
     }
 
-    fn children(&self) -> WidgetIter {
-        WidgetIter::Empty
-    }
-
     fn children_mut(&mut self) -> WidgetIterMut {
         WidgetIterMut::Empty
     }

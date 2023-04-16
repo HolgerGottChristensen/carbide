@@ -119,15 +119,19 @@ fn calculate_size_stack(
     requested_size: Dimension,
     env: &mut Environment,
 ) {
-    let mut number_of_children_that_needs_sizing = widget
-        .children()
-        .filter(|m| m.flag() != Flags::SPACER)
-        .count();
+    let mut number_of_children_that_needs_sizing = 0;
 
-    let non_spacers_vec: Vec<bool> = widget
-        .children()
-        .map(|n| n.flag() != Flags::SPACER)
-        .collect();
+    widget.foreach_child(&mut |child| {
+        if !child.is_spacer() {
+            number_of_children_that_needs_sizing += 1;
+        }
+    });
+
+    let mut non_spacers_vec = vec![];
+
+    widget.foreach_child(&mut |child| {
+        non_spacers_vec.push(!child.is_spacer());
+    });
 
     let non_spacers_vec_length = non_spacers_vec.len();
 
@@ -202,10 +206,13 @@ fn calculate_size_stack(
         total_main_axis += main_axis(chosen_size);
     }
 
-    let spacer_count = widget
-        .children()
-        .filter(|m| m.flag() == Flags::SPACER)
-        .count() as f64;
+    let mut spacer_count = 0.0;
+
+    widget.foreach_child(&mut |child| {
+        if child.is_spacer() {
+            spacer_count += 1.0;
+        }
+    });
 
     let rest_space = main_axis(requested_size) - total_main_axis - spacing_total;
 
@@ -237,10 +244,11 @@ fn position_children_stack(
     let position = widget.position();
     let dimension = widget.dimension();
 
-    let spacers: Vec<bool> = widget
-        .children()
-        .map(|n| n.flag() == Flags::SPACER)
-        .collect();
+    let mut spacers = vec![];
+
+    widget.foreach_child(&mut |child| {
+        spacers.push(child.is_spacer());
+    });
 
     for (n, mut child) in widget.children_mut().enumerate() {
         let cross = match alignment {
