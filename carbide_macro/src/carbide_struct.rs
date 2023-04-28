@@ -167,8 +167,9 @@ impl ToTokens for CarbideStruct {
             }
 
 
-
-            carbide_core::CommonWidgetImpl!(#ident, self, id: self.id, #children_common position: self.position, dimension: self.dimension);
+            impl carbide_core::widget::CommonWidget for #ident {
+                carbide_core::CommonWidgetImpl!(self, id: self.id, #children_common position: self.position, dimension: self.dimension);
+            }
 
             impl WidgetExt for #ident {}
         ))

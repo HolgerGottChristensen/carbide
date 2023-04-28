@@ -1,3 +1,5 @@
+use carbide_core::CommonWidgetImpl;
+
 use carbide_macro::carbide_default_builder;
 
 use crate::draw::{Dimension, Position, Rect};
@@ -81,45 +83,7 @@ impl Blur {
 }
 
 impl CommonWidget for Blur {
-    fn id(&self) -> WidgetId {
-        self.id
-    }
-
-    fn foreach_child(&self, f: &mut dyn FnMut(&dyn Widget)) {}
-
-    fn foreach_child_mut(&mut self, f: &mut dyn FnMut(&mut dyn Widget)) {}
-
-    fn children_mut(&mut self) -> WidgetIterMut {
-        WidgetIterMut::Empty
-    }
-
-    fn children_direct(&mut self) -> WidgetIterMut {
-        WidgetIterMut::Empty
-    }
-
-    fn children_direct_rev(&mut self) -> WidgetIterMut {
-        WidgetIterMut::Empty
-    }
-
-    fn position(&self) -> Position {
-        self.position
-    }
-
-    fn set_position(&mut self, position: Position) {
-        self.position = position;
-    }
-
-    fn flexibility(&self) -> u32 {
-        0
-    }
-
-    fn dimension(&self) -> Dimension {
-        self.dimension
-    }
-
-    fn set_dimension(&mut self, dimension: Dimension) {
-        self.dimension = dimension
-    }
+    CommonWidgetImpl!(self, id: self.id, position: self.position, dimension: self.dimension, flexibility: 0);
 }
 
 impl Render for Blur {

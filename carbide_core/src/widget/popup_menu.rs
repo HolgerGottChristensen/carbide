@@ -1,5 +1,6 @@
 use carbide_core::event::MouseEvent;
 
+
 use crate::CommonWidgetImpl;
 use crate::draw::{Dimension, Position};
 use crate::environment::{Environment, EnvironmentColor};
@@ -16,7 +17,7 @@ pub struct PopupMenu {
     child: Box<dyn Widget>,
     position: Position,
     dimension: Dimension,
-    popup: Result<Overlay, Box<Background>>,
+    popup: Result<Overlay, Box<dyn Widget>>,
     menu: TState<Menu>,
 }
 
@@ -27,7 +28,7 @@ impl PopupMenu {
         )
         .wrap_mode(Wrap::None)
         .padding(EdgeInsets::single(5.0, 5.0, 7.0, 7.0))
-        .background(Rectangle::new().fill(EnvironmentColor::Orange));
+        .background(*Rectangle::new().fill(EnvironmentColor::Orange));
 
         let menu_items =
             Map1::read_map(menu.clone(), |menu: &Menu| menu.items().clone()).ignore_writes();
@@ -35,7 +36,7 @@ impl PopupMenu {
         let list = VStack::new(vec![ForEach::new(menu_items, Self::menu_item_delegate)])
             .spacing(1.0)
             .padding(1.0)
-            .background(Rectangle::new().fill(EnvironmentColor::Blue));
+            .background(*Rectangle::new().fill(EnvironmentColor::Blue));
 
         if top_level {
             Box::new(PopupMenu {
@@ -101,7 +102,7 @@ impl PopupMenu {
             .when_true(
                 *Text::new(name.ignore_writes())
                     .padding(5.0)
-                    .background(Rectangle::new().fill(EnvironmentColor::Green)),
+                    .background(*Rectangle::new().fill(EnvironmentColor::Green)),
             )
             .when_false(*separator_or_submenu)
     }
@@ -160,6 +161,8 @@ impl Layout for PopupMenu {
     }
 }
 
-CommonWidgetImpl!(PopupMenu, self, id: self.id, child: self.child, position: self.position, dimension: self.dimension);
+impl CommonWidget for PopupMenu {
+    CommonWidgetImpl!(self, id: self.id, child: self.child, position: self.position, dimension: self.dimension);
+}
 
 impl WidgetExt for PopupMenu {}

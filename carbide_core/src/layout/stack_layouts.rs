@@ -2,7 +2,7 @@ use crate::draw::{Dimension, Position};
 use crate::environment::Environment;
 use crate::flags::Flags;
 use crate::layout::Layout;
-use crate::widget::CrossAxisAlignment;
+use crate::widget::{CrossAxisAlignment, Widget};
 use crate::widget::WidgetValMut;
 
 pub(crate) fn calculate_size_vstack(
@@ -149,15 +149,18 @@ fn calculate_size_stack(
         cross_axis(requested_size),
     );
 
-    //
-    let (mut children_flexibility_using_max_val, mut children_flexibility_rest): (
-        Vec<(u32, WidgetValMut)>,
-        Vec<(u32, WidgetValMut)>,
-    ) = widget
-        .children_mut()
-        .filter(|m| m.flag() != Flags::SPACER)
-        .map(|child| (child.flexibility(), child))
-        .partition(|(_, child)| child.flag().contains(Flags::USEMAXCROSSAXIS));
+    let mut children_flexibility_using_max_val = vec![];
+    let mut children_flexibility_rest = vec![];
+
+    widget.foreach_child_mut(&mut |child| {
+        if !child.is_spacer() {
+            if child.flag().contains(Flags::USEMAXCROSSAXIS) {
+                children_flexibility_using_max_val.push((child.flexibility(), child));
+            } else {
+                children_flexibility_rest.push((child.flexibility(), child));
+            }
+        }
+    });
 
     children_flexibility_using_max_val.sort_by(|(a, _), (b, _)| b.cmp(&a));
     children_flexibility_rest.sort_by(|(a, _), (b, _)| b.cmp(&a));
@@ -218,11 +221,13 @@ fn calculate_size_stack(
 
     let request_dimension = dimension(rest_space / spacer_count, 0.0);
 
-    for mut spacer in widget.children_mut().filter(|m| m.flag() == Flags::SPACER) {
-        let chosen_size = spacer.calculate_size(request_dimension, env);
 
-        total_main_axis += main_axis(chosen_size);
-    }
+    widget.foreach_child_mut(&mut |child| {
+        if child.is_spacer() {
+            let chosen_size = child.calculate_size(request_dimension, env);
+            total_main_axis += main_axis(chosen_size);
+        }
+    });
 
     widget.set_dimension(dimension(total_main_axis + spacing_total, max_cross_axis));
 }
@@ -250,7 +255,9 @@ fn position_children_stack(
         spacers.push(child.is_spacer());
     });
 
-    for (n, mut child) in widget.children_mut().enumerate() {
+    let mut n = 0;
+
+    widget.foreach_child_mut(&mut |child| {
         let cross = match alignment {
             CrossAxisAlignment::Start => cross_axis_position(position),
             CrossAxisAlignment::Center => {
@@ -274,5 +281,7 @@ fn position_children_stack(
         main_axis_offset += main_axis_dimension(child.dimension());
 
         child.position_children(env);
-    }
+
+        n += 1;
+    });
 }

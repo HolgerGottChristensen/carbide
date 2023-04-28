@@ -1,3 +1,4 @@
+
 use carbide_macro::carbide_default_builder;
 
 use crate::CommonWidgetImpl;
@@ -191,7 +192,7 @@ impl Layout for VSplit {
 
         let mut main_axis_offset = 0.0;
 
-        for mut child in self.children_mut() {
+        self.foreach_child_mut(&mut |child| {
             let cross = match alignment {
                 CrossAxisAlignment::Start => position.x,
                 CrossAxisAlignment::Center => {
@@ -203,10 +204,12 @@ impl Layout for VSplit {
             child.set_position(Position::new(cross, position.y + main_axis_offset));
             main_axis_offset += child.dimension().height;
             child.position_children(env);
-        }
+        });
     }
 }
 
-CommonWidgetImpl!(VSplit, self, id: self.id, children: self.children, position: self.position, dimension: self.dimension);
+impl CommonWidget for VSplit {
+    CommonWidgetImpl!(self, id: self.id, children: self.children, position: self.position, dimension: self.dimension);
+}
 
 impl WidgetExt for VSplit {}

@@ -44,7 +44,9 @@ impl Layout for Clip {
     }
 }
 
-CommonWidgetImpl!(Clip, self, id: self.id, child: self.child, position: self.position, dimension: self.dimension);
+impl CommonWidget for Clip {
+    CommonWidgetImpl!(self, id: self.id, child: self.child, position: self.position, dimension: self.dimension);
+}
 
 impl Render for Clip {
     fn render(&mut self, context: &mut RenderContext, env: &mut Environment) {
@@ -67,9 +69,9 @@ impl Render for Clip {
         }
 
         context.clip(Rect::new(self.position, self.dimension), |this| {
-            for mut child in self.children_mut() {
+            self.foreach_child_mut(&mut |child| {
                 child.render(this, env);
-            }
+            });
         })
 
     }
@@ -100,9 +102,9 @@ impl Render for Clip {
             bounding_box: Rect::new(self.position, self.dimension),
         });
 
-        for mut child in self.children_mut() {
+        self.foreach_child_mut(&mut |child| {
             child.process_get_primitives(primitives, env);
-        }
+        });
 
         primitives.push(Primitive {
             kind: PrimitiveKind::UnClip,

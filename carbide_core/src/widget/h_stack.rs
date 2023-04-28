@@ -1,10 +1,11 @@
+
 use carbide_macro::{carbide_default_builder, gen_optionals};
 
 use crate::draw::{Dimension, Position};
 use crate::environment::Environment;
 use crate::flags::Flags;
 use crate::layout::{calculate_size_hstack, Layout, position_children_hstack};
-use crate::Scalar;
+use crate::{CommonWidgetImpl, Scalar};
 use crate::widget::{CommonWidget, CrossAxisAlignment, Widget, WidgetExt, WidgetId, WidgetIter, WidgetIterMut};
 
 /// # HStack
@@ -227,87 +228,7 @@ impl Layout for HStack {
 }
 
 impl CommonWidget for HStack {
-    fn id(&self) -> WidgetId {
-        self.id
-    }
-
-    fn foreach_child(&self, f: &mut dyn FnMut(&dyn Widget)) {
-        for child in &self.children {
-            if child.is_ignore() {
-                continue;
-            }
-
-            if child.is_proxy() {
-                child.foreach_child(f);
-                continue;
-            }
-
-            f(child);
-        }
-    }
-
-    fn foreach_child_mut(&mut self, f: &mut dyn FnMut(&mut dyn Widget)) {
-        for child in &mut self.children {
-            if child.is_ignore() {
-                continue;
-            }
-
-            if child.is_proxy() {
-                child.foreach_child_mut(f);
-                continue;
-            }
-
-            f(child);
-        }
-    }
-
-    fn children_mut(&mut self) -> WidgetIterMut {
-        let contains_proxy_or_ignored = self.children.iter().fold(false, |a, b| {
-            a || (b.flag() == Flags::PROXY || b.flag() == Flags::IGNORE)
-        });
-        if !contains_proxy_or_ignored {
-            WidgetIterMut::Vec(self.children.iter_mut())
-        } else {
-            self.children
-                .iter_mut()
-                .filter(|x| x.flag() != Flags::IGNORE)
-                .rfold(WidgetIterMut::Empty, |acc, x| {
-                    if x.flag() == Flags::PROXY {
-                        WidgetIterMut::Multi(Box::new(x.children_mut()), Box::new(acc))
-                    } else {
-                        WidgetIterMut::Single(x, Box::new(acc))
-                    }
-                })
-        }
-    }
-
-    fn children_direct(&mut self) -> WidgetIterMut {
-        WidgetIterMut::Vec(self.children.iter_mut())
-    }
-
-    fn children_direct_rev(&mut self) -> WidgetIterMut {
-        WidgetIterMut::VecRev(self.children.iter_mut().rev())
-    }
-
-    fn position(&self) -> Position {
-        self.position
-    }
-
-    fn set_position(&mut self, position: Position) {
-        self.position = position;
-    }
-
-    fn flexibility(&self) -> u32 {
-        1
-    }
-
-    fn dimension(&self) -> Dimension {
-        self.dimension
-    }
-
-    fn set_dimension(&mut self, dimension: Dimension) {
-        self.dimension = dimension
-    }
+    CommonWidgetImpl!(self, id: self.id, position: self.position, dimension: self.dimension, flexibility: 1);
 }
 
 impl WidgetExt for HStack {}

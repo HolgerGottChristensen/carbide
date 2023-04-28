@@ -1,3 +1,4 @@
+
 use carbide_macro::carbide_default_builder;
 
 use crate::{Color, CommonWidgetImpl};
@@ -79,7 +80,9 @@ impl Layout for Border {
     }
 }
 
-CommonWidgetImpl!(Border, self, id: self.id, child: self.child, position: self.position, dimension: self.dimension);
+impl CommonWidget for Border {
+    CommonWidgetImpl!(self, id: self.id, child: self.child, position: self.position, dimension: self.dimension);
+}
 
 impl Render for Border {
     fn get_primitives(&mut self, primitives: &mut Vec<Primitive>, _env: &mut Environment) {

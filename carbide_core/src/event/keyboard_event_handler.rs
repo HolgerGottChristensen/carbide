@@ -43,8 +43,8 @@ pub trait KeyboardEventHandler: CommonWidget + StateSync + Focusable {
             self.release_state(env);
         }
 
-        for mut child in self.children_direct() {
+        self.foreach_child_direct(&mut |child| {
             child.process_keyboard_event(event, env);
-        }
+        });
     }
 }

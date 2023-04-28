@@ -3,6 +3,7 @@ use std::fmt::Debug;
 use std::ops::Deref;
 use carbide_core::render::{RenderContext, Style};
 
+
 use carbide_macro::carbide_default_builder;
 
 use crate::Color;
@@ -318,21 +319,16 @@ impl CommonWidget for Text {
         self.id
     }
 
-    fn foreach_child(&self, f: &mut dyn FnMut(&dyn Widget)) {}
+    fn foreach_child<'a>(&'a self, f: &mut dyn FnMut(&'a dyn Widget)) {}
 
-    fn foreach_child_mut(&mut self, f: &mut dyn FnMut(&mut dyn Widget)) {}
+    fn foreach_child_mut<'a>(&'a mut self, f: &mut dyn FnMut(&'a mut dyn Widget)) {}
 
-    fn children_mut(&mut self) -> WidgetIterMut {
-        WidgetIterMut::Empty
-    }
+    fn foreach_child_rev<'a>(&'a mut self, f: &mut dyn FnMut(&'a mut dyn Widget)) {}
 
-    fn children_direct(&mut self) -> WidgetIterMut {
-        WidgetIterMut::Empty
-    }
+    fn foreach_child_direct<'a>(&'a mut self, f: &mut dyn FnMut(&'a mut dyn Widget)) {}
 
-    fn children_direct_rev(&mut self) -> WidgetIterMut {
-        WidgetIterMut::Empty
-    }
+    fn foreach_child_direct_rev<'a>(&'a mut self, f: &mut dyn FnMut(&'a mut dyn Widget)) {}
+
 
     fn position(&self) -> Position {
         self.position

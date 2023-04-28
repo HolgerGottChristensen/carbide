@@ -3,6 +3,7 @@ use lyon::tessellation::path::builder::BorderRadii;
 use lyon::tessellation::path::traits::PathBuilder;
 use lyon::tessellation::path::Winding;
 
+
 use carbide_macro::carbide_default_builder;
 
 use crate::{Color, CommonWidgetImpl};
@@ -81,7 +82,9 @@ impl Capsule {
     }
 }
 
-CommonWidgetImpl!(Capsule, self, id: self.id, position: self.position, dimension: self.dimension);
+impl CommonWidget for Capsule {
+    CommonWidgetImpl!(self, id: self.id, position: self.position, dimension: self.dimension);
+}
 
 impl Shape for Capsule {
     fn get_triangle_store_mut(&mut self) -> &mut PrimitiveStore {

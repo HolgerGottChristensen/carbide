@@ -1,11 +1,12 @@
 use carbide_core::environment::Environment;
+
 use carbide_macro::carbide_default_builder;
 
 use crate::CommonWidgetImpl;
 use crate::draw::{Dimension, Position};
 use crate::layout::{BasicLayouter, Layout, Layouter};
 use crate::state::{ReadState, TState};
-use crate::widget::{Widget, WidgetExt, WidgetId};
+use crate::widget::{CommonWidget, Widget, WidgetExt, WidgetId};
 
 #[derive(Debug, Clone, Widget)]
 #[carbide_exclude(Layout)]
@@ -55,6 +56,8 @@ impl Layout for Offset {
     }
 }
 
-CommonWidgetImpl!(Offset, self, id: self.id, child: self.child, position: self.position, dimension: self.dimension);
+impl CommonWidget for Offset {
+    CommonWidgetImpl!(self, id: self.id, child: self.child, position: self.position, dimension: self.dimension);
+}
 
 impl WidgetExt for Offset {}

@@ -18,3 +18,11 @@ where
 }
 
 dyn_clone::clone_trait_object!(<T: StateContract> ReadState<T>);
+
+impl NewStateSync for bool {}
+
+impl ReadState<bool> for bool {
+    fn value(&self) -> ValueRef<bool> {
+        ValueRef::Borrow(self)
+    }
+}

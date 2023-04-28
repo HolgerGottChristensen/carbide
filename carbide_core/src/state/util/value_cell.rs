@@ -61,11 +61,11 @@ impl<T> ValueCell<T> {
         }
     }
 
-    pub fn borrow_mut(&self) -> ValueRefMut<'_, T> {
+    pub fn borrow_mut<'a>(&'a self) -> ValueRefMut<'a, T> {
         self.try_borrow_mut().expect("Already borrowed")
     }
 
-    pub fn try_borrow_mut(&self) -> Result<ValueRefMut<'_, T>, ()> {
+    pub fn try_borrow_mut<'a>(&'a self) -> Result<ValueRefMut<'a, T>, ()> {
         match BorrowRefMut::new(&self.borrow) {
             // SAFETY: `BorrowRef` guarantees unique access.
             Some(b) => Ok(ValueRefMut::CellBorrow {

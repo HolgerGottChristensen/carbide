@@ -5,6 +5,7 @@ use lyon::algorithms::path::Winding;
 use lyon::geom::euclid::rect;
 use lyon::math::point;
 
+
 use carbide_macro::carbide_default_builder;
 
 use crate::{Color, CommonWidgetImpl};
@@ -83,7 +84,9 @@ impl Ellipse {
     }
 }
 
-CommonWidgetImpl!(Ellipse, self, id: self.id, position: self.position, dimension: self.dimension);
+impl CommonWidget for Ellipse {
+    CommonWidgetImpl!(self, id: self.id, position: self.position, dimension: self.dimension);
+}
 
 impl Render for Ellipse {
     fn render(&mut self, context: &mut RenderContext, _: &mut Environment) {

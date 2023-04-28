@@ -5,6 +5,7 @@ use lyon::tessellation::{
     BuffersBuilder, FillOptions, FillTessellator, FillVertex, StrokeOptions, StrokeTessellator,
     StrokeVertex, VertexBuffers,
 };
+use carbide_core::CommonWidgetImpl;
 use carbide_core::render::{RenderContext, Style};
 
 use carbide_macro::carbide_default_builder;
@@ -215,41 +216,7 @@ impl<T: StateContract> Canvas<T> {
 }
 
 impl<T: StateContract> CommonWidget for Canvas<T> {
-    fn id(&self) -> carbide_core::widget::WidgetId {
-        (self.id)
-    }
-
-    fn foreach_child(&self, f: &mut dyn FnMut(&dyn Widget)) {}
-
-    fn foreach_child_mut(&mut self, f: &mut dyn FnMut(&mut dyn Widget)) {}
-
-    fn children_mut(&mut self) -> carbide_core::widget::WidgetIterMut {
-        carbide_core::widget::WidgetIterMut::Empty
-    }
-
-    fn children_direct(&mut self) -> carbide_core::widget::WidgetIterMut {
-        carbide_core::widget::WidgetIterMut::Empty
-    }
-
-    fn children_direct_rev(&mut self) -> carbide_core::widget::WidgetIterMut {
-        carbide_core::widget::WidgetIterMut::Empty
-    }
-
-    fn position(&self) -> carbide_core::draw::Position {
-        (self.position)
-    }
-
-    fn set_position(&mut self, position: carbide_core::draw::Position) {
-        (self.position) = position;
-    }
-
-    fn dimension(&self) -> carbide_core::draw::Dimension {
-        (self.dimension)
-    }
-
-    fn set_dimension(&mut self, dimension: carbide_core::draw::Dimension) {
-        (self.dimension) = dimension
-    }
+    CommonWidgetImpl!(self, id: self.id, position: self.position, dimension: self.dimension);
 }
 
 impl<T: StateContract> Shape for Canvas<T> {

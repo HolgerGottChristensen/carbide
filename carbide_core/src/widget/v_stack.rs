@@ -1,3 +1,4 @@
+
 use carbide_macro::carbide_default_builder;
 
 use crate::draw::{Dimension, Position};
@@ -64,7 +65,7 @@ impl CommonWidget for VStack {
         self.id
     }
 
-    fn foreach_child(&self, f: &mut dyn FnMut(&dyn Widget)) {
+    fn foreach_child<'a>(&'a self, f: &mut dyn FnMut(&'a dyn Widget)) {
         for child in &self.children {
             if child.is_ignore() {
                 continue;
@@ -79,7 +80,7 @@ impl CommonWidget for VStack {
         }
     }
 
-    fn foreach_child_mut(&mut self, f: &mut dyn FnMut(&mut dyn Widget)) {
+    fn foreach_child_mut<'a>(&'a mut self, f: &mut dyn FnMut(&'a mut dyn Widget)) {
         for child in &mut self.children {
             if child.is_ignore() {
                 continue;
@@ -94,32 +95,31 @@ impl CommonWidget for VStack {
         }
     }
 
-    fn children_mut(&mut self) -> WidgetIterMut {
-        let contains_proxy_or_ignored = self.children.iter().fold(false, |a, b| {
-            a || (b.flag() == Flags::PROXY || b.flag() == Flags::IGNORE)
-        });
-        if !contains_proxy_or_ignored {
-            WidgetIterMut::Vec(self.children.iter_mut())
-        } else {
-            self.children
-                .iter_mut()
-                .filter(|x| x.flag() != Flags::IGNORE)
-                .rfold(WidgetIterMut::Empty, |acc, x| {
-                    if x.flag() == Flags::PROXY {
-                        WidgetIterMut::Multi(Box::new(x.children_mut()), Box::new(acc))
-                    } else {
-                        WidgetIterMut::Single(x, Box::new(acc))
-                    }
-                })
+    fn foreach_child_rev<'a>(&'a mut self, f: &mut dyn FnMut(&'a mut dyn Widget)) {
+        for child in self.children.iter_mut().rev() {
+            if child.is_ignore() {
+                continue;
+            }
+
+            if child.is_proxy() {
+                child.foreach_child_rev(f);
+                continue;
+            }
+
+            f(child);
         }
     }
 
-    fn children_direct(&mut self) -> WidgetIterMut {
-        WidgetIterMut::Vec(self.children.iter_mut())
+    fn foreach_child_direct<'a>(&'a mut self, f: &mut dyn FnMut(&'a mut dyn Widget)) {
+        for child in self.children.iter_mut() {
+            f(child);
+        }
     }
 
-    fn children_direct_rev(&mut self) -> WidgetIterMut {
-        WidgetIterMut::VecRev(self.children.iter_mut().rev())
+    fn foreach_child_direct_rev<'a>(&'a mut self, f: &mut dyn FnMut(&'a mut dyn Widget)) {
+        for child in self.children.iter_mut().rev() {
+            f(child);
+        }
     }
 
     fn position(&self) -> Position {

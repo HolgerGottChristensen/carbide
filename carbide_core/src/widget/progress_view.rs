@@ -1,5 +1,6 @@
 use std::time::Duration;
 
+
 use carbide_macro::carbide_default_builder;
 
 use crate::color::WHITE;
@@ -7,7 +8,7 @@ use crate::CommonWidgetImpl;
 use crate::draw::{Dimension, Position};
 use crate::environment::EnvironmentColor;
 use crate::state::AnimatedState;
-use crate::widget::{Circle, Widget, WidgetExt, WidgetId, ZStack};
+use crate::widget::{Circle, CommonWidget, Widget, WidgetExt, WidgetId, ZStack};
 use crate::widget::canvas::Canvas;
 use crate::widget::canvas::LineCap;
 
@@ -90,6 +91,8 @@ impl ProgressView {
     }
 }
 
-CommonWidgetImpl!(ProgressView, self, id: self.id, child: self.child, position: self.position, dimension: self.dimension);
+impl CommonWidget for ProgressView {
+    CommonWidgetImpl!(self, id: self.id, child: self.child, position: self.position, dimension: self.dimension);
+}
 
 impl WidgetExt for ProgressView {}

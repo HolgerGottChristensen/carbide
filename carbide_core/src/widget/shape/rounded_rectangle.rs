@@ -3,6 +3,7 @@ use lyon::tessellation::path::builder::BorderRadii;
 use lyon::tessellation::path::traits::PathBuilder;
 use lyon::tessellation::path::Winding;
 
+
 use carbide_macro::carbide_default_builder;
 
 use crate::{Color, CommonWidgetImpl};
@@ -83,7 +84,9 @@ impl RoundedRectangle {
     }
 }
 
-CommonWidgetImpl!(RoundedRectangle, self, id: self.id, position: self.position, dimension: self.dimension);
+impl CommonWidget for RoundedRectangle {
+    CommonWidgetImpl!(self, id: self.id, position: self.position, dimension: self.dimension);
+}
 
 impl Render for RoundedRectangle {
     fn render(&mut self, context: &mut RenderContext, _: &mut Environment) {

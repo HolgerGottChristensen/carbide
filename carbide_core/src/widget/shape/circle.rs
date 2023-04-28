@@ -2,6 +2,7 @@ use lyon::algorithms::path::Winding;
 use lyon::geom::euclid::rect;
 use lyon::math::point;
 
+
 use carbide_macro::carbide_default_builder;
 
 use crate::{Color, CommonWidgetImpl};
@@ -81,7 +82,9 @@ impl Circle {
     }
 }
 
-CommonWidgetImpl!(Circle, self, id: self.id, position: self.position, dimension: self.dimension);
+impl CommonWidget for Circle {
+    CommonWidgetImpl!(self, id: self.id, position: self.position, dimension: self.dimension);
+}
 
 impl Layout for Circle {
     fn calculate_size(&mut self, requested_size: Dimension, _: &mut Environment) -> Dimension {

@@ -1,4 +1,5 @@
 use carbide_core::render::RenderContext;
+
 use carbide_macro::carbide_default_builder;
 
 use crate::CommonWidgetImpl;
@@ -118,9 +119,7 @@ impl OtherEventHandler for EnvUpdating {
     fn process_other_event(&mut self, event: &WidgetEvent, env: &mut Environment) {
         self.insert_into_env(env);
 
-        for mut child in self.children_direct() {
-            child.process_other_event(event, env);
-        }
+        self.child.process_other_event(event, env);
 
         self.remove_from_env(env);
     }
@@ -130,9 +129,7 @@ impl KeyboardEventHandler for EnvUpdating {
     fn process_keyboard_event(&mut self, event: &KeyboardEvent, env: &mut Environment) {
         self.insert_into_env(env);
 
-        for mut child in self.children_direct() {
-            child.process_keyboard_event(event, env);
-        }
+        self.child.process_keyboard_event(event, env);
 
         self.remove_from_env(env);
     }
@@ -141,12 +138,8 @@ impl KeyboardEventHandler for EnvUpdating {
 impl MouseEventHandler for EnvUpdating {
     fn process_mouse_event(&mut self, event: &MouseEvent, consumed: &bool, env: &mut Environment) {
         self.insert_into_env(env);
-        for mut child in self.children_direct() {
-            child.process_mouse_event(event, &consumed, env);
-            if *consumed {
-                break;
-            }
-        }
+
+        self.child.process_mouse_event(event, &consumed, env);
 
         self.remove_from_env(env);
     }
@@ -159,16 +152,12 @@ impl Focusable for EnvUpdating {
         focus_request: &Refocus,
         env: &mut Environment,
     ) -> bool {
-        let mut any_focus = false;
         self.insert_into_env(env);
 
-        for mut child in self.children_direct() {
-            if child.process_focus_request(event, focus_request, env) {
-                any_focus = true;
-            }
-        }
+        let any_focus = self.child.process_focus_request(event, focus_request, env);
 
         self.remove_from_env(env);
+
         any_focus
     }
 
@@ -179,12 +168,12 @@ impl Focusable for EnvUpdating {
         focus_up_for_grab: bool,
         env: &mut Environment,
     ) -> bool {
-        let mut focus_child = focus_up_for_grab;
         self.insert_into_env(env);
-        for mut child in self.children_direct() {
-            focus_child = child.process_focus_next(event, focus_request, focus_child, env);
-        }
+
+        let focus_child = self.child.process_focus_next(event, focus_request, focus_up_for_grab, env);
+
         self.remove_from_env(env);
+
         focus_child
     }
 
@@ -195,12 +184,12 @@ impl Focusable for EnvUpdating {
         focus_up_for_grab: bool,
         env: &mut Environment,
     ) -> bool {
-        let mut focus_child = focus_up_for_grab;
         self.insert_into_env(env);
-        for mut child in self.children_direct_rev() {
-            focus_child = child.process_focus_previous(event, focus_request, focus_child, env);
-        }
+
+        let focus_child = self.child.process_focus_previous(event, focus_request, focus_up_for_grab, env);
+
         self.remove_from_env(env);
+
         focus_child
     }
 }
@@ -209,9 +198,9 @@ impl Render for EnvUpdating {
     fn render(&mut self, context: &mut RenderContext, env: &mut Environment) {
         self.insert_into_env(env);
 
-        for mut child in self.children_mut() {
+        self.foreach_child_mut(&mut |child| {
             child.render(context, env);
-        }
+        });
 
         self.remove_from_env(env);
     }
@@ -219,14 +208,16 @@ impl Render for EnvUpdating {
     fn process_get_primitives(&mut self, primitives: &mut Vec<Primitive>, env: &mut Environment) {
         self.insert_into_env(env);
 
-        for mut child in self.children_mut() {
+        self.foreach_child_mut(&mut |child| {
             child.process_get_primitives(primitives, env);
-        }
+        });
 
         self.remove_from_env(env);
     }
 }
 
-CommonWidgetImpl!(EnvUpdating, self, id: self.id, child: self.child, position: self.position, dimension: self.dimension);
+impl CommonWidget for EnvUpdating {
+    CommonWidgetImpl!(self, id: self.id, child: self.child, position: self.position, dimension: self.dimension);
+}
 
 impl WidgetExt for EnvUpdating {}

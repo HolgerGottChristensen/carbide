@@ -1,9 +1,9 @@
+use std::ops::DerefMut;
 use carbide_core::widget::Widget;
 use crate::draw::{Dimension, Position, Scalar};
 use crate::flags::Flags;
 use crate::focus::Focus;
 use crate::layout::{BasicLayouter, Layouter};
-use crate::widget::common::widget_iterator::{WidgetIter, WidgetIterMut};
 use crate::widget::{WidgetId};
 
 pub trait CommonWidget {
@@ -22,8 +22,11 @@ pub trait CommonWidget {
         self.flag() == Flags::SPACER
     }
 
-    fn foreach_child(&self, f: &mut dyn FnMut(&dyn Widget));
-    fn foreach_child_mut(&mut self, f: &mut dyn FnMut(&mut dyn Widget));
+    fn foreach_child<'a>(&'a self, f: &mut dyn FnMut(&'a dyn Widget));
+    fn foreach_child_mut<'a>(&'a mut self, f: &mut dyn FnMut(&'a mut dyn Widget));
+    fn foreach_child_rev<'a>(&'a mut self, f: &mut dyn FnMut(&'a mut dyn Widget));
+    fn foreach_child_direct<'a>(&'a mut self, f: &mut dyn FnMut(&'a mut dyn Widget));
+    fn foreach_child_direct_rev<'a>(&'a mut self, f: &mut dyn FnMut(&'a mut dyn Widget));
 
     fn child_count(&self) -> usize {
         let mut count = 0;
@@ -34,15 +37,6 @@ pub trait CommonWidget {
 
         count
     }
-
-    /// Get the logical children. This means for example for a vstack with a foreach,
-    /// the children of the foreach is retrieved.
-    fn children_mut(&mut self) -> WidgetIterMut;
-
-    /// Get the direct children. This means for example for a vstack with a foreach,
-    /// the foreach widget is retrieved.
-    fn children_direct(&mut self) -> WidgetIterMut;
-    fn children_direct_rev(&mut self) -> WidgetIterMut;
 
     fn position(&self) -> Position;
     fn set_position(&mut self, position: Position);
@@ -61,6 +55,7 @@ pub trait CommonWidget {
     fn set_alignment(&mut self, alignment: Box<dyn Layouter>) {
         unimplemented!()
     }
+
     /// 0 is the most flexible and the largest number is the least flexible
     /// The flexibility of the widget determines the order of which the widgets are processed
     /// when laying out in a vertical or horizontal stack. The least flexible are processed first.
@@ -77,12 +72,6 @@ pub trait CommonWidget {
         });
 
         flexibility
-
-        /*if let Some(first_child) = self.children().next() {
-            first_child.flexibility()
-        } else {
-            0
-        }*/
     }
 
     fn x(&self) -> Scalar {
@@ -130,232 +119,221 @@ pub trait CommonWidget {
 
 #[macro_export]
 macro_rules! CommonWidgetImpl {
-    ($typ:ty, $self:ident, id: $id_expr:expr, child: $child:expr, position: $position:expr, dimension: $dimension:expr $(,flag: $flag:expr)? $(,flexibility: $flexibility:expr)? $(,alignment: $alignment:expr)?) => {
-        impl carbide_core::widget::CommonWidget for $typ {
-            fn id(&$self) -> carbide_core::widget::WidgetId {
-                $id_expr
+    ($self:ident, id: $id_expr:expr, child: $child:expr, position: $position:expr, dimension: $dimension:expr $(,flag: $flag:expr)? $(,flexibility: $flexibility:expr)? $(,alignment: $alignment:expr)?) => {
+        fn id(&$self) -> carbide_core::widget::WidgetId {
+            $id_expr
+        }
+
+        $(
+            fn alignment(&$self) -> Box<dyn carbide_core::layout::Layouter> {
+                $alignment.clone()
+            }
+        )?
+
+        $(
+            fn flag(&$self) -> carbide_core::flags::Flags {
+                $flag
+            }
+        )?
+
+        $(
+            fn flexibility(&$self) -> u32 {
+                $flexibility
+            }
+        )?
+
+        fn foreach_child<'a>(&'a $self, f: &mut dyn FnMut(&'a dyn Widget)) {
+            if $child.is_ignore() {
+                return;
             }
 
-            $(
-                fn alignment(&$self) -> Box<dyn carbide_core::layout::Layouter> {
-                    $alignment.clone()
-                }
-            )?
-
-            $(
-                fn flag(&$self) -> carbide_core::flags::Flags {
-                    $flag
-                }
-            )?
-
-            $(
-                fn flexibility(&$self) -> u32 {
-                    $flexibility
-                }
-            )?
-
-            fn foreach_child(&$self, f: &mut dyn FnMut(&dyn Widget)) {
-                if $child.is_ignore() {
-                    return;
-                }
-
-                if $child.is_proxy() {
-                    $child.foreach_child(f);
-                    return;
-                }
-
-                f(&$child);
+            if $child.is_proxy() {
+                $child.foreach_child(f);
+                return;
             }
 
-            fn foreach_child_mut(&mut $self, f: &mut dyn FnMut(&mut dyn Widget)) {
-                if $child.is_ignore() {
-                    return;
-                }
+            f(&$child);
+        }
 
-                if $child.is_proxy() {
-                    $child.foreach_child_mut(f);
-                    return;
-                }
-
-                f(&mut $child);
+        fn foreach_child_mut<'a>(&'a mut $self, f: &mut dyn FnMut(&'a mut dyn Widget)) {
+            if $child.is_ignore() {
+                return;
             }
 
-            fn children_mut(&mut $self) -> carbide_core::widget::WidgetIterMut {
-                if $child.flag() == carbide_core::flags::Flags::PROXY {
-                    $child.children_mut()
-                } else if $child.flag() == carbide_core::flags::Flags::IGNORE {
-                    carbide_core::widget::WidgetIterMut::Empty
-                } else {
-                    carbide_core::widget::WidgetIterMut::single(&mut $child)
-                }
+            if $child.is_proxy() {
+                $child.foreach_child_mut(f);
+                return;
             }
 
-            fn children_direct(&mut $self) -> carbide_core::widget::WidgetIterMut {
-                carbide_core::widget::WidgetIterMut::single(&mut $child)
+            f(&mut $child);
+        }
+
+        fn foreach_child_rev<'a>(&'a mut $self, f: &mut dyn FnMut(&'a mut dyn Widget)) {
+            if $child.is_ignore() {
+                return;
             }
 
-            fn children_direct_rev(&mut $self) -> carbide_core::widget::WidgetIterMut {
-                carbide_core::widget::WidgetIterMut::single(&mut $child)
+            if $child.is_proxy() {
+                $child.foreach_child_rev(f);
+                return;
             }
 
-            fn position(&$self) -> carbide_core::draw::Position {
-                $position
-            }
+            f(&mut $child);
+        }
 
-            fn set_position(&mut $self, position: carbide_core::draw::Position) {
-                $position = position;
-            }
+        fn foreach_child_direct<'a>(&'a mut $self, f: &mut dyn FnMut(&'a mut dyn Widget)) {
+            f(&mut $child)
+        }
 
-            fn dimension(&$self) -> carbide_core::draw::Dimension {
-                $dimension
-            }
+        fn foreach_child_direct_rev<'a>(&'a mut $self, f: &mut dyn FnMut(&'a mut dyn Widget)) {
+            f(&mut $child)
+        }
 
-            fn set_dimension(&mut $self, dimension: carbide_core::draw::Dimension) {
-                $dimension = dimension
-            }
+        fn position(&$self) -> carbide_core::draw::Position {
+            $position
+        }
+
+        fn set_position(&mut $self, position: carbide_core::draw::Position) {
+            $position = position;
+        }
+
+        fn dimension(&$self) -> carbide_core::draw::Dimension {
+            $dimension
+        }
+
+        fn set_dimension(&mut $self, dimension: carbide_core::draw::Dimension) {
+            $dimension = dimension
         }
     };
 
-    ($typ:ty, $self:ident, id: $id_expr:expr, children: $children:expr, position: $position:expr, dimension: $dimension:expr $(,flag: $flag:expr)? $(,flexibility: $flexibility:literal)?) => {
-        impl carbide_core::widget::CommonWidget for $typ {
-            fn id(&$self) -> carbide_core::widget::WidgetId {
-                $id_expr
-            }
+    ($self:ident, id: $id_expr:expr, children: $children:expr, position: $position:expr, dimension: $dimension:expr $(,flag: $flag:expr)? $(,flexibility: $flexibility:literal)?) => {
+        fn id(&$self) -> carbide_core::widget::WidgetId {
+            $id_expr
+        }
 
-            $(
-                fn flag(&$self) -> carbide_core::flags::Flags {
-                    $flag
+        $(
+            fn flag(&$self) -> carbide_core::flags::Flags {
+                $flag
+            }
+        )?
+
+        $(
+            fn flexibility(&$self) -> u32 {
+                $flexibility
+            }
+        )?
+
+        fn foreach_child<'a>(&'a $self, f: &mut dyn FnMut(&'a dyn Widget)) {
+            for child in &$children {
+                if child.is_ignore() {
+                    continue;
                 }
-            )?
 
-            $(
-                fn flexibility(&$self) -> u32 {
-                    $flexibility
+                if child.is_proxy() {
+                    child.foreach_child(f);
+                    continue;
                 }
-            )?
 
-            fn foreach_child(&$self, f: &mut dyn FnMut(&dyn Widget)) {
-                for child in &$children {
-                    if child.is_ignore() {
-                        continue;
-                    }
+                f(child);
+            }
+        }
 
-                    if child.is_proxy() {
-                        child.foreach_child(f);
-                        continue;
-                    }
-
-                    f(child);
+        fn foreach_child_mut<'a>(&'a mut $self, f: &mut dyn FnMut(&'a mut dyn Widget)) {
+            for child in &mut $children {
+                if child.is_ignore() {
+                    continue;
                 }
-            }
 
-            fn foreach_child_mut(&mut $self, f: &mut dyn FnMut(&mut dyn Widget)) {
-                for child in &mut $children {
-                    if child.is_ignore() {
-                        continue;
-                    }
-
-                    if child.is_proxy() {
-                        child.foreach_child_mut(f);
-                        continue;
-                    }
-
-                    f(child);
+                if child.is_proxy() {
+                    child.foreach_child_mut(f);
+                    continue;
                 }
-            }
 
-            fn children_mut(&mut $self) -> carbide_core::widget::WidgetIterMut {
-                let contains_proxy_or_ignored = $children.iter().fold(false, |a, b| a || (b.flag() == carbide_core::flags::Flags::PROXY || b.flag() == carbide_core::flags::Flags::IGNORE));
-                if !contains_proxy_or_ignored {
-                    carbide_core::widget::WidgetIterMut::Vec($children.iter_mut())
-                } else {
-                    $children
-                        .iter_mut()
-                        .filter(|x| x.flag() != carbide_core::flags::Flags::IGNORE)
-                        .rfold(carbide_core::widget::WidgetIterMut::Empty, |acc, x| {
-                            if x.flag() == carbide_core::flags::Flags::PROXY {
-                                carbide_core::widget::WidgetIterMut::Multi(Box::new(x.children_mut()), Box::new(acc))
-                            } else {
-                                carbide_core::widget::WidgetIterMut::Single(x, Box::new(acc))
-                            }
-                        })
+                f(child);
+            }
+        }
+
+        fn foreach_child_rev<'a>(&'a mut $self, f: &mut dyn FnMut(&'a mut dyn Widget)) {
+            for child in &mut $children.iter_mut().rev() {
+                if child.is_ignore() {
+                    continue;
                 }
-            }
 
-            fn children_direct(&mut $self) -> carbide_core::widget::WidgetIterMut {
-                carbide_core::widget::WidgetIterMut::Vec($children.iter_mut())
-            }
+                if child.is_proxy() {
+                    child.foreach_child_rev(f);
+                    continue;
+                }
 
-            fn children_direct_rev(&mut $self) -> carbide_core::widget::WidgetIterMut {
-                carbide_core::widget::WidgetIterMut::VecRev($children.iter_mut().rev())
+                f(child);
             }
+        }
 
-            fn position(&$self) -> carbide_core::draw::Position {
-                $position
+        fn foreach_child_direct<'a>(&'a mut $self, f: &mut dyn FnMut(&'a mut dyn Widget)) {
+            for child in &mut $children.iter_mut() {
+                f(child);
             }
+        }
 
-            fn set_position(&mut $self, position: carbide_core::draw::Position) {
-                $position = position;
+        fn foreach_child_direct_rev<'a>(&'a mut $self, f: &mut dyn FnMut(&'a mut dyn Widget)) {
+            for child in &mut $children.iter_mut().rev() {
+                f(child);
             }
+        }
 
-            fn dimension(&$self) -> carbide_core::draw::Dimension {
-                $dimension
-            }
+        fn position(&$self) -> carbide_core::draw::Position {
+            $position
+        }
 
-            fn set_dimension(&mut $self, dimension: carbide_core::draw::Dimension) {
-                $dimension = dimension
-            }
+        fn set_position(&mut $self, position: carbide_core::draw::Position) {
+            $position = position;
+        }
+
+        fn dimension(&$self) -> carbide_core::draw::Dimension {
+            $dimension
+        }
+
+        fn set_dimension(&mut $self, dimension: carbide_core::draw::Dimension) {
+            $dimension = dimension
         }
     };
 
-    ($typ:ty, $self:ident, id: $id_expr:expr, position: $position:expr, dimension: $dimension:expr $(,flag: $flag:expr)? $(,flexibility: $flexibility:literal)?) => {
-        impl carbide_core::widget::CommonWidget for $typ {
-            fn id(&$self) -> carbide_core::widget::WidgetId {
-                $id_expr
+    ($self:ident, id: $id_expr:expr, position: $position:expr, dimension: $dimension:expr $(,flag: $flag:expr)? $(,flexibility: $flexibility:literal)?) => {
+        fn id(&$self) -> carbide_core::widget::WidgetId {
+            $id_expr
+        }
+
+        $(
+            fn flag(&$self) -> carbide_core::flags::Flags {
+                $flag
             }
+        )?
 
-            $(
-                fn flag(&$self) -> carbide_core::flags::Flags {
-                    $flag
-                }
-            )?
-
-            $(
-                fn flexibility(&$self) -> u32 {
-                    $flexibility
-                }
-            )?
-
-            fn foreach_child(&$self, _: &mut dyn FnMut(&dyn Widget)) {}
-            fn foreach_child_mut(&mut $self, _: &mut dyn FnMut(&mut dyn Widget)) {}
-
-            fn children_mut(&mut $self) -> carbide_core::widget::WidgetIterMut {
-                carbide_core::widget::WidgetIterMut::Empty
+        $(
+            fn flexibility(&$self) -> u32 {
+                $flexibility
             }
+        )?
 
-            fn children_direct(&mut $self) -> carbide_core::widget::WidgetIterMut {
-                carbide_core::widget::WidgetIterMut::Empty
-            }
+        fn foreach_child<'a>(&'a $self, _: &mut dyn FnMut(&'a dyn Widget)) {}
+        fn foreach_child_mut<'a>(&'a mut $self, _: &mut dyn FnMut(&'a mut dyn Widget)) {}
+        fn foreach_child_rev<'a>(&'a mut $self, _: &mut dyn FnMut(&'a mut dyn Widget)) {}
+        fn foreach_child_direct<'a>(&'a mut $self, _: &mut dyn FnMut(&'a mut dyn Widget)) {}
+        fn foreach_child_direct_rev<'a>(&'a mut $self, _: &mut dyn FnMut(&'a mut dyn Widget)) {}
 
-            fn children_direct_rev(&mut $self) -> carbide_core::widget::WidgetIterMut {
-                carbide_core::widget::WidgetIterMut::Empty
-            }
+        fn position(&$self) -> carbide_core::draw::Position {
+            $position
+        }
 
-            fn position(&$self) -> carbide_core::draw::Position {
-                $position
-            }
+        fn set_position(&mut $self, position: carbide_core::draw::Position) {
+            $position = position;
+        }
 
-            fn set_position(&mut $self, position: carbide_core::draw::Position) {
-                $position = position;
-            }
+        fn dimension(&$self) -> carbide_core::draw::Dimension {
+            $dimension
+        }
 
-            fn dimension(&$self) -> carbide_core::draw::Dimension {
-                $dimension
-            }
-
-            fn set_dimension(&mut $self, dimension: carbide_core::draw::Dimension) {
-                $dimension = dimension
-            }
+        fn set_dimension(&mut $self, dimension: carbide_core::draw::Dimension) {
+            $dimension = dimension
         }
     };
 }

@@ -1,6 +1,7 @@
 use std::fmt::{Debug, Formatter};
 use std::hash::Hash;
 
+
 use carbide_macro::carbide_default_builder;
 
 use crate::draw::{Dimension, Position};
@@ -88,16 +89,28 @@ impl<T: StateContract> carbide_core::widget::CommonWidget for Match<T> {
         self.id
     }
 
-    fn foreach_child(&self, f: &mut dyn FnMut(&dyn Widget)) {
+    fn foreach_child<'a>(&'a self, f: &mut dyn FnMut(&'a dyn Widget)) {
         todo!()
     }
 
-    fn foreach_child_mut(&mut self, f: &mut dyn FnMut(&mut dyn Widget)) {
+    fn foreach_child_mut<'a>(&'a mut self, f: &mut dyn FnMut(&'a mut dyn Widget)) {
+        todo!()
+    }
+
+    fn foreach_child_rev<'a>(&'a mut self, f: &mut dyn FnMut(&'a mut dyn Widget)) {
+        todo!()
+    }
+
+    fn foreach_child_direct<'a>(&'a mut self, f: &mut dyn FnMut(&'a mut dyn Widget)) {
+        todo!()
+    }
+
+    fn foreach_child_direct_rev<'a>(&'a mut self, f: &mut dyn FnMut(&'a mut dyn Widget)) {
         todo!()
     }
 
 
-    fn children_mut(&mut self) -> carbide_core::widget::WidgetIterMut {
+    /*fn children_mut(&mut self) -> carbide_core::widget::WidgetIterMut {
         if let Some(index) = self.current_index {
             if (self.widgets[index].1).flag() == carbide_core::flags::Flags::PROXY {
                 (self.widgets[index].1).children_mut()
@@ -109,23 +122,15 @@ impl<T: StateContract> carbide_core::widget::CommonWidget for Match<T> {
         } else {
             carbide_core::widget::WidgetIterMut::Empty
         }
-    }
+    }*/
 
-    fn children_direct(&mut self) -> carbide_core::widget::WidgetIterMut {
+    /*fn children_direct(&mut self) -> carbide_core::widget::WidgetIterMut {
         if let Some(index) = self.current_index {
             carbide_core::widget::WidgetIterMut::single(&mut (self.widgets[index].1))
         } else {
             carbide_core::widget::WidgetIterMut::Empty
         }
-    }
-
-    fn children_direct_rev(&mut self) -> carbide_core::widget::WidgetIterMut {
-        if let Some(index) = self.current_index {
-            carbide_core::widget::WidgetIterMut::single(&mut (self.widgets[index].1))
-        } else {
-            carbide_core::widget::WidgetIterMut::Empty
-        }
-    }
+    }*/
 
     fn position(&self) -> carbide_core::draw::Position {
         self.position

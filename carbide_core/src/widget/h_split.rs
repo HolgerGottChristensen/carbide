@@ -1,3 +1,4 @@
+
 use carbide_macro::carbide_default_builder;
 
 use crate::CommonWidgetImpl;
@@ -210,7 +211,7 @@ impl Layout for HSplit {
 
         let mut main_axis_offset = 0.0;
 
-        for mut child in self.children_mut() {
+        self.foreach_child_mut(&mut |child| {
             let cross = match alignment {
                 CrossAxisAlignment::Start => position.y,
                 CrossAxisAlignment::Center => {
@@ -222,10 +223,12 @@ impl Layout for HSplit {
             child.set_position(Position::new(position.x + main_axis_offset, cross));
             main_axis_offset += child.dimension().width;
             child.position_children(env);
-        }
+        });
     }
 }
 
-CommonWidgetImpl!(HSplit, self, id: self.id, children: self.children, position: self.position, dimension: self.dimension);
+impl CommonWidget for HSplit {
+    CommonWidgetImpl!(self, id: self.id, children: self.children, position: self.position, dimension: self.dimension);
+}
 
 impl WidgetExt for HSplit {}

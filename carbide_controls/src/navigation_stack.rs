@@ -1,7 +1,7 @@
 use carbide_core::draw::{Dimension, Position};
 use carbide_core::environment::{Environment, WidgetTransferAction};
 use carbide_core::render::{Primitive, Render};
-use carbide_core::widget::{Widget, WidgetExt, WidgetId};
+use carbide_core::widget::{CommonWidget, ForEachChildAction, ForEachChildActionMut, Widget, WidgetExt, WidgetId};
 use carbide_core::CommonWidgetImpl;
 
 #[derive(Debug, Clone, Widget)]
@@ -81,6 +81,8 @@ impl Render for NavigationStack {
     }
 }
 
-CommonWidgetImpl!(NavigationStack, self, id: self.id, child: self.top, position: self.position, dimension: self.dimension);
+impl CommonWidget for NavigationStack {
+    CommonWidgetImpl!(self, id: self.id, child: self.top, position: self.position, dimension: self.dimension);
+}
 
 impl WidgetExt for NavigationStack {}

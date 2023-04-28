@@ -1,5 +1,7 @@
+use std::cell::RefCell;
 use std::fmt::Debug;
 use std::ops::{Deref, DerefMut};
+use std::rc::Rc;
 
 use dyn_clone::DynClone;
 use carbide_core::render::RenderContext;
@@ -42,24 +44,16 @@ impl<T: Widget + ?Sized> CommonWidget for Box<T> {
         self.deref().alignment()
     }
 
-    fn foreach_child(&self, f: &mut dyn FnMut(&dyn Widget)) {
+    fn foreach_child<'a>(&'a self, f: &mut dyn FnMut(&'a dyn Widget)) {
         self.deref().foreach_child(f)
     }
 
-    fn foreach_child_mut(&mut self, f: &mut dyn FnMut(&mut dyn Widget)) {
+    fn foreach_child_mut<'a>(&'a mut self, f: &mut dyn FnMut(&'a mut dyn Widget)) {
         self.deref_mut().foreach_child_mut(f)
     }
 
-    fn children_mut(&mut self) -> WidgetIterMut {
-        self.deref_mut().children_mut()
-    }
-
-    fn children_direct(&mut self) -> WidgetIterMut {
-        self.deref_mut().children_direct()
-    }
-
-    fn children_direct_rev(&mut self) -> WidgetIterMut {
-        self.deref_mut().children_direct_rev()
+    fn foreach_child_rev<'a>(&'a mut self, f: &mut dyn FnMut(&'a mut dyn Widget)) {
+        self.deref_mut().foreach_child_rev(f)
     }
 
     fn position(&self) -> Position {
@@ -88,6 +82,14 @@ impl<T: Widget + ?Sized> CommonWidget for Box<T> {
 
     fn set_dimension(&mut self, dimension: Dimension) {
         self.deref_mut().set_dimension(dimension)
+    }
+
+    fn foreach_child_direct<'a>(&'a mut self, f: &mut dyn FnMut(&'a mut dyn Widget)) {
+        self.deref_mut().foreach_child_direct(f)
+    }
+
+    fn foreach_child_direct_rev<'a>(&'a mut self, f: &mut dyn FnMut(&'a mut dyn Widget)) {
+        self.deref_mut().foreach_child_direct_rev(f)
     }
 }
 

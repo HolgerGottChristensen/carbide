@@ -1,3 +1,4 @@
+use carbide_core::widget::{CommonWidget};
 use carbide_macro::carbide_default_builder;
 
 use crate::CommonWidgetImpl;
@@ -28,6 +29,8 @@ impl Flexibility {
     }
 }
 
-CommonWidgetImpl!(Flexibility, self, id: self.id, child: self.child, position: self.position, dimension: self.dimension, flexibility: self.flexibility);
+impl CommonWidget for Flexibility {
+    CommonWidgetImpl!(self, id: self.id, child: self.child, position: self.position, dimension: self.dimension, flexibility: self.flexibility);
+}
 
 impl WidgetExt for Flexibility {}

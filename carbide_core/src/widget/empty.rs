@@ -1,4 +1,5 @@
 use carbide_core::CommonWidgetImpl;
+use carbide_core::widget::{CommonWidget};
 use carbide_macro::carbide_default_builder;
 
 use crate::draw::{Dimension, Position};
@@ -26,7 +27,9 @@ impl Empty {
     }
 }
 
-CommonWidgetImpl!(Empty, self, id: self.id, position: self.position, dimension: self.dimension, flag: Flags::IGNORE);
+impl CommonWidget for Empty {
+    CommonWidgetImpl!(self, id: self.id, position: self.position, dimension: self.dimension, flag: Flags::IGNORE);
+}
 
 impl WidgetExt for Empty {}
 

@@ -1,3 +1,4 @@
+use carbide_core::widget::{CommonWidget};
 use carbide_macro::carbide_default_builder;
 
 use crate::CommonWidgetImpl;
@@ -30,7 +31,9 @@ impl Hidden {
     }
 }
 
-CommonWidgetImpl!(Hidden, self, id: self.id, child: self.child, position: self.position, dimension: self.dimension);
+impl CommonWidget for Hidden {
+    CommonWidgetImpl!(self, id: self.id, child: self.child, position: self.position, dimension: self.dimension);
+}
 
 impl Render for Hidden {
     // Because we try to hide all children, we just stop the rendering tree.

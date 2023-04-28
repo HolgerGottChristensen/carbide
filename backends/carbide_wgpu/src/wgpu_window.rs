@@ -516,11 +516,15 @@ impl MouseEventHandler for WGPUWindow {
             }
         }
 
-        for mut child in self.children_direct() {
+        self.foreach_child_direct(&mut |child| {
             child.process_mouse_event(event, &consumed, env);
             if *consumed {
-                return ();
+                return;
             }
+        });
+
+        if *consumed {
+            return;
         }
 
         env.set_event_is_current(old_is_current);
@@ -535,7 +539,7 @@ impl CommonWidget for WGPUWindow {
         self.id
     }
 
-    fn foreach_child(&self, f: &mut dyn FnMut(&dyn Widget)) {
+    fn foreach_child<'a>(&'a self, f: &mut dyn FnMut(&'a dyn Widget)) {
         if self.child.is_ignore() {
             return;
         }
@@ -548,7 +552,7 @@ impl CommonWidget for WGPUWindow {
         f(&self.child);
     }
 
-    fn foreach_child_mut(&mut self, f: &mut dyn FnMut(&mut dyn Widget)) {
+    fn foreach_child_mut<'a>(&'a mut self, f: &mut dyn FnMut(&'a mut dyn Widget)) {
         if self.child.is_ignore() {
             return;
         }
@@ -561,22 +565,25 @@ impl CommonWidget for WGPUWindow {
         f(&mut self.child);
     }
 
-    fn children_mut(&mut self) -> WidgetIterMut {
-        if self.child.flag() == Flags::PROXY {
-            self.child.children_mut()
-        } else if self.child.flag() == Flags::IGNORE {
-            WidgetIterMut::Empty
-        } else {
-            WidgetIterMut::single(&mut self.child)
+    fn foreach_child_rev<'a>(&'a mut self, f: &mut dyn FnMut(&'a mut dyn Widget)) {
+        if self.child.is_ignore() {
+            return;
         }
+
+        if self.child.is_proxy() {
+            self.child.foreach_child_mut(f);
+            return;
+        }
+
+        f(&mut self.child);
     }
 
-    fn children_direct(&mut self) -> WidgetIterMut {
-        WidgetIterMut::single(&mut self.child)
+    fn foreach_child_direct<'a>(&'a mut self, f: &mut dyn FnMut(&'a mut dyn Widget)) {
+        f(&mut self.child);
     }
 
-    fn children_direct_rev(&mut self) -> WidgetIterMut {
-        WidgetIterMut::single(&mut self.child)
+    fn foreach_child_direct_rev<'a>(&'a mut self, f: &mut dyn FnMut(&'a mut dyn Widget)) {
+        f(&mut self.child);
     }
 
     fn position(&self) -> Position {
@@ -628,9 +635,9 @@ impl KeyboardEventHandler for WGPUWindow {
             self.release_state(env);
         }
 
-        for mut child in self.children_direct() {
+        self.foreach_child_direct(&mut |child| {
             child.process_keyboard_event(event, env);
-        }
+        });
 
         env.set_event_is_current(old_is_current);
         env.set_pixel_dimensions(old_dimension);
@@ -720,9 +727,9 @@ impl OtherEventHandler for WGPUWindow {
             self.release_state(env);
         }
 
-        for mut child in self.children_direct() {
+        self.foreach_child_direct(&mut |child| {
             child.process_other_event(event, env);
-        }
+        });
 
         // Set the cursor of the window.
         self.inner.set_cursor_icon(convert_mouse_cursor(env.cursor()));

@@ -1,3 +1,4 @@
+
 use carbide_macro::carbide_default_builder;
 
 use crate::color::Color;
@@ -404,7 +405,7 @@ impl CommonWidget for Scroll {
         Flags::EMPTY
     }
 
-    fn foreach_child(&self, f: &mut dyn FnMut(&dyn Widget)) {
+    fn foreach_child<'a>(&'a self, f: &mut dyn FnMut(&'a dyn Widget)) {
         if self.child.is_ignore() {
             return;
         }
@@ -417,7 +418,7 @@ impl CommonWidget for Scroll {
         f(&self.child);
     }
 
-    fn foreach_child_mut(&mut self, f: &mut dyn FnMut(&mut dyn Widget)) {
+    fn foreach_child_mut<'a>(&'a mut self, f: &mut dyn FnMut(&'a mut dyn Widget)) {
         if self.child.is_ignore() {
             return;
         }
@@ -430,20 +431,25 @@ impl CommonWidget for Scroll {
         f(&mut self.child);
     }
 
-    fn children_mut(&mut self) -> WidgetIterMut {
-        if self.child.flag() == Flags::PROXY {
-            self.child.children_mut()
-        } else {
-            WidgetIterMut::single(&mut self.child)
+    fn foreach_child_rev<'a>(&'a mut self, f: &mut dyn FnMut(&'a mut dyn Widget)) {
+        if self.child.is_ignore() {
+            return;
         }
+
+        if self.child.is_proxy() {
+            self.child.foreach_child_rev(f);
+            return;
+        }
+
+        f(&mut self.child);
     }
 
-    fn children_direct(&mut self) -> WidgetIterMut {
-        WidgetIterMut::single(&mut self.child)
+    fn foreach_child_direct<'a>(&'a mut self, f: &mut dyn FnMut(&'a mut dyn Widget)) {
+        f(&mut self.child);
     }
 
-    fn children_direct_rev(&mut self) -> WidgetIterMut {
-        WidgetIterMut::single(&mut self.child)
+    fn foreach_child_direct_rev<'a>(&'a mut self, f: &mut dyn FnMut(&'a mut dyn Widget)) {
+        f(&mut self.child);
     }
 
     fn position(&self) -> Position {

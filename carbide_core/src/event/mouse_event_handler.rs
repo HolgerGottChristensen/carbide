@@ -21,11 +21,11 @@ pub trait MouseEventHandler: CommonWidget + StateSync + Focusable {
             }
         }
 
-        for mut child in self.children_direct() {
+        self.foreach_child_direct(&mut |child| {
             child.process_mouse_event(event, &consumed, env);
             if *consumed {
-                return ();
+                return;
             }
-        }
+        });
     }
 }

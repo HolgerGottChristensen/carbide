@@ -1,10 +1,11 @@
+
 use carbide_core::widget::popup_menu::PopupMenu;
 
 use crate::CommonWidgetImpl;
 use crate::draw::{Dimension, Position};
 use crate::environment::EnvironmentColor;
 use crate::state::{TState, ValueState};
-use crate::widget::{ForEach, HStack, Menu, Rectangle, Spacer, VStack, Widget, WidgetExt, WidgetId};
+use crate::widget::{CommonWidget, ForEach, HStack, Menu, Rectangle, Spacer, VStack, Widget, WidgetExt, WidgetId};
 
 #[derive(Debug, Clone, Widget)]
 pub struct MenuBar {
@@ -24,7 +25,7 @@ impl MenuBar {
                 Spacer::new(),
             ])
             .spacing(1.0)
-            .background(Rectangle::new().fill(EnvironmentColor::Green)),
+            .background(*Rectangle::new().fill(EnvironmentColor::Green)),
             Spacer::new(),
             child,
             Spacer::new(),
@@ -44,6 +45,8 @@ impl MenuBar {
     }
 }
 
-CommonWidgetImpl!(MenuBar, self, id: self.id, child: self.child, position: self.position, dimension: self.dimension);
+impl CommonWidget for MenuBar {
+    CommonWidgetImpl!(self, id: self.id, child: self.child, position: self.position, dimension: self.dimension);
+}
 
 impl WidgetExt for MenuBar {}

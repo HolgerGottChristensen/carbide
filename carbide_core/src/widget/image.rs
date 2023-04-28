@@ -4,6 +4,7 @@ use std::ops::Deref;
 use image::GenericImageView;
 use carbide_core::render::RenderContext;
 use carbide_core::state::StateSync;
+use carbide_core::widget::{CommonWidget};
 
 use carbide_macro::carbide_default_builder;
 
@@ -245,6 +246,8 @@ impl Render for Image {
     }
 }
 
-CommonWidgetImpl!(Image, self, id: self.id, position: self.position, dimension: self.dimension, flexibility: 10);
+impl CommonWidget for Image {
+    CommonWidgetImpl!(self, id: self.id, position: self.position, dimension: self.dimension, flexibility: 10);
+}
 
 impl WidgetExt for Image {}

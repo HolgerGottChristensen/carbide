@@ -32,8 +32,8 @@ pub trait Render: CommonWidget + StateSync {
         // Release the state such that it is available for the children to capture later.
         self.release_state(env);
 
-        for mut child in self.children_mut() {
+        self.foreach_child_mut(&mut |child| {
             child.process_get_primitives(primitives, env);
-        }
+        });
     }
 }

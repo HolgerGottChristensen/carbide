@@ -76,11 +76,11 @@ pub trait Focusable: CommonWidget + StateSync {
         self.release_state(env);
 
         if self.focus_children() {
-            for mut child in self.children_direct() {
+            self.foreach_child_direct(&mut |child| {
                 if child.process_focus_request(event, focus_request, env) {
                     any_focus = true;
                 }
-            }
+            });
         }
 
         any_focus
@@ -117,9 +117,9 @@ pub trait Focusable: CommonWidget + StateSync {
         self.release_state(env);
 
         if self.focus_children() {
-            for mut child in self.children_direct() {
+            self.foreach_child_direct(&mut |child| {
                 focus_child = child.process_focus_next(event, focus_request, focus_child, env);
-            }
+            });
         }
 
         focus_child
@@ -153,9 +153,9 @@ pub trait Focusable: CommonWidget + StateSync {
         self.release_state(env);
 
         if self.focus_children() {
-            for mut child in self.children_direct_rev() {
-                focus_child = child.process_focus_previous(event, focus_request, focus_child, env);
-            }
+            self.foreach_child_direct_rev(&mut |child| {
+                focus_child = child.process_focus_next(event, focus_request, focus_child, env);
+            });
         }
 
         focus_child

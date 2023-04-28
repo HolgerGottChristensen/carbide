@@ -1,8 +1,9 @@
-use carbide_macro::carbide_default_builder;
+
+use carbide_macro::{carbide_default_builder, carbide_default_builder2};
 
 use crate::draw::{Dimension, Position};
 use crate::flags::Flags;
-use crate::state::{ReadState, RState};
+use crate::state::ReadState;
 use crate::widget::{CommonWidget, Empty, Widget, WidgetExt, WidgetId, WidgetIterMut};
 
 /// # If-Else Widget
@@ -19,36 +20,37 @@ use crate::widget::{CommonWidget, Empty, Widget, WidgetExt, WidgetId, WidgetIter
 /// ```
 /// In the above a green rectangle will be displayed, since the state is a constant true.
 #[derive(Debug, Clone, Widget)]
-pub struct IfElse<T, F> where
+pub struct IfElse<T, F, S> where
     T: Widget + Clone,
     F: Widget + Clone,
+    S: ReadState<bool> + Clone + 'static
 {
     id: WidgetId,
     position: Position,
     dimension: Dimension,
-    #[state] predicate: RState<bool>,
+    #[state] predicate: S,
     when_true: T,
     when_false: F,
 }
 
-impl IfElse<Empty, Empty> {
-    #[carbide_default_builder]
-    pub fn new(predicate: impl Into<RState<bool>>) -> Box<IfElse<Empty, Empty>> {}
+impl IfElse<Empty, Empty, bool> {
 
-    pub fn new(predicate: impl Into<RState<bool>>) -> Box<IfElse<Empty, Empty>> {
+    #[carbide_default_builder2]
+    pub fn new<S: ReadState<bool> + Clone + 'static>(predicate: S) -> Box<IfElse<Empty, Empty, S>> {
         Box::new(IfElse {
             id: WidgetId::new(),
-            predicate: predicate.into(),
+            predicate,
             when_true: *Empty::new(),
             when_false: *Empty::new(),
             position: Position::new(0.0, 0.0),
             dimension: Dimension::new(0.0, 0.0),
         })
     }
+
 }
 
-impl<T: Widget + Clone, F: Widget + Clone> IfElse<T, F> {
-    pub fn when_true<T2: Widget + Clone>(self, when_true: T2) -> Box<IfElse<T2, F>> {
+impl<T: Widget + Clone, F: Widget + Clone, S: ReadState<bool> + Clone + 'static> IfElse<T, F, S> {
+    pub fn when_true<T2: Widget + Clone>(self, when_true: T2) -> Box<IfElse<T2, F, S>> {
         Box::new(IfElse {
             id: self.id,
             predicate: self.predicate,
@@ -59,7 +61,7 @@ impl<T: Widget + Clone, F: Widget + Clone> IfElse<T, F> {
         })
     }
 
-    pub fn when_false<F2: Widget + Clone>(self, when_false: F2) -> Box<IfElse<T, F2>> {
+    pub fn when_false<F2: Widget + Clone>(self, when_false: F2) -> Box<IfElse<T, F2, S>> {
         Box::new(IfElse {
             id: self.id,
             predicate: self.predicate,
@@ -71,7 +73,7 @@ impl<T: Widget + Clone, F: Widget + Clone> IfElse<T, F> {
     }
 }
 
-impl<T: Widget + Clone, F: Widget + Clone> CommonWidget for IfElse<T, F> {
+impl<T: Widget + Clone, F: Widget + Clone, S: ReadState<bool> + Clone + 'static> CommonWidget for IfElse<T, F, S> {
     fn id(&self) -> WidgetId {
         self.id
     }
@@ -80,11 +82,12 @@ impl<T: Widget + Clone, F: Widget + Clone> CommonWidget for IfElse<T, F> {
         Flags::PROXY
     }
 
-    fn foreach_child(&self, f: &mut dyn FnMut(&dyn Widget)) {
+    fn foreach_child<'a>(&'a self, f: &mut dyn FnMut(&'a dyn Widget)) {
         if *self.predicate.value() {
             if self.when_true.is_ignore() {
                 return;
             }
+
             if self.when_true.is_proxy() {
                 self.when_true.foreach_child(f);
                 return;
@@ -95,6 +98,7 @@ impl<T: Widget + Clone, F: Widget + Clone> CommonWidget for IfElse<T, F> {
             if self.when_false.is_ignore() {
                 return;
             }
+
             if self.when_false.is_proxy() {
                 self.when_false.foreach_child(f);
                 return;
@@ -104,11 +108,12 @@ impl<T: Widget + Clone, F: Widget + Clone> CommonWidget for IfElse<T, F> {
         }
     }
 
-    fn foreach_child_mut(&mut self, f: &mut dyn FnMut(&mut dyn Widget)) {
+    fn foreach_child_mut<'a>(&'a mut self, f: &mut dyn FnMut(&'a mut dyn Widget)) {
         if *self.predicate.value() {
             if self.when_true.is_ignore() {
                 return;
             }
+
             if self.when_true.is_proxy() {
                 self.when_true.foreach_child_mut(f);
                 return;
@@ -119,6 +124,7 @@ impl<T: Widget + Clone, F: Widget + Clone> CommonWidget for IfElse<T, F> {
             if self.when_false.is_ignore() {
                 return;
             }
+
             if self.when_false.is_proxy() {
                 self.when_false.foreach_child_mut(f);
                 return;
@@ -128,39 +134,45 @@ impl<T: Widget + Clone, F: Widget + Clone> CommonWidget for IfElse<T, F> {
         }
     }
 
-    fn children_mut(&mut self) -> WidgetIterMut {
+    fn foreach_child_rev<'a>(&'a mut self, f: &mut dyn FnMut(&'a mut dyn Widget)) {
         if *self.predicate.value() {
-            if self.when_true.flag() == Flags::PROXY {
-                self.when_true.children_mut()
-            } else if self.when_true.flag() == Flags::IGNORE {
-                WidgetIterMut::Empty
-            } else {
-                WidgetIterMut::owned(Box::new(self.when_true.clone()))
+            if self.when_true.is_ignore() {
+                return;
             }
+
+            if self.when_true.is_proxy() {
+                self.when_true.foreach_child_rev(f);
+                return;
+            }
+
+            f(&mut self.when_true)
         } else {
-            if self.when_false.flag() == Flags::PROXY {
-                self.when_false.children_mut()
-            } else if self.when_false.flag() == Flags::IGNORE {
-                WidgetIterMut::Empty
-            } else {
-                WidgetIterMut::owned(Box::new(self.when_false.clone()))
+            if self.when_false.is_ignore() {
+                return;
             }
+
+            if self.when_false.is_proxy() {
+                self.when_false.foreach_child_rev(f);
+                return;
+            }
+
+            f(&mut self.when_false)
         }
     }
 
-    fn children_direct(&mut self) -> WidgetIterMut {
+    fn foreach_child_direct<'a>(&'a mut self, f: &mut dyn FnMut(&'a mut dyn Widget)) {
         if *self.predicate.value() {
-            WidgetIterMut::owned(Box::new(self.when_true.clone()))
+            f(&mut self.when_true)
         } else {
-            WidgetIterMut::owned(Box::new(self.when_false.clone()))
+            f(&mut self.when_false)
         }
     }
 
-    fn children_direct_rev(&mut self) -> WidgetIterMut {
+    fn foreach_child_direct_rev<'a>(&'a mut self, f: &mut dyn FnMut(&'a mut dyn Widget)) {
         if *self.predicate.value() {
-            WidgetIterMut::owned(Box::new(self.when_true.clone()))
+            f(&mut self.when_true)
         } else {
-            WidgetIterMut::owned(Box::new(self.when_false.clone()))
+            f(&mut self.when_false)
         }
     }
 
@@ -181,4 +193,4 @@ impl<T: Widget + Clone, F: Widget + Clone> CommonWidget for IfElse<T, F> {
     }
 }
 
-impl<T: Widget + Clone, F: Widget + Clone> WidgetExt for IfElse<T, F> {}
+impl<T: Widget + Clone, F: Widget + Clone, S: ReadState<bool> + Clone + 'static> WidgetExt for IfElse<T, F, S> {}

@@ -18,8 +18,8 @@ pub trait OtherEventHandler: CommonWidget + StateSync + Focusable {
             self.release_state(env);
         }
 
-        for mut child in self.children_direct() {
+        self.foreach_child_direct(&mut |child| {
             child.process_other_event(event, env);
-        }
+        });
     }
 }

@@ -1,10 +1,11 @@
+
 use carbide_macro::carbide_default_builder;
 
 use crate::CommonWidgetImpl;
 use crate::draw::{Dimension, Position};
 use crate::environment::EnvironmentColor;
 use crate::state::TState;
-use crate::widget::{Capsule, HSplit, Spacer, Widget, WidgetExt, WidgetId, ZStack};
+use crate::widget::{Capsule, CommonWidget, HSplit, Spacer, Widget, WidgetExt, WidgetId, ZStack};
 
 #[derive(Debug, Clone, Widget)]
 pub struct ProgressBar {
@@ -42,6 +43,8 @@ impl ProgressBar {
     }
 }
 
-CommonWidgetImpl!(ProgressBar, self, id: self.id, child: self.child, position: self.position, dimension: self.dimension);
+impl CommonWidget for ProgressBar {
+    CommonWidgetImpl!(self, id: self.id, child: self.child, position: self.position, dimension: self.dimension);
+}
 
 impl WidgetExt for ProgressBar {}

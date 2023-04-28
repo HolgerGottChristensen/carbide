@@ -7,7 +7,7 @@ use crate::flags::Flags;
 use crate::state::TState;
 use crate::widget::{Background, Border, Clip, ClipShape, CornerRadii, EdgeInsets, EnvUpdating, Flagged, Flexibility, Frame, Hidden, Offset, Padding, Rotation3DEffect, RoundedRectangle, Shape, Transform, Widget};
 
-pub trait WidgetExt: Widget + Sized + 'static {
+pub trait WidgetExt: Widget + Sized + Clone + 'static {
     /// Surround the widget with a frame. The frame is a widget that has fixed width, height or both.
     /// The frame takes two parameters. Both parameters take f64 state. This means you can pass
     /// constant values like 10, 100.2, varying values like LocalState and AnimationState.
@@ -31,8 +31,8 @@ pub trait WidgetExt: Widget + Sized + 'static {
     /// Add a widget to the background of this widget. The proposed size for the widget in the
     /// background will be size chosen of the widget in the foreground. This can be really useful
     /// when trying to add color behind text.
-    fn background(self, background: Box<dyn Widget>) -> Box<Background> {
-        Background::new(Box::new(self), background)
+    fn background<B: Widget + Clone>(self, background: B) -> Box<Background<Self, B>> {
+        Background::new(self, background)
     }
 
     /// This rotates the widget visually around the x and y axis. Notice it will not change the
@@ -139,5 +139,15 @@ pub trait WidgetExt: Widget + Sized + 'static {
         });
 
         e
+    }
+
+    fn fold_children_mut<R>(&mut self, mut state: R, f: &mut dyn FnMut(&mut dyn Widget, &mut R)) -> R {
+        let current = &mut state;
+
+        self.foreach_child_mut(&mut |child| {
+            f(child, current);
+        });
+
+        state
     }
 }

@@ -429,14 +429,6 @@ impl<T: StateContract, U: Delegate<T> + 'static> CommonWidget for List<T, U> {
         Flags::EMPTY
     }
 
-    fn children_mut(&mut self) -> WidgetIterMut {
-        if self.child.flag() == Flags::PROXY {
-            self.child.children_mut()
-        } else {
-            WidgetIterMut::single(&mut self.child)
-        }
-    }
-
     fn children_direct(&mut self) -> WidgetIterMut {
         WidgetIterMut::single(&mut self.child)
     }

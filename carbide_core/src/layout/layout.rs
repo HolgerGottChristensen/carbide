@@ -13,12 +13,19 @@ pub trait Layout: CommonWidget {
     /// The default behavior is to calculate the size of the first child and return that as the
     /// chosen size. If no child are present, the widget will chose the requested size.
     fn calculate_size(&mut self, requested_size: Dimension, env: &mut Environment) -> Dimension {
-        let chosen = if let Some(mut first_child) = self.children_mut().next() {
-            let dimension = first_child.calculate_size(requested_size, env);
-            dimension
-        } else {
-            requested_size
-        };
+
+        let mut chosen = requested_size;
+        let mut first = true;
+
+        self.foreach_child_mut(&mut |child| {
+            if !first {
+                return;
+            }
+            chosen = child.calculate_size(requested_size, env);
+
+            first = false;
+        });
+
         self.set_dimension(chosen);
         chosen
     }
@@ -31,9 +38,18 @@ pub trait Layout: CommonWidget {
         let positioning = self.alignment().positioner();
         let position = self.position();
         let dimension = self.dimension();
-        if let Some(mut first_child) = self.children_mut().next() {
-            positioning(position, dimension, first_child.deref_mut());
-            first_child.position_children(env);
-        }
+
+        let mut first = true;
+
+        self.foreach_child_mut(&mut |child| {
+            if !first {
+                return;
+            }
+
+            positioning(position, dimension, child);
+            child.position_children(env);
+
+            first = false;
+        });
     }
 }

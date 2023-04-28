@@ -1,3 +1,4 @@
+
 use carbide_macro::carbide_default_builder;
 
 use crate::CommonWidgetImpl;
@@ -51,24 +52,24 @@ impl MouseEventHandler for OverlaidLayer {
         if let Some(overlay) = &mut self.overlay {
             overlay.process_mouse_event(event, consumed, env);
             if *consumed {
-                return ();
+                return;
             }
 
             if !self.steal_events_when_some {
-                for mut child in self.children_direct() {
+                self.foreach_child_direct(&mut |child| {
                     child.process_mouse_event(event, &consumed, env);
                     if *consumed {
-                        return ();
+                        return;
                     }
-                }
+                });
             }
         } else {
-            for mut child in self.children_direct() {
+            self.foreach_child_direct(&mut |child| {
                 child.process_mouse_event(event, &consumed, env);
                 if *consumed {
-                    return ();
+                    return;
                 }
-            }
+            });
         }
     }
 }
@@ -79,14 +80,15 @@ impl KeyboardEventHandler for OverlaidLayer {
         if let Some(overlay) = &mut self.overlay {
             overlay.process_keyboard_event(event, env);
             if !self.steal_events_when_some {
-                for mut child in self.children_direct() {
+
+                self.foreach_child_direct(&mut |child| {
                     child.process_keyboard_event(event, env);
-                }
+                });
             }
         } else {
-            for mut child in self.children_direct() {
+            self.foreach_child_direct(&mut |child| {
                 child.process_keyboard_event(event, env);
-            }
+            });
         }
     }
 }
@@ -97,14 +99,15 @@ impl OtherEventHandler for OverlaidLayer {
         if let Some(overlay) = &mut self.overlay {
             overlay.process_other_event(event, env);
             if !self.steal_events_when_some {
-                for mut child in self.children_direct() {
+
+                self.foreach_child_direct(&mut |child| {
                     child.process_other_event(event, env);
-                }
+                });
             }
         } else {
-            for mut child in self.children_direct() {
+            self.foreach_child_direct(&mut |child| {
                 child.process_other_event(event, env);
-            }
+            });
         }
     }
 }
@@ -116,13 +119,15 @@ impl Layout for OverlaidLayer {
     }
 }
 
-CommonWidgetImpl!(OverlaidLayer, self, id: self.id, child: self.child, position: self.position, dimension: self.dimension, flexibility: 0);
+impl CommonWidget for OverlaidLayer {
+    CommonWidgetImpl!(self, id: self.id, child: self.child, position: self.position, dimension: self.dimension, flexibility: 0);
+}
 
 impl Render for OverlaidLayer {
     fn process_get_primitives(&mut self, primitives: &mut Vec<Primitive>, env: &mut Environment) {
-        for mut child in self.children_mut() {
+        self.foreach_child_mut(&mut |child| {
             child.process_get_primitives(primitives, env);
-        }
+        });
 
         // If we have an overlay in the env
         if let Some(overlay) = env.overlay(&self.overlay_id) {

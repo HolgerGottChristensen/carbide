@@ -1,5 +1,6 @@
 use std::ops::DerefMut;
 
+
 use carbide_macro::carbide_default_builder;
 
 use crate::draw::{Dimension, Position};
@@ -42,10 +43,12 @@ impl ZStack {
 
 impl Layout for ZStack {
     fn calculate_size(&mut self, requested_size: Dimension, env: &mut Environment) -> Dimension {
-        let mut children_flexibility: Vec<(u32, WidgetValMut)> = self
-            .children_mut()
-            .map(|child| (child.flexibility(), child))
-            .collect();
+        let mut children_flexibility: Vec<(u32, &mut dyn Widget)> = vec![];
+
+        self.foreach_child_mut(&mut |child| {
+            children_flexibility.push((child.flexibility(), child));
+        });
+
         children_flexibility.sort_by(|(a, _), (b, _)| a.cmp(&b));
         children_flexibility.reverse();
 
@@ -77,10 +80,10 @@ impl Layout for ZStack {
         let position = self.position;
         let dimension = self.dimension;
 
-        for mut child in self.children_mut() {
-            positioning(position, dimension, child.deref_mut());
+        self.foreach_child_mut(&mut |child| {
+            positioning(position, dimension, child);
             child.position_children(env);
-        }
+        });
     }
 }
 
@@ -95,34 +98,6 @@ impl CommonWidget for ZStack {
 
     fn set_alignment(&mut self, alignment: Box<dyn Layouter>) {
         self.alignment = alignment;
-    }
-
-    fn children_mut(&mut self) -> WidgetIterMut {
-        let contains_proxy_or_ignored = self.children.iter().fold(false, |a, b| {
-            a || (b.flag() == Flags::PROXY || b.flag() == Flags::IGNORE)
-        });
-        if !contains_proxy_or_ignored {
-            WidgetIterMut::Vec(self.children.iter_mut())
-        } else {
-            self.children
-                .iter_mut()
-                .filter(|x| x.flag() != Flags::IGNORE)
-                .rfold(WidgetIterMut::Empty, |acc, x| {
-                    if x.flag() == Flags::PROXY {
-                        WidgetIterMut::Multi(Box::new(x.children_mut()), Box::new(acc))
-                    } else {
-                        WidgetIterMut::Single(x, Box::new(acc))
-                    }
-                })
-        }
-    }
-
-    fn children_direct(&mut self) -> WidgetIterMut {
-        WidgetIterMut::Vec(self.children.iter_mut())
-    }
-
-    fn children_direct_rev(&mut self) -> WidgetIterMut {
-        WidgetIterMut::VecRev(self.children.iter_mut().rev())
     }
 
     fn position(&self) -> Position {
@@ -146,7 +121,7 @@ impl CommonWidget for ZStack {
         self.dimension = dimension
     }
 
-    fn foreach_child_mut(&mut self, f: &mut dyn FnMut(&mut dyn Widget)) {
+    fn foreach_child_mut<'a>(&'a mut self, f: &mut dyn FnMut(&'a mut dyn Widget)) {
         for child in &mut self.children {
             if child.is_ignore() {
                 continue;
@@ -161,7 +136,22 @@ impl CommonWidget for ZStack {
         }
     }
 
-    fn foreach_child(&self, f: &mut dyn FnMut(&dyn Widget)) {
+    fn foreach_child_rev<'a>(&'a mut self, f: &mut dyn FnMut(&'a mut dyn Widget)) {
+        for child in self.children.iter_mut().rev() {
+            if child.is_ignore() {
+                continue;
+            }
+
+            if child.is_proxy() {
+                child.foreach_child_rev(f);
+                continue;
+            }
+
+            f(child);
+        }
+    }
+
+    fn foreach_child<'a>(&'a self, f: &mut dyn FnMut(&'a dyn Widget)) {
         for child in &self.children {
             if child.is_ignore() {
                 continue;
@@ -172,6 +162,18 @@ impl CommonWidget for ZStack {
                 continue;
             }
 
+            f(child);
+        }
+    }
+
+    fn foreach_child_direct<'a>(&'a mut self, f: &mut dyn FnMut(&'a mut dyn Widget)) {
+        for child in self.children.iter_mut() {
+            f(child);
+        }
+    }
+
+    fn foreach_child_direct_rev<'a>(&'a mut self, f: &mut dyn FnMut(&'a mut dyn Widget)) {
+        for child in self.children.iter_mut().rev() {
             f(child);
         }
     }

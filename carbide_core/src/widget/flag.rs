@@ -1,3 +1,4 @@
+use carbide_core::widget::{CommonWidget};
 use carbide_macro::carbide_default_builder;
 
 use crate::CommonWidgetImpl;
@@ -29,6 +30,8 @@ impl Flagged {
     }
 }
 
-CommonWidgetImpl!(Flagged, self, id: self.id, child: self.child, position: self.position, dimension: self.dimension, flag: self.flags);
+impl CommonWidget for Flagged {
+    CommonWidgetImpl!(self, id: self.id, child: self.child, position: self.position, dimension: self.dimension, flag: self.flags);
+}
 
 impl WidgetExt for Flagged {}
