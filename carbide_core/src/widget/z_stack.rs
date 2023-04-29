@@ -1,4 +1,5 @@
 use std::ops::DerefMut;
+use smallvec::{SmallVec, smallvec};
 
 
 use carbide_macro::carbide_default_builder;
@@ -43,7 +44,7 @@ impl ZStack {
 
 impl Layout for ZStack {
     fn calculate_size(&mut self, requested_size: Dimension, env: &mut Environment) -> Dimension {
-        let mut children_flexibility: Vec<(u32, &mut dyn Widget)> = vec![];
+        let mut children_flexibility: SmallVec<[(u32, &mut dyn Widget); 5]> = smallvec![];
 
         self.foreach_child_mut(&mut |child| {
             children_flexibility.push((child.flexibility(), child));

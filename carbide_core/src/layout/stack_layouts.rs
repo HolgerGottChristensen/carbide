@@ -1,9 +1,9 @@
+use smallvec::{SmallVec, smallvec};
 use crate::draw::{Dimension, Position};
 use crate::environment::Environment;
 use crate::flags::Flags;
 use crate::layout::Layout;
 use crate::widget::{CrossAxisAlignment, Widget};
-use crate::widget::WidgetValMut;
 
 pub(crate) fn calculate_size_vstack(
     widget: &mut dyn Layout,
@@ -127,30 +127,35 @@ fn calculate_size_stack(
         }
     });
 
-    let mut non_spacers_vec = vec![];
+    // Calculate the number of spaces between elements in a stack.
+    // This will be 0 if there are no children, or one child
+    // It will be 1 if there are two non spacer children.
+
+    let mut last_was_non_spacer = false;
+    let mut is_first = true;
+    let mut number_of_spaces = 0;
 
     widget.foreach_child(&mut |child| {
-        non_spacers_vec.push(!child.is_spacer());
+        if !is_first {
+            if last_was_non_spacer {
+                number_of_spaces += 1;
+            }
+        }
+
+        last_was_non_spacer = !child.is_spacer();
+        is_first = false;
     });
 
-    let non_spacers_vec_length = non_spacers_vec.len();
-
-    let number_of_spaces = non_spacers_vec
-        .iter()
-        .enumerate()
-        .take(non_spacers_vec_length.max(1) - 1)
-        .filter(|(n, b)| **b && non_spacers_vec[n + 1])
-        .count() as f64;
-
-    let spacing_total = number_of_spaces * spacing;
+    let spacing_total = number_of_spaces as f64 * spacing;
 
     let mut size_for_children = dimension(
         main_axis(requested_size) - spacing_total,
         cross_axis(requested_size),
     );
 
-    let mut children_flexibility_using_max_val = vec![];
-    let mut children_flexibility_rest = vec![];
+
+    let mut children_flexibility_using_max_val: SmallVec<[(u32, &mut dyn Widget); 25]> = smallvec![];
+    let mut children_flexibility_rest: SmallVec<[(u32, &mut dyn Widget); 25]> = smallvec![];
 
     widget.foreach_child_mut(&mut |child| {
         if !child.is_spacer() {
@@ -249,14 +254,6 @@ fn position_children_stack(
     let position = widget.position();
     let dimension = widget.dimension();
 
-    let mut spacers = vec![];
-
-    widget.foreach_child(&mut |child| {
-        spacers.push(child.is_spacer());
-    });
-
-    let mut n = 0;
-
     widget.foreach_child_mut(&mut |child| {
         let cross = match alignment {
             CrossAxisAlignment::Start => cross_axis_position(position),
@@ -275,13 +272,11 @@ fn position_children_stack(
             cross,
         ));
 
-        if child.flag() != Flags::SPACER && n < spacers.len() - 1 && !spacers[n + 1] {
+        if !child.is_spacer() {
             main_axis_offset += spacing;
         }
+
         main_axis_offset += main_axis_dimension(child.dimension());
-
         child.position_children(env);
-
-        n += 1;
     });
 }
