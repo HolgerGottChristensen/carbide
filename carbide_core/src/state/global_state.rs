@@ -55,7 +55,8 @@ impl<T: StateContract> NewStateSync for GlobalState<T> {
     }
 }
 
-impl<T: StateContract> ReadState<T> for GlobalState<T> {
+impl<T: StateContract> ReadState for GlobalState<T> {
+    type T = T;
     fn value(&self) -> ValueRef<T> {
         ValueRef::Locked(
             RwLockReadGuard::map(self.inner_value.read(), |a| a)
@@ -63,7 +64,7 @@ impl<T: StateContract> ReadState<T> for GlobalState<T> {
     }
 }
 
-impl<T: StateContract> State<T> for GlobalState<T> {
+impl<T: StateContract> State for GlobalState<T> {
     fn value_mut(&mut self) -> ValueRefMut<T> {
         ValueRefMut::Locked(
             RwLockWriteGuard::map(self.inner_value.write(), |a| a)

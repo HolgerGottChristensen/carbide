@@ -2,6 +2,7 @@ use std::ops::{Deref, DerefMut};
 
 use crate::environment::{Environment, EnvironmentFontSize};
 use crate::state::{NewStateSync, ReadState, State, StateKey, ValueRef, ValueRefMut};
+use crate::text::FontSize;
 
 #[derive(Clone, Debug)]
 pub struct EnvironmentFontSizeState {
@@ -47,18 +48,19 @@ impl NewStateSync for EnvironmentFontSizeState {
     }
 }
 
-impl ReadState<u32> for EnvironmentFontSizeState {
-    fn value(&self) -> ValueRef<u32> {
+impl ReadState for EnvironmentFontSizeState {
+    type T = FontSize;
+    fn value(&self) -> ValueRef<FontSize> {
         ValueRef::Borrow(&self.value)
     }
 }
 
-impl State<u32> for EnvironmentFontSizeState {
-    fn value_mut(&mut self) -> ValueRefMut<u32> {
+impl State for EnvironmentFontSizeState {
+    fn value_mut(&mut self) -> ValueRefMut<FontSize> {
         ValueRefMut::Borrow(&mut self.value)
     }
 
-    fn set_value(&mut self, value: u32) {
+    fn set_value(&mut self, value: FontSize) {
         self.value = value;
     }
 }

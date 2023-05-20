@@ -16,13 +16,13 @@ where
     repeat_count: Option<u32>,
     animation_curve: fn(f64) -> f64,
     custom_interpolation: fn(&T, &T, f64) -> T,
-    state: Box<dyn State<T>>,
+    state: Box<dyn State<T=T>>,
     from: T,
     to: T,
 }
 
 impl<T: StateContract + Animatable<T>> Animation<T> {
-    pub fn new<S: Into<Box<dyn State<T>>>>(state: S, from: T, to: T) -> Self {
+    pub fn new<S: Into<Box<dyn State<T=T>>>>(state: S, from: T, to: T) -> Self {
         Animation {
             start_time: Instant::now(),
             duration: Duration::new(1, 0),
@@ -38,7 +38,7 @@ impl<T: StateContract + Animatable<T>> Animation<T> {
 }
 
 impl<T: StateContract> Animation<T> {
-    pub fn new_custom<S: Into<Box<dyn State<T>>>>(
+    pub fn new_custom<S: Into<Box<dyn State<T=T>>>>(
         state: S,
         from: T,
         to: T,

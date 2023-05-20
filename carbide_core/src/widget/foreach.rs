@@ -1,65 +1,71 @@
 use std::fmt::{Debug, Formatter};
+use std::marker::PhantomData;
 use carbide_core::CommonWidgetImpl;
 
 
-use carbide_macro::carbide_default_builder;
+use carbide_macro::{carbide_default_builder, carbide_default_builder2};
 
 use crate::draw::{Dimension, Position};
 use crate::environment::Environment;
 use crate::event::{OtherEventHandler, WidgetEvent};
 use crate::flags::Flags;
-use crate::state::{IndexableState, ReadState, StateContract, TState, ValueState};
-use crate::widget::{CommonWidget, Widget, WidgetExt, WidgetId, WidgetIter, WidgetIterMut};
+use crate::state::{IndexState, ReadState, RState, State, StateContract, StateExtNew, TState, ValueState};
+use crate::widget::{CommonWidget, Empty, Widget, WidgetExt, WidgetId, WidgetIter, WidgetIterMut};
 
-pub trait Delegate<T: StateContract>: Clone {
-    fn call(&self, item: TState<T>, index: TState<usize>) -> Box<dyn Widget>;
+pub trait Delegate<T: StateContract, O: Widget + Clone>: Clone {
+    fn call(&self, item: Box<dyn State<T=T>>, index: Box<dyn State<T=usize>>) -> O;
 }
 
-impl<T: StateContract, K> Delegate<T> for K
-where
-    K: Fn(TState<T>, TState<usize>) -> Box<dyn Widget> + Clone,
-{
-    fn call(&self, item: TState<T>, index: TState<usize>) -> Box<dyn Widget> {
+impl<T: StateContract, K, O: Widget + Clone> Delegate<T, O> for K where K: Fn(Box<dyn State<T=T>>, Box<dyn State<T=usize>>) -> O + Clone {
+    fn call(&self, item: Box<dyn State<T=T>>, index: Box<dyn State<T=usize>>) -> O {
         self(item, index)
+    }
+}
+
+#[derive(Clone)]
+pub struct EmptyDelegate;
+
+impl Delegate<(), Empty> for EmptyDelegate {
+    fn call(&self, _: Box<dyn State<T=()>>, _: Box<dyn State<T=usize>>) -> Empty {
+        *Empty::new()
     }
 }
 
 #[derive(Clone, Widget)]
 #[carbide_exclude(OtherEvent)]
-pub struct ForEach<T, U>
+pub struct ForEach<T, M, U, W, I>
 where
     T: StateContract,
-    U: Delegate<T> + 'static,
+    M: State<T=Vec<T>> + Clone + 'static,
+    W: Widget + Clone,
+    U: Delegate<T, W> + 'static,
+    I: ReadState<T=usize> + Clone + 'static
 {
     id: WidgetId,
     position: Position,
     dimension: Dimension,
 
-    #[state]
-    model: TState<Vec<T>>,
+    #[state] model: M,
     delegate: U,
 
-    children: Vec<Box<dyn Widget>>,
-    #[state]
-    index_offset: TState<usize>,
+    children: Vec<W>,
+    #[state] index_offset: I,
+    phantom: PhantomData<T>,
 }
 
-impl<T: StateContract, U: Delegate<T>> ForEach<T, U> {
+impl ForEach<(), Vec<()>, EmptyDelegate, Empty, usize> {
 
-    #[carbide_default_builder]
-    pub fn new(model: impl Into<TState<Vec<T>>>, delegate: U) -> Box<Self> {}
-
-    pub fn new(model: impl Into<TState<Vec<T>>>, delegate: U) -> Box<Self> {
-        let model = model.into();
-
-        Box::new(Self {
+    #[carbide_default_builder2]
+    pub fn new<T: StateContract, M: State<T=Vec<T>> + Clone, W: Widget + Clone, U: Delegate<T, W>>(model: M, delegate: U) -> Box<ForEach<T, M, U, W, usize>> {
+        Box::new(ForEach {
             id: WidgetId::new(),
             position: Position::default(),
             dimension: Dimension::default(),
             model,
             delegate,
             children: vec![],
-            index_offset: ValueState::new(0).into(),
+            index_offset: 0,
+            phantom: PhantomData::default()
         })
     }
 
@@ -79,7 +85,7 @@ impl<T: StateContract, U: Delegate<T>> ForEach<T, U> {
     }*/
 }
 
-impl<T: StateContract, U: Delegate<T>> OtherEventHandler for ForEach<T, U> {
+impl<T: StateContract, M: State<T=Vec<T>> + Clone + 'static, W: Widget + Clone, U: Delegate<T, W> + 'static, I: ReadState<T=usize> + Clone + 'static> OtherEventHandler for ForEach<T, M, U, W, I> {
     fn handle_other_event(&mut self, _event: &WidgetEvent, _env: &mut Environment) {
         if self.model.value().len() < self.children.len() {
             // Remove the excess elements
@@ -94,21 +100,23 @@ impl<T: StateContract, U: Delegate<T>> OtherEventHandler for ForEach<T, U> {
             for _ in 0..number_to_insert {
                 let index = self.children.len();
 
-                let index_state: TState<usize> = ValueState::new(index).into();
-                let item_state = self.model.index(&TState::<usize>::from(index));
+                let index_state = ValueState::new(index).as_dyn();
 
-                let widget = self.delegate.call(item_state.into(), index_state);
+                let mut item_state = IndexState::new(self.model.clone(), index_state.clone());
+
+
+                let widget = self.delegate.call(item_state.as_dyn(), index_state);
                 self.children.push(widget);
             }
         }
     }
 }
 
-impl<T: StateContract, U: Delegate<T>> CommonWidget for ForEach<T, U> {
+impl<T: StateContract, M: State<T=Vec<T>> + Clone + 'static, W: Widget + Clone, U: Delegate<T, W> + 'static, I: ReadState<T=usize> + Clone + 'static> CommonWidget for ForEach<T, M, U, W, I> {
     CommonWidgetImpl!(self, id: self.id, children: self.children, position: self.position, dimension: self.dimension, flag: Flags::PROXY);
 }
 
-impl<T: StateContract, U: Delegate<T>> Debug for ForEach<T, U> {
+impl<T: StateContract, M: State<T=Vec<T>> + Clone + 'static, W: Widget + Clone, U: Delegate<T, W> + 'static, I: ReadState<T=usize> + Clone + 'static> Debug for ForEach<T, M, U, W, I> {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("ForEach")
             .field("children", &self.children)
@@ -116,4 +124,4 @@ impl<T: StateContract, U: Delegate<T>> Debug for ForEach<T, U> {
     }
 }
 
-impl<T: StateContract, U: Delegate<T> + 'static> WidgetExt for ForEach<T, U> {}
+impl<T: StateContract, M: State<T=Vec<T>> + Clone + 'static, W: Widget + Clone, U: Delegate<T, W> + 'static, I: ReadState<T=usize> + Clone + 'static> WidgetExt for ForEach<T, M, U, W, I> {}

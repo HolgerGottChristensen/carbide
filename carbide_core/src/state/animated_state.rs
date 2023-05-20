@@ -2,11 +2,11 @@ use std::fmt::Debug;
 use std::ops::{Add, DerefMut, Mul};
 use std::time::{Duration, Instant};
 
-use carbide_core::state::NewStateSync;
+use carbide_core::state::{NewStateSync, RMap1};
 
 use crate::animation::animation_curve::linear;
 use crate::environment::Environment;
-use crate::state::{InnerState, MapOwnedState, ReadState, State, StateContract, TState};
+use crate::state::{InnerState, Map1, ReadState, State, StateContract, TState};
 use crate::state::util::value_cell::{ValueCell, ValueRef, ValueRefMut};
 use crate::state::widget_state::WidgetState;
 
@@ -69,16 +69,14 @@ impl AnimatedState {
         self,
         from: T,
         to: T,
-    ) -> TState<<U as Add>::Output>
+    ) -> RMap1<impl Fn(&f64)-><U as Add<U>>::Output + Clone, f64, <U as Add<U>>::Output, AnimatedState>
     where
         <T as Mul<f64>>::Output: Add<U>,
         <U as Add<U>>::Output: StateContract + Default + 'static,
     {
-        MapOwnedState::new(
-            WidgetState::new(Box::new(self)),
-            move |t: &f64, _: &_, _: &_| from * (1.0 - *t) + to * *t,
-        )
-        .into()
+        Map1::read_map(self, move |t| {
+            from * (1.0 - *t) + to * *t
+        })
     }
 
     pub fn calc_percentage(&self) {
@@ -124,14 +122,15 @@ impl NewStateSync for AnimatedState {
     }
 }
 
-impl ReadState<f64> for AnimatedState {
+impl ReadState for AnimatedState {
+    type T = f64;
     fn value(&self) -> ValueRef<f64> {
         self.calc_percentage();
         self.percent.borrow()
     }
 }
 
-impl State<f64> for AnimatedState {
+impl State for AnimatedState {
     fn value_mut(&mut self) -> ValueRefMut<f64> {
         self.calc_percentage();
         self.percent.borrow_mut()
@@ -143,8 +142,8 @@ impl State<f64> for AnimatedState {
     }
 }
 
-impl Into<TState<f64>> for Box<AnimatedState> {
+/*impl Into<TState<f64>> for Box<AnimatedState> {
     fn into(self) -> TState<f64> {
         WidgetState::new(self)
     }
-}
+}*/

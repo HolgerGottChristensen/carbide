@@ -2,13 +2,14 @@ use std::borrow::Borrow;
 use std::fmt::Debug;
 use std::ops::Deref;
 use carbide_core::render::{RenderContext, Style};
+use carbide_core::state::IntoState;
 
 
-use carbide_macro::carbide_default_builder;
+use carbide_macro::{carbide_default_builder, carbide_default_builder2};
 
 use crate::Color;
 use crate::draw::{Dimension, Position, Rect};
-use crate::environment::{Environment, EnvironmentColor, EnvironmentFontSize};
+use crate::environment::{Environment, EnvironmentColor, EnvironmentColorState, EnvironmentFontSize, EnvironmentFontSizeState};
 use crate::layout::Layout;
 //use crate::render::text::Text as RenderText;
 use crate::render::{new_primitive, Primitive, Render};
@@ -31,17 +32,17 @@ use crate::widget::types::Wrap;
 /// in accordance with the produced **Alignment**.
 #[derive(Debug, Clone, Widget)]
 #[carbide_exclude(Render, Layout)]
-pub struct Text {
+pub struct Text<T, S, C> where T: ReadState<T=String> + Clone, S: ReadState<T=u32> + Clone, C: ReadState<T=Color> + Clone {
     id: WidgetId,
     position: Position,
     dimension: Dimension,
     wrap_mode: Wrap,
     #[state]
-    pub text: RState<String>,
+    pub text: T,
     #[state]
-    font_size: TState<u32>,
+    font_size: S,
     #[state]
-    color: TState<Color>,
+    color: C,
     font_family: String,
     font_style: FontStyle,
     font_weight: FontWeight,
@@ -50,22 +51,19 @@ pub struct Text {
     text_span_generator: Box<dyn TextSpanGenerator>,
 }
 
-impl Text {
-
-    #[carbide_default_builder]
-    pub fn new(text: impl Into<RState<String>>) -> Box<Self> {}
-
-    pub fn new(text: impl Into<RState<String>>) -> Box<Self> {
-        let text = text.into();
+impl Text<String, u32, Color> {
+    #[carbide_default_builder2]
+    pub fn new<T: IntoState<String>>(text: T) -> Box<Text<T::Output, EnvironmentFontSizeState, <EnvironmentColor as IntoState<Color>>::Output>> {
+        let text = text.into_state();
 
         Box::new(Text {
             id: WidgetId::new(),
             text,
-            font_size: EnvironmentFontSize::Body.into(),
+            font_size: EnvironmentFontSize::Body.into_state(),
             position: Position::new(0.0, 0.0),
             dimension: Dimension::new(100.0, 100.0),
             wrap_mode: Wrap::Whitespace,
-            color: EnvironmentColor::Label.into(),
+            color: <EnvironmentColor as IntoState<Color>>::into_state(EnvironmentColor::Label),
             font_family: "system-font".to_string(),
             font_style: FontStyle::Normal,
             font_weight: FontWeight::Normal,
@@ -75,20 +73,20 @@ impl Text {
         })
     }
 
-    pub fn new_with_generator(
-        text: impl Into<RState<String>>,
+    pub fn new_with_generator<T: IntoState<String>>(
+        text: T,
         generator: impl Into<Box<dyn TextSpanGenerator>>,
-    ) -> Box<Self> {
-        let text = text.into();
+    ) -> Box<Text<T::Output, EnvironmentFontSizeState, <EnvironmentColor as IntoState<Color>>::Output>> {
+        let text = text.into_state();
 
         Box::new(Text {
             id: WidgetId::new(),
             text,
-            font_size: EnvironmentFontSize::Body.into(),
+            font_size: EnvironmentFontSize::Body.into_state(),
             position: Position::new(0.0, 0.0),
             dimension: Dimension::new(100.0, 100.0),
             wrap_mode: Wrap::Whitespace,
-            color: EnvironmentColor::Label.into(),
+            color: <EnvironmentColor as IntoState<Color>>::into_state(EnvironmentColor::Label),
             font_family: "system-font".to_string(),
             font_style: FontStyle::Normal,
             font_weight: FontWeight::Normal,
@@ -97,15 +95,43 @@ impl Text {
             text_span_generator: generator.into(),
         })
     }
+}
 
-    pub fn color(mut self, color: impl Into<TState<Color>>) -> Box<Self> {
-        self.color = color.into();
-        Box::new(self)
+impl<T2: ReadState<T=String> + Clone, S2: ReadState<T=u32> + Clone, C2: ReadState<T=Color> + Clone> Text<T2, S2, C2> {
+    pub fn color<C: IntoState<Color>>(mut self, color: C) -> Box<Text<T2, S2, C::Output>> {
+        Box::new(Text {
+            id: self.id,
+            position: self.position,
+            dimension: self.dimension,
+            wrap_mode: self.wrap_mode,
+            text: self.text,
+            font_size: self.font_size,
+            color: color.into_state(),
+            font_family: self.font_family,
+            font_style: self.font_style,
+            font_weight: self.font_weight,
+            text_decoration: self.text_decoration,
+            internal_text: self.internal_text,
+            text_span_generator: self.text_span_generator,
+        })
     }
 
-    pub fn font_size(mut self, size: impl Into<TState<u32>>) -> Box<Self> {
-        self.font_size = size.into();
-        Box::new(self)
+    pub fn font_size<S: IntoState<u32>>(mut self, size: S) -> Box<Text<T2, S::Output, C2>> {
+        Box::new(Text {
+            id: self.id,
+            position: self.position,
+            dimension: self.dimension,
+            wrap_mode: self.wrap_mode,
+            text: self.text,
+            font_size: size.into_state(),
+            color: self.color,
+            font_family: self.font_family,
+            font_style: self.font_style,
+            font_weight: self.font_weight,
+            text_decoration: self.text_decoration,
+            internal_text: self.internal_text,
+            text_span_generator: self.text_span_generator,
+        })
     }
 
     pub fn font_weight(mut self, weight: impl Into<FontWeight>) -> Box<Self> {
@@ -183,7 +209,7 @@ impl Text {
     }
 }
 
-impl Layout for Text {
+impl<T: ReadState<T=String> + Clone, S: ReadState<T=u32> + Clone, C: ReadState<T=Color> + Clone> Layout for Text<T, S, C> {
     fn calculate_size(&mut self, requested_size: Dimension, env: &mut Environment) -> Dimension {
         self.capture_state(env);
         if let None = self.internal_text {
@@ -228,7 +254,7 @@ impl Layout for Text {
     }
 }
 
-impl Render for Text {
+impl<T: ReadState<T=String> + Clone, S: ReadState<T=u32> + Clone, C: ReadState<T=Color> + Clone> Render for Text<T, S, C> {
     fn render(&mut self, context: &mut RenderContext, env: &mut Environment) {
         let default_color = *self.color.value();
 
@@ -314,7 +340,7 @@ impl Render for Text {
     }
 }
 
-impl CommonWidget for Text {
+impl<T: ReadState<T=String> + Clone, S: ReadState<T=u32> + Clone, C: ReadState<T=Color> + Clone> CommonWidget for Text<T, S, C> {
     fn id(&self) -> WidgetId {
         self.id
     }
@@ -351,4 +377,4 @@ impl CommonWidget for Text {
     }
 }
 
-impl WidgetExt for Text {}
+impl<T: ReadState<T=String> + Clone, S: ReadState<T=u32> + Clone, C: ReadState<T=Color> + Clone> WidgetExt for Text<T, S, C> {}

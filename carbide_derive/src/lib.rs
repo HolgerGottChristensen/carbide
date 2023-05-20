@@ -11,6 +11,7 @@ mod derive_type;
 mod style;
 mod utils;
 mod widget;
+mod state;
 
 // The implementation for the `WidgetCommon` trait derivation (aka `carbide_core::widget::Common`).
 #[proc_macro_derive(WidgetCommon, attributes(carbide, common_builder))]
@@ -45,6 +46,11 @@ pub fn widget_style_(input: TokenStream) -> TokenStream {
 #[proc_macro_derive(Widget, attributes(state, carbide_derive, carbide_exclude))]
 pub fn derive_widget(input: TokenStream) -> TokenStream {
     impl_derive(input, widget::impl_widget)
+}
+
+#[proc_macro_derive(State, attributes())]
+pub fn derive_state(input: TokenStream) -> TokenStream {
+    impl_derive(input, state::impl_state)
 }
 
 // Use the given function to generate a TokenStream for the derive implementation.

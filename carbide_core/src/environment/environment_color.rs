@@ -1,4 +1,5 @@
 use crate::Color;
+use crate::color::WHITE;
 use crate::environment::EnvironmentColorState;
 use crate::render::Style;
 use crate::state::*;
@@ -66,8 +67,8 @@ pub enum EnvironmentColor {
 }
 
 impl EnvironmentColor {
-    pub fn state(&self) -> TState<Color> {
-        WidgetState::new(Box::new(EnvironmentColorState::new(self.clone())))
+    pub fn state(&self) -> EnvironmentColorState {
+        EnvironmentColorState::new(self.clone())
     }
 }
 
@@ -77,7 +78,7 @@ impl Default for EnvironmentColor {
     }
 }
 
-impl Into<StateKey> for EnvironmentColor {
+/*impl Into<StateKey> for EnvironmentColor {
     fn into(self) -> StateKey {
         StateKey::Color(self)
     }
@@ -87,28 +88,50 @@ impl Into<TState<Color>> for EnvironmentColor {
     fn into(self) -> TState<Color> {
         self.state()
     }
-}
+}*/
 
-impl Into<TState<Color>> for TState<EnvironmentColor> {
+/*impl Into<TState<Color>> for TState<EnvironmentColor> {
     fn into(self) -> TState<Color> {
         let state = Map1::read_map(self, |e: &EnvironmentColor| e.state()).ignore_writes();
 
-        Flatten::new(state)
+        Flatten::new(state.as_dyn())
     }
-}
+}*/
 
-impl Into<TState<Style>> for EnvironmentColor {
+/*impl Into<TState<Style>> for EnvironmentColor {
     fn into(self) -> TState<Style> {
         let state: TState<Color> = WidgetState::new(Box::new(EnvironmentColorState::new(self)));
         let state: RState<Style> = state.into();
         state.ignore_writes()
     }
-}
+}*/
 
-impl Into<TState<Style>> for TState<EnvironmentColor> {
+/*impl Into<TState<Style>> for TState<EnvironmentColor> {
     fn into(self) -> TState<Style> {
         let state: TState<Color> = self.into();
 
         Map1::read_map(state, |s: &Color| Style::Color(*s)).ignore_writes()
+    }
+}*/
+
+impl IntoState<Style> for EnvironmentColor {
+    type Output = EnvironmentColorState;
+
+    fn into_state(self) -> Self::Output {
+        EnvironmentColorState::new(self)
+    }
+}
+
+impl IntoState<Color> for EnvironmentColor {
+    type Output = RMap1<fn(&Style) -> Color, Style, Color, EnvironmentColorState>;
+
+    fn into_state(self) -> Self::Output {
+        Map1::read_map(EnvironmentColorState::new(self), |s| {
+            match s {
+                Style::Color(c) => *c,
+                _ => WHITE,
+            }
+        })
+
     }
 }

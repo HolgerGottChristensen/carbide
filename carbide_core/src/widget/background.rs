@@ -1,7 +1,7 @@
 use carbide_core::render::RenderContext;
 use carbide_core::widget::CommonWidget;
 
-use carbide_macro::carbide_default_builder;
+use carbide_macro::{carbide_default_builder, carbide_default_builder2};
 
 use crate::CommonWidgetImpl;
 use crate::draw::{Dimension, Position};
@@ -38,9 +38,7 @@ pub struct Background<F, B> where
 }
 
 impl Background<Empty, Empty> {
-    #[carbide_default_builder]
-    pub fn new<F: Widget + Clone, B: Widget + Clone>(child: F, background: B) -> Box<Background<F, B>> {}
-
+    #[carbide_default_builder2]
     pub fn new<F: Widget + Clone, B: Widget + Clone>(child: F, background: B) -> Box<Background<F, B>> {
         Box::new(Background {
             id: WidgetId::new(),

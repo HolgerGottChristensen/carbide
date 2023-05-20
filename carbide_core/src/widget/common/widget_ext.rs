@@ -1,10 +1,11 @@
 use cgmath::Matrix4;
+use carbide_core::state::RMap1;
 
 use crate::Color;
 use crate::draw::Dimension;
-use crate::environment::{EnvironmentColor, EnvironmentStateContainer};
+use crate::environment::{EnvironmentColor, EnvironmentColorState, EnvironmentStateContainer};
 use crate::flags::Flags;
-use crate::state::TState;
+use crate::state::{ReadState, TState};
 use crate::widget::{Background, Border, Clip, ClipShape, CornerRadii, EdgeInsets, EnvUpdating, Flagged, Flexibility, Frame, Hidden, Offset, Padding, Rotation3DEffect, RoundedRectangle, Shape, Transform, Widget};
 
 pub trait WidgetExt: Widget + Sized + Clone + 'static {
@@ -17,15 +18,15 @@ pub trait WidgetExt: Widget + Sized + Clone + 'static {
 
     /// Changes the flexibility of the widget to a custom value. This can be useful when the
     /// default value does not provide the expected layout for example within a VStack.
-    fn custom_flexibility(self, flexibility: u32) -> Box<Flexibility> {
-        Flexibility::new(Box::new(self), flexibility)
+    fn custom_flexibility(self, flexibility: u32) -> Box<Flexibility<Self>> {
+        Flexibility::new(self, flexibility)
     }
 
     /// Change the flags of a given widget. This can for example be used to make any widget take
     /// Flags::USEMAXCROSSAXIS to make it use the max cross axis instead of expanding infinitely
     /// within a VStack or HStack.
-    fn custom_flags(self, flags: Flags) -> Box<Flagged> {
-        Flagged::new(Box::new(self), flags)
+    fn custom_flags(self, flags: Flags) -> Box<Flagged<Self>> {
+        Flagged::new(self, flags)
     }
 
     /// Add a widget to the background of this widget. The proposed size for the widget in the
@@ -50,30 +51,30 @@ pub trait WidgetExt: Widget + Sized + Clone + 'static {
     /// Rotates the widget around the z axis. The z axis is the axis that goes through you screen.
     /// This is only a visual change and the widget will still take up the same space as if the
     /// effect isn't applied.
-    fn rotation_effect(self, rotation: impl Into<TState<f64>>) -> Box<Transform> {
-        Transform::rotation(Box::new(self), rotation)
+    fn rotation_effect<R: ReadState<T = f64> + Clone>(self, rotation: R) -> Box<Transform<Self, RMap1<fn(&f64) -> Matrix4<f32>, f64, Matrix4<f32>, R>>> {
+        Transform::rotation(self, rotation)
     }
 
     /// Scales the widget visually in a uniform way. It takes a scale factor which is a f64 state.
     /// A scale below 1.0 will make the widget smaller and a scale larger than 1.0 will result in
     /// a larger widget. This is only visual and will not change the size taken up by the actual
     /// widget.
-    fn scale_effect(self, scale: impl Into<TState<f64>>) -> Box<Transform> {
-        Transform::scale(Box::new(self), scale)
+    fn scale_effect<R: ReadState<T = f64> + Clone>(self, scale: R) -> Box<Transform<Self, RMap1<fn(&f64) -> Matrix4<f32>, f64, Matrix4<f32>, R>>> {
+        Transform::scale(self, scale)
     }
 
     /// Scale the widget in a non uniform way. This takes a dimension and will scale the x axis
     /// with the width value and the y axis with the height value. A value of less than 1.0 will
     /// make the given scale smaller and a value larger than 1.0 will result in a larger widget.
     /// The effect is only graphical and will not change the actual scale of the widget.
-    fn scale_effect_non_uniform(self, scale: impl Into<TState<Dimension>>) -> Box<Transform> {
-        Transform::scale_non_uniform(Box::new(self), scale)
+    fn scale_effect_non_uniform<R: ReadState<T = Dimension> + Clone>(self, scale: R) -> Box<Transform<Self, RMap1<fn(&Dimension) -> Matrix4<f32>, Dimension, Matrix4<f32>, R>>> {
+        Transform::scale_non_uniform(self, scale)
     }
 
     /// This can be used to apply a custom transformation matrix to the given widget. This will
     /// only result in visual changes and not affect the actual size of the widget.
-    fn transform(self, matrix: impl Into<TState<Matrix4<f32>>>) -> Box<Transform> {
-        Transform::new(Box::new(self), matrix)
+    fn transform<R: ReadState<T = Matrix4<f32>> + Clone>(self, matrix: R) -> Box<Transform<Self, R>> {
+        Transform::new(self, matrix)
     }
 
     fn frame_fixed_width(self, width: impl Into<TState<f64>>) -> Box<Frame> {
@@ -93,16 +94,16 @@ pub trait WidgetExt: Widget + Sized + Clone + 'static {
     /// Clip the content of the widget. The clip area will be the requested area for the widget. It
     /// will clip all children graphics within that area. This currently does not change whether an
     /// item is clickable outside the clip area.
-    fn clip(self) -> Box<Clip> {
-        Clip::new(Box::new(self))
+    fn clip(self) -> Box<Clip<Self>> {
+        Clip::new(self)
     }
 
-    fn clip_shape(self, shape: Box<dyn Shape>) -> Box<ClipShape> {
-        ClipShape::new(Box::new(self), shape)
+    fn clip_shape<S: Shape + Clone>(self, shape: S) -> Box<ClipShape<Self, S>> {
+        ClipShape::new(self, shape)
     }
 
-    fn corner_radius(self, radius: impl Into<CornerRadii>) -> Box<ClipShape> {
-        ClipShape::new(Box::new(self), RoundedRectangle::new(radius.into()))
+    fn corner_radius(self, radius: impl Into<CornerRadii>) -> Box<ClipShape<Self, RoundedRectangle<EnvironmentColorState, EnvironmentColorState>>> {
+        ClipShape::new(self, *RoundedRectangle::new(radius.into()))
     }
 
     fn hidden(self) -> Box<Hidden> {
@@ -117,12 +118,12 @@ pub trait WidgetExt: Widget + Sized + Clone + 'static {
         Offset::new(offset_x.into(), offset_y.into(), Box::new(self))
     }
 
-    fn border(self) -> Box<Border> {
-        Border::new(Box::new(self))
+    fn border(self) -> Box<Border<Self, Color>> {
+        Border::new(self)
     }
 
-    fn foreground_color(self, color: impl Into<TState<Color>>) -> Box<EnvUpdating> {
-        let mut e = EnvUpdating::new(Box::new(self));
+    fn foreground_color(self, color: impl Into<TState<Color>>) -> Box<EnvUpdating<Self>> {
+        let mut e = EnvUpdating::new(self);
         e.add(EnvironmentStateContainer::Color {
             key: EnvironmentColor::Label,
             value: color.into(),
@@ -131,23 +132,13 @@ pub trait WidgetExt: Widget + Sized + Clone + 'static {
         e
     }
 
-    fn accent_color(self, color: impl Into<TState<Color>>) -> Box<EnvUpdating> {
-        let mut e = EnvUpdating::new(Box::new(self));
+    fn accent_color(self, color: impl Into<TState<Color>>) -> Box<EnvUpdating<Self>> {
+        let mut e = EnvUpdating::new(self);
         e.add(EnvironmentStateContainer::Color {
             key: EnvironmentColor::Accent,
             value: color.into(),
         });
 
         e
-    }
-
-    fn fold_children_mut<R>(&mut self, mut state: R, f: &mut dyn FnMut(&mut dyn Widget, &mut R)) -> R {
-        let current = &mut state;
-
-        self.foreach_child_mut(&mut |child| {
-            f(child, current);
-        });
-
-        state
     }
 }

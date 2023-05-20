@@ -8,14 +8,14 @@ use lyon::tessellation::{
 use carbide_core::CommonWidgetImpl;
 use carbide_core::render::{RenderContext, Style};
 
-use carbide_macro::carbide_default_builder;
+use carbide_macro::{carbide_default_builder, carbide_default_builder2};
 
 use crate::{Color, Scalar};
 use crate::draw::{Dimension, Position, Rect};
 use crate::draw::shape::triangle::Triangle;
-use crate::environment::{Environment, EnvironmentColor};
+use crate::environment::{Environment, EnvironmentColor, EnvironmentColorState};
 use crate::render::{Primitive, PrimitiveKind, Render};
-use crate::state::{NewStateSync, ReadState, StateContract, TState, ValueState};
+use crate::state::{NewStateSync, ReadState, StateContract, TState, ValueState, IntoState};
 use crate::widget::{CommonWidget, PrimitiveStore, Shape, ShapeStyle, StrokeStyle, Widget, WidgetExt, WidgetId};
 use crate::widget::canvas::{Context, ShapeStyleWithOptions};
 use crate::widget::canvas::canvas::Contexts::{NoState, WithState};
@@ -23,15 +23,16 @@ use crate::widget::canvas::canvas::Contexts::{NoState, WithState};
 /// A basic, non-interactive rectangle shape widget.
 #[derive(Clone, Widget)]
 #[carbide_exclude(Render)]
-pub struct Canvas<T>
+pub struct Canvas<T, C>
 where
     T: StateContract,
+    C: ReadState<T=Color> + Clone
 {
     id: WidgetId,
     position: Position,
     dimension: Dimension,
     #[state]
-    color: TState<Color>,
+    color: C,
     //prim_store: Vec<Primitive>,
     context: Contexts<T>,
     #[state]
@@ -47,17 +48,15 @@ where
     NoState(fn(Rect, Context, &mut Environment) -> Context),
 }
 
-impl Canvas<()> {
+impl Canvas<(), Color> {
 
-    #[carbide_default_builder]
-    pub fn new(context: fn(Rect, Context, &mut Environment) -> Context) -> Box<Canvas<()>> {}
-
-    pub fn new(context: fn(Rect, Context, &mut Environment) -> Context) -> Box<Canvas<()>> {
+    #[carbide_default_builder2]
+    pub fn new(context: fn(Rect, Context, &mut Environment) -> Context) -> Box<Canvas<(), <EnvironmentColor as IntoState<Color>>::Output>> {
         Box::new(Canvas {
             id: WidgetId::new(),
             position: Position::new(0.0, 0.0),
             dimension: Dimension::new(100.0, 100.0),
-            color: EnvironmentColor::Accent.into(),
+            color: <EnvironmentColor as IntoState<Color>>::into_state(EnvironmentColor::Accent),
             //prim_store: vec![],
             context: NoState(context),
             state: ValueState::new(()),
@@ -65,16 +64,16 @@ impl Canvas<()> {
     }
 }
 
-impl<T: StateContract> Canvas<T> {
+impl<T: StateContract, C: ReadState<T=Color> + Clone> Canvas<T, C> {
     pub fn new_with_state(
         state: impl Into<TState<T>>,
         context: fn(&mut TState<T>, Rect, Context, &mut Environment) -> Context,
-    ) -> Box<Canvas<T>> {
+    ) -> Box<Canvas<T, <EnvironmentColor as IntoState<Color>>::Output>> {
         Box::new(Canvas {
             id: WidgetId::new(),
             position: Position::new(0.0, 0.0),
             dimension: Dimension::new(100.0, 100.0),
-            color: EnvironmentColor::Accent.into(),
+            color: <EnvironmentColor as IntoState<Color>>::into_state(EnvironmentColor::Accent),
             //prim_store: vec![],
             context: WithState(context),
             state: state.into(),
@@ -215,11 +214,11 @@ impl<T: StateContract> Canvas<T> {
     }
 }
 
-impl<T: StateContract> CommonWidget for Canvas<T> {
+impl<T: StateContract, C: ReadState<T=Color> + Clone> CommonWidget for Canvas<T, C> {
     CommonWidgetImpl!(self, id: self.id, position: self.position, dimension: self.dimension);
 }
 
-impl<T: StateContract> Shape for Canvas<T> {
+impl<T: StateContract, C: ReadState<T=Color> + Clone> Shape for Canvas<T, C> {
     fn get_triangle_store_mut(&mut self) -> &mut PrimitiveStore {
         todo!()
     }
@@ -275,7 +274,7 @@ impl<T: StateContract> Shape for Canvas<T> {
     }
 }
 
-impl<T: StateContract> Render for Canvas<T> {
+impl<T: StateContract, C: ReadState<T=Color> + Clone> Render for Canvas<T, C> {
     fn render(&mut self, render_context: &mut RenderContext, env: &mut Environment) {
         let context = Context::new();
 
@@ -332,10 +331,10 @@ impl<T: StateContract> Render for Canvas<T> {
     }
 }
 
-impl<T: StateContract> Debug for Canvas<T> {
+impl<T: StateContract, C: ReadState<T=Color> + Clone> Debug for Canvas<T, C> {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("Canvas").finish()
     }
 }
 
-impl<T: StateContract> WidgetExt for Canvas<T> {}
+impl<T: StateContract, C: ReadState<T=Color> + Clone> WidgetExt for Canvas<T, C> {}

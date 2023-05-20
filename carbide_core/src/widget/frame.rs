@@ -286,7 +286,9 @@ impl NewStateSync for FrameState {
     }
 }
 
-impl ReadState<f64> for FrameState {
+impl ReadState for FrameState {
+    type T = f64;
+
     fn value(&self) -> ValueRef<f64> {
         match self {
             FrameState::Expand(e) => e.value(),
@@ -296,7 +298,7 @@ impl ReadState<f64> for FrameState {
     }
 }
 
-impl State<f64> for FrameState {
+impl State for FrameState {
     fn value_mut(&mut self) -> ValueRefMut<f64> {
         unimplemented!("Should not be called")
     }

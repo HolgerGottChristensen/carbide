@@ -284,7 +284,7 @@ impl InnerRenderContext for WGPURenderContext {
         todo!()
     }
 
-    fn stencil(&mut self, geometry: &Vec<Triangle<Position>>) {
+    fn stencil(&mut self, geometry: &[Triangle<Position>]) {
         self.freshen_state();
 
         let start_index_for_stencil = self.vertices.len();
@@ -318,7 +318,7 @@ impl InnerRenderContext for WGPURenderContext {
         }
     }
 
-    fn geometry(&mut self, geometry: &Vec<Triangle<Position>>) {
+    fn geometry(&mut self, geometry: &[Triangle<Position>]) {
         self.ensure_state_plain();
 
         let color = match self.style.last().unwrap() {
@@ -391,7 +391,7 @@ impl InnerRenderContext for WGPURenderContext {
         self.vertices.push(create_vertex(r, b, uv_r, uv_b));
     }
 
-    fn text(&mut self, text: &Vec<Glyph>) {
+    fn text(&mut self, text: &[Glyph]) {
         self.ensure_state_plain();
 
         let color = match self.style.last().unwrap_or(&WGPUStyle::Color(WHITE.gamma_srgb_to_linear().to_fsa())) {

@@ -41,15 +41,15 @@ where
     Value(ValueState<T>),
     Local(LocalState<T>),
     Global(GlobalState<T>),
-    Boxed(Box<dyn State<T>>),
+    Boxed(Box<dyn State<T=T>>),
 }
 
 impl<T: StateContract> WidgetState<T> {
-    pub fn new(item: Box<dyn State<T>>) -> WidgetState<T> {
+    pub fn new(item: Box<dyn State<T=T>>) -> WidgetState<T> {
         WidgetState::Boxed(item)
     }
 
-    pub fn to_boxed_state(self) -> Box<dyn State<T>> {
+    pub fn to_boxed_state(self) -> Box<dyn State<T=T>> {
         match self {
             WidgetState::Boxed(i) => i,
             WidgetState::Value(v) => Box::new(v),
@@ -58,9 +58,9 @@ impl<T: StateContract> WidgetState<T> {
         }
     }
 
-    pub fn read_state(self) -> RState<T> {
+    /*pub fn read_state(self) -> RState<T> {
         self.into()
-    }
+    }*/
 }
 
 impl<T: Display + StateContract> Display for WidgetState<T> {
@@ -74,7 +74,7 @@ impl<T: Display + StateContract> Display for WidgetState<T> {
     }
 }
 
-impl<T: StateContract> Into<WidgetState<T>> for Box<dyn State<T>> {
+/*impl<T: StateContract> Into<WidgetState<T>> for Box<dyn State<T>> {
     fn into(self) -> WidgetState<T> {
         WidgetState::new(self)
     }
@@ -84,7 +84,7 @@ impl<T: StateContract> Into<ReadWidgetState<T>> for WidgetState<T> {
     fn into(self) -> ReadWidgetState<T> {
         ReadWidgetState::ReadWriteState(self)
     }
-}
+}*/
 
 impl<T: StateContract> NewStateSync for WidgetState<T> {
     fn sync(&mut self, env: &mut Environment) -> bool {
@@ -97,7 +97,9 @@ impl<T: StateContract> NewStateSync for WidgetState<T> {
     }
 }
 
-impl<T: StateContract> ReadState<T> for WidgetState<T> {
+impl<T: StateContract> ReadState for WidgetState<T> {
+    type T = T;
+
     fn value(&self) -> ValueRef<T> {
         match self {
             WidgetState::Boxed(i) => i.value(),
@@ -108,7 +110,7 @@ impl<T: StateContract> ReadState<T> for WidgetState<T> {
     }
 }
 
-impl<T: StateContract> State<T> for WidgetState<T> {
+impl<T: StateContract> State for WidgetState<T> {
     fn value_mut(&mut self) -> ValueRefMut<T> {
         match self {
             WidgetState::Boxed(i) => i.value_mut(),

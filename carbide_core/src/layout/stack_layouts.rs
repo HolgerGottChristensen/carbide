@@ -226,7 +226,6 @@ fn calculate_size_stack(
 
     let request_dimension = dimension(rest_space / spacer_count, 0.0);
 
-
     widget.foreach_child_mut(&mut |child| {
         if child.is_spacer() {
             let chosen_size = child.calculate_size(request_dimension, env);

@@ -7,7 +7,7 @@ use crate::environment::{Environment, EnvironmentColor};
 use crate::event::{MouseButton, MouseEventHandler};
 use crate::flags::Flags;
 use crate::layout::Layout;
-use crate::state::{LocalState, Map1, TState};
+use crate::state::{LocalState, Map1, ReadStateExtNew, State, TState};
 use crate::widget::{Background, CommonWidget, EdgeInsets, ForEach, IfElse, Menu, MenuItem, MouseArea, Overlay, Rectangle, Text, VStack, Widget, WidgetExt, WidgetId, Wrap};
 
 #[derive(Debug, Clone, Widget)]
@@ -23,7 +23,7 @@ pub struct PopupMenu {
 
 impl PopupMenu {
     pub fn new(menu: TState<Menu>, top_level: bool) -> Box<Self> {
-        let item = Text::new(
+        /*let item = Text::new(
             Map1::read_map(menu.clone(), |a: &Menu| a.name().to_string()).ignore_writes(),
         )
         .wrap_mode(Wrap::None)
@@ -63,11 +63,12 @@ impl PopupMenu {
                 popup: Err(list),
                 menu,
             })
-        }
+        }*/
+        todo!()
     }
 
-    fn menu_item_delegate(item: TState<MenuItem>, index: TState<usize>) -> Box<dyn Widget> {
-        let default_item = Map1::read_map(item.clone(), |item: &MenuItem| {
+    fn menu_item_delegate(item: Box<dyn State<T=MenuItem>>, index: Box<dyn State<T=usize>>) -> Box<dyn Widget> {
+        /*let default_item = Map1::read_map(item.clone(), |item: &MenuItem| {
             matches!(item, MenuItem::Item { .. })
         })
         .ignore_writes();
@@ -104,7 +105,8 @@ impl PopupMenu {
                     .padding(5.0)
                     .background(*Rectangle::new().fill(EnvironmentColor::Green)),
             )
-            .when_false(*separator_or_submenu)
+            .when_false(*separator_or_submenu)*/
+        todo!()
     }
 }
 

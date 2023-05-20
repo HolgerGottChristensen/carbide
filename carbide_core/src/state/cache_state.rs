@@ -60,7 +60,8 @@ impl<T: StateContract> NewStateSync for CacheRState<T> {
     }
 }
 
-impl<T: StateContract> ReadState<T> for CacheRState<T> {
+impl<T: StateContract> ReadState for CacheRState<T> {
+    type T = T;
     fn value(&self) -> ValueRef<T> {
         ValueRef::map(self.inner_value.borrow(), |v| {v.as_ref().expect("Tried to get value without having synced first. Maps are not initialized before the first sync")})
     }
@@ -136,13 +137,14 @@ impl<T: StateContract> NewStateSync for CacheTState<T> {
     }
 }
 
-impl<T: StateContract> ReadState<T> for CacheTState<T> {
+impl<T: StateContract> ReadState for CacheTState<T> {
+    type T = T;
     fn value(&self) -> ValueRef<T> {
         ValueRef::map(self.inner_value.borrow(), |v| {v.as_ref().expect("Tried to get value without having synced first. Maps are not initialized before the first sync")})
     }
 }
 
-impl<T: StateContract> State<T> for CacheTState<T> {
+impl<T: StateContract> State for CacheTState<T> {
     fn value_mut(&mut self) -> ValueRefMut<T> {
         panic!("You can not set the value of a map state this way. Please use the set_state macro instead")
     }

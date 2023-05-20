@@ -1,30 +1,32 @@
 use carbide_core::render::RenderContext;
 
-use carbide_macro::carbide_default_builder;
+use carbide_macro::{carbide_default_builder, carbide_default_builder2};
 
 use crate::CommonWidgetImpl;
 use crate::draw::{Dimension, Position, Rect};
-use crate::environment::Environment;
+use crate::environment::{Environment, EnvironmentColorState};
 use crate::layout::{BasicLayouter, Layout, Layouter};
 use crate::render::{Primitive, PrimitiveKind, Render};
 use crate::state::StateSync;
-use crate::widget::{CommonWidget, Shape, Widget, WidgetExt, WidgetId};
+use crate::widget::{CommonWidget, Empty, Rectangle, Shape, Widget, WidgetExt, WidgetId};
 
 #[derive(Debug, Clone, Widget)]
 #[carbide_exclude(Render, Layout, StateSync)]
-pub struct ClipShape {
+pub struct ClipShape<C, S>
+where
+    C: Widget + Clone,
+    S: Shape + Clone
+{
     id: WidgetId,
-    child: Box<dyn Widget>,
-    shape: Box<dyn Shape>,
+    child: C,
+    shape: S,
     position: Position,
     dimension: Dimension,
 }
 
-impl ClipShape {
-    #[carbide_default_builder]
-    pub fn new(child: Box<dyn Widget>, shape: Box<dyn Shape>) -> Box<Self> {}
-
-    pub fn new(child: Box<dyn Widget>, shape: Box<dyn Shape>) -> Box<Self> {
+impl ClipShape<Empty, Empty> {
+    #[carbide_default_builder2]
+    pub fn new<C: Widget + Clone, S: Shape + Clone>(child: C, shape: S) -> Box<ClipShape<C, S>> {
         Box::new(ClipShape {
             id: WidgetId::new(),
             child,
@@ -35,7 +37,7 @@ impl ClipShape {
     }
 }
 
-impl StateSync for ClipShape {
+impl<C: Widget + Clone, S: Shape + Clone> StateSync for ClipShape<C, S> {
     fn capture_state(&mut self, env: &mut Environment) {
         self.child.capture_state(env);
         self.shape.capture_state(env);
@@ -47,7 +49,7 @@ impl StateSync for ClipShape {
     }
 }
 
-impl Layout for ClipShape {
+impl<C: Widget + Clone, S: Shape + Clone> Layout for ClipShape<C, S> {
     fn calculate_size(&mut self, requested_size: Dimension, env: &mut Environment) -> Dimension {
         self.child.calculate_size(requested_size, env);
         self.shape.calculate_size(requested_size, env);
@@ -68,11 +70,11 @@ impl Layout for ClipShape {
     }
 }
 
-impl CommonWidget for ClipShape {
+impl<C: Widget + Clone, S: Shape + Clone> CommonWidget for ClipShape<C, S> {
     CommonWidgetImpl!(self, id: self.id, child: self.child, position: self.position, dimension: self.dimension, flexibility: 0);
 }
 
-impl Render for ClipShape {
+impl<C: Widget + Clone, S: Shape + Clone> Render for ClipShape<C, S> {
     fn render(&mut self, context: &mut RenderContext, env: &mut Environment) {
         let stencil_triangles = &self.shape.triangles(env);
 
@@ -103,4 +105,4 @@ impl Render for ClipShape {
     }
 }
 
-impl WidgetExt for ClipShape {}
+impl<C: Widget + Clone, S: Shape + Clone> WidgetExt for ClipShape<C, S> {}

@@ -6,13 +6,13 @@ use carbide_core::render::RenderContext;
 use carbide_core::state::StateSync;
 use carbide_core::widget::{CommonWidget};
 
-use carbide_macro::carbide_default_builder;
+use carbide_macro::{carbide_default_builder, carbide_default_builder2};
 
 use crate::{Color, CommonWidgetImpl, Scalar};
 use crate::color::WHITE;
 use crate::draw::{Dimension, Position, Rect};
 use crate::draw::image::ImageId;
-use crate::environment::{Environment, EnvironmentColor};
+use crate::environment::{Environment, EnvironmentColor, EnvironmentColorState};
 use crate::layout::Layout;
 use crate::mesh::{MODE_ICON, MODE_IMAGE};
 use crate::mesh::pre_multiply::PreMultiply;
@@ -24,14 +24,14 @@ use crate::widget::types::ScaleMode;
 /// A primitive and basic widget for drawing an `Image`.
 #[derive(Debug, Clone, Widget)]
 #[carbide_exclude(Render, Layout)]
-pub struct Image {
+pub struct Image<Id, C> where Id: ReadState<T=Option<ImageId>> + Clone, C: ReadState<T=Style> + Clone {
     id: WidgetId,
     /// The unique identifier for the image that will be drawn.
     #[state]
-    pub image_id: TState<Option<ImageId>>,
+    pub image_id: Id,
     /// The rectangle area of the original source image that should be used.
     src_rect: Option<Rect>,
-    color: Option<TState<Color>>,
+    color: Option<C>,
     mode: u32,
     position: Position,
     dimension: Dimension,
@@ -40,14 +40,12 @@ pub struct Image {
     requested_size: Dimension,
 }
 
-impl Image {
-    #[carbide_default_builder]
-    pub fn new(id: impl Into<TState<Option<ImageId>>>) -> Box<Self> {}
-
-    pub fn new(id: impl Into<TState<Option<ImageId>>>) -> Box<Self> {
+impl Image<Option<ImageId>, Style> {
+    #[carbide_default_builder2]
+    pub fn new<Id: ReadState<T=Option<ImageId>> + Clone>(id: Id) -> Box<Image<Id, Style>> {
         Box::new(Image {
             id: WidgetId::new(),
-            image_id: id.into(),
+            image_id: id,
             src_rect: None,
             color: None,
             mode: MODE_IMAGE,
@@ -59,12 +57,12 @@ impl Image {
         })
     }
 
-    pub fn new_icon<I: Into<TState<Option<ImageId>>>>(id: I) -> Box<Self> {
+    pub fn new_icon<Id: ReadState<T=Option<ImageId>> + Clone>(id: Id) -> Box<Image<Id, EnvironmentColorState>> {
         Box::new(Image {
             id: WidgetId::new(),
-            image_id: id.into(),
+            image_id: id,
             src_rect: None,
-            color: Some(EnvironmentColor::Accent.into()),
+            color: Some(EnvironmentColor::Accent.state()),
             mode: MODE_ICON,
             position: Position::new(0.0, 0.0),
             dimension: Dimension::new(0.0, 0.0),
@@ -73,7 +71,9 @@ impl Image {
             requested_size: Dimension::new(0.0, 0.0),
         })
     }
+}
 
+impl<Id: ReadState<T=Option<ImageId>> + Clone, C: ReadState<T=Style> + Clone> Image<Id, C> {
     /// Set the source rectangle of the image to use. The rect is given in image pixel coordinates.
     /// A source rect outside the size of the image will result in a larger image, but where the
     /// bottom right is blank.
@@ -105,7 +105,7 @@ impl Image {
     }
 }
 
-impl Layout for Image {
+impl<Id: ReadState<T=Option<ImageId>> + Clone, C: ReadState<T=Style> + Clone> Layout for Image<Id, C> {
     fn calculate_size(&mut self, requested_size: Dimension, env: &mut Environment) -> Dimension {
         self.requested_size = requested_size;
 
@@ -170,7 +170,7 @@ impl Layout for Image {
     }
 }
 
-impl Render for Image {
+impl<Id: ReadState<T=Option<ImageId>> + Clone, C: ReadState<T=Style> + Clone> Render for Image<Id, C> {
     fn render(&mut self, context: &mut RenderContext, env: &mut Environment) {
         self.capture_state(env);
 
@@ -196,16 +196,15 @@ impl Render for Image {
                 }
             };
 
-
-
-
-            if let Some(color) = self.color.as_ref().map(|col| *col.value()) {
-                context.style(Style::Color(color), |this| {
+            if let Some(color) = self.color.as_ref().map(|col| col.value().clone()) {
+                context.style(color, |this| {
                     this.image(id.clone(), Rect::new(self.position, self.dimension), source_rect, self.mode)
                 })
             } else {
                 context.image(id.clone(), Rect::new(self.position, self.dimension), source_rect, self.mode)
             }
+        } else {
+            println!("Missing else")
         }
     }
 
@@ -217,7 +216,7 @@ impl Render for Image {
 
         if let Some(id) = self.image_id.value().deref() {
             let kind = PrimitiveKind::Image {
-                color: self.color.as_ref().map(|col| *col.value()),
+                color: None,//self.color.as_ref().map(|col| *col.value()),
                 image_id: id.clone(),
                 source_rect: self.src_rect,
                 mode: self.mode,
@@ -229,7 +228,7 @@ impl Render for Image {
                 bounding_box: rect,
             });
         } else {
-            let color = if let Some(color) = &self.color {
+            /*let color = if let Some(color) = &self.color {
                 *color.value()
             } else {
                 WHITE
@@ -241,13 +240,13 @@ impl Render for Image {
             primitives.push(Primitive {
                 kind,
                 bounding_box: rect,
-            });
+            });*/
         }
     }
 }
 
-impl CommonWidget for Image {
+impl<Id: ReadState<T=Option<ImageId>> + Clone, C: ReadState<T=Style> + Clone> CommonWidget for Image<Id, C> {
     CommonWidgetImpl!(self, id: self.id, position: self.position, dimension: self.dimension, flexibility: 10);
 }
 
-impl WidgetExt for Image {}
+impl<Id: ReadState<T=Option<ImageId>> + Clone, C: ReadState<T=Style> + Clone> WidgetExt for Image<Id, C> {}

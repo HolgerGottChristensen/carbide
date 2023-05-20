@@ -24,8 +24,16 @@ impl Default for EnvironmentFontSize {
     }
 }
 
-impl Into<TState<u32>> for EnvironmentFontSize {
+/*impl Into<TState<u32>> for EnvironmentFontSize {
     fn into(self) -> TState<u32> {
         WidgetState::new(Box::new(EnvironmentFontSizeState::new(self)))
+    }
+}*/
+
+impl IntoState<u32> for EnvironmentFontSize {
+    type Output = EnvironmentFontSizeState;
+
+    fn into_state(self) -> Self::Output {
+        EnvironmentFontSizeState::new(self)
     }
 }

@@ -8,12 +8,12 @@ pub enum ReadWidgetState<T>
 where
     T: StateContract,
 {
-    ReadState(Box<dyn ReadState<T>>),
+    ReadState(Box<dyn ReadState<T=T>>),
     ReadWriteState(TState<T>),
 }
 
 impl<T: StateContract> ReadWidgetState<T> {
-    pub fn new(item: Box<dyn ReadState<T>>) -> ReadWidgetState<T> {
+    pub fn new(item: Box<dyn ReadState<T=T>>) -> ReadWidgetState<T> {
         ReadWidgetState::ReadState(item)
     }
 
@@ -21,9 +21,9 @@ impl<T: StateContract> ReadWidgetState<T> {
         ReadWidgetState::ReadWriteState(item)
     }
 
-    pub fn ignore_writes(&self) -> TState<T> {
+    /*pub fn ignore_writes(&self) -> TState<T> {
         IgnoreWritesState::new(self.clone())
-    }
+    }*/
 }
 
 impl<T: StateContract> Debug for ReadWidgetState<T> {
@@ -44,7 +44,7 @@ impl<T: StateContract> Clone for ReadWidgetState<T> {
     }
 }
 
-impl<T: StateContract> Into<ReadWidgetState<T>> for Box<dyn ReadState<T>> {
+impl<T: StateContract> Into<ReadWidgetState<T>> for Box<dyn ReadState<T=T>> {
     fn into(self) -> ReadWidgetState<T> {
         ReadWidgetState::ReadState(self)
     }
@@ -59,7 +59,8 @@ impl<T: StateContract> NewStateSync for ReadWidgetState<T> {
     }
 }
 
-impl<T: StateContract> ReadState<T> for ReadWidgetState<T> {
+impl<T: StateContract> ReadState for ReadWidgetState<T> {
+    type T = T;
     fn value(&self) -> ValueRef<T> {
         match self {
             ReadWidgetState::ReadState(n) => n.value(),
@@ -74,9 +75,9 @@ impl<T: StateContract> From<T> for RState<T> {
     }
 }
 
-impl From<u32> for RState<f64> {
+/*impl From<u32> for RState<f64> {
     fn from(t: u32) -> Self {
         ValueState::new(t as f64).into()
     }
-}
+}*/
 

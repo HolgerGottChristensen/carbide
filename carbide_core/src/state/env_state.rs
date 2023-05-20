@@ -57,7 +57,8 @@ impl<T: StateContract + PartialEq> NewStateSync for EnvState<T> {
     }
 }
 
-impl<T: StateContract + PartialEq> ReadState<T> for EnvState<T> {
+impl<T: StateContract + PartialEq> ReadState for EnvState<T> {
+    type T = T;
     fn value(&self) -> ValueRef<T> {
         ValueRef::Borrow(&self.value)
     }

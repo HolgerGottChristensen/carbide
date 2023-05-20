@@ -1,24 +1,22 @@
-use carbide_core::widget::{CommonWidget};
-use carbide_macro::carbide_default_builder;
+use carbide_core::widget::{CommonWidget, Empty};
+use carbide_macro::{carbide_default_builder, carbide_default_builder2};
 
 use crate::CommonWidgetImpl;
 use crate::draw::{Dimension, Position};
 use crate::widget::{Widget, WidgetExt, WidgetId};
 
 #[derive(Debug, Clone, Widget)]
-pub struct Flexibility {
+pub struct Flexibility<C> where C: Widget + Clone {
     id: WidgetId,
-    child: Box<dyn Widget>,
+    child: C,
     position: Position,
     dimension: Dimension,
     flexibility: u32,
 }
 
-impl Flexibility {
-    #[carbide_default_builder]
-    pub fn new(child: Box<dyn Widget>, flexibility: u32) -> Box<Self> {}
-
-    pub fn new(child: Box<dyn Widget>, flexibility: u32) -> Box<Self> {
+impl Flexibility<Empty> {
+    #[carbide_default_builder2]
+    pub fn new<C: Widget + Clone>(child: C, flexibility: u32) -> Box<Flexibility<C>> {
         Box::new(Flexibility {
             id: WidgetId::new(),
             child,
@@ -29,8 +27,8 @@ impl Flexibility {
     }
 }
 
-impl CommonWidget for Flexibility {
+impl<C: Widget + Clone> CommonWidget for Flexibility<C> {
     CommonWidgetImpl!(self, id: self.id, child: self.child, position: self.position, dimension: self.dimension, flexibility: self.flexibility);
 }
 
-impl WidgetExt for Flexibility {}
+impl<C: Widget + Clone> WidgetExt for Flexibility<C> {}

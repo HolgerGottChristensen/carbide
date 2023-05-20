@@ -2,6 +2,7 @@ use std::fmt::{Debug, Formatter};
 use std::rc::Rc;
 
 use carbide_core::state::state_sync::NewStateSync;
+use carbide_derive::State;
 
 use crate::environment::Environment;
 use crate::state::{InnerState, ReadState, State, StateContract, TState};
@@ -20,6 +21,7 @@ use crate::state::widget_state::WidgetState;
 /// all state is stored directly within.
 /// Also it does not depend on any other states and therefore the event can be ignored.
 #[derive(Clone)]
+//#[derive(Clone, State)]
 pub struct LocalState<T>
 where
     T: StateContract,
@@ -57,13 +59,14 @@ impl<T: StateContract> NewStateSync for LocalState<T> {
     }
 }
 
-impl<T: StateContract> ReadState<T> for LocalState<T> {
+impl<T: StateContract> ReadState for LocalState<T> {
+    type T = T;
     fn value(&self) -> ValueRef<T> {
         self.inner_value.borrow()
     }
 }
 
-impl<T: StateContract> State<T> for LocalState<T> {
+impl<T: StateContract> State for LocalState<T> {
     fn value_mut(&mut self) -> ValueRefMut<T> {
         self.inner_value.borrow_mut()
     }
@@ -80,3 +83,18 @@ impl<T: StateContract> Debug for LocalState<T> {
             .finish()
     }
 }
+
+/*impl<T, __Other_T, __Other_T_State> std::ops::Add<__Other_T_State> for LocalState<T>
+    where
+        T: StateContract,
+        __Other_T: StateContract,
+        __Other_T_State: State<__Other_T> + Clone + 'static,
+        <T as std::ops::Add<__Other_T>>::Output: StateContract,
+        T: StateContract + std::ops::Add<__Other_T>
+{
+    type Output = carbide_core::state::RMap2<T, __Other_T, <T as std::ops::Add<__Other_T>>::Output, LocalState<T>, __Other_T_State>;
+
+    fn add(self, rhs: __Other_T_State) -> Self::Output {
+        carbide_core::state::Map2::read_map(self, rhs, |val1: &T, val2: &__Other_T| { val1.clone() + val2.clone() })
+    }
+}*/

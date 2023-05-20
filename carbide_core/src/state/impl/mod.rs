@@ -1,4 +1,4 @@
-pub mod color;
+/*pub mod color;
 pub mod hashset;
 pub mod option;
 pub mod vec;
@@ -20,4 +20,4 @@ pub mod sub;
 pub mod eq;
 pub mod and;
 pub mod or;
-pub mod ord;
+pub mod ord;*/

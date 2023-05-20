@@ -1,29 +1,31 @@
+use std::marker::PhantomData;
 use crate::environment::Environment;
-use crate::state::{RState, State, StateContract, TState, WidgetState};
+use crate::state::{RState, State, StateContract, WidgetState};
 use crate::state::{NewStateSync, ReadState, ValueRef, ValueRefMut};
 
 #[derive(Clone, Debug)]
-pub struct IgnoreWritesState<T: StateContract>(RState<T>);
+pub struct IgnoreWritesState<T: StateContract, TState: ReadState<T=T> + Clone + 'static>(TState, PhantomData<T>);
 
-impl<T: StateContract> IgnoreWritesState<T> {
-    pub fn new(inner: impl Into<RState<T>>) -> TState<T> {
-        WidgetState::new(Box::new(Self(inner.into())))
+impl IgnoreWritesState<(), ()> {
+    pub fn new<T: StateContract, TState: ReadState<T=T> + Clone + 'static>(inner: TState) -> IgnoreWritesState<T, TState> {
+        IgnoreWritesState(inner, PhantomData::default())
     }
 }
 
-impl<T: StateContract> ReadState<T> for IgnoreWritesState<T> {
+impl<T: StateContract, TState: ReadState<T=T> + Clone + 'static> ReadState for IgnoreWritesState<T, TState> {
+    type T = T;
     fn value(&self) -> ValueRef<T> {
         self.0.value()
     }
 }
 
-impl<T: StateContract> NewStateSync for IgnoreWritesState<T> {
+impl<T: StateContract, TState: ReadState<T=T> + Clone + 'static> NewStateSync for IgnoreWritesState<T, TState> {
     fn sync(&mut self, env: &mut Environment) -> bool {
         self.0.sync(env)
     }
 }
 
-impl<T: StateContract> State<T> for IgnoreWritesState<T> {
+impl<T: StateContract, TState: ReadState<T=T> + Clone + 'static> State for IgnoreWritesState<T, TState> {
     fn value_mut(&mut self) -> ValueRefMut<T> {
         panic!("Trying to get mutable value for a state that is readonly and ignoring writes.")
     }

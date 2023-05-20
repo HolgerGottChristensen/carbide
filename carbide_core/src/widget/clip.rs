@@ -1,7 +1,7 @@
 use carbide_core::render::RenderContext;
-use carbide_macro::carbide_default_builder;
+use carbide_macro::carbide_default_builder2;
 
-use crate::{Color, CommonWidgetImpl};
+use crate::CommonWidgetImpl;
 use crate::draw::{Dimension, Position, Rect};
 use crate::environment::{Environment, EnvironmentColor};
 use crate::layout::Layout;
@@ -10,31 +10,33 @@ use crate::widget::*;
 
 #[derive(Debug, Clone, Widget)]
 #[carbide_exclude(Render, Layout)]
-pub struct Clip {
+pub struct Clip<W>
+where
+    W: Widget + Clone
+{
     id: WidgetId,
-    child: Box<dyn Widget>,
+    child: W,
     position: Position,
     dimension: Dimension,
 }
 
-impl Clip {
-    #[carbide_default_builder]
-    pub fn new(child: Box<dyn Widget>) -> Box<Self> {}
-
-    pub fn new(child: Box<dyn Widget>) -> Box<Self> {
+impl Clip<Empty> {
+    #[carbide_default_builder2]
+    pub fn new<W: Widget + Clone>(child: W) -> Box<Clip<W>> {
         Box::new(Clip {
             id: WidgetId::new(),
-            child: ZStack::new(vec![
+            child,
+            /*child: ZStack::new(vec![
                 Rectangle::new().stroke(EnvironmentColor::Red),
                 child
-            ]),
+            ]),*/
             position: Position::new(0.0, 0.0),
             dimension: Dimension::new(100.0, 100.0),
         })
     }
 }
 
-impl Layout for Clip {
+impl<W: Widget + Clone> Layout for Clip<W> {
     // Calculate the size of the child, but force clip to requested_size. This makes sure that if
     // the child is larger than the requested, that is is clipped.
     fn calculate_size(&mut self, requested_size: Dimension, env: &mut Environment) -> Dimension {
@@ -44,11 +46,11 @@ impl Layout for Clip {
     }
 }
 
-impl CommonWidget for Clip {
+impl<W: Widget + Clone> CommonWidget for Clip<W> {
     CommonWidgetImpl!(self, id: self.id, child: self.child, position: self.position, dimension: self.dimension);
 }
 
-impl Render for Clip {
+impl<W: Widget + Clone> Render for Clip<W> {
     fn render(&mut self, context: &mut RenderContext, env: &mut Environment) {
         // If the clip is completely out of frame
         if self.position.x + self.dimension.width < 0.0 {
@@ -113,4 +115,4 @@ impl Render for Clip {
     }
 }
 
-impl WidgetExt for Clip {}
+impl<W: Widget + Clone> WidgetExt for Clip<W> {}

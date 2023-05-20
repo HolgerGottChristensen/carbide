@@ -4,14 +4,14 @@ use lyon::tessellation::path::traits::PathBuilder;
 use lyon::tessellation::path::Winding;
 
 
-use carbide_macro::carbide_default_builder;
+use carbide_macro::{carbide_default_builder, carbide_default_builder2};
 
 use crate::{Color, CommonWidgetImpl};
 use crate::draw::{Dimension, Position};
-use crate::environment::Environment;
+use crate::environment::{Environment, EnvironmentColorState};
 use crate::environment::EnvironmentColor;
 use crate::render::{Primitive, Render, RenderContext, Style};
-use crate::state::{ReadState, RState, TState};
+use crate::state::{IntoState, ReadState, ReadStateExtNew, RState, TState};
 use crate::widget::{AdvancedColor, Blur, CommonWidget, CornerRadii, Widget, WidgetExt, WidgetId, ZStack};
 use crate::widget::shape::{Shape, tessellate};
 use crate::widget::types::PrimitiveStore;
@@ -21,31 +21,64 @@ use crate::widget::types::StrokeStyle;
 /// A basic, non-interactive rectangle shape widget.
 #[derive(Debug, Clone, Widget)]
 #[carbide_exclude(Render)]
-pub struct RoundedRectangle {
+pub struct RoundedRectangle<S, F> where S: ReadState<T=Style> + Clone, F: ReadState<T=Style> + Clone {
     id: WidgetId,
     position: Position,
     dimension: Dimension,
     corner_radii: CornerRadii,
     #[state]
-    stroke_color: TState<Style>,
+    stroke_color: S,
     #[state]
-    fill_color: TState<Style>,
+    fill_color: F,
     style: ShapeStyle,
     stroke_style: StrokeStyle,
     triangle_store: PrimitiveStore,
 }
 
-impl RoundedRectangle {
-    pub fn fill(mut self, color: impl Into<TState<Style>>) -> Box<Self> {
-        self.fill_color = color.into();
-        self.style += ShapeStyle::Fill;
-        Box::new(self)
+impl RoundedRectangle<EnvironmentColorState, EnvironmentColorState> {
+    #[carbide_default_builder2]
+    pub fn new(corner_radii: impl Into<CornerRadii>) -> Box<Self> {
+        Box::new(RoundedRectangle {
+            id: WidgetId::new(),
+            position: Position::new(0.0, 0.0),
+            dimension: Dimension::new(100.0, 100.0),
+            corner_radii: corner_radii.into(),
+            stroke_color: <EnvironmentColor as IntoState<Style>>::into_state(EnvironmentColor::Blue),
+            fill_color: <EnvironmentColor as IntoState<Style>>::into_state(EnvironmentColor::Blue),
+            style: ShapeStyle::Default,
+            stroke_style: StrokeStyle::Solid { line_width: 2.0 },
+            triangle_store: PrimitiveStore::new(),
+        })
+    }
+}
+
+impl<S2: ReadState<T=Style> + Clone, F2: ReadState<T=Style> + Clone> RoundedRectangle<S2, F2> {
+    pub fn fill<F: IntoState<Style>>(self, color: F) -> Box<RoundedRectangle<S2, F::Output>> {
+        Box::new(RoundedRectangle {
+            id: self.id,
+            position: self.position,
+            dimension: self.dimension,
+            corner_radii: self.corner_radii,
+            stroke_color: self.stroke_color,
+            fill_color: color.into_state(),
+            style: self.style + ShapeStyle::Fill,
+            stroke_style: self.stroke_style,
+            triangle_store: self.triangle_store,
+        })
     }
 
-    pub fn stroke(mut self, color: impl Into<TState<Style>>) -> Box<Self> {
-        self.stroke_color = color.into();
-        self.style += ShapeStyle::Stroke;
-        Box::new(self)
+    pub fn stroke<S: IntoState<Style>>(self, color: S) -> Box<RoundedRectangle<S::Output, F2>> {
+        Box::new(RoundedRectangle {
+            id: self.id,
+            position: self.position,
+            dimension: self.dimension,
+            corner_radii: self.corner_radii,
+            stroke_color: color.into_state(),
+            fill_color: self.fill_color,
+            style: self.style + ShapeStyle::Stroke,
+            stroke_style: self.stroke_style,
+            triangle_store: self.triangle_store,
+        })
     }
 
     pub fn stroke_style(mut self, line_width: f64) -> Box<Self> {
@@ -54,41 +87,24 @@ impl RoundedRectangle {
         Box::new(self)
     }
 
-    pub fn material(mut self, material: impl Into<TState<Color>>) -> Box<ZStack> {
+    /*pub fn material(mut self, material: impl Into<TState<Color>>) -> Box<ZStack> {
         let material_state = material.into();
         let advanced_material_state: RState<Style> = material_state.into();
-        self.fill_color = advanced_material_state.clone().ignore_writes();
-        self.stroke_color = advanced_material_state.clone().ignore_writes();
+        self.fill_color = advanced_material_state.ignore_writes();
+        self.stroke_color = advanced_material_state.ignore_writes();
 
         ZStack::new(vec![
-            Blur::gaussian(10.0).clip_shape(Box::new(self.clone())),
+            Blur::gaussian(10.0).clip_shape(self.clone()),
             Box::new(self),
         ])
-    }
-
-    #[carbide_default_builder]
-    pub fn new(corner_radii: impl Into<CornerRadii>) -> Box<RoundedRectangle> {}
-
-    pub fn new(corner_radii: impl Into<CornerRadii>) -> Box<RoundedRectangle> {
-        Box::new(RoundedRectangle {
-            id: WidgetId::new(),
-            position: Position::new(0.0, 0.0),
-            dimension: Dimension::new(100.0, 100.0),
-            corner_radii: corner_radii.into(),
-            stroke_color: EnvironmentColor::Blue.into(),
-            fill_color: EnvironmentColor::Blue.into(),
-            style: ShapeStyle::Default,
-            stroke_style: StrokeStyle::Solid { line_width: 2.0 },
-            triangle_store: PrimitiveStore::new(),
-        })
-    }
+    }*/
 }
 
-impl CommonWidget for RoundedRectangle {
+impl<S: ReadState<T=Style> + Clone, F: ReadState<T=Style> + Clone> CommonWidget for RoundedRectangle<S, F> {
     CommonWidgetImpl!(self, id: self.id, position: self.position, dimension: self.dimension);
 }
 
-impl Render for RoundedRectangle {
+impl<S: ReadState<T=Style> + Clone, F: ReadState<T=Style> + Clone> Render for RoundedRectangle<S, F> {
     fn render(&mut self, context: &mut RenderContext, _: &mut Environment) {
         let rectangle = rect(
             self.x() as f32,
@@ -161,7 +177,7 @@ impl Render for RoundedRectangle {
     }
 }
 
-impl Shape for RoundedRectangle {
+impl<S: ReadState<T=Style> + Clone, F: ReadState<T=Style> + Clone> Shape for RoundedRectangle<S, F> {
     fn get_triangle_store_mut(&mut self) -> &mut PrimitiveStore {
         &mut self.triangle_store
     }
@@ -175,4 +191,4 @@ impl Shape for RoundedRectangle {
     }
 }
 
-impl WidgetExt for RoundedRectangle {}
+impl<S: ReadState<T=Style> + Clone, F: ReadState<T=Style> + Clone> WidgetExt for RoundedRectangle<S, F> {}

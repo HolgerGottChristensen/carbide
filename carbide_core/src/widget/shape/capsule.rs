@@ -4,14 +4,14 @@ use lyon::tessellation::path::traits::PathBuilder;
 use lyon::tessellation::path::Winding;
 
 
-use carbide_macro::carbide_default_builder;
+use carbide_macro::{carbide_default_builder, carbide_default_builder2};
 
 use crate::{Color, CommonWidgetImpl};
 use crate::draw::{Dimension, Position};
-use crate::environment::Environment;
+use crate::environment::{Environment, EnvironmentColorState};
 use crate::environment::EnvironmentColor;
 use crate::render::{Primitive, Render, RenderContext, Style};
-use crate::state::{ReadState, RState, TState};
+use crate::state::{IntoState, ReadState, ReadStateExtNew, RState, TState};
 use crate::widget::{AdvancedColor, Blur, CommonWidget, Widget, WidgetExt, WidgetId, ZStack};
 use crate::widget::shape::{Shape, tessellate};
 use crate::widget::types::PrimitiveStore;
@@ -21,30 +21,60 @@ use crate::widget::types::StrokeStyle;
 /// A basic, non-interactive rectangle shape widget.
 #[derive(Debug, Clone, Widget)]
 #[carbide_exclude(Render)]
-pub struct Capsule {
+pub struct Capsule<S, F> where S: ReadState<T=Style> + Clone, F: ReadState<T=Style> + Clone {
     id: WidgetId,
     position: Position,
     dimension: Dimension,
     #[state]
-    stroke_color: TState<Style>,
+    stroke_color: S,
     #[state]
-    fill_color: TState<Style>,
+    fill_color: F,
     style: ShapeStyle,
     stroke_style: StrokeStyle,
     triangle_store: PrimitiveStore,
 }
 
-impl Capsule {
-    pub fn fill(mut self, color: impl Into<TState<Style>>) -> Box<Self> {
-        self.fill_color = color.into();
-        self.style += ShapeStyle::Fill;
-        Box::new(self)
+impl Capsule<EnvironmentColorState, EnvironmentColorState> {
+    #[carbide_default_builder2]
+    pub fn new() -> Box<Self> {
+        Box::new(Capsule {
+            id: WidgetId::new(),
+            position: Position::new(0.0, 0.0),
+            dimension: Dimension::new(100.0, 100.0),
+            stroke_color: EnvironmentColor::Blue.state(),
+            fill_color: EnvironmentColor::Blue.state(),
+            style: ShapeStyle::Default,
+            stroke_style: StrokeStyle::Solid { line_width: 2.0 },
+            triangle_store: PrimitiveStore::new(),
+        })
+    }
+}
+
+impl<S2: ReadState<T=Style> + Clone, F2: ReadState<T=Style> + Clone> Capsule<S2, F2> {
+    pub fn fill<F: IntoState<Style>>(self, color: F) -> Box<Capsule<S2, F::Output>> {
+        Box::new(Capsule {
+            id: self.id,
+            position: self.position,
+            dimension: self.dimension,
+            stroke_color: self.stroke_color,
+            fill_color: color.into_state(),
+            style: self.style + ShapeStyle::Fill,
+            stroke_style: self.stroke_style,
+            triangle_store: self.triangle_store,
+        })
     }
 
-    pub fn stroke(mut self, color: impl Into<TState<Style>>) -> Box<Self> {
-        self.stroke_color = color.into();
-        self.style += ShapeStyle::Stroke;
-        Box::new(self)
+    pub fn stroke<S: IntoState<Style>>(self, color: S) -> Box<Capsule<S::Output, F2>> {
+        Box::new(Capsule {
+            id: self.id,
+            position: self.position,
+            dimension: self.dimension,
+            stroke_color: color.into_state(),
+            fill_color: self.fill_color,
+            style: self.style + ShapeStyle::Stroke,
+            stroke_style: self.stroke_style,
+            triangle_store: self.triangle_store,
+        })
     }
 
     pub fn stroke_style(mut self, line_width: f64) -> Box<Self> {
@@ -53,40 +83,24 @@ impl Capsule {
         Box::new(self)
     }
 
-    pub fn material(mut self, material: impl Into<TState<Color>>) -> Box<ZStack> {
+    /*pub fn material(mut self, material: impl Into<TState<Color>>) -> Box<ZStack> {
         let material_state = material.into();
         let advanced_material_state: RState<Style> = material_state.into();
-        self.fill_color = advanced_material_state.clone().ignore_writes();
-        self.stroke_color = advanced_material_state.clone().ignore_writes();
+        self.fill_color = advanced_material_state.ignore_writes();
+        self.stroke_color = advanced_material_state.ignore_writes();
 
         ZStack::new(vec![
-            Blur::gaussian(10.0).clip_shape(Box::new(self.clone())),
+            Blur::gaussian(10.0).clip_shape(self.clone()),
             Box::new(self),
         ])
-    }
-
-    #[carbide_default_builder]
-    pub fn new() -> Box<Capsule> {}
-
-    pub fn new() -> Box<Capsule> {
-        Box::new(Capsule {
-            id: WidgetId::new(),
-            position: Position::new(0.0, 0.0),
-            dimension: Dimension::new(100.0, 100.0),
-            stroke_color: EnvironmentColor::Blue.into(),
-            fill_color: EnvironmentColor::Blue.into(),
-            style: ShapeStyle::Default,
-            stroke_style: StrokeStyle::Solid { line_width: 2.0 },
-            triangle_store: PrimitiveStore::new(),
-        })
-    }
+    }*/
 }
 
-impl CommonWidget for Capsule {
+impl<S: ReadState<T=Style> + Clone, F: ReadState<T=Style> + Clone> CommonWidget for Capsule<S, F> {
     CommonWidgetImpl!(self, id: self.id, position: self.position, dimension: self.dimension);
 }
 
-impl Shape for Capsule {
+impl<S: ReadState<T=Style> + Clone, F: ReadState<T=Style> + Clone> Shape for Capsule<S, F> {
     fn get_triangle_store_mut(&mut self) -> &mut PrimitiveStore {
         &mut self.triangle_store
     }
@@ -100,7 +114,7 @@ impl Shape for Capsule {
     }
 }
 
-impl Render for Capsule {
+impl<S: ReadState<T=Style> + Clone, F: ReadState<T=Style> + Clone> Render for Capsule<S, F> {
     fn render(&mut self, context: &mut RenderContext, _: &mut Environment) {
         let rect = rect(
             self.x() as f32,
@@ -169,4 +183,4 @@ impl Render for Capsule {
     }
 }
 
-impl WidgetExt for Capsule {}
+impl<S: ReadState<T=Style> + Clone, F: ReadState<T=Style> + Clone> WidgetExt for Capsule<S, F> {}

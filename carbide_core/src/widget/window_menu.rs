@@ -18,7 +18,7 @@ pub struct MenuBar {
 
 impl MenuBar {
     pub fn new(menus: Vec<Menu>, child: Box<dyn Widget>) -> Box<Self> {
-        let menus = ValueState::new(menus);
+        /*let menus = ValueState::new(menus);
         let child = VStack::new(vec![
             HStack::new(vec![
                 ForEach::new(menus.clone(), Self::menu_delegate),
@@ -37,7 +37,8 @@ impl MenuBar {
             menus,
             position: Default::default(),
             dimension: Default::default(),
-        })
+        })*/
+        todo!()
     }
 
     fn menu_delegate(item: TState<Menu>, index: TState<usize>) -> Box<dyn Widget> {

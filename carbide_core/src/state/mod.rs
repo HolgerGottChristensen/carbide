@@ -15,7 +15,7 @@ pub use self::env_state::EnvState;
 pub use self::field_state::*;
 pub use self::global_state::GlobalState;
 pub use self::ignore_writes_state::IgnoreWritesState;
-pub use self::index_state::IndexableState;
+//pub use self::index_state::IndexableState;
 pub use self::index_state::IndexState;
 pub use self::local_state::LocalState;
 pub use self::map_owned_state::*;
@@ -28,6 +28,7 @@ pub use self::state_sync::NewStateSync;
 pub use self::state_sync::StateSync;
 pub use self::value_state::ValueState;
 pub use self::widget_state::WidgetState;
+pub use self::into_state::IntoState;
 
 mod animated_state;
 mod local_state;
@@ -51,6 +52,7 @@ mod tuple_state;
 mod util;
 mod cache_state;
 mod global_state;
+mod into_state;
 
 pub type InnerState<T> = Rc<ValueCell<T>>;
 

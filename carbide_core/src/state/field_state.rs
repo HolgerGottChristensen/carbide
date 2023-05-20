@@ -81,14 +81,15 @@ impl<FROM: StateContract, TO: StateContract> NewStateSync for FieldState<FROM, T
     }
 }
 
-impl<FROM: StateContract, TO: StateContract> ReadState<TO> for FieldState<FROM, TO> {
+impl<FROM: StateContract, TO: StateContract> ReadState for FieldState<FROM, TO> {
+    type T = TO;
     fn value(&self) -> ValueRef<TO> {
         let map = self.map;
         ValueRef::map(self.state.value(), |a| map(a))
     }
 }
 
-impl<FROM: StateContract, TO: StateContract> State<TO> for FieldState<FROM, TO> {
+impl<FROM: StateContract, TO: StateContract> State for FieldState<FROM, TO> {
     fn value_mut(&mut self) -> ValueRefMut<TO> {
         let map_mut = self.map_mut;
         ValueRefMut::map(self.state.value_mut(), |a| map_mut(a))

@@ -1,5 +1,5 @@
-
-use carbide_macro::carbide_default_builder;
+use carbide_core::render::{RenderContext, Style};
+use carbide_macro::{carbide_default_builder, carbide_default_builder2};
 
 use crate::{Color, CommonWidgetImpl};
 use crate::draw::{Dimension, Position, Rect};
@@ -7,48 +7,56 @@ use crate::environment::Environment;
 use crate::layout::Layout;
 use crate::render::{Primitive, PrimitiveKind, Render};
 use crate::state::{ReadState, TState};
-use crate::widget::{CommonWidget, Widget, WidgetExt, WidgetId};
+use crate::widget::{CommonWidget, Empty, Widget, WidgetExt, WidgetId};
 
 /// A basic, non-interactive rectangle shape widget.
 #[derive(Debug, Clone, Widget)]
 #[carbide_exclude(Render, Layout)]
-pub struct Border {
+pub struct Border<W, C> where
+    W: Widget + Clone,
+    C: ReadState<T=Color> + Clone + 'static
+{
     id: WidgetId,
-    child: Box<dyn Widget>,
+    child: W,
     position: Position,
     dimension: Dimension,
-    #[state]
-    color: TState<Color>,
+    #[state] color: C,
     border_width: u32,
 }
 
-impl Border {
-    pub fn color(mut self, color: impl Into<TState<Color>>) -> Box<Self> {
-        self.color = color.into();
-        Box::new(self)
-    }
-
-    pub fn border_width(mut self, width: u32) -> Box<Self> {
-        self.border_width = width;
-        Box::new(self)
-    }
-
-    #[carbide_default_builder]
-    pub fn new(child: Box<dyn Widget>) -> Box<Self> {}
-
-    pub fn new(child: Box<dyn Widget>) -> Box<Self> {
+impl Border<Empty, Color> {
+    #[carbide_default_builder2]
+    pub fn new<W: Widget + Clone>(child: W) -> Box<Border<W, Color>> {
         Box::new(Border {
             id: WidgetId::new(),
             child,
             position: Position::new(0.0, 0.0),
             dimension: Dimension::new(100.0, 100.0),
-            color: Color::random().into(),
+            color: Color::random(),
             border_width: 2,
         })
     }
 }
 
-impl Layout for Border {
+impl<W: Widget + Clone, D: ReadState<T=Color> + Clone + 'static> Border<W, D> {
+    pub fn color<C: ReadState<T=Color> + Clone + 'static>(self, color: C) -> Box<Border<W, C>> {
+        Box::new(Border {
+            id: self.id,
+            child: self.child,
+            position: self.position,
+            dimension: self.dimension,
+            color,
+            border_width: 1,
+        })
+    }
+
+    pub fn border_width(mut self, width: u32) -> Box<Border<W, D>> {
+        self.border_width = width;
+        Box::new(self)
+    }
+}
+
+impl<W: Widget + Clone, C: ReadState<T=Color> + Clone + 'static> Layout for Border<W, C> {
     fn calculate_size(&mut self, requested_size: Dimension, env: &mut Environment) -> Dimension {
         let border_width = self.border_width as f64;
         let dimensions = Dimension::new(
@@ -80,11 +88,47 @@ impl Layout for Border {
     }
 }
 
-impl CommonWidget for Border {
+impl<W: Widget + Clone, C: ReadState<T=Color> + Clone + 'static> CommonWidget for Border<W, C> {
     CommonWidgetImpl!(self, id: self.id, child: self.child, position: self.position, dimension: self.dimension);
 }
 
-impl Render for Border {
+impl<W: Widget + Clone, C: ReadState<T=Color> + Clone + 'static> Render for Border<W, C> {
+    fn render(&mut self, context: &mut RenderContext, env: &mut Environment) {
+        let rect = Rect::new(self.position, self.dimension);
+        let (l, r, b, t) = rect.l_r_b_t();
+
+        let border_width = self.border_width as f64;
+
+        let left_border = Rect::new(
+            Position::new(l, b),
+            Dimension::new(border_width, rect.height()),
+        );
+        let right_border = Rect::new(
+            Position::new(r - border_width, b),
+            Dimension::new(border_width, rect.height()),
+        );
+
+        let top_border = Rect::new(
+            Position::new(l + border_width, b),
+            Dimension::new(rect.width() - border_width * 2.0, border_width),
+        );
+        let bottom_border = Rect::new(
+            Position::new(l + border_width, t - border_width),
+            Dimension::new(rect.width() - border_width * 2.0, border_width),
+        );
+
+        self.foreach_child_mut(&mut |child| {
+            child.render(context, env);
+        });
+
+        context.style(Style::Color(*self.color.value()), |this| {
+            this.rect(left_border);
+            this.rect(right_border);
+            this.rect(top_border);
+            this.rect(bottom_border);
+        })
+    }
+
     fn get_primitives(&mut self, primitives: &mut Vec<Primitive>, _env: &mut Environment) {
         let rect = Rect::new(self.position, self.dimension);
         let (l, r, b, t) = rect.l_r_b_t();
@@ -137,4 +181,4 @@ impl Render for Border {
     }
 }
 
-impl WidgetExt for Border {}
+impl<W: Widget + Clone, C: ReadState<T=Color> + Clone + 'static> WidgetExt for Border<W, C> {}

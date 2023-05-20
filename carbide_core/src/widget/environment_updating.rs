@@ -1,6 +1,6 @@
 use carbide_core::render::RenderContext;
 
-use carbide_macro::carbide_default_builder;
+use carbide_macro::{carbide_default_builder, carbide_default_builder2};
 
 use crate::CommonWidgetImpl;
 use crate::draw::{Dimension, Position};
@@ -12,23 +12,21 @@ use crate::event::{
 use crate::focus::{Focusable, Refocus};
 use crate::render::{Primitive, Render};
 use crate::state::{NewStateSync, ReadState};
-use crate::widget::{CommonWidget, Widget, WidgetExt, WidgetId};
+use crate::widget::{CommonWidget, Empty, Widget, WidgetExt, WidgetId};
 
 #[derive(Debug, Clone, Widget)]
 #[carbide_derive(Layout, StateSync)]
-pub struct EnvUpdating {
+pub struct EnvUpdating<C> where C: Widget + Clone {
     id: WidgetId,
-    child: Box<dyn Widget>,
+    child: C,
     position: Position,
     dimension: Dimension,
     envs_to_update: Vec<EnvironmentStateContainer>,
 }
 
-impl EnvUpdating {
-    #[carbide_default_builder]
-    pub fn new(child: Box<dyn Widget>) -> Box<Self> {}
-
-    pub fn new(child: Box<dyn Widget>) -> Box<Self> {
+impl EnvUpdating<Empty> {
+    #[carbide_default_builder2]
+    pub fn new<C: Widget + Clone>(child: C) -> Box<EnvUpdating<C>> {
         Box::new(EnvUpdating {
             id: WidgetId::new(),
             child,
@@ -37,7 +35,9 @@ impl EnvUpdating {
             envs_to_update: vec![],
         })
     }
+}
 
+impl<C: Widget + Clone> EnvUpdating<C> {
     pub fn add(&mut self, env_to_update: EnvironmentStateContainer) {
         self.envs_to_update.push(env_to_update);
     }
@@ -115,7 +115,7 @@ impl EnvUpdating {
     }
 }
 
-impl OtherEventHandler for EnvUpdating {
+impl<C: Widget + Clone> OtherEventHandler for EnvUpdating<C> {
     fn process_other_event(&mut self, event: &WidgetEvent, env: &mut Environment) {
         self.insert_into_env(env);
 
@@ -125,7 +125,7 @@ impl OtherEventHandler for EnvUpdating {
     }
 }
 
-impl KeyboardEventHandler for EnvUpdating {
+impl<C: Widget + Clone> KeyboardEventHandler for EnvUpdating<C> {
     fn process_keyboard_event(&mut self, event: &KeyboardEvent, env: &mut Environment) {
         self.insert_into_env(env);
 
@@ -135,7 +135,7 @@ impl KeyboardEventHandler for EnvUpdating {
     }
 }
 
-impl MouseEventHandler for EnvUpdating {
+impl<C: Widget + Clone> MouseEventHandler for EnvUpdating<C> {
     fn process_mouse_event(&mut self, event: &MouseEvent, consumed: &bool, env: &mut Environment) {
         self.insert_into_env(env);
 
@@ -145,7 +145,7 @@ impl MouseEventHandler for EnvUpdating {
     }
 }
 
-impl Focusable for EnvUpdating {
+impl<C: Widget + Clone> Focusable for EnvUpdating<C> {
     fn process_focus_request(
         &mut self,
         event: &WidgetEvent,
@@ -194,7 +194,7 @@ impl Focusable for EnvUpdating {
     }
 }
 
-impl Render for EnvUpdating {
+impl<C: Widget + Clone> Render for EnvUpdating<C> {
     fn render(&mut self, context: &mut RenderContext, env: &mut Environment) {
         self.insert_into_env(env);
 
@@ -216,8 +216,8 @@ impl Render for EnvUpdating {
     }
 }
 
-impl CommonWidget for EnvUpdating {
+impl<C: Widget + Clone> CommonWidget for EnvUpdating<C> {
     CommonWidgetImpl!(self, id: self.id, child: self.child, position: self.position, dimension: self.dimension);
 }
 
-impl WidgetExt for EnvUpdating {}
+impl<C: Widget + Clone> WidgetExt for EnvUpdating<C> {}

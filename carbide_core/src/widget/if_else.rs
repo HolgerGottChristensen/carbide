@@ -23,7 +23,7 @@ use crate::widget::{CommonWidget, Empty, Widget, WidgetExt, WidgetId, WidgetIter
 pub struct IfElse<T, F, S> where
     T: Widget + Clone,
     F: Widget + Clone,
-    S: ReadState<bool> + Clone + 'static
+    S: ReadState<T=bool> + Clone + 'static
 {
     id: WidgetId,
     position: Position,
@@ -36,7 +36,7 @@ pub struct IfElse<T, F, S> where
 impl IfElse<Empty, Empty, bool> {
 
     #[carbide_default_builder2]
-    pub fn new<S: ReadState<bool> + Clone + 'static>(predicate: S) -> Box<IfElse<Empty, Empty, S>> {
+    pub fn new<S: ReadState<T=bool> + Clone + 'static>(predicate: S) -> Box<IfElse<Empty, Empty, S>> {
         Box::new(IfElse {
             id: WidgetId::new(),
             predicate,
@@ -49,7 +49,7 @@ impl IfElse<Empty, Empty, bool> {
 
 }
 
-impl<T: Widget + Clone, F: Widget + Clone, S: ReadState<bool> + Clone + 'static> IfElse<T, F, S> {
+impl<T: Widget + Clone, F: Widget + Clone, S: ReadState<T=bool> + Clone + 'static> IfElse<T, F, S> {
     pub fn when_true<T2: Widget + Clone>(self, when_true: T2) -> Box<IfElse<T2, F, S>> {
         Box::new(IfElse {
             id: self.id,
@@ -73,7 +73,7 @@ impl<T: Widget + Clone, F: Widget + Clone, S: ReadState<bool> + Clone + 'static>
     }
 }
 
-impl<T: Widget + Clone, F: Widget + Clone, S: ReadState<bool> + Clone + 'static> CommonWidget for IfElse<T, F, S> {
+impl<T: Widget + Clone, F: Widget + Clone, S: ReadState<T=bool> + Clone + 'static> CommonWidget for IfElse<T, F, S> {
     fn id(&self) -> WidgetId {
         self.id
     }
@@ -193,4 +193,4 @@ impl<T: Widget + Clone, F: Widget + Clone, S: ReadState<bool> + Clone + 'static>
     }
 }
 
-impl<T: Widget + Clone, F: Widget + Clone, S: ReadState<bool> + Clone + 'static> WidgetExt for IfElse<T, F, S> {}
+impl<T: Widget + Clone, F: Widget + Clone, S: ReadState<T=bool> + Clone + 'static> WidgetExt for IfElse<T, F, S> {}

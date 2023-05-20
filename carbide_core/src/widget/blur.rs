@@ -1,6 +1,6 @@
 use carbide_core::CommonWidgetImpl;
 
-use carbide_macro::carbide_default_builder;
+use carbide_macro::{carbide_default_builder, carbide_default_builder2};
 
 use crate::draw::{Dimension, Position, Rect};
 use crate::environment::Environment;
@@ -23,9 +23,7 @@ pub struct Blur {
 
 impl Blur {
 
-    #[carbide_default_builder]
-    pub fn gaussian(sigma: f32) -> Box<Self> {}
-
+    #[carbide_default_builder2]
     pub fn gaussian(sigma: f32) -> Box<Self> {
         Box::new(Blur {
             id: WidgetId::new(),

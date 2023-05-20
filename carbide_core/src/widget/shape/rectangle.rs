@@ -5,15 +5,15 @@ use carbide_core::render::{RenderContext, Style};
 use carbide_core::state::StateSync;
 
 
-use carbide_macro::carbide_default_builder;
+use carbide_macro::{carbide_default_builder, carbide_default_builder2};
 
 use crate::{Color, CommonWidgetImpl, Scalar};
 use crate::color::WHITE;
 use crate::draw::{Dimension, Position, Rect};
-use crate::environment::Environment;
+use crate::environment::{Environment, EnvironmentColorState};
 use crate::environment::EnvironmentColor;
 use crate::render::{Primitive, PrimitiveKind, Render};
-use crate::state::{ReadState, RState, TState};
+use crate::state::{ReadState, RState, TState, IntoState};
 use crate::widget::{AdvancedColor, Blur, CommonWidget, Widget, WidgetExt, WidgetId, ZStack};
 use crate::widget::shape::{Shape, tessellate};
 use crate::widget::types::PrimitiveStore;
@@ -23,48 +23,61 @@ use crate::widget::types::StrokeStyle;
 /// A basic, non-interactive rectangle shape widget.
 #[derive(Debug, Clone, Widget)]
 #[carbide_exclude(Render)]
-pub struct Rectangle {
+pub struct Rectangle<S, F> where S: ReadState<T=Style> + Clone, F: ReadState<T=Style> + Clone {
     id: WidgetId,
     position: Position,
     dimension: Dimension,
     #[state]
-    fill_color: TState<Style>,
+    fill_color: F,
     #[state]
-    stroke_color: TState<Style>,
+    stroke_color: S,
     style: ShapeStyle,
     stroke_style: StrokeStyle,
     // Store the triangles for the border
     triangle_store: PrimitiveStore,
 }
 
-impl Rectangle {
-
-    #[carbide_default_builder]
-    pub fn new() -> Box<Rectangle> {}
-
-    pub fn new() -> Box<Rectangle> {
+impl Rectangle<EnvironmentColorState, EnvironmentColorState> {
+    #[carbide_default_builder2]
+    pub fn new() -> Box<Self> {
         Box::new(Rectangle {
             id: WidgetId::new(),
             position: Position::new(0.0, 0.0),
             dimension: Dimension::new(100.0, 100.0),
-            fill_color: EnvironmentColor::Blue.into(),
-            stroke_color: EnvironmentColor::Blue.into(),
+            fill_color: <EnvironmentColor as IntoState<Style>>::into_state(EnvironmentColor::Blue),
+            stroke_color: <EnvironmentColor as IntoState<Style>>::into_state(EnvironmentColor::Blue),
             style: ShapeStyle::Default,
             stroke_style: StrokeStyle::Solid { line_width: 2.0 },
             triangle_store: PrimitiveStore::new(),
         })
     }
+}
 
-    pub fn fill(mut self, color: impl Into<TState<Style>>) -> Box<Self> {
-        self.fill_color = color.into();
-        self.style += ShapeStyle::Fill;
-        Box::new(self)
+impl<S2: ReadState<T=Style> + Clone, F2: ReadState<T=Style> + Clone> Rectangle<S2, F2> {
+    pub fn fill<F: IntoState<Style>>(self, color: F) -> Box<Rectangle<S2, F::Output>> {
+        Box::new(Rectangle {
+            id: self.id,
+            position: self.position,
+            dimension: self.dimension,
+            stroke_color: self.stroke_color,
+            fill_color: color.into_state(),
+            style: self.style + ShapeStyle::Fill,
+            stroke_style: self.stroke_style,
+            triangle_store: self.triangle_store,
+        })
     }
 
-    pub fn stroke(mut self, color: impl Into<TState<Style>>) -> Box<Self> {
-        self.stroke_color = color.into();
-        self.style += ShapeStyle::Stroke;
-        Box::new(self)
+    pub fn stroke<S: IntoState<Style>>(self, color: S) -> Box<Rectangle<S::Output, F2>> {
+        Box::new(Rectangle {
+            id: self.id,
+            position: self.position,
+            dimension: self.dimension,
+            stroke_color: color.into_state(),
+            fill_color: self.fill_color,
+            style: self.style + ShapeStyle::Stroke,
+            stroke_style: self.stroke_style,
+            triangle_store: self.triangle_store,
+        })
     }
 
     pub fn stroke_style(mut self, line_width: f64) -> Box<Self> {
@@ -73,14 +86,14 @@ impl Rectangle {
         Box::new(self)
     }
 
-    pub fn material(mut self, material: impl Into<TState<Color>>) -> Box<ZStack> {
+    /*pub fn material(mut self, material: impl Into<TState<Color>>) -> Box<ZStack> {
         let material_state = material.into();
         let advanced_material_state: RState<Style> = material_state.into();
         self.fill_color = advanced_material_state.clone().ignore_writes();
         self.stroke_color = advanced_material_state.clone().ignore_writes();
 
         ZStack::new(vec![Blur::gaussian(10.0), Box::new(self)])
-    }
+    }*/
 
     pub fn position(mut self, position: Position) -> Box<Self> {
         self.position = position;
@@ -173,11 +186,11 @@ impl Rectangle {
     }*/
 }
 
-impl CommonWidget for Rectangle {
+impl<S: ReadState<T=Style> + Clone, F: ReadState<T=Style> + Clone> CommonWidget for Rectangle<S, F> {
     CommonWidgetImpl!(self, id: self.id, position: self.position, dimension: self.dimension);
 }
 
-impl Render for Rectangle {
+impl<S: ReadState<T=Style> + Clone, F: ReadState<T=Style> + Clone> Render for Rectangle<S, F> {
     fn render(&mut self, context: &mut RenderContext, env: &mut Environment) {
 
         self.capture_state(env);
@@ -230,7 +243,7 @@ impl Render for Rectangle {
     }
 }
 
-impl Shape for Rectangle {
+impl<S: ReadState<T=Style> + Clone, F: ReadState<T=Style> + Clone> Shape for Rectangle<S, F> {
     fn get_triangle_store_mut(&mut self) -> &mut PrimitiveStore {
         &mut self.triangle_store
     }
@@ -244,4 +257,4 @@ impl Shape for Rectangle {
     }
 }
 
-impl WidgetExt for Rectangle {}
+impl<S: ReadState<T=Style> + Clone, F: ReadState<T=Style> + Clone> WidgetExt for Rectangle<S, F> {}

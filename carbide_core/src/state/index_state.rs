@@ -1,4 +1,5 @@
 use std::fmt::{Debug, Formatter};
+use std::marker::PhantomData;
 use std::ops::{Deref, Index, IndexMut};
 
 use carbide_core::state::NewStateSync;
@@ -13,18 +14,41 @@ use crate::state::widget_state::WidgetState;
 /// Index state is a general implementation that can take any state that is Index and IndexMut
 /// with the same Idx and the same Output, and return a state containing that Output.
 #[derive(Clone)]
-pub struct IndexState<T, U, Idx>
+pub struct IndexState<T, U, Idx, ST, SIdx>
 where
     T: StateContract + Index<Idx, Output=U> + IndexMut<Idx, Output=U>,
     U: StateContract,
     Idx: StateContract,
+    ST: State<T=T> + Clone + 'static,
+    SIdx: ReadState<T=Idx> + Clone + 'static,
 {
     /// The state that is evaluated whenever trying to get the index within the vec.
-    index_state: RState<Idx>,
+    index_state: SIdx,
     /// The state containing the vec.
-    indexable_state: TState<T>,
+    indexable_state: ST,
+    phantom_t: PhantomData<T>,
+    phantom_u: PhantomData<U>,
+    phantom_idx: PhantomData<Idx>,
 }
 
+impl IndexState<Vec<()>, (), usize, Vec<()>, usize> {
+    pub fn new<T, U, Idx, ST, SIdx>(indexable: ST, index: SIdx) -> IndexState<T, U, Idx, ST, SIdx> where
+        T: StateContract + Index<Idx, Output=U> + IndexMut<Idx, Output=U>,
+        U: StateContract,
+        Idx: StateContract,
+        ST: State<T=T> + Clone + 'static,
+        SIdx: ReadState<T=Idx> + Clone + 'static
+    {
+        IndexState {
+            indexable_state: indexable,
+            index_state: index,
+            phantom_t: Default::default(),
+            phantom_u: Default::default(),
+            phantom_idx: Default::default(),
+        }
+    }
+}
+/*
 impl<T, U, Idx> IndexState<T, U, Idx>
 where T: StateContract + Index<Idx, Output=U> + IndexMut<Idx, Output=U>,
       U: StateContract,
@@ -56,11 +80,16 @@ where T: StateContract + Index<Idx, Output=U> + IndexMut<Idx, Output=U>,
         }
     }
 }
+*/
 
-impl<T, U, Idx> NewStateSync for IndexState<T, U, Idx>
-where T: StateContract + Index<Idx, Output=U> + IndexMut<Idx, Output=U>,
-      U: StateContract,
-      Idx: StateContract,
+
+impl<T, U, Idx, ST, SIdx> NewStateSync for IndexState<T, U, Idx, ST, SIdx>
+where
+    T: StateContract + Index<Idx, Output=U> + IndexMut<Idx, Output=U>,
+    U: StateContract,
+    Idx: StateContract,
+    ST: State<T=T> + Clone + 'static,
+    SIdx: ReadState<T=Idx> + Clone + 'static
 {
     fn sync(&mut self, env: &mut Environment) -> bool {
         let mut should_update = false;
@@ -71,21 +100,28 @@ where T: StateContract + Index<Idx, Output=U> + IndexMut<Idx, Output=U>,
     }
 }
 
-impl<T, U, Idx> ReadState<U> for IndexState<T, U, Idx>
-where T: StateContract + Index<Idx, Output=U> + IndexMut<Idx, Output=U>,
-      U: StateContract,
-      Idx: StateContract
+impl<T, U, Idx, ST, SIdx> ReadState for IndexState<T, U, Idx, ST, SIdx>
+where
+    T: StateContract + Index<Idx, Output=U> + IndexMut<Idx, Output=U>,
+    U: StateContract,
+    Idx: StateContract,
+    ST: State<T=T> + Clone + 'static,
+    SIdx: ReadState<T=Idx> + Clone + 'static
 {
+    type T = U;
     fn value(&self) -> ValueRef<U> {
         let index = self.index_state.value().deref().clone();
         ValueRef::map(self.indexable_state.value(), |a| &a[index])
     }
 }
 
-impl<T, U, Idx> State<U> for IndexState<T, U, Idx>
-where T: StateContract + Index<Idx, Output=U> + IndexMut<Idx, Output=U>,
-      U: StateContract,
-      Idx: StateContract
+impl<T, U, Idx, ST, SIdx> State for IndexState<T, U, Idx, ST, SIdx>
+where
+    T: StateContract + Index<Idx, Output=U> + IndexMut<Idx, Output=U>,
+    U: StateContract,
+    Idx: StateContract,
+    ST: State<T=T> + Clone + 'static,
+    SIdx: ReadState<T=Idx> + Clone + 'static
 {
     fn value_mut(&mut self) -> ValueRefMut<U> {
         let index = self.index_state.value().deref().clone();
@@ -97,10 +133,13 @@ where T: StateContract + Index<Idx, Output=U> + IndexMut<Idx, Output=U>,
     }
 }
 
-impl<T, U, Idx> Debug for IndexState<T, U, Idx>
-where T: StateContract + Index<Idx, Output=U> + IndexMut<Idx, Output=U>,
-      U: StateContract,
-      Idx: StateContract
+impl<T, U, Idx, ST, SIdx> Debug for IndexState<T, U, Idx, ST, SIdx>
+where
+    T: StateContract + Index<Idx, Output=U> + IndexMut<Idx, Output=U>,
+    U: StateContract,
+    Idx: StateContract,
+    ST: State<T=T> + Clone + 'static,
+    SIdx: ReadState<T=Idx> + Clone + 'static
 {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("VecState")
@@ -110,27 +149,8 @@ where T: StateContract + Index<Idx, Output=U> + IndexMut<Idx, Output=U>,
     }
 }
 
-impl<T, U, Idx> Into<TState<U>> for IndexState<T, U, Idx>
-where T: StateContract + Index<Idx, Output=U> + IndexMut<Idx, Output=U>,
-      U: StateContract,
-      Idx: StateContract
-{
-    fn into(self) -> TState<U> {
-        WidgetState::new(Box::new(self))
-    }
-}
 
-impl<T, U, Idx> Into<TState<U>> for Box<IndexState<T, U, Idx>>
-where T: StateContract + Index<Idx, Output=U> + IndexMut<Idx, Output=U>,
-      U: StateContract,
-      Idx: StateContract
-{
-    fn into(self) -> TState<U> {
-        WidgetState::new(self)
-    }
-}
-
-pub trait IndexableState<T, U, Idx>
+/*pub trait IndexableState<T, U, Idx>
 where T: StateContract + Index<Idx, Output=U> + IndexMut<Idx, Output=U>,
       U: StateContract,
       Idx: StateContract {
@@ -144,4 +164,4 @@ where T: Index<Idx, Output=U> + IndexMut<Idx, Output=U> + StateContract,
     fn index(&self, index: &TState<Idx>) -> TState<U> {
         IndexState::<T, U, Idx>::new(self.clone(), RState::new_from_read_write_state(index.clone()))
     }
-}
+}*/

@@ -42,7 +42,7 @@ impl<'a> RenderContext<'a> {
         res
     }
 
-    pub fn stencil<R, F: FnOnce(&mut RenderContext) -> R>(&mut self, geometry: &Vec<Triangle<Position>>, f: F) -> R {
+    pub fn stencil<R, F: FnOnce(&mut RenderContext) -> R>(&mut self, geometry: &[Triangle<Position>], f: F) -> R {
         self.inner.stencil(geometry);
         let res = f(self);
         self.inner.pop_stencil();
@@ -50,12 +50,27 @@ impl<'a> RenderContext<'a> {
     }
 
     /// Renders the geometry with the current style
-    pub fn geometry(&mut self, geometry: &Vec<Triangle<Position>>) {
+    pub fn geometry(&mut self, geometry: &[Triangle<Position>]) {
         if geometry.is_empty() {
             return;
         }
 
         self.inner.geometry(geometry);
+    }
+
+    pub fn rect(&mut self, rect: Rect) {
+        self.geometry(&[
+            Triangle([
+                rect.position,
+                Position::new(rect.position.x + rect.width(), rect.position.y),
+                Position::new(rect.position.x, rect.position.y + rect.height()),
+            ]),
+            Triangle([
+                Position::new(rect.position.x + rect.width(), rect.position.y),
+                Position::new(rect.position.x + rect.width(), rect.position.y + rect.height()),
+                Position::new(rect.position.x, rect.position.y + rect.height()),
+            ]),
+        ])
     }
 
     pub fn style<R, F: FnOnce(&mut RenderContext) -> R>(&mut self, style: Style, f: F) -> R {
@@ -69,7 +84,7 @@ impl<'a> RenderContext<'a> {
         self.inner.image(id, bounding_box, source_rect, mode);
     }
 
-    pub fn text(&mut self, text: &Vec<Glyph>) {
+    pub fn text(&mut self, text: &[Glyph]) {
         self.inner.text(text);
     }
 }
@@ -83,18 +98,19 @@ pub trait InnerRenderContext {
 
     fn filter(&mut self, id: FilterId);
 
-    fn stencil(&mut self, geometry: &Vec<Triangle<Position>>);
+    fn stencil(&mut self, geometry: &[Triangle<Position>]);
     fn pop_stencil(&mut self);
 
     /// Renders the geometry with the current style
-    fn geometry(&mut self, geometry: &Vec<Triangle<Position>>);
+    fn geometry(&mut self, geometry: &[Triangle<Position>]);
 
+    // TODO: Consider making it take a reference to Style
     fn style(&mut self, style: Style);
     fn pop_style(&mut self);
 
     fn image(&mut self, id: ImageId, bounding_box: Rect, source_rect: Rect, mode: u32);
 
-    fn text(&mut self, text: &Vec<Glyph>);
+    fn text(&mut self, text: &[Glyph]);
 }
 
 pub struct NoopRenderContext;
@@ -110,11 +126,11 @@ impl InnerRenderContext for NoopRenderContext {
 
     fn filter(&mut self, id: FilterId) {}
 
-    fn stencil(&mut self, geometry: &Vec<Triangle<Position>>) {}
+    fn stencil(&mut self, geometry: &[Triangle<Position>]) {}
 
     fn pop_stencil(&mut self) {}
 
-    fn geometry(&mut self, geometry: &Vec<Triangle<Position>>) {}
+    fn geometry(&mut self, geometry: &[Triangle<Position>]) {}
 
     fn style(&mut self, style: Style) {}
 
@@ -122,5 +138,5 @@ impl InnerRenderContext for NoopRenderContext {
 
     fn image(&mut self, id: ImageId, bounding_box: Rect, source_rect: Rect, mode: u32) {}
 
-    fn text(&mut self, text: &Vec<Glyph>) {}
+    fn text(&mut self, text: &[Glyph]) {}
 }

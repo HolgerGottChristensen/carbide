@@ -1,16 +1,27 @@
-use crate::state::{Map1, MapOwnedState, RState, StateContract, TState};
+use std::io::Read;
+use carbide_core::state::ReadState;
+use crate::state::{IgnoreWritesState, Map1, RMap1, RState, State, StateContract, TState};
 use crate::state::widget_state::Map;
 
 pub trait StateExt<T>: Into<TState<T>> + Clone
 where
     T: StateContract,
 {
-    /// Example: size.mapped(|t: &f64| { format!("{:.2}", t) })
-    fn mapped<TO: StateContract + Default + 'static, M: Map<T, TO> + Clone>(
-        &self,
-        map: M,
-    ) -> TState<TO> {
-        MapOwnedState::<T, TO>::new(self.clone(), move |s: &T, _: &_, _: &_| map(s)).into()
+    // /// Example: size.mapped(|t: &f64| { format!("{:.2}", t) })
+    // fn mapped<TO: StateContract + Default + 'static, M: Map<T, TO> + Clone>(
+    //     &self,
+    //     map: M,
+    // ) -> TState<TO> {
+    //     MapOwnedState::<T, TO>::new(self.clone(), move |s: &T, _: &_, _: &_| map(s)).into()
+    // }
+}
+
+impl<T: StateContract, U> StateExt<T> for U where U: Into<TState<T>> + Clone {}
+
+
+pub trait StateExtNew<T>: State<T=T> + Sized + Clone + 'static where T: StateContract {
+    fn as_dyn(&self) -> Box<dyn State<T=T>> {
+        Box::new(self.clone())
     }
 
     /// This map a state to another state. The resulting state is read-only.
@@ -19,10 +30,22 @@ where
     /// Example: size.map(|t: &f64| { format!("{:.2}", t) })
     ///
     /// This will return a RState<String> that will stay updated with the size
-    fn map<TO: StateContract>(&self, map: fn(s: &T) -> TO) -> RState<TO> {
-        let i: TState<T> = self.clone().into();
-        Map1::read_map(i, map)
+    fn map<TO: StateContract>(&self, map: fn(s: &T) -> TO) -> RMap1<fn(s: &T) -> TO, T, TO, Self> {
+        Map1::read_map(self.clone(), map)
     }
 }
 
-impl<T: StateContract, U> StateExt<T> for U where U: Into<TState<T>> + Clone {}
+impl<T: StateContract, S> StateExtNew<T> for S where S: State<T=T> + Sized + Clone + 'static {}
+
+
+pub trait ReadStateExtNew<T>: ReadState<T=T> + Sized + Clone + 'static where T: StateContract {
+    fn as_dyn_read(&self) -> Box<dyn ReadState<T=T>> {
+        Box::new(self.clone())
+    }
+
+    fn ignore_writes(&self) -> IgnoreWritesState<T, Self> {
+        IgnoreWritesState::new(self.clone())
+    }
+}
+
+impl<T: StateContract, S> ReadStateExtNew<T> for S where S: ReadState<T=T> + Sized + Clone + 'static {}

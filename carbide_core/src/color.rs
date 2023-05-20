@@ -15,6 +15,8 @@ use std::time::{SystemTime, UNIX_EPOCH};
 use rand::Rng;
 
 use crate::animation::Animatable;
+use crate::render::Style;
+use crate::state::IntoState;
 use crate::utils::{fmod, turns_to_radians};
 
 /// Color supporting RGB and HSL variants.
@@ -750,4 +752,12 @@ fn plain_contrast_should_weight_colors() {
     assert_eq!(r, 1.0);
     assert_eq!(g, 1.0);
     assert_eq!(b, 1.0);
+}
+
+impl IntoState<Style> for Color {
+    type Output = Style;
+
+    fn into_state(self) -> Self::Output {
+        Style::Color(self)
+    }
 }

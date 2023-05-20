@@ -30,7 +30,8 @@ impl<T: StateContract> NewStateSync for Flatten<T> {
     }
 }
 
-impl<T: StateContract> ReadState<T> for Flatten<T> {
+impl<T: StateContract> ReadState for Flatten<T> {
+    type T = T;
     fn value(&self) -> ValueRef<T> {
         self.current_inner
             .as_ref()
@@ -39,7 +40,7 @@ impl<T: StateContract> ReadState<T> for Flatten<T> {
     }
 }
 
-impl<T: StateContract> State<T> for Flatten<T> {
+impl<T: StateContract> State for Flatten<T> {
     fn value_mut(&mut self) -> ValueRefMut<T> {
         panic!("You can not set the value of a map state this way. Please use the set_state macro instead")
     }

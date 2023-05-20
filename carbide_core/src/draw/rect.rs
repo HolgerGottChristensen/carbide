@@ -20,10 +20,12 @@ impl Rect {
         }
     }
 
+    #[inline]
     pub fn width(&self) -> Scalar {
         self.dimension.width
     }
 
+    #[inline]
     pub fn height(&self) -> Scalar {
         self.dimension.height
     }
