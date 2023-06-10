@@ -1,5 +1,5 @@
-
-use carbide_macro::carbide_default_builder;
+use carbide_core::state::IntoReadState;
+use carbide_macro::{carbide_default_builder, carbide_default_builder2};
 
 use crate::CommonWidgetImpl;
 use crate::cursor::MouseCursor;
@@ -7,81 +7,37 @@ use crate::draw::{Dimension, Position};
 use crate::environment::Environment;
 use crate::event::{MouseEvent, MouseEventHandler, OtherEventHandler, WidgetEvent};
 use crate::layout::Layout;
-use crate::state::{LocalState, ReadState, State, TState};
+use crate::state::{IntoState, LocalState, ReadState, State, TState};
 use crate::widget::{CommonWidget, CrossAxisAlignment, SplitType, Widget, WidgetExt, WidgetId};
 
 #[derive(Clone, Debug, Widget)]
 #[carbide_exclude(Layout, MouseEvent, OtherEvent)]
-pub struct HSplit {
+pub struct HSplit<T> where T: State<T=f64> + Clone {
     id: WidgetId,
     position: Position,
     dimension: Dimension,
     // Leading - Trailing
     children: Vec<Box<dyn Widget>>,
-    split: SplitType,
+    split: SplitType<T>,
     cross_axis_alignment: CrossAxisAlignment,
     dragging: bool,
     hovering: bool,
     draggable: bool,
 }
 
-impl HSplit {
+impl HSplit<f64> {
 
-    #[carbide_default_builder]
-    pub fn new(leading: Box<dyn Widget>, trailing: Box<dyn Widget>) -> Box<Self> {}
-
+    #[carbide_default_builder2]
     pub fn new(leading: Box<dyn Widget>, trailing: Box<dyn Widget>) -> Box<Self> {
-        let split = LocalState::new(0.1);
-        Self::new_internal(leading, trailing, SplitType::Percent(split), true)
+        Self::new_internal(leading, trailing, SplitType::Percent(0.1), true)
     }
 
-    pub fn relative_to_start(mut self, width: impl Into<TState<f64>>) -> Box<Self> {
-        Self::new_internal(
-            self.children.remove(0),
-            self.children.remove(0),
-            SplitType::Start(width.into()),
-            self.draggable,
-        )
-    }
-
-    pub fn percent(mut self, percent: impl Into<TState<f64>>) -> Box<Self> {
-        Self::new_internal(
-            self.children.remove(0),
-            self.children.remove(0),
-            SplitType::Percent(percent.into()),
-            self.draggable,
-        )
-    }
-
-    pub fn non_draggable(mut self) -> Box<Self> {
-        Self::new_internal(
-            self.children.remove(0),
-            self.children.remove(0),
-            self.split,
-            false,
-        )
-    }
-
-    pub fn relative_to_end(mut self, width: impl Into<TState<f64>>) -> Box<Self> {
-        Self::new_internal(
-            self.children.remove(0),
-            self.children.remove(0),
-            SplitType::End(width.into()),
-            self.draggable,
-        )
-    }
-
-    pub fn cross_axis_alignment(mut self, alignment: CrossAxisAlignment) -> Box<Self> {
-        self.cross_axis_alignment = alignment;
-        Box::new(self)
-    }
-
-    fn new_internal(
+    fn new_internal<T: State<T=f64> + Clone>(
         leading: Box<dyn Widget>,
         trailing: Box<dyn Widget>,
-        split: SplitType,
+        split: SplitType<T>,
         draggable: bool,
-    ) -> Box<Self> {
+    ) -> Box<HSplit<T>> {
         Box::new(HSplit {
             id: WidgetId::new(),
             position: Default::default(),
@@ -96,7 +52,50 @@ impl HSplit {
     }
 }
 
-impl OtherEventHandler for HSplit {
+impl<T: State<T=f64> + Clone> HSplit<T> {
+    pub fn relative_to_start<T2: IntoState<f64>>(mut self, width: T2) -> Box<HSplit<T2::Output>> {
+        HSplit::new_internal(
+            self.children.remove(0),
+            self.children.remove(0),
+            SplitType::Start(width.into_state()),
+            self.draggable,
+        )
+    }
+
+    pub fn percent<T2: IntoState<f64>>(mut self, percent: T2) -> Box<HSplit<T2::Output>> {
+        HSplit::new_internal(
+            self.children.remove(0),
+            self.children.remove(0),
+            SplitType::Percent(percent.into_state()),
+            self.draggable,
+        )
+    }
+
+    pub fn relative_to_end<T2: IntoState<f64>>(mut self, width: T2) -> Box<HSplit<T2::Output>> {
+        HSplit::new_internal(
+            self.children.remove(0),
+            self.children.remove(0),
+            SplitType::End(width.into_state()),
+            self.draggable,
+        )
+    }
+
+    pub fn non_draggable(mut self) -> Box<Self> {
+        HSplit::new_internal(
+            self.children.remove(0),
+            self.children.remove(0),
+            self.split,
+            false,
+        )
+    }
+
+    pub fn cross_axis_alignment(mut self, alignment: CrossAxisAlignment) -> Box<Self> {
+        self.cross_axis_alignment = alignment;
+        Box::new(self)
+    }
+}
+
+impl<T: State<T=f64> + Clone> OtherEventHandler for HSplit<T> {
     fn handle_other_event(&mut self, _event: &WidgetEvent, env: &mut Environment) {
         if self.dragging || self.hovering {
             env.set_cursor(MouseCursor::ColResize);
@@ -104,7 +103,7 @@ impl OtherEventHandler for HSplit {
     }
 }
 
-impl MouseEventHandler for HSplit {
+impl<T: State<T=f64> + Clone> MouseEventHandler for HSplit<T> {
     fn handle_mouse_event(&mut self, event: &MouseEvent, _consumed: &bool, _env: &mut Environment) {
         if !self.draggable {
             return;
@@ -169,7 +168,7 @@ impl MouseEventHandler for HSplit {
     }
 }
 
-impl Layout for HSplit {
+impl<T: State<T=f64> + Clone> Layout for HSplit<T> {
     fn calculate_size(&mut self, requested_size: Dimension, env: &mut Environment) -> Dimension {
         let (requested_leading_width, requested_trailing_width) = match &self.split {
             SplitType::Start(offset) => (*offset.value(), requested_size.width - *offset.value()),
@@ -227,8 +226,8 @@ impl Layout for HSplit {
     }
 }
 
-impl CommonWidget for HSplit {
+impl<T: State<T=f64> + Clone> CommonWidget for HSplit<T> {
     CommonWidgetImpl!(self, id: self.id, children: self.children, position: self.position, dimension: self.dimension);
 }
 
-impl WidgetExt for HSplit {}
+impl<T: State<T=f64> + Clone> WidgetExt for HSplit<T> {}

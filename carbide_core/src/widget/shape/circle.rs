@@ -11,7 +11,7 @@ use crate::environment::{Environment, EnvironmentColorState};
 use crate::environment::EnvironmentColor;
 use crate::layout::Layout;
 use crate::render::{Primitive, Render, RenderContext, Style};
-use crate::state::{ReadState, RState, TState, IntoState};
+use crate::state::{ReadState, RState, TState, IntoReadState};
 use crate::widget::{AdvancedColor, Blur, CommonWidget, Widget, WidgetExt, WidgetId, ZStack};
 use crate::widget::shape::{Shape, tessellate};
 use crate::widget::types::PrimitiveStore;
@@ -42,8 +42,8 @@ impl Circle<EnvironmentColorState, EnvironmentColorState> {
             id: WidgetId::new(),
             position: Position::new(0.0, 0.0),
             dimension: Dimension::new(100.0, 100.0),
-            stroke_color: <EnvironmentColor as IntoState<Style>>::into_state(EnvironmentColor::Blue),
-            fill_color: <EnvironmentColor as IntoState<Style>>::into_state(EnvironmentColor::Blue),
+            stroke_color: <EnvironmentColor as IntoReadState<Style>>::into_read_state(EnvironmentColor::Blue),
+            fill_color: <EnvironmentColor as IntoReadState<Style>>::into_read_state(EnvironmentColor::Blue),
             style: ShapeStyle::Default,
             stroke_style: StrokeStyle::Solid { line_width: 2.0 },
             triangle_store: PrimitiveStore::new(),
@@ -52,25 +52,25 @@ impl Circle<EnvironmentColorState, EnvironmentColorState> {
 }
 
 impl<S2: ReadState<T=Style> + Clone, F2: ReadState<T=Style> + Clone> Circle<S2, F2> {
-    pub fn fill<F: IntoState<Style>>(self, color: F) -> Box<Circle<S2, F::Output>> {
+    pub fn fill<F: IntoReadState<Style>>(self, color: F) -> Box<Circle<S2, F::Output>> {
         Box::new(Circle {
             id: self.id,
             position: self.position,
             dimension: self.dimension,
             stroke_color: self.stroke_color,
-            fill_color: color.into_state(),
+            fill_color: color.into_read_state(),
             style: self.style + ShapeStyle::Fill,
             stroke_style: self.stroke_style,
             triangle_store: self.triangle_store,
         })
     }
 
-    pub fn stroke<S: IntoState<Style>>(self, color: S) -> Box<Circle<S::Output, F2>> {
+    pub fn stroke<S: IntoReadState<Style>>(self, color: S) -> Box<Circle<S::Output, F2>> {
         Box::new(Circle {
             id: self.id,
             position: self.position,
             dimension: self.dimension,
-            stroke_color: color.into_state(),
+            stroke_color: color.into_read_state(),
             fill_color: self.fill_color,
             style: self.style + ShapeStyle::Stroke,
             stroke_style: self.stroke_style,

@@ -1,4 +1,5 @@
 use std::marker::PhantomData;
+use carbide_core::state::IntoState;
 use crate::environment::Environment;
 use crate::state::{RState, State, StateContract, WidgetState};
 use crate::state::{NewStateSync, ReadState, ValueRef, ValueRefMut};
@@ -32,5 +33,13 @@ impl<T: StateContract, TState: ReadState<T=T> + Clone + 'static> State for Ignor
 
     fn set_value(&mut self, _: T) {
         println!("WARNING: You are trying to set a state that is set to ignore writes");
+    }
+}
+
+impl<T: StateContract, TState: ReadState<T=T> + Clone + 'static> IntoState<T> for IgnoreWritesState<T, TState> {
+    type Output = Self;
+
+    fn into_state(self) -> Self::Output {
+        self
     }
 }

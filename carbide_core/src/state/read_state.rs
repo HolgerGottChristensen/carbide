@@ -1,7 +1,9 @@
 use std::fmt::Debug;
+use std::ops::{Deref, DerefMut};
 use cgmath::Matrix4;
 
 use dyn_clone::DynClone;
+use carbide_core::environment::Environment;
 use crate::Color;
 use crate::render::Style;
 
@@ -19,38 +21,6 @@ pub trait ReadState: DynClone + NewStateSync + Debug + 'static {
 }
 
 dyn_clone::clone_trait_object!(<T: StateContract> ReadState<T=T>);
-
-impl NewStateSync for () {}
-impl ReadState for () {
-    type T = ();
-    fn value(&self) -> ValueRef<()> {
-        ValueRef::Borrow(self)
-    }
-}
-
-impl NewStateSync for bool {}
-impl ReadState for bool {
-    type T = bool;
-    fn value(&self) -> ValueRef<bool> {
-        ValueRef::Borrow(self)
-    }
-}
-
-impl NewStateSync for Color {}
-impl ReadState for Color {
-    type T = Color;
-    fn value(&self) -> ValueRef<Color> {
-        ValueRef::Borrow(self)
-    }
-}
-
-impl NewStateSync for usize {}
-impl ReadState for usize {
-    type T = usize;
-    fn value(&self) -> ValueRef<usize> {
-        ValueRef::Borrow(self)
-    }
-}
 
 impl<G> NewStateSync for Matrix4<G> {}
 impl<G: Debug + Clone + 'static> ReadState for Matrix4<G> {
@@ -85,26 +55,46 @@ impl<G: Debug + Clone + 'static> State for Vec<G> {
     }
 }
 
-impl NewStateSync for Style {}
-impl ReadState for Style {
-    type T = Style;
-    fn value(&self) -> ValueRef<Style> {
-        ValueRef::Borrow(self)
+impl<G: NewStateSync> NewStateSync for Box<G> {
+    fn sync(&mut self, env: &mut Environment) -> bool {
+        self.deref_mut().sync(env)
+    }
+}
+impl<G: Debug + Clone + 'static, F: ReadState<T=G> + Clone> ReadState for Box<F> {
+    type T = G;
+    fn value(&self) -> ValueRef<G> {
+        self.deref().value()
     }
 }
 
-impl NewStateSync for u32 {}
-impl ReadState for u32 {
-    type T = u32;
-    fn value(&self) -> ValueRef<u32> {
-        ValueRef::Borrow(self)
-    }
+macro_rules! impl_read_state {
+    ($($typ: ty),*) => {
+        $(
+        impl NewStateSync for $typ {}
+        impl ReadState for $typ {
+            type T = $typ;
+            fn value(&self) -> ValueRef<$typ> {
+                ValueRef::Borrow(self)
+            }
+        }
+        impl State for $typ {
+            fn value_mut(&mut self) -> ValueRefMut<$typ> {
+                ValueRefMut::Borrow(self)
+            }
+
+            fn set_value(&mut self, value: $typ) {
+                *self = value;
+            }
+        }
+        )*
+
+    };
 }
 
-impl NewStateSync for String {}
-impl ReadState for String {
-    type T = String;
-    fn value(&self) -> ValueRef<String> {
-        ValueRef::Borrow(self)
-    }
-}
+impl_read_state!(
+    i8, u8, i16, u16,
+    i32, u32, i64, u64,
+    i128, u128, f32, f64,
+    bool, char, isize, usize,
+    Style, String, (), Color, &'static str
+);

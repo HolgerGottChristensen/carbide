@@ -1,5 +1,5 @@
 
-use carbide_macro::carbide_default_builder;
+use carbide_macro::{carbide_default_builder, carbide_default_builder2};
 
 use crate::CommonWidgetImpl;
 use crate::cursor::MouseCursor;
@@ -7,67 +7,34 @@ use crate::draw::{Dimension, Position};
 use crate::environment::Environment;
 use crate::event::{MouseEvent, MouseEventHandler, OtherEventHandler, WidgetEvent};
 use crate::layout::Layout;
-use crate::state::{LocalState, ReadState, State, TState};
+use crate::state::{IntoReadState, IntoState, LocalState, ReadState, State, TState};
 use crate::widget::{CommonWidget, CrossAxisAlignment, SplitType, Widget, WidgetExt, WidgetId};
 
 #[derive(Clone, Debug, Widget)]
 #[carbide_exclude(Layout, MouseEvent, OtherEvent)]
-pub struct VSplit {
+pub struct VSplit<T> where T: State<T=f64> + Clone {
     id: WidgetId,
     position: Position,
     dimension: Dimension,
     // Top - Bottom
     children: Vec<Box<dyn Widget>>,
-    split: SplitType,
+    split: SplitType<T>,
     cross_axis_alignment: CrossAxisAlignment,
     dragging: bool,
     hovering: bool,
 }
 
-impl VSplit {
-
-    #[carbide_default_builder]
-    pub fn new(leading: Box<dyn Widget>, trailing: Box<dyn Widget>) -> Box<Self> {}
-
+impl VSplit<f64> {
+    #[carbide_default_builder2]
     pub fn new(leading: Box<dyn Widget>, trailing: Box<dyn Widget>) -> Box<Self> {
-        let split = LocalState::new(0.1);
-        Self::new_internal(leading, trailing, SplitType::Percent(split))
+        Self::new_internal(leading, trailing, SplitType::Percent(0.1))
     }
 
-    pub fn relative_to_start(mut self, width: impl Into<TState<f64>>) -> Box<Self> {
-        Self::new_internal(
-            self.children.remove(0),
-            self.children.remove(0),
-            SplitType::Start(width.into()),
-        )
-    }
-
-    pub fn percent(mut self, percent: impl Into<TState<f64>>) -> Box<Self> {
-        Self::new_internal(
-            self.children.remove(0),
-            self.children.remove(0),
-            SplitType::Percent(percent.into()),
-        )
-    }
-
-    pub fn relative_to_end(mut self, width: impl Into<TState<f64>>) -> Box<Self> {
-        Self::new_internal(
-            self.children.remove(0),
-            self.children.remove(0),
-            SplitType::End(width.into()),
-        )
-    }
-
-    pub fn cross_axis_alignment(mut self, alignment: CrossAxisAlignment) -> Box<Self> {
-        self.cross_axis_alignment = alignment;
-        Box::new(self)
-    }
-
-    fn new_internal(
+    fn new_internal<T: State<T=f64> + Clone>(
         leading: Box<dyn Widget>,
         trailing: Box<dyn Widget>,
-        split: SplitType,
-    ) -> Box<Self> {
+        split: SplitType<T>,
+    ) -> Box<VSplit<T>> {
         Box::new(VSplit {
             id: WidgetId::new(),
             position: Default::default(),
@@ -81,7 +48,38 @@ impl VSplit {
     }
 }
 
-impl OtherEventHandler for VSplit {
+impl<T: State<T=f64> + Clone> VSplit<T> {
+    pub fn relative_to_start<T2: IntoState<f64>>(mut self, width: T2) -> Box<VSplit<T2::Output>> {
+        VSplit::new_internal(
+            self.children.remove(0),
+            self.children.remove(0),
+            SplitType::Start(width.into_state()),
+        )
+    }
+
+    pub fn percent<T2: IntoState<f64>>(mut self, percent: T2) -> Box<VSplit<T2::Output>> {
+        VSplit::new_internal(
+            self.children.remove(0),
+            self.children.remove(0),
+            SplitType::Percent(percent.into_state()),
+        )
+    }
+
+    pub fn relative_to_end<T2: IntoState<f64>>(mut self, width: T2) -> Box<VSplit<T2::Output>> {
+        VSplit::new_internal(
+            self.children.remove(0),
+            self.children.remove(0),
+            SplitType::End(width.into_state()),
+        )
+    }
+
+    pub fn cross_axis_alignment(mut self, alignment: CrossAxisAlignment) -> Box<Self> {
+        self.cross_axis_alignment = alignment;
+        Box::new(self)
+    }
+}
+
+impl<T: State<T=f64> + Clone> OtherEventHandler for VSplit<T> {
     fn handle_other_event(&mut self, _event: &WidgetEvent, env: &mut Environment) {
         if self.dragging || self.hovering {
             env.set_cursor(MouseCursor::RowResize);
@@ -89,7 +87,7 @@ impl OtherEventHandler for VSplit {
     }
 }
 
-impl MouseEventHandler for VSplit {
+impl<T: State<T=f64> + Clone> MouseEventHandler for VSplit<T> {
     fn handle_mouse_event(&mut self, event: &MouseEvent, _consumed: &bool, _env: &mut Environment) {
         let press_margin = 5.0;
 
@@ -150,7 +148,7 @@ impl MouseEventHandler for VSplit {
     }
 }
 
-impl Layout for VSplit {
+impl<T: State<T=f64> + Clone> Layout for VSplit<T> {
     fn calculate_size(&mut self, requested_size: Dimension, env: &mut Environment) -> Dimension {
         let (requested_top_height, requested_bottom_height) = match &self.split {
             SplitType::Start(offset) => (*offset.value(), requested_size.height - *offset.value()),
@@ -208,8 +206,8 @@ impl Layout for VSplit {
     }
 }
 
-impl CommonWidget for VSplit {
+impl<T: State<T=f64> + Clone> CommonWidget for VSplit<T> {
     CommonWidgetImpl!(self, id: self.id, children: self.children, position: self.position, dimension: self.dimension);
 }
 
-impl WidgetExt for VSplit {}
+impl<T: State<T=f64> + Clone> WidgetExt for VSplit<T> {}

@@ -30,10 +30,10 @@ impl Default for EnvironmentFontSize {
     }
 }*/
 
-impl IntoState<u32> for EnvironmentFontSize {
+impl IntoReadState<u32> for EnvironmentFontSize {
     type Output = EnvironmentFontSizeState;
 
-    fn into_state(self) -> Self::Output {
+    fn into_read_state(self) -> Self::Output {
         EnvironmentFontSizeState::new(self)
     }
 }

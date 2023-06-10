@@ -157,6 +157,16 @@ macro_rules! tuple_state {
                     .finish()
             }
         }
+
+
+        /// Implement NewStateSync for the RMap
+        impl<$($type: StateContract),*, TO: StateContract, $($type2: ReadState<T=$type> + Clone + 'static),*, MAP: Fn($(&$type),*) -> TO + Clone + 'static> carbide_core::state::IntoReadState<TO> for $read_map_name<MAP, $($type),*, TO, $($type2),*> {
+            type Output = Self;
+
+            fn into_read_state(self) -> Self::Output {
+                self
+            }
+        }
     };
 }
 

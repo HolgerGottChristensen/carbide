@@ -1,5 +1,5 @@
 use cgmath::Matrix4;
-use carbide_core::state::RMap1;
+use carbide_core::state::{IntoReadState, RMap1};
 
 use crate::Color;
 use crate::draw::Dimension;
@@ -7,6 +7,7 @@ use crate::environment::{EnvironmentColor, EnvironmentColorState, EnvironmentSta
 use crate::flags::Flags;
 use crate::state::{ReadState, TState};
 use crate::widget::{Background, Border, Clip, ClipShape, CornerRadii, EdgeInsets, EnvUpdating, Flagged, Flexibility, Frame, Hidden, Offset, Padding, Rotation3DEffect, RoundedRectangle, Shape, Transform, Widget};
+use crate::state::ReadStateExtNew;
 
 pub trait WidgetExt: Widget + Sized + Clone + 'static {
     /// Surround the widget with a frame. The frame is a widget that has fixed width, height or both.
@@ -132,11 +133,11 @@ pub trait WidgetExt: Widget + Sized + Clone + 'static {
         e
     }
 
-    fn accent_color(self, color: impl Into<TState<Color>>) -> Box<EnvUpdating<Self>> {
+    fn accent_color<C: IntoReadState<Color>>(self, color: C) -> Box<EnvUpdating<Self>> {
         let mut e = EnvUpdating::new(self);
         e.add(EnvironmentStateContainer::Color {
             key: EnvironmentColor::Accent,
-            value: color.into(),
+            value: TState::new(Box::new(color.into_read_state().ignore_writes())),
         });
 
         e

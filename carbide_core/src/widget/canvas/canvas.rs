@@ -15,7 +15,7 @@ use crate::draw::{Dimension, Position, Rect};
 use crate::draw::shape::triangle::Triangle;
 use crate::environment::{Environment, EnvironmentColor, EnvironmentColorState};
 use crate::render::{Primitive, PrimitiveKind, Render};
-use crate::state::{NewStateSync, ReadState, StateContract, TState, ValueState, IntoState};
+use crate::state::{NewStateSync, ReadState, StateContract, TState, ValueState, IntoReadState};
 use crate::widget::{CommonWidget, PrimitiveStore, Shape, ShapeStyle, StrokeStyle, Widget, WidgetExt, WidgetId};
 use crate::widget::canvas::{Context, ShapeStyleWithOptions};
 use crate::widget::canvas::canvas::Contexts::{NoState, WithState};
@@ -51,12 +51,12 @@ where
 impl Canvas<(), Color> {
 
     #[carbide_default_builder2]
-    pub fn new(context: fn(Rect, Context, &mut Environment) -> Context) -> Box<Canvas<(), <EnvironmentColor as IntoState<Color>>::Output>> {
+    pub fn new(context: fn(Rect, Context, &mut Environment) -> Context) -> Box<Canvas<(), <EnvironmentColor as IntoReadState<Color>>::Output>> {
         Box::new(Canvas {
             id: WidgetId::new(),
             position: Position::new(0.0, 0.0),
             dimension: Dimension::new(100.0, 100.0),
-            color: <EnvironmentColor as IntoState<Color>>::into_state(EnvironmentColor::Accent),
+            color: <EnvironmentColor as IntoReadState<Color>>::into_read_state(EnvironmentColor::Accent),
             //prim_store: vec![],
             context: NoState(context),
             state: ValueState::new(()),
@@ -68,12 +68,12 @@ impl<T: StateContract, C: ReadState<T=Color> + Clone> Canvas<T, C> {
     pub fn new_with_state(
         state: impl Into<TState<T>>,
         context: fn(&mut TState<T>, Rect, Context, &mut Environment) -> Context,
-    ) -> Box<Canvas<T, <EnvironmentColor as IntoState<Color>>::Output>> {
+    ) -> Box<Canvas<T, <EnvironmentColor as IntoReadState<Color>>::Output>> {
         Box::new(Canvas {
             id: WidgetId::new(),
             position: Position::new(0.0, 0.0),
             dimension: Dimension::new(100.0, 100.0),
-            color: <EnvironmentColor as IntoState<Color>>::into_state(EnvironmentColor::Accent),
+            color: <EnvironmentColor as IntoReadState<Color>>::into_read_state(EnvironmentColor::Accent),
             //prim_store: vec![],
             context: WithState(context),
             state: state.into(),

@@ -31,13 +31,13 @@ fn main() {
         Image::new(landscape_id.clone())
             .scaled_to_fill()
             .frame(200.0, 200.0)
-            .clip_shape(Rectangle::new().fill(EnvironmentColor::Accent))
+            .clip_shape(*Rectangle::new().fill(EnvironmentColor::Accent))
             .frame(100.0, 100.0),
         Image::new(landscape_id.clone())
             .scaled_to_fill()
             .frame(200.0, 200.0)
             .clip_shape(
-                Rectangle::new()
+                *Rectangle::new()
                     .stroke(EnvironmentColor::Accent)
                     .stroke_style(10.0),
             )
@@ -59,13 +59,13 @@ fn main() {
         Image::new(landscape_id.clone())
             .scaled_to_fill()
             .frame(200.0, 200.0)
-            .clip_shape(RoundedRectangle::new(CornerRadii::all(25.0)))
+            .clip_shape(*RoundedRectangle::new(CornerRadii::all(25.0)))
             .frame(100.0, 100.0),
         Image::new(landscape_id.clone())
             .scaled_to_fill()
             .frame(200.0, 200.0)
             .clip_shape(
-                RoundedRectangle::new(CornerRadii::all(25.0))
+                *RoundedRectangle::new(CornerRadii::all(25.0))
                     .stroke(EnvironmentColor::Accent)
                     .stroke_style(10.0),
             )
@@ -87,13 +87,13 @@ fn main() {
         Image::new(landscape_id.clone())
             .scaled_to_fill()
             .frame(200.0, 200.0)
-            .clip_shape(Circle::new())
+            .clip_shape(*Circle::new())
             .frame(100.0, 100.0),
         Image::new(landscape_id.clone())
             .scaled_to_fill()
             .frame(200.0, 200.0)
             .clip_shape(
-                Circle::new()
+                *Circle::new()
                     .stroke(EnvironmentColor::Accent)
                     .stroke_style(10.0),
             )
@@ -115,13 +115,13 @@ fn main() {
         Image::new(landscape_id.clone())
             .scaled_to_fill()
             .frame(200.0, 200.0)
-            .clip_shape(Ellipse::new())
+            .clip_shape(*Ellipse::new())
             .frame(100.0, 50.0),
         Image::new(landscape_id.clone())
             .scaled_to_fill()
             .frame(200.0, 200.0)
             .clip_shape(
-                Ellipse::new()
+                *Ellipse::new()
                     .stroke(EnvironmentColor::Accent)
                     .stroke_style(10.0),
             )
@@ -143,13 +143,13 @@ fn main() {
         Image::new(landscape_id.clone())
             .scaled_to_fill()
             .frame(200.0, 200.0)
-            .clip_shape(Capsule::new())
+            .clip_shape(*Capsule::new())
             .frame(100.0, 50.0),
         Image::new(landscape_id.clone())
             .scaled_to_fill()
             .frame(200.0, 200.0)
             .clip_shape(
-                Capsule::new()
+                *Capsule::new()
                     .stroke(EnvironmentColor::Accent)
                     .stroke_style(10.0),
             )
@@ -181,7 +181,7 @@ fn main() {
         Image::new(landscape_id.clone())
             .scaled_to_fill()
             .frame(200.0, 200.0)
-            .clip_shape(Canvas::new(|_, mut context, _| {
+            .clip_shape(*Canvas::new(|_, mut context, _| {
                 context = draw_star(Position::new(50.0, 50.0), 5, 45.0, 20.0, context);
                 context.fill();
                 context
@@ -190,7 +190,7 @@ fn main() {
         Image::new(landscape_id.clone())
             .scaled_to_fill()
             .frame(200.0, 200.0)
-            .clip_shape(Canvas::new(|_, mut context, _| {
+            .clip_shape(*Canvas::new(|_, mut context, _| {
                 context = draw_star(Position::new(50.0, 50.0), 5, 45.0, 20.0, context);
                 context.set_line_width(10.0);
                 context.stroke();

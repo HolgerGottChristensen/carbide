@@ -114,18 +114,18 @@ impl Into<TState<Color>> for EnvironmentColor {
     }
 }*/
 
-impl IntoState<Style> for EnvironmentColor {
+impl IntoReadState<Style> for EnvironmentColor {
     type Output = EnvironmentColorState;
 
-    fn into_state(self) -> Self::Output {
+    fn into_read_state(self) -> Self::Output {
         EnvironmentColorState::new(self)
     }
 }
 
-impl IntoState<Color> for EnvironmentColor {
+impl IntoReadState<Color> for EnvironmentColor {
     type Output = RMap1<fn(&Style) -> Color, Style, Color, EnvironmentColorState>;
 
-    fn into_state(self) -> Self::Output {
+    fn into_read_state(self) -> Self::Output {
         Map1::read_map(EnvironmentColorState::new(self), |s| {
             match s {
                 Style::Color(c) => *c,

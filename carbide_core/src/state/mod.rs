@@ -28,6 +28,7 @@ pub use self::state_sync::NewStateSync;
 pub use self::state_sync::StateSync;
 pub use self::value_state::ValueState;
 pub use self::widget_state::WidgetState;
+pub use self::into_state::IntoReadState;
 pub use self::into_state::IntoState;
 
 mod animated_state;

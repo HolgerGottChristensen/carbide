@@ -1,8 +1,8 @@
-use crate::state::TState;
+use crate::state::State;
 
 #[derive(Debug, Clone)]
-pub enum SplitType {
-    Start(TState<f64>),
-    Percent(TState<f64>),
-    End(TState<f64>),
+pub enum SplitType<T> where T: State<T=f64> + Clone {
+    Start(T),
+    Percent(T),
+    End(T),
 }

@@ -2,7 +2,7 @@ use std::borrow::Borrow;
 use std::fmt::Debug;
 use std::ops::Deref;
 use carbide_core::render::{RenderContext, Style};
-use carbide_core::state::IntoState;
+use carbide_core::state::IntoReadState;
 
 
 use carbide_macro::{carbide_default_builder, carbide_default_builder2};
@@ -53,17 +53,17 @@ pub struct Text<T, S, C> where T: ReadState<T=String> + Clone, S: ReadState<T=u3
 
 impl Text<String, u32, Color> {
     #[carbide_default_builder2]
-    pub fn new<T: IntoState<String>>(text: T) -> Box<Text<T::Output, EnvironmentFontSizeState, <EnvironmentColor as IntoState<Color>>::Output>> {
-        let text = text.into_state();
+    pub fn new<T: IntoReadState<String>>(text: T) -> Box<Text<T::Output, EnvironmentFontSizeState, <EnvironmentColor as IntoReadState<Color>>::Output>> {
+        let text = text.into_read_state();
 
         Box::new(Text {
             id: WidgetId::new(),
             text,
-            font_size: EnvironmentFontSize::Body.into_state(),
+            font_size: EnvironmentFontSize::Body.into_read_state(),
             position: Position::new(0.0, 0.0),
             dimension: Dimension::new(100.0, 100.0),
             wrap_mode: Wrap::Whitespace,
-            color: <EnvironmentColor as IntoState<Color>>::into_state(EnvironmentColor::Label),
+            color: <EnvironmentColor as IntoReadState<Color>>::into_read_state(EnvironmentColor::Label),
             font_family: "system-font".to_string(),
             font_style: FontStyle::Normal,
             font_weight: FontWeight::Normal,
@@ -73,20 +73,20 @@ impl Text<String, u32, Color> {
         })
     }
 
-    pub fn new_with_generator<T: IntoState<String>>(
+    pub fn new_with_generator<T: IntoReadState<String>>(
         text: T,
         generator: impl Into<Box<dyn TextSpanGenerator>>,
-    ) -> Box<Text<T::Output, EnvironmentFontSizeState, <EnvironmentColor as IntoState<Color>>::Output>> {
-        let text = text.into_state();
+    ) -> Box<Text<T::Output, EnvironmentFontSizeState, <EnvironmentColor as IntoReadState<Color>>::Output>> {
+        let text = text.into_read_state();
 
         Box::new(Text {
             id: WidgetId::new(),
             text,
-            font_size: EnvironmentFontSize::Body.into_state(),
+            font_size: EnvironmentFontSize::Body.into_read_state(),
             position: Position::new(0.0, 0.0),
             dimension: Dimension::new(100.0, 100.0),
             wrap_mode: Wrap::Whitespace,
-            color: <EnvironmentColor as IntoState<Color>>::into_state(EnvironmentColor::Label),
+            color: <EnvironmentColor as IntoReadState<Color>>::into_read_state(EnvironmentColor::Label),
             font_family: "system-font".to_string(),
             font_style: FontStyle::Normal,
             font_weight: FontWeight::Normal,
@@ -98,7 +98,7 @@ impl Text<String, u32, Color> {
 }
 
 impl<T2: ReadState<T=String> + Clone, S2: ReadState<T=u32> + Clone, C2: ReadState<T=Color> + Clone> Text<T2, S2, C2> {
-    pub fn color<C: IntoState<Color>>(mut self, color: C) -> Box<Text<T2, S2, C::Output>> {
+    pub fn color<C: IntoReadState<Color>>(mut self, color: C) -> Box<Text<T2, S2, C::Output>> {
         Box::new(Text {
             id: self.id,
             position: self.position,
@@ -106,7 +106,7 @@ impl<T2: ReadState<T=String> + Clone, S2: ReadState<T=u32> + Clone, C2: ReadStat
             wrap_mode: self.wrap_mode,
             text: self.text,
             font_size: self.font_size,
-            color: color.into_state(),
+            color: color.into_read_state(),
             font_family: self.font_family,
             font_style: self.font_style,
             font_weight: self.font_weight,
@@ -116,14 +116,14 @@ impl<T2: ReadState<T=String> + Clone, S2: ReadState<T=u32> + Clone, C2: ReadStat
         })
     }
 
-    pub fn font_size<S: IntoState<u32>>(mut self, size: S) -> Box<Text<T2, S::Output, C2>> {
+    pub fn font_size<S: IntoReadState<u32>>(mut self, size: S) -> Box<Text<T2, S::Output, C2>> {
         Box::new(Text {
             id: self.id,
             position: self.position,
             dimension: self.dimension,
             wrap_mode: self.wrap_mode,
             text: self.text,
-            font_size: size.into_state(),
+            font_size: size.into_read_state(),
             color: self.color,
             font_family: self.font_family,
             font_style: self.font_style,

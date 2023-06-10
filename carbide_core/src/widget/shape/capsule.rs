@@ -11,7 +11,7 @@ use crate::draw::{Dimension, Position};
 use crate::environment::{Environment, EnvironmentColorState};
 use crate::environment::EnvironmentColor;
 use crate::render::{Primitive, Render, RenderContext, Style};
-use crate::state::{IntoState, ReadState, ReadStateExtNew, RState, TState};
+use crate::state::{IntoReadState, ReadState, ReadStateExtNew, RState, TState};
 use crate::widget::{AdvancedColor, Blur, CommonWidget, Widget, WidgetExt, WidgetId, ZStack};
 use crate::widget::shape::{Shape, tessellate};
 use crate::widget::types::PrimitiveStore;
@@ -51,25 +51,25 @@ impl Capsule<EnvironmentColorState, EnvironmentColorState> {
 }
 
 impl<S2: ReadState<T=Style> + Clone, F2: ReadState<T=Style> + Clone> Capsule<S2, F2> {
-    pub fn fill<F: IntoState<Style>>(self, color: F) -> Box<Capsule<S2, F::Output>> {
+    pub fn fill<F: IntoReadState<Style>>(self, color: F) -> Box<Capsule<S2, F::Output>> {
         Box::new(Capsule {
             id: self.id,
             position: self.position,
             dimension: self.dimension,
             stroke_color: self.stroke_color,
-            fill_color: color.into_state(),
+            fill_color: color.into_read_state(),
             style: self.style + ShapeStyle::Fill,
             stroke_style: self.stroke_style,
             triangle_store: self.triangle_store,
         })
     }
 
-    pub fn stroke<S: IntoState<Style>>(self, color: S) -> Box<Capsule<S::Output, F2>> {
+    pub fn stroke<S: IntoReadState<Style>>(self, color: S) -> Box<Capsule<S::Output, F2>> {
         Box::new(Capsule {
             id: self.id,
             position: self.position,
             dimension: self.dimension,
-            stroke_color: color.into_state(),
+            stroke_color: color.into_read_state(),
             fill_color: self.fill_color,
             style: self.style + ShapeStyle::Stroke,
             stroke_style: self.stroke_style,
