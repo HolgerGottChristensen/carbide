@@ -30,9 +30,10 @@ use carbide_winit::convert_mouse_cursor;
 use crate::{render_pass_ops, RenderPassOps};
 use crate::application::{EVENT_LOOP, WINDOW_IDS};
 use crate::bind_group_layouts::{filter_buffer_bind_group_layout, filter_texture_bind_group_layout, gradient_buffer_bind_group_layout, main_texture_group_layout, uniform_bind_group_layout};
-use crate::bind_groups::{filter_buffer_bind_group, filter_texture_bind_group, main_bind_group, matrix_to_uniform_bind_group, size_to_uniform_bind_group};
+use crate::bind_groups::{filter_buffer_bind_group, filter_texture_bind_group, gradient_buffer_bind_group, main_bind_group, matrix_to_uniform_bind_group, size_to_uniform_bind_group};
 use crate::diffuse_bind_group::{DiffuseBindGroup, new_diffuse};
 use crate::filter::Filter;
+use crate::gradient::Gradient;
 use crate::image::Image;
 use crate::pipeline::create_pipelines;
 use crate::render_context::WGPURenderContext;
@@ -786,17 +787,19 @@ impl Render for WGPUWindow {
         //println!("Vertices: {:#?}", &self.render_context.vertices()[0..10]);
 
         let mut uniform_bind_groups = vec![];
+        let mut gradient_bind_groups = vec![];
 
         DEVICE_QUEUE.with(|(device, queue)| {
             Self::ensure_vertices_in_buffer(device, queue, self.render_context.vertices(), &mut self.vertex_buffer.0, &mut self.vertex_buffer.1);
 
             UNIFORM_BIND_GROUP_LAYOUT.with(|uniform_bind_group_layout| {
-                Self::ensure_uniforms_in_buffer(device, &self.carbide_to_wgpu_matrix, self.render_context.transforms(), uniform_bind_group_layout, &mut uniform_bind_groups);
+                Self::ensure_transforms_in_buffer(device, &self.carbide_to_wgpu_matrix, self.render_context.transforms(), uniform_bind_group_layout, &mut uniform_bind_groups);
+                Self::ensure_gradients_in_buffer(device, self.render_context.gradients(), uniform_bind_group_layout, &mut gradient_bind_groups);
             });
         });
 
         if self.visible {
-            match self.render_inner(render_passes, uniform_bind_groups, env) {
+            match self.render_inner(render_passes, uniform_bind_groups, gradient_bind_groups, env) {
                 Ok(_) => {}
                 // Recreate the swap_chain if lost
                 Err(wgpu::SurfaceError::Lost) => {
@@ -852,6 +855,7 @@ impl Render for WGPUWindow {
             self.mesh.fill(viewport, env, primitives);
 
             let mut uniform_bind_groups = vec![];
+            let mut gradient_bind_groups = vec![];
 
             let commands =
                 DEVICE_QUEUE.with(|(device, queue)| {
@@ -881,7 +885,7 @@ impl Render for WGPUWindow {
 
             println!("Commands: {:#?}", commands);
 
-            match self.render_inner(commands, uniform_bind_groups, env) {
+            match self.render_inner(commands, uniform_bind_groups, gradient_bind_groups, env) {
                 Ok(_) => {}
                 // Recreate the swap_chain if lost
                 Err(wgpu::SurfaceError::Lost) => {
@@ -1009,7 +1013,7 @@ impl WGPUWindow {
         }
     }
 
-    fn ensure_uniforms_in_buffer(device: &Device, carbide_to_wgpu_matrix: &Matrix4<f32>, transforms: &Vec<Matrix4<f32>>, uniform_bind_group_layout: &BindGroupLayout, uniform_bind_groups: &mut Vec<BindGroup>) {
+    fn ensure_transforms_in_buffer(device: &Device, carbide_to_wgpu_matrix: &Matrix4<f32>, transforms: &Vec<Matrix4<f32>>, uniform_bind_group_layout: &BindGroupLayout, uniform_bind_groups: &mut Vec<BindGroup>) {
         for transform in transforms {
             let transformed_matrix = carbide_to_wgpu_matrix * transform;
             let new_bind_group = matrix_to_uniform_bind_group(
@@ -1019,6 +1023,27 @@ impl WGPUWindow {
             );
 
             uniform_bind_groups.push(new_bind_group);
+        }
+    }
+
+    fn ensure_gradients_in_buffer(device: &Device, gradients: &Vec<Gradient>, _uniform_bind_group_layout: &BindGroupLayout, uniform_bind_groups: &mut Vec<BindGroup>) {
+        for gradient in gradients {
+            GRADIENT_BIND_GROUP_LAYOUT.with(|gradient_bind_group_layout| {
+                let gradient_buffer =
+                    device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
+                        label: Some("Gradient Buffer"),
+                        contents: &*gradient.as_bytes(),
+                        usage: wgpu::BufferUsages::STORAGE,
+                    });
+                uniform_bind_groups.push(
+                    gradient_buffer_bind_group(
+                        &device,
+                        &gradient_bind_group_layout,
+                        &gradient_buffer,
+                    )
+                );
+
+            })
         }
     }
 
@@ -1058,6 +1083,7 @@ impl WGPUWindow {
         render_pipelines: &RenderPipelines,
         bind_groups: &HashMap<ImageId, DiffuseBindGroup>,
         uniform_bind_groups: &Vec<BindGroup>,
+        gradient_bind_groups: &Vec<BindGroup>,
         filter_bind_groups: &HashMap<FilterId, BindGroup>,
         size: PhysicalSize<u32>,
         scale_factor: Scalar,
@@ -1144,7 +1170,7 @@ impl WGPUWindow {
                         }
                     }
                 }
-                RenderPass::Gradient(vertex_range, bind_group_index) => {
+                RenderPass::Gradient(vertex_range, gradient_index) => {
                     let (color_op, stencil_op, depth_op) = render_pass_ops(RenderPassOps::Middle);
                     let mut render_pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
                         label: None,
@@ -1163,7 +1189,9 @@ impl WGPUWindow {
                     render_pass.set_pipeline(&render_pipelines.render_pipeline_in_mask_gradient);
                     render_pass.set_stencil_reference(stencil_level);
                     render_pass.set_vertex_buffer(0, current_vertex_buffer_slice);
-                    render_pass.set_bind_group(0, &uniform_bind_groups[bind_group_index], &[]);
+
+
+                    render_pass.set_bind_group(0, &gradient_bind_groups[gradient_index], &[]);
                     render_pass.set_bind_group(1, current_uniform_bind_group, &[]);
                     render_pass.draw(vertex_range, instance_range.clone());
                 }
@@ -1277,7 +1305,7 @@ impl WGPUWindow {
         }
     }
 
-    fn render_inner(&self, render_passes: Vec<RenderPass>, uniform_bind_groups: Vec<BindGroup>, env: &mut Environment) -> Result<(), wgpu::SurfaceError> {
+    fn render_inner(&self, render_passes: Vec<RenderPass>, uniform_bind_groups: Vec<BindGroup>, gradient_bind_groups: Vec<BindGroup>, env: &mut Environment) -> Result<(), wgpu::SurfaceError> {
         DEVICE_QUEUE.with(|(device, queue)| {
             BIND_GROUPS.with(|bind_groups| {
                 FILTER_BIND_GROUPS.with(|filter_bind_groups| {
@@ -1302,7 +1330,7 @@ impl WGPUWindow {
                         // Ensure the images are added as bind groups
                         Self::ensure_images_exist_as_bind_groups(device, queue, bind_groups, env);
 
-                        self.process_render_passes(render_passes, &mut encoder, render_pipelines, bind_groups, &uniform_bind_groups, filter_bind_groups, size, env.scale_factor());
+                        self.process_render_passes(render_passes, &mut encoder, render_pipelines, bind_groups, &uniform_bind_groups, &gradient_bind_groups, filter_bind_groups, size, env.scale_factor());
 
                         // This blocks until a new frame is available.
                         let output = self.surface.get_current_texture()?;

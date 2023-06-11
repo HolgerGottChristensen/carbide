@@ -12,6 +12,7 @@ use carbide_macro::{carbide_default_builder, carbide_default_builder2};
 
 use crate::{Color, Scalar};
 use crate::draw::{Dimension, Position, Rect};
+use crate::draw::draw_style::DrawStyle;
 use crate::draw::shape::triangle::Triangle;
 use crate::environment::{Environment, EnvironmentColor, EnvironmentColorState};
 use crate::render::{Primitive, PrimitiveKind, Render};
@@ -290,13 +291,13 @@ impl<T: StateContract, C: ReadState<T=Color> + Clone> Render for Canvas<T, C> {
             match options {
                 ShapeStyleWithOptions::Fill(fill_options, mut color) => {
                     color.sync(env);
-                    render_context.style(Style::Color(*color.value()), |this| {
+                    render_context.style(DrawStyle::Color(*color.value()), |this| {
                         this.geometry(&self.get_fill_geometry(path, fill_options))
                     })
                 }
                 ShapeStyleWithOptions::Stroke(stroke_options, mut color) => {
                     color.sync(env);
-                    render_context.style(Style::Color(*color.value()), |this| {
+                    render_context.style(DrawStyle::Color(*color.value()), |this| {
                         this.geometry(&self.get_stroke_geometry(path, stroke_options))
                     })
                 }

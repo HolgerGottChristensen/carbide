@@ -9,30 +9,13 @@ use carbide_core::text::FontFamily;
 use carbide_core::widget::*;
 use carbide_wgpu::{Application, Window};
 
-static APP_USER_AGENT: &str = concat!(
-    env!("CARGO_PKG_NAME"),
-    "/",
-    env!("CARGO_PKG_VERSION"),
-);
+static APP_USER_AGENT: &str = concat!(env!("CARGO_PKG_NAME"), "/", env!("CARGO_PKG_VERSION"));
 
 fn main() {
     env_logger::init();
 
-    let mut application = Application::new();
-
-    fn window(child: Box<dyn Widget>) -> Box<Window> {
-        Window::new(
-            "Async using tokio example",
-            Dimension::new(400.0, 600.0),
-            child
-        ).close_application_on_window_close()
-    }
-
-    let family = FontFamily::new_from_paths("NotoSans", vec![
-        "fonts/NotoSans/NotoSans-Regular.ttf"
-    ]);
-
-    application.add_font_family(family);
+    let mut application = Application::new()
+        .with_asset_fonts();
 
     let image_id = LocalState::new(None);
     let image_id_for_async = image_id.clone();
@@ -97,7 +80,11 @@ fn main() {
         .accent_color(EnvironmentColor::Red);
 
     application.set_scene(
-        window(widgets)
+        Window::new(
+            "Async using tokio example",
+            Dimension::new(400.0, 600.0),
+            widgets
+        ).close_application_on_window_close()
     );
 
     application.launch();

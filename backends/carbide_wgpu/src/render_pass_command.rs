@@ -239,24 +239,13 @@ pub fn draw_commands_to_render_pass_commands<'a>(
                 }
 
                 let gradient = Gradient::convert(gradient);
-                let gradient_buffer =
-                    device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
-                        label: Some("Gradient Buffer"),
-                        contents: &*gradient.as_bytes(),
-                        usage: wgpu::BufferUsages::STORAGE,
-                    });
-                let gradient_buffer_bind_group = gradient_buffer_bind_group(
-                    &device,
-                    &gradient_bind_group_layout,
-                    &gradient_buffer,
-                );
 
                 let range = vertex_range.start as u32..vertex_range.end as u32;
                 let mut new_inner_commands = vec![];
                 std::mem::swap(&mut new_inner_commands, &mut inner_commands);
                 commands.push(RenderPass::Normal(new_inner_commands));
-                commands.push(RenderPass::Gradient(range, uniform_bind_groups.len()));
-                uniform_bind_groups.push(gradient_buffer_bind_group);
+                commands.push(RenderPass::Gradient(range, 0));
+                //uniform_bind_groups.push(gradient_buffer_bind_group);
                 current_bind_group = None;
             }
         }

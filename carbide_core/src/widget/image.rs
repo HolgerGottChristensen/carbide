@@ -17,7 +17,7 @@ use crate::layout::Layout;
 use crate::mesh::{MODE_ICON, MODE_IMAGE};
 use crate::mesh::pre_multiply::PreMultiply;
 use crate::render::{Primitive, PrimitiveKind, Render, Style};
-use crate::state::{NewStateSync, ReadState, TState};
+use crate::state::{IntoReadState, NewStateSync, ReadState, TState};
 use crate::widget::{Widget, WidgetExt, WidgetId};
 use crate::widget::types::ScaleMode;
 
@@ -42,10 +42,10 @@ pub struct Image<Id, C> where Id: ReadState<T=Option<ImageId>> + Clone, C: ReadS
 
 impl Image<Option<ImageId>, Style> {
     #[carbide_default_builder2]
-    pub fn new<Id: ReadState<T=Option<ImageId>> + Clone>(id: Id) -> Box<Image<Id, Style>> {
+    pub fn new<Id: IntoReadState<Option<ImageId>>>(id: Id) -> Box<Image<Id::Output, Style>> {
         Box::new(Image {
             id: WidgetId::new(),
-            image_id: id,
+            image_id: id.into_read_state(),
             src_rect: None,
             color: None,
             mode: MODE_IMAGE,
@@ -57,10 +57,10 @@ impl Image<Option<ImageId>, Style> {
         })
     }
 
-    pub fn new_icon<Id: ReadState<T=Option<ImageId>> + Clone>(id: Id) -> Box<Image<Id, EnvironmentColorState>> {
+    pub fn new_icon<Id: IntoReadState<Option<ImageId>>>(id: Id) -> Box<Image<Id::Output, EnvironmentColorState>> {
         Box::new(Image {
             id: WidgetId::new(),
-            image_id: id,
+            image_id: id.into_read_state(),
             src_rect: None,
             color: Some(EnvironmentColor::Accent.state()),
             mode: MODE_ICON,
@@ -197,7 +197,7 @@ impl<Id: ReadState<T=Option<ImageId>> + Clone, C: ReadState<T=Style> + Clone> Re
             };
 
             if let Some(color) = self.color.as_ref().map(|col| col.value().clone()) {
-                context.style(color, |this| {
+                context.style(color.convert(self.position, self.dimension), |this| {
                     this.image(id.clone(), Rect::new(self.position, self.dimension), source_rect, self.mode)
                 })
             } else {

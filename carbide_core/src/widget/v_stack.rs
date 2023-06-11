@@ -5,7 +5,7 @@ use crate::draw::{Dimension, Position};
 use crate::environment::Environment;
 use crate::flags::Flags;
 use crate::layout::{calculate_size_vstack, Layout, position_children_vstack};
-use crate::Scalar;
+use crate::{CommonWidgetImpl, Scalar};
 use crate::widget::{CommonWidget, CrossAxisAlignment, Widget, WidgetExt, WidgetId, WidgetIter, WidgetIterMut};
 
 #[derive(Debug, Clone, Widget)]
@@ -61,86 +61,7 @@ impl Layout for VStack {
 }
 
 impl CommonWidget for VStack {
-    fn id(&self) -> WidgetId {
-        self.id
-    }
-
-    fn foreach_child<'a>(&'a self, f: &mut dyn FnMut(&'a dyn Widget)) {
-        for child in &self.children {
-            if child.is_ignore() {
-                continue;
-            }
-
-            if child.is_proxy() {
-                child.foreach_child(f);
-                continue;
-            }
-
-            f(child);
-        }
-    }
-
-    fn foreach_child_mut<'a>(&'a mut self, f: &mut dyn FnMut(&'a mut dyn Widget)) {
-        for child in &mut self.children {
-            if child.is_ignore() {
-                continue;
-            }
-
-            if child.is_proxy() {
-                child.foreach_child_mut(f);
-                continue;
-            }
-
-            f(child);
-        }
-    }
-
-    fn foreach_child_rev<'a>(&'a mut self, f: &mut dyn FnMut(&'a mut dyn Widget)) {
-        for child in self.children.iter_mut().rev() {
-            if child.is_ignore() {
-                continue;
-            }
-
-            if child.is_proxy() {
-                child.foreach_child_rev(f);
-                continue;
-            }
-
-            f(child);
-        }
-    }
-
-    fn foreach_child_direct<'a>(&'a mut self, f: &mut dyn FnMut(&'a mut dyn Widget)) {
-        for child in self.children.iter_mut() {
-            f(child);
-        }
-    }
-
-    fn foreach_child_direct_rev<'a>(&'a mut self, f: &mut dyn FnMut(&'a mut dyn Widget)) {
-        for child in self.children.iter_mut().rev() {
-            f(child);
-        }
-    }
-
-    fn position(&self) -> Position {
-        self.position
-    }
-
-    fn set_position(&mut self, position: Position) {
-        self.position = position;
-    }
-
-    fn flexibility(&self) -> u32 {
-        1
-    }
-
-    fn dimension(&self) -> Dimension {
-        self.dimension
-    }
-
-    fn set_dimension(&mut self, dimension: Dimension) {
-        self.dimension = dimension
-    }
+    CommonWidgetImpl!(self, id: self.id, children: self.children, position: self.position, dimension: self.dimension, flexibility: 1);
 }
 
 impl WidgetExt for VStack {}

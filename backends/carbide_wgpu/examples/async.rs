@@ -1,26 +1,21 @@
 use std::thread::sleep;
 use std::time::Duration;
 
-use carbide_core::state::{LocalState, Map1, State, StateExt};
+use carbide_core::state::{LocalState, Map1, State};
 use carbide_core::text::FontFamily;
 use carbide_core::widget::*;
 use carbide_core::{task, Color};
+use carbide_core::color::WHITE;
 use carbide_core::draw::Dimension;
 use carbide_core::environment::EnvironmentColor;
+use carbide_core::render::Style;
 use carbide_wgpu::{Application, Window};
+use carbide_core::state::StateExtNew;
 
 fn main() {
     env_logger::init();
 
     let mut application = Application::new();
-
-    fn window(child: Box<dyn Widget>) -> Box<Window> {
-        Window::new(
-            "Async example",
-            Dimension::new(400.0, 600.0),
-            child
-        ).close_application_on_window_close()
-    }
 
     let family =
         FontFamily::new_from_paths("NotoSans", vec!["fonts/NotoSans/NotoSans-Regular.ttf"]);
@@ -74,7 +69,7 @@ fn main() {
         image_id_for_async.clone().set_value(env.queue_image(res))
     });*/
 
-    let random_color = 10.map(|_: &i32| Color::random());
+    let random_color = WHITE.map(|_| Style::Color(Color::random()));
 
     let widgets = VStack::new(vec![
         //Text::new(text)
@@ -86,15 +81,19 @@ fn main() {
             .frame(new_state, 50),
         Rectangle::new()
             .fill(EnvironmentColor::Accent)
-            .frame(new_state1.ignore_writes(), 50),
+            .frame(new_state1, 50),
         Rectangle::new()
             .fill(EnvironmentColor::Accent)
-            .frame(new_state2.ignore_writes(), 50),
+            .frame(new_state2, 50),
     ])
         .accent_color(EnvironmentColor::Red);
 
     application.set_scene(
-        window(widgets)
+        Window::new(
+            "Async example",
+            Dimension::new(400.0, 600.0),
+            widgets
+        ).close_application_on_window_close()
     );
 
     application.launch()

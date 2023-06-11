@@ -24,9 +24,9 @@ fn main() {
     application.set_scene(Window::new(
         "Rotation 3d example",
         Dimension::new(400.0, 600.0),
-        Image::new(Application::assets().join("images/landscape.png"))
+        Image::new("images/landscape.png")
             .scaled_to_fill()
-            .clip_shape(Rectangle::new())
+            .clip_shape(*Rectangle::new())
             .rotation_3d_effect(rotation, 0.0)
             .with_fov(1.0)
             .frame(200.0, 100.0)

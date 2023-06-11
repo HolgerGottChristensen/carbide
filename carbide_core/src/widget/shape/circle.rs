@@ -126,13 +126,13 @@ impl<S: ReadState<T=Style> + Clone, F: ReadState<T=Style> + Clone> Render for Ci
         });
 
         if self.triangle_store.fill_triangles.len() > 0 {
-            context.style(self.fill_color.value().clone(), |this| {
+            context.style(self.fill_color.value().convert(self.position, self.dimension), |this| {
                 this.geometry(&self.triangle_store.fill_triangles)
             })
         }
 
         if self.triangle_store.stroke_triangles.len() > 0 {
-            context.style(self.stroke_color.value().clone(), |this| {
+            context.style(self.stroke_color.value().convert(self.position, self.dimension), |this| {
                 this.geometry(&self.triangle_store.stroke_triangles)
             })
         }

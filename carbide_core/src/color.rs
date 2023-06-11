@@ -761,11 +761,3 @@ impl IntoReadState<Style> for Color {
         Style::Color(self)
     }
 }
-
-impl IntoReadState<Color> for Color {
-    type Output = Color;
-
-    fn into_read_state(self) -> Self::Output {
-        self
-    }
-}

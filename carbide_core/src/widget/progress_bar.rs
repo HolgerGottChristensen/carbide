@@ -8,6 +8,8 @@ use crate::state::TState;
 use crate::state::ReadStateExtNew;
 use crate::widget::{Capsule, CommonWidget, Empty, Frame, HSplit, Spacer, Widget, WidgetExt, WidgetId, ZStack};
 
+type Inner = Frame<f64, f64, f64, f64, ZStack>;
+
 #[derive(Debug, Clone, Widget)]
 pub struct ProgressBar<W, P> where W: Widget + Clone, P: ReadState<T=f64> + Clone {
     id: WidgetId,
@@ -20,7 +22,7 @@ pub struct ProgressBar<W, P> where W: Widget + Clone, P: ReadState<T=f64> + Clon
 
 impl ProgressBar<Empty, f64> {
     #[carbide_default_builder2]
-    pub fn new<P: IntoReadState<f64>>(progress: P) -> Box<ProgressBar<Frame, P::Output>> {
+    pub fn new<P: IntoReadState<f64>>(progress: P) -> Box<ProgressBar<Inner, P::Output>> {
         let progress = progress.into_read_state();
 
         let child = *ZStack::new(vec![
@@ -29,7 +31,7 @@ impl ProgressBar<Empty, f64> {
                 .percent(progress.ignore_writes())
                 .non_draggable(),
         ])
-            .frame(0.0, 5)
+            .frame(0.0, 5.0)
             .expand_width();
 
         Box::new(ProgressBar {

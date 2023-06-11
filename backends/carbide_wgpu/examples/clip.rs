@@ -7,7 +7,7 @@ fn main() {
         .with_asset_fonts();
 
     application.set_scene(Window::new(
-        "Icon example",
+        "Clip example",
         Dimension::new(400.0, 600.0),
         Image::new("images/landscape.png")
             .scaled_to_fill()

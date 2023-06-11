@@ -2,6 +2,7 @@ use std::ops::Range;
 use cgmath::{Matrix4, SquareMatrix, Vector3};
 use carbide_core::color::WHITE;
 use carbide_core::draw::{BoundingBox, Position, Rect};
+use carbide_core::draw::draw_style::DrawStyle;
 use carbide_core::draw::image::ImageId;
 use carbide_core::draw::shape::triangle::Triangle;
 use carbide_core::layout::BasicLayouter;
@@ -10,6 +11,7 @@ use carbide_core::render::{CarbideTransform, InnerRenderContext, Style};
 use carbide_core::Scalar;
 use carbide_core::text::Glyph;
 use carbide_core::widget::FilterId;
+use crate::gradient::Gradient;
 use crate::render_pass_command::{RenderPass, RenderPassCommand, WGPUBindGroup};
 use crate::vertex::Vertex;
 
@@ -20,6 +22,7 @@ pub struct WGPURenderContext {
     scissor_stack: Vec<BoundingBox>,
     transform_stack: Vec<(Matrix4<f32>, usize)>,
     transforms: Vec<Matrix4<f32>>,
+    gradients: Vec<Gradient>,
     state: State,
     render_pass: Vec<RenderPass>,
     render_pass_inner: Vec<RenderPassCommand>,
@@ -29,15 +32,17 @@ pub struct WGPURenderContext {
     frame_count: usize,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 enum WGPUStyle {
     Color([f32; 4]),
+    Gradient(Gradient),
 }
 
 #[derive(Debug)]
 enum State {
     Image { id: ImageId, start: usize },
     Plain { start: usize },
+    Gradient { gradient: Gradient, start: usize },
     Finished,
 }
 
@@ -49,6 +54,7 @@ impl WGPURenderContext {
             scissor_stack: vec![],
             transform_stack: vec![(Matrix4::identity(), 0)],
             transforms: vec![Matrix4::identity()],
+            gradients: vec![],
             state: State::Plain { start: 0 },
             render_pass: vec![],
             render_pass_inner: vec![],
@@ -67,6 +73,7 @@ impl WGPURenderContext {
 
         self.transform_stack.clear();
         self.transforms.clear();
+        self.gradients.clear();
         self.transforms.push(Matrix4::identity());
         self.transform_stack.push((Matrix4::identity(), 0));
 
@@ -81,6 +88,9 @@ impl WGPURenderContext {
     }
     pub fn transforms(&self) -> &Vec<Matrix4<f32>> {
         &self.transforms
+    }
+    pub fn gradients(&self) -> &Vec<Gradient> {
+        &self.gradients
     }
 
     pub fn start(&mut self, window_bounding_box: Rect) {
@@ -103,6 +113,9 @@ impl WGPURenderContext {
             },
             State::Image { id, start } => {
                 self.push_image_command(id.clone(), *start..self.vertices.len());
+            }
+            State::Gradient { gradient, start } => {
+                self.push_gradient_command(gradient.clone(), *start..self.vertices.len());
             }
             State::Finished => {}
         }
@@ -130,6 +143,9 @@ impl WGPURenderContext {
                 self.push_geometry_command(*start..self.vertices.len());
             }
             State::Finished => {}
+            State::Gradient { gradient, start } => {
+                self.push_gradient_command(gradient.clone(), *start..self.vertices.len());
+            }
         }
 
         self.state = State::Plain {
@@ -138,12 +154,54 @@ impl WGPURenderContext {
     }
 
     fn ensure_state_plain(&mut self) {
-        if let State::Image { id, start } = &self.state {
-            self.push_image_command(id.clone(), *start..self.vertices.len());
+        match &self.state {
+            State::Image { id, start } => {
+                self.push_image_command(id.clone(), *start..self.vertices.len());
 
-            self.state = State::Plain {
-                start: self.vertices.len(),
-            };
+                self.state = State::Plain {
+                    start: self.vertices.len(),
+                };
+            }
+            State::Plain { .. } => {} // We are already in the plain state
+            State::Gradient { gradient, start} => {
+                self.push_gradient_command(gradient.clone(), *start..self.vertices.len());
+
+                self.state = State::Plain {
+                    start: self.vertices.len(),
+                };
+            }
+            State::Finished => unreachable!("We should not ensure that the state is plain after we are finished")
+        }
+    }
+
+    fn ensure_state_gradient(&mut self, gradient: Gradient) {
+        match &self.state {
+            State::Image { id, start } => {
+                self.push_image_command(id.clone(), *start..self.vertices.len());
+
+                self.state = State::Gradient {
+                    gradient,
+                    start: self.vertices.len(),
+                };
+            }
+            State::Plain { start } => {
+                self.push_geometry_command(*start..self.vertices.len());
+
+                self.state = State::Gradient {
+                    gradient,
+                    start: self.vertices.len(),
+                };
+            }
+            State::Gradient { gradient: g, .. } if *g == gradient => (),
+            State::Gradient { gradient: g, start} => {
+                self.push_gradient_command(g.clone(), *start..self.vertices.len());
+
+                self.state = State::Gradient {
+                    gradient,
+                    start: self.vertices.len(),
+                };
+            }
+            State::Finished => unreachable!("We should not ensure that the state is plain after we are finished")
         }
     }
 
@@ -159,6 +217,14 @@ impl WGPURenderContext {
                 self.push_geometry_command(*start..self.vertices.len());
                 self.state = State::Image {
                     id: new_image_id,
+                    start: self.vertices.len(),
+                };
+            }
+
+            State::Gradient { gradient, start} => {
+                self.push_gradient_command(gradient.clone(), *start..self.vertices.len());
+
+                self.state = State::Plain {
                     start: self.vertices.len(),
                 };
             }
@@ -216,6 +282,24 @@ impl WGPURenderContext {
             vertex_range: vertices.start as u32..vertices.end as u32,
         };
         self.render_pass_inner.push(cmd);
+    }
+
+    fn push_gradient_command(&mut self, gradient: Gradient, vertices: Range<usize>) {
+        self.ensure_current_bind_group_is_some();
+
+        if vertices.len() == 0 {
+            return;
+        }
+
+        let mut swap = vec![];
+        std::mem::swap(&mut swap, &mut self.render_pass_inner);
+
+        self.render_pass.push(RenderPass::Normal(swap));
+
+        let range = vertices.start as u32..vertices.end as u32;
+        self.render_pass.push(RenderPass::Gradient(range, self.gradients.len()));
+        self.gradients.push(gradient);
+        self.current_bind_group = None;
     }
 }
 
@@ -319,10 +403,19 @@ impl InnerRenderContext for WGPURenderContext {
     }
 
     fn geometry(&mut self, geometry: &[Triangle<Position>]) {
-        self.ensure_state_plain();
+        //println!("draw geometry: {}", geometry.len());
 
-        let color = match self.style.last().unwrap() {
-            WGPUStyle::Color(c) => *c,
+        let style = self.style.last().unwrap().clone();
+
+        let color = match style {
+            WGPUStyle::Color(c) => {
+                self.ensure_state_plain();
+                c
+            },
+            WGPUStyle::Gradient(g) => {
+                self.ensure_state_gradient(g.clone());
+                [0.0, 0.0, 0.0, 1.0]
+            },
         };
 
         self.vertices.extend(
@@ -338,19 +431,19 @@ impl InnerRenderContext for WGPURenderContext {
         );
     }
 
-    fn style(&mut self, style: Style) {
+    fn style(&mut self, style: DrawStyle) {
         match style {
-            Style::Color(color) => {
+            DrawStyle::Color(color) => {
                 let color = color.gamma_srgb_to_linear()
                     .pre_multiply()
                     .to_fsa();
 
                 self.style.push(WGPUStyle::Color(color));
             }
-            Style::Gradient(_) => {
-                todo!()
+            DrawStyle::Gradient(g) => {
+                self.style.push(WGPUStyle::Gradient(Gradient::convert(&g)))
             }
-            Style::MultiGradient(_) => {
+            DrawStyle::MultiGradient(_) => {
                 todo!()
             }
         }
@@ -366,6 +459,7 @@ impl InnerRenderContext for WGPURenderContext {
 
         let color = match self.style.last().unwrap_or(&WGPUStyle::Color(WHITE.gamma_srgb_to_linear().to_fsa())) {
             WGPUStyle::Color(c) => *c,
+            WGPUStyle::Gradient(_) => unimplemented!("gradients not implemented for images yet...")
         };
 
         let (uv_l, uv_r, uv_b, uv_t) = source_rect.l_r_b_t();
@@ -396,6 +490,7 @@ impl InnerRenderContext for WGPURenderContext {
 
         let color = match self.style.last().unwrap_or(&WGPUStyle::Color(WHITE.gamma_srgb_to_linear().to_fsa())) {
             WGPUStyle::Color(c) => *c,
+            WGPUStyle::Gradient(_) => unimplemented!("gradients not implemented for text")
         };
 
         let v_normal = |x, y, t| Vertex {

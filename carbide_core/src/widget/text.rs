@@ -9,6 +9,7 @@ use carbide_macro::{carbide_default_builder, carbide_default_builder2};
 
 use crate::Color;
 use crate::draw::{Dimension, Position, Rect};
+use crate::draw::draw_style::DrawStyle;
 use crate::environment::{Environment, EnvironmentColor, EnvironmentColorState, EnvironmentFontSize, EnvironmentFontSizeState};
 use crate::layout::Layout;
 //use crate::render::text::Text as RenderText;
@@ -259,7 +260,7 @@ impl<T: ReadState<T=String> + Clone, S: ReadState<T=u32> + Clone, C: ReadState<T
         let default_color = *self.color.value();
 
         if let Some(internal) = &mut self.internal_text {
-            context.style(Style::Color(default_color), |context| {
+            context.style(DrawStyle::Color(default_color), |context| {
                 for (glyphs, color, additional_rects) in &internal.span_glyphs(env.scale_factor()) {
 
                     context.text(glyphs);

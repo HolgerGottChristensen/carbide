@@ -20,7 +20,7 @@ fn main() {
         Dimension::new(600.0, 600.0),
         Image::new("images/landscape.png")
             .scaled_to_fill()
-            .clip_shape(Rectangle::new())
+            .clip_shape(*Rectangle::new())
             .scale_effect(scale)
             .frame(200.0, 200.0)
             .border(),

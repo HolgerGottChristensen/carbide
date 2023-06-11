@@ -5,7 +5,7 @@ use carbide_core::widget::GradientPosition;
 use crate::draw::{Dimension, Position};
 use crate::widget::{GradientRepeat, GradientType};
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct DrawGradient {
     pub colors: Vec<Color>,
     pub ratios: Vec<f32>,

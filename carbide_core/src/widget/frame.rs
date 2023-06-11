@@ -1,137 +1,157 @@
 use std::fmt::Debug;
 
 
-use carbide_macro::carbide_default_builder;
+use carbide_macro::{carbide_default_builder, carbide_default_builder2};
 
 use crate::draw::{Dimension, Position};
 use crate::environment::Environment;
 use crate::flags::Flags;
 use crate::layout::{BasicLayouter, Layout, Layouter};
-use crate::state::{NewStateSync, ReadState, State, TState, ValueRef, ValueRefMut};
-use crate::widget::{CommonWidget, Widget, WidgetExt, WidgetId, WidgetIter, WidgetIterMut};
+use crate::state::{IntoReadState, NewStateSync, ReadState, State, TState, ValueRef, ValueRefMut};
+use crate::widget::{CommonWidget, Empty, Widget, WidgetExt, WidgetId, WidgetIter, WidgetIterMut};
 
 pub static SCALE: f64 = -1.0;
 
 #[derive(Debug, Clone, Widget)]
 #[carbide_exclude(Layout)]
-pub struct Frame {
+pub struct Frame<X, Y, W, H, C> where
+    X: ReadState<T=f64> + Clone,
+    Y: ReadState<T=f64> + Clone,
+    W: ReadState<T=f64> + Clone,
+    H: ReadState<T=f64> + Clone,
+    C: Widget + Clone
+{
     id: WidgetId,
-    child: Box<dyn Widget>,
+    child: C,
     position: Position,
-    #[state]
-    x: TState<f64>,
-    #[state]
-    y: TState<f64>,
-    fixed_x: bool,
-    fixed_y: bool,
-    #[state]
-    width: FrameState,
-    #[state]
-    height: FrameState,
+    #[state] x: Fixity<X>,
+    #[state] y: Fixity<Y>,
+    #[state] width: Fixity<W>,
+    #[state] height: Fixity<H>,
 }
 
-impl Frame {
-    #[carbide_default_builder]
-    pub fn new(
-        width: impl Into<TState<f64>>,
-        height: impl Into<TState<f64>>,
-        child: Box<dyn Widget>,
-    ) -> Box<Frame> {}
-
-    pub fn new(
-        width: impl Into<TState<f64>>,
-        height: impl Into<TState<f64>>,
-        child: Box<dyn Widget>,
-    ) -> Box<Frame> {
-        let width = width.into();
-        let height = height.into();
-
+impl Frame<f64, f64, f64, f64, Empty> {
+    #[carbide_default_builder2]
+    pub fn new<W: IntoReadState<f64>, H: IntoReadState<f64>, C: Widget + Clone>(
+        width: W,
+        height: H,
+        child: C,
+    ) -> Box<Frame<f64, f64, W::Output, H::Output, C>> {
         Box::new(Frame {
             id: WidgetId::new(),
             child,
             position: Position::new(0.0, 0.0),
-            x: 0.0.into(),
-            y: 0.0.into(),
-            fixed_x: false,
-            fixed_y: false,
-            width: FrameState::Fixed(width),
-            height: FrameState::Fixed(height),
+            x: Fixity::Expand(0.0),
+            y: Fixity::Expand(0.0),
+            width: Fixity::Fixed(width.into_read_state()),
+            height: Fixity::Fixed(height.into_read_state()),
         })
-    }
-
-    pub fn expand_width(mut self) -> Box<Frame> {
-        self.width = FrameState::Expand(10.0.into());
-        Box::new(self)
-    }
-
-    pub fn expand_height(mut self) -> Box<Frame> {
-        self.height = FrameState::Expand(10.0.into());
-        Box::new(self)
-    }
-
-    pub fn fit_width(mut self) -> Box<Frame> {
-        self.width = FrameState::Fit(10.0.into());
-        Box::new(self)
-    }
-
-    pub fn fit_height(mut self) -> Box<Frame> {
-        self.height = FrameState::Fit(10.0.into());
-        Box::new(self)
-    }
-
-    pub fn init_width(width: impl Into<TState<f64>>, child: Box<dyn Widget>) -> Box<Frame> {
-        Box::new(Frame {
-            id: WidgetId::new(),
-            child,
-            position: Position::new(0.0, 0.0),
-            x: 0.0.into(),
-            y: 0.0.into(),
-            fixed_x: false,
-            fixed_y: false,
-            width: FrameState::Fixed(width.into()),
-            height: FrameState::Expand(0.0.into()),
-        })
-    }
-
-    pub fn init_height(height: impl Into<TState<f64>>, child: Box<dyn Widget>) -> Box<Frame> {
-        Box::new(Frame {
-            id: WidgetId::new(),
-            child,
-            position: Position::new(0.0, 0.0),
-            x: 0.0.into(),
-            y: 0.0.into(),
-            fixed_x: false,
-            fixed_y: false,
-            width: FrameState::Expand(0.0.into()),
-            height: FrameState::Fixed(height.into()),
-        })
-    }
-
-    pub fn with_fixed_x(mut self, x: TState<f64>) -> Box<Frame> {
-        self.x = x;
-        self.fixed_x = true;
-
-        Box::new(self)
-    }
-
-    pub fn with_fixed_y(mut self, y: TState<f64>) -> Box<Frame> {
-        self.y = y;
-        self.fixed_y = true;
-
-        Box::new(self)
-    }
-
-    pub fn with_fixed_position(mut self, x: TState<f64>, y: TState<f64>) -> Box<Frame> {
-        self.x = x;
-        self.fixed_x = true;
-        self.y = y;
-        self.fixed_y = true;
-
-        Box::new(self)
     }
 }
 
-impl CommonWidget for Frame {
+impl<
+    X: ReadState<T=f64> + Clone,
+    Y: ReadState<T=f64> + Clone,
+    W: ReadState<T=f64> + Clone,
+    H: ReadState<T=f64> + Clone,
+    C: Widget + Clone
+> Frame<X, Y, W, H, C> {
+    /// Note: This disconnects from the existing width value
+    pub fn expand_width(mut self) -> Box<Frame<X, Y, f64, H, C>> {
+        Box::new(Frame {
+            id: self.id,
+            child: self.child,
+            position: self.position,
+            x: self.x,
+            y: self.y,
+            width: Fixity::Expand(10.0),
+            height: self.height,
+        })
+    }
+
+    /// Note: This disconnects from the existing height value
+    pub fn expand_height(mut self) -> Box<Frame<X, Y, W, f64, C>> {
+        Box::new(Frame {
+            id: self.id,
+            child: self.child,
+            position: self.position,
+            x: self.x,
+            y: self.y,
+            width: self.width,
+            height: Fixity::Expand(10.0),
+        })
+    }
+
+    /// Note: This disconnects from the existing width value
+    pub fn fit_width(mut self) -> Box<Frame<X, Y, f64, H, C>> {
+        Box::new(Frame {
+            id: self.id,
+            child: self.child,
+            position: self.position,
+            x: self.x,
+            y: self.y,
+            width: Fixity::Fit(10.0),
+            height: self.height,
+        })
+    }
+
+    /// Note: This disconnects from the existing height value
+    pub fn fit_height(mut self) -> Box<Frame<X, Y, W, f64, C>> {
+        Box::new(Frame {
+            id: self.id,
+            child: self.child,
+            position: self.position,
+            x: self.x,
+            y: self.y,
+            width: self.width,
+            height: Fixity::Fit(10.0),
+        })
+    }
+
+    pub fn with_fixed_x<N: IntoReadState<f64>>(mut self, x: N) -> Box<Frame<N::Output, Y, W, H, C>> {
+        Box::new(Frame {
+            id: self.id,
+            child: self.child,
+            position: self.position,
+            x: Fixity::Fixed(x.into_read_state()),
+            y: self.y,
+            width: self.width,
+            height: self.height,
+        })
+    }
+
+    pub fn with_fixed_y<N: IntoReadState<f64>>(mut self, y: N) -> Box<Frame<X, N::Output, W, H, C>> {
+        Box::new(Frame {
+            id: self.id,
+            child: self.child,
+            position: self.position,
+            x: self.x,
+            y: Fixity::Fixed(y.into_read_state()),
+            width: self.width,
+            height: self.height,
+        })
+    }
+
+    pub fn with_fixed_position<N: IntoReadState<f64>, M: IntoReadState<f64>>(mut self, x: N, y: M) -> Box<Frame<N::Output, M::Output, W, H, C>> {
+        Box::new(Frame {
+            id: self.id,
+            child: self.child,
+            position: self.position,
+            x: Fixity::Fixed(x.into_read_state()),
+            y: Fixity::Fixed(y.into_read_state()),
+            width: self.width,
+            height: self.height,
+        })
+    }
+}
+
+impl<
+    X: ReadState<T=f64> + Clone,
+    Y: ReadState<T=f64> + Clone,
+    W: ReadState<T=f64> + Clone,
+    H: ReadState<T=f64> + Clone,
+    C: Widget + Clone
+> CommonWidget for Frame<X, Y, W, H, C> {
     fn id(&self) -> WidgetId {
         self.id
     }
@@ -192,9 +212,9 @@ impl CommonWidget for Frame {
     }
 
     fn flexibility(&self) -> u32 {
-        if let FrameState::Expand(_) = self.width {
+        if let Fixity::Expand(_) = self.width {
             8
-        } else if let FrameState::Expand(_) = self.height {
+        } else if let Fixity::Expand(_) = self.height {
             8
         } else {
             9
@@ -211,33 +231,36 @@ impl CommonWidget for Frame {
     }
 }
 
-impl Layout for Frame {
+impl<
+    X: ReadState<T=f64> + Clone,
+    Y: ReadState<T=f64> + Clone,
+    W: ReadState<T=f64> + Clone,
+    H: ReadState<T=f64> + Clone,
+    C: Widget + Clone
+> Layout for Frame<X, Y, W, H, C> {
     fn calculate_size(&mut self, requested_size: Dimension, env: &mut Environment) -> Dimension {
-        let fixed_height = matches!(&self.height, FrameState::Fixed(_));
-
+        let fixed_height = matches!(&self.height, Fixity::Fixed(_));
         let height = *self.height.value();
 
-        if let FrameState::Expand(e) = &mut self.width {
-            e.set_value(requested_size.width);
-        } else if let FrameState::Fit(f) = &mut self.width {
+
+        if let Fixity::Expand(_) = &self.width {
+            self.width.set_value(requested_size.width);
+        } else if let Fixity::Fit(_) = &mut self.width {
             let child_dimensions = if fixed_height {
-                self.child
-                    .calculate_size(Dimension::new(requested_size.width, height), env)
+                self.child.calculate_size(Dimension::new(requested_size.width, height), env)
             } else {
                 self.child.calculate_size(requested_size, env)
             };
-            f.set_value(child_dimensions.width);
+            self.width.set_value(child_dimensions.width);
         }
 
         let width = *self.width.value();
 
-        if let FrameState::Expand(e) = &mut self.height {
-            e.set_value(requested_size.height);
-        } else if let FrameState::Fit(f) = &mut self.height {
-            let child_dimensions = self
-                .child
-                .calculate_size(Dimension::new(width, requested_size.height), env);
-            f.set_value(child_dimensions.height);
+        if let Fixity::Expand(_) = &mut self.height {
+            self.height.set_value(requested_size.height);
+        } else if let Fixity::Fit(_) = &mut self.height {
+            let child_dimensions = self.child.calculate_size(Dimension::new(width, requested_size.height), env);
+            self.height.set_value(child_dimensions.height);
         }
 
         let dimensions = self.dimension();
@@ -248,12 +271,12 @@ impl Layout for Frame {
     }
 
     fn position_children(&mut self, env: &mut Environment) {
-        if self.fixed_x {
+        if let Fixity::Fixed(_) = self.x {
             let new_x = *self.x.value();
             self.set_x(new_x);
         }
 
-        if self.fixed_y {
+        if let Fixity::Fixed(_) = self.y {
             let new_y = *self.y.value();
             self.set_y(new_y);
         }
@@ -267,47 +290,58 @@ impl Layout for Frame {
     }
 }
 
-impl WidgetExt for Frame {}
+impl<
+    X: ReadState<T=f64> + Clone,
+    Y: ReadState<T=f64> + Clone,
+    W: ReadState<T=f64> + Clone,
+    H: ReadState<T=f64> + Clone,
+    C: Widget + Clone
+> WidgetExt for Frame<X, Y, W, H, C> {}
 
 #[derive(Clone, Debug)]
-enum FrameState {
-    Expand(TState<f64>),
-    Fit(TState<f64>),
-    Fixed(TState<f64>),
+enum Fixity<T: ReadState<T=f64> + Clone> {
+    Expand(f64),
+    Fit(f64),
+    Fixed(T),
 }
 
-impl NewStateSync for FrameState {
+impl<T: ReadState<T=f64> + Clone> NewStateSync for Fixity<T> {
     fn sync(&mut self, env: &mut Environment) -> bool {
         match self {
-            FrameState::Expand(e) => e.sync(env),
-            FrameState::Fixed(f) => f.sync(env),
-            FrameState::Fit(f) => f.sync(env),
+            Fixity::Expand(_) => false,
+            Fixity::Fit(_) => false,
+            Fixity::Fixed(s) => s.sync(env),
         }
     }
 }
 
-impl ReadState for FrameState {
+impl<T: ReadState<T=f64> + Clone> ReadState for Fixity<T> {
     type T = f64;
 
-    fn value(&self) -> ValueRef<f64> {
+    fn value(&self) -> ValueRef<Self::T> {
         match self {
-            FrameState::Expand(e) => e.value(),
-            FrameState::Fixed(f) => f.value(),
-            FrameState::Fit(f) => f.value(),
+            Fixity::Expand(s) => ValueRef::Borrow(s),
+            Fixity::Fit(s) => ValueRef::Borrow(s),
+            Fixity::Fixed(s) => s.value()
         }
     }
 }
 
-impl State for FrameState {
-    fn value_mut(&mut self) -> ValueRefMut<f64> {
-        unimplemented!("Should not be called")
+impl<T: ReadState<T=f64> + Clone> State for Fixity<T> {
+    fn value_mut(&mut self) -> ValueRefMut<Self::T> {
+        todo!()
     }
 
-    fn set_value(&mut self, value: f64) {
+    fn set_value(&mut self, value: Self::T) {
         match self {
-            FrameState::Expand(e) => e.set_value(value),
-            FrameState::Fixed(f) => f.set_value(value),
-            FrameState::Fit(f) => f.set_value(value),
+            Fixity::Expand(s) => {
+                *s = value;
+            }
+            Fixity::Fit(s) => {
+                *s = value;
+            }
+            Fixity::Fixed(_) => unreachable!("We should never set fixed states")
         }
     }
 }
+

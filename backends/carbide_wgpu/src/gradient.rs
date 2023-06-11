@@ -2,7 +2,7 @@ use carbide_core::draw::draw_gradient::DrawGradient;
 use carbide_core::widget::{GradientRepeat, GradientType};
 
 #[repr(C)]
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq)]
 pub struct Gradient {
     pub colors: [[f32; 4]; 16],
     pub ratios: [f32; 16],

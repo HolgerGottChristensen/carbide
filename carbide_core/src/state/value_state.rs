@@ -8,7 +8,7 @@ use carbide_core::state::NewStateSync;
 use crate::Color;
 use crate::environment::Environment;
 use crate::render::Style;
-use crate::state::{ReadWidgetState, RState, State, StateContract, StateExt, TState};
+use crate::state::{IntoReadState, ReadWidgetState, RState, State, StateContract, StateExt, TState};
 use crate::state::{ValueRef, ValueRefMut};
 use crate::state::ReadState;
 use crate::state::widget_state::WidgetState;
@@ -242,11 +242,5 @@ impl Into<TState<String>> for TState<Result<String, String>> {
 impl Into<TState<Style>> for Color {
     fn into(self) -> TState<Style> {
         ValueState::new(Style::Color(self))
-    }
-}
-
-impl Into<TState<Style>> for Gradient {
-    fn into(self) -> TState<Style> {
-        ValueState::new(Style::Gradient(self))
     }
 }

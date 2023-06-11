@@ -1,7 +1,7 @@
 use std::path::{Path, PathBuf};
 use std::rc::Rc;
 
-use crate::state::{TState, ValueState};
+use crate::state::{IntoReadState, TState, ValueState};
 
 /// Unique image identifier.
 ///
@@ -31,6 +31,14 @@ impl Default for ImageId {
 impl AsRef<Path> for ImageId {
     fn as_ref(&self) -> &Path {
         self.0.as_path()
+    }
+}
+
+impl IntoReadState<Option<ImageId>> for &str {
+    type Output = Option<ImageId>;
+
+    fn into_read_state(self) -> Self::Output {
+        Some(ImageId::new(self))
     }
 }
 

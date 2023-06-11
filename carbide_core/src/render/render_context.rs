@@ -1,6 +1,7 @@
 use image::DynamicImage;
 use carbide_core::draw::Rect;
 use crate::draw::{BoundingBox, Position};
+use crate::draw::draw_style::DrawStyle;
 use crate::draw::image::ImageId;
 use crate::draw::shape::triangle::Triangle;
 use crate::layout::BasicLayouter;
@@ -73,7 +74,7 @@ impl<'a> RenderContext<'a> {
         ])
     }
 
-    pub fn style<R, F: FnOnce(&mut RenderContext) -> R>(&mut self, style: Style, f: F) -> R {
+    pub fn style<R, F: FnOnce(&mut RenderContext) -> R>(&mut self, style: DrawStyle, f: F) -> R {
         self.inner.style(style);
         let res = f(self);
         self.inner.pop_style();
@@ -105,7 +106,7 @@ pub trait InnerRenderContext {
     fn geometry(&mut self, geometry: &[Triangle<Position>]);
 
     // TODO: Consider making it take a reference to Style
-    fn style(&mut self, style: Style);
+    fn style(&mut self, style: DrawStyle);
     fn pop_style(&mut self);
 
     fn image(&mut self, id: ImageId, bounding_box: Rect, source_rect: Rect, mode: u32);
@@ -132,7 +133,7 @@ impl InnerRenderContext for NoopRenderContext {
 
     fn geometry(&mut self, geometry: &[Triangle<Position>]) {}
 
-    fn style(&mut self, style: Style) {}
+    fn style(&mut self, style: DrawStyle) {}
 
     fn pop_style(&mut self) {}
 

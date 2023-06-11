@@ -13,8 +13,8 @@ pub trait WidgetExt: Widget + Sized + Clone + 'static {
     /// Surround the widget with a frame. The frame is a widget that has fixed width, height or both.
     /// The frame takes two parameters. Both parameters take f64 state. This means you can pass
     /// constant values like 10, 100.2, varying values like LocalState and AnimationState.
-    fn frame(self, width: impl Into<TState<f64>>, height: impl Into<TState<f64>>) -> Box<Frame> {
-        Frame::new(width, height, Box::new(self))
+    fn frame<W: IntoReadState<f64>, H: IntoReadState<f64>>(self, width: W, height: H) -> Box<Frame<f64, f64, W::Output, H::Output, Self>> {
+        Frame::new(width, height, self)
     }
 
     /// Changes the flexibility of the widget to a custom value. This can be useful when the
@@ -41,12 +41,12 @@ pub trait WidgetExt: Widget + Sized + Clone + 'static {
     /// areas for event handling. The widget will still take up the same space as if the effect
     /// wasn't applies. This only changes the visual. The function takes anything that can be
     /// converted into a state of f64.
-    fn rotation_3d_effect(
+    fn rotation_3d_effect<R1: ReadState<T = f64> + Clone, R2: ReadState<T = f64> + Clone>(
         self,
-        x: impl Into<TState<f64>>,
-        y: impl Into<TState<f64>>,
-    ) -> Box<Rotation3DEffect> {
-        Rotation3DEffect::new(Box::new(self), x.into(), y.into())
+        x: R1,
+        y: R2,
+    ) -> Box<Rotation3DEffect<R1, R2, Self>> {
+        Rotation3DEffect::new(self, x, y)
     }
 
     /// Rotates the widget around the z axis. The z axis is the axis that goes through you screen.
@@ -78,12 +78,14 @@ pub trait WidgetExt: Widget + Sized + Clone + 'static {
         Transform::new(self, matrix)
     }
 
-    fn frame_fixed_width(self, width: impl Into<TState<f64>>) -> Box<Frame> {
-        Frame::init_width(width.into(), Box::new(self))
+    fn frame_fixed_width<W: IntoReadState<f64>>(self, width: W) -> Box<Frame<f64, f64, W::Output, f64, Self>> {
+        Frame::new(width, 10.0, self)
+            .expand_height()
     }
 
-    fn frame_fixed_height(self, height: impl Into<TState<f64>>) -> Box<Frame> {
-        Frame::init_height(height.into(), Box::new(self))
+    fn frame_fixed_height<H: IntoReadState<f64>>(self, height: H) -> Box<Frame<f64, f64, f64, H::Output, Self>> {
+        Frame::new(10.0, height, self)
+            .expand_width()
     }
 
     /// Set a padding around a widget. This will take any value that can be converted into EdgeInsets

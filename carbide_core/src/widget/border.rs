@@ -1,8 +1,10 @@
 use carbide_core::render::{RenderContext, Style};
+use carbide_core::state::IntoReadState;
 use carbide_macro::{carbide_default_builder, carbide_default_builder2};
 
 use crate::{Color, CommonWidgetImpl};
 use crate::draw::{Dimension, Position, Rect};
+use crate::draw::draw_style::DrawStyle;
 use crate::environment::Environment;
 use crate::layout::Layout;
 use crate::render::{Primitive, PrimitiveKind, Render};
@@ -39,13 +41,13 @@ impl Border<Empty, Color> {
 }
 
 impl<W: Widget + Clone, D: ReadState<T=Color> + Clone + 'static> Border<W, D> {
-    pub fn color<C: ReadState<T=Color> + Clone + 'static>(self, color: C) -> Box<Border<W, C>> {
+    pub fn color<C: IntoReadState<Color>>(self, color: C) -> Box<Border<W, C::Output>> {
         Box::new(Border {
             id: self.id,
             child: self.child,
             position: self.position,
             dimension: self.dimension,
-            color,
+            color: color.into_read_state(),
             border_width: 1,
         })
     }
@@ -121,7 +123,7 @@ impl<W: Widget + Clone, C: ReadState<T=Color> + Clone + 'static> Render for Bord
             child.render(context, env);
         });
 
-        context.style(Style::Color(*self.color.value()), |this| {
+        context.style(DrawStyle::Color(*self.color.value()), |this| {
             this.rect(left_border);
             this.rect(right_border);
             this.rect(top_border);

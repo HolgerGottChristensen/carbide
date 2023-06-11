@@ -1,4 +1,4 @@
-
+use carbide_core::render::RenderContext;
 use carbide_macro::carbide_default_builder;
 
 use crate::color::Color;
@@ -134,7 +134,7 @@ impl MouseEventHandler for Scroll {
                     if modifiers.contains(ModifierKey::SHIFT) {
                         self.scroll_offset.x += y * offset_multiplier;
                     } else {
-                        self.scroll_offset.x += x * offset_multiplier;
+                        self.scroll_offset.x -= x * offset_multiplier;
                     }
 
                     self.keep_x_within_bounds();
@@ -501,6 +501,33 @@ impl Render for Scroll {
 
             self.scrollbar_horizontal
                 .process_get_primitives(primitives, env);
+        }
+    }
+
+    fn render(&mut self, context: &mut RenderContext, env: &mut Environment) {
+        self.child.render(context, env);
+
+        if (self.scroll_directions == ScrollDirection::Both
+            || self.scroll_directions == ScrollDirection::Vertical)
+            && self.child.height() > self.height()
+        {
+            if self.vertical_scrollbar_hovered || self.drag_started_on_vertical_scrollbar {
+                self.scrollbar_vertical_background
+                    .render(context, env);
+            }
+
+            self.scrollbar_vertical.render(context, env);
+        }
+
+        if (self.scroll_directions == ScrollDirection::Both
+            || self.scroll_directions == ScrollDirection::Horizontal)
+            && self.child.width() > self.width()
+        {
+            if self.horizontal_scrollbar_hovered || self.drag_started_on_horizontal_scrollbar {
+                self.scrollbar_horizontal_background.render(context, env);
+            }
+
+            self.scrollbar_horizontal.render(context, env);
         }
     }
 }

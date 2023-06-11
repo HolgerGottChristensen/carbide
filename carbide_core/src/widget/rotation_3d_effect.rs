@@ -1,7 +1,8 @@
 use cgmath::{Deg, Matrix4, Point3, Vector3};
+use carbide_core::render::RenderContext;
 
 
-use carbide_macro::carbide_default_builder;
+use carbide_macro::{carbide_default_builder, carbide_default_builder2};
 
 use crate::draw::{Dimension, Position, Rect};
 use crate::environment::Environment;
@@ -9,48 +10,44 @@ use crate::flags::Flags;
 use crate::layout::BasicLayouter;
 use crate::render::{Primitive, PrimitiveKind, Render};
 use crate::state::{ReadState, StateSync, TState};
-use crate::widget::{CommonWidget, Widget, WidgetExt, WidgetId, WidgetIter, WidgetIterMut};
+use crate::widget::{CommonWidget, Empty, Widget, WidgetExt, WidgetId, WidgetIter, WidgetIterMut};
 
 #[derive(Debug, Clone, Widget)]
 #[carbide_exclude(Render)]
-pub struct Rotation3DEffect {
+pub struct Rotation3DEffect<R1, R2, C> where R1: ReadState<T = f64> + Clone, R2: ReadState<T = f64> + Clone, C: Widget + Clone {
     id: WidgetId,
-    child: Box<dyn Widget>,
+    child: C,
     position: Position,
     dimension: Dimension,
     anchor: BasicLayouter,
     #[state]
-    rotation_x: TState<f64>,
+    rotation_x: R1,
     #[state]
-    rotation_y: TState<f64>,
+    rotation_y: R2,
     fov: f64,
 }
 
-impl Rotation3DEffect {
-    #[carbide_default_builder]
-    pub fn new(
-        child: Box<dyn Widget>,
-        rotation_x: impl Into<TState<f64>>,
-        rotation_y: impl Into<TState<f64>>,
-    ) -> Box<Self> {}
-
-    pub fn new(
-        child: Box<dyn Widget>,
-        rotation_x: impl Into<TState<f64>>,
-        rotation_y: impl Into<TState<f64>>,
-    ) -> Box<Self> {
+impl Rotation3DEffect<f64, f64, Empty> {
+    #[carbide_default_builder2]
+    pub fn new<R1: ReadState<T = f64> + Clone, R2: ReadState<T = f64> + Clone, C: Widget + Clone>(
+        child: C,
+        rotation_x: R1,
+        rotation_y: R2,
+    ) -> Box<Rotation3DEffect<R1, R2, C>> {
         Box::new(Rotation3DEffect {
             id: WidgetId::new(),
             child,
             position: Position::new(0.0, 0.0),
             dimension: Dimension::new(100.0, 100.0),
             anchor: BasicLayouter::Center,
-            rotation_x: rotation_x.into(),
-            rotation_y: rotation_y.into(),
+            rotation_x,
+            rotation_y,
             fov: 1.15,
         })
     }
+}
 
+impl<R1: ReadState<T = f64> + Clone, R2: ReadState<T = f64> + Clone, C: Widget + Clone> Rotation3DEffect<R1, R2, C> {
     pub fn with_anchor(mut self, anchor: BasicLayouter) -> Box<Self> {
         self.anchor = anchor;
         Box::new(self)
@@ -63,7 +60,7 @@ impl Rotation3DEffect {
     }
 }
 
-impl CommonWidget for Rotation3DEffect {
+impl<R1: ReadState<T = f64> + Clone, R2: ReadState<T = f64> + Clone, C: Widget + Clone> CommonWidget for Rotation3DEffect<R1, R2, C> {
     fn id(&self) -> WidgetId {
         self.id
     }
@@ -132,7 +129,7 @@ impl CommonWidget for Rotation3DEffect {
     }
 }
 
-impl Render for Rotation3DEffect {
+impl<R1: ReadState<T = f64> + Clone, R2: ReadState<T = f64> + Clone, C: Widget + Clone> Render for Rotation3DEffect<R1, R2, C> {
     fn process_get_primitives(&mut self, primitives: &mut Vec<Primitive>, env: &mut Environment) {
         self.capture_state(env);
         // I do not understand why the fov needs to be 1.15, because my intuition says it should be 45deg
@@ -168,6 +165,98 @@ impl Render for Rotation3DEffect {
             bounding_box: Rect::new(self.position, self.dimension),
         });
     }
+
+    fn render(&mut self, context: &mut RenderContext, env: &mut Environment) {
+        self.capture_state(env);
+        // I do not understand why the fov needs to be 1.15, because my intuition says it should be 45deg
+        let fov = self.fov as f32;
+        let perspective = cgmath::perspective(Deg(fov), 1.0, 1.0, 10.0);
+        let angle_to_screen_center = 90.0;
+
+        let outer_angle = 180.0 - (fov / 2.0) - angle_to_screen_center;
+
+        let z = outer_angle.to_radians().tan() as f32;
+        let up: Vector3<f32> = cgmath::Vector3::unit_y();
+        let target: Point3<f32> = Point3::new(0.0, 0.0, 0.0);
+        let eye: Point3<f32> = Point3::new(0.0, 0.0, z);
+
+        let view = Matrix4::look_at_rh(eye, target, up);
+        let matrix = Matrix4::from_angle_x(Deg(*self.rotation_x.value() as f32));
+        let matrix = matrix * Matrix4::from_angle_y(Deg(*self.rotation_y.value() as f32));
+        let matrix = perspective * view * matrix;
+        let bounding_box = Rect::new(self.position, self.dimension);
+
+
+        let new_transform = match self.anchor {
+            BasicLayouter::TopLeading => {
+                let center_x = (bounding_box.position.x()) as f32;
+                let center_y = (bounding_box.position.y()) as f32;
+                Matrix4::from_translation(Vector3::new(center_x, center_y, 0.0))
+                    * matrix
+                    * Matrix4::from_translation(Vector3::new(-center_x, -center_y, 0.0))
+            }
+            BasicLayouter::Top => {
+                let center_x = (bounding_box.position.x() + bounding_box.dimension.width / 2.0) as f32;
+                let center_y = (bounding_box.position.y()) as f32;
+                Matrix4::from_translation(Vector3::new(center_x, center_y, 0.0))
+                    * matrix
+                    * Matrix4::from_translation(Vector3::new(-center_x, -center_y, 0.0))
+            }
+            BasicLayouter::TopTrailing => {
+                let center_x = (bounding_box.position.x() + bounding_box.dimension.width) as f32;
+                let center_y = (bounding_box.position.y()) as f32;
+                Matrix4::from_translation(Vector3::new(center_x, center_y, 0.0))
+                    * matrix
+                    * Matrix4::from_translation(Vector3::new(-center_x, -center_y, 0.0))
+            }
+            BasicLayouter::Leading => {
+                let center_x = (bounding_box.position.x()) as f32;
+                let center_y = (bounding_box.position.y() + bounding_box.dimension.height / 2.0) as f32;
+                Matrix4::from_translation(Vector3::new(center_x, center_y, 0.0))
+                    * matrix
+                    * Matrix4::from_translation(Vector3::new(-center_x, -center_y, 0.0))
+            }
+            BasicLayouter::Center => {
+                let center_x = (bounding_box.position.x() + bounding_box.dimension.width / 2.0) as f32;
+                let center_y = (bounding_box.position.y() + bounding_box.dimension.height / 2.0) as f32;
+                Matrix4::from_translation(Vector3::new(center_x, center_y, 0.0))
+                    * matrix
+                    * Matrix4::from_translation(Vector3::new(-center_x, -center_y, 0.0))
+            }
+            BasicLayouter::Trailing => {
+                let center_x = (bounding_box.position.x() + bounding_box.dimension.width) as f32;
+                let center_y = (bounding_box.position.y() + bounding_box.dimension.height / 2.0) as f32;
+                Matrix4::from_translation(Vector3::new(center_x, center_y, 0.0))
+                    * matrix
+                    * Matrix4::from_translation(Vector3::new(-center_x, -center_y, 0.0))
+            }
+            BasicLayouter::BottomLeading => {
+                let center_x = (bounding_box.position.x()) as f32;
+                let center_y = (bounding_box.position.y() + bounding_box.dimension.height) as f32;
+                Matrix4::from_translation(Vector3::new(center_x, center_y, 0.0))
+                    * matrix
+                    * Matrix4::from_translation(Vector3::new(-center_x, -center_y, 0.0))
+            }
+            BasicLayouter::Bottom => {
+                let center_x = (bounding_box.position.x() + bounding_box.dimension.width / 2.0) as f32;
+                let center_y = (bounding_box.position.y() + bounding_box.dimension.height) as f32;
+                Matrix4::from_translation(Vector3::new(center_x, center_y, 0.0))
+                    * matrix
+                    * Matrix4::from_translation(Vector3::new(-center_x, -center_y, 0.0))
+            }
+            BasicLayouter::BottomTrailing => {
+                let center_x = (bounding_box.position.x() + bounding_box.dimension.width) as f32;
+                let center_y = (bounding_box.position.y() + bounding_box.dimension.height) as f32;
+                Matrix4::from_translation(Vector3::new(center_x, center_y, 0.0))
+                    * matrix
+                    * Matrix4::from_translation(Vector3::new(-center_x, -center_y, 0.0))
+            }
+        };
+
+        context.transform(new_transform, |this| {
+            self.child.render(this, env)
+        });
+    }
 }
 
-impl WidgetExt for Rotation3DEffect {}
+impl<R1: ReadState<T = f64> + Clone, R2: ReadState<T = f64> + Clone, C: Widget + Clone> WidgetExt for Rotation3DEffect<R1, R2, C> {}
