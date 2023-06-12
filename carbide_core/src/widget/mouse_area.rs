@@ -13,9 +13,10 @@ use carbide_core::flags::Flags;
 use carbide_core::focus::Focus;
 use carbide_core::state::{ReadState, State};
 use carbide_core::widget::{CommonWidget, Widget, WidgetExt, WidgetId, WidgetIter, WidgetIterMut};
-use carbide_macro::carbide_default_builder;
+use carbide_macro::{carbide_default_builder, carbide_default_builder2};
 
-use crate::state::TState;
+use crate::state::{IntoState, TState};
+use crate::widget::Empty;
 
 pub trait Action: Fn(&mut Environment, ModifierKey) + DynClone {}
 
@@ -25,82 +26,155 @@ dyn_clone::clone_trait_object!(Action);
 
 #[derive(Clone, Widget)]
 #[carbide_exclude(MouseEvent, KeyboardEvent, OtherEvent)]
-pub struct MouseArea {
+pub struct MouseArea<I, O, F, C, H, P> where
+    I: Action + Clone + 'static,
+    O: Action + Clone + 'static,
+    F: State<T=Focus> + Clone,
+    C: Widget + Clone,
+    H: State<T=bool> + Clone,
+    P: State<T=bool> + Clone,
+{
     id: WidgetId,
-    #[state]
-    focus: TState<Focus>,
-    child: Box<dyn Widget>,
+    #[state] focus: F,
+    child: C,
     position: Position,
     dimension: Dimension,
-    click: Box<dyn Action>,
-    click_outside: Box<dyn Action>,
-    #[state]
-    is_hovered: TState<bool>,
-    #[state]
-    is_pressed: TState<bool>,
+    click: I,
+    click_outside: O,
+    #[state] is_hovered: H,
+    #[state] is_pressed: P,
     hover_cursor: MouseCursor,
     pressed_cursor: Option<MouseCursor>,
 }
 
-impl MouseArea {
-    /// Example: .on_click(move |env: &mut Environment, modifier: ModifierKey| {})
-    pub fn on_click(mut self, fire: impl Action + 'static) -> Box<Self> {
-        self.click = Box::new(fire);
-        Box::new(self)
-    }
+impl MouseArea<fn(&mut Environment, ModifierKey), fn(&mut Environment, ModifierKey), Focus, Empty, bool, bool> {
 
-    pub fn on_click_outside(mut self, fire: impl Action + 'static) -> Box<Self> {
-        self.click_outside = Box::new(fire);
-        self.hover_cursor = MouseCursor::Default;
-        Box::new(self)
-    }
-
-    pub fn hovered(mut self, is_hovered: impl Into<TState<bool>>) -> Box<Self> {
-        self.is_hovered = is_hovered.into();
-        Box::new(self)
-    }
-
-    pub fn pressed(mut self, pressed: impl Into<TState<bool>>) -> Box<Self> {
-        self.is_pressed = pressed.into();
-        Box::new(self)
-    }
-
-    pub fn focused(mut self, focused: impl Into<TState<Focus>>) -> Box<Self> {
-        self.focus = focused.into();
-        Box::new(self)
-    }
-
-    pub fn hover_cursor(mut self, cursor: MouseCursor) -> Box<Self> {
-        self.hover_cursor = cursor;
-        Box::new(self)
-    }
-
-    pub fn pressed_cursor(mut self, cursor: MouseCursor) -> Box<Self> {
-        self.pressed_cursor = Some(cursor);
-        Box::new(self)
-    }
-
-    #[carbide_default_builder]
-    pub fn new(child: Box<dyn Widget>) -> Box<Self> {}
-
-    pub fn new(child: Box<dyn Widget>) -> Box<Self> {
-        Box::new(MouseArea {
+    #[carbide_default_builder2]
+    pub fn new<C: Widget + Clone>(child: C) -> MouseArea<fn(&mut Environment, ModifierKey), fn(&mut Environment, ModifierKey), Focus, C, bool, bool> {
+        MouseArea {
             id: WidgetId::new(),
-            focus: Focus::Unfocused.into(),
+            focus: Focus::Unfocused,
             child,
             position: Position::new(0.0, 0.0),
             dimension: Dimension::new(100.0, 100.0),
-            click: Box::new(|_, _| {}),
-            click_outside: Box::new(|_, _| {}),
-            is_hovered: false.into(),
-            is_pressed: false.into(),
+            click: |_, _| {},
+            click_outside: |_, _| {},
+            is_hovered: false,
+            is_pressed: false,
             hover_cursor: MouseCursor::Hand,
             pressed_cursor: None,
-        })
+        }
     }
 }
 
-impl OtherEventHandler for MouseArea {
+impl<
+    I: Action + Clone + 'static,
+    O: Action + Clone + 'static,
+    F: State<T=Focus> + Clone,
+    C: Widget + Clone,
+    H: State<T=bool> + Clone,
+    P: State<T=bool> + Clone,
+> MouseArea<I, O, F, C, H, P> {
+    /// Example: .on_click(move |env: &mut Environment, modifier: ModifierKey| {})
+    pub fn on_click<A: Action + Clone>(mut self, action: A) -> MouseArea<A, O, F, C, H, P> {
+        MouseArea {
+            id: self.id,
+            focus: self.focus,
+            child: self.child,
+            position: self.position,
+            dimension: self.dimension,
+            click: action,
+            click_outside: self.click_outside,
+            is_hovered: self.is_hovered,
+            is_pressed: self.is_pressed,
+            hover_cursor: self.hover_cursor,
+            pressed_cursor: self.pressed_cursor,
+        }
+    }
+
+    pub fn on_click_outside<A: Action + Clone>(mut self, action: A) -> MouseArea<I, A, F, C, H, P> {
+        MouseArea {
+            id: self.id,
+            focus: self.focus,
+            child: self.child,
+            position: self.position,
+            dimension: self.dimension,
+            click: self.click,
+            click_outside: action,
+            is_hovered: self.is_hovered,
+            is_pressed: self.is_pressed,
+            hover_cursor: self.hover_cursor,
+            pressed_cursor: self.pressed_cursor,
+        }
+    }
+
+    pub fn hovered<T: IntoState<bool>>(mut self, is_hovered: T) -> MouseArea<I, O, F, C, T::Output, P> {
+        MouseArea {
+            id: self.id,
+            focus: self.focus,
+            child: self.child,
+            position: self.position,
+            dimension: self.dimension,
+            click: self.click,
+            click_outside: self.click_outside,
+            is_hovered: is_hovered.into_state(),
+            is_pressed: self.is_pressed,
+            hover_cursor: self.hover_cursor,
+            pressed_cursor: self.pressed_cursor,
+        }
+    }
+
+    pub fn pressed<T: IntoState<bool>>(mut self, pressed: T) -> MouseArea<I, O, F, C, H, T::Output> {
+        MouseArea {
+            id: self.id,
+            focus: self.focus,
+            child: self.child,
+            position: self.position,
+            dimension: self.dimension,
+            click: self.click,
+            click_outside: self.click_outside,
+            is_hovered: self.is_hovered,
+            is_pressed: pressed.into_state(),
+            hover_cursor: self.hover_cursor,
+            pressed_cursor: self.pressed_cursor,
+        }
+    }
+
+    pub fn focused<T: IntoState<Focus>>(mut self, focused: T) -> MouseArea<I, O, <T as IntoState<Focus>>::Output, C, H, P> {
+        MouseArea {
+            id: self.id,
+            focus: focused.into_state(),
+            child: self.child,
+            position: self.position,
+            dimension: self.dimension,
+            click: self.click,
+            click_outside: self.click_outside,
+            is_hovered: self.is_hovered,
+            is_pressed: self.is_pressed,
+            hover_cursor: self.hover_cursor,
+            pressed_cursor: self.pressed_cursor,
+        }
+    }
+
+    pub fn hover_cursor(mut self, cursor: MouseCursor) -> Self {
+        self.hover_cursor = cursor;
+        self
+    }
+
+    pub fn pressed_cursor(mut self, cursor: MouseCursor) -> Self {
+        self.pressed_cursor = Some(cursor);
+        self
+    }
+}
+
+impl<
+    I: Action + Clone + 'static,
+    O: Action + Clone + 'static,
+    F: State<T=Focus> + Clone,
+    C: Widget + Clone,
+    H: State<T=bool> + Clone,
+    P: State<T=bool> + Clone,
+> OtherEventHandler for MouseArea<I, O, F, C, H, P> {
     fn handle_other_event(&mut self, _event: &WidgetEvent, env: &mut Environment) {
         if *self.is_hovered.value() {
             env.set_cursor(self.hover_cursor);
@@ -113,7 +187,14 @@ impl OtherEventHandler for MouseArea {
     }
 }
 
-impl KeyboardEventHandler for MouseArea {
+impl<
+    I: Action + Clone + 'static,
+    O: Action + Clone + 'static,
+    F: State<T=Focus> + Clone,
+    C: Widget + Clone,
+    H: State<T=bool> + Clone,
+    P: State<T=bool> + Clone,
+> KeyboardEventHandler for MouseArea<I, O, F, C, H, P> {
     fn handle_keyboard_event(&mut self, event: &KeyboardEvent, env: &mut Environment) {
         if self.get_focus() != Focus::Focused {
             return;
@@ -128,7 +209,14 @@ impl KeyboardEventHandler for MouseArea {
     }
 }
 
-impl MouseEventHandler for MouseArea {
+impl<
+    I: Action + Clone + 'static,
+    O: Action + Clone + 'static,
+    F: State<T=Focus> + Clone,
+    C: Widget + Clone,
+    H: State<T=bool> + Clone,
+    P: State<T=bool> + Clone,
+> MouseEventHandler for MouseArea<I, O, F, C, H, P> {
     fn handle_mouse_event(&mut self, event: &MouseEvent, _consumed: &bool, env: &mut Environment) {
         match event {
             MouseEvent::Press(MouseButton::Left, mouse_position, _) => {
@@ -166,7 +254,14 @@ impl MouseEventHandler for MouseArea {
     }
 }
 
-impl CommonWidget for MouseArea {
+impl<
+    I: Action + Clone + 'static,
+    O: Action + Clone + 'static,
+    F: State<T=Focus> + Clone,
+    C: Widget + Clone,
+    H: State<T=bool> + Clone,
+    P: State<T=bool> + Clone,
+> CommonWidget for MouseArea<I, O, F, C, H, P> {
     fn id(&self) -> WidgetId {
         self.id
     }
@@ -247,7 +342,14 @@ impl CommonWidget for MouseArea {
     }
 }
 
-impl Debug for MouseArea {
+impl<
+    I: Action + Clone + 'static,
+    O: Action + Clone + 'static,
+    F: State<T=Focus> + Clone,
+    C: Widget + Clone,
+    H: State<T=bool> + Clone,
+    P: State<T=bool> + Clone,
+> Debug for MouseArea<I, O, F, C, H, P> {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("MouseArea")
             .field("child", &self.child)
@@ -255,4 +357,11 @@ impl Debug for MouseArea {
     }
 }
 
-impl WidgetExt for MouseArea {}
+impl<
+    I: Action + Clone + 'static,
+    O: Action + Clone + 'static,
+    F: State<T=Focus> + Clone,
+    C: Widget + Clone,
+    H: State<T=bool> + Clone,
+    P: State<T=bool> + Clone,
+> WidgetExt for MouseArea<I, O, F, C, H, P> {}

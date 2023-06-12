@@ -3,6 +3,8 @@
 //! An easy-to-use, immediate-mode, 2D GUI library featuring a range of useful widgets.
 //!
 //! If you are new to carbide, we recommend checking out [The Guide](./guide/index.html).
+//!
+//! This issue is a gamechanger: https://rust-lang.github.io/rfcs/2528-type-changing-struct-update-syntax.html
 
 #![deny(unsafe_code)]
 //#![feature(associated_type_bounds)]

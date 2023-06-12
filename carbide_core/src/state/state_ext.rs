@@ -23,16 +23,6 @@ pub trait StateExtNew<T>: State<T=T> + Sized + Clone + 'static where T: StateCon
     fn as_dyn(&self) -> Box<dyn State<T=T>> {
         Box::new(self.clone())
     }
-
-    /// This map a state to another state. The resulting state is read-only.
-    /// If you need a TState, use [Map1::map()] instead
-    ///
-    /// Example: size.map(|t: &f64| { format!("{:.2}", t) })
-    ///
-    /// This will return a RState<String> that will stay updated with the size
-    fn map<TO: StateContract>(&self, map: fn(s: &T) -> TO) -> RMap1<fn(s: &T) -> TO, T, TO, Self> {
-        Map1::read_map(self.clone(), map)
-    }
 }
 
 impl<T: StateContract, S> StateExtNew<T> for S where S: State<T=T> + Sized + Clone + 'static {}
@@ -45,6 +35,16 @@ pub trait ReadStateExtNew<T>: ReadState<T=T> + Sized + Clone + 'static where T: 
 
     fn ignore_writes(&self) -> IgnoreWritesState<T, Self> {
         IgnoreWritesState::new(self.clone())
+    }
+
+    /// This map a state to another state. The resulting state is read-only.
+    /// If you need a TState, use [Map1::map()] instead
+    ///
+    /// Example: size.map(|t: &f64| { format!("{:.2}", t) })
+    ///
+    /// This will return a RState<String> that will stay updated with the size
+    fn map<TO: StateContract, MAP: Fn(&T) -> TO + Clone + 'static>(&self, map: MAP) -> RMap1<MAP, T, TO, Self> {
+        Map1::read_map(self.clone(), map)
     }
 }
 

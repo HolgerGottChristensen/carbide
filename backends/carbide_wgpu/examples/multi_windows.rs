@@ -6,10 +6,8 @@ use carbide_core::widget::{Menu, MouseArea, Rectangle, Text, WidgetExt, ZStack};
 use carbide_wgpu::{Application, Window};
 
 fn main() {
-    let mut application = Application::new();
-
-    let family = FontFamily::new_from_paths("NotoSans", vec!["fonts/NotoSans/NotoSans-Regular.ttf"]);
-    application.add_font_family(family);
+    let mut application = Application::new()
+        .with_asset_fonts();
 
     let counter = LocalState::new(0);
 

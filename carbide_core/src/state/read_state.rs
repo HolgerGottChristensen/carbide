@@ -5,6 +5,7 @@ use cgmath::Matrix4;
 use dyn_clone::DynClone;
 use carbide_core::environment::Environment;
 use crate::Color;
+use crate::focus::Focus;
 use crate::render::Style;
 
 use crate::state::*;
@@ -96,5 +97,5 @@ impl_read_state!(
     i32, u32, i64, u64,
     i128, u128, f32, f64,
     bool, char, isize, usize,
-    Style, String, (), Color, &'static str
+    Style, String, (), Color, &'static str, Focus
 );

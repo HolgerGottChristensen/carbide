@@ -1,6 +1,7 @@
 use carbide_core::state::{ReadState, TState};
 use crate::draw::draw_gradient::DrawGradient;
 use crate::draw::{Dimension, Position};
+use crate::focus::Focus;
 use crate::render::Style;
 use crate::state::{Map1, RMap1, State, StateContract};
 use crate::widget::Gradient;
@@ -64,6 +65,14 @@ impl<T: StateContract> IntoReadState<T> for TState<T> {
     type Output = TState<T>;
 
     fn into_read_state(self) -> Self::Output {
+        self
+    }
+}
+
+impl<T: StateContract> IntoState<T> for TState<T> {
+    type Output = TState<T>;
+
+    fn into_state(self) -> Self::Output {
         self
     }
 }
