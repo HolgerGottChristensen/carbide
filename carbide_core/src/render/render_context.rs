@@ -37,11 +37,18 @@ impl<'a> RenderContext<'a> {
         res
     }
 
-    pub fn filter<R, F: FnOnce(&mut RenderContext) -> R>(&mut self, id: FilterId, f: F) -> R {
+    pub fn filter<R, F: FnOnce(&mut RenderContext) -> R>(&mut self, id: FilterId, bounding_box: BoundingBox, f: F) -> R {
         let res = f(self);
-        self.inner.filter(id);
+        self.inner.filter(id, bounding_box);
         res
     }
+
+    pub fn filter2d<R, F: FnOnce(&mut RenderContext) -> R>(&mut self, id1: FilterId, bounding_box1: BoundingBox, id2: FilterId, bounding_box2: BoundingBox, f: F) -> R {
+        let res = f(self);
+        self.inner.filter2d(id1, bounding_box1, id2, bounding_box2);
+        res
+    }
+
 
     pub fn stencil<R, F: FnOnce(&mut RenderContext) -> R>(&mut self, geometry: &[Triangle<Position>], f: F) -> R {
         self.inner.stencil(geometry);
@@ -97,7 +104,8 @@ pub trait InnerRenderContext {
     fn clip(&mut self, bounding_box: BoundingBox);
     fn pop_clip(&mut self);
 
-    fn filter(&mut self, id: FilterId);
+    fn filter(&mut self, id: FilterId, bounding_box: BoundingBox);
+    fn filter2d(&mut self, id1: FilterId, bounding_box1: BoundingBox, id2: FilterId, bounding_box2: BoundingBox);
 
     fn stencil(&mut self, geometry: &[Triangle<Position>]);
     fn pop_stencil(&mut self);
@@ -125,7 +133,9 @@ impl InnerRenderContext for NoopRenderContext {
 
     fn pop_clip(&mut self) {}
 
-    fn filter(&mut self, id: FilterId) {}
+    fn filter(&mut self, id: FilterId, bounding_box: BoundingBox) {}
+
+    fn filter2d(&mut self, id1: FilterId, bounding_box1: BoundingBox, id2: FilterId, bounding_box2: BoundingBox) {}
 
     fn stencil(&mut self, geometry: &[Triangle<Position>]) {}
 

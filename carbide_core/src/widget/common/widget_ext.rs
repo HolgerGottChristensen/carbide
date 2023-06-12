@@ -113,12 +113,10 @@ pub trait WidgetExt: Widget + Sized + Clone + 'static {
         Hidden::new(Box::new(self))
     }
 
-    fn offset(
-        self,
-        offset_x: impl Into<TState<f64>>,
-        offset_y: impl Into<TState<f64>>,
-    ) -> Box<Offset> {
-        Offset::new(offset_x.into(), offset_y.into(), Box::new(self))
+    /// Offset a widget. It will only change the locating of the rendered widget, but will not
+    /// change its position for event handling.
+    fn offset<X: IntoReadState<f64>, Y: IntoReadState<f64>>(self, offset_x: X, offset_y: Y) -> Box<Offset<X::Output, Y::Output, Self>> {
+        Offset::new(offset_x, offset_y, self)
     }
 
     fn border(self) -> Box<Border<Self, Color>> {

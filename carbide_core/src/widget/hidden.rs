@@ -1,3 +1,4 @@
+use carbide_core::render::RenderContext;
 use carbide_core::widget::{CommonWidget};
 use carbide_macro::carbide_default_builder;
 
@@ -38,6 +39,8 @@ impl CommonWidget for Hidden {
 impl Render for Hidden {
     // Because we try to hide all children, we just stop the rendering tree.
     fn process_get_primitives(&mut self, _: &mut Vec<Primitive>, _: &mut Environment) {}
+
+    fn render(&mut self, _: &mut RenderContext, _: &mut Environment) {}
 }
 
 impl WidgetExt for Hidden {}

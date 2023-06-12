@@ -1,3 +1,4 @@
+use carbide_core::render::RenderContext;
 use carbide_macro::carbide_default_builder;
 
 use crate::draw::{Dimension, Position, Rect};
@@ -124,6 +125,22 @@ impl Render for Filter {
                 bounding_box: Rect::new(self.position, self.dimension),
             });
         }
+    }
+
+    fn render(&mut self, context: &mut RenderContext, env: &mut Environment) {
+        let filter_id = if let Some(filter_id) = self.filter_id {
+            filter_id
+        } else {
+            let id = env.insert_filter(self.filter.clone());
+            self.filter_id = Some(id);
+            id
+        };
+
+        context.filter(filter_id, Rect::new(self.position, self.dimension), |this| {
+            self.foreach_child_mut(&mut |child| {
+                child.render(this, env);
+            });
+        });
     }
 }
 

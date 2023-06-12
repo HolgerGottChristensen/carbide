@@ -27,13 +27,13 @@ fn main() {
         ZStack::new(vec![
             Image::new("images/landscape.png")
                 .scaled_to_fill()
-                .clip_shape(Rectangle::new())
+                .clip_shape(*Rectangle::new())
                 .frame(500.0, 400.0),
             Blur::gaussian(10.0)
                 .frame(200.0, 200.0)
                 .offset(position_x.clone(), 0.0),
             Blur::mean(3)
-                .clip_shape(Circle::new())
+                .clip_shape(*Circle::new())
                 .frame(100.0, 100.0)
                 .offset(position_neg_x.clone(), 0.0),
             Rectangle::new()

@@ -130,7 +130,6 @@ impl WGPURenderContext {
         std::mem::swap(&mut swap, &mut self.render_pass);
 
         swap
-
     }
 
     fn freshen_state(&mut self) {
@@ -364,8 +363,107 @@ impl InnerRenderContext for WGPURenderContext {
         }
     }
 
-    fn filter(&mut self, id: FilterId) {
-        todo!()
+    fn filter(&mut self, id: FilterId, bounding_box: BoundingBox) {
+        self.freshen_state();
+
+        let create_vertex = |x, y| Vertex {
+            position: [x as f32, y as f32, 0.0],
+            tex_coords: [
+                (x / self.window_bounding_box.dimension.width) as f32,
+                (y / self.window_bounding_box.dimension.height) as f32,
+            ],
+            rgba: [1.0, 1.0, 1.0, 1.0],
+            mode: MODE_GEOMETRY,
+        };
+
+
+        let (l, r, b, t) = bounding_box.l_r_b_t();
+
+        let vertices_start = self.vertices.len() as u32;
+
+        // Bottom left triangle.
+        self.vertices.push(create_vertex(l, t));
+        self.vertices.push(create_vertex(r, b));
+        self.vertices.push(create_vertex(l, b));
+
+        // Top right triangle.
+        self.vertices.push(create_vertex(l, t));
+        self.vertices.push(create_vertex(r, t));
+        self.vertices.push(create_vertex(r, b));
+
+        let mut swap = vec![];
+        std::mem::swap(&mut swap, &mut self.render_pass_inner);
+
+        self.render_pass.push(RenderPass::Normal(swap));
+
+        let range = vertices_start..self.vertices.len() as u32;
+        self.render_pass.push(RenderPass::Filter(range, id));
+        self.current_bind_group = None;
+
+        // We need to skip the vertices added by the filtering action
+        self.state = State::Plain {
+            start: self.vertices.len(),
+        };
+    }
+
+    fn filter2d(&mut self, id1: FilterId, bounding_box1: BoundingBox, id2: FilterId, bounding_box2: BoundingBox) {
+        self.freshen_state();
+
+        let create_vertex = |x, y| Vertex {
+            position: [x as f32, y as f32, 0.0],
+            tex_coords: [
+                (x / self.window_bounding_box.dimension.width) as f32,
+                (y / self.window_bounding_box.dimension.height) as f32,
+            ],
+            rgba: [1.0, 1.0, 1.0, 1.0],
+            mode: MODE_GEOMETRY,
+        };
+
+        let (l, r, b, t) = bounding_box1.l_r_b_t();
+
+        let vertices_start1 = self.vertices.len() as u32;
+
+        // Bottom left triangle.
+        self.vertices.push(create_vertex(l, t));
+        self.vertices.push(create_vertex(r, b));
+        self.vertices.push(create_vertex(l, b));
+
+        // Top right triangle.
+        self.vertices.push(create_vertex(l, t));
+        self.vertices.push(create_vertex(r, t));
+        self.vertices.push(create_vertex(r, b));
+
+        let (l, r, b, t) = bounding_box2.l_r_b_t();
+
+        let vertices_start2 = self.vertices.len() as u32;
+
+        // Bottom left triangle.
+        self.vertices.push(create_vertex(l, t));
+        self.vertices.push(create_vertex(r, b));
+        self.vertices.push(create_vertex(l, b));
+
+        // Top right triangle.
+        self.vertices.push(create_vertex(l, t));
+        self.vertices.push(create_vertex(r, t));
+        self.vertices.push(create_vertex(r, b));
+
+        let mut swap = vec![];
+        std::mem::swap(&mut swap, &mut self.render_pass_inner);
+
+        self.render_pass.push(RenderPass::Normal(swap));
+
+        let range = vertices_start1..vertices_start2;
+        self.render_pass.push(RenderPass::FilterSplitPt1(range, id1));
+
+        let range = vertices_start2..self.vertices.len() as u32;
+        self.render_pass.push(RenderPass::FilterSplitPt2(range, id2));
+
+        self.current_bind_group = None;
+
+        // We need to skip the vertices added by the filtering action
+        self.state = State::Plain {
+            start: self.vertices.len(),
+        };
     }
 
     fn stencil(&mut self, geometry: &[Triangle<Position>]) {
@@ -390,6 +488,10 @@ impl InnerRenderContext for WGPURenderContext {
         self.stencil_stack.push(range.clone());
 
         self.render_pass_inner.push(RenderPassCommand::Stencil { vertex_range: range });
+
+        self.state = State::Plain {
+            start: self.vertices.len(),
+        };
     }
 
     fn pop_stencil(&mut self) {

@@ -1,43 +1,40 @@
 use carbide_core::environment::Environment;
+use carbide_core::state::IntoReadState;
 
-use carbide_macro::carbide_default_builder;
+use carbide_macro::{carbide_default_builder, carbide_default_builder2};
 
 use crate::CommonWidgetImpl;
 use crate::draw::{Dimension, Position};
 use crate::layout::{BasicLayouter, Layout, Layouter};
 use crate::state::{ReadState, TState};
-use crate::widget::{CommonWidget, Widget, WidgetExt, WidgetId};
+use crate::widget::{CommonWidget, Empty, Widget, WidgetExt, WidgetId};
 
 #[derive(Debug, Clone, Widget)]
 #[carbide_exclude(Layout)]
-pub struct Offset {
+pub struct Offset<X, Y, C> where X: ReadState<T=f64> + Clone, Y: ReadState<T=f64> + Clone, C: Widget + Clone {
     id: WidgetId,
-    child: Box<dyn Widget>,
+    child: C,
     position: Position,
     dimension: Dimension,
-    #[state]
-    offset_x: TState<f64>,
-    #[state]
-    offset_y: TState<f64>,
+    #[state] offset_x: X,
+    #[state] offset_y: Y,
 }
 
-impl Offset {
-    #[carbide_default_builder]
-    pub fn new(offset_x: impl Into<TState<f64>>, offset_y: impl Into<TState<f64>>, child: Box<dyn Widget>) -> Box<Self> {}
-
-    pub fn new(offset_x: impl Into<TState<f64>>, offset_y: impl Into<TState<f64>>, child: Box<dyn Widget>) -> Box<Self> {
+impl Offset<f64, f64, Empty> {
+    #[carbide_default_builder2]
+    pub fn new<X: IntoReadState<f64>, Y: IntoReadState<f64>, C: Widget + Clone>(offset_x: X, offset_y: Y, child: C) -> Box<Offset<X::Output, Y::Output, C>> {
         Box::new(Offset {
             id: WidgetId::new(),
             child,
             position: Position::new(0.0, 0.0),
             dimension: Dimension::new(0.0, 0.0),
-            offset_x: offset_x.into(),
-            offset_y: offset_y.into(),
+            offset_x: offset_x.into_read_state(),
+            offset_y: offset_y.into_read_state(),
         })
     }
 }
 
-impl Layout for Offset {
+impl<X: ReadState<T=f64> + Clone, Y: ReadState<T=f64> + Clone, C: Widget + Clone> Layout for Offset<X, Y, C> {
     fn position_children(&mut self, env: &mut Environment) {
         let positioning = BasicLayouter::Center.positioner();
         let position = self.position;
@@ -56,8 +53,8 @@ impl Layout for Offset {
     }
 }
 
-impl CommonWidget for Offset {
+impl<X: ReadState<T=f64> + Clone, Y: ReadState<T=f64> + Clone, C: Widget + Clone> CommonWidget for Offset<X, Y, C> {
     CommonWidgetImpl!(self, id: self.id, child: self.child, position: self.position, dimension: self.dimension);
 }
 
-impl WidgetExt for Offset {}
+impl<X: ReadState<T=f64> + Clone, Y: ReadState<T=f64> + Clone, C: Widget + Clone> WidgetExt for Offset<X, Y, C> {}
