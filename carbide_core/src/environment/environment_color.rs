@@ -67,8 +67,12 @@ pub enum EnvironmentColor {
 }
 
 impl EnvironmentColor {
-    pub fn state(&self) -> EnvironmentColorState {
-        EnvironmentColorState::new(self.clone())
+    pub fn color(&self) -> impl ReadState<T=Color> {
+        <EnvironmentColor as IntoReadState<Color>>::into_read_state(self.clone())
+    }
+
+    pub fn style(&self) -> impl ReadState<T=Style> {
+        <EnvironmentColor as IntoReadState<Style>>::into_read_state(self.clone())
     }
 }
 
@@ -114,24 +118,36 @@ impl Into<TState<Color>> for EnvironmentColor {
     }
 }*/
 
-impl IntoReadState<Style> for EnvironmentColor {
+/*impl<T> IntoReadState<Style> for T where T: AnyReadState<T=Color> + Clone {
+    type Output = RMap1<fn(&Color)->Style, Color, Style, T>;
+
+    fn into_read_state(self) -> Self::Output {
+        Map1::read_map(self, |c| {
+            Style::Color(*c)
+        })
+    }
+}*/
+
+/*impl IntoReadState<Style> for EnvironmentColor {
     type Output = EnvironmentColorState;
 
     fn into_read_state(self) -> Self::Output {
         EnvironmentColorState::new(self)
     }
 }
+*/
 
-impl IntoReadState<Color> for EnvironmentColor {
+
+/*impl IntoReadState<Color> for EnvironmentColor {
     type Output = RMap1<fn(&Style) -> Color, Style, Color, EnvironmentColorState>;
 
     fn into_read_state(self) -> Self::Output {
-        Map1::read_map(EnvironmentColorState::new(self), |s| {
+        /*Map1::read_map(EnvironmentColorState::new(self), |s| {
             match s {
                 Style::Color(c) => *c,
                 _ => WHITE,
             }
-        })
-
+        })*/
+        todo!()
     }
-}
+}*/

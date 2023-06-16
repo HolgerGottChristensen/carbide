@@ -1,5 +1,6 @@
+use carbide_core::state::AnyState;
 use crate::environment::Environment;
-use crate::state::{NewStateSync, ReadState, State, StateContract, TState, ValueRef, ValueRefMut};
+use crate::state::{AnyReadState, NewStateSync, ReadState, State, StateContract, TState, ValueRef, ValueRefMut};
 
 #[derive(Debug, Clone)]
 pub struct Flatten<T>
@@ -30,9 +31,9 @@ impl<T: StateContract> NewStateSync for Flatten<T> {
     }
 }
 
-impl<T: StateContract> ReadState for Flatten<T> {
+impl<T: StateContract> AnyReadState for Flatten<T> {
     type T = T;
-    fn value(&self) -> ValueRef<T> {
+    fn value_dyn(&self) -> ValueRef<T> {
         self.current_inner
             .as_ref()
             .expect("Tried to get value without having synced first.")
@@ -40,12 +41,12 @@ impl<T: StateContract> ReadState for Flatten<T> {
     }
 }
 
-impl<T: StateContract> State for Flatten<T> {
-    fn value_mut(&mut self) -> ValueRefMut<T> {
+impl<T: StateContract> AnyState for Flatten<T> {
+    fn value_dyn_mut(&mut self) -> ValueRefMut<T> {
         panic!("You can not set the value of a map state this way. Please use the set_state macro instead")
     }
 
-    fn set_value(&mut self, value: T) {
+    fn set_value_dyn(&mut self, value: T) {
         self.current_inner
             .as_mut()
             .expect("Tried to get value without having synced first.")

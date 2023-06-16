@@ -1,6 +1,6 @@
 use std::io::Read;
 use carbide_core::state::ReadState;
-use crate::state::{IgnoreWritesState, Map1, RMap1, RState, State, StateContract, TState};
+use crate::state::{AnyReadState, AnyState, IgnoreWritesState, Map1, RMap1, RState, State, StateContract, TState};
 use crate::state::widget_state::Map;
 
 pub trait StateExt<T>: Into<TState<T>> + Clone
@@ -20,7 +20,7 @@ impl<T: StateContract, U> StateExt<T> for U where U: Into<TState<T>> + Clone {}
 
 
 pub trait StateExtNew<T>: State<T=T> + Sized + Clone + 'static where T: StateContract {
-    fn as_dyn(&self) -> Box<dyn State<T=T>> {
+    fn as_dyn(&self) -> Box<dyn AnyState<T=T>> {
         Box::new(self.clone())
     }
 }
@@ -29,7 +29,7 @@ impl<T: StateContract, S> StateExtNew<T> for S where S: State<T=T> + Sized + Clo
 
 
 pub trait ReadStateExtNew<T>: ReadState<T=T> + Sized + Clone + 'static where T: StateContract {
-    fn as_dyn_read(&self) -> Box<dyn ReadState<T=T>> {
+    fn as_dyn_read(&self) -> Box<dyn AnyReadState<T=T>> {
         Box::new(self.clone())
     }
 

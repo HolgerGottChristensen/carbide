@@ -2,18 +2,18 @@ use std::fmt;
 use std::fmt::{Debug, Formatter};
 
 use crate::environment::Environment;
-use crate::state::{IgnoreWritesState, NewStateSync, ReadState, RState, StateContract, TState, ValueRef, ValueState};
+use crate::state::{AnyReadState, IgnoreWritesState, NewStateSync, ReadState, RState, StateContract, TState, ValueRef, ValueState};
 
 pub enum ReadWidgetState<T>
 where
     T: StateContract,
 {
-    ReadState(Box<dyn ReadState<T=T>>),
+    ReadState(Box<dyn AnyReadState<T=T>>),
     ReadWriteState(TState<T>),
 }
 
 impl<T: StateContract> ReadWidgetState<T> {
-    pub fn new(item: Box<dyn ReadState<T=T>>) -> ReadWidgetState<T> {
+    pub fn new(item: Box<dyn AnyReadState<T=T>>) -> ReadWidgetState<T> {
         ReadWidgetState::ReadState(item)
     }
 
@@ -44,7 +44,7 @@ impl<T: StateContract> Clone for ReadWidgetState<T> {
     }
 }
 
-impl<T: StateContract> Into<ReadWidgetState<T>> for Box<dyn ReadState<T=T>> {
+impl<T: StateContract> Into<ReadWidgetState<T>> for Box<dyn AnyReadState<T=T>> {
     fn into(self) -> ReadWidgetState<T> {
         ReadWidgetState::ReadState(self)
     }
@@ -59,12 +59,12 @@ impl<T: StateContract> NewStateSync for ReadWidgetState<T> {
     }
 }
 
-impl<T: StateContract> ReadState for ReadWidgetState<T> {
+impl<T: StateContract> AnyReadState for ReadWidgetState<T> {
     type T = T;
-    fn value(&self) -> ValueRef<T> {
+    fn value_dyn(&self) -> ValueRef<T> {
         match self {
-            ReadWidgetState::ReadState(n) => n.value(),
-            ReadWidgetState::ReadWriteState(n) => n.value(),
+            ReadWidgetState::ReadState(n) => n.value_dyn(),
+            ReadWidgetState::ReadWriteState(n) => n.value_dyn(),
         }
     }
 }

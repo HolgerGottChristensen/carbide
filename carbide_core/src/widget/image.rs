@@ -57,12 +57,12 @@ impl Image<Option<ImageId>, Style> {
         })
     }
 
-    pub fn new_icon<Id: IntoReadState<Option<ImageId>>>(id: Id) -> Box<Image<Id::Output, EnvironmentColorState>> {
+    pub fn new_icon<Id: IntoReadState<Option<ImageId>>>(id: Id) -> Box<Image<Id::Output, impl ReadState<T=Style>>> {
         Box::new(Image {
             id: WidgetId::new(),
             image_id: id.into_read_state(),
             src_rect: None,
-            color: Some(EnvironmentColor::Accent.state()),
+            color: Some(EnvironmentColor::Accent.style()),
             mode: MODE_ICON,
             position: Position::new(0.0, 0.0),
             dimension: Dimension::new(0.0, 0.0),

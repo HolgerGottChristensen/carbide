@@ -16,7 +16,7 @@ use crate::draw::draw_style::DrawStyle;
 use crate::draw::shape::triangle::Triangle;
 use crate::environment::{Environment, EnvironmentColor, EnvironmentColorState};
 use crate::render::{Primitive, PrimitiveKind, Render};
-use crate::state::{NewStateSync, ReadState, StateContract, TState, ValueState, IntoReadState};
+use crate::state::{NewStateSync, ReadState, StateContract, TState, ValueState, IntoReadState, AnyReadState};
 use crate::widget::{CommonWidget, PrimitiveStore, Shape, ShapeStyle, StrokeStyle, Widget, WidgetExt, WidgetId};
 use crate::widget::canvas::{Context, ShapeStyleWithOptions};
 use crate::widget::canvas::canvas::Contexts::{NoState, WithState};
@@ -52,12 +52,12 @@ where
 impl Canvas<(), Color> {
 
     #[carbide_default_builder2]
-    pub fn new(context: fn(Rect, Context, &mut Environment) -> Context) -> Box<Canvas<(), <EnvironmentColor as IntoReadState<Color>>::Output>> {
+    pub fn new(context: fn(Rect, Context, &mut Environment) -> Context) -> Box<Canvas<(), impl ReadState<T=Color>>> {
         Box::new(Canvas {
             id: WidgetId::new(),
             position: Position::new(0.0, 0.0),
             dimension: Dimension::new(100.0, 100.0),
-            color: <EnvironmentColor as IntoReadState<Color>>::into_read_state(EnvironmentColor::Accent),
+            color: EnvironmentColor::Accent.color(),
             //prim_store: vec![],
             context: NoState(context),
             state: ValueState::new(()),
@@ -69,12 +69,12 @@ impl<T: StateContract, C: ReadState<T=Color> + Clone> Canvas<T, C> {
     pub fn new_with_state(
         state: impl Into<TState<T>>,
         context: fn(&mut TState<T>, Rect, Context, &mut Environment) -> Context,
-    ) -> Box<Canvas<T, <EnvironmentColor as IntoReadState<Color>>::Output>> {
+    ) -> Box<Canvas<T, impl ReadState<T=Color>>> {
         Box::new(Canvas {
             id: WidgetId::new(),
             position: Position::new(0.0, 0.0),
             dimension: Dimension::new(100.0, 100.0),
-            color: <EnvironmentColor as IntoReadState<Color>>::into_read_state(EnvironmentColor::Accent),
+            color: EnvironmentColor::Accent.color(),
             //prim_store: vec![],
             context: WithState(context),
             state: state.into(),

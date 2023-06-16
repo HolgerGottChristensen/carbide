@@ -7,7 +7,7 @@ use crate::environment::{Environment, EnvironmentColor};
 use crate::event::{MouseButton, MouseEventHandler};
 use crate::flags::Flags;
 use crate::layout::Layout;
-use crate::state::{LocalState, Map1, ReadStateExtNew, State, TState};
+use crate::state::{AnyState, LocalState, Map1, ReadStateExtNew, State, TState};
 use crate::widget::{Background, CommonWidget, EdgeInsets, ForEach, IfElse, Menu, MenuItem, MouseArea, Overlay, Rectangle, Text, VStack, Widget, WidgetExt, WidgetId, Wrap};
 
 #[derive(Debug, Clone, Widget)]
@@ -67,7 +67,7 @@ impl PopupMenu {
         todo!()
     }
 
-    fn menu_item_delegate(item: Box<dyn State<T=MenuItem>>, index: Box<dyn State<T=usize>>) -> Box<dyn Widget> {
+    fn menu_item_delegate(item: Box<dyn AnyState<T=MenuItem>>, index: Box<dyn AnyState<T=usize>>) -> Box<dyn Widget> {
         /*let default_item = Map1::read_map(item.clone(), |item: &MenuItem| {
             matches!(item, MenuItem::Item { .. })
         })

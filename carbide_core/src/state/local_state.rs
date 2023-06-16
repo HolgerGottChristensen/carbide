@@ -1,11 +1,12 @@
 use std::fmt::{Debug, Formatter};
 use std::rc::Rc;
+use carbide_core::state::AnyState;
 
 use carbide_core::state::state_sync::NewStateSync;
 use carbide_derive::State;
 
 use crate::environment::Environment;
-use crate::state::{InnerState, ReadState, State, StateContract, TState};
+use crate::state::{AnyReadState, InnerState, ReadState, State, StateContract, TState};
 use crate::state::util::value_cell::{ValueCell, ValueRef, ValueRefMut};
 use crate::state::widget_state::WidgetState;
 
@@ -59,19 +60,19 @@ impl<T: StateContract> NewStateSync for LocalState<T> {
     }
 }
 
-impl<T: StateContract> ReadState for LocalState<T> {
+impl<T: StateContract> AnyReadState for LocalState<T> {
     type T = T;
-    fn value(&self) -> ValueRef<T> {
+    fn value_dyn(&self) -> ValueRef<T> {
         self.inner_value.borrow()
     }
 }
 
-impl<T: StateContract> State for LocalState<T> {
-    fn value_mut(&mut self) -> ValueRefMut<T> {
+impl<T: StateContract> AnyState for LocalState<T> {
+    fn value_dyn_mut(&mut self) -> ValueRefMut<T> {
         self.inner_value.borrow_mut()
     }
 
-    fn set_value(&mut self, value: T) {
+    fn set_value_dyn(&mut self, value: T) {
         *self.inner_value.borrow_mut() = value;
     }
 }

@@ -6,7 +6,7 @@ use carbide_macro::carbide_default_builder;
 
 use crate::draw::{Dimension, Position};
 use crate::environment::Environment;
-use crate::state::{NewStateSync, ReadState, StateContract, StateSync, TState};
+use crate::state::{AnyReadState, NewStateSync, ReadState, StateContract, StateSync, TState};
 use crate::widget::{Widget, WidgetExt, WidgetId};
 
 /// A basic, non-interactive rectangle shape widget.

@@ -8,6 +8,7 @@ use carbide_core::state::IntoReadState;
 use carbide_macro::{carbide_default_builder, carbide_default_builder2};
 
 use crate::Color;
+use crate::color::BLACK;
 use crate::draw::{Dimension, Position, Rect};
 use crate::draw::draw_style::DrawStyle;
 use crate::environment::{Environment, EnvironmentColor, EnvironmentColorState, EnvironmentFontSize, EnvironmentFontSizeState};
@@ -54,17 +55,17 @@ pub struct Text<T, S, C> where T: ReadState<T=String> + Clone, S: ReadState<T=u3
 
 impl Text<String, u32, Color> {
     #[carbide_default_builder2]
-    pub fn new<T: IntoReadState<String>>(text: T) -> Box<Text<T::Output, EnvironmentFontSizeState, <EnvironmentColor as IntoReadState<Color>>::Output>> {
+    pub fn new<T: IntoReadState<String>>(text: T) -> Box<Text<T::Output, impl ReadState<T=u32>, impl ReadState<T=Color>>> {
         let text = text.into_read_state();
 
         Box::new(Text {
             id: WidgetId::new(),
             text,
-            font_size: EnvironmentFontSize::Body.into_read_state(),
+            font_size: EnvironmentFontSize::Body.u32(),
             position: Position::new(0.0, 0.0),
             dimension: Dimension::new(100.0, 100.0),
             wrap_mode: Wrap::Whitespace,
-            color: <EnvironmentColor as IntoReadState<Color>>::into_read_state(EnvironmentColor::Label),
+            color: EnvironmentColor::Label.color(),
             font_family: "system-font".to_string(),
             font_style: FontStyle::Normal,
             font_weight: FontWeight::Normal,
@@ -74,7 +75,7 @@ impl Text<String, u32, Color> {
         })
     }
 
-    pub fn new_with_generator<T: IntoReadState<String>>(
+    /*pub fn new_with_generator<T: IntoReadState<String>>(
         text: T,
         generator: impl Into<Box<dyn TextSpanGenerator>>,
     ) -> Box<Text<T::Output, EnvironmentFontSizeState, <EnvironmentColor as IntoReadState<Color>>::Output>> {
@@ -95,7 +96,7 @@ impl Text<String, u32, Color> {
             internal_text: None,
             text_span_generator: generator.into(),
         })
-    }
+    }*/
 }
 
 impl<T2: ReadState<T=String> + Clone, S2: ReadState<T=u32> + Clone, C2: ReadState<T=Color> + Clone> Text<T2, S2, C2> {

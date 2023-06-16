@@ -1,4 +1,5 @@
 use std::ops::{Deref, DerefMut};
+use carbide_core::state::{AnyReadState, AnyState};
 
 use crate::environment::{Environment, EnvironmentFontSize};
 use crate::state::{NewStateSync, ReadState, State, StateKey, ValueRef, ValueRefMut};
@@ -48,19 +49,19 @@ impl NewStateSync for EnvironmentFontSizeState {
     }
 }
 
-impl ReadState for EnvironmentFontSizeState {
+impl AnyReadState for EnvironmentFontSizeState {
     type T = FontSize;
-    fn value(&self) -> ValueRef<FontSize> {
+    fn value_dyn(&self) -> ValueRef<FontSize> {
         ValueRef::Borrow(&self.value)
     }
 }
 
-impl State for EnvironmentFontSizeState {
-    fn value_mut(&mut self) -> ValueRefMut<FontSize> {
+impl AnyState for EnvironmentFontSizeState {
+    fn value_dyn_mut(&mut self) -> ValueRefMut<FontSize> {
         ValueRefMut::Borrow(&mut self.value)
     }
 
-    fn set_value(&mut self, value: FontSize) {
+    fn set_value_dyn(&mut self, value: FontSize) {
         self.value = value;
     }
 }

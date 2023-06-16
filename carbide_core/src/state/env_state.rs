@@ -2,7 +2,7 @@ use std::fmt::{Debug, Formatter};
 use std::ops::Deref;
 
 use crate::environment::Environment;
-use crate::state::{NewStateSync, ReadState, RState, StateContract};
+use crate::state::{AnyReadState, NewStateSync, ReadState, RState, StateContract};
 use crate::state::ReadWidgetState;
 use crate::state::util::value_cell::ValueRef;
 
@@ -57,9 +57,9 @@ impl<T: StateContract + PartialEq> NewStateSync for EnvState<T> {
     }
 }
 
-impl<T: StateContract + PartialEq> ReadState for EnvState<T> {
+impl<T: StateContract + PartialEq> AnyReadState for EnvState<T> {
     type T = T;
-    fn value(&self) -> ValueRef<T> {
+    fn value_dyn(&self) -> ValueRef<T> {
         ValueRef::Borrow(&self.value)
     }
 }

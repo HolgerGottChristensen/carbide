@@ -9,15 +9,15 @@ use crate::draw::{Dimension, Position};
 use crate::environment::Environment;
 use crate::event::{OtherEventHandler, WidgetEvent};
 use crate::flags::Flags;
-use crate::state::{IndexState, ReadState, RState, State, StateContract, StateExtNew, TState, ValueState};
+use crate::state::{AnyState, IndexState, ReadState, RState, State, StateContract, StateExtNew, TState, ValueState};
 use crate::widget::{CommonWidget, Empty, Widget, WidgetExt, WidgetId, WidgetIter, WidgetIterMut};
 
 pub trait Delegate<T: StateContract, O: Widget + Clone>: Clone {
-    fn call(&self, item: Box<dyn State<T=T>>, index: Box<dyn State<T=usize>>) -> O;
+    fn call(&self, item: Box<dyn AnyState<T=T>>, index: Box<dyn AnyState<T=usize>>) -> O;
 }
 
-impl<T: StateContract, K, O: Widget + Clone> Delegate<T, O> for K where K: Fn(Box<dyn State<T=T>>, Box<dyn State<T=usize>>) -> O + Clone {
-    fn call(&self, item: Box<dyn State<T=T>>, index: Box<dyn State<T=usize>>) -> O {
+impl<T: StateContract, K, O: Widget + Clone> Delegate<T, O> for K where K: Fn(Box<dyn AnyState<T=T>>, Box<dyn AnyState<T=usize>>) -> O + Clone {
+    fn call(&self, item: Box<dyn AnyState<T=T>>, index: Box<dyn AnyState<T=usize>>) -> O {
         self(item, index)
     }
 }
@@ -26,7 +26,7 @@ impl<T: StateContract, K, O: Widget + Clone> Delegate<T, O> for K where K: Fn(Bo
 pub struct EmptyDelegate;
 
 impl Delegate<(), Empty> for EmptyDelegate {
-    fn call(&self, _: Box<dyn State<T=()>>, _: Box<dyn State<T=usize>>) -> Empty {
+    fn call(&self, _: Box<dyn AnyState<T=()>>, _: Box<dyn AnyState<T=usize>>) -> Empty {
         *Empty::new()
     }
 }
@@ -102,7 +102,7 @@ impl<T: StateContract, M: State<T=Vec<T>> + Clone + 'static, W: Widget + Clone, 
 
                 let index_state = ValueState::new(index).as_dyn();
 
-                let mut item_state = IndexState::new(self.model.clone(), index_state.clone());
+                let mut item_state = IndexState::new(self.model.clone(), index);
 
 
                 let widget = self.delegate.call(item_state.as_dyn(), index_state);

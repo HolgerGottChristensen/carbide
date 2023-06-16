@@ -28,7 +28,7 @@ fn main() {
                         println!("{}", *counter);
                     }
                 }
-                counter.update_dependent();
+                counter.update_dependent_dyn();
             }
         })
         .frame(100.0, 30.0);

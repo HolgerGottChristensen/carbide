@@ -1,5 +1,5 @@
 use crate::environment::Environment;
-use crate::state::{InnerState, NewStateSync, ReadState, RState, State, StateContract, TState, ValueCell, ValueRef, ValueRefMut};
+use crate::state::{AnyReadState, AnyState, InnerState, NewStateSync, ReadState, RState, State, StateContract, TState, ValueCell, ValueRef, ValueRefMut};
 
 #[derive(Clone)]
 pub struct CacheRState<T> where T: StateContract {
@@ -60,9 +60,9 @@ impl<T: StateContract> NewStateSync for CacheRState<T> {
     }
 }
 
-impl<T: StateContract> ReadState for CacheRState<T> {
+impl<T: StateContract> AnyReadState for CacheRState<T> {
     type T = T;
-    fn value(&self) -> ValueRef<T> {
+    fn value_dyn(&self) -> ValueRef<T> {
         ValueRef::map(self.inner_value.borrow(), |v| {v.as_ref().expect("Tried to get value without having synced first. Maps are not initialized before the first sync")})
     }
 }
@@ -137,21 +137,21 @@ impl<T: StateContract> NewStateSync for CacheTState<T> {
     }
 }
 
-impl<T: StateContract> ReadState for CacheTState<T> {
+impl<T: StateContract> AnyReadState for CacheTState<T> {
     type T = T;
-    fn value(&self) -> ValueRef<T> {
+    fn value_dyn(&self) -> ValueRef<T> {
         ValueRef::map(self.inner_value.borrow(), |v| {v.as_ref().expect("Tried to get value without having synced first. Maps are not initialized before the first sync")})
     }
 }
 
-impl<T: StateContract> State for CacheTState<T> {
-    fn value_mut(&mut self) -> ValueRefMut<T> {
+impl<T: StateContract> AnyState for CacheTState<T> {
+    fn value_dyn_mut(&mut self) -> ValueRefMut<T> {
         panic!("You can not set the value of a map state this way. Please use the set_state macro instead")
     }
 
     /// Set value will only update its containing state if the map_rev is specified.
     #[allow(unused_parens)]
-    fn set_value(&mut self, value: T) {
+    fn set_value_dyn(&mut self, value: T) {
         self.state.set_value(value);
 
         let borrowed = &mut *self.inner_value.borrow_mut();
@@ -189,7 +189,7 @@ impl<T: StateContract> State for CacheTState<T> {
         }
     }
 
-    fn update_dependent(&mut self) {}
+    fn update_dependent_dyn(&mut self) {}
 }
 
 impl<T: StateContract> core::fmt::Debug for CacheTState<T> {

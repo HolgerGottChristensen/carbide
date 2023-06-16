@@ -2,9 +2,10 @@ use std::fmt::{Debug, Formatter};
 use std::sync::Arc;
 
 use parking_lot::{RwLock, RwLockReadGuard, RwLockWriteGuard};
+use carbide_core::state::AnyReadState;
 
 use crate::environment::Environment;
-use crate::state::{NewStateSync, ReadState, State, StateContract, ValueRef, ValueRefMut};
+use crate::state::{AnyState, NewStateSync, ReadState, State, StateContract, ValueRef, ValueRefMut};
 
 /// # Local state
 /// The local state is used as a shared state between multiple widgets within the same widget tree.
@@ -55,23 +56,23 @@ impl<T: StateContract> NewStateSync for GlobalState<T> {
     }
 }
 
-impl<T: StateContract> ReadState for GlobalState<T> {
+impl<T: StateContract> AnyReadState for GlobalState<T> {
     type T = T;
-    fn value(&self) -> ValueRef<T> {
+    fn value_dyn(&self) -> ValueRef<T> {
         ValueRef::Locked(
             RwLockReadGuard::map(self.inner_value.read(), |a| a)
         )
     }
 }
 
-impl<T: StateContract> State for GlobalState<T> {
-    fn value_mut(&mut self) -> ValueRefMut<T> {
+impl<T: StateContract> AnyState for GlobalState<T> {
+    fn value_dyn_mut(&mut self) -> ValueRefMut<T> {
         ValueRefMut::Locked(
             RwLockWriteGuard::map(self.inner_value.write(), |a| a)
         )
     }
 
-    fn set_value(&mut self, value: T) {
+    fn set_value_dyn(&mut self, value: T) {
         *self.inner_value.write() = value;
     }
 }

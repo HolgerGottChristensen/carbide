@@ -2,10 +2,10 @@ use std::fmt::{Debug, Formatter};
 use std::marker::PhantomData;
 use std::ops::{Deref, Index, IndexMut};
 
-use carbide_core::state::NewStateSync;
+use carbide_core::state::{AnyState, NewStateSync};
 
 use crate::environment::Environment;
-use crate::state::{ReadState, RState, StateContract, TState};
+use crate::state::{AnyReadState, ReadState, RState, StateContract, TState};
 use crate::state::state::State;
 use crate::state::util::value_cell::{ValueRef, ValueRefMut};
 use crate::state::widget_state::WidgetState;
@@ -100,7 +100,7 @@ where
     }
 }
 
-impl<T, U, Idx, ST, SIdx> ReadState for IndexState<T, U, Idx, ST, SIdx>
+impl<T, U, Idx, ST, SIdx> AnyReadState for IndexState<T, U, Idx, ST, SIdx>
 where
     T: StateContract + Index<Idx, Output=U> + IndexMut<Idx, Output=U>,
     U: StateContract,
@@ -109,13 +109,13 @@ where
     SIdx: ReadState<T=Idx> + Clone + 'static
 {
     type T = U;
-    fn value(&self) -> ValueRef<U> {
+    fn value_dyn(&self) -> ValueRef<U> {
         let index = self.index_state.value().deref().clone();
         ValueRef::map(self.indexable_state.value(), |a| &a[index])
     }
 }
 
-impl<T, U, Idx, ST, SIdx> State for IndexState<T, U, Idx, ST, SIdx>
+impl<T, U, Idx, ST, SIdx> AnyState for IndexState<T, U, Idx, ST, SIdx>
 where
     T: StateContract + Index<Idx, Output=U> + IndexMut<Idx, Output=U>,
     U: StateContract,
@@ -123,12 +123,12 @@ where
     ST: State<T=T> + Clone + 'static,
     SIdx: ReadState<T=Idx> + Clone + 'static
 {
-    fn value_mut(&mut self) -> ValueRefMut<U> {
+    fn value_dyn_mut(&mut self) -> ValueRefMut<U> {
         let index = self.index_state.value().deref().clone();
         ValueRefMut::map(self.indexable_state.value_mut(), |a| &mut a[index])
     }
 
-    fn set_value(&mut self, value: U) {
+    fn set_value_dyn(&mut self, value: U) {
         *self.value_mut() = value;
     }
 }

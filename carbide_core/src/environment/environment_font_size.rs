@@ -18,6 +18,12 @@ pub enum EnvironmentFontSize {
     Custom(String),
 }
 
+impl EnvironmentFontSize {
+    pub fn u32(&self) -> impl ReadState<T=u32> {
+        EnvironmentFontSizeState::new(self.clone())
+    }
+}
+
 impl Default for EnvironmentFontSize {
     fn default() -> Self {
         EnvironmentFontSize::Body
@@ -30,10 +36,10 @@ impl Default for EnvironmentFontSize {
     }
 }*/
 
-impl IntoReadState<u32> for EnvironmentFontSize {
+/*impl IntoReadState<u32> for EnvironmentFontSize {
     type Output = EnvironmentFontSizeState;
 
     fn into_read_state(self) -> Self::Output {
         EnvironmentFontSizeState::new(self)
     }
-}
+}*/

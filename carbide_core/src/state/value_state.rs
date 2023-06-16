@@ -2,17 +2,19 @@ use std::fmt::{Debug, Formatter};
 use std::ops::Deref;
 use std::str::FromStr;
 
-use carbide_core::state::Map1;
+use carbide_core::state::{AnyState, Map1};
 use carbide_core::state::NewStateSync;
 
 use crate::Color;
 use crate::environment::Environment;
 use crate::render::Style;
-use crate::state::{IntoReadState, ReadWidgetState, RState, State, StateContract, StateExt, TState};
+use crate::state::{AnyReadState, IntoReadState, ReadWidgetState, RState, State, StateContract, StateExt, TState};
 use crate::state::{ValueRef, ValueRefMut};
 use crate::state::ReadState;
 use crate::state::widget_state::WidgetState;
 use crate::widget::{Gradient};
+
+// TODO: This should not be needed after the transition to new states.
 
 /// # ValueState
 /// Value state is a state that can be used for constants and values that are not shared. When
@@ -46,19 +48,19 @@ impl<T: StateContract> ValueState<T> {
 
 impl<T: StateContract> NewStateSync for ValueState<T> {}
 
-impl<T: StateContract> ReadState for ValueState<T> {
+impl<T: StateContract> AnyReadState for ValueState<T> {
     type T = T;
-    fn value(&self) -> ValueRef<T> {
+    fn value_dyn(&self) -> ValueRef<T> {
         ValueRef::Borrow(&self.value)
     }
 }
 
-impl<T: StateContract> State for ValueState<T> {
-    fn value_mut(&mut self) -> ValueRefMut<T> {
+impl<T: StateContract> AnyState for ValueState<T> {
+    fn value_dyn_mut(&mut self) -> ValueRefMut<T> {
         ValueRefMut::Borrow(&mut self.value)
     }
 
-    fn set_value(&mut self, value: T) {
+    fn set_value_dyn(&mut self, value: T) {
         self.value = value;
     }
 }

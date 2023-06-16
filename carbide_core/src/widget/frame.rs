@@ -1,4 +1,5 @@
 use std::fmt::Debug;
+use carbide_core::state::AnyState;
 
 
 use carbide_macro::{carbide_default_builder, carbide_default_builder2};
@@ -7,7 +8,7 @@ use crate::draw::{Dimension, Position};
 use crate::environment::Environment;
 use crate::flags::Flags;
 use crate::layout::{BasicLayouter, Layout, Layouter};
-use crate::state::{IntoReadState, NewStateSync, ReadState, State, TState, ValueRef, ValueRefMut};
+use crate::state::{AnyReadState, IntoReadState, NewStateSync, ReadState, State, TState, ValueRef, ValueRefMut};
 use crate::widget::{CommonWidget, Empty, Widget, WidgetExt, WidgetId, WidgetIter, WidgetIterMut};
 
 pub static SCALE: f64 = -1.0;
@@ -315,10 +316,10 @@ impl<T: ReadState<T=f64> + Clone> NewStateSync for Fixity<T> {
     }
 }
 
-impl<T: ReadState<T=f64> + Clone> ReadState for Fixity<T> {
+impl<T: ReadState<T=f64> + Clone> AnyReadState for Fixity<T> {
     type T = f64;
 
-    fn value(&self) -> ValueRef<Self::T> {
+    fn value_dyn(&self) -> ValueRef<Self::T> {
         match self {
             Fixity::Expand(s) => ValueRef::Borrow(s),
             Fixity::Fit(s) => ValueRef::Borrow(s),
@@ -327,12 +328,12 @@ impl<T: ReadState<T=f64> + Clone> ReadState for Fixity<T> {
     }
 }
 
-impl<T: ReadState<T=f64> + Clone> State for Fixity<T> {
-    fn value_mut(&mut self) -> ValueRefMut<Self::T> {
+impl<T: ReadState<T=f64> + Clone> AnyState for Fixity<T> {
+    fn value_dyn_mut(&mut self) -> ValueRefMut<Self::T> {
         todo!()
     }
 
-    fn set_value(&mut self, value: Self::T) {
+    fn set_value_dyn(&mut self, value: Self::T) {
         match self {
             Fixity::Expand(s) => {
                 *s = value;

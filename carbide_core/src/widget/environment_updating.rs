@@ -11,7 +11,7 @@ use crate::event::{
 };
 use crate::focus::{Focusable, Refocus};
 use crate::render::{Primitive, Render};
-use crate::state::{NewStateSync, ReadState};
+use crate::state::{AnyReadState, NewStateSync, ReadState};
 use crate::widget::{CommonWidget, Empty, Widget, WidgetExt, WidgetId};
 
 #[derive(Debug, Clone, Widget)]

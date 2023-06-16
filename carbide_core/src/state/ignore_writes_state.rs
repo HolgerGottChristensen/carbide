@@ -1,7 +1,7 @@
 use std::marker::PhantomData;
 use carbide_core::state::IntoState;
 use crate::environment::Environment;
-use crate::state::{RState, State, StateContract, WidgetState};
+use crate::state::{AnyReadState, AnyState, RState, State, StateContract, WidgetState};
 use crate::state::{NewStateSync, ReadState, ValueRef, ValueRefMut};
 
 #[derive(Clone, Debug)]
@@ -13,9 +13,9 @@ impl IgnoreWritesState<(), ()> {
     }
 }
 
-impl<T: StateContract, TState: ReadState<T=T> + Clone + 'static> ReadState for IgnoreWritesState<T, TState> {
+impl<T: StateContract, TState: ReadState<T=T> + Clone + 'static> AnyReadState for IgnoreWritesState<T, TState> {
     type T = T;
-    fn value(&self) -> ValueRef<T> {
+    fn value_dyn(&self) -> ValueRef<T> {
         self.0.value()
     }
 }
@@ -26,20 +26,21 @@ impl<T: StateContract, TState: ReadState<T=T> + Clone + 'static> NewStateSync fo
     }
 }
 
-impl<T: StateContract, TState: ReadState<T=T> + Clone + 'static> State for IgnoreWritesState<T, TState> {
-    fn value_mut(&mut self) -> ValueRefMut<T> {
+impl<T: StateContract, TState: ReadState<T=T> + Clone + 'static> AnyState for IgnoreWritesState<T, TState> {
+    fn value_dyn_mut(&mut self) -> ValueRefMut<T> {
         panic!("Trying to get mutable value for a state that is readonly and ignoring writes.")
     }
 
-    fn set_value(&mut self, _: T) {
+    fn set_value_dyn(&mut self, _: T) {
         println!("WARNING: You are trying to set a state that is set to ignore writes");
     }
 }
 
-impl<T: StateContract, TState: ReadState<T=T> + Clone + 'static> IntoState<T> for IgnoreWritesState<T, TState> {
+/*impl<T: StateContract, TState: ReadState<T=T> + Clone + 'static> IntoState<T> for IgnoreWritesState<T, TState> {
     type Output = Self;
 
     fn into_state(self) -> Self::Output {
         self
     }
 }
+*/

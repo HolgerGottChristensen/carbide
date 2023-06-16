@@ -2,11 +2,11 @@ use std::fmt::Debug;
 use std::ops::{Add, DerefMut, Mul};
 use std::time::{Duration, Instant};
 
-use carbide_core::state::{NewStateSync, RMap1};
+use carbide_core::state::{AnyReadState, NewStateSync, RMap1};
 
 use crate::animation::animation_curve::linear;
 use crate::environment::Environment;
-use crate::state::{InnerState, Map1, ReadState, State, StateContract, TState};
+use crate::state::{AnyState, InnerState, Map1, ReadState, State, StateContract, TState};
 use crate::state::util::value_cell::{ValueCell, ValueRef, ValueRefMut};
 use crate::state::widget_state::WidgetState;
 
@@ -122,21 +122,21 @@ impl NewStateSync for AnimatedState {
     }
 }
 
-impl ReadState for AnimatedState {
+impl AnyReadState for AnimatedState {
     type T = f64;
-    fn value(&self) -> ValueRef<f64> {
+    fn value_dyn(&self) -> ValueRef<f64> {
         self.calc_percentage();
         self.percent.borrow()
     }
 }
 
-impl State for AnimatedState {
-    fn value_mut(&mut self) -> ValueRefMut<f64> {
+impl AnyState for AnimatedState {
+    fn value_dyn_mut(&mut self) -> ValueRefMut<f64> {
         self.calc_percentage();
         self.percent.borrow_mut()
     }
 
-    fn set_value(&mut self, value: f64) {
+    fn set_value_dyn(&mut self, value: f64) {
         self.calc_percentage();
         *self.percent.borrow_mut() = value;
     }

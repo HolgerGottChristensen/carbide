@@ -37,8 +37,8 @@ fn main() {
 
         let background_color: TState<Color> = selected
             .choice(
-                EnvironmentColor::Blue.state(),
-                EnvironmentColor::SystemFill.state(),
+                EnvironmentColor::Blue.color(),
+                EnvironmentColor::SystemFill.color(),
             )
             .ignore_writes();
 

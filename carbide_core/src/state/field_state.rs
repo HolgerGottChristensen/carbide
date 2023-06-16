@@ -1,7 +1,8 @@
 use std::fmt::Debug;
+use carbide_core::state::AnyState;
 
 use crate::environment::Environment;
-use crate::state::{NewStateSync, StateContract, TState};
+use crate::state::{AnyReadState, NewStateSync, StateContract, TState};
 use crate::state::{ReadState, State};
 use crate::state::util::value_cell::{ValueRef, ValueRefMut};
 use crate::state::widget_state::WidgetState;
@@ -81,21 +82,21 @@ impl<FROM: StateContract, TO: StateContract> NewStateSync for FieldState<FROM, T
     }
 }
 
-impl<FROM: StateContract, TO: StateContract> ReadState for FieldState<FROM, TO> {
+impl<FROM: StateContract, TO: StateContract> AnyReadState for FieldState<FROM, TO> {
     type T = TO;
-    fn value(&self) -> ValueRef<TO> {
+    fn value_dyn(&self) -> ValueRef<TO> {
         let map = self.map;
         ValueRef::map(self.state.value(), |a| map(a))
     }
 }
 
-impl<FROM: StateContract, TO: StateContract> State for FieldState<FROM, TO> {
-    fn value_mut(&mut self) -> ValueRefMut<TO> {
+impl<FROM: StateContract, TO: StateContract> AnyState for FieldState<FROM, TO> {
+    fn value_dyn_mut(&mut self) -> ValueRefMut<TO> {
         let map_mut = self.map_mut;
         ValueRefMut::map(self.state.value_mut(), |a| map_mut(a))
     }
 
-    fn set_value(&mut self, value: TO) {
+    fn set_value_dyn(&mut self, value: TO) {
         let map_mut = self.map_mut;
         *ValueRefMut::map(self.state.value_mut(), |a| map_mut(a)) = value;
     }

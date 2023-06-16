@@ -34,16 +34,16 @@ pub struct Circle<S, F> where S: ReadState<T=Style> + Clone, F: ReadState<T=Styl
     triangle_store: PrimitiveStore,
 }
 
-impl Circle<EnvironmentColorState, EnvironmentColorState> {
+impl Circle<Style, Style> {
 
     #[carbide_default_builder2]
-    pub fn new() -> Box<Self> {
+    pub fn new() -> Box<Circle<impl ReadState<T=Style>, impl ReadState<T=Style>>> {
         Box::new(Circle {
             id: WidgetId::new(),
             position: Position::new(0.0, 0.0),
             dimension: Dimension::new(100.0, 100.0),
-            stroke_color: <EnvironmentColor as IntoReadState<Style>>::into_read_state(EnvironmentColor::Blue),
-            fill_color: <EnvironmentColor as IntoReadState<Style>>::into_read_state(EnvironmentColor::Blue),
+            stroke_color: EnvironmentColor::Blue.style(),
+            fill_color: EnvironmentColor::Blue.style(),
             style: ShapeStyle::Default,
             stroke_style: StrokeStyle::Solid { line_width: 2.0 },
             triangle_store: PrimitiveStore::new(),

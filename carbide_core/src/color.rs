@@ -753,11 +753,3 @@ fn plain_contrast_should_weight_colors() {
     assert_eq!(g, 1.0);
     assert_eq!(b, 1.0);
 }
-
-impl IntoReadState<Style> for Color {
-    type Output = Style;
-
-    fn into_read_state(self) -> Self::Output {
-        Style::Color(self)
-    }
-}

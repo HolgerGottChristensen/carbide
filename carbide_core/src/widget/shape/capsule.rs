@@ -34,15 +34,15 @@ pub struct Capsule<S, F> where S: ReadState<T=Style> + Clone, F: ReadState<T=Sty
     triangle_store: PrimitiveStore,
 }
 
-impl Capsule<EnvironmentColorState, EnvironmentColorState> {
+impl Capsule<Style, Style> {
     #[carbide_default_builder2]
-    pub fn new() -> Box<Self> {
+    pub fn new() -> Box<Capsule<impl ReadState<T=Style>, impl ReadState<T=Style>>> {
         Box::new(Capsule {
             id: WidgetId::new(),
             position: Position::new(0.0, 0.0),
             dimension: Dimension::new(100.0, 100.0),
-            stroke_color: EnvironmentColor::Blue.state(),
-            fill_color: EnvironmentColor::Blue.state(),
+            stroke_color: EnvironmentColor::Blue.style(),
+            fill_color: EnvironmentColor::Blue.style(),
             style: ShapeStyle::Default,
             stroke_style: StrokeStyle::Solid { line_width: 2.0 },
             triangle_store: PrimitiveStore::new(),

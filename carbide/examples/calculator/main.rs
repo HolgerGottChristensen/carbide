@@ -117,7 +117,7 @@ fn calculator_button(label: Box<dyn Widget>, action: impl Action + 'static) -> B
     let background_color = Map3::read_map(
         pressed_state.clone(),
         hovered_state.clone(),
-        EnvironmentColor::Accent.state(),
+        EnvironmentColor::Accent.color(),
         |pressed: &bool, hovered: &bool, base_color: &Color| {
             if *pressed {
                 base_color.darkened(0.05)

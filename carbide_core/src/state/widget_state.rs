@@ -8,7 +8,7 @@ use carbide_core::state::ReadWidgetState;
 use carbide_core::state::RState;
 
 use crate::environment::Environment;
-use crate::state::{LocalState, NewStateSync, StateContract, ValueState};
+use crate::state::{AnyReadState, AnyState, LocalState, NewStateSync, StateContract, ValueState};
 use crate::state::global_state::GlobalState;
 pub use crate::state::State;
 use crate::state::util::value_cell::{ValueRef, ValueRefMut};
@@ -41,15 +41,15 @@ where
     Value(ValueState<T>),
     Local(LocalState<T>),
     Global(GlobalState<T>),
-    Boxed(Box<dyn State<T=T>>),
+    Boxed(Box<dyn AnyState<T=T>>),
 }
 
 impl<T: StateContract> WidgetState<T> {
-    pub fn new(item: Box<dyn State<T=T>>) -> WidgetState<T> {
+    pub fn new(item: Box<dyn AnyState<T=T>>) -> WidgetState<T> {
         WidgetState::Boxed(item)
     }
 
-    pub fn to_boxed_state(self) -> Box<dyn State<T=T>> {
+    pub fn to_boxed_state(self) -> Box<dyn AnyState<T=T>> {
         match self {
             WidgetState::Boxed(i) => i,
             WidgetState::Value(v) => Box::new(v),
@@ -97,10 +97,10 @@ impl<T: StateContract> NewStateSync for WidgetState<T> {
     }
 }
 
-impl<T: StateContract> ReadState for WidgetState<T> {
+impl<T: StateContract> AnyReadState for WidgetState<T> {
     type T = T;
 
-    fn value(&self) -> ValueRef<T> {
+    fn value_dyn(&self) -> ValueRef<T> {
         match self {
             WidgetState::Boxed(i) => i.value(),
             WidgetState::Value(v) => v.value(),
@@ -110,8 +110,8 @@ impl<T: StateContract> ReadState for WidgetState<T> {
     }
 }
 
-impl<T: StateContract> State for WidgetState<T> {
-    fn value_mut(&mut self) -> ValueRefMut<T> {
+impl<T: StateContract> AnyState for WidgetState<T> {
+    fn value_dyn_mut(&mut self) -> ValueRefMut<T> {
         match self {
             WidgetState::Boxed(i) => i.value_mut(),
             WidgetState::Value(v) => v.value_mut(),
@@ -120,21 +120,21 @@ impl<T: StateContract> State for WidgetState<T> {
         }
     }
 
-    fn set_value(&mut self, value: T) {
+    fn set_value_dyn(&mut self, value: T) {
         match self {
-            WidgetState::Boxed(i) => i.set_value(value),
-            WidgetState::Value(v) => v.set_value(value),
-            WidgetState::Local(v) => v.set_value(value),
-            WidgetState::Global(v) => v.set_value(value),
+            WidgetState::Boxed(i) => i.set_value_dyn(value),
+            WidgetState::Value(v) => v.set_value_dyn(value),
+            WidgetState::Local(v) => v.set_value_dyn(value),
+            WidgetState::Global(v) => v.set_value_dyn(value),
         }
     }
 
-    fn update_dependent(&mut self) {
+    fn update_dependent_dyn(&mut self) {
         match self {
-            WidgetState::Boxed(i) => i.update_dependent(),
-            WidgetState::Value(v) => v.update_dependent(),
-            WidgetState::Local(v) => v.update_dependent(),
-            WidgetState::Global(v) => v.update_dependent(),
+            WidgetState::Boxed(i) => i.update_dependent_dyn(),
+            WidgetState::Value(v) => v.update_dependent_dyn(),
+            WidgetState::Local(v) => v.update_dependent_dyn(),
+            WidgetState::Global(v) => v.update_dependent_dyn(),
         }
     }
 }

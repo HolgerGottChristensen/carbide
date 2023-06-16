@@ -85,7 +85,7 @@ fn main() {
 
         let background_color = Map2::read_map(
             selected.clone(),
-            EnvironmentColor::Accent.state(),
+            EnvironmentColor::Accent.color(),
             |selected: &bool, base_color: &Color| {
                 if *selected {
                     *base_color

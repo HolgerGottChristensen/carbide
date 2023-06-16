@@ -3,36 +3,26 @@ use crate::draw::draw_gradient::DrawGradient;
 use crate::draw::{Dimension, Position};
 use crate::focus::Focus;
 use crate::render::Style;
-use crate::state::{Map1, RMap1, State, StateContract};
+use crate::state::{IntoReadState, IntoState, Map1, RMap1, State, StateContract, IntoReadStateHelper, AnyReadState};
 use crate::widget::Gradient;
 
-pub trait IntoReadState<T>: Clone where T: StateContract {
-    type Output: ReadState<T=T> + Clone;
 
-    fn into_read_state(self) -> Self::Output;
-}
 
-pub trait IntoState<T> where T: StateContract {
-    type Output: State<T=T> + Clone;
-
-    fn into_state(self) -> Self::Output;
-}
-
-impl<T: ReadState<T=T> + Clone> IntoReadState<T> for T {
+/*impl<T: ReadState<T=T> + Clone> IntoReadState<T> for T {
     type Output = T;
 
     fn into_read_state(self) -> Self::Output {
         self
     }
-}
+}*/
 
 macro_rules! impl_string_state {
     ($($typ: ty),*) => {
         $(
-        impl IntoReadState<String> for $typ {
-            type Output = RMap1<fn(&$typ) -> String, $typ, String, $typ>;
+        impl<T> IntoReadStateHelper<T, $typ, String> for T where T: AnyReadState<T=$typ> + Clone {
+            type Output = RMap1<fn(&$typ) -> String, $typ, String, T>;
 
-            fn into_read_state(self) -> Self::Output {
+            fn into_read_state_helper(self) -> Self::Output {
                 Map1::read_map(self, |s| {
                     s.to_string()
                 })
@@ -51,7 +41,7 @@ impl_string_state!(
     &'static str
 );
 
-impl IntoReadState<f64> for u32 {
+/*impl IntoReadState<f64> for u32 {
     type Output = f64;
 
     fn into_read_state(self) -> Self::Output {
@@ -61,8 +51,8 @@ impl IntoReadState<f64> for u32 {
 
 
 
-impl<T: StateContract> IntoReadState<T> for TState<T> {
-    type Output = TState<T>;
+impl<T: StateContract> IntoReadState<T> for T where T: ReadState<T=T> {
+    type Output = T;
 
     fn into_read_state(self) -> Self::Output {
         self
@@ -83,4 +73,4 @@ impl IntoReadState<Style> for Gradient {
     fn into_read_state(self) -> Self::Output {
         Style::Gradient(self)
     }
-}
+}*/

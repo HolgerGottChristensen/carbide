@@ -7,6 +7,7 @@ use lyon::tessellation::path::Winding;
 use carbide_macro::{carbide_default_builder, carbide_default_builder2};
 
 use crate::{Color, CommonWidgetImpl};
+use crate::color::RED;
 use crate::draw::{Dimension, Position};
 use crate::environment::{Environment, EnvironmentColorState};
 use crate::environment::EnvironmentColor;
@@ -35,20 +36,26 @@ pub struct RoundedRectangle<S, F> where S: ReadState<T=Style> + Clone, F: ReadSt
     triangle_store: PrimitiveStore,
 }
 
-impl RoundedRectangle<EnvironmentColorState, EnvironmentColorState> {
+impl RoundedRectangle<Style, Style> {
     #[carbide_default_builder2]
-    pub fn new(corner_radii: impl Into<CornerRadii>) -> Box<Self> {
+    pub fn new(corner_radii: impl Into<CornerRadii>) -> Box<RoundedRectangle<impl ReadState<T=Style>, impl ReadState<T=Style>>> {
         Box::new(RoundedRectangle {
             id: WidgetId::new(),
             position: Position::new(0.0, 0.0),
             dimension: Dimension::new(100.0, 100.0),
             corner_radii: corner_radii.into(),
-            stroke_color: <EnvironmentColor as IntoReadState<Style>>::into_read_state(EnvironmentColor::Blue),
-            fill_color: <EnvironmentColor as IntoReadState<Style>>::into_read_state(EnvironmentColor::Blue),
+            stroke_color: EnvironmentColor::Blue.style(),
+            fill_color: EnvironmentColor::Blue.style(),
             style: ShapeStyle::Default,
             stroke_style: StrokeStyle::Solid { line_width: 2.0 },
             triangle_store: PrimitiveStore::new(),
         })
+    }
+
+    pub fn shape(corner_radii: impl Into<CornerRadii>) -> RoundedRectangle<Style, Style> {
+        *RoundedRectangle::new(corner_radii)
+            .fill(Style::Color(RED))
+            .stroke(Style::Color(RED))
     }
 }
 

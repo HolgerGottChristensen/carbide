@@ -2,9 +2,11 @@ use cgmath::Matrix4;
 use carbide_core::state::{IntoReadState, RMap1};
 
 use crate::Color;
+use crate::color::BLACK;
 use crate::draw::Dimension;
 use crate::environment::{EnvironmentColor, EnvironmentColorState, EnvironmentStateContainer};
 use crate::flags::Flags;
+use crate::render::Style;
 use crate::state::{ReadState, TState};
 use crate::widget::{Background, Border, Clip, ClipShape, CornerRadii, EdgeInsets, EnvUpdating, Flagged, Flexibility, Frame, Hidden, Offset, Padding, Rotation3DEffect, RoundedRectangle, Shape, Transform, Widget};
 use crate::state::ReadStateExtNew;
@@ -105,8 +107,8 @@ pub trait WidgetExt: Widget + Sized + Clone + 'static {
         ClipShape::new(self, shape)
     }
 
-    fn corner_radius(self, radius: impl Into<CornerRadii>) -> Box<ClipShape<Self, RoundedRectangle<EnvironmentColorState, EnvironmentColorState>>> {
-        ClipShape::new(self, *RoundedRectangle::new(radius.into()))
+    fn corner_radius(self, radius: impl Into<CornerRadii>) -> Box<ClipShape<Self, RoundedRectangle<Style, Style>>> {
+        ClipShape::new(self, RoundedRectangle::shape(radius))
     }
 
     fn hidden(self) -> Box<Hidden> {

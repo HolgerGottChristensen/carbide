@@ -34,13 +34,13 @@ impl AsRef<Path> for ImageId {
     }
 }
 
-impl IntoReadState<Option<ImageId>> for &str {
+/*impl IntoReadState<Option<ImageId>> for &str {
     type Output = Option<ImageId>;
 
     fn into_read_state(self) -> Self::Output {
         Some(ImageId::new(self))
     }
-}
+}*/
 
 impl Into<TState<Option<ImageId>>> for &str {
     fn into(self) -> TState<Option<ImageId>> {
