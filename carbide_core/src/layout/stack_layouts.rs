@@ -174,7 +174,7 @@ fn calculate_size_stack(
 
     let mut total_main_axis = 0.0;
 
-    for (_, mut child) in children_flexibility_rest {
+    for (_, child) in children_flexibility_rest {
         let size_for_child = dimension(
             main_axis(size_for_children) / number_of_children_that_needs_sizing as f64,
             cross_axis(size_for_children),
@@ -196,7 +196,7 @@ fn calculate_size_stack(
         total_main_axis += main_axis(chosen_size);
     }
 
-    for (_, mut child) in children_flexibility_using_max_val {
+    for (_, child) in children_flexibility_using_max_val {
         let size_for_child = dimension(
             main_axis(size_for_children) / number_of_children_that_needs_sizing as f64,
             max_cross_axis,

@@ -11,7 +11,7 @@ use crate::event::{
 use crate::flags::Flags;
 use crate::layout::{BasicLayouter, Layout, Layouter};
 use crate::render::{Primitive, Render};
-use crate::widget::{Capsule, CommonWidget, Rectangle, Widget, WidgetExt, WidgetId, WidgetIter, WidgetIterMut};
+use crate::widget::{Capsule, CommonWidget, Rectangle, Widget, WidgetExt, WidgetId};
 use crate::widget::types::ScrollDirection;
 
 #[derive(Debug, Clone, Widget)]

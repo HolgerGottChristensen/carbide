@@ -1,12 +1,12 @@
 use carbide_core::environment::Environment;
 use carbide_core::state::IntoReadState;
 
-use carbide_macro::{carbide_default_builder, carbide_default_builder2};
+use carbide_macro::{carbide_default_builder2};
 
 use crate::CommonWidgetImpl;
 use crate::draw::{Dimension, Position};
 use crate::layout::{BasicLayouter, Layout, Layouter};
-use crate::state::{ReadState, TState};
+use crate::state::{ReadState};
 use crate::widget::{CommonWidget, Empty, Widget, WidgetExt, WidgetId};
 
 #[derive(Debug, Clone, Widget)]

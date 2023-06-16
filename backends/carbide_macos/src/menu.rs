@@ -183,14 +183,14 @@ impl NSMenu {
         */
     }
 
-    pub fn add_item(mut self, item: NSMenuItem) -> Self {
+    pub fn add_item(self, item: NSMenuItem) -> Self {
         unsafe {
             let () = msg_send![self.id(), addItem: item.id()];
         }
         self
     }
 
-    pub fn insert_item_at_index(mut self, item: NSMenuItem, index: u32) -> Self {
+    pub fn insert_item_at_index(self, item: NSMenuItem, index: u32) -> Self {
         let index = NSInteger::from(index);
         unsafe {
             let () = msg_send![self.id(), insertItem: item.id() atIndex: index];
@@ -198,7 +198,7 @@ impl NSMenu {
         self
     }
 
-    pub fn remove_item(mut self, item: NSMenuItem) -> Self {
+    pub fn remove_item(self, item: NSMenuItem) -> Self {
         item.cleanup();
         unsafe {
             let () = msg_send![self.id(), removeItem: item.id()];
@@ -206,7 +206,7 @@ impl NSMenu {
         self
     }
 
-    pub fn remove_item_at_index(mut self, index: u32) -> Self {
+    pub fn remove_item_at_index(self, index: u32) -> Self {
         let index = NSInteger::from(index);
         unsafe {
             let () = msg_send![self.id(), removeItemAtIndex: index];
@@ -214,7 +214,7 @@ impl NSMenu {
         self
     }
 
-    pub fn remove_all_items(mut self) -> Self {
+    pub fn remove_all_items(self) -> Self {
         self.cleanup();
         unsafe {
             let () = msg_send![self.id(), removeAllItems];
@@ -227,7 +227,7 @@ impl NSMenu {
 
         for item in menu.items() {
             match item {
-                MenuItem::Item { id, name, hotkey, enabled, selected, action } => {
+                MenuItem::Item { id: _, name, hotkey, enabled, selected: _, action } => {
                     let item = NSMenuItem::new(name, *hotkey)
                         .set_enabled(*enabled)
                         .set_action(action.clone(), env);

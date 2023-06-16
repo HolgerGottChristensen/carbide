@@ -1,10 +1,10 @@
 use carbide_core::state::{IntoReadState, ReadState};
-use carbide_macro::{carbide_default_builder, carbide_default_builder2};
+use carbide_macro::{carbide_default_builder2};
 
 use crate::CommonWidgetImpl;
 use crate::draw::{Dimension, Position};
 use crate::environment::EnvironmentColor;
-use crate::state::TState;
+
 use crate::state::ReadStateExtNew;
 use crate::widget::{Capsule, CommonWidget, Empty, Frame, HSplit, Spacer, Widget, WidgetExt, WidgetId, ZStack};
 

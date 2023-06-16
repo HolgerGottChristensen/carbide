@@ -1,11 +1,11 @@
 use proc_macro2::TokenStream;
 use std::str::FromStr;
-use proc_macro2::{Ident, Span, TokenTree};
-use quote::{quote, ToTokens};
-use syn::buffer::Cursor;
-use syn::parse::{Parse, ParseBuffer, ParseStream};
-use syn::parse_quote;
-use syn::visit_mut::VisitMut;
+
+use quote::{ToTokens};
+
+use syn::parse::{Parse, ParseStream};
+
+
 
 pub struct StateAccessReplace;
 

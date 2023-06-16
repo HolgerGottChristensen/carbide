@@ -1,12 +1,12 @@
-use image::DynamicImage;
+
 use carbide_core::draw::Rect;
 use crate::draw::{BoundingBox, Position};
 use crate::draw::draw_style::DrawStyle;
 use crate::draw::image::ImageId;
 use crate::draw::shape::triangle::Triangle;
-use crate::layout::BasicLayouter;
+
 use crate::render::CarbideTransform;
-use crate::render::style::Style;
+
 use crate::text::Glyph;
 use crate::widget::FilterId;
 
@@ -125,29 +125,29 @@ pub trait InnerRenderContext {
 pub struct NoopRenderContext;
 
 impl InnerRenderContext for NoopRenderContext {
-    fn transform(&mut self, transform: CarbideTransform) {}
+    fn transform(&mut self, _transform: CarbideTransform) {}
 
     fn pop_transform(&mut self) {}
 
-    fn clip(&mut self, bounding_box: BoundingBox) {}
+    fn clip(&mut self, _bounding_box: BoundingBox) {}
 
     fn pop_clip(&mut self) {}
 
-    fn filter(&mut self, id: FilterId, bounding_box: BoundingBox) {}
+    fn filter(&mut self, _id: FilterId, _bounding_box: BoundingBox) {}
 
-    fn filter2d(&mut self, id1: FilterId, bounding_box1: BoundingBox, id2: FilterId, bounding_box2: BoundingBox) {}
+    fn filter2d(&mut self, _id1: FilterId, _bounding_box1: BoundingBox, _id2: FilterId, _bounding_box2: BoundingBox) {}
 
-    fn stencil(&mut self, geometry: &[Triangle<Position>]) {}
+    fn stencil(&mut self, _geometry: &[Triangle<Position>]) {}
 
     fn pop_stencil(&mut self) {}
 
-    fn geometry(&mut self, geometry: &[Triangle<Position>]) {}
+    fn geometry(&mut self, _geometry: &[Triangle<Position>]) {}
 
-    fn style(&mut self, style: DrawStyle) {}
+    fn style(&mut self, _style: DrawStyle) {}
 
     fn pop_style(&mut self) {}
 
-    fn image(&mut self, id: ImageId, bounding_box: Rect, source_rect: Rect, mode: u32) {}
+    fn image(&mut self, _id: ImageId, _bounding_box: Rect, _source_rect: Rect, _mode: u32) {}
 
-    fn text(&mut self, text: &[Glyph]) {}
+    fn text(&mut self, _text: &[Glyph]) {}
 }

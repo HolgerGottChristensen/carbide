@@ -1,4 +1,4 @@
-use std::borrow::Borrow;
+
 use std::ffi::OsStr;
 use std::fs;
 use std::fs::File;
@@ -151,7 +151,7 @@ impl Pdf {
 
                     current_layer.add_operation(Operation::new(OP_PATH_PAINT_FILL_NZ, vec![]));
                 }
-                PrimitiveKind::Image { image_id, color, source_rect, mode } => {
+                PrimitiveKind::Image { image_id, color: _, source_rect: _, mode: _ } => {
                     println!("Image");
                     let image = self.environment.image_map.get(&image_id).unwrap();
                     dbg!(image.color());
@@ -328,6 +328,6 @@ impl Pdf {
 
 fn convert_position_to_point(position: Position, page_dimensions: Dimension) -> Point {
     let x = Mm(position.x() / 2.0);
-    let y = Mm((page_dimensions.height - position.y() / 2.0));
+    let y = Mm(page_dimensions.height - position.y() / 2.0);
     Point::new(x, y)
 }

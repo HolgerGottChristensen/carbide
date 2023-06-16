@@ -1,6 +1,6 @@
 use std::collections::HashSet;
-use proc_macro2::{Ident, Span};
-use syn::{Arm, Expr, parse_quote, Pat};
+use proc_macro2::{Ident};
+use syn::{Pat};
 
 pub fn extract_idents_from_pattern(pat: Pat) -> Vec<Ident> {
     match pat {
@@ -144,9 +144,9 @@ pub fn extract_idents_from_pattern(pat: Pat) -> Vec<Ident> {
 
 
 mod tests {
-    use proc_macro2::{Ident, Span};
-    use syn::{parse_quote, Pat};
-    use crate::pat_ident_extraction::extract_idents_from_pattern;
+    
+    
+    
 
     #[test]
     fn extract_from_lit() {

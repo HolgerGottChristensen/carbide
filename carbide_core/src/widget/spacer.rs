@@ -5,7 +5,7 @@ use crate::draw::{Dimension, Position, Scalar};
 use crate::environment::Environment;
 use crate::flags::Flags;
 use crate::layout::Layout;
-use crate::widget::{CommonWidget, Widget, WidgetExt, WidgetId, WidgetIter, WidgetIterMut};
+use crate::widget::{CommonWidget, Widget, WidgetExt, WidgetId};
 
 #[derive(Clone, Debug, Widget)]
 #[carbide_exclude(Layout)]
@@ -67,15 +67,15 @@ impl CommonWidget for Spacer {
         }
     }
 
-    fn foreach_child<'a>(&'a self, f: &mut dyn FnMut(&'a dyn Widget)) {}
+    fn foreach_child<'a>(&'a self, _f: &mut dyn FnMut(&'a dyn Widget)) {}
 
-    fn foreach_child_mut<'a>(&'a mut self, f: &mut dyn FnMut(&'a mut dyn Widget)) {}
+    fn foreach_child_mut<'a>(&'a mut self, _f: &mut dyn FnMut(&'a mut dyn Widget)) {}
 
-    fn foreach_child_rev<'a>(&'a mut self, f: &mut dyn FnMut(&'a mut dyn Widget)) {}
+    fn foreach_child_rev<'a>(&'a mut self, _f: &mut dyn FnMut(&'a mut dyn Widget)) {}
 
-    fn foreach_child_direct<'a>(&'a mut self, f: &mut dyn FnMut(&'a mut dyn Widget)) {}
+    fn foreach_child_direct<'a>(&'a mut self, _f: &mut dyn FnMut(&'a mut dyn Widget)) {}
 
-    fn foreach_child_direct_rev<'a>(&'a mut self, f: &mut dyn FnMut(&'a mut dyn Widget)) {}
+    fn foreach_child_direct_rev<'a>(&'a mut self, _f: &mut dyn FnMut(&'a mut dyn Widget)) {}
 
 
     fn position(&self) -> Position {

@@ -1,14 +1,14 @@
 use std::borrow::Borrow;
 use std::fmt::Debug;
 use std::ops::Deref;
-use carbide_core::render::{RenderContext, Style};
+use carbide_core::render::{RenderContext};
 use carbide_core::state::IntoReadState;
 
 
-use carbide_macro::{carbide_default_builder, carbide_default_builder2};
+use carbide_macro::{carbide_default_builder2};
 
 use crate::draw::Color;
-use crate::color::BLACK;
+
 use crate::draw::{Dimension, Position, Rect};
 use crate::draw::draw_style::DrawStyle;
 use crate::environment::{Environment, EnvironmentColor, EnvironmentFontSize};
@@ -16,13 +16,13 @@ use crate::layout::Layout;
 //use crate::render::text::Text as RenderText;
 use crate::render::{new_primitive, Primitive, Render};
 use crate::render::PrimitiveKind;
-use crate::state::{ReadState, RState, StateSync, TState};
+use crate::state::{ReadState, StateSync};
 use crate::text::{
     FontStyle, FontWeight, Glyph, NoStyleTextSpanGenerator, TextDecoration, TextSpanGenerator,
     TextStyle,
 };
 use crate::text::Text as InternalText;
-use crate::widget::{CommonWidget, Justify, Widget, WidgetExt, WidgetId, WidgetIter, WidgetIterMut};
+use crate::widget::{CommonWidget, Justify, Widget, WidgetExt, WidgetId};
 //use crate::text_old::PositionedGlyph;
 use crate::widget::types::Wrap;
 
@@ -100,7 +100,7 @@ impl Text<String, u32, Color> {
 }
 
 impl<T2: ReadState<T=String> + Clone, S2: ReadState<T=u32> + Clone, C2: ReadState<T=Color> + Clone> Text<T2, S2, C2> {
-    pub fn color<C: IntoReadState<Color>>(mut self, color: C) -> Box<Text<T2, S2, C::Output>> {
+    pub fn color<C: IntoReadState<Color>>(self, color: C) -> Box<Text<T2, S2, C::Output>> {
         Box::new(Text {
             id: self.id,
             position: self.position,
@@ -118,7 +118,7 @@ impl<T2: ReadState<T=String> + Clone, S2: ReadState<T=u32> + Clone, C2: ReadStat
         })
     }
 
-    pub fn font_size<S: IntoReadState<u32>>(mut self, size: S) -> Box<Text<T2, S::Output, C2>> {
+    pub fn font_size<S: IntoReadState<u32>>(self, size: S) -> Box<Text<T2, S::Output, C2>> {
         Box::new(Text {
             id: self.id,
             position: self.position,
@@ -142,7 +142,7 @@ impl<T2: ReadState<T=String> + Clone, S2: ReadState<T=u32> + Clone, C2: ReadStat
     }
 
     /// Take a given text element and make it render with the font weight: Bold
-    pub fn bold(mut self) -> Box<Self> {
+    pub fn bold(self) -> Box<Self> {
         self.font_weight(FontWeight::Bold)
     }
 
@@ -262,7 +262,7 @@ impl<T: ReadState<T=String> + Clone, S: ReadState<T=u32> + Clone, C: ReadState<T
 
         if let Some(internal) = &mut self.internal_text {
             context.style(DrawStyle::Color(default_color), |context| {
-                for (glyphs, color, additional_rects) in &internal.span_glyphs(env.scale_factor()) {
+                for (glyphs, _color, _additional_rects) in &internal.span_glyphs(env.scale_factor()) {
 
                     context.text(glyphs);
 
@@ -347,15 +347,15 @@ impl<T: ReadState<T=String> + Clone, S: ReadState<T=u32> + Clone, C: ReadState<T
         self.id
     }
 
-    fn foreach_child<'a>(&'a self, f: &mut dyn FnMut(&'a dyn Widget)) {}
+    fn foreach_child<'a>(&'a self, _f: &mut dyn FnMut(&'a dyn Widget)) {}
 
-    fn foreach_child_mut<'a>(&'a mut self, f: &mut dyn FnMut(&'a mut dyn Widget)) {}
+    fn foreach_child_mut<'a>(&'a mut self, _f: &mut dyn FnMut(&'a mut dyn Widget)) {}
 
-    fn foreach_child_rev<'a>(&'a mut self, f: &mut dyn FnMut(&'a mut dyn Widget)) {}
+    fn foreach_child_rev<'a>(&'a mut self, _f: &mut dyn FnMut(&'a mut dyn Widget)) {}
 
-    fn foreach_child_direct<'a>(&'a mut self, f: &mut dyn FnMut(&'a mut dyn Widget)) {}
+    fn foreach_child_direct<'a>(&'a mut self, _f: &mut dyn FnMut(&'a mut dyn Widget)) {}
 
-    fn foreach_child_direct_rev<'a>(&'a mut self, f: &mut dyn FnMut(&'a mut dyn Widget)) {}
+    fn foreach_child_direct_rev<'a>(&'a mut self, _f: &mut dyn FnMut(&'a mut dyn Widget)) {}
 
 
     fn position(&self) -> Position {

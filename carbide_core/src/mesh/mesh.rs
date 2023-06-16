@@ -438,7 +438,7 @@ impl Mesh {
                         }
                     }
 
-                    let (mut l, mut r, mut b, mut t) = primitive.bounding_box.l_r_b_t();
+                    let (l, r, b, t) = primitive.bounding_box.l_r_b_t();
 
 
                     let new_rect = Rect::from_corners(Position::new(r, b), Position::new(l, t))
@@ -542,7 +542,7 @@ impl Mesh {
                         vertices.push(v(triangle[2]));
                     }
                 }
-                PrimitiveKind::TrianglesMultiColor { triangles } => {
+                PrimitiveKind::TrianglesMultiColor { triangles: _ } => {
                     todo!()
                 }
                 PrimitiveKind::Text { color, text: glyphs, } => {

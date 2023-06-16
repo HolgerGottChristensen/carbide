@@ -3,12 +3,12 @@ use carbide_core::event::MouseEvent;
 
 use crate::CommonWidgetImpl;
 use crate::draw::{Dimension, Position};
-use crate::environment::{Environment, EnvironmentColor};
+use crate::environment::{Environment};
 use crate::event::{MouseButton, MouseEventHandler};
-use crate::flags::Flags;
+
 use crate::layout::Layout;
-use crate::state::{AnyState, LocalState, Map1, ReadStateExtNew, State, TState};
-use crate::widget::{Background, CommonWidget, EdgeInsets, ForEach, IfElse, Menu, MenuItem, MouseArea, Overlay, Rectangle, Text, VStack, Widget, WidgetExt, WidgetId, Wrap};
+use crate::state::{AnyState, TState};
+use crate::widget::{CommonWidget, Menu, MenuItem, Overlay, Widget, WidgetExt, WidgetId};
 
 #[derive(Debug, Clone, Widget)]
 #[carbide_exclude(MouseEvent, Layout)]
@@ -22,7 +22,7 @@ pub struct PopupMenu {
 }
 
 impl PopupMenu {
-    pub fn new(menu: TState<Menu>, top_level: bool) -> Box<Self> {
+    pub fn new(_menu: TState<Menu>, _top_level: bool) -> Box<Self> {
         /*let item = Text::new(
             Map1::read_map(menu.clone(), |a: &Menu| a.name().to_string()).ignore_writes(),
         )
@@ -67,7 +67,7 @@ impl PopupMenu {
         todo!()
     }
 
-    fn menu_item_delegate(item: Box<dyn AnyState<T=MenuItem>>, index: Box<dyn AnyState<T=usize>>) -> Box<dyn Widget> {
+    fn menu_item_delegate(_item: Box<dyn AnyState<T=MenuItem>>, _index: Box<dyn AnyState<T=usize>>) -> Box<dyn Widget> {
         /*let default_item = Map1::read_map(item.clone(), |item: &MenuItem| {
             matches!(item, MenuItem::Item { .. })
         })

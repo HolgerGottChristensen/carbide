@@ -9,11 +9,11 @@ mod expr;
 
 use proc_macro::TokenStream;
 use quote::{quote, ToTokens};
-use syn::{Expr, FnArg, parse_macro_input, parse_quote};
+use syn::{FnArg, parse_macro_input};
 use carbide_struct::CarbideStruct;
 use crate::carbide_gen_optionals::CarbideGenOptionals;
 use crate::carbide_item::CarbideItem;
-use crate::dollar_pre_processor::StateAccessReplace;
+
 
 #[proc_macro]
 pub fn CarbideUI(item: TokenStream) -> TokenStream {

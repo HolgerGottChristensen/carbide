@@ -3,7 +3,7 @@ use carbide_macro::carbide_default_builder2;
 
 use crate::CommonWidgetImpl;
 use crate::draw::{Dimension, Position, Rect};
-use crate::environment::{Environment, EnvironmentColor};
+use crate::environment::{Environment};
 use crate::layout::Layout;
 use crate::render::{Primitive, PrimitiveKind, Render};
 use crate::widget::*;

@@ -38,7 +38,7 @@ impl OpenPanel {
         }
     }
 
-    pub fn set_allows_multiple_selection(mut self, allow: bool) -> Self {
+    pub fn set_allows_multiple_selection(self, allow: bool) -> Self {
         unsafe {
             let allow = if allow {YES} else {NO};
             let () = msg_send![self.id, setAllowsMultipleSelection: allow];
@@ -46,7 +46,7 @@ impl OpenPanel {
         self
     }
 
-    pub fn set_can_choose_files(mut self, can: bool) -> Self {
+    pub fn set_can_choose_files(self, can: bool) -> Self {
         unsafe {
             let can = if can {YES} else {NO};
             let () = msg_send![self.id, setCanChooseFiles: can];
@@ -54,7 +54,7 @@ impl OpenPanel {
         self
     }
 
-    pub fn set_can_choose_directories(mut self, can: bool) -> Self {
+    pub fn set_can_choose_directories(self, can: bool) -> Self {
         unsafe {
             let can = if can {YES} else {NO};
             let () = msg_send![self.id, setCanChooseDirectories: can];
@@ -62,7 +62,7 @@ impl OpenPanel {
         self
     }
 
-    pub fn set_shows_hidden_files(mut self, show: bool) -> Self {
+    pub fn set_shows_hidden_files(self, show: bool) -> Self {
         unsafe {
             let show = if show {YES} else {NO};
             let () = msg_send![self.id, setShowsHiddenFiles: show];
@@ -70,7 +70,7 @@ impl OpenPanel {
         self
     }
 
-    pub fn set_resolve_aliases(mut self, resolve: bool) -> Self {
+    pub fn set_resolve_aliases(self, resolve: bool) -> Self {
         unsafe {
             let resolve = if resolve {YES} else {NO};
             let () = msg_send![self.id, setResolveAliases: resolve];
@@ -78,7 +78,7 @@ impl OpenPanel {
         self
     }
 
-    pub fn set_title(mut self, title: &str) -> Self {
+    pub fn set_title(self, title: &str) -> Self {
         let ns_string = NSString::from(title);
         unsafe {
             let () = msg_send![self.id, setTitle: ns_string.id()];
@@ -86,7 +86,7 @@ impl OpenPanel {
         self
     }
 
-    pub fn set_prompt(mut self, prompt: &str) -> Self {
+    pub fn set_prompt(self, prompt: &str) -> Self {
         let ns_string = NSString::from(prompt);
         unsafe {
             let () = msg_send![self.id, setPrompt: ns_string.id()];
@@ -94,7 +94,7 @@ impl OpenPanel {
         self
     }
 
-    pub fn set_message(mut self, message: &str) -> Self {
+    pub fn set_message(self, message: &str) -> Self {
         let ns_string = NSString::from(message);
         unsafe {
             let () = msg_send![self.id, setMessage: ns_string.id()];
@@ -103,7 +103,7 @@ impl OpenPanel {
     }
 
     /// Sets the start directory
-    pub fn set_directory_url(mut self, url: impl AsRef<Path>) -> Self {
+    pub fn set_directory_url(self, url: impl AsRef<Path>) -> Self {
         let url = NSURL::from(url.as_ref());
         unsafe {
             let () = msg_send![self.id, setDirectoryURL: url.id()];
@@ -111,7 +111,7 @@ impl OpenPanel {
         self
     }
 
-    pub fn set_name_field_label(mut self, label: &str) -> Self {
+    pub fn set_name_field_label(self, label: &str) -> Self {
         let ns_string = NSString::from(label);
         unsafe {
             let () = msg_send![self.id, setNameFieldLabel: ns_string.id()];
@@ -127,7 +127,7 @@ impl OpenPanel {
         self
     }*/
 
-    pub fn set_can_create_directories(mut self, can: bool) -> Self {
+    pub fn set_can_create_directories(self, can: bool) -> Self {
         unsafe {
             let can = if can {YES} else {NO};
             let () = msg_send![self.id, setCanCreateDirectories: can];
@@ -135,7 +135,7 @@ impl OpenPanel {
         self
     }
 
-    pub fn set_can_select_hidden_extension(mut self, can: bool) -> Self {
+    pub fn set_can_select_hidden_extension(self, can: bool) -> Self {
         unsafe {
             let can = if can {YES} else {NO};
             let () = msg_send![self.id, setCanSelectHiddenExtension: can];
@@ -144,7 +144,7 @@ impl OpenPanel {
     }
 
     /// The default content type will be the first in the list of allowed files
-    pub fn set_allowed_content_types(mut self, allowed: &Vec<FileSpecification>) -> Self {
+    pub fn set_allowed_content_types(self, allowed: &Vec<FileSpecification>) -> Self {
         debug_assert!(allowed.len() > 0);
 
         let extensions = allowed.iter()
@@ -162,7 +162,7 @@ impl OpenPanel {
         self
     }
 
-    pub fn set_allows_other_file_types(mut self, allow: bool) -> Self {
+    pub fn set_allows_other_file_types(self, allow: bool) -> Self {
         unsafe {
             let allow = if allow {YES} else {NO};
             let () = msg_send![self.id, setAllowsOtherFileTypes: allow];
@@ -170,7 +170,7 @@ impl OpenPanel {
         self
     }
 
-    pub fn set_treats_file_packages_as_directories(mut self, treat: bool) -> Self {
+    pub fn set_treats_file_packages_as_directories(self, treat: bool) -> Self {
         unsafe {
             let treat = if treat {YES} else {NO};
             let () = msg_send![self.id, treatsFilePackagesAsDirectories: treat];

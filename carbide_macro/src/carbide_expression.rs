@@ -1,16 +1,16 @@
-use std::fmt::{Debug, Formatter, Pointer};
+use std::fmt::{Debug, Formatter};
 use proc_macro2::{Span, TokenStream};
 use quote::{quote, ToTokens};
-use syn::{Arm, Attribute, Block, Error, ExprForLoop, ExprIf, Ident, Pat, PatOr, token};
+use syn::{Attribute, Error, Ident, Pat, PatOr, token};
 use syn::token::{Brace, Colon, Comma, Dot, Else, In, Let, Paren, Semi, Token};
-use syn::{braced, Expr, parenthesized, Token, Type};
+use syn::{braced, Expr, parenthesized, Token};
 use syn::__private::{parse_braces, parse_parens, TokenStream2};
 use syn::parse::{Parse, ParseStream};
 use syn::punctuated::Punctuated;
 use crate::expr::carbide_expr::CarbideExpr;
 use crate::carbide_expression::CarbideExpression::{ForLoop, If, Instantiate, Match};
 use crate::carbide_expression::CarbideInstantiateParam::{Optional, Required};
-use crate::expr_ident_extraction::extract_idents_from_expression;
+
 use crate::pat_ident_extraction::extract_idents_from_pattern;
 
 #[derive(Debug)]
@@ -43,11 +43,11 @@ impl ToTokens for CarbideExprLet {
     fn to_tokens(&self, tokens: &mut TokenStream) {
 
         let CarbideExprLet {
-            let_token,
+            let_token: _,
             pat,
-            eq_token,
+            eq_token: _,
             expr,
-            semi_token
+            semi_token: _
         } = self;
         tokens.extend(quote!(
             let #pat = { #expr };
@@ -88,10 +88,10 @@ pub struct CarbideArm {
 impl ToTokens for CarbideExprMatch {
     fn to_tokens(&self, tokens: &mut TokenStream) {
         let CarbideExprMatch {
-            attrs,
-            match_token,
+            attrs: _,
+            match_token: _,
             expr,
-            brace_token,
+            brace_token: _,
             arms
         } = self;
 
@@ -113,12 +113,12 @@ impl ToTokens for CarbideExprMatch {
 impl CarbideArm {
     fn tokens(&self) -> TokenStream {
         let CarbideArm {
-            attrs,
+            attrs: _,
             pat,
             guard,
-            fat_arrow_token,
+            fat_arrow_token: _,
             body,
-            comma
+            comma: _
         } = self;
 
         let idents = extract_idents_from_pattern(pat.clone());
@@ -170,7 +170,7 @@ impl Debug for CarbideArm {
 
 impl Parse for CarbideExprMatch {
     fn parse(input: ParseStream) -> syn::Result<Self> {
-        let mut attrs = input.call(Attribute::parse_outer)?;
+        let attrs = input.call(Attribute::parse_outer)?;
         let match_token: Token![match] = input.parse()?;
         let expr = CarbideExpr::parse(input)?;
 
@@ -238,10 +238,10 @@ impl ToTokens for CarbideExprForLoop {
     fn to_tokens(&self, tokens: &mut TokenStream) {
 
         let CarbideExprForLoop {
-            attrs,
-            for_token,
+            attrs: _,
+            for_token: _,
             pat,
-            in_token,
+            in_token: _,
             expr,
             body
         } = self;
@@ -300,7 +300,7 @@ impl Debug for CarbideExprForLoop {
 
 impl Parse for CarbideExprForLoop {
     fn parse(input: ParseStream) -> syn::Result<Self> {
-        let mut attrs = input.call(Attribute::parse_outer)?;
+        let attrs = input.call(Attribute::parse_outer)?;
 
         let for_token: Token![for] = input.parse()?;
 
@@ -466,8 +466,8 @@ impl ToTokens for CarbideBlock {
     fn to_tokens(&self, tokens: &mut TokenStream) {
 
         let CarbideBlock {
-            brace_token,
-            exprs
+            brace_token: _,
+            exprs: _
         } = self;
 
         if self.expression_count() == 0 {
@@ -527,8 +527,8 @@ impl ToTokens for CarbideExprIf {
     fn to_tokens(&self, tokens: &mut TokenStream) {
 
         let CarbideExprIf {
-            attrs,
-            if_token,
+            attrs: _,
+            if_token: _,
             cond,
             then_branch,
             else_branch

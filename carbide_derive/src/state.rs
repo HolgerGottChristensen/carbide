@@ -1,15 +1,15 @@
-use std::collections::HashSet;
-use proc_macro2::Ident;
-use syn::{Attribute, Fields, GenericParam, Meta, parse_quote, TypeParam, WhereClause};
+
+
+use syn::{GenericParam, parse_quote};
 use syn::punctuated::Punctuated;
-use derive_type::DeriveType;
+
 
 // The implementation for `State`.
 pub fn impl_state(ast: &syn::DeriveInput) -> proc_macro2::TokenStream {
     let struct_ident = &ast.ident;
-    let mut original_generics = ast.generics.clone();
+    let original_generics = ast.generics.clone();
     let mut generics = ast.generics.clone();
-    let mut wheres = ast.generics.where_clause.clone().map(|a| a.predicates).unwrap_or(Punctuated::default());
+    let wheres = ast.generics.where_clause.clone().map(|a| a.predicates).unwrap_or(Punctuated::default());
 
 
 

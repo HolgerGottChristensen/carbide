@@ -45,7 +45,7 @@ impl ToTokens for LitExpr {
         } = self;
 
         match lit {
-            Lit::Str(s) => {
+            Lit::Str(_s) => {
                 tokens.extend(quote!(
                     carbide_core::state::ValueState::new(#lit . to_string())
                 ))
@@ -70,7 +70,7 @@ impl ToTokens for PathExpr {
 impl ToTokens for StateExpr {
     fn to_tokens(&self, tokens: &mut TokenStream) {
         let StateExpr {
-            dollar_token,
+            dollar_token: _,
             expr
         } = self;
 
@@ -84,7 +84,7 @@ impl ToTokens for FieldExpr {
     fn to_tokens(&self, tokens: &mut TokenStream) {
         let FieldExpr {
             base,
-            dot_token,
+            dot_token: _,
             member
         } = self;
 
@@ -102,7 +102,7 @@ impl ToTokens for IndexExpr {
     fn to_tokens(&self, tokens: &mut TokenStream) {
         let IndexExpr {
             expr,
-            bracket_token,
+            bracket_token: _,
             index
         } = self;
 

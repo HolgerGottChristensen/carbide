@@ -1,6 +1,6 @@
 use carbide_core::render::RenderContext;
 
-use carbide_macro::{carbide_default_builder, carbide_default_builder2};
+use carbide_macro::{carbide_default_builder2};
 
 use crate::CommonWidgetImpl;
 use crate::draw::{Dimension, Position};
@@ -11,7 +11,7 @@ use crate::event::{
 };
 use crate::focus::{Focusable, Refocus};
 use crate::render::{Primitive, Render};
-use crate::state::{AnyReadState, NewStateSync, ReadState};
+use crate::state::{NewStateSync, ReadState};
 use crate::widget::{CommonWidget, Empty, Widget, WidgetExt, WidgetId};
 
 #[derive(Debug, Clone, Widget)]

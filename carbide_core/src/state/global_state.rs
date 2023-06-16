@@ -5,7 +5,7 @@ use parking_lot::{RwLock, RwLockReadGuard, RwLockWriteGuard};
 use carbide_core::state::AnyReadState;
 
 use crate::environment::Environment;
-use crate::state::{AnyState, NewStateSync, ReadState, State, StateContract, ValueRef, ValueRefMut};
+use crate::state::{AnyState, NewStateSync, ReadState, StateContract, ValueRef, ValueRefMut};
 
 /// # Local state
 /// The local state is used as a shared state between multiple widgets within the same widget tree.

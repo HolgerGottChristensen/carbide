@@ -8,9 +8,9 @@ use image::GenericImageView;
 use carbide_rusttype::{GlyphId, Point, Rect};
 
 use crate::draw::image::ImageId;
-use crate::draw::Position;
+
 use crate::draw::Scalar;
-use crate::mesh::atlas::lossy_glyph_info::LossyGlyphInfo;
+
 use crate::text::{Font, FontId, FontSize, Glyph, GLYPH_TOLERANCE};
 
 type ImageData = image::DynamicImage;

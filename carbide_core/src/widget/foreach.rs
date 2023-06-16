@@ -3,14 +3,14 @@ use std::marker::PhantomData;
 use carbide_core::CommonWidgetImpl;
 
 
-use carbide_macro::{carbide_default_builder, carbide_default_builder2};
+use carbide_macro::{carbide_default_builder2};
 
 use crate::draw::{Dimension, Position};
 use crate::environment::Environment;
 use crate::event::{OtherEventHandler, WidgetEvent};
 use crate::flags::Flags;
-use crate::state::{AnyState, IndexState, ReadState, RState, State, StateContract, StateExtNew, TState, ValueState};
-use crate::widget::{CommonWidget, Empty, Widget, WidgetExt, WidgetId, WidgetIter, WidgetIterMut};
+use crate::state::{AnyState, IndexState, ReadState, State, StateContract, StateExtNew, ValueState};
+use crate::widget::{CommonWidget, Empty, Widget, WidgetExt, WidgetId};
 
 pub trait Delegate<T: StateContract, O: Widget + Clone>: Clone {
     fn call(&self, item: Box<dyn AnyState<T=T>>, index: Box<dyn AnyState<T=usize>>) -> O;
@@ -102,7 +102,7 @@ impl<T: StateContract, M: State<T=Vec<T>> + Clone + 'static, W: Widget + Clone, 
 
                 let index_state = ValueState::new(index).as_dyn();
 
-                let mut item_state = IndexState::new(self.model.clone(), index);
+                let item_state = IndexState::new(self.model.clone(), index);
 
 
                 let widget = self.delegate.call(item_state.as_dyn(), index_state);

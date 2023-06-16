@@ -1,4 +1,4 @@
-use std::ops::DerefMut;
+
 use smallvec::{SmallVec, smallvec};
 
 
@@ -6,9 +6,9 @@ use carbide_macro::carbide_default_builder;
 
 use crate::draw::{Dimension, Position};
 use crate::environment::Environment;
-use crate::flags::Flags;
+
 use crate::layout::{BasicLayouter, Layout, Layouter};
-use crate::widget::{CommonWidget, Widget, WidgetExt, WidgetId, WidgetIter, WidgetIterMut, WidgetValMut};
+use crate::widget::{CommonWidget, Widget, WidgetExt, WidgetId};
 
 /// A basic, non-interactive rectangle shape widget.
 #[derive(Debug, Clone, Widget)]
@@ -56,7 +56,7 @@ impl Layout for ZStack {
         let mut max_width = 0.0;
         let mut max_height = 0.0;
 
-        for (_, mut child) in children_flexibility {
+        for (_, child) in children_flexibility {
             let new_requested_size = Dimension::new(
                 requested_size.width.max(max_width),
                 requested_size.height.max(max_height),

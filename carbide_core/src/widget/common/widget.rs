@@ -1,7 +1,7 @@
-use std::cell::RefCell;
+
 use std::fmt::Debug;
 use std::ops::{Deref, DerefMut};
-use std::rc::Rc;
+
 
 use dyn_clone::DynClone;
 use carbide_core::render::RenderContext;
@@ -17,7 +17,7 @@ use crate::focus::{Focus, Focusable, Refocus};
 use crate::layout::{Layout, Layouter};
 use crate::render::{Primitive, Render};
 use crate::state::StateSync;
-use crate::widget::{CommonWidget, WidgetExt, WidgetId, WidgetIter, WidgetIterMut};
+use crate::widget::{CommonWidget, WidgetExt, WidgetId};
 
 pub trait Widget: Event + Layout + Render + Focusable + DynClone + Debug + 'static {}
 

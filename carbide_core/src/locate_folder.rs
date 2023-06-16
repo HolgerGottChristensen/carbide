@@ -55,14 +55,7 @@ impl ::std::fmt::Display for Error {
     }
 }
 
-impl ::std::error::Error for Error {
-    fn description(&self) -> &str {
-        match *self {
-            Error::IO(ref io_err) => ::std::error::Error::description(io_err),
-            Error::NotFound => "The folder could not be found",
-        }
-    }
-}
+impl ::std::error::Error for Error {}
 
 impl Search {
     /// An easy API method for finding a folder with a given name.

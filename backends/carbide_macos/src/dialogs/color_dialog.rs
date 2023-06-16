@@ -25,7 +25,7 @@ impl ColorPanel {
         }
     }
 
-    pub fn set_continuous(mut self, continuous: bool) -> Self {
+    pub fn set_continuous(self, continuous: bool) -> Self {
         unsafe {
             let continuous = if continuous {YES} else {NO};
             let () = msg_send![self.id, setContinuous: continuous];
@@ -33,7 +33,7 @@ impl ColorPanel {
         self
     }
 
-    pub fn set_shows_alpha(mut self, shows_alpha: bool) -> Self {
+    pub fn set_shows_alpha(self, shows_alpha: bool) -> Self {
         unsafe {
             let shows_alpha = if shows_alpha {YES} else {NO};
             let () = msg_send![self.id, setShowsAlpha: shows_alpha];

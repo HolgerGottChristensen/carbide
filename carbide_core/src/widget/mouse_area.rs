@@ -12,10 +12,10 @@ use carbide_core::event::{
 use carbide_core::flags::Flags;
 use carbide_core::focus::Focus;
 use carbide_core::state::{ReadState, State};
-use carbide_core::widget::{CommonWidget, Widget, WidgetExt, WidgetId, WidgetIter, WidgetIterMut};
-use carbide_macro::{carbide_default_builder, carbide_default_builder2};
+use carbide_core::widget::{CommonWidget, Widget, WidgetExt, WidgetId};
+use carbide_macro::{carbide_default_builder2};
 
-use crate::state::{IntoState, TState};
+use crate::state::{IntoState};
 use crate::widget::Empty;
 
 pub trait Action: Fn(&mut Environment, ModifierKey) + DynClone {}
@@ -76,7 +76,7 @@ impl<
     P: State<T=bool> + Clone,
 > MouseArea<I, O, F, C, H, P> {
     /// Example: .on_click(move |env: &mut Environment, modifier: ModifierKey| {})
-    pub fn on_click<A: Action + Clone>(mut self, action: A) -> MouseArea<A, O, F, C, H, P> {
+    pub fn on_click<A: Action + Clone>(self, action: A) -> MouseArea<A, O, F, C, H, P> {
         MouseArea {
             id: self.id,
             focus: self.focus,
@@ -92,7 +92,7 @@ impl<
         }
     }
 
-    pub fn on_click_outside<A: Action + Clone>(mut self, action: A) -> MouseArea<I, A, F, C, H, P> {
+    pub fn on_click_outside<A: Action + Clone>(self, action: A) -> MouseArea<I, A, F, C, H, P> {
         MouseArea {
             id: self.id,
             focus: self.focus,
@@ -108,7 +108,7 @@ impl<
         }
     }
 
-    pub fn hovered<T: IntoState<bool>>(mut self, is_hovered: T) -> MouseArea<I, O, F, C, T::Output, P> {
+    pub fn hovered<T: IntoState<bool>>(self, is_hovered: T) -> MouseArea<I, O, F, C, T::Output, P> {
         MouseArea {
             id: self.id,
             focus: self.focus,
@@ -124,7 +124,7 @@ impl<
         }
     }
 
-    pub fn pressed<T: IntoState<bool>>(mut self, pressed: T) -> MouseArea<I, O, F, C, H, T::Output> {
+    pub fn pressed<T: IntoState<bool>>(self, pressed: T) -> MouseArea<I, O, F, C, H, T::Output> {
         MouseArea {
             id: self.id,
             focus: self.focus,
@@ -140,7 +140,7 @@ impl<
         }
     }
 
-    pub fn focused<T: IntoState<Focus>>(mut self, focused: T) -> MouseArea<I, O, <T as IntoState<Focus>>::Output, C, H, P> {
+    pub fn focused<T: IntoState<Focus>>(self, focused: T) -> MouseArea<I, O, <T as IntoState<Focus>>::Output, C, H, P> {
         MouseArea {
             id: self.id,
             focus: focused.into_state(),

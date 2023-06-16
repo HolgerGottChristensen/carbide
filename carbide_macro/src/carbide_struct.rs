@@ -1,13 +1,13 @@
 use std::fmt::{Debug, Formatter};
-use proc_macro2::{Ident, Span, TokenStream};
+use proc_macro2::{Ident, TokenStream};
 use quote::{quote, ToTokens};
-use syn::token::{Brace, Colon, Let, Paren, Struct, Token};
-use syn::{AngleBracketedGenericArguments, Attribute, Block, braced, Expr, Field, FnArg, GenericArgument, ItemFn, parenthesized, parse_quote, Pat, Path, PathArguments, PathSegment, PatIdent, PatType, Receiver, ReturnType, Signature, Token, TraitBound, TraitBoundModifier, Type, TypeParamBound, TypePath, TypeTraitObject, Visibility, VisPublic};
+use syn::token::{Brace, Colon, Let, Paren, Struct};
+use syn::{Attribute, braced, Expr, ItemFn, parse_quote, Token, Type};
 use syn::__private::parse_parens;
 use syn::parse::{Parse, ParseStream};
-use syn::punctuated::Punctuated;
+
 use syn::token::parsing::keyword;
-use crate::carbide_expression::{CarbideBlock, CarbideExpression};
+use crate::carbide_expression::{CarbideBlock};
 use crate::carbide_struct::CarbideStructField::{Required, Optional};
 
 
@@ -232,7 +232,7 @@ impl Parse for CarbideBodyFunction {
         let arrow = syn::token::RArrow::parse(input)?;
         let return_type = Type::parse(input)?;
 
-        let mut body = CarbideBlock::parse(input)?;
+        let body = CarbideBlock::parse(input)?;
 
         Ok(CarbideBodyFunction {
             fn_token,
@@ -269,12 +269,12 @@ impl CarbideStructField {
     fn to_struct_field(&self) -> TokenStream {
 
         match self {
-            CarbideStructField::Optional { attrs, ident, t, .. } => {
+            CarbideStructField::Optional {  ident, t, .. } => {
                 quote!(
                     #[state] pub #ident: #t
                 )
             }
-            CarbideStructField::Required { attrs, ident, t, .. } => {
+            CarbideStructField::Required {  ident, t, .. } => {
                 quote!(
                     #[state] pub #ident: #t
                 )
@@ -285,12 +285,12 @@ impl CarbideStructField {
     fn to_struct_builder_field(&self) -> TokenStream {
 
         match self {
-            CarbideStructField::Optional { attrs, ident, t, .. } => {
+            CarbideStructField::Optional {  ident, t, .. } => {
                 quote!(
                     pub #ident: #t
                 )
             }
-            CarbideStructField::Required { attrs, ident, t, .. } => {
+            CarbideStructField::Required {  ident, t, .. } => {
                 quote!(
                     pub #ident: #t
                 )
@@ -300,12 +300,12 @@ impl CarbideStructField {
 
     fn to_struct_init_field(&self) -> TokenStream {
         match self {
-            CarbideStructField::Required { attrs, ident, .. } => {
+            CarbideStructField::Required {  ident, .. } => {
                 quote!(
                     #ident: #ident.into()
                 )
             }
-            CarbideStructField::Optional { attrs, ident, expr, .. } => {
+            CarbideStructField::Optional {  ident, expr, .. } => {
                 quote!(
                     #ident: carbide_core::state::LocalState::new({
                         #expr
@@ -349,7 +349,7 @@ impl CarbideStructField {
 
     fn to_required_arg(&self) -> Option<TokenStream> {
         match self {
-            CarbideStructField::Required { attrs, ident, t, .. } => {
+            CarbideStructField::Required {  ident, t, .. } => {
                 Some(quote!(
                         #ident: impl Into<#t>
                     ))
@@ -390,7 +390,7 @@ impl Debug for CarbideStructField {
 
 impl Parse for CarbideStructField {
     fn parse(input: ParseStream) -> syn::Result<Self> {
-        let mut attrs = input.call(Attribute::parse_outer)?;
+        let attrs = input.call(Attribute::parse_outer)?;
         let l = Let::parse(input)?;
         let ident = Ident::parse(input)?;
         let col = Colon::parse(input)?;

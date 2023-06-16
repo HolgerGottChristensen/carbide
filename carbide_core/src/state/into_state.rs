@@ -1,10 +1,10 @@
-use carbide_core::state::{ReadState, TState};
-use crate::draw::draw_gradient::DrawGradient;
-use crate::draw::{Dimension, Position};
-use crate::focus::Focus;
-use crate::render::Style;
-use crate::state::{IntoReadState, IntoState, Map1, RMap1, State, StateContract, IntoReadStateHelper, AnyReadState};
-use crate::widget::Gradient;
+
+
+
+
+
+use crate::state::{Map1, RMap1, IntoReadStateHelper, AnyReadState};
+
 
 
 

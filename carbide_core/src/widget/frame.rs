@@ -2,14 +2,14 @@ use std::fmt::Debug;
 use carbide_core::state::AnyState;
 
 
-use carbide_macro::{carbide_default_builder, carbide_default_builder2};
+use carbide_macro::{carbide_default_builder2};
 
 use crate::draw::{Dimension, Position};
 use crate::environment::Environment;
-use crate::flags::Flags;
+
 use crate::layout::{BasicLayouter, Layout, Layouter};
-use crate::state::{AnyReadState, IntoReadState, NewStateSync, ReadState, State, TState, ValueRef, ValueRefMut};
-use crate::widget::{CommonWidget, Empty, Widget, WidgetExt, WidgetId, WidgetIter, WidgetIterMut};
+use crate::state::{AnyReadState, IntoReadState, NewStateSync, ReadState, State, ValueRef, ValueRefMut};
+use crate::widget::{CommonWidget, Empty, Widget, WidgetExt, WidgetId};
 
 pub static SCALE: f64 = -1.0;
 
@@ -58,7 +58,7 @@ impl<
     C: Widget + Clone
 > Frame<X, Y, W, H, C> {
     /// Note: This disconnects from the existing width value
-    pub fn expand_width(mut self) -> Box<Frame<X, Y, f64, H, C>> {
+    pub fn expand_width(self) -> Box<Frame<X, Y, f64, H, C>> {
         Box::new(Frame {
             id: self.id,
             child: self.child,
@@ -71,7 +71,7 @@ impl<
     }
 
     /// Note: This disconnects from the existing height value
-    pub fn expand_height(mut self) -> Box<Frame<X, Y, W, f64, C>> {
+    pub fn expand_height(self) -> Box<Frame<X, Y, W, f64, C>> {
         Box::new(Frame {
             id: self.id,
             child: self.child,
@@ -84,7 +84,7 @@ impl<
     }
 
     /// Note: This disconnects from the existing width value
-    pub fn fit_width(mut self) -> Box<Frame<X, Y, f64, H, C>> {
+    pub fn fit_width(self) -> Box<Frame<X, Y, f64, H, C>> {
         Box::new(Frame {
             id: self.id,
             child: self.child,
@@ -97,7 +97,7 @@ impl<
     }
 
     /// Note: This disconnects from the existing height value
-    pub fn fit_height(mut self) -> Box<Frame<X, Y, W, f64, C>> {
+    pub fn fit_height(self) -> Box<Frame<X, Y, W, f64, C>> {
         Box::new(Frame {
             id: self.id,
             child: self.child,
@@ -109,7 +109,7 @@ impl<
         })
     }
 
-    pub fn with_fixed_x<N: IntoReadState<f64>>(mut self, x: N) -> Box<Frame<N::Output, Y, W, H, C>> {
+    pub fn with_fixed_x<N: IntoReadState<f64>>(self, x: N) -> Box<Frame<N::Output, Y, W, H, C>> {
         Box::new(Frame {
             id: self.id,
             child: self.child,
@@ -121,7 +121,7 @@ impl<
         })
     }
 
-    pub fn with_fixed_y<N: IntoReadState<f64>>(mut self, y: N) -> Box<Frame<X, N::Output, W, H, C>> {
+    pub fn with_fixed_y<N: IntoReadState<f64>>(self, y: N) -> Box<Frame<X, N::Output, W, H, C>> {
         Box::new(Frame {
             id: self.id,
             child: self.child,
@@ -133,7 +133,7 @@ impl<
         })
     }
 
-    pub fn with_fixed_position<N: IntoReadState<f64>, M: IntoReadState<f64>>(mut self, x: N, y: M) -> Box<Frame<N::Output, M::Output, W, H, C>> {
+    pub fn with_fixed_position<N: IntoReadState<f64>, M: IntoReadState<f64>>(self, x: N, y: M) -> Box<Frame<N::Output, M::Output, W, H, C>> {
         Box::new(Frame {
             id: self.id,
             child: self.child,

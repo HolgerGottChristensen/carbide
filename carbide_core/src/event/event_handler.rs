@@ -272,7 +272,7 @@ impl EventHandler {
                     modifiers: old_modifiers,
                     to: old_to,
                     ..
-                }), w_id)) = self.events.last_mut()
+                }), _w_id)) = self.events.last_mut()
                 {
                     old_delta_xy.x += delta_xy.x;
                     old_delta_xy.y += delta_xy.y;
@@ -295,7 +295,7 @@ impl EventHandler {
                 y,
                 mouse_position,
                 modifiers,
-            }), w_id)) = self.events.last_mut()
+            }), _w_id)) = self.events.last_mut()
             {
                 *x += new_x;
                 *y += new_y;

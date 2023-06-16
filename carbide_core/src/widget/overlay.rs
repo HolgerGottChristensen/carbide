@@ -11,7 +11,7 @@ use crate::event::{KeyboardEventHandler, MouseEventHandler, OtherEventHandler};
 use crate::focus::Focusable;
 use crate::layout::Layout;
 use crate::render::Render;
-use crate::state::{AnyReadState, AnyState, LocalState, ReadState, State, StateSync, TState};
+use crate::state::{AnyState, LocalState, ReadState, State, StateSync, TState};
 use crate::widget::{CommonWidget, Widget, WidgetExt, WidgetId};
 use carbide_core::state::NewStateSync;
 
@@ -57,7 +57,7 @@ impl CommonWidget for Overlay {
         self.id
     }
 
-    fn foreach_child<'a>(&'a self, f: &mut dyn FnMut(&'a dyn Widget)) {
+    fn foreach_child<'a>(&'a self, _f: &mut dyn FnMut(&'a dyn Widget)) {
         panic!("Trying to foreach_child of an overlay");
         /*if self.child.borrow().is_ignore() {
             return;
@@ -71,7 +71,7 @@ impl CommonWidget for Overlay {
         f(self.child.borrow().deref());*/
     }
 
-    fn foreach_child_mut<'a>(&'a mut self, f: &mut dyn FnMut(&'a mut dyn Widget)) {
+    fn foreach_child_mut<'a>(&'a mut self, _f: &mut dyn FnMut(&'a mut dyn Widget)) {
         panic!("Trying to foreach_child_mut of an overlay");
         /*if self.child.borrow().is_ignore() {
             return;
@@ -85,7 +85,7 @@ impl CommonWidget for Overlay {
         f(self.child.borrow_mut().deref_mut());*/
     }
 
-    fn foreach_child_rev<'a>(&'a mut self, f: &mut dyn FnMut(&'a mut dyn Widget)) {
+    fn foreach_child_rev<'a>(&'a mut self, _f: &mut dyn FnMut(&'a mut dyn Widget)) {
         panic!("Trying to foreach_child_rev of an overlay");
         /*if self.child.borrow().is_ignore() {
             return;
@@ -99,12 +99,12 @@ impl CommonWidget for Overlay {
         f(self.child.borrow_mut().deref_mut());*/
     }
 
-    fn foreach_child_direct<'a>(&'a mut self, f: &mut dyn FnMut(&'a mut dyn Widget)) {
+    fn foreach_child_direct<'a>(&'a mut self, _f: &mut dyn FnMut(&'a mut dyn Widget)) {
         panic!("Trying to foreach_child_direct of an overlay");
         //f(self.child.borrow_mut().deref_mut());
     }
 
-    fn foreach_child_direct_rev<'a>(&'a mut self, f: &mut dyn FnMut(&'a mut dyn Widget)) {
+    fn foreach_child_direct_rev<'a>(&'a mut self, _f: &mut dyn FnMut(&'a mut dyn Widget)) {
         panic!("Trying to foreach_child_direct_rev of an overlay");
         //f(self.child.borrow_mut().deref_mut());
     }
@@ -182,7 +182,7 @@ impl Focusable for Overlay {
 impl Layout for Overlay {
     fn calculate_size(&mut self, requested_size: Dimension, env: &mut Environment) -> Dimension {
 
-        let mut chosen = self.child.borrow_mut().calculate_size(requested_size, env);
+        let chosen = self.child.borrow_mut().calculate_size(requested_size, env);
 
         self.set_dimension(chosen);
         chosen

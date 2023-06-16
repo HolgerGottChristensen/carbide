@@ -6,15 +6,15 @@ use lyon::geom::euclid::rect;
 use lyon::math::point;
 
 
-use carbide_macro::{carbide_default_builder, carbide_default_builder2};
+use carbide_macro::{carbide_default_builder2};
 
 use crate::{CommonWidgetImpl};
-use crate::draw::{Dimension, Position, Color};
+use crate::draw::{Dimension, Position};
 use crate::environment::{Environment};
 use crate::environment::EnvironmentColor;
 use crate::render::{Primitive, Render, RenderContext, Style};
-use crate::state::{ReadState, RState, TState, IntoReadState};
-use crate::widget::{AdvancedColor, Blur, CommonWidget, Widget, WidgetExt, WidgetId, ZStack};
+use crate::state::{ReadState, IntoReadState};
+use crate::widget::{CommonWidget, Widget, WidgetExt, WidgetId};
 use crate::widget::shape::{Shape, tessellate};
 use crate::widget::types::PrimitiveStore;
 use crate::widget::types::ShapeStyle;

@@ -5,16 +5,16 @@ use carbide_core::render::{RenderContext, Style};
 use carbide_core::state::StateSync;
 
 
-use carbide_macro::{carbide_default_builder, carbide_default_builder2};
+use carbide_macro::{carbide_default_builder2};
 
 use crate::{CommonWidgetImpl};
-use crate::color::WHITE;
+
 use crate::draw::{Dimension, Position, Rect, Color, Scalar};
 use crate::environment::{Environment};
 use crate::environment::EnvironmentColor;
 use crate::render::{Primitive, PrimitiveKind, Render};
-use crate::state::{ReadState, RState, TState, IntoReadState};
-use crate::widget::{AdvancedColor, Blur, CommonWidget, Widget, WidgetExt, WidgetId, ZStack};
+use crate::state::{ReadState, IntoReadState};
+use crate::widget::{CommonWidget, Widget, WidgetExt, WidgetId};
 use crate::widget::shape::{Shape, tessellate};
 use crate::widget::types::PrimitiveStore;
 use crate::widget::types::ShapeStyle;

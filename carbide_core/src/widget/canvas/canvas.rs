@@ -6,16 +6,16 @@ use lyon::tessellation::{
     StrokeVertex, VertexBuffers,
 };
 use carbide_core::CommonWidgetImpl;
-use carbide_core::render::{RenderContext, Style};
+use carbide_core::render::{RenderContext};
 
-use carbide_macro::{carbide_default_builder, carbide_default_builder2};
+use carbide_macro::{carbide_default_builder2};
 
 use crate::draw::{Dimension, Position, Rect, Color, Scalar};
 use crate::draw::draw_style::DrawStyle;
 use crate::draw::shape::triangle::Triangle;
 use crate::environment::{Environment, EnvironmentColor};
 use crate::render::{Primitive, PrimitiveKind, Render};
-use crate::state::{NewStateSync, ReadState, StateContract, TState, ValueState, IntoReadState, AnyReadState};
+use crate::state::{NewStateSync, ReadState, StateContract, TState, ValueState};
 use crate::widget::{CommonWidget, PrimitiveStore, Shape, ShapeStyle, StrokeStyle, Widget, WidgetExt, WidgetId};
 use crate::widget::canvas::{Context, ShapeStyleWithOptions};
 use crate::widget::canvas::canvas::Contexts::{NoState, WithState};

@@ -1,4 +1,4 @@
-use std::ops::DerefMut;
+
 use carbide_core::widget::Widget;
 use crate::draw::{Dimension, Position, Scalar};
 use crate::flags::Flags;
@@ -31,7 +31,7 @@ pub trait CommonWidget {
     fn child_count(&self) -> usize {
         let mut count = 0;
 
-        self.foreach_child(&mut |child| {
+        self.foreach_child(&mut |_child| {
             count += 1;
         });
 

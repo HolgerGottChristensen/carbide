@@ -1,5 +1,5 @@
 use std::fmt;
-use crate::{Font, GlyphId, NearZero, OutlineBuilder, outliner, Point, Rect, Scale, vector};
+use crate::{Font, GlyphId, OutlineBuilder, outliner, Point, Rect, Scale, vector};
 use crate::scaled_glyph::ScaledGlyph;
 
 /// A glyph augmented with positioning and scaling information. You can query

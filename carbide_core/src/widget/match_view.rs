@@ -1,12 +1,12 @@
 use std::fmt::{Debug, Formatter};
-use std::hash::Hash;
+
 
 
 use carbide_macro::carbide_default_builder;
 
 use crate::draw::{Dimension, Position};
 use crate::environment::Environment;
-use crate::state::{AnyReadState, NewStateSync, ReadState, StateContract, StateSync, TState};
+use crate::state::{NewStateSync, ReadState, StateContract, StateSync, TState};
 use crate::widget::{Widget, WidgetExt, WidgetId};
 
 /// A basic, non-interactive rectangle shape widget.
@@ -89,23 +89,23 @@ impl<T: StateContract> carbide_core::widget::CommonWidget for Match<T> {
         self.id
     }
 
-    fn foreach_child<'a>(&'a self, f: &mut dyn FnMut(&'a dyn Widget)) {
+    fn foreach_child<'a>(&'a self, _f: &mut dyn FnMut(&'a dyn Widget)) {
         todo!()
     }
 
-    fn foreach_child_mut<'a>(&'a mut self, f: &mut dyn FnMut(&'a mut dyn Widget)) {
+    fn foreach_child_mut<'a>(&'a mut self, _f: &mut dyn FnMut(&'a mut dyn Widget)) {
         todo!()
     }
 
-    fn foreach_child_rev<'a>(&'a mut self, f: &mut dyn FnMut(&'a mut dyn Widget)) {
+    fn foreach_child_rev<'a>(&'a mut self, _f: &mut dyn FnMut(&'a mut dyn Widget)) {
         todo!()
     }
 
-    fn foreach_child_direct<'a>(&'a mut self, f: &mut dyn FnMut(&'a mut dyn Widget)) {
+    fn foreach_child_direct<'a>(&'a mut self, _f: &mut dyn FnMut(&'a mut dyn Widget)) {
         todo!()
     }
 
-    fn foreach_child_direct_rev<'a>(&'a mut self, f: &mut dyn FnMut(&'a mut dyn Widget)) {
+    fn foreach_child_direct_rev<'a>(&'a mut self, _f: &mut dyn FnMut(&'a mut dyn Widget)) {
         todo!()
     }
 

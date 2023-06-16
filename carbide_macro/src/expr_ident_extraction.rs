@@ -167,9 +167,9 @@ pub fn extract_idents_from_expression(expr: Expr) -> Vec<Ident> {
 }
 
 mod tests {
-    use proc_macro2::{Ident, Span};
-    use syn::{Expr, parse_quote};
-    use crate::expr_ident_extraction::extract_idents_from_expression;
+    
+    
+    
 
     #[test]
     fn extract_from_number_lit() {

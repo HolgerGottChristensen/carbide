@@ -61,7 +61,7 @@ impl NSMenuItem {
         }
     }
 
-    pub fn set_enabled(mut self, enabled: bool) -> NSMenuItem {
+    pub fn set_enabled(self, enabled: bool) -> NSMenuItem {
         let enabled = if enabled { YES } else { NO };
         unsafe {
             let () = msg_send![self.id(), setEnabled: enabled];
@@ -69,7 +69,7 @@ impl NSMenuItem {
         self
     }
 
-    pub fn set_hidden(mut self, hidden: bool) -> NSMenuItem {
+    pub fn set_hidden(self, hidden: bool) -> NSMenuItem {
         let hidden = if hidden { YES } else { NO };
         unsafe {
             let () = msg_send![self.id(), setHidden: hidden];
@@ -77,7 +77,7 @@ impl NSMenuItem {
         self
     }
 
-    pub fn set_submenu(mut self, menu: NSMenu) -> NSMenuItem {
+    pub fn set_submenu(self, menu: NSMenu) -> NSMenuItem {
         unsafe {
             let () = msg_send![self.id(), setSubmenu: menu];
         }
@@ -343,7 +343,7 @@ impl CarbideChannel {
         let (sender, rec) = channel();
 
         let p = unsafe {
-            let mut receiver = Box::into_raw(Box::new(CarbideChannel(sender, sink.event_sink())));
+            let receiver = Box::into_raw(Box::new(CarbideChannel(sender, sink.event_sink())));
             receiver
         };
 

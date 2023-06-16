@@ -37,7 +37,7 @@ impl SavePanel {
         }
     }
 
-    pub fn set_shows_hidden_files(mut self, show: bool) -> Self {
+    pub fn set_shows_hidden_files(self, show: bool) -> Self {
         unsafe {
             let show = if show {YES} else {NO};
             let () = msg_send![self.id, setShowsHiddenFiles: show];
@@ -45,7 +45,7 @@ impl SavePanel {
         self
     }
 
-    pub fn set_resolve_aliases(mut self, resolve: bool) -> Self {
+    pub fn set_resolve_aliases(self, resolve: bool) -> Self {
         unsafe {
             let resolve = if resolve {YES} else {NO};
             let () = msg_send![self.id, setResolveAliases: resolve];
@@ -53,7 +53,7 @@ impl SavePanel {
         self
     }
 
-    pub fn set_title(mut self, title: &str) -> Self {
+    pub fn set_title(self, title: &str) -> Self {
         let ns_string = NSString::from(title);
         unsafe {
             let () = msg_send![self.id, setTitle: ns_string.id()];
@@ -61,7 +61,7 @@ impl SavePanel {
         self
     }
 
-    pub fn set_prompt(mut self, prompt: &str) -> Self {
+    pub fn set_prompt(self, prompt: &str) -> Self {
         let ns_string = NSString::from(prompt);
         unsafe {
             let () = msg_send![self.id, setPrompt: ns_string.id()];
@@ -69,7 +69,7 @@ impl SavePanel {
         self
     }
 
-    pub fn set_message(mut self, message: &str) -> Self {
+    pub fn set_message(self, message: &str) -> Self {
         let ns_string = NSString::from(message);
         unsafe {
             let () = msg_send![self.id, setMessage: ns_string.id()];
@@ -78,7 +78,7 @@ impl SavePanel {
     }
 
     /// Sets the start directory
-    pub fn set_directory_url(mut self, url: impl AsRef<Path>) -> Self {
+    pub fn set_directory_url(self, url: impl AsRef<Path>) -> Self {
         let url = NSURL::from(url.as_ref());
         unsafe {
             let () = msg_send![self.id, setDirectoryURL: url.id()];
@@ -86,7 +86,7 @@ impl SavePanel {
         self
     }
 
-    pub fn set_name_field_label(mut self, label: &str) -> Self {
+    pub fn set_name_field_label(self, label: &str) -> Self {
         let ns_string = NSString::from(label);
         unsafe {
             let () = msg_send![self.id, setNameFieldLabel: ns_string.id()];
@@ -94,7 +94,7 @@ impl SavePanel {
         self
     }
 
-    pub fn set_name_field_string_value(mut self, string_value: &str) -> Self {
+    pub fn set_name_field_string_value(self, string_value: &str) -> Self {
         let ns_string = NSString::from(string_value);
         unsafe {
             let () = msg_send![self.id, nameFieldStringValue: ns_string.id()];
@@ -102,7 +102,7 @@ impl SavePanel {
         self
     }
 
-    pub fn set_can_create_directories(mut self, can: bool) -> Self {
+    pub fn set_can_create_directories(self, can: bool) -> Self {
         unsafe {
             let can = if can {YES} else {NO};
             let () = msg_send![self.id, setCanCreateDirectories: can];
@@ -110,7 +110,7 @@ impl SavePanel {
         self
     }
 
-    pub fn set_can_select_hidden_extension(mut self, can: bool) -> Self {
+    pub fn set_can_select_hidden_extension(self, can: bool) -> Self {
         unsafe {
             let can = if can {YES} else {NO};
             let () = msg_send![self.id, setCanSelectHiddenExtension: can];
@@ -119,7 +119,7 @@ impl SavePanel {
     }
 
     /// The default content type will be the first in the list of allowed files
-    pub fn set_allowed_content_types(mut self, allowed: &Vec<FileSpecification>) -> Self {
+    pub fn set_allowed_content_types(self, allowed: &Vec<FileSpecification>) -> Self {
         debug_assert!(allowed.len() > 0);
 
         let extensions = allowed.iter()
@@ -137,7 +137,7 @@ impl SavePanel {
         self
     }
 
-    pub fn set_allows_other_file_types(mut self, allow: bool) -> Self {
+    pub fn set_allows_other_file_types(self, allow: bool) -> Self {
         unsafe {
             let allow = if allow {YES} else {NO};
             let () = msg_send![self.id, setAllowsOtherFileTypes: allow];
@@ -145,7 +145,7 @@ impl SavePanel {
         self
     }
 
-    pub fn set_treats_file_packages_as_directories(mut self, treat: bool) -> Self {
+    pub fn set_treats_file_packages_as_directories(self, treat: bool) -> Self {
         unsafe {
             let treat = if treat {YES} else {NO};
             let () = msg_send![self.id, treatsFilePackagesAsDirectories: treat];

@@ -3,9 +3,9 @@ use carbide_core::widget::popup_menu::PopupMenu;
 
 use crate::CommonWidgetImpl;
 use crate::draw::{Dimension, Position};
-use crate::environment::EnvironmentColor;
-use crate::state::{TState, ValueState};
-use crate::widget::{CommonWidget, ForEach, HStack, Menu, Rectangle, Spacer, VStack, Widget, WidgetExt, WidgetId};
+
+use crate::state::{TState};
+use crate::widget::{CommonWidget, Menu, Widget, WidgetExt, WidgetId};
 
 #[derive(Debug, Clone, Widget)]
 pub struct MenuBar {
@@ -17,7 +17,7 @@ pub struct MenuBar {
 }
 
 impl MenuBar {
-    pub fn new(menus: Vec<Menu>, child: Box<dyn Widget>) -> Box<Self> {
+    pub fn new(_menus: Vec<Menu>, _child: Box<dyn Widget>) -> Box<Self> {
         /*let menus = ValueState::new(menus);
         let child = VStack::new(vec![
             HStack::new(vec![
@@ -41,7 +41,7 @@ impl MenuBar {
         todo!()
     }
 
-    fn menu_delegate(item: TState<Menu>, index: TState<usize>) -> Box<dyn Widget> {
+    fn menu_delegate(item: TState<Menu>, _index: TState<usize>) -> Box<dyn Widget> {
         PopupMenu::new(item, true)
     }
 }

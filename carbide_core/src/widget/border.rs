@@ -1,6 +1,6 @@
-use carbide_core::render::{RenderContext, Style};
+use carbide_core::render::{RenderContext};
 use carbide_core::state::IntoReadState;
-use carbide_macro::{carbide_default_builder, carbide_default_builder2};
+use carbide_macro::{carbide_default_builder2};
 
 use crate::{CommonWidgetImpl};
 use crate::draw::{Dimension, Position, Rect, Color};
@@ -8,7 +8,7 @@ use crate::draw::draw_style::DrawStyle;
 use crate::environment::Environment;
 use crate::layout::Layout;
 use crate::render::{Primitive, PrimitiveKind, Render};
-use crate::state::{ReadState, TState};
+use crate::state::{ReadState};
 use crate::widget::{CommonWidget, Empty, Widget, WidgetExt, WidgetId};
 
 /// A basic, non-interactive rectangle shape widget.

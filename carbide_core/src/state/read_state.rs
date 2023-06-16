@@ -105,7 +105,7 @@ macro_rules! impl_read_state {
     ($($typ: ty),*) => {
         $(
         impl NewStateSync for $typ {
-            fn sync(&mut self, env: &mut Environment) -> bool {
+            fn sync(&mut self, _env: &mut Environment) -> bool {
                 true
             }
         }
