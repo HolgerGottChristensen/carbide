@@ -281,8 +281,8 @@ pub fn convert_window_event(event: &WindowEvent) -> Option<Input> {
                 }
                 MouseScrollDelta::LineDelta(x, y) => {
                     // This should be configurable (we should provide a LineDelta event to allow for this).
-                    let x = ARBITRARY_POINTS_PER_LINE_FACTOR * *x as carbide_core::Scalar;
-                    let y = ARBITRARY_POINTS_PER_LINE_FACTOR * -*y as carbide_core::Scalar;
+                    let x = ARBITRARY_POINTS_PER_LINE_FACTOR * *x as carbide_core::draw::Scalar;
+                    let y = ARBITRARY_POINTS_PER_LINE_FACTOR * -*y as carbide_core::draw::Scalar;
 
                     Some(Input::Motion(Motion::Scroll { x, y }))
                 }

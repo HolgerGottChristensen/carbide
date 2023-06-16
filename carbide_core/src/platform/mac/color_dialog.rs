@@ -7,7 +7,7 @@ use objc::{class, msg_send, sel, sel_impl};
 use objc::declare::ClassDecl;
 use objc::runtime::{Class, Object, Sel};
 
-use crate::Color;
+use crate::draw::Color;
 use crate::dialog::color_dialog::ColorDialogSettings;
 use crate::prelude::Environment;
 

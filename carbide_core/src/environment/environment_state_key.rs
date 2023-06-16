@@ -3,7 +3,7 @@ use crate::environment::EnvironmentColor;
 use crate::environment::EnvironmentFontSize;
 
 #[derive(Hash, Eq, PartialEq, Clone, Debug)]
-pub enum StateKey {
+pub enum EnvironmentStateKey {
     String(String),
     Color(EnvironmentColor),
     FontSize(EnvironmentFontSize),

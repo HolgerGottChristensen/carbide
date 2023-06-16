@@ -1,7 +1,7 @@
 use wgpu::VertexFormat;
 use winit::dpi::PhysicalSize;
 use carbide_core::mesh::MODE_IMAGE;
-use carbide_core::Scalar;
+use carbide_core::draw::Scalar;
 
 #[repr(C)]
 #[derive(Copy, Clone, Debug, bytemuck::Pod, bytemuck::Zeroable)]

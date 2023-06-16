@@ -1,9 +1,5 @@
-use carbide_core::Color;
-use carbide_core::widget::Gradient;
-use carbide_core::widget::GradientPosition;
-
-use crate::draw::{Dimension, Position};
-use crate::widget::{GradientRepeat, GradientType};
+use crate::draw::{Dimension, Position, Color};
+use crate::widget::{Gradient, GradientRepeat, GradientType, GradientPosition};
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct DrawGradient {

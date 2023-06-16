@@ -2,6 +2,8 @@ pub use dimension::Dimension;
 pub use position::Position;
 pub use rect::BoundingBox;
 pub use rect::Rect;
+pub use color::Color;
+pub use alignment::Alignment;
 
 pub mod alignment;
 mod dimension;
@@ -14,6 +16,7 @@ pub mod shape;
 pub mod svg_path_builder;
 pub mod theme;
 pub mod draw_style;
+pub mod color;
 
 /// An alias over the Scalar type used throughout carbide.
 ///

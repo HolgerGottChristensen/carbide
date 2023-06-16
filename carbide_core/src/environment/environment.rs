@@ -11,10 +11,11 @@ use image::DynamicImage;
 use oneshot::TryRecvError;
 use raw_window_handle::{HasRawWindowHandle, RawWindowHandle};
 
-use crate::{Color, locate_folder};
+use crate::locate_folder;
 use crate::animation::Animation;
 use crate::cursor::MouseCursor;
 use crate::draw::Dimension;
+use crate::draw::Color;
 use crate::draw::image::{ImageId, ImageMap};
 use crate::draw::Scalar;
 use crate::draw::theme;
@@ -24,7 +25,7 @@ use crate::event::{CustomEvent, EventSink, HasEventSink};
 use crate::focus::Refocus;
 use crate::layout::BasicLayouter;
 use crate::mesh::TextureAtlas;
-use crate::state::{InnerState, StateContract, StateKey, ValueCell};
+use crate::state::{InnerState, StateContract, EnvironmentStateKey, ValueCell};
 use crate::text::{Font, FontFamily, FontId, FontSize, FontStyle, FontWeight, Glyph};
 use crate::widget::{FilterId, ImageFilter, Overlay};
 use crate::widget::ImageInformation;
@@ -712,11 +713,11 @@ impl Environment {
     }
 
     pub fn env_color(&self, color: EnvironmentColor) -> Color {
-        self.get_color(&StateKey::Color(color)).unwrap()
+        self.get_color(&EnvironmentStateKey::Color(color)).unwrap()
     }
 
-    pub fn get_color(&self, color: &StateKey) -> Option<Color> {
-        if let StateKey::Color(col) = color {
+    pub fn get_color(&self, color: &EnvironmentStateKey) -> Option<Color> {
+        if let EnvironmentStateKey::Color(col) = color {
             for item in self.stack.iter().rev() {
                 match item {
                     EnvironmentVariable::Color { key, value } => {
@@ -732,8 +733,8 @@ impl Environment {
         None
     }
 
-    pub fn get_font_size(&self, font_size: &StateKey) -> Option<u32> {
-        if let StateKey::FontSize(size) = font_size {
+    pub fn get_font_size(&self, font_size: &EnvironmentStateKey) -> Option<u32> {
+        if let EnvironmentStateKey::FontSize(size) = font_size {
             for item in self.stack.iter().rev() {
                 match item {
                     EnvironmentVariable::FontSize { key, value } => {

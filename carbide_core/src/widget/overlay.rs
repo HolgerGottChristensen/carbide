@@ -47,7 +47,7 @@ impl Overlay {
     }
 
     pub fn set_showing(&mut self, val: bool) {
-        self.showing.set_value(val);
+        self.showing.set_value_dyn(val);
     }
 
 }

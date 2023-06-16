@@ -5,8 +5,8 @@ use lyon::math::point;
 
 use carbide_macro::{carbide_default_builder, carbide_default_builder2};
 
-use crate::{Color, CommonWidgetImpl};
-use crate::draw::{Dimension, Position};
+use crate::{CommonWidgetImpl};
+use crate::draw::{Dimension, Position, Color};
 use crate::environment::{Environment};
 use crate::environment::EnvironmentColor;
 use crate::layout::Layout;

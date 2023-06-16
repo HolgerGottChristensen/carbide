@@ -1,4 +1,4 @@
-use crate::Color;
+use crate::draw::Color;
 use crate::draw::{Dimension, Position, Rect, Scalar};
 use crate::environment::Environment;
 use crate::text::Glyph;

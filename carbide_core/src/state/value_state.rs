@@ -5,7 +5,7 @@ use std::str::FromStr;
 use carbide_core::state::{AnyState, Map1};
 use carbide_core::state::NewStateSync;
 
-use crate::Color;
+use crate::draw::Color;
 use crate::environment::Environment;
 use crate::render::Style;
 use crate::state::{AnyReadState, IntoReadState, ReadWidgetState, RState, State, StateContract, StateExt, TState};

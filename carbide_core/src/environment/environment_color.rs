@@ -1,4 +1,4 @@
-use crate::Color;
+use crate::draw::Color;
 use crate::environment::Environment;
 use crate::render::Style;
 use crate::state::*;
@@ -88,7 +88,7 @@ impl<T> IntoReadStateHelper<T, EnvironmentColor, Color> for T where T: AnyReadSt
 
     fn into_read_state_helper(self) -> Self::Output {
         Map1::read_map_env(self, |env, value| {
-            env.get_color(&StateKey::Color(value.clone())).unwrap()
+            env.get_color(&EnvironmentStateKey::Color(value.clone())).unwrap()
         })
     }
 }
@@ -98,7 +98,7 @@ impl<T> IntoReadStateHelper<T, EnvironmentColor, Style> for T where T: AnyReadSt
 
     fn into_read_state_helper(self) -> Self::Output {
         Map1::read_map_env(self, |env, value| {
-            Style::Color(env.get_color(&StateKey::Color(value.clone())).unwrap())
+            Style::Color(env.get_color(&EnvironmentStateKey::Color(value.clone())).unwrap())
         })
     }
 }

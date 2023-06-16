@@ -18,10 +18,9 @@ extern crate self as carbide_core;
 pub use futures::TryFutureExt;
 
 pub use carbide_core::asynchronous::SpawnTask;
-pub use draw::Scalar;
 pub use scene::Scene;
 
-pub use crate::color::Color;
+pub use draw::color;
 
 #[macro_export]
 macro_rules! lens {
@@ -50,7 +49,6 @@ macro_rules! set_state {
 
 pub mod animation;
 pub mod asynchronous;
-pub mod color;
 pub mod cursor;
 pub mod dialog;
 pub mod draw;

@@ -39,7 +39,7 @@ impl<T> IntoReadStateHelper<T, EnvironmentFontSize, u32> for T where T: AnyReadS
 
     fn into_read_state_helper(self) -> Self::Output {
         Map1::read_map_env(self, |env, value| {
-            env.get_font_size(&StateKey::FontSize(value.clone())).unwrap()
+            env.get_font_size(&EnvironmentStateKey::FontSize(value.clone())).unwrap()
         })
     }
 }

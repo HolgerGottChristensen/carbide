@@ -84,18 +84,3 @@ impl<T: StateContract> Debug for LocalState<T> {
             .finish()
     }
 }
-
-/*impl<T, __Other_T, __Other_T_State> std::ops::Add<__Other_T_State> for LocalState<T>
-    where
-        T: StateContract,
-        __Other_T: StateContract,
-        __Other_T_State: State<__Other_T> + Clone + 'static,
-        <T as std::ops::Add<__Other_T>>::Output: StateContract,
-        T: StateContract + std::ops::Add<__Other_T>
-{
-    type Output = carbide_core::state::RMap2<T, __Other_T, <T as std::ops::Add<__Other_T>>::Output, LocalState<T>, __Other_T_State>;
-
-    fn add(self, rhs: __Other_T_State) -> Self::Output {
-        carbide_core::state::Map2::read_map(self, rhs, |val1: &T, val2: &__Other_T| { val1.clone() + val2.clone() })
-    }
-}*/

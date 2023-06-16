@@ -1,4 +1,4 @@
-use crate::Color;
+use crate::draw::Color;
 use crate::environment::Environment;
 #[cfg(target_os = "macos")]
 use crate::platform::mac::color_dialog::open_color_dialog;

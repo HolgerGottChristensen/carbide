@@ -1,5 +1,5 @@
 use carbide_core::draw::Position;
-use crate::Color;
+use crate::draw::Color;
 use crate::draw::Dimension;
 use crate::draw::draw_gradient::DrawGradient;
 use crate::draw::draw_style::DrawStyle;

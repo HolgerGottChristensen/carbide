@@ -11,7 +11,7 @@ use cocoa::foundation::{NSArray, NSAutoreleasePool, NSInteger, NSProcessInfo, NS
 use objc::{class, msg_send, sel, sel_impl};
 use oneshot::Receiver;
 
-use crate::Color;
+use crate::draw::Color;
 use crate::dialog::open_dialog::OpenDialogSettings;
 use crate::prelude::Environment;
 use crate::state::{InnerState, ValueCell};

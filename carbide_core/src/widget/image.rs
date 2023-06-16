@@ -8,9 +8,9 @@ use carbide_core::widget::{CommonWidget};
 
 use carbide_macro::{carbide_default_builder, carbide_default_builder2};
 
-use crate::{Color, CommonWidgetImpl, Scalar};
+use crate::{CommonWidgetImpl};
 use crate::color::WHITE;
-use crate::draw::{Dimension, Position, Rect};
+use crate::draw::{Dimension, Position, Rect, Color, Scalar};
 use crate::draw::image::ImageId;
 use crate::environment::{Environment, EnvironmentColor,};
 use crate::layout::Layout;

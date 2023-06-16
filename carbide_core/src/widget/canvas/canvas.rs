@@ -10,8 +10,7 @@ use carbide_core::render::{RenderContext, Style};
 
 use carbide_macro::{carbide_default_builder, carbide_default_builder2};
 
-use crate::{Color, Scalar};
-use crate::draw::{Dimension, Position, Rect};
+use crate::draw::{Dimension, Position, Rect, Color, Scalar};
 use crate::draw::draw_style::DrawStyle;
 use crate::draw::shape::triangle::Triangle;
 use crate::environment::{Environment, EnvironmentColor};

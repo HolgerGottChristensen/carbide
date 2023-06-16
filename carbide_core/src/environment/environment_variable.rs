@@ -1,4 +1,4 @@
-use crate::Color;
+use crate::draw::Color;
 use crate::environment::{EnvironmentColor, EnvironmentFontSize};
 
 #[derive(Debug, Clone)]

@@ -9,7 +9,7 @@ use objc::declare::ClassDecl;
 use objc::runtime::{Class, Object, Sel};
 use raw_window_handle::{AppKitWindowHandle, HasRawWindowHandle, RawWindowHandle};
 
-use carbide_core::Color;
+use carbide_core::draw::Color;
 use carbide_core::event::{CustomEvent, EventSink, HasEventSink, HasRawWindowHandleAndEventSink};
 
 pub struct ColorPanel {

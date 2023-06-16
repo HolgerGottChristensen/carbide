@@ -1,4 +1,4 @@
-use crate::Color;
+use crate::draw::Color;
 use crate::draw::{Dimension, Position, Rect};
 use crate::draw::draw_gradient::DrawGradient;
 use crate::draw::shape::triangle::Triangle;

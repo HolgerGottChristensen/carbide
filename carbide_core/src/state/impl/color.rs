@@ -1,4 +1,4 @@
-use crate::Color;
+use crate::draw::Color;
 use crate::state::{Map1, Map2, RState, TState};
 
 impl TState<Color> {

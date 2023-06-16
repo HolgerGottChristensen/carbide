@@ -1,5 +1,5 @@
 use carbide_core::draw::draw_gradient::DrawGradient;
-use crate::Color;
+use crate::draw::Color;
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum DrawStyle {

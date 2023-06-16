@@ -16,7 +16,7 @@ use rand::Rng;
 
 use crate::animation::Animatable;
 use crate::render::Style;
-use crate::state::{AnyReadState, IntoReadState, IntoReadStateHelper, Map1, RMap1};
+use crate::state::{AnyReadState, IntoReadStateHelper, Map1, RMap1};
 use crate::utils::{fmod, turns_to_radians};
 
 /// Color supporting RGB and HSL variants.

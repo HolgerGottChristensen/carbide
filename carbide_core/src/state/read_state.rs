@@ -4,7 +4,7 @@ use cgmath::Matrix4;
 
 use dyn_clone::DynClone;
 use carbide_core::environment::Environment;
-use crate::Color;
+use crate::draw::Color;
 use crate::environment::{EnvironmentColor, EnvironmentFontSize};
 use crate::focus::Focus;
 use crate::render::Style;
@@ -142,6 +142,16 @@ impl IntoReadStateHelper<i32, i32, u32> for i32 {
     fn into_read_state_helper(self) -> Self::Output {
         Map1::read_map(self, |c| {
             *c as u32
+        })
+    }
+}
+
+impl IntoReadStateHelper<i32, i32, f64> for i32 {
+    type Output = RMap1<fn(&i32)->f64, i32, f64, i32>;
+
+    fn into_read_state_helper(self) -> Self::Output {
+        Map1::read_map(self, |c| {
+            *c as f64
         })
     }
 }

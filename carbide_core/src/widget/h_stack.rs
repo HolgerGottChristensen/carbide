@@ -1,11 +1,11 @@
 
 use carbide_macro::{carbide_default_builder, gen_optionals};
 
-use crate::draw::{Dimension, Position};
+use crate::draw::{Dimension, Position, Scalar};
 use crate::environment::Environment;
 use crate::flags::Flags;
 use crate::layout::{calculate_size_hstack, Layout, position_children_hstack};
-use crate::{CommonWidgetImpl, Scalar};
+use crate::{CommonWidgetImpl};
 use crate::widget::{CommonWidget, CrossAxisAlignment, Widget, WidgetExt, WidgetId, WidgetIter, WidgetIterMut};
 
 /// # HStack

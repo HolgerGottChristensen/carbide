@@ -11,8 +11,8 @@ use wgpu::util::{BufferInitDescriptor, DeviceExt};
 use winit::dpi::{LogicalSize, PhysicalPosition, PhysicalSize, Size};
 use winit::window::{Window as WinitWindow, WindowBuilder};
 
-use carbide_core::{Scalar, Scene};
-use carbide_core::draw::{Dimension, Position, Rect};
+use carbide_core::{Scene};
+use carbide_core::draw::{Dimension, Position, Rect, Scalar};
 use carbide_core::draw::image::ImageId;
 use carbide_core::environment::{Environment, EnvironmentColor};
 use carbide_core::event::{KeyboardEvent, KeyboardEventHandler, MouseEvent, MouseEventHandler, OtherEventHandler, WidgetEvent, WindowEvent};

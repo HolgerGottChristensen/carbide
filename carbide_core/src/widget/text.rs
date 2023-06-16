@@ -7,7 +7,7 @@ use carbide_core::state::IntoReadState;
 
 use carbide_macro::{carbide_default_builder, carbide_default_builder2};
 
-use crate::Color;
+use crate::draw::Color;
 use crate::color::BLACK;
 use crate::draw::{Dimension, Position, Rect};
 use crate::draw::draw_style::DrawStyle;

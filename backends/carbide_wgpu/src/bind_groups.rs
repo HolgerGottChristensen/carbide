@@ -2,7 +2,7 @@ use cgmath::Matrix4;
 use wgpu::util::DeviceExt;
 use wgpu::{BindGroup, BindGroupLayout, Buffer, Device, Sampler, Texture, TextureView};
 
-use carbide_core::Scalar;
+use carbide_core::draw::Scalar;
 
 pub(crate) fn uniform_bind_group(
     device: &Device,

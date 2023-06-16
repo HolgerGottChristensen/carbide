@@ -1,4 +1,4 @@
-use crate::Color;
+use crate::draw::Color;
 use crate::environment::Environment;
 use crate::text::{Font, FontId, FontSize};
 use crate::text::types::font_style::FontStyle;
