@@ -21,3 +21,23 @@ pub mod eq;
 pub mod and;
 pub mod or;
 pub mod ord;*/
+
+
+use carbide_core::state::StateContract;
+use crate::state::{AnyReadState, Map1, ReadState, RMap1};
+
+pub trait ToStringState {
+    type Output: ReadState<T=String>;
+
+    fn to_string_state(&self) -> Self::Output;
+}
+
+impl<T, U: ToString + StateContract> ToStringState for T where T: ReadState<T=U> {
+    type Output = RMap1<fn(&U)->String, U, String, T>;
+
+    fn to_string_state(&self) -> Self::Output {
+        Map1::read_map(self.clone(), |val| {
+            val.to_string()
+        })
+    }
+}

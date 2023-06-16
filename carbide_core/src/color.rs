@@ -16,7 +16,7 @@ use rand::Rng;
 
 use crate::animation::Animatable;
 use crate::render::Style;
-use crate::state::IntoReadState;
+use crate::state::{AnyReadState, IntoReadState, IntoReadStateHelper, Map1, RMap1};
 use crate::utils::{fmod, turns_to_radians};
 
 /// Color supporting RGB and HSL variants.
@@ -753,3 +753,20 @@ fn plain_contrast_should_weight_colors() {
     assert_eq!(g, 1.0);
     assert_eq!(b, 1.0);
 }
+
+
+// ---------------------------------------------------
+//  Conversion implementations
+// ---------------------------------------------------
+
+impl<T> IntoReadStateHelper<T, Color, Style> for T where T: AnyReadState<T=Color> + Clone {
+    type Output = RMap1<fn(&Color)->Style, Color, Style, T>;
+
+    fn into_read_state_helper(self) -> Self::Output {
+        Map1::read_map(self, |c| {
+            Style::Color(*c)
+        })
+    }
+}
+
+

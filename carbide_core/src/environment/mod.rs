@@ -1,8 +1,6 @@
 pub use environment::Environment;
 pub use environment_color::EnvironmentColor;
-pub use environment_color_state::EnvironmentColorState;
 pub use environment_font_size::EnvironmentFontSize;
-pub use environment_font_size_state::EnvironmentFontSizeState;
 pub use environment_variable::EnvironmentVariable;
 
 use crate::Color;
@@ -11,9 +9,7 @@ use crate::widget::Widget;
 
 mod environment;
 mod environment_color;
-mod environment_color_state;
 mod environment_font_size;
-mod environment_font_size_state;
 mod environment_variable;
 
 #[derive(Debug, Clone)]

@@ -1,4 +1,4 @@
-use crate::environment::EnvironmentFontSizeState;
+use crate::environment::Environment;
 use crate::state::*;
 use crate::state::WidgetState;
 
@@ -20,7 +20,7 @@ pub enum EnvironmentFontSize {
 
 impl EnvironmentFontSize {
     pub fn u32(&self) -> impl ReadState<T=u32> {
-        EnvironmentFontSizeState::new(self.clone())
+        <EnvironmentFontSize as IntoReadState<u32>>::into_read_state(self.clone())
     }
 }
 
@@ -30,16 +30,16 @@ impl Default for EnvironmentFontSize {
     }
 }
 
-/*impl Into<TState<u32>> for EnvironmentFontSize {
-    fn into(self) -> TState<u32> {
-        WidgetState::new(Box::new(EnvironmentFontSizeState::new(self)))
-    }
-}*/
+// ---------------------------------------------------
+//  Conversion implementations
+// ---------------------------------------------------
 
-/*impl IntoReadState<u32> for EnvironmentFontSize {
-    type Output = EnvironmentFontSizeState;
+impl<T> IntoReadStateHelper<T, EnvironmentFontSize, u32> for T where T: AnyReadState<T=EnvironmentFontSize> + Clone {
+    type Output = EnvMap1<fn(&Environment, &EnvironmentFontSize)->u32, EnvironmentFontSize, u32, T>;
 
-    fn into_read_state(self) -> Self::Output {
-        EnvironmentFontSizeState::new(self)
+    fn into_read_state_helper(self) -> Self::Output {
+        Map1::read_map_env(self, |env, value| {
+            env.get_font_size(&StateKey::FontSize(value.clone())).unwrap()
+        })
     }
-}*/
+}

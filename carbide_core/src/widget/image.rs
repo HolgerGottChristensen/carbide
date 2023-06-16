@@ -12,7 +12,7 @@ use crate::{Color, CommonWidgetImpl, Scalar};
 use crate::color::WHITE;
 use crate::draw::{Dimension, Position, Rect};
 use crate::draw::image::ImageId;
-use crate::environment::{Environment, EnvironmentColor, EnvironmentColorState};
+use crate::environment::{Environment, EnvironmentColor,};
 use crate::layout::Layout;
 use crate::mesh::{MODE_ICON, MODE_IMAGE};
 use crate::mesh::pre_multiply::PreMultiply;

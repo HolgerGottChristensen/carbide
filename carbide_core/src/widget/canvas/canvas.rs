@@ -14,7 +14,7 @@ use crate::{Color, Scalar};
 use crate::draw::{Dimension, Position, Rect};
 use crate::draw::draw_style::DrawStyle;
 use crate::draw::shape::triangle::Triangle;
-use crate::environment::{Environment, EnvironmentColor, EnvironmentColorState};
+use crate::environment::{Environment, EnvironmentColor};
 use crate::render::{Primitive, PrimitiveKind, Render};
 use crate::state::{NewStateSync, ReadState, StateContract, TState, ValueState, IntoReadState, AnyReadState};
 use crate::widget::{CommonWidget, PrimitiveStore, Shape, ShapeStyle, StrokeStyle, Widget, WidgetExt, WidgetId};

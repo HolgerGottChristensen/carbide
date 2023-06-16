@@ -11,7 +11,7 @@ use crate::Color;
 use crate::color::BLACK;
 use crate::draw::{Dimension, Position, Rect};
 use crate::draw::draw_style::DrawStyle;
-use crate::environment::{Environment, EnvironmentColor, EnvironmentColorState, EnvironmentFontSize, EnvironmentFontSizeState};
+use crate::environment::{Environment, EnvironmentColor, EnvironmentFontSize};
 use crate::layout::Layout;
 //use crate::render::text::Text as RenderText;
 use crate::render::{new_primitive, Primitive, Render};

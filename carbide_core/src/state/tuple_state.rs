@@ -126,15 +126,13 @@ macro_rules! tuple_state {
         /// Implement NewStateSync for the EnvMap
         impl<$($type: StateContract),*, TO: StateContract + Default, $($type2: ReadState<T=$type> + Clone + 'static),*, MAP: Fn(&Environment, $(&$type),*) -> TO + Clone + 'static> NewStateSync for $env_map_name<MAP, $($type),*, TO, $($type2),*> {
             fn sync(&mut self, env: &mut Environment) -> bool {
-                let mut updated = false;
-
                 $(
-                    updated |= self.$name.sync(env);
+                    self.$name.sync(env);
                 )*
 
                 self.value = (self.map)(env, $(&*self.$name.value()),*);
 
-                true
+                true // We could check if the value changed with PartialEq
             }
         }
 

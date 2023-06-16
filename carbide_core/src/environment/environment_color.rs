@@ -1,10 +1,7 @@
 use crate::Color;
-use crate::color::WHITE;
-use crate::environment::EnvironmentColorState;
+use crate::environment::Environment;
 use crate::render::Style;
 use crate::state::*;
-use crate::state::WidgetState;
-use crate::widget::AdvancedColor;
 
 #[derive(Hash, Eq, PartialEq, Clone, Debug)]
 pub enum EnvironmentColor {
@@ -82,72 +79,26 @@ impl Default for EnvironmentColor {
     }
 }
 
-/*impl Into<StateKey> for EnvironmentColor {
-    fn into(self) -> StateKey {
-        StateKey::Color(self)
-    }
-}
+// ---------------------------------------------------
+//  Conversion implementations
+// ---------------------------------------------------
 
-impl Into<TState<Color>> for EnvironmentColor {
-    fn into(self) -> TState<Color> {
-        self.state()
-    }
-}*/
+impl<T> IntoReadStateHelper<T, EnvironmentColor, Color> for T where T: AnyReadState<T=EnvironmentColor> + Clone {
+    type Output = EnvMap1<fn(&Environment, &EnvironmentColor)->Color, EnvironmentColor, Color, T>;
 
-/*impl Into<TState<Color>> for TState<EnvironmentColor> {
-    fn into(self) -> TState<Color> {
-        let state = Map1::read_map(self, |e: &EnvironmentColor| e.state()).ignore_writes();
-
-        Flatten::new(state.as_dyn())
-    }
-}*/
-
-/*impl Into<TState<Style>> for EnvironmentColor {
-    fn into(self) -> TState<Style> {
-        let state: TState<Color> = WidgetState::new(Box::new(EnvironmentColorState::new(self)));
-        let state: RState<Style> = state.into();
-        state.ignore_writes()
-    }
-}*/
-
-/*impl Into<TState<Style>> for TState<EnvironmentColor> {
-    fn into(self) -> TState<Style> {
-        let state: TState<Color> = self.into();
-
-        Map1::read_map(state, |s: &Color| Style::Color(*s)).ignore_writes()
-    }
-}*/
-
-/*impl<T> IntoReadState<Style> for T where T: AnyReadState<T=Color> + Clone {
-    type Output = RMap1<fn(&Color)->Style, Color, Style, T>;
-
-    fn into_read_state(self) -> Self::Output {
-        Map1::read_map(self, |c| {
-            Style::Color(*c)
+    fn into_read_state_helper(self) -> Self::Output {
+        Map1::read_map_env(self, |env, value| {
+            env.get_color(&StateKey::Color(value.clone())).unwrap()
         })
     }
-}*/
+}
 
-/*impl IntoReadState<Style> for EnvironmentColor {
-    type Output = EnvironmentColorState;
+impl<T> IntoReadStateHelper<T, EnvironmentColor, Style> for T where T: AnyReadState<T=EnvironmentColor> + Clone {
+    type Output = EnvMap1<fn(&Environment, &EnvironmentColor)->Style, EnvironmentColor, Style, T>;
 
-    fn into_read_state(self) -> Self::Output {
-        EnvironmentColorState::new(self)
+    fn into_read_state_helper(self) -> Self::Output {
+        Map1::read_map_env(self, |env, value| {
+            Style::Color(env.get_color(&StateKey::Color(value.clone())).unwrap())
+        })
     }
 }
-*/
-
-
-/*impl IntoReadState<Color> for EnvironmentColor {
-    type Output = RMap1<fn(&Style) -> Color, Style, Color, EnvironmentColorState>;
-
-    fn into_read_state(self) -> Self::Output {
-        /*Map1::read_map(EnvironmentColorState::new(self), |s| {
-            match s {
-                Style::Color(c) => *c,
-                _ => WHITE,
-            }
-        })*/
-        todo!()
-    }
-}*/

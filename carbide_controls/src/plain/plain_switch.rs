@@ -49,12 +49,6 @@ impl PlainSwitch<Focus, String, bool> {
                 EnvironmentColor::Red
             }
         });
-        /*let background_color: TState<Color> = checked
-            .choice(
-                EnvironmentColor::Green.state(),
-                EnvironmentColor::Red.state(),
-            )
-            .ignore_writes();*/
 
         let val = Map2::read_map(checked, focus, |checked: &bool, focus: &Focus| {
             format!("{:?}, {:?}", *checked, focus)

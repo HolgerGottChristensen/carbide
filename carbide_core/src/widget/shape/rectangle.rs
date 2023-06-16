@@ -10,7 +10,7 @@ use carbide_macro::{carbide_default_builder, carbide_default_builder2};
 use crate::{Color, CommonWidgetImpl, Scalar};
 use crate::color::WHITE;
 use crate::draw::{Dimension, Position, Rect};
-use crate::environment::{Environment, EnvironmentColorState};
+use crate::environment::{Environment};
 use crate::environment::EnvironmentColor;
 use crate::render::{Primitive, PrimitiveKind, Render};
 use crate::state::{ReadState, RState, TState, IntoReadState};

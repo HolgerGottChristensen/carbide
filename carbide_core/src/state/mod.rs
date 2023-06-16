@@ -20,6 +20,7 @@ pub use self::index_state::IndexState;
 pub use self::local_state::LocalState;
 pub use self::map_owned_state::*;
 pub use self::read_state::*;
+pub use self::into_read_state::*;
 pub use self::read_widget_state::ReadWidgetState;
 pub use self::state::*;
 pub use self::state_ext::*;
@@ -52,6 +53,7 @@ mod util;
 mod cache_state;
 mod global_state;
 mod into_state;
+mod into_read_state;
 
 pub type InnerState<T> = Rc<ValueCell<T>>;
 

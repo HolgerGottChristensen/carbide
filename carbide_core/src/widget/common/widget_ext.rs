@@ -4,7 +4,7 @@ use carbide_core::state::{IntoReadState, RMap1};
 use crate::Color;
 use crate::color::BLACK;
 use crate::draw::Dimension;
-use crate::environment::{EnvironmentColor, EnvironmentColorState, EnvironmentStateContainer};
+use crate::environment::{EnvironmentColor, EnvironmentStateContainer};
 use crate::flags::Flags;
 use crate::render::Style;
 use crate::state::{ReadState, TState};

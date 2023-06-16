@@ -5,7 +5,6 @@ use cgmath::Matrix4;
 use dyn_clone::DynClone;
 use carbide_core::environment::Environment;
 use crate::Color;
-use crate::color::{BLACK, ORANGE};
 use crate::environment::{EnvironmentColor, EnvironmentFontSize};
 use crate::focus::Focus;
 use crate::render::Style;
@@ -14,8 +13,9 @@ use crate::state::*;
 use crate::state::state_sync::NewStateSync;
 use crate::state::util::value_cell::ValueRef;
 
-// https://play.rust-lang.org/?version=stable&mode=debug&edition=2021&gist=ec8e5b8920ccb55c4d552666fe7f1179
-
+// ---------------------------------------------------
+//  Definitions
+// ---------------------------------------------------
 
 pub trait ReadState: AnyReadState + Clone + IntoReadState<Self::T> + private::Sealed {
     /// This retrieves a immutable reference to the value contained in the state.
@@ -31,18 +31,21 @@ pub trait AnyReadState: DynClone + NewStateSync + Debug + 'static {
     fn value_dyn(&self) -> ValueRef<Self::T>;
 }
 
-pub trait IntoReadState<T>: Clone where T: StateContract {
-    type Output: ReadState<T=T>;
+// ---------------------------------------------------
+//  Implementations
+// ---------------------------------------------------
 
-    fn into_read_state(self) -> Self::Output;
+impl<T> ReadState for T where T: AnyReadState + Clone + IntoReadState<Self::T> {
+    fn value(&self) -> ValueRef<Self::T> {
+        self.value_dyn()
+    }
 }
 
-pub trait IntoReadStateHelper<T, U, B: StateContract>: Clone where T: AnyReadState<T=U> {
-    type Output: ReadState<T=B>;
+dyn_clone::clone_trait_object!(<T: StateContract> AnyReadState<T=T>);
 
-    fn into_read_state_helper(self) -> Self::Output;
-}
-
+// ---------------------------------------------------
+//  Utility
+// ---------------------------------------------------
 
 mod private {
     use crate::state::AnyReadState;
@@ -51,78 +54,6 @@ mod private {
 
     impl<T> Sealed for T where T: AnyReadState {}
 }
-
-impl<T> ReadState for T where T: AnyReadState + Clone + IntoReadState<Self::T> {
-    fn value(&self) -> ValueRef<Self::T> {
-        self.value_dyn()
-    }
-}
-
-impl<T> IntoReadStateHelper<T, Color, Style> for T where T: AnyReadState<T=Color> + Clone {
-    type Output = RMap1<fn(&Color)->Style, Color, Style, T>;
-
-    fn into_read_state_helper(self) -> Self::Output {
-        Map1::read_map(self, |c| {
-            Style::Color(*c)
-        })
-    }
-}
-
-impl<T> IntoReadStateHelper<T, EnvironmentColor, Color> for T where T: AnyReadState<T=EnvironmentColor> + Clone {
-    type Output = EnvMap1<fn(&Environment, &EnvironmentColor)->Color, EnvironmentColor, Color, T>;
-
-    fn into_read_state_helper(self) -> Self::Output {
-        Map1::read_map_env(self, |env, value| {
-            env.get_color(&StateKey::Color(value.clone())).unwrap()
-        })
-    }
-}
-
-impl<T> IntoReadStateHelper<T, EnvironmentColor, Style> for T where T: AnyReadState<T=EnvironmentColor> + Clone {
-    type Output = EnvMap1<fn(&Environment, &EnvironmentColor)->Style, EnvironmentColor, Style, T>;
-
-    fn into_read_state_helper(self) -> Self::Output {
-        Map1::read_map_env(self, |env, value| {
-            Style::Color(env.get_color(&StateKey::Color(value.clone())).unwrap())
-        })
-    }
-}
-
-impl<T> IntoReadStateHelper<T, EnvironmentFontSize, u32> for T where T: AnyReadState<T=EnvironmentFontSize> + Clone {
-    type Output = EnvMap1<fn(&Environment, &EnvironmentFontSize)->u32, EnvironmentFontSize, u32, T>;
-
-    fn into_read_state_helper(self) -> Self::Output {
-        Map1::read_map_env(self, |env, value| {
-            env.get_font_size(&StateKey::FontSize(value.clone())).unwrap()
-        })
-    }
-}
-
-impl<T, U: StateContract> IntoReadStateHelper<T, U, U> for T where T: AnyReadState<T=U> + Clone {
-    type Output = T;
-
-    fn into_read_state_helper(self) -> Self::Output {
-        self
-    }
-}
-
-impl<T: AnyReadState<T=A>, A, B: StateContract> IntoReadState<B> for T where T: IntoReadStateHelper<T, A, B> {
-    type Output = T::Output;
-
-    fn into_read_state(self) -> Self::Output {
-        self.into_read_state_helper()
-    }
-}
-
-/*impl<T: StateContract, U> IntoReadState<T> for U where U: AnyReadState<T=T> + Clone {
-    type Output = U;
-
-    fn into_read_state(self) -> Self::Output {
-        self
-    }
-}*/
-
-dyn_clone::clone_trait_object!(<T: StateContract> AnyReadState<T=T>);
 
 impl<G> NewStateSync for Vec<G> {}
 impl<G: Debug + Clone + 'static> AnyReadState for Vec<G> {
@@ -194,7 +125,6 @@ macro_rules! impl_read_state {
             }
         }
         )*
-
     };
 }
 
@@ -205,3 +135,13 @@ impl_read_state!(
     bool, char, isize, usize,
     Style, String, (), Color, &'static str, Focus, EnvironmentColor, EnvironmentFontSize
 );
+
+impl IntoReadStateHelper<i32, i32, u32> for i32 {
+    type Output = RMap1<fn(&i32)->u32, i32, u32, i32>;
+
+    fn into_read_state_helper(self) -> Self::Output {
+        Map1::read_map(self, |c| {
+            *c as u32
+        })
+    }
+}
