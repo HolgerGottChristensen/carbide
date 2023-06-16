@@ -1,4 +1,4 @@
-use carbide_core::{Color, CommonWidgetImpl};
+use carbide_core::{CommonWidgetImpl};
 use carbide_core::draw::{Dimension, Position};
 use carbide_core::environment::{Environment, EnvironmentColor};
 use carbide_core::flags::Flags;
@@ -6,8 +6,7 @@ use carbide_core::focus::{Focus, Focusable};
 use carbide_core::focus::Refocus;
 use carbide_core::state::{AnyState, IntoReadState, IntoState, LocalState, Map1, Map2, ReadState, State, StateExtNew, TState};
 use carbide_core::widget::{
-    CommonWidget, HStack, Rectangle, Text, Widget, WidgetExt, WidgetId, WidgetIter,
-    WidgetIterMut, ZStack,
+    CommonWidget, HStack, Rectangle, Text, Widget, WidgetExt, WidgetId, ZStack,
 };
 
 use crate::PlainButton;

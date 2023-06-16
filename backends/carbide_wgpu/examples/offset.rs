@@ -1,10 +1,5 @@
-use std::f64::consts::PI;
-
-use carbide_core::draw::{Dimension, Position};
-use carbide_core::draw::image::ImageId;
+use carbide_core::draw::{Dimension};
 use carbide_core::environment::*;
-use carbide_core::locate_folder;
-use carbide_core::widget::canvas::*;
 use carbide_core::widget::*;
 use carbide_wgpu::{Application, Window};
 
@@ -21,6 +16,7 @@ fn main() {
                 .fill(EnvironmentColor::Accent)
                 .frame(100.0, 100.0)
                 .offset(50.0, 50.0)
+                .border()
         ).close_application_on_window_close()
     );
 

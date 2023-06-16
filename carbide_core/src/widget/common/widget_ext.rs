@@ -7,7 +7,7 @@ use crate::draw::Dimension;
 use crate::environment::{EnvironmentColor, EnvironmentStateContainer};
 use crate::flags::Flags;
 use crate::render::Style;
-use crate::state::{ReadState, TState};
+use crate::state::{IntoState, ReadState, TState};
 use crate::widget::{Background, Border, Clip, ClipShape, CornerRadii, EdgeInsets, EnvUpdating, Flagged, Flexibility, Frame, Hidden, Offset, Padding, Rotation3DEffect, RoundedRectangle, Shape, Transform, Widget};
 use crate::state::ReadStateExtNew;
 
@@ -15,7 +15,7 @@ pub trait WidgetExt: Widget + Sized + Clone + 'static {
     /// Surround the widget with a frame. The frame is a widget that has fixed width, height or both.
     /// The frame takes two parameters. Both parameters take f64 state. This means you can pass
     /// constant values like 10, 100.2, varying values like LocalState and AnimationState.
-    fn frame<W: IntoReadState<f64>, H: IntoReadState<f64>>(self, width: W, height: H) -> Box<Frame<f64, f64, W::Output, H::Output, Self>> {
+    fn frame<W: IntoState<f64>, H: IntoState<f64>>(self, width: W, height: H) -> Box<Frame<f64, f64, W::Output, H::Output, Self>> {
         Frame::new(width, height, self)
     }
 
@@ -80,12 +80,12 @@ pub trait WidgetExt: Widget + Sized + Clone + 'static {
         Transform::new(self, matrix)
     }
 
-    fn frame_fixed_width<W: IntoReadState<f64>>(self, width: W) -> Box<Frame<f64, f64, W::Output, f64, Self>> {
+    fn frame_fixed_width<W: IntoState<f64>>(self, width: W) -> Box<Frame<f64, f64, W::Output, f64, Self>> {
         Frame::new(width, 10.0, self)
             .expand_height()
     }
 
-    fn frame_fixed_height<H: IntoReadState<f64>>(self, height: H) -> Box<Frame<f64, f64, f64, H::Output, Self>> {
+    fn frame_fixed_height<H: IntoState<f64>>(self, height: H) -> Box<Frame<f64, f64, f64, H::Output, Self>> {
         Frame::new(10.0, height, self)
             .expand_width()
     }

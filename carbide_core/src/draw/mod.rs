@@ -5,7 +5,7 @@ pub use rect::Rect;
 pub use color::Color;
 pub use alignment::Alignment;
 
-pub mod alignment;
+mod alignment;
 mod dimension;
 pub mod draw_gradient;
 pub mod image;

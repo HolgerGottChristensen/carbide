@@ -2,7 +2,7 @@ use std::fmt::{Debug, Formatter};
 use std::ops::Deref;
 
 use crate::environment::Environment;
-use crate::state::{AnyReadState, NewStateSync, ReadState, RState, StateContract};
+use crate::state::{AnyReadState, NewStateSync, RState, StateContract};
 use crate::state::ReadWidgetState;
 use crate::state::util::value_cell::ValueRef;
 

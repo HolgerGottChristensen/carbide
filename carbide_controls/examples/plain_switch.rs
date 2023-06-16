@@ -5,6 +5,9 @@ use carbide_core::widget::*;
 use carbide_wgpu::{Application, Window};
 
 fn main() {
+    // It is important to use LocalState or some other state because
+    // otherwise it will not be shared between the different components
+    // of the plain switch.
     let switch_state1 = LocalState::new(false);
     let switch_state2 = LocalState::new(true);
     let switch_state3 = LocalState::new(true);

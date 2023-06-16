@@ -1,7 +1,6 @@
-use carbide_core::draw::Position;
+use carbide_core::draw::{Position, Scalar};
 use carbide_core::text::Glyph;
 use carbide_core::utils::binary_search;
-use carbide_core::Scalar;
 
 #[derive(Debug, Clone, Copy)]
 pub enum Cursor {

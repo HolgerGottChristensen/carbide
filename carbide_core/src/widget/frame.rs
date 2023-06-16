@@ -8,7 +8,7 @@ use crate::draw::{Dimension, Position};
 use crate::environment::Environment;
 
 use crate::layout::{BasicLayouter, Layout, Layouter};
-use crate::state::{AnyReadState, IntoReadState, NewStateSync, ReadState, State, ValueRef, ValueRefMut};
+use crate::state::{AnyReadState, IntoReadState, NewStateSync, ReadState, State, ValueRef, ValueRefMut, IntoState};
 use crate::widget::{CommonWidget, Empty, Widget, WidgetExt, WidgetId};
 
 pub static SCALE: f64 = -1.0;
@@ -16,10 +16,10 @@ pub static SCALE: f64 = -1.0;
 #[derive(Debug, Clone, Widget)]
 #[carbide_exclude(Layout)]
 pub struct Frame<X, Y, W, H, C> where
-    X: ReadState<T=f64> + Clone,
-    Y: ReadState<T=f64> + Clone,
-    W: ReadState<T=f64> + Clone,
-    H: ReadState<T=f64> + Clone,
+    X: State<T=f64> + Clone,
+    Y: State<T=f64> + Clone,
+    W: State<T=f64> + Clone,
+    H: State<T=f64> + Clone,
     C: Widget + Clone
 {
     id: WidgetId,
@@ -33,7 +33,7 @@ pub struct Frame<X, Y, W, H, C> where
 
 impl Frame<f64, f64, f64, f64, Empty> {
     #[carbide_default_builder2]
-    pub fn new<W: IntoReadState<f64>, H: IntoReadState<f64>, C: Widget + Clone>(
+    pub fn new<W: IntoState<f64>, H: IntoState<f64>, C: Widget + Clone>(
         width: W,
         height: H,
         child: C,
@@ -44,17 +44,17 @@ impl Frame<f64, f64, f64, f64, Empty> {
             position: Position::new(0.0, 0.0),
             x: Fixity::Expand(0.0),
             y: Fixity::Expand(0.0),
-            width: Fixity::Fixed(width.into_read_state()),
-            height: Fixity::Fixed(height.into_read_state()),
+            width: Fixity::Fixed(width.into_state()),
+            height: Fixity::Fixed(height.into_state()),
         })
     }
 }
 
 impl<
-    X: ReadState<T=f64> + Clone,
-    Y: ReadState<T=f64> + Clone,
-    W: ReadState<T=f64> + Clone,
-    H: ReadState<T=f64> + Clone,
+    X: State<T=f64> + Clone,
+    Y: State<T=f64> + Clone,
+    W: State<T=f64> + Clone,
+    H: State<T=f64> + Clone,
     C: Widget + Clone
 > Frame<X, Y, W, H, C> {
     /// Note: This disconnects from the existing width value
@@ -109,37 +109,37 @@ impl<
         })
     }
 
-    pub fn with_fixed_x<N: IntoReadState<f64>>(self, x: N) -> Box<Frame<N::Output, Y, W, H, C>> {
+    pub fn with_fixed_x<N: IntoState<f64>>(self, x: N) -> Box<Frame<N::Output, Y, W, H, C>> {
         Box::new(Frame {
             id: self.id,
             child: self.child,
             position: self.position,
-            x: Fixity::Fixed(x.into_read_state()),
+            x: Fixity::Fixed(x.into_state()),
             y: self.y,
             width: self.width,
             height: self.height,
         })
     }
 
-    pub fn with_fixed_y<N: IntoReadState<f64>>(self, y: N) -> Box<Frame<X, N::Output, W, H, C>> {
+    pub fn with_fixed_y<N: IntoState<f64>>(self, y: N) -> Box<Frame<X, N::Output, W, H, C>> {
         Box::new(Frame {
             id: self.id,
             child: self.child,
             position: self.position,
             x: self.x,
-            y: Fixity::Fixed(y.into_read_state()),
+            y: Fixity::Fixed(y.into_state()),
             width: self.width,
             height: self.height,
         })
     }
 
-    pub fn with_fixed_position<N: IntoReadState<f64>, M: IntoReadState<f64>>(self, x: N, y: M) -> Box<Frame<N::Output, M::Output, W, H, C>> {
+    pub fn with_fixed_position<N: IntoState<f64>, M: IntoState<f64>>(self, x: N, y: M) -> Box<Frame<N::Output, M::Output, W, H, C>> {
         Box::new(Frame {
             id: self.id,
             child: self.child,
             position: self.position,
-            x: Fixity::Fixed(x.into_read_state()),
-            y: Fixity::Fixed(y.into_read_state()),
+            x: Fixity::Fixed(x.into_state()),
+            y: Fixity::Fixed(y.into_state()),
             width: self.width,
             height: self.height,
         })
@@ -147,10 +147,10 @@ impl<
 }
 
 impl<
-    X: ReadState<T=f64> + Clone,
-    Y: ReadState<T=f64> + Clone,
-    W: ReadState<T=f64> + Clone,
-    H: ReadState<T=f64> + Clone,
+    X: State<T=f64> + Clone,
+    Y: State<T=f64> + Clone,
+    W: State<T=f64> + Clone,
+    H: State<T=f64> + Clone,
     C: Widget + Clone
 > CommonWidget for Frame<X, Y, W, H, C> {
     fn id(&self) -> WidgetId {
@@ -233,10 +233,10 @@ impl<
 }
 
 impl<
-    X: ReadState<T=f64> + Clone,
-    Y: ReadState<T=f64> + Clone,
-    W: ReadState<T=f64> + Clone,
-    H: ReadState<T=f64> + Clone,
+    X: State<T=f64> + Clone,
+    Y: State<T=f64> + Clone,
+    W: State<T=f64> + Clone,
+    H: State<T=f64> + Clone,
     C: Widget + Clone
 > Layout for Frame<X, Y, W, H, C> {
     fn calculate_size(&mut self, requested_size: Dimension, env: &mut Environment) -> Dimension {
@@ -292,21 +292,21 @@ impl<
 }
 
 impl<
-    X: ReadState<T=f64> + Clone,
-    Y: ReadState<T=f64> + Clone,
-    W: ReadState<T=f64> + Clone,
-    H: ReadState<T=f64> + Clone,
+    X: State<T=f64> + Clone,
+    Y: State<T=f64> + Clone,
+    W: State<T=f64> + Clone,
+    H: State<T=f64> + Clone,
     C: Widget + Clone
 > WidgetExt for Frame<X, Y, W, H, C> {}
 
 #[derive(Clone, Debug)]
-enum Fixity<T: ReadState<T=f64> + Clone> {
+enum Fixity<T: State<T=f64>> {
     Expand(f64),
     Fit(f64),
     Fixed(T),
 }
 
-impl<T: ReadState<T=f64> + Clone> NewStateSync for Fixity<T> {
+impl<T: State<T=f64> + Clone> NewStateSync for Fixity<T> {
     fn sync(&mut self, env: &mut Environment) -> bool {
         match self {
             Fixity::Expand(_) => false,
@@ -316,7 +316,7 @@ impl<T: ReadState<T=f64> + Clone> NewStateSync for Fixity<T> {
     }
 }
 
-impl<T: ReadState<T=f64> + Clone> AnyReadState for Fixity<T> {
+impl<T: State<T=f64> + Clone> AnyReadState for Fixity<T> {
     type T = f64;
 
     fn value_dyn(&self) -> ValueRef<Self::T> {
@@ -328,7 +328,7 @@ impl<T: ReadState<T=f64> + Clone> AnyReadState for Fixity<T> {
     }
 }
 
-impl<T: ReadState<T=f64> + Clone> AnyState for Fixity<T> {
+impl<T: State<T=f64> + Clone> AnyState for Fixity<T> {
     fn value_dyn_mut(&mut self) -> ValueRefMut<Self::T> {
         todo!()
     }
@@ -341,7 +341,7 @@ impl<T: ReadState<T=f64> + Clone> AnyState for Fixity<T> {
             Fixity::Fit(s) => {
                 *s = value;
             }
-            Fixity::Fixed(_) => unreachable!("We should never set fixed states")
+            Fixity::Fixed(s) => s.set_value(value)
         }
     }
 }

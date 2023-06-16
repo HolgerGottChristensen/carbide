@@ -1,4 +1,3 @@
-use lyon::algorithms::path::builder::PathBuilder;
 use lyon::algorithms::path::Winding;
 use lyon::geom::euclid::rect;
 use carbide_core::render::{RenderContext, Style};
@@ -14,7 +13,7 @@ use crate::environment::{Environment};
 use crate::environment::EnvironmentColor;
 use crate::render::{Primitive, PrimitiveKind, Render};
 use crate::state::{ReadState, IntoReadState};
-use crate::widget::{CommonWidget, Widget, WidgetExt, WidgetId};
+use crate::widget::{Blur, CommonWidget, Widget, WidgetExt, WidgetId, ZStack};
 use crate::widget::shape::{Shape, tessellate};
 use crate::widget::types::PrimitiveStore;
 use crate::widget::types::ShapeStyle;
@@ -86,14 +85,10 @@ impl<S2: ReadState<T=Style> + Clone, F2: ReadState<T=Style> + Clone> Rectangle<S
         Box::new(self)
     }
 
-    /*pub fn material(mut self, material: impl Into<TState<Color>>) -> Box<ZStack> {
-        let material_state = material.into();
-        let advanced_material_state: RState<Style> = material_state.into();
-        self.fill_color = advanced_material_state.clone().ignore_writes();
-        self.stroke_color = advanced_material_state.clone().ignore_writes();
-
-        ZStack::new(vec![Blur::gaussian(10.0), Box::new(self)])
-    }*/
+    pub fn material<M: IntoReadState<Color>>(mut self, material: M) -> Box<ZStack> {
+        let comp = self.fill(material.clone().into_read_state());
+        ZStack::new(vec![Blur::gaussian(10.0), comp])
+    }
 
     pub fn position(mut self, position: Position) -> Box<Self> {
         self.position = position;

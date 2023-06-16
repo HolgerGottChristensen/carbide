@@ -17,7 +17,7 @@ use crate::layout::Layout;
 use crate::mesh::{MODE_ICON, MODE_IMAGE};
 use crate::mesh::pre_multiply::PreMultiply;
 use crate::render::{Primitive, PrimitiveKind, Render, Style};
-use crate::state::{IntoReadState, NewStateSync, ReadState};
+use crate::state::{IntoReadState, ReadState};
 use crate::widget::{Widget, WidgetExt, WidgetId};
 use crate::widget::types::ScaleMode;
 

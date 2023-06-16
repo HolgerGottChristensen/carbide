@@ -4,13 +4,13 @@ use std::time::Duration;
 use carbide_core::state::{LocalState, Map1, State};
 use carbide_core::text::FontFamily;
 use carbide_core::widget::*;
-use carbide_core::{task, Color};
+use carbide_core::{task};
 use carbide_core::color::WHITE;
-use carbide_core::draw::Dimension;
+use carbide_core::draw::{Color, Dimension};
 use carbide_core::environment::EnvironmentColor;
 use carbide_core::render::Style;
 use carbide_wgpu::{Application, Window};
-use carbide_core::state::StateExtNew;
+use carbide_core::state::ReadStateExtNew;
 
 fn main() {
     env_logger::init();

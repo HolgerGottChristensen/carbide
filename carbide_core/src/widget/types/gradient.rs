@@ -1,4 +1,6 @@
 use crate::draw::{Position, Color, Alignment};
+use crate::render::Style;
+use crate::state::{AnyReadState, IntoReadStateHelper, Map1, RMap1};
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum GradientPosition {
@@ -247,5 +249,20 @@ impl Into<GradientPosition> for Position {
 impl Into<GradientPosition> for (f64, f64) {
     fn into(self) -> GradientPosition {
         GradientPosition::Relative(self.0, self.1)
+    }
+}
+
+
+// ---------------------------------------------------
+//  Conversion implementations
+// ---------------------------------------------------
+
+impl<T> IntoReadStateHelper<T, Gradient, Style> for T where T: AnyReadState<T=Gradient> + Clone {
+    type Output = RMap1<fn(&Gradient)->Style, Gradient, Style, T>;
+
+    fn into_read_state_helper(self) -> Self::Output {
+        Map1::read_map(self, |c| {
+            Style::Gradient(c.clone())
+        })
     }
 }

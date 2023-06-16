@@ -1,6 +1,6 @@
 use carbide_core::draw::Dimension;
 use carbide_core::environment::{Environment, EnvironmentColor, EnvironmentFontSize};
-use carbide_core::state::{LocalState, State};
+use carbide_core::state::{AnyState, LocalState, State};
 use carbide_core::text::FontFamily;
 use carbide_core::widget::{Menu, MouseArea, Rectangle, Text, WidgetExt, ZStack};
 use carbide_wgpu::{Application, Window};
@@ -13,7 +13,7 @@ fn main() {
 
     let text = Text::new(counter.clone()).font_size(EnvironmentFontSize::LargeTitle);
 
-    let button = MouseArea::new(Rectangle::new().fill(EnvironmentColor::Yellow))
+    let button = MouseArea::new(*Rectangle::new().fill(EnvironmentColor::Yellow))
         .on_click({
             let counter = counter.clone();
 

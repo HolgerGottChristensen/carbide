@@ -17,7 +17,7 @@ fn main() {
     application.set_scene(Window::new(
         "Bitmap text example",
         Dimension::new(400.0, 600.0),
-        text//.background(Image::new("images/pixelgrid.png").scale_effect(0.5)).frame(400.0, 600.0),
+        text//.background(*Image::new("images/pixelgrid.png").scale_effect(0.5)).frame(400.0, 600.0),
     ).close_application_on_window_close());
 
     application.launch();

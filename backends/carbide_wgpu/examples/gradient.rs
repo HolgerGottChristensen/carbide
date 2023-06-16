@@ -1,6 +1,4 @@
-use carbide_core::Color;
-use carbide_core::draw::alignment::Alignment;
-use carbide_core::draw::{Dimension, Position};
+use carbide_core::draw::{Dimension, Position, Color, Alignment};
 use carbide_core::widget::*;
 use carbide_wgpu::{Application, Window};
 

@@ -3,7 +3,6 @@ use std::collections::HashMap;
 use std::rc::{Rc, Weak};
 
 use fxhash::{FxBuildHasher, FxHashMap};
-use image::GenericImageView;
 
 use carbide_rusttype::{GlyphId, Point, Rect};
 
