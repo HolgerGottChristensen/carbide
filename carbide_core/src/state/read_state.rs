@@ -36,6 +36,22 @@ pub trait AnyReadState: DynClone + NewStateSync + Debug + 'static {
 //  Implementations
 // ---------------------------------------------------
 
+impl<T: StateContract> AnyReadState for Box<dyn AnyReadState<T=T>> {
+    type T = T;
+
+    fn value_dyn(&self) -> ValueRef<Self::T> {
+        self.deref().value_dyn()
+    }
+}
+
+impl<T: StateContract> NewStateSync for Box<dyn AnyReadState<T=T>> {
+    fn sync(&mut self, env: &mut Environment) -> bool {
+        self.deref_mut().sync(env)
+    }
+}
+
+// Blanket implementation, implementing ReadState for all types that
+// implement AnyReadState, Clone and IntoReadState
 impl<T> ReadState for T where T: AnyReadState + Clone + IntoReadState<Self::T> {
     fn value(&self) -> ValueRef<Self::T> {
         self.value_dyn()
@@ -49,7 +65,7 @@ dyn_clone::clone_trait_object!(<T: StateContract> AnyReadState<T=T>);
 // ---------------------------------------------------
 
 mod private {
-    use crate::state::AnyReadState;
+    use crate::state::{AnyReadState, StateContract};
 
     pub trait Sealed {}
 

@@ -120,7 +120,7 @@ impl<F: State<T=Focus> + Clone, L: ReadState<T=String> + Clone, C: State<T=bool>
 }
 
 impl<F: State<T=Focus> + Clone, L: ReadState<T=String> + Clone, C: State<T=bool> + Clone> CommonWidget for PlainSwitch<F, L, C> {
-    CommonWidgetImpl!(self, id: self.id, child: self.child, position: self.position, dimension: self.dimension, flag: Flags::FOCUSABLE);
+    CommonWidgetImpl!(self, id: self.id, child: self.child, position: self.position, dimension: self.dimension, flag: Flags::FOCUSABLE, flexibility: 10);
 }
 
 impl<F: State<T=Focus> + Clone, L: ReadState<T=String> + Clone, C: State<T=bool> + Clone> WidgetExt for PlainSwitch<F, L, C> {}

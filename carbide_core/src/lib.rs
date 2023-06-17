@@ -4,7 +4,7 @@
 //!
 //! If you are new to carbide, we recommend checking out [The Guide](./guide/index.html).
 //!
-//! This issue is a gamechanger: https://rust-lang.github.io/rfcs/2528-type-changing-struct-update-syntax.html
+//! This issue is a game-changer: https://rust-lang.github.io/rfcs/2528-type-changing-struct-update-syntax.html
 //!
 //! https://play.rust-lang.org/?version=stable&mode=debug&edition=2021&gist=45ea0874855a115a2b5d41f947908652
 
