@@ -4,12 +4,13 @@ use carbide_core::environment::{Environment, EnvironmentColor};
 use carbide_core::flags::Flags;
 use carbide_core::focus::{Focus, Focusable};
 use carbide_core::focus::Refocus;
-use carbide_core::state::{AnyState, IntoReadState, IntoState, LocalState, Map1, Map2, ReadState, State, StateExtNew, TState};
+use carbide_core::state::{AnyReadState, AnyState, IntoReadState, IntoState, LocalState, Map1, Map2, ReadState, State, StateExtNew, TState};
 use carbide_core::widget::{
     CommonWidget, HStack, Rectangle, Text, Widget, WidgetExt, WidgetId, ZStack,
 };
 
 use crate::PlainButton;
+use crate::types::CheckBoxValue;
 
 #[derive(Debug, Clone, Widget)]
 #[carbide_exclude(Focusable)]

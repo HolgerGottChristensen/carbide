@@ -9,7 +9,7 @@ pub use plain::*;
 //pub use switch::Switch;
 //pub use text_input::TextInput;
 //pub use types::CheckBoxState;
-//pub use types::CheckBoxValue;
+pub use types::CheckBoxValue;
 
 #[macro_export]
 macro_rules! capture {

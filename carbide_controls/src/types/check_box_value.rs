@@ -1,21 +1,46 @@
+use carbide_core::impl_read_state;
+use carbide_core::state::{AnyReadState, IntoReadStateHelper, Map1, RMap1};
+
 // use carbide_core::environment::Environment;
 // use carbide_core::state::{MapOwnedState, NewStateSync, ReadState, RState, State, TState, ValueRef, ValueRefMut};
 //
 // #[derive(Clone, Debug)]
 // pub struct CheckBoxState(TState<CheckBoxValue>);
 //
-// #[derive(Clone, Debug, PartialEq)]
-// pub enum CheckBoxValue {
-//     True,
-//     Intermediate,
-//     False,
-// }
-//
-// impl Default for CheckBoxValue {
-//     fn default() -> Self {
-//         CheckBoxValue::False
-//     }
-// }
+#[derive(Clone, Debug, PartialEq)]
+pub enum CheckBoxValue {
+    True,
+    Intermediate,
+    False,
+}
+
+impl Default for CheckBoxValue {
+    fn default() -> Self {
+        CheckBoxValue::False
+    }
+}
+
+impl_read_state!(CheckBoxValue);
+
+// ---------------------------------------------------
+//  Conversion implementations
+// ---------------------------------------------------
+/*
+impl<T> IntoReadStateHelper<T, bool, CheckBoxValue> for T where T: AnyReadState<T=bool> + Clone {
+    type Output = RMap1<fn(&bool)->CheckBoxValue, bool, CheckBoxValue, T>;
+
+    fn into_read_state_helper(self) -> Self::Output {
+        Map1::read_map(self, |value| {
+            if *value {
+                CheckBoxValue::True
+            } else {
+                CheckBoxValue::False
+            }
+        })
+    }
+}
+
+*/
 //
 // impl NewStateSync for CheckBoxState {
 //     fn sync(&mut self, env: &mut Environment) -> bool {

@@ -118,23 +118,24 @@ impl<G: Debug + Clone + 'static, F: ReadState<T=G> + Clone> AnyReadState for Box
     }
 }
 
+#[macro_export]
 macro_rules! impl_read_state {
     ($($typ: ty),*) => {
         $(
-        impl NewStateSync for $typ {
-            fn sync(&mut self, _env: &mut Environment) -> bool {
+        impl carbide_core::state::NewStateSync for $typ {
+            fn sync(&mut self, _env: &mut carbide_core::environment::Environment) -> bool {
                 true
             }
         }
-        impl AnyReadState for $typ {
+        impl carbide_core::state::AnyReadState for $typ {
             type T = $typ;
-            fn value_dyn(&self) -> ValueRef<$typ> {
-                ValueRef::Borrow(self)
+            fn value_dyn(&self) -> carbide_core::state::ValueRef<$typ> {
+                carbide_core::state::ValueRef::Borrow(self)
             }
         }
-        impl AnyState for $typ {
-            fn value_dyn_mut(&mut self) -> ValueRefMut<$typ> {
-                ValueRefMut::Borrow(self)
+        impl carbide_core::state::AnyState for $typ {
+            fn value_dyn_mut(&mut self) -> carbide_core::state::ValueRefMut<$typ> {
+                carbide_core::state::ValueRefMut::Borrow(self)
             }
 
             fn set_value_dyn(&mut self, value: $typ) {
