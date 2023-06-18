@@ -34,7 +34,17 @@ impl Default for EnvironmentFontSize {
 //  Conversion implementations
 // ---------------------------------------------------
 
-impl<T> IntoReadStateHelper<T, EnvironmentFontSize, u32> for T where T: AnyReadState<T=EnvironmentFontSize> + Clone {
+impl Convert<u32> for EnvironmentFontSize {
+    type Output<G: AnyReadState<T=Self> + Clone> = EnvMap1<fn(&Environment, &EnvironmentFontSize)->u32, EnvironmentFontSize, u32, G>;
+
+    fn convert<F: AnyReadState<T=EnvironmentFontSize> + Clone>(f: F) -> Self::Output<F> {
+        Map1::read_map_env(f, |env, value| {
+            env.get_font_size(&EnvironmentStateKey::FontSize(value.clone())).unwrap()
+        })
+    }
+}
+
+/*impl<T> IntoReadStateHelper<T, EnvironmentFontSize, u32> for T where T: AnyReadState<T=EnvironmentFontSize> + Clone {
     type Output = EnvMap1<fn(&Environment, &EnvironmentFontSize)->u32, EnvironmentFontSize, u32, T>;
 
     fn into_read_state_helper(self) -> Self::Output {
@@ -42,4 +52,4 @@ impl<T> IntoReadStateHelper<T, EnvironmentFontSize, u32> for T where T: AnyReadS
             env.get_font_size(&EnvironmentStateKey::FontSize(value.clone())).unwrap()
         })
     }
-}
+}*/

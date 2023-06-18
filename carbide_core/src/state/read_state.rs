@@ -154,7 +154,7 @@ impl_read_state!(
     Style, String, (), Color, &'static str, Focus,
     EnvironmentColor, EnvironmentFontSize, Gradient
 );
-
+/*
 impl IntoReadStateHelper<i32, i32, u32> for i32 {
     type Output = RMap1<fn(&i32)->u32, i32, u32, i32>;
 
@@ -173,4 +173,4 @@ impl IntoReadStateHelper<i32, i32, f64> for i32 {
             *c as f64
         })
     }
-}
+}*/

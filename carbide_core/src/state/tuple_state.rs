@@ -12,7 +12,7 @@ macro_rules! tuple_state {
         pub struct $struct_name;
 
         impl $struct_name {
-            pub fn read_map<$($type: StateContract),*, TO: StateContract, $($type2: ReadState<T=$type> + Clone + 'static),*, MAP: Fn($(&$type),*) -> TO + Clone + 'static>($($name: $type2),*, map: MAP) -> $read_map_name<MAP, $($type),*, TO, $($type2),*> {
+            pub fn read_map<$($type: StateContract),*, TO: StateContract, $($type2: AnyReadState<T=$type> + Clone + 'static),*, MAP: Fn($(&$type),*) -> TO + Clone + 'static>($($name: $type2),*, map: MAP) -> $read_map_name<MAP, $($type),*, TO, $($type2),*> {
                 $read_map_name {
                     $(
                         $name,
@@ -21,7 +21,7 @@ macro_rules! tuple_state {
                 }
             }
 
-            pub fn read_map_env<$($type: StateContract),*, TO: StateContract + Default, $($type2: ReadState<T=$type> + Clone + 'static),*, MAP: Fn(&Environment, $(&$type),*) -> TO + Clone + 'static>($($name: $type2),*, map: MAP) -> $env_map_name<MAP, $($type),*, TO, $($type2),*> {
+            pub fn read_map_env<$($type: StateContract),*, TO: StateContract + Default, $($type2: AnyReadState<T=$type> + Clone + 'static),*, MAP: Fn(&Environment, $(&$type),*) -> TO + Clone + 'static>($($name: $type2),*, map: MAP) -> $env_map_name<MAP, $($type),*, TO, $($type2),*> {
                 $env_map_name {
                     $(
                         $name,
@@ -79,7 +79,7 @@ macro_rules! tuple_state {
 
         #[derive(Clone)]
         #[allow(unused_parens)]
-        pub struct $read_map_name<MAP, $($type),*, TO, $($type2),*> where $($type: StateContract),*, TO: StateContract, $($type2: ReadState<T=$type> + Clone + 'static),*, MAP: Fn($(&$type),*) -> TO + Clone + 'static {
+        pub struct $read_map_name<MAP, $($type),*, TO, $($type2),*> where $($type: StateContract),*, TO: StateContract, $($type2: AnyReadState<T=$type> + Clone + 'static),*, MAP: Fn($(&$type),*) -> TO + Clone + 'static {
             $(
                 $name: $type2,
             )*
@@ -88,7 +88,7 @@ macro_rules! tuple_state {
 
         #[derive(Clone)]
         #[allow(unused_parens)]
-        pub struct $env_map_name<MAP, $($type),*, TO: Default, $($type2),*> where $($type: StateContract),*, TO: StateContract, $($type2: ReadState<T=$type> + Clone + 'static),*, MAP: Fn(&Environment, $(&$type),*) -> TO + Clone + 'static {
+        pub struct $env_map_name<MAP, $($type),*, TO: Default, $($type2),*> where $($type: StateContract),*, TO: StateContract, $($type2: AnyReadState<T=$type> + Clone + 'static),*, MAP: Fn(&Environment, $(&$type),*) -> TO + Clone + 'static {
             $(
                 $name: $type2,
             )*
@@ -98,7 +98,7 @@ macro_rules! tuple_state {
 
 
         /// Implement NewStateSync for the RMap
-        impl<$($type: StateContract),*, TO: StateContract, $($type2: ReadState<T=$type> + Clone + 'static),*, MAP: Fn($(&$type),*) -> TO + Clone + 'static> NewStateSync for $read_map_name<MAP, $($type),*, TO, $($type2),*> {
+        impl<$($type: StateContract),*, TO: StateContract, $($type2: AnyReadState<T=$type> + Clone + 'static),*, MAP: Fn($(&$type),*) -> TO + Clone + 'static> NewStateSync for $read_map_name<MAP, $($type),*, TO, $($type2),*> {
             fn sync(&mut self, env: &mut Environment) -> bool {
                 let mut updated = false;
 
@@ -124,7 +124,7 @@ macro_rules! tuple_state {
         }
 
         /// Implement NewStateSync for the EnvMap
-        impl<$($type: StateContract),*, TO: StateContract + Default, $($type2: ReadState<T=$type> + Clone + 'static),*, MAP: Fn(&Environment, $(&$type),*) -> TO + Clone + 'static> NewStateSync for $env_map_name<MAP, $($type),*, TO, $($type2),*> {
+        impl<$($type: StateContract),*, TO: StateContract + Default, $($type2: AnyReadState<T=$type> + Clone + 'static),*, MAP: Fn(&Environment, $(&$type),*) -> TO + Clone + 'static> NewStateSync for $env_map_name<MAP, $($type),*, TO, $($type2),*> {
             fn sync(&mut self, env: &mut Environment) -> bool {
                 $(
                     self.$name.sync(env);
@@ -136,7 +136,7 @@ macro_rules! tuple_state {
             }
         }
 
-        impl<$($type: StateContract),*, TO: StateContract, $($type2: ReadState<T=$type> + Clone + 'static),*, MAP: Fn($(&$type),*) -> TO + Clone + 'static> AnyReadState for $read_map_name<MAP, $($type),*, TO, $($type2),*> {
+        impl<$($type: StateContract),*, TO: StateContract, $($type2: AnyReadState<T=$type> + Clone + 'static),*, MAP: Fn($(&$type),*) -> TO + Clone + 'static> AnyReadState for $read_map_name<MAP, $($type),*, TO, $($type2),*> {
             type T = TO;
             fn value_dyn(&self) -> ValueRef<TO> {
                 let val = (self.map)($(&*self.$name.value()),*);
@@ -152,7 +152,7 @@ macro_rules! tuple_state {
             }
         }
 
-        impl<$($type: StateContract),*, TO: StateContract + Default, $($type2: ReadState<T=$type> + Clone + 'static),*, MAP: Fn(&Environment, $(&$type),*) -> TO + Clone + 'static> AnyReadState for $env_map_name<MAP, $($type),*, TO, $($type2),*> {
+        impl<$($type: StateContract),*, TO: StateContract + Default, $($type2: AnyReadState<T=$type> + Clone + 'static),*, MAP: Fn(&Environment, $(&$type),*) -> TO + Clone + 'static> AnyReadState for $env_map_name<MAP, $($type),*, TO, $($type2),*> {
             type T = TO;
             fn value_dyn(&self) -> ValueRef<TO> {
                 ValueRef::Borrow(&self.value)
@@ -181,7 +181,7 @@ macro_rules! tuple_state {
             fn update_dependent_dyn(&mut self) {}
         }
 
-        impl<$($type: StateContract),*, TO: StateContract, $($type2: ReadState<T=$type> + Clone + 'static),*, MAP: Fn($(&$type),*) -> TO + Clone + 'static> core::fmt::Debug for $read_map_name<MAP, $($type),*, TO, $($type2),*> {
+        impl<$($type: StateContract),*, TO: StateContract, $($type2: AnyReadState<T=$type> + Clone + 'static),*, MAP: Fn($(&$type),*) -> TO + Clone + 'static> core::fmt::Debug for $read_map_name<MAP, $($type),*, TO, $($type2),*> {
             fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
                 f.debug_struct(stringify!($read_map_name))
                     $(
@@ -191,7 +191,7 @@ macro_rules! tuple_state {
             }
         }
 
-        impl<$($type: StateContract),*, TO: StateContract + Default, $($type2: ReadState<T=$type> + Clone + 'static),*, MAP: Fn(&Environment, $(&$type),*) -> TO + Clone + 'static> core::fmt::Debug for $env_map_name<MAP, $($type),*, TO, $($type2),*> {
+        impl<$($type: StateContract),*, TO: StateContract + Default, $($type2: AnyReadState<T=$type> + Clone + 'static),*, MAP: Fn(&Environment, $(&$type),*) -> TO + Clone + 'static> core::fmt::Debug for $env_map_name<MAP, $($type),*, TO, $($type2),*> {
             fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
                 f.debug_struct(stringify!($read_map_name))
                     $(

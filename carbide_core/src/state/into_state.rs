@@ -28,6 +28,16 @@ macro_rules! impl_string_state {
                 })
             }
         }
+
+        impl carbide_core::state::Convert<String> for $typ {
+            type Output<G: AnyReadState<T=Self> + Clone> = RMap1<fn(&$typ)->String, $typ, String, G>;
+
+            fn convert<F: AnyReadState<T=$typ> + Clone>(f: F) -> Self::Output<F> {
+                Map1::read_map(f, |s| {
+                    s.to_string()
+                })
+            }
+        }
         )*
 
     };

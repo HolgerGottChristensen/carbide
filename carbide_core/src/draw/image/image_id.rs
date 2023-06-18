@@ -38,7 +38,7 @@ impl AsRef<Path> for ImageId {
 //  Conversion implementations
 // ---------------------------------------------------
 
-impl<T> IntoReadStateHelper<T, &'static str, Option<ImageId>> for T where T: AnyReadState<T=&'static str> + Clone {
+/*impl<T> IntoReadStateHelper<T, &'static str, Option<ImageId>> for T where T: AnyReadState<T=&'static str> + Clone {
     type Output = RMap1<fn(&&'static str)-> Option<ImageId>, &'static str,  Option<ImageId>, T>;
 
     fn into_read_state_helper(self) -> Self::Output {
@@ -56,4 +56,4 @@ impl<T> IntoReadStateHelper<T, PathBuf, Option<ImageId>> for T where T: AnyReadS
             Some(ImageId::new(c))
         })
     }
-}
+}*/

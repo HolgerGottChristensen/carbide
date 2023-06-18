@@ -22,9 +22,23 @@ pub trait IntoReadStateHelper<T, U, B: StateContract>: Clone where T: AnyReadSta
     fn into_read_state_helper(self) -> Self::Output;
 }
 
+pub trait Convert<T: StateContract>: StateContract {
+    type Output<G: AnyReadState<T=Self> + Clone>: ReadState<T=T>;
+
+    fn convert<F: AnyReadState<T=Self> + Clone>(f: F) -> Self::Output<F>;
+}
+
 // ---------------------------------------------------
 //  Implementations
 // ---------------------------------------------------
+
+impl<T: StateContract> Convert<T> for T {
+    type Output<G: AnyReadState<T=Self> + Clone> = G;
+
+    fn convert<F: AnyReadState<T=T> + Clone>(f: F) -> Self::Output<F> {
+        f
+    }
+}
 
 /// Default implementation that implements `IntoReadStateHelper` using the identity.
 /// If something is a state of `U`, it can always be converted into a state of `U`.
@@ -36,12 +50,14 @@ impl<T, U: StateContract> IntoReadStateHelper<T, U, U> for T where T: AnyReadSta
     }
 }
 
+
+
 /// A blanket implementation that implements `IntoReadState` for all things
 /// that implement `IntoReadStateHelper`.
-impl<T: AnyReadState<T=A>, A, B: StateContract> IntoReadState<B> for T where T: IntoReadStateHelper<T, A, B> {
-    type Output = T::Output;
+impl<T: AnyReadState<T=A> + Clone, A: StateContract, B: StateContract> IntoReadState<B> for T where A: Convert<B> {
+    type Output = A::Output<T>;
 
     fn into_read_state(self) -> Self::Output {
-        self.into_read_state_helper()
+        A::convert(self)
     }
 }
