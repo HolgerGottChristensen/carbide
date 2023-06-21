@@ -21,6 +21,7 @@ pub use self::local_state::LocalState;
 pub use self::map_owned_state::*;
 pub use self::read_state::*;
 pub use self::into_read_state::*;
+pub use self::into_state::*;
 pub use self::read_widget_state::ReadWidgetState;
 pub use self::state::*;
 pub use self::state_ext::*;

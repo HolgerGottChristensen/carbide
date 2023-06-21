@@ -8,6 +8,10 @@ use crate::state::*;
 use crate::state::ReadState;
 use crate::state::util::value_cell::ValueRefMut;
 
+// ---------------------------------------------------
+//  Definitions
+// ---------------------------------------------------
+
 pub trait State: ReadState + AnyState + IntoState<Self::T> + private::Sealed {
     /// This retrieves the value mutably. This is the entry point to changing a value in a state.
     /// This implements deref and deref_mut. Most state mutates the actual value in the state, but
@@ -46,18 +50,35 @@ pub trait AnyState: AnyReadState {
     fn update_dependent_dyn(&mut self) {}
 }
 
-pub trait IntoState<T> where T: StateContract {
-    type Output: State<T=T>;
-
-    fn into_state(self) -> Self::Output;
+// ---------------------------------------------------
+//  Implementations
+// ---------------------------------------------------
+impl<T: StateContract> NewStateSync for Box<dyn AnyState<T=T>> {
+    fn sync(&mut self, env: &mut Environment) -> bool {
+        self.deref_mut().sync(env)
+    }
 }
 
-mod private {
-    use crate::state::AnyState;
+impl<T: StateContract> AnyReadState for Box<dyn AnyState<T=T>> {
+    type T = T;
 
-    pub trait Sealed {}
+    fn value_dyn(&self) -> ValueRef<Self::T> {
+        self.deref().value_dyn()
+    }
+}
 
-    impl<T> Sealed for T where T: AnyState {}
+impl<T: StateContract> AnyState for Box<dyn AnyState<T=T>> {
+    fn value_dyn_mut(&mut self) -> ValueRefMut<Self::T> {
+        self.deref_mut().value_dyn_mut()
+    }
+
+    fn set_value_dyn(&mut self, value: Self::T) {
+        self.deref_mut().set_value_dyn(value)
+    }
+
+    fn update_dependent_dyn(&mut self) {
+        self.deref_mut().update_dependent_dyn()
+    }
 }
 
 impl<T> State for T where T: AnyState + Clone + IntoState<Self::T> {
@@ -74,37 +95,15 @@ impl<T> State for T where T: AnyState + Clone + IntoState<Self::T> {
     }
 }
 
-impl<T: StateContract, U> IntoState<T> for U where U: AnyState<T=T> + Clone {
-    type Output = U;
-
-    fn into_state(self) -> Self::Output {
-        self
-    }
-}
-
-
 dyn_clone::clone_trait_object!(<T: StateContract> AnyState<T=T>);
 
+// ---------------------------------------------------
+//  Utility
+// ---------------------------------------------------
+mod private {
+    use crate::state::AnyState;
 
-impl<T: StateContract> NewStateSync for Box<dyn AnyState<T=T>> {
-    fn sync(&mut self, env: &mut Environment) -> bool {
-        self.deref_mut().sync(env)
-    }
-}
+    pub trait Sealed {}
 
-impl<T: StateContract> AnyReadState for Box<dyn AnyState<T=T>> {
-    type T = T;
-    fn value_dyn(&self) -> ValueRef<T> {
-        self.deref().value_dyn()
-    }
-}
-
-impl<T: StateContract> AnyState for Box<dyn AnyState<T=T>> {
-    fn value_dyn_mut(&mut self) -> ValueRefMut<T> {
-        self.deref_mut().value_dyn_mut()
-    }
-
-    fn set_value_dyn(&mut self, value: T) {
-        self.deref_mut().set_value_dyn(value)
-    }
+    impl<T> Sealed for T where T: AnyState {}
 }

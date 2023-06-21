@@ -2,9 +2,7 @@ use carbide_controls::PlainButton;
 use carbide_core::draw::Dimension;
 use carbide_core::environment::EnvironmentColor;
 use carbide_core::focus::Focus;
-use carbide_core::state::{
-    LocalState, State, ReadStateExtNew,
-};
+use carbide_core::state::{LocalState, State, ReadStateExtNew, ReadState};
 use carbide_core::widget::*;
 use carbide_wgpu::{Application, Window};
 
@@ -30,7 +28,8 @@ fn main() {
     let button = PlainButton::new(*Rectangle::new().fill(EnvironmentColor::Accent))
         .on_click(move |_: &mut _, _: _| {
             let mut temp = button_counter_state.clone();
-            *temp.value_mut() += 1;
+            let current = *temp.value();
+            temp.set_value(current + 1);
         })
         .hovered(hover_state.clone())
         .pressed(pressed_state.clone())

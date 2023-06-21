@@ -1,6 +1,6 @@
 use carbide_core::draw::Dimension;
 use carbide_core::environment::{Environment, EnvironmentColor, EnvironmentFontSize};
-use carbide_core::state::{AnyState, LocalState, State};
+use carbide_core::state::{AnyState, LocalState, ReadState, State};
 use carbide_core::text::FontFamily;
 use carbide_core::widget::{Menu, MouseArea, Rectangle, Text, WidgetExt, ZStack};
 use carbide_wgpu::{Application, Window};
@@ -21,14 +21,9 @@ fn main() {
                 use carbide_core::state::State;
                 let mut counter = counter.clone();
 
-                {
-                    let mut counter = counter.value_mut();
-                    {
-                        *counter = *counter + 1;
-                        println!("{}", *counter);
-                    }
-                }
-                counter.update_dependent_dyn();
+                let current = *counter.value();
+                counter.set_value(current + 1);
+                println!("{}", *counter);
             }
         })
         .frame(100.0, 30.0);

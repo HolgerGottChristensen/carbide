@@ -89,10 +89,11 @@ impl<F: State<T=Focus> + Clone, L: ReadState<T=String> + Clone, C: State<T=bool>
 
         let button = Box::new(PlainButton::new(delegate_widget)
             .on_click(capture!([checked, focus], |env: &mut Environment| {
-                *checked = !*checked;
+                let current = !*checked.value();
+                checked.set_value(current);
 
-                if *focus != Focus::Focused {
-                    *focus = Focus::FocusRequested;
+                if *focus.value() != Focus::Focused {
+                    focus.set_value(Focus::FocusRequested);
                     env.request_focus(Refocus::FocusRequest);
                 }
             }))

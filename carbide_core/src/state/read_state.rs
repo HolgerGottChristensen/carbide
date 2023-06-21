@@ -36,17 +36,17 @@ pub trait AnyReadState: DynClone + NewStateSync + Debug + 'static {
 //  Implementations
 // ---------------------------------------------------
 
+impl<T: StateContract> NewStateSync for Box<dyn AnyReadState<T=T>> {
+    fn sync(&mut self, env: &mut Environment) -> bool {
+        self.deref_mut().sync(env)
+    }
+}
+
 impl<T: StateContract> AnyReadState for Box<dyn AnyReadState<T=T>> {
     type T = T;
 
     fn value_dyn(&self) -> ValueRef<Self::T> {
         self.deref().value_dyn()
-    }
-}
-
-impl<T: StateContract> NewStateSync for Box<dyn AnyReadState<T=T>> {
-    fn sync(&mut self, env: &mut Environment) -> bool {
-        self.deref_mut().sync(env)
     }
 }
 
@@ -71,6 +71,21 @@ mod private {
 
     impl<T> Sealed for T where T: AnyReadState {}
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 impl<G> NewStateSync for Vec<G> {}
 impl<G: Debug + Clone + 'static> AnyReadState for Vec<G> {

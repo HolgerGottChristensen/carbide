@@ -1,11 +1,41 @@
+use crate::state::{Map1, RMap1, AnyReadState, IntoReadState, StateContract, State, AnyState};
 
 
+// ---------------------------------------------------
+//  Definitions
+// ---------------------------------------------------
 
+pub trait IntoState<T> where T: StateContract {
+    type Output: State<T=T>;
 
+    fn into_state(self) -> Self::Output;
+}
 
-use crate::state::{Map1, RMap1, IntoReadStateHelper, AnyReadState};
+pub trait ConvertInto<T: StateContract>: StateContract {
+    type Output<G: AnyState<T=Self> + Clone>: State<T=T>;
 
+    fn convert<F: AnyState<T=Self> + Clone>(f: F) -> Self::Output<F>;
+}
 
+// ---------------------------------------------------
+//  Implementations
+// ---------------------------------------------------
+
+impl<T: StateContract> ConvertInto<T> for T {
+    type Output<G: AnyState<T=Self> + Clone> = G;
+
+    fn convert<F: AnyState<T=T> + Clone>(f: F) -> Self::Output<F> {
+        f
+    }
+}
+
+impl<T: AnyState<T=A> + Clone, A: StateContract, B: StateContract> IntoState<B> for T where A: ConvertInto<B> {
+    type Output = A::Output<T>;
+
+    fn into_state(self) -> Self::Output {
+        A::convert(self)
+    }
+}
 
 
 /*impl<T: ReadState<T=T> + Clone> IntoReadState<T> for T {
@@ -19,17 +49,7 @@ use crate::state::{Map1, RMap1, IntoReadStateHelper, AnyReadState};
 macro_rules! impl_string_state {
     ($($typ: ty),*) => {
         $(
-        impl<T> IntoReadStateHelper<T, $typ, String> for T where T: AnyReadState<T=$typ> + Clone {
-            type Output = RMap1<fn(&$typ) -> String, $typ, String, T>;
-
-            fn into_read_state_helper(self) -> Self::Output {
-                Map1::read_map(self, |s| {
-                    s.to_string()
-                })
-            }
-        }
-
-        impl carbide_core::state::Convert<String> for $typ {
+        impl carbide_core::state::ConvertIntoRead<String> for $typ {
             type Output<G: AnyReadState<T=Self> + Clone> = RMap1<fn(&$typ)->String, $typ, String, G>;
 
             fn convert<F: AnyReadState<T=$typ> + Clone>(f: F) -> Self::Output<F> {

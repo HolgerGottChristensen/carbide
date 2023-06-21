@@ -1,5 +1,5 @@
 use carbide_core::impl_read_state;
-use carbide_core::state::{AnyReadState, Convert, IntoReadStateHelper, Map1, RMap1};
+use carbide_core::state::{AnyReadState, AnyState, ConvertInto, ConvertIntoRead, Map1, RMap1, RWMap1};
 
 // use carbide_core::environment::Environment;
 // use carbide_core::state::{MapOwnedState, NewStateSync, ReadState, RState, State, TState, ValueRef, ValueRefMut};
@@ -26,7 +26,7 @@ impl_read_state!(CheckBoxValue);
 //  Conversion implementations
 // ---------------------------------------------------
 
-impl Convert<CheckBoxValue> for bool {
+impl ConvertIntoRead<CheckBoxValue> for bool {
     type Output<G: AnyReadState<T=Self> + Clone> = RMap1<fn(&bool)->CheckBoxValue, bool, CheckBoxValue, G>;
 
     fn convert<F: AnyReadState<T=Self> + Clone>(f: F) -> Self::Output<F> {
@@ -39,6 +39,22 @@ impl Convert<CheckBoxValue> for bool {
         })
     }
 }
+
+impl ConvertInto<CheckBoxValue> for bool {
+    type Output<G: AnyState<T=Self> + Clone> = RWMap1<fn(&bool)->CheckBoxValue, fn(CheckBoxValue, &bool)->(Option<bool>), bool, CheckBoxValue, G>;
+
+    fn convert<F: AnyState<T=Self> + Clone>(f: F) -> Self::Output<F> {
+        Map1::map(f, |value| {
+            if *value { CheckBoxValue::True } else { CheckBoxValue::False }
+        }, |new, old| {
+            match new {
+                 CheckBoxValue::True => Some(true),
+                 CheckBoxValue::Intermediate | CheckBoxValue::False => Some(false),
+             }
+        })
+    }
+}
+
 
 /*impl<T> IntoReadStateHelper<T, bool, CheckBoxValue> for T where T: AnyReadState<T=bool> + Clone {
     type Output = RMap1<fn(&bool)->CheckBoxValue, bool, CheckBoxValue, T>;

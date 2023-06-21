@@ -21,11 +21,11 @@ macro_rules! capture {
                 use carbide_core::state::State;
                 $($(let mut $t = $t.clone();)*)?
                 $($(let mut $u = $u.clone();)*)?
-                {
-                    $($(let mut $t = $t.value_mut();)*)?
+                //{
+                    //$($(let mut $t = $t.value_mut();)*)?
                     $b
-                }
-                $($($t.update_dependent();)*)?
+                //}
+                //$($($t.update_dependent();)*)?
             }
         }
     };

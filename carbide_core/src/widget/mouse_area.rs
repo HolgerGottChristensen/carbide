@@ -221,23 +221,23 @@ impl<
         match event {
             MouseEvent::Press(MouseButton::Left, mouse_position, _) => {
                 if self.is_inside(*mouse_position) {
-                    *self.is_pressed.value_mut() = true;
+                    self.is_pressed.set_value(true);
                 }
             }
             MouseEvent::Release(MouseButton::Left, mouse_position, _) => {
                 if self.is_inside(*mouse_position) {
-                    *self.is_pressed.value_mut() = false;
+                    self.is_pressed.set_value(false);
                 }
             }
             MouseEvent::Move { to, .. } => {
                 if *self.is_hovered.value() {
                     if !self.is_inside(*to) {
-                        *self.is_hovered.value_mut() = false;
-                        *self.is_pressed.value_mut() = false;
+                        self.is_pressed.set_value(false);
+                        self.is_hovered.set_value(false);
                     }
                 } else {
                     if self.is_inside(*to) {
-                        *self.is_hovered.value_mut() = true;
+                        self.is_hovered.set_value(true);
                     }
                 }
             }
@@ -275,7 +275,7 @@ impl<
     }
 
     fn set_focus(&mut self, focus: Focus) {
-        *self.focus.value_mut() = focus;
+        self.focus.set_value(focus);
     }
 
     fn position(&self) -> Position {

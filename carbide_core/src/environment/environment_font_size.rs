@@ -34,7 +34,7 @@ impl Default for EnvironmentFontSize {
 //  Conversion implementations
 // ---------------------------------------------------
 
-impl Convert<u32> for EnvironmentFontSize {
+impl ConvertIntoRead<u32> for EnvironmentFontSize {
     type Output<G: AnyReadState<T=Self> + Clone> = EnvMap1<fn(&Environment, &EnvironmentFontSize)->u32, EnvironmentFontSize, u32, G>;
 
     fn convert<F: AnyReadState<T=EnvironmentFontSize> + Clone>(f: F) -> Self::Output<F> {

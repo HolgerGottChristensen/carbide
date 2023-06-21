@@ -83,7 +83,7 @@ impl Default for EnvironmentColor {
 //  Conversion implementations
 // ---------------------------------------------------
 
-impl Convert<Color> for EnvironmentColor {
+impl ConvertIntoRead<Color> for EnvironmentColor {
     type Output<G: AnyReadState<T=Self> + Clone> = EnvMap1<fn(&Environment, &EnvironmentColor)->Color, EnvironmentColor, Color, G>;
 
     fn convert<F: AnyReadState<T=EnvironmentColor> + Clone>(f: F) -> Self::Output<F> {
@@ -93,7 +93,7 @@ impl Convert<Color> for EnvironmentColor {
     }
 }
 
-impl Convert<Style> for EnvironmentColor {
+impl ConvertIntoRead<Style> for EnvironmentColor {
     type Output<G: AnyReadState<T=Self> + Clone> = EnvMap1<fn(&Environment, &EnvironmentColor)->Style, EnvironmentColor, Style, G>;
 
     fn convert<F: AnyReadState<T=EnvironmentColor> + Clone>(f: F) -> Self::Output<F> {

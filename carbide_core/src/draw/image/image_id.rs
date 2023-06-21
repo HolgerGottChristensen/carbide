@@ -1,7 +1,7 @@
 use std::path::{Path, PathBuf};
 use std::rc::Rc;
 
-use crate::state::{AnyReadState, IntoReadStateHelper, Map1, RMap1};
+use crate::state::{AnyReadState, ConvertIntoRead, Map1, RMap1};
 
 /// Unique image identifier.
 ///
@@ -38,22 +38,22 @@ impl AsRef<Path> for ImageId {
 //  Conversion implementations
 // ---------------------------------------------------
 
-/*impl<T> IntoReadStateHelper<T, &'static str, Option<ImageId>> for T where T: AnyReadState<T=&'static str> + Clone {
-    type Output = RMap1<fn(&&'static str)-> Option<ImageId>, &'static str,  Option<ImageId>, T>;
+impl ConvertIntoRead<Option<ImageId>> for &'static str {
+    type Output<G: AnyReadState<T=Self> + Clone> = RMap1<fn(&&'static str)-> Option<ImageId>, &'static str,  Option<ImageId>, G>;
 
-    fn into_read_state_helper(self) -> Self::Output {
-        Map1::read_map(self, |c| {
+    fn convert<F: AnyReadState<T=Self> + Clone>(f: F) -> Self::Output<F> {
+        Map1::read_map(f, |c| {
             Some(ImageId::new(c))
         })
     }
 }
 
-impl<T> IntoReadStateHelper<T, PathBuf, Option<ImageId>> for T where T: AnyReadState<T=PathBuf> + Clone {
-    type Output = RMap1<fn(&PathBuf)-> Option<ImageId>, PathBuf,  Option<ImageId>, T>;
+impl ConvertIntoRead<Option<ImageId>> for PathBuf {
+    type Output<G: AnyReadState<T=Self> + Clone> = RMap1<fn(&PathBuf)-> Option<ImageId>, PathBuf,  Option<ImageId>, G>;
 
-    fn into_read_state_helper(self) -> Self::Output {
-        Map1::read_map(self, |c| {
+    fn convert<F: AnyReadState<T=Self> + Clone>(f: F) -> Self::Output<F> {
+        Map1::read_map(f, |c| {
             Some(ImageId::new(c))
         })
     }
-}*/
+}

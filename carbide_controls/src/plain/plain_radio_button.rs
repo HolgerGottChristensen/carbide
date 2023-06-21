@@ -94,10 +94,10 @@ impl<T: StateContract + PartialEq, F: State<T=Focus>, L: ReadState<T=String>, C:
             .on_click(capture!(
                 [state, focus],
                 |env: &mut Environment| {
-                    *state = local_reference2.clone();
+                    state.set_value(local_reference2.clone());
 
-                    if *focus != Focus::Focused {
-                        *focus = Focus::FocusRequested;
+                    if *focus.value() != Focus::Focused {
+                        focus.set_value(Focus::FocusRequested);
                         env.request_focus(Refocus::FocusRequest);
                     }
                 }
