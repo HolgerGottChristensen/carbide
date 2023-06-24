@@ -108,8 +108,10 @@ impl<C: Widget + Clone> OtherEventHandler for OverlaidLayer<C> {
 
 impl<C: Widget + Clone> Layout for OverlaidLayer<C> {
     fn calculate_size(&mut self, requested_size: Dimension, env: &mut Environment) -> Dimension {
-        self.dimension = self.child.calculate_size(requested_size, env);
-        self.dimension
+        env.with_overlay_layer(self.overlay_id, self.overlays.clone(), |new_env| {
+            self.dimension = self.child.calculate_size(requested_size, new_env);
+            self.dimension
+        })
     }
 }
 
@@ -144,9 +146,11 @@ impl<C: Widget + Clone> Render for OverlaidLayer<C> {
 
     fn render(&mut self, context: &mut RenderContext, env: &mut Environment) {
 
-        env.with_overlay_layer(self.overlay_id, self.overlays.clone(), |new_env| {
+        /*env.with_overlay_layer(self.overlay_id, self.overlays.clone(), |new_env| {
             self.child.render(context, new_env)
-        });
+        });*/
+
+        self.child.render(context, env);
 
         let mut widgets = self.overlays.borrow_mut();
         for widget in widgets.deref_mut() {

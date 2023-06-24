@@ -10,7 +10,7 @@ use crate::flags::Flags;
 use crate::focus::Focus;
 use crate::render::Style;
 use crate::state::{IntoState, ReadState, TState};
-use crate::widget::{Action, Background, Border, Clip, ClipShape, CornerRadii, Duplicated, EdgeInsets, Empty, EnvUpdating, Flagged, Flexibility, Frame, Hidden, Ignore, MouseArea, Offset, Padding, Rotation3DEffect, RoundedRectangle, Shape, Transform, Widget};
+use crate::widget::{Action, Background, Border, Clip, ClipShape, CornerRadii, Duplicated, EdgeInsets, Empty, EnvUpdating, Flagged, Flexibility, Frame, Hidden, Ignore, MouseArea, Offset, Overlay, Padding, Rotation3DEffect, RoundedRectangle, Shape, Transform, Widget};
 use crate::state::ReadStateExtNew;
 
 pub trait WidgetExt: Widget + Sized + Clone + 'static {
@@ -148,18 +148,8 @@ pub trait WidgetExt: Widget + Sized + Clone + 'static {
     }
 
     /// Returns two widgets. The first should be used within an overlay, and the second within the widget hierarchy.
-    fn overlay(self) -> (Ignore<Duplicated<Self>, bool, bool, bool, bool, bool, bool, bool>, Ignore<Duplicated<Self>, bool, bool, bool, bool, bool, bool, bool>) {
-        let dup = Duplicated::new(self);
-
-        let hierarchy = Ignore::new(dup.duplicate())
-            .render(false)
-            .accept_keyboard_events(false)
-            .accept_mouse_events(false)
-            .accept_other_events(false);
-
-        let overlay = Ignore::new(dup.duplicate()).layout(false);
-
-        (overlay, hierarchy)
+    fn overlay<B: IntoReadState<bool>>(self, layer: &'static str, show: B) -> Overlay<Self, B::Output> {
+        Overlay::new(layer,show, self)
     }
 
     fn on_click<A: Action + Clone>(self, action: A) -> MouseArea<A, fn(&mut Environment, ModifierKey), Focus, Self, bool, bool> {

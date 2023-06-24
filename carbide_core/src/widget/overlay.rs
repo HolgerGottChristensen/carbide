@@ -1,220 +1,255 @@
-use std::cell::RefCell;
-use std::rc::Rc;
-
 use crate::draw::{Dimension, Position};
 use crate::environment::Environment;
 use crate::event::{KeyboardEvent, MouseEvent, WidgetEvent};
 use crate::event::{KeyboardEventHandler, MouseEventHandler, OtherEventHandler};
-use crate::focus::Focusable;
+use crate::flags::Flags;
+use crate::focus::{Focus, Focusable};
 use crate::focus::Refocus;
-use crate::layout::Layout;
+use crate::layout::{Layout, Layouter};
 use crate::render::{Primitive, RenderContext};
 use crate::render::Render;
-use crate::state::{AnyState, LocalState, ReadState, State, StateSync, TState};
-use crate::state::NewStateSync;
-use crate::widget::{CommonWidget, Widget, WidgetExt, WidgetId};
+use crate::state::{IntoReadState, ReadState, StateSync};
+use crate::widget::{CommonWidget, Duplicated, Empty, Ignore, Widget, WidgetExt, WidgetId};
 
 /// A basic, non-interactive rectangle shape widget.
 #[derive(Debug, Clone)]
-pub struct Overlay {
-    id: WidgetId,
-    child: Rc<RefCell<Box<dyn Widget>>>,
-    showing: TState<bool>,
-    position: TState<Position>,
-    dimension: TState<Dimension>,
+pub struct Overlay<W, B> where W: Widget + Clone, B: ReadState<T=bool> {
+    overlay: Ignore<Duplicated<W>, bool, bool, bool, bool, bool, bool, bool>,
+    hierarchy: Ignore<Duplicated<W>, bool, bool, bool, bool, bool, bool, bool>,
+    showing: B,
+    layer_id: &'static str,
 }
 
-impl Overlay {
-    // We do not need to return this in a box, because the overlay widgets should only
-    pub fn new(child: Box<dyn Widget>) -> Self {
+impl Overlay<Empty, bool> {
+    pub fn new<W: Widget + Clone, B: IntoReadState<bool>>(layer: &'static str, showing: B, child: W) -> Overlay<W, B::Output> {
+        let dup = Duplicated::new(child);
+
+        let hierarchy = Ignore::new(dup.duplicate())
+            .render(false)
+            .accept_keyboard_events(false)
+            .accept_mouse_events(false)
+            .accept_other_events(false);
+
+        let overlay = Ignore::new(dup.duplicate()).layout(false);
+
+
         Overlay {
-            id: WidgetId::new(),
-            child: Rc::new(RefCell::new(child)),
-            showing: LocalState::new(false),
-            position: LocalState::new(Position::new(0.0, 0.0)),
-            dimension: LocalState::new(Dimension::new(100.0, 100.0)),
+            overlay,
+            hierarchy,
+            showing: showing.into_read_state(),
+            layer_id: layer,
         }
     }
-
-    pub fn showing(mut self, showing: impl Into<TState<bool>>) -> Self {
-        self.showing = showing.into();
-        self
-    }
-
-    pub fn is_showing(&self) -> bool {
-        *self.showing.value()
-    }
-
-    pub fn set_showing(&mut self, val: bool) {
-        self.showing.set_value_dyn(val);
-    }
-
 }
 
-impl CommonWidget for Overlay {
+impl<W: Widget + Clone, B: ReadState<T=bool>>  Overlay<W, B> {
+    fn ensure_overlay_correct(&mut self, env: &mut Environment) {
+        self.showing.sync(env);
+
+        // TODO: Optimize to not add and remove every time this is called
+        if *self.showing.value() {
+            env.add_overlay(self.layer_id, Box::new(self.overlay.clone()));
+        } else {
+            env.remove_overlay(self.layer_id, self.overlay.id());
+        }
+    }
+}
+
+impl<W: Widget + Clone, B: ReadState<T=bool>> CommonWidget for Overlay<W, B> {
     fn id(&self) -> WidgetId {
-        self.id
+        self.hierarchy.id()
     }
 
-    fn foreach_child<'a>(&'a self, _f: &mut dyn FnMut(&'a dyn Widget)) {
-        panic!("Trying to foreach_child of an overlay");
-        /*if self.child.borrow().is_ignore() {
-            return;
-        }
-
-        if self.child.borrow().is_proxy() {
-            self.child.borrow().foreach_child(f);
-            return;
-        }
-
-        f(self.child.borrow().deref());*/
+    fn flag(&self) -> Flags {
+        self.hierarchy.flag()
     }
 
-    fn foreach_child_mut<'a>(&'a mut self, _f: &mut dyn FnMut(&'a mut dyn Widget)) {
-        panic!("Trying to foreach_child_mut of an overlay");
-        /*if self.child.borrow().is_ignore() {
-            return;
-        }
-
-        if self.child.borrow().is_proxy() {
-            self.child.get_mut().foreach_child_mut(f);
-            return;
-        }
-
-        f(self.child.borrow_mut().deref_mut());*/
+    fn alignment(&self) -> Box<dyn Layouter> {
+        self.hierarchy.alignment()
     }
 
-    fn foreach_child_rev<'a>(&'a mut self, _f: &mut dyn FnMut(&'a mut dyn Widget)) {
-        panic!("Trying to foreach_child_rev of an overlay");
-        /*if self.child.borrow().is_ignore() {
-            return;
-        }
-
-        if self.child.borrow().is_proxy() {
-            self.child.borrow_mut().foreach_child_rev(f);
-            return;
-        }
-
-        f(self.child.borrow_mut().deref_mut());*/
+    fn foreach_child<'a>(&'a self, f: &mut dyn FnMut(&'a dyn Widget)) {
+        self.hierarchy.foreach_child(f)
     }
 
-    fn foreach_child_direct<'a>(&'a mut self, _f: &mut dyn FnMut(&'a mut dyn Widget)) {
-        panic!("Trying to foreach_child_direct of an overlay");
-        //f(self.child.borrow_mut().deref_mut());
+    fn foreach_child_mut<'a>(&'a mut self, f: &mut dyn FnMut(&'a mut dyn Widget)) {
+        self.hierarchy.foreach_child_mut(f)
     }
 
-    fn foreach_child_direct_rev<'a>(&'a mut self, _f: &mut dyn FnMut(&'a mut dyn Widget)) {
-        panic!("Trying to foreach_child_direct_rev of an overlay");
-        //f(self.child.borrow_mut().deref_mut());
+    fn foreach_child_rev<'a>(&'a mut self, f: &mut dyn FnMut(&'a mut dyn Widget)) {
+        self.hierarchy.foreach_child_rev(f)
     }
 
     fn position(&self) -> Position {
-        *self.position.value()
+        self.hierarchy.position()
     }
 
     fn set_position(&mut self, position: Position) {
-        *self.position.value_mut() = position;
+        self.hierarchy.set_position(position)
+    }
+
+    fn get_focus(&self) -> Focus {
+        self.hierarchy.get_focus()
+    }
+
+    fn set_focus(&mut self, focus: Focus) {
+        self.hierarchy.set_focus(focus)
+    }
+
+    fn flexibility(&self) -> u32 {
+        self.hierarchy.flexibility()
     }
 
     fn dimension(&self) -> Dimension {
-        *self.dimension.value()
+        self.hierarchy.dimension()
     }
 
     fn set_dimension(&mut self, dimension: Dimension) {
-        *self.dimension.value_mut() = dimension;
+        self.hierarchy.set_dimension(dimension)
+    }
+
+    fn foreach_child_direct<'a>(&'a mut self, f: &mut dyn FnMut(&'a mut dyn Widget)) {
+        self.hierarchy.foreach_child_direct(f)
+    }
+
+    fn foreach_child_direct_rev<'a>(&'a mut self, f: &mut dyn FnMut(&'a mut dyn Widget)) {
+        self.hierarchy.foreach_child_direct_rev(f)
     }
 }
 
-impl Render for Overlay {
-    fn render(&mut self, context: &mut RenderContext, env: &mut Environment) {
-        self.child.borrow_mut().render(context, env);
+impl<W: Widget + Clone, B: ReadState<T=bool>> MouseEventHandler for Overlay<W, B> {
+    fn handle_mouse_event(&mut self, event: &MouseEvent, consumed: &bool, env: &mut Environment) {
+        self.ensure_overlay_correct(env);
+        self.hierarchy.handle_mouse_event(event, consumed, env)
     }
 
-    fn process_get_primitives(&mut self, primitives: &mut Vec<Primitive>, env: &mut Environment) {
-        self.child.borrow_mut().process_get_primitives(primitives, env)
-    }
-}
-
-impl MouseEventHandler for Overlay {
     fn process_mouse_event(&mut self, event: &MouseEvent, consumed: &bool, env: &mut Environment) {
-        self.capture_state(env);
-
-        self.child.borrow_mut().process_mouse_event(event, consumed, env)
+        self.ensure_overlay_correct(env);
+        self.hierarchy.process_mouse_event(event, consumed, env)
     }
 }
 
-impl OtherEventHandler for Overlay {
-    fn process_other_event(&mut self, event: &WidgetEvent, env: &mut Environment) {
-        self.capture_state(env);
-
-        self.child.borrow_mut().process_other_event(event, env)
+impl<W: Widget + Clone, B: ReadState<T=bool>> KeyboardEventHandler for Overlay<W, B> {
+    fn handle_keyboard_event(&mut self, event: &KeyboardEvent, env: &mut Environment) {
+        self.ensure_overlay_correct(env);
+        self.hierarchy.handle_keyboard_event(event, env)
     }
-}
-impl KeyboardEventHandler for Overlay {
+
     fn process_keyboard_event(&mut self, event: &KeyboardEvent, env: &mut Environment) {
-        self.capture_state(env);
-
-        self.child.borrow_mut().process_keyboard_event(event, env)
+        self.ensure_overlay_correct(env);
+        self.hierarchy.process_keyboard_event(event, env)
     }
 }
 
-impl Focusable for Overlay {
-    fn process_focus_next(&mut self, event: &WidgetEvent, focus_request: &Refocus, focus_up_for_grab: bool, env: &mut Environment) -> bool {
-        self.release_state(env);
-
-        self.child.borrow_mut().process_focus_next(event, focus_request, focus_up_for_grab, env)
+impl<W: Widget + Clone, B: ReadState<T=bool>> OtherEventHandler for Overlay<W, B> {
+    fn handle_other_event(&mut self, event: &WidgetEvent, env: &mut Environment) {
+        self.ensure_overlay_correct(env);
+        self.hierarchy.handle_other_event(event, env)
     }
 
-    fn process_focus_previous(&mut self, event: &WidgetEvent, focus_request: &Refocus, focus_up_for_grab: bool, env: &mut Environment) -> bool {
-        self.release_state(env);
-
-        self.child.borrow_mut().process_focus_previous(event, focus_request, focus_up_for_grab, env)
-    }
-
-    fn process_focus_request(&mut self, event: &WidgetEvent, focus_request: &Refocus, env: &mut Environment) -> bool {
-        self.release_state(env);
-
-        self.child.borrow_mut().process_focus_request(event, focus_request, env)
+    fn process_other_event(&mut self, event: &WidgetEvent, env: &mut Environment) {
+        self.ensure_overlay_correct(env);
+        self.hierarchy.process_other_event(event, env)
     }
 }
 
-impl Layout for Overlay {
-    fn calculate_size(&mut self, requested_size: Dimension, env: &mut Environment) -> Dimension {
-
-        let chosen = self.child.borrow_mut().calculate_size(requested_size, env);
-
-        self.set_dimension(chosen);
-        chosen
-    }
-
-    /// This method positions the children of the widget. When positioning, we use the alignment of
-    /// the widget to position. The default alignment is Center.
-    /// The default behavior is to position the first child using the alignment of the widget. If
-    /// no child are present the default is a no-op.
-    fn position_children(&mut self, env: &mut Environment) {
-        let positioning = self.alignment().positioner();
-        let position = self.position();
-        let dimension = self.dimension();
-
-        positioning(position, dimension, &mut **self.child.borrow_mut());
-        self.child.borrow_mut().position_children(env);
-    }
-}
-
-impl StateSync for Overlay {
+impl<W: Widget + Clone, B: ReadState<T=bool>> StateSync for Overlay<W, B> {
     fn capture_state(&mut self, env: &mut Environment) {
-        self.showing.sync(env);
-        self.position.sync(env);
-        self.dimension.sync(env);
+        self.ensure_overlay_correct(env);
+        self.hierarchy.capture_state(env);
     }
 
     fn release_state(&mut self, env: &mut Environment) {
-        self.showing.sync(env);
-        self.position.sync(env);
-        self.dimension.sync(env);
+        self.ensure_overlay_correct(env);
+        self.hierarchy.release_state(env)
     }
 }
 
-impl Widget for Overlay {}
+impl<W: Widget + Clone, B: ReadState<T=bool>> Layout for Overlay<W, B> {
+    fn calculate_size(&mut self, requested_size: Dimension, env: &mut Environment) -> Dimension {
+        self.ensure_overlay_correct(env);
+        self.hierarchy.calculate_size(requested_size, env)
+    }
 
-impl WidgetExt for Overlay {}
+    fn position_children(&mut self, env: &mut Environment) {
+        self.hierarchy.position_children(env)
+    }
+}
+
+impl<W: Widget + Clone, B: ReadState<T=bool>> Render for Overlay<W, B> {
+    fn render(&mut self, context: &mut RenderContext, env: &mut Environment) {
+        Render::render(&mut self.hierarchy, context, env)
+    }
+
+    fn get_primitives(&mut self, primitives: &mut Vec<Primitive>, env: &mut Environment) {
+        self.hierarchy.get_primitives(primitives, env);
+    }
+
+    fn process_get_primitives(&mut self, primitives: &mut Vec<Primitive>, env: &mut Environment) {
+        self.hierarchy.process_get_primitives(primitives, env);
+    }
+}
+
+impl<W: Widget + Clone, B: ReadState<T=bool>> Focusable for Overlay<W, B> {
+    fn focus_retrieved(
+        &mut self,
+        event: &WidgetEvent,
+        focus_request: &Refocus,
+        env: &mut Environment,
+    ) {
+        self.hierarchy.focus_retrieved(event, focus_request, env)
+    }
+
+    fn focus_dismissed(
+        &mut self,
+        event: &WidgetEvent,
+        focus_request: &Refocus,
+        env: &mut Environment,
+    ) {
+        self.hierarchy.focus_dismissed(event, focus_request, env)
+    }
+
+    fn set_focus_and_request(&mut self, focus: Focus, env: &mut Environment) {
+        self.hierarchy.set_focus_and_request(focus, env)
+    }
+
+    fn process_focus_request(
+        &mut self,
+        event: &WidgetEvent,
+        focus_request: &Refocus,
+        env: &mut Environment,
+    ) -> bool {
+        self.ensure_overlay_correct(env);
+        self.hierarchy
+            .process_focus_request(event, focus_request, env)
+    }
+
+    fn process_focus_next(
+        &mut self,
+        event: &WidgetEvent,
+        focus_request: &Refocus,
+        focus_up_for_grab: bool,
+        env: &mut Environment,
+    ) -> bool {
+        self.ensure_overlay_correct(env);
+        self.hierarchy
+            .process_focus_next(event, focus_request, focus_up_for_grab, env)
+    }
+
+    fn process_focus_previous(
+        &mut self,
+        event: &WidgetEvent,
+        focus_request: &Refocus,
+        focus_up_for_grab: bool,
+        env: &mut Environment,
+    ) -> bool {
+        self.ensure_overlay_correct(env);
+        self.hierarchy
+            .process_focus_previous(event, focus_request, focus_up_for_grab, env)
+    }
+}
+
+
+impl<W: Widget + Clone, B: ReadState<T=bool>> Widget for Overlay<W, B> {}
+
+impl<W: Widget + Clone, B: ReadState<T=bool>> WidgetExt for Overlay<W, B> {}
