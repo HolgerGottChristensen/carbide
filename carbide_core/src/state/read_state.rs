@@ -12,7 +12,7 @@ use crate::render::Style;
 use crate::state::*;
 use crate::state::state_sync::NewStateSync;
 use crate::state::util::value_cell::ValueRef;
-use crate::widget::Gradient;
+use crate::widget::{EdgeInsets, Gradient};
 
 // ---------------------------------------------------
 //  Definitions
@@ -167,7 +167,7 @@ impl_read_state!(
     i128, u128, f32, f64,
     bool, char, isize, usize,
     Style, String, (), Color, &'static str, Focus,
-    EnvironmentColor, EnvironmentFontSize, Gradient
+    EnvironmentColor, EnvironmentFontSize, Gradient, EdgeInsets
 );
 /*
 impl IntoReadStateHelper<i32, i32, u32> for i32 {

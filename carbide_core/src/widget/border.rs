@@ -28,33 +28,33 @@ pub struct Border<W, C> where
 
 impl Border<Empty, Color> {
     #[carbide_default_builder2]
-    pub fn new<W: Widget + Clone>(child: W) -> Box<Border<W, Color>> {
-        Box::new(Border {
+    pub fn new<W: Widget + Clone>(child: W) -> Border<W, Color> {
+        Border {
             id: WidgetId::new(),
             child,
             position: Position::new(0.0, 0.0),
             dimension: Dimension::new(100.0, 100.0),
             color: Color::random(),
             border_width: 2,
-        })
+        }
     }
 }
 
 impl<W: Widget + Clone, D: ReadState<T=Color> + Clone + 'static> Border<W, D> {
-    pub fn color<C: IntoReadState<Color>>(self, color: C) -> Box<Border<W, C::Output>> {
-        Box::new(Border {
+    pub fn color<C: IntoReadState<Color>>(self, color: C) -> Border<W, C::Output> {
+        Border {
             id: self.id,
             child: self.child,
             position: self.position,
             dimension: self.dimension,
             color: color.into_read_state(),
             border_width: 1,
-        })
+        }
     }
 
-    pub fn border_width(mut self, width: u32) -> Box<Border<W, D>> {
+    pub fn border_width(mut self, width: u32) -> Border<W, D> {
         self.border_width = width;
-        Box::new(self)
+        self
     }
 }
 

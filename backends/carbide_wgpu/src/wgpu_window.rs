@@ -230,7 +230,9 @@ pub struct WGPUWindow {
 }
 
 impl WGPUWindow {
-    pub fn new(title: impl Into<String>, dimension: Dimension, child: Box<dyn Widget>) -> Box<Self> {
+    pub fn new<W: Widget>(title: impl Into<String>, dimension: Dimension, child: W) -> Box<Self> {
+        let child: Box<dyn Widget> = Box::new(child);
+
         let window_id = WindowId::new();
         let title = title.into();
 

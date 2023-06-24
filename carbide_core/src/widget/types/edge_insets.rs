@@ -1,4 +1,6 @@
+use carbide_core::state::AnyReadState;
 use crate::draw::Scalar;
+use crate::state::{ConvertIntoRead, Map1, RMap1};
 
 #[derive(Debug, Copy, Clone)]
 pub struct EdgeInsets {
@@ -37,5 +39,15 @@ impl Into<EdgeInsets> for f64 {
 impl Into<EdgeInsets> for u32 {
     fn into(self) -> EdgeInsets {
         EdgeInsets::all(self as f64)
+    }
+}
+
+impl ConvertIntoRead<EdgeInsets> for f64 {
+    type Output<G: AnyReadState<T=Self> + Clone> = RMap1<fn(&f64)->EdgeInsets, f64, EdgeInsets, G>;
+
+    fn convert<F: AnyReadState<T=Self> + Clone>(f: F) -> Self::Output<F> {
+        Map1::read_map(f, |a| {
+            EdgeInsets::all(*a)
+        })
     }
 }

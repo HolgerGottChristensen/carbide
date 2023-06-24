@@ -1,39 +1,38 @@
-
-use carbide_macro::carbide_default_builder;
+use carbide_core::state::ReadState;
+use carbide_macro::{carbide_default_builder, carbide_default_builder2};
 
 use crate::draw::{Dimension, Position};
 use crate::environment::Environment;
 
 use crate::layout::{BasicLayouter, Layout, Layouter};
-use crate::widget::{CommonWidget, Widget, WidgetExt, WidgetId};
+use crate::state::IntoReadState;
+use crate::widget::{CommonWidget, Empty, Widget, WidgetExt, WidgetId};
 use crate::widget::types::EdgeInsets;
 
 #[derive(Debug, Clone, Widget)]
 #[carbide_exclude(Layout)]
-pub struct Padding {
+pub struct Padding<W, E> where W: Widget + Clone, E: ReadState<T=EdgeInsets> {
     id: WidgetId,
-    child: Box<dyn Widget>,
+    child: W,
     position: Position,
     dimension: Dimension,
-    edge_insets: EdgeInsets,
+    edge_insets: E,
 }
 
-impl Padding {
-    #[carbide_default_builder]
-    pub fn new(edge_insets: impl Into<EdgeInsets>, child: Box<dyn Widget>) -> Box<Self> {}
-
-    pub fn new(edge_insets: impl Into<EdgeInsets>, child: Box<dyn Widget>) -> Box<Self> {
-        Box::new(Padding {
+impl Padding<Empty, EdgeInsets> {
+    #[carbide_default_builder2]
+    pub fn new<W: Widget + Clone, E: IntoReadState<EdgeInsets>>(edge_insets: E, child: W) -> Padding<W, E::Output> {
+        Padding {
             id: WidgetId::new(),
             child,
             position: Position::new(0.0, 0.0),
             dimension: Dimension::new(0.0, 0.0),
-            edge_insets: edge_insets.into(),
-        })
+            edge_insets: edge_insets.into_read_state(),
+        }
     }
 }
 
-impl CommonWidget for Padding {
+impl<W: Widget + Clone, E: ReadState<T=EdgeInsets>> CommonWidget for Padding<W, E> {
     fn id(&self) -> WidgetId {
         self.id
     }
@@ -102,32 +101,34 @@ impl CommonWidget for Padding {
     }
 }
 
-impl Layout for Padding {
+impl<W: Widget + Clone, E: ReadState<T=EdgeInsets>> Layout for Padding<W, E> {
     fn calculate_size(&mut self, requested_size: Dimension, env: &mut Environment) -> Dimension {
+        let insets = *self.edge_insets.value();
         let dimensions = Dimension::new(
-            requested_size.width - self.edge_insets.left - self.edge_insets.right,
-            requested_size.height - self.edge_insets.top - self.edge_insets.bottom,
+            requested_size.width - insets.left - insets.right,
+            requested_size.height - insets.top - insets.bottom,
         );
 
         let child_dimensions = self.child.calculate_size(dimensions, env);
 
         self.dimension = Dimension::new(
-            child_dimensions.width + self.edge_insets.left + self.edge_insets.right,
-            child_dimensions.height + self.edge_insets.top + self.edge_insets.bottom,
+            child_dimensions.width + insets.left + insets.right,
+            child_dimensions.height + insets.top + insets.bottom,
         );
 
         self.dimension
     }
 
     fn position_children(&mut self, env: &mut Environment) {
+        let insets = *self.edge_insets.value();
         let positioning = BasicLayouter::Center.positioner();
         let position = Position::new(
-            self.x() + self.edge_insets.left,
-            self.y() + self.edge_insets.top,
+            self.x() + insets.left,
+            self.y() + insets.top,
         );
         let dimension = Dimension::new(
-            self.width() - self.edge_insets.left - self.edge_insets.right,
-            self.height() - self.edge_insets.top - self.edge_insets.bottom,
+            self.width() - insets.left - insets.right,
+            self.height() - insets.top - insets.bottom,
         );
 
         positioning(position, dimension, &mut self.child);
@@ -135,4 +136,4 @@ impl Layout for Padding {
     }
 }
 
-impl WidgetExt for Padding {}
+impl<W: Widget + Clone, E: ReadState<T=EdgeInsets>> WidgetExt for Padding<W, E> {}

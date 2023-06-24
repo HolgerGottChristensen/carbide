@@ -94,8 +94,8 @@ pub trait WidgetExt: Widget + Sized + Clone + 'static {
 
     /// Set a padding around a widget. This will take any value that can be converted into EdgeInsets
     /// This includes values like 10.0 which will apply a padding of 10.0 at all sides of the widget.
-    fn padding(self, edge_insets: impl Into<EdgeInsets>) -> Box<Padding> {
-        Padding::new(edge_insets.into(), Box::new(self))
+    fn padding<E: IntoReadState<EdgeInsets>>(self, edge_insets: E) -> Padding<Self, E::Output> {
+        Padding::new(edge_insets, self)
     }
 
     /// Clip the content of the widget. The clip area will be the requested area for the widget. It
@@ -123,7 +123,7 @@ pub trait WidgetExt: Widget + Sized + Clone + 'static {
         Offset::new(offset_x, offset_y, self)
     }
 
-    fn border(self) -> Box<Border<Self, Color>> {
+    fn border(self) -> Border<Self, Color> {
         Border::new(self)
     }
 
