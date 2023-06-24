@@ -3,6 +3,7 @@ use carbide_core::environment::EnvironmentColor;
 use carbide_core::state::{LocalState, StateExt, TState};
 use carbide_core::widget::*;
 use carbide_wgpu::{Application, Window};
+use carbide_core::state::ReadStateExtNew;
 
 fn main() {
     let width1 = LocalState::new(0.1);
@@ -14,7 +15,7 @@ fn main() {
 
     application.set_scene(Window::new(
         "HSplit example",
-        Dimension::new(200.0, 400.0),
+        Dimension::new(400.0, 600.0),
         VStack::new(vec![
             h_split(&width1).relative_to_start(width1),
             h_split(&percent).percent(percent),
@@ -25,7 +26,7 @@ fn main() {
     application.launch();
 }
 
-fn h_split(size: &TState<f64>) -> Box<HSplit> {
+fn h_split(size: &TState<f64>) -> Box<HSplit<f64>> {
     HSplit::new(
         ZStack::new(vec![
             Rectangle::new().fill(EnvironmentColor::Green),

@@ -3,6 +3,7 @@ use carbide_core::environment::EnvironmentColor;
 use carbide_core::state::{LocalState, StateExt, TState};
 use carbide_core::widget::*;
 use carbide_wgpu::{Application, Window};
+use carbide_core::state::ReadStateExtNew;
 
 fn main() {
     let height1 = LocalState::new(0.1);
@@ -21,12 +22,12 @@ fn main() {
             v_split(&percent).percent(percent),
             v_split(&height2).relative_to_end(height2),
         ])
-    ));
+    ).close_application_on_window_close());
 
     application.launch();
 }
 
-fn v_split(size: &TState<f64>) -> Box<VSplit> {
+fn v_split(size: &TState<f64>) -> Box<VSplit<f64>> {
     VSplit::new(
         ZStack::new(vec![
             Rectangle::new().fill(EnvironmentColor::Green),
