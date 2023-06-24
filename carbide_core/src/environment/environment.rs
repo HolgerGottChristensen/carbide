@@ -1,7 +1,9 @@
+use std::cell::RefCell;
 use std::collections::HashMap;
 use std::future::Future;
 use std::option::Option::Some;
 use std::path::{Path, PathBuf};
+use std::rc::Rc;
 use std::time::Instant;
 
 use bitflags::_core::fmt::Formatter;
@@ -10,6 +12,8 @@ use fxhash::{FxBuildHasher, FxHashMap};
 use image::DynamicImage;
 use oneshot::TryRecvError;
 use raw_window_handle::{HasRawWindowHandle, RawWindowHandle};
+use carbide_core::state::ReadState;
+use carbide_core::widget::Widget;
 
 use crate::locate_folder;
 use crate::animation::Animation;
@@ -25,11 +29,13 @@ use crate::event::{CustomEvent, EventSink, HasEventSink};
 use crate::focus::Refocus;
 use crate::layout::BasicLayouter;
 use crate::mesh::TextureAtlas;
-use crate::state::{InnerState, StateContract, EnvironmentStateKey, ValueCell};
+use crate::state::{InnerState, StateContract, EnvironmentStateKey, ValueCell, AnyReadState};
 use crate::text::{Font, FontFamily, FontId, FontSize, FontStyle, FontWeight, Glyph};
-use crate::widget::{FilterId, ImageFilter, Overlay};
+use crate::widget::{FilterId, ImageFilter, Overlay, WidgetId};
 use crate::widget::ImageInformation;
 use crate::window::WindowId;
+
+type Overlays = Vec<(Box<dyn Widget>, Box<dyn AnyReadState<T=bool>>)>;
 
 pub struct Environment {
     /// This stack should be used to scope the environment. This contains information such as
@@ -58,7 +64,7 @@ pub struct Environment {
 
     /// A map from String to a widget.
     /// This key should correspond to the targeted overlay_layer
-    overlay_map: FxHashMap<String, Option<Overlay>>,
+    overlay_map: FxHashMap<&'static str, Rc<RefCell<Vec<Box<dyn Widget>>>>>,
 
     /// A transfer place for widgets. It is a map with key Option<String>. If None it means the
     /// action should be picked up by the closest parent consumer. If Some it will look at the Id
@@ -509,14 +515,67 @@ impl Environment {
         }))
     }
 
+    pub fn with_overlay_layer<R, F: FnOnce(&mut Environment)->R>(&mut self, id: &'static str, layer: Rc<RefCell<Vec<Box<dyn Widget>>>>, f: F) -> R {
+        let old = self.overlay_map.insert(id, layer);
 
-    pub fn overlay(&mut self, id: &String) -> Option<Option<Overlay>> {
-        self.overlay_map.remove(id)
+        let res = f(self);
+
+        if let Some(old) = old {
+            self.overlay_map.insert(id, old);
+        } else {
+            self.overlay_map.remove(id);
+        }
+
+        res
     }
 
-    pub fn add_overlay(&mut self, id: &str, overlay: Option<Overlay>) {
-        self.overlay_map.insert(id.to_string(), overlay);
+    pub fn add_overlay(&mut self, id: &'static str, widget: Box<dyn Widget>) {
+        if let Some(layer) = self.overlay_map.get_mut(&id) {
+            layer.borrow_mut().retain(|a| a.id() != widget.id());
+            layer.borrow_mut().push(widget);
+        } else {
+            println!("Cannot add an overlay without a layer");
+        }
     }
+
+    pub fn contains_overlay(&self, id: &'static str, widget_id: WidgetId) -> bool {
+        if let Some(layer) = self.overlay_map.get(&id) {
+            layer.borrow_mut().iter().any(|a| a.id() == widget_id)
+        } else {
+            println!("Cannot add an overlay without a layer");
+            false
+        }
+    }
+
+    pub fn remove_overlay(&mut self, id: &'static str, widget_id: WidgetId) {
+        if let Some(layer) = self.overlay_map.get_mut(&id) {
+            layer.borrow_mut().retain(|a| a.id() != widget_id);
+        } else {
+            println!("Cannot add an overlay without a layer");
+        }
+    }
+
+    /*pub fn overlay(&mut self, id: &'static str) -> Option<&mut Overlays> {
+        let overlays = self.overlay_map.get_mut(&id);
+
+        if let Some(o) = overlays {
+            o.retain(|(_, retain)| *retain.value());
+
+            return Some(o)
+        } else {
+            None
+        }
+    }*/
+
+    /*pub fn add_overlay(&mut self, id: &'static str, widget: Box<dyn Widget>, keep: Box<dyn AnyReadState<T=bool>>) {
+        if let Some(s) = self.overlay_map.get_mut(&id) {
+            s.push((widget, keep));
+        } else {
+            let new = vec![(widget, keep)];
+            self.overlay_map.insert(id, new);
+        }
+        self.request_animation_frame();
+    }*/
 
     pub fn transferred_widget(&mut self, id: Option<String>) -> Option<WidgetTransferAction> {
         self.widget_transfer.remove(&id)
@@ -531,6 +590,10 @@ impl Environment {
         if self.animation_widget_in_frame > 0 {
             self.animation_widget_in_frame -= 1;
         }
+    }
+
+    pub fn number_of_animation_frames(&self) -> usize {
+        self.animation_widget_in_frame
     }
 
     pub fn request_animation_frame(&mut self) {

@@ -237,7 +237,7 @@ impl WGPUWindow {
 
         let child = ZStack::new(vec![
             Rectangle::new().fill(EnvironmentColor::SystemBackground),
-            OverlaidLayer::new("controls_popup_layer", child).steal_events(),
+            Box::new(OverlaidLayer::new("controls_popup_layer", child).steal_events()),
         ]);
 
         let builder = WindowBuilder::new()

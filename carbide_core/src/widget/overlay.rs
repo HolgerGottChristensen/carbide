@@ -1,19 +1,18 @@
 use std::cell::RefCell;
 use std::rc::Rc;
-use carbide_core::event::{KeyboardEvent, MouseEvent, WidgetEvent};
-use carbide_core::focus::Refocus;
-use carbide_core::render::{Primitive, RenderContext};
-
 
 use crate::draw::{Dimension, Position};
 use crate::environment::Environment;
+use crate::event::{KeyboardEvent, MouseEvent, WidgetEvent};
 use crate::event::{KeyboardEventHandler, MouseEventHandler, OtherEventHandler};
 use crate::focus::Focusable;
+use crate::focus::Refocus;
 use crate::layout::Layout;
+use crate::render::{Primitive, RenderContext};
 use crate::render::Render;
 use crate::state::{AnyState, LocalState, ReadState, State, StateSync, TState};
+use crate::state::NewStateSync;
 use crate::widget::{CommonWidget, Widget, WidgetExt, WidgetId};
-use carbide_core::state::NewStateSync;
 
 /// A basic, non-interactive rectangle shape widget.
 #[derive(Debug, Clone)]

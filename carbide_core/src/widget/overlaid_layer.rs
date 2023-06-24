@@ -1,5 +1,8 @@
-
-use carbide_macro::carbide_default_builder;
+use std::cell::RefCell;
+use std::ops::DerefMut;
+use std::rc::Rc;
+use carbide_core::render::RenderContext;
+use carbide_macro::carbide_default_builder2;
 
 use crate::CommonWidgetImpl;
 use crate::draw::{Dimension, Position};
@@ -10,122 +13,113 @@ use crate::event::{
 };
 use crate::layout::Layout;
 use crate::render::{Primitive, Render};
-use crate::widget::{CommonWidget, Overlay, Widget, WidgetExt, WidgetId};
+use crate::widget::{CommonWidget, Empty, Widget, WidgetExt, WidgetId};
 
 #[derive(Debug, Clone, Widget)]
 #[carbide_exclude(Render, Layout, MouseEvent, KeyboardEvent, OtherEvent)]
-pub struct OverlaidLayer {
+pub struct OverlaidLayer<C> where C: Widget + Clone {
     id: WidgetId,
-    child: Box<dyn Widget>,
-    overlay: Option<Overlay>,
-    overlay_id: String,
+    child: C,
+    overlay_id: &'static str,
+    overlays: Rc<RefCell<Vec<Box<dyn Widget>>>>,
     position: Position,
     dimension: Dimension,
     steal_events_when_some: bool,
 }
 
-impl OverlaidLayer {
-    #[carbide_default_builder]
-    pub fn new(overlay_id: &str, child: Box<dyn Widget>) -> Box<Self> {}
-
-    pub fn new(overlay_id: &str, child: Box<dyn Widget>) -> Box<Self> {
-        Box::new(Self {
+impl OverlaidLayer<Empty> {
+    #[carbide_default_builder2]
+    pub fn new<C: Widget + Clone>(overlay_id: &'static str, child: C) -> OverlaidLayer<C> {
+        OverlaidLayer {
             id: WidgetId::new(),
             child,
-            overlay: None,
-            overlay_id: overlay_id.to_string(),
+            overlay_id,
+            overlays: Rc::new(RefCell::new(vec![])),
             position: Position::new(0.0, 0.0),
             dimension: Dimension::new(0.0, 0.0),
             steal_events_when_some: false,
-        })
+        }
     }
+}
 
-    pub fn steal_events(mut self) -> Box<Self> {
+impl<C: Widget + Clone> OverlaidLayer<C> {
+    pub fn steal_events(mut self) -> OverlaidLayer<C> {
         self.steal_events_when_some = true;
-        Box::new(self)
+        self
     }
 }
 
-impl MouseEventHandler for OverlaidLayer {
+impl<C: Widget + Clone> MouseEventHandler for OverlaidLayer<C> {
     fn process_mouse_event(&mut self, event: &MouseEvent, consumed: &bool, env: &mut Environment) {
-
-        if let Some(overlay) = &mut self.overlay {
-            overlay.process_mouse_event(event, consumed, env);
-            if *consumed {
-                return;
-            }
-
-            if !self.steal_events_when_some {
-                self.foreach_child_direct(&mut |child| {
-                    child.process_mouse_event(event, &consumed, env);
-                    if *consumed {
-                        return;
-                    }
-                });
-            }
-        } else {
-            self.foreach_child_direct(&mut |child| {
-                child.process_mouse_event(event, &consumed, env);
-                if *consumed {
-                    return;
-                }
-            });
+        let mut widgets = self.overlays.borrow_mut();
+        for widget in widgets.deref_mut() {
+            widget.process_mouse_event(event, consumed, env)
         }
+
+        if self.steal_events_when_some && widgets.len() > 0 {
+            return;
+        }
+
+        drop(widgets);
+
+        env.with_overlay_layer(self.overlay_id, self.overlays.clone(), |new_env| {
+            self.child.process_mouse_event(event, consumed, new_env)
+        });
     }
 }
 
-impl KeyboardEventHandler for OverlaidLayer {
+impl<C: Widget + Clone> KeyboardEventHandler for OverlaidLayer<C> {
     fn process_keyboard_event(&mut self, event: &KeyboardEvent, env: &mut Environment) {
-
-        if let Some(overlay) = &mut self.overlay {
-            overlay.process_keyboard_event(event, env);
-            if !self.steal_events_when_some {
-
-                self.foreach_child_direct(&mut |child| {
-                    child.process_keyboard_event(event, env);
-                });
-            }
-        } else {
-            self.foreach_child_direct(&mut |child| {
-                child.process_keyboard_event(event, env);
-            });
+        let mut widgets = self.overlays.borrow_mut();
+        for widget in widgets.deref_mut() {
+            widget.process_keyboard_event(event, env)
         }
+
+        if self.steal_events_when_some && widgets.len() > 0 {
+            return;
+        }
+
+        drop(widgets);
+
+        env.with_overlay_layer(self.overlay_id, self.overlays.clone(), |new_env| {
+            self.child.process_keyboard_event(event, new_env)
+        });
     }
 }
 
-impl OtherEventHandler for OverlaidLayer {
+impl<C: Widget + Clone> OtherEventHandler for OverlaidLayer<C> {
     fn process_other_event(&mut self, event: &WidgetEvent, env: &mut Environment) {
-
-        if let Some(overlay) = &mut self.overlay {
-            overlay.process_other_event(event, env);
-            if !self.steal_events_when_some {
-
-                self.foreach_child_direct(&mut |child| {
-                    child.process_other_event(event, env);
-                });
-            }
-        } else {
-            self.foreach_child_direct(&mut |child| {
-                child.process_other_event(event, env);
-            });
+        let mut widgets = self.overlays.borrow_mut();
+        for widget in widgets.deref_mut() {
+            widget.process_other_event(event, env)
         }
+
+        if self.steal_events_when_some && widgets.len() > 0 {
+            return;
+        }
+
+        drop(widgets);
+
+        env.with_overlay_layer(self.overlay_id, self.overlays.clone(), |new_env| {
+            self.child.process_other_event(event, new_env)
+        });
     }
 }
 
-impl Layout for OverlaidLayer {
+impl<C: Widget + Clone> Layout for OverlaidLayer<C> {
     fn calculate_size(&mut self, requested_size: Dimension, env: &mut Environment) -> Dimension {
         self.dimension = self.child.calculate_size(requested_size, env);
         self.dimension
     }
 }
 
-impl CommonWidget for OverlaidLayer {
+impl<C: Widget + Clone> CommonWidget for OverlaidLayer<C> {
     CommonWidgetImpl!(self, id: self.id, child: self.child, position: self.position, dimension: self.dimension, flexibility: 0);
 }
 
-impl Render for OverlaidLayer {
+impl<C: Widget + Clone> Render for OverlaidLayer<C> {
     fn process_get_primitives(&mut self, primitives: &mut Vec<Primitive>, env: &mut Environment) {
-        self.foreach_child_mut(&mut |child| {
+        /*self.foreach_child_mut(&mut |child| {
             child.process_get_primitives(primitives, env);
         });
 
@@ -145,8 +139,20 @@ impl Render for OverlaidLayer {
 
         if let Some(t) = &mut self.overlay {
             t.process_get_primitives(primitives, env);
+        }*/
+    }
+
+    fn render(&mut self, context: &mut RenderContext, env: &mut Environment) {
+
+        env.with_overlay_layer(self.overlay_id, self.overlays.clone(), |new_env| {
+            self.child.render(context, new_env)
+        });
+
+        let mut widgets = self.overlays.borrow_mut();
+        for widget in widgets.deref_mut() {
+            widget.render(context, env)
         }
     }
 }
 
-impl WidgetExt for OverlaidLayer {}
+impl<C: Widget + Clone> WidgetExt for OverlaidLayer<C> {}

@@ -40,6 +40,8 @@ pub use self::transform::*;
 pub use self::v_split::*;
 pub use self::v_stack::*;
 pub use self::z_stack::*;
+pub use self::duplicated::*;
+pub use self::ignore::*;
 
 pub mod canvas;
 mod common;
@@ -83,6 +85,8 @@ mod v_split;
 mod v_stack;
 mod window_menu;
 mod z_stack;
+mod duplicated;
+mod ignore;
 
 #[derive(Clone, Debug, Default, Copy, Hash, Eq, PartialEq, Ord, PartialOrd)]
 pub struct WidgetId(u32);

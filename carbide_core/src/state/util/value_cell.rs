@@ -236,6 +236,25 @@ impl<'b, T> ValueRef<'b, T> {
             }
         }
     }
+
+    pub fn apply<U: ?Sized>(self, s: &mut U, f: fn(&'b T, &mut U)) {
+        match self {
+            ValueRef::CellBorrow { value, .. } => {
+                f(value, s)
+            }
+            ValueRef::Locked(value) => {
+                //MappedRwLockReadGuard::map(value, |a| {f(a, s); a});
+                todo!()
+            }
+            ValueRef::Borrow(value) => {
+                f(value, s)
+            }
+            ValueRef::Owned(value) => {
+                todo!()
+                //f(&value, s)
+            }
+        }
+    }
 }
 
 impl<T: fmt::Display> fmt::Display for ValueRef<'_, T> {
@@ -304,6 +323,27 @@ impl<'b, T: Clone> ValueRefMut<'b, T> {
             ValueRefMut::Owned(mut value) => ValueRefMut::Owned(f(&mut value).clone()),
             ValueRefMut::Locked(value) => {
                 ValueRefMut::Locked(MappedRwLockWriteGuard::map(value, f))
+            }
+        }
+    }
+}
+
+impl<'b, T> ValueRefMut<'b, T> {
+    pub fn apply<U: ?Sized>(self, s: &mut U, f: fn(&'b mut T, &mut U)) {
+        match self {
+            ValueRefMut::CellBorrow { value, .. } => {
+                f(value, s)
+            }
+            ValueRefMut::Locked(value) => {
+                //MappedRwLockReadGuard::map(value, |a| {f(a, s); a});
+                todo!()
+            }
+            ValueRefMut::Borrow(value) => {
+                f(value, s)
+            }
+            ValueRefMut::Owned(value) => {
+                todo!()
+                //f(&value, s)
             }
         }
     }
