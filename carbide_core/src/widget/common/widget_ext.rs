@@ -155,4 +155,8 @@ pub trait WidgetExt: Widget + Sized + Clone + 'static {
     fn on_click<A: Action + Clone>(self, action: A) -> MouseArea<A, fn(&mut Environment, ModifierKey), Focus, Self, bool, bool> {
         MouseArea::new(self).on_click(action)
     }
+
+    fn boxed(self) -> Box<dyn Widget> {
+        Box::new(self)
+    }
 }

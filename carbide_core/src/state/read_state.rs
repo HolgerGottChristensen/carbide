@@ -120,6 +120,15 @@ impl<G: Debug + Clone + 'static> AnyReadState for Option<G> {
         ValueRef::Borrow(self)
     }
 }
+impl<G: Debug + Clone + 'static> AnyState for Option<G> {
+    fn value_dyn_mut(&mut self) -> ValueRefMut<Option<G>> {
+        ValueRefMut::Borrow(self)
+    }
+
+    fn set_value_dyn(&mut self, value: Option<G>) {
+        *self = value;
+    }
+}
 
 impl<G: NewStateSync> NewStateSync for Box<G> {
     fn sync(&mut self, env: &mut Environment) -> bool {

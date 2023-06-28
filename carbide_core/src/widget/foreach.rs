@@ -9,7 +9,7 @@ use crate::draw::{Dimension, Position};
 use crate::environment::Environment;
 use crate::event::{OtherEventHandler, WidgetEvent};
 use crate::flags::Flags;
-use crate::state::{AnyState, IndexState, ReadState, State, StateContract, StateExtNew, ValueState};
+use crate::state::{AnyState, IndexState, IntoReadState, IntoState, ReadState, State, StateContract, StateExtNew, ValueState};
 use crate::widget::{CommonWidget, Empty, Widget, WidgetExt, WidgetId};
 
 pub trait Delegate<T: StateContract, O: Widget + Clone>: Clone {
@@ -36,10 +36,10 @@ impl Delegate<(), Empty> for EmptyDelegate {
 pub struct ForEach<T, M, U, W, I>
 where
     T: StateContract,
-    M: State<T=Vec<T>> + Clone + 'static,
+    M: State<T=Vec<T>>,
     W: Widget + Clone,
     U: Delegate<T, W> + 'static,
-    I: ReadState<T=usize> + Clone + 'static
+    I: ReadState<T=usize>
 {
     id: WidgetId,
     position: Position,
@@ -56,12 +56,12 @@ where
 impl ForEach<(), Vec<()>, EmptyDelegate, Empty, usize> {
 
     #[carbide_default_builder2]
-    pub fn new<T: StateContract, M: State<T=Vec<T>> + Clone, W: Widget + Clone, U: Delegate<T, W>>(model: M, delegate: U) -> Box<ForEach<T, M, U, W, usize>> {
+    pub fn new<T: StateContract, M: IntoState<Vec<T>> + Clone, W: Widget + Clone, U: Delegate<T, W>>(model: M, delegate: U) -> Box<ForEach<T, M::Output, U, W, usize>> {
         Box::new(ForEach {
             id: WidgetId::new(),
             position: Position::default(),
             dimension: Dimension::default(),
-            model,
+            model: model.into_state(),
             delegate,
             children: vec![],
             index_offset: 0,
