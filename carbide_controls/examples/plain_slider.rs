@@ -20,7 +20,7 @@ fn main() {
                     .clone()
                     .map(|a: &f64| format!("Slider value: {:.2}", a)),
             ),
-            PlainSlider::new(progress.clone(), 20.0, 100.0)
+            PlainSlider::new(progress.clone(), 40.0, 80.0)
                 .border()
                 .color(EnvironmentColor::Yellow)
                 .padding(20.0)
@@ -32,7 +32,7 @@ fn main() {
                     .map(|a: &f64| format!("Slider step value: {:.2}", a)),
             ),
             PlainSlider::new(progress, 20.0, 100.0)
-                .step(Some(15.0))
+                //.step(Some(15.0))
                 .border()
                 .color(EnvironmentColor::Yellow)
                 .padding(20.0)

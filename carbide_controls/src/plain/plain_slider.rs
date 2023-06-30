@@ -347,11 +347,11 @@ impl<
                 *self.start.value(),
                 *self.end.value(),
                 steps
-            );
+            ).max(0.0).min(1.0);
 
             requested_size.width * stepped_percent
         } else {
-            requested_size.width * percent
+            requested_size.width * percent.max(0.0).min(1.0)
         };
 
         let track_dimensions = Dimension::new(track_width, requested_size.height);
@@ -378,11 +378,11 @@ impl<
                 *self.start.value(),
                 *self.end.value(),
                 steps
-            );
+            ).max(0.0).min(1.0);
 
             self.x() + (self.background.width() - self.thumb.width()) * stepped_percent
         } else {
-            self.x() + (self.background.width() - self.thumb.width()) * *self.percent.value()
+            self.x() + (self.background.width() - self.thumb.width()) * (*self.percent.value()).max(0.0).min(1.0)
         };
 
         self.background.set_position(Position::new(position.x(), background_y));
