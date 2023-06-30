@@ -94,7 +94,7 @@ impl WGPURenderContext {
 
     pub fn start(&mut self, window_bounding_box: Rect) {
         self.frame_count += 1;
-        println!("Start render frame: {}", self.frame_count);
+        //println!("Start render frame: {}", self.frame_count);
         self.window_bounding_box = window_bounding_box;
         self.clear()
     }
@@ -104,7 +104,7 @@ impl WGPURenderContext {
             panic!("Trying to finish a render context that is already in a finished state.");
         }
 
-        println!("Finish render frame: {}", self.frame_count);
+        //println!("Finish render frame: {}", self.frame_count);
 
         match &self.state {
             State::Plain { start } => {

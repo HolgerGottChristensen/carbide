@@ -1,12 +1,12 @@
 use carbide_controls::PlainSlider;
 use carbide_core::draw::Dimension;
-use carbide_core::state::{LocalState, StateExt};
+use carbide_core::environment::EnvironmentColor;
+use carbide_core::state::{LocalState, StateExt, ReadStateExtNew};
 use carbide_core::widget::*;
 use carbide_wgpu::{Application, Window};
 
 fn main() {
-    let progress = LocalState::new(80.0);
-    let progress2 = LocalState::new(80.0);
+    let progress = LocalState::new(80.0); // Test bounds of slider.
 
     let mut application = Application::new()
         .with_asset_fonts();
@@ -14,25 +14,29 @@ fn main() {
     application.set_scene(Window::new(
         "Plain slider example",
         Dimension::new(400.0, 400.0),
-        VStack::new(vec![
+        *VStack::new(vec![
             Text::new(
                 progress
                     .clone()
                     .map(|a: &f64| format!("Slider value: {:.2}", a)),
             ),
-            PlainSlider::new(progress, 20.0, 100.0)
+            PlainSlider::new(progress.clone(), 20.0, 100.0)
                 .border()
-                .padding(20.0),
+                .color(EnvironmentColor::Yellow)
+                .padding(20.0)
+                .boxed(),
             Empty::new().frame(20.0, 20.0),
             Text::new(
-                progress2
+                progress
                     .clone()
                     .map(|a: &f64| format!("Slider step value: {:.2}", a)),
             ),
-            PlainSlider::new(progress2, 20.0, 100.0)
-                .step(5.0)
+            PlainSlider::new(progress, 20.0, 100.0)
+                .step(Some(15.0))
                 .border()
-                .padding(20.0),
+                .color(EnvironmentColor::Yellow)
+                .padding(20.0)
+                .boxed(),
         ])
     ).close_application_on_window_close());
 
