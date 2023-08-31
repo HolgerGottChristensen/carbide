@@ -73,7 +73,7 @@ impl Search {
     /// # Example
     ///
     /// ```
-    /// use find_folder::Search;
+    /// use carbide_core::locate_folder::Search;
     ///
     /// let mut exe_folder = std::env::current_exe().unwrap();
     /// exe_folder.pop(); // Remove the executable's name, leaving the path to the containing folder
@@ -81,7 +81,7 @@ impl Search {
     /// ```
     pub fn of(self, start: PathBuf) -> SearchFolder {
         SearchFolder {
-            start: start,
+            start,
             direction: self,
         }
     }

@@ -34,7 +34,7 @@ fn main() {
     .spacing(0.0)
     .rotation_effect(45.0);
 
-    let materials = ZStack::new(vec![
+    let materials = *ZStack::new(vec![
         background,
         VStack::new(vec![
             HStack::new(vec![

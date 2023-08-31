@@ -310,7 +310,8 @@ impl Application {
                     Event::RedrawRequested(_) => {
                         self.root.render(&mut RenderContext::new(&mut NoopRenderContext), &mut self.environment);
 
-                        self.root.process_get_primitives(&mut vec![], &mut self.environment);
+                        // TODO Re-enable this for primitives drawing
+                        //self.root.process_get_primitives(&mut vec![], &mut self.environment);
 
                         // Wait for the next event to be received
                         *control_flow = ControlFlow::Wait;

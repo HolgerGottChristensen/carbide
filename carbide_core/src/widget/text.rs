@@ -170,14 +170,6 @@ impl<T2: ReadState<T=String> + Clone, S2: ReadState<T=u32> + Clone, C2: ReadStat
         self.justify(Justify::Right)
     }
 
-    pub fn glyphs(&self) -> Vec<Glyph> {
-        if let Some(internal) = &self.internal_text {
-            internal.first_glyphs()
-        } else {
-            vec![]
-        }
-    }
-
     pub fn get_style(&self) -> TextStyle {
         let color = if self.text_span_generator.store_color() {
             Some(self.color.value().deref().clone())
@@ -250,6 +242,7 @@ impl<T: ReadState<T=String> + Clone, S: ReadState<T=u32> + Clone, C: ReadState<T
     fn position_children(&mut self, env: &mut Environment) {
         if let Some(internal) = &mut self.internal_text {
             internal.position(self.position.tolerance(1.0/env.scale_factor()));
+            //internal.position(self.position);
 
             internal.ensure_glyphs_added_to_atlas(env);
         }
@@ -357,7 +350,6 @@ impl<T: ReadState<T=String> + Clone, S: ReadState<T=u32> + Clone, C: ReadState<T
 
     fn foreach_child_direct_rev<'a>(&'a mut self, _f: &mut dyn FnMut(&'a mut dyn Widget)) {}
 
-
     fn position(&self) -> Position {
         self.position
     }
@@ -380,3 +372,21 @@ impl<T: ReadState<T=String> + Clone, S: ReadState<T=u32> + Clone, C: ReadState<T
 }
 
 impl<T: ReadState<T=String> + Clone, S: ReadState<T=u32> + Clone, C: ReadState<T=Color> + Clone> WidgetExt for Text<T, S, C> {}
+
+pub trait TextWidget: Widget {
+    fn glyphs(&self) -> Vec<Glyph>;
+}
+
+impl<T: ReadState<T=String> + Clone, S: ReadState<T=u32> + Clone, C: ReadState<T=Color> + Clone> TextWidget for Text<T, S, C> {
+    fn glyphs(&self) -> Vec<Glyph> {
+        if let Some(internal) = &self.internal_text {
+            internal.first_glyphs()
+        } else {
+            vec![]
+        }
+    }
+}
+
+impl Widget for Box<dyn TextWidget> {}
+
+dyn_clone::clone_trait_object!(TextWidget);

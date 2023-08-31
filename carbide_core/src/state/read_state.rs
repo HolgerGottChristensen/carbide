@@ -142,6 +142,23 @@ impl<G: Debug + Clone + 'static, F: ReadState<T=G> + Clone> AnyReadState for Box
     }
 }
 
+impl<T, E> NewStateSync for Result<T, E> {}
+impl<T: Debug + Clone + 'static, E: Debug + Clone + 'static> AnyReadState for Result<T, E> {
+    type T = Result<T, E>;
+    fn value_dyn(&self) -> ValueRef<Result<T, E>> {
+        ValueRef::Borrow(self)
+    }
+}
+impl<T: Debug + Clone + 'static, E: Debug + Clone + 'static> AnyState for Result<T, E> {
+    fn value_dyn_mut(&mut self) -> ValueRefMut<Result<T, E>> {
+        ValueRefMut::Borrow(self)
+    }
+
+    fn set_value_dyn(&mut self, value: Result<T, E>) {
+        *self = value;
+    }
+}
+
 #[macro_export]
 macro_rules! impl_read_state {
     ($($typ: ty),*) => {

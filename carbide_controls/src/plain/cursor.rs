@@ -57,11 +57,9 @@ impl Cursor {
 pub struct CursorIndex {
     /// The index of the line upon which the cursor is situated.
     pub line: usize,
-    /// The index within all possible cursor positions for the line.
-    ///
-    /// For example, for the line `foo`, a `char` of `1` would indicate the cursor's position
-    /// as `f|oo` where `|` is the cursor.
-    pub char: usize,
+
+    /// The index of the grapheme in the string. 0 means the cursor is at the start of the string.
+    pub index: usize,
 }
 
 impl CursorIndex {
@@ -69,11 +67,11 @@ impl CursorIndex {
     /// the cursor can be in range 0..glyphs.len()+1
     pub fn position(&self, text: &str, glyphs: &Vec<Glyph>) -> Position {
         if self.line == 0 {
-            if self.char == 0 {
+            if self.index == 0 {
                 return Position::new(0.0, 0.0);
             }
-            if self.char <= glyphs.len() {
-                let positioned = &glyphs[self.char - 1];
+            if self.index <= glyphs.len() {
+                let positioned = &glyphs[self.index - 1];
 
                 let point = positioned
                     .position()
@@ -84,7 +82,7 @@ impl CursorIndex {
                 panic!(
                     "The char index is outside of the letters({}): {} > {}",
                     text,
-                    self.char,
+                    self.index,
                     glyphs.len() + 1
                 )
             }

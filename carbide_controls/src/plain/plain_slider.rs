@@ -6,7 +6,7 @@ use carbide_core::flags::Flags;
 use carbide_core::focus::{Focus, Focusable};
 use carbide_core::layout::Layout;
 use carbide_core::render::{Render, RenderContext};
-use carbide_core::state::{AnyState, IntoReadState, IntoState, LocalState, Map4, ReadState, ReadStateExtNew, State, StateExtNew, TState};
+use carbide_core::state::{AnyReadState, AnyState, IntoReadState, IntoState, LocalState, Map3, Map4, ReadState, ReadStateExtNew, State, StateExtNew, TState};
 use carbide_core::widget::{CommonWidget, Empty, Rectangle, Widget, WidgetExt, WidgetId};
 
 #[derive(Debug, Clone, Widget)]
@@ -33,8 +33,11 @@ pub struct PlainSlider<F, St, S, E, P, Th, In, Bg> where
     #[state] end: E,
     #[state] steps: P,
 
+    thumb_delegate: ThumbDelegate<Th>,
     thumb: Th,
+    track_delegate: TrackDelegate<In>,
     track: In,
+    background_delegate: BackgroundDelegate<Bg>,
     background: Bg,
 }
 
@@ -48,9 +51,9 @@ impl PlainSlider<Focus, f64, f64, f64, Option<f64>, Empty, Empty, Empty> {
             start.into_read_state(),
             end.into_read_state(),
             None,
-            default_thumb(),
-            default_track(),
-            default_background(),
+            default_thumb,
+            default_track,
+            default_background,
         )
     }
 }
@@ -72,9 +75,9 @@ impl<
             self.start,
             self.end,
             steps.into_read_state(),
-            self.thumb,
-            self.track,
-            self.background,
+            self.thumb_delegate,
+            self.track_delegate,
+            self.background_delegate,
         )
     }
 
@@ -101,7 +104,7 @@ impl<
         Th2: Widget + Clone,
         In2: Widget + Clone,
         Bg2: Widget + Clone,
-    >(focus: F2, state: St2, start: S2, end: E2, steps: P2, thumb: Th2, track: In2, background: Bg2) -> PlainSlider<F2, St2, S2, E2, P2, Th2, In2, Bg2> {
+    >(focus: F2, state: St2, start: S2, end: E2, steps: P2, thumb_delegate: ThumbDelegate<Th2>, track_delegate: TrackDelegate<In2>, background_delegate: BackgroundDelegate<Bg2>) -> PlainSlider<F2, St2, S2, E2, P2, Th2, In2, Bg2> {
         let percent = Map4::map(
             state.clone(),
             start.ignore_writes(),
@@ -127,6 +130,10 @@ impl<
             }
         ).as_dyn();
 
+        let thumb = thumb_delegate(state.as_dyn(), start.as_dyn_read(), end.as_dyn_read(), steps.as_dyn_read());
+        let track = track_delegate(state.as_dyn(), start.as_dyn_read(), end.as_dyn_read(), steps.as_dyn_read());
+        let background = background_delegate(state.as_dyn(), start.as_dyn_read(), end.as_dyn_read(), steps.as_dyn_read());
+
         PlainSlider {
             id: WidgetId::new(),
             position: Default::default(),
@@ -138,8 +145,11 @@ impl<
             start,
             end,
             steps,
+            thumb_delegate,
             thumb,
+            track_delegate,
             track,
+            background_delegate,
             background,
         }
     }
@@ -337,13 +347,13 @@ impl<
     Bg: Widget + Clone,
 > Layout for PlainSlider<F, St, S, E, P, Th, In, Bg> {
     fn calculate_size(&mut self, requested_size: Dimension, env: &mut Environment) -> Dimension {
-        let percent = *self.percent.value();
+        let percent = self.percent.value().max(0.0).min(1.0);
 
         let background = self.background.calculate_size(requested_size, env);
 
         let track_width = if let Some(steps) = *self.steps.value() {
             let stepped_percent = Self::percent_to_stepped_percent(
-                *self.percent.value(),
+                percent,
                 *self.start.value(),
                 *self.end.value(),
                 steps
@@ -351,7 +361,7 @@ impl<
 
             requested_size.width * stepped_percent
         } else {
-            requested_size.width * percent.max(0.0).min(1.0)
+            requested_size.width * percent
         };
 
         let track_dimensions = Dimension::new(track_width, requested_size.height);
@@ -366,6 +376,7 @@ impl<
     }
 
     fn position_children(&mut self, env: &mut Environment) {
+        let percent = self.percent.value().max(0.0).min(1.0);
         let position = self.position();
 
         let background_y = position.y() + self.height() / 2.0 - self.background.height() / 2.0;
@@ -374,7 +385,7 @@ impl<
 
         let thumb_x = if let Some(steps) = *self.steps.value() {
             let stepped_percent = Self::percent_to_stepped_percent(
-                *self.percent.value(),
+                percent,
                 *self.start.value(),
                 *self.end.value(),
                 steps
@@ -382,7 +393,7 @@ impl<
 
             self.x() + (self.background.width() - self.thumb.width()) * stepped_percent
         } else {
-            self.x() + (self.background.width() - self.thumb.width()) * (*self.percent.value()).max(0.0).min(1.0)
+            self.x() + (self.background.width() - self.thumb.width()) * percent
         };
 
         self.background.set_position(Position::new(position.x(), background_y));
@@ -440,18 +451,36 @@ impl<
 // ---------------------------------------------------
 //  Delegates
 // ---------------------------------------------------
-fn default_background() -> Box<dyn Widget> {
+type ThumbDelegate<Th: Widget + Clone> =
+    fn(state: Box<dyn AnyState<T=f64>>, start: Box<dyn AnyReadState<T=f64>>, end: Box<dyn AnyReadState<T=f64>>, steps: Box<dyn AnyReadState<T=Option<f64>>>) -> Th;
+
+type TrackDelegate<In: Widget + Clone> =
+    fn(state: Box<dyn AnyState<T=f64>>, start: Box<dyn AnyReadState<T=f64>>, end: Box<dyn AnyReadState<T=f64>>, steps: Box<dyn AnyReadState<T=Option<f64>>>) -> In;
+
+type BackgroundDelegate<Bg: Widget + Clone> =
+    fn(state: Box<dyn AnyState<T=f64>>, start: Box<dyn AnyReadState<T=f64>>, end: Box<dyn AnyReadState<T=f64>>, steps: Box<dyn AnyReadState<T=Option<f64>>>) -> Bg;
+
+
+fn default_background(state: Box<dyn AnyState<T=f64>>, start: Box<dyn AnyReadState<T=f64>>, end: Box<dyn AnyReadState<T=f64>>, steps: Box<dyn AnyReadState<T=Option<f64>>>) -> Box<dyn Widget> {
     Rectangle::new()
         .fill(EnvironmentColor::Red)
         .frame_fixed_height(26.0)
 }
 
-fn default_track() -> Box<dyn Widget> {
+fn default_track(state: Box<dyn AnyState<T=f64>>, start: Box<dyn AnyReadState<T=f64>>, end: Box<dyn AnyReadState<T=f64>>, steps: Box<dyn AnyReadState<T=Option<f64>>>) -> Box<dyn Widget> {
     Rectangle::new()
         .fill(EnvironmentColor::Green)
         .frame_fixed_height(26.0)
 }
 
-fn default_thumb() -> Box<dyn Widget> {
-    Rectangle::new().fill(EnvironmentColor::Blue).frame(26.0, 26.0).boxed()
+fn default_thumb(state: Box<dyn AnyState<T=f64>>, start: Box<dyn AnyReadState<T=f64>>, end: Box<dyn AnyReadState<T=f64>>, steps: Box<dyn AnyReadState<T=Option<f64>>>) -> Box<dyn Widget> {
+    let color = Map3::read_map(state, start, end, |state, start, end| {
+        if state < start || state > end {
+            EnvironmentColor::Purple
+        } else {
+            EnvironmentColor::Blue
+        }
+    });
+
+    Rectangle::new().fill(color).frame(26.0, 26.0).boxed()
 }

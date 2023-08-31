@@ -13,14 +13,25 @@ fn main() {
 
     application.set_scene(Window::new(
         "Plain slider example",
-        Dimension::new(400.0, 400.0),
+        Dimension::new(400.0, 500.0),
         *VStack::new(vec![
+            Text::new(
+                progress
+                    .clone()
+                    .map(|a: &f64| format!("Small slider value: {:.2}", a)),
+            ),
+            PlainSlider::new(progress.clone(), 40.0, 80.0)
+                .border()
+                .color(EnvironmentColor::Yellow)
+                .padding(20.0)
+                .boxed(),
+            Empty::new().frame(20.0, 20.0),
             Text::new(
                 progress
                     .clone()
                     .map(|a: &f64| format!("Slider value: {:.2}", a)),
             ),
-            PlainSlider::new(progress.clone(), 40.0, 80.0)
+            PlainSlider::new(progress.clone(), 20.0, 100.0)
                 .border()
                 .color(EnvironmentColor::Yellow)
                 .padding(20.0)
@@ -32,7 +43,7 @@ fn main() {
                     .map(|a: &f64| format!("Slider step value: {:.2}", a)),
             ),
             PlainSlider::new(progress, 20.0, 100.0)
-                //.step(Some(15.0))
+                .step(Some(15.0))
                 .border()
                 .color(EnvironmentColor::Yellow)
                 .padding(20.0)

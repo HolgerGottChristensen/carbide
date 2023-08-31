@@ -202,7 +202,7 @@ fn main() {
         Window::new(
             "Shapes example",
             Dimension::new(600.0, 600.0),
-            VStack::new(vec![
+            *VStack::new(vec![
                 rectangles,
                 rounded_rectangles,
                 circles,
