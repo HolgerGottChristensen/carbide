@@ -95,6 +95,17 @@ impl<
     S: ReadState<T=u32>,
     T: State<T=String>,
 > PlainTextInput<F, C, O, S, T> {
+
+    pub fn obscure<O2: ReadState<T=Option<char>>>(self, obscure: O2) -> PlainTextInput<F, C, O2, S, T> {
+        Self::new_internal(
+            self.focus,
+            self.text_color,
+            obscure,
+            self.font_size,
+            self.text
+        )
+    }
+
     fn new_internal<
         F2: State<T=Focus>,
         C2: ReadState<T=Color>,
@@ -325,7 +336,7 @@ impl<
     T: State<T=String>,
 > KeyboardEventHandler for PlainTextInput<F, C, O, S, T> {
     fn handle_keyboard_event(&mut self, event: &KeyboardEvent, env: &mut Environment) {
-        println!("Event: {:#?}", event);
+        //println!("Event: {:#?}", event);
         /*if self.get_focus() != Focus::Focused {
             return;
         }*/
@@ -398,7 +409,7 @@ impl<
             _ => (),
         }
 
-        println!("cursor: {:?}", self.cursor);
+        //println!("cursor: {:?}", self.cursor);
     }
 }
 
@@ -1201,15 +1212,7 @@ impl<F: State<T=Focus>, C: ReadState<T=Color>, O: ReadState<T=Option<char>>, S: 
             Cursor::Selection { end, .. } => end,
         };
 
-        let other_index = match self.cursor {
-            Cursor::Single(_) => None,
-            Cursor::Selection { start, .. } => Some(start),
-        };
-
         let mut current_offset = *self.text_offset.value();
-
-        let currently_drawn_at = self.text_widget.x() + current_offset;
-
 
         let glyphs = self.text_widget.glyphs();
 
@@ -1223,67 +1226,29 @@ impl<F: State<T=Focus>, C: ReadState<T=Color>, O: ReadState<T=Option<char>>, S: 
             (glyphs[index.index - 1].position().x() + glyphs[index.index - 1].advance_width()) / env.scale_factor() - self.x() - tolerance_difference.x()
         };
 
-        println!("cursor_offset_from_text_origin: {:?}", cursor_offset_from_text_origin);
-        println!("tolerance: {:?}", tolerance_difference.x());
-        println!("width: {:?}", self.width());
-        println!("text_width: {:?}", self.text_widget.width());
-        println!("x: {:?}", self.x());
-        println!("text_x: {:?}", self.text_widget.x());
+        //println!("cursor_offset_from_text_origin: {:?}", cursor_offset_from_text_origin);
+        //println!("tolerance: {:?}", tolerance_difference.x());
+        //println!("width: {:?}", self.width());
+        //println!("text_width: {:?}", self.text_widget.width());
+        //println!("x: {:?}", self.x());
+        //println!("text_x: {:?}", self.text_widget.x());
 
-        println!("current_offset: {:?}", current_offset);
+        //println!("current_offset: {:?}", current_offset);
 
-        /*if new_x > self.x() + self.width() {
-            let new_offset = new_x - (self.x() + self.width());
-            println!("Outside, move from: {:?} to: {:?}", current_offset, new_offset);
-            //current_offset = -new_offset;
-        }*/
         if cursor_offset_from_text_origin + self.cursor_widget.width() > self.width() {
             current_offset -= (cursor_offset_from_text_origin + self.cursor_widget.width() - self.width());
-        } /*else if current_offset < 0.0 {
-            current_offset += (self.width() - cursor_offset_from_text_origin);
-            current_offset = current_offset.min(0.0);
-        }*/
+        }
 
         if cursor_offset_from_text_origin < 0.0 {
             current_offset -= (cursor_offset_from_text_origin);
-
         }
 
-        current_offset = current_offset.max(self.width() - self.text_widget.width() - self.cursor_widget.width()).min(0.0);
+        current_offset = current_offset
+            .max(self.width() - self.text_widget.width() - self.cursor_widget.width())
+            .min(0.0);
 
-
-        /*let cursor_offset_from_text_origin_and_speed = if let Some(speed) = self.current_offset_speed {
-            cursor_offset_from_text_origin + speed
-        } else {
-            cursor_offset_from_text_origin
-        };
-
-
-
-        if cursor_offset_from_text_origin_and_speed > self.width() {
-            current = cursor_offset_from_text_origin_and_speed - self.width();
-        }
-
-        if cursor_offset_from_text_origin_and_speed < 0.0 {
-            current = cursor_offset_from_text_origin_and_speed;
-        }
-
-        println!("new: {:?}", current);
-
-        println!("cursor_offset_from_text_origin_and_speed: {}", cursor_offset_from_text_origin_and_speed);
-
-        let width = -self.text_widget.width();
-        let lala = (width + self.width()).min(0.0);
-        let clamp = clamp(current, 0.0, lala);
-        if clamp != current {
-            self.text_offset.set_value(clamp);
-            env.request_animation_frame();
-            println!("max: {:?}", lala);
-            println!("text_offset: {:?}", *self.text_offset.value());
-        }*/
         self.text_offset.set_value(current_offset);
-        println!("new_offset: {:?}\n", *self.text_offset.value());
-
+        //println!("new_offset: {:?}\n", *self.text_offset.value());
     }
 }
 
@@ -1332,7 +1297,7 @@ impl<
     T: State<T=String>,
 > Layout for PlainTextInput<F, C, O, S, T> {
     fn calculate_size(&mut self, requested_size: Dimension, env: &mut Environment) -> Dimension {
-        println!("calculate size");
+        //println!("calculate size");
         if let Some(position) = self.last_drag_position {
             self.drag_selection(env, &position, &position);
         }
@@ -1388,7 +1353,7 @@ impl<
         positioning(position, dimension, &mut self.text_widget);
         self.text_widget.position_children(env);
 
-        println!("Position children called");
+        //println!("Position children called");
         self.update_offset(env);
 
         let positioning = BasicLayouter::Leading.positioner();

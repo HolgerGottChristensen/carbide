@@ -1,7 +1,6 @@
 use carbide_controls::{PASSWORD_CHAR, PlainTextInput};
 use carbide_core::draw::Dimension;
-use carbide_core::environment::{EnvironmentColor, EnvironmentFontSize};
-use carbide_core::state::{LocalState, TState};
+use carbide_core::state::LocalState;
 use carbide_core::widget::*;
 use carbide_wgpu::{Application, Window};
 
@@ -18,16 +17,15 @@ fn main() {
             PlainTextInput::new(text_state.clone())
                 //.font_size(EnvironmentFontSize::Title)
                 .border()
-                .boxed()
+                .boxed(),
                 //.color(EnvironmentColor::DarkText)
                 //.background(Rectangle::new().fill(EnvironmentColor::Blue)),
 
-            /*PlainTextInput::new(text_state)
-                .font_size(EnvironmentFontSize::Title)
-                .obscure(PASSWORD_CHAR)
+            /*PlainTextInput::new(text_state.clone())
+                .obscure(Some(PASSWORD_CHAR))
+                //.font_size(EnvironmentFontSize::Title)
                 .border()
-                .color(EnvironmentColor::DarkText)
-                .background(Rectangle::new().fill(EnvironmentColor::Purple)),*/
+                .boxed()*/
         ])
             .spacing(10.0)
             .padding(EdgeInsets::all(40.0)),

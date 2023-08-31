@@ -154,7 +154,7 @@ pub trait Focusable: CommonWidget + StateSync {
 
         if self.focus_children() {
             self.foreach_child_direct_rev(&mut |child| {
-                focus_child = child.process_focus_next(event, focus_request, focus_child, env);
+                focus_child = child.process_focus_previous(event, focus_request, focus_child, env);
             });
         }
 

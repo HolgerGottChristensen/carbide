@@ -4,19 +4,20 @@ use carbide_core::environment::{Environment, EnvironmentColor};
 use carbide_core::flags::Flags;
 use carbide_core::focus::{Focus, Focusable};
 use carbide_core::focus::Refocus;
-use carbide_core::state::{AnyReadState, AnyState, IntoReadState, IntoState, LocalState, Map1, Map2, ReadState, State, StateExtNew, TState};
-use carbide_core::widget::{
-    CommonWidget, HStack, Rectangle, Text, Widget, WidgetExt, WidgetId, ZStack,
-};
+use carbide_core::state::{AnyState, IntoReadState, IntoState, LocalState, Map1, Map2, ReadState, State, StateExtNew, TState};
+use carbide_core::widget::{CommonWidget, Rectangle, Text, Widget, WidgetExt, WidgetId, ZStack};
 
 use crate::PlainButton;
-use crate::types::CheckBoxValue;
 
+/// # A plain switch widget
+/// This widget contains the basic logic for a switch component, without any styling.
+/// It can be styled by setting the delegate, using the delegate method.
+///
+/// For a styled version, use [crate::Switch] instead.
 #[derive(Debug, Clone, Widget)]
 #[carbide_exclude(Focusable)]
-pub struct PlainSwitch<F, L, C> where
+pub struct PlainSwitch<F, C> where
     F: State<T=Focus> + Clone,
-    L: ReadState<T=String> + Clone,
     C: State<T=bool> + Clone
 {
     id: WidgetId,
@@ -25,19 +26,17 @@ pub struct PlainSwitch<F, L, C> where
     position: Position,
     dimension: Dimension,
     delegate: fn(focus: Box<dyn AnyState<T=Focus>>, checked: Box<dyn AnyState<T=bool>>) -> Box<dyn Widget>,
-    #[state] label: L,
     #[state] checked: C,
 }
 
-impl PlainSwitch<Focus, String, bool> {
-    pub fn new<L: IntoReadState<String>, C: IntoState<bool>>(label: L, checked: C) -> PlainSwitch<TState<Focus>, L::Output, C::Output> {
+impl PlainSwitch<Focus, bool> {
+    pub fn new<C: IntoState<bool>>(checked: C) -> PlainSwitch<TState<Focus>, C::Output> {
         let focus_state = LocalState::new(Focus::Unfocused);
 
         Self::new_internal(
             checked.into_state(),
             focus_state,
             PlainSwitch::default_delegate,
-            label.into_read_state(),
         )
     }
 
@@ -61,29 +60,27 @@ impl PlainSwitch<Focus, String, bool> {
     }
 }
 
-impl<F: State<T=Focus> + Clone, L: ReadState<T=String> + Clone, C: State<T=bool> + Clone> PlainSwitch<F, L, C> {
+impl<F: State<T=Focus> + Clone, C: State<T=bool> + Clone> PlainSwitch<F, C> {
 
     pub fn delegate(
         self,
         delegate: fn(focus: Box<dyn AnyState<T=Focus>>, selected: Box<dyn AnyState<T=bool>>) -> Box<dyn Widget>,
-    ) -> PlainSwitch<F, L, C> {
+    ) -> PlainSwitch<F, C> {
         let checked = self.checked;
         let focus_state = self.focus;
-        let label_state = self.label;
 
-        Self::new_internal(checked, focus_state, delegate, label_state)
+        Self::new_internal(checked, focus_state, delegate)
     }
 
-    pub fn focused<F2: IntoState<Focus>>(mut self, focused: F2) -> PlainSwitch<F2::Output, L, C> {
-        Self::new_internal(self.checked, focused.into_state(), self.delegate, self.label)
+    pub fn focused<F2: IntoState<Focus>>(mut self, focused: F2) -> PlainSwitch<F2::Output, C> {
+        Self::new_internal(self.checked, focused.into_state(), self.delegate)
     }
 
-    fn new_internal<F2: State<T=Focus> + Clone, L2: ReadState<T=String> + Clone, C2: State<T=bool> + Clone>(
+    fn new_internal<F2: State<T=Focus> + Clone, C2: State<T=bool> + Clone>(
         checked: C2,
         focus: F2,
         delegate: fn(focus: Box<dyn AnyState<T=Focus>>, checked: Box<dyn AnyState<T=bool>>) -> Box<dyn Widget>,
-        label_state: L2,
-    ) -> PlainSwitch<F2, L2, C2> {
+    ) -> PlainSwitch<F2, C2> {
 
         let delegate_widget = delegate(focus.as_dyn(), checked.as_dyn());
 
@@ -99,7 +96,7 @@ impl<F: State<T=Focus> + Clone, L: ReadState<T=String> + Clone, C: State<T=bool>
             }))
             .focused(focus.clone()));
 
-        let child = HStack::new(vec![button, Text::new(label_state.clone())]).spacing(5.0);
+        let child = button;
 
         PlainSwitch {
             id: WidgetId::new(),
@@ -108,21 +105,20 @@ impl<F: State<T=Focus> + Clone, L: ReadState<T=String> + Clone, C: State<T=bool>
             position: Position::new(0.0, 0.0),
             dimension: Dimension::new(0.0, 0.0),
             delegate,
-            label: label_state,
             checked,
         }
     }
 
 }
 
-impl<F: State<T=Focus> + Clone, L: ReadState<T=String> + Clone, C: State<T=bool> + Clone> Focusable for PlainSwitch<F, L, C> {
+impl<F: State<T=Focus> + Clone, C: State<T=bool> + Clone> Focusable for PlainSwitch<F, C> {
     fn focus_children(&self) -> bool {
         false
     }
 }
 
-impl<F: State<T=Focus> + Clone, L: ReadState<T=String> + Clone, C: State<T=bool> + Clone> CommonWidget for PlainSwitch<F, L, C> {
-    CommonWidgetImpl!(self, id: self.id, child: self.child, position: self.position, dimension: self.dimension, flag: Flags::FOCUSABLE, flexibility: 10);
+impl<F: State<T=Focus> + Clone, C: State<T=bool> + Clone> CommonWidget for PlainSwitch<F, C> {
+    CommonWidgetImpl!(self, id: self.id, child: self.child, position: self.position, dimension: self.dimension, flag: Flags::FOCUSABLE, flexibility: 10, focus: self.focus);
 }
 
-impl<F: State<T=Focus> + Clone, L: ReadState<T=String> + Clone, C: State<T=bool> + Clone> WidgetExt for PlainSwitch<F, L, C> {}
+impl<F: State<T=Focus> + Clone, C: State<T=bool> + Clone> WidgetExt for PlainSwitch<F, C> {}

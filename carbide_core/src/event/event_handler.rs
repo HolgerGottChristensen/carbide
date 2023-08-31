@@ -85,6 +85,7 @@ impl EventHandler {
                         }
                     }
                     Refocus::FocusPrevious => {
+                        println!("Focus prev");
                         let focus_last = widgets.process_focus_previous(
                             event,
                             &request,
@@ -92,6 +93,7 @@ impl EventHandler {
                             env,
                         );
                         if focus_last {
+                            println!("Focus prev forward to last");
                             widgets.process_focus_previous(
                                 event,
                                 &request,

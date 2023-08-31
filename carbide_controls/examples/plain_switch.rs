@@ -20,10 +20,10 @@ fn main() {
         "Plain Switch Example - Carbide",
         Dimension::new(400.0, 600.0),
         VStack::new(vec![
-            PlainSwitch::new("Rectangle", switch_state1).border().boxed(),
-            PlainSwitch::new("Circle", switch_state2).border().boxed(),
-            PlainSwitch::new("Triangle", switch_state3).border().boxed(),
-            PlainSwitch::new("Star", switch_state4).border().boxed(),
+            PlainSwitch::new(switch_state1).border().boxed(),
+            PlainSwitch::new(switch_state2).border().boxed(),
+            PlainSwitch::new(switch_state3).border().boxed(),
+            PlainSwitch::new(switch_state4).border().boxed(),
         ])
             .spacing(10.0)
             .padding(EdgeInsets::all(40.0)),

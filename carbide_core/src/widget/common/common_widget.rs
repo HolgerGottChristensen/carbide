@@ -119,7 +119,7 @@ pub trait CommonWidget {
 
 #[macro_export]
 macro_rules! CommonWidgetImpl {
-    ($self:ident, id: $id_expr:expr, child: $child:expr, position: $position:expr, dimension: $dimension:expr $(,flag: $flag:expr)? $(,flexibility: $flexibility:expr)? $(,alignment: $alignment:expr)?) => {
+    ($self:ident, id: $id_expr:expr, child: $child:expr, position: $position:expr, dimension: $dimension:expr $(,flag: $flag:expr)? $(,flexibility: $flexibility:expr)? $(,alignment: $alignment:expr)? $(,focus: $focus:expr)?) => {
         fn id(&$self) -> carbide_core::widget::WidgetId {
             $id_expr
         }
@@ -139,6 +139,16 @@ macro_rules! CommonWidgetImpl {
         $(
             fn flexibility(&$self) -> u32 {
                 $flexibility
+            }
+        )?
+
+        $(
+            fn get_focus(&$self) -> Focus {
+                $focus.value().clone()
+            }
+
+            fn set_focus(&mut $self, focus: Focus) {
+                $focus.set_value(focus);
             }
         )?
 
@@ -206,7 +216,7 @@ macro_rules! CommonWidgetImpl {
         }
     };
 
-    ($self:ident, id: $id_expr:expr, children: $children:expr, position: $position:expr, dimension: $dimension:expr $(,flag: $flag:expr)? $(,flexibility: $flexibility:literal)?) => {
+    ($self:ident, id: $id_expr:expr, children: $children:expr, position: $position:expr, dimension: $dimension:expr $(,flag: $flag:expr)? $(,flexibility: $flexibility:literal)? $(,focus: $focus:expr)?) => {
         fn id(&$self) -> carbide_core::widget::WidgetId {
             $id_expr
         }
@@ -220,6 +230,16 @@ macro_rules! CommonWidgetImpl {
         $(
             fn flexibility(&$self) -> u32 {
                 $flexibility
+            }
+        )?
+
+        $(
+            fn get_focus(&$self) -> Focus {
+                $focus.value().clone()
+            }
+
+            fn set_focus(&mut $self, focus: Focus) {
+                $focus.set_value(focus);
             }
         )?
 
@@ -297,7 +317,7 @@ macro_rules! CommonWidgetImpl {
         }
     };
 
-    ($self:ident, id: $id_expr:expr, position: $position:expr, dimension: $dimension:expr $(,flag: $flag:expr)? $(,flexibility: $flexibility:literal)?) => {
+    ($self:ident, id: $id_expr:expr, position: $position:expr, dimension: $dimension:expr $(,flag: $flag:expr)? $(,flexibility: $flexibility:literal)? $(,focus: $focus:expr)?) => {
         fn id(&$self) -> carbide_core::widget::WidgetId {
             $id_expr
         }
@@ -311,6 +331,16 @@ macro_rules! CommonWidgetImpl {
         $(
             fn flexibility(&$self) -> u32 {
                 $flexibility
+            }
+        )?
+
+        $(
+            fn get_focus(&$self) -> Focus {
+                $focus.value().clone()
+            }
+
+            fn set_focus(&mut $self, focus: Focus) {
+                $focus.set_value(focus);
             }
         )?
 
