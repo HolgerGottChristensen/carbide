@@ -12,7 +12,7 @@ use carbide_core::focus::Focus;
 use carbide_core::focus::Focusable;
 use carbide_core::layout::{BasicLayouter, Layout, Layouter};
 use carbide_core::render::{Render, RenderContext};
-use carbide_core::state::{AnyReadState, IntoState, LocalState, Map2, ReadState, ReadStateExtNew, State, TState};
+use carbide_core::state::{AnyReadState, IntoState, LocalState, Map2, NewStateSync, ReadState, ReadStateExtNew, State, TState};
 use carbide_core::state::StateSync;
 use carbide_core::text::Glyph;
 use carbide_core::utils::{binary_search, clamp};
@@ -337,9 +337,9 @@ impl<
 > KeyboardEventHandler for PlainTextInput<F, C, O, S, T> {
     fn handle_keyboard_event(&mut self, event: &KeyboardEvent, env: &mut Environment) {
         //println!("Event: {:#?}", event);
-        /*if self.get_focus() != Focus::Focused {
+        if self.get_focus() != Focus::Focused {
             return;
-        }*/
+        }
 
         let (current_movable_cursor_index, _is_selection) = match self.cursor {
             Cursor::Single(cursor_index) => (cursor_index, false),
@@ -1149,6 +1149,10 @@ impl<F: State<T=Focus>, C: ReadState<T=Color>, O: ReadState<T=Option<char>>, S: 
     }
 
     fn text_click(&mut self, position: &Position, env: &mut Environment) {
+        if self.get_focus() == Focus::Unfocused {
+            self.set_focus_and_request(Focus::FocusRequested, env);
+        }
+
         let relative_offset = position.x() * env.scale_factor();
         let char_index = find_index_from_offset_and_glyphs(relative_offset, &self.text_widget.glyphs());
 
@@ -1205,50 +1209,78 @@ impl<F: State<T=Focus>, C: ReadState<T=Color>, O: ReadState<T=Option<char>>, S: 
         }
     }
 
-    fn update_offset(&mut self, env: &mut Environment) {
-        // We should try to keep this index within view as long as the field is focused
-        let index = match self.cursor {
-            Cursor::Single(index) => index,
-            Cursor::Selection { end, .. } => end,
-        };
-
+    /// Update the current scroll offset to make the cursor visible within the text field if possible
+    fn update_offset_to_make_cursor_visible(&mut self, env: &mut Environment) {
         let mut current_offset = *self.text_offset.value();
 
-        let glyphs = self.text_widget.glyphs();
+        if self.get_focus() == Focus::Focused {
+            // We should try to keep this index within view as long as the field is focused
+            let index = match self.cursor {
+                Cursor::Single(index) => index,
+                Cursor::Selection { end, .. } => end,
+            };
 
-        let tolerance_difference = self.text_widget.position().tolerance(1.0/env.scale_factor()) - self.text_widget.position();
+            let glyphs = self.text_widget.glyphs();
 
-        let cursor_offset_from_text_origin = if glyphs.len() == 0 {
-            0.0
-        } else if index.index == 0 {
-            glyphs[index.index].position().x() / env.scale_factor() - self.x() - tolerance_difference.x()
-        } else {
-            (glyphs[index.index - 1].position().x() + glyphs[index.index - 1].advance_width()) / env.scale_factor() - self.x() - tolerance_difference.x()
-        };
+            // Since text is positioned from the nearest pixel, we need to take into account the
+            // tolerance, to calculate the cursor offset from the text origin, since all glyphs
+            // will be offset by this.
+            let tolerance_difference = self.text_widget.position().tolerance(1.0/env.scale_factor()) - self.text_widget.position();
 
-        //println!("cursor_offset_from_text_origin: {:?}", cursor_offset_from_text_origin);
-        //println!("tolerance: {:?}", tolerance_difference.x());
-        //println!("width: {:?}", self.width());
-        //println!("text_width: {:?}", self.text_widget.width());
-        //println!("x: {:?}", self.x());
-        //println!("text_x: {:?}", self.text_widget.x());
+            let cursor_offset_from_text_origin = if glyphs.len() == 0 {
+                0.0
+            } else if index.index == 0 {
+                glyphs[index.index].position().x() / env.scale_factor() - self.x() - tolerance_difference.x()
+            } else {
+                (glyphs[index.index - 1].position().x() + glyphs[index.index - 1].advance_width()) / env.scale_factor() - self.x() - tolerance_difference.x()
+            };
 
-        //println!("current_offset: {:?}", current_offset);
+            //println!("cursor_offset_from_text_origin: {:?}", cursor_offset_from_text_origin);
+            //println!("tolerance: {:?}", tolerance_difference.x());
+            //println!("width: {:?}", self.width());
+            //println!("text_width: {:?}", self.text_widget.width());
+            //println!("x: {:?}", self.x());
+            //println!("text_x: {:?}", self.text_widget.x());
 
-        if cursor_offset_from_text_origin + self.cursor_widget.width() > self.width() {
-            current_offset -= (cursor_offset_from_text_origin + self.cursor_widget.width() - self.width());
+            //println!("current_offset: {:?}", current_offset);
+
+            if cursor_offset_from_text_origin + self.cursor_widget.width() > self.width() {
+                current_offset -= (cursor_offset_from_text_origin + self.cursor_widget.width() - self.width());
+            }
+
+            if cursor_offset_from_text_origin < 0.0 {
+                current_offset -= (cursor_offset_from_text_origin);
+            }
         }
 
-        if cursor_offset_from_text_origin < 0.0 {
-            current_offset -= (cursor_offset_from_text_origin);
-        }
-
+        // Clamp the offset to be within the bounds of the visible area.
         current_offset = current_offset
             .max(self.width() - self.text_widget.width() - self.cursor_widget.width())
             .min(0.0);
 
         self.text_offset.set_value(current_offset);
         //println!("new_offset: {:?}\n", *self.text_offset.value());
+    }
+
+    /// Clamp the cursor to within the number of graphemes in the displayed text.
+    /// The state should be up to date before calling this method, especially the display_text state.
+    fn clamp_cursor(&mut self) {
+        let len_in_graphemes = len_in_graphemes(&self.display_text.value());
+
+        match self.cursor {
+            Cursor::Single(CursorIndex{ line, index }) => {
+                self.cursor = Cursor::Single(CursorIndex { line, index: index.min(len_in_graphemes)});
+            }
+            Cursor::Selection {
+                start: CursorIndex { line: line_start, index: index_start },
+                end: CursorIndex { line: line_end, index: index_end },
+            } => {
+                self.cursor = Cursor::Selection {
+                    start: CursorIndex { line: line_start, index: index_start.min(len_in_graphemes) },
+                    end: CursorIndex { line: line_end, index: index_end.min(len_in_graphemes) },
+                }
+            }
+        }
     }
 }
 
@@ -1297,6 +1329,8 @@ impl<
     T: State<T=String>,
 > Layout for PlainTextInput<F, C, O, S, T> {
     fn calculate_size(&mut self, requested_size: Dimension, env: &mut Environment) -> Dimension {
+        self.clamp_cursor();
+
         //println!("calculate size");
         if let Some(position) = self.last_drag_position {
             self.drag_selection(env, &position, &position);
@@ -1354,7 +1388,7 @@ impl<
         self.text_widget.position_children(env);
 
         //println!("Position children called");
-        self.update_offset(env);
+        self.update_offset_to_make_cursor_visible(env);
 
         let positioning = BasicLayouter::Leading.positioner();
         let position = self.position + Position::new(*self.text_offset.value(), 0.0);
@@ -1363,40 +1397,42 @@ impl<
         positioning(position, dimension, &mut self.text_widget);
         self.text_widget.position_children(env);
 
-        let glyphs = self.text_widget.glyphs();
+        if self.get_focus() == Focus::Focused {
+            let glyphs = self.text_widget.glyphs();
 
-        match self.cursor {
-            Cursor::Single(index) => {
+            match self.cursor {
+                Cursor::Single(index) => {
 
-                let new_x = if index.index == 0 {
-                    self.text_widget.x()
-                } else {
-                    (glyphs[index.index - 1].position().x() + glyphs[index.index - 1].advance_width()) / env.scale_factor()
-                };
+                    let new_x = if index.index == 0 {
+                        self.text_widget.x()
+                    } else {
+                        (glyphs[index.index - 1].position().x() + glyphs[index.index - 1].advance_width()) / env.scale_factor()
+                    };
 
-                self.cursor_widget.set_position(Position::new(new_x, self.text_widget.y()));
-                self.cursor_widget.position_children(env);
-            }
-            Cursor::Selection { start, end } => {
-                let min = start.index.min(end.index);
+                    self.cursor_widget.set_position(Position::new(new_x, self.text_widget.y()));
+                    self.cursor_widget.position_children(env);
+                }
+                Cursor::Selection { start, end } => {
+                    let min = start.index.min(end.index);
 
-                let min_x = if min == 0 {
-                    self.text_widget.x()
-                } else {
-                    (glyphs[min - 1].position().x() + glyphs[min - 1].advance_width()) / env.scale_factor()
-                };
+                    let min_x = if min == 0 {
+                        self.text_widget.x()
+                    } else {
+                        (glyphs[min - 1].position().x() + glyphs[min - 1].advance_width()) / env.scale_factor()
+                    };
 
-                let new_x = if end.index == 0 {
-                    self.text_widget.x()
-                } else {
-                    (glyphs[end.index - 1].position().x() + glyphs[end.index - 1].advance_width()) / env.scale_factor()
-                };
+                    let new_x = if end.index == 0 {
+                        self.text_widget.x()
+                    } else {
+                        (glyphs[end.index - 1].position().x() + glyphs[end.index - 1].advance_width()) / env.scale_factor()
+                    };
 
-                self.cursor_widget.set_position(Position::new(new_x, self.text_widget.y()));
-                self.cursor_widget.position_children(env);
+                    self.cursor_widget.set_position(Position::new(new_x, self.text_widget.y()));
+                    self.cursor_widget.position_children(env);
 
-                self.selection_widget.set_position(Position::new(min_x, self.text_widget.y()));
-                self.selection_widget.position_children(env);
+                    self.selection_widget.set_position(Position::new(min_x, self.text_widget.y()));
+                    self.selection_widget.position_children(env);
+                }
             }
         }
     }
@@ -1410,13 +1446,15 @@ impl<
     T: State<T=String>,
 > Render for PlainTextInput<F, C, O, S, T> {
     fn render(&mut self, context: &mut RenderContext, env: &mut Environment) {
-        match self.cursor {
-            Cursor::Single(_) => {
-                self.cursor_widget.render(context, env);
-            }
-            Cursor::Selection { .. } => {
-                self.selection_widget.render(context, env);
-                self.cursor_widget.render(context, env);
+        if self.get_focus() == Focus::Focused {
+            match self.cursor {
+                Cursor::Single(_) => {
+                    self.cursor_widget.render(context, env);
+                }
+                Cursor::Selection { .. } => {
+                    self.selection_widget.render(context, env);
+                    self.cursor_widget.render(context, env);
+                }
             }
         }
 
@@ -1431,7 +1469,7 @@ impl<
     S: ReadState<T=u32>,
     T: State<T=String>,
 > CommonWidget for PlainTextInput<F, C, O, S, T> {
-    CommonWidgetImpl!(self, id: self.id, position: self.position, dimension: self.dimension, flag: Flags::FOCUSABLE, flexibility: 1);
+    CommonWidgetImpl!(self, id: self.id, position: self.position, dimension: self.dimension, flag: Flags::FOCUSABLE, flexibility: 1, focus: self.focus);
 }
 
 impl<

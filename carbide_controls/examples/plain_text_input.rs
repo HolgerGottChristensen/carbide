@@ -21,11 +21,11 @@ fn main() {
                 //.color(EnvironmentColor::DarkText)
                 //.background(Rectangle::new().fill(EnvironmentColor::Blue)),
 
-            /*PlainTextInput::new(text_state.clone())
+            PlainTextInput::new(text_state.clone())
                 .obscure(Some(PASSWORD_CHAR))
                 //.font_size(EnvironmentFontSize::Title)
                 .border()
-                .boxed()*/
+                .boxed()
         ])
             .spacing(10.0)
             .padding(EdgeInsets::all(40.0)),
