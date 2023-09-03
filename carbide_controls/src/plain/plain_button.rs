@@ -22,11 +22,6 @@ impl<K> PlainButtonDelegate for K where K: Fn(Box<dyn AnyReadState<T=Focus>>, Bo
 type DefaultPlainButtonDelegate = fn(Box<dyn AnyReadState<T=Focus>>, Box<dyn AnyReadState<T=bool>>, Box<dyn AnyReadState<T=bool>>) -> Box<dyn Widget>;
 type DefaultPlainButtonAction = fn(&mut Environment, ModifierKey);
 
-/// # A plain switch widget
-/// This widget contains the basic logic for a switch component, without any styling.
-/// It can be styled by setting the delegate, using the delegate method.
-///
-/// For a styled version, use [crate::Switch] instead.
 #[derive(Clone, Widget)]
 #[carbide_exclude(Focusable)]
 pub struct PlainButton<F, A, D> where
@@ -168,10 +163,3 @@ impl<F: State<T=Focus> + Clone, A: Action + Clone + 'static, D: PlainButtonDeleg
             .finish()
     }
 }
-
-
-// use carbide_core::focus::Focus;
-// use carbide_core::state::State;
-// use carbide_core::widget::{Action, MouseArea, Widget};
-//
-// pub type PlainButton<I: Action + Clone + 'static, O: Action + Clone + 'static, F: State<T=Focus> + Clone, C: Widget + Clone, H: State<T=bool> + Clone, P: State<T=bool> + Clone> = MouseArea<I, O, F, C, H, P>;

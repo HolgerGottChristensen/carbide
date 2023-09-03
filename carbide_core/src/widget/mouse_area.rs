@@ -201,7 +201,11 @@ impl<
         }
 
         match event {
+            KeyboardEvent::Press(Key::Return, _) => {
+                self.is_pressed.set_value(true);
+            }
             KeyboardEvent::Click(Key::Return, _) => {
+                self.is_pressed.set_value(false);
                 (self.click)(env, ModifierKey::NO_MODIFIER);
             }
             _ => (),

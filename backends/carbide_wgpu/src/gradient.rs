@@ -58,8 +58,9 @@ impl Gradient {
         ];
 
         for (index, color) in gradient.colors.iter().enumerate() {
-            let rgb = color.to_rgb();
-            colors[index] = [rgb.0, rgb.1, rgb.2, rgb.3];
+            colors[index] = color.gamma_srgb_to_linear()
+                .pre_multiply()
+                .to_fsa();
         }
 
         let mut ratios = [
