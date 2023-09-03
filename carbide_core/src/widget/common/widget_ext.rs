@@ -137,14 +137,14 @@ pub trait WidgetExt: Widget + Sized + Clone + 'static {
         e
     }
 
-    fn accent_color<C: IntoReadState<Color>>(self, color: C) -> Box<EnvUpdating<Self>> {
+    fn accent_color<C: IntoReadState<Color>>(self, color: C) -> EnvUpdating<Self> {
         let mut e = EnvUpdating::new(self);
         e.add(EnvironmentStateContainer::Color {
             key: EnvironmentColor::Accent,
             value: TState::new(Box::new(color.into_read_state().ignore_writes())),
         });
 
-        e
+        *e
     }
 
     /// Returns two widgets. The first should be used within an overlay, and the second within the widget hierarchy.

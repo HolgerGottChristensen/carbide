@@ -11,7 +11,7 @@ use crate::environment::{Environment};
 use crate::environment::EnvironmentColor;
 use crate::layout::Layout;
 use crate::render::{Primitive, Render, RenderContext, Style};
-use crate::state::{ReadState, IntoReadState};
+use crate::state::{ReadState, IntoReadState, StateSync};
 use crate::widget::{Blur, CommonWidget, Widget, WidgetExt, WidgetId, ZStack};
 use crate::widget::shape::{Shape, tessellate};
 use crate::widget::types::PrimitiveStore;
@@ -104,7 +104,9 @@ impl<S: ReadState<T=Style> + Clone, F: ReadState<T=Style> + Clone> Layout for Ci
 }
 
 impl<S: ReadState<T=Style> + Clone, F: ReadState<T=Style> + Clone> Render for Circle<S, F> {
-    fn render(&mut self, context: &mut RenderContext, _: &mut Environment) {
+    fn render(&mut self, context: &mut RenderContext, env: &mut Environment) {
+        self.capture_state(env);
+
         let radius = self.width() as f32 / 2.0;
         let center = point(self.x() as f32 + radius, self.y() as f32 + radius);
         let rectangle = rect(

@@ -10,7 +10,7 @@ use crate::draw::{Color, Dimension, Position};
 use crate::environment::{Environment};
 use crate::environment::EnvironmentColor;
 use crate::render::{Primitive, Render, RenderContext, Style};
-use crate::state::{IntoReadState, ReadState};
+use crate::state::{IntoReadState, ReadState, StateSync};
 use crate::widget::{Blur, CommonWidget, Widget, WidgetExt, WidgetId, ZStack};
 use crate::widget::shape::{Shape, tessellate};
 use crate::widget::types::PrimitiveStore;
@@ -107,7 +107,9 @@ impl<S: ReadState<T=Style> + Clone, F: ReadState<T=Style> + Clone> Shape for Cap
 }
 
 impl<S: ReadState<T=Style> + Clone, F: ReadState<T=Style> + Clone> Render for Capsule<S, F> {
-    fn render(&mut self, context: &mut RenderContext, _: &mut Environment) {
+    fn render(&mut self, context: &mut RenderContext, env: &mut Environment) {
+        self.capture_state(env);
+
         let rect = rect(
             self.x() as f32,
             self.y() as f32,

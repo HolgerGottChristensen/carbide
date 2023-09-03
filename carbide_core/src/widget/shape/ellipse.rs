@@ -12,7 +12,7 @@ use crate::draw::{Color, Dimension, Position};
 use crate::environment::{Environment};
 use crate::environment::EnvironmentColor;
 use crate::render::{Primitive, Render, RenderContext, Style};
-use crate::state::{ReadState, IntoReadState};
+use crate::state::{ReadState, IntoReadState, StateSync};
 use crate::widget::{Blur, CommonWidget, Widget, WidgetExt, WidgetId, ZStack};
 use crate::widget::shape::{Shape, tessellate};
 use crate::widget::types::PrimitiveStore;
@@ -95,7 +95,9 @@ impl<S: ReadState<T=Style> + Clone, F: ReadState<T=Style> + Clone> CommonWidget 
 }
 
 impl<S: ReadState<T=Style> + Clone, F: ReadState<T=Style> + Clone> Render for Ellipse<S, F> {
-    fn render(&mut self, context: &mut RenderContext, _: &mut Environment) {
+    fn render(&mut self, context: &mut RenderContext, env: &mut Environment) {
+        self.capture_state(env);
+
         let radii = vec2(self.width() as f32 / 2.0, self.height() as f32 / 2.0);
         let center = point(self.x() as f32 + radii.x, self.y() as f32 + radii.y);
         let rectangle = rect(

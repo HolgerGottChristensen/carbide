@@ -18,11 +18,11 @@ fn main() {
         "Switch Example - Carbide",
         Dimension::new(400.0, 600.0),
         VStack::new(vec![
-            Switch::new("Rectangle", switch_state1),
+            Switch::new("Rectangle", switch_state1).boxed(),
             Switch::new("Circle", switch_state2)
-                .accent_color(EnvironmentColor::Pink),
-            Switch::new("Triangle", switch_state3),
-            Switch::new("Star", switch_state4),
+                .accent_color(EnvironmentColor::Pink).boxed(),
+            Switch::new("Triangle", switch_state3).boxed(),
+            Switch::new("Star", switch_state4).boxed(),
         ])
             .spacing(10.0)
             .cross_axis_alignment(CrossAxisAlignment::Start)
