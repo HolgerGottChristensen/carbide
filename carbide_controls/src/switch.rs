@@ -1,4 +1,5 @@
 use carbide_core::color::{TRANSPARENT};
+use carbide_core::draw::Color;
 use carbide_core::environment::EnvironmentColor;
 use carbide_core::focus::Focus;
 use carbide_core::state::{AnyState, IntoReadState, IntoState, Map1, Map2, ReadState, TState};

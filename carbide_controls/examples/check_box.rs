@@ -17,10 +17,10 @@ fn main() {
         "Checkbox Example - Carbide",
         Dimension::new(400.0, 600.0),
         VStack::new(vec![
-            CheckBox::new("Rectangle", checkbox_state1),
-            CheckBox::new("Circle", checkbox_state2),
-            CheckBox::new("Triangle", checkbox_state3),
-            CheckBox::new("Star", checkbox_state4),
+            CheckBox::new("Rectangle", checkbox_state1).boxed(),
+            CheckBox::new("Circle", checkbox_state2).boxed(),
+            CheckBox::new("Triangle", checkbox_state3).boxed(),
+            CheckBox::new("Star", checkbox_state4).boxed(),
         ])
             .spacing(10.0)
             .cross_axis_alignment(CrossAxisAlignment::Start)

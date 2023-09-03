@@ -6,9 +6,7 @@ use carbide_core::environment::{Environment, EnvironmentColor};
 use carbide_core::flags::Flags;
 use carbide_core::focus::{Focus, Focusable, Refocus};
 use carbide_core::state::{AnyReadState, AnyState, IntoReadState, IntoState, LocalState, Map1, Map2, ReadState, ReadStateExtNew, State, StateContract, StateExtNew, TState};
-use carbide_core::widget::{
-    CommonWidget, HStack, Rectangle, Text, Widget, WidgetExt, WidgetId, ZStack,
-};
+use carbide_core::widget::{CommonWidget, HStack, MouseArea, Rectangle, Text, Widget, WidgetExt, WidgetId, ZStack};
 
 use crate::PlainButton;
 
@@ -87,7 +85,7 @@ impl<T: StateContract + PartialEq, F: State<T=Focus>, C: State<T=T>> PlainRadioB
 
         let delegate_widget = delegate(focus.as_dyn(), selected.clone());
 
-        let button = PlainButton::new(delegate_widget)
+        let button = MouseArea::new(delegate_widget)
             .on_click(capture!(
                 [state, focus],
                 |env: &mut Environment| {

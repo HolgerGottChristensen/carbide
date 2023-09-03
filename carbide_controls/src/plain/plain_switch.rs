@@ -6,7 +6,7 @@ use carbide_core::flags::Flags;
 use carbide_core::focus::{Focus, Focusable};
 use carbide_core::focus::Refocus;
 use carbide_core::state::{AnyState, IntoReadState, IntoState, LocalState, Map1, Map2, ReadState, State, StateExtNew, TState};
-use carbide_core::widget::{CommonWidget, Rectangle, Text, Widget, WidgetExt, WidgetId, ZStack};
+use carbide_core::widget::{CommonWidget, MouseArea, Rectangle, Text, Widget, WidgetExt, WidgetId, ZStack};
 
 use crate::PlainButton;
 
@@ -96,7 +96,7 @@ impl<F: State<T=Focus> + Clone, C: State<T=bool> + Clone, D: PlainSwitchDelegate
 
         let delegate_widget = delegate.call(focus.as_dyn(), checked.as_dyn());
 
-        let button = Box::new(PlainButton::new(delegate_widget)
+        let button = Box::new(MouseArea::new(delegate_widget)
             .on_click(capture!([checked, focus], |env: &mut Environment| {
                 let current = !*checked.value();
                 checked.set_value(current);
