@@ -28,10 +28,10 @@ fn main() {
         "Plain Radio Button Example - Carbide",
         Dimension::new(400.0, 600.0),
         VStack::new(vec![
-            PlainRadioButton::new("Rectangle", Shape::Rectangle, shape_state.clone()).border(),
-            PlainRadioButton::new("Circle", Shape::Circle, shape_state.clone()).border(),
-            PlainRadioButton::new("Triangle", Shape::Triangle, shape_state.clone()).border(),
-            PlainRadioButton::new("Star", Shape::Star, shape_state.clone()).border(),
+            PlainRadioButton::new(Shape::Rectangle, shape_state.clone()).border().boxed(),
+            PlainRadioButton::new(Shape::Circle, shape_state.clone()).border().boxed(),
+            PlainRadioButton::new(Shape::Triangle, shape_state.clone()).border().boxed(),
+            PlainRadioButton::new(Shape::Star, shape_state.clone()).border().boxed(),
         ])
             .spacing(10.0)
             .padding(EdgeInsets::all(40.0))

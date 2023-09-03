@@ -159,7 +159,7 @@ impl<
     S: State<T=T>,
     M: ReadState<T=Vec<T>>
 > CommonWidget for PlainPopUpButton<T, F, S, M> {
-    CommonWidgetImpl!(self, id: self.id, child: self.child, position: self.position, dimension: self.dimension, flag: Flags::FOCUSABLE, flexibility: 10);
+    CommonWidgetImpl!(self, id: self.id, child: self.child, position: self.position, dimension: self.dimension, flag: Flags::FOCUSABLE, flexibility: 10, focus: self.focus);
 }
 
 

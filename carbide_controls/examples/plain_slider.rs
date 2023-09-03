@@ -1,7 +1,7 @@
 use carbide_controls::PlainSlider;
 use carbide_core::draw::Dimension;
 use carbide_core::environment::EnvironmentColor;
-use carbide_core::state::{LocalState, StateExt, ReadStateExtNew};
+use carbide_core::state::{LocalState, ReadStateExtNew};
 use carbide_core::widget::*;
 use carbide_wgpu::{Application, Window};
 

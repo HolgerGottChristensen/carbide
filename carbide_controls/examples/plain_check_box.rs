@@ -17,10 +17,10 @@ fn main() {
         "Plain Check Box Example - Carbide",
         Dimension::new(400.0, 600.0),
         VStack::new(vec![
-            PlainCheckBox::new("Rectangle", checkbox_state1.clone()).border(),
-            PlainCheckBox::new("Circle", checkbox_state2).border(),
-            PlainCheckBox::new("Triangle", checkbox_state3).border(),
-            PlainCheckBox::new("Star", checkbox_state4).border(),
+            PlainCheckBox::new(checkbox_state1.clone()).border().boxed(),
+            PlainCheckBox::new(checkbox_state2).border().boxed(),
+            PlainCheckBox::new(checkbox_state3).border().boxed(),
+            PlainCheckBox::new(checkbox_state4).border().boxed(),
         ])
             .spacing(10.0)
             .padding(EdgeInsets::all(40.0)),
