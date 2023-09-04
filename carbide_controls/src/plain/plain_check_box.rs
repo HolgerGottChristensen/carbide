@@ -104,7 +104,15 @@ impl<F: State<T=Focus> + Clone, C: State<T=CheckBoxValue> + Clone, D: PlainCheck
                     println!("Focus request");
                     env.request_focus(Refocus::FocusRequest);
                 }
-            }))
+            })).on_click_outside(capture!(
+                [focus],
+                |env: &mut Environment| {
+                    if *focus.value() == Focus::Focused {
+                        focus.set_value(Focus::FocusReleased);
+                        env.request_focus(Refocus::FocusRequest);
+                    }
+                }
+            ))
             .focused(focus.clone());
 
         let button = Box::new(button);
