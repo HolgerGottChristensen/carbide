@@ -43,7 +43,7 @@ fn main() {
     application.set_scene(Window::new(
         "Pop up Button Example - Carbide",
         Dimension::new(400.0, 600.0),
-        PopUpButton::new(model, selected).frame_fixed_width(200)
+        *PopUpButton::new(selected, model).frame_fixed_width(200.0)
     ).close_application_on_window_close());
 
     application.launch();

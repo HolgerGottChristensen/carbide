@@ -8,7 +8,7 @@ use carbide_core::event::{
     Key, KeyboardEvent, KeyboardEventHandler, MouseEvent, MouseEventHandler,
 };
 use carbide_core::flags::Flags;
-use carbide_core::focus::Focus;
+use carbide_core::focus::{Focus, Refocus};
 use carbide_core::layout::{Layout, Layouter};
 use carbide_core::render::Render;
 use carbide_core::state::{AnyReadState, AnyState, IntoReadState, IntoState, LocalState, Map1, Map2, ReadState, ReadStateExtNew, State, StateContract, StateExtNew, TState};
@@ -131,7 +131,7 @@ impl<
             selected.clone(),
         ).boxed().overlay("controls_popup_layer", popup_open.clone());
 
-        let child = delegate(selected.as_dyn(), focus.as_dyn());
+        let child = delegate(selected.as_dyn(), focus.as_dyn(), popup_open.as_dyn_read());
 
         PlainPopUpButton {
             id: WidgetId::new(),
@@ -211,8 +211,17 @@ impl<
         match event {
             MouseEvent::Click(_, position, _) => {
                 if self.is_inside(*position) {
+                    if self.get_focus() != Focus::Focused {
+                        self.set_focus(Focus::FocusRequested);
+                        env.request_focus(Refocus::FocusRequest);
+                    }
                     self.popup_open.set_value(true);
                     env.request_animation_frame();
+                } else {
+                    if self.get_focus() == Focus::Focused {
+                        self.set_focus(Focus::FocusReleased);
+                        env.request_focus(Refocus::FocusRequest);
+                    }
                 }
             }
             _ => (),
@@ -258,7 +267,7 @@ impl<
 //  Delegates
 // ---------------------------------------------------
 type DelegateGenerator<T: StateContract + PartialEq> =
-    fn(selected_item: Box<dyn AnyState<T=T>>, focused: Box<dyn AnyState<T=Focus>>) -> Box<dyn Widget>;
+    fn(selected_item: Box<dyn AnyState<T=T>>, focused: Box<dyn AnyState<T=Focus>>, popup_open: Box<dyn AnyReadState<T=bool>>) -> Box<dyn Widget>;
 
 type PopupDelegateGenerator<T: StateContract + PartialEq, S: State<T=T>, M: ReadState<T=Vec<T>>, B: State<T=bool>,> =
     fn(model: M, delegate: PopupDelegate<T, S, B>) -> Box<dyn Widget>;
@@ -322,7 +331,11 @@ impl<T: StateContract, S: State<T=T>, B: State<T=bool>> Delegate<T, Box<dyn Widg
     }
 }
 
-fn default_delegate<T: StateContract + PartialEq>(selected_item: Box<dyn AnyState<T=T>>, focused: Box<dyn AnyState<T=Focus>>) -> Box<dyn Widget> {
+fn default_delegate<T: StateContract + PartialEq>(
+    selected_item: Box<dyn AnyState<T=T>>,
+    focused: Box<dyn AnyState<T=Focus>>,
+    popup_open: Box<dyn AnyReadState<T=bool>>,
+) -> Box<dyn Widget> {
     let background_color = Map1::read_map(focused.clone(), |focused| {
         match *focused {
             Focus::Focused => EnvironmentColor::Green,

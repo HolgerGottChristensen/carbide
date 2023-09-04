@@ -1,7 +1,7 @@
 use carbide_core::color::TRANSPARENT;
 use carbide_core::environment::EnvironmentColor;
 use carbide_core::focus::Focus;
-use carbide_core::state::{AnyReadState, AnyState, IntoReadState, IntoState, LocalState, Map2, TState};
+use carbide_core::state::{AnyReadState, AnyState, IntoReadState, IntoState, LocalState, Map2, ReadStateExtNew, TState};
 use carbide_core::widget::*;
 
 use crate::PlainSlider;
@@ -47,22 +47,10 @@ impl Slider {
     }
 
     fn thumb(state: Box<dyn AnyState<T=f64>>, start: Box<dyn AnyReadState<T=f64>>, end: Box<dyn AnyReadState<T=f64>>, steps: Box<dyn AnyReadState<T=Option<f64>>>, focus: Box<dyn AnyReadState<T=Focus>>) -> Box<dyn Widget> {
-        /*let outline_color = Map2::read_map(focus, EnvironmentColor::Accent.color(), |focus, color| {
-            if *focus == Focus::Focused {
-                *color
-            } else {
-                TRANSPARENT
-            }
-        });*/
+        let is_stepped = steps.map(|s| s.is_some());
 
-        Circle::new()
-            .fill(EnvironmentColor::DarkText)
-            /*.background(
-                Circle::new()
-                    .stroke(outline_color)
-                    .stroke_style(1.0)
-                    .padding(-2.0)
-            )*/
-            .frame(15.0, 15.0)
+        IfElse::new(is_stepped)
+            .when_true(*RoundedRectangle::new(2.0).fill(EnvironmentColor::DarkText).frame(8.0, 15.0))
+            .when_false(*Circle::new().fill(EnvironmentColor::DarkText).frame(15.0, 15.0))
     }
 }

@@ -3,7 +3,7 @@ pub use check_box::*;
 pub use list::*;
 pub use navigation_stack::NavigationStack;
 pub use plain::*;
-//pub use pop_up_button::PopUpButton;
+pub use pop_up_button::*;
 pub use radio_button::*;
 pub use slider::*;
 pub use switch::*;
