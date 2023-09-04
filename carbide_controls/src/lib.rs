@@ -5,7 +5,7 @@ pub use navigation_stack::NavigationStack;
 pub use plain::*;
 //pub use pop_up_button::PopUpButton;
 pub use radio_button::*;
-//pub use slider::Slider;
+pub use slider::*;
 pub use switch::*;
 //pub use text_input::TextInput;
 pub use types::CheckBoxValue;
