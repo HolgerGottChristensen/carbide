@@ -7,7 +7,7 @@ pub use pop_up_button::*;
 pub use radio_button::*;
 pub use slider::*;
 pub use switch::*;
-//pub use text_input::TextInput;
+pub use text_input::*;
 pub use types::CheckBoxValue;
 
 #[macro_export]

@@ -1,4 +1,5 @@
-use crate::state::{Map1, RMap1, AnyReadState, IntoReadState, StateContract, State, AnyState};
+
+use crate::state::{Map1, RMap1, AnyReadState, IntoReadState, StateContract, State, AnyState, RWMap1};
 
 
 // ---------------------------------------------------
@@ -70,6 +71,106 @@ impl_string_state!(
     bool, char, isize, usize,
     &'static str
 );
+
+
+impl ConvertInto<Result<String, String>> for String {
+    type Output<G: AnyState<T=Self> + Clone> = RWMap1<fn(&String) -> Result<String, String>, fn(Result<String, String>, &String) -> Option<String>, String, Result<String, String>, G>;
+
+    fn convert<F: AnyState<T=Self> + Clone>(f: F) -> Self::Output<F> {
+        Map1::map(f, |val| {
+            Ok(val.to_string())
+        }, |new, old| {
+            match new {
+                Ok(s) | Err(s) => {
+                    Some(s)
+                }
+            }
+        })
+    }
+}
+
+macro_rules! impl_res_state_plain {
+    ($($typ: ty),*) => {
+        $(
+            impl ConvertInto<Result<String, String>> for Result<$typ, String> {
+                type Output<G: AnyState<T=Self> + Clone> = RWMap1<fn(&Result<$typ, String>)->Result<String, String>, fn(Result<String, String>, &Result<$typ, String>)->Option<Result<$typ, String>>, Result<$typ, String>, Result<String, String>, G>;
+
+                fn convert<F: AnyState<T=Self> + Clone>(f: F) -> Self::Output<F> {
+                    use std::str::FromStr;
+
+                    Map1::map(f, |val| {
+                        match val {
+                            Ok(val) => { Ok(val.to_string()) }
+                            Err(val) => { Err(val.to_string()) }
+                        }
+                    }, |new, old| {
+                        match new {
+                            Ok(s) | Err(s) => {
+                                Some(<$typ>::from_str(&s)
+                                    .map_err(|_| s.to_string()))
+                            }
+                        }
+                    })
+                }
+            }
+        )*
+    }
+}
+
+impl_res_state_plain! {
+    u8, u16, u32, u64, u128, usize,
+    i8, i16, i32, i64, i128, isize
+}
+
+
+// TODO: We cant do float mappings nicely, because we dont have access to the old value when mapping forwards.
+impl ConvertInto<Result<String, String>> for Result<f32, String> {
+    type Output<G: AnyState<T=Self> + Clone> = RWMap1<fn(&Result<f32, String>) -> Result<String, String>, fn(Result<String, String>, &Result<f32, String>) -> Option<Result<f32, String>>, Result<f32, String>, Result<String, String>, G>;
+
+    fn convert<F: AnyState<T=Self> + Clone>(f: F) -> Self::Output<F> {
+        use std::str::FromStr;
+
+        Map1::map(f, |val| {
+            match val {
+                Ok(val) => { Ok(val.to_string()) }
+                Err(val) => { Err(val.to_string()) }
+            }
+        }, |new, old| {
+            match new {
+                Ok(s) | Err(s) => {
+                    Some(<f32>::from_str(&s).map_err(|_| s.to_string()))
+                }
+            }
+        })
+    }
+}
+
+impl ConvertInto<Result<String, String>> for Result<f64, String> {
+    type Output<G: AnyState<T=Self> + Clone> = RWMap1<fn(&Result<f64, String>) -> Result<String, String>, fn(Result<String, String>, &Result<f64, String>) -> Option<Result<f64, String>>, Result<f64, String>, Result<String, String>, G>;
+
+    fn convert<F: AnyState<T=Self> + Clone>(f: F) -> Self::Output<F> {
+        use std::str::FromStr;
+
+        Map1::map(f, |val| {
+            match val {
+                Ok(val) => { Ok(val.to_string()) }
+                Err(val) => { Err(val.to_string()) }
+            }
+        }, |new, old| {
+            match new {
+                Ok(s) | Err(s) => {
+                    Some(<f64>::from_str(&s).map_err(|_| s.to_string()))
+                }
+            }
+        })
+    }
+}
+
+
+
+
+
+
 
 /*impl IntoReadState<f64> for u32 {
     type Output = f64;

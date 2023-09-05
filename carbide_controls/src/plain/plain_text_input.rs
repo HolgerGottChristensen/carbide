@@ -12,7 +12,7 @@ use carbide_core::focus::Focus;
 use carbide_core::focus::Focusable;
 use carbide_core::layout::{BasicLayouter, Layout, Layouter};
 use carbide_core::render::{Render, RenderContext};
-use carbide_core::state::{AnyReadState, IntoState, LocalState, Map2, NewStateSync, ReadState, ReadStateExtNew, State, TState};
+use carbide_core::state::{AnyReadState, IntoReadState, IntoState, LocalState, Map2, NewStateSync, ReadState, ReadStateExtNew, State, TState};
 use carbide_core::state::StateSync;
 use carbide_core::text::Glyph;
 use carbide_core::utils::{binary_search, clamp};
@@ -78,12 +78,17 @@ impl PlainTextInput<Focus, Color, Option<char>, u32, String> {
         let obscure = None;
         let font_size = EnvironmentFontSize::Body.u32();
 
+        let cursor_widget = Rectangle::new().fill(EnvironmentColor::Green);
+        let selection_widget = Rectangle::new().fill(EnvironmentColor::Purple);
+
         Self::new_internal(
             focus,
             color,
             obscure,
             font_size,
-            text.into_state()
+            text.into_state(),
+            cursor_widget,
+            selection_widget,
         )
     }
 }
@@ -95,14 +100,75 @@ impl<
     S: ReadState<T=u32>,
     T: State<T=String>,
 > PlainTextInput<F, C, O, S, T> {
+    pub fn focused<F2: IntoState<Focus>>(self, focused: F2) -> PlainTextInput<F2::Output, C, O, S, T> {
+        Self::new_internal(
+            focused.into_state(),
+            self.text_color,
+            self.obscure_text,
+            self.font_size,
+            self.text,
+            self.cursor_widget,
+            self.selection_widget,
+        )
+    }
 
-    pub fn obscure<O2: ReadState<T=Option<char>>>(self, obscure: O2) -> PlainTextInput<F, C, O2, S, T> {
+    pub fn font_size<S2: IntoReadState<u32>>(self, font_size: S2) -> PlainTextInput<F, C, O, S2::Output, T> {
         Self::new_internal(
             self.focus,
             self.text_color,
-            obscure,
+            self.obscure_text,
+            font_size.into_read_state(),
+            self.text,
+            self.cursor_widget,
+            self.selection_widget,
+        )
+    }
+
+    pub fn text_color<C2: IntoReadState<Color>>(self, text_color: C2) -> PlainTextInput<F, C2::Output, O, S, T> {
+        Self::new_internal(
+            self.focus,
+            text_color.into_read_state(),
+            self.obscure_text,
             self.font_size,
-            self.text
+            self.text,
+            self.cursor_widget,
+            self.selection_widget,
+        )
+    }
+
+    pub fn obscure<O2: IntoReadState<Option<char>>>(self, obscure: O2) -> PlainTextInput<F, C, O2::Output, S, T> {
+        Self::new_internal(
+            self.focus,
+            self.text_color,
+            obscure.into_read_state(),
+            self.font_size,
+            self.text,
+            self.cursor_widget,
+            self.selection_widget
+        )
+    }
+
+    pub fn selection_widget(self, selection: Box<dyn Widget>) -> PlainTextInput<F, C, O, S, T> {
+        Self::new_internal(
+            self.focus,
+            self.text_color,
+            self.obscure_text,
+            self.font_size,
+            self.text,
+            self.cursor_widget,
+            selection
+        )
+    }
+
+    pub fn cursor_widget(self, cursor: Box<dyn Widget>) -> PlainTextInput<F, C, O, S, T> {
+        Self::new_internal(
+            self.focus,
+            self.text_color,
+            self.obscure_text,
+            self.font_size,
+            self.text,
+            cursor,
+            self.selection_widget
         )
     }
 
@@ -112,7 +178,7 @@ impl<
         O2: ReadState<T=Option<char>>,
         S2: ReadState<T=u32>,
         T2: State<T=String>,
-    >(focus: F2, text_color: C2, obscure: O2, font_size: S2, text: T2) -> PlainTextInput<F2, C2, O2, S2, T2> {
+    >(focus: F2, text_color: C2, obscure: O2, font_size: S2, text: T2, cursor_widget: Box<dyn Widget>, selection_widget: Box<dyn Widget>) -> PlainTextInput<F2, C2, O2, S2, T2> {
 
         let display_text = Map2::read_map(text.clone(), obscure.clone(), |text, obscure| {
             if let Some(obscuring_char) = obscure {
@@ -134,8 +200,8 @@ impl<
             dimension: Default::default(),
             focus,
             text_widget,
-            cursor_widget: Rectangle::new().fill(EnvironmentColor::Green),
-            selection_widget: Rectangle::new().fill(EnvironmentColor::Purple),
+            cursor_widget,
+            selection_widget,
             text_color,
             obscure_text: obscure,
             font_size,
@@ -149,8 +215,6 @@ impl<
         }
     }
 }
-
-
 
 /*impl PlainTextInput {
     pub fn new(text: impl Into<TextInputState>) -> Box<Self> {
@@ -1012,9 +1076,9 @@ impl<
                 self.last_drag_position = None;
             }
             //MouseEvent::Click(_, position, ModifierKey::NO_MODIFIER) => self.text_click(position, env),
-            MouseEvent::Click(_, position, ModifierKey::SHIFT) => self.selection_click(position, env),
-            MouseEvent::NClick(_, _, _, n) if n % 2 == 1 => self.select_all(),
-            MouseEvent::NClick(_, position, _, n) if n % 2 == 0 => self.select_word_at_click(position, env),
+            MouseEvent::Click(_, position, ModifierKey::SHIFT) if self.get_focus() == Focus::Focused => self.selection_click(position, env),
+            MouseEvent::NClick(_, _, _, n) if n % 2 == 1 && self.get_focus() == Focus::Focused => self.select_all(),
+            MouseEvent::NClick(_, position, _, n) if n % 2 == 0 && self.get_focus() == Focus::Focused => self.select_word_at_click(position, env),
             MouseEvent::Drag { to, delta_xy, .. } => {
                 if self.last_drag_position.is_some() || self.is_inside(event.get_current_mouse_position()) {
                     self.last_drag_position = Some(*to);

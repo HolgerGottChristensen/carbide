@@ -50,31 +50,35 @@ fn main() {
     application.set_scene(Window::new(
         "Focus behavior example - Carbide",
         Dimension::new(400.0, 600.0),
-        VStack::new(vec![
+        *VStack::new(vec![
             PlainTextInput::new(text_state)
-                .font_size(40)
+                .font_size(40u32)
                 .padding(EdgeInsets::all(2.0))
                 .border()
                 .clip()
-                .padding(EdgeInsets::all(20.0)),
+                .padding(EdgeInsets::all(20.0))
+                .boxed(),
             PlainTextInput::new(text_state2)
-                .font_size(40)
+                .font_size(40u32)
                 .padding(EdgeInsets::all(2.0))
                 .border()
                 .clip()
-                .padding(EdgeInsets::all(20.0)),
+                .padding(EdgeInsets::all(20.0))
+                .boxed(),
             PlainTextInput::new(text_state3)
-                .font_size(40)
+                .font_size(40u32)
                 .padding(EdgeInsets::all(2.0))
                 .border()
                 .clip()
-                .padding(EdgeInsets::all(20.0)),
+                .padding(EdgeInsets::all(20.0))
+                .boxed(),
             PlainTextInput::new(text_state4)
-                .font_size(40)
+                .font_size(40u32)
                 .padding(EdgeInsets::all(2.0))
                 .border()
                 .clip()
-                .padding(EdgeInsets::all(20.0)),
+                .padding(EdgeInsets::all(20.0))
+                .boxed(),
             /*PlainTextInput::new(text_state5)
                 .padding(EdgeInsets::all(2.0))
                 .border()
@@ -86,7 +90,9 @@ fn main() {
                 .clip()
                 .padding(EdgeInsets::all(30.0)),*/
             //PopUpButton::new(model, selected).padding(EdgeInsets::all(50.0)),
-            PlainPopUpButton::new(model, selected).padding(50.0),
+            PlainPopUpButton::new(selected, model)
+                .padding(50.0)
+                .boxed(),
         ])
             .spacing(20.0)
     ).close_application_on_window_close());

@@ -32,6 +32,7 @@ impl Default for Month {
 
 fn main() {
     let selected = LocalState::new(January);
+    let selected2 = LocalState::new(January);
 
     let model = LocalState::new(vec![
         January, February, March, April, May, June, July, September, October, November, December,
@@ -43,7 +44,11 @@ fn main() {
     application.set_scene(Window::new(
         "Pop up Button Example - Carbide",
         Dimension::new(400.0, 600.0),
-        *PopUpButton::new(selected, model).frame_fixed_width(200.0)
+        *VStack::new(vec![
+            PopUpButton::new(selected, model.clone()).boxed(),
+            PopUpButton::new(selected2, model).boxed()
+        ]).spacing(20.0)
+            .frame_fixed_width(200.0)
     ).close_application_on_window_close());
 
     application.launch();

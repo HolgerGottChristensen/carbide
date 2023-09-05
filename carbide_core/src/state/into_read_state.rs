@@ -1,4 +1,4 @@
-use crate::state::{AnyReadState, ReadState, StateContract};
+use crate::state::{AnyReadState, Map1, ReadState, RMap1, StateContract};
 
 // ---------------------------------------------------
 //  Definitions
@@ -37,3 +37,15 @@ impl<T: AnyReadState<T=A> + Clone, A: StateContract, B: StateContract> IntoReadS
         A::convert(self)
     }
 }
+
+
+impl<T: StateContract> ConvertIntoRead<Option<T>> for T {
+    type Output<G: AnyReadState<T=Self> + Clone> = RMap1<fn(&T)->Option<T>, T, Option<T>, G>;
+
+    fn convert<F: AnyReadState<T=T> + Clone>(f: F) -> Self::Output<F> {
+        Map1::read_map(f, |c| {
+            Some(c.clone())
+        })
+    }
+}
+

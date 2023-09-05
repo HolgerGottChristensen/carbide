@@ -20,6 +20,15 @@ impl EdgeInsets {
         }
     }
 
+    pub fn vertical_horizontal(vertical: Scalar, horizontal: Scalar) -> Self {
+        EdgeInsets {
+            top: vertical,
+            bottom: vertical,
+            left: horizontal,
+            right: horizontal,
+        }
+    }
+
     pub fn all(amount: Scalar) -> Self {
         EdgeInsets {
             top: amount,
