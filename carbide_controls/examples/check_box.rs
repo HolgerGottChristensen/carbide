@@ -21,6 +21,9 @@ fn main() {
             CheckBox::new("Circle", checkbox_state2).boxed(),
             CheckBox::new("Triangle", checkbox_state3).boxed(),
             CheckBox::new("Star", checkbox_state4).boxed(),
+            CheckBox::new("Disabled 1", CheckBoxValue::True).enabled(false).boxed(),
+            CheckBox::new("Disabled 2", CheckBoxValue::Intermediate).enabled(false).boxed(),
+            CheckBox::new("Disabled 3", CheckBoxValue::False).enabled(false).boxed(),
         ])
             .spacing(10.0)
             .cross_axis_alignment(CrossAxisAlignment::Start)

@@ -1,7 +1,7 @@
 use carbide_core::color::TRANSPARENT;
 use carbide_core::environment::EnvironmentColor;
 use carbide_core::focus::Focus;
-use carbide_core::state::{AnyReadState, AnyState, IntoReadState, IntoState, LocalState, Map2, ReadStateExtNew, TState};
+use carbide_core::state::{AnyReadState, AnyState, IntoReadState, IntoState, LocalState, Map1, Map2, ReadStateExtNew, TState};
 use carbide_core::widget::*;
 
 use crate::PlainSlider;
@@ -9,7 +9,7 @@ use crate::PlainSlider;
 pub struct Slider;
 
 impl Slider {
-    pub fn new<V: IntoState<f64>, S: IntoReadState<f64>, E: IntoReadState<f64>>(value: V, start: S, end: E) -> PlainSlider<TState<Focus>, V::Output, S::Output, E::Output, Option<f64>, Box<dyn Widget>, Box<dyn Widget>, Box<dyn Widget>> {
+    pub fn new<V: IntoState<f64>, S: IntoReadState<f64>, E: IntoReadState<f64>>(value: V, start: S, end: E) -> PlainSlider<TState<Focus>, V::Output, S::Output, E::Output, Option<f64>, Box<dyn Widget>, Box<dyn Widget>, Box<dyn Widget>, bool> {
         let focus = LocalState::new(Focus::Unfocused);
 
         let mut plain = PlainSlider::new(value, start, end)
@@ -20,7 +20,7 @@ impl Slider {
         plain
     }
 
-    fn background(state: Box<dyn AnyState<T=f64>>, start: Box<dyn AnyReadState<T=f64>>, end: Box<dyn AnyReadState<T=f64>>, steps: Box<dyn AnyReadState<T=Option<f64>>>, focus: Box<dyn AnyReadState<T=Focus>>) -> Box<dyn Widget> {
+    fn background(state: Box<dyn AnyState<T=f64>>, start: Box<dyn AnyReadState<T=f64>>, end: Box<dyn AnyReadState<T=f64>>, steps: Box<dyn AnyReadState<T=Option<f64>>>, focus: Box<dyn AnyReadState<T=Focus>>, enabled: Box<dyn AnyReadState<T=bool>>,) -> Box<dyn Widget> {
         let outline_color = Map2::read_map(focus, EnvironmentColor::Accent.color(), |focus, color| {
             if *focus == Focus::Focused {
                 *color
@@ -29,8 +29,16 @@ impl Slider {
             }
         });
 
+        let background_color = Map1::read_map(enabled, |enabled| {
+            if *enabled {
+                EnvironmentColor::SystemFill
+            } else {
+                EnvironmentColor::TertiarySystemFill
+            }
+        });
+
         Capsule::new()
-            .fill(EnvironmentColor::SystemFill)
+            .fill(background_color)
             .background(
                 Capsule::new()
                     .stroke(outline_color)
@@ -40,17 +48,33 @@ impl Slider {
             .frame_fixed_height(5.0)
     }
 
-    fn track(state: Box<dyn AnyState<T=f64>>, start: Box<dyn AnyReadState<T=f64>>, end: Box<dyn AnyReadState<T=f64>>, steps: Box<dyn AnyReadState<T=Option<f64>>>, focus: Box<dyn AnyReadState<T=Focus>>) -> Box<dyn Widget> {
+    fn track(state: Box<dyn AnyState<T=f64>>, start: Box<dyn AnyReadState<T=f64>>, end: Box<dyn AnyReadState<T=f64>>, steps: Box<dyn AnyReadState<T=Option<f64>>>, focus: Box<dyn AnyReadState<T=Focus>>, enabled: Box<dyn AnyReadState<T=bool>>,) -> Box<dyn Widget> {
+        let track_color = Map1::read_map(enabled, |enabled| {
+            if *enabled {
+                EnvironmentColor::Accent
+            } else {
+                EnvironmentColor::SystemFill
+            }
+        });
+
         Capsule::new()
-            .fill(EnvironmentColor::Accent)
+            .fill(track_color)
             .frame_fixed_height(5.0)
     }
 
-    fn thumb(state: Box<dyn AnyState<T=f64>>, start: Box<dyn AnyReadState<T=f64>>, end: Box<dyn AnyReadState<T=f64>>, steps: Box<dyn AnyReadState<T=Option<f64>>>, focus: Box<dyn AnyReadState<T=Focus>>) -> Box<dyn Widget> {
+    fn thumb(state: Box<dyn AnyState<T=f64>>, start: Box<dyn AnyReadState<T=f64>>, end: Box<dyn AnyReadState<T=f64>>, steps: Box<dyn AnyReadState<T=Option<f64>>>, focus: Box<dyn AnyReadState<T=Focus>>, enabled: Box<dyn AnyReadState<T=bool>>,) -> Box<dyn Widget> {
         let is_stepped = steps.map(|s| s.is_some());
 
+        let thumb_color = Map1::read_map(enabled, |enabled| {
+            if *enabled {
+                EnvironmentColor::DarkText
+            } else {
+                EnvironmentColor::TertiaryLabel
+            }
+        });
+
         IfElse::new(is_stepped)
-            .when_true(*RoundedRectangle::new(2.0).fill(EnvironmentColor::DarkText).frame(8.0, 15.0))
-            .when_false(*Circle::new().fill(EnvironmentColor::DarkText).frame(15.0, 15.0))
+            .when_true(*RoundedRectangle::new(2.0).fill(thumb_color.clone()).frame(8.0, 15.0))
+            .when_false(*Circle::new().fill(thumb_color).frame(15.0, 15.0))
     }
 }

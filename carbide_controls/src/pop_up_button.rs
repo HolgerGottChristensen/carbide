@@ -1,13 +1,13 @@
 use std::fmt::Debug;
 use carbide_core::color::TRANSPARENT;
 
-use carbide_core::draw::{Alignment, Color};
-use carbide_core::environment::EnvironmentColor;
+use carbide_core::draw::{Alignment, Color, Rect};
+use carbide_core::environment::{Environment, EnvironmentColor};
 use carbide_core::focus::Focus;
 use carbide_core::render::Style;
 use carbide_core::state::{AnyReadState, AnyState, IntoReadState, IntoState, Map1, Map2, Map3, ReadState, ReadStateExtNew, State, StateContract, StateExt, TState};
 use carbide_core::widget::*;
-use carbide_core::widget::canvas::{Canvas, LineCap};
+use carbide_core::widget::canvas::{Canvas, Context, LineCap};
 
 use crate::{PlainPopUpButton, PopupDelegate};
 
@@ -31,7 +31,7 @@ impl PopUpButton {
     ) -> Box<dyn Widget> {
         let text = Map1::read_map(selected_item, |a| format!("{:?}", a));
 
-        let arrows = Canvas::new(|_, mut context, _| {
+        let arrows = Canvas::new(|rect: Rect, mut context: Context, env: &mut Environment| {
             context.move_to(6.0, 9.0);
             context.line_to(10.0, 5.0);
             context.line_to(14.0, 9.0);
@@ -67,7 +67,7 @@ impl PopUpButton {
                 ZStack::new(vec![
                     RoundedRectangle::new(CornerRadii::single(0.0, 0.0, 0.0, 2.0)) // TODO: Changing top_right, makes lyon mess up.
                         .fill(button_color),
-                    arrows,
+                    arrows.boxed(),
                 ])
                     .padding(EdgeInsets::single(0.0, 0.0, 0.0, 1.0))
                     .frame_fixed_width(20.0),

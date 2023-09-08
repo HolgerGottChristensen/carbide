@@ -13,24 +13,26 @@ use crate::PlainButton;
 use crate::types::*;
 
 pub trait PlainCheckBoxDelegate: Clone + 'static {
-    fn call(&self, focus: Box<dyn AnyReadState<T=Focus>>, checked: Box<dyn AnyReadState<T=CheckBoxValue>>) -> Box<dyn Widget>;
+    fn call(&self, focus: Box<dyn AnyReadState<T=Focus>>, checked: Box<dyn AnyReadState<T=CheckBoxValue>>, enabled: Box<dyn AnyReadState<T=bool>>) -> Box<dyn Widget>;
 }
 
-impl<K> PlainCheckBoxDelegate for K where K: Fn(Box<dyn AnyReadState<T=Focus>>, Box<dyn AnyReadState<T=CheckBoxValue>>) -> Box<dyn Widget> + Clone + 'static {
-    fn call(&self, item: Box<dyn AnyReadState<T=Focus>>, index: Box<dyn AnyReadState<T=CheckBoxValue>>) -> Box<dyn Widget> {
-        self(item, index)
+impl<K> PlainCheckBoxDelegate for K where K: Fn(Box<dyn AnyReadState<T=Focus>>, Box<dyn AnyReadState<T=CheckBoxValue>>, Box<dyn AnyReadState<T=bool>>) -> Box<dyn Widget> + Clone + 'static {
+    fn call(&self, item: Box<dyn AnyReadState<T=Focus>>, index: Box<dyn AnyReadState<T=CheckBoxValue>>, enabled: Box<dyn AnyReadState<T=bool>>) -> Box<dyn Widget> {
+        self(item, index, enabled)
     }
 }
 
 #[derive(Clone, Widget)]
 #[carbide_exclude(Focusable)]
-pub struct PlainCheckBox<F, C, D> where
+pub struct PlainCheckBox<F, C, D, E> where
     F: State<T=Focus> + Clone,
     C: State<T=CheckBoxValue> + Clone,
     D: PlainCheckBoxDelegate,
+    E: ReadState<T=bool>,
 {
     id: WidgetId,
     #[state] focus: F,
+    #[state] enabled: E,
     child: Box<dyn Widget>,
     position: Position,
     dimension: Dimension,
@@ -38,20 +40,21 @@ pub struct PlainCheckBox<F, C, D> where
     #[state] checked: C,
 }
 
-type DefaultPlainCheckBoxDelegate = fn(focus: Box<dyn AnyReadState<T=Focus>>, selected: Box<dyn AnyReadState<T=CheckBoxValue>>) -> Box<dyn Widget>;
+type DefaultPlainCheckBoxDelegate = fn(focus: Box<dyn AnyReadState<T=Focus>>, selected: Box<dyn AnyReadState<T=CheckBoxValue>>, enabled: Box<dyn AnyReadState<T=bool>>) -> Box<dyn Widget>;
 
-impl PlainCheckBox<Focus, CheckBoxValue, DefaultPlainCheckBoxDelegate> {
-    pub fn new<C: IntoState<CheckBoxValue>>(checked: C) -> PlainCheckBox<TState<Focus>, C::Output, DefaultPlainCheckBoxDelegate> {
+impl PlainCheckBox<Focus, CheckBoxValue, DefaultPlainCheckBoxDelegate, bool> {
+    pub fn new<C: IntoState<CheckBoxValue>>(checked: C) -> PlainCheckBox<TState<Focus>, C::Output, DefaultPlainCheckBoxDelegate, bool> {
         let focus_state = LocalState::new(Focus::Unfocused);
 
         Self::new_internal(
             checked.into_state(),
             focus_state,
             PlainCheckBox::default_delegate,
+            true
         )
     }
 
-    fn default_delegate(focus: Box<dyn AnyReadState<T=Focus>>, checked: Box<dyn AnyReadState<T=CheckBoxValue>>) -> Box<dyn Widget> {
+    fn default_delegate(focus: Box<dyn AnyReadState<T=Focus>>, checked: Box<dyn AnyReadState<T=CheckBoxValue>>, enabled: Box<dyn AnyReadState<T=bool>>) -> Box<dyn Widget> {
         let background_color = Map1::read_map(checked.clone(), |value| {
             match value {
                 CheckBoxValue::True => EnvironmentColor::Green,
@@ -71,28 +74,42 @@ impl PlainCheckBox<Focus, CheckBoxValue, DefaultPlainCheckBoxDelegate> {
     }
 }
 
-impl<F: State<T=Focus> + Clone, C: State<T=CheckBoxValue> + Clone, D: PlainCheckBoxDelegate> PlainCheckBox<F, C, D> {
+impl<F: State<T=Focus> + Clone, C: State<T=CheckBoxValue> + Clone, D: PlainCheckBoxDelegate, E: ReadState<T=bool>,> PlainCheckBox<F, C, D, E> {
 
     pub fn delegate<D2: PlainCheckBoxDelegate>(
         self,
         delegate: D2,
-    ) -> PlainCheckBox<F, C, D2> {
-        Self::new_internal(self.checked, self.focus, delegate)
+    ) -> PlainCheckBox<F, C, D2, E> {
+        Self::new_internal(self.checked, self.focus, delegate, self.enabled)
     }
 
-    pub fn focused<F2: IntoState<Focus>>(mut self, focused: F2) -> PlainCheckBox<F2::Output, C, D> {
-        Self::new_internal(self.checked, focused.into_state(), self.delegate)
+    pub fn focused<F2: IntoState<Focus>>(mut self, focused: F2) -> PlainCheckBox<F2::Output, C, D, E> {
+        Self::new_internal(self.checked, focused.into_state(), self.delegate, self.enabled)
     }
 
-    fn new_internal<F2: State<T=Focus> + Clone, C2: State<T=CheckBoxValue> + Clone, D2: PlainCheckBoxDelegate>(
+    pub fn enabled<E2: IntoReadState<bool>>(mut self, enabled: E2) -> PlainCheckBox<F, C, D, E2::Output> {
+        Self::new_internal(
+            self.checked,
+            self.focus,
+            self.delegate,
+            enabled.into_read_state(),
+        )
+    }
+
+    fn new_internal<F2: State<T=Focus> + Clone, C2: State<T=CheckBoxValue> + Clone, D2: PlainCheckBoxDelegate, E2: ReadState<T=bool>,>(
         checked: C2,
         focus: F2,
         delegate: D2,
-    ) -> PlainCheckBox<F2, C2, D2> {
-        let delegate_widget = delegate.call(focus.as_dyn_read(), checked.as_dyn_read());
+        enabled: E2,
+    ) -> PlainCheckBox<F2, C2, D2, E2> {
+        let delegate_widget = delegate.call(focus.as_dyn_read(), checked.as_dyn_read(), enabled.as_dyn_read());
 
         let button = MouseArea::new(delegate_widget)
-            .on_click(capture!([checked, focus], |env: &mut Environment| {
+            .on_click(capture!([checked, focus, enabled], |env: &mut Environment| {
+                if !*enabled.value() {
+                    return;
+                }
+
                 if *checked.value() == CheckBoxValue::True {
                     checked.set_value(CheckBoxValue::False);
                 } else {
@@ -127,23 +144,24 @@ impl<F: State<T=Focus> + Clone, C: State<T=CheckBoxValue> + Clone, D: PlainCheck
             dimension: Dimension::new(100.0, 100.0),
             delegate,
             checked,
+            enabled
         }
     }
 }
 
-impl<F: State<T=Focus> + Clone, C: State<T=CheckBoxValue> + Clone, D: PlainCheckBoxDelegate> Focusable for PlainCheckBox<F, C, D> {
+impl<F: State<T=Focus> + Clone, C: State<T=CheckBoxValue> + Clone, D: PlainCheckBoxDelegate, E: ReadState<T=bool>> Focusable for PlainCheckBox<F, C, D, E> {
     fn focus_children(&self) -> bool {
         false
     }
 }
 
-impl<F: State<T=Focus> + Clone, C: State<T=CheckBoxValue> + Clone, D: PlainCheckBoxDelegate> CommonWidget for PlainCheckBox<F, C, D> {
+impl<F: State<T=Focus> + Clone, C: State<T=CheckBoxValue> + Clone, D: PlainCheckBoxDelegate, E: ReadState<T=bool>> CommonWidget for PlainCheckBox<F, C, D, E> {
     CommonWidgetImpl!(self, id: self.id, child: self.child, position: self.position, dimension: self.dimension, flag: Flags::FOCUSABLE, flexibility: 10, focus: self.focus);
 }
 
-impl<F: State<T=Focus> + Clone, C: State<T=CheckBoxValue> + Clone, D: PlainCheckBoxDelegate> WidgetExt for PlainCheckBox<F, C, D> {}
+impl<F: State<T=Focus> + Clone, C: State<T=CheckBoxValue> + Clone, D: PlainCheckBoxDelegate, E: ReadState<T=bool>> WidgetExt for PlainCheckBox<F, C, D, E> {}
 
-impl<F: State<T=Focus> + Clone, C: State<T=CheckBoxValue> + Clone, D: PlainCheckBoxDelegate> Debug for PlainCheckBox<F, C, D> {
+impl<F: State<T=Focus> + Clone, C: State<T=CheckBoxValue> + Clone, D: PlainCheckBoxDelegate, E: ReadState<T=bool>> Debug for PlainCheckBox<F, C, D, E> {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("PlainCheckBox")
             .field("id", &self.id)
@@ -151,6 +169,7 @@ impl<F: State<T=Focus> + Clone, C: State<T=CheckBoxValue> + Clone, D: PlainCheck
             .field("dimension", &self.dimension)
             .field("focus", &self.focus)
             .field("checked", &self.checked)
+            .field("enabled", &self.enabled)
             .finish()
     }
 }

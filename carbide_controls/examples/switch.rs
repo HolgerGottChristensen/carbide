@@ -10,6 +10,7 @@ fn main() {
     let switch_state2 = LocalState::new(true);
     let switch_state3 = LocalState::new(true);
     let switch_state4 = LocalState::new(false);
+    let switch_state5 = LocalState::new(false);
 
     let mut application = Application::new()
         .with_asset_fonts();
@@ -23,6 +24,10 @@ fn main() {
                 .accent_color(EnvironmentColor::Pink).boxed(),
             Switch::new("Triangle", switch_state3).boxed(),
             Switch::new("Star", switch_state4).boxed(),
+            Empty::new().frame(10.0, 10.0).boxed(),
+            Switch::new("Enabled", switch_state5.clone()).boxed(),
+            Switch::new("Disabled 1", LocalState::new(true)).enabled(switch_state5.clone()).boxed(),
+            Switch::new("Disabled 2", LocalState::new(false)).enabled(switch_state5).boxed(),
         ])
             .spacing(10.0)
             .cross_axis_alignment(CrossAxisAlignment::Start)

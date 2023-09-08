@@ -14,7 +14,7 @@ const SMOOTH_VALUE_SMALL_INCREMENT: f64 = 0.01;
 
 #[derive(Debug, Clone, Widget)]
 #[carbide_exclude(Focusable, Layout, MouseEvent, KeyboardEvent, Render)]
-pub struct PlainSlider<F, St, S, E, P, Th, In, Bg> where
+pub struct PlainSlider<F, St, S, E, P, Th, In, Bg, En> where
     F: State<T=Focus>,
     St: State<T=f64>,
     S: ReadState<T=f64>,
@@ -23,11 +23,13 @@ pub struct PlainSlider<F, St, S, E, P, Th, In, Bg> where
     Th: Widget + Clone,
     In: Widget + Clone,
     Bg: Widget + Clone,
+    En: ReadState<T=bool>,
 {
     id: WidgetId,
     position: Position,
     dimension: Dimension,
     #[state] focus: F,
+    #[state] enabled: En,
     dragging: bool,
 
     #[state] state: St,
@@ -44,8 +46,8 @@ pub struct PlainSlider<F, St, S, E, P, Th, In, Bg> where
     background: Bg,
 }
 
-impl PlainSlider<Focus, f64, f64, f64, Option<f64>, Empty, Empty, Empty> {
-    pub fn new<St: IntoState<f64>, S: IntoReadState<f64>, E: IntoReadState<f64>>(state: St, start: S, end: E) -> PlainSlider<TState<Focus>, St::Output, S::Output, E::Output, Option<f64>, Box<dyn Widget>, Box<dyn Widget>, Box<dyn Widget>> {
+impl PlainSlider<Focus, f64, f64, f64, Option<f64>, Empty, Empty, Empty, bool> {
+    pub fn new<St: IntoState<f64>, S: IntoReadState<f64>, E: IntoReadState<f64>>(state: St, start: S, end: E) -> PlainSlider<TState<Focus>, St::Output, S::Output, E::Output, Option<f64>, Box<dyn Widget>, Box<dyn Widget>, Box<dyn Widget>, bool> {
         let focus = LocalState::new(Focus::Unfocused);
 
         Self::new_internal(
@@ -57,6 +59,7 @@ impl PlainSlider<Focus, f64, f64, f64, Option<f64>, Empty, Empty, Empty> {
             default_thumb,
             default_track,
             default_background,
+            true
         )
     }
 }
@@ -70,8 +73,9 @@ impl<
     Th: Widget + Clone,
     In: Widget + Clone,
     Bg: Widget + Clone,
-> PlainSlider<F, St, S, E, P, Th, In, Bg> {
-    pub fn step<P2: IntoReadState<Option<f64>>>(self, steps: P2) -> PlainSlider<F, St, S, E, P2::Output, Th, In, Bg> {
+    En: ReadState<T=bool>,
+> PlainSlider<F, St, S, E, P, Th, In, Bg, En> {
+    pub fn step<P2: IntoReadState<Option<f64>>>(self, steps: P2) -> PlainSlider<F, St, S, E, P2::Output, Th, In, Bg, En> {
         Self::new_internal(
             self.focus,
             self.state,
@@ -81,10 +85,11 @@ impl<
             self.thumb_delegate,
             self.track_delegate,
             self.background_delegate,
+            self.enabled,
         )
     }
 
-    pub fn focused<F2: IntoState<Focus>>(self, focus: F2) -> PlainSlider<F2::Output, St, S, E, P, Th, In, Bg> {
+    pub fn focused<F2: IntoState<Focus>>(self, focus: F2) -> PlainSlider<F2::Output, St, S, E, P, Th, In, Bg, En> {
         Self::new_internal(
             focus.into_state(),
             self.state,
@@ -94,10 +99,25 @@ impl<
             self.thumb_delegate,
             self.track_delegate,
             self.background_delegate,
+            self.enabled,
         )
     }
 
-    pub fn background<Bg2: Widget + Clone>(self, delegate: Delegate<Bg2>) -> PlainSlider<F, St, S, E, P, Th, In, Bg2> {
+    pub fn enabled<En2: IntoReadState<bool>>(self, enabled: En2) -> PlainSlider<F, St, S, E, P, Th, In, Bg, En2::Output> {
+        Self::new_internal(
+            self.focus,
+            self.state,
+            self.start,
+            self.end,
+            self.steps,
+            self.thumb_delegate,
+            self.track_delegate,
+            self.background_delegate,
+            enabled.into_read_state(),
+        )
+    }
+
+    pub fn background<Bg2: Widget + Clone>(self, delegate: Delegate<Bg2>) -> PlainSlider<F, St, S, E, P, Th, In, Bg2, En> {
         Self::new_internal(
             self.focus,
             self.state,
@@ -107,10 +127,11 @@ impl<
             self.thumb_delegate,
             self.track_delegate,
             delegate,
+            self.enabled,
         )
     }
 
-    pub fn thumb<Th2: Widget + Clone>(self, delegate: Delegate<Th2>) -> PlainSlider<F, St, S, E, P, Th2, In, Bg> {
+    pub fn thumb<Th2: Widget + Clone>(self, delegate: Delegate<Th2>) -> PlainSlider<F, St, S, E, P, Th2, In, Bg, En> {
         Self::new_internal(
             self.focus,
             self.state,
@@ -120,10 +141,11 @@ impl<
             delegate,
             self.track_delegate,
             self.background_delegate,
+            self.enabled,
         )
     }
 
-    pub fn track<In2: Widget + Clone>(self, delegate: Delegate<In2>) -> PlainSlider<F, St, S, E, P, Th, In2, Bg> {
+    pub fn track<In2: Widget + Clone>(self, delegate: Delegate<In2>) -> PlainSlider<F, St, S, E, P, Th, In2, Bg, En> {
         Self::new_internal(
             self.focus,
             self.state,
@@ -133,6 +155,7 @@ impl<
             self.thumb_delegate,
             delegate,
             self.background_delegate,
+            self.enabled,
         )
     }
 
@@ -159,7 +182,8 @@ impl<
         Th2: Widget + Clone,
         In2: Widget + Clone,
         Bg2: Widget + Clone,
-    >(focus: F2, state: St2, start: S2, end: E2, steps: P2, thumb_delegate: Delegate<Th2>, track_delegate: Delegate<In2>, background_delegate: Delegate<Bg2>) -> PlainSlider<F2, St2, S2, E2, P2, Th2, In2, Bg2> {
+        En2: ReadState<T=bool>,
+    >(focus: F2, state: St2, start: S2, end: E2, steps: P2, thumb_delegate: Delegate<Th2>, track_delegate: Delegate<In2>, background_delegate: Delegate<Bg2>, enabled: En2) -> PlainSlider<F2, St2, S2, E2, P2, Th2, In2, Bg2, En2> {
         let percent = Map4::map(
             state.clone(),
             start.ignore_writes(),
@@ -185,15 +209,16 @@ impl<
             }
         ).as_dyn();
 
-        let thumb = thumb_delegate(state.as_dyn(), start.as_dyn_read(), end.as_dyn_read(), steps.as_dyn_read(), focus.as_dyn_read());
-        let track = track_delegate(state.as_dyn(), start.as_dyn_read(), end.as_dyn_read(), steps.as_dyn_read(), focus.as_dyn_read());
-        let background = background_delegate(state.as_dyn(), start.as_dyn_read(), end.as_dyn_read(), steps.as_dyn_read(), focus.as_dyn_read());
+        let thumb = thumb_delegate(state.as_dyn(), start.as_dyn_read(), end.as_dyn_read(), steps.as_dyn_read(), focus.as_dyn_read(), enabled.as_dyn_read());
+        let track = track_delegate(state.as_dyn(), start.as_dyn_read(), end.as_dyn_read(), steps.as_dyn_read(), focus.as_dyn_read(), enabled.as_dyn_read());
+        let background = background_delegate(state.as_dyn(), start.as_dyn_read(), end.as_dyn_read(), steps.as_dyn_read(), focus.as_dyn_read(), enabled.as_dyn_read());
 
         PlainSlider {
             id: WidgetId::new(),
             position: Default::default(),
             dimension: Default::default(),
             focus,
+            enabled,
             dragging: false,
             state,
             percent,
@@ -219,7 +244,8 @@ impl<
     Th: Widget + Clone,
     In: Widget + Clone,
     Bg: Widget + Clone,
-> Focusable for PlainSlider<F, St, S, E, P, Th, In, Bg> {
+    En: ReadState<T=bool>,
+> Focusable for PlainSlider<F, St, S, E, P, Th, In, Bg, En> {
     fn focus_children(&self) -> bool {
         false
     }
@@ -234,8 +260,13 @@ impl<
     Th: Widget + Clone,
     In: Widget + Clone,
     Bg: Widget + Clone,
-> KeyboardEventHandler for PlainSlider<F, St, S, E, P, Th, In, Bg> {
+    En: ReadState<T=bool>,
+> KeyboardEventHandler for PlainSlider<F, St, S, E, P, Th, In, Bg, En> {
     fn handle_keyboard_event(&mut self, event: &KeyboardEvent, env: &mut Environment) {
+        if !*self.enabled.value() {
+            return;
+        }
+
         if *self.focus.value() == Focus::Focused && self.steps.value().is_none() {
             let value = *self.percent.value();
 
@@ -273,8 +304,13 @@ impl<
     Th: Widget + Clone,
     In: Widget + Clone,
     Bg: Widget + Clone,
-> MouseEventHandler for PlainSlider<F, St, S, E, P, Th, In, Bg> {
+    En: ReadState<T=bool>,
+> MouseEventHandler for PlainSlider<F, St, S, E, P, Th, In, Bg, En> {
     fn handle_mouse_event(&mut self, event: &MouseEvent, _consumed: &bool, env: &mut Environment) {
+        if !*self.enabled.value() {
+            return;
+        }
+
         match event {
             MouseEvent::Press(_, position, _) => {
                 if self.thumb.is_inside(*position) || self.background.is_inside(*position) {
@@ -323,7 +359,8 @@ impl<
     Th: Widget + Clone,
     In: Widget + Clone,
     Bg: Widget + Clone,
-> Layout for PlainSlider<F, St, S, E, P, Th, In, Bg> {
+    En: ReadState<T=bool>,
+> Layout for PlainSlider<F, St, S, E, P, Th, In, Bg, En> {
     fn calculate_size(&mut self, requested_size: Dimension, env: &mut Environment) -> Dimension {
         let percent = self.percent.value().max(0.0).min(1.0);
 
@@ -393,7 +430,8 @@ impl<
     Th: Widget + Clone,
     In: Widget + Clone,
     Bg: Widget + Clone,
-> CommonWidget for PlainSlider<F, St, S, E, P, Th, In, Bg> {
+    En: ReadState<T=bool>,
+> CommonWidget for PlainSlider<F, St, S, E, P, Th, In, Bg, En> {
     CommonWidgetImpl!(self, id: self.id, position: self.position, dimension: self.dimension, flag: Flags::FOCUSABLE, flexibility: 1, focus: self.focus);
 }
 
@@ -406,7 +444,8 @@ impl<
     Th: Widget + Clone,
     In: Widget + Clone,
     Bg: Widget + Clone,
-> Render for PlainSlider<F, St, S, E, P, Th, In, Bg> {
+    En: ReadState<T=bool>,
+> Render for PlainSlider<F, St, S, E, P, Th, In, Bg, En> {
     fn render(&mut self, context: &mut RenderContext, env: &mut Environment) {
         self.background.render(context, env);
         self.track.render(context, env);
@@ -423,28 +462,35 @@ impl<
     Th: Widget + Clone,
     In: Widget + Clone,
     Bg: Widget + Clone,
-> WidgetExt for PlainSlider<F, St, S, E, P, Th, In, Bg> {}
+    En: ReadState<T=bool>,
+> WidgetExt for PlainSlider<F, St, S, E, P, Th, In, Bg, En> {}
 
 
 // ---------------------------------------------------
 //  Delegates
 // ---------------------------------------------------
-type Delegate<W: Widget + Clone> =
-    fn(state: Box<dyn AnyState<T=f64>>, start: Box<dyn AnyReadState<T=f64>>, end: Box<dyn AnyReadState<T=f64>>, steps: Box<dyn AnyReadState<T=Option<f64>>>, focus: Box<dyn AnyReadState<T=Focus>>) -> W;
+type Delegate<W: Widget + Clone> = fn(
+    state: Box<dyn AnyState<T=f64>>,
+    start: Box<dyn AnyReadState<T=f64>>,
+    end: Box<dyn AnyReadState<T=f64>>,
+    steps: Box<dyn AnyReadState<T=Option<f64>>>,
+    focus: Box<dyn AnyReadState<T=Focus>>,
+    enabled: Box<dyn AnyReadState<T=bool>>,
+) -> W;
 
-fn default_background(state: Box<dyn AnyState<T=f64>>, start: Box<dyn AnyReadState<T=f64>>, end: Box<dyn AnyReadState<T=f64>>, steps: Box<dyn AnyReadState<T=Option<f64>>>, focus: Box<dyn AnyReadState<T=Focus>>) -> Box<dyn Widget> {
+fn default_background(state: Box<dyn AnyState<T=f64>>, start: Box<dyn AnyReadState<T=f64>>, end: Box<dyn AnyReadState<T=f64>>, steps: Box<dyn AnyReadState<T=Option<f64>>>, focus: Box<dyn AnyReadState<T=Focus>>, enabled: Box<dyn AnyReadState<T=bool>>,) -> Box<dyn Widget> {
     Rectangle::new()
         .fill(EnvironmentColor::Red)
         .frame_fixed_height(26.0)
 }
 
-fn default_track(state: Box<dyn AnyState<T=f64>>, start: Box<dyn AnyReadState<T=f64>>, end: Box<dyn AnyReadState<T=f64>>, steps: Box<dyn AnyReadState<T=Option<f64>>>, focus: Box<dyn AnyReadState<T=Focus>>) -> Box<dyn Widget> {
+fn default_track(state: Box<dyn AnyState<T=f64>>, start: Box<dyn AnyReadState<T=f64>>, end: Box<dyn AnyReadState<T=f64>>, steps: Box<dyn AnyReadState<T=Option<f64>>>, focus: Box<dyn AnyReadState<T=Focus>>, enabled: Box<dyn AnyReadState<T=bool>>,) -> Box<dyn Widget> {
     Rectangle::new()
         .fill(EnvironmentColor::Green)
         .frame_fixed_height(26.0)
 }
 
-fn default_thumb(state: Box<dyn AnyState<T=f64>>, start: Box<dyn AnyReadState<T=f64>>, end: Box<dyn AnyReadState<T=f64>>, steps: Box<dyn AnyReadState<T=Option<f64>>>, focus: Box<dyn AnyReadState<T=Focus>>) -> Box<dyn Widget> {
+fn default_thumb(state: Box<dyn AnyState<T=f64>>, start: Box<dyn AnyReadState<T=f64>>, end: Box<dyn AnyReadState<T=f64>>, steps: Box<dyn AnyReadState<T=Option<f64>>>, focus: Box<dyn AnyReadState<T=Focus>>, enabled: Box<dyn AnyReadState<T=bool>>,) -> Box<dyn Widget> {
     let color = Map3::read_map(state, start, end, |state, start, end| {
         if state < start || state > end {
             EnvironmentColor::Purple

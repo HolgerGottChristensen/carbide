@@ -27,18 +27,18 @@ type DefaultPlainButtonAction = fn(&mut Environment, ModifierKey);
 #[carbide_exclude(Focusable)]
 pub struct PlainButton<F, A, D, E> where
     F: State<T=Focus>,
-    E: ReadState<T=bool>,
     A: Action + Clone + 'static,
     D: PlainButtonDelegate,
+    E: ReadState<T=bool>,
 {
     id: WidgetId,
     #[state] focus: F,
+    #[state] enabled: E,
     child: Box<dyn Widget>,
     position: Position,
     dimension: Dimension,
     delegate: D,
     action: A,
-    enabled: E,
 }
 
 impl PlainButton<Focus, DefaultPlainButtonAction, DefaultPlainButtonDelegate, bool> {

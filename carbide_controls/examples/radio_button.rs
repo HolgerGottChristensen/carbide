@@ -33,6 +33,9 @@ fn main() {
             RadioButton::new("Circle", Shape::Circle, shape_state.clone()).boxed(),
             RadioButton::new("Triangle", Shape::Triangle, shape_state.clone()).boxed(),
             RadioButton::new("Star", Shape::Star, shape_state.clone()).boxed(),
+            Empty::new().frame(10.0, 10.0),
+            RadioButton::new("Rectangle - Disabled", Shape::Rectangle, shape_state.clone()).enabled(false).boxed(),
+            RadioButton::new("Circle - Disabled", Shape::Circle, shape_state.clone()).enabled(false).boxed(),
         ])
             .spacing(10.0)
             .cross_axis_alignment(CrossAxisAlignment::Start)
