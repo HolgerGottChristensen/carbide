@@ -10,6 +10,9 @@ use crate::environment::Environment;
 use crate::event::{Button, CustomEvent, Input, Key, ModifierKey, Motion, MouseButton};
 use crate::window::WindowId;
 
+const N_CLICK_THRESHOLD: Duration = Duration::from_millis(500);
+const MOUSE_CLICK_MAX_DISTANCE: f64 = 3.0;
+
 /// A basic, non-interactive rectangle shape widget.
 #[derive(Debug)]
 pub struct EventHandler {
@@ -259,6 +262,10 @@ impl EventHandler {
     }
 
     fn add_event(&mut self, event: WidgetEvent, window_id: Option<WindowId>) {
+        if !matches!(event, WidgetEvent::Mouse(MouseEvent::Move {..})) {
+            println!("Event: {:#?}", event);
+        }
+
         if let WidgetEvent::Mouse(MouseEvent::Move {
             delta_xy,
             to,
@@ -378,66 +385,54 @@ impl EventHandler {
             // Checks for events in the following order:
             // 1. Click
             // 2. DoubleClick
-            // 2. WidgetUncapturesMouse
             Input::Release(button_type) => match button_type {
                 Button::Mouse(mouse_button) => {
+                    // Add the event that the user released the mouse button at the specified location holding the current modifiers.
                     let event = MouseEvent::Release(mouse_button, mouse_xy, modifiers);
                     self.add_event(WidgetEvent::Mouse(event), window_id);
+
+                    // The button is no longer pressed, so remove it from currently pressed buttons.
                     let pressed_event = self.pressed_buttons.remove(&mouse_button);
-                    let now = Instant::now();
-                    let n_click_threshold = Duration::from_millis(500);
-                    let click_distance_from_original_radius_threshold = 3.0;
 
-                    fn dist(point: Position, other_point: Position) -> f64 {
-                        ((point.x - other_point.x).powi(2) + (point.y - other_point.y).powi(2))
-                            .sqrt()
-                    }
-
-                    if let Some((time, MouseEvent::NClick(button, location, _, n))) =
-                        self.last_click
-                    {
-                        if button == mouse_button
-                            && dist(location, mouse_xy)
-                                < click_distance_from_original_radius_threshold
-                            && now.duration_since(time) < n_click_threshold
-                        {
-                            let n_click_event =
-                                MouseEvent::NClick(mouse_button, mouse_xy, modifiers, n + 1);
-                            self.add_event(WidgetEvent::Mouse(n_click_event.clone()), window_id);
-                            self.last_click = Some((now, n_click_event));
-                        }
-                    } else if let Some((time, MouseEvent::Click(button, location, _))) =
-                        self.last_click
-                    {
-                        if button == mouse_button
-                            && dist(location, mouse_xy)
-                                < click_distance_from_original_radius_threshold
-                            && now.duration_since(time) < n_click_threshold
-                        {
-                            let n_click_event =
-                                MouseEvent::NClick(mouse_button, mouse_xy, modifiers, 2);
-                            self.add_event(WidgetEvent::Mouse(n_click_event.clone()), window_id);
-                            self.last_click = Some((now, n_click_event));
-                        }
-                    }
-
-                    // Handle click events
-                    if let Some(MouseEvent::Press(_, location, _)) = pressed_event {
-                        if dist(location, mouse_xy) < click_distance_from_original_radius_threshold
-                        {
-                            let click_event = MouseEvent::Click(mouse_button, mouse_xy, modifiers);
-                            if let Some((time, MouseEvent::NClick(_, _, _, _))) = self.last_click {
-                                if now.duration_since(time) >= n_click_threshold {
-                                    self.add_event(WidgetEvent::Mouse(click_event.clone()), window_id);
-                                    self.last_click = Some((now, click_event));
-                                }
-                            } else {
-                                self.add_event(WidgetEvent::Mouse(click_event.clone()), window_id);
-                                self.last_click = Some((now, click_event));
-                            }
-                        }
+                    // A click should be emitted if within a threshold distance of the press.
+                    let is_click = if let Some(MouseEvent::Press(_, location, _)) = pressed_event {
+                        mouse_xy.dist(&location) < MOUSE_CLICK_MAX_DISTANCE
+                    } else {
+                        false
                     };
 
+                    // A click will become a double click, if and only if it is within the
+                    // double click threshold time based on the latest click of the same button.
+                    let click_number = match self.last_click {
+                        // Too long since last click, so we emit a click and not a double click
+                        Some((time, _)) if Instant::now().duration_since(time) > N_CLICK_THRESHOLD => 1,
+
+                        // Our previous click was a normal click of the same button within the
+                        // same location as the previous click. The time is checked in a previous case.
+                        Some((_, MouseEvent::Click(button, location, _))) if button == mouse_button && mouse_xy.dist(&location) < MOUSE_CLICK_MAX_DISTANCE => 2,
+
+                        // Our previous click was a double click within time and with the same button
+                        // and within range of the previous click.
+                        Some((_, MouseEvent::NClick(button, location, _, n))) if button == mouse_button && mouse_xy.dist(&location) < MOUSE_CLICK_MAX_DISTANCE => n + 1,
+
+                        // Either the previous click was not in range or not with the same button
+                        Some((_, _)) => 1,
+
+                        // No previous click, so we emit a click and not a double click
+                        None => 1,
+                    };
+
+                    if is_click {
+                        if click_number == 1 {
+                            self.add_event(WidgetEvent::Mouse(MouseEvent::Click(mouse_button, mouse_xy, modifiers)), window_id);
+                            self.last_click = Some((Instant::now(), MouseEvent::Click(mouse_button, mouse_xy, modifiers)));
+                        } else {
+                            self.add_event(WidgetEvent::Mouse(MouseEvent::NClick(mouse_button, mouse_xy, modifiers, click_number)), window_id);
+                            self.last_click = Some((Instant::now(), MouseEvent::NClick(mouse_button, mouse_xy, modifiers, click_number)));
+                        }
+                    } else {
+                        self.last_click = None;
+                    }
                     None
                 }
 
