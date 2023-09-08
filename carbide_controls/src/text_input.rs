@@ -99,6 +99,7 @@ impl<F: State<T=Focus>, O: ReadState<T=Option<char>>, T: State<T=Result<String, 
             .selection_widget(Rectangle::new().fill(darkened_selection_color))
             .focused(focus.clone())
             .obscure(obscure.clone())
+            .clip()
             .padding(EdgeInsets::vertical_horizontal(VERTICAL_PADDING, HORIZONTAL_PADDING));
 
         let child = ZStack::new(vec![

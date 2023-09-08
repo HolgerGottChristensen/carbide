@@ -1,8 +1,7 @@
 use carbide_controls::{Button, capture};
 use carbide_core::draw::Dimension;
 use carbide_core::environment::Environment;
-use carbide_core::focus::Focus;
-use carbide_core::state::{LocalState, ReadStateExtNew, State, StateExt};
+use carbide_core::state::{LocalState, ReadStateExtNew, State};
 use carbide_core::widget::*;
 use carbide_wgpu::{Application, Window};
 
@@ -18,7 +17,7 @@ fn main() {
         *VStack::new(vec![
             Text::new(counter_state.map(|count: &i32| format!("Count: {}", count)))
                 .font_size(40u32),
-            Button::new("Add 1", capture!([counter_state], |env: &mut Environment| {
+            Button::new_primary("Add 1", capture!([counter_state], |env: &mut Environment| {
                 *counter_state.value_mut() += 1;
             }))
                 .frame(90.0, 22.0),
@@ -26,6 +25,7 @@ fn main() {
                 *counter_state.value_mut() -= 1;
             }))
                 .frame(90.0, 22.0),
+            Button::new("Disabled", capture!([], |env: &mut Environment| {})).enabled(false).frame(90.0, 22.0),
         ])
             .spacing(20.0)
     ).close_application_on_window_close());

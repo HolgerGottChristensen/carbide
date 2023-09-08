@@ -20,12 +20,15 @@ fn main() {
         temp.set_value(current + 1);
     })).frame(120.0, 70.0);
 
+    let button_disabled = PlainButton::new(|env: &mut Environment, _:_| {}).enabled(false).frame(120.0, 70.0);
+
     application.set_scene(Window::new(
         "Plain Button Example - Carbide",
         Dimension::new(400.0, 600.0),
         *VStack::new(vec![
             Text::new(counter_text).font_size(40u32),
             button.boxed(),
+            button_disabled.boxed(),
         ]).spacing(20.0)
     ).close_application_on_window_close());
 

@@ -13,6 +13,7 @@ use std::f32::consts::PI;
 use std::time::{SystemTime, UNIX_EPOCH};
 
 use rand::Rng;
+use carbide_core::state::{IntoReadState, Map2, ReadState, RMap2};
 
 use crate::animation::Animatable;
 use crate::render::Style;
@@ -768,6 +769,18 @@ impl ConvertIntoRead<Style> for Color {
         })
     }
 }
+
+
+/*trait ColorStateExt: ReadState<T=Color> {
+    fn darkened1<T: IntoReadState<f32>>(&self, percent: T) -> Box<dyn AnyReadState<T=Color>> {
+        Box::new(Map2::read_map(self.clone(), percent.into_read_state(), |col, percent| {
+            col.darkened(*percent)
+        }))
+    }
+}
+impl<T: ReadState<T=Color>> ColorStateExt for T {}*/
+
+
 
 /*impl<T> IntoReadStateHelper<T, Color, Style> for T where T: AnyReadState<T=Color> + Clone {
     type Output = RMap1<fn(&Color)->Style, Color, Style, T>;
