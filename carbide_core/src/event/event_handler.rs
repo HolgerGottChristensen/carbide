@@ -238,6 +238,7 @@ pub enum TouchEvent {
     // Todo: Handle touch events
 }
 
+/// A function for filtering `ModifierKey`s.
 fn filter_modifier(key: Key) -> Option<ModifierKey> {
     match key {
         Key::LCtrl | Key::RCtrl => Some(ModifierKey::CTRL),
@@ -262,9 +263,9 @@ impl EventHandler {
     }
 
     fn add_event(&mut self, event: WidgetEvent, window_id: Option<WindowId>) {
-        if !matches!(event, WidgetEvent::Mouse(MouseEvent::Move {..})) {
+        /*if !matches!(event, WidgetEvent::Mouse(MouseEvent::Move {..})) {
             println!("Event: {:#?}", event);
-        }
+        }*/
 
         if let WidgetEvent::Mouse(MouseEvent::Move {
             delta_xy,
@@ -339,7 +340,6 @@ impl EventHandler {
         event: Input,
         window_id: Option<WindowId>
     ) -> Option<WindowEvent> {
-        // A function for filtering `ModifierKey`s.
 
         // Here we handle all user input given to carbide.
         //
@@ -347,8 +347,6 @@ impl EventHandler {
         // interpret higher level events such as `Click` or `Drag`.
         //
         // Finally, we also ensure that the `current_state` is up-to-date.
-
-        //ui.global_input.push_event(event.clone().into());
 
         // Get current state
         let modifiers = self.modifiers;
