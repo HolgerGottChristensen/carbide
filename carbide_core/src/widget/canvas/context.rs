@@ -3,11 +3,14 @@ use lyon::algorithms::path::builder::{Build, SvgPathBuilder};
 use lyon::algorithms::path::Path;
 use lyon::lyon_algorithms::path::math::point;
 use lyon::tessellation::{FillOptions, LineCap, LineJoin, StrokeOptions};
+use carbide_core::state::AnyReadState;
 
 use crate::draw::Color;
 use crate::draw::{Dimension, Position};
 use crate::draw::svg_path_builder::SVGPathBuilder;
-use crate::state::{IntoReadState, TState};
+use crate::environment::Environment;
+use crate::render::Style;
+use crate::state::{IntoReadState, ReadState, TState};
 use crate::state::ReadStateExtNew;
 
 #[derive(Debug, Clone)]
@@ -42,13 +45,13 @@ impl Context {
         self.generator.push(ContextAction::MiterLimit(limit))
     }
 
-    pub fn set_fill_style<C: IntoReadState<Color>>(&mut self, color: C) {
-        self.generator.push(ContextAction::FillStyle(TState::new(Box::new(color.into_read_state().ignore_writes()))))
+    pub fn set_fill_style<C: IntoReadState<Style>>(&mut self, style: C) {
+        self.generator.push(ContextAction::FillStyle(style.into_read_state().as_dyn_read()))
     }
 
-    pub fn set_stroke_style<C: IntoReadState<Color>>(&mut self, color: C) {
+    pub fn set_stroke_style<C: IntoReadState<Style>>(&mut self, style: C) {
         self.generator
-            .push(ContextAction::StrokeStyle(TState::new(Box::new(color.into_read_state().ignore_writes()))))
+            .push(ContextAction::StrokeStyle(style.into_read_state().as_dyn_read()))
     }
 
     pub fn rect(&mut self, x: f64, y: f64, width: f64, height: f64) {
@@ -134,9 +137,9 @@ impl Context {
             .push(ContextAction::ArcTo { x1, y1, x2, y2, r })
     }
 
-    pub fn to_paths(&self, offset: Position) -> Vec<(Path, ShapeStyleWithOptions)> {
-        let mut current_stroke_color = Color::Rgba(0.0, 0.0, 0.0, 1.0).into();
-        let mut current_fill_color = Color::Rgba(0.0, 0.0, 0.0, 1.0).into();
+    pub fn to_paths(mut self, offset: Position, env: &mut Environment) -> Vec<(Path, ShapeStyleWithOptions)> {
+        let mut current_stroke_color = Style::Color(Color::Rgba(0.0, 0.0, 0.0, 1.0));
+        let mut current_fill_color = Style::Color(Color::Rgba(0.0, 0.0, 0.0, 1.0));
         let mut current_cap_style = LineCap::Round;
         let mut current_join_style = LineJoin::Round;
         let mut current_line_width = 2.0;
@@ -148,7 +151,7 @@ impl Context {
         let offset_point =
             |p: Position| point(p.x as f32 + offset.x as f32, p.y as f32 + offset.y as f32);
 
-        for action in &self.generator {
+        for action in &mut self.generator {
             if !current_builder_begun {
                 current_builder = SVGPathBuilder::new();
                 current_builder_begun = true;
@@ -199,7 +202,7 @@ impl Context {
                     start_angle,
                     end_angle,
                 } => {
-                    let sweep_angle = end_angle - start_angle;
+                    let sweep_angle = *end_angle - *start_angle;
 
                     current_builder.arc(
                         offset_point(Position::new(*x, *y)),
@@ -212,10 +215,12 @@ impl Context {
                     todo!()
                 }
                 ContextAction::FillStyle(color) => {
-                    current_fill_color = color.clone();
+                    color.sync(env);
+                    current_fill_color = color.value().clone();
                 }
                 ContextAction::StrokeStyle(color) => {
-                    current_stroke_color = color.clone();
+                    color.sync(env);
+                    current_stroke_color = color.value().clone();
                 }
                 ContextAction::Fill => {
                     let fill_options = FillOptions::default();
@@ -241,8 +246,8 @@ impl Context {
 }
 
 pub enum ShapeStyleWithOptions {
-    Fill(FillOptions, TState<Color>),
-    Stroke(StrokeOptions, TState<Color>),
+    Fill(FillOptions, Style),
+    Stroke(StrokeOptions, Style),
 }
 
 #[derive(Debug, Clone)]
@@ -281,6 +286,6 @@ enum ContextAction {
         y2: f64,
         r: f64,
     },
-    FillStyle(TState<Color>),
-    StrokeStyle(TState<Color>),
+    FillStyle(Box<dyn AnyReadState<T=Style>>),
+    StrokeStyle(Box<dyn AnyReadState<T=Style>>),
 }

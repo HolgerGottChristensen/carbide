@@ -18,67 +18,48 @@ use crate::render::{Primitive, PrimitiveKind, Render};
 use crate::state::{NewStateSync, ReadState, StateContract, TState, ValueState};
 use crate::widget::{CommonWidget, PrimitiveStore, Shape, ShapeStyle, StrokeStyle, Widget, WidgetExt, WidgetId};
 use crate::widget::canvas::{Context, ShapeStyleWithOptions};
-use crate::widget::canvas::canvas::Contexts::{NoState, WithState};
 
 /// A basic, non-interactive rectangle shape widget.
 #[derive(Clone, Widget)]
 #[carbide_exclude(Render)]
-pub struct Canvas<T, C>
+pub struct Canvas<C>
 where
-    T: StateContract,
-    C: ReadState<T=Color> + Clone
+    C: CanvasContext
 {
     id: WidgetId,
     position: Position,
     dimension: Dimension,
-    #[state]
-    color: C,
-    //prim_store: Vec<Primitive>,
-    context: Contexts<T>,
-    #[state]
-    state: TState<T>,
+
+    context: C,
 }
 
-#[derive(Clone)]
-enum Contexts<T>
-where
-    T: StateContract,
-{
-    WithState(fn(&mut TState<T>, Rect, Context, &mut Environment) -> Context),
-    NoState(fn(Rect, Context, &mut Environment) -> Context),
+pub trait CanvasContext: Clone + 'static {
+    fn call(&self, area: Rect, context: Context, env: &mut Environment) -> Context;
 }
 
-impl Canvas<(), Color> {
+impl<T> CanvasContext for T where T: Fn(Rect, Context, &mut Environment) -> Context + Clone + 'static {
+    fn call(&self, area: Rect, context: Context, env: &mut Environment) -> Context {
+        self(area, context, env)
+    }
+}
+
+type DefaultCanvasContext = fn(Rect, Context, &mut Environment) -> Context;
+
+impl Canvas<DefaultCanvasContext> {
 
     #[carbide_default_builder2]
-    pub fn new(context: fn(Rect, Context, &mut Environment) -> Context) -> Box<Canvas<(), impl ReadState<T=Color>>> {
-        Box::new(Canvas {
+    pub fn new<C: CanvasContext>(context: C) -> Canvas<C> {
+        Canvas {
             id: WidgetId::new(),
             position: Position::new(0.0, 0.0),
             dimension: Dimension::new(100.0, 100.0),
-            color: EnvironmentColor::Accent.color(),
-            //prim_store: vec![],
-            context: NoState(context),
-            state: ValueState::new(()),
-        })
+
+            context,
+        }
     }
 }
 
-impl<T: StateContract, C: ReadState<T=Color> + Clone> Canvas<T, C> {
-    pub fn new_with_state(
-        state: impl Into<TState<T>>,
-        context: fn(&mut TState<T>, Rect, Context, &mut Environment) -> Context,
-    ) -> Box<Canvas<T, impl ReadState<T=Color>>> {
-        Box::new(Canvas {
-            id: WidgetId::new(),
-            position: Position::new(0.0, 0.0),
-            dimension: Dimension::new(100.0, 100.0),
-            color: EnvironmentColor::Accent.color(),
-            //prim_store: vec![],
-            context: WithState(context),
-            state: state.into(),
-        })
-    }
+impl<C: CanvasContext> Canvas<C> {
 
     pub fn get_stroke_prim(
         &self,
@@ -214,11 +195,11 @@ impl<T: StateContract, C: ReadState<T=Color> + Clone> Canvas<T, C> {
     }
 }
 
-impl<T: StateContract, C: ReadState<T=Color> + Clone> CommonWidget for Canvas<T, C> {
+impl<C: CanvasContext> CommonWidget for Canvas<C> {
     CommonWidgetImpl!(self, id: self.id, position: self.position, dimension: self.dimension);
 }
 
-impl<T: StateContract, C: ReadState<T=Color> + Clone> Shape for Canvas<T, C> {
+impl<C: CanvasContext> Shape for Canvas<C> {
     fn get_triangle_store_mut(&mut self) -> &mut PrimitiveStore {
         todo!()
     }
@@ -236,24 +217,21 @@ impl<T: StateContract, C: ReadState<T=Color> + Clone> Shape for Canvas<T, C> {
 
         let rectangle = Rect::new(self.position(), self.dimension());
 
-        let context = match self.context {
-            WithState(c) => c(&mut self.state, rectangle, context, env),
-            NoState(c) => c(rectangle, context, env),
-        };
+        let context = (self.context).call(rectangle, context, env);
 
-        let paths = context.to_paths(self.position());
+        let paths = context.to_paths(self.position(), env);
         let mut prims = vec![];
 
         for (path, options) in paths {
             match options {
                 ShapeStyleWithOptions::Fill(fill_options, mut color) => {
                     color.sync(env);
-                    prims.push(self.get_fill_prim(path, fill_options, *color.value()));
+                    prims.push(self.get_fill_prim(path, fill_options, Color::Rgba(1.0, 0.0, 0.0, 1.0)));
                     //color.release_state(env);
                 }
                 ShapeStyleWithOptions::Stroke(stroke_options, mut color) => {
                     color.sync(env);
-                    prims.push(self.get_stroke_prim(path, stroke_options, *color.value()));
+                    prims.push(self.get_stroke_prim(path, stroke_options, Color::Rgba(1.0, 0.0, 0.0, 1.0)));
                     //color.release_state(env);
                 }
             }
@@ -274,29 +252,24 @@ impl<T: StateContract, C: ReadState<T=Color> + Clone> Shape for Canvas<T, C> {
     }
 }
 
-impl<T: StateContract, C: ReadState<T=Color> + Clone> Render for Canvas<T, C> {
+impl<C: CanvasContext> Render for Canvas<C> {
     fn render(&mut self, render_context: &mut RenderContext, env: &mut Environment) {
         let context = Context::new();
 
         let rectangle = Rect::new(self.position(), self.dimension());
-        let context = match self.context {
-            WithState(c) => c(&mut self.state, rectangle, context, env),
-            NoState(c) => c(rectangle, context, env),
-        };
+        let context = self.context.call(rectangle, context, env);
 
-        let paths = context.to_paths(self.position());
+        let paths = context.to_paths(self.position(), env);
 
         for (path, options) in paths {
             match options {
-                ShapeStyleWithOptions::Fill(fill_options, mut color) => {
-                    color.sync(env);
-                    render_context.style(DrawStyle::Color(*color.value()), |this| {
+                ShapeStyleWithOptions::Fill(fill_options, style) => {
+                    render_context.style(style.convert(self.position, self.dimension), |this| {
                         this.geometry(&self.get_fill_geometry(path, fill_options))
                     })
                 }
-                ShapeStyleWithOptions::Stroke(stroke_options, mut color) => {
-                    color.sync(env);
-                    render_context.style(DrawStyle::Color(*color.value()), |this| {
+                ShapeStyleWithOptions::Stroke(stroke_options, style) => {
+                    render_context.style(style.convert(self.position, self.dimension), |this| {
                         this.geometry(&self.get_stroke_geometry(path, stroke_options))
                     })
                 }
@@ -307,14 +280,13 @@ impl<T: StateContract, C: ReadState<T=Color> + Clone> Render for Canvas<T, C> {
         let context = Context::new();
 
         let rectangle = Rect::new(self.position(), self.dimension());
-        let context = match self.context {
-            WithState(c) => c(&mut self.state, rectangle, context, env),
-            NoState(c) => c(rectangle, context, env),
-        };
+        let context = self.context.call(rectangle, context, env);
 
-        let paths = context.to_paths(self.position());
+        let paths = context.to_paths(self.position(), env);
 
-        for (path, options) in paths {
+        todo!()
+
+        /*for (path, options) in paths {
             match options {
                 ShapeStyleWithOptions::Fill(fill_options, mut color) => {
                     color.sync(env);
@@ -327,14 +299,14 @@ impl<T: StateContract, C: ReadState<T=Color> + Clone> Render for Canvas<T, C> {
                     //color.release_state(env);
                 }
             }
-        }
+        }*/
     }
 }
 
-impl<T: StateContract, C: ReadState<T=Color> + Clone> Debug for Canvas<T, C> {
+impl<C: CanvasContext> Debug for Canvas<C> {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("Canvas").finish()
     }
 }
 
-impl<T: StateContract, C: ReadState<T=Color> + Clone> WidgetExt for Canvas<T, C> {}
+impl<C: CanvasContext> WidgetExt for Canvas<C> {}
