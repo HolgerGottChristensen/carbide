@@ -1,4 +1,6 @@
 use std::time::Duration;
+use carbide_core::draw::Rect;
+use carbide_core::widget::canvas::Context;
 
 
 use carbide_macro::carbide_default_builder;
@@ -6,7 +8,7 @@ use carbide_macro::carbide_default_builder;
 use crate::color::WHITE;
 use crate::CommonWidgetImpl;
 use crate::draw::{Dimension, Position};
-use crate::environment::EnvironmentColor;
+use crate::environment::{Environment, EnvironmentColor};
 use crate::state::AnimatedState;
 use crate::widget::{Circle, CommonWidget, Widget, WidgetExt, WidgetId, ZStack};
 use crate::widget::canvas::Canvas;
@@ -47,7 +49,7 @@ impl ProgressView {
             Circle::new()
                 .stroke(EnvironmentColor::Separator)
                 .stroke_style(4.0),
-            Canvas::new(|rect, mut context, _| {
+            Canvas::new(|rect: Rect, mut context: Context, env: &mut Environment| {
                 context.move_to(2.0, rect.height() / 2.0);
                 context.arc(
                     rect.width() / 2.0,
@@ -63,7 +65,7 @@ impl ProgressView {
                 context
             })
             .rotation_effect(animation),
-            Canvas::new(|rect, mut context, _| {
+            Canvas::new(|rect: Rect, mut context: Context, env: &mut Environment| {
                 context.move_to(2.0, rect.height() / 2.0);
                 context.arc(
                     rect.width() / 2.0,
