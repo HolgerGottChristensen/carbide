@@ -1,13 +1,12 @@
 use std::ops::Range;
-use cgmath::{Matrix4, SquareMatrix, Vector3};
+use cgmath::{Matrix4, SquareMatrix};
 use carbide_core::color::WHITE;
 use carbide_core::draw::{BoundingBox, Position, Rect, Scalar};
 use carbide_core::draw::draw_style::DrawStyle;
 use carbide_core::draw::image::ImageId;
 use carbide_core::draw::shape::triangle::Triangle;
-use carbide_core::layout::BasicLayouter;
 use carbide_core::mesh::{MODE_GEOMETRY, MODE_TEXT, MODE_TEXT_COLOR};
-use carbide_core::render::{CarbideTransform, InnerRenderContext, Style};
+use carbide_core::render::{CarbideTransform, InnerRenderContext};
 use carbide_core::text::Glyph;
 use carbide_core::widget::FilterId;
 use crate::gradient::Gradient;
@@ -16,17 +15,20 @@ use crate::vertex::Vertex;
 
 #[derive(Debug)]
 pub struct WGPURenderContext {
-    style: Vec<WGPUStyle>,
+    style_stack: Vec<WGPUStyle>,
     stencil_stack: Vec<Range<u32>>,
     scissor_stack: Vec<BoundingBox>,
     transform_stack: Vec<(Matrix4<f32>, usize)>,
+
     transforms: Vec<Matrix4<f32>>,
     gradients: Vec<Gradient>,
-    state: State,
+    vertices: Vec<Vertex>,
+
     render_pass: Vec<RenderPass>,
     render_pass_inner: Vec<RenderPassCommand>,
-    vertices: Vec<Vertex>,
     current_bind_group: Option<WGPUBindGroup>,
+
+    state: State,
     window_bounding_box: Rect,
     frame_count: usize,
 }
@@ -48,7 +50,7 @@ enum State {
 impl WGPURenderContext {
     pub fn new() -> WGPURenderContext {
         WGPURenderContext {
-            style: vec![],
+            style_stack: vec![],
             stencil_stack: vec![],
             scissor_stack: vec![],
             transform_stack: vec![(Matrix4::identity(), 0)],
@@ -65,7 +67,7 @@ impl WGPURenderContext {
     }
 
     pub fn clear(&mut self) {
-        assert!(self.style.is_empty());
+        assert!(self.style_stack.is_empty());
         self.render_pass.clear();
         self.render_pass_inner.clear();
         self.scissor_stack.clear();
@@ -506,7 +508,7 @@ impl InnerRenderContext for WGPURenderContext {
     fn geometry(&mut self, geometry: &[Triangle<Position>]) {
         //println!("draw geometry: {}", geometry.len());
 
-        let style = self.style.last().unwrap().clone();
+        let style = self.style_stack.last().unwrap().clone();
 
         let color = match style {
             WGPUStyle::Color(c) => {
@@ -539,10 +541,10 @@ impl InnerRenderContext for WGPURenderContext {
                     .pre_multiply()
                     .to_fsa();
 
-                self.style.push(WGPUStyle::Color(color));
+                self.style_stack.push(WGPUStyle::Color(color));
             }
             DrawStyle::Gradient(g) => {
-                self.style.push(WGPUStyle::Gradient(Gradient::convert(&g)))
+                self.style_stack.push(WGPUStyle::Gradient(Gradient::convert(&g)))
             }
             DrawStyle::MultiGradient(_) => {
                 todo!()
@@ -552,13 +554,13 @@ impl InnerRenderContext for WGPURenderContext {
     }
 
     fn pop_style(&mut self) {
-        assert!(self.style.pop().is_some(), "A style was popped, when no style is present.")
+        assert!(self.style_stack.pop().is_some(), "A style was popped, when no style is present.")
     }
 
     fn image(&mut self, id: ImageId, bounding_box: Rect, source_rect: Rect, mode: u32) {
         self.ensure_state_image(&id);
 
-        let color = match self.style.last().unwrap_or(&WGPUStyle::Color(WHITE.gamma_srgb_to_linear().to_fsa())) {
+        let color = match self.style_stack.last().unwrap_or(&WGPUStyle::Color(WHITE.gamma_srgb_to_linear().to_fsa())) {
             WGPUStyle::Color(c) => *c,
             WGPUStyle::Gradient(_) => unimplemented!("gradients not implemented for images yet...")
         };
@@ -589,7 +591,7 @@ impl InnerRenderContext for WGPURenderContext {
     fn text(&mut self, text: &[Glyph]) {
         self.ensure_state_plain();
 
-        let color = match self.style.last().unwrap_or(&WGPUStyle::Color(WHITE.gamma_srgb_to_linear().to_fsa())) {
+        let color = match self.style_stack.last().unwrap_or(&WGPUStyle::Color(WHITE.gamma_srgb_to_linear().to_fsa())) {
             WGPUStyle::Color(c) => *c,
             WGPUStyle::Gradient(_) => unimplemented!("gradients not implemented for text")
         };
@@ -654,5 +656,13 @@ impl InnerRenderContext for WGPURenderContext {
                 }
             }
         }
+    }
+
+    fn layer(&mut self, index: u32) {
+
+    }
+
+    fn pop_layer(&mut self) {
+
     }
 }

@@ -42,6 +42,7 @@ impl EventHandler {
             match event {
                 WidgetEvent::Mouse(mouse_event) => {
                     let consumed = false;
+                    env.set_mouse_position(mouse_event.get_current_mouse_position());
                     widgets.process_mouse_event(mouse_event, &consumed, env);
                 }
                 WidgetEvent::Keyboard(keyboard_event) => {

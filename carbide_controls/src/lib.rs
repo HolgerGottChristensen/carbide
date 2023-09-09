@@ -9,6 +9,8 @@ pub use slider::*;
 pub use switch::*;
 pub use text_input::*;
 pub use types::CheckBoxValue;
+pub use controls_ext::*;
+pub use help::*;
 
 #[macro_export]
 macro_rules! capture {
@@ -43,3 +45,5 @@ mod slider;
 mod switch;
 mod text_input;
 mod types;
+mod controls_ext;
+mod help;

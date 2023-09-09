@@ -95,6 +95,13 @@ impl<'a> RenderContext<'a> {
     pub fn text(&mut self, text: &[Glyph]) {
         self.inner.text(text);
     }
+
+    pub fn layer<R, F: FnOnce(&mut RenderContext) -> R>(&mut self, layer: u32, f: F) -> R {
+        self.inner.layer(layer);
+        let res = f(self);
+        self.inner.pop_layer();
+        res
+    }
 }
 
 pub trait InnerRenderContext {
@@ -120,6 +127,9 @@ pub trait InnerRenderContext {
     fn image(&mut self, id: ImageId, bounding_box: Rect, source_rect: Rect, mode: u32);
 
     fn text(&mut self, text: &[Glyph]);
+
+    fn layer(&mut self, index: u32);
+    fn pop_layer(&mut self);
 }
 
 pub struct NoopRenderContext;
@@ -150,4 +160,8 @@ impl InnerRenderContext for NoopRenderContext {
     fn image(&mut self, _id: ImageId, _bounding_box: Rect, _source_rect: Rect, _mode: u32) {}
 
     fn text(&mut self, _text: &[Glyph]) {}
+
+    fn layer(&mut self, _index: u32) {}
+
+    fn pop_layer(&mut self) {}
 }

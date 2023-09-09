@@ -12,6 +12,7 @@ use fxhash::{FxBuildHasher, FxHashMap};
 use image::DynamicImage;
 use oneshot::TryRecvError;
 use raw_window_handle::{HasRawWindowHandle, RawWindowHandle};
+use carbide_core::draw::Position;
 use carbide_core::state::ReadState;
 use carbide_core::widget::Widget;
 
@@ -115,6 +116,7 @@ pub struct Environment {
     pub image_map: ImageMap<DynamicImage>,
 
     cursor: MouseCursor,
+    mouse_position: Position,
 
     #[cfg(feature = "tokio")]
     tokio_runtime: tokio::runtime::Runtime,
@@ -225,6 +227,7 @@ impl Environment {
             queued_images: None,
             image_map,
             cursor: MouseCursor::Arrow,
+            mouse_position: Default::default(),
             #[cfg(feature = "tokio")]
             tokio_runtime: tokio::runtime::Builder::new_multi_thread()
                 .enable_all()
@@ -253,6 +256,14 @@ impl Environment {
 
 
         res
+    }
+
+    pub fn mouse_position(&self) -> Position {
+        self.mouse_position
+    }
+
+    pub fn set_mouse_position(&mut self, position: Position) {
+        self.mouse_position = position;
     }
 
     pub fn is_event_current(&self) -> bool {
