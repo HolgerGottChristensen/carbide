@@ -11,24 +11,26 @@ use crate::plain::plain_pop_up_button::PopupButtonKeyCommand;
 
 #[derive(Debug, Clone, Widget)]
 #[carbide_exclude(MouseEvent, KeyboardEvent)]
-pub struct PlainPopUpButtonPopUp<T, S, M, H> where
+pub struct PlainPopUpButtonPopUp<T, S, M, H, E> where
     T: StateContract + PartialEq,
     S: State<T=T>,
     M: ReadState<T=Vec<T>>,
     H: State<T=Option<usize>>,
+    E: ReadState<T=bool>,
 {
     id: WidgetId,
     child: Box<dyn Widget>,
     position: Position,
     dimension: Dimension,
-    model: M,
-    selected: S,
-    hover_model: H,
-    popup_open: Box<dyn AnyState<T=bool>>,
+    #[state] model: M,
+    #[state] selected: S,
+    #[state] hover_model: H,
+    #[state] enabled: E,
+    #[state] popup_open: Box<dyn AnyState<T=bool>>,
 }
 
-impl PlainPopUpButtonPopUp<bool, bool, Vec<bool>, Option<usize>> {
-    pub fn new<T: StateContract + PartialEq, S: State<T=T>, M: ReadState<T=Vec<T>>, H: State<T=Option<usize>>>(child: Box<dyn Widget>, hover_model: H, popup_open: Box<dyn AnyState<T=bool>>, model: M, selected: S) -> PlainPopUpButtonPopUp<T, S, M, H> {
+impl PlainPopUpButtonPopUp<bool, bool, Vec<bool>, Option<usize>, bool> {
+    pub fn new<T: StateContract + PartialEq, S: State<T=T>, M: ReadState<T=Vec<T>>, H: State<T=Option<usize>>, E: ReadState<T=bool>>(child: Box<dyn Widget>, hover_model: H, popup_open: Box<dyn AnyState<T=bool>>, model: M, selected: S, enabled: E) -> PlainPopUpButtonPopUp<T, S, M, H, E> {
         PlainPopUpButtonPopUp {
             id: WidgetId::new(),
             child,
@@ -38,6 +40,7 @@ impl PlainPopUpButtonPopUp<bool, bool, Vec<bool>, Option<usize>> {
             selected,
             hover_model,
             popup_open,
+            enabled,
         }
     }
 }
@@ -47,8 +50,13 @@ impl<
     S: State<T=T>,
     M: ReadState<T=Vec<T>>,
     H: State<T=Option<usize>>,
-> KeyboardEventHandler for PlainPopUpButtonPopUp<T, S, M, H> {
+    E: ReadState<T=bool>,
+> KeyboardEventHandler for PlainPopUpButtonPopUp<T, S, M, H, E> {
     fn handle_keyboard_event(&mut self, event: &KeyboardEvent, env: &mut Environment) {
+        if !*self.enabled.value() {
+            self.popup_open.set_value(false);
+            return;
+        }
 
         if event == PopupButtonKeyCommand::Close {
             self.popup_open.set_value(false);
@@ -84,8 +92,14 @@ impl<
     S: State<T=T>,
     M: ReadState<T=Vec<T>>,
     H: State<T=Option<usize>>,
-> MouseEventHandler for PlainPopUpButtonPopUp<T, S, M, H> {
+    E: ReadState<T=bool>,
+> MouseEventHandler for PlainPopUpButtonPopUp<T, S, M, H, E> {
     fn handle_mouse_event(&mut self, event: &MouseEvent, _consumed: &bool, env: &mut Environment) {
+        if !*self.enabled.value() {
+            self.popup_open.set_value(false);
+            return;
+        }
+
         match event {
             MouseEvent::Click(MouseButton::Left, mouse_position, _) => {
                 if !self.is_inside(*mouse_position) {
@@ -102,7 +116,8 @@ impl<
     S: State<T=T>,
     M: ReadState<T=Vec<T>>,
     H: State<T=Option<usize>>,
-> CommonWidget for PlainPopUpButtonPopUp<T, S, M, H> {
+    E: ReadState<T=bool>,
+> CommonWidget for PlainPopUpButtonPopUp<T, S, M, H, E> {
     CommonWidgetImpl!(self, id: self.id, child: self.child, position: self.position, dimension: self.dimension);
 }
 
@@ -111,4 +126,5 @@ impl<
     S: State<T=T>,
     M: ReadState<T=Vec<T>>,
     H: State<T=Option<usize>>,
-> WidgetExt for PlainPopUpButtonPopUp<T, S, M, H> {}
+    E: ReadState<T=bool>,
+> WidgetExt for PlainPopUpButtonPopUp<T, S, M, H, E> {}

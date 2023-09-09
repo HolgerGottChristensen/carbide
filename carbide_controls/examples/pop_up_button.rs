@@ -46,7 +46,8 @@ fn main() {
         Dimension::new(400.0, 600.0),
         *VStack::new(vec![
             PopUpButton::new(selected, model.clone()).boxed(),
-            PopUpButton::new(selected2, model).boxed()
+            PopUpButton::new(selected2.clone(), model.clone()).boxed(),
+            PopUpButton::new(selected2, model).enabled(false).boxed(),
         ]).spacing(20.0)
             .frame_fixed_width(200.0)
     ).close_application_on_window_close());

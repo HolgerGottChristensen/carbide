@@ -18,18 +18,20 @@ use crate::plain::plain_pop_up_button_popup::PlainPopUpButtonPopUp;
 
 #[derive(Clone, Widget)]
 #[carbide_exclude(Layout, MouseEvent, KeyboardEvent)]
-pub struct PlainPopUpButton<T, F, S, M>
+pub struct PlainPopUpButton<T, F, S, M, E>
 where
     T: StateContract + PartialEq,
     F: State<T=Focus>,
     S: State<T=T>,
     M: ReadState<T=Vec<T>>,
+    E: ReadState<T=bool>,
 {
     // Default fields
     id: WidgetId,
     position: Position,
     dimension: Dimension,
     #[state] focus: F,
+    #[state] enabled: E,
 
     // Delegates
     delegate: DelegateGenerator<T>, // Used to generate the control
@@ -44,17 +46,18 @@ where
     #[state] model: M,
 }
 
-impl PlainPopUpButton<bool, Focus, bool, Vec<bool>> {
+impl PlainPopUpButton<bool, Focus, bool, Vec<bool>, bool> {
     pub fn new<T: StateContract + PartialEq, S: IntoState<T>, M: IntoReadState<Vec<T>>>(
         selected: S,
         model: M,
-    ) -> PlainPopUpButton<T, TState<Focus>, S::Output, M::Output> {
+    ) -> PlainPopUpButton<T, TState<Focus>, S::Output, M::Output, bool> {
         let focus = LocalState::new(Focus::Unfocused);
 
         Self::new_internal(
             selected.into_state(),
             model.into_read_state(),
             focus,
+            true,
             default_delegate,
             default_popup_delegate,
             default_popup_item_delegate,
@@ -66,49 +69,78 @@ impl<
     T: StateContract + PartialEq,
     F: State<T=Focus>,
     S: State<T=T>,
-    M: ReadState<T=Vec<T>>
-> PlainPopUpButton<T, F, S, M> {
-    pub fn delegate(self, delegate: DelegateGenerator<T>) -> PlainPopUpButton<T, F, S, M> {
+    M: ReadState<T=Vec<T>>,
+    E: ReadState<T=bool>,
+> PlainPopUpButton<T, F, S, M, E> {
+    pub fn enabled<E2: IntoReadState<bool>>(self, enabled: E2) -> PlainPopUpButton<T, F, S, M, E2::Output> {
         Self::new_internal(
             self.selected,
             self.model,
             self.focus,
+            enabled.into_read_state(),
+            self.delegate,
+            self.popup_delegate,
+            self.popup_item_delegate
+        )
+    }
+
+    pub fn focused<F2: IntoState<Focus>>(self, focus: F2) -> PlainPopUpButton<T, F2::Output, S, M, E> {
+        Self::new_internal(
+            self.selected,
+            self.model,
+            focus.into_state(),
+            self.enabled,
+            self.delegate,
+            self.popup_delegate,
+            self.popup_item_delegate
+        )
+    }
+
+    pub fn delegate(self, delegate: DelegateGenerator<T>) -> PlainPopUpButton<T, F, S, M, E> {
+        Self::new_internal(
+            self.selected,
+            self.model,
+            self.focus,
+            self.enabled,
             delegate,
             self.popup_delegate,
             self.popup_item_delegate
         )
     }
 
-    pub fn popup_delegate(self, popup_delegate: PopupDelegateGenerator<T, S, M, TState<bool>>) -> PlainPopUpButton<T, F, S, M> {
+    pub fn popup_delegate(self, popup_delegate: PopupDelegateGenerator<T, S, M, TState<bool>>) -> PlainPopUpButton<T, F, S, M, E> {
         Self::new_internal(
             self.selected,
             self.model,
             self.focus,
+            self.enabled,
             self.delegate,
             popup_delegate,
             self.popup_item_delegate
         )
     }
 
-    pub fn popup_item_delegate(self, popup_item_delegate: PopupItemDelegateGenerator<T, S>) -> PlainPopUpButton<T, F, S, M> {
+    pub fn popup_item_delegate(self, popup_item_delegate: PopupItemDelegateGenerator<T, S>) -> PlainPopUpButton<T, F, S, M, E> {
         Self::new_internal(
             self.selected,
             self.model,
             self.focus,
+            self.enabled,
             self.delegate,
             self.popup_delegate,
             popup_item_delegate
         )
     }
 
-    fn new_internal<T2: StateContract + PartialEq, F2: State<T=Focus>, S2: State<T=T2>, M2: ReadState<T=Vec<T2>>>(
+    fn new_internal<T2: StateContract + PartialEq, F2: State<T=Focus>, S2: State<T=T2>, M2: ReadState<T=Vec<T2>>, E2: ReadState<T=bool>>(
         selected: S2,
         model: M2,
         focus: F2,
+        enabled: E2,
         delegate: DelegateGenerator<T2>,
         popup_delegate: PopupDelegateGenerator<T2, S2, M2, TState<bool>>,
         popup_item_delegate: PopupItemDelegateGenerator<T2, S2>,
-    ) -> PlainPopUpButton<T2, F2, S2, M2> {
+    ) -> PlainPopUpButton<T2, F2, S2, M2, E2> {
         // Stores whether the popup is currently open or closed
         let popup_open = LocalState::new(false);
 
@@ -119,9 +151,10 @@ impl<
             selected_item: selected.clone(),
             popup_item_delegate,
             popup_open: popup_open.clone(),
+            enabled: enabled.as_dyn_read(),
         };
 
-        let popup_delegate_widget = popup_delegate(model.clone(), del);
+        let popup_delegate_widget = popup_delegate(model.clone(), del, enabled.as_dyn_read());
 
         let popup = PlainPopUpButtonPopUp::new(
             popup_delegate_widget,
@@ -129,15 +162,17 @@ impl<
             popup_open.as_dyn(),
             model.clone(),
             selected.clone(),
+            enabled.as_dyn_read(),
         ).boxed().overlay("controls_popup_layer", popup_open.clone());
 
-        let child = delegate(selected.as_dyn(), focus.as_dyn(), popup_open.as_dyn_read());
+        let child = delegate(selected.as_dyn(), focus.as_dyn(), popup_open.as_dyn_read(), enabled.as_dyn_read());
 
         PlainPopUpButton {
             id: WidgetId::new(),
             position: Position::new(0.0, 0.0),
             dimension: Dimension::new(100.0, 100.0),
             focus,
+            enabled,
 
             delegate,
             popup_delegate,
@@ -157,8 +192,9 @@ impl<
     T: StateContract + PartialEq,
     F: State<T=Focus>,
     S: State<T=T>,
-    M: ReadState<T=Vec<T>>
-> CommonWidget for PlainPopUpButton<T, F, S, M> {
+    M: ReadState<T=Vec<T>>,
+    E: ReadState<T=bool>,
+> CommonWidget for PlainPopUpButton<T, F, S, M, E> {
     CommonWidgetImpl!(self, id: self.id, child: self.child, position: self.position, dimension: self.dimension, flag: Flags::FOCUSABLE, flexibility: 10, focus: self.focus);
 }
 
@@ -167,8 +203,9 @@ impl<
     T: StateContract + PartialEq,
     F: State<T=Focus>,
     S: State<T=T>,
-    M: ReadState<T=Vec<T>>
-> Debug for PlainPopUpButton<T, F, S, M> {
+    M: ReadState<T=Vec<T>>,
+    E: ReadState<T=bool>,
+> Debug for PlainPopUpButton<T, F, S, M, E> {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("PlainPopUpButton")
             .field("child", &self.child)
@@ -180,17 +217,19 @@ impl<
     T: StateContract + PartialEq,
     F: State<T=Focus>,
     S: State<T=T>,
-    M: ReadState<T=Vec<T>>
-> WidgetExt for PlainPopUpButton<T, F, S, M> {}
+    M: ReadState<T=Vec<T>>,
+    E: ReadState<T=bool>,
+> WidgetExt for PlainPopUpButton<T, F, S, M, E> {}
 
 impl<
     T: StateContract + PartialEq,
     F: State<T=Focus>,
     S: State<T=T>,
-    M: ReadState<T=Vec<T>>
-> KeyboardEventHandler for PlainPopUpButton<T, F, S, M> {
+    M: ReadState<T=Vec<T>>,
+    E: ReadState<T=bool>,
+> KeyboardEventHandler for PlainPopUpButton<T, F, S, M, E> {
     fn handle_keyboard_event(&mut self, event: &KeyboardEvent, env: &mut Environment) {
-        if self.get_focus() != Focus::Focused { return; }
+        if self.get_focus() != Focus::Focused || !*self.enabled.value() { return; }
 
         if event == PopupButtonKeyCommand::Open {
             self.popup_open.set_value(true);
@@ -203,14 +242,19 @@ impl<
     T: StateContract + PartialEq,
     F: State<T=Focus>,
     S: State<T=T>,
-    M: ReadState<T=Vec<T>>
-> MouseEventHandler for PlainPopUpButton<T, F, S, M> {
+    M: ReadState<T=Vec<T>>,
+    E: ReadState<T=bool>,
+> MouseEventHandler for PlainPopUpButton<T, F, S, M, E> {
     // Implementing this instead of handle_mouse_event makes all the children not receive events.
     fn process_mouse_event(&mut self, event: &MouseEvent, _: &bool, env: &mut Environment) {
         if !env.is_event_current() { return }
         match event {
             MouseEvent::Click(_, position, _) => {
                 if self.is_inside(*position) {
+                    if !*self.enabled.value() {
+                        return;
+                    }
+
                     if self.get_focus() != Focus::Focused {
                         self.set_focus(Focus::FocusRequested);
                         env.request_focus(Refocus::FocusRequest);
@@ -233,8 +277,9 @@ impl<
     T: StateContract + PartialEq,
     F: State<T=Focus>,
     S: State<T=T>,
-    M: ReadState<T=Vec<T>>
-> Layout for PlainPopUpButton<T, F, S, M> {
+    M: ReadState<T=Vec<T>>,
+    E: ReadState<T=bool>,
+> Layout for PlainPopUpButton<T, F, S, M, E> {
     fn calculate_size(&mut self, requested_size: Dimension, env: &mut Environment) -> Dimension {
         let dimensions = self.child.calculate_size(requested_size, env);
         self.set_dimension(dimensions);
@@ -257,6 +302,20 @@ impl<
         self.child.position_children(env);
 
         positioning(position, dimension, &mut self.popup);
+
+        // Keep the Y within the screen
+        let popup_position = self.popup.position();
+        let popup_dimension = self.popup.dimension();
+        let mut y = popup_position.y();
+
+        if y + popup_dimension.height > env.current_window_height() {
+            y = env.current_window_height() - popup_dimension.height;
+        }
+        if y < 0.0 {
+            y = 0.0;
+        }
+
+        self.popup.set_position(Position::new(popup_position.x(), y));
         self.popup.position_children(env);
     }
 }
@@ -266,14 +325,26 @@ impl<
 // ---------------------------------------------------
 //  Delegates
 // ---------------------------------------------------
-type DelegateGenerator<T: StateContract + PartialEq> =
-    fn(selected_item: Box<dyn AnyState<T=T>>, focused: Box<dyn AnyState<T=Focus>>, popup_open: Box<dyn AnyReadState<T=bool>>) -> Box<dyn Widget>;
+type DelegateGenerator<T: StateContract + PartialEq> = fn(
+    selected_item: Box<dyn AnyState<T=T>>,
+    focused: Box<dyn AnyState<T=Focus>>,
+    popup_open: Box<dyn AnyReadState<T=bool>>,
+    enabled: Box<dyn AnyReadState<T=bool>>,
+) -> Box<dyn Widget>;
 
-type PopupDelegateGenerator<T: StateContract + PartialEq, S: State<T=T>, M: ReadState<T=Vec<T>>, B: State<T=bool>,> =
-    fn(model: M, delegate: PopupDelegate<T, S, B>) -> Box<dyn Widget>;
+type PopupDelegateGenerator<T: StateContract + PartialEq, S: State<T=T>, M: ReadState<T=Vec<T>>, B: State<T=bool>> = fn(
+    model: M,
+    delegate: PopupDelegate<T, S, B>,
+    enabled: Box<dyn AnyReadState<T=bool>>,
+) -> Box<dyn Widget>;
 
-type PopupItemDelegateGenerator<T: StateContract + PartialEq, S: State<T=T>> =
-    fn(item: Box<dyn AnyState<T=T>>, index: Box<dyn AnyReadState<T=usize>>, hover: Box<dyn AnyReadState<T=bool>>, selected: S) -> Box<dyn Widget>;
+type PopupItemDelegateGenerator<T: StateContract + PartialEq, S: State<T=T>> = fn(
+    item: Box<dyn AnyState<T=T>>,
+    index: Box<dyn AnyReadState<T=usize>>,
+    hover: Box<dyn AnyReadState<T=bool>>,
+    selected: S,
+    enabled: Box<dyn AnyReadState<T=bool>>,
+) -> Box<dyn Widget>;
 
 #[derive(Clone)]
 pub struct PopupDelegate<T, S, B>
@@ -286,12 +357,14 @@ pub struct PopupDelegate<T, S, B>
     selected_item: S,
     popup_item_delegate: PopupItemDelegateGenerator<T, S>,
     popup_open: B,
+    enabled: Box<dyn AnyReadState<T=bool>>,
 }
 
 impl<T: StateContract, S: State<T=T>, B: State<T=bool>> Delegate<T, Box<dyn Widget>> for PopupDelegate<T, S, B> {
     fn call(&self, item: Box<dyn AnyState<T=T>>, index: Box<dyn AnyState<T=usize>>) -> Box<dyn Widget> {
         let selected_item_del = self.selected_item.clone();
         let popup_open = self.popup_open.clone();
+        let enabled = self.enabled.clone();
 
         // Map the hovered index to a boolean state telling us whether this item is hovered.
         // If we set this state to be hovered, we set the index, and otherwise we set to None.
@@ -319,6 +392,7 @@ impl<T: StateContract, S: State<T=T>, B: State<T=bool>> Delegate<T, Box<dyn Widg
             index.as_dyn_read(),
             hover_state.as_dyn_read(),
             selected_item_del.clone(),
+            enabled.as_dyn_read(),
         );
 
         popup_item_delegate
@@ -335,6 +409,7 @@ fn default_delegate<T: StateContract + PartialEq>(
     selected_item: Box<dyn AnyState<T=T>>,
     focused: Box<dyn AnyState<T=Focus>>,
     popup_open: Box<dyn AnyReadState<T=bool>>,
+    enabled: Box<dyn AnyReadState<T=bool>>,
 ) -> Box<dyn Widget> {
     let background_color = Map1::read_map(focused.clone(), |focused| {
         match *focused {
@@ -354,6 +429,7 @@ fn default_popup_item_delegate<T: StateContract + PartialEq, S: State<T=T>>(
     _index: Box<dyn AnyReadState<T=usize>>,
     hover_state: Box<dyn AnyReadState<T=bool>>,
     _selected_state: S,
+    enabled: Box<dyn AnyReadState<T=bool>>,
 ) -> Box<dyn Widget> {
     let item_color = Map1::read_map(hover_state.clone(), |hovered| {
         if *hovered {
@@ -373,6 +449,7 @@ fn default_popup_item_delegate<T: StateContract + PartialEq, S: State<T=T>>(
 fn default_popup_delegate<T: StateContract + PartialEq, S: State<T=T>, M: ReadState<T=Vec<T>>, B: State<T=bool>>(
     model: M,
     delegate: PopupDelegate<T, S, B>,
+    enabled: Box<dyn AnyReadState<T=bool>>,
 ) -> Box<dyn Widget> {
     VStack::new(vec![
         ForEach::new(model.ignore_writes(), delegate)
