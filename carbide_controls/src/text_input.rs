@@ -1,14 +1,12 @@
 use carbide_core::CommonWidgetImpl;
-use carbide_core::draw::{Dimension, Position, Color};
-use carbide_core::environment::{Environment, EnvironmentColor, EnvironmentFontSize};
+use carbide_core::draw::{Dimension, Position};
+use carbide_core::environment::{EnvironmentColor, EnvironmentFontSize};
 use carbide_core::focus::Focus;
-use carbide_core::flags::Flags;
-use carbide_core::layout::{BasicLayouter, Layout, Layouter};
-use carbide_core::render::{Render, RenderContext};
-use carbide_core::state::{IntoReadState, IntoState, LocalState, Map1, Map2, Map5, ReadState, State, TState};
-use carbide_core::widget::{CommonWidget, CornerRadii, EdgeInsets, Rectangle, RoundedRectangle, Widget, WidgetExt, WidgetId, WidgetIter, WidgetIterMut, ZStack};
+use carbide_core::render::{Render};
+use carbide_core::state::{IntoReadState, IntoState, LocalState, Map1, Map2, ReadState, State, TState};
+use carbide_core::widget::{CommonWidget, CornerRadii, EdgeInsets, Rectangle, RoundedRectangle, Widget, WidgetExt, WidgetId, ZStack};
 
-use crate::{PASSWORD_CHAR, PlainTextInput, TextInputState};
+use crate::{PASSWORD_CHAR, PlainTextInput};
 
 const VERTICAL_PADDING: f64 = 0.0;
 const HORIZONTAL_PADDING: f64 = 5.0;
@@ -18,10 +16,11 @@ const HORIZONTAL_PADDING: f64 = 5.0;
 /// key shortcuts, mouse click and drag select along with copy and paste. For an example of
 /// how to use this widget look at examples/plain_text_input
 #[derive(Debug, Clone, Widget)]
-pub struct TextInput<F, O, T> where
+pub struct TextInput<F, O, T, E> where
     F: State<T=Focus>,
     O: ReadState<T=Option<char>>,
     T: State<T=Result<String, String>>,
+    E: ReadState<T=bool>,
 {
     id: WidgetId,
     position: Position,
@@ -32,41 +31,53 @@ pub struct TextInput<F, O, T> where
 
     #[state] text: T,
     #[state] focus: F,
+    #[state] enabled: E,
 }
 
-impl TextInput<Focus, Option<char>, Result<String, String>> {
-    pub fn new<T: IntoState<Result<String, String>>>(text: T) -> TextInput<TState<Focus>, Option<char>, T::Output> {
+impl TextInput<Focus, Option<char>, Result<String, String>, bool> {
+    pub fn new<T: IntoState<Result<String, String>>>(text: T) -> TextInput<TState<Focus>, Option<char>, T::Output, bool> {
         let focus = LocalState::new(Focus::Unfocused);
         let obscure = None;
         let text = text.into_state();
 
-        Self::new_internal(text, focus, obscure)
+        Self::new_internal(text, focus, obscure, true)
     }
 }
 
-impl<F: State<T=Focus>, O: ReadState<T=Option<char>>, T: State<T=Result<String, String>>> TextInput<F, O, T> {
+impl<F: State<T=Focus>, O: ReadState<T=Option<char>>, T: State<T=Result<String, String>>, E: ReadState<T=bool>> TextInput<F, O, T, E> {
+    pub fn enabled<E2: IntoReadState<bool>>(self, enabled: E2) -> TextInput<F, O, T, E2::Output> {
+        Self::new_internal(
+            self.text,
+            self.focus,
+            self.obscure,
+            enabled.into_read_state(),
+        )
+    }
 
-    pub fn obscure(self) -> TextInput<F, Option<char>, T> {
+    pub fn obscure(self) -> TextInput<F, Option<char>, T, E> {
         Self::new_internal(
             self.text,
             self.focus,
             Some(PASSWORD_CHAR),
+            self.enabled,
         )
     }
 
-    pub fn obscure_with<O2: IntoReadState<Option<char>>>(self, obscure: O2) -> TextInput<F, O2::Output, T> {
+    pub fn obscure_with<O2: IntoReadState<Option<char>>>(self, obscure: O2) -> TextInput<F, O2::Output, T, E> {
         Self::new_internal(
             self.text,
             self.focus,
             obscure.into_read_state(),
+            self.enabled,
         )
     }
 
-    fn new_internal<F2: State<T=Focus>, O2: ReadState<T=Option<char>>, T2: State<T=Result<String, String>>>(
+    fn new_internal<F2: State<T=Focus>, O2: ReadState<T=Option<char>>, T2: State<T=Result<String, String>>, E2: ReadState<T=bool>>(
         text: T2,
         focus: F2,
         obscure: O2,
-    ) -> TextInput<F2, O2, T2> {
+        enabled: E2,
+    ) -> TextInput<F2, O2, T2, E2> {
 
         let selection_color = EnvironmentColor::Accent.color();
         let darkened_selection_color = Map1::read_map(selection_color, |col| col.darkened(0.2));
@@ -83,6 +94,22 @@ impl<F: State<T=Focus>, O: ReadState<T=Option<char>>, T: State<T=Result<String, 
             EnvironmentColor::OpaqueSeparator
         });
 
+        let label_color = Map1::read_map(enabled.clone(), |enabled| {
+            if *enabled {
+                EnvironmentColor::Label
+            } else {
+                EnvironmentColor::SecondaryLabel
+            }
+        });
+
+        let background_color = Map1::read_map(enabled.clone(), |enabled| {
+            if *enabled {
+                EnvironmentColor::SecondarySystemBackground
+            } else {
+                EnvironmentColor::TertiarySystemBackground
+            }
+        });
+
         // TODO: Change to cached map when available
         let text_state = Map1::map(
             text.clone(),
@@ -94,17 +121,18 @@ impl<F: State<T=Focus>, O: ReadState<T=Option<char>>, T: State<T=Result<String, 
 
         let text_widget = PlainTextInput::new(text_state)
             .font_size(EnvironmentFontSize::Body)
-            .text_color(EnvironmentColor::Label)
+            .text_color(label_color)
             .cursor_widget(Rectangle::new().fill(EnvironmentColor::Label))
             .selection_widget(Rectangle::new().fill(darkened_selection_color))
             .focused(focus.clone())
+            .enabled(enabled.clone())
             .obscure(obscure.clone())
             .clip()
             .padding(EdgeInsets::vertical_horizontal(VERTICAL_PADDING, HORIZONTAL_PADDING));
 
         let child = ZStack::new(vec![
             RoundedRectangle::new(CornerRadii::all(3.0))
-                .fill(EnvironmentColor::SecondarySystemBackground)
+                .fill(background_color)
                 .stroke(stroke_color)
                 .stroke_style(1.0),
             text_widget.boxed()
@@ -119,12 +147,13 @@ impl<F: State<T=Focus>, O: ReadState<T=Option<char>>, T: State<T=Result<String, 
             obscure,
             text,
             focus,
+            enabled,
         }
     }
 }
 
-impl<F: State<T=Focus>, O: ReadState<T=Option<char>>, T: State<T=Result<String, String>>> CommonWidget for TextInput<F, O, T> {
+impl<F: State<T=Focus>, O: ReadState<T=Option<char>>, T: State<T=Result<String, String>>, E: ReadState<T=bool>,> CommonWidget for TextInput<F, O, T, E> {
     CommonWidgetImpl!(self, id: self.id, child: self.child, position: self.position, dimension: self.dimension, flexibility: 1);
 }
 
-impl<F: State<T=Focus>, O: ReadState<T=Option<char>>, T: State<T=Result<String, String>>> WidgetExt for TextInput<F, O, T> {}
+impl<F: State<T=Focus>, O: ReadState<T=Option<char>>, T: State<T=Result<String, String>>, E: ReadState<T=bool>,> WidgetExt for TextInput<F, O, T, E> {}

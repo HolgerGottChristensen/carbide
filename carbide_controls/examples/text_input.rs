@@ -22,6 +22,9 @@ fn main() {
             TextInput::new(text_state2.clone()).boxed(),
             TextInput::new(text_state2.clone()).obscure().boxed(),
             TextInput::new(text_state2.clone()).obscure_with('©').boxed(),
+            Empty::new().frame(10.0, 10.0),
+            TextInput::new(text_state2.clone()).enabled(false).boxed(),
+
         ])
             .spacing(10.0)
             .padding(EdgeInsets::all(40.0)),
