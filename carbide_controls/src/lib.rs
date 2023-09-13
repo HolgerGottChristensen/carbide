@@ -1,4 +1,6 @@
 pub use button::*;
+use carbide_core::environment::Environment;
+use carbide_core::state::{EnvMap1, Map1};
 pub use check_box::*;
 pub use list::*;
 pub use navigation_stack::NavigationStack;
@@ -11,6 +13,7 @@ pub use text_input::*;
 pub use types::CheckBoxValue;
 pub use controls_ext::*;
 pub use help::*;
+pub use labelled::*;
 
 #[macro_export]
 macro_rules! capture {
@@ -47,3 +50,14 @@ mod text_input;
 mod types;
 mod controls_ext;
 mod help;
+mod labelled;
+
+
+type EnabledState = EnvMap1<fn(&Environment, &i32) -> bool, i32, bool, i32>;
+
+pub fn enabled_state() -> EnabledState {
+    Map1::read_map_env(0, |env, _| {
+        // Look up enabled in the environment, or default to true of nothing is specified
+        env.bool("enabled").unwrap_or(true)
+    })
+}

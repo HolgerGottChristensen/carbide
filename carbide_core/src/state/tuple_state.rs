@@ -236,7 +236,7 @@ macro_rules! tuple_state {
 
         impl<$($type: StateContract),*, TO: StateContract + Default, $($type2: AnyReadState<T=$type> + Clone + 'static),*, MAP: Fn(&Environment, $(&$type),*) -> TO + Clone + 'static> core::fmt::Debug for $env_map_name<MAP, $($type),*, TO, $($type2),*> {
             fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-                f.debug_struct(stringify!($read_map_name))
+                f.debug_struct(stringify!($env_map_name))
                     $(
                     .field(stringify!($name), &*self.$name.value())
                     )*

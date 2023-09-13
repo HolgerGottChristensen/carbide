@@ -8,9 +8,11 @@ use crate::widget::{CommonWidget};
 pub trait Render: CommonWidget + StateSync {
 
     fn render(&mut self, context: &mut RenderContext, env: &mut Environment) {
+        self.capture_state(env);
         self.foreach_child_mut(&mut |child| {
             child.render(context, env);
-        })
+        });
+        self.release_state(env);
     }
 
     /// Get the primitives from a widget. You should insert the primitives into the vec.

@@ -1,7 +1,11 @@
-use carbide_core::environment::EnvironmentColor;
+use carbide_core::environment::{EnvironmentColor, EnvironmentStateContainer};
 use carbide_core::state::IntoReadState;
-use carbide_core::widget::{EdgeInsets, Rectangle, Text, WidgetExt};
-use crate::Help;
+use carbide_core::state::ReadStateExtNew;
+use carbide_core::widget::{EdgeInsets, EnvUpdating, HStack, Rectangle, Text, WidgetExt};
+
+use crate::{Help, Labelled};
+
+type Enabled<T> = EnvUpdating<T>;
 
 pub trait ControlsExt: WidgetExt {
     fn help<H: IntoReadState<String>>(self, help: H) -> Help<Self> {
@@ -12,6 +16,20 @@ pub trait ControlsExt: WidgetExt {
                 .background(*Rectangle::new().fill(EnvironmentColor::Accent))
                 .boxed()
         )
+    }
+
+    fn label<L: IntoReadState<String>>(self, label: L) -> Labelled<HStack, L::Output> {
+        Labelled::new(label, self)
+    }
+
+    fn enabled<E: IntoReadState<bool>>(self, enabled: E) -> Enabled<Self> {
+        let mut e = EnvUpdating::new(self);
+        e.add(EnvironmentStateContainer::Bool {
+            key: "enabled",
+            value: enabled.into_read_state().as_dyn_read(),
+        });
+
+        *e
     }
 }
 

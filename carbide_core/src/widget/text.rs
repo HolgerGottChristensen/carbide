@@ -251,6 +251,8 @@ impl<T: ReadState<T=String> + Clone, S: ReadState<T=u32> + Clone, C: ReadState<T
 
 impl<T: ReadState<T=String> + Clone, S: ReadState<T=u32> + Clone, C: ReadState<T=Color> + Clone> Render for Text<T, S, C> {
     fn render(&mut self, context: &mut RenderContext, env: &mut Environment) {
+        self.capture_state(env);
+
         let default_color = *self.color.value();
 
         if let Some(internal) = &mut self.internal_text {
@@ -290,6 +292,9 @@ impl<T: ReadState<T=String> + Clone, S: ReadState<T=u32> + Clone, C: ReadState<T
                 }
             });
         }
+
+        self.release_state(env);
+
     }
 
     fn get_primitives(&mut self, primitives: &mut Vec<Primitive>, env: &mut Environment) {

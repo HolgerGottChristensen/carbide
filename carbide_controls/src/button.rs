@@ -6,18 +6,18 @@ use carbide_core::render::Style;
 use carbide_core::state::{AnyReadState, IntoReadState, IntoState, Map1, Map2, Map3, Map5, ReadState, TState};
 use carbide_core::widget::*;
 
-use crate::{PlainButton, PlainButtonDelegate};
+use crate::{EnabledState, PlainButton, PlainButtonDelegate};
 
 pub struct Button;
 
 impl Button {
     // TODO: Consider creating a newtype wrapper macro for Button, wrapping plainbutton, to simplify the signature of the function
-    pub fn new<L: IntoReadState<String>, A: Action + Clone + 'static>(label: L, action: A) -> PlainButton<TState<Focus>, A, ButtonDelegate<L::Output, bool>, bool> {
+    pub fn new<L: IntoReadState<String>, A: Action + Clone + 'static>(label: L, action: A) -> PlainButton<TState<Focus>, A, ButtonDelegate<L::Output, bool>, EnabledState> {
         PlainButton::new(action)
             .delegate(ButtonDelegate { label: label.into_read_state(), is_primary: false })
     }
 
-    pub fn new_primary<L: IntoReadState<String>, A: Action + Clone + 'static>(label: L, action: A) -> PlainButton<TState<Focus>, A, ButtonDelegate<L::Output, bool>, bool> {
+    pub fn new_primary<L: IntoReadState<String>, A: Action + Clone + 'static>(label: L, action: A) -> PlainButton<TState<Focus>, A, ButtonDelegate<L::Output, bool>, EnabledState> {
         PlainButton::new(action)
             .delegate(ButtonDelegate { label: label.into_read_state(), is_primary: true })
     }

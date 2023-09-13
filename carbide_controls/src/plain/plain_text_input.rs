@@ -18,6 +18,7 @@ use carbide_core::text::Glyph;
 use carbide_core::utils::{binary_search, clamp};
 use carbide_core::widget::{CommonWidget, Rectangle, Text, TextWidget, Widget, WidgetExt, WidgetId};
 use carbide_core::widget::Wrap;
+use crate::{enabled_state, EnabledState};
 
 use crate::plain::cursor::{Cursor, CursorIndex};
 
@@ -74,7 +75,7 @@ pub struct PlainTextInput<F, C, O, S, T, E> where
 }
 
 impl PlainTextInput<Focus, Color, Option<char>, u32, String, bool> {
-    pub fn new<S: IntoState<String>>(text: S) -> PlainTextInput<TState<Focus>, impl ReadState<T=Color>, Option<char>, impl ReadState<T=u32>, S::Output, bool> {
+    pub fn new<S: IntoState<String>>(text: S) -> PlainTextInput<TState<Focus>, impl ReadState<T=Color>, Option<char>, impl ReadState<T=u32>, S::Output, EnabledState> {
         let focus = LocalState::new(Focus::Unfocused);
         let color = EnvironmentColor::Label.color();
         let obscure = None;
@@ -91,7 +92,7 @@ impl PlainTextInput<Focus, Color, Option<char>, u32, String, bool> {
             text.into_state(),
             cursor_widget,
             selection_widget,
-            true,
+            enabled_state(),
         )
     }
 }

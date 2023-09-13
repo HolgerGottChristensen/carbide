@@ -33,6 +33,20 @@ pub struct WGPURenderContext {
     frame_count: usize,
 }
 
+/// An inner context used for each layer of rendering.
+///
+/// Each Layer context has its own state, render_pass list and a list of
+/// current render_pass_commands. It also has its own current bindgroup.
+#[derive(Debug)]
+pub struct WGPURenderLayerContext {
+    layer: u32,
+    render_pass: Vec<RenderPass>,
+    render_pass_inner: Vec<RenderPassCommand>,
+    current_bind_group: Option<WGPUBindGroup>,
+
+    state: State,
+}
+
 #[derive(Debug, Clone)]
 enum WGPUStyle {
     Color([f32; 4]),
@@ -87,9 +101,11 @@ impl WGPURenderContext {
     pub fn vertices(&self) -> &Vec<Vertex> {
         &self.vertices
     }
+
     pub fn transforms(&self) -> &Vec<Matrix4<f32>> {
         &self.transforms
     }
+
     pub fn gradients(&self) -> &Vec<Gradient> {
         &self.gradients
     }
@@ -137,7 +153,6 @@ impl WGPURenderContext {
         match &self.state {
             State::Image { id, start } => {
                 self.push_image_command(id.clone(), *start..self.vertices.len());
-
             }
             State::Plain { start } => {
                 self.push_geometry_command(*start..self.vertices.len());
@@ -665,4 +680,18 @@ impl InnerRenderContext for WGPURenderContext {
     fn pop_layer(&mut self) {
 
     }
+}
+
+
+/// Take two list of render passes and merge them into a single list of render passes
+fn merge_render_passes(mut main: Vec<RenderPass>, second: Vec<RenderPass>) -> Vec<RenderPass> {
+
+    if second.len() == 0 { return main; }
+    if main.len() == 0 { return second; }
+
+    // TODO: If the last of main and first of second are both normal or both the same gradient, we can merge them.
+    main.extend(second);
+
+    main
+
 }

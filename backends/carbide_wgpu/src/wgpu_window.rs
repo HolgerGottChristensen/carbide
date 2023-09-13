@@ -785,7 +785,7 @@ impl Render for WGPUWindow {
 
         let render_passes = self.render_context.finish();
 
-        println!("\nContext: {:#?}", render_passes);
+        //println!("\nContext: {:#?}", render_passes);
         //println!("Vertices: {:#?}", &self.render_context.vertices()[0..10]);
 
         let mut uniform_bind_groups = vec![];

@@ -15,16 +15,28 @@ pub enum EnvironmentVariable {
         key: String,
         value: f64,
     },
-    Color {
-        key: EnvironmentColor,
-        value: Color,
-    },
-    FontSize {
-        key: EnvironmentFontSize,
-        value: u32,
-    },
     I32 {
         key: String,
         value: i32,
+    },
+    Bool {
+        key: &'static str,
+        value: bool,
+    },
+    Color {
+        key: String,
+        value: Color,
+    },
+    FontSize {
+        key: String,
+        value: u32,
+    },
+    EnvironmentColor {
+        key: EnvironmentColor,
+        value: Color,
+    },
+    EnvironmentFontSize {
+        key: EnvironmentFontSize,
+        value: u32,
     },
 }

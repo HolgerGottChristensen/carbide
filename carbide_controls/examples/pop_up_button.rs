@@ -1,4 +1,4 @@
-use carbide_controls::PopUpButton;
+use carbide_controls::{ControlsExt, PopUpButton};
 use carbide_core::draw::Dimension;
 use carbide_core::state::LocalState;
 use carbide_core::widget::*;
@@ -49,7 +49,7 @@ fn main() {
             PopUpButton::new(selected2.clone(), model.clone()).boxed(),
             PopUpButton::new(selected2, model).enabled(false).boxed(),
         ]).spacing(20.0)
-            .frame_fixed_width(200.0)
+            .frame_fixed_width(300.0)
     ).close_application_on_window_close());
 
     application.launch();

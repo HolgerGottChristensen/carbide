@@ -6,7 +6,7 @@ use carbide_core::render::{Render};
 use carbide_core::state::{IntoReadState, IntoState, LocalState, Map1, Map2, ReadState, State, TState};
 use carbide_core::widget::{CommonWidget, CornerRadii, EdgeInsets, Rectangle, RoundedRectangle, Widget, WidgetExt, WidgetId, ZStack};
 
-use crate::{PASSWORD_CHAR, PlainTextInput};
+use crate::{enabled_state, EnabledState, PASSWORD_CHAR, PlainTextInput};
 
 const VERTICAL_PADDING: f64 = 0.0;
 const HORIZONTAL_PADDING: f64 = 5.0;
@@ -35,12 +35,12 @@ pub struct TextInput<F, O, T, E> where
 }
 
 impl TextInput<Focus, Option<char>, Result<String, String>, bool> {
-    pub fn new<T: IntoState<Result<String, String>>>(text: T) -> TextInput<TState<Focus>, Option<char>, T::Output, bool> {
+    pub fn new<T: IntoState<Result<String, String>>>(text: T) -> TextInput<TState<Focus>, Option<char>, T::Output, EnabledState> {
         let focus = LocalState::new(Focus::Unfocused);
         let obscure = None;
         let text = text.into_state();
 
-        Self::new_internal(text, focus, obscure, true)
+        Self::new_internal(text, focus, obscure, enabled_state())
     }
 }
 

@@ -9,6 +9,7 @@ use carbide_core::focus::{Focus, Focusable};
 use carbide_core::focus::Refocus;
 use carbide_core::state::{AnyReadState, AnyState, IntoReadState, IntoState, LocalState, Map1, Map2, Map3, Map4, ReadState, ReadStateExtNew, State, StateExtNew, TState};
 use carbide_core::widget::{Action, CommonWidget, MouseArea, Rectangle, Text, Widget, WidgetExt, WidgetId, ZStack};
+use crate::{enabled_state, EnabledState};
 
 pub trait PlainButtonDelegate: Clone + 'static {
     fn call(&self, focus: Box<dyn AnyReadState<T=Focus>>, hovered: Box<dyn AnyReadState<T=bool>>, pressed: Box<dyn AnyReadState<T=bool>>, enabled: Box<dyn AnyReadState<T=bool>>) -> Box<dyn Widget>;
@@ -42,14 +43,14 @@ pub struct PlainButton<F, A, D, E> where
 }
 
 impl PlainButton<Focus, DefaultPlainButtonAction, DefaultPlainButtonDelegate, bool> {
-    pub fn new<A: Action + Clone + 'static>(action: A) -> PlainButton<TState<Focus>, A, DefaultPlainButtonDelegate, bool> {
+    pub fn new<A: Action + Clone + 'static>(action: A) -> PlainButton<TState<Focus>, A, DefaultPlainButtonDelegate, EnabledState> {
         let focus_state = LocalState::new(Focus::Unfocused);
 
         Self::new_internal(
             action,
             focus_state,
             PlainButton::default_delegate,
-            true,
+            enabled_state(),
         )
     }
 

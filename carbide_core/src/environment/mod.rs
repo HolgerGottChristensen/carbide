@@ -1,3 +1,4 @@
+use carbide_core::state::AnyReadState;
 pub use environment::Environment;
 pub use environment_color::EnvironmentColor;
 pub use environment_font_size::EnvironmentFontSize;
@@ -49,5 +50,9 @@ pub enum EnvironmentStateContainer {
     I32 {
         key: String,
         value: TState<i32>,
+    },
+    Bool {
+        key: &'static str,
+        value: Box<dyn AnyReadState<T=bool>>,
     },
 }

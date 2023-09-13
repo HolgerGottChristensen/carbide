@@ -13,6 +13,10 @@ use crate::state::{IntoState, ReadState, TState};
 use crate::widget::{Action, Background, Border, Clip, ClipShape, CornerRadii, Duplicated, EdgeInsets, Empty, EnvUpdating, Flagged, Flexibility, Frame, Hidden, Ignore, MouseArea, Offset, Overlay, Padding, Rotation3DEffect, RoundedRectangle, Shape, Transform, Widget};
 use crate::state::ReadStateExtNew;
 
+type AccentColor<T> = EnvUpdating<T>;
+type ForegroundColor<T> = EnvUpdating<T>;
+
+
 pub trait WidgetExt: Widget + Sized + Clone + 'static {
     /// Surround the widget with a frame. The frame is a widget that has fixed width, height or both.
     /// The frame takes two parameters. Both parameters take f64 state. This means you can pass
@@ -127,17 +131,17 @@ pub trait WidgetExt: Widget + Sized + Clone + 'static {
         Border::new(self)
     }
 
-    fn foreground_color(self, color: impl Into<TState<Color>>) -> Box<EnvUpdating<Self>> {
+    fn foreground_color(self, color: impl Into<TState<Color>>) -> ForegroundColor<Self> {
         let mut e = EnvUpdating::new(self);
         e.add(EnvironmentStateContainer::Color {
             key: EnvironmentColor::Label,
             value: color.into(),
         });
 
-        e
+        *e
     }
 
-    fn accent_color<C: IntoReadState<Color>>(self, color: C) -> EnvUpdating<Self> {
+    fn accent_color<C: IntoReadState<Color>>(self, color: C) -> AccentColor<Self> {
         let mut e = EnvUpdating::new(self);
         e.add(EnvironmentStateContainer::Color {
             key: EnvironmentColor::Accent,

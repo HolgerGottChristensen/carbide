@@ -84,7 +84,7 @@ impl<C: Widget + Clone> EnvUpdating<C> {
                 EnvironmentStateContainer::Color { key, value } => {
                     value.sync(env);
                     let to_update = *value.value();
-                    env.push(EnvironmentVariable::Color {
+                    env.push(EnvironmentVariable::EnvironmentColor {
                         key: key.clone(),
                         value: to_update,
                     });
@@ -94,7 +94,7 @@ impl<C: Widget + Clone> EnvUpdating<C> {
                     value.sync(env);
                     let to_update = *value.value();
 
-                    env.push(EnvironmentVariable::FontSize {
+                    env.push(EnvironmentVariable::EnvironmentFontSize {
                         key: key.clone(),
                         value: to_update,
                     });
@@ -109,6 +109,13 @@ impl<C: Widget + Clone> EnvUpdating<C> {
                         value: to_update,
                     });
                     //value.release_state(env);
+                }
+                EnvironmentStateContainer::Bool { key, value } => {
+                    value.sync(env);
+                    env.push(EnvironmentVariable::Bool {
+                        key,
+                        value: *value.value(),
+                    });
                 }
             }
         }

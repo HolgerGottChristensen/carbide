@@ -148,47 +148,47 @@ impl Environment {
         event_sink: Box<dyn EventSink>,
     ) -> Self {
         let font_sizes_large = vec![
-            EnvironmentVariable::FontSize {
+            EnvironmentVariable::EnvironmentFontSize {
                 key: EnvironmentFontSize::LargeTitle,
                 value: 34,
             },
-            EnvironmentVariable::FontSize {
+            EnvironmentVariable::EnvironmentFontSize {
                 key: EnvironmentFontSize::Title,
                 value: 28,
             },
-            EnvironmentVariable::FontSize {
+            EnvironmentVariable::EnvironmentFontSize {
                 key: EnvironmentFontSize::Title2,
                 value: 22,
             },
-            EnvironmentVariable::FontSize {
+            EnvironmentVariable::EnvironmentFontSize {
                 key: EnvironmentFontSize::Title3,
                 value: 20,
             },
-            EnvironmentVariable::FontSize {
+            EnvironmentVariable::EnvironmentFontSize {
                 key: EnvironmentFontSize::Headline,
                 value: 17,
             },
-            EnvironmentVariable::FontSize {
+            EnvironmentVariable::EnvironmentFontSize {
                 key: EnvironmentFontSize::Body,
                 value: 17,
             },
-            EnvironmentVariable::FontSize {
+            EnvironmentVariable::EnvironmentFontSize {
                 key: EnvironmentFontSize::Callout,
                 value: 16,
             },
-            EnvironmentVariable::FontSize {
+            EnvironmentVariable::EnvironmentFontSize {
                 key: EnvironmentFontSize::Subhead,
                 value: 15,
             },
-            EnvironmentVariable::FontSize {
+            EnvironmentVariable::EnvironmentFontSize {
                 key: EnvironmentFontSize::Footnote,
                 value: 13,
             },
-            EnvironmentVariable::FontSize {
+            EnvironmentVariable::EnvironmentFontSize {
                 key: EnvironmentFontSize::Caption,
                 value: 12,
             },
-            EnvironmentVariable::FontSize {
+            EnvironmentVariable::EnvironmentFontSize {
                 key: EnvironmentFontSize::Caption2,
                 value: 11,
             },
@@ -794,7 +794,7 @@ impl Environment {
         if let EnvironmentStateKey::Color(col) = color {
             for item in self.stack.iter().rev() {
                 match item {
-                    EnvironmentVariable::Color { key, value } => {
+                    EnvironmentVariable::EnvironmentColor { key, value } => {
                         if key == col {
                             return Some(value.clone());
                         }
@@ -811,13 +811,28 @@ impl Environment {
         if let EnvironmentStateKey::FontSize(size) = font_size {
             for item in self.stack.iter().rev() {
                 match item {
-                    EnvironmentVariable::FontSize { key, value } => {
+                    EnvironmentVariable::EnvironmentFontSize { key, value } => {
                         if key == size {
                             return Some(*value);
                         }
                     }
                     _ => (),
                 }
+            }
+        }
+
+        None
+    }
+
+    pub fn bool(&self, key: &'static str) -> Option<bool> {
+        for item in self.stack.iter().rev() {
+            match item {
+                EnvironmentVariable::Bool { key: other_key, value } => {
+                    if key == *other_key {
+                        return Some(*value);
+                    }
+                }
+                _ => (),
             }
         }
 
