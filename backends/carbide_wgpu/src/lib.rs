@@ -19,6 +19,7 @@ mod vertex;
 mod application;
 mod wgpu_window;
 mod render_context;
+mod image_context;
 
 use wgpu::{LoadOp, Operations};
 pub use application::Application;

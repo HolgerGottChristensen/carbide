@@ -4,6 +4,8 @@ pub use rect::BoundingBox;
 pub use rect::Rect;
 pub use color::Color;
 pub use alignment::Alignment;
+pub use image_context::*;
+pub use texture::*;
 
 mod alignment;
 mod dimension;
@@ -17,6 +19,8 @@ pub mod svg_path_builder;
 pub mod theme;
 pub mod draw_style;
 pub mod color;
+mod image_context;
+mod texture;
 
 /// An alias over the Scalar type used throughout carbide.
 ///

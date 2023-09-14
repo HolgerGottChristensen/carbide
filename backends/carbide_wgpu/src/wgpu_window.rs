@@ -11,8 +11,8 @@ use wgpu::util::{BufferInitDescriptor, DeviceExt};
 use winit::dpi::{LogicalSize, PhysicalPosition, PhysicalSize, Size};
 use winit::window::{Window as WinitWindow, WindowBuilder};
 
-use carbide_core::{Scene};
-use carbide_core::draw::{Dimension, Position, Rect, Scalar};
+use carbide_core::{draw, Scene};
+use carbide_core::draw::{Dimension, ImageContext, Position, Rect, Scalar};
 use carbide_core::draw::image::ImageId;
 use carbide_core::environment::{Environment, EnvironmentColor};
 use carbide_core::event::{KeyboardEvent, KeyboardEventHandler, MouseEvent, MouseEventHandler, OtherEventHandler, WidgetEvent, WindowEvent};
@@ -27,17 +27,18 @@ use carbide_core::widget::{CommonWidget, FilterId, Menu, OverlaidLayer, Rectangl
 use carbide_core::window::WindowId;
 use carbide_winit::convert_mouse_cursor;
 
-use crate::{render_pass_ops, RenderPassOps};
+use crate::{image_context, render_pass_ops, RenderPassOps};
 use crate::application::{EVENT_LOOP, WINDOW_IDS};
 use crate::bind_group_layouts::{filter_buffer_bind_group_layout, filter_texture_bind_group_layout, gradient_buffer_bind_group_layout, main_texture_group_layout, uniform_bind_group_layout};
 use crate::bind_groups::{filter_buffer_bind_group, filter_texture_bind_group, gradient_buffer_bind_group, main_bind_group, matrix_to_uniform_bind_group, size_to_uniform_bind_group};
 use crate::diffuse_bind_group::{DiffuseBindGroup, new_diffuse};
 use crate::filter::Filter;
 use crate::gradient::Gradient;
-use crate::image::Image;
+use crate::image::{BindGroupExtended, Image};
+use crate::image_context::WGPUImageContext;
 use crate::pipeline::create_pipelines;
 use crate::render_context::WGPURenderContext;
-use crate::render_pass_command::{draw_commands_to_render_pass_commands, RenderPass, RenderPassCommand};
+use crate::render_pass_command::{draw_commands_to_render_pass_commands, RenderPass, RenderPassCommand, WGPUBindGroup};
 use crate::render_pipeline_layouts::{filter_pipeline_layout, gradient_pipeline_layout, main_pipeline_layout, RenderPipelines};
 use crate::renderer::{atlas_cache_tex_desc, main_render_tex_desc, secondary_render_tex_desc};
 use crate::samplers::main_sampler;
@@ -188,7 +189,29 @@ thread_local!(pub static ATLAS_CACHE_TEXTURE: Texture = {
     })
 });
 
-thread_local!(pub static BIND_GROUPS: RefCell<HashMap<ImageId, DiffuseBindGroup>> = RefCell::new(HashMap::new()));
+thread_local!(pub static BIND_GROUPS: RefCell<HashMap<ImageId, BindGroupExtended>> = {
+    use image_context::create_bind_group;
+    let mut map = HashMap::new();
+
+    let texture = draw::Texture {
+        width: 1,
+        height: 1,
+        bytes_per_row: 4,
+        format: draw::TextureFormat::RGBA8,
+        data: &[0u8, 0u8, 0u8, 255u8],
+    };
+
+    let bind_group = DEVICE_QUEUE.with(|(device, queue)| {
+        ATLAS_CACHE_TEXTURE.with(|atlas_cache_tex| {
+            MAIN_TEXTURE_BIND_GROUP_LAYOUT.with(|texture_bind_group_layout| {
+                create_bind_group(texture, device, queue, atlas_cache_tex, texture_bind_group_layout)
+            })
+        })
+    });
+
+    map.insert(ImageId::default(), bind_group);
+    RefCell::new(map)
+});
 thread_local!(pub static FILTER_BIND_GROUPS: RefCell<HashMap<FilterId, BindGroup>> = RefCell::new(HashMap::new()));
 
 thread_local!(pub static PIPELINES: RefCell<Vec<(TextureFormat, RenderPipelines)>> = RefCell::new(vec![]));
@@ -511,24 +534,27 @@ impl MouseEventHandler for WGPUWindow {
         env.set_scale_factor(scale_factor);
         env.set_window_handle(Some(self.inner.raw_window_handle()));
 
-        if !*consumed {
-            if env.is_event_current() {
-                self.capture_state(env);
-                self.handle_mouse_event(event, consumed, env);
-                self.release_state(env);
+        env.with_image_context(ImageContext::new(WGPUImageContext), |env| {
+            if !*consumed {
+                if env.is_event_current() {
+                    self.capture_state(env);
+                    self.handle_mouse_event(event, consumed, env);
+                    self.release_state(env);
+                }
             }
-        }
 
-        self.foreach_child_direct(&mut |child| {
-            child.process_mouse_event(event, &consumed, env);
+            self.foreach_child_direct(&mut |child| {
+                child.process_mouse_event(event, &consumed, env);
+                if *consumed {
+                    return;
+                }
+            });
+
             if *consumed {
                 return;
             }
         });
 
-        if *consumed {
-            return;
-        }
 
         env.set_event_is_current(old_is_current);
         env.set_pixel_dimensions(old_dimension);
@@ -632,14 +658,16 @@ impl KeyboardEventHandler for WGPUWindow {
         env.set_scale_factor(scale_factor);
         env.set_window_handle(Some(self.inner.raw_window_handle()));
 
-        if env.is_event_current() {
-            self.capture_state(env);
-            self.handle_keyboard_event(event, env);
-            self.release_state(env);
-        }
+        env.with_image_context(ImageContext::new(WGPUImageContext), |env| {
+            if env.is_event_current() {
+                self.capture_state(env);
+                self.handle_keyboard_event(event, env);
+                self.release_state(env);
+            }
 
-        self.foreach_child_direct(&mut |child| {
-            child.process_keyboard_event(event, env);
+            self.foreach_child_direct(&mut |child| {
+                child.process_keyboard_event(event, env);
+            });
         });
 
         env.set_event_is_current(old_is_current);
@@ -724,18 +752,20 @@ impl OtherEventHandler for WGPUWindow {
         env.set_scale_factor(scale_factor);
         env.set_window_handle(Some(self.inner.raw_window_handle()));
 
-        if env.is_event_current() {
-            self.capture_state(env);
-            self.handle_other_event(event, env);
-            self.release_state(env);
-        }
+        env.with_image_context(ImageContext::new(WGPUImageContext), |env| {
+            if env.is_event_current() {
+                self.capture_state(env);
+                self.handle_other_event(event, env);
+                self.release_state(env);
+            }
 
-        self.foreach_child_direct(&mut |child| {
-            child.process_other_event(event, env);
+            self.foreach_child_direct(&mut |child| {
+                child.process_other_event(event, env);
+            });
+
+            // Set the cursor of the window.
+            self.inner.set_cursor_icon(convert_mouse_cursor(env.cursor()));
         });
-
-        // Set the cursor of the window.
-        self.inner.set_cursor_icon(convert_mouse_cursor(env.cursor()));
 
         env.set_event_is_current(old_is_current);
         env.set_pixel_dimensions(old_dimension);
@@ -767,61 +797,64 @@ impl Render for WGPUWindow {
         env.set_pixel_dimensions(Dimension::new(physical_dimensions.width as f64, physical_dimensions.height as f64));
         env.set_scale_factor(scale_factor);
 
-        // Calculate size and position children
-        self.child.calculate_size(dimensions, env);
+        env.with_image_context(ImageContext::new(WGPUImageContext), |env| {
+            // Calculate size and position children
+            self.child.calculate_size(dimensions, env);
 
-        let layout = env.root_alignment();
-        (layout.positioner())(Position::new(0.0, 0.0), dimensions, &mut self.child);
+            let layout = env.root_alignment();
+            (layout.positioner())(Position::new(0.0, 0.0), dimensions, &mut self.child);
 
-        self.child.position_children(env);
+            self.child.position_children(env);
 
-        // Render the children
-        self.render_context.start(Rect::new(Position::origin(), dimensions));
-        let mut wrapper_context = RenderContext::new(&mut self.render_context);
+            // Render the children
+            self.render_context.start(Rect::new(Position::origin(), dimensions));
+            let mut wrapper_context = RenderContext::new(&mut self.render_context);
 
-        env.get_font_atlas_mut().prepare_queued();
+            env.get_font_atlas_mut().prepare_queued();
 
-        self.child.render(&mut wrapper_context, env);
+            self.child.render(&mut wrapper_context, env);
 
-        let render_passes = self.render_context.finish();
+            let render_passes = self.render_context.finish();
 
-        //println!("\nContext: {:#?}", render_passes);
-        //println!("Vertices: {:#?}", &self.render_context.vertices()[0..10]);
+            //println!("\nContext: {:#?}", render_passes);
+            //println!("Vertices: {:#?}", &self.render_context.vertices()[0..10]);
 
-        let mut uniform_bind_groups = vec![];
-        let mut gradient_bind_groups = vec![];
+            let mut uniform_bind_groups = vec![];
+            let mut gradient_bind_groups = vec![];
 
-        DEVICE_QUEUE.with(|(device, queue)| {
-            Self::ensure_vertices_in_buffer(device, queue, self.render_context.vertices(), &mut self.vertex_buffer.0, &mut self.vertex_buffer.1);
+            DEVICE_QUEUE.with(|(device, queue)| {
+                Self::ensure_vertices_in_buffer(device, queue, self.render_context.vertices(), &mut self.vertex_buffer.0, &mut self.vertex_buffer.1);
 
-            UNIFORM_BIND_GROUP_LAYOUT.with(|uniform_bind_group_layout| {
-                Self::ensure_transforms_in_buffer(device, &self.carbide_to_wgpu_matrix, self.render_context.transforms(), uniform_bind_group_layout, &mut uniform_bind_groups);
-                Self::ensure_gradients_in_buffer(device, self.render_context.gradients(), uniform_bind_group_layout, &mut gradient_bind_groups);
+                UNIFORM_BIND_GROUP_LAYOUT.with(|uniform_bind_group_layout| {
+                    Self::ensure_transforms_in_buffer(device, &self.carbide_to_wgpu_matrix, self.render_context.transforms(), uniform_bind_group_layout, &mut uniform_bind_groups);
+                    Self::ensure_gradients_in_buffer(device, self.render_context.gradients(), uniform_bind_group_layout, &mut gradient_bind_groups);
+                });
             });
-        });
 
-        if self.visible {
-            match self.render_inner(render_passes, uniform_bind_groups, gradient_bind_groups, env) {
-                Ok(_) => {}
-                // Recreate the swap_chain if lost
-                Err(wgpu::SurfaceError::Lost) => {
-                    println!("Swap chain lost");
-                    self.resize(self.inner.inner_size(), env);
-                    self.request_redraw();
-                }
-                // The system is out of memory, we should probably quit
-                Err(wgpu::SurfaceError::OutOfMemory) => {
-                    println!("Swap chain out of memory");
-                    env.close_application();
-                }
-                // All other errors (Outdated, Timeout) should be resolved by the next frame
-                Err(e) => {
-                    // We request a redraw the next frame
-                    self.request_redraw();
-                    eprintln!("{:?}", e)
+            if self.visible {
+                match self.render_inner(render_passes, uniform_bind_groups, gradient_bind_groups, env) {
+                    Ok(_) => {}
+                    // Recreate the swap_chain if lost
+                    Err(wgpu::SurfaceError::Lost) => {
+                        println!("Swap chain lost");
+                        self.resize(self.inner.inner_size(), env);
+                        self.request_redraw();
+                    }
+                    // The system is out of memory, we should probably quit
+                    Err(wgpu::SurfaceError::OutOfMemory) => {
+                        println!("Swap chain out of memory");
+                        env.close_application();
+                    }
+                    // All other errors (Outdated, Timeout) should be resolved by the next frame
+                    Err(e) => {
+                        // We request a redraw the next frame
+                        self.request_redraw();
+                        eprintln!("{:?}", e)
+                    }
                 }
             }
-        }
+        });
+
         // Reset the environment
         env.set_pixel_dimensions(old_pixel_dimensions);
         env.set_scale_factor(old_scale_factor);
@@ -1083,7 +1116,7 @@ impl WGPUWindow {
         render_passes: Vec<RenderPass>,
         encoder: &mut CommandEncoder,
         render_pipelines: &RenderPipelines,
-        bind_groups: &HashMap<ImageId, DiffuseBindGroup>,
+        bind_groups: &HashMap<ImageId, BindGroupExtended>,
         uniform_bind_groups: &Vec<BindGroup>,
         gradient_bind_groups: &Vec<BindGroup>,
         filter_bind_groups: &HashMap<FilterId, BindGroup>,
@@ -1133,7 +1166,7 @@ impl WGPUWindow {
                     for inner_command in inner {
                         match inner_command {
                             RenderPassCommand::SetBindGroup { bind_group } => {
-                                render_pass.set_bind_group(0, &bind_groups[&bind_group.get()], &[]);
+                                render_pass.set_bind_group(0, &bind_groups[&bind_group.get()].bind_group, &[]);
                             }
                             RenderPassCommand::SetScissor { rect } => {
                                 render_pass.set_scissor_rect((rect.left() * scale_factor) as u32, (rect.bottom() * scale_factor) as u32, (rect.width() * scale_factor) as u32, (rect.height() * scale_factor) as u32);
@@ -1330,7 +1363,7 @@ impl WGPUWindow {
                         Self::update_filter_bind_groups(device, filter_bind_groups, env);
 
                         // Ensure the images are added as bind groups
-                        Self::ensure_images_exist_as_bind_groups(device, queue, bind_groups, env);
+                        //Self::ensure_images_exist_as_bind_groups(device, queue, bind_groups, env);
 
                         self.process_render_passes(render_passes, &mut encoder, render_pipelines, bind_groups, &uniform_bind_groups, &gradient_bind_groups, filter_bind_groups, size, env.scale_factor());
 

@@ -10,7 +10,7 @@ use carbide_macro::{carbide_default_builder2};
 
 use crate::{CommonWidgetImpl};
 
-use crate::draw::{Dimension, Position, Rect, Scalar};
+use crate::draw::{Dimension, Position, Rect, Scalar, Texture, TextureFormat};
 use crate::draw::image::ImageId;
 use crate::environment::{Environment, EnvironmentColor,};
 use crate::layout::Layout;
@@ -37,7 +37,6 @@ pub struct Image<Id, C> where Id: ReadState<T=Option<ImageId>> + Clone, C: ReadS
     dimension: Dimension,
     scale_mode: ScaleMode,
     resizeable: bool,
-    requested_size: Dimension,
 }
 
 impl Image<Option<ImageId>, Style> {
@@ -53,7 +52,6 @@ impl Image<Option<ImageId>, Style> {
             dimension: Dimension::new(0.0, 0.0),
             scale_mode: ScaleMode::Fit,
             resizeable: false,
-            requested_size: Dimension::new(0.0, 0.0),
         })
     }
 
@@ -68,7 +66,6 @@ impl Image<Option<ImageId>, Style> {
             dimension: Dimension::new(0.0, 0.0),
             scale_mode: ScaleMode::Fit,
             resizeable: false,
-            requested_size: Dimension::new(0.0, 0.0),
         })
     }
 }
@@ -107,10 +104,9 @@ impl<Id: ReadState<T=Option<ImageId>> + Clone, C: ReadState<T=Style> + Clone> Im
 
 impl<Id: ReadState<T=Option<ImageId>> + Clone, C: ReadState<T=Style> + Clone> Layout for Image<Id, C> {
     fn calculate_size(&mut self, requested_size: Dimension, env: &mut Environment) -> Dimension {
-        self.requested_size = requested_size;
 
         if let Some(image_id) = &*self.image_id.value() {
-            if !env.image_map.contains_key(image_id) {
+            if !env.image_context.texture_exist(image_id) {
                 let path = if image_id.is_relative() {
                     let assets = carbide_core::locate_folder::Search::KidsThenParents(3, 5)
                         .for_folder("assets")
@@ -121,22 +117,32 @@ impl<Id: ReadState<T=Option<ImageId>> + Clone, C: ReadState<T=Style> + Clone> La
                     image_id.as_ref().to_path_buf()
                 };
 
-
-
                 let image = image::open(path)
                     .expect("Couldn't load logo")
                     .pre_multiplied();
 
-                env.image_map.insert(image_id.clone(), image);
+                let texture = Texture {
+                    width: image.width(),
+                    height: image.height(),
+                    bytes_per_row: image.width() * 4,
+                    format: TextureFormat::RGBA8,
+                    data: &image.to_rgba8().into_raw(),
+                };
+
+                env.image_context.update_texture(image_id.clone(), texture);
+
+                //env.image_map.insert(image_id.clone(), image);
             }
         }
 
         let image_information = if let Some(source_rect) = self.src_rect {
             source_rect.dimension
         } else {
-            env.get_image_information(&self.image_id.value())
-                .map(|i| Dimension::new(i.width as f64, i.height as f64))
-                .unwrap_or(Dimension::new(100.0, 100.0))
+            let image_dimensions = self.image_id.value().as_ref().map(|id| {
+                env.image_context.texture_dimensions(id)
+            }).flatten().unwrap_or((100, 100));
+
+            Dimension::new(image_dimensions.0 as Scalar, image_dimensions.1 as Scalar)
         };
 
         if !self.resizeable {

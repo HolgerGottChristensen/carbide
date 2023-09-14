@@ -1,0 +1,23 @@
+[package]
+name = "carbide_media"
+version = "0.70.1"
+authors = [
+    "Holger Gott Christensen <holger.gott@icloud.com>",
+]
+keywords = ["ui", "widgets", "gui", "interface", "graphics"]
+description = "A set of media widgets for the carbide core crate"
+license = "MIT OR Apache-2.0"
+readme = "../README.md"
+categories = ["gui"]
+edition = "2021"
+repository = "https://github.com/HolgerGottChristensen/carbide.git"
+homepage = "https://github.com/HolgerGottChristensen/carbide"
+
+[dependencies]
+carbide_derive = { path = "../carbide_derive", version = "0.70" }
+carbide_core = { path = "../carbide_core", version = "0.70" }
+objc = "0.2.7"
+cocoa = "0.25.0"
+
+[dev-dependencies]
+carbide_wgpu = { path = "../backends/carbide_wgpu", version = "0.70" }

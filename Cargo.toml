@@ -5,6 +5,7 @@ members = [
     "carbide_macro",
     "carbide_controls",
     "carbide_derive",
+    "carbide_media",
     #"backends/carbide_example_shared",
     "backends/carbide_winit",
     # "backends/carbide_gfx",

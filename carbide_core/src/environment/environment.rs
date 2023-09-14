@@ -1,6 +1,7 @@
 use std::cell::RefCell;
 use std::collections::HashMap;
 use std::future::Future;
+use std::mem::swap;
 use std::option::Option::Some;
 use std::path::{Path, PathBuf};
 use std::rc::Rc;
@@ -19,7 +20,7 @@ use carbide_core::widget::Widget;
 use crate::locate_folder;
 use crate::animation::Animation;
 use crate::cursor::MouseCursor;
-use crate::draw::Dimension;
+use crate::draw::{Dimension, ImageContext, NOOPImageContext};
 use crate::draw::Color;
 use crate::draw::image::{ImageId, ImageMap};
 use crate::draw::Scalar;
@@ -133,6 +134,8 @@ pub struct Environment {
 
     current_event_window_id: Box<dyn Fn(WindowId) -> bool>,
     current_event_active: bool,
+
+    pub image_context: ImageContext,
 }
 
 impl std::fmt::Debug for Environment {
@@ -239,7 +242,8 @@ impl Environment {
             animation_widget_in_frame: 0,
             request_application_close: false,
             current_event_window_id: Box::new(|_| true),
-            current_event_active: false
+            current_event_active: false,
+            image_context: ImageContext::new(NOOPImageContext),
         };
 
 
@@ -255,6 +259,13 @@ impl Environment {
         }
 
 
+        res
+    }
+
+    pub fn with_image_context<F: FnMut(&mut Environment)->R, R>(&mut self, mut context: ImageContext, mut f: F) -> R {
+        swap(&mut self.image_context, &mut context);
+        let res = f(self);
+        swap(&mut self.image_context, &mut context);
         res
     }
 
