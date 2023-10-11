@@ -210,7 +210,7 @@ impl<Id: ReadState<T=Option<ImageId>> + Clone, C: ReadState<T=Style> + Clone> Re
                 context.image(id.clone(), Rect::new(self.position, self.dimension), source_rect, self.mode)
             }
         } else {
-            println!("Missing else")
+            //println!("Missing else")
         }
     }
 

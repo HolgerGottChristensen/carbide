@@ -19,6 +19,7 @@ use carbide_core::widget::Widget;
 
 use crate::locate_folder;
 use crate::animation::Animation;
+use crate::asynchronous::{spawn};
 use crate::cursor::MouseCursor;
 use crate::draw::{Dimension, ImageContext, NOOPImageContext};
 use crate::draw::Color;
@@ -426,7 +427,8 @@ impl Environment {
         task: impl Future<Output = T> + Send + 'static,
         cont: impl Fn(T, &mut Environment) + 'static,
     ) {
-        let (sender, receiver) = oneshot::channel();
+        todo!()
+        /*let (sender, receiver) = oneshot::channel();
 
         let event_sink = self.event_sink.clone();
         let task_with_oneshot = task.then(|message| async move {
@@ -449,24 +451,10 @@ impl Environment {
             }
         });
 
-        if let Some(queue) = &mut self.async_task_queue {
-            queue.push(poll_message)
-        } else {
-            self.async_task_queue = Some(vec![poll_message])
-        }
 
-        #[cfg(feature = "tokio")]
-        {
-            self.tokio_runtime.spawn(task_with_oneshot);
-        }
+        ASYNC_QUEUE.with(|queue| queue.borrow_mut().push(poll_message));
 
-        #[cfg(all(feature = "async-std", not(feature = "tokio")))]
-        {
-            async_std::task::spawn(task_with_oneshot);
-        }
-
-        #[cfg(not(any(feature = "async-std", feature = "tokio")))]
-        println!("Tried to spawn an async task without having any async feature enabled. Try enabling 'async-std' or 'tokio'.")
+        spawn(task_with_oneshot)*/
     }
 
     pub fn capture_time(&mut self) {

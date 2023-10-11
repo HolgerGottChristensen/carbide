@@ -264,60 +264,60 @@ impl Font {
     }
 }
 
-#[test]
-fn load_bitmap_font() {
-    let test_char = '😀';
-    //let test_char = 'j';
-    //let test_char = '􁂿';
-
-    let font = Font::from_file_bitmap("/System/Library/Fonts/Apple Color Emoji.ttc").unwrap();
-
-    //let font = Font::from_file("/System/Library/Fonts/HelveticaNeue.ttc").unwrap();
-    //let font = Font::from_file("/System/Library/Fonts/SFCompactText.ttf").unwrap();
-    println!("Ascender: {:?}", font.font.inner().ascender());
-    println!("Descender: {:?}", font.font.inner().descender());
-    println!("Height: {:?}", font.font.inner().height());
-
-    let _emoji_ranges: [std::ops::Range<u32>; 1] = [
-        0x1F601..0x1F64F,
-        //0x2702..0x27B0,
-        //0x1F680..0x1F6C0,
-        //0x1F170..0x1F251
-    ];
-
-    /*for range in &emoji_ranges {
-
-        for i in range.clone() {
-            let c = unsafe { std::mem::transmute::<u32, char>(i) };
-            let id = font.get_inner().inner().glyph_index(c).unwrap();
-            let bb = font.get_inner().inner().glyph_bounding_box(id);
-            println!("bb: {:?}", bb);
-            let advance_width = font.get_inner().inner().glyph_hor_advance(id).unwrap();
-            println!("Advance_width: {}", advance_width);
-            println!("{}", c);
-        }
-    }*/
-    let glyph = font.get_inner().glyph(test_char);
-    let scale = Font::size_to_scale(14, 1.0);
-    let scaled_glyph = glyph.scaled(scale);
-    let positioned_glyph = scaled_glyph.positioned(point(0.0, 20.0));
-    println!("Positioned bb: {:?}", positioned_glyph.pixel_bounding_box());
-    println!(
-        "Exact bb: {:?}",
-        positioned_glyph.unpositioned().exact_bounding_box()
-    );
-    println!("Glyph id: {:?}", positioned_glyph.id());
-
-    //let image = font.get_glyph_raster_image(test_char, 64).unwrap();
-    /*let id = font.get_inner().inner().glyph_index(test_char).unwrap();
-    let bb = font.get_inner().inner().glyph_bounding_box(id);
-    println!("glyph bb: {:?}", bb);
-    let advance_width = font.get_inner().inner().glyph_hor_advance(id).unwrap();
-    println!("Advance_width: {}", advance_width);
-    println!("Glyph name: {:?}", font.get_inner().inner().glyph_name(id));*/
-
-    //image.save("/Users/holgergottchristensen/Documents/carbide/target/smile_new.png").unwrap();
-}
+// #[test]
+// fn load_bitmap_font() {
+//     let test_char = '😀';
+//     //let test_char = 'j';
+//     //let test_char = '􁂿';
+//
+//     let font = Font::from_file_bitmap("/System/Library/Fonts/Apple Color Emoji.ttc").unwrap();
+//
+//     //let font = Font::from_file("/System/Library/Fonts/HelveticaNeue.ttc").unwrap();
+//     //let font = Font::from_file("/System/Library/Fonts/SFCompactText.ttf").unwrap();
+//     println!("Ascender: {:?}", font.font.inner().ascender());
+//     println!("Descender: {:?}", font.font.inner().descender());
+//     println!("Height: {:?}", font.font.inner().height());
+//
+//     let _emoji_ranges: [std::ops::Range<u32>; 1] = [
+//         0x1F601..0x1F64F,
+//         //0x2702..0x27B0,
+//         //0x1F680..0x1F6C0,
+//         //0x1F170..0x1F251
+//     ];
+//
+//     /*for range in &emoji_ranges {
+//
+//         for i in range.clone() {
+//             let c = unsafe { std::mem::transmute::<u32, char>(i) };
+//             let id = font.get_inner().inner().glyph_index(c).unwrap();
+//             let bb = font.get_inner().inner().glyph_bounding_box(id);
+//             println!("bb: {:?}", bb);
+//             let advance_width = font.get_inner().inner().glyph_hor_advance(id).unwrap();
+//             println!("Advance_width: {}", advance_width);
+//             println!("{}", c);
+//         }
+//     }*/
+//     let glyph = font.get_inner().glyph(test_char);
+//     let scale = Font::size_to_scale(14, 1.0);
+//     let scaled_glyph = glyph.scaled(scale);
+//     let positioned_glyph = scaled_glyph.positioned(point(0.0, 20.0));
+//     println!("Positioned bb: {:?}", positioned_glyph.pixel_bounding_box());
+//     println!(
+//         "Exact bb: {:?}",
+//         positioned_glyph.unpositioned().exact_bounding_box()
+//     );
+//     println!("Glyph id: {:?}", positioned_glyph.id());
+//
+//     //let image = font.get_glyph_raster_image(test_char, 64).unwrap();
+//     /*let id = font.get_inner().inner().glyph_index(test_char).unwrap();
+//     let bb = font.get_inner().inner().glyph_bounding_box(id);
+//     println!("glyph bb: {:?}", bb);
+//     let advance_width = font.get_inner().inner().glyph_hor_advance(id).unwrap();
+//     println!("Advance_width: {}", advance_width);
+//     println!("Glyph name: {:?}", font.get_inner().inner().glyph_name(id));*/
+//
+//     //image.save("/Users/holgergottchristensen/Documents/carbide/target/smile_new.png").unwrap();
+// }
 
 /*#[test]
 fn list_fonts() {

@@ -268,6 +268,17 @@ impl<T: fmt::Display> fmt::Display for ValueRef<'_, T> {
     }
 }
 
+impl<T: fmt::Debug> fmt::Debug for ValueRef<'_, T> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            ValueRef::CellBorrow { value, .. } => value.fmt(f),
+            ValueRef::Borrow(value) => value.fmt(f),
+            ValueRef::Owned(value) => value.fmt(f),
+            ValueRef::Locked(value) => value.fmt(f),
+        }
+    }
+}
+
 pub struct BorrowRefMut<'b> {
     borrow: &'b Cell<BorrowFlag>,
 }

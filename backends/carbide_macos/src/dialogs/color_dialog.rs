@@ -78,7 +78,7 @@ struct ColorPickerChannel(Sender<Color>, Box<dyn EventSink>);
 impl ColorPickerChannel {
     fn received(&self, color: Color) {
         self.0.send(color).unwrap();
-        self.1.call(CustomEvent::AsyncStream);
+        self.1.send(CustomEvent::AsyncStream);
     }
 }
 

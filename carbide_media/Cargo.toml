@@ -18,6 +18,8 @@ carbide_derive = { path = "../carbide_derive", version = "0.70" }
 carbide_core = { path = "../carbide_core", version = "0.70" }
 objc = "0.2.7"
 cocoa = "0.25.0"
+lazy_static = "*"
+bitflags = "2.4.0"
 
 [dev-dependencies]
 carbide_wgpu = { path = "../backends/carbide_wgpu", version = "0.70" }

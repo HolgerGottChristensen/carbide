@@ -356,7 +356,7 @@ impl CarbideChannel {
 
     fn received(&self) {
         self.0.send(()).unwrap();
-        self.1.call(CustomEvent::AsyncStream);
+        self.1.send(CustomEvent::AsyncStream);
     }
 }
 

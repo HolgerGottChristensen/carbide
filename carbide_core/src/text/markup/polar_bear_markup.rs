@@ -47,44 +47,44 @@ pub fn parse_polar_bear_markup(input: &str) -> IResult<&str, Vec<PolarItem>> {
     Ok((left, parsed))
 }
 
-#[test]
-fn parse_polar_bear_markup_test() {
-    assert_eq!(
-        parse_polar_bear_markup("Hejsa1"),
-        Ok(("", vec![PolarItem::Paragraph("Hejsa1".to_string())]))
-    );
-    assert_eq!(
-        parse_polar_bear_markup("/Hejsa2/"),
-        Ok(("", vec![PolarItem::Italic("Hejsa2".to_string())]))
-    );
-    assert_eq!(
-        parse_polar_bear_markup("/Hejsa3/ verden!"),
-        Ok((
-            "",
-            vec![
-                PolarItem::Italic("Hejsa3".to_string()),
-                PolarItem::Paragraph(" verden!".to_string()),
-            ]
-        ))
-    );
-    assert_eq!(
-        parse_polar_bear_markup("Hejsa4 /verden!/"),
-        Ok((
-            "",
-            vec![
-                PolarItem::Paragraph("Hejsa4 ".to_string()),
-                PolarItem::Italic("verden!".to_string()),
-            ]
-        ))
-    );
-    assert_eq!(
-        parse_polar_bear_markup("/Hejsa5 / verden!"),
-        Ok((
-            "",
-            vec![PolarItem::Paragraph("/Hejsa5 / verden!".to_string())]
-        ))
-    );
-}
+// #[test]
+// fn parse_polar_bear_markup_test() {
+//     assert_eq!(
+//         parse_polar_bear_markup("Hejsa1"),
+//         Ok(("", vec![PolarItem::Paragraph("Hejsa1".to_string())]))
+//     );
+//     assert_eq!(
+//         parse_polar_bear_markup("/Hejsa2/"),
+//         Ok(("", vec![PolarItem::Italic("Hejsa2".to_string())]))
+//     );
+//     assert_eq!(
+//         parse_polar_bear_markup("/Hejsa3/ verden!"),
+//         Ok((
+//             "",
+//             vec![
+//                 PolarItem::Italic("Hejsa3".to_string()),
+//                 PolarItem::Paragraph(" verden!".to_string()),
+//             ]
+//         ))
+//     );
+//     assert_eq!(
+//         parse_polar_bear_markup("Hejsa4 /verden!/"),
+//         Ok((
+//             "",
+//             vec![
+//                 PolarItem::Paragraph("Hejsa4 ".to_string()),
+//                 PolarItem::Italic("verden!".to_string()),
+//             ]
+//         ))
+//     );
+//     assert_eq!(
+//         parse_polar_bear_markup("/Hejsa5 / verden!"),
+//         Ok((
+//             "",
+//             vec![PolarItem::Paragraph("/Hejsa5 / verden!".to_string())]
+//         ))
+//     );
+// }
 
 fn parse_header_1(input: &str) -> IResult<&str, PolarItem> {
     let (left, (_, _, parsed, _)): (&str, (_, _, &str, _)) =

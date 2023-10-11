@@ -10,7 +10,8 @@ use winit::event_loop::{ControlFlow, EventLoop as WinitEventLoop, EventLoopWindo
 use winit::window::WindowId as WinitWindowId;
 
 use carbide_core::{locate_folder, Scene};
-use carbide_core::draw::Dimension;
+use carbide_core::asynchronous::{check_tasks, set_event_sink};
+use carbide_core::draw::{Dimension, ImageContext};
 use carbide_core::environment::Environment;
 use carbide_core::event::{CustomEvent, EventHandler, Input};
 use carbide_core::render::{NoopRenderContext, Render, RenderContext};
@@ -19,6 +20,7 @@ use carbide_core::widget::Empty;
 use carbide_core::window::WindowId;
 use carbide_winit::convert_window_event;
 use carbide_winit::EventLoop;
+use crate::image_context::WGPUImageContext;
 
 use crate::proxy_event_loop::ProxyEventLoop;
 
@@ -52,12 +54,12 @@ impl Application {
             }
         });
 
-        let event_sink = Box::new(ProxyEventLoop(proxy));
+        set_event_sink(ProxyEventLoop(proxy.clone()));
 
         let environment = Environment::new(
             window_pixel_dimensions,
             scale_factor,
-            event_sink,
+            Box::new(ProxyEventLoop(proxy)),
         );
 
         Application {
@@ -91,7 +93,10 @@ impl Application {
         self.environment.update_animation();
         self.environment.clear_animation_frame();
 
-        self.environment.check_tasks();
+        self.environment.with_image_context(ImageContext::new(WGPUImageContext), |env| {
+            check_tasks(env);
+        });
+
         self.environment.add_queued_images();
 
         self.event_handler.delegate_events(&mut self.root, &mut self.environment)

@@ -109,11 +109,11 @@ pub trait WidgetExt: Widget + Sized + Clone + 'static {
         Clip::new(self)
     }
 
-    fn clip_shape<S: Shape + Clone>(self, shape: S) -> Box<ClipShape<Self, S>> {
+    fn clip_shape<S: Shape + Clone>(self, shape: S) -> ClipShape<Self, S> {
         ClipShape::new(self, shape)
     }
 
-    fn corner_radius(self, radius: impl Into<CornerRadii>) -> Box<ClipShape<Self, RoundedRectangle<Style, Style>>> {
+    fn corner_radius(self, radius: impl Into<CornerRadii>) -> ClipShape<Self, RoundedRectangle<Style, Style>> {
         ClipShape::new(self, RoundedRectangle::shape(radius))
     }
 
@@ -156,8 +156,13 @@ pub trait WidgetExt: Widget + Sized + Clone + 'static {
         Overlay::new(layer,show, self)
     }
 
+    /// Example: .on_click(move |env: &mut Environment, modifier: ModifierKey| {})
     fn on_click<A: Action + Clone>(self, action: A) -> MouseArea<A, fn(&mut Environment, ModifierKey), Focus, Self, bool, bool> {
         MouseArea::new(self).on_click(action)
+    }
+
+    fn hovered<T: IntoState<bool>>(self, hovered: T) -> MouseArea<fn(&mut Environment, ModifierKey), fn(&mut Environment, ModifierKey), Focus, Self, T::Output, bool> {
+        MouseArea::new(self).hovered(hovered)
     }
 
     fn boxed(self) -> Box<dyn Widget> {

@@ -9,7 +9,7 @@ fn main() {
     application.set_scene(Window::new(
         "Progress view example",
         Dimension::new(400.0, 600.0),
-        VStack::new(vec![
+        *VStack::new(vec![
             ProgressView::new(),
             ProgressView::new().size(50.0)
         ]).spacing(10.0),

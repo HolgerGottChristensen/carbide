@@ -162,6 +162,7 @@ impl<W: Widget + Clone, M: ReadState<T=Matrix4<f32>> + Clone> CommonWidget for T
 
 impl<W: Widget + Clone, M: ReadState<T=Matrix4<f32>> + Clone> Render for Transform<W, M> {
     fn render(&mut self, context: &mut RenderContext, env: &mut Environment) {
+        self.capture_state(env);
         let bounding_box = Rect::new(self.position, self.dimension);
         let matrix = *self.matrix.value();
 
@@ -230,6 +231,9 @@ impl<W: Widget + Clone, M: ReadState<T=Matrix4<f32>> + Clone> Render for Transfo
                     * Matrix4::from_translation(Vector3::new(-center_x, -center_y, 0.0))
             }
         };
+
+
+        self.release_state(env);
 
         context.transform(new_transform, |this| {
             self.foreach_child_mut(&mut |child| {

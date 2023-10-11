@@ -152,12 +152,12 @@ impl<T2: ReadState<T=String> + Clone, S2: ReadState<T=u32> + Clone, C2: ReadStat
     }
 
     /// Align the text to the left of its bounding **Rect**'s *x* axis range.
-    pub fn left_justify(self) -> Self {
+    pub fn justify_left(self) -> Self {
         self.justify(Justify::Left)
     }
 
     /// Align the text to the middle of its bounding **Rect**'s *x* axis range.
-    pub fn center_justify(self) -> Self {
+    pub fn justify_center(self) -> Self {
         self.justify(Justify::Center)
     }
 
@@ -166,7 +166,7 @@ impl<T2: ReadState<T=String> + Clone, S2: ReadState<T=u32> + Clone, C2: ReadStat
     }
 
     /// Align the text to the right of its bounding **Rect**'s *x* axis range.
-    pub fn right_justify(self) -> Self {
+    pub fn justify_right(self) -> Self {
         self.justify(Justify::Right)
     }
 

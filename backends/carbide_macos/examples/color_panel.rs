@@ -1,6 +1,5 @@
-use carbide_core::Color;
 use carbide_core::asynchronous::StartStream;
-use carbide_core::color::YELLOW;
+use carbide_core::color::{Color, YELLOW};
 use carbide_core::draw::Dimension;
 use carbide_core::environment::Environment;
 use carbide_core::state::{LocalState, State};
@@ -23,7 +22,7 @@ fn main() {
     let color = LocalState::new(YELLOW);
     let color_for_stream = color.clone();
 
-    let widgets = MouseArea::new(Rectangle::new()
+    let widgets = MouseArea::new(*Rectangle::new()
         .fill(color))
         .on_click(move |env: &mut Environment, _:_| {
             let color_for_stream = color_for_stream.clone();

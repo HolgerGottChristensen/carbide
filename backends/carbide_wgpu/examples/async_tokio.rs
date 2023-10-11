@@ -8,6 +8,9 @@ use carbide_core::task;
 use carbide_core::text::FontFamily;
 use carbide_core::widget::*;
 use carbide_wgpu::{Application, Window};
+use carbide_core::draw::image::ImageId;
+use carbide_core::draw::Texture;
+use carbide_core::draw::TextureFormat;
 
 static APP_USER_AGENT: &str = concat!(env!("CARGO_PKG_NAME"), "/", env!("CARGO_PKG_VERSION"));
 
@@ -27,23 +30,19 @@ fn main() {
     let block_width = LocalState::new(50.0);
     let text = LocalState::new("Hello World!".to_string());
 
-    let env = application.environment_mut();
-
-    task!(env, block_width := {
+    task!(block_width := {
         sleep(Duration::new(2, 0)).await;
         hello().await
     });
 
     let ipsum_path = Application::assets().join("ipsum.txt");
 
-    task!(env, text := {
+    task!(text := {
         sleep(Duration::new(1, 0)).await;
         tokio::fs::read_to_string(ipsum_path).await.unwrap()
     });
 
-    task!(
-        env,
-        {
+    task!({
             let client = reqwest::Client::builder()
                 .user_agent(APP_USER_AGENT)
                 .build().unwrap();
@@ -65,17 +64,29 @@ fn main() {
             let image = carbide_core::image::load_from_memory(&data).unwrap();
             image
         },
-        move |res, env: &mut Environment| {
-            image_id_for_async.clone().set_value(env.queue_image(PathBuf::new().join("ThisIsNotValid"), res))
+        move |image, env: &mut Environment| {
+
+            let id = ImageId::new(PathBuf::new().join("ThisIsNotValid"));
+
+            let texture = Texture {
+                width: image.width(),
+                height: image.height(),
+                bytes_per_row: image.width() * 4,
+                format: TextureFormat::RGBA8,
+                data: &image.to_rgba8().into_raw(),
+            };
+
+            env.image_context.update_texture(id.clone(), texture);
+            image_id_for_async.clone().set_value(Some(id));
         }
     );
 
     let widgets = VStack::new(vec![
-        Text::new(text).padding(20.0),
+        Text::new(text).padding(20.0).boxed(),
         Image::new(image_id),
         Rectangle::new()
             .fill(EnvironmentColor::Accent)
-            .frame(block_width, 50),
+            .frame(block_width, 50.0),
     ])
         .accent_color(EnvironmentColor::Red);
 

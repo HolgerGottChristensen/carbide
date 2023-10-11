@@ -5,7 +5,7 @@ use winit::event_loop::EventLoopProxy;
 pub(crate) struct ProxyEventLoop(pub EventLoopProxy<CustomEvent>);
 
 impl EventSink for ProxyEventLoop {
-    fn call(&self, event: CustomEvent) {
+    fn send(&self, event: CustomEvent) {
         self.0.send_event(event).unwrap();
     }
 }

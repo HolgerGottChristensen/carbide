@@ -26,14 +26,14 @@ where
 
 impl ClipShape<Empty, Empty> {
     #[carbide_default_builder2]
-    pub fn new<C: Widget + Clone, S: Shape + Clone>(child: C, shape: S) -> Box<ClipShape<C, S>> {
-        Box::new(ClipShape {
+    pub fn new<C: Widget + Clone, S: Shape + Clone>(child: C, shape: S) -> ClipShape<C, S> {
+        ClipShape {
             id: WidgetId::new(),
             child,
             shape,
             position: Position::new(0.0, 0.0),
             dimension: Dimension::new(100.0, 100.0),
-        })
+        }
     }
 }
 
