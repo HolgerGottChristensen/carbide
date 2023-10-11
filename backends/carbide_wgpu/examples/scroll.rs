@@ -13,7 +13,8 @@ fn main() {
             Image::new("images/landscape.png")
                 .resizeable()
                 .scaled_to_fill()
-                .frame(500.0, 500.0),
+                .frame(500.0, 500.0)
+                .boxed(),
         )
             .clip()
             .frame(250.0, 250.0),

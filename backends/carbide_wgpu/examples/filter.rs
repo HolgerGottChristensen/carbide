@@ -19,10 +19,11 @@ fn main() {
     application.set_scene(Window::new(
         "Filter example",
         Dimension::new(600.0, 450.0),
-        ZStack::new(vec![
+        *ZStack::new(vec![
             Image::new("images/landscape.png")
                 .scaled_to_fill()
-                .frame(500.0, 400.0),
+                .frame(500.0, 400.0)
+                .boxed(),
             Filter::new(ImageFilter::sobel(), Empty::new())
                 .clip_shape(*Circle::new())
                 .frame(200.0, 200.0)

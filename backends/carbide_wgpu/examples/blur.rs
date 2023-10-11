@@ -24,11 +24,12 @@ fn main() {
     application.set_scene(Window::new(
         "Blur example",
         Dimension::new(600.0, 450.0),
-        ZStack::new(vec![
+        *ZStack::new(vec![
             Image::new("images/landscape.png")
                 .scaled_to_fill()
                 .clip_shape(*Rectangle::new())
-                .frame(500.0, 400.0),
+                .frame(500.0, 400.0)
+                .boxed(),
             Blur::gaussian(10.0)
                 .frame(200.0, 200.0)
                 .offset(position_x.clone(), 0.0),

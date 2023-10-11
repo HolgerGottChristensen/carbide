@@ -10,14 +10,14 @@ fn main() {
 
     let widget = Rectangle::new().frame(100.0, 100.0);
 
-    let duplicated1 = Duplicated::new(*widget);
+    let duplicated1 = Duplicated::new(widget);
     let duplicated2 = duplicated1.duplicate();
 
     application.set_scene(
         Window::new(
             "Duplicated example",
             Dimension::new(200.0, 300.0),
-            VStack::new(vec![
+            *VStack::new(vec![
                 Box::new(duplicated1),
                 Box::new(duplicated2)
             ])

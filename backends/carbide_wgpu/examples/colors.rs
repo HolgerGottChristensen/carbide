@@ -59,7 +59,10 @@ fn main() {
                     ForEach::new(item, |item: Box<dyn AnyState<T=EnvironmentColor>>, index: Box<dyn AnyState<T=usize>>| {
                         *HStack::new(vec![
                             Text::new(format!("{:?}", *item.value())),
-                            Rectangle::new().fill(item).frame(100.0, 30.0)
+                            Rectangle::new()
+                                .fill(item)
+                                .frame(100.0, 30.0)
+                                .boxed()
                         ])
                     })
                 ]).cross_axis_alignment(CrossAxisAlignment::End)

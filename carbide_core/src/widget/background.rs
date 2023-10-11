@@ -39,15 +39,15 @@ pub struct Background<F, B> where
 
 impl Background<Empty, Empty> {
     #[carbide_default_builder2]
-    pub fn new<F: Widget + Clone, B: Widget + Clone>(child: F, background: B) -> Box<Background<F, B>> {
-        Box::new(Background {
+    pub fn new<F: Widget + Clone, B: Widget + Clone>(child: F, background: B) -> Background<F, B> {
+        Background {
             id: WidgetId::new(),
             child,
             background,
             position: Position::new(0.0, 0.0),
             dimension: Dimension::new(100.0, 100.0),
             alignment: Box::new(BasicLayouter::Center),
-        })
+        }
     }
 }
 

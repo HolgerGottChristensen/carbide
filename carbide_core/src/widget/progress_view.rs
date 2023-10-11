@@ -82,7 +82,8 @@ impl ProgressView {
             })
             .rotation_effect(animation2),
         ])
-        .frame(size, size);
+        .frame(size, size)
+            .boxed();
 
         Box::new(ProgressView {
             id: WidgetId::new(),

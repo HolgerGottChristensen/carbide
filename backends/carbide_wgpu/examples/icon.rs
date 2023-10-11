@@ -14,7 +14,8 @@ fn main() {
             Image::new_icon("images/rust.png"),
             Rectangle::new()
                 .fill(EnvironmentColor::Accent)
-                .frame(50, 50),
+                .frame(50.0, 50.0)
+                .boxed(),
         ])
             .accent_color(EnvironmentColor::Green),
     ).close_application_on_window_close());

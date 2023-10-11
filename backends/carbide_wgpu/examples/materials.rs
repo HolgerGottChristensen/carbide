@@ -11,25 +11,32 @@ fn main() {
     let background = HStack::new(vec![
         Rectangle::new()
             .fill(Color::new_rgb(251, 61, 56))
-            .frame(200.0, 800.0),
+            .frame(200.0, 800.0)
+            .boxed(),
         Rectangle::new()
             .fill(Color::new_rgb(253, 148, 38))
-            .frame(80.0, 800.0),
+            .frame(80.0, 800.0)
+            .boxed(),
         Rectangle::new()
             .fill(Color::new_rgb(254, 203, 47))
-            .frame(80.0, 800.0),
+            .frame(80.0, 800.0)
+            .boxed(),
         Rectangle::new()
             .fill(Color::new_rgb(61, 198, 95))
-            .frame(80.0, 800.0),
+            .frame(80.0, 800.0)
+            .boxed(),
         Rectangle::new()
             .fill(Color::new_rgb(21, 126, 251))
-            .frame(80.0, 800.0),
+            .frame(80.0, 800.0)
+            .boxed(),
         Rectangle::new()
             .fill(Color::new_rgb(174, 89, 219))
-            .frame(80.0, 800.0),
+            .frame(80.0, 800.0)
+            .boxed(),
         Rectangle::new()
             .fill(Color::new_rgb(251, 61, 56))
-            .frame(200.0, 800.0),
+            .frame(200.0, 800.0)
+            .boxed(),
     ])
     .spacing(0.0)
     .rotation_effect(45.0);
@@ -40,37 +47,47 @@ fn main() {
             HStack::new(vec![
                 Rectangle::new()
                     .material(EnvironmentColor::UltraThickLight)
-                    .frame(100.0, 100.0),
+                    .frame(100.0, 100.0)
+                    .boxed(),
                 Rectangle::new()
                     .material(EnvironmentColor::ThickLight)
-                    .frame(100.0, 100.0),
+                    .frame(100.0, 100.0)
+                    .boxed(),
                 Rectangle::new()
                     .material(EnvironmentColor::RegularLight)
-                    .frame(100.0, 100.0),
+                    .frame(100.0, 100.0)
+                    .boxed(),
                 Rectangle::new()
                     .material(EnvironmentColor::ThinLight)
-                    .frame(100.0, 100.0),
+                    .frame(100.0, 100.0)
+                    .boxed(),
                 Rectangle::new()
                     .material(EnvironmentColor::UltraThinLight)
-                    .frame(100.0, 100.0),
+                    .frame(100.0, 100.0)
+                    .boxed(),
             ])
                 .spacing(10.0),
             HStack::new(vec![
                 Rectangle::new()
                     .material(EnvironmentColor::UltraThickDark)
-                    .frame(100.0, 100.0),
+                    .frame(100.0, 100.0)
+                    .boxed(),
                 Rectangle::new()
                     .material(EnvironmentColor::ThickDark)
-                    .frame(100.0, 100.0),
+                    .frame(100.0, 100.0)
+                    .boxed(),
                 Rectangle::new()
                     .material(EnvironmentColor::RegularDark)
-                    .frame(100.0, 100.0),
+                    .frame(100.0, 100.0)
+                    .boxed(),
                 Rectangle::new()
                     .material(EnvironmentColor::ThinDark)
-                    .frame(100.0, 100.0),
+                    .frame(100.0, 100.0)
+                    .boxed(),
                 Rectangle::new()
                     .material(EnvironmentColor::UltraThinDark)
-                    .frame(100.0, 100.0),
+                    .frame(100.0, 100.0)
+                    .boxed(),
             ])
                 .spacing(10.0),
         ])

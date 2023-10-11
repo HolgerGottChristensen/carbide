@@ -54,7 +54,7 @@ fn animation_ball(curve: fn(f64) -> f64, env: &Environment) -> Box<dyn Widget> {
         Circle::new()
             .fill(EnvironmentColor::Accent)
             .stroke(EnvironmentColor::Label)
-            .frame(30, 30)
+            .frame(30.0, 30.0)
             .offset(state, 0.0),
         Spacer::new(),
     ])

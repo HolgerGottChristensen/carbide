@@ -84,22 +84,26 @@ impl Scroll {
                 .fill(EnvironmentColor::ThinLight)
                 .stroke(EnvironmentColor::ThinDark)
                 .stroke_style(1.0)
-                .frame(100.0, 8.0),
+                .frame(100.0, 8.0)
+                .boxed(),
             scrollbar_vertical: Capsule::new()
                 .fill(EnvironmentColor::ThinLight)
                 .stroke(EnvironmentColor::ThinDark)
                 .stroke_style(1.0)
-                .frame(8.0, 100.0),
+                .frame(8.0, 100.0)
+                .boxed(),
             drag_started_on_vertical_scrollbar: false,
             drag_started_on_horizontal_scrollbar: false,
             vertical_scrollbar_hovered: false,
             horizontal_scrollbar_hovered: false,
             scrollbar_horizontal_background: Rectangle::new()
                 .fill(Color::Rgba(0.0, 0.0, 0.0, 0.5))
-                .frame(100.0, 10.0),
+                .frame(100.0, 10.0)
+                .boxed(),
             scrollbar_vertical_background: Rectangle::new()
                 .fill(Color::Rgba(0.0, 0.0, 0.0, 0.5))
-                .frame(10.0, 100.0),
+                .frame(10.0, 100.0)
+                .boxed(),
         })
     }
 }

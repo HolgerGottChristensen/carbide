@@ -14,12 +14,13 @@ fn main() {
             Text::new(index).font_size(EnvironmentFontSize::LargeTitle),
         ])
         .frame(100.0, 50.0)
+            .boxed()
     }
 
     application.set_scene(Window::new(
         "Foreach example",
         Dimension::new(600.0, 450.0),
-        VStack::new(vec![
+        *VStack::new(vec![
             ForEach::new(
                 vec![
                     EnvironmentColor::Red,

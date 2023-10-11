@@ -15,7 +15,8 @@ fn main() {
     let overlay = ZStack::new(vec![
         Rectangle::new()
             .fill(EnvironmentColor::Blue)
-            .frame(150.0, 150.0),
+            .frame(150.0, 150.0)
+            .boxed(),
         Text::new("Overlay"),
     ]).on_click(|env: &mut Environment, _| {
         println!("Overlay clicked!")
@@ -30,10 +31,12 @@ fn main() {
             Box::new(overlay),
             Rectangle::new()
                 .fill(EnvironmentColor::Green)
-                .frame(200.0, 200.0),
+                .frame(200.0, 200.0)
+                .boxed(),
             Rectangle::new()
                 .fill(EnvironmentColor::Red)
-                .frame(100.0, 100.0),
+                .frame(100.0, 100.0)
+                .boxed(),
         ]).on_click(move |env: &mut Environment, _| {
             state.clone().set_value(true);
         })),

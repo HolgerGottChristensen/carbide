@@ -10,26 +10,30 @@ fn main() {
     application.set_scene(Window::new(
         "Sub images example",
         Dimension::new(400.0, 600.0),
-        VStack::new(vec![
+        *VStack::new(vec![
             HStack::new(vec![
                 Image::new_icon("images/rust.png")
                     .source_rectangle(rect(0, 0))
                     .border()
-                    .accent_color(Yellow),
+                    .accent_color(Yellow)
+                    .boxed(),
                 Image::new_icon("images/rust.png")
                     .source_rectangle(rect(1, 0))
                     .border()
-                    .accent_color(Red),
+                    .accent_color(Red)
+                    .boxed(),
             ]),
             HStack::new(vec![
                 Image::new_icon("images/rust.png")
                     .source_rectangle(rect(0, 1))
                     .border()
-                    .accent_color(Green),
+                    .accent_color(Green)
+                    .boxed(),
                 Image::new_icon("images/rust.png")
                     .source_rectangle(rect(1, 1))
                     .border()
-                    .accent_color(Blue),
+                    .accent_color(Blue)
+                    .boxed(),
             ]),
         ])
     ).close_application_on_window_close());

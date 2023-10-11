@@ -23,13 +23,13 @@ fn main() {
 
                 let current = *counter.value();
                 counter.set_value(current + 1);
-                println!("{}", *counter);
+                println!("{}", counter);
             }
         })
         .frame(100.0, 30.0);
 
     application.set_scene(
-        Window::new("Hello multiple windows", Dimension::new(300.0, 200.0),ZStack::new(vec![
+        Window::new("Hello multiple windows", Dimension::new(300.0, 200.0),*ZStack::new(vec![
             text,
             Window::new("Hello from window 2", Dimension::new(300.0, 100.0), button),
             //Window::new("Hello from window 3", Dimension::new(300.0, 100.0), Rectangle::new().fill(EnvironmentColor::Green)),

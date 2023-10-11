@@ -1,13 +1,13 @@
 use std::sync::Arc;
 use std::sync::atomic::{AtomicUsize, Ordering};
-use std::time::{Duration, Instant, SystemTime};
+use std::time::{Duration};
 use chrono::Local;
 use carbide_core::asynchronous::Timer;
-use carbide_core::draw::{Color, Dimension};
+use carbide_core::draw::{Dimension};
 use carbide_core::environment::{Environment, EnvironmentFontSize};
 use carbide_core::event::ModifierKey;
 use carbide_core::state::Map1;
-use carbide_core::widget::{HStack, Rectangle, Text, VStack, WidgetExt};
+use carbide_core::widget::{Text, VStack, WidgetExt};
 use carbide_wgpu::{Application, Window};
 
 fn main() {
@@ -40,18 +40,14 @@ fn main() {
             "Timer example",
             Dimension::new(400.0, 600.0),
             *VStack::new(vec![
-                Text::new("Click the counter to restart the timer"),
-                Text::new(counter_state)
-                    .font_size(EnvironmentFontSize::LargeTitle)
-                    .frame(50.0, 50.0)
+                Text::new("Click this to restart the timer")
                     .on_click(move |env: &mut Environment, modifier: ModifierKey| {
                         let timer = timer.clone();
                         timer.restart();
-                        println!("Clicked");
                     }).boxed(),
-                Text::new("Click the clock to toggle the timer"),
-                Text::new(time_state)
-                    .font_size(EnvironmentFontSize::LargeTitle)
+                Text::new(counter_state)
+                    .font_size(EnvironmentFontSize::LargeTitle),
+                Text::new("Click this to toggle the timer")
                     .on_click(move |env: &mut Environment, modifier: ModifierKey| {
                         let timer = timer2.clone();
                         if timer.is_running() {
@@ -59,12 +55,14 @@ fn main() {
                         } else {
                             timer.start();
                         }
-                        println!("Clicked");
                     }).boxed(),
+                Text::new(time_state)
+                    .font_size(EnvironmentFontSize::LargeTitle),
                 Text::new("Only the counter is tied directly to the timer. The clock is updated each re-render")
                     .justify_center()
                     .frame_fixed_width(250.0)
-                    .fit_height(),
+                    .fit_height()
+                    .boxed(),
             ])
         ).close_application_on_window_close()
     );

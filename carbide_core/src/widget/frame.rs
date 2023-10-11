@@ -37,8 +37,8 @@ impl Frame<f64, f64, f64, f64, Empty> {
         width: W,
         height: H,
         child: C,
-    ) -> Box<Frame<f64, f64, W::Output, H::Output, C>> {
-        Box::new(Frame {
+    ) -> Frame<f64, f64, W::Output, H::Output, C> {
+        Frame {
             id: WidgetId::new(),
             child,
             position: Position::new(0.0, 0.0),
@@ -46,7 +46,7 @@ impl Frame<f64, f64, f64, f64, Empty> {
             y: Fixity::Expand(0.0),
             width: Fixity::Fixed(width.into_state()),
             height: Fixity::Fixed(height.into_state()),
-        })
+        }
     }
 }
 
@@ -58,8 +58,8 @@ impl<
     C: Widget + Clone
 > Frame<X, Y, W, H, C> {
     /// Note: This disconnects from the existing width value
-    pub fn expand_width(self) -> Box<Frame<X, Y, f64, H, C>> {
-        Box::new(Frame {
+    pub fn expand_width(self) -> Frame<X, Y, f64, H, C> {
+        Frame {
             id: self.id,
             child: self.child,
             position: self.position,
@@ -67,12 +67,12 @@ impl<
             y: self.y,
             width: Fixity::Expand(10.0),
             height: self.height,
-        })
+        }
     }
 
     /// Note: This disconnects from the existing height value
-    pub fn expand_height(self) -> Box<Frame<X, Y, W, f64, C>> {
-        Box::new(Frame {
+    pub fn expand_height(self) -> Frame<X, Y, W, f64, C> {
+        Frame {
             id: self.id,
             child: self.child,
             position: self.position,
@@ -80,12 +80,12 @@ impl<
             y: self.y,
             width: self.width,
             height: Fixity::Expand(10.0),
-        })
+        }
     }
 
     /// Note: This disconnects from the existing width value
-    pub fn fit_width(self) -> Box<Frame<X, Y, f64, H, C>> {
-        Box::new(Frame {
+    pub fn fit_width(self) -> Frame<X, Y, f64, H, C> {
+        Frame {
             id: self.id,
             child: self.child,
             position: self.position,
@@ -93,12 +93,12 @@ impl<
             y: self.y,
             width: Fixity::Fit(10.0),
             height: self.height,
-        })
+        }
     }
 
     /// Note: This disconnects from the existing height value
-    pub fn fit_height(self) -> Box<Frame<X, Y, W, f64, C>> {
-        Box::new(Frame {
+    pub fn fit_height(self) -> Frame<X, Y, W, f64, C> {
+        Frame {
             id: self.id,
             child: self.child,
             position: self.position,
@@ -106,11 +106,11 @@ impl<
             y: self.y,
             width: self.width,
             height: Fixity::Fit(10.0),
-        })
+        }
     }
 
-    pub fn with_fixed_x<N: IntoState<f64>>(self, x: N) -> Box<Frame<N::Output, Y, W, H, C>> {
-        Box::new(Frame {
+    pub fn with_fixed_x<N: IntoState<f64>>(self, x: N) -> Frame<N::Output, Y, W, H, C> {
+        Frame {
             id: self.id,
             child: self.child,
             position: self.position,
@@ -118,11 +118,11 @@ impl<
             y: self.y,
             width: self.width,
             height: self.height,
-        })
+        }
     }
 
-    pub fn with_fixed_y<N: IntoState<f64>>(self, y: N) -> Box<Frame<X, N::Output, W, H, C>> {
-        Box::new(Frame {
+    pub fn with_fixed_y<N: IntoState<f64>>(self, y: N) -> Frame<X, N::Output, W, H, C> {
+        Frame {
             id: self.id,
             child: self.child,
             position: self.position,
@@ -130,11 +130,11 @@ impl<
             y: Fixity::Fixed(y.into_state()),
             width: self.width,
             height: self.height,
-        })
+        }
     }
 
-    pub fn with_fixed_position<N: IntoState<f64>, M: IntoState<f64>>(self, x: N, y: M) -> Box<Frame<N::Output, M::Output, W, H, C>> {
-        Box::new(Frame {
+    pub fn with_fixed_position<N: IntoState<f64>, M: IntoState<f64>>(self, x: N, y: M) -> Frame<N::Output, M::Output, W, H, C> {
+        Frame {
             id: self.id,
             child: self.child,
             position: self.position,
@@ -142,7 +142,7 @@ impl<
             y: Fixity::Fixed(y.into_state()),
             width: self.width,
             height: self.height,
-        })
+        }
     }
 }
 

@@ -16,7 +16,7 @@ fn main() {
     application.set_scene(Window::new(
         "HSplit example",
         Dimension::new(400.0, 600.0),
-        VStack::new(vec![
+        *VStack::new(vec![
             h_split(&width1).relative_to_start(width1),
             h_split(&percent).percent(percent),
             h_split(&width2).relative_to_end(width2),
@@ -36,7 +36,8 @@ fn h_split(size: &TState<f64>) -> Box<HSplit<f64>> {
             Rectangle::new().fill(EnvironmentColor::Accent),
             Rectangle::new()
                 .fill(EnvironmentColor::Yellow)
-                .frame(100.0, 100.0),
+                .frame(100.0, 100.0)
+                .boxed(),
         ]),
     )
 }

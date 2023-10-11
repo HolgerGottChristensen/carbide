@@ -23,7 +23,7 @@ impl ProgressBar<f64> {
     pub fn new<P: IntoReadState<f64>>(progress: P) -> Box<ProgressBar<P::Output>> {
         let progress = progress.into_read_state();
 
-        let child = *ZStack::new(vec![
+        let child = ZStack::new(vec![
             Capsule::new().fill(EnvironmentColor::SystemFill),
             HSplit::new(Capsule::new().fill(EnvironmentColor::Accent), Spacer::new())
                 .percent(progress.ignore_writes())

@@ -17,7 +17,7 @@ fn main() {
     application.set_scene(Window::new(
         "VSplit example",
         Dimension::new(600.0, 400.0),
-        HStack::new(vec![
+        *HStack::new(vec![
             v_split(&height1).relative_to_start(height1),
             v_split(&percent).percent(percent),
             v_split(&height2).relative_to_end(height2),
@@ -37,7 +37,8 @@ fn v_split(size: &TState<f64>) -> Box<VSplit<f64>> {
             Rectangle::new().fill(EnvironmentColor::Accent),
             Rectangle::new()
                 .fill(EnvironmentColor::Yellow)
-                .frame(100.0, 100.0),
+                .frame(100.0, 100.0)
+                .boxed(),
         ]),
     )
 }
