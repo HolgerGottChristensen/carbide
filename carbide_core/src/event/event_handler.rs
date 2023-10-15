@@ -7,7 +7,7 @@ use carbide_core::widget::Widget;
 
 use crate::draw::{Dimension, Position, Scalar};
 use crate::environment::Environment;
-use crate::event::{Button, CustomEvent, Input, Key, ModifierKey, Motion, MouseButton};
+use crate::event::{Button, CustomEvent, Gesture, Input, Key, ModifierKey, Motion, MouseButton, TouchPhase};
 use crate::window::WindowId;
 
 const N_CLICK_THRESHOLD: Duration = Duration::from_millis(500);
@@ -192,6 +192,9 @@ pub enum MouseEvent {
         mouse_position: Position,
         modifiers: ModifierKey,
     },
+    Rotation(Scalar, Position, TouchPhase),
+    Scale(Scalar, Position, TouchPhase),
+    SmartScale(Position),
     Drag {
         button: MouseButton,
         origin: Position,
@@ -213,6 +216,9 @@ impl MouseEvent {
             MouseEvent::NClick(_, n, _, _) => *n,
             MouseEvent::Scroll { mouse_position, .. } => *mouse_position,
             MouseEvent::Drag { to, .. } => *to,
+            MouseEvent::Rotation(_, position, _) |
+            MouseEvent::Scale(_, position, _) |
+            MouseEvent::SmartScale(position) => *position,
         }
     }
 }
@@ -569,6 +575,18 @@ impl EventHandler {
             }
             Input::CloseRequested => {
                 self.add_event(WidgetEvent::Window(WindowEvent::CloseRequested), window_id);
+                None
+            }
+            Input::Gesture(Gesture::Scale(scale, phase)) => {
+                self.add_event(WidgetEvent::Mouse(MouseEvent::Scale(scale, mouse_xy, phase)), window_id);
+                None
+            }
+            Input::Gesture(Gesture::Rotate(delta, phase)) => {
+                self.add_event(WidgetEvent::Mouse(MouseEvent::Rotation(delta, mouse_xy, phase)), window_id);
+                None
+            }
+            Input::Gesture(Gesture::SmartScale) => {
+                self.add_event(WidgetEvent::Mouse(MouseEvent::SmartScale(mouse_xy)), window_id);
                 None
             }
         }

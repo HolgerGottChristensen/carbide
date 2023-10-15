@@ -84,6 +84,13 @@ impl Rect {
         Position::new(self.right(), self.top())
     }
 
+    pub fn center(&self) -> Position {
+        Position::new(
+            self.position.x + self.dimension.width / 2.0,
+            self.position.y + self.dimension.height / 2.0,
+        )
+    }
+
     pub fn round(&mut self) {
         self.position.x = self.position.x.round();
         self.position.y = self.position.y.round();

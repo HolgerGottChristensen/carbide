@@ -482,12 +482,14 @@ fn default_background(state: Box<dyn AnyState<T=f64>>, start: Box<dyn AnyReadSta
     Rectangle::new()
         .fill(EnvironmentColor::Red)
         .frame_fixed_height(26.0)
+        .boxed()
 }
 
 fn default_track(state: Box<dyn AnyState<T=f64>>, start: Box<dyn AnyReadState<T=f64>>, end: Box<dyn AnyReadState<T=f64>>, steps: Box<dyn AnyReadState<T=Option<f64>>>, focus: Box<dyn AnyReadState<T=Focus>>, enabled: Box<dyn AnyReadState<T=bool>>,) -> Box<dyn Widget> {
     Rectangle::new()
         .fill(EnvironmentColor::Green)
         .frame_fixed_height(26.0)
+        .boxed()
 }
 
 fn default_thumb(state: Box<dyn AnyState<T=f64>>, start: Box<dyn AnyReadState<T=f64>>, end: Box<dyn AnyReadState<T=f64>>, steps: Box<dyn AnyReadState<T=Option<f64>>>, focus: Box<dyn AnyReadState<T=Focus>>, enabled: Box<dyn AnyReadState<T=bool>>,) -> Box<dyn Widget> {

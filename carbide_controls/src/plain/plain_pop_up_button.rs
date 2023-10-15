@@ -444,6 +444,7 @@ fn default_popup_item_delegate<T: StateContract + PartialEq, S: State<T=T>>(
         Text::new(item.map(|a: &T| format!("{:?}", *a)).ignore_writes()),
     ])
         .frame_fixed_height(30.0)
+        .boxed()
 }
 
 fn default_popup_delegate<T: StateContract + PartialEq, S: State<T=T>, M: ReadState<T=Vec<T>>, B: State<T=bool>>(
@@ -456,6 +457,7 @@ fn default_popup_delegate<T: StateContract + PartialEq, S: State<T=T>, M: ReadSt
     ]).spacing(1.0)
         .padding(1.0)
         .background(*Rectangle::new().fill(EnvironmentColor::Yellow))
+        .boxed()
 }
 
 // ---------------------------------------------------

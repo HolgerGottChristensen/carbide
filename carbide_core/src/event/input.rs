@@ -1,5 +1,6 @@
 use crate::event::{Button, CustomEvent};
 use crate::event::Motion;
+use crate::event::types::gesture::Gesture;
 use crate::event::types::touch::Touch;
 
 /// The event type that is used by carbide to track inputs from the world. Events yielded by polling
@@ -27,6 +28,8 @@ pub enum Input {
     Resize(f64, f64),
     /// Some motion input was received (e.g. moving mouse or joystick axis).
     Motion(Motion),
+    /// Gesture events like rotate, scale and smart scale (two finger double click)
+    Gesture(Gesture),
     /// Input from a touch surface/screen.
     Touch(Touch),
     /// Text input was received, usually via the keyboard.

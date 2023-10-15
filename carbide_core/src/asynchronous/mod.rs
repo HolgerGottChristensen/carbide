@@ -36,6 +36,10 @@ pub fn set_event_sink(sink: impl EventSink + 'static) -> Box<dyn EventSink> {
     })
 }
 
+pub fn get_event_sink() -> Box<dyn EventSink> {
+    EVENT_SINK.with(|e| e.borrow().clone())
+}
+
 pub fn spawn_task<T: Send + 'static>(
     task: impl Future<Output = T> + Send + 'static,
     cont: impl Fn(T, &mut Environment) + 'static,

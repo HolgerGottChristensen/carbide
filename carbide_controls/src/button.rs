@@ -89,6 +89,6 @@ impl<L: ReadState<T=String>, P: ReadState<T=bool>> PlainButtonDelegate for Butto
                 .stroke(outline_color)
                 .stroke_style(1.0)
                 .padding(-1.0)
-        )
+        ).boxed()
     }
 }

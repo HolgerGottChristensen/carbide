@@ -13,9 +13,10 @@ pub use types::button::Button;
 pub use types::hot_key::*;
 pub use types::key::Key;
 pub use types::modifier_key::ModifierKey;
-pub use types::motion::Motion;
+pub use types::motion::*;
 pub use types::mouse_button::MouseButton;
 pub use types::touch::*;
+pub use types::gesture::*;
 
 mod custom_event;
 mod event;

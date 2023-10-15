@@ -93,7 +93,8 @@ impl<L: ReadState<T=String>> PlainSwitchDelegate for SwitchDelegate<L> {
                     .stroke_style(1.0)
                     .padding(-1.0)
             )
-            .frame(39.0, 22.0);
+            .frame(39.0, 22.0)
+            .boxed();
 
         HStack::new(vec![switch, Text::new(self.label.clone()).color(label_color)]).spacing(5.0)
     }

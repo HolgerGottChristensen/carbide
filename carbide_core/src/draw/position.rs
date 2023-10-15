@@ -22,7 +22,7 @@ pub struct Position {
 
 impl Position {
     /// Create a new Position from scalar values.
-    pub fn new(x: Scalar, y: Scalar) -> Position {
+    pub const fn new(x: Scalar, y: Scalar) -> Position {
         Position { x, y }
     }
 
@@ -31,12 +31,12 @@ impl Position {
     }
 
     /// Get the x component of the position. This is the horizontal component.
-    pub fn x(&self) -> Scalar {
+    pub const fn x(&self) -> Scalar {
         self.x
     }
 
     /// Get the y component of the position. This is the vertical component.
-    pub fn y(&self) -> Scalar {
+    pub const fn y(&self) -> Scalar {
         self.y
     }
 

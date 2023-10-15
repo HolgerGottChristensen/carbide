@@ -136,7 +136,8 @@ impl<F: State<T=Focus>, O: ReadState<T=Option<char>>, T: State<T=Result<String, 
                 .stroke(stroke_color)
                 .stroke_style(1.0),
             text_widget.boxed()
-        ]).frame_fixed_height(22.0);
+        ]).frame_fixed_height(22.0)
+            .boxed();
 
 
         TextInput {

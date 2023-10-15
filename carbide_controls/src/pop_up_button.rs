@@ -94,7 +94,8 @@ impl PopUpButton {
                     arrows.boxed(),
                 ])
                     .padding(EdgeInsets::single(0.0, 0.0, 0.0, 1.0))
-                    .frame_fixed_width(20.0),
+                    .frame_fixed_width(20.0)
+                    .boxed(),
             ]),
             RoundedRectangle::new(CornerRadii::all(3.0))
                 .stroke_style(1.0)
@@ -107,6 +108,7 @@ impl PopUpButton {
                     .padding(-1.0)
             )
             .frame_fixed_height(22.0)
+            .boxed()
     }
 
     fn popup_item_delegate<T: StateContract + PartialEq, S: State<T=T>>(
@@ -140,6 +142,7 @@ impl PopUpButton {
             ]),
         ])
             .frame_fixed_height(24.0)
+            .boxed()
     }
 
     fn popup_delegate<T: StateContract + PartialEq, S: State<T=T>, M: ReadState<T=Vec<T>>, B: State<T=bool>>(
@@ -152,5 +155,6 @@ impl PopUpButton {
         ]).spacing(1.0)
             .padding(1.0)
             .background(*Rectangle::new().fill(EnvironmentColor::OpaqueSeparator))
+            .boxed()
     }
 }

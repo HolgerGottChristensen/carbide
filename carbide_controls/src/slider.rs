@@ -46,6 +46,7 @@ impl Slider {
                     .padding(-2.0)
             )
             .frame_fixed_height(5.0)
+            .boxed()
     }
 
     fn track(state: Box<dyn AnyState<T=f64>>, start: Box<dyn AnyReadState<T=f64>>, end: Box<dyn AnyReadState<T=f64>>, steps: Box<dyn AnyReadState<T=Option<f64>>>, focus: Box<dyn AnyReadState<T=Focus>>, enabled: Box<dyn AnyReadState<T=bool>>,) -> Box<dyn Widget> {
@@ -60,6 +61,7 @@ impl Slider {
         Capsule::new()
             .fill(track_color)
             .frame_fixed_height(5.0)
+            .boxed()
     }
 
     fn thumb(state: Box<dyn AnyState<T=f64>>, start: Box<dyn AnyReadState<T=f64>>, end: Box<dyn AnyReadState<T=f64>>, steps: Box<dyn AnyReadState<T=Option<f64>>>, focus: Box<dyn AnyReadState<T=Focus>>, enabled: Box<dyn AnyReadState<T=bool>>,) -> Box<dyn Widget> {
@@ -74,7 +76,7 @@ impl Slider {
         });
 
         IfElse::new(is_stepped)
-            .when_true(*RoundedRectangle::new(2.0).fill(thumb_color.clone()).frame(8.0, 15.0))
-            .when_false(*Circle::new().fill(thumb_color).frame(15.0, 15.0))
+            .when_true(RoundedRectangle::new(2.0).fill(thumb_color.clone()).frame(8.0, 15.0))
+            .when_false(Circle::new().fill(thumb_color).frame(15.0, 15.0))
     }
 }

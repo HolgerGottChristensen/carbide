@@ -72,7 +72,7 @@ impl<L: ReadState<T=String>> PlainRadioButtonDelegate for RadioButtonDelegate<L>
                 .stroke(EnvironmentColor::OpaqueSeparator)
                 .stroke_style(1.0),
             IfElse::new(selected).when_true(
-                *Ellipse::new()
+                Ellipse::new()
                     .fill(mark_color)
                     .frame(4.0, 4.0),
             ),
@@ -81,7 +81,8 @@ impl<L: ReadState<T=String>> PlainRadioButtonDelegate for RadioButtonDelegate<L>
                 .stroke(outline_color)
                 .stroke_style(1.0)
                 .padding(-1.0)
-        ).frame(14.0, 14.0);
+        ).frame(14.0, 14.0)
+            .boxed();
 
         HStack::new(vec![radio, Text::new(self.label.clone()).color(label_color)]).spacing(5.0)
 

@@ -13,7 +13,7 @@ use winit::window::CursorIcon;
 
 use carbide_core::cursor::MouseCursor;
 use carbide_core::draw::Position;
-use carbide_core::event::{Button, Input, Key, Motion, MouseButton, Touch, TouchId, TouchPhase};
+use carbide_core::event::{Button, Gesture, Input, Key, Motion, MouseButton, Touch, TouchId, TouchPhase};
 pub use event_loop::*;
 
 mod event_loop;
@@ -265,9 +265,8 @@ pub fn convert_window_event(event: &WindowEvent) -> Option<Input> {
         }
         WindowEvent::CursorMoved { position, .. } => {
             let LogicalPosition { x, y } = position.to_logical::<f64>(scale_factor);
-            let motion = Motion::MouseCursor { x, y };
 
-            Some(Input::Motion(motion))
+            Some(Input::Motion(Motion::MouseCursor { x, y }))
         }
         WindowEvent::MouseWheel { delta, .. } => {
             match delta {
@@ -275,9 +274,8 @@ pub fn convert_window_event(event: &WindowEvent) -> Option<Input> {
                     let LogicalPosition { x, y } = delta.to_logical::<f64>(scale_factor);
                     let x = x;
                     let y = -y;
-                    let motion = Motion::Scroll { x, y };
 
-                    Some(Input::Motion(motion))
+                    Some(Input::Motion(Motion::Scroll { x, y }))
                 }
                 MouseScrollDelta::LineDelta(x, y) => {
                     // This should be configurable (we should provide a LineDelta event to allow for this).
@@ -287,6 +285,35 @@ pub fn convert_window_event(event: &WindowEvent) -> Option<Input> {
                     Some(Input::Motion(Motion::Scroll { x, y }))
                 }
             }
+        }
+        WindowEvent::SmartMagnify { .. } => {
+            Some(Input::Gesture(Gesture::SmartScale))
+        }
+        WindowEvent::TouchpadRotate { delta, phase, .. } => {
+            let phase = match phase {
+                WinitTouchPhase::Started => TouchPhase::Start,
+                WinitTouchPhase::Moved => TouchPhase::Move,
+                WinitTouchPhase::Cancelled => TouchPhase::Cancel,
+                WinitTouchPhase::Ended => TouchPhase::End,
+            };
+
+            Some(Input::Gesture(Gesture::Rotate(
+                *delta as f64 / scale_factor,
+                phase
+            )))
+        }
+        WindowEvent::TouchpadMagnify {delta, phase, .. } => {
+            let phase = match phase {
+                WinitTouchPhase::Started => TouchPhase::Start,
+                WinitTouchPhase::Moved => TouchPhase::Move,
+                WinitTouchPhase::Cancelled => TouchPhase::Cancel,
+                WinitTouchPhase::Ended => TouchPhase::End,
+            };
+
+            Some(Input::Gesture(Gesture::Scale(
+                *delta / scale_factor,
+                phase
+            )))
         }
         WindowEvent::MouseInput { state, button, .. } => {
 

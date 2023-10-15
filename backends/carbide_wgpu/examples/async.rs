@@ -46,16 +46,20 @@ fn main() {
     let widgets = VStack::new(vec![
         Rectangle::new()
             .fill(random_color)
-            .frame(block_width, 50.0),
+            .frame(block_width, 50.0)
+            .boxed(),
         Rectangle::new()
             .fill(EnvironmentColor::Accent)
-            .frame(new_state, 50.0),
+            .frame(new_state, 50.0)
+            .boxed(),
         Rectangle::new()
             .fill(EnvironmentColor::Accent)
-            .frame(new_state1, 50.0),
+            .frame(new_state1, 50.0)
+            .boxed(),
         Rectangle::new()
             .fill(EnvironmentColor::Accent)
-            .frame(new_state2, 50.0),
+            .frame(new_state2, 50.0)
+            .boxed(),
     ])
         .accent_color(EnvironmentColor::Red);
 

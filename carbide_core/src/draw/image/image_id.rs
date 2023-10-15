@@ -1,5 +1,6 @@
 use std::path::{Path, PathBuf};
 use std::rc::Rc;
+use std::sync::Arc;
 
 use crate::state::{AnyReadState, ConvertIntoRead, Map1, RMap1};
 
@@ -9,12 +10,12 @@ use crate::state::{AnyReadState, ConvertIntoRead, Map1, RMap1};
 /// `Id`s, carbide can remain agnostic of the actual image or texture render used to represent each
 /// image.
 #[derive(Clone, Debug, Hash, Eq, PartialEq, Ord, PartialOrd)]
-pub struct ImageId(Rc<PathBuf>);
+pub struct ImageId(Arc<PathBuf>);
 
 impl ImageId {
     /// Generate a new image ID.
     pub fn new(path: impl Into<PathBuf>) -> Self {
-        ImageId(Rc::new(path.into()))
+        ImageId(Arc::new(path.into()))
     }
 
     pub fn is_relative(&self) -> bool {
@@ -24,7 +25,7 @@ impl ImageId {
 
 impl Default for ImageId {
     fn default() -> Self {
-        ImageId(Rc::new(PathBuf::default()))
+        ImageId(Arc::new(PathBuf::default()))
     }
 }
 
