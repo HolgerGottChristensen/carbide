@@ -1,3 +1,4 @@
+use std::collections::HashMap;
 use std::fmt::{Debug, Formatter};
 use std::path::PathBuf;
 use std::rc::Rc;
@@ -52,8 +53,10 @@ pub struct Mandelbrot {
     dimension: Dimension,
     jobs: Vec<(ImageRenderJobInfo, Rc<Receiver<(DynamicImage, ImageId)>>)>,
 
-    images: Vec<(ImageId, ImageRenderJobInfo)>,
-    spawned: bool
+    images: HashMap<(i32, i32, u32), (ImageId, ImageRenderJobInfo)>,
+    spawned: bool,
+
+    offset: Position,
 }
 
 impl Mandelbrot {
@@ -63,74 +66,81 @@ impl Mandelbrot {
             position: Default::default(),
             dimension: Default::default(),
             jobs: vec![],
-            images: vec![],
+            images: HashMap::new(),
             spawned: false,
+            offset: Position::origin(),
         }
     }
 }
 
 impl Render for Mandelbrot {
     fn render(&mut self, context: &mut RenderContext, env: &mut Environment) {
+        let start_tile_x = (-self.offset.x() / 200.0).floor() as i32;
+        let end_tile_x = ((-self.offset.x() + env.current_window_width()) / 200.0).ceil() as i32;
 
-        if !self.spawned {
-            for x in 0..=3 {
-                for y in 0..=3 {
-                    let (sender, receiver) = channel::<(DynamicImage, ImageId)>();
+        let start_tile_y = (-self.offset.y() / 200.0).floor() as i32;
+        let end_tile_y = ((-self.offset.y() + env.current_window_height()) / 200.0).ceil() as i32;
 
-                    let info = ImageRenderJobInfo {
-                        x: x * 200,
-                        y: y * 200,
-                        width: 200,
-                        height: 200,
-                        zoom: ZOOM,
-                        center: CENTER,
-                    };
-
-                    let id = ImageId::new(PathBuf::from(Uuid::new_v4().to_string()));
-                    let id2 = id.clone();
-
-                    let sink = get_event_sink();
-
-                    rayon::spawn(move || {
-                        let info_for_job = info.clone();
-                        let mut image = DynamicImage::new_rgba8(info_for_job.width, info_for_job.height);
-
-                        let color = Color::random();
-
-                        let time = Duration::from_secs_f64(rand::random::<f64>() * 5.0);
-                        println!("{:?}", time);
-                        std::thread::sleep(time);
-
-                        for x in 0..image.width() {
-                            for y in 0..image.height() {
-                                image.put_pixel(x, y, Rgba(color.to_byte_fsa()));
-                            }
-                        }
-
-                        //let image = generate_image(info_for_job.width, info_for_job.height, info_for_job.zoom, info_for_job.center);
-
-                        sender.send((image, id2)).unwrap();
-                        sink.send(CustomEvent::Async);
-                    });
-
-                    self.jobs.push((info, Rc::new(receiver)));
-                    self.images.push((id, info));
+        for x in start_tile_x..end_tile_x {
+            for y in start_tile_y..end_tile_y {
+                if self.images.contains_key(&(x, y, 0)) {
+                    continue;
                 }
+
+                let (sender, receiver) = channel::<(DynamicImage, ImageId)>();
+
+                let width = 200.0;
+                let height = 200.0;
+                let zoom = ZOOM;
+                let xn = x as f64 * 200.0 - 200.0;
+                let yn = y as f64 * 200.0 - 200.0;
+
+                let info = ImageRenderJobInfo {
+                    x: x * 200,
+                    y: y * 200,
+                    width: 200,
+                    height: 200,
+                    zoom,
+                    center: Position::new(
+                        CENTER.x() + (xn - width / 2.0) / (zoom * width / 2.0),
+                        CENTER.y() + (-1.0 * (yn - height / 2.0) / (zoom * height / 2.0))
+                    ),
+                };
+
+                let id = ImageId::new(PathBuf::from(Uuid::new_v4().to_string()));
+                let id2 = id.clone();
+
+                let sink = get_event_sink();
+
+                rayon::spawn(move || {
+                    let info_for_job = info.clone();
+
+                    let image = generate_image(info_for_job.width, info_for_job.height, info_for_job.zoom, info_for_job.center);
+
+                    sender.send((image, id2)).unwrap();
+                    sink.send(CustomEvent::Async);
+                });
+
+                self.jobs.push((info, Rc::new(receiver)));
+                self.images.insert((x, y, 0), (id, info));
             }
-            self.spawned = true;
         }
 
-        for (id, info) in &self.images {
-            if env.image_context.texture_exist(id) {
-                context.image(
-                    id.clone(),
-                    Rect::new(
-                        Position::new(info.x as Scalar, info.y as Scalar),
-                        Dimension::new(info.width as Scalar, info.height as Scalar),
-                    ),
-                    Rect::from_corners(Position::new(0.0, 1.0), Position::new(1.0, 0.0)),
-                    MODE_IMAGE,
-                )
+        for x in start_tile_x..end_tile_x {
+            for y in start_tile_y..end_tile_y {
+                self.images.get(&(x, y, 0)).map(|(id, info)| {
+                    if env.image_context.texture_exist(id) {
+                        context.image(
+                            id.clone(),
+                            Rect::new(
+                                Position::new(info.x as Scalar, info.y as Scalar) + self.offset,
+                                Dimension::new(info.width as Scalar, info.height as Scalar),
+                            ),
+                            Rect::from_corners(Position::new(0.0, 1.0), Position::new(1.0, 0.0)),
+                            MODE_IMAGE,
+                        )
+                    }
+                });
             }
         }
     }
@@ -165,7 +175,12 @@ impl OtherEventHandler for Mandelbrot {
 
 impl MouseEventHandler for Mandelbrot {
     fn handle_mouse_event(&mut self, event: &MouseEvent, consumed: &bool, env: &mut Environment) {
-
+        match event {
+            MouseEvent::Scroll { x, y, .. } => {
+                self.offset += Position::new(*x, -*y);
+            }
+            _ => ()
+        }
     }
 }
 
@@ -194,12 +209,13 @@ pub fn generate_image(width: u32, height: u32, zoom: f64, center: Position) -> D
             //let hue = (i as f64 / MAX_ITER as f64) % 1.0;
             //let color = Color::Hsla(hue as f32, 0.75, 0.5, 0.0);
 
-            let color = get_colormap(i, za);
+
 
             //let color = 255 - ((m * 255) as f64 / MAX_ITER as f64) as u8;
             if i == MAX_ITER {
                 image.put_pixel(x, y, Rgba([0, 0, 0, 0]));
             } else {
+                let color = get_colormap(i, za);
                 image.put_pixel(x, y, Rgba(color.to_byte_fsa()));
             }
 
@@ -217,6 +233,7 @@ fn normalize(i: u32, za: f64) -> f64 {
 
 fn get_colormap(i: u32, za: f64) -> Color {
     let ni = normalize(i, za);
+    //println!("{}", ni);
     let col1 = C1[ni as usize % C1.len()];
     let col2 = C1[(ni as usize + 1) % C1.len()];
 
