@@ -1,6 +1,7 @@
 use std::fmt::{Debug, Formatter};
 use carbide_core::{CommonWidgetImpl};
 use carbide_core::color::ORANGE;
+use carbide_core::cursor::MouseCursor;
 use carbide_core::draw::{Dimension, Position};
 use carbide_core::environment::{Environment, EnvironmentColor};
 use carbide_core::event::ModifierKey;
@@ -26,11 +27,13 @@ type DefaultPlainButtonAction = fn(&mut Environment, ModifierKey);
 
 #[derive(Clone, Widget)]
 #[carbide_exclude(Focusable)]
-pub struct PlainButton<F, A, D, E> where
+pub struct PlainButton<F, A, D, E, H, P> where
     F: State<T=Focus>,
     A: Action + Clone + 'static,
     D: PlainButtonDelegate,
     E: ReadState<T=bool>,
+    H: State<T=bool>,
+    P: State<T=bool>,
 {
     id: WidgetId,
     #[state] focus: F,
@@ -40,17 +43,26 @@ pub struct PlainButton<F, A, D, E> where
     dimension: Dimension,
     delegate: D,
     action: A,
+    #[state] hovered: H,
+    #[state] pressed: P,
+    cursor: MouseCursor,
 }
 
-impl PlainButton<Focus, DefaultPlainButtonAction, DefaultPlainButtonDelegate, bool> {
-    pub fn new<A: Action + Clone + 'static>(action: A) -> PlainButton<TState<Focus>, A, DefaultPlainButtonDelegate, EnabledState> {
+impl PlainButton<Focus, DefaultPlainButtonAction, DefaultPlainButtonDelegate, bool, bool, bool> {
+    pub fn new<A: Action + Clone + 'static>(action: A) -> PlainButton<TState<Focus>, A, DefaultPlainButtonDelegate, EnabledState, TState<bool>, TState<bool>> {
+
         let focus_state = LocalState::new(Focus::Unfocused);
+        let hovered = LocalState::new(false);
+        let pressed = LocalState::new(false);
 
         Self::new_internal(
             action,
             focus_state,
             PlainButton::default_delegate,
             enabled_state(),
+            MouseCursor::Hand,
+            hovered,
+            pressed
         )
     }
 
@@ -80,35 +92,54 @@ impl PlainButton<Focus, DefaultPlainButtonAction, DefaultPlainButtonDelegate, bo
     }
 }
 
-impl<F: State<T=Focus>, A: Action + Clone + 'static, D: PlainButtonDelegate, E: ReadState<T=bool>> PlainButton<F, A, D, E> {
+impl<F: State<T=Focus>, A: Action + Clone + 'static, D: PlainButtonDelegate, E: ReadState<T=bool>, H: State<T=bool>, P: State<T=bool>> PlainButton<F, A, D, E, H, P> {
 
     pub fn delegate<D2: PlainButtonDelegate>(
         self,
         delegate: D2,
-    ) -> PlainButton<F, A, D2, E> {
+    ) -> PlainButton<F, A, D2, E, H, P> {
         let action = self.action;
         let focus_state = self.focus;
 
-        Self::new_internal(action, focus_state, delegate, self.enabled)
+        Self::new_internal(action, focus_state, delegate, self.enabled, self.cursor, self.hovered, self.pressed)
     }
 
-    pub fn focused<F2: IntoState<Focus>>(mut self, focused: F2) -> PlainButton<F2::Output, A, D, E> {
-        Self::new_internal(self.action, focused.into_state(), self.delegate, self.enabled)
+    pub fn focused<F2: IntoState<Focus>>(mut self, focused: F2) -> PlainButton<F2::Output, A, D, E, H, P> {
+        Self::new_internal(self.action, focused.into_state(), self.delegate, self.enabled, self.cursor, self.hovered, self.pressed)
     }
 
-    pub fn enabled<E2: IntoReadState<bool>>(mut self, enabled: E2) -> PlainButton<F, A, D, E2::Output> {
-        Self::new_internal(self.action, self.focus, self.delegate, enabled.into_read_state())
+    pub fn pressed<P2: IntoState<bool>>(mut self, pressed: P2) -> PlainButton<F, A, D, E, H, P2::Output> {
+        Self::new_internal(self.action, self.focus, self.delegate, self.enabled, self.cursor, self.hovered, pressed.into_state())
     }
 
-    fn new_internal<F2: State<T=Focus> + Clone, A2: Action + Clone + 'static, D2: PlainButtonDelegate, E2: ReadState<T=bool>>(
+    pub fn hovered<H2: IntoState<bool>>(mut self, hovered: H2) -> PlainButton<F, A, D, E, H2::Output, P> {
+        Self::new_internal(self.action, self.focus, self.delegate, self.enabled, self.cursor, hovered.into_state(), self.pressed)
+    }
+
+    pub fn enabled<E2: IntoReadState<bool>>(mut self, enabled: E2) -> PlainButton<F, A, D, E2::Output, H, P> {
+        Self::new_internal(self.action, self.focus, self.delegate, enabled.into_read_state(), self.cursor, self.hovered, self.pressed)
+    }
+
+    pub fn cursor(mut self, cursor: MouseCursor) -> PlainButton<F, A, D, E, H, P> {
+        Self::new_internal(self.action, self.focus, self.delegate, self.enabled, cursor, self.hovered, self.pressed)
+    }
+
+    fn new_internal<
+        F2: State<T=Focus> + Clone,
+        A2: Action + Clone + 'static,
+        D2: PlainButtonDelegate,
+        E2: ReadState<T=bool>,
+        H2: State<T=bool>,
+        P2: State<T=bool>,
+    >(
         action: A2,
         focus: F2,
         delegate: D2,
         enabled: E2,
-    ) -> PlainButton<F2, A2, D2, E2> {
-
-        let hovered = LocalState::new(false);
-        let pressed = LocalState::new(false);
+        cursor: MouseCursor,
+        hovered: H2,
+        pressed: P2,
+    ) -> PlainButton<F2, A2, D2, E2, H2, P2> {
 
         let delegate_widget = delegate.call(focus.as_dyn_read(), hovered.as_dyn_read(), pressed.as_dyn_read(), enabled.as_dyn_read());
 
@@ -123,6 +154,9 @@ impl<F: State<T=Focus>, A: Action + Clone + 'static, D: PlainButtonDelegate, E: 
                     let mut focus = focus.clone();
                     let mut action = action.clone();
                     let mut enabled = enabled.clone();
+                    enabled.sync(env);
+                    focus.sync(env);
+                    enabled.sync(env);
 
                     {
                         if *enabled.value() {
@@ -132,6 +166,8 @@ impl<F: State<T=Focus>, A: Action + Clone + 'static, D: PlainButtonDelegate, E: 
                             }
                             (action)(env, modifier);
                         }
+
+
                     }
                 }
             })
@@ -142,8 +178,9 @@ impl<F: State<T=Focus>, A: Action + Clone + 'static, D: PlainButtonDelegate, E: 
                 }
             }))
             .focused(focus.clone())
-            .pressed(pressed)
-            .hovered(hovered);
+            .pressed(pressed.clone())
+            .hovered(hovered.clone())
+            .hover_cursor(cursor);
 
 
         PlainButton {
@@ -154,25 +191,28 @@ impl<F: State<T=Focus>, A: Action + Clone + 'static, D: PlainButtonDelegate, E: 
             dimension: Dimension::new(0.0, 0.0),
             delegate,
             action,
+            hovered,
             enabled,
+            cursor,
+            pressed,
         }
     }
 
 }
 
-impl<F: State<T=Focus> + Clone, A: Action + Clone + 'static, D: PlainButtonDelegate, E: ReadState<T=bool>> Focusable for PlainButton<F, A, D, E> {
+impl<F: State<T=Focus> + Clone, A: Action + Clone + 'static, D: PlainButtonDelegate, E: ReadState<T=bool>, H: State<T=bool>, P: State<T=bool>> Focusable for PlainButton<F, A, D, E, H, P> {
     fn focus_children(&self) -> bool {
         false
     }
 }
 
-impl<F: State<T=Focus> + Clone, A: Action + Clone + 'static, D: PlainButtonDelegate, E: ReadState<T=bool>> CommonWidget for PlainButton<F, A, D, E> {
+impl<F: State<T=Focus> + Clone, A: Action + Clone + 'static, D: PlainButtonDelegate, E: ReadState<T=bool>, H: State<T=bool>, P: State<T=bool>> CommonWidget for PlainButton<F, A, D, E, H, P> {
     CommonWidgetImpl!(self, id: self.id, child: self.child, position: self.position, dimension: self.dimension, flag: Flags::FOCUSABLE, flexibility: 10, focus: self.focus);
 }
 
-impl<F: State<T=Focus> + Clone, A: Action + Clone + 'static, D: PlainButtonDelegate, E: ReadState<T=bool>> WidgetExt for PlainButton<F, A, D, E> {}
+impl<F: State<T=Focus> + Clone, A: Action + Clone + 'static, D: PlainButtonDelegate, E: ReadState<T=bool>, H: State<T=bool>, P: State<T=bool>> WidgetExt for PlainButton<F, A, D, E, H, P> {}
 
-impl<F: State<T=Focus> + Clone, A: Action + Clone + 'static, D: PlainButtonDelegate, E: ReadState<T=bool>> Debug for PlainButton<F, A, D, E> {
+impl<F: State<T=Focus> + Clone, A: Action + Clone + 'static, D: PlainButtonDelegate, E: ReadState<T=bool>, H: State<T=bool>, P: State<T=bool>> Debug for PlainButton<F, A, D, E, H, P> {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("PlainButton")
             .field("id", &self.id)

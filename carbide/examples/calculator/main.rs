@@ -1,13 +1,14 @@
 use std::ops::Deref;
 
 use carbide::{Application, Window};
-use carbide::Color;
+use carbide::draw::Color;
 use carbide::draw::Dimension;
 use carbide::environment::{Environment, EnvironmentColor};
 use carbide::state::{LocalState, Map3, ReadState, State, StateExt, TState};
 use carbide::widget::*;
 use carbide::widget::WidgetExt;
 use carbide_controls::{capture, PlainButton};
+use carbide_core::state::ReadStateExtNew;
 
 use crate::calculator_state::{CalculatorState, Operation};
 
@@ -35,35 +36,39 @@ fn main() {
     ])
     .frame(0.0, 60.0)
     .expand_width()
-    .padding(5);
+    .padding(5.0)
+        .boxed();
 
     application.set_scene(Window::new(
         "My first calculator",
         Dimension::new(235.0, 300.0),
-        VStack::new(vec![
+        *VStack::new(vec![
             display,
             HStack::new(vec![
                 calculator_button(
                     Text::new("AC").font_size(32),
                     capture!([calculator_state], |env: &mut Environment| {
-                        calculator_state.clear_all()
+                        calculator_state.value_mut().clear_all();
                     }),
                 )
-                    .accent_color(EnvironmentColor::TertiarySystemFill),
+                    .accent_color(EnvironmentColor::TertiarySystemFill)
+                    .boxed(),
                 calculator_button(
                     Text::new("±").font_size(32),
                     capture!([calculator_state], |env: &mut Environment| {
-                        calculator_state.negate_current()
+                        calculator_state.value_mut().negate_current();
                     }),
                 )
-                    .accent_color(EnvironmentColor::TertiarySystemFill),
+                    .accent_color(EnvironmentColor::TertiarySystemFill)
+                    .boxed(),
                 calculator_button(
                     Text::new("%").font_size(32),
                     capture!([calculator_state], |env: &mut Environment| {
-                        calculator_state.percent_to_decimal()
+                        calculator_state.value_mut().percent_to_decimal();
                     }),
                 )
-                    .accent_color(EnvironmentColor::TertiarySystemFill),
+                    .accent_color(EnvironmentColor::TertiarySystemFill)
+                    .boxed(),
                 operator_button(Operation::Div, &calculator_state),
             ])
                 .spacing(1.0),
@@ -94,10 +99,11 @@ fn main() {
                     calculator_button(
                         Text::new(",").font_size(32),
                         capture!([calculator_state], |env: &mut Environment| {
-                            calculator_state.push_separator()
+                            calculator_state.value_mut().push_separator();
                         }),
                     )
-                        .accent_color(EnvironmentColor::SystemFill),
+                        .accent_color(EnvironmentColor::SystemFill)
+                        .boxed(),
                     operator_button(Operation::Eq, &calculator_state),
                 ])
                     .spacing(1.0),
@@ -110,7 +116,7 @@ fn main() {
     application.launch();
 }
 
-fn calculator_button(label: Box<dyn Widget>, action: impl Action + 'static) -> Box<dyn Widget> {
+fn calculator_button(label: Box<dyn Widget>, action: impl Action + Clone + 'static) -> Box<dyn Widget> {
     let pressed_state: TState<bool> = LocalState::new(false).into();
     let hovered_state: TState<bool> = LocalState::new(false).into();
 
@@ -130,28 +136,34 @@ fn calculator_button(label: Box<dyn Widget>, action: impl Action + 'static) -> B
     )
     .ignore_writes();
 
-    PlainButton::new(ZStack::new(vec![
-        Rectangle::new().fill(background_color),
-        label,
-    ]))
-    .on_click(action)
-    .pressed(pressed_state)
-    .hovered(hovered_state)
+    PlainButton::new(action)
+        .delegate(move |_, _, _, _| {
+            ZStack::new(vec![
+                Rectangle::new().fill(background_color.clone()),
+                label.clone(),
+            ]).boxed()
+        })
+        .pressed(pressed_state)
+        .hovered(hovered_state)
+        .boxed()
 }
 
 fn number_button(number: i64, state: &TState<CalculatorState>) -> Box<dyn Widget> {
     calculator_button(
         Text::new(number).font_size(32),
-        capture!([state], |env: &mut Environment| { state.append(number) }),
+        capture!([state], |env: &mut Environment| {
+            state.value_mut().append(number);
+        }),
     )
     .accent_color(EnvironmentColor::SystemFill)
+        .boxed()
 }
 
 fn operator_button(operator: Operation, state: &TState<CalculatorState>) -> Box<dyn Widget> {
     calculator_button(
         Text::new(operator.to_symbol()).font_size(32),
         capture!([state], |env: &mut Environment| {
-            state.set_operation(operator)
+            state.value_mut().set_operation(operator);
         }),
     )
 }

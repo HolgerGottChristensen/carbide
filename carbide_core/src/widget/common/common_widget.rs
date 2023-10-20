@@ -1,6 +1,6 @@
 
 use carbide_core::widget::Widget;
-use crate::draw::{Dimension, Position, Scalar};
+use crate::draw::{Dimension, Position, Rect, Scalar};
 use crate::flags::Flags;
 use crate::focus::Focus;
 use crate::layout::{BasicLayouter, Layouter};
@@ -114,6 +114,17 @@ pub trait CommonWidget {
             && point.x < self.x() + self.width()
             && point.y >= self.y()
             && point.y < self.y() + self.height()
+    }
+
+    fn bounding_box(&self) -> Rect {
+        Rect::new(
+            self.position(),
+            self.dimension()
+        )
+    }
+
+    fn center_point(&self) -> Position {
+        self.bounding_box().center()
     }
 }
 

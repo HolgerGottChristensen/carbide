@@ -49,3 +49,13 @@ impl<T: StateContract> ConvertIntoRead<Option<T>> for T {
     }
 }
 
+impl ConvertIntoRead<u32> for i32 {
+    type Output<G: AnyReadState<T=Self> + Clone> = RMap1<fn(&i32)->u32, i32, u32, G>;
+
+    fn convert<F: AnyReadState<T=i32> + Clone>(f: F) -> Self::Output<F> {
+        Map1::read_map(f, |c| {
+            *c as u32
+        })
+    }
+}
+

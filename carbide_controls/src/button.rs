@@ -12,12 +12,12 @@ pub struct Button;
 
 impl Button {
     // TODO: Consider creating a newtype wrapper macro for Button, wrapping plainbutton, to simplify the signature of the function
-    pub fn new<L: IntoReadState<String>, A: Action + Clone + 'static>(label: L, action: A) -> PlainButton<TState<Focus>, A, ButtonDelegate<L::Output, bool>, EnabledState> {
+    pub fn new<L: IntoReadState<String>, A: Action + Clone + 'static>(label: L, action: A) -> PlainButton<TState<Focus>, A, ButtonDelegate<L::Output, bool>, EnabledState, TState<bool>, TState<bool>> {
         PlainButton::new(action)
             .delegate(ButtonDelegate { label: label.into_read_state(), is_primary: false })
     }
 
-    pub fn new_primary<L: IntoReadState<String>, A: Action + Clone + 'static>(label: L, action: A) -> PlainButton<TState<Focus>, A, ButtonDelegate<L::Output, bool>, EnabledState> {
+    pub fn new_primary<L: IntoReadState<String>, A: Action + Clone + 'static>(label: L, action: A) -> PlainButton<TState<Focus>, A, ButtonDelegate<L::Output, bool>, EnabledState, TState<bool>, TState<bool>> {
         PlainButton::new(action)
             .delegate(ButtonDelegate { label: label.into_read_state(), is_primary: true })
     }

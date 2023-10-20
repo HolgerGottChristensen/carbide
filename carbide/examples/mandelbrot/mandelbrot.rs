@@ -9,15 +9,18 @@ use num::{Complex, Zero};
 use num::complex::ComplexFloat;
 use uuid::Uuid;
 use carbide_core::asynchronous::{get_event_sink, sleep};
+use carbide_core::color::{RED, WHITE};
 use carbide_core::CommonWidgetImpl;
 
 use carbide_core::draw::{Color, Dimension, Position, Rect, Scalar, Texture, TextureFormat};
+use carbide_core::draw::draw_style::DrawStyle;
 use carbide_core::draw::image::ImageId;
 use carbide_core::environment::Environment;
 use carbide_core::event::{CustomEvent, MouseEvent, MouseEventHandler, OtherEventHandler, WidgetEvent};
 use carbide_core::image::{DynamicImage, GenericImage, Rgba};
 use carbide_core::mesh::MODE_IMAGE;
-use carbide_core::render::{Render, RenderContext};
+use carbide_core::render::{CarbideTransform, Render, RenderContext};
+use carbide_core::render::matrix::{Deg, Matrix4, Vector3};
 use carbide_core::widget::*;
 
 const MAX_ITER: u32 = 1000;
@@ -57,6 +60,7 @@ pub struct Mandelbrot {
     spawned: bool,
 
     offset: Position,
+    rotation: f64,
 }
 
 impl Mandelbrot {
@@ -69,17 +73,18 @@ impl Mandelbrot {
             images: HashMap::new(),
             spawned: false,
             offset: Position::origin(),
+            rotation: 0.0,
         }
     }
 }
 
 impl Render for Mandelbrot {
     fn render(&mut self, context: &mut RenderContext, env: &mut Environment) {
-        let start_tile_x = (-self.offset.x() / 200.0).floor() as i32;
-        let end_tile_x = ((-self.offset.x() + env.current_window_width()) / 200.0).ceil() as i32;
+        let start_tile_x = ((-self.offset.x() + self.position.x()) / 200.0).floor() as i32;
+        let end_tile_x = ((-self.offset.x() + self.position.x() + self.dimension.width) / 200.0).ceil() as i32;
 
-        let start_tile_y = (-self.offset.y() / 200.0).floor() as i32;
-        let end_tile_y = ((-self.offset.y() + env.current_window_height()) / 200.0).ceil() as i32;
+        let start_tile_y = ((-self.offset.y() + self.position.y()) / 200.0).floor() as i32;
+        let end_tile_y = ((-self.offset.y() + self.position.y() + self.dimension.height) / 200.0).ceil() as i32;
 
         for x in start_tile_x..end_tile_x {
             for y in start_tile_y..end_tile_y {
@@ -126,23 +131,43 @@ impl Render for Mandelbrot {
             }
         }
 
-        for x in start_tile_x..end_tile_x {
-            for y in start_tile_y..end_tile_y {
-                self.images.get(&(x, y, 0)).map(|(id, info)| {
-                    if env.image_context.texture_exist(id) {
-                        context.image(
-                            id.clone(),
-                            Rect::new(
-                                Position::new(info.x as Scalar, info.y as Scalar) + self.offset,
-                                Dimension::new(info.width as Scalar, info.height as Scalar),
-                            ),
-                            Rect::from_corners(Position::new(0.0, 1.0), Position::new(1.0, 0.0)),
-                            MODE_IMAGE,
-                        )
-                    }
-                });
+        let center = self.center_point();
+
+        let transform =
+            Matrix4::from_translation(Vector3::new(center.x() as f32, center.y() as f32, 0.0)) *
+            Matrix4::from_angle_z(Deg(self.rotation as f32)) *
+            Matrix4::from_translation(Vector3::new(self.offset.x() as f32, self.offset.y() as f32, 0.0)) *
+            Matrix4::from_translation(Vector3::new(-center.x() as f32, -center.y() as f32, 0.0));
+
+        context.transform(transform, |this| {
+            for x in start_tile_x..end_tile_x {
+                for y in start_tile_y..end_tile_y {
+                    self.images.get(&(x, y, 0)).map(|(id, info)| {
+                        if env.image_context.texture_exist(id) {
+                            this.image(
+                                id.clone(),
+                                Rect::new(
+                                    Position::new(info.x as Scalar, info.y as Scalar),
+                                    Dimension::new(info.width as Scalar, info.height as Scalar),
+                                ),
+                                Rect::from_corners(Position::new(0.0, 1.0), Position::new(1.0, 0.0)),
+                                MODE_IMAGE,
+                            )
+                        }
+                    });
+                }
             }
-        }
+
+            /*this.style(DrawStyle::Color(WHITE.alpha(0.2)), |this| {
+                this.rect(Rect::new(
+                    self.position,
+                    self.dimension
+                ))
+            })*/
+
+        });
+
+
     }
 }
 
@@ -178,6 +203,9 @@ impl MouseEventHandler for Mandelbrot {
         match event {
             MouseEvent::Scroll { x, y, .. } => {
                 self.offset += Position::new(*x, -*y);
+            }
+            MouseEvent::Rotation(delta, _, _) => {
+                self.rotation -= delta;
             }
             _ => ()
         }

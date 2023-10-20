@@ -298,7 +298,7 @@ pub fn convert_window_event(event: &WindowEvent) -> Option<Input> {
             };
 
             Some(Input::Gesture(Gesture::Rotate(
-                *delta as f64 / scale_factor,
+                *delta as f64,
                 phase
             )))
         }
@@ -311,7 +311,7 @@ pub fn convert_window_event(event: &WindowEvent) -> Option<Input> {
             };
 
             Some(Input::Gesture(Gesture::Scale(
-                *delta / scale_factor,
+                *delta,
                 phase
             )))
         }

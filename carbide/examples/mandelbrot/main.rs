@@ -49,6 +49,8 @@ fn main() {
                 .resizeable()
                 .frame(600.0, 400.0)*/
             Mandelbrot::new()
+                .border()
+                .padding(200.0)
         ).close_application_on_window_close()
     );
 
