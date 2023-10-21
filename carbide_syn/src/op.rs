@@ -73,6 +73,8 @@ ast_enum! {
         Not(Token![!]),
         /// The `-` operator for negation
         Neg(Token![-]),
+        /// The `$` operator for carbide
+        Dollar(Token![$]),
     }
 }
 
@@ -168,6 +170,8 @@ pub(crate) mod parsing {
                 input.parse().map(UnOp::Not)
             } else if lookahead.peek(Token![-]) {
                 input.parse().map(UnOp::Neg)
+            } else if lookahead.peek(Token![$]) {
+                input.parse().map(UnOp::Dollar)
             } else {
                 Err(lookahead.error())
             }
@@ -224,6 +228,7 @@ mod printing {
                 UnOp::Deref(t) => t.to_tokens(tokens),
                 UnOp::Not(t) => t.to_tokens(tokens),
                 UnOp::Neg(t) => t.to_tokens(tokens),
+                UnOp::Dollar(t) => t.to_tokens(tokens),
             }
         }
     }
