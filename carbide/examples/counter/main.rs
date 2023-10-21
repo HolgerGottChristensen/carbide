@@ -11,18 +11,19 @@ fn main() {
 
     let counter = LocalState::new(0);
 
-    let text = Text::new(counter.clone()).font_size(EnvironmentFontSize::LargeTitle);
+    let text = Text::new(counter.clone())
+        .font_size(EnvironmentFontSize::LargeTitle);
 
-    let button = Button::new("Increase counter")
-        .on_click(capture!([counter], |_env: &mut Environment| {
-            *counter = *counter + 1;
+    let button = Button::new_primary("Increase counter", capture!([counter], |_env: &mut Environment| {
+            *counter.value_mut() += 1;
         }))
-        .frame(200, 30);
+        .frame(200.0, 30.0)
+        .boxed();
 
     application.set_scene(Window::new(
         "My first counter",
         Dimension::new(235.0, 300.0),
-        VStack::new(vec![text, button])
+        *VStack::new(vec![text, button])
     ).close_application_on_window_close());
 
     application.launch()
