@@ -3,7 +3,7 @@ use carbide_core::draw::Rect;
 use carbide_core::widget::canvas::Context;
 
 
-use carbide_macro::carbide_default_builder;
+use carbide_macro::{carbide_default_builder, carbide_default_builder2};
 
 use crate::color::WHITE;
 use crate::CommonWidgetImpl;
@@ -23,18 +23,16 @@ pub struct ProgressView {
 }
 
 impl ProgressView {
-    #[carbide_default_builder]
-    pub fn new() -> Box<Self> {}
-
-    pub fn new() -> Box<Self> {
+    #[carbide_default_builder2]
+    pub fn new() -> Self {
         ProgressView::new_internal(30.0)
     }
 
-    pub fn size(self, size: f64) -> Box<Self> {
+    pub fn size(self, size: f64) -> Self {
         ProgressView::new_internal(size)
     }
 
-    fn new_internal(size: f64) -> Box<Self> {
+    fn new_internal(size: f64) -> Self {
         let animation = AnimatedState::linear(None)
             .repeat()
             .duration(Duration::new(2, 0))
@@ -65,7 +63,8 @@ impl ProgressView {
                 context.stroke();
                 context
             })
-            .rotation_effect(animation),
+            .rotation_effect(animation)
+                .boxed(),
             Canvas::new(|rect: Rect, mut context: Context, env: &mut Environment| {
                 context.move_to(2.0, rect.height() / 2.0);
                 context.arc(
@@ -81,17 +80,18 @@ impl ProgressView {
                 context.stroke();
                 context
             })
-            .rotation_effect(animation2),
+            .rotation_effect(animation2)
+                .boxed(),
         ])
         .frame(size, size)
             .boxed();
 
-        Box::new(ProgressView {
+        ProgressView {
             id: WidgetId::new(),
             child,
             position: Position::new(0.0, 0.0),
             dimension: Dimension::new(100.0, 100.0),
-        })
+        }
     }
 }
 

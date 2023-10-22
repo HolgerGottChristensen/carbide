@@ -1,11 +1,13 @@
 use carbide::cursor::MouseCursor;
-use carbide::state::{ReadState, TState};
-use carbide_controls::Button;
+use carbide::state::ReadState;
+use carbide_controls::{Button, ButtonDelegate, PlainButton};
 use carbide::draw::Dimension;
 use carbide::widget::*;
 use carbide::{Application, Window};
 use carbide_core::environment::Environment;
-use carbide_core::state::AnyState;
+use carbide_core::event::ModifierKey;
+use carbide_core::focus::Focus;
+use carbide_core::state::{AnyState, LocalState};
 
 fn main() {
     env_logger::init();
@@ -54,21 +56,19 @@ fn main() {
         MouseCursor::RowResize,
     ];
 
-    fn delegate(item: Box<dyn AnyState<T=MouseCursor>>, _: Box<dyn AnyState<T=usize>>) -> Box<dyn Widget> {
+    fn delegate(item: Box<dyn AnyState<T=MouseCursor>>, _: Box<dyn AnyState<T=usize>>) -> impl Widget + Clone {
         Button::new_primary(format!("{:?}", *item.value()), move |env: &mut Environment, _: _| {})
             .cursor(*item.value())
             .frame(100.0, 22.0)
-            .boxed()
     }
 
     application.set_scene(Window::new(
         "Mouse cursors example".to_string(),
         Dimension::new(400.0, 600.0),
-        *HStack::new(vec![
-            VStack::new(vec![ForEach::new(cursors1, delegate)]),
-            VStack::new(vec![ForEach::new(cursors2, delegate)]),
-        ])
-            .cross_axis_alignment(CrossAxisAlignment::Start)
+        HStack::new((
+            VStack::new(ForEach::new(cursors1, delegate)),
+            VStack::new(ForEach::new(cursors2, delegate)),
+        )).cross_axis_alignment(CrossAxisAlignment::Start)
     ).close_application_on_window_close());
 
     application.launch();

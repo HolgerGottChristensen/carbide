@@ -23,7 +23,7 @@ use crate::widget::{CommonWidget, Empty, Widget, WidgetExt, WidgetId};
 pub struct IfElse<T, F, S> where
     T: Widget + Clone,
     F: Widget + Clone,
-    S: ReadState<T=bool> + Clone + 'static
+    S: ReadState<T=bool>
 {
     id: WidgetId,
     position: Position,

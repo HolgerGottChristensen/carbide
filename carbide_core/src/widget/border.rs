@@ -16,7 +16,7 @@ use crate::widget::{CommonWidget, Empty, Widget, WidgetExt, WidgetId};
 #[carbide_exclude(Render, Layout)]
 pub struct Border<W, C> where
     W: Widget + Clone,
-    C: ReadState<T=Color> + Clone + 'static
+    C: ReadState<T=Color>
 {
     id: WidgetId,
     child: W,
@@ -40,7 +40,7 @@ impl Border<Empty, Color> {
     }
 }
 
-impl<W: Widget + Clone, D: ReadState<T=Color> + Clone + 'static> Border<W, D> {
+impl<W: Widget + Clone, D: ReadState<T=Color>> Border<W, D> {
     pub fn color<C: IntoReadState<Color>>(self, color: C) -> Border<W, C::Output> {
         Border {
             id: self.id,
@@ -58,7 +58,7 @@ impl<W: Widget + Clone, D: ReadState<T=Color> + Clone + 'static> Border<W, D> {
     }
 }
 
-impl<W: Widget + Clone, C: ReadState<T=Color> + Clone + 'static> Layout for Border<W, C> {
+impl<W: Widget + Clone, C: ReadState<T=Color>> Layout for Border<W, C> {
     fn calculate_size(&mut self, requested_size: Dimension, env: &mut Environment) -> Dimension {
         let border_width = self.border_width as f64;
         let dimensions = Dimension::new(
@@ -90,11 +90,11 @@ impl<W: Widget + Clone, C: ReadState<T=Color> + Clone + 'static> Layout for Bord
     }
 }
 
-impl<W: Widget + Clone, C: ReadState<T=Color> + Clone + 'static> CommonWidget for Border<W, C> {
+impl<W: Widget + Clone, C: ReadState<T=Color>> CommonWidget for Border<W, C> {
     CommonWidgetImpl!(self, id: self.id, child: self.child, position: self.position, dimension: self.dimension);
 }
 
-impl<W: Widget + Clone, C: ReadState<T=Color> + Clone + 'static> Render for Border<W, C> {
+impl<W: Widget + Clone, C: ReadState<T=Color>> Render for Border<W, C> {
     fn render(&mut self, context: &mut RenderContext, env: &mut Environment) {
         let rect = Rect::new(self.position, self.dimension);
         let (l, r, b, t) = rect.l_r_b_t();
@@ -183,4 +183,4 @@ impl<W: Widget + Clone, C: ReadState<T=Color> + Clone + 'static> Render for Bord
     }
 }
 
-impl<W: Widget + Clone, C: ReadState<T=Color> + Clone + 'static> WidgetExt for Border<W, C> {}
+impl<W: Widget + Clone, C: ReadState<T=Color>> WidgetExt for Border<W, C> {}

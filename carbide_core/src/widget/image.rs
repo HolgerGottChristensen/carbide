@@ -24,7 +24,7 @@ use crate::widget::types::ScaleMode;
 /// A primitive and basic widget for drawing an `Image`.
 #[derive(Debug, Clone, Widget)]
 #[carbide_exclude(Render, Layout)]
-pub struct Image<Id, C> where Id: ReadState<T=Option<ImageId>> + Clone, C: ReadState<T=Style> + Clone {
+pub struct Image<Id, C> where Id: ReadState<T=Option<ImageId>>, C: ReadState<T=Style> {
     id: WidgetId,
     /// The unique identifier for the image that will be drawn.
     #[state]
@@ -41,8 +41,8 @@ pub struct Image<Id, C> where Id: ReadState<T=Option<ImageId>> + Clone, C: ReadS
 
 impl Image<Option<ImageId>, Style> {
     #[carbide_default_builder2]
-    pub fn new<Id: IntoReadState<Option<ImageId>>>(id: Id) -> Box<Image<Id::Output, Style>> {
-        Box::new(Image {
+    pub fn new<Id: IntoReadState<Option<ImageId>>>(id: Id) -> Image<Id::Output, Style> {
+        Image {
             id: WidgetId::new(),
             image_id: id.into_read_state(),
             src_rect: None,
@@ -52,11 +52,11 @@ impl Image<Option<ImageId>, Style> {
             dimension: Dimension::new(0.0, 0.0),
             scale_mode: ScaleMode::Fit,
             resizeable: false,
-        })
+        }
     }
 
-    pub fn new_icon<Id: IntoReadState<Option<ImageId>>>(id: Id) -> Box<Image<Id::Output, impl ReadState<T=Style>>> {
-        Box::new(Image {
+    pub fn new_icon<Id: IntoReadState<Option<ImageId>>>(id: Id) -> Image<Id::Output, impl ReadState<T=Style>> {
+        Image {
             id: WidgetId::new(),
             image_id: id.into_read_state(),
             src_rect: None,
@@ -66,43 +66,43 @@ impl Image<Option<ImageId>, Style> {
             dimension: Dimension::new(0.0, 0.0),
             scale_mode: ScaleMode::Fit,
             resizeable: false,
-        })
+        }
     }
 }
 
-impl<Id: ReadState<T=Option<ImageId>> + Clone, C: ReadState<T=Style> + Clone> Image<Id, C> {
+impl<Id: ReadState<T=Option<ImageId>>, C: ReadState<T=Style>> Image<Id, C> {
     /// Set the source rectangle of the image to use. The rect is given in image pixel coordinates.
     /// A source rect outside the size of the image will result in a larger image, but where the
     /// bottom right is blank.
-    pub fn source_rectangle(mut self, rect: Rect) -> Box<Self> {
+    pub fn source_rectangle(mut self, rect: Rect) -> Self {
         self.src_rect = Some(rect);
-        Box::new(self)
+        self
     }
 
-    pub fn resizeable(mut self) -> Box<Self> {
+    pub fn resizeable(mut self) -> Self {
         self.resizeable = true;
-        Box::new(self)
+        self
     }
 
-    pub fn scaled_to_fit(mut self) -> Box<Self> {
+    pub fn scaled_to_fit(mut self) -> Self {
         self.resizeable = true;
         self.scale_mode = ScaleMode::Fit;
-        Box::new(self)
+        self
     }
 
-    pub fn scaled_to_fill(mut self) -> Box<Self> {
+    pub fn scaled_to_fill(mut self) -> Self {
         self.resizeable = true;
         self.scale_mode = ScaleMode::Fill;
-        Box::new(self)
+        self
     }
 
-    pub fn aspect_ratio(mut self, mode: ScaleMode) -> Box<Self> {
+    pub fn aspect_ratio(mut self, mode: ScaleMode) -> Self {
         self.scale_mode = mode;
-        Box::new(self)
+        self
     }
 }
 
-impl<Id: ReadState<T=Option<ImageId>> + Clone, C: ReadState<T=Style> + Clone> Layout for Image<Id, C> {
+impl<Id: ReadState<T=Option<ImageId>>, C: ReadState<T=Style>> Layout for Image<Id, C> {
     fn calculate_size(&mut self, requested_size: Dimension, env: &mut Environment) -> Dimension {
 
         if let Some(image_id) = &*self.image_id.value() {
@@ -176,7 +176,7 @@ impl<Id: ReadState<T=Option<ImageId>> + Clone, C: ReadState<T=Style> + Clone> La
     }
 }
 
-impl<Id: ReadState<T=Option<ImageId>> + Clone, C: ReadState<T=Style> + Clone> Render for Image<Id, C> {
+impl<Id: ReadState<T=Option<ImageId>>, C: ReadState<T=Style>> Render for Image<Id, C> {
     fn render(&mut self, context: &mut RenderContext, env: &mut Environment) {
         self.capture_state(env);
 
@@ -251,8 +251,8 @@ impl<Id: ReadState<T=Option<ImageId>> + Clone, C: ReadState<T=Style> + Clone> Re
     }
 }
 
-impl<Id: ReadState<T=Option<ImageId>> + Clone, C: ReadState<T=Style> + Clone> CommonWidget for Image<Id, C> {
+impl<Id: ReadState<T=Option<ImageId>>, C: ReadState<T=Style>> CommonWidget for Image<Id, C> {
     CommonWidgetImpl!(self, id: self.id, child: (), position: self.position, dimension: self.dimension, flexibility: 10);
 }
 
-impl<Id: ReadState<T=Option<ImageId>> + Clone, C: ReadState<T=Style> + Clone> WidgetExt for Image<Id, C> {}
+impl<Id: ReadState<T=Option<ImageId>>, C: ReadState<T=Style>> WidgetExt for Image<Id, C> {}

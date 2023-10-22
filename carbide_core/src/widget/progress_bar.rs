@@ -9,7 +9,7 @@ use crate::state::ReadStateExtNew;
 use crate::widget::{Capsule, CommonWidget, Empty, Frame, HSplit, Spacer, Widget, WidgetExt, WidgetId, ZStack};
 
 #[derive(Debug, Clone, Widget)]
-pub struct ProgressBar<P> where P: ReadState<T=f64> + Clone {
+pub struct ProgressBar<P> where P: ReadState<T=f64> {
     id: WidgetId,
     child: Box<dyn Widget>,
     position: Position,
@@ -20,7 +20,7 @@ pub struct ProgressBar<P> where P: ReadState<T=f64> + Clone {
 
 impl ProgressBar<f64> {
     #[carbide_default_builder2]
-    pub fn new<P: IntoReadState<f64>>(progress: P) -> Box<ProgressBar<P::Output>> {
+    pub fn new<P: IntoReadState<f64>>(progress: P) -> ProgressBar<P::Output> {
         let progress = progress.into_read_state();
 
         let child = ZStack::new(vec![
@@ -34,13 +34,13 @@ impl ProgressBar<f64> {
             .expand_width()
             .boxed();
 
-        Box::new(ProgressBar {
+        ProgressBar {
             id: WidgetId::new(),
             child,
             position: Default::default(),
             dimension: Default::default(),
             progress,
-        })
+        }
     }
 }
 

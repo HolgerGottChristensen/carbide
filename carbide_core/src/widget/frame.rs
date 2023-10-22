@@ -16,10 +16,10 @@ pub static SCALE: f64 = -1.0;
 #[derive(Debug, Clone, Widget)]
 #[carbide_exclude(Layout)]
 pub struct Frame<X, Y, W, H, C> where
-    X: State<T=f64> + Clone,
-    Y: State<T=f64> + Clone,
-    W: State<T=f64> + Clone,
-    H: State<T=f64> + Clone,
+    X: State<T=f64>,
+    Y: State<T=f64>,
+    W: State<T=f64>,
+    H: State<T=f64>,
     C: Widget + Clone
 {
     id: WidgetId,
@@ -51,10 +51,10 @@ impl Frame<f64, f64, f64, f64, Empty> {
 }
 
 impl<
-    X: State<T=f64> + Clone,
-    Y: State<T=f64> + Clone,
-    W: State<T=f64> + Clone,
-    H: State<T=f64> + Clone,
+    X: State<T=f64>,
+    Y: State<T=f64>,
+    W: State<T=f64>,
+    H: State<T=f64>,
     C: Widget + Clone
 > Frame<X, Y, W, H, C> {
     /// Note: This disconnects from the existing width value
@@ -147,10 +147,10 @@ impl<
 }
 
 impl<
-    X: State<T=f64> + Clone,
-    Y: State<T=f64> + Clone,
-    W: State<T=f64> + Clone,
-    H: State<T=f64> + Clone,
+    X: State<T=f64>,
+    Y: State<T=f64>,
+    W: State<T=f64>,
+    H: State<T=f64>,
     C: Widget + Clone
 > CommonWidget for Frame<X, Y, W, H, C> {
     fn id(&self) -> WidgetId {
@@ -233,10 +233,10 @@ impl<
 }
 
 impl<
-    X: State<T=f64> + Clone,
-    Y: State<T=f64> + Clone,
-    W: State<T=f64> + Clone,
-    H: State<T=f64> + Clone,
+    X: State<T=f64>,
+    Y: State<T=f64>,
+    W: State<T=f64>,
+    H: State<T=f64>,
     C: Widget + Clone
 > Layout for Frame<X, Y, W, H, C> {
     fn calculate_size(&mut self, requested_size: Dimension, env: &mut Environment) -> Dimension {
@@ -292,10 +292,10 @@ impl<
 }
 
 impl<
-    X: State<T=f64> + Clone,
-    Y: State<T=f64> + Clone,
-    W: State<T=f64> + Clone,
-    H: State<T=f64> + Clone,
+    X: State<T=f64>,
+    Y: State<T=f64>,
+    W: State<T=f64>,
+    H: State<T=f64>,
     C: Widget + Clone
 > WidgetExt for Frame<X, Y, W, H, C> {}
 

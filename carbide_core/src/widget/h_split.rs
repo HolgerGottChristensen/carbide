@@ -12,7 +12,7 @@ use crate::widget::{CommonWidget, CrossAxisAlignment, SplitType, Widget, WidgetE
 
 #[derive(Clone, Debug, Widget)]
 #[carbide_exclude(Layout, MouseEvent, OtherEvent)]
-pub struct HSplit<T> where T: State<T=f64> + Clone {
+pub struct HSplit<T> where T: State<T=f64> {
     id: WidgetId,
     position: Position,
     dimension: Dimension,
@@ -52,7 +52,7 @@ impl HSplit<f64> {
     }
 }
 
-impl<T: State<T=f64> + Clone> HSplit<T> {
+impl<T: State<T=f64>> HSplit<T> {
     pub fn relative_to_start<T2: IntoState<f64>>(mut self, width: T2) -> Box<HSplit<T2::Output>> {
         HSplit::new_internal(
             self.children.remove(0),
@@ -95,7 +95,7 @@ impl<T: State<T=f64> + Clone> HSplit<T> {
     }
 }
 
-impl<T: State<T=f64> + Clone> OtherEventHandler for HSplit<T> {
+impl<T: State<T=f64>> OtherEventHandler for HSplit<T> {
     fn handle_other_event(&mut self, _event: &WidgetEvent, env: &mut Environment) {
         if self.dragging || self.hovering {
             env.set_cursor(MouseCursor::ColResize);
@@ -103,7 +103,7 @@ impl<T: State<T=f64> + Clone> OtherEventHandler for HSplit<T> {
     }
 }
 
-impl<T: State<T=f64> + Clone> MouseEventHandler for HSplit<T> {
+impl<T: State<T=f64>> MouseEventHandler for HSplit<T> {
     fn handle_mouse_event(&mut self, event: &MouseEvent, _consumed: &bool, _env: &mut Environment) {
         if !self.draggable {
             return;
@@ -168,7 +168,7 @@ impl<T: State<T=f64> + Clone> MouseEventHandler for HSplit<T> {
     }
 }
 
-impl<T: State<T=f64> + Clone> Layout for HSplit<T> {
+impl<T: State<T=f64>> Layout for HSplit<T> {
     fn calculate_size(&mut self, requested_size: Dimension, env: &mut Environment) -> Dimension {
         let (requested_leading_width, requested_trailing_width) = match &self.split {
             SplitType::Start(offset) => (*offset.value(), requested_size.width - *offset.value()),
@@ -226,8 +226,8 @@ impl<T: State<T=f64> + Clone> Layout for HSplit<T> {
     }
 }
 
-impl<T: State<T=f64> + Clone> CommonWidget for HSplit<T> {
+impl<T: State<T=f64>> CommonWidget for HSplit<T> {
     CommonWidgetImpl!(self, id: self.id, child: self.children, position: self.position, dimension: self.dimension);
 }
 
-impl<T: State<T=f64> + Clone> WidgetExt for HSplit<T> {}
+impl<T: State<T=f64>> WidgetExt for HSplit<T> {}

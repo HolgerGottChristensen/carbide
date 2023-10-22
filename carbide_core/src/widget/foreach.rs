@@ -56,8 +56,8 @@ where
 impl ForEach<(), Vec<()>, EmptyDelegate, Empty, usize> {
 
     #[carbide_default_builder2]
-    pub fn new<T: StateContract, M: IntoState<Vec<T>> + Clone, W: Widget + Clone, U: Delegate<T, W>>(model: M, delegate: U) -> Box<ForEach<T, M::Output, U, W, usize>> {
-        Box::new(ForEach {
+    pub fn new<T: StateContract, M: IntoState<Vec<T>> + Clone, W: Widget + Clone, U: Delegate<T, W>>(model: M, delegate: U) -> ForEach<T, M::Output, U, W, usize> {
+        ForEach {
             id: WidgetId::new(),
             position: Position::default(),
             dimension: Dimension::default(),
@@ -66,7 +66,7 @@ impl ForEach<(), Vec<()>, EmptyDelegate, Empty, usize> {
             children: vec![],
             index_offset: 0,
             phantom: PhantomData::default()
-        })
+        }
     }
 
     /*pub fn id_state(mut self, state: Box<dyn State<T, GS>>) -> Box<Self> {

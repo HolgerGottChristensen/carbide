@@ -29,10 +29,10 @@ dyn_clone::clone_trait_object!(Action);
 pub struct MouseArea<I, O, F, C, H, P> where
     I: Action + Clone + 'static,
     O: Action + Clone + 'static,
-    F: State<T=Focus> + Clone,
+    F: State<T=Focus>,
     C: Widget + Clone,
-    H: State<T=bool> + Clone,
-    P: State<T=bool> + Clone,
+    H: State<T=bool>,
+    P: State<T=bool>,
 {
     id: WidgetId,
     #[state] focus: F,

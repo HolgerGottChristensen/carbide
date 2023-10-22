@@ -50,18 +50,18 @@ pub trait WidgetExt: Widget + Sized + Clone + 'static {
     /// areas for event handling. The widget will still take up the same space as if the effect
     /// wasn't applies. This only changes the visual. The function takes anything that can be
     /// converted into a state of f64.
-    fn rotation_3d_effect<R1: ReadState<T = f64> + Clone, R2: ReadState<T = f64> + Clone>(
+    fn rotation_3d_effect<R1: ReadState<T = f64>, R2: ReadState<T = f64>>(
         self,
         x: R1,
         y: R2,
-    ) -> Box<Rotation3DEffect<R1, R2, Self>> {
+    ) -> Rotation3DEffect<R1, R2, Self> {
         Rotation3DEffect::new(self, x, y)
     }
 
     /// Rotates the widget around the z axis. The z axis is the axis that goes through you screen.
     /// This is only a visual change and the widget will still take up the same space as if the
     /// effect isn't applied.
-    fn rotation_effect<R: ReadState<T = f64> + Clone>(self, rotation: R) -> Box<Transform<Self, RMap1<fn(&f64) -> Matrix4<f32>, f64, Matrix4<f32>, R>>> {
+    fn rotation_effect<R: ReadState<T = f64>>(self, rotation: R) -> Transform<Self, RMap1<fn(&f64) -> Matrix4<f32>, f64, Matrix4<f32>, R>> {
         Transform::rotation(self, rotation)
     }
 
@@ -69,7 +69,7 @@ pub trait WidgetExt: Widget + Sized + Clone + 'static {
     /// A scale below 1.0 will make the widget smaller and a scale larger than 1.0 will result in
     /// a larger widget. This is only visual and will not change the size taken up by the actual
     /// widget.
-    fn scale_effect<R: ReadState<T = f64> + Clone>(self, scale: R) -> Box<Transform<Self, RMap1<fn(&f64) -> Matrix4<f32>, f64, Matrix4<f32>, R>>> {
+    fn scale_effect<R: ReadState<T = f64>>(self, scale: R) -> Transform<Self, RMap1<fn(&f64) -> Matrix4<f32>, f64, Matrix4<f32>, R>> {
         Transform::scale(self, scale)
     }
 
@@ -77,13 +77,13 @@ pub trait WidgetExt: Widget + Sized + Clone + 'static {
     /// with the width value and the y axis with the height value. A value of less than 1.0 will
     /// make the given scale smaller and a value larger than 1.0 will result in a larger widget.
     /// The effect is only graphical and will not change the actual scale of the widget.
-    fn scale_effect_non_uniform<R: ReadState<T = Dimension> + Clone>(self, scale: R) -> Box<Transform<Self, RMap1<fn(&Dimension) -> Matrix4<f32>, Dimension, Matrix4<f32>, R>>> {
+    fn scale_effect_non_uniform<R: ReadState<T = Dimension>>(self, scale: R) -> Transform<Self, RMap1<fn(&Dimension) -> Matrix4<f32>, Dimension, Matrix4<f32>, R>> {
         Transform::scale_non_uniform(self, scale)
     }
 
     /// This can be used to apply a custom transformation matrix to the given widget. This will
     /// only result in visual changes and not affect the actual size of the widget.
-    fn transform<R: ReadState<T = Matrix4<f32>> + Clone>(self, matrix: R) -> Box<Transform<Self, R>> {
+    fn transform<R: ReadState<T = Matrix4<f32>>>(self, matrix: R) -> Transform<Self, R> {
         Transform::new(self, matrix)
     }
 
@@ -106,7 +106,7 @@ pub trait WidgetExt: Widget + Sized + Clone + 'static {
     /// Clip the content of the widget. The clip area will be the requested area for the widget. It
     /// will clip all children graphics within that area. This currently does not change whether an
     /// item is clickable outside the clip area.
-    fn clip(self) -> Box<Clip<Self>> {
+    fn clip(self) -> Clip<Self> {
         Clip::new(self)
     }
 
@@ -124,7 +124,7 @@ pub trait WidgetExt: Widget + Sized + Clone + 'static {
 
     /// Offset a widget. It will only change the locating of the rendered widget, but will not
     /// change its position for event handling.
-    fn offset<X: IntoReadState<f64>, Y: IntoReadState<f64>>(self, offset_x: X, offset_y: Y) -> Box<Offset<X::Output, Y::Output, Self>> {
+    fn offset<X: IntoReadState<f64>, Y: IntoReadState<f64>>(self, offset_x: X, offset_y: Y) -> Offset<X::Output, Y::Output, Self> {
         Offset::new(offset_x, offset_y, self)
     }
 

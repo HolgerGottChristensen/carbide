@@ -452,9 +452,8 @@ fn default_popup_delegate<T: StateContract + PartialEq, S: State<T=T>, M: ReadSt
     delegate: PopupDelegate<T, S, B>,
     enabled: Box<dyn AnyReadState<T=bool>>,
 ) -> Box<dyn Widget> {
-    VStack::new(vec![
-        *ForEach::new(model.ignore_writes(), delegate)
-    ]).spacing(1.0)
+    VStack::new(ForEach::new(model.ignore_writes(), delegate))
+        .spacing(1.0)
         .padding(1.0)
         .background(Rectangle::new().fill(EnvironmentColor::Yellow))
         .boxed()

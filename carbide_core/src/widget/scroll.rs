@@ -1,5 +1,5 @@
 use carbide_core::render::RenderContext;
-use carbide_macro::carbide_default_builder;
+use carbide_macro::{carbide_default_builder, carbide_default_builder2};
 
 use crate::color::Color;
 use crate::draw::{Dimension, Position};
@@ -34,12 +34,12 @@ pub struct Scroll {
 }
 
 impl Scroll {
-    pub fn with_scroll_direction(mut self, scroll_directions: ScrollDirection) -> Box<Self> {
+    pub fn with_scroll_direction(mut self, scroll_directions: ScrollDirection) -> Self {
         self.scroll_directions = scroll_directions;
-        Box::new(self)
+        self
     }
 
-    fn keep_y_within_bounds(&mut self) -> () {
+    fn keep_y_within_bounds(&mut self) {
         if self.scroll_offset.y > 0.0 {
             self.scroll_offset = Position::new(self.scroll_offset.x, 0.0);
         }
@@ -69,11 +69,9 @@ impl Scroll {
         }
     }
 
-    #[carbide_default_builder]
-    pub fn new(child: Box<dyn Widget>) -> Box<Self> {}
-
-    pub fn new(child: Box<dyn Widget>) -> Box<Self> {
-        Box::new(Self {
+    #[carbide_default_builder2]
+    pub fn new(child: Box<dyn Widget>) -> Self {
+        Self {
             id: WidgetId::new(),
             child,
             position: Position::new(0.0, 0.0),
@@ -104,7 +102,7 @@ impl Scroll {
                 .fill(Color::Rgba(0.0, 0.0, 0.0, 0.5))
                 .frame(10.0, 100.0)
                 .boxed(),
-        })
+        }
     }
 }
 

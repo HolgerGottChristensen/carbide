@@ -14,7 +14,7 @@ use crate::widget::{CommonWidget, Empty, Widget, WidgetExt, WidgetId};
 
 #[derive(Debug, Clone, Widget)]
 #[carbide_exclude(Render)]
-pub struct Rotation3DEffect<R1, R2, C> where R1: ReadState<T = f64> + Clone, R2: ReadState<T = f64> + Clone, C: Widget + Clone {
+pub struct Rotation3DEffect<R1, R2, C> where R1: ReadState<T = f64>, R2: ReadState<T = f64>, C: Widget + Clone {
     id: WidgetId,
     child: C,
     position: Position,
@@ -29,12 +29,12 @@ pub struct Rotation3DEffect<R1, R2, C> where R1: ReadState<T = f64> + Clone, R2:
 
 impl Rotation3DEffect<f64, f64, Empty> {
     #[carbide_default_builder2]
-    pub fn new<R1: ReadState<T = f64> + Clone, R2: ReadState<T = f64> + Clone, C: Widget + Clone>(
+    pub fn new<R1: ReadState<T = f64>, R2: ReadState<T = f64>, C: Widget + Clone>(
         child: C,
         rotation_x: R1,
         rotation_y: R2,
-    ) -> Box<Rotation3DEffect<R1, R2, C>> {
-        Box::new(Rotation3DEffect {
+    ) -> Rotation3DEffect<R1, R2, C> {
+        Rotation3DEffect {
             id: WidgetId::new(),
             child,
             position: Position::new(0.0, 0.0),
@@ -43,20 +43,20 @@ impl Rotation3DEffect<f64, f64, Empty> {
             rotation_x,
             rotation_y,
             fov: 1.15,
-        })
+        }
     }
 }
 
-impl<R1: ReadState<T = f64> + Clone, R2: ReadState<T = f64> + Clone, C: Widget + Clone> Rotation3DEffect<R1, R2, C> {
-    pub fn with_anchor(mut self, anchor: BasicLayouter) -> Box<Self> {
+impl<R1: ReadState<T = f64>, R2: ReadState<T = f64>, C: Widget + Clone> Rotation3DEffect<R1, R2, C> {
+    pub fn with_anchor(mut self, anchor: BasicLayouter) -> Self {
         self.anchor = anchor;
-        Box::new(self)
+        self
     }
 
     /// Warning: The FOV is acting strange and the default is 1.15
-    pub fn with_fov(mut self, fov: f64) -> Box<Self> {
+    pub fn with_fov(mut self, fov: f64) -> Self {
         self.fov = fov;
-        Box::new(self)
+        self
     }
 }
 

@@ -14,7 +14,7 @@ use crate::widget::{CommonWidget, Empty, Widget, WidgetExt, WidgetId};
 
 #[derive(Debug, Clone, Widget)]
 #[carbide_exclude(Render)]
-pub struct Transform<W, M> where W: Widget + Clone, M: ReadState<T=Matrix4<f32>> + Clone {
+pub struct Transform<W, M> where W: Widget + Clone, M: ReadState<T=Matrix4<f32>> {
     id: WidgetId,
     child: W,
     position: Position,
@@ -26,18 +26,18 @@ pub struct Transform<W, M> where W: Widget + Clone, M: ReadState<T=Matrix4<f32>>
 
 impl Transform<Empty, Matrix4<f32>> {
     #[carbide_default_builder2]
-    pub fn new<W: Widget + Clone, M: ReadState<T=Matrix4<f32>> + Clone>(child: W, matrix: M) -> Box<Transform<W, M>> {
-        Box::new(Transform {
+    pub fn new<W: Widget + Clone, M: ReadState<T=Matrix4<f32>>>(child: W, matrix: M) -> Transform<W, M> {
+        Transform {
             id: WidgetId::new(),
             child,
             position: Position::new(0.0, 0.0),
             dimension: Dimension::new(100.0, 100.0),
             anchor: BasicLayouter::Center,
             matrix,
-        })
+        }
     }
 
-    pub fn rotation<W: Widget + Clone, R: ReadState<T=f64> + Clone>(child: W, rotation: R) -> Box<Transform<W, RMap1<fn(&f64) -> Matrix4<f32>, f64, Matrix4<f32>, R>>> {
+    pub fn rotation<W: Widget + Clone, R: ReadState<T=f64> + Clone>(child: W, rotation: R) -> Transform<W, RMap1<fn(&f64) -> Matrix4<f32>, f64, Matrix4<f32>, R>> {
         let matrix: RMap1<fn(&f64) -> Matrix4<f32>, f64, Matrix4<f32>, R> = Map1::read_map(rotation, |r| {
             Matrix4::from_angle_z(Deg(*r as f32))
         });
@@ -45,7 +45,7 @@ impl Transform<Empty, Matrix4<f32>> {
         Self::new(child, matrix)
     }
 
-    pub fn scale<W: Widget + Clone, R: ReadState<T=f64> + Clone>(child: W, scale: R) -> Box<Transform<W, RMap1<fn(&f64) -> Matrix4<f32>, f64, Matrix4<f32>, R>>> {
+    pub fn scale<W: Widget + Clone, R: ReadState<T=f64> + Clone>(child: W, scale: R) -> Transform<W, RMap1<fn(&f64) -> Matrix4<f32>, f64, Matrix4<f32>, R>> {
         let matrix: RMap1<fn(&f64) -> Matrix4<f32>, f64, Matrix4<f32>, R> = Map1::read_map(scale, |s| {
             Matrix4::from_scale(*s as f32)
         });
@@ -56,7 +56,7 @@ impl Transform<Empty, Matrix4<f32>> {
     pub fn scale_non_uniform<W: Widget + Clone, R: ReadState<T=Dimension> + Clone>(
         child: W,
         scale: R,
-    ) -> Box<Transform<W, RMap1<fn(&Dimension) -> Matrix4<f32>, Dimension, Matrix4<f32>, R>>> {
+    ) -> Transform<W, RMap1<fn(&Dimension) -> Matrix4<f32>, Dimension, Matrix4<f32>, R>> {
         let matrix: RMap1<fn(&Dimension) -> Matrix4<f32>, Dimension, Matrix4<f32>, R> = Map1::read_map(scale, |s| {
             Matrix4::from_nonuniform_scale(s.width as f32, s.height as f32, 1.0)
         });
@@ -84,14 +84,14 @@ impl Transform<Empty, Matrix4<f32>> {
 
 }
 
-impl<W: Widget + Clone, M: ReadState<T=Matrix4<f32>> + Clone> Transform<W, M> {
+impl<W: Widget + Clone, M: ReadState<T=Matrix4<f32>>> Transform<W, M> {
     pub fn with_anchor(mut self, anchor: BasicLayouter) -> Box<Self> {
         self.anchor = anchor;
         Box::new(self)
     }
 }
 
-impl<W: Widget + Clone, M: ReadState<T=Matrix4<f32>> + Clone> CommonWidget for Transform<W, M> {
+impl<W: Widget + Clone, M: ReadState<T=Matrix4<f32>>> CommonWidget for Transform<W, M> {
     fn id(&self) -> WidgetId {
         self.id
     }
@@ -160,7 +160,7 @@ impl<W: Widget + Clone, M: ReadState<T=Matrix4<f32>> + Clone> CommonWidget for T
     }
 }
 
-impl<W: Widget + Clone, M: ReadState<T=Matrix4<f32>> + Clone> Render for Transform<W, M> {
+impl<W: Widget + Clone, M: ReadState<T=Matrix4<f32>>> Render for Transform<W, M> {
     fn render(&mut self, context: &mut RenderContext, env: &mut Environment) {
         self.capture_state(env);
         let bounding_box = Rect::new(self.position, self.dimension);
@@ -264,4 +264,4 @@ impl<W: Widget + Clone, M: ReadState<T=Matrix4<f32>> + Clone> Render for Transfo
     }
 }
 
-impl<W: Widget + Clone, M: ReadState<T=Matrix4<f32>> + Clone> WidgetExt for Transform<W, M> {}
+impl<W: Widget + Clone, M: ReadState<T=Matrix4<f32>>> WidgetExt for Transform<W, M> {}

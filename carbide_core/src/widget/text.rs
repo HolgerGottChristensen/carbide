@@ -34,7 +34,7 @@ use crate::widget::types::Wrap;
 /// in accordance with the produced **Alignment**.
 #[derive(Debug, Clone, Widget)]
 #[carbide_exclude(Render, Layout)]
-pub struct Text<T, S, C> where T: ReadState<T=String> + Clone, S: ReadState<T=u32> + Clone, C: ReadState<T=Color> + Clone {
+pub struct Text<T, S, C> where T: ReadState<T=String>, S: ReadState<T=u32>, C: ReadState<T=Color> {
     id: WidgetId,
     position: Position,
     dimension: Dimension,
@@ -99,7 +99,7 @@ impl Text<String, u32, Color> {
     }
 }
 
-impl<T2: ReadState<T=String> + Clone, S2: ReadState<T=u32> + Clone, C2: ReadState<T=Color> + Clone> Text<T2, S2, C2> {
+impl<T2: ReadState<T=String>, S2: ReadState<T=u32>, C2: ReadState<T=Color>> Text<T2, S2, C2> {
     pub fn color<C: IntoReadState<Color>>(self, color: C) -> Text<T2, S2, C::Output> {
         Text {
             id: self.id,
@@ -203,7 +203,7 @@ impl<T2: ReadState<T=String> + Clone, S2: ReadState<T=u32> + Clone, C2: ReadStat
     }
 }
 
-impl<T: ReadState<T=String> + Clone, S: ReadState<T=u32> + Clone, C: ReadState<T=Color> + Clone> Layout for Text<T, S, C> {
+impl<T: ReadState<T=String>, S: ReadState<T=u32>, C: ReadState<T=Color>> Layout for Text<T, S, C> {
     fn calculate_size(&mut self, requested_size: Dimension, env: &mut Environment) -> Dimension {
         self.capture_state(env);
         if let None = self.internal_text {
@@ -249,7 +249,7 @@ impl<T: ReadState<T=String> + Clone, S: ReadState<T=u32> + Clone, C: ReadState<T
     }
 }
 
-impl<T: ReadState<T=String> + Clone, S: ReadState<T=u32> + Clone, C: ReadState<T=Color> + Clone> Render for Text<T, S, C> {
+impl<T: ReadState<T=String>, S: ReadState<T=u32>, C: ReadState<T=Color>> Render for Text<T, S, C> {
     fn render(&mut self, context: &mut RenderContext, env: &mut Environment) {
         self.capture_state(env);
 
@@ -340,7 +340,7 @@ impl<T: ReadState<T=String> + Clone, S: ReadState<T=u32> + Clone, C: ReadState<T
     }
 }
 
-impl<T: ReadState<T=String> + Clone, S: ReadState<T=u32> + Clone, C: ReadState<T=Color> + Clone> CommonWidget for Text<T, S, C> {
+impl<T: ReadState<T=String>, S: ReadState<T=u32>, C: ReadState<T=Color>> CommonWidget for Text<T, S, C> {
     fn id(&self) -> WidgetId {
         self.id
     }
@@ -376,13 +376,13 @@ impl<T: ReadState<T=String> + Clone, S: ReadState<T=u32> + Clone, C: ReadState<T
     }
 }
 
-impl<T: ReadState<T=String> + Clone, S: ReadState<T=u32> + Clone, C: ReadState<T=Color> + Clone> WidgetExt for Text<T, S, C> {}
+impl<T: ReadState<T=String>, S: ReadState<T=u32>, C: ReadState<T=Color>> WidgetExt for Text<T, S, C> {}
 
 pub trait TextWidget: Widget {
     fn glyphs(&self) -> Vec<Glyph>;
 }
 
-impl<T: ReadState<T=String> + Clone, S: ReadState<T=u32> + Clone, C: ReadState<T=Color> + Clone> TextWidget for Text<T, S, C> {
+impl<T: ReadState<T=String>, S: ReadState<T=u32>, C: ReadState<T=Color>> TextWidget for Text<T, S, C> {
     fn glyphs(&self) -> Vec<Glyph> {
         if let Some(internal) = &self.internal_text {
             internal.first_glyphs()

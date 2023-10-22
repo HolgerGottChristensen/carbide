@@ -22,8 +22,8 @@ where
 
 impl Clip<Empty> {
     #[carbide_default_builder2]
-    pub fn new<W: Widget + Clone>(child: W) -> Box<Clip<W>> {
-        Box::new(Clip {
+    pub fn new<W: Widget + Clone>(child: W) -> Clip<W> {
+        Clip {
             id: WidgetId::new(),
             child,
             /*child: ZStack::new(vec![
@@ -32,7 +32,7 @@ impl Clip<Empty> {
             ]),*/
             position: Position::new(0.0, 0.0),
             dimension: Dimension::new(100.0, 100.0),
-        })
+        }
     }
 }
 
