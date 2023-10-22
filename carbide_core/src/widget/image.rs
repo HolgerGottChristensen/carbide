@@ -252,7 +252,7 @@ impl<Id: ReadState<T=Option<ImageId>> + Clone, C: ReadState<T=Style> + Clone> Re
 }
 
 impl<Id: ReadState<T=Option<ImageId>> + Clone, C: ReadState<T=Style> + Clone> CommonWidget for Image<Id, C> {
-    CommonWidgetImpl!(self, id: self.id, position: self.position, dimension: self.dimension, flexibility: 10);
+    CommonWidgetImpl!(self, id: self.id, child: (), position: self.position, dimension: self.dimension, flexibility: 10);
 }
 
 impl<Id: ReadState<T=Option<ImageId>> + Clone, C: ReadState<T=Style> + Clone> WidgetExt for Image<Id, C> {}

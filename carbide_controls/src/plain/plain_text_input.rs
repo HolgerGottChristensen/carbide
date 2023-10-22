@@ -1573,7 +1573,7 @@ impl<
     T: State<T=String>,
     E: ReadState<T=bool>,
 > CommonWidget for PlainTextInput<F, C, O, S, T, E> {
-    CommonWidgetImpl!(self, id: self.id, position: self.position, dimension: self.dimension, flag: Flags::FOCUSABLE, flexibility: 1, focus: self.focus);
+    CommonWidgetImpl!(self, id: self.id, child: (), position: self.position, dimension: self.dimension, flag: Flags::FOCUSABLE, flexibility: 1, focus: self.focus);
 }
 
 impl<

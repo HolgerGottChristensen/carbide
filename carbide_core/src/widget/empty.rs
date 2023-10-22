@@ -28,7 +28,7 @@ impl Empty {
 }
 
 impl CommonWidget for Empty {
-    CommonWidgetImpl!(self, id: self.id, position: self.position, dimension: self.dimension, flag: Flags::IGNORE);
+    CommonWidgetImpl!(self, id: self.id, child: (), position: self.position, dimension: self.dimension, flag: Flags::IGNORE);
 }
 
 impl WidgetExt for Empty {}

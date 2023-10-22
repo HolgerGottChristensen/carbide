@@ -47,7 +47,7 @@ impl CommonWidget for Filter {
         }
 
         if self.child.is_proxy() {
-            self.child.foreach_child(f);
+            self.child.foreach(f);
             return;
         }
 
@@ -60,7 +60,7 @@ impl CommonWidget for Filter {
         }
 
         if self.child.is_proxy() {
-            self.child.foreach_child_mut(f);
+            self.child.foreach_mut(f);
             return;
         }
 
@@ -73,7 +73,7 @@ impl CommonWidget for Filter {
         }
 
         if self.child.is_proxy() {
-            self.child.foreach_child_rev(f);
+            self.child.foreach_rev(f);
             return;
         }
 

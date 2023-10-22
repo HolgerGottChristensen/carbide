@@ -432,7 +432,7 @@ impl<
     Bg: Widget + Clone,
     En: ReadState<T=bool>,
 > CommonWidget for PlainSlider<F, St, S, E, P, Th, In, Bg, En> {
-    CommonWidgetImpl!(self, id: self.id, position: self.position, dimension: self.dimension, flag: Flags::FOCUSABLE, flexibility: 1, focus: self.focus);
+    CommonWidgetImpl!(self, id: self.id, child: (), position: self.position, dimension: self.dimension, flag: Flags::FOCUSABLE, flexibility: 1, focus: self.focus);
 }
 
 impl<

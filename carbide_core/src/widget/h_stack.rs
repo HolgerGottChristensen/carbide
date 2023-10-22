@@ -228,7 +228,7 @@ impl Layout for HStack {
 }
 
 impl CommonWidget for HStack {
-    CommonWidgetImpl!(self, id: self.id, children: self.children, position: self.position, dimension: self.dimension, flexibility: 1);
+    CommonWidgetImpl!(self, id: self.id, child: self.children, position: self.position, dimension: self.dimension, flexibility: 1);
 }
 
 

@@ -196,7 +196,7 @@ impl<C: CanvasContext> Canvas<C> {
 }
 
 impl<C: CanvasContext> CommonWidget for Canvas<C> {
-    CommonWidgetImpl!(self, id: self.id, position: self.position, dimension: self.dimension);
+    CommonWidgetImpl!(self, id: self.id, child: (), position: self.position, dimension: self.dimension);
 }
 
 impl<C: CanvasContext> Shape for Canvas<C> {

@@ -5,47 +5,43 @@ use crate::draw::{Dimension, Position, Scalar};
 use crate::environment::Environment;
 use crate::layout::{calculate_size_vstack, Layout, position_children_vstack};
 use crate::{CommonWidgetImpl};
-use crate::widget::{CommonWidget, CrossAxisAlignment, Widget, WidgetExt, WidgetId};
+use crate::widget::{CommonWidget, CrossAxisAlignment, Widget, WidgetExt, WidgetId, WidgetSequence};
 
 #[derive(Debug, Clone, Widget)]
 #[carbide_exclude(Layout)]
-pub struct VStack {
+pub struct VStack<W> where W: WidgetSequence {
     id: WidgetId,
-    children: Vec<Box<dyn Widget>>,
+    children: W,
     position: Position,
     dimension: Dimension,
     spacing: Scalar,
     cross_axis_alignment: CrossAxisAlignment,
 }
 
-impl VStack {
-
-    #[carbide_default_builder]
-    pub fn new(children: Vec<Box<dyn Widget>>) -> Box<Self> {}
-
-    pub fn new(children: Vec<Box<dyn Widget>>) -> Box<Self> {
-        Box::new(VStack {
+impl<W: WidgetSequence> VStack<W> {
+    pub fn new(children: W) -> VStack<W> {
+        VStack {
             id: WidgetId::new(),
             children,
             position: Position::new(0.0, 0.0),
             dimension: Dimension::new(100.0, 100.0),
             spacing: 10.0,
             cross_axis_alignment: CrossAxisAlignment::Center,
-        })
+        }
     }
 
-    pub fn cross_axis_alignment(mut self, alignment: CrossAxisAlignment) -> Box<Self> {
+    pub fn cross_axis_alignment(mut self, alignment: CrossAxisAlignment) -> Self {
         self.cross_axis_alignment = alignment;
-        Box::new(self)
+        self
     }
 
-    pub fn spacing(mut self, spacing: f64) -> Box<Self> {
+    pub fn spacing(mut self, spacing: f64) -> Self {
         self.spacing = spacing;
-        Box::new(self)
+        self
     }
 }
 
-impl Layout for VStack {
+impl<W: WidgetSequence> Layout for VStack<W> {
     fn calculate_size(&mut self, requested_size: Dimension, env: &mut Environment) -> Dimension {
         let spacing = self.spacing;
         calculate_size_vstack(self, spacing, requested_size, env);
@@ -59,8 +55,8 @@ impl Layout for VStack {
     }
 }
 
-impl CommonWidget for VStack {
-    CommonWidgetImpl!(self, id: self.id, children: self.children, position: self.position, dimension: self.dimension, flexibility: 1);
+impl<W: WidgetSequence> CommonWidget for VStack<W> {
+    CommonWidgetImpl!(self, id: self.id, child: self.children, position: self.position, dimension: self.dimension, flexibility: 1);
 }
 
-impl WidgetExt for VStack {}
+impl<W: WidgetSequence> WidgetExt for VStack<W> {}

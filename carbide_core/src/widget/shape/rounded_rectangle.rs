@@ -99,7 +99,7 @@ impl<S2: ReadState<T=Style> + Clone, F2: ReadState<T=Style> + Clone> RoundedRect
 }
 
 impl<S: ReadState<T=Style> + Clone, F: ReadState<T=Style> + Clone> CommonWidget for RoundedRectangle<S, F> {
-    CommonWidgetImpl!(self, id: self.id, position: self.position, dimension: self.dimension);
+    CommonWidgetImpl!(self, id: self.id, child: (), position: self.position, dimension: self.dimension);
 }
 
 impl<S: ReadState<T=Style> + Clone, F: ReadState<T=Style> + Clone> Render for RoundedRectangle<S, F> {

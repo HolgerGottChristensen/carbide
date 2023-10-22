@@ -113,7 +113,7 @@ impl<T: StateContract, M: State<T=Vec<T>> + Clone + 'static, W: Widget + Clone, 
 }
 
 impl<T: StateContract, M: State<T=Vec<T>> + Clone + 'static, W: Widget + Clone, U: Delegate<T, W> + 'static, I: ReadState<T=usize> + Clone + 'static> CommonWidget for ForEach<T, M, U, W, I> {
-    CommonWidgetImpl!(self, id: self.id, children: self.children, position: self.position, dimension: self.dimension, flag: Flags::PROXY);
+    CommonWidgetImpl!(self, id: self.id, child: self.children, position: self.position, dimension: self.dimension, flag: Flags::PROXY);
 }
 
 impl<T: StateContract, M: State<T=Vec<T>> + Clone + 'static, W: Widget + Clone, U: Delegate<T, W> + 'static, I: ReadState<T=usize> + Clone + 'static> Debug for ForEach<T, M, U, W, I> {

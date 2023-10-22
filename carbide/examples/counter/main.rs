@@ -24,7 +24,7 @@ fn main() {
     application.set_scene(Window::new(
         "My first counter",
         Dimension::new(235.0, 300.0),
-        *VStack::new(vec![
+        VStack::new(vec![
             text,
             button,
         ])

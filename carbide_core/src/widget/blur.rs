@@ -82,7 +82,7 @@ impl Blur {
 }
 
 impl CommonWidget for Blur {
-    CommonWidgetImpl!(self, id: self.id, position: self.position, dimension: self.dimension, flexibility: 0);
+    CommonWidgetImpl!(self, id: self.id, child: (), position: self.position, dimension: self.dimension, flexibility: 0);
 }
 
 impl Render for Blur {

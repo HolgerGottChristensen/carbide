@@ -130,6 +130,61 @@ pub trait CommonWidget {
 
 #[macro_export]
 macro_rules! CommonWidgetImpl {
+    ($self:ident, id: $id_expr:expr, child: (), position: $position:expr, dimension: $dimension:expr $(,flag: $flag:expr)? $(,flexibility: $flexibility:expr)? $(,alignment: $alignment:expr)? $(,focus: $focus:expr)?) => {
+        fn id(&$self) -> carbide_core::widget::WidgetId {
+            $id_expr
+        }
+
+        $(
+            fn alignment(&$self) -> Box<dyn carbide_core::layout::Layouter> {
+                $alignment.clone()
+            }
+        )?
+
+        $(
+            fn flag(&$self) -> carbide_core::flags::Flags {
+                $flag
+            }
+        )?
+
+        $(
+            fn flexibility(&$self) -> u32 {
+                $flexibility
+            }
+        )?
+
+        $(
+            fn get_focus(&$self) -> Focus {
+                $focus.value().clone()
+            }
+
+            fn set_focus(&mut $self, focus: Focus) {
+                $focus.set_value(focus);
+            }
+        )?
+
+        fn foreach_child<'a>(&'a $self, f: &mut dyn FnMut(&'a dyn Widget)) {}
+        fn foreach_child_mut<'a>(&'a mut $self, f: &mut dyn FnMut(&'a mut dyn Widget)) {}
+        fn foreach_child_rev<'a>(&'a mut $self, f: &mut dyn FnMut(&'a mut dyn Widget)) {}
+        fn foreach_child_direct<'a>(&'a mut $self, f: &mut dyn FnMut(&'a mut dyn Widget)) {}
+        fn foreach_child_direct_rev<'a>(&'a mut $self, f: &mut dyn FnMut(&'a mut dyn Widget)) {}
+
+        fn position(&$self) -> carbide_core::draw::Position {
+            $position
+        }
+
+        fn set_position(&mut $self, position: carbide_core::draw::Position) {
+            $position = position;
+        }
+
+        fn dimension(&$self) -> carbide_core::draw::Dimension {
+            $dimension
+        }
+
+        fn set_dimension(&mut $self, dimension: carbide_core::draw::Dimension) {
+            $dimension = dimension
+        }
+    };
     ($self:ident, id: $id_expr:expr, child: $child:expr, position: $position:expr, dimension: $dimension:expr $(,flag: $flag:expr)? $(,flexibility: $flexibility:expr)? $(,alignment: $alignment:expr)? $(,focus: $focus:expr)?) => {
         fn id(&$self) -> carbide_core::widget::WidgetId {
             $id_expr
@@ -164,50 +219,28 @@ macro_rules! CommonWidgetImpl {
         )?
 
         fn foreach_child<'a>(&'a $self, f: &mut dyn FnMut(&'a dyn Widget)) {
-            if $child.is_ignore() {
-                return;
-            }
-
-            if $child.is_proxy() {
-                $child.foreach_child(f);
-                return;
-            }
-
-            f(&$child);
+            use carbide_core::widget::WidgetSequence;
+            $child.foreach(f);
         }
 
         fn foreach_child_mut<'a>(&'a mut $self, f: &mut dyn FnMut(&'a mut dyn Widget)) {
-            if $child.is_ignore() {
-                return;
-            }
-
-            if $child.is_proxy() {
-                $child.foreach_child_mut(f);
-                return;
-            }
-
-            f(&mut $child);
+            use carbide_core::widget::WidgetSequence;
+            $child.foreach_mut(f);
         }
 
         fn foreach_child_rev<'a>(&'a mut $self, f: &mut dyn FnMut(&'a mut dyn Widget)) {
-            if $child.is_ignore() {
-                return;
-            }
-
-            if $child.is_proxy() {
-                $child.foreach_child_rev(f);
-                return;
-            }
-
-            f(&mut $child);
+            use carbide_core::widget::WidgetSequence;
+            $child.foreach_rev(f);
         }
 
         fn foreach_child_direct<'a>(&'a mut $self, f: &mut dyn FnMut(&'a mut dyn Widget)) {
-            f(&mut $child)
+            use carbide_core::widget::WidgetSequence;
+            $child.foreach_direct(f);
         }
 
         fn foreach_child_direct_rev<'a>(&'a mut $self, f: &mut dyn FnMut(&'a mut dyn Widget)) {
-            f(&mut $child)
+            use carbide_core::widget::WidgetSequence;
+            $child.foreach_direct_rev(f);
         }
 
         fn position(&$self) -> carbide_core::draw::Position {
@@ -225,156 +258,5 @@ macro_rules! CommonWidgetImpl {
         fn set_dimension(&mut $self, dimension: carbide_core::draw::Dimension) {
             $dimension = dimension
         }
-    };
-
-    ($self:ident, id: $id_expr:expr, children: $children:expr, position: $position:expr, dimension: $dimension:expr $(,flag: $flag:expr)? $(,flexibility: $flexibility:literal)? $(,focus: $focus:expr)?) => {
-        fn id(&$self) -> carbide_core::widget::WidgetId {
-            $id_expr
-        }
-
-        $(
-            fn flag(&$self) -> carbide_core::flags::Flags {
-                $flag
-            }
-        )?
-
-        $(
-            fn flexibility(&$self) -> u32 {
-                $flexibility
-            }
-        )?
-
-        $(
-            fn get_focus(&$self) -> Focus {
-                $focus.value().clone()
-            }
-
-            fn set_focus(&mut $self, focus: Focus) {
-                $focus.set_value(focus);
-            }
-        )?
-
-        fn foreach_child<'a>(&'a $self, f: &mut dyn FnMut(&'a dyn Widget)) {
-            for child in &$children {
-                if child.is_ignore() {
-                    continue;
-                }
-
-                if child.is_proxy() {
-                    child.foreach_child(f);
-                    continue;
-                }
-
-                f(child);
-            }
-        }
-
-        fn foreach_child_mut<'a>(&'a mut $self, f: &mut dyn FnMut(&'a mut dyn Widget)) {
-            for child in &mut $children {
-                if child.is_ignore() {
-                    continue;
-                }
-
-                if child.is_proxy() {
-                    child.foreach_child_mut(f);
-                    continue;
-                }
-
-                f(child);
-            }
-        }
-
-        fn foreach_child_rev<'a>(&'a mut $self, f: &mut dyn FnMut(&'a mut dyn Widget)) {
-            for child in &mut $children.iter_mut().rev() {
-                if child.is_ignore() {
-                    continue;
-                }
-
-                if child.is_proxy() {
-                    child.foreach_child_rev(f);
-                    continue;
-                }
-
-                f(child);
-            }
-        }
-
-        fn foreach_child_direct<'a>(&'a mut $self, f: &mut dyn FnMut(&'a mut dyn Widget)) {
-            for child in &mut $children.iter_mut() {
-                f(child);
-            }
-        }
-
-        fn foreach_child_direct_rev<'a>(&'a mut $self, f: &mut dyn FnMut(&'a mut dyn Widget)) {
-            for child in &mut $children.iter_mut().rev() {
-                f(child);
-            }
-        }
-
-        fn position(&$self) -> carbide_core::draw::Position {
-            $position
-        }
-
-        fn set_position(&mut $self, position: carbide_core::draw::Position) {
-            $position = position;
-        }
-
-        fn dimension(&$self) -> carbide_core::draw::Dimension {
-            $dimension
-        }
-
-        fn set_dimension(&mut $self, dimension: carbide_core::draw::Dimension) {
-            $dimension = dimension
-        }
-    };
-
-    ($self:ident, id: $id_expr:expr, position: $position:expr, dimension: $dimension:expr $(,flag: $flag:expr)? $(,flexibility: $flexibility:literal)? $(,focus: $focus:expr)?) => {
-        fn id(&$self) -> carbide_core::widget::WidgetId {
-            $id_expr
-        }
-
-        $(
-            fn flag(&$self) -> carbide_core::flags::Flags {
-                $flag
-            }
-        )?
-
-        $(
-            fn flexibility(&$self) -> u32 {
-                $flexibility
-            }
-        )?
-
-        $(
-            fn get_focus(&$self) -> Focus {
-                $focus.value().clone()
-            }
-
-            fn set_focus(&mut $self, focus: Focus) {
-                $focus.set_value(focus);
-            }
-        )?
-
-        fn foreach_child<'a>(&'a $self, _: &mut dyn FnMut(&'a dyn Widget)) {}
-        fn foreach_child_mut<'a>(&'a mut $self, _: &mut dyn FnMut(&'a mut dyn Widget)) {}
-        fn foreach_child_rev<'a>(&'a mut $self, _: &mut dyn FnMut(&'a mut dyn Widget)) {}
-        fn foreach_child_direct<'a>(&'a mut $self, _: &mut dyn FnMut(&'a mut dyn Widget)) {}
-        fn foreach_child_direct_rev<'a>(&'a mut $self, _: &mut dyn FnMut(&'a mut dyn Widget)) {}
-
-        fn position(&$self) -> carbide_core::draw::Position {
-            $position
-        }
-
-        fn set_position(&mut $self, position: carbide_core::draw::Position) {
-            $position = position;
-        }
-
-        fn dimension(&$self) -> carbide_core::draw::Dimension {
-            $dimension
-        }
-
-        fn set_dimension(&mut $self, dimension: carbide_core::draw::Dimension) {
-            $dimension = dimension
-        }
-    };
+    }
 }

@@ -182,7 +182,7 @@ impl<S2: ReadState<T=Style> + Clone, F2: ReadState<T=Style> + Clone> Rectangle<S
 }
 
 impl<S: ReadState<T=Style> + Clone, F: ReadState<T=Style> + Clone> CommonWidget for Rectangle<S, F> {
-    CommonWidgetImpl!(self, id: self.id, position: self.position, dimension: self.dimension);
+    CommonWidgetImpl!(self, id: self.id, child: (), position: self.position, dimension: self.dimension);
 }
 
 impl<S: ReadState<T=Style> + Clone, F: ReadState<T=Style> + Clone> Render for Rectangle<S, F> {

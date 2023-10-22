@@ -227,7 +227,7 @@ impl<T: State<T=f64> + Clone> Layout for HSplit<T> {
 }
 
 impl<T: State<T=f64> + Clone> CommonWidget for HSplit<T> {
-    CommonWidgetImpl!(self, id: self.id, children: self.children, position: self.position, dimension: self.dimension);
+    CommonWidgetImpl!(self, id: self.id, child: self.children, position: self.position, dimension: self.dimension);
 }
 
 impl<T: State<T=f64> + Clone> WidgetExt for HSplit<T> {}
