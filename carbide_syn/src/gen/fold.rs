@@ -2979,6 +2979,7 @@ where
         UnOp::Deref(_binding_0) => UnOp::Deref(_binding_0),
         UnOp::Not(_binding_0) => UnOp::Not(_binding_0),
         UnOp::Neg(_binding_0) => UnOp::Neg(_binding_0),
+        UnOp::Dollar(_binding_0) => UnOp::Dollar(_binding_0),
     }
 }
 #[cfg(feature = "full")]

@@ -1,5 +1,7 @@
+use std::cell::RefCell;
 use std::fmt::Debug;
 use std::ops::{Add, DerefMut, Mul};
+use std::rc::Rc;
 use std::time::{Duration, Instant};
 
 use carbide_core::state::{AnyReadState, NewStateSync, RMap1};
@@ -24,7 +26,7 @@ pub struct AnimatedState {
     duration: Duration,
     repeat_mode: RepeatMode,
     repeat_count: Option<u32>,
-    frame_time: Option<InnerState<Instant>>,
+    frame_time: Option<Rc<RefCell<Instant>>>,
     animation_curve: fn(f64) -> f64,
 }
 
@@ -85,10 +87,10 @@ impl AnimatedState {
         let current_time = self
             .frame_time
             .as_ref()
-            .map(|time| time.borrow())
-            .unwrap_or(ValueRef::Borrow(&now));
+            .map(|time| time.borrow().clone())
+            .unwrap_or(now);
 
-        let duration = *current_time - self.start_time;
+        let duration = current_time - self.start_time;
 
         let percentage = match self.repeat_mode {
             RepeatMode::None => {

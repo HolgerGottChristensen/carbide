@@ -1,4 +1,6 @@
+use std::cell::RefCell;
 use std::path::{Path, PathBuf};
+use std::rc::Rc;
 
 use block::ConcreteBlock;
 use cocoa::base::id;
@@ -156,7 +158,7 @@ impl SavePanel {
     pub fn begin_sheet_modal_for_window(self, window: &impl HasRawWindowHandle) -> Receiver<Option<PathBuf>> {
         let (sender, receiver) = oneshot::channel();
 
-        let sender = InnerState::new(ValueCell::new(Some(sender)));
+        let sender = Rc::new(RefCell::new(Some(sender)));
 
         let block = ConcreteBlock::new(move |response: NSModalResponse| {
             let sender = sender.clone();

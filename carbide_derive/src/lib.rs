@@ -3,8 +3,12 @@ extern crate proc_macro2;
 #[macro_use]
 extern crate quote;
 extern crate syn;
+extern crate carbide_syn;
 
 use proc_macro::TokenStream;
+use quote::ToTokens;
+use a::process_a_expr;
+use carbide_syn::fold::Fold;
 
 mod common;
 mod derive_type;
@@ -12,6 +16,7 @@ mod style;
 mod utils;
 mod widget;
 mod state;
+mod a;
 
 // The implementation for the `WidgetCommon` trait derivation (aka `carbide_core::widget::Common`).
 #[proc_macro_derive(WidgetCommon, attributes(carbide, common_builder))]
@@ -65,4 +70,13 @@ fn impl_derive(
     let gen = generate_derive(&ast);
     // Return the generated impl.
     gen.into()
+}
+
+#[proc_macro]
+pub fn a(input: TokenStream) -> TokenStream {
+    let ast = carbide_syn::parse_macro_input!(input as carbide_syn::Expr);
+    let ast_res = process_a_expr(ast);
+    //panic!("\n{:#?}", &ast_res);
+
+    TokenStream::from(ast_res.into_token_stream())
 }

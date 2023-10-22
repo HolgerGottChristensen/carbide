@@ -22,6 +22,8 @@ pub use scene::Scene;
 
 pub use draw::color;
 
+pub use carbide_derive::a;
+
 #[macro_export]
 macro_rules! lens {
     ($type:ty; $i:ident $(. $field:ident)+) => {

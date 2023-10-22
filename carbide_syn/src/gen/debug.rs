@@ -2880,6 +2880,11 @@ impl Debug for UnOp {
                 formatter.field(v0);
                 formatter.finish()
             }
+            UnOp::Dollar(v0) => {
+                let mut formatter = formatter.debug_tuple("Dollar");
+                formatter.field(v0);
+                formatter.finish()
+            }
         }
     }
 }

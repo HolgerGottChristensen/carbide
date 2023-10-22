@@ -96,7 +96,7 @@ impl<G: Debug + Clone + 'static> AnyReadState for Vec<G> {
 }
 impl<G: Debug + Clone + 'static> AnyState for Vec<G> {
     fn value_dyn_mut(&mut self) -> ValueRefMut<Vec<G>> {
-        ValueRefMut::Borrow(self)
+        ValueRefMut::Borrow(Some(self))
     }
 
     fn set_value_dyn(&mut self, value: Vec<G>) {
@@ -122,7 +122,7 @@ impl<G: Debug + Clone + 'static> AnyReadState for Option<G> {
 }
 impl<G: Debug + Clone + 'static> AnyState for Option<G> {
     fn value_dyn_mut(&mut self) -> ValueRefMut<Option<G>> {
-        ValueRefMut::Borrow(self)
+        ValueRefMut::Borrow(Some(self))
     }
 
     fn set_value_dyn(&mut self, value: Option<G>) {
@@ -151,7 +151,7 @@ impl<T: Debug + Clone + 'static, E: Debug + Clone + 'static> AnyReadState for Re
 }
 impl<T: Debug + Clone + 'static, E: Debug + Clone + 'static> AnyState for Result<T, E> {
     fn value_dyn_mut(&mut self) -> ValueRefMut<Result<T, E>> {
-        ValueRefMut::Borrow(self)
+        ValueRefMut::Borrow(Some(self))
     }
 
     fn set_value_dyn(&mut self, value: Result<T, E>) {
@@ -176,7 +176,7 @@ macro_rules! impl_read_state {
         }
         impl carbide_core::state::AnyState for $typ {
             fn value_dyn_mut(&mut self) -> carbide_core::state::ValueRefMut<$typ> {
-                carbide_core::state::ValueRefMut::Borrow(self)
+                carbide_core::state::ValueRefMut::Borrow(Some(self))
             }
 
             fn set_value_dyn(&mut self, value: $typ) {

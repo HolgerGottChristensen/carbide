@@ -2635,6 +2635,9 @@ impl Hash for UnOp {
             UnOp::Neg(_) => {
                 state.write_u8(2u8);
             }
+            UnOp::Dollar(_) => {
+                state.write_u8(3u8);
+            }
         }
     }
 }

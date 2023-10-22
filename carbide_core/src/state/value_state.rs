@@ -56,7 +56,7 @@ impl<T: StateContract> AnyReadState for ValueState<T> {
 
 impl<T: StateContract> AnyState for ValueState<T> {
     fn value_dyn_mut(&mut self) -> ValueRefMut<T> {
-        ValueRefMut::Borrow(&mut self.value)
+        ValueRefMut::Borrow(Some(&mut self.value))
     }
 
     fn set_value_dyn(&mut self, value: T) {

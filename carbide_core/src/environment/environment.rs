@@ -96,7 +96,7 @@ pub struct Environment {
     scale_factor: f64,
 
     /// The start time of the current frame. This is used to sync the animated states.
-    frame_start_time: InnerState<Instant>,
+    frame_start_time: Rc<RefCell<Instant>>,
 
     /// A map that contains an image filter used for the Filter widget.
     filter_map: FxHashMap<FilterId, crate::widget::ImageFilter>,
@@ -224,7 +224,7 @@ impl Environment {
             focus_request: None,
             pixel_dimensions,
             scale_factor,
-            frame_start_time: InnerState::new(ValueCell::new(Instant::now())),
+            frame_start_time: Rc::new(RefCell::new(Instant::now())),
             filter_map: filters,
             next_filter_id: 0,
             async_task_queue: Some(vec![]),
@@ -461,7 +461,7 @@ impl Environment {
         *self.frame_start_time.borrow_mut() = Instant::now();
     }
 
-    pub fn captured_time(&self) -> InnerState<Instant> {
+    pub fn captured_time(&self) -> Rc<RefCell<Instant>> {
         self.frame_start_time.clone()
     }
 

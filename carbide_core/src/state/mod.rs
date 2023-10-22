@@ -64,3 +64,70 @@ pub type RState<T> = ReadWidgetState<T>;
 pub trait StateContract: Clone + Debug + 'static {}
 
 impl<T> StateContract for T where T: Clone + Debug + 'static {}
+
+#[cfg(test)]
+mod tests {
+    use carbide_core::state::Map1;
+    use crate::state::{GlobalState, LocalState, ReadState, State};
+
+    #[test]
+    fn mutate_mapped_local_state() {
+        let state = LocalState::new(0);
+
+        let mut mapped = Map1::map(state.clone(), |val| {
+            *val + 1
+        }, |new, old| {
+            Some(new - 1)
+        });
+
+        assert_eq!(*state.value() + 1, *mapped.value());
+
+        *mapped.value_mut() += 1;
+
+        assert_eq!(*state.value() + 1, *mapped.value());
+
+        println!("State: {}, Mapped: {}", state.value(), mapped.value());
+    }
+
+    #[test]
+    fn mutate_mapped_global_state() {
+        let state = GlobalState::new(0);
+
+        let mut mapped = Map1::map(state.clone(), |val| {
+            *val + 1
+        }, |new, old| {
+            Some(new - 1)
+        });
+
+        assert_eq!(*state.value() + 1, *mapped.value());
+
+        *mapped.value_mut() += 1;
+
+        assert_eq!(*state.value() + 1, *mapped.value());
+
+        println!("State: {}, Mapped: {}", state.value(), mapped.value());
+    }
+
+    #[test]
+    fn mutate_mapped_mapped_local_state() {
+        let state = LocalState::new(0);
+
+        let mut mapped = Map1::map(state.clone(), |val| {
+            *val + 1
+        }, |new, old| {
+            Some(new - 1)
+        });
+
+        let mapped2 = Map1::read_map(mapped.clone(), |val| {
+            *val * 2
+        });
+
+        assert_eq!(*state.value() + 1, *mapped.value());
+
+        *mapped.value_mut() += 1;
+
+        assert_eq!(*state.value() + 1, *mapped.value());
+
+        println!("State: {}, Mapped: {}, Mapped2: {}", state.value(), mapped.value(), mapped2.value());
+    }
+}

@@ -34,10 +34,10 @@ where
 impl<T: StateContract> LocalState<T> {
     /// Returns a new local state containing the value provided.
     /// Returns the local state wrapped within a WidgetState.
-    pub fn new(value: T) -> TState<T> {
-        WidgetState::Local(LocalState {
+    pub fn new(value: T) -> LocalState<T> {
+        LocalState {
             inner_value: Rc::new(ValueCell::new(value)),
-        })
+        }
     }
 
     /// Returns a new local state containing the value provided.

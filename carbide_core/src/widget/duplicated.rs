@@ -1,3 +1,4 @@
+use std::cell::RefCell;
 use std::fmt::{Debug, Formatter};
 use std::rc::Rc;
 use crate::draw::{Dimension, Position};
@@ -10,11 +11,11 @@ use crate::render::{Primitive, Render, RenderContext};
 use crate::state::{StateSync, ValueCell};
 use crate::widget::{CommonWidget, Empty, Widget, WidgetExt, WidgetId};
 
-pub struct Duplicated<T: Widget>(Rc<ValueCell<T>>);
+pub struct Duplicated<T: Widget>(Rc<RefCell<T>>);
 
 impl Duplicated<Empty> {
     pub fn new<T: Widget>(widget: T) -> Duplicated<T> {
-        Duplicated(Rc::new(ValueCell::new(widget)))
+        Duplicated(Rc::new(RefCell::new(widget)))
     }
 }
 
@@ -38,15 +39,15 @@ impl<T: Widget> CommonWidget for Duplicated<T> {
     }
 
     fn foreach_child<'a>(&'a self, f: &mut dyn FnMut(&'a dyn Widget)) {
-        self.0.borrow().apply(f, |a, b| a.foreach_child(b))
+        todo!()//self.0.borrow().apply(f, |a, b| a.foreach_child(b))
     }
 
     fn foreach_child_mut<'a>(&'a mut self, f: &mut dyn FnMut(&'a mut dyn Widget)) {
-        self.0.borrow_mut().apply(f, |a, b| a.foreach_child_mut(b))
+        todo!()//self.0.borrow_mut().apply(f, |a, b| a.foreach_child_mut(b))
     }
 
     fn foreach_child_rev<'a>(&'a mut self, f: &mut dyn FnMut(&'a mut dyn Widget)) {
-        self.0.borrow_mut().apply(f, |a, b| a.foreach_child_rev(b))
+        todo!()//self.0.borrow_mut().apply(f, |a, b| a.foreach_child_rev(b))
     }
 
     fn position(&self) -> Position {
@@ -78,12 +79,11 @@ impl<T: Widget> CommonWidget for Duplicated<T> {
     }
 
     fn foreach_child_direct<'a>(&'a mut self, f: &mut dyn FnMut(&'a mut dyn Widget)) {
-        self.0.borrow_mut().apply(f, |a, b| a.foreach_child_direct(b))
+        todo!()//self.0.borrow_mut().apply(f, |a, b| a.foreach_child_direct(b))
     }
 
     fn foreach_child_direct_rev<'a>(&'a mut self, f: &mut dyn FnMut(&'a mut dyn Widget)) {
-        self.0.borrow_mut().apply(f, |a, b| a.foreach_child_direct_rev(b))
-
+        todo!()//self.0.borrow_mut().apply(f, |a, b| a.foreach_child_direct_rev(b))
     }
 }
 

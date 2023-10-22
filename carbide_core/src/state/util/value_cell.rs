@@ -7,6 +7,9 @@ use std::fmt::{Debug, Formatter};
 use std::ops::{Deref, DerefMut};
 
 use parking_lot::{MappedRwLockReadGuard, MappedRwLockWriteGuard};
+use carbide_core::state::AnyState;
+use crate::environment::Environment;
+use crate::state::{AnyReadState, NewStateSync};
 
 type BorrowFlag = isize;
 
@@ -27,7 +30,7 @@ pub struct ValueCell<T: ?Sized> {
     value: UnsafeCell<T>,
 }
 
-impl<T: Debug> Debug for ValueCell<T> {
+impl<T: Debug + Clone> Debug for ValueCell<T> {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         f.debug_struct("InnerState")
             .field("value", &*self.borrow())
@@ -44,7 +47,7 @@ impl<T> ValueCell<T> {
     }
 }
 
-impl<T> ValueCell<T> {
+impl<T: Debug + Clone> ValueCell<T> {
     pub fn borrow(&self) -> ValueRef<'_, T> {
         self.try_borrow().expect("Already borrowed")
     }
@@ -69,8 +72,8 @@ impl<T> ValueCell<T> {
         match BorrowRefMut::new(&self.borrow) {
             // SAFETY: `BorrowRef` guarantees unique access.
             Some(b) => Ok(ValueRefMut::CellBorrow {
-                value: unsafe { &mut *self.value.get() },
-                borrow: b,
+                value: unsafe { Some(&mut *self.value.get()) },
+                borrow: Some(b),
             }),
             None => Err(()),
         }
@@ -79,7 +82,7 @@ impl<T> ValueCell<T> {
 
 unsafe impl<T: ?Sized> Send for ValueCell<T> where T: Send {}
 
-impl<T: Clone> Clone for ValueCell<T> {
+impl<T: Clone + Debug> Clone for ValueCell<T> {
     fn clone(&self) -> ValueCell<T> {
         ValueCell::new(self.borrow().clone())
     }
@@ -91,13 +94,13 @@ impl<T: Default> Default for ValueCell<T> {
     }
 }
 
-impl<T: PartialEq> PartialEq for ValueCell<T> {
+impl<T: PartialEq + Debug + Clone> PartialEq for ValueCell<T> {
     fn eq(&self, other: &ValueCell<T>) -> bool {
         *self.borrow() == *other.borrow()
     }
 }
 
-impl<T: PartialOrd> PartialOrd for ValueCell<T> {
+impl<T: PartialOrd + Debug + Clone> PartialOrd for ValueCell<T> {
     fn partial_cmp(&self, other: &ValueCell<T>) -> Option<Ordering> {
         self.borrow().partial_cmp(&*other.borrow())
     }
@@ -309,101 +312,132 @@ impl<'b> BorrowRefMut<'b> {
     }
 }
 
-pub enum ValueRefMut<'a, T: 'a> {
+pub enum ValueRefMut<'a, T: 'a + Debug + Clone + 'static> {
     CellBorrow {
-        value: &'a mut T,
-        borrow: BorrowRefMut<'a>,
+        value: Option<&'a mut T>,
+        borrow: Option<BorrowRefMut<'a>>,
     },
-    Borrow(&'a mut T),
-    Owned(T),
-    Locked(MappedRwLockWriteGuard<'a, T>),
+    Borrow(Option<&'a mut T>),
+    Locked(Option<MappedRwLockWriteGuard<'a, T>>),
+    TupleState(Option<Box<dyn FnOnce(T)>>, Option<T>),
 }
 
-impl<'b, T: Clone> ValueRefMut<'b, T> {
-    #[inline]
-    pub fn map<U: Clone, F>(orig: ValueRefMut<'b, T>, f: F) -> ValueRefMut<'b, U>
+impl<'b, T: Clone + Debug + 'static> ValueRefMut<'b, T> {
+    pub fn map<U: Clone + Debug, F>(mut orig: ValueRefMut<'b, T>, f: F) -> ValueRefMut<'b, U>
     where
-        F: FnOnce(&mut T) -> &mut U,
+        F: (FnOnce(&mut T) -> &mut U) + Clone + 'static,
     {
         match orig {
-            ValueRefMut::CellBorrow { value, borrow } => ValueRefMut::CellBorrow {
-                value: f(value),
-                borrow,
+            ValueRefMut::CellBorrow { ref mut value, ref mut borrow } => {
+                ValueRefMut::CellBorrow {
+                    value: value.take().map(f),
+                    borrow: borrow.take(),
+                }
             },
-            ValueRefMut::Borrow(value) => ValueRefMut::Borrow(f(value)),
-            ValueRefMut::Owned(mut value) => ValueRefMut::Owned(f(&mut value).clone()),
-            ValueRefMut::Locked(value) => {
-                ValueRefMut::Locked(MappedRwLockWriteGuard::map(value, f))
+            ValueRefMut::Borrow(ref mut value) => {
+                ValueRefMut::Borrow(value.take().map(f))
+            },
+            ValueRefMut::Locked(ref mut value) => {
+                ValueRefMut::Locked(Some(MappedRwLockWriteGuard::map(value.take().unwrap(), f)))
+            }
+            ValueRefMut::TupleState(ref mut state, ref mut value) => {
+                let setter = state.take().unwrap();
+                let mut value = value.take().unwrap();
+
+                let new = (f.clone())(&mut value).clone();
+
+                let new_setter = move |new: U| {
+                    let mut value = value;
+
+                    *f(&mut value) = new;
+
+                    setter(value);
+                };
+
+                ValueRefMut::TupleState(Some(Box::new(new_setter)), Some(new))
             }
         }
     }
 }
 
-impl<'b, T> ValueRefMut<'b, T> {
-    pub fn apply<U: ?Sized>(self, s: &mut U, f: fn(&'b mut T, &mut U)) {
+impl<T: Debug + Clone + 'static> Drop for ValueRefMut<'_, T> {
+    fn drop(&mut self) {
+        //println!("Dropped: {:?}", self);
         match self {
-            ValueRefMut::CellBorrow { value, .. } => {
-                f(value, s)
-            }
-            ValueRefMut::Locked(value) => {
-                //MappedRwLockReadGuard::map(value, |a| {f(a, s); a});
-                todo!()
-            }
-            ValueRefMut::Borrow(value) => {
-                f(value, s)
-            }
-            ValueRefMut::Owned(value) => {
-                todo!()
-                //f(&value, s)
+            ValueRefMut::CellBorrow { .. } => {}
+            ValueRefMut::Borrow(_) => {}
+            ValueRefMut::Locked(_) => {}
+            ValueRefMut::TupleState(state, val) => {
+                if let Some(state) = state.take() {
+                    if let Some(val) = val.take() {
+                        state(val);
+                    }
+                }
             }
         }
     }
 }
 
-impl<T> Deref for ValueRefMut<'_, T> {
+impl<T: Debug + Clone + 'static> Deref for ValueRefMut<'_, T> {
     type Target = T;
 
     #[inline]
     fn deref(&self) -> &T {
         match self {
-            ValueRefMut::CellBorrow { value, .. } => *value,
-            ValueRefMut::Borrow(value) => *value,
-            ValueRefMut::Owned(value) => value,
-            ValueRefMut::Locked(value) => value.deref(),
+            ValueRefMut::CellBorrow { value, .. } => value.as_ref().unwrap(),
+            ValueRefMut::Borrow(value) => value.as_ref().unwrap(),
+            ValueRefMut::Locked(value) => value.as_ref().unwrap().deref(),
+            ValueRefMut::TupleState(_, val) => val.as_ref().unwrap(),
         }
     }
 }
 
-impl<T> DerefMut for ValueRefMut<'_, T> {
+impl<T: Debug + Clone + 'static> DerefMut for ValueRefMut<'_, T> {
     #[inline]
     fn deref_mut(&mut self) -> &mut T {
         match self {
-            ValueRefMut::CellBorrow { value, .. } => *value,
-            ValueRefMut::Borrow(value) => *value,
-            ValueRefMut::Owned(value) => value,
-            ValueRefMut::Locked(value) => value.deref_mut(),
+            ValueRefMut::CellBorrow { value, .. } => value.as_mut().unwrap(),
+            ValueRefMut::Borrow(value) => value.as_mut().unwrap(),
+            ValueRefMut::Locked(value) => value.as_mut().unwrap().deref_mut(),
+            ValueRefMut::TupleState(_, val) => val.as_mut().unwrap(),
         }
     }
 }
 
-impl<T: fmt::Display> fmt::Display for ValueRefMut<'_, T> {
+impl<T: fmt::Display + Debug + Clone + 'static> fmt::Display for ValueRefMut<'_, T> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            ValueRefMut::CellBorrow { value, .. } => value.fmt(f),
-            ValueRefMut::Borrow(value) => value.fmt(f),
-            ValueRefMut::Owned(value) => value.fmt(f),
-            ValueRefMut::Locked(value) => value.fmt(f),
+            ValueRefMut::CellBorrow { value, .. } => std::fmt::Display::fmt(value.as_ref().unwrap(), f),
+            ValueRefMut::Borrow(value) => std::fmt::Display::fmt(value.as_ref().unwrap(), f),
+            ValueRefMut::Locked(value) => std::fmt::Display::fmt(value.as_ref().unwrap(), f),
+            ValueRefMut::TupleState(_, value) => std::fmt::Display::fmt(value.as_ref().unwrap(), f),
         }
     }
 }
 
-impl<T: fmt::Debug> fmt::Debug for ValueRefMut<'_, T> {
+impl<T: fmt::Debug + Clone + 'static> fmt::Debug for ValueRefMut<'_, T> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            ValueRefMut::CellBorrow { value, .. } => value.fmt(f),
-            ValueRefMut::Borrow(value) => value.fmt(f),
-            ValueRefMut::Owned(value) => value.fmt(f),
-            ValueRefMut::Locked(value) => value.fmt(f),
+            ValueRefMut::CellBorrow { value, .. } => {
+                f.debug_struct("ValueRefMut::CellBorrow")
+                    .field("value", &value.as_ref().unwrap())
+                    .finish()
+            },
+            ValueRefMut::Borrow(value) => {
+                f.debug_struct("ValueRefMut::Borrow")
+                    .field("value", &value.as_ref().unwrap())
+                    .finish()
+            },
+            ValueRefMut::Locked(value) => {
+                f.debug_struct("ValueRefMut::Locked")
+                    .field("value", &value.as_ref().unwrap())
+                    .finish()
+            },
+            ValueRefMut::TupleState(_, value) => {
+                f.debug_struct("ValueRefMut::TupleState")
+                    .field("value", &value.as_ref().unwrap())
+                    .finish()
+            }
         }
     }
 }

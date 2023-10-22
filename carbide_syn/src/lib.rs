@@ -808,8 +808,9 @@ mod gen {
     #[rustfmt::skip]
     mod hash;
 
-    //#[cfg(any(feature = "full", feature = "derive"))]
-    //mod helper;
+    #[cfg(any(feature = "full", feature = "derive"))]
+    #[path = "../helper.rs"]
+    mod helper;
 }
 pub use crate::gen::*;
 
@@ -817,6 +818,7 @@ pub use crate::gen::*;
 #[doc(hidden)]
 #[path = "export.rs"]
 pub mod __private;
+
 
 /// Parse tokens of source code into the chosen syntax tree node.
 ///

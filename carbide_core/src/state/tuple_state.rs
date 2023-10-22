@@ -262,7 +262,7 @@ macro_rules! tuple_state {
     };
 }
 
-tuple_state!(Map1,  RWMap1,  RMap1,  EnvMap1,  s1: T1 -> T1State);
+//tuple_state!(Map1,  RWMap1,  RMap1,  EnvMap1,  s1: T1 -> T1State);
 tuple_state!(Map2,  RWMap2,  RMap2,  EnvMap2,  s1: T1 -> T1State, s2: T2 -> T2State);
 tuple_state!(Map3,  RWMap3,  RMap3,  EnvMap3,  s1: T1 -> T1State, s2: T2 -> T2State, s3: T3 -> T3State);
 tuple_state!(Map4,  RWMap4,  RMap4,  EnvMap4,  s1: T1 -> T1State, s2: T2 -> T2State, s3: T3 -> T3State, s4: T4 -> T4State);
@@ -274,3 +274,217 @@ tuple_state!(Map9,  RWMap9,  RMap9,  EnvMap9,  s1: T1 -> T1State, s2: T2 -> T2St
 tuple_state!(Map10, RWMap10, RMap10, EnvMap10, s1: T1 -> T1State, s2: T2 -> T2State, s3: T3 -> T3State, s4: T4 -> T4State, s5: T5 -> T5State, s6: T6 -> T6State, s7: T7 -> T7State, s8: T8 -> T8State, s9: T9 -> T9State, s10: T10 -> T10State);
 tuple_state!(Map11, RWMap11, RMap11, EnvMap11, s1: T1 -> T1State, s2: T2 -> T2State, s3: T3 -> T3State, s4: T4 -> T4State, s5: T5 -> T5State, s6: T6 -> T6State, s7: T7 -> T7State, s8: T8 -> T8State, s9: T9 -> T9State, s10: T10 -> T10State, s11: T11 -> T11State);
 tuple_state!(Map12, RWMap12, RMap12, EnvMap12, s1: T1 -> T1State, s2: T2 -> T2State, s3: T3 -> T3State, s4: T4 -> T4State, s5: T5 -> T5State, s6: T6 -> T6State, s7: T7 -> T7State, s8: T8 -> T8State, s9: T9 -> T9State, s10: T10 -> T10State, s11: T11 -> T11State, s12: T12 -> T12State);
+
+
+///   The struct used to create mappings between states. Its methods delegates to the
+///   correct map implementation.
+pub struct Map1;
+impl Map1 {
+    pub fn read_map<T1: StateContract, TO: StateContract, T1State: AnyReadState<T=T1> + Clone + 'static, MAP: Fn(&T1) -> TO + Clone + 'static>(s1: T1State, map: MAP) -> RMap1<MAP, T1, TO, T1State> {
+        RMap1 {
+            s1,
+            map,
+        }
+    }
+
+    pub fn read_map_env<T1: StateContract, TO: StateContract + Default, T1State: AnyReadState<T=T1> + Clone + 'static, MAP: Fn(&Environment, &T1) -> TO + Clone + 'static>(s1: T1State, map: MAP) -> EnvMap1<MAP, T1, TO, T1State> {
+        EnvMap1 {
+            s1,
+            map,
+            value: Default::default(),
+        }
+    }
+
+    pub fn read_map_cached<T1: StateContract, TO: StateContract>(s1: impl Into<RState<T1>>, map: fn(s1: &T1) -> TO) -> RState<TO> {
+        let n = RMap1 {
+            s1: s1.into(),
+            map,
+        };
+        CacheRState::new(ReadWidgetState::new(Box::new(n)))
+    }
+
+    #[allow(unused_parens)]
+    pub fn map<T1: StateContract, TO: StateContract, T1State: AnyState<T=T1> + Clone + 'static, MAP: Fn(&T1) -> TO + Clone + 'static, REPLACE: Fn(TO, &T1) -> (   Option<T1>   ) + Clone + 'static>(s1: T1State, map: MAP, replace: REPLACE) -> RWMap1<MAP, REPLACE, T1, TO, T1State> {
+        RWMap1 {
+            s1,
+            map,
+            replace,
+        }
+    }
+
+    #[allow(unused_parens)]
+    pub fn map_cached<T1: StateContract, TO: StateContract>(s1: impl Into<TState<T1>>, map: fn(s1: &T1) -> TO, replace: fn(TO, s1: &T1) -> (   Option<T1>   )) -> TState<TO> {
+        let n = RWMap1 {
+            s1: s1.into(),
+            map,
+            replace,
+        };
+        CacheTState::new(WidgetState::new(Box::new(n)))
+    }
+}
+#[derive(Clone)]
+#[allow(unused_parens)]
+pub struct RWMap1<MAP, REPLACE, T1, TO, T1State> where
+    T1: StateContract,
+    TO: StateContract,
+    T1State: AnyState<T=T1> + Clone + 'static,
+    MAP: Fn(&T1) -> TO + Clone + 'static,
+    REPLACE: Fn(TO, &T1) -> (   Option<T1>   ) + Clone + 'static,
+{
+    s1: T1State,
+    map: MAP,
+    replace: REPLACE,
+}
+#[derive(Clone)]
+#[allow(unused_parens)]
+pub struct RMap1<MAP, T1, TO, T1State> where
+    T1: StateContract,
+    TO: StateContract,
+    T1State: AnyReadState<T=T1> + Clone + 'static,
+    MAP: Fn(&T1) -> TO + Clone + 'static
+{
+    s1: T1State,
+    map: MAP,
+}
+#[derive(Clone)]
+#[allow(unused_parens)]
+pub struct EnvMap1<MAP, T1, TO: Default, T1State> where
+    T1: StateContract,
+    TO: StateContract,
+    T1State: AnyReadState<T=T1> + Clone + 'static,
+    MAP: Fn(&Environment, &T1) -> TO + Clone + 'static
+{
+    s1: T1State,
+    map: MAP,
+    value: TO,
+}
+///   Implement NewStateSync for the RMap
+impl<
+    T1: StateContract,
+    TO: StateContract,
+    T1State: AnyReadState<T=T1> + Clone + 'static,
+    MAP: Fn(&T1) -> TO + Clone + 'static
+> NewStateSync for RMap1<MAP, T1, TO, T1State> {
+    fn sync(&mut self, env: &mut Environment) -> bool {
+        let mut updated = false;
+
+        updated |= self.s1.sync(env);
+
+        updated
+    }
+}
+///   Implement NewStateSync for the RWMap
+impl<
+    T1: StateContract,
+    TO: StateContract,
+    T1State: AnyState<T=T1> + Clone + 'static,
+    MAP: Fn(&T1) -> TO + Clone + 'static,
+    REPLACE: Fn(TO, &T1) -> (   Option<T1>   ) + Clone + 'static,
+> NewStateSync for RWMap1<MAP, REPLACE, T1, TO, T1State> {
+    fn sync(&mut self, env: &mut Environment) -> bool {
+        let mut updated = false;
+
+        updated |= self.s1.sync(env);
+
+        updated
+    }
+}
+///   Implement NewStateSync for the EnvMap
+impl<
+    T1: StateContract,
+    TO: StateContract + Default,
+    T1State: AnyReadState<T=T1> + Clone + 'static,
+    MAP: Fn(&Environment, &T1) -> TO + Clone + 'static
+> NewStateSync for EnvMap1<MAP, T1, TO, T1State> {
+    fn sync(&mut self, env: &mut Environment) -> bool {
+        self.s1.sync(env);
+
+        self.value = (self.map)(env, &*self.s1.value());
+
+        true
+    }
+}
+impl<T1: StateContract, TO: StateContract, T1State: AnyReadState<T=T1> + Clone + 'static, MAP: Fn(&T1) -> TO + Clone + 'static> AnyReadState for RMap1<MAP, T1, TO, T1State> {
+    type T = TO;
+    fn value_dyn(&self) -> ValueRef<TO> {
+        let val = (self.map)(&*self.s1.value());
+        ValueRef::Owned(val)
+    }
+}
+impl<
+    T1: StateContract,
+    TO: StateContract,
+    T1State: AnyState<T=T1> + Clone + 'static,
+    MAP: Fn(&T1) -> TO + Clone + 'static,
+    REPLACE: Fn(TO, &T1) -> (   Option<T1>   ) + Clone + 'static,
+> AnyReadState for RWMap1<MAP, REPLACE, T1, TO, T1State> {
+    type T = TO;
+    fn value_dyn(&self) -> ValueRef<TO> {
+        let val = (self.map)(&*self.s1.value());
+        ValueRef::Owned(val)
+    }
+}
+impl<T1: StateContract, TO: StateContract + Default, T1State: AnyReadState<T=T1> + Clone + 'static, MAP: Fn(&Environment, &T1) -> TO + Clone + 'static> AnyReadState for EnvMap1<MAP, T1, TO, T1State> {
+    type T = TO;
+    fn value_dyn(&self) -> ValueRef<TO> {
+        ValueRef::Borrow(&self.value)
+    }
+}
+impl<
+    T1: StateContract,
+    TO: StateContract,
+    T1State: AnyState<T=T1> + Clone + 'static,
+    MAP: Fn(&T1) -> TO + Clone + 'static,
+    REPLACE: Fn(TO, &T1) -> (   Option<T1>   ) + Clone + 'static,
+> AnyState for RWMap1<MAP, REPLACE, T1, TO, T1State> {
+    fn value_dyn_mut(&mut self) -> ValueRefMut<TO> {
+        let val = (self.map)(&*self.s1.value());
+
+        let mut setter_self = self.clone();
+
+        let setter = move |new: TO| {
+            setter_self.set_value_dyn(new);
+        };
+
+        ValueRefMut::TupleState(Some(Box::new(setter)), Some(val))
+    }
+
+    ///   Set value will only update its containing state if the map_rev is specified.
+    #[allow(unused_parens)]
+    fn set_value_dyn(&mut self, value: TO) {
+        let (s1) = (self.replace)(value, &*self.s1.value());
+
+        if let Some(s1) = s1 {
+            self.s1.set_value(s1);
+        }
+    }
+
+    fn update_dependent_dyn(&mut self) {}
+}
+impl<T1: StateContract, TO: StateContract, T1State: AnyReadState<T=T1> + Clone + 'static, MAP: Fn(&T1) -> TO + Clone + 'static> core::fmt::Debug for RMap1<MAP, T1, TO, T1State> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct(stringify!( RMap1 ))
+            .field(stringify!( s1 ), &*self.s1.value())
+            .finish()
+    }
+}
+impl<T1: StateContract, TO: StateContract + Default, T1State: AnyReadState<T=T1> + Clone + 'static, MAP: Fn(&Environment, &T1) -> TO + Clone + 'static> core::fmt::Debug for EnvMap1<MAP, T1, TO, T1State> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct(stringify!( EnvMap1 ))
+            .field(stringify!( s1 ), &*self.s1.value())
+            .finish()
+    }
+}
+impl<
+    T1: StateContract,
+    TO: StateContract,
+    T1State: AnyState<T=T1> + Clone + 'static,
+    MAP: Fn(&T1) -> TO + Clone + 'static,
+    REPLACE: Fn(TO, &T1) -> (   Option<T1>   ) + Clone + 'static,
+> core::fmt::Debug for RWMap1<MAP, REPLACE, T1, TO, T1State> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct(stringify!( RWMap1 ))
+            .field(stringify!( s1 ), &*self.s1.value())
+            .finish()
+    }
+}

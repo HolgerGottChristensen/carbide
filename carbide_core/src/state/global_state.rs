@@ -68,7 +68,7 @@ impl<T: StateContract> AnyReadState for GlobalState<T> {
 impl<T: StateContract> AnyState for GlobalState<T> {
     fn value_dyn_mut(&mut self) -> ValueRefMut<T> {
         ValueRefMut::Locked(
-            RwLockWriteGuard::map(self.inner_value.write(), |a| a)
+            Some(RwLockWriteGuard::map(self.inner_value.write(), |a| a))
         )
     }
 

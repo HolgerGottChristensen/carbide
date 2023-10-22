@@ -23,7 +23,7 @@ use carbide_core::layout::{Layout, Layouter};
 use carbide_core::mesh::mesh::Mesh;
 use carbide_core::render::{Primitive, Primitives, Render, RenderContext};
 use carbide_core::state::StateSync;
-use carbide_core::widget::{CommonWidget, FilterId, Menu, OverlaidLayer, Rectangle, Widget, WidgetId, WidgetIter, WidgetIterMut, ZStack};
+use carbide_core::widget::{CommonWidget, FilterId, Menu, OverlaidLayer, Rectangle, Widget, WidgetId, ZStack};
 use carbide_core::window::WindowId;
 use carbide_winit::convert_mouse_cursor;
 
