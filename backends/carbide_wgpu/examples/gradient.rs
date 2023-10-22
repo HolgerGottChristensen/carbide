@@ -25,7 +25,7 @@ fn main() {
     application.set_scene(Window::new(
         "Gradients example",
         Dimension::new(400.0, 600.0),
-        *VStack::new(vec![
+        VStack::new(vec![
             HStack::new(vec![
                 // We have 4 different kinds of gradients. These are linear, radial, diamond and conic
                 // They are all applied as a fill to rectangles. The gradients are all based on alignments.

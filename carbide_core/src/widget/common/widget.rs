@@ -1,8 +1,5 @@
 use std::fmt::Debug;
 use std::ops::{Deref, DerefMut};
-use std::rc::Rc;
-use std::cell::RefCell;
-
 
 use dyn_clone::DynClone;
 use carbide_core::render::RenderContext;
@@ -17,16 +14,11 @@ use crate::flags::Flags;
 use crate::focus::{Focus, Focusable, Refocus};
 use crate::layout::{Layout, Layouter};
 use crate::render::{Primitive, Render};
-use crate::state::{StateSync, ValueCell, ValueRef};
+use crate::state::{StateSync};
 use crate::widget::{CommonWidget, WidgetExt, WidgetId};
 
 // TODO Rename to AnyWidget and create a widget that is anywidget and clone
 pub trait Widget: Event + Layout + Render + Focusable + DynClone + Debug + 'static {}
-
-//impl<S, T> Widget<S> for T where T: Event<S> + Layout<S> + Render<S> + DynClone {}
-
-//This does not currently work with intellisense
-//impl<T> WidgetExt for T where T: Widget + 'static {}
 
 dyn_clone::clone_trait_object!(Widget);
 

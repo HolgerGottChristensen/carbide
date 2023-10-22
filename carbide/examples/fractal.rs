@@ -1,18 +1,14 @@
 use std::f64::consts::PI;
-use std::time::SystemTime;
 use chrono::{Local, Timelike};
 use carbide_core::color::{Color, WHITE};
 
 use carbide_core::draw::{Dimension, Position, Rect};
-use carbide_core::draw::image::ImageId;
 use carbide_core::environment::*;
 use carbide_core::widget::canvas::*;
 use carbide_core::widget::*;
 use carbide_wgpu::{Application, Window};
 
 fn main() {
-    env_logger::init();
-
     let mut application = Application::new();
 
     application.set_scene(

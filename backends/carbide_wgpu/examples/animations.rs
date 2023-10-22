@@ -48,14 +48,14 @@ fn animation_position_state(curve: fn(f64) -> f64, env: &Environment) -> impl Re
         .range(0.0, 300.0)
 }
 
-fn animation_ball(curve: fn(f64) -> f64, env: &Environment) -> Box<dyn Widget> {
+fn animation_ball(curve: fn(f64) -> f64, env: &Environment) -> impl Widget + Clone {
     let state = animation_position_state(curve, env);
-    HStack::new(vec![
+    HStack::new((
         Circle::new()
             .fill(EnvironmentColor::Accent)
             .stroke(EnvironmentColor::Label)
             .frame(30.0, 30.0)
             .offset(state, 0.0),
-        Spacer::new(),
-    ])
+        *Spacer::new(),
+    ))
 }

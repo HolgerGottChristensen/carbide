@@ -9,9 +9,6 @@
 //! https://play.rust-lang.org/?version=stable&mode=debug&edition=2021&gist=45ea0874855a115a2b5d41f947908652
 
 #![deny(unsafe_code)]
-//#![feature(associated_type_bounds)]
-//#![warn(missing_copy_implementations)]
-//#![warn(missing_docs)]
 
 extern crate self as carbide_core;
 
@@ -63,7 +60,6 @@ pub mod platform;
 pub mod render;
 pub mod state;
 pub mod text;
-mod ui;
 pub mod utils;
 pub mod widget;
 pub mod window;

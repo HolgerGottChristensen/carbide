@@ -8,19 +8,18 @@ fn main() {
     let mut application = Application::new()
         .with_asset_fonts();
 
-    fn delegate(item: impl State<T=EnvironmentColor>, index: impl State<T=usize> + Clone) -> Box<dyn Widget> {
-        ZStack::new(vec![
+    fn delegate(item: impl State<T=EnvironmentColor>, index: impl State<T=usize>) -> impl Widget + Clone {
+        ZStack::new((
             Rectangle::new().fill(item),
             Text::new(index).font_size(EnvironmentFontSize::LargeTitle),
-        ])
+        ))
         .frame(100.0, 50.0)
-            .boxed()
     }
 
     application.set_scene(Window::new(
         "Foreach example",
         Dimension::new(600.0, 450.0),
-        *VStack::new(vec![
+        VStack::new(vec![
             ForEach::new(
                 vec![
                     EnvironmentColor::Red,

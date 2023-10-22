@@ -73,4 +73,5 @@ fn animation_buttons(curve: fn(f64) -> f64, name: &str, offset: &TState<f64>) ->
             .frame(150.0, 22.0),
     ])
     .spacing(10.0)
+        .boxed()
 }

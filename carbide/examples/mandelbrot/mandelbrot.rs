@@ -213,7 +213,7 @@ impl MouseEventHandler for Mandelbrot {
 }
 
 impl CommonWidget for Mandelbrot {
-    CommonWidgetImpl!(self, id: self.id, position: self.position, dimension: self.dimension);
+    CommonWidgetImpl!(self, id: self.id, child: (), position: self.position, dimension: self.dimension);
 }
 
 impl WidgetExt for Mandelbrot {}

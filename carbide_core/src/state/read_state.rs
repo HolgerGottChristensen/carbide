@@ -65,7 +65,7 @@ dyn_clone::clone_trait_object!(<T: StateContract> AnyReadState<T=T>);
 // ---------------------------------------------------
 
 mod private {
-    use crate::state::{AnyReadState, StateContract};
+    use crate::state::AnyReadState;
 
     // This disallows implementing ReadState manually, and requires something to implement
     // AnyReadState to implement ReadState.
