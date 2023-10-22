@@ -15,7 +15,6 @@ edition = "2021"
 
 [dependencies]
 carbide_core = { path = "../../carbide_core", version = "0.70" }
-carbide_derive = { path = "../../carbide_derive", version = "0.70" }
 carbide_winit = { path = "../carbide_winit", version = "0.70" }
 winit = "0.28"
 cgmath = "0.18"

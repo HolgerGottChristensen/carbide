@@ -1,13 +1,11 @@
 use carbide::cursor::MouseCursor;
 use carbide::state::ReadState;
-use carbide_controls::{Button, ButtonDelegate, PlainButton};
+use carbide_controls::{Button};
 use carbide::draw::Dimension;
 use carbide::widget::*;
 use carbide::{Application, Window};
 use carbide_core::environment::Environment;
-use carbide_core::event::ModifierKey;
-use carbide_core::focus::Focus;
-use carbide_core::state::{AnyState, LocalState};
+use carbide_core::state::{AnyState};
 
 fn main() {
     env_logger::init();
