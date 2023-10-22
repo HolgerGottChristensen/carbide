@@ -23,7 +23,7 @@ use carbide_core::layout::{Layout, Layouter};
 use carbide_core::mesh::mesh::Mesh;
 use carbide_core::render::{Primitive, Primitives, Render, RenderContext};
 use carbide_core::state::StateSync;
-use carbide_core::widget::{CommonWidget, FilterId, Menu, OverlaidLayer, Rectangle, Widget, WidgetId, ZStack};
+use carbide_core::widget::{CommonWidget, FilterId, Menu, OverlaidLayer, Rectangle, Widget, WidgetExt, WidgetId, ZStack};
 use carbide_core::window::WindowId;
 use carbide_winit::convert_mouse_cursor;
 
@@ -261,9 +261,9 @@ impl WGPUWindow {
 
 
         let child = ZStack::new(vec![
-            Rectangle::new().fill(EnvironmentColor::SystemBackground),
+            Rectangle::new().fill(EnvironmentColor::SystemBackground).boxed(),
             Box::new(OverlaidLayer::new("controls_popup_layer", child).steal_events()),
-        ]);
+        ]).boxed();
 
         let builder = WindowBuilder::new()
             .with_inner_size(Size::Logical(LogicalSize {

@@ -1,5 +1,6 @@
 use cgmath::Matrix4;
 use carbide_core::state::{IntoReadState, RMap1};
+use crate::color::RED;
 
 use crate::draw::Color;
 
@@ -114,7 +115,7 @@ pub trait WidgetExt: Widget + Sized + Clone + 'static {
     }
 
     fn corner_radius(self, radius: impl Into<CornerRadii>) -> ClipShape<Self, RoundedRectangle<Style, Style>> {
-        ClipShape::new(self, RoundedRectangle::shape(radius))
+        ClipShape::new(self, RoundedRectangle::new(radius).fill(Style::Color(RED)).stroke(Style::Color(RED)))
     }
 
     fn hidden(self) -> Box<Hidden> {

@@ -70,15 +70,16 @@ impl<L: ReadState<T=String>> PlainSwitchDelegate for SwitchDelegate<L> {
             Capsule::new()
                 .fill(background_color)
                 .stroke(EnvironmentColor::OpaqueSeparator)
-                .stroke_style(1.0),
+                .stroke_style(1.0)
+                .boxed(),
             IfElse::new(checked)
-                .when_true(*HStack::new(vec![
+                .when_true(HStack::new(vec![
                     Spacer::new(),
                     Ellipse::new()
                         .fill(knob_color.clone())
                         .frame(20.0, 20.0).boxed(),
                 ]))
-                .when_false(*HStack::new(vec![
+                .when_false(HStack::new(vec![
                     Ellipse::new()
                         .fill(knob_color)
                         .frame(20.0, 20.0).boxed(),
@@ -96,6 +97,6 @@ impl<L: ReadState<T=String>> PlainSwitchDelegate for SwitchDelegate<L> {
             .frame(39.0, 22.0)
             .boxed();
 
-        HStack::new(vec![switch, Text::new(self.label.clone()).color(label_color).boxed()]).spacing(5.0)
+        HStack::new(vec![switch, Text::new(self.label.clone()).color(label_color).boxed()]).spacing(5.0).boxed()
     }
 }

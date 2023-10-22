@@ -68,9 +68,9 @@ impl PlainCheckBox<Focus, CheckBoxValue, DefaultPlainCheckBoxDelegate, bool> {
         });
 
         ZStack::new(vec![
-            Rectangle::new().fill(background_color),
+            Rectangle::new().fill(background_color).boxed(),
             Text::new(val).boxed(),
-        ])
+        ]).boxed()
     }
 }
 

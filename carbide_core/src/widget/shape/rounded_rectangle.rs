@@ -36,8 +36,8 @@ pub struct RoundedRectangle<S, F> where S: ReadState<T=Style> + Clone, F: ReadSt
 
 impl RoundedRectangle<Style, Style> {
     #[carbide_default_builder2]
-    pub fn new(corner_radii: impl Into<CornerRadii>) -> Box<RoundedRectangle<impl ReadState<T=Style>, impl ReadState<T=Style>>> {
-        Box::new(RoundedRectangle {
+    pub fn new(corner_radii: impl Into<CornerRadii>) -> RoundedRectangle<impl ReadState<T=Style>, impl ReadState<T=Style>> {
+        RoundedRectangle {
             id: WidgetId::new(),
             position: Position::new(0.0, 0.0),
             dimension: Dimension::new(100.0, 100.0),
@@ -47,19 +47,13 @@ impl RoundedRectangle<Style, Style> {
             style: ShapeStyle::Default,
             stroke_style: StrokeStyle::Solid { line_width: 2.0 },
             triangle_store: PrimitiveStore::new(),
-        })
-    }
-
-    pub fn shape(corner_radii: impl Into<CornerRadii>) -> RoundedRectangle<Style, Style> {
-        *RoundedRectangle::new(corner_radii)
-            .fill(Style::Color(RED))
-            .stroke(Style::Color(RED))
+        }
     }
 }
 
 impl<S2: ReadState<T=Style> + Clone, F2: ReadState<T=Style> + Clone> RoundedRectangle<S2, F2> {
-    pub fn fill<F: IntoReadState<Style>>(self, color: F) -> Box<RoundedRectangle<S2, F::Output>> {
-        Box::new(RoundedRectangle {
+    pub fn fill<F: IntoReadState<Style>>(self, color: F) -> RoundedRectangle<S2, F::Output> {
+        RoundedRectangle {
             id: self.id,
             position: self.position,
             dimension: self.dimension,
@@ -69,11 +63,11 @@ impl<S2: ReadState<T=Style> + Clone, F2: ReadState<T=Style> + Clone> RoundedRect
             style: self.style + ShapeStyle::Fill,
             stroke_style: self.stroke_style,
             triangle_store: self.triangle_store,
-        })
+        }
     }
 
-    pub fn stroke<S: IntoReadState<Style>>(self, color: S) -> Box<RoundedRectangle<S::Output, F2>> {
-        Box::new(RoundedRectangle {
+    pub fn stroke<S: IntoReadState<Style>>(self, color: S) -> RoundedRectangle<S::Output, F2> {
+        RoundedRectangle {
             id: self.id,
             position: self.position,
             dimension: self.dimension,
@@ -83,18 +77,18 @@ impl<S2: ReadState<T=Style> + Clone, F2: ReadState<T=Style> + Clone> RoundedRect
             style: self.style + ShapeStyle::Stroke,
             stroke_style: self.stroke_style,
             triangle_store: self.triangle_store,
-        })
+        }
     }
 
-    pub fn stroke_style(mut self, line_width: f64) -> Box<Self> {
+    pub fn stroke_style(mut self, line_width: f64) -> Self {
         self.stroke_style = StrokeStyle::Solid { line_width };
         self.style += ShapeStyle::Stroke;
-        Box::new(self)
+        self
     }
 
-    pub fn material<M: IntoReadState<Color>>(mut self, material: M) -> Box<ZStack> {
+    pub fn material<M: IntoReadState<Color>>(mut self, material: M) -> ZStack<(Blur, RoundedRectangle<S2, impl ReadState<T=Style> + Clone>)> {
         let comp = self.fill(material.clone().into_read_state());
-        ZStack::new(vec![Blur::gaussian(10.0), comp])
+        ZStack::new((Blur::gaussian(10.0), comp))
     }
 }
 

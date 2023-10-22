@@ -122,8 +122,8 @@ impl<F: State<T=Focus>, O: ReadState<T=Option<char>>, T: State<T=Result<String, 
         let text_widget = PlainTextInput::new(text_state)
             .font_size(EnvironmentFontSize::Body)
             .text_color(label_color)
-            .cursor_widget(Rectangle::new().fill(EnvironmentColor::Label))
-            .selection_widget(Rectangle::new().fill(darkened_selection_color))
+            .cursor_widget(Rectangle::new().fill(EnvironmentColor::Label).boxed())
+            .selection_widget(Rectangle::new().fill(darkened_selection_color).boxed())
             .focused(focus.clone())
             .enabled(enabled.clone())
             .obscure(obscure.clone())
@@ -134,7 +134,8 @@ impl<F: State<T=Focus>, O: ReadState<T=Option<char>>, T: State<T=Result<String, 
             RoundedRectangle::new(CornerRadii::all(3.0))
                 .fill(background_color)
                 .stroke(stroke_color)
-                .stroke_style(1.0),
+                .stroke_style(1.0)
+                .boxed(),
             text_widget.boxed()
         ]).frame_fixed_height(22.0)
             .boxed();

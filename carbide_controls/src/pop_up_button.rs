@@ -84,22 +84,25 @@ impl PopUpButton {
 
         ZStack::new(vec![
             RoundedRectangle::new(CornerRadii::all(3.0))
-                .fill(EnvironmentColor::SecondarySystemBackground),
+                .fill(EnvironmentColor::SecondarySystemBackground)
+                .boxed(),
             HStack::new(vec![
                 Text::new(text).color(label_color).padding(EdgeInsets::single(0.0, 0.0, 9.0, 0.0)).boxed(),
                 Spacer::new(),
                 ZStack::new(vec![
                     RoundedRectangle::new(CornerRadii::single(0.0, 0.0, 0.0, 2.0)) // TODO: Changing top_right, makes lyon mess up.
-                        .fill(button_color),
+                        .fill(button_color)
+                        .boxed(),
                     arrows.boxed(),
                 ])
                     .padding(EdgeInsets::single(0.0, 0.0, 0.0, 1.0))
                     .frame_fixed_width(20.0)
                     .boxed(),
-            ]),
+            ]).boxed(),
             RoundedRectangle::new(CornerRadii::all(3.0))
                 .stroke_style(1.0)
-                .stroke(EnvironmentColor::OpaqueSeparator),
+                .stroke(EnvironmentColor::OpaqueSeparator)
+                .boxed(),
         ])
             .background(
                 RoundedRectangle::new(CornerRadii::all(3.0))
@@ -132,14 +135,15 @@ impl PopUpButton {
             Rectangle::new()
                 .fill(background_color)
                 .stroke(EnvironmentColor::OpaqueSeparator)
-                .stroke_style(0.5),
+                .stroke_style(0.5)
+                .boxed(),
             HStack::new(vec![
                 Text::new(text)
                     .color(EnvironmentColor::Label)
                     .padding(EdgeInsets::single(0.0, 0.0, 5.0, 0.0))
                     .boxed(),
                 Spacer::new(),
-            ]),
+            ]).boxed(),
         ])
             .frame_fixed_height(24.0)
             .boxed()
@@ -154,7 +158,7 @@ impl PopUpButton {
             *ForEach::new(model.ignore_writes(), delegate)
         ]).spacing(1.0)
             .padding(1.0)
-            .background(*Rectangle::new().fill(EnvironmentColor::OpaqueSeparator))
+            .background(Rectangle::new().fill(EnvironmentColor::OpaqueSeparator))
             .boxed()
     }
 }

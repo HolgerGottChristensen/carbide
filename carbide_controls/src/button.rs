@@ -81,7 +81,8 @@ impl<L: ReadState<T=String>, P: ReadState<T=bool>> PlainButtonDelegate for Butto
             RoundedRectangle::new(CornerRadii::all(4.0))
                 .fill(background_color)
                 .stroke(EnvironmentColor::OpaqueSeparator)
-                .stroke_style(1.0),
+                .stroke_style(1.0)
+                .boxed(),
             Text::new(self.label.clone())
                 .color(label_color)
                 .boxed(),

@@ -25,26 +25,26 @@ pub struct Blur {
 impl Blur {
 
     #[carbide_default_builder2]
-    pub fn gaussian(sigma: f32) -> Box<Self> {
-        Box::new(Blur {
+    pub fn gaussian(sigma: f32) -> Self {
+        Blur {
             id: WidgetId::new(),
             position: Position::new(0.0, 0.0),
             dimension: Dimension::new(100.0, 100.0),
             blur_type: BlurType::Gaussian(sigma),
             filter_horizontal_has_been_inserted: None,
             filter_vertical_has_been_inserted: None,
-        })
+        }
     }
 
-    pub fn mean(radius: u32) -> Box<Self> {
-        Box::new(Blur {
+    pub fn mean(radius: u32) -> Self {
+        Blur {
             id: WidgetId::new(),
             position: Position::new(0.0, 0.0),
             dimension: Dimension::new(100.0, 100.0),
             blur_type: BlurType::Mean(radius),
             filter_horizontal_has_been_inserted: None,
             filter_vertical_has_been_inserted: None,
-        })
+        }
     }
 
     fn gaussian_blur(sigma: f32) -> ImageFilter {

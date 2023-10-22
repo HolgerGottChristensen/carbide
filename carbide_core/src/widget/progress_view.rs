@@ -48,7 +48,8 @@ impl ProgressView {
         let child = ZStack::new(vec![
             Circle::new()
                 .stroke(EnvironmentColor::Separator)
-                .stroke_style(4.0),
+                .stroke_style(4.0)
+                .boxed(),
             Canvas::new(|rect: Rect, mut context: Context, env: &mut Environment| {
                 context.move_to(2.0, rect.height() / 2.0);
                 context.arc(

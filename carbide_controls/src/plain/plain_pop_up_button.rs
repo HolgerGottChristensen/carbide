@@ -419,9 +419,9 @@ fn default_delegate<T: StateContract + PartialEq>(
     });
 
     ZStack::new(vec![
-        Rectangle::new().fill(background_color),
+        Rectangle::new().fill(background_color).boxed(),
         Text::new(selected_item.map(|a| format!("{:?}", a))).boxed(),
-    ])
+    ]).boxed()
 }
 
 fn default_popup_item_delegate<T: StateContract + PartialEq, S: State<T=T>>(
@@ -440,7 +440,7 @@ fn default_popup_item_delegate<T: StateContract + PartialEq, S: State<T=T>>(
     });
 
     ZStack::new(vec![
-        Rectangle::new().fill(item_color),
+        Rectangle::new().fill(item_color).boxed(),
         Text::new(item.map(|a: &T| format!("{:?}", *a)).ignore_writes()).boxed(),
     ])
         .frame_fixed_height(30.0)
@@ -456,7 +456,7 @@ fn default_popup_delegate<T: StateContract + PartialEq, S: State<T=T>, M: ReadSt
         *ForEach::new(model.ignore_writes(), delegate)
     ]).spacing(1.0)
         .padding(1.0)
-        .background(*Rectangle::new().fill(EnvironmentColor::Yellow))
+        .background(Rectangle::new().fill(EnvironmentColor::Yellow))
         .boxed()
 }
 

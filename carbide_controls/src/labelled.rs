@@ -26,7 +26,7 @@ pub struct Labelled<C, L> where C: Widget + Clone, L: ReadState<T=String> {
 }
 
 impl Labelled<Empty, String> {
-    pub fn new<C: Widget + Clone, L: IntoReadState<String>>(label: L, child: C) -> Labelled<HStack, L::Output> {
+    pub fn new<C: Widget + Clone, L: IntoReadState<String>>(label: L, child: C) -> Labelled<HStack<Vec<Box<dyn Widget>>>, L::Output> {
         Self::new_internal(label.into_read_state(), child)
     }
 }
@@ -35,7 +35,7 @@ impl<C: Widget + Clone, L: ReadState<T=String>> Labelled<C, L> {
     fn new_internal<C2: Widget + Clone, L2: ReadState<T=String>>(
         label: L2,
         child: C2,
-    ) -> Labelled<HStack, L2> {
+    ) -> Labelled<HStack<Vec<Box<dyn Widget>>>, L2> {
 
         let label_color = Map1::read_map(enabled_state(), |enabled| {
             if *enabled {
@@ -45,7 +45,7 @@ impl<C: Widget + Clone, L: ReadState<T=String>> Labelled<C, L> {
             }
         });
 
-        let child = *HStack::new(vec![
+        let child = HStack::new(vec![
             Text::new(label.clone()).color(label_color).boxed(),
             Box::new(child.clone())
         ]);

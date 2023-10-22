@@ -11,7 +11,7 @@ use crate::widget::{Capsule, CommonWidget, Empty, Frame, HSplit, Spacer, Widget,
 #[derive(Debug, Clone, Widget)]
 pub struct ProgressBar<P> where P: ReadState<T=f64> + Clone {
     id: WidgetId,
-    child: Frame<f64, f64, f64, f64, ZStack>,
+    child: Box<dyn Widget>,
     position: Position,
     dimension: Dimension,
     #[state]
@@ -24,13 +24,15 @@ impl ProgressBar<f64> {
         let progress = progress.into_read_state();
 
         let child = ZStack::new(vec![
-            Capsule::new().fill(EnvironmentColor::SystemFill),
-            HSplit::new(Capsule::new().fill(EnvironmentColor::Accent), Spacer::new())
+            Capsule::new().fill(EnvironmentColor::SystemFill).boxed(),
+            HSplit::new(Capsule::new().fill(EnvironmentColor::Accent).boxed(), Spacer::new())
                 .percent(progress.ignore_writes())
-                .non_draggable(),
+                .non_draggable()
+                .boxed(),
         ])
             .frame(0.0, 5.0)
-            .expand_width();
+            .expand_width()
+            .boxed();
 
         Box::new(ProgressBar {
             id: WidgetId::new(),

@@ -1,12 +1,12 @@
 
-use carbide_macro::{carbide_default_builder, gen_optionals};
+use carbide_macro::{carbide_default_builder, carbide_default_builder2, gen_optionals};
 
 use crate::draw::{Dimension, Position, Scalar};
 use crate::environment::Environment;
 
 use crate::layout::{calculate_size_hstack, Layout, position_children_hstack};
 use crate::{CommonWidgetImpl};
-use crate::widget::{CommonWidget, CrossAxisAlignment, Widget, WidgetExt, WidgetId};
+use crate::widget::{CommonWidget, CrossAxisAlignment, Widget, WidgetExt, WidgetId, WidgetSequence};
 
 /// # HStack
 /// The horizontal stack in Carbide is one of the main layout components.
@@ -171,49 +171,47 @@ use crate::widget::{CommonWidget, CrossAxisAlignment, Widget, WidgetExt, WidgetI
 /// The default is *Center*, but *Start* and *End* also exist.
 #[derive(Debug, Clone, Widget)]
 #[carbide_exclude(Layout)]
-pub struct HStack {
+pub struct HStack<W> where W: WidgetSequence {
     id: WidgetId,
-    children: Vec<Box<dyn Widget>>,
+    children: W,
     position: Position,
     dimension: Dimension,
     spacing: Scalar,
     cross_axis_alignment: CrossAxisAlignment,
 }
 
-impl HStack {
+impl<W: WidgetSequence> HStack<W> {
 
-    #[carbide_default_builder]
-    pub fn new(children: Vec<Box<dyn Widget>>) -> Box<Self> {}
-
-    pub fn new(children: Vec<Box<dyn Widget>>) -> Box<Self> {
-        Box::new(HStack {
+    #[carbide_default_builder2]
+    pub fn new(children: W) -> Self {
+        HStack {
             id: WidgetId::new(),
             children,
             position: Position::new(0.0, 0.0),
             dimension: Dimension::new(100.0, 100.0),
             spacing: 10.0,
             cross_axis_alignment: CrossAxisAlignment::Center,
-        })
+        }
     }
 
-    pub fn cross_axis_alignment(mut self, alignment: CrossAxisAlignment) -> Box<Self> {
+    pub fn cross_axis_alignment(mut self, alignment: CrossAxisAlignment) -> Self {
         self.cross_axis_alignment = alignment;
-        Box::new(self)
+        self
     }
 
-    pub fn spacing(mut self, spacing: f64) -> Box<Self> {
+    pub fn spacing(mut self, spacing: f64) -> Self {
         self.spacing = spacing;
-        Box::new(self)
+        self
     }
 }
 
-#[cfg(feature = "macro")]
+/*#[cfg(feature = "macro")]
 gen_optionals!(
     HStack,
     spacing: f64,
-);
+);*/
 
-impl Layout for HStack {
+impl<W: WidgetSequence> Layout for HStack<W> {
     fn calculate_size(&mut self, requested_size: Dimension, env: &mut Environment) -> Dimension {
         let spacing = self.spacing;
         calculate_size_hstack(self, spacing, requested_size, env);
@@ -227,9 +225,9 @@ impl Layout for HStack {
     }
 }
 
-impl CommonWidget for HStack {
+impl<W: WidgetSequence> CommonWidget for HStack<W> {
     CommonWidgetImpl!(self, id: self.id, child: self.children, position: self.position, dimension: self.dimension, flexibility: 1);
 }
 
 
-impl WidgetExt for HStack {}
+impl<W: WidgetSequence> WidgetExt for HStack<W> {}

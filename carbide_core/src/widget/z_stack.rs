@@ -2,47 +2,46 @@
 use smallvec::{SmallVec, smallvec};
 
 
-use carbide_macro::carbide_default_builder;
+use carbide_macro::{carbide_default_builder, carbide_default_builder2};
+use crate::CommonWidgetImpl;
 
 use crate::draw::{Dimension, Position};
 use crate::environment::Environment;
 
 use crate::layout::{BasicLayouter, Layout, Layouter};
-use crate::widget::{CommonWidget, Widget, WidgetExt, WidgetId};
+use crate::widget::{CommonWidget, Widget, WidgetExt, WidgetId, WidgetSequence};
 
 /// A basic, non-interactive rectangle shape widget.
 #[derive(Debug, Clone, Widget)]
 #[carbide_exclude(Layout)]
-pub struct ZStack {
+pub struct ZStack<W> where W: WidgetSequence {
     id: WidgetId,
-    children: Vec<Box<dyn Widget>>,
+    children: W,
     position: Position,
     dimension: Dimension,
     alignment: Box<dyn Layouter>,
 }
 
-impl ZStack {
+impl<W: WidgetSequence> ZStack<W> {
 
-    #[carbide_default_builder]
-    pub fn new(children: Vec<Box<dyn Widget>>) -> Box<ZStack> {}
-
-    pub fn new(children: Vec<Box<dyn Widget>>) -> Box<ZStack> {
-        Box::new(ZStack {
+    #[carbide_default_builder2]
+    pub fn new(children: W) -> Self {
+        ZStack {
             id: WidgetId::new(),
             children,
             position: Position::new(0.0, 0.0),
             dimension: Dimension::new(100.0, 100.0),
             alignment: Box::new(BasicLayouter::Center),
-        })
+        }
     }
 
-    pub fn with_alignment(mut self, layouter: BasicLayouter) -> Box<Self> {
+    pub fn with_alignment(mut self, layouter: BasicLayouter) -> Self {
         self.alignment = Box::new(layouter);
-        Box::new(self)
+        self
     }
 }
 
-impl Layout for ZStack {
+impl<W: WidgetSequence> Layout for ZStack<W> {
     fn calculate_size(&mut self, requested_size: Dimension, env: &mut Environment) -> Dimension {
         let mut children_flexibility: SmallVec<[(u32, &mut dyn Widget); 5]> = smallvec![];
 
@@ -88,96 +87,8 @@ impl Layout for ZStack {
     }
 }
 
-impl CommonWidget for ZStack {
-    fn id(&self) -> WidgetId {
-        self.id
-    }
-
-    fn alignment(&self) -> Box<dyn Layouter> {
-        self.alignment.clone()
-    }
-
-    fn set_alignment(&mut self, alignment: Box<dyn Layouter>) {
-        self.alignment = alignment;
-    }
-
-    fn position(&self) -> Position {
-        self.position
-    }
-
-    fn set_position(&mut self, position: Position) {
-        self.position = position;
-    }
-
-    // Todo: This should maybe be the flexibility of the least flexible child?
-    fn flexibility(&self) -> u32 {
-        1
-    }
-
-    fn dimension(&self) -> Dimension {
-        self.dimension
-    }
-
-    fn set_dimension(&mut self, dimension: Dimension) {
-        self.dimension = dimension
-    }
-
-    fn foreach_child_mut<'a>(&'a mut self, f: &mut dyn FnMut(&'a mut dyn Widget)) {
-        for child in &mut self.children {
-            if child.is_ignore() {
-                continue;
-            }
-
-            if child.is_proxy() {
-                child.foreach_child_mut(f);
-                continue;
-            }
-
-            f(child);
-        }
-    }
-
-    fn foreach_child_rev<'a>(&'a mut self, f: &mut dyn FnMut(&'a mut dyn Widget)) {
-        for child in self.children.iter_mut().rev() {
-            if child.is_ignore() {
-                continue;
-            }
-
-            if child.is_proxy() {
-                child.foreach_child_rev(f);
-                continue;
-            }
-
-            f(child);
-        }
-    }
-
-    fn foreach_child<'a>(&'a self, f: &mut dyn FnMut(&'a dyn Widget)) {
-        for child in &self.children {
-            if child.is_ignore() {
-                continue;
-            }
-
-            if child.is_proxy() {
-                child.foreach_child(f);
-                continue;
-            }
-
-            f(child);
-        }
-    }
-
-    fn foreach_child_direct<'a>(&'a mut self, f: &mut dyn FnMut(&'a mut dyn Widget)) {
-        for child in self.children.iter_mut() {
-            f(child);
-        }
-    }
-
-    fn foreach_child_direct_rev<'a>(&'a mut self, f: &mut dyn FnMut(&'a mut dyn Widget)) {
-        for child in self.children.iter_mut().rev() {
-            f(child);
-        }
-    }
+impl<W: WidgetSequence> CommonWidget for ZStack<W> {
+    CommonWidgetImpl!(self, id: self.id, child: self.children, position: self.position, dimension: self.dimension, flexibility: 1, alignment: self.alignment);
 }
 
-impl WidgetExt for ZStack {}
+impl<W: WidgetSequence> WidgetExt for ZStack<W> {}

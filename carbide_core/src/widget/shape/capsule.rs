@@ -11,7 +11,7 @@ use crate::environment::{Environment};
 use crate::environment::EnvironmentColor;
 use crate::render::{Primitive, Render, RenderContext, Style};
 use crate::state::{IntoReadState, ReadState, StateSync};
-use crate::widget::{Blur, CommonWidget, Widget, WidgetExt, WidgetId, ZStack};
+use crate::widget::{Blur, CommonWidget, Empty, Widget, WidgetExt, WidgetId, ZStack};
 use crate::widget::shape::{Shape, tessellate};
 use crate::widget::types::PrimitiveStore;
 use crate::widget::types::ShapeStyle;
@@ -35,8 +35,8 @@ pub struct Capsule<S, F> where S: ReadState<T=Style> + Clone, F: ReadState<T=Sty
 
 impl Capsule<Style, Style> {
     #[carbide_default_builder2]
-    pub fn new() -> Box<Capsule<impl ReadState<T=Style>, impl ReadState<T=Style>>> {
-        Box::new(Capsule {
+    pub fn new() -> Capsule<impl ReadState<T=Style>, impl ReadState<T=Style>> {
+        Capsule {
             id: WidgetId::new(),
             position: Position::new(0.0, 0.0),
             dimension: Dimension::new(100.0, 100.0),
@@ -45,13 +45,13 @@ impl Capsule<Style, Style> {
             style: ShapeStyle::Default,
             stroke_style: StrokeStyle::Solid { line_width: 2.0 },
             triangle_store: PrimitiveStore::new(),
-        })
+        }
     }
 }
 
 impl<S2: ReadState<T=Style> + Clone, F2: ReadState<T=Style> + Clone> Capsule<S2, F2> {
-    pub fn fill<F: IntoReadState<Style>>(self, color: F) -> Box<Capsule<S2, F::Output>> {
-        Box::new(Capsule {
+    pub fn fill<F: IntoReadState<Style>>(self, color: F) -> Capsule<S2, F::Output> {
+        Capsule {
             id: self.id,
             position: self.position,
             dimension: self.dimension,
@@ -60,11 +60,11 @@ impl<S2: ReadState<T=Style> + Clone, F2: ReadState<T=Style> + Clone> Capsule<S2,
             style: self.style + ShapeStyle::Fill,
             stroke_style: self.stroke_style,
             triangle_store: self.triangle_store,
-        })
+        }
     }
 
-    pub fn stroke<S: IntoReadState<Style>>(self, color: S) -> Box<Capsule<S::Output, F2>> {
-        Box::new(Capsule {
+    pub fn stroke<S: IntoReadState<Style>>(self, color: S) -> Capsule<S::Output, F2> {
+        Capsule {
             id: self.id,
             position: self.position,
             dimension: self.dimension,
@@ -73,18 +73,18 @@ impl<S2: ReadState<T=Style> + Clone, F2: ReadState<T=Style> + Clone> Capsule<S2,
             style: self.style + ShapeStyle::Stroke,
             stroke_style: self.stroke_style,
             triangle_store: self.triangle_store,
-        })
+        }
     }
 
-    pub fn stroke_style(mut self, line_width: f64) -> Box<Self> {
+    pub fn stroke_style(mut self, line_width: f64) -> Self {
         self.stroke_style = StrokeStyle::Solid { line_width };
         self.style += ShapeStyle::Stroke;
-        Box::new(self)
+        self
     }
 
-    pub fn material<M: IntoReadState<Color>>(mut self, material: M) -> Box<ZStack> {
-        let comp = self.fill(material.clone().into_read_state());
-        ZStack::new(vec![Blur::gaussian(10.0), comp])
+    pub fn material<M: IntoReadState<Color>>(mut self, material: M) -> ZStack<(Blur, Capsule<S2, impl ReadState<T=Style> + Clone>)> {
+        let comp = self.fill(material.into_read_state());
+        ZStack::new((Blur::gaussian(10.0), comp))
     }
 }
 

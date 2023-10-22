@@ -81,8 +81,8 @@ impl PlainTextInput<Focus, Color, Option<char>, u32, String, bool> {
         let obscure = None;
         let font_size = EnvironmentFontSize::Body.u32();
 
-        let cursor_widget = Rectangle::new().fill(EnvironmentColor::Green);
-        let selection_widget = Rectangle::new().fill(EnvironmentColor::Purple);
+        let cursor_widget = Rectangle::new().fill(EnvironmentColor::Green).boxed();
+        let selection_widget = Rectangle::new().fill(EnvironmentColor::Purple).boxed();
 
         Self::new_internal(
             focus,

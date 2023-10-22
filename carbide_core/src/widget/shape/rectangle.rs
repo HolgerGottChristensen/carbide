@@ -38,8 +38,8 @@ pub struct Rectangle<S, F> where S: ReadState<T=Style> + Clone, F: ReadState<T=S
 
 impl Rectangle<Style, Style> {
     #[carbide_default_builder2]
-    pub fn new() -> Box<Rectangle<impl ReadState<T=Style>, impl ReadState<T=Style>>> {
-        Box::new(Rectangle {
+    pub fn new() -> Rectangle<impl ReadState<T=Style>, impl ReadState<T=Style>> {
+        Rectangle {
             id: WidgetId::new(),
             position: Position::new(0.0, 0.0),
             dimension: Dimension::new(100.0, 100.0),
@@ -48,13 +48,13 @@ impl Rectangle<Style, Style> {
             style: ShapeStyle::Default,
             stroke_style: StrokeStyle::Solid { line_width: 2.0 },
             triangle_store: PrimitiveStore::new(),
-        })
+        }
     }
 }
 
 impl<S2: ReadState<T=Style> + Clone, F2: ReadState<T=Style> + Clone> Rectangle<S2, F2> {
-    pub fn fill<F: IntoReadState<Style>>(self, color: F) -> Box<Rectangle<S2, F::Output>> {
-        Box::new(Rectangle {
+    pub fn fill<F: IntoReadState<Style>>(self, color: F) -> Rectangle<S2, F::Output> {
+        Rectangle {
             id: self.id,
             position: self.position,
             dimension: self.dimension,
@@ -63,11 +63,11 @@ impl<S2: ReadState<T=Style> + Clone, F2: ReadState<T=Style> + Clone> Rectangle<S
             style: self.style + ShapeStyle::Fill,
             stroke_style: self.stroke_style,
             triangle_store: self.triangle_store,
-        })
+        }
     }
 
-    pub fn stroke<S: IntoReadState<Style>>(self, color: S) -> Box<Rectangle<S::Output, F2>> {
-        Box::new(Rectangle {
+    pub fn stroke<S: IntoReadState<Style>>(self, color: S) -> Rectangle<S::Output, F2> {
+        Rectangle {
             id: self.id,
             position: self.position,
             dimension: self.dimension,
@@ -76,18 +76,18 @@ impl<S2: ReadState<T=Style> + Clone, F2: ReadState<T=Style> + Clone> Rectangle<S
             style: self.style + ShapeStyle::Stroke,
             stroke_style: self.stroke_style,
             triangle_store: self.triangle_store,
-        })
+        }
     }
 
-    pub fn stroke_style(mut self, line_width: f64) -> Box<Self> {
+    pub fn stroke_style(mut self, line_width: f64) -> Self {
         self.stroke_style = StrokeStyle::Solid { line_width };
         self.style += ShapeStyle::Stroke;
-        Box::new(self)
+        self
     }
 
-    pub fn material<M: IntoReadState<Color>>(mut self, material: M) -> Box<ZStack> {
+    pub fn material<M: IntoReadState<Color>>(mut self, material: M) -> ZStack<(Blur, Rectangle<S2, impl ReadState<T=Style> + Clone>)> {
         let comp = self.fill(material.clone().into_read_state());
-        ZStack::new(vec![Blur::gaussian(10.0), comp])
+        ZStack::new((Blur::gaussian(10.0), comp))
     }
 
     pub fn position(mut self, position: Position) -> Box<Self> {

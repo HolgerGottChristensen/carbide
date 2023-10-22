@@ -139,6 +139,10 @@ macro_rules! CommonWidgetImpl {
             fn alignment(&$self) -> Box<dyn carbide_core::layout::Layouter> {
                 $alignment.clone()
             }
+
+            fn set_alignment(&mut $self, alignment: Box<dyn Layouter>) {
+                $alignment = alignment;
+            }
         )?
 
         $(
@@ -193,6 +197,10 @@ macro_rules! CommonWidgetImpl {
         $(
             fn alignment(&$self) -> Box<dyn carbide_core::layout::Layouter> {
                 $alignment.clone()
+            }
+
+            fn set_alignment(&mut $self, alignment: Box<dyn Layouter>) {
+                $alignment = alignment;
             }
         )?
 

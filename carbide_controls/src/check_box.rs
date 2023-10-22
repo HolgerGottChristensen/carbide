@@ -67,7 +67,8 @@ impl<L: ReadState<T=String>> PlainCheckBoxDelegate for CheckBoxDelegate<L> {
             RoundedRectangle::new(CornerRadii::all(3.0))
                 .fill(background_color)
                 .stroke(EnvironmentColor::OpaqueSeparator)
-                .stroke_style(1.0),
+                .stroke_style(1.0)
+                .boxed(),
             IfElse::new(checked_intermediate).when_true(Canvas::new(move |rect: Rect, mut context: Context, env: &mut Environment| {
                 context.move_to(4.0, 7.0);
                 context.line_to(10.0, 7.0);
@@ -95,6 +96,6 @@ impl<L: ReadState<T=String>> PlainCheckBoxDelegate for CheckBoxDelegate<L> {
             .frame(14.0, 14.0)
             .boxed();
 
-        HStack::new(vec![check_box, Text::new(self.label.clone()).color(label_color).boxed()]).spacing(5.0)
+        HStack::new(vec![check_box, Text::new(self.label.clone()).color(label_color).boxed()]).spacing(5.0).boxed()
     }
 }
