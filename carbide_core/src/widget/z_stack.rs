@@ -9,7 +9,7 @@ use crate::draw::{Dimension, Position};
 use crate::environment::Environment;
 
 use crate::layout::{BasicLayouter, Layout, Layouter};
-use crate::widget::{CommonWidget, Widget, WidgetExt, WidgetId, WidgetSequence};
+use crate::widget::{CommonWidget, AnyWidget, WidgetExt, WidgetId, WidgetSequence, Widget};
 
 /// A basic, non-interactive rectangle shape widget.
 #[derive(Debug, Clone, Widget)]
@@ -43,7 +43,7 @@ impl<W: WidgetSequence> ZStack<W> {
 
 impl<W: WidgetSequence> Layout for ZStack<W> {
     fn calculate_size(&mut self, requested_size: Dimension, env: &mut Environment) -> Dimension {
-        let mut children_flexibility: SmallVec<[(u32, &mut dyn Widget); 5]> = smallvec![];
+        let mut children_flexibility: SmallVec<[(u32, &mut dyn AnyWidget); 5]> = smallvec![];
 
         self.foreach_child_mut(&mut |child| {
             children_flexibility.push((child.flexibility(), child));

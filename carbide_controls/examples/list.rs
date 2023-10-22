@@ -15,7 +15,7 @@ fn main() {
 
     let list_model_state = LocalState::new(list_model);
 
-    fn delegate(item: TState<String>, _: TState<usize>) -> Box<dyn Widget> {
+    fn delegate(item: TState<String>, _: TState<usize>) -> Box<dyn AnyWidget> {
         ZStack::new(vec![
             Rectangle::new().fill(EnvironmentColor::Green),
             Text::new(item),

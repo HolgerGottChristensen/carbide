@@ -8,7 +8,7 @@ fn main() {
     let mut application = Application::new()
         .with_asset_fonts();
 
-    fn delegate(item: impl State<T=EnvironmentColor>, index: impl State<T=usize>) -> impl Widget + Clone {
+    fn delegate(item: impl State<T=EnvironmentColor>, index: impl State<T=usize>) -> impl Widget {
         ZStack::new((
             Rectangle::new().fill(item),
             Text::new(index).font_size(EnvironmentFontSize::LargeTitle),

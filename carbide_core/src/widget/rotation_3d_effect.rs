@@ -10,11 +10,11 @@ use crate::environment::Environment;
 use crate::layout::BasicLayouter;
 use crate::render::{Primitive, PrimitiveKind, Render};
 use crate::state::{ReadState, StateSync};
-use crate::widget::{CommonWidget, Empty, Widget, WidgetExt, WidgetId};
+use crate::widget::{CommonWidget, Empty, AnyWidget, WidgetExt, WidgetId, Widget};
 
 #[derive(Debug, Clone, Widget)]
 #[carbide_exclude(Render)]
-pub struct Rotation3DEffect<R1, R2, C> where R1: ReadState<T = f64>, R2: ReadState<T = f64>, C: Widget + Clone {
+pub struct Rotation3DEffect<R1, R2, C> where R1: ReadState<T = f64>, R2: ReadState<T = f64>, C: Widget {
     id: WidgetId,
     child: C,
     position: Position,
@@ -29,7 +29,7 @@ pub struct Rotation3DEffect<R1, R2, C> where R1: ReadState<T = f64>, R2: ReadSta
 
 impl Rotation3DEffect<f64, f64, Empty> {
     #[carbide_default_builder2]
-    pub fn new<R1: ReadState<T = f64>, R2: ReadState<T = f64>, C: Widget + Clone>(
+    pub fn new<R1: ReadState<T = f64>, R2: ReadState<T = f64>, C: Widget>(
         child: C,
         rotation_x: R1,
         rotation_y: R2,
@@ -47,7 +47,7 @@ impl Rotation3DEffect<f64, f64, Empty> {
     }
 }
 
-impl<R1: ReadState<T = f64>, R2: ReadState<T = f64>, C: Widget + Clone> Rotation3DEffect<R1, R2, C> {
+impl<R1: ReadState<T = f64>, R2: ReadState<T = f64>, C: Widget> Rotation3DEffect<R1, R2, C> {
     pub fn with_anchor(mut self, anchor: BasicLayouter) -> Self {
         self.anchor = anchor;
         self
@@ -60,12 +60,12 @@ impl<R1: ReadState<T = f64>, R2: ReadState<T = f64>, C: Widget + Clone> Rotation
     }
 }
 
-impl<R1: ReadState<T = f64> + Clone, R2: ReadState<T = f64> + Clone, C: Widget + Clone> CommonWidget for Rotation3DEffect<R1, R2, C> {
+impl<R1: ReadState<T = f64> + Clone, R2: ReadState<T = f64> + Clone, C: Widget> CommonWidget for Rotation3DEffect<R1, R2, C> {
     fn id(&self) -> WidgetId {
         self.id
     }
 
-    fn foreach_child<'a>(&'a self, f: &mut dyn FnMut(&'a dyn Widget)) {
+    fn foreach_child<'a>(&'a self, f: &mut dyn FnMut(&'a dyn AnyWidget)) {
         if self.child.is_ignore() {
             return;
         }
@@ -78,7 +78,7 @@ impl<R1: ReadState<T = f64> + Clone, R2: ReadState<T = f64> + Clone, C: Widget +
         f(&self.child);
     }
 
-    fn foreach_child_mut<'a>(&'a mut self, f: &mut dyn FnMut(&'a mut dyn Widget)) {
+    fn foreach_child_mut<'a>(&'a mut self, f: &mut dyn FnMut(&'a mut dyn AnyWidget)) {
         if self.child.is_ignore() {
             return;
         }
@@ -91,7 +91,7 @@ impl<R1: ReadState<T = f64> + Clone, R2: ReadState<T = f64> + Clone, C: Widget +
         f(&mut self.child);
     }
 
-    fn foreach_child_rev<'a>(&'a mut self, f: &mut dyn FnMut(&'a mut dyn Widget)) {
+    fn foreach_child_rev<'a>(&'a mut self, f: &mut dyn FnMut(&'a mut dyn AnyWidget)) {
         if self.child.is_ignore() {
             return;
         }
@@ -104,11 +104,11 @@ impl<R1: ReadState<T = f64> + Clone, R2: ReadState<T = f64> + Clone, C: Widget +
         f(&mut self.child);
     }
 
-    fn foreach_child_direct<'a>(&'a mut self, f: &mut dyn FnMut(&'a mut dyn Widget)) {
+    fn foreach_child_direct<'a>(&'a mut self, f: &mut dyn FnMut(&'a mut dyn AnyWidget)) {
         f(&mut self.child);
     }
 
-    fn foreach_child_direct_rev<'a>(&'a mut self, f: &mut dyn FnMut(&'a mut dyn Widget)) {
+    fn foreach_child_direct_rev<'a>(&'a mut self, f: &mut dyn FnMut(&'a mut dyn AnyWidget)) {
         f(&mut self.child);
     }
 
@@ -129,7 +129,7 @@ impl<R1: ReadState<T = f64> + Clone, R2: ReadState<T = f64> + Clone, C: Widget +
     }
 }
 
-impl<R1: ReadState<T = f64> + Clone, R2: ReadState<T = f64> + Clone, C: Widget + Clone> Render for Rotation3DEffect<R1, R2, C> {
+impl<R1: ReadState<T = f64> + Clone, R2: ReadState<T = f64> + Clone, C: AnyWidget + Clone> Render for Rotation3DEffect<R1, R2, C> {
     fn process_get_primitives(&mut self, primitives: &mut Vec<Primitive>, env: &mut Environment) {
         self.capture_state(env);
         // I do not understand why the fov needs to be 1.15, because my intuition says it should be 45deg
@@ -259,4 +259,4 @@ impl<R1: ReadState<T = f64> + Clone, R2: ReadState<T = f64> + Clone, C: Widget +
     }
 }
 
-impl<R1: ReadState<T = f64> + Clone, R2: ReadState<T = f64> + Clone, C: Widget + Clone> WidgetExt for Rotation3DEffect<R1, R2, C> {}
+impl<R1: ReadState<T = f64> + Clone, R2: ReadState<T = f64> + Clone, C: AnyWidget + Clone> WidgetExt for Rotation3DEffect<R1, R2, C> {}

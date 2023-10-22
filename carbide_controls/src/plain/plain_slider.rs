@@ -7,7 +7,7 @@ use carbide_core::focus::{Focus, Focusable, Refocus};
 use carbide_core::layout::Layout;
 use carbide_core::render::{Render, RenderContext};
 use carbide_core::state::{AnyReadState, AnyState, IntoReadState, IntoState, LocalState, Map3, Map4, ReadState, ReadStateExtNew, State, StateExtNew, TState};
-use carbide_core::widget::{CommonWidget, Empty, Rectangle, Widget, WidgetExt, WidgetId};
+use carbide_core::widget::{CommonWidget, Empty, Rectangle, AnyWidget, WidgetExt, WidgetId, Widget};
 
 const SMOOTH_VALUE_INCREMENT: f64 = 0.05;
 const SMOOTH_VALUE_SMALL_INCREMENT: f64 = 0.01;
@@ -20,9 +20,9 @@ pub struct PlainSlider<F, St, S, E, P, Th, In, Bg, En> where
     S: ReadState<T=f64>,
     E: ReadState<T=f64>,
     P: ReadState<T=Option<f64>>,
-    Th: Widget + Clone,
-    In: Widget + Clone,
-    Bg: Widget + Clone,
+    Th: AnyWidget + Clone,
+    In: AnyWidget + Clone,
+    Bg: AnyWidget + Clone,
     En: ReadState<T=bool>,
 {
     id: WidgetId,
@@ -47,7 +47,7 @@ pub struct PlainSlider<F, St, S, E, P, Th, In, Bg, En> where
 }
 
 impl PlainSlider<Focus, f64, f64, f64, Option<f64>, Empty, Empty, Empty, bool> {
-    pub fn new<St: IntoState<f64>, S: IntoReadState<f64>, E: IntoReadState<f64>>(state: St, start: S, end: E) -> PlainSlider<LocalState<Focus>, St::Output, S::Output, E::Output, Option<f64>, Box<dyn Widget>, Box<dyn Widget>, Box<dyn Widget>, bool> {
+    pub fn new<St: IntoState<f64>, S: IntoReadState<f64>, E: IntoReadState<f64>>(state: St, start: S, end: E) -> PlainSlider<LocalState<Focus>, St::Output, S::Output, E::Output, Option<f64>, Box<dyn AnyWidget>, Box<dyn AnyWidget>, Box<dyn AnyWidget>, bool> {
         let focus = LocalState::new(Focus::Unfocused);
 
         Self::new_internal(
@@ -70,9 +70,9 @@ impl<
     S: ReadState<T=f64>,
     E: ReadState<T=f64>,
     P: ReadState<T=Option<f64>>,
-    Th: Widget + Clone,
-    In: Widget + Clone,
-    Bg: Widget + Clone,
+    Th: AnyWidget + Clone,
+    In: AnyWidget + Clone,
+    Bg: AnyWidget + Clone,
     En: ReadState<T=bool>,
 > PlainSlider<F, St, S, E, P, Th, In, Bg, En> {
     pub fn step<P2: IntoReadState<Option<f64>>>(self, steps: P2) -> PlainSlider<F, St, S, E, P2::Output, Th, In, Bg, En> {
@@ -117,7 +117,7 @@ impl<
         )
     }
 
-    pub fn background<Bg2: Widget + Clone>(self, delegate: Delegate<Bg2>) -> PlainSlider<F, St, S, E, P, Th, In, Bg2, En> {
+    pub fn background<Bg2: AnyWidget + Clone>(self, delegate: Delegate<Bg2>) -> PlainSlider<F, St, S, E, P, Th, In, Bg2, En> {
         Self::new_internal(
             self.focus,
             self.state,
@@ -131,7 +131,7 @@ impl<
         )
     }
 
-    pub fn thumb<Th2: Widget + Clone>(self, delegate: Delegate<Th2>) -> PlainSlider<F, St, S, E, P, Th2, In, Bg, En> {
+    pub fn thumb<Th2: AnyWidget + Clone>(self, delegate: Delegate<Th2>) -> PlainSlider<F, St, S, E, P, Th2, In, Bg, En> {
         Self::new_internal(
             self.focus,
             self.state,
@@ -145,7 +145,7 @@ impl<
         )
     }
 
-    pub fn track<In2: Widget + Clone>(self, delegate: Delegate<In2>) -> PlainSlider<F, St, S, E, P, Th, In2, Bg, En> {
+    pub fn track<In2: AnyWidget + Clone>(self, delegate: Delegate<In2>) -> PlainSlider<F, St, S, E, P, Th, In2, Bg, En> {
         Self::new_internal(
             self.focus,
             self.state,
@@ -179,9 +179,9 @@ impl<
         S2: ReadState<T=f64>,
         E2: ReadState<T=f64>,
         P2: ReadState<T=Option<f64>>,
-        Th2: Widget + Clone,
-        In2: Widget + Clone,
-        Bg2: Widget + Clone,
+        Th2: AnyWidget + Clone,
+        In2: AnyWidget + Clone,
+        Bg2: AnyWidget + Clone,
         En2: ReadState<T=bool>,
     >(focus: F2, state: St2, start: S2, end: E2, steps: P2, thumb_delegate: Delegate<Th2>, track_delegate: Delegate<In2>, background_delegate: Delegate<Bg2>, enabled: En2) -> PlainSlider<F2, St2, S2, E2, P2, Th2, In2, Bg2, En2> {
         let percent = Map4::map(
@@ -241,9 +241,9 @@ impl<
     S: ReadState<T=f64>,
     E: ReadState<T=f64>,
     P: ReadState<T=Option<f64>>,
-    Th: Widget + Clone,
-    In: Widget + Clone,
-    Bg: Widget + Clone,
+    Th: AnyWidget + Clone,
+    In: AnyWidget + Clone,
+    Bg: AnyWidget + Clone,
     En: ReadState<T=bool>,
 > Focusable for PlainSlider<F, St, S, E, P, Th, In, Bg, En> {
     fn focus_children(&self) -> bool {
@@ -257,9 +257,9 @@ impl<
     S: ReadState<T=f64>,
     E: ReadState<T=f64>,
     P: ReadState<T=Option<f64>>,
-    Th: Widget + Clone,
-    In: Widget + Clone,
-    Bg: Widget + Clone,
+    Th: AnyWidget + Clone,
+    In: AnyWidget + Clone,
+    Bg: AnyWidget + Clone,
     En: ReadState<T=bool>,
 > KeyboardEventHandler for PlainSlider<F, St, S, E, P, Th, In, Bg, En> {
     fn handle_keyboard_event(&mut self, event: &KeyboardEvent, env: &mut Environment) {
@@ -301,9 +301,9 @@ impl<
     S: ReadState<T=f64>,
     E: ReadState<T=f64>,
     P: ReadState<T=Option<f64>>,
-    Th: Widget + Clone,
-    In: Widget + Clone,
-    Bg: Widget + Clone,
+    Th: AnyWidget + Clone,
+    In: AnyWidget + Clone,
+    Bg: AnyWidget + Clone,
     En: ReadState<T=bool>,
 > MouseEventHandler for PlainSlider<F, St, S, E, P, Th, In, Bg, En> {
     fn handle_mouse_event(&mut self, event: &MouseEvent, _consumed: &bool, env: &mut Environment) {
@@ -356,9 +356,9 @@ impl<
     S: ReadState<T=f64>,
     E: ReadState<T=f64>,
     P: ReadState<T=Option<f64>>,
-    Th: Widget + Clone,
-    In: Widget + Clone,
-    Bg: Widget + Clone,
+    Th: AnyWidget + Clone,
+    In: AnyWidget + Clone,
+    Bg: AnyWidget + Clone,
     En: ReadState<T=bool>,
 > Layout for PlainSlider<F, St, S, E, P, Th, In, Bg, En> {
     fn calculate_size(&mut self, requested_size: Dimension, env: &mut Environment) -> Dimension {
@@ -427,9 +427,9 @@ impl<
     S: ReadState<T=f64>,
     E: ReadState<T=f64>,
     P: ReadState<T=Option<f64>>,
-    Th: Widget + Clone,
-    In: Widget + Clone,
-    Bg: Widget + Clone,
+    Th: AnyWidget + Clone,
+    In: AnyWidget + Clone,
+    Bg: AnyWidget + Clone,
     En: ReadState<T=bool>,
 > CommonWidget for PlainSlider<F, St, S, E, P, Th, In, Bg, En> {
     CommonWidgetImpl!(self, id: self.id, child: (), position: self.position, dimension: self.dimension, flag: Flags::FOCUSABLE, flexibility: 1, focus: self.focus);
@@ -441,9 +441,9 @@ impl<
     S: ReadState<T=f64>,
     E: ReadState<T=f64>,
     P: ReadState<T=Option<f64>>,
-    Th: Widget + Clone,
-    In: Widget + Clone,
-    Bg: Widget + Clone,
+    Th: AnyWidget + Clone,
+    In: AnyWidget + Clone,
+    Bg: AnyWidget + Clone,
     En: ReadState<T=bool>,
 > Render for PlainSlider<F, St, S, E, P, Th, In, Bg, En> {
     fn render(&mut self, context: &mut RenderContext, env: &mut Environment) {
@@ -459,9 +459,9 @@ impl<
     S: ReadState<T=f64>,
     E: ReadState<T=f64>,
     P: ReadState<T=Option<f64>>,
-    Th: Widget + Clone,
-    In: Widget + Clone,
-    Bg: Widget + Clone,
+    Th: AnyWidget + Clone,
+    In: AnyWidget + Clone,
+    Bg: AnyWidget + Clone,
     En: ReadState<T=bool>,
 > WidgetExt for PlainSlider<F, St, S, E, P, Th, In, Bg, En> {}
 
@@ -469,7 +469,7 @@ impl<
 // ---------------------------------------------------
 //  Delegates
 // ---------------------------------------------------
-type Delegate<W: Widget + Clone> = fn(
+type Delegate<W: AnyWidget + Clone> = fn(
     state: Box<dyn AnyState<T=f64>>,
     start: Box<dyn AnyReadState<T=f64>>,
     end: Box<dyn AnyReadState<T=f64>>,
@@ -478,21 +478,21 @@ type Delegate<W: Widget + Clone> = fn(
     enabled: Box<dyn AnyReadState<T=bool>>,
 ) -> W;
 
-fn default_background(state: Box<dyn AnyState<T=f64>>, start: Box<dyn AnyReadState<T=f64>>, end: Box<dyn AnyReadState<T=f64>>, steps: Box<dyn AnyReadState<T=Option<f64>>>, focus: Box<dyn AnyReadState<T=Focus>>, enabled: Box<dyn AnyReadState<T=bool>>,) -> Box<dyn Widget> {
+fn default_background(state: Box<dyn AnyState<T=f64>>, start: Box<dyn AnyReadState<T=f64>>, end: Box<dyn AnyReadState<T=f64>>, steps: Box<dyn AnyReadState<T=Option<f64>>>, focus: Box<dyn AnyReadState<T=Focus>>, enabled: Box<dyn AnyReadState<T=bool>>,) -> Box<dyn AnyWidget> {
     Rectangle::new()
         .fill(EnvironmentColor::Red)
         .frame_fixed_height(26.0)
         .boxed()
 }
 
-fn default_track(state: Box<dyn AnyState<T=f64>>, start: Box<dyn AnyReadState<T=f64>>, end: Box<dyn AnyReadState<T=f64>>, steps: Box<dyn AnyReadState<T=Option<f64>>>, focus: Box<dyn AnyReadState<T=Focus>>, enabled: Box<dyn AnyReadState<T=bool>>,) -> Box<dyn Widget> {
+fn default_track(state: Box<dyn AnyState<T=f64>>, start: Box<dyn AnyReadState<T=f64>>, end: Box<dyn AnyReadState<T=f64>>, steps: Box<dyn AnyReadState<T=Option<f64>>>, focus: Box<dyn AnyReadState<T=Focus>>, enabled: Box<dyn AnyReadState<T=bool>>,) -> Box<dyn AnyWidget> {
     Rectangle::new()
         .fill(EnvironmentColor::Green)
         .frame_fixed_height(26.0)
         .boxed()
 }
 
-fn default_thumb(state: Box<dyn AnyState<T=f64>>, start: Box<dyn AnyReadState<T=f64>>, end: Box<dyn AnyReadState<T=f64>>, steps: Box<dyn AnyReadState<T=Option<f64>>>, focus: Box<dyn AnyReadState<T=Focus>>, enabled: Box<dyn AnyReadState<T=bool>>,) -> Box<dyn Widget> {
+fn default_thumb(state: Box<dyn AnyState<T=f64>>, start: Box<dyn AnyReadState<T=f64>>, end: Box<dyn AnyReadState<T=f64>>, steps: Box<dyn AnyReadState<T=Option<f64>>>, focus: Box<dyn AnyReadState<T=Focus>>, enabled: Box<dyn AnyReadState<T=bool>>,) -> Box<dyn AnyWidget> {
     let color = Map3::read_map(state, start, end, |state, start, end| {
         if state < start || state > end {
             EnvironmentColor::Purple

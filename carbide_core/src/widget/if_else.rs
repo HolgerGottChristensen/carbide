@@ -4,7 +4,7 @@ use carbide_macro::{carbide_default_builder2};
 use crate::draw::{Dimension, Position};
 use crate::flags::Flags;
 use crate::state::ReadState;
-use crate::widget::{CommonWidget, Empty, Widget, WidgetExt, WidgetId};
+use crate::widget::{CommonWidget, Empty, AnyWidget, WidgetExt, WidgetId, Widget};
 
 /// # If-Else Widget
 ///
@@ -21,8 +21,8 @@ use crate::widget::{CommonWidget, Empty, Widget, WidgetExt, WidgetId};
 /// In the above a green rectangle will be displayed, since the state is a constant true.
 #[derive(Debug, Clone, Widget)]
 pub struct IfElse<T, F, S> where
-    T: Widget + Clone,
-    F: Widget + Clone,
+    T: Widget,
+    F: Widget,
     S: ReadState<T=bool>
 {
     id: WidgetId,
@@ -49,8 +49,8 @@ impl IfElse<Empty, Empty, bool> {
 
 }
 
-impl<T: Widget + Clone, F: Widget + Clone, S: ReadState<T=bool> + Clone + 'static> IfElse<T, F, S> {
-    pub fn when_true<T2: Widget + Clone>(self, when_true: T2) -> Box<IfElse<T2, F, S>> {
+impl<T: Widget, F: Widget, S: ReadState<T=bool> + Clone + 'static> IfElse<T, F, S> {
+    pub fn when_true<T2: Widget>(self, when_true: T2) -> Box<IfElse<T2, F, S>> {
         Box::new(IfElse {
             id: self.id,
             predicate: self.predicate,
@@ -61,7 +61,7 @@ impl<T: Widget + Clone, F: Widget + Clone, S: ReadState<T=bool> + Clone + 'stati
         })
     }
 
-    pub fn when_false<F2: Widget + Clone>(self, when_false: F2) -> Box<IfElse<T, F2, S>> {
+    pub fn when_false<F2: Widget>(self, when_false: F2) -> Box<IfElse<T, F2, S>> {
         Box::new(IfElse {
             id: self.id,
             predicate: self.predicate,
@@ -73,7 +73,7 @@ impl<T: Widget + Clone, F: Widget + Clone, S: ReadState<T=bool> + Clone + 'stati
     }
 }
 
-impl<T: Widget + Clone, F: Widget + Clone, S: ReadState<T=bool> + Clone + 'static> CommonWidget for IfElse<T, F, S> {
+impl<T: Widget, F: Widget, S: ReadState<T=bool> + Clone + 'static> CommonWidget for IfElse<T, F, S> {
     fn id(&self) -> WidgetId {
         self.id
     }
@@ -82,7 +82,7 @@ impl<T: Widget + Clone, F: Widget + Clone, S: ReadState<T=bool> + Clone + 'stati
         Flags::PROXY
     }
 
-    fn foreach_child<'a>(&'a self, f: &mut dyn FnMut(&'a dyn Widget)) {
+    fn foreach_child<'a>(&'a self, f: &mut dyn FnMut(&'a dyn AnyWidget)) {
         if *self.predicate.value() {
             if self.when_true.is_ignore() {
                 return;
@@ -108,7 +108,7 @@ impl<T: Widget + Clone, F: Widget + Clone, S: ReadState<T=bool> + Clone + 'stati
         }
     }
 
-    fn foreach_child_mut<'a>(&'a mut self, f: &mut dyn FnMut(&'a mut dyn Widget)) {
+    fn foreach_child_mut<'a>(&'a mut self, f: &mut dyn FnMut(&'a mut dyn AnyWidget)) {
         if *self.predicate.value() {
             if self.when_true.is_ignore() {
                 return;
@@ -134,7 +134,7 @@ impl<T: Widget + Clone, F: Widget + Clone, S: ReadState<T=bool> + Clone + 'stati
         }
     }
 
-    fn foreach_child_rev<'a>(&'a mut self, f: &mut dyn FnMut(&'a mut dyn Widget)) {
+    fn foreach_child_rev<'a>(&'a mut self, f: &mut dyn FnMut(&'a mut dyn AnyWidget)) {
         if *self.predicate.value() {
             if self.when_true.is_ignore() {
                 return;
@@ -160,7 +160,7 @@ impl<T: Widget + Clone, F: Widget + Clone, S: ReadState<T=bool> + Clone + 'stati
         }
     }
 
-    fn foreach_child_direct<'a>(&'a mut self, f: &mut dyn FnMut(&'a mut dyn Widget)) {
+    fn foreach_child_direct<'a>(&'a mut self, f: &mut dyn FnMut(&'a mut dyn AnyWidget)) {
         if *self.predicate.value() {
             f(&mut self.when_true)
         } else {
@@ -168,7 +168,7 @@ impl<T: Widget + Clone, F: Widget + Clone, S: ReadState<T=bool> + Clone + 'stati
         }
     }
 
-    fn foreach_child_direct_rev<'a>(&'a mut self, f: &mut dyn FnMut(&'a mut dyn Widget)) {
+    fn foreach_child_direct_rev<'a>(&'a mut self, f: &mut dyn FnMut(&'a mut dyn AnyWidget)) {
         if *self.predicate.value() {
             f(&mut self.when_true)
         } else {
@@ -193,4 +193,4 @@ impl<T: Widget + Clone, F: Widget + Clone, S: ReadState<T=bool> + Clone + 'stati
     }
 }
 
-impl<T: Widget + Clone, F: Widget + Clone, S: ReadState<T=bool> + Clone + 'static> WidgetExt for IfElse<T, F, S> {}
+impl<T: AnyWidget + Clone, F: AnyWidget + Clone, S: ReadState<T=bool> + Clone + 'static> WidgetExt for IfElse<T, F, S> {}

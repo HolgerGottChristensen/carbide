@@ -7,7 +7,7 @@ use carbide_macro::carbide_default_builder;
 use crate::draw::{Dimension, Position};
 use crate::environment::Environment;
 use crate::state::{NewStateSync, ReadState, StateContract, StateSync, TState};
-use crate::widget::{Widget, WidgetExt, WidgetId};
+use crate::widget::{AnyWidget, WidgetExt, WidgetId, Widget};
 
 /// A basic, non-interactive rectangle shape widget.
 #[derive(Clone, Widget)]
@@ -21,7 +21,7 @@ where
     dimension: Dimension,
     #[state]
     local_state: TState<T>,
-    widgets: Vec<(fn(&T) -> bool, Box<dyn Widget>)>,
+    widgets: Vec<(fn(&T) -> bool, Box<dyn AnyWidget>)>,
     current_index: Option<usize>,
 }
 
@@ -40,12 +40,12 @@ impl<T: StateContract> Match<T> {
         })
     }
 
-    pub fn case(mut self, f: (fn(&T) -> bool, Box<dyn Widget>)) -> Box<Self> {
+    pub fn case(mut self, f: (fn(&T) -> bool, Box<dyn AnyWidget>)) -> Box<Self> {
         self.widgets.push(f);
         Box::new(self)
     }
 
-    pub fn default(mut self, widget: Box<dyn Widget>) -> Box<Self> {
+    pub fn default(mut self, widget: Box<dyn AnyWidget>) -> Box<Self> {
         self.widgets.push((|_| true, widget));
         Box::new(self)
     }
@@ -89,23 +89,23 @@ impl<T: StateContract> carbide_core::widget::CommonWidget for Match<T> {
         self.id
     }
 
-    fn foreach_child<'a>(&'a self, _f: &mut dyn FnMut(&'a dyn Widget)) {
+    fn foreach_child<'a>(&'a self, _f: &mut dyn FnMut(&'a dyn AnyWidget)) {
         todo!()
     }
 
-    fn foreach_child_mut<'a>(&'a mut self, _f: &mut dyn FnMut(&'a mut dyn Widget)) {
+    fn foreach_child_mut<'a>(&'a mut self, _f: &mut dyn FnMut(&'a mut dyn AnyWidget)) {
         todo!()
     }
 
-    fn foreach_child_rev<'a>(&'a mut self, _f: &mut dyn FnMut(&'a mut dyn Widget)) {
+    fn foreach_child_rev<'a>(&'a mut self, _f: &mut dyn FnMut(&'a mut dyn AnyWidget)) {
         todo!()
     }
 
-    fn foreach_child_direct<'a>(&'a mut self, _f: &mut dyn FnMut(&'a mut dyn Widget)) {
+    fn foreach_child_direct<'a>(&'a mut self, _f: &mut dyn FnMut(&'a mut dyn AnyWidget)) {
         todo!()
     }
 
-    fn foreach_child_direct_rev<'a>(&'a mut self, _f: &mut dyn FnMut(&'a mut dyn Widget)) {
+    fn foreach_child_direct_rev<'a>(&'a mut self, _f: &mut dyn FnMut(&'a mut dyn AnyWidget)) {
         todo!()
     }
 

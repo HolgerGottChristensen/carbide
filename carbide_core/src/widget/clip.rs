@@ -12,7 +12,7 @@ use crate::widget::*;
 #[carbide_exclude(Render, Layout)]
 pub struct Clip<W>
 where
-    W: Widget + Clone
+    W: Widget
 {
     id: WidgetId,
     child: W,
@@ -22,7 +22,7 @@ where
 
 impl Clip<Empty> {
     #[carbide_default_builder2]
-    pub fn new<W: Widget + Clone>(child: W) -> Clip<W> {
+    pub fn new<W: AnyWidget + Clone>(child: W) -> Clip<W> {
         Clip {
             id: WidgetId::new(),
             child,
@@ -36,7 +36,7 @@ impl Clip<Empty> {
     }
 }
 
-impl<W: Widget + Clone> Layout for Clip<W> {
+impl<W: AnyWidget + Clone> Layout for Clip<W> {
     // Calculate the size of the child, but force clip to requested_size. This makes sure that if
     // the child is larger than the requested, that is is clipped.
     fn calculate_size(&mut self, requested_size: Dimension, env: &mut Environment) -> Dimension {
@@ -46,11 +46,11 @@ impl<W: Widget + Clone> Layout for Clip<W> {
     }
 }
 
-impl<W: Widget + Clone> CommonWidget for Clip<W> {
+impl<W: AnyWidget + Clone> CommonWidget for Clip<W> {
     CommonWidgetImpl!(self, id: self.id, child: self.child, position: self.position, dimension: self.dimension);
 }
 
-impl<W: Widget + Clone> Render for Clip<W> {
+impl<W: AnyWidget + Clone> Render for Clip<W> {
     fn render(&mut self, context: &mut RenderContext, env: &mut Environment) {
         // If the clip is completely out of frame
         if self.position.x + self.dimension.width < 0.0 {
@@ -115,4 +115,4 @@ impl<W: Widget + Clone> Render for Clip<W> {
     }
 }
 
-impl<W: Widget + Clone> WidgetExt for Clip<W> {}
+impl<W: AnyWidget + Clone> WidgetExt for Clip<W> {}

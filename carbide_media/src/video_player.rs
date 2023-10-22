@@ -9,7 +9,7 @@ use carbide_core::render::{Render, RenderContext};
 use carbide_core::state::{AnyReadState, AnyState, IntoReadState, LocalState, Map2, ReadState, ReadStateExtNew, State, StateExtNew, StateSync};
 use carbide_core::widget::{CommonWidget, HSplit, HStack, IfElse, Image, ProgressView, Rectangle, Spacer, VStack, WidgetExt, WidgetId, ZStack};
 use crate::{Video, VideoId};
-use carbide_core::widget::Widget;
+use carbide_core::widget::AnyWidget;
 
 const ICON_SIZE: f64 = 48.0;
 const SKIP_ICON_SIZE: f64 = 32.0;
@@ -23,7 +23,7 @@ pub struct VideoPlayer<Id> where Id: ReadState<T=Option<VideoId>> + Clone {
 
     video: Video<Id>,
 
-    video_overlay: Box<dyn Widget>,
+    video_overlay: Box<dyn AnyWidget>,
     video_overlay_visible: bool,
 
     #[state] playing: Box<dyn AnyState<T=bool>>,

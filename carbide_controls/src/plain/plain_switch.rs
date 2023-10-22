@@ -6,19 +6,19 @@ use carbide_core::flags::Flags;
 use carbide_core::focus::{Focus, Focusable};
 use carbide_core::focus::Refocus;
 use carbide_core::state::{AnyReadState, AnyState, IntoReadState, IntoState, LocalState, Map1, Map2, ReadState, ReadStateExtNew, State, StateExtNew, TState};
-use carbide_core::widget::{CommonWidget, MouseArea, Rectangle, Text, Widget, WidgetExt, WidgetId, ZStack};
+use carbide_core::widget::{CommonWidget, MouseArea, Rectangle, Text, AnyWidget, WidgetExt, WidgetId, ZStack, Widget};
 
 pub trait PlainSwitchDelegate: Clone + 'static {
-    fn call(&self, focus: Box<dyn AnyState<T=Focus>>, checked: Box<dyn AnyState<T=bool>>, enabled: Box<dyn AnyReadState<T=bool>>) -> Box<dyn Widget>;
+    fn call(&self, focus: Box<dyn AnyState<T=Focus>>, checked: Box<dyn AnyState<T=bool>>, enabled: Box<dyn AnyReadState<T=bool>>) -> Box<dyn AnyWidget>;
 }
 
-impl<K> PlainSwitchDelegate for K where K: Fn(Box<dyn AnyState<T=Focus>>, Box<dyn AnyState<T=bool>>, Box<dyn AnyReadState<T=bool>>) -> Box<dyn Widget> + Clone + 'static {
-    fn call(&self, item: Box<dyn AnyState<T=Focus>>, index: Box<dyn AnyState<T=bool>>, enabled: Box<dyn AnyReadState<T=bool>>) -> Box<dyn Widget> {
+impl<K> PlainSwitchDelegate for K where K: Fn(Box<dyn AnyState<T=Focus>>, Box<dyn AnyState<T=bool>>, Box<dyn AnyReadState<T=bool>>) -> Box<dyn AnyWidget> + Clone + 'static {
+    fn call(&self, item: Box<dyn AnyState<T=Focus>>, index: Box<dyn AnyState<T=bool>>, enabled: Box<dyn AnyReadState<T=bool>>) -> Box<dyn AnyWidget> {
         self(item, index, enabled)
     }
 }
 
-type DefaultPlainSwitchDelegate = fn(Box<dyn AnyState<T=Focus>>, Box<dyn AnyState<T=bool>>, Box<dyn AnyReadState<T=bool>>) -> Box<dyn Widget>;
+type DefaultPlainSwitchDelegate = fn(Box<dyn AnyState<T=Focus>>, Box<dyn AnyState<T=bool>>, Box<dyn AnyReadState<T=bool>>) -> Box<dyn AnyWidget>;
 
 /// # A plain switch widget
 /// This widget contains the basic logic for a switch component, without any styling.
@@ -39,7 +39,7 @@ pub struct PlainSwitch<F, C, D, E> where
     #[state] focus: F,
     #[state] enabled: E,
 
-    child: Box<dyn Widget>,
+    child: Box<dyn AnyWidget>,
     delegate: D,
     #[state] checked: C,
 }
@@ -56,7 +56,7 @@ impl PlainSwitch<Focus, bool, DefaultPlainSwitchDelegate, bool> {
         )
     }
 
-    fn default_delegate(focus: Box<dyn AnyState<T=Focus>>, checked: Box<dyn AnyState<T=bool>>, enabled: Box<dyn AnyReadState<T=bool>>) -> Box<dyn Widget> {
+    fn default_delegate(focus: Box<dyn AnyState<T=Focus>>, checked: Box<dyn AnyState<T=bool>>, enabled: Box<dyn AnyReadState<T=bool>>) -> Box<dyn AnyWidget> {
         let background_color = Map1::read_map(checked.clone(), |is_checked| {
             if *is_checked {
                 EnvironmentColor::Green

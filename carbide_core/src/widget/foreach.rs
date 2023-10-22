@@ -10,13 +10,13 @@ use crate::environment::Environment;
 use crate::event::{OtherEventHandler, WidgetEvent};
 use crate::flags::Flags;
 use crate::state::{AnyState, IndexState, IntoReadState, IntoState, ReadState, State, StateContract, StateExtNew, ValueState};
-use crate::widget::{CommonWidget, Empty, Widget, WidgetExt, WidgetId};
+use crate::widget::{CommonWidget, Empty, AnyWidget, WidgetExt, WidgetId, Widget};
 
-pub trait Delegate<T: StateContract, O: Widget + Clone>: Clone {
+pub trait Delegate<T: StateContract, O: Widget>: Clone {
     fn call(&self, item: Box<dyn AnyState<T=T>>, index: Box<dyn AnyState<T=usize>>) -> O;
 }
 
-impl<T: StateContract, K, O: Widget + Clone> Delegate<T, O> for K where K: Fn(Box<dyn AnyState<T=T>>, Box<dyn AnyState<T=usize>>) -> O + Clone {
+impl<T: StateContract, K, O: Widget> Delegate<T, O> for K where K: Fn(Box<dyn AnyState<T=T>>, Box<dyn AnyState<T=usize>>) -> O + Clone {
     fn call(&self, item: Box<dyn AnyState<T=T>>, index: Box<dyn AnyState<T=usize>>) -> O {
         self(item, index)
     }
@@ -37,7 +37,7 @@ pub struct ForEach<T, M, U, W, I>
 where
     T: StateContract,
     M: State<T=Vec<T>>,
-    W: Widget + Clone,
+    W: Widget,
     U: Delegate<T, W> + 'static,
     I: ReadState<T=usize>
 {
@@ -56,7 +56,7 @@ where
 impl ForEach<(), Vec<()>, EmptyDelegate, Empty, usize> {
 
     #[carbide_default_builder2]
-    pub fn new<T: StateContract, M: IntoState<Vec<T>> + Clone, W: Widget + Clone, U: Delegate<T, W>>(model: M, delegate: U) -> ForEach<T, M::Output, U, W, usize> {
+    pub fn new<T: StateContract, M: IntoState<Vec<T>> + Clone, W: Widget, U: Delegate<T, W>>(model: M, delegate: U) -> ForEach<T, M::Output, U, W, usize> {
         ForEach {
             id: WidgetId::new(),
             position: Position::default(),
@@ -85,7 +85,7 @@ impl ForEach<(), Vec<()>, EmptyDelegate, Empty, usize> {
     }*/
 }
 
-impl<T: StateContract, M: State<T=Vec<T>> + Clone + 'static, W: Widget + Clone, U: Delegate<T, W> + 'static, I: ReadState<T=usize> + Clone + 'static> OtherEventHandler for ForEach<T, M, U, W, I> {
+impl<T: StateContract, M: State<T=Vec<T>> + Clone + 'static, W: Widget, U: Delegate<T, W> + 'static, I: ReadState<T=usize> + Clone + 'static> OtherEventHandler for ForEach<T, M, U, W, I> {
     fn handle_other_event(&mut self, _event: &WidgetEvent, _env: &mut Environment) {
         if self.model.value().len() < self.children.len() {
             // Remove the excess elements
@@ -112,11 +112,11 @@ impl<T: StateContract, M: State<T=Vec<T>> + Clone + 'static, W: Widget + Clone, 
     }
 }
 
-impl<T: StateContract, M: State<T=Vec<T>> + Clone + 'static, W: Widget + Clone, U: Delegate<T, W> + 'static, I: ReadState<T=usize> + Clone + 'static> CommonWidget for ForEach<T, M, U, W, I> {
+impl<T: StateContract, M: State<T=Vec<T>> + Clone + 'static, W: Widget, U: Delegate<T, W> + 'static, I: ReadState<T=usize> + Clone + 'static> CommonWidget for ForEach<T, M, U, W, I> {
     CommonWidgetImpl!(self, id: self.id, child: self.children, position: self.position, dimension: self.dimension, flag: Flags::PROXY);
 }
 
-impl<T: StateContract, M: State<T=Vec<T>> + Clone + 'static, W: Widget + Clone, U: Delegate<T, W> + 'static, I: ReadState<T=usize> + Clone + 'static> Debug for ForEach<T, M, U, W, I> {
+impl<T: StateContract, M: State<T=Vec<T>> + Clone + 'static, W: Widget, U: Delegate<T, W> + 'static, I: ReadState<T=usize> + Clone + 'static> Debug for ForEach<T, M, U, W, I> {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("ForEach")
             .field("children", &self.children)
@@ -124,4 +124,4 @@ impl<T: StateContract, M: State<T=Vec<T>> + Clone + 'static, W: Widget + Clone, 
     }
 }
 
-impl<T: StateContract, M: State<T=Vec<T>> + Clone + 'static, W: Widget + Clone, U: Delegate<T, W> + 'static, I: ReadState<T=usize> + Clone + 'static> WidgetExt for ForEach<T, M, U, W, I> {}
+impl<T: StateContract, M: State<T=Vec<T>> + Clone + 'static, W: Widget, U: Delegate<T, W> + 'static, I: ReadState<T=usize> + Clone + 'static> WidgetExt for ForEach<T, M, U, W, I> {}

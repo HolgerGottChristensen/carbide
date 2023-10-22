@@ -11,7 +11,7 @@ use crate::environment::{Environment,};
 use crate::environment::EnvironmentColor;
 use crate::render::{Primitive, Render, RenderContext, Style};
 use crate::state::{IntoReadState, ReadState, StateSync};
-use crate::widget::{Blur, CommonWidget, CornerRadii, Widget, WidgetExt, WidgetId, ZStack};
+use crate::widget::{Blur, CommonWidget, CornerRadii, AnyWidget, WidgetExt, WidgetId, ZStack, Widget};
 use crate::widget::shape::{Shape, tessellate};
 use crate::widget::types::PrimitiveStore;
 use crate::widget::types::ShapeStyle;

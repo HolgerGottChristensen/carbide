@@ -7,11 +7,11 @@ use crate::CommonWidgetImpl;
 use crate::draw::{Dimension, Position};
 use crate::layout::{BasicLayouter, Layout, Layouter};
 use crate::state::{ReadState};
-use crate::widget::{CommonWidget, Empty, Widget, WidgetExt, WidgetId};
+use crate::widget::{CommonWidget, Empty, AnyWidget, WidgetExt, WidgetId, Widget};
 
 #[derive(Debug, Clone, Widget)]
 #[carbide_exclude(Layout)]
-pub struct Offset<X, Y, C> where X: ReadState<T=f64>, Y: ReadState<T=f64>, C: Widget + Clone {
+pub struct Offset<X, Y, C> where X: ReadState<T=f64>, Y: ReadState<T=f64>, C: Widget {
     id: WidgetId,
     child: C,
     position: Position,
@@ -22,7 +22,7 @@ pub struct Offset<X, Y, C> where X: ReadState<T=f64>, Y: ReadState<T=f64>, C: Wi
 
 impl Offset<f64, f64, Empty> {
     #[carbide_default_builder2]
-    pub fn new<X: IntoReadState<f64>, Y: IntoReadState<f64>, C: Widget + Clone>(offset_x: X, offset_y: Y, child: C) -> Offset<X::Output, Y::Output, C> {
+    pub fn new<X: IntoReadState<f64>, Y: IntoReadState<f64>, C: Widget>(offset_x: X, offset_y: Y, child: C) -> Offset<X::Output, Y::Output, C> {
         Offset {
             id: WidgetId::new(),
             child,
@@ -34,7 +34,7 @@ impl Offset<f64, f64, Empty> {
     }
 }
 
-impl<X: ReadState<T=f64>, Y: ReadState<T=f64>, C: Widget + Clone> Layout for Offset<X, Y, C> {
+impl<X: ReadState<T=f64>, Y: ReadState<T=f64>, C: Widget> Layout for Offset<X, Y, C> {
     fn position_children(&mut self, env: &mut Environment) {
         let positioning = BasicLayouter::Center.positioner();
         let position = self.position;
@@ -53,8 +53,8 @@ impl<X: ReadState<T=f64>, Y: ReadState<T=f64>, C: Widget + Clone> Layout for Off
     }
 }
 
-impl<X: ReadState<T=f64>, Y: ReadState<T=f64>, C: Widget + Clone> CommonWidget for Offset<X, Y, C> {
+impl<X: ReadState<T=f64>, Y: ReadState<T=f64>, C: Widget> CommonWidget for Offset<X, Y, C> {
     CommonWidgetImpl!(self, id: self.id, child: self.child, position: self.position, dimension: self.dimension);
 }
 
-impl<X: ReadState<T=f64>, Y: ReadState<T=f64>, C: Widget + Clone> WidgetExt for Offset<X, Y, C> {}
+impl<X: ReadState<T=f64>, Y: ReadState<T=f64>, C: Widget> WidgetExt for Offset<X, Y, C> {}

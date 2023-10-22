@@ -48,7 +48,7 @@ fn animation_position_state(curve: fn(f64) -> f64, env: &Environment) -> impl Re
         .range(0.0, 300.0)
 }
 
-fn animation_ball(curve: fn(f64) -> f64, env: &Environment) -> impl Widget + Clone {
+fn animation_ball(curve: fn(f64) -> f64, env: &Environment) -> impl Widget {
     let state = animation_position_state(curve, env);
     HStack::new((
         Circle::new()

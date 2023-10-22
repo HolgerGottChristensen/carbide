@@ -155,7 +155,7 @@ fn main() {
         }))
         .frame(70.0, 26.0);
 
-    fn selected_node_view(graph: &TState<Graph>, selected_state: TState<usize>) -> Box<dyn Widget> {
+    fn selected_node_view(graph: &TState<Graph>, selected_state: TState<usize>) -> Box<dyn AnyWidget> {
         let nodes: TState<Vec<Node>> = lens!(Graph; graph.nodes);
         let node = nodes.index(&selected_state);
 
@@ -190,7 +190,7 @@ fn main() {
         .padding(10.0)
     }
 
-    fn selected_edge_view(graph: &TState<Graph>, selected_state: TState<usize>) -> Box<dyn Widget> {
+    fn selected_edge_view(graph: &TState<Graph>, selected_state: TState<usize>) -> Box<dyn AnyWidget> {
         let edges = lens!(Graph; graph.edges);
         let edge = edges.index(&selected_state);
 

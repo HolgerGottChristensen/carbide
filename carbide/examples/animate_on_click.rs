@@ -55,7 +55,7 @@ fn main() {
     application.launch();
 }
 
-fn animation_buttons(curve: fn(f64) -> f64, name: &str, offset: &TState<f64>) -> Box<dyn Widget> {
+fn animation_buttons(curve: fn(f64) -> f64, name: &str, offset: &TState<f64>) -> Box<dyn AnyWidget> {
     HStack::new(vec![
         Button::new(format!("{} left", name))
             .on_click(capture!({ offset }, |env: &mut Environment| {

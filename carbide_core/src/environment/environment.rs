@@ -15,7 +15,7 @@ use oneshot::TryRecvError;
 use raw_window_handle::{HasRawWindowHandle, RawWindowHandle};
 use carbide_core::draw::Position;
 use carbide_core::state::ReadState;
-use carbide_core::widget::Widget;
+use carbide_core::widget::AnyWidget;
 
 use crate::locate_folder;
 use crate::animation::Animation;
@@ -38,7 +38,7 @@ use crate::widget::{FilterId, ImageFilter, Overlay, WidgetId};
 use crate::widget::ImageInformation;
 use crate::window::WindowId;
 
-type Overlays = Vec<(Box<dyn Widget>, Box<dyn AnyReadState<T=bool>>)>;
+type Overlays = Vec<(Box<dyn AnyWidget>, Box<dyn AnyReadState<T=bool>>)>;
 
 pub struct Environment {
     /// This stack should be used to scope the environment. This contains information such as
@@ -67,7 +67,7 @@ pub struct Environment {
 
     /// A map from String to a widget.
     /// This key should correspond to the targeted overlay_layer
-    overlay_map: FxHashMap<&'static str, Rc<RefCell<Vec<Box<dyn Widget>>>>>,
+    overlay_map: FxHashMap<&'static str, Rc<RefCell<Vec<Box<dyn AnyWidget>>>>>,
 
     /// A transfer place for widgets. It is a map with key Option<String>. If None it means the
     /// action should be picked up by the closest parent consumer. If Some it will look at the Id
@@ -525,7 +525,7 @@ impl Environment {
         }))
     }
 
-    pub fn with_overlay_layer<R, F: FnOnce(&mut Environment)->R>(&mut self, id: &'static str, layer: Rc<RefCell<Vec<Box<dyn Widget>>>>, f: F) -> R {
+    pub fn with_overlay_layer<R, F: FnOnce(&mut Environment)->R>(&mut self, id: &'static str, layer: Rc<RefCell<Vec<Box<dyn AnyWidget>>>>, f: F) -> R {
         let old = self.overlay_map.insert(id, layer);
 
         let res = f(self);
@@ -539,7 +539,7 @@ impl Environment {
         res
     }
 
-    pub fn add_overlay(&mut self, id: &'static str, widget: Box<dyn Widget>) {
+    pub fn add_overlay(&mut self, id: &'static str, widget: Box<dyn AnyWidget>) {
         if let Some(layer) = self.overlay_map.get_mut(&id) {
             layer.borrow_mut().retain(|a| a.id() != widget.id());
             layer.borrow_mut().push(widget);

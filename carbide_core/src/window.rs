@@ -7,7 +7,7 @@ use crate::draw::image::ImageId;
 use crate::locate_folder::Search;
 use crate::text::{FontFamily, FontId};
 use crate::widget::Menu;
-use crate::widget::Widget;
+use crate::widget::AnyWidget;
 
 #[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct WindowId(pub usize);
@@ -37,6 +37,6 @@ pub trait TWindow {
     }
 
     fn add_image(&mut self, id: ImageId, image: DynamicImage) -> Option<ImageId>;
-    fn set_widgets(&mut self, w: Box<dyn Widget>);
+    fn set_widgets(&mut self, w: Box<dyn AnyWidget>);
     fn set_menu(&mut self, menu: Vec<Menu>);
 }

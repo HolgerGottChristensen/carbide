@@ -56,7 +56,7 @@ fn main() {
         MouseCursor::RowResize,
     ];
 
-    fn delegate(item: Box<dyn AnyState<T=MouseCursor>>, _: Box<dyn AnyState<T=usize>>) -> impl Widget + Clone {
+    fn delegate(item: Box<dyn AnyState<T=MouseCursor>>, _: Box<dyn AnyState<T=usize>>) -> impl Widget {
         Button::new_primary(format!("{:?}", *item.value()), move |env: &mut Environment, _: _| {})
             .cursor(*item.value())
             .frame(100.0, 22.0)

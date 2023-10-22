@@ -8,7 +8,7 @@ use crate::environment::Environment;
 use crate::event::{MouseEvent, MouseEventHandler, OtherEventHandler, WidgetEvent};
 use crate::layout::Layout;
 use crate::state::{IntoState, State};
-use crate::widget::{CommonWidget, CrossAxisAlignment, SplitType, Widget, WidgetExt, WidgetId};
+use crate::widget::{CommonWidget, CrossAxisAlignment, SplitType, AnyWidget, WidgetExt, WidgetId, Widget};
 
 #[derive(Clone, Debug, Widget)]
 #[carbide_exclude(Layout, MouseEvent, OtherEvent)]
@@ -17,7 +17,7 @@ pub struct HSplit<T> where T: State<T=f64> {
     position: Position,
     dimension: Dimension,
     // Leading - Trailing
-    children: Vec<Box<dyn Widget>>,
+    children: Vec<Box<dyn AnyWidget>>,
     split: SplitType<T>,
     cross_axis_alignment: CrossAxisAlignment,
     dragging: bool,
@@ -28,13 +28,13 @@ pub struct HSplit<T> where T: State<T=f64> {
 impl HSplit<f64> {
 
     #[carbide_default_builder2]
-    pub fn new(leading: Box<dyn Widget>, trailing: Box<dyn Widget>) -> Box<Self> {
+    pub fn new(leading: Box<dyn AnyWidget>, trailing: Box<dyn AnyWidget>) -> Box<Self> {
         Self::new_internal(leading, trailing, SplitType::Percent(0.1), true)
     }
 
     fn new_internal<T: State<T=f64> + Clone>(
-        leading: Box<dyn Widget>,
-        trailing: Box<dyn Widget>,
+        leading: Box<dyn AnyWidget>,
+        trailing: Box<dyn AnyWidget>,
         split: SplitType<T>,
         draggable: bool,
     ) -> Box<HSplit<T>> {

@@ -7,17 +7,17 @@ use carbide_core::flags::Flags;
 use carbide_core::focus::{Focus, Focusable, Refocus};
 use carbide_core::state::{AnyReadState, IntoReadState, IntoState, LocalState, Map1, Map2, Map4, ReadState, ReadStateExtNew, TState};
 use carbide_core::state::State;
-use carbide_core::widget::{CommonWidget, MouseArea, Rectangle, Text, Widget, WidgetExt, WidgetId, ZStack};
+use carbide_core::widget::{CommonWidget, MouseArea, Rectangle, Text, AnyWidget, WidgetExt, WidgetId, ZStack, Widget};
 
 use crate::PlainButton;
 use crate::types::*;
 
 pub trait PlainCheckBoxDelegate: Clone + 'static {
-    fn call(&self, focus: Box<dyn AnyReadState<T=Focus>>, checked: Box<dyn AnyReadState<T=CheckBoxValue>>, enabled: Box<dyn AnyReadState<T=bool>>) -> Box<dyn Widget>;
+    fn call(&self, focus: Box<dyn AnyReadState<T=Focus>>, checked: Box<dyn AnyReadState<T=CheckBoxValue>>, enabled: Box<dyn AnyReadState<T=bool>>) -> Box<dyn AnyWidget>;
 }
 
-impl<K> PlainCheckBoxDelegate for K where K: Fn(Box<dyn AnyReadState<T=Focus>>, Box<dyn AnyReadState<T=CheckBoxValue>>, Box<dyn AnyReadState<T=bool>>) -> Box<dyn Widget> + Clone + 'static {
-    fn call(&self, item: Box<dyn AnyReadState<T=Focus>>, index: Box<dyn AnyReadState<T=CheckBoxValue>>, enabled: Box<dyn AnyReadState<T=bool>>) -> Box<dyn Widget> {
+impl<K> PlainCheckBoxDelegate for K where K: Fn(Box<dyn AnyReadState<T=Focus>>, Box<dyn AnyReadState<T=CheckBoxValue>>, Box<dyn AnyReadState<T=bool>>) -> Box<dyn AnyWidget> + Clone + 'static {
+    fn call(&self, item: Box<dyn AnyReadState<T=Focus>>, index: Box<dyn AnyReadState<T=CheckBoxValue>>, enabled: Box<dyn AnyReadState<T=bool>>) -> Box<dyn AnyWidget> {
         self(item, index, enabled)
     }
 }
@@ -33,14 +33,14 @@ pub struct PlainCheckBox<F, C, D, E> where
     id: WidgetId,
     #[state] focus: F,
     #[state] enabled: E,
-    child: Box<dyn Widget>,
+    child: Box<dyn AnyWidget>,
     position: Position,
     dimension: Dimension,
     delegate: D,
     #[state] checked: C,
 }
 
-type DefaultPlainCheckBoxDelegate = fn(focus: Box<dyn AnyReadState<T=Focus>>, selected: Box<dyn AnyReadState<T=CheckBoxValue>>, enabled: Box<dyn AnyReadState<T=bool>>) -> Box<dyn Widget>;
+type DefaultPlainCheckBoxDelegate = fn(focus: Box<dyn AnyReadState<T=Focus>>, selected: Box<dyn AnyReadState<T=CheckBoxValue>>, enabled: Box<dyn AnyReadState<T=bool>>) -> Box<dyn AnyWidget>;
 
 impl PlainCheckBox<Focus, CheckBoxValue, DefaultPlainCheckBoxDelegate, bool> {
     pub fn new<C: IntoState<CheckBoxValue>>(checked: C) -> PlainCheckBox<LocalState<Focus>, C::Output, DefaultPlainCheckBoxDelegate, bool> {
@@ -54,7 +54,7 @@ impl PlainCheckBox<Focus, CheckBoxValue, DefaultPlainCheckBoxDelegate, bool> {
         )
     }
 
-    fn default_delegate(focus: Box<dyn AnyReadState<T=Focus>>, checked: Box<dyn AnyReadState<T=CheckBoxValue>>, enabled: Box<dyn AnyReadState<T=bool>>) -> Box<dyn Widget> {
+    fn default_delegate(focus: Box<dyn AnyReadState<T=Focus>>, checked: Box<dyn AnyReadState<T=CheckBoxValue>>, enabled: Box<dyn AnyReadState<T=bool>>) -> Box<dyn AnyWidget> {
         let background_color = Map1::read_map(checked.clone(), |value| {
             match value {
                 CheckBoxValue::True => EnvironmentColor::Green,

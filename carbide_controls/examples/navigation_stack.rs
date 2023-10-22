@@ -9,7 +9,7 @@ fn main() {
     let mut application = Application::new()
         .with_asset_fonts();
 
-    fn item(n: usize) -> Box<dyn Widget> {
+    fn item(n: usize) -> Box<dyn AnyWidget> {
         ZStack::new(vec![
             Rectangle::new().fill(Color::random()),
             VStack::new(vec![

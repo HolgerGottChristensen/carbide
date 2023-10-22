@@ -23,7 +23,7 @@ pub struct SwitchDelegate<L: ReadState<T=String>> {
 }
 
 impl<L: ReadState<T=String>> PlainSwitchDelegate for SwitchDelegate<L> {
-    fn call(&self, focus: Box<dyn AnyState<T=Focus>>, checked: Box<dyn AnyState<T=bool>>, enabled: Box<dyn AnyReadState<T=bool>>) -> Box<dyn Widget> {
+    fn call(&self, focus: Box<dyn AnyState<T=Focus>>, checked: Box<dyn AnyState<T=bool>>, enabled: Box<dyn AnyReadState<T=bool>>) -> Box<dyn AnyWidget> {
         let background_color = Map2::read_map(
             checked.clone(),
             enabled.clone(),

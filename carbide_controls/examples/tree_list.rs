@@ -50,7 +50,7 @@ fn main() {
 
     let list_model_state = LocalState::new(vec![list_model]);
 
-    let delegate = move |item: TState<Tree>, _: TState<usize>| -> Box<dyn Widget> {
+    let delegate = move |item: TState<Tree>, _: TState<usize>| -> Box<dyn AnyWidget> {
         ZStack::new(vec![
             Rectangle::new().fill(EnvironmentColor::SystemFill),
             Text::new(lens!(Tree; |item| {

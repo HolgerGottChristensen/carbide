@@ -9,11 +9,11 @@ use crate::layout::{Layout, Layouter};
 use crate::render::{Primitive, RenderContext};
 use crate::render::Render;
 use crate::state::{IntoReadState, ReadState, StateSync};
-use crate::widget::{CommonWidget, Duplicated, Empty, Ignore, Widget, WidgetExt, WidgetId};
+use crate::widget::{CommonWidget, Duplicated, Empty, Ignore, AnyWidget, WidgetExt, WidgetId, Widget};
 
 /// A basic, non-interactive rectangle shape widget.
 #[derive(Debug, Clone)]
-pub struct Overlay<W, B> where W: Widget + Clone, B: ReadState<T=bool> {
+pub struct Overlay<W, B> where W: Widget, B: ReadState<T=bool> {
     overlay: Ignore<Duplicated<W>, bool, bool, bool, bool, bool, bool, bool>,
     hierarchy: Ignore<Duplicated<W>, bool, bool, bool, bool, bool, bool, bool>,
     showing: B,
@@ -21,7 +21,7 @@ pub struct Overlay<W, B> where W: Widget + Clone, B: ReadState<T=bool> {
 }
 
 impl Overlay<Empty, bool> {
-    pub fn new<W: Widget + Clone, B: IntoReadState<bool>>(layer: &'static str, showing: B, child: W) -> Overlay<W, B::Output> {
+    pub fn new<W: AnyWidget + Clone, B: IntoReadState<bool>>(layer: &'static str, showing: B, child: W) -> Overlay<W, B::Output> {
         let dup = Duplicated::new(child);
 
         let hierarchy = Ignore::new(dup.duplicate())
@@ -42,7 +42,7 @@ impl Overlay<Empty, bool> {
     }
 }
 
-impl<W: Widget + Clone, B: ReadState<T=bool>>  Overlay<W, B> {
+impl<W: AnyWidget + Clone, B: ReadState<T=bool>>  Overlay<W, B> {
     fn ensure_overlay_correct(&mut self, env: &mut Environment) {
         self.showing.sync(env);
 
@@ -55,7 +55,7 @@ impl<W: Widget + Clone, B: ReadState<T=bool>>  Overlay<W, B> {
     }
 }
 
-impl<W: Widget + Clone, B: ReadState<T=bool>> CommonWidget for Overlay<W, B> {
+impl<W: AnyWidget + Clone, B: ReadState<T=bool>> CommonWidget for Overlay<W, B> {
     fn id(&self) -> WidgetId {
         self.hierarchy.id()
     }
@@ -68,15 +68,15 @@ impl<W: Widget + Clone, B: ReadState<T=bool>> CommonWidget for Overlay<W, B> {
         self.hierarchy.alignment()
     }
 
-    fn foreach_child<'a>(&'a self, f: &mut dyn FnMut(&'a dyn Widget)) {
+    fn foreach_child<'a>(&'a self, f: &mut dyn FnMut(&'a dyn AnyWidget)) {
         self.hierarchy.foreach_child(f)
     }
 
-    fn foreach_child_mut<'a>(&'a mut self, f: &mut dyn FnMut(&'a mut dyn Widget)) {
+    fn foreach_child_mut<'a>(&'a mut self, f: &mut dyn FnMut(&'a mut dyn AnyWidget)) {
         self.hierarchy.foreach_child_mut(f)
     }
 
-    fn foreach_child_rev<'a>(&'a mut self, f: &mut dyn FnMut(&'a mut dyn Widget)) {
+    fn foreach_child_rev<'a>(&'a mut self, f: &mut dyn FnMut(&'a mut dyn AnyWidget)) {
         self.hierarchy.foreach_child_rev(f)
     }
 
@@ -108,16 +108,16 @@ impl<W: Widget + Clone, B: ReadState<T=bool>> CommonWidget for Overlay<W, B> {
         self.hierarchy.set_dimension(dimension)
     }
 
-    fn foreach_child_direct<'a>(&'a mut self, f: &mut dyn FnMut(&'a mut dyn Widget)) {
+    fn foreach_child_direct<'a>(&'a mut self, f: &mut dyn FnMut(&'a mut dyn AnyWidget)) {
         self.hierarchy.foreach_child_direct(f)
     }
 
-    fn foreach_child_direct_rev<'a>(&'a mut self, f: &mut dyn FnMut(&'a mut dyn Widget)) {
+    fn foreach_child_direct_rev<'a>(&'a mut self, f: &mut dyn FnMut(&'a mut dyn AnyWidget)) {
         self.hierarchy.foreach_child_direct_rev(f)
     }
 }
 
-impl<W: Widget + Clone, B: ReadState<T=bool>> MouseEventHandler for Overlay<W, B> {
+impl<W: AnyWidget + Clone, B: ReadState<T=bool>> MouseEventHandler for Overlay<W, B> {
     fn handle_mouse_event(&mut self, event: &MouseEvent, consumed: &bool, env: &mut Environment) {
         self.ensure_overlay_correct(env);
         self.hierarchy.handle_mouse_event(event, consumed, env)
@@ -129,7 +129,7 @@ impl<W: Widget + Clone, B: ReadState<T=bool>> MouseEventHandler for Overlay<W, B
     }
 }
 
-impl<W: Widget + Clone, B: ReadState<T=bool>> KeyboardEventHandler for Overlay<W, B> {
+impl<W: AnyWidget + Clone, B: ReadState<T=bool>> KeyboardEventHandler for Overlay<W, B> {
     fn handle_keyboard_event(&mut self, event: &KeyboardEvent, env: &mut Environment) {
         self.ensure_overlay_correct(env);
         self.hierarchy.handle_keyboard_event(event, env)
@@ -141,7 +141,7 @@ impl<W: Widget + Clone, B: ReadState<T=bool>> KeyboardEventHandler for Overlay<W
     }
 }
 
-impl<W: Widget + Clone, B: ReadState<T=bool>> OtherEventHandler for Overlay<W, B> {
+impl<W: AnyWidget + Clone, B: ReadState<T=bool>> OtherEventHandler for Overlay<W, B> {
     fn handle_other_event(&mut self, event: &WidgetEvent, env: &mut Environment) {
         self.ensure_overlay_correct(env);
         self.hierarchy.handle_other_event(event, env)
@@ -153,7 +153,7 @@ impl<W: Widget + Clone, B: ReadState<T=bool>> OtherEventHandler for Overlay<W, B
     }
 }
 
-impl<W: Widget + Clone, B: ReadState<T=bool>> StateSync for Overlay<W, B> {
+impl<W: AnyWidget + Clone, B: ReadState<T=bool>> StateSync for Overlay<W, B> {
     fn capture_state(&mut self, env: &mut Environment) {
         self.ensure_overlay_correct(env);
         self.hierarchy.capture_state(env);
@@ -165,7 +165,7 @@ impl<W: Widget + Clone, B: ReadState<T=bool>> StateSync for Overlay<W, B> {
     }
 }
 
-impl<W: Widget + Clone, B: ReadState<T=bool>> Layout for Overlay<W, B> {
+impl<W: AnyWidget + Clone, B: ReadState<T=bool>> Layout for Overlay<W, B> {
     fn calculate_size(&mut self, requested_size: Dimension, env: &mut Environment) -> Dimension {
         self.ensure_overlay_correct(env);
         self.hierarchy.calculate_size(requested_size, env)
@@ -176,7 +176,7 @@ impl<W: Widget + Clone, B: ReadState<T=bool>> Layout for Overlay<W, B> {
     }
 }
 
-impl<W: Widget + Clone, B: ReadState<T=bool>> Render for Overlay<W, B> {
+impl<W: AnyWidget + Clone, B: ReadState<T=bool>> Render for Overlay<W, B> {
     fn render(&mut self, context: &mut RenderContext, env: &mut Environment) {
         Render::render(&mut self.hierarchy, context, env)
     }
@@ -190,7 +190,7 @@ impl<W: Widget + Clone, B: ReadState<T=bool>> Render for Overlay<W, B> {
     }
 }
 
-impl<W: Widget + Clone, B: ReadState<T=bool>> Focusable for Overlay<W, B> {
+impl<W: AnyWidget + Clone, B: ReadState<T=bool>> Focusable for Overlay<W, B> {
     fn focus_retrieved(
         &mut self,
         event: &WidgetEvent,
@@ -250,6 +250,6 @@ impl<W: Widget + Clone, B: ReadState<T=bool>> Focusable for Overlay<W, B> {
 }
 
 
-impl<W: Widget + Clone, B: ReadState<T=bool>> Widget for Overlay<W, B> {}
+impl<W: AnyWidget + Clone, B: ReadState<T=bool>> AnyWidget for Overlay<W, B> {}
 
-impl<W: Widget + Clone, B: ReadState<T=bool>> WidgetExt for Overlay<W, B> {}
+impl<W: AnyWidget + Clone, B: ReadState<T=bool>> WidgetExt for Overlay<W, B> {}

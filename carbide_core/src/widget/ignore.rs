@@ -7,11 +7,11 @@ use crate::focus::{Focus, Focusable, Refocus};
 use crate::layout::{Layout, Layouter};
 use crate::render::{Primitive, Render, RenderContext};
 use crate::state::{IntoReadState, ReadState, StateSync};
-use crate::widget::{CommonWidget, Empty, Widget, WidgetExt, WidgetId};
+use crate::widget::{CommonWidget, Empty, AnyWidget, WidgetExt, WidgetId, Widget};
 
 #[derive(Clone, Debug)]
 pub struct Ignore<T, B1, B2, B3, B4, B5, B6, B7> where
-    T: Widget + Clone,
+    T: Widget,
     B1: ReadState<T=bool>,
     B2: ReadState<T=bool>,
     B3: ReadState<T=bool>,
@@ -31,7 +31,7 @@ pub struct Ignore<T, B1, B2, B3, B4, B5, B6, B7> where
 }
 
 impl Ignore<Empty, bool, bool, bool, bool, bool, bool, bool> {
-    pub fn new<T: Widget + Clone>(widget: T) -> Ignore<T, bool, bool, bool, bool, bool, bool, bool> {
+    pub fn new<T: Widget>(widget: T) -> Ignore<T, bool, bool, bool, bool, bool, bool, bool> {
         Ignore {
             inner: widget,
             state_sync: true,
@@ -45,7 +45,7 @@ impl Ignore<Empty, bool, bool, bool, bool, bool, bool, bool> {
     }
 }
 
-impl<T: Widget + Clone,
+impl<T: Widget,
     B1: ReadState<T=bool>,
     B2: ReadState<T=bool>,
     B3: ReadState<T=bool>,
@@ -130,7 +130,7 @@ impl<T: Widget + Clone,
     }
 }
 
-impl<T: Widget + Clone,
+impl<T: Widget,
     B1: ReadState<T=bool>,
     B2: ReadState<T=bool>,
     B3: ReadState<T=bool>,
@@ -147,23 +147,23 @@ impl<T: Widget + Clone,
         self.inner.flag()
     }
 
-    fn foreach_child<'a>(&'a self, f: &mut dyn FnMut(&'a dyn Widget)) {
+    fn foreach_child<'a>(&'a self, f: &mut dyn FnMut(&'a dyn AnyWidget)) {
         self.inner.foreach_child(f)
     }
 
-    fn foreach_child_mut<'a>(&'a mut self, f: &mut dyn FnMut(&'a mut dyn Widget)) {
+    fn foreach_child_mut<'a>(&'a mut self, f: &mut dyn FnMut(&'a mut dyn AnyWidget)) {
         self.inner.foreach_child_mut(f)
     }
 
-    fn foreach_child_rev<'a>(&'a mut self, f: &mut dyn FnMut(&'a mut dyn Widget)) {
+    fn foreach_child_rev<'a>(&'a mut self, f: &mut dyn FnMut(&'a mut dyn AnyWidget)) {
         self.inner.foreach_child_rev(f)
     }
 
-    fn foreach_child_direct<'a>(&'a mut self, f: &mut dyn FnMut(&'a mut dyn Widget)) {
+    fn foreach_child_direct<'a>(&'a mut self, f: &mut dyn FnMut(&'a mut dyn AnyWidget)) {
         self.inner.foreach_child_direct(f)
     }
 
-    fn foreach_child_direct_rev<'a>(&'a mut self, f: &mut dyn FnMut(&'a mut dyn Widget)) {
+    fn foreach_child_direct_rev<'a>(&'a mut self, f: &mut dyn FnMut(&'a mut dyn AnyWidget)) {
         self.inner.foreach_child_direct_rev(f)
 
     }
@@ -201,7 +201,7 @@ impl<T: Widget + Clone,
     }
 }
 
-impl<T: Widget + Clone,
+impl<T: Widget,
     B1: ReadState<T=bool>,
     B2: ReadState<T=bool>,
     B3: ReadState<T=bool>,
@@ -239,7 +239,7 @@ impl<T: Widget + Clone,
     }
 }
 
-impl<T: Widget + Clone,
+impl<T: Widget,
     B1: ReadState<T=bool>,
     B2: ReadState<T=bool>,
     B3: ReadState<T=bool>,
@@ -263,7 +263,7 @@ impl<T: Widget + Clone,
     }
 }
 
-impl<T: Widget + Clone,
+impl<T: Widget,
     B1: ReadState<T=bool>,
     B2: ReadState<T=bool>,
     B3: ReadState<T=bool>,
@@ -287,7 +287,7 @@ impl<T: Widget + Clone,
     }
 }
 
-impl<T: Widget + Clone,
+impl<T: Widget,
     B1: ReadState<T=bool>,
     B2: ReadState<T=bool>,
     B3: ReadState<T=bool>,
@@ -311,7 +311,7 @@ impl<T: Widget + Clone,
     }
 }
 
-impl<T: Widget + Clone,
+impl<T: Widget,
     B1: ReadState<T=bool>,
     B2: ReadState<T=bool>,
     B3: ReadState<T=bool>,
@@ -337,7 +337,7 @@ impl<T: Widget + Clone,
     }
 }
 
-impl<T: Widget + Clone,
+impl<T: Widget,
     B1: ReadState<T=bool>,
     B2: ReadState<T=bool>,
     B3: ReadState<T=bool>,
@@ -368,7 +368,7 @@ impl<T: Widget + Clone,
     }
 }
 
-impl<T: Widget + Clone,
+impl<T: Widget,
     B1: ReadState<T=bool>,
     B2: ReadState<T=bool>,
     B3: ReadState<T=bool>,
@@ -456,7 +456,7 @@ impl<T: Widget + Clone,
     }
 }
 
-impl<T: Widget + Clone,
+impl<T: AnyWidget + Clone,
     B1: ReadState<T=bool>,
     B2: ReadState<T=bool>,
     B3: ReadState<T=bool>,
@@ -464,9 +464,9 @@ impl<T: Widget + Clone,
     B5: ReadState<T=bool>,
     B6: ReadState<T=bool>,
     B7: ReadState<T=bool>,
-> Widget for Ignore<T, B1, B2, B3, B4, B5, B6, B7> {}
+> AnyWidget for Ignore<T, B1, B2, B3, B4, B5, B6, B7> {}
 
-impl<T: Widget + Clone,
+impl<T: AnyWidget + Clone,
     B1: ReadState<T=bool>,
     B2: ReadState<T=bool>,
     B3: ReadState<T=bool>,

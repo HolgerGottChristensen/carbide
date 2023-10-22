@@ -6,7 +6,7 @@ use crate::environment::Environment;
 
 use crate::layout::{calculate_size_hstack, Layout, position_children_hstack};
 use crate::{CommonWidgetImpl};
-use crate::widget::{CommonWidget, CrossAxisAlignment, Widget, WidgetExt, WidgetId, WidgetSequence};
+use crate::widget::{CommonWidget, CrossAxisAlignment, AnyWidget, WidgetExt, WidgetId, WidgetSequence, Widget};
 
 /// # HStack
 /// The horizontal stack in Carbide is one of the main layout components.

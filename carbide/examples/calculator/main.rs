@@ -116,7 +116,7 @@ fn main() {
     application.launch();
 }
 
-fn calculator_button(label: Box<dyn Widget>, action: impl Action + Clone + 'static) -> Box<dyn Widget> {
+fn calculator_button(label: Box<dyn AnyWidget>, action: impl Action + Clone + 'static) -> Box<dyn AnyWidget> {
     let pressed_state: TState<bool> = LocalState::new(false).into();
     let hovered_state: TState<bool> = LocalState::new(false).into();
 
@@ -148,7 +148,7 @@ fn calculator_button(label: Box<dyn Widget>, action: impl Action + Clone + 'stat
         .boxed()
 }
 
-fn number_button(number: i64, state: &TState<CalculatorState>) -> Box<dyn Widget> {
+fn number_button(number: i64, state: &TState<CalculatorState>) -> Box<dyn AnyWidget> {
     calculator_button(
         Text::new(number).font_size(32),
         capture!([state], |env: &mut Environment| {
@@ -159,7 +159,7 @@ fn number_button(number: i64, state: &TState<CalculatorState>) -> Box<dyn Widget
         .boxed()
 }
 
-fn operator_button(operator: Operation, state: &TState<CalculatorState>) -> Box<dyn Widget> {
+fn operator_button(operator: Operation, state: &TState<CalculatorState>) -> Box<dyn AnyWidget> {
     calculator_button(
         Text::new(operator.to_symbol()).font_size(32),
         capture!([state], |env: &mut Environment| {

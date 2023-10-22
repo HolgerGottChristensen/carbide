@@ -10,14 +10,14 @@ use crate::CommonWidgetImpl;
 use crate::draw::{Dimension, Position};
 use crate::environment::{Environment, EnvironmentColor};
 use crate::state::AnimatedState;
-use crate::widget::{Circle, CommonWidget, Widget, WidgetExt, WidgetId, ZStack};
+use crate::widget::{Circle, CommonWidget, AnyWidget, WidgetExt, WidgetId, ZStack, Widget};
 use crate::widget::canvas::Canvas;
 use crate::widget::canvas::LineCap;
 
 #[derive(Debug, Clone, Widget)]
 pub struct ProgressView {
     id: WidgetId,
-    child: Box<dyn Widget>,
+    child: Box<dyn AnyWidget>,
     position: Position,
     dimension: Dimension,
 }

@@ -11,26 +11,26 @@ use crate::event::{
 use crate::flags::Flags;
 use crate::layout::{BasicLayouter, Layout, Layouter};
 use crate::render::{Primitive, Render};
-use crate::widget::{Capsule, CommonWidget, Rectangle, Widget, WidgetExt, WidgetId};
+use crate::widget::{Capsule, CommonWidget, Rectangle, AnyWidget, WidgetExt, WidgetId, Widget};
 use crate::widget::types::ScrollDirection;
 
 #[derive(Debug, Clone, Widget)]
 #[carbide_exclude(Render, MouseEvent, OtherEvent, Layout)]
 pub struct Scroll {
     id: WidgetId,
-    child: Box<dyn Widget>,
+    child: Box<dyn AnyWidget>,
     position: Position,
     dimension: Dimension,
     scroll_offset: Position,
     scroll_directions: ScrollDirection,
-    scrollbar_horizontal: Box<dyn Widget>,
-    scrollbar_vertical: Box<dyn Widget>,
+    scrollbar_horizontal: Box<dyn AnyWidget>,
+    scrollbar_vertical: Box<dyn AnyWidget>,
     drag_started_on_vertical_scrollbar: bool,
     drag_started_on_horizontal_scrollbar: bool,
     vertical_scrollbar_hovered: bool,
     horizontal_scrollbar_hovered: bool,
-    scrollbar_horizontal_background: Box<dyn Widget>,
-    scrollbar_vertical_background: Box<dyn Widget>,
+    scrollbar_horizontal_background: Box<dyn AnyWidget>,
+    scrollbar_vertical_background: Box<dyn AnyWidget>,
 }
 
 impl Scroll {
@@ -70,7 +70,7 @@ impl Scroll {
     }
 
     #[carbide_default_builder2]
-    pub fn new(child: Box<dyn Widget>) -> Self {
+    pub fn new(child: Box<dyn AnyWidget>) -> Self {
         Self {
             id: WidgetId::new(),
             child,
@@ -407,7 +407,7 @@ impl CommonWidget for Scroll {
         Flags::EMPTY
     }
 
-    fn foreach_child<'a>(&'a self, f: &mut dyn FnMut(&'a dyn Widget)) {
+    fn foreach_child<'a>(&'a self, f: &mut dyn FnMut(&'a dyn AnyWidget)) {
         if self.child.is_ignore() {
             return;
         }
@@ -420,7 +420,7 @@ impl CommonWidget for Scroll {
         f(&self.child);
     }
 
-    fn foreach_child_mut<'a>(&'a mut self, f: &mut dyn FnMut(&'a mut dyn Widget)) {
+    fn foreach_child_mut<'a>(&'a mut self, f: &mut dyn FnMut(&'a mut dyn AnyWidget)) {
         if self.child.is_ignore() {
             return;
         }
@@ -433,7 +433,7 @@ impl CommonWidget for Scroll {
         f(&mut self.child);
     }
 
-    fn foreach_child_rev<'a>(&'a mut self, f: &mut dyn FnMut(&'a mut dyn Widget)) {
+    fn foreach_child_rev<'a>(&'a mut self, f: &mut dyn FnMut(&'a mut dyn AnyWidget)) {
         if self.child.is_ignore() {
             return;
         }
@@ -446,11 +446,11 @@ impl CommonWidget for Scroll {
         f(&mut self.child);
     }
 
-    fn foreach_child_direct<'a>(&'a mut self, f: &mut dyn FnMut(&'a mut dyn Widget)) {
+    fn foreach_child_direct<'a>(&'a mut self, f: &mut dyn FnMut(&'a mut dyn AnyWidget)) {
         f(&mut self.child);
     }
 
-    fn foreach_child_direct_rev<'a>(&'a mut self, f: &mut dyn FnMut(&'a mut dyn Widget)) {
+    fn foreach_child_direct_rev<'a>(&'a mut self, f: &mut dyn FnMut(&'a mut dyn AnyWidget)) {
         f(&mut self.child);
     }
 

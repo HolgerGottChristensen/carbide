@@ -4,7 +4,7 @@ use crate::draw::Dimension;
 use crate::environment::Environment;
 use crate::layout::Layouter;
 use crate::render::primitive::Primitive;
-use crate::widget::Widget;
+use crate::widget::AnyWidget;
 
 pub struct Primitives {
     pub primitives: Vec<Primitive>,
@@ -13,7 +13,7 @@ pub struct Primitives {
 impl Primitives {
     pub fn new(
         window_dimensions: Dimension,
-        root: &mut Box<dyn Widget>,
+        root: &mut Box<dyn AnyWidget>,
         environment: &mut Environment,
     ) -> Vec<Primitive> {
         root.calculate_size(window_dimensions, environment);

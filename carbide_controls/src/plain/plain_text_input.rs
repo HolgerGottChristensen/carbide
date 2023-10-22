@@ -16,7 +16,7 @@ use carbide_core::state::{AnyReadState, IntoReadState, IntoState, LocalState, Ma
 use carbide_core::state::StateSync;
 use carbide_core::text::Glyph;
 use carbide_core::utils::{binary_search, clamp};
-use carbide_core::widget::{CommonWidget, Rectangle, Text, TextWidget, Widget, WidgetExt, WidgetId};
+use carbide_core::widget::{CommonWidget, Rectangle, Text, TextWidget, AnyWidget, WidgetExt, WidgetId, Widget};
 use carbide_core::widget::Wrap;
 use crate::{enabled_state, EnabledState};
 
@@ -55,8 +55,8 @@ pub struct PlainTextInput<F, C, O, S, T, E> where
 
     // Widgets
     text_widget: Box<dyn TextWidget>,
-    cursor_widget: Box<dyn Widget>,
-    selection_widget: Box<dyn Widget>,
+    cursor_widget: Box<dyn AnyWidget>,
+    selection_widget: Box<dyn AnyWidget>,
 
     // Text styles
     #[state] text_color: C,
@@ -170,7 +170,7 @@ impl<
         )
     }
 
-    pub fn selection_widget(self, selection: Box<dyn Widget>) -> PlainTextInput<F, C, O, S, T, E> {
+    pub fn selection_widget(self, selection: Box<dyn AnyWidget>) -> PlainTextInput<F, C, O, S, T, E> {
         Self::new_internal(
             self.focus,
             self.text_color,
@@ -183,7 +183,7 @@ impl<
         )
     }
 
-    pub fn cursor_widget(self, cursor: Box<dyn Widget>) -> PlainTextInput<F, C, O, S, T, E> {
+    pub fn cursor_widget(self, cursor: Box<dyn AnyWidget>) -> PlainTextInput<F, C, O, S, T, E> {
         Self::new_internal(
             self.focus,
             self.text_color,
@@ -203,7 +203,7 @@ impl<
         S2: ReadState<T=u32>,
         T2: State<T=String>,
         E2: ReadState<T=bool>,
-    >(focus: F2, text_color: C2, obscure: O2, font_size: S2, text: T2, cursor_widget: Box<dyn Widget>, selection_widget: Box<dyn Widget>, enabled: E2) -> PlainTextInput<F2, C2, O2, S2, T2, E2> {
+    >(focus: F2, text_color: C2, obscure: O2, font_size: S2, text: T2, cursor_widget: Box<dyn AnyWidget>, selection_widget: Box<dyn AnyWidget>, enabled: E2) -> PlainTextInput<F2, C2, O2, S2, T2, E2> {
 
         let display_text = Map2::read_map(text.clone(), obscure.clone(), |text, obscure| {
             if let Some(obscuring_char) = obscure {

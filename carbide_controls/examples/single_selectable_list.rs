@@ -25,7 +25,7 @@ fn main() {
 
     let selected_item_delegate = selected_item.clone();
 
-    let delegate = move |item: TState<(String, WidgetId)>, _: TState<usize>| -> Box<dyn Widget> {
+    let delegate = move |item: TState<(String, WidgetId)>, _: TState<usize>| -> Box<dyn AnyWidget> {
         let selected = Map2::read_map(
             selected_item_delegate.clone(),
             item.clone(),

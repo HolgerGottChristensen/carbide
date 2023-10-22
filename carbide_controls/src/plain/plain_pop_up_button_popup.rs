@@ -5,7 +5,7 @@ use carbide_core::event::{
     KeyboardEvent, KeyboardEventHandler, MouseButton, MouseEvent, MouseEventHandler,
 };
 use carbide_core::state::{AnyState, ReadState, State, StateContract};
-use carbide_core::widget::{CommonWidget, Widget, WidgetExt, WidgetId};
+use carbide_core::widget::{CommonWidget, AnyWidget, WidgetExt, WidgetId, Widget};
 
 use crate::plain::plain_pop_up_button::PopupButtonKeyCommand;
 
@@ -19,7 +19,7 @@ pub struct PlainPopUpButtonPopUp<T, S, M, H, E> where
     E: ReadState<T=bool>,
 {
     id: WidgetId,
-    child: Box<dyn Widget>,
+    child: Box<dyn AnyWidget>,
     position: Position,
     dimension: Dimension,
     #[state] model: M,
@@ -30,7 +30,7 @@ pub struct PlainPopUpButtonPopUp<T, S, M, H, E> where
 }
 
 impl PlainPopUpButtonPopUp<bool, bool, Vec<bool>, Option<usize>, bool> {
-    pub fn new<T: StateContract + PartialEq, S: State<T=T>, M: ReadState<T=Vec<T>>, H: State<T=Option<usize>>, E: ReadState<T=bool>>(child: Box<dyn Widget>, hover_model: H, popup_open: Box<dyn AnyState<T=bool>>, model: M, selected: S, enabled: E) -> PlainPopUpButtonPopUp<T, S, M, H, E> {
+    pub fn new<T: StateContract + PartialEq, S: State<T=T>, M: ReadState<T=Vec<T>>, H: State<T=Option<usize>>, E: ReadState<T=bool>>(child: Box<dyn AnyWidget>, hover_model: H, popup_open: Box<dyn AnyState<T=bool>>, model: M, selected: S, enabled: E) -> PlainPopUpButtonPopUp<T, S, M, H, E> {
         PlainPopUpButtonPopUp {
             id: WidgetId::new(),
             child,

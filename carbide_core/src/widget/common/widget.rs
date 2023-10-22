@@ -18,20 +18,34 @@ use crate::state::{StateSync};
 use crate::widget::{CommonWidget, WidgetExt, WidgetId};
 
 // TODO Rename to AnyWidget and create a widget that is anywidget and clone
-pub trait Widget: Event + Layout + Render + Focusable + DynClone + Debug + 'static {}
+pub trait AnyWidget: Event + Layout + Render + Focusable + DynClone + Debug + 'static {}
 
-dyn_clone::clone_trait_object!(Widget);
+dyn_clone::clone_trait_object!(AnyWidget);
 
+
+pub trait Widget: AnyWidget + Clone + private::Sealed {}
+
+impl<T> Widget for T where T: AnyWidget + Clone {}
+
+mod private {
+    use crate::widget::AnyWidget;
+
+    // This disallows implementing Widget manually, and requires something to implement
+    // AnyWidget to implement Widget.
+    pub trait Sealed {}
+
+    impl<T> Sealed for T where T: AnyWidget {}
+}
 
 // ---------------------------------------------------
 //  Implement Widget for Box dyn Widget
 // ---------------------------------------------------
 
-impl Widget for Box<dyn Widget> {}
+impl AnyWidget for Box<dyn AnyWidget> {}
 
-impl WidgetExt for Box<dyn Widget> {}
+impl WidgetExt for Box<dyn AnyWidget> {}
 
-impl<T: Widget + ?Sized> CommonWidget for Box<T> {
+impl<T: AnyWidget + ?Sized> CommonWidget for Box<T> {
     fn id(&self) -> WidgetId {
         self.deref().id()
     }
@@ -44,15 +58,15 @@ impl<T: Widget + ?Sized> CommonWidget for Box<T> {
         self.deref().alignment()
     }
 
-    fn foreach_child<'a>(&'a self, f: &mut dyn FnMut(&'a dyn Widget)) {
+    fn foreach_child<'a>(&'a self, f: &mut dyn FnMut(&'a dyn AnyWidget)) {
         self.deref().foreach_child(f)
     }
 
-    fn foreach_child_mut<'a>(&'a mut self, f: &mut dyn FnMut(&'a mut dyn Widget)) {
+    fn foreach_child_mut<'a>(&'a mut self, f: &mut dyn FnMut(&'a mut dyn AnyWidget)) {
         self.deref_mut().foreach_child_mut(f)
     }
 
-    fn foreach_child_rev<'a>(&'a mut self, f: &mut dyn FnMut(&'a mut dyn Widget)) {
+    fn foreach_child_rev<'a>(&'a mut self, f: &mut dyn FnMut(&'a mut dyn AnyWidget)) {
         self.deref_mut().foreach_child_rev(f)
     }
 
@@ -84,16 +98,16 @@ impl<T: Widget + ?Sized> CommonWidget for Box<T> {
         self.deref_mut().set_dimension(dimension)
     }
 
-    fn foreach_child_direct<'a>(&'a mut self, f: &mut dyn FnMut(&'a mut dyn Widget)) {
+    fn foreach_child_direct<'a>(&'a mut self, f: &mut dyn FnMut(&'a mut dyn AnyWidget)) {
         self.deref_mut().foreach_child_direct(f)
     }
 
-    fn foreach_child_direct_rev<'a>(&'a mut self, f: &mut dyn FnMut(&'a mut dyn Widget)) {
+    fn foreach_child_direct_rev<'a>(&'a mut self, f: &mut dyn FnMut(&'a mut dyn AnyWidget)) {
         self.deref_mut().foreach_child_direct_rev(f)
     }
 }
 
-impl<T: Widget + ?Sized> MouseEventHandler for Box<T> {
+impl<T: AnyWidget + ?Sized> MouseEventHandler for Box<T> {
     fn handle_mouse_event(&mut self, event: &MouseEvent, consumed: &bool, env: &mut Environment) {
         self.deref_mut().handle_mouse_event(event, consumed, env)
     }
@@ -103,7 +117,7 @@ impl<T: Widget + ?Sized> MouseEventHandler for Box<T> {
     }
 }
 
-impl<T: Widget + ?Sized> KeyboardEventHandler for Box<T> {
+impl<T: AnyWidget + ?Sized> KeyboardEventHandler for Box<T> {
     fn handle_keyboard_event(&mut self, event: &KeyboardEvent, env: &mut Environment) {
         self.deref_mut().handle_keyboard_event(event, env)
     }
@@ -113,7 +127,7 @@ impl<T: Widget + ?Sized> KeyboardEventHandler for Box<T> {
     }
 }
 
-impl<T: Widget + ?Sized> OtherEventHandler for Box<T> {
+impl<T: AnyWidget + ?Sized> OtherEventHandler for Box<T> {
     fn handle_other_event(&mut self, event: &WidgetEvent, env: &mut Environment) {
         self.deref_mut().handle_other_event(event, env)
     }
@@ -123,7 +137,7 @@ impl<T: Widget + ?Sized> OtherEventHandler for Box<T> {
     }
 }
 
-impl<T: Widget + ?Sized> StateSync for Box<T> {
+impl<T: AnyWidget + ?Sized> StateSync for Box<T> {
     fn capture_state(&mut self, env: &mut Environment) {
         self.deref_mut().capture_state(env);
     }
@@ -133,7 +147,7 @@ impl<T: Widget + ?Sized> StateSync for Box<T> {
     }
 }
 
-impl<T: Widget + ?Sized> Layout for Box<T> {
+impl<T: AnyWidget + ?Sized> Layout for Box<T> {
     fn calculate_size(&mut self, requested_size: Dimension, env: &mut Environment) -> Dimension {
         self.deref_mut().calculate_size(requested_size, env)
     }
@@ -143,7 +157,7 @@ impl<T: Widget + ?Sized> Layout for Box<T> {
     }
 }
 
-impl<T: Widget + ?Sized> Render for Box<T> {
+impl<T: AnyWidget + ?Sized> Render for Box<T> {
     fn render(&mut self, context: &mut RenderContext, env: &mut Environment) {
         self.deref_mut().render(context, env)
     }
@@ -157,7 +171,7 @@ impl<T: Widget + ?Sized> Render for Box<T> {
     }
 }
 
-impl<T: Widget + ?Sized> Focusable for Box<T> {
+impl<T: AnyWidget + ?Sized> Focusable for Box<T> {
     fn focus_retrieved(
         &mut self,
         event: &WidgetEvent,

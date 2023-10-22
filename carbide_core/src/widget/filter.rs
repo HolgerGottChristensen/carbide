@@ -11,7 +11,7 @@ use crate::widget::*;
 #[carbide_exclude(Render)]
 pub struct Filter {
     id: WidgetId,
-    child: Box<dyn Widget>,
+    child: Box<dyn AnyWidget>,
     position: Position,
     dimension: Dimension,
     blur_type: BlurType,
@@ -21,9 +21,9 @@ pub struct Filter {
 
 impl Filter {
     #[carbide_default_builder]
-    pub fn new(filter: ImageFilter, child: Box<dyn Widget>) -> Box<Self> {}
+    pub fn new(filter: ImageFilter, child: Box<dyn AnyWidget>) -> Box<Self> {}
 
-    pub fn new(filter: ImageFilter, child: Box<dyn Widget>) -> Box<Self> {
+    pub fn new(filter: ImageFilter, child: Box<dyn AnyWidget>) -> Box<Self> {
         Box::new(Filter {
             id: WidgetId::new(),
             child,
@@ -41,7 +41,7 @@ impl CommonWidget for Filter {
         self.id
     }
 
-    fn foreach_child<'a>(&'a self, f: &mut dyn FnMut(&'a dyn Widget)) {
+    fn foreach_child<'a>(&'a self, f: &mut dyn FnMut(&'a dyn AnyWidget)) {
         if self.child.is_ignore() {
             return;
         }
@@ -54,7 +54,7 @@ impl CommonWidget for Filter {
         f(&self.child);
     }
 
-    fn foreach_child_mut<'a>(&'a mut self, f: &mut dyn FnMut(&'a mut dyn Widget)) {
+    fn foreach_child_mut<'a>(&'a mut self, f: &mut dyn FnMut(&'a mut dyn AnyWidget)) {
         if self.child.is_ignore() {
             return;
         }
@@ -67,7 +67,7 @@ impl CommonWidget for Filter {
         f(&mut self.child);
     }
 
-    fn foreach_child_rev<'a>(&'a mut self, f: &mut dyn FnMut(&'a mut dyn Widget)) {
+    fn foreach_child_rev<'a>(&'a mut self, f: &mut dyn FnMut(&'a mut dyn AnyWidget)) {
         if self.child.is_ignore() {
             return;
         }
@@ -80,11 +80,11 @@ impl CommonWidget for Filter {
         f(&mut self.child);
     }
 
-    fn foreach_child_direct<'a>(&'a mut self, f: &mut dyn FnMut(&'a mut dyn Widget)) {
+    fn foreach_child_direct<'a>(&'a mut self, f: &mut dyn FnMut(&'a mut dyn AnyWidget)) {
         f(&mut self.child);
     }
 
-    fn foreach_child_direct_rev<'a>(&'a mut self, f: &mut dyn FnMut(&'a mut dyn Widget)) {
+    fn foreach_child_direct_rev<'a>(&'a mut self, f: &mut dyn FnMut(&'a mut dyn AnyWidget)) {
         f(&mut self.child);
     }
 

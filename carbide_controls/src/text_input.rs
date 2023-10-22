@@ -4,7 +4,7 @@ use carbide_core::environment::{EnvironmentColor, EnvironmentFontSize};
 use carbide_core::focus::Focus;
 use carbide_core::render::{Render};
 use carbide_core::state::{IntoReadState, IntoState, LocalState, Map1, Map2, ReadState, State, TState};
-use carbide_core::widget::{CommonWidget, CornerRadii, EdgeInsets, Rectangle, RoundedRectangle, Widget, WidgetExt, WidgetId, ZStack};
+use carbide_core::widget::{CommonWidget, CornerRadii, EdgeInsets, Rectangle, RoundedRectangle, AnyWidget, WidgetExt, WidgetId, ZStack, Widget};
 
 use crate::{enabled_state, EnabledState, PASSWORD_CHAR, PlainTextInput};
 
@@ -26,7 +26,7 @@ pub struct TextInput<F, O, T, E> where
     position: Position,
     dimension: Dimension,
 
-    child: Box<dyn Widget>,
+    child: Box<dyn AnyWidget>,
     obscure: O,
 
     #[state] text: T,

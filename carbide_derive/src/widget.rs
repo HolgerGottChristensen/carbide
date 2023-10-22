@@ -72,7 +72,7 @@ pub fn impl_widget(ast: &syn::DeriveInput) -> proc_macro2::TokenStream {
         #(#streams)*
 
         #[automatically_derived]
-        impl #generics carbide_core::widget::Widget for #struct_ident #generics #wheres {}
+        impl #generics carbide_core::widget::AnyWidget for #struct_ident #generics #wheres {}
     }
 }
 

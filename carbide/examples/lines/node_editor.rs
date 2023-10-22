@@ -3,7 +3,7 @@ use carbide_core::draw::{Dimension, Position};
 use carbide_core::environment::Environment;
 use carbide_core::event::{ModifierKey, MouseEvent, MouseEventHandler};
 use carbide_core::state::{LocalState, ReadState, State, TState};
-use carbide_core::widget::{CommonWidget, ForEachChildAction, ForEachChildActionMut, Widget, WidgetExt, WidgetId};
+use carbide_core::widget::{CommonWidget, ForEachChildAction, ForEachChildActionMut, AnyWidget, WidgetExt, WidgetId};
 use carbide_core::CommonWidgetImpl;
 use std::iter::once;
 

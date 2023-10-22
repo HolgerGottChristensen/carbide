@@ -30,7 +30,7 @@ pub struct ButtonDelegate<L: ReadState<T=String>, P: ReadState<T=bool>> {
 }
 
 impl<L: ReadState<T=String>, P: ReadState<T=bool>> PlainButtonDelegate for ButtonDelegate<L, P> {
-    fn call(&self, focus: Box<dyn AnyReadState<T=Focus>>, hovered: Box<dyn AnyReadState<T=bool>>, pressed: Box<dyn AnyReadState<T=bool>>, enabled: Box<dyn AnyReadState<T=bool>>) -> Box<dyn Widget> {
+    fn call(&self, focus: Box<dyn AnyReadState<T=Focus>>, hovered: Box<dyn AnyReadState<T=bool>>, pressed: Box<dyn AnyReadState<T=bool>>, enabled: Box<dyn AnyReadState<T=bool>>) -> Box<dyn AnyWidget> {
         let base_color = Map3::read_map(self.is_primary.clone(), EnvironmentColor::Accent.color(), EnvironmentColor::SecondarySystemBackground.color(), |is_primary, primary, secondary| {
             if *is_primary {
                 *primary

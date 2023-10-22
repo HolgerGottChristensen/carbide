@@ -8,7 +8,7 @@ use crate::draw::{Dimension, Position};
 use crate::environment::Environment;
 use crate::layout::{BasicLayouter, Layout, Layouter};
 use crate::render::{Primitive, Render};
-use crate::widget::{Empty, Widget, WidgetExt, WidgetId};
+use crate::widget::{Empty, AnyWidget, WidgetExt, WidgetId, Widget};
 
 /// Takes a child and a background widget, and sizes the background the same as the child.
 /// The background will be shown behind the child widget.
@@ -26,8 +26,8 @@ use crate::widget::{Empty, Widget, WidgetExt, WidgetId};
 #[derive(Debug, Clone, Widget)]
 #[carbide_exclude(Layout, Render)]
 pub struct Background<F, B> where
-    F: Widget + Clone,
-    B: Widget + Clone
+    F: Widget,
+    B: Widget
 {
     id: WidgetId,
     child: F,
@@ -39,7 +39,7 @@ pub struct Background<F, B> where
 
 impl Background<Empty, Empty> {
     #[carbide_default_builder2]
-    pub fn new<F: Widget + Clone, B: Widget + Clone>(child: F, background: B) -> Background<F, B> {
+    pub fn new<F: Widget, B: Widget>(child: F, background: B) -> Background<F, B> {
         Background {
             id: WidgetId::new(),
             child,
@@ -51,14 +51,14 @@ impl Background<Empty, Empty> {
     }
 }
 
-impl<F: Widget + Clone, B: Widget + Clone> Background<F, B> {
+impl<F: Widget, B: Widget> Background<F, B> {
     pub fn with_alignment(mut self, layouter: BasicLayouter) -> Box<Self> {
         self.alignment = Box::new(layouter);
         Box::new(self)
     }
 }
 
-impl<F: Widget + Clone, B: Widget + Clone> Layout for Background<F, B> {
+impl<F: AnyWidget + Clone, B: AnyWidget + Clone> Layout for Background<F, B> {
     fn calculate_size(&mut self, requested_size: Dimension, env: &mut Environment) -> Dimension {
         let child_size = self.child.calculate_size(requested_size, env);
         self.background.calculate_size(child_size, env);
@@ -78,7 +78,7 @@ impl<F: Widget + Clone, B: Widget + Clone> Layout for Background<F, B> {
     }
 }
 
-impl<F: Widget + Clone, B: Widget + Clone> Render for Background<F, B> {
+impl<F: AnyWidget + Clone, B: AnyWidget + Clone> Render for Background<F, B> {
     fn process_get_primitives(&mut self, primitives: &mut Vec<Primitive>, env: &mut Environment) {
         self.background.process_get_primitives(primitives, env);
         self.child.process_get_primitives(primitives, env);
@@ -90,8 +90,8 @@ impl<F: Widget + Clone, B: Widget + Clone> Render for Background<F, B> {
     }
 }
 
-impl<F: Widget + Clone, B: Widget + Clone> CommonWidget for Background<F, B> {
+impl<F: AnyWidget + Clone, B: AnyWidget + Clone> CommonWidget for Background<F, B> {
     CommonWidgetImpl!(self, id: self.id, child: self.child, position: self.position, dimension: self.dimension, alignment: self.alignment);
 }
 
-impl<F: Widget + Clone, B: Widget + Clone> WidgetExt for Background<F, B> {}
+impl<F: AnyWidget + Clone, B: AnyWidget + Clone> WidgetExt for Background<F, B> {}

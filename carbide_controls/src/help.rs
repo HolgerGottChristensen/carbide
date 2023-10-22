@@ -9,7 +9,7 @@ use carbide_core::focus::Refocus;
 use carbide_core::layout::Layout;
 use carbide_core::render::{Render, RenderContext};
 use carbide_core::state::{AnyReadState, AnyState, IntoReadState, IntoState, LocalState, Map1, Map2, ReadState, ReadStateExtNew, State, StateExtNew, TState};
-use carbide_core::widget::{CommonWidget, Empty, MouseArea, Rectangle, Text, Widget, WidgetExt, WidgetId, ZStack};
+use carbide_core::widget::{CommonWidget, Empty, MouseArea, Rectangle, Text, AnyWidget, WidgetExt, WidgetId, ZStack, Widget};
 use crate::types::TooltipPosition;
 
 const PADDING: Scalar = 8.0;
@@ -21,27 +21,27 @@ const PADDING: Scalar = 8.0;
 /// For a styled version, use [crate::Switch] instead.
 #[derive(Clone, Debug, Widget)]
 #[carbide_exclude(MouseEvent, Render, Layout)]
-pub struct Help<C> where C: Widget + Clone {
+pub struct Help<C> where C: AnyWidget + Clone {
     id: WidgetId,
     position: Position,
     dimension: Dimension,
 
     child: C,
-    help: Box<dyn Widget>,
+    help: Box<dyn AnyWidget>,
     hovered: bool,
     tooltip_position: TooltipPosition,
 }
 
 impl Help<Empty> {
-    pub fn new<C: Widget + Clone>(child: C, help: Box<dyn Widget>) -> Help<C> {
+    pub fn new<C: AnyWidget + Clone>(child: C, help: Box<dyn AnyWidget>) -> Help<C> {
         Self::new_internal(child, help)
     }
 }
 
-impl<C: Widget + Clone> Help<C> {
-    fn new_internal<C2: Widget + Clone>(
+impl<C: AnyWidget + Clone> Help<C> {
+    fn new_internal<C2: AnyWidget + Clone>(
         child: C2,
-        help: Box<dyn Widget>,
+        help: Box<dyn AnyWidget>,
     ) -> Help<C2> {
         Help {
             id: WidgetId::new(),
@@ -55,7 +55,7 @@ impl<C: Widget + Clone> Help<C> {
     }
 }
 
-impl<C: Widget + Clone> MouseEventHandler for Help<C> {
+impl<C: AnyWidget + Clone> MouseEventHandler for Help<C> {
     fn handle_mouse_event(&mut self, event: &MouseEvent, consumed: &bool, env: &mut Environment) {
         if self.is_inside(event.get_current_mouse_position()) {
             self.hovered = true;
@@ -65,7 +65,7 @@ impl<C: Widget + Clone> MouseEventHandler for Help<C> {
     }
 }
 
-impl<C: Widget + Clone> Layout for Help<C> {
+impl<C: AnyWidget + Clone> Layout for Help<C> {
     fn calculate_size(&mut self, requested_size: Dimension, env: &mut Environment) -> Dimension {
         let dimension = self.child.calculate_size(requested_size, env);
         self.set_dimension(dimension);
@@ -132,7 +132,7 @@ impl<C: Widget + Clone> Layout for Help<C> {
     }
 }
 
-impl<C: Widget + Clone> Render for Help<C> {
+impl<C: AnyWidget + Clone> Render for Help<C> {
     fn render(&mut self, context: &mut RenderContext, env: &mut Environment) {
         self.child.render(context, env);
 
@@ -145,9 +145,9 @@ impl<C: Widget + Clone> Render for Help<C> {
 }
 
 
-impl<C: Widget + Clone> CommonWidget for Help<C> {
+impl<C: AnyWidget + Clone> CommonWidget for Help<C> {
     CommonWidgetImpl!(self, id: self.id, child: self.child, position: self.position, dimension: self.dimension);
 }
 
-impl<C: Widget + Clone> WidgetExt for Help<C> {}
+impl<C: AnyWidget + Clone> WidgetExt for Help<C> {}
 

@@ -9,23 +9,23 @@ use crate::focus::{Focus, Focusable, Refocus};
 use crate::layout::{Layout, Layouter};
 use crate::render::{Primitive, Render, RenderContext};
 use crate::state::{StateSync, ValueCell};
-use crate::widget::{CommonWidget, Empty, Widget, WidgetExt, WidgetId};
+use crate::widget::{CommonWidget, Empty, AnyWidget, WidgetExt, WidgetId};
 
-pub struct Duplicated<T: Widget>(Rc<RefCell<T>>);
+pub struct Duplicated<T: AnyWidget>(Rc<RefCell<T>>);
 
 impl Duplicated<Empty> {
-    pub fn new<T: Widget>(widget: T) -> Duplicated<T> {
+    pub fn new<T: AnyWidget>(widget: T) -> Duplicated<T> {
         Duplicated(Rc::new(RefCell::new(widget)))
     }
 }
 
-impl<T: Widget> Duplicated<T> {
+impl<T: AnyWidget> Duplicated<T> {
     pub fn duplicate(&self) -> Duplicated<T> {
         Duplicated(self.0.clone())
     }
 }
 
-impl<T: Widget> CommonWidget for Duplicated<T> {
+impl<T: AnyWidget> CommonWidget for Duplicated<T> {
     fn id(&self) -> WidgetId {
         self.0.borrow().id()
     }
@@ -38,15 +38,15 @@ impl<T: Widget> CommonWidget for Duplicated<T> {
         self.0.borrow().alignment()
     }
 
-    fn foreach_child<'a>(&'a self, f: &mut dyn FnMut(&'a dyn Widget)) {
+    fn foreach_child<'a>(&'a self, f: &mut dyn FnMut(&'a dyn AnyWidget)) {
         todo!()//self.0.borrow().apply(f, |a, b| a.foreach_child(b))
     }
 
-    fn foreach_child_mut<'a>(&'a mut self, f: &mut dyn FnMut(&'a mut dyn Widget)) {
+    fn foreach_child_mut<'a>(&'a mut self, f: &mut dyn FnMut(&'a mut dyn AnyWidget)) {
         todo!()//self.0.borrow_mut().apply(f, |a, b| a.foreach_child_mut(b))
     }
 
-    fn foreach_child_rev<'a>(&'a mut self, f: &mut dyn FnMut(&'a mut dyn Widget)) {
+    fn foreach_child_rev<'a>(&'a mut self, f: &mut dyn FnMut(&'a mut dyn AnyWidget)) {
         todo!()//self.0.borrow_mut().apply(f, |a, b| a.foreach_child_rev(b))
     }
 
@@ -78,16 +78,16 @@ impl<T: Widget> CommonWidget for Duplicated<T> {
         self.0.borrow_mut().set_dimension(dimension)
     }
 
-    fn foreach_child_direct<'a>(&'a mut self, f: &mut dyn FnMut(&'a mut dyn Widget)) {
+    fn foreach_child_direct<'a>(&'a mut self, f: &mut dyn FnMut(&'a mut dyn AnyWidget)) {
         todo!()//self.0.borrow_mut().apply(f, |a, b| a.foreach_child_direct(b))
     }
 
-    fn foreach_child_direct_rev<'a>(&'a mut self, f: &mut dyn FnMut(&'a mut dyn Widget)) {
+    fn foreach_child_direct_rev<'a>(&'a mut self, f: &mut dyn FnMut(&'a mut dyn AnyWidget)) {
         todo!()//self.0.borrow_mut().apply(f, |a, b| a.foreach_child_direct_rev(b))
     }
 }
 
-impl<T: Widget> StateSync for Duplicated<T> {
+impl<T: AnyWidget> StateSync for Duplicated<T> {
     fn capture_state(&mut self, env: &mut Environment) {
         self.0.borrow_mut().capture_state(env);
     }
@@ -97,7 +97,7 @@ impl<T: Widget> StateSync for Duplicated<T> {
     }
 }
 
-impl<T: Widget> MouseEventHandler for Duplicated<T> {
+impl<T: AnyWidget> MouseEventHandler for Duplicated<T> {
     fn handle_mouse_event(&mut self, event: &MouseEvent, consumed: &bool, env: &mut Environment) {
         self.0.borrow_mut().handle_mouse_event(event, consumed, env)
     }
@@ -107,7 +107,7 @@ impl<T: Widget> MouseEventHandler for Duplicated<T> {
     }
 }
 
-impl<T: Widget> KeyboardEventHandler for Duplicated<T> {
+impl<T: AnyWidget> KeyboardEventHandler for Duplicated<T> {
     fn handle_keyboard_event(&mut self, event: &KeyboardEvent, env: &mut Environment) {
         self.0.borrow_mut().handle_keyboard_event(event, env)
     }
@@ -117,7 +117,7 @@ impl<T: Widget> KeyboardEventHandler for Duplicated<T> {
     }
 }
 
-impl<T: Widget> OtherEventHandler for Duplicated<T> {
+impl<T: AnyWidget> OtherEventHandler for Duplicated<T> {
     fn handle_other_event(&mut self, event: &WidgetEvent, env: &mut Environment) {
         self.0.borrow_mut().handle_other_event(event, env)
     }
@@ -127,7 +127,7 @@ impl<T: Widget> OtherEventHandler for Duplicated<T> {
     }
 }
 
-impl<T: Widget> Layout for Duplicated<T> {
+impl<T: AnyWidget> Layout for Duplicated<T> {
     fn calculate_size(&mut self, requested_size: Dimension, env: &mut Environment) -> Dimension {
         self.0.borrow_mut().calculate_size(requested_size, env)
     }
@@ -137,7 +137,7 @@ impl<T: Widget> Layout for Duplicated<T> {
     }
 }
 
-impl<T: Widget> Render for Duplicated<T> {
+impl<T: AnyWidget> Render for Duplicated<T> {
     fn render(&mut self, context: &mut RenderContext, env: &mut Environment) {
         self.0.borrow_mut().render(context, env)
     }
@@ -151,7 +151,7 @@ impl<T: Widget> Render for Duplicated<T> {
     }
 }
 
-impl<T: Widget> Focusable for Duplicated<T> {
+impl<T: AnyWidget> Focusable for Duplicated<T> {
     fn focus_retrieved(
         &mut self,
         event: &WidgetEvent,
@@ -207,18 +207,18 @@ impl<T: Widget> Focusable for Duplicated<T> {
     }
 }
 
-impl<T: Widget> Debug for Duplicated<T> {
+impl<T: AnyWidget> Debug for Duplicated<T> {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         self.0.borrow().fmt(f)
     }
 }
 
-impl<T: Widget> Clone for Duplicated<T> {
+impl<T: AnyWidget> Clone for Duplicated<T> {
     fn clone(&self) -> Self {
         Duplicated(self.0.clone())
     }
 }
 
-impl<T: Widget> Widget for Duplicated<T> {}
+impl<T: AnyWidget> AnyWidget for Duplicated<T> {}
 
-impl<T: Widget> WidgetExt for Duplicated<T> {}
+impl<T: AnyWidget> WidgetExt for Duplicated<T> {}

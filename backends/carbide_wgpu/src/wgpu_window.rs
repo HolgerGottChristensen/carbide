@@ -23,7 +23,7 @@ use carbide_core::layout::{Layout, Layouter};
 use carbide_core::mesh::mesh::Mesh;
 use carbide_core::render::{Primitive, Primitives, Render, RenderContext};
 use carbide_core::state::StateSync;
-use carbide_core::widget::{CommonWidget, FilterId, Menu, OverlaidLayer, Rectangle, Widget, WidgetExt, WidgetId, ZStack};
+use carbide_core::widget::{CommonWidget, FilterId, Menu, OverlaidLayer, Rectangle, AnyWidget, WidgetExt, WidgetId, ZStack};
 use carbide_core::window::WindowId;
 use carbide_winit::convert_mouse_cursor;
 
@@ -246,15 +246,15 @@ pub struct WGPUWindow {
     title: String,
     position: Position,
     dimension: Dimension,
-    child: Box<dyn Widget>,
+    child: Box<dyn AnyWidget>,
     close_application_on_window_close: bool,
     visible: bool,
     window_menu: Option<Vec<Menu>>,
 }
 
 impl WGPUWindow {
-    pub fn new<W: Widget>(title: impl Into<String>, dimension: Dimension, child: W) -> Box<Self> {
-        let child: Box<dyn Widget> = Box::new(child);
+    pub fn new<W: AnyWidget>(title: impl Into<String>, dimension: Dimension, child: W) -> Box<Self> {
+        let child: Box<dyn AnyWidget> = Box::new(child);
 
         let window_id = WindowId::new();
         let title = title.into();
@@ -568,7 +568,7 @@ impl CommonWidget for WGPUWindow {
         self.id
     }
 
-    fn foreach_child<'a>(&'a self, f: &mut dyn FnMut(&'a dyn Widget)) {
+    fn foreach_child<'a>(&'a self, f: &mut dyn FnMut(&'a dyn AnyWidget)) {
         if self.child.is_ignore() {
             return;
         }
@@ -581,7 +581,7 @@ impl CommonWidget for WGPUWindow {
         f(&self.child);
     }
 
-    fn foreach_child_mut<'a>(&'a mut self, f: &mut dyn FnMut(&'a mut dyn Widget)) {
+    fn foreach_child_mut<'a>(&'a mut self, f: &mut dyn FnMut(&'a mut dyn AnyWidget)) {
         if self.child.is_ignore() {
             return;
         }
@@ -594,7 +594,7 @@ impl CommonWidget for WGPUWindow {
         f(&mut self.child);
     }
 
-    fn foreach_child_rev<'a>(&'a mut self, f: &mut dyn FnMut(&'a mut dyn Widget)) {
+    fn foreach_child_rev<'a>(&'a mut self, f: &mut dyn FnMut(&'a mut dyn AnyWidget)) {
         if self.child.is_ignore() {
             return;
         }
@@ -607,11 +607,11 @@ impl CommonWidget for WGPUWindow {
         f(&mut self.child);
     }
 
-    fn foreach_child_direct<'a>(&'a mut self, f: &mut dyn FnMut(&'a mut dyn Widget)) {
+    fn foreach_child_direct<'a>(&'a mut self, f: &mut dyn FnMut(&'a mut dyn AnyWidget)) {
         f(&mut self.child);
     }
 
-    fn foreach_child_direct_rev<'a>(&'a mut self, f: &mut dyn FnMut(&'a mut dyn Widget)) {
+    fn foreach_child_direct_rev<'a>(&'a mut self, f: &mut dyn FnMut(&'a mut dyn AnyWidget)) {
         f(&mut self.child);
     }
 
@@ -947,7 +947,7 @@ impl Render for WGPUWindow {
     }
 }
 
-impl Widget for WGPUWindow {}
+impl AnyWidget for WGPUWindow {}
 
 impl Scene for WGPUWindow {
     /// Request the window to redraw next frame

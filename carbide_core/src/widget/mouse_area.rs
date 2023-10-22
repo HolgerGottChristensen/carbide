@@ -12,7 +12,7 @@ use carbide_core::event::{
 use carbide_core::flags::Flags;
 use carbide_core::focus::Focus;
 use carbide_core::state::{State};
-use carbide_core::widget::{CommonWidget, Widget, WidgetExt, WidgetId};
+use carbide_core::widget::{CommonWidget, AnyWidget, WidgetExt, WidgetId, Widget};
 use carbide_macro::{carbide_default_builder2};
 
 use crate::state::{IntoState};
@@ -30,7 +30,7 @@ pub struct MouseArea<I, O, F, C, H, P> where
     I: Action + Clone + 'static,
     O: Action + Clone + 'static,
     F: State<T=Focus>,
-    C: Widget + Clone,
+    C: Widget,
     H: State<T=bool>,
     P: State<T=bool>,
 {
@@ -50,7 +50,7 @@ pub struct MouseArea<I, O, F, C, H, P> where
 impl MouseArea<fn(&mut Environment, ModifierKey), fn(&mut Environment, ModifierKey), Focus, Empty, bool, bool> {
 
     #[carbide_default_builder2]
-    pub fn new<C: Widget + Clone>(child: C) -> MouseArea<fn(&mut Environment, ModifierKey), fn(&mut Environment, ModifierKey), Focus, C, bool, bool> {
+    pub fn new<C: Widget>(child: C) -> MouseArea<fn(&mut Environment, ModifierKey), fn(&mut Environment, ModifierKey), Focus, C, bool, bool> {
         MouseArea {
             id: WidgetId::new(),
             focus: Focus::Unfocused,
@@ -70,10 +70,10 @@ impl MouseArea<fn(&mut Environment, ModifierKey), fn(&mut Environment, ModifierK
 impl<
     I: Action + Clone + 'static,
     O: Action + Clone + 'static,
-    F: State<T=Focus> + Clone,
-    C: Widget + Clone,
-    H: State<T=bool> + Clone,
-    P: State<T=bool> + Clone,
+    F: State<T=Focus>,
+    C: Widget,
+    H: State<T=bool>,
+    P: State<T=bool>,
 > MouseArea<I, O, F, C, H, P> {
     /// Example: .on_click(move |env: &mut Environment, modifier: ModifierKey| {})
     pub fn on_click<A: Action + Clone>(self, action: A) -> MouseArea<A, O, F, C, H, P> {
@@ -170,10 +170,10 @@ impl<
 impl<
     I: Action + Clone + 'static,
     O: Action + Clone + 'static,
-    F: State<T=Focus> + Clone,
-    C: Widget + Clone,
-    H: State<T=bool> + Clone,
-    P: State<T=bool> + Clone,
+    F: State<T=Focus>,
+    C: Widget,
+    H: State<T=bool>,
+    P: State<T=bool>,
 > OtherEventHandler for MouseArea<I, O, F, C, H, P> {
     fn handle_other_event(&mut self, _event: &WidgetEvent, env: &mut Environment) {
         if *self.is_hovered.value() {
@@ -190,10 +190,10 @@ impl<
 impl<
     I: Action + Clone + 'static,
     O: Action + Clone + 'static,
-    F: State<T=Focus> + Clone,
-    C: Widget + Clone,
-    H: State<T=bool> + Clone,
-    P: State<T=bool> + Clone,
+    F: State<T=Focus>,
+    C: Widget,
+    H: State<T=bool>,
+    P: State<T=bool>,
 > KeyboardEventHandler for MouseArea<I, O, F, C, H, P> {
     fn handle_keyboard_event(&mut self, event: &KeyboardEvent, env: &mut Environment) {
         if self.get_focus() != Focus::Focused {
@@ -216,10 +216,10 @@ impl<
 impl<
     I: Action + Clone + 'static,
     O: Action + Clone + 'static,
-    F: State<T=Focus> + Clone,
-    C: Widget + Clone,
-    H: State<T=bool> + Clone,
-    P: State<T=bool> + Clone,
+    F: State<T=Focus>,
+    C: Widget,
+    H: State<T=bool>,
+    P: State<T=bool>,
 > MouseEventHandler for MouseArea<I, O, F, C, H, P> {
     fn handle_mouse_event(&mut self, event: &MouseEvent, _consumed: &bool, env: &mut Environment) {
         match event {
@@ -261,10 +261,10 @@ impl<
 impl<
     I: Action + Clone + 'static,
     O: Action + Clone + 'static,
-    F: State<T=Focus> + Clone,
-    C: Widget + Clone,
-    H: State<T=bool> + Clone,
-    P: State<T=bool> + Clone,
+    F: State<T=Focus>,
+    C: Widget,
+    H: State<T=bool>,
+    P: State<T=bool>,
 > CommonWidget for MouseArea<I, O, F, C, H, P> {
     fn id(&self) -> WidgetId {
         self.id
@@ -298,7 +298,7 @@ impl<
         self.dimension = dimension
     }
 
-    fn foreach_child_mut<'a>(&'a mut self, f: &mut dyn FnMut(&'a mut dyn Widget)) {
+    fn foreach_child_mut<'a>(&'a mut self, f: &mut dyn FnMut(&'a mut dyn AnyWidget)) {
         if self.child.is_ignore() {
             return;
         }
@@ -311,7 +311,7 @@ impl<
         f(&mut self.child);
     }
 
-    fn foreach_child_rev<'a>(&'a mut self, f: &mut dyn FnMut(&'a mut dyn Widget)) {
+    fn foreach_child_rev<'a>(&'a mut self, f: &mut dyn FnMut(&'a mut dyn AnyWidget)) {
         if self.child.is_ignore() {
             return;
         }
@@ -324,7 +324,7 @@ impl<
         f(&mut self.child);
     }
 
-    fn foreach_child<'a>(&'a self, f: &mut dyn FnMut(&'a dyn Widget)) {
+    fn foreach_child<'a>(&'a self, f: &mut dyn FnMut(&'a dyn AnyWidget)) {
         if self.child.is_ignore() {
             return;
         }
@@ -337,11 +337,11 @@ impl<
         f(&self.child);
     }
 
-    fn foreach_child_direct<'a>(&'a mut self, f: &mut dyn FnMut(&'a mut dyn Widget)) {
+    fn foreach_child_direct<'a>(&'a mut self, f: &mut dyn FnMut(&'a mut dyn AnyWidget)) {
         f(&mut self.child);
     }
 
-    fn foreach_child_direct_rev<'a>(&'a mut self, f: &mut dyn FnMut(&'a mut dyn Widget)) {
+    fn foreach_child_direct_rev<'a>(&'a mut self, f: &mut dyn FnMut(&'a mut dyn AnyWidget)) {
         f(&mut self.child);
     }
 }
@@ -349,10 +349,10 @@ impl<
 impl<
     I: Action + Clone + 'static,
     O: Action + Clone + 'static,
-    F: State<T=Focus> + Clone,
-    C: Widget + Clone,
-    H: State<T=bool> + Clone,
-    P: State<T=bool> + Clone,
+    F: State<T=Focus>,
+    C: Widget,
+    H: State<T=bool>,
+    P: State<T=bool>,
 > Debug for MouseArea<I, O, F, C, H, P> {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("MouseArea")
@@ -364,8 +364,8 @@ impl<
 impl<
     I: Action + Clone + 'static,
     O: Action + Clone + 'static,
-    F: State<T=Focus> + Clone,
-    C: Widget + Clone,
-    H: State<T=bool> + Clone,
-    P: State<T=bool> + Clone,
+    F: State<T=Focus>,
+    C: Widget,
+    H: State<T=bool>,
+    P: State<T=bool>,
 > WidgetExt for MouseArea<I, O, F, C, H, P> {}

@@ -1,5 +1,6 @@
 use cgmath::Matrix4;
 use carbide_core::state::{IntoReadState, RMap1};
+use carbide_core::widget::Widget;
 use crate::color::RED;
 
 use crate::draw::Color;
@@ -11,14 +12,14 @@ use crate::flags::Flags;
 use crate::focus::Focus;
 use crate::render::Style;
 use crate::state::{IntoState, ReadState, TState};
-use crate::widget::{Action, Background, Border, Clip, ClipShape, CornerRadii, Duplicated, EdgeInsets, Empty, EnvUpdating, Flagged, Flexibility, Frame, Hidden, Ignore, MouseArea, Offset, Overlay, Padding, Rotation3DEffect, RoundedRectangle, Shape, Transform, Widget};
+use crate::widget::{Action, Background, Border, Clip, ClipShape, CornerRadii, Duplicated, EdgeInsets, Empty, EnvUpdating, Flagged, Flexibility, Frame, Hidden, Ignore, MouseArea, Offset, Overlay, Padding, Rotation3DEffect, RoundedRectangle, Shape, Transform, AnyWidget};
 use crate::state::ReadStateExtNew;
 
 type AccentColor<T> = EnvUpdating<T>;
 type ForegroundColor<T> = EnvUpdating<T>;
 
 
-pub trait WidgetExt: Widget + Sized + Clone + 'static {
+pub trait WidgetExt: Widget + Sized {
     /// Surround the widget with a frame. The frame is a widget that has fixed width, height or both.
     /// The frame takes two parameters. Both parameters take f64 state. This means you can pass
     /// constant values like 10, 100.2, varying values like LocalState and AnimationState.
@@ -42,7 +43,7 @@ pub trait WidgetExt: Widget + Sized + Clone + 'static {
     /// Add a widget to the background of this widget. The proposed size for the widget in the
     /// background will be size chosen of the widget in the foreground. This can be really useful
     /// when trying to add color behind text.
-    fn background<B: Widget + Clone>(self, background: B) -> Background<Self, B> {
+    fn background<B: AnyWidget + Clone>(self, background: B) -> Background<Self, B> {
         Background::new(self, background)
     }
 
@@ -166,7 +167,7 @@ pub trait WidgetExt: Widget + Sized + Clone + 'static {
         MouseArea::new(self).hovered(hovered)
     }
 
-    fn boxed(self) -> Box<dyn Widget> {
+    fn boxed(self) -> Box<dyn AnyWidget> {
         Box::new(self)
     }
 }

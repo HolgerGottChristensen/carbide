@@ -22,7 +22,7 @@ use crate::text::{
     TextStyle,
 };
 use crate::text::Text as InternalText;
-use crate::widget::{CommonWidget, Justify, Widget, WidgetExt, WidgetId};
+use crate::widget::{CommonWidget, Justify, AnyWidget, WidgetExt, WidgetId, Widget};
 //use crate::text_old::PositionedGlyph;
 use crate::widget::types::Wrap;
 
@@ -345,15 +345,15 @@ impl<T: ReadState<T=String>, S: ReadState<T=u32>, C: ReadState<T=Color>> CommonW
         self.id
     }
 
-    fn foreach_child<'a>(&'a self, _f: &mut dyn FnMut(&'a dyn Widget)) {}
+    fn foreach_child<'a>(&'a self, _f: &mut dyn FnMut(&'a dyn AnyWidget)) {}
 
-    fn foreach_child_mut<'a>(&'a mut self, _f: &mut dyn FnMut(&'a mut dyn Widget)) {}
+    fn foreach_child_mut<'a>(&'a mut self, _f: &mut dyn FnMut(&'a mut dyn AnyWidget)) {}
 
-    fn foreach_child_rev<'a>(&'a mut self, _f: &mut dyn FnMut(&'a mut dyn Widget)) {}
+    fn foreach_child_rev<'a>(&'a mut self, _f: &mut dyn FnMut(&'a mut dyn AnyWidget)) {}
 
-    fn foreach_child_direct<'a>(&'a mut self, _f: &mut dyn FnMut(&'a mut dyn Widget)) {}
+    fn foreach_child_direct<'a>(&'a mut self, _f: &mut dyn FnMut(&'a mut dyn AnyWidget)) {}
 
-    fn foreach_child_direct_rev<'a>(&'a mut self, _f: &mut dyn FnMut(&'a mut dyn Widget)) {}
+    fn foreach_child_direct_rev<'a>(&'a mut self, _f: &mut dyn FnMut(&'a mut dyn AnyWidget)) {}
 
     fn position(&self) -> Position {
         self.position
@@ -378,7 +378,7 @@ impl<T: ReadState<T=String>, S: ReadState<T=u32>, C: ReadState<T=Color>> CommonW
 
 impl<T: ReadState<T=String>, S: ReadState<T=u32>, C: ReadState<T=Color>> WidgetExt for Text<T, S, C> {}
 
-pub trait TextWidget: Widget {
+pub trait TextWidget: AnyWidget {
     fn glyphs(&self) -> Vec<Glyph>;
 }
 
@@ -392,6 +392,6 @@ impl<T: ReadState<T=String>, S: ReadState<T=u32>, C: ReadState<T=Color>> TextWid
     }
 }
 
-impl Widget for Box<dyn TextWidget> {}
+impl AnyWidget for Box<dyn TextWidget> {}
 
 dyn_clone::clone_trait_object!(TextWidget);

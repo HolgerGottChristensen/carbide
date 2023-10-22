@@ -4,10 +4,10 @@ use carbide_macro::{carbide_default_builder2};
 use crate::CommonWidgetImpl;
 use crate::draw::{Dimension, Position};
 use crate::flags::Flags;
-use crate::widget::{Empty, Widget, WidgetExt, WidgetId};
+use crate::widget::{Empty, AnyWidget, WidgetExt, WidgetId, Widget};
 
 #[derive(Debug, Clone, Widget)]
-pub struct Flagged<C> where C: Widget + Clone {
+pub struct Flagged<C> where C: Widget {
     id: WidgetId,
     child: C,
     position: Position,
@@ -17,7 +17,7 @@ pub struct Flagged<C> where C: Widget + Clone {
 
 impl Flagged<Empty> {
     #[carbide_default_builder2]
-    pub fn new<C: Widget + Clone>(child: C, flags: Flags) -> Box<Flagged<C>> {
+    pub fn new<C: Widget>(child: C, flags: Flags) -> Box<Flagged<C>> {
         Box::new(Flagged {
             id: WidgetId::new(),
             child,
@@ -28,8 +28,8 @@ impl Flagged<Empty> {
     }
 }
 
-impl<C: Widget + Clone> CommonWidget for Flagged<C> {
+impl<C: Widget> CommonWidget for Flagged<C> {
     CommonWidgetImpl!(self, id: self.id, child: self.child, position: self.position, dimension: self.dimension, flag: self.flags);
 }
 
-impl<C: Widget + Clone> WidgetExt for Flagged<C> {}
+impl<C: Widget> WidgetExt for Flagged<C> {}

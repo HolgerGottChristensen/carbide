@@ -6,7 +6,7 @@ pub use environment_variable::EnvironmentVariable;
 
 use crate::draw::Color;
 use crate::state::TState;
-use crate::widget::Widget;
+use crate::widget::AnyWidget;
 
 mod environment;
 mod environment_color;
@@ -16,13 +16,13 @@ pub mod environment_state_key;
 
 #[derive(Debug, Clone)]
 pub enum WidgetTransferAction {
-    Push(Box<dyn Widget>),
+    Push(Box<dyn AnyWidget>),
     Pop,
-    Replace(Box<dyn Widget>),
-    PushVec(Vec<Box<dyn Widget>>),
+    Replace(Box<dyn AnyWidget>),
+    PushVec(Vec<Box<dyn AnyWidget>>),
     PopN(usize),
     PopAll,
-    ReplaceAll(Box<dyn Widget>),
+    ReplaceAll(Box<dyn AnyWidget>),
 }
 
 #[derive(Debug, Clone)]

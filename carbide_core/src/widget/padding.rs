@@ -6,12 +6,12 @@ use crate::environment::Environment;
 
 use crate::layout::{BasicLayouter, Layout, Layouter};
 use crate::state::IntoReadState;
-use crate::widget::{CommonWidget, Empty, Widget, WidgetExt, WidgetId};
+use crate::widget::{CommonWidget, Empty, AnyWidget, WidgetExt, WidgetId, Widget};
 use crate::widget::types::EdgeInsets;
 
 #[derive(Debug, Clone, Widget)]
 #[carbide_exclude(Layout)]
-pub struct Padding<W, E> where W: Widget + Clone, E: ReadState<T=EdgeInsets> {
+pub struct Padding<W, E> where W: Widget, E: ReadState<T=EdgeInsets> {
     id: WidgetId,
     child: W,
     position: Position,
@@ -21,7 +21,7 @@ pub struct Padding<W, E> where W: Widget + Clone, E: ReadState<T=EdgeInsets> {
 
 impl Padding<Empty, EdgeInsets> {
     #[carbide_default_builder2]
-    pub fn new<W: Widget + Clone, E: IntoReadState<EdgeInsets>>(edge_insets: E, child: W) -> Padding<W, E::Output> {
+    pub fn new<W: Widget, E: IntoReadState<EdgeInsets>>(edge_insets: E, child: W) -> Padding<W, E::Output> {
         Padding {
             id: WidgetId::new(),
             child,
@@ -32,12 +32,12 @@ impl Padding<Empty, EdgeInsets> {
     }
 }
 
-impl<W: Widget + Clone, E: ReadState<T=EdgeInsets>> CommonWidget for Padding<W, E> {
+impl<W: Widget, E: ReadState<T=EdgeInsets>> CommonWidget for Padding<W, E> {
     fn id(&self) -> WidgetId {
         self.id
     }
 
-    fn foreach_child<'a>(&'a self, f: &mut dyn FnMut(&'a dyn Widget)) {
+    fn foreach_child<'a>(&'a self, f: &mut dyn FnMut(&'a dyn AnyWidget)) {
         if self.child.is_ignore() {
             return;
         }
@@ -50,7 +50,7 @@ impl<W: Widget + Clone, E: ReadState<T=EdgeInsets>> CommonWidget for Padding<W, 
         f(&self.child);
     }
 
-    fn foreach_child_mut<'a>(&'a mut self, f: &mut dyn FnMut(&'a mut dyn Widget)) {
+    fn foreach_child_mut<'a>(&'a mut self, f: &mut dyn FnMut(&'a mut dyn AnyWidget)) {
         if self.child.is_ignore() {
             return;
         }
@@ -63,7 +63,7 @@ impl<W: Widget + Clone, E: ReadState<T=EdgeInsets>> CommonWidget for Padding<W, 
         f(&mut self.child);
     }
 
-    fn foreach_child_rev<'a>(&'a mut self, f: &mut dyn FnMut(&'a mut dyn Widget)) {
+    fn foreach_child_rev<'a>(&'a mut self, f: &mut dyn FnMut(&'a mut dyn AnyWidget)) {
         if self.child.is_ignore() {
             return;
         }
@@ -76,11 +76,11 @@ impl<W: Widget + Clone, E: ReadState<T=EdgeInsets>> CommonWidget for Padding<W, 
         f(&mut self.child);
     }
 
-    fn foreach_child_direct<'a>(&'a mut self, f: &mut dyn FnMut(&'a mut dyn Widget)) {
+    fn foreach_child_direct<'a>(&'a mut self, f: &mut dyn FnMut(&'a mut dyn AnyWidget)) {
         f(&mut self.child);
     }
 
-    fn foreach_child_direct_rev<'a>(&'a mut self, f: &mut dyn FnMut(&'a mut dyn Widget)) {
+    fn foreach_child_direct_rev<'a>(&'a mut self, f: &mut dyn FnMut(&'a mut dyn AnyWidget)) {
         f(&mut self.child);
     }
 
@@ -101,7 +101,7 @@ impl<W: Widget + Clone, E: ReadState<T=EdgeInsets>> CommonWidget for Padding<W, 
     }
 }
 
-impl<W: Widget + Clone, E: ReadState<T=EdgeInsets>> Layout for Padding<W, E> {
+impl<W: Widget, E: ReadState<T=EdgeInsets>> Layout for Padding<W, E> {
     fn calculate_size(&mut self, requested_size: Dimension, env: &mut Environment) -> Dimension {
         let insets = *self.edge_insets.value();
         let dimensions = Dimension::new(
@@ -136,4 +136,4 @@ impl<W: Widget + Clone, E: ReadState<T=EdgeInsets>> Layout for Padding<W, E> {
     }
 }
 
-impl<W: Widget + Clone, E: ReadState<T=EdgeInsets>> WidgetExt for Padding<W, E> {}
+impl<W: Widget, E: ReadState<T=EdgeInsets>> WidgetExt for Padding<W, E> {}

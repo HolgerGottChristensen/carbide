@@ -16,7 +16,7 @@ use crate::draw::shape::triangle::Triangle;
 use crate::environment::{Environment, EnvironmentColor};
 use crate::render::{Primitive, PrimitiveKind, Render};
 use crate::state::{NewStateSync, ReadState, StateContract, TState, ValueState};
-use crate::widget::{CommonWidget, PrimitiveStore, Shape, ShapeStyle, StrokeStyle, Widget, WidgetExt, WidgetId};
+use crate::widget::{CommonWidget, PrimitiveStore, Shape, ShapeStyle, StrokeStyle, AnyWidget, WidgetExt, WidgetId, Widget};
 use crate::widget::canvas::{Context, ShapeStyleWithOptions};
 
 /// A basic, non-interactive rectangle shape widget.

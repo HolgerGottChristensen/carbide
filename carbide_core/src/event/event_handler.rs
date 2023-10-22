@@ -3,7 +3,7 @@ use std::time::{Duration, Instant};
 
 use carbide_core::cursor::MouseCursor;
 use carbide_core::focus::Refocus;
-use carbide_core::widget::Widget;
+use carbide_core::widget::AnyWidget;
 
 use crate::draw::{Dimension, Position, Scalar};
 use crate::environment::Environment;
@@ -26,7 +26,7 @@ pub struct EventHandler {
 }
 
 impl EventHandler {
-    pub fn delegate_events(&mut self, widgets: &mut impl Widget, env: &mut Environment) -> bool {
+    pub fn delegate_events(&mut self, widgets: &mut impl AnyWidget, env: &mut Environment) -> bool {
         let now = Instant::now();
         let mut any_focus = self.any_focus;
         let events = self.get_events();

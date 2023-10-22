@@ -1,7 +1,7 @@
 use carbide_core::environment::{EnvironmentColor, EnvironmentStateContainer};
 use carbide_core::state::IntoReadState;
 use carbide_core::state::ReadStateExtNew;
-use carbide_core::widget::{EdgeInsets, EnvUpdating, HStack, Rectangle, Text, Widget, WidgetExt};
+use carbide_core::widget::{EdgeInsets, EnvUpdating, HStack, Rectangle, Text, AnyWidget, WidgetExt};
 
 use crate::{Help, Labelled};
 
@@ -18,7 +18,7 @@ pub trait ControlsExt: WidgetExt {
         )
     }
 
-    fn label<L: IntoReadState<String>>(self, label: L) -> Labelled<HStack<Vec<Box<dyn Widget>>>, L::Output> {
+    fn label<L: IntoReadState<String>>(self, label: L) -> Labelled<HStack<Vec<Box<dyn AnyWidget>>>, L::Output> {
         Labelled::new(label, self)
     }
 

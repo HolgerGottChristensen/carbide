@@ -74,7 +74,7 @@ fn main() {
 
     let selected_items_delegate = selected_items.clone();
 
-    let delegate = move |article: TState<Article>, index: TState<usize>| -> Box<dyn Widget> {
+    let delegate = move |article: TState<Article>, index: TState<usize>| -> Box<dyn AnyWidget> {
         let selected_item = article.clone();
 
         let selected = selected_items_delegate.mapped(move |map: &HashSet<WidgetId>| {
@@ -156,7 +156,7 @@ fn main() {
     application.launch();
 }
 
-fn detail_view(selected_article: TState<Option<Article>>) -> Box<dyn Widget> {
+fn detail_view(selected_article: TState<Option<Article>>) -> Box<dyn AnyWidget> {
     let selected_article_for_link = selected_article.clone();
     let link =
         PlainButton::new(

@@ -12,7 +12,7 @@ use crate::environment::EnvironmentColor;
 use crate::layout::Layout;
 use crate::render::{Primitive, Render, RenderContext, Style};
 use crate::state::{ReadState, IntoReadState, StateSync};
-use crate::widget::{Blur, CommonWidget, Widget, WidgetExt, WidgetId, ZStack};
+use crate::widget::{Blur, CommonWidget, AnyWidget, WidgetExt, WidgetId, ZStack, Widget};
 use crate::widget::shape::{Shape, tessellate};
 use crate::widget::types::PrimitiveStore;
 use crate::widget::types::ShapeStyle;

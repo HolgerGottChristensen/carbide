@@ -9,7 +9,7 @@ use crate::PlainSlider;
 pub struct Slider;
 
 impl Slider {
-    pub fn new<V: IntoState<f64>, S: IntoReadState<f64>, E: IntoReadState<f64>>(value: V, start: S, end: E) -> PlainSlider<LocalState<Focus>, V::Output, S::Output, E::Output, Option<f64>, Box<dyn Widget>, Box<dyn Widget>, Box<dyn Widget>, bool> {
+    pub fn new<V: IntoState<f64>, S: IntoReadState<f64>, E: IntoReadState<f64>>(value: V, start: S, end: E) -> PlainSlider<LocalState<Focus>, V::Output, S::Output, E::Output, Option<f64>, Box<dyn AnyWidget>, Box<dyn AnyWidget>, Box<dyn AnyWidget>, bool> {
         let focus = LocalState::new(Focus::Unfocused);
 
         let mut plain = PlainSlider::new(value, start, end)
@@ -20,7 +20,7 @@ impl Slider {
         plain
     }
 
-    fn background(state: Box<dyn AnyState<T=f64>>, start: Box<dyn AnyReadState<T=f64>>, end: Box<dyn AnyReadState<T=f64>>, steps: Box<dyn AnyReadState<T=Option<f64>>>, focus: Box<dyn AnyReadState<T=Focus>>, enabled: Box<dyn AnyReadState<T=bool>>,) -> Box<dyn Widget> {
+    fn background(state: Box<dyn AnyState<T=f64>>, start: Box<dyn AnyReadState<T=f64>>, end: Box<dyn AnyReadState<T=f64>>, steps: Box<dyn AnyReadState<T=Option<f64>>>, focus: Box<dyn AnyReadState<T=Focus>>, enabled: Box<dyn AnyReadState<T=bool>>,) -> Box<dyn AnyWidget> {
         let outline_color = Map2::read_map(focus, EnvironmentColor::Accent.color(), |focus, color| {
             if *focus == Focus::Focused {
                 *color
@@ -49,7 +49,7 @@ impl Slider {
             .boxed()
     }
 
-    fn track(state: Box<dyn AnyState<T=f64>>, start: Box<dyn AnyReadState<T=f64>>, end: Box<dyn AnyReadState<T=f64>>, steps: Box<dyn AnyReadState<T=Option<f64>>>, focus: Box<dyn AnyReadState<T=Focus>>, enabled: Box<dyn AnyReadState<T=bool>>,) -> Box<dyn Widget> {
+    fn track(state: Box<dyn AnyState<T=f64>>, start: Box<dyn AnyReadState<T=f64>>, end: Box<dyn AnyReadState<T=f64>>, steps: Box<dyn AnyReadState<T=Option<f64>>>, focus: Box<dyn AnyReadState<T=Focus>>, enabled: Box<dyn AnyReadState<T=bool>>,) -> Box<dyn AnyWidget> {
         let track_color = Map1::read_map(enabled, |enabled| {
             if *enabled {
                 EnvironmentColor::Accent
@@ -64,7 +64,7 @@ impl Slider {
             .boxed()
     }
 
-    fn thumb(state: Box<dyn AnyState<T=f64>>, start: Box<dyn AnyReadState<T=f64>>, end: Box<dyn AnyReadState<T=f64>>, steps: Box<dyn AnyReadState<T=Option<f64>>>, focus: Box<dyn AnyReadState<T=Focus>>, enabled: Box<dyn AnyReadState<T=bool>>,) -> Box<dyn Widget> {
+    fn thumb(state: Box<dyn AnyState<T=f64>>, start: Box<dyn AnyReadState<T=f64>>, end: Box<dyn AnyReadState<T=f64>>, steps: Box<dyn AnyReadState<T=Option<f64>>>, focus: Box<dyn AnyReadState<T=Focus>>, enabled: Box<dyn AnyReadState<T=bool>>,) -> Box<dyn AnyWidget> {
         let is_stepped = steps.map(|s| s.is_some());
 
         let thumb_color = Map1::read_map(enabled, |enabled| {

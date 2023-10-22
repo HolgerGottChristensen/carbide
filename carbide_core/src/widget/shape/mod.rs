@@ -20,7 +20,7 @@ use crate::render::PrimitiveKind;
 use crate::widget::types::PrimitiveStore;
 use crate::widget::types::ShapeStyle;
 use crate::widget::types::StrokeStyle;
-use crate::widget::Widget;
+use crate::widget::AnyWidget;
 
 mod capsule;
 mod circle;
@@ -28,7 +28,7 @@ mod ellipse;
 mod rectangle;
 mod rounded_rectangle;
 
-pub trait Shape: Widget + 'static {
+pub trait Shape: AnyWidget + 'static {
     fn get_triangle_store_mut(&mut self) -> &mut PrimitiveStore;
     fn get_stroke_style(&self) -> StrokeStyle;
     fn get_shape_style(&self) -> ShapeStyle;
@@ -51,7 +51,7 @@ pub trait Shape: Widget + 'static {
 
 dyn_clone::clone_trait_object!(Shape);
 
-impl Widget for Box<dyn Shape> {}
+impl AnyWidget for Box<dyn Shape> {}
 
 
 pub fn tessellate(shape: &mut dyn Shape, rectangle: &Box2D, path: &dyn Fn(&mut Builder, &Box2D)) {

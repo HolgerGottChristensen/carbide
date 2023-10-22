@@ -9,7 +9,7 @@ use crate::environment::Environment;
 
 use crate::layout::{BasicLayouter, Layout, Layouter};
 use crate::state::{AnyReadState, IntoReadState, NewStateSync, ReadState, State, ValueRef, ValueRefMut, IntoState};
-use crate::widget::{CommonWidget, Empty, Widget, WidgetExt, WidgetId};
+use crate::widget::{CommonWidget, Empty, AnyWidget, WidgetExt, WidgetId, Widget};
 
 pub static SCALE: f64 = -1.0;
 
@@ -20,7 +20,7 @@ pub struct Frame<X, Y, W, H, C> where
     Y: State<T=f64>,
     W: State<T=f64>,
     H: State<T=f64>,
-    C: Widget + Clone
+    C: Widget
 {
     id: WidgetId,
     child: C,
@@ -33,7 +33,7 @@ pub struct Frame<X, Y, W, H, C> where
 
 impl Frame<f64, f64, f64, f64, Empty> {
     #[carbide_default_builder2]
-    pub fn new<W: IntoState<f64>, H: IntoState<f64>, C: Widget + Clone>(
+    pub fn new<W: IntoState<f64>, H: IntoState<f64>, C: Widget>(
         width: W,
         height: H,
         child: C,
@@ -55,7 +55,7 @@ impl<
     Y: State<T=f64>,
     W: State<T=f64>,
     H: State<T=f64>,
-    C: Widget + Clone
+    C: Widget
 > Frame<X, Y, W, H, C> {
     /// Note: This disconnects from the existing width value
     pub fn expand_width(self) -> Frame<X, Y, f64, H, C> {
@@ -151,13 +151,13 @@ impl<
     Y: State<T=f64>,
     W: State<T=f64>,
     H: State<T=f64>,
-    C: Widget + Clone
+    C: Widget
 > CommonWidget for Frame<X, Y, W, H, C> {
     fn id(&self) -> WidgetId {
         self.id
     }
 
-    fn foreach_child<'a>(&'a self, f: &mut dyn FnMut(&'a dyn Widget)) {
+    fn foreach_child<'a>(&'a self, f: &mut dyn FnMut(&'a dyn AnyWidget)) {
         if self.child.is_ignore() {
             return;
         }
@@ -170,7 +170,7 @@ impl<
         f(&self.child);
     }
 
-    fn foreach_child_mut<'a>(&'a mut self, f: &mut dyn FnMut(&'a mut dyn Widget)) {
+    fn foreach_child_mut<'a>(&'a mut self, f: &mut dyn FnMut(&'a mut dyn AnyWidget)) {
         if self.child.is_ignore() {
             return;
         }
@@ -183,7 +183,7 @@ impl<
         f(&mut self.child);
     }
 
-    fn foreach_child_rev<'a>(&'a mut self, f: &mut dyn FnMut(&'a mut dyn Widget)) {
+    fn foreach_child_rev<'a>(&'a mut self, f: &mut dyn FnMut(&'a mut dyn AnyWidget)) {
         if self.child.is_ignore() {
             return;
         }
@@ -196,11 +196,11 @@ impl<
         f(&mut self.child);
     }
 
-    fn foreach_child_direct<'a>(&'a mut self, f: &mut dyn FnMut(&'a mut dyn Widget)) {
+    fn foreach_child_direct<'a>(&'a mut self, f: &mut dyn FnMut(&'a mut dyn AnyWidget)) {
         f(&mut self.child);
     }
 
-    fn foreach_child_direct_rev<'a>(&'a mut self, f: &mut dyn FnMut(&'a mut dyn Widget)) {
+    fn foreach_child_direct_rev<'a>(&'a mut self, f: &mut dyn FnMut(&'a mut dyn AnyWidget)) {
         f(&mut self.child);
     }
 
@@ -237,7 +237,7 @@ impl<
     Y: State<T=f64>,
     W: State<T=f64>,
     H: State<T=f64>,
-    C: Widget + Clone
+    C: Widget
 > Layout for Frame<X, Y, W, H, C> {
     fn calculate_size(&mut self, requested_size: Dimension, env: &mut Environment) -> Dimension {
         let fixed_height = matches!(&self.height, Fixity::Fixed(_));
@@ -296,7 +296,7 @@ impl<
     Y: State<T=f64>,
     W: State<T=f64>,
     H: State<T=f64>,
-    C: Widget + Clone
+    C: Widget
 > WidgetExt for Frame<X, Y, W, H, C> {}
 
 #[derive(Clone, Debug)]

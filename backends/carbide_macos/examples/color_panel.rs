@@ -11,7 +11,7 @@ fn main() {
 
     let mut application = Application::new();
 
-    fn window(child: Box<dyn Widget>) -> Box<Window> {
+    fn window(child: Box<dyn AnyWidget>) -> Box<Window> {
         Window::new(
             "Carbide MacOS color dialog example",
             Dimension::new(400.0, 600.0),

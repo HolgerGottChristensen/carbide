@@ -5,6 +5,7 @@ pub use shape::*;
 pub use types::*;
 
 use crate::draw::Position;
+pub use carbide_derive::Widget;
 
 pub use self::background::*;
 pub use self::blur::*;

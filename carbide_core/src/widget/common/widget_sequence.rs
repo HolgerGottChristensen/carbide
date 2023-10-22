@@ -1,24 +1,24 @@
 use std::fmt::Debug;
-use crate::widget::Widget;
+use crate::widget::AnyWidget;
 
 pub trait WidgetSequence: Clone + Debug + 'static {
-    fn foreach<'a>(&'a self, f: &mut dyn FnMut(&'a dyn Widget));
-    fn foreach_mut<'a>(&'a mut self, f: &mut dyn FnMut(&'a mut dyn Widget));
-    fn foreach_rev<'a>(&'a mut self, f: &mut dyn FnMut(&'a mut dyn Widget));
-    fn foreach_direct<'a>(&'a mut self, f: &mut dyn FnMut(&'a mut dyn Widget));
-    fn foreach_direct_rev<'a>(&'a mut self, f: &mut dyn FnMut(&'a mut dyn Widget));
+    fn foreach<'a>(&'a self, f: &mut dyn FnMut(&'a dyn AnyWidget));
+    fn foreach_mut<'a>(&'a mut self, f: &mut dyn FnMut(&'a mut dyn AnyWidget));
+    fn foreach_rev<'a>(&'a mut self, f: &mut dyn FnMut(&'a mut dyn AnyWidget));
+    fn foreach_direct<'a>(&'a mut self, f: &mut dyn FnMut(&'a mut dyn AnyWidget));
+    fn foreach_direct_rev<'a>(&'a mut self, f: &mut dyn FnMut(&'a mut dyn AnyWidget));
 }
 
 impl WidgetSequence for () {
-    fn foreach<'a>(&'a self, _f: &mut dyn FnMut(&'a dyn Widget)) {}
-    fn foreach_mut<'a>(&'a mut self, _f: &mut dyn FnMut(&'a mut dyn Widget)) {}
-    fn foreach_rev<'a>(&'a mut self, _f: &mut dyn FnMut(&'a mut dyn Widget)) {}
-    fn foreach_direct<'a>(&'a mut self, _f: &mut dyn FnMut(&'a mut dyn Widget)) {}
-    fn foreach_direct_rev<'a>(&'a mut self, _f: &mut dyn FnMut(&'a mut dyn Widget)) {}
+    fn foreach<'a>(&'a self, _f: &mut dyn FnMut(&'a dyn AnyWidget)) {}
+    fn foreach_mut<'a>(&'a mut self, _f: &mut dyn FnMut(&'a mut dyn AnyWidget)) {}
+    fn foreach_rev<'a>(&'a mut self, _f: &mut dyn FnMut(&'a mut dyn AnyWidget)) {}
+    fn foreach_direct<'a>(&'a mut self, _f: &mut dyn FnMut(&'a mut dyn AnyWidget)) {}
+    fn foreach_direct_rev<'a>(&'a mut self, _f: &mut dyn FnMut(&'a mut dyn AnyWidget)) {}
 }
 
-impl<W: Widget + Clone + 'static> WidgetSequence for Vec<W> {
-    fn foreach<'a>(&'a self, f: &mut dyn FnMut(&'a dyn Widget)) {
+impl<W: AnyWidget + Clone + 'static> WidgetSequence for Vec<W> {
+    fn foreach<'a>(&'a self, f: &mut dyn FnMut(&'a dyn AnyWidget)) {
         for element in self {
             if element.is_ignore() {
                 continue;
@@ -33,7 +33,7 @@ impl<W: Widget + Clone + 'static> WidgetSequence for Vec<W> {
         }
     }
 
-    fn foreach_mut<'a>(&'a mut self, f: &mut dyn FnMut(&'a mut dyn Widget)) {
+    fn foreach_mut<'a>(&'a mut self, f: &mut dyn FnMut(&'a mut dyn AnyWidget)) {
         for element in self {
             if element.is_ignore() {
                 continue;
@@ -48,7 +48,7 @@ impl<W: Widget + Clone + 'static> WidgetSequence for Vec<W> {
         }
     }
 
-    fn foreach_rev<'a>(&'a mut self, f: &mut dyn FnMut(&'a mut dyn Widget)) {
+    fn foreach_rev<'a>(&'a mut self, f: &mut dyn FnMut(&'a mut dyn AnyWidget)) {
         for element in &mut self.iter_mut().rev() {
             if element.is_ignore() {
                 continue;
@@ -63,13 +63,13 @@ impl<W: Widget + Clone + 'static> WidgetSequence for Vec<W> {
         }
     }
 
-    fn foreach_direct<'a>(&'a mut self, f: &mut dyn FnMut(&'a mut dyn Widget)) {
+    fn foreach_direct<'a>(&'a mut self, f: &mut dyn FnMut(&'a mut dyn AnyWidget)) {
         for element in &mut self.iter_mut() {
             f(element);
         }
     }
 
-    fn foreach_direct_rev<'a>(&'a mut self, f: &mut dyn FnMut(&'a mut dyn Widget)) {
+    fn foreach_direct_rev<'a>(&'a mut self, f: &mut dyn FnMut(&'a mut dyn AnyWidget)) {
         for element in &mut self.iter_mut().rev() {
             f(element);
         }
@@ -89,8 +89,8 @@ macro_rules! tuple_sequence_impl {
     ($($generic:ident),*) => {
         #[allow(non_snake_case)]
         #[allow(unused_parens)]
-        impl<$($generic: Widget + Clone + 'static),*> WidgetSequence for ($($generic),*) {
-            fn foreach<'a>(&'a self, f: &mut dyn FnMut(&'a dyn Widget)) {
+        impl<$($generic: AnyWidget + Clone + 'static),*> WidgetSequence for ($($generic),*) {
+            fn foreach<'a>(&'a self, f: &mut dyn FnMut(&'a dyn AnyWidget)) {
                 let ($($generic),*) = self;
                 $(
                     if $generic.is_ignore() {
@@ -103,7 +103,7 @@ macro_rules! tuple_sequence_impl {
                 )*
             }
 
-            fn foreach_mut<'a>(&'a mut self, f: &mut dyn FnMut(&'a mut dyn Widget)) {
+            fn foreach_mut<'a>(&'a mut self, f: &mut dyn FnMut(&'a mut dyn AnyWidget)) {
                 let ($($generic),*) = self;
                 $(
                     if $generic.is_ignore() {
@@ -116,7 +116,7 @@ macro_rules! tuple_sequence_impl {
                 )*
             }
 
-            fn foreach_rev<'a>(&'a mut self, f: &mut dyn FnMut(&'a mut dyn Widget)) {
+            fn foreach_rev<'a>(&'a mut self, f: &mut dyn FnMut(&'a mut dyn AnyWidget)) {
                 let reverse!([$($generic)*]) = self;
                 $(
                     if $generic.is_ignore() {
@@ -129,14 +129,14 @@ macro_rules! tuple_sequence_impl {
                 )*
             }
 
-            fn foreach_direct<'a>(&'a mut self, f: &mut dyn FnMut(&'a mut dyn Widget)) {
+            fn foreach_direct<'a>(&'a mut self, f: &mut dyn FnMut(&'a mut dyn AnyWidget)) {
                 let ($($generic),*) = self;
                 $(
                     f($generic);
                 )*
             }
 
-            fn foreach_direct_rev<'a>(&'a mut self, f: &mut dyn FnMut(&'a mut dyn Widget)) {
+            fn foreach_direct_rev<'a>(&'a mut self, f: &mut dyn FnMut(&'a mut dyn AnyWidget)) {
                 let reverse!([$($generic)*]) = self;
                 $(
                     f($generic);

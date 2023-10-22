@@ -10,11 +10,11 @@ use crate::environment::Environment;
 use crate::layout::BasicLayouter;
 use crate::render::{Primitive, PrimitiveKind, Render};
 use crate::state::{Map1, ReadState, StateSync};
-use crate::widget::{CommonWidget, Empty, Widget, WidgetExt, WidgetId};
+use crate::widget::{CommonWidget, Empty, AnyWidget, WidgetExt, WidgetId, Widget};
 
 #[derive(Debug, Clone, Widget)]
 #[carbide_exclude(Render)]
-pub struct Transform<W, M> where W: Widget + Clone, M: ReadState<T=Matrix4<f32>> {
+pub struct Transform<W, M> where W: AnyWidget + Clone, M: ReadState<T=Matrix4<f32>> {
     id: WidgetId,
     child: W,
     position: Position,
@@ -26,7 +26,7 @@ pub struct Transform<W, M> where W: Widget + Clone, M: ReadState<T=Matrix4<f32>>
 
 impl Transform<Empty, Matrix4<f32>> {
     #[carbide_default_builder2]
-    pub fn new<W: Widget + Clone, M: ReadState<T=Matrix4<f32>>>(child: W, matrix: M) -> Transform<W, M> {
+    pub fn new<W: AnyWidget + Clone, M: ReadState<T=Matrix4<f32>>>(child: W, matrix: M) -> Transform<W, M> {
         Transform {
             id: WidgetId::new(),
             child,
@@ -37,7 +37,7 @@ impl Transform<Empty, Matrix4<f32>> {
         }
     }
 
-    pub fn rotation<W: Widget + Clone, R: ReadState<T=f64> + Clone>(child: W, rotation: R) -> Transform<W, RMap1<fn(&f64) -> Matrix4<f32>, f64, Matrix4<f32>, R>> {
+    pub fn rotation<W: AnyWidget + Clone, R: ReadState<T=f64> + Clone>(child: W, rotation: R) -> Transform<W, RMap1<fn(&f64) -> Matrix4<f32>, f64, Matrix4<f32>, R>> {
         let matrix: RMap1<fn(&f64) -> Matrix4<f32>, f64, Matrix4<f32>, R> = Map1::read_map(rotation, |r| {
             Matrix4::from_angle_z(Deg(*r as f32))
         });
@@ -45,7 +45,7 @@ impl Transform<Empty, Matrix4<f32>> {
         Self::new(child, matrix)
     }
 
-    pub fn scale<W: Widget + Clone, R: ReadState<T=f64> + Clone>(child: W, scale: R) -> Transform<W, RMap1<fn(&f64) -> Matrix4<f32>, f64, Matrix4<f32>, R>> {
+    pub fn scale<W: AnyWidget + Clone, R: ReadState<T=f64> + Clone>(child: W, scale: R) -> Transform<W, RMap1<fn(&f64) -> Matrix4<f32>, f64, Matrix4<f32>, R>> {
         let matrix: RMap1<fn(&f64) -> Matrix4<f32>, f64, Matrix4<f32>, R> = Map1::read_map(scale, |s| {
             Matrix4::from_scale(*s as f32)
         });
@@ -53,7 +53,7 @@ impl Transform<Empty, Matrix4<f32>> {
         Self::new(child, matrix)
     }
 
-    pub fn scale_non_uniform<W: Widget + Clone, R: ReadState<T=Dimension> + Clone>(
+    pub fn scale_non_uniform<W: AnyWidget + Clone, R: ReadState<T=Dimension> + Clone>(
         child: W,
         scale: R,
     ) -> Transform<W, RMap1<fn(&Dimension) -> Matrix4<f32>, Dimension, Matrix4<f32>, R>> {
@@ -84,19 +84,19 @@ impl Transform<Empty, Matrix4<f32>> {
 
 }
 
-impl<W: Widget + Clone, M: ReadState<T=Matrix4<f32>>> Transform<W, M> {
+impl<W: AnyWidget + Clone, M: ReadState<T=Matrix4<f32>>> Transform<W, M> {
     pub fn with_anchor(mut self, anchor: BasicLayouter) -> Box<Self> {
         self.anchor = anchor;
         Box::new(self)
     }
 }
 
-impl<W: Widget + Clone, M: ReadState<T=Matrix4<f32>>> CommonWidget for Transform<W, M> {
+impl<W: AnyWidget + Clone, M: ReadState<T=Matrix4<f32>>> CommonWidget for Transform<W, M> {
     fn id(&self) -> WidgetId {
         self.id
     }
 
-    fn foreach_child<'a>(&'a self, f: &mut dyn FnMut(&'a dyn Widget)) {
+    fn foreach_child<'a>(&'a self, f: &mut dyn FnMut(&'a dyn AnyWidget)) {
         if self.child.is_ignore() {
             return;
         }
@@ -109,7 +109,7 @@ impl<W: Widget + Clone, M: ReadState<T=Matrix4<f32>>> CommonWidget for Transform
         f(&self.child);
     }
 
-    fn foreach_child_mut<'a>(&'a mut self, f: &mut dyn FnMut(&'a mut dyn Widget)) {
+    fn foreach_child_mut<'a>(&'a mut self, f: &mut dyn FnMut(&'a mut dyn AnyWidget)) {
         if self.child.is_ignore() {
             return;
         }
@@ -122,7 +122,7 @@ impl<W: Widget + Clone, M: ReadState<T=Matrix4<f32>>> CommonWidget for Transform
         f(&mut self.child);
     }
 
-    fn foreach_child_rev<'a>(&'a mut self, f: &mut dyn FnMut(&'a mut dyn Widget)) {
+    fn foreach_child_rev<'a>(&'a mut self, f: &mut dyn FnMut(&'a mut dyn AnyWidget)) {
         if self.child.is_ignore() {
             return;
         }
@@ -135,11 +135,11 @@ impl<W: Widget + Clone, M: ReadState<T=Matrix4<f32>>> CommonWidget for Transform
         f(&mut self.child);
     }
 
-    fn foreach_child_direct<'a>(&'a mut self, f: &mut dyn FnMut(&'a mut dyn Widget)) {
+    fn foreach_child_direct<'a>(&'a mut self, f: &mut dyn FnMut(&'a mut dyn AnyWidget)) {
         f(&mut self.child);
     }
 
-    fn foreach_child_direct_rev<'a>(&'a mut self, f: &mut dyn FnMut(&'a mut dyn Widget)) {
+    fn foreach_child_direct_rev<'a>(&'a mut self, f: &mut dyn FnMut(&'a mut dyn AnyWidget)) {
         f(&mut self.child);
     }
 
@@ -160,7 +160,7 @@ impl<W: Widget + Clone, M: ReadState<T=Matrix4<f32>>> CommonWidget for Transform
     }
 }
 
-impl<W: Widget + Clone, M: ReadState<T=Matrix4<f32>>> Render for Transform<W, M> {
+impl<W: AnyWidget + Clone, M: ReadState<T=Matrix4<f32>>> Render for Transform<W, M> {
     fn render(&mut self, context: &mut RenderContext, env: &mut Environment) {
         self.capture_state(env);
         let bounding_box = Rect::new(self.position, self.dimension);
@@ -264,4 +264,4 @@ impl<W: Widget + Clone, M: ReadState<T=Matrix4<f32>>> Render for Transform<W, M>
     }
 }
 
-impl<W: Widget + Clone, M: ReadState<T=Matrix4<f32>>> WidgetExt for Transform<W, M> {}
+impl<W: AnyWidget + Clone, M: ReadState<T=Matrix4<f32>>> WidgetExt for Transform<W, M> {}

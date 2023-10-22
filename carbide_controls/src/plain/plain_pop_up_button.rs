@@ -38,8 +38,8 @@ where
     popup_delegate: PopupDelegateGenerator<T, S, M, LocalState<bool>>, // Used to generate the popup
     popup_item_delegate: PopupItemDelegateGenerator<T, S>, // Used to generate each item in the popup
 
-    child: Box<dyn Widget>,
-    popup: Overlay<Box<dyn Widget>, LocalState<bool>>,
+    child: Box<dyn AnyWidget>,
+    popup: Overlay<Box<dyn AnyWidget>, LocalState<bool>>,
     popup_open: LocalState<bool>,
 
     #[state] selected: S,
@@ -330,13 +330,13 @@ type DelegateGenerator<T: StateContract + PartialEq> = fn(
     focused: Box<dyn AnyState<T=Focus>>,
     popup_open: Box<dyn AnyReadState<T=bool>>,
     enabled: Box<dyn AnyReadState<T=bool>>,
-) -> Box<dyn Widget>;
+) -> Box<dyn AnyWidget>;
 
 type PopupDelegateGenerator<T: StateContract + PartialEq, S: State<T=T>, M: ReadState<T=Vec<T>>, B: State<T=bool>> = fn(
     model: M,
     delegate: PopupDelegate<T, S, B>,
     enabled: Box<dyn AnyReadState<T=bool>>,
-) -> Box<dyn Widget>;
+) -> Box<dyn AnyWidget>;
 
 type PopupItemDelegateGenerator<T: StateContract + PartialEq, S: State<T=T>> = fn(
     item: Box<dyn AnyState<T=T>>,
@@ -344,7 +344,7 @@ type PopupItemDelegateGenerator<T: StateContract + PartialEq, S: State<T=T>> = f
     hover: Box<dyn AnyReadState<T=bool>>,
     selected: S,
     enabled: Box<dyn AnyReadState<T=bool>>,
-) -> Box<dyn Widget>;
+) -> Box<dyn AnyWidget>;
 
 #[derive(Clone)]
 pub struct PopupDelegate<T, S, B>
@@ -360,8 +360,8 @@ pub struct PopupDelegate<T, S, B>
     enabled: Box<dyn AnyReadState<T=bool>>,
 }
 
-impl<T: StateContract, S: State<T=T>, B: State<T=bool>> Delegate<T, Box<dyn Widget>> for PopupDelegate<T, S, B> {
-    fn call(&self, item: Box<dyn AnyState<T=T>>, index: Box<dyn AnyState<T=usize>>) -> Box<dyn Widget> {
+impl<T: StateContract, S: State<T=T>, B: State<T=bool>> Delegate<T, Box<dyn AnyWidget>> for PopupDelegate<T, S, B> {
+    fn call(&self, item: Box<dyn AnyState<T=T>>, index: Box<dyn AnyState<T=usize>>) -> Box<dyn AnyWidget> {
         let selected_item_del = self.selected_item.clone();
         let popup_open = self.popup_open.clone();
         let enabled = self.enabled.clone();
@@ -410,7 +410,7 @@ fn default_delegate<T: StateContract + PartialEq>(
     focused: Box<dyn AnyState<T=Focus>>,
     popup_open: Box<dyn AnyReadState<T=bool>>,
     enabled: Box<dyn AnyReadState<T=bool>>,
-) -> Box<dyn Widget> {
+) -> Box<dyn AnyWidget> {
     let background_color = Map1::read_map(focused.clone(), |focused| {
         match *focused {
             Focus::Focused => EnvironmentColor::Green,
@@ -430,7 +430,7 @@ fn default_popup_item_delegate<T: StateContract + PartialEq, S: State<T=T>>(
     hover_state: Box<dyn AnyReadState<T=bool>>,
     _selected_state: S,
     enabled: Box<dyn AnyReadState<T=bool>>,
-) -> Box<dyn Widget> {
+) -> Box<dyn AnyWidget> {
     let item_color = Map1::read_map(hover_state.clone(), |hovered| {
         if *hovered {
             EnvironmentColor::Pink
@@ -451,7 +451,7 @@ fn default_popup_delegate<T: StateContract + PartialEq, S: State<T=T>, M: ReadSt
     model: M,
     delegate: PopupDelegate<T, S, B>,
     enabled: Box<dyn AnyReadState<T=bool>>,
-) -> Box<dyn Widget> {
+) -> Box<dyn AnyWidget> {
     VStack::new(ForEach::new(model.ignore_writes(), delegate))
         .spacing(1.0)
         .padding(1.0)

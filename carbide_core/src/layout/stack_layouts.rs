@@ -3,7 +3,7 @@ use crate::draw::{Dimension, Position};
 use crate::environment::Environment;
 use crate::flags::Flags;
 use crate::layout::Layout;
-use crate::widget::{CrossAxisAlignment, Widget};
+use crate::widget::{CrossAxisAlignment, AnyWidget};
 
 pub(crate) fn calculate_size_vstack(
     widget: &mut dyn Layout,
@@ -154,8 +154,8 @@ fn calculate_size_stack(
     );
 
 
-    let mut children_flexibility_using_max_val: SmallVec<[(u32, &mut dyn Widget); 25]> = smallvec![];
-    let mut children_flexibility_rest: SmallVec<[(u32, &mut dyn Widget); 25]> = smallvec![];
+    let mut children_flexibility_using_max_val: SmallVec<[(u32, &mut dyn AnyWidget); 25]> = smallvec![];
+    let mut children_flexibility_rest: SmallVec<[(u32, &mut dyn AnyWidget); 25]> = smallvec![];
 
     widget.foreach_child_mut(&mut |child| {
         if !child.is_spacer() {

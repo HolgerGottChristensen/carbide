@@ -1,6 +1,5 @@
-pub use carbide_derive::Widget;
+pub use widget::{Widget, AnyWidget};
 pub use common_widget::*;
-pub use widget::Widget;
 pub use widget_ext::*;
 pub use widget_sequence::*;
 

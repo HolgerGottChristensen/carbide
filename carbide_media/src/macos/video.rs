@@ -15,7 +15,7 @@ use carbide_core::layout::Layout;
 use carbide_core::mesh::MODE_IMAGE;
 use carbide_core::render::{Render, RenderContext};
 use carbide_core::state::{AnyReadState, AnyState, IntoReadState, IntoState, LocalState, ReadState, ReadStateExtNew, State, StateExtNew};
-use carbide_core::widget::{CommonWidget, WidgetExt, WidgetId, Widget, ScaleMode};
+use carbide_core::widget::{CommonWidget, WidgetExt, WidgetId, AnyWidget, ScaleMode};
 use crate::{CMTime, CMTimeFlags, CVPixelBufferGetBaseAddress, CVPixelBufferGetBytesPerRow, CVPixelBufferGetDataSize, CVPixelBufferGetHeight, CVPixelBufferGetPixelFormatType, CVPixelBufferGetWidth, CVPixelBufferLockBaseAddress, CVPixelBufferUnlockBaseAddress, kCMTimeIndefinite, kCVPixelBufferPixelFormatTypeKey, NSKeyValueChangeKey};
 use crate::macos::{listener, NSKeyValueObservingOptions};
 

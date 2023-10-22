@@ -15,12 +15,12 @@ use carbide_core::event::NoopEventSink;
 use carbide_core::layout::BasicLayouter;
 use carbide_core::render::{PrimitiveKind, Primitives};
 use carbide_core::text::{FontFamily, FontId};
-use carbide_core::widget::{Empty, Widget};
+use carbide_core::widget::{Empty, AnyWidget};
 use carbide_core::window::TWindow;
 
 pub struct Pdf {
     environment: Environment,
-    widgets: Box<dyn Widget>,
+    widgets: Box<dyn AnyWidget>,
     pub title: String,
     pub document: PdfDocumentReference,
 }
@@ -98,7 +98,7 @@ impl Pdf {
         self.environment.insert_font_from_file(font_path).0
     }
 
-    pub fn set_widgets(&mut self, widgets: Box<dyn Widget>) {
+    pub fn set_widgets(&mut self, widgets: Box<dyn AnyWidget>) {
         self.widgets = widgets;
     }
 

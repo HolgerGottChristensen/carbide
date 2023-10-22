@@ -29,7 +29,7 @@ impl PopUpButton {
         focused: Box<dyn AnyState<T=Focus>>,
         popup_open: Box<dyn AnyReadState<T=bool>>,
         enabled: Box<dyn AnyReadState<T=bool>>,
-    ) -> Box<dyn Widget> {
+    ) -> Box<dyn AnyWidget> {
         let text = Map1::read_map(selected_item, |a| format!("{:?}", a));
 
         let mark_color = Map1::read_map(enabled.clone(), |enabled| {
@@ -120,7 +120,7 @@ impl PopUpButton {
         hover_state: Box<dyn AnyReadState<T=bool>>,
         _selected_state: S,
         enabled: Box<dyn AnyReadState<T=bool>>,
-    ) -> Box<dyn Widget> {
+    ) -> Box<dyn AnyWidget> {
         let text = Map1::read_map(item, |i| format!("{:?}", i));
 
         let background_color = Map1::read_map(hover_state, |hovered| {
@@ -153,7 +153,7 @@ impl PopUpButton {
         model: M,
         delegate: PopupDelegate<T, S, B>,
         enabled: Box<dyn AnyReadState<T=bool>>,
-    ) -> Box<dyn Widget> {
+    ) -> Box<dyn AnyWidget> {
         VStack::new(ForEach::new(model.ignore_writes(), delegate))
             .spacing(1.0)
             .padding(1.0)
