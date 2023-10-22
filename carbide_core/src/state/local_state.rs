@@ -6,9 +6,8 @@ use carbide_core::state::state_sync::NewStateSync;
 
 
 use crate::environment::Environment;
-use crate::state::{AnyReadState, InnerState, ReadState, StateContract, TState};
+use crate::state::{AnyReadState, InnerState, ReadState, StateContract};
 use crate::state::util::value_cell::{ValueCell, ValueRef, ValueRefMut};
-use crate::state::widget_state::WidgetState;
 
 /// # Local state
 /// The local state is used as a shared state between multiple widgets within the same widget tree.

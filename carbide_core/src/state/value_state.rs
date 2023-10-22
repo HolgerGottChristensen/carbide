@@ -8,9 +8,8 @@ use carbide_core::state::NewStateSync;
 use crate::draw::Color;
 
 use crate::render::Style;
-use crate::state::{AnyReadState, ReadWidgetState, RState, StateContract, TState};
+use crate::state::{AnyReadState, ReadWidgetState, RState, StateContract, TState, WidgetState};
 use crate::state::{ValueRef, ValueRefMut};
-use crate::state::widget_state::WidgetState;
 
 
 // TODO: This should not be needed after the transition to new states.
@@ -36,8 +35,8 @@ where
 }
 
 impl<T: StateContract> ValueState<T> {
-    pub fn new(value: T) -> TState<T> {
-        WidgetState::Value(ValueState { value })
+    pub fn new(value: T) -> ValueState<T> {
+        ValueState { value }
     }
 
     pub fn new_raw(value: T) -> Box<Self> {
@@ -74,32 +73,32 @@ impl<T: StateContract> Debug for ValueState<T> {
 
 impl<T: StateContract> Into<TState<T>> for Box<ValueState<T>> {
     fn into(self) -> TState<T> {
-        WidgetState::new(self)
+        WidgetState::Value(*self)
     }
 }
 
 // This should implement into T state for pretty much all T.
 impl<T: StateContract> From<T> for TState<T> {
     fn from(t: T) -> Self {
-        ValueState::new(t)
+        WidgetState::Value(ValueState::new(t))
     }
 }
 
 impl From<u32> for TState<f64> {
     fn from(t: u32) -> Self {
-        ValueState::new(t as f64)
+        WidgetState::Value(ValueState::new(t as f64))
     }
 }
 
 impl From<&str> for TState<String> {
     fn from(t: &str) -> Self {
-        ValueState::new(t.to_string())
+        WidgetState::Value(ValueState::new(t.to_string()))
     }
 }
 
 impl From<&str> for RState<String> {
     fn from(t: &str) -> Self {
-        ReadWidgetState::ReadWriteState(ValueState::new(t.to_string()))
+        ReadWidgetState::ReadWriteState(WidgetState::Value(ValueState::new(t.to_string())))
     }
 }
 
@@ -242,6 +241,6 @@ impl Into<TState<String>> for TState<Result<String, String>> {
 
 impl Into<TState<Style>> for Color {
     fn into(self) -> TState<Style> {
-        ValueState::new(Style::Color(self))
+        WidgetState::Value(ValueState::new(Style::Color(self)))
     }
 }

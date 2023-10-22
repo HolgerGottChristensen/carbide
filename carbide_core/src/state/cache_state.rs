@@ -188,8 +188,6 @@ impl<T: StateContract> AnyState for CacheTState<T> {
             }
         }
     }
-
-    fn update_dependent_dyn(&mut self) {}
 }
 
 impl<T: StateContract> core::fmt::Debug for CacheTState<T> {

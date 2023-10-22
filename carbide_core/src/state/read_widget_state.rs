@@ -2,7 +2,7 @@ use std::fmt;
 use std::fmt::{Debug, Formatter};
 
 use crate::environment::Environment;
-use crate::state::{AnyReadState, NewStateSync, RState, StateContract, TState, ValueRef, ValueState};
+use crate::state::{AnyReadState, NewStateSync, RState, StateContract, TState, ValueRef, ValueState, WidgetState};
 
 pub enum ReadWidgetState<T>
 where
@@ -71,7 +71,7 @@ impl<T: StateContract> AnyReadState for ReadWidgetState<T> {
 
 impl<T: StateContract> From<T> for RState<T> {
     fn from(t: T) -> Self {
-        ReadWidgetState::ReadWriteState(ValueState::new(t))
+        ReadWidgetState::ReadWriteState(WidgetState::Value(ValueState::new(t)))
     }
 }
 

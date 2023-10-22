@@ -2,7 +2,7 @@ use carbide_core::color::{TRANSPARENT};
 use carbide_core::draw::Color;
 use carbide_core::environment::EnvironmentColor;
 use carbide_core::focus::Focus;
-use carbide_core::state::{AnyReadState, AnyState, IntoReadState, IntoState, Map1, Map2, ReadState, TState};
+use carbide_core::state::{AnyReadState, AnyState, IntoReadState, IntoState, LocalState, Map1, Map2, ReadState, TState};
 use carbide_core::widget::*;
 
 use crate::{PlainSwitch, PlainSwitchDelegate};
@@ -11,7 +11,7 @@ pub struct Switch;
 
 impl Switch {
     // TODO: Consider creating a newtype wrapper macro for Switch, wrapping plainswitch, to simplify the signature of the function
-    pub fn new<L: IntoReadState<String>, C: IntoState<bool>>(label: L, checked: C) -> PlainSwitch<TState<Focus>, C::Output, SwitchDelegate<L::Output>, bool> {
+    pub fn new<L: IntoReadState<String>, C: IntoState<bool>>(label: L, checked: C) -> PlainSwitch<LocalState<Focus>, C::Output, SwitchDelegate<L::Output>, bool> {
         PlainSwitch::new(checked)
             .delegate(SwitchDelegate { label: label.into_read_state() })
     }

@@ -35,7 +35,7 @@ pub struct TextInput<F, O, T, E> where
 }
 
 impl TextInput<Focus, Option<char>, Result<String, String>, bool> {
-    pub fn new<T: IntoState<Result<String, String>>>(text: T) -> TextInput<TState<Focus>, Option<char>, T::Output, EnabledState> {
+    pub fn new<T: IntoState<Result<String, String>>>(text: T) -> TextInput<LocalState<Focus>, Option<char>, T::Output, EnabledState> {
         let focus = LocalState::new(Focus::Unfocused);
         let obscure = None;
         let text = text.into_state();

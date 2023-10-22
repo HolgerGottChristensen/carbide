@@ -2,10 +2,9 @@ use std::fmt::Debug;
 use carbide_core::state::AnyState;
 
 use crate::environment::Environment;
-use crate::state::{AnyReadState, IntoState, NewStateSync, StateContract, TState};
+use crate::state::{AnyReadState, IntoState, NewStateSync, StateContract};
 use crate::state::{ReadState, State};
 use crate::state::util::value_cell::{ValueRef, ValueRefMut};
-use crate::state::widget_state::WidgetState;
 
 /// # FieldState
 /// The FieldState is a state mapping that should be used to retrieve a field of a struct or enum
@@ -15,14 +14,6 @@ use crate::state::widget_state::WidgetState;
 /// You should almost never need to use this state directly. Instead you should use the `lens!`
 /// macro as this will do all the dirty work of creating the mapping functions provided you
 /// specify which field it should access.
-///
-/// This state is [Listenable] and can notify subscribers when the field changes. Notice that
-/// currently the listeners are notified of any changes in the parent struct/enum. This means that
-/// the field has not necessarily changed when the notification is sent. This behavior will most
-/// likely change in the future, such that at least providing the possibility to only send
-/// notifications when the field changes. However no notifications should be missed.
-///
-/// [Clone]s of this field state will share subscriber lists, but all other data is kept separate.
 ///
 /// When [NewStateSync::sync()] events are received, it will delegate if further to the
 /// parent state, making sure the parent is up to date. FieldState does not need to handle sync
@@ -323,5 +314,59 @@ mod tests {
         assert_eq!(*base.value(), 418);
         assert_eq!(*mapped.value(), 420);
         assert_eq!(*field.value(), 420);
+    }
+
+    #[test]
+    fn field_state6() {
+        let mut base = LocalState::new((24, 42));
+
+        let mut field = lens!(base.0);
+        let mut field2 = lens!(base.1);
+
+        println!("Base: {:?}, Field: {:?}", base.value(), field.value());
+
+        assert_eq!(*base.value(), (24, 42));
+        assert_eq!(*field.value(), 24);
+        assert_eq!(*field2.value(), 42);
+
+        *field.value_mut() = 200;
+
+        println!("Base: {:?}, Field: {:?}", base.value(), field.value());
+
+        assert_eq!(*base.value(), (200, 42));
+        assert_eq!(*field.value(), 200);
+        assert_eq!(*field2.value(), 42);
+
+        base.value_mut().0 = 32;
+
+        assert_eq!(*base.value(), (32, 42));
+        assert_eq!(*field.value(), 32);
+        assert_eq!(*field2.value(), 42);
+
+        println!("Base: {:?}, Field: {:?}", base.value(), field.value());
+
+        *base.value_mut() = (32, 33);
+
+        assert_eq!(*base.value(), (32, 33));
+        assert_eq!(*field.value(), 32);
+        assert_eq!(*field2.value(), 33);
+
+        println!("Base: {:?}, Field: {:?}", base.value(), field.value());
+
+        field.set_value(202);
+
+        println!("Base: {:?}, Field: {:?}", base.value(), field.value());
+
+        assert_eq!(*base.value(), (202, 33));
+        assert_eq!(*field.value(), 202);
+        assert_eq!(*field2.value(), 33);
+
+        base.set_value((42, 42));
+
+        println!("Base: {:?}, Field: {:?}", base.value(), field.value());
+
+        assert_eq!(*base.value(), (42, 42));
+        assert_eq!(*field.value(), 42);
+        assert_eq!(*field2.value(), 42);
     }
 }

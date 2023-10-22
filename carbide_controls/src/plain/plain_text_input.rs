@@ -66,7 +66,7 @@ pub struct PlainTextInput<F, C, O, S, T, E> where
     // Text
     #[state] display_text: Box<dyn AnyReadState<T=String>>,
     #[state] text: T,
-    #[state] text_offset: TState<f64>,
+    #[state] text_offset: LocalState<f64>,
 
     // Cursor
     cursor: Cursor,
@@ -75,7 +75,7 @@ pub struct PlainTextInput<F, C, O, S, T, E> where
 }
 
 impl PlainTextInput<Focus, Color, Option<char>, u32, String, bool> {
-    pub fn new<S: IntoState<String>>(text: S) -> PlainTextInput<TState<Focus>, impl ReadState<T=Color>, Option<char>, impl ReadState<T=u32>, S::Output, EnabledState> {
+    pub fn new<S: IntoState<String>>(text: S) -> PlainTextInput<LocalState<Focus>, impl ReadState<T=Color>, Option<char>, impl ReadState<T=u32>, S::Output, EnabledState> {
         let focus = LocalState::new(Focus::Unfocused);
         let color = EnvironmentColor::Label.color();
         let obscure = None;

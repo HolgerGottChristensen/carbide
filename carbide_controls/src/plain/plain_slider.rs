@@ -47,7 +47,7 @@ pub struct PlainSlider<F, St, S, E, P, Th, In, Bg, En> where
 }
 
 impl PlainSlider<Focus, f64, f64, f64, Option<f64>, Empty, Empty, Empty, bool> {
-    pub fn new<St: IntoState<f64>, S: IntoReadState<f64>, E: IntoReadState<f64>>(state: St, start: S, end: E) -> PlainSlider<TState<Focus>, St::Output, S::Output, E::Output, Option<f64>, Box<dyn Widget>, Box<dyn Widget>, Box<dyn Widget>, bool> {
+    pub fn new<St: IntoState<f64>, S: IntoReadState<f64>, E: IntoReadState<f64>>(state: St, start: S, end: E) -> PlainSlider<LocalState<Focus>, St::Output, S::Output, E::Output, Option<f64>, Box<dyn Widget>, Box<dyn Widget>, Box<dyn Widget>, bool> {
         let focus = LocalState::new(Focus::Unfocused);
 
         Self::new_internal(

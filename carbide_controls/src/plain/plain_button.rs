@@ -49,7 +49,7 @@ pub struct PlainButton<F, A, D, E, H, P> where
 }
 
 impl PlainButton<Focus, DefaultPlainButtonAction, DefaultPlainButtonDelegate, bool, bool, bool> {
-    pub fn new<A: Action + Clone + 'static>(action: A) -> PlainButton<TState<Focus>, A, DefaultPlainButtonDelegate, EnabledState, TState<bool>, TState<bool>> {
+    pub fn new<A: Action + Clone + 'static>(action: A) -> PlainButton<LocalState<Focus>, A, DefaultPlainButtonDelegate, EnabledState, LocalState<bool>, LocalState<bool>> {
 
         let focus_state = LocalState::new(Focus::Unfocused);
         let hovered = LocalState::new(false);

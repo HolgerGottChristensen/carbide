@@ -128,15 +128,6 @@ impl<T: StateContract> AnyState for WidgetState<T> {
             WidgetState::Global(v) => v.set_value_dyn(value),
         }
     }
-
-    fn update_dependent_dyn(&mut self) {
-        match self {
-            WidgetState::Boxed(i) => i.update_dependent_dyn(),
-            WidgetState::Value(v) => v.update_dependent_dyn(),
-            WidgetState::Local(v) => v.update_dependent_dyn(),
-            WidgetState::Global(v) => v.update_dependent_dyn(),
-        }
-    }
 }
 
 impl<T: StateContract> From<&WidgetState<T>> for WidgetState<T> {

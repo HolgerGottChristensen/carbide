@@ -27,8 +27,6 @@ pub trait State: ReadState + AnyState + IntoState<Self::T> + private::Sealed {
     /// state. If you just change the value using value_mut, it might not be persistent and
     /// update problems might occur.
     fn set_value(&mut self, value: Self::T);
-
-    fn update_dependent(&mut self);
 }
 
 pub trait AnyState: AnyReadState {
@@ -46,8 +44,6 @@ pub trait AnyState: AnyReadState {
     /// state. If you just change the value using value_mut, it might not be persistent and
     /// update problems might occur.
     fn set_value_dyn(&mut self, value: Self::T);
-
-    fn update_dependent_dyn(&mut self) {}
 }
 
 // ---------------------------------------------------
@@ -75,10 +71,6 @@ impl<T: StateContract> AnyState for Box<dyn AnyState<T=T>> {
     fn set_value_dyn(&mut self, value: Self::T) {
         self.deref_mut().set_value_dyn(value)
     }
-
-    fn update_dependent_dyn(&mut self) {
-        self.deref_mut().update_dependent_dyn()
-    }
 }
 
 impl<T> State for T where T: AnyState + Clone + IntoState<Self::T> {
@@ -88,10 +80,6 @@ impl<T> State for T where T: AnyState + Clone + IntoState<Self::T> {
 
     fn set_value(&mut self, value: Self::T) {
         self.set_value_dyn(value)
-    }
-
-    fn update_dependent(&mut self) {
-        self.update_dependent_dyn()
     }
 }
 
@@ -103,6 +91,8 @@ dyn_clone::clone_trait_object!(<T: StateContract> AnyState<T=T>);
 mod private {
     use crate::state::AnyState;
 
+    // This disallows implementing State manually, and requires something to implement AnyState
+    // to implement State.
     pub trait Sealed {}
 
     impl<T> Sealed for T where T: AnyState {}

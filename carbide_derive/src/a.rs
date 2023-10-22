@@ -2,7 +2,7 @@ use std::collections::hash_map::RandomState;
 use std::collections::HashSet;
 use std::iter::FromIterator;
 use proc_macro2::Ident;
-use carbide_syn::{Error, Expr, ExprClosure, ExprParen, ExprPath, ExprUnary, parse_quote, token, UnOp};
+use carbide_syn::{Error, Expr, ExprClosure, ExprUnary, parse_quote, UnOp};
 use carbide_syn::fold::{Fold, fold_expr};
 use carbide_syn::spanned::Spanned;
 
@@ -24,7 +24,7 @@ pub fn process_a_expr(ast: Expr) -> Expr {
                 constness,
                 movability,
                 asyncness,
-                capture,
+                capture: _,
                 or1_token,
                 inputs,
                 or2_token,
@@ -67,7 +67,7 @@ pub(crate) struct UnaryDollarIdentCollector(Vec<Ident>);
 impl Fold for UnaryDollarIdentCollector {
     fn fold_expr(&mut self, i: Expr) -> Expr {
         match i {
-            Expr::Unary(ExprUnary { attrs, op: UnOp::Dollar(_), expr }) => {
+            Expr::Unary(ExprUnary { attrs: _, op: UnOp::Dollar(_), expr }) => {
                 match *expr {
                     Expr::Path(path) if path.path.get_ident().is_some() => {
                         self.0.push(path.path.get_ident().unwrap().clone());

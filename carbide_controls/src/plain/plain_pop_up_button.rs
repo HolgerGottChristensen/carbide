@@ -35,12 +35,12 @@ where
 
     // Delegates
     delegate: DelegateGenerator<T>, // Used to generate the control
-    popup_delegate: PopupDelegateGenerator<T, S, M, TState<bool>>, // Used to generate the popup
+    popup_delegate: PopupDelegateGenerator<T, S, M, LocalState<bool>>, // Used to generate the popup
     popup_item_delegate: PopupItemDelegateGenerator<T, S>, // Used to generate each item in the popup
 
     child: Box<dyn Widget>,
-    popup: Overlay<Box<dyn Widget>, TState<bool>>,
-    popup_open: TState<bool>,
+    popup: Overlay<Box<dyn Widget>, LocalState<bool>>,
+    popup_open: LocalState<bool>,
 
     #[state] selected: S,
     #[state] model: M,
@@ -50,7 +50,7 @@ impl PlainPopUpButton<bool, Focus, bool, Vec<bool>, bool> {
     pub fn new<T: StateContract + PartialEq, S: IntoState<T>, M: IntoReadState<Vec<T>>>(
         selected: S,
         model: M,
-    ) -> PlainPopUpButton<T, TState<Focus>, S::Output, M::Output, bool> {
+    ) -> PlainPopUpButton<T, LocalState<Focus>, S::Output, M::Output, bool> {
         let focus = LocalState::new(Focus::Unfocused);
 
         Self::new_internal(
@@ -108,7 +108,7 @@ impl<
         )
     }
 
-    pub fn popup_delegate(self, popup_delegate: PopupDelegateGenerator<T, S, M, TState<bool>>) -> PlainPopUpButton<T, F, S, M, E> {
+    pub fn popup_delegate(self, popup_delegate: PopupDelegateGenerator<T, S, M, LocalState<bool>>) -> PlainPopUpButton<T, F, S, M, E> {
         Self::new_internal(
             self.selected,
             self.model,
@@ -138,7 +138,7 @@ impl<
         focus: F2,
         enabled: E2,
         delegate: DelegateGenerator<T2>,
-        popup_delegate: PopupDelegateGenerator<T2, S2, M2, TState<bool>>,
+        popup_delegate: PopupDelegateGenerator<T2, S2, M2, LocalState<bool>>,
         popup_item_delegate: PopupItemDelegateGenerator<T2, S2>,
     ) -> PlainPopUpButton<T2, F2, S2, M2, E2> {
         // Stores whether the popup is currently open or closed
@@ -353,7 +353,7 @@ pub struct PopupDelegate<T, S, B>
         S: State<T=T>,
         B: State<T=bool>,
 {
-    hover_model: TState<Option<usize>>,
+    hover_model: LocalState<Option<usize>>,
     selected_item: S,
     popup_item_delegate: PopupItemDelegateGenerator<T, S>,
     popup_open: B,

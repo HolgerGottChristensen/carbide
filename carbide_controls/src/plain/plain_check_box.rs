@@ -43,7 +43,7 @@ pub struct PlainCheckBox<F, C, D, E> where
 type DefaultPlainCheckBoxDelegate = fn(focus: Box<dyn AnyReadState<T=Focus>>, selected: Box<dyn AnyReadState<T=CheckBoxValue>>, enabled: Box<dyn AnyReadState<T=bool>>) -> Box<dyn Widget>;
 
 impl PlainCheckBox<Focus, CheckBoxValue, DefaultPlainCheckBoxDelegate, bool> {
-    pub fn new<C: IntoState<CheckBoxValue>>(checked: C) -> PlainCheckBox<TState<Focus>, C::Output, DefaultPlainCheckBoxDelegate, bool> {
+    pub fn new<C: IntoState<CheckBoxValue>>(checked: C) -> PlainCheckBox<LocalState<Focus>, C::Output, DefaultPlainCheckBoxDelegate, bool> {
         let focus_state = LocalState::new(Focus::Unfocused);
 
         Self::new_internal(

@@ -2,7 +2,7 @@ use carbide_core::color::{GREEN, RED, TRANSPARENT};
 use carbide_core::draw::{Alignment, Rect};
 use carbide_core::environment::{Environment, EnvironmentColor};
 use carbide_core::focus::Focus;
-use carbide_core::state::{AnyReadState, IntoReadState, IntoState, Map1, Map2, ReadState, TState};
+use carbide_core::state::{AnyReadState, IntoReadState, IntoState, LocalState, Map1, Map2, ReadState, TState};
 use carbide_core::widget::*;
 use carbide_core::widget::canvas::{Canvas, Context};
 
@@ -12,7 +12,7 @@ pub struct CheckBox;
 
 impl CheckBox {
     // TODO: Consider creating a newtype wrapper macro for CheckBox, wrapping plaincheckbox, to simplify the signature of the function
-    pub fn new<L: IntoReadState<String>, C: IntoState<CheckBoxValue>>(label: L, checked: C) -> PlainCheckBox<TState<Focus>, C::Output, CheckBoxDelegate<L::Output>, bool> {
+    pub fn new<L: IntoReadState<String>, C: IntoState<CheckBoxValue>>(label: L, checked: C) -> PlainCheckBox<LocalState<Focus>, C::Output, CheckBoxDelegate<L::Output>, bool> {
         PlainCheckBox::new(checked)
             .delegate(CheckBoxDelegate { label: label.into_read_state() })
     }

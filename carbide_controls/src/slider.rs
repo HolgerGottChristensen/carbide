@@ -9,7 +9,7 @@ use crate::PlainSlider;
 pub struct Slider;
 
 impl Slider {
-    pub fn new<V: IntoState<f64>, S: IntoReadState<f64>, E: IntoReadState<f64>>(value: V, start: S, end: E) -> PlainSlider<TState<Focus>, V::Output, S::Output, E::Output, Option<f64>, Box<dyn Widget>, Box<dyn Widget>, Box<dyn Widget>, bool> {
+    pub fn new<V: IntoState<f64>, S: IntoReadState<f64>, E: IntoReadState<f64>>(value: V, start: S, end: E) -> PlainSlider<LocalState<Focus>, V::Output, S::Output, E::Output, Option<f64>, Box<dyn Widget>, Box<dyn Widget>, Box<dyn Widget>, bool> {
         let focus = LocalState::new(Focus::Unfocused);
 
         let mut plain = PlainSlider::new(value, start, end)

@@ -8,7 +8,6 @@ extern crate carbide_syn;
 use proc_macro::TokenStream;
 use quote::ToTokens;
 use a::process_a_expr;
-use carbide_syn::fold::Fold;
 
 mod common;
 mod derive_type;

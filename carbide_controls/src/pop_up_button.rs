@@ -5,7 +5,7 @@ use carbide_core::draw::{Alignment, Color, Rect};
 use carbide_core::environment::{Environment, EnvironmentColor};
 use carbide_core::focus::Focus;
 use carbide_core::render::Style;
-use carbide_core::state::{AnyReadState, AnyState, IntoReadState, IntoState, Map1, Map2, Map3, ReadState, ReadStateExtNew, State, StateContract, StateExt, TState};
+use carbide_core::state::{AnyReadState, AnyState, IntoReadState, IntoState, LocalState, Map1, Map2, Map3, ReadState, ReadStateExtNew, State, StateContract, StateExt, TState};
 use carbide_core::widget::*;
 use carbide_core::widget::canvas::{Canvas, Context, LineCap};
 
@@ -17,7 +17,7 @@ impl PopUpButton {
     pub fn new<T: StateContract + PartialEq, S: IntoState<T>, M: IntoReadState<Vec<T>>>(
         selected: S,
         model: M,
-    ) -> PlainPopUpButton<T, TState<Focus>, S::Output, M::Output, bool> {
+    ) -> PlainPopUpButton<T, LocalState<Focus>, S::Output, M::Output, bool> {
         PlainPopUpButton::new(selected, model)
             .delegate(Self::delegate)
             .popup_item_delegate(Self::popup_item_delegate)

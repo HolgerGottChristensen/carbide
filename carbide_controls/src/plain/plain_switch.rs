@@ -45,7 +45,7 @@ pub struct PlainSwitch<F, C, D, E> where
 }
 
 impl PlainSwitch<Focus, bool, DefaultPlainSwitchDelegate, bool> {
-    pub fn new<C: IntoState<bool>>(checked: C) -> PlainSwitch<TState<Focus>, C::Output, DefaultPlainSwitchDelegate, bool> {
+    pub fn new<C: IntoState<bool>>(checked: C) -> PlainSwitch<LocalState<Focus>, C::Output, DefaultPlainSwitchDelegate, bool> {
         let focus_state = LocalState::new(Focus::Unfocused);
 
         Self::new_internal(

@@ -7,9 +7,6 @@ use std::fmt::{Debug, Formatter};
 use std::ops::{Deref, DerefMut};
 
 use parking_lot::{MappedRwLockReadGuard, MappedRwLockWriteGuard};
-use carbide_core::state::AnyState;
-use crate::environment::Environment;
-use crate::state::{AnyReadState, NewStateSync};
 
 type BorrowFlag = isize;
 
@@ -371,6 +368,8 @@ impl<T: Debug + Clone + 'static> Drop for ValueRefMut<'_, T> {
                 if let Some(state) = state.take() {
                     if let Some(val) = val.take() {
                         state(val);
+                    } else {
+                        unreachable!("The val should always be Some when the state is Some")
                     }
                 }
             }

@@ -44,7 +44,7 @@ where
 }
 
 impl PlainRadioButton<bool, Focus, bool, DefaultPlainRadioButtonDelegate, bool> {
-    pub fn new<T: StateContract + PartialEq, S: IntoState<T>>(reference: T, selected: S) -> PlainRadioButton<T, TState<Focus>, S::Output, DefaultPlainRadioButtonDelegate, bool> {
+    pub fn new<T: StateContract + PartialEq, S: IntoState<T>>(reference: T, selected: S) -> PlainRadioButton<T, LocalState<Focus>, S::Output, DefaultPlainRadioButtonDelegate, bool> {
         let focus_state = LocalState::new(Focus::Unfocused);
 
         Self::new_internal(focus_state, reference, selected.into_state(), Self::default_delegate, true)

@@ -26,18 +26,16 @@ pub use carbide_derive::a;
 
 #[macro_export]
 macro_rules! lens {
-    ($type:ty; $i:ident $(. $field:ident)+) => {
-        carbide_core::state::WidgetState::new(Box::new(
-            carbide_core::state::FieldState::new(
-                $i.clone(),
-                |item: &$type| { &item$(.$field)+ },
-                |item: &mut $type| { &mut item$(.$field)+ }
-            )
-        ))
+    ($i:ident.$fields:tt) => {
+        carbide_core::state::FieldState::new(
+            $i.clone(),
+            |item| { &item.$fields },
+            |item| { &mut item.$fields }
+        )
     };
-    ($type:ty; |$i:ident| $bl:block ) => {
+    /*($type:ty; |$i:ident| $bl:block ) => {
         $i.mapped(|$i: &$type| $bl)
-    }
+    }*/
 }
 
 #[macro_export]

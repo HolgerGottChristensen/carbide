@@ -1,7 +1,7 @@
 use carbide_core::color::{TRANSPARENT};
 use carbide_core::environment::EnvironmentColor;
 use carbide_core::focus::Focus;
-use carbide_core::state::{AnyReadState, IntoReadState, IntoState, Map1, Map2, ReadState, StateContract, TState};
+use carbide_core::state::{AnyReadState, IntoReadState, IntoState, LocalState, Map1, Map2, ReadState, StateContract, TState};
 use carbide_core::widget::*;
 
 use crate::{PlainRadioButton, PlainRadioButtonDelegate};
@@ -10,7 +10,7 @@ pub struct RadioButton;
 
 impl RadioButton {
     // TODO: Consider creating a newtype wrapper macro for Switch, wrapping plainswitch, to simplify the signature of the function
-    pub fn new<L: IntoReadState<String>, T: StateContract + PartialEq, S: IntoState<T>>(label: L, reference: T, selected: S) -> PlainRadioButton<T, TState<Focus>, S::Output, RadioButtonDelegate<L::Output>, bool> {
+    pub fn new<L: IntoReadState<String>, T: StateContract + PartialEq, S: IntoState<T>>(label: L, reference: T, selected: S) -> PlainRadioButton<T, LocalState<Focus>, S::Output, RadioButtonDelegate<L::Output>, bool> {
         PlainRadioButton::new(reference, selected)
             .delegate(RadioButtonDelegate { label: label.into_read_state() })
     }
