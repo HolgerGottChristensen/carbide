@@ -213,10 +213,10 @@ impl<
             }
         });
 
-        let text_widget = Text::new(display_text.clone())
+        let text_widget = Box::new(Text::new(display_text.clone())
             .font_size(font_size.clone())
             .color(text_color.clone())
-            .wrap_mode(Wrap::None);
+            .wrap_mode(Wrap::None));
 
         let last = len_in_graphemes(&*display_text.value());
 

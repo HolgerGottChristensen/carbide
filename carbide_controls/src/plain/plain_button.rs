@@ -87,7 +87,7 @@ impl PlainButton<Focus, DefaultPlainButtonAction, DefaultPlainButtonDelegate, bo
 
         ZStack::new(vec![
             Rectangle::new().fill(background_color),
-            Text::new(val),
+            Text::new(val).boxed(),
         ])
     }
 }

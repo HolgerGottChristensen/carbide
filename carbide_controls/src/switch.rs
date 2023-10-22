@@ -96,6 +96,6 @@ impl<L: ReadState<T=String>> PlainSwitchDelegate for SwitchDelegate<L> {
             .frame(39.0, 22.0)
             .boxed();
 
-        HStack::new(vec![switch, Text::new(self.label.clone()).color(label_color)]).spacing(5.0)
+        HStack::new(vec![switch, Text::new(self.label.clone()).color(label_color).boxed()]).spacing(5.0)
     }
 }

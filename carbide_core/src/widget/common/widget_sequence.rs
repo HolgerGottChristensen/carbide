@@ -17,55 +17,6 @@ impl WidgetSequence for () {
     fn foreach_direct_rev<'a>(&'a mut self, _f: &mut dyn FnMut(&'a mut dyn Widget)) {}
 }
 
-impl<W: Widget + Clone + 'static> WidgetSequence for W {
-    fn foreach<'a>(&'a self, f: &mut dyn FnMut(&'a dyn Widget)) {
-        if self.is_ignore() {
-            return;
-        }
-
-        if self.is_proxy() {
-            self.foreach_child(f);
-            return;
-        }
-
-        f(self);
-    }
-
-    fn foreach_mut<'a>(&'a mut self, f: &mut dyn FnMut(&'a mut dyn Widget)) {
-        if self.is_ignore() {
-            return;
-        }
-
-        if self.is_proxy() {
-            self.foreach_child_mut(f);
-            return;
-        }
-
-        f(self);
-    }
-
-    fn foreach_rev<'a>(&'a mut self, f: &mut dyn FnMut(&'a mut dyn Widget)) {
-        if self.is_ignore() {
-            return;
-        }
-
-        if self.is_proxy() {
-            self.foreach_child_rev(f);
-            return;
-        }
-
-        f(self);
-    }
-
-    fn foreach_direct<'a>(&'a mut self, f: &mut dyn FnMut(&'a mut dyn Widget)) {
-        f(self)
-    }
-
-    fn foreach_direct_rev<'a>(&'a mut self, f: &mut dyn FnMut(&'a mut dyn Widget)) {
-        f(self)
-    }
-}
-
 impl<W: Widget + Clone + 'static> WidgetSequence for Vec<W> {
     fn foreach<'a>(&'a self, f: &mut dyn FnMut(&'a dyn Widget)) {
         for element in self {
@@ -124,3 +75,86 @@ impl<W: Widget + Clone + 'static> WidgetSequence for Vec<W> {
         }
     }
 }
+
+macro_rules! reverse {
+    ([] $($reversed:tt)*) => {
+        ($($reversed),*)  // base case
+    };
+    ([$first:tt $($rest:tt)*] $($reversed:tt)*) => {
+        reverse!([$($rest)*] $first $($reversed)*)  // recursion
+    };
+}
+
+macro_rules! tuple_sequence_impl {
+    ($($generic:ident),*) => {
+        #[allow(non_snake_case)]
+        #[allow(unused_parens)]
+        impl<$($generic: Widget + Clone + 'static),*> WidgetSequence for ($($generic),*) {
+            fn foreach<'a>(&'a self, f: &mut dyn FnMut(&'a dyn Widget)) {
+                let ($($generic),*) = self;
+                $(
+                    if $generic.is_ignore() {
+
+                    } else if $generic.is_proxy() {
+                        $generic.foreach_child(f);
+                    } else {
+                        f($generic);
+                    }
+                )*
+            }
+
+            fn foreach_mut<'a>(&'a mut self, f: &mut dyn FnMut(&'a mut dyn Widget)) {
+                let ($($generic),*) = self;
+                $(
+                    if $generic.is_ignore() {
+
+                    } else if $generic.is_proxy() {
+                        $generic.foreach_child_mut(f);
+                    } else {
+                        f($generic);
+                    }
+                )*
+            }
+
+            fn foreach_rev<'a>(&'a mut self, f: &mut dyn FnMut(&'a mut dyn Widget)) {
+                let reverse!([$($generic)*]) = self;
+                $(
+                    if $generic.is_ignore() {
+
+                    } else if $generic.is_proxy() {
+                        $generic.foreach_child_rev(f);
+                    } else {
+                        f($generic);
+                    }
+                )*
+            }
+
+            fn foreach_direct<'a>(&'a mut self, f: &mut dyn FnMut(&'a mut dyn Widget)) {
+                let ($($generic),*) = self;
+                $(
+                    f($generic);
+                )*
+            }
+
+            fn foreach_direct_rev<'a>(&'a mut self, f: &mut dyn FnMut(&'a mut dyn Widget)) {
+                let reverse!([$($generic)*]) = self;
+                $(
+                    f($generic);
+                )*
+            }
+        }
+    };
+}
+
+tuple_sequence_impl!(W1);
+tuple_sequence_impl!(W1, W2);
+tuple_sequence_impl!(W1, W2, W3);
+tuple_sequence_impl!(W1, W2, W3, W4);
+tuple_sequence_impl!(W1, W2, W3, W4, W5);
+tuple_sequence_impl!(W1, W2, W3, W4, W5, W6);
+tuple_sequence_impl!(W1, W2, W3, W4, W5, W6, W7);
+tuple_sequence_impl!(W1, W2, W3, W4, W5, W6, W7, W8);
+tuple_sequence_impl!(W1, W2, W3, W4, W5, W6, W7, W8, W9);
+tuple_sequence_impl!(W1, W2, W3, W4, W5, W6, W7, W8, W9, W10);
+tuple_sequence_impl!(W1, W2, W3, W4, W5, W6, W7, W8, W9, W10, W11);
+tuple_sequence_impl!(W1, W2, W3, W4, W5, W6, W7, W8, W9, W10, W11, W12);

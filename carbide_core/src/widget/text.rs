@@ -55,10 +55,10 @@ pub struct Text<T, S, C> where T: ReadState<T=String> + Clone, S: ReadState<T=u3
 
 impl Text<String, u32, Color> {
     #[carbide_default_builder2]
-    pub fn new<T: IntoReadState<String>>(text: T) -> Box<Text<T::Output, impl ReadState<T=u32>, impl ReadState<T=Color>>> {
+    pub fn new<T: IntoReadState<String>>(text: T) -> Text<T::Output, impl ReadState<T=u32>, impl ReadState<T=Color>> {
         let text = text.into_read_state();
 
-        Box::new(Text {
+        Text {
             id: WidgetId::new(),
             text,
             font_size: EnvironmentFontSize::Body.u32(),
@@ -72,16 +72,16 @@ impl Text<String, u32, Color> {
             text_decoration: TextDecoration::None,
             internal_text: None,
             text_span_generator: Box::new(NoStyleTextSpanGenerator {}),
-        })
+        }
     }
 
     pub fn new_with_generator<T: IntoReadState<String>>(
         text: T,
         generator: impl Into<Box<dyn TextSpanGenerator>>,
-    ) -> Box<Text<T::Output, impl ReadState<T=u32>, impl ReadState<T=Color>>> {
+    ) -> Text<T::Output, impl ReadState<T=u32>, impl ReadState<T=Color>> {
         let text = text.into_read_state();
 
-        Box::new(Text {
+        Text {
             id: WidgetId::new(),
             text,
             font_size: EnvironmentFontSize::Body.u32(),
@@ -95,13 +95,13 @@ impl Text<String, u32, Color> {
             text_decoration: TextDecoration::None,
             internal_text: None,
             text_span_generator: generator.into(),
-        })
+        }
     }
 }
 
 impl<T2: ReadState<T=String> + Clone, S2: ReadState<T=u32> + Clone, C2: ReadState<T=Color> + Clone> Text<T2, S2, C2> {
-    pub fn color<C: IntoReadState<Color>>(self, color: C) -> Box<Text<T2, S2, C::Output>> {
-        Box::new(Text {
+    pub fn color<C: IntoReadState<Color>>(self, color: C) -> Text<T2, S2, C::Output> {
+        Text {
             id: self.id,
             position: self.position,
             dimension: self.dimension,
@@ -115,11 +115,11 @@ impl<T2: ReadState<T=String> + Clone, S2: ReadState<T=u32> + Clone, C2: ReadStat
             text_decoration: self.text_decoration,
             internal_text: self.internal_text,
             text_span_generator: self.text_span_generator,
-        })
+        }
     }
 
-    pub fn font_size<S: IntoReadState<u32>>(self, size: S) -> Box<Text<T2, S::Output, C2>> {
-        Box::new(Text {
+    pub fn font_size<S: IntoReadState<u32>>(self, size: S) -> Text<T2, S::Output, C2> {
+        Text {
             id: self.id,
             position: self.position,
             dimension: self.dimension,
@@ -133,22 +133,22 @@ impl<T2: ReadState<T=String> + Clone, S2: ReadState<T=u32> + Clone, C2: ReadStat
             text_decoration: self.text_decoration,
             internal_text: self.internal_text,
             text_span_generator: self.text_span_generator,
-        })
+        }
     }
 
-    pub fn font_weight(mut self, weight: impl Into<FontWeight>) -> Box<Self> {
+    pub fn font_weight(mut self, weight: impl Into<FontWeight>) -> Self {
         self.font_weight = weight.into();
-        Box::new(self)
+        self
     }
 
     /// Take a given text element and make it render with the font weight: Bold
-    pub fn bold(self) -> Box<Self> {
+    pub fn bold(self) -> Self {
         self.font_weight(FontWeight::Bold)
     }
 
-    pub fn wrap_mode(mut self, wrap: Wrap) -> Box<Self> {
+    pub fn wrap_mode(mut self, wrap: Wrap) -> Self {
         self.wrap_mode = wrap;
-        Box::new(self)
+        self
     }
 
     /// Align the text to the left of its bounding **Rect**'s *x* axis range.
@@ -187,19 +187,19 @@ impl<T2: ReadState<T=String> + Clone, S2: ReadState<T=u32> + Clone, C2: ReadStat
     }
 
     /// Take a given text element and make it render with an underline
-    pub fn underline(mut self) -> Box<Self> {
+    pub fn underline(mut self) -> Self {
         self.text_decoration = TextDecoration::Underline(vec![]);
-        Box::new(self)
+        self
     }
 
-    pub fn with_optional_decoration(mut self, decoration: TextDecoration) -> Box<Self> {
+    pub fn with_optional_decoration(mut self, decoration: TextDecoration) -> Self {
         self.text_decoration = decoration;
-        Box::new(self)
+        self
     }
 
-    pub fn with_optional_weight(mut self, weight: FontWeight) -> Box<Self> {
+    pub fn with_optional_weight(mut self, weight: FontWeight) -> Self {
         self.font_weight = weight;
-        Box::new(self)
+        self
     }
 }
 

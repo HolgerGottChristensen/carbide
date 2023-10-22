@@ -95,6 +95,6 @@ impl<L: ReadState<T=String>> PlainCheckBoxDelegate for CheckBoxDelegate<L> {
             .frame(14.0, 14.0)
             .boxed();
 
-        HStack::new(vec![check_box, Text::new(self.label.clone()).color(label_color)]).spacing(5.0)
+        HStack::new(vec![check_box, Text::new(self.label.clone()).color(label_color).boxed()]).spacing(5.0)
     }
 }

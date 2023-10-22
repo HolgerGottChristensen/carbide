@@ -46,7 +46,7 @@ impl<C: Widget + Clone, L: ReadState<T=String>> Labelled<C, L> {
         });
 
         let child = *HStack::new(vec![
-            Text::new(label.clone()).color(label_color),
+            Text::new(label.clone()).color(label_color).boxed(),
             Box::new(child.clone())
         ]);
 

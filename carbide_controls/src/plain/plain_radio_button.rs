@@ -65,7 +65,7 @@ impl PlainRadioButton<bool, Focus, bool, DefaultPlainRadioButtonDelegate, bool> 
 
         ZStack::new(vec![
             Rectangle::new().fill(background_color),
-            Text::new(val),
+            Text::new(val).boxed(),
         ])
     }
 }

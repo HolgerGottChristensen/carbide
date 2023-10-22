@@ -83,7 +83,8 @@ impl<L: ReadState<T=String>, P: ReadState<T=bool>> PlainButtonDelegate for Butto
                 .stroke(EnvironmentColor::OpaqueSeparator)
                 .stroke_style(1.0),
             Text::new(self.label.clone())
-                .color(label_color),
+                .color(label_color)
+                .boxed(),
         ]).background(
             RoundedRectangle::new(CornerRadii::all(4.0))
                 .stroke(outline_color)
