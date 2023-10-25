@@ -13,4 +13,5 @@ wgpu = { version = "0.16.1" }
 futures = "0.3.21"
 image = "0.23"
 carbide_wgpu = { path = "../carbide_wgpu" }
+uuid = { version = "1.4.1", features = ["v4"] }
 

@@ -1,23 +1,19 @@
 use carbide_core::draw::{Dimension};
-use carbide_core::environment::*;
-use carbide_core::widget::*;
 use carbide_rend3::Scene3d;
 use carbide_wgpu::{Application, Window};
 
 fn main() {
-    /*let mut application = Application::new();
+    let mut application = Application::new();
 
     application.set_scene(
         Window::new(
-            "Frame example",
+            "Cube example",
             Dimension::new(600.0, 600.0),
-            Rectangle::new()
-                .fill(EnvironmentColor::Accent)
-                .frame(100.0, 100.0)
+            Scene3d::new()
+                //.skybox("/Users/holgerchristensen/carbide/backends/carbide_rend3/ressources/skybox")
+                //.accent_color(EnvironmentColor::Orange)
         ).close_application_on_window_close()
     );
 
-    application.launch()*/
-
-    Scene3d::new();
+    application.launch()
 }

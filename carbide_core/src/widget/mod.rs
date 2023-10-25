@@ -88,7 +88,7 @@ mod z_stack;
 mod duplicated;
 mod ignore;
 
-#[derive(Clone, Debug, Default, Copy, Hash, Eq, PartialEq, Ord, PartialOrd)]
+#[derive(Clone, Debug, Copy, Hash, Eq, PartialEq, Ord, PartialOrd)]
 pub struct WidgetId(u32);
 
 impl WidgetId {
@@ -96,6 +96,12 @@ impl WidgetId {
     pub fn new() -> Self {
         static WIDGET_ID_COUNTER: AtomicU32 = AtomicU32::new(1);
         WidgetId(WIDGET_ID_COUNTER.fetch_add(1, Ordering::Relaxed))
+    }
+}
+
+impl Default for WidgetId {
+    fn default() -> Self {
+        WidgetId::new()
     }
 }
 

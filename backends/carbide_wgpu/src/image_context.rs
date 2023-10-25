@@ -95,25 +95,28 @@ pub fn create_bind_group(
     });
 
 
-    create_bind_group_from_wgpu_texture(wgpu_texture)
+    create_bind_group_from_wgpu_texture(&wgpu_texture)
 }
 
-pub fn create_bind_group_from_wgpu_texture(wgpu_texture: wgpu::Texture) -> BindGroupExtended {
-    let view = wgpu_texture.create_view(&wgpu::TextureViewDescriptor::default());
-
+pub fn create_bind_group_from_wgpu_texture(wgpu_texture: &wgpu::Texture) -> BindGroupExtended {
     DEVICE_QUEUE.with(|(device, queue)| {
-        let sampler = device.create_sampler(&wgpu::SamplerDescriptor {
-            address_mode_u: wgpu::AddressMode::ClampToEdge,
-            address_mode_v: wgpu::AddressMode::ClampToEdge,
-            address_mode_w: wgpu::AddressMode::ClampToEdge,
-            mag_filter: wgpu::FilterMode::Linear, // Change to nearest for pixel images
-            min_filter: wgpu::FilterMode::Linear, // Change to nearest for pixel images
-            mipmap_filter: wgpu::FilterMode::Nearest,
-            ..Default::default()
-        });
-
         ATLAS_CACHE_TEXTURE.with(|atlas_cache_tex| {
             MAIN_TEXTURE_BIND_GROUP_LAYOUT.with(|texture_bind_group_layout| {
+
+
+                let view = wgpu_texture.create_view(&wgpu::TextureViewDescriptor::default());
+                let atlas_tex_view = atlas_cache_tex.create_view(&wgpu::TextureViewDescriptor::default());
+
+                let sampler = device.create_sampler(&wgpu::SamplerDescriptor {
+                    address_mode_u: wgpu::AddressMode::ClampToEdge,
+                    address_mode_v: wgpu::AddressMode::ClampToEdge,
+                    address_mode_w: wgpu::AddressMode::ClampToEdge,
+                    mag_filter: wgpu::FilterMode::Linear, // Change to nearest for pixel images
+                    min_filter: wgpu::FilterMode::Linear, // Change to nearest for pixel images
+                    mipmap_filter: wgpu::FilterMode::Nearest,
+                    ..Default::default()
+                });
+
                 let bind_group = device.create_bind_group(&wgpu::BindGroupDescriptor {
                     layout: texture_bind_group_layout,
                     entries: &[
@@ -127,9 +130,7 @@ pub fn create_bind_group_from_wgpu_texture(wgpu_texture: wgpu::Texture) -> BindG
                         },
                         wgpu::BindGroupEntry {
                             binding: 2,
-                            resource: wgpu::BindingResource::TextureView(
-                                &atlas_cache_tex.create_view(&wgpu::TextureViewDescriptor::default()),
-                            ),
+                            resource: wgpu::BindingResource::TextureView(&atlas_tex_view),
                         },
                     ],
                     label: None,

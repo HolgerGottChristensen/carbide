@@ -10,7 +10,7 @@ fn main() {
     application.set_scene(Window::new(
         "Image example",
         Dimension::new(800.0, 600.0),
-        *Image::new("images/landscape.png"),
+        Image::new("images/landscape.png"),
     ).close_application_on_window_close());
 
     application.launch();

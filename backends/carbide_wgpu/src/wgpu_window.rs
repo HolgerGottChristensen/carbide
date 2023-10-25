@@ -2,6 +2,7 @@ use std::cell::RefCell;
 use std::collections::HashMap;
 use std::fmt::{Debug, Formatter};
 use std::rc::Rc;
+use std::sync::Arc;
 
 use cgmath::{Matrix4, Vector3};
 use futures::executor::block_on;
@@ -52,32 +53,34 @@ const ZOOM: f32 = 1.0;
 // The instance is a handle to our GPU
 // BackendBit::PRIMARY => Vulkan + Metal + DX12 + Browser WebGPU
 //let instance = wgpu::Instance::new(wgpu::Backends::PRIMARY);
-thread_local!(pub static INSTANCE: Instance =
-    Instance::new(wgpu::InstanceDescriptor {
+thread_local!(pub static INSTANCE: Arc<Instance> =
+    Arc::new(Instance::new(wgpu::InstanceDescriptor {
         backends: wgpu::Backends::all(),
         dx12_shader_compiler: Default::default(),
-    })
+    }))
 );
 
-thread_local!(pub static ADAPTER: Adapter = {
+thread_local!(pub static ADAPTER: Arc<Adapter> = {
     INSTANCE.with(|instance| {
-        block_on(instance.request_adapter(&wgpu::RequestAdapterOptions {
+        Arc::new(block_on(instance.request_adapter(&wgpu::RequestAdapterOptions {
             power_preference: wgpu::PowerPreference::HighPerformance,
             force_fallback_adapter: false,
             compatible_surface: None,
-        })).unwrap()
+        })).unwrap())
     })
 });
-thread_local!(pub static DEVICE_QUEUE: (Device, Queue) = {
+thread_local!(pub static DEVICE_QUEUE: (Arc<Device>, Arc<Queue>) = {
     ADAPTER.with(|adapter| {
-        block_on(adapter.request_device(
+        let (device, queue) = block_on(adapter.request_device(
             &wgpu::DeviceDescriptor {
                 label: None,
                 features: wgpu::Features::empty(),
                 limits: wgpu::Limits::default(),
             },
             None, // Trace path
-        )).unwrap()
+        )).unwrap();
+
+        (Arc::new(device), Arc::new(queue))
     })
 });
 
