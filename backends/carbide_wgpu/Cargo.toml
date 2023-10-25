@@ -20,7 +20,7 @@ winit = "0.28"
 cgmath = "0.18"
 env_logger = "0.7"
 log = "0.4"
-wgpu = { version = "0.15" }
+wgpu = { version = "0.16.1" }
 futures = "0.3"
 bytemuck = { version = "1.7", features = ["derive", "min_const_generics"] }
 anyhow = "1.0"

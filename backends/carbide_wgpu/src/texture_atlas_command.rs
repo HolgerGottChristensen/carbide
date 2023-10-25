@@ -40,8 +40,8 @@ impl<'a> TextureAtlasCommand<'a> {
             buffer,
             layout: wgpu::ImageDataLayout {
                 offset: 0,
-                bytes_per_row: NonZeroU32::new(4 * self.width),
-                rows_per_image: NonZeroU32::new(self.height),
+                bytes_per_row: Some(4 * self.width),
+                rows_per_image: Some(self.height),
             },
         }
     }

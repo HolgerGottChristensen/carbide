@@ -1,7 +1,6 @@
 use std::f64::consts::PI;
 
 use carbide_core::draw::{Dimension, Position};
-use carbide_core::draw::image::ImageId;
 use carbide_core::environment::*;
 use carbide_core::widget::canvas::*;
 use carbide_core::widget::*;

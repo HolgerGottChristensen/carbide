@@ -94,8 +94,8 @@ pub fn create_bind_group(
         &texture.data,
         wgpu::ImageDataLayout {
             offset: 0,
-            bytes_per_row: NonZeroU32::new(texture.bytes_per_row),
-            rows_per_image: NonZeroU32::new(texture.height),
+            bytes_per_row: Some(texture.bytes_per_row),
+            rows_per_image: Some(texture.height),
         },
         size,
     );
