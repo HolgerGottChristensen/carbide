@@ -28,30 +28,20 @@ impl InnerImageContext for WGPUImageContext {
     }
 
     fn update_texture(&mut self, id: ImageId, texture: Texture) -> bool {
-        DEVICE_QUEUE.with(|(device, queue)| {
-            BIND_GROUPS.with(|bind_groups| {
-                ATLAS_CACHE_TEXTURE.with(|atlas_cache_tex| {
-                    MAIN_TEXTURE_BIND_GROUP_LAYOUT.with(|texture_bind_group_layout| {
-                        let bind_groups = &mut *bind_groups.borrow_mut();
+        BIND_GROUPS.with(|bind_groups| {
+            let bind_groups = &mut *bind_groups.borrow_mut();
 
-                        //println!("Update image called");
-                        let bind_group = create_bind_group(texture, device, queue, atlas_cache_tex, texture_bind_group_layout);
-                        bind_groups.insert(id, bind_group);
+            //println!("Update image called");
+            let bind_group = create_bind_group(texture);
+            bind_groups.insert(id, bind_group);
 
-                        true
-                    })
-                })
-            })
+            true
         })
     }
 }
 
 pub fn create_bind_group(
     texture: Texture,
-    device: &Device,
-    queue: &Queue,
-    atlas_cache: &WGPUTexture,
-    layout: &BindGroupLayout
 ) -> BindGroupExtended {
     let width = texture.width;
     let height = texture.height;
@@ -67,75 +57,90 @@ pub fn create_bind_group(
         TextureFormat::BGRA8 => wgpu::TextureFormat::Bgra8UnormSrgb,
     };
 
-    let wgpu_texture = device.create_texture(&wgpu::TextureDescriptor {
-        label: None,
-        size,
-        mip_level_count: 1,
-        sample_count: 1,
-        dimension: wgpu::TextureDimension::D2,
-        format,
-        usage: wgpu::TextureUsages::TEXTURE_BINDING | wgpu::TextureUsages::COPY_DST,
-        view_formats: &[],
+    let wgpu_texture = DEVICE_QUEUE.with(|(device, queue)| {
+        let wgpu_texture = device.create_texture(&wgpu::TextureDescriptor {
+            label: None,
+            size,
+            mip_level_count: 1,
+            sample_count: 1,
+            dimension: wgpu::TextureDimension::D2,
+            format,
+            usage: wgpu::TextureUsages::TEXTURE_BINDING | wgpu::TextureUsages::COPY_DST,
+            view_formats: &[],
+        });
+
+        //println!("len: {}", texture.data.len());
+        //println!("bytes_per_row: {}", texture.bytes_per_row);
+        //println!("height: {}", texture.height);
+        //println!("size: {}", texture.height * texture.bytes_per_row);
+
+
+        queue.write_texture(
+            wgpu::ImageCopyTexture {
+                texture: &wgpu_texture,
+                mip_level: 0,
+                origin: wgpu::Origin3d::ZERO,
+                aspect: Default::default(),
+            },
+            &texture.data,
+            wgpu::ImageDataLayout {
+                offset: 0,
+                bytes_per_row: Some(texture.bytes_per_row),
+                rows_per_image: Some(texture.height),
+            },
+            size,
+        );
+
+        wgpu_texture
     });
 
-    //println!("len: {}", texture.data.len());
-    //println!("bytes_per_row: {}", texture.bytes_per_row);
-    //println!("height: {}", texture.height);
-    //println!("size: {}", texture.height * texture.bytes_per_row);
 
+    create_bind_group_from_wgpu_texture(wgpu_texture)
+}
 
-    queue.write_texture(
-        wgpu::ImageCopyTexture {
-            texture: &wgpu_texture,
-            mip_level: 0,
-            origin: wgpu::Origin3d::ZERO,
-            aspect: Default::default(),
-        },
-        &texture.data,
-        wgpu::ImageDataLayout {
-            offset: 0,
-            bytes_per_row: Some(texture.bytes_per_row),
-            rows_per_image: Some(texture.height),
-        },
-        size,
-    );
-
+pub fn create_bind_group_from_wgpu_texture(wgpu_texture: wgpu::Texture) -> BindGroupExtended {
     let view = wgpu_texture.create_view(&wgpu::TextureViewDescriptor::default());
 
-    let sampler = device.create_sampler(&wgpu::SamplerDescriptor {
-        address_mode_u: wgpu::AddressMode::ClampToEdge,
-        address_mode_v: wgpu::AddressMode::ClampToEdge,
-        address_mode_w: wgpu::AddressMode::ClampToEdge,
-        mag_filter: wgpu::FilterMode::Linear, // Change to nearest for pixel images
-        min_filter: wgpu::FilterMode::Linear, // Change to nearest for pixel images
-        mipmap_filter: wgpu::FilterMode::Nearest,
-        ..Default::default()
-    });
+    DEVICE_QUEUE.with(|(device, queue)| {
+        let sampler = device.create_sampler(&wgpu::SamplerDescriptor {
+            address_mode_u: wgpu::AddressMode::ClampToEdge,
+            address_mode_v: wgpu::AddressMode::ClampToEdge,
+            address_mode_w: wgpu::AddressMode::ClampToEdge,
+            mag_filter: wgpu::FilterMode::Linear, // Change to nearest for pixel images
+            min_filter: wgpu::FilterMode::Linear, // Change to nearest for pixel images
+            mipmap_filter: wgpu::FilterMode::Nearest,
+            ..Default::default()
+        });
 
-    let bind_group = device.create_bind_group(&wgpu::BindGroupDescriptor {
-        layout,
-        entries: &[
-            wgpu::BindGroupEntry {
-                binding: 0,
-                resource: wgpu::BindingResource::TextureView(&view),
-            },
-            wgpu::BindGroupEntry {
-                binding: 1,
-                resource: wgpu::BindingResource::Sampler(&sampler),
-            },
-            wgpu::BindGroupEntry {
-                binding: 2,
-                resource: wgpu::BindingResource::TextureView(
-                    &atlas_cache.create_view(&wgpu::TextureViewDescriptor::default()),
-                ),
-            },
-        ],
-        label: None,
-    });
+        ATLAS_CACHE_TEXTURE.with(|atlas_cache_tex| {
+            MAIN_TEXTURE_BIND_GROUP_LAYOUT.with(|texture_bind_group_layout| {
+                let bind_group = device.create_bind_group(&wgpu::BindGroupDescriptor {
+                    layout: texture_bind_group_layout,
+                    entries: &[
+                        wgpu::BindGroupEntry {
+                            binding: 0,
+                            resource: wgpu::BindingResource::TextureView(&view),
+                        },
+                        wgpu::BindGroupEntry {
+                            binding: 1,
+                            resource: wgpu::BindingResource::Sampler(&sampler),
+                        },
+                        wgpu::BindGroupEntry {
+                            binding: 2,
+                            resource: wgpu::BindingResource::TextureView(
+                                &atlas_cache_tex.create_view(&wgpu::TextureViewDescriptor::default()),
+                            ),
+                        },
+                    ],
+                    label: None,
+                });
 
-    BindGroupExtended {
-        bind_group,
-        width,
-        height,
-    }
+                BindGroupExtended {
+                    bind_group,
+                    width: wgpu_texture.width(),
+                    height: wgpu_texture.height(),
+                }
+            })
+        })
+    })
 }

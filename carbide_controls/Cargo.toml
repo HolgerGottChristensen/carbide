@@ -23,5 +23,5 @@ dyn-clone = "1.0.3"
 
 [dev-dependencies]
 env_logger = "0.7"
-carbide_wgpu = { path = "../backends/carbide_wgpu", version = "0.70" }
+carbide_wgpu = { path = "../backends/carbide_wgpu" }
 futures = "0.3"

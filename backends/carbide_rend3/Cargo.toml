@@ -6,6 +6,11 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-rend3 = { git = "https://github.com/BVE-Reborn/rend3.git", rev = "4d10795"}
-rend3-routine = { git = "https://github.com/BVE-Reborn/rend3.git", rev = "4d10795"}
-carbide_wgpu = { path = "../carbide_wgpu", version = "0.70" }
+rend3 = { git = "https://github.com/BVE-Reborn/rend3.git", rev = "ed38b90a57ce62a2d90dc6b23309446ec0585e8c"}
+rend3-routine = { git = "https://github.com/BVE-Reborn/rend3.git", rev = "ed38b90a57ce62a2d90dc6b23309446ec0585e8c"}
+carbide_core = { path = "../../carbide_core" }
+wgpu = { version = "0.16.1" }
+futures = "0.3.21"
+image = "0.23"
+carbide_wgpu = { path = "../carbide_wgpu" }
+

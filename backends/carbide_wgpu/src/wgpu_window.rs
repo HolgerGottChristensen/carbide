@@ -201,17 +201,12 @@ thread_local!(pub static BIND_GROUPS: RefCell<HashMap<ImageId, BindGroupExtended
         data: &[0u8, 0u8, 0u8, 255u8],
     };
 
-    let bind_group = DEVICE_QUEUE.with(|(device, queue)| {
-        ATLAS_CACHE_TEXTURE.with(|atlas_cache_tex| {
-            MAIN_TEXTURE_BIND_GROUP_LAYOUT.with(|texture_bind_group_layout| {
-                create_bind_group(texture, device, queue, atlas_cache_tex, texture_bind_group_layout)
-            })
-        })
-    });
+    let bind_group = create_bind_group(texture);
 
     map.insert(ImageId::default(), bind_group);
     RefCell::new(map)
 });
+
 thread_local!(pub static FILTER_BIND_GROUPS: RefCell<HashMap<FilterId, BindGroup>> = RefCell::new(HashMap::new()));
 
 thread_local!(pub static PIPELINES: RefCell<Vec<(TextureFormat, RenderPipelines)>> = RefCell::new(vec![]));

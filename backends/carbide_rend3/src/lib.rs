@@ -1,6 +1,3 @@
-use rend3::{ExtendedAdapterInfo, Renderer, RendererProfile};
-use rend3::util::mipmap::MipmapGenerator;
+mod scene3d;
 
-#[test]
-fn it_works() {
-}
+pub use scene3d::Scene3d;
