@@ -35,11 +35,8 @@ chrono = "0.4.19"
 open = "1"
 num = "0.4.1"
 
-approx = "0.3.2"
-euclid = "0.20.13"
+
 arrayvec = "0.5.1"
-smol_str = "0.1.15"
-nalgebra = "0.21.1"
 rayon = "1.7.0"
 uuid = { version = "1.4.1", features = ["v4"] }
 rand = "0.8.5"

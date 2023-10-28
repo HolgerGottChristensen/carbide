@@ -15,6 +15,8 @@ pub use controls_ext::*;
 pub use help::*;
 pub use labelled::*;
 
+extern crate carbide_core as carbide;
+
 #[macro_export]
 macro_rules! capture {
     ($([$($t:ident),*],)? $({$($u:ident),*},)? |$($a:ident: $typ:ty),*| $b:block) => {

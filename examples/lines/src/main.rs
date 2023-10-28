@@ -1,14 +1,14 @@
 use std::cmp::Ordering;
 
-use carbide::{lens, matches_case, Scalar};
+use carbide::{a, lens, matches_case};
 use carbide::{Application, Window};
-use carbide::draw::{Dimension, Position, Rect};
+use carbide::draw::{Dimension, Position, Rect, Scalar};
 use carbide::environment::{Environment, EnvironmentColor, EnvironmentFontSize};
-use carbide::state::{IndexableState, LocalState, Map1, ReadState, State, StateExt, TState, ValueRefMut};
+use carbide::state::{IndexState, LocalState, Map1, ReadState, ReadStateExtNew, State, StateExt, TState, ValueRefMut};
 use carbide::text::FontFamily;
 use carbide::widget::*;
 use carbide::widget::canvas::{Canvas, Context};
-use carbide_controls::{Button, capture, Slider, TextInput};
+use carbide::controls::{Button, capture, Slider, TextInput};
 
 use crate::edge::Edge;
 use crate::editing_mode::{CreateWallState, EditingMode, SelectedState};
@@ -28,13 +28,8 @@ mod node;
 mod node_editor;
 
 fn main() {
-    env_logger::init();
-
-    let mut application = Application::new();
-
-    let family =
-        FontFamily::new_from_paths("NotoSans", vec!["fonts/NotoSans/NotoSans-Regular.ttf"]);
-    application.add_font_family(family);
+    let mut application = Application::new()
+        .with_asset_fonts();
 
     let mut graph = Graph::new();
     graph.add_node(Node::new(Position::new(100.0, 100.0)));
@@ -50,9 +45,9 @@ fn main() {
 
     let state = LocalState::new(graph);
 
-    let editing_mode: TState<EditingMode> = lens!(Graph; state.editing_mode);
-
-    let canvas = Canvas::<Graph>::new_with_state(&state, |s, rect, mut context, _| {
+    let editing_mode = lens!(state.editing_mode);
+/*
+    let canvas = Canvas::new(|rect, mut context, _| {
         let mut graph = s.value_mut();
         context.set_line_width(1.0);
 
@@ -128,104 +123,31 @@ fn main() {
 
         context
     });
+*/
+    let canvas = Rectangle::new().fill(EnvironmentColor::Green);
 
     let node_editor = NodeEditor::new(&state);
 
-    let add_wall_button = Button::new("Add Wall")
-        .on_click(capture!([editing_mode], |env: &mut Environment| {
-            *editing_mode = EditingMode::CreateWallP1 {
-                mouse_position: Position::new(0.0, 0.0),
-                state: CreateWallState::Invalid,
-            };
-        }))
+    let add_wall_button = Button::new_primary("Add Wall", a!(|_, _| {
+        *$editing_mode = EditingMode::CreateWallP1 {
+            mouse_position: Position::new(0.0, 0.0),
+            state: CreateWallState::Invalid,
+        };
+    })).frame(70.0, 26.0);
+
+    let selection_button = Button::new_primary("Selection", a!(|_, _| {
+        *$editing_mode = EditingMode::Selection {
+            selected: SelectedState::None,
+            hovered: SelectedState::None,
+        };
+    })).frame(70.0, 26.0);
+
+    let editing_button = Button::new_primary("Editing", a!(|_, _| {
+        *$editing_mode = EditingMode::Editing;
+    }))
         .frame(70.0, 26.0);
 
-    let selection_button = Button::new("Selection")
-        .on_click(capture!([editing_mode], |env: &mut Environment| {
-            *editing_mode = EditingMode::Selection {
-                selected: SelectedState::None,
-                hovered: SelectedState::None,
-            };
-        }))
-        .frame(70.0, 26.0);
-
-    let editing_button = Button::new("Editing")
-        .on_click(capture!([editing_mode], |env: &mut Environment| {
-            *editing_mode = EditingMode::Editing;
-        }))
-        .frame(70.0, 26.0);
-
-    fn selected_node_view(graph: &TState<Graph>, selected_state: TState<usize>) -> Box<dyn AnyWidget> {
-        let nodes: TState<Vec<Node>> = lens!(Graph; graph.nodes);
-        let node = nodes.index(&selected_state);
-
-        let height = lens!(Node; node.height);
-
-        VStack::new(vec![
-            Text::new(
-                Map1::read_map(selected_state, |id: &usize| format!("NodeId: {}", id))
-                    .ignore_writes(),
-            )
-            .font_size(EnvironmentFontSize::Title),
-            Rectangle::new().frame_fixed_height(1.0),
-            Spacer::fixed(5.0),
-            Text::new(
-                Map1::read_map(node.clone(), |a: &Node| {
-                    format!(
-                        "Position: (x: {:.2}, y: {:.2})",
-                        a.position.x(),
-                        a.position.y()
-                    )
-                })
-                .ignore_writes(),
-            ),
-            HStack::new(vec![
-                Text::new("Height:"),
-                TextInput::new(height),
-                Text::new("cm"),
-            ]),
-            Spacer::new(),
-        ])
-        .cross_axis_alignment(CrossAxisAlignment::Start)
-        .padding(10.0)
-    }
-
-    fn selected_edge_view(graph: &TState<Graph>, selected_state: TState<usize>) -> Box<dyn AnyWidget> {
-        let edges = lens!(Graph; graph.edges);
-        let edge = edges.index(&selected_state);
-
-        let offset = lens!(Edge; edge.offset);
-        let width = lens!(Edge; edge.width);
-
-        VStack::new(vec![
-            Text::new(
-                Map1::read_map(selected_state, |id: &usize| format!("EdgeId: {}", id))
-                    .ignore_writes(),
-            )
-            .font_size(EnvironmentFontSize::Title),
-            Rectangle::new().frame_fixed_height(1.0),
-            Spacer::fixed(5.0),
-            HStack::new(vec![
-                Text::new("Offset:"),
-                Slider::new(offset.clone(), 0.0, 1.0).step(0.05),
-                Text::new(
-                    Map1::read_map(offset, |o: &Scalar| format!("{:.0} %", o * 100.0))
-                        .ignore_writes(),
-                ),
-            ]),
-            HStack::new(vec![
-                Text::new("Width:"),
-                Slider::new(width.clone(), 5.0, 50.0).step(5.0),
-                Text::new(
-                    Map1::read_map(width, |w: &Scalar| format!("{:.2} cm", w)).ignore_writes(),
-                ),
-            ]),
-            Spacer::new(),
-        ])
-        .cross_axis_alignment(CrossAxisAlignment::Start)
-        .padding(10.0)
-    }
-
+/*
     let selected_id = Match::new(&state)
         .case(matches_case!(state, Graph { editing_mode: EditingMode::Selection { selected: SelectedState::None, .. }, .. }, {
             VStack::new(vec![
@@ -234,26 +156,27 @@ fn main() {
                 Spacer::new(),
             ]).cross_axis_alignment(CrossAxisAlignment::Start)
             .padding(10.0)
+            .boxed()
         }))
         .case(matches_case!(state, Graph { editing_mode: EditingMode::Selection { selected: SelectedState::Node(x), .. }, .. }, x => selected_node_view(&state, x)))
         .case(matches_case!(state, Graph { editing_mode: EditingMode::Selection { selected: SelectedState::Edge(x), .. }, .. }, x => selected_edge_view(&state, x)));
+*/
+    let selected_panel = Rectangle::new().fill(EnvironmentColor::Yellow);
 
-    let status_bar = HStack::new(vec![
-        Text::new(
-            Map1::read_map(editing_mode, |a: &EditingMode| format!("Mode: {}", a)).ignore_writes(),
-        ),
+    let status_bar = HStack::new((
+        Text::new(Map1::read_map(editing_mode, |a: &EditingMode| format!("Mode: {}", a))),
         Spacer::new(),
-    ])
+    ))
     .padding(EdgeInsets::single(0.0, 0.0, 10.0, 10.0))
     .frame_fixed_height(20.0)
     .background(Rectangle::new().fill(EnvironmentColor::SystemFill));
 
-    let tool_bar = HStack::new(vec![
+    let tool_bar = HStack::new((
         add_wall_button,
         selection_button,
         editing_button,
         Spacer::new(),
-    ])
+    ))
     .padding(EdgeInsets::single(0.0, 0.0, 10.0, 10.0))
     .frame_fixed_height(35.0)
     .background(Rectangle::new().fill(EnvironmentColor::SystemFill));
@@ -262,22 +185,89 @@ fn main() {
     application.set_scene(Window::new(
         "Lines example".to_string(),
         Dimension::new(800.0, 600.0),
-        VStack::new(vec![
+        VStack::new((
             tool_bar,
-            HSplit::new(
-                ZStack::new(vec![node_editor, canvas.clip()]),
-                ZStack::new(vec![
+            *HSplit::new(
+                ZStack::new((node_editor, canvas.clip())).boxed(),
+                ZStack::new((
                     Rectangle::new().fill(EnvironmentColor::TertiarySystemFill),
-                    selected_id,
-                ]),
+                    selected_panel,
+                )).boxed(),
             )
                 .relative_to_end(250.0),
             status_bar,
-        ])
+        ))
             .spacing(0.0),
     ).close_application_on_window_close());
 
     application.launch();
+}
+
+fn selected_node_view(graph: &TState<Graph>, selected_state: TState<usize>) -> Box<dyn AnyWidget> {
+    let nodes = lens!(graph.nodes);
+    let node = IndexState::new(nodes, selected_state.clone());
+
+    let height = lens!(node.height);
+
+    VStack::new((
+        Text::new(Map1::read_map(selected_state, |id: &usize| format!("NodeId: {}", id)).ignore_writes())
+            .font_size(EnvironmentFontSize::Title),
+        Rectangle::new()
+            .frame_fixed_height(1.0),
+        Spacer::fixed(5.0),
+        Text::new(
+            Map1::read_map(node.clone(), |a: &Node| {
+                format!(
+                    "Position: (x: {:.2}, y: {:.2})",
+                    a.position.x(),
+                    a.position.y()
+                )
+            })
+                .ignore_writes(),
+        ),
+        HStack::new((
+            Text::new("Height:"),
+            TextInput::new(height),
+            Text::new("cm"),
+        )),
+        Spacer::new(),
+    ))
+        .cross_axis_alignment(CrossAxisAlignment::Start)
+        .padding(10.0)
+        .boxed()
+}
+
+fn selected_edge_view(graph: &TState<Graph>, selected_state: TState<usize>) -> Box<dyn AnyWidget> {
+    let edges = lens!(graph.edges);
+    let edge = IndexState::new(edges, selected_state.clone());
+
+    let offset = lens!(edge.offset);
+    let width = lens!(edge.width);
+
+    VStack::new((
+        Text::new(Map1::read_map(selected_state, |id: &usize| format!("EdgeId: {}", id)).ignore_writes())
+            .font_size(EnvironmentFontSize::Title),
+        Rectangle::new()
+            .frame_fixed_height(1.0),
+        Spacer::fixed(5.0),
+        HStack::new((
+            Text::new("Offset:"),
+            Slider::new(offset.clone(), 0.0, 1.0).step(0.05),
+            Text::new(
+                Map1::read_map(offset, |o: &Scalar| format!("{:.0} %", o * 100.0))
+                    .ignore_writes(),
+            ),
+        )),
+        HStack::new((
+            Text::new("Width:"),
+            Slider::new(width.clone(), 5.0, 50.0).step(5.0),
+            Text::new(Map1::read_map(width, |w: &Scalar| format!("{:.2} cm", w)).ignore_writes()),
+        )),
+        Spacer::new(),
+    ))
+        .cross_axis_alignment(CrossAxisAlignment::Start)
+        .padding(10.0)
+        .boxed()
 }
 
 fn draw_selection_selected(

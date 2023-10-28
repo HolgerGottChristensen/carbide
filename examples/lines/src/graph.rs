@@ -3,7 +3,7 @@ use crate::editing_mode::EditingMode;
 use crate::guide::Guide;
 use crate::node::Node;
 use crate::{total_cmp, Line};
-use carbide_core::draw::Position;
+use carbide::draw::Position;
 
 #[derive(Clone, Debug)]
 pub struct Graph {

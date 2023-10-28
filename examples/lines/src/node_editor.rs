@@ -1,10 +1,10 @@
 use crate::{CreateWallState, Edge, EditingMode, Graph, Line, Node, SelectedState};
-use carbide_core::draw::{Dimension, Position};
-use carbide_core::environment::Environment;
-use carbide_core::event::{ModifierKey, MouseEvent, MouseEventHandler};
-use carbide_core::state::{LocalState, ReadState, State, TState};
-use carbide_core::widget::{CommonWidget, ForEachChildAction, ForEachChildActionMut, AnyWidget, WidgetExt, WidgetId};
-use carbide_core::CommonWidgetImpl;
+use carbide::draw::{Dimension, Position};
+use carbide::environment::Environment;
+use carbide::event::{ModifierKey, MouseEvent, MouseEventHandler};
+use carbide::state::{LocalState, ReadState, State, TState};
+use carbide::widget::{CommonWidget, AnyWidget, WidgetExt, WidgetId, Widget};
+use carbide::CommonWidgetImpl;
 use std::iter::once;
 
 #[derive(Clone, Debug, Widget)]
@@ -14,20 +14,20 @@ pub struct NodeEditor {
     position: Position,
     dimension: Dimension,
     #[state]
-    graph: TState<Graph>,
+    graph: LocalState<Graph>,
     #[state]
-    selected_node: TState<Option<usize>>,
+    selected_node: LocalState<Option<usize>>,
 }
 
 impl NodeEditor {
-    pub fn new(graph: &TState<Graph>) -> Box<Self> {
-        Box::new(Self {
+    pub fn new(graph: &LocalState<Graph>) -> Self {
+        Self {
             id: WidgetId::new(),
             position: Default::default(),
             dimension: Default::default(),
             graph: graph.clone(),
             selected_node: LocalState::new(None),
-        })
+        }
     }
 
     fn normal_mode_mouse_event(
@@ -120,6 +120,7 @@ impl NodeEditor {
                 //self.graph.value_mut().offset -= Position::new(*x, *y);
             }
             MouseEvent::Drag { .. } => {}
+            _ => {}
         }
     }
 
@@ -205,6 +206,7 @@ impl NodeEditor {
             MouseEvent::NClick(_, _, _, _) => {}
             MouseEvent::Scroll { .. } => {}
             MouseEvent::Drag { .. } => {}
+            _ => {}
         }
     }
 
@@ -427,6 +429,7 @@ impl NodeEditor {
             MouseEvent::NClick(_, _, _, _) => {}
             MouseEvent::Scroll { .. } => {}
             MouseEvent::Drag { .. } => {}
+            _ => {}
         }
     }
 }
@@ -452,7 +455,7 @@ impl MouseEventHandler for NodeEditor {
 }
 
 impl CommonWidget for NodeEditor {
-    CommonWidgetImpl!(self, id: self.id, position: self.position, dimension: self.dimension);
+    CommonWidgetImpl!(self, id: self.id, child: (), position: self.position, dimension: self.dimension);
 }
 
 impl WidgetExt for NodeEditor {}

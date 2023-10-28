@@ -25,7 +25,7 @@ impl ProgressBar<f64> {
 
         let child = ZStack::new(vec![
             Capsule::new().fill(EnvironmentColor::SystemFill).boxed(),
-            HSplit::new(Capsule::new().fill(EnvironmentColor::Accent).boxed(), Spacer::new())
+            HSplit::new(Capsule::new().fill(EnvironmentColor::Accent).boxed(), Spacer::new().boxed())
                 .percent(progress.ignore_writes())
                 .non_draggable()
                 .boxed(),

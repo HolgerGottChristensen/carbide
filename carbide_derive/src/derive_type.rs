@@ -75,7 +75,7 @@ fn mouse_event_token_stream(
 ) -> TokenStream {
     quote! {
         #[automatically_derived]
-        impl #generics carbide_core::event::MouseEventHandler for #ident #generics #wheres {}
+        impl #generics carbide::event::MouseEventHandler for #ident #generics #wheres {}
     }
 }
 
@@ -86,7 +86,7 @@ fn keyboard_event_token_stream(
 ) -> TokenStream {
     quote! {
         #[automatically_derived]
-        impl #generics carbide_core::event::KeyboardEventHandler for #ident #generics #wheres {}
+        impl #generics carbide::event::KeyboardEventHandler for #ident #generics #wheres {}
     }
 }
 
@@ -97,7 +97,7 @@ fn other_event_token_stream(
 ) -> TokenStream {
     quote! {
         #[automatically_derived]
-        impl #generics carbide_core::event::OtherEventHandler for #ident #generics #wheres {}
+        impl #generics carbide::event::OtherEventHandler for #ident #generics #wheres {}
     }
 }
 
@@ -109,14 +109,14 @@ fn state_sync_token_stream(
 ) -> TokenStream {
     quote! {
         #[automatically_derived]
-        impl #generics carbide_core::state::StateSync for #ident #generics #wheres {
-            fn capture_state(&mut self, env: &mut carbide_core::environment::Environment) {
-                use carbide_core::state::NewStateSync;
+        impl #generics carbide::state::StateSync for #ident #generics #wheres {
+            fn capture_state(&mut self, env: &mut carbide::environment::Environment) {
+                use carbide::state::NewStateSync;
                 #(self.#state_idents.sync(env);)*
             }
 
-            fn release_state(&mut self, env: &mut carbide_core::environment::Environment) {
-                use carbide_core::state::NewStateSync;
+            fn release_state(&mut self, env: &mut carbide::environment::Environment) {
+                use carbide::state::NewStateSync;
                 #(self.#state_idents.sync(env);)*
             }
         }
@@ -130,7 +130,7 @@ fn render_token_stream(
 ) -> TokenStream {
     quote! {
         #[automatically_derived]
-        impl #generics carbide_core::render::Render for #ident #generics #wheres {}
+        impl #generics carbide::render::Render for #ident #generics #wheres {}
     }
 }
 
@@ -141,7 +141,7 @@ fn focusable_token_stream(
 ) -> TokenStream {
     quote! {
         #[automatically_derived]
-        impl #generics carbide_core::focus::Focusable for #ident #generics #wheres {}
+        impl #generics carbide::focus::Focusable for #ident #generics #wheres {}
     }
 }
 
@@ -152,6 +152,6 @@ fn layout_token_stream(
 ) -> TokenStream {
     quote! {
         #[automatically_derived]
-        impl #generics carbide_core::layout::Layout for #ident #generics #wheres {}
+        impl #generics carbide::layout::Layout for #ident #generics #wheres {}
     }
 }

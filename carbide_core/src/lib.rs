@@ -11,6 +11,7 @@
 #![deny(unsafe_code)]
 
 extern crate self as carbide_core;
+extern crate self as carbide;
 
 pub use futures::TryFutureExt;
 
@@ -24,7 +25,7 @@ pub use carbide_derive::a;
 #[macro_export]
 macro_rules! lens {
     ($i:ident.$fields:tt) => {
-        carbide_core::state::FieldState::new(
+        carbide::state::FieldState::new(
             $i.clone(),
             |item| { &item.$fields },
             |item| { &mut item.$fields }

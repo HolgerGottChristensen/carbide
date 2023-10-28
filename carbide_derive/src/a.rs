@@ -36,14 +36,13 @@ pub fn process_a_expr(ast: Expr) -> Expr {
             let body: Expr = parse_quote!({
                 #(
                     let mut #idents = Clone::clone(&#idents);
-                    let mut #idents = carbide_core::state::State::value_mut(&mut #idents);
+                    let mut #idents = carbide::state::State::value_mut(&mut #idents);
                 )*
 
                 #body
             });
 
-
-            Expr::Closure(ExprClosure {
+            let closure = Expr::Closure(ExprClosure {
                 attrs,
                 lifetimes,
                 constness,
@@ -55,6 +54,14 @@ pub fn process_a_expr(ast: Expr) -> Expr {
                 or2_token,
                 output,
                 body: Box::new(body),
+            });
+
+            parse_quote!({
+                #(
+                    let mut #idents = Clone::clone(&#idents);
+                )*
+
+                #closure
             })
         }
         e => Expr::Verbatim(Error::new(e.span(), "It is expected that the outermost expression is a closure").into_compile_error())

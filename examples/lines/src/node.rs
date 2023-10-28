@@ -1,5 +1,4 @@
-use carbide_core::draw::Position;
-use carbide_core::Scalar;
+use carbide::draw::{Position, Scalar};
 use std::slice::Iter;
 
 #[derive(Debug, Clone, PartialEq)]

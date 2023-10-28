@@ -131,12 +131,12 @@ pub trait CommonWidget {
 #[macro_export]
 macro_rules! CommonWidgetImpl {
     ($self:ident, id: $id_expr:expr, child: (), position: $position:expr, dimension: $dimension:expr $(,flag: $flag:expr)? $(,flexibility: $flexibility:expr)? $(,alignment: $alignment:expr)? $(,focus: $focus:expr)?) => {
-        fn id(&$self) -> carbide_core::widget::WidgetId {
+        fn id(&$self) -> carbide::widget::WidgetId {
             $id_expr
         }
 
         $(
-            fn alignment(&$self) -> Box<dyn carbide_core::layout::Layouter> {
+            fn alignment(&$self) -> Box<dyn carbide::layout::Layouter> {
                 $alignment.clone()
             }
 
@@ -146,7 +146,7 @@ macro_rules! CommonWidgetImpl {
         )?
 
         $(
-            fn flag(&$self) -> carbide_core::flags::Flags {
+            fn flag(&$self) -> carbide::flags::Flags {
                 $flag
             }
         )?
@@ -167,35 +167,35 @@ macro_rules! CommonWidgetImpl {
             }
         )?
 
-        fn foreach_child<'a>(&'a $self, f: &mut dyn FnMut(&'a dyn carbide_core::widget::AnyWidget)) {}
-        fn foreach_child_mut<'a>(&'a mut $self, f: &mut dyn FnMut(&'a mut dyn carbide_core::widget::AnyWidget)) {}
-        fn foreach_child_rev<'a>(&'a mut $self, f: &mut dyn FnMut(&'a mut dyn carbide_core::widget::AnyWidget)) {}
-        fn foreach_child_direct<'a>(&'a mut $self, f: &mut dyn FnMut(&'a mut dyn carbide_core::widget::AnyWidget)) {}
-        fn foreach_child_direct_rev<'a>(&'a mut $self, f: &mut dyn FnMut(&'a mut dyn carbide_core::widget::AnyWidget)) {}
+        fn foreach_child<'a>(&'a $self, f: &mut dyn FnMut(&'a dyn carbide::widget::AnyWidget)) {}
+        fn foreach_child_mut<'a>(&'a mut $self, f: &mut dyn FnMut(&'a mut dyn carbide::widget::AnyWidget)) {}
+        fn foreach_child_rev<'a>(&'a mut $self, f: &mut dyn FnMut(&'a mut dyn carbide::widget::AnyWidget)) {}
+        fn foreach_child_direct<'a>(&'a mut $self, f: &mut dyn FnMut(&'a mut dyn carbide::widget::AnyWidget)) {}
+        fn foreach_child_direct_rev<'a>(&'a mut $self, f: &mut dyn FnMut(&'a mut dyn carbide::widget::AnyWidget)) {}
 
-        fn position(&$self) -> carbide_core::draw::Position {
+        fn position(&$self) -> carbide::draw::Position {
             $position
         }
 
-        fn set_position(&mut $self, position: carbide_core::draw::Position) {
+        fn set_position(&mut $self, position: carbide::draw::Position) {
             $position = position;
         }
 
-        fn dimension(&$self) -> carbide_core::draw::Dimension {
+        fn dimension(&$self) -> carbide::draw::Dimension {
             $dimension
         }
 
-        fn set_dimension(&mut $self, dimension: carbide_core::draw::Dimension) {
+        fn set_dimension(&mut $self, dimension: carbide::draw::Dimension) {
             $dimension = dimension
         }
     };
     ($self:ident, id: $id_expr:expr, child: $child:expr, position: $position:expr, dimension: $dimension:expr $(,flag: $flag:expr)? $(,flexibility: $flexibility:expr)? $(,alignment: $alignment:expr)? $(,focus: $focus:expr)?) => {
-        fn id(&$self) -> carbide_core::widget::WidgetId {
+        fn id(&$self) -> carbide::widget::WidgetId {
             $id_expr
         }
 
         $(
-            fn alignment(&$self) -> Box<dyn carbide_core::layout::Layouter> {
+            fn alignment(&$self) -> Box<dyn carbide::layout::Layouter> {
                 $alignment.clone()
             }
 
@@ -205,7 +205,7 @@ macro_rules! CommonWidgetImpl {
         )?
 
         $(
-            fn flag(&$self) -> carbide_core::flags::Flags {
+            fn flag(&$self) -> carbide::flags::Flags {
                 $flag
             }
         )?
@@ -226,44 +226,44 @@ macro_rules! CommonWidgetImpl {
             }
         )?
 
-        fn foreach_child<'a>(&'a $self, f: &mut dyn FnMut(&'a dyn carbide_core::widget::AnyWidget)) {
-            use carbide_core::widget::WidgetSequence;
+        fn foreach_child<'a>(&'a $self, f: &mut dyn FnMut(&'a dyn carbide::widget::AnyWidget)) {
+            use carbide::widget::WidgetSequence;
             $child.foreach(f);
         }
 
-        fn foreach_child_mut<'a>(&'a mut $self, f: &mut dyn FnMut(&'a mut dyn carbide_core::widget::AnyWidget)) {
-            use carbide_core::widget::WidgetSequence;
+        fn foreach_child_mut<'a>(&'a mut $self, f: &mut dyn FnMut(&'a mut dyn carbide::widget::AnyWidget)) {
+            use carbide::widget::WidgetSequence;
             $child.foreach_mut(f);
         }
 
-        fn foreach_child_rev<'a>(&'a mut $self, f: &mut dyn FnMut(&'a mut dyn carbide_core::widget::AnyWidget)) {
-            use carbide_core::widget::WidgetSequence;
+        fn foreach_child_rev<'a>(&'a mut $self, f: &mut dyn FnMut(&'a mut dyn carbide::widget::AnyWidget)) {
+            use carbide::widget::WidgetSequence;
             $child.foreach_rev(f);
         }
 
-        fn foreach_child_direct<'a>(&'a mut $self, f: &mut dyn FnMut(&'a mut dyn carbide_core::widget::AnyWidget)) {
-            use carbide_core::widget::WidgetSequence;
+        fn foreach_child_direct<'a>(&'a mut $self, f: &mut dyn FnMut(&'a mut dyn carbide::widget::AnyWidget)) {
+            use carbide::widget::WidgetSequence;
             $child.foreach_direct(f);
         }
 
-        fn foreach_child_direct_rev<'a>(&'a mut $self, f: &mut dyn FnMut(&'a mut dyn carbide_core::widget::AnyWidget)) {
-            use carbide_core::widget::WidgetSequence;
+        fn foreach_child_direct_rev<'a>(&'a mut $self, f: &mut dyn FnMut(&'a mut dyn carbide::widget::AnyWidget)) {
+            use carbide::widget::WidgetSequence;
             $child.foreach_direct_rev(f);
         }
 
-        fn position(&$self) -> carbide_core::draw::Position {
+        fn position(&$self) -> carbide::draw::Position {
             $position
         }
 
-        fn set_position(&mut $self, position: carbide_core::draw::Position) {
+        fn set_position(&mut $self, position: carbide::draw::Position) {
             $position = position;
         }
 
-        fn dimension(&$self) -> carbide_core::draw::Dimension {
+        fn dimension(&$self) -> carbide::draw::Dimension {
             $dimension
         }
 
-        fn set_dimension(&mut $self, dimension: carbide_core::draw::Dimension) {
+        fn set_dimension(&mut $self, dimension: carbide::draw::Dimension) {
             $dimension = dimension
         }
     }

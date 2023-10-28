@@ -74,7 +74,7 @@ impl<L: ReadState<T=String>> PlainSwitchDelegate for SwitchDelegate<L> {
                 .boxed(),
             IfElse::new(checked)
                 .when_true(HStack::new(vec![
-                    Spacer::new(),
+                    Spacer::new().boxed(),
                     Ellipse::new()
                         .fill(knob_color.clone())
                         .frame(20.0, 20.0).boxed(),
@@ -83,7 +83,7 @@ impl<L: ReadState<T=String>> PlainSwitchDelegate for SwitchDelegate<L> {
                     Ellipse::new()
                         .fill(knob_color)
                         .frame(20.0, 20.0).boxed(),
-                    Spacer::new(),
+                    Spacer::new().boxed(),
                 ]))
                 .padding(2.0)
                 .boxed(),

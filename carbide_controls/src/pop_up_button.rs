@@ -88,7 +88,7 @@ impl PopUpButton {
                 .boxed(),
             HStack::new(vec![
                 Text::new(text).color(label_color).padding(EdgeInsets::single(0.0, 0.0, 9.0, 0.0)).boxed(),
-                Spacer::new(),
+                Spacer::new().boxed(),
                 ZStack::new(vec![
                     RoundedRectangle::new(CornerRadii::single(0.0, 0.0, 0.0, 2.0)) // TODO: Changing top_right, makes lyon mess up.
                         .fill(button_color)
@@ -142,7 +142,7 @@ impl PopUpButton {
                     .color(EnvironmentColor::Label)
                     .padding(EdgeInsets::single(0.0, 0.0, 5.0, 0.0))
                     .boxed(),
-                Spacer::new(),
+                Spacer::new().boxed(),
             ]).boxed(),
         ])
             .frame_fixed_height(24.0)

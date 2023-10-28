@@ -1,6 +1,5 @@
 use crate::intersect;
-use carbide_core::draw::{Position, Rect};
-use carbide_core::Scalar;
+use carbide::draw::{Position, Rect, Scalar};
 
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct Line {

@@ -19,5 +19,6 @@ members = [
     "backends/carbide_rusttype",
     "backends/carbide_macos",
     "backends/carbide_printpdf",
+    "examples/lines",
     "carbide"
 ]

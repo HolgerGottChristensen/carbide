@@ -1,5 +1,5 @@
 
-use carbide_macro::carbide_default_builder;
+use carbide_macro::{carbide_default_builder, carbide_default_builder2};
 
 use crate::draw::{Dimension, Position, Scalar};
 use crate::environment::Environment;
@@ -17,25 +17,23 @@ pub struct Spacer {
 }
 
 impl Spacer {
-    #[carbide_default_builder]
-    pub fn new() -> Box<Self> {}
-
-    pub fn new() -> Box<Self> {
-        Box::new(Spacer {
+    #[carbide_default_builder2]
+    pub fn new() -> Self {
+        Spacer {
             id: WidgetId::new(),
             position: Position::new(0.0, 0.0),
             dimension: Dimension::new(100.0, 100.0),
             max_size: None,
-        })
+       }
     }
 
-    pub fn fixed(max: Scalar) -> Box<Self> {
-        Box::new(Spacer {
+    pub fn fixed(max: Scalar) -> Self {
+        Spacer {
             id: WidgetId::new(),
             position: Position::new(0.0, 0.0),
             dimension: Dimension::new(100.0, 100.0),
             max_size: Some(max),
-        })
+        }
     }
 }
 

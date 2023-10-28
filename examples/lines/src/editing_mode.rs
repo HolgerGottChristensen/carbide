@@ -1,4 +1,4 @@
-use carbide_core::draw::Position;
+use carbide::draw::Position;
 use std::fmt::{Display, Formatter, Write};
 
 #[derive(Debug, Clone)]
