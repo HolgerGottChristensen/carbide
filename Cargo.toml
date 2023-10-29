@@ -22,5 +22,6 @@ members = [
     "examples/lines",
     "examples/hacker_news",
     "examples/calculator",
+    "examples/counter",
     "carbide"
 ]

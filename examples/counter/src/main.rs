@@ -1,10 +1,9 @@
-use carbide::{Application, Window};
+use carbide::{Application, Window, a};
 use carbide::draw::Dimension;
 use carbide::state::LocalState;
 use carbide::widget::{Text, VStack, WidgetExt};
-use carbide_controls::{Button};
-use carbide_core::a;
-use carbide_core::environment::EnvironmentFontSize::LargeTitle;
+use carbide::controls::{Button};
+use carbide::environment::EnvironmentFontSize::LargeTitle;
 
 fn main() {
     let mut application = Application::new()
