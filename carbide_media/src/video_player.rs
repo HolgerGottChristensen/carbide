@@ -124,13 +124,13 @@ impl VideoPlayer<Option<VideoId>> {
             )),
             VStack::new((
                 Spacer::new(),
-                *HSplit::new(
+                HSplit::new(
                     Rectangle::new()
                         .fill(EnvironmentColor::Accent)
-                        .frame_fixed_height(4.0).boxed(),
+                        .frame_fixed_height(4.0),
                     Rectangle::new()
                         .fill(EnvironmentColor::OpaqueSeparator)
-                        .frame_fixed_height(4.0).boxed()
+                        .frame_fixed_height(4.0)
                 ).percent(percent_played)
                     //.non_draggable()
             ))
