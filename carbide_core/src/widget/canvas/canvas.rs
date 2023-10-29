@@ -34,11 +34,11 @@ where
 }
 
 pub trait CanvasContext: Clone + 'static {
-    fn call(&self, area: Rect, context: Context, env: &mut Environment) -> Context;
+    fn call(&mut self, area: Rect, context: Context, env: &mut Environment) -> Context;
 }
 
 impl<T> CanvasContext for T where T: Fn(Rect, Context, &mut Environment) -> Context + Clone + 'static {
-    fn call(&self, area: Rect, context: Context, env: &mut Environment) -> Context {
+    fn call(&mut self, area: Rect, context: Context, env: &mut Environment) -> Context {
         self(area, context, env)
     }
 }
