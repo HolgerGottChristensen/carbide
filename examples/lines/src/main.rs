@@ -110,24 +110,26 @@ fn main() {
     .background(Rectangle::new().fill(EnvironmentColor::SystemFill));
 
 
+    let widget = VStack::new((
+        tool_bar,
+        HSplit::new(
+            ZStack::new((
+                node_editor,
+                canvas.clip()
+            )),
+            ZStack::new((
+                Rectangle::new().fill(EnvironmentColor::TertiarySystemFill),
+                selected_panel,
+            )),
+        ).relative_to_end(250.0),
+        status_bar,
+    ))
+        .spacing(0.0);
+
     application.set_scene(Window::new(
         "Lines example".to_string(),
         Dimension::new(800.0, 600.0),
-        VStack::new((
-            tool_bar,
-            HSplit::new(
-                ZStack::new((
-                    node_editor,
-                    canvas.clip()
-                )),
-                ZStack::new((
-                    Rectangle::new().fill(EnvironmentColor::TertiarySystemFill),
-                    selected_panel,
-                )),
-            ).relative_to_end(250.0),
-            status_bar,
-        ))
-            .spacing(0.0),
+        widget,
     ).close_application_on_window_close());
 
     application.launch();

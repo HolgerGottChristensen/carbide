@@ -20,5 +20,7 @@ members = [
     "backends/carbide_macos",
     "backends/carbide_printpdf",
     "examples/lines",
+    "examples/hacker_news",
+    "examples/calculator",
     "carbide"
 ]

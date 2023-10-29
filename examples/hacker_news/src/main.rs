@@ -3,35 +3,32 @@ use std::ops::Deref;
 
 use chrono::{TimeZone, Utc};
 use futures::stream::FuturesOrdered;
-use futures::StreamExt;
+use futures::{FutureExt, StreamExt};
 
-use carbide::{Color, lens, task};
+use carbide::{lens, task};
 use carbide::{Application, Window};
 use carbide::color::TRANSPARENT;
-use carbide::draw::Dimension;
+use carbide::draw::{Color, Dimension};
 use carbide::environment::{Environment, EnvironmentColor, EnvironmentFontSize};
 use carbide::layout::BasicLayouter;
 use carbide::state::{LocalState, Map2, ReadState, State, StateExt, TState};
 use carbide::text::FontWeight;
 use carbide::widget::*;
 use carbide::widget::WidgetExt;
-use carbide_controls::{List, PlainButton};
+use carbide::controls::{List, PlainButton};
 
 use crate::article::Article;
 
 mod article;
-mod hacker_news_api;
 
 fn main() {
-    env_logger::init();
-
     let mut application = Application::new()
         .with_asset_fonts();
 
     let env = application.environment_mut();
 
-    let news_articles: TState<Option<Vec<Article>>> = LocalState::new(None);
-    let selected_items: TState<HashSet<WidgetId>> = LocalState::new(HashSet::new());
+    let news_articles: LocalState<Option<Vec<Article>>> = LocalState::new(None);
+    let selected_items: LocalState<HashSet<WidgetId>> = LocalState::new(HashSet::new());
 
     let news_articles_for_index = news_articles.clone();
 
@@ -49,7 +46,7 @@ fn main() {
         article.carbide_id
     }
 
-    task!(env, news_articles := {
+    task!(news_articles := {
         let client = reqwest::Client::new();
 
         let response: Vec<u64> = client.get("https://hacker-news.firebaseio.com/v0/topstories.json").send().await.unwrap().json().await.unwrap();
@@ -93,16 +90,15 @@ fn main() {
                     TRANSPARENT
                 }
             },
-        )
-        .ignore_writes();
+        );
 
         VStack::new(vec![
             HStack::new(vec![
-                Text::new(lens!(Article; article.title)).font_weight(FontWeight::Bold),
+                Text::new(lens!(article.title)).font_weight(FontWeight::Bold),
                 Spacer::new(),
             ]),
             HStack::new(vec![
-                Text::new(lens!(Article; |article| {
+                Text::new(lens!(|article| {
                     let dt = Utc.timestamp(article.time as i64, 0);
                     format!("by {} {}, {}", article.by, dt.format("%D"), dt.format("%I:%M %p"))
                 })),
@@ -110,12 +106,12 @@ fn main() {
                     .resizeable()
                     .frame(16, 16)
                     .accent_color(EnvironmentColor::SecondaryLabel),
-                Text::new(lens!(Article; article.score)).custom_flexibility(3),
+                Text::new(lens!(article.score)).custom_flexibility(3),
                 Image::new_icon("icons/chat-1-line.png")
                     .resizeable()
                     .frame(16, 16)
                     .accent_color(EnvironmentColor::SecondaryLabel),
-                Text::new(lens!(Article; article.descendants).unwrap_or_default())
+                Text::new(lens!(article.descendants).unwrap_or_default())
                     .custom_flexibility(3),
             ])
             .spacing(3.0)
@@ -160,7 +156,7 @@ fn detail_view(selected_article: TState<Option<Article>>) -> Box<dyn AnyWidget> 
     let selected_article_for_link = selected_article.clone();
     let link =
         PlainButton::new(
-            Text::new(lens!(Option<Article>; |selected_article| {
+            Text::new(lens!(|selected_article| {
                 selected_article.as_ref().and_then(|a| a.url.clone()).unwrap_or("No url to show".to_string())
             })).foreground_color(EnvironmentColor::SecondaryLabel)
         ).on_click(move |_: &mut Environment, _:_| {
@@ -169,20 +165,20 @@ fn detail_view(selected_article: TState<Option<Article>>) -> Box<dyn AnyWidget> 
             selected_article.value().as_ref().and_then(|article| article.url.as_ref()).map(|a| open::that(a));
         });
 
-    ZStack::new(vec![
+    ZStack::new((
         Rectangle::new()
             .fill(EnvironmentColor::SecondarySystemBackground),
-        VStack::new(vec![
-            HStack::new(vec![
-                Text::new(lens!(Option<Article>; |selected_article| {
+        VStack::new((
+            HStack::new((
+                Text::new(lens!(|selected_article| {
                     selected_article.as_ref().map(|a| a.title.clone()).unwrap_or("No selected articles".to_string())
                 })).font_size(EnvironmentFontSize::Title),
                 Spacer::new()
-            ]),
+            )),
             link,
             Spacer::new(),
-        ]).cross_axis_alignment(CrossAxisAlignment::Start)
+        )).cross_axis_alignment(CrossAxisAlignment::Start)
             .spacing(0.0)
             .padding(EdgeInsets::single(0.0, 0.0, 10.0, 10.0)),
-    ])
+    )).boxed()
 }

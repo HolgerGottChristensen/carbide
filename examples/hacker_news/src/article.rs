@@ -1,4 +1,4 @@
-use carbide_core::widget::WidgetId;
+use carbide::widget::WidgetId;
 use serde::Deserialize;
 
 #[derive(Deserialize, Clone, Debug)]

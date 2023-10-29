@@ -88,21 +88,21 @@ pub fn check_tasks(env: &mut Environment) {
 macro_rules! task {
     ($state:ident := $body:block) => {{
         let $state = $state.clone();
-        carbide_core::asynchronous::spawn_task(async move { $body }, move |result, env| {
+        carbide::asynchronous::spawn_task(async move { $body }, move |result, env| {
             $state.clone().set_value(result);
         });
     }};
     ($state:ident := $body:block $(, $state1:ident := $body1:block)*) => {{
         let $state = $state.clone();
-        carbide_core::asynchronous::spawn_task(async move { $body }, move |result, env| {
+        carbide::asynchronous::spawn_task(async move { $body }, move |result, env| {
             $state.clone().set_value(result);
             task!(env, $($state1 :=  $body1),*);
         });
     }};
     ($body:block, move |$result:ident, $env_param:ident: &mut Environment| $cont:block) => {{
-        carbide_core::asynchronous::spawn_task(
+        carbide::asynchronous::spawn_task(
             async move { $body },
-            move |$result, $env_param: &mut carbide_core::environment::Environment| $cont,
+            move |$result, $env_param: &mut carbide::environment::Environment| $cont,
         )
     }};
 }
