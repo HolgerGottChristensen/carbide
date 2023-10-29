@@ -4,7 +4,7 @@ use carbide_core::state::AnyState;
 
 use crate::animation::animatable::Animatable;
 use crate::animation::linear;
-use crate::state::{RepeatMode, State, StateContract};
+use crate::state::{IntoState, RepeatMode, State, StateContract, StateExtNew};
 
 #[derive(Clone)]
 pub struct Animation<T>
@@ -23,7 +23,7 @@ where
 }
 
 impl<T: StateContract + Animatable<T>> Animation<T> {
-    pub fn new<S: Into<Box<dyn AnyState<T=T>>>>(state: S, from: T, to: T) -> Self {
+    pub fn new<S: IntoState<T>>(state: S, from: T, to: T) -> Self {
         Animation {
             start_time: Instant::now(),
             duration: Duration::new(1, 0),
@@ -31,7 +31,7 @@ impl<T: StateContract + Animatable<T>> Animation<T> {
             repeat_count: None,
             animation_curve: linear,
             custom_interpolation: T::interpolate,
-            state: state.into(),
+            state: state.into_state().as_dyn(),
             from,
             to,
         }
@@ -39,7 +39,7 @@ impl<T: StateContract + Animatable<T>> Animation<T> {
 }
 
 impl<T: StateContract> Animation<T> {
-    pub fn new_custom<S: Into<Box<dyn AnyState<T=T>>>>(
+    pub fn new_custom<S: IntoState<T>>(
         state: S,
         from: T,
         to: T,
@@ -52,7 +52,7 @@ impl<T: StateContract> Animation<T> {
             repeat_count: None,
             animation_curve: linear,
             custom_interpolation: interpolation,
-            state: state.into(),
+            state: state.into_state().as_dyn(),
             from,
             to,
         }

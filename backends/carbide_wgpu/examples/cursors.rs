@@ -1,9 +1,9 @@
-use carbide::cursor::MouseCursor;
-use carbide::state::ReadState;
+use carbide_core::cursor::MouseCursor;
+use carbide_core::state::ReadState;
 use carbide_controls::{Button};
-use carbide::draw::Dimension;
-use carbide::widget::*;
-use carbide::{Application, Window};
+use carbide_core::draw::Dimension;
+use carbide_core::widget::*;
+use carbide_wgpu::{Application, Window};
 use carbide_core::environment::Environment;
 use carbide_core::state::{AnyState};
 

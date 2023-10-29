@@ -12,12 +12,12 @@ macro_rules! animate {
     // The case where we dont give a custom interpolation function we rely on the value implementing animate
     ($env:ident, $state:ident $(:= $from:expr)? => $to:expr $(, curve: $curve:expr)? $(, duration: $duration:expr)?) => {
         {
-            use carbide_core::state::State;
-            use carbide_core::state::ReadState;
+            use carbide::state::State;
+            use carbide::state::ReadState;
 
             let start = $state.value().clone();
-            let animation = carbide_core::animation::Animation::new(
-                $state.clone().to_boxed_state(),
+            let animation = carbide::animation::Animation::new(
+                $state.clone(),
                 start,
                 $to,
             )$(
@@ -35,13 +35,13 @@ macro_rules! animate {
     // If we have the interpolation, we dont require the value to be animate, but instead use the provided function.
     ($env:ident, $state:ident $(:= $from:expr)? => $to:expr, interpolation: $interpolation:expr $(, curve: $curve:expr)? $(, duration: $duration:expr)?) => {
         {
-            use carbide_core::state::State;
-            use carbide_core::state::ReadState;
+            use carbide::state::State;
+            use carbide::state::ReadState;
 
 
             let start = $state.value().clone();
-            let animation = carbide_core::animation::Animation::new_custom(
-                $state.clone().to_boxed_state(),
+            let animation = carbide::animation::Animation::new_custom(
+                $state.clone(),
                 start,
                 $to,
                 $interpolation,

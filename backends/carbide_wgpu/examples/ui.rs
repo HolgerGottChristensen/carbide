@@ -1,11 +1,13 @@
-use carbide::controls::{Button, TextInput};
-use carbide::draw::Dimension;
-use carbide::environment::{EnvironmentColor, EnvironmentFontSize};
-use carbide::{a, ui};
-use carbide::state::LocalState;
-use carbide::widget::*;
-use carbide::{Application, Window};
+use carbide_controls::{Button, TextInput};
+use carbide_core::draw::Dimension;
+use carbide_core::environment::{EnvironmentColor, EnvironmentFontSize};
+use carbide_core::a;
+use carbide_macro::ui;
+use carbide_core::state::LocalState;
+use carbide_core::widget::*;
+use carbide_wgpu::{Application, Window};
 
+use carbide_core as carbide;
 
 fn main() {
     let mut application = Application::new()

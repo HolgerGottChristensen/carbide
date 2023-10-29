@@ -11,7 +11,6 @@ use carbide_core::widget::*;
 use carbide_core::task;
 use carbide_wgpu::{Application, Window};
 use carbide_core::draw::Position;
-use tokio::time::{sleep, Duration};
 
 fn main() {
     CarbideUI!{
