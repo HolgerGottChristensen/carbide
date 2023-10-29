@@ -17,3 +17,4 @@ proc-macro = true
 proc-macro2 = "1"
 quote = "1"
 syn = { version = "1", features = ["extra-traits", "full", "visit-mut"] }
+carbide_syn = { path = "../carbide_syn", features = ["extra-traits", "full", "fold"] }

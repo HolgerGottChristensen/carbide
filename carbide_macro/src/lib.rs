@@ -6,11 +6,13 @@ mod carbide_item;
 mod expr_ident_extraction;
 mod dollar_pre_processor;
 mod expr;
+mod ui;
 
 use proc_macro::TokenStream;
 use quote::{quote, ToTokens};
 use syn::{FnArg, parse_macro_input};
 use carbide_struct::CarbideStruct;
+use carbide_syn::Expr;
 use crate::carbide_gen_optionals::CarbideGenOptionals;
 use crate::carbide_item::CarbideItem;
 
@@ -110,4 +112,15 @@ pub fn carbide_default_builder2(_: TokenStream, item: TokenStream) -> TokenStrea
     stream.extend(builder);
     //panic!("\n{:#?}", &input.into_token_stream());
     TokenStream::from(stream)
+}
+
+#[proc_macro]
+pub fn ui(item: TokenStream) -> TokenStream {
+    let input = carbide_syn::parse_macro_input!(item as Expr);
+    //panic!("\n{:#?}", &input);
+
+    let output = ui::ui(input);
+
+    //panic!("\n{}", &output.into_token_stream());
+    TokenStream::from(output.into_token_stream())
 }
