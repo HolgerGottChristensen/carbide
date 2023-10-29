@@ -218,7 +218,8 @@ impl<
             .color(text_color.clone())
             .wrap_mode(Wrap::None));
 
-        let last = len_in_graphemes(&*display_text.value());
+        //let last = len_in_graphemes(&*display_text.value());
+        let last = usize::MAX;
 
         PlainTextInput {
             id: WidgetId::new(),

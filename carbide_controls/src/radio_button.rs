@@ -76,7 +76,7 @@ impl<L: ReadState<T=String>> PlainRadioButtonDelegate for RadioButtonDelegate<L>
                 Ellipse::new()
                     .fill(mark_color)
                     .frame(4.0, 4.0),
-            ),
+            ).boxed(),
         ]).background(
             Circle::new()
                 .stroke(outline_color)

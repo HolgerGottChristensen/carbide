@@ -78,5 +78,6 @@ impl Slider {
         IfElse::new(is_stepped)
             .when_true(RoundedRectangle::new(2.0).fill(thumb_color.clone()).frame(8.0, 15.0))
             .when_false(Circle::new().fill(thumb_color).frame(15.0, 15.0))
+            .boxed()
     }
 }

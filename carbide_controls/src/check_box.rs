@@ -63,7 +63,7 @@ impl<L: ReadState<T=String>> PlainCheckBoxDelegate for CheckBoxDelegate<L> {
             }
         );
 
-        let check_box = ZStack::new(vec![
+        let check_box = ZStack::new((
             RoundedRectangle::new(CornerRadii::all(3.0))
                 .fill(background_color)
                 .stroke(EnvironmentColor::OpaqueSeparator)
@@ -86,7 +86,7 @@ impl<L: ReadState<T=String>> PlainCheckBoxDelegate for CheckBoxDelegate<L> {
                 context.stroke();
                 context
             })),
-        ])
+        ))
             .background(
                 RoundedRectangle::new(CornerRadii::all(4.0))
                     .stroke(border_color)
@@ -96,6 +96,6 @@ impl<L: ReadState<T=String>> PlainCheckBoxDelegate for CheckBoxDelegate<L> {
             .frame(14.0, 14.0)
             .boxed();
 
-        HStack::new(vec![check_box, Text::new(self.label.clone()).color(label_color).boxed()]).spacing(5.0).boxed()
+        HStack::new((check_box, Text::new(self.label.clone()).color(label_color).boxed())).spacing(5.0).boxed()
     }
 }

@@ -1,53 +1,52 @@
 use std::fmt::{Debug, Formatter};
 
-
-
-use carbide_macro::carbide_default_builder;
+use carbide_macro::{carbide_default_builder, carbide_default_builder2};
 
 use crate::draw::{Dimension, Position};
 use crate::environment::Environment;
-use crate::state::{NewStateSync, ReadState, StateContract, StateSync, TState};
-use crate::widget::{AnyWidget, WidgetExt, WidgetId, Widget};
+use crate::state::{IntoReadState, NewStateSync, ReadState, StateContract, StateSync, TState};
+use crate::widget::{AnyWidget, WidgetExt, WidgetId, Widget, CommonWidget, WidgetSequence};
 
 /// A basic, non-interactive rectangle shape widget.
 #[derive(Clone, Widget)]
 #[carbide_exclude(StateSync)]
-pub struct Match<T>
+pub struct Match<T, S>
 where
     T: StateContract,
+    S: ReadState<T=T>,
 {
     id: WidgetId,
     position: Position,
     dimension: Dimension,
     #[state]
-    local_state: TState<T>,
+    local_state: S,
     widgets: Vec<(fn(&T) -> bool, Box<dyn AnyWidget>)>,
     current_index: Option<usize>,
 }
 
-impl<T: StateContract> Match<T> {
-    #[carbide_default_builder]
-    pub fn new(state: impl Into<TState<T>>) -> Box<Self> {}
-
-    pub fn new(state: impl Into<TState<T>>) -> Box<Self> {
-        Box::new(Match {
+impl Match<(), ()> {
+    #[carbide_default_builder2]
+    pub fn new<T: StateContract, S: IntoReadState<T>>(state: S) -> Match<T, S::Output> {
+        Match {
             id: WidgetId::new(),
             position: Position::new(0.0, 0.0),
             dimension: Dimension::new(0.0, 0.0),
-            local_state: state.into(),
+            local_state: state.into_read_state(),
             widgets: vec![],
             current_index: None,
-        })
+        }
     }
+}
 
-    pub fn case(mut self, f: (fn(&T) -> bool, Box<dyn AnyWidget>)) -> Box<Self> {
+impl<T: StateContract, S: ReadState<T=T>> Match<T, S> {
+    pub fn case(mut self, f: (fn(&T) -> bool, Box<dyn AnyWidget>)) -> Self {
         self.widgets.push(f);
-        Box::new(self)
+        self
     }
 
-    pub fn default(mut self, widget: Box<dyn AnyWidget>) -> Box<Self> {
+    pub fn default(mut self, widget: Box<dyn AnyWidget>) -> Self {
         self.widgets.push((|_| true, widget));
-        Box::new(self)
+        self
     }
 
     fn find_new_matching_child(&self) -> Option<usize> {
@@ -57,7 +56,7 @@ impl<T: StateContract> Match<T> {
     }
 }
 
-impl<T: StateContract> StateSync for Match<T> {
+impl<T: StateContract, S: ReadState<T=T>> StateSync for Match<T, S> {
     fn capture_state(&mut self, env: &mut Environment) {
         self.local_state.sync(env);
 
@@ -84,76 +83,61 @@ impl<T: StateContract> StateSync for Match<T> {
     }
 }
 
-impl<T: StateContract> carbide_core::widget::CommonWidget for Match<T> {
+impl<T: StateContract, S: ReadState<T=T>> CommonWidget for Match<T, S> {
     fn id(&self) -> WidgetId {
         self.id
     }
 
-    fn foreach_child<'a>(&'a self, _f: &mut dyn FnMut(&'a dyn AnyWidget)) {
-        todo!()
-    }
-
-    fn foreach_child_mut<'a>(&'a mut self, _f: &mut dyn FnMut(&'a mut dyn AnyWidget)) {
-        todo!()
-    }
-
-    fn foreach_child_rev<'a>(&'a mut self, _f: &mut dyn FnMut(&'a mut dyn AnyWidget)) {
-        todo!()
-    }
-
-    fn foreach_child_direct<'a>(&'a mut self, _f: &mut dyn FnMut(&'a mut dyn AnyWidget)) {
-        todo!()
-    }
-
-    fn foreach_child_direct_rev<'a>(&'a mut self, _f: &mut dyn FnMut(&'a mut dyn AnyWidget)) {
-        todo!()
-    }
-
-
-    /*fn children_mut(&mut self) -> carbide_core::widget::WidgetIterMut {
-        if let Some(index) = self.current_index {
-            if (self.widgets[index].1).flag() == carbide_core::flags::Flags::PROXY {
-                (self.widgets[index].1).children_mut()
-            } else if (self.widgets[index].1).flag() == carbide_core::flags::Flags::IGNORE {
-                carbide_core::widget::WidgetIterMut::Empty
-            } else {
-                carbide_core::widget::WidgetIterMut::single(&mut (self.widgets[index].1))
-            }
-        } else {
-            carbide_core::widget::WidgetIterMut::Empty
+    fn foreach_child<'a>(&'a self, f: &mut dyn FnMut(&'a dyn AnyWidget)) {
+        if let Some(index) = &self.current_index {
+            self.widgets[*index].1.foreach(f);
         }
-    }*/
+    }
 
-    /*fn children_direct(&mut self) -> carbide_core::widget::WidgetIterMut {
-        if let Some(index) = self.current_index {
-            carbide_core::widget::WidgetIterMut::single(&mut (self.widgets[index].1))
-        } else {
-            carbide_core::widget::WidgetIterMut::Empty
+    fn foreach_child_mut<'a>(&'a mut self, f: &mut dyn FnMut(&'a mut dyn AnyWidget)) {
+        if let Some(index) = &self.current_index {
+            self.widgets[*index].1.foreach_mut(f);
         }
-    }*/
+    }
 
-    fn position(&self) -> carbide_core::draw::Position {
+    fn foreach_child_rev<'a>(&'a mut self, f: &mut dyn FnMut(&'a mut dyn AnyWidget)) {
+        if let Some(index) = &self.current_index {
+            self.widgets[*index].1.foreach_rev(f);
+        }
+    }
+
+    fn foreach_child_direct<'a>(&'a mut self, f: &mut dyn FnMut(&'a mut dyn AnyWidget)) {
+        if let Some(index) = &self.current_index {
+            self.widgets[*index].1.foreach_direct(f);
+        }
+    }
+
+    fn foreach_child_direct_rev<'a>(&'a mut self, f: &mut dyn FnMut(&'a mut dyn AnyWidget)) {
+        if let Some(index) = &self.current_index {
+            self.widgets[*index].1.foreach_direct_rev(f);
+        }
+    }
+
+    fn position(&self) -> Position {
         self.position
     }
 
-    fn set_position(&mut self, position: carbide_core::draw::Position) {
+    fn set_position(&mut self, position: Position) {
         (self.position) = position;
     }
 
-    fn dimension(&self) -> carbide_core::draw::Dimension {
+    fn dimension(&self) -> Dimension {
         self.dimension
     }
 
-    fn set_dimension(&mut self, dimension: carbide_core::draw::Dimension) {
+    fn set_dimension(&mut self, dimension: Dimension) {
         (self.dimension) = dimension
     }
 }
 
-//CommonWidgetImpl!(Match, self, id: self.id, child: self.current_child, position: self.position, dimension: self.dimension);
+impl<T: StateContract, S: ReadState<T=T>> WidgetExt for Match<T, S> {}
 
-impl<T: StateContract> WidgetExt for Match<T> {}
-
-impl<T: StateContract> Debug for Match<T> {
+impl<T: StateContract, S: ReadState<T=T>> Debug for Match<T, S> {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("Match")
             .field("current_index", &self.current_index)
@@ -164,7 +148,7 @@ impl<T: StateContract> Debug for Match<T> {
 #[macro_export]
 macro_rules! matches_case {
     (@inner $i2:ident, $( $pattern:pat_param )|+ $( if $guard: expr )?, $next:ident) => {
-        let $next = carbide::state::FieldState::new2($i2.clone(), |a| {
+        let $next = carbide::state::FieldState::new($i2.clone(), |a| {
             #[allow(unused_variables)]
             match a {
                 $( $pattern )|+ $( if $guard )? => {

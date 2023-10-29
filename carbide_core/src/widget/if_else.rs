@@ -36,40 +36,40 @@ pub struct IfElse<T, F, S> where
 impl IfElse<Empty, Empty, bool> {
 
     #[carbide_default_builder2]
-    pub fn new<S: ReadState<T=bool> + Clone + 'static>(predicate: S) -> Box<IfElse<Empty, Empty, S>> {
-        Box::new(IfElse {
+    pub fn new<S: ReadState<T=bool> + Clone + 'static>(predicate: S) -> IfElse<Empty, Empty, S> {
+        IfElse {
             id: WidgetId::new(),
             predicate,
             when_true: *Empty::new(),
             when_false: *Empty::new(),
             position: Position::new(0.0, 0.0),
             dimension: Dimension::new(0.0, 0.0),
-        })
+        }
     }
 
 }
 
 impl<T: Widget, F: Widget, S: ReadState<T=bool> + Clone + 'static> IfElse<T, F, S> {
-    pub fn when_true<T2: Widget>(self, when_true: T2) -> Box<IfElse<T2, F, S>> {
-        Box::new(IfElse {
+    pub fn when_true<T2: Widget>(self, when_true: T2) -> IfElse<T2, F, S> {
+        IfElse {
             id: self.id,
             predicate: self.predicate,
             when_true,
             when_false: self.when_false,
             position: self.position,
             dimension: self.dimension,
-        })
+        }
     }
 
-    pub fn when_false<F2: Widget>(self, when_false: F2) -> Box<IfElse<T, F2, S>> {
-        Box::new(IfElse {
+    pub fn when_false<F2: Widget>(self, when_false: F2) -> IfElse<T, F2, S> {
+        IfElse {
             id: self.id,
             predicate: self.predicate,
             when_true: self.when_true,
             when_false,
             position: self.position,
             dimension: self.dimension,
-        })
+        }
     }
 }
 
