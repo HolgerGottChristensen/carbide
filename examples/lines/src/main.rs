@@ -87,7 +87,7 @@ fn main() {
             Graph { editing_mode: EditingMode::Selection { selected: SelectedState::Edge(e), .. }, .. } => {
                 selected_edge_view(state.clone(), e)
             }
-            _ => Empty::new(),
+            _ => Empty::new().boxed(),
         }
     );
 

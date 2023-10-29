@@ -27,7 +27,7 @@ pub struct EmptyDelegate;
 
 impl Delegate<(), Empty> for EmptyDelegate {
     fn call(&self, _: Box<dyn AnyState<T=()>>, _: Box<dyn AnyState<T=usize>>) -> Empty {
-        *Empty::new()
+        Empty::new()
     }
 }
 

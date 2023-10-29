@@ -40,8 +40,8 @@ impl IfElse<Empty, Empty, bool> {
         IfElse {
             id: WidgetId::new(),
             predicate,
-            when_true: *Empty::new(),
-            when_false: *Empty::new(),
+            when_true: Empty::new(),
+            when_false: Empty::new(),
             position: Position::new(0.0, 0.0),
             dimension: Dimension::new(0.0, 0.0),
         }

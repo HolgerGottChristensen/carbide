@@ -16,7 +16,7 @@ use carbide_core::environment::Environment;
 use carbide_core::event::{CustomEvent, EventHandler, Input};
 use carbide_core::render::{NoopRenderContext, Render, RenderContext};
 use carbide_core::text::{FontFamily, FontId};
-use carbide_core::widget::Empty;
+use carbide_core::widget::{Empty, WidgetExt};
 use carbide_core::window::WindowId;
 use carbide_winit::convert_window_event;
 use carbide_winit::EventLoop;
@@ -63,7 +63,7 @@ impl Application {
         );
 
         Application {
-            root: Empty::new(),
+            root: Box::new(Empty::new()),
             event_handler: EventHandler::new(),
             environment
         }

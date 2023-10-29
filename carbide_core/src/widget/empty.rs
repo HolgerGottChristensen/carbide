@@ -1,6 +1,6 @@
 use carbide_core::CommonWidgetImpl;
 use carbide_core::widget::{CommonWidget, PrimitiveStore, ShapeStyle, StrokeStyle};
-use carbide_macro::carbide_default_builder;
+use carbide_macro::{carbide_default_builder, carbide_default_builder2};
 
 use crate::draw::{Dimension, Position};
 use crate::flags::Flags;
@@ -15,15 +15,13 @@ pub struct Empty {
 }
 
 impl Empty {
-    #[carbide_default_builder]
-    pub fn new() -> Box<Self> {}
-
-    pub fn new() -> Box<Self> {
-        Box::new(Empty {
+    #[carbide_default_builder2]
+    pub fn new() ->Self {
+        Empty {
             id: WidgetId::new(),
             position: Position::new(0.0, 0.0),
             dimension: Dimension::new(100.0, 100.0),
-        })
+        }
     }
 }
 
