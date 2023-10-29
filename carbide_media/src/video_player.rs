@@ -10,6 +10,7 @@ use carbide_core::state::{AnyReadState, AnyState, IntoReadState, LocalState, Map
 use carbide_core::widget::{CommonWidget, HSplit, HStack, IfElse, Image, ProgressView, Rectangle, Spacer, VStack, WidgetExt, WidgetId, ZStack};
 use crate::{Video, VideoId};
 use carbide_core::widget::AnyWidget;
+use carbide_derive::Widget;
 
 const ICON_SIZE: f64 = 48.0;
 const SKIP_ICON_SIZE: f64 = 32.0;
@@ -104,36 +105,36 @@ impl VideoPlayer<Option<VideoId>> {
             })
             .frame(SKIP_ICON_SIZE, SKIP_ICON_SIZE);
 
-        let video_overlay = ZStack::new(vec![
+        let video_overlay = ZStack::new((
             Rectangle::new().fill(BLACK.with_opacity(0.3)),
-            HStack::new(vec![
+            HStack::new((
                 Spacer::new(),
                 replay_button,
                 Spacer::new(),
                 IfElse::new(buffering.clone())
-                    .when_true(*ProgressView::new().size(ICON_SIZE))
+                    .when_true(ProgressView::new().size(ICON_SIZE))
                     .when_false(
-                        *IfElse::new(playing.clone())
-                        .when_true(*pause_button)
-                        .when_false(*play_button)
+                        IfElse::new(playing.clone())
+                        .when_true(pause_button)
+                        .when_false(play_button)
                     ),
                 Spacer::new(),
                 forward_button,
                 Spacer::new(),
-            ]),
-            VStack::new(vec![
+            )),
+            VStack::new((
                 Spacer::new(),
-                HSplit::new(
+                *HSplit::new(
                     Rectangle::new()
                         .fill(EnvironmentColor::Accent)
-                        .frame_fixed_height(4.0),
+                        .frame_fixed_height(4.0).boxed(),
                     Rectangle::new()
                         .fill(EnvironmentColor::OpaqueSeparator)
-                        .frame_fixed_height(4.0)
+                        .frame_fixed_height(4.0).boxed()
                 ).percent(percent_played)
                     //.non_draggable()
-            ])
-        ]);
+            ))
+        )).boxed();
 
 
         VideoPlayer {

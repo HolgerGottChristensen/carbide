@@ -16,6 +16,7 @@ use carbide_core::mesh::MODE_IMAGE;
 use carbide_core::render::{Render, RenderContext};
 use carbide_core::state::{AnyReadState, AnyState, IntoReadState, IntoState, LocalState, ReadState, ReadStateExtNew, State, StateExtNew};
 use carbide_core::widget::{CommonWidget, WidgetExt, WidgetId, AnyWidget, ScaleMode};
+use carbide_derive::Widget;
 use crate::{CMTime, CMTimeFlags, CVPixelBufferGetBaseAddress, CVPixelBufferGetBytesPerRow, CVPixelBufferGetDataSize, CVPixelBufferGetHeight, CVPixelBufferGetPixelFormatType, CVPixelBufferGetWidth, CVPixelBufferLockBaseAddress, CVPixelBufferUnlockBaseAddress, kCMTimeIndefinite, kCVPixelBufferPixelFormatTypeKey, NSKeyValueChangeKey};
 use crate::macos::{listener, NSKeyValueObservingOptions};
 
@@ -464,7 +465,7 @@ impl<Id: ReadState<T=Option<ImageId>> + Clone> Render for Video<Id> {
 }
 
 impl<Id: ReadState<T=Option<ImageId>> + Clone> CommonWidget for Video<Id> {
-    CommonWidgetImpl!(self, id: self.id, position: self.position, dimension: self.dimension, flexibility: 10);
+    CommonWidgetImpl!(self, id: self.id, child: (), position: self.position, dimension: self.dimension, flexibility: 10);
 }
 
 impl<Id: ReadState<T=Option<ImageId>> + Clone> WidgetExt for Video<Id> {}
