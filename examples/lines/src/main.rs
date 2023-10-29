@@ -76,7 +76,8 @@ fn main() {
                     Text::new("Nothing is selected")
                         .font_size(EnvironmentFontSize::Title),
                     Spacer::new(),
-                )).cross_axis_alignment(CrossAxisAlignment::Start)
+                ))
+                .cross_axis_alignment(CrossAxisAlignment::Start)
                 .padding(10.0)
                 .boxed()
             }
@@ -114,14 +115,16 @@ fn main() {
         Dimension::new(800.0, 600.0),
         VStack::new((
             tool_bar,
-            *HSplit::new(
-                ZStack::new((node_editor, canvas.clip())).boxed(),
+            HSplit::new(
+                ZStack::new((
+                    node_editor,
+                    canvas.clip()
+                )),
                 ZStack::new((
                     Rectangle::new().fill(EnvironmentColor::TertiarySystemFill),
                     selected_panel,
-                )).boxed(),
-            )
-                .relative_to_end(250.0),
+                )),
+            ).relative_to_end(250.0),
             status_bar,
         ))
             .spacing(0.0),

@@ -1,6 +1,6 @@
 use carbide_core::draw::Dimension;
 use carbide_core::environment::EnvironmentColor;
-use carbide_core::state::{LocalState, StateExt, TState};
+use carbide_core::state::{LocalState, Map1, State, StateExt, TState};
 use carbide_core::widget::*;
 use carbide_wgpu::{Application, Window};
 use carbide_core::state::ReadStateExtNew;
@@ -13,31 +13,32 @@ fn main() {
     let mut application = Application::new()
         .with_asset_fonts();
 
+
     application.set_scene(Window::new(
         "HSplit example",
         Dimension::new(400.0, 600.0),
-        *VStack::new(vec![
-            h_split(&width1).relative_to_start(width1),
-            h_split(&percent).percent(percent),
-            h_split(&width2).relative_to_end(width2),
-        ])
+        VStack::new((
+            h_split(width1.clone()).relative_to_start(width1),
+            h_split(percent.clone()).percent(percent),
+            h_split(width2.clone()).relative_to_end(width2),
+        ))
     ).close_application_on_window_close());
 
     application.launch();
 }
 
-fn h_split(size: &TState<f64>) -> Box<HSplit<f64>> {
+fn h_split(size: impl State<T=f64>) -> HSplit<f64, impl Widget, impl Widget> {
     HSplit::new(
-        ZStack::new(vec![
+        ZStack::new((
             Rectangle::new().fill(EnvironmentColor::Green),
-            Text::new(size.map(|t: &f64| format!("{:.2}", t))).wrap_mode(Wrap::None),
-        ]),
-        ZStack::new(vec![
+            Text::new(Map1::read_map(size, |t: &f64| format!("{:.2}", t))).wrap_mode(Wrap::None),
+        )),
+        ZStack::new((
             Rectangle::new().fill(EnvironmentColor::Accent),
             Rectangle::new()
                 .fill(EnvironmentColor::Yellow)
                 .frame(100.0, 100.0)
                 .boxed(),
-        ]),
+        )),
     )
 }

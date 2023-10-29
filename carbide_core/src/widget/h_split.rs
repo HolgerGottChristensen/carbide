@@ -8,94 +8,96 @@ use crate::environment::Environment;
 use crate::event::{MouseEvent, MouseEventHandler, OtherEventHandler, WidgetEvent};
 use crate::layout::Layout;
 use crate::state::{IntoState, State};
-use crate::widget::{CommonWidget, CrossAxisAlignment, SplitType, AnyWidget, WidgetExt, WidgetId, Widget};
+use crate::widget::{CommonWidget, CrossAxisAlignment, SplitType, AnyWidget, WidgetExt, WidgetId, Widget, Empty, WidgetSequence};
 
 #[derive(Clone, Debug, Widget)]
 #[carbide_exclude(Layout, MouseEvent, OtherEvent)]
-pub struct HSplit<T> where T: State<T=f64> {
+pub struct HSplit<S, L, T> where S: State<T=f64>, L: Widget, T: Widget {
     id: WidgetId,
     position: Position,
     dimension: Dimension,
-    // Leading - Trailing
-    children: Vec<Box<dyn AnyWidget>>,
-    split: SplitType<T>,
+    leading: L,
+    trailing: T,
+    split: SplitType<S>,
     cross_axis_alignment: CrossAxisAlignment,
     dragging: bool,
     hovering: bool,
     draggable: bool,
 }
 
-impl HSplit<f64> {
+impl HSplit<f64, Empty, Empty> {
 
     #[carbide_default_builder2]
-    pub fn new(leading: Box<dyn AnyWidget>, trailing: Box<dyn AnyWidget>) -> Box<Self> {
+    pub fn new<L: Widget, T: Widget>(leading: L, trailing: T) -> HSplit<f64, L, T> {
         Self::new_internal(leading, trailing, SplitType::Percent(0.1), true)
     }
+}
 
-    fn new_internal<T: State<T=f64> + Clone>(
-        leading: Box<dyn AnyWidget>,
-        trailing: Box<dyn AnyWidget>,
-        split: SplitType<T>,
+impl<S: State<T=f64>, L: Widget, T: Widget> HSplit<S, L, T> {
+
+    fn new_internal<S2: State<T=f64>, L2: Widget, T2: Widget>(
+        leading: L2,
+        trailing: T2,
+        split: SplitType<S2>,
         draggable: bool,
-    ) -> Box<HSplit<T>> {
-        Box::new(HSplit {
+    ) -> HSplit<S2, L2, T2> {
+        HSplit {
             id: WidgetId::new(),
             position: Default::default(),
             dimension: Default::default(),
-            children: vec![leading, trailing],
+            leading,
+            trailing,
             split,
             cross_axis_alignment: CrossAxisAlignment::Center,
             dragging: false,
             hovering: false,
             draggable,
-        })
+        }
     }
-}
 
-impl<T: State<T=f64>> HSplit<T> {
-    pub fn relative_to_start<T2: IntoState<f64>>(mut self, width: T2) -> Box<HSplit<T2::Output>> {
-        HSplit::new_internal(
-            self.children.remove(0),
-            self.children.remove(0),
+    pub fn relative_to_start<S2: IntoState<f64>>(mut self, width: S2) -> HSplit<S2::Output, L, T> {
+        Self::new_internal(
+            self.leading,
+            self.trailing,
             SplitType::Start(width.into_state()),
             self.draggable,
         )
     }
 
-    pub fn percent<T2: IntoState<f64>>(mut self, percent: T2) -> Box<HSplit<T2::Output>> {
-        HSplit::new_internal(
-            self.children.remove(0),
-            self.children.remove(0),
+    pub fn percent<S2: IntoState<f64>>(mut self, percent: S2) -> HSplit<S2::Output, L, T> {
+        Self::new_internal(
+            self.leading,
+            self.trailing,
             SplitType::Percent(percent.into_state()),
             self.draggable,
         )
     }
 
-    pub fn relative_to_end<T2: IntoState<f64>>(mut self, width: T2) -> Box<HSplit<T2::Output>> {
-        HSplit::new_internal(
-            self.children.remove(0),
-            self.children.remove(0),
+    pub fn relative_to_end<S2: IntoState<f64>>(mut self, width: S2) -> HSplit<S2::Output, L, T> {
+        Self::new_internal(
+            self.leading,
+            self.trailing,
             SplitType::End(width.into_state()),
             self.draggable,
         )
     }
 
-    pub fn non_draggable(mut self) -> Box<Self> {
-        HSplit::new_internal(
-            self.children.remove(0),
-            self.children.remove(0),
+    pub fn non_draggable(mut self) -> Self {
+        Self::new_internal(
+            self.leading,
+            self.trailing,
             self.split,
             false,
         )
     }
 
-    pub fn cross_axis_alignment(mut self, alignment: CrossAxisAlignment) -> Box<Self> {
+    pub fn cross_axis_alignment(mut self, alignment: CrossAxisAlignment) -> Self {
         self.cross_axis_alignment = alignment;
-        Box::new(self)
+        self
     }
 }
 
-impl<T: State<T=f64>> OtherEventHandler for HSplit<T> {
+impl<S: State<T=f64>, L: Widget, T: Widget> OtherEventHandler for HSplit<S, L, T> {
     fn handle_other_event(&mut self, _event: &WidgetEvent, env: &mut Environment) {
         if self.dragging || self.hovering {
             env.set_cursor(MouseCursor::ColResize);
@@ -103,7 +105,7 @@ impl<T: State<T=f64>> OtherEventHandler for HSplit<T> {
     }
 }
 
-impl<T: State<T=f64>> MouseEventHandler for HSplit<T> {
+impl<S: State<T=f64>, L: Widget, T: Widget> MouseEventHandler for HSplit<S, L, T> {
     fn handle_mouse_event(&mut self, event: &MouseEvent, _consumed: &bool, _env: &mut Environment) {
         if !self.draggable {
             return;
@@ -115,7 +117,7 @@ impl<T: State<T=f64>> MouseEventHandler for HSplit<T> {
             MouseEvent::Press(_, position, _) => {
                 let relative_to_position = *position - self.position;
 
-                let split = self.children[0].dimension();
+                let split = self.leading.dimension();
 
                 if relative_to_position.x > split.width - press_margin
                     && relative_to_position.x < split.width + press_margin
@@ -130,7 +132,7 @@ impl<T: State<T=f64>> MouseEventHandler for HSplit<T> {
             }
             MouseEvent::Move { to, .. } => {
                 let relative_to_position = *to - self.position;
-                let split = self.children[0].dimension();
+                let split = self.leading.dimension();
 
                 if relative_to_position.x > split.width - press_margin
                     && relative_to_position.x < split.width + press_margin
@@ -168,7 +170,7 @@ impl<T: State<T=f64>> MouseEventHandler for HSplit<T> {
     }
 }
 
-impl<T: State<T=f64>> Layout for HSplit<T> {
+impl<S: State<T=f64>, L: Widget, T: Widget> Layout for HSplit<S, L, T> {
     fn calculate_size(&mut self, requested_size: Dimension, env: &mut Environment) -> Dimension {
         let (requested_leading_width, requested_trailing_width) = match &self.split {
             SplitType::Start(offset) => (*offset.value(), requested_size.width - *offset.value()),
@@ -181,19 +183,19 @@ impl<T: State<T=f64>> Layout for HSplit<T> {
         };
 
         let leading_size = Dimension::new(requested_leading_width, requested_size.height);
-        let mut leading = self.children[0].calculate_size(leading_size, env);
+        let mut leading = self.leading.calculate_size(leading_size, env);
 
         let trailing_size = Dimension::new(requested_trailing_width, requested_size.height);
-        let mut trailing = self.children[1].calculate_size(trailing_size, env);
+        let mut trailing = self.trailing.calculate_size(trailing_size, env);
 
         if leading.width > requested_leading_width {
             let trailing_size =
                 Dimension::new(requested_size.width - leading.width, requested_size.height);
-            trailing = self.children[1].calculate_size(trailing_size, env);
+            trailing = self.trailing.calculate_size(trailing_size, env);
         } else if trailing.width > requested_trailing_width {
             let leading_size =
                 Dimension::new(requested_size.width - trailing.width, requested_size.height);
-            leading = self.children[0].calculate_size(leading_size, env);
+            leading = self.leading.calculate_size(leading_size, env);
         }
 
         self.set_dimension(Dimension::new(
@@ -226,8 +228,42 @@ impl<T: State<T=f64>> Layout for HSplit<T> {
     }
 }
 
-impl<T: State<T=f64>> CommonWidget for HSplit<T> {
-    CommonWidgetImpl!(self, id: self.id, child: self.children, position: self.position, dimension: self.dimension);
+impl<S: State<T=f64>, L: Widget, T: Widget> CommonWidget for HSplit<S, L, T> {
+    fn id(&self) -> WidgetId {
+        self.id
+    }
+    fn foreach_child<'a>(&'a self, f: &mut dyn FnMut(&'a dyn AnyWidget)) {
+        self.leading.foreach(f);
+        self.trailing.foreach(f);
+    }
+    fn foreach_child_mut<'a>(&'a mut self, f: &mut dyn FnMut(&'a mut dyn AnyWidget)) {
+        self.leading.foreach_mut(f);
+        self.trailing.foreach_mut(f);
+    }
+    fn foreach_child_rev<'a>(&'a mut self, f: &mut dyn FnMut(&'a mut dyn AnyWidget)) {
+        self.leading.foreach_rev(f);
+        self.trailing.foreach_rev(f);
+    }
+    fn foreach_child_direct<'a>(&'a mut self, f: &mut dyn FnMut(&'a mut dyn AnyWidget)) {
+        self.leading.foreach_direct(f);
+        self.trailing.foreach_direct(f);
+    }
+    fn foreach_child_direct_rev<'a>(&'a mut self, f: &mut dyn FnMut(&'a mut dyn AnyWidget)) {
+        self.leading.foreach_direct_rev(f);
+        self.trailing.foreach_direct_rev(f);
+    }
+    fn position(&self) -> Position {
+        self.position
+    }
+    fn set_position(&mut self, position: Position) {
+        self.position = position;
+    }
+    fn dimension(&self) -> Dimension {
+        self.dimension
+    }
+    fn set_dimension(&mut self, dimension: Dimension) {
+        self.dimension = dimension
+    }
 }
 
-impl<T: State<T=f64>> WidgetExt for HSplit<T> {}
+impl<S: State<T=f64>, L: Widget, T: Widget> WidgetExt for HSplit<S, L, T> {}
