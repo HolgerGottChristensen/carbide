@@ -1,24 +1,22 @@
 use std::cmp::Ordering;
 
-use carbide::{a, lens, matches_case};
+use carbide::{a, lens, ui};
 use carbide::{Application, Window};
-use carbide::draw::{Dimension, Position, Rect, Scalar};
-use carbide::environment::{Environment, EnvironmentColor, EnvironmentFontSize};
-use carbide::state::{IndexState, LocalState, Map1, ReadState, ReadStateExtNew, State, StateExt, TState, ValueRefMut};
-use carbide::text::FontFamily;
+use carbide::controls::{Button, Slider, TextInput};
+use carbide::draw::{Dimension, Position, Scalar};
+use carbide::environment::{EnvironmentColor, EnvironmentFontSize};
+use carbide::state::{IndexState, LocalState, Map1, ReadState, ReadStateExtNew, State, StateExt};
 use carbide::widget::*;
-use carbide::widget::canvas::{Canvas, Context};
-use carbide::controls::{Button, capture, Slider, TextInput};
+use carbide::widget::canvas::Canvas;
 
+use crate::canvas::GraphCanvas;
 use crate::edge::Edge;
 use crate::editing_mode::{CreateWallState, EditingMode, SelectedState};
 use crate::graph::Graph;
-use crate::guide::Guide;
 use crate::line::Line;
 use crate::node::Node;
 use crate::node_editor::NodeEditor;
 
-mod constraints;
 mod edge;
 mod editing_mode;
 mod graph;
@@ -26,6 +24,7 @@ mod guide;
 mod line;
 mod node;
 mod node_editor;
+mod canvas;
 
 fn main() {
     let mut application = Application::new()
@@ -46,85 +45,8 @@ fn main() {
     let state = LocalState::new(graph);
 
     let editing_mode = lens!(state.editing_mode);
-/*
-    let canvas = Canvas::new(|rect, mut context, _| {
-        let mut graph = s.value_mut();
-        context.set_line_width(1.0);
 
-        graph.calculate_lines();
-
-        draw_edges(&mut context, &mut graph);
-
-        draw_nodes(&mut context, &mut graph);
-
-        draw_guides(&rect, &mut context, &mut graph);
-
-        match graph.editing_mode {
-            EditingMode::Editing => {}
-            EditingMode::CreateWallP1 {
-                mouse_position,
-                state,
-            } => {
-                context.begin_path();
-                match state {
-                    CreateWallState::Invalid => {
-                        context.set_fill_style(EnvironmentColor::Red);
-                    }
-                    CreateWallState::ExistingNode => {
-                        context.set_fill_style(EnvironmentColor::Blue);
-                    }
-                    CreateWallState::SplitEdge => {
-                        context.set_fill_style(EnvironmentColor::Green);
-                    }
-                    CreateWallState::Floating => {
-                        context.set_fill_style(EnvironmentColor::Red);
-                    }
-                }
-
-                context.circle(mouse_position.x() - 4.5, mouse_position.y() - 4.5, 9.0);
-                context.fill();
-            }
-            EditingMode::CreateWallP2 {
-                mouse_position,
-                state,
-                first_node_id,
-            } => {
-                let pos = graph.get_node(first_node_id).position;
-                context.begin_path();
-                context.set_fill_style(EnvironmentColor::Yellow);
-                context.circle(pos.x() - 4.5, pos.y() - 4.5, 9.0);
-                context.fill();
-
-                context.begin_path();
-
-                match state {
-                    CreateWallState::Invalid => {
-                        context.set_fill_style(EnvironmentColor::Red);
-                    }
-                    CreateWallState::ExistingNode => {
-                        context.set_fill_style(EnvironmentColor::Blue);
-                    }
-                    CreateWallState::SplitEdge => {
-                        context.set_fill_style(EnvironmentColor::Green);
-                    }
-                    CreateWallState::Floating => {
-                        context.set_fill_style(EnvironmentColor::Blue);
-                    }
-                }
-
-                context.circle(mouse_position.x() - 4.5, mouse_position.y() - 4.5, 9.0);
-                context.fill();
-            }
-            EditingMode::Selection { hovered, selected } => {
-                draw_selection_hovered(&mut context, &mut graph, hovered);
-                draw_selection_selected(&mut context, graph, selected);
-            }
-        }
-
-        context
-    });
-*/
-    let canvas = Rectangle::new().fill(EnvironmentColor::Green);
+    let canvas = Canvas::new(GraphCanvas(state.clone()));
 
     let node_editor = NodeEditor::new(&state);
 
@@ -147,21 +69,26 @@ fn main() {
     }))
         .frame(70.0, 26.0);
 
-/*
-    let selected_id = Match::new(&state)
-        .case(matches_case!(state, Graph { editing_mode: EditingMode::Selection { selected: SelectedState::None, .. }, .. }, {
-            VStack::new(vec![
-                Text::new("Nothing is selected")
-                    .font_size(EnvironmentFontSize::Title),
-                Spacer::new(),
-            ]).cross_axis_alignment(CrossAxisAlignment::Start)
-            .padding(10.0)
-            .boxed()
-        }))
-        .case(matches_case!(state, Graph { editing_mode: EditingMode::Selection { selected: SelectedState::Node(x), .. }, .. }, x => selected_node_view(&state, x)))
-        .case(matches_case!(state, Graph { editing_mode: EditingMode::Selection { selected: SelectedState::Edge(x), .. }, .. }, x => selected_edge_view(&state, x)));
-*/
-    let selected_panel = Rectangle::new().fill(EnvironmentColor::Yellow);
+    let selected_panel = ui!(
+        match state {
+            Graph { editing_mode: EditingMode::Selection { selected: SelectedState::None, .. }, .. } => {
+                VStack::new((
+                    Text::new("Nothing is selected")
+                        .font_size(EnvironmentFontSize::Title),
+                    Spacer::new(),
+                )).cross_axis_alignment(CrossAxisAlignment::Start)
+                .padding(10.0)
+                .boxed()
+            }
+            Graph { editing_mode: EditingMode::Selection { selected: SelectedState::Node(n), .. }, .. } => {
+                selected_node_view(state.clone(), n)
+            }
+            Graph { editing_mode: EditingMode::Selection { selected: SelectedState::Edge(e), .. }, .. } => {
+                selected_edge_view(state.clone(), e)
+            }
+            _ => Empty::new(),
+        }
+    );
 
     let status_bar = HStack::new((
         Text::new(Map1::read_map(editing_mode, |a: &EditingMode| format!("Mode: {}", a))),
@@ -203,7 +130,7 @@ fn main() {
     application.launch();
 }
 
-fn selected_node_view(graph: &TState<Graph>, selected_state: TState<usize>) -> Box<dyn AnyWidget> {
+fn selected_node_view(graph: impl State<T=Graph>, selected_state: impl ReadState<T=usize>) -> Box<dyn AnyWidget> {
     let nodes = lens!(graph.nodes);
     let node = IndexState::new(nodes, selected_state.clone());
 
@@ -237,7 +164,7 @@ fn selected_node_view(graph: &TState<Graph>, selected_state: TState<usize>) -> B
         .boxed()
 }
 
-fn selected_edge_view(graph: &TState<Graph>, selected_state: TState<usize>) -> Box<dyn AnyWidget> {
+fn selected_edge_view(graph: impl State<T=Graph>, selected_state: impl ReadState<T=usize>) -> Box<dyn AnyWidget> {
     let edges = lens!(graph.edges);
     let edge = IndexState::new(edges, selected_state.clone());
 
@@ -268,170 +195,6 @@ fn selected_edge_view(graph: &TState<Graph>, selected_state: TState<usize>) -> B
         .cross_axis_alignment(CrossAxisAlignment::Start)
         .padding(10.0)
         .boxed()
-}
-
-fn draw_selection_selected(
-    mut context: &mut Context,
-    mut graph: ValueRefMut<Graph>,
-    selected: SelectedState,
-) {
-    match selected {
-        SelectedState::None => {}
-        SelectedState::Node(node_id) => {
-            let node = graph.get_node(node_id);
-
-            context.begin_path();
-            context.set_fill_style(EnvironmentColor::Yellow);
-            context.circle(node.position.x() - 4.5, node.position.y() - 4.5, 9.0);
-            context.fill();
-        }
-        SelectedState::Edge(edge_id) => {
-            let edge = graph.get_edge(edge_id);
-            let line = Line::new(
-                graph.get_node(edge.to).position,
-                graph.get_node(edge.from).position,
-            );
-
-            context.begin_path();
-            context.set_stroke_style(EnvironmentColor::Yellow);
-            line_between(&mut context, &line, graph.offset);
-            context.stroke();
-        }
-    }
-}
-
-fn draw_selection_hovered(
-    mut context: &mut Context,
-    mut graph: &mut ValueRefMut<Graph>,
-    hovered: SelectedState,
-) {
-    match hovered {
-        SelectedState::None => {}
-        SelectedState::Node(node_id) => {
-            let node = graph.get_node(node_id);
-
-            context.begin_path();
-            context.set_fill_style(EnvironmentColor::Green);
-            context.circle(node.position.x() - 4.5, node.position.y() - 4.5, 9.0);
-            context.fill();
-        }
-        SelectedState::Edge(edge_id) => {
-            let edge = graph.get_edge(edge_id);
-            let line = Line::new(
-                graph.get_node(edge.to).position,
-                graph.get_node(edge.from).position,
-            );
-
-            context.begin_path();
-            context.set_stroke_style(EnvironmentColor::Green);
-            line_between(&mut context, &line, graph.offset);
-            context.stroke();
-        }
-    }
-}
-
-fn draw_edges(mut context: &mut Context, mut graph: &mut ValueRefMut<Graph>) {
-    context.begin_path();
-
-    context.set_stroke_style(EnvironmentColor::DarkText);
-
-    for edge in &graph.edges {
-        let line = Line::new(
-            graph.get_node(edge.from).position,
-            graph.get_node(edge.to).position,
-        );
-
-        line_between(&mut context, &line, graph.offset);
-    }
-
-    context.stroke();
-
-    context.begin_path();
-    context.set_stroke_style(EnvironmentColor::Blue);
-
-    for edge in &graph.edges {
-        line_between(&mut context, &edge.neg_line, graph.offset);
-        line_between(&mut context, &edge.pos_line, graph.offset);
-    }
-
-    context.stroke();
-}
-
-fn draw_nodes(mut context: &mut Context, graph: &mut ValueRefMut<Graph>) {
-    context.set_fill_style(EnvironmentColor::DarkText);
-    context.begin_path();
-
-    for node in &graph.nodes {
-        if node.hovered {
-            context.fill();
-
-            context.begin_path();
-            context.set_fill_style(EnvironmentColor::Blue);
-            context.circle(node.position.x() - 4.5, node.position.y() - 4.5, 9.0);
-
-            context.fill();
-            context.begin_path();
-            context.set_fill_style(EnvironmentColor::DarkText);
-        } else {
-            context.circle(node.position.x() - 4.5, node.position.y() - 4.5, 9.0);
-        }
-    }
-
-    context.fill();
-}
-
-fn line_between(context: &mut Context, line: &Line, offset: Position) {
-    if line.len().is_normal() {
-        context.move_to(offset.x() + line.start.x(), offset.y() + line.start.y());
-        context.line_to(offset.x() + line.end.x(), offset.y() + line.end.y());
-    }
-}
-
-fn draw_guides(rect: &Rect, mut context: &mut Context, mut graph: &mut ValueRefMut<Graph>) {
-    let mut point_context = Context::new();
-    point_context.begin_path();
-    point_context.set_fill_style(EnvironmentColor::Green);
-
-    context.begin_path();
-    context.set_stroke_style(EnvironmentColor::Green);
-
-    for guide in &graph.guides {
-        match guide {
-            Guide::Vertical(x) => {
-                line_between(
-                    &mut context,
-                    &Line::new(Position::new(*x, 0.0), Position::new(*x, rect.height())),
-                    graph.offset,
-                );
-            }
-            Guide::Horizontal(y) => {
-                line_between(
-                    &mut context,
-                    &Line::new(Position::new(0.0, *y), Position::new(rect.width(), *y)),
-                    graph.offset,
-                );
-            }
-            Guide::Directional(line) => {
-                line_between(
-                    &mut context,
-                    &line.extend(Rect::new(
-                        Position::new(0.0, 0.0),
-                        Dimension::new(rect.width(), rect.height()),
-                    )),
-                    graph.offset,
-                );
-            }
-            Guide::Point(position) => {
-                point_context.circle(position.x() - 2.5, position.y() - 2.5, 5.0);
-            }
-        }
-    }
-
-    context.stroke();
-
-    point_context.fill();
-
-    context.append(point_context);
 }
 
 // https://math.stackexchange.com/questions/3176543/intersection-point-of-2-lines-defined-by-2-points-each

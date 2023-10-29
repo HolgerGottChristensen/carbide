@@ -1,9 +1,10 @@
+use carbide::draw::Position;
+
+use crate::{Line, total_cmp};
 use crate::edge::Edge;
 use crate::editing_mode::EditingMode;
 use crate::guide::Guide;
 use crate::node::Node;
-use crate::{total_cmp, Line};
-use carbide::draw::Position;
 
 #[derive(Clone, Debug)]
 pub struct Graph {
@@ -112,7 +113,7 @@ impl Graph {
 
         self.get_node_mut(new_id).incoming_edges.push(edge_id);
 
-        self.add_edge(new_id, old_to, Edge::new());
+        self.add_edge(new_id, old_to, self.get_edge(edge_id).clone());
 
         new_id
     }

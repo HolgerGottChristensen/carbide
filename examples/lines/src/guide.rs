@@ -1,5 +1,6 @@
-use crate::Line;
 use carbide::draw::Position;
+
+use crate::Line;
 
 #[derive(Clone, Debug, PartialEq)]
 pub enum Guide {

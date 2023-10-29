@@ -1,11 +1,13 @@
-use crate::{CreateWallState, Edge, EditingMode, Graph, Line, Node, SelectedState};
+use std::iter::once;
+
+use carbide::CommonWidgetImpl;
 use carbide::draw::{Dimension, Position};
 use carbide::environment::Environment;
 use carbide::event::{ModifierKey, MouseEvent, MouseEventHandler};
-use carbide::state::{LocalState, ReadState, State, TState};
-use carbide::widget::{CommonWidget, AnyWidget, WidgetExt, WidgetId, Widget};
-use carbide::CommonWidgetImpl;
-use std::iter::once;
+use carbide::state::{LocalState, ReadState, State};
+use carbide::widget::{CommonWidget, Widget, WidgetExt, WidgetId};
+
+use crate::{CreateWallState, Edge, EditingMode, Graph, Line, Node, SelectedState};
 
 #[derive(Clone, Debug, Widget)]
 #[carbide_exclude(MouseEvent)]

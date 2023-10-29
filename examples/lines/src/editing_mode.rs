@@ -1,5 +1,6 @@
-use carbide::draw::Position;
 use std::fmt::{Display, Formatter, Write};
+
+use carbide::draw::Position;
 
 #[derive(Debug, Clone)]
 pub enum EditingMode {

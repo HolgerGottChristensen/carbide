@@ -1,5 +1,6 @@
-use carbide::draw::{Position, Scalar};
 use std::slice::Iter;
+
+use carbide::draw::{Position, Scalar};
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct Node {
