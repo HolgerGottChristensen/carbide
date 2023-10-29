@@ -109,6 +109,7 @@ This is useful for typing passwords. You are able to choose which character shou
 Text fields support most common shortcuts like copy, paste, select all, select word, and more except undo/redo. It also 
 supports mouse interactions like double click for select word, triple click for select all and click and drag for selecting
 a section of the content.
+
 ![Carbide text input example](https://user-images.githubusercontent.com/11473146/156861242-399869ae-42b5-4f06-9045-0f9ce40cacfb.gif)
 
 ![Carbide text input example 2](https://user-images.githubusercontent.com/11473146/156861582-d4c2c76d-d881-4f77-8827-90266b79d4c0.gif)
@@ -179,7 +180,6 @@ Unless you explicitly state otherwise, any contribution intentionally submitted 
 defined in the Apache-2.0 license, shall be dual licensed as above, without any additional terms or conditions.
 
 **Example Assets**
-
 - [Google Noto](https://www.google.com/get/noto/) (Apache2)
 
 [Materials Example]: https://github.com/HolgerGottChristensen/carbide/blob/master/backends/carbide_wgpu/examples/materials.rs
@@ -187,50 +187,6 @@ defined in the Apache-2.0 license, shall be dual licensed as above, without any 
 [Calculator Example]: https://github.com/HolgerGottChristensen/carbide/tree/master/carbide/examples/calculator
 [Textfield Example]: https://github.com/HolgerGottChristensen/carbide/blob/master/carbide_controls/examples/text_input.rs
 [The API Documentation]: https://docs.rs/carbide_core/
-
-[The Guide]: https://docs.rs/carbide_core/latest/carbide_core/guide/index.html
-
-[1]:        https://docs.rs/carbide_core/latest/carbide_core/guide/chapter_1/index.html
-
-[1.1]:      https://docs.rs/carbide_core/latest/carbide_core/guide/chapter_1/index.html#a-brief-history
-
-[1.2]:      https://docs.rs/carbide_core/latest/carbide_core/guide/chapter_1/index.html#screenshots-and-videos
-
-[1.3]:      https://docs.rs/carbide_core/latest/carbide_core/guide/chapter_1/index.html#feature-overview
-
-[1.4]:      https://docs.rs/carbide_core/latest/carbide_core/guide/chapter_1/index.html#available-widgets
-
-[1.4.1]:    https://docs.rs/carbide_core/latest/carbide_core/guide/chapter_1/index.html#primitive-widgets
-
-[1.4.2]:    https://docs.rs/carbide_core/latest/carbide_core/guide/chapter_1/index.html#common-use-widgets
-
-[1.5]:      https://docs.rs/carbide_core/latest/carbide_core/guide/chapter_1/index.html#immediate-mode
-
-[1.5.1]:    https://docs.rs/carbide_core/latest/carbide_core/guide/chapter_1/index.html#what-is-it
-
-[1.5.2]:    https://docs.rs/carbide_core/latest/carbide_core/guide/chapter_1/index.html#why-use-it
-
-[1.5.3]:    https://docs.rs/carbide_core/latest/carbide_core/guide/chapter_1/index.html#is-carbide-immediate-or-retained
-
-[1.6]:      https://docs.rs/carbide_core/latest/carbide_core/guide/chapter_1/index.html#the-builder-pattern
-
-[2]:        https://docs.rs/carbide_core/latest/carbide_core/guide/chapter_2/index.html
-
-[2.1]:      https://docs.rs/carbide_core/latest/carbide_core/guide/chapter_2/index.html#installing-rust-and-cargo
-
-[2.2]:      https://docs.rs/carbide_core/latest/carbide_core/guide/chapter_2/index.html#running-the-carbide-examples
-
-[3]:        https://docs.rs/carbide_core/latest/carbide_core/guide/chapter_3/index.html
-
-[3.1]:      https://docs.rs/carbide_core/latest/carbide_core/guide/chapter_3/index.html#creating-a-new-project
-
-[3.2]:      https://docs.rs/carbide_core/latest/carbide_core/guide/chapter_3/index.html#setting-up-carbide
-
-[3.2.1]:    https://docs.rs/carbide_core/latest/carbide_core/guide/chapter_3/index.html#backends
-
-[3.3]:      https://docs.rs/carbide_core/latest/carbide_core/guide/chapter_3/index.html#creating-a-window
-
-[3.4]:      https://docs.rs/carbide_core/latest/carbide_core/guide/chapter_3/index.html#handling-events
 
 [issues]: https://github.com/HolgerGottChristensen/carbide/issues
 

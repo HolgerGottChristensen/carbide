@@ -114,9 +114,6 @@ pub struct Environment {
     cursor: MouseCursor,
     mouse_position: Position,
 
-    #[cfg(feature = "tokio")]
-    tokio_runtime: tokio::runtime::Runtime,
-
     animations: Option<Vec<Box<dyn Fn(&Instant) -> bool>>>,
 
     raw_window_handle: Option<RawWindowHandle>,
@@ -225,11 +222,6 @@ impl Environment {
             image_map,
             cursor: MouseCursor::Arrow,
             mouse_position: Default::default(),
-            #[cfg(feature = "tokio")]
-            tokio_runtime: tokio::runtime::Builder::new_multi_thread()
-                .enable_all()
-                .build()
-                .expect("Could not create a tokio runtime"),
             animations: Some(vec![]),
             raw_window_handle: None,
             event_sink,
