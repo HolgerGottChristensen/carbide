@@ -37,9 +37,7 @@ impl TextInput<Focus, Option<char>, Result<String, String>, bool> {
     pub fn new<T: IntoState<Result<String, String>>>(text: T) -> TextInput<LocalState<Focus>, Option<char>, T::Output, EnabledState> {
         let focus = LocalState::new(Focus::Unfocused);
         let obscure = None;
-        println!("Before into");
         let text = text.into_state();
-        println!("After into");
 
         Self::new_internal(text, focus, obscure, enabled_state())
     }

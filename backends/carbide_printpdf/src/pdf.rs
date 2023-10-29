@@ -4,19 +4,22 @@ use std::fs;
 use std::fs::File;
 use std::io::BufWriter;
 use std::path::Path;
+use std::rc::Rc;
 
-use printpdf::{Color, Image as PdfImage, ImageTransform, Mm, OP_PATH_CONST_LINE_TO, OP_PATH_CONST_MOVE_TO, OP_PATH_PAINT_FILL_NZ, PdfDocument, PdfDocumentReference, PdfLayerIndex, PdfPageIndex, Point, Px, Rgb};
+use printpdf::{BuiltinFont, Color, Image as PdfImage, ImageTransform, Mm, OP_PATH_CONST_LINE_TO, OP_PATH_CONST_MOVE_TO, OP_PATH_PAINT_FILL_NZ, PdfDocument, PdfDocumentReference, PdfLayerIndex, PdfPageIndex, Point, Px, Rgb};
 use printpdf::lopdf::content::Operation;
 
 use carbide_core::locate_folder;
-use carbide_core::draw::{Dimension, Position};
+use carbide_core::draw::{Dimension, ImageContext, Position};
 use carbide_core::environment::Environment;
 use carbide_core::event::NoopEventSink;
-use carbide_core::layout::BasicLayouter;
-use carbide_core::render::{PrimitiveKind, Primitives};
-use carbide_core::text::{FontFamily, FontId};
-use carbide_core::widget::{Empty, AnyWidget};
+use carbide_core::layout::{BasicLayouter, Layout, Layouter};
+use carbide_core::render::{PrimitiveKind, Primitives, Render, RenderContext};
+use carbide_core::text::{FontFamily, FontId, FontStyle, FontWeight};
+use carbide_core::widget::{Empty, AnyWidget, WidgetExt};
 use carbide_core::window::TWindow;
+use crate::image_context::PDFImageContext;
+use crate::render_context::PDFRenderContext;
 
 pub struct Pdf {
     environment: Environment,
@@ -42,7 +45,7 @@ impl Pdf {
 
         Pdf {
             environment,
-            widgets: Empty::new(),
+            widgets: Empty::new().boxed(),
             title,
             document
         }
@@ -107,8 +110,9 @@ impl Pdf {
         let page_dimensions = Dimension::new(210.0, 297.0);
 
         self.environment.capture_time();
+        self.environment.set_root_alignment(BasicLayouter::Top);
 
-        let primitives = Primitives::new(
+        /*let primitives = Primitives::new(
             page_dimensions/self.environment.scale_factor(),
             &mut self.widgets,
             &mut self.environment,
@@ -239,7 +243,7 @@ impl Pdf {
                     for glyph in text.iter() {
                         let point_x = glyph.position().x();
                         let point_y = page_dimensions.height - glyph.position().y();
-                        dbg!(glyph.font_size());
+                        //dbg!(glyph.font_size());
                         current_layer.set_font(&font, (glyph.font_size()) as f64);
                         current_layer.set_text_cursor(Mm(point_x), Mm(point_y));
                         current_layer.write_text(glyph.character(), &font);
@@ -315,7 +319,34 @@ impl Pdf {
                 }
                 _ => ()
             }
-        }
+        }*/
+
+        let font_id = self.environment.get_font_family("system-font").get_best_fit(FontWeight::Normal, FontStyle::Normal);
+        let inner_font = self.environment.get_font(font_id);
+        let font_path = inner_font.path();
+        let path = Path::new(&font_path);
+        let mut file = File::open(path).unwrap();
+        let font = self.document.add_external_font(&mut file).unwrap();
+
+        let mut context = PDFRenderContext {
+            pdf_layer_reference: current_layer,
+            color_stack: vec![],
+            page_dimensions,
+            font
+        };
+
+        let image_context = ImageContext::new(PDFImageContext);
+
+        self.environment.with_image_context(image_context, move |environment| {
+            self.widgets.calculate_size(page_dimensions / environment.scale_factor(), environment);
+            let layout = environment.root_alignment();
+            (layout.positioner())(Position::new(0.0, 0.0), page_dimensions / environment.scale_factor(), &mut self.widgets);
+
+            self.widgets.position_children(environment);
+            self.widgets.render(&mut RenderContext::new(&mut context), environment);
+        });
+
+
 
         let path = format!("target/{}.pdf", self.title);
 
@@ -329,5 +360,7 @@ impl Pdf {
 fn convert_position_to_point(position: Position, page_dimensions: Dimension) -> Point {
     let x = Mm(position.x() / 2.0);
     let y = Mm(page_dimensions.height - position.y() / 2.0);
+
+    println!("{:?}, {:?}", x, y);
     Point::new(x, y)
 }

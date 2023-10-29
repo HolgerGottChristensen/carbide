@@ -746,7 +746,7 @@ impl Environment {
         self.get_font_family(&self.default_font_family_name)
     }
 
-    pub fn get_font_family(&self, name: &String) -> &FontFamily {
+    pub fn get_font_family(&self, name: &str) -> &FontFamily {
         if name == "system-font" {
             self.get_system_font_family()
         } else {
