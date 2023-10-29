@@ -8,20 +8,20 @@ use std::time::Duration;
 use num::{Complex, Zero};
 use num::complex::ComplexFloat;
 use uuid::Uuid;
-use carbide_core::asynchronous::{get_event_sink, sleep};
-use carbide_core::color::{RED, WHITE};
-use carbide_core::CommonWidgetImpl;
+use carbide::asynchronous::{get_event_sink, sleep};
+use carbide::color::{RED, WHITE};
+use carbide::CommonWidgetImpl;
 
-use carbide_core::draw::{Color, Dimension, Position, Rect, Scalar, Texture, TextureFormat};
-use carbide_core::draw::draw_style::DrawStyle;
-use carbide_core::draw::image::ImageId;
-use carbide_core::environment::Environment;
-use carbide_core::event::{CustomEvent, MouseEvent, MouseEventHandler, OtherEventHandler, WidgetEvent};
-use carbide_core::image::{DynamicImage, GenericImage, Rgba};
-use carbide_core::mesh::MODE_IMAGE;
-use carbide_core::render::{CarbideTransform, Render, RenderContext};
-use carbide_core::render::matrix::{Deg, Matrix4, Vector3};
-use carbide_core::widget::*;
+use carbide::draw::{Color, Dimension, Position, Rect, Scalar, Texture, TextureFormat};
+use carbide::draw::draw_style::DrawStyle;
+use carbide::draw::image::ImageId;
+use carbide::environment::Environment;
+use carbide::event::{CustomEvent, MouseEvent, MouseEventHandler, OtherEventHandler, WidgetEvent};
+use carbide::image::{DynamicImage, GenericImage, Rgba};
+use carbide::mesh::MODE_IMAGE;
+use carbide::render::{CarbideTransform, Render, RenderContext};
+use carbide::render::matrix::{Deg, Matrix4, Vector3};
+use carbide::widget::*;
 
 const MAX_ITER: u32 = 1000;
 //const MAX_ITER: u32 = 20;
@@ -205,7 +205,7 @@ impl MouseEventHandler for Mandelbrot {
                 self.offset += Position::new(*x, -*y);
             }
             MouseEvent::Rotation(delta, _, _) => {
-                self.rotation -= delta;
+                //self.rotation -= delta;
             }
             _ => ()
         }

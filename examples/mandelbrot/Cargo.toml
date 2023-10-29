@@ -1,0 +1,13 @@
+[package]
+name = "mandelbrot"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+carbide = { path = "../../carbide", features = ["controls"] }
+rayon = "1.7.0"
+uuid = { version = "1.4.1", features = ["v4"] }
+rand = "0.8.5"
+num = "0.4.1"

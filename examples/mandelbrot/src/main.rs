@@ -1,13 +1,12 @@
-use std::path::PathBuf;
-use std::time::Instant;
-use carbide_core::draw::{Dimension, Texture, TextureFormat};
-use carbide_core::draw::image::ImageId;
-use carbide_core::state::LocalState;
-use carbide_core::task;
-use carbide_core::widget::{Image, WidgetExt};
-use carbide_wgpu::{Application, Window};
+use carbide::draw::{Dimension, Texture, TextureFormat};
+use carbide::draw::image::ImageId;
+use carbide::state::LocalState;
+use carbide::task;
+use carbide::widget::{Image, WidgetExt};
+use carbide::{Application, Window};
+use carbide::state::State;
+
 use crate::mandelbrot::{generate_image, Mandelbrot};
-use carbide_core::state::State;
 
 mod mandelbrot;
 

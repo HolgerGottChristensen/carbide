@@ -24,5 +24,6 @@ members = [
     "examples/calculator",
     "examples/counter",
     "examples/fractal",
+    "examples/mandelbrot",
     "carbide"
 ]
