@@ -8,7 +8,7 @@ use crate::flags::Flags;
 use crate::focus::{Focus, Focusable, Refocus};
 use crate::layout::{Layout, Layouter};
 use crate::render::{Primitive, Render, RenderContext};
-use crate::state::{StateSync, ValueCell};
+use crate::state::{StateSync};
 use crate::widget::{CommonWidget, Empty, AnyWidget, WidgetExt, WidgetId};
 
 pub struct Duplicated<T: AnyWidget>(Rc<RefCell<T>>);
@@ -38,15 +38,15 @@ impl<T: AnyWidget> CommonWidget for Duplicated<T> {
         self.0.borrow().alignment()
     }
 
-    fn foreach_child<'a>(&'a self, f: &mut dyn FnMut(&'a dyn AnyWidget)) {
+    fn foreach_child<'a>(&'a self, _f: &mut dyn FnMut(&'a dyn AnyWidget)) {
         todo!()//self.0.borrow().apply(f, |a, b| a.foreach_child(b))
     }
 
-    fn foreach_child_mut<'a>(&'a mut self, f: &mut dyn FnMut(&'a mut dyn AnyWidget)) {
+    fn foreach_child_mut<'a>(&'a mut self, _f: &mut dyn FnMut(&'a mut dyn AnyWidget)) {
         todo!()//self.0.borrow_mut().apply(f, |a, b| a.foreach_child_mut(b))
     }
 
-    fn foreach_child_rev<'a>(&'a mut self, f: &mut dyn FnMut(&'a mut dyn AnyWidget)) {
+    fn foreach_child_rev<'a>(&'a mut self, _f: &mut dyn FnMut(&'a mut dyn AnyWidget)) {
         todo!()//self.0.borrow_mut().apply(f, |a, b| a.foreach_child_rev(b))
     }
 
@@ -78,11 +78,11 @@ impl<T: AnyWidget> CommonWidget for Duplicated<T> {
         self.0.borrow_mut().set_dimension(dimension)
     }
 
-    fn foreach_child_direct<'a>(&'a mut self, f: &mut dyn FnMut(&'a mut dyn AnyWidget)) {
+    fn foreach_child_direct<'a>(&'a mut self, _f: &mut dyn FnMut(&'a mut dyn AnyWidget)) {
         todo!()//self.0.borrow_mut().apply(f, |a, b| a.foreach_child_direct(b))
     }
 
-    fn foreach_child_direct_rev<'a>(&'a mut self, f: &mut dyn FnMut(&'a mut dyn AnyWidget)) {
+    fn foreach_child_direct_rev<'a>(&'a mut self, _f: &mut dyn FnMut(&'a mut dyn AnyWidget)) {
         todo!()//self.0.borrow_mut().apply(f, |a, b| a.foreach_child_direct_rev(b))
     }
 }

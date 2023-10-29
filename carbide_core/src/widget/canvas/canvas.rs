@@ -11,12 +11,11 @@ use carbide_core::render::{RenderContext};
 use carbide_macro::{carbide_default_builder2};
 
 use crate::draw::{Dimension, Position, Rect, Color, Scalar};
-use crate::draw::draw_style::DrawStyle;
 use crate::draw::shape::triangle::Triangle;
-use crate::environment::{Environment, EnvironmentColor};
+use crate::environment::{Environment};
 use crate::render::{Primitive, PrimitiveKind, Render};
-use crate::state::{NewStateSync, ReadState, StateContract, TState, ValueState};
-use crate::widget::{CommonWidget, PrimitiveStore, Shape, ShapeStyle, StrokeStyle, AnyWidget, WidgetExt, WidgetId, Widget};
+use crate::state::{NewStateSync};
+use crate::widget::{CommonWidget, PrimitiveStore, Shape, ShapeStyle, StrokeStyle, WidgetExt, WidgetId, Widget};
 use crate::widget::canvas::{Context, ShapeStyleWithOptions};
 
 /// A basic, non-interactive rectangle shape widget.
@@ -276,13 +275,13 @@ impl<C: CanvasContext> Render for Canvas<C> {
             }
         }
     }
-    fn get_primitives(&mut self, primitives: &mut Vec<Primitive>, env: &mut Environment) {
+    fn get_primitives(&mut self, _primitives: &mut Vec<Primitive>, env: &mut Environment) {
         let context = Context::new();
 
         let rectangle = Rect::new(self.position(), self.dimension());
         let context = self.context.call(rectangle, context, env);
 
-        let paths = context.to_paths(self.position(), env);
+        let _paths = context.to_paths(self.position(), env);
 
         todo!()
 

@@ -14,7 +14,7 @@ pub struct Filter {
     child: Box<dyn AnyWidget>,
     position: Position,
     dimension: Dimension,
-    blur_type: BlurType,
+    //blur_type: BlurType,
     filter: ImageFilter,
     filter_id: Option<FilterId>,
 }
@@ -29,7 +29,7 @@ impl Filter {
             child,
             position: Position::new(0.0, 0.0),
             dimension: Dimension::new(100.0, 100.0),
-            blur_type: BlurType::Gaussian(2.0),
+            //blur_type: BlurType::Gaussian(2.0),
             filter,
             filter_id: None,
         })

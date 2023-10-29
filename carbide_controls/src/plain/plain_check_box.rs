@@ -5,11 +5,10 @@ use carbide_core::environment::Environment;
 use carbide_core::environment::EnvironmentColor;
 use carbide_core::flags::Flags;
 use carbide_core::focus::{Focus, Focusable, Refocus};
-use carbide_core::state::{AnyReadState, IntoReadState, IntoState, LocalState, Map1, Map2, Map4, ReadState, ReadStateExtNew, TState};
+use carbide_core::state::{AnyReadState, IntoReadState, IntoState, LocalState, Map1, Map2, ReadState, ReadStateExtNew};
 use carbide_core::state::State;
 use carbide_core::widget::{CommonWidget, MouseArea, Rectangle, Text, AnyWidget, WidgetExt, WidgetId, ZStack, Widget};
 
-use crate::PlainButton;
 use crate::types::*;
 
 pub trait PlainCheckBoxDelegate: Clone + 'static {
@@ -54,7 +53,7 @@ impl PlainCheckBox<Focus, CheckBoxValue, DefaultPlainCheckBoxDelegate, bool> {
         )
     }
 
-    fn default_delegate(focus: Box<dyn AnyReadState<T=Focus>>, checked: Box<dyn AnyReadState<T=CheckBoxValue>>, enabled: Box<dyn AnyReadState<T=bool>>) -> Box<dyn AnyWidget> {
+    fn default_delegate(focus: Box<dyn AnyReadState<T=Focus>>, checked: Box<dyn AnyReadState<T=CheckBoxValue>>, _enabled: Box<dyn AnyReadState<T=bool>>) -> Box<dyn AnyWidget> {
         let background_color = Map1::read_map(checked.clone(), |value| {
             match value {
                 CheckBoxValue::True => EnvironmentColor::Green,
@@ -83,11 +82,11 @@ impl<F: State<T=Focus> + Clone, C: State<T=CheckBoxValue> + Clone, D: PlainCheck
         Self::new_internal(self.checked, self.focus, delegate, self.enabled)
     }
 
-    pub fn focused<F2: IntoState<Focus>>(mut self, focused: F2) -> PlainCheckBox<F2::Output, C, D, E> {
+    pub fn focused<F2: IntoState<Focus>>(self, focused: F2) -> PlainCheckBox<F2::Output, C, D, E> {
         Self::new_internal(self.checked, focused.into_state(), self.delegate, self.enabled)
     }
 
-    pub fn enabled<E2: IntoReadState<bool>>(mut self, enabled: E2) -> PlainCheckBox<F, C, D, E2::Output> {
+    pub fn enabled<E2: IntoReadState<bool>>(self, enabled: E2) -> PlainCheckBox<F, C, D, E2::Output> {
         Self::new_internal(
             self.checked,
             self.focus,

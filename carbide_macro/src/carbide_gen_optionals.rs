@@ -8,7 +8,7 @@ use syn::Type;
 
 pub struct CarbideGenOptionals {
     ident: Ident,
-    comma_token: Comma,
+    _comma_token: Comma,
     optionals: Punctuated<CarbideGenOptional, Comma>,
 }
 
@@ -52,7 +52,7 @@ impl Parse for CarbideGenOptionals {
 
         Ok(CarbideGenOptionals {
             ident,
-            comma_token,
+            _comma_token: comma_token,
             optionals
         })
     }
@@ -60,7 +60,7 @@ impl Parse for CarbideGenOptionals {
 
 pub struct CarbideGenOptional {
     ident: Ident,
-    colon_token: Colon,
+    _colon_token: Colon,
     ty: Type
 }
 
@@ -100,7 +100,7 @@ impl Parse for CarbideGenOptional {
 
         Ok(CarbideGenOptional {
             ident,
-            colon_token,
+            _colon_token: colon_token,
             ty
         })
     }

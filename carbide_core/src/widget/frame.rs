@@ -8,7 +8,7 @@ use crate::draw::{Dimension, Position};
 use crate::environment::Environment;
 
 use crate::layout::{BasicLayouter, Layout, Layouter};
-use crate::state::{AnyReadState, IntoReadState, NewStateSync, ReadState, State, ValueRef, ValueRefMut, IntoState};
+use crate::state::{AnyReadState, NewStateSync, ReadState, State, ValueRef, ValueRefMut, IntoState};
 use crate::widget::{CommonWidget, Empty, AnyWidget, WidgetExt, WidgetId, Widget};
 
 pub static SCALE: f64 = -1.0;

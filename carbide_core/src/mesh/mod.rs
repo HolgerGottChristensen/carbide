@@ -24,6 +24,3 @@ pub const MODE_TEXT_COLOR: u32 = 4;
 
 /// Default dimensions to use for the glyph cache.
 pub const DEFAULT_GLYPH_CACHE_DIMS: [u32; 2] = [1024; 2];
-
-const GLYPH_CACHE_SCALE_TOLERANCE: f32 = 1.0;
-const GLYPH_CACHE_POSITION_TOLERANCE: f32 = 1.0;

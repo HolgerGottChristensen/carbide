@@ -9,9 +9,8 @@ use carbide_core::event::{
 };
 use carbide_core::flags::Flags;
 use carbide_core::focus::{Focus, Refocus};
-use carbide_core::layout::{Layout, Layouter};
-use carbide_core::render::Render;
-use carbide_core::state::{AnyReadState, AnyState, IntoReadState, IntoState, LocalState, Map1, Map2, ReadState, ReadStateExtNew, State, StateContract, StateExtNew, TState};
+use carbide_core::layout::{Layout};
+use carbide_core::state::{AnyReadState, AnyState, IntoReadState, IntoState, LocalState, Map1, Map2, ReadState, ReadStateExtNew, State, StateContract, StateExtNew};
 use carbide_core::widget::*;
 
 use crate::plain::plain_pop_up_button_popup::PlainPopUpButtonPopUp;
@@ -325,20 +324,20 @@ impl<
 // ---------------------------------------------------
 //  Delegates
 // ---------------------------------------------------
-type DelegateGenerator<T: StateContract + PartialEq> = fn(
+type DelegateGenerator<T> = fn(
     selected_item: Box<dyn AnyState<T=T>>,
     focused: Box<dyn AnyState<T=Focus>>,
     popup_open: Box<dyn AnyReadState<T=bool>>,
     enabled: Box<dyn AnyReadState<T=bool>>,
 ) -> Box<dyn AnyWidget>;
 
-type PopupDelegateGenerator<T: StateContract + PartialEq, S: State<T=T>, M: ReadState<T=Vec<T>>, B: State<T=bool>> = fn(
+type PopupDelegateGenerator<T, S, M, B> = fn(
     model: M,
     delegate: PopupDelegate<T, S, B>,
     enabled: Box<dyn AnyReadState<T=bool>>,
 ) -> Box<dyn AnyWidget>;
 
-type PopupItemDelegateGenerator<T: StateContract + PartialEq, S: State<T=T>> = fn(
+type PopupItemDelegateGenerator<T, S> = fn(
     item: Box<dyn AnyState<T=T>>,
     index: Box<dyn AnyReadState<T=usize>>,
     hover: Box<dyn AnyReadState<T=bool>>,
@@ -378,7 +377,7 @@ impl<T: StateContract, S: State<T=T>, B: State<T=bool>> Delegate<T, Box<dyn AnyW
                     false
                 }
             },
-            |new, s1, s2| {
+            |new, _s1, s2| {
                 if new {
                     (Some(Some(*s2)), None)
                 } else {
@@ -396,7 +395,7 @@ impl<T: StateContract, S: State<T=T>, B: State<T=bool>> Delegate<T, Box<dyn AnyW
         );
 
         popup_item_delegate
-            .on_click(move |env: &mut Environment, _| {
+            .on_click(move |_env: &mut Environment, _| {
                 selected_item_del.clone().set_value(item.value().clone());
                 popup_open.clone().set_value(false);
             })
@@ -408,8 +407,8 @@ impl<T: StateContract, S: State<T=T>, B: State<T=bool>> Delegate<T, Box<dyn AnyW
 fn default_delegate<T: StateContract + PartialEq>(
     selected_item: Box<dyn AnyState<T=T>>,
     focused: Box<dyn AnyState<T=Focus>>,
-    popup_open: Box<dyn AnyReadState<T=bool>>,
-    enabled: Box<dyn AnyReadState<T=bool>>,
+    _popup_open: Box<dyn AnyReadState<T=bool>>,
+    _enabled: Box<dyn AnyReadState<T=bool>>,
 ) -> Box<dyn AnyWidget> {
     let background_color = Map1::read_map(focused.clone(), |focused| {
         match *focused {
@@ -429,7 +428,7 @@ fn default_popup_item_delegate<T: StateContract + PartialEq, S: State<T=T>>(
     _index: Box<dyn AnyReadState<T=usize>>,
     hover_state: Box<dyn AnyReadState<T=bool>>,
     _selected_state: S,
-    enabled: Box<dyn AnyReadState<T=bool>>,
+    _enabled: Box<dyn AnyReadState<T=bool>>,
 ) -> Box<dyn AnyWidget> {
     let item_color = Map1::read_map(hover_state.clone(), |hovered| {
         if *hovered {
@@ -450,7 +449,7 @@ fn default_popup_item_delegate<T: StateContract + PartialEq, S: State<T=T>>(
 fn default_popup_delegate<T: StateContract + PartialEq, S: State<T=T>, M: ReadState<T=Vec<T>>, B: State<T=bool>>(
     model: M,
     delegate: PopupDelegate<T, S, B>,
-    enabled: Box<dyn AnyReadState<T=bool>>,
+    _enabled: Box<dyn AnyReadState<T=bool>>,
 ) -> Box<dyn AnyWidget> {
     VStack::new(ForEach::new(model.ignore_writes(), delegate))
         .spacing(1.0)

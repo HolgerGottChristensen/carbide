@@ -242,14 +242,14 @@ impl<'b, T> ValueRef<'b, T> {
             ValueRef::CellBorrow { value, .. } => {
                 f(value, s)
             }
-            ValueRef::Locked(value) => {
+            ValueRef::Locked(_value) => {
                 //MappedRwLockReadGuard::map(value, |a| {f(a, s); a});
                 todo!()
             }
             ValueRef::Borrow(value) => {
                 f(value, s)
             }
-            ValueRef::Owned(value) => {
+            ValueRef::Owned(_value) => {
                 todo!()
                 //f(&value, s)
             }

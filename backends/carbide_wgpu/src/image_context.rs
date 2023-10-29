@@ -1,9 +1,5 @@
-use std::collections::HashMap;
-use std::num::NonZeroU32;
-use wgpu::{BindGroup, BindGroupLayout, Device, Queue, Texture as WGPUTexture};
 use carbide_core::draw::image::ImageId;
 use carbide_core::draw::{InnerImageContext, Texture, TextureFormat};
-use crate::diffuse_bind_group::DiffuseBindGroup;
 use crate::image::BindGroupExtended;
 use crate::wgpu_window::{ATLAS_CACHE_TEXTURE, BIND_GROUPS, DEVICE_QUEUE, MAIN_TEXTURE_BIND_GROUP_LAYOUT};
 
@@ -99,7 +95,7 @@ pub fn create_bind_group(
 }
 
 pub fn create_bind_group_from_wgpu_texture(wgpu_texture: &wgpu::Texture) -> BindGroupExtended {
-    DEVICE_QUEUE.with(|(device, queue)| {
+    DEVICE_QUEUE.with(|(device, _queue)| {
         ATLAS_CACHE_TEXTURE.with(|atlas_cache_tex| {
             MAIN_TEXTURE_BIND_GROUP_LAYOUT.with(|texture_bind_group_layout| {
 

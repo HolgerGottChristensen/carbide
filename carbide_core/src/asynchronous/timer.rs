@@ -24,7 +24,7 @@ impl<T: Fn() + Clone + Send + 'static> Timer<T> {
     ///
     /// The default timer will not repeat, is not running and has an interval of 1 sec.
     pub fn new(trigger: T) -> Timer<T> {
-        let mut timer = Timer {
+        let timer = Timer {
             interval: Arc::new(RwLock::new(Duration::new(1, 0))),
             repeat: Arc::new(AtomicBool::new(false)),
             triggered: trigger,
@@ -37,22 +37,22 @@ impl<T: Fn() + Clone + Send + 'static> Timer<T> {
     /// Set a custom interval of the current timer.
     /// Setting the interval of a running timer will set the current time to the new interval
     /// immediately and progress of the timer is reset.
-    pub fn interval(mut self, interval: Duration) -> Self {
+    pub fn interval(self, interval: Duration) -> Self {
         *self.interval.write() = interval;
         if let Some(channel) = self.channel.read().deref() {
-            channel.send(*self.interval.read());
+            let _ = channel.send(*self.interval.read());
         }
         self
     }
 
     /// Set the timer to repeat.
-    pub fn repeat(mut self) -> Self {
+    pub fn repeat(self) -> Self {
         self.repeat.store(true, Ordering::Relaxed);
         self
     }
 
     /// Start the timer. If the timer is already running this will have no effect.
-    pub fn start(mut self) -> Self {
+    pub fn start(self) -> Self {
         if self.channel.read().is_some() {
             return self;
         }
@@ -97,7 +97,7 @@ impl<T: Fn() + Clone + Send + 'static> Timer<T> {
     }
 
     /// Stop the timer. If the timer is already stopped, this will have no effect.
-    pub fn stop(mut self) -> Self {
+    pub fn stop(self) -> Self {
         if self.channel.read().is_some() {
             self.channel.write().take();
         }
@@ -107,12 +107,12 @@ impl<T: Fn() + Clone + Send + 'static> Timer<T> {
 
     /// Restart the timer. If the timer is already running, we reset the time to the interval.
     /// If the timer is stopped we start the timer.
-    pub fn restart(mut self) -> Self  {
+    pub fn restart(self) -> Self  {
         if self.channel.read().is_none() {
             self.start()
         } else {
             if let Some(channel) = self.channel.read().deref() {
-                channel.send(*self.interval.read());
+                let _ = channel.send(*self.interval.read());
             }
             self
         }
@@ -124,7 +124,7 @@ impl<T: Fn() + Clone + Send + 'static> Timer<T> {
     }
 
     /// Will stop the timer if it is running and start the timer if it is not running.
-    pub fn toggle(mut self) -> Self {
+    pub fn toggle(self) -> Self {
         if self.is_running() {
             self.stop()
         } else {

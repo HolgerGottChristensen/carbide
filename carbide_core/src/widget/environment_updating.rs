@@ -12,7 +12,7 @@ use crate::event::{
 use crate::focus::{Focusable, Refocus};
 use crate::render::{Primitive, Render};
 use crate::state::{NewStateSync, ReadState};
-use crate::widget::{CommonWidget, Empty, AnyWidget, WidgetExt, WidgetId, Widget};
+use crate::widget::{CommonWidget, Empty, WidgetExt, WidgetId, Widget};
 
 #[derive(Debug, Clone, Widget)]
 #[carbide_derive(Layout, StateSync)]

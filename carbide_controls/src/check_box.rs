@@ -1,8 +1,8 @@
-use carbide_core::color::{GREEN, RED, TRANSPARENT};
-use carbide_core::draw::{Alignment, Rect};
+use carbide_core::color::{TRANSPARENT};
+use carbide_core::draw::{Rect};
 use carbide_core::environment::{Environment, EnvironmentColor};
 use carbide_core::focus::Focus;
-use carbide_core::state::{AnyReadState, IntoReadState, IntoState, LocalState, Map1, Map2, ReadState, TState};
+use carbide_core::state::{AnyReadState, IntoReadState, IntoState, LocalState, Map1, Map2, ReadState};
 use carbide_core::widget::*;
 use carbide_core::widget::canvas::{Canvas, Context};
 
@@ -69,7 +69,7 @@ impl<L: ReadState<T=String>> PlainCheckBoxDelegate for CheckBoxDelegate<L> {
                 .stroke(EnvironmentColor::OpaqueSeparator)
                 .stroke_style(1.0)
                 .boxed(),
-            IfElse::new(checked_intermediate).when_true(Canvas::new(move |rect: Rect, mut context: Context, env: &mut Environment| {
+            IfElse::new(checked_intermediate).when_true(Canvas::new(move |_rect: Rect, mut context: Context, _env: &mut Environment| {
                 context.move_to(4.0, 7.0);
                 context.line_to(10.0, 7.0);
                 context.set_stroke_style(mark_color.clone());
@@ -77,7 +77,7 @@ impl<L: ReadState<T=String>> PlainCheckBoxDelegate for CheckBoxDelegate<L> {
                 context.stroke();
                 context
             })),
-            IfElse::new(checked_true).when_true(Canvas::new(move |rect: Rect, mut context: Context, env: &mut Environment| {
+            IfElse::new(checked_true).when_true(Canvas::new(move |_rect: Rect, mut context: Context, _env: &mut Environment| {
                 context.move_to(4.0, 8.0);
                 context.line_to(6.0, 10.0);
                 context.line_to(10.0, 4.0);

@@ -1,8 +1,7 @@
 use carbide_core::color::{TRANSPARENT};
-use carbide_core::draw::Color;
 use carbide_core::environment::EnvironmentColor;
 use carbide_core::focus::Focus;
-use carbide_core::state::{AnyReadState, AnyState, IntoReadState, IntoState, LocalState, Map1, Map2, ReadState, TState};
+use carbide_core::state::{AnyReadState, AnyState, IntoReadState, IntoState, LocalState, Map1, Map2, ReadState};
 use carbide_core::widget::*;
 
 use crate::{PlainSwitch, PlainSwitchDelegate};

@@ -1,5 +1,5 @@
 
-use carbide_macro::{carbide_default_builder, carbide_default_builder2};
+use carbide_macro::{carbide_default_builder2};
 
 use crate::draw::{Dimension, Position, Scalar};
 use crate::environment::Environment;

@@ -1,6 +1,4 @@
-use carbide_core::draw::{Position, Scalar};
-use carbide_core::text::Glyph;
-use carbide_core::utils::binary_search;
+
 
 #[derive(Debug, Clone, Copy)]
 pub enum Cursor {
@@ -12,7 +10,7 @@ pub enum Cursor {
 }
 
 impl Cursor {
-    pub fn width(&self, text: &str, glyphs: &Vec<Glyph>) -> Scalar {
+    /*pub fn width(&self, text: &str, glyphs: &Vec<Glyph>) -> Scalar {
         if let Cursor::Selection { start, end } = self {
             let start_point = start.position(text, glyphs);
             let end_point = end.position(text, glyphs);
@@ -20,7 +18,7 @@ impl Cursor {
         } else {
             0.0
         }
-    }
+    }*/
 
     /*pub fn get_char_index_split_points(positioned_glyphs: &Vec<Glyph>) -> Vec<f32> {
         let splits = vec![0.0].into_iter().chain(positioned_glyphs.iter().map(|val| {
@@ -32,7 +30,7 @@ impl Cursor {
         collected
     }*/
 
-    pub fn char_index(relative_offset: f64, glyphs: &Vec<Glyph>) -> usize {
+    /*pub fn char_index(relative_offset: f64, glyphs: &Vec<Glyph>) -> usize {
         let splits = vec![0.0].into_iter().chain(glyphs.iter().map(|glyph| {
             let middle = glyph.position().x() + glyph.advance_width();
             middle as f32
@@ -50,7 +48,7 @@ impl Cursor {
         };
 
         new_closest
-    }
+    }*/
 }
 
 #[derive(Debug, Clone, Copy)]
@@ -63,9 +61,9 @@ pub struct CursorIndex {
 }
 
 impl CursorIndex {
-    /// Get the position of the cursor, based on the glyphs. Index 0 is before all the text, and
-    /// the cursor can be in range 0..glyphs.len()+1
-    pub fn position(&self, text: &str, glyphs: &Vec<Glyph>) -> Position {
+    ///// Get the position of the cursor, based on the glyphs. Index 0 is before all the text, and
+    ///// the cursor can be in range 0..glyphs.len()+1
+    /*pub fn position(&self, text: &str, glyphs: &Vec<Glyph>) -> Position {
         if self.line == 0 {
             if self.index == 0 {
                 return Position::new(0.0, 0.0);
@@ -89,5 +87,5 @@ impl CursorIndex {
         } else {
             panic!("For now only operate on single line things")
         }
-    }
+    }*/
 }

@@ -12,6 +12,7 @@ macro_rules! tuple_state {
         pub struct $struct_name;
 
         impl $struct_name {
+            #[allow(unused_parens)]
             pub fn read_map<$($type: StateContract),*, TO: StateContract, $($type2: AnyReadState<T=$type> + Clone + 'static),*, MAP: Fn($(&$type),*) -> TO + Clone + 'static>($($name: $type2),*, map: MAP) -> $read_map_name<MAP, $($type),*, TO, $($type2),*> {
                 $read_map_name {
                     $(
@@ -21,6 +22,7 @@ macro_rules! tuple_state {
                 }
             }
 
+            #[allow(unused_parens)]
             pub fn read_map_env<$($type: StateContract),*, TO: StateContract + Default, $($type2: AnyReadState<T=$type> + Clone + 'static),*, MAP: Fn(&Environment, $(&$type),*) -> TO + Clone + 'static>($($name: $type2),*, map: MAP) -> $env_map_name<MAP, $($type),*, TO, $($type2),*> {
                 $env_map_name {
                     $(
@@ -31,6 +33,7 @@ macro_rules! tuple_state {
                 }
             }
 
+            #[allow(unused_parens)]
             pub fn read_map_cached<$($type: StateContract),*, TO: StateContract>($($name: impl Into<RState<$type>>),*, map: fn($($name: &$type),*) -> TO) -> RState<TO> {
                 let n = $read_map_name {
                     $(
@@ -131,6 +134,7 @@ macro_rules! tuple_state {
         }
 
         /// Implement NewStateSync for the RWMap
+        #[allow(unused_parens)]
         impl<
             $($type: StateContract),*,
             TO: StateContract,
@@ -150,6 +154,7 @@ macro_rules! tuple_state {
         }
 
         /// Implement NewStateSync for the EnvMap
+        #[allow(unused_parens)]
         impl<
             $($type: StateContract),*,
             TO: StateContract + Default,
@@ -167,6 +172,7 @@ macro_rules! tuple_state {
             }
         }
 
+        #[allow(unused_parens)]
         impl<$($type: StateContract),*, TO: StateContract, $($type2: AnyReadState<T=$type> + Clone + 'static),*, MAP: Fn($(&$type),*) -> TO + Clone + 'static> AnyReadState for $read_map_name<MAP, $($type),*, TO, $($type2),*> {
             type T = TO;
             fn value_dyn(&self) -> ValueRef<TO> {
@@ -175,6 +181,7 @@ macro_rules! tuple_state {
             }
         }
 
+        #[allow(unused_parens)]
         impl<
             $($type: StateContract),*,
             TO: StateContract,
@@ -189,6 +196,7 @@ macro_rules! tuple_state {
             }
         }
 
+        #[allow(unused_parens)]
         impl<$($type: StateContract),*, TO: StateContract + Default, $($type2: AnyReadState<T=$type> + Clone + 'static),*, MAP: Fn(&Environment, $(&$type),*) -> TO + Clone + 'static> AnyReadState for $env_map_name<MAP, $($type),*, TO, $($type2),*> {
             type T = TO;
             fn value_dyn(&self) -> ValueRef<TO> {
@@ -196,6 +204,7 @@ macro_rules! tuple_state {
             }
         }
 
+        #[allow(unused_parens)]
         impl<
             $($type: StateContract),*,
             TO: StateContract,
@@ -231,6 +240,7 @@ macro_rules! tuple_state {
             }
         }
 
+        #[allow(unused_parens)]
         impl<$($type: StateContract),*, TO: StateContract, $($type2: AnyReadState<T=$type> + Clone + 'static),*, MAP: Fn($(&$type),*) -> TO + Clone + 'static> core::fmt::Debug for $read_map_name<MAP, $($type),*, TO, $($type2),*> {
             fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
                 f.debug_struct(stringify!($read_map_name))
@@ -241,6 +251,7 @@ macro_rules! tuple_state {
             }
         }
 
+        #[allow(unused_parens)]
         impl<$($type: StateContract),*, TO: StateContract + Default, $($type2: AnyReadState<T=$type> + Clone + 'static),*, MAP: Fn(&Environment, $(&$type),*) -> TO + Clone + 'static> core::fmt::Debug for $env_map_name<MAP, $($type),*, TO, $($type2),*> {
             fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
                 f.debug_struct(stringify!($env_map_name))
@@ -251,6 +262,7 @@ macro_rules! tuple_state {
             }
         }
 
+        #[allow(unused_parens)]
         impl<
             $($type: StateContract),*,
             TO: StateContract,

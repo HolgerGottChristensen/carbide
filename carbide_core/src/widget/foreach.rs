@@ -9,8 +9,8 @@ use crate::draw::{Dimension, Position};
 use crate::environment::Environment;
 use crate::event::{OtherEventHandler, WidgetEvent};
 use crate::flags::Flags;
-use crate::state::{AnyState, IndexState, IntoReadState, IntoState, ReadState, State, StateContract, StateExtNew, ValueState};
-use crate::widget::{CommonWidget, Empty, AnyWidget, WidgetExt, WidgetId, Widget};
+use crate::state::{AnyState, IndexState, IntoState, ReadState, State, StateContract, StateExtNew, ValueState};
+use crate::widget::{CommonWidget, Empty, WidgetExt, WidgetId, Widget};
 
 pub trait Delegate<T: StateContract, O: Widget>: Clone {
     fn call(&self, item: Box<dyn AnyState<T=T>>, index: Box<dyn AnyState<T=usize>>) -> O;

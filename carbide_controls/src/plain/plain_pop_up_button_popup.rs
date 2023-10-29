@@ -52,7 +52,7 @@ impl<
     H: State<T=Option<usize>>,
     E: ReadState<T=bool>,
 > KeyboardEventHandler for PlainPopUpButtonPopUp<T, S, M, H, E> {
-    fn handle_keyboard_event(&mut self, event: &KeyboardEvent, env: &mut Environment) {
+    fn handle_keyboard_event(&mut self, event: &KeyboardEvent, _env: &mut Environment) {
         if !*self.enabled.value() {
             self.popup_open.set_value(false);
             return;
@@ -94,7 +94,7 @@ impl<
     H: State<T=Option<usize>>,
     E: ReadState<T=bool>,
 > MouseEventHandler for PlainPopUpButtonPopUp<T, S, M, H, E> {
-    fn handle_mouse_event(&mut self, event: &MouseEvent, _consumed: &bool, env: &mut Environment) {
+    fn handle_mouse_event(&mut self, event: &MouseEvent, _consumed: &bool, _env: &mut Environment) {
         if !*self.enabled.value() {
             self.popup_open.set_value(false);
             return;

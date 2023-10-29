@@ -6,7 +6,7 @@ use carbide_core::flags::Flags;
 use carbide_core::focus::{Focus, Focusable, Refocus};
 use carbide_core::layout::Layout;
 use carbide_core::render::{Render, RenderContext};
-use carbide_core::state::{AnyReadState, AnyState, IntoReadState, IntoState, LocalState, Map3, Map4, ReadState, ReadStateExtNew, State, StateExtNew, TState};
+use carbide_core::state::{AnyReadState, AnyState, IntoReadState, IntoState, LocalState, Map3, Map4, ReadState, ReadStateExtNew, State, StateExtNew};
 use carbide_core::widget::{CommonWidget, Empty, Rectangle, AnyWidget, WidgetExt, WidgetId, Widget};
 
 const SMOOTH_VALUE_INCREMENT: f64 = 0.05;
@@ -160,10 +160,10 @@ impl<
     }
 
     fn percent_to_stepped_percent(percent: f64, start: f64, end: f64, step_size: f64) -> f64 {
-        let range = (end - start);
+        let range = end - start;
         let range_mod = range % step_size;
         let percent_lost = range_mod / range;
-        let number_of_steps = (range / step_size);
+        let number_of_steps = range / step_size;
         let percent_per_step = (number_of_steps * percent).round() / number_of_steps;
 
         if percent > 1.0 - percent_lost / 2.0 {
@@ -189,10 +189,10 @@ impl<
             start.ignore_writes(),
             end.ignore_writes(),
             steps.ignore_writes(),
-            |state: &f64, start: &f64, end: &f64, steps: &Option<f64>| {
+            |state: &f64, start: &f64, end: &f64, _steps: &Option<f64>| {
                 (*state - *start) / (*end - *start)
             },
-            |new_percent: f64, state: &f64, start: &f64, end: &f64, steps: &Option<f64>| {
+            |new_percent: f64, _state: &f64, start: &f64, end: &f64, steps: &Option<f64>| {
                 if let Some(step_size) = *steps {
                     let stepped_percent = Self::percent_to_stepped_percent(new_percent, *start, *end, step_size);
                     let stepped_value = stepped_percent * (*end - *start) + *start;
@@ -262,7 +262,7 @@ impl<
     Bg: AnyWidget + Clone,
     En: ReadState<T=bool>,
 > KeyboardEventHandler for PlainSlider<F, St, S, E, P, Th, In, Bg, En> {
-    fn handle_keyboard_event(&mut self, event: &KeyboardEvent, env: &mut Environment) {
+    fn handle_keyboard_event(&mut self, event: &KeyboardEvent, _env: &mut Environment) {
         if !*self.enabled.value() {
             return;
         }
@@ -469,7 +469,7 @@ impl<
 // ---------------------------------------------------
 //  Delegates
 // ---------------------------------------------------
-type Delegate<W: AnyWidget + Clone> = fn(
+type Delegate<W> = fn(
     state: Box<dyn AnyState<T=f64>>,
     start: Box<dyn AnyReadState<T=f64>>,
     end: Box<dyn AnyReadState<T=f64>>,
@@ -478,21 +478,21 @@ type Delegate<W: AnyWidget + Clone> = fn(
     enabled: Box<dyn AnyReadState<T=bool>>,
 ) -> W;
 
-fn default_background(state: Box<dyn AnyState<T=f64>>, start: Box<dyn AnyReadState<T=f64>>, end: Box<dyn AnyReadState<T=f64>>, steps: Box<dyn AnyReadState<T=Option<f64>>>, focus: Box<dyn AnyReadState<T=Focus>>, enabled: Box<dyn AnyReadState<T=bool>>,) -> Box<dyn AnyWidget> {
+fn default_background(_state: Box<dyn AnyState<T=f64>>, _start: Box<dyn AnyReadState<T=f64>>, _end: Box<dyn AnyReadState<T=f64>>, _steps: Box<dyn AnyReadState<T=Option<f64>>>, _focus: Box<dyn AnyReadState<T=Focus>>, _enabled: Box<dyn AnyReadState<T=bool>>,) -> Box<dyn AnyWidget> {
     Rectangle::new()
         .fill(EnvironmentColor::Red)
         .frame_fixed_height(26.0)
         .boxed()
 }
 
-fn default_track(state: Box<dyn AnyState<T=f64>>, start: Box<dyn AnyReadState<T=f64>>, end: Box<dyn AnyReadState<T=f64>>, steps: Box<dyn AnyReadState<T=Option<f64>>>, focus: Box<dyn AnyReadState<T=Focus>>, enabled: Box<dyn AnyReadState<T=bool>>,) -> Box<dyn AnyWidget> {
+fn default_track(_state: Box<dyn AnyState<T=f64>>, _start: Box<dyn AnyReadState<T=f64>>, _end: Box<dyn AnyReadState<T=f64>>, _steps: Box<dyn AnyReadState<T=Option<f64>>>, _focus: Box<dyn AnyReadState<T=Focus>>, _enabled: Box<dyn AnyReadState<T=bool>>,) -> Box<dyn AnyWidget> {
     Rectangle::new()
         .fill(EnvironmentColor::Green)
         .frame_fixed_height(26.0)
         .boxed()
 }
 
-fn default_thumb(state: Box<dyn AnyState<T=f64>>, start: Box<dyn AnyReadState<T=f64>>, end: Box<dyn AnyReadState<T=f64>>, steps: Box<dyn AnyReadState<T=Option<f64>>>, focus: Box<dyn AnyReadState<T=Focus>>, enabled: Box<dyn AnyReadState<T=bool>>,) -> Box<dyn AnyWidget> {
+fn default_thumb(state: Box<dyn AnyState<T=f64>>, start: Box<dyn AnyReadState<T=f64>>, end: Box<dyn AnyReadState<T=f64>>, _steps: Box<dyn AnyReadState<T=Option<f64>>>, _focus: Box<dyn AnyReadState<T=Focus>>, _enabled: Box<dyn AnyReadState<T=bool>>,) -> Box<dyn AnyWidget> {
     let color = Map3::read_map(state, start, end, |state, start, end| {
         if state < start || state > end {
             EnvironmentColor::Purple

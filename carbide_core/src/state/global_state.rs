@@ -35,15 +35,6 @@ impl<T: StateContract> GlobalState<T> {
             inner_value: Arc::new(RwLock::new(value)),
         }
     }
-
-    /// Returns a new local state containing the value provided.
-    /// Often you should use `new` when creating states, but this can be used to get the state
-    /// within a box.
-    fn new_raw(value: T) -> Box<Self> {
-        Box::new(GlobalState {
-            inner_value: Arc::new(RwLock::new(value)),
-        })
-    }
 }
 
 impl<T: StateContract> NewStateSync for GlobalState<T> {

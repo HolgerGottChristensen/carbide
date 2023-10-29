@@ -3,7 +3,7 @@ use carbide_core::draw::Rect;
 use carbide_core::widget::canvas::Context;
 
 
-use carbide_macro::{carbide_default_builder, carbide_default_builder2};
+use carbide_macro::{carbide_default_builder2};
 
 use crate::color::WHITE;
 use crate::CommonWidgetImpl;
@@ -48,7 +48,7 @@ impl ProgressView {
                 .stroke(EnvironmentColor::Separator)
                 .stroke_style(4.0)
                 .boxed(),
-            Canvas::new(|rect: Rect, mut context: Context, env: &mut Environment| {
+            Canvas::new(|rect: Rect, mut context: Context, _env: &mut Environment| {
                 context.move_to(2.0, rect.height() / 2.0);
                 context.arc(
                     rect.width() / 2.0,
@@ -65,7 +65,7 @@ impl ProgressView {
             })
             .rotation_effect(animation)
                 .boxed(),
-            Canvas::new(|rect: Rect, mut context: Context, env: &mut Environment| {
+            Canvas::new(|rect: Rect, mut context: Context, _env: &mut Environment| {
                 context.move_to(2.0, rect.height() / 2.0);
                 context.arc(
                     rect.width() / 2.0,

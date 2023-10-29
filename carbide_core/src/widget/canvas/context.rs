@@ -10,7 +10,7 @@ use crate::draw::{Dimension, Position};
 use crate::draw::svg_path_builder::SVGPathBuilder;
 use crate::environment::Environment;
 use crate::render::Style;
-use crate::state::{IntoReadState, ReadState, TState};
+use crate::state::{IntoReadState, ReadState};
 use crate::state::ReadStateExtNew;
 
 #[derive(Debug, Clone)]
@@ -211,7 +211,7 @@ impl Context {
                         *start_angle as f32,
                     )
                 }
-                ContextAction::ArcTo { .. } => {
+                ContextAction::ArcTo { x1: _x1, y1: _y1, x2: _x2, y2: _y2, r: _r } => {
                     todo!()
                 }
                 ContextAction::FillStyle(color) => {

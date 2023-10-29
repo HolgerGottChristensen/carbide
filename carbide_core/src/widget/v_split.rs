@@ -1,6 +1,5 @@
 use carbide_macro::{carbide_default_builder2};
 
-use crate::CommonWidgetImpl;
 use crate::cursor::MouseCursor;
 use crate::draw::{Dimension, Position};
 use crate::environment::Environment;
@@ -54,7 +53,7 @@ impl<S: State<T=f64>, L: Widget, T: Widget> VSplit<S, L, T> {
         }
     }
 
-    pub fn relative_to_start<S2: IntoState<f64>>(mut self, width: S2) -> VSplit<S2::Output, L, T> {
+    pub fn relative_to_start<S2: IntoState<f64>>(self, width: S2) -> VSplit<S2::Output, L, T> {
         Self::new_internal(
             self.leading,
             self.trailing,
@@ -63,7 +62,7 @@ impl<S: State<T=f64>, L: Widget, T: Widget> VSplit<S, L, T> {
         )
     }
 
-    pub fn percent<S2: IntoState<f64>>(mut self, percent: S2) -> VSplit<S2::Output, L, T> {
+    pub fn percent<S2: IntoState<f64>>(self, percent: S2) -> VSplit<S2::Output, L, T> {
         Self::new_internal(
             self.leading,
             self.trailing,
@@ -72,7 +71,7 @@ impl<S: State<T=f64>, L: Widget, T: Widget> VSplit<S, L, T> {
         )
     }
 
-    pub fn relative_to_end<S2: IntoState<f64>>(mut self, width: S2) -> VSplit<S2::Output, L, T> {
+    pub fn relative_to_end<S2: IntoState<f64>>(self, width: S2) -> VSplit<S2::Output, L, T> {
         Self::new_internal(
             self.leading,
             self.trailing,
@@ -81,7 +80,7 @@ impl<S: State<T=f64>, L: Widget, T: Widget> VSplit<S, L, T> {
         )
     }
 
-    pub fn non_draggable(mut self) -> Self {
+    pub fn non_draggable(self) -> Self {
         Self::new_internal(
             self.leading,
             self.trailing,

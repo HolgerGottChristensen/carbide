@@ -3,6 +3,7 @@ use proc_macro2::Ident;
 use syn::Expr;
 
 /// Return the idents that are unbound
+#[allow(dead_code)]
 pub fn extract_idents_from_expression(expr: Expr) -> Vec<Ident> {
     match expr {
         // For literals we dont have any unbound ident.
@@ -161,8 +162,8 @@ pub fn extract_idents_from_expression(expr: Expr) -> Vec<Ident> {
         //Expr::While(_) => {}
         //Expr::Yield(_) => {}
 
-        #[cfg_attr(test, deny(non_exhaustive_omitted_patterns))]
-        _ => { panic!("Pat is a new token not yet matched with") }
+        //#[cfg_attr(test, deny(non_exhaustive_omitted_patterns))]
+        //_ => { panic!("Pat is a new token not yet matched with") }
     }
 }
 

@@ -1,5 +1,4 @@
 use std::path::{Path, PathBuf};
-use std::rc::Rc;
 use std::sync::Arc;
 
 use crate::state::{AnyReadState, ConvertIntoRead, Map1, RMap1};

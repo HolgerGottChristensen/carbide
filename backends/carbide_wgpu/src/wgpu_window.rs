@@ -6,18 +6,17 @@ use std::sync::Arc;
 
 use cgmath::{Matrix4, Vector3};
 use futures::executor::block_on;
-use raw_window_handle::HasRawWindowHandle;
-use wgpu::{Adapter, BindGroup, BindGroupLayout, Buffer, BufferUsages, CommandEncoder, Device, Extent3d, ImageCopyTexture, Instance, PipelineLayout, PresentMode, Queue, RenderPassDepthStencilAttachment, RenderPipeline, Sampler, ShaderModule, Surface, SurfaceConfiguration, SurfaceTexture, Texture, TextureFormat, TextureUsages, TextureView};
+use wgpu::{Adapter, BindGroup, BindGroupLayout, Buffer, BufferUsages, CommandEncoder, Device, Extent3d, ImageCopyTexture, Instance, PipelineLayout, Queue, RenderPassDepthStencilAttachment, RenderPipeline, Sampler, ShaderModule, Surface, SurfaceConfiguration, SurfaceTexture, Texture, TextureFormat, TextureUsages, TextureView};
 use wgpu::util::{BufferInitDescriptor, DeviceExt};
 use winit::dpi::{LogicalSize, PhysicalPosition, PhysicalSize, Size};
 use winit::window::{Window as WinitWindow, WindowBuilder};
+use raw_window_handle::HasRawWindowHandle;
 
 use carbide_core::{draw, Scene};
 use carbide_core::draw::{Dimension, ImageContext, Position, Rect, Scalar};
 use carbide_core::draw::image::ImageId;
 use carbide_core::environment::{Environment, EnvironmentColor};
 use carbide_core::event::{KeyboardEvent, KeyboardEventHandler, MouseEvent, MouseEventHandler, OtherEventHandler, WidgetEvent, WindowEvent};
-use carbide_core::flags::Flags;
 use carbide_core::focus::Focusable;
 use carbide_core::image::{DynamicImage, GenericImage, GenericImageView};
 use carbide_core::layout::{Layout, Layouter};
@@ -39,7 +38,7 @@ use crate::image::{BindGroupExtended, Image};
 use crate::image_context::WGPUImageContext;
 use crate::pipeline::create_pipelines;
 use crate::render_context::WGPURenderContext;
-use crate::render_pass_command::{draw_commands_to_render_pass_commands, RenderPass, RenderPassCommand, WGPUBindGroup};
+use crate::render_pass_command::{draw_commands_to_render_pass_commands, RenderPass, RenderPassCommand};
 use crate::render_pipeline_layouts::{filter_pipeline_layout, gradient_pipeline_layout, main_pipeline_layout, RenderPipelines};
 use crate::renderer::{atlas_cache_tex_desc, main_render_tex_desc, secondary_render_tex_desc};
 use crate::samplers::main_sampler;
@@ -115,19 +114,19 @@ thread_local!(pub static GRADIENT_BIND_GROUP_LAYOUT: BindGroupLayout = {
 });
 
 thread_local!(pub static MAIN_SHADER: ShaderModule = {
-    DEVICE_QUEUE.with(|(device, queue)| {
+    DEVICE_QUEUE.with(|(device, _queue)| {
         device.create_shader_module(wgpu::include_wgsl!("../shaders/shader.wgsl"))
     })
 });
 
 thread_local!(pub static GRADIENT_SHADER: ShaderModule = {
-    DEVICE_QUEUE.with(|(device, queue)| {
+    DEVICE_QUEUE.with(|(device, _queue)| {
         device.create_shader_module(wgpu::include_wgsl!("../shaders/gradient.wgsl"))
     })
 });
 
 thread_local!(pub static FILTER_SHADER: ShaderModule = {
-    DEVICE_QUEUE.with(|(device, queue)| {
+    DEVICE_QUEUE.with(|(device, _queue)| {
         device.create_shader_module(wgpu::include_wgsl!("../shaders/filter.wgsl"))
     })
 });
@@ -241,7 +240,7 @@ pub struct WGPUWindow {
 
     id: WidgetId,
     window_id: WindowId,
-    title: String,
+    #[allow(unused)] title: String,
     position: Position,
     dimension: Dimension,
     child: Box<dyn AnyWidget>,
@@ -311,7 +310,7 @@ impl WGPUWindow {
             unsafe { instance.create_surface(&inner) }
         }).unwrap();
 
-        DEVICE_QUEUE.with(|(device, queue)| {
+        DEVICE_QUEUE.with(|(device, _queue)| {
             // Configure the surface with format, size and usage
             let surface_caps = ADAPTER.with(|adapter| {
                 surface.get_capabilities(adapter)
@@ -631,11 +630,11 @@ impl CommonWidget for WGPUWindow {
 }
 
 impl StateSync for WGPUWindow {
-    fn capture_state(&mut self, env: &mut Environment) {
+    fn capture_state(&mut self, _env: &mut Environment) {
 
     }
 
-    fn release_state(&mut self, env: &mut Environment) {
+    fn release_state(&mut self, _env: &mut Environment) {
 
     }
 }
@@ -773,11 +772,11 @@ impl OtherEventHandler for WGPUWindow {
 }
 
 impl Layout for WGPUWindow {
-    fn calculate_size(&mut self, requested_size: Dimension, env: &mut Environment) -> Dimension {
+    fn calculate_size(&mut self, _requested_size: Dimension, _env: &mut Environment) -> Dimension {
         Dimension::new(0.0, 0.0)
     }
 
-    fn position_children(&mut self, env: &mut Environment) {}
+    fn position_children(&mut self, _env: &mut Environment) {}
 }
 
 impl Render for WGPUWindow {
@@ -888,7 +887,7 @@ impl Render for WGPUWindow {
             self.mesh.fill(viewport, env, primitives);
 
             let mut uniform_bind_groups = vec![];
-            let mut gradient_bind_groups = vec![];
+            let gradient_bind_groups = vec![];
 
             let commands =
                 DEVICE_QUEUE.with(|(device, queue)| {
@@ -1009,6 +1008,7 @@ impl WGPUWindow {
         }
     }
 
+    #[allow(dead_code)]
     fn ensure_images_exist_as_bind_groups(device: &Device, queue: &Queue, bind_groups: &mut HashMap<ImageId, DiffuseBindGroup>, env: &mut Environment) {
         ATLAS_CACHE_TEXTURE.with(|atlas_cache_tex| {
             MAIN_TEXTURE_BIND_GROUP_LAYOUT.with(|texture_bind_group_layout| {
@@ -1510,7 +1510,7 @@ impl Clone for WGPUWindow {
 }
 
 impl Debug for WGPUWindow {
-    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+    fn fmt(&self, _f: &mut Formatter<'_>) -> std::fmt::Result {
         todo!()
     }
 }

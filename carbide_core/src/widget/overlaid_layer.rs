@@ -120,7 +120,7 @@ impl<C: AnyWidget + Clone> CommonWidget for OverlaidLayer<C> {
 }
 
 impl<C: AnyWidget + Clone> Render for OverlaidLayer<C> {
-    fn process_get_primitives(&mut self, primitives: &mut Vec<Primitive>, env: &mut Environment) {
+    fn process_get_primitives(&mut self, _primitives: &mut Vec<Primitive>, _env: &mut Environment) {
         /*self.foreach_child_mut(&mut |child| {
             child.process_get_primitives(primitives, env);
         });

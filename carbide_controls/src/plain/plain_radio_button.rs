@@ -5,7 +5,7 @@ use carbide_core::draw::{Dimension, Position};
 use carbide_core::environment::{Environment, EnvironmentColor};
 use carbide_core::flags::Flags;
 use carbide_core::focus::{Focus, Focusable, Refocus};
-use carbide_core::state::{AnyReadState, IntoReadState, IntoState, LocalState, Map1, Map2, ReadState, ReadStateExtNew, State, StateContract, TState};
+use carbide_core::state::{AnyReadState, IntoReadState, IntoState, LocalState, Map1, Map2, ReadState, ReadStateExtNew, State, StateContract};
 use carbide_core::widget::{CommonWidget, MouseArea, Rectangle, Text, AnyWidget, WidgetExt, WidgetId, ZStack, Widget};
 
 pub trait PlainRadioButtonDelegate: Clone + 'static {
@@ -50,7 +50,7 @@ impl PlainRadioButton<bool, Focus, bool, DefaultPlainRadioButtonDelegate, bool> 
         Self::new_internal(focus_state, reference, selected.into_state(), Self::default_delegate, true)
     }
 
-    fn default_delegate(focus: Box<dyn AnyReadState<T=Focus>>, selected: Box<dyn AnyReadState<T=bool>>, enabled: Box<dyn AnyReadState<T=bool>>) -> Box<dyn AnyWidget> {
+    fn default_delegate(focus: Box<dyn AnyReadState<T=Focus>>, selected: Box<dyn AnyReadState<T=bool>>, _enabled: Box<dyn AnyReadState<T=bool>>) -> Box<dyn AnyWidget> {
         let background_color = Map1::read_map(selected.clone(), |is_checked| {
             if *is_checked {
                 EnvironmentColor::Green
@@ -72,11 +72,11 @@ impl PlainRadioButton<bool, Focus, bool, DefaultPlainRadioButtonDelegate, bool> 
 
 impl<T: StateContract + PartialEq, F: State<T=Focus>, C: State<T=T>, D: PlainRadioButtonDelegate, E: ReadState<T=bool>> PlainRadioButton<T, F, C, D, E> {
 
-    pub fn focused<F2: IntoState<Focus>>(mut self, focused: F2) -> PlainRadioButton<T, F2::Output, C, D, E> {
+    pub fn focused<F2: IntoState<Focus>>(self, focused: F2) -> PlainRadioButton<T, F2::Output, C, D, E> {
         Self::new_internal(focused.into_state(), self.reference, self.local_state, self.delegate, self.enabled)
     }
 
-    pub fn enabled<E2: IntoReadState<bool>>(mut self, enabled: E2) -> PlainRadioButton<T, F, C, D, E2::Output> {
+    pub fn enabled<E2: IntoReadState<bool>>(self, enabled: E2) -> PlainRadioButton<T, F, C, D, E2::Output> {
         Self::new_internal(self.focus, self.reference, self.local_state, self.delegate, enabled.into_read_state())
     }
 

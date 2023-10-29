@@ -37,6 +37,7 @@ pub struct WGPURenderContext {
 ///
 /// Each Layer context has its own state, render_pass list and a list of
 /// current render_pass_commands. It also has its own current bindgroup.
+#[allow(dead_code)]
 #[derive(Debug)]
 pub struct WGPURenderLayerContext {
     layer: u32,
@@ -673,7 +674,7 @@ impl InnerRenderContext for WGPURenderContext {
         }
     }
 
-    fn layer(&mut self, index: u32) {
+    fn layer(&mut self, _index: u32) {
 
     }
 
@@ -684,6 +685,7 @@ impl InnerRenderContext for WGPURenderContext {
 
 
 /// Take two list of render passes and merge them into a single list of render passes
+#[allow(dead_code)]
 fn merge_render_passes(mut main: Vec<RenderPass>, second: Vec<RenderPass>) -> Vec<RenderPass> {
 
     if second.len() == 0 { return main; }

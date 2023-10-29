@@ -12,9 +12,9 @@ use crate::carbide_struct::CarbideStructField::{Required, Optional};
 
 
 pub struct CarbideStruct {
-    struct_token: Token![struct],
+    _struct_token: Token![struct],
     ident: Ident,
-    brace: Brace,
+    _brace: Brace,
     fields: Vec<CarbideStructField>,
     body: CarbideBodyFunction,
 }
@@ -44,9 +44,9 @@ impl Parse for CarbideStruct {
         let body = CarbideBodyFunction::parse(&content)?;
 
         Ok(CarbideStruct {
-            struct_token,
+            _struct_token: struct_token,
             ident,
-            brace,
+            _brace: brace,
             fields,
             body
         })
@@ -177,10 +177,10 @@ impl ToTokens for CarbideStruct {
 }
 
 pub struct CarbideBodyFunction {
-    fn_token: Token![fn],
-    ident: Ident,
-    parenthesis: Paren,
-    arrow: Token![->],
+    _fn_token: Token![fn],
+    _ident: Ident,
+    _parenthesis: Paren,
+    _arrow: Token![->],
     return_type: Type,
     body: CarbideBlock,
 }
@@ -221,9 +221,9 @@ impl Parse for CarbideBodyFunction {
         let fn_token = syn::token::Fn::parse(input)?;
         let ident = keyword(input, "body").map(|span| Ident::new("body", span))?;
 
-        let paren_content;
+        let _paren_content;
         let paren = if let Ok(paren) = parse_parens(input) {
-            paren_content = paren.content;
+            _paren_content = paren.content;
             paren.token
         } else {
             Paren::default()
@@ -235,10 +235,10 @@ impl Parse for CarbideBodyFunction {
         let body = CarbideBlock::parse(input)?;
 
         Ok(CarbideBodyFunction {
-            fn_token,
-            ident,
-            parenthesis: paren,
-            arrow,
+            _fn_token: fn_token,
+            _ident: ident,
+            _parenthesis: paren,
+            _arrow: arrow,
             return_type,
             body
         })

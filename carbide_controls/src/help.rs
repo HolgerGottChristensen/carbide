@@ -1,15 +1,11 @@
-use std::fmt::{Debug, Formatter};
+use std::fmt::{Debug};
 use carbide_core::{CommonWidgetImpl};
 use carbide_core::draw::{Dimension, Position, Scalar};
-use carbide_core::environment::{Environment, EnvironmentColor};
+use carbide_core::environment::{Environment};
 use carbide_core::event::{MouseEvent, MouseEventHandler};
-use carbide_core::flags::Flags;
-use carbide_core::focus::{Focus, Focusable};
-use carbide_core::focus::Refocus;
 use carbide_core::layout::Layout;
 use carbide_core::render::{Render, RenderContext};
-use carbide_core::state::{AnyReadState, AnyState, IntoReadState, IntoState, LocalState, Map1, Map2, ReadState, ReadStateExtNew, State, StateExtNew, TState};
-use carbide_core::widget::{CommonWidget, Empty, MouseArea, Rectangle, Text, AnyWidget, WidgetExt, WidgetId, ZStack, Widget};
+use carbide_core::widget::{CommonWidget, Empty, AnyWidget, WidgetExt, WidgetId, Widget};
 use crate::types::TooltipPosition;
 
 const PADDING: Scalar = 8.0;
@@ -56,7 +52,7 @@ impl<C: AnyWidget + Clone> Help<C> {
 }
 
 impl<C: AnyWidget + Clone> MouseEventHandler for Help<C> {
-    fn handle_mouse_event(&mut self, event: &MouseEvent, consumed: &bool, env: &mut Environment) {
+    fn handle_mouse_event(&mut self, event: &MouseEvent, _consumed: &bool, _env: &mut Environment) {
         if self.is_inside(event.get_current_mouse_position()) {
             self.hovered = true;
         } else {
@@ -83,7 +79,9 @@ impl<C: AnyWidget + Clone> Layout for Help<C> {
         positioning(position, dimension, &mut self.child);
         self.child.position_children(env);
 
+        #[allow(unused_assignments)]
         let mut x = 0.0;
+        #[allow(unused_assignments)]
         let mut y = 0.0;
 
         match self.tooltip_position {

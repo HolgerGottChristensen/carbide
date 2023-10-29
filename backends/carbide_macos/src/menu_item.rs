@@ -342,12 +342,9 @@ impl CarbideChannel {
     fn new(sink: &dyn HasEventSink) -> (*const CarbideChannel, Receiver<()>) {
         let (sender, rec) = channel();
 
-        let p = unsafe {
-            let receiver = Box::into_raw(Box::new(CarbideChannel(sender, sink.event_sink())));
-            receiver
-        };
+        let receiver = Box::into_raw(Box::new(CarbideChannel(sender, sink.event_sink())));
 
-        (p, rec)
+        (receiver, rec)
     }
 
     unsafe fn from_raw(p: *mut CarbideChannel) -> Box<CarbideChannel> {

@@ -1,16 +1,11 @@
-use std::collections::HashMap;
-
 use cgmath::Matrix4;
 use wgpu::{BindGroupLayout, Device};
-use wgpu::util::DeviceExt;
-
 use carbide_core::draw::image::ImageId;
 use carbide_core::draw::Rect;
 use carbide_core::mesh::DrawCommand;
 use carbide_core::widget::FilterId;
 
-use crate::bind_groups::{gradient_buffer_bind_group, matrix_to_uniform_bind_group};
-use crate::diffuse_bind_group::DiffuseBindGroup;
+use crate::bind_groups::{matrix_to_uniform_bind_group};
 use crate::gradient::Gradient;
 
 /// A draw command that maps directly to the `wgpu::CommandEncoder` method. By returning
@@ -70,7 +65,7 @@ pub fn draw_commands_to_render_pass_commands<'a>(
     uniform_bind_groups: &mut Vec<wgpu::BindGroup>,
     device: &Device,
     uniform_bind_group_layout: &BindGroupLayout,
-    gradient_bind_group_layout: &BindGroupLayout,
+    _gradient_bind_group_layout: &BindGroupLayout,
     carbide_to_wgpu_matrix: Matrix4<f32>,
 ) -> Vec<RenderPass> {
 
@@ -238,7 +233,7 @@ pub fn draw_commands_to_render_pass_commands<'a>(
                     continue;
                 }
 
-                let gradient = Gradient::convert(gradient);
+                let _gradient = Gradient::convert(gradient);
 
                 let range = vertex_range.start as u32..vertex_range.end as u32;
                 let mut new_inner_commands = vec![];

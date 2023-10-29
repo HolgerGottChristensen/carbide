@@ -8,7 +8,7 @@ use carbide_core::event::ModifierKey;
 use carbide_core::flags::Flags;
 use carbide_core::focus::{Focus, Focusable};
 use carbide_core::focus::Refocus;
-use carbide_core::state::{AnyReadState, AnyState, IntoReadState, IntoState, LocalState, Map1, Map2, Map3, Map4, ReadState, ReadStateExtNew, State, StateExtNew, TState};
+use carbide_core::state::{AnyReadState, IntoReadState, IntoState, LocalState, Map1, Map4, ReadState, ReadStateExtNew, State};
 use carbide_core::widget::{Action, CommonWidget, MouseArea, Rectangle, Text, AnyWidget, WidgetExt, WidgetId, ZStack, Widget};
 use crate::{enabled_state, EnabledState};
 
@@ -104,23 +104,23 @@ impl<F: State<T=Focus>, A: Action + Clone + 'static, D: PlainButtonDelegate, E: 
         Self::new_internal(action, focus_state, delegate, self.enabled, self.cursor, self.hovered, self.pressed)
     }
 
-    pub fn focused<F2: IntoState<Focus>>(mut self, focused: F2) -> PlainButton<F2::Output, A, D, E, H, P> {
+    pub fn focused<F2: IntoState<Focus>>(self, focused: F2) -> PlainButton<F2::Output, A, D, E, H, P> {
         Self::new_internal(self.action, focused.into_state(), self.delegate, self.enabled, self.cursor, self.hovered, self.pressed)
     }
 
-    pub fn pressed<P2: IntoState<bool>>(mut self, pressed: P2) -> PlainButton<F, A, D, E, H, P2::Output> {
+    pub fn pressed<P2: IntoState<bool>>(self, pressed: P2) -> PlainButton<F, A, D, E, H, P2::Output> {
         Self::new_internal(self.action, self.focus, self.delegate, self.enabled, self.cursor, self.hovered, pressed.into_state())
     }
 
-    pub fn hovered<H2: IntoState<bool>>(mut self, hovered: H2) -> PlainButton<F, A, D, E, H2::Output, P> {
+    pub fn hovered<H2: IntoState<bool>>(self, hovered: H2) -> PlainButton<F, A, D, E, H2::Output, P> {
         Self::new_internal(self.action, self.focus, self.delegate, self.enabled, self.cursor, hovered.into_state(), self.pressed)
     }
 
-    pub fn enabled<E2: IntoReadState<bool>>(mut self, enabled: E2) -> PlainButton<F, A, D, E2::Output, H, P> {
+    pub fn enabled<E2: IntoReadState<bool>>(self, enabled: E2) -> PlainButton<F, A, D, E2::Output, H, P> {
         Self::new_internal(self.action, self.focus, self.delegate, enabled.into_read_state(), self.cursor, self.hovered, self.pressed)
     }
 
-    pub fn cursor(mut self, cursor: MouseCursor) -> PlainButton<F, A, D, E, H, P> {
+    pub fn cursor(self, cursor: MouseCursor) -> PlainButton<F, A, D, E, H, P> {
         Self::new_internal(self.action, self.focus, self.delegate, self.enabled, cursor, self.hovered, self.pressed)
     }
 
@@ -150,9 +150,8 @@ impl<F: State<T=Focus>, A: Action + Clone + 'static, D: PlainButtonDelegate, E: 
                 let enabled = enabled.clone();
 
                 move |env: &mut Environment, modifier: ModifierKey| {
-                    use carbide_core::state::State;
                     let mut focus = focus.clone();
-                    let mut action = action.clone();
+                    let action = action.clone();
                     let mut enabled = enabled.clone();
                     enabled.sync(env);
                     focus.sync(env);

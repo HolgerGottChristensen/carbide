@@ -1,4 +1,5 @@
 
+#[allow(unused)]
 #[derive(Clone, Debug, PartialEq)]
 pub enum TooltipPosition {
     Auto,

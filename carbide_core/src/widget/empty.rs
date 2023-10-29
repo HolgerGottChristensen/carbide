@@ -1,11 +1,11 @@
 use carbide_core::CommonWidgetImpl;
 use carbide_core::widget::{CommonWidget, PrimitiveStore, ShapeStyle, StrokeStyle};
-use carbide_macro::{carbide_default_builder, carbide_default_builder2};
+use carbide_macro::{carbide_default_builder2};
 
 use crate::draw::{Dimension, Position};
 use crate::flags::Flags;
 use crate::Scene;
-use crate::widget::{Shape, AnyWidget, WidgetExt, WidgetId, Widget};
+use crate::widget::{Shape, WidgetExt, WidgetId, Widget};
 
 #[derive(Clone, Debug, Widget)]
 pub struct Empty {

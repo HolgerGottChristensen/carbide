@@ -1,11 +1,10 @@
-use std::fmt::Debug;
 use carbide_core::color::TRANSPARENT;
 
-use carbide_core::draw::{Alignment, Color, Rect};
+use carbide_core::draw::{Alignment, Rect};
 use carbide_core::environment::{Environment, EnvironmentColor};
 use carbide_core::focus::Focus;
 use carbide_core::render::Style;
-use carbide_core::state::{AnyReadState, AnyState, IntoReadState, IntoState, LocalState, Map1, Map2, Map3, ReadState, ReadStateExtNew, State, StateContract, StateExt, TState};
+use carbide_core::state::{AnyReadState, AnyState, IntoReadState, IntoState, LocalState, Map1, Map3, ReadState, ReadStateExtNew, State, StateContract};
 use carbide_core::widget::*;
 use carbide_core::widget::canvas::{Canvas, Context, LineCap};
 
@@ -42,7 +41,7 @@ impl PopUpButton {
 
         let label_color = mark_color.clone();
 
-        let arrows = Canvas::new(move |rect: Rect, mut context: Context, env: &mut Environment| {
+        let arrows = Canvas::new(move |_rect: Rect, mut context: Context, _env: &mut Environment| {
             context.move_to(6.0, 9.0);
             context.line_to(10.0, 5.0);
             context.line_to(14.0, 9.0);
@@ -119,7 +118,7 @@ impl PopUpButton {
         _index: Box<dyn AnyReadState<T=usize>>,
         hover_state: Box<dyn AnyReadState<T=bool>>,
         _selected_state: S,
-        enabled: Box<dyn AnyReadState<T=bool>>,
+        _enabled: Box<dyn AnyReadState<T=bool>>,
     ) -> Box<dyn AnyWidget> {
         let text = Map1::read_map(item, |i| format!("{:?}", i));
 
@@ -152,7 +151,7 @@ impl PopUpButton {
     fn popup_delegate<T: StateContract + PartialEq, S: State<T=T>, M: ReadState<T=Vec<T>>, B: State<T=bool>>(
         model: M,
         delegate: PopupDelegate<T, S, B>,
-        enabled: Box<dyn AnyReadState<T=bool>>,
+        _enabled: Box<dyn AnyReadState<T=bool>>,
     ) -> Box<dyn AnyWidget> {
         VStack::new(ForEach::new(model.ignore_writes(), delegate))
             .spacing(1.0)

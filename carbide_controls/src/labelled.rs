@@ -1,14 +1,11 @@
 use std::fmt::Debug;
 
 use carbide_core::CommonWidgetImpl;
-use carbide_core::draw::{Dimension, Position, Scalar};
-use carbide_core::environment::{Environment, EnvironmentColor};
-use carbide_core::render::Render;
-use carbide_core::state::{EnvMap1, IntoReadState, Map1, ReadState};
+use carbide_core::draw::{Dimension, Position};
+use carbide_core::environment::{EnvironmentColor};
+use carbide_core::state::{IntoReadState, Map1, ReadState};
 use carbide_core::widget::{CommonWidget, Empty, HStack, Text, AnyWidget, WidgetExt, WidgetId, Widget};
 use crate::enabled_state;
-
-const PADDING: Scalar = 8.0;
 
 /// # A plain switch widget
 /// This widget contains the basic logic for a switch component, without any styling.

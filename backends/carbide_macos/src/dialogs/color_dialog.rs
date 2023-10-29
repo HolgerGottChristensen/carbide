@@ -7,10 +7,10 @@ use lazy_static::lazy_static;
 use objc::{class, msg_send, sel, sel_impl};
 use objc::declare::ClassDecl;
 use objc::runtime::{Class, Object, Sel};
-use raw_window_handle::{AppKitWindowHandle, HasRawWindowHandle, RawWindowHandle};
+use raw_window_handle::{AppKitWindowHandle, RawWindowHandle};
 
 use carbide_core::draw::Color;
-use carbide_core::event::{CustomEvent, EventSink, HasEventSink, HasRawWindowHandleAndEventSink};
+use carbide_core::event::{CustomEvent, EventSink, HasRawWindowHandleAndEventSink};
 
 pub struct ColorPanel {
     id: id,

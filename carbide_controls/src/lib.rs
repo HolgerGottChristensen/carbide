@@ -23,7 +23,11 @@ macro_rules! capture {
         {
             $($(let $t = $t.clone();)*)?
             $($(let $u = $u.clone();)*)?
+            #[allow(unused_variables)]
+            #[allow(unused_imports)]
+            #[allow(unused_mut)]
             move |$($a: $typ),*, modifier: carbide_core::event::ModifierKey| {
+
                 use carbide_core::state::State;
                 $($(let mut $t = $t.clone();)*)?
                 $($(let mut $u = $u.clone();)*)?

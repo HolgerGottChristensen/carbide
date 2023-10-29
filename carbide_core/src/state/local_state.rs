@@ -38,15 +38,6 @@ impl<T: StateContract> LocalState<T> {
             inner_value: Rc::new(ValueCell::new(value)),
         }
     }
-
-    /// Returns a new local state containing the value provided.
-    /// Often you should use `new` when creating states, but this can be used to get the state
-    /// within a box.
-    fn new_raw(value: T) -> Box<Self> {
-        Box::new(LocalState {
-            inner_value: Rc::new(ValueCell::new(value)),
-        })
-    }
 }
 
 impl<T: StateContract> NewStateSync for LocalState<T> {

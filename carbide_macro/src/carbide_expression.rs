@@ -2,7 +2,7 @@ use std::fmt::{Debug, Formatter};
 use proc_macro2::{Span, TokenStream};
 use quote::{quote, ToTokens};
 use syn::{Attribute, Error, Ident, Pat, PatOr, token};
-use syn::token::{Brace, Colon, Comma, Dot, Else, In, Let, Paren, Semi, Token};
+use syn::token::{Brace, Colon, Comma, Dot, Else, In, Let, Paren, Semi};
 use syn::{braced, Expr, parenthesized, Token};
 use syn::__private::{parse_braces, parse_parens, TokenStream2};
 use syn::parse::{Parse, ParseStream};
@@ -617,9 +617,9 @@ impl Parse for CarbideExpression {
 
 pub struct CarbideInstantiate {
     ident: Ident,
-    paren: Option<Paren>,
+    _paren: Option<Paren>,
     params: Option<Punctuated<CarbideInstantiateParam, Token![,]>>,
-    braces: Option<Brace>,
+    _braces: Option<Brace>,
     iterate: Option<CarbideInstantiateIterate>,
     body: Option<Vec<CarbideExpression>>,
     modifiers: Vec<CarbideInstantiateModifier>,
@@ -738,9 +738,9 @@ impl Parse for CarbideInstantiate {
 
         Ok(CarbideInstantiate {
             ident,
-            paren,
+            _paren: paren,
             params,
-            braces,
+            _braces: braces,
             body,
             iterate,
             modifiers
@@ -749,9 +749,9 @@ impl Parse for CarbideInstantiate {
 }
 
 pub struct CarbideInstantiateModifier {
-    dot_token: Token![.],
+    _dot_token: Token![.],
     ident: Ident,
-    paren_token: Paren,
+    _paren_token: Paren,
     exprs: Punctuated<Expr, Comma>,
 }
 
@@ -794,9 +794,9 @@ impl Parse for CarbideInstantiateModifier {
             };
 
             Ok(CarbideInstantiateModifier {
-                dot_token,
+                _dot_token: dot_token,
                 ident,
-                paren_token,
+                _paren_token: paren_token,
                 exprs
             })
         } else {
@@ -807,7 +807,7 @@ impl Parse for CarbideInstantiateModifier {
 
 pub struct CarbideInstantiateIterate {
     vars: Vec<Ident>,
-    in_token: Token![in],
+    _in_token: Token![in],
 }
 
 impl Debug for CarbideInstantiateIterate {
@@ -831,7 +831,7 @@ impl Parse for CarbideInstantiateIterate {
 
         Ok(CarbideInstantiateIterate {
             vars: vec![ident],
-            in_token
+            _in_token: in_token
         })
     }
 }

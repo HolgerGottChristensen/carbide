@@ -8,18 +8,14 @@ use std::rc::Rc;
 use std::time::Instant;
 
 use bitflags::_core::fmt::Formatter;
-use futures::FutureExt;
 use fxhash::{FxBuildHasher, FxHashMap};
 use image::DynamicImage;
-use oneshot::TryRecvError;
 use raw_window_handle::{HasRawWindowHandle, RawWindowHandle};
 use carbide_core::draw::Position;
-use carbide_core::state::ReadState;
 use carbide_core::widget::AnyWidget;
 
 use crate::locate_folder;
 use crate::animation::Animation;
-use crate::asynchronous::{spawn};
 use crate::cursor::MouseCursor;
 use crate::draw::{Dimension, ImageContext, NOOPImageContext};
 use crate::draw::Color;
@@ -28,17 +24,17 @@ use crate::draw::Scalar;
 use crate::draw::theme;
 use crate::environment::{EnvironmentFontSize, WidgetTransferAction};
 use crate::environment::{EnvironmentColor, EnvironmentVariable};
-use crate::event::{CustomEvent, EventSink, HasEventSink};
+use crate::event::{EventSink, HasEventSink};
 use crate::focus::Refocus;
 use crate::layout::BasicLayouter;
 use crate::mesh::TextureAtlas;
-use crate::state::{InnerState, StateContract, EnvironmentStateKey, ValueCell, AnyReadState};
+use crate::state::{InnerState, StateContract, EnvironmentStateKey};
 use crate::text::{Font, FontFamily, FontId, FontSize, FontStyle, FontWeight, Glyph};
-use crate::widget::{FilterId, ImageFilter, Overlay, WidgetId};
+use crate::widget::{FilterId, ImageFilter, WidgetId};
 use crate::widget::ImageInformation;
 use crate::window::WindowId;
 
-type Overlays = Vec<(Box<dyn AnyWidget>, Box<dyn AnyReadState<T=bool>>)>;
+//type Overlays = Vec<(Box<dyn AnyWidget>, Box<dyn AnyReadState<T=bool>>)>;
 
 pub struct Environment {
     /// This stack should be used to scope the environment. This contains information such as
@@ -100,8 +96,6 @@ pub struct Environment {
 
     /// A map that contains an image filter used for the Filter widget.
     filter_map: FxHashMap<FilterId, crate::widget::ImageFilter>,
-    /// The next id for the filter. This is used when inserting into the filter_map.
-    next_filter_id: u32,
 
     /// A queue of functions that should be evaluated called each frame. This is called from the
     /// main thread, and will return a boolean true if the task is done and should be removed
@@ -226,7 +220,6 @@ impl Environment {
             scale_factor,
             frame_start_time: Rc::new(RefCell::new(Instant::now())),
             filter_map: filters,
-            next_filter_id: 0,
             async_task_queue: Some(vec![]),
             queued_images: None,
             image_map,

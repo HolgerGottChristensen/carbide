@@ -5,13 +5,12 @@ use lyon::tessellation::path::Winding;
 use carbide_macro::{carbide_default_builder2};
 
 use crate::{CommonWidgetImpl};
-use crate::color::RED;
 use crate::draw::{Color, Dimension, Position};
 use crate::environment::{Environment,};
 use crate::environment::EnvironmentColor;
 use crate::render::{Primitive, Render, RenderContext, Style};
 use crate::state::{IntoReadState, ReadState, StateSync};
-use crate::widget::{Blur, CommonWidget, CornerRadii, AnyWidget, WidgetExt, WidgetId, ZStack, Widget};
+use crate::widget::{Blur, CommonWidget, CornerRadii, WidgetExt, WidgetId, ZStack, Widget};
 use crate::widget::shape::{Shape, tessellate};
 use crate::widget::types::PrimitiveStore;
 use crate::widget::types::ShapeStyle;
@@ -86,7 +85,7 @@ impl<S2: ReadState<T=Style> + Clone, F2: ReadState<T=Style> + Clone> RoundedRect
         self
     }
 
-    pub fn material<M: IntoReadState<Color>>(mut self, material: M) -> ZStack<(Blur, RoundedRectangle<S2, impl ReadState<T=Style> + Clone>)> {
+    pub fn material<M: IntoReadState<Color>>(self, material: M) -> ZStack<(Blur, RoundedRectangle<S2, impl ReadState<T=Style> + Clone>)> {
         let comp = self.fill(material.clone().into_read_state());
         ZStack::new((Blur::gaussian(10.0), comp))
     }

@@ -1,8 +1,6 @@
-use std::cell::{OnceCell, RefCell};
+use std::cell::RefCell;
 use std::future::Future;
-use std::sync::{Arc, OnceLock};
 use std::time::Duration;
-use futures::executor::block_on;
 pub use timer::Timer;
 
 use crate::environment::Environment;
@@ -112,7 +110,7 @@ pub trait SpawnTask<G: Send + 'static> {
 }
 
 impl<G: Send + 'static, T: Future<Output = G> + Send + 'static> SpawnTask<G> for T {
-    fn spawn(self, env: &mut Environment, cont: impl Fn(G, &mut Environment) + 'static) {
+    fn spawn(self, _env: &mut Environment, cont: impl Fn(G, &mut Environment) + 'static) {
         spawn_task(self, cont);
     }
 }
@@ -127,7 +125,8 @@ impl<T: Send + 'static> StartStream<T> for std::sync::mpsc::Receiver<T> {
     }
 }
 
-
+#[cfg(feature = "tokio")]
+use std::sync::OnceLock;
 #[cfg(feature = "tokio")]
 static RUNTIME: OnceLock<tokio::runtime::Runtime> = OnceLock::new();
 
@@ -150,6 +149,7 @@ pub fn spawn<F, T>(future: F) where F: Future<Output = T> + Send + 'static, T: S
 
     #[cfg(all(not(feature = "async-std"), not(feature = "tokio")))]
     std::thread::spawn(|| {
+        use futures::executor::block_on;
         block_on(future)
     });
 }

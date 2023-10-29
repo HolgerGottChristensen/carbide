@@ -12,10 +12,10 @@ use carbide_core::focus::Focus;
 use carbide_core::focus::Focusable;
 use carbide_core::layout::{BasicLayouter, Layout, Layouter};
 use carbide_core::render::{Render, RenderContext};
-use carbide_core::state::{AnyReadState, IntoReadState, IntoState, LocalState, Map2, NewStateSync, ReadState, ReadStateExtNew, State, TState};
+use carbide_core::state::{AnyReadState, IntoReadState, IntoState, LocalState, Map2, ReadState, ReadStateExtNew, State, TState};
 use carbide_core::state::StateSync;
 use carbide_core::text::Glyph;
-use carbide_core::utils::{binary_search, clamp};
+use carbide_core::utils::{binary_search};
 use carbide_core::widget::{CommonWidget, Rectangle, Text, TextWidget, AnyWidget, WidgetExt, WidgetId, Widget};
 use carbide_core::widget::Wrap;
 use crate::{enabled_state, EnabledState};
@@ -207,7 +207,7 @@ impl<
 
         let display_text = Map2::read_map(text.clone(), obscure.clone(), |text, obscure| {
             if let Some(obscuring_char) = obscure {
-                text.graphemes(true).map(|a| obscuring_char).collect::<String>()
+                text.graphemes(true).map(|_a| obscuring_char).collect::<String>()
             } else {
                 text.clone()
             }
@@ -986,44 +986,9 @@ impl<F: State<T=Focus>, C: ReadState<T=Color>, O: ReadState<T=Option<char>>, S: 
         self.text.set_value(new_string);
     }
 
-    /// Recalculate the position of the cursor and the selection. This will not move the cursor
-    /// index, but move the visual positioning of the cursor and the selection box (if selection mode).
-    fn reposition_cursor(&mut self, env: &mut Environment) {
-        /*let glyph = self.glyphs(env);
-        let text = &*self.display_text.value();
-
-        let index = match &mut self.cursor {
-            Cursor::Single(index) => {
-                let len_in_graphemes = len_in_graphemes(text);
-                *index = CursorIndex {
-                    line: 0,
-                    char: index.char.min(len_in_graphemes),
-                };
-                index
-            }
-            Cursor::Selection { end, .. } => end,
-        };
-
-        let point = index.position(text, &glyph);
-
-        *self.cursor_x.value_mut() = point.x();
-        *self.selection_x.value_mut() = point.x();
-
-        let selection_width = self.cursor.width(text, &glyph);
-
-        if selection_width < 0.0 {
-            *self.selection_width.value_mut() = selection_width.abs();
-        } else {
-            *self.selection_x.value_mut() -= selection_width;
-            *self.selection_width.value_mut() = selection_width;
-        }*/
-
-        todo!("reposition_cursor")
-    }
-
-    /// This will change the text offset to make the cursor visible. It will result in the text
+    /*/// This will change the text offset to make the cursor visible. It will result in the text
     /// getting scrolled, such that the entire cursor is visible.
-    fn recalculate_offset_to_make_cursor_visible(&mut self, env: &mut Environment) {
+    fn recalculate_offset_to_make_cursor_visible(&mut self, _env: &mut Environment) {
         /*let cursor_x = *self.cursor_x.value();
         let cursor_width = 4.0;
         let current_text_offset = *self.text_offset.value();
@@ -1062,7 +1027,7 @@ impl<F: State<T=Focus>, C: ReadState<T=Color>, O: ReadState<T=Option<char>>, S: 
         }*/
 
         todo!("recalculate_offset_to_make_cursor_visible")
-    }
+    }*/
 }
 
 impl<
@@ -1128,7 +1093,7 @@ impl<
 }
 
 impl<F: State<T=Focus>, C: ReadState<T=Color>, O: ReadState<T=Option<char>>, S: ReadState<T=u32>, T: State<T=String>, E: ReadState<T=bool>> PlainTextInput<F, C, O, S, T, E> {
-    fn drag_selection(&mut self, env: &mut Environment, to: &Position, delta_xy: &Position) {
+    fn drag_selection(&mut self, env: &mut Environment, to: &Position, _delta_xy: &Position) {
         if self.width() < SCROLL_FAST_WIDTH * 2.0 {
             self.current_offset_speed = None;
         } else if to.x() - self.x() < SCROLL_FAST_WIDTH {
@@ -1268,7 +1233,7 @@ impl<F: State<T=Focus>, C: ReadState<T=Color>, O: ReadState<T=Option<char>>, S: 
         let clicked_index = find_index_from_offset_and_glyphs(relative_offset, &self.text_widget.glyphs());
 
         match self.cursor {
-            Cursor::Single(CursorIndex { line, index }) => {
+            Cursor::Single(CursorIndex { line: _, index }) => {
                 self.cursor = Cursor::Selection {
                     start: CursorIndex { line: 0, index },
                     end: CursorIndex {
@@ -1346,11 +1311,11 @@ impl<F: State<T=Focus>, C: ReadState<T=Color>, O: ReadState<T=Option<char>>, S: 
             //println!("current_offset: {:?}", current_offset);
 
             if cursor_offset_from_text_origin + self.cursor_widget.width() > self.width() {
-                current_offset -= (cursor_offset_from_text_origin + self.cursor_widget.width() - self.width());
+                current_offset -= cursor_offset_from_text_origin + self.cursor_widget.width() - self.width();
             }
 
             if cursor_offset_from_text_origin < 0.0 {
-                current_offset -= (cursor_offset_from_text_origin);
+                current_offset -= cursor_offset_from_text_origin;
             }
         }
 
@@ -1692,7 +1657,7 @@ fn prev_space_grapheme_index(current_grapheme_index: usize, text: &str) -> usize
     let index = text.grapheme_indices(true)
         .rev()
         .skip(len_in_graphemes(text) - current_grapheme_index)
-        .take_while(|(index, val)| *val != " ")
+        .take_while(|(_index, val)| *val != " ")
         .last()
         .map_or(0, |a| a.0);
 
@@ -1702,7 +1667,7 @@ fn prev_space_grapheme_index(current_grapheme_index: usize, text: &str) -> usize
 fn next_space_grapheme_index(current_grapheme_index: usize, text: &str) -> usize {
     let index = text.grapheme_indices(true)
         .skip(current_grapheme_index+1)
-        .skip_while(|(index, val)| *val != " ")
+        .skip_while(|(_index, val)| *val != " ")
         .next()
         .map_or(len_in_graphemes(text), |a| a.0);
 

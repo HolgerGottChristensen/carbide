@@ -1,5 +1,5 @@
 
-use crate::state::{Map1, RMap1, AnyReadState, IntoReadState, StateContract, State, AnyState, RWMap1};
+use crate::state::{Map1, RMap1, AnyReadState, StateContract, State, AnyState, RWMap1};
 
 
 // ---------------------------------------------------
@@ -79,7 +79,7 @@ impl ConvertInto<Result<String, String>> for String {
     fn convert<F: AnyState<T=Self> + Clone>(f: F) -> Self::Output<F> {
         Map1::map(f, |val| {
             Ok(val.to_string())
-        }, |new, old| {
+        }, |new, _old| {
             match new {
                 Ok(s) | Err(s) => {
                     Some(s)
@@ -103,7 +103,7 @@ macro_rules! impl_res_state_plain {
                             Ok(val) => { Ok(val.to_string()) }
                             Err(val) => { Err(val.to_string()) }
                         }
-                    }, |new, old| {
+                    }, |new, _old| {
                         match new {
                             Ok(s) | Err(s) => {
                                 Some(<$typ>::from_str(&s)
@@ -135,7 +135,7 @@ impl ConvertInto<Result<String, String>> for Result<f32, String> {
                 Ok(val) => { Ok(val.to_string()) }
                 Err(val) => { Err(val.to_string()) }
             }
-        }, |new, old| {
+        }, |new, _old| {
             match new {
                 Ok(s) | Err(s) => {
                     Some(<f32>::from_str(&s).map_err(|_| s.to_string()))
@@ -156,7 +156,7 @@ impl ConvertInto<Result<String, String>> for Result<f64, String> {
                 Ok(val) => { Ok(val.to_string()) }
                 Err(val) => { Err(val.to_string()) }
             }
-        }, |new, old| {
+        }, |new, _old| {
             match new {
                 Ok(s) | Err(s) => {
                     Some(<f64>::from_str(&s).map_err(|_| s.to_string()))

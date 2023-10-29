@@ -2,7 +2,7 @@ use std::fmt::Debug;
 use carbide_core::state::AnyState;
 
 use crate::environment::Environment;
-use crate::state::{AnyReadState, IntoState, NewStateSync, StateContract};
+use crate::state::{AnyReadState, NewStateSync, StateContract};
 use crate::state::{ReadState, State};
 use crate::state::util::value_cell::{ValueRef, ValueRefMut};
 

@@ -1,6 +1,4 @@
 use std::fmt::{Debug, Formatter};
-use std::ops::Deref;
-
 
 use carbide_core::state::{AnyState, Map1};
 use carbide_core::state::NewStateSync;
@@ -66,7 +64,7 @@ impl<T: StateContract> AnyState for ValueState<T> {
 impl<T: StateContract> Debug for ValueState<T> {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("ValueState")
-            .field("value", self.deref())
+            .field("value", &self.value)
             .finish()
     }
 }
@@ -114,7 +112,7 @@ impl From<&str> for RState<String> {
 //     }
 // }
 
-macro_rules! impl_res_state_plain {
+/*macro_rules! impl_res_state_plain {
     ($($typ: ty),*) => {
         $(
         impl Into<TState<Result<String, String>>> for TState<Result<$typ, String>> {
@@ -136,7 +134,7 @@ macro_rules! impl_res_state_plain {
         }
         )*
     }
-}
+}*/
 
 // impl_res_state_plain! {
 //     u8, u16, u32, u64, u128, usize,

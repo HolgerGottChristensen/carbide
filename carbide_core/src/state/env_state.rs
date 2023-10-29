@@ -1,5 +1,4 @@
 use std::fmt::{Debug, Formatter};
-use std::ops::Deref;
 
 use crate::environment::Environment;
 use crate::state::{AnyReadState, NewStateSync, RState, StateContract};
@@ -67,7 +66,7 @@ impl<T: StateContract + PartialEq> AnyReadState for EnvState<T> {
 impl<T: StateContract + PartialEq> Debug for EnvState<T> {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("EnvState")
-            .field("value", self.deref())
+            .field("value", &self.value)
             .finish()
     }
 }

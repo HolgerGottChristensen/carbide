@@ -1,11 +1,8 @@
-
-use carbide_macro::carbide_default_builder;
-
 use crate::draw::{Dimension, Position, Scalar};
 use crate::environment::Environment;
 use crate::layout::{calculate_size_vstack, Layout, position_children_vstack};
 use crate::{CommonWidgetImpl};
-use crate::widget::{CommonWidget, CrossAxisAlignment, AnyWidget, WidgetExt, WidgetId, WidgetSequence, Widget};
+use crate::widget::{CommonWidget, CrossAxisAlignment, WidgetExt, WidgetId, WidgetSequence, Widget};
 
 #[derive(Debug, Clone, Widget)]
 #[carbide_exclude(Layout)]

@@ -1,5 +1,3 @@
-use std::num::NonZeroU32;
-
 use wgpu::util::DeviceExt;
 
 /// An command for uploading an individual glyph.

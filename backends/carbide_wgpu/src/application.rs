@@ -6,7 +6,8 @@ use std::mem::transmute;
 use std::path::{Path, PathBuf};
 
 use winit::event::{Event, WindowEvent as WinitWindowEvent};
-use winit::event_loop::{ControlFlow, EventLoop as WinitEventLoop, EventLoopWindowTarget};
+use winit::event_loop::{ControlFlow, EventLoopWindowTarget};
+use winit::event_loop::EventLoopBuilder;
 use winit::window::WindowId as WinitWindowId;
 
 use carbide_core::{locate_folder, Scene};
@@ -16,7 +17,7 @@ use carbide_core::environment::Environment;
 use carbide_core::event::{CustomEvent, EventHandler, Input};
 use carbide_core::render::{NoopRenderContext, Render, RenderContext};
 use carbide_core::text::{FontFamily, FontId};
-use carbide_core::widget::{Empty, WidgetExt};
+use carbide_core::widget::{Empty};
 use carbide_core::window::WindowId;
 use carbide_winit::convert_window_event;
 use carbide_winit::EventLoop;
@@ -24,7 +25,7 @@ use crate::image_context::WGPUImageContext;
 
 use crate::proxy_event_loop::ProxyEventLoop;
 
-thread_local!(pub static EVENT_LOOP: RefCell<EventLoop<CustomEvent>> = RefCell::new(EventLoop::Owned(WinitEventLoop::<CustomEvent>::with_user_event())));
+thread_local!(pub static EVENT_LOOP: RefCell<EventLoop<CustomEvent>> = RefCell::new(EventLoop::Owned(EventLoopBuilder::<CustomEvent>::with_user_event().build())));
 thread_local!(pub static WINDOW_IDS: RefCell<HashMap<WinitWindowId, WindowId>> = RefCell::new(HashMap::new()));
 
 pub struct Application {

@@ -14,7 +14,6 @@ use oneshot::Receiver;
 use raw_window_handle::{AppKitWindowHandle, HasRawWindowHandle, RawWindowHandle};
 
 use carbide_core::dialog::FileSpecification;
-use carbide_core::state::{InnerState, ValueCell};
 
 use crate::array::NSArray;
 use crate::dialogs::NSModalResponse;
@@ -162,6 +161,7 @@ impl SavePanel {
 
         let block = ConcreteBlock::new(move |response: NSModalResponse| {
             let sender = sender.clone();
+            #[allow(non_upper_case_globals)]
             match response {
                 NSModalResponseOK => {
                     let url: NSURL = NSURL(unsafe {msg_send![self.id, URL]});

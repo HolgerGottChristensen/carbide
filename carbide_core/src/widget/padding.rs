@@ -1,5 +1,5 @@
 use carbide_core::state::ReadState;
-use carbide_macro::{carbide_default_builder, carbide_default_builder2};
+use carbide_macro::{carbide_default_builder2};
 
 use crate::draw::{Dimension, Position};
 use crate::environment::Environment;

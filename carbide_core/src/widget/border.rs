@@ -9,7 +9,7 @@ use crate::environment::Environment;
 use crate::layout::Layout;
 use crate::render::{Primitive, PrimitiveKind, Render};
 use crate::state::{ReadState};
-use crate::widget::{CommonWidget, Empty, AnyWidget, WidgetExt, WidgetId, Widget};
+use crate::widget::{CommonWidget, Empty, WidgetExt, WidgetId, Widget};
 
 /// A basic, non-interactive rectangle shape widget.
 #[derive(Debug, Clone, Widget)]

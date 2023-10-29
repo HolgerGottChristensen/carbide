@@ -5,7 +5,7 @@ use carbide_core::environment::{Environment, EnvironmentColor};
 use carbide_core::flags::Flags;
 use carbide_core::focus::{Focus, Focusable};
 use carbide_core::focus::Refocus;
-use carbide_core::state::{AnyReadState, AnyState, IntoReadState, IntoState, LocalState, Map1, Map2, ReadState, ReadStateExtNew, State, StateExtNew, TState};
+use carbide_core::state::{AnyReadState, AnyState, IntoReadState, IntoState, LocalState, Map1, Map2, ReadState, ReadStateExtNew, State, StateExtNew};
 use carbide_core::widget::{CommonWidget, MouseArea, Rectangle, Text, AnyWidget, WidgetExt, WidgetId, ZStack, Widget};
 
 pub trait PlainSwitchDelegate: Clone + 'static {
@@ -56,7 +56,7 @@ impl PlainSwitch<Focus, bool, DefaultPlainSwitchDelegate, bool> {
         )
     }
 
-    fn default_delegate(focus: Box<dyn AnyState<T=Focus>>, checked: Box<dyn AnyState<T=bool>>, enabled: Box<dyn AnyReadState<T=bool>>) -> Box<dyn AnyWidget> {
+    fn default_delegate(focus: Box<dyn AnyState<T=Focus>>, checked: Box<dyn AnyState<T=bool>>, _enabled: Box<dyn AnyReadState<T=bool>>) -> Box<dyn AnyWidget> {
         let background_color = Map1::read_map(checked.clone(), |is_checked| {
             if *is_checked {
                 EnvironmentColor::Green
@@ -88,11 +88,11 @@ impl<F: State<T=Focus> + Clone, C: State<T=bool> + Clone, D: PlainSwitchDelegate
         Self::new_internal(checked, focus_state, delegate, self.enabled)
     }
 
-    pub fn focused<F2: IntoState<Focus>>(mut self, focused: F2) -> PlainSwitch<F2::Output, C, D, E> {
+    pub fn focused<F2: IntoState<Focus>>(self, focused: F2) -> PlainSwitch<F2::Output, C, D, E> {
         Self::new_internal(self.checked, focused.into_state(), self.delegate, self.enabled)
     }
 
-    pub fn enabled<E2: IntoReadState<bool>>(mut self, enabled: E2) -> PlainSwitch<F, C, D, E2::Output> {
+    pub fn enabled<E2: IntoReadState<bool>>(self, enabled: E2) -> PlainSwitch<F, C, D, E2::Output> {
         Self::new_internal(self.checked, self.focus, self.delegate, enabled.into_read_state())
     }
 

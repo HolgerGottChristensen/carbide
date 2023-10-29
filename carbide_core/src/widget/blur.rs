@@ -7,7 +7,7 @@ use crate::draw::{Dimension, Position, Rect};
 use crate::environment::Environment;
 use crate::render::{Primitive, PrimitiveKind, Render};
 use crate::utils::gaussian;
-use crate::widget::{BlurType, CommonWidget, FilterId, ImageFilter, ImageFilterValue, AnyWidget, WidgetExt, WidgetId, Widget};
+use crate::widget::{BlurType, CommonWidget, FilterId, ImageFilter, ImageFilterValue, WidgetExt, WidgetId, Widget};
 
 #[derive(Debug, Clone, Widget)]
 #[carbide_exclude(Render)]

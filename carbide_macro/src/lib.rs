@@ -17,6 +17,7 @@ use crate::carbide_gen_optionals::CarbideGenOptionals;
 use crate::carbide_item::CarbideItem;
 
 
+#[allow(non_snake_case)]
 #[proc_macro]
 pub fn CarbideUI(item: TokenStream) -> TokenStream {
     let input = parse_macro_input!(item as CarbideItem);
