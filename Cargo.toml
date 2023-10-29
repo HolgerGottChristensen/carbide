@@ -23,5 +23,6 @@ members = [
     "examples/hacker_news",
     "examples/calculator",
     "examples/counter",
+    "examples/fractal",
     "carbide"
 ]

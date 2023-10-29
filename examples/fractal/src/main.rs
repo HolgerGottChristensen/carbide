@@ -1,12 +1,12 @@
 use std::f64::consts::PI;
 use chrono::{Local, Timelike};
-use carbide_core::color::{Color, WHITE};
 
-use carbide_core::draw::{Dimension, Position, Rect};
-use carbide_core::environment::*;
-use carbide_core::widget::canvas::*;
-use carbide_core::widget::*;
-use carbide_wgpu::{Application, Window};
+use carbide::color::{Color, WHITE};
+use carbide::draw::{Dimension, Position, Rect};
+use carbide::environment::*;
+use carbide::widget::canvas::*;
+use carbide::widget::*;
+use carbide::{Application, Window};
 
 fn main() {
     let mut application = Application::new();
@@ -106,7 +106,7 @@ impl FractalClock {
 
 
 impl CanvasContext for FractalClock {
-    fn call(&self, area: Rect, mut context: Context, env: &mut Environment) -> Context {
+    fn call(&mut self, area: Rect, mut context: Context, env: &mut Environment) -> Context {
         env.request_animation_frame();
 
         let angles = Angles::current();
