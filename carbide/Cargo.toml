@@ -14,13 +14,13 @@ description = "A crate that includes the other carbide crates and where features
 
 
 [features]
-default = ["carbide_wgpu"]
+default = ["carbide_wgpu", "carbide_macro"]
 controls = ["carbide_controls"]
 
 
 [dependencies]
-carbide_macro = { path = "../carbide_macro", version = "0.1.0" }
 carbide_core = { path = "../carbide_core", version = "0.70", features = ["tokio"] }
+carbide_macro = { path = "../carbide_macro", version = "0.1.0", optional = true }
 carbide_controls = { path = "../carbide_controls", version = "0.70", optional = true }
 carbide_wgpu = { path = "../backends/carbide_wgpu", version = "0.70", optional = true }
 
@@ -43,4 +43,8 @@ rand = "0.8.5"
 
 [[example]]
 name = "animate_on_click"
+required-features = ["controls"]
+
+[[example]]
+name = "ui"
 required-features = ["controls"]

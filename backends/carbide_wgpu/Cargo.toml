@@ -38,6 +38,7 @@ foreign-types = "0.3.2"
 
 [dev-dependencies]
 carbide_winit = { path = "../carbide_winit", version = "0.70" }
+carbide_controls = { path = "../../carbide_controls" }
 futures = "0.3"
 winit = "0.26.1"
 async-std = { version = "1.10.0" }
