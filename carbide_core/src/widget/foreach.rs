@@ -9,15 +9,15 @@ use crate::draw::{Dimension, Position};
 use crate::environment::Environment;
 use crate::event::{OtherEventHandler, WidgetEvent};
 use crate::flags::Flags;
-use crate::state::{AnyState, IndexState, IntoState, ReadState, State, StateContract, StateExtNew, ValueState};
+use crate::state::{AnyReadState, AnyState, IndexState, IntoState, ReadState, ReadStateExtNew, State, StateContract, StateExtNew, ValueState};
 use crate::widget::{CommonWidget, Empty, WidgetExt, WidgetId, Widget};
 
 pub trait Delegate<T: StateContract, O: Widget>: Clone + 'static {
-    fn call(&self, item: Box<dyn AnyState<T=T>>, index: Box<dyn AnyState<T=usize>>) -> O;
+    fn call(&self, item: Box<dyn AnyState<T=T>>, index: Box<dyn AnyReadState<T=usize>>) -> O;
 }
 
-impl<T: StateContract, K, O: Widget> Delegate<T, O> for K where K: Fn(Box<dyn AnyState<T=T>>, Box<dyn AnyState<T=usize>>) -> O + Clone + 'static {
-    fn call(&self, item: Box<dyn AnyState<T=T>>, index: Box<dyn AnyState<T=usize>>) -> O {
+impl<T: StateContract, K, O: Widget> Delegate<T, O> for K where K: Fn(Box<dyn AnyState<T=T>>, Box<dyn AnyReadState<T=usize>>) -> O + Clone + 'static {
+    fn call(&self, item: Box<dyn AnyState<T=T>>, index: Box<dyn AnyReadState<T=usize>>) -> O {
         self(item, index)
     }
 }
@@ -26,7 +26,7 @@ impl<T: StateContract, K, O: Widget> Delegate<T, O> for K where K: Fn(Box<dyn An
 pub struct EmptyDelegate;
 
 impl Delegate<(), Empty> for EmptyDelegate {
-    fn call(&self, _: Box<dyn AnyState<T=()>>, _: Box<dyn AnyState<T=usize>>) -> Empty {
+    fn call(&self, _: Box<dyn AnyState<T=()>>, _: Box<dyn AnyReadState<T=usize>>) -> Empty {
         Empty::new()
     }
 }
@@ -100,7 +100,7 @@ impl<T: StateContract, M: State<T=Vec<T>>, W: Widget, U: Delegate<T, W>, I: Read
             for _ in 0..number_to_insert {
                 let index = self.children.len();
 
-                let index_state = ValueState::new(index).as_dyn();
+                let index_state = ValueState::new(index).as_dyn_read();
 
                 let item_state = IndexState::new(self.model.clone(), index);
 

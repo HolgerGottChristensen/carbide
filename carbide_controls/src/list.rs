@@ -2,7 +2,11 @@ use std::borrow::Borrow;
 use std::cmp::{max, min};
 use std::collections::HashSet;
 use std::fmt::{Debug, Formatter};
+use std::hash::Hash;
 use std::marker::PhantomData;
+use carbide::a;
+use carbide::state::{AnyReadState, AnyState};
+use carbide::widget::{AnyWidget, MouseArea};
 use carbide_core::CommonWidgetImpl;
 use carbide_core::state::IntoState;
 use carbide_core::widget::{Empty, EmptyDelegate};
@@ -31,12 +35,13 @@ const MULTI_SELECTION_MODIFIER: ModifierKey = if cfg!(target_os = "macos") {
 const LIST_SELECTION_MODIFIER: ModifierKey = ModifierKey::SHIFT;
 
 #[derive(Clone, Widget)]
-pub struct List<T, M, W, U>
+pub struct List<T, M, W, U, I>
 where
     T: StateContract,
     M: State<T=Vec<T>>,
     W: Widget,
     U: Delegate<T, W>,
+    I: StateContract + PartialEq,
 {
     id: WidgetId,
     position: Position,
@@ -47,6 +52,9 @@ where
     #[state] model: M,
     delegate: U,
     spacing: f64,
+
+    selection: Option<Selection<I>>, // TODO: should be marked as state right?
+    #[state] last_index_clicked: LocalState<usize>, // Used to make shift selects
 
     phantom: PhantomData<T>,
     phantom_widget: PhantomData<W>,
@@ -70,8 +78,8 @@ where
     tree_disclosure: TreeDisclosure,*/
 }
 
-impl List<(), Vec<()>, Empty, EmptyDelegate> {
-    pub fn new<T: StateContract, M: IntoState<Vec<T>>, W: Widget, U: Delegate<T, W>>(model: M, delegate: U) -> List<T, M::Output, W, U> {
+impl List<(), Vec<()>, Empty, EmptyDelegate, ()> {
+    pub fn new<T: StateContract, M: IntoState<Vec<T>>, W: Widget, U: Delegate<T, W>>(model: M, delegate: U) -> List<T, M::Output, W, U, ()> {
         let model = model.into_state();
         let spacing = 10.0;
 
@@ -85,6 +93,66 @@ impl List<(), Vec<()>, Empty, EmptyDelegate> {
             model,
             delegate,
             spacing,
+            selection: None,
+            last_index_clicked: LocalState::new(0),
+            phantom: Default::default(),
+            phantom_widget: Default::default(),
+        }
+    }
+}
+
+impl<T: StateContract, M: State<T=Vec<T>>, W: Widget, U: Delegate<T, W>, I: StateContract + PartialEq> List<T, M, W, U, I> {
+    /// Returns a list selectable where the items within are selectable
+    ///
+    /// Consumes the `self` argument. It takes an `id` function from the item **T** to the
+    /// [`Id`]. It also takes something that can be turned into a selection
+    ///
+    /// Examples of this is [`Option<Id>`] for single-selection and
+    /// [`HashSet<Id>`] for multi-selection.
+    pub fn selectable<I2: StateContract + PartialEq + Eq + Hash>(
+        self,
+        selection: impl Into<Selection<I2>>,
+    ) -> List<T, M, Box<dyn AnyWidget>, SelectableListDelegate<T, M, W, U, I2>, I2> where T: Identifiable<I2> {
+        let selection = selection.into();
+
+        //let last_index_clicked = LocalState::new(0);
+
+        let new_delegate = SelectableListDelegate {
+            selection: selection.clone(),
+            inner_delegate: self.delegate.clone(),
+            last_index_clicked: self.last_index_clicked.clone(),
+            model: self.model.clone(),
+            phantom: Default::default(),
+        };
+
+        let child = Scroll::new(VStack::new(ForEach::new(self.model.clone(), new_delegate.clone())).spacing(self.spacing).boxed());
+
+
+        /*let child = Scroll::new(
+            VStack::new(vec![
+                Rectangle::new()
+                    .fill(TRANSPARENT)
+                    .frame(0.0, self.start_offset.clone())
+                    .expand_width(),
+                ForEach::new(self.internal_model.clone(), new_delegate.clone()),
+                Rectangle::new()
+                    .fill(TRANSPARENT)
+                    .frame(0.0, self.end_offset.clone())
+                    .expand_width(),
+            ])
+                .spacing(self.spacing),
+        );*/
+
+        List {
+            id: self.id,
+            position: self.position,
+            dimension: self.dimension,
+            child,
+            model: self.model,
+            delegate: new_delegate,
+            spacing: self.spacing,
+            selection: Some(selection),
+            last_index_clicked: self.last_index_clicked,
             phantom: Default::default(),
             phantom_widget: Default::default(),
         }
@@ -159,64 +227,6 @@ impl List<(), Vec<()>, Empty, EmptyDelegate> {
             last_index_clicked: self.last_index_clicked,
             sub_tree_function: Some(children),
             tree_disclosure,
-        })
-    }
-
-    /// Returns a list selectable where the items within are selectable
-    ///
-    /// Consumes the `self` argument. It takes an `id` function from the item **T** to the
-    /// [`Id`]. It also takes something that can be turned into a selection
-    ///
-    /// Examples of this is [`Option<Id>`] for single-selection and
-    /// [`HashSet<Id>`] for multi-selection.
-    pub fn selectable(
-        mut self,
-        id: fn(&T) -> WidgetId,
-        selection: impl Into<Selection>,
-    ) -> Box<List<T, SelectableListDelegate<T, U>>> {
-        let selection = selection.into();
-        let last_index_clicked = LocalState::new(0);
-
-        let new_delegate = SelectableListDelegate {
-            item_id_function: id,
-            selection: selection.clone(),
-            inner_delegate: self.delegate,
-            last_selected_index: last_index_clicked.clone(),
-            internal_model: self.internal_model.clone(),
-        };
-
-        let child = Scroll::new(
-            VStack::new(vec![
-                Rectangle::new()
-                    .fill(TRANSPARENT)
-                    .frame(0.0, self.start_offset.clone())
-                    .expand_width(),
-                ForEach::new(self.internal_model.clone(), new_delegate.clone()),
-                Rectangle::new()
-                    .fill(TRANSPARENT)
-                    .frame(0.0, self.end_offset.clone())
-                    .expand_width(),
-            ])
-            .spacing(self.spacing),
-        );
-
-        Box::new(List {
-            id: self.id,
-            child,
-            delegate: new_delegate,
-            position: Default::default(),
-            dimension: Default::default(),
-            spacing: self.spacing,
-            model: self.model,
-            internal_model: self.internal_model,
-            index_offset: self.index_offset,
-            start_offset: self.start_offset,
-            end_offset: self.end_offset,
-            item_id_function: Some(id),
-            selection: Some(selection.clone()),
-            last_index_clicked,
-            sub_tree_function: None,
-            tree_disclosure: self.tree_disclosure,
         })
     }*/
 
@@ -411,184 +421,200 @@ impl List<(), Vec<()>, Empty, EmptyDelegate> {
     */
 }
 
-impl<T: StateContract, M: State<T=Vec<T>>, W: Widget, U: Delegate<T, W>> CommonWidget for List<T, M, W, U> {
+impl<T: StateContract, M: State<T=Vec<T>>, W: Widget, U: Delegate<T, W>, I: StateContract + PartialEq> CommonWidget for List<T, M, W, U, I> {
     CommonWidgetImpl!(self, id: self.id, child: self.child, position: self.position, dimension: self.dimension);
 }
 
-impl<T: StateContract, M: State<T=Vec<T>>, W: Widget, U: Delegate<T, W>> Debug for List<T, M, W, U> {
+impl<T: StateContract, M: State<T=Vec<T>>, W: Widget, U: Delegate<T, W>, I: StateContract + PartialEq> Debug for List<T, M, W, U, I> {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("List").field("child", &self.child).finish()
     }
 }
 
-impl<T: StateContract, M: State<T=Vec<T>>, W: Widget, U: Delegate<T, W>> WidgetExt for List<T, M, W, U> {}
+impl<T: StateContract, M: State<T=Vec<T>>, W: Widget, U: Delegate<T, W>, I: StateContract + PartialEq> WidgetExt for List<T, M, W, U, I> {}
 
-// #[derive(Clone)]
-// pub struct TreeListDelegate<T, U>
-// where
-//     T: StateContract,
-//     U: Delegate<T> + 'static,
-// {
-//     sub_tree_function: fn(TState<T>) -> TState<Option<Vec<T>>>,
-//     tree_disclosure: TreeDisclosure,
-//     inner_delegate: U,
-// }
-//
-// impl<T: StateContract, U: Delegate<T> + 'static> Delegate<T> for TreeListDelegate<T, U> {
-//     fn call(&self, item: TState<T>, index: TState<usize>) -> Box<dyn Widget> {
-//         let widget = self.inner_delegate.call(item.clone(), index.clone());
-//
-//         let cloned = self.clone();
-//         let inner_delegate = move |item: TState<T>, index: TState<usize>| -> Box<dyn Widget> {
-//             let view = cloned.clone().call(item, index);
-//             view.padding(EdgeInsets::single(0.0, 0.0, 20.0, 0.0))
-//         };
-//
-//         let opened = LocalState::new(false);
-//
-//         let disclosure_item: Box<dyn Widget> = match self.tree_disclosure {
-//             TreeDisclosure::Arrow => {
-//                 let rotation = opened.mapped(|b: &bool| if *b { 90.0 } else { 0.0 });
-//
-//                 Canvas::new(|_, mut context, _| {
-//                     context.move_to(8.0, 5.0);
-//                     context.line_to(13.0, 10.0);
-//                     context.line_to(8.0, 15.0);
-//                     context.set_stroke_style(EnvironmentColor::DarkText);
-//                     context.set_line_width(1.5);
-//                     context.stroke();
-//
-//                     context
-//                 })
-//                 .frame(20.0, 20.0)
-//                 .rotation_effect(rotation)
-//             }
-//             TreeDisclosure::Custom(f) => f(opened.clone()),
-//         };
-//
-//         let disclosure = PlainButton::new(disclosure_item.clone())
-//             .on_click(capture!([opened], |env: &mut Environment| {
-//                 *opened = !*opened
-//             }));
-//
-//         let sub_tree_model = (self.sub_tree_function)(item);
-//
-//         VStack::new(vec![
-//             HStack::new(vec![
-//                 IfElse::new(sub_tree_model.is_some().ignore_writes())
-//                     .when_true(disclosure)
-//                     .when_false(disclosure_item.hidden()),
-//                 widget,
-//             ])
-//             .spacing(0.0),
-//             IfElse::new(opened).when_true(ForEach::new(
-//                 sub_tree_model.unwrap_or_default(),
-//                 inner_delegate,
-//             )),
-//         ])
-//     }
-// }
-//
-// #[derive(Clone)]
-// pub struct SelectableListDelegate<T, U>
-// where
-//     T: StateContract,
-//     U: Delegate<T> + 'static,
-// {
-//     item_id_function: fn(&T) -> WidgetId,
-//     selection: Selection,
-//     inner_delegate: U,
-//     last_selected_index: TState<usize>,
-//     internal_model: TState<Vec<T>>,
-// }
-//
-// impl<T: StateContract, U: Delegate<T> + 'static> Delegate<T> for SelectableListDelegate<T, U> {
-//     fn call(&self, item: TState<T>, index: TState<usize>) -> Box<dyn Widget> {
-//         let selection = self.selection.clone();
-//         let last_selected_index = self.last_selected_index.clone();
-//         let internal_model = self.internal_model.clone();
-//         let id_function = self.item_id_function;
-//
-//         PlainButton::new(self.inner_delegate.call(item.clone(), index.clone())).on_click(
-//             move |env: &mut Environment, modifier: ModifierKey| {
-//                 let mut selection = selection.clone();
-//                 let mut last_selected_index = last_selected_index.clone();
-//                 let value = id_function(&*item.value());
-//
-//                 match &mut selection {
-//                     // If we are in single selection mode
-//                     Selection::Single(id) => {
-//                         let val = id.value_mut().clone();
-//
-//                         // If the value we clicked while holding down GUI (on mac) and Ctrl (on windows)
-//                         // is the same as already selected, deselect the value. Otherwise select the
-//                         // item clicked.
-//                         if let Some(val) = val {
-//                             if val == value && modifier == MULTI_SELECTION_MODIFIER {
-//                                 *id.value_mut() = None;
-//                             } else {
-//                                 *id.value_mut() = Some(value);
-//                             }
-//                         } else {
-//                             *id.value_mut() = Some(value);
-//                         }
-//                     }
-//                     // If we are in multi-select mode
-//                     Selection::Multi(selections) => {
-//                         match modifier {
-//                             // If we are holding down GUI (on mac) or CTRL (on windows), add the item
-//                             // to the set if it does not already contain it. Otherwise remove it from
-//                             // the set.
-//                             MULTI_SELECTION_MODIFIER => {
-//                                 if !selections.value_mut().remove(&value) {
-//                                     selections.value_mut().insert(value);
-//                                 }
-//                                 *last_selected_index.value_mut() = *index.value();
-//                             }
-//                             LIST_SELECTION_MODIFIER => {
-//                                 selections.value_mut().clear();
-//                                 let min = min(*index.value(), *last_selected_index.value());
-//                                 let max = max(*index.value(), *last_selected_index.value());
-//
-//                                 for val in min..=max {
-//                                     //dbg!(&internal_model);
-//                                     let id = id_function(&internal_model.value()[val]);
-//
-//                                     selections.value_mut().insert(id);
-//                                 }
-//                             }
-//                             // If we are not holding it down, remove all elements from the set and add
-//                             // the newly clicked element.
-//                             _ => {
-//                                 selections.value_mut().clear();
-//                                 selections.value_mut().insert(value);
-//                                 *last_selected_index.value_mut() = *index.value();
-//                             }
-//                         }
-//                     }
-//                 }
-//             },
-//         )
-//     }
-// }
-//
-// #[derive(Clone, Debug)]
-// pub enum Selection {
-//     Single(TState<Option<WidgetId>>),
-//     Multi(TState<HashSet<WidgetId>>),
-// }
-//
-// impl Into<Selection> for TState<Option<WidgetId>> {
-//     fn into(self) -> Selection {
-//         Selection::Single(self)
-//     }
-// }
-//
-// impl Into<Selection> for TState<HashSet<WidgetId>> {
-//     fn into(self) -> Selection {
-//         Selection::Multi(self)
-//     }
-// }
+pub trait Identifiable<I: StateContract + PartialEq> {
+    fn identifier(&self) -> I;
+}
+
+impl<T: StateContract + PartialEq> Identifiable<T> for T {
+    fn identifier(&self) -> T {
+        self.clone()
+    }
+}
+
+#[derive(Clone, Debug)]
+pub enum Selection<T: StateContract> {
+    Single(LocalState<Option<T>>),
+    Multi(LocalState<HashSet<T>>),
+}
+
+impl<T: StateContract> Into<Selection<T>> for LocalState<Option<T>> {
+    fn into(self) -> Selection<T> {
+        Selection::Single(self)
+    }
+}
+
+impl<T: StateContract> Into<Selection<T>> for LocalState<HashSet<T>> {
+    fn into(self) -> Selection<T> {
+        Selection::Multi(self)
+    }
+}
+
+#[derive(Clone)]
+pub struct SelectableListDelegate<T, M, W, U, I> where
+    T: StateContract + Identifiable<I>,
+    M: State<T=Vec<T>>,
+    W: Widget,
+    U: Delegate<T, W>,
+    I: StateContract + PartialEq + Eq + Hash,
+{
+    selection: Selection<I>,
+    inner_delegate: U,
+    last_index_clicked: LocalState<usize>,
+    model: M,
+    phantom: PhantomData<W>,
+}
+
+impl<T: StateContract + Identifiable<I>, M: State<T=Vec<T>>, W: Widget, U: Delegate<T, W>, I: StateContract + PartialEq + Eq + Hash> Delegate<T, Box<dyn AnyWidget>> for SelectableListDelegate<T, M, W, U, I> {
+    fn call(&self, item: Box<dyn AnyState<T=T>>, index: Box<dyn AnyReadState<T=usize>>) -> Box<dyn AnyWidget> {
+        let selection = self.selection.clone();
+        let last_index_clicked = self.last_index_clicked.clone();
+        let model = self.model.clone();
+
+        MouseArea::new(self.inner_delegate.call(item.clone(), index.clone()))
+            .on_click(a!(|_, modifier: ModifierKey| {
+                let mut selection = selection.clone();
+                let identifier = item.value().identifier();
+
+                let mut model = Clone::clone(&model);
+                let mut model = carbide::state::State::value_mut(&mut model);
+
+                match &mut selection {
+                    // If we are in single selection mode
+                    Selection::Single(id) => {
+                        let val = id.value_mut().clone();
+
+                        // If the value we clicked while holding down GUI (on mac) and Ctrl (on windows)
+                        // is the same as already selected, deselect the value. Otherwise select the
+                        // item clicked.
+                        if let Some(val) = val {
+                            if val == identifier && modifier == MULTI_SELECTION_MODIFIER {
+                                *id.value_mut() = None;
+                            } else {
+                                *id.value_mut() = Some(identifier);
+                            }
+                        } else {
+                            *id.value_mut() = Some(identifier);
+                        }
+                    }
+                    Selection::Multi(selections) => {
+                        match modifier {
+                            // If we are holding down GUI (on mac) or CTRL (on windows), add the item
+                            // to the set if it does not already contain it. Otherwise remove it from
+                            // the set.
+                            MULTI_SELECTION_MODIFIER => {
+                                if !selections.value_mut().remove(&identifier) {
+                                    selections.value_mut().insert(identifier);
+                                }
+                                *$last_index_clicked = *index.value();
+                            }
+                            LIST_SELECTION_MODIFIER => {
+                                selections.value_mut().clear();
+                                let min = min(*index.value(), *$last_index_clicked);
+                                let max = max(*index.value(), *$last_index_clicked);
+
+                                for val in min..=max {
+                                    //dbg!(&internal_model);
+                                    let id = (*model)[val].identifier();
+
+                                    selections.value_mut().insert(id);
+                                }
+                            }
+                            // If we are not holding it down, remove all elements from the set and add
+                            // the newly clicked element.
+                            _ => {
+                                selections.value_mut().clear();
+                                selections.value_mut().insert(identifier);
+                                *$last_index_clicked = *index.value();
+                            }
+                        }
+                    }
+                }
+
+            }))
+            .boxed()
+    }
+}
+
+/*#[derive(Clone)]
+pub struct TreeListDelegate<T, U>
+where
+    T: StateContract,
+    U: Delegate<T> + 'static,
+{
+    sub_tree_function: fn(TState<T>) -> TState<Option<Vec<T>>>,
+    tree_disclosure: TreeDisclosure,
+    inner_delegate: U,
+}
+
+impl<T: StateContract, U: Delegate<T> + 'static> Delegate<T> for TreeListDelegate<T, U> {
+    fn call(&self, item: TState<T>, index: TState<usize>) -> Box<dyn Widget> {
+        let widget = self.inner_delegate.call(item.clone(), index.clone());
+
+        let cloned = self.clone();
+        let inner_delegate = move |item: TState<T>, index: TState<usize>| -> Box<dyn Widget> {
+            let view = cloned.clone().call(item, index);
+            view.padding(EdgeInsets::single(0.0, 0.0, 20.0, 0.0))
+        };
+
+        let opened = LocalState::new(false);
+
+        let disclosure_item: Box<dyn Widget> = match self.tree_disclosure {
+            TreeDisclosure::Arrow => {
+                let rotation = opened.mapped(|b: &bool| if *b { 90.0 } else { 0.0 });
+
+                Canvas::new(|_, mut context, _| {
+                    context.move_to(8.0, 5.0);
+                    context.line_to(13.0, 10.0);
+                    context.line_to(8.0, 15.0);
+                    context.set_stroke_style(EnvironmentColor::DarkText);
+                    context.set_line_width(1.5);
+                    context.stroke();
+
+                    context
+                })
+                .frame(20.0, 20.0)
+                .rotation_effect(rotation)
+            }
+            TreeDisclosure::Custom(f) => f(opened.clone()),
+        };
+
+        let disclosure = PlainButton::new(disclosure_item.clone())
+            .on_click(capture!([opened], |env: &mut Environment| {
+                *opened = !*opened
+            }));
+
+        let sub_tree_model = (self.sub_tree_function)(item);
+
+        VStack::new(vec![
+            HStack::new(vec![
+                IfElse::new(sub_tree_model.is_some().ignore_writes())
+                    .when_true(disclosure)
+                    .when_false(disclosure_item.hidden()),
+                widget,
+            ])
+            .spacing(0.0),
+            IfElse::new(opened).when_true(ForEach::new(
+                sub_tree_model.unwrap_or_default(),
+                inner_delegate,
+            )),
+        ])
+    }
+}
+*/
+
+
 //
 // #[derive(Clone, Debug)]
 // pub enum TreeDisclosure {

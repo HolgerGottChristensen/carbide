@@ -1,6 +1,6 @@
 use carbide_core::draw::Dimension;
 use carbide_core::environment::*;
-use carbide_core::state::State;
+use carbide_core::state::{ReadState, State};
 use carbide_core::widget::*;
 use carbide_wgpu::{Application, Window};
 
@@ -8,7 +8,7 @@ fn main() {
     let mut application = Application::new()
         .with_asset_fonts();
 
-    fn delegate(item: impl State<T=EnvironmentColor>, index: impl State<T=usize>) -> impl Widget {
+    fn delegate(item: impl State<T=EnvironmentColor>, index: impl ReadState<T=usize>) -> impl Widget {
         ZStack::new((
             Rectangle::new().fill(item),
             Text::new(index).font_size(EnvironmentFontSize::LargeTitle),

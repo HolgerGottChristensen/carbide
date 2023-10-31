@@ -360,7 +360,7 @@ pub struct PopupDelegate<T, S, B>
 }
 
 impl<T: StateContract, S: State<T=T>, B: State<T=bool>> Delegate<T, Box<dyn AnyWidget>> for PopupDelegate<T, S, B> {
-    fn call(&self, item: Box<dyn AnyState<T=T>>, index: Box<dyn AnyState<T=usize>>) -> Box<dyn AnyWidget> {
+    fn call(&self, item: Box<dyn AnyState<T=T>>, index: Box<dyn AnyReadState<T=usize>>) -> Box<dyn AnyWidget> {
         let selected_item_del = self.selected_item.clone();
         let popup_open = self.popup_open.clone();
         let enabled = self.enabled.clone();
@@ -369,7 +369,7 @@ impl<T: StateContract, S: State<T=T>, B: State<T=bool>> Delegate<T, Box<dyn AnyW
         // If we set this state to be hovered, we set the index, and otherwise we set to None.
         let hover_state = Map2::map(
             self.hover_model.clone(),
-            index.clone(),
+            index.clone().ignore_writes(),
             |a, b| {
                 if let Some(a) = a {
                     *a == *b
