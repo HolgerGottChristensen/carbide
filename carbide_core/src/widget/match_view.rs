@@ -1,4 +1,5 @@
 use std::fmt::{Debug, Formatter};
+use carbide::flags::Flags;
 
 use carbide_macro::{carbide_default_builder2};
 
@@ -26,12 +27,12 @@ where
 
 impl Match<(), ()> {
     #[carbide_default_builder2]
-    pub fn new<T: StateContract, S: IntoReadState<T>>(state: S) -> Match<T, S::Output> {
+    pub fn new<T: StateContract, S: ReadState<T=T>>(state: S) -> Match<T, S> {
         Match {
             id: WidgetId::new(),
             position: Position::new(0.0, 0.0),
             dimension: Dimension::new(0.0, 0.0),
-            local_state: state.into_read_state(),
+            local_state: state,
             widgets: vec![],
             current_index: None,
         }
@@ -86,6 +87,10 @@ impl<T: StateContract, S: ReadState<T=T>> StateSync for Match<T, S> {
 impl<T: StateContract, S: ReadState<T=T>> CommonWidget for Match<T, S> {
     fn id(&self) -> WidgetId {
         self.id
+    }
+
+    fn flag(&self) -> Flags {
+        Flags::PROXY
     }
 
     fn foreach_child<'a>(&'a self, f: &mut dyn FnMut(&'a dyn AnyWidget)) {

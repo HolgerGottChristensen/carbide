@@ -11,7 +11,7 @@ use carbide::color::TRANSPARENT;
 use carbide::draw::{Color, Dimension};
 use carbide::environment::{Environment, EnvironmentColor, EnvironmentFontSize};
 use carbide::layout::BasicLayouter;
-use carbide::state::{LocalState, Map2, ReadState, State, StateExt, TState};
+use carbide::state::{LocalState, Map2, ReadState, ReadStateExtNew, State, StateExt, TState};
 use carbide::text::FontWeight;
 use carbide::widget::*;
 use carbide::widget::WidgetExt;
@@ -32,7 +32,7 @@ fn main() {
 
     let news_articles_for_index = news_articles.clone();
 
-    let first_selected_article = selected_items.mapped(move |a: &HashSet<WidgetId>| {
+    let first_selected_article = selected_items.map(move |a: &HashSet<WidgetId>| {
         match (
             news_articles_for_index.clone().value().deref(),
             a.iter().next(),
@@ -74,7 +74,7 @@ fn main() {
     let delegate = move |article: TState<Article>, index: TState<usize>| -> Box<dyn AnyWidget> {
         let selected_item = article.clone();
 
-        let selected = selected_items_delegate.mapped(move |map: &HashSet<WidgetId>| {
+        let selected = selected_items_delegate.map(move |map: &HashSet<WidgetId>| {
             map.contains(&id_function(&*selected_item.value()))
         });
 

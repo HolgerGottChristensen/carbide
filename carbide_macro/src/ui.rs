@@ -46,7 +46,7 @@ impl Fold for Folder {
                             // This is expected to be optimized out by the compiler,
                             // because it is wrapped in a if false.
                             #[allow(unused_variables)]
-                            match *carbide::state::ReadState::value(&(#expr).clone()) {
+                            match &*carbide::state::ReadState::value(&(#expr).clone()) {
                                 #(
                                     #patterns => todo!(),
                                 )*

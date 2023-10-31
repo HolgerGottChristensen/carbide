@@ -5,8 +5,10 @@ use std::fmt::{Debug, Formatter};
 use std::hash::Hash;
 use std::marker::PhantomData;
 use carbide::a;
-use carbide::state::{AnyReadState, AnyState};
+use carbide::draw::Rect;
+use carbide::state::{AnyReadState, AnyState, Map1};
 use carbide::widget::{AnyWidget, MouseArea};
+use carbide::widget::canvas::Context;
 use carbide_core::CommonWidgetImpl;
 use carbide_core::state::IntoState;
 use carbide_core::widget::{Empty, EmptyDelegate};
@@ -24,6 +26,7 @@ use carbide_core::widget::{
     WidgetExt, WidgetId,
 };
 use carbide_core::widget::canvas::Canvas;
+use carbide_macro::ui;
 
 use crate::PlainButton;
 
@@ -55,6 +58,7 @@ where
 
     selection: Option<Selection<I>>, // TODO: should be marked as state right?
     #[state] last_index_clicked: LocalState<usize>, // Used to make shift selects
+    tree_disclosure: TreeDisclosure,
 
     phantom: PhantomData<T>,
     phantom_widget: PhantomData<W>,
@@ -95,6 +99,7 @@ impl List<(), Vec<()>, Empty, EmptyDelegate, ()> {
             spacing,
             selection: None,
             last_index_clicked: LocalState::new(0),
+            tree_disclosure: TreeDisclosure::Arrow,
             phantom: Default::default(),
             phantom_widget: Default::default(),
         }
@@ -115,8 +120,6 @@ impl<T: StateContract, M: State<T=Vec<T>>, W: Widget, U: Delegate<T, W>, I: Stat
     ) -> List<T, M, Box<dyn AnyWidget>, SelectableListDelegate<T, M, W, U, I2>, I2> where T: Identifiable<I2> {
         let selection = selection.into();
 
-        //let last_index_clicked = LocalState::new(0);
-
         let new_delegate = SelectableListDelegate {
             selection: selection.clone(),
             inner_delegate: self.delegate.clone(),
@@ -126,22 +129,6 @@ impl<T: StateContract, M: State<T=Vec<T>>, W: Widget, U: Delegate<T, W>, I: Stat
         };
 
         let child = Scroll::new(VStack::new(ForEach::new(self.model.clone(), new_delegate.clone())).spacing(self.spacing).boxed());
-
-
-        /*let child = Scroll::new(
-            VStack::new(vec![
-                Rectangle::new()
-                    .fill(TRANSPARENT)
-                    .frame(0.0, self.start_offset.clone())
-                    .expand_width(),
-                ForEach::new(self.internal_model.clone(), new_delegate.clone()),
-                Rectangle::new()
-                    .fill(TRANSPARENT)
-                    .frame(0.0, self.end_offset.clone())
-                    .expand_width(),
-            ])
-                .spacing(self.spacing),
-        );*/
 
         List {
             id: self.id,
@@ -153,6 +140,38 @@ impl<T: StateContract, M: State<T=Vec<T>>, W: Widget, U: Delegate<T, W>, I: Stat
             spacing: self.spacing,
             selection: Some(selection),
             last_index_clicked: self.last_index_clicked,
+            tree_disclosure: TreeDisclosure::Arrow,
+            phantom: Default::default(),
+            phantom_widget: Default::default(),
+        }
+    }
+
+    pub fn tree(
+        mut self,
+        tree_disclosure: impl Into<TreeDisclosure>,
+    ) -> List<T, M, Box<dyn AnyWidget>, TreeListDelegate<T, W, U>, I> where Box<dyn AnyState<T=T>>: Treeable<T> {
+        let tree_disclosure = tree_disclosure.into();
+
+        let new_delegate = TreeListDelegate {
+            tree_disclosure: tree_disclosure.clone(),
+            inner_delegate: self.delegate.clone(),
+            phantom: Default::default(),
+            phantom2: Default::default(),
+        };
+
+        let child = Scroll::new(VStack::new(ForEach::new(self.model.clone(), new_delegate.clone())).spacing(self.spacing).boxed());
+
+        List {
+            id: self.id,
+            position: self.position,
+            dimension: self.dimension,
+            child,
+            model: self.model,
+            delegate: new_delegate,
+            spacing: self.spacing,
+            selection: self.selection,
+            last_index_clicked: self.last_index_clicked,
+            tree_disclosure,
             phantom: Default::default(),
             phantom_widget: Default::default(),
         }
@@ -180,54 +199,6 @@ impl<T: StateContract, M: State<T=Vec<T>>, W: Widget, U: Delegate<T, W>, I: Stat
             .spacing(spacing),
         );
         Box::new(self)
-    }
-
-    pub fn tree(
-        mut self,
-        children: fn(TState<T>) -> TState<Option<Vec<T>>>,
-        tree_disclosure: impl Into<TreeDisclosure>,
-    ) -> Box<List<T, TreeListDelegate<T, U>>> {
-        let tree_disclosure = tree_disclosure.into();
-
-        let new_delegate = TreeListDelegate {
-            sub_tree_function: children,
-            tree_disclosure: tree_disclosure.clone(),
-            inner_delegate: self.delegate,
-        };
-
-        let child = Scroll::new(
-            VStack::new(vec![
-                Rectangle::new()
-                    .fill(TRANSPARENT)
-                    .frame(0.0, self.start_offset.clone())
-                    .expand_width(),
-                ForEach::new(self.internal_model.clone(), new_delegate.clone()),
-                Rectangle::new()
-                    .fill(TRANSPARENT)
-                    .frame(0.0, self.end_offset.clone())
-                    .expand_width(),
-            ])
-            .spacing(self.spacing),
-        );
-
-        Box::new(List {
-            id: self.id,
-            child,
-            delegate: new_delegate,
-            position: Default::default(),
-            dimension: Default::default(),
-            spacing: self.spacing,
-            model: self.model,
-            internal_model: self.internal_model,
-            index_offset: self.index_offset,
-            start_offset: self.start_offset,
-            end_offset: self.end_offset,
-            item_id_function: self.item_id_function,
-            selection: self.selection,
-            last_index_clicked: self.last_index_clicked,
-            sub_tree_function: Some(children),
-            tree_disclosure,
-        })
     }*/
 
     /*
@@ -547,34 +518,40 @@ impl<T: StateContract + Identifiable<I>, M: State<T=Vec<T>>, W: Widget, U: Deleg
     }
 }
 
-/*#[derive(Clone)]
-pub struct TreeListDelegate<T, U>
-where
-    T: StateContract,
-    U: Delegate<T> + 'static,
-{
-    sub_tree_function: fn(TState<T>) -> TState<Option<Vec<T>>>,
-    tree_disclosure: TreeDisclosure,
-    inner_delegate: U,
+pub trait Treeable<T: StateContract>: State<T=T> {
+    fn children(&self) -> Box<dyn AnyState<T=Vec<T>>>;
 }
 
-impl<T: StateContract, U: Delegate<T> + 'static> Delegate<T> for TreeListDelegate<T, U> {
-    fn call(&self, item: TState<T>, index: TState<usize>) -> Box<dyn Widget> {
-        let widget = self.inner_delegate.call(item.clone(), index.clone());
+#[derive(Clone)]
+pub struct TreeListDelegate<T, W, U>
+where
+    T: StateContract,
+    W: Widget,
+    U: Delegate<T, W>,
+{
+    tree_disclosure: TreeDisclosure,
+    inner_delegate: U,
+    phantom: PhantomData<W>,
+    phantom2: PhantomData<T>,
+}
 
+impl<T: StateContract, W: Widget, U: Delegate<T, W>> Delegate<T, Box<dyn AnyWidget>> for TreeListDelegate<T, W, U> where Box<dyn AnyState<T=T>>: Treeable<T> {
+    fn call(&self, item: Box<dyn AnyState<T=T>>, index: Box<dyn AnyReadState<T=usize>>) -> Box<dyn AnyWidget> {
+        let widget = self.inner_delegate.call(item.clone(), index.clone());
         let cloned = self.clone();
-        let inner_delegate = move |item: TState<T>, index: TState<usize>| -> Box<dyn Widget> {
+
+        let inner_delegate = move |item: Box<dyn AnyState<T=T>>, index: Box<dyn AnyReadState<T=usize>>| -> Box<dyn AnyWidget> {
             let view = cloned.clone().call(item, index);
-            view.padding(EdgeInsets::single(0.0, 0.0, 20.0, 0.0))
+            view.padding(EdgeInsets::single(0.0, 0.0, 20.0, 0.0)).boxed()
         };
 
         let opened = LocalState::new(false);
 
-        let disclosure_item: Box<dyn Widget> = match self.tree_disclosure {
+        let disclosure_item = match self.tree_disclosure {
             TreeDisclosure::Arrow => {
-                let rotation = opened.mapped(|b: &bool| if *b { 90.0 } else { 0.0 });
+                let rotation = Map1::read_map(opened.clone(), |b| if *b { 90.0 } else { 0.0 });
 
-                Canvas::new(|_, mut context, _| {
+                Canvas::new(|rect: Rect, mut context: Context, env: &mut Environment| {
                     context.move_to(8.0, 5.0);
                     context.line_to(13.0, 10.0);
                     context.line_to(8.0, 15.0);
@@ -584,52 +561,51 @@ impl<T: StateContract, U: Delegate<T> + 'static> Delegate<T> for TreeListDelegat
 
                     context
                 })
-                .frame(20.0, 20.0)
-                .rotation_effect(rotation)
+                    .frame(20.0, 20.0)
+                    .rotation_effect(rotation)
+                    .boxed()
             }
             TreeDisclosure::Custom(f) => f(opened.clone()),
         };
 
-        let disclosure = PlainButton::new(disclosure_item.clone())
-            .on_click(capture!([opened], |env: &mut Environment| {
-                *opened = !*opened
+        let disclosure = MouseArea::new(disclosure_item.clone())
+            .on_click(a!(|_, _| {
+                *$opened = !*$opened;
             }));
 
-        let sub_tree_model = (self.sub_tree_function)(item);
+        let sub_tree_model = item.children();
 
-        VStack::new(vec![
-            HStack::new(vec![
-                IfElse::new(sub_tree_model.is_some().ignore_writes())
-                    .when_true(disclosure)
-                    .when_false(disclosure_item.hidden()),
+        let sub_tree_model_empty = Map1::read_map(sub_tree_model.clone(), |s| s.is_empty());
+
+        VStack::new((
+            HStack::new((
+                IfElse::new(sub_tree_model_empty)
+                    .when_true(*disclosure_item.hidden())
+                    .when_false(disclosure),
                 widget,
-            ])
-            .spacing(0.0),
-            IfElse::new(opened).when_true(ForEach::new(
-                sub_tree_model.unwrap_or_default(),
-                inner_delegate,
-            )),
-        ])
+            )).spacing(0.0),
+            IfElse::new(opened)
+                .when_true(ForEach::new(sub_tree_model, inner_delegate)),
+        )).boxed()
     }
 }
-*/
 
 
-//
-// #[derive(Clone, Debug)]
-// pub enum TreeDisclosure {
-//     Arrow,
-//     Custom(fn(TState<bool>) -> Box<dyn Widget>),
-// }
-//
-// impl Into<TreeDisclosure> for () {
-//     fn into(self) -> TreeDisclosure {
-//         TreeDisclosure::Arrow
-//     }
-// }
-//
-// impl Into<TreeDisclosure> for fn(TState<bool>) -> Box<dyn Widget> {
-//     fn into(self) -> TreeDisclosure {
-//         TreeDisclosure::Custom(self)
-//     }
-// }
+
+#[derive(Clone, Debug)]
+pub enum TreeDisclosure {
+    Arrow,
+    Custom(fn(LocalState<bool>) -> Box<dyn AnyWidget>),
+}
+
+impl Into<TreeDisclosure> for () {
+    fn into(self) -> TreeDisclosure {
+        TreeDisclosure::Arrow
+    }
+}
+
+impl Into<TreeDisclosure> for fn(LocalState<bool>) -> Box<dyn AnyWidget> {
+    fn into(self) -> TreeDisclosure {
+        TreeDisclosure::Custom(self)
+    }
+}
