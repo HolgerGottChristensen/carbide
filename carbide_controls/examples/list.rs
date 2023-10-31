@@ -1,7 +1,7 @@
 use carbide_controls::List;
 use carbide_core::draw::Dimension;
 use carbide_core::environment::EnvironmentColor;
-use carbide_core::state::{LocalState, TState};
+use carbide_core::state::{LocalState, State};
 use carbide_core::widget::*;
 use carbide_wgpu::{Application, Window};
 
@@ -15,11 +15,11 @@ fn main() {
 
     let list_model_state = LocalState::new(list_model);
 
-    fn delegate(item: TState<String>, _: TState<usize>) -> Box<dyn AnyWidget> {
-        ZStack::new(vec![
+    fn delegate(item: impl State<T=String>, _: impl State<T=usize>) -> impl Widget {
+        ZStack::new((
             Rectangle::new().fill(EnvironmentColor::Green),
             Text::new(item),
-        ])
+        ))
         .frame_fixed_height(80.0)
     }
 
