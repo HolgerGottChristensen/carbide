@@ -1,13 +1,9 @@
 use carbide_controls::{List, Treeable, TreeDisclosure};
 use carbide_core::draw::Dimension;
 use carbide_core::environment::EnvironmentColor;
-use carbide_core::lens;
-use carbide_core::state::{AnyState, FieldState, LocalState, Map1, ReadState, State, StateExt, StateExtNew, TState};
+use carbide_core::state::{AnyState, FieldState, LocalState, Map1, ReadState, State, StateExtNew};
 use carbide_core::widget::*;
 use carbide_wgpu::{Application, Window};
-
-use carbide_core as carbide;
-
 
 #[derive(Clone, Debug)]
 struct Tree(String, WidgetId, Vec<Tree>);
