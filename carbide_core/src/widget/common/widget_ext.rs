@@ -29,15 +29,15 @@ pub trait WidgetExt: Widget + Sized {
 
     /// Changes the flexibility of the widget to a custom value. This can be useful when the
     /// default value does not provide the expected layout for example within a VStack.
-    fn custom_flexibility(self, flexibility: u32) -> Box<Flexibility<Self>> {
-        Flexibility::new(self, flexibility)
+    fn custom_flexibility(self, flexibility: u32) -> Flexibility<Self> {
+        *Flexibility::new(self, flexibility)
     }
 
     /// Change the flags of a given widget. This can for example be used to make any widget take
     /// Flags::USEMAXCROSSAXIS to make it use the max cross axis instead of expanding infinitely
     /// within a VStack or HStack.
-    fn custom_flags(self, flags: Flags) -> Box<Flagged<Self>> {
-        Flagged::new(self, flags)
+    fn custom_flags(self, flags: Flags) -> Flagged<Self> {
+        *Flagged::new(self, flags)
     }
 
     /// Add a widget to the background of this widget. The proposed size for the widget in the
@@ -133,11 +133,11 @@ pub trait WidgetExt: Widget + Sized {
         Border::new(self)
     }
 
-    fn foreground_color(self, color: impl Into<TState<Color>>) -> ForegroundColor<Self> {
+    fn foreground_color<C: IntoReadState<Color>>(self, color: C) -> ForegroundColor<Self> {
         let mut e = EnvUpdating::new(self);
         e.add(EnvironmentStateContainer::Color {
             key: EnvironmentColor::Label,
-            value: color.into(),
+            value: TState::new(Box::new(color.into_read_state().ignore_writes())),
         });
 
         *e

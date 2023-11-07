@@ -5,13 +5,13 @@ use chrono::{TimeZone, Utc};
 use futures::stream::FuturesOrdered;
 use futures::{FutureExt, StreamExt};
 
-use carbide::{lens, task};
+use carbide::{a, lens, task, ui};
 use carbide::{Application, Window};
 use carbide::color::TRANSPARENT;
 use carbide::draw::{Color, Dimension};
 use carbide::environment::{Environment, EnvironmentColor, EnvironmentFontSize};
 use carbide::layout::BasicLayouter;
-use carbide::state::{LocalState, Map2, ReadState, ReadStateExtNew, State, StateExt, TState};
+use carbide::state::{AnyReadState, AnyState, IndexState, LocalState, Map1, Map2, ReadState, ReadStateExtNew, State, StateExt, TState};
 use carbide::text::FontWeight;
 use carbide::widget::*;
 use carbide::widget::WidgetExt;
@@ -25,26 +25,8 @@ fn main() {
     let mut application = Application::new()
         .with_asset_fonts();
 
-    let env = application.environment_mut();
-
     let news_articles: LocalState<Option<Vec<Article>>> = LocalState::new(None);
-    let selected_items: LocalState<HashSet<WidgetId>> = LocalState::new(HashSet::new());
-
-    let news_articles_for_index = news_articles.clone();
-
-    let first_selected_article = selected_items.map(move |a: &HashSet<WidgetId>| {
-        match (
-            news_articles_for_index.clone().value().deref(),
-            a.iter().next(),
-        ) {
-            (Some(l), Some(id)) => l.iter().find(|&a| &a.carbide_id == id).cloned(),
-            _ => None,
-        }
-    });
-
-    fn id_function(article: &Article) -> WidgetId {
-        article.carbide_id
-    }
+    let selected_item: LocalState<Option<WidgetId>> = LocalState::new(None);
 
     task!(news_articles := {
         let client = reqwest::Client::new();
@@ -67,21 +49,22 @@ fn main() {
         Some(futures.collect::<Vec<_>>().await)
     });
 
-    println!("Hello hacker news");
+    let selected_items_delegate = selected_item.clone();
 
-    let selected_items_delegate = selected_items.clone();
-
-    let delegate = move |article: TState<Article>, index: TState<usize>| -> Box<dyn AnyWidget> {
-        let selected_item = article.clone();
-
-        let selected = selected_items_delegate.map(move |map: &HashSet<WidgetId>| {
-            map.contains(&id_function(&*selected_item.value()))
-        });
+    let delegate = move |article: Box<dyn AnyState<T=Article>>, index: Box<dyn AnyReadState<T=usize>>| -> Box<dyn AnyWidget> {
 
         let top_padding = if *index.value() == 0 { 5.0 } else { 0.0 };
 
+        let selected = Map2::read_map(article.clone(), selected_items_delegate.clone(), |article, selected| {
+            if let Some(id) = selected {
+                article.carbide_id == *id
+            } else {
+                false
+            }
+        });
+
         let background_color = Map2::read_map(
-            selected.clone(),
+            selected,
             EnvironmentColor::Accent.color(),
             |selected: &bool, base_color: &Color| {
                 if *selected {
@@ -92,31 +75,33 @@ fn main() {
             },
         );
 
-        VStack::new(vec![
-            HStack::new(vec![
+        let timestamp = Map1::read_map(article.clone(), |article| {
+            let dt = Utc.timestamp(article.time as i64, 0);
+            format!("by {} {}, {}", article.by, dt.format("%D"), dt.format("%I:%M %p"))
+        });
+
+        VStack::new((
+            HStack::new((
                 Text::new(lens!(article.title)).font_weight(FontWeight::Bold),
                 Spacer::new(),
-            ]),
-            HStack::new(vec![
-                Text::new(lens!(|article| {
-                    let dt = Utc.timestamp(article.time as i64, 0);
-                    format!("by {} {}, {}", article.by, dt.format("%D"), dt.format("%I:%M %p"))
-                })),
+            )),
+            HStack::new((
+                Text::new(timestamp),
                 Image::new_icon("icons/thumb-up-line.png")
                     .resizeable()
-                    .frame(16, 16)
+                    .frame(16.0, 16.0)
                     .accent_color(EnvironmentColor::SecondaryLabel),
                 Text::new(lens!(article.score)).custom_flexibility(3),
                 Image::new_icon("icons/chat-1-line.png")
                     .resizeable()
-                    .frame(16, 16)
+                    .frame(16.0, 16.0)
                     .accent_color(EnvironmentColor::SecondaryLabel),
-                Text::new(lens!(article.descendants).unwrap_or_default())
+                Text::new(Map1::read_map(article.clone(), |article| article.descendants.unwrap_or_default()))
                     .custom_flexibility(3),
-            ])
+            ))
             .spacing(3.0)
             .foreground_color(EnvironmentColor::SecondaryLabel),
-        ])
+        ))
         .spacing(0.0)
         .cross_axis_alignment(CrossAxisAlignment::Start)
         .padding(EdgeInsets::single(top_padding, 3.0, 10.0, 10.0))
@@ -128,51 +113,61 @@ fn main() {
         .with_alignment(BasicLayouter::Leading)
     };
 
-    let list = List::new(news_articles.unwrap_or_default(), delegate)
-        .spacing(2.0)
-        .selectable(id_function, selected_items);
-
-    let loader = ZStack::new(vec![
+    let loader = ZStack::new((
         Rectangle::new().fill(EnvironmentColor::SystemBackground),
         ProgressView::new(),
-    ]);
+    ));
+
+    let widget = ui!(
+        match news_articles {
+            Some(news_articles) => {
+                HSplit::new(
+                    List::new(
+                        news_articles.clone(),
+                        delegate
+                    ).selectable(selected_item.clone()),
+
+                    match selected_item {
+                        Some(f) => {
+                            let index = Map2::read_map(news_articles.clone(), f.clone(), |a, i| {
+                                a.iter().position(|r| r.carbide_id == *i).unwrap()
+                            });
+                            Box::new(detail_view(IndexState::new(news_articles, index)))
+                        },
+                        _ => Rectangle::new().fill(EnvironmentColor::Orange).boxed(),
+                    }
+                ).relative_to_start(400.0).boxed()
+            }
+            _ => loader.boxed(),
+        }
+    );
+
 
     application.set_scene(Window::new(
         "Hacker-news example",
         Dimension::new(900.0, 500.0),
-        HSplit::new(
-            IfElse::new(news_articles.is_some().ignore_writes())
-                .when_true(list)
-                .when_false(loader),
-            detail_view(first_selected_article),
-        )
-            .relative_to_start(400.0),
+        widget,
     ).close_application_on_window_close());
 
     application.launch();
 }
 
-fn detail_view(selected_article: TState<Option<Article>>) -> Box<dyn AnyWidget> {
-    let selected_article_for_link = selected_article.clone();
-    let link =
-        PlainButton::new(
-            Text::new(lens!(|selected_article| {
-                selected_article.as_ref().and_then(|a| a.url.clone()).unwrap_or("No url to show".to_string())
-            })).foreground_color(EnvironmentColor::SecondaryLabel)
-        ).on_click(move |_: &mut Environment, _:_| {
-            let selected_article = selected_article_for_link.clone();
-            println!("Clicked");
-            selected_article.value().as_ref().and_then(|article| article.url.as_ref()).map(|a| open::that(a));
-        });
+fn detail_view(selected: impl State<T=Article>) -> impl Widget {
+    let selected_article_for_link = selected.clone();
+
+    let title = lens!(selected.title);
+    let url = lens!(selected.url);
+
+    let link = ui!(match url {
+        Some(url) => Text::new(url.clone()).on_click(a!(|_, _| { open::that(url.value().clone()); })).boxed(),
+        _ => Text::new("No URL for the article").boxed()
+    });
 
     ZStack::new((
-        Rectangle::new()
-            .fill(EnvironmentColor::SecondarySystemBackground),
+        Rectangle::new().fill(EnvironmentColor::SecondarySystemBackground),
         VStack::new((
             HStack::new((
-                Text::new(lens!(|selected_article| {
-                    selected_article.as_ref().map(|a| a.title.clone()).unwrap_or("No selected articles".to_string())
-                })).font_size(EnvironmentFontSize::Title),
+                Text::new(title).font_size(EnvironmentFontSize::Title),
                 Spacer::new()
             )),
             link,
@@ -180,5 +175,5 @@ fn detail_view(selected_article: TState<Option<Article>>) -> Box<dyn AnyWidget> 
         )).cross_axis_alignment(CrossAxisAlignment::Start)
             .spacing(0.0)
             .padding(EdgeInsets::single(0.0, 0.0, 10.0, 10.0)),
-    )).boxed()
+    ))
 }

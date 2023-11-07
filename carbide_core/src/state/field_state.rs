@@ -21,7 +21,7 @@ use crate::state::util::value_cell::{ValueRef, ValueRefMut};
 #[derive(Clone)]
 pub struct FieldState<S, FROM, TO>
 where
-    S: AnyState<T=FROM> + Clone + 'static,
+    S: State<T=FROM>,
     FROM: StateContract,
     TO: StateContract,
 {
@@ -35,7 +35,7 @@ where
     map_mut: for<'r, 's> fn(&'r mut FROM) -> &'r mut TO,
 }
 
-impl<S: AnyState<T=FROM> + Clone + 'static, FROM: StateContract, TO: StateContract> FieldState<S, FROM, TO> {
+impl<S: State<T=FROM>, FROM: StateContract, TO: StateContract> FieldState<S, FROM, TO> {
     pub fn new(
         state: S,
         map: for<'r, 's> fn(&'r FROM) -> &'r TO,
@@ -49,13 +49,13 @@ impl<S: AnyState<T=FROM> + Clone + 'static, FROM: StateContract, TO: StateContra
     }
 }
 
-impl<S: AnyState<T=FROM> + Clone + 'static, FROM: StateContract, TO: StateContract> NewStateSync for FieldState<S, FROM, TO> {
+impl<S: State<T=FROM>, FROM: StateContract, TO: StateContract> NewStateSync for FieldState<S, FROM, TO> {
     fn sync(&mut self, env: &mut Environment) -> bool {
         self.state.sync(env)
     }
 }
 
-impl<S: AnyState<T=FROM> + Clone + 'static, FROM: StateContract, TO: StateContract> AnyReadState for FieldState<S, FROM, TO> {
+impl<S: State<T=FROM>, FROM: StateContract, TO: StateContract> AnyReadState for FieldState<S, FROM, TO> {
     type T = TO;
     fn value_dyn(&self) -> ValueRef<TO> {
         let map = self.map;
@@ -63,7 +63,7 @@ impl<S: AnyState<T=FROM> + Clone + 'static, FROM: StateContract, TO: StateContra
     }
 }
 
-impl<S: AnyState<T=FROM> + Clone + 'static, FROM: StateContract, TO: StateContract> AnyState for FieldState<S, FROM, TO> {
+impl<S: State<T=FROM>, FROM: StateContract, TO: StateContract> AnyState for FieldState<S, FROM, TO> {
     fn value_dyn_mut(&mut self) -> ValueRefMut<TO> {
         let map_mut = self.map_mut;
         ValueRefMut::map(self.state.value_mut(), move |a| map_mut(a))
@@ -75,7 +75,7 @@ impl<S: AnyState<T=FROM> + Clone + 'static, FROM: StateContract, TO: StateContra
     }
 }
 
-impl<S: AnyState<T=FROM> + Clone + 'static, FROM: StateContract, TO: StateContract> Debug for FieldState<S, FROM, TO> {
+impl<S: State<T=FROM>, FROM: StateContract, TO: StateContract> Debug for FieldState<S, FROM, TO> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("FieldState")
             .field("value", &*self.value())

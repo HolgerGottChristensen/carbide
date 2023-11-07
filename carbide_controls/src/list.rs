@@ -459,7 +459,7 @@ impl<T: StateContract + Identifiable<I>, M: State<T=Vec<T>>, W: Widget, U: Deleg
                 let identifier = item.value().identifier();
 
                 let mut model = Clone::clone(&model);
-                let mut model = carbide::state::State::value_mut(&mut model);
+                let mut model = carbide::state::ReadState::value(&model);
 
                 match &mut selection {
                     // If we are in single selection mode

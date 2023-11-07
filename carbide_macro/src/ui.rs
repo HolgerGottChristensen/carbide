@@ -37,7 +37,9 @@ impl Fold for Folder {
                 }).collect::<Vec<_>>();
 
                 let patterns = arms.iter().cloned().map(|a| a.pat).collect::<Vec<_>>();
-                let bodies = arms.iter().cloned().map(|a| a.body).collect::<Vec<_>>();
+                let bodies = arms.iter().cloned().map(|a| {
+                    fold_expr(&mut Folder { allow_widget_expr: true }, *a.body)
+                }).collect::<Vec<_>>();
 
                 parse_quote!({
                     {
