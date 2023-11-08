@@ -19,8 +19,6 @@ impl ImageContext {
     pub fn update_texture(&mut self, id: ImageId, texture: Texture) {
         self.0.update_texture(id, texture);
     }
-
-
 }
 
 pub trait InnerImageContext {

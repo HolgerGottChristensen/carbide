@@ -4,8 +4,7 @@ use carbide::controls::Identifiable;
 
 #[derive(Deserialize, Clone, Debug)]
 pub struct Article {
-    #[serde(skip_deserializing)]
-    pub carbide_id: WidgetId,
+    pub id: u64,
     pub title: String,
     pub url: Option<String>,
     pub by: String,
@@ -14,8 +13,8 @@ pub struct Article {
     pub score: u64,
 }
 
-impl Identifiable<WidgetId> for Article {
-    fn identifier(&self) -> WidgetId {
-        self.carbide_id
+impl Identifiable<u64> for Article {
+    fn identifier(&self) -> u64 {
+        self.id
     }
 }
