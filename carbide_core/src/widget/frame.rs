@@ -7,7 +7,7 @@ use carbide_macro::{carbide_default_builder2};
 use crate::draw::{Dimension, Position};
 use crate::environment::Environment;
 
-use crate::layout::{BasicLayouter, Layout, Layouter};
+use crate::layout::{BasicLayouter, Layout, LayoutContext, Layouter};
 use crate::state::{AnyReadState, NewStateSync, ReadState, State, ValueRef, ValueRefMut, IntoState};
 use crate::widget::{CommonWidget, Empty, AnyWidget, WidgetExt, WidgetId, Widget};
 
@@ -239,7 +239,7 @@ impl<
     H: State<T=f64>,
     C: Widget
 > Layout for Frame<X, Y, W, H, C> {
-    fn calculate_size(&mut self, requested_size: Dimension, env: &mut Environment) -> Dimension {
+    fn calculate_size(&mut self, requested_size: Dimension, ctx: &mut LayoutContext) -> Dimension {
         let fixed_height = matches!(&self.height, Fixity::Fixed(_));
         let height = *self.height.value();
 
@@ -248,9 +248,9 @@ impl<
             self.width.set_value(requested_size.width);
         } else if let Fixity::Fit(_) = &mut self.width {
             let child_dimensions = if fixed_height {
-                self.child.calculate_size(Dimension::new(requested_size.width, height), env)
+                self.child.calculate_size(Dimension::new(requested_size.width, height), ctx)
             } else {
-                self.child.calculate_size(requested_size, env)
+                self.child.calculate_size(requested_size, ctx)
             };
             self.width.set_value(child_dimensions.width);
         }
@@ -260,18 +260,18 @@ impl<
         if let Fixity::Expand(_) = &mut self.height {
             self.height.set_value(requested_size.height);
         } else if let Fixity::Fit(_) = &mut self.height {
-            let child_dimensions = self.child.calculate_size(Dimension::new(width, requested_size.height), env);
+            let child_dimensions = self.child.calculate_size(Dimension::new(width, requested_size.height), ctx);
             self.height.set_value(child_dimensions.height);
         }
 
         let dimensions = self.dimension();
 
-        self.child.calculate_size(dimensions, env);
+        self.child.calculate_size(dimensions, ctx);
 
         self.dimension()
     }
 
-    fn position_children(&mut self, env: &mut Environment) {
+    fn position_children(&mut self, ctx: &mut LayoutContext) {
         if let Fixity::Fixed(_) = self.x {
             let new_x = *self.x.value();
             self.set_x(new_x);
@@ -287,7 +287,7 @@ impl<
         let dimension = Dimension::new(self.width(), self.height());
 
         positioning(position, dimension, &mut self.child);
-        self.child.position_children(env);
+        self.child.position_children(ctx);
     }
 }
 

@@ -2,6 +2,7 @@ use std::ops::Range;
 
 use copypasta::{ClipboardContext, ClipboardProvider};
 use unicode_segmentation::UnicodeSegmentation;
+use carbide::layout::LayoutContext;
 use carbide_core::CommonWidgetImpl;
 
 use carbide_core::draw::{Color, Dimension, Position};
@@ -1396,23 +1397,23 @@ impl<
     T: State<T=String>,
     E: ReadState<T=bool>,
 > Layout for PlainTextInput<F, C, O, S, T, E> {
-    fn calculate_size(&mut self, requested_size: Dimension, env: &mut Environment) -> Dimension {
+    fn calculate_size(&mut self, requested_size: Dimension, ctx: &mut LayoutContext) -> Dimension {
         self.clamp_cursor();
 
         //println!("calculate size");
         if let Some(position) = self.last_drag_position {
-            self.drag_selection(env, &position, &position);
+            self.drag_selection(ctx, &position, &position);
         }
 
-        let text_dimensions = self.text_widget.calculate_size(requested_size, env);
+        let text_dimensions = self.text_widget.calculate_size(requested_size, ctx);
 
-        self.cursor_widget.calculate_size(Dimension::new(1.0, text_dimensions.height), env);
+        self.cursor_widget.calculate_size(Dimension::new(1.0, text_dimensions.height), ctx);
 
         // Calculate size for selection indicator
         let glyphs = self.text_widget.glyphs();
         match self.cursor {
             Cursor::Single(_) => {
-                self.selection_widget.calculate_size(Dimension::new(0.0, 0.0), env);
+                self.selection_widget.calculate_size(Dimension::new(0.0, 0.0), ctx);
             }
             Cursor::Selection { start, end } => {
                 let min = start.index.min(end.index);
@@ -1421,17 +1422,17 @@ impl<
                 let min_x = if min == 0 {
                     self.text_widget.x()
                 } else {
-                    (glyphs[min - 1].position().x() + glyphs[min - 1].advance_width()) / env.scale_factor()
+                    (glyphs[min - 1].position().x() + glyphs[min - 1].advance_width()) / ctx.scale_factor()
                 };
 
                 let max_x = if max == 0 {
                     self.text_widget.x()
                 } else {
-                    (glyphs[max - 1].position().x() + glyphs[max - 1].advance_width()) / env.scale_factor()
+                    (glyphs[max - 1].position().x() + glyphs[max - 1].advance_width()) / ctx.scale_factor()
                 };
 
                 let selection_width = max_x - min_x;
-                self.selection_widget.calculate_size(Dimension::new(selection_width, text_dimensions.height), env);
+                self.selection_widget.calculate_size(Dimension::new(selection_width, text_dimensions.height), ctx);
 
             }
         }
@@ -1440,7 +1441,7 @@ impl<
         self.dimension
     }
 
-    fn position_children(&mut self, env: &mut Environment) {
+    fn position_children(&mut self, ctx: &mut LayoutContext) {
         // The process of positioning
         // 1. We need to position the text as is, to be able to use the positions of the glyphs.
         //    This also helps if new letters are added since last positioning. All this is
@@ -1453,17 +1454,17 @@ impl<
         let dimension = self.dimension;
 
         positioning(position, dimension, &mut self.text_widget);
-        self.text_widget.position_children(env);
+        self.text_widget.position_children(ctx);
 
         //println!("Position children called");
-        self.update_offset_to_make_cursor_visible(env);
+        self.update_offset_to_make_cursor_visible(ctx);
 
         let positioning = BasicLayouter::Leading.positioner();
         let position = self.position + Position::new(*self.text_offset.value(), 0.0);
         let dimension = self.dimension;
 
         positioning(position, dimension, &mut self.text_widget);
-        self.text_widget.position_children(env);
+        self.text_widget.position_children(ctx);
 
         if self.get_focus() == Focus::Focused && *self.enabled.value() {
             let glyphs = self.text_widget.glyphs();
@@ -1474,11 +1475,11 @@ impl<
                     let new_x = if index.index == 0 {
                         self.text_widget.x()
                     } else {
-                        (glyphs[index.index - 1].position().x() + glyphs[index.index - 1].advance_width()) / env.scale_factor()
+                        (glyphs[index.index - 1].position().x() + glyphs[index.index - 1].advance_width()) / ctx.scale_factor()
                     };
 
                     self.cursor_widget.set_position(Position::new(new_x, self.text_widget.y()));
-                    self.cursor_widget.position_children(env);
+                    self.cursor_widget.position_children(ctx);
                 }
                 Cursor::Selection { start, end } => {
                     let min = start.index.min(end.index);
@@ -1486,20 +1487,20 @@ impl<
                     let min_x = if min == 0 {
                         self.text_widget.x()
                     } else {
-                        (glyphs[min - 1].position().x() + glyphs[min - 1].advance_width()) / env.scale_factor()
+                        (glyphs[min - 1].position().x() + glyphs[min - 1].advance_width()) / ctx.scale_factor()
                     };
 
                     let new_x = if end.index == 0 {
                         self.text_widget.x()
                     } else {
-                        (glyphs[end.index - 1].position().x() + glyphs[end.index - 1].advance_width()) / env.scale_factor()
+                        (glyphs[end.index - 1].position().x() + glyphs[end.index - 1].advance_width()) / ctx.scale_factor()
                     };
 
                     self.cursor_widget.set_position(Position::new(new_x, self.text_widget.y()));
-                    self.cursor_widget.position_children(env);
+                    self.cursor_widget.position_children(ctx);
 
                     self.selection_widget.set_position(Position::new(min_x, self.text_widget.y()));
-                    self.selection_widget.position_children(env);
+                    self.selection_widget.position_children(ctx);
                 }
             }
         }

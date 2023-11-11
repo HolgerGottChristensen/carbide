@@ -6,6 +6,7 @@ use cocoa::base::{id, nil};
 use cocoa::foundation::{NSArray, NSAutoreleasePool, NSDictionary, NSInteger, NSString, NSUInteger};
 use objc::{msg_send, class, sel, sel_impl};
 use objc::runtime::BOOL;
+use carbide::layout::LayoutContext;
 use carbide_core::CommonWidgetImpl;
 use carbide_core::draw::image::ImageId;
 use carbide_core::draw::{Dimension, Position, Rect, Scalar, Texture, TextureFormat};
@@ -110,22 +111,22 @@ impl Video<Option<VideoId>> {
 }
 
 impl<Id: ReadState<T=Option<ImageId>> + Clone> Layout for Video<Id> {
-    fn calculate_size(&mut self, requested_size: Dimension, env: &mut Environment) -> Dimension {
+    fn calculate_size(&mut self, requested_size: Dimension, ctx: &mut LayoutContext) -> Dimension {
 
         if &*self.video_id_state.value() != &self.video_id {
-            self.change_video(env);
+            self.change_video(ctx);
         }
 
         self.update_rate();
         self.update_volume();
         self.update_muted();
         self.update_current_time();
-        self.update_frame(env);
+        self.update_frame(ctx);
 
 
         let information = self.video_id.as_ref().and_then(|id| {
-            let (width, height) = env.image_context.texture_dimensions(id)?;
-            Some(Dimension::new(width as Scalar, height as Scalar) / env.scale_factor())
+            let (width, height) = ctx.image_context.texture_dimensions(id)?;
+            Some(Dimension::new(width as Scalar, height as Scalar) / ctx.scale_factor())
         }).unwrap_or(Dimension::new(100.0, 100.0));
 
         if !self.resizeable {

@@ -13,7 +13,7 @@ use crate::{CommonWidgetImpl};
 use crate::draw::{Dimension, Position, Rect, Scalar, Texture, TextureFormat};
 use crate::draw::image::ImageId;
 use crate::environment::{Environment, EnvironmentColor,};
-use crate::layout::Layout;
+use crate::layout::{Layout, LayoutContext};
 use crate::mesh::{MODE_ICON, MODE_IMAGE};
 use crate::mesh::pre_multiply::PreMultiply;
 use crate::render::{Primitive, PrimitiveKind, Render, Style};
@@ -103,10 +103,10 @@ impl<Id: ReadState<T=Option<ImageId>>, C: ReadState<T=Style>> Image<Id, C> {
 }
 
 impl<Id: ReadState<T=Option<ImageId>>, C: ReadState<T=Style>> Layout for Image<Id, C> {
-    fn calculate_size(&mut self, requested_size: Dimension, env: &mut Environment) -> Dimension {
+    fn calculate_size(&mut self, requested_size: Dimension, ctx: &mut LayoutContext) -> Dimension {
 
         if let Some(image_id) = &*self.image_id.value() {
-            if !env.image_context.texture_exist(image_id) {
+            if !ctx.image.texture_exist(image_id) {
                 let path = if image_id.is_relative() {
                     let assets = carbide_core::locate_folder::Search::KidsThenParents(3, 5)
                         .for_folder("assets")
@@ -129,7 +129,7 @@ impl<Id: ReadState<T=Option<ImageId>>, C: ReadState<T=Style>> Layout for Image<I
                     data: &image.to_rgba8().into_raw(),
                 };
 
-                env.image_context.update_texture(image_id.clone(), texture);
+                ctx.image.update_texture(image_id.clone(), texture);
 
                 //env.image_map.insert(image_id.clone(), image);
             }
@@ -139,7 +139,7 @@ impl<Id: ReadState<T=Option<ImageId>>, C: ReadState<T=Style>> Layout for Image<I
             source_rect.dimension
         } else {
             let image_dimensions = self.image_id.value().as_ref().map(|id| {
-                env.image_context.texture_dimensions(id)
+                ctx.image.texture_dimensions(id)
             }).flatten().unwrap_or((100, 100));
 
             Dimension::new(image_dimensions.0 as Scalar, image_dimensions.1 as Scalar)
@@ -211,42 +211,6 @@ impl<Id: ReadState<T=Option<ImageId>>, C: ReadState<T=Style>> Render for Image<I
             }
         } else {
             //println!("Missing else")
-        }
-    }
-
-    fn get_primitives(&mut self, primitives: &mut Vec<Primitive>, env: &mut Environment) {
-        if let Some(color) = &mut self.color {
-            color.sync(env);
-            //color.release_state(env);
-        }
-
-        if let Some(id) = self.image_id.value().deref() {
-            let kind = PrimitiveKind::Image {
-                color: None,//self.color.as_ref().map(|col| *col.value()),
-                image_id: id.clone(),
-                source_rect: self.src_rect,
-                mode: self.mode,
-            };
-            let rect = Rect::new(self.position, self.dimension);
-
-            primitives.push(Primitive {
-                kind,
-                bounding_box: rect,
-            });
-        } else {
-            /*let color = if let Some(color) = &self.color {
-                *color.value()
-            } else {
-                WHITE
-            };
-            let kind = PrimitiveKind::RectanglePrim { color };
-
-            let rect = Rect::new(self.position, self.dimension);
-
-            primitives.push(Primitive {
-                kind,
-                bounding_box: rect,
-            });*/
         }
     }
 }

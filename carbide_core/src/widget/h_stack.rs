@@ -4,7 +4,7 @@ use carbide_macro::{carbide_default_builder2};
 use crate::draw::{Dimension, Position, Scalar};
 use crate::environment::Environment;
 
-use crate::layout::{calculate_size_hstack, Layout, position_children_hstack};
+use crate::layout::{calculate_size_hstack, Layout, LayoutContext, position_children_hstack};
 use crate::{CommonWidgetImpl};
 use crate::widget::{CommonWidget, CrossAxisAlignment, WidgetExt, WidgetId, WidgetSequence, Widget};
 
@@ -212,16 +212,16 @@ gen_optionals!(
 );*/
 
 impl<W: WidgetSequence> Layout for HStack<W> {
-    fn calculate_size(&mut self, requested_size: Dimension, env: &mut Environment) -> Dimension {
+    fn calculate_size(&mut self, requested_size: Dimension, ctx: &mut LayoutContext) -> Dimension {
         let spacing = self.spacing;
-        calculate_size_hstack(self, spacing, requested_size, env);
+        calculate_size_hstack(self, spacing, requested_size, ctx);
         self.dimension
     }
 
-    fn position_children(&mut self, env: &mut Environment) {
+    fn position_children(&mut self, ctx: &mut LayoutContext) {
         let spacing = self.spacing;
         let cross_axis_alignment = self.cross_axis_alignment;
-        position_children_hstack(self, spacing, cross_axis_alignment, env)
+        position_children_hstack(self, spacing, cross_axis_alignment, ctx)
     }
 }
 

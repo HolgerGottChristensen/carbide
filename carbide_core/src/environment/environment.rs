@@ -27,9 +27,8 @@ use crate::environment::{EnvironmentColor, EnvironmentVariable};
 use crate::event::{EventSink, HasEventSink};
 use crate::focus::Refocus;
 use crate::layout::BasicLayouter;
-use crate::mesh::TextureAtlas;
 use crate::state::{InnerState, StateContract, EnvironmentStateKey};
-use crate::text::{Font, FontFamily, FontId, FontSize, FontStyle, FontWeight, Glyph};
+use crate::text::{FontId, FontSize, FontStyle, FontWeight, NOOPTextContext};
 use crate::widget::{FilterId, ImageFilter, WidgetId};
 use crate::widget::ImageInformation;
 use crate::window::WindowId;
@@ -44,22 +43,6 @@ pub struct Environment {
     stack: Vec<EnvironmentVariable>,
 
     root_alignment: BasicLayouter,
-
-    /// Keep the loaded fonts in a map from font id to font. This is used when
-    /// calculating the size of rendered strings.
-    fonts: Vec<Font>,
-
-    /// Font families. The fonts are still kept as seperate fonts in the above vec, but references
-    /// are kept in families for better lookup.
-    font_families: FxHashMap<String, FontFamily>,
-
-    /// Font atlas that keeps track of all the textures of the glyphs to render, along with details
-    /// on texture offsets and more.
-    font_texture_atlas: TextureAtlas,
-
-    /// System font family name. This is used to get the font family for default text rendering.
-    /// This should always be expected to exist.
-    default_font_family_name: String,
 
     /// A map from String to a widget.
     /// This key should correspond to the targeted overlay_layer
@@ -126,8 +109,6 @@ pub struct Environment {
 
     current_event_window_id: Box<dyn Fn(WindowId) -> bool>,
     current_event_active: bool,
-
-    pub image_context: ImageContext,
 }
 
 impl std::fmt::Debug for Environment {
@@ -195,8 +176,6 @@ impl Environment {
             .map(|item| item.clone())
             .collect::<Vec<_>>();
 
-        let default_font_family_name = "NotoSans";
-
         let filters = HashMap::with_hasher(FxBuildHasher::default());
 
         let mut image_map = ImageMap::default();
@@ -205,10 +184,6 @@ impl Environment {
         let mut res = Environment {
             stack: env_stack,
             root_alignment: BasicLayouter::Center,
-            fonts: vec![],
-            font_families: HashMap::with_hasher(FxBuildHasher::default()),
-            font_texture_atlas: TextureAtlas::new(512, 512),
-            default_font_family_name: default_font_family_name.to_string(),
             overlay_map: HashMap::with_hasher(FxBuildHasher::default()),
             //local_state: HashMap::with_hasher(FxBuildHasher::default()),
             widget_transfer: HashMap::with_hasher(FxBuildHasher::default()),
@@ -229,29 +204,9 @@ impl Environment {
             request_application_close: false,
             current_event_window_id: Box::new(|_| true),
             current_event_active: false,
-            image_context: ImageContext::new(NOOPImageContext),
         };
 
 
-        #[cfg(target_os = "macos")]
-        {
-            let mut family = FontFamily::new("Apple Color Emoji");
-            family.add_font_with_hints(
-                "/System/Library/Fonts/Apple Color Emoji.ttc",
-                FontWeight::Normal,
-                FontStyle::Normal,
-            );
-            res.add_font_family(family);
-        }
-
-
-        res
-    }
-
-    pub fn with_image_context<F: FnMut(&mut Environment)->R, R>(&mut self, mut context: ImageContext, mut f: F) -> R {
-        swap(&mut self.image_context, &mut context);
-        let res = f(self);
-        swap(&mut self.image_context, &mut context);
         res
     }
 
@@ -475,14 +430,6 @@ impl Environment {
         self.scale_factor
     }
 
-    pub fn get_font_atlas_mut(&mut self) -> &mut TextureAtlas {
-        &mut self.font_texture_atlas
-    }
-
-    pub fn get_font_atlas(&self) -> &TextureAtlas {
-        &self.font_texture_atlas
-    }
-
     pub fn cursor(&self) -> MouseCursor {
         self.cursor
     }
@@ -644,117 +591,6 @@ impl Environment {
     /*pub fn insert_local_state_from_key_value<T: Serialize + Clone + Debug>(&mut self, key: &StateKey, value: &T) {
         self.local_state.insert(key.clone(), to_bin(value).unwrap());
     }*/
-
-    pub fn insert_font_from_file(&mut self, path: impl AsRef<Path>) -> (FontId, FontWeight, FontStyle) {
-        let mut font = Font::from_file(path);
-        let weight = font.weight();
-        let style = font.style();
-        let font_id = self.fonts.len();
-        font.set_font_id(font_id);
-        self.fonts.push(font);
-        (font_id, weight, style)
-    }
-
-    pub fn add_glyphs_to_atlas(&mut self, glyphs: Vec<&mut Glyph>) {
-        let scale_factor = self.scale_factor();
-        for glyph in glyphs {
-            let font = &self.fonts[glyph.font_id()];
-            if let Some(entry) = self
-                .font_texture_atlas
-                .queue_glyph(glyph, font, scale_factor)
-            {
-                glyph.set_atlas_entry(entry);
-            }
-        }
-    }
-
-    pub fn remove_glyphs_from_atlas(&mut self, _glyphs: &Vec<Glyph>) {}
-
-    pub fn get_glyph_from_fallback(
-        &mut self,
-        c: char,
-        font_size: FontSize,
-        scale_factor: Scalar,
-    ) -> (Scalar, Glyph) {
-        // Try all the loaded fonts. We only check the first font in each family.
-        // Todo: Consider using weight hints and style hints.
-        // Todo: Consider going through a separate list if we have a lot of families loaded.
-        for (_, font_family) in &self.font_families {
-            println!("Looking up in font family: {:?}", font_family);
-            let font_id = font_family.get_best_fit(FontWeight::Normal, FontStyle::Normal);
-            if let Some(res) = self.get_font(font_id).glyph_for(c, font_size, scale_factor) {
-                return res;
-            }
-        }
-
-        // Try load fallback fonts until we run out
-        // Todo: Implement fallback font list.
-
-        // Get the glyph for the unknown character: �
-        if c != '�' {
-            self.get_glyph_from_fallback('�', font_size, scale_factor)
-        } else {
-            panic!("Could not lookup the char in any of the loaded fonts or in any fallback fonts. \
-            Further more we could not look up the missing char replacement �. Something is not right.")
-        }
-    }
-
-    pub fn get_font_ref(&self, id: FontId) -> &Font {
-        &self.fonts[id]
-    }
-
-    pub fn get_font(&self, id: FontId) -> Font {
-        self.fonts[id].clone()
-    }
-
-    pub fn get_font_mut(&mut self, id: FontId) -> &mut Font {
-        &mut self.fonts[id]
-    }
-
-    /// Adds the given `rusttype::Font` to the `Map` and returns a unique `Id` for it.
-    pub fn insert_font(&mut self, font: Font) -> FontId {
-        let font_id = self.fonts.len();
-        self.fonts.push(font);
-        font_id
-    }
-
-    // TODO: Add fonts automatically and warn if none could be loaded: https://github.com/RazrFalcon/fontdb/blob/master/src/lib.rs
-    pub fn add_font_family(&mut self, mut family: FontFamily) {
-        for font in &mut family.fonts {
-            let assets = locate_folder::Search::KidsThenParents(3, 5)
-                .for_folder("assets")
-                .unwrap();
-            let font_path = assets.join(&font.path);
-            let (font_id, weight, style) = self.insert_font_from_file(font_path);
-            font.font_id = font_id;
-            font.weight_hint = weight;
-            font.style_hint = style;
-        }
-        let key = family.name.clone();
-        self.font_families.insert(key, family);
-    }
-
-    pub fn get_first_font_family(&self) -> &FontFamily {
-        for (_, family) in self.font_families.iter() {
-            return family;
-        }
-
-        panic!("No font family have been added, so we can not get the first.")
-    }
-
-    pub fn get_system_font_family(&self) -> &FontFamily {
-        self.get_font_family(&self.default_font_family_name)
-    }
-
-    pub fn get_font_family(&self, name: &str) -> &FontFamily {
-        if name == "system-font" {
-            self.get_system_font_family()
-        } else {
-            self.font_families
-                .get(name)
-                .expect("Could not find a suitable font family")
-        }
-    }
 
     pub fn push_vec(&mut self, value: Vec<EnvironmentVariable>) {
         for v in value {

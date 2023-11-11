@@ -241,27 +241,6 @@ impl<W: AnyWidget + Clone, M: ReadState<T=Matrix4<f32>>> Render for Transform<W,
             });
         })
     }
-
-    fn process_get_primitives(&mut self, primitives: &mut Vec<Primitive>, env: &mut Environment) {
-        self.capture_state(env);
-        let matrix = *self.matrix.value();
-
-        primitives.push(Primitive {
-            kind: PrimitiveKind::Transform(matrix, self.anchor.clone()),
-            bounding_box: Rect::new(self.position, self.dimension),
-        });
-
-        self.release_state(env);
-
-        self.foreach_child_mut(&mut |child| {
-            child.process_get_primitives(primitives, env);
-        });
-
-        primitives.push(Primitive {
-            kind: PrimitiveKind::DeTransform,
-            bounding_box: Rect::new(self.position, self.dimension),
-        });
-    }
 }
 
 impl<W: AnyWidget + Clone, M: ReadState<T=Matrix4<f32>>> WidgetExt for Transform<W, M> {}

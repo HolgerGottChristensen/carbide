@@ -1,3 +1,4 @@
+use carbide::layout::LayoutContext;
 use carbide_core::CommonWidgetImpl;
 use carbide_core::draw::{Dimension, Position};
 use carbide_core::environment::{Environment, EnvironmentColor};
@@ -361,10 +362,10 @@ impl<
     Bg: AnyWidget + Clone,
     En: ReadState<T=bool>,
 > Layout for PlainSlider<F, St, S, E, P, Th, In, Bg, En> {
-    fn calculate_size(&mut self, requested_size: Dimension, env: &mut Environment) -> Dimension {
+    fn calculate_size(&mut self, requested_size: Dimension, ctx: &mut LayoutContext) -> Dimension {
         let percent = self.percent.value().max(0.0).min(1.0);
 
-        let background = self.background.calculate_size(requested_size, env);
+        let background = self.background.calculate_size(requested_size, ctx);
 
         let track_width = if let Some(steps) = *self.steps.value() {
             let stepped_percent = Self::percent_to_stepped_percent(
@@ -380,9 +381,9 @@ impl<
         };
 
         let track_dimensions = Dimension::new(track_width, requested_size.height);
-        let track = self.track.calculate_size(track_dimensions, env);
+        let track = self.track.calculate_size(track_dimensions, ctx);
 
-        let thumb = self.thumb.calculate_size(requested_size, env);
+        let thumb = self.thumb.calculate_size(requested_size, ctx);
 
         let max_height = background.height.max(track.height).max(thumb.height);
 
@@ -390,7 +391,7 @@ impl<
         self.dimension
     }
 
-    fn position_children(&mut self, env: &mut Environment) {
+    fn position_children(&mut self, ctx: &mut LayoutContext) {
         let percent = self.percent.value().max(0.0).min(1.0);
         let position = self.position();
 
@@ -415,9 +416,9 @@ impl<
         self.track.set_position(Position::new(position.x(), track_y));
         self.thumb.set_position(Position::new(thumb_x, thumb_y));
 
-        self.background.position_children(env);
-        self.track.position_children(env);
-        self.thumb.position_children(env);
+        self.background.position_children(ctx);
+        self.track.position_children(ctx);
+        self.thumb.position_children(ctx);
     }
 }
 

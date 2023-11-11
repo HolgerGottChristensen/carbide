@@ -6,7 +6,7 @@ use crate::draw::draw_gradient::DrawGradient;
 use crate::draw::image::ImageId;
 use crate::draw::shape::triangle::Triangle;
 use crate::layout::BasicLayouter;
-use crate::text::Glyph;
+//use crate::text::Glyph;
 use crate::widget::{ColoredPoint, FilterId};
 
 /// The unique kind for each primitive element in the Ui.
@@ -79,8 +79,8 @@ pub enum PrimitiveKind {
     Text {
         /// The colour of the `Text`.
         color: Color,
-        /// All glyphs within the `Text` laid out in their correct positions in order from top-left
-        /// to bottom right.
-        text: Vec<Glyph>,
+        ///// All glyphs within the `Text` laid out in their correct positions in order from top-left
+        ///// to bottom right.
+        //text: Vec<Glyph>,
     },
 }

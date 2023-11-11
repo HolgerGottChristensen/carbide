@@ -12,7 +12,7 @@ use crate::event::{
 };
 use crate::flags::Flags;
 use crate::focus::{Focus, Focusable, Refocus};
-use crate::layout::{Layout, Layouter};
+use crate::layout::{Layout, LayoutContext, Layouter};
 use crate::render::{Primitive, Render};
 use crate::state::{StateSync};
 use crate::widget::{CommonWidget, WidgetExt, WidgetId};
@@ -148,26 +148,18 @@ impl<T: AnyWidget + ?Sized> StateSync for Box<T> {
 }
 
 impl<T: AnyWidget + ?Sized> Layout for Box<T> {
-    fn calculate_size(&mut self, requested_size: Dimension, env: &mut Environment) -> Dimension {
-        self.deref_mut().calculate_size(requested_size, env)
+    fn calculate_size(&mut self, requested_size: Dimension, ctx: &mut LayoutContext) -> Dimension {
+        self.deref_mut().calculate_size(requested_size, ctx)
     }
 
-    fn position_children(&mut self, env: &mut Environment) {
-        self.deref_mut().position_children(env)
+    fn position_children(&mut self, ctx: &mut LayoutContext) {
+        self.deref_mut().position_children(ctx)
     }
 }
 
 impl<T: AnyWidget + ?Sized> Render for Box<T> {
     fn render(&mut self, context: &mut RenderContext, env: &mut Environment) {
         self.deref_mut().render(context, env)
-    }
-
-    fn get_primitives(&mut self, primitives: &mut Vec<Primitive>, env: &mut Environment) {
-        self.deref_mut().get_primitives(primitives, env);
-    }
-
-    fn process_get_primitives(&mut self, primitives: &mut Vec<Primitive>, env: &mut Environment) {
-        self.deref_mut().process_get_primitives(primitives, env);
     }
 }
 

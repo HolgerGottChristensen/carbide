@@ -4,7 +4,7 @@ use crate::environment::Environment;
 use crate::event::{KeyboardEvent, KeyboardEventHandler, MouseEvent, MouseEventHandler, OtherEventHandler, WidgetEvent};
 use crate::flags::Flags;
 use crate::focus::{Focus, Focusable, Refocus};
-use crate::layout::{Layout, Layouter};
+use crate::layout::{Layout, LayoutContext, Layouter};
 use crate::render::{Primitive, Render, RenderContext};
 use crate::state::{IntoReadState, ReadState, StateSync};
 use crate::widget::{CommonWidget, Empty, AnyWidget, WidgetExt, WidgetId, Widget};
@@ -320,19 +320,19 @@ impl<T: Widget,
     B6: ReadState<T=bool>,
     B7: ReadState<T=bool>,
 > Layout for Ignore<T, B1, B2, B3, B4, B5, B6, B7> {
-    fn calculate_size(&mut self, requested_size: Dimension, env: &mut Environment) -> Dimension {
-        self.update_states(env);
+    fn calculate_size(&mut self, requested_size: Dimension, ctx: &mut LayoutContext) -> Dimension {
+        self.update_states(ctx.env);
         if *self.layout_event.value() {
-            self.inner.calculate_size(requested_size, env)
+            self.inner.calculate_size(requested_size, ctx)
         } else {
             self.inner.dimension()
         }
     }
 
-    fn position_children(&mut self, env: &mut Environment) {
-        self.update_states(env);
+    fn position_children(&mut self, ctx: &mut LayoutContext) {
+        self.update_states(ctx.env);
         if *self.layout_event.value() {
-            self.inner.position_children(env)
+            self.inner.position_children(ctx)
         }
     }
 }
@@ -350,20 +350,6 @@ impl<T: Widget,
         self.update_states(env);
         if *self.render_event.value() {
             self.inner.render(context, env)
-        }
-    }
-
-    fn get_primitives(&mut self, primitives: &mut Vec<Primitive>, env: &mut Environment) {
-        self.update_states(env);
-        if *self.render_event.value() {
-            self.inner.get_primitives(primitives, env);
-        }
-    }
-
-    fn process_get_primitives(&mut self, primitives: &mut Vec<Primitive>, env: &mut Environment) {
-        self.update_states(env);
-        if *self.render_event.value() {
-            self.inner.process_get_primitives(primitives, env);
         }
     }
 }

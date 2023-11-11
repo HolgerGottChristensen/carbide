@@ -1,3 +1,4 @@
+use carbide::layout::LayoutContext;
 use carbide_core::environment::Environment;
 use carbide_core::state::IntoReadState;
 
@@ -35,7 +36,7 @@ impl Offset<f64, f64, Empty> {
 }
 
 impl<X: ReadState<T=f64>, Y: ReadState<T=f64>, C: Widget> Layout for Offset<X, Y, C> {
-    fn position_children(&mut self, env: &mut Environment) {
+    fn position_children(&mut self, ctx: &mut LayoutContext) {
         let positioning = BasicLayouter::Center.positioner();
         let position = self.position;
         let dimension = self.dimension;
@@ -49,7 +50,7 @@ impl<X: ReadState<T=f64>, Y: ReadState<T=f64>, C: Widget> Layout for Offset<X, Y
 
         self.child.set_position(child_position);
 
-        self.child.position_children(env);
+        self.child.position_children(ctx);
     }
 }
 

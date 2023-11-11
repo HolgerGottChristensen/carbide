@@ -5,7 +5,7 @@ use carbide_macro::{carbide_default_builder2};
 use crate::CommonWidgetImpl;
 use crate::draw::{Dimension, Position, Rect};
 use crate::environment::{Environment,};
-use crate::layout::{BasicLayouter, Layout, Layouter};
+use crate::layout::{BasicLayouter, Layout, LayoutContext, Layouter};
 use crate::render::{Primitive, PrimitiveKind, Render};
 use crate::state::StateSync;
 use crate::widget::{CommonWidget, Empty, Shape, AnyWidget, WidgetExt, WidgetId, Widget};
@@ -50,14 +50,14 @@ impl<C: Widget, S: Shape + Clone> StateSync for ClipShape<C, S> {
 }
 
 impl<C: Widget, S: Shape + Clone> Layout for ClipShape<C, S> {
-    fn calculate_size(&mut self, requested_size: Dimension, env: &mut Environment) -> Dimension {
-        self.child.calculate_size(requested_size, env);
-        self.shape.calculate_size(requested_size, env);
+    fn calculate_size(&mut self, requested_size: Dimension, ctx: &mut LayoutContext) -> Dimension {
+        self.child.calculate_size(requested_size, ctx);
+        self.shape.calculate_size(requested_size, ctx);
         self.dimension = requested_size;
         requested_size
     }
 
-    fn position_children(&mut self, env: &mut Environment) {
+    fn position_children(&mut self, ctx: &mut LayoutContext) {
         let positioning = BasicLayouter::Center.positioner();
         let position = self.position;
         let dimension = self.dimension;
@@ -65,8 +65,8 @@ impl<C: Widget, S: Shape + Clone> Layout for ClipShape<C, S> {
         positioning(position, dimension, &mut self.child);
         positioning(position, dimension, &mut self.shape);
 
-        self.child.position_children(env);
-        self.shape.position_children(env);
+        self.child.position_children(ctx);
+        self.shape.position_children(ctx);
     }
 }
 
@@ -84,24 +84,6 @@ impl<C: AnyWidget + Clone, S: Shape + Clone> Render for ClipShape<C, S> {
             });
         })
 
-    }
-
-    fn process_get_primitives(&mut self, primitives: &mut Vec<Primitive>, env: &mut Environment) {
-        let stencil_triangles = self.shape.triangles(env);
-
-        primitives.push(Primitive {
-            kind: PrimitiveKind::Stencil(stencil_triangles),
-            bounding_box: Rect::new(self.position, self.dimension),
-        });
-
-        self.foreach_child_mut(&mut |child| {
-            child.process_get_primitives(primitives, env);
-        });
-
-        primitives.push(Primitive {
-            kind: PrimitiveKind::DeStencil,
-            bounding_box: Rect::new(self.position, self.dimension),
-        });
     }
 }
 

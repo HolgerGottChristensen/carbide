@@ -4,7 +4,7 @@ use carbide_macro::{carbide_default_builder2};
 use crate::draw::{Dimension, Position};
 use crate::environment::Environment;
 
-use crate::layout::{BasicLayouter, Layout, Layouter};
+use crate::layout::{BasicLayouter, Layout, LayoutContext, Layouter};
 use crate::state::IntoReadState;
 use crate::widget::{CommonWidget, Empty, AnyWidget, WidgetExt, WidgetId, Widget};
 use crate::widget::types::EdgeInsets;
@@ -102,14 +102,14 @@ impl<W: Widget, E: ReadState<T=EdgeInsets>> CommonWidget for Padding<W, E> {
 }
 
 impl<W: Widget, E: ReadState<T=EdgeInsets>> Layout for Padding<W, E> {
-    fn calculate_size(&mut self, requested_size: Dimension, env: &mut Environment) -> Dimension {
+    fn calculate_size(&mut self, requested_size: Dimension, ctx: &mut LayoutContext) -> Dimension {
         let insets = *self.edge_insets.value();
         let dimensions = Dimension::new(
             requested_size.width - insets.left - insets.right,
             requested_size.height - insets.top - insets.bottom,
         );
 
-        let child_dimensions = self.child.calculate_size(dimensions, env);
+        let child_dimensions = self.child.calculate_size(dimensions, ctx);
 
         self.dimension = Dimension::new(
             child_dimensions.width + insets.left + insets.right,
@@ -119,7 +119,7 @@ impl<W: Widget, E: ReadState<T=EdgeInsets>> Layout for Padding<W, E> {
         self.dimension
     }
 
-    fn position_children(&mut self, env: &mut Environment) {
+    fn position_children(&mut self, ctx: &mut LayoutContext) {
         let insets = *self.edge_insets.value();
         let positioning = BasicLayouter::Center.positioner();
         let position = Position::new(
@@ -132,7 +132,7 @@ impl<W: Widget, E: ReadState<T=EdgeInsets>> Layout for Padding<W, E> {
         );
 
         positioning(position, dimension, &mut self.child);
-        self.child.position_children(env);
+        self.child.position_children(ctx);
     }
 }
 

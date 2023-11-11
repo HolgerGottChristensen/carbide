@@ -6,13 +6,15 @@ use fxhash::{FxBuildHasher, FxHashMap};
 
 use carbide_rusttype::{GlyphId, Point, Rect};
 
-use crate::draw::image::ImageId;
+use carbide_core::draw::image::ImageId;
 
-use crate::draw::Scalar;
+use carbide_core::draw::Scalar;
+use carbide_core::image::DynamicImage;
 
-use crate::text::{Font, FontId, FontSize, Glyph, GLYPH_TOLERANCE};
+use carbide_core::text::{FontId, FontSize};
+use crate::font::Font;
+use crate::glyph::{Glyph, GLYPH_TOLERANCE};
 
-type ImageData = image::DynamicImage;
 pub type TextureAtlasIndex = usize;
 
 pub type AtlasEntry = Rc<RefCell<Book>>;
@@ -33,14 +35,14 @@ pub struct TextureAtlas {
     width: u32,
     height: u32,
 
-    insertion_queue: Vec<(AtlasId, ImageData, AtlasEntry)>,
+    insertion_queue: Vec<(AtlasId, DynamicImage, AtlasEntry)>,
     cache_queue: Vec<(u32, u32, AtlasId)>,
 
     /// An atlas is split up into a number of shelves. Each shelf can hold a number of images that
     /// are less than or equal to that space.
     shelves: Vec<Shelf>,
 
-    all_books_cabinet: FxHashMap<AtlasId, (AtlasEntry, ImageData)>,
+    all_books_cabinet: FxHashMap<AtlasId, (AtlasEntry, DynamicImage)>,
 }
 
 impl TextureAtlas {
@@ -120,7 +122,7 @@ impl TextureAtlas {
         }
     }
 
-    pub fn queue_image(&mut self, image_id: ImageId, image_data: ImageData) -> Option<AtlasEntry> {
+    pub fn queue_image(&mut self, image_id: ImageId, image_data: DynamicImage) -> Option<AtlasEntry> {
         let atlas_id = AtlasId::Image(image_id);
 
         // Check if a suitable item has already been added.
@@ -188,7 +190,7 @@ impl TextureAtlas {
 
     }
 
-    fn append_from_queue(&mut self, queue: &mut Vec<(AtlasId, ImageData, AtlasEntry)>, size: (u32, u32)) -> bool {
+    fn append_from_queue(&mut self, queue: &mut Vec<(AtlasId, DynamicImage, AtlasEntry)>, size: (u32, u32)) -> bool {
 
         // Sort by height, to allow for better caching density
         queue.sort_unstable_by(|(_, data1, _), (_, data2, _)| data2.height().cmp(&data1.height()));
@@ -213,7 +215,7 @@ impl TextureAtlas {
     }
 
     /// The uploader should be x, y, image_data
-    pub fn cache_queued<F: FnMut(u32, u32, &ImageData)>(&mut self, mut uploader: F) {
+    pub fn cache_queued<F: FnMut(u32, u32, &DynamicImage)>(&mut self, mut uploader: F) {
         self.cache_queue.drain(..).for_each(|(x, y, id)| {
             uploader(x, y, &self.all_books_cabinet.get(&id).unwrap().1)
         });

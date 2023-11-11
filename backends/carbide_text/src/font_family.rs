@@ -1,8 +1,6 @@
 use std::path::{Path, PathBuf};
+use carbide_core::text::{FontId, FontStyle, FontWeight};
 
-use crate::text::FontId;
-use crate::text::types::font_style::FontStyle;
-use crate::text::types::font_weight::FontWeight;
 
 /// Font families should only contain the same sets of glyphs.
 #[derive(Clone, Debug)]
@@ -98,6 +96,6 @@ impl FontFamily {
 pub struct FontDescriptor {
     pub path: PathBuf,
     pub font_id: FontId,
-    pub(crate) weight_hint: FontWeight,
-    pub(crate) style_hint: FontStyle,
+    pub weight_hint: FontWeight,
+    pub style_hint: FontStyle,
 }

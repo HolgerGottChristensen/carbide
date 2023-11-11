@@ -20,6 +20,7 @@ mod application;
 mod wgpu_window;
 mod render_context;
 mod image_context;
+mod text_context;
 
 use std::collections::HashMap;
 use std::sync::Arc;

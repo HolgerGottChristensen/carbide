@@ -1,59 +1,55 @@
 
 use carbide_core::draw::Rect;
-use crate::draw::{BoundingBox, Position};
+use crate::draw::{BoundingBox, InnerImageContext, Position};
 use crate::draw::draw_style::DrawStyle;
 use crate::draw::image::ImageId;
 use crate::draw::shape::triangle::Triangle;
 
 use crate::render::CarbideTransform;
 
-use crate::text::Glyph;
+use crate::text::{InnerTextContext, TextId};
 use crate::widget::FilterId;
 
 pub struct RenderContext<'a> {
-    inner: &'a mut dyn InnerRenderContext,
+    pub render: &'a mut dyn InnerRenderContext,
+    pub text: &'a mut dyn InnerTextContext,
+    pub image: &'a mut dyn InnerImageContext,
 }
 
 impl<'a> RenderContext<'a> {
 
-    pub fn new(inner: &'a mut dyn InnerRenderContext) -> RenderContext<'a> {
-        RenderContext {
-            inner,
-        }
-    }
-
     // TODO: Change BasicLayouter to something more suitable
     pub fn transform<R, F: FnOnce(&mut RenderContext) -> R>(&mut self, transform: CarbideTransform, f: F) -> R {
-        self.inner.transform(transform);
+        self.render.transform(transform);
         let res = f(self);
-        self.inner.pop_transform();
+        self.render.pop_transform();
         res
     }
 
     pub fn clip<R, F: FnOnce(&mut RenderContext) -> R>(&mut self, bounding_box: BoundingBox, f: F) -> R {
-        self.inner.clip(bounding_box);
+        self.render.clip(bounding_box);
         let res = f(self);
-        self.inner.pop_clip();
+        self.render.pop_clip();
         res
     }
 
     pub fn filter<R, F: FnOnce(&mut RenderContext) -> R>(&mut self, id: FilterId, bounding_box: BoundingBox, f: F) -> R {
         let res = f(self);
-        self.inner.filter(id, bounding_box);
+        self.render.filter(id, bounding_box);
         res
     }
 
     pub fn filter2d<R, F: FnOnce(&mut RenderContext) -> R>(&mut self, id1: FilterId, bounding_box1: BoundingBox, id2: FilterId, bounding_box2: BoundingBox, f: F) -> R {
         let res = f(self);
-        self.inner.filter2d(id1, bounding_box1, id2, bounding_box2);
+        self.render.filter2d(id1, bounding_box1, id2, bounding_box2);
         res
     }
 
 
     pub fn stencil<R, F: FnOnce(&mut RenderContext) -> R>(&mut self, geometry: &[Triangle<Position>], f: F) -> R {
-        self.inner.stencil(geometry);
+        self.render.stencil(geometry);
         let res = f(self);
-        self.inner.pop_stencil();
+        self.render.pop_stencil();
         res
     }
 
@@ -63,7 +59,7 @@ impl<'a> RenderContext<'a> {
             return;
         }
 
-        self.inner.geometry(geometry);
+        self.render.geometry(geometry);
     }
 
     pub fn rect(&mut self, rect: Rect) {
@@ -82,24 +78,24 @@ impl<'a> RenderContext<'a> {
     }
 
     pub fn style<R, F: FnOnce(&mut RenderContext) -> R>(&mut self, style: DrawStyle, f: F) -> R {
-        self.inner.style(style);
+        self.render.style(style);
         let res = f(self);
-        self.inner.pop_style();
+        self.render.pop_style();
         res
     }
 
     pub fn image(&mut self, id: ImageId, bounding_box: BoundingBox, source_rect: Rect, mode: u32) {
-        self.inner.image(id, bounding_box, source_rect, mode);
+        self.render.image(id, bounding_box, source_rect, mode);
     }
 
-    pub fn text(&mut self, text: &[Glyph]) {
-        self.inner.text(text);
+    pub fn text(&mut self, text: TextId) {
+        self.render.text(text, self.text);
     }
 
     pub fn layer<R, F: FnOnce(&mut RenderContext) -> R>(&mut self, layer: u32, f: F) -> R {
-        self.inner.layer(layer);
+        self.render.layer(layer);
         let res = f(self);
-        self.inner.pop_layer();
+        self.render.pop_layer();
         res
     }
 }
@@ -126,7 +122,7 @@ pub trait InnerRenderContext {
 
     fn image(&mut self, id: ImageId, bounding_box: Rect, source_rect: Rect, mode: u32);
 
-    fn text(&mut self, text: &[Glyph]);
+    fn text(&mut self, text: TextId, ctx: &mut dyn InnerTextContext);
 
     fn layer(&mut self, index: u32);
     fn pop_layer(&mut self);
@@ -159,7 +155,7 @@ impl InnerRenderContext for NoopRenderContext {
 
     fn image(&mut self, _id: ImageId, _bounding_box: Rect, _source_rect: Rect, _mode: u32) {}
 
-    fn text(&mut self, _text: &[Glyph]) {}
+    fn text(&mut self, text: TextId, ctx: &mut dyn InnerTextContext) {}
 
     fn layer(&mut self, _index: u32) {}
 

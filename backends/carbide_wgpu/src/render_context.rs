@@ -7,7 +7,7 @@ use carbide_core::draw::image::ImageId;
 use carbide_core::draw::shape::triangle::Triangle;
 use carbide_core::mesh::{MODE_GEOMETRY, MODE_TEXT, MODE_TEXT_COLOR};
 use carbide_core::render::{CarbideTransform, InnerRenderContext};
-use carbide_core::text::Glyph;
+use carbide_core::text::{InnerTextContext, NOOPTextContext, TextId};
 use carbide_core::widget::FilterId;
 use crate::gradient::Gradient;
 use crate::render_pass_command::{RenderPass, RenderPassCommand, WGPUBindGroup};
@@ -604,74 +604,8 @@ impl InnerRenderContext for WGPURenderContext {
         self.vertices.push(create_vertex(r, b, uv_r, uv_b));
     }
 
-    fn text(&mut self, text: &[Glyph]) {
-        self.ensure_state_plain();
-
-        let color = match self.style_stack.last().unwrap_or(&WGPUStyle::Color(WHITE.gamma_srgb_to_linear().to_fsa())) {
-            WGPUStyle::Color(c) => *c,
-            WGPUStyle::Gradient(_) => unimplemented!("gradients not implemented for text")
-        };
-
-        let v_normal = |x, y, t| Vertex {
-            position: [x as f32, y as f32, 0.0],
-            tex_coords: t,
-            rgba: color,
-            mode: MODE_TEXT,
-        };
-
-        let v_color = |x, y, t| Vertex {
-            position: [x as f32, y as f32, 0.0],
-            tex_coords: t,
-            rgba: color,
-            mode: MODE_TEXT_COLOR,
-        };
-
-        let mut push_v = |x: Scalar, y: Scalar, t: [f32; 2], is_bitmap: bool| {
-            if is_bitmap {
-                self.vertices.push(v_color(x, y, t));
-            } else {
-                self.vertices.push(v_normal(x, y, t));
-            }
-        };
-
-        for glyph in text {
-            if let Some(bb) = glyph.bb() {
-                let (left, right, bottom, top) = bb.l_r_b_t();
-
-                if let Some(index) = glyph.atlas_entry() {
-                    if !index.borrow().is_active {
-                        println!(
-                            "Trying to show glyph that is not in the texture atlas 11111."
-                        );
-                    }
-                    let coords = index.borrow().tex_coords;
-
-                    push_v(left, top, [coords.min.x, coords.max.y], glyph.is_bitmap());
-                    push_v(
-                        right,
-                        bottom,
-                        [coords.max.x, coords.min.y],
-                        glyph.is_bitmap(),
-                    );
-                    push_v(
-                        left,
-                        bottom,
-                        [coords.min.x, coords.min.y],
-                        glyph.is_bitmap(),
-                    );
-                    push_v(left, top, [coords.min.x, coords.max.y], glyph.is_bitmap());
-                    push_v(
-                        right,
-                        bottom,
-                        [coords.max.x, coords.min.y],
-                        glyph.is_bitmap(),
-                    );
-                    push_v(right, top, [coords.max.x, coords.max.y], glyph.is_bitmap());
-                } else {
-                    println!("Trying to show glyph that is not in the texture atlas.");
-                }
-            }
-        }
+    fn text(&mut self, text: TextId, ctx: &mut dyn InnerTextContext) {
+        ctx.render(text, self);
     }
 
     fn layer(&mut self, _index: u32) {

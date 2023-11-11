@@ -134,41 +134,6 @@ impl<S: ReadState<T=Style> + Clone, F: ReadState<T=Style> + Clone> Render for Ro
             })
         }
     }
-
-    fn get_primitives(&mut self, primitives: &mut Vec<Primitive>, _env: &mut Environment) {
-        let rectangle = rect(
-            self.x() as f32,
-            self.y() as f32,
-            self.width() as f32,
-            self.height() as f32,
-        );
-
-        let corner_radius = self.corner_radii;
-
-        tessellate(self, &rectangle.to_box2d(), &|builder, rect| {
-            builder.add_rounded_rectangle(
-                rect,
-                &BorderRadii {
-                    top_left: corner_radius.top_left as f32,
-                    top_right: corner_radius.top_right as f32,
-                    bottom_left: corner_radius.bottom_left as f32,
-                    bottom_right: corner_radius.bottom_right as f32,
-                },
-                Winding::Positive,
-            );
-        });
-
-        let fill_color = self.fill_color.value().clone();
-        let stroke_color = self.stroke_color.value().clone();
-
-        self.triangle_store.insert_primitives(
-            primitives,
-            fill_color,
-            stroke_color,
-            self.position,
-            self.dimension,
-        );
-    }
 }
 
 impl<S: ReadState<T=Style> + Clone, F: ReadState<T=Style> + Clone> Shape for RoundedRectangle<S, F> {

@@ -1,6 +1,6 @@
 use crate::draw::{Dimension, Position, Scalar};
 use crate::environment::Environment;
-use crate::layout::{calculate_size_vstack, Layout, position_children_vstack};
+use crate::layout::{calculate_size_vstack, Layout, LayoutContext, position_children_vstack};
 use crate::{CommonWidgetImpl};
 use crate::widget::{CommonWidget, CrossAxisAlignment, WidgetExt, WidgetId, WidgetSequence, Widget};
 
@@ -39,16 +39,16 @@ impl<W: WidgetSequence> VStack<W> {
 }
 
 impl<W: WidgetSequence> Layout for VStack<W> {
-    fn calculate_size(&mut self, requested_size: Dimension, env: &mut Environment) -> Dimension {
+    fn calculate_size(&mut self, requested_size: Dimension, ctx: &mut LayoutContext) -> Dimension {
         let spacing = self.spacing;
-        calculate_size_vstack(self, spacing, requested_size, env);
+        calculate_size_vstack(self, spacing, requested_size, ctx);
         self.dimension
     }
 
-    fn position_children(&mut self, env: &mut Environment) {
+    fn position_children(&mut self, ctx: &mut LayoutContext) {
         let spacing = self.spacing;
         let cross_axis_alignment = self.cross_axis_alignment;
-        position_children_vstack(self, spacing, cross_axis_alignment, env)
+        position_children_vstack(self, spacing, cross_axis_alignment, ctx)
     }
 }
 

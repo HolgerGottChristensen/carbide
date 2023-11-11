@@ -9,7 +9,7 @@ use crate::{CommonWidgetImpl};
 use crate::draw::{Color, Dimension, Position};
 use crate::environment::{Environment};
 use crate::environment::EnvironmentColor;
-use crate::layout::Layout;
+use crate::layout::{Layout, LayoutContext};
 use crate::render::{Primitive, Render, RenderContext, Style};
 use crate::state::{ReadState, IntoReadState, StateSync};
 use crate::widget::{Blur, CommonWidget, WidgetExt, WidgetId, ZStack, Widget};
@@ -95,7 +95,7 @@ impl<S: ReadState<T=Style> + Clone, F: ReadState<T=Style> + Clone> CommonWidget 
 }
 
 impl<S: ReadState<T=Style> + Clone, F: ReadState<T=Style> + Clone> Layout for Circle<S, F> {
-    fn calculate_size(&mut self, requested_size: Dimension, _: &mut Environment) -> Dimension {
+    fn calculate_size(&mut self, requested_size: Dimension, ctx: &mut LayoutContext) -> Dimension {
         let min_dimension = requested_size.width.min(requested_size.height);
         self.dimension = Dimension::new(min_dimension, min_dimension);
 
@@ -131,32 +131,6 @@ impl<S: ReadState<T=Style> + Clone, F: ReadState<T=Style> + Clone> Render for Ci
                 this.geometry(&self.triangle_store.stroke_triangles)
             })
         }
-    }
-
-    fn get_primitives(&mut self, primitives: &mut Vec<Primitive>, _env: &mut Environment) {
-        let radius = self.width() as f32 / 2.0;
-        let center = point(self.x() as f32 + radius, self.y() as f32 + radius);
-        let rectangle = rect(
-            self.x() as f32,
-            self.y() as f32,
-            self.width() as f32,
-            self.height() as f32,
-        );
-
-        tessellate(self, &rectangle.to_box2d(), &|builder, _| {
-            builder.add_circle(center, radius, Winding::Positive);
-        });
-
-        let fill_color = self.fill_color.value().clone();
-        let stroke_color = self.stroke_color.value().clone();
-
-        self.triangle_store.insert_primitives(
-            primitives,
-            fill_color,
-            stroke_color,
-            self.position,
-            self.dimension,
-        );
     }
 }
 

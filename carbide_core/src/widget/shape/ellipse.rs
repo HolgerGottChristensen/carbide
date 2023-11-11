@@ -123,32 +123,6 @@ impl<S: ReadState<T=Style> + Clone, F: ReadState<T=Style> + Clone> Render for El
             })
         }
     }
-
-    fn get_primitives(&mut self, primitives: &mut Vec<Primitive>, _env: &mut Environment) {
-        let radii = vec2(self.width() as f32 / 2.0, self.height() as f32 / 2.0);
-        let center = point(self.x() as f32 + radii.x, self.y() as f32 + radii.y);
-        let rectangle = rect(
-            self.x() as f32,
-            self.y() as f32,
-            self.width() as f32,
-            self.height() as f32,
-        );
-
-        tessellate(self, &rectangle.to_box2d(), &|builder, _| {
-            builder.add_ellipse(center, radii, Angle::degrees(0.0), Winding::Positive);
-        });
-
-        let fill_color = self.fill_color.value().clone();
-        let stroke_color = self.stroke_color.value().clone();
-
-        self.triangle_store.insert_primitives(
-            primitives,
-            fill_color,
-            stroke_color,
-            self.position,
-            self.dimension,
-        );
-    }
 }
 
 impl<S: ReadState<T=Style> + Clone, F: ReadState<T=Style> + Clone> Shape for Ellipse<S, F> {

@@ -545,80 +545,80 @@ impl Mesh {
                 PrimitiveKind::TrianglesMultiColor { triangles: _ } => {
                     todo!()
                 }
-                PrimitiveKind::Text { color, text: glyphs, } => {
-                    match current_state {
-                        State::Plain { .. } => (),
-                        State::Image { image_id, start } => {
-                            commands.push(DrawCommand::Image(start..vertices.len(), image_id));
-                            current_state = State::Plain {
-                                start: vertices.len(),
-                            };
-                        }
-                    }
-
-                    let color = color.gamma_srgb_to_linear().to_fsa();
-                    //let texture_atlas = env.get_font_atlas();
-
-                    let v_normal = |x, y, t| Vertex {
-                        position: [x as f32, y as f32, 0.0],
-                        tex_coords: t,
-                        rgba: color,
-                        mode: MODE_TEXT,
-                    };
-
-                    let v_color = |x, y, t| Vertex {
-                        position: [x as f32, y as f32, 0.0],
-                        tex_coords: t,
-                        rgba: color,
-                        mode: MODE_TEXT_COLOR,
-                    };
-
-                    let mut push_v = |x: Scalar, y: Scalar, t: [f32; 2], is_bitmap: bool| {
-                        if is_bitmap {
-                            vertices.push(v_color(x, y, t));
-                        } else {
-                            vertices.push(v_normal(x, y, t));
-                        }
-                    };
-
-                    for glyph in glyphs {
-                        if let Some(bb) = glyph.bb() {
-                            let (left, right, bottom, top) = bb.l_r_b_t_scaled(scale_factor);
-
-                            if let Some(index) = glyph.atlas_entry() {
-                                if !index.borrow().is_active {
-                                    println!(
-                                        "Trying to show glyph that is not in the texture atlas 1."
-                                    );
-                                }
-                                let coords = index.borrow().tex_coords;
-
-                                push_v(left, top, [coords.min.x, coords.max.y], glyph.is_bitmap());
-                                push_v(
-                                    right,
-                                    bottom,
-                                    [coords.max.x, coords.min.y],
-                                    glyph.is_bitmap(),
-                                );
-                                push_v(
-                                    left,
-                                    bottom,
-                                    [coords.min.x, coords.min.y],
-                                    glyph.is_bitmap(),
-                                );
-                                push_v(left, top, [coords.min.x, coords.max.y], glyph.is_bitmap());
-                                push_v(
-                                    right,
-                                    bottom,
-                                    [coords.max.x, coords.min.y],
-                                    glyph.is_bitmap(),
-                                );
-                                push_v(right, top, [coords.max.x, coords.max.y], glyph.is_bitmap());
-                            } else {
-                                println!("Trying to show glyph that is not in the texture atlas.");
-                            }
-                        }
-                    }
+                PrimitiveKind::Text { color } => {
+                    // match current_state {
+                    //     State::Plain { .. } => (),
+                    //     State::Image { image_id, start } => {
+                    //         commands.push(DrawCommand::Image(start..vertices.len(), image_id));
+                    //         current_state = State::Plain {
+                    //             start: vertices.len(),
+                    //         };
+                    //     }
+                    // }
+                    //
+                    // let color = color.gamma_srgb_to_linear().to_fsa();
+                    // //let texture_atlas = env.get_font_atlas();
+                    //
+                    // let v_normal = |x, y, t| Vertex {
+                    //     position: [x as f32, y as f32, 0.0],
+                    //     tex_coords: t,
+                    //     rgba: color,
+                    //     mode: MODE_TEXT,
+                    // };
+                    //
+                    // let v_color = |x, y, t| Vertex {
+                    //     position: [x as f32, y as f32, 0.0],
+                    //     tex_coords: t,
+                    //     rgba: color,
+                    //     mode: MODE_TEXT_COLOR,
+                    // };
+                    //
+                    // let mut push_v = |x: Scalar, y: Scalar, t: [f32; 2], is_bitmap: bool| {
+                    //     if is_bitmap {
+                    //         vertices.push(v_color(x, y, t));
+                    //     } else {
+                    //         vertices.push(v_normal(x, y, t));
+                    //     }
+                    // };
+                    //
+                    // for glyph in glyphs {
+                    //     if let Some(bb) = glyph.bb() {
+                    //         let (left, right, bottom, top) = bb.l_r_b_t_scaled(scale_factor);
+                    //
+                    //         if let Some(index) = glyph.atlas_entry() {
+                    //             if !index.borrow().is_active {
+                    //                 println!(
+                    //                     "Trying to show glyph that is not in the texture atlas 1."
+                    //                 );
+                    //             }
+                    //             let coords = index.borrow().tex_coords;
+                    //
+                    //             push_v(left, top, [coords.min.x, coords.max.y], glyph.is_bitmap());
+                    //             push_v(
+                    //                 right,
+                    //                 bottom,
+                    //                 [coords.max.x, coords.min.y],
+                    //                 glyph.is_bitmap(),
+                    //             );
+                    //             push_v(
+                    //                 left,
+                    //                 bottom,
+                    //                 [coords.min.x, coords.min.y],
+                    //                 glyph.is_bitmap(),
+                    //             );
+                    //             push_v(left, top, [coords.min.x, coords.max.y], glyph.is_bitmap());
+                    //             push_v(
+                    //                 right,
+                    //                 bottom,
+                    //                 [coords.max.x, coords.min.y],
+                    //                 glyph.is_bitmap(),
+                    //             );
+                    //             push_v(right, top, [coords.max.x, coords.max.y], glyph.is_bitmap());
+                    //         } else {
+                    //             println!("Trying to show glyph that is not in the texture atlas.");
+                    //         }
+                    //     }
+                    // }
                 }
                 PrimitiveKind::Image { image_id, color, source_rect, mode} => {
                     let image_ref = match env.image_map.get(&image_id) {

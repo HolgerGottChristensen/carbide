@@ -110,23 +110,6 @@ impl CommonWidget for Filter {
 }
 
 impl Render for Filter {
-    fn process_get_primitives(&mut self, primitives: &mut Vec<Primitive>, env: &mut Environment) {
-        if self.filter_id == None {
-            self.filter_id = Some(env.insert_filter(self.filter.clone()));
-        }
-
-        self.foreach_child_mut(&mut |child| {
-            child.process_get_primitives(primitives, env);
-        });
-
-        if let Some(filter_id) = self.filter_id {
-            primitives.push(Primitive {
-                kind: PrimitiveKind::Filter(filter_id),
-                bounding_box: Rect::new(self.position, self.dimension),
-            });
-        }
-    }
-
     fn render(&mut self, context: &mut RenderContext, env: &mut Environment) {
         let filter_id = if let Some(filter_id) = self.filter_id {
             filter_id

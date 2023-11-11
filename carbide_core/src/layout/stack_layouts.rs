@@ -2,14 +2,14 @@ use smallvec::{SmallVec, smallvec};
 use crate::draw::{Dimension, Position};
 use crate::environment::Environment;
 use crate::flags::Flags;
-use crate::layout::Layout;
+use crate::layout::{Layout, LayoutContext};
 use crate::widget::{CrossAxisAlignment, AnyWidget};
 
 pub(crate) fn calculate_size_vstack(
     widget: &mut dyn Layout,
     spacing: f64,
     requested_size: Dimension,
-    env: &mut Environment,
+    ctx: &mut LayoutContext
 ) {
     calculate_size_stack(
         widget,
@@ -18,7 +18,7 @@ pub(crate) fn calculate_size_vstack(
         height_width,
         spacing,
         requested_size,
-        env,
+        ctx,
     );
 }
 
@@ -26,7 +26,7 @@ pub(crate) fn position_children_vstack(
     widget: &mut dyn Layout,
     spacing: f64,
     cross_axis_alignment: CrossAxisAlignment,
-    env: &mut Environment,
+    ctx: &mut LayoutContext
 ) {
     position_children_stack(
         widget,
@@ -37,7 +37,7 @@ pub(crate) fn position_children_vstack(
         y_x,
         cross_axis_alignment,
         spacing,
-        env,
+        ctx,
     );
 }
 
@@ -45,7 +45,7 @@ pub(crate) fn calculate_size_hstack(
     widget: &mut dyn Layout,
     spacing: f64,
     requested_size: Dimension,
-    env: &mut Environment,
+    ctx: &mut LayoutContext,
 ) {
     calculate_size_stack(
         widget,
@@ -54,7 +54,7 @@ pub(crate) fn calculate_size_hstack(
         width_height,
         spacing,
         requested_size,
-        env,
+        ctx,
     );
 }
 
@@ -62,7 +62,7 @@ pub(crate) fn position_children_hstack(
     widget: &mut dyn Layout,
     spacing: f64,
     cross_axis_alignment: CrossAxisAlignment,
-    env: &mut Environment,
+    ctx: &mut LayoutContext
 ) {
     position_children_stack(
         widget,
@@ -73,7 +73,7 @@ pub(crate) fn position_children_hstack(
         x_y,
         cross_axis_alignment,
         spacing,
-        env,
+        ctx,
     );
 }
 
@@ -117,7 +117,7 @@ fn calculate_size_stack(
     dimension: fn(f64, f64) -> Dimension,
     spacing: f64,
     requested_size: Dimension,
-    env: &mut Environment,
+    ctx: &mut LayoutContext
 ) {
     let mut number_of_children_that_needs_sizing = 0;
 
@@ -180,7 +180,7 @@ fn calculate_size_stack(
             cross_axis(size_for_children),
         );
 
-        let chosen_size = child.calculate_size(size_for_child, env);
+        let chosen_size = child.calculate_size(size_for_child, ctx);
 
         if cross_axis(chosen_size) > max_cross_axis {
             max_cross_axis = cross_axis(chosen_size);
@@ -202,7 +202,7 @@ fn calculate_size_stack(
             max_cross_axis,
         );
 
-        let chosen_size = child.calculate_size(size_for_child, env);
+        let chosen_size = child.calculate_size(size_for_child, ctx);
 
         size_for_children = dimension(
             (main_axis(size_for_children) - main_axis(chosen_size)).max(0.0),
@@ -228,7 +228,7 @@ fn calculate_size_stack(
 
     widget.foreach_child_mut(&mut |child| {
         if child.is_spacer() {
-            let chosen_size = child.calculate_size(request_dimension, env);
+            let chosen_size = child.calculate_size(request_dimension, ctx);
             total_main_axis += main_axis(chosen_size);
         }
     });
@@ -245,7 +245,7 @@ fn position_children_stack(
     position_from_main_and_cross: fn(f64, f64) -> Position,
     cross_axis_alignment: CrossAxisAlignment,
     spacing: f64,
-    env: &mut Environment,
+    ctx: &mut LayoutContext,
 ) {
     let alignment = cross_axis_alignment;
     let mut main_axis_offset = 0.0;
@@ -276,6 +276,6 @@ fn position_children_stack(
         }
 
         main_axis_offset += main_axis_dimension(child.dimension());
-        child.position_children(env);
+        child.position_children(ctx);
     });
 }

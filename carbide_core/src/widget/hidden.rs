@@ -38,8 +38,6 @@ impl CommonWidget for Hidden {
 
 impl Render for Hidden {
     // Because we try to hide all children, we just stop the rendering tree.
-    fn process_get_primitives(&mut self, _: &mut Vec<Primitive>, _: &mut Environment) {}
-
     fn render(&mut self, _: &mut RenderContext, _: &mut Environment) {}
 }
 

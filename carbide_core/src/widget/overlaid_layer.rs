@@ -11,7 +11,7 @@ use crate::event::{
     KeyboardEvent, KeyboardEventHandler, MouseEvent, MouseEventHandler, OtherEventHandler,
     WidgetEvent,
 };
-use crate::layout::Layout;
+use crate::layout::{Layout, LayoutContext};
 use crate::render::{Primitive, Render};
 use crate::widget::{CommonWidget, Empty, AnyWidget, WidgetExt, WidgetId, Widget};
 
@@ -107,11 +107,14 @@ impl<C: Widget> OtherEventHandler for OverlaidLayer<C> {
 }
 
 impl<C: AnyWidget + Clone> Layout for OverlaidLayer<C> {
-    fn calculate_size(&mut self, requested_size: Dimension, env: &mut Environment) -> Dimension {
-        env.with_overlay_layer(self.overlay_id, self.overlays.clone(), |new_env| {
-            self.dimension = self.child.calculate_size(requested_size, new_env);
-            self.dimension
-        })
+    fn calculate_size(&mut self, requested_size: Dimension, ctx: &mut LayoutContext) -> Dimension {
+        self.dimension = self.child.calculate_size(requested_size, ctx);
+        self.dimension
+
+        // ctx.env.with_overlay_layer(self.overlay_id, self.overlays.clone(), |new_env| {
+        //     self.dimension = self.child.calculate_size(requested_size, new_env);
+        //     self.dimension
+        // })
     }
 }
 
@@ -120,30 +123,6 @@ impl<C: AnyWidget + Clone> CommonWidget for OverlaidLayer<C> {
 }
 
 impl<C: AnyWidget + Clone> Render for OverlaidLayer<C> {
-    fn process_get_primitives(&mut self, _primitives: &mut Vec<Primitive>, _env: &mut Environment) {
-        /*self.foreach_child_mut(&mut |child| {
-            child.process_get_primitives(primitives, env);
-        });
-
-        // If we have an overlay in the env
-        if let Some(overlay) = env.overlay(&self.overlay_id) {
-            // If we already contained an overlay, set its showing to false
-            if let Some(overlay) = &mut self.overlay {
-                overlay.set_showing(false);
-            }
-            // Insert the overlay
-            self.overlay = overlay;
-            // If there is a new overlay put in, set its showing to true
-            if let Some(overlay) = &mut self.overlay {
-                overlay.set_showing(true);
-            }
-        }
-
-        if let Some(t) = &mut self.overlay {
-            t.process_get_primitives(primitives, env);
-        }*/
-    }
-
     fn render(&mut self, context: &mut RenderContext, env: &mut Environment) {
 
         /*env.with_overlay_layer(self.overlay_id, self.overlays.clone(), |new_env| {

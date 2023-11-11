@@ -4,11 +4,15 @@ use std::ffi::OsStr;
 use std::fs;
 use std::mem::transmute;
 use std::path::{Path, PathBuf};
+use cosmic_text::FontSystem;
 
 use winit::event::{Event, WindowEvent as WinitWindowEvent};
 use winit::event_loop::{ControlFlow, EventLoopWindowTarget};
 use winit::event_loop::EventLoopBuilder;
 use winit::window::WindowId as WinitWindowId;
+
+use carbide_text::font_family::FontFamily;
+use carbide_text::text_context::TextContext;
 
 use carbide_core::{locate_folder, Scene};
 use carbide_core::asynchronous::{check_tasks, set_event_sink};
@@ -16,14 +20,16 @@ use carbide_core::draw::{Dimension, ImageContext};
 use carbide_core::environment::Environment;
 use carbide_core::event::{CustomEvent, EventHandler, Input};
 use carbide_core::render::{NoopRenderContext, Render, RenderContext};
-use carbide_core::text::{FontFamily, FontId};
+use carbide_core::text::{FontId};
 use carbide_core::widget::{Empty};
 use carbide_core::window::WindowId;
+
 use carbide_winit::convert_window_event;
 use carbide_winit::EventLoop;
 use crate::image_context::WGPUImageContext;
 
 use crate::proxy_event_loop::ProxyEventLoop;
+use crate::text_context::WGPUTextContext;
 
 thread_local!(pub static EVENT_LOOP: RefCell<EventLoop<CustomEvent>> = RefCell::new(EventLoop::Owned(EventLoopBuilder::<CustomEvent>::with_user_event().build())));
 thread_local!(pub static WINDOW_IDS: RefCell<HashMap<WinitWindowId, WindowId>> = RefCell::new(HashMap::new()));
@@ -33,6 +39,7 @@ pub struct Application {
     root: Box<dyn Scene>,
     event_handler: EventHandler,
     environment: Environment,
+    text_context: TextContext,
     //any_focus: bool,
 
     //windows: HashMap<WindowId, WGPUWindow>,
@@ -57,7 +64,7 @@ impl Application {
 
         set_event_sink(ProxyEventLoop(proxy.clone()));
 
-        let environment = Environment::new(
+        let mut environment = Environment::new(
             window_pixel_dimensions,
             scale_factor,
             Box::new(ProxyEventLoop(proxy)),
@@ -66,7 +73,8 @@ impl Application {
         Application {
             root: Box::new(Empty::new()),
             event_handler: EventHandler::new(),
-            environment
+            environment,
+            text_context: TextContext::new(),
         }
     }
 
@@ -94,9 +102,7 @@ impl Application {
         self.environment.update_animation();
         self.environment.clear_animation_frame();
 
-        self.environment.with_image_context(ImageContext::new(WGPUImageContext), |env| {
-            check_tasks(env);
-        });
+        check_tasks(&mut self.environment);
 
         self.environment.add_queued_images();
 
@@ -140,7 +146,7 @@ impl Application {
 
     pub fn add_font_family(&mut self, family: FontFamily) -> String {
         let family_name = family.name.clone();
-        self.environment.add_font_family(family);
+        self.text_context.add_font_family(family);
         family_name
     }
 
@@ -151,7 +157,7 @@ impl Application {
             .unwrap();
         let font_path = assets.join(path.as_ref());
 
-        self.environment.insert_font_from_file(font_path).0
+        self.text_context.insert_font_from_file(font_path).0
     }
 
     pub fn environment(&self) -> &Environment {
@@ -314,7 +320,11 @@ impl Application {
 
                     // Gets called if redrawing is requested.
                     Event::RedrawRequested(_) => {
-                        self.root.render(&mut RenderContext::new(&mut NoopRenderContext), &mut self.environment);
+                        self.root.render(&mut RenderContext {
+                            render: &mut NoopRenderContext,
+                            text: &mut self.text_context,
+                            image: &mut WGPUImageContext,
+                        }, &mut self.environment);
 
                         // TODO Re-enable this for primitives drawing
                         //self.root.process_get_primitives(&mut vec![], &mut self.environment);

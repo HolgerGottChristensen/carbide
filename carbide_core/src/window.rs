@@ -5,7 +5,7 @@ use image::DynamicImage;
 
 use crate::draw::image::ImageId;
 use crate::locate_folder::Search;
-use crate::text::{FontFamily, FontId};
+use crate::text::{FontId};
 use crate::widget::Menu;
 use crate::widget::AnyWidget;
 
@@ -21,7 +21,7 @@ impl WindowId {
 
 
 pub trait TWindow {
-    fn add_font_family(&mut self, family: FontFamily) -> String;
+    //fn add_font_family(&mut self, family: FontFamily) -> String;
     fn add_font<P: AsRef<Path>>(&mut self, path: P) -> FontId;
 
     fn add_image_from_path(&mut self, path: &str) -> Option<ImageId> {

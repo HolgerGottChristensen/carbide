@@ -7,7 +7,7 @@ use nom::sequence::{delimited, preceded, tuple};
 
 use crate::environment::Environment;
 use crate::text::{FontStyle, FontWeight, TextSpanGenerator};
-use crate::text::text_span::TextSpan;
+use carbide_text::text_span::TextSpan;
 use crate::text::text_style::TextStyle;
 use crate::text::types::text_decoration::TextDecoration;
 

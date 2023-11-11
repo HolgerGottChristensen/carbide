@@ -213,29 +213,6 @@ impl<S: ReadState<T=Style> + Clone, F: ReadState<T=Style> + Clone> Render for Re
             })
         }
     }
-
-    fn get_primitives(&mut self, primitives: &mut Vec<Primitive>, _env: &mut Environment) {
-        let rect = rect(
-            self.x() as f32,
-            self.y() as f32,
-            self.width() as f32,
-            self.height() as f32,
-        );
-        tessellate(self, &rect.to_box2d(), &|builder, rectangle| {
-            builder.add_rectangle(rectangle, Winding::Positive)
-        });
-
-        let fill_color = self.fill_color.value().clone();
-        let stroke_color = self.stroke_color.value().clone();
-
-        self.triangle_store.insert_primitives(
-            primitives,
-            fill_color,
-            stroke_color,
-            self.position,
-            self.dimension,
-        );
-    }
 }
 
 impl<S: ReadState<T=Style> + Clone, F: ReadState<T=Style> + Clone> Shape for Rectangle<S, F> {

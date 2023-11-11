@@ -275,31 +275,6 @@ impl<C: CanvasContext> Render for Canvas<C> {
             }
         }
     }
-    fn get_primitives(&mut self, _primitives: &mut Vec<Primitive>, env: &mut Environment) {
-        let context = Context::new();
-
-        let rectangle = Rect::new(self.position(), self.dimension());
-        let context = self.context.call(rectangle, context, env);
-
-        let _paths = context.to_paths(self.position(), env);
-
-        todo!()
-
-        /*for (path, options) in paths {
-            match options {
-                ShapeStyleWithOptions::Fill(fill_options, mut color) => {
-                    color.sync(env);
-                    primitives.push(self.get_fill_prim(path, fill_options, *color.value()));
-                    //color.release_state(env);
-                }
-                ShapeStyleWithOptions::Stroke(stroke_options, mut color) => {
-                    color.sync(env);
-                    primitives.push(self.get_stroke_prim(path, stroke_options, *color.value()));
-                    //color.release_state(env);
-                }
-            }
-        }*/
-    }
 }
 
 impl<C: CanvasContext> Debug for Canvas<C> {

@@ -5,7 +5,7 @@ use crate::cursor::MouseCursor;
 use crate::draw::{Dimension, Position};
 use crate::environment::Environment;
 use crate::event::{MouseEvent, MouseEventHandler, OtherEventHandler, WidgetEvent};
-use crate::layout::Layout;
+use crate::layout::{Layout, LayoutContext};
 use crate::state::{IntoState, State};
 use crate::widget::{CommonWidget, CrossAxisAlignment, SplitType, AnyWidget, WidgetExt, WidgetId, Widget, Empty, WidgetSequence};
 
@@ -170,7 +170,7 @@ impl<S: State<T=f64>, L: Widget, T: Widget> MouseEventHandler for HSplit<S, L, T
 }
 
 impl<S: State<T=f64>, L: Widget, T: Widget> Layout for HSplit<S, L, T> {
-    fn calculate_size(&mut self, requested_size: Dimension, env: &mut Environment) -> Dimension {
+    fn calculate_size(&mut self, requested_size: Dimension, ctx: &mut LayoutContext) -> Dimension {
         let (requested_leading_width, requested_trailing_width) = match &self.split {
             SplitType::Start(offset) => (*offset.value(), requested_size.width - *offset.value()),
             SplitType::Percent(percent) => {
@@ -182,19 +182,19 @@ impl<S: State<T=f64>, L: Widget, T: Widget> Layout for HSplit<S, L, T> {
         };
 
         let leading_size = Dimension::new(requested_leading_width, requested_size.height);
-        let mut leading = self.leading.calculate_size(leading_size, env);
+        let mut leading = self.leading.calculate_size(leading_size, ctx);
 
         let trailing_size = Dimension::new(requested_trailing_width, requested_size.height);
-        let mut trailing = self.trailing.calculate_size(trailing_size, env);
+        let mut trailing = self.trailing.calculate_size(trailing_size, ctx);
 
         if leading.width > requested_leading_width {
             let trailing_size =
                 Dimension::new(requested_size.width - leading.width, requested_size.height);
-            trailing = self.trailing.calculate_size(trailing_size, env);
+            trailing = self.trailing.calculate_size(trailing_size, ctx);
         } else if trailing.width > requested_trailing_width {
             let leading_size =
                 Dimension::new(requested_size.width - trailing.width, requested_size.height);
-            leading = self.leading.calculate_size(leading_size, env);
+            leading = self.leading.calculate_size(leading_size, ctx);
         }
 
         self.set_dimension(Dimension::new(
@@ -204,7 +204,7 @@ impl<S: State<T=f64>, L: Widget, T: Widget> Layout for HSplit<S, L, T> {
         self.dimension
     }
 
-    fn position_children(&mut self, env: &mut Environment) {
+    fn position_children(&mut self, ctx: &mut LayoutContext) {
         let position = self.position();
         let dimension = self.dimension();
         let alignment = self.cross_axis_alignment;
@@ -222,7 +222,7 @@ impl<S: State<T=f64>, L: Widget, T: Widget> Layout for HSplit<S, L, T> {
 
             child.set_position(Position::new(position.x + main_axis_offset, cross));
             main_axis_offset += child.dimension().width;
-            child.position_children(env);
+            child.position_children(ctx);
         });
     }
 }

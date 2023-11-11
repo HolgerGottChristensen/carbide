@@ -19,10 +19,11 @@ use carbide_core::environment::{Environment, EnvironmentColor};
 use carbide_core::event::{KeyboardEvent, KeyboardEventHandler, MouseEvent, MouseEventHandler, OtherEventHandler, WidgetEvent, WindowEvent};
 use carbide_core::focus::Focusable;
 use carbide_core::image::{DynamicImage, GenericImage, GenericImageView};
-use carbide_core::layout::{Layout, Layouter};
+use carbide_core::layout::{Layout, LayoutContext, Layouter};
 use carbide_core::mesh::mesh::Mesh;
 use carbide_core::render::{Primitive, Primitives, Render, RenderContext};
 use carbide_core::state::StateSync;
+use carbide_core::text::InnerTextContext;
 use carbide_core::widget::{CommonWidget, FilterId, Menu, OverlaidLayer, Rectangle, AnyWidget, WidgetExt, WidgetId, ZStack};
 use carbide_core::window::WindowId;
 use carbide_winit::convert_mouse_cursor;
@@ -531,27 +532,24 @@ impl MouseEventHandler for WGPUWindow {
         env.set_scale_factor(scale_factor);
         env.set_window_handle(Some(self.inner.raw_window_handle()));
 
-        env.with_image_context(ImageContext::new(WGPUImageContext), |env| {
-            if !*consumed {
-                if env.is_event_current() {
-                    self.capture_state(env);
-                    self.handle_mouse_event(event, consumed, env);
-                    self.release_state(env);
-                }
+        if !*consumed {
+            if env.is_event_current() {
+                self.capture_state(env);
+                self.handle_mouse_event(event, consumed, env);
+                self.release_state(env);
             }
+        }
 
-            self.foreach_child_direct(&mut |child| {
-                child.process_mouse_event(event, &consumed, env);
-                if *consumed {
-                    return;
-                }
-            });
-
+        self.foreach_child_direct(&mut |child| {
+            child.process_mouse_event(event, &consumed, env);
             if *consumed {
                 return;
             }
         });
 
+        if *consumed {
+            return;
+        }
 
         env.set_event_is_current(old_is_current);
         env.set_pixel_dimensions(old_dimension);
@@ -655,16 +653,14 @@ impl KeyboardEventHandler for WGPUWindow {
         env.set_scale_factor(scale_factor);
         env.set_window_handle(Some(self.inner.raw_window_handle()));
 
-        env.with_image_context(ImageContext::new(WGPUImageContext), |env| {
-            if env.is_event_current() {
-                self.capture_state(env);
-                self.handle_keyboard_event(event, env);
-                self.release_state(env);
-            }
+        if env.is_event_current() {
+            self.capture_state(env);
+            self.handle_keyboard_event(event, env);
+            self.release_state(env);
+        }
 
-            self.foreach_child_direct(&mut |child| {
-                child.process_keyboard_event(event, env);
-            });
+        self.foreach_child_direct(&mut |child| {
+            child.process_keyboard_event(event, env);
         });
 
         env.set_event_is_current(old_is_current);
@@ -749,20 +745,18 @@ impl OtherEventHandler for WGPUWindow {
         env.set_scale_factor(scale_factor);
         env.set_window_handle(Some(self.inner.raw_window_handle()));
 
-        env.with_image_context(ImageContext::new(WGPUImageContext), |env| {
-            if env.is_event_current() {
-                self.capture_state(env);
-                self.handle_other_event(event, env);
-                self.release_state(env);
-            }
+        if env.is_event_current() {
+            self.capture_state(env);
+            self.handle_other_event(event, env);
+            self.release_state(env);
+        }
 
-            self.foreach_child_direct(&mut |child| {
-                child.process_other_event(event, env);
-            });
-
-            // Set the cursor of the window.
-            self.inner.set_cursor_icon(convert_mouse_cursor(env.cursor()));
+        self.foreach_child_direct(&mut |child| {
+            child.process_other_event(event, env);
         });
+
+        // Set the cursor of the window.
+        self.inner.set_cursor_icon(convert_mouse_cursor(env.cursor()));
 
         env.set_event_is_current(old_is_current);
         env.set_pixel_dimensions(old_dimension);
@@ -772,15 +766,15 @@ impl OtherEventHandler for WGPUWindow {
 }
 
 impl Layout for WGPUWindow {
-    fn calculate_size(&mut self, _requested_size: Dimension, _env: &mut Environment) -> Dimension {
+    fn calculate_size(&mut self, requested_size: Dimension, ctx: &mut LayoutContext) -> Dimension {
         Dimension::new(0.0, 0.0)
     }
 
-    fn position_children(&mut self, _env: &mut Environment) {}
+    fn position_children(&mut self, ctx: &mut LayoutContext) {}
 }
 
 impl Render for WGPUWindow {
-    fn render(&mut self, _: &mut RenderContext, env: &mut Environment) {
+    fn render(&mut self, ctx: &mut RenderContext, env: &mut Environment) {
         let old_scale_factor = env.scale_factor();
         let old_pixel_dimensions = env.pixel_dimensions();
 
@@ -794,130 +788,52 @@ impl Render for WGPUWindow {
         env.set_pixel_dimensions(Dimension::new(physical_dimensions.width as f64, physical_dimensions.height as f64));
         env.set_scale_factor(scale_factor);
 
-        env.with_image_context(ImageContext::new(WGPUImageContext), |env| {
-            // Calculate size and position children
-            self.child.calculate_size(dimensions, env);
-
-            let layout = env.root_alignment();
-            (layout.positioner())(Position::new(0.0, 0.0), dimensions, &mut self.child);
-
-            self.child.position_children(env);
-
-            // Render the children
-            self.render_context.start(Rect::new(Position::origin(), dimensions));
-            let mut wrapper_context = RenderContext::new(&mut self.render_context);
-
-            env.get_font_atlas_mut().prepare_queued();
-
-            self.child.render(&mut wrapper_context, env);
-
-            let render_passes = self.render_context.finish();
-
-            //println!("\nContext: {:#?}", render_passes);
-            //println!("Vertices: {:#?}", &self.render_context.vertices()[0..10]);
-
-            let mut uniform_bind_groups = vec![];
-            let mut gradient_bind_groups = vec![];
-
-            DEVICE_QUEUE.with(|(device, queue)| {
-                Self::ensure_vertices_in_buffer(device, queue, self.render_context.vertices(), &mut self.vertex_buffer.0, &mut self.vertex_buffer.1);
-
-                UNIFORM_BIND_GROUP_LAYOUT.with(|uniform_bind_group_layout| {
-                    Self::ensure_transforms_in_buffer(device, &self.carbide_to_wgpu_matrix, self.render_context.transforms(), uniform_bind_group_layout, &mut uniform_bind_groups);
-                    Self::ensure_gradients_in_buffer(device, self.render_context.gradients(), uniform_bind_group_layout, &mut gradient_bind_groups);
-                });
-            });
-
-            if self.visible {
-                match self.render_inner(render_passes, uniform_bind_groups, gradient_bind_groups, env) {
-                    Ok(_) => {}
-                    // Recreate the swap_chain if lost
-                    Err(wgpu::SurfaceError::Lost) => {
-                        println!("Swap chain lost");
-                        self.resize(self.inner.inner_size(), env);
-                        self.request_redraw();
-                    }
-                    // The system is out of memory, we should probably quit
-                    Err(wgpu::SurfaceError::OutOfMemory) => {
-                        println!("Swap chain out of memory");
-                        env.close_application();
-                    }
-                    // All other errors (Outdated, Timeout) should be resolved by the next frame
-                    Err(e) => {
-                        // We request a redraw the next frame
-                        self.request_redraw();
-                        eprintln!("{:?}", e)
-                    }
-                }
-            }
+        // Calculate size and position children
+        self.child.calculate_size(dimensions, &mut LayoutContext {
+            text: ctx.text,
+            image: ctx.image,
+            env,
         });
 
-        // Reset the environment
-        env.set_pixel_dimensions(old_pixel_dimensions);
-        env.set_scale_factor(old_scale_factor);
-    }
-    
-    fn process_get_primitives(&mut self, _: &mut Vec<Primitive>, env: &mut Environment) {
-        let old_scale_factor = env.scale_factor();
-        let old_pixel_dimensions = env.pixel_dimensions();
+        let layout = env.root_alignment();
+        (layout.positioner())(Position::new(0.0, 0.0), dimensions, &mut self.child);
 
-        let scale_factor = self.inner.scale_factor();
-        let physical_dimensions = self.inner.inner_size();
-        let logical_dimensions = physical_dimensions.to_logical(scale_factor);
-        let dimensions = Dimension::new(logical_dimensions.width, logical_dimensions.height);
-
-        env.capture_time();
-
-        env.set_pixel_dimensions(Dimension::new(physical_dimensions.width as f64, physical_dimensions.height as f64));
-        env.set_scale_factor(scale_factor);
-
-        let primitives = Primitives::new(
-            dimensions,
-            &mut self.child,
+        self.child.position_children(&mut LayoutContext {
+            text: ctx.text,
+            image: ctx.image,
             env,
-        );
+        });
 
-        if self.visible && false {
+        // Render the children
+        self.render_context.start(Rect::new(Position::origin(), dimensions));
 
-            let viewport = Rect::new(
-                Position::new(0.0, 0.0),
-                Dimension::new(physical_dimensions.width as f64, physical_dimensions.height as f64),
-            );
+        ctx.text.prepare_render();
 
-            self.mesh.fill(viewport, env, primitives);
+        self.child.render(&mut RenderContext {
+            render: &mut self.render_context,
+            text: ctx.text,
+            image: ctx.image,
+        }, env);
 
-            let mut uniform_bind_groups = vec![];
-            let gradient_bind_groups = vec![];
+        let render_passes = self.render_context.finish();
 
-            let commands =
-                DEVICE_QUEUE.with(|(device, queue)| {
-                    let vertices: Vec<Vertex> = self
-                        .mesh
-                        .vertices()
-                        .iter()
-                        .map(|v| Vertex::from(*v))
-                        .collect::<Vec<_>>();
+        //println!("\nContext: {:#?}", render_passes);
+        //println!("Vertices: {:#?}", &self.render_context.vertices()[0..10]);
 
-                    // Ensure vertices in buffer
-                    Self::ensure_vertices_in_buffer(device, queue, &vertices, &mut self.vertex_buffer.0, &mut self.vertex_buffer.1);
+        let mut uniform_bind_groups = vec![];
+        let mut gradient_bind_groups = vec![];
 
-                    UNIFORM_BIND_GROUP_LAYOUT.with(|uniform_bind_group_layout| {
-                        GRADIENT_BIND_GROUP_LAYOUT.with(|gradient_bind_group_layout| {
-                            draw_commands_to_render_pass_commands(
-                                self.mesh.commands(),
-                                &mut uniform_bind_groups,
-                                device,
-                                uniform_bind_group_layout,
-                                gradient_bind_group_layout,
-                                self.carbide_to_wgpu_matrix,
-                            )
-                        })
-                    })
-                });
+        DEVICE_QUEUE.with(|(device, queue)| {
+            Self::ensure_vertices_in_buffer(device, queue, self.render_context.vertices(), &mut self.vertex_buffer.0, &mut self.vertex_buffer.1);
 
-            println!("Commands: {:#?}", commands);
+            UNIFORM_BIND_GROUP_LAYOUT.with(|uniform_bind_group_layout| {
+                Self::ensure_transforms_in_buffer(device, &self.carbide_to_wgpu_matrix, self.render_context.transforms(), uniform_bind_group_layout, &mut uniform_bind_groups);
+                Self::ensure_gradients_in_buffer(device, self.render_context.gradients(), uniform_bind_group_layout, &mut gradient_bind_groups);
+            });
+        });
 
-            match self.render_inner(commands, uniform_bind_groups, gradient_bind_groups, env) {
+        if self.visible {
+            match self.render_inner(render_passes, uniform_bind_groups, gradient_bind_groups, ctx.text, env) {
                 Ok(_) => {}
                 // Recreate the swap_chain if lost
                 Err(wgpu::SurfaceError::Lost) => {
@@ -939,6 +855,7 @@ impl Render for WGPUWindow {
             }
         }
 
+        // Reset the environment
         env.set_pixel_dimensions(old_pixel_dimensions);
         env.set_scale_factor(old_scale_factor);
     }
@@ -954,14 +871,14 @@ impl Scene for WGPUWindow {
 }
 
 impl WGPUWindow {
-    fn update_atlas_cache(device: &Device, encoder: &mut CommandEncoder, env: &mut Environment) {
+    fn update_atlas_cache(device: &Device, encoder: &mut CommandEncoder, ctx: &mut dyn InnerTextContext) {
         ATLAS_CACHE_TEXTURE.with(|atlas_cache_tex| {
             ATLAS_CACHE.with(|atlas_image| {
                 let atlas_image = &mut *atlas_image.borrow_mut();
-                let texture_atlas = env.get_font_atlas_mut();
+                //let texture_atlas = env.get_font_atlas_mut();
                 let mut upload_needed = false;
 
-                texture_atlas.cache_queued(|x, y, image_data| {
+                ctx.cache_queued(&mut |x, y, image_data| {
                     //println!("Insert the image at: {}, {} with size {}, {}", x, y, image_data.width(), image_data.height());
                     for (ix, iy, pixel) in image_data.pixels() {
                         atlas_image.put_pixel(x + ix, y + iy, pixel);
@@ -1338,7 +1255,7 @@ impl WGPUWindow {
         }
     }
 
-    fn render_inner(&self, render_passes: Vec<RenderPass>, uniform_bind_groups: Vec<BindGroup>, gradient_bind_groups: Vec<BindGroup>, env: &mut Environment) -> Result<(), wgpu::SurfaceError> {
+    fn render_inner(&self, render_passes: Vec<RenderPass>, uniform_bind_groups: Vec<BindGroup>, gradient_bind_groups: Vec<BindGroup>, ctx: &mut dyn InnerTextContext, env: &mut Environment) -> Result<(), wgpu::SurfaceError> {
         DEVICE_QUEUE.with(|(device, queue)| {
             BIND_GROUPS.with(|bind_groups| {
                 FILTER_BIND_GROUPS.with(|filter_bind_groups| {
@@ -1355,7 +1272,7 @@ impl WGPUWindow {
                         let size = self.inner.inner_size();
 
                         // Handle update of atlas cache
-                        Self::update_atlas_cache(device, &mut encoder, env);
+                        Self::update_atlas_cache(device, &mut encoder, ctx);
 
                         // Update filter bind groups
                         Self::update_filter_bind_groups(device, filter_bind_groups, env);

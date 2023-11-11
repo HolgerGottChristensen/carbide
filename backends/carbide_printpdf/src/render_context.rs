@@ -7,7 +7,7 @@ use carbide_core::draw::draw_style::DrawStyle;
 use carbide_core::draw::image::ImageId;
 use carbide_core::draw::shape::triangle::Triangle;
 use carbide_core::render::{CarbideTransform, InnerRenderContext};
-use carbide_core::text::Glyph;
+use carbide_core::text::{Glyph, InnerTextContext, TextId};
 use carbide_core::widget::FilterId;
 use printpdf::Image as PdfImage;
 use carbide_core::image::{DynamicImage, RgbaImage};
@@ -220,7 +220,7 @@ impl InnerRenderContext for PDFRenderContext {
         })
     }
 
-    fn text(&mut self, text: &[Glyph]) {
+    fn text(&mut self, text: TextId, ctx: &mut InnerTextContext) {
         self.pdf_layer_reference.begin_text_section();
 
         for glyph in text.iter() {

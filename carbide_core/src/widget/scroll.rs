@@ -9,7 +9,7 @@ use crate::event::{
     ModifierKey, MouseButton, MouseEvent, MouseEventHandler, OtherEventHandler, WidgetEvent,
 };
 use crate::flags::Flags;
-use crate::layout::{BasicLayouter, Layout, Layouter};
+use crate::layout::{BasicLayouter, Layout, LayoutContext, Layouter};
 use crate::render::{Primitive, Render};
 use crate::widget::{Capsule, CommonWidget, Rectangle, AnyWidget, WidgetExt, WidgetId, Widget};
 use crate::widget::types::ScrollDirection;
@@ -241,8 +241,8 @@ impl OtherEventHandler for Scroll {
 }
 
 impl Layout for Scroll {
-    fn calculate_size(&mut self, requested_size: Dimension, env: &mut Environment) -> Dimension {
-        self.child.calculate_size(requested_size, env);
+    fn calculate_size(&mut self, requested_size: Dimension, ctx: &mut LayoutContext) -> Dimension {
+        self.child.calculate_size(requested_size, ctx);
 
         self.keep_y_within_bounds();
         self.keep_x_within_bounds();
@@ -267,12 +267,12 @@ impl Layout for Scroll {
                 - horizontal_height;
 
             self.scrollbar_vertical.set_height(height);
-            self.scrollbar_vertical.calculate_size(requested_size, env);
+            self.scrollbar_vertical.calculate_size(requested_size, ctx);
 
             self.scrollbar_vertical_background
                 .set_height(requested_size.height);
             self.scrollbar_vertical_background
-                .calculate_size(requested_size, env);
+                .calculate_size(requested_size, ctx);
         }
 
         if self.scroll_directions == ScrollDirection::Both
@@ -295,17 +295,17 @@ impl Layout for Scroll {
 
             self.scrollbar_horizontal.set_width(width);
             self.scrollbar_horizontal
-                .calculate_size(requested_size, env);
+                .calculate_size(requested_size, ctx);
             self.scrollbar_horizontal_background
                 .set_width(requested_size.width);
             self.scrollbar_horizontal_background
-                .calculate_size(requested_size, env);
+                .calculate_size(requested_size, ctx);
         }
 
         requested_size
     }
 
-    fn position_children(&mut self, env: &mut Environment) {
+    fn position_children(&mut self, ctx: &mut LayoutContext) {
         let positioning = BasicLayouter::TopLeading.positioner(); // Top for center
         let position = self.position;
         let dimension = self.dimension;
@@ -390,11 +390,11 @@ impl Layout for Scroll {
                 ),
         );
 
-        self.scrollbar_vertical.position_children(env);
-        self.scrollbar_horizontal.position_children(env);
-        self.scrollbar_vertical_background.position_children(env);
-        self.scrollbar_horizontal_background.position_children(env);
-        self.child.position_children(env);
+        self.scrollbar_vertical.position_children(ctx);
+        self.scrollbar_horizontal.position_children(ctx);
+        self.scrollbar_vertical_background.position_children(ctx);
+        self.scrollbar_horizontal_background.position_children(ctx);
+        self.child.position_children(ctx);
     }
 }
 
@@ -476,36 +476,6 @@ impl CommonWidget for Scroll {
 }
 
 impl Render for Scroll {
-    fn process_get_primitives(&mut self, primitives: &mut Vec<Primitive>, env: &mut Environment) {
-        self.child.process_get_primitives(primitives, env);
-
-        if (self.scroll_directions == ScrollDirection::Both
-            || self.scroll_directions == ScrollDirection::Vertical)
-            && self.child.height() > self.height()
-        {
-            if self.vertical_scrollbar_hovered || self.drag_started_on_vertical_scrollbar {
-                self.scrollbar_vertical_background
-                    .process_get_primitives(primitives, env);
-            }
-
-            self.scrollbar_vertical
-                .process_get_primitives(primitives, env);
-        }
-
-        if (self.scroll_directions == ScrollDirection::Both
-            || self.scroll_directions == ScrollDirection::Horizontal)
-            && self.child.width() > self.width()
-        {
-            if self.horizontal_scrollbar_hovered || self.drag_started_on_horizontal_scrollbar {
-                self.scrollbar_horizontal_background
-                    .process_get_primitives(primitives, env);
-            }
-
-            self.scrollbar_horizontal
-                .process_get_primitives(primitives, env);
-        }
-    }
-
     fn render(&mut self, context: &mut RenderContext, env: &mut Environment) {
         self.child.render(context, env);
 

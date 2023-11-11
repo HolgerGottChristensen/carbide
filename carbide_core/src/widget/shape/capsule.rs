@@ -142,39 +142,6 @@ impl<S: ReadState<T=Style> + Clone, F: ReadState<T=Style> + Clone> Render for Ca
             })
         }
     }
-
-    fn get_primitives(&mut self, primitives: &mut Vec<Primitive>, _env: &mut Environment) {
-        let rectangle = rect(
-            self.x() as f32,
-            self.y() as f32,
-            self.width() as f32,
-            self.height() as f32,
-        );
-
-        tessellate(self, &rectangle.to_box2d(), &|builder, rect| {
-            builder.add_rounded_rectangle(
-                rect,
-                &BorderRadii {
-                    top_left: f32::MAX,
-                    top_right: f32::MAX,
-                    bottom_left: f32::MAX,
-                    bottom_right: f32::MAX,
-                },
-                Winding::Positive,
-            );
-        });
-
-        let fill_color = self.fill_color.value().clone();
-        let stroke_color = self.stroke_color.value().clone();
-
-        self.triangle_store.insert_primitives(
-            primitives,
-            fill_color,
-            stroke_color,
-            self.position,
-            self.dimension,
-        );
-    }
 }
 
 impl<S: ReadState<T=Style> + Clone, F: ReadState<T=Style> + Clone> WidgetExt for Capsule<S, F> {}

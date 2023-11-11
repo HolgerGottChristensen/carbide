@@ -4,7 +4,7 @@ use carbide_macro::carbide_default_builder2;
 use crate::CommonWidgetImpl;
 use crate::draw::{Dimension, Position, Rect};
 use crate::environment::{Environment};
-use crate::layout::Layout;
+use crate::layout::{Layout, LayoutContext};
 use crate::render::{Primitive, PrimitiveKind, Render};
 use crate::widget::*;
 
@@ -39,8 +39,8 @@ impl Clip<Empty> {
 impl<W: AnyWidget + Clone> Layout for Clip<W> {
     // Calculate the size of the child, but force clip to requested_size. This makes sure that if
     // the child is larger than the requested, that is is clipped.
-    fn calculate_size(&mut self, requested_size: Dimension, env: &mut Environment) -> Dimension {
-        self.child.calculate_size(requested_size, env);
+    fn calculate_size(&mut self, requested_size: Dimension, ctx: &mut LayoutContext) -> Dimension {
+        self.child.calculate_size(requested_size, ctx);
         self.dimension = requested_size;
         requested_size
     }
@@ -75,43 +75,6 @@ impl<W: AnyWidget + Clone> Render for Clip<W> {
                 child.render(this, env);
             });
         })
-
-    }
-
-    fn process_get_primitives(&mut self, primitives: &mut Vec<Primitive>, env: &mut Environment) {
-        // Cut the rendering if either the width or the height is 0
-        let min = 1.0 / env.scale_factor();
-        if self.dimension.width <= min || self.dimension.height <= min {
-            return;
-        }
-
-        // If the clip is completely out of frame
-        if self.position.x + self.dimension.width < 0.0 {
-            return;
-        }
-        if self.position.y + self.dimension.height < 0.0 {
-            return;
-        }
-        if self.position.x >= env.current_window_width() {
-            return;
-        }
-        if self.position.y >= env.current_window_height() {
-            return;
-        }
-
-        primitives.push(Primitive {
-            kind: PrimitiveKind::Clip,
-            bounding_box: Rect::new(self.position, self.dimension),
-        });
-
-        self.foreach_child_mut(&mut |child| {
-            child.process_get_primitives(primitives, env);
-        });
-
-        primitives.push(Primitive {
-            kind: PrimitiveKind::UnClip,
-            bounding_box: Rect::new(self.position, self.dimension),
-        });
     }
 }
 

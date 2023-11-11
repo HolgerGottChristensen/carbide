@@ -211,16 +211,6 @@ impl<C: Widget> Render for EnvUpdating<C> {
 
         self.remove_from_env(env);
     }
-
-    fn process_get_primitives(&mut self, primitives: &mut Vec<Primitive>, env: &mut Environment) {
-        self.insert_into_env(env);
-
-        self.foreach_child_mut(&mut |child| {
-            child.process_get_primitives(primitives, env);
-        });
-
-        self.remove_from_env(env);
-    }
 }
 
 impl<C: Widget> CommonWidget for EnvUpdating<C> {

@@ -6,7 +6,7 @@ use crate::{CommonWidgetImpl};
 use crate::draw::{Dimension, Position, Rect, Color};
 use crate::draw::draw_style::DrawStyle;
 use crate::environment::Environment;
-use crate::layout::Layout;
+use crate::layout::{Layout, LayoutContext};
 use crate::render::{Primitive, PrimitiveKind, Render};
 use crate::state::{ReadState};
 use crate::widget::{CommonWidget, Empty, WidgetExt, WidgetId, Widget};
@@ -59,14 +59,14 @@ impl<W: Widget, D: ReadState<T=Color>> Border<W, D> {
 }
 
 impl<W: Widget, C: ReadState<T=Color>> Layout for Border<W, C> {
-    fn calculate_size(&mut self, requested_size: Dimension, env: &mut Environment) -> Dimension {
+    fn calculate_size(&mut self, requested_size: Dimension, ctx: &mut LayoutContext) -> Dimension {
         let border_width = self.border_width as f64;
         let dimensions = Dimension::new(
             requested_size.width - border_width - border_width,
             requested_size.height - border_width - border_width,
         );
 
-        let child_dimensions = self.child.calculate_size(dimensions, env);
+        let child_dimensions = self.child.calculate_size(dimensions, ctx);
 
         self.dimension = Dimension::new(
             child_dimensions.width + border_width + border_width,
@@ -76,7 +76,7 @@ impl<W: Widget, C: ReadState<T=Color>> Layout for Border<W, C> {
         self.dimension
     }
 
-    fn position_children(&mut self, env: &mut Environment) {
+    fn position_children(&mut self, ctx: &mut LayoutContext) {
         let border_width = self.border_width as f64;
         let positioning = self.alignment().positioner();
         let position = Position::new(self.x() + border_width, self.y() + border_width);
@@ -86,7 +86,7 @@ impl<W: Widget, C: ReadState<T=Color>> Layout for Border<W, C> {
         );
 
         positioning(position, dimension, &mut self.child);
-        self.child.position_children(env);
+        self.child.position_children(ctx);
     }
 }
 
@@ -129,57 +129,6 @@ impl<W: Widget, C: ReadState<T=Color>> Render for Border<W, C> {
             this.rect(top_border);
             this.rect(bottom_border);
         })
-    }
-
-    fn get_primitives(&mut self, primitives: &mut Vec<Primitive>, _env: &mut Environment) {
-        let rect = Rect::new(self.position, self.dimension);
-        let (l, r, b, t) = rect.l_r_b_t();
-
-        let border_width = self.border_width as f64;
-
-        let left_border = Rect::new(
-            Position::new(l, b),
-            Dimension::new(border_width, rect.height()),
-        );
-        let right_border = Rect::new(
-            Position::new(r - border_width, b),
-            Dimension::new(border_width, rect.height()),
-        );
-
-        let top_border = Rect::new(
-            Position::new(l + border_width, b),
-            Dimension::new(rect.width() - border_width * 2.0, border_width),
-        );
-        let bottom_border = Rect::new(
-            Position::new(l + border_width, t - border_width),
-            Dimension::new(rect.width() - border_width * 2.0, border_width),
-        );
-
-        let border_color = *self.color.value();
-        primitives.push(Primitive {
-            kind: PrimitiveKind::RectanglePrim {
-                color: border_color,
-            },
-            bounding_box: left_border,
-        });
-        primitives.push(Primitive {
-            kind: PrimitiveKind::RectanglePrim {
-                color: border_color,
-            },
-            bounding_box: right_border,
-        });
-        primitives.push(Primitive {
-            kind: PrimitiveKind::RectanglePrim {
-                color: border_color,
-            },
-            bounding_box: top_border,
-        });
-        primitives.push(Primitive {
-            kind: PrimitiveKind::RectanglePrim {
-                color: border_color,
-            },
-            bounding_box: bottom_border,
-        });
     }
 }
 

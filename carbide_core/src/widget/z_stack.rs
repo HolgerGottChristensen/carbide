@@ -8,7 +8,7 @@ use crate::CommonWidgetImpl;
 use crate::draw::{Dimension, Position};
 use crate::environment::Environment;
 
-use crate::layout::{BasicLayouter, Layout, Layouter};
+use crate::layout::{BasicLayouter, Layout, LayoutContext, Layouter};
 use crate::widget::{CommonWidget, AnyWidget, WidgetExt, WidgetId, WidgetSequence, Widget};
 
 /// A basic, non-interactive rectangle shape widget.
@@ -42,7 +42,7 @@ impl<W: WidgetSequence> ZStack<W> {
 }
 
 impl<W: WidgetSequence> Layout for ZStack<W> {
-    fn calculate_size(&mut self, requested_size: Dimension, env: &mut Environment) -> Dimension {
+    fn calculate_size(&mut self, requested_size: Dimension, ctx: &mut LayoutContext) -> Dimension {
         let mut children_flexibility: SmallVec<[(u32, &mut dyn AnyWidget); 5]> = smallvec![];
 
         self.foreach_child_mut(&mut |child| {
@@ -60,7 +60,7 @@ impl<W: WidgetSequence> Layout for ZStack<W> {
                 requested_size.width.max(max_width),
                 requested_size.height.max(max_height),
             );
-            let chosen_size = child.calculate_size(new_requested_size, env);
+            let chosen_size = child.calculate_size(new_requested_size, ctx);
 
             if chosen_size.width > max_width {
                 max_width = chosen_size.width;
@@ -75,14 +75,14 @@ impl<W: WidgetSequence> Layout for ZStack<W> {
         self.dimension
     }
 
-    fn position_children(&mut self, env: &mut Environment) {
+    fn position_children(&mut self, ctx: &mut LayoutContext) {
         let positioning = self.alignment.positioner();
         let position = self.position;
         let dimension = self.dimension;
 
         self.foreach_child_mut(&mut |child| {
             positioning(position, dimension, child);
-            child.position_children(env);
+            child.position_children(ctx);
         });
     }
 }

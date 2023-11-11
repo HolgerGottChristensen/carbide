@@ -4,7 +4,7 @@ use carbide_macro::{carbide_default_builder2};
 use crate::draw::{Dimension, Position, Scalar};
 use crate::environment::Environment;
 use crate::flags::Flags;
-use crate::layout::Layout;
+use crate::layout::{Layout, LayoutContext};
 use crate::widget::{CommonWidget, AnyWidget, WidgetExt, WidgetId, Widget};
 
 #[derive(Clone, Debug, Widget)]
@@ -38,7 +38,7 @@ impl Spacer {
 }
 
 impl Layout for Spacer {
-    fn calculate_size(&mut self, requested_size: Dimension, _: &mut Environment) -> Dimension {
+    fn calculate_size(&mut self, requested_size: Dimension, ctx: &mut LayoutContext) -> Dimension {
         if let Some(max) = self.max_size {
             self.dimension = Dimension::new(
                 requested_size.width.min(max),

@@ -86,49 +86,6 @@ impl CommonWidget for Blur {
 }
 
 impl Render for Blur {
-    fn process_get_primitives(&mut self, primitives: &mut Vec<Primitive>, env: &mut Environment) {
-        if self.filter_horizontal_has_been_inserted == None {
-            let (filter_id, radius) = match self.blur_type {
-                BlurType::Mean(radius) => (env.insert_filter(Blur::mean_blur(radius)), radius),
-                BlurType::Gaussian(sigma) => {
-                    let filter = Blur::gaussian_blur(sigma);
-                    let radius = filter.radius_x();
-                    (env.insert_filter(filter), radius)
-                }
-            };
-            self.filter_horizontal_has_been_inserted = Some((filter_id, radius));
-        }
-        if self.filter_vertical_has_been_inserted == None {
-            let (filter_id, radius) = match self.blur_type {
-                BlurType::Mean(radius) => {
-                    (env.insert_filter(Blur::mean_blur(radius).flipped()), radius)
-                }
-                BlurType::Gaussian(sigma) => {
-                    let filter = Blur::gaussian_blur(sigma).flipped();
-                    let radius = filter.radius_y();
-                    (env.insert_filter(filter), radius)
-                }
-            };
-            self.filter_vertical_has_been_inserted = Some((filter_id, radius));
-        }
-
-        if let Some((filter_id, radius)) = self.filter_horizontal_has_been_inserted {
-            let position = self.position - Position::new(0.0, radius as f64);
-            let dimension = self.dimension + Dimension::new(0.0, radius as f64 * 2.0);
-            primitives.push(Primitive {
-                kind: PrimitiveKind::FilterSplitPt1(filter_id),
-                bounding_box: Rect::new(position, dimension),
-            });
-        }
-
-        if let Some((filter_id, _)) = self.filter_vertical_has_been_inserted {
-            primitives.push(Primitive {
-                kind: PrimitiveKind::FilterSplitPt2(filter_id),
-                bounding_box: Rect::new(self.position, self.dimension),
-            });
-        }
-    }
-
     fn render(&mut self, context: &mut RenderContext, env: &mut Environment) {
         if self.filter_horizontal_has_been_inserted == None {
             let (filter_id, radius) = match self.blur_type {

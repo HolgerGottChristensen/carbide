@@ -8,15 +8,22 @@ use lyon::tessellation::{
 use lyon::tessellation::path::Path;
 
 pub use capsule::*;
+use carbide::draw::{BoundingBox, Rect};
+use carbide::draw::draw_style::DrawStyle;
+use carbide::draw::image::ImageId;
+use carbide::render::CarbideTransform;
+use carbide::text::{InnerTextContext, TextId};
+use carbide::widget::FilterId;
 pub use circle::*;
 pub use ellipse::*;
 pub use rectangle::*;
 pub use rounded_rectangle::*;
 
-use crate::draw::{Position, Scalar};
+use crate::draw::{NOOPImageContext, Position, Scalar};
 use crate::draw::shape::triangle::Triangle;
 use crate::environment::Environment;
-use crate::render::PrimitiveKind;
+use crate::render::{InnerRenderContext, PrimitiveKind, RenderContext};
+use crate::text::NOOPTextContext;
 use crate::widget::types::PrimitiveStore;
 use crate::widget::types::ShapeStyle;
 use crate::widget::types::StrokeStyle;
@@ -34,18 +41,14 @@ pub trait Shape: AnyWidget + 'static {
     fn get_shape_style(&self) -> ShapeStyle;
     // Todo: add primitives to before and after the shape.
     fn triangles(&mut self, env: &mut Environment) -> Vec<Triangle<Position>> {
-        let mut primitives = vec![];
-        self.get_primitives(&mut primitives, env);
-        if primitives.len() >= 1 {
-            match primitives.remove(0).kind {
-                PrimitiveKind::Geometry { triangles, .. } => triangles,
-                _ => {
-                    panic!("Can only return triangles of PrimitiveKind::Geometry. This error might happen if you use a rectangle with content.")
-                }
-            }
-        } else {
-            vec![]
-        }
+        let mut geom = Tris(vec![]);
+        self.render(&mut RenderContext {
+            render: &mut geom,
+            text: &mut NOOPTextContext,
+            image: &mut NOOPImageContext,
+        }, env);
+
+        geom.0
     }
 }
 
@@ -53,6 +56,41 @@ dyn_clone::clone_trait_object!(Shape);
 
 impl AnyWidget for Box<dyn Shape> {}
 
+
+struct Tris(Vec<Triangle<Position>>);
+impl InnerRenderContext for Tris {
+    fn transform(&mut self, transform: CarbideTransform) {}
+
+    fn pop_transform(&mut self) {}
+
+    fn clip(&mut self, bounding_box: BoundingBox) {}
+
+    fn pop_clip(&mut self) {}
+
+    fn filter(&mut self, id: FilterId, bounding_box: BoundingBox) {}
+
+    fn filter2d(&mut self, id1: FilterId, bounding_box1: BoundingBox, id2: FilterId, bounding_box2: BoundingBox) {}
+
+    fn stencil(&mut self, geometry: &[Triangle<Position>]) {}
+
+    fn pop_stencil(&mut self) {}
+
+    fn geometry(&mut self, geometry: &[Triangle<Position>]) {
+        self.0.extend(geometry);
+    }
+
+    fn style(&mut self, style: DrawStyle) {}
+
+    fn pop_style(&mut self) {}
+
+    fn image(&mut self, id: ImageId, bounding_box: Rect, source_rect: Rect, mode: u32) {}
+
+    fn text(&mut self, text: TextId, ctx: &mut dyn InnerTextContext) {}
+
+    fn layer(&mut self, index: u32) {}
+
+    fn pop_layer(&mut self) {}
+}
 
 pub fn tessellate(shape: &mut dyn Shape, rectangle: &Box2D, path: &dyn Fn(&mut Builder, &Box2D)) {
     match shape.get_shape_style() {

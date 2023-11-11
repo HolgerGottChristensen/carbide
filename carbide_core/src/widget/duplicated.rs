@@ -6,7 +6,7 @@ use crate::environment::Environment;
 use crate::event::{KeyboardEvent, KeyboardEventHandler, MouseEvent, MouseEventHandler, OtherEventHandler, WidgetEvent};
 use crate::flags::Flags;
 use crate::focus::{Focus, Focusable, Refocus};
-use crate::layout::{Layout, Layouter};
+use crate::layout::{Layout, LayoutContext, Layouter};
 use crate::render::{Primitive, Render, RenderContext};
 use crate::state::{StateSync};
 use crate::widget::{CommonWidget, Empty, AnyWidget, WidgetExt, WidgetId};
@@ -128,26 +128,18 @@ impl<T: AnyWidget> OtherEventHandler for Duplicated<T> {
 }
 
 impl<T: AnyWidget> Layout for Duplicated<T> {
-    fn calculate_size(&mut self, requested_size: Dimension, env: &mut Environment) -> Dimension {
-        self.0.borrow_mut().calculate_size(requested_size, env)
+    fn calculate_size(&mut self, requested_size: Dimension, ctx: &mut LayoutContext) -> Dimension {
+        self.0.borrow_mut().calculate_size(requested_size, ctx)
     }
 
-    fn position_children(&mut self, env: &mut Environment) {
-        self.0.borrow_mut().position_children(env)
+    fn position_children(&mut self, ctx: &mut LayoutContext) {
+        self.0.borrow_mut().position_children(ctx)
     }
 }
 
 impl<T: AnyWidget> Render for Duplicated<T> {
     fn render(&mut self, context: &mut RenderContext, env: &mut Environment) {
         self.0.borrow_mut().render(context, env)
-    }
-
-    fn get_primitives(&mut self, primitives: &mut Vec<Primitive>, env: &mut Environment) {
-        self.0.borrow_mut().get_primitives(primitives, env);
-    }
-
-    fn process_get_primitives(&mut self, primitives: &mut Vec<Primitive>, env: &mut Environment) {
-        self.0.borrow_mut().process_get_primitives(primitives, env);
     }
 }
 

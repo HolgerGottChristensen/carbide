@@ -1,9 +1,11 @@
-use crate::draw::Color;
-use crate::environment::Environment;
-use crate::text::{Font, FontId, FontSize};
-use crate::text::types::font_style::FontStyle;
-use crate::text::types::font_weight::FontWeight;
-use crate::text::types::text_decoration::TextDecoration;
+use carbide_core::color::Color;
+use carbide_core::environment::Environment;
+use carbide_core::text::{FontId, FontSize};
+use carbide_core::text::FontStyle;
+use carbide_core::text::FontWeight;
+use carbide_core::text::TextDecoration;
+use crate::font::Font;
+use crate::text_context::TextContext;
 
 /// The text style for a piece of text
 #[derive(Clone, Debug, PartialEq)]
@@ -23,14 +25,14 @@ pub struct TextStyle {
 }
 
 impl TextStyle {
-    pub fn get_font(&self, env: &Environment) -> Font {
-        let family = env.get_font_family(&self.font_family);
+    pub fn get_font(&self, context: &TextContext) -> Font {
+        let family = context.get_font_family(&self.font_family);
         let font_id = family.get_best_fit(self.font_weight, self.font_style);
-        env.get_font(font_id)
+        context.get_font(font_id)
     }
 
-    pub fn get_font_id(&self, env: &Environment) -> FontId {
-        let family = env.get_font_family(&self.font_family);
+    pub fn get_font_id(&self, context: &TextContext) -> FontId {
+        let family = context.get_font_family(&self.font_family);
         family.get_best_fit(self.font_weight, self.font_style)
     }
 }

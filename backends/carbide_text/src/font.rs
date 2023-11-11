@@ -1,15 +1,16 @@
 use std::fmt::{Debug, Formatter};
 use std::path::Path;
+use carbide_core::draw::{Position, Scalar};
+use carbide_core::environment::Environment;
+use carbide_core::image;
+use carbide_core::image::{DynamicImage, GenericImage, Rgba};
+use carbide_core::text::{FontId, FontSize, FontStyle, FontWeight};
 
-use image::{DynamicImage, GenericImage, Rgba};
 
 use carbide_rusttype::{GlyphId, point, Scale, Weight};
+use crate::glyph::Glyph;
+use crate::text_context::TextContext;
 
-use crate::draw::Position;
-use crate::draw::Scalar;
-use crate::environment::Environment;
-use crate::text::{FontId, FontSize, FontStyle, FontWeight};
-use crate::text::glyph::Glyph;
 
 type RustTypeFont = carbide_rusttype::Font<'static>;
 type RustTypeScale = carbide_rusttype::Scale;
@@ -51,7 +52,7 @@ impl Font {
             .get_inner()
             .glyph(id)
             .scaled(scale)
-            .positioned(point(position_offset.x as f32, position_offset.y as f32));
+            .positioned(point(position_offset.x() as f32, position_offset.y() as f32));
 
         if let Some(bb) = positioned_glyph.pixel_bounding_box() {
             let mut image_data = DynamicImage::new_rgba8(bb.width() as u32, bb.height() as u32);
@@ -94,7 +95,7 @@ impl Font {
         text: &str,
         font_size: FontSize,
         scale_factor: Scalar,
-        env: &mut Environment,
+        context: &mut TextContext,
     ) -> (Vec<Scalar>, Vec<Glyph>) {
         let scale = Font::size_to_scale(font_size, scale_factor);
         let mut next_width = 0.0;
@@ -140,7 +141,7 @@ impl Font {
                     }
                     last = None;
 
-                    let (width, glyph) = env.get_glyph_from_fallback(c, font_size, scale_factor);
+                    let (width, glyph) = context.get_glyph_from_fallback(c, font_size, scale_factor);
                     glyphs.push(glyph);
                     widths.push(width);
                 }

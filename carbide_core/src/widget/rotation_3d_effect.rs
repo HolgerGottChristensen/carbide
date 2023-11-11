@@ -130,42 +130,6 @@ impl<R1: ReadState<T = f64> + Clone, R2: ReadState<T = f64> + Clone, C: Widget> 
 }
 
 impl<R1: ReadState<T = f64> + Clone, R2: ReadState<T = f64> + Clone, C: AnyWidget + Clone> Render for Rotation3DEffect<R1, R2, C> {
-    fn process_get_primitives(&mut self, primitives: &mut Vec<Primitive>, env: &mut Environment) {
-        self.capture_state(env);
-        // I do not understand why the fov needs to be 1.15, because my intuition says it should be 45deg
-        let fov = self.fov as f32;
-        let perspective = cgmath::perspective(Deg(fov), 1.0, 1.0, 10.0);
-        let angle_to_screen_center = 90.0;
-
-        let outer_angle = 180.0 - (fov / 2.0) - angle_to_screen_center;
-
-        let z = outer_angle.to_radians().tan() as f32;
-        let up: Vector3<f32> = cgmath::Vector3::unit_y();
-        let target: Point3<f32> = Point3::new(0.0, 0.0, 0.0);
-        let eye: Point3<f32> = Point3::new(0.0, 0.0, z);
-
-        let view = Matrix4::look_at_rh(eye, target, up);
-        let matrix = Matrix4::from_angle_x(Deg(*self.rotation_x.value() as f32));
-        let matrix = matrix * Matrix4::from_angle_y(Deg(*self.rotation_y.value() as f32));
-        let matrix = perspective * view * matrix;
-
-        primitives.push(Primitive {
-            kind: PrimitiveKind::Transform(matrix, self.anchor.clone()),
-            bounding_box: Rect::new(self.position, self.dimension),
-        });
-
-        self.release_state(env);
-
-        self.foreach_child_mut(&mut |child| {
-            child.process_get_primitives(primitives, env);
-        });
-
-        primitives.push(Primitive {
-            kind: PrimitiveKind::DeTransform,
-            bounding_box: Rect::new(self.position, self.dimension),
-        });
-    }
-
     fn render(&mut self, context: &mut RenderContext, env: &mut Environment) {
         self.capture_state(env);
         // I do not understand why the fov needs to be 1.15, because my intuition says it should be 45deg

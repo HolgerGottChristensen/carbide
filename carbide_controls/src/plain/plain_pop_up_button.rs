@@ -1,4 +1,5 @@
 use std::fmt::{Debug, Formatter};
+use carbide::layout::LayoutContext;
 
 use carbide_core::CommonWidgetImpl;
 use carbide_core::draw::{Dimension, Position};
@@ -279,26 +280,26 @@ impl<
     M: ReadState<T=Vec<T>>,
     E: ReadState<T=bool>,
 > Layout for PlainPopUpButton<T, F, S, M, E> {
-    fn calculate_size(&mut self, requested_size: Dimension, env: &mut Environment) -> Dimension {
-        let dimensions = self.child.calculate_size(requested_size, env);
+    fn calculate_size(&mut self, requested_size: Dimension, ctx: &mut LayoutContext) -> Dimension {
+        let dimensions = self.child.calculate_size(requested_size, ctx);
         self.set_dimension(dimensions);
 
         let max_height = 400.0;
-        let max_height = env.current_window_height().min(max_height);
+        let max_height = ctx.current_window_height().min(max_height);
         let popup_request = Dimension::new(dimensions.width, max_height);
 
-        self.popup.calculate_size(popup_request, env);
+        self.popup.calculate_size(popup_request, ctx);
 
         dimensions
     }
 
-    fn position_children(&mut self, env: &mut Environment) {
+    fn position_children(&mut self, ctx: &mut LayoutContext) {
         let positioning = self.alignment().positioner();
         let position = self.position();
         let dimension = self.dimension();
 
         positioning(position, dimension, &mut self.child);
-        self.child.position_children(env);
+        self.child.position_children(ctx);
 
         positioning(position, dimension, &mut self.popup);
 
@@ -307,15 +308,15 @@ impl<
         let popup_dimension = self.popup.dimension();
         let mut y = popup_position.y();
 
-        if y + popup_dimension.height > env.current_window_height() {
-            y = env.current_window_height() - popup_dimension.height;
+        if y + popup_dimension.height > ctx.current_window_height() {
+            y = ctx.current_window_height() - popup_dimension.height;
         }
         if y < 0.0 {
             y = 0.0;
         }
 
         self.popup.set_position(Position::new(popup_position.x(), y));
-        self.popup.position_children(env);
+        self.popup.position_children(ctx);
     }
 }
 

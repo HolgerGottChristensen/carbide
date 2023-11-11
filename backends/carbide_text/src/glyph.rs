@@ -1,9 +1,9 @@
-use carbide_core::mesh::AtlasEntry;
 use carbide_rusttype::{GlyphId, point};
 use carbide_rusttype::PositionedGlyph;
 
-use crate::draw::{Position, Rect, Scalar};
-use crate::text::{FontId, FontSize};
+use carbide_core::draw::{Position, Rect, Scalar};
+use carbide_core::text::{FontId, FontSize};
+use crate::atlas::texture_atlas::AtlasEntry;
 
 pub const GLYPH_TOLERANCE: f64 = 0.25;
 
@@ -70,7 +70,7 @@ impl Glyph {
     pub fn set_position(&mut self, mut position: Position) {
         position = position.tolerance(GLYPH_TOLERANCE);
 
-        self.inner.set_position(point(position.x as f32, position.y as f32));
+        self.inner.set_position(point(position.x() as f32, position.y() as f32));
 
         self.bb = self.inner.pixel_bounding_box().map(Rect::from);
     }

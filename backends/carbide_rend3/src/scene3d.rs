@@ -20,7 +20,7 @@ use carbide_core::CommonWidgetImpl;
 use carbide_core::draw::{Color, Dimension, Position, Rect};
 use carbide_core::draw::image::ImageId;
 use carbide_core::environment::{Environment, EnvironmentColor};
-use carbide_core::layout::Layout;
+use carbide_core::layout::{Layout, LayoutContext};
 use carbide_core::mesh::MODE_IMAGE;
 use carbide_core::render::{Render, RenderContext};
 use carbide_core::state::EnvironmentStateKey;
@@ -260,12 +260,12 @@ impl Scene3d {
 }
 
 impl Layout for Scene3d {
-    fn calculate_size(&mut self, requested_size: Dimension, env: &mut Environment) -> Dimension {
+    fn calculate_size(&mut self, requested_size: Dimension, ctx: &mut LayoutContext) -> Dimension {
 
         // If the requested size is not the same as the dimension, recreate the texture
         if requested_size != self.dimension || self.texture.is_none() {
             self.dimension = requested_size;
-            self.recreate_texture(env);
+            self.recreate_texture(ctx);
         }
         requested_size
     }

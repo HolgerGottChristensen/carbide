@@ -1,4 +1,5 @@
 use std::time::Duration;
+use carbide::layout::LayoutContext;
 use carbide_core::color::BLACK;
 use carbide_core::CommonWidgetImpl;
 use carbide_core::draw::{Dimension, Position};
@@ -197,15 +198,15 @@ impl<Id: ReadState<T=Option<VideoId>> + Clone> KeyboardEventHandler for VideoPla
 
 
 impl<Id: ReadState<T=Option<VideoId>> + Clone> Layout for VideoPlayer<Id> {
-    fn calculate_size(&mut self, requested_size: Dimension, env: &mut Environment) -> Dimension {
-        let res = self.video.calculate_size(requested_size, env);
-        self.video_overlay.calculate_size(res, env);
+    fn calculate_size(&mut self, requested_size: Dimension, ctx: &mut LayoutContext) -> Dimension {
+        let res = self.video.calculate_size(requested_size, ctx);
+        self.video_overlay.calculate_size(res, ctx);
 
         self.dimension = res;
         res
     }
 
-    fn position_children(&mut self, env: &mut Environment) {
+    fn position_children(&mut self, ctx: &mut LayoutContext) {
         let positioning = self.alignment().positioner();
         let position = self.position();
         let dimension = self.dimension();
@@ -213,8 +214,8 @@ impl<Id: ReadState<T=Option<VideoId>> + Clone> Layout for VideoPlayer<Id> {
         positioning(position, dimension, &mut self.video);
         positioning(position, dimension, &mut self.video_overlay);
 
-        self.video.position_children(env);
-        self.video_overlay.position_children(env);
+        self.video.position_children(ctx);
+        self.video_overlay.position_children(ctx);
     }
 }
 

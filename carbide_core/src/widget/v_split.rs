@@ -4,7 +4,7 @@ use crate::cursor::MouseCursor;
 use crate::draw::{Dimension, Position};
 use crate::environment::Environment;
 use crate::event::{MouseEvent, MouseEventHandler, OtherEventHandler, WidgetEvent};
-use crate::layout::Layout;
+use crate::layout::{Layout, LayoutContext};
 use crate::state::{IntoState, State};
 use crate::widget::{CommonWidget, CrossAxisAlignment, SplitType, AnyWidget, WidgetExt, WidgetId, Widget, Empty, WidgetSequence};
 
@@ -165,7 +165,7 @@ impl<S: State<T=f64>, L: Widget, T: Widget> MouseEventHandler for VSplit<S, L, T
 }
 
 impl<S: State<T=f64>, L: Widget, T: Widget> Layout for VSplit<S, L, T> {
-    fn calculate_size(&mut self, requested_size: Dimension, env: &mut Environment) -> Dimension {
+    fn calculate_size(&mut self, requested_size: Dimension, ctx: &mut LayoutContext) -> Dimension {
         let (requested_top_height, requested_bottom_height) = match &self.split {
             SplitType::Start(offset) => (*offset.value(), requested_size.height - *offset.value()),
             SplitType::Percent(percent) => {
@@ -177,19 +177,19 @@ impl<S: State<T=f64>, L: Widget, T: Widget> Layout for VSplit<S, L, T> {
         };
 
         let top_size = Dimension::new(requested_size.width, requested_top_height);
-        let mut top = self.leading.calculate_size(top_size, env);
+        let mut top = self.leading.calculate_size(top_size, ctx);
 
         let bottom_size = Dimension::new(requested_size.width, requested_bottom_height);
-        let mut bottom = self.trailing.calculate_size(bottom_size, env);
+        let mut bottom = self.trailing.calculate_size(bottom_size, ctx);
 
         if top.height > requested_top_height {
             let bottom_size =
                 Dimension::new(requested_size.width, requested_size.height - top.height);
-            bottom = self.trailing.calculate_size(bottom_size, env);
+            bottom = self.trailing.calculate_size(bottom_size, ctx);
         } else if bottom.height > requested_bottom_height {
             let top_size =
                 Dimension::new(requested_size.width, requested_size.height - bottom.height);
-            top = self.leading.calculate_size(top_size, env);
+            top = self.leading.calculate_size(top_size, ctx);
         }
 
         self.set_dimension(Dimension::new(
@@ -199,7 +199,7 @@ impl<S: State<T=f64>, L: Widget, T: Widget> Layout for VSplit<S, L, T> {
         self.dimension
     }
 
-    fn position_children(&mut self, env: &mut Environment) {
+    fn position_children(&mut self, ctx: &mut LayoutContext) {
         let position = self.position();
         let dimension = self.dimension();
         let alignment = self.cross_axis_alignment;
@@ -217,7 +217,7 @@ impl<S: State<T=f64>, L: Widget, T: Widget> Layout for VSplit<S, L, T> {
 
             child.set_position(Position::new(cross, position.y + main_axis_offset));
             main_axis_offset += child.dimension().height;
-            child.position_children(env);
+            child.position_children(ctx);
         });
     }
 }

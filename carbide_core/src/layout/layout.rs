@@ -1,5 +1,4 @@
-
-
+use carbide::layout::layout_context::LayoutContext;
 use crate::draw::Dimension;
 use crate::environment::Environment;
 use crate::widget::CommonWidget;
@@ -12,7 +11,7 @@ pub trait Layout: CommonWidget {
     /// The widget should return the chosen dimensions back to the caller.
     /// The default behavior is to calculate the size of the first child and return that as the
     /// chosen size. If no child are present, the widget will chose the requested size.
-    fn calculate_size(&mut self, requested_size: Dimension, env: &mut Environment) -> Dimension {
+    fn calculate_size(&mut self, requested_size: Dimension, ctx: &mut LayoutContext) -> Dimension {
 
         let mut chosen = requested_size;
         let mut first = true;
@@ -21,7 +20,7 @@ pub trait Layout: CommonWidget {
             if !first {
                 return;
             }
-            chosen = child.calculate_size(requested_size, env);
+            chosen = child.calculate_size(requested_size, ctx);
 
             first = false;
         });
@@ -34,7 +33,7 @@ pub trait Layout: CommonWidget {
     /// the widget to position. The default alignment is Center.
     /// The default behavior is to position the first child using the alignment of the widget. If
     /// no child are present the default is a no-op.
-    fn position_children(&mut self, env: &mut Environment) {
+    fn position_children(&mut self, ctx: &mut LayoutContext) {
         let positioning = self.alignment().positioner();
         let position = self.position();
         let dimension = self.dimension();
@@ -47,7 +46,7 @@ pub trait Layout: CommonWidget {
             }
 
             positioning(position, dimension, child);
-            child.position_children(env);
+            child.position_children(ctx);
 
             first = false;
         });

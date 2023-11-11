@@ -3,7 +3,7 @@ use std::fmt::Debug;
 use dyn_clone::DynClone;
 
 use crate::environment::Environment;
-use crate::text::text_span::TextSpan;
+//use carbide_text::text_span::TextSpan;
 use crate::text::text_style::TextStyle;
 
 pub trait TextSpanGenerator: DynClone + Debug {

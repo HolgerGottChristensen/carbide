@@ -5,7 +5,7 @@ use crate::event::{KeyboardEventHandler, MouseEventHandler, OtherEventHandler};
 use crate::flags::Flags;
 use crate::focus::{Focus, Focusable};
 use crate::focus::Refocus;
-use crate::layout::{Layout, Layouter};
+use crate::layout::{Layout, LayoutContext, Layouter};
 use crate::render::{Primitive, RenderContext};
 use crate::render::Render;
 use crate::state::{IntoReadState, ReadState, StateSync};
@@ -166,27 +166,20 @@ impl<W: AnyWidget + Clone, B: ReadState<T=bool>> StateSync for Overlay<W, B> {
 }
 
 impl<W: AnyWidget + Clone, B: ReadState<T=bool>> Layout for Overlay<W, B> {
-    fn calculate_size(&mut self, requested_size: Dimension, env: &mut Environment) -> Dimension {
-        self.ensure_overlay_correct(env);
-        self.hierarchy.calculate_size(requested_size, env)
+    fn calculate_size(&mut self, requested_size: Dimension, ctx: &mut LayoutContext) -> Dimension {
+        todo!()
+        // self.ensure_overlay_correct(ctx);
+        // self.hierarchy.calculate_size(requested_size, ctx)
     }
 
-    fn position_children(&mut self, env: &mut Environment) {
-        self.hierarchy.position_children(env)
+    fn position_children(&mut self, ctx: &mut LayoutContext) {
+        self.hierarchy.position_children(ctx)
     }
 }
 
 impl<W: AnyWidget + Clone, B: ReadState<T=bool>> Render for Overlay<W, B> {
     fn render(&mut self, context: &mut RenderContext, env: &mut Environment) {
         Render::render(&mut self.hierarchy, context, env)
-    }
-
-    fn get_primitives(&mut self, primitives: &mut Vec<Primitive>, env: &mut Environment) {
-        self.hierarchy.get_primitives(primitives, env);
-    }
-
-    fn process_get_primitives(&mut self, primitives: &mut Vec<Primitive>, env: &mut Environment) {
-        self.hierarchy.process_get_primitives(primitives, env);
     }
 }
 

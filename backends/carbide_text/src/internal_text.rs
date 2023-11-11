@@ -1,13 +1,15 @@
-use crate::draw::Color;
-use crate::draw::{Dimension, Position, Rect, Scalar};
-use crate::environment::Environment;
-use crate::text::Glyph;
-use crate::text::text_span::TextSpan;
-use crate::text::text_span_generator::TextSpanGenerator;
-use crate::text::text_style::TextStyle;
-use crate::text::types::text_decoration::TextDecoration;
-use crate::widget::Justify;
-use crate::widget::Wrap;
+use carbide_core::color::Color;
+use carbide_core::draw::{Dimension, Position, Rect, Scalar};
+use carbide_core::environment::Environment;
+use crate::text_span::TextSpan;
+use carbide_core::text::TextDecoration;
+use carbide_core::widget::Justify;
+use carbide_core::widget::Wrap;
+use crate::atlas::texture_atlas::TextureAtlas;
+use crate::font::Font;
+use crate::glyph::Glyph;
+use crate::text_context::TextContext;
+use crate::text_style::TextStyle;
 
 #[derive(Debug, Clone)]
 pub struct Text {
@@ -36,14 +38,15 @@ impl Text {
         string: String,
         mut style: TextStyle,
         wrapping: Wrap,
-        generator: &dyn TextSpanGenerator,
-        env: &mut Environment,
+        //generator: &dyn TextSpanGenerator,
+        context: &mut TextContext,
+        scale_factor: f64,
     ) -> Text {
-        let spans = generator.generate(&string, &style, env);
+        let spans = TextSpan::new(&string, &style, context, scale_factor);//generator.generate(&string, &style, env);
 
-        if !generator.store_color() {
+        /*if !generator.store_color() {
             style.color = None;
-        }
+        }*/
 
         //println!("Inserting text \"{}\" with style: {:#?}", string, style);
         Text {
@@ -115,8 +118,7 @@ impl Text {
                                 | TextDecoration::Underline(r)
                                 | TextDecoration::StrikeThrough(r) => {
                                     for rect in r {
-                                        rect.position.x += new_offset.x / self.scale_factor;
-                                        rect.position.y += new_offset.y / self.scale_factor;
+                                        rect.position += Position::new(new_offset.x() / self.scale_factor, new_offset.y() / self.scale_factor);
                                     }
                                 }
                             }
@@ -160,7 +162,7 @@ impl Text {
         )
     }
 
-    pub fn ensure_glyphs_added_to_atlas(&mut self, env: &mut Environment) {
+    pub fn ensure_glyphs_added_to_atlas(&mut self, fonts: &Vec<Font>, atlas: &mut TextureAtlas, scale_factor: f64) {
         if self.needs_to_update_atlas {
             if self.already_added_to_atlas {
                 //env.remove_glyphs_from_atlas()
@@ -175,7 +177,16 @@ impl Text {
                 .flatten()
                 .collect::<Vec<&mut Glyph>>();
 
-            env.add_glyphs_to_atlas(glyphs_to_queue);
+            //context.add_glyphs_to_atlas(glyphs_to_queue, scale_factor);
+
+            for glyph in glyphs_to_queue {
+                let font = &fonts[glyph.font_id()];
+                if let Some(entry) = atlas
+                    .queue_glyph(glyph, font, scale_factor)
+                {
+                    glyph.set_atlas_entry(entry);
+                }
+            }
             self.needs_to_update_atlas = false;
             self.already_added_to_atlas = true;
         }
@@ -254,7 +265,7 @@ impl Text {
 
                                 current_strike_line.dimension = Dimension::new(
                                     current_max_width / self.scale_factor
-                                        - current_strike_line.position.x,
+                                        - current_strike_line.position.x(),
                                     1.0,
                                 );
                                 strike_lines.push(current_strike_line);
@@ -274,7 +285,7 @@ impl Text {
                             } else {
                                 current_strike_line.dimension = Dimension::new(
                                     requested_width / self.scale_factor
-                                        - current_strike_line.position.x,
+                                        - current_strike_line.position.x(),
                                     1.0,
                                 );
                                 strike_lines.push(current_strike_line);
@@ -306,7 +317,7 @@ impl Text {
                     }
 
                     current_strike_line.dimension = Dimension::new(
-                        current_x / self.scale_factor - current_strike_line.position.x,
+                        current_x / self.scale_factor - current_strike_line.position.x(),
                         1.0,
                     );
                     strike_lines.push(current_strike_line);
@@ -379,7 +390,7 @@ impl Text {
 
                         if current_x > width {
                             current_strike_line.dimension = Dimension::new(
-                                width / self.scale_factor - current_strike_line.position.x,
+                                width / self.scale_factor - current_strike_line.position.x(),
                                 1.0,
                             );
                             strike_lines.push(current_strike_line);
@@ -406,7 +417,7 @@ impl Text {
                     }
 
                     current_strike_line.dimension = Dimension::new(
-                        current_x / self.scale_factor - current_strike_line.position.x,
+                        current_x / self.scale_factor - current_strike_line.position.x(),
                         1.0,
                     );
                     strike_lines.push(current_strike_line);
@@ -550,15 +561,15 @@ impl Text {
                     ..
                 } => {
                     for glyph in glyphs {
-                        if current_line == glyph.position().y {
+                        if current_line == glyph.position().y() {
                             max_ascend_this_line = max_ascend_this_line.max(*ascend);
                             max_descend_this_line = max_descend_this_line.max(-(*descend));
                             max_line_gap = max_line_gap.max(*line_gap);
                         } else {
                             let prev_line = current_line as u32;
-                            let next_line = glyph.position().y as u32;
+                            let next_line = glyph.position().y() as u32;
                             for _ in prev_line..next_line {
-                                current_line = glyph.position().y;
+                                current_line = glyph.position().y();
                                 line_descends.push(max_descend_this_line);
                                 line_ascends.push(max_ascend_this_line);
                                 line_gaps.push(max_line_gap);
@@ -603,8 +614,8 @@ impl Text {
                     for glyph in glyphs {
                         let position = glyph.position();
                         glyph.set_position(Position::new(
-                            position.x,
-                            line_positions[position.y as usize],
+                            position.x(),
+                            line_positions[position.y() as usize],
                         ));
                     }
 
@@ -615,28 +626,28 @@ impl Text {
                                 for line in l {
                                     let position = line.position;
                                     line.position = Position::new(
-                                        position.x,
-                                        line_positions[position.y as usize] / self.scale_factor,
+                                        position.x(),
+                                        line_positions[position.y() as usize] / self.scale_factor,
                                     );
-                                    line.position.y -= *ascend * 0.3 / self.scale_factor;
+                                    line.position -= Position::new(0.0, *ascend * 0.3 / self.scale_factor);
                                 }
                             }
                             TextDecoration::Overline(l) => {
                                 for line in l {
                                     let position = line.position;
                                     line.position = Position::new(
-                                        position.x,
-                                        line_positions[position.y as usize] / self.scale_factor,
+                                        position.x(),
+                                        line_positions[position.y() as usize] / self.scale_factor,
                                     );
-                                    line.position.y -= *ascend / self.scale_factor;
+                                    line.position -= Position::new(0.0, *ascend / self.scale_factor);
                                 }
                             }
                             TextDecoration::Underline(l) => {
                                 for line in l {
                                     let position = line.position;
                                     line.position = Position::new(
-                                        position.x,
-                                        line_positions[position.y as usize] / self.scale_factor,
+                                        position.x(),
+                                        line_positions[position.y() as usize] / self.scale_factor,
                                     );
                                 }
                             }

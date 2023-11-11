@@ -6,7 +6,7 @@ use carbide_macro::{carbide_default_builder2};
 use crate::CommonWidgetImpl;
 use crate::draw::{Dimension, Position};
 use crate::environment::Environment;
-use crate::layout::{BasicLayouter, Layout, Layouter};
+use crate::layout::{BasicLayouter, Layout, LayoutContext, Layouter};
 use crate::render::{Primitive, Render};
 use crate::widget::{Empty, AnyWidget, WidgetExt, WidgetId, Widget};
 
@@ -59,31 +59,26 @@ impl<F: Widget, B: Widget> Background<F, B> {
 }
 
 impl<F: AnyWidget + Clone, B: AnyWidget + Clone> Layout for Background<F, B> {
-    fn calculate_size(&mut self, requested_size: Dimension, env: &mut Environment) -> Dimension {
-        let child_size = self.child.calculate_size(requested_size, env);
-        self.background.calculate_size(child_size, env);
+    fn calculate_size(&mut self, requested_size: Dimension, ctx: &mut LayoutContext) -> Dimension {
+        let child_size = self.child.calculate_size(requested_size, ctx);
+        self.background.calculate_size(child_size, ctx);
         self.dimension = child_size;
         self.dimension
     }
 
-    fn position_children(&mut self, env: &mut Environment) {
+    fn position_children(&mut self, ctx: &mut LayoutContext) {
         let positioning = self.alignment.positioner();
         let position = self.position;
         let dimension = self.dimension;
 
         positioning(position, dimension, &mut self.child);
         positioning(position, dimension, &mut self.background);
-        self.child.position_children(env);
-        self.background.position_children(env);
+        self.child.position_children(ctx);
+        self.background.position_children(ctx);
     }
 }
 
 impl<F: AnyWidget + Clone, B: AnyWidget + Clone> Render for Background<F, B> {
-    fn process_get_primitives(&mut self, primitives: &mut Vec<Primitive>, env: &mut Environment) {
-        self.background.process_get_primitives(primitives, env);
-        self.child.process_get_primitives(primitives, env);
-    }
-
     fn render(&mut self, context: &mut RenderContext, env: &mut Environment) {
         self.background.render(context, env);
         self.child.render(context, env);

@@ -1,4 +1,5 @@
 use std::fmt::{Debug};
+use carbide::layout::LayoutContext;
 use carbide_core::{CommonWidgetImpl};
 use carbide_core::draw::{Dimension, Position, Scalar};
 use carbide_core::environment::{Environment};
@@ -62,22 +63,22 @@ impl<C: AnyWidget + Clone> MouseEventHandler for Help<C> {
 }
 
 impl<C: AnyWidget + Clone> Layout for Help<C> {
-    fn calculate_size(&mut self, requested_size: Dimension, env: &mut Environment) -> Dimension {
-        let dimension = self.child.calculate_size(requested_size, env);
+    fn calculate_size(&mut self, requested_size: Dimension, ctx: &mut LayoutContext) -> Dimension {
+        let dimension = self.child.calculate_size(requested_size, ctx);
         self.set_dimension(dimension);
 
-        self.help.calculate_size(Dimension::new(env.current_window_width(), env.current_window_height()), env);
+        self.help.calculate_size(Dimension::new(ctx.current_window_width(), ctx.current_window_height()), ctx);
 
         dimension
     }
 
-    fn position_children(&mut self, env: &mut Environment) {
+    fn position_children(&mut self, ctx: &mut LayoutContext) {
         let positioning = self.alignment().positioner();
         let position = self.position();
         let dimension = self.dimension();
 
         positioning(position, dimension, &mut self.child);
-        self.child.position_children(env);
+        self.child.position_children(ctx);
 
         #[allow(unused_assignments)]
         let mut x = 0.0;
@@ -92,7 +93,7 @@ impl<C: AnyWidget + Clone> Layout for Help<C> {
                     y = self.y() + PADDING + self.height();
                 }
 
-                if y > env.current_window_height() - self.help.height() {
+                if y > ctx.current_window_height() - self.help.height() {
                     y = self.y() - PADDING - self.help.height();
                 }
 
@@ -103,7 +104,7 @@ impl<C: AnyWidget + Clone> Layout for Help<C> {
                 y = self.y() - PADDING - self.help.height();
             }
             TooltipPosition::Mouse => {
-                let mouse_position = env.mouse_position();
+                let mouse_position = ctx.mouse_position();
 
                 x = mouse_position.x();
                 y = mouse_position.y() - PADDING - self.help.height();
@@ -122,11 +123,11 @@ impl<C: AnyWidget + Clone> Layout for Help<C> {
             }
         }
 
-        x = x.max(0.0).min(env.current_window_width() - self.help.width());
-        y = y.max(0.0).min(env.current_window_height() - self.help.height());
+        x = x.max(0.0).min(ctx.current_window_width() - self.help.width());
+        y = y.max(0.0).min(ctx.current_window_height() - self.help.height());
 
         self.help.set_position(Position::new(x, y));
-        self.help.position_children(env);
+        self.help.position_children(ctx);
     }
 }
 
