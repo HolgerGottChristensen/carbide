@@ -17,7 +17,7 @@ use crate::layout::{Layout, LayoutContext};
 use crate::render::{new_primitive, Primitive, Render};
 use crate::render::PrimitiveKind;
 use crate::state::{ReadState, StateSync};
-use crate::text::{FontStyle, FontWeight, TextDecoration, TextId};
+use crate::text::{FontStyle, FontWeight, TextDecoration, TextId, TextStyle};
 use crate::widget::{CommonWidget, Justify, AnyWidget, WidgetExt, WidgetId, Widget};
 //use crate::text_old::PositionedGlyph;
 use crate::widget::types::Wrap;
@@ -171,16 +171,17 @@ impl<T2: ReadState<T=String>, S2: ReadState<T=u32>, C2: ReadState<T=Color>> Text
         self.justify(Justify::Right)
     }
 
-    // pub fn get_style(&self) -> TextStyle {
-    //     TextStyle {
-    //         font_family: self.font_family.clone(),
-    //         font_size: *self.font_size.value(),
-    //         font_style: self.font_style,
-    //         font_weight: self.font_weight,
-    //         text_decoration: self.text_decoration.clone(),
-    //         color: None,
-    //     }
-    // }
+    pub fn get_style(&self) -> TextStyle {
+        TextStyle {
+            font_family: self.font_family.clone(),
+            font_size: *self.font_size.value(),
+            font_style: self.font_style,
+            font_weight: self.font_weight,
+            text_decoration: self.text_decoration.clone(),
+            color: None,
+            wrap: self.wrap_mode,
+        }
+    }
 
     /// Take a given text element and make it render with an underline
     pub fn underline(mut self) -> Self {
@@ -203,7 +204,7 @@ impl<T: ReadState<T=String>, S: ReadState<T=u32>, C: ReadState<T=Color>> Layout 
     fn calculate_size(&mut self, requested_size: Dimension, ctx: &mut LayoutContext) -> Dimension {
         self.capture_state(ctx.env);
 
-        ctx.text.update(self.text_id, &self.text.value());
+        ctx.text.update(self.text_id, &self.text.value(), &self.get_style());
         self.dimension = ctx.text.calculate_size(self.text_id, requested_size, ctx.env);
 
         // if let None = self.internal_text {

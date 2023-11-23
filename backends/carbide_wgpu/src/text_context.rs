@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 use carbide_core::draw::{Dimension, Position};
-use carbide_core::text::{InnerTextContext, TextId};
+use carbide_core::text::{InnerTextContext, TextId, TextStyle};
 use cosmic_text::{Attrs, Buffer, FontSystem, Metrics, Shaping};
 use carbide_core::environment::Environment;
 use carbide_core::image::DynamicImage;
@@ -29,7 +29,7 @@ impl InnerTextContext for WGPUTextContext {
         None
     }
 
-    fn update(&mut self, id: TextId, text: &str) {
+    fn update(&mut self, id: TextId, text: &str, style: &TextStyle) {
         if let Some(layout) = self.layouts.get_mut(&id) {
             layout.set_text(&mut self.font_system, text, Attrs::new(), Shaping::Advanced);
         } else {

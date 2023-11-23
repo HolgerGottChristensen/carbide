@@ -70,11 +70,11 @@ impl<C: Widget, S: Shape + Clone> Layout for ClipShape<C, S> {
     }
 }
 
-impl<C: AnyWidget + Clone, S: Shape + Clone> CommonWidget for ClipShape<C, S> {
+impl<C: Widget, S: Shape + Clone> CommonWidget for ClipShape<C, S> {
     CommonWidgetImpl!(self, id: self.id, child: self.child, position: self.position, dimension: self.dimension, flexibility: 0);
 }
 
-impl<C: AnyWidget + Clone, S: Shape + Clone> Render for ClipShape<C, S> {
+impl<C: Widget, S: Shape + Clone> Render for ClipShape<C, S> {
     fn render(&mut self, context: &mut RenderContext, env: &mut Environment) {
         let stencil_triangles = &self.shape.triangles(env);
 
@@ -83,8 +83,7 @@ impl<C: AnyWidget + Clone, S: Shape + Clone> Render for ClipShape<C, S> {
                 child.render(this, env);
             });
         })
-
     }
 }
 
-impl<C: AnyWidget + Clone, S: Shape + Clone> WidgetExt for ClipShape<C, S> {}
+impl<C: Widget, S: Shape + Clone> WidgetExt for ClipShape<C, S> {}

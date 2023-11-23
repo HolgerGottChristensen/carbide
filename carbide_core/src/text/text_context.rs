@@ -1,6 +1,7 @@
 use std::sync::atomic::{AtomicU32, Ordering};
 use image::DynamicImage;
 use carbide::environment::Environment;
+use carbide::text::TextStyle;
 use crate::draw::{Dimension, Position};
 use crate::render::InnerRenderContext;
 
@@ -35,7 +36,7 @@ pub trait InnerTextContext {
 
     fn hash(&self, id: TextId) -> Option<u64>;
 
-    fn update(&mut self, id: TextId, text: &str);
+    fn update(&mut self, id: TextId, text: &str, style: &TextStyle);
 
     fn render(&self, id: TextId, ctx: &mut dyn InnerRenderContext);
 
@@ -59,7 +60,7 @@ impl InnerTextContext for NOOPTextContext {
         unimplemented!()
     }
 
-    fn update(&mut self, _id: TextId, _text: &str) {
+    fn update(&mut self, id: TextId, text: &str, style: &TextStyle) {
         unimplemented!()
     }
 

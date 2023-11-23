@@ -1,9 +1,8 @@
 use carbide_core::draw::Scalar;
-use carbide_core::environment::Environment;
 use carbide_core::widget::AnyWidget;
 use crate::glyph::Glyph;
 use crate::text_context::TextContext;
-use crate::text_style::TextStyle;
+use carbide_core::text::TextStyle;
 
 #[derive(Debug, Clone)]
 pub enum TextSpan {
@@ -25,7 +24,7 @@ impl TextSpan {
         let mut res = vec![];
 
         for line in string.split('\n') {
-            let font = style.get_font(context);
+            let font = context.font_from_style(style);
 
             let ascend = font.ascend(style.font_size, scale_factor);
             let descend = font.descend(style.font_size, scale_factor);

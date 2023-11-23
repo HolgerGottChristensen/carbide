@@ -28,7 +28,6 @@ use crate::event::{EventSink, HasEventSink};
 use crate::focus::Refocus;
 use crate::layout::BasicLayouter;
 use crate::state::{InnerState, StateContract, EnvironmentStateKey};
-use crate::text::{FontId, FontSize, FontStyle, FontWeight, NOOPTextContext};
 use crate::widget::{FilterId, ImageFilter, WidgetId};
 use crate::widget::ImageInformation;
 use crate::window::WindowId;

@@ -15,7 +15,6 @@ use carbide_core::layout::{BasicLayouter, Layout, Layouter};
 use carbide_core::render::{Render, RenderContext};
 use carbide_core::state::{AnyReadState, IntoReadState, IntoState, LocalState, Map2, ReadState, ReadStateExtNew, State, TState};
 use carbide_core::state::StateSync;
-use carbide_core::text::Glyph;
 use carbide_core::utils::{binary_search};
 use carbide_core::widget::{CommonWidget, Rectangle, Text, TextWidget, AnyWidget, WidgetExt, WidgetId, Widget};
 use carbide_core::widget::Wrap;

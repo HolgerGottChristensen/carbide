@@ -15,7 +15,7 @@ use crate::font::Font;
 use crate::font_family::FontFamily;
 use crate::glyph::Glyph;
 use crate::internal_text::Text;
-use crate::text_style::TextStyle;
+use carbide_core::text::TextStyle;
 
 pub struct TextContext {
     atlas: TextureAtlas,
@@ -169,6 +169,17 @@ impl TextContext {
                 .expect("Could not find a suitable font family")
         }
     }
+
+    pub fn font_from_style(&self, style: &TextStyle) -> Font {
+        let family = self.get_font_family(&style.font_family);
+        let font_id = family.get_best_fit(style.font_weight, style.font_style);
+        self.get_font(font_id)
+    }
+
+    pub fn font_id_from_style(&self, style: &TextStyle) -> FontId {
+        let family = self.get_font_family(&style.font_family);
+        family.get_best_fit(style.font_weight, style.font_style)
+    }
 }
 
 impl InnerTextContext for TextContext {
@@ -193,17 +204,16 @@ impl InnerTextContext for TextContext {
         todo!()
     }
 
-    fn update(&mut self, id: TextId, text: &str) {
-        if !self.map.contains_key(&id) {
-            let new = Text::new(text.to_string(), TextStyle {
-                font_family: self.default_font_family_name.to_string(),
-                font_size: 32,
-                font_style: FontStyle::Normal,
-                font_weight: FontWeight::Thin,
-                text_decoration: TextDecoration::None,
-                color: None,
-            }, Wrap::None, self, 2.0);
+    fn update(&mut self, id: TextId, text: &str, style: &TextStyle) {
 
+        let add = if let Some(internal) = self.map.get_mut(&id) {
+            internal.string_that_generated_this() != text || internal.style_that_generated_this() != style
+        } else {
+            true
+        };
+
+        if add {
+            let new = Text::new(text.to_string(), style.clone(), self, 2.0);
             self.map.insert(id, new);
         }
     }

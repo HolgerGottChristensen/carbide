@@ -9,7 +9,7 @@ use crate::atlas::texture_atlas::TextureAtlas;
 use crate::font::Font;
 use crate::glyph::Glyph;
 use crate::text_context::TextContext;
-use crate::text_style::TextStyle;
+use carbide_core::text::TextStyle;
 
 #[derive(Debug, Clone)]
 pub struct Text {
@@ -37,7 +37,6 @@ impl Text {
     pub fn new(
         string: String,
         mut style: TextStyle,
-        wrapping: Wrap,
         //generator: &dyn TextSpanGenerator,
         context: &mut TextContext,
         scale_factor: f64,
@@ -56,7 +55,7 @@ impl Text {
             latest_max_width: 0.0,
             latest_max_height: 0.0,
             scale_factor: 0.0,
-            wrap: wrapping,
+            wrap: style.wrap,
             justify: Justify::Left,
             needs_to_update_atlas: true,
             already_added_to_atlas: false,
