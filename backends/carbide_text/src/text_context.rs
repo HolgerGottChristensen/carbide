@@ -1,23 +1,20 @@
-use std::collections::HashMap;
-use std::path::Path;
-use cosmic_text::{Attrs, Buffer, Color, FontSystem, Metrics, Shaping, SwashCache, SwashImage};
-use fxhash::{FxBuildHasher, FxHashMap};
+use cosmic_text::{Attrs, Buffer, FontSystem, Metrics, Shaping, SwashCache, SwashImage};
+use fxhash::FxHashMap;
 use swash::scale::{Render, ScaleContext, Source, StrikeWith};
 use swash::scale::image::Content;
-use swash::Stretch;
 use swash::zeno::{Format, Vector};
+
 use carbide_core::color::{RED, YELLOW};
 use carbide_core::draw::{Dimension, Position, Rect, Scalar};
 use carbide_core::draw::draw_style::DrawStyle;
 use carbide_core::draw::image::ImageId;
 use carbide_core::environment::Environment;
 use carbide_core::image::{DynamicImage, GrayImage, RgbaImage};
-use carbide_core::locate_folder;
 use carbide_core::mesh::{MODE_TEXT, MODE_TEXT_COLOR};
 use carbide_core::render::InnerRenderContext;
-use carbide_core::text::{FontId, FontSize, FontStyle, FontWeight, InnerTextContext, TextDecoration, TextId};
-use carbide_core::widget::Wrap;
+use carbide_core::text::{InnerTextContext, TextId};
 use carbide_core::text::TextStyle;
+
 use crate::atlas::texture_atlas::{AtlasId, TextureAtlas};
 
 pub struct TextContext {
@@ -102,8 +99,9 @@ impl InnerTextContext for TextContext {
             let attributes = Attrs::new();
 
             buffer.set_text(text, attributes, Shaping::Advanced);
+            buffer.set_metrics(Metrics::new(style.font_size as f32, style.font_size as f32 * style.line_height as f32))
         } else {
-            let mut buffer = Buffer::new(&mut self.font_system, Metrics::new(34.0, 40.0));
+            let mut buffer = Buffer::new(&mut self.font_system, Metrics::new(style.font_size as f32, style.font_size as f32 * style.line_height as f32));
 
             {
                 let mut buffer = buffer.borrow_with(&mut self.font_system);
