@@ -4,7 +4,6 @@ use std::ffi::OsStr;
 use std::fs;
 use std::mem::transmute;
 use std::path::{Path, PathBuf};
-use cosmic_text::FontSystem;
 
 use winit::event::{Event, WindowEvent as WinitWindowEvent};
 use winit::event_loop::{ControlFlow, EventLoopWindowTarget};
@@ -29,7 +28,6 @@ use carbide_winit::EventLoop;
 use crate::image_context::WGPUImageContext;
 
 use crate::proxy_event_loop::ProxyEventLoop;
-use crate::text_context::WGPUTextContext;
 
 thread_local!(pub static EVENT_LOOP: RefCell<EventLoop<CustomEvent>> = RefCell::new(EventLoop::Owned(EventLoopBuilder::<CustomEvent>::with_user_event().build())));
 thread_local!(pub static WINDOW_IDS: RefCell<HashMap<WinitWindowId, WindowId>> = RefCell::new(HashMap::new()));
@@ -146,8 +144,9 @@ impl Application {
 
     pub fn add_font_family(&mut self, family: FontFamily) -> String {
         let family_name = family.name.clone();
-        self.text_context.add_font_family(family);
-        family_name
+        //self.text_context.add_font_family(family);
+        family_name;
+        todo!()
     }
 
 
@@ -157,7 +156,8 @@ impl Application {
             .unwrap();
         let font_path = assets.join(path.as_ref());
 
-        self.text_context.insert_font_from_file(font_path).0
+        //self.text_context.insert_font_from_file(font_path).0
+        todo!()
     }
 
     pub fn environment(&self) -> &Environment {

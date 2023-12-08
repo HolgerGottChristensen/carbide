@@ -45,6 +45,14 @@ impl Color {
         Color::Rgba(r, g, b, 1.0)
     }
 
+    pub fn new_rgba(r: u8, g: u8, b: u8, a: u8) -> Color {
+        let r = r as f32 / 255.0;
+        let g = g as f32 / 255.0;
+        let b = b as f32 / 255.0;
+        let a = a as f32 / 255.0;
+        Color::Rgba(r, g, b, a)
+    }
+
     /// This method will generate a random color each time it
     /// is called.
     pub fn random() -> Self {

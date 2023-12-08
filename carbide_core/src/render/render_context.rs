@@ -116,6 +116,13 @@ pub trait InnerRenderContext {
     /// Renders the geometry with the current style
     fn geometry(&mut self, geometry: &[Triangle<Position>]);
 
+    fn rect(&mut self, rect: Rect) {
+        self.geometry(&[
+            (rect.bottom_left(), rect.bottom_right(), rect.top_left()).into(),
+            (rect.bottom_right(), rect.top_right(), rect.top_left()).into(),
+        ])
+    }
+
     // TODO: Consider making it take a reference to Style
     fn style(&mut self, style: DrawStyle);
     fn pop_style(&mut self);

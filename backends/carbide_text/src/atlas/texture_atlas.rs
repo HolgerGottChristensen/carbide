@@ -1,19 +1,14 @@
 use std::cell::RefCell;
-use std::collections::HashMap;
-use std::rc::{Rc, Weak};
+use std::rc::Rc;
+use cosmic_text::{CacheKey};
 
-use fxhash::{FxBuildHasher, FxHashMap};
-
-use carbide_rusttype::{GlyphId, Point, Rect};
+use fxhash::{FxHashMap};
 
 use carbide_core::draw::image::ImageId;
+use carbide_core::draw::{Dimension, Position, Rect, Scalar};
+use carbide_core::image;
 
-use carbide_core::draw::Scalar;
-use carbide_core::image::DynamicImage;
-
-use carbide_core::text::{FontId, FontSize};
-use crate::font::Font;
-use crate::glyph::{Glyph, GLYPH_TOLERANCE};
+use carbide_core::image::{DynamicImage, GenericImage, GenericImageView};
 
 pub type TextureAtlasIndex = usize;
 
@@ -24,247 +19,128 @@ const SHELVE_WIDTH: u32 = 512;
 #[derive(Clone, Hash, Eq, PartialEq, Debug)]
 pub enum AtlasId {
     Image(ImageId),
-    Glyph(FontId, GlyphId, FontSize, (u16, u16)),
+    Glyph(CacheKey),
 }
 
 /// Inspired by the gpu_cache from rusttype
 /// Another interesting source: https://nical.github.io/posts/etagere.html
 #[derive(Debug)]
 pub struct TextureAtlas {
-    /// The width and height of the atlas in pixels. The atlas should be a multiple of SHELVE_WIDTH
-    width: u32,
-    height: u32,
+    /// The atlas image cache, that stores all the glyphs
+    atlas: DynamicImage,
 
-    insertion_queue: Vec<(AtlasId, DynamicImage, AtlasEntry)>,
-    cache_queue: Vec<(u32, u32, AtlasId)>,
+    /// A list of things to be queued
+    queue: FxHashMap<AtlasId, (DynamicImage, i32, i32)>,
 
     /// An atlas is split up into a number of shelves. Each shelf can hold a number of images that
     /// are less than or equal to that space.
     shelves: Vec<Shelf>,
 
-    all_books_cabinet: FxHashMap<AtlasId, (AtlasEntry, DynamicImage)>,
+    /// A map of all the books currently stored in the atlas.
+    books: FxHashMap<AtlasId, Book>,
+
+    requires_render: bool,
 }
 
 impl TextureAtlas {
     /// Create a new texture atlas of the size of the parameters in physical pixels.
     pub fn new(width: u32, height: u32) -> TextureAtlas {
         TextureAtlas {
-            width,
-            height,
-            insertion_queue: vec![],
-            cache_queue: vec![],
+            atlas: DynamicImage::new_rgba8(width, height),
+            queue: FxHashMap::default(),
             shelves: vec![],
-            all_books_cabinet: HashMap::with_hasher(FxBuildHasher::default()),
+            books: FxHashMap::default(),
+            requires_render: false,
         }
     }
 
     /// Returns the width of the atlas in physical pixels
     pub fn width(&self) -> u32 {
-        self.width
+        self.atlas.width()
     }
 
     /// Returns the height of the atlas in physical pixels
     pub fn height(&self) -> u32 {
-        self.height
+        self.atlas.height()
     }
 
-    /// Queue the given glyph to from the given font to the atlas at the given scale factor.
-    /// Returns an AtlasEntry with the corresponding information about where the glyph is located
-    /// within the atlas.
-    pub fn queue_glyph(
-        &mut self,
-        glyph: &Glyph,
-        font: &Font,
-        scale_factor: Scalar,
-    ) -> Option<AtlasEntry> {
-        let tolerance = (glyph.position().fraction_0_1() / GLYPH_TOLERANCE).round_to_u16();
-        let atlas_id = AtlasId::Glyph(font.id(), glyph.id(), glyph.font_size(), tolerance);
+    pub fn book(&self, key: &AtlasId) -> Option<&Book> {
+        self.books.get(key)
+    }
 
-        // Check if a suitable item has already been added.
-        if let Some(item) = self.all_books_cabinet.get(&atlas_id) {
-            return Some(item.0.clone());
-        }
+    pub fn enqueue<F: FnOnce()->Option<(DynamicImage, i32, i32)>>(&mut self, id: AtlasId, f: F) {
+        if !self.books.contains_key(&id) && !self.queue.contains_key(&id) {
+            let image = f();
 
-        // Get the image data for the given glyph from the font
-        let image_data = font.glyph_image(
-            glyph.id(),
-            glyph.font_size(),
-            scale_factor,
-            glyph.position().fraction_0_1(),
-        );
-
-        if let Some(image_data) = image_data {
-            if let Some(already_in_queue) =
-                self.insertion_queue.iter().find(|&a| &a.0 == &atlas_id)
-            {
-                Some(already_in_queue.2.clone())
-            } else {
-                // Generate a new empty book. This will be added to a shelf when cache_queued is called.
-                let book = Book {
-                    x: 0,
-                    y: 0,
-                    width: image_data.width(),
-                    height: image_data.height(),
-                    is_active: false,
-                    tex_coords: Default::default(),
-                };
-
-                self.insertion_queue
-                    .push((atlas_id, image_data, Rc::new(RefCell::new(book))));
-                Some(
-                    self.insertion_queue[self.insertion_queue.len() - 1]
-                        .2
-                        .clone(),
-                )
+            if let Some(image) = image {
+                self.queue.insert(id, image);
             }
-        } else {
-            None
         }
     }
 
-    pub fn queue_image(&mut self, image_id: ImageId, image_data: DynamicImage) -> Option<AtlasEntry> {
-        let atlas_id = AtlasId::Image(image_id);
-
-        // Check if a suitable item has already been added.
-        if let Some(item) = self.all_books_cabinet.get(&atlas_id) {
-            return Some(item.0.clone());
-        }
-
-        if let Some(already_in_queue) = self.insertion_queue.iter().find(|&a| &a.0 == &atlas_id)
-        {
-            Some(already_in_queue.2.clone())
-        } else {
-            // Generate a new empty book. This will be added to a shelf when cache_queued is called.
-            let book = Book {
-                x: 0,
-                y: 0,
-                width: image_data.width(),
-                height: image_data.height(),
-                is_active: false,
-                tex_coords: Default::default(),
-            };
-
-            self.insertion_queue
-                .push((atlas_id, image_data, Rc::new(RefCell::new(book))));
-            Some(
-                self.insertion_queue[self.insertion_queue.len() - 1]
-                    .2
-                    .clone(),
-            )
-        }
-    }
-
-    pub fn prepare_queued(&mut self) {
-        if self.insertion_queue.len() == 0 {
+    pub fn process_queued(&mut self) {
+        // If no elements are in the queue, we can return early
+        if self.queue.len() == 0 {
             return;
         }
 
-        // Take everything out of the insertion queue, to handle borrow checking
-        let mut queue = vec![];
-        std::mem::swap(&mut queue, &mut self.insertion_queue);
+        self.requires_render = true;
 
-        let size = (self.width, self.height);
-
-        // Store if everything was managed to be queued
-        let all_queued = self.append_from_queue(&mut queue, size);
-
-        // If there was not space for all the queued images, try to clean up.
-        if !all_queued {
-            println!("Not space for all glyphs. Trying to cleanup atlas.");
-            self.shelves.clear();
-            self.cache_queue.clear();
-
-            let mut queue = self
-                .all_books_cabinet
-                .drain()
-                .map(|(key, (entry, img))| (key, img, entry))
-                .filter(|(_, _, e)| Rc::strong_count(e) > 1)
-                .collect::<Vec<_>>();
-
-            let all_queued = self.append_from_queue(&mut queue, size);
-
-            if !all_queued {
-                println!("Tried to add more images to the atlas but there was not enough space even after cleanup.");
-            }
-        }
-
-    }
-
-    fn append_from_queue(&mut self, queue: &mut Vec<(AtlasId, DynamicImage, AtlasEntry)>, size: (u32, u32)) -> bool {
+        // Retrieve all elements in a queue
+        let mut queue = self.queue.drain().collect::<Vec<_>>();
 
         // Sort by height, to allow for better caching density
-        queue.sort_unstable_by(|(_, data1, _), (_, data2, _)| data2.height().cmp(&data1.height()));
+        queue.sort_unstable_by(|(_, (data1, _, _)), (_, (data2, _, _))| data2.height().cmp(&data1.height()));
 
+        'queue: for (key, (image, top, left)) in queue {
 
-        queue.drain(..).fold(true, |state, (id, image_data, book)| {
-            let shelf = self.get_or_new_fitting_shelve(image_data.width(), image_data.height());
+            for shelf in &mut self.shelves {
+                if image.height() <= shelf.shelf_height && image.height() > shelf.shelf_height / 2 {
+                    // If there is horizontal space enough to fit.
+                    if shelf.available_width() > image.width() {
+                        let book = shelf.append(image, top, left, &mut self.atlas);
+                        self.books.insert(key, book);
+                        continue 'queue;
+                    }
+                }
+            }
 
-
-            let res = if let Some(shelf) = shelf {
-                let position = shelf.append(size, book.clone());
-                self.cache_queue.push((position.0, position.1, id.clone()));
-                state
-            } else {
-                false
+            // No fitting shelf available. Try to create a new one:
+            let mut shelf = Shelf {
+                shelf_height: image.height(),
+                shelf_y: self.shelves.last().map(|s| s.shelf_y + s.shelf_height + 1).unwrap_or_default(),
+                shelf_current_x: 0,
             };
 
-            self.all_books_cabinet.insert(id, (book, image_data));
 
-            res
-        })
+            let book = shelf.append(image, top, left, &mut self.atlas);
+            self.books.insert(key, book);
+            self.shelves.push(shelf);
+        }
     }
 
     /// The uploader should be x, y, image_data
-    pub fn cache_queued<F: FnMut(u32, u32, &DynamicImage)>(&mut self, mut uploader: F) {
-        self.cache_queue.drain(..).for_each(|(x, y, id)| {
-            uploader(x, y, &self.all_books_cabinet.get(&id).unwrap().1)
-        });
-    }
+    pub fn update_cache(&mut self, f: &mut dyn FnMut(&DynamicImage)) {
+        if self.requires_render {
 
-    fn get_or_new_fitting_shelve(&mut self, width: u32, height: u32) -> Option<&mut Shelf> {
-        for (shelf_number, shelf) in self.shelves.iter().enumerate() {
-            // We want to see it fit, but not if there is too much space in the shelf
-            if height <= shelf.shelf_height && height > shelf.shelf_height / 2 {
-                // If there is horizontal space enough to fit.
-                if shelf.get_width_left() > width {
-                    return Some(&mut self.shelves[shelf_number]);
-                }
-            }
+            //self.atlas.save("target/atlas.png").unwrap();
+
+            f(&self.atlas)
         }
 
-        // Create a new shelf
-        let shelf_y = self
-            .shelves
-            .last()
-            .map(|s| s.shelf_y + s.shelf_height + 1)
-            .unwrap_or(0);
-
-        if shelf_y + height >= self.height {
-            return None;
-        }
-
-        let shelf = Shelf {
-            shelf_height: height,
-            shelf_y,
-            shelf_current_x: 0,
-            books: vec![],
-        };
-
-        self.shelves.push(shelf);
-        let new_shelf_number = self.shelves.len() - 1;
-        Some(&mut self.shelves[new_shelf_number])
+        self.requires_render = false;
     }
 }
 
 /// The book is an area of the shelf where a single image is stored.
 #[derive(Copy, Clone, Debug)]
 pub struct Book {
-    pub x: u32,
-    pub y: u32,
     pub width: u32,
     pub height: u32,
-    pub is_active: bool,
-    pub tex_coords: Rect<f32>,
+    pub top: i32,
+    pub left: i32,
+    pub tex_coords: Rect,
+    pub has_color: bool,
 }
 
 /// Each section of rows in the atlas is a shelf
@@ -278,39 +154,51 @@ pub struct Shelf {
     /// The x position at the end of the shelf. This is where the the next glyph is added if there
     /// is space on the x direction.
     shelf_current_x: u32,
-    /// The list of books in order from left to right in the atlas.
-    books: Vec<Weak<RefCell<Book>>>,
 }
 
 impl Shelf {
-    fn append(&mut self, atlas_size: (u32, u32), entry: AtlasEntry) -> (u32, u32) {
-        let mut book = entry.borrow_mut();
-        book.x = self.shelf_current_x;
-        book.y = self.shelf_y;
+    fn append(&mut self, image: DynamicImage, top: i32, left: i32, atlas: &mut DynamicImage) -> Book {
+        let offset_x = self.shelf_current_x;
+        let offset_y = self.shelf_y;
 
-        book.tex_coords = Rect {
-            min: Point {
-                x: book.x as f32 / atlas_size.0 as f32,
-                y: book.y as f32 / atlas_size.1 as f32,
-            },
-            max: Point {
-                x: (book.x as f32 + book.width as f32) / atlas_size.0 as f32,
-                y: (book.y as f32 + book.height as f32) / atlas_size.1 as f32,
-            },
+        let book = Book {
+            width: image.width(),
+            height: image.height(),
+            top,
+            left,
+            tex_coords: Rect::new(
+                Position::new(
+                    offset_x as Scalar / atlas.width() as Scalar,
+                    offset_y as Scalar / atlas.height() as Scalar,
+                ),
+                Dimension::new(
+                    image.width() as Scalar / atlas.width() as Scalar,
+                    image.height() as Scalar / atlas.height() as Scalar,
+                )
+            ),
+            has_color: !matches!(image, DynamicImage::ImageLuma8(_)),
         };
 
-        let res = (self.shelf_current_x, self.shelf_y);
+        // Add image width to shelf and add 1 to make sure we have a pixel spacing.
+        self.shelf_current_x += image.width() + 1;
 
-        book.is_active = true;
-        self.shelf_current_x += book.width + 1;
-        self.books.push(Rc::downgrade(&entry));
+        match image {
+            DynamicImage::ImageLuma8(image) => {
+                for (ix, iy, pixel) in image.enumerate_pixels() {
+                    atlas.put_pixel(offset_x + ix, offset_y + iy, image::Rgba([0, 0, 0, pixel.0[0]]));
+                }
+            }
+            image => {
+                for (ix, iy, pixel) in image.pixels() {
+                    atlas.put_pixel(offset_x + ix, offset_y + iy, pixel);
+                }
+            }
+        }
 
-        res
-
-
+        book
     }
 
-    fn get_width_left(&self) -> u32 {
+    fn available_width(&self) -> u32 {
         SHELVE_WIDTH - self.shelf_current_x
     }
 }

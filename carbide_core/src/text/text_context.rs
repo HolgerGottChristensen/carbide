@@ -38,11 +38,11 @@ pub trait InnerTextContext {
 
     fn update(&mut self, id: TextId, text: &str, style: &TextStyle);
 
-    fn render(&self, id: TextId, ctx: &mut dyn InnerRenderContext);
+    fn render(&mut self, id: TextId, ctx: &mut dyn InnerRenderContext);
 
     fn prepare_render(&mut self);
 
-    fn cache_queued(&mut self, uploader: &mut dyn FnMut(u32, u32, &DynamicImage));
+    fn update_cache(&mut self, f: &mut dyn FnMut(&DynamicImage));
 }
 
 pub struct NOOPTextContext;
@@ -64,7 +64,7 @@ impl InnerTextContext for NOOPTextContext {
         unimplemented!()
     }
 
-    fn render(&self, id: TextId, ctx: &mut dyn InnerRenderContext) {
+    fn render(&mut self, id: TextId, ctx: &mut dyn InnerRenderContext) {
         unimplemented!()
     }
 
@@ -72,8 +72,8 @@ impl InnerTextContext for NOOPTextContext {
         unimplemented!()
     }
 
-    fn cache_queued(&mut self, uploader: &mut dyn FnMut(u32, u32, &DynamicImage)) {
-        todo!()
+    fn update_cache(&mut self, f: &mut dyn FnMut(&DynamicImage)) {
+        unimplemented!()
     }
 }
 

@@ -9,3 +9,5 @@ edition = "2021"
 carbide_rusttype = { path = "../carbide_rusttype" }
 carbide_core = { path = "../../carbide_core" }
 fxhash = "0.2.1"
+cosmic-text = "0.10.0"
+swash = "0.1.8"

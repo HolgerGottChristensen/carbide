@@ -873,28 +873,16 @@ impl Scene for WGPUWindow {
 impl WGPUWindow {
     fn update_atlas_cache(device: &Device, encoder: &mut CommandEncoder, ctx: &mut dyn InnerTextContext) {
         ATLAS_CACHE_TEXTURE.with(|atlas_cache_tex| {
-            ATLAS_CACHE.with(|atlas_image| {
-                let atlas_image = &mut *atlas_image.borrow_mut();
-                //let texture_atlas = env.get_font_atlas_mut();
-                let mut upload_needed = false;
 
-                ctx.cache_queued(&mut |x, y, image_data| {
-                    //println!("Insert the image at: {}, {} with size {}, {}", x, y, image_data.width(), image_data.height());
-                    for (ix, iy, pixel) in image_data.pixels() {
-                        atlas_image.put_pixel(x + ix, y + iy, pixel);
-                    }
-                    upload_needed = true;
-                });
+            ctx.update_cache(&mut |image| {
+                TextureAtlasCommand {
+                    texture_atlas_buffer: image.as_bytes(),
+                    texture_atlas_texture: atlas_cache_tex,
+                    width: image.width(),
+                    height: image.height(),
+                }.load_buffer_and_encode(device, encoder);
+            });
 
-                if upload_needed {
-                    TextureAtlasCommand {
-                        texture_atlas_buffer: atlas_image.as_bytes(),
-                        texture_atlas_texture: atlas_cache_tex,
-                        width: atlas_image.width(),
-                        height: atlas_image.height(),
-                    }.load_buffer_and_encode(device, encoder)
-                }
-            })
         });
     }
 

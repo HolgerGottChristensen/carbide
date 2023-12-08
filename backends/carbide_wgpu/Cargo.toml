@@ -27,7 +27,6 @@ bytemuck = { version = "1.7", features = ["derive", "min_const_generics"] }
 anyhow = "1.0"
 uuid = { version = "1.2.1", features = ["serde", "v4"] }
 raw-window-handle = "0.5"
-cosmic-text = "0.10.0"
 #smaa = "0.4.0"
 
 [target.'cfg(target_os="macos")'.dependencies]

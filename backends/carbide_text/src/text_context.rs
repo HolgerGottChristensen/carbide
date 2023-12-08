@@ -1,203 +1,94 @@
 use std::collections::HashMap;
 use std::path::Path;
+use cosmic_text::{Attrs, Buffer, Color, FontSystem, Metrics, Shaping, SwashCache, SwashImage};
 use fxhash::{FxBuildHasher, FxHashMap};
+use swash::scale::{Render, ScaleContext, Source, StrikeWith};
+use swash::scale::image::Content;
+use swash::Stretch;
+use swash::zeno::{Format, Vector};
+use carbide_core::color::{RED, YELLOW};
 use carbide_core::draw::{Dimension, Position, Rect, Scalar};
+use carbide_core::draw::draw_style::DrawStyle;
 use carbide_core::draw::image::ImageId;
 use carbide_core::environment::Environment;
-use carbide_core::image::DynamicImage;
+use carbide_core::image::{DynamicImage, GrayImage, RgbaImage};
 use carbide_core::locate_folder;
 use carbide_core::mesh::{MODE_TEXT, MODE_TEXT_COLOR};
 use carbide_core::render::InnerRenderContext;
 use carbide_core::text::{FontId, FontSize, FontStyle, FontWeight, InnerTextContext, TextDecoration, TextId};
 use carbide_core::widget::Wrap;
-use crate::atlas::texture_atlas::TextureAtlas;
-use crate::font::Font;
-use crate::font_family::FontFamily;
-use crate::glyph::Glyph;
-use crate::internal_text::Text;
 use carbide_core::text::TextStyle;
+use crate::atlas::texture_atlas::{AtlasId, TextureAtlas};
 
 pub struct TextContext {
+    map: FxHashMap<TextId, Buffer>,
+    metadata: FxHashMap<TextId, (Position, Scalar)>,
+    font_system: FontSystem,
+    cache: SwashCache,
     atlas: TextureAtlas,
-    map: FxHashMap<TextId, Text>,
 
-    /// Keep the loaded fonts in a map from font id to font. This is used when
-    /// calculating the size of rendered strings.
-    fonts: Vec<Font>,
-
-    /// Font families. The fonts are still kept as seperate fonts in the above vec, but references
-    /// are kept in families for better lookup.
-    font_families: FxHashMap<String, FontFamily>,
-
-    /// System font family name. This is used to get the font family for default text rendering.
-    /// This should always be expected to exist.
-    default_font_family_name: String,
+    scale_context: ScaleContext,
 }
 
 impl TextContext {
     pub fn new() -> TextContext {
-        let default_font_family_name = "NotoSans";
-
-        let mut res = TextContext {
-            atlas: TextureAtlas::new(512, 512),
+        TextContext {
             map: Default::default(),
-            fonts: vec![],
-            font_families: HashMap::with_hasher(FxBuildHasher::default()),
-            default_font_family_name: default_font_family_name.to_string(),
-        };
-
-        #[cfg(target_os = "macos")]
-        {
-            let mut family = FontFamily::new("Apple Color Emoji");
-            family.add_font_with_hints(
-                "/System/Library/Fonts/Apple Color Emoji.ttc",
-                FontWeight::Normal,
-                FontStyle::Normal,
-            );
-            res.add_font_family(family);
+            metadata: Default::default(),
+            font_system: FontSystem::new(),
+            cache: SwashCache::new(),
+            atlas: TextureAtlas::new(512, 512),
+            scale_context: ScaleContext::new(),
         }
-
-        res
-    }
-
-    pub fn insert_font_from_file(&mut self, path: impl AsRef<Path>) -> (FontId, FontWeight, FontStyle) {
-        let mut font = Font::from_file(path);
-        let weight = font.weight();
-        let style = font.style();
-        let font_id = self.fonts.len();
-        font.set_font_id(font_id);
-        self.fonts.push(font);
-        (font_id, weight, style)
-    }
-
-    pub fn add_glyphs_to_atlas(&mut self, glyphs: Vec<&mut Glyph>, scale_factor: f64) {
-        for glyph in glyphs {
-            let font = &self.fonts[glyph.font_id()];
-            if let Some(entry) = self
-                .atlas
-                .queue_glyph(glyph, font, scale_factor)
-            {
-                glyph.set_atlas_entry(entry);
-            }
-        }
-    }
-
-    pub fn remove_glyphs_from_atlas(&mut self, _glyphs: &Vec<Glyph>) {}
-
-    pub fn get_glyph_from_fallback(
-        &mut self,
-        c: char,
-        font_size: FontSize,
-        scale_factor: Scalar,
-    ) -> (Scalar, Glyph) {
-        // Try all the loaded fonts. We only check the first font in each family.
-        // Todo: Consider using weight hints and style hints.
-        // Todo: Consider going through a separate list if we have a lot of families loaded.
-        for (_, font_family) in &self.font_families {
-            println!("Looking up in font family: {:?}", font_family);
-            let font_id = font_family.get_best_fit(FontWeight::Normal, FontStyle::Normal);
-            if let Some(res) = self.get_font(font_id).glyph_for(c, font_size, scale_factor) {
-                return res;
-            }
-        }
-
-        // Try load fallback fonts until we run out
-        // Todo: Implement fallback font list.
-
-        // Get the glyph for the unknown character: �
-        if c != '�' {
-            self.get_glyph_from_fallback('�', font_size, scale_factor)
-        } else {
-            panic!("Could not lookup the char in any of the loaded fonts or in any fallback fonts. \
-            Further more we could not look up the missing char replacement �. Something is not right.")
-        }
-    }
-
-    pub fn get_font_ref(&self, id: FontId) -> &Font {
-        &self.fonts[id]
-    }
-
-    pub fn get_font(&self, id: FontId) -> Font {
-        self.fonts[id].clone()
-    }
-
-    pub fn get_font_mut(&mut self, id: FontId) -> &mut Font {
-        &mut self.fonts[id]
-    }
-
-    /// Adds the given `rusttype::Font` to the `Map` and returns a unique `Id` for it.
-    pub fn insert_font(&mut self, font: Font) -> FontId {
-        let font_id = self.fonts.len();
-        self.fonts.push(font);
-        font_id
-    }
-
-    // TODO: Add fonts automatically and warn if none could be loaded: https://github.com/RazrFalcon/fontdb/blob/master/src/lib.rs
-    pub fn add_font_family(&mut self, mut family: FontFamily) {
-        for font in &mut family.fonts {
-            let assets = locate_folder::Search::KidsThenParents(3, 5)
-                .for_folder("assets")
-                .unwrap();
-            let font_path = assets.join(&font.path);
-            let (font_id, weight, style) = self.insert_font_from_file(font_path);
-            font.font_id = font_id;
-            font.weight_hint = weight;
-            font.style_hint = style;
-        }
-        let key = family.name.clone();
-        self.font_families.insert(key, family);
-    }
-
-    pub fn get_first_font_family(&self) -> &FontFamily {
-        for (_, family) in self.font_families.iter() {
-            return family;
-        }
-
-        panic!("No font family have been added, so we can not get the first.")
-    }
-
-    pub fn get_system_font_family(&self) -> &FontFamily {
-        self.get_font_family(&self.default_font_family_name)
-    }
-
-    pub fn get_font_family(&self, name: &str) -> &FontFamily {
-        if name == "system-font" {
-            self.get_system_font_family()
-        } else {
-            self.font_families
-                .get(name)
-                .expect("Could not find a suitable font family")
-        }
-    }
-
-    pub fn font_from_style(&self, style: &TextStyle) -> Font {
-        let family = self.get_font_family(&style.font_family);
-        let font_id = family.get_best_fit(style.font_weight, style.font_style);
-        self.get_font(font_id)
-    }
-
-    pub fn font_id_from_style(&self, style: &TextStyle) -> FontId {
-        let family = self.get_font_family(&style.font_family);
-        family.get_best_fit(style.font_weight, style.font_style)
     }
 }
 
 impl InnerTextContext for TextContext {
     fn calculate_size(&mut self, id: TextId, requested_size: Dimension, env: &mut Environment) -> Dimension {
-        if let Some(text) = self.map.get_mut(&id) {
-            text.calculate_size(requested_size, env)
-        } else {
-            panic!("Update before calculate size");
+        let mut buffer = self.map.get_mut(&id).unwrap();
+
+        buffer.set_wrap(&mut self.font_system, cosmic_text::Wrap::Word);
+
+        buffer.set_size(&mut self.font_system, requested_size.width as f32, f32::MAX);
+
+        buffer.shape_until_scroll(&mut self.font_system);
+
+        let mut width: f32 = 0.0;
+        let mut height: f32 = 0.0;
+
+        for run in buffer.layout_runs() {
+            width = width.max(run.line_w);
+            height = height.max(run.line_top + buffer.metrics().line_height);
+
+            for glyph in run.glyphs.iter() {
+                let physical_glyph = glyph.physical((0., 0.), env.scale_factor() as f32);
+
+                self.atlas.enqueue(AtlasId::Glyph(physical_glyph.cache_key), || {
+                    let image = swash_image(&mut self.font_system, &mut self.scale_context, physical_glyph.cache_key);
+
+                    image.map(|image| {
+                        let dynamic = match image.content {
+                            Content::Mask => {
+                                DynamicImage::ImageLuma8(GrayImage::from_raw(image.placement.width, image.placement.height, image.data).unwrap())
+                            }
+                            Content::SubpixelMask => todo!(),
+                            Content::Color => {
+                                DynamicImage::ImageRgba8(RgbaImage::from_raw(image.placement.width, image.placement.height, image.data).unwrap())
+                            }
+                        };
+
+                        (dynamic, image.placement.top, image.placement.left)
+                    })
+
+                })
+            }
         }
+
+        Dimension::new(width as f64, height as f64)
     }
 
     fn calculate_position(&mut self, id: TextId, requested_offset: Position, env: &mut Environment) {
-        if let Some(text) = self.map.get_mut(&id) {
-            text.position(requested_offset);
-            text.ensure_glyphs_added_to_atlas(&self.fonts, &mut self.atlas, env.scale_factor());
-        } else {
-            panic!("Update before calculate size");
-        }
+        self.metadata.insert(id, (requested_offset.rounded(), env.scale_factor()));
     }
 
     fn hash(&self, id: TextId) -> Option<u64> {
@@ -205,54 +96,143 @@ impl InnerTextContext for TextContext {
     }
 
     fn update(&mut self, id: TextId, text: &str, style: &TextStyle) {
+        if let Some(buffer) = self.map.get_mut(&id) {
+            let mut buffer = buffer.borrow_with(&mut self.font_system);
 
-        let add = if let Some(internal) = self.map.get_mut(&id) {
-            internal.string_that_generated_this() != text || internal.style_that_generated_this() != style
+            let attributes = Attrs::new();
+
+            buffer.set_text(text, attributes, Shaping::Advanced);
         } else {
-            true
-        };
+            let mut buffer = Buffer::new(&mut self.font_system, Metrics::new(34.0, 40.0));
 
-        if add {
-            let new = Text::new(text.to_string(), style.clone(), self, 2.0);
-            self.map.insert(id, new);
+            {
+                let mut buffer = buffer.borrow_with(&mut self.font_system);
+
+                let attributes = Attrs::new();
+
+                buffer.set_text(text, attributes, Shaping::Advanced);
+            }
+
+
+            self.map.insert(id, buffer);
         }
     }
 
-    fn render(&self, id: TextId, ctx: &mut dyn InnerRenderContext) {
-        if let Some(text) = self.map.get(&id) {
-            for glyph in text.first_glyphs() {
-                if let Some(bb) = glyph.bb() {
-                    if let Some(index) = glyph.atlas_entry() {
-                        if !index.borrow().is_active {
-                            println!(
-                                "Trying to show glyph that is not in the texture atlas 11111."
-                            );
-                        }
-                        let coords = index.borrow().tex_coords;
+    fn render(&mut self, id: TextId, ctx: &mut dyn InnerRenderContext) {
+        let mut buffer = self.map.get_mut(&id).unwrap();
+        let metadata = self.metadata.get_mut(&id).unwrap();
+        //let mut buffer = buffer.borrow_with(&mut self.font_system);
 
-                        let mode = if glyph.is_bitmap() { MODE_TEXT_COLOR } else { MODE_TEXT };
+        buffer.shape_until_scroll(&mut self.font_system);
 
-                        ctx.image(
-                            ImageId::default(),
-                            bb / 2.0,
-                            Rect::new(Position::new(coords.min.x as Scalar, coords.min.y as Scalar), Dimension::new(coords.width() as Scalar, coords.height() as Scalar)),
-                            mode
-                        );
-                    } else {
-                        println!("Trying to show glyph that is not in the texture atlas.");
-                    }
+        // Inspect the output runs
+        for run in buffer.layout_runs() {
+            ctx.style(DrawStyle::Color(RED));
+            ctx.rect(Rect::new(Position::new(0.0, run.line_y as f64), Dimension::new(run.line_w as f64, 1.0 / metadata.1)) + metadata.0);
+            ctx.pop_style();
+
+            ctx.style(DrawStyle::Color(YELLOW));
+            ctx.rect(Rect::new(Position::new(0.0, run.line_top as f64), Dimension::new(run.line_w as f64, 1.0 / metadata.1)) + metadata.0);
+            ctx.pop_style();
+
+            for glyph in run.glyphs.iter() {
+                //println!("{:#?}", glyph);
+                let physical_glyph = glyph.physical((0., 0.), metadata.1 as f32);
+
+                let book = self.atlas.book(&AtlasId::Glyph(physical_glyph.cache_key));
+
+                if let Some(book) = book {
+                    ctx.image(
+                        ImageId::default(),
+                        Rect::new(
+                            Position::new(physical_glyph.x as f64 + book.left as f64, run.line_y as f64 * metadata.1 + physical_glyph.y as f64 - book.top as f64),
+                            Dimension::new(book.width as f64, book.height as f64)
+                        ) / metadata.1 + metadata.0,
+                        book.tex_coords,
+                        if book.has_color { MODE_TEXT_COLOR } else { MODE_TEXT }
+                    );
                 }
             }
-        } else {
-            panic!("Update before calculate size");
         }
+
+        /*let text_color = Color::rgb(0xFF, 0xFF, 0xFF);
+
+        for run in buffer.layout_runs() {
+            for glyph in run.glyphs.iter() {
+                let physical_glyph = glyph.physical((0., 0.), 1.0);
+
+                let glyph_color = match glyph.color_opt {
+                    Some(some) => some,
+                    None => text_color,
+                };
+
+                self.cache.with_pixels(
+                    &mut self.font_system,
+                    physical_glyph.cache_key,
+                    glyph_color,
+                    |x, y, color| {
+                        let x = physical_glyph.x + x;
+                        let y = run.line_y as i32 + physical_glyph.y + y;
+                        let w = 1;
+                        let h = 1;
+                        let color = color;
+
+                        //ctx.style(DrawStyle::Color(carbide_core::draw::Color::random()));
+                        ctx.style(DrawStyle::Color(carbide_core::draw::Color::new_rgba(color.r(), color.g(), color.b(), color.a())));
+                        ctx.rect(Rect::new(Position::new(x as f64, y as f64), Dimension::new(w as f64, h as f64)) + *position);
+                        ctx.pop_style();
+                    },
+                );
+            }
+        }*/
     }
 
     fn prepare_render(&mut self) {
-        self.atlas.prepare_queued();
+        self.atlas.process_queued();
     }
 
-    fn cache_queued(&mut self, uploader: &mut dyn FnMut(u32, u32, &DynamicImage)) {
-        self.atlas.cache_queued(uploader);
+    fn update_cache(&mut self, f: &mut dyn FnMut(&DynamicImage)) {
+        self.atlas.update_cache(f)
     }
+}
+
+
+fn swash_image(
+    font_system: &mut FontSystem,
+    context: &mut ScaleContext,
+    cache_key: cosmic_text::CacheKey,
+) -> Option<SwashImage> {
+    let font = match font_system.get_font(cache_key.font_id) {
+        Some(some) => some,
+        None => {
+            return None;
+        }
+    };
+
+    // Build the scaler
+    let mut scaler = context
+        .builder(font.as_swash())
+        .size(f32::from_bits(cache_key.font_size_bits))
+        .hint(true)
+        .build();
+
+    // Compute the fractional offset-- you'll likely want to quantize this
+    // in a real renderer
+    let offset = Vector::new(cache_key.x_bin.as_float(), cache_key.y_bin.as_float());
+
+    // Select our source order
+    Render::new(&[
+        // Color outline with the first palette
+        Source::ColorOutline(0),
+        // Color bitmap with best fit selection mode
+        Source::ColorBitmap(StrikeWith::BestFit),
+        // Standard scalable outline
+        Source::Outline,
+    ])
+        // Select a subpixel format
+        .format(Format::Alpha)
+        // Apply the fractional offset
+        .offset(offset)
+        // Render the image
+        .render(&mut scaler, cache_key.glyph_id)
 }
