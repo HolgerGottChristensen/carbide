@@ -1,3 +1,4 @@
+use std::time::Instant;
 use cosmic_text::{Attrs, Buffer, FontSystem, Metrics, Shaping, SwashCache, SwashImage};
 use fxhash::FxHashMap;
 use swash::scale::{Render, ScaleContext, Source, StrikeWith};
@@ -16,10 +17,10 @@ use carbide_core::text::{InnerTextContext, TextId};
 use carbide_core::text::TextStyle;
 
 use crate::atlas::texture_atlas::{AtlasId, TextureAtlas};
+use crate::metadata::Metadata;
 
 pub struct TextContext {
-    map: FxHashMap<TextId, Buffer>,
-    metadata: FxHashMap<TextId, (Position, Scalar)>,
+    map: FxHashMap<TextId, (Buffer, Metadata)>,
     font_system: FontSystem,
     cache: SwashCache,
     atlas: TextureAtlas,
@@ -31,7 +32,6 @@ impl TextContext {
     pub fn new() -> TextContext {
         TextContext {
             map: Default::default(),
-            metadata: Default::default(),
             font_system: FontSystem::new(),
             cache: SwashCache::new(),
             atlas: TextureAtlas::new(512, 512),
@@ -42,13 +42,14 @@ impl TextContext {
 
 impl InnerTextContext for TextContext {
     fn calculate_size(&mut self, id: TextId, requested_size: Dimension, env: &mut Environment) -> Dimension {
-        let mut buffer = self.map.get_mut(&id).unwrap();
-
+        let (ref mut buffer, metadata) = self.map.get_mut(&id).unwrap();
+        let now = Instant::now();
         buffer.set_wrap(&mut self.font_system, cosmic_text::Wrap::Word);
+        println!("Elapsed: {:.2?}", now.elapsed());
 
         buffer.set_size(&mut self.font_system, requested_size.width as f32, f32::MAX);
+        println!("Elapsed2: {:.2?}", now.elapsed());
 
-        buffer.shape_until_scroll(&mut self.font_system);
 
         let mut width: f32 = 0.0;
         let mut height: f32 = 0.0;
@@ -81,11 +82,14 @@ impl InnerTextContext for TextContext {
             }
         }
 
+        println!("Elapsed3: {:.2?}", now.elapsed());
+
         Dimension::new(width as f64, height as f64)
     }
 
     fn calculate_position(&mut self, id: TextId, requested_offset: Position, env: &mut Environment) {
-        self.metadata.insert(id, (requested_offset.rounded(), env.scale_factor()));
+        self.map.get_mut(&id).unwrap().1.position = requested_offset.rounded();
+        self.map.get_mut(&id).unwrap().1.scale_factor = env.scale_factor();
     }
 
     fn hash(&self, id: TextId) -> Option<u64> {
@@ -93,13 +97,18 @@ impl InnerTextContext for TextContext {
     }
 
     fn update(&mut self, id: TextId, text: &str, style: &TextStyle) {
-        if let Some(buffer) = self.map.get_mut(&id) {
-            let mut buffer = buffer.borrow_with(&mut self.font_system);
+        let now = Instant::now();
 
-            let attributes = Attrs::new();
+        if let Some((buffer, metadata)) = self.map.get_mut(&id) {
 
-            buffer.set_text(text, attributes, Shaping::Advanced);
-            buffer.set_metrics(Metrics::new(style.font_size as f32, style.font_size as f32 * style.line_height as f32))
+            if &metadata.text != text || &metadata.style != style {
+                let mut buffer = buffer.borrow_with(&mut self.font_system);
+
+                let attributes = Attrs::new();
+
+                buffer.set_text(text, attributes, Shaping::Advanced);
+                buffer.set_metrics(Metrics::new(style.font_size as f32, style.font_size as f32 * style.line_height as f32));
+            }
         } else {
             let mut buffer = Buffer::new(&mut self.font_system, Metrics::new(style.font_size as f32, style.font_size as f32 * style.line_height as f32));
 
@@ -112,30 +121,35 @@ impl InnerTextContext for TextContext {
             }
 
 
-            self.map.insert(id, buffer);
+            self.map.insert(id, (buffer, Metadata {
+                scale_factor: 1.0,
+                position: Default::default(),
+                text: text.to_string(),
+                style: style.clone(),
+            }));
         }
+        println!("Elapsed4: {:.2?}", now.elapsed());
     }
 
     fn render(&mut self, id: TextId, ctx: &mut dyn InnerRenderContext) {
-        let mut buffer = self.map.get_mut(&id).unwrap();
-        let metadata = self.metadata.get_mut(&id).unwrap();
+        let (ref mut buffer, metadata) = self.map.get_mut(&id).unwrap();
         //let mut buffer = buffer.borrow_with(&mut self.font_system);
 
-        buffer.shape_until_scroll(&mut self.font_system);
+        //buffer.shape_until_scroll(&mut self.font_system);
 
         // Inspect the output runs
         for run in buffer.layout_runs() {
             ctx.style(DrawStyle::Color(RED));
-            ctx.rect(Rect::new(Position::new(0.0, run.line_y as f64), Dimension::new(run.line_w as f64, 1.0 / metadata.1)) + metadata.0);
+            ctx.rect(Rect::new(Position::new(0.0, run.line_y as f64), Dimension::new(run.line_w as f64, 1.0 / metadata.scale_factor)) + metadata.position);
             ctx.pop_style();
 
             ctx.style(DrawStyle::Color(YELLOW));
-            ctx.rect(Rect::new(Position::new(0.0, run.line_top as f64), Dimension::new(run.line_w as f64, 1.0 / metadata.1)) + metadata.0);
+            ctx.rect(Rect::new(Position::new(0.0, run.line_top as f64), Dimension::new(run.line_w as f64, 1.0 / metadata.scale_factor)) + metadata.position);
             ctx.pop_style();
 
             for glyph in run.glyphs.iter() {
                 //println!("{:#?}", glyph);
-                let physical_glyph = glyph.physical((0., 0.), metadata.1 as f32);
+                let physical_glyph = glyph.physical((0., 0.), metadata.scale_factor as f32);
 
                 let book = self.atlas.book(&AtlasId::Glyph(physical_glyph.cache_key));
 
@@ -143,9 +157,9 @@ impl InnerTextContext for TextContext {
                     ctx.image(
                         ImageId::default(),
                         Rect::new(
-                            Position::new(physical_glyph.x as f64 + book.left as f64, run.line_y as f64 * metadata.1 + physical_glyph.y as f64 - book.top as f64),
+                            Position::new(physical_glyph.x as f64 + book.left as f64, run.line_y as f64 * metadata.scale_factor + physical_glyph.y as f64 - book.top as f64),
                             Dimension::new(book.width as f64, book.height as f64)
-                        ) / metadata.1 + metadata.0,
+                        ) / metadata.scale_factor + metadata.position,
                         book.tex_coords,
                         if book.has_color { MODE_TEXT_COLOR } else { MODE_TEXT }
                     );
