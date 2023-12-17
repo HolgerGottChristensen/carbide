@@ -5,9 +5,10 @@ use carbide_core::cursor::MouseCursor;
 use carbide_core::focus::Refocus;
 use carbide_core::widget::AnyWidget;
 
-use crate::draw::{Dimension, Position, Scalar};
+use crate::draw::{Dimension, InnerImageContext, Position, Scalar};
 use crate::environment::Environment;
-use crate::event::{Button, CustomEvent, Gesture, Input, Key, ModifierKey, Motion, MouseButton, TouchPhase};
+use crate::event::{Button, CustomEvent, Gesture, Input, Key, ModifierKey, Motion, MouseButton, MouseEventContext, TouchPhase};
+use crate::text::InnerTextContext;
 use crate::window::WindowId;
 
 const N_CLICK_THRESHOLD: Duration = Duration::from_millis(500);
@@ -26,7 +27,7 @@ pub struct EventHandler {
 }
 
 impl EventHandler {
-    pub fn delegate_events(&mut self, widgets: &mut impl AnyWidget, env: &mut Environment) -> bool {
+    pub fn delegate_events(&mut self, widgets: &mut impl AnyWidget, env: &mut Environment, text_context: &mut dyn InnerTextContext, image_context: &mut dyn InnerImageContext) -> bool {
         let now = Instant::now();
         let mut any_focus = self.any_focus;
         let events = self.get_events();
@@ -43,7 +44,11 @@ impl EventHandler {
                 WidgetEvent::Mouse(mouse_event) => {
                     let consumed = false;
                     env.set_mouse_position(mouse_event.get_current_mouse_position());
-                    widgets.process_mouse_event(mouse_event, &consumed, env);
+                    widgets.process_mouse_event(mouse_event, &consumed, &mut MouseEventContext {
+                        text: text_context,
+                        image: image_context,
+                        env,
+                    });
                 }
                 WidgetEvent::Keyboard(keyboard_event) => {
                     widgets.process_keyboard_event(keyboard_event, env);

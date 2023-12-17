@@ -42,7 +42,7 @@ pub struct Text<T, S, C> where T: ReadState<T=String>, S: ReadState<T=u32>, C: R
     font_size: S,
     #[state]
     color: C,
-    font_family: String,
+    family: String,
     font_style: FontStyle,
     font_weight: FontWeight,
     text_decoration: TextDecoration,
@@ -64,7 +64,7 @@ impl Text<String, u32, Color> {
             dimension: Dimension::new(100.0, 100.0),
             wrap_mode: Wrap::Whitespace,
             color: EnvironmentColor::Label.color(),
-            font_family: "system-font".to_string(),
+            family: "Noto Sans".to_string(),
             font_style: FontStyle::Normal,
             font_weight: FontWeight::Normal,
             text_decoration: TextDecoration::None,
@@ -108,7 +108,7 @@ impl<T2: ReadState<T=String>, S2: ReadState<T=u32>, C2: ReadState<T=Color>> Text
             text: self.text,
             font_size: self.font_size,
             color: color.into_read_state(),
-            font_family: self.font_family,
+            family: self.family,
             font_style: self.font_style,
             font_weight: self.font_weight,
             text_decoration: self.text_decoration,
@@ -128,13 +128,18 @@ impl<T2: ReadState<T=String>, S2: ReadState<T=u32>, C2: ReadState<T=Color>> Text
             text: self.text,
             font_size: size.into_read_state(),
             color: self.color,
-            font_family: self.font_family,
+            family: self.family,
             font_style: self.font_style,
             font_weight: self.font_weight,
             text_decoration: self.text_decoration,
             //internal_text: self.internal_text,
             //text_span_generator: self.text_span_generator,
         }
+    }
+
+    pub fn family(mut self, family: String) -> Self {
+        self.family = family;
+        self
     }
 
     pub fn font_weight(mut self, weight: impl Into<FontWeight>) -> Self {
@@ -145,6 +150,11 @@ impl<T2: ReadState<T=String>, S2: ReadState<T=u32>, C2: ReadState<T=Color>> Text
     /// Take a given text element and make it render with the font weight: Bold
     pub fn bold(self) -> Self {
         self.font_weight(FontWeight::Bold)
+    }
+
+    pub fn italic(mut self) -> Self {
+        self.font_style = FontStyle::Italic;
+        self
     }
 
     pub fn wrap_mode(mut self, wrap: Wrap) -> Self {
@@ -173,7 +183,7 @@ impl<T2: ReadState<T=String>, S2: ReadState<T=u32>, C2: ReadState<T=Color>> Text
 
     pub fn get_style(&self) -> TextStyle {
         TextStyle {
-            font_family: self.font_family.clone(),
+            family: self.family.clone(),
             font_size: *self.font_size.value(),
             line_height: 1.0,
             font_style: self.font_style,
@@ -309,17 +319,13 @@ impl<T: ReadState<T=String>, S: ReadState<T=u32>, C: ReadState<T=Color>> CommonW
 impl<T: ReadState<T=String>, S: ReadState<T=u32>, C: ReadState<T=Color>> WidgetExt for Text<T, S, C> {}
 
 pub trait TextWidget: AnyWidget {
-    //fn glyphs(&self) -> Vec<Glyph>;
+    fn text_id(&self) -> TextId;
 }
 
 impl<T: ReadState<T=String>, S: ReadState<T=u32>, C: ReadState<T=Color>> TextWidget for Text<T, S, C> {
-    // fn glyphs(&self) -> Vec<Glyph> {
-    //     if let Some(internal) = &self.internal_text {
-    //         internal.first_glyphs()
-    //     } else {
-    //         vec![]
-    //     }
-    // }
+    fn text_id(&self) -> TextId {
+        self.text_id
+    }
 }
 
 impl AnyWidget for Box<dyn TextWidget> {}

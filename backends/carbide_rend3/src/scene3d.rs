@@ -240,8 +240,7 @@ impl Scene3d {
             sample_count: 1,
             dimension: wgpu::TextureDimension::D2,
             format: TextureFormat::Bgra8UnormSrgb,
-            usage: TextureUsages::RENDER_ATTACHMENT
-                | TextureUsages::TEXTURE_BINDING,
+            usage: TextureUsages::RENDER_ATTACHMENT | TextureUsages::TEXTURE_BINDING,
             view_formats: &[],
         };
 
@@ -265,7 +264,7 @@ impl Layout for Scene3d {
         // If the requested size is not the same as the dimension, recreate the texture
         if requested_size != self.dimension || self.texture.is_none() {
             self.dimension = requested_size;
-            self.recreate_texture(ctx);
+            self.recreate_texture(ctx.env);
         }
         requested_size
     }

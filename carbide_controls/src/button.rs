@@ -77,16 +77,14 @@ impl<L: ReadState<T=String>, P: ReadState<T=bool>> PlainButtonDelegate for Butto
             }
         );
 
-        ZStack::new(vec![
+        ZStack::new((
             RoundedRectangle::new(CornerRadii::all(4.0))
                 .fill(background_color)
                 .stroke(EnvironmentColor::OpaqueSeparator)
-                .stroke_style(1.0)
-                .boxed(),
+                .stroke_style(1.0),
             Text::new(self.label.clone())
-                .color(label_color)
-                .boxed(),
-        ]).background(
+                .color(label_color),
+        )).background(
             RoundedRectangle::new(CornerRadii::all(4.0))
                 .stroke(outline_color)
                 .stroke_style(1.0)

@@ -14,7 +14,7 @@ fn main() {
     application.set_scene(Window::new(
         "Plain slider example",
         Dimension::new(400.0, 500.0),
-        *VStack::new(vec![
+        VStack::new((
             Text::new(
                 progress
                     .clone()
@@ -23,8 +23,7 @@ fn main() {
             PlainSlider::new(progress.clone(), 40.0, 80.0)
                 .border()
                 .color(EnvironmentColor::Yellow)
-                .padding(20.0)
-                .boxed(),
+                .padding(20.0),
             Empty::new().frame(20.0, 20.0),
             Text::new(
                 progress
@@ -34,8 +33,7 @@ fn main() {
             PlainSlider::new(progress.clone(), 20.0, 100.0)
                 .border()
                 .color(EnvironmentColor::Yellow)
-                .padding(20.0)
-                .boxed(),
+                .padding(20.0),
             Empty::new().frame(20.0, 20.0),
             Text::new(
                 progress
@@ -46,9 +44,8 @@ fn main() {
                 .step(Some(15.0))
                 .border()
                 .color(EnvironmentColor::Yellow)
-                .padding(20.0)
-                .boxed(),
-        ])
+                .padding(20.0),
+        ))
     ).close_application_on_window_close());
 
     application.launch();

@@ -1,4 +1,5 @@
 use std::fmt::{Debug, Formatter};
+use carbide::event::MouseEventContext;
 use carbide::layout::LayoutContext;
 
 use carbide_core::CommonWidgetImpl;
@@ -246,8 +247,8 @@ impl<
     E: ReadState<T=bool>,
 > MouseEventHandler for PlainPopUpButton<T, F, S, M, E> {
     // Implementing this instead of handle_mouse_event makes all the children not receive events.
-    fn process_mouse_event(&mut self, event: &MouseEvent, _: &bool, env: &mut Environment) {
-        if !env.is_event_current() { return }
+    fn process_mouse_event(&mut self, event: &MouseEvent, consumed: &bool, ctx: &mut MouseEventContext) {
+        if !ctx.env.is_event_current() { return }
         match event {
             MouseEvent::Click(_, position, _) => {
                 if self.is_inside(*position) {
@@ -257,14 +258,14 @@ impl<
 
                     if self.get_focus() != Focus::Focused {
                         self.set_focus(Focus::FocusRequested);
-                        env.request_focus(Refocus::FocusRequest);
+                        ctx.env.request_focus(Refocus::FocusRequest);
                     }
                     self.popup_open.set_value(true);
-                    env.request_animation_frame();
+                    ctx.env.request_animation_frame();
                 } else {
                     if self.get_focus() == Focus::Focused {
                         self.set_focus(Focus::FocusReleased);
-                        env.request_focus(Refocus::FocusRequest);
+                        ctx.env.request_focus(Refocus::FocusRequest);
                     }
                 }
             }
@@ -285,7 +286,7 @@ impl<
         self.set_dimension(dimensions);
 
         let max_height = 400.0;
-        let max_height = ctx.current_window_height().min(max_height);
+        let max_height = ctx.env.current_window_height().min(max_height);
         let popup_request = Dimension::new(dimensions.width, max_height);
 
         self.popup.calculate_size(popup_request, ctx);
@@ -308,8 +309,8 @@ impl<
         let popup_dimension = self.popup.dimension();
         let mut y = popup_position.y();
 
-        if y + popup_dimension.height > ctx.current_window_height() {
-            y = ctx.current_window_height() - popup_dimension.height;
+        if y + popup_dimension.height > ctx.env.current_window_height() {
+            y = ctx.env.current_window_height() - popup_dimension.height;
         }
         if y < 0.0 {
             y = 0.0;

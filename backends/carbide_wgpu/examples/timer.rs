@@ -16,9 +16,9 @@ fn main() {
 
 
     let mut counter = Arc::new(AtomicUsize::new(0));
-    let mut counter2 = counter.clone();
+    let counter2 = counter.clone();
 
-    let mut timer = Timer::new(move || {
+    let timer = Timer::new(move || {
         counter.fetch_add(1, Ordering::Relaxed);
     })
         .interval(Duration::from_secs_f64(0.2))
@@ -39,12 +39,12 @@ fn main() {
         Window::new(
             "Timer example",
             Dimension::new(400.0, 600.0),
-            *VStack::new(vec![
+            VStack::new((
                 Text::new("Click this to restart the timer")
                     .on_click(move |env: &mut Environment, modifier: ModifierKey| {
                         let timer = timer.clone();
                         timer.restart();
-                    }).boxed(),
+                    }),
                 Text::new(counter_state)
                     .font_size(EnvironmentFontSize::LargeTitle),
                 Text::new("Click this to toggle the timer")
@@ -55,15 +55,14 @@ fn main() {
                         } else {
                             timer.start();
                         }
-                    }).boxed(),
+                    }),
                 Text::new(time_state)
                     .font_size(EnvironmentFontSize::LargeTitle),
-                Text::new("Only the counter is tied directly to the timer. The clock is updated each re-render")
+                Text::new("Only the counter is tied directly to the timer. The clock is updated each re-render.")
                     .justify_center()
                     .frame_fixed_width(250.0)
-                    .fit_height()
-                    .boxed(),
-            ])
+                    .fit_height(),
+            ))
         ).close_application_on_window_close()
     );
 

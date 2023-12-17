@@ -159,20 +159,20 @@ impl VideoPlayer<Option<VideoId>> {
 }
 
 impl<Id: ReadState<T=Option<VideoId>> + Clone> MouseEventHandler for VideoPlayer<Id> {
-    fn handle_mouse_event(&mut self, event: &MouseEvent, consumed: &bool, env: &mut Environment) {
+    fn handle_mouse_event(&mut self, event: &MouseEvent, consumed: &bool, ctx: &mut MouseEventContext) {
         self.video_overlay_visible = self.is_inside(event.get_current_mouse_position());
     }
 
-    fn process_mouse_event(&mut self, event: &MouseEvent, consumed: &bool, env: &mut Environment) {
-        if env.is_event_current() {
+    fn process_mouse_event(&mut self, event: &MouseEvent, consumed: &bool, ctx: &mut MouseEventContext) {
+        if ctx.is_event_current() {
             if !*consumed {
-                self.capture_state(env);
-                self.handle_mouse_event(event, consumed, env);
-                self.release_state(env);
+                self.capture_state(ctx);
+                self.handle_mouse_event(event, consumed, ctx);
+                self.release_state(ctx);
             }
         }
 
-        self.video_overlay.process_mouse_event(event, &consumed, env);
+        self.video_overlay.process_mouse_event(event, &consumed, ctx);
     }
 }
 

@@ -1,4 +1,5 @@
 use std::fmt::{Debug};
+use carbide::event::MouseEventContext;
 use carbide::layout::LayoutContext;
 use carbide_core::{CommonWidgetImpl};
 use carbide_core::draw::{Dimension, Position, Scalar};
@@ -53,7 +54,7 @@ impl<C: AnyWidget + Clone> Help<C> {
 }
 
 impl<C: AnyWidget + Clone> MouseEventHandler for Help<C> {
-    fn handle_mouse_event(&mut self, event: &MouseEvent, _consumed: &bool, _env: &mut Environment) {
+    fn handle_mouse_event(&mut self, event: &MouseEvent, consumed: &bool, ctx: &mut MouseEventContext) {
         if self.is_inside(event.get_current_mouse_position()) {
             self.hovered = true;
         } else {
@@ -67,7 +68,7 @@ impl<C: AnyWidget + Clone> Layout for Help<C> {
         let dimension = self.child.calculate_size(requested_size, ctx);
         self.set_dimension(dimension);
 
-        self.help.calculate_size(Dimension::new(ctx.current_window_width(), ctx.current_window_height()), ctx);
+        self.help.calculate_size(Dimension::new(ctx.env.current_window_width(), ctx.env.current_window_height()), ctx);
 
         dimension
     }
@@ -93,7 +94,7 @@ impl<C: AnyWidget + Clone> Layout for Help<C> {
                     y = self.y() + PADDING + self.height();
                 }
 
-                if y > ctx.current_window_height() - self.help.height() {
+                if y > ctx.env.current_window_height() - self.help.height() {
                     y = self.y() - PADDING - self.help.height();
                 }
 
@@ -104,7 +105,7 @@ impl<C: AnyWidget + Clone> Layout for Help<C> {
                 y = self.y() - PADDING - self.help.height();
             }
             TooltipPosition::Mouse => {
-                let mouse_position = ctx.mouse_position();
+                let mouse_position = ctx.env.mouse_position();
 
                 x = mouse_position.x();
                 y = mouse_position.y() - PADDING - self.help.height();
@@ -123,8 +124,8 @@ impl<C: AnyWidget + Clone> Layout for Help<C> {
             }
         }
 
-        x = x.max(0.0).min(ctx.current_window_width() - self.help.width());
-        y = y.max(0.0).min(ctx.current_window_height() - self.help.height());
+        x = x.max(0.0).min(ctx.env.current_window_width() - self.help.width());
+        y = y.max(0.0).min(ctx.env.current_window_height() - self.help.height());
 
         self.help.set_position(Position::new(x, y));
         self.help.position_children(ctx);

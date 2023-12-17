@@ -3,7 +3,7 @@ use std::fmt::{Debug, Formatter};
 use std::rc::Rc;
 use crate::draw::{Dimension, Position};
 use crate::environment::Environment;
-use crate::event::{KeyboardEvent, KeyboardEventHandler, MouseEvent, MouseEventHandler, OtherEventHandler, WidgetEvent};
+use crate::event::{KeyboardEvent, KeyboardEventHandler, MouseEvent, MouseEventContext, MouseEventHandler, OtherEventHandler, WidgetEvent};
 use crate::flags::Flags;
 use crate::focus::{Focus, Focusable, Refocus};
 use crate::layout::{Layout, LayoutContext, Layouter};
@@ -98,12 +98,12 @@ impl<T: AnyWidget> StateSync for Duplicated<T> {
 }
 
 impl<T: AnyWidget> MouseEventHandler for Duplicated<T> {
-    fn handle_mouse_event(&mut self, event: &MouseEvent, consumed: &bool, env: &mut Environment) {
-        self.0.borrow_mut().handle_mouse_event(event, consumed, env)
+    fn handle_mouse_event(&mut self, event: &MouseEvent, consumed: &bool, ctx: &mut MouseEventContext) {
+        self.0.borrow_mut().handle_mouse_event(event, consumed, ctx)
     }
 
-    fn process_mouse_event(&mut self, event: &MouseEvent, consumed: &bool, env: &mut Environment) {
-        self.0.borrow_mut().process_mouse_event(event, consumed, env)
+    fn process_mouse_event(&mut self, event: &MouseEvent, consumed: &bool, ctx: &mut MouseEventContext) {
+        self.0.borrow_mut().process_mouse_event(event, consumed, ctx)
     }
 }
 

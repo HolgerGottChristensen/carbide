@@ -9,8 +9,8 @@ use crate::widget::Wrap;
 /// The text style for a piece of text
 #[derive(Clone, Debug, PartialEq)]
 pub struct TextStyle {
-    /// A key to get the font family from the env.
-    pub font_family: String,
+    /// Name of the font to use
+    pub family: String,
     /// The size of the text
     pub font_size: FontSize,
     pub line_height: Scalar,

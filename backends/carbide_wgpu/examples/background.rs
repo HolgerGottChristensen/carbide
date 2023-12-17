@@ -1,14 +1,9 @@
 use carbide_core::draw::Dimension;
-use carbide_core::text::FontFamily;
 use carbide_core::widget::*;
 use carbide_wgpu::{Application, Window};
 
 fn main() {
-    let mut application = Application::new();
-
-    let family =
-        FontFamily::new_from_paths("NotoSans", vec!["fonts/NotoSans/NotoSans-Regular.ttf"]);
-    application.add_font_family(family);
+    let mut application = Application::new().with_asset_fonts();
 
     application.set_scene(Window::new(
         "Background example",

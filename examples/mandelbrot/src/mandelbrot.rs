@@ -143,7 +143,7 @@ impl Render for Mandelbrot {
             for x in start_tile_x..end_tile_x {
                 for y in start_tile_y..end_tile_y {
                     self.images.get(&(x, y, 0)).map(|(id, info)| {
-                        if env.image_context.texture_exist(id) {
+                        if this.image.texture_exist(id) {
                             this.image(
                                 id.clone(),
                                 Rect::new(
@@ -199,7 +199,7 @@ impl OtherEventHandler for Mandelbrot {
 }
 
 impl MouseEventHandler for Mandelbrot {
-    fn handle_mouse_event(&mut self, event: &MouseEvent, consumed: &bool, env: &mut Environment) {
+    fn handle_mouse_event(&mut self, event: &MouseEvent, consumed: &bool, ctx: &mut MouseEventContext) {
         match event {
             MouseEvent::Scroll { x, y, .. } => {
                 self.offset += Position::new(*x, -*y);

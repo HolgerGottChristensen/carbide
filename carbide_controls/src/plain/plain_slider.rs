@@ -1,3 +1,4 @@
+use carbide::event::MouseEventContext;
 use carbide::layout::LayoutContext;
 use carbide_core::CommonWidgetImpl;
 use carbide_core::draw::{Dimension, Position};
@@ -307,7 +308,7 @@ impl<
     Bg: AnyWidget + Clone,
     En: ReadState<T=bool>,
 > MouseEventHandler for PlainSlider<F, St, S, E, P, Th, In, Bg, En> {
-    fn handle_mouse_event(&mut self, event: &MouseEvent, _consumed: &bool, env: &mut Environment) {
+    fn handle_mouse_event(&mut self, event: &MouseEvent, consumed: &bool, ctx: &mut MouseEventContext) {
         if !*self.enabled.value() {
             return;
         }
@@ -317,7 +318,7 @@ impl<
                 if self.thumb.is_inside(*position) || self.background.is_inside(*position) {
                     if *self.focus.value() != Focus::Focused {
                         self.focus.set_value(Focus::FocusRequested);
-                        env.request_focus(Refocus::FocusRequest);
+                        ctx.env.request_focus(Refocus::FocusRequest);
                     }
 
                     self.dragging = true;
@@ -329,7 +330,7 @@ impl<
                 } else {
                     if *self.focus.value() == Focus::Focused {
                         self.focus.set_value(Focus::FocusReleased);
-                        env.request_focus(Refocus::FocusRequest);
+                        ctx.env.request_focus(Refocus::FocusRequest);
                     }
                 }
             }

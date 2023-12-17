@@ -56,7 +56,7 @@ pub struct CursorIndex {
     /// The index of the line upon which the cursor is situated.
     pub line: usize,
 
-    /// The index of the grapheme in the string. 0 means the cursor is at the start of the string.
+    /// The byte index (not grapheme or char) of the cursor in the string. 0 means the cursor is at the start of the string.
     pub index: usize,
 }
 

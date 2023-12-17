@@ -11,6 +11,8 @@ use carbide_core::render::Style;
 use carbide_wgpu::{Application, Window};
 use carbide_core::state::ReadStateExtNew;
 
+use carbide_core as carbide;
+
 fn main() {
     let mut application = Application::new()
         .with_asset_fonts();

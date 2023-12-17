@@ -1,7 +1,7 @@
 use std::fmt::{Debug};
 use crate::draw::{Dimension, Position};
 use crate::environment::Environment;
-use crate::event::{KeyboardEvent, KeyboardEventHandler, MouseEvent, MouseEventHandler, OtherEventHandler, WidgetEvent};
+use crate::event::{KeyboardEvent, KeyboardEventHandler, MouseEvent, MouseEventContext, MouseEventHandler, OtherEventHandler, WidgetEvent};
 use crate::flags::Flags;
 use crate::focus::{Focus, Focusable, Refocus};
 use crate::layout::{Layout, LayoutContext, Layouter};
@@ -248,17 +248,17 @@ impl<T: Widget,
     B6: ReadState<T=bool>,
     B7: ReadState<T=bool>,
 > MouseEventHandler for Ignore<T, B1, B2, B3, B4, B5, B6, B7> {
-    fn handle_mouse_event(&mut self, event: &MouseEvent, consumed: &bool, env: &mut Environment) {
-        self.update_states(env);
+    fn handle_mouse_event(&mut self, event: &MouseEvent, consumed: &bool, ctx: &mut MouseEventContext) {
+        self.update_states(ctx.env);
         if *self.mouse_event.value() {
-            self.inner.handle_mouse_event(event, consumed, env)
+            self.inner.handle_mouse_event(event, consumed, ctx)
         }
     }
 
-    fn process_mouse_event(&mut self, event: &MouseEvent, consumed: &bool, env: &mut Environment) {
-        self.update_states(env);
+    fn process_mouse_event(&mut self, event: &MouseEvent, consumed: &bool, ctx: &mut MouseEventContext) {
+        self.update_states(ctx.env);
         if *self.mouse_event.value() {
-            self.inner.process_mouse_event(event, consumed, env)
+            self.inner.process_mouse_event(event, consumed, ctx)
         }
     }
 }

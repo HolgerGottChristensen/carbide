@@ -45,17 +45,15 @@ fn animation_position_state(curve: fn(f64) -> f64, env: &Environment) -> impl Re
     AnimatedState::custom(curve, Some(env))
         .duration(Duration::new(2, 0))
         .repeat_alternate()
-        .range(0.0, 300.0)
+        .range(-150.0, 150.0)
 }
 
 fn animation_ball(curve: fn(f64) -> f64, env: &Environment) -> impl Widget {
     let state = animation_position_state(curve, env);
-    HStack::new((
-        Circle::new()
-            .fill(EnvironmentColor::Accent)
-            .stroke(EnvironmentColor::Label)
-            .frame(30.0, 30.0)
-            .offset(state, 0.0),
-        *Spacer::new(),
-    ))
+
+    Circle::new()
+        .fill(EnvironmentColor::Accent)
+        .stroke(EnvironmentColor::Label)
+        .frame(30.0, 30.0)
+        .offset(state, 0.0)
 }

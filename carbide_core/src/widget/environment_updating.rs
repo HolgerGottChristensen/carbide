@@ -5,10 +5,7 @@ use carbide_macro::{carbide_default_builder2};
 use crate::CommonWidgetImpl;
 use crate::draw::{Dimension, Position};
 use crate::environment::{Environment, EnvironmentStateContainer, EnvironmentVariable};
-use crate::event::{
-    KeyboardEvent, KeyboardEventHandler, MouseEvent, MouseEventHandler, OtherEventHandler,
-    WidgetEvent,
-};
+use crate::event::{KeyboardEvent, KeyboardEventHandler, MouseEvent, MouseEventContext, MouseEventHandler, OtherEventHandler, WidgetEvent};
 use crate::focus::{Focusable, Refocus};
 use crate::render::{Primitive, Render};
 use crate::state::{NewStateSync, ReadState};
@@ -143,12 +140,12 @@ impl<C: Widget> KeyboardEventHandler for EnvUpdating<C> {
 }
 
 impl<C: Widget> MouseEventHandler for EnvUpdating<C> {
-    fn process_mouse_event(&mut self, event: &MouseEvent, consumed: &bool, env: &mut Environment) {
-        self.insert_into_env(env);
+    fn process_mouse_event(&mut self, event: &MouseEvent, consumed: &bool, ctx: &mut MouseEventContext) {
+        self.insert_into_env(ctx.env);
 
-        self.child.process_mouse_event(event, &consumed, env);
+        self.child.process_mouse_event(event, &consumed, ctx);
 
-        self.remove_from_env(env);
+        self.remove_from_env(ctx.env);
     }
 }
 

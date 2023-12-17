@@ -1,6 +1,7 @@
 use carbide_core::cursor::MouseCursor;
-use carbide_core::state::ReadState;
+use carbide_core::state::{AnyReadState, ReadState, State};
 use carbide_controls::{Button};
+use carbide_core::a;
 use carbide_core::draw::Dimension;
 use carbide_core::widget::*;
 use carbide_wgpu::{Application, Window};
@@ -54,9 +55,9 @@ fn main() {
         MouseCursor::RowResize,
     ];
 
-    fn delegate(item: Box<dyn AnyState<T=MouseCursor>>, _: Box<dyn AnyState<T=usize>>) -> impl Widget {
-        Button::new_primary(format!("{:?}", *item.value()), move |env: &mut Environment, _: _| {})
-            .cursor(*item.value())
+    fn delegate(item: impl State<T=MouseCursor>, _: impl ReadState<T=usize>) -> impl Widget {
+        Button::new_primary(format!("{:?}", *item.value()), a!(|_,_|{}))
+            .cursor(item.value().clone())
             .frame(100.0, 22.0)
     }
 

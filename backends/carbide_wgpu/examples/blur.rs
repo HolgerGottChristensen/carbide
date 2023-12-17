@@ -28,8 +28,7 @@ fn main() {
             Image::new("images/landscape.png")
                 .scaled_to_fill()
                 .clip_shape(Rectangle::new())
-                .frame(500.0, 400.0)
-                .boxed(),
+                .frame(500.0, 400.0),
             Blur::gaussian(10.0)
                 .frame(200.0, 200.0)
                 .offset(position_x.clone(), 0.0),

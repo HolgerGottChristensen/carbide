@@ -34,7 +34,7 @@ impl NavigationStack {
 }
 
 impl Render for NavigationStack {
-    fn process_get_primitives(&mut self, primitives: &mut Vec<Primitive>, env: &mut Environment) {
+    /*fn process_get_primitives(&mut self, primitives: &mut Vec<Primitive>, env: &mut Environment) {
         // Draw first because we are sure it is laid out.
         self.top.process_get_primitives(primitives, env);
 
@@ -78,7 +78,7 @@ impl Render for NavigationStack {
                 }
             }
         }
-    }
+    }*/
 
     fn render(&mut self, context: &mut RenderContext, env: &mut Environment) {
         // Draw first because we are sure it is laid out.

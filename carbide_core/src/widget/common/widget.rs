@@ -6,10 +6,7 @@ use carbide_core::render::RenderContext;
 
 use crate::draw::{Dimension, Position};
 use crate::environment::Environment;
-use crate::event::{
-    Event, KeyboardEvent, KeyboardEventHandler, MouseEvent, MouseEventHandler, OtherEventHandler,
-    WidgetEvent,
-};
+use crate::event::{Event, KeyboardEvent, KeyboardEventHandler, MouseEvent, MouseEventContext, MouseEventHandler, OtherEventHandler, WidgetEvent};
 use crate::flags::Flags;
 use crate::focus::{Focus, Focusable, Refocus};
 use crate::layout::{Layout, LayoutContext, Layouter};
@@ -108,12 +105,12 @@ impl<T: AnyWidget + ?Sized> CommonWidget for Box<T> {
 }
 
 impl<T: AnyWidget + ?Sized> MouseEventHandler for Box<T> {
-    fn handle_mouse_event(&mut self, event: &MouseEvent, consumed: &bool, env: &mut Environment) {
-        self.deref_mut().handle_mouse_event(event, consumed, env)
+    fn handle_mouse_event(&mut self, event: &MouseEvent, consumed: &bool, ctx: &mut MouseEventContext) {
+        self.deref_mut().handle_mouse_event(event, consumed, ctx)
     }
 
-    fn process_mouse_event(&mut self, event: &MouseEvent, consumed: &bool, env: &mut Environment) {
-        self.deref_mut().process_mouse_event(event, consumed, env)
+    fn process_mouse_event(&mut self, event: &MouseEvent, consumed: &bool, ctx: &mut MouseEventContext) {
+        self.deref_mut().process_mouse_event(event, consumed, ctx)
     }
 }
 

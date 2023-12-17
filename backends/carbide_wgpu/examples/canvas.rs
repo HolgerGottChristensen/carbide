@@ -13,7 +13,7 @@ fn main() {
 
     application.set_scene(
         Window::new(
-            "Shapes example",
+            "Canvas example",
             Dimension::new(600.0, 600.0),
             Canvas::new(|_, mut context, _: &mut Environment| {
                 context = draw_star(Position::new(50.0, 50.0), 5, 45.0, 20.0, context);

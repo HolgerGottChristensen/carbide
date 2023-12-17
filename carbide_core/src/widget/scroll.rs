@@ -5,9 +5,7 @@ use crate::color::Color;
 use crate::draw::{Dimension, Position};
 use crate::environment::Environment;
 use crate::environment::EnvironmentColor;
-use crate::event::{
-    ModifierKey, MouseButton, MouseEvent, MouseEventHandler, OtherEventHandler, WidgetEvent,
-};
+use crate::event::{ModifierKey, MouseButton, MouseEvent, MouseEventContext, MouseEventHandler, OtherEventHandler, WidgetEvent};
 use crate::flags::Flags;
 use crate::layout::{BasicLayouter, Layout, LayoutContext, Layouter};
 use crate::render::{Primitive, Render};
@@ -107,7 +105,7 @@ impl Scroll {
 }
 
 impl MouseEventHandler for Scroll {
-    fn handle_mouse_event(&mut self, event: &MouseEvent, _: &bool, _: &mut Environment) {
+    fn handle_mouse_event(&mut self, event: &MouseEvent, consumed: &bool, ctx: &mut MouseEventContext) {
         match event {
             MouseEvent::Scroll {
                 x, y, modifiers, ..

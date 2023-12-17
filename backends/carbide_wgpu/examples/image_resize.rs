@@ -9,7 +9,7 @@ fn main() {
     application.set_scene(Window::new(
         "Image resize example",
         Dimension::new(400.0, 300.0),
-        *Image::new("images/lcabyg.png").resizeable()
+        Image::new("images/lcabyg.png").resizeable()
     ));
 
     application.launch();

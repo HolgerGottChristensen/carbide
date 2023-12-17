@@ -19,13 +19,12 @@ fn main() {
     application.set_scene(Window::new(
         "Filter example",
         Dimension::new(600.0, 450.0),
-        *ZStack::new(vec![
+        ZStack::new((
             Image::new("images/landscape.png")
                 .scaled_to_fill()
-                .frame(500.0, 400.0)
-                .boxed(),
-            Filter::new(ImageFilter::sobel(), Empty::new())
-                .clip_shape(*Circle::new())
+                .frame(500.0, 400.0),
+            Filter::new(ImageFilter::sobel(), Empty::new().boxed())
+                .clip_shape(Circle::new())
                 .frame(200.0, 200.0)
                 .offset(position_x.clone(), 0.0),
             Circle::new()
@@ -33,7 +32,7 @@ fn main() {
                 .stroke_style(1.0)
                 .frame(200.0, 200.0)
                 .offset(position_x, 0.0),
-        ])
+        ))
     ).close_application_on_window_close());
 
     /*application.set_scene(Window::new(

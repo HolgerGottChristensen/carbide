@@ -125,47 +125,47 @@ impl Environment {
         let font_sizes_large = vec![
             EnvironmentVariable::EnvironmentFontSize {
                 key: EnvironmentFontSize::LargeTitle,
-                value: 34,
+                value: 30,
             },
             EnvironmentVariable::EnvironmentFontSize {
                 key: EnvironmentFontSize::Title,
-                value: 28,
+                value: 24,
             },
             EnvironmentVariable::EnvironmentFontSize {
                 key: EnvironmentFontSize::Title2,
-                value: 22,
-            },
-            EnvironmentVariable::EnvironmentFontSize {
-                key: EnvironmentFontSize::Title3,
                 value: 20,
             },
             EnvironmentVariable::EnvironmentFontSize {
+                key: EnvironmentFontSize::Title3,
+                value: 18,
+            },
+            EnvironmentVariable::EnvironmentFontSize {
                 key: EnvironmentFontSize::Headline,
-                value: 17,
-            },
-            EnvironmentVariable::EnvironmentFontSize {
-                key: EnvironmentFontSize::Body,
-                value: 17,
-            },
-            EnvironmentVariable::EnvironmentFontSize {
-                key: EnvironmentFontSize::Callout,
                 value: 16,
             },
             EnvironmentVariable::EnvironmentFontSize {
-                key: EnvironmentFontSize::Subhead,
-                value: 15,
-            },
-            EnvironmentVariable::EnvironmentFontSize {
-                key: EnvironmentFontSize::Footnote,
+                key: EnvironmentFontSize::Body,
                 value: 13,
             },
             EnvironmentVariable::EnvironmentFontSize {
-                key: EnvironmentFontSize::Caption,
+                key: EnvironmentFontSize::Callout,
                 value: 12,
             },
             EnvironmentVariable::EnvironmentFontSize {
-                key: EnvironmentFontSize::Caption2,
+                key: EnvironmentFontSize::Subhead,
                 value: 11,
+            },
+            EnvironmentVariable::EnvironmentFontSize {
+                key: EnvironmentFontSize::Footnote,
+                value: 9,
+            },
+            EnvironmentVariable::EnvironmentFontSize {
+                key: EnvironmentFontSize::Caption,
+                value: 8,
+            },
+            EnvironmentVariable::EnvironmentFontSize {
+                key: EnvironmentFontSize::Caption2,
+                value: 7,
             },
         ];
 

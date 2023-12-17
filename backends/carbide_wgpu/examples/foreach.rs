@@ -5,13 +5,12 @@ use carbide_core::widget::*;
 use carbide_wgpu::{Application, Window};
 
 fn main() {
-    let mut application = Application::new()
-        .with_asset_fonts();
+    let mut application = Application::new().with_asset_fonts();
 
     fn delegate(item: impl State<T=EnvironmentColor>, index: impl ReadState<T=usize>) -> impl Widget {
         ZStack::new((
             Rectangle::new().fill(item),
-            Text::new(index).font_size(EnvironmentFontSize::LargeTitle),
+            Text::new(index).font_size(EnvironmentFontSize::Title),
         ))
         .frame(100.0, 50.0)
     }

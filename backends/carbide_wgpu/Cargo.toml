@@ -27,6 +27,7 @@ bytemuck = { version = "1.7", features = ["derive", "min_const_generics"] }
 anyhow = "1.0"
 uuid = { version = "1.2.1", features = ["serde", "v4"] }
 raw-window-handle = "0.5"
+walkdir = "2.4.0"
 #smaa = "0.4.0"
 
 [target.'cfg(target_os="macos")'.dependencies]
@@ -39,7 +40,7 @@ foreign-types = "0.3.2"
 
 [dev-dependencies]
 carbide_winit = { path = "../carbide_winit", version = "0.70" }
-# carbide_controls = { path = "../../carbide_controls" }
+carbide_controls = { path = "../../carbide_controls" }
 carbide_macro = { path = "../../carbide_macro" }
 futures = "0.3"
 winit = "0.26.1"

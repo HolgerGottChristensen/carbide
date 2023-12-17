@@ -4,7 +4,7 @@ use carbide_macro::{carbide_default_builder2};
 use crate::cursor::MouseCursor;
 use crate::draw::{Dimension, Position};
 use crate::environment::Environment;
-use crate::event::{MouseEvent, MouseEventHandler, OtherEventHandler, WidgetEvent};
+use crate::event::{MouseEvent, MouseEventContext, MouseEventHandler, OtherEventHandler, WidgetEvent};
 use crate::layout::{Layout, LayoutContext};
 use crate::state::{IntoState, State};
 use crate::widget::{CommonWidget, CrossAxisAlignment, SplitType, AnyWidget, WidgetExt, WidgetId, Widget, Empty, WidgetSequence};
@@ -105,7 +105,7 @@ impl<S: State<T=f64>, L: Widget, T: Widget> OtherEventHandler for HSplit<S, L, T
 }
 
 impl<S: State<T=f64>, L: Widget, T: Widget> MouseEventHandler for HSplit<S, L, T> {
-    fn handle_mouse_event(&mut self, event: &MouseEvent, _consumed: &bool, _env: &mut Environment) {
+    fn handle_mouse_event(&mut self, event: &MouseEvent, consumed: &bool, ctx: &mut MouseEventContext) {
         if !self.draggable {
             return;
         }

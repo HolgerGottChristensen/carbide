@@ -437,20 +437,20 @@ impl NodeEditor {
 }
 
 impl MouseEventHandler for NodeEditor {
-    fn handle_mouse_event(&mut self, event: &MouseEvent, consumed: &bool, env: &mut Environment) {
+    fn handle_mouse_event(&mut self, event: &MouseEvent, consumed: &bool, ctx: &mut MouseEventContext) {
         let mode = self.graph.value().editing_mode.clone();
         match mode {
             EditingMode::Editing => {
-                self.normal_mode_mouse_event(event, consumed, env);
+                self.normal_mode_mouse_event(event, consumed, ctx);
             }
             EditingMode::CreateWallP1 { .. } => {
-                self.create_wall_p1_mouse_event(event, consumed, env);
+                self.create_wall_p1_mouse_event(event, consumed, ctx);
             }
             EditingMode::CreateWallP2 { first_node_id, .. } => {
-                self.create_wall_p2_mouse_event(first_node_id, event, consumed, env);
+                self.create_wall_p2_mouse_event(first_node_id, event, consumed, ctx);
             }
             EditingMode::Selection { selected, .. } => {
-                self.selection_mode_mouse_event(event, consumed, env, selected);
+                self.selection_mode_mouse_event(event, consumed, ctx, selected);
             }
         }
     }

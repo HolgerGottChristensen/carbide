@@ -9,7 +9,6 @@ fn main() {
 
     let mut application = Application::new();
 
-
     let widget = Rectangle::new().frame(100.0, 100.0);
 
     let state =

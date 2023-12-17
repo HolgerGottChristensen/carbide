@@ -2,7 +2,10 @@ use std::ops::Range;
 
 use copypasta::{ClipboardContext, ClipboardProvider};
 use unicode_segmentation::UnicodeSegmentation;
+use carbide::draw::Rect;
+use carbide::event::MouseEventContext;
 use carbide::layout::LayoutContext;
+use carbide::text::InnerTextContext;
 use carbide_core::CommonWidgetImpl;
 
 use carbide_core::draw::{Color, Dimension, Position};
@@ -27,17 +30,31 @@ pub type TextInputState = TState<Result<String, String>>;
 pub const PASSWORD_CHAR: char = '●';
 pub const PASSWORD_CHAR_SMALL: char = '•';
 
-pub const SCROLL_FAST_SPEED: f64 = 1.0;
-pub const SCROLL_SLOW_SPEED: f64 = 0.5;
+pub const SCROLL_SUPER_FAST_SPEED: f64 = 4.0;
+pub const SCROLL_FAST_SPEED: f64 = 2.0;
+pub const SCROLL_SLOW_SPEED: f64 = 1.0;
 pub const SCROLL_FAST_WIDTH: f64 = 6.0;
 pub const SCROLL_SLOW_WIDTH: f64 = 12.0;
+
+// How editors allows editing:
+// Jetbrains IDE: Allow placing cursor at character bounds, even within grapheme clusters. Allows deleting characters even within grapheme clusters (both directions).
+// Safari/MacOS: Allow placing cursor at grapheme cluster bounds, delete characters (when not emoji?) in leftward direction, delete graphemes in rightwards direction.
+// Firefox: Allow placing cursor at grapheme cluster bounds. Delete characters in leftward direction, delete graphemes in rightwards direction
+// Cosmic text editor: Allow placing cursor at grapheme cluster bounds. Delete individual characters.
+// Rust playground: Allow placing cursor at character bounds. Allow deleting characters. All selection and offsets get messed up when having funny characters. Does not combine multi character things such as emojis.
+
+
+// When editing text we have three concepts important to understand:
+// * Bytes - a string consist of bytes at the lowest level. When asking for String::len, we get the number of bytes. We dont want to edit individual bytes because it will lead to invalid chars.
+// * Chars - a char is a collection of bytes (up to 4 in rust), and represents a character.
+// * Graphemes - a collection of chars. Represents visual unicode glyphs.
 
 /// A plain text input widget. The widget contains no specific styling, other than text color,
 /// cursor color/width and selection color. Most common logic has been implemented, such as
 /// key shortcuts, mouse click and drag select along with copy and paste. For an example of
 /// how to use this widget look at examples/plain_text_input
 #[derive(Debug, Clone, Widget)]
-#[carbide_exclude(MouseEvent, KeyboardEvent, OtherEvent, Layout, Render)]
+#[carbide_exclude(MouseEvent, KeyboardEvent, Layout, Render)]
 pub struct PlainTextInput<F, C, O, S, T, E> where
     F: State<T=Focus>,
     C: ReadState<T=Color>,
@@ -207,7 +224,7 @@ impl<
 
         let display_text = Map2::read_map(text.clone(), obscure.clone(), |text, obscure| {
             if let Some(obscuring_char) = obscure {
-                text.graphemes(true).map(|_a| obscuring_char).collect::<String>()
+                text.graphemes(true).map(|_a| obscuring_char).collect::<String>() // TODO: Does this break when changing to editing chars instead of graphemes?
             } else {
                 text.clone()
             }
@@ -469,11 +486,7 @@ impl<
 
         match event {
             KeyboardEvent::Text(string, modifiers) => {
-                if len_in_graphemes(string) == 0 || string.chars().next().unwrap().is_control()
-                {
-                    return;
-                }
-                if modifiers.contains(ModifierKey::GUI) {
+                if string.len() == 0 || string.chars().next().unwrap().is_control() || modifiers.contains(ModifierKey::GUI) {
                     return;
                 }
 
@@ -483,7 +496,7 @@ impl<
 
                         self.cursor = Cursor::Single(CursorIndex {
                             line: 0,
-                            index: index.index + len_in_graphemes(&string),
+                            index: index.index + string.len(),
                         });
                     }
                     Cursor::Selection { start, end } => {
@@ -494,7 +507,7 @@ impl<
                         self.insert_str(min, string);
                         self.cursor = Cursor::Single(CursorIndex {
                             line: 0,
-                            index: min + len_in_graphemes(&string),
+                            index: min + string.len(),
                         });
                     }
                 }
@@ -518,7 +531,7 @@ impl<F: State<T=Focus>, C: ReadState<T=Color>, O: ReadState<T=Option<char>>, S: 
                     start: index,
                     end: CursorIndex {
                         line: 0,
-                        index: len_in_graphemes(&self.text.value()),
+                        index: self.text.value().len(),
                     },
                 }
             }
@@ -527,7 +540,7 @@ impl<F: State<T=Focus>, C: ReadState<T=Color>, O: ReadState<T=Option<char>>, S: 
                     start,
                     end: CursorIndex {
                         line: 0,
-                        index: len_in_graphemes(&self.text.value()),
+                        index: self.text.value().len(),
                     },
                 }
             }
@@ -554,7 +567,7 @@ impl<F: State<T=Focus>, C: ReadState<T=Color>, O: ReadState<T=Option<char>>, S: 
     fn jump_to_right(&mut self) {
         self.cursor = Cursor::Single(CursorIndex {
             line: 0,
-            index: len_in_graphemes(&self.text.value()),
+            index: self.text.value().len(),
         })
     }
 
@@ -574,7 +587,7 @@ impl<F: State<T=Focus>, C: ReadState<T=Color>, O: ReadState<T=Option<char>>, S: 
             start: CursorIndex { line: 0, index: 0 },
             end: CursorIndex {
                 line: 0,
-                index: len_in_graphemes(&self.text.value()),
+                index: self.text.value().len(),
             },
         }
     }
@@ -595,7 +608,7 @@ impl<F: State<T=Focus>, C: ReadState<T=Color>, O: ReadState<T=Option<char>>, S: 
                 let min = start.index.min(end.index);
                 let max = start.index.max(end.index);
 
-                let s = self.display_text.value()[byte_range_graphemes(min..max, &*self.display_text.value())].to_string();
+                let s = self.display_text.value()[min..max].to_string();
                 ctx.set_contents(s).unwrap();
                 self.remove_range(min..max);
 
@@ -619,7 +632,7 @@ impl<F: State<T=Focus>, C: ReadState<T=Color>, O: ReadState<T=Option<char>>, S: 
 
                 self.cursor = Cursor::Single(CursorIndex {
                     line: 0,
-                    index: index.index + len_in_graphemes(&content),
+                    index: index.index + content.len(),
                 });
             }
             Cursor::Selection { start, end } => {
@@ -630,7 +643,7 @@ impl<F: State<T=Focus>, C: ReadState<T=Color>, O: ReadState<T=Option<char>>, S: 
                 self.insert_str(min, &content);
                 self.cursor = Cursor::Single(CursorIndex {
                     line: 0,
-                    index: min + len_in_graphemes(&content),
+                    index: min + content.len(),
                 });
             }
         }
@@ -648,7 +661,7 @@ impl<F: State<T=Focus>, C: ReadState<T=Color>, O: ReadState<T=Option<char>>, S: 
                 let min = start.index.min(end.index);
                 let max = start.index.max(end.index);
 
-                let s = self.display_text.value()[byte_range_graphemes(min..max, &*self.display_text.value())].to_string();
+                let s = self.display_text.value()[min..max].to_string();
                 ctx.set_contents(s).unwrap();
             }
         }
@@ -663,7 +676,7 @@ impl<F: State<T=Focus>, C: ReadState<T=Color>, O: ReadState<T=Option<char>>, S: 
 
                 self.cursor = Cursor::Single(CursorIndex {
                     line: 0,
-                    index: len_in_graphemes(&text) * 2,
+                    index: self.text.value().len(),
                 })
             }
             Cursor::Selection { start, end } => {
@@ -707,7 +720,7 @@ impl<F: State<T=Focus>, C: ReadState<T=Color>, O: ReadState<T=Option<char>>, S: 
     /// If we have a cursor and not a selection, we remove rightwards until we see either a space or the end of the text
     fn remove_word_right(&mut self) {
         if let Cursor::Single(index) = self.cursor {
-            let start_index = next_space_grapheme_index(index.index, &*self.display_text.value());
+            let start_index = next_byte_offset(index.index, &*self.display_text.value(), true, |s| s == " ");
 
             self.remove_range(index.index..start_index);
         }
@@ -716,7 +729,7 @@ impl<F: State<T=Focus>, C: ReadState<T=Color>, O: ReadState<T=Option<char>>, S: 
     /// If we have a cursor and not a selection, we remove leftwards until we see either a space or the start of the text
     fn remove_word_left(&mut self) {
         if let Cursor::Single(index) = self.cursor {
-            let start_index = prev_space_grapheme_index(index.index, &*self.display_text.value());
+            let start_index = prev_byte_offset(index.index, &*self.display_text.value(), true, |s| s == " ");
 
             self.remove_range(start_index..index.index);
 
@@ -729,7 +742,7 @@ impl<F: State<T=Focus>, C: ReadState<T=Color>, O: ReadState<T=Option<char>>, S: 
 
     /// Creates or extends a selection to the next space to the right or the end of the text
     fn jump_select_word_right(&mut self, current_movable_cursor_index: CursorIndex) {
-        let index = next_space_grapheme_index(current_movable_cursor_index.index, &*self.display_text.value());
+        let index = next_byte_offset(current_movable_cursor_index.index, &*self.display_text.value(), true, |s| s == " ");
 
         let start = match self.cursor {
             Cursor::Single(index) => index,
@@ -745,7 +758,7 @@ impl<F: State<T=Focus>, C: ReadState<T=Color>, O: ReadState<T=Option<char>>, S: 
 
     /// Creates or extends a selection to the next space to the left, or the start of the text
     fn jump_select_word_left(&mut self, current_movable_cursor_index: CursorIndex) {
-        let index = prev_space_grapheme_index(current_movable_cursor_index.index, &*self.display_text.value());
+        let index = prev_byte_offset(current_movable_cursor_index.index, &*self.display_text.value(), true, |s| s == " ");
 
         let start = match self.cursor {
             Cursor::Single(index) => index,
@@ -763,7 +776,7 @@ impl<F: State<T=Focus>, C: ReadState<T=Color>, O: ReadState<T=Option<char>>, S: 
     fn jump_word_right(&mut self, current_movable_cursor_index: CursorIndex) {
         self.cursor = Cursor::Single(CursorIndex {
             line: 0,
-            index: next_space_grapheme_index(current_movable_cursor_index.index, &*self.display_text.value())
+            index: next_byte_offset(current_movable_cursor_index.index, &*self.display_text.value(), true, |s| s == " ")
         });
     }
 
@@ -771,7 +784,7 @@ impl<F: State<T=Focus>, C: ReadState<T=Color>, O: ReadState<T=Option<char>>, S: 
     fn jump_word_left(&mut self, current_movable_cursor_index: CursorIndex) {
         self.cursor = Cursor::Single(CursorIndex {
             line: 0,
-            index: prev_space_grapheme_index(current_movable_cursor_index.index, &*self.display_text.value())
+            index: prev_byte_offset(current_movable_cursor_index.index, &*self.display_text.value(), true, |s| s == " ")
         });
     }
 
@@ -779,13 +792,22 @@ impl<F: State<T=Focus>, C: ReadState<T=Color>, O: ReadState<T=Option<char>>, S: 
     fn remove_right(&mut self) {
         match self.cursor {
             Cursor::Single(index) => {
-                if index.index < len_in_graphemes(&*self.text.value()) {
-                    self.remove(index.index);
+                if index.index < self.text.value().len() {
+                    let mut range = None;
 
-                    self.cursor = Cursor::Single(CursorIndex {
-                        line: 0,
-                        index: index.index,
-                    });
+                    for (i, _) in self.display_text.value().grapheme_indices(true) {
+                        if i > index.index {
+                            range = Some(index.index..i);
+                            break;
+                        }
+                    }
+
+                    if let Some(range) = range {
+                        self.remove_range(range);
+                    } else {
+                        let len = self.text.value().len();
+                        self.remove_range(index.index..len);
+                    }
                 }
             }
             Cursor::Selection { start, end } => {
@@ -803,11 +825,21 @@ impl<F: State<T=Focus>, C: ReadState<T=Color>, O: ReadState<T=Option<char>>, S: 
         match self.cursor {
             Cursor::Single(index) => {
                 if index.index > 0 {
-                    self.remove(index.index - 1);
+                    let mut prev_byte_offset = 0;
+
+                    for (i, _) in self.display_text.value().char_indices() { // .grapheme_indices(true)
+                        if i < index.index {
+                            prev_byte_offset = i;
+                        } else {
+                            break;
+                        }
+                    }
+
+                    self.remove_range(prev_byte_offset..index.index);
 
                     self.cursor = Cursor::Single(CursorIndex {
                         line: 0,
-                        index: index.index - 1,
+                        index: prev_byte_offset,
                     });
                 }
             }
@@ -827,26 +859,16 @@ impl<F: State<T=Focus>, C: ReadState<T=Color>, O: ReadState<T=Option<char>>, S: 
     fn select_right(&mut self) {
         match self.cursor {
             Cursor::Single(index) => {
-                let new_index = carbide_core::utils::clamp(
-                    index.index + 1,
-                    0,
-                    len_in_graphemes(&self.text.value()),
-                );
-
                 self.cursor = Cursor::Selection {
                     start: index,
                     end: CursorIndex {
                         line: 0,
-                        index: new_index,
+                        index: next_grapheme_byte_offset(index.index, &self.text.value()),
                     },
                 }
             }
             Cursor::Selection { start, end } => {
-                let new_index = carbide_core::utils::clamp(
-                    end.index + 1,
-                    0,
-                    len_in_graphemes(&self.text.value()),
-                );
+                let new_index = next_grapheme_byte_offset(end.index, &self.text.value());
 
                 if start.index == new_index {
                     self.cursor = Cursor::Single(start)
@@ -868,28 +890,16 @@ impl<F: State<T=Focus>, C: ReadState<T=Color>, O: ReadState<T=Option<char>>, S: 
     fn select_left(&mut self) {
         match self.cursor {
             Cursor::Single(index) => {
-                let moved_index = if index.index == 0 { 0 } else { index.index - 1 };
-                let new_index = carbide_core::utils::clamp(
-                    moved_index,
-                    0,
-                    len_in_graphemes(&self.text.value()),
-                );
-
                 self.cursor = Cursor::Selection {
                     start: index,
                     end: CursorIndex {
                         line: 0,
-                        index: new_index,
+                        index: prev_grapheme_byte_offset(index.index, &self.text.value()),
                     },
                 }
             }
             Cursor::Selection { start, end } => {
-                let moved_index = if end.index == 0 { 0 } else { end.index - 1 };
-                let new_index = carbide_core::utils::clamp(
-                    moved_index,
-                    0,
-                    len_in_graphemes(&self.text.value()),
-                );
+                let new_index = prev_grapheme_byte_offset(end.index, &self.text.value());
 
                 if start.index == new_index {
                     self.cursor = Cursor::Single(start)
@@ -910,11 +920,10 @@ impl<F: State<T=Focus>, C: ReadState<T=Color>, O: ReadState<T=Option<char>>, S: 
     fn move_right(&mut self) {
         match self.cursor {
             Cursor::Single(current_index) => {
-                let moved_index = (current_index.index + 1).min(len_in_graphemes(&*self.text.value()));
 
                 self.cursor = Cursor::Single(CursorIndex {
                     line: 0,
-                    index: moved_index,
+                    index: next_grapheme_byte_offset(current_index.index, &self.text.value()),
                 });
             }
             Cursor::Selection { start, end } => {
@@ -931,17 +940,9 @@ impl<F: State<T=Focus>, C: ReadState<T=Color>, O: ReadState<T=Option<char>>, S: 
     fn move_left(&mut self) {
         match self.cursor {
             Cursor::Single(current_index) => {
-                let current_index = current_index.index;
-
-                let moved_index = if current_index == 0 {
-                    0
-                } else {
-                    (current_index - 1).max(0)
-                };
-
                 self.cursor = Cursor::Single(CursorIndex {
                     line: 0,
-                    index: moved_index,
+                    index: prev_grapheme_byte_offset(current_index.index, &self.text.value()),
                 });
             }
             Cursor::Selection { start, end } => {
@@ -955,328 +956,60 @@ impl<F: State<T=Focus>, C: ReadState<T=Color>, O: ReadState<T=Option<char>>, S: 
 
     }
 
+}
 
-    /// Insert a string at a given grapheme index.
-    fn insert_str(&mut self, grapheme_index: usize, string: &str) {
-        let offset = byte_index_from_graphemes(grapheme_index, &self.text.value());
-        //TODO: This might be rather inefficient
-        let mut next_string = self.text.value().clone();
-        next_string.insert_str(offset, string);
-        self.text.set_value(next_string);
+// General text modification actions
+impl<F: State<T=Focus>, C: ReadState<T=Color>, O: ReadState<T=Option<char>>, S: ReadState<T=u32>, T: State<T=String>, E: ReadState<T=bool>> PlainTextInput<F, C, O, S, T, E> {
+    /// Insert a string at a given byte offset.
+    fn insert_str(&mut self, byte_offset: usize, string: &str) {
+        self.text.value_mut().insert_str(byte_offset, string);
     }
 
     /// Push a string to the end of the input
     fn push_str(&mut self, string: &str) {
-        let mut next_string = self.text.value().clone();
-        next_string.push_str(string);
-        self.text.set_value(next_string);
-    }
-
-    /// Remove a single grapheme at an index.
-    fn remove(&mut self, grapheme_index: usize) {
-        self.remove_range(grapheme_index..grapheme_index+1);
+        self.text.value_mut().push_str(string);
     }
 
     /// Remove all the graphemes inside the range,
-    fn remove_range(&mut self, grapheme_range: Range<usize>) {
-        let mut new_string: String = self.text.value().clone();
-        let byte_range = byte_range_graphemes(grapheme_range, &new_string);
-
-        new_string.replace_range(byte_range, "");
-        self.text.set_value(new_string);
+    fn remove_range(&mut self, byte_range: Range<usize>) {
+        self.text.value_mut().replace_range(byte_range, "");
     }
 
-    /*/// This will change the text offset to make the cursor visible. It will result in the text
-    /// getting scrolled, such that the entire cursor is visible.
-    fn recalculate_offset_to_make_cursor_visible(&mut self, _env: &mut Environment) {
-        /*let cursor_x = *self.cursor_x.value();
-        let cursor_width = 4.0;
-        let current_text_offset = *self.text_offset.value();
-
-        if cursor_x + cursor_width > self.width()
-            && -current_text_offset < cursor_x + cursor_width - self.width()
-        {
-            let new_text_offset = -(cursor_x + cursor_width - self.width());
-
-            *self.text_offset.value_mut() = new_text_offset;
-        } else if cursor_x + current_text_offset < 0.0 {
-            let new_text_offset = -(cursor_x);
-
-            *self.text_offset.value_mut() = new_text_offset;
-        }
-
-        let positioned_glyphs = self.glyphs(env);
-
-        if positioned_glyphs.len() != 0 {
-            let last_glyph = &positioned_glyphs[positioned_glyphs.len() - 1];
-
-            let point = last_glyph.position();
-
-            let width = last_glyph.advance_width();
-
-            let width_of_text = point.x() + width;
-
-            if width_of_text < self.width() {
-                *self.text_offset.value_mut() = 0.0;
-            } else if current_text_offset.abs() > width_of_text {
-                *self.text_offset.value_mut() = 0.0;
-                self.recalculate_offset_to_make_cursor_visible(env)
-            }
-        } else {
-            *self.text_offset.value_mut() = 0.0;
-        }*/
-
-        todo!("recalculate_offset_to_make_cursor_visible")
-    }*/
-}
-
-impl<
-    F: State<T=Focus>,
-    C: ReadState<T=Color>,
-    O: ReadState<T=Option<char>>,
-    S: ReadState<T=u32>,
-    T: State<T=String>,
-    E: ReadState<T=bool>,
-> MouseEventHandler for PlainTextInput<F, C, O, S, T, E> {
-    fn handle_mouse_event(&mut self, event: &MouseEvent, _consumed: &bool, env: &mut Environment) {
-        // If clicked outside, we should release focus
-        /*if !self.is_inside(event.get_current_mouse_position()) {
-            match event {
-
-                MouseEvent::Release(_, _, _) => {
-                    self.current_offset_speed = None;
-                    self.last_drag_position = None;
-                }
-                MouseEvent::Drag { to, delta_xy, .. } => {
-                    if self.get_focus() == Focus::Focused {
-                        self.last_drag_position = Some(*to);
-                        self.drag_selection(env, to, delta_xy);
-                    }
-                }
-                _ => (),
-            }
-
-            return;
-        }*/
-
-        let enabled = *self.enabled.value();
-        let editable = enabled && self.get_focus() == Focus::Focused;
-
-        match event {
-            MouseEvent::Press(_, _, _) if !self.is_inside(event.get_current_mouse_position()) => {
-                if self.get_focus() == Focus::Focused {
-                    self.set_focus_and_request(Focus::FocusReleased, env);
-                }
-            }
-            MouseEvent::Press(_, position, ModifierKey::NO_MODIFIER) if enabled => self.text_click(position, env),
-            MouseEvent::Release(_, _, _) => {
-                self.current_offset_speed = None;
-                self.last_drag_position = None;
-            }
-            //MouseEvent::Click(_, position, ModifierKey::NO_MODIFIER) => self.text_click(position, env),
-            MouseEvent::Click(_, position, ModifierKey::SHIFT) if editable => self.selection_click(position, env),
-            MouseEvent::NClick(_, _, _, n) if n % 2 == 1 && editable => self.select_all(),
-            MouseEvent::NClick(_, position, _, n) if n % 2 == 0 && editable => self.select_word_at_click(position, env),
-            MouseEvent::Drag { to, delta_xy, .. } => {
-                if !enabled {
-                    return;
-                }
-
-                if self.last_drag_position.is_some() || self.is_inside(event.get_current_mouse_position()) {
-                    self.last_drag_position = Some(*to);
-                    self.drag_selection(env, to, delta_xy);
-                }
-            }
-            _ => (),
-        }
-    }
-}
-
-impl<F: State<T=Focus>, C: ReadState<T=Color>, O: ReadState<T=Option<char>>, S: ReadState<T=u32>, T: State<T=String>, E: ReadState<T=bool>> PlainTextInput<F, C, O, S, T, E> {
-    fn drag_selection(&mut self, env: &mut Environment, to: &Position, _delta_xy: &Position) {
-        if self.width() < SCROLL_FAST_WIDTH * 2.0 {
-            self.current_offset_speed = None;
-        } else if to.x() - self.x() < SCROLL_FAST_WIDTH {
-            self.current_offset_speed = Some(SCROLL_FAST_SPEED);
-        } else if (self.x() + self.width()) - to.x() < SCROLL_FAST_WIDTH {
-            self.current_offset_speed = Some(-SCROLL_FAST_SPEED);
-        } else if self.width() < SCROLL_SLOW_WIDTH * 2.0 {
-            self.current_offset_speed = None;
-        } else if to.x() - self.x() < SCROLL_SLOW_WIDTH {
-            self.current_offset_speed = Some(SCROLL_SLOW_SPEED);
-        } else if (self.x() + self.width()) - to.x() < SCROLL_SLOW_WIDTH {
-            self.current_offset_speed = Some(-SCROLL_SLOW_SPEED);
-        } else {
-            self.current_offset_speed = None;
-        }
-
-        let mut relative_offset = to.x() * env.scale_factor();
-        if let Some(speed) = self.current_offset_speed {
-            relative_offset += speed;
-        }
-
-        let current_index = find_index_from_offset_and_glyphs(relative_offset, &self.text_widget.glyphs());
-
+    /// Clamp the cursor to within the number of chars in the displayed text.
+    /// The state should be up to date before calling this method, especially the display_text state.
+    fn clamp_cursor(&mut self) {
+        let count = self.display_text.value().len();
 
         match self.cursor {
-            Cursor::Single(start) | Cursor::Selection { start, .. } => {
-                if start.index == current_index {
-                    self.cursor = Cursor::Single(start);
-                } else {
-                    self.cursor = Cursor::Selection { start, end: CursorIndex { line: 0, index: current_index } };
-                }
-            }
-        }
-
-        /*
-        // Get the current text for the text_input
-        let text = self.text.value().clone();
-
-        // Get the delta x for the drag
-        let delta_x = delta_xy.x().abs();
-
-        // The threshold for when to scroll when the mouse is at the edge
-        let mouse_scroll_threshold = 30.0;
-
-        // If the cursor is at the right edge within the threshold
-        if to.x() < self.x() + mouse_scroll_threshold {
-            let offset = *self.text_offset.value() + 10.0 * delta_x;
-            *self.text_offset.value_mut() = offset.min(0.0);
-
-            // If the cursor is at the left edge within the threshold
-        } else if to.x() > self.x() + self.width() - mouse_scroll_threshold {
-            let offset = *self.text_offset.value() - 10.0 * delta_x;
-            let positioned_glyphs = self.glyphs(env);
-
-            let start = CursorIndex { line: 0, char: 0 };
-            let end = CursorIndex {
-                line: 0,
-                char: len_in_graphemes(&self.text.value()),
-            };
-
-            let max_offset =
-                Cursor::Selection { start, end }.width(&text, &positioned_glyphs);
-
-            // Since the offset is negative we have to chose the max value
-            *self.text_offset.value_mut() =
-                offset.max(-(max_offset - self.width())).min(0.0);
-        }
-
-        let current_relative_offset = to.x() - self.position.x() - text_offset;
-
-        let current_char_index =
-            Cursor::char_index(current_relative_offset, &self.glyphs(env));
-
-        match self.drag_start_cursor {
-            None => match self.cursor {
-                Cursor::Single(index) => {
-                    self.cursor = Cursor::Selection {
-                        start: index,
-                        end: CursorIndex {
-                            line: 0,
-                            char: current_char_index,
-                        },
-                    }
-                }
-                Cursor::Selection { start, .. } => {
-                    self.cursor = Cursor::Selection {
-                        start,
-                        end: CursorIndex {
-                            line: 0,
-                            char: current_char_index,
-                        },
-                    }
-                }
-            },
-            Some(cursor) => {
-                match cursor {
-                    Cursor::Single(index) => {
-                        self.cursor = Cursor::Selection {
-                            start: index,
-                            end: CursorIndex {
-                                line: 0,
-                                char: current_char_index,
-                            },
-                        }
-                    }
-                    Cursor::Selection { start, .. } => {
-                        self.cursor = Cursor::Selection {
-                            start,
-                            end: CursorIndex {
-                                line: 0,
-                                char: current_char_index,
-                            },
-                        }
-                    }
-                }
-                self.drag_start_cursor = None;
-            }
-        }*/
-    }
-
-    fn text_click(&mut self, position: &Position, env: &mut Environment) {
-        if self.get_focus() == Focus::Unfocused {
-            self.set_focus_and_request(Focus::FocusRequested, env);
-        }
-
-        let relative_offset = position.x() * env.scale_factor();
-        let char_index = find_index_from_offset_and_glyphs(relative_offset, &self.text_widget.glyphs());
-
-        self.cursor = Cursor::Single(CursorIndex {
-            line: 0,
-            index: char_index,
-        });
-    }
-
-    fn selection_click(&mut self, position: &Position, env: &mut Environment) {
-        let relative_offset = position.x() * env.scale_factor();
-        let clicked_index = find_index_from_offset_and_glyphs(relative_offset, &self.text_widget.glyphs());
-
-        match self.cursor {
-            Cursor::Single(CursorIndex { line: _, index }) => {
-                self.cursor = Cursor::Selection {
-                    start: CursorIndex { line: 0, index },
-                    end: CursorIndex {
-                        line: 0,
-                        index: clicked_index,
-                    },
-                }
+            Cursor::Single(CursorIndex{ line, index }) => {
+                self.cursor = Cursor::Single(CursorIndex { line, index: index.min(count)});
             }
             Cursor::Selection {
-                start: CursorIndex { index, .. },
-                ..
+                start: CursorIndex { line: line_start, index: index_start },
+                end: CursorIndex { line: line_end, index: index_end },
             } => {
                 self.cursor = Cursor::Selection {
-                    start: CursorIndex { line: 0, index },
-                    end: CursorIndex {
-                        line: 0,
-                        index: clicked_index,
-                    },
+                    start: CursorIndex { line: line_start, index: index_start.min(count) },
+                    end: CursorIndex { line: line_end, index: index_end.min(count) },
                 }
             }
         }
     }
 
-    fn select_word_at_click(&mut self, position: &Position, env: &mut Environment) {
-        let relative_offset = position.x() * env.scale_factor();
-        let clicked_index = find_index_from_offset_and_glyphs(relative_offset, &self.text_widget.glyphs());
+    fn update_offset_with_speed_to_make_cursor_visible(&mut self, speed: f64, ctx: &mut dyn InnerTextContext) {
+        let mut current_offset = *self.text_offset.value();
 
-        let range = word_range_surrounding_grapheme_index(clicked_index, &self.display_text.value());
+        current_offset += speed;
 
-        self.cursor = Cursor::Selection {
-            start: CursorIndex {
-                line: 0,
-                index: range.start,
-            },
-            end: CursorIndex {
-                line: 0,
-                index: range.end,
-            },
-        }
+        current_offset = current_offset
+            .max(self.width() - self.text_widget.width() - self.cursor_widget.width())
+            .min(0.0);
+
+        self.text_offset.set_value(current_offset);
     }
 
-    /// Update the current scroll offset to make the cursor visible within the text field if possible
-    fn update_offset_to_make_cursor_visible(&mut self, env: &mut Environment) {
+        /// Update the current scroll offset to make the cursor visible within the text field if possible
+    fn update_offset_to_make_cursor_visible(&mut self, ctx: &mut dyn InnerTextContext) {
         let mut current_offset = *self.text_offset.value();
 
         if self.get_focus() == Focus::Focused {
@@ -1286,20 +1019,8 @@ impl<F: State<T=Focus>, C: ReadState<T=Color>, O: ReadState<T=Option<char>>, S: 
                 Cursor::Selection { end, .. } => end,
             };
 
-            let glyphs = self.text_widget.glyphs();
-
-            // Since text is positioned from the nearest pixel, we need to take into account the
-            // tolerance, to calculate the cursor offset from the text origin, since all glyphs
-            // will be offset by this.
-            let tolerance_difference = self.text_widget.position().tolerance(1.0/env.scale_factor()) - self.text_widget.position();
-
-            let cursor_offset_from_text_origin = if glyphs.len() == 0 {
-                0.0
-            } else if index.index == 0 {
-                glyphs[index.index].position().x() / env.scale_factor() - self.x() - tolerance_difference.x()
-            } else {
-                (glyphs[index.index - 1].position().x() + glyphs[index.index - 1].advance_width()) / env.scale_factor() - self.x() - tolerance_difference.x()
-            };
+            let text_id = self.text_widget.text_id();
+            let cursor_offset_from_text_origin = ctx.position_of(text_id, 0, index.index).x();
 
             //println!("cursor_offset_from_text_origin: {:?}", cursor_offset_from_text_origin);
             //println!("tolerance: {:?}", tolerance_difference.x());
@@ -1310,12 +1031,17 @@ impl<F: State<T=Focus>, C: ReadState<T=Color>, O: ReadState<T=Option<char>>, S: 
 
             //println!("current_offset: {:?}", current_offset);
 
-            if cursor_offset_from_text_origin + self.cursor_widget.width() > self.width() {
-                current_offset -= cursor_offset_from_text_origin + self.cursor_widget.width() - self.width();
+            //dbg!(cursor_offset_from_text_origin + self.cursor_widget.width());
+            //dbg!(cursor_offset_from_text_origin + self.cursor_widget.width() + current_offset - self.width());
+            if cursor_offset_from_text_origin + self.cursor_widget.width() + current_offset > self.width() {
+                //println!("Current offset above width");
+                current_offset -= (cursor_offset_from_text_origin + self.cursor_widget.width() + current_offset - self.width());
             }
 
-            if cursor_offset_from_text_origin < 0.0 {
-                current_offset -= cursor_offset_from_text_origin;
+            //dbg!(cursor_offset_from_text_origin + current_offset);
+            if cursor_offset_from_text_origin + current_offset < 0.0 {
+                //println!("Current offset below 0");
+                current_offset -= (cursor_offset_from_text_origin + current_offset);
             }
         }
 
@@ -1327,27 +1053,6 @@ impl<F: State<T=Focus>, C: ReadState<T=Color>, O: ReadState<T=Option<char>>, S: 
         self.text_offset.set_value(current_offset);
         //println!("new_offset: {:?}\n", *self.text_offset.value());
     }
-
-    /// Clamp the cursor to within the number of graphemes in the displayed text.
-    /// The state should be up to date before calling this method, especially the display_text state.
-    fn clamp_cursor(&mut self) {
-        let len_in_graphemes = len_in_graphemes(&self.display_text.value());
-
-        match self.cursor {
-            Cursor::Single(CursorIndex{ line, index }) => {
-                self.cursor = Cursor::Single(CursorIndex { line, index: index.min(len_in_graphemes)});
-            }
-            Cursor::Selection {
-                start: CursorIndex { line: line_start, index: index_start },
-                end: CursorIndex { line: line_end, index: index_end },
-            } => {
-                self.cursor = Cursor::Selection {
-                    start: CursorIndex { line: line_start, index: index_start.min(len_in_graphemes) },
-                    end: CursorIndex { line: line_end, index: index_end.min(len_in_graphemes) },
-                }
-            }
-        }
-    }
 }
 
 impl<
@@ -1357,35 +1062,134 @@ impl<
     S: ReadState<T=u32>,
     T: State<T=String>,
     E: ReadState<T=bool>,
-> OtherEventHandler for PlainTextInput<F, C, O, S, T, E> {
-    /*fn handle_other_event(&mut self, event: &WidgetEvent, env: &mut Environment) {
+> MouseEventHandler for PlainTextInput<F, C, O, S, T, E> {
+    fn handle_mouse_event(&mut self, event: &MouseEvent, consumed: &bool, ctx: &mut MouseEventContext) {
+        let enabled = *self.enabled.value();
+        let editable = enabled && self.get_focus() == Focus::Focused;
+
         match event {
-            WidgetEvent::Window(w) => {
-                match w {
-                    WindowEvent::Resize(_) => {
-                        let offset = *self.text_offset.value();
-                        let text = self.text.value().clone();
-                        let positioned_glyphs = self.glyphs(env);
+            MouseEvent::Press(_, _, _) if !self.is_inside(event.get_current_mouse_position()) => {
+                if self.get_focus() == Focus::Focused {
+                    self.set_focus_and_request(Focus::FocusReleased, ctx.env);
+                }
+            }
+            MouseEvent::Press(_, position, ModifierKey::NO_MODIFIER) if enabled => self.text_click(position, ctx),
+            MouseEvent::Release(_, _, _) => {
+                self.current_offset_speed = None;
+                self.last_drag_position = None;
+            }
+            //MouseEvent::Click(_, position, ModifierKey::NO_MODIFIER) => self.text_click(position, env),
+            MouseEvent::Click(_, position, ModifierKey::SHIFT) if editable => self.selection_click(position, ctx),
+            MouseEvent::NClick(_, _, _, n) if n % 2 == 1 && editable => self.select_all(),
+            MouseEvent::NClick(_, position, _, n) if n % 2 == 0 && editable => self.select_word_at_click(position, ctx),
+            MouseEvent::Drag { to, delta_xy, .. } => {
+                if !enabled {
+                    return;
+                }
 
-                        let start = CursorIndex { line: 0, char: 0 };
-                        let end = CursorIndex {
-                            line: 0,
-                            char: len_in_graphemes(&text),
-                        };
-
-                        let max_offset =
-                            Cursor::Selection { start, end }.width(&text, &positioned_glyphs);
-
-                        // Since the offset is negative we have to chose the max value
-                        *self.text_offset.value_mut() =
-                            offset.max(-(max_offset - self.width())).min(0.0);
-                    }
-                    _ => (),
+                if self.last_drag_position.is_some() || self.is_inside(event.get_current_mouse_position()) {
+                    self.last_drag_position = Some(*to);
+                    self.drag_selection(ctx.text, to, delta_xy);
                 }
             }
             _ => (),
         }
-    }*/
+    }
+}
+
+impl<F: State<T=Focus>, C: ReadState<T=Color>, O: ReadState<T=Option<char>>, S: ReadState<T=u32>, T: State<T=String>, E: ReadState<T=bool>> PlainTextInput<F, C, O, S, T, E> {
+    fn drag_selection(&mut self, ctx: &mut dyn InnerTextContext, to: &Position, _delta_xy: &Position) {
+        if to.x() - self.x() < 0.0 {
+            self.current_offset_speed = Some(SCROLL_SUPER_FAST_SPEED);
+        } else if (self.x() + self.width()) - to.x() < 0.0 {
+            self.current_offset_speed = Some(-SCROLL_SUPER_FAST_SPEED);
+        } else if to.x() - self.x() < SCROLL_FAST_WIDTH {
+            self.current_offset_speed = Some(SCROLL_FAST_SPEED);
+        } else if (self.x() + self.width()) - to.x() < SCROLL_FAST_WIDTH {
+            self.current_offset_speed = Some(-SCROLL_FAST_SPEED);
+        } else if to.x() - self.x() < SCROLL_SLOW_WIDTH {
+            self.current_offset_speed = Some(SCROLL_SLOW_SPEED);
+        } else if (self.x() + self.width()) - to.x() < SCROLL_SLOW_WIDTH {
+            self.current_offset_speed = Some(-SCROLL_SLOW_SPEED);
+        } else {
+            self.current_offset_speed = None;
+        }
+
+        let x = to.x() - self.position.x() - *self.text_offset.value();
+        let (line, index) = ctx.hit(self.text_widget.text_id(), Position::new(x, 0.0));
+
+
+        match self.cursor {
+            Cursor::Single(start) | Cursor::Selection { start, .. } => {
+                if start.index == index {
+                    self.cursor = Cursor::Single(start);
+                } else {
+                    self.cursor = Cursor::Selection { start, end: CursorIndex { line: 0, index } };
+                }
+            }
+        }
+    }
+
+    fn text_click(&mut self, position: &Position, ctx: &mut MouseEventContext) {
+        if self.get_focus() == Focus::Unfocused {
+            self.set_focus_and_request(Focus::FocusRequested, ctx.env);
+        }
+
+        let x = position.x() - self.position.x() - *self.text_offset.value();
+        let (line, index) = ctx.text.hit(self.text_widget.text_id(), Position::new(x, 0.0));
+
+        self.cursor = Cursor::Single(CursorIndex {
+            line,
+            index,
+        });
+    }
+
+    fn selection_click(&mut self, position: &Position, ctx: &mut MouseEventContext) {
+        let x = position.x() - self.position.x() - *self.text_offset.value();
+        let (line, clicked_index) = ctx.text.hit(self.text_widget.text_id(), Position::new(x, 0.0));
+
+        match self.cursor {
+            Cursor::Single(CursorIndex { line: _, index }) => {
+                self.cursor = Cursor::Selection {
+                    start: CursorIndex { line: 0, index },
+                    end: CursorIndex {
+                        line,
+                        index: clicked_index,
+                    },
+                }
+            }
+            Cursor::Selection {
+                start: CursorIndex { index, .. },
+                ..
+            } => {
+                self.cursor = Cursor::Selection {
+                    start: CursorIndex { line: 0, index },
+                    end: CursorIndex {
+                        line,
+                        index: clicked_index,
+                    },
+                }
+            }
+        }
+    }
+
+    fn select_word_at_click(&mut self, position: &Position, ctx: &mut MouseEventContext) {
+        let x = position.x() - self.position.x() - *self.text_offset.value();
+        let (line, clicked_index) = ctx.text.hit(self.text_widget.text_id(), Position::new(x, 0.0));
+
+        let range = word_range_surrounding_byte_offset(clicked_index, &self.display_text.value());
+
+        self.cursor = Cursor::Selection {
+            start: CursorIndex {
+                line,
+                index: range.start,
+            },
+            end: CursorIndex {
+                line,
+                index: range.end,
+            },
+        }
+    }
 }
 
 impl<
@@ -1401,38 +1205,26 @@ impl<
 
         //println!("calculate size");
         if let Some(position) = self.last_drag_position {
-            self.drag_selection(ctx, &position, &position);
+            self.drag_selection(ctx.text, &position, &position);
         }
 
         let text_dimensions = self.text_widget.calculate_size(requested_size, ctx);
 
-        self.cursor_widget.calculate_size(Dimension::new(1.0, text_dimensions.height), ctx);
-
         // Calculate size for selection indicator
-        let glyphs = self.text_widget.glyphs();
         match self.cursor {
             Cursor::Single(_) => {
-                self.selection_widget.calculate_size(Dimension::new(0.0, 0.0), ctx);
+                self.cursor_widget.calculate_size(Dimension::new(1.0, text_dimensions.height), ctx);
             }
             Cursor::Selection { start, end } => {
-                let min = start.index.min(end.index);
-                let max = start.index.max(end.index);
+                let text_id = self.text_widget.text_id();
+                let start_x = ctx.text.position_of(text_id, 0, start.index).x() + self.x();
+                let end_x = ctx.text.position_of(text_id, 0, end.index).x() + self.x();
 
-                let min_x = if min == 0 {
-                    self.text_widget.x()
-                } else {
-                    (glyphs[min - 1].position().x() + glyphs[min - 1].advance_width()) / ctx.scale_factor()
-                };
+                let min = start_x.min(end_x);
+                let max = start_x.max(end_x);
 
-                let max_x = if max == 0 {
-                    self.text_widget.x()
-                } else {
-                    (glyphs[max - 1].position().x() + glyphs[max - 1].advance_width()) / ctx.scale_factor()
-                };
-
-                let selection_width = max_x - min_x;
-                self.selection_widget.calculate_size(Dimension::new(selection_width, text_dimensions.height), ctx);
-
+                self.cursor_widget.calculate_size(Dimension::new(1.0, text_dimensions.height), ctx);
+                self.selection_widget.calculate_size(Dimension::new(max - min, text_dimensions.height), ctx);
             }
         }
 
@@ -1456,7 +1248,13 @@ impl<
         self.text_widget.position_children(ctx);
 
         //println!("Position children called");
-        self.update_offset_to_make_cursor_visible(ctx);
+        if let Some(speed) = self.current_offset_speed {
+            self.update_offset_with_speed_to_make_cursor_visible(speed, ctx.text);
+            ctx.env.request_animation_frame();
+        } else {
+            self.update_offset_to_make_cursor_visible(ctx.text);
+        }
+
 
         let positioning = BasicLayouter::Leading.positioner();
         let position = self.position + Position::new(*self.text_offset.value(), 0.0);
@@ -1466,36 +1264,20 @@ impl<
         self.text_widget.position_children(ctx);
 
         if self.get_focus() == Focus::Focused && *self.enabled.value() {
-            let glyphs = self.text_widget.glyphs();
+            let text_id = self.text_widget.text_id();
 
             match self.cursor {
                 Cursor::Single(index) => {
+                    let x = ctx.text.position_of(text_id, 0, index.index).x() + self.x() + *self.text_offset.value();
 
-                    let new_x = if index.index == 0 {
-                        self.text_widget.x()
-                    } else {
-                        (glyphs[index.index - 1].position().x() + glyphs[index.index - 1].advance_width()) / ctx.scale_factor()
-                    };
-
-                    self.cursor_widget.set_position(Position::new(new_x, self.text_widget.y()));
+                    self.cursor_widget.set_position(Position::new(x, self.text_widget.y()));
                     self.cursor_widget.position_children(ctx);
                 }
                 Cursor::Selection { start, end } => {
-                    let min = start.index.min(end.index);
+                    let end_x = ctx.text.position_of(text_id, 0, end.index).x() + self.x() + *self.text_offset.value();
+                    let min_x = ctx.text.position_of(text_id, 0, start.index.min(end.index)).x() + self.x() + *self.text_offset.value();
 
-                    let min_x = if min == 0 {
-                        self.text_widget.x()
-                    } else {
-                        (glyphs[min - 1].position().x() + glyphs[min - 1].advance_width()) / ctx.scale_factor()
-                    };
-
-                    let new_x = if end.index == 0 {
-                        self.text_widget.x()
-                    } else {
-                        (glyphs[end.index - 1].position().x() + glyphs[end.index - 1].advance_width()) / ctx.scale_factor()
-                    };
-
-                    self.cursor_widget.set_position(Position::new(new_x, self.text_widget.y()));
+                    self.cursor_widget.set_position(Position::new(end_x, self.text_widget.y()));
                     self.cursor_widget.position_children(ctx);
 
                     self.selection_widget.set_position(Position::new(min_x, self.text_widget.y()));
@@ -1629,8 +1411,36 @@ impl From<&KeyboardEvent> for TextInputKeyCommand {
 // ---------------------------------------------------
 //  Utilities
 // ---------------------------------------------------
+fn next_grapheme_byte_offset(current_offset: usize, text: &str) -> usize {
+    for (i, c) in text.grapheme_indices(true) {
+        if i == current_offset {
+            return i + c.len();
+        }
+    }
+
+    current_offset
+}
+
+fn prev_grapheme_byte_offset(current_offset: usize, text: &str) -> usize {
+    let mut prev_byte_offset = 0;
+
+    for (i, _) in text.grapheme_indices(true) {
+        if i < current_offset {
+            prev_byte_offset = i;
+        } else {
+            break;
+        }
+    }
+
+    prev_byte_offset
+}
+
 fn len_in_graphemes(text: &str) -> usize {
     text.graphemes(true).count()
+}
+
+fn len_in_chars(text: &str) -> usize {
+    text.char_indices().count()
 }
 
 /// Get the index of the first byte for a given grapheme index.
@@ -1653,50 +1463,42 @@ fn byte_range_graphemes(grapheme_range: Range<usize>, text: &str) -> Range<usize
     start..end
 }
 
-fn prev_space_grapheme_index(current_grapheme_index: usize, text: &str) -> usize {
-    let index = text.grapheme_indices(true)
-        .rev()
-        .skip(len_in_graphemes(text) - current_grapheme_index)
-        .take_while(|(_index, val)| *val != " ")
-        .last()
-        .map_or(0, |a| a.0);
+fn prev_byte_offset(byte_offset: usize, text: &str, skip_initial: bool, f: fn(&str) ->bool) -> usize {
+    let substring = &text[..byte_offset];
 
-    index
+    for (index, c) in substring.grapheme_indices(true).rev().skip_while(|(_, s)| f(*s) && skip_initial) {
+        if f(c) {
+            return index + c.len();
+        }
+    }
+
+    0
 }
 
-fn next_space_grapheme_index(current_grapheme_index: usize, text: &str) -> usize {
-    let index = text.grapheme_indices(true)
-        .skip(current_grapheme_index+1)
-        .skip_while(|(_index, val)| *val != " ")
-        .next()
-        .map_or(len_in_graphemes(text), |a| a.0);
+fn next_byte_offset(byte_offset: usize, text: &str, skip_initial: bool, f: fn(&str) ->bool) -> usize {
+    let substring = &text[byte_offset..];
 
-    index
+    for (index, c) in substring.grapheme_indices(true).skip_while(|(_, s)| f(*s) && skip_initial) {
+        if f(c) {
+            return index + byte_offset;
+        }
+    }
+
+    text.len()
 }
 
-fn word_range_surrounding_grapheme_index(current_grapheme_index: usize, text: &str) -> Range<usize> {
-    let min = prev_space_grapheme_index(current_grapheme_index, text);
-    let max = next_space_grapheme_index(current_grapheme_index, text);
+/// Returns a range of byte offsets for either the word at the current byte offset
+/// or the range of spaces surrounding the current byte offset
+fn word_range_surrounding_byte_offset(byte_offset: usize, text: &str) -> Range<usize> {
+    let min = prev_byte_offset(byte_offset, text, false, |s| s == " ");
+    let max = next_byte_offset(byte_offset, text, false, |s| s == " ");
+
+    if min == max {
+        let min = prev_byte_offset(byte_offset, text, false, |s| s != " ");
+        let max = next_byte_offset(byte_offset, text, false, |s| s != " ");
+
+        return min..max
+    }
 
     min..max
-}
-
-pub fn find_index_from_offset_and_glyphs(relative_offset: f64, glyphs: &Vec<Glyph>) -> usize {
-    let splits = vec![glyphs.first().map_or(0.0, |a| a.position().x() as f32)].into_iter().chain(glyphs.iter().map(|glyph| {
-        let middle = glyph.position().x() + glyph.advance_width();
-        middle as f32
-    }));
-    let splits = splits.collect::<Vec<_>>();
-    let rightmost_closest = binary_search(relative_offset as f32, &splits);
-
-    let new_closest = if rightmost_closest < splits.len() - 1
-        && ((relative_offset as f32) - splits[rightmost_closest + 1]).abs()
-        < ((relative_offset as f32) - splits[rightmost_closest]).abs()
-    {
-        rightmost_closest + 1
-    } else {
-        rightmost_closest
-    };
-
-    new_closest
 }

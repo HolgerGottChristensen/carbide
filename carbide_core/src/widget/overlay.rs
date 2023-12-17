@@ -1,6 +1,6 @@
 use crate::draw::{Dimension, Position};
 use crate::environment::Environment;
-use crate::event::{KeyboardEvent, MouseEvent, WidgetEvent};
+use crate::event::{KeyboardEvent, MouseEvent, MouseEventContext, WidgetEvent};
 use crate::event::{KeyboardEventHandler, MouseEventHandler, OtherEventHandler};
 use crate::flags::Flags;
 use crate::focus::{Focus, Focusable};
@@ -118,14 +118,14 @@ impl<W: AnyWidget + Clone, B: ReadState<T=bool>> CommonWidget for Overlay<W, B> 
 }
 
 impl<W: AnyWidget + Clone, B: ReadState<T=bool>> MouseEventHandler for Overlay<W, B> {
-    fn handle_mouse_event(&mut self, event: &MouseEvent, consumed: &bool, env: &mut Environment) {
-        self.ensure_overlay_correct(env);
-        self.hierarchy.handle_mouse_event(event, consumed, env)
+    fn handle_mouse_event(&mut self, event: &MouseEvent, consumed: &bool, ctx: &mut MouseEventContext) {
+        self.ensure_overlay_correct(ctx.env);
+        self.hierarchy.handle_mouse_event(event, consumed, ctx)
     }
 
-    fn process_mouse_event(&mut self, event: &MouseEvent, consumed: &bool, env: &mut Environment) {
-        self.ensure_overlay_correct(env);
-        self.hierarchy.process_mouse_event(event, consumed, env)
+    fn process_mouse_event(&mut self, event: &MouseEvent, consumed: &bool, ctx: &mut MouseEventContext) {
+        self.ensure_overlay_correct(ctx.env);
+        self.hierarchy.process_mouse_event(event, consumed, ctx)
     }
 }
 

@@ -4,13 +4,14 @@ use std::ffi::OsStr;
 use std::fs;
 use std::mem::transmute;
 use std::path::{Path, PathBuf};
+use walkdir::WalkDir;
 
 use winit::event::{Event, WindowEvent as WinitWindowEvent};
 use winit::event_loop::{ControlFlow, EventLoopWindowTarget};
 use winit::event_loop::EventLoopBuilder;
 use winit::window::WindowId as WinitWindowId;
 
-use carbide_text::font_family::FontFamily;
+//use carbide_text::font_family::FontFamily;
 use carbide_text::text_context::TextContext;
 
 use carbide_core::{locate_folder, Scene};
@@ -19,7 +20,7 @@ use carbide_core::draw::{Dimension, ImageContext};
 use carbide_core::environment::Environment;
 use carbide_core::event::{CustomEvent, EventHandler, Input};
 use carbide_core::render::{NoopRenderContext, Render, RenderContext};
-use carbide_core::text::{FontId};
+use carbide_core::text::{FontId, InnerTextContext};
 use carbide_core::widget::{Empty};
 use carbide_core::window::WindowId;
 
@@ -104,7 +105,7 @@ impl Application {
 
         self.environment.add_queued_images();
 
-        self.event_handler.delegate_events(&mut self.root, &mut self.environment)
+        self.event_handler.delegate_events(&mut self.root, &mut self.environment, &mut self.text_context, &mut WGPUImageContext)
     }
 
     /// Locates the default asset folder and tries to load fonts from a subfolder called /fonts.
@@ -115,49 +116,19 @@ impl Application {
             .for_folder("assets")
             .unwrap();
 
-        let fonts_path = assets.join("fonts");
-
-        let directories = fs::read_dir(fonts_path).unwrap();
-
-        for entry in directories.filter_map(|a| a.ok()) {
+        for entry in WalkDir::new(assets) {
+            let entry = entry.unwrap();
             let path = entry.path();
-            if path.is_dir() {
-
-                let name = path.file_name()
-                    .map(|name| name.to_string_lossy().to_string())
-                    .unwrap();
-
-                let mut fonts = vec![];
-
-                for font_path in fs::read_dir(path).unwrap().filter_map(|a| a.ok()) {
-                    if font_path.path().extension() == Some(OsStr::new("ttf")) {
-                        fonts.push(font_path.path());
-                    }
-                }
-
-                self.add_font_family(FontFamily::new_from_paths(&name, fonts));
+            if path.is_file() && path.extension() == Some(OsStr::new("ttf")) {
+                self.add_font(path.to_path_buf());
             }
         }
 
         self
     }
 
-    pub fn add_font_family(&mut self, family: FontFamily) -> String {
-        let family_name = family.name.clone();
-        //self.text_context.add_font_family(family);
-        family_name;
-        todo!()
-    }
-
-
-    pub fn add_font<P: AsRef<Path>>(&mut self, path: P) -> FontId {
-        let assets = locate_folder::Search::KidsThenParents(3, 5)
-            .for_folder("assets")
-            .unwrap();
-        let font_path = assets.join(path.as_ref());
-
-        //self.text_context.insert_font_from_file(font_path).0
-        todo!()
+    pub fn add_font<P: AsRef<Path>>(&mut self, path: P) {
+        self.text_context.add_font(path.as_ref().to_path_buf());
     }
 
     pub fn environment(&self) -> &Environment {

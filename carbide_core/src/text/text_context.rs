@@ -1,3 +1,4 @@
+use std::path::PathBuf;
 use std::sync::atomic::{AtomicU32, Ordering};
 use image::DynamicImage;
 use carbide::environment::Environment;
@@ -43,6 +44,13 @@ pub trait InnerTextContext {
     fn prepare_render(&mut self);
 
     fn update_cache(&mut self, f: &mut dyn FnMut(&DynamicImage));
+
+    fn add_font(&mut self, p: PathBuf);
+
+    /// Returns (line, index)
+    fn hit(&self, id: TextId, position: Position) -> (usize, usize);
+
+    fn position_of(&self, id: TextId, line: usize, index: usize) -> Position;
 }
 
 pub struct NOOPTextContext;
@@ -73,6 +81,18 @@ impl InnerTextContext for NOOPTextContext {
     }
 
     fn update_cache(&mut self, f: &mut dyn FnMut(&DynamicImage)) {
+        unimplemented!()
+    }
+
+    fn add_font(&mut self, p: PathBuf) {
+        unimplemented!()
+    }
+
+    fn hit(&self, id: TextId, position: Position) -> (usize, usize) {
+        unimplemented!()
+    }
+
+    fn position_of(&self, id: TextId, line: usize, index: usize) -> Position {
         unimplemented!()
     }
 }

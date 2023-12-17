@@ -14,6 +14,7 @@ use carbide_core::focus::Focus;
 use carbide_core::state::{State};
 use carbide_core::widget::{CommonWidget, AnyWidget, WidgetExt, WidgetId, Widget};
 use carbide_macro::{carbide_default_builder2};
+use crate::event::MouseEventContext;
 
 use crate::state::{IntoState};
 use crate::widget::Empty;
@@ -221,7 +222,7 @@ impl<
     H: State<T=bool>,
     P: State<T=bool>,
 > MouseEventHandler for MouseArea<I, O, F, C, H, P> {
-    fn handle_mouse_event(&mut self, event: &MouseEvent, _consumed: &bool, env: &mut Environment) {
+    fn handle_mouse_event(&mut self, event: &MouseEvent, consumed: &bool, ctx: &mut MouseEventContext) {
         match event {
             MouseEvent::Press(MouseButton::Left, mouse_position, _) => {
                 if self.is_inside(*mouse_position) {
@@ -248,9 +249,9 @@ impl<
             MouseEvent::Click(MouseButton::Left, mouse_position, modifier)
             | MouseEvent::NClick(MouseButton::Left, mouse_position, modifier, _) => {
                 if self.is_inside(*mouse_position) {
-                    (self.click)(env, *modifier);
+                    (self.click)(ctx.env, *modifier);
                 } else {
-                    (self.click_outside)(env, *modifier);
+                    (self.click_outside)(ctx.env, *modifier);
                 }
             }
             _ => (),

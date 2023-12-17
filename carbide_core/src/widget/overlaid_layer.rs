@@ -7,10 +7,7 @@ use carbide_macro::carbide_default_builder2;
 use crate::CommonWidgetImpl;
 use crate::draw::{Dimension, Position};
 use crate::environment::Environment;
-use crate::event::{
-    KeyboardEvent, KeyboardEventHandler, MouseEvent, MouseEventHandler, OtherEventHandler,
-    WidgetEvent,
-};
+use crate::event::{KeyboardEvent, KeyboardEventHandler, MouseEvent, MouseEventContext, MouseEventHandler, OtherEventHandler, WidgetEvent};
 use crate::layout::{Layout, LayoutContext};
 use crate::render::{Primitive, Render};
 use crate::widget::{CommonWidget, Empty, AnyWidget, WidgetExt, WidgetId, Widget};
@@ -50,10 +47,10 @@ impl<C: Widget> OverlaidLayer<C> {
 }
 
 impl<C: Widget> MouseEventHandler for OverlaidLayer<C> {
-    fn process_mouse_event(&mut self, event: &MouseEvent, consumed: &bool, env: &mut Environment) {
+    fn process_mouse_event(&mut self, event: &MouseEvent, consumed: &bool, ctx: &mut MouseEventContext) {
         let mut widgets = self.overlays.borrow_mut();
         for widget in widgets.deref_mut() {
-            widget.process_mouse_event(event, consumed, env)
+            widget.process_mouse_event(event, consumed, ctx)
         }
 
         if self.steal_events_when_some && widgets.len() > 0 {
@@ -62,8 +59,12 @@ impl<C: Widget> MouseEventHandler for OverlaidLayer<C> {
 
         drop(widgets);
 
-        env.with_overlay_layer(self.overlay_id, self.overlays.clone(), |new_env| {
-            self.child.process_mouse_event(event, consumed, new_env)
+        ctx.env.with_overlay_layer(self.overlay_id, self.overlays.clone(), |new_env| {
+            self.child.process_mouse_event(event, consumed, &mut MouseEventContext {
+                text: ctx.text,
+                image: ctx.image,
+                env: new_env,
+            })
         });
     }
 }

@@ -16,7 +16,7 @@ use carbide_core::{draw, Scene};
 use carbide_core::draw::{Dimension, ImageContext, Position, Rect, Scalar};
 use carbide_core::draw::image::ImageId;
 use carbide_core::environment::{Environment, EnvironmentColor};
-use carbide_core::event::{KeyboardEvent, KeyboardEventHandler, MouseEvent, MouseEventHandler, OtherEventHandler, WidgetEvent, WindowEvent};
+use carbide_core::event::{KeyboardEvent, KeyboardEventHandler, MouseEvent, MouseEventContext, MouseEventHandler, OtherEventHandler, WidgetEvent, WindowEvent};
 use carbide_core::focus::Focusable;
 use carbide_core::image::{DynamicImage, GenericImage, GenericImageView};
 use carbide_core::layout::{Layout, LayoutContext, Layouter};
@@ -183,11 +183,9 @@ thread_local!(pub static MAIN_SAMPLER: Sampler = {
     })
 });
 
-thread_local!(pub static ATLAS_CACHE: RefCell<DynamicImage> = RefCell::new(DynamicImage::new_rgba8(512, 512)));
-
 thread_local!(pub static ATLAS_CACHE_TEXTURE: Texture = {
     DEVICE_QUEUE.with(|(device, _)| {
-        let atlas_cache_tex_desc = atlas_cache_tex_desc([512, 512]);
+        let atlas_cache_tex_desc = atlas_cache_tex_desc([1024, 1024]);
         device.create_texture(&atlas_cache_tex_desc)
     })
 });
@@ -519,29 +517,29 @@ impl WGPUWindow {
 }
 
 impl MouseEventHandler for WGPUWindow {
-    fn process_mouse_event(&mut self, event: &MouseEvent, consumed: &bool, env: &mut Environment) {
-        let old_is_current = env.is_event_current();
-        let old_dimension = env.pixel_dimensions();
-        let old_scale_factor = env.scale_factor();
-        let old_window_handle = env.window_handle();
+    fn process_mouse_event(&mut self, event: &MouseEvent, consumed: &bool, ctx: &mut MouseEventContext) {
+        let old_is_current = ctx.env.is_event_current();
+        let old_dimension = ctx.env.pixel_dimensions();
+        let old_scale_factor = ctx.env.scale_factor();
+        let old_window_handle = ctx.env.window_handle();
         let scale_factor = self.inner.scale_factor();
         let physical_dimensions = self.inner.inner_size();
 
-        env.set_event_is_current_by_id(self.window_id);
-        env.set_pixel_dimensions(Dimension::new(physical_dimensions.width as f64, physical_dimensions.height as f64));
-        env.set_scale_factor(scale_factor);
-        env.set_window_handle(Some(self.inner.raw_window_handle()));
+        ctx.env.set_event_is_current_by_id(self.window_id);
+        ctx.env.set_pixel_dimensions(Dimension::new(physical_dimensions.width as f64, physical_dimensions.height as f64));
+        ctx.env.set_scale_factor(scale_factor);
+        ctx.env.set_window_handle(Some(self.inner.raw_window_handle()));
 
         if !*consumed {
-            if env.is_event_current() {
-                self.capture_state(env);
-                self.handle_mouse_event(event, consumed, env);
-                self.release_state(env);
+            if ctx.env.is_event_current() {
+                self.capture_state(ctx.env);
+                self.handle_mouse_event(event, consumed, ctx);
+                self.release_state(ctx.env);
             }
         }
 
         self.foreach_child_direct(&mut |child| {
-            child.process_mouse_event(event, &consumed, env);
+            child.process_mouse_event(event, &consumed, ctx);
             if *consumed {
                 return;
             }
@@ -551,10 +549,10 @@ impl MouseEventHandler for WGPUWindow {
             return;
         }
 
-        env.set_event_is_current(old_is_current);
-        env.set_pixel_dimensions(old_dimension);
-        env.set_scale_factor(old_scale_factor);
-        env.set_window_handle(old_window_handle);
+        ctx.env.set_event_is_current(old_is_current);
+        ctx.env.set_pixel_dimensions(old_dimension);
+        ctx.env.set_scale_factor(old_scale_factor);
+        ctx.env.set_window_handle(old_window_handle);
     }
 }
 

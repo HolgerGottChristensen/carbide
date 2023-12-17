@@ -1,6 +1,7 @@
+use carbide_core::color::{BLACK, WHITE};
 use carbide_core::draw::Dimension;
 use carbide_core::environment::EnvironmentColor;
-use carbide_core::state::{AnyState, ReadState};
+use carbide_core::state::{AnyReadState, AnyState, ReadState};
 use carbide_core::widget::*;
 use carbide_wgpu::{Application, Window};
 
@@ -53,21 +54,21 @@ fn main() {
     application.set_scene(Window::new(
         "Color preview example",
         Dimension::new(800.0, 700.0),
-        *HStack::new(vec![
-            ForEach::new(vec![colors1, colors2, colors3], |item: Box<dyn AnyState<T=Vec<EnvironmentColor>>>, index: Box<dyn AnyState<T=usize>>| {
-                *VStack::new(vec![
-                    ForEach::new(item, |item: Box<dyn AnyState<T=EnvironmentColor>>, index: Box<dyn AnyState<T=usize>>| {
-                        *HStack::new(vec![
-                            Text::new(format!("{:?}", *item.value())),
-                            Rectangle::new()
-                                .fill(item)
-                                .frame(100.0, 30.0)
-                                .boxed()
-                        ])
-                    })
-                ]).cross_axis_alignment(CrossAxisAlignment::End)
-            })
-        ]).cross_axis_alignment(CrossAxisAlignment::Start)
+        ZStack::new((
+            Rectangle::new().fill(BLACK),
+            HStack::new(ForEach::new(vec![colors1, colors2, colors3], |item, index| {
+                VStack::new(ForEach::new(item, |item: Box<dyn AnyState<T=EnvironmentColor>>, index| {
+                    HStack::new((
+                        Text::new(format!("{:?}", *item.value())),
+                        Rectangle::new()
+                            .fill(item)
+                            .stroke(WHITE)
+                            .stroke_style(1.0)
+                            .frame(100.0, 30.0)
+                    ))
+                })).cross_axis_alignment(CrossAxisAlignment::End)
+            })).cross_axis_alignment(CrossAxisAlignment::Start)
+        ))
     ).close_application_on_window_close());
 
     application.launch();
