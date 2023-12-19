@@ -2,7 +2,6 @@ use std::ops::Range;
 
 use copypasta::{ClipboardContext, ClipboardProvider};
 use unicode_segmentation::UnicodeSegmentation;
-use carbide::draw::Rect;
 use carbide::event::MouseEventContext;
 use carbide::layout::LayoutContext;
 use carbide::text::InnerTextContext;
@@ -10,7 +9,7 @@ use carbide_core::CommonWidgetImpl;
 
 use carbide_core::draw::{Color, Dimension, Position};
 use carbide_core::environment::{Environment, EnvironmentColor, EnvironmentFontSize};
-use carbide_core::event::{Key, KeyboardEvent, KeyboardEventHandler, ModifierKey, MouseEvent, MouseEventHandler, OtherEventHandler};
+use carbide_core::event::{Key, KeyboardEvent, KeyboardEventHandler, ModifierKey, MouseEvent, MouseEventHandler};
 use carbide_core::flags::Flags;
 use carbide_core::focus::Focus;
 use carbide_core::focus::Focusable;
@@ -18,7 +17,6 @@ use carbide_core::layout::{BasicLayouter, Layout, Layouter};
 use carbide_core::render::{Render, RenderContext};
 use carbide_core::state::{AnyReadState, IntoReadState, IntoState, LocalState, Map2, ReadState, ReadStateExtNew, State, TState};
 use carbide_core::state::StateSync;
-use carbide_core::utils::{binary_search};
 use carbide_core::widget::{CommonWidget, Rectangle, Text, TextWidget, AnyWidget, WidgetExt, WidgetId, Widget};
 use carbide_core::widget::Wrap;
 use crate::{enabled_state, EnabledState};
@@ -1116,7 +1114,7 @@ impl<F: State<T=Focus>, C: ReadState<T=Color>, O: ReadState<T=Option<char>>, S: 
         }
 
         let x = to.x() - self.position.x() - *self.text_offset.value();
-        let (line, index) = ctx.hit(self.text_widget.text_id(), Position::new(x, 0.0));
+        let (_, index) = ctx.hit(self.text_widget.text_id(), Position::new(x, 0.0));
 
 
         match self.cursor {
