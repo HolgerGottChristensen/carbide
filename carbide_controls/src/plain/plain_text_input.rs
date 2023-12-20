@@ -1139,7 +1139,7 @@ impl<F: State<T=Focus>, C: ReadState<T=Color>, O: ReadState<T=Option<char>>, S: 
         }
 
         let x = to.x() - self.position.x() - *self.text_offset.value();
-        let (_, index) = ctx.hit(self.text_widget.text_id(), Position::new(x, 0.0));
+        let (_, index) = ctx.hit(self.text_widget.text_id(), Position::new(x, self.text_widget.height() / 2.0));
 
 
         match self.cursor {
@@ -1159,7 +1159,7 @@ impl<F: State<T=Focus>, C: ReadState<T=Color>, O: ReadState<T=Option<char>>, S: 
         }
 
         let x = position.x() - self.position.x() - *self.text_offset.value();
-        let (line, index) = ctx.text.hit(self.text_widget.text_id(), Position::new(x, 0.0));
+        let (line, index) = ctx.text.hit(self.text_widget.text_id(), Position::new(x, self.text_widget.height() / 2.0));
 
         self.cursor = Cursor::Single(CursorIndex {
             line,
@@ -1169,7 +1169,7 @@ impl<F: State<T=Focus>, C: ReadState<T=Color>, O: ReadState<T=Option<char>>, S: 
 
     fn selection_click(&mut self, position: &Position, ctx: &mut MouseEventContext) {
         let x = position.x() - self.position.x() - *self.text_offset.value();
-        let (line, clicked_index) = ctx.text.hit(self.text_widget.text_id(), Position::new(x, 0.0));
+        let (line, clicked_index) = ctx.text.hit(self.text_widget.text_id(), Position::new(x, self.text_widget.height() / 2.0));
 
         match self.cursor {
             Cursor::Single(CursorIndex { line: _, index }) => {
@@ -1198,7 +1198,7 @@ impl<F: State<T=Focus>, C: ReadState<T=Color>, O: ReadState<T=Option<char>>, S: 
 
     fn select_word_at_click(&mut self, position: &Position, ctx: &mut MouseEventContext) {
         let x = position.x() - self.position.x() - *self.text_offset.value();
-        let (line, clicked_index) = ctx.text.hit(self.text_widget.text_id(), Position::new(x, 0.0));
+        let (line, clicked_index) = ctx.text.hit(self.text_widget.text_id(), Position::new(x, self.text_widget.height() / 2.0));
 
         let range = word_range_surrounding_grapheme_index(clicked_index, &self.display_text.value());
 
@@ -1507,6 +1507,7 @@ fn grapheme_index_from_byte_offset(index: ByteOffset, string: &str) -> usize {
 #[cfg(test)]
 mod tests {
     use assert_matches::assert_matches;
+    use carbide::state::{LocalState, ReadState};
     use crate::plain::cursor::Cursor;
     use crate::plain::cursor::CursorIndex;
     use crate::PlainTextInput;
@@ -1556,6 +1557,12 @@ mod tests {
         input.select_all();
         assert_eq!(input.text, String::new());
         assert_matches!(input.cursor, Cursor::Single(CursorIndex { line: 0, index: 0 }));
+
+        let mut input = PlainTextInput::new("".to_string())
+            .obscure('0');
+        input.select_all();
+        assert_eq!(input.text, String::new());
+        assert_matches!(input.cursor, Cursor::Single(CursorIndex { line: 0, index: 0 }));
     }
 
     #[test]
@@ -1574,6 +1581,14 @@ mod tests {
         input.remove_all();
         assert_eq!(input.text, String::new());
         assert_matches!(input.cursor, Cursor::Single(CursorIndex { line: 0, index: 0 }));
+
+        let mut input = PlainTextInput::new(LocalState::new("Hello world!".to_string()))
+            .obscure('0');
+        assert_eq!(&*input.display_text.value(), "000000000000");
+        input.remove_all();
+        assert_eq!(&*input.display_text.value(), "");
+        assert_eq!(&*input.text.value(), "");
+        assert_matches!(input.cursor, Cursor::Single(CursorIndex { line: 0, index: 0 }));
     }
 
     #[test]
@@ -1587,9 +1602,34 @@ mod tests {
 
         assert_eq!(input.cursor, cursor);
 
+
+
+        let mut input = PlainTextInput::new("ধারা ১ সমস্ত মানুষ".to_string());
+        input.cursor = Cursor::Single(CursorIndex { line: 0, index: 13 });
+
+        let cursor = input.cursor;
+        input.move_left();
+        input.move_right();
+
+        assert_eq!(input.cursor, cursor);
+
+
+
         // Empty will also return to original position
         let mut input = PlainTextInput::new("".to_string());
         input.cursor = Cursor::Single(CursorIndex { line: 0, index: 0 });
+
+        let cursor = input.cursor;
+        input.move_left();
+        input.move_right();
+
+        assert_eq!(input.cursor, cursor);
+
+
+
+        let mut input = PlainTextInput::new(LocalState::new("Hello world!".to_string()))
+            .obscure('0');
+        input.cursor = Cursor::Single(CursorIndex { line: 0, index: 12 });
 
         let cursor = input.cursor;
         input.move_left();

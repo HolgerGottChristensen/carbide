@@ -185,7 +185,7 @@ impl<T2: ReadState<T=String>, S2: ReadState<T=u32>, C2: ReadState<T=Color>> Text
         TextStyle {
             family: self.family.clone(),
             font_size: *self.font_size.value(),
-            line_height: 1.0,
+            line_height: 1.2,
             font_style: self.font_style,
             font_weight: self.font_weight,
             text_decoration: self.text_decoration.clone(),

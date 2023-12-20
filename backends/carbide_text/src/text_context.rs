@@ -1,12 +1,12 @@
 use std::path::PathBuf;
 use std::time::Instant;
-use cosmic_text::{Attrs, Buffer, Family, FontSystem, LayoutRun, Metrics, Shaping, Style, SwashCache, SwashImage, Weight};
+use cosmic_text::{Attrs, Buffer, Family, FontSystem, LayoutLine, LayoutRun, Metrics, Shaping, Style, SwashCache, SwashImage, Weight};
 use fxhash::FxHashMap;
 use swash::scale::{Render, ScaleContext, Source, StrikeWith};
 use swash::scale::image::Content;
 use swash::zeno::{Format, Vector};
 
-use carbide_core::color::{RED, YELLOW};
+use carbide_core::color::{GREEN, LIGHT_GREEN, LIGHT_PURPLE, LIGHT_RED, RED, YELLOW};
 use carbide_core::draw::{Dimension, Position, Rect, Scalar};
 use carbide_core::draw::draw_style::DrawStyle;
 use carbide_core::draw::image::ImageId;
@@ -173,18 +173,19 @@ impl InnerTextContext for TextContext {
 
     fn render(&mut self, id: TextId, ctx: &mut dyn InnerRenderContext) {
         let (ref mut buffer, metadata) = self.map.get_mut(&id).unwrap();
-        //let mut buffer = buffer.borrow_with(&mut self.font_system);
-
-        //buffer.shape_until_scroll(&mut self.font_system);
 
         // Inspect the output runs
         for run in buffer.layout_runs() {
-            ctx.style(DrawStyle::Color(RED));
+            ctx.style(DrawStyle::Color(LIGHT_PURPLE));
             ctx.rect(Rect::new(Position::new(0.0, run.line_y as f64), Dimension::new(run.line_w as f64, 1.0 / metadata.scale_factor)) + metadata.position);
             ctx.pop_style();
 
             ctx.style(DrawStyle::Color(YELLOW));
             ctx.rect(Rect::new(Position::new(0.0, run.line_top as f64), Dimension::new(run.line_w as f64, 1.0 / metadata.scale_factor)) + metadata.position);
+            ctx.pop_style();
+
+            ctx.style(DrawStyle::Color(LIGHT_GREEN));
+            ctx.rect(Rect::new(Position::new(0.0, run.line_top as f64 + buffer.metrics().line_height as f64), Dimension::new(run.line_w as f64, 1.0 / metadata.scale_factor)) + metadata.position);
             ctx.pop_style();
 
             for glyph in run.glyphs.iter() {
@@ -194,49 +195,25 @@ impl InnerTextContext for TextContext {
                 let book = self.atlas.book(&AtlasId::Glyph(physical_glyph.cache_key));
 
                 if let Some(book) = book {
+                    let bb = Rect::new(
+                        Position::new(physical_glyph.x as f64 + book.left as f64, run.line_y as f64 * metadata.scale_factor + physical_glyph.y as f64 - book.top as f64),
+                        Dimension::new(book.width as f64, book.height as f64)
+                    ) / metadata.scale_factor + metadata.position;
+
+                    /*ctx.style(DrawStyle::Color(LIGHT_RED));
+                    ctx.rect(bb);
+                    ctx.pop_style();*/
+
                     ctx.image(
                         ImageId::default(),
-                        Rect::new(
-                            Position::new(physical_glyph.x as f64 + book.left as f64, run.line_y as f64 * metadata.scale_factor + physical_glyph.y as f64 - book.top as f64),
-                            Dimension::new(book.width as f64, book.height as f64)
-                        ) / metadata.scale_factor + metadata.position,
+                        bb,
                         book.tex_coords,
                         if book.has_color { MODE_TEXT_COLOR } else { MODE_TEXT }
                     );
+
                 }
             }
         }
-
-        /*let text_color = Color::rgb(0xFF, 0xFF, 0xFF);
-
-        for run in buffer.layout_runs() {
-            for glyph in run.glyphs.iter() {
-                let physical_glyph = glyph.physical((0., 0.), 1.0);
-
-                let glyph_color = match glyph.color_opt {
-                    Some(some) => some,
-                    None => text_color,
-                };
-
-                self.cache.with_pixels(
-                    &mut self.font_system,
-                    physical_glyph.cache_key,
-                    glyph_color,
-                    |x, y, color| {
-                        let x = physical_glyph.x + x;
-                        let y = run.line_y as i32 + physical_glyph.y + y;
-                        let w = 1;
-                        let h = 1;
-                        let color = color;
-
-                        //ctx.style(DrawStyle::Color(carbide_core::draw::Color::random()));
-                        ctx.style(DrawStyle::Color(carbide_core::draw::Color::new_rgba(color.r(), color.g(), color.b(), color.a())));
-                        ctx.rect(Rect::new(Position::new(x as f64, y as f64), Dimension::new(w as f64, h as f64)) + *position);
-                        ctx.pop_style();
-                    },
-                );
-            }
-        }*/
     }
 
     fn prepare_render(&mut self) {
