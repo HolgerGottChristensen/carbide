@@ -252,19 +252,38 @@ impl InnerTextContext for TextContext {
     }
 
     fn hit(&self, id: TextId, position: Position) -> (usize, usize) {
-        let (ref buffer, _) = self.map.get(&id).unwrap();
+        let (ref buffer, meta) = self.map.get(&id).unwrap();
 
         let hit = buffer.hit(position.x() as f32, position.y() as f32);
 
-        (hit.unwrap().line, hit.unwrap().index)
+        fn grapheme_index_from_byte_offset(index: usize, string: &str) -> usize {
+            for (i, (g, _)) in string.grapheme_indices(true).enumerate() {
+                if g >= index {
+                    return i
+                }
+            }
+
+            string.grapheme_indices(true).count()
+        }
+
+        let grapheme_index = grapheme_index_from_byte_offset(hit.unwrap().index, &meta.text);
+
+        (hit.unwrap().line, grapheme_index)
     }
 
     fn position_of(&self, id: TextId, line: usize, index: usize) -> Position {
-        let (ref buffer, _) = self.map.get(&id).unwrap();
+        let (ref buffer, meta) = self.map.get(&id).unwrap();
+
+        let byte_offset = meta.text
+            .grapheme_indices(true)
+            .skip(index)
+            .map(|(i, s)| i)
+            .next()
+            .unwrap_or(meta.text.len());
 
         for layout_run in buffer.layout_runs() {
             if layout_run.line_i == line {
-                let (glyph_index, internal_offset) = Self::partial_glyph_offset(index, &layout_run);
+                let (glyph_index, internal_offset) = Self::partial_glyph_offset(byte_offset, &layout_run);
 
                 let x = match layout_run.glyphs.get(glyph_index) {
                     Some(glyph) => {

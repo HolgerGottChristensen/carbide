@@ -1,4 +1,4 @@
-use std::ops::Range;
+use std::ops::{Index, Range};
 
 use copypasta::{ClipboardContext, ClipboardProvider};
 use unicode_segmentation::UnicodeSegmentation;
@@ -222,7 +222,7 @@ impl<
 
         let display_text = Map2::read_map(text.clone(), obscure.clone(), |text, obscure| {
             if let Some(obscuring_char) = obscure {
-                text.graphemes(true).map(|_a| obscuring_char).collect::<String>() // TODO: Does this break when changing to editing chars instead of graphemes?
+                text.graphemes(true).map(|_a| obscuring_char).collect::<String>()
             } else {
                 text.clone()
             }
@@ -233,7 +233,6 @@ impl<
             .color(text_color.clone())
             .wrap_mode(Wrap::None));
 
-        //let last = len_in_graphemes(&*display_text.value());
         let last = usize::MAX;
 
         PlainTextInput {
@@ -449,7 +448,7 @@ impl<
             return;
         }
 
-        let (current_movable_cursor_index, _is_selection) = match self.cursor {
+        let (current_index, _is_selection) = match self.cursor {
             Cursor::Single(cursor_index) => (cursor_index, false),
             Cursor::Selection { end, .. } => (end, true),
         };
@@ -461,17 +460,17 @@ impl<
             TextInputKeyCommand::SelectRight => self.select_right(),
             TextInputKeyCommand::RemoveLeft => self.remove_left(),
             TextInputKeyCommand::RemoveRight => self.remove_right(),
-            TextInputKeyCommand::JumpWordLeft => self.jump_word_left(current_movable_cursor_index),
-            TextInputKeyCommand::JumpWordRight => self.jump_word_right(current_movable_cursor_index),
-            TextInputKeyCommand::JumpSelectWordLeft => self.jump_select_word_left(current_movable_cursor_index),
-            TextInputKeyCommand::JumpSelectWordRight => self.jump_select_word_right(current_movable_cursor_index),
+            TextInputKeyCommand::JumpWordLeft => self.jump_word_left(current_index),
+            TextInputKeyCommand::JumpWordRight => self.jump_word_right(current_index),
+            TextInputKeyCommand::JumpSelectWordLeft => self.jump_select_word_left(current_index),
+            TextInputKeyCommand::JumpSelectWordRight => self.jump_select_word_right(current_index),
             TextInputKeyCommand::RemoveWordLeft => self.remove_word_left(),
             TextInputKeyCommand::RemoveWordRight => self.remove_word_right(),
             TextInputKeyCommand::DuplicateLeft => self.duplicate_left(),
             TextInputKeyCommand::DuplicateRight => self.duplicate_right(),
+            TextInputKeyCommand::Cut => self.cut(),
             TextInputKeyCommand::Copy => self.copy(),
             TextInputKeyCommand::Paste => self.paste(),
-            TextInputKeyCommand::Clip => self.clip(),
             TextInputKeyCommand::SelectAll => self.select_all(),
             TextInputKeyCommand::RemoveAll => self.remove_all(),
             TextInputKeyCommand::JumpToLeft => self.jump_to_left(),
@@ -490,22 +489,34 @@ impl<
 
                 match self.cursor {
                     Cursor::Single(index) => {
-                        self.insert_str(index.index, string);
+                        let offset = byte_offset_from_grapheme_index(index.index, &*self.text.value());
+
+                        self.insert_str(offset, string);
+
+                        let new_offset = ByteOffset(offset.0 + string.len());
+
+                        let grapheme_index = grapheme_index_from_byte_offset(new_offset, &*self.text.value());
 
                         self.cursor = Cursor::Single(CursorIndex {
                             line: 0,
-                            index: index.index + string.len(),
+                            index: grapheme_index,
                         });
                     }
                     Cursor::Selection { start, end } => {
-                        let min = start.index.min(end.index);
-                        let max = start.index.max(end.index);
+                        let min = byte_offset_from_grapheme_index(start.index.min(end.index), &*self.text.value());
+                        let max = byte_offset_from_grapheme_index(start.index.max(end.index), &*self.text.value());
+
                         self.remove_range(min..max);
-                        self.capture_state(env);
+
                         self.insert_str(min, string);
+
+                        let new_offset = ByteOffset(min.0 + string.len());
+                        let grapheme_index = grapheme_index_from_byte_offset(new_offset, &*self.text.value());
+
+
                         self.cursor = Cursor::Single(CursorIndex {
                             line: 0,
-                            index: min + string.len(),
+                            index: grapheme_index,
                         });
                     }
                 }
@@ -529,7 +540,7 @@ impl<F: State<T=Focus>, C: ReadState<T=Color>, O: ReadState<T=Option<char>>, S: 
                     start: index,
                     end: CursorIndex {
                         line: 0,
-                        index: self.text.value().len(),
+                        index: count(&*self.display_text.value()),
                     },
                 }
             }
@@ -538,7 +549,7 @@ impl<F: State<T=Focus>, C: ReadState<T=Color>, O: ReadState<T=Option<char>>, S: 
                     start,
                     end: CursorIndex {
                         line: 0,
-                        index: self.text.value().len(),
+                        index: count(&*self.display_text.value()),
                     },
                 }
             }
@@ -565,7 +576,7 @@ impl<F: State<T=Focus>, C: ReadState<T=Color>, O: ReadState<T=Option<char>>, S: 
     fn jump_to_right(&mut self) {
         self.cursor = Cursor::Single(CursorIndex {
             line: 0,
-            index: self.text.value().len(),
+            index: count(&*self.display_text.value()),
         })
     }
 
@@ -581,17 +592,23 @@ impl<F: State<T=Focus>, C: ReadState<T=Color>, O: ReadState<T=Option<char>>, S: 
 
     /// Select all text, with the cursor ending at the end of the text
     fn select_all(&mut self) {
-        self.cursor = Cursor::Selection {
-            start: CursorIndex { line: 0, index: 0 },
-            end: CursorIndex {
-                line: 0,
-                index: self.text.value().len(),
-            },
+        let count = count(&*self.display_text.value());
+
+        if count == 0 {
+            self.cursor = Cursor::Single(CursorIndex { line: 0, index: 0 })
+        } else {
+            self.cursor = Cursor::Selection {
+                start: CursorIndex { line: 0, index: 0 },
+                end: CursorIndex {
+                    line: 0,
+                    index: count,
+                },
+            }
         }
     }
 
-    /// Clip the selection text, or the full text if nothing was selected
-    fn clip(&mut self) {
+    /// Cut the selection text, or the full text if nothing was selected
+    fn cut(&mut self) {
         let mut ctx = ClipboardContext::new().unwrap();
 
         match self.cursor {
@@ -603,14 +620,14 @@ impl<F: State<T=Focus>, C: ReadState<T=Color>, O: ReadState<T=Option<char>>, S: 
                 self.cursor = Cursor::Single(CursorIndex { line: 0, index: 0 })
             }
             Cursor::Selection { start, end } => {
-                let min = start.index.min(end.index);
-                let max = start.index.max(end.index);
+                let min = byte_offset_from_grapheme_index(start.index.min(end.index), &*self.display_text.value());
+                let max = byte_offset_from_grapheme_index(start.index.max(end.index), &*self.display_text.value());
 
-                let s = self.display_text.value()[min..max].to_string();
+                let s = self.display_text.value()[min.0..max.0].to_string();
                 ctx.set_contents(s).unwrap();
                 self.remove_range(min..max);
 
-                self.cursor = Cursor::Single(CursorIndex { line: 0, index: min })
+                self.cursor = Cursor::Single(CursorIndex { line: 0, index: start.index.min(end.index) })
             }
         }
     }
@@ -626,22 +643,33 @@ impl<F: State<T=Focus>, C: ReadState<T=Color>, O: ReadState<T=Option<char>>, S: 
 
         match self.cursor {
             Cursor::Single(index) => {
-                self.insert_str(index.index, &content);
+                let byte_offset = byte_offset_from_grapheme_index(index.index, &*self.text.value());
+                self.insert_str(byte_offset, &content);
+
+                let new_offset = ByteOffset(byte_offset.0 + content.len());
+
+                let grapheme_index = grapheme_index_from_byte_offset(new_offset, &*self.text.value());
 
                 self.cursor = Cursor::Single(CursorIndex {
                     line: 0,
-                    index: index.index + content.len(),
+                    index: grapheme_index,
                 });
             }
             Cursor::Selection { start, end } => {
-                let min = start.index.min(end.index);
-                let max = start.index.max(end.index);
+                let min = byte_offset_from_grapheme_index(start.index.min(end.index), &*self.text.value());
+                let max = byte_offset_from_grapheme_index(start.index.max(end.index), &*self.text.value());
+
                 self.remove_range(min..max);
 
                 self.insert_str(min, &content);
+
+                let new_offset = ByteOffset(min.0 + content.len());
+
+                let grapheme_index = grapheme_index_from_byte_offset(new_offset, &*self.text.value());
+
                 self.cursor = Cursor::Single(CursorIndex {
                     line: 0,
-                    index: min + content.len(),
+                    index: grapheme_index,
                 });
             }
         }
@@ -656,10 +684,10 @@ impl<F: State<T=Focus>, C: ReadState<T=Color>, O: ReadState<T=Option<char>>, S: 
                 ctx.set_contents(self.display_text.value().clone()).unwrap();
             }
             Cursor::Selection { start, end } => {
-                let min = start.index.min(end.index);
-                let max = start.index.max(end.index);
+                let min = byte_offset_from_grapheme_index(start.index.min(end.index), &*self.display_text.value());
+                let max = byte_offset_from_grapheme_index(start.index.max(end.index), &*self.display_text.value());
 
-                let s = self.display_text.value()[min..max].to_string();
+                let s = self.display_text.value()[min.0..max.0].to_string();
                 ctx.set_contents(s).unwrap();
             }
         }
@@ -674,15 +702,20 @@ impl<F: State<T=Focus>, C: ReadState<T=Color>, O: ReadState<T=Option<char>>, S: 
 
                 self.cursor = Cursor::Single(CursorIndex {
                     line: 0,
-                    index: self.text.value().len(),
+                    index: count(&*self.text.value()),
                 })
             }
             Cursor::Selection { start, end } => {
                 let text = self.text.value().clone();
-                let min = start.index.min(end.index);
-                let max = start.index.max(end.index);
 
-                self.insert_str(max, &text[min..max]);
+                let min = byte_offset_from_grapheme_index(start.index.min(end.index), &*self.text.value());
+                let max = byte_offset_from_grapheme_index(start.index.max(end.index), &*self.text.value());
+
+                self.insert_str(max, &text[min.0..max.0]);
+
+                let index = ByteOffset(max.0 + (min.0..max.0).count());
+
+                let grapheme_index = grapheme_index_from_byte_offset(index, &*self.text.value());
 
                 self.cursor = Cursor::Selection {
                     start: CursorIndex {
@@ -691,7 +724,7 @@ impl<F: State<T=Focus>, C: ReadState<T=Color>, O: ReadState<T=Option<char>>, S: 
                     },
                     end: CursorIndex {
                         line: 0,
-                        index: end.index + (min..max).count(),
+                        index: grapheme_index,
                     },
                 }
             }
@@ -707,10 +740,10 @@ impl<F: State<T=Focus>, C: ReadState<T=Color>, O: ReadState<T=Option<char>>, S: 
             }
             Cursor::Selection { start, end } => {
                 let text = self.text.value().clone();
-                let min = start.index.min(end.index);
-                let max = start.index.max(end.index);
+                let min = byte_offset_from_grapheme_index(start.index.min(end.index), &*self.text.value());
+                let max = byte_offset_from_grapheme_index(start.index.max(end.index), &*self.text.value());
 
-                self.insert_str(max, &text[min..max]);
+                self.insert_str(max, &text[min.0..max.0]);
             }
         }
     }
@@ -718,18 +751,24 @@ impl<F: State<T=Focus>, C: ReadState<T=Color>, O: ReadState<T=Option<char>>, S: 
     /// If we have a cursor and not a selection, we remove rightwards until we see either a space or the end of the text
     fn remove_word_right(&mut self) {
         if let Cursor::Single(index) = self.cursor {
-            let start_index = next_byte_offset(index.index, &*self.display_text.value(), true, |s| s == " ");
+            let end_index = next_grapheme_index(index.index, &*self.display_text.value(), true, |s| s == " ");
 
-            self.remove_range(index.index..start_index);
+            let min = byte_offset_from_grapheme_index(index.index, &*self.text.value());
+            let max = byte_offset_from_grapheme_index(end_index, &*self.text.value());
+
+            self.remove_range(min..max);
         }
     }
 
     /// If we have a cursor and not a selection, we remove leftwards until we see either a space or the start of the text
     fn remove_word_left(&mut self) {
         if let Cursor::Single(index) = self.cursor {
-            let start_index = prev_byte_offset(index.index, &*self.display_text.value(), true, |s| s == " ");
+            let start_index = prev_grapheme_index(index.index, &*self.display_text.value(), true, |s| s == " ");
 
-            self.remove_range(start_index..index.index);
+            let min = byte_offset_from_grapheme_index(start_index, &*self.text.value());
+            let max = byte_offset_from_grapheme_index(index.index, &*self.text.value());
+
+            self.remove_range(min..max);
 
             self.cursor = Cursor::Single(CursorIndex {
                 line: 0,
@@ -739,8 +778,8 @@ impl<F: State<T=Focus>, C: ReadState<T=Color>, O: ReadState<T=Option<char>>, S: 
     }
 
     /// Creates or extends a selection to the next space to the right or the end of the text
-    fn jump_select_word_right(&mut self, current_movable_cursor_index: CursorIndex) {
-        let index = next_byte_offset(current_movable_cursor_index.index, &*self.display_text.value(), true, |s| s == " ");
+    fn jump_select_word_right(&mut self, current_index: CursorIndex) {
+        let index = next_grapheme_index(current_index.index, &*self.display_text.value(), true, |s| s == " ");
 
         let start = match self.cursor {
             Cursor::Single(index) => index,
@@ -755,8 +794,8 @@ impl<F: State<T=Focus>, C: ReadState<T=Color>, O: ReadState<T=Option<char>>, S: 
     }
 
     /// Creates or extends a selection to the next space to the left, or the start of the text
-    fn jump_select_word_left(&mut self, current_movable_cursor_index: CursorIndex) {
-        let index = prev_byte_offset(current_movable_cursor_index.index, &*self.display_text.value(), true, |s| s == " ");
+    fn jump_select_word_left(&mut self, current_index: CursorIndex) {
+        let index = prev_grapheme_index(current_index.index, &*self.display_text.value(), true, |s| s == " ");
 
         let start = match self.cursor {
             Cursor::Single(index) => index,
@@ -771,18 +810,18 @@ impl<F: State<T=Focus>, C: ReadState<T=Color>, O: ReadState<T=Option<char>>, S: 
     }
 
     /// Moves the cursor to the right to either we see a space or the end of the text
-    fn jump_word_right(&mut self, current_movable_cursor_index: CursorIndex) {
+    fn jump_word_right(&mut self, current_index: CursorIndex) {
         self.cursor = Cursor::Single(CursorIndex {
             line: 0,
-            index: next_byte_offset(current_movable_cursor_index.index, &*self.display_text.value(), true, |s| s == " ")
+            index: next_grapheme_index(current_index.index, &*self.display_text.value(), true, |s| s == " ")
         });
     }
 
     /// Moves the cursor to the left to either we see a space or the start of the text
-    fn jump_word_left(&mut self, current_movable_cursor_index: CursorIndex) {
+    fn jump_word_left(&mut self, current_index: CursorIndex) {
         self.cursor = Cursor::Single(CursorIndex {
             line: 0,
-            index: prev_byte_offset(current_movable_cursor_index.index, &*self.display_text.value(), true, |s| s == " ")
+            index: prev_grapheme_index(current_index.index, &*self.display_text.value(), true, |s| s == " ")
         });
     }
 
@@ -790,30 +829,18 @@ impl<F: State<T=Focus>, C: ReadState<T=Color>, O: ReadState<T=Option<char>>, S: 
     fn remove_right(&mut self) {
         match self.cursor {
             Cursor::Single(index) => {
-                if index.index < self.text.value().len() {
-                    let mut range = None;
+                let min = byte_offset_from_grapheme_index(index.index, &*self.text.value());
+                let max = byte_offset_from_grapheme_index(index.index + 1, &*self.text.value());
 
-                    for (i, _) in self.display_text.value().grapheme_indices(true) {
-                        if i > index.index {
-                            range = Some(index.index..i);
-                            break;
-                        }
-                    }
-
-                    if let Some(range) = range {
-                        self.remove_range(range);
-                    } else {
-                        let len = self.text.value().len();
-                        self.remove_range(index.index..len);
-                    }
-                }
+                self.remove_range(min..max);
             }
             Cursor::Selection { start, end } => {
-                let min = start.index.min(end.index);
-                let max = start.index.max(end.index);
+                let min = byte_offset_from_grapheme_index(start.index.min(end.index), &*self.text.value());
+                let max = byte_offset_from_grapheme_index(start.index.max(end.index), &*self.text.value());
+
                 self.remove_range(min..max);
 
-                self.cursor = Cursor::Single(CursorIndex { line: 0, index: min });
+                self.cursor = Cursor::Single(CursorIndex { line: 0, index: start.index.min(end.index) });
             }
         }
     }
@@ -822,32 +849,32 @@ impl<F: State<T=Focus>, C: ReadState<T=Color>, O: ReadState<T=Option<char>>, S: 
     fn remove_left(&mut self) {
         match self.cursor {
             Cursor::Single(index) => {
-                if index.index > 0 {
-                    let mut prev_byte_offset = 0;
+                let index = byte_offset_from_grapheme_index(index.index, &*self.text.value());
 
-                    for (i, _) in self.display_text.value().char_indices() { // .grapheme_indices(true)
-                        if i < index.index {
-                            prev_byte_offset = i;
-                        } else {
-                            break;
-                        }
+                let mut prev_byte_offset = ByteOffset(0);
+
+                for (i, _) in self.text.value().char_indices() { // .grapheme_indices(true)
+                    if i < index.0 {
+                        prev_byte_offset = ByteOffset(i);
+                    } else {
+                        break;
                     }
-
-                    self.remove_range(prev_byte_offset..index.index);
-
-                    self.cursor = Cursor::Single(CursorIndex {
-                        line: 0,
-                        index: prev_byte_offset,
-                    });
                 }
+
+                self.remove_range(prev_byte_offset..index);
+
+                self.cursor = Cursor::Single(CursorIndex {
+                    line: 0,
+                    index: grapheme_index_from_byte_offset(prev_byte_offset, &*self.text.value()),
+                });
             }
             Cursor::Selection { start, end } => {
-                let min = start.index.min(end.index);
-                let max = start.index.max(end.index);
+                let min = byte_offset_from_grapheme_index(start.index.min(end.index), &*self.text.value());
+                let max = byte_offset_from_grapheme_index(start.index.max(end.index), &*self.text.value());
 
                 self.remove_range(min..max);
 
-                self.cursor = Cursor::Single(CursorIndex { line: 0, index: min });
+                self.cursor = Cursor::Single(CursorIndex { line: 0, index: start.index.min(end.index) });
             }
         }
     }
@@ -861,12 +888,12 @@ impl<F: State<T=Focus>, C: ReadState<T=Color>, O: ReadState<T=Option<char>>, S: 
                     start: index,
                     end: CursorIndex {
                         line: 0,
-                        index: next_grapheme_byte_offset(index.index, &self.text.value()),
+                        index: index.index.saturating_add(1),
                     },
                 }
             }
             Cursor::Selection { start, end } => {
-                let new_index = next_grapheme_byte_offset(end.index, &self.text.value());
+                let new_index = end.index.saturating_add(1);
 
                 if start.index == new_index {
                     self.cursor = Cursor::Single(start)
@@ -892,12 +919,12 @@ impl<F: State<T=Focus>, C: ReadState<T=Color>, O: ReadState<T=Option<char>>, S: 
                     start: index,
                     end: CursorIndex {
                         line: 0,
-                        index: prev_grapheme_byte_offset(index.index, &self.text.value()),
+                        index: index.index.saturating_sub(1),
                     },
                 }
             }
             Cursor::Selection { start, end } => {
-                let new_index = prev_grapheme_byte_offset(end.index, &self.text.value());
+                let new_index = end.index.saturating_sub(1);
 
                 if start.index == new_index {
                     self.cursor = Cursor::Single(start)
@@ -921,7 +948,7 @@ impl<F: State<T=Focus>, C: ReadState<T=Color>, O: ReadState<T=Option<char>>, S: 
 
                 self.cursor = Cursor::Single(CursorIndex {
                     line: 0,
-                    index: next_grapheme_byte_offset(current_index.index, &self.text.value()),
+                    index: current_index.index.saturating_add(1).min(count(&*self.display_text.value())),
                 });
             }
             Cursor::Selection { start, end } => {
@@ -940,7 +967,7 @@ impl<F: State<T=Focus>, C: ReadState<T=Color>, O: ReadState<T=Option<char>>, S: 
             Cursor::Single(current_index) => {
                 self.cursor = Cursor::Single(CursorIndex {
                     line: 0,
-                    index: prev_grapheme_byte_offset(current_index.index, &self.text.value()),
+                    index: current_index.index.saturating_sub(1),
                 });
             }
             Cursor::Selection { start, end } => {
@@ -951,16 +978,14 @@ impl<F: State<T=Focus>, C: ReadState<T=Color>, O: ReadState<T=Option<char>>, S: 
                 });
             }
         }
-
     }
-
 }
 
 // General text modification actions
 impl<F: State<T=Focus>, C: ReadState<T=Color>, O: ReadState<T=Option<char>>, S: ReadState<T=u32>, T: State<T=String>, E: ReadState<T=bool>> PlainTextInput<F, C, O, S, T, E> {
     /// Insert a string at a given byte offset.
-    fn insert_str(&mut self, byte_offset: usize, string: &str) {
-        self.text.value_mut().insert_str(byte_offset, string);
+    fn insert_str(&mut self, byte_offset: ByteOffset, string: &str) {
+        self.text.value_mut().insert_str(byte_offset.0, string);
     }
 
     /// Push a string to the end of the input
@@ -969,14 +994,14 @@ impl<F: State<T=Focus>, C: ReadState<T=Color>, O: ReadState<T=Option<char>>, S: 
     }
 
     /// Remove all the graphemes inside the range,
-    fn remove_range(&mut self, byte_range: Range<usize>) {
-        self.text.value_mut().replace_range(byte_range, "");
+    fn remove_range(&mut self, byte_range: Range<ByteOffset>) {
+        self.text.value_mut().replace_range(byte_range.start.0..byte_range.end.0, "");
     }
 
     /// Clamp the cursor to within the number of chars in the displayed text.
     /// The state should be up to date before calling this method, especially the display_text state.
     fn clamp_cursor(&mut self) {
-        let count = self.display_text.value().len();
+        let count = count(&*self.display_text.value());
 
         match self.cursor {
             Cursor::Single(CursorIndex{ line, index }) => {
@@ -1175,7 +1200,7 @@ impl<F: State<T=Focus>, C: ReadState<T=Color>, O: ReadState<T=Option<char>>, S: 
         let x = position.x() - self.position.x() - *self.text_offset.value();
         let (line, clicked_index) = ctx.text.hit(self.text_widget.text_id(), Position::new(x, 0.0));
 
-        let range = word_range_surrounding_byte_offset(clicked_index, &self.display_text.value());
+        let range = word_range_surrounding_grapheme_index(clicked_index, &self.display_text.value());
 
         self.cursor = Cursor::Selection {
             start: CursorIndex {
@@ -1295,19 +1320,22 @@ impl<
     E: ReadState<T=bool>,
 > Render for PlainTextInput<F, C, O, S, T, E> {
     fn render(&mut self, context: &mut RenderContext, env: &mut Environment) {
+
         if self.get_focus() == Focus::Focused && *self.enabled.value() {
             match self.cursor {
                 Cursor::Single(_) => {
+                    self.text_widget.render(context, env);
                     self.cursor_widget.render(context, env);
                 }
                 Cursor::Selection { .. } => {
                     self.selection_widget.render(context, env);
+                    self.text_widget.render(context, env);
                     self.cursor_widget.render(context, env);
                 }
             }
+        } else {
+            self.text_widget.render(context, env);
         }
-
-        self.text_widget.render(context, env);
     }
 }
 
@@ -1352,7 +1380,7 @@ pub(super) enum TextInputKeyCommand {
     DuplicateRight,
     Copy,
     Paste,
-    Clip,
+    Cut,
     SelectAll,
     RemoveAll,
     JumpToLeft,
@@ -1390,7 +1418,7 @@ impl From<&KeyboardEvent> for TextInputKeyCommand {
 
             KeyboardEvent::Press(Key::C, ModifierKey::GUI) => TextInputKeyCommand::Copy,
             KeyboardEvent::Press(Key::V, ModifierKey::GUI) => TextInputKeyCommand::Paste,
-            KeyboardEvent::Press(Key::X, ModifierKey::GUI) => TextInputKeyCommand::Clip,
+            KeyboardEvent::Press(Key::X, ModifierKey::GUI) => TextInputKeyCommand::Cut,
             KeyboardEvent::Press(Key::A, ModifierKey::GUI) => TextInputKeyCommand::SelectAll,
             KeyboardEvent::Press(Key::D, ModifierKey::GUI) => TextInputKeyCommand::DuplicateRight,
             KeyboardEvent::Press(Key::D, ModifierKey::SHIFT_GUI) => TextInputKeyCommand::DuplicateLeft,
@@ -1409,94 +1437,164 @@ impl From<&KeyboardEvent> for TextInputKeyCommand {
 // ---------------------------------------------------
 //  Utilities
 // ---------------------------------------------------
-fn next_grapheme_byte_offset(current_offset: usize, text: &str) -> usize {
-    for (i, c) in text.grapheme_indices(true) {
-        if i == current_offset {
-            return i + c.len();
-        }
-    }
+#[derive(Copy, Clone, Debug)]
+struct ByteOffset(usize);
 
-    current_offset
+fn prev_grapheme_index(grapheme_index: usize, text: &str, skip_initial: bool, f: fn(&str) ->bool) -> usize {
+    text
+        .grapheme_indices(true)
+        .rev()
+        .enumerate()
+        .skip(count(text) - grapheme_index)
+        .skip_while(|(_, (_, s))| f(*s) && skip_initial)
+        .find(|(_, (_, c))| f(*c))
+        .map_or(0, |(e, _)| count(text) - e)
 }
 
-fn prev_grapheme_byte_offset(current_offset: usize, text: &str) -> usize {
-    let mut prev_byte_offset = 0;
-
-    for (i, _) in text.grapheme_indices(true) {
-        if i < current_offset {
-            prev_byte_offset = i;
-        } else {
-            break;
-        }
-    }
-
-    prev_byte_offset
+fn next_grapheme_index(grapheme_index: usize, text: &str, skip_initial: bool, f: fn(&str) ->bool) -> usize {
+    text
+        .grapheme_indices(true)
+        .enumerate()
+        .skip(grapheme_index)
+        .skip_while(|(_, (_, s))| f(*s) && skip_initial)
+        .find(|(_, (_, c))| f(*c))
+        .map_or(count(text), |(e, _)| e)
 }
 
-fn len_in_graphemes(text: &str) -> usize {
-    text.graphemes(true).count()
-}
-
-fn len_in_chars(text: &str) -> usize {
-    text.char_indices().count()
-}
-
-/// Get the index of the first byte for a given grapheme index.
-fn byte_index_from_graphemes(grapheme_index: usize, text: &str) -> usize {
-    if text.len() == 0 {
-        return 0;
-    }
-    let byte_offset = match text.grapheme_indices(true).skip(grapheme_index).next() {
-        None => text.len(),
-        Some((g, _)) => g,
-    };
-
-    byte_offset
-}
-
-fn byte_range_graphemes(grapheme_range: Range<usize>, text: &str) -> Range<usize> {
-    let start = byte_index_from_graphemes(grapheme_range.start, text);
-    let end = byte_index_from_graphemes(grapheme_range.end, text);
-
-    start..end
-}
-
-fn prev_byte_offset(byte_offset: usize, text: &str, skip_initial: bool, f: fn(&str) ->bool) -> usize {
-    let substring = &text[..byte_offset];
-
-    for (index, c) in substring.grapheme_indices(true).rev().skip_while(|(_, s)| f(*s) && skip_initial) {
-        if f(c) {
-            return index + c.len();
-        }
-    }
-
-    0
-}
-
-fn next_byte_offset(byte_offset: usize, text: &str, skip_initial: bool, f: fn(&str) ->bool) -> usize {
-    let substring = &text[byte_offset..];
-
-    for (index, c) in substring.grapheme_indices(true).skip_while(|(_, s)| f(*s) && skip_initial) {
-        if f(c) {
-            return index + byte_offset;
-        }
-    }
-
-    text.len()
-}
-
-/// Returns a range of byte offsets for either the word at the current byte offset
-/// or the range of spaces surrounding the current byte offset
-fn word_range_surrounding_byte_offset(byte_offset: usize, text: &str) -> Range<usize> {
-    let min = prev_byte_offset(byte_offset, text, false, |s| s == " ");
-    let max = next_byte_offset(byte_offset, text, false, |s| s == " ");
+/// Returns a range of grapheme indexes for either the word at the current grapheme index
+/// or the range of spaces surrounding the current grapheme index
+fn word_range_surrounding_grapheme_index(grapheme_index: usize, text: &str) -> Range<usize> {
+    let min = prev_grapheme_index(grapheme_index, text, false, |s| s == " ");
+    let max = next_grapheme_index(grapheme_index, text, false, |s| s == " ");
 
     if min == max {
-        let min = prev_byte_offset(byte_offset, text, false, |s| s != " ");
-        let max = next_byte_offset(byte_offset, text, false, |s| s != " ");
+        let min = prev_grapheme_index(grapheme_index, text, false, |s| s != " ");
+        let max = next_grapheme_index(grapheme_index, text, false, |s| s != " ");
 
         return min..max
     }
 
     min..max
+}
+
+fn count(s: &str) -> usize {
+    s.graphemes(true).count()
+}
+
+fn byte_offset_from_grapheme_index(index: usize, string: &str) -> ByteOffset {
+    string
+        .grapheme_indices(true)
+        .skip(index)
+        .map(|(i, s)| ByteOffset(i))
+        .next()
+        .unwrap_or(ByteOffset(string.len()))
+}
+
+fn grapheme_index_from_byte_offset(index: ByteOffset, string: &str) -> usize {
+    for (i, (g, _)) in string.grapheme_indices(true).enumerate() {
+        if g >= index.0 {
+            return i
+        }
+    }
+
+    count(string)
+}
+
+
+// ---------------------------------------------------
+//  Tests
+// ---------------------------------------------------
+#[cfg(test)]
+mod tests {
+    use assert_matches::assert_matches;
+    use crate::plain::cursor::Cursor;
+    use crate::plain::cursor::CursorIndex;
+    use crate::PlainTextInput;
+
+    #[test]
+    fn hello_world() {
+        let input = PlainTextInput::new("Hello world!".to_string());
+    }
+
+    #[test]
+    fn select_all_non_empty1() {
+        let mut input = PlainTextInput::new("Hello world!".to_string());
+        input.select_all();
+        assert_eq!(input.text, "Hello world!".to_string());
+        assert_matches!(input.cursor, Cursor::Selection {
+            start: CursorIndex {
+                line: 0,
+                index: 0
+            },
+            end: CursorIndex {
+                line: 0,
+                index: 12,
+            },
+        });
+    }
+
+    #[test]
+    fn select_all_non_empty2() {
+        let mut input = PlainTextInput::new("ধারা ১ সমস্ত মানুষ".to_string());
+        input.select_all();
+        assert_eq!(input.text, "ধারা ১ সমস্ত মানুষ".to_string());
+        assert_matches!(input.cursor, Cursor::Selection {
+            start: CursorIndex {
+                line: 0,
+                index: 0
+            },
+            end: CursorIndex {
+                line: 0,
+                index: 13,
+            },
+        });
+    }
+
+    #[test]
+    fn select_all_empty() {
+        let mut input = PlainTextInput::new("".to_string());
+        input.select_all();
+        assert_eq!(input.text, String::new());
+        assert_matches!(input.cursor, Cursor::Single(CursorIndex { line: 0, index: 0 }));
+    }
+
+    #[test]
+    fn remove_all_becomes_empty() {
+        let mut input = PlainTextInput::new("".to_string());
+        input.remove_all();
+        assert_eq!(input.text, String::new());
+        assert_matches!(input.cursor, Cursor::Single(CursorIndex { line: 0, index: 0 }));
+
+        let mut input = PlainTextInput::new("Hello world!".to_string());
+        input.remove_all();
+        assert_eq!(input.text, String::new());
+        assert_matches!(input.cursor, Cursor::Single(CursorIndex { line: 0, index: 0 }));
+
+        let mut input = PlainTextInput::new("ধারা ১ সমস্ত মানুষ".to_string());
+        input.remove_all();
+        assert_eq!(input.text, String::new());
+        assert_matches!(input.cursor, Cursor::Single(CursorIndex { line: 0, index: 0 }));
+    }
+
+    #[test]
+    fn move_left_then_right_identity() {
+        let mut input = PlainTextInput::new("Hello world!".to_string());
+        input.cursor = Cursor::Single(CursorIndex { line: 0, index: 12 });
+
+        let cursor = input.cursor;
+        input.move_left();
+        input.move_right();
+
+        assert_eq!(input.cursor, cursor);
+
+        // Empty will also return to original position
+        let mut input = PlainTextInput::new("".to_string());
+        input.cursor = Cursor::Single(CursorIndex { line: 0, index: 0 });
+
+        let cursor = input.cursor;
+        input.move_left();
+        input.move_right();
+
+        assert_eq!(input.cursor, cursor);
+    }
 }

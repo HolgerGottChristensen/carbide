@@ -25,3 +25,4 @@ dyn-clone = "1.0.3"
 env_logger = "0.7"
 carbide_wgpu = { path = "../backends/carbide_wgpu" }
 futures = "0.3"
+assert_matches = "1.5.0"
