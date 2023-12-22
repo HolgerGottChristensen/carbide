@@ -10,6 +10,7 @@ use carbide_core::layout::Layout;
 use carbide_core::render::{Render, RenderContext};
 use carbide_core::state::{AnyReadState, AnyState, IntoReadState, IntoState, LocalState, Map3, Map4, ReadState, ReadStateExtNew, State, StateExtNew};
 use carbide_core::widget::{CommonWidget, Empty, Rectangle, AnyWidget, WidgetExt, WidgetId, Widget};
+use crate::{enabled_state, EnabledState};
 
 const SMOOTH_VALUE_INCREMENT: f64 = 0.05;
 const SMOOTH_VALUE_SMALL_INCREMENT: f64 = 0.01;
@@ -49,7 +50,7 @@ pub struct PlainSlider<F, St, S, E, P, Th, In, Bg, En> where
 }
 
 impl PlainSlider<Focus, f64, f64, f64, Option<f64>, Empty, Empty, Empty, bool> {
-    pub fn new<St: IntoState<f64>, S: IntoReadState<f64>, E: IntoReadState<f64>>(state: St, start: S, end: E) -> PlainSlider<LocalState<Focus>, St::Output, S::Output, E::Output, Option<f64>, Box<dyn AnyWidget>, Box<dyn AnyWidget>, Box<dyn AnyWidget>, bool> {
+    pub fn new<St: IntoState<f64>, S: IntoReadState<f64>, E: IntoReadState<f64>>(state: St, start: S, end: E) -> PlainSlider<LocalState<Focus>, St::Output, S::Output, E::Output, Option<f64>, Box<dyn AnyWidget>, Box<dyn AnyWidget>, Box<dyn AnyWidget>, EnabledState> {
         let focus = LocalState::new(Focus::Unfocused);
 
         Self::new_internal(
@@ -61,7 +62,7 @@ impl PlainSlider<Focus, f64, f64, f64, Option<f64>, Empty, Empty, Empty, bool> {
             default_thumb,
             default_track,
             default_background,
-            true
+            enabled_state()
         )
     }
 }

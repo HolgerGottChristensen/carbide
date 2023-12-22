@@ -1,4 +1,4 @@
-use carbide_controls::Button;
+use carbide_controls::{Button, ControlsExt};
 use carbide_core::a;
 use carbide_core::draw::Dimension;
 use carbide_core::state::{LocalState, ReadStateExtNew, State};

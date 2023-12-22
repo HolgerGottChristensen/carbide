@@ -1,4 +1,6 @@
 use std::fmt::{Debug, Formatter};
+use carbide::a;
+use carbide::event::ModifierKey;
 use carbide_core::{CommonWidgetImpl};
 use carbide_core::draw::{Dimension, Position};
 use carbide_core::environment::Environment;
@@ -8,6 +10,7 @@ use carbide_core::focus::{Focus, Focusable, Refocus};
 use carbide_core::state::{AnyReadState, IntoReadState, IntoState, LocalState, Map1, Map2, ReadState, ReadStateExtNew};
 use carbide_core::state::State;
 use carbide_core::widget::{CommonWidget, MouseArea, Rectangle, Text, AnyWidget, WidgetExt, WidgetId, ZStack, Widget};
+use crate::{enabled_state, EnabledState};
 
 use crate::types::*;
 
@@ -42,14 +45,14 @@ pub struct PlainCheckBox<F, C, D, E> where
 type DefaultPlainCheckBoxDelegate = fn(focus: Box<dyn AnyReadState<T=Focus>>, selected: Box<dyn AnyReadState<T=CheckBoxValue>>, enabled: Box<dyn AnyReadState<T=bool>>) -> Box<dyn AnyWidget>;
 
 impl PlainCheckBox<Focus, CheckBoxValue, DefaultPlainCheckBoxDelegate, bool> {
-    pub fn new<C: IntoState<CheckBoxValue>>(checked: C) -> PlainCheckBox<LocalState<Focus>, C::Output, DefaultPlainCheckBoxDelegate, bool> {
+    pub fn new<C: IntoState<CheckBoxValue>>(checked: C) -> PlainCheckBox<LocalState<Focus>, C::Output, DefaultPlainCheckBoxDelegate, EnabledState> {
         let focus_state = LocalState::new(Focus::Unfocused);
 
         Self::new_internal(
             checked.into_state(),
             focus_state,
             PlainCheckBox::default_delegate,
-            true
+            enabled_state()
         )
     }
 
@@ -57,7 +60,7 @@ impl PlainCheckBox<Focus, CheckBoxValue, DefaultPlainCheckBoxDelegate, bool> {
         let background_color = Map1::read_map(checked.clone(), |value| {
             match value {
                 CheckBoxValue::True => EnvironmentColor::Green,
-                CheckBoxValue::Intermediate => EnvironmentColor::Blue,
+                CheckBoxValue::Indeterminate => EnvironmentColor::Blue,
                 CheckBoxValue::False => EnvironmentColor::Red,
             }
         });
@@ -105,6 +108,10 @@ impl<F: State<T=Focus> + Clone, C: State<T=CheckBoxValue> + Clone, D: PlainCheck
 
         let button = MouseArea::new(delegate_widget)
             .on_click(capture!([checked, focus, enabled], |env: &mut Environment| {
+                enabled.sync(env);
+                checked.sync(env);
+                focus.sync(env);
+
                 if !*enabled.value() {
                     return;
                 }
@@ -120,15 +127,12 @@ impl<F: State<T=Focus> + Clone, C: State<T=CheckBoxValue> + Clone, D: PlainCheck
                     println!("Focus request");
                     env.request_focus(Refocus::FocusRequest);
                 }
-            })).on_click_outside(capture!(
-                [focus],
-                |env: &mut Environment| {
-                    if *focus.value() == Focus::Focused {
-                        focus.set_value(Focus::FocusReleased);
-                        env.request_focus(Refocus::FocusRequest);
-                    }
+            })).on_click_outside(a!(|env: &mut Environment, _: ModifierKey| {
+                if *$focus == Focus::Focused {
+                    *$focus = Focus::FocusReleased;
+                    env.request_focus(Refocus::FocusRequest);
                 }
-            ))
+            }))
             .focused(focus.clone());
 
         let button = Box::new(button);

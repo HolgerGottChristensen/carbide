@@ -17,26 +17,23 @@ fn main() {
         Window::new(
         "Labeled example - Carbide",
         Dimension::new(400.0, 600.0),
-        VStack::new(vec![
+        VStack::new((
             TextInput::new(text_state.clone())
                 .frame_fixed_width(150.0)
                 .fit_height()
-                .label("Label:")
-                .boxed(),
+                .label("Label:"),
             TextInput::new(text_state2.clone())
                 .frame_fixed_width(150.0)
                 .fit_height()
-                .label("Longer label:")
-                .boxed(),
+                .label("Longer label:"),
             TextInput::new(text_state3.clone())
                 .frame_fixed_width(150.0)
                 .fit_height()
                 .help("This field is disabled")
                 .label("Disabled label:")
                 .enabled(false)
-                .accent_color(EnvironmentColor::Orange)
-                .boxed(),
-        ])
+                .accent_color(EnvironmentColor::Orange),
+        ))
             .spacing(10.0)
             .cross_axis_alignment(CrossAxisAlignment::End)
             .padding(EdgeInsets::all(40.0)),

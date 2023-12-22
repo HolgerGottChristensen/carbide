@@ -44,11 +44,11 @@ fn main() {
     application.set_scene(Window::new(
         "Pop up Button Example - Carbide",
         Dimension::new(400.0, 600.0),
-        *VStack::new(vec![
-            PopUpButton::new(selected, model.clone()).boxed(),
-            PopUpButton::new(selected2.clone(), model.clone()).boxed(),
-            PopUpButton::new(selected2, model).enabled(false).boxed(),
-        ]).spacing(20.0)
+        VStack::new((
+            PopUpButton::new(selected, model.clone()),
+            PopUpButton::new(selected2.clone(), model.clone()),
+            PopUpButton::new(selected2, model).enabled(false),
+        )).spacing(20.0)
             .frame_fixed_width(300.0)
     ).close_application_on_window_close());
 

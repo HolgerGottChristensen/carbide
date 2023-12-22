@@ -1,4 +1,4 @@
-use carbide_controls::{CheckBox, CheckBoxValue};
+use carbide_controls::{CheckBox, CheckBoxValue, ControlsExt};
 use carbide_core::draw::Dimension;
 use carbide_core::state::LocalState;
 use carbide_core::widget::*;
@@ -7,7 +7,7 @@ use carbide_wgpu::{Application, Window};
 fn main() {
     let checkbox_state1 = LocalState::new(CheckBoxValue::False);
     let checkbox_state2 = LocalState::new(CheckBoxValue::False);
-    let checkbox_state3 = LocalState::new(CheckBoxValue::Intermediate);
+    let checkbox_state3 = LocalState::new(CheckBoxValue::Indeterminate);
     let checkbox_state4 = LocalState::new(true);
 
     let mut application = Application::new()
@@ -16,17 +16,21 @@ fn main() {
     application.set_scene(Window::new(
         "Checkbox Example - Carbide",
         Dimension::new(400.0, 600.0),
-        VStack::new(vec![
-            CheckBox::new("Rectangle", checkbox_state1).boxed(),
-            CheckBox::new("Circle", checkbox_state2).boxed(),
-            CheckBox::new("Triangle", checkbox_state3).boxed(),
-            CheckBox::new("Star", checkbox_state4).boxed(),
-            CheckBox::new("Disabled 1", CheckBoxValue::True).enabled(false).boxed(),
-            CheckBox::new("Disabled 2", CheckBoxValue::Intermediate).enabled(false).boxed(),
-            CheckBox::new("Disabled 3", CheckBoxValue::False).enabled(false).boxed(),
-        ])
-            .spacing(10.0)
+        VStack::new((
+            CheckBox::new("Rectangle", checkbox_state1),
+            CheckBox::new("Circle", checkbox_state2),
+            CheckBox::new("Triangle", checkbox_state3),
+            CheckBox::new("Star", checkbox_state4),
+            Empty::new().frame(1.0, 20.0),
+            CheckBox::new("Checked - Disabled", CheckBoxValue::True)
+                .enabled(false),
+            CheckBox::new("Indeterminate - Disabled", CheckBoxValue::Indeterminate)
+                .enabled(false),
+            CheckBox::new("Unchecked - Disabled", CheckBoxValue::False)
+                .enabled(false),
+        )).spacing(10.0)
             .cross_axis_alignment(CrossAxisAlignment::Start)
+            //.enabled(false)
             .padding(EdgeInsets::all(40.0))
     ).close_application_on_window_close());
 

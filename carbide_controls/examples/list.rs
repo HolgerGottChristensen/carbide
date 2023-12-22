@@ -26,7 +26,9 @@ fn main() {
     application.set_scene(Window::new(
         "List Example - Carbide",
         Dimension::new(400.0, 600.0),
-        List::new(list_model_state, delegate).clip().padding(50.0)
+        List::new(list_model_state, delegate)
+            .clip()
+            .padding(50.0)
     ).close_application_on_window_close());
 
     application.launch();

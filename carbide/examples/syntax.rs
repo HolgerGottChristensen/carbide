@@ -6,7 +6,6 @@ use carbide_core::draw::Dimension;
 use carbide_core::environment::EnvironmentColor;
 use carbide_core::environment::EnvironmentFontSize;
 use carbide_core::state::{LocalState, ReadState, StateExt};
-use carbide_core::text::{FontFamily, FontWeight, TextDecoration};
 use carbide_core::widget::*;
 use carbide_core::task;
 use carbide_wgpu::{Application, Window};
@@ -149,24 +148,18 @@ fn main() {
     let count = LocalState::new(42);
 
 
-    let mut application = Application::new();
+    let mut application = Application::new()
+        .with_asset_fonts();
 
     let env = application.environment_mut();
 
-    task!(env, count := {
+    /*task!(count := {
         sleep(Duration::new(2, 0)).await;
         420
     }, count := {
         sleep(Duration::new(2, 0)).await;
         42
-    });
-
-    let family =
-        FontFamily::new_from_paths("NotoSans", vec![
-            "fonts/NotoSans/NotoSans-Regular.ttf",
-            "fonts/NotoSans/NotoSans-Bold.ttf",
-        ]);
-    application.add_font_family(family);
+    });*/
 
     let child = CarbideUI! {
         AlbumDetail(vec!["Album 1".to_string(), "Album 2".to_string()], alignment: $count)

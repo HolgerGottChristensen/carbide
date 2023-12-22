@@ -7,6 +7,7 @@ use carbide_core::focus::{Focus, Focusable};
 use carbide_core::focus::Refocus;
 use carbide_core::state::{AnyReadState, AnyState, IntoReadState, IntoState, LocalState, Map1, Map2, ReadState, ReadStateExtNew, State, StateExtNew};
 use carbide_core::widget::{CommonWidget, MouseArea, Rectangle, Text, AnyWidget, WidgetExt, WidgetId, ZStack, Widget};
+use crate::{enabled_state, EnabledState};
 
 pub trait PlainSwitchDelegate: Clone + 'static {
     fn call(&self, focus: Box<dyn AnyState<T=Focus>>, checked: Box<dyn AnyState<T=bool>>, enabled: Box<dyn AnyReadState<T=bool>>) -> Box<dyn AnyWidget>;
@@ -45,14 +46,14 @@ pub struct PlainSwitch<F, C, D, E> where
 }
 
 impl PlainSwitch<Focus, bool, DefaultPlainSwitchDelegate, bool> {
-    pub fn new<C: IntoState<bool>>(checked: C) -> PlainSwitch<LocalState<Focus>, C::Output, DefaultPlainSwitchDelegate, bool> {
+    pub fn new<C: IntoState<bool>>(checked: C) -> PlainSwitch<LocalState<Focus>, C::Output, DefaultPlainSwitchDelegate, EnabledState> {
         let focus_state = LocalState::new(Focus::Unfocused);
 
         Self::new_internal(
             checked.into_state(),
             focus_state,
             PlainSwitch::default_delegate,
-            true,
+            enabled_state(),
         )
     }
 
@@ -107,6 +108,10 @@ impl<F: State<T=Focus> + Clone, C: State<T=bool> + Clone, D: PlainSwitchDelegate
 
         let button = Box::new(MouseArea::new(delegate_widget)
             .on_click(capture!([checked, focus, enabled], |env: &mut Environment| {
+                enabled.sync(env);
+                focus.sync(env);
+                checked.sync(env);
+
                 if !*enabled.value() {
                     return;
                 }

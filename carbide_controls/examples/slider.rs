@@ -1,7 +1,7 @@
-use carbide_controls::Slider;
+use carbide_controls::{ControlsExt, Slider};
 use carbide_core::draw::Dimension;
 use carbide_core::environment::EnvironmentColor;
-use carbide_core::state::{LocalState, StateExt};
+use carbide_core::state::LocalState;
 use carbide_core::widget::*;
 use carbide_wgpu::{Application, Window};
 use carbide_core::state::ReadStateExtNew;
@@ -15,16 +15,18 @@ fn main() {
         .with_asset_fonts();
 
     application.set_scene(Window::new(
-        "Slider example",
+        "Slider example - Carbide",
         Dimension::new(400.0, 400.0),
-        *VStack::new(vec![
+        VStack::new((
             Text::new(
                 progress
                     .clone()
                     .map(|a: &f64| format!("Slider value: {:.2}", a)),
             ),
-            Slider::new(progress, 20.0, 100.0).padding(20.0).boxed(),
-            Empty::new().frame(20.0, 20.0),
+            Slider::new(progress, 20.0, 100.0)
+                .padding(20.0),
+            Empty::new()
+                .frame(20.0, 20.0),
             Text::new(
                 progress2
                     .clone()
@@ -33,17 +35,18 @@ fn main() {
             Slider::new(progress2, 20.0, 100.0)
                 .step(Some(5.0))
                 .accent_color(EnvironmentColor::Orange)
-                .padding(20.0)
-                .boxed(),
+                .padding(20.0),
             Empty::new().frame(20.0, 20.0),
             Text::new(
                 progress3
                     .clone()
                     .map(|a: &f64| format!("Slider disabled value: {:.2}", a)),
             ),
-            Slider::new(progress3, 20.0, 100.0).enabled(false).padding(20.0).boxed(),
+            Slider::new(progress3, 20.0, 100.0)
+                .enabled(false)
+                .padding(20.0),
 
-        ])
+        ))
     ).close_application_on_window_close());
 
     application.launch();

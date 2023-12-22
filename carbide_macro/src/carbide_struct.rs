@@ -96,7 +96,7 @@ impl ToTokens for CarbideStruct {
         let struct_fields_use2 = struct_fields_use.clone();
 
         // If we have a body with multiple widget returns we store them in a field in the struct
-        let child_field = quote!(child: Box<dyn Widget>,);
+        let child_field = quote!(child: Box<dyn AnyWidget>,);
 
         let child_init_field = quote!(child: child,);
 

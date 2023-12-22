@@ -4,12 +4,12 @@ use carbide_core::focus::Focus;
 use carbide_core::state::{AnyReadState, AnyState, IntoReadState, IntoState, LocalState, Map1, Map2, ReadStateExtNew};
 use carbide_core::widget::*;
 
-use crate::PlainSlider;
+use crate::{EnabledState, PlainSlider};
 
 pub struct Slider;
 
 impl Slider {
-    pub fn new<V: IntoState<f64>, S: IntoReadState<f64>, E: IntoReadState<f64>>(value: V, start: S, end: E) -> PlainSlider<LocalState<Focus>, V::Output, S::Output, E::Output, Option<f64>, Box<dyn AnyWidget>, Box<dyn AnyWidget>, Box<dyn AnyWidget>, bool> {
+    pub fn new<V: IntoState<f64>, S: IntoReadState<f64>, E: IntoReadState<f64>>(value: V, start: S, end: E) -> PlainSlider<LocalState<Focus>, V::Output, S::Output, E::Output, Option<f64>, Box<dyn AnyWidget>, Box<dyn AnyWidget>, Box<dyn AnyWidget>, EnabledState> {
         let focus = LocalState::new(Focus::Unfocused);
 
         let plain = PlainSlider::new(value, start, end)

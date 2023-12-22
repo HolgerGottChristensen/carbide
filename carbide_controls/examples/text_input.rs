@@ -1,4 +1,4 @@
-use carbide_controls::TextInput;
+use carbide_controls::{ControlsExt, TextInput};
 use carbide_core::draw::Dimension;
 use carbide_core::environment::EnvironmentColor;
 use carbide_core::state::{LocalState};
