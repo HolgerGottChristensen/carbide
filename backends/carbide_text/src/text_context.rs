@@ -176,7 +176,7 @@ impl InnerTextContext for TextContext {
 
         // Inspect the output runs
         for run in buffer.layout_runs() {
-            ctx.style(DrawStyle::Color(LIGHT_PURPLE));
+            ctx.style(DrawStyle::Color(RED));
             ctx.rect(Rect::new(Position::new(0.0, run.line_y as f64), Dimension::new(run.line_w as f64, 1.0 / metadata.scale_factor)) + metadata.position);
             ctx.pop_style();
 

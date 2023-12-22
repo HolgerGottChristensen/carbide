@@ -8,7 +8,7 @@ pub use event_handler::*;
 pub use input::Input;
 pub use keyboard_event_handler::KeyboardEventHandler;
 pub use mouse_event_handler::*;
-pub use other_event_handler::OtherEventHandler;
+pub use other_event_handler::*;
 pub use types::button::Button;
 pub use types::hot_key::*;
 pub use types::key::Key;

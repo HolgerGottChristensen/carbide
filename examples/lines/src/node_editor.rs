@@ -3,7 +3,7 @@ use std::iter::once;
 use carbide::CommonWidgetImpl;
 use carbide::draw::{Dimension, Position};
 use carbide::environment::Environment;
-use carbide::event::{ModifierKey, MouseEvent, MouseEventHandler};
+use carbide::event::{ModifierKey, MouseEvent, MouseEventContext, MouseEventHandler};
 use carbide::state::{LocalState, ReadState, State};
 use carbide::widget::{CommonWidget, Widget, WidgetExt, WidgetId};
 
@@ -441,16 +441,16 @@ impl MouseEventHandler for NodeEditor {
         let mode = self.graph.value().editing_mode.clone();
         match mode {
             EditingMode::Editing => {
-                self.normal_mode_mouse_event(event, consumed, ctx);
+                self.normal_mode_mouse_event(event, consumed, ctx.env);
             }
             EditingMode::CreateWallP1 { .. } => {
-                self.create_wall_p1_mouse_event(event, consumed, ctx);
+                self.create_wall_p1_mouse_event(event, consumed, ctx.env);
             }
             EditingMode::CreateWallP2 { first_node_id, .. } => {
-                self.create_wall_p2_mouse_event(first_node_id, event, consumed, ctx);
+                self.create_wall_p2_mouse_event(first_node_id, event, consumed, ctx.env);
             }
             EditingMode::Selection { selected, .. } => {
-                self.selection_mode_mouse_event(event, consumed, ctx, selected);
+                self.selection_mode_mouse_event(event, consumed, ctx.env, selected);
             }
         }
     }

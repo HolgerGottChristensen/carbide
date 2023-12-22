@@ -7,7 +7,7 @@ use carbide_core::widget::AnyWidget;
 
 use crate::draw::{Dimension, InnerImageContext, Position, Scalar};
 use crate::environment::Environment;
-use crate::event::{Button, CustomEvent, Gesture, Input, Key, ModifierKey, Motion, MouseButton, MouseEventContext, TouchPhase};
+use crate::event::{Button, CustomEvent, Gesture, Input, Key, ModifierKey, Motion, MouseButton, MouseEventContext, OtherEventContext, TouchPhase};
 use crate::text::InnerTextContext;
 use crate::window::WindowId;
 
@@ -54,14 +54,26 @@ impl EventHandler {
                     widgets.process_keyboard_event(keyboard_event, env);
                 }
                 WidgetEvent::Window(_) => {
-                    widgets.process_other_event(event, env);
+                    widgets.process_other_event(event, &mut OtherEventContext {
+                        text: text_context,
+                        image: image_context,
+                        env,
+                    });
                 }
                 WidgetEvent::Touch(_) => {
-                    widgets.process_other_event(event, env);
+                    widgets.process_other_event(event, &mut OtherEventContext {
+                        text: text_context,
+                        image: image_context,
+                        env,
+                    });
                 }
                 WidgetEvent::Custom(_) => {}
                 WidgetEvent::DoneProcessingEvents => {
-                    widgets.process_other_event(event, env);
+                    widgets.process_other_event(event, &mut OtherEventContext {
+                        text: text_context,
+                        image: image_context,
+                        env,
+                    });
                 }
             }
 
@@ -144,7 +156,11 @@ impl EventHandler {
 
         // Todo: Consider being smarter about sending this event. We dont need to send it if no state changed this frame.
         // Currently used by foreach to check if updates has been made to its model.
-        widgets.process_other_event(&WidgetEvent::DoneProcessingEvents, env);
+        widgets.process_other_event(&WidgetEvent::DoneProcessingEvents, &mut OtherEventContext {
+            text: text_context,
+            image: image_context,
+            env,
+        });
         self.clear_events();
         self.any_focus = any_focus;
 

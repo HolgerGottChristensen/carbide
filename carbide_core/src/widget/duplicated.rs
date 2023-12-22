@@ -3,7 +3,7 @@ use std::fmt::{Debug, Formatter};
 use std::rc::Rc;
 use crate::draw::{Dimension, Position};
 use crate::environment::Environment;
-use crate::event::{KeyboardEvent, KeyboardEventHandler, MouseEvent, MouseEventContext, MouseEventHandler, OtherEventHandler, WidgetEvent};
+use crate::event::{KeyboardEvent, KeyboardEventHandler, MouseEvent, MouseEventContext, MouseEventHandler, OtherEventContext, OtherEventHandler, WidgetEvent};
 use crate::flags::Flags;
 use crate::focus::{Focus, Focusable, Refocus};
 use crate::layout::{Layout, LayoutContext, Layouter};
@@ -118,12 +118,12 @@ impl<T: AnyWidget> KeyboardEventHandler for Duplicated<T> {
 }
 
 impl<T: AnyWidget> OtherEventHandler for Duplicated<T> {
-    fn handle_other_event(&mut self, event: &WidgetEvent, env: &mut Environment) {
-        self.0.borrow_mut().handle_other_event(event, env)
+    fn handle_other_event(&mut self, _event: &WidgetEvent, ctx: &mut OtherEventContext) {
+        self.0.borrow_mut().handle_other_event(_event, ctx)
     }
 
-    fn process_other_event(&mut self, event: &WidgetEvent, env: &mut Environment) {
-        self.0.borrow_mut().process_other_event(event, env)
+    fn process_other_event(&mut self, event: &WidgetEvent, ctx: &mut OtherEventContext) {
+        self.0.borrow_mut().process_other_event(event, ctx)
     }
 }
 

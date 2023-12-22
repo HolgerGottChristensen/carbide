@@ -2,24 +2,21 @@ use std::collections::HashMap;
 use std::fmt::{Debug, Formatter};
 use std::path::PathBuf;
 use std::rc::Rc;
-use std::sync::Arc;
-use std::sync::mpsc::{channel, Receiver, Sender, TryRecvError};
-use std::time::Duration;
+use std::sync::mpsc::{channel, Receiver, TryRecvError};
+
 use num::{Complex, Zero};
 use num::complex::ComplexFloat;
 use uuid::Uuid;
-use carbide::asynchronous::{get_event_sink, sleep};
-use carbide::color::{RED, WHITE};
-use carbide::CommonWidgetImpl;
 
+use carbide::asynchronous::get_event_sink;
+use carbide::CommonWidgetImpl;
 use carbide::draw::{Color, Dimension, Position, Rect, Scalar, Texture, TextureFormat};
-use carbide::draw::draw_style::DrawStyle;
 use carbide::draw::image::ImageId;
 use carbide::environment::Environment;
-use carbide::event::{CustomEvent, MouseEvent, MouseEventHandler, OtherEventHandler, WidgetEvent};
+use carbide::event::{CustomEvent, MouseEvent, MouseEventContext, MouseEventHandler, OtherEventContext, OtherEventHandler, WidgetEvent};
 use carbide::image::{DynamicImage, GenericImage, Rgba};
 use carbide::mesh::MODE_IMAGE;
-use carbide::render::{CarbideTransform, Render, RenderContext};
+use carbide::render::{Render, RenderContext};
 use carbide::render::matrix::{Deg, Matrix4, Vector3};
 use carbide::widget::*;
 
@@ -172,12 +169,12 @@ impl Render for Mandelbrot {
 }
 
 impl OtherEventHandler for Mandelbrot {
-    fn handle_other_event(&mut self, event: &WidgetEvent, env: &mut Environment) {
-        if let WidgetEvent::DoneProcessingEvents = event {
+    fn handle_other_event(&mut self, _event: &WidgetEvent, ctx: &mut OtherEventContext) {
+        if let WidgetEvent::DoneProcessingEvents = _event {
             self.jobs.retain(|(job, receiver)| {
                 match receiver.try_recv() {
                     Ok((image, id)) => {
-                        env.image_context.update_texture(id.clone(), Texture {
+                        ctx.image.update_texture(id.clone(), Texture {
                             width: image.width(),
                             height: image.height(),
                             bytes_per_row: image.width() * 4,

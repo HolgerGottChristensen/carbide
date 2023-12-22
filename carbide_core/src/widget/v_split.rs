@@ -3,7 +3,7 @@ use carbide_macro::{carbide_default_builder2};
 use crate::cursor::MouseCursor;
 use crate::draw::{Dimension, Position};
 use crate::environment::Environment;
-use crate::event::{MouseEvent, MouseEventContext, MouseEventHandler, OtherEventHandler, WidgetEvent};
+use crate::event::{MouseEvent, MouseEventContext, MouseEventHandler, OtherEventContext, OtherEventHandler, WidgetEvent};
 use crate::layout::{Layout, LayoutContext};
 use crate::state::{IntoState, State};
 use crate::widget::{CommonWidget, CrossAxisAlignment, SplitType, AnyWidget, WidgetExt, WidgetId, Widget, Empty, WidgetSequence};
@@ -96,9 +96,9 @@ impl<S: State<T=f64>, L: Widget, T: Widget> VSplit<S, L, T> {
 }
 
 impl<S: State<T=f64>, L: Widget, T: Widget> OtherEventHandler for VSplit<S, L, T> {
-    fn handle_other_event(&mut self, _event: &WidgetEvent, env: &mut Environment) {
+    fn handle_other_event(&mut self, _event: &WidgetEvent, ctx: &mut OtherEventContext) {
         if self.dragging || self.hovering {
-            env.set_cursor(MouseCursor::RowResize);
+            ctx.env.set_cursor(MouseCursor::RowResize);
         }
     }
 }

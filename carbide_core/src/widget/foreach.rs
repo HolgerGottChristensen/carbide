@@ -7,7 +7,7 @@ use carbide_macro::{carbide_default_builder2};
 
 use crate::draw::{Dimension, Position};
 use crate::environment::Environment;
-use crate::event::{OtherEventHandler, WidgetEvent};
+use crate::event::{OtherEventContext, OtherEventHandler, WidgetEvent};
 use crate::flags::Flags;
 use crate::state::{AnyReadState, AnyState, IndexState, IntoState, ReadState, ReadStateExtNew, State, StateContract, StateExtNew, ValueState};
 use crate::widget::{CommonWidget, Empty, WidgetExt, WidgetId, Widget};
@@ -86,7 +86,7 @@ impl ForEach<(), Vec<()>, EmptyDelegate, Empty, usize> {
 }
 
 impl<T: StateContract, M: State<T=Vec<T>>, W: Widget, U: Delegate<T, W>, I: ReadState<T=usize>> OtherEventHandler for ForEach<T, M, U, W, I> {
-    fn handle_other_event(&mut self, _event: &WidgetEvent, _env: &mut Environment) {
+    fn handle_other_event(&mut self, _event: &WidgetEvent, ctx: &mut OtherEventContext) {
         if self.model.value().len() < self.children.len() {
             // Remove the excess elements
             let number_to_remove = self.children.len() - self.model.value().len();

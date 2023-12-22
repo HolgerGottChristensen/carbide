@@ -10,10 +10,6 @@ use crate::{enabled_state, EnabledState, PASSWORD_CHAR, PlainTextInput};
 const VERTICAL_PADDING: f64 = 0.0;
 const HORIZONTAL_PADDING: f64 = 5.0;
 
-/// A plain text input widget. The widget contains no specific styling, other than text color,
-/// cursor color/width and selection color. Most common logic has been implemented, such as
-/// key shortcuts, mouse click and drag select along with copy and paste. For an example of
-/// how to use this widget look at examples/plain_text_input
 #[derive(Debug, Clone, Widget)]
 pub struct TextInput<F, O, T, E> where
     F: State<T=Focus>,

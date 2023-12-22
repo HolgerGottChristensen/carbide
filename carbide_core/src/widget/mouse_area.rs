@@ -14,7 +14,7 @@ use carbide_core::focus::Focus;
 use carbide_core::state::{State};
 use carbide_core::widget::{CommonWidget, AnyWidget, WidgetExt, WidgetId, Widget};
 use carbide_macro::{carbide_default_builder2};
-use crate::event::MouseEventContext;
+use crate::event::{MouseEventContext, OtherEventContext};
 
 use crate::state::{IntoState};
 use crate::widget::Empty;
@@ -176,13 +176,13 @@ impl<
     H: State<T=bool>,
     P: State<T=bool>,
 > OtherEventHandler for MouseArea<I, O, F, C, H, P> {
-    fn handle_other_event(&mut self, _event: &WidgetEvent, env: &mut Environment) {
+    fn handle_other_event(&mut self, _event: &WidgetEvent, ctx: &mut OtherEventContext) {
         if *self.is_hovered.value() {
-            env.set_cursor(self.hover_cursor);
+            ctx.env.set_cursor(self.hover_cursor);
         }
         if *self.is_pressed.value() {
             if let Some(cursor) = self.pressed_cursor {
-                env.set_cursor(cursor);
+                ctx.env.set_cursor(cursor);
             }
         }
     }

@@ -5,7 +5,7 @@ use carbide_macro::{carbide_default_builder2};
 use crate::CommonWidgetImpl;
 use crate::draw::{Dimension, Position};
 use crate::environment::{Environment, EnvironmentStateContainer, EnvironmentVariable};
-use crate::event::{KeyboardEvent, KeyboardEventHandler, MouseEvent, MouseEventContext, MouseEventHandler, OtherEventHandler, WidgetEvent};
+use crate::event::{KeyboardEvent, KeyboardEventHandler, MouseEvent, MouseEventContext, MouseEventHandler, OtherEventContext, OtherEventHandler, WidgetEvent};
 use crate::focus::{Focusable, Refocus};
 use crate::render::{Primitive, Render};
 use crate::state::{NewStateSync, ReadState};
@@ -120,12 +120,12 @@ impl<C: Widget> EnvUpdating<C> {
 }
 
 impl<C: Widget> OtherEventHandler for EnvUpdating<C> {
-    fn process_other_event(&mut self, event: &WidgetEvent, env: &mut Environment) {
-        self.insert_into_env(env);
+    fn process_other_event(&mut self, event: &WidgetEvent, ctx: &mut OtherEventContext) {
+        self.insert_into_env(ctx.env);
 
-        self.child.process_other_event(event, env);
+        self.child.process_other_event(event, ctx);
 
-        self.remove_from_env(env);
+        self.remove_from_env(ctx.env);
     }
 }
 

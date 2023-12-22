@@ -1,7 +1,7 @@
 use std::fmt::{Debug};
 use crate::draw::{Dimension, Position};
 use crate::environment::Environment;
-use crate::event::{KeyboardEvent, KeyboardEventHandler, MouseEvent, MouseEventContext, MouseEventHandler, OtherEventHandler, WidgetEvent};
+use crate::event::{KeyboardEvent, KeyboardEventHandler, MouseEvent, MouseEventContext, MouseEventHandler, OtherEventContext, OtherEventHandler, WidgetEvent};
 use crate::flags::Flags;
 use crate::focus::{Focus, Focusable, Refocus};
 use crate::layout::{Layout, LayoutContext, Layouter};
@@ -296,17 +296,17 @@ impl<T: Widget,
     B6: ReadState<T=bool>,
     B7: ReadState<T=bool>,
 > OtherEventHandler for Ignore<T, B1, B2, B3, B4, B5, B6, B7> {
-    fn handle_other_event(&mut self, event: &WidgetEvent, env: &mut Environment) {
-        self.update_states(env);
+    fn handle_other_event(&mut self, _event: &WidgetEvent, ctx: &mut OtherEventContext) {
+        self.update_states(ctx.env);
         if *self.other_event.value() {
-            self.inner.handle_other_event(event, env)
+            self.inner.handle_other_event(_event, ctx)
         }
     }
 
-    fn process_other_event(&mut self, event: &WidgetEvent, env: &mut Environment) {
-        self.update_states(env);
+    fn process_other_event(&mut self, event: &WidgetEvent, ctx: &mut OtherEventContext) {
+        self.update_states(ctx.env);
         if *self.other_event.value() {
-            self.inner.process_other_event(event, env)
+            self.inner.process_other_event(event, ctx)
         }
     }
 }

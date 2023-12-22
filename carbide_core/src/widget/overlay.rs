@@ -1,6 +1,6 @@
 use crate::draw::{Dimension, Position};
 use crate::environment::Environment;
-use crate::event::{KeyboardEvent, MouseEvent, MouseEventContext, WidgetEvent};
+use crate::event::{KeyboardEvent, MouseEvent, MouseEventContext, OtherEventContext, WidgetEvent};
 use crate::event::{KeyboardEventHandler, MouseEventHandler, OtherEventHandler};
 use crate::flags::Flags;
 use crate::focus::{Focus, Focusable};
@@ -142,14 +142,14 @@ impl<W: AnyWidget + Clone, B: ReadState<T=bool>> KeyboardEventHandler for Overla
 }
 
 impl<W: AnyWidget + Clone, B: ReadState<T=bool>> OtherEventHandler for Overlay<W, B> {
-    fn handle_other_event(&mut self, event: &WidgetEvent, env: &mut Environment) {
-        self.ensure_overlay_correct(env);
-        self.hierarchy.handle_other_event(event, env)
+    fn handle_other_event(&mut self, _event: &WidgetEvent, ctx: &mut OtherEventContext) {
+        self.ensure_overlay_correct(ctx.env);
+        self.hierarchy.handle_other_event(_event, ctx)
     }
 
-    fn process_other_event(&mut self, event: &WidgetEvent, env: &mut Environment) {
-        self.ensure_overlay_correct(env);
-        self.hierarchy.process_other_event(event, env)
+    fn process_other_event(&mut self, event: &WidgetEvent, ctx: &mut OtherEventContext) {
+        self.ensure_overlay_correct(ctx.env);
+        self.hierarchy.process_other_event(event, ctx)
     }
 }
 
