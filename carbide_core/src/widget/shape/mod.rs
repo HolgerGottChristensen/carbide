@@ -22,12 +22,12 @@ pub use rounded_rectangle::*;
 use crate::draw::{NOOPImageContext, Position, Scalar};
 use crate::draw::shape::triangle::Triangle;
 use crate::environment::Environment;
-use crate::render::{InnerRenderContext, PrimitiveKind, RenderContext};
+use crate::render::{InnerRenderContext, RenderContext};
 use crate::text::NOOPTextContext;
+use crate::widget::AnyWidget;
 use crate::widget::types::PrimitiveStore;
 use crate::widget::types::ShapeStyle;
 use crate::widget::types::StrokeStyle;
-use crate::widget::AnyWidget;
 
 mod capsule;
 mod circle;

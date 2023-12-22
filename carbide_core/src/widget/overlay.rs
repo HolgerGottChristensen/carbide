@@ -6,10 +6,10 @@ use crate::flags::Flags;
 use crate::focus::{Focus, Focusable};
 use crate::focus::Refocus;
 use crate::layout::{Layout, LayoutContext, Layouter};
-use crate::render::{Primitive, RenderContext};
+use crate::render::RenderContext;
 use crate::render::Render;
 use crate::state::{IntoReadState, ReadState, StateSync};
-use crate::widget::{CommonWidget, Duplicated, Empty, Ignore, AnyWidget, WidgetExt, WidgetId, Widget};
+use crate::widget::{AnyWidget, CommonWidget, Duplicated, Empty, Ignore, Widget, WidgetExt, WidgetId};
 
 /// A basic, non-interactive rectangle shape widget.
 #[derive(Debug, Clone)]

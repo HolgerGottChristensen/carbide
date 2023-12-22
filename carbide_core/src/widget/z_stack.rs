@@ -1,15 +1,11 @@
-
 use smallvec::{SmallVec, smallvec};
 
+use carbide_macro::carbide_default_builder2;
 
-use carbide_macro::{carbide_default_builder2};
 use crate::CommonWidgetImpl;
-
 use crate::draw::{Dimension, Position};
-use crate::environment::Environment;
-
 use crate::layout::{BasicLayouter, Layout, LayoutContext, Layouter};
-use crate::widget::{CommonWidget, AnyWidget, WidgetExt, WidgetId, WidgetSequence, Widget};
+use crate::widget::{AnyWidget, CommonWidget, Widget, WidgetExt, WidgetId, WidgetSequence};
 
 /// A basic, non-interactive rectangle shape widget.
 #[derive(Debug, Clone, Widget)]

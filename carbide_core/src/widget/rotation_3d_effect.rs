@@ -1,16 +1,14 @@
 use cgmath::{Deg, Matrix4, Point3, Vector3};
+
 use carbide_core::render::RenderContext;
-
-
-use carbide_macro::{carbide_default_builder2};
+use carbide_macro::carbide_default_builder2;
 
 use crate::draw::{Dimension, Position, Rect};
 use crate::environment::Environment;
-
 use crate::layout::BasicLayouter;
-use crate::render::{Primitive, PrimitiveKind, Render};
+use crate::render::Render;
 use crate::state::{ReadState, StateSync};
-use crate::widget::{CommonWidget, Empty, AnyWidget, WidgetExt, WidgetId, Widget};
+use crate::widget::{AnyWidget, CommonWidget, Empty, Widget, WidgetExt, WidgetId};
 
 #[derive(Debug, Clone, Widget)]
 #[carbide_exclude(Render)]

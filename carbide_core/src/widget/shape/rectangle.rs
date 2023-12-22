@@ -1,19 +1,17 @@
 use lyon::algorithms::path::Winding;
 use lyon::geom::euclid::rect;
+
 use carbide_core::render::{RenderContext, Style};
 use carbide_core::state::StateSync;
+use carbide_macro::carbide_default_builder2;
 
-
-use carbide_macro::{carbide_default_builder2};
-
-use crate::{CommonWidgetImpl};
-
-use crate::draw::{Dimension, Position, Rect, Color, Scalar};
-use crate::environment::{Environment};
+use crate::CommonWidgetImpl;
+use crate::draw::{Color, Dimension, Position};
+use crate::environment::Environment;
 use crate::environment::EnvironmentColor;
-use crate::render::{Primitive, PrimitiveKind, Render};
-use crate::state::{ReadState, IntoReadState};
-use crate::widget::{Blur, CommonWidget, WidgetExt, WidgetId, ZStack, Widget};
+use crate::render::Render;
+use crate::state::{IntoReadState, ReadState};
+use crate::widget::{Blur, CommonWidget, Widget, WidgetExt, WidgetId, ZStack};
 use crate::widget::shape::{Shape, tessellate};
 use crate::widget::types::PrimitiveStore;
 use crate::widget::types::ShapeStyle;
@@ -94,91 +92,6 @@ impl<S2: ReadState<T=Style> + Clone, F2: ReadState<T=Style> + Clone> Rectangle<S
         self.position = position;
         Box::new(self)
     }
-
-    //#[cfg(not(feature = "debug-outline"))]
-    pub fn debug_outline(_rect: Rect, _width: Scalar) -> Vec<Primitive> {
-        vec![]
-    }
-
-    pub fn debug_outline_special(rect: Rect, border_width: Scalar) -> Vec<Primitive> {
-        let (l, r, b, t) = rect.l_r_b_t();
-
-        let left_border = Rect::new(
-            Position::new(l, b),
-            Dimension::new(border_width, rect.height()),
-        );
-        let right_border = Rect::new(
-            Position::new(r - border_width, b),
-            Dimension::new(border_width, rect.height()),
-        );
-
-        let top_border = Rect::new(
-            Position::new(l + border_width, b),
-            Dimension::new(rect.width() - border_width * 2.0, border_width),
-        );
-        let bottom_border = Rect::new(
-            Position::new(l + border_width, t - border_width),
-            Dimension::new(rect.width() - border_width * 2.0, border_width),
-        );
-
-        let border_color = Color::Rgba(0.0 / 255.0, 255.0 / 255.0, 251.0 / 255.0, 1.0); //Color::random();
-        vec![
-            Primitive {
-                kind: PrimitiveKind::RectanglePrim {
-                    color: border_color.clone(),
-                },
-                bounding_box: left_border,
-            },
-            Primitive {
-                kind: PrimitiveKind::RectanglePrim {
-                    color: border_color.clone(),
-                },
-                bounding_box: right_border,
-            },
-            Primitive {
-                kind: PrimitiveKind::RectanglePrim {
-                    color: border_color.clone(),
-                },
-                bounding_box: top_border,
-            },
-            Primitive {
-                kind: PrimitiveKind::RectanglePrim {
-                    color: border_color.clone(),
-                },
-                bounding_box: bottom_border,
-            },
-        ]
-    }
-
-    //#[cfg(feature = "debug-outline")]
-    /*pub fn debug_outline(rect: Rect, width: Scalar) -> Vec<Primitive> {
-        let (l, r, b, t) = rect.l_r_b_t();
-
-        let left_border = Rect::new([l,b], [width, rect.h()]);
-        let right_border = Rect::new([r-width,b], [width, rect.h()]);
-        let top_border = Rect::new([l+width,b], [rect.w()-width*2.0, width]);
-        let bottom_border = Rect::new([l+width,t-width], [rect.w()-width*2.0, width]);
-
-        let border_color = Color::Rgba(0.0 / 255.0, 255.0 / 255.0, 251.0 / 255.0, 1.0);//Color::random();
-        vec![
-            Primitive {
-                kind: PrimitiveKind::Rectangle { color: border_color.clone()},
-                rect: left_border
-            },
-            Primitive {
-                kind: PrimitiveKind::Rectangle { color: border_color.clone()},
-                rect: right_border
-            },
-            Primitive {
-                kind: PrimitiveKind::Rectangle { color: border_color.clone()},
-                rect: top_border
-            },
-            Primitive {
-                kind: PrimitiveKind::Rectangle { color: border_color.clone()},
-                rect: bottom_border
-            },
-        ]
-    }*/
 }
 
 impl<S: ReadState<T=Style> + Clone, F: ReadState<T=Style> + Clone> CommonWidget for Rectangle<S, F> {

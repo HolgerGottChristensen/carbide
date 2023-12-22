@@ -1,14 +1,13 @@
 use carbide_core::render::RenderContext;
 use carbide_core::widget::CommonWidget;
-
-use carbide_macro::{carbide_default_builder2};
+use carbide_macro::carbide_default_builder2;
 
 use crate::CommonWidgetImpl;
 use crate::draw::{Dimension, Position};
 use crate::environment::Environment;
 use crate::layout::{BasicLayouter, Layout, LayoutContext, Layouter};
-use crate::render::{Primitive, Render};
-use crate::widget::{Empty, AnyWidget, WidgetExt, WidgetId, Widget};
+use crate::render::Render;
+use crate::widget::{AnyWidget, Empty, Widget, WidgetExt, WidgetId};
 
 /// Takes a child and a background widget, and sizes the background the same as the child.
 /// The background will be shown behind the child widget.
@@ -52,9 +51,9 @@ impl Background<Empty, Empty> {
 }
 
 impl<F: Widget, B: Widget> Background<F, B> {
-    pub fn with_alignment(mut self, layouter: BasicLayouter) -> Box<Self> {
+    pub fn with_alignment(mut self, layouter: BasicLayouter) -> Self {
         self.alignment = Box::new(layouter);
-        Box::new(self)
+        self
     }
 }
 

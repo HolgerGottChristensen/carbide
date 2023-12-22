@@ -1,14 +1,13 @@
 use carbide_core::render::RenderContext;
-
-use carbide_macro::{carbide_default_builder2};
+use carbide_macro::carbide_default_builder2;
 
 use crate::CommonWidgetImpl;
-use crate::draw::{Dimension, Position, Rect};
-use crate::environment::{Environment,};
+use crate::draw::{Dimension, Position};
+use crate::environment::Environment;
 use crate::layout::{BasicLayouter, Layout, LayoutContext, Layouter};
-use crate::render::{Primitive, PrimitiveKind, Render};
+use crate::render::Render;
 use crate::state::StateSync;
-use crate::widget::{CommonWidget, Empty, Shape, AnyWidget, WidgetExt, WidgetId, Widget};
+use crate::widget::{CommonWidget, Empty, Shape, Widget, WidgetExt, WidgetId};
 
 #[derive(Debug, Clone, Widget)]
 #[carbide_exclude(Render, Layout, StateSync)]

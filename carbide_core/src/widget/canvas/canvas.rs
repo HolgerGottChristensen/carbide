@@ -5,17 +5,17 @@ use lyon::tessellation::{
     BuffersBuilder, FillOptions, FillTessellator, FillVertex, StrokeOptions, StrokeTessellator,
     StrokeVertex, VertexBuffers,
 };
+
 use carbide_core::CommonWidgetImpl;
-use carbide_core::render::{RenderContext};
+use carbide_core::render::RenderContext;
+use carbide_macro::carbide_default_builder2;
 
-use carbide_macro::{carbide_default_builder2};
-
-use crate::draw::{Dimension, Position, Rect, Color, Scalar};
+use crate::draw::{Color, Dimension, Position, Rect, Scalar};
 use crate::draw::shape::triangle::Triangle;
-use crate::environment::{Environment};
+use crate::environment::Environment;
 use crate::render::{Primitive, PrimitiveKind, Render};
-use crate::state::{NewStateSync};
-use crate::widget::{CommonWidget, PrimitiveStore, Shape, ShapeStyle, StrokeStyle, WidgetExt, WidgetId, Widget};
+use crate::state::NewStateSync;
+use crate::widget::{CommonWidget, PrimitiveStore, Shape, ShapeStyle, StrokeStyle, Widget, WidgetExt, WidgetId};
 use crate::widget::canvas::{Context, ShapeStyleWithOptions};
 
 /// A basic, non-interactive rectangle shape widget.

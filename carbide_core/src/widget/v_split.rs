@@ -1,12 +1,11 @@
-use carbide_macro::{carbide_default_builder2};
+use carbide_macro::carbide_default_builder2;
 
 use crate::cursor::MouseCursor;
 use crate::draw::{Dimension, Position};
-use crate::environment::Environment;
 use crate::event::{MouseEvent, MouseEventContext, MouseEventHandler, OtherEventContext, OtherEventHandler, WidgetEvent};
 use crate::layout::{Layout, LayoutContext};
 use crate::state::{IntoState, State};
-use crate::widget::{CommonWidget, CrossAxisAlignment, SplitType, AnyWidget, WidgetExt, WidgetId, Widget, Empty, WidgetSequence};
+use crate::widget::{AnyWidget, CommonWidget, CrossAxisAlignment, Empty, SplitType, Widget, WidgetExt, WidgetId, WidgetSequence};
 
 #[derive(Clone, Debug, Widget)]
 #[carbide_exclude(Layout, MouseEvent, OtherEvent)]

@@ -1,15 +1,16 @@
 use std::cell::RefCell;
 use std::fmt::{Debug, Formatter};
 use std::rc::Rc;
+
 use crate::draw::{Dimension, Position};
 use crate::environment::Environment;
 use crate::event::{KeyboardEvent, KeyboardEventHandler, MouseEvent, MouseEventContext, MouseEventHandler, OtherEventContext, OtherEventHandler, WidgetEvent};
 use crate::flags::Flags;
 use crate::focus::{Focus, Focusable, Refocus};
 use crate::layout::{Layout, LayoutContext, Layouter};
-use crate::render::{Primitive, Render, RenderContext};
-use crate::state::{StateSync};
-use crate::widget::{CommonWidget, Empty, AnyWidget, WidgetExt, WidgetId};
+use crate::render::{Render, RenderContext};
+use crate::state::StateSync;
+use crate::widget::{AnyWidget, CommonWidget, Empty, WidgetExt, WidgetId};
 
 pub struct Duplicated<T: AnyWidget>(Rc<RefCell<T>>);
 

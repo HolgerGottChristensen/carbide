@@ -1,16 +1,15 @@
 use std::time::Duration;
+
 use carbide_core::draw::Rect;
 use carbide_core::widget::canvas::Context;
-
-
-use carbide_macro::{carbide_default_builder2};
+use carbide_macro::carbide_default_builder2;
 
 use crate::color::WHITE;
 use crate::CommonWidgetImpl;
 use crate::draw::{Dimension, Position};
 use crate::environment::{Environment, EnvironmentColor};
 use crate::state::AnimatedState;
-use crate::widget::{Circle, CommonWidget, AnyWidget, WidgetExt, WidgetId, ZStack, Widget};
+use crate::widget::{AnyWidget, Circle, CommonWidget, Widget, WidgetExt, WidgetId, ZStack};
 use crate::widget::canvas::Canvas;
 use crate::widget::canvas::LineCap;
 

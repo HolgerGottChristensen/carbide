@@ -1,4 +1,5 @@
 use std::fmt::Debug;
+
 use crate::widget::AnyWidget;
 
 pub trait WidgetSequence: Clone + Debug + 'static {

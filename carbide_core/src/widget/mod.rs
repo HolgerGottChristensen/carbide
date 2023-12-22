@@ -1,17 +1,18 @@
 use std::sync::atomic::{AtomicU32, Ordering};
 
+pub use carbide_derive::Widget;
 pub use common::*;
 pub use shape::*;
 pub use types::*;
 
 use crate::draw::Position;
-pub use carbide_derive::Widget;
 
 pub use self::background::*;
 pub use self::blur::*;
 pub use self::border::*;
 pub use self::clip::*;
 pub use self::clip_shape::*;
+pub use self::duplicated::*;
 pub use self::empty::*;
 pub use self::environment_updating::*;
 pub use self::filter::*;
@@ -23,6 +24,7 @@ pub use self::h_split::*;
 pub use self::h_stack::*;
 pub use self::hidden::*;
 pub use self::if_else::*;
+pub use self::ignore::*;
 pub use self::image::*;
 pub use self::match_view::*;
 pub use self::menu::*;
@@ -41,8 +43,6 @@ pub use self::transform::*;
 pub use self::v_split::*;
 pub use self::v_stack::*;
 pub use self::z_stack::*;
-pub use self::duplicated::*;
-pub use self::ignore::*;
 
 pub mod canvas;
 mod common;

@@ -3,10 +3,11 @@ use lyon::algorithms::path::builder::{Build, SvgPathBuilder};
 use lyon::algorithms::path::Path;
 use lyon::lyon_algorithms::path::math::point;
 use lyon::tessellation::{FillOptions, LineCap, LineJoin, StrokeOptions};
+
 use carbide_core::state::AnyReadState;
 
-use crate::draw::Color;
 use crate::draw::{Dimension, Position};
+use crate::draw::Color;
 use crate::draw::svg_path_builder::SVGPathBuilder;
 use crate::environment::Environment;
 use crate::render::Style;

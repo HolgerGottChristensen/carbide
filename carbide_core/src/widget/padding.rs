@@ -1,12 +1,10 @@
 use carbide_core::state::ReadState;
-use carbide_macro::{carbide_default_builder2};
+use carbide_macro::carbide_default_builder2;
 
 use crate::draw::{Dimension, Position};
-use crate::environment::Environment;
-
 use crate::layout::{BasicLayouter, Layout, LayoutContext, Layouter};
 use crate::state::IntoReadState;
-use crate::widget::{CommonWidget, Empty, AnyWidget, WidgetExt, WidgetId, Widget};
+use crate::widget::{AnyWidget, CommonWidget, Empty, Widget, WidgetExt, WidgetId};
 use crate::widget::types::EdgeInsets;
 
 #[derive(Debug, Clone, Widget)]

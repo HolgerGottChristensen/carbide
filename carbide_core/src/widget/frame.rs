@@ -1,15 +1,13 @@
 use std::fmt::Debug;
+
 use carbide_core::state::AnyState;
-
-
-use carbide_macro::{carbide_default_builder2};
+use carbide_macro::carbide_default_builder2;
 
 use crate::draw::{Dimension, Position};
 use crate::environment::Environment;
-
 use crate::layout::{BasicLayouter, Layout, LayoutContext, Layouter};
-use crate::state::{AnyReadState, NewStateSync, ReadState, State, ValueRef, ValueRefMut, IntoState};
-use crate::widget::{CommonWidget, Empty, AnyWidget, WidgetExt, WidgetId, Widget};
+use crate::state::{AnyReadState, IntoState, NewStateSync, ReadState, State, ValueRef, ValueRefMut};
+use crate::widget::{AnyWidget, CommonWidget, Empty, Widget, WidgetExt, WidgetId};
 
 pub static SCALE: f64 = -1.0;
 

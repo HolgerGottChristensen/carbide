@@ -1,5 +1,5 @@
 use carbide_core::render::RenderContext;
-use carbide_macro::{carbide_default_builder2};
+use carbide_macro::carbide_default_builder2;
 
 use crate::color::Color;
 use crate::draw::{Dimension, Position};
@@ -8,8 +8,8 @@ use crate::environment::EnvironmentColor;
 use crate::event::{ModifierKey, MouseButton, MouseEvent, MouseEventContext, MouseEventHandler, OtherEventContext, OtherEventHandler, WidgetEvent};
 use crate::flags::Flags;
 use crate::layout::{BasicLayouter, Layout, LayoutContext, Layouter};
-use crate::render::{Primitive, Render};
-use crate::widget::{Capsule, CommonWidget, Rectangle, AnyWidget, WidgetExt, WidgetId, Widget};
+use crate::render::Render;
+use crate::widget::{AnyWidget, Capsule, CommonWidget, Rectangle, Widget, WidgetExt, WidgetId};
 use crate::widget::types::ScrollDirection;
 
 #[derive(Debug, Clone, Widget)]

@@ -1,9 +1,5 @@
-use crate::draw::Color;
-use crate::draw::{Dimension, Position, Rect};
-use crate::draw::draw_gradient::DrawGradient;
+use crate::draw::{Dimension, Position};
 use crate::draw::shape::triangle::Triangle;
-use crate::render::{Primitive, Style};
-use crate::render::PrimitiveKind;
 use crate::widget::types::advanced_color::AdvancedColor;
 
 /// A storage container for primitives that can be used to cache tessellated shapes.
@@ -12,11 +8,9 @@ pub struct PrimitiveStore {
     pub latest_stroke_position: Position,
     pub latest_stroke_dimensions: Dimension,
     pub latest_stoke_color: Option<AdvancedColor>,
-    //pub stroke_primitive: Option<Primitive>,
     pub latest_fill_position: Position,
     pub latest_fill_dimensions: Dimension,
     pub latest_fill_color: Option<AdvancedColor>,
-    //pub fill_primitive: Option<Primitive>,
     pub stroke_triangles: Vec<Triangle<Position>>,
     pub fill_triangles: Vec<Triangle<Position>>,
 }
@@ -68,104 +62,6 @@ impl PrimitiveStore {
 
     pub fn set_fill_triangles(&mut self, triangles: &Vec<Triangle<Position>>) {
         self.fill_triangles = triangles.clone()
-    }
-
-    pub fn insert_primitives(
-        &self,
-        primitives: &mut Vec<Primitive>,
-        fill_color: Style,
-        stroke_color: Style,
-        position: Position,
-        dimension: Dimension,
-    ) {
-        if self.fill_triangles.len() > 0 {
-            let fill_color = fill_color.into();
-
-            match fill_color {
-                Style::Color(c) => {
-                    primitives.push(Primitive {
-                        kind: PrimitiveKind::Geometry {
-                            color: c,
-                            triangles: self.fill_triangles.clone(),
-                        },
-                        bounding_box: Rect::new(
-                            self.latest_fill_position,
-                            self.latest_fill_dimensions,
-                        ),
-                    });
-                }
-                Style::Gradient(g) => {
-                    primitives.push(Primitive {
-                        kind: PrimitiveKind::Gradient(
-                            self.fill_triangles.clone(),
-                            DrawGradient::convert(g, position, dimension),
-                        ),
-                        bounding_box: Rect::new(
-                            self.latest_fill_position,
-                            self.latest_fill_dimensions,
-                        ),
-                    });
-                }
-                Style::MultiGradient(_) => {}
-            }
-        }
-
-        if self.stroke_triangles.len() > 0 {
-            let stroke_color = stroke_color.into();
-
-            match stroke_color {
-                Style::Color(c) => {
-                    primitives.push(Primitive {
-                        kind: PrimitiveKind::Geometry {
-                            color: c,
-                            triangles: self.stroke_triangles.clone(),
-                        },
-                        bounding_box: Rect::new(
-                            self.latest_stroke_position,
-                            self.latest_stroke_dimensions,
-                        ),
-                    });
-                }
-                Style::Gradient(g) => {
-                    primitives.push(Primitive {
-                        kind: PrimitiveKind::Gradient(
-                            self.stroke_triangles.clone(),
-                            DrawGradient::convert(g, position, dimension),
-                        ),
-                        bounding_box: Rect::new(
-                            self.latest_stroke_position,
-                            self.latest_stroke_dimensions,
-                        ),
-                    });
-                }
-                Style::MultiGradient(_) => {}
-            }
-        }
-    }
-
-    pub fn get_primitives(&self, fill_color: Color, stroke_color: Color) -> Vec<Primitive> {
-        let mut res = vec![];
-        if self.fill_triangles.len() > 0 {
-            res.push(Primitive {
-                kind: PrimitiveKind::Geometry {
-                    color: fill_color,
-                    triangles: self.fill_triangles.clone(),
-                },
-                bounding_box: Rect::new(self.latest_fill_position, self.latest_fill_dimensions),
-            });
-        }
-
-        if self.stroke_triangles.len() > 0 {
-            res.push(Primitive {
-                kind: PrimitiveKind::Geometry {
-                    color: stroke_color,
-                    triangles: self.stroke_triangles.clone(),
-                },
-                bounding_box: Rect::new(self.latest_stroke_position, self.latest_stroke_dimensions),
-            });
-        }
-
-        res
     }
 }
 

@@ -1,10 +1,9 @@
-
-use carbide_macro::{carbide_default_builder2};
+use carbide_macro::carbide_default_builder2;
 
 use crate::draw::{Dimension, Position};
 use crate::flags::Flags;
 use crate::state::ReadState;
-use crate::widget::{CommonWidget, Empty, AnyWidget, WidgetExt, WidgetId, Widget};
+use crate::widget::{AnyWidget, CommonWidget, Empty, Widget, WidgetExt, WidgetId};
 
 /// # If-Else Widget
 ///

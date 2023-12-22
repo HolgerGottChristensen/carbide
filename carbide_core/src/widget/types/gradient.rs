@@ -1,4 +1,4 @@
-use crate::draw::{Position, Color, Alignment};
+use crate::draw::{Alignment, Color, Position};
 use crate::render::Style;
 use crate::state::{AnyReadState, ConvertIntoRead, Map1, RMap1};
 

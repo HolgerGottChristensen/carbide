@@ -1,13 +1,14 @@
-use std::fmt::{Debug};
+use std::fmt::Debug;
+
 use crate::draw::{Dimension, Position};
 use crate::environment::Environment;
 use crate::event::{KeyboardEvent, KeyboardEventHandler, MouseEvent, MouseEventContext, MouseEventHandler, OtherEventContext, OtherEventHandler, WidgetEvent};
 use crate::flags::Flags;
 use crate::focus::{Focus, Focusable, Refocus};
 use crate::layout::{Layout, LayoutContext, Layouter};
-use crate::render::{Primitive, Render, RenderContext};
+use crate::render::{Render, RenderContext};
 use crate::state::{IntoReadState, ReadState, StateSync};
-use crate::widget::{CommonWidget, Empty, AnyWidget, WidgetExt, WidgetId, Widget};
+use crate::widget::{AnyWidget, CommonWidget, Empty, Widget, WidgetExt, WidgetId};
 
 #[derive(Clone, Debug)]
 pub struct Ignore<T, B1, B2, B3, B4, B5, B6, B7> where

@@ -1,13 +1,12 @@
 use carbide_core::CommonWidgetImpl;
 use carbide_core::render::RenderContext;
-
-use carbide_macro::{carbide_default_builder2};
+use carbide_macro::carbide_default_builder2;
 
 use crate::draw::{Dimension, Position, Rect};
 use crate::environment::Environment;
-use crate::render::{Primitive, PrimitiveKind, Render};
+use crate::render::Render;
 use crate::utils::gaussian;
-use crate::widget::{BlurType, CommonWidget, FilterId, ImageFilter, ImageFilterValue, WidgetExt, WidgetId, Widget};
+use crate::widget::{BlurType, CommonWidget, FilterId, ImageFilter, ImageFilterValue, Widget, WidgetExt, WidgetId};
 
 #[derive(Debug, Clone, Widget)]
 #[carbide_exclude(Render)]

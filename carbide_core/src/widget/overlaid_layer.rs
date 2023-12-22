@@ -1,6 +1,7 @@
 use std::cell::RefCell;
 use std::ops::DerefMut;
 use std::rc::Rc;
+
 use carbide_core::render::RenderContext;
 use carbide_macro::carbide_default_builder2;
 
@@ -9,8 +10,8 @@ use crate::draw::{Dimension, Position};
 use crate::environment::Environment;
 use crate::event::{KeyboardEvent, KeyboardEventHandler, MouseEvent, MouseEventContext, MouseEventHandler, OtherEventContext, OtherEventHandler, WidgetEvent};
 use crate::layout::{Layout, LayoutContext};
-use crate::render::{Primitive, Render};
-use crate::widget::{CommonWidget, Empty, AnyWidget, WidgetExt, WidgetId, Widget};
+use crate::render::Render;
+use crate::widget::{AnyWidget, CommonWidget, Empty, Widget, WidgetExt, WidgetId};
 
 #[derive(Debug, Clone, Widget)]
 #[carbide_exclude(Render, Layout, MouseEvent, KeyboardEvent, OtherEvent)]

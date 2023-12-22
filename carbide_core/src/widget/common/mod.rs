@@ -1,5 +1,5 @@
-pub use widget::{Widget, AnyWidget};
 pub use common_widget::*;
+pub use widget::{AnyWidget, Widget};
 pub use widget_ext::*;
 pub use widget_sequence::*;
 

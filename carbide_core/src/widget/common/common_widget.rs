@@ -1,10 +1,10 @@
-
 use carbide_core::widget::AnyWidget;
+
 use crate::draw::{Dimension, Position, Rect, Scalar};
 use crate::flags::Flags;
 use crate::focus::Focus;
 use crate::layout::{BasicLayouter, Layouter};
-use crate::widget::{WidgetId};
+use crate::widget::WidgetId;
 
 pub trait CommonWidget {
     fn id(&self) -> WidgetId;

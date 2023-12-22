@@ -1,11 +1,9 @@
-
-use carbide_macro::{carbide_default_builder2};
+use carbide_macro::carbide_default_builder2;
 
 use crate::draw::{Dimension, Position, Scalar};
-use crate::environment::Environment;
 use crate::flags::Flags;
 use crate::layout::{Layout, LayoutContext};
-use crate::widget::{CommonWidget, AnyWidget, WidgetExt, WidgetId, Widget};
+use crate::widget::{AnyWidget, CommonWidget, Widget, WidgetExt, WidgetId};
 
 #[derive(Clone, Debug, Widget)]
 #[carbide_exclude(Layout)]

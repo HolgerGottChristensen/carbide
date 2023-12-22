@@ -1,12 +1,9 @@
+use carbide_macro::carbide_default_builder2;
 
-use carbide_macro::{carbide_default_builder2};
-
+use crate::CommonWidgetImpl;
 use crate::draw::{Dimension, Position, Scalar};
-use crate::environment::Environment;
-
 use crate::layout::{calculate_size_hstack, Layout, LayoutContext, position_children_hstack};
-use crate::{CommonWidgetImpl};
-use crate::widget::{CommonWidget, CrossAxisAlignment, WidgetExt, WidgetId, WidgetSequence, Widget};
+use crate::widget::{CommonWidget, CrossAxisAlignment, Widget, WidgetExt, WidgetId, WidgetSequence};
 
 /// # HStack
 /// The horizontal stack in Carbide is one of the main layout components.

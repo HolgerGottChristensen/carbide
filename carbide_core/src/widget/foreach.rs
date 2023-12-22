@@ -1,16 +1,14 @@
 use std::fmt::{Debug, Formatter};
 use std::marker::PhantomData;
+
 use carbide_core::CommonWidgetImpl;
-
-
-use carbide_macro::{carbide_default_builder2};
+use carbide_macro::carbide_default_builder2;
 
 use crate::draw::{Dimension, Position};
-use crate::environment::Environment;
 use crate::event::{OtherEventContext, OtherEventHandler, WidgetEvent};
 use crate::flags::Flags;
 use crate::state::{AnyReadState, AnyState, IndexState, IntoState, ReadState, ReadStateExtNew, State, StateContract, StateExtNew, ValueState};
-use crate::widget::{CommonWidget, Empty, WidgetExt, WidgetId, Widget};
+use crate::widget::{CommonWidget, Empty, Widget, WidgetExt, WidgetId};
 
 pub trait Delegate<T: StateContract, O: Widget>: Clone + 'static {
     fn call(&self, item: Box<dyn AnyState<T=T>>, index: Box<dyn AnyReadState<T=usize>>) -> O;

@@ -2,6 +2,7 @@ use std::fmt::Debug;
 use std::ops::{Deref, DerefMut};
 
 use dyn_clone::DynClone;
+
 use carbide_core::render::RenderContext;
 
 use crate::draw::{Dimension, Position};
@@ -10,8 +11,8 @@ use crate::event::{Event, KeyboardEvent, KeyboardEventHandler, MouseEvent, Mouse
 use crate::flags::Flags;
 use crate::focus::{Focus, Focusable, Refocus};
 use crate::layout::{Layout, LayoutContext, Layouter};
-use crate::render::{Primitive, Render};
-use crate::state::{StateSync};
+use crate::render::Render;
+use crate::state::StateSync;
 use crate::widget::{CommonWidget, WidgetExt, WidgetId};
 
 // TODO Rename to AnyWidget and create a widget that is anywidget and clone

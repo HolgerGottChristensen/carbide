@@ -2,16 +2,15 @@ use lyon::geom::euclid::rect;
 use lyon::tessellation::path::builder::BorderRadii;
 use lyon::tessellation::path::Winding;
 
+use carbide_macro::carbide_default_builder2;
 
-use carbide_macro::{carbide_default_builder2};
-
-use crate::{CommonWidgetImpl};
+use crate::CommonWidgetImpl;
 use crate::draw::{Color, Dimension, Position};
-use crate::environment::{Environment};
+use crate::environment::Environment;
 use crate::environment::EnvironmentColor;
-use crate::render::{Primitive, Render, RenderContext, Style};
+use crate::render::{Render, RenderContext, Style};
 use crate::state::{IntoReadState, ReadState, StateSync};
-use crate::widget::{Blur, CommonWidget, WidgetExt, WidgetId, ZStack, Widget};
+use crate::widget::{Blur, CommonWidget, Widget, WidgetExt, WidgetId, ZStack};
 use crate::widget::shape::{Shape, tessellate};
 use crate::widget::types::PrimitiveStore;
 use crate::widget::types::ShapeStyle;

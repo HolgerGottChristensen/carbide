@@ -3,9 +3,9 @@ use carbide_macro::carbide_default_builder2;
 
 use crate::CommonWidgetImpl;
 use crate::draw::{Dimension, Position, Rect};
-use crate::environment::{Environment};
+use crate::environment::Environment;
 use crate::layout::{Layout, LayoutContext};
-use crate::render::{Primitive, PrimitiveKind, Render};
+use crate::render::Render;
 use crate::widget::*;
 
 #[derive(Debug, Clone, Widget)]
@@ -26,10 +26,6 @@ impl Clip<Empty> {
         Clip {
             id: WidgetId::new(),
             child,
-            /*child: ZStack::new(vec![
-                Rectangle::new().stroke(EnvironmentColor::Red),
-                child
-            ]),*/
             position: Position::new(0.0, 0.0),
             dimension: Dimension::new(100.0, 100.0),
         }

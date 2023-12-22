@@ -11,12 +11,12 @@ use carbide_core::event::{
 };
 use carbide_core::flags::Flags;
 use carbide_core::focus::Focus;
-use carbide_core::state::{State};
-use carbide_core::widget::{CommonWidget, AnyWidget, WidgetExt, WidgetId, Widget};
-use carbide_macro::{carbide_default_builder2};
-use crate::event::{MouseEventContext, OtherEventContext};
+use carbide_core::state::State;
+use carbide_core::widget::{AnyWidget, CommonWidget, Widget, WidgetExt, WidgetId};
+use carbide_macro::carbide_default_builder2;
 
-use crate::state::{IntoState};
+use crate::event::{MouseEventContext, OtherEventContext};
+use crate::state::IntoState;
 use crate::widget::Empty;
 
 pub trait Action: Fn(&mut Environment, ModifierKey) + DynClone {}

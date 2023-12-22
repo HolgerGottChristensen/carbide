@@ -1,24 +1,20 @@
 use std::borrow::Borrow;
 use std::fmt::Debug;
-use std::ops::Deref;
-use carbide_core::render::{RenderContext};
+
+use carbide_core::render::RenderContext;
 use carbide_core::state::IntoReadState;
+use carbide_macro::carbide_default_builder2;
 
-
-use carbide_macro::{carbide_default_builder2};
-
+use crate::draw::{Dimension, Position};
 use crate::draw::Color;
-
-use crate::draw::{Dimension, Position, Rect};
 use crate::draw::draw_style::DrawStyle;
 use crate::environment::{Environment, EnvironmentColor, EnvironmentFontSize};
 use crate::layout::{Layout, LayoutContext};
 //use crate::render::text::Text as RenderText;
-use crate::render::{new_primitive, Primitive, Render};
-use crate::render::PrimitiveKind;
+use crate::render::Render;
 use crate::state::{ReadState, StateSync};
 use crate::text::{FontStyle, FontWeight, TextDecoration, TextId, TextStyle};
-use crate::widget::{CommonWidget, Justify, AnyWidget, WidgetExt, WidgetId, Widget};
+use crate::widget::{AnyWidget, CommonWidget, Justify, Widget, WidgetExt, WidgetId};
 //use crate::text_old::PositionedGlyph;
 use crate::widget::types::Wrap;
 
