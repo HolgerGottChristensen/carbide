@@ -1413,8 +1413,12 @@ impl Clone for WGPUWindow {
 }
 
 impl Debug for WGPUWindow {
-    fn fmt(&self, _f: &mut Formatter<'_>) -> std::fmt::Result {
-        todo!()
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("Window")
+            .field("position", &self.position)
+            .field("dimension", &self.dimension)
+            .field("child", &self.child)
+            .finish()
     }
 }
 

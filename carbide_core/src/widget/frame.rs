@@ -9,8 +9,6 @@ use crate::layout::{BasicLayouter, Layout, LayoutContext, Layouter};
 use crate::state::{AnyReadState, IntoState, NewStateSync, ReadState, State, ValueRef, ValueRefMut};
 use crate::widget::{AnyWidget, CommonWidget, Empty, Widget, WidgetExt, WidgetId};
 
-pub static SCALE: f64 = -1.0;
-
 #[derive(Debug, Clone, Widget)]
 #[carbide_exclude(Layout)]
 pub struct Frame<X, Y, W, H, C> where

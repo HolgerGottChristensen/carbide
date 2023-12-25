@@ -1,4 +1,5 @@
 use cgmath::Matrix4;
+use carbide::widget::OnChange;
 
 use carbide_core::state::{IntoReadState, RMap1};
 use carbide_core::widget::Widget;
@@ -11,9 +12,9 @@ use crate::event::ModifierKey;
 use crate::flags::Flags;
 use crate::focus::Focus;
 use crate::render::Style;
-use crate::state::{IntoState, ReadState, TState};
+use crate::state::{IntoState, ReadState, StateContract, TState};
 use crate::state::ReadStateExtNew;
-use crate::widget::{Action, AnyWidget, Background, Border, Clip, ClipShape, CornerRadii, EdgeInsets, EnvUpdating, Flagged, Flexibility, Frame, Hidden, MouseArea, Offset, Overlay, Padding, Rotation3DEffect, RoundedRectangle, Shape, Transform};
+use crate::widget::{Action, AnyWidget, Background, Border, Changed, Clip, ClipShape, CornerRadii, EdgeInsets, EnvUpdating, Flagged, Flexibility, Frame, Hidden, MouseArea, Offset, Overlay, Padding, Rotation3DEffect, RoundedRectangle, Shape, Transform};
 
 type AccentColor<T> = EnvUpdating<T>;
 type ForegroundColor<T> = EnvUpdating<T>;
@@ -119,14 +120,18 @@ pub trait WidgetExt: Widget + Sized {
         ClipShape::new(self, RoundedRectangle::new(radius).fill(Style::Color(RED)).stroke(Style::Color(RED)))
     }
 
-    fn hidden(self) -> Box<Hidden> {
-        Hidden::new(Box::new(self))
+    fn hidden(self) -> Hidden<Self> {
+        Hidden::new(self)
     }
 
     /// Offset a widget. It will only change the locating of the rendered widget, but will not
     /// change its position for event handling.
     fn offset<X: IntoReadState<f64>, Y: IntoReadState<f64>>(self, offset_x: X, offset_y: Y) -> Offset<X::Output, Y::Output, Self> {
         Offset::new(offset_x, offset_y, self)
+    }
+
+    fn on_change<T: StateContract + PartialEq, S: ReadState<T=T>, F: Changed<T>>(self, state: S, f: F) -> OnChange<Self, T, S, F> {
+        OnChange::new(self, state, f)
     }
 
     fn border(self) -> Border<Self, Color> {

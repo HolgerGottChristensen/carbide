@@ -1,7 +1,10 @@
+use std::time::Duration;
+use carbide::a;
+use carbide::state::TransitionState;
 use carbide_core::color::{TRANSPARENT};
 use carbide_core::environment::EnvironmentColor;
 use carbide_core::focus::Focus;
-use carbide_core::state::{AnyReadState, AnyState, IntoReadState, IntoState, LocalState, Map1, Map2, ReadState};
+use carbide_core::state::{AnyReadState, AnyState, IntoReadState, IntoState, LocalState, Map1, Map2, ReadState, State};
 use carbide_core::widget::*;
 
 use crate::{EnabledState, PlainSwitch, PlainSwitchDelegate};
@@ -23,6 +26,9 @@ pub struct SwitchDelegate<L: ReadState<T=String>> {
 
 impl<L: ReadState<T=String>> PlainSwitchDelegate for SwitchDelegate<L> {
     fn call(&self, focus: Box<dyn AnyState<T=Focus>>, checked: Box<dyn AnyState<T=bool>>, enabled: Box<dyn AnyReadState<T=bool>>) -> Box<dyn AnyWidget> {
+        let switch_width = 39.0;
+        let knob_width = 20.0;
+
         let background_color = Map2::read_map(
             checked.clone(),
             enabled.clone(),
@@ -65,37 +71,37 @@ impl<L: ReadState<T=String>> PlainSwitchDelegate for SwitchDelegate<L> {
 
         let label_color = knob_color.clone();
 
-        let switch = ZStack::new(vec![
+        let offset = switch_width / 2.0 - knob_width / 2.0 - 1.0;
+
+        let inner_offset = LocalState::new(0.0);
+        let knob_offset = TransitionState::new(inner_offset.clone())
+            .duration(Duration::from_secs_f64(0.15));
+
+        let switch = ZStack::new((
             Capsule::new()
                 .fill(background_color)
                 .stroke(EnvironmentColor::OpaqueSeparator)
-                .stroke_style(1.0)
-                .boxed(),
-            IfElse::new(checked)
-                .when_true(HStack::new(vec![
-                    Spacer::new().boxed(),
-                    Ellipse::new()
-                        .fill(knob_color.clone())
-                        .frame(20.0, 20.0).boxed(),
-                ]))
-                .when_false(HStack::new(vec![
-                    Ellipse::new()
-                        .fill(knob_color)
-                        .frame(20.0, 20.0).boxed(),
-                    Spacer::new().boxed(),
-                ]))
-                .padding(2.0)
-                .boxed(),
-        ])
+                .stroke_style(1.0),
+            Ellipse::new()
+                .fill(knob_color)
+                .frame(knob_width, 20.0)
+                .offset(knob_offset.clone(), 0.0),
+        ))
             .background(
                 Capsule::new()
                     .stroke(outline_color)
                     .stroke_style(1.0)
                     .padding(-1.0)
             )
-            .frame(39.0, 22.0)
-            .boxed();
+            .on_change(checked.clone(),a!(|old, new| {
+                if old.is_none() {
+                    inner_offset.clone().set_value(if *new { offset } else { -offset });
+                } else {
+                    knob_offset.clone().set_value(if *new { offset } else { -offset });
+                }
+            }))
+            .frame(switch_width, 22.0);
 
-        HStack::new(vec![switch, Text::new(self.label.clone()).color(label_color).boxed()]).spacing(5.0).boxed()
+        HStack::new((switch, Text::new(self.label.clone()).color(label_color))).spacing(5.0).boxed()
     }
 }

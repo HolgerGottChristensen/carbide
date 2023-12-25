@@ -1,6 +1,7 @@
 use std::cell::RefCell;
 use std::collections::HashMap;
 use std::ffi::OsStr;
+use std::fmt::{Debug, Formatter};
 use std::fs;
 use std::mem::transmute;
 use std::path::{Path, PathBuf};
@@ -323,5 +324,13 @@ impl Application {
                 });
             },
         );
+    }
+}
+
+impl Debug for Application {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("Application")
+            .field("root", &self.root)
+            .finish()
     }
 }

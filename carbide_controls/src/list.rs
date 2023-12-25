@@ -580,7 +580,7 @@ impl<T: StateContract, W: Widget, U: Delegate<T, W>> Delegate<T, Box<dyn AnyWidg
         VStack::new((
             HStack::new((
                 IfElse::new(sub_tree_model_empty)
-                    .when_true(*disclosure_item.hidden())
+                    .when_true(disclosure_item.hidden())
                     .when_false(disclosure),
                 widget,
             )).spacing(0.0),
