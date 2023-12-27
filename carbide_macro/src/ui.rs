@@ -30,16 +30,22 @@ impl Fold for Folder {
 
                 let expr = fold_expr(&mut Folder { allow_widget_expr: false }, *expr);
 
-                let bindings = arms.iter().cloned().map(|a| {
+                let mut bindings = arms.iter().cloned().map(|a| {
                     let mut folder = PatFolder(vec![]);
                     folder.fold_pat(a.pat);
                     folder.0
                 }).collect::<Vec<_>>();
 
                 let patterns = arms.iter().cloned().map(|a| a.pat).collect::<Vec<_>>();
-                let bodies = arms.iter().cloned().map(|a| {
+                let mut patterns_rev = patterns.clone();
+
+                let mut bodies = arms.iter().cloned().map(|a| {
                     fold_expr(&mut Folder { allow_widget_expr: true }, *a.body)
                 }).collect::<Vec<_>>();
+
+                patterns_rev.reverse();
+                bodies.reverse();
+                bindings.reverse();
 
                 parse_quote!({
                     {
@@ -50,36 +56,41 @@ impl Fold for Folder {
                             #[allow(unused_variables)]
                             match &*carbide::state::ReadState::value(&(#expr).clone()) {
                                 #(
-                                    #patterns => todo!(),
+                                    #patterns => unreachable!(),
                                 )*
                             }
                         }
                     }
-                    #[allow(unused_variables)]
-                    carbide::widget::Match::new((#expr).clone())
-                    #(
 
-                        .case((|a| matches!(a, #patterns), {
-                            #(
-                                let #bindings = carbide::state::FieldState::new((#expr).clone(), |a| {
-                                    match a {
-                                        #patterns => {
-                                            #bindings
+                    // Might want to make an Unreachable Widget, since we check above that the match is exhaustive.
+                    let acc = carbide::widget::Empty::new();
+
+                    #(
+                        let acc = carbide::widget::IfElse::new(carbide::state::Map1::read_map((#expr).clone(), |a| {matches!(a, #patterns_rev)} ))
+                            .when_true({
+                                #(
+                                    let #bindings = carbide::state::FieldState::new((#expr).clone(), |a| {
+                                        match a {
+                                            #patterns_rev => {
+                                                #bindings
+                                            }
+                                            _ => panic!("Not matching: &{}", stringify!{#bindings})
                                         }
-                                        _ => panic!("Not matching: &{}", stringify!{#bindings})
-                                    }
-                                }, |b| {
-                                    match b {
-                                        #patterns => {
-                                            #bindings
+                                    }, |b| {
+                                        match b {
+                                            #patterns_rev => {
+                                                #bindings
+                                            }
+                                            _ => panic!("Not matching: &mut {}", stringify!{#bindings})
                                         }
-                                        _ => panic!("Not matching: &mut {}", stringify!{#bindings})
-                                    }
-                                });
-                            )*
-                            #bodies
-                        }))
+                                    });
+                                )*
+                                #bodies
+                            })
+                            .when_false(acc);
                     )*
+
+                    acc
                 })
             },
             _ => fold_expr(self, i)
