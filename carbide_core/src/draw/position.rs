@@ -2,8 +2,6 @@ use std::fmt;
 use std::fmt::{Display, Formatter};
 use std::ops::{Add, AddAssign, Div, Mul, Sub, SubAssign};
 
-use carbide_rusttype::Point;
-
 use crate::draw::Dimension;
 use crate::draw::Scalar;
 
@@ -250,15 +248,6 @@ impl Add<Dimension> for Position {
         self.x += rhs.width;
         self.y += rhs.height;
         self
-    }
-}
-
-impl From<Point<f32>> for Position {
-    fn from(pos: Point<f32>) -> Self {
-        Position {
-            x: pos.x as Scalar,
-            y: pos.y as Scalar,
-        }
     }
 }
 

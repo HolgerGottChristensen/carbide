@@ -1,4 +1,3 @@
-use carbide_rusttype::PositionedGlyph;
 //pub use markup::PolarBearMarkup;
 //pub use text_span_generator::NoStyleTextSpanGenerator;
 //pub use text_span_generator::TextSpanGenerator;
@@ -16,5 +15,3 @@ mod text_style;
 
 pub type FontId = usize;
 pub type FontSize = u32;
-
-pub type InnerGlyph = PositionedGlyph<'static>;
