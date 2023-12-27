@@ -1,9 +1,8 @@
-use wgpu::util::{BufferInitDescriptor, DeviceExt};
+use carbide_core::draw::{Dimension, Position, Rect};
 use wgpu::{
     BufferUsages, Extent3d, ImageCopyTexture, LoadOp, Operations, RenderPassDepthStencilAttachment,
 };
-
-use carbide_core::draw::{Dimension, Position, Rect};
+use wgpu::util::{BufferInitDescriptor, DeviceExt};
 
 use crate::bind_groups::filter_buffer_bind_group;
 use crate::filter::Filter;

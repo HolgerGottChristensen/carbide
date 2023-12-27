@@ -1,4 +1,4 @@
-use carbide_core::draw::{Dimension};
+use carbide_core::draw::Dimension;
 use carbide_core::widget::*;
 use carbide_wgpu::{Application, Window};
 
@@ -17,10 +17,10 @@ fn main() {
         Window::new(
             "Duplicated example",
             Dimension::new(200.0, 300.0),
-            *VStack::new(vec![
-                Box::new(duplicated1),
-                Box::new(duplicated2)
-            ])
+            VStack::new((
+                duplicated1,
+                duplicated2
+            ))
         ).close_application_on_window_close()
     );
 

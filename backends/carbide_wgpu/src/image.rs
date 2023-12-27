@@ -1,4 +1,11 @@
+use wgpu::{Device, Queue};
 use wgpu::BindGroup;
+
+use carbide_core::image::DynamicImage;
+use carbide_core::mesh::pre_multiply::PreMultiply;
+
+use crate::texture;
+use crate::texture::Texture;
 
 pub struct BindGroupExtended {
     pub bind_group: BindGroup,
@@ -6,14 +13,6 @@ pub struct BindGroupExtended {
     pub height: u32,
 }
 
-
-use carbide_core::image::DynamicImage;
-use wgpu::{Device, Queue};
-
-use carbide_core::mesh::pre_multiply::PreMultiply;
-
-use crate::texture;
-use crate::texture::Texture;
 
 /// A loaded wgpu texture and it's width/height
 pub struct Image {

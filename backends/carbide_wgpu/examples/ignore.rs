@@ -1,5 +1,6 @@
 use std::time::Duration;
-use carbide_core::draw::{Dimension};
+
+use carbide_core::draw::Dimension;
 use carbide_core::state::{AnimatedState, ReadStateExtNew};
 use carbide_core::widget::*;
 use carbide_wgpu::{Application, Window};
@@ -22,10 +23,10 @@ fn main() {
         Window::new(
             "Ignore example",
             Dimension::new(200.0, 300.0),
-            *VStack::new(vec![
+            VStack::new((
                 Ignore::new(widget.clone()).render(state.clone()).border().boxed(),
                 Ignore::new(widget.clone()).layout(state.clone()).border().boxed(),
-            ])
+            ))
         ).close_application_on_window_close()
     );
 

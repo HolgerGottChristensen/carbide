@@ -1,4 +1,4 @@
-use carbide_core::draw::{Dimension};
+use carbide_core::draw::Dimension;
 use carbide_core::environment::*;
 use carbide_core::widget::*;
 use carbide_wgpu::{Application, Window};
@@ -10,26 +10,22 @@ fn main() {
 
     application.set_scene(
         Window::new(
-            "HStack example",
+            "HStack - Carbide",
             Dimension::new(600.0, 600.0),
-            *HStack::new(vec![
+            HStack::new((
                 Rectangle::new()
                     .fill(EnvironmentColor::Accent)
-                    .frame(100.0, 100.0)
-                    .boxed(),
+                    .frame(100.0, 100.0),
                 Rectangle::new()
                     .fill(EnvironmentColor::Accent)
-                    .frame(100.0, 100.0)
-                    .boxed(),
+                    .frame(100.0, 100.0),
                 Rectangle::new()
                     .fill(EnvironmentColor::Accent)
-                    .frame(100.0, 100.0)
-                    .boxed(),
+                    .frame(100.0, 100.0),
                 Rectangle::new()
                     .fill(EnvironmentColor::Accent)
-                    .frame(100.0, 100.0)
-                    .boxed(),
-            ]).spacing(10.0),
+                    .frame(100.0, 100.0),
+            )).spacing(10.0),
         ).close_application_on_window_close()
     );
 

@@ -1,36 +1,39 @@
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
 
+use carbide_core::{image, locate_folder, Scalar, Ui};
+use carbide_core::draw::Dimension;
+use carbide_core::draw::image::ImageId;
+use carbide_core::draw::image::ImageMap;
+use carbide_core::event::CustomEvent;
+use carbide_core::event::Input;
 use carbide_core::image::DynamicImage;
+use carbide_core::mesh::{DEFAULT_GLYPH_CACHE_DIMS, MODE_IMAGE};
+use carbide_core::mesh::mesh::Mesh;
+use carbide_core::prelude::{Environment, EnvironmentColor, Menu};
+use carbide_core::prelude::Rectangle;
+use carbide_core::text::{FontFamily, FontId};
+use carbide_core::widget::{FilterId, OverlaidLayer, ZStack};
+use carbide_core::widget::Widget;
+pub use carbide_core::window::TWindow as CoreWindow;
+use carbide_winit::convert_window_event;
 use cgmath::{Matrix4, Vector3};
 pub use futures::executor::block_on;
 //use smaa::{SmaaMode, SmaaTarget};
 use uuid::Uuid;
-use wgpu::util::{BufferInitDescriptor, DeviceExt};
 use wgpu::{
     BindGroup, BindGroupLayout, Buffer, BufferUsages, PresentMode, Sampler, SurfaceConfiguration,
     Texture, TextureView,
 };
+use wgpu::util::{BufferInitDescriptor, DeviceExt};
 use winit::dpi::{LogicalSize, PhysicalPosition, Size};
 use winit::event::{ElementState, Event, KeyboardInput, VirtualKeyCode, WindowEvent};
 use winit::event_loop::{ControlFlow, EventLoop};
 #[cfg(target_os = "macos")]
 use winit::platform::macos::WindowExtMacOS;
+#[cfg(target_os = "windows")]
+use winit::platform::windows::WindowExtWindows;
 use winit::window::{Icon, WindowBuilder};
-
-use carbide_core::draw::image::ImageMap;
-use carbide_core::draw::Dimension;
-use carbide_core::event::CustomEvent;
-use carbide_core::event::Input;
-use carbide_core::mesh::mesh::Mesh;
-use carbide_core::mesh::{DEFAULT_GLYPH_CACHE_DIMS, MODE_IMAGE};
-use carbide_core::prelude::Rectangle;
-use carbide_core::prelude::{Environment, EnvironmentColor, Menu};
-use carbide_core::text::{FontFamily, FontId};
-use carbide_core::widget::Widget;
-use carbide_core::widget::{FilterId, OverlaidLayer, ZStack};
-pub use carbide_core::window::TWindow as CoreWindow;
-use carbide_core::{image, locate_folder, Scalar, Ui};
 
 use crate::bind_group_layouts::{
     filter_buffer_bind_group_layout, filter_texture_bind_group_layout,
@@ -40,7 +43,7 @@ use crate::bind_groups::{
     filter_texture_bind_group, main_bind_group, matrix_to_uniform_bind_group,
     size_to_uniform_bind_group,
 };
-use crate::diffuse_bind_group::{new_diffuse, DiffuseBindGroup};
+use crate::diffuse_bind_group::{DiffuseBindGroup, new_diffuse};
 use crate::image::Image;
 use crate::pipeline::{create_render_pipeline, MaskType};
 use crate::proxy_event_loop::ProxyEventLoop;
@@ -49,10 +52,6 @@ use crate::renderer::{atlas_cache_tex_desc, main_render_tex_desc, secondary_rend
 use crate::samplers::main_sampler;
 use crate::textures::create_depth_stencil_texture;
 use crate::vertex::Vertex;
-use carbide_core::draw::image::ImageId;
-#[cfg(target_os = "windows")]
-use winit::platform::windows::WindowExtWindows;
-use carbide_winit::convert_window_event;
 
 // Todo: Look into multisampling: https://github.com/gfx-rs/wgpu-rs/blob/v0.6/examples/msaa-line/main.rs
 // An alternative is https://github.com/fintelia/smaa-rs (https://github.com/gfx-rs/naga/issues/1275)

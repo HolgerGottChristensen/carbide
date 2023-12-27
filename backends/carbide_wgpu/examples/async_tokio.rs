@@ -1,17 +1,17 @@
 use std::path::PathBuf;
-use tokio::time::{sleep, Duration};
-use carbide_core::draw::Dimension;
-use carbide_core::environment::EnvironmentColor;
 
+use tokio::time::{Duration, sleep};
+
+use carbide_core as carbide; // Required only in internal examples
+use carbide_core::draw::Dimension;
+use carbide_core::draw::image::ImageId;
+use carbide_core::draw::Texture;
+use carbide_core::draw::TextureFormat;
+use carbide_core::environment::EnvironmentColor;
 use carbide_core::state::{LocalState, State};
 use carbide_core::task;
 use carbide_core::widget::*;
 use carbide_wgpu::{Application, Window};
-use carbide_core::draw::image::ImageId;
-use carbide_core::draw::Texture;
-use carbide_core::draw::TextureFormat;
-
-use carbide_core as carbide;
 
 static APP_USER_AGENT: &str = concat!(env!("CARGO_PKG_NAME"), "/", env!("CARGO_PKG_VERSION"));
 

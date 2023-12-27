@@ -1,12 +1,10 @@
-use carbide_core::cursor::MouseCursor;
-use carbide_core::state::{AnyReadState, ReadState, State};
-use carbide_controls::{Button};
+use carbide_controls::Button;
 use carbide_core::a;
+use carbide_core::cursor::MouseCursor;
 use carbide_core::draw::Dimension;
+use carbide_core::state::{ReadState, State};
 use carbide_core::widget::*;
 use carbide_wgpu::{Application, Window};
-use carbide_core::environment::Environment;
-use carbide_core::state::{AnyState};
 
 fn main() {
     env_logger::init();

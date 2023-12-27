@@ -6,25 +6,25 @@ use std::sync::Arc;
 
 use cgmath::{Matrix4, Vector3};
 use futures::executor::block_on;
+use raw_window_handle::HasRawWindowHandle;
 use wgpu::{Adapter, BindGroup, BindGroupLayout, Buffer, BufferUsages, CommandEncoder, Device, Extent3d, ImageCopyTexture, Instance, PipelineLayout, Queue, RenderPassDepthStencilAttachment, RenderPipeline, Sampler, ShaderModule, Surface, SurfaceConfiguration, SurfaceTexture, Texture, TextureFormat, TextureUsages, TextureView};
 use wgpu::util::{BufferInitDescriptor, DeviceExt};
 use winit::dpi::{LogicalSize, PhysicalPosition, PhysicalSize, Size};
 use winit::window::{Window as WinitWindow, WindowBuilder};
-use raw_window_handle::HasRawWindowHandle;
 
 use carbide_core::{draw, Scene};
-use carbide_core::draw::{Dimension, ImageContext, Position, Rect, Scalar};
+use carbide_core::draw::{Dimension, Position, Rect, Scalar};
 use carbide_core::draw::image::ImageId;
 use carbide_core::environment::{Environment, EnvironmentColor};
 use carbide_core::event::{KeyboardEvent, KeyboardEventHandler, MouseEvent, MouseEventContext, MouseEventHandler, OtherEventContext, OtherEventHandler, WidgetEvent, WindowEvent};
 use carbide_core::focus::Focusable;
-use carbide_core::image::{DynamicImage, GenericImage, GenericImageView};
+use carbide_core::image::GenericImageView;
 use carbide_core::layout::{Layout, LayoutContext, Layouter};
 use carbide_core::mesh::mesh::Mesh;
-use carbide_core::render::{Primitive, Primitives, Render, RenderContext};
+use carbide_core::render::{Render, RenderContext};
 use carbide_core::state::StateSync;
 use carbide_core::text::InnerTextContext;
-use carbide_core::widget::{CommonWidget, FilterId, Menu, OverlaidLayer, Rectangle, AnyWidget, WidgetExt, WidgetId, ZStack};
+use carbide_core::widget::{AnyWidget, CommonWidget, FilterId, Menu, OverlaidLayer, Rectangle, WidgetExt, WidgetId, ZStack};
 use carbide_core::window::WindowId;
 use carbide_winit::convert_mouse_cursor;
 
@@ -32,21 +32,18 @@ use crate::{image_context, render_pass_ops, RenderPassOps};
 use crate::application::{EVENT_LOOP, WINDOW_IDS};
 use crate::bind_group_layouts::{filter_buffer_bind_group_layout, filter_texture_bind_group_layout, gradient_buffer_bind_group_layout, main_texture_group_layout, uniform_bind_group_layout};
 use crate::bind_groups::{filter_buffer_bind_group, filter_texture_bind_group, gradient_buffer_bind_group, main_bind_group, matrix_to_uniform_bind_group, size_to_uniform_bind_group};
-use crate::diffuse_bind_group::{DiffuseBindGroup, new_diffuse};
 use crate::filter::Filter;
 use crate::gradient::Gradient;
-use crate::image::{BindGroupExtended, Image};
-use crate::image_context::WGPUImageContext;
+use crate::image::BindGroupExtended;
 use crate::pipeline::create_pipelines;
 use crate::render_context::WGPURenderContext;
-use crate::render_pass_command::{draw_commands_to_render_pass_commands, RenderPass, RenderPassCommand};
+use crate::render_pass_command::{RenderPass, RenderPassCommand};
 use crate::render_pipeline_layouts::{filter_pipeline_layout, gradient_pipeline_layout, main_pipeline_layout, RenderPipelines};
 use crate::renderer::{atlas_cache_tex_desc, main_render_tex_desc, secondary_render_tex_desc};
 use crate::samplers::main_sampler;
 use crate::texture_atlas_command::TextureAtlasCommand;
 use crate::textures::create_depth_stencil_texture;
 use crate::vertex::Vertex;
-
 
 const ZOOM: f32 = 1.0;
 

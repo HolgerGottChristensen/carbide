@@ -114,13 +114,14 @@ impl<C: Widget> OtherEventHandler for OverlaidLayer<C> {
 
 impl<C: AnyWidget + Clone> Layout for OverlaidLayer<C> {
     fn calculate_size(&mut self, requested_size: Dimension, ctx: &mut LayoutContext) -> Dimension {
-        self.dimension = self.child.calculate_size(requested_size, ctx);
-        self.dimension
-
-        // ctx.env.with_overlay_layer(self.overlay_id, self.overlays.clone(), |new_env| {
-        //     self.dimension = self.child.calculate_size(requested_size, new_env);
-        //     self.dimension
-        // })
+        ctx.env.with_overlay_layer(self.overlay_id, self.overlays.clone(), |new_env| {
+            self.dimension = self.child.calculate_size(requested_size, &mut LayoutContext {
+                text: ctx.text,
+                image: ctx.image,
+                env: new_env,
+            });
+            self.dimension
+        })
     }
 }
 

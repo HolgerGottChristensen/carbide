@@ -1,13 +1,12 @@
 use carbide_controls::{Button, TextInput};
+use carbide_core as carbide; // Required only in internal examples
+use carbide_core::a;
 use carbide_core::draw::Dimension;
 use carbide_core::environment::{EnvironmentColor, EnvironmentFontSize};
-use carbide_core::a;
-use carbide_macro::ui;
 use carbide_core::state::LocalState;
 use carbide_core::widget::*;
+use carbide_macro::ui;
 use carbide_wgpu::{Application, Window};
-
-use carbide_core as carbide;
 
 fn main() {
     let mut application = Application::new()
@@ -36,7 +35,7 @@ fn main() {
         VStack::new((
             widget,
             Button::new_primary("Click to change the view above", a!(|_, _| {
-                *$integer_state = (*$integer_state + 1) % 3;
+                *$integer_state = (*$integer_state + 1) % 4;
             })).frame_fixed_height(45.0),
         ))
     ).close_application_on_window_close());

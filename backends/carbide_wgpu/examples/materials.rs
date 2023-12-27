@@ -1,6 +1,6 @@
+use carbide_core::draw::{Color, Dimension};
 use carbide_core::environment::*;
 use carbide_core::widget::*;
-use carbide_core::draw::{Dimension, Color};
 use carbide_wgpu::{Application, Window};
 
 fn main() {

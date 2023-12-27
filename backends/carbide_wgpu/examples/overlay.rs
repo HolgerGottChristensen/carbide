@@ -1,4 +1,4 @@
-use carbide_core::draw::{Dimension};
+use carbide_core::draw::Dimension;
 use carbide_core::environment::*;
 use carbide_core::state::{LocalState, State};
 use carbide_core::widget::*;
@@ -12,36 +12,33 @@ fn main() {
     let state = LocalState::new(false);
     let state2 = state.clone();
 
-    let overlay = ZStack::new(vec![
+    let overlay = ZStack::new((
         Rectangle::new()
             .fill(EnvironmentColor::Blue)
-            .frame(150.0, 150.0)
-            .boxed(),
+            .frame(150.0, 150.0),
         Text::new("Overlay"),
-    ]).on_click(|env: &mut Environment, _| {
+    )).on_click(|env: &mut Environment, _| {
         println!("Overlay clicked!")
     }).on_click_outside(move |env: &mut Environment, _| {
         state2.clone().set_value(false);
     }).overlay("overlay", state.clone());
 
 
-    let widget = OverlaidLayer::new("overlay", *VStack::new(vec![
+    let widget = OverlaidLayer::new("overlay", VStack::new((
         Text::new("Click the rectangle to add element to overlay"),
-        Box::new(ZStack::new(vec![
-            Box::new(overlay),
+        ZStack::new((
+            overlay,
             Rectangle::new()
                 .fill(EnvironmentColor::Green)
-                .frame(200.0, 200.0)
-                .boxed(),
+                .frame(200.0, 200.0),
             Rectangle::new()
                 .fill(EnvironmentColor::Red)
-                .frame(100.0, 100.0)
-                .boxed(),
-        ]).on_click(move |env: &mut Environment, _| {
+                .frame(100.0, 100.0),
+        )).on_click(move |env: &mut Environment, _| {
             state.clone().set_value(true);
-        })),
+        }),
         Text::new("Click outside to remove the overlay"),
-    ])).steal_events();
+    ))).steal_events();
 
 
     application.set_scene(Window::new(

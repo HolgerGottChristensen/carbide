@@ -1,4 +1,4 @@
-use carbide_core::draw::Dimension;
+/*use carbide_core::draw::Dimension;
 use carbide_core::environment::EnvironmentColor;
 use carbide_core::text::PolarBearMarkup;
 use carbide_core::widget::*;
@@ -21,4 +21,5 @@ fn main() {
     ).close_application_on_window_close());
 
     application.launch();
-}
+}*/
+fn main() {}

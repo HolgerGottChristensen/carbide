@@ -5,7 +5,7 @@ use carbide_core::state::{LocalState, ReadStateExtNew, State};
 use carbide_core::widget::*;
 use carbide_wgpu::{Application, Window};
 
-use carbide_core as carbide;
+use carbide_core as carbide; // Required only in internal examples
 
 fn main() {
     let mut application = Application::new()

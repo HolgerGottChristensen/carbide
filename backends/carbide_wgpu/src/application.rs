@@ -2,33 +2,30 @@ use std::cell::RefCell;
 use std::collections::HashMap;
 use std::ffi::OsStr;
 use std::fmt::{Debug, Formatter};
-use std::fs;
 use std::mem::transmute;
 use std::path::{Path, PathBuf};
-use walkdir::WalkDir;
 
+use walkdir::WalkDir;
 use winit::event::{Event, WindowEvent as WinitWindowEvent};
 use winit::event_loop::{ControlFlow, EventLoopWindowTarget};
 use winit::event_loop::EventLoopBuilder;
 use winit::window::WindowId as WinitWindowId;
 
-//use carbide_text::font_family::FontFamily;
-use carbide_text::text_context::TextContext;
-
 use carbide_core::{locate_folder, Scene};
 use carbide_core::asynchronous::{AsyncContext, check_tasks, set_event_sink};
-use carbide_core::draw::{Dimension, ImageContext};
+use carbide_core::draw::Dimension;
 use carbide_core::environment::Environment;
 use carbide_core::event::{CustomEvent, EventHandler, Input};
 use carbide_core::render::{NoopRenderContext, Render, RenderContext};
-use carbide_core::text::{FontId, InnerTextContext};
-use carbide_core::widget::{Empty};
+use carbide_core::text::InnerTextContext;
+use carbide_core::widget::Empty;
 use carbide_core::window::WindowId;
-
+//use carbide_text::font_family::FontFamily;
+use carbide_text::text_context::TextContext;
 use carbide_winit::convert_window_event;
 use carbide_winit::EventLoop;
-use crate::image_context::WGPUImageContext;
 
+use crate::image_context::WGPUImageContext;
 use crate::proxy_event_loop::ProxyEventLoop;
 
 thread_local!(pub static EVENT_LOOP: RefCell<EventLoop<CustomEvent>> = RefCell::new(EventLoop::Owned(EventLoopBuilder::<CustomEvent>::with_user_event().build())));

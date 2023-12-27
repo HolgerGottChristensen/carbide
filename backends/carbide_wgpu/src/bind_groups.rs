@@ -1,6 +1,6 @@
 use cgmath::Matrix4;
-use wgpu::util::DeviceExt;
 use wgpu::{BindGroup, BindGroupLayout, Buffer, Device, Sampler, Texture, TextureView};
+use wgpu::util::DeviceExt;
 
 use carbide_core::draw::Scalar;
 

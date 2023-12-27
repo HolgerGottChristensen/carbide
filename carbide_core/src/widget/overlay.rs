@@ -167,9 +167,8 @@ impl<W: AnyWidget + Clone, B: ReadState<T=bool>> StateSync for Overlay<W, B> {
 
 impl<W: AnyWidget + Clone, B: ReadState<T=bool>> Layout for Overlay<W, B> {
     fn calculate_size(&mut self, requested_size: Dimension, ctx: &mut LayoutContext) -> Dimension {
-        todo!()
-        // self.ensure_overlay_correct(ctx);
-        // self.hierarchy.calculate_size(requested_size, ctx)
+        self.ensure_overlay_correct(ctx.env);
+        self.hierarchy.calculate_size(requested_size, ctx)
     }
 
     fn position_children(&mut self, ctx: &mut LayoutContext) {

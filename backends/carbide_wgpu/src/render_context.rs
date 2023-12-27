@@ -1,14 +1,17 @@
 use std::ops::Range;
+
 use cgmath::{Matrix4, SquareMatrix};
+
 use carbide_core::color::WHITE;
-use carbide_core::draw::{BoundingBox, Position, Rect, Scalar};
+use carbide_core::draw::{BoundingBox, Position, Rect};
 use carbide_core::draw::draw_style::DrawStyle;
 use carbide_core::draw::image::ImageId;
 use carbide_core::draw::shape::triangle::Triangle;
-use carbide_core::mesh::{MODE_GEOMETRY, MODE_TEXT, MODE_TEXT_COLOR};
+use carbide_core::mesh::MODE_GEOMETRY;
 use carbide_core::render::{CarbideTransform, InnerRenderContext};
-use carbide_core::text::{InnerTextContext, NOOPTextContext, TextId};
+use carbide_core::text::{InnerTextContext, TextId};
 use carbide_core::widget::FilterId;
+
 use crate::gradient::Gradient;
 use crate::render_pass_command::{RenderPass, RenderPassCommand, WGPUBindGroup};
 use crate::vertex::Vertex;

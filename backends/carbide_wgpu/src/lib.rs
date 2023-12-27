@@ -1,3 +1,16 @@
+use std::collections::HashMap;
+use std::sync::Arc;
+
+use wgpu::{Adapter, Device, Instance, LoadOp, Operations, Queue};
+
+pub use application::Application;
+use carbide_core::draw::image::ImageId;
+pub use wgpu_window::WGPUWindow as Window;
+
+use crate::image::BindGroupExtended;
+pub use crate::image_context::create_bind_group_from_wgpu_texture;
+use crate::wgpu_window::{ADAPTER, BIND_GROUPS, DEVICE_QUEUE, INSTANCE};
+
 mod bind_group_layouts;
 mod bind_groups;
 mod diffuse_bind_group;
@@ -20,16 +33,6 @@ mod application;
 mod wgpu_window;
 mod render_context;
 mod image_context;
-
-use std::collections::HashMap;
-use std::sync::Arc;
-use wgpu::{Adapter, Device, Instance, LoadOp, Operations, Queue};
-pub use application::Application;
-use carbide_core::draw::image::ImageId;
-pub use wgpu_window::WGPUWindow as Window;
-use crate::image::BindGroupExtended;
-use crate::wgpu_window::{ADAPTER, BIND_GROUPS, DEVICE_QUEUE, INSTANCE};
-pub use crate::image_context::create_bind_group_from_wgpu_texture;
 
 pub fn init_logger() {
     env_logger::init();

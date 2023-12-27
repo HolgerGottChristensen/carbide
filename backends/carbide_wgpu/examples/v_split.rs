@@ -1,9 +1,8 @@
 use carbide_core::draw::Dimension;
 use carbide_core::environment::EnvironmentColor;
-use carbide_core::state::{LocalState, Map1, State, StateExt, TState};
+use carbide_core::state::{LocalState, Map1, State};
 use carbide_core::widget::*;
 use carbide_wgpu::{Application, Window};
-use carbide_core::state::ReadStateExtNew;
 
 fn main() {
     let height1 = LocalState::new(0.1);

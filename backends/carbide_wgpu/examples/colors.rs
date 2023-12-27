@@ -1,7 +1,7 @@
 use carbide_core::color::{BLACK, WHITE};
 use carbide_core::draw::Dimension;
 use carbide_core::environment::EnvironmentColor;
-use carbide_core::state::{AnyReadState, AnyState, ReadState};
+use carbide_core::state::{AnyState, ReadState};
 use carbide_core::widget::*;
 use carbide_wgpu::{Application, Window};
 

@@ -1,9 +1,11 @@
 use std::sync::Arc;
 use std::sync::atomic::{AtomicUsize, Ordering};
-use std::time::{Duration};
+use std::time::Duration;
+
 use chrono::Local;
+
 use carbide_core::asynchronous::Timer;
-use carbide_core::draw::{Dimension};
+use carbide_core::draw::Dimension;
 use carbide_core::environment::{Environment, EnvironmentFontSize};
 use carbide_core::event::ModifierKey;
 use carbide_core::state::Map1;

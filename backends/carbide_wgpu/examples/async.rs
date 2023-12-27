@@ -1,17 +1,16 @@
 use std::time::Duration;
 
-use carbide_core::state::{LocalState, Map1, State};
-use carbide_core::asynchronous::{sleep};
-use carbide_core::widget::*;
-use carbide_core::{task};
+use carbide_core::task;
+use carbide_core as carbide; // Required only in internal examples
+use carbide_core::asynchronous::sleep;
 use carbide_core::color::WHITE;
 use carbide_core::draw::{Color, Dimension};
 use carbide_core::environment::EnvironmentColor;
 use carbide_core::render::Style;
-use carbide_wgpu::{Application, Window};
+use carbide_core::state::{LocalState, Map1, State};
 use carbide_core::state::ReadStateExtNew;
-
-use carbide_core as carbide;
+use carbide_core::widget::*;
+use carbide_wgpu::{Application, Window};
 
 fn main() {
     let mut application = Application::new()
