@@ -31,14 +31,14 @@ pub trait WidgetExt: Widget + Sized {
     /// Changes the flexibility of the widget to a custom value. This can be useful when the
     /// default value does not provide the expected layout for example within a VStack.
     fn custom_flexibility(self, flexibility: u32) -> Flexibility<Self> {
-        *Flexibility::new(self, flexibility)
+        Flexibility::new(self, flexibility)
     }
 
     /// Change the flags of a given widget. This can for example be used to make any widget take
     /// Flags::USEMAXCROSSAXIS to make it use the max cross axis instead of expanding infinitely
     /// within a VStack or HStack.
     fn custom_flags(self, flags: Flags) -> Flagged<Self> {
-        *Flagged::new(self, flags)
+        Flagged::new(self, flags)
     }
 
     /// Add a widget to the background of this widget. The proposed size for the widget in the
@@ -145,7 +145,7 @@ pub trait WidgetExt: Widget + Sized {
             value: TState::new(Box::new(color.into_read_state().ignore_writes())),
         });
 
-        *e
+        e
     }
 
     fn accent_color<C: IntoReadState<Color>>(self, color: C) -> AccentColor<Self> {
@@ -155,7 +155,7 @@ pub trait WidgetExt: Widget + Sized {
             value: TState::new(Box::new(color.into_read_state().ignore_writes())),
         });
 
-        *e
+        e
     }
 
     /// Returns two widgets. The first should be used within an overlay, and the second within the widget hierarchy.

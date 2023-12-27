@@ -22,14 +22,14 @@ pub struct EnvUpdating<C> where C: Widget {
 
 impl EnvUpdating<Empty> {
     #[carbide_default_builder2]
-    pub fn new<C: Widget>(child: C) -> Box<EnvUpdating<C>> {
-        Box::new(EnvUpdating {
+    pub fn new<C: Widget>(child: C) -> EnvUpdating<C> {
+        EnvUpdating {
             id: WidgetId::new(),
             child,
             position: Position::default(),
             dimension: Dimension::default(),
             envs_to_update: vec![],
-        })
+        }
     }
 }
 

@@ -17,14 +17,14 @@ pub struct Flagged<C> where C: Widget {
 
 impl Flagged<Empty> {
     #[carbide_default_builder2]
-    pub fn new<C: Widget>(child: C, flags: Flags) -> Box<Flagged<C>> {
-        Box::new(Flagged {
+    pub fn new<C: Widget>(child: C, flags: Flags) -> Flagged<C> {
+        Flagged {
             id: WidgetId::new(),
             child,
             position: Position::new(0.0, 0.0),
             dimension: Dimension::new(100.0, 100.0),
             flags,
-        })
+        }
     }
 }
 

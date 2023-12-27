@@ -38,19 +38,20 @@ const MULTI_SELECTION_MODIFIER: ModifierKey = if cfg!(target_os = "macos") {
 const LIST_SELECTION_MODIFIER: ModifierKey = ModifierKey::SHIFT;
 
 #[derive(Clone, Widget)]
-pub struct List<T, M, W, U, I>
+pub struct List<T, M, W, U, I, G>
 where
     T: StateContract,
     M: State<T=Vec<T>>,
     W: Widget,
     U: Delegate<T, W>,
     I: StateContract + PartialEq,
+    G: Widget,
 {
     id: WidgetId,
     position: Position,
     dimension: Dimension,
 
-    child: Scroll,
+    child: Scroll<G>,
 
     #[state] model: M,
     delegate: U,
@@ -82,8 +83,8 @@ where
     tree_disclosure: TreeDisclosure,*/
 }
 
-impl List<(), Vec<()>, Empty, EmptyDelegate, ()> {
-    pub fn new<T: StateContract, M: IntoState<Vec<T>>, W: Widget, U: Delegate<T, W>>(model: M, delegate: U) -> List<T, M::Output, W, U, ()> {
+impl List<(), Vec<()>, Empty, EmptyDelegate, (), Empty> {
+    pub fn new<T: StateContract, M: IntoState<Vec<T>>, W: Widget, U: Delegate<T, W>>(model: M, delegate: U) -> List<T, M::Output, W, U, (), impl Widget> {
         let model = model.into_state();
         let spacing = 10.0;
 
@@ -106,7 +107,7 @@ impl List<(), Vec<()>, Empty, EmptyDelegate, ()> {
     }
 }
 
-impl<T: StateContract, M: State<T=Vec<T>>, W: Widget, U: Delegate<T, W>, I: StateContract + PartialEq> List<T, M, W, U, I> {
+impl<T: StateContract, M: State<T=Vec<T>>, W: Widget, U: Delegate<T, W>, I: StateContract + PartialEq, G: Widget> List<T, M, W, U, I, G> {
     /// Returns a list selectable where the items within are selectable
     ///
     /// Consumes the `self` argument. It takes an `id` function from the item **T** to the
@@ -117,7 +118,7 @@ impl<T: StateContract, M: State<T=Vec<T>>, W: Widget, U: Delegate<T, W>, I: Stat
     pub fn selectable<I2: StateContract + PartialEq + Eq + Hash>(
         self,
         selection: impl Into<Selection<I2>>,
-    ) -> List<T, M, Box<dyn AnyWidget>, SelectableListDelegate<T, M, W, U, I2>, I2> where T: Identifiable<I2> {
+    ) -> List<T, M, Box<dyn AnyWidget>, SelectableListDelegate<T, M, W, U, I2>, I2, impl Widget> where T: Identifiable<I2> {
         let selection = selection.into();
 
         let new_delegate = SelectableListDelegate {
@@ -128,7 +129,7 @@ impl<T: StateContract, M: State<T=Vec<T>>, W: Widget, U: Delegate<T, W>, I: Stat
             phantom: Default::default(),
         };
 
-        let child = Scroll::new(VStack::new(ForEach::new(self.model.clone(), new_delegate.clone())).spacing(self.spacing).boxed());
+        let child = Scroll::new(VStack::new(ForEach::new(self.model.clone(), new_delegate.clone())).spacing(self.spacing));
 
         List {
             id: self.id,
@@ -149,7 +150,7 @@ impl<T: StateContract, M: State<T=Vec<T>>, W: Widget, U: Delegate<T, W>, I: Stat
     pub fn tree(
         mut self,
         tree_disclosure: impl Into<TreeDisclosure>,
-    ) -> List<T, M, Box<dyn AnyWidget>, TreeListDelegate<T, W, U>, I> where Box<dyn AnyState<T=T>>: Treeable<T> {
+    ) -> List<T, M, Box<dyn AnyWidget>, TreeListDelegate<T, W, U>, I, impl Widget> where Box<dyn AnyState<T=T>>: Treeable<T> {
         let tree_disclosure = tree_disclosure.into();
 
         let new_delegate = TreeListDelegate {
@@ -159,7 +160,7 @@ impl<T: StateContract, M: State<T=Vec<T>>, W: Widget, U: Delegate<T, W>, I: Stat
             phantom2: Default::default(),
         };
 
-        let child = Scroll::new(VStack::new(ForEach::new(self.model.clone(), new_delegate.clone())).spacing(self.spacing).boxed());
+        let child = Scroll::new(VStack::new(ForEach::new(self.model.clone(), new_delegate.clone())).spacing(self.spacing));
 
         List {
             id: self.id,
@@ -392,17 +393,17 @@ impl<T: StateContract, M: State<T=Vec<T>>, W: Widget, U: Delegate<T, W>, I: Stat
     */
 }
 
-impl<T: StateContract, M: State<T=Vec<T>>, W: Widget, U: Delegate<T, W>, I: StateContract + PartialEq> CommonWidget for List<T, M, W, U, I> {
+impl<T: StateContract, M: State<T=Vec<T>>, W: Widget, U: Delegate<T, W>, I: StateContract + PartialEq, G: Widget> CommonWidget for List<T, M, W, U, I, G> {
     CommonWidgetImpl!(self, id: self.id, child: self.child, position: self.position, dimension: self.dimension);
 }
 
-impl<T: StateContract, M: State<T=Vec<T>>, W: Widget, U: Delegate<T, W>, I: StateContract + PartialEq> Debug for List<T, M, W, U, I> {
+impl<T: StateContract, M: State<T=Vec<T>>, W: Widget, U: Delegate<T, W>, I: StateContract + PartialEq, G: Widget> Debug for List<T, M, W, U, I, G> {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("List").field("child", &self.child).finish()
     }
 }
 
-impl<T: StateContract, M: State<T=Vec<T>>, W: Widget, U: Delegate<T, W>, I: StateContract + PartialEq> WidgetExt for List<T, M, W, U, I> {}
+impl<T: StateContract, M: State<T=Vec<T>>, W: Widget, U: Delegate<T, W>, I: StateContract + PartialEq, G: Widget> WidgetExt for List<T, M, W, U, I, G> {}
 
 pub trait Identifiable<I: StateContract + PartialEq> {
     fn identifier(&self) -> I;

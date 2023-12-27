@@ -9,29 +9,25 @@ use crate::CommonWidgetImpl;
 use crate::draw::{Dimension, Position};
 use crate::environment::{Environment, EnvironmentColor};
 use crate::state::AnimatedState;
-use crate::widget::{AnyWidget, Circle, CommonWidget, Widget, WidgetExt, WidgetId, ZStack};
+use crate::widget::{Circle, CommonWidget, Empty, Widget, WidgetExt, WidgetId, ZStack};
 use crate::widget::canvas::Canvas;
 use crate::widget::canvas::LineCap;
 
 #[derive(Debug, Clone, Widget)]
-pub struct ProgressView {
+pub struct ProgressView<W> where W: Widget {
     id: WidgetId,
-    child: Box<dyn AnyWidget>,
+    child: W,
     position: Position,
     dimension: Dimension,
 }
 
-impl ProgressView {
+impl ProgressView<Empty> {
     #[carbide_default_builder2]
-    pub fn new() -> Self {
+    pub fn new() -> ProgressView<impl Widget> {
         ProgressView::new_internal(30.0)
     }
 
-    pub fn size(self, size: f64) -> Self {
-        ProgressView::new_internal(size)
-    }
-
-    fn new_internal(size: f64) -> Self {
+    fn new_internal(size: f64) -> ProgressView<impl Widget> {
         let animation = AnimatedState::linear(None)
             .repeat()
             .duration(Duration::new(2, 0))
@@ -42,11 +38,10 @@ impl ProgressView {
             .duration(Duration::new(1, 0))
             .range(0.0, 360.0);
 
-        let child = ZStack::new(vec![
+        let child = ZStack::new((
             Circle::new()
                 .stroke(EnvironmentColor::Separator)
-                .stroke_style(4.0)
-                .boxed(),
+                .stroke_style(4.0),
             Canvas::new(|rect: Rect, mut context: Context, _env: &mut Environment| {
                 context.move_to(2.0, rect.height() / 2.0);
                 context.arc(
@@ -62,8 +57,7 @@ impl ProgressView {
                 context.stroke();
                 context
             })
-            .rotation_effect(animation)
-                .boxed(),
+                .rotation_effect(animation),
             Canvas::new(|rect: Rect, mut context: Context, _env: &mut Environment| {
                 context.move_to(2.0, rect.height() / 2.0);
                 context.arc(
@@ -79,11 +73,9 @@ impl ProgressView {
                 context.stroke();
                 context
             })
-            .rotation_effect(animation2)
-                .boxed(),
-        ])
-        .frame(size, size)
-            .boxed();
+                .rotation_effect(animation2),
+        ))
+            .frame(size, size);
 
         ProgressView {
             id: WidgetId::new(),
@@ -94,8 +86,14 @@ impl ProgressView {
     }
 }
 
-impl CommonWidget for ProgressView {
+impl<W: Widget> ProgressView<W> {
+    pub fn size(self, size: f64) -> ProgressView<impl Widget> {
+        ProgressView::new_internal(size)
+    }
+}
+
+impl<W: Widget> CommonWidget for ProgressView<W> {
     CommonWidgetImpl!(self, id: self.id, child: self.child, position: self.position, dimension: self.dimension);
 }
 
-impl WidgetExt for ProgressView {}
+impl<W: Widget> WidgetExt for ProgressView<W> {}

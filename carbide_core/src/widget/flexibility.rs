@@ -16,14 +16,14 @@ pub struct Flexibility<C> where C: Widget {
 
 impl Flexibility<Empty> {
     #[carbide_default_builder2]
-    pub fn new<C: Widget>(child: C, flexibility: u32) -> Box<Flexibility<C>> {
-        Box::new(Flexibility {
+    pub fn new<C: Widget>(child: C, flexibility: u32) -> Flexibility<C> {
+        Flexibility {
             id: WidgetId::new(),
             child,
             position: Position::new(0.0, 0.0),
             dimension: Dimension::new(100.0, 100.0),
             flexibility,
-        })
+        }
     }
 }
 

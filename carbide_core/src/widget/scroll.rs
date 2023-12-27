@@ -9,14 +9,14 @@ use crate::event::{ModifierKey, MouseButton, MouseEvent, MouseEventContext, Mous
 use crate::flags::Flags;
 use crate::layout::{BasicLayouter, Layout, LayoutContext, Layouter};
 use crate::render::Render;
-use crate::widget::{AnyWidget, Capsule, CommonWidget, Rectangle, Widget, WidgetExt, WidgetId};
+use crate::widget::{AnyWidget, Capsule, CommonWidget, Empty, Rectangle, Widget, WidgetExt, WidgetId};
 use crate::widget::types::ScrollDirection;
 
 #[derive(Debug, Clone, Widget)]
 #[carbide_exclude(Render, MouseEvent, OtherEvent, Layout)]
-pub struct Scroll {
+pub struct Scroll<W> where W: Widget {
     id: WidgetId,
-    child: Box<dyn AnyWidget>,
+    child: W,
     position: Position,
     dimension: Dimension,
     scroll_offset: Position,
@@ -31,45 +31,10 @@ pub struct Scroll {
     scrollbar_vertical_background: Box<dyn AnyWidget>,
 }
 
-impl Scroll {
-    pub fn with_scroll_direction(mut self, scroll_directions: ScrollDirection) -> Self {
-        self.scroll_directions = scroll_directions;
-        self
-    }
-
-    fn keep_y_within_bounds(&mut self) {
-        if self.scroll_offset.y > 0.0 {
-            self.scroll_offset = Position::new(self.scroll_offset.x, 0.0);
-        }
-
-        if self.child.height() > self.height() {
-            if self.scroll_offset.y < -(self.child.height() - self.height()) {
-                self.scroll_offset =
-                    Position::new(self.scroll_offset.x, -(self.child.height() - self.height()));
-            }
-        } else {
-            self.scroll_offset = Position::new(self.scroll_offset.x, 0.0);
-        }
-    }
-
-    fn keep_x_within_bounds(&mut self) {
-        if self.scroll_offset.x < 0.0 {
-            self.scroll_offset = Position::new(0.0, self.scroll_offset.y);
-        }
-
-        if self.child.width() > self.width() {
-            if self.scroll_offset.x > (self.child.width() - self.width()) {
-                self.scroll_offset =
-                    Position::new(self.child.width() - self.width(), self.scroll_offset.y);
-            }
-        } else {
-            self.scroll_offset = Position::new(0.0, self.scroll_offset.y);
-        }
-    }
-
+impl Scroll<Empty> {
     #[carbide_default_builder2]
-    pub fn new(child: Box<dyn AnyWidget>) -> Self {
-        Self {
+    pub fn new<W: Widget>(child: W) -> Scroll<W> {
+        Scroll {
             id: WidgetId::new(),
             child,
             position: Position::new(0.0, 0.0),
@@ -104,7 +69,44 @@ impl Scroll {
     }
 }
 
-impl MouseEventHandler for Scroll {
+impl<W: Widget> Scroll<W> {
+    pub fn with_scroll_direction(mut self, scroll_directions: ScrollDirection) -> Self {
+        self.scroll_directions = scroll_directions;
+        self
+    }
+
+    fn keep_y_within_bounds(&mut self) {
+        if self.scroll_offset.y > 0.0 {
+            self.scroll_offset = Position::new(self.scroll_offset.x, 0.0);
+        }
+
+        if self.child.height() > self.height() {
+            if self.scroll_offset.y < -(self.child.height() - self.height()) {
+                self.scroll_offset =
+                    Position::new(self.scroll_offset.x, -(self.child.height() - self.height()));
+            }
+        } else {
+            self.scroll_offset = Position::new(self.scroll_offset.x, 0.0);
+        }
+    }
+
+    fn keep_x_within_bounds(&mut self) {
+        if self.scroll_offset.x < 0.0 {
+            self.scroll_offset = Position::new(0.0, self.scroll_offset.y);
+        }
+
+        if self.child.width() > self.width() {
+            if self.scroll_offset.x > (self.child.width() - self.width()) {
+                self.scroll_offset =
+                    Position::new(self.child.width() - self.width(), self.scroll_offset.y);
+            }
+        } else {
+            self.scroll_offset = Position::new(0.0, self.scroll_offset.y);
+        }
+    }
+}
+
+impl<W: Widget> MouseEventHandler for Scroll<W> {
     fn handle_mouse_event(&mut self, event: &MouseEvent, consumed: &bool, ctx: &mut MouseEventContext) {
         match event {
             MouseEvent::Scroll {
@@ -226,7 +228,7 @@ impl MouseEventHandler for Scroll {
     }
 }
 
-impl OtherEventHandler for Scroll {
+impl<W: Widget> OtherEventHandler for Scroll<W> {
     fn handle_other_event(&mut self, _event: &WidgetEvent, ctx: &mut OtherEventContext) {
         match _event {
             WidgetEvent::Window(_) => {
@@ -238,7 +240,7 @@ impl OtherEventHandler for Scroll {
     }
 }
 
-impl Layout for Scroll {
+impl<W: Widget> Layout for Scroll<W> {
     fn calculate_size(&mut self, requested_size: Dimension, ctx: &mut LayoutContext) -> Dimension {
         self.child.calculate_size(requested_size, ctx);
 
@@ -396,7 +398,7 @@ impl Layout for Scroll {
     }
 }
 
-impl CommonWidget for Scroll {
+impl<W: Widget> CommonWidget for Scroll<W> {
     fn id(&self) -> WidgetId {
         self.id
     }
@@ -473,7 +475,7 @@ impl CommonWidget for Scroll {
     }
 }
 
-impl Render for Scroll {
+impl<W: Widget> Render for Scroll<W> {
     fn render(&mut self, context: &mut RenderContext, env: &mut Environment) {
         self.child.render(context, env);
 
@@ -502,4 +504,4 @@ impl Render for Scroll {
     }
 }
 
-impl WidgetExt for Scroll {}
+impl<W: Widget> WidgetExt for Scroll<W> {}

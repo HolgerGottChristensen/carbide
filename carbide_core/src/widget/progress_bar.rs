@@ -5,21 +5,21 @@ use crate::CommonWidgetImpl;
 use crate::draw::{Dimension, Position};
 use crate::environment::EnvironmentColor;
 use crate::state::ReadStateExtNew;
-use crate::widget::{AnyWidget, Capsule, CommonWidget, HSplit, Spacer, Widget, WidgetExt, WidgetId, ZStack};
+use crate::widget::{Capsule, CommonWidget, Empty, HSplit, Spacer, Widget, WidgetExt, WidgetId, ZStack};
 
 #[derive(Debug, Clone, Widget)]
-pub struct ProgressBar<P> where P: ReadState<T=f64> {
+pub struct ProgressBar<P, W> where P: ReadState<T=f64>, W: Widget {
     id: WidgetId,
-    child: Box<dyn AnyWidget>,
+    child: W,
     position: Position,
     dimension: Dimension,
     #[state]
     progress: P,
 }
 
-impl ProgressBar<f64> {
+impl ProgressBar<f64, Empty> {
     #[carbide_default_builder2]
-    pub fn new<P: IntoReadState<f64>>(progress: P) -> ProgressBar<P::Output> {
+    pub fn new<P: IntoReadState<f64>>(progress: P) -> ProgressBar<P::Output, impl Widget> {
         let progress = progress.into_read_state();
 
         let child = ZStack::new(vec![
@@ -30,8 +30,7 @@ impl ProgressBar<f64> {
                 .boxed(),
         ])
             .frame(0.0, 5.0)
-            .expand_width()
-            .boxed();
+            .expand_width();
 
         ProgressBar {
             id: WidgetId::new(),
@@ -43,8 +42,8 @@ impl ProgressBar<f64> {
     }
 }
 
-impl<P: ReadState<T=f64> + Clone> CommonWidget for ProgressBar<P> {
+impl<P: ReadState<T=f64>, W: Widget> CommonWidget for ProgressBar<P, W> {
     CommonWidgetImpl!(self, id: self.id, child: self.child, position: self.position, dimension: self.dimension);
 }
 
-impl<P: ReadState<T=f64> + Clone> WidgetExt for ProgressBar<P> {}
+impl<P: ReadState<T=f64>, W: Widget> WidgetExt for ProgressBar<P, W> {}

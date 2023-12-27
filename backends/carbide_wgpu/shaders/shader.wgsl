@@ -28,20 +28,23 @@ fn main_fs(in: VertexOutput) -> @location(0) vec4<f32> {
     let atlas_pixel = textureSample(atlas_texture, main_sampler, in.tex_coord);
     let main_pixel = textureSample(main_texture, main_sampler, in.tex_coord);
 
-    if (in.mode == 0u) {
-        return vec4<f32>(in.color.r * atlas_pixel.a, in.color.g * atlas_pixel.a, in.color.b * atlas_pixel.a, atlas_pixel.a);
+    switch (in.mode) {
+        case 0u: {
+            return vec4<f32>(in.color.r * atlas_pixel.a, in.color.g * atlas_pixel.a, in.color.b * atlas_pixel.a, atlas_pixel.a);
+        }
+        case 1u: {
+            return main_pixel;
+        }
+        case 2u: {
+            return in.color;
+        }
+        case 3u: {
+            return vec4<f32>(in.color.r * main_pixel.a, in.color.g * main_pixel.a, in.color.b * main_pixel.a, main_pixel.a);
+        }
+        default: {
+            return vec4<f32>(atlas_pixel.r * atlas_pixel.a, atlas_pixel.g * atlas_pixel.a, atlas_pixel.b * atlas_pixel.a, atlas_pixel.a);
+        }
     }
-    if (in.mode == 1u) {
-        return main_pixel;
-    }
-    if (in.mode == 2u) {
-        return in.color;
-    }
-    if (in.mode == 3u) {
-        return vec4<f32>(in.color.r * main_pixel.a, in.color.g * main_pixel.a, in.color.b * main_pixel.a, main_pixel.a);
-    }
-
-    return vec4<f32>(atlas_pixel.r * atlas_pixel.a, atlas_pixel.g * atlas_pixel.a, atlas_pixel.b * atlas_pixel.a, atlas_pixel.a);
 }
 
 @vertex

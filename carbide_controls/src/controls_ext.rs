@@ -29,7 +29,7 @@ pub trait ControlsExt: WidgetExt {
             value: enabled.into_read_state().as_dyn_read(),
         });
 
-        *e
+        e
     }
 }
 

@@ -23,7 +23,6 @@ pub struct VSplit<S, L, T> where S: State<T=f64>, L: Widget, T: Widget {
 }
 
 impl VSplit<f64, Empty, Empty> {
-
     #[carbide_default_builder2]
     pub fn new<L: Widget, T: Widget>(leading: L, trailing: T) -> VSplit<f64, L, T> {
         Self::new_internal(leading, trailing, SplitType::Percent(0.1), true)
