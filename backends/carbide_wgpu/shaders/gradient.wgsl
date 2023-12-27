@@ -92,7 +92,7 @@ fn main_fs(in: VertexOutput) -> @location(0) vec4<f32> {
 
     var j: u32;
     for( j = 1u; t > gradient.ratios[j]; j = j + 1u) {
-        // Noop - but increate J to the count of elements in gradient.ratios
+        // Noop - but increate J while the ratios is less than t
     }
 
     let i = j - 1u;

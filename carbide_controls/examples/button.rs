@@ -26,9 +26,22 @@ fn main() {
             Button::new("Subtract 1", a!(|_,_| { *$counter_state -= 1; }))
                 .frame(90.0, 22.0),
 
+            /*Button::new(Image::new("images/landscape.png").scaled_to_fill(), a!(|_,_| {}))
+                .frame(90.0, 22.0),*/
+
             Button::new("Disabled", a!(|_,_|{}))
                 .enabled(false)
                 .frame(90.0, 22.0),
+
+            HStack::new((
+                Button::new_primary(Image::new_icon("icons/chat-1-line.png"), a!(|_,_| {}))
+                    .frame(32.0, 32.0),
+                Button::new(Image::new_icon("icons/chat-1-line.png"), a!(|_,_| {}))
+                    .frame(32.0, 32.0),
+                Button::new(Image::new_icon("icons/chat-1-line.png"), a!(|_,_| {}))
+                    .enabled(false)
+                    .frame(32.0, 32.0),
+            )).spacing(10.0)
         ))
             .spacing(20.0)
     ).close_application_on_window_close());

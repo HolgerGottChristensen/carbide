@@ -172,7 +172,8 @@ impl<F: State<T=Focus>, A: Action + Clone + 'static, D: PlainButtonDelegate, E: 
                 }
             })
             .on_click_outside(capture!([focus, enabled], |env: &mut Environment| {
-                if *focus.value() == Focus::Focused && *enabled.value() {
+                focus.sync(env);
+                if *focus.value() == Focus::Focused {
                     focus.set_value(Focus::FocusReleased);
                     env.request_focus(Refocus::FocusRequest);
                 }
@@ -219,6 +220,7 @@ impl<F: State<T=Focus> + Clone, A: Action + Clone + 'static, D: PlainButtonDeleg
             .field("position", &self.position)
             .field("dimension", &self.dimension)
             .field("focus", &self.focus)
+            .field("child", &self.child)
             .finish()
     }
 }

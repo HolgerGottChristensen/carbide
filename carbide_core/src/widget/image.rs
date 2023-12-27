@@ -60,7 +60,7 @@ impl Image<Option<ImageId>, Style> {
             id: WidgetId::new(),
             image_id: id.into_read_state(),
             src_rect: None,
-            color: Some(EnvironmentColor::Accent.style()),
+            color: Some(EnvironmentColor::Label.style()),
             mode: MODE_ICON,
             position: Position::new(0.0, 0.0),
             dimension: Dimension::new(0.0, 0.0),

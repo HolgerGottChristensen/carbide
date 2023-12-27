@@ -13,24 +13,24 @@ pub struct Button;
 
 impl Button {
     // TODO: Consider creating a newtype wrapper macro for Button, wrapping plainbutton, to simplify the signature of the function
-    pub fn new<L: IntoReadState<String>, A: Action + Clone + 'static>(label: L, action: A) -> PlainButton<LocalState<Focus>, A, ButtonDelegate<L::Output, bool>, EnabledState, LocalState<bool>, LocalState<bool>> {
+    pub fn new<L: IntoWidget, A: Action + Clone + 'static>(label: L, action: A) -> PlainButton<LocalState<Focus>, A, ButtonDelegate<L::Output, bool>, EnabledState, LocalState<bool>, LocalState<bool>> {
         PlainButton::new(action)
-            .delegate(ButtonDelegate { label: label.into_read_state(), is_primary: false })
+            .delegate(ButtonDelegate { label: label.into_widget(), is_primary: false })
     }
 
-    pub fn new_primary<L: IntoReadState<String>, A: Action + Clone + 'static>(label: L, action: A) -> PlainButton<LocalState<Focus>, A, ButtonDelegate<L::Output, bool>, EnabledState, LocalState<bool>, LocalState<bool>> {
+    pub fn new_primary<L: IntoWidget, A: Action + Clone + 'static>(label: L, action: A) -> PlainButton<LocalState<Focus>, A, ButtonDelegate<L::Output, bool>, EnabledState, LocalState<bool>, LocalState<bool>> {
         PlainButton::new(action)
-            .delegate(ButtonDelegate { label: label.into_read_state(), is_primary: true })
+            .delegate(ButtonDelegate { label: label.into_widget(), is_primary: true })
     }
 }
 
 #[derive(Clone)]
-pub struct ButtonDelegate<L: ReadState<T=String>, P: ReadState<T=bool>> {
+pub struct ButtonDelegate<L: Widget + WidgetExt, P: ReadState<T=bool>> {
     label: L,
     is_primary: P,
 }
 
-impl<L: ReadState<T=String>, P: ReadState<T=bool>> PlainButtonDelegate for ButtonDelegate<L, P> {
+impl<L: Widget + WidgetExt, P: ReadState<T=bool>> PlainButtonDelegate for ButtonDelegate<L, P> {
     fn call(&self, focus: Box<dyn AnyReadState<T=Focus>>, hovered: Box<dyn AnyReadState<T=bool>>, pressed: Box<dyn AnyReadState<T=bool>>, enabled: Box<dyn AnyReadState<T=bool>>) -> Box<dyn AnyWidget> {
         let base_color = Map3::read_map(self.is_primary.clone(), EnvironmentColor::Accent.color(), EnvironmentColor::SecondarySystemBackground.color(), |is_primary, primary, secondary| {
             if *is_primary {
@@ -83,8 +83,11 @@ impl<L: ReadState<T=String>, P: ReadState<T=bool>> PlainButtonDelegate for Butto
                 .fill(background_color)
                 .stroke(EnvironmentColor::OpaqueSeparator)
                 .stroke_style(1.0),
-            Text::new(self.label.clone())
-                .color(label_color),
+            self.label
+                .clone()
+                .foreground_color(label_color)
+                .clip_shape(RoundedRectangle::new(3.0))
+                .padding(1.0),
         )).background(
             RoundedRectangle::new(CornerRadii::all(4.0))
                 .stroke(outline_color)
