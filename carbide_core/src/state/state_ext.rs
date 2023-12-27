@@ -1,6 +1,6 @@
 
 use carbide_core::state::ReadState;
-use crate::state::{AnyReadState, AnyState, IgnoreWritesState, Map1, RMap1, State, StateContract, TState};
+use crate::state::{AnyReadState, AnyState, IgnoreWritesState, Map1, RMap1, State, StateContract, TransitionState, TState};
 
 
 pub trait StateExt<T>: Into<TState<T>> + Clone

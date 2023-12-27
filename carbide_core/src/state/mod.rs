@@ -30,7 +30,7 @@ pub use self::state_sync::NewStateSync;
 pub use self::state_sync::StateSync;
 pub use self::value_state::ValueState;
 pub use self::widget_state::WidgetState;
-pub use self::transition_state::TransitionState;
+pub use self::transition_state::*;
 
 mod animated_state;
 mod local_state;

@@ -2,6 +2,7 @@ use std::ops::{Index, Range};
 
 use copypasta::{ClipboardContext, ClipboardProvider};
 use unicode_segmentation::UnicodeSegmentation;
+use carbide::environment::IntoColorReadState;
 use carbide::event::MouseEventContext;
 use carbide::layout::LayoutContext;
 use carbide::text::InnerTextContext;

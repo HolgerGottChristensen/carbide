@@ -64,10 +64,6 @@ pub enum EnvironmentColor {
 }
 
 impl EnvironmentColor {
-    pub fn color(&self) -> impl ReadState<T=Color> {
-        <EnvironmentColor as IntoReadState<Color>>::into_read_state(self.clone())
-    }
-
     pub fn style(&self) -> impl ReadState<T=Style> {
         <EnvironmentColor as IntoReadState<Style>>::into_read_state(self.clone())
     }
@@ -103,22 +99,15 @@ impl ConvertIntoRead<Style> for EnvironmentColor {
     }
 }
 
-/*impl<T> IntoReadStateHelper<T, EnvironmentColor, Color> for T where T: AnyReadState<T=EnvironmentColor> + Clone {
-    type Output = EnvMap1<fn(&Environment, &EnvironmentColor)->Color, EnvironmentColor, Color, T>;
-
-    fn into_read_state_helper(self) -> Self::Output {
-        Map1::read_map_env(self, |env, value| {
-            env.get_color(&EnvironmentStateKey::Color(value.clone())).unwrap()
-        })
-    }
+pub trait IntoColorReadState {
+    type Output: ReadState<T=Color>;
+    fn color(self) -> Self::Output;
 }
 
-impl<T> IntoReadStateHelper<T, EnvironmentColor, Style> for T where T: AnyReadState<T=EnvironmentColor> + Clone {
-    type Output = EnvMap1<fn(&Environment, &EnvironmentColor)->Style, EnvironmentColor, Style, T>;
+impl<T> IntoColorReadState for T where T: IntoReadState<Color> {
+    type Output = T::Output;
 
-    fn into_read_state_helper(self) -> Self::Output {
-        Map1::read_map_env(self, |env, value| {
-            Style::Color(env.get_color(&EnvironmentStateKey::Color(value.clone())).unwrap())
-        })
+    fn color(self) -> Self::Output {
+        self.into_read_state()
     }
-}*/
+}

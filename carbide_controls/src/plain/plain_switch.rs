@@ -10,12 +10,12 @@ use carbide_core::widget::{CommonWidget, MouseArea, Rectangle, Text, AnyWidget, 
 use crate::{enabled_state, EnabledState};
 
 pub trait PlainSwitchDelegate: Clone + 'static {
-    fn call(&self, focus: Box<dyn AnyState<T=Focus>>, checked: Box<dyn AnyState<T=bool>>, enabled: Box<dyn AnyReadState<T=bool>>) -> Box<dyn AnyWidget>;
+    fn call(&self, focus: impl State<T=Focus>, checked: impl State<T=bool>, enabled: impl ReadState<T=bool>) -> Box<dyn AnyWidget>;
 }
 
 impl<K> PlainSwitchDelegate for K where K: Fn(Box<dyn AnyState<T=Focus>>, Box<dyn AnyState<T=bool>>, Box<dyn AnyReadState<T=bool>>) -> Box<dyn AnyWidget> + Clone + 'static {
-    fn call(&self, item: Box<dyn AnyState<T=Focus>>, index: Box<dyn AnyState<T=bool>>, enabled: Box<dyn AnyReadState<T=bool>>) -> Box<dyn AnyWidget> {
-        self(item, index, enabled)
+    fn call(&self, item: impl State<T=Focus>, index: impl State<T=bool>, enabled: impl ReadState<T=bool>) -> Box<dyn AnyWidget> {
+        self(Box::new(item), Box::new(index), Box::new(enabled))
     }
 }
 

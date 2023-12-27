@@ -1,48 +1,60 @@
 use std::cell::RefCell;
+use std::fmt::{Debug, Formatter};
 use std::rc::Rc;
+use std::sync::atomic::{AtomicBool, Ordering};
 use std::time::{Duration, Instant};
-use carbide::state::IntoState;
+use carbide::state::{IntoState, ReadState, ValueCell};
 use crate::animation::{Animatable, ease_in_out};
-use crate::environment::Environment;
-use crate::state::{AnyReadState, AnyState, NewStateSync, State, StateContract, ValueRef, ValueRefMut};
+use crate::environment::{Environment, EnvironmentColor};
+use crate::state::{AnyReadState, AnyState, InnerState, NewStateSync, State, StateContract, ValueRef, ValueRefMut};
 
-#[derive(Clone, Debug)]
+#[derive(Clone)]
 pub struct TransitionState<T, S>
     where
-        T: StateContract + Animatable<T>,
-        S: State<T=T>,
+        T: StateContract + Animatable<T> + PartialEq,
+        S: ReadState<T=T>,
 {
     /// The value contained as the state
     inner: S,
+    value: InnerState<T>,
+
     duration: Duration,
+    curve: fn(f64) -> f64,
+    interpolation: fn(&T, &T, f64) -> T,
 
-    animation_curve: fn(f64) -> f64,
+    transition: Rc<RefCell<Option<Transition<T>>>>,
 
-    custom_interpolation: fn(&T, &T, f64) -> T,
+    initialized: Rc<AtomicBool>,
+}
 
-    range: Rc<RefCell<Option<(Instant, T, T)>>>,
+struct Transition<T> where T: StateContract + Animatable<T> + PartialEq {
+    start: Instant,
+    from: T,
+    to: T,
 }
 
 impl TransitionState<f64, f64> {
-    pub fn new<T: StateContract + Animatable<T>, S: IntoState<T>>(state: S) -> TransitionState<T, S::Output> {
+    pub fn new<T: StateContract + Animatable<T> + Default + PartialEq, S: ReadState<T=T>>(state: S) -> TransitionState<T, S> {
         TransitionState {
-            inner: state.into_state(),
-            duration: Duration::from_secs_f64(1.0),
-            animation_curve: ease_in_out,
-            custom_interpolation: T::interpolate,
-            range: Rc::new(RefCell::new(None)),
+            inner: state,
+            value: Rc::new(ValueCell::new(T::default())),
+            duration: Duration::new(1, 0),
+            curve: ease_in_out,
+            interpolation: T::interpolate,
+            transition: Rc::new(RefCell::new(None)),
+            initialized: Default::default(),
         }
     }
 }
 
-impl<T: StateContract + Animatable<T>, S: State<T=T>> TransitionState<T, S> {
+impl<T: StateContract + Animatable<T> + PartialEq, S: ReadState<T=T>> TransitionState<T, S> {
     pub fn interpolation(mut self, interpolation: fn(&T, &T, f64) -> T) -> Self {
-        self.custom_interpolation = interpolation;
+        self.interpolation = interpolation;
         self
     }
 
     pub fn curve(mut self, curve: fn(f64) -> f64) -> Self {
-        self.animation_curve = curve;
+        self.curve = curve;
         self
     }
 
@@ -51,7 +63,7 @@ impl<T: StateContract + Animatable<T>, S: State<T=T>> TransitionState<T, S> {
         self
     }
 
-    fn progression(&mut self) -> Option<T> {
+    /*fn progression(&mut self) -> Option<T> {
         let res = match &*self.range.borrow() {
             None => None,
             Some((time, start, end)) => {
@@ -78,42 +90,84 @@ impl<T: StateContract + Animatable<T>, S: State<T=T>> TransitionState<T, S> {
         }
 
         res
-    }
+    }*/
 }
 
-impl<T: StateContract + Animatable<T>, S: State<T=T>> NewStateSync for TransitionState<T, S> {
+impl<T: StateContract + Animatable<T> + PartialEq, S: ReadState<T=T>> NewStateSync for TransitionState<T, S> {
     fn sync(&mut self, env: &mut Environment) -> bool {
-        match self.progression() {
-            None => false,
-            Some(new) => {
-                env.request_animation_frame();
-                self.inner.set_value(new);
-                true
-            }
+        let res = self.inner.sync(env);
+
+        if self.transition.borrow().is_some() {
+            env.request_animation_frame();
+        } else if &*self.value.borrow() != &*self.inner.value() {
+            env.request_animation_frame();
         }
+
+        res
     }
 }
 
-impl<T: StateContract + Animatable<T>, S: State<T=T>> AnyReadState for TransitionState<T, S> {
+impl<T: StateContract + Animatable<T> + PartialEq, S: ReadState<T=T>> AnyReadState for TransitionState<T, S> {
     type T = T;
     fn value_dyn(&self) -> ValueRef<T> {
-        self.inner.value()
+        if !self.initialized.load(Ordering::Relaxed) {
+            self.initialized.store(true, Ordering::Relaxed);
+            *self.value.borrow_mut() = self.inner.value().clone();
+        }
+
+        let update = if let Some(transition) = &*self.transition.borrow() {
+            transition.to != *self.inner.value()
+        } else if &*self.value.borrow() != &*self.inner.value() {
+            true
+        } else {
+            false
+        };
+
+        if update {
+            let transition = Transition {
+                start: Instant::now(),
+                from: self.value.borrow().clone(),
+                to: self.inner.value().clone(),
+            };
+
+            *self.transition.borrow_mut() = Some(transition);
+        }
+
+        let remove = if let Some(transition) = &*self.transition.borrow() {
+            let percentage = transition.start.elapsed().as_secs_f64() / self.duration.as_secs_f64();
+            if percentage > 1.0 {
+                *self.value.borrow_mut() = self.inner.value().clone();
+            } else {
+                let animated = (self.curve)(percentage);
+
+                let res = (self.interpolation)(&transition.from, &transition.to, animated);
+
+                *self.value.borrow_mut() = res;
+            }
+
+            transition.start.elapsed() > self.duration
+        } else {
+            false
+        };
+
+        if remove {
+            *self.transition.borrow_mut() = None;
+        }
+
+        self.value.borrow()
     }
 }
 
-impl<T: StateContract + Animatable<T>, S: State<T=T>> AnyState for TransitionState<T, S> {
-    fn value_dyn_mut(&mut self) -> ValueRefMut<T> {
-        unimplemented!() // Use value ref mut drop function
-    }
-
-    fn set_value_dyn(&mut self, value: T) {
-        let current: T = self.inner.value().clone();
-        let target = value;
-
-        *self.range.borrow_mut() = Some((
-            Instant::now(),
-            current,
-            target
-        ));
+impl<T: StateContract + Animatable<T> + PartialEq, S: ReadState<T=T>> Debug for TransitionState<T, S> {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        todo!()
     }
 }
+
+pub trait ReadStateExtTransition<T>: ReadState<T=T> + Sized + Clone + 'static where T: StateContract + Default + PartialEq + Animatable<T> {
+    fn transition(self) -> TransitionState<T, Self> {
+        TransitionState::new(self)
+    }
+}
+
+impl<T: StateContract + Default + PartialEq + Animatable<T>, S> ReadStateExtTransition<T> for S where S: ReadState<T=T> + Sized + Clone + 'static {}

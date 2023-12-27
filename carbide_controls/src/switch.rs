@@ -1,6 +1,7 @@
 use std::time::Duration;
-use carbide::a;
-use carbide::state::TransitionState;
+use carbide::draw::Color;
+use carbide::environment::IntoColorReadState;
+use carbide::state::{ReadStateExtNew, ReadStateExtTransition};
 use carbide_core::color::{TRANSPARENT};
 use carbide_core::environment::EnvironmentColor;
 use carbide_core::focus::Focus;
@@ -25,9 +26,10 @@ pub struct SwitchDelegate<L: ReadState<T=String>> {
 }
 
 impl<L: ReadState<T=String>> PlainSwitchDelegate for SwitchDelegate<L> {
-    fn call(&self, focus: Box<dyn AnyState<T=Focus>>, checked: Box<dyn AnyState<T=bool>>, enabled: Box<dyn AnyReadState<T=bool>>) -> Box<dyn AnyWidget> {
-        let switch_width = 39.0;
+    fn call(&self, focus: impl State<T=Focus>, checked: impl State<T=bool>, enabled: impl ReadState<T=bool>) -> Box<dyn AnyWidget> {
+        let switch_width = 38.0;
         let knob_width = 20.0;
+        let transition_duration = Duration::from_secs_f64(0.15);
 
         let background_color = Map2::read_map(
             checked.clone(),
@@ -49,6 +51,18 @@ impl<L: ReadState<T=String>> PlainSwitchDelegate for SwitchDelegate<L> {
             }
         );
 
+        let border_color = background_color
+            .clone()
+            .color()
+            .map(|a| a.lightened(0.08))
+            .transition()
+            .duration(transition_duration);
+
+        let background_color = background_color
+            .color()
+            .transition()
+            .duration(transition_duration);
+
         let outline_color = Map2::read_map(
             focus.clone(),
             EnvironmentColor::Accent.color(),
@@ -61,46 +75,47 @@ impl<L: ReadState<T=String>> PlainSwitchDelegate for SwitchDelegate<L> {
             }
         );
 
-        let knob_color = Map1::read_map(enabled, |enabled| {
+        let knob_color = Map2::read_map(enabled.clone(), EnvironmentColor::TertiaryLabel.color(), |enabled, color| {
+            if *enabled {
+                Color::new_rgba(202, 202, 204, 255)
+            } else {
+                *color
+            }
+        }).transition()
+            .duration(transition_duration);
+
+        let label_color = Map1::read_map(enabled, |enabled| {
             if *enabled {
                 EnvironmentColor::DarkText
             } else {
                 EnvironmentColor::TertiaryLabel
             }
-        });
-
-        let label_color = knob_color.clone();
+        }).color()
+            .transition()
+            .duration(transition_duration);
 
         let offset = switch_width / 2.0 - knob_width / 2.0 - 1.0;
 
-        let inner_offset = LocalState::new(0.0);
-        let knob_offset = TransitionState::new(inner_offset.clone())
-            .duration(Duration::from_secs_f64(0.15));
+        let offset = Map1::read_map(checked.clone(), move |a| { if *a { offset } else { -offset } })
+            .transition()
+            .duration(transition_duration);
 
         let switch = ZStack::new((
             Capsule::new()
                 .fill(background_color)
-                .stroke(EnvironmentColor::OpaqueSeparator)
+                .stroke(border_color)
                 .stroke_style(1.0),
             Ellipse::new()
                 .fill(knob_color)
                 .frame(knob_width, 20.0)
-                .offset(knob_offset.clone(), 0.0),
+                .offset(offset, 0.0),
         ))
             .background(
                 Capsule::new()
                     .stroke(outline_color)
                     .stroke_style(1.0)
-                    .padding(-1.0)
-            )
-            .on_change(checked.clone(),a!(|old, new| {
-                if old.is_none() {
-                    inner_offset.clone().set_value(if *new { offset } else { -offset });
-                } else {
-                    knob_offset.clone().set_value(if *new { offset } else { -offset });
-                }
-            }))
-            .frame(switch_width, 22.0);
+                    .padding(-2.0)
+            ).frame(switch_width, 22.0);
 
         HStack::new((switch, Text::new(self.label.clone()).color(label_color))).spacing(5.0).boxed()
     }

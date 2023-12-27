@@ -1,6 +1,6 @@
 use carbide_core::state::AnyReadState;
 pub use environment::Environment;
-pub use environment_color::EnvironmentColor;
+pub use environment_color::*;
 pub use environment_font_size::EnvironmentFontSize;
 pub use environment_variable::EnvironmentVariable;
 

@@ -1,3 +1,4 @@
+use carbide::environment::IntoColorReadState;
 use carbide_core::color::{TRANSPARENT};
 use carbide_core::environment::EnvironmentColor;
 use carbide_core::focus::Focus;
