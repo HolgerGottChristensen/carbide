@@ -23,7 +23,7 @@ pub struct RadioButtonDelegate<L: ReadState<T=String>> {
 }
 
 impl<L: ReadState<T=String>> PlainRadioButtonDelegate for RadioButtonDelegate<L> {
-    fn call(&self, focus: Box<dyn AnyReadState<T=Focus>>, selected: Box<dyn AnyReadState<T=bool>>, enabled: Box<dyn AnyReadState<T=bool>>) -> Box<dyn AnyWidget> {
+    fn call(&self, focus: impl ReadState<T=Focus>, selected: impl ReadState<T=bool>, enabled: impl ReadState<T=bool>) -> Box<dyn AnyWidget> {
         let background_color = Map2::read_map(
             selected.clone(),
             enabled.clone(),

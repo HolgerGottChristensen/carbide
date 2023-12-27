@@ -25,7 +25,7 @@ pub struct CheckBoxDelegate<L: ReadState<T=String>> {
 }
 
 impl<L: ReadState<T=String>> PlainCheckBoxDelegate for CheckBoxDelegate<L> {
-    fn call(&self, focus: Box<dyn AnyReadState<T=Focus>>, checked: Box<dyn AnyReadState<T=CheckBoxValue>>, enabled: Box<dyn AnyReadState<T=bool>>) -> Box<dyn AnyWidget> {
+    fn call(&self, focus: impl ReadState<T=Focus>, checked: impl ReadState<T=CheckBoxValue>, enabled: impl ReadState<T=bool>) -> Box<dyn AnyWidget> {
         let background_color = Map2::read_map(checked.clone(), enabled.clone(), |value, enabled| {
             match *value {
                 CheckBoxValue::True | CheckBoxValue::Indeterminate if *enabled => EnvironmentColor::Accent,

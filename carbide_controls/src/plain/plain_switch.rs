@@ -10,16 +10,16 @@ use carbide_core::widget::{CommonWidget, MouseArea, Rectangle, Text, AnyWidget, 
 use crate::{enabled_state, EnabledState};
 
 pub trait PlainSwitchDelegate: Clone + 'static {
-    fn call(&self, focus: impl State<T=Focus>, checked: impl State<T=bool>, enabled: impl ReadState<T=bool>) -> Box<dyn AnyWidget>;
+    fn call(&self, focus: impl ReadState<T=Focus>, checked: impl ReadState<T=bool>, enabled: impl ReadState<T=bool>) -> Box<dyn AnyWidget>;
 }
 
-impl<K> PlainSwitchDelegate for K where K: Fn(Box<dyn AnyState<T=Focus>>, Box<dyn AnyState<T=bool>>, Box<dyn AnyReadState<T=bool>>) -> Box<dyn AnyWidget> + Clone + 'static {
-    fn call(&self, item: impl State<T=Focus>, index: impl State<T=bool>, enabled: impl ReadState<T=bool>) -> Box<dyn AnyWidget> {
-        self(Box::new(item), Box::new(index), Box::new(enabled))
+impl<K> PlainSwitchDelegate for K where K: Fn(Box<dyn AnyReadState<T=Focus>>, Box<dyn AnyReadState<T=bool>>, Box<dyn AnyReadState<T=bool>>) -> Box<dyn AnyWidget> + Clone + 'static {
+    fn call(&self, item: impl ReadState<T=Focus>, index: impl ReadState<T=bool>, enabled: impl ReadState<T=bool>) -> Box<dyn AnyWidget> {
+        self(item.as_dyn_read(), index.as_dyn_read(), enabled.as_dyn_read())
     }
 }
 
-type DefaultPlainSwitchDelegate = fn(Box<dyn AnyState<T=Focus>>, Box<dyn AnyState<T=bool>>, Box<dyn AnyReadState<T=bool>>) -> Box<dyn AnyWidget>;
+type DefaultPlainSwitchDelegate = fn(Box<dyn AnyReadState<T=Focus>>, Box<dyn AnyReadState<T=bool>>, Box<dyn AnyReadState<T=bool>>) -> Box<dyn AnyWidget>;
 
 /// # A plain switch widget
 /// This widget contains the basic logic for a switch component, without any styling.
@@ -57,7 +57,7 @@ impl PlainSwitch<Focus, bool, DefaultPlainSwitchDelegate, bool> {
         )
     }
 
-    fn default_delegate(focus: Box<dyn AnyState<T=Focus>>, checked: Box<dyn AnyState<T=bool>>, _enabled: Box<dyn AnyReadState<T=bool>>) -> Box<dyn AnyWidget> {
+    fn default_delegate(focus: Box<dyn AnyReadState<T=Focus>>, checked: Box<dyn AnyReadState<T=bool>>, _enabled: Box<dyn AnyReadState<T=bool>>) -> Box<dyn AnyWidget> {
         let background_color = Map1::read_map(checked.clone(), |is_checked| {
             if *is_checked {
                 EnvironmentColor::Green

@@ -26,7 +26,7 @@ pub struct SwitchDelegate<L: ReadState<T=String>> {
 }
 
 impl<L: ReadState<T=String>> PlainSwitchDelegate for SwitchDelegate<L> {
-    fn call(&self, focus: impl State<T=Focus>, checked: impl State<T=bool>, enabled: impl ReadState<T=bool>) -> Box<dyn AnyWidget> {
+    fn call(&self, focus: impl ReadState<T=Focus>, checked: impl ReadState<T=bool>, enabled: impl ReadState<T=bool>) -> Box<dyn AnyWidget> {
         let switch_width = 38.0;
         let knob_width = 20.0;
         let transition_duration = Duration::from_secs_f64(0.15);

@@ -15,12 +15,12 @@ use crate::{enabled_state, EnabledState};
 use crate::types::*;
 
 pub trait PlainCheckBoxDelegate: Clone + 'static {
-    fn call(&self, focus: Box<dyn AnyReadState<T=Focus>>, checked: Box<dyn AnyReadState<T=CheckBoxValue>>, enabled: Box<dyn AnyReadState<T=bool>>) -> Box<dyn AnyWidget>;
+    fn call(&self, focus: impl ReadState<T=Focus>, checked: impl ReadState<T=CheckBoxValue>, enabled: impl ReadState<T=bool>) -> Box<dyn AnyWidget>;
 }
 
 impl<K> PlainCheckBoxDelegate for K where K: Fn(Box<dyn AnyReadState<T=Focus>>, Box<dyn AnyReadState<T=CheckBoxValue>>, Box<dyn AnyReadState<T=bool>>) -> Box<dyn AnyWidget> + Clone + 'static {
-    fn call(&self, item: Box<dyn AnyReadState<T=Focus>>, index: Box<dyn AnyReadState<T=CheckBoxValue>>, enabled: Box<dyn AnyReadState<T=bool>>) -> Box<dyn AnyWidget> {
-        self(item, index, enabled)
+    fn call(&self, item: impl ReadState<T=Focus>, index: impl ReadState<T=CheckBoxValue>, enabled: impl ReadState<T=bool>) -> Box<dyn AnyWidget> {
+        self(item.as_dyn_read(), index.as_dyn_read(), enabled.as_dyn_read())
     }
 }
 

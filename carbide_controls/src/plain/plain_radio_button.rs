@@ -9,12 +9,12 @@ use carbide_core::state::{AnyReadState, IntoReadState, IntoState, LocalState, Ma
 use carbide_core::widget::{CommonWidget, MouseArea, Rectangle, Text, AnyWidget, WidgetExt, WidgetId, ZStack, Widget};
 
 pub trait PlainRadioButtonDelegate: Clone + 'static {
-    fn call(&self, focus: Box<dyn AnyReadState<T=Focus>>, selected: Box<dyn AnyReadState<T=bool>>, enabled: Box<dyn AnyReadState<T=bool>>) -> Box<dyn AnyWidget>;
+    fn call(&self, focus: impl ReadState<T=Focus>, selected: impl ReadState<T=bool>, enabled: impl ReadState<T=bool>) -> Box<dyn AnyWidget>;
 }
 
 impl<K> PlainRadioButtonDelegate for K where K: Fn(Box<dyn AnyReadState<T=Focus>>, Box<dyn AnyReadState<T=bool>>, Box<dyn AnyReadState<T=bool>>) -> Box<dyn AnyWidget> + Clone + 'static {
-    fn call(&self, focus: Box<dyn AnyReadState<T=Focus>>, selected: Box<dyn AnyReadState<T=bool>>, enabled: Box<dyn AnyReadState<T=bool>>) -> Box<dyn AnyWidget> {
-        self(focus, selected, enabled)
+    fn call(&self, focus: impl ReadState<T=Focus>, selected: impl ReadState<T=bool>, enabled: impl ReadState<T=bool>) -> Box<dyn AnyWidget> {
+        self(focus.as_dyn_read(), selected.as_dyn_read(), enabled.as_dyn_read())
     }
 }
 
