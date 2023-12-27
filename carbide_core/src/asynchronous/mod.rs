@@ -81,6 +81,34 @@ pub fn check_tasks(env: &mut Environment) {
     });
 }
 
+pub fn start_stream<T: Send + 'static>(
+    receiver: std::sync::mpsc::Receiver<T>,
+    next: impl Fn(T, &mut Environment) -> bool + 'static,
+) {
+    let poll_message: Box<dyn Fn(&mut Environment) -> bool> = Box::new(move |env| -> bool {
+        let mut stop = false;
+        loop {
+            if stop {
+                break;
+            }
+            match receiver.try_recv() {
+                Ok(message) => {
+                    stop = next(message, env);
+                }
+                Err(std::sync::mpsc::TryRecvError::Empty) => {
+                    break;
+                }
+                Err(std::sync::mpsc::TryRecvError::Disconnected) => {
+                    stop = true;
+                }
+            }
+        }
+        stop
+    });
+
+    ASYNC_WAIT_QUEUE.with(|queue| queue.borrow_mut().push(poll_message));
+}
+
 
 #[macro_export]
 macro_rules! task {
@@ -120,8 +148,8 @@ pub trait StartStream<G: Send + 'static> {
 }
 
 impl<T: Send + 'static> StartStream<T> for std::sync::mpsc::Receiver<T> {
-    fn start_stream(self, env: &mut Environment, cont: impl Fn(T, &mut Environment) -> bool + 'static) {
-        env.start_stream(self, cont);
+    fn start_stream(self, _env: &mut Environment, cont: impl Fn(T, &mut Environment) -> bool + 'static) {
+        start_stream(self, cont);
     }
 }
 

@@ -18,8 +18,7 @@ fn main() {
         Window::new(
             "Carbide MacOS color dialog example",
             Dimension::new(400.0, 600.0),
-            MouseArea::new(Rectangle::new()
-                .fill(color))
+            MouseArea::new(Rectangle::new().fill(color))
                 .on_click(move |env: &mut Environment, _:_| {
                     let color_for_stream = color_for_stream.clone();
 
@@ -29,6 +28,7 @@ fn main() {
                         .start_stream(env, move |color: Color, env| {
                             let mut color_for_stream = color_for_stream.clone();
                             color_for_stream.set_value(color);
+                            println!("New color: {:?}", color);
                             false
                         });
 

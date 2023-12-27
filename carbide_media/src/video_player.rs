@@ -1,4 +1,5 @@
 use std::time::Duration;
+use carbide::event::MouseEventContext;
 use carbide::layout::LayoutContext;
 use carbide_core::color::BLACK;
 use carbide_core::CommonWidgetImpl;
@@ -164,11 +165,11 @@ impl<Id: ReadState<T=Option<VideoId>> + Clone> MouseEventHandler for VideoPlayer
     }
 
     fn process_mouse_event(&mut self, event: &MouseEvent, consumed: &bool, ctx: &mut MouseEventContext) {
-        if ctx.is_event_current() {
+        if ctx.env.is_event_current() {
             if !*consumed {
-                self.capture_state(ctx);
+                self.capture_state(ctx.env);
                 self.handle_mouse_event(event, consumed, ctx);
-                self.release_state(ctx);
+                self.release_state(ctx.env);
             }
         }
 

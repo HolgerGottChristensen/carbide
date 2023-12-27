@@ -114,7 +114,7 @@ impl<Id: ReadState<T=Option<ImageId>> + Clone> Layout for Video<Id> {
     fn calculate_size(&mut self, requested_size: Dimension, ctx: &mut LayoutContext) -> Dimension {
 
         if &*self.video_id_state.value() != &self.video_id {
-            self.change_video(ctx);
+            self.change_video(ctx.env);
         }
 
         self.update_rate();
@@ -125,8 +125,8 @@ impl<Id: ReadState<T=Option<ImageId>> + Clone> Layout for Video<Id> {
 
 
         let information = self.video_id.as_ref().and_then(|id| {
-            let (width, height) = ctx.image_context.texture_dimensions(id)?;
-            Some(Dimension::new(width as Scalar, height as Scalar) / ctx.scale_factor())
+            let (width, height) = ctx.image.texture_dimensions(id)?;
+            Some(Dimension::new(width as Scalar, height as Scalar) / ctx.env.scale_factor())
         }).unwrap_or(Dimension::new(100.0, 100.0));
 
         if !self.resizeable {
@@ -264,12 +264,12 @@ impl<Id: ReadState<T=Option<ImageId>> + Clone> Video<Id> {
         }
     }
 
-    fn update_frame(&mut self, env: &mut Environment) {
+    fn update_frame(&mut self, ctx: &mut LayoutContext) {
         if let Some(player) = &self.player {
             unsafe {
                 let rate: f32 = msg_send![player.player, rate];
                 if rate != 0.0 {
-                    env.request_animation_frame();
+                    ctx.env.request_animation_frame();
                 }
 
                 let current_time: CMTime = msg_send![player.player, currentTime];
@@ -293,7 +293,7 @@ impl<Id: ReadState<T=Option<ImageId>> + Clone> Video<Id> {
                     let address = CVPixelBufferGetBaseAddress(buffer);
                     //println!("address: {:?}", address);
 
-                    env.image_context.update_texture(self.video_id.clone().unwrap(), Texture {
+                    ctx.image.update_texture(self.video_id.clone().unwrap(), Texture {
                         width: width as u32,
                         height: height as u32,
                         bytes_per_row: bytes_per_row as u32,
@@ -453,7 +453,7 @@ impl<Id: ReadState<T=Option<ImageId>> + Clone> Video<Id> {
 impl<Id: ReadState<T=Option<ImageId>> + Clone> Render for Video<Id> {
     fn render(&mut self, context: &mut RenderContext, env: &mut Environment) {
         if let Some(id) = &self.video_id {
-            if env.image_context.texture_exist(id) {
+            if context.image.texture_exist(id) {
                 context.image(
                     id.clone(),
                     Rect::new(self.position, self.dimension),
