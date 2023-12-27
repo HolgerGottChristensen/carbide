@@ -188,9 +188,7 @@ impl<Id: ReadState<T=Option<ImageId>>, C: ReadState<T=Style>> Render for Image<I
             let source_rect = match self.src_rect {
                 None => Rect::from_corners(Position::new(0.0, 1.0), Position::new(1.0, 0.0)),
                 Some(src_rect) => {
-                    let image = env.image_map.get(id).unwrap();
-
-                    let (image_w, image_h) = image.dimensions();
+                    let (image_w, image_h) = context.image.texture_dimensions(id).unwrap();
                     let (image_w, image_h) = (image_w as Scalar, image_h as Scalar);
 
                     let (l, r, b, t) = src_rect.l_r_b_t();

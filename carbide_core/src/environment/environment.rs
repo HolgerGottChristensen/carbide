@@ -91,8 +91,6 @@ pub struct Environment {
     /// window the next frame.
     queued_images: Option<Vec<(ImageId, DynamicImage)>>,
 
-    pub image_map: ImageMap<DynamicImage>,
-
     cursor: MouseCursor,
     mouse_position: Position,
 
@@ -177,9 +175,6 @@ impl Environment {
 
         let filters = HashMap::with_hasher(FxBuildHasher::default());
 
-        let mut image_map = ImageMap::default();
-        image_map.insert(ImageId::default(), DynamicImage::new_rgba8(1, 1));
-
         let mut res = Environment {
             stack: env_stack,
             root_alignment: BasicLayouter::Center,
@@ -193,7 +188,6 @@ impl Environment {
             filter_map: filters,
             async_task_queue: Some(vec![]),
             queued_images: None,
-            image_map,
             cursor: MouseCursor::Arrow,
             mouse_position: Default::default(),
             animations: Some(vec![]),
@@ -247,30 +241,6 @@ impl Environment {
 
     pub fn set_root_alignment(&mut self, layout: BasicLayouter) {
         self.root_alignment = layout;
-    }
-
-    pub fn queue_image(&mut self, path: PathBuf, image: DynamicImage) -> Option<ImageId> {
-        let id = ImageId::new(path);
-
-        if let Some(images) = &mut self.queued_images {
-            images.push((id.clone(), image))
-        } else {
-            self.queued_images = Some(vec![(id.clone(), image)])
-        }
-
-        Some(id)
-    }
-
-    pub fn queued_images(&mut self) -> Option<Vec<(ImageId, DynamicImage)>> {
-        self.queued_images.take()
-    }
-
-    pub fn add_queued_images(&mut self) {
-        if let Some(queued_images) = self.queued_images() {
-            for queued_image in queued_images {
-                let _ = self.image_map.insert(queued_image.0, queued_image.1);
-            }
-        }
     }
 
     pub fn insert_animation<A: StateContract>(&mut self, animation: Animation<A>) {
@@ -447,13 +417,6 @@ impl Environment {
 
     pub fn reset_focus_requests(&mut self) {
         self.focus_request = None;
-    }
-
-    pub fn get_image_information(&self, id: &Option<ImageId>) -> Option<ImageInformation> {
-        id.as_ref().and_then(|id| self.image_map.get(id).map(|a| ImageInformation {
-            width: a.width(),
-            height: a.height()
-        }))
     }
 
     pub fn with_overlay_layer<R, F: FnOnce(&mut Environment)->R>(&mut self, id: &'static str, layer: Rc<RefCell<Vec<Box<dyn AnyWidget>>>>, f: F) -> R {

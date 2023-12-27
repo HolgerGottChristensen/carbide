@@ -621,7 +621,7 @@ impl Mesh {
                     // }
                 }
                 PrimitiveKind::Image { image_id, color, source_rect, mode} => {
-                    let image_ref = match env.image_map.get(&image_id) {
+                    /*let image_ref = match env.image_map.get(&image_id) {
                         None => {
                             println!("Image missing in map: {:?}", image_id);
                             continue
@@ -696,7 +696,8 @@ impl Mesh {
                     // Top right triangle.
                     push_v(l, t, [uv_l, uv_t]);
                     push_v(r, t, [uv_r, uv_t]);
-                    push_v(r, b, [uv_r, uv_b]);
+                    push_v(r, b, [uv_r, uv_b]);*/
+                    todo!()
                 }
                 PrimitiveKind::Gradient(triangles, gradient) => {
                     match current_state {

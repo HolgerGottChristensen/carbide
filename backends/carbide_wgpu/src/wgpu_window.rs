@@ -871,7 +871,6 @@ impl Scene for WGPUWindow {
 impl WGPUWindow {
     fn update_atlas_cache(device: &Device, encoder: &mut CommandEncoder, ctx: &mut dyn InnerTextContext) {
         ATLAS_CACHE_TEXTURE.with(|atlas_cache_tex| {
-
             ctx.update_cache(&mut |image| {
                 TextureAtlasCommand {
                     texture_atlas_buffer: image.as_bytes(),
@@ -880,7 +879,6 @@ impl WGPUWindow {
                     height: image.height(),
                 }.load_buffer_and_encode(device, encoder);
             });
-
         });
     }
 
@@ -909,28 +907,6 @@ impl WGPUWindow {
                     .insert(*filter_id, filter_buffer_bind_group);
             }
         }
-    }
-
-    #[allow(dead_code)]
-    fn ensure_images_exist_as_bind_groups(device: &Device, queue: &Queue, bind_groups: &mut HashMap<ImageId, DiffuseBindGroup>, env: &mut Environment) {
-        ATLAS_CACHE_TEXTURE.with(|atlas_cache_tex| {
-            MAIN_TEXTURE_BIND_GROUP_LAYOUT.with(|texture_bind_group_layout| {
-                bind_groups.retain(|k, _| env.image_map.contains_key(k));
-
-                for (id, img) in env.image_map.iter() {
-                    // If we already have a bind group for this image move on.
-                    if bind_groups.contains_key(id) {
-                        continue;
-                    }
-
-                    let img = Image::new_from_dynamic(img.clone(), device, queue);
-
-                    // Create the bind
-                    let bind_group = new_diffuse(&device, &img, &atlas_cache_tex, &texture_bind_group_layout);
-                    bind_groups.insert(id.clone(), bind_group);
-                }
-            })
-        });
     }
 
     fn ensure_vertices_in_buffer(device: &Device, queue: &Queue, vertices: &Vec<Vertex>, vertex_buffer: &mut Buffer, buffer_size: &mut usize) {

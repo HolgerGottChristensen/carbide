@@ -104,8 +104,6 @@ impl Application {
 
         check_tasks(&mut self.environment);
 
-        self.environment.add_queued_images();
-
         self.event_handler.delegate_events(&mut self.root, &mut self.environment, &mut self.text_context, &mut WGPUImageContext)
     }
 
