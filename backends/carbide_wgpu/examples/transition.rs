@@ -2,7 +2,7 @@ use std::time::Duration;
 
 use carbide_core::color::{BLUE, GREEN, RED, Color};
 use carbide_core::animation::{bounce_out, ease_in_out, linear, elastic_in_out};
-use carbide_core::state::{LocalState, TState, ReadState, State, TransitionState};
+use carbide_core::state::{LocalState, TState, ReadState, State, TransitionState, ReadStateExtTransition};
 use carbide_core::{a, animate};
 use carbide_controls::capture;
 use carbide_controls::Button;
@@ -18,10 +18,10 @@ fn main() {
         .with_asset_fonts();
 
     let offset_x = LocalState::new(-120.0);
+    let offset_x1 = offset_x.clone();
+    let offset_x2 = offset_x.clone();
 
-    let transition = TransitionState::new(offset_x).duration(Duration::new(2, 0));
-    let mut transition1 = transition.clone();
-    let mut transition2 = transition.clone();
+    let transition = offset_x.transition().duration(Duration::new(2, 0));
 
     application.set_scene(Window::new(
         "Transition - Carbide",
@@ -29,14 +29,14 @@ fn main() {
         VStack::new((
             Rectangle::new()
                 .frame(60.0, 60.0)
-                .offset(transition.clone(), 0.0),
+                .offset(transition, 0.0),
             HStack::new((
                 Button::new_primary("Left", a!(|_, _| {
-                    transition1.clone().set_value(-120.0)
+                    offset_x1.clone().set_value(-120.0)
                 }))
                     .frame(96.0, 22.0),
                 Button::new_primary("Right", a!(|_, _| {
-                    transition2.clone().set_value(120.0)
+                    offset_x2.clone().set_value(120.0)
                 }))
                     .frame(96.0, 22.0),
             )).spacing(10.0),

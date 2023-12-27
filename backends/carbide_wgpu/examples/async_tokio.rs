@@ -65,8 +65,7 @@ fn main() {
             let image = carbide_core::image::load_from_memory(&data).unwrap();
             image
         },
-        move |image, env: &mut Environment| {
-
+        move |image, ctx| {
             let id = ImageId::new(PathBuf::new().join("ThisIsNotValid"));
 
             let texture = Texture {
@@ -77,25 +76,23 @@ fn main() {
                 data: &image.to_rgba8().into_raw(),
             };
 
-            env.image_context.update_texture(id.clone(), texture);
+            ctx.image.update_texture(id.clone(), texture);
             image_id_for_async.clone().set_value(Some(id));
         }
     );
-
-    let widgets = VStack::new(vec![
-        Text::new(text).padding(20.0).boxed(),
-        Image::new(image_id),
-        Rectangle::new()
-            .fill(EnvironmentColor::Accent)
-            .frame(block_width, 50.0),
-    ])
-        .accent_color(EnvironmentColor::Red);
 
     application.set_scene(
         Window::new(
             "Async using tokio example",
             Dimension::new(400.0, 600.0),
-            widgets
+            VStack::new((
+                Text::new(text).padding(20.0),
+                Image::new(image_id),
+                Rectangle::new()
+                    .fill(EnvironmentColor::Accent)
+                    .frame(block_width, 50.0),
+            ))
+                .accent_color(EnvironmentColor::Red)
         ).close_application_on_window_close()
     );
 

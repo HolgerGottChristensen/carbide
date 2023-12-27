@@ -16,7 +16,7 @@ use winit::window::WindowId as WinitWindowId;
 use carbide_text::text_context::TextContext;
 
 use carbide_core::{locate_folder, Scene};
-use carbide_core::asynchronous::{check_tasks, set_event_sink};
+use carbide_core::asynchronous::{AsyncContext, check_tasks, set_event_sink};
 use carbide_core::draw::{Dimension, ImageContext};
 use carbide_core::environment::Environment;
 use carbide_core::event::{CustomEvent, EventHandler, Input};
@@ -102,7 +102,11 @@ impl Application {
         self.environment.update_animation();
         self.environment.clear_animation_frame();
 
-        check_tasks(&mut self.environment);
+        check_tasks(&mut AsyncContext {
+            text: &mut self.text_context,
+            image: &mut WGPUImageContext,
+            env: &mut self.environment,
+        });
 
         self.event_handler.delegate_events(&mut self.root, &mut self.environment, &mut self.text_context, &mut WGPUImageContext)
     }

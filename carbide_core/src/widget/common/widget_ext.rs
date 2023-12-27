@@ -24,7 +24,7 @@ pub trait WidgetExt: Widget + Sized {
     /// Surround the widget with a frame. The frame is a widget that has fixed width, height or both.
     /// The frame takes two parameters. Both parameters take f64 state. This means you can pass
     /// constant values like 10, 100.2, varying values like LocalState and AnimationState.
-    fn frame<W: IntoState<f64>, H: IntoState<f64>>(self, width: W, height: H) -> Frame<f64, f64, W::Output, H::Output, Self> {
+    fn frame<W: IntoState<f64>, H: IntoState<f64>>(self, width: W, height: H) -> Frame<W::Output, H::Output, Self> {
         Frame::new(width, height, self)
     }
 
@@ -89,12 +89,12 @@ pub trait WidgetExt: Widget + Sized {
         Transform::new(self, matrix)
     }
 
-    fn frame_fixed_width<W: IntoState<f64>>(self, width: W) -> Frame<f64, f64, W::Output, f64, Self> {
+    fn frame_fixed_width<W: IntoState<f64>>(self, width: W) -> Frame<W::Output, f64, Self> {
         Frame::new(width, 10.0, self)
             .expand_height()
     }
 
-    fn frame_fixed_height<H: IntoState<f64>>(self, height: H) -> Frame<f64, f64, f64, H::Output, Self> {
+    fn frame_fixed_height<H: IntoState<f64>>(self, height: H) -> Frame<f64, H::Output, Self> {
         Frame::new(10.0, height, self)
             .expand_width()
     }

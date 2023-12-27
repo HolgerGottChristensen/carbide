@@ -11,9 +11,7 @@ use crate::widget::{AnyWidget, CommonWidget, Empty, Widget, WidgetExt, WidgetId}
 
 #[derive(Debug, Clone, Widget)]
 #[carbide_exclude(Layout)]
-pub struct Frame<X, Y, W, H, C> where
-    X: State<T=f64>,
-    Y: State<T=f64>,
+pub struct Frame<W, H, C> where
     W: State<T=f64>,
     H: State<T=f64>,
     C: Widget
@@ -21,134 +19,74 @@ pub struct Frame<X, Y, W, H, C> where
     id: WidgetId,
     child: C,
     position: Position,
-    #[state] x: Fixity<X>,
-    #[state] y: Fixity<Y>,
     #[state] width: Fixity<W>,
     #[state] height: Fixity<H>,
 }
 
-impl Frame<f64, f64, f64, f64, Empty> {
+impl Frame<f64, f64, Empty> {
     #[carbide_default_builder2]
     pub fn new<W: IntoState<f64>, H: IntoState<f64>, C: Widget>(
         width: W,
         height: H,
         child: C,
-    ) -> Frame<f64, f64, W::Output, H::Output, C> {
+    ) -> Frame<W::Output, H::Output, C> {
         Frame {
             id: WidgetId::new(),
             child,
             position: Position::new(0.0, 0.0),
-            x: Fixity::Expand(0.0),
-            y: Fixity::Expand(0.0),
             width: Fixity::Fixed(width.into_state()),
             height: Fixity::Fixed(height.into_state()),
         }
     }
 }
 
-impl<
-    X: State<T=f64>,
-    Y: State<T=f64>,
-    W: State<T=f64>,
-    H: State<T=f64>,
-    C: Widget
-> Frame<X, Y, W, H, C> {
+impl<W: State<T=f64>, H: State<T=f64>, C: Widget> Frame<W, H, C> {
     /// Note: This disconnects from the existing width value
-    pub fn expand_width(self) -> Frame<X, Y, f64, H, C> {
+    pub fn expand_width(self) -> Frame<f64, H, C> {
         Frame {
             id: self.id,
             child: self.child,
             position: self.position,
-            x: self.x,
-            y: self.y,
             width: Fixity::Expand(10.0),
             height: self.height,
         }
     }
 
     /// Note: This disconnects from the existing height value
-    pub fn expand_height(self) -> Frame<X, Y, W, f64, C> {
+    pub fn expand_height(self) -> Frame<W, f64, C> {
         Frame {
             id: self.id,
             child: self.child,
             position: self.position,
-            x: self.x,
-            y: self.y,
             width: self.width,
             height: Fixity::Expand(10.0),
         }
     }
 
     /// Note: This disconnects from the existing width value
-    pub fn fit_width(self) -> Frame<X, Y, f64, H, C> {
+    pub fn fit_width(self) -> Frame<f64, H, C> {
         Frame {
             id: self.id,
             child: self.child,
             position: self.position,
-            x: self.x,
-            y: self.y,
             width: Fixity::Fit(10.0),
             height: self.height,
         }
     }
 
     /// Note: This disconnects from the existing height value
-    pub fn fit_height(self) -> Frame<X, Y, W, f64, C> {
+    pub fn fit_height(self) -> Frame<W, f64, C> {
         Frame {
             id: self.id,
             child: self.child,
             position: self.position,
-            x: self.x,
-            y: self.y,
             width: self.width,
             height: Fixity::Fit(10.0),
         }
     }
-
-    pub fn with_fixed_x<N: IntoState<f64>>(self, x: N) -> Frame<N::Output, Y, W, H, C> {
-        Frame {
-            id: self.id,
-            child: self.child,
-            position: self.position,
-            x: Fixity::Fixed(x.into_state()),
-            y: self.y,
-            width: self.width,
-            height: self.height,
-        }
-    }
-
-    pub fn with_fixed_y<N: IntoState<f64>>(self, y: N) -> Frame<X, N::Output, W, H, C> {
-        Frame {
-            id: self.id,
-            child: self.child,
-            position: self.position,
-            x: self.x,
-            y: Fixity::Fixed(y.into_state()),
-            width: self.width,
-            height: self.height,
-        }
-    }
-
-    pub fn with_fixed_position<N: IntoState<f64>, M: IntoState<f64>>(self, x: N, y: M) -> Frame<N::Output, M::Output, W, H, C> {
-        Frame {
-            id: self.id,
-            child: self.child,
-            position: self.position,
-            x: Fixity::Fixed(x.into_state()),
-            y: Fixity::Fixed(y.into_state()),
-            width: self.width,
-            height: self.height,
-        }
-    }
 }
 
-impl<
-    X: State<T=f64>,
-    Y: State<T=f64>,
-    W: State<T=f64>,
-    H: State<T=f64>,
-    C: Widget
-> CommonWidget for Frame<X, Y, W, H, C> {
+impl<W: State<T=f64>, H: State<T=f64>, C: Widget> CommonWidget for Frame<W, H, C> {
     fn id(&self) -> WidgetId {
         self.id
     }
@@ -228,13 +166,7 @@ impl<
     }
 }
 
-impl<
-    X: State<T=f64>,
-    Y: State<T=f64>,
-    W: State<T=f64>,
-    H: State<T=f64>,
-    C: Widget
-> Layout for Frame<X, Y, W, H, C> {
+impl<W: State<T=f64>, H: State<T=f64>, C: Widget> Layout for Frame<W, H, C> {
     fn calculate_size(&mut self, requested_size: Dimension, ctx: &mut LayoutContext) -> Dimension {
         let fixed_height = matches!(&self.height, Fixity::Fixed(_));
         let height = *self.height.value();
@@ -268,16 +200,6 @@ impl<
     }
 
     fn position_children(&mut self, ctx: &mut LayoutContext) {
-        if let Fixity::Fixed(_) = self.x {
-            let new_x = *self.x.value();
-            self.set_x(new_x);
-        }
-
-        if let Fixity::Fixed(_) = self.y {
-            let new_y = *self.y.value();
-            self.set_y(new_y);
-        }
-
         let positioning = BasicLayouter::Center.positioner();
         let position = self.position;
         let dimension = Dimension::new(self.width(), self.height());
@@ -287,13 +209,7 @@ impl<
     }
 }
 
-impl<
-    X: State<T=f64>,
-    Y: State<T=f64>,
-    W: State<T=f64>,
-    H: State<T=f64>,
-    C: Widget
-> WidgetExt for Frame<X, Y, W, H, C> {}
+impl<W: State<T=f64>, H: State<T=f64>, C: Widget> WidgetExt for Frame<W, H, C> {}
 
 #[derive(Clone, Debug)]
 enum Fixity<T: State<T=f64>> {

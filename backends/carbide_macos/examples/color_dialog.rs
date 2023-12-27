@@ -8,7 +8,6 @@ use carbide_macos::ColorPanel;
 use carbide_wgpu::{Application, Window};
 
 fn main() {
-
     let mut application = Application::new();
 
     let color = LocalState::new(YELLOW);
@@ -16,7 +15,7 @@ fn main() {
 
     application.set_scene(
         Window::new(
-            "Carbide MacOS color dialog example",
+            "MacOS Color Dialog - Carbide",
             Dimension::new(400.0, 600.0),
             MouseArea::new(Rectangle::new().fill(color))
                 .on_click(move |env: &mut Environment, _:_| {
@@ -25,10 +24,9 @@ fn main() {
                     ColorPanel::new()
                         .set_shows_alpha(true)
                         .order_front(env)
-                        .start_stream(env, move |color: Color, env| {
+                        .start_stream(move |color: Color, env| {
                             let mut color_for_stream = color_for_stream.clone();
                             color_for_stream.set_value(color);
-                            println!("New color: {:?}", color);
                             false
                         });
 

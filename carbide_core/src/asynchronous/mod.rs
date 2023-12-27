@@ -14,11 +14,11 @@ use oneshot::TryRecvError;
 use crate::event::{CustomEvent, EventSink, NoopEventSink};
 
 thread_local! {
-    static ASYNC_QUEUE: RefCell<Vec<Box<dyn Fn(&mut Environment) -> bool>>> = {
+    static ASYNC_QUEUE: RefCell<Vec<Box<dyn Fn(&mut AsyncContext) -> bool>>> = {
         RefCell::new(vec![])
     };
 
-    static ASYNC_WAIT_QUEUE: RefCell<Vec<Box<dyn Fn(&mut Environment) -> bool>>> = {
+    static ASYNC_WAIT_QUEUE: RefCell<Vec<Box<dyn Fn(&mut AsyncContext) -> bool>>> = {
         RefCell::new(vec![])
     };
 
@@ -40,7 +40,7 @@ pub fn get_event_sink() -> Box<dyn EventSink> {
 
 pub fn spawn_task<T: Send + 'static>(
     task: impl Future<Output = T> + Send + 'static,
-    cont: impl Fn(T, &mut Environment) + 'static,
+    cont: impl Fn(T, &mut AsyncContext) + 'static,
 ) {
     let (sender, receiver) = oneshot::channel();
 
@@ -52,10 +52,10 @@ pub fn spawn_task<T: Send + 'static>(
         ()
     });
 
-    let poll_message: Box<dyn Fn(&mut Environment) -> bool> = Box::new(move |env| -> bool {
+    let poll_message: Box<dyn Fn(&mut AsyncContext) -> bool> = Box::new(move |ctx| -> bool {
         match receiver.try_recv() {
             Ok(message) => {
-                cont(message, env);
+                cont(message, ctx);
                 true
             }
             Err(TryRecvError::Empty) => false,
@@ -71,21 +71,21 @@ pub fn spawn_task<T: Send + 'static>(
     spawn(task_with_oneshot)
 }
 
-pub fn check_tasks(env: &mut Environment) {
+pub fn check_tasks(ctx: &mut AsyncContext) {
     ASYNC_QUEUE.with(|queue| {
         ASYNC_WAIT_QUEUE.with(|wait_queue| {
             queue.borrow_mut().append(&mut wait_queue.borrow_mut());
 
-            queue.borrow_mut().retain(|task| !task(env));
+            queue.borrow_mut().retain(|task| !task(ctx));
         });
     });
 }
 
 pub fn start_stream<T: Send + 'static>(
     receiver: std::sync::mpsc::Receiver<T>,
-    next: impl Fn(T, &mut Environment) -> bool + 'static,
+    next: impl Fn(T, &mut AsyncContext) -> bool + 'static,
 ) {
-    let poll_message: Box<dyn Fn(&mut Environment) -> bool> = Box::new(move |env| -> bool {
+    let poll_message: Box<dyn Fn(&mut AsyncContext) -> bool> = Box::new(move |ctx| -> bool {
         let mut stop = false;
         loop {
             if stop {
@@ -93,7 +93,7 @@ pub fn start_stream<T: Send + 'static>(
             }
             match receiver.try_recv() {
                 Ok(message) => {
-                    stop = next(message, env);
+                    stop = next(message, ctx);
                 }
                 Err(std::sync::mpsc::TryRecvError::Empty) => {
                     break;
@@ -114,47 +114,50 @@ pub fn start_stream<T: Send + 'static>(
 macro_rules! task {
     ($state:ident := $body:block) => {{
         let $state = $state.clone();
-        carbide::asynchronous::spawn_task(async move { $body }, move |result, env| {
+        carbide::asynchronous::spawn_task(async move { $body }, move |result, ctx| {
             $state.clone().set_value(result);
         });
     }};
     ($state:ident := $body:block $(, $state1:ident := $body1:block)*) => {{
         let $state = $state.clone();
-        carbide::asynchronous::spawn_task(async move { $body }, move |result, env| {
+        carbide::asynchronous::spawn_task(async move { $body }, move |result, ctx| {
             $state.clone().set_value(result);
-            task!(env, $($state1 :=  $body1),*);
+            task!($($state1 :=  $body1),*);
         });
     }};
-    ($body:block, move |$result:ident, $env_param:ident: &mut Environment| $cont:block) => {{
+    ($body:block, move |$result:ident, $env_param:ident| $cont:block) => {{
         carbide::asynchronous::spawn_task(
             async move { $body },
-            move |$result, $env_param: &mut carbide::environment::Environment| $cont,
+            move |$result, $env_param: &mut carbide::asynchronous::AsyncContext| $cont,
         )
     }};
 }
 
 pub trait SpawnTask<G: Send + 'static> {
-    fn spawn(self, env: &mut Environment, cont: impl Fn(G, &mut Environment) + 'static);
+    fn spawn(self, cont: impl Fn(G, &mut AsyncContext) + 'static);
 }
 
 impl<G: Send + 'static, T: Future<Output = G> + Send + 'static> SpawnTask<G> for T {
-    fn spawn(self, _env: &mut Environment, cont: impl Fn(G, &mut Environment) + 'static) {
+    fn spawn(self, cont: impl Fn(G, &mut AsyncContext) + 'static) {
         spawn_task(self, cont);
     }
 }
 
 pub trait StartStream<G: Send + 'static> {
-    fn start_stream(self, env: &mut Environment, cont: impl Fn(G, &mut Environment) -> bool + 'static);
+    fn start_stream(self, cont: impl Fn(G, &mut AsyncContext) -> bool + 'static);
 }
 
 impl<T: Send + 'static> StartStream<T> for std::sync::mpsc::Receiver<T> {
-    fn start_stream(self, _env: &mut Environment, cont: impl Fn(T, &mut Environment) -> bool + 'static) {
+    fn start_stream(self, cont: impl Fn(T, &mut AsyncContext) -> bool + 'static) {
         start_stream(self, cont);
     }
 }
 
 #[cfg(feature = "tokio")]
 use std::sync::OnceLock;
+use crate::draw::InnerImageContext;
+use crate::text::InnerTextContext;
+
 #[cfg(feature = "tokio")]
 static RUNTIME: OnceLock<tokio::runtime::Runtime> = OnceLock::new();
 
@@ -191,4 +194,10 @@ pub async fn sleep(duration: Duration) {
 
     #[cfg(all(not(feature = "async-std"), not(feature = "tokio")))]
     std::thread::sleep(duration)
+}
+
+pub struct AsyncContext<'a> {
+    pub text: &'a mut dyn InnerTextContext,
+    pub image: &'a mut dyn InnerImageContext,
+    pub env: &'a mut Environment,
 }
