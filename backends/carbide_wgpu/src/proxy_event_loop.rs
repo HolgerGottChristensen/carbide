@@ -1,4 +1,4 @@
-use winit::event_loop::EventLoopProxy;
+use carbide_winit::event_loop::EventLoopProxy;
 
 use carbide_core::event::{CustomEvent, EventSink};
 

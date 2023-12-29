@@ -17,7 +17,6 @@ edition = "2021"
 carbide_core = { path = "../../carbide_core", version = "0.70" }
 carbide_winit = { path = "../carbide_winit", version = "0.70" }
 carbide_text = { path = "../carbide_text" }
-winit = "0.28"
 cgmath = "0.18"
 env_logger = "0.7"
 log = "0.4"
@@ -43,21 +42,12 @@ carbide_winit = { path = "../carbide_winit", version = "0.70" }
 carbide_controls = { path = "../../carbide_controls" }
 carbide_macro = { path = "../../carbide_macro" }
 futures = "0.3"
-winit = "0.26.1"
 async-std = { version = "1.10.0" }
 surf = { version = "2.3" }
 tokio = { version = "1", features = ["full"] }
 reqwest = "0.11.22"
 chrono = "0.4.31"
 
-[target.'cfg(target_os="windows")'.dependencies]
-windows = { version = "0.28.0", features = [
-    "Win32_Foundation",
-    "Win32_System_Com",
-    "Win32_UI_Shell_Common",
-    "Win32_UI_Shell",
-    "Win32_UI_WindowsAndMessaging",
-]}
 
 [[example]]
 name = "async"

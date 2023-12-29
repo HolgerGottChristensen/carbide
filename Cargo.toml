@@ -15,6 +15,7 @@ members = [
     # "backends/carbide_rendy",
     # "backends/carbide_vulkano",
     "backends/carbide_wgpu",
+    "backends/carbide_windows",
     "backends/carbide_rend3",
     "backends/carbide_text",
     "backends/carbide_macos",

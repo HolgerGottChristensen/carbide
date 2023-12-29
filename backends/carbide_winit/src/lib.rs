@@ -14,9 +14,11 @@ use winit::window::CursorIcon;
 use carbide_core::cursor::MouseCursor;
 use carbide_core::draw::Position;
 use carbide_core::event::{Button, Gesture, Input, Key, Motion, MouseButton, Touch, TouchId, TouchPhase};
-pub use event_loop::*;
+pub use custom_event_loop::*;
 
-mod event_loop;
+pub use winit::*;
+
+mod custom_event_loop;
 
 const ARBITRARY_POINTS_PER_LINE_FACTOR: f64 = 10.0;
 

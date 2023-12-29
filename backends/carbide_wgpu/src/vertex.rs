@@ -1,5 +1,5 @@
 use wgpu::VertexFormat;
-use winit::dpi::PhysicalSize;
+use carbide_winit::dpi::PhysicalSize;
 
 use carbide_core::draw::Scalar;
 use carbide_core::mesh::MODE_IMAGE;

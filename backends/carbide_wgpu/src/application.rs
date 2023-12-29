@@ -6,10 +6,10 @@ use std::mem::transmute;
 use std::path::{Path, PathBuf};
 
 use walkdir::WalkDir;
-use winit::event::{Event, WindowEvent as WinitWindowEvent};
-use winit::event_loop::{ControlFlow, EventLoopWindowTarget};
-use winit::event_loop::EventLoopBuilder;
-use winit::window::WindowId as WinitWindowId;
+use carbide_winit::event::{Event, WindowEvent as WinitWindowEvent};
+use carbide_winit::event_loop::{ControlFlow, EventLoopWindowTarget};
+use carbide_winit::event_loop::EventLoopBuilder;
+use carbide_winit::window::WindowId as WinitWindowId;
 
 use carbide_core::{locate_folder, Scene};
 use carbide_core::asynchronous::{AsyncContext, check_tasks, set_event_sink};

@@ -9,8 +9,8 @@ use futures::executor::block_on;
 use raw_window_handle::HasRawWindowHandle;
 use wgpu::{Adapter, BindGroup, BindGroupLayout, Buffer, BufferUsages, CommandEncoder, Device, Extent3d, ImageCopyTexture, Instance, PipelineLayout, Queue, RenderPassDepthStencilAttachment, RenderPipeline, Sampler, ShaderModule, Surface, SurfaceConfiguration, SurfaceTexture, Texture, TextureFormat, TextureUsages, TextureView};
 use wgpu::util::{BufferInitDescriptor, DeviceExt};
-use winit::dpi::{LogicalSize, PhysicalPosition, PhysicalSize, Size};
-use winit::window::{Window as WinitWindow, WindowBuilder};
+use carbide_winit::dpi::{LogicalSize, PhysicalPosition, PhysicalSize, Size};
+use carbide_winit::window::{Window as WinitWindow, WindowBuilder};
 
 use carbide_core::{draw, Scene};
 use carbide_core::draw::{Dimension, Position, Rect, Scalar};
@@ -1257,7 +1257,7 @@ impl WGPUWindow {
         })
     }
 
-    pub fn resize(&mut self, new_size: winit::dpi::PhysicalSize<u32>, _: &mut Environment) {
+    pub fn resize(&mut self, new_size: PhysicalSize<u32>, _: &mut Environment) {
         DEVICE_QUEUE.with(|(device, queue)| {
             let size = new_size;
             //env.set_pixel_dimensions(size.width as f64);
