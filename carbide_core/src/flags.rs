@@ -1,7 +1,10 @@
 use bitflags::bitflags;
 
+#[derive(Copy, Clone, Debug, Eq, PartialEq)]
+pub struct Flags(u8);
+
 bitflags! {
-    pub struct Flags: u32 {
+    impl Flags: u8 {
         const EMPTY =  0b00000000;
         const PROXY =  0b00000001;
         const SPACER = 0b00000010;

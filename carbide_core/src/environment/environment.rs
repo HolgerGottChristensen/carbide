@@ -1,5 +1,6 @@
 use std::cell::RefCell;
 use std::collections::HashMap;
+use std::fmt::Formatter;
 use std::future::Future;
 use std::mem::swap;
 use std::option::Option::Some;
@@ -7,7 +8,6 @@ use std::path::{Path, PathBuf};
 use std::rc::Rc;
 use std::time::Instant;
 
-use bitflags::_core::fmt::Formatter;
 use fxhash::{FxBuildHasher, FxHashMap};
 use image::DynamicImage;
 use raw_window_handle::{HasRawWindowHandle, RawWindowHandle};
