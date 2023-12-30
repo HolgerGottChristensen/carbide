@@ -11,8 +11,7 @@
 pub enum MouseCursor {
     Default,
     Crosshair,
-    Hand,
-    Arrow,
+    Pointer,
     Move,
     Text,
     Wait,

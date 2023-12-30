@@ -1,5 +1,7 @@
 use std::collections::HashMap;
 use std::time::{Duration, Instant};
+use bitflags::Flags;
+use carbide::event::Key;
 
 use carbide_core::cursor::MouseCursor;
 use carbide_core::focus::Refocus;
@@ -7,7 +9,7 @@ use carbide_core::widget::AnyWidget;
 
 use crate::draw::{Dimension, InnerImageContext, Position, Scalar};
 use crate::environment::Environment;
-use crate::event::{Button, CustomEvent, Gesture, Input, Key, ModifierKey, Motion, MouseButton, MouseEventContext, OtherEventContext, TouchPhase};
+use crate::event::{Button, CustomEvent, Gesture, Input, ModifierKey, Motion, MouseButton, MouseEventContext, OtherEventContext, TouchPhase};
 use crate::text::InnerTextContext;
 use crate::window::WindowId;
 
@@ -32,7 +34,7 @@ impl EventHandler {
         let mut any_focus = self.any_focus;
         let events = self.get_events();
 
-        env.set_cursor(MouseCursor::Arrow);
+        env.set_cursor(MouseCursor::Default);
 
         for (event, window_id) in events {
             let window_id = *window_id;
@@ -249,7 +251,6 @@ pub enum KeyboardEvent {
     Press(Key, ModifierKey),
     Release(Key, ModifierKey),
     Click(Key, ModifierKey),
-    Text(String, ModifierKey),
 }
 
 #[derive(Clone, Debug)]
@@ -267,12 +268,12 @@ pub enum TouchEvent {
 }
 
 /// A function for filtering `ModifierKey`s.
-fn filter_modifier(key: Key) -> Option<ModifierKey> {
+fn filter_modifier(key: &Key) -> Option<ModifierKey> {
     match key {
-        Key::LCtrl | Key::RCtrl => Some(ModifierKey::CTRL),
-        Key::LShift | Key::RShift => Some(ModifierKey::SHIFT),
-        Key::LAlt | Key::RAlt => Some(ModifierKey::ALT),
-        Key::LGui | Key::RGui => Some(ModifierKey::GUI),
+        Key::Control => Some(ModifierKey::CTRL),
+        Key::Shift => Some(ModifierKey::SHIFT),
+        Key::Alt => Some(ModifierKey::ALT),
+        Key::Meta => Some(ModifierKey::META),
         _ => None,
     }
 }
@@ -393,14 +394,15 @@ impl EventHandler {
                 }
 
                 Button::Keyboard(key) => {
-                    let event = KeyboardEvent::Press(key, modifiers);
+                    let event = KeyboardEvent::Press(key.clone(), modifiers);
                     self.add_event(WidgetEvent::Keyboard(event.clone()), window_id);
-                    self.pressed_keys.insert(key, event);
 
                     // If some modifier key was pressed, add it to the current modifiers.
-                    if let Some(modifier) = filter_modifier(key) {
+                    if let Some(modifier) = filter_modifier(&key) {
                         self.modifiers.insert(modifier);
                     }
+
+                    self.pressed_keys.insert(key, event);
 
                     None
                 }
@@ -463,16 +465,16 @@ impl EventHandler {
                 }
 
                 Button::Keyboard(key) => {
-                    let event = KeyboardEvent::Release(key, modifiers);
+                    let event = KeyboardEvent::Release(key.clone(), modifiers);
                     self.add_event(WidgetEvent::Keyboard(event), window_id);
                     let pressed_event = self.pressed_keys.remove(&key);
 
                     if let Some(KeyboardEvent::Press(..)) = pressed_event {
-                        let click_event = KeyboardEvent::Click(key, modifiers);
+                        let click_event = KeyboardEvent::Click(key.clone(), modifiers);
                         self.add_event(WidgetEvent::Keyboard(click_event), window_id);
                     }
 
-                    if let Some(modifier) = filter_modifier(key) {
+                    if let Some(modifier) = filter_modifier(&key) {
                         self.modifiers.remove(modifier);
                     }
 
@@ -562,13 +564,6 @@ impl EventHandler {
 
                     _ => (),
                 }
-                None
-            }
-
-            Input::Text(string) => {
-                let event = KeyboardEvent::Text(string, modifiers);
-                self.add_event(WidgetEvent::Keyboard(event), window_id);
-
                 None
             }
 

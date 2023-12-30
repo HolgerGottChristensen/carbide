@@ -10,7 +10,7 @@ use std::time::Instant;
 
 use fxhash::{FxBuildHasher, FxHashMap};
 use image::DynamicImage;
-use raw_window_handle::{HasRawWindowHandle, RawWindowHandle};
+use raw_window_handle::{HandleError, HasRawWindowHandle, RawWindowHandle};
 use carbide_core::draw::Position;
 use carbide_core::widget::AnyWidget;
 
@@ -188,7 +188,7 @@ impl Environment {
             filter_map: filters,
             async_task_queue: Some(vec![]),
             queued_images: None,
-            cursor: MouseCursor::Arrow,
+            cursor: MouseCursor::Default,
             mouse_position: Default::default(),
             animations: Some(vec![]),
             raw_window_handle: None,

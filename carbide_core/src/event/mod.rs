@@ -11,7 +11,7 @@ pub use mouse_event_handler::*;
 pub use other_event_handler::*;
 pub use types::button::Button;
 pub use types::hot_key::*;
-pub use types::key::Key;
+pub use types::key::*;
 pub use types::modifier_key::ModifierKey;
 pub use types::motion::*;
 pub use types::mouse_button::MouseButton;

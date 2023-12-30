@@ -164,7 +164,7 @@ struct KeyEquivalent {
 
 impl From<HotKey> for KeyEquivalent {
     fn from(hot: HotKey) -> Self {
-        let char = match hot.key {
+        /*let char = match hot.key {
             Key::Backspace => '\u{0008}',
             Key::Delete => '\u{0008}',
             Key::Return => '\u{0003}',
@@ -302,6 +302,8 @@ impl From<HotKey> for KeyEquivalent {
             _ => panic!("You are trying to use a key that is not mapped on the macos platform."),
         };
 
+
+
         let modifiers = if hot.modifier == ModifierKey::NO_MODIFIER {
             None
         } else {
@@ -316,7 +318,7 @@ impl From<HotKey> for KeyEquivalent {
             if hot.modifier.contains(ModifierKey::ALT) {
                 k = k | NSEventModifierFlags::NSAlternateKeyMask;
             }
-            if hot.modifier.contains(ModifierKey::GUI) {
+            if hot.modifier.contains(ModifierKey::META) {
                 k = k | NSEventModifierFlags::NSCommandKeyMask;
             }
 
@@ -326,7 +328,8 @@ impl From<HotKey> for KeyEquivalent {
         KeyEquivalent {
             key: NSString::from(char),
             masks: modifiers
-        }
+        }*/
+        todo!()
     }
 }
 

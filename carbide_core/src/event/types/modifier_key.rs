@@ -15,7 +15,7 @@ bitflags!(
         /// Alt.
         const ALT                   = 0b00000100;
         /// Gui.
-        const GUI                   = 0b00001000;
+        const META                   = 0b00001000;
         /// Ctrl + Shift.
         const CTRL_SHIFT            = ModifierKey::CTRL.bits()
                                     | ModifierKey::SHIFT.bits();
@@ -24,7 +24,7 @@ bitflags!(
                                     | ModifierKey::ALT.bits();
         /// Ctrl + Gui.
         const CTRL_GUI              = ModifierKey::CTRL.bits()
-                                    | ModifierKey::GUI.bits();
+                                    | ModifierKey::META.bits();
         /// Ctrl + Shift + Alt.
         const CTRL_SHIFT_ALT        = ModifierKey::CTRL.bits()
                                     | ModifierKey::SHIFT.bits()
@@ -32,25 +32,25 @@ bitflags!(
         /// Ctrl + Shift + Gui.
         const CTRL_SHIFT_GUI        = ModifierKey::CTRL.bits()
                                     | ModifierKey::SHIFT.bits()
-                                    | ModifierKey::GUI.bits();
+                                    | ModifierKey::META.bits();
         /// Ctrl + Shift + Alt + Gui.
         const CTRL_SHIFT_ALT_GUI    = ModifierKey::CTRL.bits()
                                     | ModifierKey::SHIFT.bits()
                                     | ModifierKey::ALT.bits()
-                                    | ModifierKey::GUI.bits();
+                                    | ModifierKey::META.bits();
         /// Shift + Alt.
         const SHIFT_ALT             = ModifierKey::SHIFT.bits()
                                     | ModifierKey::ALT.bits();
         /// Shift + Gui.
         const SHIFT_GUI             = ModifierKey::SHIFT.bits()
-                                    | ModifierKey::GUI.bits();
+                                    | ModifierKey::META.bits();
         /// Shift + Alt + Gui.
         const SHIFT_ALT_GUI         = ModifierKey::SHIFT.bits()
                                     | ModifierKey::ALT.bits()
-                                    | ModifierKey::GUI.bits();
+                                    | ModifierKey::META.bits();
         /// Alt + Gui.
         const ALT_GUI               = ModifierKey::ALT.bits()
-                                    | ModifierKey::GUI.bits();
+                                    | ModifierKey::META.bits();
     }
 );
 

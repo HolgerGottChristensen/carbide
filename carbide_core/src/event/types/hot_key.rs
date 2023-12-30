@@ -1,6 +1,6 @@
 use crate::event::{Key, ModifierKey};
 
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, Clone)]
 pub struct HotKey {
     pub key: Key,
     pub modifier: ModifierKey,

@@ -274,22 +274,22 @@ impl<
             let value = *self.percent.value();
 
             match event {
-                KeyboardEvent::Press(Key::Right, ModifierKey::CTRL) => {
+                KeyboardEvent::Press(Key::ArrowRight, ModifierKey::CTRL) => {
                     self.percent.set_value(1.0);
                 }
-                KeyboardEvent::Press(Key::Left, ModifierKey::CTRL) => {
+                KeyboardEvent::Press(Key::ArrowLeft, ModifierKey::CTRL) => {
                     self.percent.set_value(0.0);
                 }
-                KeyboardEvent::Press(Key::Right, ModifierKey::SHIFT) => {
+                KeyboardEvent::Press(Key::ArrowRight, ModifierKey::SHIFT) => {
                     self.percent.set_value((value + SMOOTH_VALUE_SMALL_INCREMENT).min(1.0));
                 }
-                KeyboardEvent::Press(Key::Left, ModifierKey::SHIFT) => {
+                KeyboardEvent::Press(Key::ArrowLeft, ModifierKey::SHIFT) => {
                     self.percent.set_value((value - SMOOTH_VALUE_SMALL_INCREMENT).max(0.0));
                 }
-                KeyboardEvent::Press(Key::Right, _) => {
+                KeyboardEvent::Press(Key::ArrowRight, _) => {
                     self.percent.set_value((value + SMOOTH_VALUE_INCREMENT).min(1.0));
                 }
-                KeyboardEvent::Press(Key::Left, _) => {
+                KeyboardEvent::Press(Key::ArrowLeft, _) => {
                     self.percent.set_value((value - SMOOTH_VALUE_INCREMENT).max(0.0));
                 }
                 _ => ()

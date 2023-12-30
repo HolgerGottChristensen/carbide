@@ -31,7 +31,7 @@ use carbide_macro::ui;
 use crate::PlainButton;
 
 const MULTI_SELECTION_MODIFIER: ModifierKey = if cfg!(target_os = "macos") {
-    ModifierKey::GUI
+    ModifierKey::META
 } else {
     ModifierKey::CTRL
 };

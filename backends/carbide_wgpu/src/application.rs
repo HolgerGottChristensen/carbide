@@ -6,7 +6,7 @@ use std::mem::transmute;
 use std::path::{Path, PathBuf};
 
 use walkdir::WalkDir;
-use carbide_winit::event::{Event, WindowEvent as WinitWindowEvent};
+use carbide_winit::event::{Event, WindowEvent as WinitWindowEvent, WindowEvent};
 use carbide_winit::event_loop::{ControlFlow, EventLoopWindowTarget};
 use carbide_winit::event_loop::EventLoopBuilder;
 use carbide_winit::window::WindowId as WinitWindowId;
@@ -28,7 +28,7 @@ use carbide_winit::EventLoop;
 use crate::image_context::WGPUImageContext;
 use crate::proxy_event_loop::ProxyEventLoop;
 
-thread_local!(pub static EVENT_LOOP: RefCell<EventLoop<CustomEvent>> = RefCell::new(EventLoop::Owned(EventLoopBuilder::<CustomEvent>::with_user_event().build())));
+thread_local!(pub static EVENT_LOOP: RefCell<EventLoop<CustomEvent>> = RefCell::new(EventLoop::Owned(EventLoopBuilder::<CustomEvent>::with_user_event().build().expect("Expected the event loop creation was successful"))));
 thread_local!(pub static WINDOW_IDS: RefCell<HashMap<WinitWindowId, WindowId>> = RefCell::new(HashMap::new()));
 
 pub struct Application {
@@ -188,7 +188,7 @@ impl Application {
         //self.input(&WinitWindowEvent::Focused(true));
 
         event_loop.run(
-            move |event, event_loop, control_flow| {
+            move |event, event_loop| {
                 EVENT_LOOP.with(|a| {
                     // SAFETY: We make the reference static such that we can store it in our thread_local
                     // We make sure to drop it after the reference is no longer valid, at the end of
@@ -206,66 +206,22 @@ impl Application {
                     } if WINDOW_IDS.with(|a| a.borrow().contains_key(&window_id)) => {
                         self.input(event, window_id);
 
-                        /*if !self.input(event) {
-                            match event {
-                                WindowEvent::CloseRequested => *control_flow = ControlFlow::Exit,
-                                WindowEvent::KeyboardInput { input, .. } => {
-                                    match input {
-                                        KeyboardInput {
-                                            state: ElementState::Pressed,
-                                            virtual_keycode: Some(VirtualKeyCode::F1),
-                                            ..
-                                        } => {
-                                            // This is only for debugging purposes.
-                                            use carbide_core::image::GrayImage;
-                                            use std::fs::*;
-                                            let image_folder =
-                                                String::from("/tmp/carbide_img_dump_")
-                                                    + &Uuid::new_v4().to_string();
-                                            create_dir_all(&image_folder).unwrap();
-                                            self.mesh
-                                                .texture_atlas_image()
-                                                .save(image_folder.clone() + "/glyph_atlas0.png")
-                                                .unwrap();
-                                            let atlas1 = DynamicImage::ImageLuma8(
-                                                GrayImage::from_raw(
-                                                    DEFAULT_GLYPH_CACHE_DIMS[0],
-                                                    DEFAULT_GLYPH_CACHE_DIMS[1],
-                                                    self.mesh.glyph_cache_pixel_buffer().to_vec(),
-                                                )
-                                                    .unwrap(),
-                                            );
-                                            atlas1
-                                                .save(image_folder.clone() + "/glyph_atlas1.png")
-                                                .unwrap();
-                                            println!("Images dumped to: {}", image_folder);
-                                        }
-                                        KeyboardInput {
-                                            state: ElementState::Pressed,
-                                            virtual_keycode: Some(VirtualKeyCode::Escape),
-                                            ..
-                                        } => *control_flow = ControlFlow::Exit,
-                                        _ => {}
-                                    }
+                        match event {
+                            // Gets called if redrawing is requested.
+                            WindowEvent::RedrawRequested => {
+                                self.root.render(&mut RenderContext {
+                                    render: &mut NoopRenderContext,
+                                    text: &mut self.text_context,
+                                    image: &mut WGPUImageContext,
+                                }, &mut self.environment);
+
+                                // Default controlflow says Wait.
+                                if self.environment.has_animations() {
+                                    self.request_redraw();
                                 }
-                                WindowEvent::Resized(physical_size) => {
-                                    self.resize(*physical_size);
-                                    self.inner_window.request_redraw();
-                                }
-                                WindowEvent::ScaleFactorChanged {
-                                    new_inner_size,
-                                    scale_factor,
-                                } => {
-                                    self.ui.set_scale_factor(*scale_factor);
-                                    self.resize(**new_inner_size);
-                                    self.inner_window.request_redraw();
-                                }
-                                WindowEvent::Focused(true) => {
-                                    self.ui.refresh_application_menu();
-                                }
-                                _ => {}
                             }
-                        }*/
+                            _ => (),
+                        }
                     }
 
                     // Gets called whenever we receive carbide sent events
@@ -276,7 +232,7 @@ impl Application {
                     }
 
                     // Gets called when all window and user events are delivered
-                    Event::MainEventsCleared => {
+                    Event::AboutToWait => {
                         // If we have any events queued up and update the UI
                         if self.event_handler.has_queued_events() || self.environment.has_animations() {
                             // If the ui should redraw because of the update
@@ -288,41 +244,18 @@ impl Application {
                                 .set_cursor_icon(convert_mouse_cursor(self.ui.mouse_cursor()));*/
                         }
                     }
-
-                    // Gets called if redrawing is requested.
-                    Event::RedrawRequested(_) => {
-                        self.root.render(&mut RenderContext {
-                            render: &mut NoopRenderContext,
-                            text: &mut self.text_context,
-                            image: &mut WGPUImageContext,
-                        }, &mut self.environment);
-
-                        // TODO Re-enable this for primitives drawing
-                        //self.root.process_get_primitives(&mut vec![], &mut self.environment);
-
-                        // Wait for the next event to be received
-                        *control_flow = ControlFlow::Wait;
-                    }
-
-                    // This is called after the rendering
-                    Event::RedrawEventsCleared => {
-                        // If we have any animations running we should draw as soon as possible next frame
-                        if self.environment.has_animations() {
-                            self.request_redraw();
-                        }
-                    }
                     _ => {}
                 }
 
                 if self.environment.should_close_application() {
-                    *control_flow = ControlFlow::Exit;
+                    event_loop.exit();
                 }
 
                 EVENT_LOOP.with(|a| {
                     a.take()
                 });
             },
-        );
+        ).expect("TODO: panic message");
     }
 }
 

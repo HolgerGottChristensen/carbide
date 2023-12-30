@@ -61,7 +61,7 @@ impl PlainButton<Focus, DefaultPlainButtonAction, DefaultPlainButtonDelegate, bo
             focus_state,
             PlainButton::default_delegate,
             enabled_state(),
-            MouseCursor::Hand,
+            MouseCursor::Pointer,
             hovered,
             pressed
         )

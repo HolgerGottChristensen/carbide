@@ -62,7 +62,7 @@ impl MouseArea<fn(&mut Environment, ModifierKey), fn(&mut Environment, ModifierK
             click_outside: |_, _| {},
             is_hovered: false,
             is_pressed: false,
-            hover_cursor: MouseCursor::Hand,
+            hover_cursor: MouseCursor::Pointer,
             pressed_cursor: None,
         }
     }
@@ -202,10 +202,10 @@ impl<
         }
 
         match event {
-            KeyboardEvent::Press(Key::Return, _) => {
+            KeyboardEvent::Press(Key::Enter, _) => {
                 self.is_pressed.set_value(true);
             }
-            KeyboardEvent::Click(Key::Return, _) => {
+            KeyboardEvent::Click(Key::Enter, _) => {
                 self.is_pressed.set_value(false);
                 (self.click)(env, ModifierKey::NO_MODIFIER);
             }

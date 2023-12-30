@@ -228,7 +228,7 @@ impl NSMenu {
         for item in menu.items() {
             match item {
                 MenuItem::Item { id: _, name, hotkey, enabled, selected: _, action } => {
-                    let item = NSMenuItem::new(name, *hotkey)
+                    let item = NSMenuItem::new(name, hotkey.clone())
                         .set_enabled(*enabled)
                         .set_action(action.clone(), env);
 

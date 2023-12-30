@@ -15,7 +15,7 @@ fn main() {
     let cursors1 = vec![
         MouseCursor::Default,
         MouseCursor::Crosshair,
-        MouseCursor::Hand,
+        MouseCursor::Pointer,
         MouseCursor::Arrow,
         MouseCursor::Move,
         MouseCursor::Text,

@@ -12,9 +12,9 @@ readme = "../../README.md"
 repository = "https://github.com/HolgerGottChristensen/carbide.git"
 homepage = "https://github.com/HolgerGottChristensen/carbide"
 categories = ["gui"]
-edition="2018"
+edition="2021"
 
 
 [dependencies]
-winit = "0.28"
+winit = { version = "0.29", features = ["rwh_05"] }
 carbide_core = { path = "../../carbide_core", version = "0.70" }

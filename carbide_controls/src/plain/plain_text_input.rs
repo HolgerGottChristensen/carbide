@@ -482,9 +482,9 @@ impl<
             TextInputKeyCommand::Undefined => {}
         }
 
-        match event {
+        /*match event {
             KeyboardEvent::Text(string, modifiers) => {
-                if string.len() == 0 || string.chars().next().unwrap().is_control() || modifiers.contains(ModifierKey::GUI) {
+                if string.len() == 0 || string.chars().next().unwrap().is_control() || modifiers.contains(ModifierKey::META) {
                     return;
                 }
 
@@ -523,7 +523,7 @@ impl<
                 }
             }
             _ => (),
-        }
+        }*/
 
         //println!("cursor: {:?}", self.cursor);
     }
@@ -1395,19 +1395,19 @@ pub(super) enum TextInputKeyCommand {
 impl From<&KeyboardEvent> for TextInputKeyCommand {
     fn from(value: &KeyboardEvent) -> Self {
         match value {
-            KeyboardEvent::Press(Key::Left, ModifierKey::NO_MODIFIER) => TextInputKeyCommand::MoveLeft,
-            KeyboardEvent::Press(Key::Left, ModifierKey::SHIFT) => TextInputKeyCommand::SelectLeft,
-            KeyboardEvent::Press(Key::Left, ModifierKey::ALT) => TextInputKeyCommand::JumpWordLeft,
-            KeyboardEvent::Press(Key::Left, ModifierKey::GUI) => TextInputKeyCommand::JumpToLeft,
-            KeyboardEvent::Press(Key::Left, ModifierKey::SHIFT_ALT) => TextInputKeyCommand::JumpSelectWordLeft,
-            KeyboardEvent::Press(Key::Left, ModifierKey::SHIFT_GUI) => TextInputKeyCommand::JumpSelectToLeft,
+            KeyboardEvent::Press(Key::ArrowLeft, ModifierKey::NO_MODIFIER) => TextInputKeyCommand::MoveLeft,
+            KeyboardEvent::Press(Key::ArrowLeft, ModifierKey::SHIFT) => TextInputKeyCommand::SelectLeft,
+            KeyboardEvent::Press(Key::ArrowLeft, ModifierKey::ALT) => TextInputKeyCommand::JumpWordLeft,
+            KeyboardEvent::Press(Key::ArrowLeft, ModifierKey::META) => TextInputKeyCommand::JumpToLeft,
+            KeyboardEvent::Press(Key::ArrowLeft, ModifierKey::SHIFT_ALT) => TextInputKeyCommand::JumpSelectWordLeft,
+            KeyboardEvent::Press(Key::ArrowLeft, ModifierKey::SHIFT_GUI) => TextInputKeyCommand::JumpSelectToLeft,
 
-            KeyboardEvent::Press(Key::Right, ModifierKey::NO_MODIFIER) => TextInputKeyCommand::MoveRight,
-            KeyboardEvent::Press(Key::Right, ModifierKey::SHIFT) => TextInputKeyCommand::SelectRight,
-            KeyboardEvent::Press(Key::Right, ModifierKey::ALT) => TextInputKeyCommand::JumpWordRight,
-            KeyboardEvent::Press(Key::Right, ModifierKey::GUI) => TextInputKeyCommand::JumpToRight,
-            KeyboardEvent::Press(Key::Right, ModifierKey::SHIFT_ALT) => TextInputKeyCommand::JumpSelectWordRight,
-            KeyboardEvent::Press(Key::Right, ModifierKey::SHIFT_GUI) => TextInputKeyCommand::JumpSelectToRight,
+            KeyboardEvent::Press(Key::ArrowRight, ModifierKey::NO_MODIFIER) => TextInputKeyCommand::MoveRight,
+            KeyboardEvent::Press(Key::ArrowRight, ModifierKey::SHIFT) => TextInputKeyCommand::SelectRight,
+            KeyboardEvent::Press(Key::ArrowRight, ModifierKey::ALT) => TextInputKeyCommand::JumpWordRight,
+            KeyboardEvent::Press(Key::ArrowRight, ModifierKey::META) => TextInputKeyCommand::JumpToRight,
+            KeyboardEvent::Press(Key::ArrowRight, ModifierKey::SHIFT_ALT) => TextInputKeyCommand::JumpSelectWordRight,
+            KeyboardEvent::Press(Key::ArrowRight, ModifierKey::SHIFT_GUI) => TextInputKeyCommand::JumpSelectToRight,
 
             KeyboardEvent::Press(Key::Backspace, ModifierKey::NO_MODIFIER) => TextInputKeyCommand::RemoveLeft,
             KeyboardEvent::Press(Key::Backspace, ModifierKey::SHIFT) => TextInputKeyCommand::RemoveLeft,
@@ -1417,17 +1417,16 @@ impl From<&KeyboardEvent> for TextInputKeyCommand {
             KeyboardEvent::Press(Key::Delete, ModifierKey::SHIFT) => TextInputKeyCommand::RemoveAll,
             KeyboardEvent::Press(Key::Delete, ModifierKey::ALT) => TextInputKeyCommand::RemoveWordRight,
 
-            KeyboardEvent::Press(Key::C, ModifierKey::GUI) => TextInputKeyCommand::Copy,
-            KeyboardEvent::Press(Key::V, ModifierKey::GUI) => TextInputKeyCommand::Paste,
-            KeyboardEvent::Press(Key::X, ModifierKey::GUI) => TextInputKeyCommand::Cut,
-            KeyboardEvent::Press(Key::A, ModifierKey::GUI) => TextInputKeyCommand::SelectAll,
-            KeyboardEvent::Press(Key::D, ModifierKey::GUI) => TextInputKeyCommand::DuplicateRight,
-            KeyboardEvent::Press(Key::D, ModifierKey::SHIFT_GUI) => TextInputKeyCommand::DuplicateLeft,
+            KeyboardEvent::Press(Key::Character(c), ModifierKey::META) if c == "c" => TextInputKeyCommand::Copy,
+            KeyboardEvent::Press(Key::Character(c), ModifierKey::META) if c == "v" => TextInputKeyCommand::Paste,
+            KeyboardEvent::Press(Key::Character(c), ModifierKey::META) if c == "x" => TextInputKeyCommand::Cut,
+            KeyboardEvent::Press(Key::Character(c), ModifierKey::META) if c == "a" => TextInputKeyCommand::SelectAll,
+            KeyboardEvent::Press(Key::Character(c), ModifierKey::META) if c == "d" => TextInputKeyCommand::DuplicateRight,
+            KeyboardEvent::Press(Key::Character(c), ModifierKey::SHIFT_GUI) if c == "d" => TextInputKeyCommand::DuplicateLeft,
 
             KeyboardEvent::Press(Key::Home, ModifierKey::SHIFT) => TextInputKeyCommand::JumpSelectToLeft,
             KeyboardEvent::Press(Key::End, ModifierKey::SHIFT) => TextInputKeyCommand::JumpSelectToRight,
-            KeyboardEvent::Press(Key::Return, ModifierKey::NO_MODIFIER) => TextInputKeyCommand::Enter,
-            KeyboardEvent::Press(Key::Return2, ModifierKey::NO_MODIFIER) => TextInputKeyCommand::Enter,
+            KeyboardEvent::Press(Key::Enter, ModifierKey::NO_MODIFIER) => TextInputKeyCommand::Enter,
 
             _ => TextInputKeyCommand::Undefined,
         }

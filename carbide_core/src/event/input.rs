@@ -32,8 +32,6 @@ pub enum Input {
     Gesture(Gesture),
     /// Input from a touch surface/screen.
     Touch(Touch),
-    /// Text input was received, usually via the keyboard.
-    Text(String),
     /// The window was focused or lost focus.
     Focus(bool),
     /// The backed requested to redraw.
