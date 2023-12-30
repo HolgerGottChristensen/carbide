@@ -1,7 +1,7 @@
 use carbide_macro::carbide_default_builder2;
 
 use crate::draw::{Dimension, Position};
-use crate::flags::Flags;
+use crate::flags::WidgetFlag;
 use crate::state::ReadState;
 use crate::widget::{AnyWidget, CommonWidget, Empty, Widget, WidgetExt, WidgetId};
 
@@ -77,8 +77,8 @@ impl<T: Widget, F: Widget, S: ReadState<T=bool> + Clone + 'static> CommonWidget 
         self.id
     }
 
-    fn flag(&self) -> Flags {
-        Flags::PROXY
+    fn flag(&self) -> WidgetFlag {
+        WidgetFlag::PROXY
     }
 
     fn foreach_child<'a>(&'a self, f: &mut dyn FnMut(&'a dyn AnyWidget)) {

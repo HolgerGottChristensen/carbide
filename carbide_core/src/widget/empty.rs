@@ -3,7 +3,7 @@ use carbide_core::widget::{CommonWidget, PrimitiveStore, ShapeStyle, StrokeStyle
 use carbide_macro::carbide_default_builder2;
 
 use crate::draw::{Dimension, Position};
-use crate::flags::Flags;
+use crate::flags::WidgetFlag;
 use crate::Scene;
 use crate::widget::{Shape, Widget, WidgetExt, WidgetId};
 
@@ -26,7 +26,7 @@ impl Empty {
 }
 
 impl CommonWidget for Empty {
-    CommonWidgetImpl!(self, id: self.id, child: (), position: self.position, dimension: self.dimension, flag: Flags::IGNORE);
+    CommonWidgetImpl!(self, id: self.id, child: (), position: self.position, dimension: self.dimension, flag: WidgetFlag::IGNORE);
 }
 
 impl WidgetExt for Empty {}

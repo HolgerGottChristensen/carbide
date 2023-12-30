@@ -8,7 +8,7 @@ use carbide_core::render::RenderContext;
 use crate::draw::{Dimension, Position};
 use crate::environment::Environment;
 use crate::event::{Event, KeyboardEvent, KeyboardEventHandler, MouseEvent, MouseEventContext, MouseEventHandler, OtherEventContext, OtherEventHandler, WidgetEvent};
-use crate::flags::Flags;
+use crate::flags::WidgetFlag;
 use crate::focus::{Focus, Focusable, Refocus};
 use crate::layout::{Layout, LayoutContext, Layouter};
 use crate::render::Render;
@@ -48,7 +48,7 @@ impl<T: AnyWidget + ?Sized> CommonWidget for Box<T> {
         self.deref().id()
     }
 
-    fn flag(&self) -> Flags {
+    fn flag(&self) -> WidgetFlag {
         self.deref().flag()
     }
 

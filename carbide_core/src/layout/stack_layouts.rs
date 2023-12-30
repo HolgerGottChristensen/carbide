@@ -1,7 +1,7 @@
 use smallvec::{SmallVec, smallvec};
 use crate::draw::{Dimension, Position};
 use crate::environment::Environment;
-use crate::flags::Flags;
+use crate::flags::WidgetFlag;
 use crate::layout::{Layout, LayoutContext};
 use crate::widget::{CrossAxisAlignment, AnyWidget};
 
@@ -159,7 +159,7 @@ fn calculate_size_stack(
 
     widget.foreach_child_mut(&mut |child| {
         if !child.is_spacer() {
-            if child.flag().contains(Flags::USEMAXCROSSAXIS) {
+            if child.flag().contains(WidgetFlag::USEMAXCROSSAXIS) {
                 children_flexibility_using_max_val.push((child.flexibility(), child));
             } else {
                 children_flexibility_rest.push((child.flexibility(), child));

@@ -3,7 +3,7 @@ use carbide_macro::carbide_default_builder2;
 
 use crate::CommonWidgetImpl;
 use crate::draw::{Dimension, Position};
-use crate::flags::Flags;
+use crate::flags::WidgetFlag;
 use crate::widget::{Empty, Widget, WidgetExt, WidgetId};
 
 #[derive(Debug, Clone, Widget)]
@@ -12,12 +12,12 @@ pub struct Flagged<C> where C: Widget {
     child: C,
     position: Position,
     dimension: Dimension,
-    flags: Flags,
+    flags: WidgetFlag,
 }
 
 impl Flagged<Empty> {
     #[carbide_default_builder2]
-    pub fn new<C: Widget>(child: C, flags: Flags) -> Flagged<C> {
+    pub fn new<C: Widget>(child: C, flags: WidgetFlag) -> Flagged<C> {
         Flagged {
             id: WidgetId::new(),
             child,

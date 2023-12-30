@@ -5,7 +5,7 @@ use carbide_core::{CommonWidgetImpl};
 use carbide_core::draw::{Dimension, Position};
 use carbide_core::environment::Environment;
 use carbide_core::environment::EnvironmentColor;
-use carbide_core::flags::Flags;
+use carbide_core::flags::WidgetFlag;
 use carbide_core::focus::{Focus, Focusable, Refocus};
 use carbide_core::state::{AnyReadState, IntoReadState, IntoState, LocalState, Map1, Map2, ReadState, ReadStateExtNew};
 use carbide_core::state::State;
@@ -159,7 +159,7 @@ impl<F: State<T=Focus> + Clone, C: State<T=CheckBoxValue> + Clone, D: PlainCheck
 }
 
 impl<F: State<T=Focus> + Clone, C: State<T=CheckBoxValue> + Clone, D: PlainCheckBoxDelegate, E: ReadState<T=bool>> CommonWidget for PlainCheckBox<F, C, D, E> {
-    CommonWidgetImpl!(self, id: self.id, child: self.child, position: self.position, dimension: self.dimension, flag: Flags::FOCUSABLE, flexibility: 10, focus: self.focus);
+    CommonWidgetImpl!(self, id: self.id, child: self.child, position: self.position, dimension: self.dimension, flag: WidgetFlag::FOCUSABLE, flexibility: 10, focus: self.focus);
 }
 
 impl<F: State<T=Focus> + Clone, C: State<T=CheckBoxValue> + Clone, D: PlainCheckBoxDelegate, E: ReadState<T=bool>> WidgetExt for PlainCheckBox<F, C, D, E> {}

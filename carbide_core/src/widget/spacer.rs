@@ -1,7 +1,7 @@
 use carbide_macro::carbide_default_builder2;
 
 use crate::draw::{Dimension, Position, Scalar};
-use crate::flags::Flags;
+use crate::flags::WidgetFlag;
 use crate::layout::{Layout, LayoutContext};
 use crate::widget::{AnyWidget, CommonWidget, Widget, WidgetExt, WidgetId};
 
@@ -55,11 +55,11 @@ impl CommonWidget for Spacer {
         self.id
     }
 
-    fn flag(&self) -> Flags {
+    fn flag(&self) -> WidgetFlag {
         if let Some(_) = self.max_size {
-            Flags::EMPTY
+            WidgetFlag::EMPTY
         } else {
-            Flags::SPACER
+            WidgetFlag::SPACER
         }
     }
 

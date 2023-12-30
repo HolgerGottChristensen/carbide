@@ -9,7 +9,7 @@ use crate::draw::Color;
 use crate::draw::Dimension;
 use crate::environment::{Environment, EnvironmentColor, EnvironmentStateContainer};
 use crate::event::ModifierKey;
-use crate::flags::Flags;
+use crate::flags::WidgetFlag;
 use crate::focus::Focus;
 use crate::render::Style;
 use crate::state::{IntoState, ReadState, StateContract, TState};
@@ -37,7 +37,7 @@ pub trait WidgetExt: Widget + Sized {
     /// Change the flags of a given widget. This can for example be used to make any widget take
     /// Flags::USEMAXCROSSAXIS to make it use the max cross axis instead of expanding infinitely
     /// within a VStack or HStack.
-    fn custom_flags(self, flags: Flags) -> Flagged<Self> {
+    fn custom_flags(self, flags: WidgetFlag) -> Flagged<Self> {
         Flagged::new(self, flags)
     }
 

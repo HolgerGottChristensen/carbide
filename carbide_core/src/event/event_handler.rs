@@ -19,7 +19,6 @@ const MOUSE_CLICK_MAX_DISTANCE: f64 = 3.0;
 /// A basic, non-interactive rectangle shape widget.
 #[derive(Debug)]
 pub struct EventHandler {
-    pressed_keys: HashMap<Key, KeyboardEvent>,
     pressed_buttons: HashMap<MouseButton, MouseEvent>,
     modifiers: ModifierKey,
     last_click: Option<(Instant, MouseEvent)>,
@@ -131,7 +130,7 @@ impl EventHandler {
                 match event {
                     WidgetEvent::Keyboard(KeyboardEvent::Press(key, modifier)) => {
                         if key == &Key::Tab {
-                            if modifier == &ModifierKey::SHIFT {
+                            if modifier.shift_key() {
                                 // If focus is still up for grab we can assume that no element
                                 // has been focused. This assumption breaks if there can be multiple
                                 // widgets with focus at the same time
@@ -141,7 +140,7 @@ impl EventHandler {
                                     true,
                                     env
                                 );
-                            } else if modifier == &ModifierKey::NO_MODIFIER {
+                            } else if modifier.is_empty() {
                                 any_focus = !widgets.process_focus_next(
                                     event,
                                     &Refocus::FocusNext,
@@ -267,21 +266,9 @@ pub enum TouchEvent {
     // Todo: Handle touch events
 }
 
-/// A function for filtering `ModifierKey`s.
-fn filter_modifier(key: &Key) -> Option<ModifierKey> {
-    match key {
-        Key::Control => Some(ModifierKey::CTRL),
-        Key::Shift => Some(ModifierKey::SHIFT),
-        Key::Alt => Some(ModifierKey::ALT),
-        Key::Meta => Some(ModifierKey::META),
-        _ => None,
-    }
-}
-
 impl EventHandler {
     pub fn new() -> Self {
         Self {
-            pressed_keys: HashMap::new(),
             pressed_buttons: HashMap::new(),
             modifiers: ModifierKey::default(),
             last_click: None,
@@ -394,16 +381,7 @@ impl EventHandler {
                 }
 
                 Button::Keyboard(key) => {
-                    let event = KeyboardEvent::Press(key.clone(), modifiers);
-                    self.add_event(WidgetEvent::Keyboard(event.clone()), window_id);
-
-                    // If some modifier key was pressed, add it to the current modifiers.
-                    if let Some(modifier) = filter_modifier(&key) {
-                        self.modifiers.insert(modifier);
-                    }
-
-                    self.pressed_keys.insert(key, event);
-
+                    self.add_event(WidgetEvent::Keyboard(KeyboardEvent::Press(key, modifiers)), window_id);
                     None
                 }
             }
@@ -465,18 +443,8 @@ impl EventHandler {
                 }
 
                 Button::Keyboard(key) => {
-                    let event = KeyboardEvent::Release(key.clone(), modifiers);
+                    let event = KeyboardEvent::Release(key, modifiers);
                     self.add_event(WidgetEvent::Keyboard(event), window_id);
-                    let pressed_event = self.pressed_keys.remove(&key);
-
-                    if let Some(KeyboardEvent::Press(..)) = pressed_event {
-                        let click_event = KeyboardEvent::Click(key.clone(), modifiers);
-                        self.add_event(WidgetEvent::Keyboard(click_event), window_id);
-                    }
-
-                    if let Some(modifier) = filter_modifier(&key) {
-                        self.modifiers.remove(modifier);
-                    }
 
                     None
                 }
@@ -603,6 +571,11 @@ impl EventHandler {
             }
             Input::Gesture(Gesture::SmartScale) => {
                 self.add_event(WidgetEvent::Mouse(MouseEvent::SmartScale(mouse_xy)), window_id);
+                None
+            }
+            Input::ModifiersChanged(modifier) => {
+                self.modifiers = modifier;
+
                 None
             }
         }

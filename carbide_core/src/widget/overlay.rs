@@ -2,7 +2,7 @@ use crate::draw::{Dimension, Position};
 use crate::environment::Environment;
 use crate::event::{KeyboardEvent, MouseEvent, MouseEventContext, OtherEventContext, WidgetEvent};
 use crate::event::{KeyboardEventHandler, MouseEventHandler, OtherEventHandler};
-use crate::flags::Flags;
+use crate::flags::WidgetFlag;
 use crate::focus::{Focus, Focusable};
 use crate::focus::Refocus;
 use crate::layout::{Layout, LayoutContext, Layouter};
@@ -60,7 +60,7 @@ impl<W: AnyWidget + Clone, B: ReadState<T=bool>> CommonWidget for Overlay<W, B> 
         self.hierarchy.id()
     }
 
-    fn flag(&self) -> Flags {
+    fn flag(&self) -> WidgetFlag {
         self.hierarchy.flag()
     }
 

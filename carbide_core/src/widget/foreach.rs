@@ -6,7 +6,7 @@ use carbide_macro::carbide_default_builder2;
 
 use crate::draw::{Dimension, Position};
 use crate::event::{OtherEventContext, OtherEventHandler, WidgetEvent};
-use crate::flags::Flags;
+use crate::flags::WidgetFlag;
 use crate::state::{AnyReadState, AnyState, IndexState, IntoState, ReadState, ReadStateExtNew, State, StateContract, StateExtNew, ValueState};
 use crate::widget::{CommonWidget, Empty, Widget, WidgetExt, WidgetId};
 
@@ -111,7 +111,7 @@ impl<T: StateContract, M: State<T=Vec<T>>, W: Widget, U: Delegate<T, W>, I: Read
 }
 
 impl<T: StateContract, M: State<T=Vec<T>>, W: Widget, U: Delegate<T, W>, I: ReadState<T=usize>> CommonWidget for ForEach<T, M, U, W, I> {
-    CommonWidgetImpl!(self, id: self.id, child: self.children, position: self.position, dimension: self.dimension, flag: Flags::PROXY);
+    CommonWidgetImpl!(self, id: self.id, child: self.children, position: self.position, dimension: self.dimension, flag: WidgetFlag::PROXY);
 }
 
 impl<T: StateContract, M: State<T=Vec<T>>, W: Widget, U: Delegate<T, W>, I: ReadState<T=usize>> Debug for ForEach<T, M, U, W, I> {

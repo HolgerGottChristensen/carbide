@@ -2,7 +2,7 @@ use std::fmt::{Debug, Formatter};
 use carbide_core::{CommonWidgetImpl};
 use carbide_core::draw::{Dimension, Position};
 use carbide_core::environment::{Environment, EnvironmentColor};
-use carbide_core::flags::Flags;
+use carbide_core::flags::WidgetFlag;
 use carbide_core::focus::{Focus, Focusable};
 use carbide_core::focus::Refocus;
 use carbide_core::state::{AnyReadState, AnyState, IntoReadState, IntoState, LocalState, Map1, Map2, ReadState, ReadStateExtNew, State, StateExtNew};
@@ -154,7 +154,7 @@ impl<F: State<T=Focus> + Clone, C: State<T=bool> + Clone, D: PlainSwitchDelegate
 }
 
 impl<F: State<T=Focus> + Clone, C: State<T=bool> + Clone, D: PlainSwitchDelegate, E: ReadState<T=bool>> CommonWidget for PlainSwitch<F, C, D, E> {
-    CommonWidgetImpl!(self, id: self.id, child: self.child, position: self.position, dimension: self.dimension, flag: Flags::FOCUSABLE, flexibility: 10, focus: self.focus);
+    CommonWidgetImpl!(self, id: self.id, child: self.child, position: self.position, dimension: self.dimension, flag: WidgetFlag::FOCUSABLE, flexibility: 10, focus: self.focus);
 }
 
 impl<F: State<T=Focus> + Clone, C: State<T=bool> + Clone, D: PlainSwitchDelegate, E: ReadState<T=bool>> WidgetExt for PlainSwitch<F, C, D, E> {}

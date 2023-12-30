@@ -1,25 +1,25 @@
 use carbide_core::widget::AnyWidget;
 
 use crate::draw::{Dimension, Position, Rect, Scalar};
-use crate::flags::Flags;
+use crate::flags::WidgetFlag;
 use crate::focus::Focus;
 use crate::layout::{BasicLayouter, Layouter};
 use crate::widget::WidgetId;
 
 pub trait CommonWidget {
     fn id(&self) -> WidgetId;
-    fn flag(&self) -> Flags {
-        Flags::EMPTY
+    fn flag(&self) -> WidgetFlag {
+        WidgetFlag::EMPTY
     }
     fn is_proxy(&self) -> bool {
-        self.flag() == Flags::PROXY
+        self.flag() == WidgetFlag::PROXY
     }
     fn is_ignore(&self) -> bool {
-        self.flag() == Flags::IGNORE
+        self.flag() == WidgetFlag::IGNORE
     }
 
     fn is_spacer(&self) -> bool {
-        self.flag() == Flags::SPACER
+        self.flag() == WidgetFlag::SPACER
     }
 
     fn foreach_child<'a>(&'a self, f: &mut dyn FnMut(&'a dyn AnyWidget));
@@ -146,7 +146,7 @@ macro_rules! CommonWidgetImpl {
         )?
 
         $(
-            fn flag(&$self) -> carbide::flags::Flags {
+            fn flag(&$self) -> carbide::flags::WidgetFlag {
                 $flag
             }
         )?
@@ -205,7 +205,7 @@ macro_rules! CommonWidgetImpl {
         )?
 
         $(
-            fn flag(&$self) -> carbide::flags::Flags {
+            fn flag(&$self) -> carbide::flags::WidgetFlag {
                 $flag
             }
         )?

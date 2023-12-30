@@ -13,7 +13,7 @@ use winit::window::CursorIcon;
 
 use carbide_core::cursor::MouseCursor;
 use carbide_core::draw::Position;
-use carbide_core::event::{Button, Gesture, Input, Key, Motion, MouseButton, Touch, TouchId, TouchPhase};
+use carbide_core::event::{Button, Gesture, Input, Key, ModifierKey, Motion, MouseButton, Touch, TouchId, TouchPhase};
 pub use custom_event_loop::*;
 
 pub use winit::*;
@@ -443,6 +443,9 @@ pub fn convert_window_event(event: &WindowEvent) -> Option<Input> {
                 ElementState::Released => Input::Release(Button::Keyboard(key)),
             };
             Some(res)
+        }
+        WindowEvent::ModifiersChanged(modifiers) => {
+            Some(Input::ModifiersChanged(ModifierKey::from_bits_retain(modifiers.state().bits())))
         }
         WindowEvent::Touch(WinitTouch { phase, location, id, .. }) => {
             let LogicalPosition { x, y } = location.to_logical::<f64>(scale_factor);

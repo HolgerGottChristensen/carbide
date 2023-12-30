@@ -5,7 +5,7 @@ use std::rc::Rc;
 use crate::draw::{Dimension, Position};
 use crate::environment::Environment;
 use crate::event::{KeyboardEvent, KeyboardEventHandler, MouseEvent, MouseEventContext, MouseEventHandler, OtherEventContext, OtherEventHandler, WidgetEvent};
-use crate::flags::Flags;
+use crate::flags::WidgetFlag;
 use crate::focus::{Focus, Focusable, Refocus};
 use crate::layout::{Layout, LayoutContext, Layouter};
 use crate::render::{Render, RenderContext};
@@ -31,7 +31,7 @@ impl<T: AnyWidget> CommonWidget for Duplicated<T> {
         self.0.borrow().id()
     }
 
-    fn flag(&self) -> Flags {
+    fn flag(&self) -> WidgetFlag {
         self.0.borrow().flag()
     }
 

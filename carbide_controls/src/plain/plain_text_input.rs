@@ -11,7 +11,7 @@ use carbide_core::CommonWidgetImpl;
 use carbide_core::draw::{Color, Dimension, Position};
 use carbide_core::environment::{Environment, EnvironmentColor, EnvironmentFontSize};
 use carbide_core::event::{Key, KeyboardEvent, KeyboardEventHandler, ModifierKey, MouseEvent, MouseEventHandler};
-use carbide_core::flags::Flags;
+use carbide_core::flags::WidgetFlag;
 use carbide_core::focus::Focus;
 use carbide_core::focus::Focusable;
 use carbide_core::layout::{BasicLayouter, Layout, Layouter};
@@ -479,57 +479,59 @@ impl<
             TextInputKeyCommand::JumpSelectToLeft => self.jump_select_to_left(),
             TextInputKeyCommand::JumpSelectToRight => self.jump_select_to_right(),
             TextInputKeyCommand::Enter => self.enter(env),
-            TextInputKeyCommand::Undefined => {}
-        }
-
-        /*match event {
-            KeyboardEvent::Text(string, modifiers) => {
-                if string.len() == 0 || string.chars().next().unwrap().is_control() || modifiers.contains(ModifierKey::META) {
+            TextInputKeyCommand::Space => self.text(" "),
+            TextInputKeyCommand::Tab => self.text("\t"),
+            TextInputKeyCommand::Text(s, m) => {
+                if s.len() == 0 || s.chars().next().unwrap().is_control() || m.contains(ModifierKey::SUPER) {
                     return;
                 }
 
-                match self.cursor {
-                    Cursor::Single(index) => {
-                        let offset = byte_offset_from_grapheme_index(index.index, &*self.text.value());
-
-                        self.insert_str(offset, string);
-
-                        let new_offset = ByteOffset(offset.0 + string.len());
-
-                        let grapheme_index = grapheme_index_from_byte_offset(new_offset, &*self.text.value());
-
-                        self.cursor = Cursor::Single(CursorIndex {
-                            line: 0,
-                            index: grapheme_index,
-                        });
-                    }
-                    Cursor::Selection { start, end } => {
-                        let min = byte_offset_from_grapheme_index(start.index.min(end.index), &*self.text.value());
-                        let max = byte_offset_from_grapheme_index(start.index.max(end.index), &*self.text.value());
-
-                        self.remove_range(min..max);
-
-                        self.insert_str(min, string);
-
-                        let new_offset = ByteOffset(min.0 + string.len());
-                        let grapheme_index = grapheme_index_from_byte_offset(new_offset, &*self.text.value());
-
-
-                        self.cursor = Cursor::Single(CursorIndex {
-                            line: 0,
-                            index: grapheme_index,
-                        });
-                    }
-                }
+                self.text(s);
             }
-            _ => (),
-        }*/
+            TextInputKeyCommand::Undefined => {}
+        }
 
         //println!("cursor: {:?}", self.cursor);
     }
 }
 
 impl<F: State<T=Focus>, C: ReadState<T=Color>, O: ReadState<T=Option<char>>, S: ReadState<T=u32>, T: State<T=String>, E: ReadState<T=bool>> PlainTextInput<F, C, O, S, T, E> {
+    fn text(&mut self, s: &str) {
+        match self.cursor {
+            Cursor::Single(index) => {
+                let offset = byte_offset_from_grapheme_index(index.index, &*self.text.value());
+
+                self.insert_str(offset, s);
+
+                let new_offset = ByteOffset(offset.0 + s.len());
+
+                let grapheme_index = grapheme_index_from_byte_offset(new_offset, &*self.text.value());
+
+                self.cursor = Cursor::Single(CursorIndex {
+                    line: 0,
+                    index: grapheme_index,
+                });
+            }
+            Cursor::Selection { start, end } => {
+                let min = byte_offset_from_grapheme_index(start.index.min(end.index), &*self.text.value());
+                let max = byte_offset_from_grapheme_index(start.index.max(end.index), &*self.text.value());
+
+                self.remove_range(min..max);
+
+                self.insert_str(min, s);
+
+                let new_offset = ByteOffset(min.0 + s.len());
+                let grapheme_index = grapheme_index_from_byte_offset(new_offset, &*self.text.value());
+
+
+                self.cursor = Cursor::Single(CursorIndex {
+                    line: 0,
+                    index: grapheme_index,
+                });
+            }
+        }
+    }
+
     fn enter(&mut self, env: &mut Environment) {
         self.set_focus_and_request(Focus::FocusReleased, env);
     }
@@ -1097,7 +1099,7 @@ impl<
                     self.set_focus_and_request(Focus::FocusReleased, ctx.env);
                 }
             }
-            MouseEvent::Press(_, position, ModifierKey::NO_MODIFIER) if enabled => self.text_click(position, ctx),
+            MouseEvent::Press(_, position, ModifierKey::EMPTY) if enabled => self.text_click(position, ctx),
             MouseEvent::Release(_, _, _) => {
                 self.current_offset_speed = None;
                 self.last_drag_position = None;
@@ -1348,7 +1350,7 @@ impl<
     T: State<T=String>,
     E: ReadState<T=bool>,
 > CommonWidget for PlainTextInput<F, C, O, S, T, E> {
-    CommonWidgetImpl!(self, id: self.id, child: (), position: self.position, dimension: self.dimension, flag: Flags::FOCUSABLE, flexibility: 1, focus: self.focus);
+    CommonWidgetImpl!(self, id: self.id, child: (), position: self.position, dimension: self.dimension, flag: WidgetFlag::FOCUSABLE, flexibility: 1, focus: self.focus);
 }
 
 impl<
@@ -1364,7 +1366,8 @@ impl<
 // ---------------------------------------------------
 //  Key commands
 // ---------------------------------------------------
-pub(super) enum TextInputKeyCommand {
+pub(super) enum TextInputKeyCommand<'a> {
+    Text(&'a String, ModifierKey),
     MoveLeft,
     MoveRight,
     SelectLeft,
@@ -1389,44 +1392,50 @@ pub(super) enum TextInputKeyCommand {
     JumpSelectToLeft,
     JumpSelectToRight,
     Enter,
+    Space,
+    Tab,
     Undefined,
 }
 
-impl From<&KeyboardEvent> for TextInputKeyCommand {
-    fn from(value: &KeyboardEvent) -> Self {
+impl<'a> From<&'a KeyboardEvent> for TextInputKeyCommand<'a> {
+    fn from(value: &'a KeyboardEvent) -> Self {
         match value {
-            KeyboardEvent::Press(Key::ArrowLeft, ModifierKey::NO_MODIFIER) => TextInputKeyCommand::MoveLeft,
+            KeyboardEvent::Press(Key::ArrowLeft, ModifierKey::EMPTY) => TextInputKeyCommand::MoveLeft,
             KeyboardEvent::Press(Key::ArrowLeft, ModifierKey::SHIFT) => TextInputKeyCommand::SelectLeft,
             KeyboardEvent::Press(Key::ArrowLeft, ModifierKey::ALT) => TextInputKeyCommand::JumpWordLeft,
-            KeyboardEvent::Press(Key::ArrowLeft, ModifierKey::META) => TextInputKeyCommand::JumpToLeft,
+            KeyboardEvent::Press(Key::ArrowLeft, ModifierKey::SUPER) => TextInputKeyCommand::JumpToLeft,
             KeyboardEvent::Press(Key::ArrowLeft, ModifierKey::SHIFT_ALT) => TextInputKeyCommand::JumpSelectWordLeft,
-            KeyboardEvent::Press(Key::ArrowLeft, ModifierKey::SHIFT_GUI) => TextInputKeyCommand::JumpSelectToLeft,
+            KeyboardEvent::Press(Key::ArrowLeft, ModifierKey::SHIFT_SUPER) => TextInputKeyCommand::JumpSelectToLeft,
 
-            KeyboardEvent::Press(Key::ArrowRight, ModifierKey::NO_MODIFIER) => TextInputKeyCommand::MoveRight,
+            KeyboardEvent::Press(Key::ArrowRight, ModifierKey::EMPTY) => TextInputKeyCommand::MoveRight,
             KeyboardEvent::Press(Key::ArrowRight, ModifierKey::SHIFT) => TextInputKeyCommand::SelectRight,
             KeyboardEvent::Press(Key::ArrowRight, ModifierKey::ALT) => TextInputKeyCommand::JumpWordRight,
-            KeyboardEvent::Press(Key::ArrowRight, ModifierKey::META) => TextInputKeyCommand::JumpToRight,
+            KeyboardEvent::Press(Key::ArrowRight, ModifierKey::SUPER) => TextInputKeyCommand::JumpToRight,
             KeyboardEvent::Press(Key::ArrowRight, ModifierKey::SHIFT_ALT) => TextInputKeyCommand::JumpSelectWordRight,
-            KeyboardEvent::Press(Key::ArrowRight, ModifierKey::SHIFT_GUI) => TextInputKeyCommand::JumpSelectToRight,
+            KeyboardEvent::Press(Key::ArrowRight, ModifierKey::SHIFT_SUPER) => TextInputKeyCommand::JumpSelectToRight,
 
-            KeyboardEvent::Press(Key::Backspace, ModifierKey::NO_MODIFIER) => TextInputKeyCommand::RemoveLeft,
+            KeyboardEvent::Press(Key::Backspace, ModifierKey::EMPTY) => TextInputKeyCommand::RemoveLeft,
             KeyboardEvent::Press(Key::Backspace, ModifierKey::SHIFT) => TextInputKeyCommand::RemoveLeft,
             KeyboardEvent::Press(Key::Backspace, ModifierKey::ALT) => TextInputKeyCommand::RemoveWordLeft,
 
-            KeyboardEvent::Press(Key::Delete, ModifierKey::NO_MODIFIER) => TextInputKeyCommand::RemoveRight,
+            KeyboardEvent::Press(Key::Delete, ModifierKey::EMPTY) => TextInputKeyCommand::RemoveRight,
             KeyboardEvent::Press(Key::Delete, ModifierKey::SHIFT) => TextInputKeyCommand::RemoveAll,
             KeyboardEvent::Press(Key::Delete, ModifierKey::ALT) => TextInputKeyCommand::RemoveWordRight,
 
-            KeyboardEvent::Press(Key::Character(c), ModifierKey::META) if c == "c" => TextInputKeyCommand::Copy,
-            KeyboardEvent::Press(Key::Character(c), ModifierKey::META) if c == "v" => TextInputKeyCommand::Paste,
-            KeyboardEvent::Press(Key::Character(c), ModifierKey::META) if c == "x" => TextInputKeyCommand::Cut,
-            KeyboardEvent::Press(Key::Character(c), ModifierKey::META) if c == "a" => TextInputKeyCommand::SelectAll,
-            KeyboardEvent::Press(Key::Character(c), ModifierKey::META) if c == "d" => TextInputKeyCommand::DuplicateRight,
-            KeyboardEvent::Press(Key::Character(c), ModifierKey::SHIFT_GUI) if c == "d" => TextInputKeyCommand::DuplicateLeft,
+            KeyboardEvent::Press(Key::Character(c), ModifierKey::SUPER) if c == "c" => TextInputKeyCommand::Copy,
+            KeyboardEvent::Press(Key::Character(c), ModifierKey::SUPER) if c == "v" => TextInputKeyCommand::Paste,
+            KeyboardEvent::Press(Key::Character(c), ModifierKey::SUPER) if c == "x" => TextInputKeyCommand::Cut,
+            KeyboardEvent::Press(Key::Character(c), ModifierKey::SUPER) if c == "a" => TextInputKeyCommand::SelectAll,
+            KeyboardEvent::Press(Key::Character(c), ModifierKey::SUPER) if c == "d" => TextInputKeyCommand::DuplicateRight,
+            KeyboardEvent::Press(Key::Character(c), ModifierKey::SHIFT_SUPER) if c == "d" => TextInputKeyCommand::DuplicateLeft,
 
             KeyboardEvent::Press(Key::Home, ModifierKey::SHIFT) => TextInputKeyCommand::JumpSelectToLeft,
             KeyboardEvent::Press(Key::End, ModifierKey::SHIFT) => TextInputKeyCommand::JumpSelectToRight,
-            KeyboardEvent::Press(Key::Enter, ModifierKey::NO_MODIFIER) => TextInputKeyCommand::Enter,
+            KeyboardEvent::Press(Key::Enter, ModifierKey::EMPTY) => TextInputKeyCommand::Enter,
+            KeyboardEvent::Press(Key::Space, ModifierKey::EMPTY) => TextInputKeyCommand::Space,
+            KeyboardEvent::Press(Key::Tab, ModifierKey::EMPTY) => TextInputKeyCommand::Tab,
+
+            KeyboardEvent::Press(Key::Character(s), m) => TextInputKeyCommand::Text(s, *m),
 
             _ => TextInputKeyCommand::Undefined,
         }

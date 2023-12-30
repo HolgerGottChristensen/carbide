@@ -4,7 +4,7 @@ use carbide_core::CommonWidgetImpl;
 use carbide_core::draw::{Dimension, Position};
 use carbide_core::environment::{Environment, EnvironmentColor};
 use carbide_core::event::{Key, KeyboardEvent, KeyboardEventHandler, ModifierKey, MouseEvent, MouseEventHandler};
-use carbide_core::flags::Flags;
+use carbide_core::flags::WidgetFlag;
 use carbide_core::focus::{Focus, Focusable, Refocus};
 use carbide_core::layout::Layout;
 use carbide_core::render::{Render, RenderContext};
@@ -274,10 +274,10 @@ impl<
             let value = *self.percent.value();
 
             match event {
-                KeyboardEvent::Press(Key::ArrowRight, ModifierKey::CTRL) => {
+                KeyboardEvent::Press(Key::ArrowRight, ModifierKey::CONTROL) => {
                     self.percent.set_value(1.0);
                 }
-                KeyboardEvent::Press(Key::ArrowLeft, ModifierKey::CTRL) => {
+                KeyboardEvent::Press(Key::ArrowLeft, ModifierKey::CONTROL) => {
                     self.percent.set_value(0.0);
                 }
                 KeyboardEvent::Press(Key::ArrowRight, ModifierKey::SHIFT) => {
@@ -435,7 +435,7 @@ impl<
     Bg: AnyWidget + Clone,
     En: ReadState<T=bool>,
 > CommonWidget for PlainSlider<F, St, S, E, P, Th, In, Bg, En> {
-    CommonWidgetImpl!(self, id: self.id, child: (), position: self.position, dimension: self.dimension, flag: Flags::FOCUSABLE, flexibility: 1, focus: self.focus);
+    CommonWidgetImpl!(self, id: self.id, child: (), position: self.position, dimension: self.dimension, flag: WidgetFlag::FOCUSABLE, flexibility: 1, focus: self.focus);
 }
 
 impl<

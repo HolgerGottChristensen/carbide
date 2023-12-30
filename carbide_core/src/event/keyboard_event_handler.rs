@@ -1,6 +1,7 @@
+use bitflags::Flags;
 use crate::environment::Environment;
 use crate::event::{Key, KeyboardEvent, ModifierKey};
-use crate::flags::Flags;
+use crate::flags::WidgetFlag as CarbideFlags;
 use crate::focus::{Focus, Focusable, Refocus};
 use crate::state::StateSync;
 use crate::widget::CommonWidget;
@@ -20,14 +21,14 @@ pub trait KeyboardEventHandler: CommonWidget + StateSync + Focusable {
     /// manage the events yourself. Overriding this you are thereby able to restrict events to
     /// a widgets children.
     fn process_keyboard_event(&mut self, event: &KeyboardEvent, env: &mut Environment) {
-        if self.flag().contains(Flags::FOCUSABLE) && self.get_focus() == Focus::Focused && env.is_event_current() {
+        if self.flag().contains(CarbideFlags::FOCUSABLE) && self.get_focus() == Focus::Focused && env.is_event_current() {
             match event {
                 KeyboardEvent::Press(key, modifier) => {
                     if key == &Key::Tab {
-                        if modifier == &ModifierKey::SHIFT {
+                        if modifier.shift_key() {
                             self.set_focus(Focus::FocusReleased);
                             env.request_focus(Refocus::FocusPrevious);
-                        } else if modifier == &ModifierKey::NO_MODIFIER {
+                        } else if modifier.is_empty() {
                             self.set_focus(Focus::FocusReleased);
                             env.request_focus(Refocus::FocusNext);
                         }

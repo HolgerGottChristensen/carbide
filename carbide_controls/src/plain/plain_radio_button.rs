@@ -3,7 +3,7 @@ use carbide_core::CommonWidgetImpl;
 
 use carbide_core::draw::{Dimension, Position};
 use carbide_core::environment::{Environment, EnvironmentColor};
-use carbide_core::flags::Flags;
+use carbide_core::flags::WidgetFlag;
 use carbide_core::focus::{Focus, Focusable, Refocus};
 use carbide_core::state::{AnyReadState, IntoReadState, IntoState, LocalState, Map1, Map2, ReadState, ReadStateExtNew, State, StateContract};
 use carbide_core::widget::{CommonWidget, MouseArea, Rectangle, Text, AnyWidget, WidgetExt, WidgetId, ZStack, Widget};
@@ -162,7 +162,7 @@ impl<T: StateContract + PartialEq, F: State<T=Focus>, C: State<T=T>, D: PlainRad
         child: self.child,
         position: self.position,
         dimension: self.dimension,
-        flag: Flags::FOCUSABLE,
+        flag: WidgetFlag::FOCUSABLE,
         flexibility: 10,
         focus: self.focus
     );

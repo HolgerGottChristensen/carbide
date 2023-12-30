@@ -6,7 +6,7 @@ use carbide_core::cursor::MouseCursor;
 use carbide_core::draw::{Dimension, Position};
 use carbide_core::environment::{Environment, EnvironmentColor};
 use carbide_core::event::ModifierKey;
-use carbide_core::flags::Flags;
+use carbide_core::flags::WidgetFlag;
 use carbide_core::focus::{Focus, Focusable};
 use carbide_core::focus::Refocus;
 use carbide_core::state::{AnyReadState, IntoReadState, IntoState, LocalState, Map1, Map4, ReadState, ReadStateExtNew, State};
@@ -208,7 +208,7 @@ impl<F: State<T=Focus> + Clone, A: Action + Clone + 'static, D: PlainButtonDeleg
 }
 
 impl<F: State<T=Focus> + Clone, A: Action + Clone + 'static, D: PlainButtonDelegate, E: ReadState<T=bool>, H: State<T=bool>, P: State<T=bool>> CommonWidget for PlainButton<F, A, D, E, H, P> {
-    CommonWidgetImpl!(self, id: self.id, child: self.child, position: self.position, dimension: self.dimension, flag: Flags::FOCUSABLE, flexibility: 10, focus: self.focus);
+    CommonWidgetImpl!(self, id: self.id, child: self.child, position: self.position, dimension: self.dimension, flag: WidgetFlag::FOCUSABLE, flexibility: 10, focus: self.focus);
 }
 
 impl<F: State<T=Focus> + Clone, A: Action + Clone + 'static, D: PlainButtonDelegate, E: ReadState<T=bool>, H: State<T=bool>, P: State<T=bool>> WidgetExt for PlainButton<F, A, D, E, H, P> {}

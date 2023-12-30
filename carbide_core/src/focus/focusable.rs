@@ -1,6 +1,6 @@
 use crate::environment::Environment;
 use crate::event::WidgetEvent;
-use crate::flags::Flags;
+use crate::flags::WidgetFlag;
 use crate::focus::focus::Focus;
 use crate::focus::Refocus;
 use crate::state::StateSync;
@@ -61,7 +61,7 @@ pub trait Focusable: CommonWidget + StateSync {
 
         let mut any_focus = false;
 
-        if self.flag().contains(Flags::FOCUSABLE) {
+        if self.flag().contains(WidgetFlag::FOCUSABLE) {
             let focus = self.get_focus();
             if focus == Focus::FocusRequested {
                 self.set_focus(Focus::Focused);
@@ -95,7 +95,7 @@ pub trait Focusable: CommonWidget + StateSync {
     ) -> bool {
         self.capture_state(env);
 
-        let mut focus_child = if self.flag().contains(Flags::FOCUSABLE) {
+        let mut focus_child = if self.flag().contains(WidgetFlag::FOCUSABLE) {
             //println!("{}, {:?}", focus_up_for_grab, self.get_focus());
             if focus_up_for_grab {
                 self.set_focus(Focus::Focused);
@@ -134,7 +134,7 @@ pub trait Focusable: CommonWidget + StateSync {
     ) -> bool {
         self.capture_state(env);
 
-        let mut focus_child = if self.flag().contains(Flags::FOCUSABLE) {
+        let mut focus_child = if self.flag().contains(WidgetFlag::FOCUSABLE) {
             if focus_up_for_grab {
                 self.set_focus(Focus::Focused);
                 self.focus_retrieved(event, focus_request, env);

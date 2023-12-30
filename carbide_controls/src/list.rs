@@ -17,7 +17,7 @@ use carbide_core::color::TRANSPARENT;
 use carbide_core::draw::{Dimension, Position};
 use carbide_core::environment::{Environment, EnvironmentColor};
 use carbide_core::event::ModifierKey;
-use carbide_core::flags::Flags;
+use carbide_core::flags::WidgetFlag;
 use carbide_core::state::{
     LocalState, ReadState, State, StateContract, StateExt, TState, ValueState,
 };
@@ -31,9 +31,9 @@ use carbide_macro::ui;
 use crate::PlainButton;
 
 const MULTI_SELECTION_MODIFIER: ModifierKey = if cfg!(target_os = "macos") {
-    ModifierKey::META
+    ModifierKey::SUPER
 } else {
-    ModifierKey::CTRL
+    ModifierKey::CONTROL
 };
 const LIST_SELECTION_MODIFIER: ModifierKey = ModifierKey::SHIFT;
 

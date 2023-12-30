@@ -1,4 +1,4 @@
-use crate::event::{Button, CustomEvent};
+use crate::event::{Button, CustomEvent, ModifierKey};
 use crate::event::Motion;
 use crate::event::types::gesture::Gesture;
 use crate::event::types::touch::Touch;
@@ -39,6 +39,7 @@ pub enum Input {
     CloseRequested,
     /// Custom carbide event
     Custom(CustomEvent),
+    ModifiersChanged(ModifierKey),
 }
 
 impl From<Touch> for Input {

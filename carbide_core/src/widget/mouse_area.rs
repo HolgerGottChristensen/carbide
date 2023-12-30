@@ -1,4 +1,5 @@
 use std::fmt::{Debug, Formatter};
+use bitflags::Flags;
 
 use dyn_clone::DynClone;
 
@@ -9,7 +10,7 @@ use carbide_core::event::{
     Key, KeyboardEvent, KeyboardEventHandler, ModifierKey, MouseButton, MouseEvent,
     MouseEventHandler, OtherEventHandler, WidgetEvent,
 };
-use carbide_core::flags::Flags;
+use carbide_core::flags::WidgetFlag;
 use carbide_core::focus::Focus;
 use carbide_core::state::State;
 use carbide_core::widget::{AnyWidget, CommonWidget, Widget, WidgetExt, WidgetId};
@@ -207,7 +208,7 @@ impl<
             }
             KeyboardEvent::Click(Key::Enter, _) => {
                 self.is_pressed.set_value(false);
-                (self.click)(env, ModifierKey::NO_MODIFIER);
+                (self.click)(env, ModifierKey::empty());
             }
             _ => (),
         }
@@ -271,8 +272,8 @@ impl<
         self.id
     }
 
-    fn flag(&self) -> Flags {
-        Flags::FOCUSABLE
+    fn flag(&self) -> WidgetFlag {
+        WidgetFlag::FOCUSABLE
     }
 
     fn get_focus(&self) -> Focus {

@@ -6,7 +6,7 @@ use crate::draw::{Dimension, Position};
 use crate::environment::Environment;
 use crate::environment::EnvironmentColor;
 use crate::event::{ModifierKey, MouseButton, MouseEvent, MouseEventContext, MouseEventHandler, OtherEventContext, OtherEventHandler, WidgetEvent};
-use crate::flags::Flags;
+use crate::flags::WidgetFlag;
 use crate::layout::{BasicLayouter, Layout, LayoutContext, Layouter};
 use crate::render::Render;
 use crate::widget::{AnyWidget, Capsule, CommonWidget, Empty, Rectangle, Widget, WidgetExt, WidgetId};
@@ -403,8 +403,8 @@ impl<W: Widget> CommonWidget for Scroll<W> {
         self.id
     }
 
-    fn flag(&self) -> Flags {
-        Flags::EMPTY
+    fn flag(&self) -> WidgetFlag {
+        WidgetFlag::EMPTY
     }
 
     fn foreach_child<'a>(&'a self, f: &mut dyn FnMut(&'a dyn AnyWidget)) {
