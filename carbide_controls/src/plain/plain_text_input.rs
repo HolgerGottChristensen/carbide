@@ -3,7 +3,7 @@ use std::ops::{Index, Range};
 use copypasta::{ClipboardContext, ClipboardProvider};
 use unicode_segmentation::UnicodeSegmentation;
 use carbide::environment::IntoColorReadState;
-use carbide::event::MouseEventContext;
+use carbide::event::{Ime, MouseEventContext};
 use carbide::layout::LayoutContext;
 use carbide::text::InnerTextContext;
 use carbide_core::CommonWidgetImpl;
@@ -1436,6 +1436,7 @@ impl<'a> From<&'a KeyboardEvent> for TextInputKeyCommand<'a> {
             KeyboardEvent::Press(Key::Tab, ModifierKey::EMPTY) => TextInputKeyCommand::Tab,
 
             KeyboardEvent::Press(Key::Character(s), m) => TextInputKeyCommand::Text(s, *m),
+            KeyboardEvent::Ime(Ime::Commit(s)) => TextInputKeyCommand::Text(s, ModifierKey::EMPTY),
 
             _ => TextInputKeyCommand::Undefined,
         }

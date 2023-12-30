@@ -206,9 +206,13 @@ impl<
             KeyboardEvent::Press(Key::Enter, _) => {
                 self.is_pressed.set_value(true);
             }
-            KeyboardEvent::Click(Key::Enter, _) => {
-                self.is_pressed.set_value(false);
-                (self.click)(env, ModifierKey::empty());
+            KeyboardEvent::Release(Key::Enter, _) => {
+                if *self.is_pressed.value() {
+                    self.is_pressed.set_value(false);
+                    (self.click)(env, ModifierKey::empty());
+                } else {
+                    self.is_pressed.set_value(false);
+                }
             }
             _ => (),
         }

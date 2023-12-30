@@ -17,6 +17,7 @@ pub use types::motion::*;
 pub use types::mouse_button::MouseButton;
 pub use types::touch::*;
 pub use types::gesture::*;
+pub use types::ime::*;
 
 mod custom_event;
 mod event;

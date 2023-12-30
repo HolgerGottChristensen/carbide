@@ -9,7 +9,7 @@ use carbide_core::widget::AnyWidget;
 
 use crate::draw::{Dimension, InnerImageContext, Position, Scalar};
 use crate::environment::Environment;
-use crate::event::{Button, CustomEvent, Gesture, Input, ModifierKey, Motion, MouseButton, MouseEventContext, OtherEventContext, TouchPhase};
+use crate::event::{Button, CustomEvent, Gesture, Ime, Input, ModifierKey, Motion, MouseButton, MouseEventContext, OtherEventContext, TouchPhase};
 use crate::text::InnerTextContext;
 use crate::window::WindowId;
 
@@ -249,7 +249,7 @@ impl MouseEvent {
 pub enum KeyboardEvent {
     Press(Key, ModifierKey),
     Release(Key, ModifierKey),
-    Click(Key, ModifierKey),
+    Ime(Ime),
 }
 
 #[derive(Clone, Debug)]
@@ -576,6 +576,10 @@ impl EventHandler {
             Input::ModifiersChanged(modifier) => {
                 self.modifiers = modifier;
 
+                None
+            }
+            Input::Ime(ime) => {
+                self.add_event(WidgetEvent::Keyboard(KeyboardEvent::Ime(ime)), window_id);
                 None
             }
         }

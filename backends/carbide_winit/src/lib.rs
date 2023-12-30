@@ -1,13 +1,6 @@
 //! A function for converting a `winit::Event` to a `carbide::event::Input`.
 use winit::dpi::{LogicalPosition, LogicalSize};
-use winit::event::{
-    ElementState,
-    MouseButton as WinitMouseButton,
-    MouseScrollDelta,
-    Touch as WinitTouch,
-    TouchPhase as WinitTouchPhase,
-    WindowEvent
-};
+use winit::event::{ElementState, Ime, MouseButton as WinitMouseButton, MouseScrollDelta, Touch as WinitTouch, TouchPhase as WinitTouchPhase, WindowEvent};
 use winit::keyboard::{Key as WinitKey, NamedKey};
 use winit::window::CursorIcon;
 
@@ -443,6 +436,14 @@ pub fn convert_window_event(event: &WindowEvent) -> Option<Input> {
                 ElementState::Released => Input::Release(Button::Keyboard(key)),
             };
             Some(res)
+        }
+        WindowEvent::Ime(ime) => {
+            match ime {
+                Ime::Enabled => None,
+                Ime::Preedit(s, cursor) => Some(Input::Ime(carbide_core::event::Ime::PreEdit(s.to_string(), cursor.clone()))),
+                Ime::Commit(s) => Some(Input::Ime(carbide_core::event::Ime::Commit(s.to_string()))),
+                Ime::Disabled => None,
+            }
         }
         WindowEvent::ModifiersChanged(modifiers) => {
             Some(Input::ModifiersChanged(ModifierKey::from_bits_retain(modifiers.state().bits())))

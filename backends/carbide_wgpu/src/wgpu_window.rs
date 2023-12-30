@@ -271,6 +271,8 @@ impl WGPUWindow {
             a.borrow().create_inner_window(builder)
         });
 
+        inner.set_ime_allowed(true);
+
         // Add the window to the list of IDS to make event propagate when received by the window.
         WINDOW_IDS.with(|a| {
             a.borrow_mut().insert(inner.id(), window_id);
