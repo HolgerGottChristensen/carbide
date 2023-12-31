@@ -5,7 +5,8 @@ use crate::color::Color;
 use crate::draw::{Dimension, Position};
 use crate::environment::Environment;
 use crate::environment::EnvironmentColor;
-use crate::event::{ModifierKey, MouseButton, MouseEvent, MouseEventContext, MouseEventHandler, OtherEventContext, OtherEventHandler, WidgetEvent};
+use crate::event::{ModifierKey, MouseButton, MouseEvent, MouseEventContext, MouseEventHandler, OtherEventContext, OtherEventHandler};
+use crate::event::Event;
 use crate::flags::WidgetFlag;
 use crate::layout::{BasicLayouter, Layout, LayoutContext, Layouter};
 use crate::render::Render;
@@ -107,7 +108,7 @@ impl<W: Widget> Scroll<W> {
 }
 
 impl<W: Widget> MouseEventHandler for Scroll<W> {
-    fn handle_mouse_event(&mut self, event: &MouseEvent, consumed: &bool, ctx: &mut MouseEventContext) {
+    fn handle_mouse_event(&mut self, event: &MouseEvent, ctx: &mut MouseEventContext) {
         match event {
             MouseEvent::Scroll {
                 x, y, modifiers, ..
@@ -229,9 +230,9 @@ impl<W: Widget> MouseEventHandler for Scroll<W> {
 }
 
 impl<W: Widget> OtherEventHandler for Scroll<W> {
-    fn handle_other_event(&mut self, _event: &WidgetEvent, ctx: &mut OtherEventContext) {
+    fn handle_other_event(&mut self, _event: &Event, ctx: &mut OtherEventContext) {
         match _event {
-            WidgetEvent::Window(_) => {
+            Event::Window(_) => {
                 self.keep_y_within_bounds();
                 self.keep_x_within_bounds();
             }

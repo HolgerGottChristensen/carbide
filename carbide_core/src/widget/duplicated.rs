@@ -1,10 +1,12 @@
 use std::cell::RefCell;
 use std::fmt::{Debug, Formatter};
 use std::rc::Rc;
+use carbide::event::{WindowEvent, WindowEventContext};
 
 use crate::draw::{Dimension, Position};
 use crate::environment::Environment;
-use crate::event::{KeyboardEvent, KeyboardEventHandler, MouseEvent, MouseEventContext, MouseEventHandler, OtherEventContext, OtherEventHandler, WidgetEvent};
+use crate::event::{KeyboardEvent, KeyboardEventContext, KeyboardEventHandler, MouseEvent, MouseEventContext, MouseEventHandler, OtherEventContext, OtherEventHandler, WindowEventHandler};
+use crate::event::Event;
 use crate::flags::WidgetFlag;
 use crate::focus::{Focus, Focusable, Refocus};
 use crate::layout::{Layout, LayoutContext, Layouter};
@@ -99,31 +101,41 @@ impl<T: AnyWidget> StateSync for Duplicated<T> {
 }
 
 impl<T: AnyWidget> MouseEventHandler for Duplicated<T> {
-    fn handle_mouse_event(&mut self, event: &MouseEvent, consumed: &bool, ctx: &mut MouseEventContext) {
-        self.0.borrow_mut().handle_mouse_event(event, consumed, ctx)
+    fn handle_mouse_event(&mut self, event: &MouseEvent, ctx: &mut MouseEventContext) {
+        self.0.borrow_mut().handle_mouse_event(event, ctx)
     }
 
-    fn process_mouse_event(&mut self, event: &MouseEvent, consumed: &bool, ctx: &mut MouseEventContext) {
-        self.0.borrow_mut().process_mouse_event(event, consumed, ctx)
+    fn process_mouse_event(&mut self, event: &MouseEvent, ctx: &mut MouseEventContext) {
+        self.0.borrow_mut().process_mouse_event(event, ctx)
     }
 }
 
 impl<T: AnyWidget> KeyboardEventHandler for Duplicated<T> {
-    fn handle_keyboard_event(&mut self, event: &KeyboardEvent, env: &mut Environment) {
-        self.0.borrow_mut().handle_keyboard_event(event, env)
+    fn handle_keyboard_event(&mut self, event: &KeyboardEvent, ctx: &mut KeyboardEventContext) {
+        self.0.borrow_mut().handle_keyboard_event(event, ctx)
     }
 
-    fn process_keyboard_event(&mut self, event: &KeyboardEvent, env: &mut Environment) {
-        self.0.borrow_mut().process_keyboard_event(event, env)
+    fn process_keyboard_event(&mut self, event: &KeyboardEvent, ctx: &mut KeyboardEventContext) {
+        self.0.borrow_mut().process_keyboard_event(event, ctx)
+    }
+}
+
+impl<T: AnyWidget> WindowEventHandler for Duplicated<T> {
+    fn handle_window_event(&mut self, event: &WindowEvent, ctx: &mut WindowEventContext) {
+        self.0.borrow_mut().handle_window_event(event, ctx)
+    }
+
+    fn process_window_event(&mut self, event: &WindowEvent, ctx: &mut WindowEventContext) {
+        self.0.borrow_mut().process_window_event(event, ctx)
     }
 }
 
 impl<T: AnyWidget> OtherEventHandler for Duplicated<T> {
-    fn handle_other_event(&mut self, _event: &WidgetEvent, ctx: &mut OtherEventContext) {
+    fn handle_other_event(&mut self, _event: &Event, ctx: &mut OtherEventContext) {
         self.0.borrow_mut().handle_other_event(_event, ctx)
     }
 
-    fn process_other_event(&mut self, event: &WidgetEvent, ctx: &mut OtherEventContext) {
+    fn process_other_event(&mut self, event: &Event, ctx: &mut OtherEventContext) {
         self.0.borrow_mut().process_other_event(event, ctx)
     }
 }
@@ -147,20 +159,18 @@ impl<T: AnyWidget> Render for Duplicated<T> {
 impl<T: AnyWidget> Focusable for Duplicated<T> {
     fn focus_retrieved(
         &mut self,
-        event: &WidgetEvent,
         focus_request: &Refocus,
         env: &mut Environment,
     ) {
-        self.0.borrow_mut().focus_retrieved(event, focus_request, env)
+        self.0.borrow_mut().focus_retrieved(focus_request, env)
     }
 
     fn focus_dismissed(
         &mut self,
-        event: &WidgetEvent,
         focus_request: &Refocus,
         env: &mut Environment,
     ) {
-        self.0.borrow_mut().focus_dismissed(event, focus_request, env)
+        self.0.borrow_mut().focus_dismissed(focus_request, env)
     }
 
     fn set_focus_and_request(&mut self, focus: Focus, env: &mut Environment) {
@@ -169,34 +179,31 @@ impl<T: AnyWidget> Focusable for Duplicated<T> {
 
     fn process_focus_request(
         &mut self,
-        event: &WidgetEvent,
         focus_request: &Refocus,
         env: &mut Environment,
     ) -> bool {
         self.0.borrow_mut()
-            .process_focus_request(event, focus_request, env)
+            .process_focus_request(focus_request, env)
     }
 
     fn process_focus_next(
         &mut self,
-        event: &WidgetEvent,
         focus_request: &Refocus,
         focus_up_for_grab: bool,
         env: &mut Environment,
     ) -> bool {
         self.0.borrow_mut()
-            .process_focus_next(event, focus_request, focus_up_for_grab, env)
+            .process_focus_next(focus_request, focus_up_for_grab, env)
     }
 
     fn process_focus_previous(
         &mut self,
-        event: &WidgetEvent,
         focus_request: &Refocus,
         focus_up_for_grab: bool,
         env: &mut Environment,
     ) -> bool {
         self.0.borrow_mut()
-            .process_focus_previous(event, focus_request, focus_up_for_grab, env)
+            .process_focus_previous(focus_request, focus_up_for_grab, env)
     }
 }
 

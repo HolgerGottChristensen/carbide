@@ -437,7 +437,7 @@ impl NodeEditor {
 }
 
 impl MouseEventHandler for NodeEditor {
-    fn handle_mouse_event(&mut self, event: &MouseEvent, consumed: &bool, ctx: &mut MouseEventContext) {
+    fn handle_mouse_event(&mut self, event: &MouseEvent, ctx: &mut MouseEventContext) {
         let mode = self.graph.value().editing_mode.clone();
         match mode {
             EditingMode::Editing => {

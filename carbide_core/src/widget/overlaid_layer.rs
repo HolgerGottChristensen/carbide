@@ -8,7 +8,8 @@ use carbide_macro::carbide_default_builder2;
 use crate::CommonWidgetImpl;
 use crate::draw::{Dimension, Position};
 use crate::environment::Environment;
-use crate::event::{KeyboardEvent, KeyboardEventHandler, MouseEvent, MouseEventContext, MouseEventHandler, OtherEventContext, OtherEventHandler, WidgetEvent};
+use crate::event::{KeyboardEvent, KeyboardEventContext, KeyboardEventHandler, MouseEvent, MouseEventContext, MouseEventHandler, OtherEventContext, OtherEventHandler};
+use crate::event::Event;
 use crate::layout::{Layout, LayoutContext};
 use crate::render::Render;
 use crate::widget::{AnyWidget, CommonWidget, Empty, Widget, WidgetExt, WidgetId};
@@ -48,10 +49,10 @@ impl<C: Widget> OverlaidLayer<C> {
 }
 
 impl<C: Widget> MouseEventHandler for OverlaidLayer<C> {
-    fn process_mouse_event(&mut self, event: &MouseEvent, consumed: &bool, ctx: &mut MouseEventContext) {
+    fn process_mouse_event(&mut self, event: &MouseEvent, ctx: &mut MouseEventContext) {
         let mut widgets = self.overlays.borrow_mut();
         for widget in widgets.deref_mut() {
-            widget.process_mouse_event(event, consumed, ctx)
+            widget.process_mouse_event(event, ctx)
         }
 
         if self.steal_events_when_some && widgets.len() > 0 {
@@ -61,20 +62,23 @@ impl<C: Widget> MouseEventHandler for OverlaidLayer<C> {
         drop(widgets);
 
         ctx.env.with_overlay_layer(self.overlay_id, self.overlays.clone(), |new_env| {
-            self.child.process_mouse_event(event, consumed, &mut MouseEventContext {
+            self.child.process_mouse_event(event, &mut MouseEventContext {
                 text: ctx.text,
                 image: ctx.image,
                 env: new_env,
+                is_current: ctx.is_current,
+                window_id: ctx.window_id,
+                consumed: ctx.consumed,
             })
         });
     }
 }
 
 impl<C: Widget> KeyboardEventHandler for OverlaidLayer<C> {
-    fn process_keyboard_event(&mut self, event: &KeyboardEvent, env: &mut Environment) {
+    fn process_keyboard_event(&mut self, event: &KeyboardEvent, ctx: &mut KeyboardEventContext) {
         let mut widgets = self.overlays.borrow_mut();
         for widget in widgets.deref_mut() {
-            widget.process_keyboard_event(event, env)
+            widget.process_keyboard_event(event, ctx)
         }
 
         if self.steal_events_when_some && widgets.len() > 0 {
@@ -83,14 +87,20 @@ impl<C: Widget> KeyboardEventHandler for OverlaidLayer<C> {
 
         drop(widgets);
 
-        env.with_overlay_layer(self.overlay_id, self.overlays.clone(), |new_env| {
-            self.child.process_keyboard_event(event, new_env)
+        ctx.env.with_overlay_layer(self.overlay_id, self.overlays.clone(), |new_env| {
+            self.child.process_keyboard_event(event, &mut KeyboardEventContext {
+                text: ctx.text,
+                image: ctx.image,
+                env: new_env,
+                is_current: ctx.is_current,
+                window_id: ctx.window_id,
+            })
         });
     }
 }
 
 impl<C: Widget> OtherEventHandler for OverlaidLayer<C> {
-    fn process_other_event(&mut self, event: &WidgetEvent, ctx: &mut OtherEventContext) {
+    fn process_other_event(&mut self, event: &Event, ctx: &mut OtherEventContext) {
         let mut widgets = self.overlays.borrow_mut();
         for widget in widgets.deref_mut() {
             widget.process_other_event(event, ctx)

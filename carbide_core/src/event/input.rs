@@ -1,7 +1,7 @@
 use crate::event::{Button, CustomEvent, ModifierKey};
+use crate::event::keyboard_event_handler::Ime;
 use crate::event::Motion;
 use crate::event::types::gesture::Gesture;
-use crate::event::types::ime::Ime;
 use crate::event::types::touch::Touch;
 
 /// The event type that is used by carbide to track inputs from the world. Events yielded by polling

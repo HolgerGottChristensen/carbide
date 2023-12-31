@@ -34,6 +34,7 @@ pub struct WGPURenderContext {
     state: State,
     window_bounding_box: Rect,
     frame_count: usize,
+    skip_rendering: bool,
 }
 
 /// An inner context used for each layer of rendering.
@@ -81,6 +82,7 @@ impl WGPURenderContext {
             current_bind_group: None,
             window_bounding_box: Rect::default(),
             frame_count: 0,
+            skip_rendering: false,
         }
     }
 
@@ -100,6 +102,7 @@ impl WGPURenderContext {
         self.state = State::Plain { start: 0 };
         self.vertices.clear();
         self.current_bind_group = None;
+        self.skip_rendering = false;
     }
 
     pub fn vertices(&self) -> &Vec<Vertex> {
@@ -346,7 +349,6 @@ impl InnerRenderContext for WGPURenderContext {
         });
     }
 
-    // TODO: clip is broken atm. And no color on hacker news list example...
     fn clip(&mut self, bounding_box: BoundingBox) {
         self.freshen_state();
 
@@ -356,10 +358,13 @@ impl InnerRenderContext for WGPURenderContext {
             bounding_box.within_bounding_box(&self.window_bounding_box)
         };
 
-
-        self.render_pass_inner.push(RenderPassCommand::SetScissor {
-            rect: corrected
-        });
+        if corrected.height() > 0.0 && corrected.width() > 0.0 {
+            self.render_pass_inner.push(RenderPassCommand::SetScissor {
+                rect: corrected
+            });
+        } else {
+            self.skip_rendering = true;
+        }
 
         self.scissor_stack.push(corrected);
     }
@@ -371,11 +376,15 @@ impl InnerRenderContext for WGPURenderContext {
 
         match self.scissor_stack.last() {
             Some(n) => {
-                self.render_pass_inner.push(RenderPassCommand::SetScissor {
-                    rect: *n
-                })
+                if n.height() > 0.0 && n.width() > 0.0 {
+                    self.skip_rendering = false;
+                    self.render_pass_inner.push(RenderPassCommand::SetScissor {
+                        rect: *n
+                    })
+                }
             }
             None => {
+                self.skip_rendering = false;
                 self.render_pass_inner.push(RenderPassCommand::SetScissor {
                     rect: self.window_bounding_box
                 })
@@ -384,6 +393,9 @@ impl InnerRenderContext for WGPURenderContext {
     }
 
     fn filter(&mut self, id: FilterId, bounding_box: BoundingBox) {
+        if self.skip_rendering {
+            return;
+        }
         self.freshen_state();
 
         let create_vertex = |x, y| Vertex {
@@ -427,6 +439,9 @@ impl InnerRenderContext for WGPURenderContext {
     }
 
     fn filter2d(&mut self, id1: FilterId, bounding_box1: BoundingBox, id2: FilterId, bounding_box2: BoundingBox) {
+        if self.skip_rendering {
+            return;
+        }
         self.freshen_state();
 
         let create_vertex = |x, y| Vertex {
@@ -487,6 +502,10 @@ impl InnerRenderContext for WGPURenderContext {
     }
 
     fn stencil(&mut self, geometry: &[Triangle<Position>]) {
+        if self.skip_rendering {
+            return;
+        }
+
         self.freshen_state();
 
         let start_index_for_stencil = self.vertices.len();
@@ -515,6 +534,10 @@ impl InnerRenderContext for WGPURenderContext {
     }
 
     fn pop_stencil(&mut self) {
+        if self.skip_rendering {
+            return;
+        }
+
         self.freshen_state();
 
         if let Some(range) = self.stencil_stack.pop() {
@@ -525,6 +548,9 @@ impl InnerRenderContext for WGPURenderContext {
     }
 
     fn geometry(&mut self, geometry: &[Triangle<Position>]) {
+        if self.skip_rendering {
+            return;
+        }
         //println!("draw geometry: {}", geometry.len());
 
         let style = self.style_stack.last().unwrap().clone();
@@ -577,6 +603,10 @@ impl InnerRenderContext for WGPURenderContext {
     }
 
     fn image(&mut self, id: ImageId, bounding_box: Rect, source_rect: Rect, mode: u32) {
+        if self.skip_rendering {
+            return;
+        }
+
         self.ensure_state_image(&id);
 
         let color = match self.style_stack.last().unwrap_or(&WGPUStyle::Color(WHITE.gamma_srgb_to_linear().to_fsa())) {
@@ -608,6 +638,11 @@ impl InnerRenderContext for WGPURenderContext {
     }
 
     fn text(&mut self, text: TextId, ctx: &mut dyn InnerTextContext) {
+        if self.skip_rendering {
+            println!("Skipping");
+            return;
+        }
+
         ctx.render(text, self);
     }
 

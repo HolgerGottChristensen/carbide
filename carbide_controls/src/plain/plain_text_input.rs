@@ -3,7 +3,7 @@ use std::ops::{Index, Range};
 use copypasta::{ClipboardContext, ClipboardProvider};
 use unicode_segmentation::UnicodeSegmentation;
 use carbide::environment::IntoColorReadState;
-use carbide::event::{Ime, MouseEventContext};
+use carbide::event::{Ime, KeyboardEventContext, MouseEventContext};
 use carbide::layout::LayoutContext;
 use carbide::text::InnerTextContext;
 use carbide_core::CommonWidgetImpl;
@@ -443,7 +443,7 @@ impl<
     T: State<T=String>,
     E: ReadState<T=bool>,
 > KeyboardEventHandler for PlainTextInput<F, C, O, S, T, E> {
-    fn handle_keyboard_event(&mut self, event: &KeyboardEvent, env: &mut Environment) {
+    fn handle_keyboard_event(&mut self, event: &KeyboardEvent, ctx: &mut KeyboardEventContext) {
         //println!("Event: {:#?}", event);
         if self.get_focus() != Focus::Focused || !*self.enabled.value() {
             return;
@@ -478,7 +478,7 @@ impl<
             TextInputKeyCommand::JumpToRight => self.jump_to_right(),
             TextInputKeyCommand::JumpSelectToLeft => self.jump_select_to_left(),
             TextInputKeyCommand::JumpSelectToRight => self.jump_select_to_right(),
-            TextInputKeyCommand::Enter => self.enter(env),
+            TextInputKeyCommand::Enter => self.enter(ctx.env),
             TextInputKeyCommand::Space => self.text(" "),
             TextInputKeyCommand::Tab => self.text("\t"),
             TextInputKeyCommand::Text(s, m) => {
@@ -1089,7 +1089,7 @@ impl<
     T: State<T=String>,
     E: ReadState<T=bool>,
 > MouseEventHandler for PlainTextInput<F, C, O, S, T, E> {
-    fn handle_mouse_event(&mut self, event: &MouseEvent, consumed: &bool, ctx: &mut MouseEventContext) {
+    fn handle_mouse_event(&mut self, event: &MouseEvent, ctx: &mut MouseEventContext) {
         let enabled = *self.enabled.value();
         let editable = enabled && self.get_focus() == Focus::Focused;
 

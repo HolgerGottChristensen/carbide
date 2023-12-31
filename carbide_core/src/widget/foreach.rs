@@ -5,7 +5,8 @@ use carbide_core::CommonWidgetImpl;
 use carbide_macro::carbide_default_builder2;
 
 use crate::draw::{Dimension, Position};
-use crate::event::{OtherEventContext, OtherEventHandler, WidgetEvent};
+use crate::event::{OtherEventContext, OtherEventHandler};
+use crate::event::Event;
 use crate::flags::WidgetFlag;
 use crate::state::{AnyReadState, AnyState, IndexState, IntoState, ReadState, ReadStateExtNew, State, StateContract, StateExtNew, ValueState};
 use crate::widget::{CommonWidget, Empty, Widget, WidgetExt, WidgetId};
@@ -84,7 +85,7 @@ impl ForEach<(), Vec<()>, EmptyDelegate, Empty, usize> {
 }
 
 impl<T: StateContract, M: State<T=Vec<T>>, W: Widget, U: Delegate<T, W>, I: ReadState<T=usize>> OtherEventHandler for ForEach<T, M, U, W, I> {
-    fn handle_other_event(&mut self, _event: &WidgetEvent, ctx: &mut OtherEventContext) {
+    fn handle_other_event(&mut self, _event: &Event, ctx: &mut OtherEventContext) {
         if self.model.value().len() < self.children.len() {
             // Remove the excess elements
             let number_to_remove = self.children.len() - self.model.value().len();

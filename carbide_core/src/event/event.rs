@@ -1,7 +1,16 @@
-use crate::event::KeyboardEventHandler;
-use crate::event::MouseEventHandler;
-use crate::event::OtherEventHandler;
+use carbide::event::{CustomEvent, MouseEvent, TouchEvent, WindowEvent};
+use crate::event::KeyboardEvent;
 
-pub trait Event: MouseEventHandler + KeyboardEventHandler + OtherEventHandler {}
+#[derive(Clone, Debug)]
+pub enum Event {
+    Mouse(MouseEvent),
+    Keyboard(KeyboardEvent),
+    Window(WindowEvent),
+    Touch(TouchEvent),
+    Custom(CustomEvent),
+    DoneProcessingEvents,
+}
 
-impl<T> Event for T where T: MouseEventHandler + KeyboardEventHandler + OtherEventHandler {}
+pub trait IntoEvent {
+    fn into(self) -> Option<Event>;
+}

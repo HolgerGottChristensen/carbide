@@ -1,4 +1,4 @@
-use carbide::event::MouseEventContext;
+use carbide::event::{KeyboardEventContext, MouseEventContext};
 use carbide::layout::LayoutContext;
 use carbide_core::CommonWidgetImpl;
 use carbide_core::draw::{Dimension, Position};
@@ -265,7 +265,7 @@ impl<
     Bg: AnyWidget + Clone,
     En: ReadState<T=bool>,
 > KeyboardEventHandler for PlainSlider<F, St, S, E, P, Th, In, Bg, En> {
-    fn handle_keyboard_event(&mut self, event: &KeyboardEvent, _env: &mut Environment) {
+    fn handle_keyboard_event(&mut self, event: &KeyboardEvent, ctx: &mut KeyboardEventContext) {
         if !*self.enabled.value() {
             return;
         }
@@ -309,7 +309,7 @@ impl<
     Bg: AnyWidget + Clone,
     En: ReadState<T=bool>,
 > MouseEventHandler for PlainSlider<F, St, S, E, P, Th, In, Bg, En> {
-    fn handle_mouse_event(&mut self, event: &MouseEvent, consumed: &bool, ctx: &mut MouseEventContext) {
+    fn handle_mouse_event(&mut self, event: &MouseEvent, ctx: &mut MouseEventContext) {
         if !*self.enabled.value() {
             return;
         }

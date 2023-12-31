@@ -13,12 +13,13 @@ use carbide::CommonWidgetImpl;
 use carbide::draw::{Color, Dimension, Position, Rect, Scalar, Texture, TextureFormat};
 use carbide::draw::image::ImageId;
 use carbide::environment::Environment;
-use carbide::event::{CustomEvent, MouseEvent, MouseEventContext, MouseEventHandler, OtherEventContext, OtherEventHandler, WidgetEvent};
+use carbide::event::{CustomEvent, MouseEvent, MouseEventContext, MouseEventHandler, OtherEventContext, OtherEventHandler};
 use carbide::image::{DynamicImage, GenericImage, Rgba};
 use carbide::mesh::MODE_IMAGE;
 use carbide::render::{Render, RenderContext};
 use carbide::render::matrix::{Deg, Matrix4, Vector3};
 use carbide::widget::*;
+use carbide_core::event::event::WidgetEvent;
 
 const MAX_ITER: u32 = 1000;
 //const MAX_ITER: u32 = 20;
@@ -196,7 +197,7 @@ impl OtherEventHandler for Mandelbrot {
 }
 
 impl MouseEventHandler for Mandelbrot {
-    fn handle_mouse_event(&mut self, event: &MouseEvent, consumed: &bool, ctx: &mut MouseEventContext) {
+    fn handle_mouse_event(&mut self, event: &MouseEvent, ctx: &mut MouseEventContext) {
         match event {
             MouseEvent::Scroll { x, y, .. } => {
                 self.offset += Position::new(*x, -*y);

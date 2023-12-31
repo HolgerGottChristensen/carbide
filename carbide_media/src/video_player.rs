@@ -160,25 +160,25 @@ impl VideoPlayer<Option<VideoId>> {
 }
 
 impl<Id: ReadState<T=Option<VideoId>> + Clone> MouseEventHandler for VideoPlayer<Id> {
-    fn handle_mouse_event(&mut self, event: &MouseEvent, consumed: &bool, ctx: &mut MouseEventContext) {
+    fn handle_mouse_event(&mut self, event: &MouseEvent, ctx: &mut MouseEventContext) {
         self.video_overlay_visible = self.is_inside(event.get_current_mouse_position());
     }
 
-    fn process_mouse_event(&mut self, event: &MouseEvent, consumed: &bool, ctx: &mut MouseEventContext) {
+    fn process_mouse_event(&mut self, event: &MouseEvent, ctx: &mut MouseEventContext) {
         if ctx.env.is_event_current() {
             if !*consumed {
                 self.capture_state(ctx.env);
-                self.handle_mouse_event(event, consumed, ctx);
+                self.handle_mouse_event(event, ctx);
                 self.release_state(ctx.env);
             }
         }
 
-        self.video_overlay.process_mouse_event(event, &consumed, ctx);
+        self.video_overlay.process_mouse_event(event, ctx);
     }
 }
 
 impl<Id: ReadState<T=Option<VideoId>> + Clone> KeyboardEventHandler for VideoPlayer<Id> {
-    fn handle_keyboard_event(&mut self, event: &KeyboardEvent, env: &mut Environment) {
+    fn handle_keyboard_event(&mut self, event: &KeyboardEvent, ctx: &mut KeyboardEventContext) {
         match event {
             KeyboardEvent::Press(Key::Left, _) => {
                 let current = *self.current_time.value();

@@ -1,10 +1,12 @@
+use carbide::event::{WindowEvent, WindowEventContext};
 use carbide_core::render::RenderContext;
 use carbide_macro::carbide_default_builder2;
 
 use crate::CommonWidgetImpl;
 use crate::draw::{Dimension, Position};
 use crate::environment::{Environment, EnvironmentStateContainer, EnvironmentVariable};
-use crate::event::{KeyboardEvent, KeyboardEventHandler, MouseEvent, MouseEventContext, MouseEventHandler, OtherEventContext, OtherEventHandler, WidgetEvent};
+use crate::event::{KeyboardEvent, KeyboardEventContext, KeyboardEventHandler, MouseEvent, MouseEventContext, MouseEventHandler, OtherEventContext, OtherEventHandler, WindowEventHandler};
+use crate::event::Event;
 use crate::focus::{Focusable, Refocus};
 use crate::render::Render;
 use crate::state::{NewStateSync, ReadState};
@@ -119,7 +121,7 @@ impl<C: Widget> EnvUpdating<C> {
 }
 
 impl<C: Widget> OtherEventHandler for EnvUpdating<C> {
-    fn process_other_event(&mut self, event: &WidgetEvent, ctx: &mut OtherEventContext) {
+    fn process_other_event(&mut self, event: &Event, ctx: &mut OtherEventContext) {
         self.insert_into_env(ctx.env);
 
         self.child.process_other_event(event, ctx);
@@ -129,20 +131,30 @@ impl<C: Widget> OtherEventHandler for EnvUpdating<C> {
 }
 
 impl<C: Widget> KeyboardEventHandler for EnvUpdating<C> {
-    fn process_keyboard_event(&mut self, event: &KeyboardEvent, env: &mut Environment) {
-        self.insert_into_env(env);
+    fn process_keyboard_event(&mut self, event: &KeyboardEvent, ctx: &mut KeyboardEventContext) {
+        self.insert_into_env(ctx.env);
 
-        self.child.process_keyboard_event(event, env);
+        self.child.process_keyboard_event(event, ctx);
 
-        self.remove_from_env(env);
+        self.remove_from_env(ctx.env);
+    }
+}
+
+impl<C: Widget> WindowEventHandler for EnvUpdating<C> {
+    fn process_window_event(&mut self, event: &WindowEvent, ctx: &mut WindowEventContext) {
+        self.insert_into_env(ctx.env);
+
+        self.child.process_window_event(event, ctx);
+
+        self.remove_from_env(ctx.env);
     }
 }
 
 impl<C: Widget> MouseEventHandler for EnvUpdating<C> {
-    fn process_mouse_event(&mut self, event: &MouseEvent, consumed: &bool, ctx: &mut MouseEventContext) {
+    fn process_mouse_event(&mut self, event: &MouseEvent, ctx: &mut MouseEventContext) {
         self.insert_into_env(ctx.env);
 
-        self.child.process_mouse_event(event, &consumed, ctx);
+        self.child.process_mouse_event(event, ctx);
 
         self.remove_from_env(ctx.env);
     }
@@ -151,13 +163,12 @@ impl<C: Widget> MouseEventHandler for EnvUpdating<C> {
 impl<C: Widget> Focusable for EnvUpdating<C> {
     fn process_focus_request(
         &mut self,
-        event: &WidgetEvent,
         focus_request: &Refocus,
         env: &mut Environment,
     ) -> bool {
         self.insert_into_env(env);
 
-        let any_focus = self.child.process_focus_request(event, focus_request, env);
+        let any_focus = self.child.process_focus_request(focus_request, env);
 
         self.remove_from_env(env);
 
@@ -166,14 +177,13 @@ impl<C: Widget> Focusable for EnvUpdating<C> {
 
     fn process_focus_next(
         &mut self,
-        event: &WidgetEvent,
         focus_request: &Refocus,
         focus_up_for_grab: bool,
         env: &mut Environment,
     ) -> bool {
         self.insert_into_env(env);
 
-        let focus_child = self.child.process_focus_next(event, focus_request, focus_up_for_grab, env);
+        let focus_child = self.child.process_focus_next(focus_request, focus_up_for_grab, env);
 
         self.remove_from_env(env);
 
@@ -182,14 +192,13 @@ impl<C: Widget> Focusable for EnvUpdating<C> {
 
     fn process_focus_previous(
         &mut self,
-        event: &WidgetEvent,
         focus_request: &Refocus,
         focus_up_for_grab: bool,
         env: &mut Environment,
     ) -> bool {
         self.insert_into_env(env);
 
-        let focus_child = self.child.process_focus_previous(event, focus_request, focus_up_for_grab, env);
+        let focus_child = self.child.process_focus_previous(focus_request, focus_up_for_grab, env);
 
         self.remove_from_env(env);
 

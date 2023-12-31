@@ -1,9 +1,11 @@
 use bitflags::Flags;
+use crate::draw::InnerImageContext;
 use crate::environment::Environment;
-use crate::event::{Key, KeyboardEvent, ModifierKey};
+use crate::event::{Key, ModifierKey};
 use crate::flags::WidgetFlag as CarbideFlags;
 use crate::focus::{Focus, Focusable, Refocus};
 use crate::state::StateSync;
+use crate::text::InnerTextContext;
 use crate::widget::CommonWidget;
 
 pub trait KeyboardEventHandler: CommonWidget + StateSync + Focusable {
@@ -11,7 +13,7 @@ pub trait KeyboardEventHandler: CommonWidget + StateSync + Focusable {
     /// This event will be given to all widgets, no matter if they are in focus or not.
     /// This is because the focus will be decided by the widgets themselves.
     #[allow(unused_variables)]
-    fn handle_keyboard_event(&mut self, event: &KeyboardEvent, env: &mut Environment) {}
+    fn handle_keyboard_event(&mut self, event: &KeyboardEvent, ctx: &mut KeyboardEventContext) {}
 
     /// This function is used to delegate the keyboard events, first to its own handle event
     /// [KeyboardEventHandler::handle_keyboard_event()] and then to the direct children.
@@ -20,17 +22,17 @@ pub trait KeyboardEventHandler: CommonWidget + StateSync + Focusable {
     /// proxy widgets will be skipped in the tree. If you override this, you will need to
     /// manage the events yourself. Overriding this you are thereby able to restrict events to
     /// a widgets children.
-    fn process_keyboard_event(&mut self, event: &KeyboardEvent, env: &mut Environment) {
-        if self.flag().contains(CarbideFlags::FOCUSABLE) && self.get_focus() == Focus::Focused && env.is_event_current() {
+    fn process_keyboard_event(&mut self, event: &KeyboardEvent, ctx: &mut KeyboardEventContext) {
+        if self.flag().contains(CarbideFlags::FOCUSABLE) && self.get_focus() == Focus::Focused && *ctx.is_current {
             match event {
                 KeyboardEvent::Press(key, modifier) => {
                     if key == &Key::Tab {
                         if modifier.shift_key() {
                             self.set_focus(Focus::FocusReleased);
-                            env.request_focus(Refocus::FocusPrevious);
+                            ctx.env.request_focus(Refocus::FocusPrevious);
                         } else if modifier.is_empty() {
                             self.set_focus(Focus::FocusReleased);
-                            env.request_focus(Refocus::FocusNext);
+                            ctx.env.request_focus(Refocus::FocusNext);
                         }
                     }
                 }
@@ -38,14 +40,37 @@ pub trait KeyboardEventHandler: CommonWidget + StateSync + Focusable {
             }
         }
 
-        if env.is_event_current() {
-            self.capture_state(env);
-            self.handle_keyboard_event(event, env);
-            self.release_state(env);
+        if *ctx.is_current {
+            self.capture_state(ctx.env);
+            self.handle_keyboard_event(event, ctx);
+            self.release_state(ctx.env);
         }
 
         self.foreach_child_direct(&mut |child| {
-            child.process_keyboard_event(event, env);
+            child.process_keyboard_event(event, ctx);
         });
     }
+}
+
+
+pub struct KeyboardEventContext<'a> {
+    pub text: &'a mut dyn InnerTextContext,
+    pub image: &'a mut dyn InnerImageContext,
+    pub env: &'a mut Environment,
+    pub is_current: &'a bool,
+    pub window_id: &'a u64,
+}
+
+
+#[derive(Clone, Debug)]
+pub enum KeyboardEvent {
+    Press(Key, ModifierKey),
+    Release(Key, ModifierKey),
+    Ime(Ime),
+}
+
+#[derive(Clone, PartialEq, PartialOrd, Ord, Eq, Hash, Debug)]
+pub enum Ime {
+    PreEdit(String, Option<(usize, usize)>),
+    Commit(String),
 }

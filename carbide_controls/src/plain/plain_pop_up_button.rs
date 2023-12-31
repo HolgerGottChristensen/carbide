@@ -1,5 +1,5 @@
 use std::fmt::{Debug, Formatter};
-use carbide::event::MouseEventContext;
+use carbide::event::{KeyboardEventContext, MouseEventContext};
 use carbide::layout::LayoutContext;
 
 use carbide_core::CommonWidgetImpl;
@@ -229,12 +229,12 @@ impl<
     M: ReadState<T=Vec<T>>,
     E: ReadState<T=bool>,
 > KeyboardEventHandler for PlainPopUpButton<T, F, S, M, E> {
-    fn handle_keyboard_event(&mut self, event: &KeyboardEvent, env: &mut Environment) {
+    fn handle_keyboard_event(&mut self, event: &KeyboardEvent, ctx: &mut KeyboardEventContext) {
         if self.get_focus() != Focus::Focused || !*self.enabled.value() { return; }
 
         if event == PopupButtonKeyCommand::Open {
             self.popup_open.set_value(true);
-            env.request_animation_frame();
+            ctx.env.request_animation_frame();
         }
     }
 }
@@ -247,8 +247,8 @@ impl<
     E: ReadState<T=bool>,
 > MouseEventHandler for PlainPopUpButton<T, F, S, M, E> {
     // Implementing this instead of handle_mouse_event makes all the children not receive events.
-    fn process_mouse_event(&mut self, event: &MouseEvent, consumed: &bool, ctx: &mut MouseEventContext) {
-        if !ctx.env.is_event_current() { return }
+    fn process_mouse_event(&mut self, event: &MouseEvent, ctx: &mut MouseEventContext) {
+        if !*ctx.is_current { return }
         match event {
             MouseEvent::Click(_, position, _) => {
                 if self.is_inside(*position) {

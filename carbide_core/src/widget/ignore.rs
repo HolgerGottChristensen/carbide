@@ -1,8 +1,10 @@
 use std::fmt::Debug;
+use carbide::event::{WindowEvent, WindowEventContext};
 
 use crate::draw::{Dimension, Position};
 use crate::environment::Environment;
-use crate::event::{KeyboardEvent, KeyboardEventHandler, MouseEvent, MouseEventContext, MouseEventHandler, OtherEventContext, OtherEventHandler, WidgetEvent};
+use crate::event::{KeyboardEvent, KeyboardEventContext, KeyboardEventHandler, MouseEvent, MouseEventContext, MouseEventHandler, OtherEventContext, OtherEventHandler, WindowEventHandler};
+use crate::event::Event;
 use crate::flags::WidgetFlag;
 use crate::focus::{Focus, Focusable, Refocus};
 use crate::layout::{Layout, LayoutContext, Layouter};
@@ -249,17 +251,17 @@ impl<T: Widget,
     B6: ReadState<T=bool>,
     B7: ReadState<T=bool>,
 > MouseEventHandler for Ignore<T, B1, B2, B3, B4, B5, B6, B7> {
-    fn handle_mouse_event(&mut self, event: &MouseEvent, consumed: &bool, ctx: &mut MouseEventContext) {
+    fn handle_mouse_event(&mut self, event: &MouseEvent, ctx: &mut MouseEventContext) {
         self.update_states(ctx.env);
         if *self.mouse_event.value() {
-            self.inner.handle_mouse_event(event, consumed, ctx)
+            self.inner.handle_mouse_event(event, ctx)
         }
     }
 
-    fn process_mouse_event(&mut self, event: &MouseEvent, consumed: &bool, ctx: &mut MouseEventContext) {
+    fn process_mouse_event(&mut self, event: &MouseEvent, ctx: &mut MouseEventContext) {
         self.update_states(ctx.env);
         if *self.mouse_event.value() {
-            self.inner.process_mouse_event(event, consumed, ctx)
+            self.inner.process_mouse_event(event, ctx)
         }
     }
 }
@@ -273,17 +275,17 @@ impl<T: Widget,
     B6: ReadState<T=bool>,
     B7: ReadState<T=bool>,
 > KeyboardEventHandler for Ignore<T, B1, B2, B3, B4, B5, B6, B7> {
-    fn handle_keyboard_event(&mut self, event: &KeyboardEvent, env: &mut Environment) {
-        self.update_states(env);
+    fn handle_keyboard_event(&mut self, event: &KeyboardEvent, ctx: &mut KeyboardEventContext) {
+        self.update_states(ctx.env);
         if *self.keyboard_event.value() {
-            self.inner.handle_keyboard_event(event, env)
+            self.inner.handle_keyboard_event(event, ctx)
         }
     }
 
-    fn process_keyboard_event(&mut self, event: &KeyboardEvent, env: &mut Environment) {
-        self.update_states(env);
+    fn process_keyboard_event(&mut self, event: &KeyboardEvent, ctx: &mut KeyboardEventContext) {
+        self.update_states(ctx.env);
         if *self.keyboard_event.value() {
-            self.inner.process_keyboard_event(event, env)
+            self.inner.process_keyboard_event(event, ctx)
         }
     }
 }
@@ -296,15 +298,35 @@ impl<T: Widget,
     B5: ReadState<T=bool>,
     B6: ReadState<T=bool>,
     B7: ReadState<T=bool>,
+> WindowEventHandler for Ignore<T, B1, B2, B3, B4, B5, B6, B7> {
+    fn handle_window_event(&mut self, event: &WindowEvent, ctx: &mut WindowEventContext) {
+        self.update_states(ctx.env);
+        self.inner.handle_window_event(event, ctx)
+    }
+
+    fn process_window_event(&mut self, event: &WindowEvent, ctx: &mut WindowEventContext) {
+        self.update_states(ctx.env);
+        self.inner.process_window_event(event, ctx)
+    }
+}
+
+impl<T: Widget,
+    B1: ReadState<T=bool>,
+    B2: ReadState<T=bool>,
+    B3: ReadState<T=bool>,
+    B4: ReadState<T=bool>,
+    B5: ReadState<T=bool>,
+    B6: ReadState<T=bool>,
+    B7: ReadState<T=bool>,
 > OtherEventHandler for Ignore<T, B1, B2, B3, B4, B5, B6, B7> {
-    fn handle_other_event(&mut self, _event: &WidgetEvent, ctx: &mut OtherEventContext) {
+    fn handle_other_event(&mut self, _event: &Event, ctx: &mut OtherEventContext) {
         self.update_states(ctx.env);
         if *self.other_event.value() {
             self.inner.handle_other_event(_event, ctx)
         }
     }
 
-    fn process_other_event(&mut self, event: &WidgetEvent, ctx: &mut OtherEventContext) {
+    fn process_other_event(&mut self, event: &Event, ctx: &mut OtherEventContext) {
         self.update_states(ctx.env);
         if *self.other_event.value() {
             self.inner.process_other_event(event, ctx)
@@ -366,25 +388,23 @@ impl<T: Widget,
 > Focusable for Ignore<T, B1, B2, B3, B4, B5, B6, B7> {
     fn focus_retrieved(
         &mut self,
-        event: &WidgetEvent,
         focus_request: &Refocus,
         env: &mut Environment,
     ) {
         self.update_states(env);
         if *self.focus_event.value() {
-            self.inner.focus_retrieved(event, focus_request, env)
+            self.inner.focus_retrieved(focus_request, env)
         }
     }
 
     fn focus_dismissed(
         &mut self,
-        event: &WidgetEvent,
         focus_request: &Refocus,
         env: &mut Environment,
     ) {
         self.update_states(env);
         if *self.focus_event.value() {
-            self.inner.focus_dismissed(event, focus_request, env)
+            self.inner.focus_dismissed(focus_request, env)
         }
     }
 
@@ -397,14 +417,13 @@ impl<T: Widget,
 
     fn process_focus_request(
         &mut self,
-        event: &WidgetEvent,
         focus_request: &Refocus,
         env: &mut Environment,
     ) -> bool {
         self.update_states(env);
         if *self.focus_event.value() {
             self.inner
-                .process_focus_request(event, focus_request, env)
+                .process_focus_request(focus_request, env)
         } else {
             false
         }
@@ -412,7 +431,6 @@ impl<T: Widget,
 
     fn process_focus_next(
         &mut self,
-        event: &WidgetEvent,
         focus_request: &Refocus,
         focus_up_for_grab: bool,
         env: &mut Environment,
@@ -420,7 +438,7 @@ impl<T: Widget,
         self.update_states(env);
         if *self.focus_event.value() {
             self.inner
-                .process_focus_next(event, focus_request, focus_up_for_grab, env)
+                .process_focus_next(focus_request, focus_up_for_grab, env)
         } else {
             focus_up_for_grab
         }
@@ -428,7 +446,6 @@ impl<T: Widget,
 
     fn process_focus_previous(
         &mut self,
-        event: &WidgetEvent,
         focus_request: &Refocus,
         focus_up_for_grab: bool,
         env: &mut Environment,
@@ -436,7 +453,7 @@ impl<T: Widget,
         self.update_states(env);
         if *self.focus_event.value() {
             self.inner
-                .process_focus_previous(event, focus_request, focus_up_for_grab, env)
+                .process_focus_previous(focus_request, focus_up_for_grab, env)
         } else {
             focus_up_for_grab
         }

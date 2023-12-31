@@ -16,7 +16,8 @@ use carbide_core::{draw, Scene};
 use carbide_core::draw::{Dimension, Position, Rect, Scalar};
 use carbide_core::draw::image::ImageId;
 use carbide_core::environment::{Environment, EnvironmentColor};
-use carbide_core::event::{KeyboardEvent, KeyboardEventHandler, MouseEvent, MouseEventContext, MouseEventHandler, OtherEventContext, OtherEventHandler, WidgetEvent, WindowEvent};
+use carbide_core::event::{KeyboardEvent, KeyboardEventContext, KeyboardEventHandler, MouseEvent, MouseEventContext, MouseEventHandler, OtherEventContext, OtherEventHandler, WindowEvent, WindowEventContext, WindowEventHandler};
+use carbide_core::event::Event;
 use carbide_core::focus::Focusable;
 use carbide_core::image::GenericImageView;
 use carbide_core::layout::{Layout, LayoutContext, Layouter};
@@ -516,39 +517,35 @@ impl WGPUWindow {
 }
 
 impl MouseEventHandler for WGPUWindow {
-    fn process_mouse_event(&mut self, event: &MouseEvent, consumed: &bool, ctx: &mut MouseEventContext) {
-        let old_is_current = ctx.env.is_event_current();
+    fn process_mouse_event(&mut self, event: &MouseEvent, ctx: &mut MouseEventContext) {
         let old_dimension = ctx.env.pixel_dimensions();
         let old_scale_factor = ctx.env.scale_factor();
         let old_window_handle = ctx.env.window_handle();
         let scale_factor = self.inner.scale_factor();
         let physical_dimensions = self.inner.inner_size();
 
-        ctx.env.set_event_is_current_by_id(self.window_id);
         ctx.env.set_pixel_dimensions(Dimension::new(physical_dimensions.width as f64, physical_dimensions.height as f64));
         ctx.env.set_scale_factor(scale_factor);
         ctx.env.set_window_handle(Some(self.inner.raw_window_handle()));
 
-        if !*consumed {
-            if ctx.env.is_event_current() {
-                self.capture_state(ctx.env);
-                self.handle_mouse_event(event, consumed, ctx);
-                self.release_state(ctx.env);
-            }
-        }
+        let id: u64 = self.inner.id().into();
+
+        let new_ctx = &mut MouseEventContext {
+            text: ctx.text,
+            image: ctx.image,
+            env: ctx.env,
+            is_current: &(*ctx.window_id == id),
+            window_id: ctx.window_id,
+            consumed: ctx.consumed,
+        };
 
         self.foreach_child_direct(&mut |child| {
-            child.process_mouse_event(event, &consumed, ctx);
-            if *consumed {
+            child.process_mouse_event(event, new_ctx);
+            if *new_ctx.consumed {
                 return;
             }
         });
 
-        if *consumed {
-            return;
-        }
-
-        ctx.env.set_event_is_current(old_is_current);
         ctx.env.set_pixel_dimensions(old_dimension);
         ctx.env.set_scale_factor(old_scale_factor);
         ctx.env.set_window_handle(old_window_handle);
@@ -637,116 +634,48 @@ impl StateSync for WGPUWindow {
 impl Focusable for WGPUWindow {}
 
 impl KeyboardEventHandler for WGPUWindow {
-    fn process_keyboard_event(&mut self, event: &KeyboardEvent, env: &mut Environment) {
-        let old_is_current = env.is_event_current();
-        let old_dimension = env.pixel_dimensions();
-        let old_scale_factor = env.scale_factor();
-        let old_window_handle = env.window_handle();
-        let scale_factor = self.inner.scale_factor();
-        let physical_dimensions = self.inner.inner_size();
-
-        env.set_event_is_current_by_id(self.window_id);
-        env.set_pixel_dimensions(Dimension::new(physical_dimensions.width as f64, physical_dimensions.height as f64));
-        env.set_scale_factor(scale_factor);
-        env.set_window_handle(Some(self.inner.raw_window_handle()));
-
-        if env.is_event_current() {
-            self.capture_state(env);
-            self.handle_keyboard_event(event, env);
-            self.release_state(env);
-        }
-
-        self.foreach_child_direct(&mut |child| {
-            child.process_keyboard_event(event, env);
-        });
-
-        env.set_event_is_current(old_is_current);
-        env.set_pixel_dimensions(old_dimension);
-        env.set_scale_factor(old_scale_factor);
-        env.set_window_handle(old_window_handle);
-    }
-}
-
-impl OtherEventHandler for WGPUWindow {
-    fn handle_other_event(&mut self, _event: &WidgetEvent, ctx: &mut OtherEventContext) {
-        match _event {
-            /*WindowEvent::Resized(physical_size) => {
-                self.resize(*physical_size);
-                self.inner_window.request_redraw();
-            }
-            WindowEvent::ScaleFactorChanged {
-                new_inner_size,
-                scale_factor,
-            } => {
-                self.ui.set_scale_factor(*scale_factor);
-                self.resize(**new_inner_size);
-                self.inner_window.request_redraw();
-            }*/
-            WidgetEvent::Window(e) => {
-                match e {
-                    WindowEvent::Resize(size) => {
-                        self.resize(LogicalSize::new(size.width, size.height).to_physical(2.0), ctx.env);
-                        self.request_redraw();
-                    }
-                    WindowEvent::Focus => {
-                        #[cfg(target_os = "macos")]
-                        {
-                            use carbide_macos::NSMenu;
-                            use carbide_macos::NSMenuItem;
-
-                            // The outer menu is not visible, but only a container for
-                            // other menus.
-
-                            if let Some(menu) = &self.window_menu {
-                                let mut outer_menu = NSMenu::new("");
-
-                                for m in menu {
-                                    let item = NSMenuItem::new(m.name(), None)
-                                        .set_submenu(NSMenu::from(m, ctx.env));
-
-                                    outer_menu = outer_menu.add_item(item);
-                                }
-
-                                outer_menu.set_as_main_menu();
-                            } else {
-                                // Todo: Set default application menu
-                            }
-                        }
-                    }
-                    WindowEvent::UnFocus => {}
-                    WindowEvent::Redraw => {}
-                    WindowEvent::CloseRequested => {
-                        self.visible = false;
-                        if self.close_application_on_window_close {
-                            ctx.env.close_application();
-                        } else {
-                            self.inner.set_visible(false);
-                        }
-                    }
-                }
-            }
-            _ => ()
-        }
-    }
-
-    fn process_other_event(&mut self, event: &WidgetEvent, ctx: &mut OtherEventContext) {
-        let old_is_current = ctx.env.is_event_current();
+    fn process_keyboard_event(&mut self, event: &KeyboardEvent, ctx: &mut KeyboardEventContext) {
         let old_dimension = ctx.env.pixel_dimensions();
         let old_scale_factor = ctx.env.scale_factor();
         let old_window_handle = ctx.env.window_handle();
         let scale_factor = self.inner.scale_factor();
         let physical_dimensions = self.inner.inner_size();
 
-        ctx.env.set_event_is_current_by_id(self.window_id);
         ctx.env.set_pixel_dimensions(Dimension::new(physical_dimensions.width as f64, physical_dimensions.height as f64));
         ctx.env.set_scale_factor(scale_factor);
         ctx.env.set_window_handle(Some(self.inner.raw_window_handle()));
 
-        if ctx.env.is_event_current() {
-            self.capture_state(ctx.env);
-            self.handle_other_event(event, ctx);
-            self.release_state(ctx.env);
-        }
+        let id: u64 = self.inner.id().into();
+
+        let new_ctx = &mut KeyboardEventContext {
+            text: ctx.text,
+            image: ctx.image,
+            env: ctx.env,
+            is_current: &(*ctx.window_id == id),
+            window_id: ctx.window_id,
+        };
+
+        self.foreach_child_direct(&mut |child| {
+            child.process_keyboard_event(event, new_ctx);
+        });
+
+        ctx.env.set_pixel_dimensions(old_dimension);
+        ctx.env.set_scale_factor(old_scale_factor);
+        ctx.env.set_window_handle(old_window_handle);
+    }
+}
+
+impl OtherEventHandler for WGPUWindow {
+    fn process_other_event(&mut self, event: &Event, ctx: &mut OtherEventContext) {
+        let old_dimension = ctx.env.pixel_dimensions();
+        let old_scale_factor = ctx.env.scale_factor();
+        let old_window_handle = ctx.env.window_handle();
+        let scale_factor = self.inner.scale_factor();
+        let physical_dimensions = self.inner.inner_size();
+
+        ctx.env.set_pixel_dimensions(Dimension::new(physical_dimensions.width as f64, physical_dimensions.height as f64));
+        ctx.env.set_scale_factor(scale_factor);
+        ctx.env.set_window_handle(Some(self.inner.raw_window_handle()));
 
         self.foreach_child_direct(&mut |child| {
             child.process_other_event(event, ctx);
@@ -755,7 +684,91 @@ impl OtherEventHandler for WGPUWindow {
         // Set the cursor of the window.
         self.inner.set_cursor_icon(convert_mouse_cursor(ctx.env.cursor()));
 
-        ctx.env.set_event_is_current(old_is_current);
+        ctx.env.set_pixel_dimensions(old_dimension);
+        ctx.env.set_scale_factor(old_scale_factor);
+        ctx.env.set_window_handle(old_window_handle);
+    }
+}
+
+impl WindowEventHandler for WGPUWindow {
+    fn handle_window_event(&mut self, event: &WindowEvent, ctx: &mut WindowEventContext) {
+        match event {
+            WindowEvent::Resize(size) => {
+                self.resize(LogicalSize::new(size.width, size.height).to_physical(2.0), ctx.env);
+                self.request_redraw();
+            }
+            WindowEvent::Focus => {
+                #[cfg(target_os = "macos")]
+                {
+                    use carbide_macos::NSMenu;
+                    use carbide_macos::NSMenuItem;
+
+                    // The outer menu is not visible, but only a container for
+                    // other menus.
+
+                    if let Some(menu) = &self.window_menu {
+                        let mut outer_menu = NSMenu::new("");
+
+                        for m in menu {
+                            let item = NSMenuItem::new(m.name(), None)
+                                .set_submenu(NSMenu::from(m, ctx.env));
+
+                            outer_menu = outer_menu.add_item(item);
+                        }
+
+                        outer_menu.set_as_main_menu();
+                    } else {
+                        // Todo: Set default application menu
+                    }
+                }
+            }
+            WindowEvent::CloseRequested => {
+                self.visible = false;
+                if self.close_application_on_window_close {
+                    ctx.env.close_application();
+                } else {
+                    self.inner.set_visible(false);
+                }
+            }
+            _ => ()
+        }
+    }
+
+    fn process_window_event(&mut self, event: &WindowEvent, ctx: &mut WindowEventContext) {
+        let old_dimension = ctx.env.pixel_dimensions();
+        let old_scale_factor = ctx.env.scale_factor();
+        let old_window_handle = ctx.env.window_handle();
+        let scale_factor = self.inner.scale_factor();
+        let physical_dimensions = self.inner.inner_size();
+
+        ctx.env.set_pixel_dimensions(Dimension::new(physical_dimensions.width as f64, physical_dimensions.height as f64));
+        ctx.env.set_scale_factor(scale_factor);
+        ctx.env.set_window_handle(Some(self.inner.raw_window_handle()));
+
+        let id: u64 = self.inner.id().into();
+
+        let is_current = *ctx.window_id == id;
+
+        if is_current {
+            self.capture_state(ctx.env);
+            self.handle_window_event(event, ctx);
+            self.release_state(ctx.env);
+        }
+
+        let new_ctx = &mut WindowEventContext {
+            text: ctx.text,
+            image: ctx.image,
+            env: ctx.env,
+            is_current: &is_current,
+            window_id: ctx.window_id,
+        };
+
+        self.foreach_child_direct(&mut |child| {
+            child.process_window_event(event, new_ctx);
+        });
+
+        self.inner.set_cursor_icon(convert_mouse_cursor(ctx.env.cursor()));
+
         ctx.env.set_pixel_dimensions(old_dimension);
         ctx.env.set_scale_factor(old_scale_factor);
         ctx.env.set_window_handle(old_window_handle);

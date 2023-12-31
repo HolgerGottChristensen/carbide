@@ -1,6 +1,6 @@
-use crate::draw::InnerImageContext;
+use crate::draw::{InnerImageContext, Position, Scalar};
 use crate::environment::Environment;
-use crate::event::MouseEvent;
+use crate::event::{ModifierKey, TouchPhase};
 use crate::focus::Focusable;
 use crate::state::StateSync;
 use crate::text::InnerTextContext;
@@ -12,29 +12,140 @@ pub trait MouseEventHandler: CommonWidget + StateSync + Focusable {
     /// Return true if the event is consumed, and will thus not be delegated to other
     /// widgets.
     #[allow(unused_variables)]
-    fn handle_mouse_event(&mut self, event: &MouseEvent, consumed: &bool, ctx: &mut MouseEventContext) {}
+    fn handle_mouse_event(&mut self, event: &MouseEvent, ctx: &mut MouseEventContext) {}
 
-    fn process_mouse_event(&mut self, event: &MouseEvent, consumed: &bool, ctx: &mut MouseEventContext) {
-        if ctx.env.is_event_current() {
-            if !*consumed {
-                self.capture_state(ctx.env);
-                self.handle_mouse_event(event, consumed, ctx);
-                self.release_state(ctx.env);
-            }
+    fn process_mouse_event(&mut self, event: &MouseEvent, ctx: &mut MouseEventContext) {
+        if !*ctx.consumed && *ctx.is_current {
+            self.capture_state(ctx.env);
+            self.handle_mouse_event(event, ctx);
+            self.release_state(ctx.env);
         }
 
         self.foreach_child_direct(&mut |child| {
-            child.process_mouse_event(event, &consumed, ctx);
-            if *consumed {
+            child.process_mouse_event(event, ctx);
+            if *ctx.consumed {
                 return;
             }
         });
     }
 }
 
+
 // TODO: Consider changing to Event Context
 pub struct MouseEventContext<'a> {
     pub text: &'a mut dyn InnerTextContext,
     pub image: &'a mut dyn InnerImageContext,
     pub env: &'a mut Environment,
+    pub is_current: &'a bool,
+    pub window_id: &'a u64,
+    pub consumed: &'a mut bool,
+}
+
+#[derive(Copy, Clone, PartialEq, Eq, Ord, PartialOrd, Hash, Debug)]
+pub enum MouseButton {
+    /// Unknown mouse button.
+    Unknown,
+    /// Left mouse button.
+    Left,
+    /// Right mouse button.
+    Right,
+    /// Middle mouse button.
+    Middle,
+    /// Extra mouse button number 1.
+    Button4,
+    /// Extra mouse button number 2.
+    Button5,
+    /// Mouse button number 6.
+    Button6,
+    /// Mouse button number 7.
+    Button7,
+    /// Mouse button number 8.
+    Button8,
+}
+
+impl From<u32> for MouseButton {
+    fn from(n: u32) -> MouseButton {
+        match n {
+            0 => MouseButton::Unknown,
+            1 => MouseButton::Left,
+            2 => MouseButton::Right,
+            3 => MouseButton::Middle,
+            4 => MouseButton::Button4,
+            5 => MouseButton::Button5,
+            6 => MouseButton::Button6,
+            7 => MouseButton::Button7,
+            8 => MouseButton::Button8,
+            _ => MouseButton::Unknown,
+        }
+    }
+}
+
+impl From<MouseButton> for u32 {
+    fn from(button: MouseButton) -> u32 {
+        match button {
+            MouseButton::Unknown => 0,
+            MouseButton::Left => 1,
+            MouseButton::Right => 2,
+            MouseButton::Middle => 3,
+            MouseButton::Button4 => 4,
+            MouseButton::Button5 => 5,
+            MouseButton::Button6 => 6,
+            MouseButton::Button7 => 7,
+            MouseButton::Button8 => 8,
+        }
+    }
+}
+
+
+#[derive(Clone, Debug)]
+pub enum MouseEvent {
+    Press(MouseButton, Position, ModifierKey),
+    Release(MouseButton, Position, ModifierKey),
+    Click(MouseButton, Position, ModifierKey),
+    NClick(MouseButton, Position, ModifierKey, u32),
+    Move {
+        from: Position,
+        to: Position,
+        delta_xy: Position,
+        modifiers: ModifierKey,
+    },
+    Scroll {
+        x: Scalar,
+        y: Scalar,
+        mouse_position: Position,
+        modifiers: ModifierKey,
+    },
+    Rotation(Scalar, Position, TouchPhase),
+    Scale(Scalar, Position, TouchPhase),
+    SmartScale(Position),
+    Drag {
+        button: MouseButton,
+        origin: Position,
+        from: Position,
+        to: Position,
+        delta_xy: Position,
+        total_delta_xy: Position,
+        modifiers: ModifierKey,
+    },
+    Entered,
+    Left,
+}
+
+impl MouseEvent {
+    pub fn get_current_mouse_position(&self) -> Position {
+        match self {
+            MouseEvent::Press(_, n, _) => *n,
+            MouseEvent::Release(_, n, _) => *n,
+            MouseEvent::Click(_, n, _) => *n,
+            MouseEvent::Move { to, .. } => *to,
+            MouseEvent::NClick(_, n, _, _) => *n,
+            MouseEvent::Scroll { mouse_position, .. } => *mouse_position,
+            MouseEvent::Drag { to, .. } => *to,
+            MouseEvent::Rotation(_, position, _) |
+            MouseEvent::Scale(_, position, _) |
+            MouseEvent::SmartScale(position) => *position,
+            MouseEvent::Entered => todo!(),
+            MouseEvent::Left => todo!(),
+        }
+    }
 }

@@ -63,7 +63,7 @@ pub struct Environment {
     /// This field holds the requests for refocus. If Some we need to check the refocus
     /// reason and apply that focus change after the event is done. This also means that
     /// the focus change is not instant, but updates after each run event.
-    pub(crate) focus_request: Option<Refocus>,
+    pub focus_request: Option<Refocus>,
 
     /// The size of the drawing area in actual pixels.
     pixel_dimensions: Dimension,
@@ -103,9 +103,6 @@ pub struct Environment {
     animation_widget_in_frame: usize,
 
     request_application_close: bool,
-
-    current_event_window_id: Box<dyn Fn(WindowId) -> bool>,
-    current_event_active: bool,
 }
 
 impl std::fmt::Debug for Environment {
@@ -195,8 +192,6 @@ impl Environment {
             event_sink,
             animation_widget_in_frame: 0,
             request_application_close: false,
-            current_event_window_id: Box::new(|_| true),
-            current_event_active: false,
         };
 
 
@@ -209,22 +204,6 @@ impl Environment {
 
     pub fn set_mouse_position(&mut self, position: Position) {
         self.mouse_position = position;
-    }
-
-    pub fn is_event_current(&self) -> bool {
-        self.current_event_active
-    }
-
-    pub fn set_current_event_window_id(&mut self, e: Box<dyn Fn(WindowId) -> bool>) {
-        self.current_event_window_id = e;
-    }
-
-    pub fn set_event_is_current_by_id(&mut self, id: WindowId) {
-        self.current_event_active = (self.current_event_window_id)(id);
-    }
-
-    pub fn set_event_is_current(&mut self, is_current: bool) {
-        self.current_event_active = is_current;
     }
 
     pub fn close_application(&mut self) {

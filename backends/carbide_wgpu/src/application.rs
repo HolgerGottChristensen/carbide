@@ -15,14 +15,14 @@ use carbide_core::{locate_folder, Scene};
 use carbide_core::asynchronous::{AsyncContext, check_tasks, set_event_sink};
 use carbide_core::draw::Dimension;
 use carbide_core::environment::Environment;
-use carbide_core::event::{CustomEvent, EventHandler, Input};
+use carbide_core::event::{CustomEvent, EventComposer, Input};
 use carbide_core::render::{NoopRenderContext, Render, RenderContext};
 use carbide_core::text::InnerTextContext;
 use carbide_core::widget::Empty;
 use carbide_core::window::WindowId;
 //use carbide_text::font_family::FontFamily;
 use carbide_text::text_context::TextContext;
-use carbide_winit::convert_window_event;
+use carbide_winit::{convert_window_event, NewEventHandler};
 use carbide_winit::EventLoop;
 
 use crate::image_context::WGPUImageContext;
@@ -34,7 +34,7 @@ thread_local!(pub static WINDOW_IDS: RefCell<HashMap<WinitWindowId, WindowId>> =
 pub struct Application {
     // /// This contains the whole widget tree. This includes windows and other widgets.
     root: Box<dyn Scene>,
-    event_handler: EventHandler,
+    event_handler: NewEventHandler,
     environment: Environment,
     text_context: TextContext,
     //any_focus: bool,
@@ -69,7 +69,7 @@ impl Application {
 
         Application {
             root: Box::new(Empty::new()),
-            event_handler: EventHandler::new(),
+            event_handler: NewEventHandler::new(),
             environment,
             text_context: TextContext::new(),
         }
@@ -85,15 +85,15 @@ impl Application {
         self.root = scene;
     }
 
-    fn input(&mut self, event: &WinitWindowEvent, window_id: WinitWindowId) {
+    /*fn input(&mut self, event: &WinitWindowEvent, window_id: WinitWindowId) {
         let input = convert_window_event(event);
         if let Some(input) = input {
             let id = WINDOW_IDS.with(|a| *a.borrow().get(&window_id).unwrap());
             self.event_handler.compound_and_add_event(input, Some(id));
         }
-    }
+    }*/
 
-    fn update(&mut self) -> bool {
+    /*fn update(&mut self) -> bool {
         // Capture the current time and update the animations in the environment.
         self.environment.capture_time();
         self.environment.update_animation();
@@ -106,7 +106,7 @@ impl Application {
         });
 
         self.event_handler.delegate_events(&mut self.root, &mut self.environment, &mut self.text_context, &mut WGPUImageContext)
-    }
+    }*/
 
     /// Locates the default asset folder and tries to load fonts from a subfolder called /fonts.
     /// For each sub folder in the fonts folder will create a new family with the name of that folder
@@ -184,9 +184,6 @@ impl Application {
             }
         });
 
-        // Make the state sync on event loop run
-        //self.input(&WinitWindowEvent::Focused(true));
-
         event_loop.run(
             move |event, event_loop| {
                 EVENT_LOOP.with(|a| {
@@ -199,6 +196,11 @@ impl Application {
                     *a.borrow_mut() = EventLoop::StaticBorrow(event_loop)
                 });
 
+                if self.event_handler.event(event, &mut self.root, &mut self.text_context, &mut WGPUImageContext, &mut self.environment) {
+                    self.request_redraw()
+                }
+
+/*
                 match event {
                     Event::WindowEvent {
                         ref event,
@@ -209,6 +211,7 @@ impl Application {
                         match event {
                             // Gets called if redrawing is requested.
                             WindowEvent::RedrawRequested => {
+                                println!("Render");
                                 self.root.render(&mut RenderContext {
                                     render: &mut NoopRenderContext,
                                     text: &mut self.text_context,
@@ -230,11 +233,11 @@ impl Application {
                         self.event_handler.compound_and_add_event(Input::Custom(event), None);
                         self.request_redraw();
                     }
-
                     // Gets called when all window and user events are delivered
                     Event::AboutToWait => {
                         // If we have any events queued up and update the UI
                         if self.event_handler.has_queued_events() || self.environment.has_animations() {
+                            println!("AboutToWait");
                             // If the ui should redraw because of the update
                             if self.update() || self.environment.has_animations() {
                                 self.request_redraw();
@@ -246,7 +249,7 @@ impl Application {
                     }
                     _ => {}
                 }
-
+*/
                 if self.environment.should_close_application() {
                     event_loop.exit();
                 }

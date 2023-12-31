@@ -1,4 +1,4 @@
-use carbide::event::MouseEventContext;
+use carbide::event::{KeyboardEventContext, MouseEventContext};
 use carbide_core::CommonWidgetImpl;
 use carbide_core::draw::{Dimension, Position};
 use carbide_core::environment::Environment;
@@ -53,7 +53,7 @@ impl<
     H: State<T=Option<usize>>,
     E: ReadState<T=bool>,
 > KeyboardEventHandler for PlainPopUpButtonPopUp<T, S, M, H, E> {
-    fn handle_keyboard_event(&mut self, event: &KeyboardEvent, _env: &mut Environment) {
+    fn handle_keyboard_event(&mut self, event: &KeyboardEvent, ctx: &mut KeyboardEventContext) {
         if !*self.enabled.value() {
             self.popup_open.set_value(false);
             return;
@@ -95,7 +95,7 @@ impl<
     H: State<T=Option<usize>>,
     E: ReadState<T=bool>,
 > MouseEventHandler for PlainPopUpButtonPopUp<T, S, M, H, E> {
-    fn handle_mouse_event(&mut self, event: &MouseEvent, consumed: &bool, ctx: &mut MouseEventContext) {
+    fn handle_mouse_event(&mut self, event: &MouseEvent, ctx: &mut MouseEventContext) {
         if !*self.enabled.value() {
             self.popup_open.set_value(false);
             return;

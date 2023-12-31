@@ -1,5 +1,5 @@
+use bitflags::Flags;
 use crate::environment::Environment;
-use crate::event::WidgetEvent;
 use crate::flags::WidgetFlag;
 use crate::focus::focus::Focus;
 use crate::focus::Refocus;
@@ -15,7 +15,6 @@ pub trait Focusable: CommonWidget + StateSync {
     #[allow(unused_variables)]
     fn focus_retrieved(
         &mut self,
-        event: &WidgetEvent,
         focus_request: &Refocus,
         env: &mut Environment,
     ) {
@@ -24,7 +23,6 @@ pub trait Focusable: CommonWidget + StateSync {
     #[allow(unused_variables)]
     fn focus_dismissed(
         &mut self,
-        event: &WidgetEvent,
         focus_request: &Refocus,
         env: &mut Environment,
     ) {
@@ -53,7 +51,6 @@ pub trait Focusable: CommonWidget + StateSync {
 
     fn process_focus_request(
         &mut self,
-        event: &WidgetEvent,
         focus_request: &Refocus,
         env: &mut Environment,
     ) -> bool {
@@ -65,11 +62,11 @@ pub trait Focusable: CommonWidget + StateSync {
             let focus = self.get_focus();
             if focus == Focus::FocusRequested {
                 self.set_focus(Focus::Focused);
-                self.focus_retrieved(event, focus_request, env);
+                self.focus_retrieved(focus_request, env);
                 any_focus = true;
             } else if focus != Focus::Unfocused {
                 self.set_focus(Focus::Unfocused);
-                self.focus_dismissed(event, focus_request, env);
+                self.focus_dismissed(focus_request, env);
             }
         }
 
@@ -77,7 +74,7 @@ pub trait Focusable: CommonWidget + StateSync {
 
         if self.focus_children() {
             self.foreach_child_direct(&mut |child| {
-                if child.process_focus_request(event, focus_request, env) {
+                if child.process_focus_request(focus_request, env) {
                     any_focus = true;
                 }
             });
@@ -88,7 +85,6 @@ pub trait Focusable: CommonWidget + StateSync {
 
     fn process_focus_next(
         &mut self,
-        event: &WidgetEvent,
         focus_request: &Refocus,
         focus_up_for_grab: bool,
         env: &mut Environment,
@@ -99,12 +95,12 @@ pub trait Focusable: CommonWidget + StateSync {
             //println!("{}, {:?}", focus_up_for_grab, self.get_focus());
             if focus_up_for_grab {
                 self.set_focus(Focus::Focused);
-                self.focus_retrieved(event, focus_request, env);
+                self.focus_retrieved(focus_request, env);
                 //println!("{}, {:?}", focus_up_for_grab, self.get_focus());
                 false
             } else if self.get_focus() == Focus::FocusReleased {
                 self.set_focus(Focus::Unfocused);
-                self.focus_dismissed(event, focus_request, env);
+                self.focus_dismissed(focus_request, env);
                 //println!("{}, {:?}", focus_up_for_grab, self.get_focus());
                 true
             } else {
@@ -118,7 +114,7 @@ pub trait Focusable: CommonWidget + StateSync {
 
         if self.focus_children() {
             self.foreach_child_direct(&mut |child| {
-                focus_child = child.process_focus_next(event, focus_request, focus_child, env);
+                focus_child = child.process_focus_next(focus_request, focus_child, env);
             });
         }
 
@@ -127,7 +123,6 @@ pub trait Focusable: CommonWidget + StateSync {
 
     fn process_focus_previous(
         &mut self,
-        event: &WidgetEvent,
         focus_request: &Refocus,
         focus_up_for_grab: bool,
         env: &mut Environment,
@@ -137,11 +132,11 @@ pub trait Focusable: CommonWidget + StateSync {
         let mut focus_child = if self.flag().contains(WidgetFlag::FOCUSABLE) {
             if focus_up_for_grab {
                 self.set_focus(Focus::Focused);
-                self.focus_retrieved(event, focus_request, env);
+                self.focus_retrieved(focus_request, env);
                 false
             } else if self.get_focus() == Focus::FocusReleased {
                 self.set_focus(Focus::Unfocused);
-                self.focus_dismissed(event, focus_request, env);
+                self.focus_dismissed(focus_request, env);
                 true
             } else {
                 false
@@ -154,7 +149,7 @@ pub trait Focusable: CommonWidget + StateSync {
 
         if self.focus_children() {
             self.foreach_child_direct_rev(&mut |child| {
-                focus_child = child.process_focus_previous(event, focus_request, focus_child, env);
+                focus_child = child.process_focus_previous(focus_request, focus_child, env);
             });
         }
 

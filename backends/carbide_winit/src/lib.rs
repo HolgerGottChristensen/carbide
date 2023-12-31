@@ -10,8 +10,10 @@ use carbide_core::event::{Button, Gesture, Input, Key, ModifierKey, Motion, Mous
 pub use custom_event_loop::*;
 
 pub use winit::*;
+pub use event_handler::NewEventHandler;
 
 mod custom_event_loop;
+mod event_handler;
 
 const ARBITRARY_POINTS_PER_LINE_FACTOR: f64 = 10.0;
 
@@ -340,6 +342,15 @@ fn convert_named_key(named: &NamedKey) -> Key {
     }
 }
 
+pub fn convert_touch_phase(phase: WinitTouchPhase) -> TouchPhase {
+    match phase {
+        WinitTouchPhase::Started => TouchPhase::Start,
+        WinitTouchPhase::Moved => TouchPhase::Move,
+        WinitTouchPhase::Cancelled => TouchPhase::Cancel,
+        WinitTouchPhase::Ended => TouchPhase::End,
+    }
+}
+
 /// Maps winit key to carbide core key
 pub fn convert_key(key: &WinitKey) -> Key {
     match key {
@@ -423,6 +434,7 @@ pub fn convert_window_event(event: &WindowEvent) -> Option<Input> {
 
     match event {
         WindowEvent::Resized(physical_size) => {
+            println!("{:?}, {:?}", physical_size, physical_size.to_logical::<f64>(scale_factor));
             let LogicalSize { width, height } = physical_size.to_logical(scale_factor);
             Some(Input::Resize(width, height))
         }
@@ -451,12 +463,7 @@ pub fn convert_window_event(event: &WindowEvent) -> Option<Input> {
         WindowEvent::Touch(WinitTouch { phase, location, id, .. }) => {
             let LogicalPosition { x, y } = location.to_logical::<f64>(scale_factor);
 
-            let phase = match phase {
-                WinitTouchPhase::Started => TouchPhase::Start,
-                WinitTouchPhase::Moved => TouchPhase::Move,
-                WinitTouchPhase::Cancelled => TouchPhase::Cancel,
-                WinitTouchPhase::Ended => TouchPhase::End,
-            };
+            let phase = convert_touch_phase(*phase);
 
             let id = TouchId::new(id.clone());
 
@@ -495,12 +502,7 @@ pub fn convert_window_event(event: &WindowEvent) -> Option<Input> {
             Some(Input::Gesture(Gesture::SmartScale))
         }
         WindowEvent::TouchpadRotate { delta, phase, .. } => {
-            let phase = match phase {
-                WinitTouchPhase::Started => TouchPhase::Start,
-                WinitTouchPhase::Moved => TouchPhase::Move,
-                WinitTouchPhase::Cancelled => TouchPhase::Cancel,
-                WinitTouchPhase::Ended => TouchPhase::End,
-            };
+            let phase = convert_touch_phase(*phase);
 
             Some(Input::Gesture(Gesture::Rotate(
                 *delta as f64,
@@ -508,12 +510,7 @@ pub fn convert_window_event(event: &WindowEvent) -> Option<Input> {
             )))
         }
         WindowEvent::TouchpadMagnify {delta, phase, .. } => {
-            let phase = match phase {
-                WinitTouchPhase::Started => TouchPhase::Start,
-                WinitTouchPhase::Moved => TouchPhase::Move,
-                WinitTouchPhase::Cancelled => TouchPhase::Cancel,
-                WinitTouchPhase::Ended => TouchPhase::End,
-            };
+            let phase = convert_touch_phase(*phase);
 
             Some(Input::Gesture(Gesture::Scale(
                 *delta,

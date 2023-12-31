@@ -1,7 +1,8 @@
 use crate::draw::{Dimension, Position};
 use crate::environment::Environment;
-use crate::event::{KeyboardEvent, MouseEvent, MouseEventContext, OtherEventContext, WidgetEvent};
+use crate::event::{KeyboardEvent, KeyboardEventContext, MouseEvent, MouseEventContext, OtherEventContext, WindowEvent, WindowEventContext, WindowEventHandler};
 use crate::event::{KeyboardEventHandler, MouseEventHandler, OtherEventHandler};
+use crate::event::Event;
 use crate::flags::WidgetFlag;
 use crate::focus::{Focus, Focusable};
 use crate::focus::Refocus;
@@ -118,36 +119,48 @@ impl<W: AnyWidget + Clone, B: ReadState<T=bool>> CommonWidget for Overlay<W, B> 
 }
 
 impl<W: AnyWidget + Clone, B: ReadState<T=bool>> MouseEventHandler for Overlay<W, B> {
-    fn handle_mouse_event(&mut self, event: &MouseEvent, consumed: &bool, ctx: &mut MouseEventContext) {
+    fn handle_mouse_event(&mut self, event: &MouseEvent, ctx: &mut MouseEventContext) {
         self.ensure_overlay_correct(ctx.env);
-        self.hierarchy.handle_mouse_event(event, consumed, ctx)
+        self.hierarchy.handle_mouse_event(event, ctx)
     }
 
-    fn process_mouse_event(&mut self, event: &MouseEvent, consumed: &bool, ctx: &mut MouseEventContext) {
+    fn process_mouse_event(&mut self, event: &MouseEvent, ctx: &mut MouseEventContext) {
         self.ensure_overlay_correct(ctx.env);
-        self.hierarchy.process_mouse_event(event, consumed, ctx)
+        self.hierarchy.process_mouse_event(event, ctx)
     }
 }
 
 impl<W: AnyWidget + Clone, B: ReadState<T=bool>> KeyboardEventHandler for Overlay<W, B> {
-    fn handle_keyboard_event(&mut self, event: &KeyboardEvent, env: &mut Environment) {
-        self.ensure_overlay_correct(env);
-        self.hierarchy.handle_keyboard_event(event, env)
+    fn handle_keyboard_event(&mut self, event: &KeyboardEvent, ctx: &mut KeyboardEventContext) {
+        self.ensure_overlay_correct(ctx.env);
+        self.hierarchy.handle_keyboard_event(event, ctx)
     }
 
-    fn process_keyboard_event(&mut self, event: &KeyboardEvent, env: &mut Environment) {
-        self.ensure_overlay_correct(env);
-        self.hierarchy.process_keyboard_event(event, env)
+    fn process_keyboard_event(&mut self, event: &KeyboardEvent, ctx: &mut KeyboardEventContext) {
+        self.ensure_overlay_correct(ctx.env);
+        self.hierarchy.process_keyboard_event(event, ctx)
+    }
+}
+
+impl<W: AnyWidget + Clone, B: ReadState<T=bool>> WindowEventHandler for Overlay<W, B> {
+    fn handle_window_event(&mut self, event: &WindowEvent, ctx: &mut WindowEventContext) {
+        self.ensure_overlay_correct(ctx.env);
+        self.hierarchy.handle_window_event(event, ctx)
+    }
+
+    fn process_window_event(&mut self, event: &WindowEvent, ctx: &mut WindowEventContext) {
+        self.ensure_overlay_correct(ctx.env);
+        self.hierarchy.process_window_event(event, ctx)
     }
 }
 
 impl<W: AnyWidget + Clone, B: ReadState<T=bool>> OtherEventHandler for Overlay<W, B> {
-    fn handle_other_event(&mut self, _event: &WidgetEvent, ctx: &mut OtherEventContext) {
+    fn handle_other_event(&mut self, _event: &Event, ctx: &mut OtherEventContext) {
         self.ensure_overlay_correct(ctx.env);
         self.hierarchy.handle_other_event(_event, ctx)
     }
 
-    fn process_other_event(&mut self, event: &WidgetEvent, ctx: &mut OtherEventContext) {
+    fn process_other_event(&mut self, event: &Event, ctx: &mut OtherEventContext) {
         self.ensure_overlay_correct(ctx.env);
         self.hierarchy.process_other_event(event, ctx)
     }
@@ -185,20 +198,18 @@ impl<W: AnyWidget + Clone, B: ReadState<T=bool>> Render for Overlay<W, B> {
 impl<W: AnyWidget + Clone, B: ReadState<T=bool>> Focusable for Overlay<W, B> {
     fn focus_retrieved(
         &mut self,
-        event: &WidgetEvent,
         focus_request: &Refocus,
         env: &mut Environment,
     ) {
-        self.hierarchy.focus_retrieved(event, focus_request, env)
+        self.hierarchy.focus_retrieved(focus_request, env)
     }
 
     fn focus_dismissed(
         &mut self,
-        event: &WidgetEvent,
         focus_request: &Refocus,
         env: &mut Environment,
     ) {
-        self.hierarchy.focus_dismissed(event, focus_request, env)
+        self.hierarchy.focus_dismissed(focus_request, env)
     }
 
     fn set_focus_and_request(&mut self, focus: Focus, env: &mut Environment) {
@@ -207,37 +218,34 @@ impl<W: AnyWidget + Clone, B: ReadState<T=bool>> Focusable for Overlay<W, B> {
 
     fn process_focus_request(
         &mut self,
-        event: &WidgetEvent,
         focus_request: &Refocus,
         env: &mut Environment,
     ) -> bool {
         self.ensure_overlay_correct(env);
         self.hierarchy
-            .process_focus_request(event, focus_request, env)
+            .process_focus_request(focus_request, env)
     }
 
     fn process_focus_next(
         &mut self,
-        event: &WidgetEvent,
         focus_request: &Refocus,
         focus_up_for_grab: bool,
         env: &mut Environment,
     ) -> bool {
         self.ensure_overlay_correct(env);
         self.hierarchy
-            .process_focus_next(event, focus_request, focus_up_for_grab, env)
+            .process_focus_next(focus_request, focus_up_for_grab, env)
     }
 
     fn process_focus_previous(
         &mut self,
-        event: &WidgetEvent,
         focus_request: &Refocus,
         focus_up_for_grab: bool,
         env: &mut Environment,
     ) -> bool {
         self.ensure_overlay_correct(env);
         self.hierarchy
-            .process_focus_previous(event, focus_request, focus_up_for_grab, env)
+            .process_focus_previous(focus_request, focus_up_for_grab, env)
     }
 }
 

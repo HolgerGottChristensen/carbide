@@ -8,7 +8,7 @@ use carbide_core::draw::{Dimension, Position};
 use carbide_core::environment::Environment;
 use carbide_core::event::{
     Key, KeyboardEvent, KeyboardEventHandler, ModifierKey, MouseButton, MouseEvent,
-    MouseEventHandler, OtherEventHandler, WidgetEvent,
+    MouseEventHandler, OtherEventHandler,
 };
 use carbide_core::flags::WidgetFlag;
 use carbide_core::focus::Focus;
@@ -16,7 +16,8 @@ use carbide_core::state::State;
 use carbide_core::widget::{AnyWidget, CommonWidget, Widget, WidgetExt, WidgetId};
 use carbide_macro::carbide_default_builder2;
 
-use crate::event::{MouseEventContext, OtherEventContext};
+use crate::event::{KeyboardEventContext, MouseEventContext, OtherEventContext};
+use crate::event::Event;
 use crate::state::IntoState;
 use crate::widget::Empty;
 
@@ -177,7 +178,7 @@ impl<
     H: State<T=bool>,
     P: State<T=bool>,
 > OtherEventHandler for MouseArea<I, O, F, C, H, P> {
-    fn handle_other_event(&mut self, _event: &WidgetEvent, ctx: &mut OtherEventContext) {
+    fn handle_other_event(&mut self, _event: &Event, ctx: &mut OtherEventContext) {
         if *self.is_hovered.value() {
             ctx.env.set_cursor(self.hover_cursor);
         }
@@ -197,7 +198,7 @@ impl<
     H: State<T=bool>,
     P: State<T=bool>,
 > KeyboardEventHandler for MouseArea<I, O, F, C, H, P> {
-    fn handle_keyboard_event(&mut self, event: &KeyboardEvent, env: &mut Environment) {
+    fn handle_keyboard_event(&mut self, event: &KeyboardEvent, ctx: &mut KeyboardEventContext) {
         if self.get_focus() != Focus::Focused {
             return;
         }
@@ -209,7 +210,7 @@ impl<
             KeyboardEvent::Release(Key::Enter, _) => {
                 if *self.is_pressed.value() {
                     self.is_pressed.set_value(false);
-                    (self.click)(env, ModifierKey::empty());
+                    (self.click)(ctx.env, ModifierKey::empty());
                 } else {
                     self.is_pressed.set_value(false);
                 }
@@ -227,7 +228,7 @@ impl<
     H: State<T=bool>,
     P: State<T=bool>,
 > MouseEventHandler for MouseArea<I, O, F, C, H, P> {
-    fn handle_mouse_event(&mut self, event: &MouseEvent, consumed: &bool, ctx: &mut MouseEventContext) {
+    fn handle_mouse_event(&mut self, event: &MouseEvent, ctx: &mut MouseEventContext) {
         match event {
             MouseEvent::Press(MouseButton::Left, mouse_position, _) => {
                 if self.is_inside(*mouse_position) {
