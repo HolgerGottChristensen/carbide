@@ -8,7 +8,7 @@ use carbide_core::asynchronous::{AsyncContext, check_tasks};
 use carbide_core::cursor::MouseCursor;
 use carbide_core::draw::{Dimension, InnerImageContext, Position};
 use carbide_core::environment::Environment;
-use carbide_core::event::{CustomEvent, KeyboardEvent, KeyboardEventContext, ModifierKey, MouseEvent, MouseEventContext, WindowEventContext};
+use carbide_core::event::{CustomEvent, KeyboardEvent, KeyboardEventContext, ModifierKey, MouseEvent, MouseEventContext, OtherEventContext, WindowEventContext};
 use carbide_core::focus::Refocus;
 use carbide_core::render::{NoopRenderContext, RenderContext};
 use carbide_core::Scene;
@@ -334,6 +334,12 @@ impl NewEventHandler {
 
     pub fn user_event(&mut self, event: CustomEvent, target: &mut impl Scene, text_context: &mut impl InnerTextContext, image_context: &mut impl InnerImageContext, env: &mut Environment) -> bool {
         check_tasks(&mut AsyncContext {
+            text: text_context,
+            image: image_context,
+            env,
+        });
+
+        target.process_other_event(&carbide_core::event::Event::Custom(event), &mut OtherEventContext {
             text: text_context,
             image: image_context,
             env,

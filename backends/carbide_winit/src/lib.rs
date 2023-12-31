@@ -6,7 +6,7 @@ use winit::window::CursorIcon;
 
 use carbide_core::cursor::MouseCursor;
 use carbide_core::draw::Position;
-use carbide_core::event::{Button, Gesture, Input, Key, ModifierKey, Motion, MouseButton, Touch, TouchId, TouchPhase};
+use carbide_core::event::{Gesture, Key, ModifierKey, MouseButton, Touch, TouchId, TouchPhase};
 pub use custom_event_loop::*;
 
 pub use winit::*;
@@ -421,113 +421,5 @@ pub fn convert_mouse_cursor(cursor: MouseCursor) -> CursorIcon {
         MouseCursor::ColResize => CursorIcon::ColResize,
         MouseCursor::RowResize => CursorIcon::RowResize,
         MouseCursor::Custom(_) => CursorIcon::Default,
-    }
-}
-
-pub fn convert_window_event(event: &WindowEvent) -> Option<Input> {
-    // FIXME: We should not hardcode scale factor. When we convert physical to logical, this
-    // should be depending on the current window, because the event can be propagated to more than
-    // one window.
-
-    // The window size in points.
-    let scale_factor: f64 = 2.0;
-
-    match event {
-        WindowEvent::Resized(physical_size) => {
-            println!("{:?}, {:?}", physical_size, physical_size.to_logical::<f64>(scale_factor));
-            let LogicalSize { width, height } = physical_size.to_logical(scale_factor);
-            Some(Input::Resize(width, height))
-        }
-        WindowEvent::Focused(focused) => {
-            Some(Input::Focus(*focused))
-        }
-        WindowEvent::KeyboardInput { event: winit::event::KeyEvent { logical_key, state, .. }, .. } => {
-            let key = convert_key(logical_key);
-            let res = match state {
-                ElementState::Pressed => Input::Press(Button::Keyboard(key)),
-                ElementState::Released => Input::Release(Button::Keyboard(key)),
-            };
-            Some(res)
-        }
-        WindowEvent::Ime(ime) => {
-            match ime {
-                Ime::Enabled => None,
-                Ime::Preedit(s, cursor) => Some(Input::Ime(carbide_core::event::Ime::PreEdit(s.to_string(), cursor.clone()))),
-                Ime::Commit(s) => Some(Input::Ime(carbide_core::event::Ime::Commit(s.to_string()))),
-                Ime::Disabled => None,
-            }
-        }
-        WindowEvent::ModifiersChanged(modifiers) => {
-            Some(Input::ModifiersChanged(ModifierKey::from_bits_retain(modifiers.state().bits())))
-        }
-        WindowEvent::Touch(WinitTouch { phase, location, id, .. }) => {
-            let LogicalPosition { x, y } = location.to_logical::<f64>(scale_factor);
-
-            let phase = convert_touch_phase(*phase);
-
-            let id = TouchId::new(id.clone());
-
-            let touch = Touch {
-                phase,
-                id,
-                position: Position::new(x, y)
-            };
-
-            Some(Input::Touch(touch))
-        }
-        WindowEvent::CursorMoved { position, .. } => {
-            let LogicalPosition { x, y } = position.to_logical::<f64>(scale_factor);
-
-            Some(Input::Motion(Motion::MouseCursor { x, y }))
-        }
-        WindowEvent::MouseWheel { delta, .. } => {
-            match delta {
-                MouseScrollDelta::PixelDelta(delta) => {
-                    let LogicalPosition { x, y } = delta.to_logical::<f64>(scale_factor);
-                    let x = x;
-                    let y = -y;
-
-                    Some(Input::Motion(Motion::Scroll { x, y }))
-                }
-                MouseScrollDelta::LineDelta(x, y) => {
-                    // This should be configurable (we should provide a LineDelta event to allow for this).
-                    let x = ARBITRARY_POINTS_PER_LINE_FACTOR * *x as carbide_core::draw::Scalar;
-                    let y = ARBITRARY_POINTS_PER_LINE_FACTOR * -*y as carbide_core::draw::Scalar;
-
-                    Some(Input::Motion(Motion::Scroll { x, y }))
-                }
-            }
-        }
-        WindowEvent::SmartMagnify { .. } => {
-            Some(Input::Gesture(Gesture::SmartScale))
-        }
-        WindowEvent::TouchpadRotate { delta, phase, .. } => {
-            let phase = convert_touch_phase(*phase);
-
-            Some(Input::Gesture(Gesture::Rotate(
-                *delta as f64,
-                phase
-            )))
-        }
-        WindowEvent::TouchpadMagnify {delta, phase, .. } => {
-            let phase = convert_touch_phase(*phase);
-
-            Some(Input::Gesture(Gesture::Scale(
-                *delta,
-                phase
-            )))
-        }
-        WindowEvent::MouseInput { state, button, .. } => {
-
-            let mouse_button = convert_mouse_button(*button);
-            match state {
-                ElementState::Pressed => Some(Input::Press(Button::Mouse(mouse_button))),
-                ElementState::Released => Some(Input::Release(Button::Mouse(mouse_button))),
-            }
-        }
-        WindowEvent::CloseRequested => {
-            Some(Input::CloseRequested)
-        }
-        _ => None,
     }
 }

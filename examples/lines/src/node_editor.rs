@@ -441,16 +441,16 @@ impl MouseEventHandler for NodeEditor {
         let mode = self.graph.value().editing_mode.clone();
         match mode {
             EditingMode::Editing => {
-                self.normal_mode_mouse_event(event, consumed, ctx.env);
+                self.normal_mode_mouse_event(event, ctx.consumed, ctx.env);
             }
             EditingMode::CreateWallP1 { .. } => {
-                self.create_wall_p1_mouse_event(event, consumed, ctx.env);
+                self.create_wall_p1_mouse_event(event, ctx.consumed, ctx.env);
             }
             EditingMode::CreateWallP2 { first_node_id, .. } => {
-                self.create_wall_p2_mouse_event(first_node_id, event, consumed, ctx.env);
+                self.create_wall_p2_mouse_event(first_node_id, event, ctx.consumed, ctx.env);
             }
             EditingMode::Selection { selected, .. } => {
-                self.selection_mode_mouse_event(event, consumed, ctx.env, selected);
+                self.selection_mode_mouse_event(event, ctx.consumed, ctx.env, selected);
             }
         }
     }

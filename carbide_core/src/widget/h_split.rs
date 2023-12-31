@@ -9,7 +9,7 @@ use crate::state::{IntoState, State};
 use crate::widget::{AnyWidget, CommonWidget, CrossAxisAlignment, Empty, SplitType, Widget, WidgetExt, WidgetId, WidgetSequence};
 
 #[derive(Clone, Debug, Widget)]
-#[carbide_exclude(Layout, MouseEvent, OtherEvent)]
+#[carbide_exclude(Layout, MouseEvent)]
 pub struct HSplit<S, L, T> where S: State<T=f64>, L: Widget, T: Widget {
     id: WidgetId,
     position: Position,
@@ -95,14 +95,6 @@ impl<S: State<T=f64>, L: Widget, T: Widget> HSplit<S, L, T> {
     }
 }
 
-impl<S: State<T=f64>, L: Widget, T: Widget> OtherEventHandler for HSplit<S, L, T> {
-    fn handle_other_event(&mut self, _event: &Event, ctx: &mut OtherEventContext) {
-        if self.dragging || self.hovering {
-            ctx.env.set_cursor(MouseCursor::ColResize);
-        }
-    }
-}
-
 impl<S: State<T=f64>, L: Widget, T: Widget> MouseEventHandler for HSplit<S, L, T> {
     fn handle_mouse_event(&mut self, event: &MouseEvent, ctx: &mut MouseEventContext) {
         if !self.draggable {
@@ -164,6 +156,10 @@ impl<S: State<T=f64>, L: Widget, T: Widget> MouseEventHandler for HSplit<S, L, T
                 }
             }
             _ => (),
+        }
+
+        if self.dragging || self.hovering {
+            ctx.env.set_cursor(MouseCursor::ColResize);
         }
     }
 }

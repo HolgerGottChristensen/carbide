@@ -153,13 +153,13 @@ fn main() {
                             let index = Map2::read_map(news_articles.clone(), f.clone(), |a, i| {
                                 a.iter().position(|r| r.id == *i).unwrap()
                             });
-                            Box::new(detail_view(IndexState::new(news_articles, index), current_hn_item))
+                            detail_view(IndexState::new(news_articles, index), current_hn_item)
                         },
-                        _ => Rectangle::new().fill(EnvironmentColor::SecondarySystemBackground).boxed(),
+                        _ => Rectangle::new().fill(EnvironmentColor::SecondarySystemBackground),
                     }
-                ).relative_to_start(400.0).boxed()
+                ).relative_to_start(400.0)
             }
-            _ => loader.boxed(),
+            _ => loader,
         }
     );
 
@@ -187,8 +187,8 @@ fn detail_view(selected: impl State<T=Article>, content: impl State<T=Option<HNI
     });
 
     let comments = ui!(match content {
-        Some(content) => Scroll::new(Text::new(Map1::read_map(content, |c| format!("{:#?}", c))).boxed()).clip().boxed(),
-        _ => Rectangle::new().fill(EnvironmentColor::Green).boxed()
+        Some(content) => Scroll::new(Text::new(Map1::read_map(content, |c| format!("{:#?}", c))).boxed()).clip(),
+        _ => Rectangle::new().fill(EnvironmentColor::Green)
     });
 
     ZStack::new((

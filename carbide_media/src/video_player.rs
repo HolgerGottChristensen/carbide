@@ -1,5 +1,5 @@
 use std::time::Duration;
-use carbide::event::MouseEventContext;
+use carbide::event::{KeyboardEventContext, MouseEventContext};
 use carbide::layout::LayoutContext;
 use carbide_core::color::BLACK;
 use carbide_core::CommonWidgetImpl;
@@ -165,8 +165,8 @@ impl<Id: ReadState<T=Option<VideoId>> + Clone> MouseEventHandler for VideoPlayer
     }
 
     fn process_mouse_event(&mut self, event: &MouseEvent, ctx: &mut MouseEventContext) {
-        if ctx.env.is_event_current() {
-            if !*consumed {
+        if *ctx.is_current {
+            if !*ctx.consumed {
                 self.capture_state(ctx.env);
                 self.handle_mouse_event(event, ctx);
                 self.release_state(ctx.env);
@@ -180,7 +180,7 @@ impl<Id: ReadState<T=Option<VideoId>> + Clone> MouseEventHandler for VideoPlayer
 impl<Id: ReadState<T=Option<VideoId>> + Clone> KeyboardEventHandler for VideoPlayer<Id> {
     fn handle_keyboard_event(&mut self, event: &KeyboardEvent, ctx: &mut KeyboardEventContext) {
         match event {
-            KeyboardEvent::Press(Key::Left, _) => {
+            KeyboardEvent::Press(Key::ArrowLeft, _) => {
                 let current = *self.current_time.value();
                 if current >= Duration::new(10, 0) {
                     self.current_time.set_value(current - Duration::new(10, 0));
@@ -188,7 +188,7 @@ impl<Id: ReadState<T=Option<VideoId>> + Clone> KeyboardEventHandler for VideoPla
                     self.current_time.set_value(Duration::new(0, 0));
                 }
             }
-            KeyboardEvent::Press(Key::Right, _) => {
+            KeyboardEvent::Press(Key::ArrowRight, _) => {
                 let current = *self.current_time.value();
                 self.current_time.set_value(current + Duration::new(10, 0));
             }

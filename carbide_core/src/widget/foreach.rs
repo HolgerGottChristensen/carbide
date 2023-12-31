@@ -31,7 +31,7 @@ impl Delegate<(), Empty> for EmptyDelegate {
 }
 
 #[derive(Clone, Widget)]
-#[carbide_exclude(OtherEvent)]
+#[carbide_exclude(StateSync)]
 pub struct ForEach<T, M, U, W, I>
 where
     T: StateContract,
@@ -53,7 +53,6 @@ where
 }
 
 impl ForEach<(), Vec<()>, EmptyDelegate, Empty, usize> {
-
     #[carbide_default_builder2]
     pub fn new<T: StateContract, M: IntoState<Vec<T>>, W: Widget, U: Delegate<T, W>>(model: M, delegate: U) -> ForEach<T, M::Output, U, W, usize> {
         ForEach {
@@ -84,8 +83,18 @@ impl ForEach<(), Vec<()>, EmptyDelegate, Empty, usize> {
     }*/
 }
 
-impl<T: StateContract, M: State<T=Vec<T>>, W: Widget, U: Delegate<T, W>, I: ReadState<T=usize>> OtherEventHandler for ForEach<T, M, U, W, I> {
-    fn handle_other_event(&mut self, _event: &Event, ctx: &mut OtherEventContext) {
+impl<T, M, U, W, I> carbide::state::StateSync for ForEach<T, M, U, W, I>
+    where
+        T: StateContract,
+        M: State<T=Vec<T>>,
+        W: Widget,
+        U: Delegate<T, W>,
+        I: ReadState<T=usize>
+{
+    fn capture_state(&mut self, env: &mut carbide::environment::Environment) {
+        self.model.sync(env);
+        self.index_offset.sync(env);
+
         if self.model.value().len() < self.children.len() {
             // Remove the excess elements
             let number_to_remove = self.children.len() - self.model.value().len();
@@ -108,6 +117,11 @@ impl<T: StateContract, M: State<T=Vec<T>>, W: Widget, U: Delegate<T, W>, I: Read
                 self.children.push(widget);
             }
         }
+    }
+
+    fn release_state(&mut self, env: &mut carbide::environment::Environment) {
+        self.model.sync(env);
+        self.index_offset.sync(env);
     }
 }
 

@@ -19,7 +19,6 @@ use carbide::mesh::MODE_IMAGE;
 use carbide::render::{Render, RenderContext};
 use carbide::render::matrix::{Deg, Matrix4, Vector3};
 use carbide::widget::*;
-use carbide_core::event::event::WidgetEvent;
 
 const MAX_ITER: u32 = 1000;
 //const MAX_ITER: u32 = 20;
@@ -47,7 +46,7 @@ pub struct ImageRenderJobInfo {
 
 
 #[derive(Clone, Widget)]
-#[carbide_exclude(MouseEvent, Render, OtherEvent)]
+#[carbide_exclude(MouseEvent, Render)]
 pub struct Mandelbrot {
     id: WidgetId,
     position: Position,
@@ -78,6 +77,28 @@ impl Mandelbrot {
 
 impl Render for Mandelbrot {
     fn render(&mut self, context: &mut RenderContext, env: &mut Environment) {
+
+        self.jobs.retain(|(job, receiver)| {
+            match receiver.try_recv() {
+                Ok((image, id)) => {
+                    context.image.update_texture(id.clone(), Texture {
+                        width: image.width(),
+                        height: image.height(),
+                        bytes_per_row: image.width() * 4,
+                        format: TextureFormat::RGBA8,
+                        data: image.as_bytes(),
+                    });
+                    true
+                }
+                Err(TryRecvError::Empty) => {
+                    true
+                }
+                Err(TryRecvError::Disconnected) => {
+                    false
+                }
+            }
+        });
+
         let start_tile_x = ((-self.offset.x() + self.position.x()) / 200.0).floor() as i32;
         let end_tile_x = ((-self.offset.x() + self.position.x() + self.dimension.width) / 200.0).ceil() as i32;
 
@@ -166,33 +187,6 @@ impl Render for Mandelbrot {
         });
 
 
-    }
-}
-
-impl OtherEventHandler for Mandelbrot {
-    fn handle_other_event(&mut self, _event: &WidgetEvent, ctx: &mut OtherEventContext) {
-        if let WidgetEvent::DoneProcessingEvents = _event {
-            self.jobs.retain(|(job, receiver)| {
-                match receiver.try_recv() {
-                    Ok((image, id)) => {
-                        ctx.image.update_texture(id.clone(), Texture {
-                            width: image.width(),
-                            height: image.height(),
-                            bytes_per_row: image.width() * 4,
-                            format: TextureFormat::RGBA8,
-                            data: image.as_bytes(),
-                        });
-                        true
-                    }
-                    Err(TryRecvError::Empty) => {
-                        true
-                    }
-                    Err(TryRecvError::Disconnected) => {
-                        false
-                    }
-                }
-            })
-        }
     }
 }
 
