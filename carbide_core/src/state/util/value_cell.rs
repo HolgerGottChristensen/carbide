@@ -236,25 +236,6 @@ impl<'b, T> ValueRef<'b, T> {
             }
         }
     }
-
-    pub fn apply<U: ?Sized>(self, s: &mut U, f: fn(&'b T, &mut U)) {
-        match self {
-            ValueRef::CellBorrow { value, .. } => {
-                f(value, s)
-            }
-            ValueRef::Locked(_value) => {
-                //MappedRwLockReadGuard::map(value, |a| {f(a, s); a});
-                todo!()
-            }
-            ValueRef::Borrow(value) => {
-                f(value, s)
-            }
-            ValueRef::Owned(_value) => {
-                todo!()
-                //f(&value, s)
-            }
-        }
-    }
 }
 
 impl<T: fmt::Display> fmt::Display for ValueRef<'_, T> {
