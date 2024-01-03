@@ -2,8 +2,7 @@ use carbide_macro::carbide_default_builder2;
 
 use crate::cursor::MouseCursor;
 use crate::draw::{Dimension, Position};
-use crate::event::{MouseEvent, MouseEventContext, MouseEventHandler, OtherEventContext, OtherEventHandler};
-use crate::event::Event;
+use crate::event::{MouseEvent, MouseEventContext, MouseEventHandler};
 use crate::layout::{Layout, LayoutContext};
 use crate::state::{IntoState, State};
 use crate::widget::{AnyWidget, CommonWidget, CrossAxisAlignment, Empty, SplitType, Widget, WidgetExt, WidgetId, WidgetSequence};
@@ -157,23 +156,19 @@ impl<S: State<T=f64>, L: Widget, T: Widget> MouseEventHandler for HSplit<S, L, T
             }
             _ => (),
         }
-
-        if self.dragging || self.hovering {
-            ctx.env.set_cursor(MouseCursor::ColResize);
-        }
     }
 }
 
 impl<S: State<T=f64>, L: Widget, T: Widget> Layout for HSplit<S, L, T> {
     fn calculate_size(&mut self, requested_size: Dimension, ctx: &mut LayoutContext) -> Dimension {
         let (requested_leading_width, requested_trailing_width) = match &self.split {
-            SplitType::Start(offset) => (*offset.value(), requested_size.width - *offset.value()),
+            SplitType::Start(offset) => (offset.value().clone(), requested_size.width - offset.value().clone()),
             SplitType::Percent(percent) => {
-                let leading = requested_size.width * *percent.value();
-                let trailing = requested_size.width * (1.0 - *percent.value());
+                let leading = requested_size.width * percent.value().clone();
+                let trailing = requested_size.width * (1.0 - percent.value().clone());
                 (leading, trailing)
             }
-            SplitType::End(offset) => (requested_size.width - *offset.value(), *offset.value()),
+            SplitType::End(offset) => (requested_size.width - offset.value().clone(), offset.value().clone()),
         };
 
         let leading_size = Dimension::new(requested_leading_width, requested_size.height);
@@ -257,6 +252,14 @@ impl<S: State<T=f64>, L: Widget, T: Widget> CommonWidget for HSplit<S, L, T> {
     }
     fn set_dimension(&mut self, dimension: Dimension) {
         self.dimension = dimension
+    }
+
+    fn cursor(&self) -> Option<MouseCursor> {
+        if self.hovering || self.dragging {
+            Some(MouseCursor::ColResize)
+        } else {
+            None
+        }
     }
 }
 

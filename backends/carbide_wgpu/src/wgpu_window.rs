@@ -767,8 +767,6 @@ impl WindowEventHandler for WGPUWindow {
             child.process_window_event(event, new_ctx);
         });
 
-        self.inner.set_cursor_icon(convert_mouse_cursor(ctx.env.cursor()));
-
         ctx.env.set_pixel_dimensions(old_dimension);
         ctx.env.set_scale_factor(old_scale_factor);
         ctx.env.set_window_handle(old_window_handle);
@@ -843,6 +841,8 @@ impl Render for WGPUWindow {
         });
 
         if self.visible {
+            self.inner.set_cursor_icon(convert_mouse_cursor(env.cursor()));
+
             match self.render_inner(render_passes, uniform_bind_groups, gradient_bind_groups, ctx.text, env) {
                 Ok(_) => {}
                 // Recreate the swap_chain if lost

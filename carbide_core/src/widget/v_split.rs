@@ -152,23 +152,19 @@ impl<S: State<T=f64>, L: Widget, T: Widget> MouseEventHandler for VSplit<S, L, T
             }
             _ => (),
         }
-
-        if self.dragging || self.hovering {
-            ctx.env.set_cursor(MouseCursor::RowResize);
-        }
     }
 }
 
 impl<S: State<T=f64>, L: Widget, T: Widget> Layout for VSplit<S, L, T> {
     fn calculate_size(&mut self, requested_size: Dimension, ctx: &mut LayoutContext) -> Dimension {
         let (requested_top_height, requested_bottom_height) = match &self.split {
-            SplitType::Start(offset) => (*offset.value(), requested_size.height - *offset.value()),
+            SplitType::Start(offset) => (offset.value().clone(), requested_size.height - offset.value().clone()),
             SplitType::Percent(percent) => {
-                let leading = requested_size.height * *percent.value();
-                let trailing = requested_size.height * (1.0 - *percent.value());
+                let leading = requested_size.height * percent.value().clone();
+                let trailing = requested_size.height * (1.0 - percent.value().clone());
                 (leading, trailing)
             }
-            SplitType::End(offset) => (requested_size.height - *offset.value(), *offset.value()),
+            SplitType::End(offset) => (requested_size.height - offset.value().clone(), offset.value().clone()),
         };
 
         let top_size = Dimension::new(requested_size.width, requested_top_height);
@@ -252,6 +248,14 @@ impl<S: State<T=f64>, L: Widget, T: Widget> CommonWidget for VSplit<S, L, T> {
     }
     fn set_dimension(&mut self, dimension: Dimension) {
         self.dimension = dimension
+    }
+
+    fn cursor(&self) -> Option<MouseCursor> {
+        if self.hovering || self.dragging {
+            Some(MouseCursor::RowResize)
+        } else {
+            None
+        }
     }
 }
 

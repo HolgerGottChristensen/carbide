@@ -1,6 +1,8 @@
 use carbide_core::widget::AnyWidget;
+use crate::cursor::MouseCursor;
 
 use crate::draw::{Dimension, Position, Rect, Scalar};
+use crate::environment::Environment;
 use crate::flags::WidgetFlag;
 use crate::focus::Focus;
 use crate::layout::{BasicLayouter, Layouter};
@@ -125,6 +127,10 @@ pub trait CommonWidget {
 
     fn center_point(&self) -> Position {
         self.bounding_box().center()
+    }
+
+    fn cursor(&self) -> Option<MouseCursor> {
+        None
     }
 }
 

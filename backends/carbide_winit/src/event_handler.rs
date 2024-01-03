@@ -39,7 +39,6 @@ impl NewEventHandler {
     }
 
     pub fn event(&mut self, event: Event<CustomEvent>, target: &mut impl Scene, text_context: &mut impl InnerTextContext, image_context: &mut impl InnerImageContext, env: &mut Environment) -> bool {
-        env.set_cursor(MouseCursor::Default);
         env.capture_time();
         env.update_animation();
         env.clear_animation_frame();
@@ -119,6 +118,9 @@ impl NewEventHandler {
                     text: text_context,
                     image: image_context,
                 }, env);
+
+                // Set cursor to default for next frame
+                env.set_cursor(MouseCursor::Default);
 
                 // Default controlflow says Wait.
                 env.has_animations()

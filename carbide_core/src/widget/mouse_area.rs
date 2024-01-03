@@ -28,7 +28,7 @@ impl<I> Action for I where I: Fn(&mut Environment, ModifierKey) + Clone {}
 dyn_clone::clone_trait_object!(Action);
 
 #[derive(Clone, Widget)]
-#[carbide_exclude(MouseEvent, KeyboardEvent, OtherEvent)]
+#[carbide_exclude(MouseEvent, KeyboardEvent)]
 pub struct MouseArea<I, O, F, C, H, P> where
     I: Action + Clone + 'static,
     O: Action + Clone + 'static,
@@ -167,26 +167,6 @@ impl<
     pub fn pressed_cursor(mut self, cursor: MouseCursor) -> Self {
         self.pressed_cursor = Some(cursor);
         self
-    }
-}
-
-impl<
-    I: Action + Clone + 'static,
-    O: Action + Clone + 'static,
-    F: State<T=Focus>,
-    C: Widget,
-    H: State<T=bool>,
-    P: State<T=bool>,
-> OtherEventHandler for MouseArea<I, O, F, C, H, P> {
-    fn handle_other_event(&mut self, _event: &Event, ctx: &mut OtherEventContext) {
-        if *self.is_hovered.value() {
-            ctx.env.set_cursor(self.hover_cursor);
-        }
-        if *self.is_pressed.value() {
-            if let Some(cursor) = self.pressed_cursor {
-                ctx.env.set_cursor(cursor);
-            }
-        }
     }
 }
 
@@ -350,6 +330,18 @@ impl<
 
     fn foreach_child_direct_rev<'a>(&'a mut self, f: &mut dyn FnMut(&'a mut dyn AnyWidget)) {
         f(&mut self.child);
+    }
+
+    fn cursor(&self) -> Option<MouseCursor> {
+        if *self.is_hovered.value() {
+            return Some(self.hover_cursor)
+        }
+
+        if *self.is_pressed.value() {
+            return self.pressed_cursor;
+        }
+
+        None
     }
 }
 

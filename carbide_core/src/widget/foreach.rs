@@ -5,8 +5,6 @@ use carbide_core::CommonWidgetImpl;
 use carbide_macro::carbide_default_builder2;
 
 use crate::draw::{Dimension, Position};
-use crate::event::{OtherEventContext, OtherEventHandler};
-use crate::event::Event;
 use crate::flags::WidgetFlag;
 use crate::state::{AnyReadState, AnyState, IndexState, IntoState, ReadState, ReadStateExtNew, State, StateContract, StateExtNew, ValueState};
 use crate::widget::{CommonWidget, Empty, Widget, WidgetExt, WidgetId};
