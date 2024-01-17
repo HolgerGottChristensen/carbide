@@ -1,5 +1,5 @@
-
-use crate::state::{Map1, RMap1, AnyReadState, StateContract, State, AnyState, RWMap1};
+use std::fmt::Debug;
+use crate::state::{Map1, RMap1, AnyReadState, StateContract, State, AnyState, RWMap1, RWOMap1};
 
 
 // ---------------------------------------------------
@@ -138,7 +138,7 @@ impl ConvertInto<Result<String, String>> for Result<f32, String> {
         }, |new, _old| {
             match new {
                 Ok(s) | Err(s) => {
-                    Some(<f32>::from_str(&s).map_err(|_| s.to_string()))
+                    Some(<f32>::from_str(&s).map_err(|_| s))
                 }
             }
         })
@@ -146,28 +146,44 @@ impl ConvertInto<Result<String, String>> for Result<f32, String> {
 }
 
 impl ConvertInto<Result<String, String>> for Result<f64, String> {
-    type Output<G: AnyState<T=Self> + Clone> = RWMap1<fn(&Result<f64, String>) -> Result<String, String>, fn(Result<String, String>, &Result<f64, String>) -> Option<Result<f64, String>>, Result<f64, String>, Result<String, String>, G>;
+    type Output<G: AnyState<T=Self> + Clone> = RWOMap1<
+        fn(&Result<f64, String>, &mut Result<String, String>),
+        fn(Result<String, String>, &mut Result<f64, String>),
+        Result<f64, String>,
+        Result<String, String>,
+        G
+    >;
 
     fn convert<F: AnyState<T=Self> + Clone>(f: F) -> Self::Output<F> {
         use std::str::FromStr;
 
-        Map1::map(f, |val| {
-            match val {
-                Ok(val) => { Ok(val.to_string()) }
-                Err(val) => { Err(val.to_string()) }
-            }
-        }, |new, _old| {
-            match new {
-                Ok(s) | Err(s) => {
-                    Some(<f64>::from_str(&s).map_err(|_| s.to_string()))
+        Map1::map_owned(f, |val, current| {
+            match (val, current) {
+                (Ok(v), Ok(o)) => {
+                    println!("Both ok");
+                    if let Ok(k) = <f64>::from_str(o) {
+                        if *v != k {
+                            *o = v.to_string();
+                        } else {
+                            println!("Equal");
+                        }
+                    } else {
+                        *o = v.to_string();
+                    }
+                }
+                (e, t) => {
+                    *t = e.clone().map(|b| b.to_string());
                 }
             }
-        })
+        }, |new, old| {
+            match new {
+                Ok(s) | Err(s) => {
+                    *old = <f64>::from_str(&s).map_err(|_| s);
+                }
+            }
+        }, Err(String::new()))
     }
 }
-
-
-
 
 
 

@@ -20,11 +20,15 @@ members = [
     "backends/carbide_text",
     "backends/carbide_macos",
     "backends/carbide_printpdf",
+    "backends/carbide_fluent",
     "examples/lines",
     "examples/hacker_news",
     "examples/calculator",
     "examples/counter",
     "examples/fractal",
     "examples/mandelbrot",
-    "carbide"
+    "carbide",
 ]
+
+[workspace.dependencies]
+dyn-clone = "1.0.5"

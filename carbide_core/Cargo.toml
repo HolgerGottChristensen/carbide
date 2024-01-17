@@ -31,7 +31,7 @@ carbide_macro = { path = "../carbide_macro", version = "0.1.0", optional = true}
 copypasta = "0.8.1"
 rand = "0.8.5"
 bitflags = "2.4.0"
-dyn-clone = "1.0.5"
+dyn-clone.workspace = true
 parking_lot = "0.12.1"
 smallvec = "1"
 
