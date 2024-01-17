@@ -1,27 +1,27 @@
 use chrono::Utc;
+use carbide_controls::{ControlsExt, PopUpButton, Slider, TextInput};
 use carbide_core::draw::Dimension;
+use carbide_core::environment::{EnvironmentColor, EnvironmentFontSize};
 use carbide_core::impl_read_state;
 use carbide_core::state::LocalState;
-use carbide_core::widget::Text;
-use carbide_fluent::LocalizedString;
+use carbide_core::widget::{Text, VStack, WidgetExt};
+use carbide_fluent::{Arg, LocalizedArg, LocalizedString};
 use carbide_fluent::Localizable;
 use carbide_wgpu::{Application, Window};
 
-#[derive(Clone, Debug)]
-enum Test {
-    Var,
-    Var2,
-    Var3,
+#[derive(Clone, Debug, PartialEq)]
+enum Gender {
+    Male,
+    Female,
+    Other,
 }
 
-impl_read_state!(Test);
-
-impl Localizable for Test {
-    fn get(&self) -> &str {
+impl Arg for Gender {
+    fn into(&self) -> LocalizedArg {
         match self {
-            Test::Var => "test-var",
-            Test::Var2 => "test-var2",
-            Test::Var3 => "test-var3",
+            Gender::Male => LocalizedArg::Str("male"),
+            Gender::Female => LocalizedArg::Str("female"),
+            Gender::Other => LocalizedArg::Str("other"),
         }
     }
 }
@@ -29,14 +29,36 @@ impl Localizable for Test {
 fn main() {
     let mut application = Application::new();
 
+    let username = LocalState::new("Emma".to_string());
+    let photo_count = LocalState::new(3.0);
+    let gender = LocalState::new(Gender::Female);
+
     application.set_scene(Window::new(
         "LocalizedString - Carbide",
-        Dimension::new(400.0, 600.0),
-        Text::new(
-            LocalizedString::new("response-msg")
-                .arg("input", LocalState::new(Utc::now()))
-                .arg("value", 22.2)
-        )
+        Dimension::new(400.0, 400.0),
+        VStack::new((
+            Text::new(
+                LocalizedString::new("shared-photos")
+                    .arg("userName", username.clone())
+                    .arg("userGender", gender.clone())
+                    .arg("photoCount", photo_count.clone())
+            ).padding(30.0)
+                .border()
+                .color(EnvironmentColor::Accent),
+            VStack::new((
+                TextInput::new(username)
+                    .label("Username:"),
+                PopUpButton::new(gender, vec![
+                    Gender::Male,
+                    Gender::Female,
+                    Gender::Other,
+                ]).label("Gender:"),
+                Slider::new(photo_count, 1.0, 10.0)
+                    .step(1.0)
+                    .label("Photo count:")
+            ))
+        )).spacing(30.0)
+            .padding(80.0)
     ).close_application_on_window_close());
 
     application.launch();

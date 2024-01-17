@@ -57,9 +57,21 @@ impl Arg for f64 {
     }
 }
 
+impl Arg for i32 {
+    fn into(&self) -> LocalizedArg {
+        LocalizedArg::Number(*self as f64, FluentNumberOptions::default())
+    }
+}
+
 impl Arg for &'static str {
     fn into(&self) -> LocalizedArg {
         LocalizedArg::Str(*self)
+    }
+}
+
+impl Arg for String {
+    fn into(&self) -> LocalizedArg {
+        LocalizedArg::String(self.clone())
     }
 }
 

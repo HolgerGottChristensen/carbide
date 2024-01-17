@@ -176,7 +176,7 @@ impl InnerTextContext for TextContext {
 
         // Inspect the output runs
         for run in buffer.layout_runs() {
-            ctx.style(DrawStyle::Color(RED));
+            /*ctx.style(DrawStyle::Color(RED));
             ctx.rect(Rect::new(Position::new(0.0, run.line_y as f64), Dimension::new(run.line_w as f64, 1.0 / metadata.scale_factor)) + metadata.position);
             ctx.pop_style();
 
@@ -186,7 +186,7 @@ impl InnerTextContext for TextContext {
 
             ctx.style(DrawStyle::Color(LIGHT_GREEN));
             ctx.rect(Rect::new(Position::new(0.0, run.line_top as f64 + buffer.metrics().line_height as f64), Dimension::new(run.line_w as f64, 1.0 / metadata.scale_factor)) + metadata.position);
-            ctx.pop_style();
+            ctx.pop_style();*/
 
             for glyph in run.glyphs.iter() {
                 //println!("{:#?}", glyph);

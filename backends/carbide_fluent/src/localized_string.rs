@@ -38,7 +38,7 @@ impl<K: Localizable, S: ReadState<T=K>, V: Args> AnyReadState for LocalizedStrin
     type T = String;
 
     fn value_dyn(&self) -> ValueRef<Self::T> {
-        let languages = LANGUAGES.read().unwrap();
+        let languages = &LANGUAGES;
         let bundle = languages.get(&locale).unwrap();
 
         let binding = self.key.value();

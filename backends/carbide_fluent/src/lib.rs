@@ -13,6 +13,8 @@ use walkdir::WalkDir;
 use carbide_core::locate_folder;
 pub use localized_string::*;
 pub use localizable::Localizable;
+pub use args::Arg;
+pub use args::LocalizedArg;
 
 mod localized_string;
 mod localizable;
@@ -21,12 +23,12 @@ mod args;
 type Bundle = fluent::bundle::FluentBundle<FluentResource, intl_memoizer::concurrent::IntlLangMemoizer>;
 
 lazy_static!(
-    static ref LANGUAGES: Arc<std::sync::RwLock<HashMap<Locale, Bundle>>> = {
-        Arc::new(std::sync::RwLock::new(load_languages().unwrap()))
+    static ref LANGUAGES: HashMap<Locale, Bundle> = {
+        load_languages().unwrap()
     };
 );
 
-static locale: Locale = locale!("da");
+static locale: Locale = locale!("en");
 
 fn load_languages() -> Result<HashMap<Locale, Bundle>, io::Error> {
     let assets = locate_folder::Search::KidsThenParents(3, 5)
