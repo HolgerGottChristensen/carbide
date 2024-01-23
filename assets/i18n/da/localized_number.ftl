@@ -1,0 +1,10 @@
+number = Tal:
+style = Tal stil:
+notation = Notation:
+grouping = Gruppering:
+rounding = Afrunding:
+minimum_integer_digits = Minimum antal heltals cifre:
+minimum_fraction_digits = Minimum antal brøkdels cifre:
+maximum_fraction_digits = Maksimum antal brøkdels cifre:
+minimum_significant_digits = Minimum antal betydende cifre:
+maximum_significant_digits = Maksimum antal betydende cifre:

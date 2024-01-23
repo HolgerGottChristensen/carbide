@@ -7,3 +7,7 @@ shared-photos =
         [female] her stream
         *[other] their stream
     }.
+username = Username:
+gender = Gender:
+photo-count = Photo count:
+locale = Locale:

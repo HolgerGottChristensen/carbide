@@ -12,13 +12,21 @@ use walkdir::WalkDir;
 
 use carbide_core::locate_folder;
 pub use localized_string::*;
+pub use localized_datetime::*;
+pub use localized_number::*;
 pub use localizable::Localizable;
 pub use args::Arg;
 pub use args::LocalizedArg;
+pub use locale_ext::LocaleExt;
+use carbide_core::environment::Environment;
+use carbide_core::state::{EnvMap1, Map1};
 
 mod localized_string;
 mod localizable;
 mod args;
+mod locale_ext;
+mod localized_datetime;
+mod localized_number;
 
 type Bundle = fluent::bundle::FluentBundle<FluentResource, intl_memoizer::concurrent::IntlLangMemoizer>;
 
@@ -27,8 +35,6 @@ lazy_static!(
         load_languages().unwrap()
     };
 );
-
-static locale: Locale = locale!("en");
 
 fn load_languages() -> Result<HashMap<Locale, Bundle>, io::Error> {
     let assets = locate_folder::Search::KidsThenParents(3, 5)

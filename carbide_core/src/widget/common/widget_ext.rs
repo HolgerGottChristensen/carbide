@@ -16,8 +16,8 @@ use crate::state::{IntoState, ReadState, StateContract, TState};
 use crate::state::ReadStateExtNew;
 use crate::widget::{Action, AnyWidget, Background, Border, Changed, Clip, ClipShape, CornerRadii, EdgeInsets, EnvUpdating, Flagged, Flexibility, Frame, Hidden, MouseArea, Offset, Overlay, Padding, Rotation3DEffect, RoundedRectangle, Shape, Transform};
 
-type AccentColor<T> = EnvUpdating<T>;
-type ForegroundColor<T> = EnvUpdating<T>;
+type AccentColor<C, T, S> = EnvUpdating<C, T, S>;
+type ForegroundColor<C, T, S> = EnvUpdating<C, T, S>;
 
 
 pub trait WidgetExt: Widget + Sized {
@@ -138,24 +138,12 @@ pub trait WidgetExt: Widget + Sized {
         Border::new(self)
     }
 
-    fn foreground_color<C: IntoReadState<Color>>(self, color: C) -> ForegroundColor<Self> {
-        let mut e = EnvUpdating::new(self);
-        e.add(EnvironmentStateContainer::Color {
-            key: EnvironmentColor::Label,
-            value: TState::new(Box::new(color.into_read_state().ignore_writes())),
-        });
-
-        e
+    fn foreground_color<C: IntoReadState<Color>>(self, color: C) -> ForegroundColor<Self, Color, C::Output> {
+        EnvUpdating::new(EnvironmentColor::Label, color.into_read_state(), self)
     }
 
-    fn accent_color<C: IntoReadState<Color>>(self, color: C) -> AccentColor<Self> {
-        let mut e = EnvUpdating::new(self);
-        e.add(EnvironmentStateContainer::Color {
-            key: EnvironmentColor::Accent,
-            value: TState::new(Box::new(color.into_read_state().ignore_writes())),
-        });
-
-        e
+    fn accent_color<C: IntoReadState<Color>>(self, color: C) -> AccentColor<Self, Color, C::Output> {
+        EnvUpdating::new(EnvironmentColor::Accent, color.into_read_state(), self)
     }
 
     /// Returns two widgets. The first should be used within an overlay, and the second within the widget hierarchy.

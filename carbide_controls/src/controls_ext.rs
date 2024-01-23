@@ -5,7 +5,7 @@ use carbide_core::widget::{EdgeInsets, EnvUpdating, HStack, Rectangle, Text, Any
 
 use crate::{Help, Labelled};
 
-type Enabled<T> = EnvUpdating<T>;
+type Enabled<C, T, S> = EnvUpdating<C, T, S>;
 
 pub trait ControlsExt: WidgetExt {
     fn help<H: IntoReadState<String>>(self, help: H) -> Help<Self> {
@@ -22,14 +22,8 @@ pub trait ControlsExt: WidgetExt {
         Labelled::new(label, self)
     }
 
-    fn enabled<E: IntoReadState<bool>>(self, enabled: E) -> Enabled<Self> {
-        let mut e = EnvUpdating::new(self);
-        e.add(EnvironmentStateContainer::Bool {
-            key: "enabled",
-            value: enabled.into_read_state().as_dyn_read(),
-        });
-
-        e
+    fn enabled<E: IntoReadState<bool>>(self, enabled: E) -> Enabled<Self, bool, E::Output> {
+        EnvUpdating::new("enabled", enabled.into_read_state(), self)
     }
 }
 

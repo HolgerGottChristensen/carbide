@@ -9,118 +9,57 @@ use crate::event::{KeyboardEvent, KeyboardEventContext, KeyboardEventHandler, Mo
 use crate::event::Event;
 use crate::focus::{Focusable, Refocus};
 use crate::render::Render;
-use crate::state::{NewStateSync, ReadState};
+use crate::state::{NewStateSync, ReadState, StateContract};
 use crate::widget::{CommonWidget, Empty, Widget, WidgetExt, WidgetId};
+
+pub trait EnvKey {
+    fn key(&self) -> &'static str;
+}
+
+impl EnvKey for &'static str {
+    fn key(&self) -> &'static str {
+        *self
+    }
+}
 
 #[derive(Debug, Clone, Widget)]
 #[carbide_derive(Layout, StateSync)]
-pub struct EnvUpdating<C> where C: Widget {
+pub struct EnvUpdating<C, T, S> where C: Widget, T: StateContract, S: ReadState<T=T> {
     id: WidgetId,
     child: C,
     position: Position,
     dimension: Dimension,
-    envs_to_update: Vec<EnvironmentStateContainer>,
+    key: &'static str,
+    value: S,
 }
 
-impl EnvUpdating<Empty> {
+impl<C: Widget, T: StateContract, S: ReadState<T=T>> EnvUpdating<C, T, S> {
     #[carbide_default_builder2]
-    pub fn new<C: Widget>(child: C) -> EnvUpdating<C> {
+    pub fn new<K: EnvKey>(key: K, value: S, child: C) -> EnvUpdating<C, T, S> {
         EnvUpdating {
             id: WidgetId::new(),
             child,
             position: Position::default(),
             dimension: Dimension::default(),
-            envs_to_update: vec![],
+            key: key.key(),
+            value
         }
     }
 }
 
-impl<C: Widget> EnvUpdating<C> {
-    pub fn add(&mut self, env_to_update: EnvironmentStateContainer) {
-        self.envs_to_update.push(env_to_update);
-    }
+impl<C: Widget, T: StateContract, S: ReadState<T=T>> EnvUpdating<C, T, S> {
 
     fn remove_from_env(&self, env: &mut Environment) {
-        for _ in &self.envs_to_update {
-            env.pop()
-        }
+        env.pop();
     }
 
     fn insert_into_env(&mut self, env: &mut Environment) {
-        for env_to_update in &mut self.envs_to_update {
-            match env_to_update {
-                EnvironmentStateContainer::String { key, value } => {
-                    value.sync(env);
-                    let to_update = value.value().clone();
-
-                    env.push(EnvironmentVariable::String {
-                        key: key.clone(),
-                        value: to_update,
-                    });
-                    //value.release_state(env);
-                }
-                EnvironmentStateContainer::U32 { key, value } => {
-                    value.sync(env);
-                    let to_update = *value.value();
-
-                    env.push(EnvironmentVariable::U32 {
-                        key: key.clone(),
-                        value: to_update,
-                    });
-                    //value.release_state(env);
-                }
-                EnvironmentStateContainer::F64 { key, value } => {
-                    value.sync(env);
-                    let to_update = *value.value();
-
-                    env.push(EnvironmentVariable::F64 {
-                        key: key.clone(),
-                        value: to_update,
-                    });
-                    //value.release_state(env);
-                }
-                EnvironmentStateContainer::Color { key, value } => {
-                    value.sync(env);
-                    let to_update = *value.value();
-                    env.push(EnvironmentVariable::EnvironmentColor {
-                        key: key.clone(),
-                        value: to_update,
-                    });
-                    //value.release_state(env);
-                }
-                EnvironmentStateContainer::FontSize { key, value } => {
-                    value.sync(env);
-                    let to_update = *value.value();
-
-                    env.push(EnvironmentVariable::EnvironmentFontSize {
-                        key: key.clone(),
-                        value: to_update,
-                    });
-                    //value.release_state(env);
-                }
-                EnvironmentStateContainer::I32 { key, value } => {
-                    value.sync(env);
-                    let to_update = *value.value();
-
-                    env.push(EnvironmentVariable::I32 {
-                        key: key.clone(),
-                        value: to_update,
-                    });
-                    //value.release_state(env);
-                }
-                EnvironmentStateContainer::Bool { key, value } => {
-                    value.sync(env);
-                    env.push(EnvironmentVariable::Bool {
-                        key,
-                        value: *value.value(),
-                    });
-                }
-            }
-        }
+        self.value.sync(env);
+        env.push(self.key, Box::new(self.value.value().clone()));
     }
 }
 
-impl<C: Widget> OtherEventHandler for EnvUpdating<C> {
+impl<C: Widget, T: StateContract, S: ReadState<T=T>> OtherEventHandler for EnvUpdating<C, T, S> {
     fn process_other_event(&mut self, event: &Event, ctx: &mut OtherEventContext) {
         self.insert_into_env(ctx.env);
 
@@ -130,7 +69,7 @@ impl<C: Widget> OtherEventHandler for EnvUpdating<C> {
     }
 }
 
-impl<C: Widget> KeyboardEventHandler for EnvUpdating<C> {
+impl<C: Widget, T: StateContract, S: ReadState<T=T>> KeyboardEventHandler for EnvUpdating<C, T, S> {
     fn process_keyboard_event(&mut self, event: &KeyboardEvent, ctx: &mut KeyboardEventContext) {
         self.insert_into_env(ctx.env);
 
@@ -140,7 +79,7 @@ impl<C: Widget> KeyboardEventHandler for EnvUpdating<C> {
     }
 }
 
-impl<C: Widget> WindowEventHandler for EnvUpdating<C> {
+impl<C: Widget, T: StateContract, S: ReadState<T=T>> WindowEventHandler for EnvUpdating<C, T, S> {
     fn process_window_event(&mut self, event: &WindowEvent, ctx: &mut WindowEventContext) {
         self.insert_into_env(ctx.env);
 
@@ -150,7 +89,7 @@ impl<C: Widget> WindowEventHandler for EnvUpdating<C> {
     }
 }
 
-impl<C: Widget> MouseEventHandler for EnvUpdating<C> {
+impl<C: Widget, T: StateContract, S: ReadState<T=T>> MouseEventHandler for EnvUpdating<C, T, S> {
     fn process_mouse_event(&mut self, event: &MouseEvent, ctx: &mut MouseEventContext) {
         self.insert_into_env(ctx.env);
 
@@ -160,7 +99,7 @@ impl<C: Widget> MouseEventHandler for EnvUpdating<C> {
     }
 }
 
-impl<C: Widget> Focusable for EnvUpdating<C> {
+impl<C: Widget, T: StateContract, S: ReadState<T=T>> Focusable for EnvUpdating<C, T, S> {
     fn process_focus_request(
         &mut self,
         focus_request: &Refocus,
@@ -206,7 +145,7 @@ impl<C: Widget> Focusable for EnvUpdating<C> {
     }
 }
 
-impl<C: Widget> Render for EnvUpdating<C> {
+impl<C: Widget, T: StateContract, S: ReadState<T=T>> Render for EnvUpdating<C, T, S> {
     fn render(&mut self, context: &mut RenderContext, env: &mut Environment) {
         self.insert_into_env(env);
 
@@ -218,8 +157,8 @@ impl<C: Widget> Render for EnvUpdating<C> {
     }
 }
 
-impl<C: Widget> CommonWidget for EnvUpdating<C> {
+impl<C: Widget, T: StateContract, S: ReadState<T=T>> CommonWidget for EnvUpdating<C, T, S> {
     CommonWidgetImpl!(self, id: self.id, child: self.child, position: self.position, dimension: self.dimension);
 }
 
-impl<C: Widget> WidgetExt for EnvUpdating<C> {}
+impl<C: Widget, T: StateContract, S: ReadState<T=T>> WidgetExt for EnvUpdating<C, T, S> {}

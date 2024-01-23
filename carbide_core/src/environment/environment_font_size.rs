@@ -1,8 +1,9 @@
 use crate::environment::Environment;
 use crate::state::*;
+use crate::widget::EnvKey;
 
 
-#[derive(Hash, Eq, PartialEq, Clone, Debug)]
+#[derive(Hash, Eq, PartialEq, Clone, Debug, Copy)]
 pub enum EnvironmentFontSize {
     LargeTitle,
     Title,
@@ -15,8 +16,28 @@ pub enum EnvironmentFontSize {
     Footnote,
     Caption,
     Caption2,
-    Custom(String),
+    Custom(&'static str),
 }
+
+impl EnvKey for EnvironmentFontSize {
+    fn key(&self) -> &'static str {
+        match self {
+            EnvironmentFontSize::LargeTitle => "EnvironmentFontSize::LargeTitle",
+            EnvironmentFontSize::Title => "EnvironmentFontSize::Title",
+            EnvironmentFontSize::Title2 => "EnvironmentFontSize::Title2",
+            EnvironmentFontSize::Title3 => "EnvironmentFontSize::Title3",
+            EnvironmentFontSize::Headline => "EnvironmentFontSize::Headline",
+            EnvironmentFontSize::Body => "EnvironmentFontSize::Body",
+            EnvironmentFontSize::Callout => "EnvironmentFontSize::Callout",
+            EnvironmentFontSize::Subhead => "EnvironmentFontSize::Subhead",
+            EnvironmentFontSize::Footnote => "EnvironmentFontSize::Footnote",
+            EnvironmentFontSize::Caption => "EnvironmentFontSize::Caption",
+            EnvironmentFontSize::Caption2 => "EnvironmentFontSize::Caption2",
+            EnvironmentFontSize::Custom(c) => *c,
+        }
+    }
+}
+
 
 impl EnvironmentFontSize {
     pub fn u32(&self) -> impl ReadState<T=u32> {
@@ -39,7 +60,7 @@ impl ConvertIntoRead<u32> for EnvironmentFontSize {
 
     fn convert<F: AnyReadState<T=EnvironmentFontSize> + Clone>(f: F) -> Self::Output<F> {
         Map1::read_map_env(f, |env, value| {
-            env.get_font_size(&EnvironmentStateKey::FontSize(value.clone())).unwrap()
+            env.font_size(*value).unwrap()
         })
     }
 }

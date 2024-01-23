@@ -1,8 +1,9 @@
+use std::any::Any;
 use carbide_core::state::AnyReadState;
 pub use environment::Environment;
 pub use environment_color::*;
 pub use environment_font_size::EnvironmentFontSize;
-pub use environment_variable::EnvironmentVariable;
+pub(crate) use environment_variable::EnvironmentVariable;
 
 use crate::draw::Color;
 use crate::state::TState;
@@ -25,7 +26,6 @@ pub enum WidgetTransferAction {
     ReplaceAll(Box<dyn AnyWidget>),
 }
 
-#[derive(Debug, Clone)]
 pub enum EnvironmentStateContainer {
     String {
         key: String,
@@ -55,4 +55,8 @@ pub enum EnvironmentStateContainer {
         key: &'static str,
         value: Box<dyn AnyReadState<T=bool>>,
     },
+    Any {
+        key: &'static str,
+        value: Box<dyn AnyReadState<T=Box<dyn Any>>>,
+    }
 }

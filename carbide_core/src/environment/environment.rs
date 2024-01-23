@@ -1,3 +1,4 @@
+use std::any::{Any, TypeId};
 use std::cell::RefCell;
 use std::collections::HashMap;
 use std::fmt::Formatter;
@@ -28,7 +29,7 @@ use crate::event::{EventSink, HasEventSink};
 use crate::focus::Refocus;
 use crate::layout::BasicLayouter;
 use crate::state::{InnerState, StateContract, EnvironmentStateKey};
-use crate::widget::{FilterId, ImageFilter, WidgetId};
+use crate::widget::{EnvKey, FilterId, ImageFilter, WidgetId};
 use crate::widget::ImageInformation;
 use crate::window::WindowId;
 
@@ -39,7 +40,7 @@ pub struct Environment {
     /// current foreground color, text colors and more. This means a parent can choose some
     /// styling that is applied to all of its children, unless some child overrides that style.
     // TODO: Consider switching to a map, so we dont need to search through the vec for better performance
-    stack: Vec<EnvironmentVariable>,
+    stack: Vec<(&'static str, Box<dyn Any>)>,
 
     root_alignment: BasicLayouter,
 
@@ -165,9 +166,21 @@ impl Environment {
         ];
 
         let env_stack = theme::dark_mode_color_theme()
-            .iter()
-            .chain(font_sizes_large.iter())
-            .map(|item| item.clone())
+            .into_iter()
+            .chain(font_sizes_large.into_iter())
+            .map(|r| {
+                match r {
+                    EnvironmentVariable::EnvironmentColor { key, value } => {
+                        (key.key(), Box::new(value) as Box<dyn Any>)
+                    }
+                    EnvironmentVariable::EnvironmentFontSize { key, value } => {
+                        (key.key(), Box::new(value) as Box<dyn Any>)
+                    }
+                    EnvironmentVariable::Any { key, value } => {
+                        (key, value)
+                    }
+                }
+            })
             .collect::<Vec<_>>();
 
         let filters = HashMap::with_hasher(FxBuildHasher::default());
@@ -533,67 +546,32 @@ impl Environment {
         self.local_state.insert(key.clone(), to_bin(value).unwrap());
     }*/
 
-    pub fn push_vec(&mut self, value: Vec<EnvironmentVariable>) {
-        for v in value {
-            self.push(v);
-        }
-    }
-
-    pub fn push(&mut self, value: EnvironmentVariable) {
-        self.stack.push(value);
+    pub fn push(&mut self, key: &'static str, value: Box<dyn Any>) {
+        self.stack.push((key, value));
     }
 
     pub fn pop(&mut self) {
         self.stack.pop();
     }
 
-    pub fn env_color(&self, color: EnvironmentColor) -> Color {
-        self.get_color(&EnvironmentStateKey::Color(color)).unwrap()
+    pub fn color(&self, color: EnvironmentColor) -> Option<Color> {
+        self.value::<EnvironmentColor, Color>(color).cloned()
+
     }
 
-    pub fn get_color(&self, color: &EnvironmentStateKey) -> Option<Color> {
-        if let EnvironmentStateKey::Color(col) = color {
-            for item in self.stack.iter().rev() {
-                match item {
-                    EnvironmentVariable::EnvironmentColor { key, value } => {
-                        if key == col {
-                            return Some(value.clone());
-                        }
-                    }
-                    _ => (),
-                }
-            }
-        }
-
-        None
+    pub fn font_size(&self, font_size: EnvironmentFontSize) -> Option<u32> {
+        self.value::<EnvironmentFontSize, u32>(font_size).cloned()
     }
 
-    pub fn get_font_size(&self, font_size: &EnvironmentStateKey) -> Option<u32> {
-        if let EnvironmentStateKey::FontSize(size) = font_size {
-            for item in self.stack.iter().rev() {
-                match item {
-                    EnvironmentVariable::EnvironmentFontSize { key, value } => {
-                        if key == size {
-                            return Some(*value);
-                        }
-                    }
-                    _ => (),
-                }
-            }
-        }
-
-        None
+    pub fn bool<K: EnvKey>(&self, key: K) -> Option<bool> {
+        self.value::<K, bool>(key).cloned()
     }
 
-    pub fn bool(&self, key: &'static str) -> Option<bool> {
-        for item in self.stack.iter().rev() {
-            match item {
-                EnvironmentVariable::Bool { key: other_key, value } => {
-                    if key == *other_key {
-                        return Some(*value);
-                    }
-                }
-                _ => (),
+    pub fn value<K: EnvKey, T: 'static>(&self, key: K) -> Option<&T> {
+        let key = key.key();
+        for (other_key, value) in self.stack.iter().rev() {
+            if key == *other_key && value.is::<T>() {
+                return value.downcast_ref();
             }
         }
 
