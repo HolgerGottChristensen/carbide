@@ -23,22 +23,22 @@ fn main() {
     let notation = LocalState::new(NumberNotation::default());
     let grouping = LocalState::new(NumberGrouping::default());
     let rounding = LocalState::new(RoundingMode::default());
-    let minimum_integer_digits = LocalState::new(2.0);
-    let minimum_fraction_digits = LocalState::new(2.0);
-    let maximum_fraction_digits = LocalState::new(2.0);
-    let minimum_significant_digits = LocalState::new(2.0);
-    let maximum_significant_digits = LocalState::new(2.0);
+    let minimum_integer_digits = LocalState::new(2usize);
+    let minimum_fraction_digits = LocalState::new(2usize);
+    let maximum_fraction_digits = LocalState::new(2usize);
+    let minimum_significant_digits = LocalState::new(2usize);
+    let maximum_significant_digits = LocalState::new(2usize);
 
     let text = Text::new(
         LocalizedNumber::new(number.clone())
             .style(style.clone())
             .notation(notation.clone())
             .use_grouping(grouping.clone())
-            .minimum_integer_digits(Map1::read_map(minimum_integer_digits.clone(), |a| *a as usize))
-            .minimum_fraction_digits(Map1::read_map(minimum_fraction_digits.clone(), |a| *a as usize))
-            .maximum_fraction_digits(Map1::read_map(maximum_fraction_digits.clone(), |a| *a as usize))
-            .minimum_significant_digits(Map1::read_map(minimum_significant_digits.clone(), |a| *a as usize))
-            .maximum_significant_digits(Map1::read_map(maximum_significant_digits.clone(), |a| *a as usize))
+            .minimum_integer_digits(minimum_integer_digits.clone())
+            .minimum_fraction_digits(minimum_fraction_digits.clone())
+            .maximum_fraction_digits(maximum_fraction_digits.clone())
+            .minimum_significant_digits(minimum_significant_digits.clone())
+            .maximum_significant_digits(maximum_significant_digits.clone())
             .rounding_mode(rounding.clone())
     )
         .padding(30.0)
@@ -79,11 +79,11 @@ fn main() {
                     RoundingMode::HalfTrunc,
                     RoundingMode::HalfEven,
                 ]).label(LocalizedString::new("rounding")),
-                Slider::new(minimum_integer_digits, 0.0, 10.0).step(1.0).label(LocalizedString::new("minimum_integer_digits")),
-                Slider::new(minimum_fraction_digits, 0.0, 10.0).step(1.0).label(LocalizedString::new("minimum_fraction_digits")),
-                Slider::new(maximum_fraction_digits, 0.0, 10.0).step(1.0).label(LocalizedString::new("maximum_fraction_digits")),
-                Slider::new(minimum_significant_digits, 0.0, 10.0).step(1.0).label(LocalizedString::new("minimum_significant_digits")),
-                Slider::new(maximum_significant_digits, 0.0, 10.0).step(1.0).label(LocalizedString::new("maximum_significant_digits")),
+                Slider::new(minimum_integer_digits, 0usize, 10usize).label(LocalizedString::new("minimum_integer_digits")),
+                Slider::new(minimum_fraction_digits, 0usize, 10usize).label(LocalizedString::new("minimum_fraction_digits")),
+                Slider::new(maximum_fraction_digits, 0usize, 10usize).label(LocalizedString::new("maximum_fraction_digits")),
+                Slider::new(minimum_significant_digits, 0usize, 10usize).label(LocalizedString::new("minimum_significant_digits")),
+                Slider::new(maximum_significant_digits, 0usize, 10usize).label(LocalizedString::new("maximum_significant_digits")),
             )).spacing(15.0),
             PopUpButton::new(locale.clone(), vec![
                 locale!("en"),

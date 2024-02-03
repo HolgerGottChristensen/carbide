@@ -8,7 +8,7 @@ use carbide_core::state::ReadStateExtNew;
 
 fn main() {
     let progress = LocalState::new(80.0);
-    let progress2 = LocalState::new(80.0);
+    let progress2 = LocalState::new(5u32);
     let progress3 = LocalState::new(30.0);
 
     let mut application = Application::new()
@@ -21,7 +21,7 @@ fn main() {
             Text::new(
                 progress
                     .clone()
-                    .map(|a: &f64| format!("Slider value: {:.2}", a)),
+                    .map(|a| format!("Slider value: {:.2}", a)),
             ),
             Slider::new(progress, 20.0, 100.0)
                 .padding(20.0),
@@ -30,17 +30,16 @@ fn main() {
             Text::new(
                 progress2
                     .clone()
-                    .map(|a: &f64| format!("Slider step value: {:.2}", a)),
+                    .map(|a| format!("Slider step value: {:.2}", a)),
             ),
-            Slider::new(progress2, 20.0, 100.0)
-                .step(Some(5.0))
+            Slider::new(progress2, 0, 5)
                 .accent_color(EnvironmentColor::Orange)
                 .padding(20.0),
             Empty::new().frame(20.0, 20.0),
             Text::new(
                 progress3
                     .clone()
-                    .map(|a: &f64| format!("Slider disabled value: {:.2}", a)),
+                    .map(|a| format!("Slider disabled value: {:.2}", a)),
             ),
             Slider::new(progress3, 20.0, 100.0)
                 .enabled(false)

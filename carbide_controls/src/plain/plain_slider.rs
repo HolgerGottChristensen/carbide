@@ -1,3 +1,4 @@
+use std::fmt::Debug;
 use carbide::event::{KeyboardEventContext, MouseEventContext};
 use carbide::layout::LayoutContext;
 use carbide_core::CommonWidgetImpl;
@@ -14,18 +15,20 @@ use crate::{enabled_state, EnabledState};
 
 const SMOOTH_VALUE_INCREMENT: f64 = 0.05;
 const SMOOTH_VALUE_SMALL_INCREMENT: f64 = 0.01;
+const STEP_SMOOTH_BEHAVIOR: bool = false;
 
 #[derive(Debug, Clone, Widget)]
 #[carbide_exclude(Focusable, Layout, MouseEvent, KeyboardEvent, Render)]
-pub struct PlainSlider<F, St, S, E, P, Th, In, Bg, En> where
+pub struct PlainSlider<V, F, St, S, E, P, Th, In, Bg, En> where
+    V: SliderValue,
     F: State<T=Focus>,
-    St: State<T=f64>,
-    S: ReadState<T=f64>,
-    E: ReadState<T=f64>,
-    P: ReadState<T=Option<f64>>,
-    Th: AnyWidget + Clone,
-    In: AnyWidget + Clone,
-    Bg: AnyWidget + Clone,
+    St: State<T=V>,
+    S: ReadState<T=V>,
+    E: ReadState<T=V>,
+    P: ReadState<T=Option<V>>,
+    Th: Widget,
+    In: Widget,
+    Bg: Widget,
     En: ReadState<T=bool>,
 {
     id: WidgetId,
@@ -41,21 +44,21 @@ pub struct PlainSlider<F, St, S, E, P, Th, In, Bg, En> where
     #[state] end: E,
     #[state] steps: P,
 
-    thumb_delegate: Delegate<Th>,
+    thumb_delegate: Delegate<Th, V>,
     thumb: Th,
-    track_delegate: Delegate<In>,
+    track_delegate: Delegate<In, V>,
     track: In,
-    background_delegate: Delegate<Bg>,
+    background_delegate: Delegate<Bg, V>,
     background: Bg,
 }
 
-impl PlainSlider<Focus, f64, f64, f64, Option<f64>, Empty, Empty, Empty, bool> {
-    pub fn new<St: IntoState<f64>, S: IntoReadState<f64>, E: IntoReadState<f64>>(state: St, start: S, end: E) -> PlainSlider<LocalState<Focus>, St::Output, S::Output, E::Output, Option<f64>, Box<dyn AnyWidget>, Box<dyn AnyWidget>, Box<dyn AnyWidget>, EnabledState> {
+impl PlainSlider<f64, Focus, f64, f64, f64, Option<f64>, Empty, Empty, Empty, bool> {
+    pub fn new<V: SliderValue, St: State<T=V>, S: IntoReadState<V>, E: IntoReadState<V>>(state: St, start: S, end: E) -> PlainSlider<V, LocalState<Focus>, St, S::Output, E::Output, Option<V>, impl Widget, impl Widget, impl Widget, EnabledState> {
         let focus = LocalState::new(Focus::Unfocused);
 
         Self::new_internal(
             focus,
-            state.into_state(),
+            state,
             start.into_read_state(),
             end.into_read_state(),
             None,
@@ -68,17 +71,18 @@ impl PlainSlider<Focus, f64, f64, f64, Option<f64>, Empty, Empty, Empty, bool> {
 }
 
 impl<
+    V: SliderValue,
     F: State<T=Focus>,
-    St: State<T=f64>,
-    S: ReadState<T=f64>,
-    E: ReadState<T=f64>,
-    P: ReadState<T=Option<f64>>,
+    St: State<T=V>,
+    S: ReadState<T=V>,
+    E: ReadState<T=V>,
+    P: ReadState<T=Option<V>>,
     Th: AnyWidget + Clone,
     In: AnyWidget + Clone,
     Bg: AnyWidget + Clone,
     En: ReadState<T=bool>,
-> PlainSlider<F, St, S, E, P, Th, In, Bg, En> {
-    pub fn step<P2: IntoReadState<Option<f64>>>(self, steps: P2) -> PlainSlider<F, St, S, E, P2::Output, Th, In, Bg, En> {
+> PlainSlider<V, F, St, S, E, P, Th, In, Bg, En> {
+    pub fn step<P2: IntoReadState<Option<V>>>(self, steps: P2) -> PlainSlider<V, F, St, S, E, P2::Output, Th, In, Bg, En> {
         Self::new_internal(
             self.focus,
             self.state,
@@ -92,7 +96,7 @@ impl<
         )
     }
 
-    pub fn focused<F2: IntoState<Focus>>(self, focus: F2) -> PlainSlider<F2::Output, St, S, E, P, Th, In, Bg, En> {
+    pub fn focused<F2: IntoState<Focus>>(self, focus: F2) -> PlainSlider<V, F2::Output, St, S, E, P, Th, In, Bg, En> {
         Self::new_internal(
             focus.into_state(),
             self.state,
@@ -106,7 +110,7 @@ impl<
         )
     }
 
-    pub fn enabled<En2: IntoReadState<bool>>(self, enabled: En2) -> PlainSlider<F, St, S, E, P, Th, In, Bg, En2::Output> {
+    pub fn enabled<En2: IntoReadState<bool>>(self, enabled: En2) -> PlainSlider<V, F, St, S, E, P, Th, In, Bg, En2::Output> {
         Self::new_internal(
             self.focus,
             self.state,
@@ -120,7 +124,7 @@ impl<
         )
     }
 
-    pub fn background<Bg2: AnyWidget + Clone>(self, delegate: Delegate<Bg2>) -> PlainSlider<F, St, S, E, P, Th, In, Bg2, En> {
+    pub fn background<Bg2: Widget>(self, delegate: Delegate<Bg2, V>) -> PlainSlider<V, F, St, S, E, P, Th, In, Bg2, En> {
         Self::new_internal(
             self.focus,
             self.state,
@@ -134,7 +138,7 @@ impl<
         )
     }
 
-    pub fn thumb<Th2: AnyWidget + Clone>(self, delegate: Delegate<Th2>) -> PlainSlider<F, St, S, E, P, Th2, In, Bg, En> {
+    pub fn thumb<Th2: Widget>(self, delegate: Delegate<Th2, V>) -> PlainSlider<V, F, St, S, E, P, Th2, In, Bg, En> {
         Self::new_internal(
             self.focus,
             self.state,
@@ -148,7 +152,7 @@ impl<
         )
     }
 
-    pub fn track<In2: AnyWidget + Clone>(self, delegate: Delegate<In2>) -> PlainSlider<F, St, S, E, P, Th, In2, Bg, En> {
+    pub fn track<In2: Widget>(self, delegate: Delegate<In2, V>) -> PlainSlider<V, F, St, S, E, P, Th, In2, Bg, En> {
         Self::new_internal(
             self.focus,
             self.state,
@@ -177,28 +181,28 @@ impl<
     }
 
     fn new_internal<
+        V2: SliderValue,
         F2: State<T=Focus>,
-        St2: State<T=f64>,
-        S2: ReadState<T=f64>,
-        E2: ReadState<T=f64>,
-        P2: ReadState<T=Option<f64>>,
+        St2: State<T=V2>,
+        S2: ReadState<T=V2>,
+        E2: ReadState<T=V2>,
+        P2: ReadState<T=Option<V2>>,
         Th2: AnyWidget + Clone,
         In2: AnyWidget + Clone,
         Bg2: AnyWidget + Clone,
         En2: ReadState<T=bool>,
-    >(focus: F2, state: St2, start: S2, end: E2, steps: P2, thumb_delegate: Delegate<Th2>, track_delegate: Delegate<In2>, background_delegate: Delegate<Bg2>, enabled: En2) -> PlainSlider<F2, St2, S2, E2, P2, Th2, In2, Bg2, En2> {
+    >(focus: F2, state: St2, start: S2, end: E2, steps: P2, thumb_delegate: Delegate<Th2, V2>, track_delegate: Delegate<In2, V2>, background_delegate: Delegate<Bg2, V2>, enabled: En2) -> PlainSlider<V2, F2, St2, S2, E2, P2, Th2, In2, Bg2, En2> {
         let percent = Map4::map(
             state.clone(),
             start.ignore_writes(),
             end.ignore_writes(),
             steps.ignore_writes(),
-            |state: &f64, start: &f64, end: &f64, _steps: &Option<f64>| {
-                (*state - *start) / (*end - *start)
+            |state: &V2, start: &V2, end: &V2, _steps: &Option<V2>| {
+                V2::percent(state, start, end)
             },
-            |new_percent: f64, _state: &f64, start: &f64, end: &f64, steps: &Option<f64>| {
-                if let Some(step_size) = *steps {
-                    let stepped_percent = Self::percent_to_stepped_percent(new_percent, *start, *end, step_size);
-                    let stepped_value = stepped_percent * (*end - *start) + *start;
+            |new_percent: f64, _state: &V2, start: &V2, end: &V2, steps: &Option<V2>| {
+                if let Some(step_size) = &*steps {
+                    let stepped_value = V2::stepped_interpolate(start, end, step_size, new_percent);
 
                     (
                         Some(stepped_value),
@@ -207,10 +211,11 @@ impl<
                         None,
                     )
                 } else {
-                    (Some(new_percent * (*end - *start) + *start), None, None, None)
+                    (Some(V2::interpolate(start, end, new_percent)), None, None, None)
                 }
             }
         ).as_dyn();
+
 
         let thumb = thumb_delegate(state.as_dyn(), start.as_dyn_read(), end.as_dyn_read(), steps.as_dyn_read(), focus.as_dyn_read(), enabled.as_dyn_read());
         let track = track_delegate(state.as_dyn(), start.as_dyn_read(), end.as_dyn_read(), steps.as_dyn_read(), focus.as_dyn_read(), enabled.as_dyn_read());
@@ -239,32 +244,34 @@ impl<
 }
 
 impl<
+    V: SliderValue,
     F: State<T=Focus>,
-    St: State<T=f64>,
-    S: ReadState<T=f64>,
-    E: ReadState<T=f64>,
-    P: ReadState<T=Option<f64>>,
+    St: State<T=V>,
+    S: ReadState<T=V>,
+    E: ReadState<T=V>,
+    P: ReadState<T=Option<V>>,
     Th: AnyWidget + Clone,
     In: AnyWidget + Clone,
     Bg: AnyWidget + Clone,
     En: ReadState<T=bool>,
-> Focusable for PlainSlider<F, St, S, E, P, Th, In, Bg, En> {
+> Focusable for PlainSlider<V, F, St, S, E, P, Th, In, Bg, En> {
     fn focus_children(&self) -> bool {
         false
     }
 }
 
 impl<
+    V: SliderValue,
     F: State<T=Focus>,
-    St: State<T=f64>,
-    S: ReadState<T=f64>,
-    E: ReadState<T=f64>,
-    P: ReadState<T=Option<f64>>,
+    St: State<T=V>,
+    S: ReadState<T=V>,
+    E: ReadState<T=V>,
+    P: ReadState<T=Option<V>>,
     Th: AnyWidget + Clone,
     In: AnyWidget + Clone,
     Bg: AnyWidget + Clone,
     En: ReadState<T=bool>,
-> KeyboardEventHandler for PlainSlider<F, St, S, E, P, Th, In, Bg, En> {
+> KeyboardEventHandler for PlainSlider<V, F, St, S, E, P, Th, In, Bg, En> {
     fn handle_keyboard_event(&mut self, event: &KeyboardEvent, ctx: &mut KeyboardEventContext) {
         if !*self.enabled.value() {
             return;
@@ -299,16 +306,17 @@ impl<
 }
 
 impl<
+    V: SliderValue,
     F: State<T=Focus>,
-    St: State<T=f64>,
-    S: ReadState<T=f64>,
-    E: ReadState<T=f64>,
-    P: ReadState<T=Option<f64>>,
+    St: State<T=V>,
+    S: ReadState<T=V>,
+    E: ReadState<T=V>,
+    P: ReadState<T=Option<V>>,
     Th: AnyWidget + Clone,
     In: AnyWidget + Clone,
     Bg: AnyWidget + Clone,
     En: ReadState<T=bool>,
-> MouseEventHandler for PlainSlider<F, St, S, E, P, Th, In, Bg, En> {
+> MouseEventHandler for PlainSlider<V, F, St, S, E, P, Th, In, Bg, En> {
     fn handle_mouse_event(&mut self, event: &MouseEvent, ctx: &mut MouseEventContext) {
         if !*self.enabled.value() {
             return;
@@ -354,30 +362,28 @@ impl<
 }
 
 impl<
+    V: SliderValue,
     F: State<T=Focus>,
-    St: State<T=f64>,
-    S: ReadState<T=f64>,
-    E: ReadState<T=f64>,
-    P: ReadState<T=Option<f64>>,
+    St: State<T=V>,
+    S: ReadState<T=V>,
+    E: ReadState<T=V>,
+    P: ReadState<T=Option<V>>,
     Th: AnyWidget + Clone,
     In: AnyWidget + Clone,
     Bg: AnyWidget + Clone,
     En: ReadState<T=bool>,
-> Layout for PlainSlider<F, St, S, E, P, Th, In, Bg, En> {
+> Layout for PlainSlider<V, F, St, S, E, P, Th, In, Bg, En> {
     fn calculate_size(&mut self, requested_size: Dimension, ctx: &mut LayoutContext) -> Dimension {
         let percent = self.percent.value().max(0.0).min(1.0);
 
         let background = self.background.calculate_size(requested_size, ctx);
 
-        let track_width = if let Some(steps) = *self.steps.value() {
-            let stepped_percent = Self::percent_to_stepped_percent(
-                percent,
-                *self.start.value(),
-                *self.end.value(),
-                steps
-            ).max(0.0).min(1.0);
-
-            requested_size.width * stepped_percent
+        let track_width = if let Some(steps) = &*self.steps.value() {
+            if STEP_SMOOTH_BEHAVIOR {
+                requested_size.width * percent
+            } else {
+                requested_size.width * V::stepped_percent(&*self.start.value(), &*self.end.value(), steps, percent)
+            }
         } else {
             requested_size.width * percent
         };
@@ -401,15 +407,13 @@ impl<
         let track_y = position.y() + self.height() / 2.0 - self.track.height() / 2.0;
         let thumb_y = position.y() + self.height() / 2.0 - self.thumb.height() / 2.0;
 
-        let thumb_x = if let Some(steps) = *self.steps.value() {
-            let stepped_percent = Self::percent_to_stepped_percent(
-                percent,
-                *self.start.value(),
-                *self.end.value(),
-                steps
-            ).max(0.0).min(1.0);
-
-            self.x() + (self.background.width() - self.thumb.width()) * stepped_percent
+        let thumb_x = if let Some(steps) = &*self.steps.value() {
+            if STEP_SMOOTH_BEHAVIOR {
+                self.x() + (self.background.width() - self.thumb.width()) * percent
+            } else {
+                let stepped_percent = V::stepped_percent(&*self.start.value(), &*self.end.value(), steps, percent);
+                self.x() + (self.background.width() - self.thumb.width()) * stepped_percent
+            }
         } else {
             self.x() + (self.background.width() - self.thumb.width()) * percent
         };
@@ -425,30 +429,32 @@ impl<
 }
 
 impl<
+    V: SliderValue,
     F: State<T=Focus>,
-    St: State<T=f64>,
-    S: ReadState<T=f64>,
-    E: ReadState<T=f64>,
-    P: ReadState<T=Option<f64>>,
+    St: State<T=V>,
+    S: ReadState<T=V>,
+    E: ReadState<T=V>,
+    P: ReadState<T=Option<V>>,
     Th: AnyWidget + Clone,
     In: AnyWidget + Clone,
     Bg: AnyWidget + Clone,
     En: ReadState<T=bool>,
-> CommonWidget for PlainSlider<F, St, S, E, P, Th, In, Bg, En> {
+> CommonWidget for PlainSlider<V, F, St, S, E, P, Th, In, Bg, En> {
     CommonWidgetImpl!(self, id: self.id, child: (), position: self.position, dimension: self.dimension, flag: WidgetFlag::FOCUSABLE, flexibility: 1, focus: self.focus);
 }
 
 impl<
+    V: SliderValue,
     F: State<T=Focus>,
-    St: State<T=f64>,
-    S: ReadState<T=f64>,
-    E: ReadState<T=f64>,
-    P: ReadState<T=Option<f64>>,
+    St: State<T=V>,
+    S: ReadState<T=V>,
+    E: ReadState<T=V>,
+    P: ReadState<T=Option<V>>,
     Th: AnyWidget + Clone,
     In: AnyWidget + Clone,
     Bg: AnyWidget + Clone,
     En: ReadState<T=bool>,
-> Render for PlainSlider<F, St, S, E, P, Th, In, Bg, En> {
+> Render for PlainSlider<V, F, St, S, E, P, Th, In, Bg, En> {
     fn render(&mut self, context: &mut RenderContext, env: &mut Environment) {
         self.background.render(context, env);
         self.track.render(context, env);
@@ -457,45 +463,46 @@ impl<
 }
 
 impl<
+    V: SliderValue,
     F: State<T=Focus>,
-    St: State<T=f64>,
-    S: ReadState<T=f64>,
-    E: ReadState<T=f64>,
-    P: ReadState<T=Option<f64>>,
+    St: State<T=V>,
+    S: ReadState<T=V>,
+    E: ReadState<T=V>,
+    P: ReadState<T=Option<V>>,
     Th: AnyWidget + Clone,
     In: AnyWidget + Clone,
     Bg: AnyWidget + Clone,
     En: ReadState<T=bool>,
-> WidgetExt for PlainSlider<F, St, S, E, P, Th, In, Bg, En> {}
+> WidgetExt for PlainSlider<V, F, St, S, E, P, Th, In, Bg, En> {}
 
 
 // ---------------------------------------------------
 //  Delegates
 // ---------------------------------------------------
-type Delegate<W> = fn(
-    state: Box<dyn AnyState<T=f64>>,
-    start: Box<dyn AnyReadState<T=f64>>,
-    end: Box<dyn AnyReadState<T=f64>>,
-    steps: Box<dyn AnyReadState<T=Option<f64>>>,
+type Delegate<W, V> = fn(
+    state: Box<dyn AnyState<T=V>>,
+    start: Box<dyn AnyReadState<T=V>>,
+    end: Box<dyn AnyReadState<T=V>>,
+    steps: Box<dyn AnyReadState<T=Option<V>>>,
     focus: Box<dyn AnyReadState<T=Focus>>,
     enabled: Box<dyn AnyReadState<T=bool>>,
 ) -> W;
 
-fn default_background(_state: Box<dyn AnyState<T=f64>>, _start: Box<dyn AnyReadState<T=f64>>, _end: Box<dyn AnyReadState<T=f64>>, _steps: Box<dyn AnyReadState<T=Option<f64>>>, _focus: Box<dyn AnyReadState<T=Focus>>, _enabled: Box<dyn AnyReadState<T=bool>>,) -> Box<dyn AnyWidget> {
+fn default_background<V: SliderValue>(_state: Box<dyn AnyState<T=V>>, _start: Box<dyn AnyReadState<T=V>>, _end: Box<dyn AnyReadState<T=V>>, _steps: Box<dyn AnyReadState<T=Option<V>>>, _focus: Box<dyn AnyReadState<T=Focus>>, _enabled: Box<dyn AnyReadState<T=bool>>,) -> impl Widget {
     Rectangle::new()
         .fill(EnvironmentColor::Red)
         .frame_fixed_height(26.0)
         .boxed()
 }
 
-fn default_track(_state: Box<dyn AnyState<T=f64>>, _start: Box<dyn AnyReadState<T=f64>>, _end: Box<dyn AnyReadState<T=f64>>, _steps: Box<dyn AnyReadState<T=Option<f64>>>, _focus: Box<dyn AnyReadState<T=Focus>>, _enabled: Box<dyn AnyReadState<T=bool>>,) -> Box<dyn AnyWidget> {
+fn default_track<V: SliderValue>(_state: Box<dyn AnyState<T=V>>, _start: Box<dyn AnyReadState<T=V>>, _end: Box<dyn AnyReadState<T=V>>, _steps: Box<dyn AnyReadState<T=Option<V>>>, _focus: Box<dyn AnyReadState<T=Focus>>, _enabled: Box<dyn AnyReadState<T=bool>>,) -> impl Widget {
     Rectangle::new()
         .fill(EnvironmentColor::Green)
         .frame_fixed_height(26.0)
         .boxed()
 }
 
-fn default_thumb(state: Box<dyn AnyState<T=f64>>, start: Box<dyn AnyReadState<T=f64>>, end: Box<dyn AnyReadState<T=f64>>, _steps: Box<dyn AnyReadState<T=Option<f64>>>, _focus: Box<dyn AnyReadState<T=Focus>>, _enabled: Box<dyn AnyReadState<T=bool>>,) -> Box<dyn AnyWidget> {
+fn default_thumb<V: SliderValue>(state: Box<dyn AnyState<T=V>>, start: Box<dyn AnyReadState<T=V>>, end: Box<dyn AnyReadState<T=V>>, _steps: Box<dyn AnyReadState<T=Option<V>>>, _focus: Box<dyn AnyReadState<T=Focus>>, _enabled: Box<dyn AnyReadState<T=bool>>,) -> impl Widget {
     let color = Map3::read_map(state, start, end, |state, start, end| {
         if state < start || state > end {
             EnvironmentColor::Purple
@@ -506,3 +513,95 @@ fn default_thumb(state: Box<dyn AnyState<T=f64>>, start: Box<dyn AnyReadState<T=
 
     Rectangle::new().fill(color).frame(26.0, 26.0).boxed()
 }
+
+
+pub trait SliderValue: Debug + Clone + PartialEq + PartialOrd + 'static {
+    fn interpolate(&self, other: &Self, percentage: f64) -> Self;
+    fn stepped_interpolate(&self, other: &Self, step_size: &Self, percentage: f64) -> Self {
+        let stepped = Self::stepped_percent(self, other, step_size, percentage);
+        Self::interpolate(self, other, stepped)
+    }
+    fn percent(&self, start: &Self, end: &Self) -> f64;
+    fn stepped_percent(&self, other: &Self, step_size: &Self, percentage: f64) -> f64;
+}
+
+impl SliderValue for f64 {
+    fn interpolate(&self, other: &Self, percentage: f64) -> Self {
+        percentage * (*other - *self) + *self
+    }
+
+    fn percent(&self, start: &Self, end: &Self) -> f64 {
+        (*self - *start) / (*end - *start)
+    }
+
+    fn stepped_percent(&self, other: &Self, step_size: &Self, percentage: f64) -> f64 {
+        let range = *other - *self;
+        let range_mod = range % step_size;
+        let percent_lost = range_mod / range;
+        let number_of_steps = range / step_size;
+        let percent_per_step = (number_of_steps * percentage).round() / number_of_steps;
+
+        if percentage > 1.0 - percent_lost / 2.0 {
+            1.0
+        } else {
+            percent_per_step
+        }
+    }
+}
+
+impl SliderValue for f32 {
+    fn interpolate(&self, other: &Self, percentage: f64) -> Self {
+        (percentage * ((*other - *self) as f64)) as f32 + *self
+    }
+
+    fn percent(&self, start: &Self, end: &Self) -> f64 {
+        (*self - *start) as f64 / (*end - *start) as f64
+    }
+
+    fn stepped_percent(&self, other: &Self, step_size: &Self, percentage: f64) -> f64 {
+        let range = *other - *self;
+        let range_mod = (range % step_size) as f64;
+        let percent_lost = range_mod / range as f64;
+        let number_of_steps = range as f64 / *step_size as f64;
+        let percent_per_step = (number_of_steps * percentage).round() / number_of_steps;
+
+        if percentage > 1.0 - percent_lost / 2.0 {
+            1.0
+        } else {
+            percent_per_step
+        }
+    }
+}
+
+macro_rules! impl_slider_value {
+    ($($typ: ty),*) => {
+        $(
+        impl SliderValue for $typ {
+            fn interpolate(&self, other: &Self, percentage: f64) -> Self {
+                (percentage * (*other - *self) as f64).round() as $typ + *self
+            }
+
+            fn percent(&self, start: &Self, end: &Self) -> f64 {
+                self.saturating_sub(*start) as f64 / (*end - *start) as f64
+            }
+
+            fn stepped_percent(&self, other: &Self, step_size: &Self, percentage: f64) -> f64 {
+                let range = *other - *self;
+                let range_mod = (range % step_size) as f64;
+                let percent_lost = range_mod / range as f64;
+                let number_of_steps = range as f64 / *step_size as f64;
+                let percent_per_step = (number_of_steps * percentage).round() / number_of_steps;
+
+                if percentage > 1.0 - percent_lost / 2.0 {
+                    1.0
+                } else {
+                    percent_per_step
+                }
+            }
+        }
+        )*
+    };
+}
+
+impl_slider_value!(u8, u16, u32, u64, u128, usize);
+impl_slider_value!(i8, i16, i32, i64, i128, isize);
