@@ -1,6 +1,7 @@
 use std::fmt::Debug;
 use carbide::event::{KeyboardEventContext, MouseEventContext};
 use carbide::layout::LayoutContext;
+use carbide::state::ValueRefMut;
 use carbide_core::CommonWidgetImpl;
 use carbide_core::draw::{Dimension, Position};
 use carbide_core::environment::{Environment, EnvironmentColor};
@@ -200,18 +201,11 @@ impl<
             |state: &V2, start: &V2, end: &V2, _steps: &Option<V2>| {
                 V2::percent(state, start, end)
             },
-            |new_percent: f64, _state: &V2, start: &V2, end: &V2, steps: &Option<V2>| {
+            |new_percent: f64, mut state, start, end, steps| {
                 if let Some(step_size) = &*steps {
-                    let stepped_value = V2::stepped_interpolate(start, end, step_size, new_percent);
-
-                    (
-                        Some(stepped_value),
-                        None,
-                        None,
-                        None,
-                    )
+                    *state = V2::stepped_interpolate(&*start, &*end, step_size, new_percent);
                 } else {
-                    (Some(V2::interpolate(start, end, new_percent)), None, None, None)
+                    *state = V2::interpolate(&*start, &*end, new_percent);
                 }
             }
         ).as_dyn();

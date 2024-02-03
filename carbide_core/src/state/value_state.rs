@@ -195,7 +195,7 @@ impl From<&str> for RState<String> {
 //     }
 // }
 
-impl Into<TState<String>> for TState<Result<String, String>> {
+/*impl Into<TState<String>> for TState<Result<String, String>> {
     fn into(self) -> TState<String> {
         Map1::map_cached(
             self,
@@ -205,7 +205,7 @@ impl Into<TState<String>> for TState<Result<String, String>> {
             |new, _| Some(Ok(new)),
         )
     }
-}
+}*/
 
 // impl From<TState<Result<String, String>>> for RState<String> {
 //     fn from(t: TState<Result<String, String>>) -> RState<String> {

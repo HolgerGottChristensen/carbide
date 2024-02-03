@@ -256,7 +256,7 @@ mod tests {
         let mut mapped = Map1::map(
             base.clone(),
             |val| { *val + 2 },
-            |new, old| { Some(new - 2) },
+            |new, mut val| { *val = new - 2 },
         );
 
         let mut field = FieldState::new(mapped.clone(), |base| { base }, |base| { base });

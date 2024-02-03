@@ -28,7 +28,7 @@ impl<T: StateContract, TState: ReadState<T=T> + Clone + 'static> NewStateSync fo
 
 impl<T: StateContract, TState: ReadState<T=T> + Clone + 'static> AnyState for IgnoreWritesState<T, TState> {
     fn value_dyn_mut(&mut self) -> ValueRefMut<T> {
-        panic!("Trying to get mutable value for a state that is readonly and ignoring writes.")
+        ValueRefMut::Read(self.value())
     }
 
     fn set_value_dyn(&mut self, _: T) {

@@ -25,7 +25,9 @@ fn main() {
     let new_state = Map1::map(
         block_width.clone(),
         |x: &f64| *x * 2.0,
-        |x: f64, _: &f64| Some(x / 2.0),
+        |x: f64, mut val| {
+            *val = x / 2.0;
+        },
     );
 
     let new_state1 = Map1::read_map(block_width.clone(), |x: &f64| *x * 3.0).ignore_writes();

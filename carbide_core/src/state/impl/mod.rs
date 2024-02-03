@@ -24,6 +24,7 @@ pub mod ord;*/
 
 
 use carbide_core::state::StateContract;
+use crate::draw::Color;
 use crate::state::{Map1, ReadState, RMap1};
 
 pub trait ToStringState {
@@ -41,3 +42,4 @@ impl<T, U: ToString + StateContract> ToStringState for T where T: ReadState<T=U>
         })
     }
 }
+

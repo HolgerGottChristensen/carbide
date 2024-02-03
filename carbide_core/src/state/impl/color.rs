@@ -35,8 +35,8 @@ impl TState<Color> {
         fn map(color: &Color) -> Color {
             color.complement()
         }
-        fn replace(new: Color, _: &Color) -> Option<Color> {
-            Some(new.complement())
+        fn replace(new: Color, val: &mut Color) {
+            *val = new.complement()
         }
         Map1::map(self.clone(), map, replace)
     }

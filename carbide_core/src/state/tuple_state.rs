@@ -47,7 +47,7 @@ macro_rules! tuple_state {
             }
 
             #[allow(unused_parens)]
-            pub fn map<$($type: StateContract),*, TO: StateContract, $($type2: AnyState<T=$type> + Clone + 'static),*, MAP: Fn($(&$type),*) -> TO + Clone + 'static, REPLACE: Fn(TO, $(&$type),*) -> ($(Option<$type>),*) + Clone + 'static>($($name: $type2),*, map: MAP, replace: REPLACE) -> $map_name<MAP, REPLACE, $($type),*, TO, $($type2),*> {
+            pub fn map<$($type: StateContract),*, TO: StateContract, $($type2: AnyState<T=$type> + Clone + 'static),*, MAP: Fn($(&$type),*) -> TO + Clone + 'static, REPLACE: Fn(TO, $(ValueRefMut<$type>),*) + Clone + 'static>($($name: $type2),*, map: MAP, replace: REPLACE) -> $map_name<MAP, REPLACE, $($type),*, TO, $($type2),*> {
                 $map_name {
                     $(
                         $name,
@@ -58,7 +58,7 @@ macro_rules! tuple_state {
             }
 
             #[allow(unused_parens)]
-            pub fn map_owned<$($type: StateContract),*, TO: StateContract, $($type2: AnyState<T=$type> + Clone + 'static),*, MAP: Fn($(&$type),*, &mut TO) + Clone + 'static, REPLACE: Fn(TO, $(&mut $type),*) + Clone + 'static>($($name: $type2),*, map: MAP, replace: REPLACE, default: TO) -> $map_name_owned<MAP, REPLACE, $($type),*, TO, $($type2),*> {
+            pub fn map_owned<$($type: StateContract),*, TO: StateContract, $($type2: AnyState<T=$type> + Clone + 'static),*, MAP: Fn($(&$type),*, &mut TO) + Clone + 'static, REPLACE: Fn(TO, $(ValueRefMut<$type>),*) + Clone + 'static>($($name: $type2),*, map: MAP, replace: REPLACE, default: TO) -> $map_name_owned<MAP, REPLACE, $($type),*, TO, $($type2),*> {
                 $map_name_owned {
                     $(
                         $name,
@@ -70,7 +70,7 @@ macro_rules! tuple_state {
             }
 
             #[allow(unused_parens)]
-            pub fn map_cached<$($type: StateContract),*, TO: StateContract>($($name: impl Into<TState<$type>>),*, map: fn($($name: &$type),*) -> TO, replace: fn(TO, $($name: &$type),*) -> ($(Option<$type>),*)) -> TState<TO> {
+            pub fn map_cached<$($type: StateContract),*, TO: StateContract>($($name: impl Into<TState<$type>>),*, map: fn($($name: &$type),*) -> TO, replace: fn(TO, $($name: ValueRefMut<$type>),*)) -> TState<TO> {
                 let n = $map_name {
                     $(
                         $name: $name.into(),
@@ -90,7 +90,7 @@ macro_rules! tuple_state {
             TO: StateContract,
             $($type2: AnyState<T=$type> + Clone + 'static),*,
             MAP: Fn($(&$type),*) -> TO + Clone + 'static,
-            REPLACE: Fn(TO, $(&$type),*) -> ($(Option<$type>),*) + Clone + 'static,
+            REPLACE: Fn(TO, $(ValueRefMut<$type>),*) + Clone + 'static,
         {
             $(
                 $name: $type2,
@@ -106,7 +106,7 @@ macro_rules! tuple_state {
             TO: StateContract,
             $($type2: AnyState<T=$type> + Clone + 'static),*,
             MAP: Fn($(&$type),*, &mut TO) + Clone + 'static,
-            REPLACE: Fn(TO, $(&mut $type),*) + Clone + 'static,
+            REPLACE: Fn(TO, $(ValueRefMut<$type>),*) + Clone + 'static,
         {
             $(
                 $name: $type2,
@@ -171,7 +171,7 @@ macro_rules! tuple_state {
             TO: StateContract,
             $($type2: AnyState<T=$type> + Clone + 'static),*,
             MAP: Fn($(&$type),*) -> TO + Clone + 'static,
-            REPLACE: Fn(TO, $(&$type),*) -> ($(Option<$type>),*) + Clone + 'static,
+            REPLACE: Fn(TO, $(ValueRefMut<$type>),*) + Clone + 'static,
         > NewStateSync for $map_name<MAP, REPLACE, $($type),*, TO, $($type2),*> {
             fn sync(&mut self, env: &mut Environment) -> bool {
                 let mut updated = false;
@@ -191,7 +191,7 @@ macro_rules! tuple_state {
             TO: StateContract,
             $($type2: AnyState<T=$type> + Clone + 'static),*,
             MAP: Fn($(&$type),*, &mut TO) + Clone + 'static,
-            REPLACE: Fn(TO, $(&mut $type),*) + Clone + 'static,
+            REPLACE: Fn(TO, $(ValueRefMut<$type>),*) + Clone + 'static,
         > NewStateSync for $map_name_owned<MAP, REPLACE, $($type),*, TO, $($type2),*> {
             fn sync(&mut self, env: &mut Environment) -> bool {
                 let mut updated = false;
@@ -224,7 +224,12 @@ macro_rules! tuple_state {
         }
 
         #[allow(unused_parens)]
-        impl<$($type: StateContract),*, TO: StateContract, $($type2: AnyReadState<T=$type> + Clone + 'static),*, MAP: Fn($(&$type),*) -> TO + Clone + 'static> AnyReadState for $read_map_name<MAP, $($type),*, TO, $($type2),*> {
+        impl<
+            $($type: StateContract),*,
+            TO: StateContract,
+            $($type2: AnyReadState<T=$type> + Clone + 'static),*,
+            MAP: Fn($(&$type),*) -> TO + Clone + 'static
+        > AnyReadState for $read_map_name<MAP, $($type),*, TO, $($type2),*> {
             type T = TO;
             fn value_dyn(&self) -> ValueRef<TO> {
                 let val = (self.map)($(&*self.$name.value()),*);
@@ -238,7 +243,7 @@ macro_rules! tuple_state {
             TO: StateContract,
             $($type2: AnyState<T=$type> + Clone + 'static),*,
             MAP: Fn($(&$type),*) -> TO + Clone + 'static,
-            REPLACE: Fn(TO, $(&$type),*) -> ($(Option<$type>),*) + Clone + 'static,
+            REPLACE: Fn(TO, $(ValueRefMut<$type>),*) + Clone + 'static,
         > AnyReadState for $map_name<MAP, REPLACE, $($type),*, TO, $($type2),*> {
             type T = TO;
             fn value_dyn(&self) -> ValueRef<TO> {
@@ -253,7 +258,7 @@ macro_rules! tuple_state {
             TO: StateContract,
             $($type2: AnyState<T=$type> + Clone + 'static),*,
             MAP: Fn($(&$type),*, &mut TO) + Clone + 'static,
-            REPLACE: Fn(TO, $(&mut $type),*) + Clone + 'static,
+            REPLACE: Fn(TO, $(ValueRefMut<$type>),*) + Clone + 'static,
         > AnyReadState for $map_name_owned<MAP, REPLACE, $($type),*, TO, $($type2),*> {
             type T = TO;
             fn value_dyn(&self) -> ValueRef<TO> {
@@ -263,7 +268,12 @@ macro_rules! tuple_state {
         }
 
         #[allow(unused_parens)]
-        impl<$($type: StateContract),*, TO: StateContract + Default, $($type2: AnyReadState<T=$type> + Clone + 'static),*, MAP: Fn(&Environment, $(&$type),*) -> TO + Clone + 'static> AnyReadState for $env_map_name<MAP, $($type),*, TO, $($type2),*> {
+        impl<
+            $($type: StateContract),*,
+            TO: StateContract + Default,
+            $($type2: AnyReadState<T=$type> + Clone + 'static),*,
+            MAP: Fn(&Environment, $(&$type),*) -> TO + Clone + 'static
+        > AnyReadState for $env_map_name<MAP, $($type),*, TO, $($type2),*> {
             type T = TO;
             fn value_dyn(&self) -> ValueRef<TO> {
                 ValueRef::Borrow(&self.value)
@@ -276,7 +286,7 @@ macro_rules! tuple_state {
             TO: StateContract,
             $($type2: AnyState<T=$type> + Clone + 'static),*,
             MAP: Fn($(&$type),*) -> TO + Clone + 'static,
-            REPLACE: Fn(TO, $(&$type),*) -> ($(Option<$type>),*) + Clone + 'static,
+            REPLACE: Fn(TO, $(ValueRefMut<$type>),*) + Clone + 'static,
         > AnyState for $map_name<MAP, REPLACE, $($type),*, TO, $($type2),*> {
             fn value_dyn_mut(&mut self) -> ValueRefMut<TO> {
                 // Get the current value
@@ -296,13 +306,7 @@ macro_rules! tuple_state {
             /// Set value will only update its containing state if the map_rev is specified.
             #[allow(unused_parens)]
             fn set_value_dyn(&mut self, value: TO) {
-                let ($($name),*) = (self.replace)(value, $(&*self.$name.value()),*);
-
-                $(
-                    if let Some($name) = $name {
-                        self.$name.set_value($name);
-                    }
-                )*
+                (self.replace)(value, $(self.$name.value_mut()),*);
             }
         }
 
@@ -312,7 +316,7 @@ macro_rules! tuple_state {
             TO: StateContract,
             $($type2: AnyState<T=$type> + Clone + 'static),*,
             MAP: Fn($(&$type),*, &mut TO) + Clone + 'static,
-            REPLACE: Fn(TO, $(&mut $type),*) + Clone + 'static,
+            REPLACE: Fn(TO, $(ValueRefMut<$type>),*) + Clone + 'static,
         > AnyState for $map_name_owned<MAP, REPLACE, $($type),*, TO, $($type2),*> {
             fn value_dyn_mut(&mut self) -> ValueRefMut<TO> {
                 // Get the current value
@@ -332,7 +336,7 @@ macro_rules! tuple_state {
             /// Set value will only update its containing state if the map_rev is specified.
             #[allow(unused_parens)]
             fn set_value_dyn(&mut self, value: TO) {
-                (self.replace)(value, $(&mut *self.$name.value_mut()),*);
+                (self.replace)(value, $(self.$name.value_mut()),*);
             }
         }
 
@@ -364,7 +368,7 @@ macro_rules! tuple_state {
             TO: StateContract,
             $($type2: AnyState<T=$type> + Clone + 'static),*,
             MAP: Fn($(&$type),*) -> TO + Clone + 'static,
-            REPLACE: Fn(TO, $(&$type),*) -> ($(Option<$type>),*) + Clone + 'static,
+            REPLACE: Fn(TO, $(ValueRefMut<$type>),*) + Clone + 'static,
         > core::fmt::Debug for $map_name<MAP, REPLACE, $($type),*, TO, $($type2),*> {
             fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
                 f.debug_struct(stringify!($map_name))
@@ -381,7 +385,7 @@ macro_rules! tuple_state {
             TO: StateContract,
             $($type2: AnyState<T=$type> + Clone + 'static),*,
             MAP: Fn($(&$type),*, &mut TO) + Clone + 'static,
-            REPLACE: Fn(TO, $(&mut $type),*) + Clone + 'static,
+            REPLACE: Fn(TO, $(ValueRefMut<$type>),*) + Clone + 'static,
         > core::fmt::Debug for $map_name_owned<MAP, REPLACE, $($type),*, TO, $($type2),*> {
             fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
                 f.debug_struct(stringify!($map_name_owned))

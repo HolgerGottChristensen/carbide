@@ -1,5 +1,5 @@
 use std::fmt::Debug;
-use crate::state::{Map1, RMap1, AnyReadState, StateContract, State, AnyState, RWMap1, RWOMap1};
+use crate::state::{Map1, RMap1, AnyReadState, StateContract, State, AnyState, RWMap1, RWOMap1, ValueRefMut};
 
 
 // ---------------------------------------------------
@@ -74,15 +74,15 @@ impl_string_state!(
 
 
 impl ConvertInto<Result<String, String>> for String {
-    type Output<G: AnyState<T=Self> + Clone> = RWMap1<fn(&String) -> Result<String, String>, fn(Result<String, String>, &String) -> Option<String>, String, Result<String, String>, G>;
+    type Output<G: AnyState<T=Self> + Clone> = RWMap1<fn(&String) -> Result<String, String>, fn(Result<String, String>, ValueRefMut<String>), String, Result<String, String>, G>;
 
     fn convert<F: AnyState<T=Self> + Clone>(f: F) -> Self::Output<F> {
         Map1::map(f, |val| {
             Ok(val.to_string())
-        }, |new, _old| {
+        }, |new, mut value| {
             match new {
                 Ok(s) | Err(s) => {
-                    Some(s)
+                    *value = s;
                 }
             }
         })
@@ -93,7 +93,7 @@ macro_rules! impl_res_state_plain {
     ($($typ: ty),*) => {
         $(
             impl ConvertInto<Result<String, String>> for Result<$typ, String> {
-                type Output<G: AnyState<T=Self> + Clone> = RWMap1<fn(&Result<$typ, String>)->Result<String, String>, fn(Result<String, String>, &Result<$typ, String>)->Option<Result<$typ, String>>, Result<$typ, String>, Result<String, String>, G>;
+                type Output<G: AnyState<T=Self> + Clone> = RWMap1<fn(&Result<$typ, String>)->Result<String, String>, fn(Result<String, String>, ValueRefMut<Result<$typ, String>>), Result<$typ, String>, Result<String, String>, G>;
 
                 fn convert<F: AnyState<T=Self> + Clone>(f: F) -> Self::Output<F> {
                     use std::str::FromStr;
@@ -103,11 +103,10 @@ macro_rules! impl_res_state_plain {
                             Ok(val) => { Ok(val.to_string()) }
                             Err(val) => { Err(val.to_string()) }
                         }
-                    }, |new, _old| {
+                    }, |new, mut val| {
                         match new {
                             Ok(s) | Err(s) => {
-                                Some(<$typ>::from_str(&s)
-                                    .map_err(|_| s.to_string()))
+                                *val = <$typ>::from_str(&s).map_err(|_| s.to_string())
                             }
                         }
                     })
@@ -125,7 +124,7 @@ impl_res_state_plain! {
 
 // TODO: We cant do float mappings nicely, because we dont have access to the old value when mapping forwards.
 impl ConvertInto<Result<String, String>> for Result<f32, String> {
-    type Output<G: AnyState<T=Self> + Clone> = RWMap1<fn(&Result<f32, String>) -> Result<String, String>, fn(Result<String, String>, &Result<f32, String>) -> Option<Result<f32, String>>, Result<f32, String>, Result<String, String>, G>;
+    type Output<G: AnyState<T=Self> + Clone> = RWMap1<fn(&Result<f32, String>) -> Result<String, String>, fn(Result<String, String>, ValueRefMut<Result<f32, String>>), Result<f32, String>, Result<String, String>, G>;
 
     fn convert<F: AnyState<T=Self> + Clone>(f: F) -> Self::Output<F> {
         use std::str::FromStr;
@@ -135,10 +134,10 @@ impl ConvertInto<Result<String, String>> for Result<f32, String> {
                 Ok(val) => { Ok(val.to_string()) }
                 Err(val) => { Err(val.to_string()) }
             }
-        }, |new, _old| {
+        }, |new, mut val| {
             match new {
                 Ok(s) | Err(s) => {
-                    Some(<f32>::from_str(&s).map_err(|_| s))
+                    *val = <f32>::from_str(&s).map_err(|_| s);
                 }
             }
         })
@@ -148,7 +147,7 @@ impl ConvertInto<Result<String, String>> for Result<f32, String> {
 impl ConvertInto<Result<String, String>> for Result<f64, String> {
     type Output<G: AnyState<T=Self> + Clone> = RWOMap1<
         fn(&Result<f64, String>, &mut Result<String, String>),
-        fn(Result<String, String>, &mut Result<f64, String>),
+        fn(Result<String, String>, ValueRefMut<Result<f64, String>>),
         Result<f64, String>,
         Result<String, String>,
         G
@@ -175,7 +174,7 @@ impl ConvertInto<Result<String, String>> for Result<f64, String> {
                     *t = e.clone().map(|b| b.to_string());
                 }
             }
-        }, |new, old| {
+        }, |new, mut old| {
             match new {
                 Ok(s) | Err(s) => {
                     *old = <f64>::from_str(&s).map_err(|_| s);

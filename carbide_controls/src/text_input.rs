@@ -112,7 +112,9 @@ impl<F: State<T=Focus>, O: ReadState<T=Option<char>>, T: State<T=Result<String, 
             |res| match res.as_ref() {
                 Ok(s) | Err(s) => s.clone(),
             },
-            |new, _| Some(Ok(new)),
+            |new, mut val| {
+                *val = Ok(new)
+            },
         );
 
         let text_widget = PlainTextInput::new(text_state)

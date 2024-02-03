@@ -1,3 +1,4 @@
+use carbide::state::ValueRefMut;
 use carbide_core::impl_read_state;
 use carbide_core::state::{AnyReadState, AnyState, ConvertInto, ConvertIntoRead, Map1, RMap1, RWMap1};
 
@@ -41,15 +42,15 @@ impl ConvertIntoRead<CheckBoxValue> for bool {
 }
 
 impl ConvertInto<CheckBoxValue> for bool {
-    type Output<G: AnyState<T=Self> + Clone> = RWMap1<fn(&bool)->CheckBoxValue, fn(CheckBoxValue, &bool)->Option<bool>, bool, CheckBoxValue, G>;
+    type Output<G: AnyState<T=Self> + Clone> = RWMap1<fn(&bool)->CheckBoxValue, fn(CheckBoxValue, ValueRefMut<bool>), bool, CheckBoxValue, G>;
 
     fn convert<F: AnyState<T=Self> + Clone>(f: F) -> Self::Output<F> {
         Map1::map(f, |value| {
             if *value { CheckBoxValue::True } else { CheckBoxValue::False }
-        }, |new, _old| {
+        }, |new, mut val| {
             match new {
-                 CheckBoxValue::True => Some(true),
-                 CheckBoxValue::Indeterminate | CheckBoxValue::False => Some(false),
+                 CheckBoxValue::True => *val = true,
+                 CheckBoxValue::Indeterminate | CheckBoxValue::False => *val = false,
              }
         })
     }

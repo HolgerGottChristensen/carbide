@@ -32,7 +32,7 @@ fn main() {
                     .clone()
                     .map(|a| format!("Slider step value: {:.2}", a)),
             ),
-            Slider::new(progress2, 0, 5)
+            Slider::new(progress2, 0, 25)
                 .accent_color(EnvironmentColor::Orange)
                 .padding(20.0),
             Empty::new().frame(20.0, 20.0),

@@ -78,8 +78,8 @@ mod tests {
 
         let mut mapped = Map1::map(state.clone(), |val| {
             *val + 1
-        }, |new, old| {
-            Some(new - 1)
+        }, |new, mut val| {
+            *val = new - 1;
         });
 
         assert_eq!(*state.value() + 1, *mapped.value());
@@ -97,8 +97,8 @@ mod tests {
 
         let mut mapped = Map1::map(state.clone(), |val| {
             *val + 1
-        }, |new, old| {
-            Some(new - 1)
+        }, |new, mut val| {
+            *val = new - 1;
         });
 
         assert_eq!(*state.value() + 1, *mapped.value());
@@ -116,8 +116,8 @@ mod tests {
 
         let mut mapped = Map1::map(state.clone(), |val| {
             *val + 1
-        }, |new, old| {
-            Some(new - 1)
+        }, |new, mut val| {
+            *val = new - 1;
         });
 
         let mapped2 = Map1::read_map(mapped.clone(), |val| {

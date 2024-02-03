@@ -298,6 +298,7 @@ pub enum ValueRefMut<'a, T: 'a + Debug + Clone + 'static> {
     Borrow(Option<&'a mut T>),
     Locked(Option<MappedRwLockWriteGuard<'a, T>>),
     TupleState(Option<Box<dyn FnOnce(T)>>, Option<T>),
+    Read(ValueRef<'a, T>),
 }
 
 impl<'b, T: Clone + Debug + 'static> ValueRefMut<'b, T> {
@@ -334,6 +335,9 @@ impl<'b, T: Clone + Debug + 'static> ValueRefMut<'b, T> {
 
                 ValueRefMut::TupleState(Some(Box::new(new_setter)), Some(new))
             }
+            ValueRefMut::Read(_) => {
+                todo!()
+            }
         }
     }
 }
@@ -354,6 +358,7 @@ impl<T: Debug + Clone + 'static> Drop for ValueRefMut<'_, T> {
                     }
                 }
             }
+            ValueRefMut::Read(_) => {}
         }
     }
 }
@@ -368,6 +373,7 @@ impl<T: Debug + Clone + 'static> Deref for ValueRefMut<'_, T> {
             ValueRefMut::Borrow(value) => value.as_ref().unwrap(),
             ValueRefMut::Locked(value) => value.as_ref().unwrap().deref(),
             ValueRefMut::TupleState(_, val) => val.as_ref().unwrap(),
+            ValueRefMut::Read(val) => &*val
         }
     }
 }
@@ -380,6 +386,9 @@ impl<T: Debug + Clone + 'static> DerefMut for ValueRefMut<'_, T> {
             ValueRefMut::Borrow(value) => value.as_mut().unwrap(),
             ValueRefMut::Locked(value) => value.as_mut().unwrap().deref_mut(),
             ValueRefMut::TupleState(_, val) => val.as_mut().unwrap(),
+            ValueRefMut::Read(_) => {
+                panic!("Ignore writes was used. Cannot deref mut")
+            }
         }
     }
 }
@@ -391,6 +400,7 @@ impl<T: fmt::Display + Debug + Clone + 'static> fmt::Display for ValueRefMut<'_,
             ValueRefMut::Borrow(value) => std::fmt::Display::fmt(value.as_ref().unwrap(), f),
             ValueRefMut::Locked(value) => std::fmt::Display::fmt(value.as_ref().unwrap(), f),
             ValueRefMut::TupleState(_, value) => std::fmt::Display::fmt(value.as_ref().unwrap(), f),
+            ValueRefMut::Read(val) => std::fmt::Display::fmt(val, f),
         }
     }
 }
@@ -417,6 +427,9 @@ impl<T: fmt::Debug + Clone + 'static> fmt::Debug for ValueRefMut<'_, T> {
                 f.debug_struct("ValueRefMut::TupleState")
                     .field("value", &value.as_ref().unwrap())
                     .finish()
+            }
+            ValueRefMut::Read(val) => {
+                fmt::Debug::fmt(val, f)
             }
         }
     }

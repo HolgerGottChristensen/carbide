@@ -379,11 +379,11 @@ impl<T: StateContract, S: State<T=T>, B: State<T=bool>> Delegate<T, Box<dyn AnyW
                     false
                 }
             },
-            |new, _s1, s2| {
+            |new, mut s1, s2| {
                 if new {
-                    (Some(Some(*s2)), None)
+                    *s1 = Some(*s2);
                 } else {
-                    (Some(None), None)
+                    *s1 = None;
                 }
             }
         ).as_dyn();
