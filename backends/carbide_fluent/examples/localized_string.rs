@@ -3,7 +3,7 @@ use icu::locid::locale;
 use carbide_controls::{ControlsExt, PopUpButton, Slider, TextInput};
 use carbide_core::draw::Dimension;
 use carbide_core::environment::EnvironmentColor;
-use carbide_core::state::LocalState;
+use carbide_core::state::{LocalState, LoggingState, StateExtNew};
 use carbide_core::widget::{Text, VStack, WidgetExt};
 use carbide_fluent::{Arg, LocalizedArg, LocalizedString};
 use carbide_fluent::LocaleExt;
@@ -19,9 +19,9 @@ enum Gender {
 impl Arg for Gender {
     fn into(&self) -> LocalizedArg {
         match self {
-            Gender::Male => LocalizedArg::Str("gender-male"),
-            Gender::Female => LocalizedArg::Str("gender-female"),
-            Gender::Other => LocalizedArg::Str("gender-other"),
+            Gender::Male => LocalizedArg::Str("male"),
+            Gender::Female => LocalizedArg::Str("female"),
+            Gender::Other => LocalizedArg::Str("other"),
         }
     }
 }

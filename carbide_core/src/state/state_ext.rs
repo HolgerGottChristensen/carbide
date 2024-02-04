@@ -1,6 +1,6 @@
 
 use carbide_core::state::ReadState;
-use crate::state::{AnyReadState, AnyState, IgnoreWritesState, Map1, RMap1, State, StateContract, TransitionState, TState};
+use crate::state::{AnyReadState, AnyState, IgnoreWritesState, LoggingState, Map1, RMap1, State, StateContract, TransitionState, TState};
 
 
 pub trait StateExt<T>: Into<TState<T>> + Clone
@@ -22,6 +22,10 @@ impl<T: StateContract, U> StateExt<T> for U where U: Into<TState<T>> + Clone {}
 pub trait StateExtNew<T>: State<T=T> + Sized + Clone + 'static where T: StateContract {
     fn as_dyn(&self) -> Box<dyn AnyState<T=T>> {
         Box::new(self.clone())
+    }
+
+    fn log_changes(&self) -> LoggingState<T, Self> {
+        LoggingState::new(self.clone())
     }
 }
 

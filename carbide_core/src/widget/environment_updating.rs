@@ -1,4 +1,5 @@
 use carbide::event::{WindowEvent, WindowEventContext};
+use carbide::layout::{Layout, LayoutContext};
 use carbide_core::render::RenderContext;
 use carbide_macro::carbide_default_builder2;
 
@@ -23,7 +24,7 @@ impl EnvKey for &'static str {
 }
 
 #[derive(Debug, Clone, Widget)]
-#[carbide_derive(Layout, StateSync)]
+#[carbide_derive(StateSync)]
 pub struct EnvUpdating<C, T, S> where C: Widget, T: StateContract, S: ReadState<T=T> {
     id: WidgetId,
     child: C,
@@ -58,6 +59,31 @@ impl<C: Widget, T: StateContract, S: ReadState<T=T>> EnvUpdating<C, T, S> {
         env.push(self.key, Box::new(self.value.value().clone()));
     }
 }
+
+impl<C: Widget, T: StateContract, S: ReadState<T=T>> Layout for EnvUpdating<C, T, S> {
+    fn calculate_size(&mut self, requested_size: Dimension, ctx: &mut LayoutContext) -> Dimension {
+        self.insert_into_env(ctx.env);
+
+        let chosen = self.child.calculate_size(requested_size, ctx);
+        self.set_dimension(chosen);
+
+        self.remove_from_env(ctx.env);
+        chosen
+    }
+
+    fn position_children(&mut self, ctx: &mut LayoutContext) {
+        self.insert_into_env(ctx.env);
+
+        let positioning = self.alignment().positioner();
+        let position = self.position();
+        let dimension = self.dimension();
+        positioning(position, dimension, &mut self.child);
+        self.child.position_children(ctx);
+
+        self.remove_from_env(ctx.env);
+    }
+}
+
 
 impl<C: Widget, T: StateContract, S: ReadState<T=T>> OtherEventHandler for EnvUpdating<C, T, S> {
     fn process_other_event(&mut self, event: &Event, ctx: &mut OtherEventContext) {
