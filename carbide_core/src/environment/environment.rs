@@ -46,7 +46,7 @@ pub struct Environment {
 
     /// A map from String to a widget.
     /// This key should correspond to the targeted overlay_layer
-    overlay_map: FxHashMap<&'static str, Rc<RefCell<Vec<Box<dyn AnyWidget>>>>>,
+    overlay_map: FxHashMap<&'static str, Rc<RefCell<Option<Box<dyn AnyWidget>>>>>,
 
     /// A transfer place for widgets. It is a map with key Option<String>. If None it means the
     /// action should be picked up by the closest parent consumer. If Some it will look at the Id
@@ -411,7 +411,7 @@ impl Environment {
         self.focus_request = None;
     }
 
-    pub fn with_overlay_layer<R, F: FnOnce(&mut Environment)->R>(&mut self, id: &'static str, layer: Rc<RefCell<Vec<Box<dyn AnyWidget>>>>, f: F) -> R {
+    pub fn with_overlay_layer<R, F: FnOnce(&mut Environment)->R>(&mut self, id: &'static str, layer: Rc<RefCell<Option<Box<dyn AnyWidget>>>>, f: F) -> R {
         let old = self.overlay_map.insert(id, layer);
 
         let res = f(self);
@@ -427,8 +427,7 @@ impl Environment {
 
     pub fn add_overlay(&mut self, id: &'static str, widget: Box<dyn AnyWidget>) {
         if let Some(layer) = self.overlay_map.get_mut(&id) {
-            layer.borrow_mut().retain(|a| a.id() != widget.id());
-            layer.borrow_mut().push(widget);
+            *layer.borrow_mut() = Some(widget);
         } else {
             println!("Cannot add an overlay without a layer");
         }
@@ -436,7 +435,7 @@ impl Environment {
 
     pub fn contains_overlay(&self, id: &'static str, widget_id: WidgetId) -> bool {
         if let Some(layer) = self.overlay_map.get(&id) {
-            layer.borrow_mut().iter().any(|a| a.id() == widget_id)
+            layer.borrow().as_ref().map_or(false, |m| m.id() == widget_id)
         } else {
             println!("Cannot add an overlay without a layer");
             false
@@ -444,10 +443,12 @@ impl Environment {
     }
 
     pub fn remove_overlay(&mut self, id: &'static str, widget_id: WidgetId) {
-        if let Some(layer) = self.overlay_map.get_mut(&id) {
-            layer.borrow_mut().retain(|a| a.id() != widget_id);
-        } else {
-            println!("Cannot add an overlay without a layer");
+        if self.contains_overlay(id, widget_id) {
+            if let Some(layer) = self.overlay_map.get_mut(&id) {
+                *layer.borrow_mut() = None;
+            } else {
+                println!("Cannot add an overlay without a layer");
+            }
         }
     }
 

@@ -1,5 +1,6 @@
 use carbide::event::{WindowEvent, WindowEventContext};
 use carbide::layout::{Layout, LayoutContext};
+use carbide::update::UpdateContext;
 use carbide_core::render::RenderContext;
 use carbide_macro::carbide_default_builder2;
 
@@ -11,6 +12,7 @@ use crate::event::Event;
 use crate::focus::{Focusable, Refocus};
 use crate::render::Render;
 use crate::state::{NewStateSync, ReadState, StateContract};
+use crate::update::Update;
 use crate::widget::{CommonWidget, Empty, Widget, WidgetExt, WidgetId};
 
 pub trait EnvKey {
@@ -84,6 +86,15 @@ impl<C: Widget, T: StateContract, S: ReadState<T=T>> Layout for EnvUpdating<C, T
     }
 }
 
+impl<C: Widget, T: StateContract, S: ReadState<T=T>> Update for EnvUpdating<C, T, S> {
+    fn process_update(&mut self, ctx: &mut UpdateContext) {
+        self.insert_into_env(ctx.env);
+
+        self.child.process_update(ctx);
+
+        self.remove_from_env(ctx.env);
+    }
+}
 
 impl<C: Widget, T: StateContract, S: ReadState<T=T>> OtherEventHandler for EnvUpdating<C, T, S> {
     fn process_other_event(&mut self, event: &Event, ctx: &mut OtherEventContext) {

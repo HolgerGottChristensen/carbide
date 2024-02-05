@@ -25,6 +25,7 @@ use carbide_core::mesh::mesh::Mesh;
 use carbide_core::render::{Render, RenderContext};
 use carbide_core::state::StateSync;
 use carbide_core::text::InnerTextContext;
+use carbide_core::update::{Update, UpdateContext};
 use carbide_core::widget::{AnyWidget, CommonWidget, FilterId, Menu, OverlaidLayer, Rectangle, WidgetExt, WidgetId, ZStack};
 use carbide_core::window::WindowId;
 use carbide_winit::convert_mouse_cursor;
@@ -781,6 +782,12 @@ impl Layout for WGPUWindow {
     fn position_children(&mut self, ctx: &mut LayoutContext) {}
 }
 
+impl Update for WGPUWindow {
+    fn update(&mut self, ctx: &mut UpdateContext) {}
+
+    fn process_update(&mut self, ctx: &mut UpdateContext) {}
+}
+
 impl Render for WGPUWindow {
     fn render(&mut self, ctx: &mut RenderContext, env: &mut Environment) {
         let old_scale_factor = env.scale_factor();
@@ -796,13 +803,21 @@ impl Render for WGPUWindow {
         env.set_pixel_dimensions(Dimension::new(physical_dimensions.width as f64, physical_dimensions.height as f64));
         env.set_scale_factor(scale_factor);
 
-        // Calculate size and position children
+        // Update children
+        self.child.process_update(&mut UpdateContext {
+            text: ctx.text,
+            image: ctx.image,
+            env,
+        });
+
+        // Calculate size
         self.child.calculate_size(dimensions, &mut LayoutContext {
             text: ctx.text,
             image: ctx.image,
             env,
         });
 
+        // Position children
         let layout = env.root_alignment();
         (layout.positioner())(Position::new(0.0, 0.0), dimensions, &mut self.child);
 

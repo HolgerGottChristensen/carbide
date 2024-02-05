@@ -1,17 +1,17 @@
-use std::cell::RefCell;
+use std::cell::{Ref, RefCell};
 use std::fmt::{Debug, Formatter};
 use std::rc::Rc;
-use carbide::event::{WindowEvent, WindowEventContext};
 
 use crate::draw::{Dimension, Position};
 use crate::environment::Environment;
-use crate::event::{KeyboardEvent, KeyboardEventContext, KeyboardEventHandler, MouseEvent, MouseEventContext, MouseEventHandler, OtherEventContext, OtherEventHandler, WindowEventHandler};
+use crate::event::{KeyboardEvent, KeyboardEventContext, KeyboardEventHandler, MouseEvent, MouseEventContext, MouseEventHandler, OtherEventContext, OtherEventHandler, WindowEvent, WindowEventContext, WindowEventHandler};
 use crate::event::Event;
 use crate::flags::WidgetFlag;
 use crate::focus::{Focus, Focusable, Refocus};
 use crate::layout::{Layout, LayoutContext, Layouter};
 use crate::render::{Render, RenderContext};
 use crate::state::StateSync;
+use crate::update::{Update, UpdateContext};
 use crate::widget::{AnyWidget, CommonWidget, Empty, WidgetExt, WidgetId};
 
 pub struct Duplicated<T: AnyWidget>(Rc<RefCell<T>>);
@@ -97,6 +97,16 @@ impl<T: AnyWidget> StateSync for Duplicated<T> {
 
     fn release_state(&mut self, env: &mut Environment) {
         self.0.borrow_mut().release_state(env)
+    }
+}
+
+impl<T: AnyWidget> Update for Duplicated<T> {
+    fn update(&mut self, ctx: &mut UpdateContext) {
+        self.0.borrow_mut().update(ctx)
+    }
+
+    fn process_update(&mut self, ctx: &mut UpdateContext) {
+        self.0.borrow_mut().process_update(ctx)
     }
 }
 

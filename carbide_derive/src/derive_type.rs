@@ -22,6 +22,9 @@ pub enum DeriveType {
 
     // Layout
     Layout,
+
+    // Update
+    Update,
 }
 
 impl DeriveType {
@@ -35,6 +38,7 @@ impl DeriveType {
         set.insert(DeriveType::Render);
         set.insert(DeriveType::Focusable);
         set.insert(DeriveType::Layout);
+        set.insert(DeriveType::Update);
         set
     }
 
@@ -48,6 +52,7 @@ impl DeriveType {
             "Render" => DeriveType::Render,
             "Focusable" => DeriveType::Focusable,
             "Layout" => DeriveType::Layout,
+            "Update" => DeriveType::Update,
             _ => panic!("Could not match with any of the derive types."),
         }
     }
@@ -68,6 +73,7 @@ impl DeriveType {
             DeriveType::Render => render_token_stream(ident, generics, wheres),
             DeriveType::Focusable => focusable_token_stream(ident, generics, wheres),
             DeriveType::Layout => layout_token_stream(ident, generics, wheres),
+            DeriveType::Update => update_token_stream(ident, generics, wheres),
         }
     }
 }
@@ -168,5 +174,16 @@ fn layout_token_stream(
     quote! {
         #[automatically_derived]
         impl #generics carbide::layout::Layout for #ident #generics #wheres {}
+    }
+}
+
+fn update_token_stream(
+    ident: &Ident,
+    generics: &Generics,
+    wheres: &Option<WhereClause>,
+) -> TokenStream {
+    quote! {
+        #[automatically_derived]
+        impl #generics carbide::update::Update for #ident #generics #wheres {}
     }
 }

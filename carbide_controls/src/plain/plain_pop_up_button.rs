@@ -1,6 +1,7 @@
 use std::fmt::{Debug, Formatter};
 use carbide::event::{KeyboardEventContext, MouseEventContext};
 use carbide::layout::LayoutContext;
+use carbide::update::{Update, UpdateContext};
 
 use carbide_core::CommonWidgetImpl;
 use carbide_core::draw::{Dimension, Position};
@@ -18,7 +19,7 @@ use carbide_core::widget::*;
 use crate::plain::plain_pop_up_button_popup::PlainPopUpButtonPopUp;
 
 #[derive(Clone, Widget)]
-#[carbide_exclude(Layout, MouseEvent, KeyboardEvent)]
+#[carbide_exclude(Layout, MouseEvent, KeyboardEvent, Update)]
 pub struct PlainPopUpButton<T, F, S, M, E>
 where
     T: StateContract + PartialEq,
@@ -181,8 +182,8 @@ impl<
 
             child,
             popup,
-            popup_open,
 
+            popup_open,
             selected,
             model,
         }
@@ -271,6 +272,18 @@ impl<
             }
             _ => (),
         }
+    }
+}
+
+impl<
+    T: StateContract + PartialEq,
+    F: State<T=Focus>,
+    S: State<T=T>,
+    M: ReadState<T=Vec<T>>,
+    E: ReadState<T=bool>,
+> Update for PlainPopUpButton<T, F, S, M, E> {
+    fn update(&mut self, ctx: &mut UpdateContext) {
+        self.popup.ensure_overlay_correct(ctx.env)
     }
 }
 

@@ -1,12 +1,14 @@
 use std::fmt::{Debug, Formatter};
 use std::marker::PhantomData;
+use carbide::update::UpdateContext;
 
 use carbide_core::CommonWidgetImpl;
 use carbide_macro::carbide_default_builder2;
 
 use crate::draw::{Dimension, Position};
 use crate::flags::WidgetFlag;
-use crate::state::{AnyReadState, AnyState, IndexState, IntoState, ReadState, ReadStateExtNew, State, StateContract, StateExtNew, ValueState};
+use crate::state::{AnyReadState, AnyState, IndexState, IntoState, ReadState, ReadStateExtNew, State, StateContract, StateExtNew, StateSync, ValueState};
+use crate::update::Update;
 use crate::widget::{CommonWidget, Empty, Widget, WidgetExt, WidgetId};
 
 pub trait Delegate<T: StateContract, O: Widget>: Clone + 'static {
@@ -81,7 +83,7 @@ impl ForEach<(), Vec<()>, EmptyDelegate, Empty, usize> {
     }*/
 }
 
-impl<T, M, U, W, I> carbide::state::StateSync for ForEach<T, M, U, W, I>
+impl<T, M, U, W, I> StateSync for ForEach<T, M, U, W, I>
     where
         T: StateContract,
         M: State<T=Vec<T>>,

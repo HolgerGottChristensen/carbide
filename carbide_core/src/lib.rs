@@ -65,6 +65,7 @@ pub mod utils;
 pub mod widget;
 pub mod window;
 mod scene;
+pub mod update;
 
 /// Reexport of the image crate
 pub mod image {
