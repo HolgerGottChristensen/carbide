@@ -8,7 +8,7 @@ use crate::layout::Layouter;
 use crate::render::Render;
 use crate::state::ValueCell;
 use crate::update::Update;
-use crate::widget::{AnyWidget, CommonWidget, Empty, Widget, WidgetExt, WidgetId};
+use crate::widget::{AnyWidget, CommonWidget, Empty, Widget, WidgetExt, WidgetId, WidgetSequence};
 
 #[derive(Widget, Debug, Clone)]
 pub struct Duplicated<T>(Rc<ValueCell<T>>) where T: Widget;
@@ -39,15 +39,15 @@ impl<T: Widget> CommonWidget for Duplicated<T> {
     }
 
     fn foreach_child<'a>(&'a self, f: &mut dyn FnMut(&'a dyn AnyWidget)) {
-        self.0.borrow().apply(f, |a, b| a.foreach_child(b))
+        self.0.borrow().apply(f, |a, b| a.foreach(b))
     }
 
     fn foreach_child_mut<'a>(&'a mut self, f: &mut dyn FnMut(&'a mut dyn AnyWidget)) {
-        self.0.borrow_mut().apply(f, |a, b| a.foreach_child_mut(b))
+        self.0.borrow_mut().apply(f, |a, b| a.foreach_mut(b))
     }
 
     fn foreach_child_rev<'a>(&'a mut self, f: &mut dyn FnMut(&'a mut dyn AnyWidget)) {
-        self.0.borrow_mut().apply(f, |a, b| a.foreach_child_rev(b))
+        self.0.borrow_mut().apply(f, |a, b| a.foreach_rev(b))
     }
 
     fn position(&self) -> Position {
@@ -79,11 +79,11 @@ impl<T: Widget> CommonWidget for Duplicated<T> {
     }
 
     fn foreach_child_direct<'a>(&'a mut self, f: &mut dyn FnMut(&'a mut dyn AnyWidget)) {
-        self.0.borrow_mut().apply(f, |a, b| a.foreach_child_direct(b))
+        self.0.borrow_mut().apply(f, |a, b| a.foreach_direct(b))
     }
 
     fn foreach_child_direct_rev<'a>(&'a mut self, f: &mut dyn FnMut(&'a mut dyn AnyWidget)) {
-        self.0.borrow_mut().apply(f, |a, b| a.foreach_child_direct_rev(b))
+        self.0.borrow_mut().apply(f, |a, b| a.foreach_direct_rev(b))
     }
 }
 
