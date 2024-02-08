@@ -18,20 +18,16 @@ pub fn impl_widget(ast: &syn::DeriveInput) -> proc_macro2::TokenStream {
     // Ensure we are deriving for a struct.
     let body = match ast.data {
         syn::Data::Struct(ref body) => body,
-        _ => panic!("Widget can only be derived on a struct"),
+        _ => panic!("Widget can only be derived on structs"),
     };
 
-    let named = match &body.fields {
-        Fields::Named(n) => n,
-        Fields::Unnamed(_) => {
-            panic!("Unnamed field structs not supported for derive macro Widget")
-        }
-        Fields::Unit => {
-            panic!("Widget can only be implemented on named field structs and not unit structs")
-        }
+    let fields = match &body.fields {
+        Fields::Named(n) => Some(&n.named),
+        Fields::Unnamed(u) => Some(&u.unnamed),
+        Fields::Unit => None,
     };
 
-    let state_idents_iter = named.named.iter().filter_map(|field| {
+    let state_idents: Vec<Ident> = fields.map_or(vec![], |n| n.iter().filter_map(|field| {
         let mut contains_state = false;
 
         for attr in &field.attrs {
@@ -59,9 +55,7 @@ pub fn impl_widget(ast: &syn::DeriveInput) -> proc_macro2::TokenStream {
         } else {
             None
         }
-    });
-
-    let state_idents: Vec<Ident> = state_idents_iter.collect();
+    }).collect::<Vec<_>>());
 
     let streams = struct_attributes
         .iter()
