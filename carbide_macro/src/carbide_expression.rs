@@ -268,7 +268,6 @@ impl ToTokens for CarbideExprForLoop {
             } else {
                 quote!(
                     carbide_core::matches_case!(@inner item, #pat, #(#idents),*);
-
                 )
             }
         };

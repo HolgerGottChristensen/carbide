@@ -155,11 +155,11 @@ fn main() {
                             });
                             detail_view(IndexState::new(news_articles, index), current_hn_item)
                         },
-                        _ => Rectangle::new().fill(EnvironmentColor::SecondarySystemBackground),
+                        None => Rectangle::new().fill(EnvironmentColor::SecondarySystemBackground),
                     }
                 ).relative_to_start(400.0)
             }
-            _ => loader,
+            None => loader,
         }
     );
 
@@ -183,12 +183,12 @@ fn detail_view(selected: impl State<T=Article>, content: impl State<T=Option<HNI
         Some(url) => Text::new(url.clone()).on_click(a!(|_, _| {
             open::that(url.value().clone());
         })).background(Rectangle::new().fill(EnvironmentColor::Accent)).boxed(),
-        _ => Text::new("No URL for the article").boxed()
+        None => Text::new("No URL for the article").boxed()
     });
 
     let comments = ui!(match content {
         Some(content) => Scroll::new(Text::new(Map1::read_map(content, |c| format!("{:#?}", c))).boxed()).clip(),
-        _ => Rectangle::new().fill(EnvironmentColor::Green)
+        None => Rectangle::new().fill(EnvironmentColor::Green)
     });
 
     ZStack::new((
