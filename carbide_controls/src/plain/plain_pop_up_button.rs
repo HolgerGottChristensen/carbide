@@ -36,6 +36,7 @@ where
     #[state] enabled: E,
 
     // Delegates
+    text_delegate: TextDelegateGenerator<T>,
     delegate: DelegateGenerator<T>, // Used to generate the control
     popup_delegate: PopupDelegateGenerator<T, S, M, LocalState<bool>>, // Used to generate the popup
     popup_item_delegate: PopupItemDelegateGenerator<T, S>, // Used to generate each item in the popup
@@ -60,12 +61,14 @@ impl PlainPopUpButton<bool, Focus, bool, Vec<bool>, bool> {
             model.into_read_state(),
             focus,
             true,
+            |t| Map1::read_map(t, |s| format!("{:?}", s)).as_dyn_read(),
             default_delegate,
             default_popup_delegate,
             default_popup_item_delegate,
         )
     }
 }
+
 
 impl<
     T: StateContract + PartialEq,
@@ -80,6 +83,7 @@ impl<
             self.model,
             self.focus,
             enabled.into_read_state(),
+            self.text_delegate,
             self.delegate,
             self.popup_delegate,
             self.popup_item_delegate
@@ -92,6 +96,20 @@ impl<
             self.model,
             focus.into_state(),
             self.enabled,
+            self.text_delegate,
+            self.delegate,
+            self.popup_delegate,
+            self.popup_item_delegate
+        )
+    }
+
+    pub fn text_delegate(self, text_delegate: TextDelegateGenerator<T>) -> PlainPopUpButton<T, F, S, M, E> {
+        Self::new_internal(
+            self.selected,
+            self.model,
+            self.focus,
+            self.enabled,
+            text_delegate,
             self.delegate,
             self.popup_delegate,
             self.popup_item_delegate
@@ -104,6 +122,7 @@ impl<
             self.model,
             self.focus,
             self.enabled,
+            self.text_delegate,
             delegate,
             self.popup_delegate,
             self.popup_item_delegate
@@ -116,6 +135,7 @@ impl<
             self.model,
             self.focus,
             self.enabled,
+            self.text_delegate,
             self.delegate,
             popup_delegate,
             self.popup_item_delegate
@@ -128,6 +148,7 @@ impl<
             self.model,
             self.focus,
             self.enabled,
+            self.text_delegate,
             self.delegate,
             self.popup_delegate,
             popup_item_delegate
@@ -139,6 +160,7 @@ impl<
         model: M2,
         focus: F2,
         enabled: E2,
+        text_delegate: TextDelegateGenerator<T2>,
         delegate: DelegateGenerator<T2>,
         popup_delegate: PopupDelegateGenerator<T2, S2, M2, LocalState<bool>>,
         popup_item_delegate: PopupItemDelegateGenerator<T2, S2>,
@@ -152,6 +174,7 @@ impl<
             hover_model: hover_model.clone(),
             selected_item: selected.clone(),
             popup_item_delegate,
+            text_delegate,
             popup_open: popup_open.clone(),
             enabled: enabled.as_dyn_read(),
         };
@@ -167,7 +190,7 @@ impl<
             enabled.as_dyn_read(),
         ).boxed().overlay("controls_popup_layer", popup_open.clone());
 
-        let child = delegate(selected.as_dyn(), focus.as_dyn(), popup_open.as_dyn_read(), enabled.as_dyn_read());
+        let child = delegate(selected.as_dyn(), focus.as_dyn(), popup_open.as_dyn_read(), enabled.as_dyn_read(), text_delegate);
 
         PlainPopUpButton {
             id: WidgetId::new(),
@@ -176,6 +199,7 @@ impl<
             focus,
             enabled,
 
+            text_delegate,
             delegate,
             popup_delegate,
             popup_item_delegate,
@@ -187,6 +211,20 @@ impl<
             selected,
             model,
         }
+    }
+}
+
+
+#[cfg(feature = "carbide_fluent")]
+impl<
+    T: StateContract + PartialEq + carbide_fluent::Localizable,
+    F: State<T=Focus>,
+    S: State<T=T>,
+    M: ReadState<T=Vec<T>>,
+    E: ReadState<T=bool>,
+> PlainPopUpButton<T, F, S, M, E> {
+    pub fn localize(self) -> PlainPopUpButton<T, F, S, M, E> {
+        self.text_delegate(|item| carbide_fluent::LocalizedString::new(item).as_dyn_read())
     }
 }
 
@@ -339,11 +377,14 @@ impl<
 // ---------------------------------------------------
 //  Delegates
 // ---------------------------------------------------
+type TextDelegateGenerator<T> = fn(Box<dyn AnyReadState<T=T>>)->Box<dyn AnyReadState<T=String>>;
+
 type DelegateGenerator<T> = fn(
     selected_item: Box<dyn AnyState<T=T>>,
     focused: Box<dyn AnyState<T=Focus>>,
     popup_open: Box<dyn AnyReadState<T=bool>>,
     enabled: Box<dyn AnyReadState<T=bool>>,
+    text_delegate: TextDelegateGenerator<T>,
 ) -> Box<dyn AnyWidget>;
 
 type PopupDelegateGenerator<T, S, M, B> = fn(
@@ -358,6 +399,7 @@ type PopupItemDelegateGenerator<T, S> = fn(
     hover: Box<dyn AnyReadState<T=bool>>,
     selected: S,
     enabled: Box<dyn AnyReadState<T=bool>>,
+    text_delegate: TextDelegateGenerator<T>,
 ) -> Box<dyn AnyWidget>;
 
 #[derive(Clone)]
@@ -370,6 +412,7 @@ pub struct PopupDelegate<T, S, B>
     hover_model: LocalState<Option<usize>>,
     selected_item: S,
     popup_item_delegate: PopupItemDelegateGenerator<T, S>,
+    text_delegate: TextDelegateGenerator<T>,
     popup_open: B,
     enabled: Box<dyn AnyReadState<T=bool>>,
 }
@@ -407,6 +450,7 @@ impl<T: StateContract, S: State<T=T>, B: State<T=bool>> Delegate<T, Box<dyn AnyW
             hover_state.as_dyn_read(),
             selected_item_del.clone(),
             enabled.as_dyn_read(),
+            self.text_delegate,
         );
 
         popup_item_delegate
@@ -424,6 +468,7 @@ fn default_delegate<T: StateContract + PartialEq>(
     focused: Box<dyn AnyState<T=Focus>>,
     _popup_open: Box<dyn AnyReadState<T=bool>>,
     _enabled: Box<dyn AnyReadState<T=bool>>,
+    text_delegate: TextDelegateGenerator<T>,
 ) -> Box<dyn AnyWidget> {
     let background_color = Map1::read_map(focused.clone(), |focused| {
         match *focused {
@@ -432,10 +477,10 @@ fn default_delegate<T: StateContract + PartialEq>(
         }
     });
 
-    ZStack::new(vec![
-        Rectangle::new().fill(background_color).boxed(),
-        Text::new(selected_item.map(|a| format!("{:?}", a))).boxed(),
-    ]).boxed()
+    ZStack::new((
+        Rectangle::new().fill(background_color),
+        Text::new(text_delegate(selected_item.as_dyn_read())),
+    )).boxed()
 }
 
 fn default_popup_item_delegate<T: StateContract + PartialEq, S: State<T=T>>(
@@ -444,6 +489,7 @@ fn default_popup_item_delegate<T: StateContract + PartialEq, S: State<T=T>>(
     hover_state: Box<dyn AnyReadState<T=bool>>,
     _selected_state: S,
     _enabled: Box<dyn AnyReadState<T=bool>>,
+    text_delegate: TextDelegateGenerator<T>,
 ) -> Box<dyn AnyWidget> {
     let item_color = Map1::read_map(hover_state.clone(), |hovered| {
         if *hovered {
@@ -453,10 +499,10 @@ fn default_popup_item_delegate<T: StateContract + PartialEq, S: State<T=T>>(
         }
     });
 
-    ZStack::new(vec![
-        Rectangle::new().fill(item_color).boxed(),
-        Text::new(item.map(|a: &T| format!("{:?}", *a)).ignore_writes()).boxed(),
-    ])
+    ZStack::new((
+        Rectangle::new().fill(item_color),
+        Text::new(text_delegate(item.as_dyn_read())),
+    ))
         .frame_fixed_height(30.0)
         .boxed()
 }

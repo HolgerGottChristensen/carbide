@@ -17,4 +17,4 @@ dyn-clone.workspace = true
 
 [dev-dependencies]
 carbide_wgpu = { path = "../carbide_wgpu", version = "0.70" }
-carbide_controls = { path = "../../carbide_controls" }
+carbide_controls = { path = "../../carbide_controls", features = ["carbide_fluent"] }

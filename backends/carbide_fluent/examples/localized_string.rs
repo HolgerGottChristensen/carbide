@@ -3,9 +3,10 @@ use icu::locid::locale;
 use carbide_controls::{ControlsExt, PopUpButton, Slider, TextInput};
 use carbide_core::draw::Dimension;
 use carbide_core::environment::EnvironmentColor;
+use carbide_core::impl_read_state;
 use carbide_core::state::{LocalState, LoggingState, StateExtNew};
 use carbide_core::widget::{Text, VStack, WidgetExt};
-use carbide_fluent::{Arg, LocalizedArg, LocalizedString};
+use carbide_fluent::{Arg, Localizable, LocalizedArg, LocalizedString};
 use carbide_fluent::LocaleExt;
 use carbide_wgpu::{Application, Window};
 
@@ -22,6 +23,16 @@ impl Arg for Gender {
             Gender::Male => LocalizedArg::Str("male"),
             Gender::Female => LocalizedArg::Str("female"),
             Gender::Other => LocalizedArg::Str("other"),
+        }
+    }
+}
+
+impl Localizable for Gender {
+    fn get(&self) -> &str {
+        match self {
+            Gender::Male => "gender.male",
+            Gender::Female => "gender.female",
+            Gender::Other => "gender.other",
         }
     }
 }
@@ -56,7 +67,7 @@ fn main() {
                     Gender::Male,
                     Gender::Female,
                     Gender::Other,
-                ]).label(LocalizedString::new("gender")),
+                ]).localize().label(LocalizedString::new("gender")),
                 Slider::new(photo_count, 1, 10)
                     .label(LocalizedString::new("photo-count")),
                 PopUpButton::new(locale.clone(), vec![

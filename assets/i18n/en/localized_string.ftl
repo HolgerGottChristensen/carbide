@@ -9,5 +9,8 @@ shared-photos =
     }.
 username = Username:
 gender = Gender:
+    .male = Male
+    .female = Female
+    .other = Other
 photo-count = Photo count:
 locale = Locale:

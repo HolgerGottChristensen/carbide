@@ -9,5 +9,8 @@ shared-photos =
     }.
 username = Brugernavn:
 gender = Køn:
+    .male = Mand
+    .female = Kvinde
+    .other = Andet
 photo-count = Antal billeder:
 locale = Sprog:

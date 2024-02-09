@@ -29,8 +29,9 @@ impl PopUpButton {
         focused: Box<dyn AnyState<T=Focus>>,
         popup_open: Box<dyn AnyReadState<T=bool>>,
         enabled: Box<dyn AnyReadState<T=bool>>,
+        text_delegate: fn(Box<dyn AnyReadState<T=T>>) -> Box<dyn AnyReadState<T=String>>,
     ) -> Box<dyn AnyWidget> {
-        let text = Map1::read_map(selected_item, |a| format!("{:?}", a));
+        let text = text_delegate(selected_item.as_dyn_read());
 
         let mark_color = Map1::read_map(enabled.clone(), |enabled| {
             if *enabled {
@@ -120,8 +121,9 @@ impl PopUpButton {
         hover_state: Box<dyn AnyReadState<T=bool>>,
         _selected_state: S,
         _enabled: Box<dyn AnyReadState<T=bool>>,
+        text_delegate: fn(Box<dyn AnyReadState<T=T>>) -> Box<dyn AnyReadState<T=String>>,
     ) -> Box<dyn AnyWidget> {
-        let text = Map1::read_map(item, |i| format!("{:?}", i));
+        let text = text_delegate(item.as_dyn_read());
 
         let background_color = Map1::read_map(hover_state, |hovered| {
             if *hovered {
