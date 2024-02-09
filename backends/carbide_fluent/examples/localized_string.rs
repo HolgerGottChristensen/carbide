@@ -32,7 +32,7 @@ fn main() {
     let locale = LocalState::new(locale!("en"));
 
     let username = LocalState::new("Emma".to_string());
-    let photo_count = LocalState::new(3.0);
+    let photo_count = LocalState::new(3);
     let gender = LocalState::new(Gender::Female);
 
     let text = Text::new(
@@ -57,8 +57,7 @@ fn main() {
                     Gender::Female,
                     Gender::Other,
                 ]).label(LocalizedString::new("gender")),
-                Slider::new(photo_count, 1.0, 10.0)
-                    .step(1.0)
+                Slider::new(photo_count, 1, 10)
                     .label(LocalizedString::new("photo-count")),
                 PopUpButton::new(locale.clone(), vec![
                     locale!("en"),
