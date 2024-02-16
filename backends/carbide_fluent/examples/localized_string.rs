@@ -47,7 +47,7 @@ fn main() {
     let gender = LocalState::new(Gender::Female);
 
     let text = Text::new(
-        LocalizedString::new("shared-photos")
+        LocalizedString::new("shared_photos")
             .arg("userName", username.clone())
             .arg("userGender", gender.clone())
             .arg("photoCount", photo_count.clone())
@@ -69,7 +69,7 @@ fn main() {
                     Gender::Other,
                 ]).localize().label(LocalizedString::new("gender")),
                 Slider::new(photo_count, 1, 10)
-                    .label(LocalizedString::new("photo-count")),
+                    .label(LocalizedString::new("photo_count")),
                 PopUpButton::new(locale.clone(), vec![
                     locale!("en"),
                     locale!("da")

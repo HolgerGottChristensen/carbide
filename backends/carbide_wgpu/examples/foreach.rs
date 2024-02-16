@@ -18,7 +18,7 @@ fn main() {
     application.set_scene(Window::new(
         "Foreach example",
         Dimension::new(600.0, 450.0),
-        VStack::new(vec![
+        VStack::new(
             ForEach::new(
                 vec![
                     EnvironmentColor::Red,
@@ -30,7 +30,7 @@ fn main() {
                 ],
                 delegate,
             )
-        ]).spacing(10.0),
+        ).spacing(10.0),
     ).close_application_on_window_close());
 
     application.launch();

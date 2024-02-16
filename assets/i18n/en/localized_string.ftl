@@ -1,4 +1,4 @@
-shared-photos =
+shared_photos =
     {$userName} {$photoCount ->
         [one] added a new photo
         *[other] added {$photoCount} new photos
@@ -12,5 +12,5 @@ gender = Gender:
     .male = Male
     .female = Female
     .other = Other
-photo-count = Photo count:
+photo_count = Photo count:
 locale = Locale:

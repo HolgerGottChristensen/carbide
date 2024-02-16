@@ -1,5 +1,6 @@
 use std::fmt::Debug;
-use crate::state::{Map1, RMap1, AnyReadState, StateContract, State, AnyState, RWMap1, RWOMap1, ValueRefMut};
+use std::ops::{Range, RangeInclusive};
+use crate::state::{Map1, RMap1, AnyReadState, StateContract, State, AnyState, RWMap1, RWOMap1, ValueRefMut, ValueState, LocalState};
 
 
 // ---------------------------------------------------
@@ -35,6 +36,22 @@ impl<T: AnyState<T=A> + Clone, A: StateContract, B: StateContract> IntoState<B> 
 
     fn into_state(self) -> Self::Output {
         A::convert(self)
+    }
+}
+
+impl<T: StateContract> IntoState<Vec<<Range<T> as Iterator>::Item>> for Range<T> where Range<T>: Iterator, <Range<T> as Iterator>::Item: StateContract {
+    type Output = LocalState<Vec<<Range<T> as Iterator>::Item>>;
+
+    fn into_state(self) -> Self::Output {
+        LocalState::new(self.collect::<Vec<_>>())
+    }
+}
+
+impl<T: StateContract> IntoState<Vec<<RangeInclusive<T> as Iterator>::Item>> for RangeInclusive<T> where RangeInclusive<T>: Iterator, <RangeInclusive<T> as Iterator>::Item: StateContract{
+    type Output = LocalState<Vec<<RangeInclusive<T> as Iterator>::Item>>;
+
+    fn into_state(self) -> Self::Output {
+        LocalState::new(self.collect::<Vec<_>>())
     }
 }
 
