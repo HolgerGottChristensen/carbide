@@ -106,8 +106,6 @@ impl<W: WidgetSequence> Layout for VGrid<W> {
             }
         }
 
-        println!("{:?}", self.calculated_widths);
-
         //
 
         let mut children_flexibility_rest: SmallVec<[(u32, &mut dyn AnyWidget); 25]> = smallvec![];

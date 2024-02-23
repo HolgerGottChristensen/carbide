@@ -9,15 +9,15 @@ fn main() {
 
     application.set_scene(
         Window::new(
-            "VGrid - Carbide",
+            "HGrid - Carbide",
             Dimension::new(600.0, 600.0),
-            VGrid::new(ForEach::new(0x1f600..=0x1f64f, |val, idx| unsafe {
+            HGrid::new(ForEach::new(0x1f600..=0x1f64f, |val, idx| unsafe {
                 ZStack::new((
                     RoundedRectangle::new(5.0),
                     Text::new(Map1::read_map(val, |c| char::from_u32_unchecked(*c))).font_size(EnvironmentFontSize::LargeTitle),
-                )).frame_fixed_height(60.0)
+                )).frame_fixed_width(60.0)
             }), vec![
-                VGridColumn::Adaptive(80.0)
+                HGridRow::Adaptive(80.0)
             ]).padding(10.0),
         ).close_application_on_window_close()
     );

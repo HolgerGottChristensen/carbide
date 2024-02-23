@@ -14,7 +14,7 @@ use crate::focus::Focus;
 use crate::render::Style;
 use crate::state::{IntoState, ReadState, StateContract, TState};
 use crate::state::ReadStateExtNew;
-use crate::widget::{Action, AnyWidget, Background, Border, Changed, Clip, ClipShape, CornerRadii, EdgeInsets, EnvUpdating, Flagged, Flexibility, Frame, Hidden, MouseArea, Offset, Overlay, Padding, Rotation3DEffect, RoundedRectangle, Shape, Transform};
+use crate::widget::{Action, AnyWidget, Background, Border, Changed, Clip, ClipShape, CornerRadii, EdgeInsets, EnvUpdating, Flagged, Flexibility, Frame, Hidden, MouseArea, Offset, Overlay, Padding, Rotation3DEffect, RoundedRectangle, Scroll, Shape, Transform};
 
 type AccentColor<C, T, S> = EnvUpdating<C, T, S>;
 type ForegroundColor<C, T, S> = EnvUpdating<C, T, S>;
@@ -103,6 +103,10 @@ pub trait WidgetExt: Widget + Sized {
     /// This includes values like 10.0 which will apply a padding of 10.0 at all sides of the widget.
     fn padding<E: IntoReadState<EdgeInsets>>(self, edge_insets: E) -> Padding<Self, E::Output> {
         Padding::new(edge_insets, self)
+    }
+
+    fn scroll(self) -> Scroll<Self> {
+        Scroll::new(self)
     }
 
     /// Clip the content of the widget. The clip area will be the requested area for the widget. It

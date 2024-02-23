@@ -42,6 +42,7 @@ pub use self::transform::*;
 pub use self::v_split::*;
 pub use self::v_stack::*;
 pub use self::v_grid::*;
+pub use self::h_grid::*;
 pub use self::z_stack::*;
 pub use self::on_change::*;
 pub use self::proxy::*;
@@ -90,6 +91,7 @@ mod ignore;
 mod on_change;
 mod proxy;
 mod v_grid;
+mod h_grid;
 
 #[derive(Clone, Debug, Copy, Hash, Eq, PartialEq, Ord, PartialOrd)]
 pub struct WidgetId(u32);

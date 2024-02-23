@@ -23,10 +23,10 @@ pub struct Proxy<W> where W: WidgetSequence {
 
 impl Proxy<Empty> {
     #[carbide_default_builder2]
-    pub fn new<W: WidgetSequence>(child: W) -> Proxy<W> {
+    pub fn new<W: WidgetSequence>(children: W) -> Proxy<W> {
         Proxy {
             id: WidgetId::new(),
-            children: child,
+            children,
             position: Position::new(0.0, 0.0),
             dimension: Dimension::new(100.0, 100.0),
         }
