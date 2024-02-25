@@ -1,5 +1,6 @@
 use std::fmt::Debug;
 use std::ops::{Range, RangeInclusive};
+use carbide::state::ConvertIntoRead;
 use crate::state::{Map1, RMap1, AnyReadState, StateContract, State, AnyState, RWMap1, RWOMap1, ValueRefMut, ValueState, LocalState};
 
 
@@ -52,6 +53,16 @@ impl<T: StateContract> IntoState<Vec<<RangeInclusive<T> as Iterator>::Item>> for
 
     fn into_state(self) -> Self::Output {
         LocalState::new(self.collect::<Vec<_>>())
+    }
+}
+
+impl ConvertIntoRead<Vec<u32>> for u32 {
+    type Output<G: AnyReadState<T=Self> + Clone> = RMap1<fn(&u32)->Vec<u32>, u32, Vec<u32>, G>;
+
+    fn convert<F: AnyReadState<T=Self> + Clone>(f: F) -> Self::Output<F> {
+        Map1::read_map(f,|d| {
+            (0..*d).collect::<Vec<_>>()
+        })
     }
 }
 

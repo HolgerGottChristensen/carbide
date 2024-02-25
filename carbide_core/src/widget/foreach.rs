@@ -7,7 +7,7 @@ use carbide_macro::carbide_default_builder2;
 
 use crate::draw::{Dimension, Position};
 use crate::flags::WidgetFlag;
-use crate::state::{AnyReadState, AnyState, IndexState, IntoState, ReadState, ReadStateExtNew, State, StateContract, StateExtNew, StateSync, ValueState};
+use crate::state::{AnyReadState, AnyState, IgnoreWritesState, IndexState, IntoReadState, IntoState, ReadState, ReadStateExtNew, State, StateContract, StateExtNew, StateSync, ValueState};
 use crate::update::Update;
 use crate::widget::{CommonWidget, Empty, Widget, WidgetExt, WidgetId};
 
@@ -60,6 +60,19 @@ impl ForEach<(), Vec<()>, EmptyDelegate, Empty, usize> {
             position: Position::default(),
             dimension: Dimension::default(),
             model: model.into_state(),
+            delegate,
+            children: vec![],
+            index_offset: 0,
+            phantom: PhantomData::default()
+        }
+    }
+
+    pub fn new_read<T: StateContract, M: IntoReadState<Vec<T>>, W: Widget, U: Delegate<T, W>>(model: M, delegate: U) -> ForEach<T, IgnoreWritesState<Vec<T>, M::Output>, U, W, usize> {
+        ForEach {
+            id: WidgetId::new(),
+            position: Position::default(),
+            dimension: Dimension::default(),
+            model: model.into_read_state().ignore_writes(),
             delegate,
             children: vec![],
             index_offset: 0,

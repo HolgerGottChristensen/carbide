@@ -38,6 +38,11 @@ impl<W: WidgetSequence> HGrid<W> {
             calculated_heights: vec![],
         }
     }
+
+    pub fn spacing(mut self, spacing: Dimension) -> Self {
+        self.spacing = spacing;
+        self
+    }
 }
 
 impl<W: WidgetSequence> Layout for HGrid<W> {
@@ -104,6 +109,8 @@ impl<W: WidgetSequence> Layout for HGrid<W> {
                     }
                 }
             }
+
+            number_of_remaining_rows -= 1;
         }
 
         //

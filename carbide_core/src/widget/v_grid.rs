@@ -38,6 +38,11 @@ impl<W: WidgetSequence> VGrid<W> {
             calculated_widths: vec![],
         }
     }
+
+    pub fn spacing(mut self, spacing: Dimension) -> Self {
+        self.spacing = spacing;
+        self
+    }
 }
 
 impl<W: WidgetSequence> Layout for VGrid<W> {
@@ -89,6 +94,8 @@ impl<W: WidgetSequence> Layout for VGrid<W> {
                     for _ in 0..column_count {
                         self.calculated_widths.push(proposed_width / column_count as f64);
                     }
+
+                    number_of_remaining_cols -= 1;
                 }
                 VGridColumn::Flexible { minimum, maximum } => {
                     let proposed_width = remaining_width / number_of_remaining_cols as Scalar;
@@ -102,8 +109,12 @@ impl<W: WidgetSequence> Layout for VGrid<W> {
                         self.calculated_widths.push(proposed_width);
                         remaining_width -= proposed_width;
                     }
+
+                    number_of_remaining_cols -= 1;
                 }
             }
+
+
         }
 
         //

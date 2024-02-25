@@ -14,6 +14,7 @@ pub use types::CheckBoxValue;
 pub use controls_ext::*;
 pub use help::*;
 pub use labelled::*;
+pub use calendar::*;
 
 extern crate carbide_core as carbide;
 
@@ -57,6 +58,7 @@ mod types;
 mod controls_ext;
 mod help;
 mod labelled;
+mod calendar;
 
 
 type EnabledState = EnvMap1<fn(&Environment, &i32) -> bool, i32, bool, i32>;
