@@ -41,7 +41,7 @@ impl NewEventHandler {
     pub fn event(&mut self, event: Event<CustomEvent>, target: &mut impl Scene, text_context: &mut impl InnerTextContext, image_context: &mut impl InnerImageContext, env: &mut Environment) -> bool {
         env.capture_time();
         env.update_animation();
-        env.clear_animation_frame();
+        //env.clear_animation_frame();
 
         let res = match event {
             Event::WindowEvent { event, window_id } => self.window_event(event, window_id, target, text_context, image_context, env),
@@ -122,8 +122,13 @@ impl NewEventHandler {
                 // Set cursor to default for next frame
                 env.set_cursor(MouseCursor::Default);
 
-                // Default controlflow says Wait.
-                env.has_animations()
+                // Check if there are any animations or requested animation frames
+                let redraw = env.has_animations();
+
+                // Clear a single animation frame
+                env.clear_animation_frame();
+
+                redraw
             }
             WindowEvent::CloseRequested => {
                 target.process_window_event(&carbide_core::event::WindowEvent::CloseRequested, &mut WindowEventContext {
