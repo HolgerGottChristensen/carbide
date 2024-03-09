@@ -136,106 +136,25 @@ pub trait CommonWidget {
 
 #[macro_export]
 macro_rules! CommonWidgetImpl {
-    ($self:ident, id: $id_expr:expr, child: () $(,position: $position:expr)? $(,dimension: $dimension:expr)? $(,flag: $flag:expr)? $(,flexibility: $flexibility:expr)? $(,alignment: $alignment:expr)? $(,focus: $focus:expr)?) => {
+    ($self:ident, id: $id_expr:expr $(, $($rest:tt)*)?) => {
         fn id(&$self) -> carbide::widget::WidgetId {
             $id_expr
         }
 
-        $(
-            fn alignment(&$self) -> Box<dyn carbide::layout::Layouter> {
-                $alignment.clone()
-            }
+        $(CommonWidgetImpl!($self, $($rest)*);)?
+    };
 
-            fn set_alignment(&mut $self, alignment: Box<dyn Layouter>) {
-                $alignment = alignment;
-            }
-        )?
-
-        $(
-            fn flag(&$self) -> carbide::flags::WidgetFlag {
-                $flag
-            }
-        )?
-
-        $(
-            fn flexibility(&$self) -> u32 {
-                $flexibility
-            }
-        )?
-
-        $(
-            fn get_focus(&$self) -> Focus {
-                $focus.value().clone()
-            }
-
-            fn set_focus(&mut $self, focus: Focus) {
-                $focus.set_value(focus);
-            }
-        )?
-
+    ($self:ident, child: () $(, $($rest:tt)*)?) => {
         fn foreach_child<'a>(&'a $self, _f: &mut dyn FnMut(&'a dyn carbide::widget::AnyWidget)) {}
         fn foreach_child_mut<'a>(&'a mut $self, _f: &mut dyn FnMut(&'a mut dyn carbide::widget::AnyWidget)) {}
         fn foreach_child_rev<'a>(&'a mut $self, _f: &mut dyn FnMut(&'a mut dyn carbide::widget::AnyWidget)) {}
         fn foreach_child_direct<'a>(&'a mut $self, _f: &mut dyn FnMut(&'a mut dyn carbide::widget::AnyWidget)) {}
         fn foreach_child_direct_rev<'a>(&'a mut $self, _f: &mut dyn FnMut(&'a mut dyn carbide::widget::AnyWidget)) {}
 
-        $(
-            fn position(&$self) -> carbide::draw::Position {
-                $position
-            }
-
-            fn set_position(&mut $self, position: carbide::draw::Position) {
-                $position = position;
-            }
-        )?
-
-        $(
-            fn dimension(&$self) -> carbide::draw::Dimension {
-                $dimension
-            }
-
-            fn set_dimension(&mut $self, dimension: carbide::draw::Dimension) {
-                $dimension = dimension
-            }
-        )?
+        $(CommonWidgetImpl!($self, $($rest)*);)?
     };
-    ($self:ident, id: $id_expr:expr, child: $child:expr $(,position: $position:expr)? $(,dimension: $dimension:expr)? $(,flag: $flag:expr)? $(,flexibility: $flexibility:expr)? $(,alignment: $alignment:expr)? $(,focus: $focus:expr)?) => {
-        fn id(&$self) -> carbide::widget::WidgetId {
-            $id_expr
-        }
 
-        $(
-            fn alignment(&$self) -> Box<dyn carbide::layout::Layouter> {
-                $alignment.clone()
-            }
-
-            fn set_alignment(&mut $self, alignment: Box<dyn Layouter>) {
-                $alignment = alignment;
-            }
-        )?
-
-        $(
-            fn flag(&$self) -> carbide::flags::WidgetFlag {
-                $flag
-            }
-        )?
-
-        $(
-            fn flexibility(&$self) -> u32 {
-                $flexibility
-            }
-        )?
-
-        $(
-            fn get_focus(&$self) -> Focus {
-                $focus.value().clone()
-            }
-
-            fn set_focus(&mut $self, focus: Focus) {
-                $focus.set_value(focus);
-            }
-        )?
-
+    ($self:ident, child: $child:expr $(, $($rest:tt)*)?) => {
         #[allow(unused_imports)]
         fn foreach_child<'a>(&'a $self, f: &mut dyn FnMut(&'a dyn carbide::widget::AnyWidget)) {
             use carbide::widget::WidgetSequence;
@@ -266,24 +185,72 @@ macro_rules! CommonWidgetImpl {
             $child.foreach_direct_rev(f);
         }
 
-        $(
-            fn position(&$self) -> carbide::draw::Position {
-                $position
-            }
+        $(CommonWidgetImpl!($self, $($rest)*);)?
+    };
 
-            fn set_position(&mut $self, position: carbide::draw::Position) {
-                $position = position;
-            }
-        )?
+    ($self:ident, position: $position:expr $(, $($rest:tt)*)?) => {
+        fn position(&$self) -> carbide::draw::Position {
+            $position
+        }
 
-        $(
-            fn dimension(&$self) -> carbide::draw::Dimension {
-                $dimension
-            }
+        fn set_position(&mut $self, position: carbide::draw::Position) {
+            $position = position;
+        }
 
-            fn set_dimension(&mut $self, dimension: carbide::draw::Dimension) {
-                $dimension = dimension
-            }
-        )?
-    }
+        $(CommonWidgetImpl!($self, $($rest)*);)?
+    };
+
+    ($self:ident, dimension: $dimension:expr $(, $($rest:tt)*)?) => {
+        fn dimension(&$self) -> carbide::draw::Dimension {
+            $dimension
+        }
+
+        fn set_dimension(&mut $self, dimension: carbide::draw::Dimension) {
+            $dimension = dimension
+        }
+
+        $(CommonWidgetImpl!($self, $($rest)*);)?
+    };
+
+    ($self:ident, flag: $flag:expr $(, $($rest:tt)*)?) => {
+        fn flag(&$self) -> carbide::flags::WidgetFlag {
+            $flag
+        }
+
+        $(CommonWidgetImpl!($self, $($rest)*);)?
+    };
+
+    ($self:ident, flexibility: $flexibility:expr $(, $($rest:tt)*)?) => {
+        fn flexibility(&$self) -> u32 {
+            $flexibility
+        }
+
+        $(CommonWidgetImpl!($self, $($rest)*);)?
+    };
+
+    ($self:ident, alignment: $alignment:expr $(, $($rest:tt)*)?) => {
+        fn alignment(&$self) -> Box<dyn carbide::layout::Layouter> {
+            $alignment.clone()
+        }
+
+        fn set_alignment(&mut $self, alignment: Box<dyn Layouter>) {
+            $alignment = alignment;
+        }
+
+        $(CommonWidgetImpl!($self, $($rest)*);)?
+    };
+
+    ($self:ident, focus: $focus:expr $(, $($rest:tt)*)?) => {
+        fn get_focus(&$self) -> Focus {
+            $focus.value().clone()
+        }
+
+        fn set_focus(&mut $self, focus: Focus) {
+            $focus.set_value(focus);
+        }
+
+        $(CommonWidgetImpl!($self, $($rest)*);)?
+    };
+
+    ($self:ident) => {};
 }
