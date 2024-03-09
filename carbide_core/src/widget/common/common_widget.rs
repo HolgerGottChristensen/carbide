@@ -252,5 +252,6 @@ macro_rules! CommonWidgetImpl {
         $(CommonWidgetImpl!($self, $($rest)*);)?
     };
 
+    ($self:ident,) => {};
     ($self:ident) => {};
 }
