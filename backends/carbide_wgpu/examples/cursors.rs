@@ -16,7 +16,6 @@ fn main() {
         MouseCursor::Default,
         MouseCursor::Crosshair,
         MouseCursor::Pointer,
-        MouseCursor::Arrow,
         MouseCursor::Move,
         MouseCursor::Text,
         MouseCursor::Wait,

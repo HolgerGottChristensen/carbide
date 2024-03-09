@@ -129,8 +129,6 @@ pub(crate) fn create_render_pipeline(
 ) -> RenderPipeline {
     let (stencil_desc, col) = mask_render_state(mask_type);
 
-
-
     device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
         label: Some(&format!("Render Pipeline, {:?}", mask_type)),
         layout: Some(render_pipeline_layout),

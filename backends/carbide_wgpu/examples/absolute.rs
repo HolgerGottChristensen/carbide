@@ -13,7 +13,7 @@ fn main() {
             Rectangle::new()
                 .fill(EnvironmentColor::Accent)
                 .frame(100.0, 100.0)
-                .absolute(Position::new(10.0, 10.0))
+                .absolute(10.0, 10.0)
                 .border()
         ).close_application_on_window_close()
     );

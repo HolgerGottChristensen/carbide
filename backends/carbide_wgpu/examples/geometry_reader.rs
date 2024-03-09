@@ -20,7 +20,7 @@ fn main() {
                 ZStack::new((
                     Rectangle::new(),
                     Text::new(Map1::read_map(geometry, |g| {
-                        format!("X: {}, Y: {}, W: {}, H: {}", g.position.x(), g.position.y(), g.dimension.width, g.dimension.height)
+                        format!("X: {}, Y: {}, W: {}, H: {}", g.position.x, g.position.y, g.dimension.width, g.dimension.height)
                     }))
                 )),
             ).padding(30.0)

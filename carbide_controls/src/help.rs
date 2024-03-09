@@ -107,8 +107,8 @@ impl<C: AnyWidget + Clone> Layout for Help<C> {
             TooltipPosition::Mouse => {
                 let mouse_position = ctx.env.mouse_position();
 
-                x = mouse_position.x();
-                y = mouse_position.y() - PADDING - self.help.height();
+                x = mouse_position.x;
+                y = mouse_position.y - PADDING - self.help.height();
             }
             TooltipPosition::Bottom => {
                 x = self.x() + self.width() / 2.0 - self.help.width() / 2.0;

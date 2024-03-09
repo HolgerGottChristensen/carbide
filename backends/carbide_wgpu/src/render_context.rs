@@ -514,8 +514,8 @@ impl InnerRenderContext for WGPURenderContext {
             geometry.iter()
                 .flat_map(|triangle| &triangle.0)
                 .map(|position| Vertex::new_from_2d(
-                    position.x() as f32,
-                    position.y() as f32,
+                    position.x as f32,
+                    position.y as f32,
                     [1.0, 1.0, 1.0, 1.0],
                     [0.0, 0.0],
                     MODE_GEOMETRY
@@ -570,8 +570,8 @@ impl InnerRenderContext for WGPURenderContext {
             geometry.iter()
                 .flat_map(|triangle| &triangle.0)
                 .map(|position| Vertex::new_from_2d(
-                    position.x() as f32,
-                    position.y() as f32,
+                    position.x as f32,
+                    position.y as f32,
                     color,
                     [0.0, 0.0],
                     MODE_GEOMETRY

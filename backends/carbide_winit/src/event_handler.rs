@@ -503,7 +503,7 @@ impl NewEventHandler {
 
         // Check for drag events.
 
-        let distance = (delta_xy.x() + delta_xy.y()).abs().sqrt();
+        let distance = (delta_xy.x + delta_xy.y).abs().sqrt();
         let drag_threshold = 0.0;
 
         if distance > drag_threshold {

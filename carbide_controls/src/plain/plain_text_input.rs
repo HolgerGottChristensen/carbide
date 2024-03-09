@@ -1046,7 +1046,7 @@ impl<F: State<T=Focus>, C: ReadState<T=Color>, O: ReadState<T=Option<char>>, S: 
             };
 
             let text_id = self.text_widget.text_id();
-            let cursor_offset_from_text_origin = ctx.position_of(text_id, 0, index.index).x();
+            let cursor_offset_from_text_origin = ctx.position_of(text_id, 0, index.index).x;
 
             //println!("cursor_offset_from_text_origin: {:?}", cursor_offset_from_text_origin);
             //println!("tolerance: {:?}", tolerance_difference.x());
@@ -1125,23 +1125,23 @@ impl<
 
 impl<F: State<T=Focus>, C: ReadState<T=Color>, O: ReadState<T=Option<char>>, S: ReadState<T=u32>, T: State<T=String>, E: ReadState<T=bool>> PlainTextInput<F, C, O, S, T, E> {
     fn drag_selection(&mut self, ctx: &mut dyn InnerTextContext, to: &Position, _delta_xy: &Position) {
-        if to.x() - self.x() < 0.0 {
+        if to.x - self.x() < 0.0 {
             self.current_offset_speed = Some(SCROLL_SUPER_FAST_SPEED);
-        } else if (self.x() + self.width()) - to.x() < 0.0 {
+        } else if (self.x() + self.width()) - to.x < 0.0 {
             self.current_offset_speed = Some(-SCROLL_SUPER_FAST_SPEED);
-        } else if to.x() - self.x() < SCROLL_FAST_WIDTH {
+        } else if to.x - self.x() < SCROLL_FAST_WIDTH {
             self.current_offset_speed = Some(SCROLL_FAST_SPEED);
-        } else if (self.x() + self.width()) - to.x() < SCROLL_FAST_WIDTH {
+        } else if (self.x() + self.width()) - to.x < SCROLL_FAST_WIDTH {
             self.current_offset_speed = Some(-SCROLL_FAST_SPEED);
-        } else if to.x() - self.x() < SCROLL_SLOW_WIDTH {
+        } else if to.x - self.x() < SCROLL_SLOW_WIDTH {
             self.current_offset_speed = Some(SCROLL_SLOW_SPEED);
-        } else if (self.x() + self.width()) - to.x() < SCROLL_SLOW_WIDTH {
+        } else if (self.x() + self.width()) - to.x < SCROLL_SLOW_WIDTH {
             self.current_offset_speed = Some(-SCROLL_SLOW_SPEED);
         } else {
             self.current_offset_speed = None;
         }
 
-        let x = to.x() - self.position.x() - *self.text_offset.value();
+        let x = to.x - self.position.x - *self.text_offset.value();
         let (_, index) = ctx.hit(self.text_widget.text_id(), Position::new(x, self.text_widget.height() / 2.0));
 
 
@@ -1161,7 +1161,7 @@ impl<F: State<T=Focus>, C: ReadState<T=Color>, O: ReadState<T=Option<char>>, S: 
             self.set_focus_and_request(Focus::FocusRequested, ctx.env);
         }
 
-        let x = position.x() - self.position.x() - *self.text_offset.value();
+        let x = position.x - self.position.x - *self.text_offset.value();
         let (line, index) = ctx.text.hit(self.text_widget.text_id(), Position::new(x, self.text_widget.height() / 2.0));
 
         self.cursor = Cursor::Single(CursorIndex {
@@ -1171,7 +1171,7 @@ impl<F: State<T=Focus>, C: ReadState<T=Color>, O: ReadState<T=Option<char>>, S: 
     }
 
     fn selection_click(&mut self, position: &Position, ctx: &mut MouseEventContext) {
-        let x = position.x() - self.position.x() - *self.text_offset.value();
+        let x = position.x - self.position.x - *self.text_offset.value();
         let (line, clicked_index) = ctx.text.hit(self.text_widget.text_id(), Position::new(x, self.text_widget.height() / 2.0));
 
         match self.cursor {
@@ -1200,7 +1200,7 @@ impl<F: State<T=Focus>, C: ReadState<T=Color>, O: ReadState<T=Option<char>>, S: 
     }
 
     fn select_word_at_click(&mut self, position: &Position, ctx: &mut MouseEventContext) {
-        let x = position.x() - self.position.x() - *self.text_offset.value();
+        let x = position.x - self.position.x - *self.text_offset.value();
         let (line, clicked_index) = ctx.text.hit(self.text_widget.text_id(), Position::new(x, self.text_widget.height() / 2.0));
 
         let range = word_range_surrounding_grapheme_index(clicked_index, &self.display_text.value());
@@ -1243,8 +1243,8 @@ impl<
             }
             Cursor::Selection { start, end } => {
                 let text_id = self.text_widget.text_id();
-                let start_x = ctx.text.position_of(text_id, 0, start.index).x() + self.x();
-                let end_x = ctx.text.position_of(text_id, 0, end.index).x() + self.x();
+                let start_x = ctx.text.position_of(text_id, 0, start.index).x + self.x();
+                let end_x = ctx.text.position_of(text_id, 0, end.index).x + self.x();
 
                 let min = start_x.min(end_x);
                 let max = start_x.max(end_x);
@@ -1294,14 +1294,14 @@ impl<
 
             match self.cursor {
                 Cursor::Single(index) => {
-                    let x = ctx.text.position_of(text_id, 0, index.index).x() + self.x() + *self.text_offset.value();
+                    let x = ctx.text.position_of(text_id, 0, index.index).x + self.x() + *self.text_offset.value();
 
                     self.cursor_widget.set_position(Position::new(x, self.text_widget.y()));
                     self.cursor_widget.position_children(ctx);
                 }
                 Cursor::Selection { start, end } => {
-                    let end_x = ctx.text.position_of(text_id, 0, end.index).x() + self.x() + *self.text_offset.value();
-                    let min_x = ctx.text.position_of(text_id, 0, start.index.min(end.index)).x() + self.x() + *self.text_offset.value();
+                    let end_x = ctx.text.position_of(text_id, 0, end.index).x + self.x() + *self.text_offset.value();
+                    let min_x = ctx.text.position_of(text_id, 0, start.index.min(end.index)).x + self.x() + *self.text_offset.value();
 
                     self.cursor_widget.set_position(Position::new(end_x, self.text_widget.y()));
                     self.cursor_widget.position_children(ctx);

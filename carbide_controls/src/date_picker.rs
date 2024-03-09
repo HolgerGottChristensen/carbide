@@ -151,21 +151,21 @@ impl DatePicker {
         let geometry = LocalState::new(Rect::default());
 
         let x = Map3::read_map_env(parent_position.clone(), parent_dimension.clone(), geometry.clone(), |env, position, dimension, geometry| {
-            (position.x() + dimension.width / 2.0 - geometry.dimension.width / 2.0).min(env.current_window_width() - geometry.dimension.width).max(0.0)
+            (position.x + dimension.width / 2.0 - geometry.dimension.width / 2.0).min(env.current_window_width() - geometry.dimension.width).max(0.0)
         });
 
         let y = Map3::read_map_env(parent_position, parent_dimension, geometry.clone(), |env, position, dimension, geometry| {
             // The bottom of the calendar popup is below the bottom of the window when placed below the input.
-            let oob_below = position.y() + dimension.height + 1.0 + geometry.dimension.height > env.current_window_height();
+            let oob_below = position.y + dimension.height + 1.0 + geometry.dimension.height > env.current_window_height();
             // The top of the calendar popup is above the top of the window when placed below the input.
-            let oob_above = position.y() - 1.0 - geometry.dimension.height < 0.0;
+            let oob_above = position.y - 1.0 - geometry.dimension.height < 0.0;
 
             if oob_below && oob_above {
-                (position.y() + dimension.height + 1.0).min(env.current_window_height() - geometry.dimension.height).max(0.0)
+                (position.y + dimension.height + 1.0).min(env.current_window_height() - geometry.dimension.height).max(0.0)
             } else if !oob_below {
-                (position.y() + dimension.height + 1.0).max(0.0)
+                (position.y + dimension.height + 1.0).max(0.0)
             } else {
-                (position.y() - 1.0 - geometry.dimension.height).min(env.current_window_height() - geometry.dimension.height)
+                (position.y - 1.0 - geometry.dimension.height).min(env.current_window_height() - geometry.dimension.height)
             }
         });
 

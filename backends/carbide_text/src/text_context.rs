@@ -231,7 +231,7 @@ impl InnerTextContext for TextContext {
     fn hit(&self, id: TextId, position: Position) -> (usize, usize) {
         let (ref buffer, meta) = self.map.get(&id).unwrap();
 
-        let hit = buffer.hit(position.x() as f32, position.y() as f32);
+        let hit = buffer.hit(position.x as f32, position.y as f32);
 
         fn grapheme_index_from_byte_offset(index: usize, string: &str) -> usize {
             for (i, (g, _)) in string.grapheme_indices(true).enumerate() {

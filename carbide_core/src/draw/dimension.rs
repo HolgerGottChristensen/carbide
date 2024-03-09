@@ -9,12 +9,16 @@ use crate::draw::Scalar;
 pub struct Dimension {
     pub width: Scalar,
     pub height: Scalar,
+    // https://users.rust-lang.org/t/public-getter-method-vs-pub-field/20147/4
+    _private: ()
 }
 
 impl Dimension {
+    #[inline]
     pub fn new(width: Scalar, height: Scalar) -> Dimension {
-        Dimension { width, height }
+        Dimension { width, height, _private: () }
     }
+
 }
 
 impl AddAssign<Position> for Dimension {

@@ -36,8 +36,8 @@ fn draw_star(
 ) -> Context {
     let mut rotation = PI / 2.0 * 3.0;
 
-    let center_x = center.x();
-    let center_y = center.y();
+    let center_x = center.x;
+    let center_y = center.y;
 
     let mut x;
     let mut y;

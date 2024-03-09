@@ -32,18 +32,18 @@ impl Animatable<Color> for Color {
 
 impl Animatable<Position> for Position {
     fn interpolate(&self, other: &Position, percentage: f64) -> Position {
-        Position {
-            x: self.x.interpolate(&other.x, percentage),
-            y: self.y.interpolate(&other.y, percentage),
-        }
+        Position::new(
+            self.x.interpolate(&other.x, percentage),
+            self.y.interpolate(&other.y, percentage),
+        )
     }
 }
 
 impl Animatable<Dimension> for Dimension {
     fn interpolate(&self, other: &Dimension, percentage: f64) -> Dimension {
-        Dimension {
-            width: self.width.interpolate(&other.width, percentage),
-            height: self.height.interpolate(&other.height, percentage),
-        }
+        Dimension::new(
+            self.width.interpolate(&other.width, percentage),
+            self.height.interpolate(&other.height, percentage)
+        )
     }
 }

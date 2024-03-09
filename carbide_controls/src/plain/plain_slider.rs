@@ -327,7 +327,7 @@ impl<
                     self.dragging = true;
 
                     let relative_to_position = *position - self.position;
-                    let p = (relative_to_position.x() - self.thumb.width() / 2.0)
+                    let p = (relative_to_position.x - self.thumb.width() / 2.0)
                         / (self.dimension.width - self.thumb.width());
                     self.percent.set_value(p.max(0.0).min(1.0));
                 } else {
@@ -346,7 +346,7 @@ impl<
                 }
 
                 let relative_to_position = *to - self.position;
-                let p = (relative_to_position.x() - self.thumb.width() / 2.0)
+                let p = (relative_to_position.x - self.thumb.width() / 2.0)
                     / (self.dimension.width - self.thumb.width());
                 self.percent.set_value(p.max(0.0).min(1.0));
             }
@@ -397,9 +397,9 @@ impl<
         let percent = self.percent.value().max(0.0).min(1.0);
         let position = self.position();
 
-        let background_y = position.y() + self.height() / 2.0 - self.background.height() / 2.0;
-        let track_y = position.y() + self.height() / 2.0 - self.track.height() / 2.0;
-        let thumb_y = position.y() + self.height() / 2.0 - self.thumb.height() / 2.0;
+        let background_y = position.y + self.height() / 2.0 - self.background.height() / 2.0;
+        let track_y = position.y + self.height() / 2.0 - self.track.height() / 2.0;
+        let thumb_y = position.y + self.height() / 2.0 - self.thumb.height() / 2.0;
 
         let thumb_x = if let Some(steps) = &*self.steps.value() {
             if STEP_SMOOTH_BEHAVIOR {
@@ -412,8 +412,8 @@ impl<
             self.x() + (self.background.width() - self.thumb.width()) * percent
         };
 
-        self.background.set_position(Position::new(position.x(), background_y));
-        self.track.set_position(Position::new(position.x(), track_y));
+        self.background.set_position(Position::new(position.x, background_y));
+        self.track.set_position(Position::new(position.x, track_y));
         self.thumb.set_position(Position::new(thumb_x, thumb_y));
 
         self.background.position_children(ctx);

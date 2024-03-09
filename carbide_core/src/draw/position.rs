@@ -14,28 +14,21 @@ use crate::draw::Scalar;
 /// You are also able to add Positions and [super::Dimension], to get new offset positions.
 #[derive(Copy, Clone, PartialOrd, PartialEq, Debug, Default)]
 pub struct Position {
-    pub(crate) x: Scalar,
-    pub(crate) y: Scalar,
+    pub x: Scalar,
+    pub y: Scalar,
+    // https://users.rust-lang.org/t/public-getter-method-vs-pub-field/20147/4
+    _private: (),
 }
 
 impl Position {
     /// Create a new Position from scalar values.
+    #[inline]
     pub const fn new(x: Scalar, y: Scalar) -> Position {
-        Position { x, y }
+        Position { x, y, _private: () }
     }
 
-    pub fn origin() -> Position {
-        Position { x: 0.0, y: 0.0 }
-    }
-
-    /// Get the x component of the position. This is the horizontal component.
-    pub const fn x(&self) -> Scalar {
-        self.x
-    }
-
-    /// Get the y component of the position. This is the vertical component.
-    pub const fn y(&self) -> Scalar {
-        self.y
+    pub const fn origin() -> Position {
+        Position::new(0.0, 0.0)
     }
 
     /// Get a new position that takes the min x position from the two positions and uses it as
