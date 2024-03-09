@@ -3,7 +3,6 @@ use carbide_core::environment::Environment;
 use carbide_core::state::{EnvMap1, Map1};
 pub use check_box::*;
 pub use list::*;
-pub use navigation_stack::NavigationStack;
 pub use plain::*;
 pub use pop_up_button::*;
 pub use radio_button::*;
@@ -15,6 +14,7 @@ pub use controls_ext::*;
 pub use help::*;
 pub use labelled::*;
 pub use calendar::*;
+pub use date_picker::*;
 
 extern crate carbide_core as carbide;
 
@@ -47,7 +47,6 @@ macro_rules! capture {
 mod button;
 mod check_box;
 mod list;
-mod navigation_stack;
 mod plain;
 mod pop_up_button;
 mod radio_button;
@@ -59,6 +58,7 @@ mod controls_ext;
 mod help;
 mod labelled;
 mod calendar;
+mod date_picker;
 
 
 type EnabledState = EnvMap1<fn(&Environment, &i32) -> bool, i32, bool, i32>;

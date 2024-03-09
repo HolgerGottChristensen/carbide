@@ -3,6 +3,7 @@ use std::path::PathBuf;
 use tokio::time::{Duration, sleep};
 
 use carbide_core as carbide; // Required only in internal examples
+use carbide_core::asynchronous::Task;
 use carbide_core::draw::Dimension;
 use carbide_core::draw::image::ImageId;
 use carbide_core::draw::Texture;
@@ -43,43 +44,43 @@ fn main() {
         tokio::fs::read_to_string(ipsum_path).await.unwrap()
     });
 
-    task!({
-            let client = reqwest::Client::builder()
-                .user_agent(APP_USER_AGENT)
-                .build().unwrap();
+    let task = Task::new(|| async {
+        let client = reqwest::Client::builder()
+            .user_agent(APP_USER_AGENT)
+            .build().unwrap();
 
-            //println!("{:?}", client);
+        //println!("{:?}", client);
 
-            let response = client.get("https://picsum.photos/300")
-                .send()
-                .await
-                .unwrap();
+        let response = client.get("https://picsum.photos/300")
+            .send()
+            .await
+            .unwrap();
 
-            //.text().await;
+        //.text().await;
 
-            //println!("{:#?}", response);
+        //println!("{:#?}", response);
 
-            let data = response.bytes()
-                .await
-                .expect("Could not get bytes");
-            let image = carbide_core::image::load_from_memory(&data).unwrap();
-            image
-        },
-        move |image, ctx| {
-            let id = ImageId::new(PathBuf::new().join("ThisIsNotValid"));
+        let data = response.bytes()
+            .await
+            .expect("Could not get bytes");
+        let image = carbide_core::image::load_from_memory(&data).unwrap();
+        image
+    }, move |image, ctx| {
+        let id = ImageId::new(PathBuf::new().join("ImageIdForAsyncImage"));
 
-            let texture = Texture {
-                width: image.width(),
-                height: image.height(),
-                bytes_per_row: image.width() * 4,
-                format: TextureFormat::RGBA8,
-                data: &image.to_rgba8().into_raw(),
-            };
+        let texture = Texture {
+            width: image.width(),
+            height: image.height(),
+            bytes_per_row: image.width() * 4,
+            format: TextureFormat::RGBA8,
+            data: &image.to_rgba8().into_raw(),
+        };
 
-            ctx.image.update_texture(id.clone(), texture);
-            image_id_for_async.clone().set_value(Some(id));
-        }
-    );
+        ctx.image.update_texture(id.clone(), texture);
+        image_id_for_async.clone().set_value(Some(id));
+    });
+
+    task.clone().start();
 
     application.set_scene(
         Window::new(
@@ -87,7 +88,11 @@ fn main() {
             Dimension::new(400.0, 600.0),
             VStack::new((
                 Text::new(text).padding(20.0),
-                Image::new(image_id),
+                Image::new(image_id)
+                    .on_click(move |_, _| {
+                        task.clone().start()
+                    }),
+                Text::new("Click the image"),
                 Rectangle::new()
                     .fill(EnvironmentColor::Accent)
                     .frame(block_width, 50.0),

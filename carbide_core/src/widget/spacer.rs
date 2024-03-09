@@ -36,7 +36,7 @@ impl Spacer {
 }
 
 impl Layout for Spacer {
-    fn calculate_size(&mut self, requested_size: Dimension, ctx: &mut LayoutContext) -> Dimension {
+    fn calculate_size(&mut self, requested_size: Dimension, _ctx: &mut LayoutContext) -> Dimension {
         if let Some(max) = self.max_size {
             self.dimension = Dimension::new(
                 requested_size.width.min(max),

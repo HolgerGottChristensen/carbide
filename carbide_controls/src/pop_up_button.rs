@@ -83,28 +83,24 @@ impl PopUpButton {
             }
         });
 
-        ZStack::new(vec![
+        ZStack::new((
             RoundedRectangle::new(CornerRadii::all(3.0))
-                .fill(EnvironmentColor::SecondarySystemBackground)
-                .boxed(),
-            HStack::new(vec![
-                Text::new(text).color(label_color).padding(EdgeInsets::single(0.0, 0.0, 9.0, 0.0)).boxed(),
-                Spacer::new().boxed(),
-                ZStack::new(vec![
+                .fill(EnvironmentColor::SecondarySystemBackground),
+            HStack::new((
+                Text::new(text).color(label_color).padding(EdgeInsets::single(0.0, 0.0, 9.0, 0.0)),
+                Spacer::new(),
+                ZStack::new((
                     RoundedRectangle::new(CornerRadii::single(0.0, 0.0, 0.0, 2.0)) // TODO: Changing top_right, makes lyon mess up.
-                        .fill(button_color)
-                        .boxed(),
-                    arrows.boxed(),
-                ])
+                        .fill(button_color),
+                    arrows,
+                ))
                     .padding(EdgeInsets::single(0.0, 0.0, 0.0, 1.0))
-                    .frame_fixed_width(20.0)
-                    .boxed(),
-            ]).boxed(),
+                    .frame_fixed_width(20.0),
+            )),
             RoundedRectangle::new(CornerRadii::all(3.0))
                 .stroke_style(1.0)
-                .stroke(EnvironmentColor::OpaqueSeparator)
-                .boxed(),
-        ])
+                .stroke(EnvironmentColor::OpaqueSeparator),
+        ))
             .background(
                 RoundedRectangle::new(CornerRadii::all(3.0))
                     .stroke(outline_color)
@@ -151,9 +147,9 @@ impl PopUpButton {
             .boxed()
     }
 
-    fn popup_delegate<T: StateContract + PartialEq, S: State<T=T>, M: ReadState<T=Vec<T>>, B: State<T=bool>>(
+    fn popup_delegate<T: StateContract + PartialEq, S: State<T=T>, M: ReadState<T=Vec<T>>>(
         model: M,
-        delegate: PopupDelegate<T, S, B>,
+        delegate: PopupDelegate<T, S>,
         _enabled: Box<dyn AnyReadState<T=bool>>,
     ) -> Box<dyn AnyWidget> {
         VStack::new(ForEach::new(model.ignore_writes(), delegate))

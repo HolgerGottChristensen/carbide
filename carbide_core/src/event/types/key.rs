@@ -1,5 +1,3 @@
-use std::cmp::Ordering;
-
 /// Represent a keyboard key.
 #[allow(missing_docs)]
 #[derive(Clone, Debug, Hash, PartialEq, Eq, Ord, PartialOrd)]

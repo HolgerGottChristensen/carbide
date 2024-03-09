@@ -94,6 +94,8 @@ impl<W: WidgetSequence> Layout for HGrid<W> {
                     for _ in 0..row_count {
                         self.calculated_heights.push(proposed_height / row_count as f64);
                     }
+
+                    number_of_remaining_rows -= 1;
                 }
                 HGridRow::Flexible { minimum, maximum } => {
                     let proposed_height = remaining_height / number_of_remaining_rows as Scalar;
@@ -107,13 +109,11 @@ impl<W: WidgetSequence> Layout for HGrid<W> {
                         self.calculated_heights.push(proposed_height);
                         remaining_height -= proposed_height;
                     }
+
+                    number_of_remaining_rows -= 1;
                 }
             }
-
-            number_of_remaining_rows -= 1;
         }
-
-        //
 
         let mut children_flexibility_rest: SmallVec<[(u32, &mut dyn AnyWidget); 25]> = smallvec![];
 

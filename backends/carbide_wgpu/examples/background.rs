@@ -6,7 +6,7 @@ fn main() {
     let mut application = Application::new().with_asset_fonts();
 
     application.set_scene(Window::new(
-        "Background example",
+        "Background example - Carbide",
         Dimension::new(400.0, 600.0),
         Text::new("Hello world!")
             .padding(5.0)

@@ -281,7 +281,7 @@ impl Render for Scene3d {
 
         self.renderer.set_object_transform(&self.object_handle, Mat4::from_rotation_y(self.rotation as f32) * Mat4::from_scale(Vec3::new(1.0, 2.0, 3.0)));
 
-        let color = env.color(&EnvironmentStateKey::Color(EnvironmentColor::Accent)).unwrap();
+        let color = env.color(EnvironmentColor::Accent).unwrap();
 
         let color = glam::Vec4::new(color.red(), color.green(), color.blue(), color.opacity());
 

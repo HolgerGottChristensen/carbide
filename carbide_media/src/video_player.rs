@@ -1,3 +1,4 @@
+use std::ops::{Deref, DerefMut};
 use std::time::Duration;
 use carbide::event::{KeyboardEventContext, MouseEventContext};
 use carbide::layout::LayoutContext;
@@ -50,11 +51,9 @@ impl VideoPlayer<Option<VideoId>> {
                 } else {
                     1.0
                 }
-            }, |new, current_time, duration| {
-                if let Some(duration) = duration {
-                    (Some(Duration::from_secs_f64(duration.as_secs_f64() * new)), None)
-                } else {
-                    (None, None)
+            }, |new, mut current_time, duration| {
+                if let Some(duration) = duration.deref() {
+                    *current_time = Duration::from_secs_f64(duration.as_secs_f64() * new);
                 }
             }
         );
@@ -161,7 +160,9 @@ impl VideoPlayer<Option<VideoId>> {
 
 impl<Id: ReadState<T=Option<VideoId>> + Clone> MouseEventHandler for VideoPlayer<Id> {
     fn handle_mouse_event(&mut self, event: &MouseEvent, ctx: &mut MouseEventContext) {
-        self.video_overlay_visible = self.is_inside(event.get_current_mouse_position());
+        if !matches!(event, MouseEvent::Left | MouseEvent::Entered) {
+            self.video_overlay_visible = self.is_inside(event.get_current_mouse_position());
+        }
     }
 
     fn process_mouse_event(&mut self, event: &MouseEvent, ctx: &mut MouseEventContext) {

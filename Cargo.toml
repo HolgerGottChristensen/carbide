@@ -27,6 +27,7 @@ members = [
     "examples/counter",
     "examples/fractal",
     "examples/mandelbrot",
+    "examples/othello",
     "carbide",
 ]
 

@@ -19,7 +19,7 @@ impl Calendar {
             .hidden_delegate(CalendarHiddenDelegate)
             .title_delegate(CalendarTitleDelegate)
             .column(VGridColumn::Fixed(30.0))
-            .spacing(Dimension::new(10.0, 5.0))
+            .spacing(Dimension::new(7.0, 5.0))
     }
 }
 

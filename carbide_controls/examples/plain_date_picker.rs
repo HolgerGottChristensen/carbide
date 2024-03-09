@@ -1,8 +1,9 @@
 use chrono::{Days, Local};
 
-use carbide_controls::PlainCalendar;
+use carbide_controls::{PlainCalendar, PlainDatePicker};
 use carbide_core::draw::Dimension;
 use carbide_core::state::LocalState;
+use carbide_core::widget::WidgetExt;
 use carbide_wgpu::{Application, Window};
 
 fn main() {
@@ -14,9 +15,9 @@ fn main() {
     let selection = LocalState::new(Some(Local::now().naive_local().date()..=Local::now().checked_add_days(Days::new(10)).unwrap().naive_local().date()));
 
     application.set_scene(Window::new(
-        "Plain Calendar Example - Carbide",
+        "Plain DatePicker Example - Carbide",
         Dimension::new(400.0, 600.0),
-        PlainCalendar::new(selection),
+        PlainDatePicker::new(selection).frame(300.0, 40.0),
     ).close_application_on_window_close());
 
     application.launch();

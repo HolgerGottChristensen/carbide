@@ -2,11 +2,13 @@ use std::cell::RefCell;
 use std::future::Future;
 use std::time::Duration;
 pub use timer::Timer;
+pub use task::Task;
 
 use crate::environment::Environment;
 
 pub mod thread_task;
 mod timer;
+mod task;
 
 use futures::FutureExt;
 use oneshot::TryRecvError;

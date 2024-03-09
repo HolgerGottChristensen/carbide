@@ -1,6 +1,5 @@
 use carbide::layout::layout_context::LayoutContext;
 use crate::draw::Dimension;
-use crate::environment::Environment;
 use crate::widget::CommonWidget;
 
 pub trait Layout: CommonWidget {

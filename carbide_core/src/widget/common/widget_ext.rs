@@ -1,20 +1,18 @@
 use cgmath::Matrix4;
-use carbide::widget::OnChange;
-
-use carbide_core::state::{IntoReadState, RMap1};
-use carbide_core::widget::Widget;
 
 use crate::color::RED;
-use crate::draw::Color;
+use crate::draw::{Color, Rect};
 use crate::draw::Dimension;
-use crate::environment::{Environment, EnvironmentColor, EnvironmentStateContainer};
+use crate::environment::{Environment, EnvironmentColor};
 use crate::event::ModifierKey;
 use crate::flags::WidgetFlag;
 use crate::focus::Focus;
 use crate::render::Style;
-use crate::state::{IntoState, ReadState, StateContract, TState};
-use crate::state::ReadStateExtNew;
-use crate::widget::{Action, AnyWidget, Background, Border, Changed, Clip, ClipShape, CornerRadii, EdgeInsets, EnvUpdating, Flagged, Flexibility, Frame, Hidden, MouseArea, Offset, Overlay, Padding, Rotation3DEffect, RoundedRectangle, Scroll, Shape, Transform};
+use crate::state::{IntoReadState, RMap1};
+use crate::state::{IntoState, ReadState, StateContract};
+use crate::widget::{Absolute, Action, AnyWidget, AspectRatio, Background, Border, Changed, Clip, ClipShape, ContentMode, CornerRadii, EdgeInsets, EnvUpdating, Flagged, Flexibility, Frame, GeometryReader, Hidden, MouseArea, Offset, Padding, Rotation3DEffect, RoundedRectangle, Scroll, Shape, Transform};
+use crate::widget::OnChange;
+use crate::widget::Widget;
 
 type AccentColor<C, T, S> = EnvUpdating<C, T, S>;
 type ForegroundColor<C, T, S> = EnvUpdating<C, T, S>;
@@ -128,10 +126,20 @@ pub trait WidgetExt: Widget + Sized {
         Hidden::new(self)
     }
 
-    /// Offset a widget. It will only change the locating of the rendered widget, but will not
-    /// change its position for event handling.
     fn offset<X: IntoReadState<f64>, Y: IntoReadState<f64>>(self, offset_x: X, offset_y: Y) -> Offset<X::Output, Y::Output, Self> {
         Offset::new(offset_x, offset_y, self)
+    }
+
+    fn absolute<X: IntoReadState<f64>, Y: IntoReadState<f64>>(self, x: X, y: Y) -> Absolute<X::Output, Y::Output, Self> {
+        Absolute::new(x, y, self)
+    }
+
+    fn aspect_ratio<D: IntoReadState<Dimension>>(self, ratio: D) -> AspectRatio<D::Output, ContentMode, Self> {
+        AspectRatio::new(ratio, self)
+    }
+
+    fn geometry<G: IntoState<Rect>>(self, geometry: G) -> GeometryReader<Self, G::Output> {
+        GeometryReader::new(geometry, self)
     }
 
     fn on_change<T: StateContract + PartialEq, S: ReadState<T=T>, F: Changed<T>>(self, state: S, f: F) -> OnChange<Self, T, S, F> {
@@ -148,11 +156,6 @@ pub trait WidgetExt: Widget + Sized {
 
     fn accent_color<C: IntoReadState<Color>>(self, color: C) -> AccentColor<Self, Color, C::Output> {
         EnvUpdating::new(EnvironmentColor::Accent, color.into_read_state(), self)
-    }
-
-    /// Returns two widgets. The first should be used within an overlay, and the second within the widget hierarchy.
-    fn overlay<B: IntoReadState<bool>>(self, layer: &'static str, show: B) -> Overlay<Self, B::Output> {
-        Overlay::new(layer,show, self)
     }
 
     /// Example: .on_click(move |env: &mut Environment, modifier: ModifierKey| {})

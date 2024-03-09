@@ -164,7 +164,7 @@ impl<T: AnyWidget + ?Sized> Update for Box<T> {
     }
 
     fn process_update(&mut self, ctx: &mut UpdateContext) {
-        self.deref_mut().process_update(ctx)
+        self.deref_mut().process_update(ctx);
     }
 }
 

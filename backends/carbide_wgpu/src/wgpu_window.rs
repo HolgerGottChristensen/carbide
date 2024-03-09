@@ -26,7 +26,7 @@ use carbide_core::render::{Render, RenderContext};
 use carbide_core::state::StateSync;
 use carbide_core::text::InnerTextContext;
 use carbide_core::update::{Update, UpdateContext};
-use carbide_core::widget::{AnyWidget, CommonWidget, FilterId, Menu, OverlaidLayer, Rectangle, WidgetExt, WidgetId, ZStack};
+use carbide_core::widget::{AnyWidget, CommonWidget, FilterId, Menu, Overlay, Rectangle, WidgetExt, WidgetId, ZStack};
 use carbide_core::window::WindowId;
 use carbide_winit::convert_mouse_cursor;
 
@@ -255,10 +255,10 @@ impl WGPUWindow {
         let title = title.into();
 
 
-        let child = ZStack::new(vec![
-            Rectangle::new().fill(EnvironmentColor::SystemBackground).boxed(),
-            Box::new(OverlaidLayer::new("controls_popup_layer", child).steal_events()),
-        ]).boxed();
+        let child = ZStack::new((
+            Rectangle::new().fill(EnvironmentColor::SystemBackground),
+            Overlay::new("controls_popup_layer", child).steal_events(),
+        )).boxed();
 
         let builder = WindowBuilder::new()
             .with_inner_size(Size::Logical(LogicalSize {
@@ -1034,6 +1034,7 @@ impl WGPUWindow {
         let mut current_main_render_pipeline = &render_pipelines.render_pipeline_no_mask;
         let current_vertex_buffer_slice = self.vertex_buffer.0.slice(..);
         let mut current_uniform_bind_group = &self.uniform_bind_group;
+        let mut invalid_scissor = false;
 
         for command in render_passes {
             match command {
@@ -1073,9 +1074,21 @@ impl WGPUWindow {
                                 render_pass.set_bind_group(0, &bind_groups[&bind_group.get()].bind_group, &[]);
                             }
                             RenderPassCommand::SetScissor { rect } => {
-                                render_pass.set_scissor_rect((rect.left() * scale_factor) as u32, (rect.bottom() * scale_factor) as u32, (rect.width() * scale_factor) as u32, (rect.height() * scale_factor) as u32);
+                                let x = (rect.left() * scale_factor).max(0.0) as u32;
+                                let y = (rect.bottom() * scale_factor).max(0.0) as u32;
+                                let width = (rect.width() * scale_factor) as u32;
+                                let height = (rect.height() * scale_factor) as u32;
+
+                                invalid_scissor = width <= 0 || height <= 0;
+
+                                if !invalid_scissor {
+                                    render_pass.set_scissor_rect(x, y, width, height);
+                                }
                             }
                             RenderPassCommand::Draw { vertex_range } => {
+                                if invalid_scissor {
+                                    continue;
+                                }
                                 render_pass.draw(vertex_range, instance_range.clone());
                             }
                             RenderPassCommand::Stencil { vertex_range } => {
@@ -1110,6 +1123,10 @@ impl WGPUWindow {
                     }
                 }
                 RenderPass::Gradient(vertex_range, gradient_index) => {
+                    if invalid_scissor {
+                        continue;
+                    }
+
                     let (color_op, stencil_op, depth_op) = render_pass_ops(RenderPassOps::Middle);
                     let mut render_pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
                         label: None,
@@ -1135,6 +1152,10 @@ impl WGPUWindow {
                     render_pass.draw(vertex_range, instance_range.clone());
                 }
                 RenderPass::Filter(vertex_range, bind_group_index) => {
+                    if invalid_scissor {
+                        continue;
+                    }
+
                     encoder.copy_texture_to_texture(
                         ImageCopyTexture {
                             texture: &self.main_tex,
@@ -1185,6 +1206,10 @@ impl WGPUWindow {
                     render_pass.draw(vertex_range, instance_range.clone());
                 }
                 RenderPass::FilterSplitPt1(vertex_range, filter_id) => {
+                    if invalid_scissor {
+                        continue;
+                    }
+
                     let (color_op, stencil_op, depth_op) = render_pass_ops(RenderPassOps::Middle);
 
                     let mut render_pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
@@ -1213,6 +1238,10 @@ impl WGPUWindow {
                     render_pass.draw(vertex_range, instance_range.clone());
                 }
                 RenderPass::FilterSplitPt2(vertex_range, filter_id) => {
+                    if invalid_scissor {
+                        continue;
+                    }
+
                     let (color_op, stencil_op, depth_op) = render_pass_ops(RenderPassOps::Middle);
                     let mut render_pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
                         label: None,

@@ -1,37 +1,32 @@
-use std::any::{Any, TypeId};
+use std::any::Any;
 use std::cell::RefCell;
 use std::collections::HashMap;
 use std::fmt::Formatter;
 use std::future::Future;
-use std::mem::swap;
 use std::option::Option::Some;
-use std::path::{Path, PathBuf};
 use std::rc::Rc;
 use std::time::Instant;
 
 use fxhash::{FxBuildHasher, FxHashMap};
 use image::DynamicImage;
-use raw_window_handle::{HandleError, HasRawWindowHandle, RawWindowHandle};
+use raw_window_handle::{HasRawWindowHandle, RawWindowHandle};
+
 use carbide_core::draw::Position;
 use carbide_core::widget::AnyWidget;
 
-use crate::locate_folder;
 use crate::animation::Animation;
 use crate::cursor::MouseCursor;
-use crate::draw::{Dimension, ImageContext, NOOPImageContext};
+use crate::draw::Dimension;
 use crate::draw::Color;
-use crate::draw::image::{ImageId, ImageMap};
-use crate::draw::Scalar;
+use crate::draw::image::ImageId;
 use crate::draw::theme;
 use crate::environment::{EnvironmentFontSize, WidgetTransferAction};
 use crate::environment::{EnvironmentColor, EnvironmentVariable};
 use crate::event::{EventSink, HasEventSink};
 use crate::focus::Refocus;
 use crate::layout::BasicLayouter;
-use crate::state::{InnerState, StateContract, EnvironmentStateKey};
+use crate::state::{InnerState, StateContract};
 use crate::widget::{EnvKey, FilterId, ImageFilter, WidgetId};
-use crate::widget::ImageInformation;
-use crate::window::WindowId;
 
 //type Overlays = Vec<(Box<dyn AnyWidget>, Box<dyn AnyReadState<T=bool>>)>;
 
@@ -54,13 +49,6 @@ pub struct Environment {
     /// exists, and afterwards take out the special keyed value.
     widget_transfer: FxHashMap<Option<String>, WidgetTransferAction>,
 
-    /// Keep local state as a map from String, to a vector of bytes.
-    /// The vector is used as a serializing target for the state value.
-    /// bin-code is used to serialize the state.
-    /// Keys should be unique to avoid trying to deserialize state into
-    /// different state.
-    //pub(crate) local_state: FxHashMap<StateKey, Option<Box<dyn Any>>>,
-
     /// This field holds the requests for refocus. If Some we need to check the refocus
     /// reason and apply that focus change after the event is done. This also means that
     /// the focus change is not instant, but updates after each run event.
@@ -78,7 +66,7 @@ pub struct Environment {
     frame_start_time: Rc<RefCell<Instant>>,
 
     /// A map that contains an image filter used for the Filter widget.
-    filter_map: FxHashMap<FilterId, crate::widget::ImageFilter>,
+    filter_map: FxHashMap<FilterId, ImageFilter>,
 
     /// A queue of functions that should be evaluated called each frame. This is called from the
     /// main thread, and will return a boolean true if the task is done and should be removed
@@ -474,13 +462,12 @@ impl Environment {
         self.request_animation_frame();
     }*/
 
-    pub fn transferred_widget(&mut self, id: Option<String>) -> Option<WidgetTransferAction> {
-        self.widget_transfer.remove(&id)
+    pub fn transferred_widget(&mut self, id: &Option<String>) -> Option<WidgetTransferAction> {
+        self.widget_transfer.remove(id)
     }
 
     pub fn transfer_widget(&mut self, id: Option<String>, widget_transfer: WidgetTransferAction) {
         self.widget_transfer.insert(id, widget_transfer);
-        self.request_animation_frame();
     }
 
     pub fn clear_animation_frame(&mut self) {

@@ -136,7 +136,7 @@ pub trait CommonWidget {
 
 #[macro_export]
 macro_rules! CommonWidgetImpl {
-    ($self:ident, id: $id_expr:expr, child: (), position: $position:expr, dimension: $dimension:expr $(,flag: $flag:expr)? $(,flexibility: $flexibility:expr)? $(,alignment: $alignment:expr)? $(,focus: $focus:expr)?) => {
+    ($self:ident, id: $id_expr:expr, child: () $(,position: $position:expr)? $(,dimension: $dimension:expr)? $(,flag: $flag:expr)? $(,flexibility: $flexibility:expr)? $(,alignment: $alignment:expr)? $(,focus: $focus:expr)?) => {
         fn id(&$self) -> carbide::widget::WidgetId {
             $id_expr
         }
@@ -179,23 +179,27 @@ macro_rules! CommonWidgetImpl {
         fn foreach_child_direct<'a>(&'a mut $self, _f: &mut dyn FnMut(&'a mut dyn carbide::widget::AnyWidget)) {}
         fn foreach_child_direct_rev<'a>(&'a mut $self, _f: &mut dyn FnMut(&'a mut dyn carbide::widget::AnyWidget)) {}
 
-        fn position(&$self) -> carbide::draw::Position {
-            $position
-        }
+        $(
+            fn position(&$self) -> carbide::draw::Position {
+                $position
+            }
 
-        fn set_position(&mut $self, position: carbide::draw::Position) {
-            $position = position;
-        }
+            fn set_position(&mut $self, position: carbide::draw::Position) {
+                $position = position;
+            }
+        )?
 
-        fn dimension(&$self) -> carbide::draw::Dimension {
-            $dimension
-        }
+        $(
+            fn dimension(&$self) -> carbide::draw::Dimension {
+                $dimension
+            }
 
-        fn set_dimension(&mut $self, dimension: carbide::draw::Dimension) {
-            $dimension = dimension
-        }
+            fn set_dimension(&mut $self, dimension: carbide::draw::Dimension) {
+                $dimension = dimension
+            }
+        )?
     };
-    ($self:ident, id: $id_expr:expr, child: $child:expr, position: $position:expr, dimension: $dimension:expr $(,flag: $flag:expr)? $(,flexibility: $flexibility:expr)? $(,alignment: $alignment:expr)? $(,focus: $focus:expr)?) => {
+    ($self:ident, id: $id_expr:expr, child: $child:expr $(,position: $position:expr)? $(,dimension: $dimension:expr)? $(,flag: $flag:expr)? $(,flexibility: $flexibility:expr)? $(,alignment: $alignment:expr)? $(,focus: $focus:expr)?) => {
         fn id(&$self) -> carbide::widget::WidgetId {
             $id_expr
         }
@@ -262,20 +266,24 @@ macro_rules! CommonWidgetImpl {
             $child.foreach_direct_rev(f);
         }
 
-        fn position(&$self) -> carbide::draw::Position {
-            $position
-        }
+        $(
+            fn position(&$self) -> carbide::draw::Position {
+                $position
+            }
 
-        fn set_position(&mut $self, position: carbide::draw::Position) {
-            $position = position;
-        }
+            fn set_position(&mut $self, position: carbide::draw::Position) {
+                $position = position;
+            }
+        )?
 
-        fn dimension(&$self) -> carbide::draw::Dimension {
-            $dimension
-        }
+        $(
+            fn dimension(&$self) -> carbide::draw::Dimension {
+                $dimension
+            }
 
-        fn set_dimension(&mut $self, dimension: carbide::draw::Dimension) {
-            $dimension = dimension
-        }
+            fn set_dimension(&mut $self, dimension: carbide::draw::Dimension) {
+                $dimension = dimension
+            }
+        )?
     }
 }
