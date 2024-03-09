@@ -1,16 +1,17 @@
 use cgmath::Matrix4;
+use carbide::event::Key;
 
 use crate::color::RED;
 use crate::draw::{Color, Rect};
 use crate::draw::Dimension;
 use crate::environment::{Environment, EnvironmentColor};
-use crate::event::ModifierKey;
+use crate::event::{KeyboardEventContext, ModifierKey};
 use crate::flags::WidgetFlag;
 use crate::focus::Focus;
 use crate::render::Style;
 use crate::state::{IntoReadState, RMap1};
 use crate::state::{IntoState, ReadState, StateContract};
-use crate::widget::{Absolute, Action, AnyWidget, AspectRatio, Background, Border, Changed, Clip, ClipShape, ContentMode, CornerRadii, EdgeInsets, EnvUpdating, Flagged, Flexibility, Frame, GeometryReader, Hidden, MouseArea, Offset, Padding, Rotation3DEffect, RoundedRectangle, Scroll, Shape, Transform};
+use crate::widget::{Absolute, Action, AnyWidget, AspectRatio, Background, Border, Changed, Clip, ClipShape, ContentMode, CornerRadii, EdgeInsets, EnvUpdating, Flagged, Flexibility, Frame, GeometryReader, Hidden, MouseArea, Offset, OnKey, OnKeyAction, Padding, Rotation3DEffect, RoundedRectangle, Scroll, Shape, Transform};
 use crate::widget::OnChange;
 use crate::widget::Widget;
 
@@ -169,5 +170,15 @@ pub trait WidgetExt: Widget + Sized {
 
     fn boxed(self) -> Box<dyn AnyWidget> {
         Box::new(self)
+    }
+
+    fn on_key_pressed<A2: OnKeyAction>(self, action: A2) -> OnKey<A2, fn(&Key, ModifierKey, &mut KeyboardEventContext), Self> {
+        OnKey::new(self)
+            .on_key_pressed(action)
+    }
+
+    fn on_key_released<A2: OnKeyAction>(self, action: A2) -> OnKey<fn(&Key, ModifierKey, &mut KeyboardEventContext), A2, Self> {
+        OnKey::new(self)
+            .on_key_released(action)
     }
 }

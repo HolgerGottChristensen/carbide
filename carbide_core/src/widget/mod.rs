@@ -49,6 +49,7 @@ pub use self::v_grid::*;
 pub use self::v_split::*;
 pub use self::v_stack::*;
 pub use self::z_stack::*;
+pub use self::on_key::*;
 
 pub mod canvas;
 mod common;
@@ -98,6 +99,7 @@ mod v_split;
 mod v_stack;
 mod z_stack;
 mod aspect_ratio;
+mod on_key;
 
 #[derive(Clone, Debug, Copy, Hash, Eq, PartialEq, Ord, PartialOrd)]
 pub struct WidgetId(u32);
