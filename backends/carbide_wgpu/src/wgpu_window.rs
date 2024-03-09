@@ -23,10 +23,10 @@ use carbide_core::image::GenericImageView;
 use carbide_core::layout::{Layout, LayoutContext, Layouter};
 use carbide_core::mesh::mesh::Mesh;
 use carbide_core::render::{Render, RenderContext};
-use carbide_core::state::StateSync;
+use carbide_core::state::{IntoReadState, ReadState, StateSync};
 use carbide_core::text::InnerTextContext;
 use carbide_core::update::{Update, UpdateContext};
-use carbide_core::widget::{AnyWidget, CommonWidget, FilterId, Menu, Overlay, Rectangle, WidgetExt, WidgetId, ZStack};
+use carbide_core::widget::{AnyWidget, CommonWidget, Empty, FilterId, Menu, Overlay, Rectangle, Widget, WidgetExt, WidgetId, ZStack};
 use carbide_core::window::WindowId;
 use carbide_winit::convert_mouse_cursor;
 
@@ -211,7 +211,7 @@ thread_local!(pub static FILTER_BIND_GROUPS: RefCell<HashMap<FilterId, BindGroup
 
 thread_local!(pub static PIPELINES: RefCell<Vec<(TextureFormat, RenderPipelines)>> = RefCell::new(vec![]));
 
-pub struct WGPUWindow {
+pub struct WGPUWindow<T: ReadState<T=String>> {
     pub(crate) surface: Surface,
 
     pub(crate) render_pipelines_index: usize,
@@ -238,7 +238,7 @@ pub struct WGPUWindow {
 
     id: WidgetId,
     window_id: WindowId,
-    #[allow(unused)] title: String,
+    title: T,
     position: Position,
     dimension: Dimension,
     child: Box<dyn AnyWidget>,
@@ -247,12 +247,10 @@ pub struct WGPUWindow {
     window_menu: Option<Vec<Menu>>,
 }
 
-impl WGPUWindow {
-    pub fn new<W: AnyWidget>(title: impl Into<String>, dimension: Dimension, child: W) -> Box<Self> {
-        let child: Box<dyn AnyWidget> = Box::new(child);
-
+impl WGPUWindow<String> {
+    pub fn new<T: IntoReadState<String>, C: Widget>(title: T, dimension: Dimension, child: C) -> Box<WGPUWindow<T::Output>> {
         let window_id = WindowId::new();
-        let title = title.into();
+        let title = title.into_read_state();
 
 
         let child = ZStack::new((
@@ -265,7 +263,7 @@ impl WGPUWindow {
                 width: dimension.width,
                 height: dimension.height,
             }))
-            .with_title(title.clone())
+            //.with_title(title.clone())
             //.with_window_icon(loaded_icon)
             ;
 
@@ -466,58 +464,9 @@ impl WGPUWindow {
             })
         })
     }
-
-    pub fn menu(mut self, menu: Vec<Menu>) -> Box<Self> {
-        self.window_menu = Some(menu);
-        Box::new(self)
-    }
-
-    pub fn close_application_on_window_close(mut self) -> Box<Self> {
-        self.close_application_on_window_close = true;
-        Box::new(self)
-    }
-
-    fn calculate_carbide_to_wgpu_matrix(
-        dimension: Dimension,
-        scale_factor: Scalar,
-    ) -> Matrix4<f32> {
-        let half_height = dimension.height / 2.0;
-        let scale = (scale_factor / half_height) as f32;
-
-        #[rustfmt::skip]
-        pub const OPENGL_TO_WGPU_MATRIX: cgmath::Matrix4<f32> = cgmath::Matrix4::new(
-            1.0, 0.0, 0.0, 0.0,
-            0.0, 1.0, 0.0, 0.0,
-            0.0, 0.0, 0.5, 0.0,
-            0.0, 0.0, 0.5, 1.0,
-        );
-
-        let pixel_to_points: [[f32; 4]; 4] = [
-            [scale, 0.0, 0.0, 0.0],
-            [0.0, -scale, 0.0, 0.0],
-            [0.0, 0.0, scale, 0.0],
-            [0.0, 0.0, 0.0, 1.0],
-        ];
-
-        let aspect_ratio = (dimension.width / dimension.height) as f32;
-
-        let ortho = cgmath::ortho(
-            -1.0 * aspect_ratio,
-            1.0 * aspect_ratio,
-            -1.0,
-            1.0,
-            1.0,
-            -1.0,
-        );
-        let res = OPENGL_TO_WGPU_MATRIX
-            * ortho
-            * Matrix4::from_translation(Vector3::new(-aspect_ratio, 1.0, 0.0))
-            * Matrix4::from(pixel_to_points);
-        res
-    }
 }
 
-impl MouseEventHandler for WGPUWindow {
+impl<T: ReadState<T=String>> MouseEventHandler for WGPUWindow<T> {
     fn process_mouse_event(&mut self, event: &MouseEvent, ctx: &mut MouseEventContext) {
         let old_dimension = ctx.env.pixel_dimensions();
         let old_scale_factor = ctx.env.scale_factor();
@@ -553,7 +502,7 @@ impl MouseEventHandler for WGPUWindow {
     }
 }
 
-impl CommonWidget for WGPUWindow {
+impl<T: ReadState<T=String>> CommonWidget for WGPUWindow<T> {
     fn id(&self) -> WidgetId {
         self.id
     }
@@ -622,7 +571,7 @@ impl CommonWidget for WGPUWindow {
     }
 }
 
-impl StateSync for WGPUWindow {
+impl<T: ReadState<T=String>> StateSync for WGPUWindow<T> {
     fn capture_state(&mut self, _env: &mut Environment) {
 
     }
@@ -632,9 +581,9 @@ impl StateSync for WGPUWindow {
     }
 }
 
-impl Focusable for WGPUWindow {}
+impl<T: ReadState<T=String>> Focusable for WGPUWindow<T> {}
 
-impl KeyboardEventHandler for WGPUWindow {
+impl<T: ReadState<T=String>> KeyboardEventHandler for WGPUWindow<T> {
     fn process_keyboard_event(&mut self, event: &KeyboardEvent, ctx: &mut KeyboardEventContext) {
         let old_dimension = ctx.env.pixel_dimensions();
         let old_scale_factor = ctx.env.scale_factor();
@@ -666,7 +615,7 @@ impl KeyboardEventHandler for WGPUWindow {
     }
 }
 
-impl OtherEventHandler for WGPUWindow {
+impl<T: ReadState<T=String>> OtherEventHandler for WGPUWindow<T> {
     fn process_other_event(&mut self, event: &Event, ctx: &mut OtherEventContext) {
         let old_dimension = ctx.env.pixel_dimensions();
         let old_scale_factor = ctx.env.scale_factor();
@@ -691,7 +640,7 @@ impl OtherEventHandler for WGPUWindow {
     }
 }
 
-impl WindowEventHandler for WGPUWindow {
+impl<T: ReadState<T=String>> WindowEventHandler for WGPUWindow<T> {
     fn handle_window_event(&mut self, event: &WindowEvent, ctx: &mut WindowEventContext) {
         match event {
             WindowEvent::Resize(size) => {
@@ -774,7 +723,7 @@ impl WindowEventHandler for WGPUWindow {
     }
 }
 
-impl Layout for WGPUWindow {
+impl<T: ReadState<T=String>> Layout for WGPUWindow<T> {
     fn calculate_size(&mut self, requested_size: Dimension, ctx: &mut LayoutContext) -> Dimension {
         Dimension::new(0.0, 0.0)
     }
@@ -782,13 +731,13 @@ impl Layout for WGPUWindow {
     fn position_children(&mut self, ctx: &mut LayoutContext) {}
 }
 
-impl Update for WGPUWindow {
+impl<T: ReadState<T=String>> Update for WGPUWindow<T> {
     fn update(&mut self, ctx: &mut UpdateContext) {}
 
     fn process_update(&mut self, ctx: &mut UpdateContext) {}
 }
 
-impl Render for WGPUWindow {
+impl<T: ReadState<T=String>> Render for WGPUWindow<T> {
     fn render(&mut self, ctx: &mut RenderContext, env: &mut Environment) {
         let old_scale_factor = env.scale_factor();
         let old_pixel_dimensions = env.pixel_dimensions();
@@ -856,6 +805,15 @@ impl Render for WGPUWindow {
         });
 
         if self.visible {
+            {
+                self.title.sync(env);
+
+                let current = &*self.title.value();
+                if &self.inner.title() != current {
+                    self.inner.set_title(current);
+                }
+            }
+
             self.inner.set_cursor_icon(convert_mouse_cursor(env.cursor()));
 
             match self.render_inner(render_passes, uniform_bind_groups, gradient_bind_groups, ctx.text, env) {
@@ -886,16 +844,65 @@ impl Render for WGPUWindow {
     }
 }
 
-impl AnyWidget for WGPUWindow {}
+impl<T: ReadState<T=String>> AnyWidget for WGPUWindow<T> {}
 
-impl Scene for WGPUWindow {
+impl<T: ReadState<T=String>> Scene for WGPUWindow<T> {
     /// Request the window to redraw next frame
     fn request_redraw(&self) {
         self.inner.request_redraw();
     }
 }
 
-impl WGPUWindow {
+impl<T: ReadState<T=String>> WGPUWindow<T> {
+    pub fn menu(mut self, menu: Vec<Menu>) -> Box<Self> {
+        self.window_menu = Some(menu);
+        Box::new(self)
+    }
+
+    pub fn close_application_on_window_close(mut self) -> Box<Self> {
+        self.close_application_on_window_close = true;
+        Box::new(self)
+    }
+
+    fn calculate_carbide_to_wgpu_matrix(
+        dimension: Dimension,
+        scale_factor: Scalar,
+    ) -> Matrix4<f32> {
+        let half_height = dimension.height / 2.0;
+        let scale = (scale_factor / half_height) as f32;
+
+        #[rustfmt::skip]
+        pub const OPENGL_TO_WGPU_MATRIX: cgmath::Matrix4<f32> = cgmath::Matrix4::new(
+            1.0, 0.0, 0.0, 0.0,
+            0.0, 1.0, 0.0, 0.0,
+            0.0, 0.0, 0.5, 0.0,
+            0.0, 0.0, 0.5, 1.0,
+        );
+
+        let pixel_to_points: [[f32; 4]; 4] = [
+            [scale, 0.0, 0.0, 0.0],
+            [0.0, -scale, 0.0, 0.0],
+            [0.0, 0.0, scale, 0.0],
+            [0.0, 0.0, 0.0, 1.0],
+        ];
+
+        let aspect_ratio = (dimension.width / dimension.height) as f32;
+
+        let ortho = cgmath::ortho(
+            -1.0 * aspect_ratio,
+            1.0 * aspect_ratio,
+            -1.0,
+            1.0,
+            1.0,
+            -1.0,
+        );
+        let res = OPENGL_TO_WGPU_MATRIX
+            * ortho
+            * Matrix4::from_translation(Vector3::new(-aspect_ratio, 1.0, 0.0))
+            * Matrix4::from(pixel_to_points);
+        res
+    }
+
     fn update_atlas_cache(device: &Device, encoder: &mut CommandEncoder, ctx: &mut dyn InnerTextContext) {
         ATLAS_CACHE_TEXTURE.with(|atlas_cache_tex| {
             ctx.update_cache(&mut |image| {
@@ -1438,13 +1445,13 @@ impl WGPUWindow {
     }
 }
 
-impl Clone for WGPUWindow {
+impl<T: ReadState<T=String>> Clone for WGPUWindow<T> {
     fn clone(&self) -> Self {
         todo!()
     }
 }
 
-impl Debug for WGPUWindow {
+impl<T: ReadState<T=String>> Debug for WGPUWindow<T> {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("Window")
             .field("position", &self.position)
@@ -1454,7 +1461,7 @@ impl Debug for WGPUWindow {
     }
 }
 
-impl Drop for WGPUWindow {
+impl<T: ReadState<T=String>> Drop for WGPUWindow<T> {
     fn drop(&mut self) {
         WINDOW_IDS.with(|a| {
             a.borrow_mut().remove(&self.inner.id());
