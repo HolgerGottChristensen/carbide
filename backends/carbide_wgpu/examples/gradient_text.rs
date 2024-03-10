@@ -1,4 +1,4 @@
-use carbide_core::draw::Dimension;
+use carbide_core::draw::{Alignment, Color, Dimension};
 use carbide_core::environment::{EnvironmentColor, EnvironmentFontSize};
 use carbide_core::widget::*;
 use carbide_wgpu::{Application, Window};
@@ -13,10 +13,17 @@ Jerky chicken pork loin, landjaeger rump frankfurter kielbasa leberkas chislic b
     //let text = "Hejsa verden!\nBla bla bla👨‍👨‍👧‍👧";
     //let text = "O😀";
 
+    let colors1 = vec![
+        Color::Rgba(1.0, 0.0, 0.0, 1.0),
+        Color::Rgba(0.0, 1.0, 0.0, 1.0),
+        Color::Rgba(0.0, 0.0, 1.0, 1.0),
+    ];
+
     application.set_scene(Window::new(
-        "Text example",
+        "Text gradient example",
         Dimension::new(400.0, 600.0),
         Text::new(text)
+            .color(Gradient::linear(colors1, Alignment::Leading, Alignment::Trailing))
             .font_size(EnvironmentFontSize::Body)
             .wrap_mode(Wrap::Whitespace)
             .border()

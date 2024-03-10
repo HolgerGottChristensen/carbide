@@ -100,6 +100,20 @@ impl<Id: ReadState<T=Option<ImageId>>, C: ReadState<T=Style>> Image<Id, C> {
         self.scale_mode = mode;
         self
     }
+
+    pub fn color<C2: IntoReadState<Style>>(mut self, color: C2) -> Image<Id, C2::Output> {
+        Image {
+            id: self.id,
+            image_id: self.image_id,
+            src_rect: self.src_rect,
+            color: Some(color.into_read_state()),
+            mode: self.mode,
+            position: self.position,
+            dimension: self.dimension,
+            scale_mode: self.scale_mode,
+            resizeable: self.resizeable,
+        }
+    }
 }
 
 impl<Id: ReadState<T=Option<ImageId>>, C: ReadState<T=Style>> Layout for Image<Id, C> {

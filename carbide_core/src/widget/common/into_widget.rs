@@ -2,6 +2,7 @@ use carbide::environment::EnvironmentFontSize;
 use carbide::widget::WidgetExt;
 use crate::draw::Color;
 use crate::environment::EnvironmentColor;
+use crate::render::Style;
 use crate::state::{IntoReadState, ReadState};
 use crate::widget::{Text, Widget};
 
@@ -28,7 +29,7 @@ impl<T> IntoWidget for T where T: Widget + WidgetExt {
 }
 
 impl IntoWidget for String {
-    type Output = Text<String, <EnvironmentFontSize as IntoReadState<u32>>::Output, <EnvironmentColor as IntoReadState<Color>>::Output>;
+    type Output = Text<String, <EnvironmentFontSize as IntoReadState<u32>>::Output, <EnvironmentColor as IntoReadState<Style>>::Output>;
 
     fn into_widget(self) -> Self::Output {
         Text::new(self)
@@ -38,7 +39,7 @@ impl IntoWidget for String {
 }
 
 impl IntoWidget for &'static str {
-    type Output = Text<String, <EnvironmentFontSize as IntoReadState<u32>>::Output, <EnvironmentColor as IntoReadState<Color>>::Output>;
+    type Output = Text<String, <EnvironmentFontSize as IntoReadState<u32>>::Output, <EnvironmentColor as IntoReadState<Style>>::Output>;
 
     fn into_widget(self) -> Self::Output {
         Text::new(self.to_string())

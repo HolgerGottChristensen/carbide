@@ -108,7 +108,7 @@ pub(crate) fn gradient_buffer_bind_group(
             binding: 0,
             resource: wgpu::BindingResource::Buffer(buffer.as_entire_buffer_binding()),
         }],
-        label: Some("filter_bind_group"),
+        label: Some("gradient_bind_group"),
     })
 }
 

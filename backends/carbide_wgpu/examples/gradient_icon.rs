@@ -14,16 +14,15 @@ fn main() {
     ];
 
     application.set_scene(Window::new(
-        "Icon example",
+        "Icon gradient example",
         Dimension::new(400.0, 600.0),
         VStack::new((
             Image::new_icon("images/rust.png")
-                .color(Gradient::conic(colors1, Alignment::Center, Alignment::BottomTrailing))
-                .foreground_color(EnvironmentColor::Accent),
+                .color(Gradient::conic(colors1.clone(), Alignment::Center, Alignment::BottomTrailing)),
             Rectangle::new()
-                .fill(EnvironmentColor::Accent)
+                .fill(Gradient::conic(colors1, Alignment::Center, Alignment::BottomTrailing))
                 .frame(50.0, 50.0),
-        )).accent_color(EnvironmentColor::Green),
+        )),
     ).close_application_on_window_close());
 
     application.launch();

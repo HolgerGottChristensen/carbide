@@ -7,7 +7,7 @@ use wgpu::{
 
 use crate::render_pipeline_layouts::RenderPipelines;
 use crate::vertex::Vertex;
-use crate::wgpu_window::{FILTER_RENDER_PIPELINE_LAYOUT, FILTER_SHADER, GRADIENT_RENDER_PIPELINE_LAYOUT, GRADIENT_SHADER, MAIN_SHADER, RENDER_PIPELINE_LAYOUT};
+use crate::wgpu_window::{FILTER_RENDER_PIPELINE_LAYOUT, FILTER_SHADER, MAIN_SHADER, RENDER_PIPELINE_LAYOUT};
 
 #[derive(Debug, Copy, Clone)]
 pub(crate) enum MaskType {
@@ -96,19 +96,6 @@ pub(crate) fn create_pipelines(device: &Device, preferred_format: TextureFormat)
             })
         });
 
-    let render_pipeline_in_mask_gradient =
-        GRADIENT_RENDER_PIPELINE_LAYOUT.with(|gradient_render_pipeline_layout| {
-            GRADIENT_SHADER.with(|gradient_shader| {
-                create_render_pipeline(
-                    device,
-                    gradient_render_pipeline_layout,
-                    gradient_shader,
-                    preferred_format,
-                    MaskType::InMask,
-                )
-            })
-        });
-
     RenderPipelines {
         render_pipeline_no_mask,
         render_pipeline_add_mask,
@@ -116,7 +103,6 @@ pub(crate) fn create_pipelines(device: &Device, preferred_format: TextureFormat)
         render_pipeline_remove_mask,
         render_pipeline_in_mask_filter,
         render_pipeline_no_mask_filter,
-        render_pipeline_in_mask_gradient,
     }
 }
 

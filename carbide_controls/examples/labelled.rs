@@ -29,7 +29,6 @@ fn main() {
             TextInput::new(text_state3.clone())
                 .frame_fixed_width(150.0)
                 .fit_height()
-                .help("This field is disabled")
                 .label("Disabled label:")
                 .enabled(false)
                 .accent_color(EnvironmentColor::Orange),

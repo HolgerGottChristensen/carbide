@@ -17,5 +17,11 @@ pub const MODE_ICON: u32 = 3;
 /// Draw colored bitmap glyphs.
 pub const MODE_TEXT_COLOR: u32 = 4;
 
+pub const MODE_GRADIENT_GEOMETRY: u32 = 5;
+
+pub const MODE_GRADIENT_ICON: u32 = 6;
+
+pub const MODE_GRADIENT_TEXT: u32 = 7;
+
 /// Default dimensions to use for the glyph cache.
 pub const DEFAULT_GLYPH_CACHE_DIMS: [u32; 2] = [1024; 2];

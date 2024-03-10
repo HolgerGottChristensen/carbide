@@ -14,6 +14,7 @@ use carbide_winit::window::{Window as WinitWindow, WindowBuilder};
 
 use carbide_core::{draw, Scene};
 use carbide_core::draw::{Dimension, Position, Rect, Scalar};
+use carbide_core::draw::draw_gradient::DrawGradient;
 use carbide_core::draw::image::ImageId;
 use carbide_core::environment::{Environment, EnvironmentColor};
 use carbide_core::event::{KeyboardEvent, KeyboardEventContext, KeyboardEventHandler, MouseEvent, MouseEventContext, MouseEventHandler, OtherEventContext, OtherEventHandler, WindowEvent, WindowEventContext, WindowEventHandler};
@@ -26,7 +27,7 @@ use carbide_core::render::{Render, RenderContext};
 use carbide_core::state::{IntoReadState, ReadState, StateSync};
 use carbide_core::text::InnerTextContext;
 use carbide_core::update::{Update, UpdateContext};
-use carbide_core::widget::{AnyWidget, CommonWidget, Empty, FilterId, Menu, Overlay, Rectangle, Widget, WidgetExt, WidgetId, ZStack};
+use carbide_core::widget::{AnyWidget, CommonWidget, Empty, FilterId, GradientRepeat, GradientType, Menu, Overlay, Rectangle, Widget, WidgetExt, WidgetId, ZStack};
 use carbide_core::window::WindowId;
 use carbide_winit::convert_mouse_cursor;
 
@@ -119,12 +120,6 @@ thread_local!(pub static MAIN_SHADER: ShaderModule = {
     })
 });
 
-thread_local!(pub static GRADIENT_SHADER: ShaderModule = {
-    DEVICE_QUEUE.with(|(device, _queue)| {
-        device.create_shader_module(wgpu::include_wgsl!("../shaders/gradient.wgsl"))
-    })
-});
-
 thread_local!(pub static FILTER_SHADER: ShaderModule = {
     DEVICE_QUEUE.with(|(device, _queue)| {
         device.create_shader_module(wgpu::include_wgsl!("../shaders/filter.wgsl"))
@@ -135,11 +130,14 @@ thread_local!(pub static RENDER_PIPELINE_LAYOUT: PipelineLayout = {
     DEVICE_QUEUE.with(|(device, _)| {
         UNIFORM_BIND_GROUP_LAYOUT.with(|uniform_bind_group_layout| {
             MAIN_TEXTURE_BIND_GROUP_LAYOUT.with(|main_bind_group_layout| {
-                main_pipeline_layout(
-                    device,
-                    main_bind_group_layout,
-                    uniform_bind_group_layout,
-                )
+                GRADIENT_BIND_GROUP_LAYOUT.with(|gradient_bind_group_layout| {
+                    main_pipeline_layout(
+                        device,
+                        main_bind_group_layout,
+                        uniform_bind_group_layout,
+                        gradient_bind_group_layout,
+                    )
+                })
             })
         })
     })
@@ -157,20 +155,6 @@ thread_local!(pub static FILTER_RENDER_PIPELINE_LAYOUT: PipelineLayout = {
                         uniform_bind_group_layout,
                     )
                 })
-            })
-        })
-    })
-});
-
-thread_local!(pub static GRADIENT_RENDER_PIPELINE_LAYOUT: PipelineLayout = {
-    DEVICE_QUEUE.with(|(device, _)| {
-        GRADIENT_BIND_GROUP_LAYOUT.with(|gradient_bind_group_layout| {
-            UNIFORM_BIND_GROUP_LAYOUT.with(|uniform_bind_group_layout| {
-                gradient_pipeline_layout(
-                    device,
-                    gradient_bind_group_layout,
-                    uniform_bind_group_layout,
-                )
             })
         })
     })
@@ -229,6 +213,7 @@ pub struct WGPUWindow<T: ReadState<T=String>> {
     pub(crate) filter_main_texture_bind_group: BindGroup,
     pub(crate) filter_secondary_texture_bind_group: BindGroup,
     pub(crate) uniform_bind_group: BindGroup,
+    pub(crate) gradient_bind_group: BindGroup,
 
     pub(crate) carbide_to_wgpu_matrix: Matrix4<f32>,
     pub(crate) vertex_buffer: (Buffer, usize),
@@ -328,6 +313,30 @@ impl WGPUWindow<String> {
             );
 
             let matrix = Self::calculate_carbide_to_wgpu_matrix(pixel_dimensions, scale_factor);
+
+            let gradient_bind_group = GRADIENT_BIND_GROUP_LAYOUT.with(|gradient_bind_group_layout| {
+                let gradient = DrawGradient {
+                    colors: vec![],
+                    ratios: vec![],
+                    gradient_type: GradientType::Linear,
+                    gradient_repeat: GradientRepeat::Clamp,
+                    start: Default::default(),
+                    end: Default::default(),
+                };
+
+                let gradient = Gradient::convert(&gradient);
+                let gradient_buffer =
+                    device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
+                        label: Some("Gradient Buffer"),
+                        contents: &*gradient.as_bytes(),
+                        usage: wgpu::BufferUsages::STORAGE,
+                    });
+                gradient_buffer_bind_group(
+                    &device,
+                    &gradient_bind_group_layout,
+                    &gradient_buffer,
+                )
+            });
 
             let uniform_bind_group = UNIFORM_BIND_GROUP_LAYOUT.with(|uniform_bind_group_layout| {
                 matrix_to_uniform_bind_group(device, uniform_bind_group_layout, matrix)
@@ -446,6 +455,7 @@ impl WGPUWindow<String> {
                 filter_main_texture_bind_group,
                 filter_secondary_texture_bind_group,
                 uniform_bind_group,
+                gradient_bind_group,
                 carbide_to_wgpu_matrix: matrix,
                 vertex_buffer: (vertex_buffer, 0),
                 second_vertex_buffer,
@@ -972,7 +982,7 @@ impl<T: ReadState<T=String>> WGPUWindow<T> {
         }
     }
 
-    fn ensure_gradients_in_buffer(device: &Device, gradients: &Vec<Gradient>, _uniform_bind_group_layout: &BindGroupLayout, uniform_bind_groups: &mut Vec<BindGroup>) {
+    fn ensure_gradients_in_buffer(device: &Device, gradients: &Vec<Gradient>, _uniform_bind_group_layout: &BindGroupLayout, gradient_bind_groups: &mut Vec<BindGroup>) {
         for gradient in gradients {
             GRADIENT_BIND_GROUP_LAYOUT.with(|gradient_bind_group_layout| {
                 let gradient_buffer =
@@ -981,7 +991,7 @@ impl<T: ReadState<T=String>> WGPUWindow<T> {
                         contents: &*gradient.as_bytes(),
                         usage: wgpu::BufferUsages::STORAGE,
                     });
-                uniform_bind_groups.push(
+                gradient_bind_groups.push(
                     gradient_buffer_bind_group(
                         &device,
                         &gradient_bind_group_layout,
@@ -1018,8 +1028,8 @@ impl<T: ReadState<T=String>> WGPUWindow<T> {
         render_pass.set_vertex_buffer(0, self.second_vertex_buffer.slice(..));
         render_pass.set_bind_group(0, &self.main_bind_group, &[]);
         render_pass.set_bind_group(1, &self.uniform_bind_group, &[]);
+        render_pass.set_bind_group(2, &self.gradient_bind_group, &[]);
         render_pass.draw(0..6, instance_range);
-
     }
 
     fn process_render_passes(
@@ -1041,6 +1051,7 @@ impl<T: ReadState<T=String>> WGPUWindow<T> {
         let mut current_main_render_pipeline = &render_pipelines.render_pipeline_no_mask;
         let current_vertex_buffer_slice = self.vertex_buffer.0.slice(..);
         let mut current_uniform_bind_group = &self.uniform_bind_group;
+        let mut current_gradient_bind_group = &self.gradient_bind_group;
         let mut invalid_scissor = false;
 
         for command in render_passes {
@@ -1074,6 +1085,7 @@ impl<T: ReadState<T=String>> WGPUWindow<T> {
                     render_pass.set_pipeline(current_main_render_pipeline);
                     render_pass.set_vertex_buffer(0, current_vertex_buffer_slice);
                     render_pass.set_bind_group(1, current_uniform_bind_group, &[]);
+                    render_pass.set_bind_group(2, current_gradient_bind_group, &[]);
 
                     for inner_command in inner {
                         match inner_command {
@@ -1122,41 +1134,15 @@ impl<T: ReadState<T=String>> WGPUWindow<T> {
                             RenderPassCommand::Transform {
                                 uniform_bind_group_index,
                             } => {
-                                current_uniform_bind_group =
-                                    &uniform_bind_groups[uniform_bind_group_index];
+                                current_uniform_bind_group = &uniform_bind_groups[uniform_bind_group_index];
                                 render_pass.set_bind_group(1, current_uniform_bind_group, &[]);
+                            }
+                            RenderPassCommand::Gradient { index } => {
+                                current_gradient_bind_group = &gradient_bind_groups[index];
+                                render_pass.set_bind_group(2, current_gradient_bind_group, &[]);
                             }
                         }
                     }
-                }
-                RenderPass::Gradient(vertex_range, gradient_index) => {
-                    if invalid_scissor {
-                        continue;
-                    }
-
-                    let (color_op, stencil_op, depth_op) = render_pass_ops(RenderPassOps::Middle);
-                    let mut render_pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
-                        label: None,
-                        color_attachments: &[Some(wgpu::RenderPassColorAttachment {
-                            view: &self.main_tex_view, // Here is the render target
-                            resolve_target: None,
-                            ops: color_op,
-                        })],
-                        depth_stencil_attachment: Some(RenderPassDepthStencilAttachment {
-                            view: &self.depth_texture_view,
-                            depth_ops: Some(depth_op),
-                            stencil_ops: Some(stencil_op),
-                        }),
-                    });
-
-                    render_pass.set_pipeline(&render_pipelines.render_pipeline_in_mask_gradient);
-                    render_pass.set_stencil_reference(stencil_level);
-                    render_pass.set_vertex_buffer(0, current_vertex_buffer_slice);
-
-
-                    render_pass.set_bind_group(0, &gradient_bind_groups[gradient_index], &[]);
-                    render_pass.set_bind_group(1, current_uniform_bind_group, &[]);
-                    render_pass.draw(vertex_range, instance_range.clone());
                 }
                 RenderPass::Filter(vertex_range, bind_group_index) => {
                     if invalid_scissor {

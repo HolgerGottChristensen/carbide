@@ -11,7 +11,7 @@ use crate::draw::draw_style::DrawStyle;
 use crate::environment::{Environment, EnvironmentColor, EnvironmentFontSize, IntoColorReadState};
 use crate::layout::{Layout, LayoutContext};
 //use crate::render::text::Text as RenderText;
-use crate::render::Render;
+use crate::render::{Render, Style};
 use crate::state::{ReadState, StateSync};
 use crate::text::{FontStyle, FontWeight, TextDecoration, TextId, TextStyle};
 use crate::widget::{AnyWidget, CommonWidget, Justify, Widget, WidgetExt, WidgetId};
@@ -26,7 +26,7 @@ use crate::widget::types::Wrap;
 /// in accordance with the produced **Alignment**.
 #[derive(Debug, Clone, Widget)]
 #[carbide_exclude(Render, Layout)]
-pub struct Text<T, S, C> where T: ReadState<T=String>, S: ReadState<T=u32>, C: ReadState<T=Color> {
+pub struct Text<T, S, C> where T: ReadState<T=String>, S: ReadState<T=u32>, C: ReadState<T=Style> {
     id: WidgetId,
     text_id: TextId,
     position: Position,
@@ -46,9 +46,9 @@ pub struct Text<T, S, C> where T: ReadState<T=String>, S: ReadState<T=u32>, C: R
     //text_span_generator: Box<dyn TextSpanGenerator>,
 }
 
-impl Text<String, u32, Color> {
+impl Text<String, u32, Style> {
     #[carbide_default_builder2]
-    pub fn new<T: IntoReadState<String>>(text: T) -> Text<T::Output, impl ReadState<T=u32>, impl ReadState<T=Color>> {
+    pub fn new<T: IntoReadState<String>>(text: T) -> Text<T::Output, impl ReadState<T=u32>, impl ReadState<T=Style>> {
         let text = text.into_read_state();
 
         Text {
@@ -59,7 +59,7 @@ impl Text<String, u32, Color> {
             position: Position::new(0.0, 0.0),
             dimension: Dimension::new(100.0, 100.0),
             wrap_mode: Wrap::Whitespace,
-            color: EnvironmentColor::Label.color(),
+            color: EnvironmentColor::Label.style(),
             family: "Noto Sans".to_string(),
             font_style: FontStyle::Normal,
             font_weight: FontWeight::Normal,
@@ -94,8 +94,8 @@ impl Text<String, u32, Color> {
     // }
 }
 
-impl<T2: ReadState<T=String>, S2: ReadState<T=u32>, C2: ReadState<T=Color>> Text<T2, S2, C2> {
-    pub fn color<C: IntoReadState<Color>>(self, color: C) -> Text<T2, S2, C::Output> {
+impl<T2: ReadState<T=String>, S2: ReadState<T=u32>, C2: ReadState<T=Style>> Text<T2, S2, C2> {
+    pub fn color<C: IntoReadState<Style>>(self, color: C) -> Text<T2, S2, C::Output> {
         Text {
             id: self.id,
             position: self.position,
@@ -207,7 +207,7 @@ impl<T2: ReadState<T=String>, S2: ReadState<T=u32>, C2: ReadState<T=Color>> Text
     }
 }
 
-impl<T: ReadState<T=String>, S: ReadState<T=u32>, C: ReadState<T=Color>> Layout for Text<T, S, C> {
+impl<T: ReadState<T=String>, S: ReadState<T=u32>, C: ReadState<T=Style>> Layout for Text<T, S, C> {
     fn calculate_size(&mut self, requested_size: Dimension, ctx: &mut LayoutContext) -> Dimension {
         self.capture_state(ctx.env);
 
@@ -262,21 +262,19 @@ impl<T: ReadState<T=String>, S: ReadState<T=u32>, C: ReadState<T=Color>> Layout 
     }
 }
 
-impl<T: ReadState<T=String>, S: ReadState<T=u32>, C: ReadState<T=Color>> Render for Text<T, S, C> {
+impl<T: ReadState<T=String>, S: ReadState<T=u32>, C: ReadState<T=Style>> Render for Text<T, S, C> {
     fn render(&mut self, context: &mut RenderContext, env: &mut Environment) {
         self.capture_state(env);
 
-        let default_color = *self.color.value();
+        let default_color = self.color.value();
 
-        context.style(DrawStyle::Color(default_color), |context| {
+        context.style(default_color.convert(self.position, self.dimension), |context| {
             context.text(self.text_id);
         });
-
-        self.release_state(env);
     }
 }
 
-impl<T: ReadState<T=String>, S: ReadState<T=u32>, C: ReadState<T=Color>> CommonWidget for Text<T, S, C> {
+impl<T: ReadState<T=String>, S: ReadState<T=u32>, C: ReadState<T=Style>> CommonWidget for Text<T, S, C> {
     fn id(&self) -> WidgetId {
         self.id
     }
@@ -312,13 +310,13 @@ impl<T: ReadState<T=String>, S: ReadState<T=u32>, C: ReadState<T=Color>> CommonW
     }
 }
 
-impl<T: ReadState<T=String>, S: ReadState<T=u32>, C: ReadState<T=Color>> WidgetExt for Text<T, S, C> {}
+impl<T: ReadState<T=String>, S: ReadState<T=u32>, C: ReadState<T=Style>> WidgetExt for Text<T, S, C> {}
 
 pub trait TextWidget: AnyWidget {
     fn text_id(&self) -> TextId;
 }
 
-impl<T: ReadState<T=String>, S: ReadState<T=u32>, C: ReadState<T=Color>> TextWidget for Text<T, S, C> {
+impl<T: ReadState<T=String>, S: ReadState<T=u32>, C: ReadState<T=Style>> TextWidget for Text<T, S, C> {
     fn text_id(&self) -> TextId {
         self.text_id
     }
