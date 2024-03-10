@@ -99,11 +99,11 @@ impl Render for Mandelbrot {
             }
         });
 
-        let start_tile_x = ((-self.offset.x() + self.position.x()) / 200.0).floor() as i32;
-        let end_tile_x = ((-self.offset.x() + self.position.x() + self.dimension.width) / 200.0).ceil() as i32;
+        let start_tile_x = ((-self.offset.x + self.position.x) / 200.0).floor() as i32;
+        let end_tile_x = ((-self.offset.x + self.position.x + self.dimension.width) / 200.0).ceil() as i32;
 
-        let start_tile_y = ((-self.offset.y() + self.position.y()) / 200.0).floor() as i32;
-        let end_tile_y = ((-self.offset.y() + self.position.y() + self.dimension.height) / 200.0).ceil() as i32;
+        let start_tile_y = ((-self.offset.y + self.position.y) / 200.0).floor() as i32;
+        let end_tile_y = ((-self.offset.y + self.position.y + self.dimension.height) / 200.0).ceil() as i32;
 
         for x in start_tile_x..end_tile_x {
             for y in start_tile_y..end_tile_y {
@@ -126,8 +126,8 @@ impl Render for Mandelbrot {
                     height: 200,
                     zoom,
                     center: Position::new(
-                        CENTER.x() + (xn - width / 2.0) / (zoom * width / 2.0),
-                        CENTER.y() + (-1.0 * (yn - height / 2.0) / (zoom * height / 2.0))
+                        CENTER.x + (xn - width / 2.0) / (zoom * width / 2.0),
+                        CENTER.y + (-1.0 * (yn - height / 2.0) / (zoom * height / 2.0))
                     ),
                 };
 
@@ -153,10 +153,10 @@ impl Render for Mandelbrot {
         let center = self.center_point();
 
         let transform =
-            Matrix4::from_translation(Vector3::new(center.x() as f32, center.y() as f32, 0.0)) *
+            Matrix4::from_translation(Vector3::new(center.x as f32, center.y as f32, 0.0)) *
             Matrix4::from_angle_z(Deg(self.rotation as f32)) *
-            Matrix4::from_translation(Vector3::new(self.offset.x() as f32, self.offset.y() as f32, 0.0)) *
-            Matrix4::from_translation(Vector3::new(-center.x() as f32, -center.y() as f32, 0.0));
+            Matrix4::from_translation(Vector3::new(self.offset.x as f32, self.offset.y as f32, 0.0)) *
+            Matrix4::from_translation(Vector3::new(-center.x as f32, -center.y as f32, 0.0));
 
         context.transform(transform, |this| {
             for x in start_tile_x..end_tile_x {
@@ -221,7 +221,7 @@ pub fn generate_image(width: u32, height: u32, zoom: f64, center: Position) -> D
 
     for x in 0..image.width() {
         for y in 0..image.height() {
-            let c = point_to_complex(image.width() as f64, image.height() as f64, x as f64, y as f64, center.x(), center.y(), zoom);
+            let c = point_to_complex(image.width() as f64, image.height() as f64, x as f64, y as f64, center.x, center.y, zoom);
 
             let (i, za) = mandelbrot(c);
 
