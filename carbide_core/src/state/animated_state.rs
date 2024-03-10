@@ -5,6 +5,7 @@ use std::rc::Rc;
 use std::time::{Duration, Instant};
 
 use carbide_core::state::{AnyReadState, NewStateSync, RMap1};
+use crate::animation::Animatable;
 
 use crate::animation::animation_curve::linear;
 use crate::environment::Environment;
@@ -67,17 +68,13 @@ impl AnimatedState {
         Box::new(self)
     }
 
-    pub fn range<T: Mul<f64, Output = U> + Copy + 'static, U: Add>(
+    pub fn range<T: Animatable<T> + Copy + 'static + Debug>(
         self,
         from: T,
         to: T,
-    ) -> RMap1<impl Fn(&f64)-><U as Add<U>>::Output + Clone, f64, <U as Add<U>>::Output, AnimatedState>
-    where
-        <T as Mul<f64>>::Output: Add<U>,
-        <U as Add<U>>::Output: StateContract + Default + 'static,
-    {
+    ) -> RMap1<impl Fn(&f64)->T + Clone, f64, T, AnimatedState> {
         Map1::read_map(self, move |t| {
-            from * (1.0 - *t) + to * *t
+            from.interpolate(&to, *t)
         })
     }
 

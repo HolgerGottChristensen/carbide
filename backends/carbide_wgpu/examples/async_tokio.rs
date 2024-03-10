@@ -4,13 +4,14 @@ use tokio::time::{Duration, sleep};
 
 use carbide_core as carbide; // Required only in internal examples
 use carbide_core::asynchronous::Task;
+use carbide_core::color::{BLUE, GREEN, RED};
 use carbide_core::draw::Dimension;
 use carbide_core::draw::image::ImageId;
 use carbide_core::draw::Texture;
 use carbide_core::draw::TextureFormat;
 use carbide_core::environment::EnvironmentColor;
-use carbide_core::state::{LocalState, State};
-use carbide_core::task;
+use carbide_core::state::{AnimatedState, LocalState, RepeatMode, State};
+use carbide_core::{animate, task};
 use carbide_core::widget::*;
 use carbide_wgpu::{Application, Window};
 
@@ -82,6 +83,10 @@ fn main() {
 
     task.clone().start();
 
+    let color = AnimatedState::linear(None)
+        .repeat_alternate()
+        .range(RED, GREEN);
+
     application.set_scene(
         Window::new(
             "Async using tokio example",
@@ -94,7 +99,7 @@ fn main() {
                     }),
                 Text::new("Click the image"),
                 Rectangle::new()
-                    .fill(EnvironmentColor::Accent)
+                    .fill(color)
                     .frame(block_width, 50.0),
             ))
                 .accent_color(EnvironmentColor::Red)
