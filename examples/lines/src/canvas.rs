@@ -47,7 +47,7 @@ impl CanvasContext for GraphCanvas {
                     }
                 }
 
-                context.circle(mouse_position.x() - 4.5, mouse_position.y() - 4.5, 9.0);
+                context.circle(mouse_position.x - 4.5, mouse_position.y - 4.5, 9.0);
                 context.fill();
             }
             EditingMode::CreateWallP2 {
@@ -58,7 +58,7 @@ impl CanvasContext for GraphCanvas {
                 let pos = graph.get_node(first_node_id).position;
                 context.begin_path();
                 context.set_fill_style(EnvironmentColor::Yellow);
-                context.circle(pos.x() - 4.5, pos.y() - 4.5, 9.0);
+                context.circle(pos.x - 4.5, pos.y - 4.5, 9.0);
                 context.fill();
 
                 context.begin_path();
@@ -78,7 +78,7 @@ impl CanvasContext for GraphCanvas {
                     }
                 }
 
-                context.circle(mouse_position.x() - 4.5, mouse_position.y() - 4.5, 9.0);
+                context.circle(mouse_position.x - 4.5, mouse_position.y - 4.5, 9.0);
                 context.fill();
             }
             EditingMode::Selection { hovered, selected } => {
@@ -104,7 +104,7 @@ fn draw_selection_selected(
 
             context.begin_path();
             context.set_fill_style(EnvironmentColor::Yellow);
-            context.circle(node.position.x() - 4.5, node.position.y() - 4.5, 9.0);
+            context.circle(node.position.x - 4.5, node.position.y - 4.5, 9.0);
             context.fill();
         }
         SelectedState::Edge(edge_id) => {
@@ -134,7 +134,7 @@ fn draw_selection_hovered(
 
             context.begin_path();
             context.set_fill_style(EnvironmentColor::Green);
-            context.circle(node.position.x() - 4.5, node.position.y() - 4.5, 9.0);
+            context.circle(node.position.x - 4.5, node.position.y - 4.5, 9.0);
             context.fill();
         }
         SelectedState::Edge(edge_id) => {
@@ -189,13 +189,13 @@ fn draw_nodes(mut context: &mut Context, graph: &mut ValueRefMut<Graph>) {
 
             context.begin_path();
             context.set_fill_style(EnvironmentColor::Blue);
-            context.circle(node.position.x() - 4.5, node.position.y() - 4.5, 9.0);
+            context.circle(node.position.x - 4.5, node.position.y - 4.5, 9.0);
 
             context.fill();
             context.begin_path();
             context.set_fill_style(EnvironmentColor::DarkText);
         } else {
-            context.circle(node.position.x() - 4.5, node.position.y() - 4.5, 9.0);
+            context.circle(node.position.x - 4.5, node.position.y - 4.5, 9.0);
         }
     }
 
@@ -204,8 +204,8 @@ fn draw_nodes(mut context: &mut Context, graph: &mut ValueRefMut<Graph>) {
 
 fn line_between(context: &mut Context, line: &Line, offset: Position) {
     if line.len().is_normal() {
-        context.move_to(offset.x() + line.start.x(), offset.y() + line.start.y());
-        context.line_to(offset.x() + line.end.x(), offset.y() + line.end.y());
+        context.move_to(offset.x + line.start.x, offset.y + line.start.y);
+        context.line_to(offset.x + line.end.x, offset.y + line.end.y);
     }
 }
 
@@ -244,7 +244,7 @@ fn draw_guides(rect: &Rect, mut context: &mut Context, mut graph: &mut ValueRefM
                 );
             }
             Guide::Point(position) => {
-                point_context.circle(position.x() - 2.5, position.y() - 2.5, 5.0);
+                point_context.circle(position.x - 2.5, position.y - 2.5, 5.0);
             }
         }
     }

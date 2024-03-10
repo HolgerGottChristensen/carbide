@@ -151,8 +151,8 @@ fn selected_node_view(graph: impl State<T=Graph>, selected_state: impl ReadState
             Map1::read_map(node.clone(), |a: &Node| {
                 format!(
                     "Position: (x: {:.2}, y: {:.2})",
-                    a.position.x(),
-                    a.position.y()
+                    a.position.x,
+                    a.position.y
                 )
             })
                 .ignore_writes(),
@@ -209,14 +209,14 @@ fn selected_edge_view(graph: impl State<T=Graph>, selected_state: impl ReadState
 /// # d = pt 2 on line 2
 fn intersect(a: Position, b: Position, c: Position, d: Position) -> Option<Position> {
     // stuff for line 1
-    let a1 = b.y() - a.y();
-    let b1 = a.x() - b.x();
-    let c1 = a1 * a.x() + b1 * a.y();
+    let a1 = b.y - a.y;
+    let b1 = a.x - b.x;
+    let c1 = a1 * a.x + b1 * a.y;
 
     // stuff for line 2
-    let a2 = d.y() - c.y();
-    let b2 = c.x() - d.x();
-    let c2 = a2 * c.x() + b2 * c.y();
+    let a2 = d.y - c.y;
+    let b2 = c.x - d.x;
+    let c2 = a2 * c.x + b2 * c.y;
 
     let determinant = a1 * b2 - a2 * b1;
 

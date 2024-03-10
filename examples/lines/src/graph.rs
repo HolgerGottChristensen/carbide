@@ -193,14 +193,14 @@ impl Graph {
                 continue;
             }
 
-            if (position.x() - node.position.x()).abs() < 5.0 {
-                guides.push(Guide::Vertical(node.position.x()));
-                new_position = Position::new(node.position.x(), new_position.y());
+            if (position.x - node.position.x).abs() < 5.0 {
+                guides.push(Guide::Vertical(node.position.x));
+                new_position = Position::new(node.position.x, new_position.y);
             }
 
-            if (position.y() - node.position.y()).abs() < 5.0 {
-                guides.push(Guide::Horizontal(node.position.y()));
-                new_position = Position::new(new_position.x(), node.position.y());
+            if (position.y - node.position.y).abs() < 5.0 {
+                guides.push(Guide::Horizontal(node.position.y));
+                new_position = Position::new(new_position.x, node.position.y);
             }
         }
 

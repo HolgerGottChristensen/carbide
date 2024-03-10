@@ -33,8 +33,8 @@ impl Line {
     /// Return the angle in degrees
     pub fn angle(&self) -> Scalar {
         f64::to_degrees(f64::atan2(
-            self.end.y() - self.start.y(),
-            self.end.x() - self.start.x(),
+            self.end.y - self.start.y,
+            self.end.x - self.start.x,
         ))
     }
 
@@ -59,15 +59,15 @@ impl Line {
     }
 
     pub fn dist_inf_line_to_point(&self, point: Position) -> Scalar {
-        let dx = self.start.x() - self.end.x();
-        let dy = self.start.y() - self.end.y();
+        let dx = self.start.x - self.end.x;
+        let dy = self.start.y - self.end.y;
 
         let length = (dx * dx + dy * dy).sqrt();
 
         let dx = dx / length;
         let dy = dy / length;
 
-        (dy * (point.x() - self.start.x()) - dx * (point.y() - self.start.y())).abs()
+        (dy * (point.x - self.start.x) - dx * (point.y - self.start.y)).abs()
     }
 
     pub fn closest_point_on_line_infinite(&self, point: Position) -> Position {
@@ -95,17 +95,17 @@ impl Line {
     }
 
     pub fn extend(&self, bounding_box: Rect) -> Line {
-        if self.start.y() == self.end.y() {
+        if self.start.y == self.end.y {
             return Line::new(
-                Position::new(bounding_box.bottom(), self.start.y()),
-                Position::new(bounding_box.top(), self.start.y()),
+                Position::new(bounding_box.bottom(), self.start.y),
+                Position::new(bounding_box.top(), self.start.y),
             );
         }
 
-        if self.start.x() == self.end.x() {
+        if self.start.x == self.end.x {
             return Line::new(
-                Position::new(self.start.x(), bounding_box.left()),
-                Position::new(self.start.x(), bounding_box.right()),
+                Position::new(self.start.x, bounding_box.left()),
+                Position::new(self.start.x, bounding_box.right()),
             );
         }
 
