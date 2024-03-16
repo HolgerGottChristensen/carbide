@@ -66,8 +66,8 @@ struct FractalClock {
 impl FractalClock {
     fn draw(&self, center: Position, angle: Angles, context: &mut Context) {
         context.begin_path();
-        context.move_to(center.x(), center.y());
-        context.line_to(center.x() + angle.hours.cos() * 50.0, center.y() + angle.hours.sin() * 50.0);
+        context.move_to(center.x, center.y);
+        context.line_to(center.x + angle.hours.cos() * 50.0, center.y + angle.hours.sin() * 50.0);
         context.stroke();
 
         self.draw_minutes_seconds(center, 0.0, angle, self.depth, 100.0, 1.0, context);
@@ -78,23 +78,23 @@ impl FractalClock {
         context.set_stroke_style(self.color.alpha(alpha as f32));
 
         let minute_position = Position::new(
-            center.x() + (angle_offset + angle.minutes).cos() * length,
-            center.y() + (angle_offset + angle.minutes).sin() * length
+            center.x + (angle_offset + angle.minutes).cos() * length,
+            center.y + (angle_offset + angle.minutes).sin() * length
         );
 
         let second_position = Position::new(
-            center.x() + (angle_offset + angle.seconds).cos() * length,
-            center.y() + (angle_offset + angle.seconds).sin() * length
+            center.x + (angle_offset + angle.seconds).cos() * length,
+            center.y + (angle_offset + angle.seconds).sin() * length
         );
 
         context.begin_path();
-        context.move_to(center.x(), center.y());
-        context.line_to(minute_position.x(), minute_position.y());
+        context.move_to(center.x, center.y);
+        context.line_to(minute_position.x, minute_position.y);
         context.stroke();
 
         context.begin_path();
-        context.move_to(center.x(), center.y());
-        context.line_to(second_position.x(), second_position.y());
+        context.move_to(center.x, center.y);
+        context.line_to(second_position.x, second_position.y);
         context.stroke();
 
         if depth != 0 {
