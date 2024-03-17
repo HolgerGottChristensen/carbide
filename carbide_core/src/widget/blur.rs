@@ -66,7 +66,7 @@ impl Blur {
     }
 
     /// This is also known as box blur or linear blur.
-    fn mean_blur(radius: u32) -> ImageFilter {
+    pub fn mean_blur(radius: u32) -> ImageFilter {
         let radius = radius as i32;
         let div = 2 * radius + 1;
 

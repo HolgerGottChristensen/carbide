@@ -42,23 +42,25 @@ pub enum RenderPassCommand {
 
 #[derive(Debug)]
 pub enum RenderPass {
-    Normal(Vec<RenderPassCommand>),
-    Filter(std::ops::Range<u32>, FilterId),
-    FilterSplitPt1(std::ops::Range<u32>, FilterId),
-    FilterSplitPt2(std::ops::Range<u32>, FilterId),
+    Normal {
+        commands: Vec<RenderPassCommand>,
+        target_index: usize
+    },
+    Clear {
+        target_index: usize
+    },
+    Filter {
+        vertex_range: std::ops::Range<u32>,
+        filter_id: FilterId,
+        source_id: usize,
+        target_id: usize,
+        initial_copy: bool,
+    },
 }
 
 #[derive(PartialEq, Debug)]
 pub enum WGPUBindGroup {
     Default,
     Image(ImageId),
-}
-
-impl WGPUBindGroup {
-    pub fn get(&self) -> ImageId {
-        match self {
-            WGPUBindGroup::Default => ImageId::default(),
-            WGPUBindGroup::Image(id) => id.clone(),
-        }
-    }
+    Target(usize),
 }

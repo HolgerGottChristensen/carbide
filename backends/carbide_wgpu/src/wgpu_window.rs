@@ -7,7 +7,7 @@ use std::sync::Arc;
 use cgmath::{Matrix4, Vector3};
 use futures::executor::block_on;
 use raw_window_handle::HasRawWindowHandle;
-use wgpu::{Adapter, BindGroup, BindGroupLayout, Buffer, BufferUsages, CommandEncoder, Device, Extent3d, ImageCopyTexture, Instance, PipelineLayout, Queue, RenderPassDepthStencilAttachment, RenderPipeline, Sampler, ShaderModule, Surface, SurfaceConfiguration, SurfaceTexture, Texture, TextureFormat, TextureUsages, TextureView};
+use wgpu::{Adapter, BindGroup, BindGroupLayout, Buffer, BufferUsages, CommandEncoder, Device, Extent3d, ImageCopyTexture, ImageSubresourceRange, Instance, PipelineLayout, Queue, RenderPassDepthStencilAttachment, RenderPipeline, Sampler, ShaderModule, Surface, SurfaceConfiguration, SurfaceTexture, Texture, TextureFormat, TextureUsages, TextureView};
 use wgpu::util::{BufferInitDescriptor, DeviceExt};
 use carbide_winit::dpi::{LogicalSize, PhysicalPosition, PhysicalSize, Size};
 use carbide_winit::window::{Window as WinitWindow, WindowBuilder};
@@ -33,15 +33,16 @@ use carbide_winit::convert_mouse_cursor;
 
 use crate::{image_context, render_pass_ops, RenderPassOps};
 use crate::application::{EVENT_LOOP, WINDOW_IDS};
-use crate::bind_group_layouts::{filter_buffer_bind_group_layout, filter_texture_bind_group_layout, gradient_buffer_bind_group_layout, main_texture_group_layout, uniform_bind_group_layout};
+use crate::bind_group_layouts::{atlas_bind_group_layout, filter_buffer_bind_group_layout, filter_texture_bind_group_layout, gradient_buffer_bind_group_layout, main_bind_group_layout, uniform_bind_group_layout};
 use crate::bind_groups::{filter_buffer_bind_group, filter_texture_bind_group, gradient_buffer_bind_group, main_bind_group, matrix_to_uniform_bind_group, size_to_uniform_bind_group};
 use crate::filter::Filter;
 use crate::gradient::Gradient;
 use crate::image::BindGroupExtended;
 use crate::pipeline::create_pipelines;
 use crate::render_context::WGPURenderContext;
-use crate::render_pass_command::{RenderPass, RenderPassCommand};
+use crate::render_pass_command::{RenderPass, RenderPassCommand, WGPUBindGroup};
 use crate::render_pipeline_layouts::{filter_pipeline_layout, gradient_pipeline_layout, main_pipeline_layout, RenderPipelines};
+use crate::render_target::RenderTarget;
 use crate::renderer::{atlas_cache_tex_desc, main_render_tex_desc, secondary_render_tex_desc};
 use crate::samplers::main_sampler;
 use crate::texture_atlas_command::TextureAtlasCommand;
@@ -74,7 +75,7 @@ thread_local!(pub static DEVICE_QUEUE: (Arc<Device>, Arc<Queue>) = {
         let (device, queue) = block_on(adapter.request_device(
             &wgpu::DeviceDescriptor {
                 label: None,
-                features: wgpu::Features::empty(),
+                features: wgpu::Features::CLEAR_TEXTURE,
                 limits: wgpu::Limits::default(),
             },
             None, // Trace path
@@ -104,13 +105,19 @@ thread_local!(pub static FILTER_BUFFER_BIND_GROUP_LAYOUT: BindGroupLayout = {
 
 thread_local!(pub static MAIN_TEXTURE_BIND_GROUP_LAYOUT: BindGroupLayout = {
     DEVICE_QUEUE.with(|(device, _)| {
-        main_texture_group_layout(&device)
+        main_bind_group_layout(&device)
     })
 });
 
 thread_local!(pub static GRADIENT_BIND_GROUP_LAYOUT: BindGroupLayout = {
     DEVICE_QUEUE.with(|(device, _)| {
         gradient_buffer_bind_group_layout(&device)
+    })
+});
+
+thread_local!(pub static ATLAS_BIND_GROUP_LAYOUT: BindGroupLayout = {
+    DEVICE_QUEUE.with(|(device, _)| {
+        atlas_bind_group_layout(&device)
     })
 });
 
@@ -131,12 +138,15 @@ thread_local!(pub static RENDER_PIPELINE_LAYOUT: PipelineLayout = {
         UNIFORM_BIND_GROUP_LAYOUT.with(|uniform_bind_group_layout| {
             MAIN_TEXTURE_BIND_GROUP_LAYOUT.with(|main_bind_group_layout| {
                 GRADIENT_BIND_GROUP_LAYOUT.with(|gradient_bind_group_layout| {
-                    main_pipeline_layout(
-                        device,
-                        main_bind_group_layout,
-                        uniform_bind_group_layout,
-                        gradient_bind_group_layout,
-                    )
+                    ATLAS_BIND_GROUP_LAYOUT.with(|atlas_bind_group_layout| {
+                        main_pipeline_layout(
+                            device,
+                            main_bind_group_layout,
+                            uniform_bind_group_layout,
+                            gradient_bind_group_layout,
+                            atlas_bind_group_layout,
+                        )
+                    })
                 })
             })
         })
@@ -173,6 +183,27 @@ thread_local!(pub static ATLAS_CACHE_TEXTURE: Texture = {
     })
 });
 
+thread_local!(pub static ATLAS_CACHE_BIND_GROUP: BindGroup = {
+    DEVICE_QUEUE.with(|(device, _)| {
+        ATLAS_BIND_GROUP_LAYOUT.with(|layout| {
+            ATLAS_CACHE_TEXTURE.with(|texture| {
+                let view = texture.create_view(&Default::default());
+
+                device.create_bind_group(&wgpu::BindGroupDescriptor {
+                    layout: layout,
+                    entries: &[
+                        wgpu::BindGroupEntry {
+                            binding: 0,
+                            resource: wgpu::BindingResource::TextureView(&view),
+                        },
+                    ],
+                    label: None,
+                })
+            })
+        })
+    })
+});
+
 thread_local!(pub static BIND_GROUPS: RefCell<HashMap<ImageId, BindGroupExtended>> = {
     use image_context::create_bind_group;
     let mut map = HashMap::new();
@@ -201,17 +232,11 @@ pub struct WGPUWindow<T: ReadState<T=String>> {
     pub(crate) render_pipelines_index: usize,
 
     pub(crate) depth_texture_view: TextureView,
-    pub(crate) main_bind_group: BindGroup,
     pub(crate) texture_size_bind_group: BindGroup,
     pub(crate) mesh: Mesh,
 
-    pub(crate) main_tex: Texture,
-    pub(crate) main_tex_view: TextureView,
-    pub(crate) secondary_tex: Texture,
-    pub(crate) secondary_tex_view: TextureView,
+    pub(crate) targets: Vec<RenderTarget>,
 
-    pub(crate) filter_main_texture_bind_group: BindGroup,
-    pub(crate) filter_secondary_texture_bind_group: BindGroup,
     pub(crate) uniform_bind_group: BindGroup,
     pub(crate) gradient_bind_group: BindGroup,
 
@@ -352,13 +377,6 @@ impl WGPUWindow<String> {
                 )
             });
 
-            let main_tex = device.create_texture(&main_render_tex_desc([size.width, size.height]));
-            let main_tex_view = main_tex.create_view(&Default::default());
-
-            let secondary_tex =
-                device.create_texture(&secondary_render_tex_desc([size.width, size.height]));
-            let secondary_tex_view = secondary_tex.create_view(&Default::default());
-
             let render_pipelines_index = PIPELINES.with(|pipelines| {
                 let pipelines = &mut *pipelines.borrow_mut();
 
@@ -381,25 +399,6 @@ impl WGPUWindow<String> {
                 }
             });
 
-
-
-
-
-            let main_bind_group =
-                MAIN_TEXTURE_BIND_GROUP_LAYOUT.with(|main_texture_bind_group_layout| {
-                    MAIN_SAMPLER.with(|main_sampler| {
-                        ATLAS_CACHE_TEXTURE.with(|atlas_cache_tex| {
-                            main_bind_group(
-                                device,
-                                main_texture_bind_group_layout,
-                                &main_tex_view,
-                                main_sampler,
-                                atlas_cache_tex,
-                            )
-                        })
-                    })
-                });
-
             let mesh = Mesh::new();
 
             let depth_texture = create_depth_stencil_texture(&device, size.width, size.height);
@@ -417,43 +416,18 @@ impl WGPUWindow<String> {
                 usage: BufferUsages::VERTEX | BufferUsages::COPY_DST,
             });
 
-            let filter_main_texture_bind_group =
-            FILTER_TEXTURE_BIND_GROUP_LAYOUT.with(|filter_texture_bind_group_layout| {
-                MAIN_SAMPLER.with(|main_sampler| {
-                    filter_texture_bind_group(
-                        device,
-                        filter_texture_bind_group_layout,
-                        &main_tex_view,
-                        main_sampler,
-                    )
-                })
-            });
+            let mut targets = vec![];
 
-            let filter_secondary_texture_bind_group =
-            FILTER_TEXTURE_BIND_GROUP_LAYOUT.with(|filter_texture_bind_group_layout| {
-                MAIN_SAMPLER.with(|main_sampler| {
-                    filter_texture_bind_group(
-                        device,
-                        filter_texture_bind_group_layout,
-                        &secondary_tex_view,
-                        main_sampler,
-                    )
-                })
-            });
+            targets.push(RenderTarget::new(size.width, size.height));
+            targets.push(RenderTarget::new(size.width, size.height));
 
             Box::new(WGPUWindow {
                 surface,
                 render_pipelines_index,
                 depth_texture_view,
-                main_bind_group,
                 texture_size_bind_group,
                 mesh,
-                main_tex,
-                main_tex_view,
-                secondary_tex,
-                secondary_tex_view,
-                filter_main_texture_bind_group,
-                filter_secondary_texture_bind_group,
+                targets,
                 uniform_bind_group,
                 gradient_bind_group,
                 carbide_to_wgpu_matrix: matrix,
@@ -926,12 +900,14 @@ impl<T: ReadState<T=String>> WGPUWindow<T> {
         });
     }
 
-    fn update_filter_bind_groups(device: &Device, filter_bind_groups: &mut HashMap<FilterId, BindGroup>, env: &mut Environment) {
+    fn update_filter_bind_groups(device: &Device, filter_bind_groups: &mut HashMap<FilterId, BindGroup>, env: &mut Environment, size: PhysicalSize<u32>) {
         filter_bind_groups.retain(|id, _| env.filters().contains_key(id));
 
         for (filter_id, filter) in env.filters() {
             if !filter_bind_groups.contains_key(filter_id) {
-                let filter: Filter = filter.clone().into();
+                let mut filter: Filter = filter.clone().into();
+                filter.texture_size = [size.width as f32, size.height as f32];
+
                 let filter_buffer =
                     device
                         .create_buffer_init(&BufferInitDescriptor {
@@ -1003,10 +979,10 @@ impl<T: ReadState<T=String>> WGPUWindow<T> {
         }
     }
 
-    fn render_texture_to_swapchain(&self, encoder: &mut CommandEncoder, render_pipeline_no_mask: &RenderPipeline, output: &SurfaceTexture) {
+    fn render_texture_to_swapchain(&self, encoder: &mut CommandEncoder, render_pipeline_no_mask: &RenderPipeline, output: &SurfaceTexture, atlas_cache_bind_group: &BindGroup) {
         let instance_range = 0..1;
 
-        let (color_op, stencil_op, depth_op) = render_pass_ops(RenderPassOps::Middle);
+        let (color_op, stencil_op, depth_op) = render_pass_ops(RenderPassOps::Start);
 
         let frame_view = output.texture.create_view(&Default::default());
 
@@ -1026,9 +1002,10 @@ impl<T: ReadState<T=String>> WGPUWindow<T> {
 
         render_pass.set_pipeline(render_pipeline_no_mask);
         render_pass.set_vertex_buffer(0, self.second_vertex_buffer.slice(..));
-        render_pass.set_bind_group(0, &self.main_bind_group, &[]);
+        render_pass.set_bind_group(0, &self.targets[0].bind_group, &[]);
         render_pass.set_bind_group(1, &self.uniform_bind_group, &[]);
         render_pass.set_bind_group(2, &self.gradient_bind_group, &[]);
+        render_pass.set_bind_group(3, atlas_cache_bind_group, &[]);
         render_pass.draw(0..6, instance_range);
     }
 
@@ -1043,20 +1020,26 @@ impl<T: ReadState<T=String>> WGPUWindow<T> {
         filter_bind_groups: &HashMap<FilterId, BindGroup>,
         size: PhysicalSize<u32>,
         scale_factor: Scalar,
+        atlas_cache_bind_group: &BindGroup,
     ) {
         let instance_range = 0..1;
         let mut stencil_level = 0;
         let mut first_pass = true;
 
+        let mut current_target_view = &self.targets[0].view;
         let mut current_main_render_pipeline = &render_pipelines.render_pipeline_no_mask;
         let current_vertex_buffer_slice = self.vertex_buffer.0.slice(..);
         let mut current_uniform_bind_group = &self.uniform_bind_group;
         let mut current_gradient_bind_group = &self.gradient_bind_group;
         let mut invalid_scissor = false;
 
+        //println!("{:#?}", render_passes);
+
         for command in render_passes {
             match command {
-                RenderPass::Normal(inner) => {
+                RenderPass::Normal { commands: inner, target_index: index } => {
+                    current_target_view = &self.targets[index].view;
+
                     if inner.len() == 0 {
                         continue;
                     }
@@ -1070,7 +1053,7 @@ impl<T: ReadState<T=String>> WGPUWindow<T> {
                     let mut render_pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
                         label: None,
                         color_attachments: &[Some(wgpu::RenderPassColorAttachment {
-                            view: &self.main_tex_view, // Here is the render target
+                            view: current_target_view, // Here is the render target
                             resolve_target: None,
                             ops: color_op,
                         })],
@@ -1086,11 +1069,22 @@ impl<T: ReadState<T=String>> WGPUWindow<T> {
                     render_pass.set_vertex_buffer(0, current_vertex_buffer_slice);
                     render_pass.set_bind_group(1, current_uniform_bind_group, &[]);
                     render_pass.set_bind_group(2, current_gradient_bind_group, &[]);
+                    render_pass.set_bind_group(3, atlas_cache_bind_group, &[]);
 
                     for inner_command in inner {
                         match inner_command {
                             RenderPassCommand::SetBindGroup { bind_group } => {
-                                render_pass.set_bind_group(0, &bind_groups[&bind_group.get()].bind_group, &[]);
+                                match bind_group {
+                                    WGPUBindGroup::Default => {
+                                        render_pass.set_bind_group(0, &bind_groups[&ImageId::default()].bind_group, &[]);
+                                    }
+                                    WGPUBindGroup::Image(id) => {
+                                        render_pass.set_bind_group(0, &bind_groups[&id].bind_group, &[]);
+                                    }
+                                    WGPUBindGroup::Target(index) => {
+                                        render_pass.set_bind_group(0, &self.targets[index].bind_group, &[]);
+                                    }
+                                }
                             }
                             RenderPassCommand::SetScissor { rect } => {
                                 let x = (rect.left() * scale_factor).max(0.0) as u32;
@@ -1144,36 +1138,45 @@ impl<T: ReadState<T=String>> WGPUWindow<T> {
                         }
                     }
                 }
-                RenderPass::Filter(vertex_range, bind_group_index) => {
+                RenderPass::Filter {
+                    vertex_range,
+                    filter_id,
+                    source_id,
+                    target_id,
+                    initial_copy
+                } => {
                     if invalid_scissor {
                         continue;
                     }
 
-                    encoder.copy_texture_to_texture(
-                        ImageCopyTexture {
-                            texture: &self.main_tex,
-                            mip_level: 0,
-                            origin: Default::default(),
-                            aspect: Default::default(),
-                        },
-                        ImageCopyTexture {
-                            texture: &self.secondary_tex,
-                            mip_level: 0,
-                            origin: Default::default(),
-                            aspect: Default::default(),
-                        },
-                        Extent3d {
-                            width: size.width,
-                            height: size.height,
-                            depth_or_array_layers: 1,
-                        },
-                    );
+                    if initial_copy {
+                        encoder.copy_texture_to_texture(
+                            ImageCopyTexture {
+                                texture: &self.targets[target_id].texture,
+                                mip_level: 0,
+                                origin: Default::default(),
+                                aspect: Default::default(),
+                            },
+                            ImageCopyTexture {
+                                texture: &self.targets[source_id].texture,
+                                mip_level: 0,
+                                origin: Default::default(),
+                                aspect: Default::default(),
+                            },
+                            Extent3d {
+                                width: size.width,
+                                height: size.height,
+                                depth_or_array_layers: 1,
+                            },
+                        );
+                    }
 
                     let (color_op, stencil_op, depth_op) = render_pass_ops(RenderPassOps::Middle);
+
                     let mut render_pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
                         label: None,
                         color_attachments: &[Some(wgpu::RenderPassColorAttachment {
-                            view: &self.main_tex_view, // Here is the render target
+                            view: &self.targets[target_id].view, // Here is the render target
                             resolve_target: None,
                             ops: color_op,
                         })],
@@ -1183,84 +1186,19 @@ impl<T: ReadState<T=String>> WGPUWindow<T> {
                             stencil_ops: Some(stencil_op),
                         }),
                     });
+
                     render_pass.set_pipeline(&render_pipelines.render_pipeline_in_mask_filter);
                     render_pass.set_stencil_reference(stencil_level);
                     render_pass.set_vertex_buffer(0, current_vertex_buffer_slice);
-                    render_pass.set_bind_group(0, &self.filter_secondary_texture_bind_group, &[]);
-                    render_pass.set_bind_group(
-                        1,
-                        &filter_bind_groups
-                            .get(&bind_group_index)
-                            .unwrap(),
-                        &[],
-                    );
+                    render_pass.set_bind_group(0, &self.targets[source_id].bind_group, &[]);
+                    render_pass.set_bind_group(1, &filter_bind_groups[&filter_id], &[]);
                     render_pass.set_bind_group(2, current_uniform_bind_group, &[]);
-                    render_pass.set_bind_group(3, &self.texture_size_bind_group, &[]);
+                    render_pass.set_bind_group(3, &self.targets[source_id].bind_group, &[]);
+
                     render_pass.draw(vertex_range, instance_range.clone());
                 }
-                RenderPass::FilterSplitPt1(vertex_range, filter_id) => {
-                    if invalid_scissor {
-                        continue;
-                    }
-
-                    let (color_op, stencil_op, depth_op) = render_pass_ops(RenderPassOps::Middle);
-
-                    let mut render_pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
-                        label: None,
-                        color_attachments: &[Some(wgpu::RenderPassColorAttachment {
-                            view: &self.secondary_tex_view, // Here is the render target
-                            resolve_target: None,
-                            ops: color_op,
-                        })],
-                        depth_stencil_attachment: Some(RenderPassDepthStencilAttachment {
-                            view: &self.depth_texture_view,
-                            depth_ops: Some(depth_op),
-                            stencil_ops: Some(stencil_op),
-                        }),
-                    });
-                    render_pass.set_pipeline(&render_pipelines.render_pipeline_no_mask_filter);
-                    render_pass.set_vertex_buffer(0, current_vertex_buffer_slice);
-                    render_pass.set_bind_group(0, &self.filter_main_texture_bind_group, &[]);
-                    render_pass.set_bind_group(
-                        1,
-                        &filter_bind_groups.get(&filter_id).unwrap(),
-                        &[],
-                    );
-                    render_pass.set_bind_group(2, current_uniform_bind_group, &[]);
-                    render_pass.set_bind_group(3, &self.texture_size_bind_group, &[]);
-                    render_pass.draw(vertex_range, instance_range.clone());
-                }
-                RenderPass::FilterSplitPt2(vertex_range, filter_id) => {
-                    if invalid_scissor {
-                        continue;
-                    }
-
-                    let (color_op, stencil_op, depth_op) = render_pass_ops(RenderPassOps::Middle);
-                    let mut render_pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
-                        label: None,
-                        color_attachments: &[Some(wgpu::RenderPassColorAttachment {
-                            view: &self.main_tex_view, // Here is the render target
-                            resolve_target: None,
-                            ops: color_op,
-                        })],
-                        depth_stencil_attachment: Some(RenderPassDepthStencilAttachment {
-                            view: &self.depth_texture_view,
-                            depth_ops: Some(depth_op),
-                            stencil_ops: Some(stencil_op),
-                        }),
-                    });
-                    render_pass.set_pipeline(&render_pipelines.render_pipeline_in_mask_filter);
-                    render_pass.set_stencil_reference(stencil_level);
-                    render_pass.set_vertex_buffer(0, current_vertex_buffer_slice);
-                    render_pass.set_bind_group(0, &self.filter_secondary_texture_bind_group, &[]);
-                    render_pass.set_bind_group(
-                        1,
-                        &filter_bind_groups.get(&filter_id).unwrap(),
-                        &[],
-                    );
-                    render_pass.set_bind_group(2, current_uniform_bind_group, &[]);
-                    render_pass.set_bind_group(3, &self.texture_size_bind_group, &[]);
-                    render_pass.draw(vertex_range, instance_range.clone());
+                RenderPass::Clear { target_index: index } => {
+                    encoder.clear_texture(&self.targets[index].texture, &Default::default())
                 }
             };
         }
@@ -1269,40 +1207,42 @@ impl<T: ReadState<T=String>> WGPUWindow<T> {
     fn render_inner(&self, render_passes: Vec<RenderPass>, uniform_bind_groups: Vec<BindGroup>, gradient_bind_groups: Vec<BindGroup>, ctx: &mut dyn InnerTextContext, env: &mut Environment) -> Result<(), wgpu::SurfaceError> {
         DEVICE_QUEUE.with(|(device, queue)| {
             BIND_GROUPS.with(|bind_groups| {
-                FILTER_BIND_GROUPS.with(|filter_bind_groups| {
-                    PIPELINES.with(|render_pipelines| {
-                        let render_pipelines = &render_pipelines.borrow()[self.render_pipelines_index].1;
-                        let filter_bind_groups = &mut *filter_bind_groups.borrow_mut();
-                        let bind_groups = &mut *bind_groups.borrow_mut();
+                ATLAS_CACHE_BIND_GROUP.with(|atlas_cache_bind_group| {
+                    FILTER_BIND_GROUPS.with(|filter_bind_groups| {
+                        PIPELINES.with(|render_pipelines| {
+                            let render_pipelines = &render_pipelines.borrow()[self.render_pipelines_index].1;
+                            let filter_bind_groups = &mut *filter_bind_groups.borrow_mut();
+                            let bind_groups = &mut *bind_groups.borrow_mut();
 
-                        let mut encoder = device
-                            .create_command_encoder(&wgpu::CommandEncoderDescriptor {
-                                label: Some("Render Encoder"),
-                            });
+                            let mut encoder = device
+                                .create_command_encoder(&wgpu::CommandEncoderDescriptor {
+                                    label: Some("Render Encoder"),
+                                });
 
-                        let size = self.inner.inner_size();
+                            let size = self.inner.inner_size();
 
-                        // Handle update of atlas cache
-                        Self::update_atlas_cache(device, &mut encoder, ctx);
+                            // Handle update of atlas cache
+                            Self::update_atlas_cache(device, &mut encoder, ctx);
 
-                        // Update filter bind groups
-                        Self::update_filter_bind_groups(device, filter_bind_groups, env);
+                            // Update filter bind groups
+                            Self::update_filter_bind_groups(device, filter_bind_groups, env, size);
 
-                        // Ensure the images are added as bind groups
-                        //Self::ensure_images_exist_as_bind_groups(device, queue, bind_groups, env);
+                            // Ensure the images are added as bind groups
+                            //Self::ensure_images_exist_as_bind_groups(device, queue, bind_groups, env);
 
-                        self.process_render_passes(render_passes, &mut encoder, render_pipelines, bind_groups, &uniform_bind_groups, &gradient_bind_groups, filter_bind_groups, size, env.scale_factor());
+                            self.process_render_passes(render_passes, &mut encoder, render_pipelines, bind_groups, &uniform_bind_groups, &gradient_bind_groups, filter_bind_groups, size, env.scale_factor(), atlas_cache_bind_group);
 
-                        // This blocks until a new frame is available.
-                        let output = self.surface.get_current_texture()?;
+                            // This blocks until a new frame is available.
+                            let output = self.surface.get_current_texture()?;
 
-                        // Render from the texture to the swap chain
-                        self.render_texture_to_swapchain(&mut encoder, &render_pipelines.render_pipeline_no_mask, &output);
+                            // Render from the texture to the swap chain
+                            self.render_texture_to_swapchain(&mut encoder, &render_pipelines.render_pipeline_no_mask, &output, atlas_cache_bind_group);
 
-                        // submit will accept anything that implements IntoIter
-                        queue.submit(std::iter::once(encoder.finish()));
-                        output.present();
-                        Ok(())
+                            // submit will accept anything that implements IntoIter
+                            queue.submit(std::iter::once(encoder.finish()));
+                            output.present();
+                            Ok(())
+                        })
                     })
                 })
             })
@@ -1322,33 +1262,14 @@ impl<T: ReadState<T=String>> WGPUWindow<T> {
 
             self.depth_texture_view = depth_texture_view;
 
-            let main_tex = device
-                .create_texture(&main_render_tex_desc([new_size.width, new_size.height]));
-            let main_tex_view = main_tex.create_view(&Default::default());
-            let secondary_tex = device.create_texture(&secondary_render_tex_desc([
-                new_size.width,
-                new_size.height,
-            ]));
-            let secondary_tex_view = secondary_tex.create_view(&Default::default());
+            let mut targets = vec![];
+            targets.push(RenderTarget::new(new_size.width, new_size.height));
+            targets.push(RenderTarget::new(new_size.width, new_size.height));
+            self.targets = targets;
 
             let scale_factor = self.inner.scale_factor();
 
-            self.main_bind_group =
-                MAIN_TEXTURE_BIND_GROUP_LAYOUT.with(|main_texture_bind_group_layout| {
-                    MAIN_SAMPLER.with(|main_sampler| {
-                        ATLAS_CACHE_TEXTURE.with(|atlas_cache_tex| {
-                            main_bind_group(
-                                device,
-                                main_texture_bind_group_layout,
-                                &main_tex_view,
-                                main_sampler,
-                                atlas_cache_tex,
-                            )
-                        })
-                    })
-                });
-
-            let texture_size_bind_group =
+            self.texture_size_bind_group =
                 UNIFORM_BIND_GROUP_LAYOUT.with(|uniform_bind_group_layout| {
                     size_to_uniform_bind_group(
                         device,
@@ -1357,36 +1278,6 @@ impl<T: ReadState<T=String>> WGPUWindow<T> {
                         size.height as f64,
                         scale_factor,
                     )
-                });
-            self.texture_size_bind_group = texture_size_bind_group;
-
-            self.main_tex = main_tex;
-            self.main_tex_view = main_tex_view;
-            self.secondary_tex = secondary_tex;
-            self.secondary_tex_view = secondary_tex_view;
-
-            self.filter_main_texture_bind_group =
-                FILTER_TEXTURE_BIND_GROUP_LAYOUT.with(|filter_texture_bind_group_layout| {
-                    MAIN_SAMPLER.with(|main_sampler| {
-                        filter_texture_bind_group(
-                            device,
-                            filter_texture_bind_group_layout,
-                            &self.main_tex_view,
-                            main_sampler,
-                        )
-                    })
-                });
-
-            self.filter_secondary_texture_bind_group =
-                FILTER_TEXTURE_BIND_GROUP_LAYOUT.with(|filter_texture_bind_group_layout| {
-                    MAIN_SAMPLER.with(|main_sampler| {
-                        filter_texture_bind_group(
-                            device,
-                            filter_texture_bind_group_layout,
-                            &self.secondary_tex_view,
-                            main_sampler,
-                        )
-                    })
                 });
 
             let dimension = Dimension::new(new_size.width as Scalar, new_size.height as Scalar);
@@ -1404,6 +1295,10 @@ impl<T: ReadState<T=String>> WGPUWindow<T> {
                 });
 
             self.uniform_bind_group = uniform_bind_group;
+
+            FILTER_BIND_GROUPS.with(|a| {
+                a.borrow_mut().clear();
+            });
 
             queue.write_buffer(
                 &self.second_vertex_buffer,

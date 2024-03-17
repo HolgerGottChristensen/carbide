@@ -35,11 +35,5 @@ fn main() {
         ))
     ).close_application_on_window_close());
 
-    /*application.set_scene(Window::new(
-        "Filter example",
-        Dimension::new(600.0, 600.0),
-        Filter::new(ImageFilter::sobel(), Image::new("images/landscape.png").scaled_to_fit())
-    ).close_application_on_window_close());*/
-
     application.launch();
 }

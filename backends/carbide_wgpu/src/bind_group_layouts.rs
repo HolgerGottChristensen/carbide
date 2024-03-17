@@ -75,7 +75,26 @@ pub(crate) fn gradient_buffer_bind_group_layout(device: &Device) -> BindGroupLay
     })
 }
 
-pub(crate) fn main_texture_group_layout(device: &Device) -> BindGroupLayout {
+pub(crate) fn atlas_bind_group_layout(device: &Device) -> BindGroupLayout {
+    device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
+        entries: &[
+            wgpu::BindGroupLayoutEntry {
+                binding: 0,
+                visibility: wgpu::ShaderStages::FRAGMENT,
+                ty: wgpu::BindingType::Texture {
+                    sample_type: TextureSampleType::Float { filterable: true },
+                    view_dimension: TextureViewDimension::D2,
+                    multisampled: false,
+                },
+                count: None,
+            },
+        ],
+        label: Some("atlas_bind_group_layout"),
+    })
+}
+
+
+pub(crate) fn main_bind_group_layout(device: &Device) -> BindGroupLayout {
     device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
         entries: &[
             wgpu::BindGroupLayoutEntry {
@@ -93,17 +112,7 @@ pub(crate) fn main_texture_group_layout(device: &Device) -> BindGroupLayout {
                 visibility: wgpu::ShaderStages::FRAGMENT,
                 ty: wgpu::BindingType::Sampler(SamplerBindingType::Filtering),
                 count: None,
-            },
-            wgpu::BindGroupLayoutEntry {
-                binding: 2,
-                visibility: wgpu::ShaderStages::FRAGMENT,
-                ty: wgpu::BindingType::Texture {
-                    sample_type: TextureSampleType::Float { filterable: true },
-                    view_dimension: TextureViewDimension::D2,
-                    multisampled: false,
-                },
-                count: None,
-            },
+            }
         ],
         label: Some("texture_bind_group_layout"),
     })

@@ -26,16 +26,14 @@ var main_texture: texture_2d<f32>;
 @group(0) @binding(1)
 var main_sampler: sampler;
 
-@group(0) @binding(2)
-var atlas_texture: texture_2d<f32>;
-
-
 @group(1) @binding(0)
 var<uniform> uniforms: Uniforms;
 
 @group(2) @binding(0)
 var<storage, read> gradient: Gradient;
 
+@group(3) @binding(0)
+var atlas_texture: texture_2d<f32>;
 
 @fragment
 fn main_fs(in: VertexOutput) -> @location(0) vec4<f32> {

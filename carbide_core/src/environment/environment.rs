@@ -177,7 +177,6 @@ impl Environment {
             stack: env_stack,
             root_alignment: BasicLayouter::Center,
             overlay_map: HashMap::with_hasher(FxBuildHasher::default()),
-            //local_state: HashMap::with_hasher(FxBuildHasher::default()),
             widget_transfer: HashMap::with_hasher(FxBuildHasher::default()),
             focus_request: None,
             pixel_dimensions,
@@ -440,28 +439,6 @@ impl Environment {
         }
     }
 
-    /*pub fn overlay(&mut self, id: &'static str) -> Option<&mut Overlays> {
-        let overlays = self.overlay_map.get_mut(&id);
-
-        if let Some(o) = overlays {
-            o.retain(|(_, retain)| *retain.value());
-
-            return Some(o)
-        } else {
-            None
-        }
-    }*/
-
-    /*pub fn add_overlay(&mut self, id: &'static str, widget: Box<dyn Widget>, keep: Box<dyn AnyReadState<T=bool>>) {
-        if let Some(s) = self.overlay_map.get_mut(&id) {
-            s.push((widget, keep));
-        } else {
-            let new = vec![(widget, keep)];
-            self.overlay_map.insert(id, new);
-        }
-        self.request_animation_frame();
-    }*/
-
     pub fn transferred_widget(&mut self, id: &Option<String>) -> Option<WidgetTransferAction> {
         self.widget_transfer.remove(id)
     }
@@ -502,37 +479,9 @@ impl Environment {
         filter_id
     }
 
-    /// Swaps the local state between the env and the state requesting it.
-    /*pub fn swap_local_state<T: StateContract>(&mut self, local_state: &mut LocalState<T>) {
-        if let Some(state_in_env) = self.local_state.get_mut(local_state.key()) {
-            std::mem::swap(state_in_env, local_state.value());
-        } else {
-            self.local_state.insert(local_state.key().clone(), None);
-        }
-    }*/
-
-    /*pub fn update_local_state<T: Serialize + Clone + Debug + DeserializeOwned>(&self, local_state: &mut dyn State<T, GS>) {
-        local_state.update_dependent_states(self);
-        if let Some(key) = local_state.get_key() {
-            let local_value: &Vec<u8> = match self.local_state.get(key) {
-                Some(n) => n,
-                None => return,
-            };
-            *local_state.get_latest_value_mut() = from_bin::<T>(&local_value).unwrap();
-        }
+    pub fn remove_filter(&mut self, id: FilterId) {
+        self.filter_map.remove(&id);
     }
-
-    pub fn insert_local_state<T: Serialize + Clone + Debug>(&mut self, local_state: &dyn State<T, GS>) {
-        local_state.insert_dependent_states(self);
-        if let Some(key) = local_state.get_key() {
-            let value = local_state.get_latest_value();
-            self.local_state.insert(key.clone(), to_bin(value).unwrap());
-        }
-    }*/
-
-    /*pub fn insert_local_state_from_key_value<T: Serialize + Clone + Debug>(&mut self, key: &StateKey, value: &T) {
-        self.local_state.insert(key.clone(), to_bin(value).unwrap());
-    }*/
 
     pub fn push(&mut self, key: &'static str, value: Box<dyn Any>) {
         self.stack.push((key, value));

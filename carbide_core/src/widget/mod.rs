@@ -50,6 +50,7 @@ pub use self::v_split::*;
 pub use self::v_stack::*;
 pub use self::z_stack::*;
 pub use self::on_key::*;
+pub use self::shadow::*;
 
 pub mod canvas;
 mod common;
@@ -100,6 +101,7 @@ mod v_stack;
 mod z_stack;
 mod aspect_ratio;
 mod on_key;
+mod shadow;
 
 #[derive(Clone, Debug, Copy, Hash, Eq, PartialEq, Ord, PartialOrd)]
 pub struct WidgetId(u32);

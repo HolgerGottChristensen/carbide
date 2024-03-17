@@ -1,5 +1,6 @@
-
+use carbide::color::Color;
 use carbide_core::draw::Rect;
+use crate::color::WHITE;
 use crate::draw::{BoundingBox, InnerImageContext, Position};
 use crate::draw::draw_style::DrawStyle;
 use crate::draw::image::ImageId;
@@ -45,6 +46,19 @@ impl<'a> RenderContext<'a> {
         res
     }
 
+    pub fn filter_new<R, F: FnOnce(&mut RenderContext) -> R>(&mut self, id: FilterId, f: F) -> R {
+        self.render.filter_new();
+        let res = f(self);
+        self.render.filter_new_pop(id, WHITE);
+        res
+    }
+
+    pub fn shadow<R, F: FnOnce(&mut RenderContext) -> R>(&mut self, id: FilterId, color: Color, f: F) -> R {
+        self.render.filter_new();
+        let res = f(self);
+        self.render.filter_new_pop(id, color);
+        res
+    }
 
     pub fn stencil<R, F: FnOnce(&mut RenderContext) -> R>(&mut self, geometry: &[Triangle<Position>], f: F) -> R {
         self.render.stencil(geometry);
@@ -133,6 +147,9 @@ pub trait InnerRenderContext {
 
     fn layer(&mut self, index: u32);
     fn pop_layer(&mut self);
+
+    fn filter_new(&mut self);
+    fn filter_new_pop(&mut self, id: FilterId, color: Color);
 }
 
 pub struct NoopRenderContext;
@@ -167,4 +184,8 @@ impl InnerRenderContext for NoopRenderContext {
     fn layer(&mut self, _index: u32) {}
 
     fn pop_layer(&mut self) {}
+
+    fn filter_new(&mut self) {}
+
+    fn filter_new_pop(&mut self, id: FilterId, color: Color) {}
 }

@@ -2,12 +2,12 @@ use std::ops::Range;
 
 use cgmath::{Matrix4, SquareMatrix};
 
-use carbide_core::color::WHITE;
+use carbide_core::color::{Color, WHITE};
 use carbide_core::draw::{BoundingBox, Position, Rect};
 use carbide_core::draw::draw_style::DrawStyle;
 use carbide_core::draw::image::ImageId;
 use carbide_core::draw::shape::triangle::Triangle;
-use carbide_core::mesh::{MODE_GEOMETRY, MODE_GRADIENT_GEOMETRY, MODE_GRADIENT_ICON, MODE_GRADIENT_TEXT, MODE_ICON, MODE_TEXT};
+use carbide_core::mesh::{MODE_GEOMETRY, MODE_GRADIENT_GEOMETRY, MODE_GRADIENT_ICON, MODE_GRADIENT_TEXT, MODE_ICON, MODE_IMAGE, MODE_TEXT};
 use carbide_core::render::{CarbideTransform, InnerRenderContext};
 use carbide_core::text::{InnerTextContext, TextId};
 use carbide_core::widget::FilterId;
@@ -22,6 +22,7 @@ pub struct WGPURenderContext {
     stencil_stack: Vec<Range<u32>>,
     scissor_stack: Vec<BoundingBox>,
     transform_stack: Vec<(Matrix4<f32>, usize)>,
+    target_stack: Vec<usize>,
 
     transforms: Vec<Matrix4<f32>>,
     gradients: Vec<Gradient>,
@@ -36,21 +37,6 @@ pub struct WGPURenderContext {
     window_bounding_box: Rect,
     frame_count: usize,
     skip_rendering: bool,
-}
-
-/// An inner context used for each layer of rendering.
-///
-/// Each Layer context has its own state, render_pass list and a list of
-/// current render_pass_commands. It also has its own current bindgroup.
-#[allow(dead_code)]
-#[derive(Debug)]
-pub struct WGPURenderLayerContext {
-    layer: u32,
-    render_pass: Vec<RenderPass>,
-    render_pass_inner: Vec<RenderPassCommand>,
-    current_bind_group: Option<WGPUBindGroup>,
-
-    state: State,
 }
 
 #[derive(Debug, Clone)]
@@ -73,6 +59,7 @@ impl WGPURenderContext {
             stencil_stack: vec![],
             scissor_stack: vec![],
             transform_stack: vec![(Matrix4::identity(), 0)],
+            target_stack: vec![],
             transforms: vec![Matrix4::identity()],
             gradients: vec![],
             state: State::Plain { start: 0 },
@@ -92,6 +79,8 @@ impl WGPURenderContext {
         self.render_pass.clear();
         self.render_pass_inner.clear();
         self.scissor_stack.clear();
+
+        self.target_stack.clear();
 
         self.transform_stack.clear();
         self.transforms.clear();
@@ -146,7 +135,12 @@ impl WGPURenderContext {
         let mut swap = vec![];
         std::mem::swap(&mut swap, &mut self.render_pass_inner);
 
-        self.render_pass.push(RenderPass::Normal(swap));
+        if !swap.is_empty() {
+            self.render_pass.push(RenderPass::Normal {
+                commands: swap,
+                target_index: self.target_stack.len()
+            });
+        }
         self.state = State::Finished;
 
         let mut swap = vec![];
@@ -271,11 +265,11 @@ impl WGPURenderContext {
     }
 
     fn push_geometry_command(&mut self, vertices: Range<usize>) {
-        self.ensure_current_bind_group_is_some();
-
         if vertices.len() == 0 {
             return;
         }
+
+        self.ensure_current_bind_group_is_some();
 
         let cmd = RenderPassCommand::Draw {
             vertex_range: vertices.start as u32..vertices.end as u32,
@@ -284,11 +278,11 @@ impl WGPURenderContext {
     }
 
     fn push_gradient_command(&mut self, gradient: Gradient, vertices: Range<usize>) {
-        self.ensure_current_bind_group_is_some();
-
         if vertices.len() == 0 {
             return;
         }
+
+        self.ensure_current_bind_group_is_some();
 
         self.render_pass_inner.push(RenderPassCommand::Gradient {
             index: self.gradients.len()
@@ -305,6 +299,7 @@ impl WGPURenderContext {
 impl InnerRenderContext for WGPURenderContext {
     fn transform(&mut self, transform: CarbideTransform) {
         self.freshen_state();
+        self.ensure_current_bind_group_is_some();
 
         let (latest_transform, _) = &self.transform_stack[self.transform_stack.len() - 1];
 
@@ -319,6 +314,7 @@ impl InnerRenderContext for WGPURenderContext {
 
     fn pop_transform(&mut self) {
         self.freshen_state();
+        self.ensure_current_bind_group_is_some();
 
         self.transform_stack.pop();
         self.render_pass_inner.push(RenderPassCommand::Transform {
@@ -328,6 +324,7 @@ impl InnerRenderContext for WGPURenderContext {
 
     fn clip(&mut self, bounding_box: BoundingBox) {
         self.freshen_state();
+        self.ensure_current_bind_group_is_some();
 
         let corrected = if let Some(outer) = self.scissor_stack.last() {
             bounding_box.within_bounding_box(outer)
@@ -348,6 +345,7 @@ impl InnerRenderContext for WGPURenderContext {
 
     fn pop_clip(&mut self) {
         self.freshen_state();
+        self.ensure_current_bind_group_is_some();
 
         self.scissor_stack.pop();
 
@@ -403,10 +401,20 @@ impl InnerRenderContext for WGPURenderContext {
         let mut swap = vec![];
         std::mem::swap(&mut swap, &mut self.render_pass_inner);
 
-        self.render_pass.push(RenderPass::Normal(swap));
+        self.render_pass.push(RenderPass::Normal {
+            commands: swap,
+            target_index: self.target_stack.len(),
+        });
 
         let range = vertices_start..self.vertices.len() as u32;
-        self.render_pass.push(RenderPass::Filter(range, id));
+        self.render_pass.push(RenderPass::Filter {
+            vertex_range: range,
+            filter_id: id,
+            source_id: 1,
+            target_id: 0,
+            initial_copy: true,
+        });
+
         self.current_bind_group = None;
 
         // We need to skip the vertices added by the filtering action
@@ -462,13 +470,25 @@ impl InnerRenderContext for WGPURenderContext {
         let mut swap = vec![];
         std::mem::swap(&mut swap, &mut self.render_pass_inner);
 
-        self.render_pass.push(RenderPass::Normal(swap));
+        self.render_pass.push(RenderPass::Normal { commands: swap, target_index: 0 });
 
         let range = vertices_start1..vertices_start2;
-        self.render_pass.push(RenderPass::FilterSplitPt1(range, id1));
+        self.render_pass.push(RenderPass::Filter {
+            vertex_range: range,
+            filter_id: id1,
+            source_id: 0,
+            target_id: 1,
+            initial_copy: false,
+        });
 
         let range = vertices_start2..self.vertices.len() as u32;
-        self.render_pass.push(RenderPass::FilterSplitPt2(range, id2));
+        self.render_pass.push(RenderPass::Filter {
+            vertex_range: range,
+            filter_id: id2,
+            source_id: 1,
+            target_id: 0,
+            initial_copy: false,
+        });
 
         self.current_bind_group = None;
 
@@ -484,6 +504,7 @@ impl InnerRenderContext for WGPURenderContext {
         }
 
         self.freshen_state();
+        self.ensure_current_bind_group_is_some();
 
         let start_index_for_stencil = self.vertices.len();
 
@@ -518,6 +539,7 @@ impl InnerRenderContext for WGPURenderContext {
         self.freshen_state();
 
         if let Some(range) = self.stencil_stack.pop() {
+            self.ensure_current_bind_group_is_some();
             self.render_pass_inner.push(RenderPassCommand::DeStencil { vertex_range: range });
         } else {
             panic!("Trying to pop from empty stencil stack")
@@ -642,19 +664,104 @@ impl InnerRenderContext for WGPURenderContext {
     fn pop_layer(&mut self) {
 
     }
-}
+
+    fn filter_new(&mut self) {
+        match &self.state {
+            State::Image { id, start } => {
+                self.push_image_command(id.clone(), *start..self.vertices.len());
+            }
+            State::Plain { start } => {
+                self.push_geometry_command(*start..self.vertices.len());
+            }
+            State::Finished => {}
+        }
+
+        self.state = State::Plain {
+            start: self.vertices.len(),
+        };
+
+        let mut swap = vec![];
+        std::mem::swap(&mut swap, &mut self.render_pass_inner);
+
+        self.render_pass.push(RenderPass::Normal {
+            commands: swap,
+            target_index: self.target_stack.len()
+        });
+        self.target_stack.push(0);
+        self.render_pass.push(RenderPass::Clear { target_index: self.target_stack.len() });
+
+        self.current_bind_group = None;
+    }
+
+    fn filter_new_pop(&mut self, id: FilterId, color: Color) {
+        match &self.state {
+            State::Image { id, start } => {
+                self.push_image_command(id.clone(), *start..self.vertices.len());
+            }
+            State::Plain { start } => {
+                self.push_geometry_command(*start..self.vertices.len());
+            }
+            State::Finished => {}
+        }
+
+        let mut swap = vec![];
+        std::mem::swap(&mut swap, &mut self.render_pass_inner);
+
+        self.render_pass.push(RenderPass::Normal {
+            commands: swap,
+            target_index: self.target_stack.len()
+        });
+
+        let create_vertex = |x, y, tx, ty| Vertex {
+            position: [x as f32, y as f32, 0.0],
+            tex_coords: [tx as f32, ty as f32],
+            rgba: color
+                .gamma_srgb_to_linear()
+                .pre_multiply()
+                .to_fsa(),
+            mode: MODE_IMAGE,
+        };
 
 
-/// Take two list of render passes and merge them into a single list of render passes
-#[allow(dead_code)]
-fn merge_render_passes(mut main: Vec<RenderPass>, second: Vec<RenderPass>) -> Vec<RenderPass> {
+        let (l, r, b, t) = self.window_bounding_box.l_r_b_t();
 
-    if second.len() == 0 { return main; }
-    if main.len() == 0 { return second; }
+        self.render_pass_inner.push(RenderPassCommand::SetBindGroup {
+            bind_group: WGPUBindGroup::Target(self.target_stack.len()),
+        });
 
-    // TODO: If the last of main and first of second are both normal or both the same gradient, we can merge them.
-    main.extend(second);
+        self.target_stack.pop();
 
-    main
+        let vertices_start = self.vertices.len() as u32;
 
+        // Bottom left triangle.
+        self.vertices.push(create_vertex(l, t, 0.0, 1.0));
+        self.vertices.push(create_vertex(r, b, 1.0, 0.0));
+        self.vertices.push(create_vertex(l, b, 0.0, 0.0));
+
+        // Top right triangle.
+        self.vertices.push(create_vertex(l, t, 0.0, 1.0));
+        self.vertices.push(create_vertex(r, t, 1.0, 1.0));
+        self.vertices.push(create_vertex(r, b, 1.0, 0.0));
+
+        let range = vertices_start..self.vertices.len() as u32;
+        self.render_pass.push(RenderPass::Filter {
+            vertex_range: range.clone(),
+            filter_id: id,
+            source_id: 1,
+            target_id: 0,
+            initial_copy: false,
+        });
+
+        self.render_pass.push(RenderPass::Normal { commands: vec![
+            RenderPassCommand::SetBindGroup { bind_group: WGPUBindGroup::Target(1) },
+            RenderPassCommand::Draw { vertex_range: range }
+        ], target_index: 0 });
+
+        self.current_bind_group = None;
+
+        // We need to skip the vertices added by the filtering action
+        self.state = State::Plain {
+            start: self.vertices.len(),
+        };
+    }
 }

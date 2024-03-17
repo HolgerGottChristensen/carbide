@@ -47,3 +47,9 @@ impl Animatable<Dimension> for Dimension {
         )
     }
 }
+
+impl Animatable<i32> for i32 {
+    fn interpolate(&self, other: &i32, percentage: f64) -> i32 {
+        (*self as f32 * (1.0 - percentage as f32) + *other as f32 * percentage as f32).round() as i32
+    }
+}

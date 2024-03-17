@@ -149,18 +149,7 @@ pub(crate) fn create_render_pipeline(
             entry_point: "main_fs",
             targets: &[Some(ColorTargetState {
                 format: preferred_format,
-                blend: Some(BlendState {
-                    color: BlendComponent {
-                        src_factor: BlendFactor::One,
-                        dst_factor: BlendFactor::OneMinusSrcAlpha,
-                        operation: BlendOperation::Add,
-                    },
-                    alpha: BlendComponent {
-                        src_factor: BlendFactor::One,
-                        dst_factor: BlendFactor::OneMinusSrcAlpha,
-                        operation: BlendOperation::Add,
-                    },
-                }),
+                blend: Some(BlendState::PREMULTIPLIED_ALPHA_BLENDING),
                 write_mask: col,
             })],
         }),

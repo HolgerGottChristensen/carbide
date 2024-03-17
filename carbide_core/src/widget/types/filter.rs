@@ -1,4 +1,7 @@
+use std::fmt::{Display, Formatter};
+use std::ops::Div;
 use std::sync::atomic::{AtomicU32, Ordering};
+use crate::utils::gaussian;
 
 /// Filter struct containing a matrix of filter weights that can be applied to change the rendering
 /// of a sub tree. For more information on image filters look at:
@@ -6,6 +9,78 @@ use std::sync::atomic::{AtomicU32, Ordering};
 #[derive(Clone, Debug)]
 pub struct ImageFilter {
     pub filter: Vec<ImageFilterValue>,
+}
+
+impl Display for ImageFilter {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        let mut min_x = None;
+        let mut max_x = None;
+        let mut min_y = None;
+        let mut max_y = None;
+
+        for item in &self.filter {
+            if let Some(min_x) = &mut min_x {
+                if item.offset_x < *min_x {
+                    *min_x = item.offset_x;
+                }
+            } else {
+                min_x = Some(item.offset_x);
+            }
+
+            if let Some(min_y) = &mut min_y {
+                if item.offset_y < *min_y {
+                    *min_y = item.offset_y;
+                }
+            } else {
+                min_y = Some(item.offset_y);
+            }
+
+            if let Some(max_x) = &mut max_x {
+                if item.offset_x > *max_x {
+                    *max_x = item.offset_x;
+                }
+            } else {
+                max_x = Some(item.offset_x);
+            }
+
+            if let Some(max_y) = &mut max_y {
+                if item.offset_y > *max_y {
+                    *max_y = item.offset_y;
+                }
+            } else {
+                max_y = Some(item.offset_y);
+            }
+        }
+
+        writeln!(f, "{:?}-{:?}:{:?}-{:?}", min_x, max_x, min_y, max_y);
+
+        let mut res = String::new();
+
+        if let (Some(min_x), Some(max_x), Some(min_y), Some(max_y)) = (min_x, max_x, min_y, max_y) {
+            for y in min_y..=max_y {
+                for x in min_x..=max_x {
+                    let mut found = false;
+                    for item in &self.filter {
+                        if item.offset_x == x && item.offset_y == y {
+                            res.push_str(&format!("{:.4} ", item.weight));
+                            found = true;
+                            break;
+                        }
+                    }
+
+                    if !found {
+                        res.push_str("x.xxxx");
+                    }
+                }
+
+                res.push('\n');
+            }
+
+            writeln!(f, "{}", res)?;
+        }
+
+        Ok(())
+    }
 }
 
 #[derive(Clone, Debug, Copy, Hash, Eq, PartialEq, Ord, PartialOrd)]
@@ -29,6 +104,44 @@ impl ImageFilter {
                 ImageFilterValue::new(0, 1, -1.0),
                 ImageFilterValue::new(0, 0, 5.0),
             ],
+        }
+    }
+
+    // http://demofox.org/gauss.html
+    // https://lisyarus.github.io/blog/graphics/2023/02/24/blur-coefficients-generator.html
+    pub fn gaussian_blur(sigma: f64) -> ImageFilter {
+        let radius = (3.0 * sigma).round() as i32;
+        let mut res = vec![];
+
+        for x in -radius..=radius {
+            for y in -radius..=radius {
+                res.push(ImageFilterValue::new(x, y, f64::exp(-f64::div(f64::powf(x as f64, 2.0) + f64::powf(y as f64, 2.0), f64::powf(sigma, 2.0))) as f32));
+            }
+        }
+
+        let mut filter = ImageFilter {
+            filter: res,
+        };
+        filter.normalize();
+
+        //println!("{}", filter);
+
+        filter
+    }
+
+    pub fn mean_blur(radius: i32) -> ImageFilter {
+        let width = radius + 1 + radius;
+        let factor = 1.0 / (width * width) as f32;
+        let mut res = vec![];
+
+        for x in -radius..=radius {
+            for y in -radius..=radius {
+                res.push(ImageFilterValue::new(x, y, factor))
+            }
+        }
+
+        ImageFilter {
+            filter: res,
         }
     }
 
@@ -133,6 +246,15 @@ impl ImageFilter {
     /// Convenience function to flip filter and return the resulting filter using [Self::flip()]
     pub fn flipped(mut self) -> ImageFilter {
         self.flip();
+        self
+    }
+
+    pub fn offset(mut self, x: i32, y: i32) -> ImageFilter {
+        for f in &mut self.filter {
+            f.offset_x += x;
+            f.offset_y += y;
+        }
+
         self
     }
 

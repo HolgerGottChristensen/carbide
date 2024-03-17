@@ -17,10 +17,11 @@ pub(crate) fn main_pipeline_layout(
     main_bind_group_layout: &BindGroupLayout,
     uniform_bind_group_layout: &BindGroupLayout,
     gradient_bind_group_layout: &BindGroupLayout,
+    atlas_bind_group_layout: &BindGroupLayout,
 ) -> PipelineLayout {
     device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
         label: Some("Render Pipeline Layout"),
-        bind_group_layouts: &[main_bind_group_layout, uniform_bind_group_layout, gradient_bind_group_layout],
+        bind_group_layouts: &[main_bind_group_layout, uniform_bind_group_layout, gradient_bind_group_layout, atlas_bind_group_layout],
         push_constant_ranges: &[],
     })
 }
@@ -49,7 +50,7 @@ pub(crate) fn filter_pipeline_layout(
             &filter_texture_bind_group_layout,
             &filter_buffer_bind_group_layout,
             &uniform_bind_group_layout,
-            &uniform_bind_group_layout,
+            &filter_texture_bind_group_layout,
         ],
         push_constant_ranges: &[],
     })

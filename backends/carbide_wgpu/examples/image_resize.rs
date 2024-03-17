@@ -10,7 +10,7 @@ fn main() {
         "Image resize example",
         Dimension::new(400.0, 300.0),
         Image::new("images/lcabyg.png").resizeable()
-    ));
+    ).close_application_on_window_close());
 
     application.launch();
 }

@@ -15,21 +15,21 @@ fn main() {
                 Image::new_icon("images/rust.png")
                     .source_rectangle(rect(0, 0))
                     .border()
-                    .accent_color(Yellow),
+                    .foreground_color(Yellow),
                 Image::new_icon("images/rust.png")
                     .source_rectangle(rect(1, 0))
                     .border()
-                    .accent_color(Red),
+                    .foreground_color(Red),
             )),
             HStack::new((
                 Image::new_icon("images/rust.png")
                     .source_rectangle(rect(0, 1))
                     .border()
-                    .accent_color(Green),
+                    .foreground_color(Green),
                 Image::new_icon("images/rust.png")
                     .source_rectangle(rect(1, 1))
                     .border()
-                    .accent_color(Blue),
+                    .foreground_color(Blue),
             )),
         ))
     ).close_application_on_window_close());

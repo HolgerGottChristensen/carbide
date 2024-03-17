@@ -8,6 +8,7 @@ use lyon::tessellation::{
 use lyon::tessellation::path::Path;
 
 pub use capsule::*;
+use carbide::color::Color;
 use carbide::draw::{BoundingBox, Rect};
 use carbide::draw::draw_style::DrawStyle;
 use carbide::draw::image::ImageId;
@@ -90,6 +91,10 @@ impl InnerRenderContext for Tris {
     fn layer(&mut self, index: u32) {}
 
     fn pop_layer(&mut self) {}
+
+    fn filter_new(&mut self) {}
+
+    fn filter_new_pop(&mut self, id: FilterId, color: Color) {}
 }
 
 pub fn tessellate(shape: &mut dyn Shape, rectangle: &Box2D, path: &dyn Fn(&mut Builder, &Box2D)) {
