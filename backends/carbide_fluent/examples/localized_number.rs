@@ -1,15 +1,11 @@
-use std::time::Duration;
-
-use chrono::Local;
 use icu::locid::locale;
 
 use carbide_controls::{ControlsExt, PopUpButton, Slider};
-use carbide_core::asynchronous::Timer;
 use carbide_core::draw::Dimension;
 use carbide_core::environment::EnvironmentColor;
-use carbide_core::state::{GlobalState, LocalState, Map1, State, ValueState};
+use carbide_core::state::LocalState;
 use carbide_core::widget::{EdgeInsets, Text, VStack, WidgetExt};
-use carbide_fluent::{DateStyle, LocalizedDateTime, LocalizedNumber, LocalizedString, NumberGrouping, NumberNotation, NumberStyle, RoundingMode, TimeStyle, TimezoneStyle};
+use carbide_fluent::{LocalizedNumber, LocalizedString, NumberGrouping, NumberNotation, NumberStyle, RoundingMode};
 use carbide_fluent::LocaleExt;
 use carbide_wgpu::{Application, Window};
 

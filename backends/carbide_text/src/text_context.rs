@@ -1,20 +1,16 @@
 use std::path::PathBuf;
-use std::time::Instant;
-use cosmic_text::{Attrs, Buffer, Family, FontSystem, LayoutLine, LayoutRun, Metrics, Shaping, Style, SwashCache, SwashImage, Weight};
+use cosmic_text::{Attrs, Buffer, Family, FontSystem, LayoutRun, Metrics, Shaping, Style, SwashCache, SwashImage, Weight};
 use fxhash::FxHashMap;
 use swash::scale::{Render, ScaleContext, Source, StrikeWith};
 use swash::scale::image::Content;
 use swash::zeno::{Format, Vector};
 
-use carbide_core::color::{GREEN, LIGHT_GREEN, LIGHT_PURPLE, LIGHT_RED, RED, YELLOW};
-use carbide_core::draw::{Dimension, Position, Rect, Scalar};
-use carbide_core::draw::draw_style::DrawStyle;
+use carbide_core::draw::{Dimension, MODE_TEXT, MODE_TEXT_COLOR, Position, Rect, Scalar};
 use carbide_core::draw::image::ImageId;
 use carbide_core::environment::Environment;
 use carbide_core::image::{DynamicImage, GrayImage, RgbaImage};
-use carbide_core::mesh::{MODE_TEXT, MODE_TEXT_COLOR};
 use carbide_core::render::InnerRenderContext;
-use carbide_core::text::{FontStyle, FontWeight, InnerTextContext, TextId};
+use carbide_core::text::{FontStyle, InnerTextContext, TextId};
 use carbide_core::text::TextStyle;
 use carbide_core::widget::Wrap;
 use unicode_segmentation::UnicodeSegmentation;

@@ -2,7 +2,7 @@ use wgpu::VertexFormat;
 use carbide_winit::dpi::PhysicalSize;
 
 use carbide_core::draw::Scalar;
-use carbide_core::mesh::MODE_IMAGE;
+use carbide_core::draw::MODE_IMAGE;
 
 #[repr(C)]
 #[derive(Copy, Clone, Debug, bytemuck::Pod, bytemuck::Zeroable)]
@@ -109,17 +109,6 @@ impl Vertex {
                     format: VertexFormat::Uint32,
                 },
             ],
-        }
-    }
-}
-
-impl From<carbide_core::mesh::vertex::Vertex> for Vertex {
-    fn from(v: carbide_core::mesh::vertex::Vertex) -> Self {
-        Vertex {
-            position: v.position,
-            tex_coords: v.tex_coords,
-            rgba: v.rgba,
-            mode: v.mode,
         }
     }
 }

@@ -48,7 +48,6 @@ macro_rules! set_state {
 pub mod animation;
 pub mod asynchronous;
 pub mod cursor;
-pub mod dialog;
 pub mod draw;
 pub mod environment;
 pub mod event;
@@ -56,8 +55,6 @@ pub mod flags;
 pub mod focus;
 pub mod layout;
 pub mod locate_folder;
-pub mod mesh;
-pub mod platform;
 pub mod render;
 pub mod state;
 pub mod text;

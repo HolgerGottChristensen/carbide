@@ -10,12 +10,11 @@ use carbide_core::widget::CommonWidget;
 use carbide_macro::carbide_default_builder2;
 
 use crate::CommonWidgetImpl;
-use crate::draw::{Dimension, Position, Rect, Scalar, Texture, TextureFormat};
+use crate::draw::{Dimension, MODE_ICON, MODE_IMAGE, Position, Rect, Scalar, Texture, TextureFormat};
 use crate::draw::image::ImageId;
 use crate::environment::{Environment, EnvironmentColor,};
 use crate::layout::{Layout, LayoutContext};
-use crate::mesh::{MODE_ICON, MODE_IMAGE};
-use crate::mesh::pre_multiply::PreMultiply;
+use crate::draw::pre_multiply::PreMultiply;
 use crate::render::{Render, Style};
 use crate::state::{IntoReadState, ReadState};
 use crate::widget::{Widget, WidgetExt, WidgetId};

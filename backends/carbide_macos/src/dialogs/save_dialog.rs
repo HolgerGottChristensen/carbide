@@ -13,12 +13,12 @@ use objc::sel_impl;
 use oneshot::Receiver;
 use raw_window_handle::{AppKitWindowHandle, HasRawWindowHandle, RawWindowHandle};
 
-use carbide_core::dialog::FileSpecification;
 
 use crate::array::NSArray;
 use crate::dialogs::NSModalResponse;
 use crate::dialogs::NSModalResponseCancel;
 use crate::dialogs::NSModalResponseOK;
+use crate::FileSpecification;
 use crate::id::Id;
 use crate::string::NSString;
 use crate::url::NSURL;

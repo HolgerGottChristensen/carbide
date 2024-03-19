@@ -39,7 +39,7 @@ fn main() {
                 sigma,
                 VStack::new((
                     Text::new("Hello world!").font_size(42),
-                    Image::new_icon("images/lcabyg.png")
+                    Image::new_icon("images/rust.png")
                 )).foreground_color(Color::new_rgba(170, 170, 170, 255))
             ).shadow_color(color)
                 .shadow_offset(offset_x, offset_y)

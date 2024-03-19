@@ -2,7 +2,7 @@ use wgpu::{Device, Queue};
 use wgpu::BindGroup;
 
 use carbide_core::image::DynamicImage;
-use carbide_core::mesh::pre_multiply::PreMultiply;
+use carbide_core::draw::pre_multiply::PreMultiply;
 
 use crate::texture;
 use crate::texture::Texture;

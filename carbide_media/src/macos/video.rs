@@ -13,7 +13,7 @@ use carbide_core::draw::{Dimension, Position, Rect, Scalar, Texture, TextureForm
 use carbide_core::environment::Environment;
 use carbide_core::event::{CustomEvent, HasEventSink, Key, KeyboardEvent, KeyboardEventHandler};
 use carbide_core::layout::Layout;
-use carbide_core::mesh::MODE_IMAGE;
+use carbide_core::draw::MODE_IMAGE;
 use carbide_core::render::{Render, RenderContext};
 use carbide_core::state::{AnyReadState, AnyState, IntoReadState, IntoState, LocalState, ReadState, ReadStateExtNew, State, StateExtNew};
 use carbide_core::widget::{CommonWidget, WidgetExt, WidgetId, AnyWidget, ScaleMode};

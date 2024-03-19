@@ -229,17 +229,3 @@ fn listener<F: Fn(String, HashMap<NSKeyValueChangeKey, id>) + 'static>(f: F) -> 
 
     listener
 }
-
-
-/*
-struct ColorPickerResponder(*const Class);
-
-unsafe impl Send for ColorPickerResponder {}
-
-unsafe impl Sync for ColorPickerResponder {}
-
-lazy_static! {
-    static ref COLOR_PICKER_RESPONDER: ColorPickerResponder = unsafe {
-
-    };
-}*/

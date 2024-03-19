@@ -1,6 +1,4 @@
 use std::any::Any;
-use std::fmt::Debug;
-use dyn_clone::DynClone;
 use crate::draw::Color;
 use crate::environment::{EnvironmentColor, EnvironmentFontSize};
 

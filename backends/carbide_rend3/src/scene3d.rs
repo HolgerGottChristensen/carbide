@@ -21,7 +21,7 @@ use carbide_core::draw::{Color, Dimension, Position, Rect};
 use carbide_core::draw::image::ImageId;
 use carbide_core::environment::{Environment, EnvironmentColor};
 use carbide_core::layout::{Layout, LayoutContext};
-use carbide_core::mesh::MODE_IMAGE;
+use carbide_core::draw::MODE_IMAGE;
 use carbide_core::render::{Render, RenderContext};
 use carbide_core::state::EnvironmentStateKey;
 use carbide_core::widget::*;

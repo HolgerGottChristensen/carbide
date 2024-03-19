@@ -22,7 +22,6 @@ use carbide_core::event::Event;
 use carbide_core::focus::Focusable;
 use carbide_core::image::GenericImageView;
 use carbide_core::layout::{Layout, LayoutContext, Layouter};
-use carbide_core::mesh::mesh::Mesh;
 use carbide_core::render::{Render, RenderContext};
 use carbide_core::state::{IntoReadState, ReadState, StateSync};
 use carbide_core::text::InnerTextContext;
@@ -233,7 +232,6 @@ pub struct WGPUWindow<T: ReadState<T=String>> {
 
     pub(crate) depth_texture_view: TextureView,
     pub(crate) texture_size_bind_group: BindGroup,
-    pub(crate) mesh: Mesh,
 
     pub(crate) targets: Vec<RenderTarget>,
 
@@ -399,7 +397,6 @@ impl WGPUWindow<String> {
                 }
             });
 
-            let mesh = Mesh::new();
 
             let depth_texture = create_depth_stencil_texture(&device, size.width, size.height);
             let depth_texture_view = depth_texture.create_view(&Default::default());
@@ -426,7 +423,6 @@ impl WGPUWindow<String> {
                 render_pipelines_index,
                 depth_texture_view,
                 texture_size_bind_group,
-                mesh,
                 targets,
                 uniform_bind_group,
                 gradient_bind_group,

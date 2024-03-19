@@ -1,13 +1,6 @@
-use cgmath::Matrix4;
-use wgpu::{BindGroupLayout, Device};
-
 use carbide_core::draw::image::ImageId;
 use carbide_core::draw::Rect;
-use carbide_core::mesh::DrawCommand;
 use carbide_core::widget::FilterId;
-
-use crate::bind_groups::matrix_to_uniform_bind_group;
-use crate::gradient::Gradient;
 
 /// A draw command that maps directly to the `wgpu::CommandEncoder` method. By returning
 /// `RenderPassCommand`s, we can avoid consuming the entire `AutoCommandBufferBuilder` itself which might

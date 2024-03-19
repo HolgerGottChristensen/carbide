@@ -3,11 +3,10 @@ use std::ops::Range;
 use cgmath::{Matrix4, SquareMatrix};
 
 use carbide_core::color::{Color, WHITE};
-use carbide_core::draw::{BoundingBox, Position, Rect};
+use carbide_core::draw::{BoundingBox, MODE_GEOMETRY, MODE_GRADIENT_GEOMETRY, MODE_GRADIENT_ICON, MODE_GRADIENT_TEXT, MODE_ICON, MODE_IMAGE, MODE_TEXT, Position, Rect};
 use carbide_core::draw::draw_style::DrawStyle;
 use carbide_core::draw::image::ImageId;
 use carbide_core::draw::shape::triangle::Triangle;
-use carbide_core::mesh::{MODE_GEOMETRY, MODE_GRADIENT_GEOMETRY, MODE_GRADIENT_ICON, MODE_GRADIENT_TEXT, MODE_ICON, MODE_IMAGE, MODE_TEXT};
 use carbide_core::render::{CarbideTransform, InnerRenderContext};
 use carbide_core::text::{InnerTextContext, TextId};
 use carbide_core::widget::FilterId;
