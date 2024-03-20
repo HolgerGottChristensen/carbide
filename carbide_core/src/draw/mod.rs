@@ -1,6 +1,5 @@
 pub use dimension::Dimension;
 pub use position::Position;
-pub use rect::BoundingBox;
 pub use rect::Rect;
 pub use color::Color;
 pub use alignment::Alignment;

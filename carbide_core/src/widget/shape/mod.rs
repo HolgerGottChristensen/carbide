@@ -9,7 +9,7 @@ use lyon::tessellation::path::Path;
 
 pub use capsule::*;
 use carbide::color::Color;
-use carbide::draw::{BoundingBox, Rect};
+use carbide::draw::{Rect};
 use carbide::draw::draw_style::DrawStyle;
 use carbide::draw::image::ImageId;
 use carbide::render::CarbideTransform;
@@ -64,13 +64,13 @@ impl InnerRenderContext for Tris {
 
     fn pop_transform(&mut self) {}
 
-    fn clip(&mut self, bounding_box: BoundingBox) {}
+    fn clip(&mut self, bounding_box: Rect) {}
 
     fn pop_clip(&mut self) {}
 
-    fn filter(&mut self, id: FilterId, bounding_box: BoundingBox) {}
+    fn filter(&mut self, id: FilterId, bounding_box: Rect) {}
 
-    fn filter2d(&mut self, id1: FilterId, bounding_box1: BoundingBox, id2: FilterId, bounding_box2: BoundingBox) {}
+    fn filter2d(&mut self, id1: FilterId, bounding_box1: Rect, id2: FilterId, bounding_box2: Rect) {}
 
     fn stencil(&mut self, geometry: &[Triangle<Position>]) {}
 

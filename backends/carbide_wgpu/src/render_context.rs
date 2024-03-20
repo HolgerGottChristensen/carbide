@@ -3,7 +3,7 @@ use std::ops::Range;
 use cgmath::{Matrix4, SquareMatrix};
 
 use carbide_core::color::{Color, WHITE};
-use carbide_core::draw::{BoundingBox, MODE_GEOMETRY, MODE_GRADIENT_GEOMETRY, MODE_GRADIENT_ICON, MODE_GRADIENT_TEXT, MODE_ICON, MODE_IMAGE, MODE_TEXT, Position, Rect};
+use carbide_core::draw::{MODE_GEOMETRY, MODE_GRADIENT_GEOMETRY, MODE_GRADIENT_ICON, MODE_GRADIENT_TEXT, MODE_ICON, MODE_IMAGE, MODE_TEXT, Position, Rect};
 use carbide_core::draw::draw_style::DrawStyle;
 use carbide_core::draw::image::ImageId;
 use carbide_core::draw::shape::triangle::Triangle;
@@ -19,7 +19,7 @@ use crate::vertex::Vertex;
 pub struct WGPURenderContext {
     style_stack: Vec<WGPUStyle>,
     stencil_stack: Vec<Range<u32>>,
-    scissor_stack: Vec<BoundingBox>,
+    scissor_stack: Vec<Rect>,
     transform_stack: Vec<(Matrix4<f32>, usize)>,
     target_stack: Vec<usize>,
 
@@ -321,7 +321,7 @@ impl InnerRenderContext for WGPURenderContext {
         });
     }
 
-    fn clip(&mut self, bounding_box: BoundingBox) {
+    fn clip(&mut self, bounding_box: Rect) {
         self.freshen_state();
         self.ensure_current_bind_group_is_some();
 
@@ -366,7 +366,7 @@ impl InnerRenderContext for WGPURenderContext {
         }
     }
 
-    fn filter(&mut self, id: FilterId, bounding_box: BoundingBox) {
+    fn filter(&mut self, id: FilterId, bounding_box: Rect) {
         if self.skip_rendering {
             return;
         }
@@ -422,7 +422,7 @@ impl InnerRenderContext for WGPURenderContext {
         };
     }
 
-    fn filter2d(&mut self, id1: FilterId, bounding_box1: BoundingBox, id2: FilterId, bounding_box2: BoundingBox) {
+    fn filter2d(&mut self, id1: FilterId, bounding_box1: Rect, id2: FilterId, bounding_box2: Rect) {
         if self.skip_rendering {
             return;
         }

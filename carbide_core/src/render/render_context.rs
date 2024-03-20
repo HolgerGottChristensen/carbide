@@ -1,7 +1,7 @@
 use carbide::color::Color;
 use carbide_core::draw::Rect;
 use crate::color::WHITE;
-use crate::draw::{BoundingBox, InnerImageContext, Position};
+use crate::draw::{InnerImageContext, Position};
 use crate::draw::draw_style::DrawStyle;
 use crate::draw::image::ImageId;
 use crate::draw::shape::triangle::Triangle;
@@ -27,20 +27,20 @@ impl<'a> RenderContext<'a> {
         res
     }
 
-    pub fn clip<R, F: FnOnce(&mut RenderContext) -> R>(&mut self, bounding_box: BoundingBox, f: F) -> R {
+    pub fn clip<R, F: FnOnce(&mut RenderContext) -> R>(&mut self, bounding_box: Rect, f: F) -> R {
         self.render.clip(bounding_box);
         let res = f(self);
         self.render.pop_clip();
         res
     }
 
-    pub fn filter<R, F: FnOnce(&mut RenderContext) -> R>(&mut self, id: FilterId, bounding_box: BoundingBox, f: F) -> R {
+    pub fn filter<R, F: FnOnce(&mut RenderContext) -> R>(&mut self, id: FilterId, bounding_box: Rect, f: F) -> R {
         let res = f(self);
         self.render.filter(id, bounding_box);
         res
     }
 
-    pub fn filter2d<R, F: FnOnce(&mut RenderContext) -> R>(&mut self, id1: FilterId, bounding_box1: BoundingBox, id2: FilterId, bounding_box2: BoundingBox, f: F) -> R {
+    pub fn filter2d<R, F: FnOnce(&mut RenderContext) -> R>(&mut self, id1: FilterId, bounding_box1: Rect, id2: FilterId, bounding_box2: Rect, f: F) -> R {
         let res = f(self);
         self.render.filter2d(id1, bounding_box1, id2, bounding_box2);
         res
@@ -98,7 +98,7 @@ impl<'a> RenderContext<'a> {
         res
     }
 
-    pub fn image(&mut self, id: ImageId, bounding_box: BoundingBox, source_rect: Rect, mode: u32) {
+    pub fn image(&mut self, id: ImageId, bounding_box: Rect, source_rect: Rect, mode: u32) {
         self.render.image(id, bounding_box, source_rect, mode);
     }
 
@@ -118,11 +118,11 @@ pub trait InnerRenderContext {
     fn transform(&mut self, transform: CarbideTransform);
     fn pop_transform(&mut self);
 
-    fn clip(&mut self, bounding_box: BoundingBox);
+    fn clip(&mut self, bounding_box: Rect);
     fn pop_clip(&mut self);
 
-    fn filter(&mut self, id: FilterId, bounding_box: BoundingBox);
-    fn filter2d(&mut self, id1: FilterId, bounding_box1: BoundingBox, id2: FilterId, bounding_box2: BoundingBox);
+    fn filter(&mut self, id: FilterId, bounding_box: Rect);
+    fn filter2d(&mut self, id1: FilterId, bounding_box1: Rect, id2: FilterId, bounding_box2: Rect);
 
     fn stencil(&mut self, geometry: &[Triangle<Position>]);
     fn pop_stencil(&mut self);
@@ -159,13 +159,13 @@ impl InnerRenderContext for NoopRenderContext {
 
     fn pop_transform(&mut self) {}
 
-    fn clip(&mut self, _bounding_box: BoundingBox) {}
+    fn clip(&mut self, _bounding_box: Rect) {}
 
     fn pop_clip(&mut self) {}
 
-    fn filter(&mut self, _id: FilterId, _bounding_box: BoundingBox) {}
+    fn filter(&mut self, _id: FilterId, _bounding_box: Rect) {}
 
-    fn filter2d(&mut self, _id1: FilterId, _bounding_box1: BoundingBox, _id2: FilterId, _bounding_box2: BoundingBox) {}
+    fn filter2d(&mut self, _id1: FilterId, _bounding_box1: Rect, _id2: FilterId, _bounding_box2: Rect) {}
 
     fn stencil(&mut self, _geometry: &[Triangle<Position>]) {}
 

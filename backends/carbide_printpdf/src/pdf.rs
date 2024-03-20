@@ -14,8 +14,8 @@ use carbide_core::draw::{Dimension, ImageContext, Position};
 use carbide_core::environment::Environment;
 use carbide_core::event::NoopEventSink;
 use carbide_core::layout::{BasicLayouter, Layout, Layouter};
-use carbide_core::render::{PrimitiveKind, Primitives, Render, RenderContext};
-use carbide_core::text::{FontFamily, FontId, FontStyle, FontWeight};
+use carbide_core::render::{Render, RenderContext};
+use carbide_core::text::{FontId, FontStyle, FontWeight};
 use carbide_core::widget::{Empty, AnyWidget, WidgetExt};
 use carbide_core::window::TWindow;
 use crate::image_context::PDFImageContext;
@@ -50,7 +50,7 @@ impl Pdf {
             document
         }
     }
-
+/*
     /// Locates the default asset folder and tries to load fonts from a subfolder called /fonts.
     /// For each sub folder in the fonts folder will create a new family with the name of that folder
     /// and load in any fonts within it.
@@ -99,7 +99,7 @@ impl Pdf {
         let font_path = assets.join(path.as_ref());
 
         self.environment.insert_font_from_file(font_path).0
-    }
+    }*/
 
     pub fn set_widgets(&mut self, widgets: Box<dyn AnyWidget>) {
         self.widgets = widgets;
@@ -321,7 +321,9 @@ impl Pdf {
             }
         }*/
 
-        let font_id = self.environment.get_font_family("system-font").get_best_fit(FontWeight::Normal, FontStyle::Normal);
+        todo!()
+
+        /*let font_id = self.environment.get_font_family("system-font").get_best_fit(FontWeight::Normal, FontStyle::Normal);
         let inner_font = self.environment.get_font(font_id);
         let font_path = inner_font.path();
         let path = Path::new(&font_path);
@@ -343,7 +345,7 @@ impl Pdf {
             (layout.positioner())(Position::new(0.0, 0.0), page_dimensions / environment.scale_factor(), &mut self.widgets);
 
             self.widgets.position_children(environment);
-            self.widgets.render(&mut RenderContext::new(&mut context), environment);
+            self.widgets.render(&mut RenderContext::new(&mut context), environment.env);
         });
 
 
@@ -353,13 +355,13 @@ impl Pdf {
         self.document.save(&mut BufWriter::new(File::create(path.clone()).unwrap()))
             .unwrap();
 
-        path
+        path*/
     }
 }
 
 fn convert_position_to_point(position: Position, page_dimensions: Dimension) -> Point {
-    let x = Mm(position.x() / 2.0);
-    let y = Mm(page_dimensions.height - position.y() / 2.0);
+    let x = Mm(position.x / 2.0);
+    let y = Mm(page_dimensions.height - position.y / 2.0);
 
     println!("{:?}, {:?}", x, y);
     Point::new(x, y)

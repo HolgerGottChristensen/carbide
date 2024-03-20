@@ -5,8 +5,7 @@ use carbide_core::window::TWindow;
 use carbide_printpdf::Pdf;
 
 fn main() {
-    let mut pdf = Pdf::new("test_rectangle")
-        .with_asset_fonts();
+    let mut pdf = Pdf::new("test_rectangle");
 
     //pdf.set_widgets(Rectangle::new().fill(EnvironmentColor::Red).frame(100.0, 100.0));
 

@@ -10,7 +10,8 @@ use carbide_core::widget::*;
 use carbide_core::task;
 use carbide_wgpu::{Application, Window};
 use carbide_core::draw::Position;
-
+use carbide::CommonWidgetImpl;
+/*
 fn main() {
     CarbideUI!{
         struct AlbumDetail {
@@ -172,5 +173,9 @@ fn main() {
     ).close_application_on_window_close());
 
     application.launch();
+
+}*/
+
+fn main() {
 
 }

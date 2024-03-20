@@ -2,12 +2,12 @@ use std::collections::HashMap;
 use std::path::Path;
 use printpdf::{Color, ImageTransform, IndirectFontRef, Mm, OP_PATH_CONST_LINE_TO, OP_PATH_CONST_MOVE_TO, OP_PATH_PAINT_FILL_NZ, PdfLayerReference, Point, Pt, Px, Rgb};
 use printpdf::lopdf::content::Operation;
-use carbide_core::draw::{BoundingBox, Dimension, InnerImageContext, Position, Rect, Texture, TextureFormat};
+use carbide_core::draw::{Dimension, InnerImageContext, Position, Rect, Texture, TextureFormat};
 use carbide_core::draw::draw_style::DrawStyle;
 use carbide_core::draw::image::ImageId;
 use carbide_core::draw::shape::triangle::Triangle;
 use carbide_core::render::{CarbideTransform, InnerRenderContext};
-use carbide_core::text::{Glyph, InnerTextContext, TextId};
+use carbide_core::text::{InnerTextContext, TextId};
 use carbide_core::widget::FilterId;
 use printpdf::Image as PdfImage;
 use carbide_core::image::{DynamicImage, RgbaImage};
@@ -45,7 +45,7 @@ impl InnerRenderContext for PDFRenderContext {
         todo!()
     }
 
-    fn clip(&mut self, bounding_box: BoundingBox) {
+    fn clip(&mut self, bounding_box: Rect) {
         println!("Clip");
         let point1 = convert_position_to_point(bounding_box.top_left(), self.page_dimensions);
         let point2 = convert_position_to_point(bounding_box.top_right(), self.page_dimensions);
@@ -82,11 +82,11 @@ impl InnerRenderContext for PDFRenderContext {
         self.pdf_layer_reference.add_operation(Operation::new("Q", vec![]));
     }
 
-    fn filter(&mut self, id: FilterId, bounding_box: BoundingBox) {
+    fn filter(&mut self, id: FilterId, bounding_box: Rect) {
         todo!()
     }
 
-    fn filter2d(&mut self, id1: FilterId, bounding_box1: BoundingBox, id2: FilterId, bounding_box2: BoundingBox) {
+    fn filter2d(&mut self, id1: FilterId, bounding_box1: Rect, id2: FilterId, bounding_box2: Rect) {
         todo!()
     }
 
@@ -220,8 +220,8 @@ impl InnerRenderContext for PDFRenderContext {
         })
     }
 
-    fn text(&mut self, text: TextId, ctx: &mut InnerTextContext) {
-        self.pdf_layer_reference.begin_text_section();
+    fn text(&mut self, text: TextId, ctx: &mut dyn InnerTextContext) {
+        /*self.pdf_layer_reference.begin_text_section();
 
         for glyph in text.iter() {
             let point_x = glyph.position().x();
@@ -233,7 +233,7 @@ impl InnerRenderContext for PDFRenderContext {
             self.pdf_layer_reference.set_text_cursor(Mm(-point_x), Mm(-point_y));
         }
 
-        self.pdf_layer_reference.end_text_section();
+        self.pdf_layer_reference.end_text_section();*/
     }
 
     fn layer(&mut self, index: u32) {
@@ -243,12 +243,20 @@ impl InnerRenderContext for PDFRenderContext {
     fn pop_layer(&mut self) {
         todo!()
     }
+
+    fn filter_new(&mut self) {
+        todo!()
+    }
+
+    fn filter_new_pop(&mut self, id: FilterId, color: carbide_core::color::Color) {
+        todo!()
+    }
 }
 
 
 fn convert_position_to_point(position: Position, page_dimensions: Dimension) -> Point {
-    let x = Mm(position.x() / 2.0);
-    let y = Mm(page_dimensions.height - position.y() / 2.0);
+    let x = Mm(position.x / 2.0);
+    let y = Mm(page_dimensions.height - position.y / 2.0);
     //println!("{:?}, {:?}", x, y);
     Point::new(x, y)
 }

@@ -1,4 +1,4 @@
-use carbide_controls::{PlainDatePicker, PlainTextInput};
+use carbide_controls::{PlainDatePicker, PlainPopUpButton, PlainTextInput};
 use carbide_core::draw::Dimension;
 use carbide_core::state::LocalState;
 use carbide_core::widget::*;
@@ -50,7 +50,7 @@ fn main() {
     application.set_scene(Window::new(
         "Focus behavior example - Carbide",
         Dimension::new(400.0, 600.0),
-        *VStack::new(vec![
+        VStack::new((
             PlainTextInput::new(text_state)
                 .font_size(40u32)
                 .padding(EdgeInsets::all(2.0))
@@ -90,10 +90,10 @@ fn main() {
                 .clip()
                 .padding(EdgeInsets::all(30.0)),*/
             //PopUpButton::new(model, selected).padding(EdgeInsets::all(50.0)),
-            PlainDatePicker::new(selected, model)
+            PlainPopUpButton::new(selected, model)
                 .padding(50.0)
                 .boxed(),
-        ])
+        ))
             .spacing(20.0)
     ).close_application_on_window_close());
 

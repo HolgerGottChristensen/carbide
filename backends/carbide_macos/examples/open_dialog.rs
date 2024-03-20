@@ -3,11 +3,10 @@ use std::path::PathBuf;
 use oneshot::RecvError;
 
 use carbide_core::SpawnTask;
-use carbide_core::dialog::FileSpecification;
 use carbide_core::draw::Dimension;
 use carbide_core::environment::{Environment, EnvironmentColor};
 use carbide_core::widget::*;
-use carbide_macos::OpenPanel;
+use carbide_macos::{FileSpecification, OpenPanel};
 use carbide_wgpu::{Application, Window};
 
 fn main() {
