@@ -86,9 +86,9 @@ impl InnerRenderContext for Tris {
 
     fn filter_new(&mut self) {}
 
-    fn filter_new_pop(&mut self, _id: FilterId, _color: Color) {}
+    fn filter_new_pop(&mut self, _id: FilterId, _color: Color, _post_draw: bool) {}
 
-    fn filter_new_pop2d(&mut self, _id: FilterId, _id2: FilterId, _color: Color) {}
+    fn filter_new_pop2d(&mut self, _id: FilterId, _id2: FilterId, _color: Color, _post_draw: bool) {}
 }
 
 pub fn tessellate(shape: &mut dyn Shape, rectangle: &Box2D, path: &dyn Fn(&mut Builder, &Box2D)) {

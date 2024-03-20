@@ -672,7 +672,7 @@ impl InnerRenderContext for WGPURenderContext {
         self.current_bind_group = None;
     }
 
-    fn filter_new_pop(&mut self, id: FilterId, color: Color) {
+    fn filter_new_pop(&mut self, id: FilterId, color: Color, post_draw: bool) {
         match &self.state {
             State::Image { id, start } => {
                 self.push_image_command(id.clone(), *start..self.vertices.len());
@@ -698,7 +698,7 @@ impl InnerRenderContext for WGPURenderContext {
                 .gamma_srgb_to_linear()
                 .pre_multiply()
                 .to_fsa(),
-            mode: MODE_IMAGE,
+            mode: if post_draw { MODE_IMAGE } else { MODE_TEXT },
         };
 
 
@@ -731,10 +731,12 @@ impl InnerRenderContext for WGPURenderContext {
             initial_copy: false,
         });
 
-        self.render_pass.push(RenderPass::Normal { commands: vec![
-            RenderPassCommand::SetBindGroup { bind_group: WGPUBindGroup::Target(1) },
-            RenderPassCommand::Draw { vertex_range: range }
-        ], target_index: 0 });
+        if post_draw {
+            self.render_pass.push(RenderPass::Normal { commands: vec![
+                RenderPassCommand::SetBindGroup { bind_group: WGPUBindGroup::Target(1) },
+                RenderPassCommand::Draw { vertex_range: range }
+            ], target_index: 0 });
+        }
 
         self.current_bind_group = None;
 
@@ -744,7 +746,7 @@ impl InnerRenderContext for WGPURenderContext {
         };
     }
 
-    fn filter_new_pop2d(&mut self, id: FilterId, id2: FilterId, color: Color) {
+    fn filter_new_pop2d(&mut self, id: FilterId, id2: FilterId, color: Color, post_draw: bool) {
         match &self.state {
             State::Image { id, start } => {
                 self.push_image_command(id.clone(), *start..self.vertices.len());
@@ -770,7 +772,7 @@ impl InnerRenderContext for WGPURenderContext {
                 .gamma_srgb_to_linear()
                 .pre_multiply()
                 .to_fsa(),
-            mode: MODE_IMAGE,
+            mode: if post_draw { MODE_IMAGE } else { MODE_TEXT },
         };
 
 
@@ -813,10 +815,12 @@ impl InnerRenderContext for WGPURenderContext {
             initial_copy: false,
         });
 
-        self.render_pass.push(RenderPass::Normal { commands: vec![
-            RenderPassCommand::SetBindGroup { bind_group: WGPUBindGroup::Target(1) },
-            RenderPassCommand::Draw { vertex_range: range }
-        ], target_index: 0 });
+        if post_draw {
+            self.render_pass.push(RenderPass::Normal { commands: vec![
+                RenderPassCommand::SetBindGroup { bind_group: WGPUBindGroup::Target(1) },
+                RenderPassCommand::Draw { vertex_range: range }
+            ], target_index: 0 });
+        }
 
         self.current_bind_group = None;
 
