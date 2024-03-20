@@ -4,14 +4,14 @@ use carbide::event::Key;
 use crate::color::RED;
 use crate::draw::{Color, Rect};
 use crate::draw::Dimension;
-use crate::environment::{Environment, EnvironmentColor};
+use crate::environment::{Environment, EnvironmentColor, IntoColorReadState};
 use crate::event::{KeyboardEventContext, ModifierKey};
 use crate::flags::WidgetFlag;
 use crate::focus::Focus;
 use crate::render::Style;
 use crate::state::{IntoReadState, RMap1};
 use crate::state::{IntoState, ReadState, StateContract};
-use crate::widget::{Absolute, Action, AnyWidget, AspectRatio, Background, Border, Changed, Clip, ClipShape, ContentMode, CornerRadii, EdgeInsets, EnvUpdating, Flagged, Flexibility, Frame, GeometryReader, Hidden, MouseArea, Offset, OnKey, OnKeyAction, Padding, Rotation3DEffect, RoundedRectangle, Scroll, Shape, Transform};
+use crate::widget::{Absolute, Action, AnyWidget, AspectRatio, Background, Border, Changed, Clip, ClipShape, ContentMode, CornerRadii, EdgeInsets, EnvUpdating, Flagged, Flexibility, Frame, GeometryReader, Hidden, MouseArea, Offset, OnKey, OnKeyAction, Padding, Rotation3DEffect, RoundedRectangle, Scroll, Shadow, Shape, Transform};
 use crate::widget::OnChange;
 use crate::widget::Widget;
 
@@ -180,5 +180,11 @@ pub trait WidgetExt: Widget + Sized {
     fn on_key_released<A2: OnKeyAction>(self, action: A2) -> OnKey<fn(&Key, ModifierKey, &mut KeyboardEventContext), A2, Self> {
         OnKey::new(self)
             .on_key_released(action)
+    }
+
+    fn shadow<S: IntoReadState<f64>, C: IntoReadState<Color>, X: IntoReadState<i32>, Y: IntoReadState<i32>>(self, sigma: S, color: C, x: X, y: Y) -> Shadow<Self, C::Output, S::Output, X::Output, Y::Output> {
+        Shadow::new(sigma, self)
+            .shadow_color(color)
+            .shadow_offset(x, y)
     }
 }

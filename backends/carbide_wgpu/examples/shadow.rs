@@ -34,14 +34,11 @@ fn main() {
         Window::new(
             "Shadow example",
             Dimension::new(600.0, 600.0),
-            Shadow::new(
-                sigma,
-                VStack::new((
-                    Text::new("Hello world!").font_size(42),
-                    Image::new_icon("images/rust.png")
-                )).foreground_color(Color::new_rgba(170, 170, 170, 255))
-            ).shadow_color(color)
-                .shadow_offset(offset_x, offset_y)
+            VStack::new((
+                Text::new("Hello world!").font_size(42),
+                Image::new_icon("images/rust.png")
+            )).foreground_color(Color::new_rgba(170, 170, 170, 255))
+                .shadow(sigma, color, offset_x, offset_y)
         ).close_application_on_window_close()
     );
 
