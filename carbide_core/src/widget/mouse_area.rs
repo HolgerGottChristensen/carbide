@@ -1,6 +1,6 @@
 use std::fmt::{Debug, Formatter};
-use bitflags::Flags;
 
+use bitflags::Flags;
 use dyn_clone::DynClone;
 
 use carbide_core::cursor::MouseCursor;
@@ -8,7 +8,7 @@ use carbide_core::draw::{Dimension, Position};
 use carbide_core::environment::Environment;
 use carbide_core::event::{
     Key, KeyboardEvent, KeyboardEventHandler, ModifierKey, MouseButton, MouseEvent,
-    MouseEventHandler, OtherEventHandler,
+    MouseEventHandler,
 };
 use carbide_core::flags::WidgetFlag;
 use carbide_core::focus::Focus;
@@ -16,8 +16,7 @@ use carbide_core::state::State;
 use carbide_core::widget::{AnyWidget, CommonWidget, Widget, WidgetExt, WidgetId};
 use carbide_macro::carbide_default_builder2;
 
-use crate::event::{KeyboardEventContext, MouseEventContext, OtherEventContext};
-use crate::event::Event;
+use crate::event::{KeyboardEventContext, MouseEventContext};
 use crate::state::IntoState;
 use crate::widget::Empty;
 

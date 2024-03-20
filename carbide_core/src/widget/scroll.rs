@@ -108,7 +108,7 @@ impl<W: Widget> Scroll<W> {
 }
 
 impl<W: Widget> MouseEventHandler for Scroll<W> {
-    fn handle_mouse_event(&mut self, event: &MouseEvent, ctx: &mut MouseEventContext) {
+    fn handle_mouse_event(&mut self, event: &MouseEvent, _ctx: &mut MouseEventContext) {
         match event {
             MouseEvent::Scroll {
                 x, y, modifiers, ..
@@ -230,7 +230,7 @@ impl<W: Widget> MouseEventHandler for Scroll<W> {
 }
 
 impl<W: Widget> OtherEventHandler for Scroll<W> {
-    fn handle_other_event(&mut self, _event: &Event, ctx: &mut OtherEventContext) {
+    fn handle_other_event(&mut self, _event: &Event, _ctx: &mut OtherEventContext) {
         match _event {
             Event::Window(_) => {
                 self.keep_y_within_bounds();

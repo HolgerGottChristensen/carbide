@@ -1,4 +1,3 @@
-use bitflags::Flags;
 use crate::environment::Environment;
 use crate::flags::WidgetFlag;
 use crate::focus::focus::Focus;

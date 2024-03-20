@@ -1,4 +1,4 @@
-use bitflags::{bitflags, Flags};
+use bitflags::bitflags;
 
 // Defining every combination to allow assignment in static expressions.
 bitflags! {

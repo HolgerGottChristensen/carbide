@@ -1,14 +1,10 @@
-use carbide_core::CommonWidgetImpl;
-use carbide_core::render::RenderContext;
-use carbide_macro::carbide_default_builder2;
 use crate::color::BLACK;
-
-use crate::draw::{Color, Dimension, Position, Rect};
+use crate::CommonWidgetImpl;
+use crate::draw::{Color, Dimension, Position};
 use crate::environment::Environment;
-use crate::render::Render;
+use crate::render::{Render, RenderContext};
 use crate::state::{IntoReadState, ReadState};
-use crate::utils::gaussian;
-use crate::widget::{BlurType, CommonWidget, Empty, FilterId, ImageFilter, ImageFilterValue, IntoWidget, Widget, WidgetExt, WidgetId};
+use crate::widget::{CommonWidget, Empty, FilterId, ImageFilter, IntoWidget, Widget, WidgetExt, WidgetId};
 
 #[derive(Debug, Clone, Widget)]
 #[carbide_exclude(Render)]

@@ -1,10 +1,7 @@
-use carbide::environment::EnvironmentFontSize;
-use carbide::widget::WidgetExt;
-use crate::draw::Color;
-use crate::environment::EnvironmentColor;
+use crate::environment::{EnvironmentColor, EnvironmentFontSize};
 use crate::render::Style;
-use crate::state::{IntoReadState, ReadState};
-use crate::widget::{Text, Widget};
+use crate::state::IntoReadState;
+use crate::widget::{Text, Widget, WidgetExt};
 
 // ---------------------------------------------------
 //  Definitions

@@ -1,8 +1,9 @@
 use smallvec::{SmallVec, smallvec};
+
 use crate::CommonWidgetImpl;
 use crate::draw::{Dimension, Position, Scalar};
-use crate::layout::{calculate_size_vstack, Layout, LayoutContext, position_children_vstack};
-use crate::widget::{AnyWidget, CommonWidget, CrossAxisAlignment, Widget, WidgetExt, WidgetId, WidgetSequence};
+use crate::layout::{Layout, LayoutContext};
+use crate::widget::{AnyWidget, CommonWidget, Widget, WidgetExt, WidgetId, WidgetSequence};
 
 #[derive(Debug, Clone)]
 pub enum VGridColumn {

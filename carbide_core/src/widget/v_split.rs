@@ -2,8 +2,7 @@ use carbide_macro::carbide_default_builder2;
 
 use crate::cursor::MouseCursor;
 use crate::draw::{Dimension, Position};
-use crate::event::{MouseEvent, MouseEventContext, MouseEventHandler, OtherEventContext, OtherEventHandler};
-use crate::event::Event;
+use crate::event::{MouseEvent, MouseEventContext, MouseEventHandler};
 use crate::layout::{Layout, LayoutContext};
 use crate::state::{IntoState, State};
 use crate::widget::{AnyWidget, CommonWidget, CrossAxisAlignment, Empty, SplitType, Widget, WidgetExt, WidgetId, WidgetSequence};
@@ -95,7 +94,7 @@ impl<S: State<T=f64>, L: Widget, T: Widget> VSplit<S, L, T> {
 }
 
 impl<S: State<T=f64>, L: Widget, T: Widget> MouseEventHandler for VSplit<S, L, T> {
-    fn handle_mouse_event(&mut self, event: &MouseEvent, ctx: &mut MouseEventContext) {
+    fn handle_mouse_event(&mut self, event: &MouseEvent, _ctx: &mut MouseEventContext) {
         let press_margin = 5.0;
 
         match event {

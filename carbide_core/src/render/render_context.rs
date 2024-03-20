@@ -179,7 +179,7 @@ impl InnerRenderContext for NoopRenderContext {
 
     fn image(&mut self, _id: ImageId, _bounding_box: Rect, _source_rect: Rect, _mode: u32) {}
 
-    fn text(&mut self, text: TextId, ctx: &mut dyn InnerTextContext) {}
+    fn text(&mut self, _text: TextId, _ctx: &mut dyn InnerTextContext) {}
 
     fn layer(&mut self, _index: u32) {}
 
@@ -187,5 +187,5 @@ impl InnerRenderContext for NoopRenderContext {
 
     fn filter_new(&mut self) {}
 
-    fn filter_new_pop(&mut self, id: FilterId, color: Color) {}
+    fn filter_new_pop(&mut self, _id: FilterId, _color: Color) {}
 }

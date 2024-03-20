@@ -12,7 +12,7 @@ macro_rules! env_color {
     };
 }
 
-pub fn light_mode_color_theme() -> Vec<EnvironmentVariable> {
+pub(crate) fn light_mode_color_theme() -> Vec<EnvironmentVariable> {
     vec![
         EnvironmentVariable::EnvironmentColor {
             key: EnvironmentColor::Blue,
@@ -167,7 +167,7 @@ pub fn light_mode_color_theme() -> Vec<EnvironmentVariable> {
     ]
 }
 
-pub fn dark_mode_color_theme() -> Vec<EnvironmentVariable> {
+pub(crate) fn dark_mode_color_theme() -> Vec<EnvironmentVariable> {
     vec![
         EnvironmentVariable::EnvironmentColor {
             key: EnvironmentColor::Blue,

@@ -6,15 +6,14 @@ use lyon::tessellation::{
     StrokeVertex, VertexBuffers,
 };
 
-use carbide_core::CommonWidgetImpl;
-use carbide_core::render::RenderContext;
 use carbide_macro::carbide_default_builder2;
 
-use crate::draw::{Color, Dimension, Position, Rect, Scalar};
+use crate::CommonWidgetImpl;
+use crate::draw::{Dimension, Position, Rect, Scalar};
 use crate::draw::shape::triangle::Triangle;
 use crate::environment::Environment;
-use crate::render::{Render};
-use crate::state::NewStateSync;
+use crate::render::Render;
+use crate::render::RenderContext;
 use crate::widget::{CommonWidget, PrimitiveStore, Shape, ShapeStyle, StrokeStyle, Widget, WidgetExt, WidgetId};
 use crate::widget::canvas::{Context, ShapeStyleWithOptions};
 
@@ -149,10 +148,10 @@ impl<C: CanvasContext> Shape for Canvas<C> {
 
         for (path, options) in paths {
             match options {
-                ShapeStyleWithOptions::Fill(fill_options, mut color) => {
+                ShapeStyleWithOptions::Fill(fill_options, _) => {
                     triangles.extend(self.get_fill_geometry(path, fill_options));
                 }
-                ShapeStyleWithOptions::Stroke(stroke_options, mut color) => {
+                ShapeStyleWithOptions::Stroke(stroke_options, _) => {
                     triangles.extend(self.get_stroke_geometry(path, stroke_options));
                 }
             }

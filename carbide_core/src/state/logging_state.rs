@@ -1,6 +1,6 @@
 use std::marker::PhantomData;
 use crate::environment::Environment;
-use crate::state::{AnyReadState, AnyState, NewStateSync, ReadState, State, StateContract, ValueRef, ValueRefMut};
+use crate::state::{AnyReadState, AnyState, NewStateSync, State, StateContract, ValueRef, ValueRefMut};
 
 #[derive(Clone, Debug)]
 pub struct LoggingState<T: StateContract, TState: State<T=T> + Clone + 'static>(TState, PhantomData<T>);

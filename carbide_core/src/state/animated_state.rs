@@ -1,17 +1,15 @@
 use std::cell::RefCell;
 use std::fmt::Debug;
-use std::ops::{Add, DerefMut, Mul};
+use std::ops::DerefMut;
 use std::rc::Rc;
 use std::time::{Duration, Instant};
 
-use carbide_core::state::{AnyReadState, NewStateSync, RMap1};
+use crate::state::{AnyReadState, NewStateSync, RMap1};
 use crate::animation::Animatable;
-
 use crate::animation::animation_curve::linear;
 use crate::environment::Environment;
-use crate::state::{AnyState, InnerState, Map1, StateContract};
+use crate::state::{AnyState, InnerState, Map1};
 use crate::state::util::value_cell::{ValueCell, ValueRef, ValueRefMut};
-
 
 #[derive(Clone, Debug)]
 pub enum RepeatMode {

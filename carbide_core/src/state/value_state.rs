@@ -1,14 +1,12 @@
 use std::fmt::{Debug, Formatter};
 
-use carbide_core::state::{AnyState, Map1};
+use carbide_core::state::AnyState;
 use carbide_core::state::NewStateSync;
 
 use crate::draw::Color;
-
 use crate::render::Style;
 use crate::state::{AnyReadState, ReadWidgetState, RState, StateContract, TState, WidgetState};
 use crate::state::{ValueRef, ValueRefMut};
-
 
 // TODO: This should not be needed after the transition to new states.
 

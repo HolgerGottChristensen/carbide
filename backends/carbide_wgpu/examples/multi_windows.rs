@@ -1,5 +1,4 @@
 use carbide_core as carbide; // Required only in internal examples
-// Only necessary for internal examples
 use carbide_core::a;
 use carbide_core::draw::Dimension;
 use carbide_core::environment::{EnvironmentColor, EnvironmentFontSize};

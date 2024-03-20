@@ -75,11 +75,6 @@ pub struct Environment {
     /// remove it from the list.
     async_task_queue: Option<Vec<Box<dyn Fn(&mut Environment) -> bool>>>,
 
-
-    /// A list of queued images. When an image is added to this queue it will be added to the
-    /// window the next frame.
-    queued_images: Option<Vec<(ImageId, DynamicImage)>>,
-
     cursor: MouseCursor,
     mouse_position: Position,
 
@@ -173,7 +168,7 @@ impl Environment {
 
         let filters = HashMap::with_hasher(FxBuildHasher::default());
 
-        let mut res = Environment {
+        let res = Environment {
             stack: env_stack,
             root_alignment: BasicLayouter::Center,
             overlay_map: HashMap::with_hasher(FxBuildHasher::default()),
@@ -184,7 +179,6 @@ impl Environment {
             frame_start_time: Rc::new(RefCell::new(Instant::now())),
             filter_map: filters,
             async_task_queue: Some(vec![]),
-            queued_images: None,
             cursor: MouseCursor::Default,
             mouse_position: Default::default(),
             animations: Some(vec![]),

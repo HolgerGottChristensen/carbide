@@ -1,6 +1,6 @@
 use carbide_controls::Button;
-use carbide_core::a;
 use carbide_core as carbide; // Required only in internal examples
+use carbide_core::a;
 use carbide_core::draw::Dimension;
 use carbide_core::environment::EnvironmentFontSize;
 use carbide_core::state::{LocalState, State};

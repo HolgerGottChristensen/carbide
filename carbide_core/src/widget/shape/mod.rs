@@ -60,19 +60,19 @@ impl AnyWidget for Box<dyn Shape> {}
 
 struct Tris(Vec<Triangle<Position>>);
 impl InnerRenderContext for Tris {
-    fn transform(&mut self, transform: CarbideTransform) {}
+    fn transform(&mut self, _transform: CarbideTransform) {}
 
     fn pop_transform(&mut self) {}
 
-    fn clip(&mut self, bounding_box: Rect) {}
+    fn clip(&mut self, _bounding_box: Rect) {}
 
     fn pop_clip(&mut self) {}
 
-    fn filter(&mut self, id: FilterId, bounding_box: Rect) {}
+    fn filter(&mut self, _id: FilterId, _bounding_box: Rect) {}
 
-    fn filter2d(&mut self, id1: FilterId, bounding_box1: Rect, id2: FilterId, bounding_box2: Rect) {}
+    fn filter2d(&mut self, _id1: FilterId, _bounding_box1: Rect, _id2: FilterId, _bounding_box2: Rect) {}
 
-    fn stencil(&mut self, geometry: &[Triangle<Position>]) {}
+    fn stencil(&mut self, _geometry: &[Triangle<Position>]) {}
 
     fn pop_stencil(&mut self) {}
 
@@ -80,21 +80,21 @@ impl InnerRenderContext for Tris {
         self.0.extend(geometry);
     }
 
-    fn style(&mut self, style: DrawStyle) {}
+    fn style(&mut self, _style: DrawStyle) {}
 
     fn pop_style(&mut self) {}
 
-    fn image(&mut self, id: ImageId, bounding_box: Rect, source_rect: Rect, mode: u32) {}
+    fn image(&mut self, _id: ImageId, _bounding_box: Rect, _source_rect: Rect, _mode: u32) {}
 
-    fn text(&mut self, text: TextId, ctx: &mut dyn InnerTextContext) {}
+    fn text(&mut self, _text: TextId, _ctx: &mut dyn InnerTextContext) {}
 
-    fn layer(&mut self, index: u32) {}
+    fn layer(&mut self, _index: u32) {}
 
     fn pop_layer(&mut self) {}
 
     fn filter_new(&mut self) {}
 
-    fn filter_new_pop(&mut self, id: FilterId, color: Color) {}
+    fn filter_new_pop(&mut self, _id: FilterId, _color: Color) {}
 }
 
 pub fn tessellate(shape: &mut dyn Shape, rectangle: &Box2D, path: &dyn Fn(&mut Builder, &Box2D)) {

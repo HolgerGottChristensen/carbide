@@ -1,7 +1,6 @@
 use crate::CommonWidgetImpl;
 use crate::draw::{Dimension, Position};
 use crate::environment::WidgetTransferAction;
-use crate::render::Render;
 use crate::update::{Update, UpdateContext};
 use crate::widget::{AnyWidget, CommonWidget, Widget, WidgetExt, WidgetId};
 

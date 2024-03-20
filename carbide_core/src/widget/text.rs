@@ -1,21 +1,15 @@
 use std::borrow::Borrow;
 use std::fmt::Debug;
 
-use carbide_core::render::RenderContext;
-use carbide_core::state::IntoReadState;
 use carbide_macro::carbide_default_builder2;
 
 use crate::draw::{Dimension, Position};
-use crate::draw::Color;
-use crate::draw::draw_style::DrawStyle;
 use crate::environment::{Environment, EnvironmentColor, EnvironmentFontSize, IntoColorReadState};
 use crate::layout::{Layout, LayoutContext};
-//use crate::render::text::Text as RenderText;
-use crate::render::{Render, Style};
-use crate::state::{ReadState, StateSync};
+use crate::render::{Render, RenderContext, Style};
+use crate::state::{IntoReadState, ReadState, StateSync};
 use crate::text::{FontStyle, FontWeight, TextDecoration, TextId, TextStyle};
 use crate::widget::{AnyWidget, CommonWidget, Justify, Widget, WidgetExt, WidgetId};
-//use crate::text_old::PositionedGlyph;
 use crate::widget::types::Wrap;
 
 /// Displays some given text centered within a rectangular area.

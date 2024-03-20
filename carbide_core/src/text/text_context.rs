@@ -56,11 +56,11 @@ pub trait InnerTextContext {
 pub struct NOOPTextContext;
 
 impl InnerTextContext for NOOPTextContext {
-    fn calculate_size(&mut self, id: TextId, requested_size: Dimension, env: &mut Environment) -> Dimension {
+    fn calculate_size(&mut self, _id: TextId, _requested_size: Dimension, _env: &mut Environment) -> Dimension {
         unimplemented!()
     }
 
-    fn calculate_position(&mut self, id: TextId, requested_offset: Position, env: &mut Environment) {
+    fn calculate_position(&mut self, _id: TextId, _requested_offset: Position, _env: &mut Environment) {
         unimplemented!()
     }
 
@@ -68,11 +68,11 @@ impl InnerTextContext for NOOPTextContext {
         unimplemented!()
     }
 
-    fn update(&mut self, id: TextId, text: &str, style: &TextStyle) {
+    fn update(&mut self, _id: TextId, _text: &str, _style: &TextStyle) {
         unimplemented!()
     }
 
-    fn render(&mut self, id: TextId, ctx: &mut dyn InnerRenderContext) {
+    fn render(&mut self, _id: TextId, _ctx: &mut dyn InnerRenderContext) {
         unimplemented!()
     }
 
@@ -80,19 +80,19 @@ impl InnerTextContext for NOOPTextContext {
         unimplemented!()
     }
 
-    fn update_cache(&mut self, f: &mut dyn FnMut(&DynamicImage)) {
+    fn update_cache(&mut self, _f: &mut dyn FnMut(&DynamicImage)) {
         unimplemented!()
     }
 
-    fn add_font(&mut self, p: PathBuf) {
+    fn add_font(&mut self, _p: PathBuf) {
         unimplemented!()
     }
 
-    fn hit(&self, id: TextId, position: Position) -> (usize, usize) {
+    fn hit(&self, _id: TextId, _position: Position) -> (usize, usize) {
         unimplemented!()
     }
 
-    fn position_of(&self, id: TextId, line: usize, index: usize) -> Position {
+    fn position_of(&self, _id: TextId, _line: usize, _index: usize) -> Position {
         unimplemented!()
     }
 }

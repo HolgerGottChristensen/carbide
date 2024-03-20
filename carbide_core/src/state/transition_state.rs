@@ -3,10 +3,10 @@ use std::fmt::{Debug, Formatter};
 use std::rc::Rc;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::time::{Duration, Instant};
-use carbide::state::{IntoState, ReadState, ValueCell};
+
 use crate::animation::{Animatable, ease_in_out};
-use crate::environment::{Environment, EnvironmentColor};
-use crate::state::{AnyReadState, AnyState, InnerState, NewStateSync, State, StateContract, ValueRef, ValueRefMut};
+use crate::environment::Environment;
+use crate::state::{AnyReadState, InnerState, NewStateSync, ReadState, StateContract, ValueCell, ValueRef};
 
 #[derive(Clone)]
 pub struct TransitionState<T, S>
@@ -159,7 +159,7 @@ impl<T: StateContract + Animatable<T> + PartialEq, S: ReadState<T=T>> AnyReadSta
 }
 
 impl<T: StateContract + Animatable<T> + PartialEq, S: ReadState<T=T>> Debug for TransitionState<T, S> {
-    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+    fn fmt(&self, _f: &mut Formatter<'_>) -> std::fmt::Result {
         todo!()
     }
 }

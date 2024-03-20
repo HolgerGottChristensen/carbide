@@ -94,7 +94,7 @@ impl<S: ReadState<T=Style> + Clone, F: ReadState<T=Style> + Clone> CommonWidget 
 }
 
 impl<S: ReadState<T=Style> + Clone, F: ReadState<T=Style> + Clone> Layout for Circle<S, F> {
-    fn calculate_size(&mut self, requested_size: Dimension, ctx: &mut LayoutContext) -> Dimension {
+    fn calculate_size(&mut self, requested_size: Dimension, _ctx: &mut LayoutContext) -> Dimension {
         let min_dimension = requested_size.width.min(requested_size.height);
         self.dimension = Dimension::new(min_dimension, min_dimension);
 

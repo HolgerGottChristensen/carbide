@@ -365,7 +365,7 @@ impl<'b, T: Clone + Debug + 'static> ValueRefMut<'b, T> {
             ValueRefMut::CellBorrow { ref mut value, .. } => {
                 f(value.take().unwrap(), s)
             }
-            ValueRefMut::Locked(ref mut value) => {
+            ValueRefMut::Locked(ref mut _value) => {
                 //MappedRwLockReadGuard::map(value, |a| {f(a, s); a});
                 todo!()
             }

@@ -1,8 +1,5 @@
 //! A simple, non-interactive widget for drawing an `Image`.
-
 use std::ops::Deref;
-
-use image::GenericImageView;
 
 use carbide_core::render::RenderContext;
 use carbide_core::state::StateSync;
@@ -100,7 +97,7 @@ impl<Id: ReadState<T=Option<ImageId>>, C: ReadState<T=Style>> Image<Id, C> {
         self
     }
 
-    pub fn color<C2: IntoReadState<Style>>(mut self, color: C2) -> Image<Id, C2::Output> {
+    pub fn color<C2: IntoReadState<Style>>(self, color: C2) -> Image<Id, C2::Output> {
         Image {
             id: self.id,
             image_id: self.image_id,

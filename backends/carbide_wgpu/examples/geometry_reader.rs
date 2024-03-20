@@ -1,5 +1,4 @@
 use carbide_core::draw::{Dimension, Rect};
-use carbide_core::environment::*;
 use carbide_core::state::{LocalState, Map1};
 use carbide_core::widget::*;
 use carbide_wgpu::{Application, Window};

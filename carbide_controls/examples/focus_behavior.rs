@@ -1,4 +1,4 @@
-use carbide_controls::{PlainDatePicker, PlainPopUpButton, PlainTextInput};
+use carbide_controls::{PlainPopUpButton, PlainTextInput};
 use carbide_core::draw::Dimension;
 use carbide_core::state::LocalState;
 use carbide_core::widget::*;

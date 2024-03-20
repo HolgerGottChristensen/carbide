@@ -95,7 +95,7 @@ impl<S: State<T=f64>, L: Widget, T: Widget> HSplit<S, L, T> {
 }
 
 impl<S: State<T=f64>, L: Widget, T: Widget> MouseEventHandler for HSplit<S, L, T> {
-    fn handle_mouse_event(&mut self, event: &MouseEvent, ctx: &mut MouseEventContext) {
+    fn handle_mouse_event(&mut self, event: &MouseEvent, _ctx: &mut MouseEventContext) {
         if !self.draggable {
             return;
         }

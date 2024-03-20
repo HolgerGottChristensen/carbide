@@ -1,14 +1,10 @@
 use std::fmt::{Debug, Formatter};
-use dyn_clone::DynClone;
-use carbide_core::render::RenderContext;
-use carbide_core::state::IntoReadState;
+
 use carbide_macro::carbide_default_builder2;
 
 use crate::CommonWidgetImpl;
-use crate::draw::{Color, Dimension, Position, Rect};
-use crate::draw::draw_style::DrawStyle;
+use crate::draw::{Dimension, Position};
 use crate::environment::Environment;
-use crate::layout::{Layout, LayoutContext};
 use crate::render::Render;
 use crate::state::{ReadState, StateContract, StateSync};
 use crate::widget::{CommonWidget, Empty, Widget, WidgetExt, WidgetId};

@@ -1,6 +1,5 @@
 use std::time::Duration;
 
-use carbide_core::task;
 use carbide_core as carbide; // Required only in internal examples
 use carbide_core::asynchronous::sleep;
 use carbide_core::color::WHITE;
@@ -9,6 +8,7 @@ use carbide_core::environment::EnvironmentColor;
 use carbide_core::render::Style;
 use carbide_core::state::{LocalState, Map1, State};
 use carbide_core::state::ReadStateExtNew;
+use carbide_core::task;
 use carbide_core::widget::*;
 use carbide_wgpu::{Application, Window};
 
