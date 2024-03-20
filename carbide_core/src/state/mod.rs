@@ -18,7 +18,6 @@ pub use self::ignore_writes_state::IgnoreWritesState;
 //pub use self::index_state::IndexableState;
 pub use self::index_state::IndexState;
 pub use self::local_state::LocalState;
-pub use self::map_owned_state::*;
 pub use self::read_state::*;
 pub use self::into_read_state::*;
 pub use self::into_state::*;
@@ -35,7 +34,6 @@ pub use self::transition_state::*;
 
 mod animated_state;
 mod local_state;
-mod map_owned_state;
 mod state;
 mod state_ext;
 mod state_sync;

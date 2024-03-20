@@ -1,5 +1,4 @@
 use std::sync::atomic::{AtomicU32, Ordering};
-use uuid::Uuid;
 use wgpu::{BindGroup, Texture, TextureDescriptor, TextureFormat, TextureUsages, TextureView};
 use crate::wgpu_window::{ATLAS_CACHE_TEXTURE, DEVICE_QUEUE, MAIN_SAMPLER, MAIN_TEXTURE_BIND_GROUP_LAYOUT};
 

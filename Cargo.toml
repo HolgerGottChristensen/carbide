@@ -33,4 +33,6 @@ members = [
 
 [workspace.dependencies]
 dyn-clone = "1.0.5"
-chrono = "0.4.30"
+chrono = "0.4"
+cgmath = "0.18"
+raw-window-handle = "0.5"
