@@ -11,6 +11,7 @@ pub enum Alignment {
     BottomLeading,
     Bottom,
     BottomTrailing,
+    Custom(f64, f64),
 }
 
 impl Alignment {
@@ -25,6 +26,9 @@ impl Alignment {
             Alignment::BottomLeading => Alignment::bottom_leading(position, dimension),
             Alignment::Bottom => Alignment::bottom(position, dimension),
             Alignment::BottomTrailing => Alignment::bottom_trailing(position, dimension),
+            Alignment::Custom(x, y) => {
+                Position::new(position.x + dimension.width * *x, position.y + dimension.height * *y)
+            }
         }
     }
 

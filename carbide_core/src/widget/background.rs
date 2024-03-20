@@ -7,7 +7,7 @@ use crate::draw::{Dimension, Position};
 use crate::environment::Environment;
 use crate::layout::{BasicLayouter, Layout, LayoutContext, Layouter};
 use crate::render::Render;
-use crate::widget::{AnyWidget, Empty, Widget, WidgetExt, WidgetId};
+use crate::widget::{Empty, Widget, WidgetExt, WidgetId};
 
 /// Takes a child and a background widget, and sizes the background the same as the child.
 /// The background will be shown behind the child widget.
@@ -57,7 +57,7 @@ impl<F: Widget, B: Widget> Background<F, B> {
     }
 }
 
-impl<F: AnyWidget + Clone, B: AnyWidget + Clone> Layout for Background<F, B> {
+impl<F: Widget, B: Widget> Layout for Background<F, B> {
     fn calculate_size(&mut self, requested_size: Dimension, ctx: &mut LayoutContext) -> Dimension {
         let child_size = self.child.calculate_size(requested_size, ctx);
         self.background.calculate_size(child_size, ctx);
@@ -77,15 +77,15 @@ impl<F: AnyWidget + Clone, B: AnyWidget + Clone> Layout for Background<F, B> {
     }
 }
 
-impl<F: AnyWidget + Clone, B: AnyWidget + Clone> Render for Background<F, B> {
+impl<F: Widget, B: Widget> Render for Background<F, B> {
     fn render(&mut self, context: &mut RenderContext, env: &mut Environment) {
         self.background.render(context, env);
         self.child.render(context, env);
     }
 }
 
-impl<F: AnyWidget + Clone, B: AnyWidget + Clone> CommonWidget for Background<F, B> {
+impl<F: Widget, B: Widget> CommonWidget for Background<F, B> {
     CommonWidgetImpl!(self, id: self.id, child: self.child, position: self.position, dimension: self.dimension, alignment: self.alignment);
 }
 
-impl<F: AnyWidget + Clone, B: AnyWidget + Clone> WidgetExt for Background<F, B> {}
+impl<F: Widget, B: Widget> WidgetExt for Background<F, B> {}

@@ -3,8 +3,8 @@ use std::path::Path;
 use printpdf::{Color, ImageTransform, IndirectFontRef, Mm, OP_PATH_CONST_LINE_TO, OP_PATH_CONST_MOVE_TO, OP_PATH_PAINT_FILL_NZ, PdfLayerReference, Point, Pt, Px, Rgb};
 use printpdf::lopdf::content::Operation;
 use carbide_core::draw::{Dimension, InnerImageContext, Position, Rect, Texture, TextureFormat};
-use carbide_core::draw::draw_style::DrawStyle;
-use carbide_core::draw::image::ImageId;
+use carbide_core::draw::DrawStyle;
+use carbide_core::draw::ImageId;
 use carbide_core::draw::shape::triangle::Triangle;
 use carbide_core::render::{CarbideTransform, InnerRenderContext};
 use carbide_core::text::{InnerTextContext, TextId};
@@ -248,7 +248,11 @@ impl InnerRenderContext for PDFRenderContext {
         todo!()
     }
 
-    fn filter_new_pop(&mut self, id: FilterId, color: carbide_core::color::Color) {
+    fn filter_new_pop(&mut self, id: FilterId, color: carbide_core::color::Color, post_draw: bool) {
+        todo!()
+    }
+
+    fn filter_new_pop2d(&mut self, id: FilterId, id2: FilterId, color: carbide_core::color::Color, post_draw: bool) {
         todo!()
     }
 }

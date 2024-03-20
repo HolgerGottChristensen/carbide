@@ -108,7 +108,7 @@ impl<C: Widget> OtherEventHandler for Overlay<C> {
     }
 }
 
-impl<C: AnyWidget + Clone> Layout for Overlay<C> {
+impl<C: Widget> Layout for Overlay<C> {
     fn calculate_size(&mut self, requested_size: Dimension, ctx: &mut LayoutContext) -> Dimension {
         if let Some(overlay) = &mut self.overlay {
             overlay.calculate_size(requested_size, ctx);
@@ -133,11 +133,11 @@ impl<C: AnyWidget + Clone> Layout for Overlay<C> {
     }
 }
 
-impl<C: AnyWidget + Clone> CommonWidget for Overlay<C> {
+impl<C: Widget> CommonWidget for Overlay<C> {
     CommonWidgetImpl!(self, id: self.id, child: self.child, position: self.position, dimension: self.dimension, flexibility: 0);
 }
 
-impl<C: AnyWidget + Clone> Render for Overlay<C> {
+impl<C: Widget> Render for Overlay<C> {
     fn render(&mut self, context: &mut RenderContext, env: &mut Environment) {
         self.child.render(context, env);
 
@@ -147,4 +147,4 @@ impl<C: AnyWidget + Clone> Render for Overlay<C> {
     }
 }
 
-impl<C: AnyWidget + Clone> WidgetExt for Overlay<C> {}
+impl<C: Widget> WidgetExt for Overlay<C> {}

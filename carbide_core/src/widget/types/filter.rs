@@ -128,6 +128,7 @@ impl ImageFilter {
 
     // http://demofox.org/gauss.html
     // https://lisyarus.github.io/blog/graphics/2023/02/24/blur-coefficients-generator.html
+    // https://drafts.fxtf.org/filter-effects/#feGaussianBlurElement
     pub fn gaussian_blur(sigma: f64) -> ImageFilter {
         let radius = (3.0 * sigma).round() as i32;
         let mut res = vec![];

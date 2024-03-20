@@ -28,6 +28,7 @@ members = [
     "examples/fractal",
     "examples/mandelbrot",
     "examples/othello",
+    "examples/drawing_paths_and_shapes",
     "carbide",
 ]
 

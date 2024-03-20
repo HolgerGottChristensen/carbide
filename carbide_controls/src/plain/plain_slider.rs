@@ -10,7 +10,7 @@ use carbide_core::focus::{Focus, Focusable, Refocus};
 use carbide_core::layout::Layout;
 use carbide_core::render::{Render, RenderContext};
 use carbide_core::state::{AnyReadState, AnyState, IntoReadState, IntoState, LocalState, Map3, Map4, ReadState, ReadStateExtNew, State, StateExtNew};
-use carbide_core::widget::{CommonWidget, Empty, Rectangle, AnyWidget, WidgetExt, WidgetId, Widget};
+use carbide_core::widget::{CommonWidget, Empty, Rectangle, WidgetExt, WidgetId, Widget};
 use crate::{enabled_state, EnabledState};
 
 const SMOOTH_VALUE_INCREMENT: f64 = 0.05;
@@ -77,9 +77,9 @@ impl<
     S: ReadState<T=V>,
     E: ReadState<T=V>,
     P: ReadState<T=Option<V>>,
-    Th: AnyWidget + Clone,
-    In: AnyWidget + Clone,
-    Bg: AnyWidget + Clone,
+    Th: Widget,
+    In: Widget,
+    Bg: Widget,
     En: ReadState<T=bool>,
 > PlainSlider<V, F, St, S, E, P, Th, In, Bg, En> {
     pub fn step<P2: IntoReadState<Option<V>>>(self, steps: P2) -> PlainSlider<V, F, St, S, E, P2::Output, Th, In, Bg, En> {
@@ -188,9 +188,9 @@ impl<
         S2: ReadState<T=V2>,
         E2: ReadState<T=V2>,
         P2: ReadState<T=Option<V2>>,
-        Th2: AnyWidget + Clone,
-        In2: AnyWidget + Clone,
-        Bg2: AnyWidget + Clone,
+        Th2: Widget,
+        In2: Widget,
+        Bg2: Widget,
         En2: ReadState<T=bool>,
     >(focus: F2, state: St2, start: S2, end: E2, steps: P2, thumb_delegate: Delegate<Th2, V2>, track_delegate: Delegate<In2, V2>, background_delegate: Delegate<Bg2, V2>, enabled: En2) -> PlainSlider<V2, F2, St2, S2, E2, P2, Th2, In2, Bg2, En2> {
         let percent = Map4::map(
@@ -244,9 +244,9 @@ impl<
     S: ReadState<T=V>,
     E: ReadState<T=V>,
     P: ReadState<T=Option<V>>,
-    Th: AnyWidget + Clone,
-    In: AnyWidget + Clone,
-    Bg: AnyWidget + Clone,
+    Th: Widget,
+    In: Widget,
+    Bg: Widget,
     En: ReadState<T=bool>,
 > Focusable for PlainSlider<V, F, St, S, E, P, Th, In, Bg, En> {
     fn focus_children(&self) -> bool {
@@ -261,9 +261,9 @@ impl<
     S: ReadState<T=V>,
     E: ReadState<T=V>,
     P: ReadState<T=Option<V>>,
-    Th: AnyWidget + Clone,
-    In: AnyWidget + Clone,
-    Bg: AnyWidget + Clone,
+    Th: Widget,
+    In: Widget,
+    Bg: Widget,
     En: ReadState<T=bool>,
 > KeyboardEventHandler for PlainSlider<V, F, St, S, E, P, Th, In, Bg, En> {
     fn handle_keyboard_event(&mut self, event: &KeyboardEvent, _ctx: &mut KeyboardEventContext) {
@@ -306,9 +306,9 @@ impl<
     S: ReadState<T=V>,
     E: ReadState<T=V>,
     P: ReadState<T=Option<V>>,
-    Th: AnyWidget + Clone,
-    In: AnyWidget + Clone,
-    Bg: AnyWidget + Clone,
+    Th: Widget,
+    In: Widget,
+    Bg: Widget,
     En: ReadState<T=bool>,
 > MouseEventHandler for PlainSlider<V, F, St, S, E, P, Th, In, Bg, En> {
     fn handle_mouse_event(&mut self, event: &MouseEvent, ctx: &mut MouseEventContext) {
@@ -362,9 +362,9 @@ impl<
     S: ReadState<T=V>,
     E: ReadState<T=V>,
     P: ReadState<T=Option<V>>,
-    Th: AnyWidget + Clone,
-    In: AnyWidget + Clone,
-    Bg: AnyWidget + Clone,
+    Th: Widget,
+    In: Widget,
+    Bg: Widget,
     En: ReadState<T=bool>,
 > Layout for PlainSlider<V, F, St, S, E, P, Th, In, Bg, En> {
     fn calculate_size(&mut self, requested_size: Dimension, ctx: &mut LayoutContext) -> Dimension {
@@ -429,9 +429,9 @@ impl<
     S: ReadState<T=V>,
     E: ReadState<T=V>,
     P: ReadState<T=Option<V>>,
-    Th: AnyWidget + Clone,
-    In: AnyWidget + Clone,
-    Bg: AnyWidget + Clone,
+    Th: Widget,
+    In: Widget,
+    Bg: Widget,
     En: ReadState<T=bool>,
 > CommonWidget for PlainSlider<V, F, St, S, E, P, Th, In, Bg, En> {
     CommonWidgetImpl!(self, id: self.id, child: (), position: self.position, dimension: self.dimension, flag: WidgetFlag::FOCUSABLE, flexibility: 1, focus: self.focus);
@@ -444,9 +444,9 @@ impl<
     S: ReadState<T=V>,
     E: ReadState<T=V>,
     P: ReadState<T=Option<V>>,
-    Th: AnyWidget + Clone,
-    In: AnyWidget + Clone,
-    Bg: AnyWidget + Clone,
+    Th: Widget,
+    In: Widget,
+    Bg: Widget,
     En: ReadState<T=bool>,
 > Render for PlainSlider<V, F, St, S, E, P, Th, In, Bg, En> {
     fn render(&mut self, context: &mut RenderContext, env: &mut Environment) {
@@ -463,9 +463,9 @@ impl<
     S: ReadState<T=V>,
     E: ReadState<T=V>,
     P: ReadState<T=Option<V>>,
-    Th: AnyWidget + Clone,
-    In: AnyWidget + Clone,
-    Bg: AnyWidget + Clone,
+    Th: Widget,
+    In: Widget,
+    Bg: Widget,
     En: ReadState<T=bool>,
 > WidgetExt for PlainSlider<V, F, St, S, E, P, Th, In, Bg, En> {}
 

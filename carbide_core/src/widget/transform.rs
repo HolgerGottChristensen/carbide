@@ -84,9 +84,9 @@ impl Transform<Empty, Matrix4<f32>> {
 }
 
 impl<W: AnyWidget + Clone, M: ReadState<T=Matrix4<f32>>> Transform<W, M> {
-    pub fn with_anchor(mut self, anchor: BasicLayouter) -> Box<Self> {
+    pub fn with_anchor(mut self, anchor: BasicLayouter) -> Self {
         self.anchor = anchor;
-        Box::new(self)
+        self
     }
 }
 

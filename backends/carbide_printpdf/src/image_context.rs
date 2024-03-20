@@ -1,6 +1,6 @@
 use std::cell::RefCell;
 use std::collections::HashMap;
-use carbide_core::draw::image::ImageId;
+use carbide_core::draw::ImageId;
 use carbide_core::draw::{InnerImageContext, Texture, TextureFormat};
 use printpdf::Image as PdfImage;
 use carbide_core::image::{DynamicImage, RgbaImage};

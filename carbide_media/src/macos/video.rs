@@ -8,7 +8,7 @@ use objc::{msg_send, class, sel, sel_impl};
 use objc::runtime::BOOL;
 use carbide::layout::LayoutContext;
 use carbide_core::CommonWidgetImpl;
-use carbide_core::draw::image::ImageId;
+use carbide_core::draw::ImageId;
 use carbide_core::draw::{Dimension, Position, Rect, Scalar, Texture, TextureFormat};
 use carbide_core::environment::Environment;
 use carbide_core::event::{CustomEvent, HasEventSink, Key, KeyboardEvent, KeyboardEventHandler};

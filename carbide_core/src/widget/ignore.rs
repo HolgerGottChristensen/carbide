@@ -519,7 +519,7 @@ impl<T: Widget,
     }
 }
 
-impl<T: AnyWidget + Clone,
+impl<T: Widget,
     B1: ReadState<T=bool>,
     B2: ReadState<T=bool>,
     B3: ReadState<T=bool>,
@@ -530,7 +530,7 @@ impl<T: AnyWidget + Clone,
     B8: ReadState<T=bool>,
 > AnyWidget for Ignore<T, B1, B2, B3, B4, B5, B6, B7, B8> {}
 
-impl<T: AnyWidget + Clone,
+impl<T: Widget,
     B1: ReadState<T=bool>,
     B2: ReadState<T=bool>,
     B3: ReadState<T=bool>,

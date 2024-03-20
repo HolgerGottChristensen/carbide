@@ -5,7 +5,6 @@ use carbide_macro::carbide_default_builder2;
 use crate::draw::{Dimension, Position, Rect};
 use crate::environment::Environment;
 use crate::render::Render;
-use crate::utils::gaussian;
 use crate::widget::{BlurType, CommonWidget, FilterId, ImageFilter, ImageFilterValue, Widget, WidgetExt, WidgetId};
 
 #[derive(Debug, Clone, Widget)]

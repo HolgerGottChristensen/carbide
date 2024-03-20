@@ -109,6 +109,11 @@ impl Context {
             .push(ContextAction::LineTo(Position::new(x, y)))
     }
 
+    pub fn add_lines(&mut self, lines: impl IntoIterator<Item=Position>) {
+        self.generator
+            .extend(lines.into_iter().map(|pos| ContextAction::LineTo(pos)))
+    }
+
     pub fn clip(&mut self) {
         todo!()
     }

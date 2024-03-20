@@ -4,7 +4,7 @@ use carbide::event::Key;
 use crate::color::RED;
 use crate::draw::{Color, Rect};
 use crate::draw::Dimension;
-use crate::environment::{Environment, EnvironmentColor, IntoColorReadState};
+use crate::environment::{Environment, EnvironmentColor};
 use crate::event::{KeyboardEventContext, ModifierKey};
 use crate::flags::WidgetFlag;
 use crate::focus::Focus;
@@ -19,7 +19,7 @@ type AccentColor<C, T, S> = EnvUpdating<C, T, S>;
 type ForegroundColor<C, T, S> = EnvUpdating<C, T, S>;
 
 
-pub trait WidgetExt: Widget + Sized {
+pub trait WidgetExt: AnyWidget + Clone + Sized {
     /// Surround the widget with a frame. The frame is a widget that has fixed width, height or both.
     /// The frame takes two parameters. Both parameters take f64 state. This means you can pass
     /// constant values like 10, 100.2, varying values like LocalState and AnimationState.
@@ -43,7 +43,7 @@ pub trait WidgetExt: Widget + Sized {
     /// Add a widget to the background of this widget. The proposed size for the widget in the
     /// background will be size chosen of the widget in the foreground. This can be really useful
     /// when trying to add color behind text.
-    fn background<B: AnyWidget + Clone>(self, background: B) -> Background<Self, B> {
+    fn background<B: Widget>(self, background: B) -> Background<Self, B> {
         Background::new(self, background)
     }
 

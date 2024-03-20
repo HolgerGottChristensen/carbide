@@ -7,7 +7,7 @@ use carbide_core::task;
 use carbide_core::asynchronous::Task;
 use carbide_core::color::{GREEN, RED};
 use carbide_core::draw::Dimension;
-use carbide_core::draw::image::ImageId;
+use carbide_core::draw::ImageId;
 use carbide_core::draw::Texture;
 use carbide_core::draw::TextureFormat;
 use carbide_core::environment::EnvironmentColor;

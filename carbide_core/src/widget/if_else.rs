@@ -192,4 +192,4 @@ impl<T: Widget, F: Widget, S: ReadState<T=bool> + Clone + 'static> CommonWidget 
     }
 }
 
-impl<T: AnyWidget + Clone, F: AnyWidget + Clone, S: ReadState<T=bool> + Clone + 'static> WidgetExt for IfElse<T, F, S> {}
+impl<T: Widget, F: Widget, S: ReadState<T=bool> + Clone + 'static> WidgetExt for IfElse<T, F, S> {}

@@ -24,9 +24,9 @@ pub trait AnyWidget: EventHandler + Update + Layout + Render + Focusable + DynCl
 dyn_clone::clone_trait_object!(AnyWidget);
 
 
-pub trait Widget: AnyWidget + Clone + private::Sealed {}
+pub trait Widget: AnyWidget + WidgetExt + Clone + private::Sealed {}
 
-impl<T> Widget for T where T: AnyWidget + Clone {}
+impl<T> Widget for T where T: AnyWidget + WidgetExt + Clone {}
 
 mod private {
     use crate::widget::AnyWidget;

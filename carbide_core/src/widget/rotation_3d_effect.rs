@@ -127,7 +127,7 @@ impl<R1: ReadState<T = f64> + Clone, R2: ReadState<T = f64> + Clone, C: Widget> 
     }
 }
 
-impl<R1: ReadState<T = f64> + Clone, R2: ReadState<T = f64> + Clone, C: AnyWidget + Clone> Render for Rotation3DEffect<R1, R2, C> {
+impl<R1: ReadState<T = f64>, R2: ReadState<T = f64>, C: Widget> Render for Rotation3DEffect<R1, R2, C> {
     fn render(&mut self, context: &mut RenderContext, env: &mut Environment) {
         self.capture_state(env);
         // I do not understand why the fov needs to be 1.15, because my intuition says it should be 45deg
@@ -221,4 +221,4 @@ impl<R1: ReadState<T = f64> + Clone, R2: ReadState<T = f64> + Clone, C: AnyWidge
     }
 }
 
-impl<R1: ReadState<T = f64> + Clone, R2: ReadState<T = f64> + Clone, C: AnyWidget + Clone> WidgetExt for Rotation3DEffect<R1, R2, C> {}
+impl<R1: ReadState<T = f64>, R2: ReadState<T = f64>, C: Widget> WidgetExt for Rotation3DEffect<R1, R2, C> {}

@@ -18,7 +18,7 @@ use wgpu::{Texture, TextureFormat, TextureUsages};
 
 use carbide_core::CommonWidgetImpl;
 use carbide_core::draw::{Color, Dimension, Position, Rect};
-use carbide_core::draw::image::ImageId;
+use carbide_core::draw::ImageId;
 use carbide_core::environment::{Environment, EnvironmentColor};
 use carbide_core::layout::{Layout, LayoutContext};
 use carbide_core::draw::MODE_IMAGE;
@@ -110,7 +110,7 @@ impl Scene3d {
             transform: Mat4::IDENTITY,
         };
         // Creating an object will hold onto both the mesh and the material
-        // even if they are deleted.
+        // even if they are dropped.
         //
         // We need to keep the object handle alive.
         let object_handle = renderer.add_object(object);
