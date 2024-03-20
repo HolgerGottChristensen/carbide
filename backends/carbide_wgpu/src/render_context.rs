@@ -743,4 +743,86 @@ impl InnerRenderContext for WGPURenderContext {
             start: self.vertices.len(),
         };
     }
+
+    fn filter_new_pop2d(&mut self, id: FilterId, id2: FilterId, color: Color) {
+        match &self.state {
+            State::Image { id, start } => {
+                self.push_image_command(id.clone(), *start..self.vertices.len());
+            }
+            State::Plain { start } => {
+                self.push_geometry_command(*start..self.vertices.len());
+            }
+            State::Finished => {}
+        }
+
+        let mut swap = vec![];
+        std::mem::swap(&mut swap, &mut self.render_pass_inner);
+
+        self.render_pass.push(RenderPass::Normal {
+            commands: swap,
+            target_index: self.target_stack.len()
+        });
+
+        let create_vertex = |x, y, tx, ty| Vertex {
+            position: [x as f32, y as f32, 0.0],
+            tex_coords: [tx as f32, ty as f32],
+            rgba: color
+                .gamma_srgb_to_linear()
+                .pre_multiply()
+                .to_fsa(),
+            mode: MODE_IMAGE,
+        };
+
+
+        let (l, r, b, t) = self.window_bounding_box.l_r_b_t();
+
+        self.render_pass_inner.push(RenderPassCommand::SetBindGroup {
+            bind_group: WGPUBindGroup::Target(self.target_stack.len()),
+        });
+
+        self.target_stack.pop();
+
+        let vertices_start = self.vertices.len() as u32;
+
+        // Bottom left triangle.
+        self.vertices.push(create_vertex(l, t, 0.0, 1.0));
+        self.vertices.push(create_vertex(r, b, 1.0, 0.0));
+        self.vertices.push(create_vertex(l, b, 0.0, 0.0));
+
+        // Top right triangle.
+        self.vertices.push(create_vertex(l, t, 0.0, 1.0));
+        self.vertices.push(create_vertex(r, t, 1.0, 1.0));
+        self.vertices.push(create_vertex(r, b, 1.0, 0.0));
+
+        self.render_pass.push(RenderPass::Clear { target_index: 2 });
+
+        let range = vertices_start..self.vertices.len() as u32;
+        self.render_pass.push(RenderPass::Filter {
+            vertex_range: range.clone(),
+            filter_id: id,
+            source_id: 1,
+            target_id: 2,
+            initial_copy: false,
+        });
+
+        self.render_pass.push(RenderPass::Filter {
+            vertex_range: range.clone(),
+            filter_id: id2,
+            source_id: 2,
+            target_id: 0,
+            initial_copy: false,
+        });
+
+        self.render_pass.push(RenderPass::Normal { commands: vec![
+            RenderPassCommand::SetBindGroup { bind_group: WGPUBindGroup::Target(1) },
+            RenderPassCommand::Draw { vertex_range: range }
+        ], target_index: 0 });
+
+        self.current_bind_group = None;
+
+        // We need to skip the vertices added by the filtering action
+        self.state = State::Plain {
+            start: self.vertices.len(),
+        };
+    }
 }

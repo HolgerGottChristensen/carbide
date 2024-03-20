@@ -13,7 +13,7 @@ pub struct Shadow<W, C, S, X, Y> where W: Widget, C: ReadState<T=Color>, S: Read
     position: Position,
     dimension: Dimension,
     child: W,
-    filter_id: Option<FilterId>,
+    filter_id: Option<(FilterId, FilterId)>,
     #[state] color: C,
     #[state] sigma: S,
     #[state] offset_x: X,
@@ -72,14 +72,16 @@ impl<W: Widget, C: ReadState<T=Color>, S: ReadState<T=f64>, X: ReadState<T=i32>,
 
 impl<W: Widget, C: ReadState<T=Color>, S: ReadState<T=f64>, X: ReadState<T=i32>, Y: ReadState<T=i32>> Render for Shadow<W, C, S, X, Y> {
     fn render(&mut self, context: &mut RenderContext, env: &mut Environment) {
-        if let Some(filter_id) = self.filter_id {
-            env.remove_filter(filter_id);
+        if let Some((id, id2)) = self.filter_id {
+            env.remove_filter(id);
+            env.remove_filter(id2);
         }
 
-        let id = env.insert_filter(ImageFilter::gaussian_blur(*self.sigma.value()).offset(-*self.offset_x.value(), -*self.offset_y.value()));
-        self.filter_id = Some(id);
+        let id = env.insert_filter(ImageFilter::gaussian_blur_1d(*self.sigma.value() as f32).offset(-*self.offset_x.value(), -*self.offset_y.value()));
+        let id2 = env.insert_filter(ImageFilter::gaussian_blur_1d(*self.sigma.value() as f32).flipped().offset(-*self.offset_x.value(), -*self.offset_y.value()));
+        self.filter_id = Some((id, id2));
 
-        context.shadow(id, *self.color.value(), |new_context| {
+        context.shadow(id, id2, *self.color.value(), |new_context| {
             self.child.render(new_context, env)
         })
     }

@@ -1,6 +1,7 @@
 use std::fmt::{Display, Formatter};
 use std::ops::Div;
 use std::sync::atomic::{AtomicU32, Ordering};
+use crate::utils::gaussian;
 
 /// Filter struct containing a matrix of filter weights that can be applied to change the rendering
 /// of a sub tree. For more information on image filters look at:
@@ -104,6 +105,25 @@ impl ImageFilter {
                 ImageFilterValue::new(0, 0, 5.0),
             ],
         }
+    }
+
+    pub fn gaussian_blur_1d(sigma: f32) -> ImageFilter {
+        assert!(sigma > 0.0);
+        let mut entries = vec![];
+        let radius = (3.0 * sigma).round() as i32;
+
+        for x in -radius..=radius {
+            entries.push(ImageFilterValue::new(
+                x,
+                0,
+                gaussian(sigma as f64, x as f64) as f32,
+            ))
+        }
+
+        let mut filter = ImageFilter { filter: entries };
+
+        filter.normalize();
+        filter
     }
 
     // http://demofox.org/gauss.html

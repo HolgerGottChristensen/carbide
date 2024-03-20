@@ -51,10 +51,17 @@ impl<'a> RenderContext<'a> {
         res
     }
 
-    pub fn shadow<R, F: FnOnce(&mut RenderContext) -> R>(&mut self, id: FilterId, color: Color, f: F) -> R {
+    pub fn filter_new2d<R, F: FnOnce(&mut RenderContext) -> R>(&mut self, id: FilterId, id2: FilterId, f: F) -> R {
         self.render.filter_new();
         let res = f(self);
-        self.render.filter_new_pop(id, color);
+        self.render.filter_new_pop2d(id, id2, WHITE);
+        res
+    }
+
+    pub fn shadow<R, F: FnOnce(&mut RenderContext) -> R>(&mut self, id: FilterId, id2: FilterId, color: Color, f: F) -> R {
+        self.render.filter_new();
+        let res = f(self);
+        self.render.filter_new_pop2d(id, id2, color);
         res
     }
 
@@ -148,6 +155,7 @@ pub trait InnerRenderContext {
 
     fn filter_new(&mut self);
     fn filter_new_pop(&mut self, id: FilterId, color: Color);
+    fn filter_new_pop2d(&mut self, id: FilterId, id2: FilterId, color: Color);
 }
 
 pub struct NoopRenderContext;
@@ -186,4 +194,6 @@ impl InnerRenderContext for NoopRenderContext {
     fn filter_new(&mut self) {}
 
     fn filter_new_pop(&mut self, _id: FilterId, _color: Color) {}
+
+    fn filter_new_pop2d(&mut self, _id: FilterId, _id2: FilterId, _color: Color) {}
 }

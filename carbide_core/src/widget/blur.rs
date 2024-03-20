@@ -46,25 +46,6 @@ impl Blur {
         }
     }
 
-    fn gaussian_blur(sigma: f32) -> ImageFilter {
-        assert!(sigma > 0.0);
-        let mut entries = vec![];
-        let radius = (3.0 * sigma).round() as i32;
-
-        for x in -radius..=radius {
-            entries.push(ImageFilterValue::new(
-                x,
-                0,
-                gaussian(sigma as f64, x as f64) as f32,
-            ))
-        }
-
-        let mut filter = ImageFilter { filter: entries };
-
-        filter.normalize();
-        filter
-    }
-
     /// This is also known as box blur or linear blur.
     pub fn mean_blur(radius: u32) -> ImageFilter {
         let radius = radius as i32;
@@ -90,7 +71,7 @@ impl Render for Blur {
             let (filter_id, radius) = match self.blur_type {
                 BlurType::Mean(radius) => (env.insert_filter(Blur::mean_blur(radius)), radius),
                 BlurType::Gaussian(sigma) => {
-                    let filter = Blur::gaussian_blur(sigma);
+                    let filter = ImageFilter::gaussian_blur_1d(sigma);
                     let radius = filter.radius_x();
                     (env.insert_filter(filter), radius)
                 }
@@ -103,7 +84,7 @@ impl Render for Blur {
                     (env.insert_filter(Blur::mean_blur(radius).flipped()), radius)
                 }
                 BlurType::Gaussian(sigma) => {
-                    let filter = Blur::gaussian_blur(sigma).flipped();
+                    let filter = ImageFilter::gaussian_blur_1d(sigma).flipped();
                     let radius = filter.radius_y();
                     (env.insert_filter(filter), radius)
                 }

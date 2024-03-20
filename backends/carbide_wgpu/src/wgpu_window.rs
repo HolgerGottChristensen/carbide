@@ -412,6 +412,7 @@ impl WGPUWindow<String> {
 
             targets.push(RenderTarget::new(size.width, size.height));
             targets.push(RenderTarget::new(size.width, size.height));
+            targets.push(RenderTarget::new(size.width, size.height));
 
             Box::new(WGPUWindow {
                 surface,
@@ -1255,6 +1256,8 @@ impl<T: ReadState<T=String>> WGPUWindow<T> {
             let mut targets = vec![];
             targets.push(RenderTarget::new(new_size.width, new_size.height));
             targets.push(RenderTarget::new(new_size.width, new_size.height));
+            targets.push(RenderTarget::new(new_size.width, new_size.height));
+
             self.targets = targets;
 
             let scale_factor = self.inner.scale_factor();

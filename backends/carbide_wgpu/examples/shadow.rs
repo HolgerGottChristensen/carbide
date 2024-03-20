@@ -13,7 +13,7 @@ fn main() {
     let sigma = AnimatedState::custom(ease_in_out, Some(application.environment()))
         .duration(Duration::from_secs_f64(2.1))
         .repeat_alternate()
-        .range(1.0, 7.0);
+        .range(1.0, 10.0);
 
     let color = AnimatedState::custom(ease_in_out, Some(application.environment()))
         .duration(Duration::from_secs_f64(0.6))
