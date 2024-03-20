@@ -12,7 +12,6 @@ use carbide_core::asynchronous::set_event_sink;
 use carbide_core::draw::Dimension;
 use carbide_core::environment::Environment;
 use carbide_core::event::CustomEvent;
-use carbide_core::render::Render;
 use carbide_core::text::InnerTextContext;
 use carbide_core::widget::Empty;
 use carbide_core::window::WindowId;
@@ -55,7 +54,7 @@ impl Application {
 
         set_event_sink(ProxyEventLoop(proxy.clone()));
 
-        let mut environment = Environment::new(
+        let environment = Environment::new(
             window_pixel_dimensions,
             scale_factor,
             Box::new(ProxyEventLoop(proxy)),

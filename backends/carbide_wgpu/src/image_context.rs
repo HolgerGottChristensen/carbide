@@ -1,8 +1,7 @@
-use carbide_core::draw::{InnerImageContext, Texture, TextureFormat};
-use carbide_core::draw::image::ImageId;
+use carbide_core::draw::{InnerImageContext, Texture, TextureFormat, ImageId};
 
 use crate::image::BindGroupExtended;
-use crate::wgpu_window::{ATLAS_CACHE_TEXTURE, BIND_GROUPS, DEVICE_QUEUE, MAIN_TEXTURE_BIND_GROUP_LAYOUT};
+use crate::wgpu_window::{BIND_GROUPS, DEVICE_QUEUE, MAIN_TEXTURE_BIND_GROUP_LAYOUT};
 
 pub struct WGPUImageContext;
 

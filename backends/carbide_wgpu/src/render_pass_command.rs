@@ -1,5 +1,4 @@
-use carbide_core::draw::image::ImageId;
-use carbide_core::draw::Rect;
+use carbide_core::draw::{Rect, ImageId};
 use carbide_core::widget::FilterId;
 
 /// A draw command that maps directly to the `wgpu::CommandEncoder` method. By returning

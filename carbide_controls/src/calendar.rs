@@ -1,18 +1,20 @@
 use chrono::{Local, Month, NaiveDate, Weekday};
-use carbide::environment::{EnvironmentColor, IntoColorReadState};
-use carbide::state::{LocalState, Map1, Map2, Map3, Map4, ReadState, State, ValueState};
-use carbide::widget::{AnyWidget, Circle, HStack, Image, Rectangle, Spacer, Text, VGridColumn, WidgetExt, ZStack};
-use crate::{PlainButton, PlainCalendar, PlainCalendarHeaderDelegate, PlainCalendarHiddenDelegate, PlainCalendarItemDelegate, PlainCalendarTitleDelegate, Selected};
-use crate::plain::plain_calendar::Selection;
 use chrono::Datelike;
-use carbide::a;
-use carbide::color::TRANSPARENT;
-use carbide::draw::Dimension;
+
+use carbide_core::a;
+use carbide_core::color::TRANSPARENT;
+use carbide_core::draw::Dimension;
+use carbide_core::environment::{EnvironmentColor, IntoColorReadState};
+use carbide_core::state::{LocalState, Map1, Map2, Map4, ReadState, State, ValueState};
+use carbide_core::widget::{AnyWidget, Circle, HStack, Image, Rectangle, Spacer, Text, VGridColumn, WidgetExt, ZStack};
+
+use crate::{PlainButton, PlainCalendar, PlainCalendarHeaderDelegate, PlainCalendarHiddenDelegate, PlainCalendarItemDelegate, PlainCalendarTitleDelegate, Selected};
+use crate::plain::plain_calendar::DateSelection;
 
 pub struct Calendar;
 
 impl Calendar {
-    pub fn new<S: Into<Selection>>(selection: S) -> PlainCalendar<CalendarHeaderDelegate, CalendarItemDelegate, CalendarHiddenDelegate, CalendarTitleDelegate> {
+    pub fn new<S: Into<DateSelection>>(selection: S) -> PlainCalendar<CalendarHeaderDelegate, CalendarItemDelegate, CalendarHiddenDelegate, CalendarTitleDelegate> {
         PlainCalendar::new(selection)
             .header_delegate(CalendarHeaderDelegate)
             .item_delegate(CalendarItemDelegate)
@@ -39,7 +41,7 @@ impl PlainCalendarHeaderDelegate for CalendarHeaderDelegate {
 pub struct CalendarItemDelegate;
 
 impl PlainCalendarItemDelegate for CalendarItemDelegate {
-    fn call(&self, selected: impl ReadState<T=Selected>, hovered: impl ReadState<T=bool>, pressed: impl ReadState<T=bool>, date: impl ReadState<T=NaiveDate>) -> Box<dyn AnyWidget> {
+    fn call(&self, selected: impl ReadState<T=Selected>, _hovered: impl ReadState<T=bool>, _pressed: impl ReadState<T=bool>, date: impl ReadState<T=NaiveDate>) -> Box<dyn AnyWidget> {
         let today = ValueState::new(Local::now().naive_local().date());
 
         let is_today = Map2::read_map(today, date.clone(), |today, date| today == date);
@@ -79,7 +81,7 @@ impl PlainCalendarHiddenDelegate for CalendarHiddenDelegate {
 pub struct CalendarTitleDelegate;
 
 impl PlainCalendarTitleDelegate for CalendarTitleDelegate {
-    fn call(&self, month: impl State<T=Month>, year: impl State<T=i32>, selection: Selection) -> Box<dyn AnyWidget> {
+    fn call(&self, month: impl State<T=Month>, year: impl State<T=i32>, _selection: DateSelection) -> Box<dyn AnyWidget> {
         let hover1 = LocalState::new(false);
         let hover2 = LocalState::new(false);
 
@@ -108,7 +110,7 @@ impl PlainCalendarTitleDelegate for CalendarTitleDelegate {
                     *$year -= 1;
                 }
                 *$month = month.pred();
-            })).delegate(move |a, b, c, d| {
+            })).delegate(move |_, _, _, _| {
                 Image::new_icon("icons/arrow-left-s-line.png").resizeable().foreground_color(color1.clone()).frame(30.0, 30.0).boxed()
             }).hovered(hover1),
             PlainButton::new(a!(|_,_| {
@@ -116,7 +118,7 @@ impl PlainCalendarTitleDelegate for CalendarTitleDelegate {
                     *$year += 1;
                 }
                 *$month = month.succ();
-            })).delegate(move |a, b, c, d| {
+            })).delegate(move |_, _, _, _| {
                 Image::new_icon("icons/arrow-right-s-line.png").resizeable().foreground_color(color2.clone()).frame(30.0, 30.0).boxed()
             }).hovered(hover2),
         )).boxed()

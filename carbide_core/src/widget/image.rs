@@ -7,8 +7,7 @@ use carbide_core::widget::CommonWidget;
 use carbide_macro::carbide_default_builder2;
 
 use crate::CommonWidgetImpl;
-use crate::draw::{Dimension, MODE_ICON, MODE_IMAGE, Position, Rect, Scalar, Texture, TextureFormat};
-use crate::draw::image::ImageId;
+use crate::draw::{Dimension, MODE_ICON, MODE_IMAGE, Position, Rect, Scalar, Texture, TextureFormat, ImageId};
 use crate::environment::{Environment, EnvironmentColor,};
 use crate::layout::{Layout, LayoutContext};
 use crate::draw::pre_multiply::PreMultiply;

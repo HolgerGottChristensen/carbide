@@ -3,9 +3,7 @@ use std::ops::Range;
 use cgmath::{Matrix4, SquareMatrix};
 
 use carbide_core::color::{Color, WHITE};
-use carbide_core::draw::{MODE_GEOMETRY, MODE_GRADIENT_GEOMETRY, MODE_GRADIENT_ICON, MODE_GRADIENT_TEXT, MODE_ICON, MODE_IMAGE, MODE_TEXT, Position, Rect};
-use carbide_core::draw::draw_style::DrawStyle;
-use carbide_core::draw::image::ImageId;
+use carbide_core::draw::{MODE_GEOMETRY, MODE_GRADIENT_GEOMETRY, MODE_GRADIENT_ICON, MODE_GRADIENT_TEXT, MODE_ICON, MODE_IMAGE, MODE_TEXT, Position, Rect, DrawStyle, ImageId};
 use carbide_core::draw::shape::triangle::Triangle;
 use carbide_core::render::{CarbideTransform, InnerRenderContext};
 use carbide_core::text::{InnerTextContext, TextId};
@@ -274,24 +272,6 @@ impl WGPURenderContext {
             vertex_range: vertices.start as u32..vertices.end as u32,
         };
         self.render_pass_inner.push(cmd);
-    }
-
-    fn push_gradient_command(&mut self, gradient: Gradient, vertices: Range<usize>) {
-        if vertices.len() == 0 {
-            return;
-        }
-
-        self.ensure_current_bind_group_is_some();
-
-        self.render_pass_inner.push(RenderPassCommand::Gradient {
-            index: self.gradients.len()
-        });
-
-        self.render_pass_inner.push(RenderPassCommand::Draw {
-            vertex_range: vertices.start as u32..vertices.end as u32,
-        });
-
-        self.gradients.push(gradient);
     }
 }
 

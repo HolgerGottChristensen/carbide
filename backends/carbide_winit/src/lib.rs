@@ -1,21 +1,16 @@
 //! A function for converting a `winit::Event` to a `carbide::event::Input`.
-use winit::dpi::{LogicalPosition, LogicalSize};
-use winit::event::{ElementState, Ime, MouseButton as WinitMouseButton, MouseScrollDelta, Touch as WinitTouch, TouchPhase as WinitTouchPhase, WindowEvent};
+pub use winit::*;
+use winit::event::{MouseButton as WinitMouseButton, TouchPhase as WinitTouchPhase};
 use winit::keyboard::{Key as WinitKey, NamedKey};
 use winit::window::CursorIcon;
 
 use carbide_core::cursor::MouseCursor;
-use carbide_core::draw::Position;
-use carbide_core::event::{Gesture, Key, ModifierKey, MouseButton, Touch, TouchId, TouchPhase};
+use carbide_core::event::{Key, MouseButton, TouchPhase};
 pub use custom_event_loop::*;
-
-pub use winit::*;
 pub use event_handler::NewEventHandler;
 
 mod custom_event_loop;
 mod event_handler;
-
-const ARBITRARY_POINTS_PER_LINE_FACTOR: f64 = 10.0;
 
 /// Types that have access to a `winit::Window` and can provide the necessary dimensions and hidpi
 /// factor for converting `winit::Event`s to `carbide::event::Input`, as well as set the mouse

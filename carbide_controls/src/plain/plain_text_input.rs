@@ -1,27 +1,21 @@
-use std::ops::{Index, Range};
+use std::ops::Range;
 
 use copypasta::{ClipboardContext, ClipboardProvider};
 use unicode_segmentation::UnicodeSegmentation;
-use carbide::environment::IntoColorReadState;
-use carbide::event::{Ime, KeyboardEventContext, MouseEventContext};
-use carbide::layout::LayoutContext;
-use carbide::text::InnerTextContext;
-use carbide_core::CommonWidgetImpl;
 
+use carbide_core::CommonWidgetImpl;
 use carbide_core::draw::{Color, Dimension, Position};
-use carbide_core::environment::{Environment, EnvironmentColor, EnvironmentFontSize};
-use carbide_core::event::{Key, KeyboardEvent, KeyboardEventHandler, ModifierKey, MouseEvent, MouseEventHandler};
+use carbide_core::environment::{Environment, EnvironmentColor, EnvironmentFontSize, IntoColorReadState};
+use carbide_core::event::{Ime, Key, KeyboardEvent, KeyboardEventContext, KeyboardEventHandler, ModifierKey, MouseEvent, MouseEventContext, MouseEventHandler};
 use carbide_core::flags::WidgetFlag;
-use carbide_core::focus::Focus;
-use carbide_core::focus::Focusable;
-use carbide_core::layout::{BasicLayouter, Layout, Layouter};
+use carbide_core::focus::{Focus, Focusable};
+use carbide_core::layout::{BasicLayouter, Layout, LayoutContext, Layouter};
 use carbide_core::render::{Render, RenderContext};
 use carbide_core::state::{AnyReadState, IntoReadState, IntoState, LocalState, Map2, ReadState, ReadStateExtNew, State, TState};
-use carbide_core::state::StateSync;
-use carbide_core::widget::{CommonWidget, Rectangle, Text, TextWidget, AnyWidget, WidgetExt, WidgetId, Widget};
-use carbide_core::widget::Wrap;
-use crate::{enabled_state, EnabledState};
+use carbide_core::text::InnerTextContext;
+use carbide_core::widget::{AnyWidget, CommonWidget, Rectangle, Text, TextWidget, Widget, WidgetExt, WidgetId, Wrap};
 
+use crate::{enabled_state, EnabledState};
 use crate::plain::cursor::{Cursor, CursorIndex};
 
 pub type TextInputState = TState<Result<String, String>>;
@@ -1022,7 +1016,7 @@ impl<F: State<T=Focus>, C: ReadState<T=Color>, O: ReadState<T=Option<char>>, S: 
         }
     }
 
-    fn update_offset_with_speed_to_make_cursor_visible(&mut self, speed: f64, ctx: &mut dyn InnerTextContext) {
+    fn update_offset_with_speed_to_make_cursor_visible(&mut self, speed: f64, _ctx: &mut dyn InnerTextContext) {
         let mut current_offset = *self.text_offset.value();
 
         current_offset += speed;
@@ -1061,13 +1055,13 @@ impl<F: State<T=Focus>, C: ReadState<T=Color>, O: ReadState<T=Option<char>>, S: 
             //dbg!(cursor_offset_from_text_origin + self.cursor_widget.width() + current_offset - self.width());
             if cursor_offset_from_text_origin + self.cursor_widget.width() + current_offset > self.width() {
                 //println!("Current offset above width");
-                current_offset -= (cursor_offset_from_text_origin + self.cursor_widget.width() + current_offset - self.width());
+                current_offset -= cursor_offset_from_text_origin + self.cursor_widget.width() + current_offset - self.width();
             }
 
             //dbg!(cursor_offset_from_text_origin + current_offset);
             if cursor_offset_from_text_origin + current_offset < 0.0 {
                 //println!("Current offset below 0");
-                current_offset -= (cursor_offset_from_text_origin + current_offset);
+                current_offset -= cursor_offset_from_text_origin + current_offset;
             }
         }
 
@@ -1495,7 +1489,7 @@ fn byte_offset_from_grapheme_index(index: usize, string: &str) -> ByteOffset {
     string
         .grapheme_indices(true)
         .skip(index)
-        .map(|(i, s)| ByteOffset(i))
+        .map(|(i, _)| ByteOffset(i))
         .next()
         .unwrap_or(ByteOffset(string.len()))
 }
@@ -1517,7 +1511,9 @@ fn grapheme_index_from_byte_offset(index: ByteOffset, string: &str) -> usize {
 #[cfg(test)]
 mod tests {
     use assert_matches::assert_matches;
+
     use carbide::state::{LocalState, ReadState};
+
     use crate::plain::cursor::Cursor;
     use crate::plain::cursor::CursorIndex;
     use crate::PlainTextInput;

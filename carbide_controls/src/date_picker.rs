@@ -1,31 +1,25 @@
-use carbide::draw::{Dimension, Position};
-use carbide::environment::{IntoColorReadState, WidgetTransferAction};
-use carbide::layout::BasicLayouter;
-use carbide::state::Map2;
 use carbide_core::color::TRANSPARENT;
-
-use carbide_core::draw::{Alignment, Rect};
-use carbide_core::environment::{Environment, EnvironmentColor};
+use carbide_core::draw::{Dimension, Position, Rect};
+use carbide_core::environment::{EnvironmentColor, IntoColorReadState, WidgetTransferAction};
 use carbide_core::focus::Focus;
-use carbide_core::render::Style;
-use carbide_core::state::{AnyReadState, AnyState, IntoReadState, IntoState, LocalState, Map1, Map3, ReadState, ReadStateExtNew, State, StateContract};
+use carbide_core::layout::BasicLayouter;
+use carbide_core::state::{AnyReadState, AnyState, LocalState, Map1, Map2, Map3, ReadStateExtNew};
 use carbide_core::widget::*;
-use carbide_core::widget::canvas::{Canvas, Context, LineCap};
 
-use crate::{PlainDatePicker, PlainPopUpButton, PopupDelegate, Calendar};
-use crate::plain_calendar::Selection;
+use crate::{Calendar, PlainDatePicker};
+use crate::plain_calendar::DateSelection;
 
 pub struct DatePicker;
 
 impl DatePicker {
-    pub fn new(selection: impl Into<Selection>) -> PlainDatePicker<LocalState<Focus>, bool> {
+    pub fn new(selection: impl Into<DateSelection>) -> PlainDatePicker<LocalState<Focus>, bool> {
         PlainDatePicker::new(selection)
             .delegate(Self::delegate)
             .popup_delegate(Self::popup)
     }
 
     fn delegate(
-        selection: Selection,
+        selection: DateSelection,
         focused: Box<dyn AnyState<T=Focus>>,
         enabled: Box<dyn AnyReadState<T=bool>>,
         //text_delegate: TextDelegateGenerator,
@@ -39,7 +33,7 @@ impl DatePicker {
         });
 
         let stroke_color = match selection.clone() {
-            Selection::Single(s) => {
+            DateSelection::Single(s) => {
                 Map1::read_map(s, |a| {
                     if a.is_none() {
                         EnvironmentColor::Red
@@ -48,7 +42,7 @@ impl DatePicker {
                     }
                 }).as_dyn_read()
             }
-            Selection::Multi(s) => {
+            DateSelection::Multi(s) => {
                 Map1::read_map(s, |a| {
                     if a.is_empty() {
                         EnvironmentColor::Red
@@ -57,7 +51,7 @@ impl DatePicker {
                     }
                 }).as_dyn_read()
             }
-            Selection::Range(s) => {
+            DateSelection::Range(s) => {
                 Map1::read_map(s, |a| {
                     if let Some(r) = a {
                         if r.start() == r.end() {
@@ -89,12 +83,12 @@ impl DatePicker {
         });
 
         let text = match selection {
-            Selection::Single(s) => {
+            DateSelection::Single(s) => {
                 Map1::read_map(s, |s| {
                     s.map_or("".to_string(), |d| d.format("%d/%m/%Y").to_string())
                 }).as_dyn_read()
             }
-            Selection::Multi(s) => {
+            DateSelection::Multi(s) => {
                 Map1::read_map(s, |s| {
                     let mut list = s.iter().collect::<Vec<_>>();
 
@@ -105,10 +99,10 @@ impl DatePicker {
                     }).collect::<Vec<_>>().join(", ")
                 }).as_dyn_read()
             }
-            Selection::Range(s) => {
+            DateSelection::Range(s) => {
                 Map1::read_map(s, |s| {
                     s.as_ref().map_or("".to_string(), |r| {
-                        if (r.start() == r.end()) {
+                        if r.start() == r.end() {
                             format!("{}", r.start().format("%d/%m/%Y").to_string())
                         } else {
                             format!("{} — {}", r.start().format("%d/%m/%Y").to_string(), r.end().format("%d/%m/%Y").to_string())
@@ -142,7 +136,7 @@ impl DatePicker {
     }
 
     fn popup(
-        selection: Selection,
+        selection: DateSelection,
         _focused: Box<dyn AnyState<T=Focus>>,
         _enabled: Box<dyn AnyReadState<T=bool>>,
         parent_position: Box<dyn AnyReadState<T=Position>>,

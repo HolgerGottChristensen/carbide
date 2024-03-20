@@ -5,7 +5,7 @@ use carbide::state::{ReadStateExtNew, ReadStateExtTransition};
 use carbide_core::color::{TRANSPARENT};
 use carbide_core::environment::EnvironmentColor;
 use carbide_core::focus::Focus;
-use carbide_core::state::{AnyReadState, AnyState, IntoReadState, IntoState, LocalState, Map1, Map2, ReadState, State};
+use carbide_core::state::{IntoReadState, IntoState, LocalState, Map1, Map2, ReadState};
 use carbide_core::widget::*;
 
 use crate::{EnabledState, PlainSwitch, PlainSwitchDelegate};

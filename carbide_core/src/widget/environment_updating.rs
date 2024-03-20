@@ -7,7 +7,7 @@ use crate::event::{Event, KeyboardEvent, KeyboardEventContext, KeyboardEventHand
 use crate::focus::{Focusable, Refocus};
 use crate::layout::{Layout, LayoutContext};
 use crate::render::{Render, RenderContext};
-use crate::state::{NewStateSync, ReadState, StateContract};
+use crate::state::{ReadState, StateContract};
 use crate::update::{Update, UpdateContext};
 use crate::widget::{CommonWidget, Widget, WidgetExt, WidgetId};
 

@@ -8,27 +8,19 @@ use lyon::tessellation::{
 use lyon::tessellation::path::Path;
 
 pub use capsule::*;
-use carbide::color::Color;
-use carbide::draw::{Rect};
-use carbide::draw::draw_style::DrawStyle;
-use carbide::draw::image::ImageId;
-use carbide::render::CarbideTransform;
-use carbide::text::{InnerTextContext, TextId};
-use carbide::widget::FilterId;
 pub use circle::*;
 pub use ellipse::*;
 pub use rectangle::*;
 pub use rounded_rectangle::*;
 
-use crate::draw::{NOOPImageContext, Position, Scalar};
+use crate::color::Color;
+use crate::draw::{DrawStyle, ImageId, Rect, NOOPImageContext, Position, Scalar};
 use crate::draw::shape::triangle::Triangle;
 use crate::environment::Environment;
-use crate::render::{InnerRenderContext, RenderContext};
-use crate::text::NOOPTextContext;
-use crate::widget::AnyWidget;
-use crate::widget::types::PrimitiveStore;
-use crate::widget::types::ShapeStyle;
-use crate::widget::types::StrokeStyle;
+use crate::render::{InnerRenderContext, RenderContext, CarbideTransform};
+use crate::text::{InnerTextContext, TextId, NOOPTextContext};
+use crate::widget::{AnyWidget, FilterId};
+use crate::widget::types::{PrimitiveStore, ShapeStyle, StrokeStyle};
 
 mod capsule;
 mod circle;

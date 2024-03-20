@@ -1,34 +1,28 @@
-use std::borrow::Borrow;
 use std::cmp::{max, min};
 use std::collections::HashSet;
 use std::fmt::{Debug, Formatter};
 use std::hash::Hash;
 use std::marker::PhantomData;
+
 use carbide::a;
 use carbide::draw::Rect;
 use carbide::state::{AnyReadState, AnyState, Map1};
 use carbide::widget::{AnyWidget, MouseArea};
 use carbide::widget::canvas::Context;
 use carbide_core::CommonWidgetImpl;
-use carbide_core::state::IntoState;
-use carbide_core::widget::{Empty, EmptyDelegate};
-
-use carbide_core::color::TRANSPARENT;
 use carbide_core::draw::{Dimension, Position};
 use carbide_core::environment::{Environment, EnvironmentColor};
 use carbide_core::event::ModifierKey;
-use carbide_core::flags::WidgetFlag;
 use carbide_core::state::{
-    LocalState, ReadState, State, StateContract, StateExt, TState, ValueState,
+    LocalState, ReadState, State, StateContract,
 };
+use carbide_core::state::IntoState;
+use carbide_core::widget::{Empty, EmptyDelegate};
 use carbide_core::widget::{
-    CommonWidget, Delegate, EdgeInsets, ForEach, HStack, IfElse, Rectangle, Scroll, VStack, Widget,
+    CommonWidget, Delegate, EdgeInsets, ForEach, HStack, IfElse, Scroll, VStack, Widget,
     WidgetExt, WidgetId,
 };
 use carbide_core::widget::canvas::Canvas;
-use carbide_macro::ui;
-
-use crate::PlainButton;
 
 const MULTI_SELECTION_MODIFIER: ModifierKey = if cfg!(target_os = "macos") {
     ModifierKey::SUPER
@@ -57,8 +51,9 @@ where
     delegate: U,
     spacing: f64,
 
-    selection: Option<Selection<I>>, // TODO: should be marked as state right?
+    selection: Option<ListSelection<I>>, // TODO: should be marked as state right?
     #[state] last_index_clicked: LocalState<usize>, // Used to make shift selects
+    #[allow(unused)]
     tree_disclosure: TreeDisclosure,
 
     phantom: PhantomData<T>,
@@ -117,7 +112,7 @@ impl<T: StateContract, M: State<T=Vec<T>>, W: Widget, U: Delegate<T, W>, I: Stat
     /// [`HashSet<Id>`] for multi-selection.
     pub fn selectable<I2: StateContract + PartialEq + Eq + Hash>(
         self,
-        selection: impl Into<Selection<I2>>,
+        selection: impl Into<ListSelection<I2>>,
     ) -> List<T, M, Box<dyn AnyWidget>, SelectableListDelegate<T, M, W, U, I2>, I2, impl Widget> where T: Identifiable<I2> {
         let selection = selection.into();
 
@@ -148,7 +143,7 @@ impl<T: StateContract, M: State<T=Vec<T>>, W: Widget, U: Delegate<T, W>, I: Stat
     }
 
     pub fn tree(
-        mut self,
+        self,
         tree_disclosure: impl Into<TreeDisclosure>,
     ) -> List<T, M, Box<dyn AnyWidget>, TreeListDelegate<T, W, U>, I, impl Widget> where Box<dyn AnyState<T=T>>: Treeable<T> {
         let tree_disclosure = tree_disclosure.into();
@@ -416,20 +411,20 @@ impl<T: StateContract + PartialEq> Identifiable<T> for T {
 }
 
 #[derive(Clone, Debug)]
-pub enum Selection<T: StateContract> {
+pub enum ListSelection<T: StateContract> {
     Single(LocalState<Option<T>>),
     Multi(LocalState<HashSet<T>>),
 }
 
-impl<T: StateContract> Into<Selection<T>> for LocalState<Option<T>> {
-    fn into(self) -> Selection<T> {
-        Selection::Single(self)
+impl<T: StateContract> Into<ListSelection<T>> for LocalState<Option<T>> {
+    fn into(self) -> ListSelection<T> {
+        ListSelection::Single(self)
     }
 }
 
-impl<T: StateContract> Into<Selection<T>> for LocalState<HashSet<T>> {
-    fn into(self) -> Selection<T> {
-        Selection::Multi(self)
+impl<T: StateContract> Into<ListSelection<T>> for LocalState<HashSet<T>> {
+    fn into(self) -> ListSelection<T> {
+        ListSelection::Multi(self)
     }
 }
 
@@ -441,7 +436,7 @@ pub struct SelectableListDelegate<T, M, W, U, I> where
     U: Delegate<T, W>,
     I: StateContract + PartialEq + Eq + Hash,
 {
-    selection: Selection<I>,
+    selection: ListSelection<I>,
     inner_delegate: U,
     last_index_clicked: LocalState<usize>,
     model: M,
@@ -459,12 +454,12 @@ impl<T: StateContract + Identifiable<I>, M: State<T=Vec<T>>, W: Widget, U: Deleg
                 let mut selection = selection.clone();
                 let identifier = item.value().identifier();
 
-                let mut model = Clone::clone(&model);
-                let mut model = carbide::state::ReadState::value(&model);
+                let model = Clone::clone(&model);
+                let model = carbide::state::ReadState::value(&model);
 
                 match &mut selection {
                     // If we are in single selection mode
-                    Selection::Single(id) => {
+                    ListSelection::Single(id) => {
                         let val = id.value_mut().clone();
 
                         // If the value we clicked while holding down GUI (on mac) and Ctrl (on windows)
@@ -480,7 +475,7 @@ impl<T: StateContract + Identifiable<I>, M: State<T=Vec<T>>, W: Widget, U: Deleg
                             *id.value_mut() = Some(identifier);
                         }
                     }
-                    Selection::Multi(selections) => {
+                    ListSelection::Multi(selections) => {
                         match modifier {
                             // If we are holding down GUI (on mac) or CTRL (on windows), add the item
                             // to the set if it does not already contain it. Otherwise remove it from
@@ -552,7 +547,7 @@ impl<T: StateContract, W: Widget, U: Delegate<T, W>> Delegate<T, Box<dyn AnyWidg
             TreeDisclosure::Arrow => {
                 let rotation = Map1::read_map(opened.clone(), |b| if *b { 90.0 } else { 0.0 });
 
-                Canvas::new(|rect: Rect, mut context: Context, env: &mut Environment| {
+                Canvas::new(|_: Rect, mut context: Context, _: &mut Environment| {
                     context.move_to(8.0, 5.0);
                     context.line_to(13.0, 10.0);
                     context.line_to(8.0, 15.0);

@@ -1,9 +1,7 @@
 use carbide::color::Color;
 use carbide_core::draw::Rect;
 use crate::color::WHITE;
-use crate::draw::{InnerImageContext, Position};
-use crate::draw::draw_style::DrawStyle;
-use crate::draw::image::ImageId;
+use crate::draw::{InnerImageContext, Position, DrawStyle, ImageId};
 use crate::draw::shape::triangle::Triangle;
 
 use crate::render::CarbideTransform;

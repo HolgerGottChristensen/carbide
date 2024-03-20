@@ -1,12 +1,13 @@
 use std::fmt::{Debug, Formatter};
-use carbide_core::{CommonWidgetImpl};
+
+use carbide_core::CommonWidgetImpl;
 use carbide_core::draw::{Dimension, Position};
 use carbide_core::environment::{Environment, EnvironmentColor};
 use carbide_core::flags::WidgetFlag;
-use carbide_core::focus::{Focus, Focusable};
-use carbide_core::focus::Refocus;
-use carbide_core::state::{AnyReadState, AnyState, IntoReadState, IntoState, LocalState, Map1, Map2, ReadState, ReadStateExtNew, State, StateExtNew};
-use carbide_core::widget::{CommonWidget, MouseArea, Rectangle, Text, AnyWidget, WidgetExt, WidgetId, ZStack, Widget};
+use carbide_core::focus::{Focus, Focusable, Refocus};
+use carbide_core::state::{AnyReadState, IntoReadState, IntoState, LocalState, Map1, Map2, ReadState, ReadStateExtNew, State, StateExtNew};
+use carbide_core::widget::{AnyWidget, CommonWidget, MouseArea, Rectangle, Text, Widget, WidgetExt, WidgetId, ZStack};
+
 use crate::{enabled_state, EnabledState};
 
 pub trait PlainSwitchDelegate: Clone + 'static {

@@ -43,7 +43,6 @@ where
     popup_item_delegate: PopupItemDelegateGenerator<T, S>, // Used to generate each item in the popup
 
     child: Box<dyn AnyWidget>,
-    popup_open: bool,
 
     #[state] selected: S,
     #[state] model: M,
@@ -193,10 +192,8 @@ impl<
         popup_delegate: PopupDelegateGenerator<T2, S2, M2>,
         popup_item_delegate: PopupItemDelegateGenerator<T2, S2>,
     ) -> PlainPopUpButton<T2, F2, S2, M2, E2> {
-        // Stores whether the popup is currently open or closed
-        let popup_open = false;
 
-        let child = delegate(selected.as_dyn(), focus.as_dyn(), popup_open.as_dyn_read(), enabled.as_dyn_read(), text_delegate);
+        let child = delegate(selected.as_dyn(), focus.as_dyn(), enabled.as_dyn_read(), text_delegate);
 
         PlainPopUpButton {
             id: WidgetId::new(),
@@ -212,7 +209,6 @@ impl<
 
             child,
 
-            popup_open,
             selected,
             model,
         }
@@ -341,7 +337,7 @@ impl<
     M: ReadState<T=Vec<T>>,
     E: ReadState<T=bool>,
 > Update for PlainPopUpButton<T, F, S, M, E> {
-    fn update(&mut self, ctx: &mut UpdateContext) {
+    fn update(&mut self, _ctx: &mut UpdateContext) {
         //self.popup.ensure_overlay_correct(ctx.env)
     }
 }
@@ -354,16 +350,9 @@ impl<
     E: ReadState<T=bool>,
 > Layout for PlainPopUpButton<T, F, S, M, E> {
     fn calculate_size(&mut self, requested_size: Dimension, ctx: &mut LayoutContext) -> Dimension {
-        let dimensions = self.child.calculate_size(requested_size, ctx);
-        self.set_dimension(dimensions);
-
-        let max_height = 400.0;
-        let max_height = ctx.env.current_window_height().min(max_height);
-        let popup_request = Dimension::new(dimensions.width, max_height);
-
-        //self.popup.calculate_size(popup_request, ctx);
-
-        dimensions
+        let dimension = self.child.calculate_size(requested_size, ctx);
+        self.set_dimension(dimension);
+        dimension
     }
 
     fn position_children(&mut self, ctx: &mut LayoutContext) {
@@ -403,7 +392,6 @@ type TextDelegateGenerator<T> = fn(Box<dyn AnyReadState<T=T>>)->Box<dyn AnyReadS
 type DelegateGenerator<T> = fn(
     selected_item: Box<dyn AnyState<T=T>>,
     focused: Box<dyn AnyState<T=Focus>>,
-    popup_open: Box<dyn AnyReadState<T=bool>>,
     enabled: Box<dyn AnyReadState<T=bool>>,
     text_delegate: TextDelegateGenerator<T>,
 ) -> Box<dyn AnyWidget>;
@@ -489,7 +477,6 @@ impl<T: StateContract, S: State<T=T>> Delegate<T, Box<dyn AnyWidget>> for PopupD
 fn default_delegate<T: StateContract + PartialEq>(
     selected_item: Box<dyn AnyState<T=T>>,
     focused: Box<dyn AnyState<T=Focus>>,
-    _popup_open: Box<dyn AnyReadState<T=bool>>,
     _enabled: Box<dyn AnyReadState<T=bool>>,
     text_delegate: TextDelegateGenerator<T>,
 ) -> Box<dyn AnyWidget> {

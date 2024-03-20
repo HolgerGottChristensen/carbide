@@ -1,7 +1,6 @@
-use carbide_core::environment::{EnvironmentColor, EnvironmentStateContainer};
+use carbide_core::environment::EnvironmentColor;
 use carbide_core::state::IntoReadState;
-use carbide_core::state::ReadStateExtNew;
-use carbide_core::widget::{EdgeInsets, EnvUpdating, HStack, Rectangle, Text, AnyWidget, WidgetExt};
+use carbide_core::widget::{AnyWidget, EdgeInsets, EnvUpdating, HStack, Rectangle, Text, WidgetExt};
 
 use crate::{Help, Labelled};
 

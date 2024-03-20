@@ -2,6 +2,7 @@ use std::any::Any;
 use crate::draw::Color;
 use crate::environment::{EnvironmentColor, EnvironmentFontSize};
 
+#[allow(dead_code)]
 pub(crate) enum EnvironmentVariable {
     EnvironmentColor {
         key: EnvironmentColor,

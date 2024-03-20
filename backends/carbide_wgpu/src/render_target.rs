@@ -1,6 +1,6 @@
-use std::sync::atomic::{AtomicU32, Ordering};
 use wgpu::{BindGroup, Texture, TextureDescriptor, TextureFormat, TextureUsages, TextureView};
-use crate::wgpu_window::{ATLAS_CACHE_TEXTURE, DEVICE_QUEUE, MAIN_SAMPLER, MAIN_TEXTURE_BIND_GROUP_LAYOUT};
+
+use crate::wgpu_window::{DEVICE_QUEUE, MAIN_SAMPLER, MAIN_TEXTURE_BIND_GROUP_LAYOUT};
 
 pub struct RenderTarget {
     pub(crate) texture: Texture,
@@ -31,13 +31,13 @@ impl RenderTarget {
             view_formats: &[],
         };
 
-        let texture = DEVICE_QUEUE.with(|(device, queue)| {
+        let texture = DEVICE_QUEUE.with(|(device, _)| {
             device.create_texture(&descriptor)
         });
 
         let view = texture.create_view(&Default::default());
 
-        let bind_group = DEVICE_QUEUE.with(|(device, queue)| {
+        let bind_group = DEVICE_QUEUE.with(|(device, _)| {
             MAIN_TEXTURE_BIND_GROUP_LAYOUT.with(|layout| {
                 MAIN_SAMPLER.with(|sampler| {
                     device.create_bind_group(&wgpu::BindGroupDescriptor {

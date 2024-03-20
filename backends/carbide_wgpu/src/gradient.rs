@@ -1,4 +1,4 @@
-use carbide_core::draw::draw_gradient::DrawGradient;
+use carbide_core::draw::DrawGradient;
 use carbide_core::widget::{GradientRepeat, GradientType};
 
 #[repr(C)]

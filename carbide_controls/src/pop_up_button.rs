@@ -1,11 +1,9 @@
-use carbide::environment::IntoColorReadState;
 use carbide_core::color::TRANSPARENT;
-
 use carbide_core::draw::{Alignment, Rect};
-use carbide_core::environment::{Environment, EnvironmentColor};
+use carbide_core::environment::{Environment, EnvironmentColor, IntoColorReadState};
 use carbide_core::focus::Focus;
 use carbide_core::render::Style;
-use carbide_core::state::{AnyReadState, AnyState, IntoReadState, IntoState, LocalState, Map1, Map3, ReadState, ReadStateExtNew, State, StateContract};
+use carbide_core::state::{AnyReadState, AnyState, IntoReadState, IntoState, LocalState, Map1, Map3, ReadState, ReadStateExtNew, State, StateContract, Map2};
 use carbide_core::widget::*;
 use carbide_core::widget::canvas::{Canvas, Context, LineCap};
 
@@ -27,7 +25,6 @@ impl PopUpButton {
     fn delegate<T: StateContract + PartialEq>(
         selected_item: Box<dyn AnyState<T=T>>,
         focused: Box<dyn AnyState<T=Focus>>,
-        popup_open: Box<dyn AnyReadState<T=bool>>,
         enabled: Box<dyn AnyReadState<T=bool>>,
         text_delegate: fn(Box<dyn AnyReadState<T=T>>) -> Box<dyn AnyReadState<T=String>>,
     ) -> Box<dyn AnyWidget> {
@@ -75,8 +72,8 @@ impl PopUpButton {
 
         });
 
-        let outline_color = Map3::read_map(EnvironmentColor::Accent.color(), focused, popup_open, |color, focused, opened| {
-            if *focused == Focus::Focused && !*opened {
+        let outline_color = Map2::read_map(EnvironmentColor::Accent.color(), focused, |color, focused| {
+            if *focused == Focus::Focused {
                 *color
             } else {
                 TRANSPARENT

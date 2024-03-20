@@ -1,9 +1,9 @@
-use carbide::environment::IntoColorReadState;
-use carbide_core::color::{TRANSPARENT};
-use carbide_core::draw::{Rect};
+use carbide_core::color::TRANSPARENT;
+use carbide_core::draw::Rect;
 use carbide_core::environment::{Environment, EnvironmentColor};
+use carbide_core::environment::IntoColorReadState;
 use carbide_core::focus::Focus;
-use carbide_core::state::{AnyReadState, IntoReadState, IntoState, LocalState, Map1, Map2, ReadState};
+use carbide_core::state::{IntoReadState, IntoState, LocalState, Map1, Map2, ReadState};
 use carbide_core::widget::*;
 use carbide_core::widget::canvas::{Canvas, Context};
 

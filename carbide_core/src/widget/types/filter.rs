@@ -51,7 +51,7 @@ impl Display for ImageFilter {
             }
         }
 
-        writeln!(f, "{:?}-{:?}:{:?}-{:?}", min_x, max_x, min_y, max_y);
+        writeln!(f, "{:?}-{:?}:{:?}-{:?}", min_x, max_x, min_y, max_y)?;
 
         let mut res = String::new();
 

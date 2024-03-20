@@ -8,7 +8,6 @@ use std::rc::Rc;
 use std::time::Instant;
 
 use fxhash::{FxBuildHasher, FxHashMap};
-use image::DynamicImage;
 use raw_window_handle::{HasRawWindowHandle, RawWindowHandle};
 
 use carbide_core::draw::Position;
@@ -18,7 +17,6 @@ use crate::animation::Animation;
 use crate::cursor::MouseCursor;
 use crate::draw::Dimension;
 use crate::draw::Color;
-use crate::draw::image::ImageId;
 use crate::draw::theme;
 use crate::environment::{EnvironmentFontSize, WidgetTransferAction};
 use crate::environment::{EnvironmentColor, EnvironmentVariable};

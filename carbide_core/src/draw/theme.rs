@@ -12,6 +12,7 @@ macro_rules! env_color {
     };
 }
 
+#[allow(unused)]
 pub(crate) fn light_mode_color_theme() -> Vec<EnvironmentVariable> {
     vec![
         EnvironmentVariable::EnvironmentColor {

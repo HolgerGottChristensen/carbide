@@ -12,7 +12,7 @@ use objc::runtime::{BOOL, Class, Object, Sel};
 use objc::runtime::{NO, YES};
 
 use carbide_core::environment::Environment;
-use carbide_core::event::{CustomEvent, EventSink, HasEventSink, HotKey, Key, ModifierKey};
+use carbide_core::event::{CustomEvent, EventSink, HasEventSink, HotKey};
 use carbide_core::widget::MenuAction;
 
 use crate::id::Id;
@@ -163,7 +163,7 @@ struct KeyEquivalent {
 }
 
 impl From<HotKey> for KeyEquivalent {
-    fn from(hot: HotKey) -> Self {
+    fn from(_hot: HotKey) -> Self {
         /*let char = match hot.key {
             Key::Backspace => '\u{0008}',
             Key::Delete => '\u{0008}',

@@ -37,7 +37,7 @@ impl Shadow<Empty, Color, f64, i32, i32> {
 }
 
 impl<W: Widget, C: ReadState<T=Color>, S: ReadState<T=f64>, X: ReadState<T=i32>, Y: ReadState<T=i32>> Shadow<W, C, S, X, Y> {
-    pub fn shadow_color<C2: IntoReadState<Color>>(mut self, color: C2) -> Shadow<W, C2::Output, S, X, Y> {
+    pub fn shadow_color<C2: IntoReadState<Color>>(self, color: C2) -> Shadow<W, C2::Output, S, X, Y> {
         Shadow {
             id: self.id,
             position: self.position,
@@ -51,7 +51,7 @@ impl<W: Widget, C: ReadState<T=Color>, S: ReadState<T=f64>, X: ReadState<T=i32>,
         }
     }
 
-    pub fn shadow_offset<X2: IntoReadState<i32>, Y2: IntoReadState<i32>>(mut self, x: X2, y: Y2) -> Shadow<W, C, S, X2::Output, Y2::Output> {
+    pub fn shadow_offset<X2: IntoReadState<i32>, Y2: IntoReadState<i32>>(self, x: X2, y: Y2) -> Shadow<W, C, S, X2::Output, Y2::Output> {
         Shadow {
             id: self.id,
             position: self.position,

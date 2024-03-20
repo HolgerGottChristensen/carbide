@@ -1,24 +1,18 @@
 use std::fmt::{Debug, Formatter};
-use carbide::environment::WidgetTransferAction;
-use carbide::event::{KeyboardEventContext, MouseEventContext};
-use carbide::layout::LayoutContext;
-use carbide::update::{Update, UpdateContext};
 
 use carbide_core::CommonWidgetImpl;
 use carbide_core::draw::{Dimension, Position};
-use carbide_core::environment::Environment;
-use carbide_core::environment::EnvironmentColor;
+use carbide_core::environment::{Environment, EnvironmentColor, WidgetTransferAction};
 use carbide_core::event::{
-    Key, KeyboardEvent, KeyboardEventHandler, MouseEvent, MouseEventHandler,
+    KeyboardEvent, KeyboardEventHandler, MouseEvent, MouseEventHandler, KeyboardEventContext, MouseEventContext
 };
 use carbide_core::flags::WidgetFlag;
 use carbide_core::focus::{Focus, Refocus};
-use carbide_core::layout::{Layout};
-use carbide_core::state::{AnyReadState, AnyState, IntoReadState, IntoState, LocalState, Map1, Map2, ReadState, ReadStateExtNew, State, StateContract, StateExtNew};
+use carbide_core::state::{AnyReadState, AnyState, LocalState, Map1, ReadState, ReadStateExtNew, State, StateExtNew};
+use carbide_core::update::{Update, UpdateContext};
 use carbide_core::widget::*;
 
-use crate::plain::plain_pop_up_button_popup::PlainPopUpButtonPopUp;
-use crate::plain_calendar::Selection;
+use crate::plain_calendar::DateSelection;
 use crate::PlainCalendar;
 
 #[derive(Clone, Widget)]
@@ -41,13 +35,12 @@ where
     popup: PopupDelegateGenerator,
 
     child: Box<dyn AnyWidget>,
-    popup_open: bool,
 
-    selected: Selection,
+    selected: DateSelection,
 }
 
 impl PlainDatePicker<Focus, bool> {
-    pub fn new(selection: impl Into<Selection>) -> PlainDatePicker<LocalState<Focus>, bool> {
+    pub fn new(selection: impl Into<DateSelection>) -> PlainDatePicker<LocalState<Focus>, bool> {
         let focus = LocalState::new(Focus::Unfocused);
 
         Self::new_internal(
@@ -90,16 +83,13 @@ impl<F: State<T=Focus>, E: ReadState<T=bool>> PlainDatePicker<F, E> {
     }
 
     fn new_internal<F2: State<T=Focus>, E2: ReadState<T=bool>>(
-        selection: Selection,
+        selection: DateSelection,
         focus: F2,
         enabled: E2,
         //text_delegate: TextDelegateGenerator,
         delegate: DelegateGenerator,
         popup: PopupDelegateGenerator,
     ) -> PlainDatePicker<F2, E2> {
-        // Stores whether the popup is currently open or closed
-        let popup_open = false;
-
         let child = delegate(selection.clone(), focus.as_dyn(), enabled.as_dyn_read());
 
         PlainDatePicker {
@@ -114,7 +104,6 @@ impl<F: State<T=Focus>, E: ReadState<T=bool>> PlainDatePicker<F, E> {
             popup,
             child,
 
-            popup_open,
             selected: selection,
         }
     }
@@ -160,7 +149,7 @@ impl<F: State<T=Focus>, E: ReadState<T=bool>> Debug for PlainDatePicker<F, E> {
 impl<F: State<T=Focus>, E: ReadState<T=bool>> WidgetExt for PlainDatePicker<F, E> {}
 
 impl<F: State<T=Focus>, E: ReadState<T=bool>> KeyboardEventHandler for PlainDatePicker<F, E> {
-    fn handle_keyboard_event(&mut self, event: &KeyboardEvent, ctx: &mut KeyboardEventContext) {
+    fn handle_keyboard_event(&mut self, _event: &KeyboardEvent, _ctx: &mut KeyboardEventContext) {
         if self.get_focus() != Focus::Focused || !*self.enabled.value() { return; }
 
         /*if event == PopupButtonKeyCommand::Open {
@@ -200,7 +189,7 @@ impl<F: State<T=Focus>, E: ReadState<T=bool>> MouseEventHandler for PlainDatePic
 }
 
 impl<F: State<T=Focus>, E: ReadState<T=bool>> Update for PlainDatePicker<F, E> {
-    fn update(&mut self, ctx: &mut UpdateContext) {
+    fn update(&mut self, _ctx: &mut UpdateContext) {
         //self.popup.ensure_overlay_correct(ctx.env)
     }
 }
@@ -210,17 +199,18 @@ impl<F: State<T=Focus>, E: ReadState<T=bool>> Update for PlainDatePicker<F, E> {
 // ---------------------------------------------------
 //  Delegates
 // ---------------------------------------------------
-type TextDelegateGenerator = fn(Selection)->Box<dyn AnyReadState<T=String>>;
+#[allow(unused)]
+type TextDelegateGenerator = fn(DateSelection) ->Box<dyn AnyReadState<T=String>>;
 
 type DelegateGenerator = fn(
-    selected_item: Selection,
+    selected_item: DateSelection,
     focused: Box<dyn AnyState<T=Focus>>,
     enabled: Box<dyn AnyReadState<T=bool>>,
     //text_delegate: TextDelegateGenerator,
 ) -> Box<dyn AnyWidget>;
 
 type PopupDelegateGenerator = fn(
-    selected_item: Selection,
+    selected_item: DateSelection,
     focused: Box<dyn AnyState<T=Focus>>,
     enabled: Box<dyn AnyReadState<T=bool>>,
     parent_position: Box<dyn AnyReadState<T=Position>>,
@@ -229,7 +219,7 @@ type PopupDelegateGenerator = fn(
 ) -> Box<dyn AnyWidget>;
 
 fn default_delegate(
-    selection: Selection,
+    selection: DateSelection,
     focused: Box<dyn AnyState<T=Focus>>,
     _enabled: Box<dyn AnyReadState<T=bool>>,
     //text_delegate: TextDelegateGenerator,
@@ -242,17 +232,17 @@ fn default_delegate(
     });
 
     let text = match selection {
-        Selection::Single(s) => {
+        DateSelection::Single(s) => {
             Map1::read_map(s, |s| {
                 format!("{:?}", s)
             }).as_dyn_read()
         }
-        Selection::Multi(s) => {
+        DateSelection::Multi(s) => {
             Map1::read_map(s, |s| {
                 format!("{:?}", s)
             }).as_dyn_read()
         }
-        Selection::Range(s) => {
+        DateSelection::Range(s) => {
             Map1::read_map(s, |s| {
                 format!("{:?}", s)
             }).as_dyn_read()
@@ -266,11 +256,11 @@ fn default_delegate(
 }
 
 fn default_popup_delegate(
-    selection: Selection,
+    selection: DateSelection,
     _focused: Box<dyn AnyState<T=Focus>>,
     _enabled: Box<dyn AnyReadState<T=bool>>,
-    parent_position: Box<dyn AnyReadState<T=Position>>,
-    parent_dimension: Box<dyn AnyReadState<T=Dimension>>,
+    _parent_position: Box<dyn AnyReadState<T=Position>>,
+    _parent_dimension: Box<dyn AnyReadState<T=Dimension>>,
 ) -> Box<dyn AnyWidget> {
     PlainCalendar::new(selection)
         .padding(10.0)

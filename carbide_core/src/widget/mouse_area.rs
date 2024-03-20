@@ -1,6 +1,5 @@
 use std::fmt::{Debug, Formatter};
 
-use bitflags::Flags;
 use dyn_clone::DynClone;
 
 use carbide_core::cursor::MouseCursor;

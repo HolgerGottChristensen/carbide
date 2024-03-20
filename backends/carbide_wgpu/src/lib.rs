@@ -4,7 +4,7 @@ use std::sync::Arc;
 use wgpu::{Adapter, Device, Instance, LoadOp, Operations, Queue};
 
 pub use application::Application;
-use carbide_core::draw::image::ImageId;
+use carbide_core::draw::ImageId;
 pub use wgpu_window::WGPUWindow as Window;
 
 use crate::image::BindGroupExtended;
@@ -13,7 +13,6 @@ use crate::wgpu_window::{ADAPTER, BIND_GROUPS, DEVICE_QUEUE, INSTANCE};
 
 mod bind_group_layouts;
 mod bind_groups;
-mod diffuse_bind_group;
 mod filter;
 mod gradient;
 mod image;
@@ -24,7 +23,6 @@ mod render_pass_command;
 mod render_pipeline_layouts;
 mod renderer;
 mod samplers;
-mod texture;
 mod texture_atlas_command;
 mod textures;
 mod vertex;

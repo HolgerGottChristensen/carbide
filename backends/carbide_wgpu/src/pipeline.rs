@@ -1,5 +1,5 @@
 use wgpu::{
-    BlendComponent, BlendFactor, BlendOperation, BlendState, ColorTargetState,
+    BlendState, ColorTargetState,
     CompareFunction, DepthBiasState, DepthStencilState, Device, FragmentState, FrontFace,
     PipelineLayout, PrimitiveState, PrimitiveTopology, RenderPipeline, ShaderModule,
     StencilFaceState, StencilOperation, TextureFormat, VertexState,
@@ -83,26 +83,12 @@ pub(crate) fn create_pipelines(device: &Device, preferred_format: TextureFormat)
             })
         });
 
-    let render_pipeline_no_mask_filter =
-        FILTER_RENDER_PIPELINE_LAYOUT.with(|filter_render_pipeline_layout| {
-            FILTER_SHADER.with(|filter_shader| {
-                create_render_pipeline(
-                    device,
-                    filter_render_pipeline_layout,
-                    filter_shader,
-                    preferred_format,
-                    MaskType::NoMask,
-                )
-            })
-        });
-
     RenderPipelines {
         render_pipeline_no_mask,
         render_pipeline_add_mask,
         render_pipeline_in_mask,
         render_pipeline_remove_mask,
         render_pipeline_in_mask_filter,
-        render_pipeline_no_mask_filter,
     }
 }
 

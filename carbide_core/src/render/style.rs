@@ -1,8 +1,4 @@
-use carbide_core::draw::Position;
-use crate::draw::Color;
-use crate::draw::Dimension;
-use crate::draw::draw_gradient::DrawGradient;
-use crate::draw::draw_style::DrawStyle;
+use crate::draw::{Color, Dimension, DrawGradient, DrawStyle, Position};
 use crate::widget::Gradient;
 
 #[derive(Debug, Clone, PartialEq)]

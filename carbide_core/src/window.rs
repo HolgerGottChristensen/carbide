@@ -3,7 +3,7 @@ use std::sync::atomic::{AtomicUsize, Ordering};
 
 use image::DynamicImage;
 
-use crate::draw::image::ImageId;
+use crate::draw::ImageId;
 use crate::locate_folder::Search;
 use crate::text::{FontId};
 use crate::widget::Menu;

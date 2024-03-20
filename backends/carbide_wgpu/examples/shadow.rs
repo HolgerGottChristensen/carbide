@@ -3,7 +3,6 @@ use std::time::Duration;
 use carbide_core::animation::ease_in_out;
 use carbide_core::color::{LIGHT_BLUE, RED};
 use carbide_core::draw::{Color, Dimension};
-use carbide_core::environment::*;
 use carbide_core::state::AnimatedState;
 use carbide_core::widget::*;
 use carbide_wgpu::{Application, Window};

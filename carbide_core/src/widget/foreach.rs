@@ -7,7 +7,6 @@ use crate::CommonWidgetImpl;
 use crate::draw::{Dimension, Position};
 use crate::flags::WidgetFlag;
 use crate::state::{AnyReadState, AnyState, IgnoreWritesState, IndexState, IntoReadState, IntoState, ReadState, ReadStateExtNew, State, StateContract, StateExtNew, StateSync, ValueState};
-use crate::update::Update;
 use crate::widget::{CommonWidget, Empty, Widget, WidgetExt, WidgetId};
 
 pub trait Delegate<T: StateContract, O: Widget>: Clone + 'static {

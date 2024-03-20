@@ -1,12 +1,11 @@
 use std::path::PathBuf;
-use cosmic_text::{Attrs, Buffer, Family, FontSystem, LayoutRun, Metrics, Shaping, Style, SwashCache, SwashImage, Weight};
+use cosmic_text::{Attrs, Buffer, Family, FontSystem, LayoutRun, Metrics, Shaping, Style, SwashImage, Weight};
 use fxhash::FxHashMap;
 use swash::scale::{Render, ScaleContext, Source, StrikeWith};
 use swash::scale::image::Content;
 use swash::zeno::{Format, Vector};
 
-use carbide_core::draw::{Dimension, MODE_TEXT, MODE_TEXT_COLOR, Position, Rect, Scalar};
-use carbide_core::draw::image::ImageId;
+use carbide_core::draw::{Dimension, MODE_TEXT, MODE_TEXT_COLOR, Position, Rect, Scalar, ImageId};
 use carbide_core::environment::Environment;
 use carbide_core::image::{DynamicImage, GrayImage, RgbaImage};
 use carbide_core::render::InnerRenderContext;
@@ -21,7 +20,6 @@ use crate::metadata::Metadata;
 pub struct TextContext {
     map: FxHashMap<TextId, (Buffer, Metadata)>,
     font_system: FontSystem,
-    cache: SwashCache,
     atlas: TextureAtlas,
 
     scale_context: ScaleContext,
@@ -32,7 +30,6 @@ impl TextContext {
         TextContext {
             map: Default::default(),
             font_system: FontSystem::new(),
-            cache: SwashCache::new(),
             atlas: TextureAtlas::new(1024, 1024),
             scale_context: ScaleContext::new(),
         }
@@ -120,7 +117,7 @@ impl InnerTextContext for TextContext {
         self.map.get_mut(&id).unwrap().1.scale_factor = env.scale_factor();
     }
 
-    fn hash(&self, id: TextId) -> Option<u64> {
+    fn hash(&self, _id: TextId) -> Option<u64> {
         todo!()
     }
 
@@ -250,7 +247,7 @@ impl InnerTextContext for TextContext {
         let byte_offset = meta.text
             .grapheme_indices(true)
             .skip(index)
-            .map(|(i, s)| i)
+            .map(|(i, _)| i)
             .next()
             .unwrap_or(meta.text.len());
 

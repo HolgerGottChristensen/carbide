@@ -1,15 +1,12 @@
-use carbide::environment::WidgetTransferAction;
-use carbide::event::{KeyboardEventContext, MouseEventContext};
-use carbide::layout::{Layout, LayoutContext};
-use carbide::state::LocalState;
 use carbide_core::CommonWidgetImpl;
 use carbide_core::draw::{Dimension, Position};
-use carbide_core::environment::Environment;
+use carbide_core::environment::WidgetTransferAction;
 use carbide_core::event::{
-    KeyboardEvent, KeyboardEventHandler, MouseButton, MouseEvent, MouseEventHandler,
+    KeyboardEvent, KeyboardEventHandler, MouseButton, MouseEvent, MouseEventHandler, KeyboardEventContext, MouseEventContext
 };
-use carbide_core::state::{AnyState, ReadState, State, StateContract};
-use carbide_core::widget::{CommonWidget, AnyWidget, WidgetExt, WidgetId, Widget};
+use carbide_core::layout::{Layout, LayoutContext};
+use carbide_core::state::{ReadState, State, StateContract, LocalState};
+use carbide_core::widget::{AnyWidget, CommonWidget, Widget, WidgetExt, WidgetId};
 
 use crate::plain::plain_pop_up_button::PopupButtonKeyCommand;
 

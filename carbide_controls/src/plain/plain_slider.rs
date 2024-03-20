@@ -1,7 +1,6 @@
 use std::fmt::Debug;
-use carbide::event::{KeyboardEventContext, MouseEventContext};
-use carbide::layout::LayoutContext;
-use carbide::state::ValueRefMut;
+use carbide_core::event::{KeyboardEventContext, MouseEventContext};
+use carbide_core::layout::LayoutContext;
 use carbide_core::CommonWidgetImpl;
 use carbide_core::draw::{Dimension, Position};
 use carbide_core::environment::{Environment, EnvironmentColor};
@@ -167,6 +166,7 @@ impl<
         )
     }
 
+    #[allow(unused)]
     fn percent_to_stepped_percent(percent: f64, start: f64, end: f64, step_size: f64) -> f64 {
         let range = end - start;
         let range_mod = range % step_size;
@@ -266,7 +266,7 @@ impl<
     Bg: AnyWidget + Clone,
     En: ReadState<T=bool>,
 > KeyboardEventHandler for PlainSlider<V, F, St, S, E, P, Th, In, Bg, En> {
-    fn handle_keyboard_event(&mut self, event: &KeyboardEvent, ctx: &mut KeyboardEventContext) {
+    fn handle_keyboard_event(&mut self, event: &KeyboardEvent, _ctx: &mut KeyboardEventContext) {
         if !*self.enabled.value() {
             return;
         }

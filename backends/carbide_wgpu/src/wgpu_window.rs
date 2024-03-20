@@ -7,42 +7,38 @@ use std::sync::Arc;
 use cgmath::{Matrix4, Vector3};
 use futures::executor::block_on;
 use raw_window_handle::HasRawWindowHandle;
-use wgpu::{Adapter, BindGroup, BindGroupLayout, Buffer, BufferUsages, CommandEncoder, Device, Extent3d, ImageCopyTexture, ImageSubresourceRange, Instance, PipelineLayout, Queue, RenderPassDepthStencilAttachment, RenderPipeline, Sampler, ShaderModule, Surface, SurfaceConfiguration, SurfaceTexture, Texture, TextureFormat, TextureUsages, TextureView};
+use wgpu::{Adapter, BindGroup, BindGroupLayout, Buffer, BufferUsages, CommandEncoder, Device, Extent3d, ImageCopyTexture, Instance, PipelineLayout, Queue, RenderPassDepthStencilAttachment, RenderPipeline, Sampler, ShaderModule, Surface, SurfaceConfiguration, SurfaceTexture, Texture, TextureFormat, TextureUsages, TextureView};
 use wgpu::util::{BufferInitDescriptor, DeviceExt};
-use carbide_winit::dpi::{LogicalSize, PhysicalPosition, PhysicalSize, Size};
-use carbide_winit::window::{Window as WinitWindow, WindowBuilder};
 
 use carbide_core::{draw, Scene};
-use carbide_core::draw::{Dimension, Position, Rect, Scalar};
-use carbide_core::draw::draw_gradient::DrawGradient;
-use carbide_core::draw::image::ImageId;
+use carbide_core::draw::{Dimension, DrawGradient, ImageId, Position, Rect, Scalar};
 use carbide_core::environment::{Environment, EnvironmentColor};
-use carbide_core::event::{KeyboardEvent, KeyboardEventContext, KeyboardEventHandler, MouseEvent, MouseEventContext, MouseEventHandler, OtherEventContext, OtherEventHandler, WindowEvent, WindowEventContext, WindowEventHandler};
-use carbide_core::event::Event;
+use carbide_core::event::{Event, KeyboardEvent, KeyboardEventContext, KeyboardEventHandler, MouseEvent, MouseEventContext, MouseEventHandler, OtherEventContext, OtherEventHandler, WindowEvent, WindowEventContext, WindowEventHandler};
 use carbide_core::focus::Focusable;
-use carbide_core::image::GenericImageView;
 use carbide_core::layout::{Layout, LayoutContext, Layouter};
 use carbide_core::render::{Render, RenderContext};
 use carbide_core::state::{IntoReadState, ReadState, StateSync};
 use carbide_core::text::InnerTextContext;
 use carbide_core::update::{Update, UpdateContext};
-use carbide_core::widget::{AnyWidget, CommonWidget, Empty, FilterId, GradientRepeat, GradientType, Menu, Overlay, Rectangle, Widget, WidgetExt, WidgetId, ZStack};
+use carbide_core::widget::{AnyWidget, CommonWidget, FilterId, GradientRepeat, GradientType, Menu, Overlay, Rectangle, Widget, WidgetExt, WidgetId, ZStack};
 use carbide_core::window::WindowId;
 use carbide_winit::convert_mouse_cursor;
+use carbide_winit::dpi::{LogicalSize, PhysicalPosition, PhysicalSize, Size};
+use carbide_winit::window::{Window as WinitWindow, WindowBuilder};
 
 use crate::{image_context, render_pass_ops, RenderPassOps};
 use crate::application::{EVENT_LOOP, WINDOW_IDS};
 use crate::bind_group_layouts::{atlas_bind_group_layout, filter_buffer_bind_group_layout, filter_texture_bind_group_layout, gradient_buffer_bind_group_layout, main_bind_group_layout, uniform_bind_group_layout};
-use crate::bind_groups::{filter_buffer_bind_group, filter_texture_bind_group, gradient_buffer_bind_group, main_bind_group, matrix_to_uniform_bind_group, size_to_uniform_bind_group};
+use crate::bind_groups::{filter_buffer_bind_group, gradient_buffer_bind_group, matrix_to_uniform_bind_group, size_to_uniform_bind_group};
 use crate::filter::Filter;
 use crate::gradient::Gradient;
 use crate::image::BindGroupExtended;
 use crate::pipeline::create_pipelines;
 use crate::render_context::WGPURenderContext;
 use crate::render_pass_command::{RenderPass, RenderPassCommand, WGPUBindGroup};
-use crate::render_pipeline_layouts::{filter_pipeline_layout, gradient_pipeline_layout, main_pipeline_layout, RenderPipelines};
+use crate::render_pipeline_layouts::{filter_pipeline_layout, main_pipeline_layout, RenderPipelines};
 use crate::render_target::RenderTarget;
-use crate::renderer::{atlas_cache_tex_desc, main_render_tex_desc, secondary_render_tex_desc};
+use crate::renderer::atlas_cache_tex_desc;
 use crate::samplers::main_sampler;
 use crate::texture_atlas_command::TextureAtlasCommand;
 use crate::textures::create_depth_stencil_texture;
@@ -177,7 +173,7 @@ thread_local!(pub static MAIN_SAMPLER: Sampler = {
 
 thread_local!(pub static ATLAS_CACHE_TEXTURE: Texture = {
     DEVICE_QUEUE.with(|(device, _)| {
-        let atlas_cache_tex_desc = atlas_cache_tex_desc([1024, 1024]);
+        let atlas_cache_tex_desc = atlas_cache_tex_desc(1024, 1024);
         device.create_texture(&atlas_cache_tex_desc)
     })
 });
@@ -245,7 +241,6 @@ pub struct WGPUWindow<T: ReadState<T=String>> {
     inner: Rc<WinitWindow>,
 
     id: WidgetId,
-    window_id: WindowId,
     title: T,
     position: Position,
     dimension: Dimension,
@@ -433,7 +428,6 @@ impl WGPUWindow<String> {
                 render_context: WGPURenderContext::new(),
                 inner: Rc::new(inner),
                 id: WidgetId::new(),
-                window_id,
                 title,
                 position: Default::default(),
                 dimension: Default::default(),
@@ -704,17 +698,17 @@ impl<T: ReadState<T=String>> WindowEventHandler for WGPUWindow<T> {
 }
 
 impl<T: ReadState<T=String>> Layout for WGPUWindow<T> {
-    fn calculate_size(&mut self, requested_size: Dimension, ctx: &mut LayoutContext) -> Dimension {
+    fn calculate_size(&mut self, _requested_size: Dimension, _ctx: &mut LayoutContext) -> Dimension {
         Dimension::new(0.0, 0.0)
     }
 
-    fn position_children(&mut self, ctx: &mut LayoutContext) {}
+    fn position_children(&mut self, _ctx: &mut LayoutContext) {}
 }
 
 impl<T: ReadState<T=String>> Update for WGPUWindow<T> {
-    fn update(&mut self, ctx: &mut UpdateContext) {}
+    fn update(&mut self, _ctx: &mut UpdateContext) {}
 
-    fn process_update(&mut self, ctx: &mut UpdateContext) {}
+    fn process_update(&mut self, _ctx: &mut UpdateContext) {}
 }
 
 impl<T: ReadState<T=String>> Render for WGPUWindow<T> {
@@ -1022,7 +1016,7 @@ impl<T: ReadState<T=String>> WGPUWindow<T> {
         let mut stencil_level = 0;
         let mut first_pass = true;
 
-        let mut current_target_view = &self.targets[0].view;
+        let mut current_target_view;
         let mut current_main_render_pipeline = &render_pipelines.render_pipeline_no_mask;
         let current_vertex_buffer_slice = self.vertex_buffer.0.slice(..);
         let mut current_uniform_bind_group = &self.uniform_bind_group;

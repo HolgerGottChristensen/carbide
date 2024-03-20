@@ -1,10 +1,9 @@
-use std::borrow::Borrow;
 use std::fmt::Debug;
 
 use carbide_macro::carbide_default_builder2;
 
 use crate::draw::{Dimension, Position};
-use crate::environment::{Environment, EnvironmentColor, EnvironmentFontSize, IntoColorReadState};
+use crate::environment::{Environment, EnvironmentColor, EnvironmentFontSize};
 use crate::layout::{Layout, LayoutContext};
 use crate::render::{Render, RenderContext, Style};
 use crate::state::{IntoReadState, ReadState, StateSync};

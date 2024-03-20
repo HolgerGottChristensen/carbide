@@ -54,7 +54,7 @@ impl<C: AnyWidget + Clone> Help<C> {
 }
 
 impl<C: AnyWidget + Clone> MouseEventHandler for Help<C> {
-    fn handle_mouse_event(&mut self, event: &MouseEvent, ctx: &mut MouseEventContext) {
+    fn handle_mouse_event(&mut self, event: &MouseEvent, _ctx: &mut MouseEventContext) {
         if self.is_inside(event.get_current_mouse_position()) {
             self.hovered = true;
         } else {
