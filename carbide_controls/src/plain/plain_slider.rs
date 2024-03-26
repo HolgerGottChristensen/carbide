@@ -3,7 +3,7 @@ use carbide_core::event::{KeyboardEventContext, MouseEventContext};
 use carbide_core::layout::LayoutContext;
 use carbide_core::CommonWidgetImpl;
 use carbide_core::draw::{Dimension, Position};
-use carbide_core::environment::{Environment, EnvironmentColor};
+use carbide_core::environment::EnvironmentColor;
 use carbide_core::event::{Key, KeyboardEvent, KeyboardEventHandler, ModifierKey, MouseEvent, MouseEventHandler};
 use carbide_core::flags::WidgetFlag;
 use carbide_core::focus::{Focus, Focusable, Refocus};
@@ -449,10 +449,10 @@ impl<
     Bg: Widget,
     En: ReadState<T=bool>,
 > Render for PlainSlider<V, F, St, S, E, P, Th, In, Bg, En> {
-    fn render(&mut self, context: &mut RenderContext, env: &mut Environment) {
-        self.background.render(context, env);
-        self.track.render(context, env);
-        self.thumb.render(context, env);
+    fn render(&mut self, context: &mut RenderContext) {
+        self.background.render(context);
+        self.track.render(context);
+        self.thumb.render(context);
     }
 }
 

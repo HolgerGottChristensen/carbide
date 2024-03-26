@@ -162,13 +162,13 @@ impl<C: CanvasContext> Shape for Canvas<C> {
 }
 
 impl<C: CanvasContext> Render for Canvas<C> {
-    fn render(&mut self, render_context: &mut RenderContext, env: &mut Environment) {
+    fn render(&mut self, render_context: &mut RenderContext) {
         let context = Context::new();
 
         let rectangle = Rect::new(self.position(), self.dimension());
-        let context = self.context.call(rectangle, context, env);
+        let context = self.context.call(rectangle, context, render_context.env);
 
-        let paths = context.to_paths(self.position(), env);
+        let paths = context.to_paths(self.position(), render_context.env);
 
         for (path, options) in paths {
             match options {

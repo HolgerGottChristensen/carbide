@@ -14,11 +14,11 @@ pub use rectangle::*;
 pub use rounded_rectangle::*;
 
 use crate::color::Color;
-use crate::draw::{DrawStyle, ImageId, Rect, NOOPImageContext, Position, Scalar};
+use crate::draw::{DrawStyle, ImageId, NOOPImageContext, Position, Rect, Scalar};
 use crate::draw::shape::triangle::Triangle;
 use crate::environment::Environment;
-use crate::render::{InnerRenderContext, RenderContext, CarbideTransform};
-use crate::text::{InnerTextContext, TextId, NOOPTextContext};
+use crate::render::{CarbideTransform, InnerRenderContext, RenderContext};
+use crate::text::{InnerTextContext, NOOPTextContext, TextId};
 use crate::widget::{AnyWidget, FilterId};
 use crate::widget::types::{PrimitiveStore, ShapeStyle, StrokeStyle};
 
@@ -36,10 +36,11 @@ pub trait Shape: AnyWidget + 'static {
     fn triangles(&mut self, env: &mut Environment) -> Vec<Triangle<Position>> {
         let mut geom = Tris(vec![]);
         self.render(&mut RenderContext {
-            render: &mut geom,
-            text: &mut NOOPTextContext,
-            image: &mut NOOPImageContext,
-        }, env);
+                    render: &mut geom,
+                    text: &mut NOOPTextContext,
+                    image: &mut NOOPImageContext,
+            env,
+        });
 
         geom.0
     }
@@ -55,6 +56,10 @@ impl InnerRenderContext for Tris {
     fn transform(&mut self, _transform: CarbideTransform) {}
 
     fn pop_transform(&mut self) {}
+
+    fn color_filter(&mut self, _hue_rotation: f32, _saturation_shift: f32, _luminance_shift: f32, _color_invert: bool) {}
+
+    fn pop_color_filter(&mut self) {}
 
     fn clip(&mut self, _bounding_box: Rect) {}
 
@@ -89,6 +94,12 @@ impl InnerRenderContext for Tris {
     fn filter_new_pop(&mut self, _id: FilterId, _color: Color, _post_draw: bool) {}
 
     fn filter_new_pop2d(&mut self, _id: FilterId, _id2: FilterId, _color: Color, _post_draw: bool) {}
+
+    fn mask_start(&mut self) {}
+
+    fn mask_in(&mut self) {}
+
+    fn mask_end(&mut self) {}
 }
 
 pub fn tessellate(shape: &mut dyn Shape, rectangle: &Box2D, path: &dyn Fn(&mut Builder, &Box2D)) {

@@ -3,7 +3,6 @@ use std::collections::HashMap;
 use std::fs::File;
 use std::io::Read;
 use std::str::FromStr;
-use std::sync::Arc;
 
 use fluent::FluentResource;
 use icu::locid::{Locale, locale};
@@ -18,8 +17,6 @@ pub use localizable::Localizable;
 pub use args::Arg;
 pub use args::LocalizedArg;
 pub use locale_ext::LocaleExt;
-use carbide_core::environment::Environment;
-use carbide_core::state::{EnvMap1, Map1};
 
 mod localized_string;
 mod localizable;

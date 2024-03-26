@@ -1,16 +1,12 @@
-use carbide::update::UpdateContext;
-
-use carbide_core::render::RenderContext;
 use carbide_macro::carbide_default_builder2;
 
 use crate::CommonWidgetImpl;
 use crate::draw::{Dimension, Position};
-use crate::environment::{Environment, WidgetTransferAction};
-use crate::event::{KeyboardEvent, KeyboardEventContext, KeyboardEventHandler, MouseEvent, MouseEventContext, MouseEventHandler, OtherEventContext, OtherEventHandler};
-use crate::event::Event;
+use crate::environment::WidgetTransferAction;
+use crate::event::{KeyboardEvent, KeyboardEventContext, KeyboardEventHandler, MouseEvent, MouseEventContext, MouseEventHandler, OtherEventContext, OtherEventHandler, Event};
 use crate::layout::{Layout, LayoutContext};
-use crate::render::Render;
-use crate::update::Update;
+use crate::render::{Render, RenderContext};
+use crate::update::{Update, UpdateContext};
 use crate::widget::{AnyWidget, CommonWidget, Empty, Widget, WidgetExt, WidgetId};
 
 #[derive(Debug, Clone, Widget)]
@@ -138,11 +134,11 @@ impl<C: Widget> CommonWidget for Overlay<C> {
 }
 
 impl<C: Widget> Render for Overlay<C> {
-    fn render(&mut self, context: &mut RenderContext, env: &mut Environment) {
-        self.child.render(context, env);
+    fn render(&mut self, context: &mut RenderContext) {
+        self.child.render(context);
 
         if let Some(overlay) = &mut self.overlay {
-            overlay.render(context, env)
+            overlay.render(context)
         }
     }
 }

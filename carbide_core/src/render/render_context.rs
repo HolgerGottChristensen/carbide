@@ -8,11 +8,13 @@ use crate::render::CarbideTransform;
 
 use crate::text::{InnerTextContext, TextId};
 use crate::widget::FilterId;
+use crate::environment::Environment;
 
 pub struct RenderContext<'a> {
     pub render: &'a mut dyn InnerRenderContext,
     pub text: &'a mut dyn InnerTextContext,
     pub image: &'a mut dyn InnerImageContext,
+    pub env: &'a mut Environment,
 }
 
 impl<'a> RenderContext<'a> {
@@ -22,6 +24,27 @@ impl<'a> RenderContext<'a> {
         self.render.transform(transform);
         let res = f(self);
         self.render.pop_transform();
+        res
+    }
+
+    pub fn hue_rotation<R, F: FnOnce(&mut RenderContext) -> R>(&mut self, rotation: f32, f: F) -> R {
+        self.render.color_filter(rotation, 0.0, 0.0, false);
+        let res = f(self);
+        self.render.pop_color_filter();
+        res
+    }
+
+    pub fn saturation_shift<R, F: FnOnce(&mut RenderContext) -> R>(&mut self, shift: f32, f: F) -> R {
+        self.render.color_filter(0.0, shift, 0.0, false);
+        let res = f(self);
+        self.render.pop_color_filter();
+        res
+    }
+
+    pub fn luminance_shift<R, F: FnOnce(&mut RenderContext) -> R>(&mut self, shift: f32, f: F) -> R {
+        self.render.color_filter(0.0, 0.0, shift, false);
+        let res = f(self);
+        self.render.pop_color_filter();
         res
     }
 
@@ -62,6 +85,15 @@ impl<'a> RenderContext<'a> {
         self.render.filter_new();
         let res = f(self);
         self.render.filter_new_pop2d(id, id2, color, true);
+        res
+    }
+
+    pub fn mask<R, F: FnOnce(&mut RenderContext) -> R, R2, F2: FnOnce(&mut RenderContext) -> R2>(&mut self, mask: F2, f: F) -> R {
+        self.render.mask_start();
+        let _ = mask(self);
+        self.render.mask_in();
+        let res = f(self);
+        self.render.mask_end();
         res
     }
 
@@ -123,6 +155,9 @@ pub trait InnerRenderContext {
     fn transform(&mut self, transform: CarbideTransform);
     fn pop_transform(&mut self);
 
+    fn color_filter(&mut self, hue_rotation: f32, saturation_shift: f32, luminance_shift: f32, color_invert: bool);
+    fn pop_color_filter(&mut self);
+
     fn clip(&mut self, bounding_box: Rect);
     fn pop_clip(&mut self);
 
@@ -156,6 +191,10 @@ pub trait InnerRenderContext {
     fn filter_new(&mut self);
     fn filter_new_pop(&mut self, id: FilterId, color: Color, post_draw: bool);
     fn filter_new_pop2d(&mut self, id: FilterId, id2: FilterId, color: Color, post_draw: bool);
+
+    fn mask_start(&mut self);
+    fn mask_in(&mut self);
+    fn mask_end(&mut self);
 }
 
 pub struct NoopRenderContext;
@@ -164,6 +203,10 @@ impl InnerRenderContext for NoopRenderContext {
     fn transform(&mut self, _transform: CarbideTransform) {}
 
     fn pop_transform(&mut self) {}
+
+    fn color_filter(&mut self, _hue_rotation: f32, _saturation_shift: f32, _luminance_shift: f32, _color_invert: bool) {}
+
+    fn pop_color_filter(&mut self) {}
 
     fn clip(&mut self, _bounding_box: Rect) {}
 
@@ -196,4 +239,8 @@ impl InnerRenderContext for NoopRenderContext {
     fn filter_new_pop(&mut self, _id: FilterId, _color: Color, _post_draw: bool) {}
 
     fn filter_new_pop2d(&mut self, _id: FilterId, _id2: FilterId, _color: Color, _post_draw: bool) {}
+
+    fn mask_start(&mut self) {}
+    fn mask_in(&mut self) {}
+    fn mask_end(&mut self) {}
 }

@@ -271,17 +271,17 @@ impl Layout for Scene3d {
 }
 
 impl Render for Scene3d {
-    fn render(&mut self, context: &mut RenderContext, env: &mut Environment) {
+    fn render(&mut self, context: &mut RenderContext) {
 
         for element in &mut self.elements {
-            element.update(&mut self.renderer, env);
+            element.update(&mut self.renderer, context.env);
         }
 
         self.rotation = self.rotation + 0.01;
 
         self.renderer.set_object_transform(&self.object_handle, Mat4::from_rotation_y(self.rotation as f32) * Mat4::from_scale(Vec3::new(1.0, 2.0, 3.0)));
 
-        let color = env.color(EnvironmentColor::Accent).unwrap();
+        let color = context.env.color(EnvironmentColor::Accent).unwrap();
 
         let color = glam::Vec4::new(color.red(), color.green(), color.blue(), color.opacity());
 
@@ -293,7 +293,7 @@ impl Render for Scene3d {
             ..PbrMaterial::default()
         });
 
-        env.request_animation_frame();
+        context.env.request_animation_frame();
 
         // Swap the instruction buffers so that our frame's changes can be processed.
         self.renderer.swap_instruction_buffers();

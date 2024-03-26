@@ -1,15 +1,12 @@
-use carbide_core::render::RenderContext;
 use carbide_macro::carbide_default_builder2;
 
 use crate::color::Color;
 use crate::draw::{Dimension, Position};
-use crate::environment::Environment;
 use crate::environment::EnvironmentColor;
-use crate::event::{ModifierKey, MouseButton, MouseEvent, MouseEventContext, MouseEventHandler, OtherEventContext, OtherEventHandler};
-use crate::event::Event;
+use crate::event::{ModifierKey, MouseButton, MouseEvent, MouseEventContext, MouseEventHandler, OtherEventContext, OtherEventHandler, Event};
 use crate::flags::WidgetFlag;
 use crate::layout::{BasicLayouter, Layout, LayoutContext, Layouter};
-use crate::render::Render;
+use crate::render::{Render, RenderContext};
 use crate::widget::{AnyWidget, Capsule, CommonWidget, Empty, Rectangle, Widget, WidgetExt, WidgetId};
 use crate::widget::types::ScrollDirection;
 
@@ -477,8 +474,8 @@ impl<W: Widget> CommonWidget for Scroll<W> {
 }
 
 impl<W: Widget> Render for Scroll<W> {
-    fn render(&mut self, context: &mut RenderContext, env: &mut Environment) {
-        self.child.render(context, env);
+    fn render(&mut self, context: &mut RenderContext) {
+        self.child.render(context);
 
         if (self.scroll_directions == ScrollDirection::Both
             || self.scroll_directions == ScrollDirection::Vertical)
@@ -486,10 +483,10 @@ impl<W: Widget> Render for Scroll<W> {
         {
             if self.vertical_scrollbar_hovered || self.drag_started_on_vertical_scrollbar {
                 self.scrollbar_vertical_background
-                    .render(context, env);
+                    .render(context);
             }
 
-            self.scrollbar_vertical.render(context, env);
+            self.scrollbar_vertical.render(context);
         }
 
         if (self.scroll_directions == ScrollDirection::Both
@@ -497,10 +494,10 @@ impl<W: Widget> Render for Scroll<W> {
             && self.child.width() > self.width()
         {
             if self.horizontal_scrollbar_hovered || self.drag_started_on_horizontal_scrollbar {
-                self.scrollbar_horizontal_background.render(context, env);
+                self.scrollbar_horizontal_background.render(context);
             }
 
-            self.scrollbar_horizontal.render(context, env);
+            self.scrollbar_horizontal.render(context);
         }
     }
 }

@@ -1,11 +1,9 @@
-use carbide_core::render::RenderContext;
 use carbide_macro::carbide_default_builder2;
 
 use crate::CommonWidgetImpl;
 use crate::draw::{Dimension, Position, Rect};
-use crate::environment::Environment;
 use crate::layout::{Layout, LayoutContext};
-use crate::render::Render;
+use crate::render::{Render, RenderContext};
 use crate::widget::*;
 
 #[derive(Debug, Clone, Widget)]
@@ -47,7 +45,7 @@ impl<W: Widget> CommonWidget for Clip<W> {
 }
 
 impl<W: Widget> Render for Clip<W> {
-    fn render(&mut self, context: &mut RenderContext, env: &mut Environment) {
+    fn render(&mut self, context: &mut RenderContext) {
         // If the clip is completely out of frame
         if self.position.x + self.dimension.width < 0.0 {
             return;
@@ -55,10 +53,10 @@ impl<W: Widget> Render for Clip<W> {
         if self.position.y + self.dimension.height < 0.0 {
             return;
         }
-        if self.position.x >= env.current_window_width() {
+        if self.position.x >= context.env.current_window_width() {
             return;
         }
-        if self.position.y >= env.current_window_height() {
+        if self.position.y >= context.env.current_window_height() {
             return;
         }
 
@@ -68,7 +66,7 @@ impl<W: Widget> Render for Clip<W> {
 
         context.clip(Rect::new(self.position, self.dimension), |this| {
             self.foreach_child_mut(&mut |child| {
-                child.render(this, env);
+                child.render(this);
             });
         })
     }

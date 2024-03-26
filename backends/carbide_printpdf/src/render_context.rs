@@ -45,6 +45,14 @@ impl InnerRenderContext for PDFRenderContext {
         todo!()
     }
 
+    fn color_filter(&mut self, hue_rotation: f32, saturation_shift: f32, luminance_shift: f32, color_invert: bool) {
+        todo!()
+    }
+
+    fn pop_color_filter(&mut self) {
+        todo!()
+    }
+
     fn clip(&mut self, bounding_box: Rect) {
         println!("Clip");
         let point1 = convert_position_to_point(bounding_box.top_left(), self.page_dimensions);
@@ -253,6 +261,18 @@ impl InnerRenderContext for PDFRenderContext {
     }
 
     fn filter_new_pop2d(&mut self, id: FilterId, id2: FilterId, color: carbide_core::color::Color, post_draw: bool) {
+        todo!()
+    }
+
+    fn mask_start(&mut self) {
+        todo!()
+    }
+
+    fn mask_in(&mut self) {
+        todo!()
+    }
+
+    fn mask_end(&mut self) {
         todo!()
     }
 }

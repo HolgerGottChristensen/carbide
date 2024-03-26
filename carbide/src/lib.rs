@@ -9,6 +9,9 @@ pub use carbide_wgpu::*;
 #[cfg(feature = "media")]
 pub use carbide_media::*;
 
+#[cfg(feature = "i18n")]
+pub use carbide_fluent::*;
+
 #[cfg(feature = "carbide_controls")]
 pub mod controls {
     pub use carbide_controls::*;

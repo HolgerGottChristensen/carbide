@@ -19,10 +19,14 @@ pub(crate) fn uniform_bind_group(
     })
 }
 
-pub(crate) fn matrix_to_uniform_bind_group(
+pub(crate) fn uniforms_to_bind_group(
     device: &Device,
     uniform_bind_group_layout: &BindGroupLayout,
     matrix: Matrix4<f32>,
+    hue_rotation: f32,
+    saturation_shift: f32,
+    luminance_shift: f32,
+    color_invert: bool,
 ) -> BindGroup {
     let uniforms: [[f32; 4]; 4] = matrix.into();
 
@@ -32,10 +36,33 @@ pub(crate) fn matrix_to_uniform_bind_group(
         usage: wgpu::BufferUsages::UNIFORM,
     });
 
-    let uniform_bind_group = uniform_bind_group(device, uniform_bind_group_layout, uniform_buffer);
+    let color_filter_buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
+        label: Some("Color filter Buffer"),
+        contents: bytemuck::cast_slice(&[
+            bytemuck::cast::<f32, [u8; 4]>(hue_rotation),
+            bytemuck::cast::<f32, [u8; 4]>(saturation_shift),
+            bytemuck::cast::<f32, [u8; 4]>(luminance_shift),
+            bytemuck::cast::<u32, [u8; 4]>(if color_invert { 1u32 } else { 0u32 })
+        ]),
+        usage: wgpu::BufferUsages::UNIFORM,
+    });
 
-    uniform_bind_group
+    device.create_bind_group(&wgpu::BindGroupDescriptor {
+        layout: &uniform_bind_group_layout,
+        entries: &[
+            wgpu::BindGroupEntry {
+                binding: 0,
+                resource: wgpu::BindingResource::Buffer(uniform_buffer.as_entire_buffer_binding()),
+            },
+            wgpu::BindGroupEntry {
+                binding: 1,
+                resource: wgpu::BindingResource::Buffer(color_filter_buffer.as_entire_buffer_binding()),
+            },
+        ],
+        label: Some("uniform_bind_group"),
+    })
 }
+
 
 pub(crate) fn size_to_uniform_bind_group(
     device: &Device,

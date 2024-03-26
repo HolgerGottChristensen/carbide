@@ -1,12 +1,9 @@
-use carbide_core::render::RenderContext;
-use carbide_core::widget::CommonWidget;
 use carbide_macro::carbide_default_builder2;
 
 use crate::CommonWidgetImpl;
 use crate::draw::{Dimension, Position};
-use crate::environment::Environment;
-use crate::render::Render;
-use crate::widget::{Empty, Widget, WidgetExt, WidgetId};
+use crate::render::{Render, RenderContext};
+use crate::widget::{Empty, Widget, WidgetExt, WidgetId, CommonWidget};
 
 /// A basic, non-interactive rectangle shape widget.
 #[derive(Debug, Clone, Widget)]
@@ -36,7 +33,7 @@ impl<W: Widget> CommonWidget for Hidden<W> {
 
 impl<W: Widget> Render for Hidden<W> {
     // Because we try to hide all children, we just stop the rendering tree.
-    fn render(&mut self, _: &mut RenderContext, _: &mut Environment) {}
+    fn render(&mut self, _context: &mut RenderContext) {}
 }
 
 impl<W: Widget> WidgetExt for Hidden<W> {}

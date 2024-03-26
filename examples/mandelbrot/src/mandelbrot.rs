@@ -76,7 +76,7 @@ impl Mandelbrot {
 }
 
 impl Render for Mandelbrot {
-    fn render(&mut self, context: &mut RenderContext, env: &mut Environment) {
+    fn render(&mut self, context: &mut RenderContext) {
 
         self.jobs.retain(|(job, receiver)| {
             match receiver.try_recv() {

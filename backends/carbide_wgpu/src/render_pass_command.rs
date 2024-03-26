@@ -30,6 +30,9 @@ pub enum RenderPassCommand {
     SetBindGroup {
         bind_group: WGPUBindGroup,
     },
+    SetMaskBindGroup {
+        bind_group: WGPUBindGroup,
+    },
 }
 
 #[derive(Debug)]

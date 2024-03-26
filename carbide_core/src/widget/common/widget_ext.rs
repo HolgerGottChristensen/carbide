@@ -1,17 +1,18 @@
 use cgmath::Matrix4;
-use carbide::event::Key;
 
 use crate::color::RED;
 use crate::draw::{Color, Rect};
 use crate::draw::Dimension;
 use crate::environment::{Environment, EnvironmentColor};
 use crate::event::{KeyboardEventContext, ModifierKey};
+use crate::event::Key;
 use crate::flags::WidgetFlag;
 use crate::focus::Focus;
 use crate::render::Style;
 use crate::state::{IntoReadState, RMap1};
 use crate::state::{IntoState, ReadState, StateContract};
-use crate::widget::{Absolute, Action, AnyWidget, AspectRatio, Background, Border, Changed, Clip, ClipShape, ContentMode, CornerRadii, EdgeInsets, EnvUpdating, Flagged, Flexibility, Frame, GeometryReader, Hidden, MouseArea, Offset, OnKey, OnKeyAction, Padding, Rotation3DEffect, RoundedRectangle, Scroll, Shadow, Shape, Transform};
+use crate::widget::{Absolute, Action, AnyWidget, AspectRatio, Background, Border, Changed, Clip, ClipShape, ContentMode, CornerRadii, EdgeInsets, EnvUpdating, Flagged, Flexibility, Frame, GeometryReader, Hidden, HueRotation, Mask, MouseArea, Offset, OnKey, OnKeyAction, Padding, Rotation3DEffect, RoundedRectangle, Saturation, Scroll, Shadow, Shape, Transform};
+use crate::widget::luminance::Luminance;
 use crate::widget::OnChange;
 use crate::widget::Widget;
 
@@ -119,6 +120,10 @@ pub trait WidgetExt: AnyWidget + Clone + Sized {
         ClipShape::new(self, shape)
     }
 
+    fn mask<M: Widget>(self, mask: M) -> Mask<M, Self> {
+        Mask::new(mask, self)
+    }
+
     fn corner_radius(self, radius: impl Into<CornerRadii>) -> ClipShape<Self, RoundedRectangle<Style, Style>> {
         ClipShape::new(self, RoundedRectangle::new(radius).fill(Style::Color(RED)).stroke(Style::Color(RED)))
     }
@@ -186,5 +191,17 @@ pub trait WidgetExt: AnyWidget + Clone + Sized {
         Shadow::new(sigma, self)
             .shadow_color(color)
             .shadow_offset(x, y)
+    }
+
+    fn hue_rotation<R: IntoReadState<f64>>(self, rotation: R) -> HueRotation<Self, R::Output> {
+        HueRotation::new(self, rotation)
+    }
+
+    fn saturation<R: IntoReadState<f64>>(self, shift: R) -> Saturation<Self, R::Output> {
+        Saturation::new(self, shift)
+    }
+
+    fn luminance<R: IntoReadState<f64>>(self, shift: R) -> Luminance<Self, R::Output> {
+        Luminance::new(self, shift)
     }
 }

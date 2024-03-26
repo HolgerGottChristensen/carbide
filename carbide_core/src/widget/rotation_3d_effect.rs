@@ -1,12 +1,10 @@
 use cgmath::{Deg, Matrix4, Point3, Vector3};
 
-use carbide_core::render::RenderContext;
 use carbide_macro::carbide_default_builder2;
 
 use crate::draw::{Dimension, Position, Rect};
-use crate::environment::Environment;
 use crate::layout::BasicLayouter;
-use crate::render::Render;
+use crate::render::{Render, RenderContext};
 use crate::state::{ReadState, StateSync};
 use crate::widget::{AnyWidget, CommonWidget, Empty, Widget, WidgetExt, WidgetId};
 
@@ -128,8 +126,8 @@ impl<R1: ReadState<T = f64> + Clone, R2: ReadState<T = f64> + Clone, C: Widget> 
 }
 
 impl<R1: ReadState<T = f64>, R2: ReadState<T = f64>, C: Widget> Render for Rotation3DEffect<R1, R2, C> {
-    fn render(&mut self, context: &mut RenderContext, env: &mut Environment) {
-        self.capture_state(env);
+    fn render(&mut self, context: &mut RenderContext) {
+        self.capture_state(context.env);
         // I do not understand why the fov needs to be 1.15, because my intuition says it should be 45deg
         let fov = self.fov as f32;
         let perspective = cgmath::perspective(Deg(fov), 1.0, 1.0, 10.0);
@@ -216,7 +214,7 @@ impl<R1: ReadState<T = f64>, R2: ReadState<T = f64>, C: Widget> Render for Rotat
         };
 
         context.transform(new_transform, |this| {
-            self.child.render(this, env)
+            self.child.render(this)
         });
     }
 }

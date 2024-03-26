@@ -117,7 +117,8 @@ impl NewEventHandler {
                     render: &mut NoopRenderContext,
                     text: text_context,
                     image: image_context,
-                }, env);
+                    env,
+                });
 
                 // Set cursor to default for next frame
                 env.set_cursor(MouseCursor::Default);

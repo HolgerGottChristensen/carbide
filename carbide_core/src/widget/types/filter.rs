@@ -1,6 +1,7 @@
 use std::fmt::{Display, Formatter};
 use std::ops::Div;
 use std::sync::atomic::{AtomicU32, Ordering};
+
 use crate::utils::gaussian;
 
 /// Filter struct containing a matrix of filter weights that can be applied to change the rendering

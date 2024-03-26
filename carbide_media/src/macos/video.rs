@@ -451,7 +451,7 @@ impl<Id: ReadState<T=Option<ImageId>> + Clone> Video<Id> {
 }
 
 impl<Id: ReadState<T=Option<ImageId>> + Clone> Render for Video<Id> {
-    fn render(&mut self, context: &mut RenderContext, env: &mut Environment) {
+    fn render(&mut self, context: &mut RenderContext) {
         if let Some(id) = &self.video_id {
             if context.image.texture_exist(id) {
                 context.image(

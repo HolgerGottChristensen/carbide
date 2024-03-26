@@ -51,6 +51,9 @@ pub use self::v_stack::*;
 pub use self::z_stack::*;
 pub use self::on_key::*;
 pub use self::shadow::*;
+pub use self::hue_rotation::*;
+pub use self::saturation::*;
+pub use self::mask::*;
 
 pub mod canvas;
 mod common;
@@ -102,6 +105,10 @@ mod z_stack;
 mod aspect_ratio;
 mod on_key;
 mod shadow;
+mod hue_rotation;
+mod saturation;
+mod luminance;
+mod mask;
 
 #[derive(Clone, Debug, Copy, Hash, Eq, PartialEq, Ord, PartialOrd)]
 pub struct WidgetId(u32);

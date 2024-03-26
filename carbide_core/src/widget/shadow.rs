@@ -1,7 +1,6 @@
 use crate::color::BLACK;
 use crate::CommonWidgetImpl;
 use crate::draw::{Color, Dimension, Position};
-use crate::environment::Environment;
 use crate::render::{Render, RenderContext};
 use crate::state::{IntoReadState, ReadState};
 use crate::widget::{CommonWidget, Empty, FilterId, ImageFilter, IntoWidget, Widget, WidgetExt, WidgetId};
@@ -71,18 +70,18 @@ impl<W: Widget, C: ReadState<T=Color>, S: ReadState<T=f64>, X: ReadState<T=i32>,
 }
 
 impl<W: Widget, C: ReadState<T=Color>, S: ReadState<T=f64>, X: ReadState<T=i32>, Y: ReadState<T=i32>> Render for Shadow<W, C, S, X, Y> {
-    fn render(&mut self, context: &mut RenderContext, env: &mut Environment) {
+    fn render(&mut self, context: &mut RenderContext) {
         if let Some((id, id2)) = self.filter_id {
-            env.remove_filter(id);
-            env.remove_filter(id2);
+            context.env.remove_filter(id);
+            context.env.remove_filter(id2);
         }
 
-        let id = env.insert_filter(ImageFilter::gaussian_blur_1d(*self.sigma.value() as f32).offset(-*self.offset_x.value(), -*self.offset_y.value()));
-        let id2 = env.insert_filter(ImageFilter::gaussian_blur_1d(*self.sigma.value() as f32).flipped().offset(-*self.offset_x.value(), -*self.offset_y.value()));
+        let id = context.env.insert_filter(ImageFilter::gaussian_blur_1d(*self.sigma.value() as f32).offset(-*self.offset_x.value(), -*self.offset_y.value()));
+        let id2 = context.env.insert_filter(ImageFilter::gaussian_blur_1d(*self.sigma.value() as f32).flipped().offset(-*self.offset_x.value(), -*self.offset_y.value()));
         self.filter_id = Some((id, id2));
 
         context.shadow(id, id2, *self.color.value(), |new_context| {
-            self.child.render(new_context, env)
+            self.child.render(new_context)
         })
     }
 }

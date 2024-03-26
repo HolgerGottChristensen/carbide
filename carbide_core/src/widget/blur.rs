@@ -3,7 +3,6 @@ use carbide_core::render::RenderContext;
 use carbide_macro::carbide_default_builder2;
 
 use crate::draw::{Dimension, Position, Rect};
-use crate::environment::Environment;
 use crate::render::Render;
 use crate::widget::{BlurType, CommonWidget, FilterId, ImageFilter, ImageFilterValue, Widget, WidgetExt, WidgetId};
 
@@ -65,14 +64,14 @@ impl CommonWidget for Blur {
 }
 
 impl Render for Blur {
-    fn render(&mut self, context: &mut RenderContext, env: &mut Environment) {
+    fn render(&mut self, context: &mut RenderContext) {
         if self.filter_horizontal_has_been_inserted == None {
             let (filter_id, radius) = match self.blur_type {
-                BlurType::Mean(radius) => (env.insert_filter(Blur::mean_blur(radius)), radius),
+                BlurType::Mean(radius) => (context.env.insert_filter(Blur::mean_blur(radius)), radius),
                 BlurType::Gaussian(sigma) => {
                     let filter = ImageFilter::gaussian_blur_1d(sigma);
                     let radius = filter.radius_x();
-                    (env.insert_filter(filter), radius)
+                    (context.env.insert_filter(filter), radius)
                 }
             };
             self.filter_horizontal_has_been_inserted = Some((filter_id, radius));
@@ -80,12 +79,12 @@ impl Render for Blur {
         if self.filter_vertical_has_been_inserted == None {
             let (filter_id, radius) = match self.blur_type {
                 BlurType::Mean(radius) => {
-                    (env.insert_filter(Blur::mean_blur(radius).flipped()), radius)
+                    (context.env.insert_filter(Blur::mean_blur(radius).flipped()), radius)
                 }
                 BlurType::Gaussian(sigma) => {
                     let filter = ImageFilter::gaussian_blur_1d(sigma).flipped();
                     let radius = filter.radius_y();
-                    (env.insert_filter(filter), radius)
+                    (context.env.insert_filter(filter), radius)
                 }
             };
             self.filter_vertical_has_been_inserted = Some((filter_id, radius));

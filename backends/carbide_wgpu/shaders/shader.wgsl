@@ -10,6 +10,13 @@ struct Uniforms {
     transform: mat4x4<f32>,
 }
 
+struct ColorFilter {
+    hue_rotation: f32,
+    saturation_shift: f32,
+    luminance_shift: f32,
+    invert: u32,
+}
+
 struct Gradient {
     colors: array<vec4<f32>,16u>,
     ratios: array<f32,16u>,
@@ -29,48 +36,77 @@ var main_sampler: sampler;
 @group(1) @binding(0)
 var<uniform> uniforms: Uniforms;
 
+@group(1) @binding(1)
+var<uniform> color_filter: ColorFilter;
+
 @group(2) @binding(0)
 var<storage, read> gradient: Gradient;
 
 @group(3) @binding(0)
 var atlas_texture: texture_2d<f32>;
 
+@group(4) @binding(0)
+var mask_texture: texture_2d<f32>;
+
+@group(4) @binding(1)
+var mask_sampler: sampler;
+
 @fragment
 fn main_fs(in: VertexOutput) -> @location(0) vec4<f32> {
     let atlas_pixel = textureSample(atlas_texture, main_sampler, in.tex_coord);
     let main_pixel = textureSample(main_texture, main_sampler, in.tex_coord);
 
-    switch (in.mode) {
+    let dim = textureDimensions(mask_texture);
+    let mask_pixel = textureSample(mask_texture, mask_sampler, vec2<f32>(in.position.x / f32(dim.x), in.position.y / f32(dim.y)));
+
+    let mode = in.mode & 31u;
+    let masked = in.mode & (1u << 5u);
+
+    var col = vec4<f32>(0.0);
+
+    switch (mode) {
         case 0u: {
-            return vec4<f32>(in.color.r * atlas_pixel.a, in.color.g * atlas_pixel.a, in.color.b * atlas_pixel.a, atlas_pixel.a);
+            col = vec4<f32>(in.color.r * atlas_pixel.a, in.color.g * atlas_pixel.a, in.color.b * atlas_pixel.a, atlas_pixel.a);
         }
         case 1u: {
-            return main_pixel;
+            col = main_pixel;
         }
         case 2u: {
-            return in.color;
+            col = in.color;
         }
         case 3u: {
-            return vec4<f32>(in.color.r * main_pixel.a, in.color.g * main_pixel.a, in.color.b * main_pixel.a, main_pixel.a);
+            col = vec4<f32>(in.color.r * main_pixel.a, in.color.g * main_pixel.a, in.color.b * main_pixel.a, main_pixel.a);
         }
         case 4u: {
-            return vec4<f32>(atlas_pixel.r * atlas_pixel.a, atlas_pixel.g * atlas_pixel.a, atlas_pixel.b * atlas_pixel.a, atlas_pixel.a);
+            col = vec4<f32>(atlas_pixel.r * atlas_pixel.a, atlas_pixel.g * atlas_pixel.a, atlas_pixel.b * atlas_pixel.a, atlas_pixel.a);
         }
 
         case 5u: {
-            return gradient_color(in.gradient_coord);
+            col = gradient_color(in.gradient_coord);
         }
         case 6u: {
-            return gradient_color(in.gradient_coord) * main_pixel.a;
+            col = gradient_color(in.gradient_coord) * main_pixel.a;
         }
         case 7u: {
-            return gradient_color(in.gradient_coord) * atlas_pixel.a;
+            col = gradient_color(in.gradient_coord) * atlas_pixel.a;
         }
 
         default: {
-           return vec4<f32>(1.0, 0.0, 0.0, 1.0);
+           col = vec4<f32>(1.0, 0.0, 0.0, 1.0);
         }
     }
+
+    var hsl = rgb_to_hsl(col.rgb / col.a);
+    hsl.x = fract(hsl.x + color_filter.hue_rotation);
+    hsl.y = clamp(hsl.y + color_filter.saturation_shift, 0.0, 1.0);
+    hsl.z = clamp(hsl.z + color_filter.luminance_shift, 0.0, 1.0);
+
+    // The color should be masked
+    if (masked != 0u) {
+        let a = mask_pixel.a * col.a;
+        return vec4<f32>(hsl_to_rgb(hsl) * a, a);
+    }
+    return vec4<f32>(hsl_to_rgb(hsl) * col.a, col.a);
 }
 
 @vertex
@@ -167,4 +203,74 @@ fn gradient_color(gradient_coord: vec2<f32>) -> vec4<f32> {
     color.b = color.b * color.a;
 
     return color;
+}
+
+fn rgb_to_hsl(color: vec3<f32>) -> vec3<f32> {
+    let c_max = max(max(color.r, color.g), color.b);
+    let c_min = min(min(color.r, color.g), color.b);
+    let delta = c_max - c_min;
+    var hsl = vec3<f32>(0.0, 0.0, (c_max + c_min) / 2.0);
+
+    if (delta != 0.0) {
+        // Saturation
+        if (hsl.z < 0.5) {
+            hsl.y = delta / (c_max + c_min);
+        } else {
+            hsl.y = delta / (2.0 - c_max - c_min);
+        }
+
+        // Hue
+        let delta_r = (((c_max - color.r) / 6.0) + (delta / 2.0)) / delta;
+        let delta_g = (((c_max - color.g) / 6.0) + (delta / 2.0)) / delta;
+        let delta_b = (((c_max - color.b) / 6.0) + (delta / 2.0)) / delta;
+
+        if (color.r == c_max) {
+            hsl.x = delta_b - delta_g;
+        } else if (color.g == c_max) {
+            hsl.x = (1.0 / 3.0) + delta_r - delta_b;
+        } else {
+            hsl.x = (2.0 / 3.0) + delta_g - delta_r;
+        }
+
+        // Ensure within [0.0, 1.0]
+        // https://www.w3.org/TR/WGSL/#fract-builtin
+        hsl.x = fract(hsl.x);
+    }
+
+    return hsl;
+}
+
+fn hsl_to_rgb(hsl: vec3<f32>) -> vec3<f32> {
+    if (hsl.y == 0.0) {
+        return vec3<f32>(hsl.z);
+    } else {
+        var b = 0.0;
+        if (hsl.z < 0.5) {
+			b = hsl.z * (1.0 + hsl.y);
+		} else {
+			b = hsl.z + hsl.y - hsl.y * hsl.z;
+		}
+
+        let a = 2.0 * hsl.z - b;
+
+        return vec3<f32>(
+            hueRamp(a, b, hsl.x + (1.0 / 3.0)),
+            hueRamp(a, b, hsl.x),
+            hueRamp(a, b, hsl.x - (1.0 / 3.0)),
+        );
+    }
+}
+
+fn hueRamp(a: f32, b: f32, hue: f32) -> f32 {
+   	let hue = fract(hue);
+
+   	if ((6.0 * hue) < 1.0){
+   		return a + (b - a) * 6.0 * hue;
+   	} else if ((2.0 * hue) < 1.0) {
+   		return b;
+   	} else if ((3.0 * hue) < 2.0) {
+   		return a + (b - a) * ((2.0 / 3.0) - hue) * 6.0;
+   	} else {
+   	    return a;
+   	}
 }

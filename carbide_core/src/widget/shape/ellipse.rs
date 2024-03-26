@@ -8,7 +8,6 @@ use carbide_macro::carbide_default_builder2;
 
 use crate::CommonWidgetImpl;
 use crate::draw::{Color, Dimension, Position};
-use crate::environment::Environment;
 use crate::environment::EnvironmentColor;
 use crate::render::{Render, RenderContext, Style};
 use crate::state::{IntoReadState, ReadState, StateSync};
@@ -94,8 +93,8 @@ impl<S: ReadState<T=Style> + Clone, F: ReadState<T=Style> + Clone> CommonWidget 
 }
 
 impl<S: ReadState<T=Style> + Clone, F: ReadState<T=Style> + Clone> Render for Ellipse<S, F> {
-    fn render(&mut self, context: &mut RenderContext, env: &mut Environment) {
-        self.capture_state(env);
+    fn render(&mut self, context: &mut RenderContext) {
+        self.capture_state(context.env);
 
         let radii = vec2(self.width() as f32 / 2.0, self.height() as f32 / 2.0);
         let center = point(self.x() as f32 + radii.x, self.y() as f32 + radii.y);

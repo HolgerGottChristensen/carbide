@@ -4,7 +4,6 @@ use carbide_macro::carbide_default_builder2;
 
 use crate::CommonWidgetImpl;
 use crate::draw::{Dimension, Position};
-use crate::environment::Environment;
 use crate::layout::{BasicLayouter, Layout, LayoutContext, Layouter};
 use crate::render::Render;
 use crate::widget::{Empty, Widget, WidgetExt, WidgetId};
@@ -78,9 +77,9 @@ impl<F: Widget, B: Widget> Layout for Background<F, B> {
 }
 
 impl<F: Widget, B: Widget> Render for Background<F, B> {
-    fn render(&mut self, context: &mut RenderContext, env: &mut Environment) {
-        self.background.render(context, env);
-        self.child.render(context, env);
+    fn render(&mut self, context: &mut RenderContext) {
+        self.background.render(context);
+        self.child.render(context);
     }
 }
 

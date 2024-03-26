@@ -2,7 +2,6 @@ use std::fmt::Debug;
 use std::ops::{Deref, DerefMut};
 
 use dyn_clone::DynClone;
-use crate::update::UpdateContext;
 
 use carbide_core::render::RenderContext;
 
@@ -15,8 +14,9 @@ use crate::focus::{Focus, Focusable, Refocus};
 use crate::layout::{Layout, LayoutContext, Layouter};
 use crate::render::Render;
 use crate::state::StateSync;
-use crate::widget::{CommonWidget, WidgetExt, WidgetId};
 use crate::update::Update;
+use crate::update::UpdateContext;
+use crate::widget::{CommonWidget, WidgetExt, WidgetId};
 
 // TODO Rename to AnyWidget and create a widget that is anywidget and clone
 pub trait AnyWidget: EventHandler + Update + Layout + Render + Focusable + DynClone + Debug + 'static {}
@@ -179,8 +179,8 @@ impl<T: AnyWidget + ?Sized> Layout for Box<T> {
 }
 
 impl<T: AnyWidget + ?Sized> Render for Box<T> {
-    fn render(&mut self, context: &mut RenderContext, env: &mut Environment) {
-        self.deref_mut().render(context, env)
+    fn render(&mut self, context: &mut RenderContext) {
+        self.deref_mut().render(context)
     }
 }
 

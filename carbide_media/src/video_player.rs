@@ -222,14 +222,14 @@ impl<Id: ReadState<T=Option<VideoId>> + Clone> Layout for VideoPlayer<Id> {
 }
 
 impl<Id: ReadState<T=Option<VideoId>> + Clone> Render for VideoPlayer<Id> {
-    fn render(&mut self, context: &mut RenderContext, env: &mut Environment) {
-        self.capture_state(env);
-        self.video.render(context, env);
+    fn render(&mut self, context: &mut RenderContext) {
+        self.capture_state(context.env);
+        self.video.render(context);
 
         if self.video_overlay_visible || *self.buffering.value() {
-            self.video_overlay.render(context, env);
+            self.video_overlay.render(context);
         }
-        self.release_state(env);
+        self.release_state(context.env);
     }
 }
 

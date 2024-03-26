@@ -1316,22 +1316,22 @@ impl<
     T: State<T=String>,
     E: ReadState<T=bool>,
 > Render for PlainTextInput<F, C, O, S, T, E> {
-    fn render(&mut self, context: &mut RenderContext, env: &mut Environment) {
+    fn render(&mut self, context: &mut RenderContext) {
 
         if self.get_focus() == Focus::Focused && *self.enabled.value() {
             match self.cursor {
                 Cursor::Single(_) => {
-                    self.text_widget.render(context, env);
-                    self.cursor_widget.render(context, env);
+                    self.text_widget.render(context);
+                    self.cursor_widget.render(context);
                 }
                 Cursor::Selection { .. } => {
-                    self.selection_widget.render(context, env);
-                    self.text_widget.render(context, env);
-                    self.cursor_widget.render(context, env);
+                    self.selection_widget.render(context);
+                    self.text_widget.render(context);
+                    self.cursor_widget.render(context);
                 }
             }
         } else {
-            self.text_widget.render(context, env);
+            self.text_widget.render(context);
         }
     }
 }

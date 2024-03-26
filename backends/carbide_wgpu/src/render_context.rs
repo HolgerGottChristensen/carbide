@@ -18,10 +18,10 @@ pub struct WGPURenderContext {
     style_stack: Vec<WGPUStyle>,
     stencil_stack: Vec<Range<u32>>,
     scissor_stack: Vec<Rect>,
-    transform_stack: Vec<(Matrix4<f32>, usize)>,
+    uniform_stack: Vec<(Uniform, usize)>,
     target_stack: Vec<usize>,
 
-    transforms: Vec<Matrix4<f32>>,
+    uniforms: Vec<Uniform>,
     gradients: Vec<Gradient>,
     vertices: Vec<Vertex>,
 
@@ -34,6 +34,7 @@ pub struct WGPURenderContext {
     window_bounding_box: Rect,
     frame_count: usize,
     skip_rendering: bool,
+    masked: bool,
 }
 
 #[derive(Debug, Clone)]
@@ -49,15 +50,36 @@ enum State {
     Finished,
 }
 
+#[derive(Debug, Clone, Copy)]
+pub struct Uniform {
+    pub transform: Matrix4<f32>,
+    pub hue_rotation: f32,
+    pub saturation_shift: f32,
+    pub luminance_shift: f32,
+    pub color_invert: bool,
+}
+
 impl WGPURenderContext {
     pub fn new() -> WGPURenderContext {
         WGPURenderContext {
             style_stack: vec![],
             stencil_stack: vec![],
             scissor_stack: vec![],
-            transform_stack: vec![(Matrix4::identity(), 0)],
+            uniform_stack: vec![(Uniform {
+                transform: Matrix4::identity(),
+                hue_rotation: 0.0,
+                saturation_shift: 0.0,
+                luminance_shift: 0.0,
+                color_invert: false,
+            }, 0)],
             target_stack: vec![],
-            transforms: vec![Matrix4::identity()],
+            uniforms: vec![Uniform {
+                transform: Matrix4::identity(),
+                hue_rotation: 0.0,
+                saturation_shift: 0.0,
+                luminance_shift: 0.0,
+                color_invert: false,
+            }],
             gradients: vec![],
             state: State::Plain { start: 0 },
             render_pass: vec![],
@@ -68,6 +90,7 @@ impl WGPURenderContext {
             frame_count: 0,
             skip_rendering: false,
             current_gradient: None,
+            masked: false,
         }
     }
 
@@ -79,11 +102,24 @@ impl WGPURenderContext {
 
         self.target_stack.clear();
 
-        self.transform_stack.clear();
-        self.transforms.clear();
+        self.uniform_stack.clear();
+        self.uniforms.clear();
         self.gradients.clear();
-        self.transforms.push(Matrix4::identity());
-        self.transform_stack.push((Matrix4::identity(), 0));
+
+        self.uniforms.push(Uniform {
+            transform: Matrix4::identity(),
+            hue_rotation: 0.0,
+            saturation_shift: 0.0,
+            luminance_shift: 0.0,
+            color_invert: false,
+        });
+        self.uniform_stack.push((Uniform {
+            transform: Matrix4::identity(),
+            hue_rotation: 0.0,
+            saturation_shift: 0.0,
+            luminance_shift: 0.0,
+            color_invert: false,
+        }, 0));
 
         self.stencil_stack.clear();
         self.state = State::Plain { start: 0 };
@@ -91,14 +127,15 @@ impl WGPURenderContext {
         self.current_bind_group = None;
         self.current_gradient = None;
         self.skip_rendering = false;
+        self.masked = false;
     }
 
     pub fn vertices(&self) -> &Vec<Vertex> {
         &self.vertices
     }
 
-    pub fn transforms(&self) -> &Vec<Matrix4<f32>> {
-        &self.transforms
+    pub fn uniforms(&self) -> &Vec<Uniform> {
+        &self.uniforms
     }
 
     pub fn gradients(&self) -> &Vec<Gradient> {
@@ -280,13 +317,16 @@ impl InnerRenderContext for WGPURenderContext {
         self.freshen_state();
         self.ensure_current_bind_group_is_some();
 
-        let (latest_transform, _) = &self.transform_stack[self.transform_stack.len() - 1];
+        let (latest_uniform, _) = &self.uniform_stack[self.uniform_stack.len() - 1];
 
-        let new_transform = latest_transform * transform;
+        let new_uniform = Uniform {
+            transform: latest_uniform.transform * transform,
+            ..*latest_uniform
+        };
 
-        let index = self.transforms.len();
-        self.transform_stack.push((new_transform, index));
-        self.transforms.push(new_transform);
+        let index = self.uniforms.len();
+        self.uniform_stack.push((new_uniform, index));
+        self.uniforms.push(new_uniform);
 
         self.render_pass_inner.push(RenderPassCommand::Transform { uniform_bind_group_index: index });
     }
@@ -295,9 +335,40 @@ impl InnerRenderContext for WGPURenderContext {
         self.freshen_state();
         self.ensure_current_bind_group_is_some();
 
-        self.transform_stack.pop();
+        self.uniform_stack.pop();
         self.render_pass_inner.push(RenderPassCommand::Transform {
-            uniform_bind_group_index: self.transform_stack[self.transform_stack.len() - 1].1
+            uniform_bind_group_index: self.uniform_stack[self.uniform_stack.len() - 1].1
+        });
+    }
+
+    fn color_filter(&mut self, hue_rotation: f32, saturation_shift: f32, luminance_shift: f32, color_invert: bool) {
+        self.freshen_state();
+        self.ensure_current_bind_group_is_some();
+
+        let (latest_uniform, _) = &self.uniform_stack[self.uniform_stack.len() - 1];
+
+        let new_uniform = Uniform {
+            transform: latest_uniform.transform,
+            hue_rotation: latest_uniform.hue_rotation + hue_rotation,
+            saturation_shift: latest_uniform.saturation_shift + saturation_shift,
+            luminance_shift: latest_uniform.luminance_shift + luminance_shift,
+            color_invert: if color_invert { !latest_uniform.color_invert } else { latest_uniform.color_invert },
+        };
+
+        let index = self.uniforms.len();
+        self.uniform_stack.push((new_uniform, index));
+        self.uniforms.push(new_uniform);
+
+        self.render_pass_inner.push(RenderPassCommand::Transform { uniform_bind_group_index: index });
+    }
+
+    fn pop_color_filter(&mut self) {
+        self.freshen_state();
+        self.ensure_current_bind_group_is_some();
+
+        self.uniform_stack.pop();
+        self.render_pass_inner.push(RenderPassCommand::Transform {
+            uniform_bind_group_index: self.uniform_stack[self.uniform_stack.len() - 1].1
         });
     }
 
@@ -544,6 +615,9 @@ impl InnerRenderContext for WGPURenderContext {
             },
         };
 
+        let mode = if gradient { MODE_GRADIENT_GEOMETRY } else { MODE_GEOMETRY };
+        let mode = if self.masked { mode | 0b100000 } else { mode };
+
         self.vertices.extend(
             geometry.iter()
                 .flat_map(|triangle| &triangle.0)
@@ -552,7 +626,7 @@ impl InnerRenderContext for WGPURenderContext {
                     position.y as f32,
                     color,
                     [0.0, 0.0],
-                    if gradient { MODE_GRADIENT_GEOMETRY } else { MODE_GEOMETRY }
+                    mode
                 ))
         );
     }
@@ -605,6 +679,8 @@ impl InnerRenderContext for WGPURenderContext {
         if mode == MODE_TEXT && is_gradient {
             mode = MODE_GRADIENT_TEXT;
         }
+
+        let mode = if self.masked { mode | 0b100000 } else { mode };
 
         let create_vertex = |x, y, tx, ty| Vertex {
             position: [x as f32, y as f32, 0.0],
@@ -828,5 +904,98 @@ impl InnerRenderContext for WGPURenderContext {
         self.state = State::Plain {
             start: self.vertices.len(),
         };
+    }
+
+    fn mask_start(&mut self) {
+        self.ensure_current_bind_group_is_some();
+
+        match &self.state {
+            State::Image { id, start } => {
+                self.push_image_command(id.clone(), *start..self.vertices.len());
+            }
+            State::Plain { start } => {
+                self.push_geometry_command(*start..self.vertices.len());
+            }
+            State::Finished => {}
+        }
+
+        self.state = State::Plain {
+            start: self.vertices.len(),
+        };
+
+        let mut swap = vec![];
+        std::mem::swap(&mut swap, &mut self.render_pass_inner);
+
+        self.render_pass.push(RenderPass::Normal {
+            commands: swap,
+            target_index: self.target_stack.len()
+        });
+        self.target_stack.push(0);
+        self.render_pass.push(RenderPass::Clear { target_index: self.target_stack.len() });
+
+        self.current_bind_group = None;
+    }
+
+    fn mask_in(&mut self) {
+        self.ensure_current_bind_group_is_some();
+
+        match &self.state {
+            State::Image { id, start } => {
+                self.push_image_command(id.clone(), *start..self.vertices.len());
+            }
+            State::Plain { start } => {
+                self.push_geometry_command(*start..self.vertices.len());
+            }
+            State::Finished => {}
+        }
+
+        self.state = State::Plain {
+            start: self.vertices.len(),
+        };
+
+        let mut swap = vec![];
+        std::mem::swap(&mut swap, &mut self.render_pass_inner);
+
+        self.render_pass.push(RenderPass::Normal {
+            commands: swap,
+            target_index: self.target_stack.len()
+        });
+
+        self.render_pass_inner.push(RenderPassCommand::SetMaskBindGroup {
+            bind_group: WGPUBindGroup::Target(self.target_stack.len()),
+        });
+
+        self.target_stack.pop();
+        self.masked = true;
+        self.current_bind_group = None;
+    }
+
+    fn mask_end(&mut self) {
+        self.ensure_current_bind_group_is_some();
+
+        match &self.state {
+            State::Image { id, start } => {
+                self.push_image_command(id.clone(), *start..self.vertices.len());
+            }
+            State::Plain { start } => {
+                self.push_geometry_command(*start..self.vertices.len());
+            }
+            State::Finished => {}
+        }
+
+        let mut swap = vec![];
+        std::mem::swap(&mut swap, &mut self.render_pass_inner);
+
+        self.render_pass.push(RenderPass::Normal {
+            commands: swap,
+            target_index: self.target_stack.len()
+        });
+
+        self.state = State::Plain {
+            start: self.vertices.len(),
+        };
+
+        self.masked = false;
+        self.current_bind_group = None;
     }
 }

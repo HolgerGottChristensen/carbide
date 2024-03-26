@@ -28,13 +28,13 @@ use carbide_winit::window::{Window as WinitWindow, WindowBuilder};
 
 use crate::{image_context, render_pass_ops, RenderPassOps};
 use crate::application::{EVENT_LOOP, WINDOW_IDS};
-use crate::bind_group_layouts::{atlas_bind_group_layout, filter_buffer_bind_group_layout, filter_texture_bind_group_layout, gradient_buffer_bind_group_layout, main_bind_group_layout, uniform_bind_group_layout};
-use crate::bind_groups::{filter_buffer_bind_group, gradient_buffer_bind_group, matrix_to_uniform_bind_group, size_to_uniform_bind_group};
+use crate::bind_group_layouts::{atlas_bind_group_layout, filter_buffer_bind_group_layout, filter_texture_bind_group_layout, gradient_buffer_bind_group_layout, main_bind_group_layout, uniform_bind_group_layout, uniform_bind_group_layout2};
+use crate::bind_groups::{filter_buffer_bind_group, gradient_buffer_bind_group, uniforms_to_bind_group, size_to_uniform_bind_group};
 use crate::filter::Filter;
 use crate::gradient::Gradient;
 use crate::image::BindGroupExtended;
 use crate::pipeline::create_pipelines;
-use crate::render_context::WGPURenderContext;
+use crate::render_context::{Uniform, WGPURenderContext};
 use crate::render_pass_command::{RenderPass, RenderPassCommand, WGPUBindGroup};
 use crate::render_pipeline_layouts::{filter_pipeline_layout, main_pipeline_layout, RenderPipelines};
 use crate::render_target::RenderTarget;
@@ -58,20 +58,26 @@ thread_local!(pub static INSTANCE: Arc<Instance> =
 
 thread_local!(pub static ADAPTER: Arc<Adapter> = {
     INSTANCE.with(|instance| {
-        Arc::new(block_on(instance.request_adapter(&wgpu::RequestAdapterOptions {
+        let adapter = block_on(instance.request_adapter(&wgpu::RequestAdapterOptions {
             power_preference: wgpu::PowerPreference::HighPerformance,
             force_fallback_adapter: false,
             compatible_surface: None,
-        })).unwrap())
+        })).unwrap();
+
+        //println!("{:#?}", adapter.limits());
+
+        Arc::new(adapter)
     })
 });
 thread_local!(pub static DEVICE_QUEUE: (Arc<Device>, Arc<Queue>) = {
     ADAPTER.with(|adapter| {
+        let mut limits = wgpu::Limits::default();
+        limits.max_bind_groups = 5;
         let (device, queue) = block_on(adapter.request_device(
             &wgpu::DeviceDescriptor {
                 label: None,
                 features: wgpu::Features::CLEAR_TEXTURE,
-                limits: wgpu::Limits::default(),
+                limits,
             },
             None, // Trace path
         )).unwrap();
@@ -83,6 +89,12 @@ thread_local!(pub static DEVICE_QUEUE: (Arc<Device>, Arc<Queue>) = {
 thread_local!(pub static UNIFORM_BIND_GROUP_LAYOUT: BindGroupLayout = {
     DEVICE_QUEUE.with(|(device, _)| {
         uniform_bind_group_layout(&device)
+    })
+});
+
+thread_local!(pub static UNIFORM_BIND_GROUP_LAYOUT2: BindGroupLayout = {
+    DEVICE_QUEUE.with(|(device, _)| {
+        uniform_bind_group_layout2(&device)
     })
 });
 
@@ -357,10 +369,10 @@ impl WGPUWindow<String> {
             });
 
             let uniform_bind_group = UNIFORM_BIND_GROUP_LAYOUT.with(|uniform_bind_group_layout| {
-                matrix_to_uniform_bind_group(device, uniform_bind_group_layout, matrix)
+                uniforms_to_bind_group(device, uniform_bind_group_layout, matrix, 0.0, 0.0, 0.0, false)
             });
 
-            let texture_size_bind_group = UNIFORM_BIND_GROUP_LAYOUT.with(|uniform_bind_group_layout| {
+            let texture_size_bind_group = UNIFORM_BIND_GROUP_LAYOUT2.with(|uniform_bind_group_layout| {
                 size_to_uniform_bind_group(
                     device,
                     uniform_bind_group_layout,
@@ -713,54 +725,55 @@ impl<T: ReadState<T=String>> Update for WGPUWindow<T> {
 }
 
 impl<T: ReadState<T=String>> Render for WGPUWindow<T> {
-    fn render(&mut self, ctx: &mut RenderContext, env: &mut Environment) {
-        let old_scale_factor = env.scale_factor();
-        let old_pixel_dimensions = env.pixel_dimensions();
+    fn render(&mut self, context: &mut RenderContext) {
+        let old_scale_factor = context.env.scale_factor();
+        let old_pixel_dimensions = context.env.pixel_dimensions();
 
         let scale_factor = self.inner.scale_factor();
         let physical_dimensions = self.inner.inner_size();
         let logical_dimensions = physical_dimensions.to_logical(scale_factor);
         let dimensions = Dimension::new(logical_dimensions.width, logical_dimensions.height);
 
-        env.capture_time();
+        context.env.capture_time();
 
-        env.set_pixel_dimensions(Dimension::new(physical_dimensions.width as f64, physical_dimensions.height as f64));
-        env.set_scale_factor(scale_factor);
+        context.env.set_pixel_dimensions(Dimension::new(physical_dimensions.width as f64, physical_dimensions.height as f64));
+        context.env.set_scale_factor(scale_factor);
 
         // Update children
         self.child.process_update(&mut UpdateContext {
-            text: ctx.text,
-            image: ctx.image,
-            env,
+            text: context.text,
+            image: context.image,
+            env: context.env,
         });
 
         // Calculate size
         self.child.calculate_size(dimensions, &mut LayoutContext {
-            text: ctx.text,
-            image: ctx.image,
-            env,
+            text: context.text,
+            image: context.image,
+            env: context.env,
         });
 
         // Position children
-        let layout = env.root_alignment();
+        let layout = context.env.root_alignment();
         (layout.positioner())(Position::new(0.0, 0.0), dimensions, &mut self.child);
 
         self.child.position_children(&mut LayoutContext {
-            text: ctx.text,
-            image: ctx.image,
-            env,
+            text: context.text,
+            image: context.image,
+            env: context.env,
         });
 
         // Render the children
         self.render_context.start(Rect::new(Position::origin(), dimensions));
 
-        ctx.text.prepare_render();
+        context.text.prepare_render();
 
         self.child.render(&mut RenderContext {
             render: &mut self.render_context,
-            text: ctx.text,
-            image: ctx.image,
-        }, env);
+            text: context.text,
+            image: context.image,
+            env: context.env,
+        });
 
         let render_passes = self.render_context.finish();
 
@@ -774,14 +787,14 @@ impl<T: ReadState<T=String>> Render for WGPUWindow<T> {
             Self::ensure_vertices_in_buffer(device, queue, self.render_context.vertices(), &mut self.vertex_buffer.0, &mut self.vertex_buffer.1);
 
             UNIFORM_BIND_GROUP_LAYOUT.with(|uniform_bind_group_layout| {
-                Self::ensure_transforms_in_buffer(device, &self.carbide_to_wgpu_matrix, self.render_context.transforms(), uniform_bind_group_layout, &mut uniform_bind_groups);
+                Self::ensure_uniforms_in_buffer(device, &self.carbide_to_wgpu_matrix, self.render_context.uniforms(), uniform_bind_group_layout, &mut uniform_bind_groups);
                 Self::ensure_gradients_in_buffer(device, self.render_context.gradients(), uniform_bind_group_layout, &mut gradient_bind_groups);
             });
         });
 
         if self.visible {
             {
-                self.title.sync(env);
+                self.title.sync(context.env);
 
                 let current = &*self.title.value();
                 if &self.inner.title() != current {
@@ -789,20 +802,20 @@ impl<T: ReadState<T=String>> Render for WGPUWindow<T> {
                 }
             }
 
-            self.inner.set_cursor_icon(convert_mouse_cursor(env.cursor()));
+            self.inner.set_cursor_icon(convert_mouse_cursor(context.env.cursor()));
 
-            match self.render_inner(render_passes, uniform_bind_groups, gradient_bind_groups, ctx.text, env) {
+            match self.render_inner(render_passes, uniform_bind_groups, gradient_bind_groups, context.text, context.env) {
                 Ok(_) => {}
                 // Recreate the swap_chain if lost
                 Err(wgpu::SurfaceError::Lost) => {
                     println!("Swap chain lost");
-                    self.resize(self.inner.inner_size(), env);
+                    self.resize(self.inner.inner_size(), context.env);
                     self.request_redraw();
                 }
                 // The system is out of memory, we should probably quit
                 Err(wgpu::SurfaceError::OutOfMemory) => {
                     println!("Swap chain out of memory");
-                    env.close_application();
+                    context.env.close_application();
                 }
                 // All other errors (Outdated, Timeout) should be resolved by the next frame
                 Err(e) => {
@@ -814,8 +827,8 @@ impl<T: ReadState<T=String>> Render for WGPUWindow<T> {
         }
 
         // Reset the environment
-        env.set_pixel_dimensions(old_pixel_dimensions);
-        env.set_scale_factor(old_scale_factor);
+        context.env.set_pixel_dimensions(old_pixel_dimensions);
+        context.env.set_scale_factor(old_scale_factor);
     }
 }
 
@@ -936,13 +949,18 @@ impl<T: ReadState<T=String>> WGPUWindow<T> {
         }
     }
 
-    fn ensure_transforms_in_buffer(device: &Device, carbide_to_wgpu_matrix: &Matrix4<f32>, transforms: &Vec<Matrix4<f32>>, uniform_bind_group_layout: &BindGroupLayout, uniform_bind_groups: &mut Vec<BindGroup>) {
-        for transform in transforms {
-            let transformed_matrix = carbide_to_wgpu_matrix * transform;
-            let new_bind_group = matrix_to_uniform_bind_group(
+    fn ensure_uniforms_in_buffer(device: &Device, carbide_to_wgpu_matrix: &Matrix4<f32>, uniforms: &Vec<Uniform>, uniform_bind_group_layout: &BindGroupLayout, uniform_bind_groups: &mut Vec<BindGroup>) {
+        for uniform in uniforms {
+            let transformed_matrix = carbide_to_wgpu_matrix * uniform.transform;
+
+            let new_bind_group = uniforms_to_bind_group(
                 device,
                 uniform_bind_group_layout,
                 transformed_matrix,
+                uniform.hue_rotation,
+                uniform.saturation_shift,
+                uniform.luminance_shift,
+                uniform.color_invert,
             );
 
             uniform_bind_groups.push(new_bind_group);
@@ -970,7 +988,7 @@ impl<T: ReadState<T=String>> WGPUWindow<T> {
         }
     }
 
-    fn render_texture_to_swapchain(&self, encoder: &mut CommandEncoder, render_pipeline_no_mask: &RenderPipeline, output: &SurfaceTexture, atlas_cache_bind_group: &BindGroup) {
+    fn render_texture_to_swapchain(&self, encoder: &mut CommandEncoder, render_pipeline_no_mask: &RenderPipeline, output: &SurfaceTexture, atlas_cache_bind_group: &BindGroup, bind_groups: &HashMap<ImageId, BindGroupExtended>) {
         let instance_range = 0..1;
 
         let (color_op, stencil_op, depth_op) = render_pass_ops(RenderPassOps::Start);
@@ -997,6 +1015,8 @@ impl<T: ReadState<T=String>> WGPUWindow<T> {
         render_pass.set_bind_group(1, &self.uniform_bind_group, &[]);
         render_pass.set_bind_group(2, &self.gradient_bind_group, &[]);
         render_pass.set_bind_group(3, atlas_cache_bind_group, &[]);
+        render_pass.set_bind_group(4, &bind_groups[&ImageId::default()].bind_group, &[]);
+
         render_pass.draw(0..6, instance_range);
     }
 
@@ -1024,7 +1044,7 @@ impl<T: ReadState<T=String>> WGPUWindow<T> {
         let mut current_gradient_bind_group = &self.gradient_bind_group;
         let mut invalid_scissor = false;
 
-        //println!("{:#?}", render_passes);
+        // println!("{:#?}", render_passes);
 
         for command in render_passes {
             match command {
@@ -1061,6 +1081,8 @@ impl<T: ReadState<T=String>> WGPUWindow<T> {
                     render_pass.set_bind_group(1, current_uniform_bind_group, &[]);
                     render_pass.set_bind_group(2, current_gradient_bind_group, &[]);
                     render_pass.set_bind_group(3, atlas_cache_bind_group, &[]);
+                    render_pass.set_bind_group(4, &bind_groups[&ImageId::default()].bind_group, &[]);
+
 
                     for inner_command in inner {
                         match inner_command {
@@ -1125,6 +1147,19 @@ impl<T: ReadState<T=String>> WGPUWindow<T> {
                             RenderPassCommand::Gradient { index } => {
                                 current_gradient_bind_group = &gradient_bind_groups[index];
                                 render_pass.set_bind_group(2, current_gradient_bind_group, &[]);
+                            }
+                            RenderPassCommand::SetMaskBindGroup { bind_group } => {
+                                match bind_group {
+                                    WGPUBindGroup::Default => {
+                                        render_pass.set_bind_group(4, &bind_groups[&ImageId::default()].bind_group, &[]);
+                                    }
+                                    WGPUBindGroup::Image(id) => {
+                                        render_pass.set_bind_group(4, &bind_groups[&id].bind_group, &[]);
+                                    }
+                                    WGPUBindGroup::Target(index) => {
+                                        render_pass.set_bind_group(4, &self.targets[index].bind_group, &[]);
+                                    }
+                                }
                             }
                         }
                     }
@@ -1227,7 +1262,7 @@ impl<T: ReadState<T=String>> WGPUWindow<T> {
                             let output = self.surface.get_current_texture()?;
 
                             // Render from the texture to the swap chain
-                            self.render_texture_to_swapchain(&mut encoder, &render_pipelines.render_pipeline_no_mask, &output, atlas_cache_bind_group);
+                            self.render_texture_to_swapchain(&mut encoder, &render_pipelines.render_pipeline_no_mask, &output, atlas_cache_bind_group, bind_groups);
 
                             // submit will accept anything that implements IntoIter
                             queue.submit(std::iter::once(encoder.finish()));
@@ -1263,7 +1298,7 @@ impl<T: ReadState<T=String>> WGPUWindow<T> {
             let scale_factor = self.inner.scale_factor();
 
             self.texture_size_bind_group =
-                UNIFORM_BIND_GROUP_LAYOUT.with(|uniform_bind_group_layout| {
+                UNIFORM_BIND_GROUP_LAYOUT2.with(|uniform_bind_group_layout| {
                     size_to_uniform_bind_group(
                         device,
                         uniform_bind_group_layout,
@@ -1280,10 +1315,14 @@ impl<T: ReadState<T=String>> WGPUWindow<T> {
 
             let uniform_bind_group =
                 UNIFORM_BIND_GROUP_LAYOUT.with(|uniform_bind_group_layout| {
-                    matrix_to_uniform_bind_group(
+                    uniforms_to_bind_group(
                         device,
                         uniform_bind_group_layout,
                         self.carbide_to_wgpu_matrix,
+                        0.0,
+                        0.0,
+                        0.0,
+                        false
                     )
                 });
 

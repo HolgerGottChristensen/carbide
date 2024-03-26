@@ -3,7 +3,7 @@ use std::fmt::Debug;
 use carbide_macro::carbide_default_builder2;
 
 use crate::draw::{Dimension, Position};
-use crate::environment::{Environment, EnvironmentColor, EnvironmentFontSize};
+use crate::environment::{EnvironmentColor, EnvironmentFontSize};
 use crate::layout::{Layout, LayoutContext};
 use crate::render::{Render, RenderContext, Style};
 use crate::state::{IntoReadState, ReadState, StateSync};
@@ -256,8 +256,8 @@ impl<T: ReadState<T=String>, S: ReadState<T=u32>, C: ReadState<T=Style>> Layout 
 }
 
 impl<T: ReadState<T=String>, S: ReadState<T=u32>, C: ReadState<T=Style>> Render for Text<T, S, C> {
-    fn render(&mut self, context: &mut RenderContext, env: &mut Environment) {
-        self.capture_state(env);
+    fn render(&mut self, context: &mut RenderContext) {
+        self.capture_state(context.env);
 
         let default_color = self.color.value();
 

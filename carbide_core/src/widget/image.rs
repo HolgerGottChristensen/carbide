@@ -1,19 +1,16 @@
 //! A simple, non-interactive widget for drawing an `Image`.
 use std::ops::Deref;
 
-use carbide_core::render::RenderContext;
-use carbide_core::state::StateSync;
-use carbide_core::widget::CommonWidget;
 use carbide_macro::carbide_default_builder2;
 
 use crate::CommonWidgetImpl;
-use crate::draw::{Dimension, MODE_ICON, MODE_IMAGE, Position, Rect, Scalar, Texture, TextureFormat, ImageId};
-use crate::environment::{Environment, EnvironmentColor,};
-use crate::layout::{Layout, LayoutContext};
+use crate::draw::{Dimension, ImageId, MODE_ICON, MODE_IMAGE, Position, Rect, Scalar, Texture, TextureFormat};
 use crate::draw::pre_multiply::PreMultiply;
-use crate::render::{Render, Style};
-use crate::state::{IntoReadState, ReadState};
-use crate::widget::{Widget, WidgetExt, WidgetId};
+use crate::environment::EnvironmentColor;
+use crate::layout::{Layout, LayoutContext};
+use crate::render::{Render, Style, RenderContext};
+use crate::state::{IntoReadState, ReadState, StateSync};
+use crate::widget::{Widget, WidgetExt, WidgetId, CommonWidget};
 use crate::widget::types::ScaleMode;
 
 /// A primitive and basic widget for drawing an `Image`.
@@ -186,11 +183,11 @@ impl<Id: ReadState<T=Option<ImageId>>, C: ReadState<T=Style>> Layout for Image<I
 }
 
 impl<Id: ReadState<T=Option<ImageId>>, C: ReadState<T=Style>> Render for Image<Id, C> {
-    fn render(&mut self, context: &mut RenderContext, env: &mut Environment) {
-        self.capture_state(env);
+    fn render(&mut self, context: &mut RenderContext) {
+        self.capture_state(context.env);
 
         if let Some(color) = &mut self.color {
-            color.sync(env);
+            color.sync(context.env);
         }
 
         if let Some(id) = self.image_id.value().deref() {

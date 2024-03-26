@@ -1,14 +1,13 @@
 use cgmath::{Deg, Matrix4, Vector3};
 
-use carbide_core::render::RenderContext;
-use carbide_core::state::RMap1;
 use carbide_macro::carbide_default_builder2;
 
 use crate::draw::{Dimension, Position, Rect};
-use crate::environment::Environment;
 use crate::layout::BasicLayouter;
 use crate::render::Render;
+use crate::render::RenderContext;
 use crate::state::{Map1, ReadState, StateSync};
+use crate::state::RMap1;
 use crate::widget::{AnyWidget, CommonWidget, Empty, Widget, WidgetExt, WidgetId};
 
 #[derive(Debug, Clone, Widget)]
@@ -160,8 +159,8 @@ impl<W: AnyWidget + Clone, M: ReadState<T=Matrix4<f32>>> CommonWidget for Transf
 }
 
 impl<W: AnyWidget + Clone, M: ReadState<T=Matrix4<f32>>> Render for Transform<W, M> {
-    fn render(&mut self, context: &mut RenderContext, env: &mut Environment) {
-        self.capture_state(env);
+    fn render(&mut self, context: &mut RenderContext) {
+        self.capture_state(context.env);
         let bounding_box = Rect::new(self.position, self.dimension);
         let matrix = *self.matrix.value();
 
@@ -232,11 +231,11 @@ impl<W: AnyWidget + Clone, M: ReadState<T=Matrix4<f32>>> Render for Transform<W,
         };
 
 
-        self.release_state(env);
+        self.release_state(context.env);
 
         context.transform(new_transform, |this| {
             self.foreach_child_mut(&mut |child| {
-                child.render(this, env);
+                child.render(this);
             });
         })
     }

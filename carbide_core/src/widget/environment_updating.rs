@@ -179,14 +179,14 @@ impl<C: Widget, T: StateContract, S: ReadState<T=T>> Focusable for EnvUpdating<C
 }
 
 impl<C: Widget, T: StateContract, S: ReadState<T=T>> Render for EnvUpdating<C, T, S> {
-    fn render(&mut self, context: &mut RenderContext, env: &mut Environment) {
-        self.insert_into_env(env);
+    fn render(&mut self, context: &mut RenderContext) {
+        self.insert_into_env(context.env);
 
         self.foreach_child_mut(&mut |child| {
-            child.render(context, env);
+            child.render(context);
         });
 
-        self.remove_from_env(env);
+        self.remove_from_env(context.env);
     }
 }
 

@@ -427,10 +427,10 @@ impl<T: Widget,
     B7: ReadState<T=bool>,
     B8: ReadState<T=bool>,
 > Render for Ignore<T, B1, B2, B3, B4, B5, B6, B7, B8> {
-    fn render(&mut self, context: &mut RenderContext, env: &mut Environment) {
-        self.update_states(env);
+    fn render(&mut self, context: &mut RenderContext) {
+        self.update_states(context.env);
         if *self.render_event.value() {
-            self.inner.render(context, env)
+            self.inner.render(context)
         }
     }
 }

@@ -6,7 +6,6 @@ use carbide_macro::carbide_default_builder2;
 
 use crate::CommonWidgetImpl;
 use crate::draw::{Color, Dimension, Position};
-use crate::environment::Environment;
 use crate::environment::EnvironmentColor;
 use crate::layout::{Layout, LayoutContext};
 use crate::render::{Render, RenderContext, Style};
@@ -103,8 +102,8 @@ impl<S: ReadState<T=Style> + Clone, F: ReadState<T=Style> + Clone> Layout for Ci
 }
 
 impl<S: ReadState<T=Style> + Clone, F: ReadState<T=Style> + Clone> Render for Circle<S, F> {
-    fn render(&mut self, context: &mut RenderContext, env: &mut Environment) {
-        self.capture_state(env);
+    fn render(&mut self, context: &mut RenderContext) {
+        self.capture_state(context.env);
 
         let radius = self.width() as f32 / 2.0;
         let center = point(self.x() as f32 + radius, self.y() as f32 + radius);

@@ -2,7 +2,6 @@ use carbide_macro::carbide_default_builder2;
 
 use crate::CommonWidgetImpl;
 use crate::draw::{Dimension, Position, Rect};
-use crate::environment::Environment;
 use crate::render::{Render, RenderContext};
 use crate::widget::*;
 
@@ -36,18 +35,18 @@ impl<W: Widget> CommonWidget for Filter<W> {
 }
 
 impl<W: Widget> Render for Filter<W> {
-    fn render(&mut self, context: &mut RenderContext, env: &mut Environment) {
+    fn render(&mut self, context: &mut RenderContext) {
         let filter_id = if let Some(filter_id) = self.filter_id {
             filter_id
         } else {
-            let id = env.insert_filter(self.filter.clone());
+            let id = context.env.insert_filter(self.filter.clone());
             self.filter_id = Some(id);
             id
         };
 
         context.filter(filter_id, Rect::new(self.position, self.dimension), |this| {
             self.foreach_child_mut(&mut |child| {
-                child.render(this, env);
+                child.render(this);
             });
         });
     }

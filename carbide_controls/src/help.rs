@@ -3,7 +3,6 @@ use carbide::event::MouseEventContext;
 use carbide::layout::LayoutContext;
 use carbide_core::{CommonWidgetImpl};
 use carbide_core::draw::{Dimension, Position, Scalar};
-use carbide_core::environment::{Environment};
 use carbide_core::event::{MouseEvent, MouseEventHandler};
 use carbide_core::layout::Layout;
 use carbide_core::render::{Render, RenderContext};
@@ -133,12 +132,12 @@ impl<C: AnyWidget + Clone> Layout for Help<C> {
 }
 
 impl<C: AnyWidget + Clone> Render for Help<C> {
-    fn render(&mut self, context: &mut RenderContext, env: &mut Environment) {
-        self.child.render(context, env);
+    fn render(&mut self, context: &mut RenderContext) {
+        self.child.render(context);
 
         if self.hovered {
             context.layer(1000, |this| {
-                self.help.render(this, env);
+                self.help.render(this);
             });
         }
     }

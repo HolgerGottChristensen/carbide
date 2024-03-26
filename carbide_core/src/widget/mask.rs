@@ -7,51 +7,51 @@ use crate::environment::Environment;
 use crate::layout::{BasicLayouter, Layout, LayoutContext, Layouter};
 use crate::render::Render;
 use crate::state::StateSync;
-use crate::widget::{CommonWidget, Empty, Shape, Widget, WidgetExt, WidgetId};
+use crate::widget::{CommonWidget, Empty, Widget, WidgetExt, WidgetId};
 
 #[derive(Debug, Clone, Widget)]
 #[carbide_exclude(Render, Layout, StateSync)]
-pub struct ClipShape<C, S>
+pub struct Mask<M, W>
 where
-    C: Widget,
-    S: Shape + Clone
+    M: Widget,
+    W: Widget,
 {
     id: WidgetId,
-    child: C,
-    shape: S,
+    child: W,
+    mask: M,
     position: Position,
     dimension: Dimension,
 }
 
-impl ClipShape<Empty, Empty> {
+impl Mask<Empty, Empty> {
     #[carbide_default_builder2]
-    pub fn new<C: Widget, S: Shape + Clone>(child: C, shape: S) -> ClipShape<C, S> {
-        ClipShape {
+    pub fn new<M: Widget, W: Widget>(mask: M, child: W) -> Mask<M, W> {
+        Mask {
             id: WidgetId::new(),
             child,
-            shape,
+            mask,
             position: Position::new(0.0, 0.0),
             dimension: Dimension::new(100.0, 100.0),
         }
     }
 }
 
-impl<C: Widget, S: Shape + Clone> StateSync for ClipShape<C, S> {
+impl<M: Widget, W: Widget> StateSync for Mask<M, W> {
     fn capture_state(&mut self, env: &mut Environment) {
         self.child.capture_state(env);
-        self.shape.capture_state(env);
+        self.mask.capture_state(env);
     }
 
     fn release_state(&mut self, env: &mut Environment) {
         self.child.release_state(env);
-        self.shape.release_state(env);
+        self.mask.release_state(env);
     }
 }
 
-impl<C: Widget, S: Shape + Clone> Layout for ClipShape<C, S> {
+impl<M: Widget, W: Widget> Layout for Mask<M, W> {
     fn calculate_size(&mut self, requested_size: Dimension, ctx: &mut LayoutContext) -> Dimension {
         self.child.calculate_size(requested_size, ctx);
-        self.shape.calculate_size(requested_size, ctx);
+        self.mask.calculate_size(requested_size, ctx);
         self.dimension = requested_size;
         requested_size
     }
@@ -62,27 +62,25 @@ impl<C: Widget, S: Shape + Clone> Layout for ClipShape<C, S> {
         let dimension = self.dimension;
 
         positioning(position, dimension, &mut self.child);
-        positioning(position, dimension, &mut self.shape);
+        positioning(position, dimension, &mut self.mask);
 
         self.child.position_children(ctx);
-        self.shape.position_children(ctx);
+        self.mask.position_children(ctx);
     }
 }
 
-impl<C: Widget, S: Shape + Clone> CommonWidget for ClipShape<C, S> {
+impl<M: Widget, W: Widget> CommonWidget for Mask<M, W> {
     CommonWidgetImpl!(self, id: self.id, child: self.child, position: self.position, dimension: self.dimension, flexibility: 0);
 }
 
-impl<C: Widget, S: Shape + Clone> Render for ClipShape<C, S> {
+impl<M: Widget, W: Widget> Render for Mask<M, W> {
     fn render(&mut self, context: &mut RenderContext) {
-        let stencil_triangles = &self.shape.triangles(context.env);
-
-        context.stencil(stencil_triangles, |this| {
-            self.foreach_child_mut(&mut |child| {
-                child.render(this);
-            });
+        context.mask(|this| {
+            self.mask.render(this);
+        }, |this| {
+            self.child.render(this);
         })
     }
 }
 
-impl<C: Widget, S: Shape + Clone> WidgetExt for ClipShape<C, S> {}
+impl<M: Widget, W: Widget> WidgetExt for Mask<M, W> {}

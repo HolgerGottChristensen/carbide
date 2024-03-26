@@ -24,7 +24,7 @@ use crate::utils::{fmod, turns_to_radians};
 pub enum Color {
     /// Red, Green, Blue, Alpha - All values' scales represented between 0.0 and 1.0.
     Rgba(f32, f32, f32, f32),
-    /// Hue, Saturation, Lightness, Alpha - all values scales represented between 0.0 and 1.0.
+    /// Hue, Saturation, Lightness, Alpha - H, [0.0, 2*PI), all other values represented between 0.0 and 1.0.
     Hsla(f32, f32, f32, f32),
 }
 

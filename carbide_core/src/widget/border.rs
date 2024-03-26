@@ -1,13 +1,10 @@
-use carbide_core::render::RenderContext;
-use carbide_core::state::IntoReadState;
 use carbide_macro::carbide_default_builder2;
 
 use crate::CommonWidgetImpl;
-use crate::draw::{Color, Dimension, Position, Rect, DrawStyle};
-use crate::environment::Environment;
+use crate::draw::{Color, Dimension, DrawStyle, Position, Rect};
 use crate::layout::{Layout, LayoutContext};
-use crate::render::Render;
-use crate::state::ReadState;
+use crate::render::{Render, RenderContext};
+use crate::state::{IntoReadState, ReadState};
 use crate::widget::{CommonWidget, Empty, Widget, WidgetExt, WidgetId};
 
 /// A basic, non-interactive rectangle shape widget.
@@ -94,7 +91,7 @@ impl<W: Widget, C: ReadState<T=Color>> CommonWidget for Border<W, C> {
 }
 
 impl<W: Widget, C: ReadState<T=Color>> Render for Border<W, C> {
-    fn render(&mut self, context: &mut RenderContext, env: &mut Environment) {
+    fn render(&mut self, context: &mut RenderContext) {
         let rect = Rect::new(self.position, self.dimension);
         let (l, r, b, t) = rect.l_r_b_t();
 
@@ -119,7 +116,7 @@ impl<W: Widget, C: ReadState<T=Color>> Render for Border<W, C> {
         );
 
         self.foreach_child_mut(&mut |child| {
-            child.render(context, env);
+            child.render(context);
         });
 
         context.style(DrawStyle::Color(*self.color.value()), |this| {
