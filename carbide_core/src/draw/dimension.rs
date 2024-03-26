@@ -1,11 +1,11 @@
 use std::fmt;
-use std::fmt::{Display, Formatter};
+use std::fmt::{Debug, Display, Formatter};
 use std::ops::{Add, AddAssign, Div, Mul, Sub, SubAssign};
 
 use crate::draw::Position;
 use crate::draw::Scalar;
 
-#[derive(Copy, Clone, PartialOrd, PartialEq, Debug, Default)]
+#[derive(Copy, Clone, PartialOrd, PartialEq, Default)]
 pub struct Dimension {
     pub width: Scalar,
     pub height: Scalar,
@@ -108,5 +108,14 @@ impl Mul<Scalar> for Dimension {
 impl Display for Dimension {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         write!(f, "(w: {}px, h: {}px)", self.width, self.height)
+    }
+}
+
+impl Debug for Dimension {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        f.debug_struct("Dimension")
+            .field("width", &self.width)
+            .field("height", &self.height)
+            .finish()
     }
 }

@@ -73,6 +73,7 @@ thread_local!(pub static DEVICE_QUEUE: (Arc<Device>, Arc<Queue>) = {
     ADAPTER.with(|adapter| {
         let mut limits = wgpu::Limits::default();
         limits.max_bind_groups = 5;
+
         let (device, queue) = block_on(adapter.request_device(
             &wgpu::DeviceDescriptor {
                 label: None,
@@ -420,18 +421,14 @@ impl WGPUWindow<String> {
                 usage: BufferUsages::VERTEX | BufferUsages::COPY_DST,
             });
 
-            let mut targets = vec![];
-
-            targets.push(RenderTarget::new(size.width, size.height));
-            targets.push(RenderTarget::new(size.width, size.height));
-            targets.push(RenderTarget::new(size.width, size.height));
-
             Box::new(WGPUWindow {
                 surface,
                 render_pipelines_index,
                 depth_texture_view,
                 texture_size_bind_group,
-                targets,
+                targets: vec![
+                    RenderTarget::new(size.width, size.height)
+                ],
                 uniform_bind_group,
                 gradient_bind_group,
                 carbide_to_wgpu_matrix: matrix,
@@ -777,8 +774,16 @@ impl<T: ReadState<T=String>> Render for WGPUWindow<T> {
 
         let render_passes = self.render_context.finish();
 
+        let target_count = self.render_context.target_count();
+        if self.targets.len() < target_count {
+            for _ in self.targets.len()..target_count {
+                self.targets.push(RenderTarget::new(self.inner.inner_size().width, self.inner.inner_size().height));
+            }
+        }
+
         //println!("\nContext: {:#?}", render_passes);
         //println!("Vertices: {:#?}", &self.render_context.vertices()[0..10]);
+        //println!("Targets: {:#?}", &self.targets.len());
 
         let mut uniform_bind_groups = vec![];
         let mut gradient_bind_groups = vec![];
@@ -1078,6 +1083,7 @@ impl<T: ReadState<T=String>> WGPUWindow<T> {
                     render_pass.set_stencil_reference(stencil_level);
                     render_pass.set_pipeline(current_main_render_pipeline);
                     render_pass.set_vertex_buffer(0, current_vertex_buffer_slice);
+                    render_pass.set_bind_group(0, &bind_groups[&ImageId::default()].bind_group, &[]);
                     render_pass.set_bind_group(1, current_uniform_bind_group, &[]);
                     render_pass.set_bind_group(2, current_gradient_bind_group, &[]);
                     render_pass.set_bind_group(3, atlas_cache_bind_group, &[]);
@@ -1138,7 +1144,7 @@ impl<T: ReadState<T=String>> WGPUWindow<T> {
                                     render_pass.set_pipeline(current_main_render_pipeline);
                                 }
                             }
-                            RenderPassCommand::Transform {
+                            RenderPassCommand::Uniform {
                                 uniform_bind_group_index,
                             } => {
                                 current_uniform_bind_group = &uniform_bind_groups[uniform_bind_group_index];
@@ -1288,12 +1294,9 @@ impl<T: ReadState<T=String>> WGPUWindow<T> {
 
             self.depth_texture_view = depth_texture_view;
 
-            let mut targets = vec![];
-            targets.push(RenderTarget::new(new_size.width, new_size.height));
-            targets.push(RenderTarget::new(new_size.width, new_size.height));
-            targets.push(RenderTarget::new(new_size.width, new_size.height));
-
-            self.targets = targets;
+            self.targets = vec![
+                RenderTarget::new(new_size.width, new_size.height)
+            ];
 
             let scale_factor = self.inner.scale_factor();
 

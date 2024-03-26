@@ -81,13 +81,9 @@ impl InnerRenderContext for Tris {
 
     fn pop_style(&mut self) {}
 
-    fn image(&mut self, _id: ImageId, _bounding_box: Rect, _source_rect: Rect, _mode: u32) {}
+    fn image(&mut self, _id: Option<ImageId>, _bounding_box: Rect, _source_rect: Rect, _mode: u32) {}
 
     fn text(&mut self, _text: TextId, _ctx: &mut dyn InnerTextContext) {}
-
-    fn layer(&mut self, _index: u32) {}
-
-    fn pop_layer(&mut self) {}
 
     fn filter_new(&mut self) {}
 

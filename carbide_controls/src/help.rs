@@ -136,9 +136,7 @@ impl<C: AnyWidget + Clone> Render for Help<C> {
         self.child.render(context);
 
         if self.hovered {
-            context.layer(1000, |this| {
-                self.help.render(this);
-            });
+            self.help.render(context);
         }
     }
 }

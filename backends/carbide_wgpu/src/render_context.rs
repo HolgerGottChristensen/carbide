@@ -10,6 +10,7 @@ use carbide_core::text::{InnerTextContext, TextId};
 use carbide_core::widget::FilterId;
 
 use crate::gradient::Gradient;
+use crate::render_context::TargetState::{Free, Used};
 use crate::render_pass_command::{RenderPass, RenderPassCommand, WGPUBindGroup};
 use crate::vertex::Vertex;
 
@@ -19,7 +20,11 @@ pub struct WGPURenderContext {
     stencil_stack: Vec<Range<u32>>,
     scissor_stack: Vec<Rect>,
     uniform_stack: Vec<(Uniform, usize)>,
-    target_stack: Vec<usize>,
+
+    // (mask, target)
+    mask_target_stack: Vec<(usize, usize)>,
+    // target, old_target
+    filter_target_stack: Vec<(usize, usize)>,
 
     uniforms: Vec<Uniform>,
     gradients: Vec<Gradient>,
@@ -30,11 +35,13 @@ pub struct WGPURenderContext {
     current_bind_group: Option<WGPUBindGroup>,
     current_gradient: Option<Gradient>,
 
-    state: State,
+    finished: bool,
+    targets: TargetStates,
     window_bounding_box: Rect,
     frame_count: usize,
     skip_rendering: bool,
     masked: bool,
+    current_target: usize,
 }
 
 #[derive(Debug, Clone)]
@@ -43,11 +50,45 @@ enum WGPUStyle {
     Gradient(Gradient),
 }
 
+#[derive(Debug, PartialEq)]
+enum TargetState {
+    Free,
+    Used
+}
+
 #[derive(Debug)]
-enum State {
-    Image { id: ImageId, start: usize },
-    Plain { start: usize },
-    Finished,
+struct TargetStates {
+    inner: Vec<TargetState>,
+}
+
+impl TargetStates {
+    fn new() -> TargetStates {
+        TargetStates {
+            inner: vec![
+                Used
+            ],
+        }
+    }
+
+    fn len(&self) -> usize {
+        self.inner.len()
+    }
+
+    /// Get the index of the next free target and a bool indicating if the target needs clearing.
+    fn get(&mut self) -> (usize, bool) {
+        if let Some((index, target)) = self.inner.iter_mut().enumerate().filter(|(_, a)| **a != Used).next() {
+            let needs_free = *target == Free;
+            *target = Used;
+            (index, needs_free)
+        } else {
+            self.inner.push(Used);
+            (self.inner.len() - 1, false)
+        }
+    }
+
+    fn free(&mut self, index: usize) {
+        self.inner[index] = Free;
+    }
 }
 
 #[derive(Debug, Clone, Copy)]
@@ -72,7 +113,8 @@ impl WGPURenderContext {
                 luminance_shift: 0.0,
                 color_invert: false,
             }, 0)],
-            target_stack: vec![],
+            mask_target_stack: vec![],
+            filter_target_stack: vec![],
             uniforms: vec![Uniform {
                 transform: Matrix4::identity(),
                 hue_rotation: 0.0,
@@ -81,7 +123,7 @@ impl WGPURenderContext {
                 color_invert: false,
             }],
             gradients: vec![],
-            state: State::Plain { start: 0 },
+            finished: false,
             render_pass: vec![],
             render_pass_inner: vec![],
             vertices: vec![],
@@ -91,7 +133,13 @@ impl WGPURenderContext {
             skip_rendering: false,
             current_gradient: None,
             masked: false,
+            targets: TargetStates::new(),
+            current_target: 0,
         }
+    }
+
+    pub fn target_count(&self) -> usize {
+        self.targets.len()
     }
 
     pub fn clear(&mut self) {
@@ -99,8 +147,8 @@ impl WGPURenderContext {
         self.render_pass.clear();
         self.render_pass_inner.clear();
         self.scissor_stack.clear();
-
-        self.target_stack.clear();
+        self.mask_target_stack.clear();
+        self.filter_target_stack.clear();
 
         self.uniform_stack.clear();
         self.uniforms.clear();
@@ -122,12 +170,13 @@ impl WGPURenderContext {
         }, 0));
 
         self.stencil_stack.clear();
-        self.state = State::Plain { start: 0 };
+        self.finished = false;
         self.vertices.clear();
         self.current_bind_group = None;
         self.current_gradient = None;
         self.skip_rendering = false;
         self.masked = false;
+        self.current_target = 0;
     }
 
     pub fn vertices(&self) -> &Vec<Vertex> {
@@ -150,13 +199,13 @@ impl WGPURenderContext {
     }
 
     pub fn finish(&mut self) -> Vec<RenderPass> {
-        if let State::Finished = self.state {
+        if self.finished {
             panic!("Trying to finish a render context that is already in a finished state.");
         }
 
         //println!("Finish render frame: {}", self.frame_count);
 
-        match &self.state {
+        /*match &self.state {
             State::Plain { start } => {
                 self.push_geometry_command(*start..self.vertices.len());
             },
@@ -172,10 +221,10 @@ impl WGPURenderContext {
         if !swap.is_empty() {
             self.render_pass.push(RenderPass::Normal {
                 commands: swap,
-                target_index: self.target_stack.len()
+                target_index: 0
             });
-        }
-        self.state = State::Finished;
+        }*/
+        self.finished = true;
 
         let mut swap = vec![];
         std::mem::swap(&mut swap, &mut self.render_pass);
@@ -183,140 +232,57 @@ impl WGPURenderContext {
         swap
     }
 
-    fn freshen_state(&mut self) {
-        match &self.state {
-            State::Image { id, start } => {
-                self.push_image_command(id.clone(), *start..self.vertices.len());
+    fn draw(&mut self, start: u32, end: u32) {
+        if let Some(RenderPass::Normal { commands, .. }) = self.render_pass.last_mut() {
+            if let Some(RenderPassCommand::Draw { vertex_range }) = commands.last_mut() {
+                vertex_range.end = end;
+            } else {
+                commands.push(RenderPassCommand::Draw { vertex_range: start..end })
             }
-            State::Plain { start } => {
-                self.push_geometry_command(*start..self.vertices.len());
-            }
-            State::Finished => {}
+        } else {
+            self.render_pass.push(RenderPass::Normal { commands: vec![
+                RenderPassCommand::Draw { vertex_range: start..end }
+            ], target_index: self.current_target });
+            self.current_bind_group = None;
         }
-
-        self.state = State::Plain {
-            start: self.vertices.len(),
-        };
     }
 
-    fn ensure_state_plain(&mut self) {
-        match &self.state {
-            State::Image { id, start } => {
-                self.push_image_command(id.clone(), *start..self.vertices.len());
-
-                self.state = State::Plain {
-                    start: self.vertices.len(),
-                };
-            }
-            State::Plain { .. } => {} // We are already in the plain state
-            State::Finished => unreachable!("We should not ensure that the state is plain after we are finished")
+    fn push_command(&mut self, command: RenderPassCommand) {
+        if let Some(RenderPass::Normal { commands, .. }) = self.render_pass.last_mut() {
+            commands.push(command);
+        } else {
+            self.render_pass.push(RenderPass::Normal { commands: vec![
+                command
+            ], target_index: self.current_target });
         }
+    }
+
+    fn start_render_pass(&mut self, index: usize) {
+        self.current_bind_group = None;
+        self.render_pass.push(RenderPass::Normal { commands: vec![], target_index: index });
     }
 
     fn ensure_state_gradient(&mut self, gradient: &Gradient) {
         let needs_update = if let Some(current) = &mut self.current_gradient {
             current != gradient
         } else {
-            self.current_gradient = Some(gradient.clone());
-
-            self.render_pass_inner.push(RenderPassCommand::Gradient {
-                index: self.gradients.len()
-            });
-
-            self.gradients.push(gradient.clone());
-
-            false
+            true
         };
 
         if needs_update {
-            self.freshen_state();
             self.current_gradient = Some(gradient.clone());
 
-            self.render_pass_inner.push(RenderPassCommand::Gradient {
+            self.push_command(RenderPassCommand::Gradient {
                 index: self.gradients.len()
             });
 
             self.gradients.push(gradient.clone());
         }
-    }
-
-    fn ensure_state_image(&mut self, id: &ImageId) {
-        let new_image_id = id.clone();
-
-        match &self.state {
-            // If we're already in the drawing mode for this image, we're done.
-            State::Image { id, .. } if id == &new_image_id => (),
-
-            // If we were in the `Plain` drawing state, switch to Image drawing state.
-            State::Plain { start } => {
-                self.push_geometry_command(*start..self.vertices.len());
-                self.state = State::Image {
-                    id: new_image_id,
-                    start: self.vertices.len(),
-                };
-            }
-
-            // If we were drawing a different image, switch state to draw *this* image.
-            State::Image { id, start } => {
-                self.push_image_command(id.clone(), *start..self.vertices.len());
-                self.state = State::Image {
-                    id: new_image_id,
-                    start: self.vertices.len(),
-                };
-            }
-            State::Finished => {}
-        }
-    }
-
-    fn ensure_current_bind_group_is_some(&mut self) {
-        if self.current_bind_group.is_none() {
-            self.current_bind_group = Some(WGPUBindGroup::Default);
-            let cmd = RenderPassCommand::SetBindGroup {
-                bind_group: WGPUBindGroup::Default,
-            };
-            self.render_pass_inner.push(cmd);
-        }
-    }
-
-    fn push_image_command(&mut self, id: ImageId, vertices: Range<usize>) {
-        let new_group = WGPUBindGroup::Image(id.clone());
-        let expected_bind_group = Some(WGPUBindGroup::Image(id.clone()));
-
-        if self.current_bind_group != expected_bind_group {
-            // Now update the bind group and add the new bind group command.
-            self.current_bind_group = expected_bind_group;
-            let cmd = RenderPassCommand::SetBindGroup {
-                bind_group: new_group,
-            };
-            self.render_pass_inner.push(cmd);
-        }
-
-        let cmd = RenderPassCommand::Draw {
-            vertex_range: vertices.start as u32..vertices.end as u32,
-        };
-
-        self.render_pass_inner.push(cmd);
-    }
-
-    fn push_geometry_command(&mut self, vertices: Range<usize>) {
-        if vertices.len() == 0 {
-            return;
-        }
-
-        self.ensure_current_bind_group_is_some();
-
-        let cmd = RenderPassCommand::Draw {
-            vertex_range: vertices.start as u32..vertices.end as u32,
-        };
-        self.render_pass_inner.push(cmd);
     }
 }
 
 impl InnerRenderContext for WGPURenderContext {
     fn transform(&mut self, transform: CarbideTransform) {
-        self.freshen_state();
-        self.ensure_current_bind_group_is_some();
-
         let (latest_uniform, _) = &self.uniform_stack[self.uniform_stack.len() - 1];
 
         let new_uniform = Uniform {
@@ -328,23 +294,17 @@ impl InnerRenderContext for WGPURenderContext {
         self.uniform_stack.push((new_uniform, index));
         self.uniforms.push(new_uniform);
 
-        self.render_pass_inner.push(RenderPassCommand::Transform { uniform_bind_group_index: index });
+        self.push_command(RenderPassCommand::Uniform { uniform_bind_group_index: index });
     }
 
     fn pop_transform(&mut self) {
-        self.freshen_state();
-        self.ensure_current_bind_group_is_some();
-
         self.uniform_stack.pop();
-        self.render_pass_inner.push(RenderPassCommand::Transform {
+        self.push_command(RenderPassCommand::Uniform {
             uniform_bind_group_index: self.uniform_stack[self.uniform_stack.len() - 1].1
         });
     }
 
     fn color_filter(&mut self, hue_rotation: f32, saturation_shift: f32, luminance_shift: f32, color_invert: bool) {
-        self.freshen_state();
-        self.ensure_current_bind_group_is_some();
-
         let (latest_uniform, _) = &self.uniform_stack[self.uniform_stack.len() - 1];
 
         let new_uniform = Uniform {
@@ -359,23 +319,17 @@ impl InnerRenderContext for WGPURenderContext {
         self.uniform_stack.push((new_uniform, index));
         self.uniforms.push(new_uniform);
 
-        self.render_pass_inner.push(RenderPassCommand::Transform { uniform_bind_group_index: index });
+        self.push_command(RenderPassCommand::Uniform { uniform_bind_group_index: index });
     }
 
     fn pop_color_filter(&mut self) {
-        self.freshen_state();
-        self.ensure_current_bind_group_is_some();
-
         self.uniform_stack.pop();
-        self.render_pass_inner.push(RenderPassCommand::Transform {
+        self.push_command(RenderPassCommand::Uniform {
             uniform_bind_group_index: self.uniform_stack[self.uniform_stack.len() - 1].1
         });
     }
 
     fn clip(&mut self, bounding_box: Rect) {
-        self.freshen_state();
-        self.ensure_current_bind_group_is_some();
-
         let corrected = if let Some(outer) = self.scissor_stack.last() {
             bounding_box.within_bounding_box(outer)
         } else {
@@ -383,7 +337,7 @@ impl InnerRenderContext for WGPURenderContext {
         };
 
         if corrected.height() > 0.0 && corrected.width() > 0.0 {
-            self.render_pass_inner.push(RenderPassCommand::SetScissor {
+            self.push_command(RenderPassCommand::SetScissor {
                 rect: corrected
             });
         } else {
@@ -394,23 +348,20 @@ impl InnerRenderContext for WGPURenderContext {
     }
 
     fn pop_clip(&mut self) {
-        self.freshen_state();
-        self.ensure_current_bind_group_is_some();
-
         self.scissor_stack.pop();
 
         match self.scissor_stack.last() {
             Some(n) => {
                 if n.height() > 0.0 && n.width() > 0.0 {
                     self.skip_rendering = false;
-                    self.render_pass_inner.push(RenderPassCommand::SetScissor {
+                    self.push_command(RenderPassCommand::SetScissor {
                         rect: *n
                     })
                 }
             }
             None => {
                 self.skip_rendering = false;
-                self.render_pass_inner.push(RenderPassCommand::SetScissor {
+                self.push_command(RenderPassCommand::SetScissor {
                     rect: self.window_bounding_box
                 })
             }
@@ -421,7 +372,6 @@ impl InnerRenderContext for WGPURenderContext {
         if self.skip_rendering {
             return;
         }
-        self.freshen_state();
 
         let create_vertex = |x, y| Vertex {
             position: [x as f32, y as f32, 0.0],
@@ -435,6 +385,7 @@ impl InnerRenderContext for WGPURenderContext {
 
 
         let (l, r, b, t) = bounding_box.l_r_b_t();
+        let (new_target, _needs_clear) = self.targets.get();
 
         let vertices_start = self.vertices.len() as u32;
 
@@ -448,36 +399,21 @@ impl InnerRenderContext for WGPURenderContext {
         self.vertices.push(create_vertex(r, t));
         self.vertices.push(create_vertex(r, b));
 
-        let mut swap = vec![];
-        std::mem::swap(&mut swap, &mut self.render_pass_inner);
-
-        self.render_pass.push(RenderPass::Normal {
-            commands: swap,
-            target_index: self.target_stack.len(),
-        });
-
-        let range = vertices_start..self.vertices.len() as u32;
         self.render_pass.push(RenderPass::Filter {
-            vertex_range: range,
+            vertex_range: vertices_start..self.vertices.len() as u32,
             filter_id: id,
-            source_id: 1,
-            target_id: 0,
+            source_id: new_target,
+            target_id: self.current_target,
             initial_copy: true,
         });
 
-        self.current_bind_group = None;
-
-        // We need to skip the vertices added by the filtering action
-        self.state = State::Plain {
-            start: self.vertices.len(),
-        };
+        self.targets.free(new_target);
     }
 
     fn filter2d(&mut self, id1: FilterId, bounding_box1: Rect, id2: FilterId, bounding_box2: Rect) {
         if self.skip_rendering {
             return;
         }
-        self.freshen_state();
 
         let create_vertex = |x, y| Vertex {
             position: [x as f32, y as f32, 0.0],
@@ -517,10 +453,11 @@ impl InnerRenderContext for WGPURenderContext {
         self.vertices.push(create_vertex(r, t));
         self.vertices.push(create_vertex(r, b));
 
-        let mut swap = vec![];
-        std::mem::swap(&mut swap, &mut self.render_pass_inner);
+        let (new_target, needs_clear) = self.targets.get();
 
-        self.render_pass.push(RenderPass::Normal { commands: swap, target_index: 0 });
+        if needs_clear {
+            self.render_pass.push(RenderPass::Clear { target_index: new_target });
+        }
 
         let range = vertices_start1..vertices_start2;
         self.render_pass.push(RenderPass::Filter {
@@ -542,10 +479,7 @@ impl InnerRenderContext for WGPURenderContext {
 
         self.current_bind_group = None;
 
-        // We need to skip the vertices added by the filtering action
-        self.state = State::Plain {
-            start: self.vertices.len(),
-        };
+        self.targets.free(new_target);
     }
 
     fn stencil(&mut self, geometry: &[Triangle<Position>]) {
@@ -553,10 +487,7 @@ impl InnerRenderContext for WGPURenderContext {
             return;
         }
 
-        self.freshen_state();
-        self.ensure_current_bind_group_is_some();
-
-        let start_index_for_stencil = self.vertices.len();
+        let start = self.vertices.len();
 
         self.vertices.extend(
             geometry.iter()
@@ -570,15 +501,11 @@ impl InnerRenderContext for WGPURenderContext {
                 ))
         );
 
-        let range = start_index_for_stencil as u32..self.vertices.len() as u32;
+        let range = start as u32..self.vertices.len() as u32;
 
         self.stencil_stack.push(range.clone());
 
-        self.render_pass_inner.push(RenderPassCommand::Stencil { vertex_range: range });
-
-        self.state = State::Plain {
-            start: self.vertices.len(),
-        };
+        self.push_command(RenderPassCommand::Stencil { vertex_range: range });
     }
 
     fn pop_stencil(&mut self) {
@@ -586,11 +513,8 @@ impl InnerRenderContext for WGPURenderContext {
             return;
         }
 
-        self.freshen_state();
-
         if let Some(range) = self.stencil_stack.pop() {
-            self.ensure_current_bind_group_is_some();
-            self.render_pass_inner.push(RenderPassCommand::DeStencil { vertex_range: range });
+            self.push_command(RenderPassCommand::DeStencil { vertex_range: range });
         } else {
             panic!("Trying to pop from empty stencil stack")
         }
@@ -606,7 +530,6 @@ impl InnerRenderContext for WGPURenderContext {
 
         let (color, gradient) = match style {
             WGPUStyle::Color(c) => {
-                self.ensure_state_plain();
                 (c, false)
             },
             WGPUStyle::Gradient(g) => {
@@ -618,6 +541,7 @@ impl InnerRenderContext for WGPURenderContext {
         let mode = if gradient { MODE_GRADIENT_GEOMETRY } else { MODE_GEOMETRY };
         let mode = if self.masked { mode | 0b100000 } else { mode };
 
+        let start = self.vertices.len();
         self.vertices.extend(
             geometry.iter()
                 .flat_map(|triangle| &triangle.0)
@@ -629,6 +553,8 @@ impl InnerRenderContext for WGPURenderContext {
                     mode
                 ))
         );
+
+        self.draw(start as u32, self.vertices.len() as u32);
     }
 
     fn style(&mut self, style: DrawStyle) {
@@ -654,12 +580,34 @@ impl InnerRenderContext for WGPURenderContext {
         assert!(self.style_stack.pop().is_some(), "A style was popped, when no style is present.")
     }
 
-    fn image(&mut self, id: ImageId, bounding_box: Rect, source_rect: Rect, mut mode: u32) {
+    fn image(&mut self, id: Option<ImageId>, bounding_box: Rect, source_rect: Rect, mut mode: u32) {
         if self.skip_rendering {
             return;
         }
 
-        self.ensure_state_image(&id);
+        if let Some(id) = id {
+            let id = WGPUBindGroup::Image(id);
+
+            let command = if let Some(current) = &mut self.current_bind_group {
+                if current != &id {
+                    *current = id.clone();
+                    Some(RenderPassCommand::SetBindGroup {
+                        bind_group: id,
+                    })
+                } else {
+                    None
+                }
+            } else {
+                self.current_bind_group = Some(id.clone());
+                Some(RenderPassCommand::SetBindGroup {
+                    bind_group: id,
+                })
+            };
+
+            if let Some(command) = command {
+                self.push_command(command);
+            }
+        }
 
         let (color, is_gradient) = match self.style_stack.last().unwrap_or(&WGPUStyle::Color(WHITE.gamma_srgb_to_linear().to_fsa())).clone() {
             WGPUStyle::Color(c) => {
@@ -692,6 +640,7 @@ impl InnerRenderContext for WGPURenderContext {
 
         let (l, r, b, t) = bounding_box.l_r_b_t();
 
+        let start = self.vertices.len();
         // Bottom left triangle.
         self.vertices.push(create_vertex(l, t, uv_l, uv_t));
         self.vertices.push(create_vertex(r, b, uv_r, uv_b));
@@ -701,71 +650,32 @@ impl InnerRenderContext for WGPURenderContext {
         self.vertices.push(create_vertex(l, t, uv_l, uv_t));
         self.vertices.push(create_vertex(r, t, uv_r, uv_t));
         self.vertices.push(create_vertex(r, b, uv_r, uv_b));
+
+        self.draw(start as u32, self.vertices.len() as u32);
     }
 
     fn text(&mut self, text: TextId, ctx: &mut dyn InnerTextContext) {
         if self.skip_rendering {
-            println!("Skipping");
             return;
         }
 
         ctx.render(text, self);
     }
 
-    fn layer(&mut self, _index: u32) {
-
-    }
-
-    fn pop_layer(&mut self) {
-
-    }
-
     fn filter_new(&mut self) {
-        match &self.state {
-            State::Image { id, start } => {
-                self.push_image_command(id.clone(), *start..self.vertices.len());
-            }
-            State::Plain { start } => {
-                self.push_geometry_command(*start..self.vertices.len());
-            }
-            State::Finished => {}
+        let (new_target, needs_clear) = self.targets.get();
+
+        if needs_clear {
+            self.render_pass.push(RenderPass::Clear { target_index: new_target });
         }
 
-        self.state = State::Plain {
-            start: self.vertices.len(),
-        };
+        self.filter_target_stack.push((new_target, self.current_target));
 
-        let mut swap = vec![];
-        std::mem::swap(&mut swap, &mut self.render_pass_inner);
-
-        self.render_pass.push(RenderPass::Normal {
-            commands: swap,
-            target_index: self.target_stack.len()
-        });
-        self.target_stack.push(0);
-        self.render_pass.push(RenderPass::Clear { target_index: self.target_stack.len() });
-
-        self.current_bind_group = None;
+        self.current_target = new_target;
     }
 
     fn filter_new_pop(&mut self, id: FilterId, color: Color, post_draw: bool) {
-        match &self.state {
-            State::Image { id, start } => {
-                self.push_image_command(id.clone(), *start..self.vertices.len());
-            }
-            State::Plain { start } => {
-                self.push_geometry_command(*start..self.vertices.len());
-            }
-            State::Finished => {}
-        }
-
-        let mut swap = vec![];
-        std::mem::swap(&mut swap, &mut self.render_pass_inner);
-
-        self.render_pass.push(RenderPass::Normal {
-            commands: swap,
-            target_index: self.target_stack.len()
-        });
+        let (target, old_target) = self.filter_target_stack.pop().unwrap();
 
         let create_vertex = |x, y, tx, ty| Vertex {
             position: [x as f32, y as f32, 0.0],
@@ -779,12 +689,6 @@ impl InnerRenderContext for WGPURenderContext {
 
 
         let (l, r, b, t) = self.window_bounding_box.l_r_b_t();
-
-        self.render_pass_inner.push(RenderPassCommand::SetBindGroup {
-            bind_group: WGPUBindGroup::Target(self.target_stack.len()),
-        });
-
-        self.target_stack.pop();
 
         let vertices_start = self.vertices.len() as u32;
 
@@ -802,44 +706,29 @@ impl InnerRenderContext for WGPURenderContext {
         self.render_pass.push(RenderPass::Filter {
             vertex_range: range.clone(),
             filter_id: id,
-            source_id: 1,
-            target_id: 0,
+            source_id: target,
+            target_id: old_target,
             initial_copy: false,
         });
 
         if post_draw {
             self.render_pass.push(RenderPass::Normal { commands: vec![
-                RenderPassCommand::SetBindGroup { bind_group: WGPUBindGroup::Target(1) },
+                RenderPassCommand::SetBindGroup { bind_group: WGPUBindGroup::Target(target) },
                 RenderPassCommand::Draw { vertex_range: range }
-            ], target_index: 0 });
+            ], target_index: old_target });
         }
 
-        self.current_bind_group = None;
-
-        // We need to skip the vertices added by the filtering action
-        self.state = State::Plain {
-            start: self.vertices.len(),
-        };
+        self.current_target = old_target;
+        self.targets.free(target);
     }
 
     fn filter_new_pop2d(&mut self, id: FilterId, id2: FilterId, color: Color, post_draw: bool) {
-        match &self.state {
-            State::Image { id, start } => {
-                self.push_image_command(id.clone(), *start..self.vertices.len());
-            }
-            State::Plain { start } => {
-                self.push_geometry_command(*start..self.vertices.len());
-            }
-            State::Finished => {}
+        let (target, old_target) = self.filter_target_stack.pop().unwrap();
+        let (new_target, needs_clear) = self.targets.get();
+
+        if needs_clear {
+            self.render_pass.push(RenderPass::Clear { target_index: new_target });
         }
-
-        let mut swap = vec![];
-        std::mem::swap(&mut swap, &mut self.render_pass_inner);
-
-        self.render_pass.push(RenderPass::Normal {
-            commands: swap,
-            target_index: self.target_stack.len()
-        });
 
         let create_vertex = |x, y, tx, ty| Vertex {
             position: [x as f32, y as f32, 0.0],
@@ -851,14 +740,8 @@ impl InnerRenderContext for WGPURenderContext {
             mode: if post_draw { MODE_IMAGE } else { MODE_TEXT },
         };
 
-
         let (l, r, b, t) = self.window_bounding_box.l_r_b_t();
 
-        self.render_pass_inner.push(RenderPassCommand::SetBindGroup {
-            bind_group: WGPUBindGroup::Target(self.target_stack.len()),
-        });
-
-        self.target_stack.pop();
 
         let vertices_start = self.vertices.len() as u32;
 
@@ -872,130 +755,62 @@ impl InnerRenderContext for WGPURenderContext {
         self.vertices.push(create_vertex(r, t, 1.0, 1.0));
         self.vertices.push(create_vertex(r, b, 1.0, 0.0));
 
-        self.render_pass.push(RenderPass::Clear { target_index: 2 });
-
         let range = vertices_start..self.vertices.len() as u32;
+
         self.render_pass.push(RenderPass::Filter {
             vertex_range: range.clone(),
             filter_id: id,
-            source_id: 1,
-            target_id: 2,
+            source_id: target,
+            target_id: new_target,
             initial_copy: false,
         });
 
         self.render_pass.push(RenderPass::Filter {
             vertex_range: range.clone(),
             filter_id: id2,
-            source_id: 2,
-            target_id: 0,
+            source_id: new_target,
+            target_id: old_target,
             initial_copy: false,
         });
 
         if post_draw {
             self.render_pass.push(RenderPass::Normal { commands: vec![
-                RenderPassCommand::SetBindGroup { bind_group: WGPUBindGroup::Target(1) },
+                RenderPassCommand::SetBindGroup { bind_group: WGPUBindGroup::Target(target) },
                 RenderPassCommand::Draw { vertex_range: range }
-            ], target_index: 0 });
+            ], target_index: old_target });
         }
 
-        self.current_bind_group = None;
-
-        // We need to skip the vertices added by the filtering action
-        self.state = State::Plain {
-            start: self.vertices.len(),
-        };
+        self.current_target = old_target;
+        self.targets.free(new_target);
+        self.targets.free(target);
     }
 
     fn mask_start(&mut self) {
-        self.ensure_current_bind_group_is_some();
+        let (index, need_clear) = self.targets.get();
+        self.mask_target_stack.push((index, self.current_target));
 
-        match &self.state {
-            State::Image { id, start } => {
-                self.push_image_command(id.clone(), *start..self.vertices.len());
-            }
-            State::Plain { start } => {
-                self.push_geometry_command(*start..self.vertices.len());
-            }
-            State::Finished => {}
+        if need_clear {
+            self.render_pass.push(RenderPass::Clear { target_index: index });
         }
 
-        self.state = State::Plain {
-            start: self.vertices.len(),
-        };
-
-        let mut swap = vec![];
-        std::mem::swap(&mut swap, &mut self.render_pass_inner);
-
-        self.render_pass.push(RenderPass::Normal {
-            commands: swap,
-            target_index: self.target_stack.len()
-        });
-        self.target_stack.push(0);
-        self.render_pass.push(RenderPass::Clear { target_index: self.target_stack.len() });
-
-        self.current_bind_group = None;
+        self.start_render_pass(index);
+        self.current_target = index;
     }
 
     fn mask_in(&mut self) {
-        self.ensure_current_bind_group_is_some();
-
-        match &self.state {
-            State::Image { id, start } => {
-                self.push_image_command(id.clone(), *start..self.vertices.len());
-            }
-            State::Plain { start } => {
-                self.push_geometry_command(*start..self.vertices.len());
-            }
-            State::Finished => {}
-        }
-
-        self.state = State::Plain {
-            start: self.vertices.len(),
-        };
-
-        let mut swap = vec![];
-        std::mem::swap(&mut swap, &mut self.render_pass_inner);
-
-        self.render_pass.push(RenderPass::Normal {
-            commands: swap,
-            target_index: self.target_stack.len()
+        let (mask, target) = *self.mask_target_stack.last().unwrap();
+        self.start_render_pass(target);
+        self.push_command(RenderPassCommand::SetMaskBindGroup {
+            bind_group: WGPUBindGroup::Target(mask),
         });
+        self.current_target = target;
 
-        self.render_pass_inner.push(RenderPassCommand::SetMaskBindGroup {
-            bind_group: WGPUBindGroup::Target(self.target_stack.len()),
-        });
-
-        self.target_stack.pop();
         self.masked = true;
-        self.current_bind_group = None;
     }
 
     fn mask_end(&mut self) {
-        self.ensure_current_bind_group_is_some();
-
-        match &self.state {
-            State::Image { id, start } => {
-                self.push_image_command(id.clone(), *start..self.vertices.len());
-            }
-            State::Plain { start } => {
-                self.push_geometry_command(*start..self.vertices.len());
-            }
-            State::Finished => {}
-        }
-
-        let mut swap = vec![];
-        std::mem::swap(&mut swap, &mut self.render_pass_inner);
-
-        self.render_pass.push(RenderPass::Normal {
-            commands: swap,
-            target_index: self.target_stack.len()
-        });
-
-        self.state = State::Plain {
-            start: self.vertices.len(),
-        };
-
+        let (mask, _) = self.mask_target_stack.pop().unwrap();
         self.masked = false;
-        self.current_bind_group = None;
+        self.targets.free(mask);
     }
 }

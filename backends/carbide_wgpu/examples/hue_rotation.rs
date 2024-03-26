@@ -1,6 +1,6 @@
 use std::time::Duration;
 use carbide_core::animation::{bounce_in_out, ease_in_out, linear};
-use carbide_core::draw::{Color, Dimension};
+use carbide_core::draw::{Alignment, Color, Dimension};
 use carbide_core::state::AnimatedState;
 use carbide_core::widget::*;
 use carbide_wgpu::{Application, Window};
@@ -29,7 +29,18 @@ fn main() {
                 Rectangle::new()
                     .fill(Color::new_rgb(0, 0, 255))
                     .frame(100.0, 100.0),
-            ))
+            )),
+            Rectangle::new()
+                .fill(Gradient::linear(vec![
+                    Color::new_rgb(255, 0, 0),
+                    Color::new_rgb(255, 255, 0),
+                    Color::new_rgb(0, 255, 0),
+                    Color::new_rgb(0, 255, 255),
+                    Color::new_rgb(0, 0, 255),
+                    Color::new_rgb(255, 0, 255),
+                    Color::new_rgb(255, 0, 0),
+                ], Alignment::Leading, Alignment::Trailing))
+                .frame(300.0, 30.0)
         )).hue_rotation(rotation)
     ).close_application_on_window_close());
 

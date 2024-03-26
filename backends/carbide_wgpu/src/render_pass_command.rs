@@ -20,7 +20,7 @@ pub enum RenderPassCommand {
     DeStencil {
         vertex_range: std::ops::Range<u32>,
     },
-    Transform {
+    Uniform {
         uniform_bind_group_index: usize,
     },
     Gradient {
@@ -53,7 +53,7 @@ pub enum RenderPass {
     },
 }
 
-#[derive(PartialEq, Debug)]
+#[derive(PartialEq, Debug, Clone)]
 pub enum WGPUBindGroup {
     Default,
     Image(ImageId),

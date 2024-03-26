@@ -1,5 +1,5 @@
 use std::fmt;
-use std::fmt::{Display, Formatter};
+use std::fmt::{Debug, Display, Formatter};
 use std::ops::{Add, AddAssign, Div, Mul, Sub, SubAssign};
 
 use crate::draw::Dimension;
@@ -12,7 +12,7 @@ use crate::draw::Scalar;
 ///
 /// The position can be seen as a vector and can be translated, reversed, normalized and more.
 /// You are also able to add Positions and [super::Dimension], to get new offset positions.
-#[derive(Copy, Clone, PartialOrd, PartialEq, Debug, Default)]
+#[derive(Copy, Clone, PartialOrd, PartialEq, Default)]
 pub struct Position {
     pub x: Scalar,
     pub y: Scalar,
@@ -247,6 +247,15 @@ impl Add<Dimension> for Position {
 impl Display for Position {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         write!(f, "({}, {})", self.x, self.y)
+    }
+}
+
+impl Debug for Position {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        f.debug_struct("Position")
+            .field("x", &self.x)
+            .field("y", &self.y)
+            .finish()
     }
 }
 

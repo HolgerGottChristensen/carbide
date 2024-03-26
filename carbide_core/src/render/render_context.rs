@@ -136,18 +136,11 @@ impl<'a> RenderContext<'a> {
     }
 
     pub fn image(&mut self, id: ImageId, bounding_box: Rect, source_rect: Rect, mode: u32) {
-        self.render.image(id, bounding_box, source_rect, mode);
+        self.render.image(Some(id), bounding_box, source_rect, mode);
     }
 
     pub fn text(&mut self, text: TextId) {
         self.render.text(text, self.text);
-    }
-
-    pub fn layer<R, F: FnOnce(&mut RenderContext) -> R>(&mut self, layer: u32, f: F) -> R {
-        self.render.layer(layer);
-        let res = f(self);
-        self.render.pop_layer();
-        res
     }
 }
 
@@ -181,12 +174,9 @@ pub trait InnerRenderContext {
     fn style(&mut self, style: DrawStyle);
     fn pop_style(&mut self);
 
-    fn image(&mut self, id: ImageId, bounding_box: Rect, source_rect: Rect, mode: u32);
+    fn image(&mut self, id: Option<ImageId>, bounding_box: Rect, source_rect: Rect, mode: u32);
 
     fn text(&mut self, text: TextId, ctx: &mut dyn InnerTextContext);
-
-    fn layer(&mut self, index: u32);
-    fn pop_layer(&mut self);
 
     fn filter_new(&mut self);
     fn filter_new_pop(&mut self, id: FilterId, color: Color, post_draw: bool);
@@ -226,13 +216,9 @@ impl InnerRenderContext for NoopRenderContext {
 
     fn pop_style(&mut self) {}
 
-    fn image(&mut self, _id: ImageId, _bounding_box: Rect, _source_rect: Rect, _mode: u32) {}
+    fn image(&mut self, _id: Option<ImageId>, _bounding_box: Rect, _source_rect: Rect, _mode: u32) {}
 
     fn text(&mut self, _text: TextId, _ctx: &mut dyn InnerTextContext) {}
-
-    fn layer(&mut self, _index: u32) {}
-
-    fn pop_layer(&mut self) {}
 
     fn filter_new(&mut self) {}
 

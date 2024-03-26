@@ -5,7 +5,7 @@ use swash::scale::{Render, ScaleContext, Source, StrikeWith};
 use swash::scale::image::Content;
 use swash::zeno::{Format, Vector};
 
-use carbide_core::draw::{Dimension, MODE_TEXT, MODE_TEXT_COLOR, Position, Rect, Scalar, ImageId};
+use carbide_core::draw::{Dimension, MODE_TEXT, MODE_TEXT_COLOR, Position, Rect, Scalar};
 use carbide_core::environment::Environment;
 use carbide_core::image::{DynamicImage, GrayImage, RgbaImage};
 use carbide_core::render::InnerRenderContext;
@@ -198,7 +198,7 @@ impl InnerTextContext for TextContext {
                     ctx.pop_style();*/
 
                     ctx.image(
-                        ImageId::default(),
+                        None,
                         bb,
                         book.tex_coords,
                         if book.has_color { MODE_TEXT_COLOR } else { MODE_TEXT }
