@@ -1,4 +1,4 @@
-use carbide_core::draw::DrawGradient;
+use carbide_core::draw::{ColorSpace, DrawGradient};
 use carbide_core::widget::{GradientRepeat, GradientType};
 
 #[repr(C)]
@@ -13,6 +13,7 @@ pub struct Gradient {
 
     pub start: [f32; 2],
     pub end: [f32; 2],
+    pub mode: u32,
 }
 
 impl Gradient {
@@ -22,16 +23,9 @@ impl Gradient {
         bytes.extend_from_slice(bytemuck::cast_slice(&self.ratios));
 
         bytes.extend_from_slice(bytemuck::bytes_of(&self.num_colors));
+        bytes.extend_from_slice(bytemuck::bytes_of(&self.mode));
         bytes.extend_from_slice(bytemuck::bytes_of(&self.gradient_type));
         bytes.extend_from_slice(bytemuck::bytes_of(&self.repeat_mode));
-
-        // If gradients start to look funny, take a look at this. I think it has to do with
-        // some alignment but I dont fully understand why this has to be here.
-        // My guess is that the three u32 has a size of 12. Since alignment of vec2<f32> is
-        // 8 the next position to read from will be 16 which is a byte after the start of the
-        // vec<32>. This should be corrected by inserting 4 bytes that will not be used.
-        bytes.extend_from_slice(bytemuck::bytes_of(&self.repeat_mode));
-
         bytes.extend_from_slice(bytemuck::cast_slice(&self.start));
         bytes.extend_from_slice(bytemuck::cast_slice(&self.end));
         bytes
@@ -84,6 +78,15 @@ impl Gradient {
             GradientRepeat::Mirror => 2,
         };
 
+        let mode = match gradient.color_space {
+            ColorSpace::Linear => 0,
+            ColorSpace::OkLAB => 1,
+            ColorSpace::Srgb => 2,
+            ColorSpace::Xyz => 3,
+            ColorSpace::Cielab => 4,
+            ColorSpace::HSL => 5,
+        };
+
         if gradient.start == gradient.end && gradient.gradient_type == GradientType::Radial {
             Self {
                 colors,
@@ -93,6 +96,7 @@ impl Gradient {
                 repeat_mode,
                 start: [gradient.start.x as f32, gradient.start.y as f32],
                 end: [(gradient.end.x + 1.0) as f32, gradient.end.y as f32],
+                mode,
             }
         } else if gradient.start == gradient.end {
             Self {
@@ -103,6 +107,7 @@ impl Gradient {
                 repeat_mode,
                 start: [gradient.start.x as f32, gradient.start.y as f32],
                 end: [gradient.end.x as f32, gradient.end.y as f32],
+                mode,
             }
         } else {
             Self {
@@ -113,6 +118,7 @@ impl Gradient {
                 repeat_mode,
                 start: [gradient.start.x as f32, gradient.start.y as f32],
                 end: [gradient.end.x as f32, gradient.end.y as f32],
+                mode,
             }
         }
     }

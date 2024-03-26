@@ -2,6 +2,16 @@ use crate::draw::{Dimension, Position, Color};
 use crate::widget::{Gradient, GradientRepeat, GradientType, GradientPosition};
 
 #[derive(Debug, Clone, PartialEq)]
+pub enum ColorSpace {
+    Linear,
+    OkLAB,
+    Srgb,
+    Xyz,
+    Cielab,
+    HSL,
+}
+
+#[derive(Debug, Clone, PartialEq)]
 pub struct DrawGradient {
     pub colors: Vec<Color>,
     pub ratios: Vec<f32>,
@@ -11,6 +21,8 @@ pub struct DrawGradient {
 
     pub start: Position,
     pub end: Position,
+
+    pub color_space: ColorSpace,
 }
 
 impl DrawGradient {
@@ -40,6 +52,7 @@ impl DrawGradient {
             gradient_repeat: g.gradient_repeat,
             start,
             end,
+            color_space: g.color_space,
         }
     }
 }

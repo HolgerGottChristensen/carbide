@@ -11,7 +11,7 @@ use wgpu::{Adapter, BindGroup, BindGroupLayout, Buffer, BufferUsages, CommandEnc
 use wgpu::util::{BufferInitDescriptor, DeviceExt};
 
 use carbide_core::{draw, Scene};
-use carbide_core::draw::{Dimension, DrawGradient, ImageId, Position, Rect, Scalar};
+use carbide_core::draw::{ColorSpace, Dimension, DrawGradient, ImageId, Position, Rect, Scalar};
 use carbide_core::environment::{Environment, EnvironmentColor};
 use carbide_core::event::{Event, KeyboardEvent, KeyboardEventContext, KeyboardEventHandler, MouseEvent, MouseEventContext, MouseEventHandler, OtherEventContext, OtherEventHandler, WindowEvent, WindowEventContext, WindowEventHandler};
 use carbide_core::focus::Focusable;
@@ -353,6 +353,7 @@ impl WGPUWindow<String> {
                     gradient_repeat: GradientRepeat::Clamp,
                     start: Default::default(),
                     end: Default::default(),
+                    color_space: ColorSpace::Linear,
                 };
 
                 let gradient = Gradient::convert(&gradient);

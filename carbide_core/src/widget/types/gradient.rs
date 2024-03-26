@@ -1,4 +1,4 @@
-use crate::draw::{Alignment, Color, Position};
+use crate::draw::{Alignment, Color, ColorSpace, Position};
 use crate::render::Style;
 use crate::state::{AnyReadState, ConvertIntoRead, Map1, RMap1};
 
@@ -35,6 +35,8 @@ pub struct Gradient {
 
     pub start: GradientPosition,
     pub end: GradientPosition,
+
+    pub color_space: ColorSpace,
 }
 
 impl Gradient {
@@ -61,6 +63,7 @@ impl Gradient {
             gradient_repeat: GradientRepeat::Clamp,
             start: start.into(),
             end: end.into(),
+            color_space: ColorSpace::Linear,
         }
     }
 
@@ -88,6 +91,7 @@ impl Gradient {
             gradient_repeat: GradientRepeat::Clamp,
             start: center.into(),
             end: edge.into(),
+            color_space: ColorSpace::Linear,
         }
     }
 
@@ -115,6 +119,7 @@ impl Gradient {
             gradient_repeat: GradientRepeat::Clamp,
             start: center.into(),
             end: end.into(),
+            color_space: ColorSpace::Linear,
         }
     }
 
@@ -141,6 +146,7 @@ impl Gradient {
             gradient_repeat: GradientRepeat::Clamp,
             start: center.into(),
             end: end.into(),
+            color_space: ColorSpace::Linear,
         }
     }
 
@@ -158,6 +164,7 @@ impl Gradient {
             gradient_repeat: GradientRepeat::Clamp,
             start: start.into(),
             end: end.into(),
+            color_space: ColorSpace::Linear,
         }
     }
 
@@ -175,6 +182,7 @@ impl Gradient {
             gradient_repeat: GradientRepeat::Clamp,
             start: center.into(),
             end: edge.into(),
+            color_space: ColorSpace::Linear,
         }
     }
 
@@ -192,6 +200,7 @@ impl Gradient {
             gradient_repeat: GradientRepeat::Clamp,
             start: center.into(),
             end: end.into(),
+            color_space: ColorSpace::Linear,
         }
     }
 
@@ -209,6 +218,7 @@ impl Gradient {
             gradient_repeat: GradientRepeat::Clamp,
             start: center.into(),
             end: end.into(),
+            color_space: ColorSpace::Linear,
         }
     }
 
@@ -230,6 +240,11 @@ impl Gradient {
     /// will be red -> blue red -> blue red -> blue red -> blue ...
     pub fn repeat(mut self) -> Self {
         self.gradient_repeat = GradientRepeat::Repeat;
+        self
+    }
+
+    pub fn color_space(mut self, color_space: ColorSpace) -> Self {
+        self.color_space = color_space;
         self
     }
 }
