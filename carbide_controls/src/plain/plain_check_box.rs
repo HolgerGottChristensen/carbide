@@ -1,17 +1,16 @@
 use std::fmt::{Debug, Formatter};
-use carbide::a;
-use carbide::event::ModifierKey;
-use carbide_core::{CommonWidgetImpl};
-use carbide_core::draw::{Dimension, Position};
-use carbide_core::environment::Environment;
-use carbide_core::environment::EnvironmentColor;
-use carbide_core::flags::WidgetFlag;
-use carbide_core::focus::{Focus, Focusable, Refocus};
-use carbide_core::state::{AnyReadState, IntoReadState, IntoState, LocalState, Map1, Map2, ReadState, ReadStateExtNew};
-use carbide_core::state::State;
-use carbide_core::widget::{CommonWidget, MouseArea, Rectangle, Text, AnyWidget, WidgetExt, WidgetId, ZStack, Widget};
-use crate::{enabled_state, EnabledState};
 
+use carbide::a;
+use carbide_core::CommonWidgetImpl;
+use carbide_core::draw::{Dimension, Position};
+use carbide_core::environment::{Environment, EnvironmentColor};
+use carbide_core::event::ModifierKey;
+use carbide_core::flags::WidgetFlag;
+use carbide_core::focus::{Focus, Refocus};
+use carbide_core::state::{AnyReadState, IntoReadState, IntoState, LocalState, Map1, Map2, ReadState, ReadStateExtNew, State};
+use carbide_core::widget::{AnyWidget, CommonWidget, MouseArea, Rectangle, Text, Widget, WidgetExt, WidgetId, ZStack};
+
+use crate::{enabled_state, EnabledState};
 use crate::types::*;
 
 pub trait PlainCheckBoxDelegate: Clone + 'static {
@@ -25,7 +24,6 @@ impl<K> PlainCheckBoxDelegate for K where K: Fn(Box<dyn AnyReadState<T=Focus>>, 
 }
 
 #[derive(Clone, Widget)]
-#[carbide_exclude(Focusable)]
 pub struct PlainCheckBox<F, C, D, E> where
     F: State<T=Focus> + Clone,
     C: State<T=CheckBoxValue> + Clone,
@@ -149,12 +147,6 @@ impl<F: State<T=Focus> + Clone, C: State<T=CheckBoxValue> + Clone, D: PlainCheck
             checked,
             enabled
         }
-    }
-}
-
-impl<F: State<T=Focus> + Clone, C: State<T=CheckBoxValue> + Clone, D: PlainCheckBoxDelegate, E: ReadState<T=bool>> Focusable for PlainCheckBox<F, C, D, E> {
-    fn focus_children(&self) -> bool {
-        false
     }
 }
 

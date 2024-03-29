@@ -39,7 +39,7 @@ impl NodeEditor {
         env: &mut Environment,
     ) {
         match event {
-            MouseEvent::Press(_, b, _) => {
+            MouseEvent::Press { position: b, .. } => {
                 let b = *b - self.position;
                 let mut closest_id = 0;
                 let mut closest_distance = self.graph.value().get_node(0).position.dist(&b);
@@ -58,7 +58,7 @@ impl NodeEditor {
                     self.selected_node.set_value(None);
                 }
             }
-            MouseEvent::Release(_, _, _) => {
+            MouseEvent::Release { .. } => {
                 self.selected_node.set_value(None);
                 self.graph.value_mut().guides.clear();
             }
@@ -133,8 +133,8 @@ impl NodeEditor {
         env: &mut Environment,
     ) {
         match event {
-            MouseEvent::Press(_, _, _) => {}
-            MouseEvent::Release(_, to, _) => {
+            MouseEvent::Press { .. } => {}
+            MouseEvent::Release { position: to, .. } => {
                 let to = *to - self.position;
                 let close_node = self.graph.value().node_in_range(to);
                 let close_edge = self.graph.value().edge_in_range(to);
@@ -220,7 +220,7 @@ impl NodeEditor {
         env: &mut Environment,
     ) {
         match event {
-            MouseEvent::Release(_, to, modifier) => {
+            MouseEvent::Release { position: to, modifiers: modifier, .. } => {
                 let to = *to - self.position;
                 let close_node = self.graph.value().node_in_range(to);
                 let close_edge = self.graph.value().edge_in_range(to);
@@ -385,8 +385,8 @@ impl NodeEditor {
         selected: SelectedState,
     ) {
         match event {
-            MouseEvent::Press(_, _, _) => {}
-            MouseEvent::Release(_, _, _) => {}
+            MouseEvent::Press { .. } => {}
+            MouseEvent::Release { .. } => {}
             MouseEvent::Click(_, to, _) => {
                 if !self.is_inside(*to) {
                     return;

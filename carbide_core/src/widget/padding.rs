@@ -1,9 +1,8 @@
-use carbide_core::state::ReadState;
 use carbide_macro::carbide_default_builder2;
 
-use crate::draw::{Dimension, Position};
-use crate::layout::{BasicLayouter, Layout, LayoutContext, Layouter};
-use crate::state::IntoReadState;
+use crate::draw::{Alignment, Dimension, Position};
+use crate::layout::{Layout, LayoutContext};
+use crate::state::{IntoReadState, ReadState};
 use crate::widget::{AnyWidget, CommonWidget, Empty, Widget, WidgetExt, WidgetId};
 use crate::widget::types::EdgeInsets;
 
@@ -119,7 +118,6 @@ impl<W: Widget, E: ReadState<T=EdgeInsets>> Layout for Padding<W, E> {
 
     fn position_children(&mut self, ctx: &mut LayoutContext) {
         let insets = *self.edge_insets.value();
-        let positioning = BasicLayouter::Center.positioner();
         let position = Position::new(
             self.x() + insets.left,
             self.y() + insets.top,
@@ -129,7 +127,7 @@ impl<W: Widget, E: ReadState<T=EdgeInsets>> Layout for Padding<W, E> {
             self.height() - insets.top - insets.bottom,
         );
 
-        positioning(position, dimension, &mut self.child);
+        self.child.set_position(Alignment::Center.position(position, dimension, self.child.dimension()));
         self.child.position_children(ctx);
     }
 }

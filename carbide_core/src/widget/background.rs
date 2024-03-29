@@ -1,12 +1,10 @@
-use carbide_core::render::RenderContext;
-use carbide_core::widget::CommonWidget;
 use carbide_macro::carbide_default_builder2;
 
 use crate::CommonWidgetImpl;
-use crate::draw::{Dimension, Position};
-use crate::layout::{BasicLayouter, Layout, LayoutContext, Layouter};
-use crate::render::Render;
-use crate::widget::{Empty, Widget, WidgetExt, WidgetId};
+use crate::draw::{Alignment, Dimension, Position};
+use crate::layout::{Layout, LayoutContext};
+use crate::render::{Render, RenderContext};
+use crate::widget::{CommonWidget, Empty, Widget, WidgetExt, WidgetId};
 
 /// Takes a child and a background widget, and sizes the background the same as the child.
 /// The background will be shown behind the child widget.
@@ -32,7 +30,7 @@ pub struct Background<F, B> where
     background: B,
     position: Position,
     dimension: Dimension,
-    alignment: Box<dyn Layouter>,
+    alignment: Alignment,
 }
 
 impl Background<Empty, Empty> {
@@ -44,14 +42,14 @@ impl Background<Empty, Empty> {
             background,
             position: Position::new(0.0, 0.0),
             dimension: Dimension::new(100.0, 100.0),
-            alignment: Box::new(BasicLayouter::Center),
+            alignment: Alignment::Center,
         }
     }
 }
 
 impl<F: Widget, B: Widget> Background<F, B> {
-    pub fn with_alignment(mut self, layouter: BasicLayouter) -> Self {
-        self.alignment = Box::new(layouter);
+    pub fn with_alignment(mut self, alignment: Alignment) -> Self {
+        self.alignment = alignment;
         self
     }
 }
@@ -65,12 +63,13 @@ impl<F: Widget, B: Widget> Layout for Background<F, B> {
     }
 
     fn position_children(&mut self, ctx: &mut LayoutContext) {
-        let positioning = self.alignment.positioner();
+        let alignment = self.alignment();
         let position = self.position;
         let dimension = self.dimension;
 
-        positioning(position, dimension, &mut self.child);
-        positioning(position, dimension, &mut self.background);
+        self.child.set_position(alignment.position(position, dimension, self.child.dimension()));
+        self.background.set_position(alignment.position(position, dimension, self.background.dimension()));
+
         self.child.position_children(ctx);
         self.background.position_children(ctx);
     }

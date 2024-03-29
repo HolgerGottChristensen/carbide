@@ -380,7 +380,7 @@ impl InnerRenderContext for WGPURenderContext {
                 (y / self.window_bounding_box.dimension.height) as f32,
             ],
             rgba: [1.0, 1.0, 1.0, 1.0],
-            mode: MODE_GEOMETRY,
+            mode: MODE_TEXT,
         };
 
 
@@ -404,6 +404,7 @@ impl InnerRenderContext for WGPURenderContext {
             filter_id: id,
             source_id: new_target,
             target_id: self.current_target,
+            mask_id: None,
             initial_copy: true,
         });
 
@@ -422,7 +423,7 @@ impl InnerRenderContext for WGPURenderContext {
                 (y / self.window_bounding_box.dimension.height) as f32,
             ],
             rgba: [1.0, 1.0, 1.0, 1.0],
-            mode: MODE_GEOMETRY,
+            mode: MODE_TEXT,
         };
 
         let (l, r, b, t) = bounding_box1.l_r_b_t();
@@ -465,6 +466,7 @@ impl InnerRenderContext for WGPURenderContext {
             filter_id: id1,
             source_id: 0,
             target_id: 1,
+            mask_id: None,
             initial_copy: false,
         });
 
@@ -474,6 +476,7 @@ impl InnerRenderContext for WGPURenderContext {
             filter_id: id2,
             source_id: 1,
             target_id: 0,
+            mask_id: None,
             initial_copy: false,
         });
 
@@ -708,6 +711,7 @@ impl InnerRenderContext for WGPURenderContext {
             filter_id: id,
             source_id: target,
             target_id: old_target,
+            mask_id: None,
             initial_copy: false,
         });
 
@@ -762,6 +766,7 @@ impl InnerRenderContext for WGPURenderContext {
             filter_id: id,
             source_id: target,
             target_id: new_target,
+            mask_id: None,
             initial_copy: false,
         });
 
@@ -770,6 +775,7 @@ impl InnerRenderContext for WGPURenderContext {
             filter_id: id2,
             source_id: new_target,
             target_id: old_target,
+            mask_id: None,
             initial_copy: false,
         });
 

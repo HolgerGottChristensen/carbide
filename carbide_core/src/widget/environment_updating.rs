@@ -1,10 +1,11 @@
+use crate::focus::FocusContext;
 use carbide_macro::carbide_default_builder2;
 
 use crate::CommonWidgetImpl;
 use crate::draw::{Dimension, Position};
 use crate::environment::Environment;
 use crate::event::{Event, KeyboardEvent, KeyboardEventContext, KeyboardEventHandler, MouseEvent, MouseEventContext, MouseEventHandler, OtherEventContext, OtherEventHandler, WindowEvent, WindowEventContext, WindowEventHandler};
-use crate::focus::{Focusable, Refocus};
+use crate::focus::Focusable;
 use crate::layout::{Layout, LayoutContext};
 use crate::render::{Render, RenderContext};
 use crate::state::{ReadState, StateContract};
@@ -72,10 +73,10 @@ impl<C: Widget, T: StateContract, S: ReadState<T=T>> Layout for EnvUpdating<C, T
     fn position_children(&mut self, ctx: &mut LayoutContext) {
         self.insert_into_env(ctx.env);
 
-        let positioning = self.alignment().positioner();
+        let alignment = self.alignment();
         let position = self.position();
         let dimension = self.dimension();
-        positioning(position, dimension, &mut self.child);
+        self.child.set_position(alignment.position(position, dimension, self.child.dimension()));
         self.child.position_children(ctx);
 
         self.remove_from_env(ctx.env);
@@ -133,46 +134,31 @@ impl<C: Widget, T: StateContract, S: ReadState<T=T>> MouseEventHandler for EnvUp
 }
 
 impl<C: Widget, T: StateContract, S: ReadState<T=T>> Focusable for EnvUpdating<C, T, S> {
-    fn process_focus_request(
-        &mut self,
-        focus_request: &Refocus,
-        env: &mut Environment,
-    ) -> bool {
-        self.insert_into_env(env);
+    fn process_focus_request(&mut self, ctx: &mut FocusContext) {
+        self.insert_into_env(ctx.env);
 
-        let any_focus = self.child.process_focus_request(focus_request, env);
+        self.child.process_focus_request(ctx);
 
-        self.remove_from_env(env);
-
-        any_focus
+        self.remove_from_env(ctx.env);
     }
 
-    fn process_focus_next(
-        &mut self,
-        focus_request: &Refocus,
-        focus_up_for_grab: bool,
-        env: &mut Environment,
-    ) -> bool {
-        self.insert_into_env(env);
+    fn process_focus_next(&mut self, ctx: &mut FocusContext) {
+        self.insert_into_env(ctx.env);
 
-        let focus_child = self.child.process_focus_next(focus_request, focus_up_for_grab, env);
+        self.child.process_focus_next(ctx);
 
-        self.remove_from_env(env);
-
-        focus_child
+        self.remove_from_env(ctx.env);
     }
 
     fn process_focus_previous(
         &mut self,
-        focus_request: &Refocus,
-        focus_up_for_grab: bool,
-        env: &mut Environment,
-    ) -> bool {
-        self.insert_into_env(env);
+        ctx: &mut FocusContext,
+    ) {
+        self.insert_into_env(ctx.env);
 
-        let focus_child = self.child.process_focus_previous(focus_request, focus_up_for_grab, env);
+        let focus_child = self.child.process_focus_previous(ctx);
 
-        self.remove_from_env(env);
+        self.remove_from_env(ctx.env);
 
         focus_child
     }

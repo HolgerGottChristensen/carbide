@@ -8,8 +8,8 @@ use carbide_core::asynchronous::{AsyncContext, check_tasks};
 use carbide_core::cursor::MouseCursor;
 use carbide_core::draw::{Dimension, InnerImageContext, Position};
 use carbide_core::environment::Environment;
-use carbide_core::event::{CustomEvent, KeyboardEvent, KeyboardEventContext, ModifierKey, MouseEvent, MouseEventContext, OtherEventContext, WindowEventContext};
-use carbide_core::focus::Refocus;
+use carbide_core::event::{CustomEvent, EventId, KeyboardEvent, KeyboardEventContext, ModifierKey, MouseEvent, MouseEventContext, OtherEventContext, WindowEventContext};
+use carbide_core::focus::{FocusContext, Refocus};
 use carbide_core::render::{NoopRenderContext, RenderContext};
 use carbide_core::Scene;
 use carbide_core::text::InnerTextContext;
@@ -20,11 +20,11 @@ const MOUSE_CLICK_MAX_DISTANCE: f64 = 3.0;
 const ARBITRARY_POINTS_PER_LINE_FACTOR: f64 = 10.0;
 
 pub struct NewEventHandler {
-    pressed_buttons: HashMap<MouseButton, MouseEvent>,
+    pressed_buttons: HashMap<MouseButton, (MouseEvent, Instant)>,
     modifiers: ModifierKey,
     last_click: Option<(Instant, MouseEvent)>,
     mouse_position: Position,
-    any_focus: bool,
+    event_id: u32,
 }
 
 impl NewEventHandler {
@@ -34,8 +34,13 @@ impl NewEventHandler {
             modifiers: Default::default(),
             last_click: None,
             mouse_position: Default::default(),
-            any_focus: false,
+            event_id: 0,
         }
+    }
+
+    pub fn next_id(&mut self) -> EventId {
+        self.event_id += 1;
+        EventId::new(self.event_id)
     }
 
     pub fn event(&mut self, event: Event<CustomEvent>, target: &mut impl Scene, text_context: &mut impl InnerTextContext, image_context: &mut impl InnerImageContext, env: &mut Environment) -> bool {
@@ -55,35 +60,58 @@ impl NewEventHandler {
             Event::MemoryWarning => false,
         };
 
-        let mut any_focus = self.any_focus;
-
         if let Some(request) = env.focus_request.clone() {
             match request {
                 Refocus::FocusRequest => {
-                    println!("Process focus request");
-                    any_focus = target.process_focus_request(&request, env);
+                    //println!("Process focus request");
+                    target.process_focus_request(&mut FocusContext {
+                        env,
+                        focus_count: &mut 0,
+                        available: &mut false,
+                    });
                 }
                 Refocus::FocusNext => {
-                    println!("Focus next");
-                    let focus_first = target.process_focus_next(&request, false, env);
-                    if focus_first {
-                        println!("Focus next back to first");
-                        target.process_focus_next(&request, true, env);
+                    let mut count = 0;
+
+                    //println!("Focus next");
+                    target.process_focus_next(&mut FocusContext {
+                        env,
+                        focus_count: &mut count,
+                        available: &mut false,
+                    });
+
+                    if count == 0 {
+                        //println!("Focus next back to first");
+                        target.process_focus_next(&mut FocusContext {
+                            env,
+                            focus_count: &mut 0,
+                            available: &mut true,
+                        });
                     }
                 }
                 Refocus::FocusPrevious => {
-                    println!("Focus prev");
-                    let focus_last = target.process_focus_previous(&request, false, env);
-                    if focus_last {
-                        println!("Focus prev forward to last");
-                        target.process_focus_previous(&request, true, env);
+                    let mut count = 0;
+
+                    //println!("Focus prev");
+                    target.process_focus_previous(&mut FocusContext {
+                        env,
+                        focus_count: &mut count,
+                        available: &mut false,
+                    });
+
+                    if count == 0 {
+                        //println!("Focus prev forward to last");
+                        target.process_focus_previous(&mut FocusContext {
+                            env,
+                            focus_count: &mut 0,
+                            available: &mut true,
+                        });
                     }
                 }
             }
             env.focus_request = None;
         }
 
-        self.any_focus = any_focus;
         res
     }
 
@@ -245,7 +273,15 @@ impl NewEventHandler {
     pub fn mouse_input(&mut self, button: MouseButton, state: ElementState, window_id: WindowId, target: &mut impl Scene, text_context: &mut impl InnerTextContext, image_context: &mut impl InnerImageContext, env: &mut Environment) -> bool {
         match state {
             ElementState::Pressed => {
-                let event = MouseEvent::Press(convert_mouse_button(button), self.mouse_position, self.modifiers);
+                let id = self.next_id();
+                let now = Instant::now();
+
+                let event = MouseEvent::Press {
+                    id,
+                    button: convert_mouse_button(button),
+                    position: self.mouse_position,
+                    modifiers: self.modifiers
+                };
 
                 let mut consumed = false;
                 target.process_mouse_event(&event, &mut MouseEventContext {
@@ -257,11 +293,26 @@ impl NewEventHandler {
                     consumed: &mut consumed,
                 });
 
-                self.pressed_buttons.insert(button, event);
+                self.pressed_buttons.insert(button, (event, now));
             }
             ElementState::Released => {
+                // The button is no longer pressed, so remove it from currently pressed buttons.
+                let (pressed_event, pressed_time) = if let Some(event) = self.pressed_buttons.remove(&button) {
+                    event
+                } else {
+                    println!("Mouse button release without mouse press??");
+                    return false;
+                };
+
                 // Add the event that the user released the mouse button at the specified location holding the current modifiers.
-                let event = MouseEvent::Release(convert_mouse_button(button), self.mouse_position, self.modifiers);
+                let event = MouseEvent::Release {
+                    id: self.next_id(),
+                    button: convert_mouse_button(button),
+                    position: self.mouse_position,
+                    modifiers: self.modifiers,
+                    press_id: pressed_event.id(),
+                    duration: Instant::now().duration_since(pressed_time),
+                };
                 let mut consumed = false;
                 target.process_mouse_event(&event, &mut MouseEventContext {
                     text: text_context,
@@ -272,15 +323,8 @@ impl NewEventHandler {
                     consumed: &mut consumed,
                 });
 
-                // The button is no longer pressed, so remove it from currently pressed buttons.
-                let pressed_event = self.pressed_buttons.remove(&button);
-
                 // A click should be emitted if within a threshold distance of the press.
-                let is_click = if let Some(MouseEvent::Press(_, location, _)) = pressed_event {
-                    self.mouse_position.dist(&location) < MOUSE_CLICK_MAX_DISTANCE
-                } else {
-                    false
-                };
+                let is_click = self.mouse_position.dist(&pressed_event.get_current_mouse_position()) < MOUSE_CLICK_MAX_DISTANCE;
 
                 // A click will become a double click, if and only if it is within the
                 // double click threshold time based on the latest click of the same button.
@@ -416,15 +460,29 @@ impl NewEventHandler {
 
     pub fn keyboard(&mut self, logical_key: Key, state: ElementState, window_id: WindowId, target: &mut impl Scene, text_context: &mut impl InnerTextContext, image_context: &mut impl InnerImageContext, env: &mut Environment) -> bool {
         let key = convert_key(&logical_key);
+        let mut prevent_default = false;
         match state {
             ElementState::Pressed => {
-                target.process_keyboard_event(&KeyboardEvent::Press(key, self.modifiers), &mut KeyboardEventContext {
+                target.process_keyboard_event(&KeyboardEvent::Press(key.clone(), self.modifiers), &mut KeyboardEventContext {
                     text: text_context,
                     image: image_context,
                     env,
                     is_current: &false,
                     window_id: &window_id.into(),
+                    prevent_default: &mut prevent_default,
                 });
+
+                if !prevent_default {
+                    if key == carbide_core::event::Key::Tab {
+                        if self.modifiers.shift_key() {
+                            //self.set_focus(Focus::FocusReleased);
+                            env.request_focus(Refocus::FocusPrevious);
+                        } else if self.modifiers.is_empty() {
+                            //self.set_focus(Focus::FocusReleased);
+                            env.request_focus(Refocus::FocusNext);
+                        }
+                    }
+                }
             },
             ElementState::Released => {
                 target.process_keyboard_event(&KeyboardEvent::Release(key, self.modifiers), &mut KeyboardEventContext {
@@ -433,9 +491,11 @@ impl NewEventHandler {
                     env,
                     is_current: &false,
                     window_id: &window_id.into(),
+                    prevent_default: &mut prevent_default,
                 });
             },
         };
+
 
         true
     }
@@ -452,6 +512,7 @@ impl NewEventHandler {
                     env,
                     is_current: &false,
                     window_id: &window_id.into(),
+                    prevent_default: &mut false,
                 });
                 true
             },
@@ -464,6 +525,7 @@ impl NewEventHandler {
                     env,
                     is_current: &false,
                     window_id: &window_id.into(),
+                    prevent_default: &mut false,
                 });
                 true
             },
@@ -508,9 +570,9 @@ impl NewEventHandler {
         let drag_threshold = 0.0;
 
         if distance > drag_threshold {
-            for (button, evt) in self.pressed_buttons.iter() {
+            for (button, (evt, _)) in self.pressed_buttons.iter() {
                 match evt {
-                    MouseEvent::Press(_, location, _) => {
+                    MouseEvent::Press { position: location, .. } => {
                         let total_delta_xy = self.mouse_position - *location;
                         let drag_event = MouseEvent::Drag {
                             button: convert_mouse_button(*button),

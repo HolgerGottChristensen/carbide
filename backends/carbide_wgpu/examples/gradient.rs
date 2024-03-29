@@ -25,8 +25,8 @@ fn main() {
     application.set_scene(Window::new(
         "Gradients example",
         Dimension::new(400.0, 600.0),
-        VStack::new(vec![
-            HStack::new(vec![
+        VStack::new((
+            HStack::new((
                 // We have 4 different kinds of gradients. These are linear, radial, diamond and conic
                 // They are all applied as a fill to rectangles. The gradients are all based on alignments.
                 // This is the simplest way to have gradients start and end at the corners of the figure.
@@ -36,34 +36,30 @@ fn main() {
                         Alignment::Leading,
                         Alignment::Trailing,
                     ))
-                    .frame(80.0, 80.0)
-                    .boxed(),
+                    .frame(80.0, 80.0),
                 Rectangle::new()
                     .fill(Gradient::radial(
                         colors.clone(),
                         Alignment::Center,
                         Alignment::Trailing,
                     ))
-                    .frame(80.0, 80.0)
-                    .boxed(),
+                    .frame(80.0, 80.0),
                 Rectangle::new()
                     .fill(Gradient::diamond(
                         colors.clone(),
                         Alignment::Center,
                         Alignment::Trailing,
                     ))
-                    .frame(80.0, 80.0)
-                    .boxed(),
+                    .frame(80.0, 80.0),
                 Rectangle::new()
                     .fill(Gradient::conic(
                         colors.clone(),
                         Alignment::Center,
                         Alignment::Trailing,
                     ))
-                    .frame(80.0, 80.0)
-                    .boxed(),
-            ]),
-            HStack::new(vec![
+                    .frame(80.0, 80.0),
+            )),
+            HStack::new((
                 // We have three different gradient modes, which corresponds to different ways of
                 // handling areas outside of the specified gradient, but still in the state.
                 // The first is clamp which is also the default. This keeps the latest color at the
@@ -74,18 +70,15 @@ fn main() {
                 // end of the gradient.
                 Rectangle::new()
                     .fill(Gradient::linear(colors.clone(), (0.3, 0.0), (0.7, 0.0)).clamp())
-                    .frame(80.0, 80.0)
-                    .boxed(),
+                    .frame(80.0, 80.0),
                 Rectangle::new()
                     .fill(Gradient::linear(colors.clone(), (0.3, 0.0), (0.7, 0.0)).repeat())
-                    .frame(80.0, 80.0)
-                    .boxed(),
+                    .frame(80.0, 80.0),
                 Rectangle::new()
                     .fill(Gradient::linear(colors.clone(), (0.3, 0.0), (0.7, 0.0)).mirror())
-                    .frame(80.0, 80.0)
-                    .boxed(),
-            ]),
-            HStack::new(vec![
+                    .frame(80.0, 80.0),
+            )),
+            HStack::new((
                 // The gradients below show that they can be applied to all other shapes, and not
                 // just rectangles. They also show gradients with absolute positioning, useful for
                 // creating continuous gradients across multiple shapes. Try to resize the window
@@ -99,8 +92,7 @@ fn main() {
                         )
                             .repeat(),
                     )
-                    .frame(80.0, 80.0)
-                    .boxed(),
+                    .frame(80.0, 80.0),
                 RoundedRectangle::new(10.0)
                     .fill(
                         Gradient::linear(
@@ -110,8 +102,7 @@ fn main() {
                         )
                             .repeat(),
                     )
-                    .frame(80.0, 80.0)
-                    .boxed(),
+                    .frame(80.0, 80.0),
                 Circle::new()
                     .fill(
                         Gradient::radial(
@@ -121,8 +112,7 @@ fn main() {
                         )
                             .repeat(),
                     )
-                    .frame(80.0, 80.0)
-                    .boxed(),
+                    .frame(80.0, 80.0),
                 Circle::new()
                     .fill(
                         Gradient::radial(
@@ -132,10 +122,9 @@ fn main() {
                         )
                             .repeat(),
                     )
-                    .frame(80.0, 80.0)
-                    .boxed(),
-            ]),
-            HStack::new(vec![
+                    .frame(80.0, 80.0),
+            )),
+            HStack::new((
                 // Gradients can have more than two colors, actually up to 16. This limit is imposed for now, but
                 // may increase or be customizable in the future.
                 Rectangle::new()
@@ -144,34 +133,30 @@ fn main() {
                         Alignment::Leading,
                         Alignment::Trailing,
                     ))
-                    .frame(80.0, 80.0)
-                    .boxed(),
+                    .frame(80.0, 80.0),
                 Rectangle::new()
                     .fill(Gradient::radial(
                         colors1.clone(),
                         Alignment::Center,
                         Alignment::Trailing,
                     ))
-                    .frame(80.0, 80.0)
-                    .boxed(),
+                    .frame(80.0, 80.0),
                 Rectangle::new()
                     .fill(Gradient::diamond(
                         colors1.clone(),
                         Alignment::Center,
                         Alignment::Trailing,
                     ))
-                    .frame(80.0, 80.0)
-                    .boxed(),
+                    .frame(80.0, 80.0),
                 Rectangle::new()
                     .fill(Gradient::conic(
                         colors1.clone(),
                         Alignment::Center,
                         Alignment::Trailing,
                     ))
-                    .frame(80.0, 80.0)
-                    .boxed(),
-            ]),
-            HStack::new(vec![
+                    .frame(80.0, 80.0),
+            )),
+            HStack::new((
                 // Gradients can not only be used to fill shapes, but also to stroke shapes.
                 Rectangle::new()
                     .stroke(Gradient::linear(
@@ -180,8 +165,7 @@ fn main() {
                         Alignment::Trailing,
                     ))
                     .stroke_style(10.0)
-                    .frame(80.0, 80.0)
-                    .boxed(),
+                    .frame(80.0, 80.0),
                 Rectangle::new()
                     .stroke(Gradient::radial(
                         colors1.clone(),
@@ -189,8 +173,7 @@ fn main() {
                         Alignment::BottomTrailing,
                     ))
                     .stroke_style(10.0)
-                    .frame(80.0, 80.0)
-                    .boxed(),
+                    .frame(80.0, 80.0),
                 Rectangle::new()
                     .stroke(Gradient::diamond(
                         colors1.clone(),
@@ -198,8 +181,7 @@ fn main() {
                         Alignment::BottomTrailing,
                     ))
                     .stroke_style(10.0)
-                    .frame(80.0, 80.0)
-                    .boxed(),
+                    .frame(80.0, 80.0),
                 Rectangle::new()
                     .stroke(Gradient::conic(
                         colors1.clone(),
@@ -207,10 +189,9 @@ fn main() {
                         Alignment::Trailing,
                     ))
                     .stroke_style(10.0)
-                    .frame(80.0, 80.0)
-                    .boxed(),
-            ]),
-            HStack::new(vec![
+                    .frame(80.0, 80.0),
+            )),
+            HStack::new((
                 // Gradients work with transparency as well.
                 Rectangle::new()
                     .fill(Gradient::linear(
@@ -218,34 +199,30 @@ fn main() {
                         Alignment::Leading,
                         Alignment::Trailing,
                     ))
-                    .frame(80.0, 80.0)
-                    .boxed(),
+                    .frame(80.0, 80.0),
                 Rectangle::new()
                     .fill(Gradient::radial(
                         colors2.clone(),
                         Alignment::Center,
                         Alignment::Trailing,
                     ))
-                    .frame(80.0, 80.0)
-                    .boxed(),
+                    .frame(80.0, 80.0),
                 Rectangle::new()
                     .fill(Gradient::diamond(
                         colors2.clone(),
                         Alignment::Center,
                         Alignment::Trailing,
                     ))
-                    .frame(80.0, 80.0)
-                    .boxed(),
+                    .frame(80.0, 80.0),
                 Rectangle::new()
                     .fill(Gradient::conic(
                         colors2.clone(),
                         Alignment::Center,
                         Alignment::Trailing,
                     ))
-                    .frame(80.0, 80.0)
-                    .boxed(),
-            ]),
-        ])
+                    .frame(80.0, 80.0),
+            )),
+        ))
     ).close_application_on_window_close());
 
     application.launch();

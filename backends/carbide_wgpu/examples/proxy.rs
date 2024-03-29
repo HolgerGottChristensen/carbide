@@ -5,7 +5,7 @@ use carbide_core::widget::*;
 use carbide_wgpu::{Application, Window};
 
 fn main() {
-    let mut application = Application::new().with_asset_fonts();
+    let mut application = Application::new();
 
     fn delegate(_: impl State<T=u32>, _: impl ReadState<T=usize>) -> impl Widget {
         Proxy::new((

@@ -185,12 +185,12 @@ impl ConvertInto<Result<String, String>> for Result<f64, String> {
         Map1::map_owned(f, |val, current| {
             match (val, current) {
                 (Ok(v), Ok(o)) => {
-                    println!("Both ok");
+                    //println!("Both ok");
                     if let Ok(k) = <f64>::from_str(o) {
                         if *v != k {
                             *o = v.to_string();
                         } else {
-                            println!("Equal");
+                            //println!("Equal");
                         }
                     } else {
                         *o = v.to_string();

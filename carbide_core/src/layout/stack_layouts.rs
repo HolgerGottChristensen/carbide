@@ -118,19 +118,21 @@ fn calculate_size_stack(
     requested_size: Dimension,
     ctx: &mut LayoutContext
 ) {
-    let mut number_of_children_that_needs_sizing = 0;
+    let mut child_count: u32 = 0;
 
     widget.foreach_child(&mut |child| {
         if !child.is_spacer() {
-            number_of_children_that_needs_sizing += 1;
+            child_count += 1;
         }
     });
+
+    let number_of_spaces = child_count.saturating_sub(1);
 
     // Calculate the number of spaces between elements in a stack.
     // This will be 0 if there are no children, or one child
     // It will be 1 if there are two non spacer children.
 
-    let mut last_was_non_spacer = false;
+    /*let mut last_was_non_spacer = false;
     let mut is_first = true;
     let mut number_of_spaces = 0;
 
@@ -143,7 +145,7 @@ fn calculate_size_stack(
 
         last_was_non_spacer = !child.is_spacer();
         is_first = false;
-    });
+    });*/
 
     let spacing_total = number_of_spaces as f64 * spacing;
 
@@ -153,8 +155,8 @@ fn calculate_size_stack(
     );
 
 
-    let mut children_flexibility_using_max_val: SmallVec<[(u32, &mut dyn AnyWidget); 25]> = smallvec![];
-    let mut children_flexibility_rest: SmallVec<[(u32, &mut dyn AnyWidget); 25]> = smallvec![];
+    let mut children_flexibility_using_max_val: SmallVec<[(u32, &mut dyn AnyWidget); 10]> = smallvec![];
+    let mut children_flexibility_rest: SmallVec<[(u32, &mut dyn AnyWidget); 10]> = smallvec![];
 
     widget.foreach_child_mut(&mut |child| {
         if !child.is_spacer() {
@@ -175,7 +177,7 @@ fn calculate_size_stack(
 
     for (_, child) in children_flexibility_rest {
         let size_for_child = dimension(
-            main_axis(size_for_children) / number_of_children_that_needs_sizing as f64,
+            main_axis(size_for_children) / child_count as f64,
             cross_axis(size_for_children),
         );
 
@@ -190,14 +192,14 @@ fn calculate_size_stack(
             cross_axis(size_for_children),
         );
 
-        number_of_children_that_needs_sizing -= 1;
+        child_count -= 1;
 
         total_main_axis += main_axis(chosen_size);
     }
 
     for (_, child) in children_flexibility_using_max_val {
         let size_for_child = dimension(
-            main_axis(size_for_children) / number_of_children_that_needs_sizing as f64,
+            main_axis(size_for_children) / child_count as f64,
             max_cross_axis,
         );
 
@@ -208,7 +210,7 @@ fn calculate_size_stack(
             cross_axis(size_for_children),
         );
 
-        number_of_children_that_needs_sizing -= 1;
+        child_count -= 1;
 
         total_main_axis += main_axis(chosen_size);
     }

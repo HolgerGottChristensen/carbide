@@ -2,22 +2,20 @@ use std::fmt::{Debug, Formatter};
 
 use dyn_clone::DynClone;
 
-use carbide_core::cursor::MouseCursor;
-use carbide_core::draw::{Dimension, Position};
-use carbide_core::environment::Environment;
-use carbide_core::event::{
-    Key, KeyboardEvent, KeyboardEventHandler, ModifierKey, MouseButton, MouseEvent,
-    MouseEventHandler,
-};
-use carbide_core::flags::WidgetFlag;
-use carbide_core::focus::Focus;
-use carbide_core::state::State;
-use carbide_core::widget::{AnyWidget, CommonWidget, Widget, WidgetExt, WidgetId};
 use carbide_macro::carbide_default_builder2;
 
-use crate::event::{KeyboardEventContext, MouseEventContext};
-use crate::state::IntoState;
-use crate::widget::Empty;
+use crate::CommonWidgetImpl;
+use crate::cursor::MouseCursor;
+use crate::draw::{Dimension, Position};
+use crate::environment::Environment;
+use crate::event::{
+    Key, KeyboardEvent, KeyboardEventHandler, ModifierKey, MouseButton, MouseEvent,
+    MouseEventHandler, KeyboardEventContext, MouseEventContext
+};
+use crate::flags::WidgetFlag;
+use crate::focus::Focus;
+use crate::state::{IntoState, State};
+use crate::widget::{CommonWidget, Widget, WidgetExt, WidgetId, Empty};
 
 pub trait Action: Fn(&mut Environment, ModifierKey) + DynClone {}
 
@@ -208,12 +206,12 @@ impl<
 > MouseEventHandler for MouseArea<I, O, F, C, H, P> {
     fn handle_mouse_event(&mut self, event: &MouseEvent, ctx: &mut MouseEventContext) {
         match event {
-            MouseEvent::Press(MouseButton::Left, mouse_position, _) => {
+            MouseEvent::Press { button: MouseButton::Left, position: mouse_position, .. } => {
                 if self.is_inside(*mouse_position) {
                     self.is_pressed.set_value(true);
                 }
             }
-            MouseEvent::Release(MouseButton::Left, mouse_position, _) => {
+            MouseEvent::Release { button: MouseButton::Left, position: mouse_position, .. } => {
                 if self.is_inside(*mouse_position) {
                     self.is_pressed.set_value(false);
                 }
@@ -233,8 +231,10 @@ impl<
             MouseEvent::Click(MouseButton::Left, mouse_position, modifier)
             | MouseEvent::NClick(MouseButton::Left, mouse_position, modifier, _) => {
                 if self.is_inside(*mouse_position) {
+                    //self.request_focus(ctx.env);
                     (self.click)(ctx.env, *modifier);
                 } else {
+                    //self.set_focus(Focus::Unfocused);
                     (self.click_outside)(ctx.env, *modifier);
                 }
             }
@@ -251,84 +251,7 @@ impl<
     H: State<T=bool>,
     P: State<T=bool>,
 > CommonWidget for MouseArea<I, O, F, C, H, P> {
-    fn id(&self) -> WidgetId {
-        self.id
-    }
-
-    fn flag(&self) -> WidgetFlag {
-        WidgetFlag::FOCUSABLE
-    }
-
-    fn get_focus(&self) -> Focus {
-        self.focus.value().clone()
-    }
-
-    fn set_focus(&mut self, focus: Focus) {
-        self.focus.set_value(focus);
-    }
-
-    fn position(&self) -> Position {
-        self.position
-    }
-
-    fn set_position(&mut self, position: Position) {
-        self.position = position;
-    }
-
-    fn dimension(&self) -> Dimension {
-        self.dimension
-    }
-
-    fn set_dimension(&mut self, dimension: Dimension) {
-        self.dimension = dimension
-    }
-
-    fn foreach_child_mut<'a>(&'a mut self, f: &mut dyn FnMut(&'a mut dyn AnyWidget)) {
-        if self.child.is_ignore() {
-            return;
-        }
-
-        if self.child.is_proxy() {
-            self.child.foreach_child_mut(f);
-            return;
-        }
-
-        f(&mut self.child);
-    }
-
-    fn foreach_child_rev<'a>(&'a mut self, f: &mut dyn FnMut(&'a mut dyn AnyWidget)) {
-        if self.child.is_ignore() {
-            return;
-        }
-
-        if self.child.is_proxy() {
-            self.child.foreach_child_rev(f);
-            return;
-        }
-
-        f(&mut self.child);
-    }
-
-    fn foreach_child<'a>(&'a self, f: &mut dyn FnMut(&'a dyn AnyWidget)) {
-        if self.child.is_ignore() {
-            return;
-        }
-
-        if self.child.is_proxy() {
-            self.child.foreach_child(f);
-            return;
-        }
-
-        f(&self.child);
-    }
-
-    fn foreach_child_direct<'a>(&'a mut self, f: &mut dyn FnMut(&'a mut dyn AnyWidget)) {
-        f(&mut self.child);
-    }
-
-    fn foreach_child_direct_rev<'a>(&'a mut self, f: &mut dyn FnMut(&'a mut dyn AnyWidget)) {
-        f(&mut self.child);
-    }
+    CommonWidgetImpl!(self, id: self.id, child: self.child, flag: WidgetFlag::FOCUSABLE, focus: self.focus, position: self.position, dimension: self.dimension);
 
     fn cursor(&self) -> Option<MouseCursor> {
         if *self.is_hovered.value() {

@@ -3,8 +3,7 @@ use carbide_core::widget::*;
 use carbide_wgpu::{Application, Window};
 
 fn main() {
-    let mut application = Application::new()
-        .with_asset_fonts();
+    let mut application = Application::new();
 
     let colors1 = vec![
         Color::Rgba(1.0, 0.0, 0.0, 1.0),

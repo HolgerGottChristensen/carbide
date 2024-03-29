@@ -3,8 +3,8 @@ use smallvec::{SmallVec, smallvec};
 use carbide_macro::carbide_default_builder2;
 
 use crate::CommonWidgetImpl;
-use crate::draw::{Dimension, Position};
-use crate::layout::{BasicLayouter, Layout, LayoutContext, Layouter};
+use crate::draw::{Dimension, Position, Alignment};
+use crate::layout::{Layout, LayoutContext};
 use crate::widget::{AnyWidget, CommonWidget, Widget, WidgetExt, WidgetId, WidgetSequence};
 
 /// A basic, non-interactive rectangle shape widget.
@@ -15,7 +15,7 @@ pub struct ZStack<W> where W: WidgetSequence {
     children: W,
     position: Position,
     dimension: Dimension,
-    alignment: Box<dyn Layouter>,
+    alignment: Alignment,
 }
 
 impl<W: WidgetSequence> ZStack<W> {
@@ -27,12 +27,12 @@ impl<W: WidgetSequence> ZStack<W> {
             children,
             position: Position::new(0.0, 0.0),
             dimension: Dimension::new(100.0, 100.0),
-            alignment: Box::new(BasicLayouter::Center),
+            alignment: Alignment::Center,
         }
     }
 
-    pub fn with_alignment(mut self, layouter: BasicLayouter) -> Self {
-        self.alignment = Box::new(layouter);
+    pub fn with_alignment(mut self, alignment: Alignment) -> Self {
+        self.alignment = alignment;
         self
     }
 }
@@ -72,12 +72,12 @@ impl<W: WidgetSequence> Layout for ZStack<W> {
     }
 
     fn position_children(&mut self, ctx: &mut LayoutContext) {
-        let positioning = self.alignment.positioner();
+        let alignment = self.alignment();
         let position = self.position;
         let dimension = self.dimension;
 
         self.foreach_child_mut(&mut |child| {
-            positioning(position, dimension, child);
+            child.set_position(alignment.position(position, dimension, child.dimension()));
             child.position_children(ctx);
         });
     }

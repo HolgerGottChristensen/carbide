@@ -103,7 +103,7 @@ impl<S: State<T=f64>, L: Widget, T: Widget> MouseEventHandler for HSplit<S, L, T
         let press_margin = 5.0;
 
         match event {
-            MouseEvent::Press(_, position, _) => {
+            MouseEvent::Press { position, .. } => {
                 let relative_to_position = *position - self.position;
 
                 let split = self.leading.dimension();
@@ -116,7 +116,7 @@ impl<S: State<T=f64>, L: Widget, T: Widget> MouseEventHandler for HSplit<S, L, T
                     self.dragging = true;
                 }
             }
-            MouseEvent::Release(_, _, _) => {
+            MouseEvent::Release { .. } => {
                 self.dragging = false;
             }
             MouseEvent::Move { to, .. } => {

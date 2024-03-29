@@ -1,6 +1,6 @@
 use std::fmt::{Debug, Formatter};
 use carbide::environment::WidgetTransferAction;
-use carbide::event::{KeyboardEventContext, MouseEventContext};
+use carbide::event::{EventId, KeyboardEventContext, MouseButton, MouseEventContext};
 use carbide::layout::LayoutContext;
 use carbide::update::{Update, UpdateContext};
 
@@ -18,6 +18,7 @@ use carbide_core::state::{AnyReadState, AnyState, IntoReadState, IntoState, Loca
 use carbide_core::widget::*;
 
 use crate::plain::plain_pop_up_button_popup::PlainPopUpButtonPopUp;
+use crate::plain::plain_pop_up_button_popup_item::PlainPopUpButtonPopUpItem;
 
 #[derive(Clone, Widget)]
 #[carbide_exclude(Layout, MouseEvent, KeyboardEvent, Update)]
@@ -154,16 +155,17 @@ impl<
         )
     }
 
-    fn open_popup(&self, env: &mut Environment) {
+    fn open_popup(&self, event_id: EventId, env: &mut Environment) {
         let hover_model = LocalState::new(None);
 
-        let del = PopupDelegate {
+        let del = PopupItemDelegate {
             hover_model: hover_model.clone(),
             selected_item: self.selected.clone(),
             popup_item_delegate: self.popup_item_delegate,
             text_delegate: self.text_delegate,
             enabled: self.enabled.as_dyn_read(),
             overlay_id: Some("controls_popup_layer".to_string()),
+            event_id,
         };
 
         let popup_delegate_widget = (self.popup_delegate)(self.model.clone(), del, self.enabled.as_dyn_read());
@@ -177,6 +179,7 @@ impl<
             Some("controls_popup_layer".to_string()),
             self.position.clone(),
             self.dimension.clone(),
+            event_id
         ).boxed();
 
         env.transfer_widget(Some("controls_popup_layer".to_string()), WidgetTransferAction::Push(popup));
@@ -289,7 +292,7 @@ impl<
         if self.get_focus() != Focus::Focused || !*self.enabled.value() { return; }
 
         if event == PopupButtonKeyCommand::Open {
-            self.open_popup(ctx.env);
+            self.open_popup(EventId::default(), ctx.env);
             //ctx.env.request_animation_frame();
         }
     }
@@ -306,7 +309,7 @@ impl<
     fn process_mouse_event(&mut self, event: &MouseEvent, ctx: &mut MouseEventContext) {
         if !*ctx.is_current { return }
         match event {
-            MouseEvent::Click(_, position, _) => {
+            MouseEvent::Press { position, id, button: MouseButton::Left, .. } => {
                 if self.is_inside(*position) {
                     if !*self.enabled.value() {
                         return;
@@ -316,7 +319,7 @@ impl<
                         self.set_focus(Focus::FocusRequested);
                         ctx.env.request_focus(Refocus::FocusRequest);
                     }
-                    self.open_popup(ctx.env);
+                    self.open_popup(*id, ctx.env);
                     //ctx.env.request_animation_frame();
                 } else {
                     if self.get_focus() == Focus::Focused {
@@ -356,11 +359,11 @@ impl<
     }
 
     fn position_children(&mut self, ctx: &mut LayoutContext) {
-        let positioning = self.alignment().positioner();
+        let alignment = self.alignment();
         let position = self.position();
         let dimension = self.dimension();
 
-        positioning(position, dimension, &mut self.child);
+        self.child.set_position(alignment.position(position, dimension, self.child.dimension()));
         self.child.position_children(ctx);
 
         /*positioning(position, dimension, &mut self.popup);
@@ -398,7 +401,7 @@ type DelegateGenerator<T> = fn(
 
 type PopupDelegateGenerator<T, S, M> = fn(
     model: M,
-    delegate: PopupDelegate<T, S>,
+    delegate: PopupItemDelegate<T, S>,
     enabled: Box<dyn AnyReadState<T=bool>>,
 ) -> Box<dyn AnyWidget>;
 
@@ -412,7 +415,7 @@ type PopupItemDelegateGenerator<T, S> = fn(
 ) -> Box<dyn AnyWidget>;
 
 #[derive(Clone)]
-pub struct PopupDelegate<T, S>
+pub struct PopupItemDelegate<T, S>
     where
         T: StateContract,
         S: State<T=T>,
@@ -423,14 +426,11 @@ pub struct PopupDelegate<T, S>
     text_delegate: TextDelegateGenerator<T>,
     enabled: Box<dyn AnyReadState<T=bool>>,
     overlay_id: Option<String>,
+    event_id: EventId,
 }
 
-impl<T: StateContract, S: State<T=T>> Delegate<T, Box<dyn AnyWidget>> for PopupDelegate<T, S> {
+impl<T: StateContract, S: State<T=T>> Delegate<T, Box<dyn AnyWidget>> for PopupItemDelegate<T, S> {
     fn call(&self, item: Box<dyn AnyState<T=T>>, index: Box<dyn AnyReadState<T=usize>>) -> Box<dyn AnyWidget> {
-        let selected_item_del = self.selected_item.clone();
-        //let popup_open = self.popup_open.clone();
-        let enabled = self.enabled.clone();
-
         // Map the hovered index to a boolean state telling us whether this item is hovered.
         // If we set this state to be hovered, we set the index, and otherwise we set to None.
         let hover_state = Map2::map(
@@ -456,21 +456,19 @@ impl<T: StateContract, S: State<T=T>> Delegate<T, Box<dyn AnyWidget>> for PopupD
             item.clone(),
             index.as_dyn_read(),
             hover_state.as_dyn_read(),
-            selected_item_del.clone(),
-            enabled.as_dyn_read(),
+            self.selected_item.clone(),
+            self.enabled.as_dyn_read(),
             self.text_delegate,
         );
 
-        let overlay_id = self.overlay_id.clone();
-
-        popup_item_delegate
-            .on_click(move |env: &mut Environment, _| {
-                selected_item_del.clone().set_value(item.value().clone());
-                //popup_open.clone().set_value(false);
-                env.transfer_widget(overlay_id.clone(), WidgetTransferAction::Pop);
-            })
-            .hovered(hover_state)
-            .boxed()
+        PlainPopUpButtonPopUpItem::new(
+            popup_item_delegate,
+            self.selected_item.clone(),
+            item,
+            hover_state,
+            self.overlay_id.clone(),
+            self.event_id,
+        ).boxed()
     }
 }
 
@@ -519,7 +517,7 @@ fn default_popup_item_delegate<T: StateContract + PartialEq, S: State<T=T>>(
 
 fn default_popup_delegate<T: StateContract + PartialEq, S: State<T=T>, M: ReadState<T=Vec<T>>>(
     model: M,
-    delegate: PopupDelegate<T, S>,
+    delegate: PopupItemDelegate<T, S>,
     _enabled: Box<dyn AnyReadState<T=bool>>,
 ) -> Box<dyn AnyWidget> {
     VStack::new(ForEach::new(model.ignore_writes(), delegate))

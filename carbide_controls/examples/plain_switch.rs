@@ -19,12 +19,12 @@ fn main() {
     application.set_scene(Window::new(
         "Plain Switch Example - Carbide",
         Dimension::new(400.0, 600.0),
-        VStack::new(vec![
-            PlainSwitch::new(switch_state1).border().boxed(),
-            PlainSwitch::new(switch_state2).border().boxed(),
-            PlainSwitch::new(switch_state3).border().boxed(),
-            PlainSwitch::new(switch_state4).border().boxed(),
-        ])
+        VStack::new((
+            PlainSwitch::new(switch_state1).border(),
+            PlainSwitch::new(switch_state2).border(),
+            PlainSwitch::new(switch_state3).border(),
+            PlainSwitch::new(switch_state4).border(),
+        ))
             .spacing(10.0)
             .padding(EdgeInsets::all(40.0)),
     ).close_application_on_window_close());

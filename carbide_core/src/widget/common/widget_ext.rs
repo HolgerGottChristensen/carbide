@@ -1,7 +1,7 @@
 use cgmath::Matrix4;
 
 use crate::color::RED;
-use crate::draw::{Color, Rect};
+use crate::draw::{Angle, Color, Rect};
 use crate::draw::Dimension;
 use crate::environment::{Environment, EnvironmentColor};
 use crate::event::{KeyboardEventContext, ModifierKey};
@@ -52,18 +52,18 @@ pub trait WidgetExt: AnyWidget + Clone + Sized {
     /// areas for event handling. The widget will still take up the same space as if the effect
     /// wasn't applies. This only changes the visual. The function takes anything that can be
     /// converted into a state of f64.
-    fn rotation_3d_effect<R1: ReadState<T = f64>, R2: ReadState<T = f64>>(
+    fn rotation_3d_effect<R1: IntoReadState<Angle>, R2: IntoReadState<Angle>>(
         self,
         x: R1,
         y: R2,
-    ) -> Rotation3DEffect<R1, R2, Self> {
+    ) -> Rotation3DEffect<R1::Output, R2::Output, Self> {
         Rotation3DEffect::new(self, x, y)
     }
 
     /// Rotates the widget around the z axis. The z axis is the axis that goes through you screen.
     /// This is only a visual change and the widget will still take up the same space as if the
     /// effect isn't applied.
-    fn rotation_effect<R: ReadState<T = f64>>(self, rotation: R) -> Transform<Self, RMap1<fn(&f64) -> Matrix4<f32>, f64, Matrix4<f32>, R>> {
+    fn rotation_effect<R: IntoReadState<Angle>>(self, rotation: R) -> Transform<Self, RMap1<fn(&Angle) -> Matrix4<f32>, Angle, Matrix4<f32>, R::Output>> {
         Transform::rotation(self, rotation)
     }
 
@@ -193,7 +193,7 @@ pub trait WidgetExt: AnyWidget + Clone + Sized {
             .shadow_offset(x, y)
     }
 
-    fn hue_rotation<R: IntoReadState<f64>>(self, rotation: R) -> HueRotation<Self, R::Output> {
+    fn hue_rotation<R: IntoReadState<Angle>>(self, rotation: R) -> HueRotation<Self, R::Output> {
         HueRotation::new(self, rotation)
     }
 

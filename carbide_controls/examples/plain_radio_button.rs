@@ -27,12 +27,12 @@ fn main() {
     application.set_scene(Window::new(
         "Plain Radio Button Example - Carbide",
         Dimension::new(400.0, 600.0),
-        VStack::new(vec![
-            PlainRadioButton::new(Shape::Rectangle, shape_state.clone()).border().boxed(),
-            PlainRadioButton::new(Shape::Circle, shape_state.clone()).border().boxed(),
-            PlainRadioButton::new(Shape::Triangle, shape_state.clone()).border().boxed(),
-            PlainRadioButton::new(Shape::Star, shape_state.clone()).border().boxed(),
-        ])
+        VStack::new((
+            PlainRadioButton::new(Shape::Rectangle, shape_state.clone()).border(),
+            PlainRadioButton::new(Shape::Circle, shape_state.clone()).border(),
+            PlainRadioButton::new(Shape::Triangle, shape_state.clone()).border(),
+            PlainRadioButton::new(Shape::Star, shape_state.clone()).border(),
+        ))
             .spacing(10.0)
             .padding(EdgeInsets::all(40.0))
     ).close_application_on_window_close());

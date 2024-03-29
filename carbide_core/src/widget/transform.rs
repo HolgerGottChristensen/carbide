@@ -2,12 +2,9 @@ use cgmath::{Deg, Matrix4, Vector3};
 
 use carbide_macro::carbide_default_builder2;
 
-use crate::draw::{Dimension, Position, Rect};
-use crate::layout::BasicLayouter;
-use crate::render::Render;
-use crate::render::RenderContext;
-use crate::state::{Map1, ReadState, StateSync};
-use crate::state::RMap1;
+use crate::draw::{Alignment, Angle, Dimension, Position, Rect};
+use crate::render::{Render, RenderContext};
+use crate::state::{IntoReadState, Map1, ReadState, StateSync, RMap1};
 use crate::widget::{AnyWidget, CommonWidget, Empty, Widget, WidgetExt, WidgetId};
 
 #[derive(Debug, Clone, Widget)]
@@ -17,7 +14,7 @@ pub struct Transform<W, M> where W: AnyWidget + Clone, M: ReadState<T=Matrix4<f3
     child: W,
     position: Position,
     dimension: Dimension,
-    anchor: BasicLayouter,
+    anchor: Alignment,
     #[state]
     matrix: M,
 }
@@ -30,14 +27,14 @@ impl Transform<Empty, Matrix4<f32>> {
             child,
             position: Position::new(0.0, 0.0),
             dimension: Dimension::new(100.0, 100.0),
-            anchor: BasicLayouter::Center,
+            anchor: Alignment::Center,
             matrix,
         }
     }
 
-    pub fn rotation<W: AnyWidget + Clone, R: ReadState<T=f64> + Clone>(child: W, rotation: R) -> Transform<W, RMap1<fn(&f64) -> Matrix4<f32>, f64, Matrix4<f32>, R>> {
-        let matrix: RMap1<fn(&f64) -> Matrix4<f32>, f64, Matrix4<f32>, R> = Map1::read_map(rotation, |r| {
-            Matrix4::from_angle_z(Deg(*r as f32))
+    pub fn rotation<W: Widget, R: IntoReadState<Angle>>(child: W, rotation: R) -> Transform<W, RMap1<fn(&Angle) -> Matrix4<f32>, Angle, Matrix4<f32>, R::Output>> {
+        let matrix: RMap1<fn(&Angle) -> Matrix4<f32>, Angle, Matrix4<f32>, R::Output> = Map1::read_map(rotation.into_read_state(), |r| {
+            Matrix4::from_angle_z(Deg(r.degrees() as f32))
         });
 
         Self::new(child, matrix)
@@ -83,7 +80,7 @@ impl Transform<Empty, Matrix4<f32>> {
 }
 
 impl<W: AnyWidget + Clone, M: ReadState<T=Matrix4<f32>>> Transform<W, M> {
-    pub fn with_anchor(mut self, anchor: BasicLayouter) -> Self {
+    pub fn with_anchor(mut self, anchor: Alignment) -> Self {
         self.anchor = anchor;
         self
     }
@@ -165,68 +162,71 @@ impl<W: AnyWidget + Clone, M: ReadState<T=Matrix4<f32>>> Render for Transform<W,
         let matrix = *self.matrix.value();
 
         let new_transform = match self.anchor {
-            BasicLayouter::TopLeading => {
+            Alignment::TopLeading => {
                 let center_x = (bounding_box.position.x) as f32;
                 let center_y = (bounding_box.position.y) as f32;
                 Matrix4::from_translation(Vector3::new(center_x, center_y, 0.0))
                     * matrix
                     * Matrix4::from_translation(Vector3::new(-center_x, -center_y, 0.0))
             }
-            BasicLayouter::Top => {
+            Alignment::Top => {
                 let center_x = (bounding_box.position.x + bounding_box.dimension.width / 2.0) as f32;
                 let center_y = (bounding_box.position.y) as f32;
                 Matrix4::from_translation(Vector3::new(center_x, center_y, 0.0))
                     * matrix
                     * Matrix4::from_translation(Vector3::new(-center_x, -center_y, 0.0))
             }
-            BasicLayouter::TopTrailing => {
+            Alignment::TopTrailing => {
                 let center_x = (bounding_box.position.x + bounding_box.dimension.width) as f32;
                 let center_y = (bounding_box.position.y) as f32;
                 Matrix4::from_translation(Vector3::new(center_x, center_y, 0.0))
                     * matrix
                     * Matrix4::from_translation(Vector3::new(-center_x, -center_y, 0.0))
             }
-            BasicLayouter::Leading => {
+            Alignment::Leading => {
                 let center_x = (bounding_box.position.x) as f32;
                 let center_y = (bounding_box.position.y + bounding_box.dimension.height / 2.0) as f32;
                 Matrix4::from_translation(Vector3::new(center_x, center_y, 0.0))
                     * matrix
                     * Matrix4::from_translation(Vector3::new(-center_x, -center_y, 0.0))
             }
-            BasicLayouter::Center => {
+            Alignment::Center => {
                 let center_x = (bounding_box.position.x + bounding_box.dimension.width / 2.0) as f32;
                 let center_y = (bounding_box.position.y + bounding_box.dimension.height / 2.0) as f32;
                 Matrix4::from_translation(Vector3::new(center_x, center_y, 0.0))
                     * matrix
                     * Matrix4::from_translation(Vector3::new(-center_x, -center_y, 0.0))
             }
-            BasicLayouter::Trailing => {
+            Alignment::Trailing => {
                 let center_x = (bounding_box.position.x + bounding_box.dimension.width) as f32;
                 let center_y = (bounding_box.position.y + bounding_box.dimension.height / 2.0) as f32;
                 Matrix4::from_translation(Vector3::new(center_x, center_y, 0.0))
                     * matrix
                     * Matrix4::from_translation(Vector3::new(-center_x, -center_y, 0.0))
             }
-            BasicLayouter::BottomLeading => {
+            Alignment::BottomLeading => {
                 let center_x = (bounding_box.position.x) as f32;
                 let center_y = (bounding_box.position.y + bounding_box.dimension.height) as f32;
                 Matrix4::from_translation(Vector3::new(center_x, center_y, 0.0))
                     * matrix
                     * Matrix4::from_translation(Vector3::new(-center_x, -center_y, 0.0))
             }
-            BasicLayouter::Bottom => {
+            Alignment::Bottom => {
                 let center_x = (bounding_box.position.x + bounding_box.dimension.width / 2.0) as f32;
                 let center_y = (bounding_box.position.y + bounding_box.dimension.height) as f32;
                 Matrix4::from_translation(Vector3::new(center_x, center_y, 0.0))
                     * matrix
                     * Matrix4::from_translation(Vector3::new(-center_x, -center_y, 0.0))
             }
-            BasicLayouter::BottomTrailing => {
+            Alignment::BottomTrailing => {
                 let center_x = (bounding_box.position.x + bounding_box.dimension.width) as f32;
                 let center_y = (bounding_box.position.y + bounding_box.dimension.height) as f32;
                 Matrix4::from_translation(Vector3::new(center_x, center_y, 0.0))
                     * matrix
                     * Matrix4::from_translation(Vector3::new(-center_x, -center_y, 0.0))
+            }
+            Alignment::Custom(_, _) => {
+                unimplemented!()
             }
         };
 

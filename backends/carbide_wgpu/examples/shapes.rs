@@ -23,12 +23,12 @@ fn main() {
             .fill(EnvironmentColor::Accent)
             .stroke(EnvironmentColor::Red)
             .frame(100.0, 100.0),
-        Image::new(landscape.clone())
+        Image::new(landscape)
             .scaled_to_fill()
             .frame(200.0, 200.0)
             .clip_shape(Rectangle::new().fill(EnvironmentColor::Accent))
             .frame(100.0, 100.0),
-        Image::new(landscape.clone())
+        Image::new(landscape)
             .scaled_to_fill()
             .frame(200.0, 200.0)
             .clip_shape(
@@ -51,12 +51,12 @@ fn main() {
             .fill(EnvironmentColor::Accent)
             .stroke(EnvironmentColor::Red)
             .frame(100.0, 100.0),
-        Image::new(landscape.clone())
+        Image::new(landscape)
             .scaled_to_fill()
             .frame(200.0, 200.0)
             .clip_shape(RoundedRectangle::new(CornerRadii::all(25.0)))
             .frame(100.0, 100.0),
-        Image::new(landscape.clone())
+        Image::new(landscape)
             .scaled_to_fill()
             .frame(200.0, 200.0)
             .clip_shape(
@@ -79,12 +79,12 @@ fn main() {
             .fill(EnvironmentColor::Accent)
             .stroke(EnvironmentColor::Red)
             .frame(100.0, 100.0),
-        Image::new(landscape.clone())
+        Image::new(landscape)
             .scaled_to_fill()
             .frame(200.0, 200.0)
             .clip_shape(Circle::new())
             .frame(100.0, 100.0),
-        Image::new(landscape.clone())
+        Image::new(landscape)
             .scaled_to_fill()
             .frame(200.0, 200.0)
             .clip_shape(
@@ -107,12 +107,12 @@ fn main() {
             .fill(EnvironmentColor::Accent)
             .stroke(EnvironmentColor::Red)
             .frame(100.0, 50.0),
-        Image::new(landscape.clone())
+        Image::new(landscape)
             .scaled_to_fill()
             .frame(200.0, 200.0)
             .clip_shape(Ellipse::new())
             .frame(100.0, 50.0),
-        Image::new(landscape.clone())
+        Image::new(landscape)
             .scaled_to_fill()
             .frame(200.0, 200.0)
             .clip_shape(
@@ -135,12 +135,12 @@ fn main() {
             .fill(EnvironmentColor::Accent)
             .stroke(EnvironmentColor::Red)
             .frame(100.0, 50.0),
-        Image::new(landscape.clone())
+        Image::new(landscape)
             .scaled_to_fill()
             .frame(200.0, 200.0)
             .clip_shape(Capsule::new())
             .frame(100.0, 50.0),
-        Image::new(landscape.clone())
+        Image::new(landscape)
             .scaled_to_fill()
             .frame(200.0, 200.0)
             .clip_shape(
@@ -173,7 +173,7 @@ fn main() {
             context.stroke();
             context
         }).frame(100.0, 100.0),
-        Image::new(landscape.clone())
+        Image::new(landscape)
             .scaled_to_fill()
             .frame(200.0, 200.0)
             .clip_shape(Canvas::new(|_, mut context, _: &mut Environment| {
@@ -182,7 +182,7 @@ fn main() {
                 context
             }))
             .frame(100.0, 100.0),
-        Image::new(landscape.clone())
+        Image::new(landscape)
             .scaled_to_fill()
             .frame(200.0, 200.0)
             .clip_shape(Canvas::new(|_, mut context, _: &mut Environment| {
@@ -196,7 +196,7 @@ fn main() {
 
     application.set_scene(
         Window::new(
-            "Shapes example",
+            "Shapes example - Carbide",
             Dimension::new(600.0, 600.0),
             VStack::new((
                 rectangles,

@@ -1,3 +1,4 @@
+use carbide::event::EventId;
 use carbide_core::CommonWidgetImpl;
 use carbide_core::draw::{Dimension, Position};
 use carbide_core::environment::WidgetTransferAction;
@@ -30,10 +31,13 @@ pub struct PlainPopUpButtonPopUp<T, S, M, H, E> where
     #[state] selected: S,
     #[state] hover_model: H,
     #[state] enabled: E,
+
+    /// The ID of the event causing this to open.
+    _event_id: EventId,
 }
 
 impl PlainPopUpButtonPopUp<bool, bool, Vec<bool>, Option<usize>, bool> {
-    pub fn new<T: StateContract + PartialEq, S: State<T=T>, M: ReadState<T=Vec<T>>, H: State<T=Option<usize>>, E: ReadState<T=bool>>(child: Box<dyn AnyWidget>, hover_model: H, model: M, selected: S, enabled: E, overlay_id: Option<String>, parent_position: LocalState<Position>, parent_dimension: LocalState<Dimension>) -> PlainPopUpButtonPopUp<T, S, M, H, E> {
+    pub fn new<T: StateContract + PartialEq, S: State<T=T>, M: ReadState<T=Vec<T>>, H: State<T=Option<usize>>, E: ReadState<T=bool>>(child: Box<dyn AnyWidget>, hover_model: H, model: M, selected: S, enabled: E, overlay_id: Option<String>, parent_position: LocalState<Position>, parent_dimension: LocalState<Dimension>, event_id: EventId) -> PlainPopUpButtonPopUp<T, S, M, H, E> {
         PlainPopUpButtonPopUp {
             id: WidgetId::new(),
             child,
@@ -46,6 +50,7 @@ impl PlainPopUpButtonPopUp<bool, bool, Vec<bool>, Option<usize>, bool> {
             selected,
             hover_model,
             enabled,
+            _event_id: event_id,
         }
     }
 }
@@ -66,18 +71,18 @@ impl<
     }
 
     fn position_children(&mut self, ctx: &mut LayoutContext) {
-        let positioning = self.alignment().positioner();
+        let alignment = self.alignment();
         let position = *self.parent_position.value();
         let dimension = *self.parent_dimension.value();
 
-        positioning(position, dimension, self);
+        self.set_position(alignment.position(position, dimension, self.dimension));
         self.position = self.position
             .min(&Position::new(ctx.env.current_window_width() - self.width(), ctx.env.current_window_height() - self.height()))
             .max(&Position::new(0.0, 0.0));
 
         let position = self.position();
         let dimension = self.dimension();
-        positioning(position, dimension, &mut self.child);
+        self.child.set_position(alignment.position(position, dimension, self.child.dimension()));
         self.child.position_children(ctx);
     }
 }
@@ -95,6 +100,8 @@ impl<
             //self.popup_open.set_value(false);
             return;
         }
+
+        ctx.prevent_default();
 
         if event == PopupButtonKeyCommand::Close {
             ctx.env.transfer_widget(self.overlay_id.clone(), WidgetTransferAction::Pop);
@@ -142,8 +149,8 @@ impl<
         }
 
         match event {
-            MouseEvent::Click(MouseButton::Left, mouse_position, _) => {
-                if !self.is_inside(*mouse_position) {
+            MouseEvent::Release { button: MouseButton::Left, position, ..} => {
+                if !self.is_inside(*position) {
                     ctx.env.transfer_widget(self.overlay_id.clone(), WidgetTransferAction::Pop);
                     //self.popup_open.set_value(false);
                 }

@@ -1,11 +1,9 @@
-use carbide::layout::LayoutContext;
-use carbide_core::state::IntoReadState;
 use carbide_macro::carbide_default_builder2;
 
 use crate::CommonWidgetImpl;
-use crate::draw::{Dimension, Position};
-use crate::layout::{BasicLayouter, Layout, Layouter};
-use crate::state::ReadState;
+use crate::draw::{Alignment, Dimension, Position};
+use crate::layout::{Layout, LayoutContext};
+use crate::state::{IntoReadState, ReadState};
 use crate::widget::{CommonWidget, Empty, Widget, WidgetExt, WidgetId};
 
 #[derive(Debug, Clone, Widget)]
@@ -35,11 +33,10 @@ impl Offset<f64, f64, Empty> {
 
 impl<X: ReadState<T=f64>, Y: ReadState<T=f64>, C: Widget> Layout for Offset<X, Y, C> {
     fn position_children(&mut self, ctx: &mut LayoutContext) {
-        let positioning = BasicLayouter::Center.positioner();
         let position = self.position;
         let dimension = self.dimension;
 
-        positioning(position, dimension, &mut self.child);
+        self.child.set_position(Alignment::Center.position(position, dimension, self.child.dimension()));
 
         let mut child_position = self.child.position();
 

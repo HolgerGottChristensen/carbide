@@ -1,6 +1,6 @@
-pub use focus::Focus;
-pub use focusable::Focusable;
-pub use refocus::Refocus;
+pub use focus::*;
+pub use focusable::*;
+pub use refocus::*;
 
 mod focus;
 mod focusable;

@@ -1,6 +1,6 @@
 use crate::draw::{Dimension, Position};
 
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Copy, Clone, Debug, PartialEq)]
 pub enum Alignment {
     TopLeading,
     Top,
@@ -15,65 +15,80 @@ pub enum Alignment {
 }
 
 impl Alignment {
-    pub fn position(&self, position: Position, dimension: Dimension) -> Position {
+    pub fn position(&self, position: Position, outer: Dimension, inner: Dimension) -> Position {
         match self {
-            Alignment::TopLeading => Alignment::top_leading(position, dimension),
-            Alignment::Top => Alignment::top(position, dimension),
-            Alignment::TopTrailing => Alignment::top_trailing(position, dimension),
-            Alignment::Leading => Alignment::leading(position, dimension),
-            Alignment::Center => Alignment::center(position, dimension),
-            Alignment::Trailing => Alignment::trailing(position, dimension),
-            Alignment::BottomLeading => Alignment::bottom_leading(position, dimension),
-            Alignment::Bottom => Alignment::bottom(position, dimension),
-            Alignment::BottomTrailing => Alignment::bottom_trailing(position, dimension),
+            Alignment::TopLeading => Alignment::top_leading(position, outer, inner),
+            Alignment::Top => Alignment::top(position, outer, inner),
+            Alignment::TopTrailing => Alignment::top_trailing(position, outer, inner),
+            Alignment::Leading => Alignment::leading(position, outer, inner),
+            Alignment::Center => Alignment::center(position, outer, inner),
+            Alignment::Trailing => Alignment::trailing(position, outer, inner),
+            Alignment::BottomLeading => Alignment::bottom_leading(position, outer, inner),
+            Alignment::Bottom => Alignment::bottom(position, outer, inner),
+            Alignment::BottomTrailing => Alignment::bottom_trailing(position, outer, inner),
             Alignment::Custom(x, y) => {
-                Position::new(position.x + dimension.width * *x, position.y + dimension.height * *y)
+                Position::new(position.x + outer.width * *x - inner.width / 2.0, position.y + outer.height * *y - inner.height / 2.0)
             }
         }
     }
 
-    fn top_leading(position: Position, _: Dimension) -> Position {
+    fn top_leading(position: Position, _: Dimension, _: Dimension) -> Position {
         position
     }
 
-    fn top(position: Position, dimension: Dimension) -> Position {
-        Position::new(position.x + dimension.width / 2.0, position.y)
-    }
-
-    fn top_trailing(position: Position, dimension: Dimension) -> Position {
-        Position::new(position.x + dimension.width, position.y)
-    }
-
-    fn leading(position: Position, dimension: Dimension) -> Position {
-        Position::new(position.x, position.y + dimension.height / 2.0)
-    }
-
-    fn center(position: Position, dimension: Dimension) -> Position {
+    fn top(position: Position, outer: Dimension, inner: Dimension) -> Position {
         Position::new(
-            position.x + dimension.width / 2.0,
-            position.y + dimension.height / 2.0,
+            position.x + outer.width / 2.0 - inner.width / 2.0,
+            position.y
         )
     }
 
-    fn trailing(position: Position, dimension: Dimension) -> Position {
+    fn top_trailing(position: Position, outer: Dimension, inner: Dimension) -> Position {
         Position::new(
-            position.x + dimension.width,
-            position.y + dimension.height / 2.0,
+            position.x + outer.width - inner.width,
+            position.y
         )
     }
 
-    fn bottom_leading(position: Position, dimension: Dimension) -> Position {
-        Position::new(position.x, position.y + dimension.height)
-    }
-
-    fn bottom(position: Position, dimension: Dimension) -> Position {
+    fn leading(position: Position, outer: Dimension, inner: Dimension) -> Position {
         Position::new(
-            position.x + dimension.width / 2.0,
-            position.y + dimension.height,
+            position.x,
+            position.y + outer.height / 2.0 - inner.height / 2.0
         )
     }
 
-    fn bottom_trailing(position: Position, dimension: Dimension) -> Position {
-        Position::new(position.x + dimension.width, position.y + dimension.height)
+    fn center(position: Position, outer: Dimension, inner: Dimension) -> Position {
+        Position::new(
+            position.x + outer.width / 2.0 - inner.width / 2.0,
+            position.y + outer.height / 2.0 - inner.height / 2.0,
+        )
+    }
+
+    fn trailing(position: Position, outer: Dimension, inner: Dimension) -> Position {
+        Position::new(
+            position.x + outer.width - inner.width,
+            position.y + outer.height / 2.0 - inner.height / 2.0,
+        )
+    }
+
+    fn bottom_leading(position: Position, outer: Dimension, inner: Dimension) -> Position {
+        Position::new(
+            position.x,
+            position.y + outer.height - inner.height
+        )
+    }
+
+    fn bottom(position: Position, outer: Dimension, inner: Dimension) -> Position {
+        Position::new(
+            position.x + outer.width / 2.0,
+            position.y + outer.height - inner.height,
+        )
+    }
+
+    fn bottom_trailing(position: Position, outer: Dimension, inner: Dimension) -> Position {
+        Position::new(
+            position.x + outer.width - inner.width,
+            position.y + outer.height - inner.height
+        )
     }
 }

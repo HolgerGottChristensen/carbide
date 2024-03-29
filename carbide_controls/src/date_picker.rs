@@ -1,8 +1,8 @@
+use carbide::draw::Alignment;
 use carbide_core::color::TRANSPARENT;
 use carbide_core::draw::{Dimension, Position, Rect};
 use carbide_core::environment::{EnvironmentColor, IntoColorReadState, WidgetTransferAction};
 use carbide_core::focus::Focus;
-use carbide_core::layout::BasicLayouter;
 use carbide_core::state::{AnyReadState, AnyState, LocalState, Map1, Map2, Map3, ReadStateExtNew};
 use carbide_core::widget::*;
 
@@ -124,7 +124,7 @@ impl DatePicker {
                 Spacer::new(),
             )).clip()
             .padding(EdgeInsets::vertical_horizontal(0.0, 5.0)),
-        )).with_alignment(BasicLayouter::Leading)
+        )).with_alignment(Alignment::Leading)
         .background(
             RoundedRectangle::new(CornerRadii::all(3.0))
                 .stroke(outline_color)

@@ -4,24 +4,7 @@ use carbide_core::widget::*;
 use carbide_wgpu::{Application, Window};
 
 fn main() {
-
-    let mut application = Application::new()
-        .with_asset_fonts();
-
-    /*let state = LocalState::new(false);
-    let state2 = state.clone();
-
-    let overlay = ZStack::new((
-        Rectangle::new()
-            .fill(EnvironmentColor::Blue)
-            .frame(150.0, 150.0),
-        Text::new("Overlay"),
-    )).on_click(|env: &mut Environment, _| {
-        println!("Overlay clicked!")
-    }).on_click_outside(move |env: &mut Environment, _| {
-        state2.clone().set_value(false);
-    }).overlay("overlay", state.clone());*/
-
+    let mut application = Application::new();
 
     let widget = Overlay::new("overlay", VStack::new((
         Text::new("Click the rectangle to add element to overlay"),
@@ -40,7 +23,7 @@ fn main() {
                         .fill(EnvironmentColor::Blue)
                         .frame(150.0, 150.0),
                     Text::new("Overlay"),
-                )).on_click(|env: &mut Environment, _| {
+                )).on_click(|_, _| {
                     println!("Overlay clicked!")
                 }).on_click_outside(move |env: &mut Environment, _| {
                     env.transfer_widget(Some("overlay".to_string()), WidgetTransferAction::Pop)

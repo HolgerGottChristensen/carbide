@@ -23,3 +23,12 @@ mod other_event_handler;
 mod types;
 mod event;
 mod window_event_handler;
+
+#[derive(Copy, Clone, Ord, PartialOrd, Eq, PartialEq, Hash, Debug, Default)]
+pub struct EventId(u32);
+
+impl EventId {
+    pub fn new(id: u32) -> EventId {
+        EventId(id)
+    }
+}

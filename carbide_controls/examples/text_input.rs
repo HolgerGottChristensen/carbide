@@ -1,4 +1,4 @@
-use carbide_controls::{ControlsExt, TextInput};
+use carbide_controls::TextInput;
 use carbide_core::draw::Dimension;
 use carbide_core::environment::EnvironmentColor;
 use carbide_core::state::{LocalState};
@@ -17,13 +17,13 @@ fn main() {
         "Text Input Example - Carbide",
         Dimension::new(400.0, 600.0),
         VStack::new((
-            TextInput::new(text_state.clone()).accent_color(EnvironmentColor::Green).boxed(),
-            TextInput::new(text_state.clone()).accent_color(EnvironmentColor::Purple).boxed(),
-            TextInput::new(text_state2.clone()).boxed(),
-            TextInput::new(text_state2.clone()).obscure().boxed(),
-            TextInput::new(text_state2.clone()).obscure_with('©').boxed(),
+            TextInput::new(text_state.clone()).accent_color(EnvironmentColor::Green),
+            TextInput::new(text_state.clone()).accent_color(EnvironmentColor::Purple),
+            TextInput::new(text_state2.clone()),
+            TextInput::new(text_state2.clone()).obscure(),
+            TextInput::new(text_state2.clone()).obscure_with('©'),
             Empty::new().frame(10.0, 10.0),
-            TextInput::new(text_state2.clone()).enabled(false).boxed(),
+            TextInput::new(text_state2.clone()).enabled(false),
 
         ))
             .spacing(10.0)

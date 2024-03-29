@@ -10,21 +10,14 @@ use std::time::Instant;
 use fxhash::{FxBuildHasher, FxHashMap};
 use raw_window_handle::{HasRawWindowHandle, RawWindowHandle};
 
-use carbide_core::draw::Position;
-use carbide_core::widget::AnyWidget;
-
 use crate::animation::Animation;
 use crate::cursor::MouseCursor;
-use crate::draw::Dimension;
-use crate::draw::Color;
-use crate::draw::theme;
-use crate::environment::{EnvironmentFontSize, WidgetTransferAction};
-use crate::environment::{EnvironmentColor, EnvironmentVariable};
+use crate::draw::{Alignment, Color, Dimension, Position, theme};
+use crate::environment::{EnvironmentColor, EnvironmentFontSize, EnvironmentVariable, WidgetTransferAction};
 use crate::event::{EventSink, HasEventSink};
 use crate::focus::Refocus;
-use crate::layout::BasicLayouter;
 use crate::state::{InnerState, StateContract};
-use crate::widget::{EnvKey, FilterId, ImageFilter, WidgetId};
+use crate::widget::{AnyWidget, EnvKey, FilterId, ImageFilter, WidgetId};
 
 //type Overlays = Vec<(Box<dyn AnyWidget>, Box<dyn AnyReadState<T=bool>>)>;
 
@@ -35,7 +28,7 @@ pub struct Environment {
     // TODO: Consider switching to a map, so we dont need to search through the vec for better performance
     stack: Vec<(&'static str, Box<dyn Any>)>,
 
-    root_alignment: BasicLayouter,
+    root_alignment: Alignment,
 
     /// A map from String to a widget.
     /// This key should correspond to the targeted overlay_layer
@@ -168,7 +161,7 @@ impl Environment {
 
         let res = Environment {
             stack: env_stack,
-            root_alignment: BasicLayouter::Center,
+            root_alignment: Alignment::Center,
             overlay_map: HashMap::with_hasher(FxBuildHasher::default()),
             widget_transfer: HashMap::with_hasher(FxBuildHasher::default()),
             focus_request: None,
@@ -206,12 +199,12 @@ impl Environment {
         self.request_application_close
     }
 
-    pub fn root_alignment(&self) -> BasicLayouter {
+    pub fn root_alignment(&self) -> Alignment {
         self.root_alignment
     }
 
-    pub fn set_root_alignment(&mut self, layout: BasicLayouter) {
-        self.root_alignment = layout;
+    pub fn set_root_alignment(&mut self, alignment: Alignment) {
+        self.root_alignment = alignment;
     }
 
     pub fn insert_animation<A: StateContract>(&mut self, animation: Animation<A>) {

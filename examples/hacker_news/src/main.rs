@@ -1,23 +1,20 @@
-use std::collections::HashSet;
 use std::ops::Deref;
 
 use chrono::{TimeZone, Utc};
-use futures::stream::FuturesOrdered;
 use futures::{FutureExt, StreamExt};
-use reqwest::{Client, get};
+use futures::stream::FuturesOrdered;
+use reqwest::get;
 
 use carbide::{a, lens, task, ui};
 use carbide::{Application, Window};
-use carbide::asynchronous::spawn;
 use carbide::color::TRANSPARENT;
-use carbide::draw::{Color, Dimension};
-use carbide::environment::{Environment, EnvironmentColor, EnvironmentFontSize, IntoColorReadState};
-use carbide::layout::BasicLayouter;
-use carbide::state::{AnyReadState, AnyState, IndexState, LocalState, Map1, Map2, ReadState, ReadStateExtNew, State, StateExt, TState};
+use carbide::controls::List;
+use carbide::draw::{Alignment, Color, Dimension};
+use carbide::environment::{EnvironmentColor, EnvironmentFontSize, IntoColorReadState};
+use carbide::state::{AnyReadState, AnyState, IndexState, LocalState, Map1, Map2, ReadState, ReadStateExtNew, State, StateExt};
 use carbide::text::FontWeight;
 use carbide::widget::*;
 use carbide::widget::WidgetExt;
-use carbide::controls::{List, PlainButton};
 
 use crate::article::Article;
 use crate::item::HNItem;
@@ -117,7 +114,7 @@ fn main() {
                 .fill(background_color)
                 .frame_fixed_width(6.0),
         )
-        .with_alignment(BasicLayouter::Leading)
+        .with_alignment(Alignment::Leading)
             .on_click(a!(|_, _| {
                 current_hn_item.clone().set_value(None);
                 let id = article.value().id;

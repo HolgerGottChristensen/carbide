@@ -15,7 +15,7 @@ use carbide_core::draw::{ColorSpace, Dimension, DrawGradient, ImageId, Position,
 use carbide_core::environment::{Environment, EnvironmentColor};
 use carbide_core::event::{Event, KeyboardEvent, KeyboardEventContext, KeyboardEventHandler, MouseEvent, MouseEventContext, MouseEventHandler, OtherEventContext, OtherEventHandler, WindowEvent, WindowEventContext, WindowEventHandler};
 use carbide_core::focus::Focusable;
-use carbide_core::layout::{Layout, LayoutContext, Layouter};
+use carbide_core::layout::{Layout, LayoutContext};
 use carbide_core::render::{Render, RenderContext};
 use carbide_core::state::{IntoReadState, ReadState, StateSync};
 use carbide_core::text::InnerTextContext;
@@ -588,6 +588,7 @@ impl<T: ReadState<T=String>> KeyboardEventHandler for WGPUWindow<T> {
             env: ctx.env,
             is_current: &(*ctx.window_id == id),
             window_id: ctx.window_id,
+            prevent_default: ctx.prevent_default,
         };
 
         self.foreach_child_direct(&mut |child| {
@@ -752,9 +753,8 @@ impl<T: ReadState<T=String>> Render for WGPUWindow<T> {
         });
 
         // Position children
-        let layout = context.env.root_alignment();
-        (layout.positioner())(Position::new(0.0, 0.0), dimensions, &mut self.child);
-
+        let alignment = context.env.root_alignment();
+        self.child.set_position(alignment.position(Position::new(0.0, 0.0), dimensions, self.child.dimension()));
         self.child.position_children(&mut LayoutContext {
             text: context.text,
             image: context.image,
@@ -1095,9 +1095,9 @@ impl<T: ReadState<T=String>> WGPUWindow<T> {
                         match inner_command {
                             RenderPassCommand::SetBindGroup { bind_group } => {
                                 match bind_group {
-                                    WGPUBindGroup::Default => {
+                                    /*WGPUBindGroup::Default => {
                                         render_pass.set_bind_group(0, &bind_groups[&ImageId::default()].bind_group, &[]);
-                                    }
+                                    }*/
                                     WGPUBindGroup::Image(id) => {
                                         render_pass.set_bind_group(0, &bind_groups[&id].bind_group, &[]);
                                     }
@@ -1157,9 +1157,9 @@ impl<T: ReadState<T=String>> WGPUWindow<T> {
                             }
                             RenderPassCommand::SetMaskBindGroup { bind_group } => {
                                 match bind_group {
-                                    WGPUBindGroup::Default => {
+                                    /*WGPUBindGroup::Default => {
                                         render_pass.set_bind_group(4, &bind_groups[&ImageId::default()].bind_group, &[]);
-                                    }
+                                    }*/
                                     WGPUBindGroup::Image(id) => {
                                         render_pass.set_bind_group(4, &bind_groups[&id].bind_group, &[]);
                                     }
@@ -1176,6 +1176,7 @@ impl<T: ReadState<T=String>> WGPUWindow<T> {
                     filter_id,
                     source_id,
                     target_id,
+                    mask_id,
                     initial_copy
                 } => {
                     if invalid_scissor {
@@ -1226,7 +1227,11 @@ impl<T: ReadState<T=String>> WGPUWindow<T> {
                     render_pass.set_bind_group(0, &self.targets[source_id].bind_group, &[]);
                     render_pass.set_bind_group(1, &filter_bind_groups[&filter_id], &[]);
                     render_pass.set_bind_group(2, current_uniform_bind_group, &[]);
-                    render_pass.set_bind_group(3, &self.targets[source_id].bind_group, &[]);
+                    if let Some(id) = mask_id {
+                        render_pass.set_bind_group(3, &self.targets[id].bind_group, &[]);
+                    } else {
+                        render_pass.set_bind_group(3, &bind_groups[&ImageId::default()].bind_group, &[]);
+                    }
 
                     render_pass.draw(vertex_range, instance_range.clone());
                 }

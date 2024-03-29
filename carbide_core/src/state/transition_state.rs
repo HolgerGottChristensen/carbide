@@ -165,8 +165,8 @@ impl<T: StateContract + Animatable<T> + PartialEq, S: ReadState<T=T>> Debug for 
 }
 
 pub trait ReadStateExtTransition<T>: ReadState<T=T> + Sized + Clone + 'static where T: StateContract + Default + PartialEq + Animatable<T> {
-    fn transition(self) -> TransitionState<T, Self> {
-        TransitionState::new(self)
+    fn transition(&self) -> TransitionState<T, Self> {
+        TransitionState::new(self.clone())
     }
 }
 

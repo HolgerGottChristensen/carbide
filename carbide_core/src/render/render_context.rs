@@ -27,6 +27,7 @@ impl<'a> RenderContext<'a> {
         res
     }
 
+    /// Hue rotation given in turns.
     pub fn hue_rotation<R, F: FnOnce(&mut RenderContext) -> R>(&mut self, rotation: f32, f: F) -> R {
         self.render.color_filter(rotation, 0.0, 0.0, false);
         let res = f(self);

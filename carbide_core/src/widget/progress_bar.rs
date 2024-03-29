@@ -22,13 +22,13 @@ impl ProgressBar<f64, Empty> {
     pub fn new<P: IntoReadState<f64>>(progress: P) -> ProgressBar<P::Output, impl Widget> {
         let progress = progress.into_read_state();
 
-        let child = ZStack::new(vec![
-            Capsule::new().fill(EnvironmentColor::SystemFill).boxed(),
-            HSplit::new(Capsule::new().fill(EnvironmentColor::Accent).boxed(), Spacer::new().boxed())
+        let child = ZStack::new((
+            Capsule::new().fill(EnvironmentColor::SystemFill),
+            HSplit::new(Capsule::new().fill(EnvironmentColor::Accent), Spacer::new())
                 .percent(progress.ignore_writes())
                 .non_draggable()
                 .boxed(),
-        ])
+        ))
             .frame(0.0, 5.0)
             .expand_width();
 

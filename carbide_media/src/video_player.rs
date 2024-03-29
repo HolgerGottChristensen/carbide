@@ -1,19 +1,18 @@
-use std::ops::{Deref, DerefMut};
+use std::ops::Deref;
 use std::time::Duration;
-use carbide::event::{KeyboardEventContext, MouseEventContext};
-use carbide::layout::LayoutContext;
+
 use carbide_core::color::BLACK;
 use carbide_core::CommonWidgetImpl;
 use carbide_core::draw::{Dimension, Position};
 use carbide_core::environment::{Environment, EnvironmentColor};
-use carbide_core::event::{Key, KeyboardEvent, KeyboardEventHandler, ModifierKey, MouseEvent, MouseEventHandler};
-use carbide_core::layout::Layout;
+use carbide_core::event::{Key, KeyboardEvent, KeyboardEventContext, KeyboardEventHandler, ModifierKey, MouseEvent, MouseEventContext, MouseEventHandler};
+use carbide_core::layout::{Layout, LayoutContext};
 use carbide_core::render::{Render, RenderContext};
-use carbide_core::state::{AnyReadState, AnyState, IntoReadState, LocalState, Map2, ReadState, ReadStateExtNew, State, StateExtNew, StateSync};
-use carbide_core::widget::{CommonWidget, HSplit, HStack, IfElse, Image, ProgressView, Rectangle, Spacer, VStack, WidgetExt, WidgetId, ZStack};
-use crate::{Video, VideoId};
-use carbide_core::widget::AnyWidget;
+use carbide_core::state::{AnyState, IntoReadState, LocalState, Map2, ReadState, ReadStateExtNew, State, StateExtNew, StateSync};
+use carbide_core::widget::{AnyWidget, CommonWidget, HSplit, HStack, IfElse, Image, ProgressView, Rectangle, Spacer, VStack, WidgetExt, WidgetId, ZStack};
 use carbide_derive::Widget;
+
+use crate::{Video, VideoId};
 
 const ICON_SIZE: f64 = 48.0;
 const SKIP_ICON_SIZE: f64 = 32.0;
@@ -209,12 +208,12 @@ impl<Id: ReadState<T=Option<VideoId>> + Clone> Layout for VideoPlayer<Id> {
     }
 
     fn position_children(&mut self, ctx: &mut LayoutContext) {
-        let positioning = self.alignment().positioner();
+        let alignment = self.alignment();
         let position = self.position();
         let dimension = self.dimension();
 
-        positioning(position, dimension, &mut self.video);
-        positioning(position, dimension, &mut self.video_overlay);
+        self.video.set_position(alignment.position(position, dimension, self.video.dimension()));
+        self.video_overlay.set_position(alignment.position(position, dimension, self.video_overlay.dimension()));
 
         self.video.position_children(ctx);
         self.video_overlay.position_children(ctx);

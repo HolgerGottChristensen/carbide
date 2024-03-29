@@ -1,11 +1,10 @@
-use carbide_core::render::RenderContext;
 use carbide_macro::carbide_default_builder2;
 
 use crate::CommonWidgetImpl;
-use crate::draw::{Dimension, Position};
+use crate::draw::{Alignment, Dimension, Position};
 use crate::environment::Environment;
-use crate::layout::{BasicLayouter, Layout, LayoutContext, Layouter};
-use crate::render::Render;
+use crate::layout::{Layout, LayoutContext};
+use crate::render::{Render, RenderContext};
 use crate::state::StateSync;
 use crate::widget::{CommonWidget, Empty, Widget, WidgetExt, WidgetId};
 
@@ -57,12 +56,11 @@ impl<M: Widget, W: Widget> Layout for Mask<M, W> {
     }
 
     fn position_children(&mut self, ctx: &mut LayoutContext) {
-        let positioning = BasicLayouter::Center.positioner();
         let position = self.position;
         let dimension = self.dimension;
 
-        positioning(position, dimension, &mut self.child);
-        positioning(position, dimension, &mut self.mask);
+        self.child.set_position(Alignment::Center.position(position, dimension, self.child.dimension()));
+        self.mask.set_position(Alignment::Center.position(position, dimension, self.mask.dimension()));
 
         self.child.position_children(ctx);
         self.mask.position_children(ctx);

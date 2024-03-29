@@ -1,6 +1,5 @@
 use carbide::{Application, Window};
 use carbide::draw::Dimension;
-use carbide::widget::WidgetExt;
 
 use crate::badge::Badge;
 

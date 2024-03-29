@@ -23,8 +23,7 @@ fn main() {
     let shape_state = LocalState::new(Shape::Rectangle);
     let shape_state2 = LocalState::new(Shape::Rectangle);
 
-    let mut application = Application::new()
-        .with_asset_fonts();
+    let mut application = Application::new();
 
     application.set_scene(Window::new(
         "Radio Button Example - Carbide",

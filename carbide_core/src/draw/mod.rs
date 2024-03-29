@@ -8,6 +8,7 @@ pub use texture::*;
 pub use image::*;
 pub use draw_gradient::*;
 pub use draw_style::*;
+pub use angle::*;
 
 mod alignment;
 mod dimension;
@@ -23,7 +24,7 @@ mod draw_style;
 pub mod color;
 mod image_context;
 mod texture;
-pub mod pre_multiply;
+mod angle;
 
 /// An alias over the Scalar type used throughout carbide.
 ///

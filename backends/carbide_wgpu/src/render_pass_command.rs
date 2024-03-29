@@ -49,13 +49,14 @@ pub enum RenderPass {
         filter_id: FilterId,
         source_id: usize,
         target_id: usize,
+        mask_id: Option<usize>,
         initial_copy: bool,
     },
 }
 
 #[derive(PartialEq, Debug, Clone)]
 pub enum WGPUBindGroup {
-    Default,
+    // Default,
     Image(ImageId),
     Target(usize),
 }

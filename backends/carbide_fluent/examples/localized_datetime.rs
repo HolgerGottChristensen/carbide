@@ -7,7 +7,7 @@ use carbide_controls::{ControlsExt, PopUpButton};
 use carbide_core::asynchronous::Timer;
 use carbide_core::draw::Dimension;
 use carbide_core::environment::EnvironmentColor;
-use carbide_core::state::{GlobalState, LocalState, State, ValueState};
+use carbide_core::state::{GlobalState, LocalState, State};
 use carbide_core::widget::{Text, VStack, WidgetExt};
 use carbide_fluent::{DateStyle, LocalizedDateTime, LocalizedString, TimeStyle, TimezoneStyle};
 use carbide_fluent::LocaleExt;

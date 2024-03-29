@@ -33,7 +33,6 @@ pub struct IfElse<T, F, S> where
 }
 
 impl IfElse<Empty, Empty, bool> {
-
     #[carbide_default_builder2]
     pub fn new<S: ReadState<T=bool> + Clone + 'static>(predicate: S) -> IfElse<Empty, Empty, S> {
         IfElse {

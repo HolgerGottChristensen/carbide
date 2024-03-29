@@ -6,7 +6,7 @@ use carbide_core::draw::{Dimension, Position};
 use carbide_core::environment::EnvironmentColor;
 use carbide_core::event::{Key, KeyboardEvent, KeyboardEventHandler, ModifierKey, MouseEvent, MouseEventHandler};
 use carbide_core::flags::WidgetFlag;
-use carbide_core::focus::{Focus, Focusable, Refocus};
+use carbide_core::focus::{Focus, Refocus};
 use carbide_core::layout::Layout;
 use carbide_core::render::{Render, RenderContext};
 use carbide_core::state::{AnyReadState, AnyState, IntoReadState, IntoState, LocalState, Map3, Map4, ReadState, ReadStateExtNew, State, StateExtNew};
@@ -18,7 +18,7 @@ const SMOOTH_VALUE_SMALL_INCREMENT: f64 = 0.01;
 const STEP_SMOOTH_BEHAVIOR: bool = false;
 
 #[derive(Debug, Clone, Widget)]
-#[carbide_exclude(Focusable, Layout, MouseEvent, KeyboardEvent, Render)]
+#[carbide_exclude(Layout, MouseEvent, KeyboardEvent, Render)]
 pub struct PlainSlider<V, F, St, S, E, P, Th, In, Bg, En> where
     V: SliderValue,
     F: State<T=Focus>,
@@ -248,23 +248,6 @@ impl<
     In: Widget,
     Bg: Widget,
     En: ReadState<T=bool>,
-> Focusable for PlainSlider<V, F, St, S, E, P, Th, In, Bg, En> {
-    fn focus_children(&self) -> bool {
-        false
-    }
-}
-
-impl<
-    V: SliderValue,
-    F: State<T=Focus>,
-    St: State<T=V>,
-    S: ReadState<T=V>,
-    E: ReadState<T=V>,
-    P: ReadState<T=Option<V>>,
-    Th: Widget,
-    In: Widget,
-    Bg: Widget,
-    En: ReadState<T=bool>,
 > KeyboardEventHandler for PlainSlider<V, F, St, S, E, P, Th, In, Bg, En> {
     fn handle_keyboard_event(&mut self, event: &KeyboardEvent, _ctx: &mut KeyboardEventContext) {
         if !*self.enabled.value() {
@@ -317,7 +300,7 @@ impl<
         }
 
         match event {
-            MouseEvent::Press(_, position, _) => {
+            MouseEvent::Press { position, .. } => {
                 if self.thumb.is_inside(*position) || self.background.is_inside(*position) {
                     if *self.focus.value() != Focus::Focused {
                         self.focus.set_value(Focus::FocusRequested);
@@ -337,7 +320,7 @@ impl<
                     }
                 }
             }
-            MouseEvent::Release(_, _, _) => {
+            MouseEvent::Release { .. } => {
                 self.dragging = false;
             }
             MouseEvent::Move { to, .. } => {

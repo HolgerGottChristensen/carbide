@@ -2,6 +2,8 @@ use std::ops::Range;
 
 use copypasta::{ClipboardContext, ClipboardProvider};
 use unicode_segmentation::UnicodeSegmentation;
+use carbide::cursor::MouseCursor;
+use carbide::draw::Alignment;
 
 use carbide_core::CommonWidgetImpl;
 use carbide_core::draw::{Color, Dimension, Position};
@@ -9,7 +11,7 @@ use carbide_core::environment::{Environment, EnvironmentColor, EnvironmentFontSi
 use carbide_core::event::{Ime, Key, KeyboardEvent, KeyboardEventContext, KeyboardEventHandler, ModifierKey, MouseEvent, MouseEventContext, MouseEventHandler};
 use carbide_core::flags::WidgetFlag;
 use carbide_core::focus::{Focus, Focusable};
-use carbide_core::layout::{BasicLayouter, Layout, LayoutContext, Layouter};
+use carbide_core::layout::{Layout, LayoutContext};
 use carbide_core::render::{Render, RenderContext};
 use carbide_core::state::{AnyReadState, IntoReadState, IntoState, LocalState, Map2, ReadState, ReadStateExtNew, State, TState};
 use carbide_core::text::InnerTextContext;
@@ -82,6 +84,8 @@ pub struct PlainTextInput<F, C, O, S, T, E> where
     cursor: Cursor,
     last_drag_position: Option<Position>,
     current_offset_speed: Option<f64>,
+
+    hovered: bool,
 }
 
 impl PlainTextInput<Focus, Color, Option<char>, u32, String, bool> {
@@ -249,6 +253,7 @@ impl<
             cursor: Cursor::Single(CursorIndex { line: 0, index: last }),
             last_drag_position: None,
             current_offset_speed: None,
+            hovered: false,
         }
     }
 }
@@ -474,7 +479,6 @@ impl<
             TextInputKeyCommand::JumpSelectToRight => self.jump_select_to_right(),
             TextInputKeyCommand::Enter => self.enter(ctx.env),
             TextInputKeyCommand::Space => self.text(" "),
-            TextInputKeyCommand::Tab => self.text("\t"),
             TextInputKeyCommand::Text(s, m) => {
                 if s.len() == 0 || s.chars().next().unwrap().is_control() || m.contains(ModifierKey::SUPER) {
                     return;
@@ -526,8 +530,8 @@ impl<F: State<T=Focus>, C: ReadState<T=Color>, O: ReadState<T=Option<char>>, S: 
         }
     }
 
-    fn enter(&mut self, env: &mut Environment) {
-        self.set_focus_and_request(Focus::FocusReleased, env);
+    fn enter(&mut self, _env: &mut Environment) {
+        self.set_focus(Focus::Unfocused);
     }
 
     fn jump_select_to_right(&mut self) {
@@ -1088,13 +1092,16 @@ impl<
         let editable = enabled && self.get_focus() == Focus::Focused;
 
         match event {
-            MouseEvent::Press(_, _, _) if !self.is_inside(event.get_current_mouse_position()) => {
+            MouseEvent::Move { to, .. } => {
+                self.hovered = self.is_inside(*to);
+            }
+            MouseEvent::Press { .. } if !self.is_inside(event.get_current_mouse_position()) => {
                 if self.get_focus() == Focus::Focused {
-                    self.set_focus_and_request(Focus::FocusReleased, ctx.env);
+                    self.set_focus(Focus::Unfocused);
                 }
             }
-            MouseEvent::Press(_, position, ModifierKey::EMPTY) if enabled => self.text_click(position, ctx),
-            MouseEvent::Release(_, _, _) => {
+            MouseEvent::Press { position, modifiers: ModifierKey::EMPTY, .. } if enabled => self.text_click(position, ctx),
+            MouseEvent::Release { .. } => {
                 self.current_offset_speed = None;
                 self.last_drag_position = None;
             }
@@ -1152,7 +1159,7 @@ impl<F: State<T=Focus>, C: ReadState<T=Color>, O: ReadState<T=Option<char>>, S: 
 
     fn text_click(&mut self, position: &Position, ctx: &mut MouseEventContext) {
         if self.get_focus() == Focus::Unfocused {
-            self.set_focus_and_request(Focus::FocusRequested, ctx.env);
+            self.request_focus(ctx.env);
         }
 
         let x = position.x - self.position.x - *self.text_offset.value();
@@ -1260,11 +1267,10 @@ impl<
         // 2. We calculate the new offset, by looking if the cursor as calculated before is
         //    outside the visible area on either side.
 
-        let positioning = BasicLayouter::Leading.positioner();
         let position = self.position + Position::new(*self.text_offset.value(), 0.0);
         let dimension = self.dimension;
 
-        positioning(position, dimension, &mut self.text_widget);
+        self.text_widget.set_position(Alignment::Leading.position(position, dimension, self.text_widget.dimension()));
         self.text_widget.position_children(ctx);
 
         //println!("Position children called");
@@ -1276,11 +1282,10 @@ impl<
         }
 
 
-        let positioning = BasicLayouter::Leading.positioner();
         let position = self.position + Position::new(*self.text_offset.value(), 0.0);
         let dimension = self.dimension;
 
-        positioning(position, dimension, &mut self.text_widget);
+        self.text_widget.set_position(Alignment::Leading.position(position, dimension, self.text_widget.dimension()));
         self.text_widget.position_children(ctx);
 
         if self.get_focus() == Focus::Focused && *self.enabled.value() {
@@ -1317,6 +1322,9 @@ impl<
     E: ReadState<T=bool>,
 > Render for PlainTextInput<F, C, O, S, T, E> {
     fn render(&mut self, context: &mut RenderContext) {
+        if let Some(cursor) = self.cursor() {
+            context.env.set_cursor(cursor);
+        }
 
         if self.get_focus() == Focus::Focused && *self.enabled.value() {
             match self.cursor {
@@ -1344,6 +1352,14 @@ impl<
     T: State<T=String>,
     E: ReadState<T=bool>,
 > CommonWidget for PlainTextInput<F, C, O, S, T, E> {
+    fn cursor(&self) -> Option<MouseCursor> {
+        if self.hovered {
+            Some(MouseCursor::Text)
+        } else {
+            None
+        }
+    }
+
     CommonWidgetImpl!(self, id: self.id, child: (), position: self.position, dimension: self.dimension, flag: WidgetFlag::FOCUSABLE, flexibility: 1, focus: self.focus);
 }
 
@@ -1387,7 +1403,6 @@ pub(super) enum TextInputKeyCommand<'a> {
     JumpSelectToRight,
     Enter,
     Space,
-    Tab,
     Undefined,
 }
 
@@ -1427,7 +1442,6 @@ impl<'a> From<&'a KeyboardEvent> for TextInputKeyCommand<'a> {
             KeyboardEvent::Press(Key::End, ModifierKey::SHIFT) => TextInputKeyCommand::JumpSelectToRight,
             KeyboardEvent::Press(Key::Enter, ModifierKey::EMPTY) => TextInputKeyCommand::Enter,
             KeyboardEvent::Press(Key::Space, ModifierKey::EMPTY) => TextInputKeyCommand::Space,
-            KeyboardEvent::Press(Key::Tab, ModifierKey::EMPTY) => TextInputKeyCommand::Tab,
 
             KeyboardEvent::Press(Key::Character(s), m) => TextInputKeyCommand::Text(s, *m),
             KeyboardEvent::Ime(Ime::Commit(s)) => TextInputKeyCommand::Text(s, ModifierKey::EMPTY),

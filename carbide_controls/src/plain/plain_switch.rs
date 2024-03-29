@@ -4,7 +4,7 @@ use carbide_core::CommonWidgetImpl;
 use carbide_core::draw::{Dimension, Position};
 use carbide_core::environment::{Environment, EnvironmentColor};
 use carbide_core::flags::WidgetFlag;
-use carbide_core::focus::{Focus, Focusable, Refocus};
+use carbide_core::focus::{Focus, Refocus};
 use carbide_core::state::{AnyReadState, IntoReadState, IntoState, LocalState, Map1, Map2, ReadState, ReadStateExtNew, State, StateExtNew};
 use carbide_core::widget::{AnyWidget, CommonWidget, MouseArea, Rectangle, Text, Widget, WidgetExt, WidgetId, ZStack};
 
@@ -28,7 +28,6 @@ type DefaultPlainSwitchDelegate = fn(Box<dyn AnyReadState<T=Focus>>, Box<dyn Any
 ///
 /// For a styled version, use [crate::Switch] instead.
 #[derive(Clone, Widget)]
-#[carbide_exclude(Focusable)]
 pub struct PlainSwitch<F, C, D, E> where
     F: State<T=Focus>,
     C: State<T=bool>,
@@ -146,12 +145,6 @@ impl<F: State<T=Focus> + Clone, C: State<T=bool> + Clone, D: PlainSwitchDelegate
         }
     }
 
-}
-
-impl<F: State<T=Focus> + Clone, C: State<T=bool> + Clone, D: PlainSwitchDelegate, E: ReadState<T=bool>> Focusable for PlainSwitch<F, C, D, E> {
-    fn focus_children(&self) -> bool {
-        false
-    }
 }
 
 impl<F: State<T=Focus> + Clone, C: State<T=bool> + Clone, D: PlainSwitchDelegate, E: ReadState<T=bool>> CommonWidget for PlainSwitch<F, C, D, E> {

@@ -29,7 +29,7 @@ impl DrawGradient {
     pub fn convert(g: Gradient, position: Position, dimension: Dimension) -> Self {
         let start = match g.start {
             GradientPosition::Absolute(p) => p,
-            GradientPosition::Alignment(l) => l.position(position, dimension),
+            GradientPosition::Alignment(l) => l.position(position, dimension, Dimension::default()),
             GradientPosition::Relative(x, y) => Position::new(
                 position.x + dimension.width * x,
                 position.y + dimension.height * y,
@@ -38,7 +38,7 @@ impl DrawGradient {
 
         let end = match g.end {
             GradientPosition::Absolute(p) => p,
-            GradientPosition::Alignment(l) => l.position(position, dimension),
+            GradientPosition::Alignment(l) => l.position(position, dimension, Dimension::default()),
             GradientPosition::Relative(x, y) => Position::new(
                 position.x + dimension.width * x,
                 position.y + dimension.height * y,

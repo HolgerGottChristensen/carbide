@@ -10,10 +10,10 @@ use printpdf::{BuiltinFont, Color, Image as PdfImage, ImageTransform, Mm, OP_PAT
 use printpdf::lopdf::content::Operation;
 
 use carbide_core::locate_folder;
-use carbide_core::draw::{Dimension, ImageContext, Position};
+use carbide_core::draw::{Alignment, Dimension, ImageContext, Position};
 use carbide_core::environment::Environment;
 use carbide_core::event::NoopEventSink;
-use carbide_core::layout::{BasicLayouter, Layout, Layouter};
+use carbide_core::layout::{Layout};
 use carbide_core::render::{Render, RenderContext};
 use carbide_core::text::{FontId, FontStyle, FontWeight};
 use carbide_core::widget::{Empty, AnyWidget, WidgetExt};
@@ -38,7 +38,7 @@ impl Pdf {
             Box::new(NoopEventSink)
         );
 
-        environment.set_root_alignment(BasicLayouter::Top);
+        environment.set_root_alignment(Alignment::Top);
 
         let (document, _, _) =
             PdfDocument::new(&title, Mm(210.0), Mm(297.0), "Layer 1");
@@ -110,7 +110,7 @@ impl Pdf {
         let page_dimensions = Dimension::new(210.0, 297.0);
 
         self.environment.capture_time();
-        self.environment.set_root_alignment(BasicLayouter::Top);
+        //self.environment.set_root_alignment(BasicLayouter::Top);
 
         /*let primitives = Primitives::new(
             page_dimensions/self.environment.scale_factor(),

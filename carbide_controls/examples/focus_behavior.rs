@@ -56,29 +56,25 @@ fn main() {
                 .padding(EdgeInsets::all(2.0))
                 .border()
                 .clip()
-                .padding(EdgeInsets::all(20.0))
-                .boxed(),
+                .padding(EdgeInsets::all(20.0)),
             PlainTextInput::new(text_state2)
                 .font_size(40u32)
                 .padding(EdgeInsets::all(2.0))
                 .border()
                 .clip()
-                .padding(EdgeInsets::all(20.0))
-                .boxed(),
+                .padding(EdgeInsets::all(20.0)),
             PlainTextInput::new(text_state3)
                 .font_size(40u32)
                 .padding(EdgeInsets::all(2.0))
                 .border()
                 .clip()
-                .padding(EdgeInsets::all(20.0))
-                .boxed(),
+                .padding(EdgeInsets::all(20.0)),
             PlainTextInput::new(text_state4)
                 .font_size(40u32)
                 .padding(EdgeInsets::all(2.0))
                 .border()
                 .clip()
-                .padding(EdgeInsets::all(20.0))
-                .boxed(),
+                .padding(EdgeInsets::all(20.0)),
             /*PlainTextInput::new(text_state5)
                 .padding(EdgeInsets::all(2.0))
                 .border()
@@ -91,8 +87,7 @@ fn main() {
                 .padding(EdgeInsets::all(30.0)),*/
             //PopUpButton::new(model, selected).padding(EdgeInsets::all(50.0)),
             PlainPopUpButton::new(selected, model)
-                .padding(50.0)
-                .boxed(),
+                .padding(50.0),
         ))
             .spacing(20.0)
     ).close_application_on_window_close());

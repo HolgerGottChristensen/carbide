@@ -1,11 +1,11 @@
 use carbide_macro::carbide_default_builder2;
 
 use crate::color::Color;
-use crate::draw::{Dimension, Position};
+use crate::draw::{Alignment, Dimension, Position};
 use crate::environment::EnvironmentColor;
 use crate::event::{ModifierKey, MouseButton, MouseEvent, MouseEventContext, MouseEventHandler, OtherEventContext, OtherEventHandler, Event};
 use crate::flags::WidgetFlag;
-use crate::layout::{BasicLayouter, Layout, LayoutContext, Layouter};
+use crate::layout::{Layout, LayoutContext};
 use crate::render::{Render, RenderContext};
 use crate::widget::{AnyWidget, Capsule, CommonWidget, Empty, Rectangle, Widget, WidgetExt, WidgetId};
 use crate::widget::types::ScrollDirection;
@@ -140,7 +140,7 @@ impl<W: Widget> MouseEventHandler for Scroll<W> {
                     self.keep_x_within_bounds();
                 }
             }
-            MouseEvent::Release(..) => {
+            MouseEvent::Release { .. } => {
                 self.drag_started_on_vertical_scrollbar = false;
                 self.drag_started_on_horizontal_scrollbar = false;
             }
@@ -149,7 +149,7 @@ impl<W: Widget> MouseEventHandler for Scroll<W> {
                 self.horizontal_scrollbar_hovered =
                     self.scrollbar_horizontal_background.is_inside(*to);
             }
-            MouseEvent::Press(MouseButton::Left, point, ..) => {
+            MouseEvent::Press { button: MouseButton::Left, position: point, .. } => {
                 if self.scrollbar_vertical_background.is_inside(*point)
                     && !self.scrollbar_vertical.is_inside(*point)
                 {
@@ -304,11 +304,10 @@ impl<W: Widget> Layout for Scroll<W> {
     }
 
     fn position_children(&mut self, ctx: &mut LayoutContext) {
-        let positioning = BasicLayouter::TopLeading.positioner(); // Top for center
         let position = self.position;
         let dimension = self.dimension;
 
-        positioning(position, dimension, &mut self.child);
+        self.child.set_position(Alignment::TopLeading.position(position, dimension, self.child.dimension()));
 
         let child_position = self.child.position();
 

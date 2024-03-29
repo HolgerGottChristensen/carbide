@@ -3,19 +3,15 @@ use std::ops::{Deref, DerefMut};
 
 use dyn_clone::DynClone;
 
-use carbide_core::render::RenderContext;
-
-use crate::draw::{Dimension, Position};
+use crate::draw::{Alignment, Dimension, Position};
 use crate::environment::Environment;
-use crate::event::{EventHandler, KeyboardEvent, KeyboardEventContext, KeyboardEventHandler, MouseEvent, MouseEventContext, MouseEventHandler, OtherEventContext, OtherEventHandler, WindowEvent, WindowEventContext, WindowEventHandler};
-use crate::event::Event;
+use crate::event::{Event, EventHandler, KeyboardEvent, KeyboardEventContext, KeyboardEventHandler, MouseEvent, MouseEventContext, MouseEventHandler, OtherEventContext, OtherEventHandler, WindowEvent, WindowEventContext, WindowEventHandler};
 use crate::flags::WidgetFlag;
-use crate::focus::{Focus, Focusable, Refocus};
-use crate::layout::{Layout, LayoutContext, Layouter};
-use crate::render::Render;
+use crate::focus::{Focus, Focusable, FocusContext};
+use crate::layout::{Layout, LayoutContext};
+use crate::render::{Render, RenderContext};
 use crate::state::StateSync;
-use crate::update::Update;
-use crate::update::UpdateContext;
+use crate::update::{Update, UpdateContext};
 use crate::widget::{CommonWidget, WidgetExt, WidgetId};
 
 // TODO Rename to AnyWidget and create a widget that is anywidget and clone
@@ -55,7 +51,7 @@ impl<T: AnyWidget + ?Sized> CommonWidget for Box<T> {
         self.deref().flag()
     }
 
-    fn alignment(&self) -> Box<dyn Layouter> {
+    fn alignment(&self) -> Alignment {
         self.deref().alignment()
     }
 
@@ -185,53 +181,16 @@ impl<T: AnyWidget + ?Sized> Render for Box<T> {
 }
 
 impl<T: AnyWidget + ?Sized> Focusable for Box<T> {
-    fn focus_retrieved(
-        &mut self,
-        focus_request: &Refocus,
-        env: &mut Environment,
-    ) {
-        self.deref_mut().focus_retrieved(focus_request, env)
+    fn process_focus_request(&mut self, ctx: &mut FocusContext) {
+        self.deref_mut().process_focus_request(ctx)
     }
 
-    fn focus_dismissed(
-        &mut self,
-        focus_request: &Refocus,
-        env: &mut Environment,
-    ) {
-        self.deref_mut().focus_dismissed(focus_request, env)
+    fn process_focus_next(&mut self, ctx: &mut FocusContext) {
+        self.deref_mut().process_focus_next(ctx)
     }
 
-    fn set_focus_and_request(&mut self, focus: Focus, env: &mut Environment) {
-        self.deref_mut().set_focus_and_request(focus, env)
-    }
-
-    fn process_focus_request(
-        &mut self,
-        focus_request: &Refocus,
-        env: &mut Environment,
-    ) -> bool {
-        self.deref_mut()
-            .process_focus_request(focus_request, env)
-    }
-
-    fn process_focus_next(
-        &mut self,
-        focus_request: &Refocus,
-        focus_up_for_grab: bool,
-        env: &mut Environment,
-    ) -> bool {
-        self.deref_mut()
-            .process_focus_next(focus_request, focus_up_for_grab, env)
-    }
-
-    fn process_focus_previous(
-        &mut self,
-        focus_request: &Refocus,
-        focus_up_for_grab: bool,
-        env: &mut Environment,
-    ) -> bool {
-        self.deref_mut()
-            .process_focus_previous(focus_request, focus_up_for_grab, env)
+    fn process_focus_previous(&mut self, ctx: &mut FocusContext) {
+        self.deref_mut().process_focus_previous(ctx)
     }
 }
 

@@ -44,8 +44,11 @@ impl Layout for Spacer {
             );
             self.dimension
         } else {
-            self.dimension = requested_size;
-            requested_size
+            self.dimension = Dimension::new(
+                requested_size.width.max(0.0),
+                requested_size.height.max(0.0),
+            );
+            self.dimension
         }
     }
 }

@@ -1,5 +1,6 @@
-use carbide::layout::layout_context::LayoutContext;
-use crate::draw::Dimension;
+use crate::draw::{Dimension, InnerImageContext};
+use crate::environment::Environment;
+use crate::text::InnerTextContext;
 use crate::widget::CommonWidget;
 
 pub trait Layout: CommonWidget {
@@ -33,7 +34,7 @@ pub trait Layout: CommonWidget {
     /// The default behavior is to position the first child using the alignment of the widget. If
     /// no child are present the default is a no-op.
     fn position_children(&mut self, ctx: &mut LayoutContext) {
-        let positioning = self.alignment().positioner();
+        let positioning = self.alignment();
         let position = self.position();
         let dimension = self.dimension();
 
@@ -44,10 +45,16 @@ pub trait Layout: CommonWidget {
                 return;
             }
 
-            positioning(position, dimension, child);
+            child.set_position(positioning.position(position, dimension, child.dimension()));
             child.position_children(ctx);
 
             first = false;
         });
     }
+}
+
+pub struct LayoutContext<'a> {
+    pub text: &'a mut dyn InnerTextContext,
+    pub image: &'a mut dyn InnerImageContext,
+    pub env: &'a mut Environment,
 }

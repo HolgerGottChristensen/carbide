@@ -7,7 +7,7 @@ use carbide_core::draw::{Dimension, Position};
 use carbide_core::environment::{Environment, EnvironmentColor};
 use carbide_core::event::ModifierKey;
 use carbide_core::flags::WidgetFlag;
-use carbide_core::focus::{Focus, Focusable};
+use carbide_core::focus::Focus;
 use carbide_core::focus::Refocus;
 use carbide_core::state::{AnyReadState, IntoReadState, IntoState, LocalState, Map1, Map4, ReadState, ReadStateExtNew, State};
 use carbide_core::widget::{Action, CommonWidget, MouseArea, Rectangle, Text, AnyWidget, WidgetExt, WidgetId, ZStack, Widget};
@@ -29,7 +29,6 @@ type DefaultPlainButtonDelegate = fn(Box<dyn AnyReadState<T=Focus>>, Box<dyn Any
 type DefaultPlainButtonAction = fn(&mut Environment, ModifierKey);
 
 #[derive(Clone, Widget)]
-#[carbide_exclude(Focusable)]
 pub struct PlainButton<F, A, D, E, H, P> where
     F: State<T=Focus>,
     A: Action + Clone + 'static,
@@ -201,12 +200,6 @@ impl<F: State<T=Focus>, A: Action + Clone + 'static, D: PlainButtonDelegate, E: 
         }
     }
 
-}
-
-impl<F: State<T=Focus> + Clone, A: Action + Clone + 'static, D: PlainButtonDelegate, E: ReadState<T=bool>, H: State<T=bool>, P: State<T=bool>> Focusable for PlainButton<F, A, D, E, H, P> {
-    fn focus_children(&self) -> bool {
-        false
-    }
 }
 
 impl<F: State<T=Focus> + Clone, A: Action + Clone + 'static, D: PlainButtonDelegate, E: ReadState<T=bool>, H: State<T=bool>, P: State<T=bool>> CommonWidget for PlainButton<F, A, D, E, H, P> {

@@ -66,25 +66,27 @@ impl<L: ReadState<T=String>> PlainRadioButtonDelegate for RadioButtonDelegate<L>
 
         let label_color = mark_color.clone();
 
-        let radio = ZStack::new(vec![
+        let radio = ZStack::new((
             Circle::new()
                 .fill(background_color)
                 .stroke(EnvironmentColor::OpaqueSeparator)
-                .stroke_style(1.0)
-                .boxed(),
+                .stroke_style(1.0),
             IfElse::new(selected).when_true(
                 Ellipse::new()
                     .fill(mark_color)
                     .frame(4.0, 4.0),
-            ).boxed(),
-        ]).background(
+            ),
+        )).background(
             Circle::new()
                 .stroke(outline_color)
                 .stroke_style(1.0)
                 .padding(-1.0)
-        ).frame(14.0, 14.0)
-            .boxed();
+        ).frame(14.0, 14.0);
 
-        HStack::new(vec![radio, Text::new(self.label.clone()).color(label_color).boxed()]).spacing(5.0).boxed()
+        HStack::new((
+            radio,
+            Text::new(self.label.clone())
+                .color(label_color)
+        )).spacing(5.0).boxed()
     }
 }

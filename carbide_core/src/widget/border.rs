@@ -74,14 +74,14 @@ impl<W: Widget, C: ReadState<T=Color>> Layout for Border<W, C> {
 
     fn position_children(&mut self, ctx: &mut LayoutContext) {
         let border_width = self.border_width as f64;
-        let positioning = self.alignment().positioner();
+        let alignment = self.alignment();
         let position = Position::new(self.x() + border_width, self.y() + border_width);
         let dimension = Dimension::new(
             self.width() - border_width - border_width,
             self.height() - border_width - border_width,
         );
 
-        positioning(position, dimension, &mut self.child);
+        self.child.set_position(alignment.position(position, dimension, self.child.dimension()));
         self.child.position_children(ctx);
     }
 }

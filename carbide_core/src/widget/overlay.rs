@@ -115,15 +115,15 @@ impl<C: Widget> Layout for Overlay<C> {
     }
 
     fn position_children(&mut self, ctx: &mut LayoutContext) {
-        let positioning = self.alignment().positioner();
+        let alignment = self.alignment();
         let position = self.position();
         let dimension = self.dimension();
 
-        positioning(position, dimension, &mut self.child);
+        self.child.set_position(alignment.position(position, dimension, self.child.dimension()));
         self.child.position_children(ctx);
 
         if let Some(overlay) = &mut self.overlay {
-            positioning(position, dimension, overlay);
+            overlay.set_position(alignment.position(position, dimension, overlay.dimension()));
             overlay.position_children(ctx);
         }
     }

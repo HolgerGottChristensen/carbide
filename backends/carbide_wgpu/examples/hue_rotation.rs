@@ -13,7 +13,7 @@ fn main() {
     let rotation = AnimatedState::custom(bounce_out, None)
         .repeat()
         .duration(Duration::new(5, 0))
-        .range(0.0, 1.0);
+        .range(0.0, 360.0);
 
     application.set_scene(Window::new(
         "Hue rotation example - Carbide",

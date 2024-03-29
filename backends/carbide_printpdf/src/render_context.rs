@@ -188,8 +188,8 @@ impl InnerRenderContext for PDFRenderContext {
         }
     }
 
-    fn image(&mut self, id: ImageId, bounding_box: Rect, source_rect: Rect, mode: u32) {
-        IMAGES.with(|images| {
+    fn image(&mut self, id: Option<ImageId>, bounding_box: Rect, source_rect: Rect, mode: u32) {
+        /*IMAGES.with(|images| {
             let images = &*images.borrow();
             let (image, width, height) = images.get(&id).unwrap();
 
@@ -225,7 +225,7 @@ impl InnerRenderContext for PDFRenderContext {
                 scale_y: Some(scaling_height),
                 ..Default::default()
             });
-        })
+        })*/
     }
 
     fn text(&mut self, text: TextId, ctx: &mut dyn InnerTextContext) {
@@ -242,14 +242,6 @@ impl InnerRenderContext for PDFRenderContext {
         }
 
         self.pdf_layer_reference.end_text_section();*/
-    }
-
-    fn layer(&mut self, index: u32) {
-        todo!()
-    }
-
-    fn pop_layer(&mut self) {
-        todo!()
     }
 
     fn filter_new(&mut self) {

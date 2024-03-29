@@ -1,8 +1,7 @@
 use crate::draw::InnerImageContext;
 use crate::environment::Environment;
 use crate::event::{Key, ModifierKey};
-use crate::flags::WidgetFlag as CarbideFlags;
-use crate::focus::{Focus, Focusable, Refocus};
+use crate::focus::Focusable;
 use crate::state::StateSync;
 use crate::text::InnerTextContext;
 use crate::widget::CommonWidget;
@@ -22,7 +21,7 @@ pub trait KeyboardEventHandler: CommonWidget + StateSync + Focusable {
     /// manage the events yourself. Overriding this you are thereby able to restrict events to
     /// a widgets children.
     fn process_keyboard_event(&mut self, event: &KeyboardEvent, ctx: &mut KeyboardEventContext) {
-        if bitflags::Flags::contains(&self.flag(), CarbideFlags::FOCUSABLE) && self.get_focus() == Focus::Focused && *ctx.is_current {
+        /*if bitflags::Flags::contains(&self.flag(), CarbideFlags::FOCUSABLE) && self.get_focus() == Focus::Focused && *ctx.is_current {
             match event {
                 KeyboardEvent::Press(key, modifier) => {
                     if key == &Key::Tab {
@@ -37,7 +36,7 @@ pub trait KeyboardEventHandler: CommonWidget + StateSync + Focusable {
                 }
                 _ => (),
             }
-        }
+        }*/
 
         if *ctx.is_current {
             self.capture_state(ctx.env);
@@ -58,6 +57,13 @@ pub struct KeyboardEventContext<'a> {
     pub env: &'a mut Environment,
     pub is_current: &'a bool,
     pub window_id: &'a u64,
+    pub prevent_default: &'a mut bool,
+}
+
+impl KeyboardEventContext<'_> {
+    pub fn prevent_default(&mut self) {
+        *self.prevent_default = true;
+    }
 }
 
 

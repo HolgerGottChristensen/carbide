@@ -32,24 +32,39 @@ var<storage, read> filter_uniforms: FilterUniforms;
 var<uniform> uniforms: Uniforms;
 
 @group(3) @binding(0)
-var secondary_texture: texture_2d<f32>;
+var mask_texture: texture_2d<f32>;
 
 @group(3) @binding(1)
-var secondary_sampler: sampler;
+var mask_sampler: sampler;
 
 @fragment
 fn main_fs(in: VertexOutput) -> @location(0) vec4<f32> {
     var color: vec4<f32> = vec4<f32>(0.0);
     let texel_size: vec2<f32> = vec2<f32>(1.0) / filter_uniforms.texture_size;
-    let c = textureSample(secondary_texture, secondary_sampler, in.tex_coord);
+
+    let dim = textureDimensions(mask_texture);
+    let mask_pixel = textureSample(mask_texture, mask_sampler, vec2<f32>(in.position.x / f32(dim.x), in.position.y / f32(dim.y)));
 
     for (var i: u32 = 0u; i < filter_uniforms.length; i = i + 1u) {
         let texel_move = texel_size * filter_uniforms.transform[i].xy;
         color = color + filter_uniforms.transform[i].z * textureSample(main_texture, main_sampler, in.tex_coord + texel_move);
     }
 
-    if (in.mode == 1u) {
+    let mode = in.mode & 31u;
+    let masked = in.mode & (1u << 5u);
+
+    if (masked != 0u && mask_pixel.a == 0.0) {
+        discard;
+    }
+
+    if (mode == 1u) {
         let a = clamp(color.a, 0.0, 1.0);
+        let s = vec4<f32>(in.color.rgb * a, a);
+        return s;
+    }
+
+    if (mode == 2u) {
+        let a = 1.0 - clamp(color.a, 0.0, 1.0);
         let s = vec4<f32>(in.color.rgb * a, a);
         return s;
     }

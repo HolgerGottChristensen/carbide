@@ -1,6 +1,7 @@
+use std::time::Duration;
 use crate::draw::{InnerImageContext, Position, Scalar};
 use crate::environment::Environment;
-use crate::event::{ModifierKey, TouchPhase};
+use crate::event::{EventId, ModifierKey, TouchPhase};
 use crate::focus::Focusable;
 use crate::state::StateSync;
 use crate::text::InnerTextContext;
@@ -99,8 +100,20 @@ impl From<MouseButton> for u32 {
 
 #[derive(Clone, Debug)]
 pub enum MouseEvent {
-    Press(MouseButton, Position, ModifierKey),
-    Release(MouseButton, Position, ModifierKey),
+    Press {
+        id: EventId,
+        button: MouseButton,
+        position: Position,
+        modifiers: ModifierKey
+    },
+    Release {
+        id: EventId,
+        button: MouseButton,
+        position: Position,
+        modifiers: ModifierKey,
+        press_id: EventId,
+        duration: Duration,
+    },
     Click(MouseButton, Position, ModifierKey),
     NClick(MouseButton, Position, ModifierKey, u32),
     Move {
@@ -134,8 +147,8 @@ pub enum MouseEvent {
 impl MouseEvent {
     pub fn get_current_mouse_position(&self) -> Position {
         match self {
-            MouseEvent::Press(_, n, _) => *n,
-            MouseEvent::Release(_, n, _) => *n,
+            MouseEvent::Press { position: n, .. } => *n,
+            MouseEvent::Release { position: n, .. } => *n,
             MouseEvent::Click(_, n, _) => *n,
             MouseEvent::Move { to, .. } => *to,
             MouseEvent::NClick(_, n, _, _) => *n,
@@ -146,6 +159,14 @@ impl MouseEvent {
             MouseEvent::SmartScale(position) => *position,
             MouseEvent::Entered => todo!(),
             MouseEvent::Left => todo!(),
+        }
+    }
+
+    pub fn id(&self) -> EventId {
+        match self {
+            MouseEvent::Press { id, .. } => *id,
+            MouseEvent::Release { id, .. } => *id,
+            _ => unimplemented!(),
         }
     }
 }

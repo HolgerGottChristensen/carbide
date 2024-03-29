@@ -46,24 +46,20 @@ fn main() {
 
     let random_color = WHITE.map(|_| Style::Color(Color::random()));
 
-    let widgets = VStack::new(vec![
+    let widgets = VStack::new((
         Rectangle::new()
             .fill(random_color)
-            .frame(block_width, 50.0)
-            .boxed(),
+            .frame(block_width, 50.0),
         Rectangle::new()
             .fill(EnvironmentColor::Accent)
-            .frame(new_state, 50.0)
-            .boxed(),
+            .frame(new_state, 50.0),
         Rectangle::new()
             .fill(EnvironmentColor::Accent)
-            .frame(new_state1, 50.0)
-            .boxed(),
+            .frame(new_state1, 50.0),
         Rectangle::new()
             .fill(EnvironmentColor::Accent)
-            .frame(new_state2, 50.0)
-            .boxed(),
-    ])
+            .frame(new_state2, 50.0),
+    ))
         .accent_color(EnvironmentColor::Red);
 
     application.set_scene(

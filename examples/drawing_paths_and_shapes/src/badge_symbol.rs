@@ -1,6 +1,5 @@
-use carbide::draw::{Color, Position, Rect};
+use carbide::draw::{Alignment, Color, Position, Rect};
 use carbide::environment::Environment;
-use carbide::layout::BasicLayouter;
 use carbide::state::IntoReadState;
 use carbide::widget::canvas::{Canvas, Context};
 use carbide::widget::{Widget, WidgetExt};
@@ -39,6 +38,6 @@ impl BadgeSymbol {
             context.fill();
 
             context
-        }).padding(-60.0).rotation_effect(rotation.into_read_state()).with_anchor(BasicLayouter::Bottom)
+        }).padding(-60.0).rotation_effect(rotation.into_read_state()).with_anchor(Alignment::Bottom)
     }
 }

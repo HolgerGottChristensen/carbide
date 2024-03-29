@@ -1,12 +1,12 @@
 use std::fmt::{Debug, Formatter};
-use carbide_core::CommonWidgetImpl;
 
+use carbide_core::CommonWidgetImpl;
 use carbide_core::draw::{Dimension, Position};
 use carbide_core::environment::{Environment, EnvironmentColor};
 use carbide_core::flags::WidgetFlag;
-use carbide_core::focus::{Focus, Focusable, Refocus};
+use carbide_core::focus::{Focus, Refocus};
 use carbide_core::state::{AnyReadState, IntoReadState, IntoState, LocalState, Map1, Map2, ReadState, ReadStateExtNew, State, StateContract};
-use carbide_core::widget::{CommonWidget, MouseArea, Rectangle, Text, AnyWidget, WidgetExt, WidgetId, ZStack, Widget};
+use carbide_core::widget::{AnyWidget, CommonWidget, MouseArea, Rectangle, Text, Widget, WidgetExt, WidgetId, ZStack};
 
 pub trait PlainRadioButtonDelegate: Clone + 'static {
     fn call(&self, focus: impl ReadState<T=Focus>, selected: impl ReadState<T=bool>, enabled: impl ReadState<T=bool>) -> Box<dyn AnyWidget>;
@@ -21,7 +21,6 @@ impl<K> PlainRadioButtonDelegate for K where K: Fn(Box<dyn AnyReadState<T=Focus>
 type DefaultPlainRadioButtonDelegate = fn(focus: Box<dyn AnyReadState<T=Focus>>, selected: Box<dyn AnyReadState<T=bool>>, enabled: Box<dyn AnyReadState<T=bool>>) -> Box<dyn AnyWidget>;
 
 #[derive(Clone, Widget)]
-#[carbide_exclude(Focusable)]
 pub struct PlainRadioButton<T, F, C, D, E>
 where
     T: StateContract + PartialEq,
@@ -146,12 +145,6 @@ impl<T: StateContract + PartialEq, F: State<T=Focus>, C: State<T=T>, D: PlainRad
             local_state: state,
             selected_state: selected,
         }
-    }
-}
-
-impl<T: StateContract + PartialEq, F: State<T=Focus>, C: State<T=T>, D: PlainRadioButtonDelegate, E: ReadState<T=bool>> Focusable for PlainRadioButton<T, F, C, D, E> {
-    fn focus_children(&self) -> bool {
-        false
     }
 }
 

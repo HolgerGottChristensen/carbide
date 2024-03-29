@@ -1,10 +1,9 @@
-use carbide::layout::LayoutContext;
 use carbide_core::state::IntoReadState;
 use carbide_macro::carbide_default_builder2;
 
 use crate::CommonWidgetImpl;
-use crate::draw::{Dimension, Position, Scalar};
-use crate::layout::{BasicLayouter, Layout, Layouter};
+use crate::draw::{Alignment, Dimension, Position, Scalar};
+use crate::layout::{Layout, LayoutContext};
 use crate::state::ReadState;
 use crate::widget::{CommonWidget, Empty, Widget, WidgetExt, WidgetId};
 
@@ -38,11 +37,10 @@ impl<X: ReadState<T=Scalar>, Y: ReadState<T=Scalar>, C: Widget> Layout for Absol
         self.x.sync(ctx.env);
         self.y.sync(ctx.env);
 
-        let positioning = BasicLayouter::TopLeading.positioner();
         let position = Position::new(*self.x.value(), *self.y.value());
         let dimension = Dimension::new(ctx.env.current_window_width(), ctx.env.current_window_height());
 
-        positioning(position, dimension, &mut self.child);
+        self.child.set_position(Alignment::TopLeading.position(position, dimension, self.child.dimension()));
         self.child.position_children(ctx);
     }
 }

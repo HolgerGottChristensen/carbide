@@ -1,8 +1,8 @@
+use carbide::draw::Alignment;
 use crate::cursor::MouseCursor;
 use crate::draw::{Dimension, Position, Rect, Scalar};
 use crate::flags::WidgetFlag;
 use crate::focus::Focus;
-use crate::layout::{BasicLayouter, Layouter};
 use crate::widget::{AnyWidget, WidgetId};
 
 pub trait CommonWidget {
@@ -16,7 +16,9 @@ pub trait CommonWidget {
     fn is_ignore(&self) -> bool {
         self.flag() == WidgetFlag::IGNORE
     }
-
+    fn is_focusable(&self) -> bool {
+        self.flag().contains(WidgetFlag::FOCUSABLE)
+    }
     fn is_spacer(&self) -> bool {
         self.flag() == WidgetFlag::SPACER
     }
@@ -43,15 +45,16 @@ pub trait CommonWidget {
     fn get_focus(&self) -> Focus {
         Focus::Unfocused
     }
+
     #[allow(unused_variables)]
     fn set_focus(&mut self, focus: Focus) {}
 
-    fn alignment(&self) -> Box<dyn Layouter> {
-        Box::new(BasicLayouter::Center)
+    fn alignment(&self) -> Alignment {
+        Alignment::Center
     }
 
     #[allow(unused_variables)]
-    fn set_alignment(&mut self, alignment: Box<dyn Layouter>) {
+    fn set_alignment(&mut self, alignment: Alignment) {
         unimplemented!()
     }
 
@@ -226,11 +229,11 @@ macro_rules! CommonWidgetImpl {
     };
 
     ($self:ident, alignment: $alignment:expr $(, $($rest:tt)*)?) => {
-        fn alignment(&$self) -> Box<dyn carbide::layout::Layouter> {
+        fn alignment(&$self) -> Alignment {
             $alignment.clone()
         }
 
-        fn set_alignment(&mut $self, alignment: Box<dyn Layouter>) {
+        fn set_alignment(&mut $self, alignment: Alignment) {
             $alignment = alignment;
         }
 

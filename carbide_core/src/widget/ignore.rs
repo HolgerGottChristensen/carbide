@@ -1,12 +1,11 @@
 use std::fmt::Debug;
 
-use crate::draw::{Dimension, Position};
+use crate::draw::{Alignment, Dimension, Position};
 use crate::environment::Environment;
-use crate::event::{KeyboardEvent, KeyboardEventContext, KeyboardEventHandler, MouseEvent, MouseEventContext, MouseEventHandler, OtherEventContext, OtherEventHandler, WindowEvent, WindowEventContext, WindowEventHandler};
-use crate::event::Event;
+use crate::event::{KeyboardEvent, KeyboardEventContext, KeyboardEventHandler, MouseEvent, MouseEventContext, MouseEventHandler, OtherEventContext, OtherEventHandler, WindowEvent, WindowEventContext, WindowEventHandler, Event};
 use crate::flags::WidgetFlag;
-use crate::focus::{Focus, Focusable, Refocus};
-use crate::layout::{Layout, LayoutContext, Layouter};
+use crate::focus::{Focus, Focusable, FocusContext};
+use crate::layout::{Layout, LayoutContext};
 use crate::render::{Render, RenderContext};
 use crate::state::{IntoReadState, ReadState, StateSync};
 use crate::update::{Update, UpdateContext};
@@ -211,7 +210,7 @@ impl<T: Widget,
         self.inner.set_focus(focus)
     }
 
-    fn alignment(&self) -> Box<dyn Layouter> {
+    fn alignment(&self) -> Alignment {
         self.inner.alignment()
     }
 
@@ -445,76 +444,34 @@ impl<T: Widget,
     B7: ReadState<T=bool>,
     B8: ReadState<T=bool>,
 > Focusable for Ignore<T, B1, B2, B3, B4, B5, B6, B7, B8> {
-    fn focus_retrieved(
-        &mut self,
-        focus_request: &Refocus,
-        env: &mut Environment,
-    ) {
+    fn request_focus(&mut self, env: &mut Environment) {
         self.update_states(env);
         if *self.focus_event.value() {
-            self.inner.focus_retrieved(focus_request, env)
+            self.inner.request_focus(env)
         }
     }
 
-    fn focus_dismissed(
-        &mut self,
-        focus_request: &Refocus,
-        env: &mut Environment,
-    ) {
-        self.update_states(env);
+    fn process_focus_request(&mut self, ctx: &mut FocusContext) {
+        self.update_states(ctx.env);
         if *self.focus_event.value() {
-            self.inner.focus_dismissed(focus_request, env)
+            self.inner.process_focus_request(ctx)
         }
     }
 
-    fn set_focus_and_request(&mut self, focus: Focus, env: &mut Environment) {
-        self.update_states(env);
+    fn process_focus_next(&mut self, ctx: &mut FocusContext) {
+        self.update_states(ctx.env);
         if *self.focus_event.value() {
-            self.inner.set_focus_and_request(focus, env)
-        }
-    }
-
-    fn process_focus_request(
-        &mut self,
-        focus_request: &Refocus,
-        env: &mut Environment,
-    ) -> bool {
-        self.update_states(env);
-        if *self.focus_event.value() {
-            self.inner
-                .process_focus_request(focus_request, env)
-        } else {
-            false
-        }
-    }
-
-    fn process_focus_next(
-        &mut self,
-        focus_request: &Refocus,
-        focus_up_for_grab: bool,
-        env: &mut Environment,
-    ) -> bool {
-        self.update_states(env);
-        if *self.focus_event.value() {
-            self.inner
-                .process_focus_next(focus_request, focus_up_for_grab, env)
-        } else {
-            focus_up_for_grab
+            self.inner.process_focus_next(ctx)
         }
     }
 
     fn process_focus_previous(
         &mut self,
-        focus_request: &Refocus,
-        focus_up_for_grab: bool,
-        env: &mut Environment,
-    ) -> bool {
-        self.update_states(env);
+        ctx: &mut FocusContext,
+    ) {
+        self.update_states(ctx.env);
         if *self.focus_event.value() {
-            self.inner
-                .process_focus_previous(focus_request, focus_up_for_grab, env)
-        } else {
-            focus_up_for_grab
+            self.inner.process_focus_previous(ctx)
         }
     }
 }

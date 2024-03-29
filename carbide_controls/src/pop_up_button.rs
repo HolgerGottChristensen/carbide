@@ -7,7 +7,7 @@ use carbide_core::state::{AnyReadState, AnyState, IntoReadState, IntoState, Loca
 use carbide_core::widget::*;
 use carbide_core::widget::canvas::{Canvas, Context, LineCap};
 
-use crate::{PlainPopUpButton, PopupDelegate};
+use crate::{PlainPopUpButton, PopupItemDelegate};
 
 pub struct PopUpButton;
 
@@ -146,7 +146,7 @@ impl PopUpButton {
 
     fn popup_delegate<T: StateContract + PartialEq, S: State<T=T>, M: ReadState<T=Vec<T>>>(
         model: M,
-        delegate: PopupDelegate<T, S>,
+        delegate: PopupItemDelegate<T, S>,
         _enabled: Box<dyn AnyReadState<T=bool>>,
     ) -> Box<dyn AnyWidget> {
         VStack::new(ForEach::new(model.ignore_writes(), delegate))

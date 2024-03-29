@@ -1,10 +1,9 @@
 use std::fmt::Debug;
 use std::rc::Rc;
 
-use crate::draw::{Dimension, Position};
+use crate::draw::{Dimension, Position, Alignment};
 use crate::flags::WidgetFlag;
 use crate::focus::Focus;
-use crate::layout::Layouter;
 use crate::state::ValueCell;
 use crate::widget::{AnyWidget, CommonWidget, Empty, Widget, WidgetExt, WidgetId, WidgetSequence};
 
@@ -32,7 +31,7 @@ impl<T: Widget> CommonWidget for Duplicated<T> {
         self.0.borrow().flag()
     }
 
-    fn alignment(&self) -> Box<dyn Layouter> {
+    fn alignment(&self) -> Alignment {
         self.0.borrow().alignment()
     }
 

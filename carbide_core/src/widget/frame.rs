@@ -1,12 +1,11 @@
 use std::fmt::Debug;
 
-use carbide_core::state::AnyState;
 use carbide_macro::carbide_default_builder2;
 
-use crate::draw::{Dimension, Position};
+use crate::draw::{Alignment, Dimension, Position};
 use crate::environment::Environment;
-use crate::layout::{BasicLayouter, Layout, LayoutContext, Layouter};
-use crate::state::{AnyReadState, IntoState, NewStateSync, ReadState, State, ValueRef, ValueRefMut};
+use crate::layout::{Layout, LayoutContext};
+use crate::state::{AnyReadState, AnyState, IntoState, NewStateSync, ReadState, State, ValueRef, ValueRefMut};
 use crate::widget::{AnyWidget, CommonWidget, Empty, Widget, WidgetExt, WidgetId};
 
 #[derive(Debug, Clone, Widget)]
@@ -200,11 +199,10 @@ impl<W: State<T=f64>, H: State<T=f64>, C: Widget> Layout for Frame<W, H, C> {
     }
 
     fn position_children(&mut self, ctx: &mut LayoutContext) {
-        let positioning = BasicLayouter::Center.positioner();
         let position = self.position;
         let dimension = Dimension::new(self.width(), self.height());
 
-        positioning(position, dimension, &mut self.child);
+        self.child.set_position(Alignment::Center.position(position, dimension, self.child.dimension()));
         self.child.position_children(ctx);
     }
 }

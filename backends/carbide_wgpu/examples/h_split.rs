@@ -36,8 +36,7 @@ fn h_split(size: impl State<T=f64>) -> HSplit<f64, impl Widget, impl Widget> {
             Rectangle::new().fill(EnvironmentColor::Accent),
             Rectangle::new()
                 .fill(EnvironmentColor::Yellow)
-                .frame(100.0, 100.0)
-                .boxed(),
+                .frame(100.0, 100.0),
         )),
     )
 }

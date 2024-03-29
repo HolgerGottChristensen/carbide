@@ -157,8 +157,8 @@ impl Color {
         let from_hsla = from.to_hsl();
         let to_hsla = to.to_hsl();
 
-        let from_h = from_hsla.0 * 180.0 / std::f32::consts::PI;
-        let to_h = to_hsla.0 * 180.0 / std::f32::consts::PI;
+        let from_h = from_hsla.0 * 180.0 / PI;
+        let to_h = to_hsla.0 * 180.0 / PI;
 
         let d = to_h - from_h;
         let delta = d + if d.abs() > 180.0 {
