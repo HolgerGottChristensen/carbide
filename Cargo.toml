@@ -32,6 +32,9 @@ members = [
     "carbide",
 ]
 
+[workspace.package]
+version = "0.72.0"
+
 [workspace.dependencies]
 dyn-clone = "1.0.5"
 chrono = "0.4"

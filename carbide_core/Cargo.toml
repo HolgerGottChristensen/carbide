@@ -1,6 +1,6 @@
 [package]
 name = "carbide_core"
-version = "0.70.1"
+version = { workspace = true }
 authors = [
     "Holger Gott Christensen <holger.gott@icloud.com>",
     "Mitchell Nordine <mitchell.nordine@gmail.com>",
@@ -25,8 +25,8 @@ macro = ["carbide_macro"]
 
 [dependencies]
 raw-window-handle.workspace = true
-carbide_derive = { path = "../carbide_derive", version = "0.70" }
-carbide_macro = { path = "../carbide_macro", version = "0.1.0", optional = true }
+carbide_derive = { path = "../carbide_derive" }
+carbide_macro = { path = "../carbide_macro", optional = true }
 rand = "0.8.5"
 bitflags = "2.4.0"
 dyn-clone.workspace = true

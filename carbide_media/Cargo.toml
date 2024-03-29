@@ -1,6 +1,6 @@
 [package]
 name = "carbide_media"
-version = "0.70.1"
+version = { workspace = true }
 authors = [
     "Holger Gott Christensen <holger.gott@icloud.com>",
 ]
@@ -14,12 +14,12 @@ repository = "https://github.com/HolgerGottChristensen/carbide.git"
 homepage = "https://github.com/HolgerGottChristensen/carbide"
 
 [dependencies]
-carbide_derive = { path = "../carbide_derive", version = "0.70" }
-carbide_core = { path = "../carbide_core", version = "0.70" }
+carbide_derive = { path = "../carbide_derive" }
+carbide_core = { path = "../carbide_core" }
 objc = "0.2.7"
 cocoa = "0.25.0"
 lazy_static = "*"
 bitflags = "2.4.0"
 
 [dev-dependencies]
-carbide_wgpu = { path = "../backends/carbide_wgpu", version = "0.70" }
+carbide_wgpu = { path = "../backends/carbide_wgpu" }

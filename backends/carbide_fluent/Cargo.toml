@@ -1,6 +1,6 @@
 [package]
 name = "carbide_fluent"
-version = "0.1.0"
+version = { workspace = true }
 edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
@@ -16,5 +16,5 @@ chrono = "0.4.30"
 dyn-clone.workspace = true
 
 [dev-dependencies]
-carbide_wgpu = { path = "../carbide_wgpu", version = "0.70" }
+carbide_wgpu = { path = "../carbide_wgpu" }
 carbide_controls = { path = "../../carbide_controls", features = ["carbide_fluent"] }

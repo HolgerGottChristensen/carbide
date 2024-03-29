@@ -1,6 +1,6 @@
 [package]
 name = "carbide_controls"
-version = "0.70.1"
+version = { workspace = true }
 authors = [
     "Holger Gott Christensen <holger.gott@icloud.com>",
 ]
@@ -16,7 +16,7 @@ homepage = "https://github.com/HolgerGottChristensen/carbide"
 [dependencies]
 carbide_macro = { path = "../carbide_macro" }
 carbide_fluent = { path = "../backends/carbide_fluent", optional = true }
-carbide_core = { path = "../carbide_core", version = "0.70" }
+carbide_core = { path = "../carbide_core" }
 copypasta = "0.8.1"
 unicode-segmentation = "1.7.1"
 serde = "1.0.118"

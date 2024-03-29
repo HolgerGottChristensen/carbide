@@ -1,6 +1,6 @@
 [package]
 name = "carbide"
-version = "0.70.1"
+version = { workspace = true }
 authors = ["Holger Gott Christensen <holger.gott@icloud.com>"]
 edition = "2021"
 keywords = ["ui", "widgets", "gui", "interface", "graphics"]
@@ -20,12 +20,12 @@ media = ["carbide_media"]
 i18n = ["carbide_fluent"]
 
 [dependencies]
-carbide_core = { path = "../carbide_core", version = "0.70" }
-carbide_macro = { path = "../carbide_macro", version = "0.1.0", optional = true }
-carbide_controls = { path = "../carbide_controls", version = "0.70", optional = true }
-carbide_wgpu = { path = "../backends/carbide_wgpu", version = "0.70", optional = true }
-carbide_media = { path = "../carbide_media", version = "0.70", optional = true }
+carbide_core = { path = "../carbide_core" }
+carbide_macro = { path = "../carbide_macro", optional = true }
+carbide_controls = { path = "../carbide_controls", optional = true }
+carbide_wgpu = { path = "../backends/carbide_wgpu", optional = true }
+carbide_media = { path = "../carbide_media", optional = true }
 carbide_fluent = { path = "../backends/carbide_fluent", optional = true}
 
 [dev-dependencies]
-carbide_controls = { path = "../carbide_controls", version = "0.70" }
+carbide_controls = { path = "../carbide_controls" }

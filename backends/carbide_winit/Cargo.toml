@@ -1,6 +1,6 @@
 [package]
 name = "carbide_winit"
-version = "0.70.0"
+version = { workspace = true }
 authors = [
     "Mitchell Nordine <mitchell.nordine@gmail.com>",
     "Sven Nilsen <bvssvni@gmail.com>"
@@ -17,4 +17,4 @@ edition="2021"
 
 [dependencies]
 winit = { version = "0.29", features = ["rwh_05"] }
-carbide_core = { path = "../../carbide_core", version = "0.70" }
+carbide_core = { path = "../../carbide_core" }

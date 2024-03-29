@@ -1,11 +1,11 @@
 [package]
 name = "carbide_printpdf"
-version = "0.1.0"
+version = { workspace = true }
 edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-carbide_core = { path = "../../carbide_core", version = "0.70" }
-carbide_derive = { path = "../../carbide_derive", version = "0.70" }
+carbide_core = { path = "../../carbide_core" }
+carbide_derive = { path = "../../carbide_derive" }
 printpdf = { git = "https://github.com/HolgerGottChristensen/printpdf", features = ["embedded_images"]}

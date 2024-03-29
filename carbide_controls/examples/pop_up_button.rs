@@ -1,4 +1,4 @@
-use carbide_controls::{ControlsExt, PopUpButton};
+use carbide_controls::PopUpButton;
 use carbide_core::draw::Dimension;
 use carbide_core::state::LocalState;
 use carbide_core::widget::*;
@@ -45,9 +45,9 @@ fn main() {
         "Pop up Button Example - Carbide",
         Dimension::new(400.0, 600.0),
         VStack::new((
-            PopUpButton::new(selected, model.clone()),
+            PopUpButton::new(selected.clone(),  model.clone()),
             PopUpButton::new(selected2.clone(), model.clone()),
-            PopUpButton::new(selected2, model).enabled(false),
+            PopUpButton::new(selected2.clone(), model.clone()).enabled(false),
         )).spacing(20.0)
             .frame_fixed_width(300.0)
     ).close_application_on_window_close());
