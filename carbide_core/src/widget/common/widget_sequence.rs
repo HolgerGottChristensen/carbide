@@ -1,6 +1,6 @@
 use std::fmt::Debug;
 
-use crate::widget::AnyWidget;
+use crate::widget::{AnyWidget, Widget};
 
 pub trait WidgetSequence: Clone + Debug + 'static {
     fn foreach<'a>(&'a self, f: &mut dyn FnMut(&'a dyn AnyWidget));
@@ -18,7 +18,7 @@ impl WidgetSequence for () {
     fn foreach_direct_rev<'a>(&'a mut self, _f: &mut dyn FnMut(&'a mut dyn AnyWidget)) {}
 }
 
-impl<W: AnyWidget + Clone + 'static> WidgetSequence for Vec<W> {
+impl<W: Widget + 'static> WidgetSequence for Vec<W> {
     fn foreach<'a>(&'a self, f: &mut dyn FnMut(&'a dyn AnyWidget)) {
         for element in self {
             if element.is_ignore() {
@@ -90,7 +90,7 @@ macro_rules! tuple_sequence_impl {
     ($($generic:ident),*) => {
         #[allow(non_snake_case)]
         #[allow(unused_parens)]
-        impl<$($generic: AnyWidget + Clone + 'static),*> WidgetSequence for ($($generic),*) {
+        impl<$($generic: Widget + 'static),*> WidgetSequence for ($($generic),*) {
             fn foreach<'a>(&'a self, f: &mut dyn FnMut(&'a dyn AnyWidget)) {
                 let ($($generic),*) = self;
                 $(

@@ -13,7 +13,7 @@ use crate::enabled_state;
 ///
 /// For a styled version, use [crate::Switch] instead.
 #[derive(Clone, Debug, Widget)]
-pub struct Labelled<C, L> where C: AnyWidget + Clone, L: ReadState<T=String> {
+pub struct Labelled<C, L> where C: Widget, L: ReadState<T=String> {
     id: WidgetId,
     position: Position,
     dimension: Dimension,
@@ -23,13 +23,13 @@ pub struct Labelled<C, L> where C: AnyWidget + Clone, L: ReadState<T=String> {
 }
 
 impl Labelled<Empty, String> {
-    pub fn new<C: AnyWidget + Clone, L: IntoReadState<String>>(label: L, child: C) -> Labelled<HStack<Vec<Box<dyn AnyWidget>>>, L::Output> {
+    pub fn new<C: Widget, L: IntoReadState<String>>(label: L, child: C) -> Labelled<HStack<Vec<Box<dyn AnyWidget>>>, L::Output> {
         Self::new_internal(label.into_read_state(), child)
     }
 }
 
-impl<C: AnyWidget + Clone, L: ReadState<T=String>> Labelled<C, L> {
-    fn new_internal<C2: AnyWidget + Clone, L2: ReadState<T=String>>(
+impl<C: Widget, L: ReadState<T=String>> Labelled<C, L> {
+    fn new_internal<C2: Widget, L2: ReadState<T=String>>(
         label: L2,
         child: C2,
     ) -> Labelled<HStack<Vec<Box<dyn AnyWidget>>>, L2> {
@@ -57,9 +57,9 @@ impl<C: AnyWidget + Clone, L: ReadState<T=String>> Labelled<C, L> {
     }
 }
 
-impl<C: AnyWidget + Clone, L: ReadState<T=String>> CommonWidget for Labelled<C, L> {
+impl<C: Widget, L: ReadState<T=String>> CommonWidget for Labelled<C, L> {
     CommonWidgetImpl!(self, id: self.id, child: self.child, position: self.position, dimension: self.dimension);
 }
 
-impl<C: AnyWidget + Clone, L: ReadState<T=String>> WidgetExt for Labelled<C, L> {}
+impl<C: Widget, L: ReadState<T=String>> WidgetExt for Labelled<C, L> {}
 

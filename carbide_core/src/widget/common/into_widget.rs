@@ -1,14 +1,14 @@
 use crate::environment::{EnvironmentColor, EnvironmentFontSize};
 use crate::render::Style;
 use crate::state::IntoReadState;
-use crate::widget::{Text, Widget, WidgetExt};
+use crate::widget::{Text, Widget};
 
 // ---------------------------------------------------
 //  Definitions
 // ---------------------------------------------------
 
 pub trait IntoWidget: Clone {
-    type Output: Widget + WidgetExt;
+    type Output: Widget;
 
     fn into_widget(self) -> Self::Output;
 }
@@ -17,7 +17,7 @@ pub trait IntoWidget: Clone {
 //  Implementations
 // ---------------------------------------------------
 
-impl<T> IntoWidget for T where T: Widget + WidgetExt {
+impl<T> IntoWidget for T where T: Widget {
     type Output = T;
 
     fn into_widget(self) -> Self::Output {

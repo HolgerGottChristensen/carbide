@@ -9,7 +9,7 @@ use crate::widget::{AnyWidget, CommonWidget, Empty, Widget, WidgetExt, WidgetId}
 
 #[derive(Debug, Clone, Widget)]
 #[carbide_exclude(Render)]
-pub struct Transform<W, M> where W: AnyWidget + Clone, M: ReadState<T=Matrix4<f32>> {
+pub struct Transform<W, M> where W: Widget, M: ReadState<T=Matrix4<f32>> {
     id: WidgetId,
     child: W,
     position: Position,
@@ -21,7 +21,7 @@ pub struct Transform<W, M> where W: AnyWidget + Clone, M: ReadState<T=Matrix4<f3
 
 impl Transform<Empty, Matrix4<f32>> {
     #[carbide_default_builder2]
-    pub fn new<W: AnyWidget + Clone, M: ReadState<T=Matrix4<f32>>>(child: W, matrix: M) -> Transform<W, M> {
+    pub fn new<W: Widget, M: ReadState<T=Matrix4<f32>>>(child: W, matrix: M) -> Transform<W, M> {
         Transform {
             id: WidgetId::new(),
             child,
@@ -40,7 +40,7 @@ impl Transform<Empty, Matrix4<f32>> {
         Self::new(child, matrix)
     }
 
-    pub fn scale<W: AnyWidget + Clone, R: ReadState<T=f64> + Clone>(child: W, scale: R) -> Transform<W, RMap1<fn(&f64) -> Matrix4<f32>, f64, Matrix4<f32>, R>> {
+    pub fn scale<W: Widget, R: ReadState<T=f64> + Clone>(child: W, scale: R) -> Transform<W, RMap1<fn(&f64) -> Matrix4<f32>, f64, Matrix4<f32>, R>> {
         let matrix: RMap1<fn(&f64) -> Matrix4<f32>, f64, Matrix4<f32>, R> = Map1::read_map(scale, |s| {
             Matrix4::from_scale(*s as f32)
         });
@@ -48,7 +48,7 @@ impl Transform<Empty, Matrix4<f32>> {
         Self::new(child, matrix)
     }
 
-    pub fn scale_non_uniform<W: AnyWidget + Clone, R: ReadState<T=Dimension> + Clone>(
+    pub fn scale_non_uniform<W: Widget, R: ReadState<T=Dimension> + Clone>(
         child: W,
         scale: R,
     ) -> Transform<W, RMap1<fn(&Dimension) -> Matrix4<f32>, Dimension, Matrix4<f32>, R>> {
@@ -79,14 +79,14 @@ impl Transform<Empty, Matrix4<f32>> {
 
 }
 
-impl<W: AnyWidget + Clone, M: ReadState<T=Matrix4<f32>>> Transform<W, M> {
+impl<W: Widget, M: ReadState<T=Matrix4<f32>>> Transform<W, M> {
     pub fn with_anchor(mut self, anchor: Alignment) -> Self {
         self.anchor = anchor;
         self
     }
 }
 
-impl<W: AnyWidget + Clone, M: ReadState<T=Matrix4<f32>>> CommonWidget for Transform<W, M> {
+impl<W: Widget, M: ReadState<T=Matrix4<f32>>> CommonWidget for Transform<W, M> {
     fn id(&self) -> WidgetId {
         self.id
     }
@@ -155,7 +155,7 @@ impl<W: AnyWidget + Clone, M: ReadState<T=Matrix4<f32>>> CommonWidget for Transf
     }
 }
 
-impl<W: AnyWidget + Clone, M: ReadState<T=Matrix4<f32>>> Render for Transform<W, M> {
+impl<W: Widget, M: ReadState<T=Matrix4<f32>>> Render for Transform<W, M> {
     fn render(&mut self, context: &mut RenderContext) {
         self.capture_state(context.env);
         let bounding_box = Rect::new(self.position, self.dimension);
@@ -241,4 +241,4 @@ impl<W: AnyWidget + Clone, M: ReadState<T=Matrix4<f32>>> Render for Transform<W,
     }
 }
 
-impl<W: AnyWidget + Clone, M: ReadState<T=Matrix4<f32>>> WidgetExt for Transform<W, M> {}
+impl<W: Widget, M: ReadState<T=Matrix4<f32>>> WidgetExt for Transform<W, M> {}

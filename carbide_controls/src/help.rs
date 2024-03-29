@@ -18,7 +18,7 @@ const PADDING: Scalar = 8.0;
 /// For a styled version, use [crate::Switch] instead.
 #[derive(Clone, Debug, Widget)]
 #[carbide_exclude(MouseEvent, Render, Layout)]
-pub struct Help<C> where C: AnyWidget + Clone {
+pub struct Help<C> where C: Widget {
     id: WidgetId,
     position: Position,
     dimension: Dimension,
@@ -30,13 +30,13 @@ pub struct Help<C> where C: AnyWidget + Clone {
 }
 
 impl Help<Empty> {
-    pub fn new<C: AnyWidget + Clone>(child: C, help: Box<dyn AnyWidget>) -> Help<C> {
+    pub fn new<C: Widget>(child: C, help: Box<dyn AnyWidget>) -> Help<C> {
         Self::new_internal(child, help)
     }
 }
 
-impl<C: AnyWidget + Clone> Help<C> {
-    fn new_internal<C2: AnyWidget + Clone>(
+impl<C: Widget> Help<C> {
+    fn new_internal<C2: Widget>(
         child: C2,
         help: Box<dyn AnyWidget>,
     ) -> Help<C2> {
@@ -52,7 +52,7 @@ impl<C: AnyWidget + Clone> Help<C> {
     }
 }
 
-impl<C: AnyWidget + Clone> MouseEventHandler for Help<C> {
+impl<C: Widget> MouseEventHandler for Help<C> {
     fn handle_mouse_event(&mut self, event: &MouseEvent, _ctx: &mut MouseEventContext) {
         if self.is_inside(event.get_current_mouse_position()) {
             self.hovered = true;
@@ -62,7 +62,7 @@ impl<C: AnyWidget + Clone> MouseEventHandler for Help<C> {
     }
 }
 
-impl<C: AnyWidget + Clone> Layout for Help<C> {
+impl<C: Widget> Layout for Help<C> {
     fn calculate_size(&mut self, requested_size: Dimension, ctx: &mut LayoutContext) -> Dimension {
         let dimension = self.child.calculate_size(requested_size, ctx);
         self.set_dimension(dimension);
@@ -131,7 +131,7 @@ impl<C: AnyWidget + Clone> Layout for Help<C> {
     }
 }
 
-impl<C: AnyWidget + Clone> Render for Help<C> {
+impl<C: Widget> Render for Help<C> {
     fn render(&mut self, context: &mut RenderContext) {
         self.child.render(context);
 
@@ -142,9 +142,9 @@ impl<C: AnyWidget + Clone> Render for Help<C> {
 }
 
 
-impl<C: AnyWidget + Clone> CommonWidget for Help<C> {
+impl<C: Widget> CommonWidget for Help<C> {
     CommonWidgetImpl!(self, id: self.id, child: self.child, position: self.position, dimension: self.dimension);
 }
 
-impl<C: AnyWidget + Clone> WidgetExt for Help<C> {}
+impl<C: Widget> WidgetExt for Help<C> {}
 
