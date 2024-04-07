@@ -44,7 +44,7 @@ impl Triangle<Position> {
         Triangle([(self[0], color), (self[1], color), (self[2], color)])
     }
 
-    pub fn from_point_list(points: Vec<Position>) -> Vec<Triangle<Position>> {
+    pub fn from_point_list<T: Vertex>(points: Vec<T>) -> Vec<Triangle<T>> {
         let len = points.len();
 
         if len == 0 {

@@ -114,6 +114,14 @@ impl<'a> RenderContext<'a> {
         self.render.geometry(geometry);
     }
 
+    pub fn stroke(&mut self, stroke: &[Triangle<(Position, (Position, Position))>]) {
+        if stroke.is_empty() {
+            return;
+        }
+
+        self.render.stroke(stroke);
+    }
+
     pub fn rect(&mut self, rect: Rect) {
         self.geometry(&[
             Triangle([
@@ -163,6 +171,8 @@ pub trait InnerRenderContext {
 
     /// Renders the geometry with the current style
     fn geometry(&mut self, geometry: &[Triangle<Position>]);
+    fn stroke(&mut self, stroke: &[Triangle<(Position, (Position, Position))>]);
+
 
     fn rect(&mut self, rect: Rect) {
         self.geometry(&[
@@ -212,6 +222,8 @@ impl InnerRenderContext for NoopRenderContext {
     fn pop_stencil(&mut self) {}
 
     fn geometry(&mut self, _geometry: &[Triangle<Position>]) {}
+
+    fn stroke(&mut self, stroke: &[Triangle<(Position, (Position, Position))>]) {}
 
     fn style(&mut self, _style: DrawStyle) {}
 

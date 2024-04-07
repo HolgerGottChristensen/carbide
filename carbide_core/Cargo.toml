@@ -33,7 +33,7 @@ dyn-clone.workspace = true
 parking_lot = "0.12.1"
 smallvec = "1"
 
-lyon = "1.0.1"
+lyon.workspace = true
 fxhash = "0.2.1"
 nom = "7.1.1"
 image = "0.24.2"

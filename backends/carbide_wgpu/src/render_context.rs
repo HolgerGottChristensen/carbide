@@ -3,7 +3,7 @@ use std::ops::Range;
 use cgmath::{Matrix4, SquareMatrix};
 
 use carbide_core::color::{Color, WHITE};
-use carbide_core::draw::{MODE_GEOMETRY, MODE_GRADIENT_GEOMETRY, MODE_GRADIENT_ICON, MODE_GRADIENT_TEXT, MODE_ICON, MODE_IMAGE, MODE_TEXT, Position, Rect, DrawStyle, ImageId};
+use carbide_core::draw::{MODE_GEOMETRY, MODE_GRADIENT_GEOMETRY, MODE_GRADIENT_ICON, MODE_GRADIENT_TEXT, MODE_ICON, MODE_IMAGE, MODE_TEXT, Position, Rect, DrawStyle, ImageId, MODE_GEOMETRY_DASH};
 use carbide_core::draw::shape::triangle::Triangle;
 use carbide_core::render::{CarbideTransform, InnerRenderContext};
 use carbide_core::text::{InnerTextContext, TextId};
@@ -381,6 +381,7 @@ impl InnerRenderContext for WGPURenderContext {
             ],
             rgba: [1.0, 1.0, 1.0, 1.0],
             mode: MODE_TEXT,
+            line_coords: [0.0, 0.0, 0.0, 0.0],
         };
 
 
@@ -424,6 +425,7 @@ impl InnerRenderContext for WGPURenderContext {
             ],
             rgba: [1.0, 1.0, 1.0, 1.0],
             mode: MODE_TEXT,
+            line_coords: [0.0, 0.0, 0.0, 0.0],
         };
 
         let (l, r, b, t) = bounding_box1.l_r_b_t();
@@ -560,6 +562,51 @@ impl InnerRenderContext for WGPURenderContext {
         self.draw(start as u32, self.vertices.len() as u32);
     }
 
+    fn stroke(&mut self, geometry: &[Triangle<(Position, (Position, Position))>]) {
+        if self.skip_rendering {
+            return;
+        }
+        //println!("draw geometry: {}", geometry.len());
+
+        let style = self.style_stack.last().unwrap().clone();
+
+        let (mut color, gradient) = match style {
+            WGPUStyle::Color(c) => {
+                (c, false)
+            },
+            WGPUStyle::Gradient(g) => {
+                self.ensure_state_gradient(&g);
+                ([0.0, 0.0, 0.0, 1.0], true)
+            },
+        };
+
+        let mode = if gradient { MODE_GEOMETRY_DASH } else { MODE_GEOMETRY };
+        let mode = if self.masked { mode | 0b100000 } else { mode };
+
+        let start = self.vertices.len();
+        self.vertices.extend(
+            geometry.iter()
+                .flat_map(|triangle| &triangle.0)
+                .map(|(position, line_position)| {
+
+                    Vertex {
+                        position: [position.x as f32, position.y as f32, 0.0],
+                        tex_coords: [0.0, 0.0],
+                        rgba: if gradient { Color::random().to_fsa() } else { color },
+                        mode,
+                        line_coords: [
+                            line_position.0.x as f32,
+                            line_position.0.y as f32,
+                            line_position.1.x as f32,
+                            line_position.1.y as f32,
+                        ],
+                    }
+                })
+        );
+
+        self.draw(start as u32, self.vertices.len() as u32);
+    }
+
     fn style(&mut self, style: DrawStyle) {
         match style {
             DrawStyle::Color(color) => {
@@ -638,6 +685,7 @@ impl InnerRenderContext for WGPURenderContext {
             tex_coords: [tx as f32, ty as f32],
             rgba: color,
             mode,
+            line_coords: [0.0, 0.0, 0.0, 0.0],
         };
 
 
@@ -688,6 +736,7 @@ impl InnerRenderContext for WGPURenderContext {
                 .pre_multiply()
                 .to_fsa(),
             mode: if post_draw { MODE_IMAGE } else { MODE_TEXT },
+            line_coords: [0.0, 0.0, 0.0, 0.0],
         };
 
 
@@ -742,6 +791,7 @@ impl InnerRenderContext for WGPURenderContext {
                 .pre_multiply()
                 .to_fsa(),
             mode: if post_draw { MODE_IMAGE } else { MODE_TEXT },
+            line_coords: [0.0, 0.0, 0.0, 0.0],
         };
 
         let (l, r, b, t) = self.window_bounding_box.l_r_b_t();

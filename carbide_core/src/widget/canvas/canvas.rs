@@ -1,6 +1,7 @@
 use std::fmt::{Debug, Formatter};
 
 use lyon::algorithms::path::Path;
+use lyon::path::Side;
 use lyon::tessellation::{
     BuffersBuilder, FillOptions, FillTessellator, FillVertex, StrokeOptions, StrokeTessellator,
     StrokeVertex, VertexBuffers,
@@ -90,9 +91,11 @@ impl<C: CanvasContext> Canvas<C> {
         &self,
         path: Path,
         stroke_options: StrokeOptions,
-    ) -> Vec<Triangle<Position>> {
+    ) -> Vec<Triangle<(Position, (Position, Position))>> {
         let mut geometry: VertexBuffers<Position, u16> = VertexBuffers::new();
         let mut tessellator = StrokeTessellator::new();
+
+        println!("{:?}", path);
 
         {
             // Compute the tessellation.
@@ -101,8 +104,15 @@ impl<C: CanvasContext> Canvas<C> {
                     &path,
                     &stroke_options,
                     &mut BuffersBuilder::new(&mut geometry, |vertex: StrokeVertex| {
-                        let point = vertex.position().to_array();
-                        Position::new(point[0] as Scalar, point[1] as Scalar)
+                        dbg!(
+                            &vertex.position(),
+                            &vertex.advancement(),
+                            &vertex.source(),
+                            &vertex.normal(),
+                        );
+                        let point = vertex.position();
+
+                        Position::new(point.x as Scalar, point.y as Scalar)
                     }),
                 )
                 .unwrap();
@@ -111,9 +121,13 @@ impl<C: CanvasContext> Canvas<C> {
         let point_iter = geometry
             .indices
             .iter()
-            .map(|index| geometry.vertices[*index as usize]);
+            .enumerate()
+            .map(|(e, index)| {
+                let dir = geometry.points[e / 3];
+                (geometry.vertices[*index as usize], (Position::new(dir.0.x as f64, dir.0.y as f64), Position::new(dir.1.x as f64, dir.1.y as f64)))
+            });
 
-        let points: Vec<Position> = point_iter.collect();
+        let points: Vec<_> = point_iter.collect();
 
         Triangle::from_point_list(points)
     }
@@ -152,7 +166,7 @@ impl<C: CanvasContext> Shape for Canvas<C> {
                     triangles.extend(self.get_fill_geometry(path, fill_options));
                 }
                 ShapeStyleWithOptions::Stroke(stroke_options, _) => {
-                    triangles.extend(self.get_stroke_geometry(path, stroke_options));
+                    //triangles.extend(self.get_stroke_geometry(path, stroke_options));
                 }
             }
         }
@@ -179,7 +193,7 @@ impl<C: CanvasContext> Render for Canvas<C> {
                 }
                 ShapeStyleWithOptions::Stroke(stroke_options, style) => {
                     render_context.style(style.convert(self.position, self.dimension), |this| {
-                        this.geometry(&self.get_stroke_geometry(path, stroke_options))
+                        this.stroke(&self.get_stroke_geometry(path, stroke_options))
                     })
                 }
             }

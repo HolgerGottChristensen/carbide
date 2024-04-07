@@ -3,6 +3,7 @@ use std::ops::{Deref, DerefMut};
 
 use cgmath::Matrix4;
 use dyn_clone::DynClone;
+use carbide::text::FontWeight;
 
 use carbide_core::environment::Environment;
 
@@ -13,6 +14,7 @@ use crate::render::Style;
 use crate::state::*;
 use crate::state::state_sync::NewStateSync;
 use crate::state::util::value_cell::ValueRef;
+use crate::text::FontStyle;
 use crate::widget::{EdgeInsets, Gradient};
 
 // ---------------------------------------------------
@@ -197,7 +199,8 @@ impl_read_state!(
     bool, char, isize, usize,
     Style, String, (), Color, &'static str, Focus,
     EnvironmentColor, EnvironmentFontSize, Gradient,
-    EdgeInsets, Position, Dimension, Rect, Angle
+    EdgeInsets, Position, Dimension, Rect, Angle,
+    FontStyle, FontWeight
 );
 /*
 impl IntoReadStateHelper<i32, i32, u32> for i32 {

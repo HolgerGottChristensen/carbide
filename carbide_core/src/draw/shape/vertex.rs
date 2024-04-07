@@ -24,6 +24,34 @@ impl Vertex for Position {
     }
 }
 
+impl Vertex for (Position, Position) {
+    fn point(&self) -> Position {
+        todo!()
+    }
+
+    fn add_vertex(self, add: Position) -> Self {
+        todo!()
+    }
+
+    fn offset(&mut self, other: Position) {
+        todo!()
+    }
+}
+
+impl Vertex for (Position, (Position, Position)) {
+    fn point(&self) -> Position {
+        todo!()
+    }
+
+    fn add_vertex(self, add: Position) -> Self {
+        todo!()
+    }
+
+    fn offset(&mut self, other: Position) {
+        todo!()
+    }
+}
+
 impl Vertex for ColoredPoint {
     fn point(&self) -> Position {
         self.0

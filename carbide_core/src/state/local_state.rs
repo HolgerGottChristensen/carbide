@@ -21,7 +21,6 @@ use crate::state::util::value_cell::{ValueCell, ValueRef, ValueRefMut};
 /// all state is stored directly within.
 /// Also it does not depend on any other states and therefore the event can be ignored.
 #[derive(Clone)]
-//#[derive(Clone, State)]
 pub struct LocalState<T>
 where
     T: StateContract,

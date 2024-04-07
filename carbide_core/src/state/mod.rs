@@ -31,6 +31,7 @@ pub use self::value_state::ValueState;
 pub use self::widget_state::WidgetState;
 pub use self::logging_state::*;
 pub use self::transition_state::*;
+pub use self::static_state::*;
 
 mod animated_state;
 mod local_state;
@@ -56,6 +57,7 @@ mod into_state;
 mod into_read_state;
 mod transition_state;
 mod logging_state;
+mod static_state;
 
 pub type InnerState<T> = Rc<ValueCell<T>>;
 

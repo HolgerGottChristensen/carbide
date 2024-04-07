@@ -1,6 +1,6 @@
 use carbide_controls::PopUpButton;
 use carbide_core::draw::Dimension;
-use carbide_core::state::LocalState;
+use carbide_core::state::{LocalState, StaticState};
 use carbide_core::widget::*;
 use carbide_wgpu::{Application, Window};
 
@@ -31,10 +31,10 @@ impl Default for Month {
 }
 
 fn main() {
-    let selected = LocalState::new(January);
-    let selected2 = LocalState::new(January);
+    let selected = StaticState::new(January);
+    let selected2 = StaticState::new(January);
 
-    let model = LocalState::new(vec![
+    let model = StaticState::new(vec![
         January, February, March, April, May, June, July, September, October, November, December,
     ]);
 
@@ -45,9 +45,9 @@ fn main() {
         "Pop up Button Example - Carbide",
         Dimension::new(400.0, 600.0),
         VStack::new((
-            PopUpButton::new(selected.clone(),  model.clone()),
-            PopUpButton::new(selected2.clone(), model.clone()),
-            PopUpButton::new(selected2.clone(), model.clone()).enabled(false),
+            PopUpButton::new(selected,  model),
+            PopUpButton::new(selected2, model),
+            PopUpButton::new(selected2, model).enabled(false),
         )).spacing(20.0)
             .frame_fixed_width(300.0)
     ).close_application_on_window_close());

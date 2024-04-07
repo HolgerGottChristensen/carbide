@@ -90,7 +90,7 @@ macro_rules! tuple_sequence_impl {
     ($($generic:ident),*) => {
         #[allow(non_snake_case)]
         #[allow(unused_parens)]
-        impl<$($generic: Widget + 'static),*> WidgetSequence for ($($generic),*) {
+        impl<$($generic: Widget),*> WidgetSequence for ($($generic),*) {
             fn foreach<'a>(&'a self, f: &mut dyn FnMut(&'a dyn AnyWidget)) {
                 let ($($generic),*) = self;
                 $(

@@ -4,6 +4,7 @@ struct VertexOutput {
     @location(1) color: vec4<f32>,
     @location(2) mode: u32,
     @location(3) gradient_coord: vec2<f32>,
+    @location(4) line_coords: vec4<f32>,
 }
 
 struct Uniforms {
@@ -91,6 +92,30 @@ fn main_fs(in: VertexOutput) -> @location(0) vec4<f32> {
         case 7u: {
             col = gradient_color(in.gradient_coord) * atlas_pixel.a;
         }
+        case 8u: {
+            let dir = in.line_coords.zw - in.line_coords.xy;
+            let len = length(in.line_coords.zw - in.line_coords.xy);
+
+            let s = dot(in.position.xy, normalize(dir));
+
+            let s0 = dot(in.gradient_coord.xy - in.line_coords.xy, normalize(dir));
+
+            if (s0 > len) {
+                return vec4<f32>(1.0, 0.0, 0.0, 1.0);
+            }
+
+
+            if (s0 < 0.0) {
+                return vec4<f32>(0.0, 1.0, 0.0, 1.0);
+            }
+
+            if (fract(s / 40.0) >= 0.5) {
+                return vec4<f32>(0.0, 0.0, 1.0, 1.0);
+            }
+
+            col = in.color;
+            return vec4<f32>(1.0, 1.0, 1.0, 1.0);
+        }
 
         default: {
            col = vec4<f32>(1.0, 0.0, 0.0, 1.0);
@@ -116,6 +141,7 @@ fn main_vs(
     @location(1) tex_coord: vec2<f32>,
     @location(2) color: vec4<f32>,
     @location(3) mode: u32,
+    @location(4) line_coords: vec4<f32>,
 ) -> VertexOutput {
     var out: VertexOutput;
     out.tex_coord = tex_coord;
@@ -123,6 +149,9 @@ fn main_vs(
     out.gradient_coord = position.xy;
     out.color = color;
     out.mode = mode;
+    let p0 = vec4<f32>(line_coords.xy, 0.0, 1.0);
+    let p1 = vec4<f32>(line_coords.zw, 0.0, 1.0);
+    out.line_coords = vec4<f32>(p0.xy, p1.xy);
     return out;
 }
 

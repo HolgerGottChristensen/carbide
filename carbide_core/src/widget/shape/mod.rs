@@ -77,6 +77,8 @@ impl InnerRenderContext for Tris {
         self.0.extend(geometry);
     }
 
+    fn stroke(&mut self, _stroke: &[Triangle<(Position, (Position, Position))>]) {}
+
     fn style(&mut self, _style: DrawStyle) {}
 
     fn pop_style(&mut self) {}
