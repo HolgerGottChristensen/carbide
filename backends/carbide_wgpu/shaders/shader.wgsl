@@ -5,6 +5,7 @@ struct VertexOutput {
     @location(2) mode: u32,
     @location(3) gradient_coord: vec2<f32>,
     @location(4) line_coords: vec4<f32>,
+    @location(5) line_utils: vec4<f32>,
 }
 
 struct Uniforms {
@@ -93,28 +94,36 @@ fn main_fs(in: VertexOutput) -> @location(0) vec4<f32> {
             col = gradient_color(in.gradient_coord) * atlas_pixel.a;
         }
         case 8u: {
-            let dir = in.line_coords.zw - in.line_coords.xy;
+            let dir = normalize(in.line_coords.zw - in.line_coords.xy);
             let len = length(in.line_coords.zw - in.line_coords.xy);
 
-            let s = dot(in.position.xy, normalize(dir));
+            let s = dot(in.position.xy, dir);
 
-            let s0 = dot(in.gradient_coord.xy - in.line_coords.xy, normalize(dir));
+            let s0 = dot(in.gradient_coord.xy - in.line_coords.xy, dir);
 
-            if (s0 > len) {
-                return vec4<f32>(1.0, 0.0, 0.0, 1.0);
+            let s1 = clamp(s0, 0.0, len) + in.line_utils.x;
+
+            //let s2 = abs(dot(in.gradient_coord.xy - in.line_coords.xy, vec2<f32>(dir.y, -dir.x))) / 40.0;
+
+            //var c = vec4<f32>(s2, s2, 1.0, 1.0);
+            var c = vec4<f32>(1.0, 1.0, 1.0, 1.0);
+
+            /*if (s0 > len) {
+                c = vec4<f32>(1.0, 0.0, 0.0, 1.0);
             }
-
 
             if (s0 < 0.0) {
-                return vec4<f32>(0.0, 1.0, 0.0, 1.0);
+                c = vec4<f32>(0.0, 1.0, 0.0, 1.0);
+            }*/
+
+
+
+            if (fract(s1 / 100.0) >= 0.5) {
+                c = c * 0.5;
+                c.a = 1.0;
             }
 
-            if (fract(s / 40.0) >= 0.5) {
-                return vec4<f32>(0.0, 0.0, 1.0, 1.0);
-            }
-
-            col = in.color;
-            return vec4<f32>(1.0, 1.0, 1.0, 1.0);
+            col = c;
         }
 
         default: {
@@ -142,6 +151,7 @@ fn main_vs(
     @location(2) color: vec4<f32>,
     @location(3) mode: u32,
     @location(4) line_coords: vec4<f32>,
+    @location(5) line_utils: vec4<f32>,
 ) -> VertexOutput {
     var out: VertexOutput;
     out.tex_coord = tex_coord;
@@ -149,9 +159,8 @@ fn main_vs(
     out.gradient_coord = position.xy;
     out.color = color;
     out.mode = mode;
-    let p0 = vec4<f32>(line_coords.xy, 0.0, 1.0);
-    let p1 = vec4<f32>(line_coords.zw, 0.0, 1.0);
-    out.line_coords = vec4<f32>(p0.xy, p1.xy);
+    out.line_coords = line_coords;
+    out.line_utils = line_utils;
     return out;
 }
 

@@ -12,6 +12,7 @@ pub struct Vertex {
     pub rgba: [f32; 4],
     pub mode: u32,
     pub line_coords: [f32; 4],
+    pub line_utils: [f32; 4],
 }
 
 impl Vertex {
@@ -77,6 +78,7 @@ impl Vertex {
             rgba: color,
             mode,
             line_coords: [0.0, 0.0, 0.0, 0.0],
+            line_utils: [0.0, 0.0, 0.0, 0.0],
         }
     }
 
@@ -117,6 +119,16 @@ impl Vertex {
                         + std::mem::size_of::<[u32; 1]>())
                         as wgpu::BufferAddress,
                     shader_location: 4,
+                    format: VertexFormat::Float32x4,
+                },
+                wgpu::VertexAttribute {
+                    offset: (std::mem::size_of::<[f32; 3]>()
+                        + std::mem::size_of::<[f32; 2]>()
+                        + std::mem::size_of::<[f32; 4]>()
+                        + std::mem::size_of::<[u32; 1]>()
+                        + std::mem::size_of::<[f32; 4]>())
+                        as wgpu::BufferAddress,
+                    shader_location: 5,
                     format: VertexFormat::Float32x4,
                 },
             ],

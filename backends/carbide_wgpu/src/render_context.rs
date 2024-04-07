@@ -382,6 +382,7 @@ impl InnerRenderContext for WGPURenderContext {
             rgba: [1.0, 1.0, 1.0, 1.0],
             mode: MODE_TEXT,
             line_coords: [0.0, 0.0, 0.0, 0.0],
+            line_utils: [0.0, 0.0, 0.0, 0.0],
         };
 
 
@@ -426,6 +427,7 @@ impl InnerRenderContext for WGPURenderContext {
             rgba: [1.0, 1.0, 1.0, 1.0],
             mode: MODE_TEXT,
             line_coords: [0.0, 0.0, 0.0, 0.0],
+            line_utils: [0.0, 0.0, 0.0, 0.0],
         };
 
         let (l, r, b, t) = bounding_box1.l_r_b_t();
@@ -562,7 +564,7 @@ impl InnerRenderContext for WGPURenderContext {
         self.draw(start as u32, self.vertices.len() as u32);
     }
 
-    fn stroke(&mut self, geometry: &[Triangle<(Position, (Position, Position))>]) {
+    fn stroke(&mut self, stroke: &[Triangle<(Position, (Position, Position, f32))>]) {
         if self.skip_rendering {
             return;
         }
@@ -585,7 +587,7 @@ impl InnerRenderContext for WGPURenderContext {
 
         let start = self.vertices.len();
         self.vertices.extend(
-            geometry.iter()
+            stroke.iter()
                 .flat_map(|triangle| &triangle.0)
                 .map(|(position, line_position)| {
 
@@ -600,6 +602,7 @@ impl InnerRenderContext for WGPURenderContext {
                             line_position.1.x as f32,
                             line_position.1.y as f32,
                         ],
+                        line_utils: [line_position.2, 0.0, 0.0, 0.0],
                     }
                 })
         );
@@ -686,6 +689,7 @@ impl InnerRenderContext for WGPURenderContext {
             rgba: color,
             mode,
             line_coords: [0.0, 0.0, 0.0, 0.0],
+            line_utils: [0.0, 0.0, 0.0, 0.0],
         };
 
 
@@ -737,6 +741,8 @@ impl InnerRenderContext for WGPURenderContext {
                 .to_fsa(),
             mode: if post_draw { MODE_IMAGE } else { MODE_TEXT },
             line_coords: [0.0, 0.0, 0.0, 0.0],
+            line_utils: [0.0, 0.0, 0.0, 0.0],
+
         };
 
 
@@ -792,6 +798,7 @@ impl InnerRenderContext for WGPURenderContext {
                 .to_fsa(),
             mode: if post_draw { MODE_IMAGE } else { MODE_TEXT },
             line_coords: [0.0, 0.0, 0.0, 0.0],
+            line_utils: [0.0, 0.0, 0.0, 0.0],
         };
 
         let (l, r, b, t) = self.window_bounding_box.l_r_b_t();

@@ -114,7 +114,7 @@ impl<'a> RenderContext<'a> {
         self.render.geometry(geometry);
     }
 
-    pub fn stroke(&mut self, stroke: &[Triangle<(Position, (Position, Position))>]) {
+    pub fn stroke(&mut self, stroke: &[Triangle<(Position, (Position, Position, f32))>]) {
         if stroke.is_empty() {
             return;
         }
@@ -171,7 +171,7 @@ pub trait InnerRenderContext {
 
     /// Renders the geometry with the current style
     fn geometry(&mut self, geometry: &[Triangle<Position>]);
-    fn stroke(&mut self, stroke: &[Triangle<(Position, (Position, Position))>]);
+    fn stroke(&mut self, stroke: &[Triangle<(Position, (Position, Position, f32))>]);
 
 
     fn rect(&mut self, rect: Rect) {
@@ -223,7 +223,7 @@ impl InnerRenderContext for NoopRenderContext {
 
     fn geometry(&mut self, _geometry: &[Triangle<Position>]) {}
 
-    fn stroke(&mut self, stroke: &[Triangle<(Position, (Position, Position))>]) {}
+    fn stroke(&mut self, stroke: &[Triangle<(Position, (Position, Position, f32))>]) {}
 
     fn style(&mut self, _style: DrawStyle) {}
 

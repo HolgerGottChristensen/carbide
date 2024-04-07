@@ -91,11 +91,11 @@ impl<C: CanvasContext> Canvas<C> {
         &self,
         path: Path,
         stroke_options: StrokeOptions,
-    ) -> Vec<Triangle<(Position, (Position, Position))>> {
+    ) -> Vec<Triangle<(Position, (Position, Position, f32))>> {
         let mut geometry: VertexBuffers<Position, u16> = VertexBuffers::new();
         let mut tessellator = StrokeTessellator::new();
 
-        println!("{:?}", path);
+        //println!("{:?}", path);
 
         {
             // Compute the tessellation.
@@ -104,12 +104,12 @@ impl<C: CanvasContext> Canvas<C> {
                     &path,
                     &stroke_options,
                     &mut BuffersBuilder::new(&mut geometry, |vertex: StrokeVertex| {
-                        dbg!(
+                        /*dbg!(
                             &vertex.position(),
                             &vertex.advancement(),
                             &vertex.source(),
                             &vertex.normal(),
-                        );
+                        );*/
                         let point = vertex.position();
 
                         Position::new(point.x as Scalar, point.y as Scalar)
@@ -124,7 +124,7 @@ impl<C: CanvasContext> Canvas<C> {
             .enumerate()
             .map(|(e, index)| {
                 let dir = geometry.points[e / 3];
-                (geometry.vertices[*index as usize], (Position::new(dir.0.x as f64, dir.0.y as f64), Position::new(dir.1.x as f64, dir.1.y as f64)))
+                (geometry.vertices[*index as usize], (Position::new(dir.0.x as f64, dir.0.y as f64), Position::new(dir.1.x as f64, dir.1.y as f64), dir.2))
             });
 
         let points: Vec<_> = point_iter.collect();
