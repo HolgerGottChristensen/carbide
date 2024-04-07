@@ -564,7 +564,7 @@ impl InnerRenderContext for WGPURenderContext {
         self.draw(start as u32, self.vertices.len() as u32);
     }
 
-    fn stroke(&mut self, stroke: &[Triangle<(Position, (Position, Position, f32))>]) {
+    fn stroke(&mut self, stroke: &[Triangle<(Position, (Position, Position, f32, f32))>]) {
         if self.skip_rendering {
             return;
         }
@@ -602,7 +602,7 @@ impl InnerRenderContext for WGPURenderContext {
                             line_position.1.x as f32,
                             line_position.1.y as f32,
                         ],
-                        line_utils: [line_position.2, 0.0, 0.0, 0.0],
+                        line_utils: [line_position.2, line_position.3, 0.0, 0.0],
                     }
                 })
         );

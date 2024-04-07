@@ -38,7 +38,7 @@ impl Vertex for (Position, Position) {
     }
 }
 
-impl Vertex for (Position, (Position, Position, f32)) {
+impl Vertex for (Position, (Position, Position, f32, f32)) {
     fn point(&self) -> Position {
         todo!()
     }

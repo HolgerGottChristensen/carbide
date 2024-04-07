@@ -30,6 +30,14 @@ struct Gradient {
     end: vec2<f32>,
 }
 
+struct Dashes {
+    dashes: array<f32,2u>,
+    dash_count: u32,
+    start_cap: u32,
+    end_cap: u32,
+    total_dash_width: f32,
+}
+
 @group(0) @binding(0)
 var main_texture: texture_2d<f32>;
 
@@ -94,6 +102,18 @@ fn main_fs(in: VertexOutput) -> @location(0) vec4<f32> {
             col = gradient_color(in.gradient_coord) * atlas_pixel.a;
         }
         case 8u: {
+            let line_width = in.line_utils.y;
+
+            var dashes = Dashes(
+                array<f32, 2u>(0.0, 1.0), // Dashes - Must be even length array
+                2u, // Number of dashes
+                4u, // Start cap
+                3u, // End cap
+                1.0 // Total dash length cap
+            );
+
+            let total_dash_length = dashes.total_dash_width * line_width;
+
             let dir = normalize(in.line_coords.zw - in.line_coords.xy);
             let len = length(in.line_coords.zw - in.line_coords.xy);
 
@@ -103,24 +123,49 @@ fn main_fs(in: VertexOutput) -> @location(0) vec4<f32> {
 
             let s1 = clamp(s0, 0.0, len) + in.line_utils.x;
 
-            //let s2 = abs(dot(in.gradient_coord.xy - in.line_coords.xy, vec2<f32>(dir.y, -dir.x))) / 40.0;
+            let s2 = abs(dot(in.gradient_coord.xy - in.line_coords.xy, vec2<f32>(dir.y, -dir.x)));
 
-            //var c = vec4<f32>(s2, s2, 1.0, 1.0);
             var c = vec4<f32>(1.0, 1.0, 1.0, 1.0);
 
-            /*if (s0 > len) {
-                c = vec4<f32>(1.0, 0.0, 0.0, 1.0);
+            /*var in_join = false;
+            if (s0 > len) {
+                in_join = true;
             }
 
             if (s0 < 0.0) {
-                c = vec4<f32>(0.0, 1.0, 0.0, 1.0);
+                in_join = true;
             }*/
 
+            let s3 = s1 % total_dash_length;
 
+            var start = 0.0;
+            for (var i = 0u; i < dashes.dash_count; i++) {
+                let end = start + dashes.dashes[i] * line_width;
 
-            if (fract(s1 / 100.0) >= 0.5) {
-                c = c * 0.5;
-                c.a = 1.0;
+                // We are somewhere between "start" and "end".
+                if (s3 < end) {
+
+                    // We are inside a gap
+                    if (i % 2u == 1u) {
+                        var in_cap = false;
+                        if (s3 - start < line_width / 2.0) { // We are in an end cap
+                            in_cap = cap(s3 - start, s2, line_width, dashes.end_cap);
+                        } else if (end - s3 < line_width / 2.0) { // We are in a start cap
+                            in_cap = cap(end - s3, s2, line_width, dashes.start_cap);
+                        } else { // We are in the gap
+                            in_cap = false;
+                        }
+
+                        if (!in_cap) {
+                            c = c * 0.5;
+                            c.a = 1.0;
+                            //discard;
+                        }
+                    }
+                    break;
+                }
+
+                start = end;
             }
 
             col = c;
@@ -162,6 +207,35 @@ fn main_vs(
     out.line_coords = line_coords;
     out.line_utils = line_utils;
     return out;
+}
+
+fn cap(x: f32, y: f32, w: f32, ty: u32) -> bool {
+    switch (ty) {
+        // Rounded
+        case 1u: {
+            let l = length(vec2<f32>(x, y));
+            return l <= w / 2.0;
+        }
+        // Square
+        case 2u: {
+            let l = x / 2.0;
+            return l <= w / 2.0;
+        }
+        // Triangle out
+        case 3u: {
+            let l = x + y;
+            return l <= w / 2.0;
+        }
+        // Triangle in
+        case 4u: {
+            let l = max(y, w / 2.0 + x - y);
+            return l <= w / 2.0;
+        }
+        // None / butt
+        default: {
+            return false;
+        }
+    }
 }
 
 fn gradient_color(gradient_coord: vec2<f32>) -> vec4<f32> {
