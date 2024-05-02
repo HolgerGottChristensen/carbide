@@ -1,5 +1,5 @@
-//! A module encompassing the primitive 2D shape widgets.
 use lyon::lyon_tessellation::path::path::Builder;
+use lyon::lyon_tessellation::StrokeAlignment;
 use lyon::math::Box2D;
 use lyon::tessellation::{
     BuffersBuilder, FillOptions, FillTessellator, FillVertex, Side, StrokeOptions,
@@ -14,7 +14,7 @@ pub use rectangle::*;
 pub use rounded_rectangle::*;
 
 use crate::color::Color;
-use crate::draw::{DrawStyle, ImageId, NOOPImageContext, Position, Rect, Scalar};
+use crate::draw::{DrawStyle, ImageId, NOOPImageContext, Position, Rect, Scalar, StrokeDashPattern};
 use crate::draw::shape::triangle::Triangle;
 use crate::environment::Environment;
 use crate::render::{CarbideTransform, InnerRenderContext, RenderContext};
@@ -77,11 +77,15 @@ impl InnerRenderContext for Tris {
         self.0.extend(geometry);
     }
 
-    fn stroke(&mut self, stroke: &[Triangle<(Position, (Position, Position, f32, f32))>]) {}
+    fn stroke(&mut self, _stroke: &[Triangle<(Position, (Position, Position, f32, f32))>]) {}
 
     fn style(&mut self, _style: DrawStyle) {}
 
     fn pop_style(&mut self) {}
+
+    fn stroke_dash_pattern(&mut self, _pattern: Option<StrokeDashPattern>) {}
+
+    fn pop_stroke_dash_pattern(&mut self) {}
 
     fn image(&mut self, _id: Option<ImageId>, _bounding_box: Rect, _source_rect: Rect, _mode: u32) {}
 
@@ -190,72 +194,17 @@ pub fn stroke(path: &dyn Fn(&mut Builder, &Box2D), shape: &mut dyn Shape, rectan
 
         let mut tessellator = StrokeTessellator::new();
 
-        let mut stroke_options = StrokeOptions::default();
-        stroke_options.line_width = line_width * 2.0;
-
-        let filled_points: Vec<Position> = {
-            let mut geometry: VertexBuffers<Position, u16> = VertexBuffers::new();
-
-            let mut tessellator = FillTessellator::new();
-
-            let fill_options = FillOptions::default();
-
-            {
-                // Compute the tessellation.
-                tessellator
-                    .tessellate_path(
-                        &path,
-                        &fill_options,
-                        &mut BuffersBuilder::new(&mut geometry, |vertex: FillVertex| {
-                            let point = vertex.position().to_array();
-                            Position::new(point[0] as Scalar, point[1] as Scalar)
-                        }),
-                    )
-                    .unwrap();
-            }
-
-            let point_iter = geometry
-                .indices
-                .iter()
-                .map(|index| geometry.vertices[*index as usize]);
-
-            point_iter.collect()
-        };
-
-        // Todo: This is linear and should be optimized
-        fn get_closest_point(point: Position, points: &Vec<Position>) -> Position {
-            if points.len() > 0 {
-                let mut closest = points[0];
-                let mut dist = f64::MAX;
-                for p in points {
-                    let cur_dist = (point.x - p.x).powi(2) + (point.y - p.y).powi(2);
-                    if cur_dist < dist {
-                        dist = cur_dist;
-                        closest = *p;
-                    }
-                }
-                closest
-            } else {
-                point
-            }
-        }
-
         {
             // Compute the tessellation.
             tessellator
                 .tessellate_path(
                     &path,
-                    &stroke_options,
+                    &StrokeOptions::default()
+                        .with_line_width(line_width)
+                        .with_alignment(StrokeAlignment::Positive),
                     &mut BuffersBuilder::new(&mut geometry, |vertex: StrokeVertex| {
                         let point = vertex.position().to_array();
-                        let point = Position::new(point[0] as Scalar, point[1] as Scalar);
-                        if vertex.side() == Side::Positive {
-                            point
-                        } else {
-                            let p = point;
-
-                            get_closest_point(p, &filled_points)
-                        }
+                        Position::new(point[0] as Scalar, point[1] as Scalar)
                     }),
                 )
                 .unwrap();

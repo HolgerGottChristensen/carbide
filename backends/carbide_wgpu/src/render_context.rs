@@ -3,13 +3,13 @@ use std::ops::Range;
 use cgmath::{Matrix4, SquareMatrix};
 
 use carbide_core::color::{Color, WHITE};
-use carbide_core::draw::{MODE_GEOMETRY, MODE_GRADIENT_GEOMETRY, MODE_GRADIENT_ICON, MODE_GRADIENT_TEXT, MODE_ICON, MODE_IMAGE, MODE_TEXT, Position, Rect, DrawStyle, ImageId, MODE_GEOMETRY_DASH};
+use carbide_core::draw::{MODE_GEOMETRY, MODE_GRADIENT_GEOMETRY, MODE_GRADIENT_ICON, MODE_GRADIENT_TEXT, MODE_ICON, MODE_IMAGE, MODE_TEXT, Position, Rect, DrawStyle, ImageId, MODE_GEOMETRY_DASH, StrokeDashPattern, MODE_GRADIENT_GEOMETRY_DASH};
 use carbide_core::draw::shape::triangle::Triangle;
 use carbide_core::render::{CarbideTransform, InnerRenderContext};
 use carbide_core::text::{InnerTextContext, TextId};
 use carbide_core::widget::FilterId;
 
-use crate::gradient::Gradient;
+use crate::gradient::{Dashes, Gradient};
 use crate::render_context::TargetState::{Free, Used};
 use crate::render_pass_command::{RenderPass, RenderPassCommand, WGPUBindGroup};
 use crate::vertex::Vertex;
@@ -17,6 +17,7 @@ use crate::vertex::Vertex;
 #[derive(Debug)]
 pub struct WGPURenderContext {
     style_stack: Vec<WGPUStyle>,
+    stroke_dash_stack: Vec<Option<StrokeDashPattern>>,
     stencil_stack: Vec<Range<u32>>,
     scissor_stack: Vec<Rect>,
     uniform_stack: Vec<(Uniform, usize)>,
@@ -34,6 +35,7 @@ pub struct WGPURenderContext {
     render_pass_inner: Vec<RenderPassCommand>,
     current_bind_group: Option<WGPUBindGroup>,
     current_gradient: Option<Gradient>,
+    current_stroke_dash: Option<StrokeDashPattern>,
 
     finished: bool,
     targets: TargetStates,
@@ -104,6 +106,7 @@ impl WGPURenderContext {
     pub fn new() -> WGPURenderContext {
         WGPURenderContext {
             style_stack: vec![],
+            stroke_dash_stack: vec![],
             stencil_stack: vec![],
             scissor_stack: vec![],
             uniform_stack: vec![(Uniform {
@@ -135,6 +138,7 @@ impl WGPURenderContext {
             masked: false,
             targets: TargetStates::new(),
             current_target: 0,
+            current_stroke_dash: None,
         }
     }
 
@@ -149,6 +153,7 @@ impl WGPURenderContext {
         self.scissor_stack.clear();
         self.mask_target_stack.clear();
         self.filter_target_stack.clear();
+        self.stroke_dash_stack.clear();
 
         self.uniform_stack.clear();
         self.uniforms.clear();
@@ -168,12 +173,14 @@ impl WGPURenderContext {
             luminance_shift: 0.0,
             color_invert: false,
         }, 0));
+        self.stroke_dash_stack.push(None);
 
         self.stencil_stack.clear();
         self.finished = false;
         self.vertices.clear();
         self.current_bind_group = None;
         self.current_gradient = None;
+        self.current_stroke_dash = None;
         self.skip_rendering = false;
         self.masked = false;
         self.current_target = 0;
@@ -272,11 +279,7 @@ impl WGPURenderContext {
         if needs_update {
             self.current_gradient = Some(gradient.clone());
 
-            self.push_command(RenderPassCommand::Gradient {
-                index: self.gradients.len()
-            });
-
-            self.gradients.push(gradient.clone());
+            self.push_command(RenderPassCommand::Gradient(gradient.clone()));
         }
     }
 }
@@ -582,7 +585,47 @@ impl InnerRenderContext for WGPURenderContext {
             },
         };
 
-        let mode = if gradient { MODE_GEOMETRY_DASH } else { MODE_GEOMETRY };
+        let new_stroke_dash = self.stroke_dash_stack.last().unwrap();
+
+        if &self.current_stroke_dash != new_stroke_dash {
+            if let Some(new_stroke_dash) = new_stroke_dash {
+                assert_ne!(new_stroke_dash.pattern.len(), 0);
+                let repeat = new_stroke_dash.pattern.len() % 2 == 0;
+
+                let pattern_count = new_stroke_dash.pattern.len();
+                let count = if repeat { pattern_count * 2 } else { pattern_count };
+
+                assert!(count <= 16);
+
+                let mut dashes = [0.0f32; 16];
+                let mut total_dash_width = 0.0;
+
+                for i in 0..count {
+                    dashes[i] = (new_stroke_dash.pattern[i % pattern_count] as f32).abs();
+                    total_dash_width += dashes[i];
+                }
+
+                let offset = total_dash_width - new_stroke_dash.offset as f32 % total_dash_width;
+
+                self.push_command(RenderPassCommand::StrokeDashing (Dashes {
+                    dashes,
+                    dash_count: count as u32,
+                    start_cap: 0,
+                    end_cap: 0,
+                    total_dash_width,
+                    dash_offset: offset,
+                }));
+            }
+            self.current_stroke_dash = self.stroke_dash_stack.last().unwrap().clone();
+        }
+
+        let mode = match (gradient, self.current_stroke_dash.is_some()) {
+            (false, false) => MODE_GEOMETRY,
+            (false, true) => MODE_GEOMETRY_DASH,
+            (true, false) => MODE_GRADIENT_GEOMETRY,
+            (true, true) => MODE_GRADIENT_GEOMETRY_DASH,
+        };
+
         let mode = if self.masked { mode | 0b100000 } else { mode };
 
         let start = self.vertices.len();
@@ -631,6 +674,14 @@ impl InnerRenderContext for WGPURenderContext {
 
     fn pop_style(&mut self) {
         assert!(self.style_stack.pop().is_some(), "A style was popped, when no style is present.")
+    }
+
+    fn stroke_dash_pattern(&mut self, pattern: Option<StrokeDashPattern>) {
+        self.stroke_dash_stack.push(pattern);
+    }
+
+    fn pop_stroke_dash_pattern(&mut self) {
+        self.stroke_dash_stack.pop();
     }
 
     fn image(&mut self, id: Option<ImageId>, bounding_box: Rect, source_rect: Rect, mut mode: u32) {

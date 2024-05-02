@@ -1,6 +1,7 @@
 use std::fmt::{Debug, Formatter};
 
 use lyon::algorithms::path::Path;
+use lyon::math::point;
 use lyon::path::Side;
 use lyon::tessellation::{
     BuffersBuilder, FillOptions, FillTessellator, FillVertex, StrokeOptions, StrokeTessellator,
@@ -33,16 +34,16 @@ where
 }
 
 pub trait CanvasContext: Clone + 'static {
-    fn call(&mut self, area: Rect, context: Context, env: &mut Environment) -> Context;
+    fn call(&mut self, area: Rect, context: &mut Context, env: &mut Environment);
 }
 
-impl<T> CanvasContext for T where T: Fn(Rect, Context, &mut Environment) -> Context + Clone + 'static {
-    fn call(&mut self, area: Rect, context: Context, env: &mut Environment) -> Context {
+impl<T> CanvasContext for T where T: Fn(Rect, &mut Context, &mut Environment) + Clone + 'static {
+    fn call(&mut self, area: Rect, context: &mut Context, env: &mut Environment) {
         self(area, context, env)
     }
 }
 
-type DefaultCanvasContext = fn(Rect, Context, &mut Environment) -> Context;
+type DefaultCanvasContext = fn(Rect, &mut Context, &mut Environment);
 
 impl Canvas<DefaultCanvasContext> {
 
@@ -123,7 +124,8 @@ impl<C: CanvasContext> Canvas<C> {
             .iter()
             .enumerate()
             .map(|(e, index)| {
-                let dir = geometry.points[e / 3];
+                //let dir = geometry.points[e / 3];
+                let dir = (point(0.0, 0.0), point(400.0, 400.0), 0.0);
                 (geometry.vertices[*index as usize].0, (Position::new(dir.0.x as f64, dir.0.y as f64), Position::new(dir.1.x as f64, dir.1.y as f64), dir.2, geometry.vertices[*index as usize].1))
             });
 
@@ -151,11 +153,11 @@ impl<C: CanvasContext> Shape for Canvas<C> {
     }
 
     fn triangles(&mut self, env: &mut Environment) -> Vec<Triangle<Position>> {
-        let context = Context::new();
+        let mut context = Context::new();
 
         let rectangle = Rect::new(self.position(), self.dimension());
 
-        let context = (self.context).call(rectangle, context, env);
+        self.context.call(rectangle, &mut context, env);
 
         let paths = context.to_paths(self.position(), env);
         let mut triangles = vec![];
@@ -165,8 +167,12 @@ impl<C: CanvasContext> Shape for Canvas<C> {
                 ShapeStyleWithOptions::Fill(fill_options, _) => {
                     triangles.extend(self.get_fill_geometry(path, fill_options));
                 }
-                ShapeStyleWithOptions::Stroke(stroke_options, _) => {
-                    //triangles.extend(self.get_stroke_geometry(path, stroke_options));
+                ShapeStyleWithOptions::Stroke(stroke_options, _, _) => {
+                    triangles.extend(self.get_stroke_geometry(path, stroke_options).iter().map(|a| Triangle([
+                        a.0[0].0,
+                        a.0[1].0,
+                        a.0[2].0
+                    ])));
                 }
             }
         }
@@ -177,10 +183,10 @@ impl<C: CanvasContext> Shape for Canvas<C> {
 
 impl<C: CanvasContext> Render for Canvas<C> {
     fn render(&mut self, render_context: &mut RenderContext) {
-        let context = Context::new();
+        let mut context = Context::new();
 
         let rectangle = Rect::new(self.position(), self.dimension());
-        let context = self.context.call(rectangle, context, render_context.env);
+        self.context.call(rectangle, &mut context, render_context.env);
 
         let paths = context.to_paths(self.position(), render_context.env);
 
@@ -191,9 +197,11 @@ impl<C: CanvasContext> Render for Canvas<C> {
                         this.geometry(&self.get_fill_geometry(path, fill_options))
                     })
                 }
-                ShapeStyleWithOptions::Stroke(stroke_options, style) => {
-                    render_context.style(style.convert(self.position, self.dimension), |this| {
-                        this.stroke(&self.get_stroke_geometry(path, stroke_options))
+                ShapeStyleWithOptions::Stroke(stroke_options, style, dashes) => {
+                    render_context.style(style.convert(self.position, self.dimension), |render_context| {
+                        render_context.stroke_dash_pattern(dashes, |render_context| {
+                            render_context.stroke(&self.get_stroke_geometry(path, stroke_options))
+                        })
                     })
                 }
             }

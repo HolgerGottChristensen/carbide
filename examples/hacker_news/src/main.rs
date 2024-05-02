@@ -14,7 +14,6 @@ use carbide::environment::{EnvironmentColor, EnvironmentFontSize, IntoColorReadS
 use carbide::state::{AnyReadState, AnyState, IndexState, LocalState, Map1, Map2, ReadState, ReadStateExtNew, State, StateExt};
 use carbide::text::FontWeight;
 use carbide::widget::*;
-use carbide::widget::WidgetExt;
 
 use crate::article::Article;
 use crate::item::HNItem;
@@ -183,10 +182,12 @@ fn detail_view(selected: impl State<T=Article>, content: impl State<T=Option<HNI
         None => Text::new("No URL for the article").boxed()
     });
 
-    let comments = ui!(match content {
-        Some(content) => Scroll::new(Text::new(Map1::read_map(content, |c| format!("{:#?}", c))).boxed()).clip(),
-        None => Rectangle::new().fill(EnvironmentColor::Green)
-    });
+    let comments = ui!(
+        match content {
+            Some(content) => Scroll::new(Text::new(Map1::read_map(content, |c| format!("{:#?}", c))).boxed()).clip(),
+            None => Rectangle::new().fill(EnvironmentColor::Green)
+        }
+    );
 
     ZStack::new((
         Rectangle::new().fill(EnvironmentColor::SecondarySystemBackground),

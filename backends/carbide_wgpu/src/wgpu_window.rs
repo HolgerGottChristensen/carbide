@@ -7,6 +7,7 @@ use std::sync::Arc;
 use cgmath::{Matrix4, Vector3};
 use futures::executor::block_on;
 use raw_window_handle::HasRawWindowHandle;
+use typed_arena::Arena;
 use wgpu::{Adapter, BindGroup, BindGroupLayout, Buffer, BufferUsages, CommandEncoder, Device, Extent3d, ImageCopyTexture, Instance, PipelineLayout, Queue, RenderPassDepthStencilAttachment, RenderPipeline, Sampler, ShaderModule, Surface, SurfaceConfiguration, SurfaceTexture, Texture, TextureFormat, TextureUsages, TextureView};
 use wgpu::util::{BufferInitDescriptor, DeviceExt};
 
@@ -29,9 +30,9 @@ use carbide_winit::window::{Window as WinitWindow, WindowBuilder};
 use crate::{image_context, render_pass_ops, RenderPassOps};
 use crate::application::{EVENT_LOOP, WINDOW_IDS};
 use crate::bind_group_layouts::{atlas_bind_group_layout, filter_buffer_bind_group_layout, filter_texture_bind_group_layout, gradient_buffer_bind_group_layout, main_bind_group_layout, uniform_bind_group_layout, uniform_bind_group_layout2};
-use crate::bind_groups::{filter_buffer_bind_group, gradient_buffer_bind_group, uniforms_to_bind_group, size_to_uniform_bind_group};
+use crate::bind_groups::{filter_buffer_bind_group, gradient_dashes_bind_group, uniforms_to_bind_group, size_to_uniform_bind_group};
 use crate::filter::Filter;
-use crate::gradient::Gradient;
+use crate::gradient::{Dashes, Gradient};
 use crate::image::BindGroupExtended;
 use crate::pipeline::create_pipelines;
 use crate::render_context::{Uniform, WGPURenderContext};
@@ -117,7 +118,7 @@ thread_local!(pub static MAIN_TEXTURE_BIND_GROUP_LAYOUT: BindGroupLayout = {
     })
 });
 
-thread_local!(pub static GRADIENT_BIND_GROUP_LAYOUT: BindGroupLayout = {
+thread_local!(pub static GRADIENT_DASHES_BIND_GROUP_LAYOUT: BindGroupLayout = {
     DEVICE_QUEUE.with(|(device, _)| {
         gradient_buffer_bind_group_layout(&device)
     })
@@ -145,7 +146,7 @@ thread_local!(pub static RENDER_PIPELINE_LAYOUT: PipelineLayout = {
     DEVICE_QUEUE.with(|(device, _)| {
         UNIFORM_BIND_GROUP_LAYOUT.with(|uniform_bind_group_layout| {
             MAIN_TEXTURE_BIND_GROUP_LAYOUT.with(|main_bind_group_layout| {
-                GRADIENT_BIND_GROUP_LAYOUT.with(|gradient_bind_group_layout| {
+                GRADIENT_DASHES_BIND_GROUP_LAYOUT.with(|gradient_bind_group_layout| {
                     ATLAS_BIND_GROUP_LAYOUT.with(|atlas_bind_group_layout| {
                         main_pipeline_layout(
                             device,
@@ -245,7 +246,9 @@ pub struct WGPUWindow<T: ReadState<T=String>> {
     pub(crate) targets: Vec<RenderTarget>,
 
     pub(crate) uniform_bind_group: BindGroup,
-    pub(crate) gradient_bind_group: BindGroup,
+    pub(crate) gradient_buffer: Buffer,
+    pub(crate) dashes_buffer: Buffer,
+    pub(crate) gradient_dashes_bind_group: BindGroup,
 
     pub(crate) carbide_to_wgpu_matrix: Matrix4<f32>,
     pub(crate) vertex_buffer: (Buffer, usize),
@@ -345,30 +348,42 @@ impl WGPUWindow<String> {
 
             let matrix = Self::calculate_carbide_to_wgpu_matrix(pixel_dimensions, scale_factor);
 
-            let gradient_bind_group = GRADIENT_BIND_GROUP_LAYOUT.with(|gradient_bind_group_layout| {
-                let gradient = DrawGradient {
-                    colors: vec![],
-                    ratios: vec![],
-                    gradient_type: GradientType::Linear,
-                    gradient_repeat: GradientRepeat::Clamp,
-                    start: Default::default(),
-                    end: Default::default(),
-                    color_space: ColorSpace::Linear,
-                };
+            let gradient = DrawGradient {
+                colors: vec![],
+                ratios: vec![],
+                gradient_type: GradientType::Linear,
+                gradient_repeat: GradientRepeat::Clamp,
+                start: Default::default(),
+                end: Default::default(),
+                color_space: ColorSpace::Linear,
+            };
 
-                let gradient = Gradient::convert(&gradient);
-                let gradient_buffer =
-                    device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
-                        label: Some("Gradient Buffer"),
-                        contents: &*gradient.as_bytes(),
-                        usage: wgpu::BufferUsages::STORAGE,
-                    });
-                gradient_buffer_bind_group(
-                    &device,
-                    &gradient_bind_group_layout,
-                    &gradient_buffer,
-                )
+            let gradient = Gradient::convert(&gradient);
+            let gradient_buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
+                label: Some("Gradient Buffer"),
+                contents: &*gradient.as_bytes(),
+                usage: wgpu::BufferUsages::STORAGE,
             });
+
+            let dashes = Dashes {
+                dashes: [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0],
+                dash_count: 2,
+                start_cap: 0,
+                end_cap: 0,
+                total_dash_width: 2.0,
+                dash_offset: 0.0,
+            };
+
+            let dashes_buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
+                label: Some("Dashes Buffer"),
+                contents: &*dashes.as_bytes(),
+                usage: wgpu::BufferUsages::STORAGE,
+            });
+
+            let gradient_dashed_bind_group = GRADIENT_DASHES_BIND_GROUP_LAYOUT.with(|layout| {
+                gradient_dashes_bind_group(&device, layout, &gradient_buffer, &dashes_buffer)
+            });
+
 
             let uniform_bind_group = UNIFORM_BIND_GROUP_LAYOUT.with(|uniform_bind_group_layout| {
                 uniforms_to_bind_group(device, uniform_bind_group_layout, matrix, 0.0, 0.0, 0.0, false)
@@ -431,7 +446,9 @@ impl WGPUWindow<String> {
                     RenderTarget::new(size.width, size.height)
                 ],
                 uniform_bind_group,
-                gradient_bind_group,
+                gradient_buffer,
+                dashes_buffer,
+                gradient_dashes_bind_group: gradient_dashed_bind_group,
                 carbide_to_wgpu_matrix: matrix,
                 vertex_buffer: (vertex_buffer, 0),
                 second_vertex_buffer,
@@ -794,7 +811,7 @@ impl<T: ReadState<T=String>> Render for WGPUWindow<T> {
 
             UNIFORM_BIND_GROUP_LAYOUT.with(|uniform_bind_group_layout| {
                 Self::ensure_uniforms_in_buffer(device, &self.carbide_to_wgpu_matrix, self.render_context.uniforms(), uniform_bind_group_layout, &mut uniform_bind_groups);
-                Self::ensure_gradients_in_buffer(device, self.render_context.gradients(), uniform_bind_group_layout, &mut gradient_bind_groups);
+                //Self::ensure_gradients_in_buffer(device, self.render_context.gradients(), uniform_bind_group_layout, &mut gradient_bind_groups);
             });
         });
 
@@ -975,18 +992,35 @@ impl<T: ReadState<T=String>> WGPUWindow<T> {
 
     fn ensure_gradients_in_buffer(device: &Device, gradients: &Vec<Gradient>, _uniform_bind_group_layout: &BindGroupLayout, gradient_bind_groups: &mut Vec<BindGroup>) {
         for gradient in gradients {
-            GRADIENT_BIND_GROUP_LAYOUT.with(|gradient_bind_group_layout| {
+            GRADIENT_DASHES_BIND_GROUP_LAYOUT.with(|gradient_bind_group_layout| {
                 let gradient_buffer =
                     device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
                         label: Some("Gradient Buffer"),
                         contents: &*gradient.as_bytes(),
                         usage: wgpu::BufferUsages::STORAGE,
                     });
+
+                let dashes = Dashes {
+                    dashes: [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0],
+                    dash_count: 2,
+                    start_cap: 0,
+                    end_cap: 0,
+                    total_dash_width: 2.0,
+                    dash_offset: 0.0,
+                };
+                let dashes_buffer =
+                    device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
+                        label: Some("Dashes Buffer"),
+                        contents: &*dashes.as_bytes(),
+                        usage: wgpu::BufferUsages::STORAGE,
+                    });
+
                 gradient_bind_groups.push(
-                    gradient_buffer_bind_group(
+                    gradient_dashes_bind_group(
                         &device,
                         &gradient_bind_group_layout,
                         &gradient_buffer,
+                        &dashes_buffer
                     )
                 );
 
@@ -1019,7 +1053,7 @@ impl<T: ReadState<T=String>> WGPUWindow<T> {
         render_pass.set_vertex_buffer(0, self.second_vertex_buffer.slice(..));
         render_pass.set_bind_group(0, &self.targets[0].bind_group, &[]);
         render_pass.set_bind_group(1, &self.uniform_bind_group, &[]);
-        render_pass.set_bind_group(2, &self.gradient_bind_group, &[]);
+        render_pass.set_bind_group(2, &self.gradient_dashes_bind_group, &[]);
         render_pass.set_bind_group(3, atlas_cache_bind_group, &[]);
         render_pass.set_bind_group(4, &bind_groups[&ImageId::default()].bind_group, &[]);
 
@@ -1029,11 +1063,12 @@ impl<T: ReadState<T=String>> WGPUWindow<T> {
     fn process_render_passes(
         &self,
         render_passes: Vec<RenderPass>,
+        device: &Device,
         encoder: &mut CommandEncoder,
         render_pipelines: &RenderPipelines,
         bind_groups: &HashMap<ImageId, BindGroupExtended>,
         uniform_bind_groups: &Vec<BindGroup>,
-        gradient_bind_groups: &Vec<BindGroup>,
+        gradient_dashes_bind_group_layout: &BindGroupLayout,
         filter_bind_groups: &HashMap<FilterId, BindGroup>,
         size: PhysicalSize<u32>,
         scale_factor: Scalar,
@@ -1047,8 +1082,13 @@ impl<T: ReadState<T=String>> WGPUWindow<T> {
         let mut current_main_render_pipeline = &render_pipelines.render_pipeline_no_mask;
         let current_vertex_buffer_slice = self.vertex_buffer.0.slice(..);
         let mut current_uniform_bind_group = &self.uniform_bind_group;
-        let mut current_gradient_bind_group = &self.gradient_bind_group;
+        let mut current_gradient_dashes_bind_group = &self.gradient_dashes_bind_group;
+        let mut current_gradient_buffer = &self.gradient_buffer;
+        let mut current_dashes_buffer = &self.dashes_buffer;
         let mut invalid_scissor = false;
+
+        let mut buffers = Arena::new();
+        let mut gradient_dashed_bind_groups = Arena::new();
 
         // println!("{:#?}", render_passes);
 
@@ -1086,7 +1126,7 @@ impl<T: ReadState<T=String>> WGPUWindow<T> {
                     render_pass.set_vertex_buffer(0, current_vertex_buffer_slice);
                     render_pass.set_bind_group(0, &bind_groups[&ImageId::default()].bind_group, &[]);
                     render_pass.set_bind_group(1, current_uniform_bind_group, &[]);
-                    render_pass.set_bind_group(2, current_gradient_bind_group, &[]);
+                    render_pass.set_bind_group(2, current_gradient_dashes_bind_group, &[]);
                     render_pass.set_bind_group(3, atlas_cache_bind_group, &[]);
                     render_pass.set_bind_group(4, &bind_groups[&ImageId::default()].bind_group, &[]);
 
@@ -1151,9 +1191,39 @@ impl<T: ReadState<T=String>> WGPUWindow<T> {
                                 current_uniform_bind_group = &uniform_bind_groups[uniform_bind_group_index];
                                 render_pass.set_bind_group(1, current_uniform_bind_group, &[]);
                             }
-                            RenderPassCommand::Gradient { index } => {
-                                current_gradient_bind_group = &gradient_bind_groups[index];
-                                render_pass.set_bind_group(2, current_gradient_bind_group, &[]);
+                            RenderPassCommand::Gradient(gradient) => {
+                                current_gradient_buffer =
+                                    buffers.alloc(device.create_buffer_init(&BufferInitDescriptor {
+                                        label: Some("Gradient Buffer"),
+                                        contents: &*gradient.as_bytes(),
+                                        usage: BufferUsages::STORAGE,
+                                    }));
+
+                                current_gradient_dashes_bind_group = gradient_dashed_bind_groups.alloc(gradient_dashes_bind_group(
+                                    device,
+                                    gradient_dashes_bind_group_layout,
+                                    current_gradient_buffer,
+                                    current_dashes_buffer,
+                                ));
+
+                                render_pass.set_bind_group(2, current_gradient_dashes_bind_group, &[]);
+                            }
+                            RenderPassCommand::StrokeDashing(dashes) => {
+                                current_dashes_buffer =
+                                    buffers.alloc(device.create_buffer_init(&BufferInitDescriptor {
+                                        label: Some("Dashes Buffer"),
+                                        contents: &*dashes.as_bytes(),
+                                        usage: BufferUsages::STORAGE,
+                                    }));
+
+                                current_gradient_dashes_bind_group = gradient_dashed_bind_groups.alloc(gradient_dashes_bind_group(
+                                    device,
+                                    gradient_dashes_bind_group_layout,
+                                    current_gradient_buffer,
+                                    current_dashes_buffer,
+                                ));
+
+                                render_pass.set_bind_group(2, current_gradient_dashes_bind_group, &[]);
                             }
                             RenderPassCommand::SetMaskBindGroup { bind_group } => {
                                 match bind_group {
@@ -1246,40 +1316,42 @@ impl<T: ReadState<T=String>> WGPUWindow<T> {
         DEVICE_QUEUE.with(|(device, queue)| {
             BIND_GROUPS.with(|bind_groups| {
                 ATLAS_CACHE_BIND_GROUP.with(|atlas_cache_bind_group| {
-                    FILTER_BIND_GROUPS.with(|filter_bind_groups| {
-                        PIPELINES.with(|render_pipelines| {
-                            let render_pipelines = &render_pipelines.borrow()[self.render_pipelines_index].1;
-                            let filter_bind_groups = &mut *filter_bind_groups.borrow_mut();
-                            let bind_groups = &mut *bind_groups.borrow_mut();
+                    GRADIENT_DASHES_BIND_GROUP_LAYOUT.with(|gradient_dashes_bind_group_layout| {
+                        FILTER_BIND_GROUPS.with(|filter_bind_groups| {
+                            PIPELINES.with(|render_pipelines| {
+                                let render_pipelines = &render_pipelines.borrow()[self.render_pipelines_index].1;
+                                let filter_bind_groups = &mut *filter_bind_groups.borrow_mut();
+                                let bind_groups = &mut *bind_groups.borrow_mut();
 
-                            let mut encoder = device
-                                .create_command_encoder(&wgpu::CommandEncoderDescriptor {
-                                    label: Some("Render Encoder"),
-                                });
+                                let mut encoder = device
+                                    .create_command_encoder(&wgpu::CommandEncoderDescriptor {
+                                        label: Some("Render Encoder"),
+                                    });
 
-                            let size = self.inner.inner_size();
+                                let size = self.inner.inner_size();
 
-                            // Handle update of atlas cache
-                            Self::update_atlas_cache(device, &mut encoder, ctx);
+                                // Handle update of atlas cache
+                                Self::update_atlas_cache(device, &mut encoder, ctx);
 
-                            // Update filter bind groups
-                            Self::update_filter_bind_groups(device, filter_bind_groups, env, size);
+                                // Update filter bind groups
+                                Self::update_filter_bind_groups(device, filter_bind_groups, env, size);
 
-                            // Ensure the images are added as bind groups
-                            //Self::ensure_images_exist_as_bind_groups(device, queue, bind_groups, env);
+                                // Ensure the images are added as bind groups
+                                //Self::ensure_images_exist_as_bind_groups(device, queue, bind_groups, env);
 
-                            self.process_render_passes(render_passes, &mut encoder, render_pipelines, bind_groups, &uniform_bind_groups, &gradient_bind_groups, filter_bind_groups, size, env.scale_factor(), atlas_cache_bind_group);
+                                self.process_render_passes(render_passes, &*device, &mut encoder, render_pipelines, bind_groups, &uniform_bind_groups, gradient_dashes_bind_group_layout, filter_bind_groups, size, env.scale_factor(), atlas_cache_bind_group);
 
-                            // This blocks until a new frame is available.
-                            let output = self.surface.get_current_texture()?;
+                                // This blocks until a new frame is available.
+                                let output = self.surface.get_current_texture()?;
 
-                            // Render from the texture to the swap chain
-                            self.render_texture_to_swapchain(&mut encoder, &render_pipelines.render_pipeline_no_mask, &output, atlas_cache_bind_group, bind_groups);
+                                // Render from the texture to the swap chain
+                                self.render_texture_to_swapchain(&mut encoder, &render_pipelines.render_pipeline_no_mask, &output, atlas_cache_bind_group, bind_groups);
 
-                            // submit will accept anything that implements IntoIter
-                            queue.submit(std::iter::once(encoder.finish()));
-                            output.present();
-                            Ok(())
+                                // submit will accept anything that implements IntoIter
+                                queue.submit(std::iter::once(encoder.finish()));
+                                output.present();
+                                Ok(())
+                            })
                         })
                     })
                 })
@@ -1390,3 +1462,5 @@ impl<T: ReadState<T=String>> Drop for WGPUWindow<T> {
         });
     }
 }
+
+impl<T: ReadState<T=String>> WidgetExt for WGPUWindow<T> {}

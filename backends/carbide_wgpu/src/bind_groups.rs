@@ -102,17 +102,24 @@ pub(crate) fn filter_buffer_bind_group(
     })
 }
 
-pub(crate) fn gradient_buffer_bind_group(
+pub(crate) fn gradient_dashes_bind_group(
     device: &Device,
     gradient_bind_group_layout: &BindGroupLayout,
-    buffer: &Buffer,
+    gradient_buffer: &Buffer,
+    dashes_buffer: &Buffer,
 ) -> BindGroup {
     device.create_bind_group(&wgpu::BindGroupDescriptor {
         layout: &gradient_bind_group_layout,
-        entries: &[wgpu::BindGroupEntry {
-            binding: 0,
-            resource: wgpu::BindingResource::Buffer(buffer.as_entire_buffer_binding()),
-        }],
-        label: Some("gradient_bind_group"),
+        entries: &[
+            wgpu::BindGroupEntry {
+                binding: 0,
+                resource: wgpu::BindingResource::Buffer(gradient_buffer.as_entire_buffer_binding()),
+            },
+            wgpu::BindGroupEntry {
+                binding: 1,
+                resource: wgpu::BindingResource::Buffer(dashes_buffer.as_entire_buffer_binding()),
+            },
+        ],
+        label: Some("gradient_dashes_bind_group"),
     })
 }

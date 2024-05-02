@@ -1,5 +1,6 @@
-use carbide_core::draw::{Rect, ImageId};
+use carbide_core::draw::{Rect, ImageId, DrawGradient, StrokeDashPattern};
 use carbide_core::widget::FilterId;
+use crate::gradient::{Dashes, Gradient};
 
 /// A draw command that maps directly to the `wgpu::CommandEncoder` method. By returning
 /// `RenderPassCommand`s, we can avoid consuming the entire `AutoCommandBufferBuilder` itself which might
@@ -23,9 +24,8 @@ pub enum RenderPassCommand {
     Uniform {
         uniform_bind_group_index: usize,
     },
-    Gradient {
-        index: usize,
-    },
+    Gradient(Gradient),
+    StrokeDashing(Dashes),
     /// A new image requires drawing and in turn a new bind group requires setting.
     SetBindGroup {
         bind_group: WGPUBindGroup,

@@ -24,8 +24,8 @@ fn main() {
         Window::new("Hello multiple windows", Dimension::new(300.0, 200.0), ZStack::new((
             text,
             *Window::new("Hello from window 2", Dimension::new(300.0, 100.0), button),
-            //Window::new("Hello from window 3", Dimension::new(300.0, 100.0), Rectangle::new().fill(EnvironmentColor::Green)),
-            //Window::new("Hello from window 4", Dimension::new(300.0, 100.0), Rectangle::new().fill(EnvironmentColor::Yellow)),
+            //*Window::new("Hello from window 3", Dimension::new(300.0, 100.0), Rectangle::new().fill(EnvironmentColor::Green)),
+            //*Window::new("Hello from window 4", Dimension::new(300.0, 100.0), Rectangle::new().fill(EnvironmentColor::Yellow)),
         )))
     );
 

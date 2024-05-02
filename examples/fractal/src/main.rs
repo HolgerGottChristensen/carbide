@@ -106,7 +106,7 @@ impl FractalClock {
 
 
 impl CanvasContext for FractalClock {
-    fn call(&mut self, area: Rect, mut context: Context, env: &mut Environment) -> Context {
+    fn call(&mut self, area: Rect, context: &mut Context, env: &mut Environment) {
         env.request_animation_frame();
 
         let angles = Angles::current();
@@ -118,7 +118,6 @@ impl CanvasContext for FractalClock {
 
         context.set_stroke_style(self.color);
         context.set_line_cap(LineCap::Butt);
-        self.draw(center, angles, &mut context);
-        context
+        self.draw(center, angles, context);
     }
 }

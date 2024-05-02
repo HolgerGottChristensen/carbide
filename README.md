@@ -3,13 +3,12 @@
 [![docs.rs](https://docs.rs/carbide_core/badge.svg)](https://docs.rs/carbide_core/)
 [![license](https://img.shields.io/crates/l/carbide)]()
 
-Carbide is a rust GUI Framework in its experimental stages. It is build to be simple to use and simple to layout
-widgets. It is inspired by current attempts at creating desktop UI, such as SwiftUI, Flutter and Qt.
+Carbide is an attempt to create an easy-to-use, 2D library written entirely in Rust (through it is possible to integrate with rend3 for 3d ).
 
-Carbide is a fork of the earlier repository conrod (which is still being worked on and maintained). Most of the core 
-code has changed since the fork was made, but some common structures will still exist.
+Carbide is an experimental Rust GUI Framework. The main focuses of the Carbide project are simplicity and composability. It is inspired by current attempts at creating desktop UI, such as SwiftUI, Flutter and Qt.
 
-Carbide is an attempt to create an easy-to-use, 2D library written entirely in Rust.
+Carbide is a fork of the earlier repository conrod (which is still being worked on and maintained). Since the fork, almost all the code has been rewritten, so the two
+are not really comparable anymore.
 
 The project differentiates itself from other attempts (druid, egui, iced, ...) by using the mindset of SwiftUI layouting
 along with being a retained mode framework.
@@ -30,34 +29,33 @@ default accent color.
 ![Counter application](https://user-images.githubusercontent.com/11473146/156854780-ae51c267-ed5b-4f73-9999-521edf763e53.png)
 
 ```rust
-use carbide_controls::{capture, Button};
-use carbide_core::draw::Dimension;
-use carbide_core::prelude::*;
-use carbide_core::text::FontFamily;
-use carbide_core::window::TWindow;
-use carbide_wgpu::{Application, Window};
+use carbide::{Application, Window, a};
+use carbide::draw::Dimension;
+use carbide::state::LocalState;
+use carbide::widget::{Text, VStack, WidgetExt};
+use carbide::controls::{Button};
+use carbide::environment::EnvironmentFontSize::LargeTitle;
 
 fn main() {
-  let mut application = Application::new();
-
-  let family =
-          FontFamily::new_from_paths("NotoSans", vec!["fonts/NotoSans/NotoSans-Regular.ttf"]);
-  application.add_font_family(family);
+  let mut application = Application::new()
+          .with_asset_fonts();
 
   let counter = LocalState::new(0);
 
-  let text = Text::new(counter.clone()).font_size(EnvironmentFontSize::LargeTitle);
+  let text = Text::new(counter.clone()).font_size(LargeTitle);
 
-  let button = Button::new("Increase counter")
-          .on_click(capture!([counter], |_env: &mut Environment| {
-            *counter = *counter + 1;
-        }))
-          .frame(200, 30);
+  let button = Button::new_primary("Increase counter", a!(|_, _| {
+        *$counter += 1;
+    }))
+          .frame(200.0, 30.0);
 
   application.set_scene(Window::new(
     "My first counter",
-    Dimension::new(235.0, 300.0),
-    VStack::new(vec![text, button])
+    Dimension::new(300.0, 235.0),
+    VStack::new((
+      text,
+      button
+    ))
   ).close_application_on_window_close());
 
   application.launch()

@@ -6,7 +6,7 @@ use carbide_core::widget::*;
 use carbide_wgpu::{Application, Window};
 
 fn main() {
-    let text_state = LocalState::new(Ok(0f64));
+    let text_state = LocalState::new(Ok(0i64));
     let text_state2 = LocalState::new("Hello world!".to_string());
 
     let mut application = Application::new()

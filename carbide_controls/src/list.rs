@@ -547,15 +547,13 @@ impl<T: StateContract, W: Widget, U: Delegate<T, W>> Delegate<T, Box<dyn AnyWidg
             TreeDisclosure::Arrow => {
                 let rotation = Map1::read_map(opened.clone(), |b| if *b { 90.0 } else { 0.0 });
 
-                Canvas::new(|_: Rect, mut context: Context, _: &mut Environment| {
+                Canvas::new(|_: Rect, context: &mut Context, _: &mut Environment| {
                     context.move_to(8.0, 5.0);
                     context.line_to(13.0, 10.0);
                     context.line_to(8.0, 15.0);
                     context.set_stroke_style(EnvironmentColor::DarkText);
                     context.set_line_width(1.5);
                     context.stroke();
-
-                    context
                 })
                     .frame(20.0, 20.0)
                     .rotation_effect(rotation)

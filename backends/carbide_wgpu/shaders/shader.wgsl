@@ -31,11 +31,12 @@ struct Gradient {
 }
 
 struct Dashes {
-    dashes: array<f32,2u>,
+    dashes: array<f32,16u>,
     dash_count: u32,
     start_cap: u32,
     end_cap: u32,
     total_dash_width: f32,
+    dash_offset: f32,
 }
 
 @group(0) @binding(0)
@@ -52,6 +53,9 @@ var<uniform> color_filter: ColorFilter;
 
 @group(2) @binding(0)
 var<storage, read> gradient: Gradient;
+
+@group(2) @binding(1)
+var<storage, read> dashes: Dashes;
 
 @group(3) @binding(0)
 var atlas_texture: texture_2d<f32>;
@@ -101,74 +105,78 @@ fn main_fs(in: VertexOutput) -> @location(0) vec4<f32> {
         case 7u: {
             col = gradient_color(in.gradient_coord) * atlas_pixel.a;
         }
-        case 8u: {
-            let line_width = in.line_utils.y;
 
-            var dashes = Dashes(
-                array<f32, 2u>(0.0, 1.0), // Dashes - Must be even length array
-                2u, // Number of dashes
-                4u, // Start cap
-                3u, // End cap
-                1.0 // Total dash length cap
-            );
+        // Stroke dashing mode
+        case 8u, 9u: {
+            // If the mode is even, we use the vertex color, otherwise the gradient color
+            if (mode % 2u == 0u) {
+                col = in.color;
+            } else {
+                col = gradient_color(in.gradient_coord);
+            }
+
+            let line_width = in.line_utils.y;
+            let line_offset = in.line_utils.x;
 
             let total_dash_length = dashes.total_dash_width * line_width;
 
+            // The direction of the line segment containing this fragment
             let dir = normalize(in.line_coords.zw - in.line_coords.xy);
+            // The length of the line segment containing this fragment
             let len = length(in.line_coords.zw - in.line_coords.xy);
 
-            let s = dot(in.position.xy, dir);
+            // Project the fragment onto the line segment, to get the x distance from the first position of the line segment.
+            let distance_x = dot(in.gradient_coord.xy - in.line_coords.xy, dir);
 
-            let s0 = dot(in.gradient_coord.xy - in.line_coords.xy, dir);
+            // Clamp the distance and apply the offset of the line segment and the dash offset.
+            let clamped_distance = clamp(distance_x, 0.0, len) + line_offset + dashes.dash_offset * line_width;
 
-            let s1 = clamp(s0, 0.0, len) + in.line_utils.x;
+            // Project the fragment onto the line segment, but flipped 90 degrees.
+            // This gives us the y distance from the line segment. We take the absolute
+            // value, because we might be on either side of the line segment.
+            let distance_y = abs(dot(in.gradient_coord.xy - in.line_coords.xy, vec2<f32>(dir.y, -dir.x)));
 
-            let s2 = abs(dot(in.gradient_coord.xy - in.line_coords.xy, vec2<f32>(dir.y, -dir.x)));
+            // Mod the distance to get the position within the dash range. This is because
+            // the dashes are repeating over the dash pattern.
+            let s3 = clamped_distance % total_dash_length;
 
-            var c = vec4<f32>(1.0, 1.0, 1.0, 1.0);
-
-            /*var in_join = false;
-            if (s0 > len) {
-                in_join = true;
-            }
-
-            if (s0 < 0.0) {
-                in_join = true;
-            }*/
-
-            let s3 = s1 % total_dash_length;
-
+            // Stores the start of the dash in the dash pattern.
             var start = 0.0;
+
+            // For each dash in the dash pattern
             for (var i = 0u; i < dashes.dash_count; i++) {
+                // The end of the current dash within the dash pattern
                 let end = start + dashes.dashes[i] * line_width;
 
-                // We are somewhere between "start" and "end".
+                // We are somewhere between start and end of the dash (or gap)
                 if (s3 < end) {
 
                     // We are inside a gap
                     if (i % 2u == 1u) {
                         var in_cap = false;
-                        if (s3 - start < line_width / 2.0) { // We are in an end cap
-                            in_cap = cap(s3 - start, s2, line_width, dashes.end_cap);
-                        } else if (end - s3 < line_width / 2.0) { // We are in a start cap
-                            in_cap = cap(end - s3, s2, line_width, dashes.start_cap);
-                        } else { // We are in the gap
-                            in_cap = false;
+
+                        // We are in an end cap
+                        if (s3 - start < line_width / 2.0) {
+                            in_cap = cap(s3 - start, distance_y, line_width, dashes.end_cap);
+
+                        // We are in a start cap
+                        } else if (end - s3 < line_width / 2.0) {
+                            in_cap = cap(end - s3, distance_y, line_width, dashes.start_cap);
                         }
 
+                        // If we are inside a gap and not in a cap, we can discard the fragment
                         if (!in_cap) {
-                            c = c * 0.5;
-                            c.a = 1.0;
-                            //discard;
+                            discard;
                         }
                     }
+
+                    // If we are not in a gap, we just break, out of the loop
                     break;
                 }
 
+                // The start of the next dash is the end of the previous
                 start = end;
             }
-
-            col = c;
         }
 
         default: {

@@ -6,7 +6,7 @@ use lyon::tessellation::{FillOptions, LineCap, LineJoin, StrokeOptions};
 
 use carbide_core::state::AnyReadState;
 
-use crate::draw::{Dimension, Position};
+use crate::draw::{Dimension, Position, StrokeDashCap, StrokeDashPattern};
 use crate::draw::Color;
 use crate::draw::svg_path_builder::SVGPathBuilder;
 use crate::environment::Environment;
@@ -32,6 +32,14 @@ impl Context {
 
     pub fn set_line_width(&mut self, width: f64) {
         self.generator.push(ContextAction::LineWidth(width))
+    }
+
+    pub fn set_dash_pattern(&mut self, pattern: Option<Vec<f64>>) {
+        self.generator.push(ContextAction::LineDashPattern(pattern));
+    }
+
+    pub fn set_dash_offset(&mut self, offset: f64) {
+        self.generator.push(ContextAction::LineDashOffset(offset));
     }
 
     pub fn set_line_join(&mut self, join: LineJoin) {
@@ -149,6 +157,8 @@ impl Context {
         let mut current_cap_style = LineCap::Round;
         let mut current_join_style = LineJoin::Round;
         let mut current_line_width = 2.0;
+        let mut current_dash_pattern = None;
+        let mut current_dash_offset = 0.0;
         let mut current_miter_limit = StrokeOptions::DEFAULT_MITER_LIMIT;
         let mut paths: Vec<(Path, ShapeStyleWithOptions)> = vec![];
         let mut current_builder = SVGPathBuilder::new();
@@ -242,7 +252,21 @@ impl Context {
                         .with_line_join(current_join_style);
                     let color = current_stroke_color.clone();
                     let path = current_builder.clone().build();
-                    paths.push((path, ShapeStyleWithOptions::Stroke(stroke_options, color)));
+                    let dashes = current_dash_pattern.as_ref().map(|pattern: &Vec<f64>| {
+                        StrokeDashPattern {
+                            pattern: pattern.clone(),
+                            offset: current_dash_offset,
+                            start_cap: StrokeDashCap::None,
+                            end_cap: StrokeDashCap::None,
+                        }
+                    });
+                    paths.push((path, ShapeStyleWithOptions::Stroke(stroke_options, color, dashes)));
+                }
+                ContextAction::LineDashOffset(offset) => {
+                    current_dash_offset = *offset;
+                }
+                ContextAction::LineDashPattern(pattern) => {
+                    current_dash_pattern = pattern.clone();
                 }
             }
         }
@@ -253,7 +277,7 @@ impl Context {
 
 pub enum ShapeStyleWithOptions {
     Fill(FillOptions, Style),
-    Stroke(StrokeOptions, Style),
+    Stroke(StrokeOptions, Style, Option<StrokeDashPattern>),
 }
 
 #[derive(Debug, Clone)]
@@ -272,6 +296,8 @@ enum ContextAction {
     Fill,
     Stroke,
     Close,
+    LineDashOffset(f64),
+    LineDashPattern(Option<Vec<f64>>),
     LineWidth(f64),
     LineJoin(LineJoin),
     LineCap(LineCap),

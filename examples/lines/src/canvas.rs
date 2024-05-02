@@ -12,18 +12,18 @@ use crate::line::Line;
 pub struct GraphCanvas(pub LocalState<Graph>);
 
 impl CanvasContext for GraphCanvas {
-    fn call(&mut self, area: Rect, mut context: Context, env: &mut Environment) -> Context {
+    fn call(&mut self, area: Rect, context: &mut Context, env: &mut Environment) {
         self.0.sync(env);
         let mut graph = self.0.value_mut();
         context.set_line_width(1.0);
 
         graph.calculate_lines();
 
-        draw_edges(&mut context, &mut graph);
+        draw_edges(context, &mut graph);
 
-        draw_nodes(&mut context, &mut graph);
+        draw_nodes(context, &mut graph);
 
-        draw_guides(&area, &mut context, &mut graph);
+        draw_guides(&area, context, &mut graph);
 
         match graph.editing_mode {
             EditingMode::Editing => {}
@@ -82,12 +82,10 @@ impl CanvasContext for GraphCanvas {
                 context.fill();
             }
             EditingMode::Selection { hovered, selected } => {
-                draw_selection_hovered(&mut context, &mut graph, hovered);
-                draw_selection_selected(&mut context, graph, selected);
+                draw_selection_hovered(context, &mut graph, hovered);
+                draw_selection_selected(context, graph, selected);
             }
         }
-
-        context
     }
 }
 

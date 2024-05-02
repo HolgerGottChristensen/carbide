@@ -9,6 +9,7 @@ pub use image::*;
 pub use draw_gradient::*;
 pub use draw_style::*;
 pub use angle::*;
+pub use stroke_dashes::*;
 
 mod alignment;
 mod dimension;
@@ -25,6 +26,7 @@ pub mod color;
 mod image_context;
 mod texture;
 mod angle;
+mod stroke_dashes;
 
 /// An alias over the Scalar type used throughout carbide.
 ///
@@ -49,6 +51,7 @@ pub const MODE_GRADIENT_ICON: u32 = 6;
 pub const MODE_GRADIENT_TEXT: u32 = 7;
 
 pub const MODE_GEOMETRY_DASH: u32 = 8;
+pub const MODE_GRADIENT_GEOMETRY_DASH: u32 = 9;
 
 
 /// Default dimensions to use for the glyph cache.

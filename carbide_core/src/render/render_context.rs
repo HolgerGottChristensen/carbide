@@ -1,7 +1,7 @@
 use carbide::color::Color;
 use carbide_core::draw::Rect;
 use crate::color::WHITE;
-use crate::draw::{InnerImageContext, Position, DrawStyle, ImageId};
+use crate::draw::{InnerImageContext, Position, DrawStyle, ImageId, StrokeDashPattern};
 use crate::draw::shape::triangle::Triangle;
 
 use crate::render::CarbideTransform;
@@ -144,6 +144,13 @@ impl<'a> RenderContext<'a> {
         res
     }
 
+    pub fn stroke_dash_pattern<R, F: FnOnce(&mut RenderContext) -> R>(&mut self, pattern: Option<StrokeDashPattern>, f: F) -> R {
+        self.render.stroke_dash_pattern(pattern);
+        let res = f(self);
+        self.render.pop_stroke_dash_pattern();
+        res
+    }
+
     pub fn image(&mut self, id: ImageId, bounding_box: Rect, source_rect: Rect, mode: u32) {
         self.render.image(Some(id), bounding_box, source_rect, mode);
     }
@@ -185,6 +192,9 @@ pub trait InnerRenderContext {
     fn style(&mut self, style: DrawStyle);
     fn pop_style(&mut self);
 
+    fn stroke_dash_pattern(&mut self, pattern: Option<StrokeDashPattern>);
+    fn pop_stroke_dash_pattern(&mut self);
+
     fn image(&mut self, id: Option<ImageId>, bounding_box: Rect, source_rect: Rect, mode: u32);
 
     fn text(&mut self, text: TextId, ctx: &mut dyn InnerTextContext);
@@ -223,11 +233,13 @@ impl InnerRenderContext for NoopRenderContext {
 
     fn geometry(&mut self, _geometry: &[Triangle<Position>]) {}
 
-    fn stroke(&mut self, stroke: &[Triangle<(Position, (Position, Position, f32, f32))>]) {}
+    fn stroke(&mut self, _stroke: &[Triangle<(Position, (Position, Position, f32, f32))>]) {}
 
     fn style(&mut self, _style: DrawStyle) {}
-
     fn pop_style(&mut self) {}
+
+    fn stroke_dash_pattern(&mut self, _pattern: Option<StrokeDashPattern>) {}
+    fn pop_stroke_dash_pattern(&mut self) {}
 
     fn image(&mut self, _id: Option<ImageId>, _bounding_box: Rect, _source_rect: Rect, _mode: u32) {}
 

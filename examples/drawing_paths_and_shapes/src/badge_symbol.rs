@@ -8,7 +8,7 @@ pub struct BadgeSymbol;
 
 impl BadgeSymbol {
     pub fn new(rotation: impl IntoReadState<f64>) -> impl Widget {
-        Canvas::new(|rect: Rect, mut context: Context, env: &mut Environment| {
+        Canvas::new(|rect: Rect, context: &mut Context, env: &mut Environment| {
             let width = f64::min(rect.width(), rect.height());
             let height = width * 0.75;
             let spacing = width * 0.030;
@@ -36,8 +36,6 @@ impl BadgeSymbol {
 
             context.set_fill_style(Color::new_rgba(79, 79, 191, 128));
             context.fill();
-
-            context
         }).padding(-60.0).rotation_effect(rotation.into_read_state()).with_anchor(Alignment::Bottom)
     }
 }

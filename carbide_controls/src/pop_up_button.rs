@@ -40,7 +40,7 @@ impl PopUpButton {
 
         let label_color = mark_color.clone();
 
-        let arrows = Canvas::new(move |_rect: Rect, mut context: Context, _env: &mut Environment| {
+        let arrows = Canvas::new(move |_rect: Rect, context: &mut Context, _env: &mut Environment| {
             context.move_to(6.0, 9.0);
             context.line_to(10.0, 5.0);
             context.line_to(14.0, 9.0);
@@ -51,8 +51,6 @@ impl PopUpButton {
             context.set_line_width(1.5);
             context.set_line_cap(LineCap::Round);
             context.stroke();
-
-            context
         });
 
         let button_color = Map3::read_map(enabled.clone(), EnvironmentColor::Accent.color(), EnvironmentColor::TertiarySystemFill.color(), |enabled, color, disabled_color| {

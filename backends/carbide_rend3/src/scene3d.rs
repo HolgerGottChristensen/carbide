@@ -286,9 +286,9 @@ impl Render for Scene3d {
         let color = glam::Vec4::new(color.red(), color.green(), color.blue(), color.opacity());
 
         self.renderer.update_material(&self.material_handle, PbrMaterial {
-            //albedo: rend3_routine::pbr::AlbedoComponent::Vertex { srgb: false },
+            albedo: rend3_routine::pbr::AlbedoComponent::Vertex { srgb: false },
             //unlit: true,
-            albedo: rend3_routine::pbr::AlbedoComponent::Value(color),
+            //albedo: rend3_routine::pbr::AlbedoComponent::Value(color),
             unlit: false,
             ..PbrMaterial::default()
         });
