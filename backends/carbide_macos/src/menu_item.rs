@@ -10,6 +10,7 @@ use objc::{class, msg_send, sel, sel_impl};
 use objc::declare::ClassDecl;
 use objc::runtime::{BOOL, Class, Object, Sel};
 use objc::runtime::{NO, YES};
+use carbide_core::asynchronous::{AsyncContext, start_stream};
 
 use carbide_core::environment::Environment;
 use carbide_core::event::{CustomEvent, EventSink, HasEventSink, HotKey};
@@ -88,8 +89,8 @@ impl NSMenuItem {
 
         let (pointer, receiver) = CarbideChannel::new(env);
 
-        env.start_stream(receiver, move |_: (), env: &mut Environment| -> bool {
-            (action)(env);
+        start_stream(receiver, move |_: (), ctx: &mut AsyncContext| -> bool {
+            (action)(ctx.env);
             false
         });
 

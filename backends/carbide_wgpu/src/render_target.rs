@@ -1,6 +1,8 @@
 use wgpu::{BindGroup, Texture, TextureDescriptor, TextureFormat, TextureUsages, TextureView};
 
-use crate::wgpu_window::{DEVICE_QUEUE, MAIN_SAMPLER, MAIN_TEXTURE_BIND_GROUP_LAYOUT};
+use crate::application::DEVICE;
+use crate::bind_group_layouts::MAIN_TEXTURE_BIND_GROUP_LAYOUT;
+use crate::wgpu_window::{MAIN_SAMPLER};
 
 pub struct RenderTarget {
     pub(crate) texture: Texture,
@@ -31,31 +33,23 @@ impl RenderTarget {
             view_formats: &[],
         };
 
-        let texture = DEVICE_QUEUE.with(|(device, _)| {
-            device.create_texture(&descriptor)
-        });
+        let texture = DEVICE.create_texture(&descriptor);
 
         let view = texture.create_view(&Default::default());
 
-        let bind_group = DEVICE_QUEUE.with(|(device, _)| {
-            MAIN_TEXTURE_BIND_GROUP_LAYOUT.with(|layout| {
-                MAIN_SAMPLER.with(|sampler| {
-                    device.create_bind_group(&wgpu::BindGroupDescriptor {
-                        layout: &layout,
-                        entries: &[
-                            wgpu::BindGroupEntry {
-                                binding: 0,
-                                resource: wgpu::BindingResource::TextureView(&view),
-                            },
-                            wgpu::BindGroupEntry {
-                                binding: 1,
-                                resource: wgpu::BindingResource::Sampler(&sampler),
-                            },
-                        ],
-                        label: Some("diffuse_bind_group"),
-                    })
-                })
-            })
+        let bind_group = DEVICE.create_bind_group(&wgpu::BindGroupDescriptor {
+            layout: &MAIN_TEXTURE_BIND_GROUP_LAYOUT,
+            entries: &[
+                wgpu::BindGroupEntry {
+                    binding: 0,
+                    resource: wgpu::BindingResource::TextureView(&view),
+                },
+                wgpu::BindGroupEntry {
+                    binding: 1,
+                    resource: wgpu::BindingResource::Sampler(&MAIN_SAMPLER),
+                },
+            ],
+            label: Some("diffuse_bind_group"),
         });
 
         RenderTarget {

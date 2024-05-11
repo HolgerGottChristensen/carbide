@@ -1,11 +1,14 @@
 use std::cell::RefCell;
+use std::clone::Clone;
 use std::collections::HashMap;
 use std::fmt::{Debug, Formatter};
 use std::rc::Rc;
-use std::sync::Arc;
+use std::sync::{Arc, RwLock};
 
 use cgmath::{Matrix4, Vector3};
+use dashmap::DashMap;
 use futures::executor::block_on;
+use once_cell::sync::Lazy;
 use raw_window_handle::HasRawWindowHandle;
 use typed_arena::Arena;
 use wgpu::{Adapter, BindGroup, BindGroupLayout, Buffer, BufferUsages, CommandEncoder, Device, Extent3d, ImageCopyTexture, Instance, PipelineLayout, Queue, RenderPassDepthStencilAttachment, RenderPipeline, Sampler, ShaderModule, Surface, SurfaceConfiguration, SurfaceTexture, Texture, TextureFormat, TextureUsages, TextureView};
@@ -23,13 +26,13 @@ use carbide_core::text::InnerTextContext;
 use carbide_core::update::{Update, UpdateContext};
 use carbide_core::widget::{AnyWidget, CommonWidget, FilterId, GradientRepeat, GradientType, Menu, Overlay, Rectangle, Widget, WidgetExt, WidgetId, ZStack};
 use carbide_core::window::WindowId;
-use carbide_winit::convert_mouse_cursor;
+use carbide_winit::{convert_mouse_cursor, update_scale_factor};
 use carbide_winit::dpi::{LogicalSize, PhysicalPosition, PhysicalSize, Size};
 use carbide_winit::window::{Window as WinitWindow, WindowBuilder};
 
 use crate::{image_context, render_pass_ops, RenderPassOps};
-use crate::application::{EVENT_LOOP, WINDOW_IDS};
-use crate::bind_group_layouts::{atlas_bind_group_layout, filter_buffer_bind_group_layout, filter_texture_bind_group_layout, gradient_buffer_bind_group_layout, main_bind_group_layout, uniform_bind_group_layout, uniform_bind_group_layout2};
+use crate::application::{ADAPTER, DEVICE, EVENT_LOOP, INSTANCE, QUEUE, WINDOW_IDS};
+use crate::bind_group_layouts::{atlas_bind_group_layout, ATLAS_BIND_GROUP_LAYOUT, filter_buffer_bind_group_layout, FILTER_BUFFER_BIND_GROUP_LAYOUT, filter_texture_bind_group_layout, FILTER_TEXTURE_BIND_GROUP_LAYOUT, gradient_buffer_bind_group_layout, GRADIENT_DASHES_BIND_GROUP_LAYOUT, main_bind_group_layout, MAIN_TEXTURE_BIND_GROUP_LAYOUT, uniform_bind_group_layout, UNIFORM_BIND_GROUP_LAYOUT, uniform_bind_group_layout2, UNIFORM_BIND_GROUP_LAYOUT2};
 use crate::bind_groups::{filter_buffer_bind_group, gradient_dashes_bind_group, uniforms_to_bind_group, size_to_uniform_bind_group};
 use crate::filter::Filter;
 use crate::gradient::{Dashes, Gradient};
@@ -47,170 +50,59 @@ use crate::vertex::Vertex;
 
 const ZOOM: f32 = 1.0;
 
-// The instance is a handle to our GPU
-// BackendBit::PRIMARY => Vulkan + Metal + DX12 + Browser WebGPU
-//let instance = wgpu::Instance::new(wgpu::Backends::PRIMARY);
-thread_local!(pub static INSTANCE: Arc<Instance> =
-    Arc::new(Instance::new(wgpu::InstanceDescriptor {
-        backends: wgpu::Backends::all(),
-        dx12_shader_compiler: Default::default(),
-    }))
-);
-
-thread_local!(pub static ADAPTER: Arc<Adapter> = {
-    INSTANCE.with(|instance| {
-        let adapter = block_on(instance.request_adapter(&wgpu::RequestAdapterOptions {
-            power_preference: wgpu::PowerPreference::HighPerformance,
-            force_fallback_adapter: false,
-            compatible_surface: None,
-        })).unwrap();
-
-        //println!("{:#?}", adapter.limits());
-
-        Arc::new(adapter)
-    })
+pub(crate) static MAIN_SHADER: Lazy<ShaderModule> = Lazy::new(|| {
+    DEVICE.create_shader_module(wgpu::include_wgsl!("../shaders/shader.wgsl"))
 });
-thread_local!(pub static DEVICE_QUEUE: (Arc<Device>, Arc<Queue>) = {
-    ADAPTER.with(|adapter| {
-        let mut limits = wgpu::Limits::default();
-        limits.max_bind_groups = 5;
 
-        let (device, queue) = block_on(adapter.request_device(
-            &wgpu::DeviceDescriptor {
-                label: None,
-                features: wgpu::Features::CLEAR_TEXTURE,
-                limits,
+pub(crate) static FILTER_SHADER: Lazy<ShaderModule> = Lazy::new(|| {
+    DEVICE.create_shader_module(wgpu::include_wgsl!("../shaders/filter.wgsl"))
+});
+
+pub(crate) static RENDER_PIPELINE_LAYOUT: Lazy<PipelineLayout> = Lazy::new(|| {
+    main_pipeline_layout(
+        &DEVICE,
+        &MAIN_TEXTURE_BIND_GROUP_LAYOUT,
+        &UNIFORM_BIND_GROUP_LAYOUT,
+        &GRADIENT_DASHES_BIND_GROUP_LAYOUT,
+        &ATLAS_BIND_GROUP_LAYOUT,
+    )
+});
+
+pub(crate) static FILTER_RENDER_PIPELINE_LAYOUT: Lazy<PipelineLayout> = Lazy::new(|| {
+    filter_pipeline_layout(
+        &DEVICE,
+        &FILTER_TEXTURE_BIND_GROUP_LAYOUT,
+        &FILTER_BUFFER_BIND_GROUP_LAYOUT,
+        &UNIFORM_BIND_GROUP_LAYOUT,
+    )
+});
+
+pub(crate) static MAIN_SAMPLER: Lazy<Sampler> = Lazy::new(|| {
+    main_sampler(&DEVICE)
+});
+
+pub(crate) static ATLAS_CACHE_TEXTURE: Lazy<Texture> = Lazy::new(|| {
+    let atlas_cache_tex_desc = atlas_cache_tex_desc(1024, 1024);
+    DEVICE.create_texture(&atlas_cache_tex_desc)
+});
+
+pub(crate) static ATLAS_CACHE_BIND_GROUP: Lazy<BindGroup> = Lazy::new(|| {
+    let view = ATLAS_CACHE_TEXTURE.create_view(&Default::default());
+
+    DEVICE.create_bind_group(&wgpu::BindGroupDescriptor {
+        layout: &ATLAS_BIND_GROUP_LAYOUT,
+        entries: &[
+            wgpu::BindGroupEntry {
+                binding: 0,
+                resource: wgpu::BindingResource::TextureView(&view),
             },
-            None, // Trace path
-        )).unwrap();
-
-        (Arc::new(device), Arc::new(queue))
+        ],
+        label: None,
     })
 });
 
-thread_local!(pub static UNIFORM_BIND_GROUP_LAYOUT: BindGroupLayout = {
-    DEVICE_QUEUE.with(|(device, _)| {
-        uniform_bind_group_layout(&device)
-    })
-});
-
-thread_local!(pub static UNIFORM_BIND_GROUP_LAYOUT2: BindGroupLayout = {
-    DEVICE_QUEUE.with(|(device, _)| {
-        uniform_bind_group_layout2(&device)
-    })
-});
-
-thread_local!(pub static FILTER_TEXTURE_BIND_GROUP_LAYOUT: BindGroupLayout = {
-    DEVICE_QUEUE.with(|(device, _)| {
-        filter_texture_bind_group_layout(&device)
-    })
-});
-
-thread_local!(pub static FILTER_BUFFER_BIND_GROUP_LAYOUT: BindGroupLayout = {
-    DEVICE_QUEUE.with(|(device, _)| {
-        filter_buffer_bind_group_layout(&device)
-    })
-});
-
-thread_local!(pub static MAIN_TEXTURE_BIND_GROUP_LAYOUT: BindGroupLayout = {
-    DEVICE_QUEUE.with(|(device, _)| {
-        main_bind_group_layout(&device)
-    })
-});
-
-thread_local!(pub static GRADIENT_DASHES_BIND_GROUP_LAYOUT: BindGroupLayout = {
-    DEVICE_QUEUE.with(|(device, _)| {
-        gradient_buffer_bind_group_layout(&device)
-    })
-});
-
-thread_local!(pub static ATLAS_BIND_GROUP_LAYOUT: BindGroupLayout = {
-    DEVICE_QUEUE.with(|(device, _)| {
-        atlas_bind_group_layout(&device)
-    })
-});
-
-thread_local!(pub static MAIN_SHADER: ShaderModule = {
-    DEVICE_QUEUE.with(|(device, _queue)| {
-        device.create_shader_module(wgpu::include_wgsl!("../shaders/shader.wgsl"))
-    })
-});
-
-thread_local!(pub static FILTER_SHADER: ShaderModule = {
-    DEVICE_QUEUE.with(|(device, _queue)| {
-        device.create_shader_module(wgpu::include_wgsl!("../shaders/filter.wgsl"))
-    })
-});
-
-thread_local!(pub static RENDER_PIPELINE_LAYOUT: PipelineLayout = {
-    DEVICE_QUEUE.with(|(device, _)| {
-        UNIFORM_BIND_GROUP_LAYOUT.with(|uniform_bind_group_layout| {
-            MAIN_TEXTURE_BIND_GROUP_LAYOUT.with(|main_bind_group_layout| {
-                GRADIENT_DASHES_BIND_GROUP_LAYOUT.with(|gradient_bind_group_layout| {
-                    ATLAS_BIND_GROUP_LAYOUT.with(|atlas_bind_group_layout| {
-                        main_pipeline_layout(
-                            device,
-                            main_bind_group_layout,
-                            uniform_bind_group_layout,
-                            gradient_bind_group_layout,
-                            atlas_bind_group_layout,
-                        )
-                    })
-                })
-            })
-        })
-    })
-});
-
-thread_local!(pub static FILTER_RENDER_PIPELINE_LAYOUT: PipelineLayout = {
-    DEVICE_QUEUE.with(|(device, _)| {
-        FILTER_TEXTURE_BIND_GROUP_LAYOUT.with(|filter_texture_bind_group_layout| {
-            FILTER_BUFFER_BIND_GROUP_LAYOUT.with(|filter_buffer_bind_group_layout| {
-                UNIFORM_BIND_GROUP_LAYOUT.with(|uniform_bind_group_layout| {
-                    filter_pipeline_layout(
-                        device,
-                        filter_texture_bind_group_layout,
-                        filter_buffer_bind_group_layout,
-                        uniform_bind_group_layout,
-                    )
-                })
-            })
-        })
-    })
-});
-
-thread_local!(pub static MAIN_SAMPLER: Sampler = {
-    DEVICE_QUEUE.with(|(device, _)| {
-        main_sampler(device)
-    })
-});
-
-thread_local!(pub static ATLAS_CACHE_TEXTURE: Texture = {
-    DEVICE_QUEUE.with(|(device, _)| {
-        let atlas_cache_tex_desc = atlas_cache_tex_desc(1024, 1024);
-        device.create_texture(&atlas_cache_tex_desc)
-    })
-});
-
-thread_local!(pub static ATLAS_CACHE_BIND_GROUP: BindGroup = {
-    DEVICE_QUEUE.with(|(device, _)| {
-        ATLAS_BIND_GROUP_LAYOUT.with(|layout| {
-            ATLAS_CACHE_TEXTURE.with(|texture| {
-                let view = texture.create_view(&Default::default());
-
-                device.create_bind_group(&wgpu::BindGroupDescriptor {
-                    layout: layout,
-                    entries: &[
-                        wgpu::BindGroupEntry {
-                            binding: 0,
-                            resource: wgpu::BindingResource::TextureView(&view),
-                        },
-                    ],
-                    label: None,
-                })
-            })
-        })
-    })
+pub(crate) static PIPELINES: Lazy<DashMap<TextureFormat, RenderPipelines>> = Lazy::new(|| {
+    DashMap::new()
 });
 
 thread_local!(pub static BIND_GROUPS: RefCell<HashMap<ImageId, BindGroupExtended>> = {
@@ -231,14 +123,14 @@ thread_local!(pub static BIND_GROUPS: RefCell<HashMap<ImageId, BindGroupExtended
     RefCell::new(map)
 });
 
-thread_local!(pub static FILTER_BIND_GROUPS: RefCell<HashMap<FilterId, BindGroup>> = RefCell::new(HashMap::new()));
-
-thread_local!(pub static PIPELINES: RefCell<Vec<(TextureFormat, RenderPipelines)>> = RefCell::new(vec![]));
+pub(crate) static FILTER_BIND_GROUPS: Lazy<RwLock<HashMap<FilterId, BindGroup>>> = Lazy::new(|| {
+    RwLock::new(HashMap::new())
+});
 
 pub struct WGPUWindow<T: ReadState<T=String>> {
     pub(crate) surface: Surface,
 
-    pub(crate) render_pipelines_index: usize,
+    pub(crate) texture_format: TextureFormat,
 
     pub(crate) depth_texture_view: TextureView,
     pub(crate) texture_size_bind_group: BindGroup,
@@ -323,147 +215,138 @@ impl WGPUWindow<String> {
         let scale_factor = inner.scale_factor();
 
 
-        let surface = INSTANCE.with(|instance| {
-            unsafe { instance.create_surface(&inner) }
-        }).unwrap();
+        let surface = unsafe { INSTANCE.create_surface(&inner) }.unwrap();
 
-        DEVICE_QUEUE.with(|(device, _queue)| {
-            // Configure the surface with format, size and usage
-            let surface_caps = ADAPTER.with(|adapter| {
-                surface.get_capabilities(adapter)
-            });
+        // Configure the surface with format, size and usage
+        let surface_caps = surface.get_capabilities(&*ADAPTER);
 
-            surface.configure(
-                &device,
-                &SurfaceConfiguration {
-                    usage: TextureUsages::RENDER_ATTACHMENT,
-                    format: TextureFormat::Bgra8UnormSrgb,
-                    width: inner.inner_size().width,
-                    height: inner.inner_size().height,
-                    present_mode: surface_caps.present_modes[0],
-                    alpha_mode: wgpu::CompositeAlphaMode::Auto,
-                    view_formats: vec![],
-                },
-            );
+        surface.configure(
+            &DEVICE,
+            &SurfaceConfiguration {
+                usage: TextureUsages::RENDER_ATTACHMENT,
+                format: TextureFormat::Bgra8UnormSrgb,
+                width: inner.inner_size().width,
+                height: inner.inner_size().height,
+                present_mode: surface_caps.present_modes[0],
+                alpha_mode: wgpu::CompositeAlphaMode::Auto,
+                view_formats: vec![],
+            },
+        );
 
-            let matrix = Self::calculate_carbide_to_wgpu_matrix(pixel_dimensions, scale_factor);
+        let matrix = Self::calculate_carbide_to_wgpu_matrix(pixel_dimensions, scale_factor);
 
-            let gradient = DrawGradient {
-                colors: vec![],
-                ratios: vec![],
-                gradient_type: GradientType::Linear,
-                gradient_repeat: GradientRepeat::Clamp,
-                start: Default::default(),
-                end: Default::default(),
-                color_space: ColorSpace::Linear,
-            };
+        let gradient = DrawGradient {
+            colors: vec![],
+            ratios: vec![],
+            gradient_type: GradientType::Linear,
+            gradient_repeat: GradientRepeat::Clamp,
+            start: Default::default(),
+            end: Default::default(),
+            color_space: ColorSpace::Linear,
+        };
 
-            let gradient = Gradient::convert(&gradient);
-            let gradient_buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
-                label: Some("Gradient Buffer"),
-                contents: &*gradient.as_bytes(),
-                usage: wgpu::BufferUsages::STORAGE,
-            });
+        let gradient = Gradient::convert(&gradient);
+        let gradient_buffer = DEVICE.create_buffer_init(&BufferInitDescriptor {
+            label: Some("Gradient Buffer"),
+            contents: &*gradient.as_bytes(),
+            usage: BufferUsages::STORAGE,
+        });
 
-            let dashes = Dashes {
-                dashes: [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0],
-                dash_count: 2,
-                start_cap: 0,
-                end_cap: 0,
-                total_dash_width: 2.0,
-                dash_offset: 0.0,
-            };
+        let dashes = Dashes {
+            dashes: [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0],
+            dash_count: 2,
+            start_cap: 0,
+            end_cap: 0,
+            total_dash_width: 2.0,
+            dash_offset: 0.0,
+        };
 
-            let dashes_buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
-                label: Some("Dashes Buffer"),
-                contents: &*dashes.as_bytes(),
-                usage: wgpu::BufferUsages::STORAGE,
-            });
+        let dashes_buffer = DEVICE.create_buffer_init(&BufferInitDescriptor {
+            label: Some("Dashes Buffer"),
+            contents: &*dashes.as_bytes(),
+            usage: BufferUsages::STORAGE,
+        });
 
-            let gradient_dashed_bind_group = GRADIENT_DASHES_BIND_GROUP_LAYOUT.with(|layout| {
-                gradient_dashes_bind_group(&device, layout, &gradient_buffer, &dashes_buffer)
-            });
+        let gradient_dashed_bind_group = gradient_dashes_bind_group(
+            &DEVICE,
+            &GRADIENT_DASHES_BIND_GROUP_LAYOUT,
+            &gradient_buffer,
+            &dashes_buffer
+        );
 
 
-            let uniform_bind_group = UNIFORM_BIND_GROUP_LAYOUT.with(|uniform_bind_group_layout| {
-                uniforms_to_bind_group(device, uniform_bind_group_layout, matrix, 0.0, 0.0, 0.0, false)
-            });
-
-            let texture_size_bind_group = UNIFORM_BIND_GROUP_LAYOUT2.with(|uniform_bind_group_layout| {
-                size_to_uniform_bind_group(
-                    device,
-                    uniform_bind_group_layout,
-                    pixel_dimensions.width,
-                    pixel_dimensions.height,
-                    scale_factor,
-                )
-            });
-
-            let render_pipelines_index = PIPELINES.with(|pipelines| {
-                let pipelines = &mut *pipelines.borrow_mut();
-
-                let preferred_format = ADAPTER.with(|adapter| {
-                    let surface_caps = surface.get_capabilities(adapter);
-                    surface_caps.formats.iter()
-                        .copied()
-                        .filter(|f| f.is_srgb())
-                        .next()
-                        .unwrap_or(surface_caps.formats[0])
-                });
+        let uniform_bind_group = uniforms_to_bind_group(
+            &DEVICE,
+            &UNIFORM_BIND_GROUP_LAYOUT,
+            matrix,
+            0.0,
+            0.0,
+            0.0,
+            false
+        );
 
 
-                if let Some(index) = pipelines.iter().position(|(format, _)| format == &preferred_format) {
-                    index
-                } else {
-                    let new_pipelines = create_pipelines(device, preferred_format);
-                    pipelines.push((preferred_format, new_pipelines));
-                    pipelines.len() - 1
-                }
-            });
+        let texture_size_bind_group = size_to_uniform_bind_group(
+            &DEVICE,
+            &UNIFORM_BIND_GROUP_LAYOUT2,
+            pixel_dimensions.width,
+            pixel_dimensions.height,
+            scale_factor,
+        );
 
+        let preferred_format = surface_caps.formats.iter()
+            .copied()
+            .filter(|f| f.is_srgb())
+            .next()
+            .unwrap_or(surface_caps.formats[0]);
 
-            let depth_texture = create_depth_stencil_texture(&device, size.width, size.height);
-            let depth_texture_view = depth_texture.create_view(&Default::default());
+        if !PIPELINES.contains_key(&preferred_format) {
+            PIPELINES.insert(preferred_format, create_pipelines(&DEVICE, preferred_format));
+        }
 
-            let vertex_buffer = device.create_buffer_init(&BufferInitDescriptor {
-                label: Some("Vertex Buffer"),
-                contents: &[],
-                usage: BufferUsages::VERTEX | BufferUsages::COPY_DST,
-            });
+        let depth_texture = create_depth_stencil_texture(&DEVICE, size.width, size.height);
+        let depth_texture_view = depth_texture.create_view(&Default::default());
 
-            let second_vertex_buffer = device.create_buffer_init(&BufferInitDescriptor {
-                label: Some("Vertex Buffer"),
-                contents: bytemuck::cast_slice(&Vertex::rect(size, scale_factor, ZOOM)),
-                usage: BufferUsages::VERTEX | BufferUsages::COPY_DST,
-            });
+        let vertex_buffer = DEVICE.create_buffer_init(&BufferInitDescriptor {
+            label: Some("Vertex Buffer"),
+            contents: &[],
+            usage: BufferUsages::VERTEX | BufferUsages::COPY_DST,
+        });
 
-            Box::new(WGPUWindow {
-                surface,
-                render_pipelines_index,
-                depth_texture_view,
-                texture_size_bind_group,
-                targets: vec![
-                    RenderTarget::new(size.width, size.height)
-                ],
-                uniform_bind_group,
-                gradient_buffer,
-                dashes_buffer,
-                gradient_dashes_bind_group: gradient_dashed_bind_group,
-                carbide_to_wgpu_matrix: matrix,
-                vertex_buffer: (vertex_buffer, 0),
-                second_vertex_buffer,
+        let second_vertex_buffer = DEVICE.create_buffer_init(&BufferInitDescriptor {
+            label: Some("Vertex Buffer"),
+            contents: bytemuck::cast_slice(&Vertex::rect(size, scale_factor, ZOOM)),
+            usage: BufferUsages::VERTEX | BufferUsages::COPY_DST,
+        });
 
-                render_context: WGPURenderContext::new(),
-                inner: Rc::new(inner),
-                id: WidgetId::new(),
-                title,
-                position: Default::default(),
-                dimension: Default::default(),
-                child,
-                close_application_on_window_close: false,
-                visible: true,
-                window_menu: None
-            })
+        update_scale_factor(inner.id(), inner.scale_factor());
+
+        Box::new(WGPUWindow {
+            surface,
+            texture_format: preferred_format,
+            depth_texture_view,
+            texture_size_bind_group,
+            targets: vec![
+                RenderTarget::new(size.width, size.height)
+            ],
+            uniform_bind_group,
+            gradient_buffer,
+            dashes_buffer,
+            gradient_dashes_bind_group: gradient_dashed_bind_group,
+            carbide_to_wgpu_matrix: matrix,
+            vertex_buffer: (vertex_buffer, 0),
+            second_vertex_buffer,
+
+            render_context: WGPURenderContext::new(),
+            inner: Rc::new(inner),
+            id: WidgetId::new(),
+            title,
+            position: Default::default(),
+            dimension: Default::default(),
+            child,
+            close_application_on_window_close: false,
+            visible: true,
+            window_menu: None
         })
     }
 }
@@ -471,35 +354,34 @@ impl WGPUWindow<String> {
 impl<T: ReadState<T=String>> MouseEventHandler for WGPUWindow<T> {
     fn process_mouse_event(&mut self, event: &MouseEvent, ctx: &mut MouseEventContext) {
         let old_dimension = ctx.env.pixel_dimensions();
-        let old_scale_factor = ctx.env.scale_factor();
         let old_window_handle = ctx.env.window_handle();
         let scale_factor = self.inner.scale_factor();
         let physical_dimensions = self.inner.inner_size();
 
         ctx.env.set_pixel_dimensions(Dimension::new(physical_dimensions.width as f64, physical_dimensions.height as f64));
-        ctx.env.set_scale_factor(scale_factor);
         ctx.env.set_window_handle(Some(self.inner.raw_window_handle()));
 
-        let id: u64 = self.inner.id().into();
+        ctx.env.with_scale_factor(scale_factor, |env| {
+            let id: u64 = self.inner.id().into();
 
-        let new_ctx = &mut MouseEventContext {
-            text: ctx.text,
-            image: ctx.image,
-            env: ctx.env,
-            is_current: &(*ctx.window_id == id),
-            window_id: ctx.window_id,
-            consumed: ctx.consumed,
-        };
+            let new_ctx = &mut MouseEventContext {
+                text: ctx.text,
+                image: ctx.image,
+                env,
+                is_current: &(*ctx.window_id == id),
+                window_id: ctx.window_id,
+                consumed: ctx.consumed,
+            };
 
-        self.foreach_child_direct(&mut |child| {
-            child.process_mouse_event(event, new_ctx);
-            if *new_ctx.consumed {
-                return;
-            }
+            self.foreach_child_direct(&mut |child| {
+                child.process_mouse_event(event, new_ctx);
+                if *new_ctx.consumed {
+                    return;
+                }
+            });
         });
 
         ctx.env.set_pixel_dimensions(old_dimension);
-        ctx.env.set_scale_factor(old_scale_factor);
         ctx.env.set_window_handle(old_window_handle);
     }
 }
@@ -588,32 +470,31 @@ impl<T: ReadState<T=String>> Focusable for WGPUWindow<T> {}
 impl<T: ReadState<T=String>> KeyboardEventHandler for WGPUWindow<T> {
     fn process_keyboard_event(&mut self, event: &KeyboardEvent, ctx: &mut KeyboardEventContext) {
         let old_dimension = ctx.env.pixel_dimensions();
-        let old_scale_factor = ctx.env.scale_factor();
         let old_window_handle = ctx.env.window_handle();
         let scale_factor = self.inner.scale_factor();
         let physical_dimensions = self.inner.inner_size();
 
         ctx.env.set_pixel_dimensions(Dimension::new(physical_dimensions.width as f64, physical_dimensions.height as f64));
-        ctx.env.set_scale_factor(scale_factor);
         ctx.env.set_window_handle(Some(self.inner.raw_window_handle()));
 
-        let id: u64 = self.inner.id().into();
+        ctx.env.with_scale_factor(scale_factor, |env| {
+            let id: u64 = self.inner.id().into();
 
-        let new_ctx = &mut KeyboardEventContext {
-            text: ctx.text,
-            image: ctx.image,
-            env: ctx.env,
-            is_current: &(*ctx.window_id == id),
-            window_id: ctx.window_id,
-            prevent_default: ctx.prevent_default,
-        };
+            let new_ctx = &mut KeyboardEventContext {
+                text: ctx.text,
+                image: ctx.image,
+                env,
+                is_current: &(*ctx.window_id == id),
+                window_id: ctx.window_id,
+                prevent_default: ctx.prevent_default,
+            };
 
-        self.foreach_child_direct(&mut |child| {
-            child.process_keyboard_event(event, new_ctx);
+            self.foreach_child_direct(&mut |child| {
+                child.process_keyboard_event(event, new_ctx);
+            });
         });
 
         ctx.env.set_pixel_dimensions(old_dimension);
-        ctx.env.set_scale_factor(old_scale_factor);
         ctx.env.set_window_handle(old_window_handle);
     }
 }
@@ -621,24 +502,27 @@ impl<T: ReadState<T=String>> KeyboardEventHandler for WGPUWindow<T> {
 impl<T: ReadState<T=String>> OtherEventHandler for WGPUWindow<T> {
     fn process_other_event(&mut self, event: &Event, ctx: &mut OtherEventContext) {
         let old_dimension = ctx.env.pixel_dimensions();
-        let old_scale_factor = ctx.env.scale_factor();
         let old_window_handle = ctx.env.window_handle();
         let scale_factor = self.inner.scale_factor();
         let physical_dimensions = self.inner.inner_size();
 
         ctx.env.set_pixel_dimensions(Dimension::new(physical_dimensions.width as f64, physical_dimensions.height as f64));
-        ctx.env.set_scale_factor(scale_factor);
         ctx.env.set_window_handle(Some(self.inner.raw_window_handle()));
 
-        self.foreach_child_direct(&mut |child| {
-            child.process_other_event(event, ctx);
+        ctx.env.with_scale_factor(scale_factor, |env| {
+            self.foreach_child_direct(&mut |child| {
+                child.process_other_event(event, &mut OtherEventContext {
+                    text: ctx.text,
+                    image: ctx.image,
+                    env,
+                });
+            });
         });
 
         // Set the cursor of the window.
         self.inner.set_cursor_icon(convert_mouse_cursor(ctx.env.cursor()));
 
         ctx.env.set_pixel_dimensions(old_dimension);
-        ctx.env.set_scale_factor(old_scale_factor);
         ctx.env.set_window_handle(old_window_handle);
     }
 }
@@ -647,7 +531,7 @@ impl<T: ReadState<T=String>> WindowEventHandler for WGPUWindow<T> {
     fn handle_window_event(&mut self, event: &WindowEvent, ctx: &mut WindowEventContext) {
         match event {
             WindowEvent::Resize(size) => {
-                self.resize(LogicalSize::new(size.width, size.height).to_physical(2.0), ctx.env);
+                self.resize(LogicalSize::new(size.width, size.height).to_physical(self.inner.scale_factor()), ctx.env);
                 self.request_redraw();
             }
             WindowEvent::Focus => {
@@ -689,39 +573,42 @@ impl<T: ReadState<T=String>> WindowEventHandler for WGPUWindow<T> {
 
     fn process_window_event(&mut self, event: &WindowEvent, ctx: &mut WindowEventContext) {
         let old_dimension = ctx.env.pixel_dimensions();
-        let old_scale_factor = ctx.env.scale_factor();
         let old_window_handle = ctx.env.window_handle();
         let scale_factor = self.inner.scale_factor();
         let physical_dimensions = self.inner.inner_size();
 
         ctx.env.set_pixel_dimensions(Dimension::new(physical_dimensions.width as f64, physical_dimensions.height as f64));
-        ctx.env.set_scale_factor(scale_factor);
         ctx.env.set_window_handle(Some(self.inner.raw_window_handle()));
 
-        let id: u64 = self.inner.id().into();
+        ctx.env.with_scale_factor(scale_factor, |env| {
+            let id: u64 = self.inner.id().into();
 
-        let is_current = *ctx.window_id == id;
+            let is_current = *ctx.window_id == id;
 
-        if is_current {
-            self.capture_state(ctx.env);
-            self.handle_window_event(event, ctx);
-            self.release_state(ctx.env);
-        }
+            if is_current {
+                self.capture_state(env);
+                self.handle_window_event(event, &mut WindowEventContext {
+                    text: ctx.text,
+                    image: ctx.image,
+                    env,
+                    is_current: &is_current,
+                    window_id: ctx.window_id,
+                });
+                self.release_state(env);
+            }
 
-        let new_ctx = &mut WindowEventContext {
-            text: ctx.text,
-            image: ctx.image,
-            env: ctx.env,
-            is_current: &is_current,
-            window_id: ctx.window_id,
-        };
-
-        self.foreach_child_direct(&mut |child| {
-            child.process_window_event(event, new_ctx);
+            self.foreach_child_direct(&mut |child| {
+                child.process_window_event(event, &mut WindowEventContext {
+                    text: ctx.text,
+                    image: ctx.image,
+                    env,
+                    is_current: &is_current,
+                    window_id: ctx.window_id,
+                });
+            });
         });
 
         ctx.env.set_pixel_dimensions(old_dimension);
-        ctx.env.set_scale_factor(old_scale_factor);
         ctx.env.set_window_handle(old_window_handle);
     }
 }
@@ -741,117 +628,110 @@ impl<T: ReadState<T=String>> Update for WGPUWindow<T> {
 }
 
 impl<T: ReadState<T=String>> Render for WGPUWindow<T> {
-    fn render(&mut self, context: &mut RenderContext) {
-        let old_scale_factor = context.env.scale_factor();
-        let old_pixel_dimensions = context.env.pixel_dimensions();
+    fn render(&mut self, ctx: &mut RenderContext) {
+        let old_pixel_dimensions = ctx.env.pixel_dimensions();
 
         let scale_factor = self.inner.scale_factor();
         let physical_dimensions = self.inner.inner_size();
         let logical_dimensions = physical_dimensions.to_logical(scale_factor);
         let dimensions = Dimension::new(logical_dimensions.width, logical_dimensions.height);
 
-        context.env.capture_time();
+        ctx.env.capture_time();
 
-        context.env.set_pixel_dimensions(Dimension::new(physical_dimensions.width as f64, physical_dimensions.height as f64));
-        context.env.set_scale_factor(scale_factor);
+        ctx.env.set_pixel_dimensions(Dimension::new(physical_dimensions.width as f64, physical_dimensions.height as f64));
 
-        // Update children
-        self.child.process_update(&mut UpdateContext {
-            text: context.text,
-            image: context.image,
-            env: context.env,
-        });
-
-        // Calculate size
-        self.child.calculate_size(dimensions, &mut LayoutContext {
-            text: context.text,
-            image: context.image,
-            env: context.env,
-        });
-
-        // Position children
-        let alignment = context.env.root_alignment();
-        self.child.set_position(alignment.position(Position::new(0.0, 0.0), dimensions, self.child.dimension()));
-        self.child.position_children(&mut LayoutContext {
-            text: context.text,
-            image: context.image,
-            env: context.env,
-        });
-
-        // Render the children
-        self.render_context.start(Rect::new(Position::origin(), dimensions));
-
-        context.text.prepare_render();
-
-        self.child.render(&mut RenderContext {
-            render: &mut self.render_context,
-            text: context.text,
-            image: context.image,
-            env: context.env,
-        });
-
-        let render_passes = self.render_context.finish();
-
-        let target_count = self.render_context.target_count();
-        if self.targets.len() < target_count {
-            for _ in self.targets.len()..target_count {
-                self.targets.push(RenderTarget::new(self.inner.inner_size().width, self.inner.inner_size().height));
-            }
-        }
-
-        //println!("\nContext: {:#?}", render_passes);
-        //println!("Vertices: {:#?}", &self.render_context.vertices()[0..10]);
-        //println!("Targets: {:#?}", &self.targets.len());
-
-        let mut uniform_bind_groups = vec![];
-        let mut gradient_bind_groups = vec![];
-
-        DEVICE_QUEUE.with(|(device, queue)| {
-            Self::ensure_vertices_in_buffer(device, queue, self.render_context.vertices(), &mut self.vertex_buffer.0, &mut self.vertex_buffer.1);
-
-            UNIFORM_BIND_GROUP_LAYOUT.with(|uniform_bind_group_layout| {
-                Self::ensure_uniforms_in_buffer(device, &self.carbide_to_wgpu_matrix, self.render_context.uniforms(), uniform_bind_group_layout, &mut uniform_bind_groups);
-                //Self::ensure_gradients_in_buffer(device, self.render_context.gradients(), uniform_bind_group_layout, &mut gradient_bind_groups);
+        ctx.env.with_scale_factor(scale_factor, |env| {
+            // Update children
+            self.child.process_update(&mut UpdateContext {
+                text: ctx.text,
+                image: ctx.image,
+                env,
             });
+
+            // Calculate size
+            self.child.calculate_size(dimensions, &mut LayoutContext {
+                text: ctx.text,
+                image: ctx.image,
+                env,
+            });
+
+            // Position children
+            let alignment = env.root_alignment();
+            self.child.set_position(alignment.position(Position::new(0.0, 0.0), dimensions, self.child.dimension()));
+            self.child.position_children(&mut LayoutContext {
+                text: ctx.text,
+                image: ctx.image,
+                env,
+            });
+
+            // Render the children
+            self.render_context.start(Rect::new(Position::origin(), dimensions));
+
+            ctx.text.prepare_render();
+
+            self.child.render(&mut RenderContext {
+                render: &mut self.render_context,
+                text: ctx.text,
+                image: ctx.image,
+                env,
+            });
+
+            let render_passes = self.render_context.finish();
+
+            let target_count = self.render_context.target_count();
+            if self.targets.len() < target_count {
+                for _ in self.targets.len()..target_count {
+                    self.targets.push(RenderTarget::new(self.inner.inner_size().width, self.inner.inner_size().height));
+                }
+            }
+
+            //println!("\nContext: {:#?}", render_passes);
+            //println!("Vertices: {:#?}", &self.render_context.vertices()[0..10]);
+            //println!("Targets: {:#?}", &self.targets.len());
+
+            let mut uniform_bind_groups = vec![];
+
+            Self::ensure_vertices_in_buffer(&DEVICE, &QUEUE, self.render_context.vertices(), &mut self.vertex_buffer.0, &mut self.vertex_buffer.1);
+            Self::ensure_uniforms_in_buffer(&DEVICE, &self.carbide_to_wgpu_matrix, self.render_context.uniforms(), &UNIFORM_BIND_GROUP_LAYOUT, &mut uniform_bind_groups);
+
+
+            if self.visible {
+                {
+                    self.title.sync(env);
+
+                    let current = &*self.title.value();
+                    if &self.inner.title() != current {
+                        self.inner.set_title(current);
+                    }
+                }
+
+                self.inner.set_cursor_icon(convert_mouse_cursor(env.cursor()));
+
+                match self.render_inner(render_passes, uniform_bind_groups, ctx.text, env) {
+                    Ok(_) => {}
+                    // Recreate the swap_chain if lost
+                    Err(wgpu::SurfaceError::Lost) => {
+                        println!("Swap chain lost");
+                        self.resize(self.inner.inner_size(), env);
+                        self.request_redraw();
+                    }
+                    // The system is out of memory, we should probably quit
+                    Err(wgpu::SurfaceError::OutOfMemory) => {
+                        println!("Swap chain out of memory");
+                        env.close_application();
+                    }
+                    // All other errors (Outdated, Timeout) should be resolved by the next frame
+                    Err(e) => {
+                        // We request a redraw the next frame
+                        self.request_redraw();
+                        eprintln!("{:?}", e)
+                    }
+                }
+            }
         });
-
-        if self.visible {
-            {
-                self.title.sync(context.env);
-
-                let current = &*self.title.value();
-                if &self.inner.title() != current {
-                    self.inner.set_title(current);
-                }
-            }
-
-            self.inner.set_cursor_icon(convert_mouse_cursor(context.env.cursor()));
-
-            match self.render_inner(render_passes, uniform_bind_groups, gradient_bind_groups, context.text, context.env) {
-                Ok(_) => {}
-                // Recreate the swap_chain if lost
-                Err(wgpu::SurfaceError::Lost) => {
-                    println!("Swap chain lost");
-                    self.resize(self.inner.inner_size(), context.env);
-                    self.request_redraw();
-                }
-                // The system is out of memory, we should probably quit
-                Err(wgpu::SurfaceError::OutOfMemory) => {
-                    println!("Swap chain out of memory");
-                    context.env.close_application();
-                }
-                // All other errors (Outdated, Timeout) should be resolved by the next frame
-                Err(e) => {
-                    // We request a redraw the next frame
-                    self.request_redraw();
-                    eprintln!("{:?}", e)
-                }
-            }
-        }
 
         // Reset the environment
-        context.env.set_pixel_dimensions(old_pixel_dimensions);
-        context.env.set_scale_factor(old_scale_factor);
+        ctx.env.set_pixel_dimensions(old_pixel_dimensions);
     }
 }
 
@@ -915,15 +795,13 @@ impl<T: ReadState<T=String>> WGPUWindow<T> {
     }
 
     fn update_atlas_cache(device: &Device, encoder: &mut CommandEncoder, ctx: &mut dyn InnerTextContext) {
-        ATLAS_CACHE_TEXTURE.with(|atlas_cache_tex| {
-            ctx.update_cache(&mut |image| {
-                TextureAtlasCommand {
-                    texture_atlas_buffer: image.as_bytes(),
-                    texture_atlas_texture: atlas_cache_tex,
-                    width: image.width(),
-                    height: image.height(),
-                }.load_buffer_and_encode(device, encoder);
-            });
+        ctx.update_cache(&mut |image| {
+            TextureAtlasCommand {
+                texture_atlas_buffer: image.as_bytes(),
+                texture_atlas_texture: &ATLAS_CACHE_TEXTURE,
+                width: image.width(),
+                height: image.height(),
+            }.load_buffer_and_encode(device, encoder);
         });
     }
 
@@ -935,21 +813,18 @@ impl<T: ReadState<T=String>> WGPUWindow<T> {
                 let mut filter: Filter = filter.clone().into();
                 filter.texture_size = [size.width as f32, size.height as f32];
 
-                let filter_buffer =
-                    device
-                        .create_buffer_init(&BufferInitDescriptor {
-                            label: Some("Filter Buffer"),
-                            contents: &*filter.as_bytes(),
-                            usage: wgpu::BufferUsages::STORAGE,
-                        });
-                let filter_buffer_bind_group =
-                    FILTER_BUFFER_BIND_GROUP_LAYOUT.with(|filter_buffer_bind_group_layout| {
-                        filter_buffer_bind_group(
-                            device,
-                            filter_buffer_bind_group_layout,
-                            &filter_buffer,
-                        )
-                    });
+                let filter_buffer = device.create_buffer_init(&BufferInitDescriptor {
+                    label: Some("Filter Buffer"),
+                    contents: &*filter.as_bytes(),
+                    usage: wgpu::BufferUsages::STORAGE,
+                });
+
+                let filter_buffer_bind_group = filter_buffer_bind_group(
+                    device,
+                    &FILTER_BUFFER_BIND_GROUP_LAYOUT,
+                    &filter_buffer,
+                );
+
                 filter_bind_groups
                     .insert(*filter_id, filter_buffer_bind_group);
             }
@@ -992,39 +867,36 @@ impl<T: ReadState<T=String>> WGPUWindow<T> {
 
     fn ensure_gradients_in_buffer(device: &Device, gradients: &Vec<Gradient>, _uniform_bind_group_layout: &BindGroupLayout, gradient_bind_groups: &mut Vec<BindGroup>) {
         for gradient in gradients {
-            GRADIENT_DASHES_BIND_GROUP_LAYOUT.with(|gradient_bind_group_layout| {
-                let gradient_buffer =
-                    device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
-                        label: Some("Gradient Buffer"),
-                        contents: &*gradient.as_bytes(),
-                        usage: wgpu::BufferUsages::STORAGE,
-                    });
+            let gradient_buffer =
+                device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
+                    label: Some("Gradient Buffer"),
+                    contents: &*gradient.as_bytes(),
+                    usage: wgpu::BufferUsages::STORAGE,
+                });
 
-                let dashes = Dashes {
-                    dashes: [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0],
-                    dash_count: 2,
-                    start_cap: 0,
-                    end_cap: 0,
-                    total_dash_width: 2.0,
-                    dash_offset: 0.0,
-                };
-                let dashes_buffer =
-                    device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
-                        label: Some("Dashes Buffer"),
-                        contents: &*dashes.as_bytes(),
-                        usage: wgpu::BufferUsages::STORAGE,
-                    });
+            let dashes = Dashes {
+                dashes: [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0],
+                dash_count: 2,
+                start_cap: 0,
+                end_cap: 0,
+                total_dash_width: 2.0,
+                dash_offset: 0.0,
+            };
+            let dashes_buffer =
+                device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
+                    label: Some("Dashes Buffer"),
+                    contents: &*dashes.as_bytes(),
+                    usage: wgpu::BufferUsages::STORAGE,
+                });
 
-                gradient_bind_groups.push(
-                    gradient_dashes_bind_group(
-                        &device,
-                        &gradient_bind_group_layout,
-                        &gradient_buffer,
-                        &dashes_buffer
-                    )
-                );
-
-            })
+            gradient_bind_groups.push(
+                gradient_dashes_bind_group(
+                    &device,
+                    &GRADIENT_DASHES_BIND_GROUP_LAYOUT,
+                    &gradient_buffer,
+                    &dashes_buffer
+                )
+            );
         }
     }
 
@@ -1312,130 +1184,123 @@ impl<T: ReadState<T=String>> WGPUWindow<T> {
         }
     }
 
-    fn render_inner(&self, render_passes: Vec<RenderPass>, uniform_bind_groups: Vec<BindGroup>, gradient_bind_groups: Vec<BindGroup>, ctx: &mut dyn InnerTextContext, env: &mut Environment) -> Result<(), wgpu::SurfaceError> {
-        DEVICE_QUEUE.with(|(device, queue)| {
-            BIND_GROUPS.with(|bind_groups| {
-                ATLAS_CACHE_BIND_GROUP.with(|atlas_cache_bind_group| {
-                    GRADIENT_DASHES_BIND_GROUP_LAYOUT.with(|gradient_dashes_bind_group_layout| {
-                        FILTER_BIND_GROUPS.with(|filter_bind_groups| {
-                            PIPELINES.with(|render_pipelines| {
-                                let render_pipelines = &render_pipelines.borrow()[self.render_pipelines_index].1;
-                                let filter_bind_groups = &mut *filter_bind_groups.borrow_mut();
-                                let bind_groups = &mut *bind_groups.borrow_mut();
+    fn render_inner(&self, render_passes: Vec<RenderPass>, uniform_bind_groups: Vec<BindGroup>, ctx: &mut dyn InnerTextContext, env: &mut Environment) -> Result<(), wgpu::SurfaceError> {
+        BIND_GROUPS.with(|bind_groups|  {
+            let bind_groups = &*bind_groups.borrow();
 
-                                let mut encoder = device
-                                    .create_command_encoder(&wgpu::CommandEncoderDescriptor {
-                                        label: Some("Render Encoder"),
-                                    });
+            let mut encoder = DEVICE
+                .create_command_encoder(&wgpu::CommandEncoderDescriptor {
+                    label: Some("Render Encoder"),
+                });
 
-                                let size = self.inner.inner_size();
+            let size = self.inner.inner_size();
 
-                                // Handle update of atlas cache
-                                Self::update_atlas_cache(device, &mut encoder, ctx);
+            // Handle update of atlas cache
+            Self::update_atlas_cache(&DEVICE, &mut encoder, ctx);
 
-                                // Update filter bind groups
-                                Self::update_filter_bind_groups(device, filter_bind_groups, env, size);
+            // Update filter bind groups
+            Self::update_filter_bind_groups(&DEVICE,  &mut *FILTER_BIND_GROUPS.write().unwrap(), env, size);
 
-                                // Ensure the images are added as bind groups
-                                //Self::ensure_images_exist_as_bind_groups(device, queue, bind_groups, env);
+            // Ensure the images are added as bind groups
+            //Self::ensure_images_exist_as_bind_groups(device, queue, bind_groups, env);
 
-                                self.process_render_passes(render_passes, &*device, &mut encoder, render_pipelines, bind_groups, &uniform_bind_groups, gradient_dashes_bind_group_layout, filter_bind_groups, size, env.scale_factor(), atlas_cache_bind_group);
+            let pipelines = &PIPELINES.get(&self.texture_format).unwrap();
 
-                                // This blocks until a new frame is available.
-                                let output = self.surface.get_current_texture()?;
 
-                                // Render from the texture to the swap chain
-                                self.render_texture_to_swapchain(&mut encoder, &render_pipelines.render_pipeline_no_mask, &output, atlas_cache_bind_group, bind_groups);
+            self.process_render_passes(
+                render_passes,
+                &DEVICE,
+                &mut encoder,
+                pipelines,
+                bind_groups,
+                &uniform_bind_groups,
+                &GRADIENT_DASHES_BIND_GROUP_LAYOUT,
+                &*FILTER_BIND_GROUPS.read().unwrap(),
+                size,
+                env.scale_factor(),
+                &ATLAS_CACHE_BIND_GROUP
+            );
 
-                                // submit will accept anything that implements IntoIter
-                                queue.submit(std::iter::once(encoder.finish()));
-                                output.present();
-                                Ok(())
-                            })
-                        })
-                    })
-                })
-            })
+            // This blocks until a new frame is available.
+            let output = self.surface.get_current_texture()?;
+
+            // Render from the texture to the swap chain
+            self.render_texture_to_swapchain(&mut encoder, &pipelines.render_pipeline_no_mask, &output, &ATLAS_CACHE_BIND_GROUP, bind_groups);
+
+            // submit will accept anything that implements IntoIter
+            QUEUE.submit(std::iter::once(encoder.finish()));
+            output.present();
+            Ok(())
         })
     }
 
     pub fn resize(&mut self, new_size: PhysicalSize<u32>, _: &mut Environment) {
-        DEVICE_QUEUE.with(|(device, queue)| {
-            let size = new_size;
-            //env.set_pixel_dimensions(size.width as f64);
-            //env.set_pixel_height(size.height as f64);
-            //self.ui.compound_and_add_event(Input::Redraw);
 
-            let depth_texture =
-                create_depth_stencil_texture(device, new_size.width, new_size.height);
-            let depth_texture_view = depth_texture.create_view(&Default::default());
+        let size = new_size;
+        //env.set_pixel_dimensions(size.width as f64);
+        //env.set_pixel_height(size.height as f64);
+        //self.ui.compound_and_add_event(Input::Redraw);
 
-            self.depth_texture_view = depth_texture_view;
+        let depth_texture =
+            create_depth_stencil_texture(&DEVICE, new_size.width, new_size.height);
+        let depth_texture_view = depth_texture.create_view(&Default::default());
 
-            self.targets = vec![
-                RenderTarget::new(new_size.width, new_size.height)
-            ];
+        self.depth_texture_view = depth_texture_view;
 
-            let scale_factor = self.inner.scale_factor();
+        self.targets = vec![
+            RenderTarget::new(new_size.width, new_size.height)
+        ];
 
-            self.texture_size_bind_group =
-                UNIFORM_BIND_GROUP_LAYOUT2.with(|uniform_bind_group_layout| {
-                    size_to_uniform_bind_group(
-                        device,
-                        uniform_bind_group_layout,
-                        size.width as f64,
-                        size.height as f64,
-                        scale_factor,
-                    )
-                });
+        let scale_factor = self.inner.scale_factor();
 
-            let dimension = Dimension::new(new_size.width as Scalar, new_size.height as Scalar);
+        self.texture_size_bind_group = size_to_uniform_bind_group(
+            &DEVICE,
+            &UNIFORM_BIND_GROUP_LAYOUT2,
+            size.width as f64,
+            size.height as f64,
+            scale_factor,
+        );
 
-            self.carbide_to_wgpu_matrix =
-                Self::calculate_carbide_to_wgpu_matrix(dimension, scale_factor);
+        let dimension = Dimension::new(new_size.width as Scalar, new_size.height as Scalar);
 
-            let uniform_bind_group =
-                UNIFORM_BIND_GROUP_LAYOUT.with(|uniform_bind_group_layout| {
-                    uniforms_to_bind_group(
-                        device,
-                        uniform_bind_group_layout,
-                        self.carbide_to_wgpu_matrix,
-                        0.0,
-                        0.0,
-                        0.0,
-                        false
-                    )
-                });
+        self.carbide_to_wgpu_matrix =
+            Self::calculate_carbide_to_wgpu_matrix(dimension, scale_factor);
 
-            self.uniform_bind_group = uniform_bind_group;
+        let uniform_bind_group = uniforms_to_bind_group(
+            &DEVICE,
+            &UNIFORM_BIND_GROUP_LAYOUT,
+            self.carbide_to_wgpu_matrix,
+            0.0,
+            0.0,
+            0.0,
+            false
+        );
 
-            FILTER_BIND_GROUPS.with(|a| {
-                a.borrow_mut().clear();
-            });
+        self.uniform_bind_group = uniform_bind_group;
 
-            queue.write_buffer(
-                &self.second_vertex_buffer,
-                0,
-                bytemuck::cast_slice(&Vertex::rect(size, scale_factor, ZOOM)),
-            );
+        FILTER_BIND_GROUPS.write().unwrap().clear();
 
-            let surface_caps = ADAPTER.with(|adapter| {
-                self.surface.get_capabilities(adapter)
-            });
+        QUEUE.write_buffer(
+            &self.second_vertex_buffer,
+            0,
+            bytemuck::cast_slice(&Vertex::rect(size, scale_factor, ZOOM)),
+        );
 
-            self.surface.configure(
-                device,
-                &SurfaceConfiguration {
-                    usage: TextureUsages::RENDER_ATTACHMENT,
-                    format: TextureFormat::Bgra8UnormSrgb,
-                    width: new_size.width,
-                    height: new_size.height,
-                    present_mode: surface_caps.present_modes[0],
-                    alpha_mode: wgpu::CompositeAlphaMode::Auto,
-                    view_formats: vec![],
-                },
-            );
-        })
+        let surface_caps = self.surface.get_capabilities(&*ADAPTER);
+
+        self.surface.configure(
+            &DEVICE,
+            &SurfaceConfiguration {
+                usage: TextureUsages::RENDER_ATTACHMENT,
+                format: TextureFormat::Bgra8UnormSrgb,
+                width: new_size.width,
+                height: new_size.height,
+                present_mode: surface_caps.present_modes[0],
+                alpha_mode: wgpu::CompositeAlphaMode::Auto,
+                view_formats: vec![],
+            },
+        );
+
     }
 }
 

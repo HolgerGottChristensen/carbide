@@ -246,7 +246,7 @@ impl Add<Dimension> for Position {
 
 impl Display for Position {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-        write!(f, "({}, {})", self.x, self.y)
+        write!(f, "(x: {}px, y: {}px)", self.x, self.y)
     }
 }
 

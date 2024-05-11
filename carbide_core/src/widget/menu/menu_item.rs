@@ -8,9 +8,9 @@ use crate::environment::Environment;
 use crate::event::HotKey;
 use crate::widget::WidgetId;
 
-pub trait MenuAction: Fn(&mut Environment) + DynClone {}
+pub trait MenuAction: Fn(&mut Environment)->() + DynClone {}
 
-impl<I> MenuAction for I where I: Fn(&mut Environment) + Clone {}
+impl<I> MenuAction for I where I: Fn(&mut Environment)->() + Clone {}
 
 dyn_clone::clone_trait_object!(MenuAction);
 

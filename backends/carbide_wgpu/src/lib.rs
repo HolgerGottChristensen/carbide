@@ -1,5 +1,6 @@
 use std::collections::HashMap;
 use std::sync::Arc;
+use dashmap::DashMap;
 
 use wgpu::{Adapter, Device, Instance, LoadOp, Operations, Queue};
 
@@ -9,7 +10,8 @@ pub use wgpu_window::WGPUWindow as Window;
 
 use crate::image::BindGroupExtended;
 pub use crate::image_context::create_bind_group_from_wgpu_texture;
-use crate::wgpu_window::{ADAPTER, BIND_GROUPS, DEVICE_QUEUE, INSTANCE};
+use crate::application::{ADAPTER, DEVICE, INSTANCE, QUEUE};
+use crate::wgpu_window::BIND_GROUPS;
 
 mod bind_group_layouts;
 mod bind_groups;
@@ -91,27 +93,18 @@ pub fn with_bind_groups<F: FnOnce(&HashMap<ImageId, BindGroupExtended>)->R, R>(f
     })
 }
 
-pub fn with_bind_groups_mut<F: FnOnce(&mut HashMap<ImageId, BindGroupExtended>)->R, R>(f: F) -> R {
-    BIND_GROUPS.with(|bind_groups| {
-        let bind_groups = &mut *bind_groups.borrow_mut();
-        f(bind_groups)
-    })
-}
-
 pub fn with_adapter<F: FnOnce(Arc<Adapter>)->R, R>(f: F) -> R {
-    ADAPTER.with(|adapter| {
-        f(adapter.clone())
-    })
+    f(ADAPTER.clone())
 }
 
-pub fn with_device_queue<F: FnOnce(Arc<Device>, Arc<Queue>)->R, R>(f: F) -> R {
-    DEVICE_QUEUE.with(|(device, queue)| {
-        f(device.clone(), queue.clone())
-    })
+pub fn with_device<F: FnOnce(Arc<Device>)->R, R>(f: F) -> R {
+    f(DEVICE.clone())
+}
+
+pub fn with_queue<F: FnOnce(Arc<Queue>)->R, R>(f: F) -> R {
+    f(QUEUE.clone())
 }
 
 pub fn with_instance<F: FnOnce(Arc<Instance>)->R, R>(f: F) -> R {
-    INSTANCE.with(|instance| {
-        f(instance.clone())
-    })
+    f(INSTANCE.clone())
 }

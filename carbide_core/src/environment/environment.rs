@@ -19,8 +19,6 @@ use crate::focus::Refocus;
 use crate::state::{InnerState, StateContract};
 use crate::widget::{AnyWidget, EnvKey, FilterId, ImageFilter, WidgetId};
 
-//type Overlays = Vec<(Box<dyn AnyWidget>, Box<dyn AnyReadState<T=bool>>)>;
-
 pub struct Environment {
     /// This stack should be used to scope the environment. This contains information such as
     /// current foreground color, text colors and more. This means a parent can choose some
@@ -51,20 +49,13 @@ pub struct Environment {
     /// The pixel density, or scale factor.
     /// On windows this is the settable factor in desktop settings.
     /// On retina displays for macos this is 2 and otherwise 1.
-    scale_factor: f64,
+    scale_factor: Option<f64>,
 
     /// The start time of the current frame. This is used to sync the animated states.
     frame_start_time: Rc<RefCell<Instant>>,
 
     /// A map that contains an image filter used for the Filter widget.
     filter_map: FxHashMap<FilterId, ImageFilter>,
-
-    /// A queue of functions that should be evaluated called each frame. This is called from the
-    /// main thread, and will return a boolean true if the task is done and should be removed
-    /// from the list. Each task in the queue should be fast to call, and non-blocking. We use
-    /// oneshot for evaluating if tasks are completed. If they are, we run the continuation and
-    /// remove it from the list.
-    async_task_queue: Option<Vec<Box<dyn Fn(&mut Environment) -> bool>>>,
 
     cursor: MouseCursor,
     mouse_position: Position,
@@ -89,7 +80,6 @@ impl std::fmt::Debug for Environment {
 impl Environment {
     pub fn new(
         pixel_dimensions: Dimension,
-        scale_factor: f64,
         event_sink: Box<dyn EventSink>,
     ) -> Self {
         let font_sizes_large = vec![
@@ -166,10 +156,9 @@ impl Environment {
             widget_transfer: HashMap::with_hasher(FxBuildHasher::default()),
             focus_request: None,
             pixel_dimensions,
-            scale_factor,
+            scale_factor: None,
             frame_start_time: Rc::new(RefCell::new(Instant::now())),
             filter_map: filters,
-            async_task_queue: Some(vec![]),
             cursor: MouseCursor::Default,
             mouse_position: Default::default(),
             animations: Some(vec![]),
@@ -178,7 +167,6 @@ impl Environment {
             animation_widget_in_frame: 0,
             request_application_close: false,
         };
-
 
         res
     }
@@ -238,98 +226,6 @@ impl Environment {
             || self.animation_widget_in_frame > 0
     }
 
-    /// Check if any async tasks have completed and if so call their continuation.
-    pub fn check_tasks(&mut self) {
-        let mut temp = None;
-        std::mem::swap(&mut temp, &mut self.async_task_queue);
-
-        temp.as_mut().map(|t| t.retain(|task| !task(self)));
-
-        std::mem::swap(&mut temp, &mut self.async_task_queue);
-
-        match (temp, &mut self.async_task_queue) {
-            (Some(t), Some(queue)) => {
-                queue.extend(t);
-            }
-            (None, _) => (),
-            (_, _) => {
-                panic!("The async queue was empty, which is not good.")
-            }
-        }
-    }
-
-    /// Starts a listener where next will be called each time something is sent to the channel.
-    /// The sender can be cloned and more values can be sent with it. If true is returned from
-    /// next, the stream is closed and will no longer receive values.
-    pub fn start_stream<T: Send + 'static>(
-        &mut self,
-        receiver: std::sync::mpsc::Receiver<T>,
-        next: impl Fn(T, &mut Environment) -> bool + 'static,
-    ) {
-
-        let poll_message: Box<dyn Fn(&mut Environment) -> bool> = Box::new(move |env| -> bool {
-            let mut stop = false;
-            loop {
-                if stop {
-                    break;
-                }
-                match receiver.try_recv() {
-                    Ok(message) => {
-                        stop = next(message, env);
-                    }
-                    Err(std::sync::mpsc::TryRecvError::Empty) => {
-                        break;
-                    }
-                    Err(std::sync::mpsc::TryRecvError::Disconnected) => {
-                        stop = true;
-                    }
-                }
-            }
-            stop
-        });
-
-        self.async_task_queue
-            .as_mut()
-            .expect("No async task queue was present.")
-            .push(poll_message);
-    }
-
-    #[allow(unused_variables)]
-    pub fn spawn_task<T: Send + 'static>(
-        &mut self,
-        task: impl Future<Output = T> + Send + 'static,
-        cont: impl Fn(T, &mut Environment) + 'static,
-    ) {
-        todo!()
-        /*let (sender, receiver) = oneshot::channel();
-
-        let event_sink = self.event_sink.clone();
-        let task_with_oneshot = task.then(|message| async move {
-            let _ = sender.send(message);
-            event_sink.call(CustomEvent::Async);
-            ()
-        });
-
-        let poll_message: Box<dyn Fn(&mut Environment) -> bool> = Box::new(move |env| -> bool {
-            match receiver.try_recv() {
-                Ok(message) => {
-                    cont(message, env);
-                    true
-                }
-                Err(TryRecvError::Empty) => false,
-                Err(e) => {
-                    eprintln!("{:?}", e);
-                    true
-                }
-            }
-        });
-
-
-        ASYNC_QUEUE.with(|queue| queue.borrow_mut().push(poll_message));
-
-        spawn(task_with_oneshot)*/
-    }
-
     pub fn capture_time(&mut self) {
         *self.frame_start_time.borrow_mut() = Instant::now();
     }
@@ -347,20 +243,25 @@ impl Environment {
         self.pixel_dimensions = dimension;
     }
 
-    pub fn set_scale_factor(&mut self, new_scale_factor: f64) {
-        self.scale_factor = new_scale_factor;
+    pub fn with_scale_factor<R, F: FnOnce(&mut Environment)->R>(&mut self, factor: f64, f: F) -> R {
+        let old = self.scale_factor;
+        self.scale_factor = Some(factor);
+        let res = f(self);
+        self.scale_factor = old;
+
+        res
     }
 
     /// Get the width in carbide points. (Actual pixels / dpi)
-    pub fn current_window_width(&self) -> f64 { self.pixel_dimensions.width / self.scale_factor }
+    pub fn current_window_width(&self) -> f64 { self.pixel_dimensions.width / self.scale_factor.unwrap() }
 
     /// Get the height in carbide points. (Actual pixels / dpi)
     pub fn current_window_height(&self) -> f64 {
-        self.pixel_dimensions.height / self.scale_factor
+        self.pixel_dimensions.height / self.scale_factor.unwrap()
     }
 
     pub fn scale_factor(&self) -> f64 {
-        self.scale_factor
+        self.scale_factor.unwrap()
     }
 
     pub fn cursor(&self) -> MouseCursor {
@@ -450,10 +351,6 @@ impl Environment {
         self.animation_widget_in_frame = self.animation_widget_in_frame.max(n);
     }
 
-    pub fn get_global_state<T>(&self) -> InnerState<T> {
-        todo!()
-    }
-
     pub fn filters(&self) -> &FxHashMap<FilterId, ImageFilter> {
         &self.filter_map
     }
@@ -478,7 +375,6 @@ impl Environment {
 
     pub fn color(&self, color: EnvironmentColor) -> Option<Color> {
         self.value::<EnvironmentColor, Color>(color).cloned()
-
     }
 
     pub fn font_size(&self, font_size: EnvironmentFontSize) -> Option<u32> {
@@ -491,6 +387,7 @@ impl Environment {
 
     pub fn value<K: EnvKey, T: 'static>(&self, key: K) -> Option<&T> {
         let key = key.key();
+
         for (other_key, value) in self.stack.iter().rev() {
             if key == *other_key && value.is::<T>() {
                 return value.downcast_ref();

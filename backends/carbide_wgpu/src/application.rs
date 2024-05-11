@@ -4,8 +4,12 @@ use std::ffi::OsStr;
 use std::fmt::{Debug, Formatter};
 use std::mem::transmute;
 use std::path::{Path, PathBuf};
+use std::sync::Arc;
+use futures::executor::block_on;
+use once_cell::sync::Lazy;
 
 use walkdir::WalkDir;
+use wgpu::{Adapter, Device, Instance, Queue};
 
 use carbide_core::{locate_folder, Scene};
 use carbide_core::asynchronous::set_event_sink;
@@ -25,8 +29,44 @@ use carbide_winit::window::WindowId as WinitWindowId;
 use crate::image_context::WGPUImageContext;
 use crate::proxy_event_loop::ProxyEventLoop;
 
+pub(crate) static INSTANCE: Lazy<Arc<Instance>> = Lazy::new(|| {
+    Arc::new(Instance::new(wgpu::InstanceDescriptor {
+        backends: wgpu::Backends::all(),
+        dx12_shader_compiler: Default::default(),
+    }))
+});
+
+pub(crate) static ADAPTER: Lazy<Arc<Adapter>> = Lazy::new(|| {
+    Arc::new(block_on(INSTANCE.request_adapter(&wgpu::RequestAdapterOptions {
+        power_preference: wgpu::PowerPreference::HighPerformance,
+        force_fallback_adapter: false,
+        compatible_surface: None,
+    })).unwrap())
+});
+
+static DEVICE_QUEUE: Lazy<(Arc<Device>, Arc<Queue>)> = Lazy::new(|| {
+    let mut limits = wgpu::Limits::default();
+    limits.max_bind_groups = 5;
+
+    let (device, queue) = block_on(ADAPTER.request_device(
+        &wgpu::DeviceDescriptor {
+            label: None,
+            features: wgpu::Features::CLEAR_TEXTURE,
+            limits,
+        },
+        None, // Trace path
+    )).unwrap();
+
+    (Arc::new(device), Arc::new(queue))
+});
+
+pub(crate) static DEVICE: Lazy<Arc<Device>> = Lazy::new(|| DEVICE_QUEUE.0.clone());
+pub(crate) static QUEUE: Lazy<Arc<Queue>> = Lazy::new(|| DEVICE_QUEUE.1.clone());
+
+
 thread_local!(pub static EVENT_LOOP: RefCell<EventLoop<CustomEvent>> = RefCell::new(EventLoop::Owned(EventLoopBuilder::<CustomEvent>::with_user_event().build().expect("Expected the event loop creation was successful"))));
 thread_local!(pub static WINDOW_IDS: RefCell<HashMap<WinitWindowId, WindowId>> = RefCell::new(HashMap::new()));
+
 
 pub struct Application {
     /// This contains the whole widget tree. This includes windows and other widgets.
@@ -42,7 +82,6 @@ pub struct Application {
 impl Application {
     pub fn new() -> Self {
         let window_pixel_dimensions = Dimension::new(400.0, 400.0);
-        let scale_factor = 2.0;
 
         let proxy = EVENT_LOOP.with(|a| {
             match &*a.borrow() {
@@ -56,7 +95,6 @@ impl Application {
 
         let environment = Environment::new(
             window_pixel_dimensions,
-            scale_factor,
             Box::new(ProxyEventLoop(proxy)),
         );
 

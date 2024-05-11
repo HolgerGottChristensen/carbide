@@ -1,4 +1,4 @@
-use crate::draw::{Dimension, InnerImageContext, Scalar};
+use crate::draw::{Dimension, InnerImageContext, Position, Scalar};
 use crate::environment::Environment;
 use crate::state::StateSync;
 use crate::text::InnerTextContext;
@@ -34,6 +34,7 @@ pub struct WindowEventContext<'a> {
 #[derive(Clone, Debug)]
 pub enum WindowEvent {
     Resize(Dimension),
+    Moved(Position),
     Focus,
     UnFocus,
     Redraw,

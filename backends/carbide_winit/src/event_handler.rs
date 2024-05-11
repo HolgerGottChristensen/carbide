@@ -1,12 +1,14 @@
 use std::collections::HashMap;
 use std::time::{Duration, Instant};
+use dashmap::DashMap;
+use once_cell::sync::Lazy;
 use winit::dpi::{LogicalPosition, LogicalSize, PhysicalPosition};
 use winit::event::{ElementState, Event, Ime, MouseButton, MouseScrollDelta, WindowEvent};
 use winit::keyboard::Key;
 use winit::window::{Theme, WindowId};
 use carbide_core::asynchronous::{AsyncContext, check_tasks};
 use carbide_core::cursor::MouseCursor;
-use carbide_core::draw::{Dimension, InnerImageContext, Position};
+use carbide_core::draw::{Dimension, InnerImageContext, Position, Scalar};
 use carbide_core::environment::Environment;
 use carbide_core::event::{CustomEvent, EventId, KeyboardEvent, KeyboardEventContext, ModifierKey, MouseEvent, MouseEventContext, OtherEventContext, WindowEventContext};
 use carbide_core::focus::{FocusContext, Refocus};
@@ -18,6 +20,16 @@ use crate::{convert_key, convert_mouse_button, convert_touch_phase};
 const N_CLICK_THRESHOLD: Duration = Duration::from_millis(500);
 const MOUSE_CLICK_MAX_DISTANCE: f64 = 3.0;
 const ARBITRARY_POINTS_PER_LINE_FACTOR: f64 = 10.0;
+
+static SCALE_FACTORS: Lazy<DashMap<WindowId, Scalar>> = Lazy::new(|| DashMap::new());
+
+pub fn update_scale_factor(window_id: WindowId, factor: Scalar) {
+    SCALE_FACTORS.insert(window_id, factor);
+}
+
+pub fn scale_factor(window_id: WindowId) -> Scalar {
+    *SCALE_FACTORS.get(&window_id).unwrap()
+}
 
 pub struct NewEventHandler {
     pressed_buttons: HashMap<MouseButton, (MouseEvent, Instant)>,
@@ -117,8 +129,21 @@ impl NewEventHandler {
 
     pub fn window_event(&mut self, event: WindowEvent, window_id: WindowId, target: &mut impl Scene, text_context: &mut impl InnerTextContext, image_context: &mut impl InnerImageContext, env: &mut Environment) -> bool {
         match event {
+            WindowEvent::Moved(position) => {
+                let logical_position = position.to_logical(scale_factor(window_id));
+
+                target.process_window_event(&carbide_core::event::WindowEvent::Moved(Position::new(logical_position.x, logical_position.y)), &mut WindowEventContext {
+                    text: text_context,
+                    image: image_context,
+                    env,
+                    is_current: &false,
+                    window_id: &window_id.into(),
+                });
+
+                true
+            }
             WindowEvent::Resized(new) => {
-                let LogicalSize { width, height } = new.to_logical::<f64>(2.0);
+                let LogicalSize { width, height } = new.to_logical::<f64>(scale_factor(window_id));
 
                 target.process_window_event(&carbide_core::event::WindowEvent::Resize(Dimension::new(width, height)), &mut WindowEventContext {
                     text: text_context,
@@ -171,7 +196,6 @@ impl NewEventHandler {
                 false
             },
             WindowEvent::ActivationTokenDone { .. } => false,
-            WindowEvent::Moved(_) => false,
             WindowEvent::Destroyed => false,
             WindowEvent::DroppedFile(_) => false,
             WindowEvent::HoveredFile(_) => false,
@@ -220,6 +244,10 @@ impl NewEventHandler {
                 false
             }
             WindowEvent::ScaleFactorChanged { scale_factor, .. } => {
+                println!("ScaleFactorChanged!");
+
+                update_scale_factor(window_id, scale_factor);
+
                 target.process_window_event(&carbide_core::event::WindowEvent::ScaleFactorChanged(scale_factor), &mut WindowEventContext {
                     text: text_context,
                     image: image_context,
@@ -402,7 +430,7 @@ impl NewEventHandler {
     pub fn mouse_wheel(&mut self, delta: MouseScrollDelta, window_id: WindowId, target: &mut impl Scene, text_context: &mut impl InnerTextContext, image_context: &mut impl InnerImageContext, env: &mut Environment) -> bool {
         let (x, y) = match delta {
             MouseScrollDelta::PixelDelta(delta) => {
-                let LogicalPosition { x, y } = delta.to_logical::<f64>(2.0);
+                let LogicalPosition { x, y } = delta.to_logical::<f64>(scale_factor(window_id));
                 let x = x;
                 let y = -y;
 
@@ -536,7 +564,7 @@ impl NewEventHandler {
     pub fn cursor_moved(&mut self, position: PhysicalPosition<f64>, window_id: WindowId, target: &mut impl Scene, text_context: &mut impl InnerTextContext, image_context: &mut impl InnerImageContext, env: &mut Environment) -> bool {
         let last_mouse_xy = self.mouse_position;
 
-        let LogicalPosition { x, y } = position.to_logical::<f64>(2.0); // Todo: Fix scale factor
+        let LogicalPosition { x, y } = position.to_logical::<f64>(scale_factor(window_id));
         self.mouse_position = Position::new(x, y);
 
         if last_mouse_xy == self.mouse_position {
