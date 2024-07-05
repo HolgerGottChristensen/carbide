@@ -1,6 +1,6 @@
 use proc_macro2::Ident;
-use carbide_syn::{Error, Expr, ExprMatch, parse_quote, PatIdent};
-use carbide_syn::fold::{Fold, fold_expr};
+use carbide_syn::{Error, Expr, ExprMatch, parse_quote, PatIdent, ExprIf};
+use carbide_syn::fold::{Fold, fold_block, fold_expr};
 use carbide_syn::spanned::Spanned;
 
 pub fn ui(expr: Expr) -> Expr {
@@ -24,6 +24,7 @@ impl Fold for Folder {
     fn fold_expr(&mut self, i: Expr) -> Expr {
         match i {
             Expr::Match(m) if self.allow_widget_expr => Self::handle_match_widget_expr(m),
+            Expr::If(m) if self.allow_widget_expr => Self::handle_if_widget_expr(m),
             _ => fold_expr(self, i)
         }
     }
@@ -100,6 +101,45 @@ impl Folder {
             )*
 
             acc
+        })
+    }
+
+    fn handle_if_widget_expr(m: ExprIf) -> Expr {
+        let ExprIf {
+            cond,
+            then_branch,
+            else_branch,
+            ..
+        } = m;
+
+        let when_false = if let Some((_, e)) = else_branch {
+            match *e {
+                Expr::If(i) => {
+                    let expr = Self::handle_if_widget_expr(i);
+
+                    parse_quote!(
+                        #expr
+                    )
+                }
+                Expr::Block(b) => {
+                    b
+                }
+                _ => unreachable!()
+            }
+        } else {
+            parse_quote!({
+                carbide::widget::Empty::new()
+            })
+        };
+
+        let condition = fold_expr(&mut Folder { allow_widget_expr: false }, *cond);
+
+        let when_true = fold_block(&mut Folder { allow_widget_expr: true }, then_branch);
+
+        parse_quote!({
+            carbide::widget::IfElse::new(Clone::clone(& #condition))
+                .when_true(#when_true)
+                .when_false(#when_false)
         })
     }
 }

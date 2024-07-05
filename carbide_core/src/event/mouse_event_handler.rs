@@ -53,9 +53,9 @@ pub enum MouseButton {
     /// Middle mouse button.
     Middle,
     /// Extra mouse button number 1.
-    Button4,
+    Back,
     /// Extra mouse button number 2.
-    Button5,
+    Forward,
     /// Mouse button number 6.
     Button6,
     /// Mouse button number 7.
@@ -71,8 +71,8 @@ impl From<u32> for MouseButton {
             1 => MouseButton::Left,
             2 => MouseButton::Right,
             3 => MouseButton::Middle,
-            4 => MouseButton::Button4,
-            5 => MouseButton::Button5,
+            4 => MouseButton::Back,
+            5 => MouseButton::Forward,
             6 => MouseButton::Button6,
             7 => MouseButton::Button7,
             8 => MouseButton::Button8,
@@ -88,8 +88,8 @@ impl From<MouseButton> for u32 {
             MouseButton::Left => 1,
             MouseButton::Right => 2,
             MouseButton::Middle => 3,
-            MouseButton::Button4 => 4,
-            MouseButton::Button5 => 5,
+            MouseButton::Back => 4,
+            MouseButton::Forward => 5,
             MouseButton::Button6 => 6,
             MouseButton::Button7 => 7,
             MouseButton::Button8 => 8,
